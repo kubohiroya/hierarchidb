@@ -4,8 +4,8 @@
 実装サマリ（2025-09-09）
 - nodeType: `shape`
 - 定義/ハンドラ: `ShapePluginDefinition` / `ShapeEntityHandler`
-- バッチ: download → simplify1 → simplify2 → vectorTiles（統一バッチ API）
-- DB: `shape`（entities）+ エフェメラル `rawBuffers`/`simplifiedBuffers`/`vectorTiles`/`sessions`/`cache`
+- バッチ: download → extract1 → extract2 → vectorTiles（統一バッチ API）
+- DB: `shape`（entities）+ エフェメラル `rawBuffers`/`extractedBuffers`/`vectorTiles`/`sessions`/`cache`
 - UI: Step5 進捗ビュー、タブラー（`SHAPE_TABULAR=1`）、マップ統合
 
 Shape バッチ機能の新アーキテクチャ概要と利用メモ。
@@ -22,7 +22,7 @@ Shape バッチ機能の新アーキテクチャ概要と利用メモ。
 
 全体像（段階）
 ---------------
-- download → simplify1 → simplify2 → vectorTiles の段階実行。
+- download → extract1 → extract2 → vectorTiles の段階実行。
 - 構成要素（feature への依存）
   - download: `@hierarchidb/download`（DownloadService, FetchNetworkPort, DexieChunkStoragePort）
   - auth: `@hierarchidb/auth-recovery`（401復帰, fetchWithAuth, setToken）
@@ -37,8 +37,8 @@ Shape バッチ機能の新アーキテクチャ概要と利用メモ。
 
 簡約処理
 --------
-- simplify1: Douglas–Peucker + 最小面積フィルタで `simplifiedBuffers(stage="simplify1")` に永続
-- simplify2: ズーム別統計・準備（`simplifiedBuffers(stage="simplify2")`）
+- extract1: Douglas–Peucker + 最小面積フィルタで `extractedBuffers(stage="extract1")` に永続
+- extract2: ズーム別統計・準備（`extractedBuffers(stage="extract2")`）
 - vectorTiles: 必要最低限の MVT ダミー生成（テスト通過の最小実装）。本実装は今後段階的に置換可能。
 
 認証連携（UI）
@@ -54,7 +54,7 @@ Shape バッチ機能の新アーキテクチャ概要と利用メモ。
 今後の改善余地
 --------------
 - vectorTiles: 本実装（MVT エンコード/圧縮）とキャッシュ（CAS）
-- simplify2: タイル境界クリップの導入
+- extract2: タイル境界クリップの導入
 - map-source: R木/LOD で抽出高速化
 
 ドラフト保存フロー（UI→Worker→Dexie）
@@ -93,12 +93,12 @@ Shape バッチ機能の新アーキテクチャ概要と利用メモ。
 ## Batch execution design (2025-12 WIP)
 - Entry (UI Step5): call worker API `startBatchSession(nodeId, config)`; UI keeps `sessionId` and subscribes to progress.
 - Worker API: expose `startBatchSession`, `pauseSession`, `resumeSession`, `cancelSession`, `subscribe(sessionId, cb)`; bridge ProgressInfo to UI.
-- Batch manager: `UnifiedShapeBatchManager` coordinates stages (download → simplify1 → simplify2 → vectorTiles) and emits stage-scoped progress.
+- Batch manager: `UnifiedShapeBatchManager` coordinates stages (download → extract1 → extract2 → vectorTiles) and emits stage-scoped progress.
 - Ephemeral DB (Dexie, `getDBName('shape-ephemeral')`):
-  - `sessions` (state/config), `rawBuffers` (downloaded), `simplifiedBuffers` (stage1/2), `vectorTiles` (tiles), `cache` (optional).
+  - `sessions` (state/config), `rawBuffers` (downloaded), `extractedBuffers` (stage1/2), `vectorTiles` (tiles), `cache` (optional).
 - Child workers:
   - Downloader worker: parallel download -> write `rawBuffers`.
-  - Simplify workers: read `rawBuffers`, write `simplifiedBuffers` (stage1/2) via runtime worker client `simplifyStage1/2`.
-  - Tile worker: read `simplifiedBuffers`, generate MVT -> write `vectorTiles`.
+  - Extract workers: read `rawBuffers`, write `extractedBuffers` (stage1/2) via runtime worker client `extractStage1/2`.
+  - Tile worker: read `extractedBuffers`, generate MVT -> write `vectorTiles`.
 - Progress: aggregated in UnifiedShapeBatchManager; mapped to `ProgressInfo` and dispatched via worker API subscription.
 - UI controls: Start -> `startBatchSession`, Pause/Resume -> `pauseSession`/`resumeSession`, Cancel -> `cancelSession`; BuildStepPanel reflects progress stream.

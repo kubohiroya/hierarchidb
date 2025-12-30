@@ -96,7 +96,7 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
       ],
       transformations: [
         { type: 'coordinate-system', from: 'EPSG:4326', to: 'EPSG:4326' }, //  WGS84
-        { type: 'simplify', tolerance: 0.001 }],
+        { type: 'extract', tolerance: 0.001 }],
     },
     cache: {
       ttl: 86400000 * 7, //  1
@@ -164,7 +164,7 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
   }
 
   async processData(rawData: NaturalEarthRawData, options?: ProcessOptions): Promise<NaturalEarthProcessedData> {
-    const { filters, transformations, simplify: _simplify = true, tolerance: _tolerance = 0.001 } = options || {};
+    const { filters, transformations, extract: _extract = true, tolerance: _tolerance = 0.001 } = options || {};
 
     try {
       //  ShapefileGeoJSON

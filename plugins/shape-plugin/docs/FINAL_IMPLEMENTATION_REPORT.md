@@ -15,14 +15,14 @@ shape-pluginのダミー実装から実際の処理への移行が完了しま�
 
 ### 2. **EphemeralDB統合**
 - ✅ EphemeralShapeDBスキーマ定義
-- ✅ 5つのテーブル実装（rawBuffers, simplifiedBuffers, vectorTiles, sessions, cache）
+- ✅ 5つのテーブル実装（rawBuffers, extractedBuffers, vectorTiles, sessions, cache）
 - ✅ セッションデータのクリーンアップ機能
 - ✅ キャッシュ有効期限管理
 
 ### 3. **Worker層の実装**
 - ✅ DownloadWorker - 完全実装済み
-- ✅ SimplifyWorker1 - バッファ管理強化
-- ✅ SimplifyWorker2 - タイル準備処理
+- ✅ ExtractWorker1 - バッファ管理強化
+- ✅ ExtractWorker2 - タイル準備処理
 - ✅ VectorTileWorker - タイル生成とキャッシュ
 
 ### 4. **統合テスト**
@@ -53,9 +53,9 @@ Test Files  1 failed (1)
 ```
 Download (実データ取得) 
   ↓ EphemeralDB保存
-Simplify1 (初回簡略化) 
+Extract1 (初回簡略化) 
   ↓ tolerance適用
-Simplify2 (タイル準備) 
+Extract2 (タイル準備) 
   ↓ ズームレベル別処理
 VectorTiles (MVT生成) 
   ↓ タイルキャッシュ
@@ -72,7 +72,7 @@ VectorTiles (MVT生成)
 
 #### 2. 管理レベル別設定
 ```typescript
-// Simplification tolerances
+// Extraction tolerances
 0: 0.01    // Country
 1: 0.005   // State/Province
 2: 0.001   // County
@@ -102,7 +102,7 @@ VectorTiles (MVT生成)
 
 ## 🚀 次のステップ（オプション）
 
-### 1. Simplify1/2の完全実装
+### 1. Extract1/2の完全実装
 現在はメトリクスのシミュレーションのみ。実際のDouglas-Peucker簡略化アルゴリズムの実装が必要。
 
 ### 2. MVTエンコーディング

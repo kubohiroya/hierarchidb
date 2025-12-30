@@ -13,7 +13,7 @@
 ## Consequences
 
 - Layer boundaries are explicit: Base (headless) → Service API/SDK (contract/helpers) → UI Host (presentation) → App.
-- Apps gain a single integration point (`PluginDialogHost`), simplifying future migrations (e.g., alternate hosts).
+- Apps gain a single integration point (`PluginDialogHost`), extracting future migrations (e.g., alternate hosts).
 - Presentation helpers remain available via `@hierarchidb/plugin-presentation` for menus と UI ホスト双方から利用でき、headless パッケージが UI 依存を抱えない。
 - Dep-fence will fail CI if new direct imports violate this layering.
 

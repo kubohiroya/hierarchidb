@@ -176,7 +176,7 @@
   ```typescript
   export interface ShapeEntity extends BaseEntity {
     geoJsonPath: string;
-    simplificationLevel: number;
+    extractionLevel: number;
     filterConditions: FilterCondition[];
     features: GeoJSON.Feature[];
   }

@@ -243,7 +243,7 @@ export function useAuth(homeUrl = '/') {
     signinSilent: () => bffAuth.refreshToken(),
     signoutSilent: () => signOut(),
     removeUser: () => signOut(),
-    // Event system (simplified)
+    // Event system (extracted)
     events: {
       addAccessTokenExpiring: (_handler: () => void) => {
         // Could implement event emitter if needed

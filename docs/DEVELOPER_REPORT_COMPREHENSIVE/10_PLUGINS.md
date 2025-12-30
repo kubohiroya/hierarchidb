@@ -160,7 +160,7 @@ graph TB
     
     subgraph "Processing Pipeline"
         DownloadWorker["Download Worker"]
-        SimplifyWorker["Simplify Worker"]
+        ExtractWorker["Extract Worker"]
         TileGenerator["Tile Generator"]
         CacheManager["Cache Manager"]
     end
@@ -184,8 +184,8 @@ graph TB
     GADMConnector --> CORSProxy
     
     BatchProcessor --> DownloadWorker
-    DownloadWorker --> SimplifyWorker
-    SimplifyWorker --> TileGenerator
+    DownloadWorker --> ExtractWorker
+    ExtractWorker --> TileGenerator
     TileGenerator --> CacheManager
     
     classDef core fill:#e1f5fe
@@ -198,7 +198,7 @@ graph TB
     class ShapeDB,FeatureBuffer,VectorTileService,BatchProcessor data
     class ShapeDialog,MapPreview,BatchMonitor,ProgressIndicator ui
     class GADMConnector,NaturalEarthAPI,GeoBoundariesAPI,CORSProxy external
-    class DownloadWorker,SimplifyWorker,TileGenerator,CacheManager processing
+    class DownloadWorker,ExtractWorker,TileGenerator,CacheManager processing
 ```
 
 ### 28.2 Basemap Plugin パターン (Basemap Plugin Pattern)

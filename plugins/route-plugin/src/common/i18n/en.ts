@@ -83,8 +83,8 @@ export const en: RoutePluginTranslations = {
       validating: 'Validating Results',
       optimizing: 'Optimization',
       download: 'Download',
-      simplify1: 'Simplifying Geometry',
-      simplify2: 'Validating Geometry',
+      extract1: 'Extracting Geometry',
+      extract2: 'Validating Geometry',
       vectortile: 'Vector Tile Generation',
     },
     phases: {

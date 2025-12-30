@@ -197,7 +197,7 @@ await api.commitWorkingCopy({
 
 ## Helper Functions
 
-Create these utility functions to simplify migration:
+Create these utility functions to extract migration:
 
 ```typescript
 // utils/command-helpers.ts
@@ -241,7 +241,7 @@ await api.moveNodes(
 
 - Consistent API usage across all packages
 - Better type safety with CommandEnvelope
-- Simplified Worker communication
+- Extracted Worker communication
 - Automatic undo/redo support
 - Proper working copy pattern
 - Observable-based subscriptions

@@ -6,9 +6,9 @@ export type FeatureFilterMethod = 'bbox_only' | 'polygon_only' | 'hybrid' | 'non
 export interface BatchConfig {
   dataSource?: DataSourceName;
   downloadConfig?: DownloadBatchConfig;
-  simplify1Config?: Simplify1Config;
-  simplify2Config?: Simplify2Config;
-  simplificationConfig?: SimplificationBatchConfig;
+  extract1Config?: Extract1Config;
+  extract2Config?: Extract2Config;
+  extractionConfig?: ExtractionBatchConfig;
   tileConfig?: TileBatchConfig;
   cleanupConfig?: CleanupBatchConfig;
   source?: string;
@@ -23,7 +23,7 @@ export interface DownloadBatchConfig {
   retryDelay?: number;
 }
 
-export interface SimplificationBatchConfig {
+export interface ExtractionBatchConfig {
   featureFilterMethod: FeatureFilterMethod;
   areaThreshold: number;
   minVertexCountForAreaFilter?: number;
@@ -33,10 +33,10 @@ export interface SimplificationBatchConfig {
   level2Workers: number;
   tolerance: number;
   quantize?: number;
-  enablePerFeatureSimplification?: boolean;
+  enablePerFeatureExtraction?: boolean;
 }
 
-export interface Simplify1Config {
+export interface Extract1Config {
   workers: number;
   tolerance: number;
   featureFilterMethod: FeatureFilterMethod;
@@ -46,14 +46,14 @@ export interface Simplify1Config {
   hybridFilterConfig?: HybridFilterConfig;
 }
 
-export type Simplify2SimplificationMode = 'off' | 'topojson' | 'geojson';
+export type Extract2ExtractionMode = 'off' | 'topojson' | 'geojson';
 
-export interface Simplify2Config {
+export interface Extract2Config {
   workers: number;
   tolerance: number;
   quantize?: number;
-  enablePerFeatureSimplification?: boolean;
-  simplificationMode?: Simplify2SimplificationMode;
+  enablePerFeatureExtraction?: boolean;
+  extractionMode?: Extract2ExtractionMode;
 }
 
 export interface TileBatchConfig {

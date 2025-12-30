@@ -24,7 +24,7 @@ const logBatchSessionWarning = (message: string, error: unknown): void => {
   console.warn('[ShapeBatchSessionManager]', message, error);
 };
 
-const STAGES: ProcessingStage[] = ['download', 'simplify1', 'simplify2', 'vectortile'];
+const STAGES: ProcessingStage[] = ['download', 'extract1', 'extract2', 'vectortile'];
 
 export interface BatchSessionOptions {
   maxConcurrentTasks?: number;
@@ -364,7 +364,7 @@ export class BatchSessionManager extends BaseBatchSessionManager {
 
   // Private Methods
   private initializeStages(_config: BatchProcessConfig): Record<ProcessingStage, StageStatus> {
-    const stages: ProcessingStage[] = ['download', 'simplify1', 'simplify2', 'vectortile'];
+    const stages: ProcessingStage[] = ['download', 'extract1', 'extract2', 'vectortile'];
     const stageStatus = {} as Record<ProcessingStage, StageStatus>;
 
     for (const stage of stages) {

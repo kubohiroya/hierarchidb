@@ -9,23 +9,23 @@ type Args = {
   onChange: (next: BatchConfig) => void;
 };
 
-export const useSimplify1ConfigSection = ({ config, onChange }: Args) => {
+export const useExtract1ConfigSection = ({ config, onChange }: Args) => {
   const controlId = useId();
-  const baseSimplify1Config = config.simplify1Config ?? DEFAULT_PROCESSING_CONFIG.simplify1Config;
+  const baseExtract1Config = config.extract1Config ?? DEFAULT_PROCESSING_CONFIG.extract1Config;
   const defaultHybridConfig: HybridFilterConfig =
-    DEFAULT_PROCESSING_CONFIG.simplify1Config?.hybridFilterConfig ?? {
+    DEFAULT_PROCESSING_CONFIG.extract1Config?.hybridFilterConfig ?? {
       quickRejectThreshold: 0.1,
       regularShapeMinRatio: 0.5,
       regularShapeMaxRatio: 2.0,
-      simpleShapeVertexThreshold: 50,
+      simpleShapeVertexThreshold: 10,
       elongatedShapeCorrectionFactor: 0.8,
     };
 
-  if (!baseSimplify1Config) {
-    throw new Error('Simplify1ConfigSection: baseSimplify1Config is not defined');
+  if (!baseExtract1Config) {
+    throw new Error('Extract1ConfigSection: baseExtract1Config is not defined');
   }
 
-  const baseHybridConfig: HybridFilterConfig = baseSimplify1Config.hybridFilterConfig ?? defaultHybridConfig;
+  const baseHybridConfig: HybridFilterConfig = baseExtract1Config.hybridFilterConfig ?? defaultHybridConfig;
   const quickRejectMin = 0.001;
   const quickRejectMax = 1;
   const quickRejectValue = Math.min(
@@ -42,7 +42,7 @@ export const useSimplify1ConfigSection = ({ config, onChange }: Args) => {
 
   return {
     controlId,
-    baseSimplify1Config,
+    baseExtract1Config,
     baseHybridConfig,
     quickRejectLogMin,
     quickRejectLogMax,
@@ -51,10 +51,10 @@ export const useSimplify1ConfigSection = ({ config, onChange }: Args) => {
   };
 };
 
-export const useSimplify2ConfigSection = ({ config, onChange }: Args) => {
-  const baseSimplify2Config = config.simplify2Config ?? DEFAULT_PROCESSING_CONFIG.simplify2Config;
-  if (!baseSimplify2Config) {
-    throw new Error('Simplify2ConfigSection: baseSimplify2Config is not defined');
+export const useExtract2ConfigSection = ({ config, onChange }: Args) => {
+  const baseExtract2Config = config.extract2Config ?? DEFAULT_PROCESSING_CONFIG.extract2Config;
+  if (!baseExtract2Config) {
+    throw new Error('Extract2ConfigSection: baseExtract2Config is not defined');
   }
 
   const quantizeOptions = [1000, 5000, 10000, 20000, 50000, 100000, 200000];
@@ -66,7 +66,7 @@ export const useSimplify2ConfigSection = ({ config, onChange }: Args) => {
     }, null as null | { index: number; diff: number });
     return resolved?.index ?? 0;
   };
-  const quantizeValue = baseSimplify2Config.quantize ?? 50000;
+  const quantizeValue = baseExtract2Config.quantize ?? 50000;
   const quantizeIndex = resolveQuantizeIndex(quantizeValue);
   const quantizeRank = quantizeIndex + 1;
 
@@ -80,7 +80,7 @@ export const useSimplify2ConfigSection = ({ config, onChange }: Args) => {
   );
 
   return {
-    baseSimplify2Config,
+    baseExtract2Config,
     quantizeOptions,
     quantizeIndex,
     quantizeRank,

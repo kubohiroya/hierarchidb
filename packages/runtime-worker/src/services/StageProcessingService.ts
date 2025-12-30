@@ -1,4 +1,4 @@
-import type { DownloadWorkerAPI, SimplifyWorkerAPI, VectorTileProgress, VectorTileWorkerAPI } from '../types.js';
+import type { DownloadWorkerAPI, ExtractWorkerAPI, VectorTileProgress, VectorTileWorkerAPI } from '../types.js';
 import { getDBName } from '@hierarchidb/util';
 import {
   generateVectorTilesFromJsonBuffer,
@@ -49,13 +49,13 @@ class RealDownloadWorker implements DownloadWorkerAPI {
 const bufferRegistry: Map<string, { parent?: string; stage: 's1' | 's2' | 'src'; ts: number }> =
   new Map();
 
-class RealSimplifyWorker implements SimplifyWorkerAPI {
-  async simplifyStage1(inputBufferId: string, _config: { tolerance: number; minArea: number }) {
+class RealExtractWorker implements ExtractWorkerAPI {
+  async extractStage1(inputBufferId: string, _config: { tolerance: number; minArea: number }) {
     const out = `${inputBufferId}-s1`;
     bufferRegistry.set(out, { parent: inputBufferId, stage: 's1', ts: Date.now() });
     return { outputBufferId: out };
   }
-  async simplifyStage2(inputBufferId: string, _config: { zoomLevels: number[]; tileSize: number }) {
+  async extractStage2(inputBufferId: string, _config: { zoomLevels: number[]; tileSize: number }) {
     const out = `${inputBufferId}-s2`;
     bufferRegistry.set(out, { parent: inputBufferId, stage: 's2', ts: Date.now() });
     return { outputBufferId: out };
@@ -84,7 +84,7 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
       // Ignore and fall back to ephemeral buffers.
     }
     const db = getEphemeralDb();
-    const row = await db.simplifiedBuffers.get(fileId) ?? await db.rawBuffers.get(fileId);
+    const row = await db.extractedBuffers.get(fileId);
     return row?.data ?? null;
   }
 
@@ -119,8 +119,8 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
       const buf = await this.readBuffer(inputBufferId);
       if (!buf) return { tilesGenerated: 0, totalBytes: 0 };
       const nodeId = config.targetNodeId
-        ?? (inputBufferId.includes('-simplify2-')
-          ? inputBufferId.substring(0, inputBufferId.lastIndexOf('-simplify2-'))
+        ?? (inputBufferId.includes('-extract2-')
+          ? inputBufferId.substring(0, inputBufferId.lastIndexOf('-extract2-'))
           : inputBufferId);
       const sdkConfig: VectorTileGenerateConfig = {
         buffer: config.buffer,
@@ -161,7 +161,7 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
 
 export type StageProcessingService = {
   download: DownloadWorkerAPI;
-  simplify: SimplifyWorkerAPI;
+  extract: ExtractWorkerAPI;
   vectortile: VectorTileWorkerAPI;
 };
 
@@ -171,7 +171,7 @@ export async function getStageProcessingService(): Promise<StageProcessingServic
   if (!singleton) {
     singleton = {
       download: new RealDownloadWorker(),
-      simplify: new RealSimplifyWorker(),
+      extract: new RealExtractWorker(),
       vectortile: new RealVectorTileWorker(),
     };
   }

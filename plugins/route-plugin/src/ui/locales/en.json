@@ -88,8 +88,8 @@
     "apiThrottleDescription": "Limit API calls to avoid rate limits.",
     "requestsPerSecond": "Requests per second",
     "maxConcurrent": "Max concurrent requests",
-    "simplificationTitle": "Geometry simplification",
-    "simplificationDescription": "Reduce geometry complexity for faster rendering.",
+    "extractionTitle": "Geometry extraction",
+    "extractionDescription": "Reduce geometry complexity for faster rendering.",
     "tolerance": "Tolerance",
     "vectorTilesTitle": "Vector tile settings",
     "vectorTilesDescription": "Configure zoom range and buffer for tile generation.",
@@ -162,8 +162,8 @@
       "generating_routes": "Generating Routes",
       "validating": "Validating Results",
       "download": "Download",
-      "simplify1": "Simplifying Geometry",
-      "simplify2": "Validating Geometry",
+      "extract1": "Extracting Geometry",
+      "extract2": "Validating Geometry",
       "vectortile": "Vector Tile Generation"
     },
     "phases": {

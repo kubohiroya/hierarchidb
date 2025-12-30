@@ -82,7 +82,7 @@
   workingCopyId: 'wc-001'
   ephemeralData: [
     { id: 'ed-001', workingCopyId: 'wc-001', stage: 'download' },
-    { id: 'ed-002', workingCopyId: 'wc-001', stage: 'simplify1' }
+    { id: 'ed-002', workingCopyId: 'wc-001', stage: 'extract1' }
   ]
   ```
   - **入力データの意味**: Shapesプラグインの処理中間データ

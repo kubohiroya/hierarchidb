@@ -14,7 +14,7 @@ The shape plugin contains several large UI components and hooks that bundle mult
 - [x] (2025-12-21 22:40) Identify the largest/most complex shape UI/hooks and define the new shared boundaries.
 - [x] (2025-12-21 22:45) Split preview logic into focused hooks (metadata load, search/selection, table data, map layers).
 - [x] (2025-12-21 22:46) Split build-progress logic into focused hooks (status mapping, stage definitions, session actions).
-- [x] (2025-12-21 22:47) Split large processing UI sections (Download/Simplification) into subcomponents.
+- [x] (2025-12-21 22:47) Split large processing UI sections (Download/Extraction) into subcomponents.
 - [x] (2025-12-21 22:49) Update imports/exports and confirm typecheck passes; record logs in `TASKS.md`.
 
 ## Surprises & Discoveries
@@ -38,7 +38,7 @@ The shape plugin’s Step UI lives under `plugins/shape-plugin/src/ui/components
 * `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` handles preview metadata loading, search/filtering, selection context, table rows/columns, and MapLibre layer management.
 * `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts` handles progress status, stage definitions, task grouping, and start/resume/pause actions.
 * `plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts` mixes subscription wiring, polling, and progress/status mapping.
-* `plugins/shape-plugin/src/ui/components/steps/SimplificationConfigSection.tsx` and `DownloadConfigSection.tsx` render multiple distinct UI panels in a single file.
+* `plugins/shape-plugin/src/ui/components/steps/ExtractionConfigSection.tsx` and `DownloadConfigSection.tsx` render multiple distinct UI panels in a single file.
 
 The goal is to split those responsibilities into smaller hooks/components with clear, reusable interfaces.
 
@@ -56,7 +56,7 @@ Update `useShapePreviewStep.ts` to compose those hooks and keep only high-level 
 Next, split build-progress logic. Extract stage definitions, status mapping, pane progress computation, and session control actions into separate hooks under `plugins/shape-plugin/src/ui/hooks/build/` (or similar). Keep `useShapeBuildProgressStep.ts` as a coordinator hook that composes those pieces.
 
 Then, split UI sections:
-* Move the area filter controls, simplification controls, and precision controls from `SimplificationConfigSection.tsx` into focused subcomponents (e.g., `ProcessingAreaFilterCard`, `ProcessingSimplificationCard`, `ProcessingPrecisionCard`).
+* Move the area filter controls, extraction controls, and precision controls from `ExtractionConfigSection.tsx` into focused subcomponents (e.g., `ProcessingAreaFilterCard`, `ProcessingExtractionCard`, `ProcessingPrecisionCard`).
 * Split `DownloadConfigSection.tsx` into smaller UI blocks (e.g., `DownloadCacheControls`, `DownloadRetrySettings`, `DownloadTimeoutFields`).
 
 Ensure each new subcomponent receives its data and event handlers via props only, with no direct state access, to preserve reusability.
@@ -66,7 +66,7 @@ Finally, update imports/exports, ensure the step components render the same UI, 
 ## Concrete Steps
 
 1) Create the new hook/component files under `plugins/shape-plugin/src/ui/hooks/...` and `plugins/shape-plugin/src/ui/components/...` as described above.
-2) Refactor `useShapePreviewStep.ts`, `useShapeBuildProgressStep.ts`, `useShapeProgress.ts`, `SimplificationConfigSection.tsx`, and `DownloadConfigSection.tsx` to use the new pieces.
+2) Refactor `useShapePreviewStep.ts`, `useShapeBuildProgressStep.ts`, `useShapeProgress.ts`, `ExtractionConfigSection.tsx`, and `DownloadConfigSection.tsx` to use the new pieces.
 3) Update any exports in `plugins/shape-plugin/src/ui/hooks/index.ts` or new index files as needed.
 4) From repo root, run:
    pnpm --filter @hierarchidb/shape-plugin typecheck
@@ -75,7 +75,7 @@ Finally, update imports/exports, ensure the step components render the same UI, 
 
 ## Validation and Acceptance
 
-Run `pnpm --filter @hierarchidb/shape-plugin typecheck` from the repository root and confirm exit code 0. Manually open the shape dialog steps (Step2–Step5) and verify that download/simplification settings, build progress, and preview behave as before (no missing UI or errors). Record the typecheck result in `TASKS.md`.
+Run `pnpm --filter @hierarchidb/shape-plugin typecheck` from the repository root and confirm exit code 0. Manually open the shape dialog steps (Step2–Step5) and verify that download/extraction settings, build progress, and preview behave as before (no missing UI or errors). Record the typecheck result in `TASKS.md`.
 
 ## Idempotence and Recovery
 

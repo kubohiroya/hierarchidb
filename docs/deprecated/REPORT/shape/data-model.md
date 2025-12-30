@@ -5,7 +5,7 @@ This document describes the comprehensive data model for the Shape Plugin, inclu
 ## Overview
 
 The Shape Plugin implements a high-performance geospatial data processing system with:
-- **4-stage processing pipeline**: Download → Simplify1 → Simplify2 → VectorTiles
+- **4-stage processing pipeline**: Download → Extract1 → Extract2 → VectorTiles
 - **Worker pool architecture**: Parallel processing with Web Workers
 - **6-category entity system**: HierarchiDB-compliant data storage across 5 specialized databases
 - **Spatial indexing**: Morton codes for efficient geographic queries
@@ -110,7 +110,7 @@ export type ShapesWorkingCopy = ShapesEntity & WorkingCopyProperties & {
   changes: Partial<ShapesEntity>;
   isDirty: boolean;
   
-  // Simplified due to single-session constraint
+  // Extracted due to single-session constraint
   exclusiveSessionId: string;  // The one and only active session for this node
 };
 ```
@@ -142,7 +142,7 @@ export interface BatchSessionEntity extends GroupEntity {
   taskIds: string[];         // References to BatchTaskEntity
   bufferIds: string[];       // References to BatchBufferEntity
   
-  // Session exclusivity (simplified due to single-session constraint)
+  // Session exclusivity (extracted due to single-session constraint)
   isExclusive: true;         // Always true - no concurrent sessions allowed
 }
 
@@ -150,8 +150,8 @@ type SessionStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled
 
 interface SessionProgress {
   downloadProgress: number;    // 0-100
-  simplify1Progress: number;   // 0-100
-  simplify2Progress: number;   // 0-100
+  extract1Progress: number;   // 0-100
+  extract2Progress: number;   // 0-100
   vectorTileProgress: number;  // 0-100
   overallProgress: number;     // 0-100
   estimatedTimeRemaining?: number;
@@ -239,7 +239,7 @@ interface TransformationRule {
   parameters?: Record<string, any>;
 }
 
-type TaskType = 'download' | 'simplify1' | 'simplify2' | 'vectorTile';
+type TaskType = 'download' | 'extract1' | 'extract2' | 'vectorTile';
 type TaskStage = 'queued' | 'assigned' | 'running' | 'completed' | 'failed';
 type TaskStatus = 'pending' | 'queued' | 'running' | 'completed' | 'failed' | 'cancelled';
 
@@ -253,7 +253,7 @@ interface DownloadTaskConfig {
   retryDelay: number;
 }
 
-interface SimplifyTaskConfig {
+interface ExtractTaskConfig {
   algorithm: 'douglas-peucker' | 'topojson';
   tolerance: number;
   preserveTopology: boolean;
@@ -299,7 +299,7 @@ export interface BatchBufferEntity extends PeerEntity {
   metadata: BufferMetadata;  // Processing metadata
 }
 
-type BufferType = 'raw' | 'simplified' | 'indexed' | 'tiled';
+type BufferType = 'raw' | 'extracted' | 'indexed' | 'tiled';
 type DataFormat = 'geojson' | 'geobuf' | 'topojson' | 'mvt';
 type CompressionType = 'none' | 'gzip' | 'brotli';
 
@@ -370,7 +370,7 @@ export interface FeatureBufferEntity extends PeerEntity {
   properties: ArrayBuffer;   // Encoded properties
   
   // Processing metadata
-  simplificationLevel: number;
+  extractionLevel: number;
   originalComplexity: number;
   currentComplexity: number;
   qualityScore: number;      // Processing quality metric
@@ -565,8 +565,8 @@ Centralized management of all Worker pools:
 ```typescript
 export class WorkerPoolManager {
   private downloadPool: WorkerPool<DownloadWorkerAPI>;
-  private simplify1Pool: WorkerPool<SimplifyWorker1API>;
-  private simplify2Pool: WorkerPool<SimplifyWorker2API>;
+  private extract1Pool: WorkerPool<ExtractWorker1API>;
+  private extract2Pool: WorkerPool<ExtractWorker2API>;
   private vectorTilePool: WorkerPool<VectorTileWorkerAPI>;
 
   constructor(config: WorkerPoolConfig = DEFAULT_WORKER_CONFIG) {
@@ -579,14 +579,14 @@ export class WorkerPoolManager {
       config.downloadWorkers
     );
     
-    this.simplify1Pool = new WorkerPool(
-      '/workers/simplify1-worker.js',
-      config.simplify1Workers
+    this.extract1Pool = new WorkerPool(
+      '/workers/extract1-worker.js',
+      config.extract1Workers
     );
     
-    this.simplify2Pool = new WorkerPool(
-      '/workers/simplify2-worker.js',
-      config.simplify2Workers
+    this.extract2Pool = new WorkerPool(
+      '/workers/extract2-worker.js',
+      config.extract2Workers
     );
     
     this.vectorTilePool = new WorkerPool(
@@ -599,12 +599,12 @@ export class WorkerPoolManager {
     return this.downloadPool.execute('processDownload', task);
   }
 
-  async executeSimplify1Task(task: Simplify1Task): Promise<Simplify1Result> {
-    return this.simplify1Pool.execute('processSimplification', task);
+  async executeExtract1Task(task: Extract1Task): Promise<Extract1Result> {
+    return this.extract1Pool.execute('processExtraction', task);
   }
 
-  async executeSimplify2Task(task: Simplify2Task): Promise<Simplify2Result> {
-    return this.simplify2Pool.execute('processTileSimplification', task);
+  async executeExtract2Task(task: Extract2Task): Promise<Extract2Result> {
+    return this.extract2Pool.execute('processTileExtraction', task);
   }
 
   async executeVectorTileTask(task: VectorTileTask): Promise<VectorTileResult> {
@@ -614,8 +614,8 @@ export class WorkerPoolManager {
 
 const DEFAULT_WORKER_CONFIG: WorkerPoolConfig = {
   downloadWorkers: 2,      // Network I/O constrained
-  simplify1Workers: 4,     // CPU-intensive
-  simplify2Workers: 4,     // CPU-intensive
+  extract1Workers: 4,     // CPU-intensive
+  extract2Workers: 4,     // CPU-intensive
   vectorTileWorkers: 2     // Moderate CPU + I/O
 };
 ```
@@ -686,45 +686,45 @@ export class DownloadWorker implements DownloadWorkerAPI {
 }
 ```
 
-#### SimplifyWorker1
+#### ExtractWorker1
 
-Performs feature-level simplification:
+Performs feature-level extraction:
 
 ```typescript
 /**
- * SimplifyWorker1 - Feature-level simplification
+ * ExtractWorker1 - Feature-level extraction
  * 
  * Responsibilities:
- * - Individual features simplification using Douglas-Peucker algorithm
+ * - Individual features extraction using Douglas-Peucker algorithm
  * - Topology preservation options (prevent self-intersection)
- * - Morton code recalculation for simplified geometries
+ * - Morton code recalculation for extracted geometries
  * - Area and complexity-based filtering
  */
-export class SimplifyWorker1 implements SimplifyWorker1API {
+export class ExtractWorker1 implements ExtractWorker1API {
   private featureIndexDB: FeatureIndexDB;
   private featureBufferDB: FeatureBufferDB;
 
-  async processSimplification(task: Simplify1Task): Promise<Simplify1Result> {
+  async processExtraction(task: Extract1Task): Promise<Extract1Result> {
     const { taskId, inputBufferId, config } = task;
     
     try {
       // 1. Load features from input buffer
       const features = await this.loadFeaturesFromBuffer(inputBufferId);
       
-      // 2. Apply Douglas-Peucker simplification
-      const simplifiedFeatures = await this.applyDouglasePeuckerSimplification(
+      // 2. Apply Douglas-Peucker extraction
+      const extractedFeatures = await this.applyDouglasePeuckerExtraction(
         features, 
         config
       );
       
       // 3. Filter by area and complexity thresholds
-      const filteredFeatures = this.filterByThresholds(simplifiedFeatures, config);
+      const filteredFeatures = this.filterByThresholds(extractedFeatures, config);
       
       // 4. Recalculate spatial indices
       const updatedIndices = await this.recalculateSpatialIndices(filteredFeatures);
       
-      // 5. Store simplified features
-      const outputBufferId = await this.storeSimplifiedFeatures(
+      // 5. Store extracted features
+      const outputBufferId = await this.storeExtractedFeatures(
         filteredFeatures, 
         updatedIndices
       );
@@ -734,20 +734,20 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
         status: 'completed',
         outputBufferId,
         originalFeatureCount: features.length,
-        simplifiedFeatureCount: filteredFeatures.length,
+        extractedFeatureCount: filteredFeatures.length,
         reductionRatio: 1 - (filteredFeatures.length / features.length),
         processingTime: Date.now() - task.startedAt!
       };
       
     } catch (error) {
-      console.error(`SimplifyWorker1 error for ${taskId}:`, error);
-      throw new ProcessingError(`Simplification failed: ${error.message}`, taskId, 'simplify1');
+      console.error(`ExtractWorker1 error for ${taskId}:`, error);
+      throw new ProcessingError(`Extraction failed: ${error.message}`, taskId, 'extract1');
     }
   }
 
-  private async applyDouglasePeuckerSimplification(
+  private async applyDouglasePeuckerExtraction(
     features: GeoJSONFeature[],
-    config: SimplifyTaskConfig
+    config: ExtractTaskConfig
   ): Promise<GeoJSONFeature[]> {
     // Implementation of Douglas-Peucker algorithm
     // Preserves important vertices while reducing overall complexity
@@ -755,30 +755,30 @@ export class SimplifyWorker1 implements SimplifyWorker1API {
 }
 ```
 
-#### SimplifyWorker2
+#### ExtractWorker2
 
-Performs tile-level TopoJSON simplification:
+Performs tile-level TopoJSON extraction:
 
 ```typescript
 /**
- * SimplifyWorker2 - Tile-level TopoJSON simplification
+ * ExtractWorker2 - Tile-level TopoJSON extraction
  * 
  * Responsibilities:
  * - Group features by tile grid
- * - TopoJSON-based topology-preserving simplification
+ * - TopoJSON-based topology-preserving extraction
  * - Shared boundary resolution
  * - Quantization and coordinate precision optimization
  */
-export class SimplifyWorker2 implements SimplifyWorker2API {
+export class ExtractWorker2 implements ExtractWorker2API {
   private featureIndexDB: FeatureIndexDB;
   private featureBufferDB: FeatureBufferDB;
   private tileBufferDB: TileBufferDB;
 
-  async processTileSimplification(task: Simplify2Task): Promise<Simplify2Result> {
+  async processTileExtraction(task: Extract2Task): Promise<Extract2Result> {
     const { taskId, inputBufferId, config } = task;
     
     try {
-      // 1. Load simplified features from previous stage
+      // 1. Load extracted features from previous stage
       const features = await this.loadFeaturesFromBuffer(inputBufferId);
       
       // 2. Group features by tile grid
@@ -801,16 +801,16 @@ export class SimplifyWorker2 implements SimplifyWorker2API {
       };
       
     } catch (error) {
-      console.error(`SimplifyWorker2 error for ${taskId}:`, error);
-      throw new ProcessingError(`Tile simplification failed: ${error.message}`, taskId, 'simplify2');
+      console.error(`ExtractWorker2 error for ${taskId}:`, error);
+      throw new ProcessingError(`Tile extraction failed: ${error.message}`, taskId, 'extract2');
     }
   }
 
   private async processTopoJSONTile(
     tileFeatures: GeoJSONFeature[],
-    config: SimplifyTaskConfig
+    config: ExtractTaskConfig
   ): Promise<TileBuffer> {
-    // Implementation of TopoJSON-based simplification
+    // Implementation of TopoJSON-based extraction
     // Preserves shared boundaries between adjacent features
   }
 }
@@ -969,7 +969,7 @@ erDiagram
         string indexId FK
         ArrayBuffer geometry
         ArrayBuffer properties
-        number simplificationLevel
+        number extractionLevel
         number qualityScore
     }
     
@@ -1093,7 +1093,7 @@ classDiagram
         +string indexId
         +ArrayBuffer geometry
         +ArrayBuffer properties
-        +number simplificationLevel
+        +number extractionLevel
         +number qualityScore
     }
     
@@ -1149,8 +1149,8 @@ flowchart TD
     
     %% Task Management Layer
     C --> D[BatchTaskEntity: Download]
-    C --> E[BatchTaskEntity: Simplify1]
-    C --> F[BatchTaskEntity: Simplify2] 
+    C --> E[BatchTaskEntity: Extract1]
+    C --> F[BatchTaskEntity: Extract2] 
     C --> G[BatchTaskEntity: VectorTile]
     
     %% Dependency Management
@@ -1164,8 +1164,8 @@ flowchart TD
     I --> J[FeatureIndexEntity: Spatial Index]
     J --> K[FeatureBufferEntity: Processed Features]
     
-    E --> L[BatchBufferEntity: Simplified L1]
-    L --> M[FeatureBufferEntity: Simplified Features]
+    E --> L[BatchBufferEntity: Extracted L1]
+    L --> M[FeatureBufferEntity: Extracted Features]
     
     F --> N[TileBufferEntity: Topology Preserved]
     N --> O[FeatureBufferEntity: Tile Features]
@@ -1206,8 +1206,8 @@ flowchart TD
     %% Worker Processing
     subgraph "Worker Pool Layer"
         W1[DownloadWorker Pool]
-        W2[SimplifyWorker1 Pool]
-        W3[SimplifyWorker2 Pool]
+        W2[ExtractWorker1 Pool]
+        W3[ExtractWorker2 Pool]
         W4[VectorTileWorker Pool]
     end
     
@@ -1225,7 +1225,7 @@ flowchart TD
     class W1,W2,W3,W4 workerClass
 ```
 
-## Single-Session Constraint and Design Simplifications
+## Single-Session Constraint and Design Extractions
 
 ### Core Constraint: One Working Copy Per TreeNode
 
@@ -1244,7 +1244,7 @@ interface SessionExclusivity {
 }
 ```
 
-### Design Simplifications Due to Single-Session Constraint
+### Design Extractions Due to Single-Session Constraint
 
 #### 1. **Eliminated Complexity**
 
@@ -1266,7 +1266,7 @@ interface ExclusiveSessionManager {
 }
 ```
 
-#### 2. **Simplified Working Copy Management**
+#### 2. **Extracted Working Copy Management**
 
 ```typescript
 class WorkingCopyManager {
@@ -1290,7 +1290,7 @@ class WorkingCopyManager {
 }
 ```
 
-#### 3. **Simplified Error Handling**
+#### 3. **Extracted Error Handling**
 
 ```typescript
 // Error scenarios are straightforward
@@ -1326,7 +1326,7 @@ class SessionErrorHandler {
 ### Implementation Benefits
 
 1. **Reduced Complexity**: No concurrent session coordination
-2. **Simplified Testing**: Linear session lifecycle testing
+2. **Extracted Testing**: Linear session lifecycle testing
 3. **Better Performance**: No lock contention or conflict resolution overhead
 4. **Clearer UX**: User sees clear "processing in progress" state
 5. **Easier Debugging**: Single execution path per node
@@ -1362,22 +1362,22 @@ const downloadParentTask: BatchTaskEntity = {
 
 **RelationalEntity Pattern for Complex Dependencies**:
 ```typescript
-// Sequential dependency: Simplify1 tasks depend on Download completion
+// Sequential dependency: Extract1 tasks depend on Download completion
 const sequentialDependency: TaskDependencyEntity = {
   dependencyId: 'dep-seq-001',
   sourceTaskId: 'node123-download-JP-level1',
-  targetTaskId: 'node123-simplify1-JP-level1',
+  targetTaskId: 'node123-extract1-JP-level1',
   dependencyType: 'sequential',
   status: 'satisfied'
 };
 
-// Data dependency: VectorTile task needs multiple Simplify2 outputs
+// Data dependency: VectorTile task needs multiple Extract2 outputs
 const dataDependency: TaskDependencyEntity = {
   dependencyId: 'dep-data-002',
-  sourceTaskId: 'node123-simplify2-tile-z8-x128-y85',
+  sourceTaskId: 'node123-extract2-tile-z8-x128-y85',
   targetTaskId: 'node123-vectortile-z8-x128-y85',
   dependencyType: 'data',
-  requiredDataIds: ['buffer-simplified-tile-001', 'index-spatial-002'],
+  requiredDataIds: ['buffer-extracted-tile-001', 'index-spatial-002'],
   status: 'pending'
 };
 ```
@@ -1396,17 +1396,17 @@ The Worker pool architecture processes data through a 4-stage pipeline:
    - **GroupEntity**: `BatchTaskEntity` manages country/level-specific child downloads
    - **RelationalEntity**: `TaskDependencyEntity` tracks data dependencies
 
-2. **Simplify1 Stage**: `SimplifyWorker1` applies feature-level simplification
-   - **GroupEntity**: Parent simplify1 task manages feature-batch child tasks
+2. **Extract1 Stage**: `ExtractWorker1` applies feature-level extraction
+   - **GroupEntity**: Parent extract1 task manages feature-batch child tasks
    - **RelationalEntity**: Dependencies on download task completion
 
-3. **Simplify2 Stage**: `SimplifyWorker2` performs tile-level topology preservation
-   - **GroupEntity**: Parent simplify2 task manages tile-grid child tasks
-   - **RelationalEntity**: Dependencies on simplify1 outputs and spatial adjacency
+3. **Extract2 Stage**: `ExtractWorker2` performs tile-level topology preservation
+   - **GroupEntity**: Parent extract2 task manages tile-grid child tasks
+   - **RelationalEntity**: Dependencies on extract1 outputs and spatial adjacency
 
 4. **VectorTile Stage**: `VectorTileWorker` generates final MVT output
    - **GroupEntity**: Parent vectortile task manages zoom-level child tasks
-   - **RelationalEntity**: Dependencies on simplify2 tile outputs
+   - **RelationalEntity**: Dependencies on extract2 tile outputs
 
 Each stage creates appropriate entities in the corresponding databases, with full traceability through the processing pipeline.
 
@@ -1417,8 +1417,8 @@ Each stage creates appropriate entities in the corresponding databases, with ful
 ```typescript
 const optimalPoolSizes = {
   download: Math.min(2, navigator.hardwareConcurrency),      // Network I/O bound
-  simplify1: Math.max(2, navigator.hardwareConcurrency - 1), // CPU intensive
-  simplify2: Math.max(2, navigator.hardwareConcurrency - 1), // CPU intensive  
+  extract1: Math.max(2, navigator.hardwareConcurrency - 1), // CPU intensive
+  extract2: Math.max(2, navigator.hardwareConcurrency - 1), // CPU intensive  
   vectorTile: Math.min(2, navigator.hardwareConcurrency)     // Moderate CPU + I/O
 };
 ```

@@ -101,24 +101,24 @@ export function mapDraftToUpdates(draft: ShapeDraft): Partial<ShapeEntity> {
 export function validateBatchConfig(config: Partial<BatchConfig>): ShapeStepValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
-  const legacySimplification = config.simplificationConfig;
-  const simplify1Workers = config.simplify1Config?.workers ?? legacySimplification?.level1Workers;
-  const simplify2Workers = config.simplify2Config?.workers ?? legacySimplification?.level2Workers;
+  const legacyExtraction = config.extractionConfig;
+  const extract1Workers = config.extract1Config?.workers ?? legacyExtraction?.level1Workers;
+  const extract2Workers = config.extract2Config?.workers ?? legacyExtraction?.level2Workers;
 
   const downloadConcurrency = config.downloadConfig?.maxConcurrent;
   if (downloadConcurrency !== undefined) {
-    if (downloadConcurrency < 1 || downloadConcurrency > 10) {
-      errors.push('Concurrent downloads must be between 1 and 10');
+    if (downloadConcurrency < 1 || downloadConcurrency > 4) {
+      errors.push('Concurrent downloads must be between 1 and 4');
     }
   }
 
-  if (simplify1Workers !== undefined) {
-    if (simplify1Workers < 1 || simplify1Workers > 8) {
+  if (extract1Workers !== undefined) {
+    if (extract1Workers < 1 || extract1Workers > 8) {
       errors.push('Concurrent processes must be between 1 and 8');
     }
   }
-  if (simplify2Workers !== undefined) {
-    if (simplify2Workers < 1 || simplify2Workers > 8) {
+  if (extract2Workers !== undefined) {
+    if (extract2Workers < 1 || extract2Workers > 8) {
       errors.push('Concurrent processes must be between 1 and 8');
     }
   }
@@ -142,7 +142,7 @@ export function validateBatchConfig(config: Partial<BatchConfig>): ShapeStepVali
     errors.push('Min zoom level must be less than or equal to max zoom level');
   }
 
-  const areaThreshold = config.simplify1Config?.areaThreshold ?? legacySimplification?.areaThreshold;
+  const areaThreshold = config.extract1Config?.areaThreshold ?? legacyExtraction?.areaThreshold;
   if (areaThreshold !== undefined) {
     if (areaThreshold < 0 || areaThreshold > 10000) {
       errors.push('Feature area threshold must be between 0 and 10000');
@@ -210,7 +210,6 @@ export function generateDownloadTaskPayloads(
           countryCode: resolvedCode,
           countryName: country.countryName,
           adminLevel: level,
-          continent: country.continent,
           dataSource,
         });
       }
@@ -267,7 +266,6 @@ export function generateDownloadTaskPayloadsFromSelection(
         countryCode: resolvedCode,
         countryName: country.countryName,
         adminLevel: level,
-        continent: country.continent,
         dataSource,
       }];
     });
@@ -275,7 +273,7 @@ export function generateDownloadTaskPayloadsFromSelection(
 }
 
 export const buildDownloadTaskId = (nodeId: string, payload: DownloadTaskPayload): string => {
-  const countryId = payload.countryCode || payload.country || 'unknown';
+  const countryId = payload.countryCode || 'unknown';
   return `${nodeId}+${countryId}+${payload.adminLevel}`;
 };
 
@@ -326,21 +324,21 @@ function buildDataSourceUrl(
  * Merge processing config with defaults
  */
 export function mergeBatchConfig(config: Partial<BatchConfig>): BatchConfig {
-  const legacySimplification = config.simplificationConfig;
-  const migratedSimplify1 = legacySimplification ? {
-    workers: legacySimplification.level1Workers,
-    tolerance: legacySimplification.tolerance,
-    featureFilterMethod: legacySimplification.featureFilterMethod,
-    areaThreshold: legacySimplification.areaThreshold,
-    minVertexCountForAreaFilter: legacySimplification.minVertexCountForAreaFilter,
-    aspectRatioThreshold: legacySimplification.aspectRatioThreshold,
-    hybridFilterConfig: legacySimplification.hybridFilterConfig,
+  const legacyExtraction = config.extractionConfig;
+  const migratedExtract1 = legacyExtraction ? {
+    workers: legacyExtraction.level1Workers,
+    tolerance: legacyExtraction.tolerance,
+    featureFilterMethod: legacyExtraction.featureFilterMethod,
+    areaThreshold: legacyExtraction.areaThreshold,
+    minVertexCountForAreaFilter: legacyExtraction.minVertexCountForAreaFilter,
+    aspectRatioThreshold: legacyExtraction.aspectRatioThreshold,
+    hybridFilterConfig: legacyExtraction.hybridFilterConfig,
   } : {};
-  const migratedSimplify2 = legacySimplification ? {
-    workers: legacySimplification.level2Workers,
-    tolerance: legacySimplification.tolerance,
-    quantize: legacySimplification.quantize,
-    enablePerFeatureSimplification: legacySimplification.enablePerFeatureSimplification,
+  const migratedExtract2 = legacyExtraction ? {
+    workers: legacyExtraction.level2Workers,
+    tolerance: legacyExtraction.tolerance,
+    quantize: legacyExtraction.quantize,
+    enablePerFeatureExtraction: legacyExtraction.enablePerFeatureExtraction,
   } : {};
 
   return {
@@ -349,23 +347,23 @@ export function mergeBatchConfig(config: Partial<BatchConfig>): BatchConfig {
       ...(DEFAULT_PROCESSING_CONFIG.downloadConfig ?? { maxConcurrent: 2 }),
       ...(config.downloadConfig ?? {}),
     } as DownloadBatchConfig,
-    simplify1Config: {
-      ...(DEFAULT_PROCESSING_CONFIG.simplify1Config ?? {
+    extract1Config: {
+      ...(DEFAULT_PROCESSING_CONFIG.extract1Config ?? {
         workers: 2,
         tolerance: 0.01,
         featureFilterMethod: 'hybrid',
         areaThreshold: 5,
       }),
-      ...migratedSimplify1,
-      ...(config.simplify1Config ?? {}),
+      ...migratedExtract1,
+      ...(config.extract1Config ?? {}),
     },
-    simplify2Config: {
-      ...(DEFAULT_PROCESSING_CONFIG.simplify2Config ?? {
+    extract2Config: {
+      ...(DEFAULT_PROCESSING_CONFIG.extract2Config ?? {
         workers: 2,
         tolerance: 0.01,
       }),
-      ...migratedSimplify2,
-      ...(config.simplify2Config ?? {}),
+      ...migratedExtract2,
+      ...(config.extract2Config ?? {}),
     },
     tileConfig: {
       ...(DEFAULT_PROCESSING_CONFIG.tileConfig ?? {

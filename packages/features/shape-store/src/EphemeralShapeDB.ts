@@ -1,6 +1,6 @@
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
-import { type Table } from 'dexie';
+import type { Table } from 'dexie';
 import type { BatchProcessConfig } from './ShapeDB.js';
 import type { FeatureBufferRecord, TileBufferRecord } from './ShapeDB.js';
 import {
@@ -9,12 +9,12 @@ import {
   type EphemeralStage as BaseEphemeralStage,
   type ProcessingCache as BaseProcessingCache,
   type RawFeatureBuffer as BaseRawFeatureBuffer,
-  type SimplifiedFeatureBuffer as BaseSimplifiedFeatureBuffer,
+  type ExtractedFeatureBuffer as BaseExtractedFeatureBuffer,
   type VectorTileData as BaseVectorTileData,
 } from '@hierarchidb/gis-sdk';
 
 export type RawFeatureBuffer = BaseRawFeatureBuffer;
-export type SimplifiedFeatureBuffer = BaseSimplifiedFeatureBuffer;
+export type ExtractedFeatureBuffer = BaseExtractedFeatureBuffer;
 export type VectorTileData = BaseVectorTileData;
 export type EphemeralStage = BaseEphemeralStage;
 export type ProcessingCache = BaseProcessingCache;
@@ -28,7 +28,7 @@ export class EphemeralShapeDB extends EphemeralGisDB<BatchProcessConfig> {
     super(getDBName('shape-ephemeral'));
     this.version(3).stores({
       rawBuffers: '&id, nodeId, timestamp',
-      simplifiedBuffers: '&id, nodeId, stage, timestamp, [nodeId+stage]',
+      extractedBuffers: '&id, nodeId, stage, timestamp, [nodeId+stage]',
       vectorTiles: '&id, nodeId, [z+x+y], hash, timestamp',
       sessions: '&nodeId, status, stage, startTime',
       cache: '&key, type, lastAccessed, ttl',

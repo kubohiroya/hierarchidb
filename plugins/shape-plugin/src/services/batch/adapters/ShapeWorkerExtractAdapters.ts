@@ -1,6 +1,6 @@
-import type { ProgressInfo, Simplify1Task, Simplify2Task } from '../../../common/types/index.js';
-import type { Simplify1StageAdapter } from './Simplify1StageAdapter.js';
-import type { Simplify2StageAdapter } from './Simplify2StageAdapter.js';
+import type { ProgressInfo, Extract1Task, Extract2Task, ExtractTaskInput } from '../../../common/types/index.js';
+import type { Extract1StageAdapter } from './Extract1StageAdapter.js';
+import type { Extract2StageAdapter } from './Extract2StageAdapter.js';
 import type { StageControls } from './StageControls.js';
 import { shapeDB } from '../../database/ShapeDB.js';
 import { getEphemeralShapeDB } from '../../database/EphemeralShapeDB.js';
@@ -11,7 +11,7 @@ const isAbortError = (error: unknown): boolean => (
   error instanceof Error && error.name === 'AbortError'
 );
 
-const requireNodeId = (value: Simplify1Task['nodeId'] | Simplify2Task['nodeId']): NonNullable<typeof value> => {
+const requireNodeId = (value: Extract1Task['nodeId'] | Extract2Task['nodeId']): NonNullable<typeof value> => {
   if (!value) {
     throw new Error('Task nodeId is required');
   }
@@ -31,7 +31,7 @@ const formatErrorWithSource = (error: unknown, fallback: string): string => {
 };
 
 const SIMPLIFY1_SKIP_MESSAGE = 'Skipped: no features remain after filtering.';
-const SIMPLIFY2_SKIP_MESSAGE = 'Skipped: no features remain after simplification.';
+const SIMPLIFY2_SKIP_MESSAGE = 'Skipped: no features remain after extraction.';
 
 const formatBytes = (bytes: number): string => {
   if (!Number.isFinite(bytes)) return 'unknown size';
@@ -44,7 +44,7 @@ const formatBytes = (bytes: number): string => {
   return `${gb.toFixed(2)} GB`;
 };
 
-const buildSimplify2CompletionMessage = (featureCount?: number, sizeBytes?: number): string | undefined => {
+const buildExtract2CompletionMessage = (featureCount?: number, sizeBytes?: number): string | undefined => {
   const parts: string[] = [];
   if (typeof featureCount === 'number') {
     parts.push(`Features: ${featureCount}`);
@@ -55,21 +55,33 @@ const buildSimplify2CompletionMessage = (featureCount?: number, sizeBytes?: numb
   return parts.length > 0 ? `Completed (${parts.join(', ')})` : undefined;
 };
 
-const buildSimplify1CompletionMessage = (
+const buildExtract1CompletionMessage = (
   rawBytes?: number,
-  simplifiedBytes?: number,
+  extractedBytes?: number,
 ): string | undefined => {
-  if (typeof rawBytes !== 'number' || typeof simplifiedBytes !== 'number' || rawBytes <= 0) {
+  if (typeof rawBytes !== 'number' || typeof extractedBytes !== 'number' || rawBytes <= 0) {
     return undefined;
   }
-  const ratio = (simplifiedBytes / rawBytes) * 100;
-  return `Completed (Raw: ${formatBytes(rawBytes)}, Simplified: ${formatBytes(simplifiedBytes)}, Ratio: ${ratio.toFixed(1)}%)`;
+  const ratio = (extractedBytes / rawBytes) * 100;
+  return `Completed (Raw: ${formatBytes(rawBytes)}, Extracted: ${formatBytes(extractedBytes)}, Ratio: ${ratio.toFixed(1)}%)`;
 };
 
-export class ShapeWorkerSimplify1Adapter implements Simplify1StageAdapter {
-  async process(tasks: Simplify1Task[], onProgress: (p: ProgressInfo) => void, controls?: StageControls) {
+export class ShapeWorkerExtract1Adapter implements Extract1StageAdapter {
+  async process(tasks: Extract1Task[], onProgress: (p: ProgressInfo) => void, controls?: StageControls) {
     const getSignal = controls?.getSignal;
     const shouldAbort = () => Boolean(getSignal?.()?.aborted);
+    const resolvedNodeId = tasks[0]?.nodeId ? requireNodeId(tasks[0].nodeId) : null;
+    const inputByTaskId = new Map<string, ExtractTaskInput>();
+    if (resolvedNodeId) {
+      const rows = await shapeDB.batchTasks
+        .where('nodeId')
+        .equals(resolvedNodeId)
+        .and((row) => row.taskType === 'extract1')
+        .toArray();
+      rows.forEach((row) => {
+        inputByTaskId.set(row.taskId, (row.inputData ?? {}) as ExtractTaskInput);
+      });
+    }
     const batch = new BatchService();
     const maxConcurrent = Math.max(1, controls?.maxConcurrent ?? 1);
     const workerPool = await ShapeWorkerPool.create(maxConcurrent);
@@ -97,10 +109,12 @@ export class ShapeWorkerSimplify1Adapter implements Simplify1StageAdapter {
         try {
           const taskIndex = task.index ?? index;
           const resolvedNodeId = requireNodeId(task.nodeId);
-          const result = await workerPool.run((api) => api.processSimplify1Task({
+          const input = inputByTaskId.get(task.taskId) ?? {};
+          const result = await workerPool.run((api) => api.processExtract1Task({
             nodeId: resolvedNodeId,
             task,
             taskIndex,
+            input,
           }));
           if (result.status === 'failed') {
             failed += 1;
@@ -109,7 +123,7 @@ export class ShapeWorkerSimplify1Adapter implements Simplify1StageAdapter {
                 status: 'failed',
                 completedAt: Date.now(),
                 progress: 100,
-                errorMessage: result.errorMessage ?? 'Simplify stage 1 failed',
+                errorMessage: result.errorMessage ?? 'Extract stage 1 failed',
               });
             }
           } else if (result.status === 'skipped') {
@@ -125,12 +139,12 @@ export class ShapeWorkerSimplify1Adapter implements Simplify1StageAdapter {
           } else {
             completed += 1;
             if (task.taskId) {
-              const inputBufferId = task.inputBufferId ?? task.config?.inputBufferId ?? '';
-              const outputBufferId = `${String(resolvedNodeId)}-simplify1-${taskIndex}`;
+              const inputBufferId = task.inputBufferId ?? input.inputBufferId ?? '';
+              const outputBufferId = `${String(resolvedNodeId)}-extract1-${taskIndex}`;
               const db = getEphemeralShapeDB();
               const raw = await db.rawBuffers.get(inputBufferId);
-              const output = await db.simplifiedBuffers.get(outputBufferId);
-              const completionMessage = buildSimplify1CompletionMessage(
+              const output = await db.extractedBuffers.get(outputBufferId);
+              const completionMessage = buildExtract1CompletionMessage(
                 raw?.data.byteLength,
                 output?.data.byteLength,
               );
@@ -155,7 +169,7 @@ export class ShapeWorkerSimplify1Adapter implements Simplify1StageAdapter {
               status: 'failed',
               completedAt: Date.now(),
               progress: 100,
-              errorMessage: formatErrorWithSource(error, 'Simplify stage 1 failed'),
+              errorMessage: formatErrorWithSource(error, 'Extract stage 1 failed'),
             });
           }
         }
@@ -170,7 +184,7 @@ export class ShapeWorkerSimplify1Adapter implements Simplify1StageAdapter {
           failed,
           skipped,
           percentage: total > 0 ? (done / total) * 100 : 0,
-          currentStage: 'simplify1',
+          currentStage: 'extract1',
           currentTask: task.taskId,
         });
       }, { concurrency: workerPool.size });
@@ -181,10 +195,22 @@ export class ShapeWorkerSimplify1Adapter implements Simplify1StageAdapter {
   }
 }
 
-export class ShapeWorkerSimplify2Adapter implements Simplify2StageAdapter {
-  async process(tasks: Simplify2Task[], onProgress: (p: ProgressInfo) => void, controls?: StageControls) {
+export class ShapeWorkerExtract2Adapter implements Extract2StageAdapter {
+  async process(tasks: Extract2Task[], onProgress: (p: ProgressInfo) => void, controls?: StageControls) {
     const getSignal = controls?.getSignal;
     const shouldAbort = () => Boolean(getSignal?.()?.aborted);
+    const resolvedNodeId = tasks[0]?.nodeId ? requireNodeId(tasks[0].nodeId) : null;
+    const inputByTaskId = new Map<string, ExtractTaskInput>();
+    if (resolvedNodeId) {
+      const rows = await shapeDB.batchTasks
+        .where('nodeId')
+        .equals(resolvedNodeId)
+        .and((row) => row.taskType === 'extract2')
+        .toArray();
+      rows.forEach((row) => {
+        inputByTaskId.set(row.taskId, (row.inputData ?? {}) as ExtractTaskInput);
+      });
+    }
     const batch = new BatchService();
     const maxConcurrent = Math.max(1, controls?.maxConcurrent ?? 1);
     const workerPool = await ShapeWorkerPool.create(maxConcurrent);
@@ -212,26 +238,28 @@ export class ShapeWorkerSimplify2Adapter implements Simplify2StageAdapter {
         try {
           const taskIndex = task.index ?? index;
           const resolvedNodeId = requireNodeId(task.nodeId);
-          const sourceTaskId = task.config?.sourceTaskId
-            ?? `${String(resolvedNodeId)}-simplify1-${taskIndex}`;
-          const simplify1Task = await shapeDB.batchTasks.get(sourceTaskId);
-          if (simplify1Task?.status === 'failed') {
+          const input = inputByTaskId.get(task.taskId) ?? {};
+          const sourceTaskId = input.sourceTaskId
+            ?? `${String(resolvedNodeId)}-extract1-${taskIndex}`;
+          const extract1Task = await shapeDB.batchTasks.get(sourceTaskId);
+          if (extract1Task?.status === 'failed') {
             failed += 1;
             if (task.taskId) {
-              const simplify1TaskLabel = simplify1Task.taskId ?? sourceTaskId;
-              const simplify1Reason = simplify1Task.errorMessage ?? 'unknown error';
+              const extract1TaskLabel = extract1Task.taskId ?? sourceTaskId;
+              const extract1Reason = extract1Task.errorMessage ?? 'unknown error';
               await shapeDB.updateBatchTask(task.taskId, {
                 status: 'failed',
                 completedAt: Date.now(),
                 progress: 100,
-                errorMessage: `Simplify1 failed (${simplify1TaskLabel}): ${simplify1Reason}`,
+                errorMessage: `Extract1 failed (${extract1TaskLabel}): ${extract1Reason}`,
               });
             }
           } else {
-            const result = await workerPool.run((api) => api.processSimplify2Task({
+            const result = await workerPool.run((api) => api.processExtract2Task({
               nodeId: resolvedNodeId,
               task,
               taskIndex,
+              input,
             }));
             if (result.status === 'failed') {
               failed += 1;
@@ -240,7 +268,7 @@ export class ShapeWorkerSimplify2Adapter implements Simplify2StageAdapter {
                   status: 'failed',
                   completedAt: Date.now(),
                   progress: 100,
-                  errorMessage: result.errorMessage ?? 'Simplify stage 2 failed',
+                  errorMessage: result.errorMessage ?? 'Extract stage 2 failed',
                 });
               }
             } else if (result.status === 'skipped') {
@@ -256,11 +284,11 @@ export class ShapeWorkerSimplify2Adapter implements Simplify2StageAdapter {
             } else {
               completed += 1;
               if (task.taskId) {
-                const outputBufferId = `${String(resolvedNodeId)}-simplify2-${taskIndex}`;
+                const outputBufferId = `${String(resolvedNodeId)}-extract2-${taskIndex}`;
                 const db = getEphemeralShapeDB();
-                const output = await db.simplifiedBuffers.get(outputBufferId);
+                const output = await db.extractedBuffers.get(outputBufferId);
                 const completionMessage = output
-                  ? buildSimplify2CompletionMessage(output.featureCount, output.data.byteLength)
+                  ? buildExtract2CompletionMessage(output.featureCount, output.data.byteLength)
                   : undefined;
                 await shapeDB.updateBatchTask(task.taskId, {
                   status: 'completed',
@@ -284,7 +312,7 @@ export class ShapeWorkerSimplify2Adapter implements Simplify2StageAdapter {
               status: 'failed',
               completedAt: Date.now(),
               progress: 100,
-              errorMessage: error instanceof Error ? error.message : 'Simplify stage 2 failed',
+              errorMessage: error instanceof Error ? error.message : 'Extract stage 2 failed',
             });
           }
         }
@@ -299,7 +327,7 @@ export class ShapeWorkerSimplify2Adapter implements Simplify2StageAdapter {
           failed,
           skipped,
           percentage: total > 0 ? (done / total) * 100 : 0,
-          currentStage: 'simplify2',
+          currentStage: 'extract2',
           currentTask: task.taskId,
         });
       }, { concurrency: workerPool.size });

@@ -274,7 +274,7 @@ export interface InteractionConfiguration {
 }
 
 export interface PerformanceConfiguration {
-  simplificationLevel?: number;
+  extractionLevel?: number;
   clusterPoints?: boolean;
   maxFeatures?: number;
 }

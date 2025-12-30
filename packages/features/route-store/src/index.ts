@@ -72,7 +72,7 @@ export interface RouteProcessingConfig {
     requestsPerSecond: number;
     maxConcurrent: number;
   };
-  simplification?: {
+  extraction?: {
     tolerance: number;
   };
   vectorTiles?: {

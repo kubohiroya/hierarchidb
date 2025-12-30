@@ -100,7 +100,7 @@ export interface BatchProcessConfig {
   adminLevels: number[];
   workerPoolSize?: number;
   enableFeatureExtraction?: boolean;
-  simplificationLevels?: number[];
+  extractionLevels?: number[];
   tileZoomRange?: [number, number];
   corsProxy?: string;
   cacheStrategy?: CacheStrategy;
@@ -250,7 +250,7 @@ export interface BboxQueryOptions {
   limit?: number;
   offset?: number;
   adminLevel?: number;
-  simplificationLevel?: number;
+  extractionLevel?: number;
   includeProperties?: boolean;
   clip?: boolean;
 }
@@ -291,14 +291,14 @@ export interface OptimizationResult {
 
 export type {
   DownloadTask,
-  DownloadTaskConfig,
-  SimplifyTask,
-  Simplify1Task,
-  Simplify2Task,
-  SimplifyTaskConfig,
-  TileSimplifyConfig,
+  //DownloadTaskInput,
+  ExtractTask,
+  Extract1Task,
+  Extract2Task,
+  //ExtractTaskInput,
+  TileExtractConfig,
   VectorTileTask,
-  VectorTileTaskConfig,
+  //VectorTileTaskInput,
   ProcessingStage,
   TaskStatus,
 } from '../common/types/index.js';
@@ -315,18 +315,18 @@ export interface DownloadResult {
   errorMessage?: string;
 }
 
-export interface Simplify1Result {
+export interface Extract1Result {
   taskId: string;
   status: 'completed' | 'failed';
   outputBufferId: string;
   originalFeatureCount: number;
-  simplifiedFeatureCount: number;
+  extractedFeatureCount: number;
   reductionRatio: number;
   qualityMetrics: QualityMetrics;
   errorMessage?: string;
 }
 
-export interface Simplify2Result {
+export interface Extract2Result {
   taskId: string;
   status: 'completed' | 'failed';
   tileBufferIds: string[];
@@ -372,7 +372,7 @@ export interface LayerConfig {
   minZoom: number;
   maxZoom: number;
   properties: string[];
-  simplificationLevel: number;
+  extractionLevel: number;
 }
 
 export interface TopoJSONTopology {
@@ -460,7 +460,7 @@ export interface FeatureMetadata {
   originalId: string;
   dataSource: string;
   downloadedAt: number;
-  simplificationLevel: number;
+  extractionLevel: number;
   qualityScore: number;
   bbox: [number, number, number, number];
 }

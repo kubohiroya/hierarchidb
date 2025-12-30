@@ -164,7 +164,7 @@ export const shapesPlugin: PluginConfig = {
     maxFeatureCount: 10000,
     maxFileSize: 100 * 1024 * 1024, // 100MB
     defaultProcessingOptions: {
-      simplification: {
+      extraction: {
         enabled: false,
         tolerance: 1.0
       },
@@ -240,7 +240,7 @@ export interface ShapesEntity extends BaseEntity {
   
   // 処理設定
   processingOptions?: {
-    simplification?: {
+    extraction?: {
       enabled: boolean;
       tolerance: number;
     };

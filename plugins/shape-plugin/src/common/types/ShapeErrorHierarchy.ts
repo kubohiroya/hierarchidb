@@ -56,8 +56,8 @@ export enum ActionType {
 
 export type BatchProcessingStage =
   | 'download'
-  | 'simplify1'
-  | 'simplify2'
+  | 'extract1'
+  | 'extract2'
   | 'vectorTiles';
 
 export interface WorkerError extends BaseShapeError {

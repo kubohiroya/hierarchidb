@@ -16,7 +16,7 @@ export const DEFAULT_PROCESSING_CONFIG: BatchConfig = {
     retryAttempts: 3,
     retryDelay: 1000,
   },
-  simplify1Config: {
+  extract1Config: {
     workers: 2,
     tolerance: 0.05,
     featureFilterMethod: 'hybrid',
@@ -27,18 +27,18 @@ export const DEFAULT_PROCESSING_CONFIG: BatchConfig = {
       quickRejectThreshold: 0.01,
       regularShapeMinRatio: 0.5,
       regularShapeMaxRatio: 2.0,
-      simpleShapeVertexThreshold: 80,
+      simpleShapeVertexThreshold: 10,
       elongatedShapeCorrectionFactor: 0.8,
     },
   },
-  simplify2Config: {
+  extract2Config: {
     workers: 2,
-    tolerance: 0.5,
+    tolerance: 0.3,
     quantize: 50000,
-    enablePerFeatureSimplification: true,
-    simplificationMode: 'topojson',
+    enablePerFeatureExtraction: true,
+    extractionMode: 'topojson',
   },
-  simplificationConfig: {
+  extractionConfig: {
     featureFilterMethod: 'hybrid',
     areaThreshold: 1,
     minVertexCountForAreaFilter: 200,
@@ -47,14 +47,14 @@ export const DEFAULT_PROCESSING_CONFIG: BatchConfig = {
       quickRejectThreshold: 0.01,
       regularShapeMinRatio: 0.5,
       regularShapeMaxRatio: 2.0,
-      simpleShapeVertexThreshold: 80,
+      simpleShapeVertexThreshold: 10,
       elongatedShapeCorrectionFactor: 0.8,
     },
     level1Workers: 2,
     level2Workers: 2,
-    tolerance: 0.5,
+    tolerance: 0.3,
     quantize: 50000,
-    enablePerFeatureSimplification: true,
+    enablePerFeatureExtraction: true,
   },
   tileConfig: {
     workers: 2,

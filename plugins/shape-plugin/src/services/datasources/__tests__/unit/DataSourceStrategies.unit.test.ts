@@ -122,7 +122,7 @@ describe('DataSourceStrategy', () => {
     it('should process data with options', async () => {
       const rawData = { test: 'raw' };
       const options: ProcessOptions = {
-        simplify: true,
+        extract: true,
         tolerance: 0.01,
       };
 
@@ -491,7 +491,7 @@ describe('Integration Tests', () => {
     expect(rawData).toBeDefined();
 
     const processOptions: ProcessOptions = {
-      simplify: true,
+      extract: true,
       tolerance: 0.01,
     };
     const processedData = await strategy.processData(rawData, processOptions);

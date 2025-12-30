@@ -36,7 +36,5 @@ export interface DownloadTaskPayload {
   countryCode: CountryCode;
   countryName?: string;
   adminLevel: number;
-  continent: string;
   dataSource?: DataSourceName;
-  country?: CountryCode;
 }

@@ -53,6 +53,305 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+2009) shape-plugin: Extract1/2 task の tolerance/minArea/zoomLevels/tileSize 重複保持の是非調査（P2）
+- ブランチ: `investigation/shape-plugin/extract-task-field-redundancy`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/common/types/batch.ts`, `plugins/shape-plugin/src/services/**`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] ExtractTask/ExtractTaskInput での参照箇所を特定する
+  - [ ] 実行時にどの型から参照しているか説明できる
+  - [ ] 冗長コピーの是非と整理方針を結論として提示する
+  - [ ] 調査結果を運用ログに記載する
+- チェックリスト:
+  - [ ] `tolerance/minArea/zoomLevels/tileSize` の参照を洗い出す
+  - [ ] ExtractTask と ExtractTaskInput のデータフローを確認する
+  - [ ] ExecPlan を `plans/shape-extract-task-ssot-execplan.md` に作成する
+- ロールバック手順：調査のみ（コード変更なし）
+- 運用ログ：
+  - start: 2025-12-30 18:19 JST Extract1/2 の task field 重複保持の是非調査に着手。
+  - progress: 2025-12-30 18:22 JST Extract1/2 は task 側の tolerance/minArea/zoomLevels/tileSize を worker/local adapter で参照し、inputData は基本空（retry のみ）であることを確認。
+  - progress: 2025-12-30 18:36 JST ExecPlan を `plans/shape-extract-task-ssot-execplan.md` に作成。
+
+2008) shape-plugin: task.metadata 廃止と Dexie 参照への回帰（P1）
+- ブランチ: `refactor/shape-plugin/remove-task-metadata`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/**`, `packages/**`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] task.metadata の付与/参照を削除する
+  - [ ] TaskPayload の型定義を前提に必要情報は Dexie から取得する
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] task.metadata の利用箇所を洗い出す
+  - [ ] 代替の Dexie 参照へ置き換える
+- ロールバック手順：該当差分を revert する
+- 運用ログ：
+  - start: 2025-12-30 17:33 JST task.metadata 廃止の対応に着手。
+  - progress: 2025-12-31 02:12 JST Continent は geoBoundaries API 由来を正とする方針を確認し、DownloadTaskPayload から continent/country 重複の整理を進める。
+  - progress: 2025-12-31 02:28 JST DownloadTaskPayload から continent/country を削除し、DownloadTaskInput も同様に整理。Download 戦略/SessionController/テストを新シグネチャに追従。
+  - progress: 2025-12-31 02:46 JST ExtractTask/VectorTileTask を薄くし、tolerance/minArea/zoomLevels/tileSize および vector tile の country/admin/tileCount を撤去。実処理は input 参照へ移行。
+
+2007) shape-plugin: ダウンロード同時実行数の上限を4に変更（P1）
+- ブランチ: `fix/shape-plugin/download-concurrency-cap-4`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/ui/components/steps/DownloadConfigSection.tsx`, `plugins/shape-plugin/src/services/utils/utils.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] UIで同時ダウンロード数を最大4まで設定できる
+  - [ ] バリデーションの上限が4に揃っている
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] UIの上限（max）を4に更新する
+  - [ ] validateBatchConfig の上限を4に更新する
+- ロールバック手順：上記ファイルの差分を revert する
+- 運用ログ：
+  - start: 2025-12-30 17:22 JST ダウンロード同時実行数の上限変更に着手。
+  - progress: 2025-12-30 17:24 JST UI の上限を4に更新し、バリデーション上限も 4 に統一。
+
+2006) shape-plugin: Step4→Step5 遷移でビルドが自動開始される事象の原因調査（P1）
+- ブランチ: `investigation/shape-plugin/auto-start-build-on-step-transition`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/ui/**`, `packages/plugin-ui-host/**`, `packages/ui/batch/**`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] Step4→Step5遷移時にビルド開始が発火する条件を特定できる
+  - [ ] 想定外の自動開始の原因をコード根拠付きで説明できる
+  - [ ] 最小修正案と恒久対応案を提示できる
+- チェックリスト:
+  - [ ] UI/Worker の startBatchSession 呼び出し経路を洗い出す
+  - [ ] Step 遷移と build 状態の連動箇所を確認する
+  - [ ] 追加観測ポイント（ログ/状態）を整理する
+- ロールバック手順：変更なし（分析のみ）
+- 運用ログ：
+  - start: 2025-12-30 17:22 JST Step4→Step5 遷移時のビルド自動開始の調査に着手。
+
+2005) shape-plugin: 既存ファイルがあるのに download タスクが走る事象の原因調査/対策提案（P1）
+- ブランチ: `investigation/shape-plugin/redundant-download-task`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/**`, `packages/**`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] 再現条件と影響範囲を整理できている
+  - [ ] 既存の「download 済み判定」がすり抜ける原因候補を提示できる
+  - [ ] 根拠となるログ/コードを示して説明できる
+  - [ ] 短期回避策と恒久対応の提案ができる
+- チェックリスト:
+  - [ ] download 判定やタスク生成箇所を特定する
+  - [ ] 既存ファイル検出の判定条件を洗い出す
+  - [ ] 追加で必要な観測ポイントを整理する
+- ロールバック手順：変更なし（分析のみ）
+- 運用ログ：
+  - start: 2025-12-30 16:21 JST 既存ファイルがあるのに download タスクが走る事象の原因調査に着手。
+  - progress: 2025-12-30 16:24 JST `startBatchProcess` が buildStartedAt を常に Date.now() で再生成し、`persistDownloadTaskPayloads` と `markDownloadTasksCompletedWhenBuffersExist` が buildStartedAt を境に旧タスク/旧rawを除外するため、既存 rawBuffers があっても download を再実行する挙動を確認。
+  - progress: 2025-12-30 16:35 JST `persistDownloadTaskPayloads` の削除条件を「未完了タスクのみ削除」に変更し、日付比較による削除を撤廃。
+
+2004) shape-plugin: 空エラーメッセージの Snackbar 表示を抑止（P1）
+- ブランチ: `fix/shape-plugin/suppress-empty-error-snackbar`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`, `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] エラーメッセージが空の場合は Snackbar を表示しない
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] warningMessage の空判定を強化する
+  - [ ] 表示済み Snackbar が空メッセージで残らないようにする
+- ロールバック手順：上記ファイルの差分を revert する
+- 運用ログ：
+  - start: 2025-12-31 01:44 JST 空エラーメッセージの Snackbar 抑止に着手。
+  - progress: 2025-12-31 01:46 JST warningMessage を trim して空は null と扱い、空メッセージ時は Snackbar を閉じるよう修正。
+
+2003) shape-plugin: Step5 進捗 n/m が更新されない問題の修正（P1）
+- ブランチ: `fix/shape-plugin/step5-stage-counts-stale`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] download 実行中にステージヘッダの n/m が更新される
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] stageTaskSummary の更新タイミングを見直す
+- ロールバック手順：`useShapeBuildProgressStep.ts` の差分を revert する
+- 運用ログ：
+  - start: 2025-12-31 01:36 JST Step5 の n/m 更新問題の調査に着手。
+  - progress: 2025-12-31 01:38 JST stageTaskSummary の再集計を tasks/persistedTasks 更新時にも実行するよう修正。
+
+2002) shape-plugin: Step5 ビルド開始後に download が動かない問題の調査/修正（P1）
+- ブランチ: `fix/shape-plugin/step5-download-not-starting`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/services/batch/SessionController.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] ビルド開始時に古い raw buffer がある場合は download を再実行する
+  - [ ] download が待機のまま進まないケースが解消される
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] raw buffer の timestamp と buildStartedAt を比較してスキップ判定する
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：`SessionController.ts` の差分を revert する
+- 運用ログ：
+  - start: 2025-12-31 01:20 JST Step5 の download 停止問題の調査に着手。
+  - progress: 2025-12-31 01:24 JST raw buffer の timestamp が buildStartedAt より古い場合は download を再実行するように判定を追加。
+
+2001) shape-plugin: Step4 「抽出をオフにする」文言を「フィルタリングをオフにする」へ変更（P1）
+- ブランチ: `fix/shape-plugin/step4-filtering-off-label`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/ui/locales/ja.json`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] Step4 の「抽出をオフにする」表記が「フィルタリングをオフにする」に更新される
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] ja.json の該当キーを更新する
+- ロールバック手順：`ja.json` の差分を revert する
+- 運用ログ：
+  - start: 2025-12-31 01:10 JST Step4 の文言変更に着手。
+  - progress: 2025-12-31 01:10 JST 「抽出をオフにする」を「フィルタリングをオフにする」へ変更。
+
+1998) shape-plugin: シンプル形状の頂点しきい値のデフォルトを10へ変更（P1）
+- ブランチ: `fix/shape-plugin/simple-shape-vertex-default`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/common/types/constants.ts`, `plugins/shape-plugin/src/ui/hooks/useExtractionConfigSection.ts`, `plugins/shape-plugin/src/ui/components/processing/AreaFilterPanel.tsx`, `plugins/shape-plugin/src/common/types/BatchConfig.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] 「シンプル形状の頂点しきい値」のデフォルトが 10 になる
+  - [ ] UI 表示と実際の既定値が一致する
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] DEFAULT_PROCESSING_CONFIG の既定値を更新する
+  - [ ] UI での fallback 既定値を更新する
+  - [ ] 型コメントの既定値表記を更新する
+- ロールバック手順：上記ファイルの差分を revert する
+- 運用ログ：
+  - start: 2025-12-31 00:52 JST シンプル形状の頂点しきい値のデフォルト変更に着手。
+  - progress: 2025-12-31 00:52 JST 既定値を 10 に更新（constants/UI fallback/BatchConfig コメント）。検証: 未実施。
+
+1999) shape-plugin: 一次抽出トレランスのラベル/ヘルプ文言を調整（P1）
+- ブランチ: `fix/shape-plugin/extract1-tolerance-label`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/ui/locales/ja.json`, `plugins/shape-plugin/src/ui/locales/en.json`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] ラベルが「簡略化の強さ (degree of simplification)」になる
+  - [ ] ヘルプ文言に指定の説明が反映される
+  - [ ] UI 表示と I18N が一致する
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] ja/en のラベル/ヘルプ文言を更新する
+  - [ ] UI 表示の整合を確認する
+- ロールバック手順：上記ファイルの差分を revert する
+- 運用ログ：
+  - start: 2025-12-31 01:05 JST 一次抽出トレランスのラベル/ヘルプ文言の調整に着手。
+  - progress: 2025-12-31 01:05 JST ラベルを「簡略化の強さ (degree of simplification)」に変更し、ヘルプに3点の説明を反映。検証: 未実施。
+
+2000) shape-plugin: 二次抽出トレランスのラベルを調整（P1）
+- ブランチ: `fix/shape-plugin/extract2-tolerance-label`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/ui/locales/ja.json`, `plugins/shape-plugin/src/ui/locales/en.json`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] 「二次抽出許容値 (度)」のラベルが「二次的な簡略化の強さ」になる
+  - [ ] UI 表示と I18N が一致する
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] ja/en のラベル文言を更新する
+  - [ ] UI 表示の整合を確認する
+- ロールバック手順：上記ファイルの差分を revert する
+- 運用ログ：
+  - start: 2025-12-31 01:08 JST 二次抽出トレランスのラベル調整に着手。
+  - progress: 2025-12-31 01:08 JST ラベルを「二次的な簡略化の強さ」に変更（en: Secondary Degree of Simplification）。検証: 未実施。
+
+2001) shape-plugin: 一次抽出トレランスの表示文言を言語別に分離（P1）
+- ブランチ: `fix/shape-plugin/extract1-tolerance-label-i18n`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/ui/locales/ja.json`, `plugins/shape-plugin/src/ui/locales/en.json`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] 日本語は「簡略化の強さ」、英語は「degree of simplification」として表示される
+  - [ ] I18N の表示が言語ごとに切り替わる
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] ja/en のラベル文言を更新する
+  - [ ] UI 表示の整合を確認する
+- ロールバック手順：上記ファイルの差分を revert する
+- 運用ログ：
+  - start: 2025-12-31 01:12 JST 一次抽出トレランスの I18N 表示分離に着手。
+  - progress: 2025-12-31 01:12 JST ja:「簡略化の強さ」/ en:「degree of simplification」に更新。検証: 未実施。
+
+2002) shape-plugin: 二次的な簡略化の強さの範囲/既定値を調整（P1）
+- ブランチ: `fix/shape-plugin/extract2-tolerance-range-default`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/common/types/constants.ts`, `plugins/shape-plugin/src/ui/components/steps/Extract2ConfigSection.tsx`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] 二次的な簡略化の強さの上限が 1.0 になる
+  - [ ] デフォルトが 0.3 になる
+  - [ ] UI 表示と実際の既定値が一致する
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] DEFAULT_PROCESSING_CONFIG の既定値を更新する
+  - [ ] UI のスライダー範囲/既定値を更新する
+- ロールバック手順：上記ファイルの差分を revert する
+- 運用ログ：
+  - start: 2025-12-31 01:18 JST 二次的な簡略化の強さの範囲/既定値調整に着手。
+  - progress: 2025-12-31 01:18 JST 上限 1.0 / 既定 0.3 に更新し、スライダー範囲と既定値を反映。検証: 未実施。
+
+2003) shape-plugin: 省略許容の文言を調整（P1）
+- ブランチ: `fix/shape-plugin/extract-omission-label`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/ui/locales/ja.json`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] 文言が「簡略化により国や自治体の省略を許容」になる
+  - [ ] UI 表示と I18N が一致する
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] ja の文言を更新する
+  - [ ] UI 表示の整合を確認する
+- ロールバック手順：上記ファイルの差分を revert する
+- 運用ログ：
+  - start: 2025-12-31 01:21 JST 省略許容の文言調整に着手。
+  - progress: 2025-12-31 01:21 JST 文言を「簡略化により国や自治体の省略を許容」に更新。検証: 未実施。
+
+2004) shape-plugin: GeoBoundaries ダウンロード時に大陸名を紐づけて保存（P1）
+- ブランチ: `feat/shape-plugin/geoboundaries-continent-metadata`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/services/datasources/GeoBoundariesStrategy.ts`, `plugins/shape-plugin/src/services/batch/strategies/*DownloadStrategy.ts`, `plugins/shape-plugin/src/services/batch/SessionController.ts`, `plugins/shape-plugin/src/services/database/ShapeTileMetadataDB.ts`, `plugins/shape-plugin/src/services/batch/strategies/DownloadStageStrategy.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] GeoBoundaries API から大陸名を取得してメタデータに保存される
+  - [ ] download ステージのメタデータで国/自治体と大陸名が紐づく
+  - [ ] 既存の保存形式と整合する（互換性を維持）
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] GeoBoundariesStrategy に continent 抽出/保持を追加する
+  - [ ] DownloadStageOutput/OriginMetadata/ShapeSourceMetadataRow に continent を追加する
+  - [ ] download 出力と metadata 更新で continent を保持する
+- ロールバック手順：上記ファイルの差分を revert する
+- 運用ログ：
+  - start: 2025-12-31 01:34 JST GeoBoundaries の大陸名メタデータ紐づけ対応に着手。
+  - progress: 2025-12-31 01:34 JST API 応答から continent を抽出し、download 出力/メタデータに反映。検証: 未実施。
+
+2005) shape-plugin: extract2 TopoJSON の大陸/国/自治体グルーピング（P1）
+- ブランチ: `feat/shape-plugin/extract2-topojson-continent-grouping`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plans/shape-extract2-topojson-continent-grouping-execplan.md`, `plugins/shape-plugin/src/services/batch/SessionController.ts`, `plugins/shape-plugin/src/services/batch/utils/topojsonExtract.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/batch/adapters/LocalExtractAdapters.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] 大陸名/国コード/自治体コードの階層でグルーピングできる
+  - [ ] 大陸名や国名が欠落する場合は警告し処理対象から外す
+  - [ ] ズーム0は大陸名で分割しTopoJSON化する
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] extract2 タスク生成をグルーピング対応に変更する
+  - [ ] topojsonExtract をタイル交差ベースに更新する
+  - [ ] Feature properties に補助メタデータを付与する
+- ロールバック手順：上記ファイルの差分を revert する
+- 運用ログ：
+  - start: 2025-12-31 01:50 JST extract2 の大陸/国/自治体グルーピングに着手。
+  - progress: 2025-12-31 02:08 JST extract2 タスクを大陸/国/自治体階層でグループ化し、メタデータ欠落時は警告して除外。Featureにcontinent/countryName等を付与。検証: 未実施。
+
+1997) tools/gen-iso3166-2: rowsToRecords の型定義見直し（P1）
+- ブランチ: `fix/tools/iso3166-rows-to-records-typing`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/tools/gen-iso3166-2/src/store.ts`, `packages/tools/gen-iso3166-2/src/store.browser.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] rowsToRecords が配列入力のみを受け付ける明確な型定義になる
+  - [ ] 単一行の変換は別関数で明示化される
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] store.ts / store.browser.ts の rowsToRecords overload を整理する
+  - [ ] 呼び出し側の型が破綻しないことを確認する
+- ロールバック手順：上記ファイルの差分を revert する
+- 運用ログ：
+  - start: 2025-12-31 00:06 JST rowsToRecords の型定義見直しに着手。
+  - progress: 2025-12-31 00:10 JST rowsToRecords を配列専用にし、単一行は rowToRecord で明示化。
+
+1996) monorepo: simplify → extract の全面リネーム（破壊的）（P1）
+- ブランチ: `refactor/monorepo/rename-simplify-to-extract`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plans/rename-to-extract-execplan.md`, `packages/**`, `plugins/**`, `app/**`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] UI/I18N/ログ/変数/関数/クラス/ファイルの simplify 表記が extract 表記へ置換される
+  - [ ] ステージ名・型名・API名も extract1/extract2 に完全移行する
+  - [ ] 破壊的変更であることを明示し、旧データを捨てる手順を提供する
+  - [ ] ExecPlan に従って実装し、運用ログに結果を記載する
+- チェックリスト:
+  - [ ] ExecPlan を `plans/rename-to-extract-execplan.md` に作成する
+  - [ ] monorepo 全体の simplify 参照を棚卸しして置換する
+  - [ ] tests/typecheck/lint の結果を記録する
+- ロールバック手順：名前変更とファイル移動の差分を revert する
+- 運用ログ：
+  - start: 2025-12-30 14:15 JST simplify → extract の全面リネーム計画に着手。
+  - progress: 2025-12-30 14:20 JST rg で monorepo の simplify 参照を棚卸し（640 行ヒット）。ExecPlan に記録。
+  - progress: 2025-12-31 00:25 JST monorepo 全体で simplify → extract の一括置換とファイルリネームを実施。外部仕様名（topojson-simplify/turf.simplify/simplifiedGeometryGeoJSON/OSRM simplified）は例外として保持。
+  - progress: 2025-12-31 00:40 JST plans の simplify 名を排除し、`plans/rename-to-extract-execplan.md` と `plans/shape-extract2-topojson-execplan.md` に改名。TopoJSON 簡略化の外部依存を topojson-simplify に統一して ExecPlan を更新。
+
 1995) shape-plugin: Step4 面積フィルターの最小頂点数/最小面積の範囲変更（P1）
 - ブランチ: `fix/shape-plugin/area-filter-range-defaults`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `plugins/shape-plugin/src/ui/components/processing/AreaFilterPanel.tsx`, `plugins/shape-plugin/src/common/types/constants.ts`, `TASKS.md`
@@ -71,21 +370,21 @@
   - progress: 2025-12-30 14:09 JST 最小頂点数を 0-1000/デフォルト10、最小面積を 0-1000/デフォルト100 に更新。検証: 未実施。
 
 1994) shape-plugin: 一次簡略化許容値(度)の範囲/デフォルト調整（P1）
-- ブランチ: `fix/shape-plugin/simplify1-tolerance-range`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: `plugins/shape-plugin/src/ui/components/steps/Simplify1ConfigSection.tsx`, `plugins/shape-plugin/src/common/types/constants.ts`, `TASKS.md`
+- ブランチ: `fix/shape-plugin/extract1-tolerance-range`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/ui/components/steps/Extract1ConfigSection.tsx`, `plugins/shape-plugin/src/common/types/constants.ts`, `TASKS.md`
 - 受け入れ基準（DoD）:
   - [ ] 一次簡略化許容値(度)の範囲が 0.0-1.0 になる
   - [ ] デフォルトが 0.05 になる
   - [ ] UI の表示と実際のデフォルトが一致する
   - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
 - チェックリスト:
-  - [ ] Simplify1ConfigSection の min/max/step/marks を更新する
-  - [ ] DEFAULT_PROCESSING_CONFIG の simplify1 tolerance を更新する
+  - [ ] Extract1ConfigSection の min/max/step/marks を更新する
+  - [ ] DEFAULT_PROCESSING_CONFIG の extract1 tolerance を更新する
   - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
 - ロールバック手順：上記ファイルの差分を revert する
 - 運用ログ：
   - start: 2025-12-30 14:02 JST 一次簡略化許容値(度)の範囲/デフォルト調整に着手。
-  - progress: 2025-12-30 14:02 JST Simplify1 の許容値範囲を 0.0-1.0 に拡大し、デフォルトを 0.05 に更新。検証: 未実施。
+  - progress: 2025-12-30 14:02 JST Extract1 の許容値範囲を 0.0-1.0 に拡大し、デフォルトを 0.05 に更新。検証: 未実施。
 
 1993) shape-plugin: メタデータ BBox 表示復活と vectortile 簡略化ログ/失敗扱い整理（P1）
 - ブランチ: `fix/shape-plugin/metadata-bbox-vectortile-logging`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -108,7 +407,7 @@
   - progress: 2025-12-30 23:58 JST タイル交差で消えた originKey を抽出して debug ログへ追加。
 
 1992) shape-plugin: vectortile ステージの最終簡略化と描画欠落の原因整理（調査）
-- ブランチ: `chore/shape-plugin/vectortile-final-simplify-investigation`（sandbox 制約で branch 作成不可なら main 上で作業）
+- ブランチ: `chore/shape-plugin/vectortile-final-extract-investigation`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `plugins/shape-plugin/src/**`, `packages/**`, `TASKS.md`
 - 受け入れ基準（DoD）:
   - [ ] vectortile ステージの「最終的な簡略化」処理内容を根拠コード付きで説明できる
@@ -122,7 +421,7 @@
 - ロールバック手順：調査のみ（コード変更なし）
 - 運用ログ：
   - start: 2025-12-30 23:10 JST vectortile ステージの最終簡略化と描画欠落の原因調査に着手。
-  - progress: 2025-12-30 23:20 JST vectortile は geojson-vt によるズーム別簡略化＋タイル交差フィルタで最終出力。入力は simplify2 バッファのみで、bbox/交差なし・空レイヤーはタイル生成されない（`packages/features/gis-sdk/src/vectorTiles.ts`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `plugins/shape-plugin/src/services/batch/SessionController.ts`）。
+  - progress: 2025-12-30 23:20 JST vectortile は geojson-vt によるズーム別簡略化＋タイル交差フィルタで最終出力。入力は extract2 バッファのみで、bbox/交差なし・空レイヤーはタイル生成されない（`packages/features/gis-sdk/src/vectorTiles.ts`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `plugins/shape-plugin/src/services/batch/SessionController.ts`）。
 
 1991) shape-plugin: 再開時に download の completed タスクを再実行しない（P1）
 - ブランチ: `fix/shape-plugin/resume-download-skip-completed`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -158,22 +457,22 @@
   - progress: 2025-12-30 12:43 JST BaseMapProps に showTileBoundaries/showTileCoordinates を追加し、MapLibreMap へ渡すのと Step6 プレビューで有効化。検証: 未実施。
   - progress: 2025-12-30 12:50 JST MapLibreMap の onLoad/useEffect で showTileBoundaries/showTileCoordinates を明示的に反映し、再描画を要求。検証: 未実施。
 
-1989) shape-plugin: simplify1 の「フィルタリングOFF」で素通し（P1）
-- ブランチ: `fix/shape-plugin/simplify1-pass-through`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: `plugins/shape-plugin/src/services/batch/SessionController.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/batch/adapters/LocalSimplifyAdapters.ts`, `plugins/shape-plugin/src/common/types/batch.ts`, `TASKS.md`
+1989) shape-plugin: extract1 の「フィルタリングOFF」で素通し（P1）
+- ブランチ: `fix/shape-plugin/extract1-pass-through`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/services/batch/SessionController.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/batch/adapters/LocalExtractAdapters.ts`, `plugins/shape-plugin/src/common/types/batch.ts`, `TASKS.md`
 - 受け入れ基準（DoD）:
-  - [ ] Step4 の「フィルタリングOFF」で simplify1 が raw をそのまま出力する
+  - [ ] Step4 の「フィルタリングOFF」で extract1 が raw をそのまま出力する
   - [ ] Worker/Local の両経路で同じ挙動になる
   - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
 - チェックリスト:
-  - [ ] Simplify1TaskConfig に enableFeatureFiltering を追加する
-  - [ ] simplify1 task 生成時に enableFeatureFiltering を渡す
-  - [ ] simplify1 worker/local で enableFeatureFiltering=false を素通し処理にする
+  - [ ] Extract1TaskConfig に enableFeatureFiltering を追加する
+  - [ ] extract1 task 生成時に enableFeatureFiltering を渡す
+  - [ ] extract1 worker/local で enableFeatureFiltering=false を素通し処理にする
   - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
 - ロールバック手順：上記ファイルの差分を revert する
 - 運用ログ：
-  - start: 2025-12-30 12:03 JST simplify1 のフィルタリングOFF素通し対応に着手。
-  - progress: 2025-12-30 12:03 JST Simplify1TaskConfig に enableFeatureFiltering を追加し、task 生成と worker/local で素通し分岐を実装。検証: 未実施。
+  - start: 2025-12-30 12:03 JST extract1 のフィルタリングOFF素通し対応に着手。
+  - progress: 2025-12-30 12:03 JST Extract1TaskConfig に enableFeatureFiltering を追加し、task 生成と worker/local で素通し分岐を実装。検証: 未実施。
 
 1988) shape-plugin: リロード時に running タスクが残る問題の復旧（P1）
 - ブランチ: `fix/shape-plugin/reload-running-tasks`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -213,40 +512,40 @@
   - start: 2025-12-30 11:46 JST 「ダウンロード済みファイルを削除」後の resume 失敗（missing download payloads）の調査に着手。
   - progress: 2025-12-30 11:51 JST download 削除時はタスクを削除せず waiting にリセットし、resume で missing payloads が出た場合は新規ビルドへフォールバックするよう調整。検証: 未実施。
 
-1975) shape-plugin: Step4 デフォルト見直し + simplify2 TopoJSON 簡略化（P1）
-- ブランチ: `feat/shape-plugin/simplify2-topojson`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/batch/adapters/LocalSimplifyAdapters.ts`, `plugins/shape-plugin/src/common/types/constants.ts`, `plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx`, `TASKS.md`, `plans/`
+1975) shape-plugin: Step4 デフォルト見直し + extract2 TopoJSON 簡略化（P1）
+- ブランチ: `feat/shape-plugin/extract2-topojson`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/batch/adapters/LocalExtractAdapters.ts`, `plugins/shape-plugin/src/common/types/constants.ts`, `plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx`, `TASKS.md`, `plans/`
 - 受け入れ基準（DoD）:
   - [ ] Step4 のデフォルト値を「過度な簡略化」から適正へ戻す
-  - [ ] simplify2 の簡略化を TopoJSON ベースへ切り替え、境界の崩壊を抑える
+  - [ ] extract2 の簡略化を TopoJSON ベースへ切り替え、境界の崩壊を抑える
   - [ ] ExecPlan を作成し、変更内容/理由/ロールバック/検証結果を運用ログに記載する
 - チェックリスト:
-  - [ ] ExecPlan を `plans/shape-simplify2-topojson-execplan.md` に作成する
-  - [ ] simplify2（worker/local）で TopoJSON 簡略化を実装する
+  - [ ] ExecPlan を `plans/shape-extract2-topojson-execplan.md` に作成する
+  - [ ] extract2（worker/local）で TopoJSON 簡略化を実装する
   - [ ] Step4 のデフォルト値を見直す
   - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
-- ロールバック手順：simplify2 実装と Step4 デフォルト値の差分を revert する
+- ロールバック手順：extract2 実装と Step4 デフォルト値の差分を revert する
 - 運用ログ：
-  - start: 2025-12-30 18:20 JST simplify2 TopoJSON 簡略化と Step4 デフォルト見直しの検討に着手。
-  - progress: 2025-12-30 18:35 JST ExecPlan を `plans/shape-simplify2-topojson-execplan.md` に作成。検証: 未実施。
-  - progress: 2025-12-30 19:20 JST TopoJSON 簡略化のユーティリティ追加と simplify2 worker/local への適用、Step4 デフォルト値の緩和を実施。検証: 未実施。
+  - start: 2025-12-30 18:20 JST extract2 TopoJSON 簡略化と Step4 デフォルト見直しの検討に着手。
+  - progress: 2025-12-30 18:35 JST ExecPlan を `plans/shape-extract2-topojson-execplan.md` に作成。検証: 未実施。
+  - progress: 2025-12-30 19:20 JST TopoJSON 簡略化のユーティリティ追加と extract2 worker/local への適用、Step4 デフォルト値の緩和を実施。検証: 未実施。
   - progress: 2025-12-30 19:35 JST 共有ズーム範囲のデフォルトを 1-4 に更新。検証: 未実施。
 
-1974) shape-plugin: vectortile/simplify2 完了メッセージへ件数・サイズを表示（P1）
+1974) shape-plugin: vectortile/extract2 完了メッセージへ件数・サイズを表示（P1）
 - ブランチ: `feat/shape-plugin/task-completion-metrics`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `plugins/shape-plugin/src/services/batch/adapters/ShapeWorkerSimplifyAdapters.ts`, `plugins/shape-plugin/src/services/batch/adapters/LocalSimplifyAdapters.ts`, `TASKS.md`
+- 依存: `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `plugins/shape-plugin/src/services/batch/adapters/ShapeWorkerExtractAdapters.ts`, `plugins/shape-plugin/src/services/batch/adapters/LocalExtractAdapters.ts`, `TASKS.md`
 - 受け入れ基準（DoD）:
   - [ ] vectortile Completed の message に features 数とタイルサイズが表示される
-  - [ ] simplify2 Completed の message に features 数と出力サイズが表示される
+  - [ ] extract2 Completed の message に features 数と出力サイズが表示される
   - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
 - チェックリスト:
   - [ ] vectortile 完了時に TilesDB からサイズを取得し message へ反映する
-  - [ ] simplify2 完了時に output buffer の featureCount/サイズを message へ反映する
+  - [ ] extract2 完了時に output buffer の featureCount/サイズを message へ反映する
   - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
 - ロールバック手順：上記 adapter の message 追加差分を revert する
 - 運用ログ：
   - start: 2025-12-30 17:55 JST Completed メッセージに件数/サイズを表示する修正に着手。
-  - progress: 2025-12-30 18:05 JST vectortile 完了で TilesDB からサイズ取得、simplify2 完了で output buffer から件数/サイズを message に反映。検証: 未実施。
+  - progress: 2025-12-30 18:05 JST vectortile 完了で TilesDB からサイズ取得、extract2 完了で output buffer から件数/サイズを message に反映。検証: 未実施。
 1976) shape-plugin: Step5 LRUSplitView の空表示をタスク無し時に限定（P1）
 - ブランチ: `fix/shape-plugin/step5-empty-state-visibility`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`, `TASKS.md`
@@ -261,20 +560,20 @@
 - 運用ログ：
   - start: 2025-12-30 19:50 JST Step5 の空表示をタスク無し時に限定する修正に着手。
   - progress: 2025-12-30 20:00 JST タスク有無で空表示を切り替え、タスクがある場合はリストのみ表示するよう修正。検証: 未実施。
-1977) shape-plugin: simplify1 完了メッセージにサイズ/比率を表示（P1）
-- ブランチ: `feat/shape-plugin/simplify1-completion-metrics`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: `plugins/shape-plugin/src/services/batch/adapters/ShapeWorkerSimplifyAdapters.ts`, `plugins/shape-plugin/src/services/batch/adapters/LocalSimplifyAdapters.ts`, `TASKS.md`
+1977) shape-plugin: extract1 完了メッセージにサイズ/比率を表示（P1）
+- ブランチ: `feat/shape-plugin/extract1-completion-metrics`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/services/batch/adapters/ShapeWorkerExtractAdapters.ts`, `plugins/shape-plugin/src/services/batch/adapters/LocalExtractAdapters.ts`, `TASKS.md`
 - 受け入れ基準（DoD）:
-  - [ ] simplify1 Completed の message に元サイズ・簡略化後サイズ・比率(%)を表示する
+  - [ ] extract1 Completed の message に元サイズ・簡略化後サイズ・比率(%)を表示する
   - [ ] 取得できない場合は従来通り message を省略する
   - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
 - チェックリスト:
-  - [ ] simplify1 の worker/local 完了処理にメッセージ生成を追加する
+  - [ ] extract1 の worker/local 完了処理にメッセージ生成を追加する
   - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
-- ロールバック手順：simplify1 完了メッセージ追加の差分を revert する
+- ロールバック手順：extract1 完了メッセージ追加の差分を revert する
 - 運用ログ：
-  - start: 2025-12-30 20:10 JST simplify1 完了メッセージへサイズ/比率表示を追加する修正に着手。
-  - progress: 2025-12-30 20:20 JST simplify1 の worker/local で raw/output サイズから比率を算出して message に反映。検証: 未実施。
+  - start: 2025-12-30 20:10 JST extract1 完了メッセージへサイズ/比率表示を追加する修正に着手。
+  - progress: 2025-12-30 20:20 JST extract1 の worker/local で raw/output サイズから比率を算出して message に反映。検証: 未実施。
 
 1978) shape-plugin: download 完了メッセージにサイズを付記（P1）
 - ブランチ: `fix/shape-plugin/download-message-size`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -347,32 +646,32 @@
   - progress: 2025-12-30 22:30 JST デフォルト復帰ボタンを即時削除カードの 6つ目ボタンへ移設し、編集中の設定をシステムデフォルトへ戻す挙動へ更新。検証: 未実施。
   - progress: 2025-12-30 22:35 JST Download/Cache 管理を 3 カラム表示へ戻し、空欄の 4 列目を解消。検証: 未実施。
 
-1981) shape-plugin: simplify1 デフォルト値の見直しと簡略化の反映（P1）
-- ブランチ: `fix/shape-plugin/simplify1-defaults`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: `plugins/shape-plugin/src/common/types/constants.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/batch/adapters/LocalSimplifyAdapters.ts`, `TASKS.md`
+1981) shape-plugin: extract1 デフォルト値の見直しと簡略化の反映（P1）
+- ブランチ: `fix/shape-plugin/extract1-defaults`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/common/types/constants.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/batch/adapters/LocalExtractAdapters.ts`, `TASKS.md`
 - 受け入れ基準（DoD）:
-  - [ ] simplify1 デフォルト値が見直され、簡略化が反映される
+  - [ ] extract1 デフォルト値が見直され、簡略化が反映される
   - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
 - チェックリスト:
-  - [ ] simplify1 で簡略化（tolerance）を反映する
-  - [ ] simplify1 デフォルト値を更新する
+  - [ ] extract1 で簡略化（tolerance）を反映する
+  - [ ] extract1 デフォルト値を更新する
   - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
-- ロールバック手順：simplify1 の変更差分を revert する
+- ロールバック手順：extract1 の変更差分を revert する
 - 運用ログ：
-  - start: 2025-12-30 23:05 JST simplify1 デフォルト値見直しと簡略化反映の対応に着手。
-  - progress: 2025-12-30 23:20 JST simplify1 に simplifyGeoJson を適用し、デフォルト tolerance を 4.0 へ見直し。検証: 未実施。
-  - progress: 2025-12-30 23:30 JST simplify1 の最小面積を 0-2000 に調整し、デフォルトを 500 に変更。検証: 未実施。
-  - progress: 2025-12-30 23:40 JST simplify1 の最小頂点数を 0-500 に調整し、デフォルトを 200 に変更。検証: 未実施。
-  - progress: 2025-12-31 00:05 JST simplify1 のデフォルト最小頂点数を 100、最小面積を 300 に再調整。検証: 未実施。
-- progress: 2025-12-31 04:05 JST simplify1/2 の簡略化デフォルトを詳細寄りに調整（tolerance 2.0/1.5、quantize 5000）。検証: 未実施。
-- progress: 2025-12-31 05:30 JST Step4 の簡略化許容値の上限を 5、既定を 1 に統一（Simplify1/2 UI + デフォルト値）。検証: 未実施。
-- progress: 2025-12-31 06:20 JST Step4 の簡略化許容値を 0-3、既定 0.5 に再調整（Simplify1/2 UI + デフォルト値）。検証: 未実施。
-- progress: 2025-12-31 06:30 JST Step4 の簡略化許容値ラベルを一次/二次で区別（Simplify1/2 UI の表記変更）。検証: 未実施。
+  - start: 2025-12-30 23:05 JST extract1 デフォルト値見直しと簡略化反映の対応に着手。
+  - progress: 2025-12-30 23:20 JST extract1 に extractGeoJson を適用し、デフォルト tolerance を 4.0 へ見直し。検証: 未実施。
+  - progress: 2025-12-30 23:30 JST extract1 の最小面積を 0-2000 に調整し、デフォルトを 500 に変更。検証: 未実施。
+  - progress: 2025-12-30 23:40 JST extract1 の最小頂点数を 0-500 に調整し、デフォルトを 200 に変更。検証: 未実施。
+  - progress: 2025-12-31 00:05 JST extract1 のデフォルト最小頂点数を 100、最小面積を 300 に再調整。検証: 未実施。
+- progress: 2025-12-31 04:05 JST extract1/2 の簡略化デフォルトを詳細寄りに調整（tolerance 2.0/1.5、quantize 5000）。検証: 未実施。
+- progress: 2025-12-31 05:30 JST Step4 の簡略化許容値の上限を 5、既定を 1 に統一（Extract1/2 UI + デフォルト値）。検証: 未実施。
+- progress: 2025-12-31 06:20 JST Step4 の簡略化許容値を 0-3、既定 0.5 に再調整（Extract1/2 UI + デフォルト値）。検証: 未実施。
+- progress: 2025-12-31 06:30 JST Step4 の簡略化許容値ラベルを一次/二次で区別（Extract1/2 UI の表記変更）。検証: 未実施。
 - progress: 2025-12-31 06:45 JST Step6 のプレビューで map の wheel イベントを遮断していた処理を撤去し、マウスホイールズームを有効化。検証: 未実施。
 - progress: 2025-12-31 07:05 JST Step6 の地図内右上に検索フィールドを追加し、検索は前方一致でマッチした地物を強調表示するよう調整。検証: 未実施。
 - progress: 2025-12-31 07:15 JST Step6 検索フィールドを左上へ移動し、地図コントロールは右上へ移設。検索文字列はメタデータ検索と共有（Jotai）を維持。検証: 未実施。
 - progress: 2025-12-31 07:40 JST 検索マッチ用の featureId を簡略化結果に付与し、metadata と vector tile で一致するよう補正。前方一致検索を地図強調へ反映。検証: 未実施。
-- progress: 2025-12-31 08:05 JST Step4 のタイル前処理に簡略化方式（オフ/TopoJSON/GeoJSON）の選択肢を追加し、simplify2 に反映。検証: 未実施。
+- progress: 2025-12-31 08:05 JST Step4 のタイル前処理に簡略化方式（オフ/TopoJSON/GeoJSON）の選択肢を追加し、extract2 に反映。検証: 未実施。
 - progress: 2025-12-31 08:20 JST Step4 の説明カード削除・一次/二次の省略条件をツールチップ化し、ワーカー数のヘルプ文言をメモリ注意喚起へ更新。検証: 未実施。
 - progress: 2025-12-31 08:30 JST Step4 の説明文を削除し、簡略化方式カードを二次簡略化の左へ移設。タイル生成の説明はツールチップへ移動。検証: 未実施。
 
@@ -465,37 +764,37 @@
   - progress: 2025-12-30 17:10 JST vectortile 完了後に TilesDB から hidb-shape vectorTiles へ同期する処理を追加し、プレビュー判定は shapeDB もフォールバック参照に更新。検証: 未実施。
 
 1970) shape-plugin: デフォルト簡略化を強化して頂点90%削減/タイルサイズ1桁減（P1）
-- ブランチ: `fix/shape-plugin/default-simplify-aggressive`（sandbox 制約で branch 作成不可なら main 上で作業）
+- ブランチ: `fix/shape-plugin/default-extract-aggressive`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `plugins/shape-plugin/src/common/types/constants.ts`, `plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx`, `TASKS.md`
 - 受け入れ基準（DoD）:
-  - [ ] simplify1/2 のデフォルト値を強い簡略化（90%間引き想定）へ更新する
+  - [ ] extract1/2 のデフォルト値を強い簡略化（90%間引き想定）へ更新する
   - [ ] vectorTiles の maxZoom を下げ、タイルサイズが1桁小さくなる方向へ調整する
   - [ ] UI のデフォルト値が更新内容と一致する
   - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
 - チェックリスト:
-  - [x] DEFAULT_PROCESSING_CONFIG の simplify1/2/tiles を更新する
+  - [x] DEFAULT_PROCESSING_CONFIG の extract1/2/tiles を更新する
   - [x] TileConfigSection の共有ズーム既定値を更新する
   - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
 - ロールバック手順：`plugins/shape-plugin/src/common/types/constants.ts` と `plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx` の差分を revert する
 - 運用ログ：
   - start: 2025-12-30 11:30 JST デフォルト簡略化/タイル範囲の強化に着手。
-  - progress: 2025-12-30 11:40 JST simplify1/2 と tileConfig の既定値を強化し、共有ズーム既定値を 0-4 に更新。検証: 未実施。
+  - progress: 2025-12-30 11:40 JST extract1/2 と tileConfig の既定値を強化し、共有ズーム既定値を 0-4 に更新。検証: 未実施。
 
-1971) shape-plugin: vectortile サイズ超過時の regression リトライと simplify2 再始動（P1）
+1971) shape-plugin: vectortile サイズ超過時の regression リトライと extract2 再始動（P1）
 - ブランチ: `feat/shape-plugin/vectortile-regression-retry`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `plugins/shape-plugin/src/services/batch/SessionController.ts`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `packages/features/shape-store/src/ShapeDB.ts`, `plugins/shape-plugin/src/common/types/batch.ts`, `TASKS.md`, `plans/`
 - 受け入れ基準（DoD）:
   - [ ] vectortile サイズ超過時にタスクが `regression` 状態になり、retry が更新される
-  - [ ] vectortile 完了後に regression が残る場合、simplify2 を再起動して再試行する
-  - [ ] simplify2 が retry 値に応じて簡略化を強める
+  - [ ] vectortile 完了後に regression が残る場合、extract2 を再起動して再試行する
+  - [ ] extract2 が retry 値に応じて簡略化を強める
   - [ ] batch 制御/API/UI/Worker から cancel/cancelled を撤廃し、pause のみで操作できる
   - [ ] ExecPlan を作成し、変更内容/理由/ロールバック/検証結果を運用ログに記載する
 - チェックリスト:
   - [x] ExecPlan を `plans/shape-vectortile-regression-retry-execplan.md` に作成する
   - [ ] TaskStatus に regression を追加し UI/Worker で扱えるようにする
   - [ ] vectortile サイズ超過時の retry 更新と regression 状態遷移を実装する
-  - [ ] regression 検知で simplify2 を再始動する制御を追加する
-  - [ ] simplify2 の簡略化ロジックに retry 強化を追加する
+  - [ ] regression 検知で extract2 を再始動する制御を追加する
+  - [ ] extract2 の簡略化ロジックに retry 強化を追加する
   - [x] cancel/cancelled の参照を検索して除去する（batch 制御/API/UI/Worker）
   - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
 - ロールバック手順：`plugins/shape-plugin/src/services/batch/**` と `packages/features/shape-store/src/ShapeDB.ts`、`plugins/shape-plugin/src/common/types/batch.ts` の差分を revert する
@@ -508,13 +807,13 @@
   - start: 2025-12-30 13:05 JST cancel/cancelled を全体から除去する確認と残件の整理に着手。
   - progress: 2025-12-30 13:25 JST batch 制御/API/Worker/Doc の cancel/cancelled を撤廃し、pause/failed へ統一。認証/Import-Export 等の一般的な「取り消し」表現は残存。検証: 未実施。
   - start: 2025-12-30 14:10 JST サイズ超過タスクの regression 再試行が動作しない件の調査と修正に着手。
-  - progress: 2025-12-30 14:30 JST vectortile regression 検知→simplify2 再起動→vectortile 再実行のループと retry 反映を追加。simplify2 の retry 強化と UI の regression 表示を補正。検証: 未実施。
+  - progress: 2025-12-30 14:30 JST vectortile regression 検知→extract2 再起動→vectortile 再実行のループと retry 反映を追加。extract2 の retry 強化と UI の regression 表示を補正。検証: 未実施。
   - progress: 2025-12-30 15:20 JST vectortile 再始動時のクラッシュ対策として retry 時の vectortile 並列数を 1 に固定し、stage 終了時に feature cache を解放。検証: 未実施。
-  - progress: 2025-12-30 15:35 JST simplify2 の retry 強化係数を増やし、tolerance を倍増・quantize をさらに低下させるよう調整。検証: 未実施。
+  - progress: 2025-12-30 15:35 JST extract2 の retry 強化係数を増やし、tolerance を倍増・quantize をさらに低下させるよう調整。検証: 未実施。
   - progress: 2025-12-30 15:45 JST vectortile 再実行時は waiting/regression のみ処理し、completed/failed を再処理しないようフィルタを修正。検証: 未実施。
   - progress: 2025-12-30 15:55 JST vectortile タスク生成時に既存IDを確認し、regressionのみ retry+1 更新、非regressionは上書きしないよう登録処理を修正。検証: 未実施。
-  - progress: 2025-12-30 16:05 JST Step4 の Min Vertex Count を 0-10000/既定8000、Simplification Tolerance を 1-50/既定40 に変更。検証: 未実施。
-  - progress: 2025-12-30 16:15 JST GeoBoundaries の download を gjDownloadURL から simplifiedGeometryGeoJSON に切替。モックテストも更新。検証: 未実施。
+  - progress: 2025-12-30 16:05 JST Step4 の Min Vertex Count を 0-10000/既定8000、Extraction Tolerance を 1-50/既定40 に変更。検証: 未実施。
+  - progress: 2025-12-30 16:15 JST GeoBoundaries の download を gjDownloadURL から extractedGeometryGeoJSON に切替。モックテストも更新。検証: 未実施。
   - start: 2025-12-30 16:25 JST Step6 プレビューで vector tiles が未生成扱いになる件を調査。
   - start: 2025-12-30 15:10 JST vectortile 再始動時の「エラーコード:5」発生を調査。
 
@@ -594,8 +893,8 @@
   - [ ] ShapeBuildProgressStep の task failed 発生経路（UI/Worker/ログ）を確認する
   - [ ] タイル生成ステージの task payload/結果/例外処理を確認する
   - [ ] タスクID生成を国・自治体レベル基準に合わせる
-  - [x] simplify1 のタスクタイトルに複数フィーチャー時の枝番（-1/-2/...）を付与する
-  - [x] simplify1 のタスクタイトルを `country/admin label` 形式で識別できるようにする
+  - [x] extract1 のタスクタイトルに複数フィーチャー時の枝番（-1/-2/...）を付与する
+  - [x] extract1 のタスクタイトルを `country/admin label` 形式で識別できるようにする
   - [ ] pause 時の `Session ... not found` を解消し、再開/停止が正しく動作する
   - [ ] vectortile の待機状態が継続する原因を特定し、進捗が進むようにする
   - [ ] task failed のエラーメッセージを失敗理由の説明に置き換える
@@ -613,16 +912,16 @@
   - progress: 2025-12-29 16:05 JST shape-plugin 全体の i18n 未対応文言を補正し、skipped/error のメッセージ/ログ方針を見直す対応に着手。
   - progress: 2025-12-29 16:24 JST shape-plugin の未i18n文言（国選択/復旧ダイアログ/検索aria/ワーカー表示）を i18n 化し、skipped メッセージを理由付きに変更。UI は skipped を console.warn、サイズ超過/シリアライズ失敗は failed + console.error に変更。
   - progress: 2025-12-29 16:24 JST 検証未実施（未着手）。
-  - progress: 2025-12-29 16:55 JST simplify1 の IND/1 重複疑義を調査。download 後の `expandOutputsForFeatureGroups` が Feature 単位でタスク化し、UI のタイトルが `country/admin` だけなので同一表示になることを確認。再開時は download が完了でも postprocess/expand が再実行されるが `taskId` は `country/admin/featureLabel/featureGroupId` 由来で安定していれば重複登録されない。feature id が欠落し index 依存になる場合のみ重複タスク化の可能性がある。
+  - progress: 2025-12-29 16:55 JST extract1 の IND/1 重複疑義を調査。download 後の `expandOutputsForFeatureGroups` が Feature 単位でタスク化し、UI のタイトルが `country/admin` だけなので同一表示になることを確認。再開時は download が完了でも postprocess/expand が再実行されるが `taskId` は `country/admin/featureLabel/featureGroupId` 由来で安定していれば重複登録されない。feature id が欠落し index 依存になる場合のみ重複タスク化の可能性がある。
   - progress: 2025-12-29 09:30 JST GIS SDK / TilesDB の sessionId 命名とスキーマを nodeId へ統一する作業に着手。
   - progress: 2025-12-29 05:05 JST Step4「ビルド終了時の中間生成物の保持」カードの縦位置を上揃えに修正。
   - progress: 2025-12-29 05:15 JST SessionController の GeometryCollection 対応と metadata 型エラーを修正し、未使用の buildVectorTileInputBuffer を削除。worker plugin の未使用引数を整理。
   - progress: 2025-12-29 14:43 JST Step5 の taskId 生成とエラーメッセージ改善の対応に着手。
-  - progress: 2025-12-29 14:50 JST simplify1/2 の taskId を国・自治体ベースへ変更し、simplify1 失敗理由をエラーメッセージへ反映。検証: 未実施。
-  - progress: 2025-12-29 15:02 JST simplify1 エラーにスタック由来のファイル/行/列情報を含めるよう更新。検証: 未実施。
+  - progress: 2025-12-29 14:50 JST extract1/2 の taskId を国・自治体ベースへ変更し、extract1 失敗理由をエラーメッセージへ反映。検証: 未実施。
+  - progress: 2025-12-29 15:02 JST extract1 エラーにスタック由来のファイル/行/列情報を含めるよう更新。検証: 未実施。
   - progress: 2025-12-29 15:05 JST ensureTileFeatureIndex の JSON.stringify 失敗時に vectortile を pause し、タイル座標とファイル/行情報を含めるよう修正。検証: 未実施。
-  - progress: 2025-12-29 15:11 JST simplify1 の flatgeobuf serialize 前に undefined feature を除外するガードを追加。検証: 未実施。
-  - progress: 2025-12-29 15:14 JST simplify1/2 で結果 FeatureCollection が空になった場合は skipped 扱いに変更。検証: 未実施。
+  - progress: 2025-12-29 15:11 JST extract1 の flatgeobuf serialize 前に undefined feature を除外するガードを追加。検証: 未実施。
+  - progress: 2025-12-29 15:14 JST extract1/2 で結果 FeatureCollection が空になった場合は skipped 扱いに変更。検証: 未実施。
   - progress: 2025-12-29 15:21 JST vectortile 入力の stringify/サイズ警告で pause せず、該当タイルのみスキップするよう変更。検証: 未実施。
   - progress: 2025-12-29 15:46 JST vectortile 入力が0件のときスキップ扱いのダミータスクを登録し、タスクなし表示を回避。検証: 未実施。
   - progress: 2025-12-29 15:52 JST タイル生成ペインのタスクが表示されない原因調査に着手（task.stage の割当を再確認）。
@@ -645,17 +944,17 @@
   - progress: 2025-12-29 21:05 JST 「簡略化許容値 (度)」のUI範囲を 1-6、既定値を 3 に調整し、ズーム範囲スライダー上限を 10 へ変更。検証: 未実施。
   - progress: 2025-12-29 21:20 JST 「シンプル形状の頂点しきい値」の範囲を 0-500 に拡張し、既定値を 300 に更新。検証: 未実施。
   - progress: 2025-12-29 21:40 JST タイル前処理の全体進捗とペイン進捗の不一致を解消し、タイル生成開始がUIへ確実に伝わるよう調整に着手。検証: 未実施。
-  - progress: 2025-12-29 22:00 JST simplify2 完了時に skipped を含めて最終進捗を送信し、タイル生成入力なしでも vectortile 開始を通知するよう修正。UI側は skipped 分を除外した合計で表示を整合。検証: 未実施。
+  - progress: 2025-12-29 22:00 JST extract2 完了時に skipped を含めて最終進捗を送信し、タイル生成入力なしでも vectortile 開始を通知するよう修正。UI側は skipped 分を除外した合計で表示を整合。検証: 未実施。
   - progress: 2025-12-29 22:20 JST 最小頂点数スライダーを inverted 化し、簡略化許容値レンジを 1-20/既定10 に拡張。検証: 未実施。
   - progress: 2025-12-29 22:40 JST Step5 の valid/canSave 判定をタイル生成済み（tileSummary/永続タイル/タスク完了）で成立するよう更新し、Save の二重押下抑止に備える。検証: 未実施。
   - progress: 2025-12-29 23:00 JST Step4 の削除ボタン条件に合わせて、Step5 でもビルド開始前に各ステージの状態を表示するためのスナップショット表示を追加。検証: 未実施。
   - progress: 2025-12-29 23:20 JST Step5 のペインヘッダにタスク総数/成功/失敗/スキップのサマリ表示を追加し、保存済みタスクから集計するよう更新。検証: 未実施。
   - progress: 2025-12-29 23:40 JST registerTasks の bulkPut を 50 件ずつに分割し、大量タスク時のUI固まりを軽減。検証: 未実施。
   - progress: 2025-12-30 00:10 JST vectortile 入力の生成をタスク実行中へ移し、タスク実行時にスキップ判定/記録するよう再構成。検証: 未実施。
-  - start: 2025-12-30 10:10 JST simplify1 の複数フィーチャー時にタスクタイトルへ -1/-2... を付与する対応に着手。
-  - progress: 2025-12-30 10:15 JST simplify1 タスクの metadata に featureIndex/featureCount を追加し、UI 表示で -1/-2... の枝番を付与。検証: 未実施。
-  - start: 2025-12-30 11:05 JST simplify1 タイトルの重複/ pause 失敗 / vectortile 待機の調査に着手。
-  - progress: 2025-12-30 11:15 JST simplify1/2 のタイトルで featureLabel を表示し、セッション既存時に再生成できるよう createSession を更新。検証: 未実施。
+  - start: 2025-12-30 10:10 JST extract1 の複数フィーチャー時にタスクタイトルへ -1/-2... を付与する対応に着手。
+  - progress: 2025-12-30 10:15 JST extract1 タスクの metadata に featureIndex/featureCount を追加し、UI 表示で -1/-2... の枝番を付与。検証: 未実施。
+  - start: 2025-12-30 11:05 JST extract1 タイトルの重複/ pause 失敗 / vectortile 待機の調査に着手。
+  - progress: 2025-12-30 11:15 JST extract1/2 のタイトルで featureLabel を表示し、セッション既存時に再生成できるよう createSession を更新。検証: 未実施。
 
 1958) shape-plugin: selectedArrayByCountries を Record<ISO2, boolean[]> へ変更（P1）
 - ブランチ: `fix/shape-plugin/selected-array-by-countries-map`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -700,7 +999,7 @@
 - ロールバック手順：`plugins/shape-plugin/src/**` の差分を revert する。
 - 運用ログ：
   - start: 2025-12-29 07:05 JST Step4 簡略化許容値のデフォルトを 0.5 に変更する作業に着手。
-  - done: 2025-12-29 07:10 JST simplify2Config/simplificationConfig の tolerance を 0.5 に更新し、Step4 の UI 既定値を 0.5 へ変更。検証: 未実施。ロールバック: `plugins/shape-plugin/src/common/types/constants.ts` と `plugins/shape-plugin/src/ui/components/steps/Simplify2ConfigSection.tsx` の差分を revert。
+  - done: 2025-12-29 07:10 JST extract2Config/extractionConfig の tolerance を 0.5 に更新し、Step4 の UI 既定値を 0.5 へ変更。検証: 未実施。ロールバック: `plugins/shape-plugin/src/common/types/constants.ts` と `plugins/shape-plugin/src/ui/components/steps/Extract2ConfigSection.tsx` の差分を revert。
 
 1961) shape-plugin: selectedArrayByCountries Record 化後の downloadTaskPayload 空生成調査（P1）
 - ブランチ: `fix/shape-plugin/selection-record-download-task-empty`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -1247,7 +1546,7 @@
   - progress: 2025-12-28 22:55 JST start build 後の進捗が止まる件で、GeoBoundaries の per-payload メタデータ確認を停止し、availability リストのみでフィルタするように修正。
   - progress: 2025-12-28 23:10 JST download task の登録判定を isRegistered/needRegistered に統一し、全データソースで `${nodeId}+${countryId}+${adminLevel}` の taskId を用いた差分登録に切り替え。
   - progress: 2025-12-28 23:25 JST 進捗カードの一時的な 0/0 表示を未完了ステージに基づく表示へ変更し、ダウンロード再実行は未完了/失敗タスクのみ対象に修正。タスクタイトルの文字サイズを小さく調整。
-  - progress: 2025-12-28 23:35 JST download/simplify1/タイル前処理のタスクタイトルを `${国ID}/${自治体レベル}` に統一し、ダウンロード成功時は URL・失敗時はエラーをメッセージ表示するように更新。
+  - progress: 2025-12-28 23:35 JST download/extract1/タイル前処理のタスクタイトルを `${国ID}/${自治体レベル}` に統一し、ダウンロード成功時は URL・失敗時はエラーをメッセージ表示するように更新。
   - progress: 2025-12-28 23:45 JST 簡略化で処理不要なタスクを分母から除外し成功扱いに調整。全タスク完了後に runtime worker を終了するように更新。
   - progress: 2025-12-29 00:05 JST Step5 入室時の batchTasks ポーリングを buildStatus に連動させ、開始/再開時のみ有効化するように調整。
   - progress: 2025-12-28 23:25 JST 進捗の「スキップ」数が残数として表示される問題に対し、skipped の伝播/表示を実際のスキップ数のみ扱う方針で修正に着手。
@@ -1255,10 +1554,10 @@
   - progress: 2025-12-28 23:45 JST Step5 で failed タスク通知時に console.error へ出力する対応と、ステージごとの未完了タスクのみ処理するように進捗集計/Worker起動タイミングを調整する対応に着手。
   - progress: 2025-12-28 23:45 JST Step5 failed タスクの console.error 出力を追加し、各ステージで既完了タスクを除外して進捗集計と処理対象を更新。VectorTile 以外のステージは未完了タスクがある場合のみ処理するよう整理。
   - progress: 2025-12-29 00:04 JST LRUSplitView ヘッダの 0/0 表示を 0% として出すよう補正し、ステージ進捗は完了+失敗+スキップで完了判定するよう更新。Step4 の worker 設定を各ステージの並列処理数に反映。
-  - progress: 2025-12-29 00:09 JST simplify2 の入力バッファ欠落時に simplify1 の失敗を検知して先に失敗扱いとし、進捗は総タスク数に対する完了+失敗+スキップで算出するよう統一。
+  - progress: 2025-12-29 00:09 JST extract2 の入力バッファ欠落時に extract1 の失敗を検知して先に失敗扱いとし、進捗は総タスク数に対する完了+失敗+スキップで算出するよう統一。
   - progress: 2025-12-29 00:15 JST ExecPlan `plans/shape-stage-worker-pool-execplan.md` を作成し、ステージごとの WebWorker プール化方針と実装手順を明文化。
-  - progress: 2025-12-29 01:05 JST Step5 の download/simplify/vectortile を実際に複数 Worker 起動で並列実行する実装に着手。
-  - progress: 2025-12-29 01:25 JST shape-plugin の stage worker entry と worker プールを追加し、download/simplify/vectortile のアダプタを Step4 の worker 数で並列処理する構成へ更新。
+  - progress: 2025-12-29 01:05 JST Step5 の download/extract/vectortile を実際に複数 Worker 起動で並列実行する実装に着手。
+  - progress: 2025-12-29 01:25 JST shape-plugin の stage worker entry と worker プールを追加し、download/extract/vectortile のアダプタを Step4 の worker 数で並列処理する構成へ更新。
   - progress: 2025-12-29 01:45 JST useShapeBatchTasks のポーリングが停止条件で残るケースに対し、interval 内で autoRefresh を再評価し停止時に clear するよう修正。
   - progress: 2025-12-29 02:05 JST shape-plugin の stage worker で cors proxy URL を初期化し、ダウンロードの 2 回目アクセスが直アクセスにならないよう修正。
   - progress: 2025-12-29 02:20 JST shape stage worker へ Auth token を同期し、cors-proxy へのリクエストに Authorization ヘッダが付与されるよう更新。
@@ -2063,7 +2362,7 @@
 - 受け入れ基準（DoD）:
   - [ ] Pause 操作で AbortSignal が発火し、進行中タスクが中断されても session 状態は paused を維持する
   - [ ] Resume 操作で残タスクが再開でき、cancel 扱いにならない
-  - [ ] Download/Simplify1/Simplify2/VectorTile で中断導線が有効化される
+  - [ ] Download/Extract1/Extract2/VectorTile で中断導線が有効化される
   - [ ] generateTiles の中断時に部分的なタイルが残らず、再開時に破損しない
   - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
 - チェックリスト:
@@ -2300,7 +2599,7 @@
 - ブランチ: `refactor/shape/step5-pipeline-tasks`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: plugins/shape-plugin（batch/worker/Step5 UI）
 - 受け入れ基準（DoD）:
-  - [ ] Simplify1/Simplify2 のタスク単位がフィーチャーグループ単位になる
+  - [ ] Extract1/Extract2 のタスク単位がフィーチャーグループ単位になる
   - [ ] VectorTile のタスク単位がタイル(z/x/y)単位になる
   - [ ] タスク名がステージの責務に一致し、国・行政単位は前段のみで表示される
   - [ ] Step5 のタスク表示が重複/混乱を起こさない構成に更新される
@@ -2767,7 +3066,7 @@
   - [ ] ExecPlan（`plans/shape-download-postprocess-strategy.md`）を作成し、進捗に合わせて更新する
   - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
 - チェックリスト:
-  - [x] 現行フローで download/simplify タスク生成の責務を整理する
+  - [x] 現行フローで download/extract タスク生成の責務を整理する
   - [x] データソース別ストラテジーを定義し、共通コードから呼び出す
   - [x] 次ステージ生成の単体テスト/統合テストを更新する
 - ロールバック手順：本タスクで更新したファイルを revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` と `pnpm --filter @hierarchidb/shape-plugin test` を再実行する。
@@ -2802,7 +3101,7 @@
 - 受け入れ基準（DoD）:
   - [ ] タスクIDではなくタスクタイトルを表示する
   - [ ] タイトルはプラグイン/ステージごとに定義できる
-  - [ ] download: URL / simplify1: URL + featureId / vectorTiles: zxy を表示できる
+  - [ ] download: URL / extract1: URL + featureId / vectorTiles: zxy を表示できる
   - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
 - チェックリスト:
   - [ ] タスク生成時にタイトル生成に必要なメタ情報を付与する
@@ -2910,7 +3209,7 @@
 - 依存: plugins/shape-plugin, plugins/spreadsheet-plugin, tsconfig/pnpm workspace
 - 受け入れ基準（DoD）:
   - [ ] spreadsheet の typecheck が shape のコードへ波及する経路を特定し、原因を説明できる
-  - [ ] `LocalSimplifyAdapters.ts` / `RuntimeWorkerDownloadAdapter.ts` の geojson 型エラーが解消する
+  - [ ] `LocalExtractAdapters.ts` / `RuntimeWorkerDownloadAdapter.ts` の geojson 型エラーが解消する
   - [ ] spreadsheet typecheck で当該 shape 由来の型エラーが出ない
   - [ ] 変更内容とロールバック手順を運用ログに記載する
 - チェックリスト:
@@ -5907,7 +6206,7 @@
   - 依存: PR #144（UI-DESIGN.md）
   - 受け入れ基準（DoD）:
     - [ ] Start/Pause/Resume/Stop を I/F 化し DI（mock/real）で切替可能
-    - [ ] 進捗イベント（download/simplify*/vectortile）をストアに集約し UI は購読で更新
+    - [ ] 進捗イベント（download/extract*/vectortile）をストアに集約し UI は購読で更新
     - [ ] MapPreview は vectorTileTasks 完了時のみ有効化
     - [ ] Step検証（Step1/3/4/5）にユニットテストを追加
   - ロールバック: フラグ `SHAPE_BATCH_MONITOR_REAL=0` で mock 実装にフォールバック
@@ -6120,7 +6419,7 @@
 
 - feat/route/compute-tiler-sharing（TopoJSON/MVT の compute ステップ共用化）
   - ブランチ: `feat/route/compute-tiler-sharing`
-  - 依存: `packages/plugins/shape-plugin/src/services/workers/SimplifyWorker1.ts`, `SimplifyWorker2.ts`, `vt-pbf` 経路
+  - 依存: `packages/plugins/shape-plugin/src/services/workers/ExtractWorker1.ts`, `ExtractWorker2.ts`, `vt-pbf` 経路
   - 受け入れ基準（DoD）:
     - [ ] shape の簡略化/TopoJSON/MVT 生成を `feature/compute` の共有ステップに抽出（ファイル/関数名とシグネチャを明文化）
     - [ ] route の最終段（optimization）で共有ステップを呼び出し、ルート線形のタイル生成が可能
@@ -6588,7 +6887,7 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
 - start: route M1（共有化）着手。
   - ProgressEmitter/Store を runtime-shared へ追加し、route-plugin は共有参照へ切替（型チェックOK）。
   - PLAN.md に Cross-Plugin Sharing を追加し、WBS を同期。
-  - shape — PR #115（配線リファクタ）/#116（batch オーケストレーション移行）/#118（simplify2・vectorTiles 完全化）を順次マージ。EphemeralDB による段間永続と UI 進捗通知の安定化を確認。
+  - shape — PR #115（配線リファクタ）/#116（batch オーケストレーション移行）/#118（extract2・vectorTiles 完全化）を順次マージ。EphemeralDB による段間永続と UI 進捗通知の安定化を確認。
 - 2025-09-06 start: feat/project/serialization-impl — 実装・テスト追加。PR #110 作成。
 - 2025-09-06 start: node-type/* プラグイン監査の結果を ToDo に反映（coverage 導入、project/shape/route/location/base/resolver/spreadsheet/styler/basemap/folder の各タスクを追加）。コード差分は未作成。
 - 2025-09-06 done: TASKS.md を運用方針に合わせて同期（Doing→Done へ移動、ブランチ削除運用の注記を追加）。
@@ -7339,7 +7638,7 @@ P2:
 ### Done（完了） <a id="kanban-done"></a>
 
 1986) fix/shape/preview-zoom-and-filter-off (P1) — 完了 (2025-12-30)
-- 要点：Step6 プレビューのズーム範囲をタイル生成範囲に合わせ、simplify1 のフィルタリングOFFを追加。
+- 要点：Step6 プレビューのズーム範囲をタイル生成範囲に合わせ、extract1 のフィルタリングOFFを追加。
 - 検証：未実施（手動確認未実行）。
 - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx`, `plugins/shape-plugin/src/ui/components/processing/AreaFilterPanel.tsx`, `plugins/shape-plugin/src/common/types/processing.ts`, `packages/features/gis-sdk/src/processing/featureFiltering.ts`, `packages/ui/map/src/{components/MapLibreMap.tsx,types/unified-map-props.ts}`, `packages/features/shape-store/src/ShapeDB.ts`, `plugins/shape-plugin/src/ui/locales/{en.json,ja.json}` の差分を revert する。
 - 運用ログ：
@@ -7347,9 +7646,9 @@ P2:
   - done: 2025-12-30 11:06 JST mapOptions の min/max zoom 対応とフィルタOFFの選択肢追加を反映。検証: 未実施（手動確認未実行）。ロールバック: 上記差分を revert。
 
 1985) fix/shape/detail-defaults-and-ranges (P1) — 完了 (2025-12-30)
-- 要点：simplify1/2・area filter・tile の設定範囲を詳細寄りに拡大し、デフォルト値を詳細化方向へ調整。zoom/area のバリデーション上限も UI と整合させた。
+- 要点：extract1/2・area filter・tile の設定範囲を詳細寄りに拡大し、デフォルト値を詳細化方向へ調整。zoom/area のバリデーション上限も UI と整合させた。
 - 検証：未実施（手動確認未実行）。
-- ロールバック手順：`plugins/shape-plugin/src/common/types/constants.ts`, `plugins/shape-plugin/src/ui/hooks/useSimplificationConfigSection.ts`, `plugins/shape-plugin/src/ui/components/steps/{Simplify1ConfigSection.tsx,Simplify2ConfigSection.tsx,TileConfigSection.tsx}`, `plugins/shape-plugin/src/ui/components/processing/AreaFilterPanel.tsx`, `plugins/shape-plugin/src/services/utils/utils.ts` の差分を revert する。
+- ロールバック手順：`plugins/shape-plugin/src/common/types/constants.ts`, `plugins/shape-plugin/src/ui/hooks/useExtractionConfigSection.ts`, `plugins/shape-plugin/src/ui/components/steps/{Extract1ConfigSection.tsx,Extract2ConfigSection.tsx,TileConfigSection.tsx}`, `plugins/shape-plugin/src/ui/components/processing/AreaFilterPanel.tsx`, `plugins/shape-plugin/src/services/utils/utils.ts` の差分を revert する。
 - 運用ログ：
   - start: 2025-12-30 10:48 JST 詳細化向けの範囲/デフォルト調整に着手。
   - done: 2025-12-30 10:55 JST 詳細化方向の既定値/範囲/バリデーションを更新。検証: 未実施（手動確認未実行）。ロールバック: 上記差分を revert。
@@ -7370,13 +7669,13 @@ P2:
   - start: 2025-12-30 10:30 JST メタデータ二重表示とマッチ色コントラスト修正に着手。
   - done: 2025-12-30 10:32 JST placeholder 行抑止と文字色調整を反映。検証: 未実施（手動確認未実行）。ロールバック: 上記差分を revert。
 
-1982) fix/shape/simplify1-defaults-rebalance (P1) — 完了 (2025-12-30)
-- 要点：simplify1 の default を詳細寄りに下げ、tolerance スライダーの範囲を小さく精密に調整。
+1982) fix/shape/extract1-defaults-rebalance (P1) — 完了 (2025-12-30)
+- 要点：extract1 の default を詳細寄りに下げ、tolerance スライダーの範囲を小さく精密に調整。
 - 検証：未実施（手動確認未実行）。
-- ロールバック手順：`plugins/shape-plugin/src/common/types/constants.ts`, `plugins/shape-plugin/src/ui/components/steps/Simplify1ConfigSection.tsx` の差分を revert する。
+- ロールバック手順：`plugins/shape-plugin/src/common/types/constants.ts`, `plugins/shape-plugin/src/ui/components/steps/Extract1ConfigSection.tsx` の差分を revert する。
 - 運用ログ：
-  - start: 2025-12-30 10:24 JST simplify1 デフォルト見直しに着手。
-  - done: 2025-12-30 10:26 JST simplify1 のデフォルトと tolerance 範囲を詳細寄りへ調整。検証: 未実施（手動確認未実行）。ロールバック: 上記差分を revert。
+  - start: 2025-12-30 10:24 JST extract1 デフォルト見直しに着手。
+  - done: 2025-12-30 10:26 JST extract1 のデフォルトと tolerance 範囲を詳細寄りへ調整。検証: 未実施（手動確認未実行）。ロールバック: 上記差分を revert。
 
 1981) fix/shape/build-warning-dev-suppress (P2) — 完了 (2025-12-30)
 - 要点：開発環境では build warning の Snackbar を出さないようにし、本番は従来どおり表示。
@@ -7387,9 +7686,9 @@ P2:
   - done: 2025-12-30 10:20 JST `import.meta.env.DEV` を用いて crash warning の Snackbar を dev では抑制。検証: 未実施（手動確認未実行）。ロールバック: 上記差分を revert。
 
 1980) fix/shape/step4-defaults-and-metadata-search (P1) — 完了 (2025-12-30)
-- 要点：Step4 のデフォルト値（simplify/tile/area filter）を詳細寄りへ調整し、範囲スライダーを精密化。メタデータ検索は logical* 値も検索対象に追加し、マッチ判定は raw featureId で行うように修正。
+- 要点：Step4 のデフォルト値（extract/tile/area filter）を詳細寄りへ調整し、範囲スライダーを精密化。メタデータ検索は logical* 値も検索対象に追加し、マッチ判定は raw featureId で行うように修正。
 - 検証：未実施（手動確認未実行）。
-- ロールバック手順：`plugins/shape-plugin/src/common/types/constants.ts`, `plugins/shape-plugin/src/ui/hooks/useSimplificationConfigSection.ts`, `plugins/shape-plugin/src/ui/components/steps/{Simplify1ConfigSection.tsx,Simplify2ConfigSection.tsx,TileConfigSection.tsx}`, `plugins/shape-plugin/src/ui/components/processing/AreaFilterPanel.tsx`, `plugins/shape-plugin/src/ui/hooks/{useShapePreviewStep.ts,preview/useVectorTilePreviewTable.ts}` の差分を revert する。
+- ロールバック手順：`plugins/shape-plugin/src/common/types/constants.ts`, `plugins/shape-plugin/src/ui/hooks/useExtractionConfigSection.ts`, `plugins/shape-plugin/src/ui/components/steps/{Extract1ConfigSection.tsx,Extract2ConfigSection.tsx,TileConfigSection.tsx}`, `plugins/shape-plugin/src/ui/components/processing/AreaFilterPanel.tsx`, `plugins/shape-plugin/src/ui/hooks/{useShapePreviewStep.ts,preview/useVectorTilePreviewTable.ts}` の差分を revert する。
 - 運用ログ：
   - start: 2025-12-30 09:45 JST Step4 デフォルト見直しとメタデータ検索不具合の修正に着手。
   - progress: 2025-12-30 10:05 JST DEFAULT_PROCESSING_CONFIG と Step4 UI 範囲を見直し、簡略化/タイルのデフォルトを詳細寄りに変更。
@@ -7888,7 +8187,7 @@ P2:
 - 1886) shape-plugin 未使用候補の削除（P1） — 完了 (2025-12-26)
   - 要点：未参照のモック関数とユーティリティを削除し、未使用のテスト/アダプタ/モックファイルを整理。
   - 検証：`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。
-  - ロールバック手順：`plugins/shape-plugin/src/common/mock/data.ts` と削除済みファイル（`services/datasources/__tests__/demo.ts`/`manual-test.ts`、`services/batch/adapters/RuntimeWorkerSimplifyAdapters.ts`、`ui/__tests__/mocks/useWorkerAPIClient.ts`）の差分を revert する。
+  - ロールバック手順：`plugins/shape-plugin/src/common/mock/data.ts` と削除済みファイル（`services/datasources/__tests__/demo.ts`/`manual-test.ts`、`services/batch/adapters/RuntimeWorkerExtractAdapters.ts`、`ui/__tests__/mocks/useWorkerAPIClient.ts`）の差分を revert する。
 - 1885) ui-grid GenericDataGrid wheel handler scope 修正（P1） — 完了 (2025-12-26)
   - 要点：useEffect をコンポーネント内へ移動し、stopWheelPropagation/parentRef の参照エラーを解消。
   - 検証：未実施。
@@ -7973,10 +8272,10 @@ P2:
   - 要点：`rg` で参照有無を確認し、未使用ファイル/関数/定数の候補を一覧化（削除/保留の分類付き）。
   - 検証：検索ベース（`rg`）で確認。
   - ロールバック手順：調査のみのため差分なし（運用ログ追記を削除）。
-- 1867) shape-plugin Step4 Simplify1/2 設定分離とステージ整合（P1） — 完了 (2025-12-25)
-  - 要点：`simplify1Config`/`simplify2Config` を導入し、旧 `simplificationConfig` をマージで移行。Step4 を Simplify1/Simplify2 に分割して UI と Worker の設定参照を新構造へ統一。説明文/翻訳を「最詳細ズーム基準」「タイル前処理」に合わせて更新。
+- 1867) shape-plugin Step4 Extract1/2 設定分離とステージ整合（P1） — 完了 (2025-12-25)
+  - 要点：`extract1Config`/`extract2Config` を導入し、旧 `extractionConfig` をマージで移行。Step4 を Extract1/Extract2 に分割して UI と Worker の設定参照を新構造へ統一。説明文/翻訳を「最詳細ズーム基準」「タイル前処理」に合わせて更新。
   - 検証：未実施。
-  - ロールバック手順：`plugins/shape-plugin/src/{common/types/processing.ts,common/types/constants.ts,services/utils/utils.ts,worker/api.ts,ui/utils/sessionInvalidation.ts,ui/components/steps/{ShapeProcessingSettingsStep.tsx,Simplify1ConfigSection.tsx,Simplify2ConfigSection.tsx,TileConfigSection.tsx},ui/components/processing/{AreaFilterPanel.tsx,SimplificationPanel.tsx,PrecisionPanel.tsx},ui/hooks/useSimplificationConfigSection.ts,ui/locales/{ja.json,en.json}}` の差分を revert し、`simplificationConfig` 方式へ戻す。
+  - ロールバック手順：`plugins/shape-plugin/src/{common/types/processing.ts,common/types/constants.ts,services/utils/utils.ts,worker/api.ts,ui/utils/sessionInvalidation.ts,ui/components/steps/{ShapeProcessingSettingsStep.tsx,Extract1ConfigSection.tsx,Extract2ConfigSection.tsx,TileConfigSection.tsx},ui/components/processing/{AreaFilterPanel.tsx,ExtractionPanel.tsx,PrecisionPanel.tsx},ui/hooks/useExtractionConfigSection.ts,ui/locales/{ja.json,en.json}}` の差分を revert し、`extractionConfig` 方式へ戻す。
 - 1866) cors-proxy JWT 解析の型エラー解消（P1） — 完了 (2025-12-25)
   - 要点：JWT のセグメント不足時に明示的に Invalid token を返し、decode へ undefined が渡らないようにガードを追加。
   - 検証：`pnpm --filter @hierarchidb/cors-proxy typecheck` exit 0。
@@ -8113,8 +8412,8 @@ P2:
   - 要点：progress mapping の stage/currentTask を string 固定にし、BatchTask の stage を status 由来へ修正。
   - 検証：`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。
   - ロールバック手順：`plugins/shape-plugin/src/ui/hooks/progress/shapeProgressMapping.ts` と `plugins/shape-plugin/src/worker/api.ts` の差分を revert し、同 typecheck を再実行する。
-- 1814) shape-plugin 型エラー（BoundingBox/SimplifyTaskConfig/flatgeobuf）修正（P1） — 完了 (2025-12-22)
-  - 要点：Download adapter で BoundingBox を DataSourceStrategy 形式へ正規化し、SimplifyTaskConfig に sourceUrl を追加、flatgeobuf decode を型ガードで安全に変換。
+- 1814) shape-plugin 型エラー（BoundingBox/ExtractTaskConfig/flatgeobuf）修正（P1） — 完了 (2025-12-22)
+  - 要点：Download adapter で BoundingBox を DataSourceStrategy 形式へ正規化し、ExtractTaskConfig に sourceUrl を追加、flatgeobuf decode を型ガードで安全に変換。
   - 検証：`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0。
   - ロールバック手順：`plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerDownloadAdapter.ts`, `plugins/shape-plugin/src/common/types/batch.ts`, `plugins/shape-plugin/src/services/batch/strategies/flatgeobuf.ts` の差分を revert し、同 typecheck を再実行する。
 - 1800) style-store typecheck の依存解決（util / plugin-service-api）（P1） — 完了 (2025-12-22)
@@ -8198,7 +8497,7 @@ P2:
   - 検証：`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。
   - ロールバック手順：`packages/ui/{gis,batch}` と `plugins/shape-plugin/src/ui`、`tsconfig.base.json`、`plans/shape-ui-shared-packages.md` の差分を revert し、同 typecheck を再実行する。
 - 1784) shape-plugin UI/Hook の複雑ロジック分割（共通利用前提）（P1） — 完了 (2025-12-21)
-  - 要点：Preview/Build/Progress のフックを分割し、Download/Simplification UI をサブコンポーネント化。共通利用に向けた責務境界へ整理。
+  - 要点：Preview/Build/Progress のフックを分割し、Download/Extraction UI をサブコンポーネント化。共通利用に向けた責務境界へ整理。
   - 検証：`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。
   - ロールバック手順：`plugins/shape-plugin/src/ui/{components,hooks}` と `plans/shape-shared-ui-split.md` の差分を revert し、同 typecheck を再実行する。
 - 1783) shape-plugin Step2 以降の UI ロジック抽出（表示専用化）（P1） — 完了 (2025-12-21)
@@ -8213,14 +8512,14 @@ P2:
   - 要点：preview action を /preview に切り替え、dialog mode に preview を追加。Preview は最終ステップを強制し、URL `mode=full` で FullScreen を適用。preview では dialogUIState の保存を抑制し、edit の復元を維持。
   - 検証：未実施（手動確認/ typecheck 未実行）。
   - ロールバック手順：`app/src/loader.ts`、`app/src/router/routes/tree/PluginDialogRoute.tsx`、`app/src/hooks/treeconsole/createTreeConsoleActions.ts`、`packages/plugin-ui-host/src/headless/{usePluginDialogController.tsx,components/PluginDialogFooter.tsx,cancelDraftPolicy.ts}`、`packages/ui/dialog/src/{components/{CommonDialog.tsx,CommonDialogActions.tsx,CommonDialogTitle.tsx},types/PluginDialog.types.ts}` の差分を revert する。
-- 1779) shape-plugin featureFiltering/geometrySimplify の typecheck エラー解消（P1） — 完了 (2025-12-21)
+- 1779) shape-plugin featureFiltering/geometryExtract の typecheck エラー解消（P1） — 完了 (2025-12-21)
   - 要点：hybrid フィルタのパラメータ反映と GeometryCollection 対応の量子化処理で TS6133/TS2322/TS2339 を解消。
   - 検証：`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。
-  - ロールバック手順：`plugins/shape-plugin/src/services/batch/utils/{featureFiltering.ts,geometrySimplify.ts}` の差分を revert し、同 typecheck を再実行する。
-- 1778) shape-plugin SimplificationConfigSection の hybridFilterConfig 型不整合修正（P1） — 完了 (2025-12-21)
+  - ロールバック手順：`plugins/shape-plugin/src/services/batch/utils/{featureFiltering.ts,geometryExtract.ts}` の差分を revert し、同 typecheck を再実行する。
+- 1778) shape-plugin ExtractionConfigSection の hybridFilterConfig 型不整合修正（P1） — 完了 (2025-12-21)
   - 要点：HybridFilterConfig の default を補完し TS2322 を解消。
-  - 検証：`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 2（既存エラー: featureFiltering の未使用変数/geometrySimplify の型不整合）。
-  - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/SimplificationConfigSection.tsx` の差分を revert し、同 typecheck を再実行する。
+  - 検証：`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 2（既存エラー: featureFiltering の未使用変数/geometryExtract の型不整合）。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/ExtractionConfigSection.tsx` の差分を revert し、同 typecheck を再実行する。
 - 1777) runtime-worker StageProcessingService の flatgeobuf import 解決（P1） — 完了 (2025-12-21)
   - 要点：`flatgeobuf/lib/mjs/geojson` の型宣言を runtime-worker に追加し typecheck を解消。
   - 検証：`pnpm --filter @hierarchidb/runtime-worker typecheck` exit 0。
@@ -8228,7 +8527,7 @@ P2:
 - 1774) flatgeobuf/shpjs 型宣言の共通化で typecheck エラー解消（P1） — 完了 (2025-12-21)
   - 要点：flatgeobuf は公式型に合わせて `flatgeobuf` の `geojson` export を使用し、runtime-worker は JSON 入力で処理するよう変更。shpjs は `@types/shpjs` を利用し、独自宣言は撤去。
   - 検証：未実施。
-  - ロールバック手順：`packages/runtime-worker/src/services/StageProcessingService.ts`、`plugins/shape-plugin/src/services/batch/adapters/{LocalSimplifyAdapters.ts,RuntimeWorkerDownloadAdapter.ts,RuntimeWorkerVectorTileAdapter.ts}`、`plugins/shape-plugin/src/headless/shape-batch-progress.headless.test.ts`、`plugins/shape-plugin/vitest.config.ts`、`global.d.ts` の差分を revert する。
+  - ロールバック手順：`packages/runtime-worker/src/services/StageProcessingService.ts`、`plugins/shape-plugin/src/services/batch/adapters/{LocalExtractAdapters.ts,RuntimeWorkerDownloadAdapter.ts,RuntimeWorkerVectorTileAdapter.ts}`、`plugins/shape-plugin/src/headless/shape-batch-progress.headless.test.ts`、`plugins/shape-plugin/vitest.config.ts`、`global.d.ts` の差分を revert する。
 - 1773) Preview 起動がログ止まりの導線修正（ContextMenu/Breadcrumb/InfoPanel）（P1） — 完了 (2025-12-21)
   - 要点：TreeTable/Breadcrumb の Preview を console.log から onContextAction に接続し、Preview 起動前に step provider をロードして最終ステップ index を確定。
   - 検証：未実施。
@@ -8348,9 +8647,9 @@ P2:
   - 検証：未実施（UI 表示確認は未実行）。
   - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/{DownloadConfigSection,ShapeProcessingSettingsStep}.tsx` の差分を revert し、表示確認を再実行する。
 - 1762) shape Step4 レイアウト整理と Cleanup 移設（P1） — 完了 (2025-12-20)
-  - 要点：Simplification の Filtering/Area/Tolerance を Grid 3分割で配置し、Tile の Workers/Buffer/MaxZoom も Grid 3分割で配置。Cleanup アコーディオンを削除し、Retain downloaded files スイッチを Download の Worker カード右側へ移設。
+  - 要点：Extraction の Filtering/Area/Tolerance を Grid 3分割で配置し、Tile の Workers/Buffer/MaxZoom も Grid 3分割で配置。Cleanup アコーディオンを削除し、Retain downloaded files スイッチを Download の Worker カード右側へ移設。
   - 検証：未実施（UI 表示確認は未実行）。
-  - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/{SimplificationConfigSection,TileConfigSection,DownloadConfigSection,ShapeProcessingSettingsStep}.tsx` と `plugins/shape-plugin/src/ui/components/steps/CleanupConfigSection.tsx` の差分を revert し、表示確認を再実行する。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/{ExtractionConfigSection,TileConfigSection,DownloadConfigSection,ShapeProcessingSettingsStep}.tsx` と `plugins/shape-plugin/src/ui/components/steps/CleanupConfigSection.tsx` の差分を revert し、表示確認を再実行する。
 - 1761) WorkerNumberConfigCard の先頭アイコンを任意指定可能にする（P1） — 完了 (2025-12-20)
   - 要点：WorkerNumberConfigCard に任意アイコン指定を追加し、Concurrent Downloads は CloudDownload を表示。
   - 検証：未実施（UI 表示確認は未実行）。
@@ -8362,11 +8661,11 @@ P2:
 - 1759) shape Step4 の Feature Filtering スイッチ撤去（P1） — 完了 (2025-12-20)
   - 要点：Enable Feature Filtering の UI を削除し、enableFiltering を型/デフォルト/利用箇所から撤去。フィルタ処理は常時有効化。
   - 検証：未実施（UI 表示確認は未実行）。
-  - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/SimplificationConfigSection.tsx`、`plugins/shape-plugin/src/common/types/processing.ts`、`plugins/shape-plugin/src/common/types/constants.ts`、`plugins/shape-plugin/src/services/utils/utils.ts`、`plugins/shape-plugin/src/worker/api.ts`、`plugins/shape-plugin/src/ui/components/steps/obsolate/ShapeViewPanel.tsx` の差分を revert し、表示確認を再実行する。
-- 1758) shape Step4 の Simplification Tolerance を通常 Slider へ変更（P1） — 完了 (2025-12-20)
-  - 要点：Simplification Tolerance (meters) を WorkerSliderCard から通常の Slider 表示へ変更し、既存の更新ロジックを維持。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/ExtractionConfigSection.tsx`、`plugins/shape-plugin/src/common/types/processing.ts`、`plugins/shape-plugin/src/common/types/constants.ts`、`plugins/shape-plugin/src/services/utils/utils.ts`、`plugins/shape-plugin/src/worker/api.ts`、`plugins/shape-plugin/src/ui/components/steps/obsolate/ShapeViewPanel.tsx` の差分を revert し、表示確認を再実行する。
+- 1758) shape Step4 の Extraction Tolerance を通常 Slider へ変更（P1） — 完了 (2025-12-20)
+  - 要点：Extraction Tolerance (meters) を WorkerSliderCard から通常の Slider 表示へ変更し、既存の更新ロジックを維持。
   - 検証：未実施（UI 表示確認は未実行）。
-  - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/SimplificationConfigSection.tsx` の差分を revert し、表示確認を再実行する。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/ExtractionConfigSection.tsx` の差分を revert し、表示確認を再実行する。
 - 1768) Preview 操作の最終ステップ遷移対応（P1） — 完了 (2025-12-20)
   - 要点：resolvePreviewStepIndex を最終ステップ返却に変更し、Preview 操作で full screen の最終ステップを開く挙動に統一。folder 系は対象外。
   - 検証：`pnpm --filter @hierarchidb/app typecheck`（2025-12-20 01:43 JST）exit 0（plugin-base build の define 警告あり）。
@@ -11644,13 +11943,13 @@ P2:
   - ブランチ: `feat/shared-batch-post-docs`（PR 作成用ブランチ、push後PR化）
   - 要点: shape/location/route の Executor を `@hierarchidb/batch` に統一、location の GET を共有DLへ、POST は shared `postJson()` 経由、README 反映、route テスト追加。
 
-- fix/shape/complete-simplify2-vectortiles（simplify2 と vectorTiles の完全化）
-  - ブランチ: `fix/shape/complete-simplify2-vectortiles`（PR #118、マージ後ブランチ削除）
-  - 要点: Download→Simplify1→Simplify2→VectorTiles を EphemeralDB 経由で連結。S1/S2/VT で入出力を永続化し、タイル単位で MVT を生成・保存。空プロパティ定義時は全プロパティを許容。
+- fix/shape/complete-extract2-vectortiles（extract2 と vectorTiles の完全化）
+  - ブランチ: `fix/shape/complete-extract2-vectortiles`（PR #118、マージ後ブランチ削除）
+  - 要点: Download→Extract1→Extract2→VectorTiles を EphemeralDB 経由で連結。S1/S2/VT で入出力を永続化し、タイル単位で MVT を生成・保存。空プロパティ定義時は全プロパティを許容。
 
 - feat/shape/use-feature-batch（@hierarchidb/batch で全段のオーケストレーション）
   - ブランチ: `feat/shape/use-feature-batch`（PR #116、マージ後ブランチ削除）
-  - 要点: `BatchService.mapChunks` を download/simplify1/simplify2/vectorTiles に適用し、既存 WorkerPool のタスク実装は維持。進捗イベントを既存 UI フローへ橋渡し。
+  - 要点: `BatchService.mapChunks` を download/extract1/extract2/vectorTiles に適用し、既存 WorkerPool のタスク実装は維持。進捗イベントを既存 UI フローへ橋渡し。
 
 - refactor/shape/integrate-batch-download-compute（batch/download/compute の導入配線）
   - ブランチ: `refactor/shape/integrate-batch-download-compute`（PR #115、マージ後ブランチ削除）
@@ -12118,7 +12417,7 @@ P2:
 - 2025-09-25 13:45 progress: phase1/runtime-investigation — WorkerAPIClient/WorkerProvider/プラグインの静的 export 構造を調査し、要件文書の現状メモに反映
 - 2025-09-25 13:52 progress: phase1/worker-client-proxy-skeleton — `app/src/worker-runtime` を追加し Proxy インターフェースと hook を定義、既存 `pnpm --filter @hierarchidb/app typecheck` 成功
 - 2025-09-25 13:58 progress: phase1/worker-provider-integration — WorkerProvider で proxy hook を併用し、pnpm --filter @hierarchidb/app typecheck 再実行で成功
-- 2025-09-25 14:02 progress: phase1/suspense-gate-simplify — WorkerClientGate を Proxy 状態前提に整理し、pnpm --filter @hierarchidb/app typecheck 再確認
+- 2025-09-25 14:02 progress: phase1/suspense-gate-extract — WorkerClientGate を Proxy 状態前提に整理し、pnpm --filter @hierarchidb/app typecheck 再確認
 - 2025-09-25 14:08 progress: phase1/proxy-state-sync — WorkerProvider の status を proxy state/error と同期させる effect を追加
 - 2025-09-25 14:15 progress: tooling/codemod-runner-enhance — codemod runner に対象ファイル収集と dry-run サポートを追加
 - 2025-09-25 14:20 progress: phase1/channel-event-bridge — WorkerInitializationChannel で init start/progress/error イベントを dispatch し、WorkerClientProxy が受信して状態/進捗を更新
@@ -12398,7 +12697,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - feat/location/progress-vocabulary-adapter（進捗語彙の標準化）
   - ブランチ: `feat/location/progress-vocabulary-adapter`
   - 受け入れ基準（DoD）:
-    - [x] `toStandardProgressEvent` 実装（download/filter/cluster/index → download/simplify1/simplify2/vectortile）
+    - [x] `toStandardProgressEvent` 実装（download/filter/cluster/index → download/extract1/extract2/vectortile）
     - [x] `UnifiedLocationBatchManager.onBatchProgress` で適用
     - [x] typecheck グリーン
   - ロールバック: adapter の呼び出しを削除
@@ -13925,9 +14224,9 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-10"></a>
 
-- 2025-11-10 13:40 start: chore/scripts/dev-start-simplify — DoD（run-env-vite.sh 廃止・pnpm dev/build/preview:init の prep/start 再構成・関連ドキュメント更新・ロールバック手順明示）を確認し、影響範囲を `package.json` / `scripts/env/README.md` / `scripts/run-dev-with-turbo-watch.mjs` に特定。
-- 2025-11-10 15:05 progress: chore/scripts/dev-start-simplify — `package.json` に `dev:pre` / `dev:start(:production)` / `build:pre` / `build:start` / `preview:(build|start)` を追加し、Bash ワンライナーで環境スクリプトと `.env.secrets` を読み込む方式へ移行。`pnpm run dev:pre`（dependency guard → alias ビルド）と `pnpm run preview:build`（`turbo run build --filter @hierarchidb/app`）の exit 0 を取得。watcher 用スクリプトも `pnpm run dev` を直接起動するよう更新。
-- 2025-11-10 15:30 done: chore/scripts/dev-start-simplify — `scripts/run-env-vite.sh` を削除し、`scripts/env/README.md` へ新手順を追記。ロールバックは `git checkout HEAD^ -- package.json scripts/run-dev-with-turbo-watch.mjs scripts/run-env-vite.sh scripts/env/README.md` で旧構成を復元し、`pnpm dev`/`preview:init` スクリプトを従来フローに戻すこと。
+- 2025-11-10 13:40 start: chore/scripts/dev-start-extract — DoD（run-env-vite.sh 廃止・pnpm dev/build/preview:init の prep/start 再構成・関連ドキュメント更新・ロールバック手順明示）を確認し、影響範囲を `package.json` / `scripts/env/README.md` / `scripts/run-dev-with-turbo-watch.mjs` に特定。
+- 2025-11-10 15:05 progress: chore/scripts/dev-start-extract — `package.json` に `dev:pre` / `dev:start(:production)` / `build:pre` / `build:start` / `preview:(build|start)` を追加し、Bash ワンライナーで環境スクリプトと `.env.secrets` を読み込む方式へ移行。`pnpm run dev:pre`（dependency guard → alias ビルド）と `pnpm run preview:build`（`turbo run build --filter @hierarchidb/app`）の exit 0 を取得。watcher 用スクリプトも `pnpm run dev` を直接起動するよう更新。
+- 2025-11-10 15:30 done: chore/scripts/dev-start-extract — `scripts/run-env-vite.sh` を削除し、`scripts/env/README.md` へ新手順を追記。ロールバックは `git checkout HEAD^ -- package.json scripts/run-dev-with-turbo-watch.mjs scripts/run-env-vite.sh scripts/env/README.md` で旧構成を復元し、`pnpm dev`/`preview:init` スクリプトを従来フローに戻すこと。
 - 2025-11-10 15:45 start: refactor/ui-treeconsole/trash-naming-phase1 — TreeConsole front-layerの命名移行タスクを棚卸しし、現状の差分と不足箇所を再調査。DoD を UI フロントの互換保証 + テストログ取得 + 後続フェーズ計画明記へ再定義。
 - 2025-11-10 15:58 progress: refactor/ui-treeconsole/trash-naming-phase1 — `app/src/hooks/treeconsole/{createTreeConsoleActions.ts,batch-types.ts}` / `packages/ui/treeconsole/{toolbar,breadcrumb,base}` を確認し、`handleTrash`/`onTrash` 経路が全 UI 入口で使われていることを再レビュー。`pnpm -C app test -- createTreeConsoleActions` — exit 0 を取得し、互換テストを運用ログに記録。
 - 2025-11-10 16:02 blocked: refactor/ui-treeconsole/trash-naming-phase1 — `pnpm --filter @hierarchidb/app typecheck` が `packages/util/src/webCrypto.ts`（SharedArrayBuffer）と styler plugin 依存未解決で失敗。本タスクのコード差分とは無関係の既知課題として記録し、別タスクで対応予定。
@@ -14644,7 +14943,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-26 13:28 start: plan/shape-location-route/roadmap — shape共通化→location→route の大きな流れを TASKS に反映。DoD: Kanban 1900〜1902 のとおり。
 - 2025-12-26 13:30 start: refactor/shape/shared-core-stabilize — Stage1〜4 共通化を shape 中心に適用し、location/route をスタブ化して安定化する対応に着手。DoD: Kanban 1900 のとおり。
 - 2025-12-26 13:52 start: fix/shape/step5-pause-abort — Step5 Pause/Resume で AbortSignal を使って進行中タスクを中断できるようにする対応に着手。DoD: Kanban 1894 のとおり。
-- 2025-12-26 14:20 progress: fix/shape/step5-pause-abort — StageControls に AbortSignal の取得関数を追加し、SessionController の pause/resume で stage AbortController を切り替え。download/simplify/vectorTile adapter が pause abort を検知して待機/再開できるよう補強し、download 経由の fetch に signal を伝播するよう更新。
+- 2025-12-26 14:20 progress: fix/shape/step5-pause-abort — StageControls に AbortSignal の取得関数を追加し、SessionController の pause/resume で stage AbortController を切り替え。download/extract/vectorTile adapter が pause abort を検知して待機/再開できるよう補強し、download 経由の fetch に signal を伝播するよう更新。
 - 2025-12-26 15:05 progress: fix/shape/step5-pause-abort — vectortile generateTiles に abortKey を追加し、runtime-worker で AbortSignal を監視する中断導線を追加。gis-sdk のタイル生成ループに abort チェックを挿入し、adapter は pause 時に abortGenerateTiles を呼ぶよう更新。
 - 2025-12-26 09:48 start: fix/auth/download-401-redirect — @hierarchidb/download の 401 復帰フロー調査と修復に着手。DoD: Kanban 1892 のとおり。
 - 2025-12-26 10:05 progress: fix/auth/download-401-redirect — download の FetchNetworkPort が AuthRecoveryService.fetchWithAuth を使わないため、401 が AuthNotificationRegistry へ伝播せず UI の localStorage 保存が走らないことを確認。
@@ -14719,7 +15018,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-26 05:30 progress: fix/shape/metadata-iso3166-2-logical-id — selectionMetadata の adminLevel が一意に決まる場合は欠落した adminLevel を補完し、ADM 表示が空欄にならないよう補正。
 - 2025-12-26 06:05 start: analysis/shape/step5-pause-worker-lifecycle — Step5 Pause が worker 処理を止めない件と Worker ライフサイクルイベントの発火経路を調査。DoD: 初期化/遷移/操作の発火順を整理して報告。
 - 2025-12-26 01:15 start: refactor/shape/step5-pipeline-tasks — Step5 のタスク粒度をパイプライン設計（download→feature grouping→tile）に合わせて再構成する対応に着手。DoD: Kanban 1873 のとおり。
-- 2025-12-26 01:45 progress: refactor/shape/step5-pipeline-tasks — Download 後に Feature 単位の raw buffer を生成し Simplify1/2 を Feature グループ単位へ変更。VectorTile 入力は Simplify2 の統合バッファに寄せ、タイル座標ベースのタスクを生成するよう再構成。Step5/worker のタスクタイトルはタイル座標を優先して表示するよう更新。
+- 2025-12-26 01:45 progress: refactor/shape/step5-pipeline-tasks — Download 後に Feature 単位の raw buffer を生成し Extract1/2 を Feature グループ単位へ変更。VectorTile 入力は Extract2 の統合バッファに寄せ、タイル座標ベースのタスクを生成するよう再構成。Step5/worker のタスクタイトルはタイル座標を優先して表示するよう更新。
 - 2025-12-26 00:22 start: fix/shape/step5-wait-ui-step6-metadata-filter — Step5 の待機UI表示と Step6 メタデータ一覧の国フィルタ不整合を修正する対応に着手。DoD: Kanban 1872 のとおり。
 - 2025-12-26 00:28 progress: fix/shape/step5-wait-ui-step6-metadata-filter — Preview でタイル準備中のポーリングと待機UIを追加し、メタデータ一覧を Step3 選択に合わせて国/レベルで絞り込むよう調整。
 - 2025-12-26 00:29 done: fix/shape/step5-wait-ui-step6-metadata-filter — 待機UI表示とメタデータ国フィルタの修正を完了。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` と `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` と `plugins/shape-plugin/src/ui/locales/{ja.json,en.json}` の差分を revert。
@@ -14751,12 +15050,12 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-25 19:20 progress: fix/ui/lru-splitview-breakpoints — コンテナ幅が 0 の間は LRUSplitView を描画せず、幅確定後にレイアウトするよう変更（診断ログは撤去）。
 - 2025-12-25 19:40 progress: fix/ui/lru-splitview-breakpoints — 均等割り時の sizes を比率ではなくコンテナ幅(px)基準で算出し、最後のペインが余剰を占有する問題を修正。
 - 2025-12-25 19:55 progress: fix/ui/lru-splitview-breakpoints — getSizes の型定義を availableSpace 引数対応に更新し、TS2554 を解消。
-- 2025-12-25 18:10 start: refactor/shape/step4-simplify-split — Step4 の Simplify1/2 設定分離とステージ整合の実装に着手。DoD: Kanban 1867 のとおり。
-- 2025-12-25 18:30 progress: refactor/shape/step4-simplify-split — `simplify1Config`/`simplify2Config` を導入し、旧 `simplificationConfig` をマージで移行。Worker の batch config 参照を新構造へ更新。
-- 2025-12-25 18:50 done: refactor/shape/step4-simplify-split — Step4 UI を Simplify1/Simplify2 に分割し、翻訳文言/説明を更新。検証: 未実施。ロールバック: Done セクションの記載に従う。
-- 2025-12-25 19:05 progress: refactor/shape/step4-simplify-split — typecheck で指摘された UI hook/export/preview tileDataProvider/quantize の型エラーを修正。
-- 2025-12-25 19:15 progress: refactor/shape/step4-simplify-split — app typecheck の @hierarchidb/download / @hierarchidb/auth-recovery 解決エラーに対し、`app/tsconfig.json` の paths を追加。
-- 2025-12-25 19:25 progress: refactor/shape/step4-simplify-split — ベクトルタイルサマリーの集計で `Math.min(...zooms)` が大量配列で stack overflow するため、ループで min/max を算出するよう修正。
+- 2025-12-25 18:10 start: refactor/shape/step4-extract-split — Step4 の Extract1/2 設定分離とステージ整合の実装に着手。DoD: Kanban 1867 のとおり。
+- 2025-12-25 18:30 progress: refactor/shape/step4-extract-split — `extract1Config`/`extract2Config` を導入し、旧 `extractionConfig` をマージで移行。Worker の batch config 参照を新構造へ更新。
+- 2025-12-25 18:50 done: refactor/shape/step4-extract-split — Step4 UI を Extract1/Extract2 に分割し、翻訳文言/説明を更新。検証: 未実施。ロールバック: Done セクションの記載に従う。
+- 2025-12-25 19:05 progress: refactor/shape/step4-extract-split — typecheck で指摘された UI hook/export/preview tileDataProvider/quantize の型エラーを修正。
+- 2025-12-25 19:15 progress: refactor/shape/step4-extract-split — app typecheck の @hierarchidb/download / @hierarchidb/auth-recovery 解決エラーに対し、`app/tsconfig.json` の paths を追加。
+- 2025-12-25 19:25 progress: refactor/shape/step4-extract-split — ベクトルタイルサマリーの集計で `Math.min(...zooms)` が大量配列で stack overflow するため、ループで min/max を算出するよう修正。
 - 2025-12-25 15:40 progress: worker auth/cors 注入 — `@hierarchidb/download` に `setCorsProxyBaseURL` を追加し、`globalThis.ENV` 依存を撤去。Worker entry で setter を使用。WorkerAPI に `setAuthToken`/`setCorsProxyBaseURL` を追加し、`WorkerProvider` から `access_token` を同期するようにした。
 - 2025-12-25 15:18 progress: cors-proxy CLI テスト — 成功時も response headers を出力するよう `proxy-smoke.mjs` を更新。
 - 2025-12-25 15:12 progress: batch download 失敗の切り分け — CLI では 200 成功だがブラウザ側は `Failed to fetch` のため、CORS ヘッダー未付与の旧 proxy が動いている可能性を指摘。`--preflight=1` で CORS ヘッダ確認→最新 worker の再デプロイを推奨。
@@ -14777,7 +15076,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-25 10:55 progress: analysis/shape/step4-cache-session-cleanup — Start 経路で paused セッションが残ると Resume 表記が復活するため、`createSession` で paused セッションは常に破棄して再生成するよう更新。
 - 2025-12-25 10:59 progress: analysis/shape/step4-cache-session-cleanup — Step4 の削除ボタンが中間/最終生成物の存在で有効化されるよう判定を拡張し、削除時に `shapeDB.vectorTiles` と `ShapeTileMetadataDB.featureMetadata` も消すよう更新。
 - 2025-12-25 11:03 progress: analysis/shape/step4-cache-session-cleanup — Step4 削除時の batchSessionId 永続クリアが WorkerClient 未取得でスキップされていた可能性があるため、WorkerBridge 経由で必ず save-draft を行うよう修正。
-- 2025-12-25 11:05 progress: analysis/shape/step4-cache-session-cleanup — Step4 で `simplifiedBuffers` の where({sessionId, stage}) が複合インデックス不足で警告を出すため、EphemeralGisDB に `[sessionId+stage]` の複合インデックスを追加。
+- 2025-12-25 11:05 progress: analysis/shape/step4-cache-session-cleanup — Step4 で `extractedBuffers` の where({sessionId, stage}) が複合インデックス不足で警告を出すため、EphemeralGisDB に `[sessionId+stage]` の複合インデックスを追加。
 - 2025-12-25 11:13 progress: analysis/shape/step4-cache-session-cleanup — Step5 の build 完了/失敗時に batchSessionId を自動クリアし、Resume 表記が残らないよう `useShapeBuildProgressStep` に終端ステータスのリセット処理を追加。
 - 2025-12-25 11:19 progress: analysis/shape/step4-cache-session-cleanup — ダウンロード進捗が「タスクがまだありません」に戻る現象に対し、tasks が空になった場合でも直近の tasks を保持して表示するよう `useShapeBuildProgressStep` にタスクの維持ロジックを追加。
 - 2025-12-25 11:27 progress: analysis/shape/step4-cache-session-cleanup — タスク表示が `(Title unavailable)` になる原因（task.stage が status 由来）を修正し、taskType を stage として返すよう `mapTaskRecordToBatchTask` を更新。GeoBoundaries の実在確認（release type metadata の事前チェック）を追加して未提供組み合わせを除外。
@@ -14955,8 +15254,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-22 16:09 progress: fix/shape/typecheck-progress-stage — statusToUnified のフォールバックを string 固定化し、mapTaskRecordToBatchTask の stage を status 由来へ変更して型整合を修正。
 - 2025-12-22 16:09 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。
 - 2025-12-22 16:09 done: fix/shape/typecheck-progress-stage — shape-plugin typecheck の progress mapping / stage 型エラーを解消。ロールバック: `plugins/shape-plugin/src/ui/hooks/progress/shapeProgressMapping.ts` と `plugins/shape-plugin/src/worker/api.ts` の差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する。
-- 2025-12-22 16:01 start: fix/shape/typecheck-bbox-sourceurl — spreadsheet-plugin typecheck で発生した shape-plugin の型エラー（BoundingBox/SimplifyTaskConfig/flatgeobuf）を解消する対応に着手。DoD: Kanban 記載どおり型エラー解消/運用ログ記載/検証結果記録。（Kanban: 1814）
-- 2025-12-22 16:04 progress: fix/shape/typecheck-bbox-sourceurl — BoundingBox を DataSourceStrategy へ変換するヘルパーを追加し、SimplifyTaskConfig に sourceUrl を補完、flatgeobuf の decode を型ガード付きで安全に変換。
+- 2025-12-22 16:01 start: fix/shape/typecheck-bbox-sourceurl — spreadsheet-plugin typecheck で発生した shape-plugin の型エラー（BoundingBox/ExtractTaskConfig/flatgeobuf）を解消する対応に着手。DoD: Kanban 記載どおり型エラー解消/運用ログ記載/検証結果記録。（Kanban: 1814）
+- 2025-12-22 16:04 progress: fix/shape/typecheck-bbox-sourceurl — BoundingBox を DataSourceStrategy へ変換するヘルパーを追加し、ExtractTaskConfig に sourceUrl を補完、flatgeobuf の decode を型ガード付きで安全に変換。
 - 2025-12-22 16:04 command: pnpm --filter @hierarchidb/spreadsheet-plugin typecheck — exit 0。
 - 2025-12-22 16:04 done: fix/shape/typecheck-bbox-sourceurl — spreadsheet-plugin typecheck の型エラーを解消。ロールバック: `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerDownloadAdapter.ts`, `plugins/shape-plugin/src/common/types/batch.ts`, `plugins/shape-plugin/src/services/batch/strategies/flatgeobuf.ts` の差分を revert し、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` を再実行する。
 - 2025-12-22 15:56 start: test/linker/resource-branch-ordering — linker-plugin の MapLibreStyle.version 型エラー（resourceTreeOrdering.ts）を解消する対応に着手。DoD: Kanban 記載どおりテスト有無確認/不足分追加/型エラー解消/運用ログ記載。（Kanban: 1810）
@@ -14999,7 +15298,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-22 10:32 progress: feat/ui-map/layer-style-composition — `ResourceLayerMap` を ui-map に追加し、ベースマップ選択・レイヤー絶対パス順ソート・スタイル上書きを適用する構成を実装。index export を更新。
 - 2025-12-22 21:48 start: feat/gis/location-route-query-api — styler-plugin の QueryAPI 公開パターンを踏襲し、location-plugin/route-plugin の成果物を LocationQueryAPI/RouteQueryAPI から取得可能にする対応に着手。DoD: Kanban 記載どおり QueryAPI 経由の取得、未連携の明記、typecheck 実行、運用ログ/ロールバック記載。
 - 2025-12-22 22:17 start: feat/runtime/delete-linked-gis-data — CoreDB nodes 削除に合わせて shape/location/route の永続DBと ephemeralDB を nodeId 単位で削除する対応に着手。DoD: Kanban 記載どおり削除連動/テーブル一覧/検証ログ/ロールバック記載。
-- 2025-12-22 22:30 progress: feat/runtime/delete-linked-gis-data — remove/removeSubtree の core handler から EntityLifecycleManager へ削除対象ノードを通知し、nodeType 別に group/relations + plugin DB を削除。対象: shape(ShapeDB: shapeEntities/batchSessions/batchTasks/features/featureIndices/featureBuffers/vectorTiles/tileBuffers/cache + EphemeralShapeDB rawBuffers/simplifiedBuffers/vectorTiles/sessions/cache), location(LocationEntities group/relations + EphemeralLocationDB vectorTiles/sessions/pendingSessions), route(RouteDatabase routes/workingCopies/routeCache/routeResults/routeCursors/pendingSessions)。route-ephemeral は未実装のため no-op。
+- 2025-12-22 22:30 progress: feat/runtime/delete-linked-gis-data — remove/removeSubtree の core handler から EntityLifecycleManager へ削除対象ノードを通知し、nodeType 別に group/relations + plugin DB を削除。対象: shape(ShapeDB: shapeEntities/batchSessions/batchTasks/features/featureIndices/featureBuffers/vectorTiles/tileBuffers/cache + EphemeralShapeDB rawBuffers/extractedBuffers/vectorTiles/sessions/cache), location(LocationEntities group/relations + EphemeralLocationDB vectorTiles/sessions/pendingSessions), route(RouteDatabase routes/workingCopies/routeCache/routeResults/routeCursors/pendingSessions)。route-ephemeral は未実装のため no-op。
 - 2025-12-22 22:31 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0。
 - 2025-12-22 22:04 progress: feat/gis/location-route-query-api — LocationQueryAPI/RouteQueryAPI の型と runtime-worker の QueryService/WorkerAPI/worker-bridge を追加。RouteDatabase に routeId index を追加し、routeResults に nodeId を保存するよう更新（RouteBatchSession/tabular materialize）。
 - 2025-12-22 22:04 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 2。LocationDialog/LocationPanel/BatchProgressDialog/LocationMapPreview 系の translations が unknown エラー、LocationPanel の LocationEntity で type/category が不足（既存課題）。
@@ -15007,7 +15306,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-22 10:33 note: test/linker/resource-branch-ordering/test/styler/node-merge-ordering/feat/ui-map/layer-style-composition — 検証コマンド（pnpm test/typecheck）は未実施。必要であれば実行する。
 - 2025-12-22 10:20 start: feat/shape/download-postprocess-strategy — shape-plugin の download/後処理/次ステージ生成をデータソース別ストラテジーで差し替え可能にする対応に着手。DoD: Kanban 記載どおり差し替え可能化/ExecPlan更新/運用ログ記載。（Kanban: 1807）
 - 2025-12-22 10:25 progress: feat/shape/download-postprocess-strategy — ExecPlan `plans/shape-download-postprocess-strategy.md` を作成し、戦略化の方針と検証手順を記載。
-- 2025-12-22 11:05 progress: feat/shape/download-postprocess-strategy — download/後処理ストラテジーのインターフェースと固定マップを追加し、SessionController を戦略経由で download→postprocess→simplify1 タスク生成へ変更。OSM/NaturalEarth/GADM/GeoBoundaries の戦略骨格を実装。
+- 2025-12-22 11:05 progress: feat/shape/download-postprocess-strategy — download/後処理ストラテジーのインターフェースと固定マップを追加し、SessionController を戦略経由で download→postprocess→extract1 タスク生成へ変更。OSM/NaturalEarth/GADM/GeoBoundaries の戦略骨格を実装。
 - 2025-12-22 11:20 progress: feat/shape/download-postprocess-strategy — 戦略のユニットテスト（GADM 1:1/NaturalEarth 分割）を追加し、OSM bbox 用の CountryMetadata 拡張と fetch options の tags/bbox 対応を反映。
 - 2025-12-22 11:34 command: pnpm --filter @hierarchidb/shape-plugin test -- src/services/batch/strategies/__tests__/DownloadStageStrategy.unit.test.ts — exit 1。`shape-batch-progress.headless.test.ts` が GeoBoundaries API へ fetch して失敗（ネットワーク未許可）。新規テスト単体の実行方法を見直す必要あり。
 - 2025-12-22 11:35 command: pnpm --filter @hierarchidb/shape-plugin exec vitest run --include src/headless/download-stage-strategy.headless.test.ts — exit 1。`--include` は vitest で未知のオプション。
@@ -15051,7 +15350,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-23 10:12 progress: feat/ui/treeconsole-folder-split — TreeNodeInfoPanel の購読イベントで subtree の別ノードを拾わないよう、event.node.id が page node と一致する場合のみ更新するガードを追加。
 - 2025-12-23 10:30 progress: feat/ui/treeconsole-folder-split — TreeConsolePanel で folder + md 以上の split view を実装し、TreeConsoleIntegration の2カラム構成を撤去。TreeConsolePanel に infoPanel/pageTreeNode を受け渡すよう調整。
 - 2025-12-23 10:40 progress: feat/ui/treeconsole-folder-split — split view 左カラムを垂直上寄せ（alignSelf: start）に変更。
-- 2025-12-22 06:58 progress: feat/shape/step5-task-titles — タスク入力データに URL/featureId などのメタを付与し、UI でステージ別タイトルを表示（download/simplify/vectorTiles）。
+- 2025-12-22 06:58 progress: feat/shape/step5-task-titles — タスク入力データに URL/featureId などのメタを付与し、UI でステージ別タイトルを表示（download/extract/vectorTiles）。
 - 2025-12-22 07:06 progress: feat/shape/step5-task-titles — タスク表示を独立コンポーネント化し、サマリの進捗バーをSVGのタスク矩形（未実行=灰/成功=緑/失敗=赤）で描画するよう更新。
 - 2025-12-22 07:10 progress: feat/shape/step5-task-titles — LRU pane header の Chip/アイコン色を failed 状態で赤になるよう補正（BuildStatus に failed を追加し、pane status を failed 優先に調整）。
 - 2025-12-22 07:17 start: fix/shape/step4-cache-actions — Step4 キャッシュ管理ボタンが失敗時に有効化されない問題の調査/修正に着手。DoD: Kanban 記載どおりキャッシュ/タスク削除導線の有効化、原因/影響範囲説明、運用ログ記載。
@@ -15092,23 +15391,23 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-22 04:32 start: fix/ui/plugin-icons-treeconsole — TreeConsole（パンくず/テーブル行）と PluginDialog 見出しで linker-plugin/timeline-plugin のアイコンがフォルダ表示になる問題を修正する対応に着手。DoD: Kanban 記載どおり正しいアイコン表示、回帰なし、運用ログ/ロールバック手順記載。（Kanban: 1790）
 - 2025-12-22 04:42 done: fix/ui/plugin-icons-treeconsole — TreeConsole の NodeTypeIcon に linker/timeline のアイコン定義を追加し、PluginDialog は IconRegistry を使って plugin icon を解決するよう修正。検証: 未実施。ロールバック: `packages/ui/treeconsole/breadcrumb/src/components/NodeTypeIcon.tsx` と `packages/plugin-ui-host/src/headless/usePluginDialogController.tsx` の差分を revert する。
 - 2025-12-21 21:12 start: fix/types/spreadsheet-shape-leak — spreadsheet の typecheck で shape-plugin 由来の型エラーが派生する経路を調査し、geojson 型不整合を修正する対応に着手。DoD: Kanban 記載どおり原因特定/型エラー解消/運用ログ更新/ロールバック手順記載。
-- 2025-12-21 21:20 progress: fix/types/spreadsheet-shape-leak — spreadsheet が参照する `@hierarchidb/runtime-worker` が plugin-registry（generated）を import し、そこから全プラグインの動的 import を含むため、TypeScript が shape-plugin の src を取り込む流れを確認。`LocalSimplifyAdapters` / `RuntimeWorkerDownloadAdapter` で `geojson` 変数名の衝突により `serialize` が unknown 参照になっていたため、`geojsonApi`/`featureCollection` へリネームして解消。
-- 2025-12-21 21:23 command: pnpm --filter @hierarchidb/spreadsheet-plugin typecheck — exit 2。`LocalSimplifyAdapters.ts` の `geojsonApi.serialize` に unknown が渡るため TS2345 が発生。
-- 2025-12-21 21:26 progress: fix/types/spreadsheet-shape-leak — `LocalSimplifyAdapters.ts` に `isFeatureCollection` 型ガードを追加し、`serialize` には `FeatureCollection` のみ渡すよう修正。該当箇所の featureCount も型に合わせて更新。
+- 2025-12-21 21:20 progress: fix/types/spreadsheet-shape-leak — spreadsheet が参照する `@hierarchidb/runtime-worker` が plugin-registry（generated）を import し、そこから全プラグインの動的 import を含むため、TypeScript が shape-plugin の src を取り込む流れを確認。`LocalExtractAdapters` / `RuntimeWorkerDownloadAdapter` で `geojson` 変数名の衝突により `serialize` が unknown 参照になっていたため、`geojsonApi`/`featureCollection` へリネームして解消。
+- 2025-12-21 21:23 command: pnpm --filter @hierarchidb/spreadsheet-plugin typecheck — exit 2。`LocalExtractAdapters.ts` の `geojsonApi.serialize` に unknown が渡るため TS2345 が発生。
+- 2025-12-21 21:26 progress: fix/types/spreadsheet-shape-leak — `LocalExtractAdapters.ts` に `isFeatureCollection` 型ガードを追加し、`serialize` には `FeatureCollection` のみ渡すよう修正。該当箇所の featureCount も型に合わせて更新。
 - 2025-12-21 21:27 command: pnpm --filter @hierarchidb/spreadsheet-plugin typecheck — exit 0。
-- 2025-12-21 21:28 done: fix/types/spreadsheet-shape-leak — runtime-worker が plugin-registry を介して全プラグインを参照するため、spreadsheet typecheck が shape-plugin を巻き込む構造であることを確認。shape 側の `geojson` 変数衝突を解消し、`FeatureCollection` 型ガードで `serialize` の型エラーを修正。検証: `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0。ロールバック: `plugins/shape-plugin/src/services/batch/adapters/{LocalSimplifyAdapters.ts,RuntimeWorkerDownloadAdapter.ts}` と `TASKS.md` の差分を revert し、同 typecheck を再実行する。
+- 2025-12-21 21:28 done: fix/types/spreadsheet-shape-leak — runtime-worker が plugin-registry を介して全プラグインを参照するため、spreadsheet typecheck が shape-plugin を巻き込む構造であることを確認。shape 側の `geojson` 変数衝突を解消し、`FeatureCollection` 型ガードで `serialize` の型エラーを修正。検証: `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0。ロールバック: `plugins/shape-plugin/src/services/batch/adapters/{LocalExtractAdapters.ts,RuntimeWorkerDownloadAdapter.ts}` と `TASKS.md` の差分を revert し、同 typecheck を再実行する。
 - 2025-12-21 21:30 progress: feat/gis/sdk-common — `@hierarchidb/gis-sdk` を追加し、`TilesDB` とベクトルタイル生成ロジックを SDK に移設。shape-plugin の簡略化/フィルタ処理を SDK の共通ユーティリティへ移動し、runtime-worker は SDK を呼ぶだけの構成へ移行中。
 - 2025-12-21 21:45 progress: feat/gis/sdk-common — Ephemeral DB の共通化を GIS SDK 側に実装（`EphemeralGisDB`）。shape-plugin の EphemeralShapeDB は SDK を継承する薄いラッパに置換し、共通 DB 定義・操作を SDK 側へ集約。
 - 2025-12-21 21:50 start: analysis/ui/location-components-shared — location-plugin の `src/components` を走査し、共通化できるもの/できないものを分類して命名案を整理する調査に着手。DoD: Kanban 記載どおり分類/根拠/命名案を提示し運用ログを更新。
 - 2025-12-21 22:05 done: analysis/ui/location-components-shared — location-plugin には `src/components` がなく、`src/ui/components` と `src/common/components` を対象に棚卸し。共通化候補は BatchProgressDialog/BatchParametersStep/SelectionStep/MapPreview など（要抽象化）、非共通は LocationDialog/LocationPanel/LocationDataSourceStep/LocationMapPreviewStep など（ドメイン依存が強い）と分類。`@hierarchidb/ui-XXXX` 命名案を整理。ロールバック: 調査記録のみのため差分なし（運用ログ追記を削除）。
 - 2025-12-21 21:54 start: analysis/ui/shape-components-shared — shape-plugin の components 相当（ui/common 配下）を走査し、共通化できるもの/できないものを分類する調査に着手。DoD: Kanban 記載どおり分類/根拠/再利用性評価を提示し運用ログを更新。
 - 2025-12-21 22:01 start: refactor/ui/shape-step-hooks — shape-plugin Step2 以降のコンポーネントを表示専用化し、ロジックをカスタムフックへ抽出する作業に着手。DoD: Kanban 記載どおりロジック抽出/フック化/運用ログ更新/ロールバック手順記載。
-- 2025-12-21 22:15 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 2。`@hierarchidb/gis-sdk` の依存解決（@turf/*, geojson, @maplibre/vt-pbf, @hierarchidb/common-types）と、`SimplificationConfigSection.tsx` の未使用変数、`useShapeDataSourceStep` の `licenseAgreedAt` 型不整合が残存。
+- 2025-12-21 22:15 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 2。`@hierarchidb/gis-sdk` の依存解決（@turf/*, geojson, @maplibre/vt-pbf, @hierarchidb/common-types）と、`ExtractionConfigSection.tsx` の未使用変数、`useShapeDataSourceStep` の `licenseAgreedAt` 型不整合が残存。
 - 2025-12-21 22:16 command: pnpm install --offline — exit 0。`@hierarchidb/gis-sdk` の依存リンクを更新（peer 警告あり）。
 - 2025-12-21 22:19 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。
-- 2025-12-21 22:20 progress: refactor/ui/shape-step-hooks — ShapeDataSource/ShapeCountrySelection/ShapeProcessingSettings/Download/Simplification/Tile/BuildProgress/Preview の各 Step でロジックをフックへ抽出し、BatchRecoveryDialog/ErrorDisplay もフック化。`plans/shape-step-hooks.md` を更新。
+- 2025-12-21 22:20 progress: refactor/ui/shape-step-hooks — ShapeDataSource/ShapeCountrySelection/ShapeProcessingSettings/Download/Extraction/Tile/BuildProgress/Preview の各 Step でロジックをフックへ抽出し、BatchRecoveryDialog/ErrorDisplay もフック化。`plans/shape-step-hooks.md` を更新。
 - 2025-12-21 22:30 start: refactor/ui/shape-shared-split — shape-plugin の複雑な Step/Hook を共通利用前提で分割する対応に着手。DoD: Kanban 記載どおり分割方針整理/適用/typecheck/運用ログ更新。
-- 2025-12-21 22:45 progress: refactor/ui/shape-shared-split — Preview/Build/Progress フックを分割し、Download/Simplification UI をサブコンポーネント化。共通利用を想定した hook/component 境界で整理。
+- 2025-12-21 22:45 progress: refactor/ui/shape-shared-split — Preview/Build/Progress フックを分割し、Download/Extraction UI をサブコンポーネント化。共通利用を想定した hook/component 境界で整理。
 - 2025-12-21 22:49 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。
 - 2025-12-21 22:50 done: refactor/ui/shape-shared-split — 分割作業完了。ロールバック: `plugins/shape-plugin/src/ui/{components,hooks}` と `plans/shape-shared-ui-split.md` の差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行。
 - 2025-12-21 23:16 start: refactor/ui/shape-shared-packages — shape-plugin の共通 UI/Hook を ui-gis/ui-batch へ移設する対応に着手。DoD: Kanban 記載どおり移設/参照更新/typecheck/運用ログ更新。
@@ -15122,7 +15421,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-22 00:22 done: refactor/ui/tabular-grid-naming — ui-tabular/ui-grid のパッケージ名と export を整理し、`TabularPreviewGrid`/`DataGridPreview` へ命名統一。参照元の import とドキュメント表記を更新。ロールバック: `packages/ui/{data-grid,tabular-extract}` と `tsconfig.base.json`、`plugins/**`、`docs/**` の差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する。
 - 2025-12-21 21:05 start: feat/gis/sdk-common — GIS 系プラグインの共通 SDK を設計し、runtime-worker から GIS 実装を分離する対応に着手。DoD: ExecPlan 作成、責務分離、共通 SDK 化、運用ログ更新、ロールバック手順記載。
 - 2025-12-21 20:40 start: fix/types/flatgeobuf-shpjs — flatgeobuf/shpjs の型解決エラーを共通宣言で解消する対応に着手。DoD: Kanban 記載どおり型解決、運用ログ更新、ロールバック手順記載。
-- 2025-12-21 20:54 done: fix/types/flatgeobuf-shpjs — flatgeobuf は公式型に合わせて `flatgeobuf` の `geojson` export を利用し、runtime-worker は JSON 入力で処理するよう変更。shpjs は `@types/shpjs` を利用し、独自宣言は撤去。検証: 未実施。ロールバック: `packages/runtime-worker/src/services/StageProcessingService.ts`、`plugins/shape-plugin/src/services/batch/adapters/{LocalSimplifyAdapters.ts,RuntimeWorkerDownloadAdapter.ts,RuntimeWorkerVectorTileAdapter.ts}`、`plugins/shape-plugin/src/headless/shape-batch-progress.headless.test.ts`、`plugins/shape-plugin/vitest.config.ts`、`global.d.ts` の差分を revert する。
+- 2025-12-21 20:54 done: fix/types/flatgeobuf-shpjs — flatgeobuf は公式型に合わせて `flatgeobuf` の `geojson` export を利用し、runtime-worker は JSON 入力で処理するよう変更。shpjs は `@types/shpjs` を利用し、独自宣言は撤去。検証: 未実施。ロールバック: `packages/runtime-worker/src/services/StageProcessingService.ts`、`plugins/shape-plugin/src/services/batch/adapters/{LocalExtractAdapters.ts,RuntimeWorkerDownloadAdapter.ts,RuntimeWorkerVectorTileAdapter.ts}`、`plugins/shape-plugin/src/headless/shape-batch-progress.headless.test.ts`、`plugins/shape-plugin/vitest.config.ts`、`global.d.ts` の差分を revert する。
 - 2025-12-21 20:44 done: fix/types/flatgeobuf-shpjs — `global.d.ts` に flatgeobuf/shpjs の module 宣言を追加して型解決を共通化。検証: 未実施。ロールバック: `global.d.ts` の差分を revert する。
 - 2025-12-21 20:26 start: fix/timeline/step-props-type — timeline-plugin steps-provider の StepComponentProps を PluginStepProps へ置換し、typecheck エラーを解消する対応に着手。DoD: Kanban/運用ログ更新、型置換、`pnpm --filter @hierarchidb/timeline-plugin typecheck` 結果記録、ロールバック手順記載。
 - 2025-12-21 20:27 command: pnpm --filter @hierarchidb/timeline-plugin typecheck — exit 0。
@@ -15131,12 +15430,12 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-21 16:42 start: fix/runtime-worker/flatgeobuf-geojson-import — StageProcessingService の flatgeobuf import 未解決（TS2307）を解消する対応に着手。DoD: Kanban 記載どおり typecheck 解消、運用ログ/ロールバック記載。
 - 2025-12-21 16:44 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0。
 - 2025-12-21 16:45 done: fix/runtime-worker/flatgeobuf-geojson-import — runtime-worker に `flatgeobuf/lib/mjs/geojson` の型宣言を追加し typecheck を解消。ロールバック: `packages/runtime-worker/src/types/flatgeobuf.d.ts` の差分を revert し、同 typecheck を再実行する。
-- 2025-12-21 16:45 start: fix/shape/hybrid-filter-config-typing — SimplificationConfigSection の hybridFilterConfig 型不整合（TS2322）を解消する対応に着手。DoD: Kanban 記載どおり typecheck 解消、運用ログ/ロールバック記載。
-- 2025-12-21 16:47 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 2。既存エラー: featureFiltering の未使用変数/geometrySimplify の型不整合。
-- 2025-12-21 16:47 done: fix/shape/hybrid-filter-config-typing — HybridFilterConfig の default を補完して TS2322 を解消。ロールバック: `plugins/shape-plugin/src/ui/components/steps/SimplificationConfigSection.tsx` の差分を revert し、同 typecheck を再実行する。
-- 2025-12-21 18:39 start: fix/shape/filtering-geometry-types — featureFiltering/geometrySimplify の typecheck エラー（TS6133/TS2322/TS2339）を解消する対応に着手。DoD: Kanban 記載どおり typecheck 解消、運用ログ/ロールバック記載。
+- 2025-12-21 16:45 start: fix/shape/hybrid-filter-config-typing — ExtractionConfigSection の hybridFilterConfig 型不整合（TS2322）を解消する対応に着手。DoD: Kanban 記載どおり typecheck 解消、運用ログ/ロールバック記載。
+- 2025-12-21 16:47 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 2。既存エラー: featureFiltering の未使用変数/geometryExtract の型不整合。
+- 2025-12-21 16:47 done: fix/shape/hybrid-filter-config-typing — HybridFilterConfig の default を補完して TS2322 を解消。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ExtractionConfigSection.tsx` の差分を revert し、同 typecheck を再実行する。
+- 2025-12-21 18:39 start: fix/shape/filtering-geometry-types — featureFiltering/geometryExtract の typecheck エラー（TS6133/TS2322/TS2339）を解消する対応に着手。DoD: Kanban 記載どおり typecheck 解消、運用ログ/ロールバック記載。
 - 2025-12-21 18:40 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。
-- 2025-12-21 18:40 done: fix/shape/filtering-geometry-types — hybrid フィルタのパラメータ反映と GeometryCollection 対応の量子化処理を追加。ロールバック: `plugins/shape-plugin/src/services/batch/utils/{featureFiltering.ts,geometrySimplify.ts}` の差分を revert し、同 typecheck を再実行する。
+- 2025-12-21 18:40 done: fix/shape/filtering-geometry-types — hybrid フィルタのパラメータ反映と GeometryCollection 対応の量子化処理を追加。ロールバック: `plugins/shape-plugin/src/services/batch/utils/{featureFiltering.ts,geometryExtract.ts}` の差分を revert し、同 typecheck を再実行する。
 - 2025-12-21 15:15 start: analysis/shape/src-unused-inventory — shape-plugin/src の未使用ファイル/関数を棚卸しする調査に着手。DoD: 未使用候補一覧と根拠、運用ログ更新。
 - 2025-12-21 15:20 progress: analysis/shape/src-unused-inventory — `rg` と簡易スクリプトで未参照のファイル/関数候補を抽出し、repo 内参照の有無を確認。
 - 2025-12-21 15:24 done: analysis/shape/src-unused-inventory — 未使用候補（ファイル/関数）一覧を作成して報告。ロールバック: 調査記録のみのため差分なし。
@@ -15150,12 +15449,12 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-21 13:55 done: analysis/shape/step5-batch-flow — 未実装/不備を整理。主な指摘: (1) バッチタスクの DB 登録が未実装で `getBatchTasks` は常に空（`plugins/shape-plugin/src/services/database/ShapeDB.ts` の `createBatchTask` が未使用、`BatchSessionManager`/各 Adapter で登録なし）。(2) `BatchSessionManager.createSession` が既存セッションを無条件に返すため、完了/失敗済みでも再実行で新セッションが作られず処理が走らない（`plugins/shape-plugin/src/services/batch/BatchSessionManager.ts`）。(3) 進捗購読の unsubscribe が no-op（`UnifiedShapeBatchManager.onBatchProgress`）で、`BatchSessionManager.onProgress` に解除手段がなく UI 側の購読解除が効かない。 (4) `getBatchSessionStatus` の基準となる `shapeDB.batchSessions.progress` が更新されず、ポーリング fallback は進捗が初期値のまま（`BatchSessionManager` の updateProgress がコメントアウト）。
 - 2025-12-21 14:05 start: fix/shape/step5-batch-impl — Step5 のタスク登録・再ビルド・進捗解除・進捗更新を補強する対応に着手。DoD: Kanban/運用ログ更新、タスク登録/更新、再ビルド可能化、unsubscribe 対応、進捗更新、typecheck 結果記録。
 - 2025-12-21 14:20 progress: fix/shape/step5-batch-impl — BatchSessionManager で完了/失敗時のセッション再作成と progress 永続化、progress unsubscribe 対応を追加。SessionController で各 Stage のタスク登録を行い、各 Adapter で task status/progress を更新するよう補強。
-- 2025-12-21 14:25 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 2。既存エラーが残存: runtime-worker StageProcessingService の型, shape-plugin の featureFiltering/geometrySimplify/SimplificationConfigSection/TileConfigSection 由来の型・未使用変数エラー（詳細はコマンドログ参照）。
-- 2025-12-21 14:26 done: fix/shape/step5-batch-impl — Step5 タスク登録/更新、セッション再作成、unsubscribe、progress 永続化を実装。ロールバック: `plugins/shape-plugin/src/services/database/ShapeDB.ts`、`plugins/shape-plugin/src/services/batch/{BatchSessionManager.ts,UnifiedShapeBatchManager.ts,SessionController.ts}`、`plugins/shape-plugin/src/services/batch/adapters/{RuntimeWorkerDownloadAdapter.ts,LocalSimplifyAdapters.ts,RuntimeWorkerVectorTileAdapter.ts}` の差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する。
+- 2025-12-21 14:25 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 2。既存エラーが残存: runtime-worker StageProcessingService の型, shape-plugin の featureFiltering/geometryExtract/ExtractionConfigSection/TileConfigSection 由来の型・未使用変数エラー（詳細はコマンドログ参照）。
+- 2025-12-21 14:26 done: fix/shape/step5-batch-impl — Step5 タスク登録/更新、セッション再作成、unsubscribe、progress 永続化を実装。ロールバック: `plugins/shape-plugin/src/services/database/ShapeDB.ts`、`plugins/shape-plugin/src/services/batch/{BatchSessionManager.ts,UnifiedShapeBatchManager.ts,SessionController.ts}`、`plugins/shape-plugin/src/services/batch/adapters/{RuntimeWorkerDownloadAdapter.ts,LocalExtractAdapters.ts,RuntimeWorkerVectorTileAdapter.ts}` の差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する。
 - 2025-12-21 14:40 start: test/shape/headless-batch-progress — shapePluginAPI.startBatchProcessing を用いた headless バッチ処理の結合テストを追加し、progress callback で完了判定する流れを検証する対応に着手。DoD: Kanban/運用ログ更新、テスト追加、検証コマンド結果記録、ロールバック手順記載。
 - 2025-12-21 15:05 progress: test/shape/headless-batch-progress — headless テストを `plugins/shape-plugin/src/headless/shape-batch-progress.headless.test.ts` に追加し、DataSourceStrategyFactory/RuntimeWorkerClient をモック。vitest alias を `@hierarchidb/runtime-worker`/`@hierarchidb/ui-worker-client`/`@hierarchidb/common-api`/`@hierarchidb/common-types` の実パスへ補正。
-- 2025-12-21 15:10 command: pnpm --filter @hierarchidb/shape-plugin test:run -- src/headless/shape-batch-progress.headless.test.ts — exit 124（timeout）。途中ログで headless テストは download→simplify→vectorTiles を通過し完了ログまで到達したが、同時に既存テスト failure（data-source-normalization: createDraftFromEntity 未定義）があり、終了まで待てずタイムアウト。
-- 2025-12-21 15:20 command: pnpm --filter @hierarchidb/shape-plugin test:run -- src/headless/shape-batch-progress.headless.test.ts — exit 124（timeout）。エイリアス補正後も data-source-normalization の既存 failure が残り、headless テストはログ上 download/simplify/vectorTiles を通過。完走確認はタイムアウトのため未確定。
+- 2025-12-21 15:10 command: pnpm --filter @hierarchidb/shape-plugin test:run -- src/headless/shape-batch-progress.headless.test.ts — exit 124（timeout）。途中ログで headless テストは download→extract→vectorTiles を通過し完了ログまで到達したが、同時に既存テスト failure（data-source-normalization: createDraftFromEntity 未定義）があり、終了まで待てずタイムアウト。
+- 2025-12-21 15:20 command: pnpm --filter @hierarchidb/shape-plugin test:run -- src/headless/shape-batch-progress.headless.test.ts — exit 124（timeout）。エイリアス補正後も data-source-normalization の既存 failure が残り、headless テストはログ上 download/extract/vectorTiles を通過。完走確認はタイムアウトのため未確定。
 - 2025-12-21 15:30 progress: test/shape/headless-batch-progress — createDraftFromEntity / mapDraftToUpdates を utils に復帰し、data-source-normalization の既存 failure を解消。headless テストの完了条件を progress + session status の両方で確認するよう調整。
 - 2025-12-21 15:32 command: pnpm --filter @hierarchidb/shape-plugin test:run -- src/headless/shape-batch-progress.headless.test.ts — exit 0。headless テスト単体がパス（他の UI hooks テストは skipped）。
 - 2025-12-21 15:35 done: test/shape/headless-batch-progress — headless バッチ進捗テストの追加と既存失敗の修復を完了。ロールバック: `plugins/shape-plugin/src/headless/shape-batch-progress.headless.test.ts`、`plugins/shape-plugin/vitest.config.ts`、`plugins/shape-plugin/src/services/utils/utils.ts` の差分を revert し、`pnpm --filter @hierarchidb/shape-plugin test:run -- src/headless/shape-batch-progress.headless.test.ts` を再実行する。
@@ -15177,18 +15476,18 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-21 14:47 command: pnpm --filter @hierarchidb/gen-iso3166-2 build — exit 0（tsdown define の invalid option warning/PLUGIN_TIMINGS warning）。
 - 2025-12-21 14:48 done: fix/tools/iso3166-2-entrypoints — entry 分離と import 更新を完了。検証: `pnpm --filter @hierarchidb/gen-iso3166-2 build` exit 0（tsdown warning あり）。ロールバック: `packages/tools/gen-iso3166-2/{package.json,src/{browser.ts,store.browser.ts}}`、`app/vite.config.ts`、`packages/ui/country-select/src/hooks/useIsoCountries.ts` の差分を revert し、`pnpm --filter @hierarchidb/gen-iso3166-2 build` を再実行。
 - 2025-12-21 13:20 start: fix/shape/step4-processing-apply — Step4 の追加設定（Download/Filter/Tile）を実処理へ反映する対応に着手。DoD: 反映経路の実装、影響箇所の確認、運用ログとロールバック手順記載。
-- 2025-12-21 13:50 progress: fix/shape/step4-processing-apply — Download の timeout/retry を adapter に反映し、Simplify1/2 をローカル処理化（最小面積フィルタ/簡略化/量子化）、runtime-worker のタイル生成が EphemeralDB の FlatGeoBuf を読み込んでズーム/タイル数しきい値に従うよう調整。i18n の「未反映」表記を更新。
-- 2025-12-21 13:55 done: fix/shape/step4-processing-apply — Step4 の追加設定が実処理に反映されるように補強。中間保存は FlatGeoBuf に統一。ロールバック: `plugins/shape-plugin/src/services/batch/{SessionController.ts,adapters/RuntimeWorkerDownloadAdapter.ts,adapters/RuntimeWorkerVectorTileAdapter.ts,adapters/LocalSimplifyAdapters.ts,utils/{featureFiltering.ts,geometrySimplify.ts}}`、`plugins/shape-plugin/src/services/database/EphemeralShapeDB.ts`、`plugins/shape-plugin/src/common/types/batch.ts`、`plugins/shape-plugin/src/ui/locales/{en,ja}.json`、`packages/runtime-worker/src/{types.ts,services/StageProcessingService.ts}` の差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する。
-- 2025-12-21 14:10 done: fix/shape/min-area-range — 最小フィーチャー面積の範囲を 1–100 平方km、初期値を 5 平方km に更新。ロールバック: `plugins/shape-plugin/src/common/types/constants.ts` と `plugins/shape-plugin/src/ui/components/steps/SimplificationConfigSection.tsx` の差分を revert する。
-- 2025-12-21 14:25 done: fix/shape/tolerance-range-degrees — 簡略化許容値を度単位に明記し、範囲を 0.001–0.1 に変更。ヘルプに東京付近での距離換算を追記。ロールバック: `plugins/shape-plugin/src/ui/components/steps/SimplificationConfigSection.tsx` と `plugins/shape-plugin/src/ui/locales/{en,ja}.json` の差分を revert する。
+- 2025-12-21 13:50 progress: fix/shape/step4-processing-apply — Download の timeout/retry を adapter に反映し、Extract1/2 をローカル処理化（最小面積フィルタ/簡略化/量子化）、runtime-worker のタイル生成が EphemeralDB の FlatGeoBuf を読み込んでズーム/タイル数しきい値に従うよう調整。i18n の「未反映」表記を更新。
+- 2025-12-21 13:55 done: fix/shape/step4-processing-apply — Step4 の追加設定が実処理に反映されるように補強。中間保存は FlatGeoBuf に統一。ロールバック: `plugins/shape-plugin/src/services/batch/{SessionController.ts,adapters/RuntimeWorkerDownloadAdapter.ts,adapters/RuntimeWorkerVectorTileAdapter.ts,adapters/LocalExtractAdapters.ts,utils/{featureFiltering.ts,geometryExtract.ts}}`、`plugins/shape-plugin/src/services/database/EphemeralShapeDB.ts`、`plugins/shape-plugin/src/common/types/batch.ts`、`plugins/shape-plugin/src/ui/locales/{en,ja}.json`、`packages/runtime-worker/src/{types.ts,services/StageProcessingService.ts}` の差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する。
+- 2025-12-21 14:10 done: fix/shape/min-area-range — 最小フィーチャー面積の範囲を 1–100 平方km、初期値を 5 平方km に更新。ロールバック: `plugins/shape-plugin/src/common/types/constants.ts` と `plugins/shape-plugin/src/ui/components/steps/ExtractionConfigSection.tsx` の差分を revert する。
+- 2025-12-21 14:25 done: fix/shape/tolerance-range-degrees — 簡略化許容値を度単位に明記し、範囲を 0.001–0.1 に変更。ヘルプに東京付近での距離換算を追記。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ExtractionConfigSection.tsx` と `plugins/shape-plugin/src/ui/locales/{en,ja}.json` の差分を revert する。
 - 2025-12-21 14:40 done: fix/shape/step4-validation-range — Step4 の最小面積しきい値検証を 1–100 平方km に合わせて修正。ロールバック: `plugins/shape-plugin/src/services/utils/utils.ts` の差分を revert する。
-- 2025-12-21 14:55 done: fix/shape/area-filter-card — Step4 の面積フィルターをカード化し、最小頂点数スライダーと最小面積（track=inverted）スライダーを統合。ロールバック: `plugins/shape-plugin/src/ui/components/steps/SimplificationConfigSection.tsx` と `plugins/shape-plugin/src/ui/locales/{en,ja}.json` の差分を revert する。
-- 2025-12-21 15:10 done: fix/shape/remove-regular-shape-filter — 正規形状フィルター（regularShapeMinRatio/MaxRatio）をUIと処理から除去。ロールバック: `plugins/shape-plugin/src/services/batch/utils/featureFiltering.ts` と `plugins/shape-plugin/src/ui/components/steps/SimplificationConfigSection.tsx`、`plugins/shape-plugin/src/ui/locales/{en,ja}.json` の差分を revert する。
-- 2025-12-21 15:20 done: fix/shape/remove-aspect-ratio-threshold — アスペクト比しきい値をUIと処理から除去。ロールバック: `plugins/shape-plugin/src/services/batch/utils/featureFiltering.ts`、`plugins/shape-plugin/src/services/batch/adapters/LocalSimplifyAdapters.ts`、`plugins/shape-plugin/src/ui/components/steps/SimplificationConfigSection.tsx`、`plugins/shape-plugin/src/ui/locales/{en,ja}.json` の差分を revert する。
-- 2025-12-21 15:35 done: fix/shape/inverted-threshold-sliders — 最小面積/最小頂点数/クイック除外しきい値のスライダーを track=inverted へ変更。ロールバック: `plugins/shape-plugin/src/ui/components/steps/SimplificationConfigSection.tsx` の差分を revert する。
+- 2025-12-21 14:55 done: fix/shape/area-filter-card — Step4 の面積フィルターをカード化し、最小頂点数スライダーと最小面積（track=inverted）スライダーを統合。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ExtractionConfigSection.tsx` と `plugins/shape-plugin/src/ui/locales/{en,ja}.json` の差分を revert する。
+- 2025-12-21 15:10 done: fix/shape/remove-regular-shape-filter — 正規形状フィルター（regularShapeMinRatio/MaxRatio）をUIと処理から除去。ロールバック: `plugins/shape-plugin/src/services/batch/utils/featureFiltering.ts` と `plugins/shape-plugin/src/ui/components/steps/ExtractionConfigSection.tsx`、`plugins/shape-plugin/src/ui/locales/{en,ja}.json` の差分を revert する。
+- 2025-12-21 15:20 done: fix/shape/remove-aspect-ratio-threshold — アスペクト比しきい値をUIと処理から除去。ロールバック: `plugins/shape-plugin/src/services/batch/utils/featureFiltering.ts`、`plugins/shape-plugin/src/services/batch/adapters/LocalExtractAdapters.ts`、`plugins/shape-plugin/src/ui/components/steps/ExtractionConfigSection.tsx`、`plugins/shape-plugin/src/ui/locales/{en,ja}.json` の差分を revert する。
+- 2025-12-21 15:35 done: fix/shape/inverted-threshold-sliders — 最小面積/最小頂点数/クイック除外しきい値のスライダーを track=inverted へ変更。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ExtractionConfigSection.tsx` の差分を revert する。
 - 2025-12-21 15:45 done: fix/shape/label-min-area-vertex — 最小頂点数/最小面積の見出し文言を更新。ロールバック: `plugins/shape-plugin/src/ui/locales/{en,ja}.json` の差分を revert する。
-- 2025-12-21 16:05 done: fix/shape/step4-card-grouping — Step4 を Area Filter / Simplification / Precision & Compression のカード構成へ再編し、クイック除外しきい値をlogスケール、量子化をRank表示へ変更。ロールバック: `plugins/shape-plugin/src/ui/components/steps/SimplificationConfigSection.tsx` と `plugins/shape-plugin/src/ui/locales/{en,ja}.json` の差分を revert する。
-- 2025-12-21 16:30 done: fix/shape/step4-card-layout-columns — Area Filter を2カラム化し、右カラムに Simplification/Precision を上下配置。クイック除外のlog刻み幅を0.1、量子化候補を 1e2/3e2/1e3/3e3/1e4 に調整。ロールバック: `plugins/shape-plugin/src/ui/components/steps/SimplificationConfigSection.tsx` の差分を revert する。
+- 2025-12-21 16:05 done: fix/shape/step4-card-grouping — Step4 を Area Filter / Extraction / Precision & Compression のカード構成へ再編し、クイック除外しきい値をlogスケール、量子化をRank表示へ変更。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ExtractionConfigSection.tsx` と `plugins/shape-plugin/src/ui/locales/{en,ja}.json` の差分を revert する。
+- 2025-12-21 16:30 done: fix/shape/step4-card-layout-columns — Area Filter を2カラム化し、右カラムに Extraction/Precision を上下配置。クイック除外のlog刻み幅を0.1、量子化候補を 1e2/3e2/1e3/3e3/1e4 に調整。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ExtractionConfigSection.tsx` の差分を revert する。
 - 2025-12-21 08:10 start: feat/shape/step5-stage-task-list — Step5 のステージ別タスク一覧＋進捗可視化の実装に着手。DoD: ExecPlan 作成、Worker→UI のタスク一覧供給、Pane のタスク一覧表示、件数チップ更新、検証ログとロールバック記載。
 - 2025-12-21 08:25 progress: feat/shape/step5-stage-task-list — ExecPlan を `plans/shape-step5-stage-task-list.md` に作成。
 - 2025-12-21 09:10 progress: feat/shape/step5-stage-task-list — WorkerAPI に getBatchTasks を追加し、worker entry で module export の `getBatchTaskSummaries` を解決して供給。shape-plugin worker 側でタスク取得実装、Step5 でタスク一覧 UI と PaneHeader 件数を表示するよう更新。
@@ -15226,7 +15525,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-21 11:10 progress: feat/shape/step4-step5-config-sync — Step5 の Start/Resume 前に TreeNodeUpdaterAPI の save-draft を実行し、worker runtime 側は draftData を TreeNodeUpdaterAPI から読み直して startBatchProcessing へ渡すよう補強。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx` と `app/src/worker-runtime/worker.ts` の差分を revert。
 - 2025-12-21 11:20 progress: feat/shape/step4-step5-config-sync — Step5 の停止（Pause）でも Save Draft を実行する対応に着手。DoD: 保存失敗時は停止を中断し警告、保存は TreeNodeUpdaterAPI の save-draft。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx` の差分を revert。
 - 2025-12-21 11:25 progress: feat/shape/step4-step5-config-sync — Pause 操作前に save-draft を実行し、保存失敗時は停止を中断するように実装。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx` の差分を revert。
-- 2025-12-21 11:50 progress: feat/shape/step4-step5-config-sync — Step4 の追加フォームに help 文言を追加し、リトライ回数/間隔の順序を入れ替え、リトライ回数の Rating をチェックマーク表示へ変更。simplify/tile の未反映項目は help に注記。download の retryDelay 設定が retryAttempts を参照していた不具合も修正。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/{DownloadConfigSection,SimplificationConfigSection,TileConfigSection}.tsx`、`plugins/shape-plugin/src/ui/locales/{en,ja}.json`、`plugins/shape-plugin/src/services/batch/SessionController.ts` の差分を revert。
+- 2025-12-21 11:50 progress: feat/shape/step4-step5-config-sync — Step4 の追加フォームに help 文言を追加し、リトライ回数/間隔の順序を入れ替え、リトライ回数の Rating をチェックマーク表示へ変更。extract/tile の未反映項目は help に注記。download の retryDelay 設定が retryAttempts を参照していた不具合も修正。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/{DownloadConfigSection,ExtractionConfigSection,TileConfigSection}.tsx`、`plugins/shape-plugin/src/ui/locales/{en,ja}.json`、`plugins/shape-plugin/src/services/batch/SessionController.ts` の差分を revert。
 - 2025-12-20 00:20 start: analysis/basemap/step3-drag-once — basemap Step3 のドラッグが初回のみ反応する問題の原因分析に着手。DoD: 原因/影響範囲の整理、修正案提示、運用ログ記録。branch 作成不可なら main 作業。
 - 2025-12-20 00:32 progress: analysis/basemap/step3-drag-once — ViewportStep が onMove のたびに onChange を発火し、上位 draft 更新→value 変更→useEffect 同期/jumpTo が走るため、ドラッグ中に状態同期が割り込む構造を確認。修正案: (1) onMove では local state/ref のみ更新し、onMoveEnd でのみ onChange 反映、(2) Jotai/ref に一時保持し drag end で commit、(3) onChange を debounce/throttle し、同期 effect では map.isMoving 中の jumpTo を抑制。
 - 2025-12-20 00:34 done: analysis/basemap/step3-drag-once — 原因と修正案を整理済み。ロールバック: 調査記録のみのため差分なし。
@@ -15306,16 +15605,16 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-20 11:11 start: fix/basemap/i18n-resource-registration — basemap-plugin の i18n リソース登録を他プラグインと同様に追加する対応に着手。DoD: Kanban/運用ログ更新、i18n 参照反映、確認ログとロールバック手順記載。
 - 2025-12-20 11:12 progress: fix/basemap/i18n-resource-registration — `plugins/basemap-plugin/src/ui/i18n.ts` を追加し、`ui/index.ts` で import。`locales/en.json` と `locales/ja.json` を追加して addResourceBundle 登録に対応。
 - 2025-12-20 11:13 done: fix/basemap/i18n-resource-registration — basemap-plugin の i18n リソース登録を追加して Step2/Step3 の文言が再評価されるように修正。検証: UI 表示確認は未実施。ロールバック: `plugins/basemap-plugin/src/ui/i18n.ts`、`plugins/basemap-plugin/src/ui/index.ts`、`plugins/basemap-plugin/src/ui/locales/*.json` の差分を revert し、表示確認を再実行する。
-- 2025-12-20 11:38 start: fix/shape/simplification-tolerance-slider — Simplification Tolerance (meters) を WorkerSliderCard から通常 Slider へ変更する対応に着手。DoD: Kanban/運用ログ更新、挙動維持、確認ログとロールバック手順記載。
-- 2025-12-20 11:39 done: fix/shape/simplification-tolerance-slider — Simplification Tolerance を通常 Slider へ置換し、更新ロジックと disabled 制御を維持。検証: UI 表示確認は未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/SimplificationConfigSection.tsx` の差分を revert し、表示確認を再実行する。
+- 2025-12-20 11:38 start: fix/shape/extraction-tolerance-slider — Extraction Tolerance (meters) を WorkerSliderCard から通常 Slider へ変更する対応に着手。DoD: Kanban/運用ログ更新、挙動維持、確認ログとロールバック手順記載。
+- 2025-12-20 11:39 done: fix/shape/extraction-tolerance-slider — Extraction Tolerance を通常 Slider へ置換し、更新ロジックと disabled 制御を維持。検証: UI 表示確認は未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ExtractionConfigSection.tsx` の差分を revert し、表示確認を再実行する。
 - 2025-12-20 11:44 start: fix/shape/remove-filter-toggle — Step4 の Enable Feature Filtering を撤去し、enableFiltering を削除する対応に着手。DoD: Kanban/運用ログ更新、分岐常時実行、確認ログとロールバック手順記載。
-- 2025-12-20 11:45 done: fix/shape/remove-filter-toggle — SimplificationConfigSection からスイッチ/分岐を削除し、enableFiltering を型/デフォルト/worker/config から撤去。フィルタ処理は常時有効化。検証: UI 表示確認は未実施。ロールバック: 該当差分を revert し、表示確認を再実行する。
+- 2025-12-20 11:45 done: fix/shape/remove-filter-toggle — ExtractionConfigSection からスイッチ/分岐を削除し、enableFiltering を型/デフォルト/worker/config から撤去。フィルタ処理は常時有効化。検証: UI 表示確認は未実施。ロールバック: 該当差分を revert し、表示確認を再実行する。
 - 2025-12-20 11:48 start: refactor/shape/worker-rating-card — WorkerSliderCard を WorkerNumberConfigCard へ改名し、Rating UI に置換する対応に着手。DoD: Kanban/運用ログ更新、表示変更、確認ログとロールバック手順記載。
 - 2025-12-20 11:49 done: refactor/shape/worker-rating-card — WorkerNumberConfigCard を追加し、Slider を Rating へ置換。人数表示を「N Workers」形式に変更し、各 Step 参照を更新。検証: UI 表示確認は未実施。ロールバック: 該当差分を revert し、表示確認を再実行する。
 - 2025-12-20 11:58 start: fix/shape/worker-card-icon — WorkerNumberConfigCard の先頭アイコンを任意指定可能にする対応に着手。DoD: Kanban/運用ログ更新、CloudDownload 指定、確認ログとロールバック手順記載。
 - 2025-12-20 11:59 done: fix/shape/worker-card-icon — WorkerNumberConfigCard に icon props を追加し、Concurrent Downloads に CloudDownload アイコンを表示。検証: UI 表示確認は未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/WorkerNumberConfigCard.tsx` と `plugins/shape-plugin/src/ui/components/steps/DownloadConfigSection.tsx` の差分を revert し、表示確認を再実行する。
-- 2025-12-20 14:15 start: fix/shape/step4-layout-and-download-retain — Step4 の Simplification/Tile の 3分割レイアウト化と Cleanup 移設に着手。DoD: Kanban/運用ログ更新、レイアウト変更、Retain スイッチ移設、確認ログとロールバック手順記載。
-- 2025-12-20 14:16 done: fix/shape/step4-layout-and-download-retain — Simplification の Filtering/Area/Tolerance を Grid 3分割配置、Tile の Workers/Buffer/MaxZoom を Grid 3分割配置。Cleanup アコーディオン削除し、Retain downloaded files スイッチを Download の Worker カード右側へ移設。検証: UI 表示確認は未実施。ロールバック: 該当差分を revert し、表示確認を再実行する。
+- 2025-12-20 14:15 start: fix/shape/step4-layout-and-download-retain — Step4 の Extraction/Tile の 3分割レイアウト化と Cleanup 移設に着手。DoD: Kanban/運用ログ更新、レイアウト変更、Retain スイッチ移設、確認ログとロールバック手順記載。
+- 2025-12-20 14:16 done: fix/shape/step4-layout-and-download-retain — Extraction の Filtering/Area/Tolerance を Grid 3分割配置、Tile の Workers/Buffer/MaxZoom を Grid 3分割配置。Cleanup アコーディオン削除し、Retain downloaded files スイッチを Download の Worker カード右側へ移設。検証: UI 表示確認は未実施。ロールバック: 該当差分を revert し、表示確認を再実行する。
 - 2025-12-20 14:20 start: fix/shape/download-grid-delete-button — Download セクションを Grid 3分割に変更し、Delete Downloaded Files ボタンを追加する対応に着手。DoD: Kanban/運用ログ更新、件数表示、確認ログとロールバック手順記載。
 - 2025-12-20 14:21 done: fix/shape/download-grid-delete-button — Download の Grid を 3分割へ変更し、Retain スイッチ右側に Delete Downloaded Files ボタンを配置。件数は `draft.urlMetadata` 長さで表示し、0件時は無効化。検証: UI 表示確認は未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/{DownloadConfigSection,ShapeProcessingSettingsStep}.tsx` の差分を revert し、表示確認を再実行する。
 - 2025-12-20 14:35 start: fix/ui-lru-splitview/max-update-depth — LRUSplitView の Maximum update depth exceeded を解消する対応に着手。DoD: Kanban/運用ログ更新、依存整理、確認ログとロールバック手順記載。
@@ -15358,15 +15657,15 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-20 20:05 progress: fix/auth/recovery-return-to-step5 — 401 復帰時に auth_return_url/bff-auth-redirect-url を保存し、/auth/callback から Step5 へ戻る経路を強化。paused 表示からの Resume で同一 sessionId が再開される前提（sessionId=nodeId）を維持。
 - 2025-12-20 20:10 done: fix/auth/recovery-return-to-step5 — 401 復帰時の戻り先保存を追加し、Step5 に戻る導線を安定化。検証: 未実施。ロールバック: `app/src/entry.client.tsx` の差分を revert し、必要なら `pnpm --filter @hierarchidb/app typecheck` を再実行する。
 - 2025-12-21 11:56 start: fix/shape/step4-tile-range-inverted — Step4 の簡略化許容値の inverted 化、タイル設定のズーム範囲スライダー化/タイル数閾値撤去、量子化/ヘルプ文言更新、WorkerNumberConfigCard のアイコンサイズ変更に着手。DoD: UI/型/実処理の整合、i18n更新、ロールバック手順記載。
-- 2025-12-21 12:10 done: fix/shape/step4-tile-range-inverted — 簡略化許容値を inverted スライダー化し、タイル設定をズーム範囲スライダーへ変更してタイル数閾値/ズームレベル入力を撤去。座標値の量子化ラベルと★ヘルプを追加し、WorkerNumberConfigCard の Engineering アイコンを large 化。処理系は min/max ズームに統一して runtime-worker まで反映。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/{SimplificationConfigSection,TileConfigSection,WorkerNumberConfigCard}.tsx`、`plugins/shape-plugin/src/common/types/{processing,BatchConfig,constants}.ts`、`plugins/shape-plugin/src/worker/api.ts`、`plugins/shape-plugin/src/services/batch/{SessionController,adapters/RuntimeWorkerVectorTileAdapter}.ts`、`packages/runtime-worker/src/{types.ts,services/StageProcessingService.ts}` と i18n/テスト差分を revert し、必要なら `pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する。
+- 2025-12-21 12:10 done: fix/shape/step4-tile-range-inverted — 簡略化許容値を inverted スライダー化し、タイル設定をズーム範囲スライダーへ変更してタイル数閾値/ズームレベル入力を撤去。座標値の量子化ラベルと★ヘルプを追加し、WorkerNumberConfigCard の Engineering アイコンを large 化。処理系は min/max ズームに統一して runtime-worker まで反映。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/{ExtractionConfigSection,TileConfigSection,WorkerNumberConfigCard}.tsx`、`plugins/shape-plugin/src/common/types/{processing,BatchConfig,constants}.ts`、`plugins/shape-plugin/src/worker/api.ts`、`plugins/shape-plugin/src/services/batch/{SessionController,adapters/RuntimeWorkerVectorTileAdapter}.ts`、`packages/runtime-worker/src/{types.ts,services/StageProcessingService.ts}` と i18n/テスト差分を revert し、必要なら `pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する。
 - 2025-12-21 12:12 start: fix/shape/step4-card-padding-labels — Step4 のカードに左右パディング追加、タイル関連ラベルの文言見直しに着手。DoD: paddingLeft/Right 反映、i18n更新、ロールバック手順記載。
-- 2025-12-21 12:13 done: fix/shape/step4-card-padding-labels — Step4 の Slider/Rank を含むカードへ paddingLeft 8px / paddingRight 16px を追加し、タイルワーカー/タイルマージン文言を更新。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/{WorkerNumberConfigCard,SimplificationConfigSection,TileConfigSection}.tsx` と `plugins/shape-plugin/src/ui/locales/{en,ja}.json` の差分を revert する。
+- 2025-12-21 12:13 done: fix/shape/step4-card-padding-labels — Step4 の Slider/Rank を含むカードへ paddingLeft 8px / paddingRight 16px を追加し、タイルワーカー/タイルマージン文言を更新。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/{WorkerNumberConfigCard,ExtractionConfigSection,TileConfigSection}.tsx` と `plugins/shape-plugin/src/ui/locales/{en,ja}.json` の差分を revert する。
 - 2025-12-21 12:17 start: fix/shape/step4-slider-margins — Step4 スライダーの幅を90%にして左右余白を均等化。DoD: 対象スライダーの余白反映、ロールバック手順記載。
-- 2025-12-21 12:18 done: fix/shape/step4-slider-margins — Step4 スライダーに `width: 90%` と左右 auto マージンを追加して均等余白を確保。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/{SimplificationConfigSection,TileConfigSection}.tsx` の差分を revert する。
+- 2025-12-21 12:18 done: fix/shape/step4-slider-margins — Step4 スライダーに `width: 90%` と左右 auto マージンを追加して均等余白を確保。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/{ExtractionConfigSection,TileConfigSection}.tsx` の差分を revert する。
 - 2025-12-21 12:56 start: fix/shape/step4-slider-padding — Step4 スライダー幅を100%に戻し、左右パディングで余白を調整。DoD: paddingLeft/Right 反映、ロールバック手順記載。
-- 2025-12-21 12:57 done: fix/shape/step4-slider-padding — Step4 スライダーの `width: 90%` を撤去し、`paddingLeft/Right: 16px` 相当の `px: 2` を付与。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/{SimplificationConfigSection,TileConfigSection}.tsx` の差分を revert する。
+- 2025-12-21 12:57 done: fix/shape/step4-slider-padding — Step4 スライダーの `width: 90%` を撤去し、`paddingLeft/Right: 16px` 相当の `px: 2` を付与。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/{ExtractionConfigSection,TileConfigSection}.tsx` の差分を revert する。
 - 2025-12-21 12:58 start: fix/shape/step4-slider-overflow — Step4 スライダーがカードからはみ出す問題を修正。DoD: スライダーがカード内に収まり、余白も維持、ロールバック手順記載。
-- 2025-12-21 12:59 done: fix/shape/step4-slider-overflow — Slider 本体の padding を撤去し、外側 Box の左右パディングで余白を確保してはみ出しを解消。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/{SimplificationConfigSection,TileConfigSection}.tsx` の差分を revert する。
+- 2025-12-21 12:59 done: fix/shape/step4-slider-overflow — Slider 本体の padding を撤去し、外側 Box の左右パディングで余白を確保してはみ出しを解消。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/{ExtractionConfigSection,TileConfigSection}.tsx` の差分を revert する。
 - 2025-12-21 13:20 start: fix/shape/step5-start-enable — Step2〜Step4 が valid のとき Step5 の「ビルド開始」ボタンが enabled になるよう調整。DoD: valid 判定反映、既存 disabled 条件維持、ロールバック手順記載。
 - 2025-12-21 13:22 done: fix/shape/step5-start-enable — Step2〜Step4 の valid 判定（DataSource/Selection/ProcessingConfig）を満たすときのみ Build ボタンが有効になるよう更新。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx` の差分を revert する。
 - 2025-12-21 13:23 start: fix/shape/step3-country-table-height — Step3 国選択の仮想テーブルがダイアログ高さを使い切るようレイアウト調整。DoD: 余白解消、コンテント高さ一致、ロールバック手順記載。
@@ -15382,10 +15681,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-21 13:59 start: fix/dialog/persist-ui-state-on-close — ダイアログを閉じる操作でも dialogUIState を永続化。DoD: close時保存/既存Save挙動維持/ロールバック記載。
 - 2025-12-21 14:01 done: fix/dialog/persist-ui-state-on-close — キャンセル/バックドロップ/閉じる時に dialogUIState を save-draft で永続化（createモードは除外）。検証: 未実施。ロールバック: `packages/plugin-ui-host/src/headless/usePluginDialogController.tsx` の差分を revert する。
 - 2025-12-21 15:14 start: test/shape/headless-batch-progress — headless 結合テストを実データ取得/実 vectortile 生成で動かすよう更新し、cors-proxy/Authorization を使わずに fetch 直アクセスする検証に着手。DoD: 実データ取得、実処理経路、DBクリア、運用ログ/ロールバック記載。
-- 2025-12-21 16:23 progress: test/shape/headless-batch-progress — headless 結合テストを node 環境に切り替え、GeoBoundaries 直 fetch 用のテスト内パッチを追加。flatgeobuf の async generator 変換に合わせ、簡略化/ベクトルタイル経路を実データで完走できるよう補強（feature filtering / simplify fallback / StageProcessingService bbox 修正）。resolver/location plugin database の alias と flatgeobuf パス alias を追加。
+- 2025-12-21 16:23 progress: test/shape/headless-batch-progress — headless 結合テストを node 環境に切り替え、GeoBoundaries 直 fetch 用のテスト内パッチを追加。flatgeobuf の async generator 変換に合わせ、簡略化/ベクトルタイル経路を実データで完走できるよう補強（feature filtering / extract fallback / StageProcessingService bbox 修正）。resolver/location plugin database の alias と flatgeobuf パス alias を追加。
 - 2025-12-21 16:23 command: pnpm --filter @hierarchidb/shape-plugin test:run -- src/headless/shape-batch-progress.headless.test.ts — exit 0（headless 結合テスト成功）。
 - 2025-12-21 17:05 start: review/shape/headless-test-side-effects — headless 結合テストの alias/モック/runtime-worker 修正の副作用を評価し、実データ取得・vectortile 実処理の担保と最小化可否を確認する対応に着手。DoD: 実処理確認、過剰な副作用の削減可否判断、運用ログ記載。
-- 2025-12-21 17:20 done: review/shape/headless-test-side-effects — alias/モック/runtime-worker 修正の副作用を確認。runtime-worker の flatgeobuf async generator 対応と polygon bbox 計算は実処理の不具合修正であり維持が妥当。`@hierarchidb/*/database` alias は runtime-worker index→plugin-registry 経由で subpath 解決が必要なため削除不可。auth-recovery は dist 未生成のため mock 維持が最小。テストは fetch 直アクセス（cors-proxy/Authorization 不使用）と raw/simplify buffer + vectortile summary を検証済み。
+- 2025-12-21 17:20 done: review/shape/headless-test-side-effects — alias/モック/runtime-worker 修正の副作用を確認。runtime-worker の flatgeobuf async generator 対応と polygon bbox 計算は実処理の不具合修正であり維持が妥当。`@hierarchidb/*/database` alias は runtime-worker index→plugin-registry 経由で subpath 解決が必要なため削除不可。auth-recovery は dist 未生成のため mock 維持が最小。テストは fetch 直アクセス（cors-proxy/Authorization 不使用）と raw/extract buffer + vectortile summary を検証済み。
 - 2025-12-21 17:35 start: fix/shape/preview-flag-default-on — preview フラグ既定OFFをONへ変更。DoD: 既定値更新、理由/ロールバック記載。
 - 2025-12-21 17:36 done: fix/shape/preview-flag-default-on — `HDB_SHAPE_PREVIEW_METADATA` の既定値を true に変更。ロールバック: `plugins/shape-plugin/src/common/config/previewFlags.ts` の既定値を false に戻す。
 - 2025-12-21 18:05 start: fix/styler/step-progress-indicator — styler Step2〜5 初回遷移のブロッキング処理に対し progress indicator を追加する対応に着手。DoD: 進捗表示・i18n 追加・ロールバック記載。
@@ -15558,7 +15857,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-25 23:31 start: analysis/shape/src-unused-inventory — shape-plugin/src の未使用ファイル/関数/定数を棚卸しする調査に着手（Kanban: 1868）。DoD: 未使用候補一覧と根拠、削除/保留分類、運用ログ更新。
 - 2025-12-25 23:35 done: analysis/shape/src-unused-inventory — 未使用ファイル/関数/定数の候補を `rg` で再確認し一覧化（削除/保留を分類）。検証: `rg` 検索。ロールバック: 調査のみのため差分なし（運用ログ追記を削除）。
 - 2025-12-26 01:21 start: chore/shape/prune-unused-src — shape-plugin の削除候補（ファイル/関数）を削除する対応に着手。DoD: Kanban 記載どおり削除対象の削除、typecheck 結果記録、運用ログ/ロールバック記載。（Kanban: 1886）
-- 2025-12-26 01:25 done: chore/shape/prune-unused-src — 未使用のモック関数（generateMock* / generateSampleCheckboxMatrix / calculateEstimatedProcessingTime）と ShapeErrorFactory / validateShapeName / isShapeBatchAPIV2Enabled / getCategoryLabel / getCategoryColor を削除。未参照ファイル（demo.ts/manual-test.ts/RuntimeWorkerSimplifyAdapters.ts/useWorkerAPIClient.ts）も削除。検証: `pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。ロールバック: `plugins/shape-plugin/src/common/{mock/data.ts,types/ShapeErrorHierarchy.ts,types/category-types.ts}`, `plugins/shape-plugin/src/services/{batch/UnifiedShapeBatchManager.ts,utils/utils.ts}` と削除済みファイル差分を revert。
+- 2025-12-26 01:25 done: chore/shape/prune-unused-src — 未使用のモック関数（generateMock* / generateSampleCheckboxMatrix / calculateEstimatedProcessingTime）と ShapeErrorFactory / validateShapeName / isShapeBatchAPIV2Enabled / getCategoryLabel / getCategoryColor を削除。未参照ファイル（demo.ts/manual-test.ts/RuntimeWorkerExtractAdapters.ts/useWorkerAPIClient.ts）も削除。検証: `pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。ロールバック: `plugins/shape-plugin/src/common/{mock/data.ts,types/ShapeErrorHierarchy.ts,types/category-types.ts}`, `plugins/shape-plugin/src/services/{batch/UnifiedShapeBatchManager.ts,utils/utils.ts}` と削除済みファイル差分を revert。
 - 2025-12-26 08:52 start: fix/shape/build-start-immediate-loading — Step5 の「ビルド開始」押下直後に loading+disabled になるよう改善に着手。DoD: Kanban 記載どおり即時ローディング化、挙動維持、運用ログ/ロールバック記載。（Kanban: 1889）
 - 2025-12-26 08:53 done: fix/shape/build-start-immediate-loading — 開始直後に pending を立てて status を一時的に running 扱いにし、ボタンの loading+disabled を即時反映。検証: `pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。ロールバック: `plugins/shape-plugin/src/ui/hooks/{useShapeBuildProgressStep.ts,build/useBatchSessionActions.ts}` の差分を revert。
 - 2025-12-26 09:47 start: analysis/shape/build-valid-persistence — Step5 の valid 条件と永続化されないデータの特定に着手。DoD: Kanban 記載どおり条件/原因/再現対応の説明。（Kanban: 1892）
@@ -15683,10 +15982,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-28 17:55 done: fix/location/status-cancelled-compare — rawStatus の cancelled 比較を撤去し、TS2367 を解消。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/location-plugin/src/services/batch/UnifiedLocationBatchManager.ts` と `TASKS.md` の差分を revert。
 - 2025-12-28 17:58 start: fix/shape/vectortile-tilesize-shadow — RuntimeWorkerVectorTileAdapter の tileSize 変数再宣言エラーを解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
 - 2025-12-28 17:59 done: fix/shape/vectortile-tilesize-shadow — tileSize の設定値を tileSizeConfig にリネームし、再宣言を回避。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts` と `TASKS.md` の差分を revert。
-- 2025-12-28 18:02 start: fix/shape/vectortile-tilesize-redeclare — RuntimeWorkerVectorTileAdapter の tileSize 再宣言と simplify adapter の outputBufferId 参照エラーを解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
-- 2025-12-28 18:04 done: fix/shape/vectortile-tilesize-redeclare — tileSize 変数を tileSizeBytes に分離し、simplify2 の outputBufferId 参照を削除して固定 ID で参照。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/shape-plugin/src/services/batch/adapters/{RuntimeWorkerVectorTileAdapter.ts,ShapeWorkerSimplifyAdapters.ts}` と `TASKS.md` の差分を revert。
-- 2025-12-28 18:08 start: fix/shape/topojson-simplify-types — ShapeWorkerSimplifyAdapters の重複 import と topojsonSimplify の型エラーを解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
-- 2025-12-28 18:10 done: fix/shape/topojson-simplify-types — 重複 import を削除し、GeometryCollection/FeatureCollection の型ガードとキャストで topojsonSimplify の型エラーを解消。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/shape-plugin/src/services/batch/{adapters/ShapeWorkerSimplifyAdapters.ts,utils/topojsonSimplify.ts}` と `TASKS.md` の差分を revert。
+- 2025-12-28 18:02 start: fix/shape/vectortile-tilesize-redeclare — RuntimeWorkerVectorTileAdapter の tileSize 再宣言と extract adapter の outputBufferId 参照エラーを解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 18:04 done: fix/shape/vectortile-tilesize-redeclare — tileSize 変数を tileSizeBytes に分離し、extract2 の outputBufferId 参照を削除して固定 ID で参照。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/shape-plugin/src/services/batch/adapters/{RuntimeWorkerVectorTileAdapter.ts,ShapeWorkerExtractAdapters.ts}` と `TASKS.md` の差分を revert。
+- 2025-12-28 18:08 start: fix/shape/topojson-extract-types — ShapeWorkerExtractAdapters の重複 import と topojsonExtract の型エラーを解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 18:10 done: fix/shape/topojson-extract-types — 重複 import を削除し、GeometryCollection/FeatureCollection の型ガードとキャストで topojsonExtract の型エラーを解消。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/shape-plugin/src/services/batch/{adapters/ShapeWorkerExtractAdapters.ts,utils/topojsonExtract.ts}` と `TASKS.md` の差分を revert。
 - 2025-12-28 18:16 start: fix/runtime-worker/vector-tile-progress-types — StageProcessingService の onProgress 参照と VectorTileProgress 型の欠落を解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
 - 2025-12-28 18:19 done: fix/runtime-worker/vector-tile-progress-types — VectorTileProgress を runtime-worker 側に定義し、generateTiles の config/onProgress 型と sdkConfig を拡張して型エラーを解消。検証: 未実施（typecheck 未実行）。ロールバック: `packages/runtime-worker/src/{types.ts,services/StageProcessingService.ts}` と `TASKS.md` の差分を revert。
 - 2025-12-28 18:26 start: fix/shape/download-config-defaults — useDownloadConfigSection の DownloadBatchConfig 既定値を明示し、maxConcurrent の undefined を解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
@@ -15699,10 +15998,20 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-28 18:43 done: fix/runtime-worker/vector-tile-target-node — generateTiles の config 型に targetNodeId を追加し、参照エラーを解消。検証: 未実施（typecheck 未実行）。ロールバック: `packages/runtime-worker/src/services/StageProcessingService.ts` と `TASKS.md` の差分を revert。
 - 2025-12-28 18:50 start: fix/gen-iso3166-2/rows-to-records-overload — rowsToRecords の戻り型を明示し、store.ts/store.browser.ts の型不一致を解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
 - 2025-12-28 18:52 done: fix/gen-iso3166-2/rows-to-records-overload — rowsToRecords に overload を追加し、単件/配列の戻り型を明示して型エラーを解消。検証: 未実施（typecheck 未実行）。ロールバック: `packages/tools/gen-iso3166-2/src/{store.ts,store.browser.ts}` と `TASKS.md` の差分を revert。
-- 2025-12-28 18:58 start: fix/shape/simplify2-config-types — simplify2 設定の型不一致と未使用 import、BatchTaskRecord の status 型を整合する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
-- 2025-12-28 19:01 done: fix/shape/simplify2-config-types — simplify2 の simplificationMode 参照を固定化し、未使用 import を削除、download reset の status 型を TaskStatus に合わせて整合。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/shape-plugin/src/services/batch/SessionController.ts`, `plugins/shape-plugin/src/ui/components/steps/Simplify2ConfigSection.tsx`, `plugins/shape-plugin/src/ui/hooks/useDownloadConfigSection.ts` と `TASKS.md` の差分を revert。
-- 2025-12-28 19:05 start: fix/shape/simplify2-mode-radio — Step4 の簡略化方式をラジオボタン化する対応に着手。DoD: UI がラジオ表示になる、挙動維持、運用ログ更新、ロールバック手順記載。
-- 2025-12-28 19:07 done: fix/shape/simplify2-mode-radio — ToggleButton を RadioGroup へ置換し、簡略化方式をラジオ表示に変更。検証: 未実施（build/typecheck 未実行）。ロールバック: `plugins/shape-plugin/src/ui/components/steps/Simplify2ConfigSection.tsx` と `TASKS.md` の差分を revert。
+- 2025-12-28 19:28 start: fix/shape-store/extracted-buffer-export — EphemeralShapeDB の ExtractedFeatureBuffer 参照を修正し、gis-sdk の export 不一致を解消する対応に着手。DoD: build:types エラー解消、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 19:29 done: fix/shape-store/extracted-buffer-export — ExtractedFeatureBuffer を SimplifiedFeatureBuffer に置換し、gis-sdk の export と整合。検証: 未実施（build:types 未実行）。ロールバック: `packages/features/shape-store/src/{EphemeralShapeDB.ts,index.ts}` と `TASKS.md` の差分を revert。
+- 2025-12-28 19:36 start: fix/runtime-worker/extracted-buffer-access — EphemeralGisDB の extractedBuffers 参照を現行のバッファ名へ置換する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 19:37 done: fix/runtime-worker/extracted-buffer-access — extractedBuffers を simplifiedBuffers に置換し、EphemeralGisDB の型と整合。検証: 未実施（typecheck 未実行）。ロールバック: `packages/runtime-worker/src/services/StageProcessingService.ts` と `TASKS.md` の差分を revert。
+- 2025-12-28 19:41 start: fix/gis-sdk/ephemeral-buffer-exports — gis-sdk の EphemeralGisDB 型と参照先の不整合を解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 19:42 done: fix/gis-sdk/ephemeral-buffer-exports — EphemeralGisDB の extractedBuffers を再利用し、shape-store は ExtractedFeatureBuffer に戻して型整合。検証: 未実施（typecheck 未実行）。ロールバック: `packages/runtime-worker/src/services/StageProcessingService.ts`, `packages/features/shape-store/src/{EphemeralShapeDB.ts,index.ts}` と `TASKS.md` の差分を revert。
+- 2025-12-28 19:47 start: fix/shape-store/tsconfig-paths — shape-store の tsconfig paths 上書きを撤去し、gis-sdk の src 解決を復帰させる対応に着手。DoD: typecheck/build:types エラー解消、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 19:48 done: fix/shape-store/tsconfig-paths — shape-store の paths 上書きを削除し、tsconfig.base の @hierarchidb/gis-sdk パスを有効化。検証: 未実施（typecheck/build:types 未実行）。ロールバック: `packages/features/shape-store/tsconfig.json` と `TASKS.md` の差分を revert。
+- 2025-12-28 19:55 start: fix/shape-store/gis-sdk-path-override — shape-store で gis-sdk の src パスを明示し、ExtractedFeatureBuffer の解決を固定する対応に着手。DoD: typecheck/build:types エラー解消、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 19:57 done: fix/shape-store/gis-sdk-path-override — shape-store の tsconfig に gis-sdk src パスを明示し、ExtractedFeatureBuffer の解決を src に固定。検証: 未実施（typecheck/build:types 未実行）。ロールバック: `packages/features/shape-store/tsconfig.json` と `TASKS.md` の差分を revert。
+- 2025-12-28 18:58 start: fix/shape/extract2-config-types — extract2 設定の型不一致と未使用 import、BatchTaskRecord の status 型を整合する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 19:01 done: fix/shape/extract2-config-types — extract2 の extractionMode 参照を固定化し、未使用 import を削除、download reset の status 型を TaskStatus に合わせて整合。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/shape-plugin/src/services/batch/SessionController.ts`, `plugins/shape-plugin/src/ui/components/steps/Extract2ConfigSection.tsx`, `plugins/shape-plugin/src/ui/hooks/useDownloadConfigSection.ts` と `TASKS.md` の差分を revert。
+- 2025-12-28 19:05 start: fix/shape/extract2-mode-radio — Step4 の簡略化方式をラジオボタン化する対応に着手。DoD: UI がラジオ表示になる、挙動維持、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 19:07 done: fix/shape/extract2-mode-radio — ToggleButton を RadioGroup へ置換し、簡略化方式をラジオ表示に変更。検証: 未実施（build/typecheck 未実行）。ロールバック: `plugins/shape-plugin/src/ui/components/steps/Extract2ConfigSection.tsx` と `TASKS.md` の差分を revert。
 - 2025-12-28 19:12 start: fix/lru-splitview/pane-chip-refresh — LRUSplitView のペインヘッダ Chip が再ビルド中に更新されない問題を解消する対応に着手。DoD: Chip 数が更新される、影響最小、運用ログ更新、ロールバック手順記載。
 - 2025-12-28 19:13 done: fix/lru-splitview/pane-chip-refresh — stageTaskSummary を tasks 変化で再計算するよう依存関係を追加し、Chip 数の更新を反映。検証: 未実施（typecheck/build 未実行）。ロールバック: `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts` と `TASKS.md` の差分を revert。
 - 2025-12-28 19:20 start: fix/shape/batch-session-progress-stage — BatchSessionManager の progress.currentStage 型を整合する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
@@ -15717,8 +16026,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-30 10:18 done: fix/shape/step4-defaults-and-metadata-search — デフォルト/範囲/検索修正を反映。検証: 未実施（手動確認未実行）。ロールバック: Kanban 1980 の手順に従い差分を revert。
 - 2025-12-30 10:16 start: fix/shape/build-warning-dev-suppress — build warning の dev 抑制対応に着手。DoD: Kanban 1981 のとおり。
 - 2025-12-30 10:20 done: fix/shape/build-warning-dev-suppress — `import.meta.env.DEV` を用いて crash warning の Snackbar を dev では抑制。検証: 未実施（手動確認未実行）。ロールバック: Kanban 1981 の手順に従い差分を revert。
-- 2025-12-30 10:24 start: fix/shape/simplify1-defaults-rebalance — simplify1 デフォルト見直しに着手。DoD: Kanban 1982 のとおり。
-- 2025-12-30 10:26 done: fix/shape/simplify1-defaults-rebalance — simplify1 のデフォルトと tolerance 範囲を詳細寄りへ調整。検証: 未実施（手動確認未実行）。ロールバック: Kanban 1982 の手順に従い差分を revert。
+- 2025-12-30 10:24 start: fix/shape/extract1-defaults-rebalance — extract1 デフォルト見直しに着手。DoD: Kanban 1982 のとおり。
+- 2025-12-30 10:26 done: fix/shape/extract1-defaults-rebalance — extract1 のデフォルトと tolerance 範囲を詳細寄りへ調整。検証: 未実施（手動確認未実行）。ロールバック: Kanban 1982 の手順に従い差分を revert。
 - 2025-12-30 10:30 start: fix/shape/metadata-rows-and-match-contrast — メタデータ二重表示とマッチ色コントラスト修正に着手。DoD: Kanban 1983 のとおり。
 - 2025-12-30 10:32 done: fix/shape/metadata-rows-and-match-contrast — placeholder 行を実データ行がある場合に抑止し、マッチ/選択行の文字色を背景に合わせて調整。検証: 未実施（手動確認未実行）。ロールバック: Kanban 1983 の手順に従い差分を revert。
 - 2025-12-30 10:36 start: fix/shape/metadata-match-text-contrast — マッチ行の文字色コントラスト改善に着手。DoD: Kanban 1984 のとおり。

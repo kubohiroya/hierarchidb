@@ -5,7 +5,7 @@ import { toNodeId } from '@hierarchidb/common-types';
 import { normalizeDataSourceName } from '../../common/types/index.js';
 import { useTranslation } from '../i18n.js';
 import { isShapePreviewMetadataEnabled } from '../../common/config/previewFlags.js';
-import { getShapeTileMetadataDB, type ShapeSourceMetadataRow } from '../../services/database/ShapeTileMetadataDB.js';
+import { getShapeTileMetadataDB, type ShapeSourceMetadataRow } from '../../services/database/VectorTileDB.ts';
 import { useAtom } from 'jotai';
 import {
   shapePreviewSearchAtom,

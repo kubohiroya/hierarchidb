@@ -114,7 +114,7 @@ const emit = async (event: BatchProgressEvent) => {
     await emit({
       sessionId: 'session-err',
       nodeId: 'console-err' as any,
-      stage: 'simplify1',
+      stage: 'extract1',
       phase: 'failed',
       timestamp: Date.now(),
       payload: {

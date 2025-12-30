@@ -169,7 +169,7 @@ interface ShapesEntity {
   selectedAdminLevels: number[];
   batchConfig: {
     concurrency: number;
-    simplificationTolerance: number;
+    extractionTolerance: number;
     tileGenerationConfig: {
       minZoom: number;
       maxZoom: number;

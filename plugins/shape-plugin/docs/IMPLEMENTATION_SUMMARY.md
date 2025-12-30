@@ -10,10 +10,10 @@
   - fetch APIを使用した実データ取得
   - GeoJSON検証
   - 進捗レポート機能
-- ✅ `executeSimplify1Stage()` - 簡略化パラメータの実装
+- ✅ `executeExtract1Stage()` - 簡略化パラメータの実装
   - 管理レベル別のtolerance設定
   - 最小面積フィルタリング設定
-- ✅ `executeSimplify2Stage()` - タイル生成準備の実装
+- ✅ `executeExtract2Stage()` - タイル生成準備の実装
   - ズームレベル計算
   - タイル数の計算
   - 簡略化率の算出
@@ -30,7 +30,7 @@
   - 空間インデックス生成
   - キャッシュ機能
 
-#### 3. **SimplifyWorker1** (packages/plugins/shape-plugin/src/services/workers/SimplifyWorker1.ts)
+#### 3. **ExtractWorker1** (packages/plugins/shape-plugin/src/services/workers/ExtractWorker1.ts)
 - ✅ `loadInputBuffer()` - バッファ読み込み機能を強化
   - キャッシュからの読み込み
   - ログ出力追加
@@ -40,7 +40,7 @@
   - エラーハンドリング
 - ✅ `formatBytes()` - ユーティリティメソッド追加
 
-#### 4. **SimplifyWorker2** (packages/plugins/shape-plugin/src/services/workers/SimplifyWorker2.ts)
+#### 4. **ExtractWorker2** (packages/plugins/shape-plugin/src/services/workers/ExtractWorker2.ts)
 - ✅ 既に完全実装済み
   - タイルグリッド生成
   - 境界へのクリッピング
@@ -75,7 +75,7 @@ const featureCount = geoJsonData.features.length;
 
 2. **データ処理パイプライン**
    ```
-   Download → Simplify1 → Simplify2 → VectorTiles
+   Download → Extract1 → Extract2 → VectorTiles
    ```
    各ステージで実際のデータ処理を実装
 
@@ -93,7 +93,7 @@ const featureCount = geoJsonData.features.length;
 
 #### 管理レベル別設定
 ```typescript
-// Simplification tolerances
+// Extraction tolerances
 0: 0.01    // Country - 高簡略化
 1: 0.005   // State/Province
 2: 0.001   // County
@@ -132,7 +132,7 @@ await this.ephemeralDB.buffers.put({
   id: bufferId,
   data: data,
   timestamp: Date.now(),
-  type: 'simplified-features'
+  type: 'extracted-features'
 });
 ```
 

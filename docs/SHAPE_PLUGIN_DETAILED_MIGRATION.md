@@ -14,7 +14,7 @@
 - **folder-plugin拡張**: FolderEntityを継承した地理空間データプラグイン
 - **完全なStep実装**: TabularDataSourceStep, LicenseStep, ProcessingStep, CountrySelectionStep
 - **高度なバッチ処理**: 大規模地理データの並列処理
-- **Worker統合**: VectorTileWorker、SimplifyWorker、DownloadWorker
+- **Worker統合**: VectorTileWorker、ExtractWorker、DownloadWorker
 - **認証システム**: データソースアクセス認証
 - **エラーハンドリング**: 包括的なエラー管理システム
 

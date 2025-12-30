@@ -76,7 +76,7 @@ export interface ShapeConfig {
   adminLevels: AdminLevelConfig;
   
   // Processing options
-  simplification: SimplificationConfig;
+  extraction: ExtractionConfig;
   vectorTiles: VectorTileConfig;
   
   // Performance settings
@@ -133,13 +133,13 @@ export interface ProcessingStages {
     skipCache: boolean;
     validateGeometry: boolean;
   };
-  simplify1: {
+  extract1: {
     enabled: boolean;
     algorithm: 'douglas-peucker' | 'visvalingam';
     tolerance: number;
     minArea: number;
   };
-  simplify2: {
+  extract2: {
     enabled: boolean;
     preserveTopology: boolean;
     quantization: number;
@@ -156,7 +156,7 @@ export interface ProcessingStages {
 
 export interface WorkerConfiguration {
   downloadWorkers: number;
-  simplifyWorkers: number;
+  extractWorkers: number;
   tileWorkers: number;
   maxMemoryPerWorker: number;
   taskTimeout: number;
@@ -190,7 +190,7 @@ export interface FeatureMetadata {
   originalId: string;
   dataSource: DataSourceName;
   downloadedAt: Timestamp;
-  simplificationLevel: number;
+  extractionLevel: number;
   qualityScore: number;
   bbox: BoundingBox;
 }
@@ -227,7 +227,7 @@ export interface BatchTask {
   outputs: string[];
 }
 
-export type TaskType = 'download' | 'simplify1' | 'simplify2' | 'vectorTile';
+export type TaskType = 'download' | 'extract1' | 'extract2' | 'vectorTile';
 export type TaskStage = 'queued' | 'assigned' | 'running' | 'completed' | 'failed';
 export type TaskStatus = 'pending' | 'active' | 'completed' | 'failed' | 'cancelled';
 
@@ -270,8 +270,8 @@ export interface BatchProgress {
 
 export interface StageProgress {
   download: StageStatus;
-  simplify1: StageStatus;
-  simplify2: StageStatus;
+  extract1: StageStatus;
+  extract2: StageStatus;
   vectorTiles: StageStatus;
 }
 
@@ -328,8 +328,8 @@ export interface WorkerPoolConfig {
 
 export interface PoolSizes {
   download: number;
-  simplify1: number;
-  simplify2: number;
+  extract1: number;
+  extract2: number;
   vectorTile: number;
 }
 
@@ -378,34 +378,34 @@ export interface DownloadMetadata {
 }
 ```
 
-#### SimplifyWorker
+#### ExtractWorker
 
 ```typescript
-export interface SimplifyWorkerAPI {
-  async simplifyFeatures(config: SimplifyConfig): Promise<SimplifyResult>;
+export interface ExtractWorkerAPI {
+  async extractFeatures(config: ExtractConfig): Promise<ExtractResult>;
   async validateGeometry(geometry: GeoJSONGeometry): Promise<boolean>;
   async calculateComplexity(geometry: GeoJSONGeometry): Promise<number>;
   async optimizeFeatures(features: FeatureData[]): Promise<FeatureData[]>;
 }
 
-export interface SimplifyConfig {
+export interface ExtractConfig {
   features: FeatureData[];
-  algorithm: SimplificationAlgorithm;
+  algorithm: ExtractionAlgorithm;
   tolerance: number;
   preserveTopology: boolean;
   minArea: number;
   maxVertices: number;
 }
 
-export interface SimplifyResult {
-  simplifiedFeatures: FeatureData[];
-  statistics: SimplificationStats;
+export interface ExtractResult {
+  extractedFeatures: FeatureData[];
+  statistics: ExtractionStats;
   qualityMetrics: QualityMetrics;
 }
 
-export interface SimplificationStats {
+export interface ExtractionStats {
   originalVertices: number;
-  simplifiedVertices: number;
+  extractedVertices: number;
   reductionRatio: number;
   processingTime: number;
   memoryUsage: number;

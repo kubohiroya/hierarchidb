@@ -103,7 +103,7 @@ describe('Vector Tile Generation - End to End', () => {
       dataSource: 'gadm',
       countries: ['JP'],
       adminLevels: [1],
-      simplification: {
+      extraction: {
         enabled: true,
         tolerance: 0.005,
         preserveTopology: true,
@@ -151,17 +151,17 @@ describe('Vector Tile Generation - End to End', () => {
     expect(rawBuffers[0].featureCount).toBe(2);
     console.log(`Downloaded ${rawBuffers[0].featureCount} features`);
 
-    // Stage 2: Simplify1
-    const simplify1Result = await manager.executeSimplify1Stage(sessionId);
-    expect(simplify1Result.success).toBe(true);
-    expect(simplify1Result.processedFeatures).toBeGreaterThan(0);
-    console.log(`Simplified ${simplify1Result.processedFeatures} features`);
+    // Stage 2: Extract1
+    const extract1Result = await manager.executeExtract1Stage(sessionId);
+    expect(extract1Result.success).toBe(true);
+    expect(extract1Result.processedFeatures).toBeGreaterThan(0);
+    console.log(`Extracted ${extract1Result.processedFeatures} features`);
 
-    // Stage 3: Simplify2
-    const simplify2Result = await manager.executeSimplify2Stage(sessionId);
-    expect(simplify2Result.success).toBe(true);
-    expect(simplify2Result.processedTiles).toBeGreaterThan(0);
-    console.log(`Prepared ${simplify2Result.processedTiles} tiles`);
+    // Stage 3: Extract2
+    const extract2Result = await manager.executeExtract2Stage(sessionId);
+    expect(extract2Result.success).toBe(true);
+    expect(extract2Result.processedTiles).toBeGreaterThan(0);
+    console.log(`Prepared ${extract2Result.processedTiles} tiles`);
 
     // Stage 4: Vector Tiles
     const vectorTilesResult = await manager.executeVectorTilesStage(sessionId);
@@ -193,7 +193,7 @@ describe('Vector Tile Generation - End to End', () => {
       dataSource: 'gadm',
       countries: ['JP'],
       adminLevels: [0, 1, 2],
-      simplification: {
+      extraction: {
         enabled: true,
         tolerance: 0.01,
         preserveTopology: true,
@@ -232,7 +232,7 @@ describe('Vector Tile Generation - End to End', () => {
       dataSource: 'gadm',
       countries: ['JP'],
       adminLevels: [0],
-      simplification: {
+      extraction: {
         enabled: true,
         tolerance: 0.01,
         preserveTopology: false,
@@ -271,7 +271,7 @@ describe('Vector Tile Generation - End to End', () => {
       dataSource: 'gadm',
       countries: ['JP', 'KR'],
       adminLevels: [0, 1],
-      simplification: {
+      extraction: {
         enabled: true,
         tolerance: 0.005,
         preserveTopology: true,

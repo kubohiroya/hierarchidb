@@ -31,9 +31,9 @@ const createBatchConfig = (
     ...DEFAULT_PROCESSING_CONFIG.downloadConfig,
     ...overrides.downloadConfig,
   },
-  simplificationConfig: {
-    ...DEFAULT_PROCESSING_CONFIG.simplificationConfig,
-    ...overrides.simplificationConfig,
+  extractionConfig: {
+    ...DEFAULT_PROCESSING_CONFIG.extractionConfig,
+    ...overrides.extractionConfig,
   },
   tileConfig: {
     ...DEFAULT_PROCESSING_CONFIG.tileConfig,
@@ -313,7 +313,7 @@ describe('Shape batch processing (headless)', () => {
     expect(await shapeDB.batchTasks.count()).toBe(0);
     const stats = await getEphemeralShapeDB().getStatistics();
     expect(stats.rawBuffers).toBe(0);
-    expect(stats.simplifiedBuffers).toBe(0);
+    expect(stats.extractedBuffers).toBe(0);
     expect(stats.vectorTiles).toBe(0);
     expect(stats.sessions).toBe(0);
     registerShapeRuntimeWorkerClient(async () => getStageProcessingClient());
@@ -339,9 +339,9 @@ describe('Shape batch processing (headless)', () => {
   it('starts batch processing and completes via progress callbacks', async () => {
     const config = createBatchConfig({
       dataSource: 'geoboundaries',
-      simplificationConfig: {
-        ...DEFAULT_PROCESSING_CONFIG.simplificationConfig,
-        enablePerFeatureSimplification: false,
+      extractionConfig: {
+        ...DEFAULT_PROCESSING_CONFIG.extractionConfig,
+        enablePerFeatureExtraction: false,
       },
       tileConfig: {
         ...DEFAULT_PROCESSING_CONFIG.tileConfig,
@@ -370,13 +370,13 @@ describe('Shape batch processing (headless)', () => {
         `Batch task failures: ${failedTasks.map((task) => `${task.taskType}:${task.errorMessage ?? 'unknown'}`).join('; ')}`,
       );
     }
-    const simplify2Buffer = await getEphemeralShapeDB().simplifiedBuffers
-      .get(`${sessionId}-simplify2-0`);
-    if (!simplify2Buffer) {
-      throw new Error('Simplify2 buffer was not written.');
+    const extract2Buffer = await getEphemeralShapeDB().extractedBuffers
+      .get(`${sessionId}-extract2-0`);
+    if (!extract2Buffer) {
+      throw new Error('Extract2 buffer was not written.');
     }
-    if (simplify2Buffer.featureCount === 0) {
-      throw new Error('Simplify2 buffer has 0 features.');
+    if (extract2Buffer.featureCount === 0) {
+      throw new Error('Extract2 buffer has 0 features.');
     }
     const rawBuffer = await getEphemeralShapeDB().rawBuffers
       .get(`${sessionId}-download-0`);
@@ -390,24 +390,24 @@ describe('Shape batch processing (headless)', () => {
     if (rawDecodedCount === 0) {
       throw new Error('Download buffer decoded to 0 features.');
     }
-    const simplify1Buffer = await getEphemeralShapeDB().simplifiedBuffers
-      .get(`${sessionId}-simplify1-0`);
-    if (!simplify1Buffer) {
-      throw new Error('Simplify1 buffer was not written.');
+    const extract1Buffer = await getEphemeralShapeDB().extractedBuffers
+      .get(`${sessionId}-extract1-0`);
+    if (!extract1Buffer) {
+      throw new Error('Extract1 buffer was not written.');
     }
-    const decodedSimplify1 = await decodeFeatureCollection(simplify1Buffer.data);
-    const simplify1DecodedCount = Array.isArray(decodedSimplify1?.features)
-      ? decodedSimplify1.features.length
+    const decodedExtract1 = await decodeFeatureCollection(extract1Buffer.data);
+    const extract1DecodedCount = Array.isArray(decodedExtract1?.features)
+      ? decodedExtract1.features.length
       : 0;
-    if (simplify1DecodedCount === 0) {
-      throw new Error('Simplify1 buffer decoded to 0 features.');
+    if (extract1DecodedCount === 0) {
+      throw new Error('Extract1 buffer decoded to 0 features.');
     }
-    const decoded = await decodeFeatureCollection(simplify2Buffer.data);
+    const decoded = await decodeFeatureCollection(extract2Buffer.data);
     const decodedFeatureCount = Array.isArray(decoded?.features)
       ? decoded.features.length
       : 0;
     if (decodedFeatureCount === 0) {
-      throw new Error('Simplify2 buffer decoded to 0 features.');
+      throw new Error('Extract2 buffer decoded to 0 features.');
     }
     const stageClient = await getStageProcessingClient();
     const summary = await stageClient.vectortile.getSummary(sessionId);

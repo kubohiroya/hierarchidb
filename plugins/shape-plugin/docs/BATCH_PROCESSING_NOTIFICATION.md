@@ -41,7 +41,7 @@ const sessionId = await manager.startBatchSession(
 interface BatchProgressEvent {
   sessionId: string;
   treeNodeId: NodeId;
-  stage: 'download' | 'simplify1' | 'simplify2' | 'vectorTiles';
+  stage: 'download' | 'extract1' | 'extract2' | 'vectorTiles';
   progress: number;        // 0-100のパーセンテージ
   completedTasks: number;  // 完了したタスク数
   totalTasks: number;      // 全タスク数
@@ -132,35 +132,35 @@ async executeDownloadStage(sessionId: string): Promise<BatchStageResult> {
 }
 ```
 
-**Simplify1 Stage (25-50%)**
+**Extract1 Stage (25-50%)**
 ```typescript
-async executeSimplify1Stage(sessionId: string): Promise<BatchStageResult> {
+async executeExtract1Stage(sessionId: string): Promise<BatchStageResult> {
   const progressOffset = 25;
   const progressRange = 25;
   
-  for (const task of simplifyTasks) {
+  for (const task of extractTasks) {
     // ... 簡略化処理 ...
     
     const currentProgress = progressOffset + 
-      Math.round((processedTasks / simplifyTasks.length) * progressRange);
+      Math.round((processedTasks / extractTasks.length) * progressRange);
     
     this.emitProgressEvent(sessionId, {
       sessionId,
       treeNodeId: status.nodeId,
-      stage: 'simplify1',
+      stage: 'extract1',
       progress: currentProgress,
       completedTasks: processedTasks,
-      totalTasks: simplifyTasks.length,
-      currentTask: `Simplified features for ${task.country}_L${task.adminLevel}`,
+      totalTasks: extractTasks.length,
+      currentTask: `Extracted features for ${task.country}_L${task.adminLevel}`,
       timestamp: Date.now(),
     });
   }
 }
 ```
 
-**Simplify2 Stage (50-75%)**
+**Extract2 Stage (50-75%)**
 ```typescript
-async executeSimplify2Stage(sessionId: string): Promise<BatchStageResult> {
+async executeExtract2Stage(sessionId: string): Promise<BatchStageResult> {
   const progressOffset = 50;
   const progressRange = 25;
   
@@ -299,8 +299,8 @@ export function ShapeProcessingStatus({ nodeId }: { nodeId: NodeId }) {
   const getStageLabel = (stage: string) => {
     const labels = {
       'download': 'データダウンロード中...',
-      'simplify1': '初期簡略化処理中...',
-      'simplify2': 'タイル準備中...',
+      'extract1': '初期簡略化処理中...',
+      'extract2': 'タイル準備中...',
       'vectorTiles': 'ベクタータイル生成中...'
     };
     return labels[stage] || '準備中...';
@@ -417,7 +417,7 @@ if (process.env.NODE_ENV === 'development') {
 Shape Pluginのバッチ処理通知システムは以下の特徴を持ちます：
 
 1. **リアルタイム通知**: Worker層からUI層へ即座に進捗を通知
-2. **4段階の進捗管理**: Download → Simplify1 → Simplify2 → VectorTiles
+2. **4段階の進捗管理**: Download → Extract1 → Extract2 → VectorTiles
 3. **エラーハンドリング**: エラー情報を含む詳細な通知
 4. **柔軟なコールバック**: UI層で自由にカスタマイズ可能
 5. **セッション管理**: 複数の処理を並行して管理可能

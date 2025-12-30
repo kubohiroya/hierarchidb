@@ -195,7 +195,7 @@ export interface ShapeDataEntity extends GroupEntity {
   id: string;
   nodeId: TreeNodeId;
   sessionId: string;
-  stage: 'download' | 'simplify1' | 'simplify2';
+  stage: 'download' | 'extract1' | 'extract2';
   countryCode: string;
   adminLevel: number;
   data: GeoJSON.FeatureCollection;
@@ -936,8 +936,8 @@ export const ShapesBatchProcessor: React.FC<BatchProcessorProps> = ({
   
   const stages = [
     { id: 'download', title: 'Download Geographic Data', icon: DownloadIcon },
-    { id: 'simplify1', title: 'Feature Processing', icon: FilterIcon },
-    { id: 'simplify2', title: 'Tile Preparation', icon: ProcessIcon },
+    { id: 'extract1', title: 'Feature Processing', icon: FilterIcon },
+    { id: 'extract2', title: 'Tile Preparation', icon: ProcessIcon },
     { id: 'vectorTiles', title: 'Vector Tile Generation', icon: TileIcon }
   ];
   

@@ -8,7 +8,7 @@ Ensure the base-map plugin remains compatible with the evolving dialog/batch inf
 
 ## Phase 1: Dialog Integration
 - [ ] Audit current multi-step dialogs (if any) and align with the shared `useWorkingCopy` pattern.
-- [ ] Reintroduce or simplify step registrations so base map configuration steps behave as expected.
+- [ ] Reintroduce or extract step registrations so base map configuration steps behave as expected.
 
 ## Phase 2: Processing/Preview UI
 - [ ] Validate progress dialogs or preview components against actual worker APIs; remove temporary placeholders if present.

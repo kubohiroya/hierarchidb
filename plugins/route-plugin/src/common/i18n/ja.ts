@@ -79,8 +79,8 @@ export const ja: RoutePluginTranslations = {
       validating: '結果の検証',
       optimizing: '最適化',
       download: 'ダウンロード',
-      simplify1: '形状の簡略化',
-      simplify2: '形状の検証',
+      extract1: '形状の抽出',
+      extract2: '形状の検証',
       vectortile: 'ベクタタイル生成',
     },
     phases: {

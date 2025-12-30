@@ -211,7 +211,7 @@ describe('ShapeEntityHandler Migration Tests', () => {
           concurrentDownloads: 3,
           deleteOnComplete: false,
         },
-        simplify1: {
+        extract1: {
           concurrentProcesses: 4,
           enableFeatureFiltering: true,
           featureAreaThreshold: 0.1,
@@ -220,12 +220,12 @@ describe('ShapeEntityHandler Migration Tests', () => {
           featureFilterMethod: 'hybrid',
           deleteOnComplete: false,
         },
-        simplify2: {
+        extract2: {
           concurrentProcesses: 4,
           quantize: 1e4,
-          simplify: 0.01,
+          extract: 0.01,
           tolerance: 0.1,
-          enablePerFeatureSimplification: true,
+          enablePerFeatureExtraction: true,
           deleteOnComplete: false,
         },
         vectorTiles: {
@@ -256,7 +256,7 @@ describe('ShapeEntityHandler Migration Tests', () => {
       const batchConfig: BatchConfig = {
         dataSource: 'naturalearth',
         download: { concurrentDownloads: 3, deleteOnComplete: false },
-        simplify1: {
+        extract1: {
           concurrentProcesses: 4,
           enableFeatureFiltering: true,
           featureAreaThreshold: 0.1,
@@ -265,12 +265,12 @@ describe('ShapeEntityHandler Migration Tests', () => {
           featureFilterMethod: 'hybrid',
           deleteOnComplete: false,
         },
-        simplify2: {
+        extract2: {
           concurrentProcesses: 4,
           quantize: 1e4,
-          simplify: 0.01,
+          extract: 0.01,
           tolerance: 0.1,
-          enablePerFeatureSimplification: true,
+          enablePerFeatureExtraction: true,
           deleteOnComplete: false,
         },
         vectorTiles: {
@@ -288,8 +288,8 @@ describe('ShapeEntityHandler Migration Tests', () => {
       //  Then: BatchConfig
       expect(retrievedBatchConfig).toBeDefined();
       expect(retrievedBatchConfig?.download).toBeDefined();
-      expect(retrievedBatchConfig?.simplify1).toBeDefined();
-      expect(retrievedBatchConfig?.simplify2).toBeDefined();
+      expect(retrievedBatchConfig?.extract1).toBeDefined();
+      expect(retrievedBatchConfig?.extract2).toBeDefined();
       expect(retrievedBatchConfig?.vectorTiles).toBeDefined();
     });
   });

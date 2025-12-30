@@ -1,5 +1,11 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { DownloadTask, Simplify1Task, Simplify2Task } from '../../../common/types/index.js';
+import type {
+  DownloadTask,
+  DownloadTaskInput,
+  Extract1Task,
+  Extract2Task,
+  ExtractTaskInput,
+} from '../../../common/types/index.js';
 
 export type ShapeStageWorkerTaskResult = {
   status: 'completed' | 'failed' | 'skipped';
@@ -12,17 +18,19 @@ export type DownloadTaskRequest = {
   nodeId: NodeId;
   task: DownloadTask;
   taskIndex: number;
+  input: DownloadTaskInput;
 };
 
-export type SimplifyTaskRequest<TTask> = {
+export type ExtractTaskRequest<TTask> = {
   nodeId: NodeId;
   task: TTask;
   taskIndex: number;
+  input: ExtractTaskInput;
 };
 
 export type ShapeStageWorkerAPI = {
   processDownloadTask: (request: DownloadTaskRequest) => Promise<ShapeStageWorkerTaskResult>;
-  processSimplify1Task: (request: SimplifyTaskRequest<Simplify1Task>) => Promise<ShapeStageWorkerTaskResult>;
-  processSimplify2Task: (request: SimplifyTaskRequest<Simplify2Task>) => Promise<ShapeStageWorkerTaskResult>;
+  processExtract1Task: (request: ExtractTaskRequest<Extract1Task>) => Promise<ShapeStageWorkerTaskResult>;
+  processExtract2Task: (request: ExtractTaskRequest<Extract2Task>) => Promise<ShapeStageWorkerTaskResult>;
   setAuthToken: (token: string, type?: 'Bearer' | 'Basic', expiresAt?: number) => Promise<void>;
 };

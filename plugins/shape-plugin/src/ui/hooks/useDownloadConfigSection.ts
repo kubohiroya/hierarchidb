@@ -8,7 +8,7 @@ import { toNodeId, type NodeId } from '@hierarchidb/common-types';
 import { notify } from '@hierarchidb/components';
 import { useTranslation } from '../i18n.js';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
-import { getShapeTileMetadataDB } from '../../services/database/ShapeTileMetadataDB.js';
+import { getShapeTileMetadataDB } from '../../services/database/VectorTileDB.ts';
 import { useSetAtom } from 'jotai';
 import { shapeBuildPersistedTasksAtom, shapeBuildTasksAtom } from '../state/shapeBuildProgressAtoms.js';
 
@@ -37,7 +37,7 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
   const [counts, setCounts] = useState({ raw: 0, stage1: 0, stage2: 0, tiles: 0, cache: 0 });
   const [taskCounts, setTaskCounts] = useState({ vectortile: 0 });
   const [finalCounts, setFinalCounts] = useState({ tiles: 0, metadata: 0 });
-  const [failedCounts, setFailedCounts] = useState({ download: 0, simplify1: 0, simplify2: 0, vectortile: 0 });
+  const [failedCounts, setFailedCounts] = useState({ download: 0, extract1: 0, extract2: 0, vectortile: 0 });
   const [persistedStatus, setPersistedStatus] = useState<string | null>(null);
   const [statusLoaded, setStatusLoaded] = useState(false);
   const setBuildTasks = useSetAtom(shapeBuildTasksAtom);
@@ -52,7 +52,7 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
     if (!batchNodeId) {
       setCounts({ raw: 0, stage1: 0, stage2: 0, tiles: 0, cache: 0 });
       setFinalCounts({ tiles: 0, metadata: 0 });
-      setFailedCounts({ download: 0, simplify1: 0, simplify2: 0, vectortile: 0 });
+      setFailedCounts({ download: 0, extract1: 0, extract2: 0, vectortile: 0 });
       setTaskCounts({ vectortile: 0 });
       return;
     }
@@ -67,8 +67,8 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
       vectortileTasks,
     ] = await Promise.all([
       db.rawBuffers.where('nodeId').equals(batchNodeId).count(),
-      db.simplifiedBuffers.where({ nodeId: batchNodeId, stage: 'simplify1' }).count(),
-      db.simplifiedBuffers.where({ nodeId: batchNodeId, stage: 'simplify2' }).count(),
+      db.extractedBuffers.where({ nodeId: batchNodeId, stage: 'extract1' }).count(),
+      db.extractedBuffers.where({ nodeId: batchNodeId, stage: 'extract2' }).count(),
       db.vectorTiles.where('nodeId').equals(batchNodeId).count(),
       db.cache.filter((entry) => entry.key.includes(batchNodeId)).count(),
       shapeDB.vectorTiles.where('nodeId').equals(batchNodeId).count(),
@@ -93,8 +93,8 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
       .toArray();
     const failed = {
       download: failedTasks.filter((task) => task.taskType === 'download').length,
-      simplify1: failedTasks.filter((task) => task.taskType === 'simplify1').length,
-      simplify2: failedTasks.filter((task) => task.taskType === 'simplify2').length,
+      extract1: failedTasks.filter((task) => task.taskType === 'extract1').length,
+      extract2: failedTasks.filter((task) => task.taskType === 'extract2').length,
       vectortile: failedTasks.filter((task) => task.taskType === 'vectortile').length,
     };
     setCounts({ raw, stage1, stage2, tiles, cache: cacheEntries });
@@ -144,8 +144,8 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
     : persistedStatus === 'running';
   const hasFinalOutputs = finalCounts.tiles > 0 || finalCounts.metadata > 0;
   const canDeleteRaw = !isRunning && !disabled && (counts.raw > 0 || failedCounts.download > 0);
-  const canDeleteStage1 = !isRunning && !disabled && (counts.stage1 > 0 || failedCounts.simplify1 > 0);
-  const canDeleteStage2 = !isRunning && !disabled && (counts.stage2 > 0 || failedCounts.simplify2 > 0);
+  const canDeleteStage1 = !isRunning && !disabled && (counts.stage1 > 0 || failedCounts.extract1 > 0);
+  const canDeleteStage2 = !isRunning && !disabled && (counts.stage2 > 0 || failedCounts.extract2 > 0);
   const canDeleteTiles = !isRunning && !disabled && (
     counts.tiles > 0
     || failedCounts.vectortile > 0
@@ -252,12 +252,12 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
     resetDownloadTasks,
   ]);
 
-  const handleDeleteStage = useCallback(async (stage: 'simplify1' | 'simplify2') => {
+  const handleDeleteStage = useCallback(async (stage: 'extract1' | 'extract2') => {
     if (!batchNodeId) return notify.warning('NodeId is missing.');
     await db.clearStage(batchNodeId, stage);
     await clearBatchTasksForType(stage);
     await loadCounts();
-    notify.success(stage === 'simplify1' ? 'Deleted Stage1 cache' : 'Deleted Stage2 cache');
+    notify.success(stage === 'extract1' ? 'Deleted Stage1 cache' : 'Deleted Stage2 cache');
   }, [batchNodeId, clearBatchTasksForType, db, loadCounts]);
 
   const handleDeleteTiles = useCallback(async () => {

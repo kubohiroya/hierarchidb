@@ -9,7 +9,7 @@ eria-cartographプロジェクトの実装を参考に、hierarchidbアーキテ
 
 1. **バッチ処理の実装**
    - simulateProcessing()を実際のデータ処理に置き換え
-   - 各ステージ（Download, Simplify1, Simplify2, VectorTiles）の実装
+   - 各ステージ（Download, Extract1, Extract2, VectorTiles）の実装
 
 2. **データ永続化**
    - EphemeralDBへの実際のデータ保存
@@ -40,8 +40,8 @@ await this.downloadWorker.downloadData({
 ### 2. Worker Services (4ファイル)
 **対象**:
 - DownloadWorker.ts
-- SimplifyWorker1.ts
-- SimplifyWorker2.ts
+- ExtractWorker1.ts
+- ExtractWorker2.ts
 - VectorTileWorker.ts
 
 **現状**: Mock implementation コメント付きの空実装
@@ -139,7 +139,7 @@ async getWorkingCopy(nodeId: NodeId): Promise<ShapeWorkingCopy | undefined> {
 - [ ] データ検証とエラーハンドリング
 - [ ] 進捗通知実装
 
-### Stage 3: Simplify実装 (3日)
+### Stage 3: Extract実装 (3日)
 - [ ] Douglas-Peuckerアルゴリズム実装
 - [ ] 管理レベル別簡略化設定
 - [ ] バッファストレージ実装
@@ -221,12 +221,12 @@ class DownloadProgress {
 }
 ```
 
-### 2. Simplify Stage 実装
+### 2. Extract Stage 実装
 
 #### 2.1 Douglas-Peucker実装
 ```typescript
 class GeometrySimplifier {
-  simplify(coordinates: number[][], tolerance: number): number[][] {
+  extract(coordinates: number[][], tolerance: number): number[][] {
     if (coordinates.length <= 2) return coordinates;
     
     // Find point with maximum distance
@@ -247,13 +247,13 @@ class GeometrySimplifier {
       }
     }
     
-    // Recursively simplify
+    // Recursively extract
     if (maxDistance > tolerance) {
-      const left = this.simplify(
+      const left = this.extract(
         coordinates.slice(0, maxIndex + 1), 
         tolerance
       );
-      const right = this.simplify(
+      const right = this.extract(
         coordinates.slice(maxIndex), 
         tolerance
       );
@@ -394,7 +394,7 @@ describe('Shape Plugin E2E', () => {
     );
     const sessionId = await api.startBatchProcess(
       nodeId,
-      { adminLevels: [0, 1, 2], simplification: 'auto' },
+      { adminLevels: [0, 1, 2], extraction: 'auto' },
       downloadTaskPayloads,
     );
     
@@ -412,7 +412,7 @@ describe('Shape Plugin E2E', () => {
 ## 📈 パフォーマンス目標
 
 - **Download**: 10MB/秒以上
-- **Simplify**: 10,000 features/秒以上
+- **Extract**: 10,000 features/秒以上
 - **VectorTile**: 100 tiles/秒以上
 - **メモリ使用量**: 500MB以下
 - **並列処理**: 最大4 Workers
@@ -425,7 +425,7 @@ describe('Shape Plugin E2E', () => {
    - EphemeralDB接続
 
 2. **優先度中**
-   - SimplifyWorker1/2実装
+   - ExtractWorker1/2実装
    - 進捗通知システム
    - エラーハンドリング
 

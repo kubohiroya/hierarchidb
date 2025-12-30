@@ -26,7 +26,7 @@ Users should be able to run the Shape build once per node and resume it later wi
 - Decision: Session identity will be `nodeId` and persisted session data will be deleted only via explicit UI actions in Step4 or automatic invalidation from settings changes.
   Rationale: Aligns with the “single session per node” policy and simplifies recovery while keeping user control for deletion.
   Date/Author: 2025-12-20 / Codex
-- Decision: Processing config changes invalidate stage data as follows: download changes clear download+simplify+tiles, simplification changes clear simplify+tiles, tile changes clear tiles.
+- Decision: Processing config changes invalidate stage data as follows: download changes clear download+extract+tiles, extraction changes clear extract+tiles, tile changes clear tiles.
   Rationale: Matches pipeline dependencies while avoiding unnecessary deletes for cleanup-only changes.
   Date/Author: 2025-12-20 / Codex
 
@@ -36,7 +36,7 @@ Implemented sessionId=nodeId reuse, EphemeralShapeDB stage cleanup, auto-invalid
 
 ## Context and Orientation
 
-Shape batch processing uses the Shape plugin’s worker-side batch manager and Dexie databases. The persistent store lives in `plugins/shape-plugin/src/services/database/ShapeDB.ts` (batchSessions/batchTasks/etc). Temporary per-session data is stored in `plugins/shape-plugin/src/services/database/EphemeralShapeDB.ts` (rawBuffers/simplifiedBuffers/vectorTiles/sessions). The UI step that hosts Step4 settings is `plugins/shape-plugin/src/ui/components/steps/ShapeProcessingSettingsStep.tsx`, and Step5 is `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`.
+Shape batch processing uses the Shape plugin’s worker-side batch manager and Dexie databases. The persistent store lives in `plugins/shape-plugin/src/services/database/ShapeDB.ts` (batchSessions/batchTasks/etc). Temporary per-session data is stored in `plugins/shape-plugin/src/services/database/EphemeralShapeDB.ts` (rawBuffers/extractedBuffers/vectorTiles/sessions). The UI step that hosts Step4 settings is `plugins/shape-plugin/src/ui/components/steps/ShapeProcessingSettingsStep.tsx`, and Step5 is `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`.
 
 The current sessionId is generated as a UUID in `ShapeDB.createBatchSession`, and the worker-side batch manager starts a session in `plugins/shape-plugin/src/services/batch/BatchSessionManager.ts` via `createSession`. Step4 deletion is implemented in `DownloadConfigSection.tsx` but filters by `nodeId` rather than `sessionId` and does not consider auto-delete rules. Step5 uses local component state rather than worker progress.
 
@@ -46,7 +46,7 @@ First, modify the session lifecycle so that `sessionId` always equals `nodeId`. 
 
 Second, implement EphemeralShapeDB helpers for stage-aware session cleanup (for example, `clearStage(sessionId, stage)` and `hasStageData(sessionId, stage)`), so UI components can delete exactly the invalidated data. Update `DownloadConfigSection.tsx` to call stage-specific clearers keyed by `sessionId` (which equals `nodeId`). Keep the delete buttons disabled when the stage has no data or while processing. Also ensure deleting any stage clears the session metadata entry so progress does not show stale stage information.
 
-Third, introduce auto-delete logic on UI setting changes. For Step2 (`ShapeDataSourceStep.tsx`), when dataSource changes, delete raw, simplified, and tile data if any exists for the session. For Step3 (`ShapeCountrySelectionStep.tsx`), when the selection matrix changes, delete the same downstream data. For Step4, compare previous and next `ProcessingConfig` and clear only the affected stages: download config changes clear raw + simplified + tiles; simplification config changes clear simplified + tiles; tile config changes clear tiles. Cleanup config changes should not delete data because they do not change outputs. Implement this in a shared helper to avoid inconsistent rules.
+Third, introduce auto-delete logic on UI setting changes. For Step2 (`ShapeDataSourceStep.tsx`), when dataSource changes, delete raw, extracted, and tile data if any exists for the session. For Step3 (`ShapeCountrySelectionStep.tsx`), when the selection matrix changes, delete the same downstream data. For Step4, compare previous and next `ProcessingConfig` and clear only the affected stages: download config changes clear raw + extracted + tiles; extraction config changes clear extracted + tiles; tile config changes clear tiles. Cleanup config changes should not delete data because they do not change outputs. Implement this in a shared helper to avoid inconsistent rules.
 
 Fourth, wire Step5 to worker progress. Use `useShapeProgress` to subscribe to progress for the current sessionId (nodeId). Map the progress and status to `BuildStepPanel` props. Replace local `useState` placeholders with real values. Integrate control handlers to call the worker bridge (start/pause/resume/cancel) if the worker bridge provides batch methods for the shape node type. This wiring may initially be optimistic; if worker API does not expose those methods, the UI should fail gracefully with warnings rather than crashing.
 

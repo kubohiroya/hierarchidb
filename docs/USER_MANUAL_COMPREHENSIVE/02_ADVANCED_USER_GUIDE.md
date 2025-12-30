@@ -64,7 +64,7 @@ classDiagram
     
     class ShapePlugin {
         +geometryType: string
-        +simplify()
+        +extract()
         +generateTiles()
     }
     
@@ -409,8 +409,8 @@ graph TB
     end
     
     subgraph "簡略化"
-        Simplify1[Douglas-Peucker<br/>tolerance: 10m]
-        Simplify2[Visvalingam<br/>area threshold]
+        Extract1[Douglas-Peucker<br/>tolerance: 10m]
+        Extract2[Visvalingam<br/>area threshold]
     end
 ```
 
@@ -629,7 +629,7 @@ class TileOptimizer {
     // 優先度の高いタイルを先に生成
     for (const zoom of priorityZooms) {
       await this.generateTilesForZoom(data, zoom, {
-        simplification: 'moderate',
+        extraction: 'moderate',
         clustering: zoom < 10
       });
     }

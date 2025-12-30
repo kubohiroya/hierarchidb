@@ -45,7 +45,7 @@ The Shape Plugin implements a 4-layer architecture with Worker pool-based proces
 ```
 UI Layer (React) ←→ Comlink RPC ←→ Worker Layer ←→ IndexedDB Storage
                                         ↓
-                            [Download → Simplify1 → Simplify2 → VectorTiles]
+                            [Download → Extract1 → Extract2 → VectorTiles]
 ```
 
 ### Key Components
@@ -65,7 +65,7 @@ UI Layer (React) ←→ Comlink RPC ←→ Worker Layer ←→ IndexedDB Storage
 
 ### Processing Capabilities
 - **Parallel Processing**: Multi-Worker concurrent operations
-- **Geometry Simplification**: Douglas-Peucker and TopoJSON algorithms
+- **Geometry Extraction**: Douglas-Peucker and TopoJSON algorithms
 - **Vector Tiles**: Mapbox Vector Tile (MVT) generation
 - **Spatial Indexing**: Morton codes for efficient queries
 - **Streaming**: Memory-efficient large dataset handling
@@ -87,7 +87,7 @@ UI Layer (React) ←→ Comlink RPC ←→ Worker Layer ←→ IndexedDB Storage
 ### 🔄 In Progress (Phase 2)
 - Worker Pool implementation
 - DownloadWorker (completed)
-- SimplifyWorker1/2 implementation
+- ExtractWorker1/2 implementation
 - VectorTileWorker implementation
 
 ### 📋 Planned (Phases 3-5)

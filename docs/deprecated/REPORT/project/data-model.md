@@ -190,7 +190,7 @@ export interface LayerConfiguration extends RelationalEntity {
   
   // Performance settings
   performanceConfig: {
-    simplificationLevel?: number; // Geometry simplification level
+    extractionLevel?: number; // Geometry extraction level
     clusterPoints?: boolean;      // Whether to cluster point data
     maxFeatures?: number;         // Maximum features to render
   };

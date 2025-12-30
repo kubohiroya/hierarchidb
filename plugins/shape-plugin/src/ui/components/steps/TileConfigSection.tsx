@@ -95,7 +95,7 @@ export const TileConfigSection: React.FC<Props> = ({ config, draft, disabled, on
           <Tooltip
             title={t(
               'processing.tile.descriptionTooltip',
-              'Generate vector tiles with zoom-aware simplification.',
+              'Generate vector tiles with zoom-aware extraction.',
             )}
             placement="top"
           >

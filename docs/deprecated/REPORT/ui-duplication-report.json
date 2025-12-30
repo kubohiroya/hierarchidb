@@ -399,7 +399,7 @@
       "priority": "LOW",
       "issue": "Common import patterns",
       "description": "1 packages are commonly imported across UI packages",
-      "solution": "Consider creating facade exports in parent packages to simplify imports"
+      "solution": "Consider creating facade exports in parent packages to extract imports"
     }
   ]
 }

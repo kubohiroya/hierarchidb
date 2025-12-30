@@ -168,8 +168,8 @@ interface RouteProcessingConfig {
   };
   
   // 簡略化設定
-  simplificationConfig: {
-    enableSimplification: boolean;
+  extractionConfig: {
+    enableExtraction: boolean;
     algorithm: 'douglas-peucker' | 'visvalingam' | 'radial-distance';
     tolerance: number;               // 簡略化許容誤差（メートル）
     preserveTopology: boolean;      // トポロジー保持
@@ -285,8 +285,8 @@ interface ProgressView {
   // ステージ進捗
   stages: {
     download: StageProgress;
-    simplify1: StageProgress;
-    simplify2: StageProgress;
+    extract1: StageProgress;
+    extract2: StageProgress;
     vectorTile: StageProgress;
   };
   
@@ -594,7 +594,7 @@ interface RouteSegment {
   };
   
   // 簡略化情報
-  simplificationLevel?: number;     // 簡略化レベル
+  extractionLevel?: number;     // 簡略化レベル
   originalPointCount?: number;      // 元の座標点数
   
   // 空間インデックス
@@ -660,7 +660,7 @@ const session = await routePlugin.createBatchSession(
   config,
   selection,
   {
-    simplificationTolerance: 10,  // 10m tolerance
+    extractionTolerance: 10,  // 10m tolerance
     generateVectorTiles: true,
     zoomLevels: [5, 8, 11, 14]
   }

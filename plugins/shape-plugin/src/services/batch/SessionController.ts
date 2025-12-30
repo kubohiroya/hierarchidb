@@ -11,11 +11,11 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { DownloadStageAdapter } from './adapters/DownloadStageAdapter.js';
 import { RuntimeWorkerDownloadAdapter } from './adapters/RuntimeWorkerDownloadAdapter.js';
-import type { Simplify1Task, Simplify2Task, VectorTileTask } from '../../common/types/index.js';
-import type { Simplify1StageAdapter } from './adapters/Simplify1StageAdapter.js';
-import type { Simplify2StageAdapter } from './adapters/Simplify2StageAdapter.js';
+import type { Extract1Task, Extract2ExtractionMode, Extract2Task, VectorTileTask } from '../../common/types/index.js';
+import type { Extract1StageAdapter } from './adapters/Extract1StageAdapter.js';
+import type { Extract2StageAdapter } from './adapters/Extract2StageAdapter.js';
 import type { VectorTileStageAdapter } from './adapters/VectorTileStageAdapter.js';
-import { ShapeWorkerSimplify1Adapter, ShapeWorkerSimplify2Adapter } from './adapters/ShapeWorkerSimplifyAdapters.js';
+import { ShapeWorkerExtract1Adapter, ShapeWorkerExtract2Adapter } from './adapters/ShapeWorkerExtractAdapters.js';
 import { RuntimeWorkerVectorTileAdapter } from './adapters/RuntimeWorkerVectorTileAdapter.js';
 import type { BatchProcessConfig } from './types.js';
 import type { DownloadTaskPayload, ProgressInfo, ProcessingStage } from '../../common/types/index.js';
@@ -24,7 +24,7 @@ import type { DownloadTask } from '../../common/types/index.js';
 import { isShapePreviewMetadataEnabled } from '../../common/config/previewFlags.js';
 import { shapeDB, type BatchTaskRecord, type VectorTileRecord } from '../database/ShapeDB.js';
 import { getEphemeralShapeDB } from '../database/EphemeralShapeDB.js';
-import { getShapeTileMetadataDB, type ShapeSourceMetadataRow } from '../database/ShapeTileMetadataDB.js';
+import { getShapeTileMetadataDB, type ShapeSourceMetadataRow } from '../database/VectorTileDB.ts';
 import type { DownloadStageOutput } from './strategies/DownloadStageStrategy.js';
 import { resolveDownloadStageStrategy } from './strategies/resolveDownloadStageStrategy.js';
 import { geojson as geojsonApi } from 'flatgeobuf';
@@ -50,6 +50,7 @@ type OriginMetadata = {
   dataSource?: string;
   countryName?: string;
   countryCode?: string;
+  continent?: string;
   adminLevel?: number;
   featureGroupId?: string;
   featureLabel?: string;
@@ -85,12 +86,12 @@ export class SessionController {
   private isPaused = false;
   private isAborted = false;
   private progressCallback?: (progress: ProgressInfo) => void;
-  private simplify1Adapter?: Simplify1StageAdapter;
-  private simplify2Adapter?: Simplify2StageAdapter;
+  private extract1Adapter?: Extract1StageAdapter;
+  private extract2Adapter?: Extract2StageAdapter;
   private vectorTileAdapter?: VectorTileStageAdapter;
-  private simplify1Tasks: Simplify1Task[] = [];
-  private simplify2Tasks: Simplify2Task[] = [];
-  private simplify2RetryOverride = 0;
+  private extract1Tasks: Extract1Task[] = [];
+  private extract2Tasks: Extract2Task[] = [];
+  private extract2RetryOverride = 0;
   private readonly pausedStages = new Set<ProcessingStage>();
   private readonly stageWaiters = new Map<ProcessingStage, Array<() => void>>();
   private readonly stageAbortControllers = new Map<ProcessingStage, AbortController>();
@@ -236,7 +237,7 @@ export class SessionController {
   }
 
   private buildProcessingTaskId(
-    stage: 'simplify1' | 'simplify2',
+    stage: 'extract1' | 'extract2',
     details: {
       countryCode?: string;
       adminLevel?: number;
@@ -261,28 +262,26 @@ export class SessionController {
     return `${this.nodeId}+${countrySegment}+${adminSegment}+${featureSegment}+${stage}`;
   }
 
-  private resolveTaskIdDetails(task: {
-    countryCode?: string;
-    adminLevel?: number;
-    metadata?: Record<string, unknown>;
-    config?: {
+  private resolveTaskIdDetails(
+    task: {
+      countryCode?: string;
+      adminLevel?: number;
+    },
+    input?: {
       featureLabel?: string;
       featureGroupId?: string;
-    };
-  }): {
+    },
+  ): {
     countryCode?: string;
     adminLevel?: number;
     featureLabel?: string;
     featureGroupId?: string;
   } {
-    const metadata = task.metadata ?? {};
     return {
       countryCode: task.countryCode,
       adminLevel: task.adminLevel,
-      featureLabel: task.config?.featureLabel
-        ?? (typeof metadata.featureLabel === 'string' ? metadata.featureLabel : undefined),
-      featureGroupId: task.config?.featureGroupId
-        ?? (typeof metadata.featureGroupId === 'string' ? metadata.featureGroupId : undefined),
+      featureLabel: input?.featureLabel,
+      featureGroupId: input?.featureGroupId,
     };
   }
 
@@ -300,6 +299,8 @@ export class SessionController {
         expanded.push(output);
         continue;
       }
+      const resolvedContinent = output.continent
+        ?? this.resolveContinentFromFeature(collection.features[0]);
       const fallbackPrefix = output.adminLevel != null ? `ADM${output.adminLevel}` : 'feature';
       for (let index = 0; index < collection.features.length; index++) {
         const feature = collection.features[index];
@@ -324,6 +325,7 @@ export class SessionController {
         });
         expanded.push({
           ...output,
+          continent: resolvedContinent,
           inputBufferId: bufferId,
           featureGroupId,
           featureLabel,
@@ -335,6 +337,18 @@ export class SessionController {
     return expanded;
   }
 
+  private resolveContinentFromFeature(feature?: Feature | null): string | undefined {
+    if (!feature || !feature.properties) return undefined;
+    const props = feature.properties as Record<string, unknown>;
+    const candidates = [props.continent, props.Continent, props.CONTINENT];
+    for (const value of candidates) {
+      if (typeof value === 'string' && value.trim().length > 0) {
+        return value.trim();
+      }
+    }
+    return undefined;
+  }
+
   /**
    * Initialize the session by creating a new WorkerPool
    */
@@ -343,9 +357,9 @@ export class SessionController {
       throw new Error(`Session ${this.nodeId} already initialized`);
     }
 
-    // Use shape-stage workers for download/simplify and runtime-worker for vector tiles.
-    this.simplify1Adapter = new ShapeWorkerSimplify1Adapter();
-    this.simplify2Adapter = new ShapeWorkerSimplify2Adapter();
+    // Use shape-stage workers for download/extract and runtime-worker for vector tiles.
+    this.extract1Adapter = new ShapeWorkerExtract1Adapter();
+    this.extract2Adapter = new ShapeWorkerExtract2Adapter();
     this.vectorTileAdapter = new RuntimeWorkerVectorTileAdapter();
   }
 
@@ -381,12 +395,12 @@ export class SessionController {
       await waitForResumeIfPaused();
 
       if (!this.isAborted && !this.isPaused) {
-        await this.processSimplify1Stage();
+        await this.processExtract1Stage();
       }
       await waitForResumeIfPaused();
 
       if (!this.isAborted && !this.isPaused) {
-        await this.processSimplify2Stage();
+        await this.processExtract2Stage();
       }
       await waitForResumeIfPaused();
 
@@ -405,16 +419,16 @@ export class SessionController {
           break;
         }
         console.warn(
-          `[Session ${this.nodeId}] Vector tile regression detected (retry=${retry}); restarting simplify2.`,
+          `[Session ${this.nodeId}] Vector tile regression detected (retry=${retry}); restarting extract2.`,
         );
-        await this.prepareSimplify2Retry(retry);
-        await this.processSimplify2Stage();
+        await this.prepareExtract2Retry(retry);
+        await this.processExtract2Stage();
         await waitForResumeIfPaused();
         if (this.isAborted || this.isPaused) break;
         await this.processVectorTileStage();
         await waitForResumeIfPaused();
       }
-      this.simplify2RetryOverride = 0;
+      this.extract2RetryOverride = 0;
 
       if (!this.isAborted && !this.isPaused) {
         console.log(`[Session ${this.nodeId}] Batch processing completed successfully`);
@@ -487,7 +501,7 @@ export class SessionController {
 
     const dataSource = this.resolveDataSource();
     const strategy = resolveDownloadStageStrategy(dataSource);
-    const tasks: DownloadTask[] = await strategy.buildDownloadTasks({
+    const { tasks, inputsByTaskId } = await strategy.buildDownloadTasks({
       nodeId: this.nodeId,
       downloadTaskPayloads: this.downloadTaskPayloads,
       config: this.config,
@@ -498,7 +512,7 @@ export class SessionController {
       },
     });
     const existingTaskIds = await this.assignDownloadTaskIndices(tasks);
-    await this.registerTasks('download', tasks, existingTaskIds);
+    await this.registerTasks('download', tasks, existingTaskIds, inputsByTaskId);
     await this.markDownloadTasksCompletedWhenBuffersExist(tasks);
     const { runnableTasks, completedCount, failedCount, total } = await this.resolveStageTasks('download', tasks);
     const baseCompleted = Math.min(completedCount, total);
@@ -543,6 +557,7 @@ export class SessionController {
       const res = await this.downloadAdapter.process(
         this.nodeId,
         runnableTasks,
+        inputsByTaskId,
         reportProgress,
         {
           waitIfPaused: () => this.waitForStageResume('download'),
@@ -576,6 +591,7 @@ export class SessionController {
         retryDelay: this.options.retryDelay,
       },
       downloadTasks: tasks,
+      downloadInputsById: inputsByTaskId,
     });
     const expandedOutputs = await this.expandOutputsForFeatureGroups(postprocess.outputs);
     if (isShapePreviewMetadataEnabled()) {
@@ -594,15 +610,15 @@ export class SessionController {
     } else {
       this.indexOriginMetadata(expandedOutputs);
     }
-    this.simplify1Tasks = this.buildSimplify1Tasks(expandedOutputs);
+    this.extract1Tasks = this.buildExtract1Tasks(expandedOutputs);
   }
 
-  private buildSimplify1Tasks(outputs: DownloadStageOutput[]): Simplify1Task[] {
-    const simplifyConfig = this.config.simplify1;
-    const simplifyTolerance = this.config.simplify2?.simplify
-      ?? this.config.simplify2?.tolerance
+  private buildExtract1Tasks(outputs: DownloadStageOutput[]): Extract1Task[] {
+    const extractConfig = this.config.extract1;
+    const extractTolerance = this.config.extract2?.extract
+      ?? this.config.extract2?.tolerance
       ?? 0.001;
-    const minArea = simplifyConfig?.featureAreaThreshold ?? 0;
+    const minArea = extractConfig?.featureAreaThreshold ?? 0;
 
     return outputs.map((output, index) => {
       const origin = this.originMetadataByBuffer.get(output.inputBufferId) ?? this.buildOriginMetadata(output);
@@ -610,7 +626,7 @@ export class SessionController {
       const featureId = featureLabel
         ?? output.featureGroupId
         ?? `${output.countryCode ?? 'UNK'}:ADM${output.adminLevel ?? 'X'}`;
-      const taskId = this.buildProcessingTaskId('simplify1', {
+      const taskId = this.buildProcessingTaskId('extract1', {
         countryCode: output.countryCode,
         adminLevel: output.adminLevel,
         featureLabel,
@@ -619,20 +635,19 @@ export class SessionController {
       return {
         taskId,
         nodeId: this.nodeId,
-        taskType: 'simplify1',
+        taskType: 'extract1',
         stage: BatchTaskStage.WAIT,
-        type: 'simplify1',
+        type: 'extract1',
         status: 'waiting',
         index,
         progress: 0,
         inputBufferId: output.inputBufferId,
-        tolerance: simplifyTolerance,
-        minArea,
         countryCode: output.countryCode,
         adminLevel: output.adminLevel,
         metadata: {
           dataSource: output.dataSource,
           countryName: output.countryName,
+          continent: output.continent,
           sourceUrl: output.sourceUrl,
           featureLabel,
           featureIndex: output.featureIndex,
@@ -648,37 +663,40 @@ export class SessionController {
           featureIndex: output.featureIndex,
           originKey: origin.originKey,
           originLabel: origin.originLabel,
+          continent: output.continent,
+          countryName: output.countryName,
           countryCode: output.countryCode,
           adminLevel: output.adminLevel,
+          adminCode: output.featureGroupId,
           algorithm: 'douglas-peucker',
-          tolerance: simplifyTolerance,
+          tolerance: extractTolerance,
           preserveTopology: true,
           minimumArea: minArea,
-          enableFeatureFiltering: simplifyConfig?.enableFeatureFiltering ?? true,
-          featureFilterMethod: simplifyConfig?.featureFilterMethod,
-          minVertexCountForAreaFilter: simplifyConfig?.minVertexCountForAreaFilter,
-          aspectRatioThreshold: simplifyConfig?.aspectRatioThreshold,
-          hybridFilterConfig: simplifyConfig?.hybridFilterConfig,
+          enableFeatureFiltering: extractConfig?.enableFeatureFiltering ?? true,
+          featureFilterMethod: extractConfig?.featureFilterMethod,
+          minVertexCountForAreaFilter: extractConfig?.minVertexCountForAreaFilter,
+          aspectRatioThreshold: extractConfig?.aspectRatioThreshold,
+          hybridFilterConfig: extractConfig?.hybridFilterConfig,
         },
       };
     });
   }
 
   /**
-   * Process simplify1 stage
+   * Process extract1 stage
    */
-  private async processSimplify1Stage(): Promise<void> {
-    this.currentStage = 'simplify1';
-    console.log(`[Session ${this.nodeId}] Processing simplify1 stage`);
+  private async processExtract1Stage(): Promise<void> {
+    this.currentStage = 'extract1';
+    console.log(`[Session ${this.nodeId}] Processing extract1 stage`);
 
-    const tasks = this.simplify1Tasks;
+    const tasks = this.extract1Tasks;
     if (tasks.length === 0) {
-      console.warn(`[Session ${this.nodeId}] No simplify1 tasks to process`);
+      console.warn(`[Session ${this.nodeId}] No extract1 tasks to process`);
       return;
     }
 
-    await this.registerTasks('simplify1', tasks);
-    const { runnableTasks, completedCount, failedCount, total } = await this.resolveStageTasks('simplify1', tasks);
+    await this.registerTasks('extract1', tasks);
+    const { runnableTasks, completedCount, failedCount, total } = await this.resolveStageTasks('extract1', tasks);
     const baseCompleted = Math.min(completedCount, total);
     const baseFailed = Math.min(failedCount, total - baseCompleted);
     const baseDone = Math.min(total, baseCompleted + baseFailed);
@@ -689,8 +707,8 @@ export class SessionController {
         failed: baseFailed,
         skipped: 0,
         percentage: total > 0 ? (baseDone / total) * 100 : 0,
-        currentStage: 'simplify1',
-        currentTask: 'Simplify1 already completed',
+        currentStage: 'extract1',
+        currentTask: 'Extract1 already completed',
       });
       return;
     }
@@ -707,66 +725,67 @@ export class SessionController {
         failed,
         skipped,
         percentage,
-        currentStage: 'simplify1',
+        currentStage: 'extract1',
       });
     };
-    const maxConcurrent = this.config.simplify1?.concurrentProcesses ?? this.options.maxConcurrentTasks;
-    const r = await this.simplify1Adapter!.process(runnableTasks, reportProgress, {
-      waitIfPaused: () => this.waitForStageResume('simplify1'),
-      getSignal: () => this.getStageAbortSignal('simplify1'),
+    const maxConcurrent = this.config.extract1?.concurrentProcesses ?? this.options.maxConcurrentTasks;
+    const r = await this.extract1Adapter!.process(runnableTasks, reportProgress, {
+      waitIfPaused: () => this.waitForStageResume('extract1'),
+      getSignal: () => this.getStageAbortSignal('extract1'),
       maxConcurrent,
     });
     console.log(
-      `[Session ${this.nodeId}] Simplify1 stage completed: ${baseCompleted + r.processed}/${total} successful`,
+      `[Session ${this.nodeId}] Extract1 stage completed: ${baseCompleted + r.processed}/${total} successful`,
     );
     if (isShapePreviewMetadataEnabled()) {
       const db = getEphemeralShapeDB();
       const statsByOrigin = new Map<string, GeometryStatsSummary>();
-      for (const task of this.simplify1Tasks) {
+      for (const task of this.extract1Tasks) {
         const originKey = this.getOriginKeyFromTask(task);
         if (!originKey) continue;
-        const bufferId = `${this.nodeId}-simplify1-${task.index ?? 0}`;
-        const buffer = await db.simplifiedBuffers.get(bufferId);
+        const bufferId = `${this.nodeId}-extract1-${task.index ?? 0}`;
+        const buffer = await db.extractedBuffers.get(bufferId);
         if (!buffer) continue;
         const stats = await this.summarizeBufferStats(buffer.data);
         const existing = statsByOrigin.get(originKey) ?? { vertexCount: 0, polygonCount: 0 };
         statsByOrigin.set(originKey, this.accumulateStats(existing, stats));
       }
-      await this.updateSourceMetadataStage('simplify1', statsByOrigin);
+      await this.updateSourceMetadataStage('extract1', statsByOrigin);
     }
   }
 
-  /**
-   * Process simplify2 stage
-   */
-  private async processSimplify2Stage(): Promise<void> {
-    this.currentStage = 'simplify2';
-    console.log(`[Session ${this.nodeId}] Processing simplify2 stage`);
-
-    const zoomLevels = this.resolveZoomLevels();
-    const tileSize = this.config.vectorTiles?.tileSize ?? this.config.tileSize ?? 512;
-    const simplify2Config = this.config.simplify2;
-    const simplificationMode = 'topojson';
-    const retry = this.simplify2RetryOverride ?? 0;
-
-    const tasks: Simplify2Task[] = this.simplify1Tasks.map((task, index) => {
+  private buildExtract2TasksFromExtract1({
+    zoomLevels,
+    tileSize,
+    extractionMode,
+    extract2Config,
+    retry,
+  }: {
+    zoomLevels: number[];
+    tileSize: number;
+    extractionMode: string;
+    extract2Config: BatchProcessConfig['extract2'];
+    retry: number;
+  }): Extract2Task[] {
+    return this.extract1Tasks.map((task, index) => {
       const originKey = this.getOriginKeyFromTask(task);
       const metadata = task.metadata ?? {};
       const originLabel = typeof metadata.originLabel === 'string' ? metadata.originLabel : undefined;
       return ({
-        taskId: this.buildProcessingTaskId('simplify2', this.resolveTaskIdDetails(task)),
+        taskId: this.buildProcessingTaskId('extract2', this.resolveTaskIdDetails(task)),
         nodeId: this.nodeId,
-        taskType: 'simplify2',
+        taskType: 'extract2',
         stage: BatchTaskStage.WAIT,
-        type: 'simplify2',
+        type: 'extract2',
         status: 'waiting',
         index,
         progress: 0,
-        inputBufferId: `${this.nodeId}-simplify1-${index}`,
-        zoomLevels,
-        tileSize,
+        inputBufferId: `${this.nodeId}-extract1-${index}`,
         countryCode: task.countryCode,
+        countryName: typeof metadata.countryName === 'string' ? metadata.countryName : undefined,
+        continent: typeof metadata.continent === 'string' ? metadata.continent : undefined,
         adminLevel: task.adminLevel,
+        adminCode: task.config?.adminCode ?? task.config?.featureGroupId,
         metadata: task.metadata,
         config: {
           sourceTaskId: task.taskId,
@@ -774,35 +793,332 @@ export class SessionController {
           featureId: task.config?.featureId ?? `${task.countryCode ?? 'UNK'}:ADM${task.adminLevel ?? 'X'}`,
           featureLabel: task.config?.featureLabel,
           featureGroupId: task.config?.featureGroupId,
+          adminCode: task.config?.adminCode ?? task.config?.featureGroupId,
           featureIndex: task.config?.featureIndex,
           originKey,
           originLabel,
+          continent: typeof metadata.continent === 'string' ? metadata.continent : undefined,
+          countryName: typeof metadata.countryName === 'string' ? metadata.countryName : undefined,
           countryCode: task.countryCode,
           adminLevel: task.adminLevel,
           zoomLevel: zoomLevels[0] ?? 10,
           tileSize,
-          preserveSharedBoundaries: simplificationMode === 'topojson',
-          simplificationMode,
-          quantize: simplify2Config?.quantize,
+          preserveSharedBoundaries: extractionMode === 'topojson',
+          extractionMode: extractionMode as Extract2ExtractionMode,
+          quantize: extract2Config?.quantize,
           algorithm: 'douglas-peucker',
-          tolerance: simplify2Config?.tolerance,
-          minimumArea: simplify2Config?.simplify,
+          tolerance: extract2Config?.tolerance,
+          minimumArea: extract2Config?.extract,
           preserveTopology: true,
           maxVertices: undefined,
           coordinatePrecision: 6,
-          enablePerFeatureSimplification: simplify2Config?.enablePerFeatureSimplification,
+          enablePerFeatureExtraction: extract2Config?.enablePerFeatureExtraction,
           retry: retry > 0 ? retry : undefined,
         },
       });
     });
-    this.simplify2Tasks = tasks;
+  }
+
+  private resolveTaskContinent(task: Extract1Task): string | undefined {
+    return task.metadata?.continent as string | undefined;
+  }
+
+  private resolveTaskCountryName(task: Extract1Task): string | undefined {
+    const metadata = task.metadata ?? {};
+    if (typeof metadata.countryName === 'string' && metadata.countryName.trim()) {
+      return metadata.countryName.trim();
+    }
+    if (typeof task.config?.countryName === 'string' && task.config.countryName.trim()) {
+      return task.config.countryName.trim();
+    }
+    return undefined;
+  }
+
+  private resolveTaskCountryCode(task: Extract1Task): string | undefined {
+    const code = task.countryCode;
+    if (typeof code === 'string' && code.trim()) {
+      return code.trim().toUpperCase();
+    }
+    return undefined;
+  }
+
+  private resolveTaskAdminCode(task: Extract1Task): string | undefined {
+    const code = task.config?.featureGroupId ?? task.config?.adminCode;
+    if (typeof code === 'string' && code.trim()) {
+      return code.trim();
+    }
+    return undefined;
+  }
+
+  private applyFeatureMetadata(
+    collection: FeatureCollection,
+    meta: {
+      continent?: string;
+      countryName?: string;
+      countryCode?: string;
+      adminCode?: string;
+      originKey?: string;
+    },
+  ): FeatureCollection {
+    for (const feature of collection.features) {
+      if (!feature) continue;
+      feature.properties ??= {} as Record<string, unknown>
+      const properties = feature.properties;
+      if (meta.continent && typeof properties.continent !== 'string') {
+        properties.continent = meta.continent;
+      }
+      if (meta.countryName && typeof properties.countryName !== 'string') {
+        properties.countryName = meta.countryName;
+      }
+      if (meta.countryCode && typeof properties.countryCode !== 'string') {
+        properties.countryCode = meta.countryCode;
+      }
+      if (meta.adminCode && typeof properties.adminCode !== 'string') {
+        properties.adminCode = meta.adminCode;
+      }
+      if (meta.originKey && typeof properties[HDB_ORIGIN_KEY] !== 'string') {
+        properties[HDB_ORIGIN_KEY] = meta.originKey;
+      }
+    }
+    return collection;
+  }
+
+  private splitGroupByKey<T>(
+    items: T[],
+    resolveKey: (item: T) => string,
+  ): Array<{ key: string; items: T[] }> {
+    const groups = new Map<string, T[]>();
+    for (const item of items) {
+      const key = resolveKey(item);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(item);
+    }
+    return Array.from(groups.entries()).map(([key, items]) => ({ key, items }));
+  }
+
+  private async buildGroupedExtract2Tasks({
+    zoomLevels,
+    tileSize,
+    extractionMode,
+    extract2Config,
+    retry,
+  }: {
+    zoomLevels: number[];
+    tileSize: number;
+    extractionMode: string;
+    extract2Config: BatchProcessConfig['extract2'];
+    retry: number;
+  }): Promise<Extract2Task[]> {
+    const db = getEphemeralShapeDB();
+    const maxFeaturesPerGroup = 2000;
+    type Candidate = {
+      task: Extract1Task;
+      continent: string;
+      countryName: string;
+      countryCode?: string;
+      adminCode?: string;
+      adminLevel?: number;
+      originKey?: string;
+      originLabel?: string;
+      sourceUrl?: string;
+      features: Feature[];
+    };
+    const candidates: Candidate[] = [];
+
+    for (const task of this.extract1Tasks) {
+      const continent = this.resolveTaskContinent(task);
+      const countryName = this.resolveTaskCountryName(task);
+      if (!continent || !countryName) {
+        console.warn(`[Session ${this.nodeId}] Missing continent/countryName; skipping extract2 task`, {
+          taskId: task.taskId,
+          continent,
+          countryCode: task.countryCode,
+          adminLevel: task.adminLevel,
+        });
+        continue;
+      }
+      const inputBufferId = `${this.nodeId}-extract1-${task.index ?? 0}`;
+      const buffer = await db.extractedBuffers.get(inputBufferId);
+      if (!buffer) {
+        console.warn(`[Session ${this.nodeId}] Extract1 buffer missing; skipping extract2 task`, {
+          taskId: task.taskId,
+          inputBufferId,
+        });
+        continue;
+      }
+      const collection = await this.decodeFeatureCollection(buffer.data);
+      if (!collection || collection.features.length === 0) {
+        continue;
+      }
+      const originKey = this.getOriginKeyFromTask(task);
+      const countryCode = this.resolveTaskCountryCode(task);
+      const adminCode = this.resolveTaskAdminCode(task);
+      this.applyFeatureMetadata(collection, {
+        continent,
+        countryName,
+        countryCode,
+        adminCode,
+        originKey,
+      });
+      candidates.push({
+        task,
+        continent,
+        countryName,
+        countryCode,
+        adminCode,
+        adminLevel: task.adminLevel,
+        originKey,
+        originLabel: typeof task.metadata?.originLabel === 'string' ? task.metadata.originLabel : undefined,
+        sourceUrl: task.config?.sourceUrl,
+        features: collection.features,
+      });
+    }
+
+    if (candidates.length === 0) {
+      return [];
+    }
+
+    const continentGroups = this.splitGroupByKey(
+      candidates,
+      (entry) => `${entry.task.metadata?.dataSource ?? 'unknown'}|${entry.adminLevel ?? 'NA'}|${entry.continent}`,
+    );
+    const finalGroups: Array<{ key: string; items: Candidate[] }> = [];
+
+    const sumFeatures = (items: Candidate[]) =>
+      items.reduce((total, item) => total + item.features.length, 0);
+
+    for (const group of continentGroups) {
+      if (sumFeatures(group.items) <= maxFeaturesPerGroup) {
+        finalGroups.push(group);
+        continue;
+      }
+      const countryGroups = this.splitGroupByKey(
+        group.items,
+        (entry) => `${group.key}|${entry.countryCode ?? 'UNKNOWN'}`,
+      );
+      for (const countryGroup of countryGroups) {
+        if (sumFeatures(countryGroup.items) <= maxFeaturesPerGroup) {
+          finalGroups.push(countryGroup);
+          continue;
+        }
+        const adminGroups = this.splitGroupByKey(
+          countryGroup.items,
+          (entry) => `${countryGroup.key}|${entry.adminCode ?? 'UNKNOWN'}`,
+        );
+        finalGroups.push(...adminGroups);
+      }
+    }
+
+    const tasks: Extract2Task[] = [];
+    for (let index = 0; index < finalGroups.length; index += 1) {
+      const group = finalGroups[index];
+      const groupFeatures = group?.items.flatMap((item) => item.features);
+      if (!groupFeatures || groupFeatures?.length === 0) continue;
+      const groupCollection: FeatureCollection = {
+        type: 'FeatureCollection',
+        features: groupFeatures,
+      };
+      const groupBufferId = `${this.nodeId}-extract1-group-${index}`;
+      const data = await this.encodeFeatureCollection(groupCollection);
+      await db.extractedBuffers.put({
+        id: groupBufferId,
+        nodeId: this.nodeId,
+        stage: 'extract1',
+        data,
+        featureCount: groupFeatures.length,
+        extractionRatio: 1,
+        tolerance: 0,
+        timestamp: Date.now(),
+      });
+      const primary = group?.items[0];
+      const featureGroupId = `continent-group:${group?.key}`;
+      if (!primary) continue;
+      tasks.push({
+        taskId: this.buildProcessingTaskId('extract2', {
+          countryCode: primary.countryCode,
+          adminLevel: primary.adminLevel,
+          featureGroupId,
+        }),
+        nodeId: this.nodeId,
+        taskType: 'extract2',
+        stage: BatchTaskStage.WAIT,
+        type: 'extract2',
+        status: 'waiting',
+        index,
+        progress: 0,
+        inputBufferId: groupBufferId,
+        continent: primary.continent,
+        adminLevel: primary.adminLevel,
+        metadata: {
+          dataSource: primary.task.metadata?.dataSource,
+          continent: primary.continent,
+          originKey: primary.originKey,
+          originLabel: primary.originLabel,
+          featureLabel: featureGroupId,
+        },
+        config: {
+          sourceTaskId: primary.task.taskId,
+          sourceUrl: primary.sourceUrl,
+          featureGroupId,
+          adminCode: primary.adminCode,
+          originKey: primary.originKey,
+          originLabel: primary.originLabel,
+          continent: primary.continent,
+          zoomLevels,
+          tileSize,
+          preserveSharedBoundaries: extractionMode === 'topojson',
+          extractionMode: extractionMode as Extract2ExtractionMode,
+          quantize: extract2Config?.quantize,
+          // algorithm: 'douglas-peucker',
+          tolerance: extract2Config?.tolerance,
+          minimumArea: extract2Config?.extract,
+          // preserveTopology: true,
+          // maxVertices: undefined,
+          // coordinatePrecision: 6,
+          enablePerFeatureExtraction: extract2Config?.enablePerFeatureExtraction,
+          retry: retry > 0 ? retry : undefined,
+        },
+      });
+    }
+    return tasks;
+  }
+
+  /**
+   * Process extract2 stage
+   */
+  private async processExtract2Stage(): Promise<void> {
+    this.currentStage = 'extract2';
+    console.log(`[Session ${this.nodeId}] Processing extract2 stage`);
+
+    const zoomLevels = this.resolveZoomLevels();
+    const tileSize = this.config.vectorTiles?.tileSize ?? this.config.tileSize ?? 512;
+    const extract2Config = this.config.extract2;
+    const extractionMode = 'topojson';
+    const retry = this.extract2RetryOverride ?? 0;
+    const shouldGroupByContinent = extractionMode === 'topojson' && zoomLevels.includes(0);
+    const tasks: Extract2Task[] = shouldGroupByContinent
+      ? await this.buildGroupedExtract2Tasks({
+        zoomLevels,
+        tileSize,
+        extractionMode,
+        extract2Config,
+        retry,
+      })
+      : this.buildExtract2TasksFromExtract1({
+        zoomLevels,
+        tileSize,
+        extractionMode,
+        extract2Config,
+        retry,
+      });
+    this.extract2Tasks = tasks;
     if (tasks.length === 0) {
-      console.warn(`[Session ${this.nodeId}] No simplify2 tasks to process`);
+      console.warn(`[Session ${this.nodeId}] No extract2 tasks to process`);
       return;
     }
 
-    await this.registerTasks('simplify2', tasks);
-    const { runnableTasks, completedCount, failedCount, total } = await this.resolveStageTasks('simplify2', tasks);
+    await this.registerTasks('extract2', tasks);
+    const { runnableTasks, completedCount, failedCount, total } = await this.resolveStageTasks('extract2', tasks);
     const baseCompleted = Math.min(completedCount, total);
     const baseFailed = Math.min(failedCount, total - baseCompleted);
     const baseDone = Math.min(total, baseCompleted + baseFailed);
@@ -813,8 +1129,8 @@ export class SessionController {
         failed: baseFailed,
         skipped: 0,
         percentage: total > 0 ? (baseDone / total) * 100 : 0,
-        currentStage: 'simplify2',
-        currentTask: 'Simplify2 already completed',
+        currentStage: 'extract2',
+        currentTask: 'Extract2 already completed',
       });
       return;
     }
@@ -831,19 +1147,19 @@ export class SessionController {
         failed,
         skipped,
         percentage,
-        currentStage: 'simplify2',
+        currentStage: 'extract2',
       });
     };
-    const maxConcurrent = this.config.simplify2?.concurrentProcesses ?? this.options.maxConcurrentTasks;
-    const r = await this.simplify2Adapter!.process(runnableTasks, reportProgress, {
-      waitIfPaused: () => this.waitForStageResume('simplify2'),
-      getSignal: () => this.getStageAbortSignal('simplify2'),
+    const maxConcurrent = this.config.extract2?.concurrentProcesses ?? this.options.maxConcurrentTasks;
+    const r = await this.extract2Adapter!.process(runnableTasks, reportProgress, {
+      waitIfPaused: () => this.waitForStageResume('extract2'),
+      getSignal: () => this.getStageAbortSignal('extract2'),
       maxConcurrent,
     });
     const skipped = await shapeDB.batchTasks
       .where('nodeId')
       .equals(this.nodeId)
-      .and((task) => task.taskType === 'simplify2' && isSkippedMessage(task.message))
+      .and((task) => task.taskType === 'extract2' && isSkippedMessage(task.message))
       .count();
     const completed = Math.min(total, baseCompleted + r.processed);
     const failed = Math.min(total - completed, baseFailed + r.failed);
@@ -854,26 +1170,26 @@ export class SessionController {
       failed,
       skipped,
       percentage: total > 0 ? (done / total) * 100 : 0,
-      currentStage: 'simplify2',
-      currentTask: 'Simplify2 completed',
+      currentStage: 'extract2',
+      currentTask: 'Extract2 completed',
     });
     console.log(
-      `[Session ${this.nodeId}] Simplify2 stage completed: ${baseCompleted + r.processed}/${total} successful`,
+      `[Session ${this.nodeId}] Extract2 stage completed: ${baseCompleted + r.processed}/${total} successful`,
     );
     if (isShapePreviewMetadataEnabled()) {
       const db = getEphemeralShapeDB();
       const statsByOrigin = new Map<string, GeometryStatsSummary>();
-      for (const task of this.simplify2Tasks) {
+      for (const task of this.extract2Tasks) {
         const originKey = this.getOriginKeyFromTask(task);
         if (!originKey) continue;
-        const bufferId = `${this.nodeId}-simplify2-${task.index ?? 0}`;
-        const buffer = await db.simplifiedBuffers.get(bufferId);
+        const bufferId = `${this.nodeId}-extract2-${task.index ?? 0}`;
+        const buffer = await db.extractedBuffers.get(bufferId);
         if (!buffer) continue;
         const stats = await this.summarizeBufferStats(buffer.data);
         const existing = statsByOrigin.get(originKey) ?? { vertexCount: 0, polygonCount: 0 };
         statsByOrigin.set(originKey, this.accumulateStats(existing, stats));
       }
-      await this.updateSourceMetadataStage('simplify2', statsByOrigin);
+      await this.updateSourceMetadataStage('extract2', statsByOrigin);
     }
   }
 
@@ -1031,6 +1347,7 @@ export class SessionController {
       dataSource,
       countryName: output.countryName,
       countryCode,
+      continent: output.continent,
       adminLevel,
       featureGroupId: output.featureGroupId,
       featureLabel: output.featureLabel,
@@ -1108,6 +1425,7 @@ export class SessionController {
         dataSource: entry.dataSource,
         countryName: entry.countryName,
         countryCode: entry.countryCode,
+        continent: entry.continent,
         adminLevel: entry.adminLevel,
         featureGroupId: entry.featureGroupId,
         featureLabel: entry.featureLabel,
@@ -1115,10 +1433,10 @@ export class SessionController {
         updatedAt: now,
         rawVertexCount: prior?.rawVertexCount,
         rawPolygonCount: prior?.rawPolygonCount,
-        simplify1VertexCount: prior?.simplify1VertexCount,
-        simplify1PolygonCount: prior?.simplify1PolygonCount,
-        simplify2VertexCount: prior?.simplify2VertexCount,
-        simplify2PolygonCount: prior?.simplify2PolygonCount,
+        extract1VertexCount: prior?.extract1VertexCount,
+        extract1PolygonCount: prior?.extract1PolygonCount,
+        extract2VertexCount: prior?.extract2VertexCount,
+        extract2PolygonCount: prior?.extract2PolygonCount,
         vectorTileVertexCount: prior?.vectorTileVertexCount,
         vectorTilePolygonCount: prior?.vectorTilePolygonCount,
         bbox: prior?.bbox,
@@ -1130,7 +1448,7 @@ export class SessionController {
   }
 
   private async updateSourceMetadataStage(
-    stage: 'raw' | 'simplify1' | 'simplify2' | 'vectorTile',
+    stage: 'raw' | 'extract1' | 'extract2' | 'vectorTile',
     statsByOrigin: Map<string, GeometryStatsSummary>,
   ): Promise<void> {
     if (statsByOrigin.size === 0) return;
@@ -1144,7 +1462,7 @@ export class SessionController {
       const prior = existingByKey.get(originKey);
       const base = this.originMetadataByKey.get(originKey);
       if (!prior && !base) continue;
-      const bbox = (stage === 'raw' || stage === 'simplify2')
+      const bbox = (stage === 'raw' || stage === 'extract2')
         ? (stats.bbox ?? prior?.bbox)
         : prior?.bbox;
       rows.push({
@@ -1155,6 +1473,7 @@ export class SessionController {
         dataSource: prior?.dataSource ?? base?.dataSource,
         countryName: prior?.countryName ?? base?.countryName,
         countryCode: prior?.countryCode ?? base?.countryCode,
+        continent: prior?.continent ?? base?.continent,
         adminLevel: prior?.adminLevel ?? base?.adminLevel,
         featureGroupId: prior?.featureGroupId ?? base?.featureGroupId,
         featureLabel: prior?.featureLabel ?? base?.featureLabel,
@@ -1162,10 +1481,10 @@ export class SessionController {
         updatedAt: now,
         rawVertexCount: stage === 'raw' ? stats.vertexCount : prior?.rawVertexCount,
         rawPolygonCount: stage === 'raw' ? stats.polygonCount : prior?.rawPolygonCount,
-        simplify1VertexCount: stage === 'simplify1' ? stats.vertexCount : prior?.simplify1VertexCount,
-        simplify1PolygonCount: stage === 'simplify1' ? stats.polygonCount : prior?.simplify1PolygonCount,
-        simplify2VertexCount: stage === 'simplify2' ? stats.vertexCount : prior?.simplify2VertexCount,
-        simplify2PolygonCount: stage === 'simplify2' ? stats.polygonCount : prior?.simplify2PolygonCount,
+        extract1VertexCount: stage === 'extract1' ? stats.vertexCount : prior?.extract1VertexCount,
+        extract1PolygonCount: stage === 'extract1' ? stats.polygonCount : prior?.extract1PolygonCount,
+        extract2VertexCount: stage === 'extract2' ? stats.vertexCount : prior?.extract2VertexCount,
+        extract2PolygonCount: stage === 'extract2' ? stats.polygonCount : prior?.extract2PolygonCount,
         vectorTileVertexCount: stage === 'vectorTile' ? stats.vertexCount : prior?.vectorTileVertexCount,
         vectorTilePolygonCount: stage === 'vectorTile' ? stats.polygonCount : prior?.vectorTilePolygonCount,
         bbox,
@@ -1249,16 +1568,17 @@ export class SessionController {
     }> = [];
     const createdAt = Date.now();
 
-    for (const task of this.simplify2Tasks) {
-      const inputBufferId = task.inputBufferId ?? `${this.nodeId}-simplify2-${task.index ?? 0}`;
-      const buffer = await db.simplifiedBuffers.get(inputBufferId);
+    for (const task of this.extract2Tasks) {
+      const inputBufferId = task.inputBufferId ?? `${this.nodeId}-extract2-${task.index ?? 0}`;
+      const buffer = await db.extractedBuffers.get(inputBufferId);
       if (!buffer) continue;
       const collection = await this.decodeFeatureCollection(buffer.data);
       if (!collection) continue;
       for (let index = 0; index < collection.features.length; index++) {
         const feature = collection.features[index];
         if (!feature) continue;
-        const properties = (feature.properties ??= {});
+        feature.properties ??= {};
+        const properties = feature.properties;
         const stats = this.extractGeometryStats(feature);
         const countryCode = task.countryCode ?? this.pickCountryCode(properties);
         const adminLevel = task.adminLevel ?? this.pickAdminLevel(properties);
@@ -1334,7 +1654,6 @@ export class SessionController {
       status: 'waiting',
       index,
       progress: 0,
-      zoomLevel: tile.z,
       config: {
         inputBufferId: tile.key,
         minZoom,
@@ -1477,7 +1796,7 @@ export class SessionController {
       });
     };
     const baseConcurrent = this.config.vectorTiles?.concurrentProcesses ?? this.options.maxConcurrentTasks;
-    const maxConcurrent = this.simplify2RetryOverride > 0
+    const maxConcurrent = this.extract2RetryOverride > 0
       ? 1
       : (baseConcurrent ?? 1);
     const r = await this.vectorTileAdapter!.process(runnableTasks, reportProgress, {
@@ -1568,8 +1887,9 @@ export class SessionController {
 
   private async registerTasks(
     stage: ProcessingStage,
-    tasks: Array<{ taskId: string; config?: unknown; index?: number }>,
+    tasks: Array<{ taskId: string; index?: number }>,
     existingTaskIds?: Set<string>,
+    inputsByTaskId?: Map<string, Record<string, unknown>>,
   ): Promise<void> {
     const now = Date.now();
     if (stage === 'vectortile') {
@@ -1582,6 +1902,7 @@ export class SessionController {
       const newTasks = [];
       for (const [index, task] of tasks.entries()) {
         const existingTask = existingById.get(task.taskId);
+        const inputData = inputsByTaskId?.get(task.taskId);
         if (!existingTask) {
           newTasks.push({
             taskId: task.taskId,
@@ -1590,7 +1911,7 @@ export class SessionController {
             status: 'waiting' as const,
             index: task.index ?? index,
             progress: 0,
-            inputData: typeof task.config === 'object' && task.config ? (task.config as Record<string, unknown>) : undefined,
+            inputData,
             createdAt: now,
             updatedAt: now,
           });
@@ -1603,7 +1924,7 @@ export class SessionController {
         const nextRetry = currentRetry + 1;
         const nextInputData = {
           ...(existingTask.inputData ?? {}),
-          ...(typeof task.config === 'object' && task.config ? (task.config as Record<string, unknown>) : {}),
+          ...(inputData ?? {}),
           retry: nextRetry,
         };
         await shapeDB.updateBatchTask(task.taskId, { inputData: nextInputData });
@@ -1633,7 +1954,7 @@ export class SessionController {
         status: 'waiting' as const,
         index: task.index ?? index,
         progress: 0,
-        inputData: typeof task.config === 'object' && task.config ? (task.config as Record<string, unknown>) : undefined,
+        inputData: inputsByTaskId?.get(task.taskId),
         createdAt: now,
         updatedAt: now,
       }));
@@ -1643,6 +1964,21 @@ export class SessionController {
         await shapeDB.batchTasks.bulkPut(newTasks.slice(offset, offset + chunkSize));
       }
     }
+  }
+
+  private async loadStageInputs<TInput>(stage: ProcessingStage): Promise<Map<string, TInput>> {
+    const rows = await shapeDB.batchTasks
+      .where('nodeId')
+      .equals(this.nodeId)
+      .and((task) => task.taskType === stage)
+      .toArray();
+    const inputs = new Map<string, TInput>();
+    rows.forEach((row) => {
+      if (row.inputData) {
+        inputs.set(row.taskId, row.inputData as TInput);
+      }
+    });
+    return inputs;
   }
 
   private async resolveStageTasks<T extends { taskId: string }>(
@@ -1667,6 +2003,8 @@ export class SessionController {
   private async markDownloadTasksCompletedWhenBuffersExist(tasks: DownloadTask[]): Promise<void> {
     if (tasks.length === 0) return;
     const db = getEphemeralShapeDB();
+    const session = await shapeDB.getBatchSession(this.nodeId);
+    const startedAt = session?.startedAt ?? 0;
     const existing = await shapeDB.batchTasks
       .where('nodeId')
       .equals(this.nodeId)
@@ -1680,6 +2018,9 @@ export class SessionController {
       const bufferId = `${this.nodeId}-download-${index}`;
       const raw = await db.rawBuffers.get(bufferId);
       if (!raw) continue;
+      if (startedAt > 0 && raw.timestamp < startedAt) {
+        continue;
+      }
       await shapeDB.updateBatchTask(task.taskId, {
         status: 'completed',
         progress: 100,
@@ -1710,14 +2051,14 @@ export class SessionController {
     return Math.max(...retryable);
   }
 
-  private async prepareSimplify2Retry(retry: number): Promise<void> {
-    this.simplify2RetryOverride = retry;
-    const simplify2Tasks = await shapeDB.batchTasks
+  private async prepareExtract2Retry(retry: number): Promise<void> {
+    this.extract2RetryOverride = retry;
+    const extract2Tasks = await shapeDB.batchTasks
       .where('nodeId')
       .equals(this.nodeId)
-      .and((task) => task.taskType === 'simplify2')
+      .and((task) => task.taskType === 'extract2')
       .toArray();
-    for (const task of simplify2Tasks) {
+    for (const task of extract2Tasks) {
       const inputData = { ...(task.inputData ?? {}), retry };
       await shapeDB.updateBatchTask(task.taskId, {
         status: 'waiting',

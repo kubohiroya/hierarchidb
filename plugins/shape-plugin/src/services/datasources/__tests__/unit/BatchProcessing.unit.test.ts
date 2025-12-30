@@ -313,7 +313,7 @@ describe('Batch Processing System', () => {
           bbox: { minLat: 35, maxLat: 36, minLng: 139, maxLng: 140 },
         },
         processOptions: {
-          simplify: true,
+          extract: true,
           tolerance: 0.01,
         },
         saveTarget: {
@@ -450,7 +450,7 @@ describe('Batch Processing System', () => {
           adminLevel: 0,
         },
         processOptions: {
-          simplify: true,
+          extract: true,
           tolerance: 0.001,
           filters: [
             { field: 'properties.POP_EST', operator: 'gt', value: 1000000 },

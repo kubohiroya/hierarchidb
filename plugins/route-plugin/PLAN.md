@@ -22,7 +22,7 @@ Last Updated: 2025-09-06
 
 - Throttling/Backoff: promote the lightweight RateLimiter currently embedded in `runtime-ui/datasource` into a shared module (e.g., `runtime-shared/batch-processor` or `@hierarchidb/util`) and reuse. Do not create a new limiter.
 - Storage/Schema: use `feature/batch` Dexie stores for jobs/tasks/results. For route outputs, extend existing route stores or add a small route‑specific table; avoid parallel bespoke stores.
-- Geometry/Encoding/Simplification: reuse capabilities from the refactored `shape-plugin` services (quantization, TopoJSON simplification, geobuf, pako). Wire through `feature/compute` steps instead of re‑writing.
+- Geometry/Encoding/Extraction: reuse capabilities from the refactored `shape-plugin` services (quantization, TopoJSON extraction, geobuf, pako). Wire through `feature/compute` steps instead of re‑writing.
 - Vector Tiles: if MVT generation exists in shape pipeline (or documented as planned), factor common parts into shared steps; otherwise keep tiler as optional follow‑up, not a blocker for the first delivery.
 - Engine adapters: check for existing `feature/route-searoute` and any OSRM client. Implement thin adapters that conform to a common engine interface.
 
@@ -57,7 +57,7 @@ The route batch processing implementation prioritizes shared infrastructure to r
   - Register engine capabilities via `@hierarchidb/feature-registry` at worker bootstrap. Provide caps such as `route.engine.osrm`, `route.engine.searoute` and consume them from `RouteGenerator`.
 - Reuse/promote shared utilities:
   - Move the simple RateLimiter from `packages/runtime-ui/datasource/src/services/DataSourceManager.ts` into a shared module (e.g., `packages/runtime-shared/batch-processor/src/RateLimiter.ts` or `packages/util/src/rateLimiter.ts`). Import it in Route scheduler; remove duplicate implementations.
-  - Geometry encoding/simplification should reuse shape-plugin workers/utilities; do not build a new TopoJSON/MVT stack under route.
+  - Geometry encoding/extraction should reuse shape-plugin workers/utilities; do not build a new TopoJSON/MVT stack under route.
 
 Deliverables MUST reference these files/paths to avoid drift.
 
@@ -124,7 +124,7 @@ Deliverables MUST reference these files/paths to avoid drift.
 
 6) Tiler (Offline/Background)
 - Process tiles in tileKey order; write `tiles{ tileKey, zxy, mvtPbf, stats }`.
-- Steps: read routeIds for tileKey → decode geom → clip to tile bounds → simplify by zoom tolerance → `geojson‑vt`‑like slicing → `vt‑pbf` encode → persist.
+- Steps: read routeIds for tileKey → decode geom → clip to tile bounds → extract by zoom tolerance → `geojson‑vt`‑like slicing → `vt‑pbf` encode → persist.
 - Design avoids holding all data in memory; streaming/page through Dexie.
 
 7) UI Progress & Control

@@ -199,7 +199,7 @@ flowchart TD
 sequenceDiagram
     participant VG as VectorTileGenerator
     participant QT as QuadTree
-    participant SP as SimplificationProcessor
+    participant SP as ExtractionProcessor
     participant CP as ClippingProcessor
     participant MC as MVTConverter
     participant CC as CompressionController
@@ -208,8 +208,8 @@ sequenceDiagram
     QT-->>VG: TileGrid[]
     
     loop 各タイルについて
-        VG->>SP: simplifyGeometry(features, tolerance)
-        SP-->>VG: SimplifiedFeatures
+        VG->>SP: extractGeometry(features, tolerance)
+        SP-->>VG: ExtractedFeatures
         
         VG->>CP: clipToBounds(features, tileBounds)
         CP-->>VG: ClippedFeatures

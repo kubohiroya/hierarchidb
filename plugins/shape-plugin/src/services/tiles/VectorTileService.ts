@@ -62,7 +62,7 @@ export class VectorTileService {
         minZoom: 0,
         maxZoom: 14,
         properties: ['name', 'name_en', 'admin_level', 'population'],
-        simplificationLevel: 1,
+        extractionLevel: 1,
       },
     ],
     compression: true,
@@ -250,10 +250,10 @@ export class VectorTileService {
       (feature: FeatureRecord) => !feature.adminLevel || feature.adminLevel <= adminLevel,
     );
 
-    // Simplify geometries based on zoom level
+    // Extract geometries based on zoom level
     return filteredFeatures.map((feature: FeatureRecord) => ({
       ...feature,
-      geometry: this.simplifyGeometryForZoom(feature.geometry, zoom),
+      geometry: this.extractGeometryForZoom(feature.geometry, zoom),
     }));
   }
 
@@ -372,17 +372,17 @@ export class VectorTileService {
     return 3;
   }
 
-  private simplifyGeometryForZoom(geometry: Geometry, zoom: number): Geometry {
+  private extractGeometryForZoom(geometry: Geometry, zoom: number): Geometry {
     const tolerance = this.getToleranceForZoom(zoom);
 
     try {
-      const simplified = turf.simplify(geometry, { tolerance, highQuality: false }) as GeoJSONFeature<Geometry> | Geometry;
-      if ((simplified as GeoJSONFeature<Geometry>).type === 'Feature') {
-        return (simplified as GeoJSONFeature<Geometry>).geometry;
+      const extracted = turf.simplify(geometry, { tolerance, highQuality: false }) as GeoJSONFeature<Geometry> | Geometry;
+      if ((extracted as GeoJSONFeature<Geometry>).type === 'Feature') {
+        return (extracted as GeoJSONFeature<Geometry>).geometry;
       }
-      return simplified as Geometry;
+      return extracted as Geometry;
     } catch {
-      return geometry; // Return original if simplification fails
+      return geometry; // Return original if extraction fails
     }
   }
 
@@ -406,7 +406,7 @@ export class VectorTileService {
   ): Geometry {
     throw new Error('Method not implemented.');
     // Transform geographic coordinates to tile coordinates
-    // This is a simplified implementation
+    // This is a extracted implementation
     //return geometry;
   }
 

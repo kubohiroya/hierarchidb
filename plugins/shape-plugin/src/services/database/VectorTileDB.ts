@@ -38,6 +38,7 @@ export interface ShapeSourceMetadataRow {
   dataSource?: string;
   countryName?: string;
   countryCode?: string;
+  continent?: string;
   adminLevel?: number;
   featureGroupId?: string;
   featureLabel?: string;
@@ -45,23 +46,23 @@ export interface ShapeSourceMetadataRow {
   updatedAt: number;
   rawVertexCount?: number;
   rawPolygonCount?: number;
-  simplify1VertexCount?: number;
-  simplify1PolygonCount?: number;
-  simplify2VertexCount?: number;
-  simplify2PolygonCount?: number;
+  extract1VertexCount?: number;
+  extract1PolygonCount?: number;
+  extract2VertexCount?: number;
+  extract2PolygonCount?: number;
   vectorTileVertexCount?: number;
   vectorTilePolygonCount?: number;
   bbox?: [number, number, number, number];
 }
 
-export class ShapeTileMetadataDB extends Dexie {
+export class VectorTileDB extends Dexie {
   tiles!: Table<StageTileRow, string>;
   featureMetadata!: Table<ShapeFeatureMetadataRow, string>;
   sourceMetadata!: Table<ShapeSourceMetadataRow, string>;
 
-  static async getSingleton(): Promise<ShapeTileMetadataDB> {
+  static async getSingleton(): Promise<VectorTileDB> {
     return SingletonMixin.getSingleton('ShapeTileMetadataDB', async () => {
-      const db = new ShapeTileMetadataDB(getDBName('vectortile'));
+      const db = new VectorTileDB(getDBName('vectortile'));
       await db.open();
       return db;
     });
@@ -69,23 +70,6 @@ export class ShapeTileMetadataDB extends Dexie {
 
   private constructor(name: string) {
     super(name);
-    this.version(2).stores({
-      tiles: '&key, sessionId, [sessionId+z+x+y], z, x, y, timestamp',
-      featureMetadata:
-        '&id, sessionId, featureId, countryCode, adminLevel, adminCode, dataSource, createdAt',
-    });
-    this.version(3)
-      .stores({
-        tiles: '&key, nodeId, [nodeId+z+x+y], z, x, y, timestamp',
-        featureMetadata:
-          '&id, nodeId, featureId, countryCode, adminLevel, adminCode, dataSource, createdAt',
-        sourceMetadata:
-          '&id, nodeId, originKey, dataSource, countryCode, adminLevel, createdAt, updatedAt',
-      })
-      .upgrade(async () => {
-        await this.table('tiles').clear();
-        await this.table('featureMetadata').clear();
-      });
     this.version(4).stores({
       tiles: '&key, nodeId, [nodeId+z+x+y], z, x, y, timestamp',
       featureMetadata:
@@ -99,6 +83,6 @@ export class ShapeTileMetadataDB extends Dexie {
   }
 }
 
-export async function getShapeTileMetadataDB(): Promise<ShapeTileMetadataDB> {
-  return ShapeTileMetadataDB.getSingleton();
+export async function getShapeTileMetadataDB(): Promise<VectorTileDB> {
+  return VectorTileDB.getSingleton();
 }

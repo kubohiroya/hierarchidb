@@ -197,7 +197,7 @@ wrangler tail --config wrangler.hierarchidb.toml --env production
 
 ## Benefits
 
-### 1. Simplified Management
+### 1. Extracted Management
 - Single BFF to maintain instead of multiple backend services
 - Centralized security configuration
 - Unified OAuth app management

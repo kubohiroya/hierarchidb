@@ -37,7 +37,7 @@ export interface DownloadSessionConfig {
   retryDelay?: number;
 }
 
-export interface SimplifySession1Config {
+export interface ExtractSession1Config {
   concurrentProcesses: number;
   enableFeatureFiltering: boolean;
   featureAreaThreshold: number;
@@ -48,12 +48,12 @@ export interface SimplifySession1Config {
   deleteOnComplete?: boolean;
 }
 
-export interface SimplifySession2Config {
+export interface ExtractSession2Config {
   concurrentProcesses: number;
   quantize: number;
-  simplify: number;
+  extract: number;
   tolerance: number;
-  enablePerFeatureSimplification: boolean;
+  enablePerFeatureExtraction: boolean;
   deleteOnComplete?: boolean;
 }
 
@@ -67,30 +67,30 @@ export interface GenerateVectorTilesConfig {
 
 export interface BatchSessionConfig extends CommonSessionConfig {
   download: DownloadSessionConfig;
-  simplify1: SimplifySession1Config;
-  simplify2: SimplifySession2Config;
+  extract1: ExtractSession1Config;
+  extract2: ExtractSession2Config;
   vectorTiles: GenerateVectorTilesConfig;
   concurrentDownloads?: number;
   concurrentProcesses?: number;
   quantize?: number;
-  simplify?: number;
+  extract?: number;
   tolerance?: number;
   maxZoom?: number;
   minZoom?: number;
   featureAreaThreshold?: number;
   minVertexCountForAreaFilter?: number;
   enableFeatureFiltering?: boolean;
-  enablePerFeatureSimplification?: boolean;
+  enablePerFeatureExtraction?: boolean;
   aspectRatioThreshold?: number;
   featureFilterMethod?: FeatureFilterMethod;
   hybridFilterConfig?: HybridFilterConfig;
   deleteDownloadCacheOnComplete?: boolean;
-  deleteSimplify1CacheOnComplete?: boolean;
-  deleteSimplify2CacheOnComplete?: boolean;
+  deleteExtract1CacheOnComplete?: boolean;
+  deleteExtract2CacheOnComplete?: boolean;
 }
 
 export type BatchProcessConfig = BatchSessionConfig;
-export type BatchTaskType = 'download' | 'simplify1' | 'simplify2' | 'vectortile';
+export type BatchTaskType = 'download' | 'extract1' | 'extract2' | 'vectortile';
 export type ProcessingStage = BatchTaskType;
 export type TaskStatus = 'waiting' | 'running' | 'completed' | 'failed' | 'regression';
 
@@ -191,7 +191,7 @@ export interface FeatureRecord {
   nameEn?: string;
   population?: number;
   area?: number;
-  simplificationLevel?: number;
+  extractionLevel?: number;
   createdAt: number;
   updatedAt: number;
 }

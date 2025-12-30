@@ -4,7 +4,7 @@ export {
   type EphemeralStage,
   type ProcessingCache,
   type RawFeatureBuffer,
-  type SimplifiedFeatureBuffer,
+  type ExtractedFeatureBuffer,
   type VectorTileData,
   closeEphemeralShapeDB,
   getEphemeralShapeDB,

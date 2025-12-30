@@ -8,7 +8,7 @@ import type {
   DownloadStageStrategy,
   DownloadTaskPayloadBuildContext,
 } from './DownloadStageStrategy.js';
-import type { CountryMetadata, DownloadTask, DownloadTaskPayload } from '../../../common/types/index.js';
+import type { CountryMetadata, DownloadTask, DownloadTaskInput, DownloadTaskPayload } from '../../../common/types/index.js';
 import { getEphemeralShapeDB } from '../../database/EphemeralShapeDB.js';
 import { decodeFlatGeoJson, encodeFlatGeoJson } from './flatgeobuf.js';
 import { metadataLoader } from '../../metadata/MetadataLoader.js';
@@ -25,7 +25,7 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
     );
   }
 
-  async buildDownloadTasks(context: DownloadStageBuildContext): Promise<DownloadTask[]> {
+  async buildDownloadTasks(context: DownloadStageBuildContext) {
     const adminLevels = new Map<number, DownloadTaskPayload>();
     for (const metadata of context.downloadTaskPayloads) {
       const level = metadata.adminLevel;
@@ -33,28 +33,31 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
         adminLevels.set(level, metadata);
       }
     }
-    return Array.from(adminLevels.entries()).map(([adminLevel, metadata], index) => ({
-      taskId: buildDownloadTaskId(String(context.nodeId), metadata),
-      nodeId: context.nodeId,
-      taskType: 'download',
-      stage: 'wait',
-      type: 'download',
-      status: 'waiting',
-      index,
-      progress: 0,
-      url: metadata.url,
-      config: {
+    const inputsByTaskId = new Map<string, DownloadTaskInput>();
+    const tasks = Array.from(adminLevels.entries()).map(([adminLevel, metadata], index) => {
+      const taskId = buildDownloadTaskId(String(context.nodeId), metadata);
+      const input: DownloadTaskInput = {
         dataSource: 'naturalearth',
-        country: metadata.countryCode ?? 'UNKNOWN',
         adminLevel,
         url: metadata.url,
         timeoutMs: context.options.timeoutMs ?? 0,
         retryDelay: context.options.retryDelay ?? 0,
         retryAttempts: context.options.retryAttempts ?? 0,
-        expectedFormat: 'geojson',
-        validateSSL: true,
-      },
-    }));
+      };
+      inputsByTaskId.set(taskId, input);
+      return {
+        taskId,
+        nodeId: context.nodeId,
+        taskType: 'download',
+        stage: 'wait',
+        type: 'download',
+        status: 'waiting',
+        index,
+        progress: 0,
+        url: metadata.url,
+      };
+    });
+    return { tasks, inputsByTaskId };
   }
 
   async postprocessDownloadOutputs(
@@ -73,13 +76,15 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
 
       const geojson = await decodeFlatGeoJson(raw.data);
       const buckets = this.partitionFeaturesByCountry(geojson, lookup);
-      const adminLevel = task.config?.adminLevel ?? 0;
-      const sourceUrl = task.config?.url;
+      const input = context.downloadInputsById.get(task.taskId);
+      const adminLevel = input?.adminLevel ?? 0;
+      const sourceUrl = input?.url ?? task.url;
 
       for (const [countryCode, features] of buckets.entries()) {
         if (!features.length) continue;
         const country = lookup.get(countryCode.toUpperCase());
         const countryName = country?.countryName;
+        const continent = country?.continent;
         const collection: FeatureCollection = { type: 'FeatureCollection', features };
         const data = await encodeFlatGeoJson(collection);
         const bounds = turfBbox(collection);
@@ -98,6 +103,7 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
           inputBufferId: outputBufferId,
           countryCode,
           countryName,
+          continent,
           adminLevel,
           dataSource: 'naturalearth',
           sourceUrl,

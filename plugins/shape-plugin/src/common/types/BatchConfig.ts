@@ -18,7 +18,7 @@ export interface HybridFilterConfig {
   regularShapeMaxRatio: number; // Max aspect ratio for regular shapes (default: 2.0)
 
   // Step 3: Simple shape-plugin vertex threshold
-  simpleShapeVertexThreshold: number; // Max vertices to consider shape-plugin as simple (default: 50)
+  simpleShapeVertexThreshold: number; // Max vertices to consider shape-plugin as simple (default: 10)
 
   // Step 4: Elongated simple shape-plugin correction
   elongatedShapeCorrectionFactor: number; // Correction factor for elongated simple shapes (default: 0.8)
@@ -45,9 +45,9 @@ export interface DownloadSessionConfig {
 }
 
 /**
- * Configuration specific to SimplifySession1 (Feature Processing)
+ * Configuration specific to ExtractSession1 (Feature Processing)
  */
-export interface SimplifySession1Config {
+export interface ExtractSession1Config {
   concurrentProcesses: number;
 
   // Feature filtering parameters
@@ -62,16 +62,16 @@ export interface SimplifySession1Config {
 }
 
 /**
- * Configuration specific to SimplifySession2 (Tile Processing)
+ * Configuration specific to ExtractSession2 (Tile Processing)
  */
-export interface SimplifySession2Config {
+export interface ExtractSession2Config {
   concurrentProcesses: number;
 
-  // Simplification parameters
+  // Extraction parameters
   quantize: number;
-  simplify: number;
+  extract: number;
   tolerance: number;
-  enablePerFeatureSimplification: boolean;
+  enablePerFeatureExtraction: boolean;
 
   deleteOnComplete?: boolean; // Delete TileBuffer after session completes
 }
@@ -94,8 +94,8 @@ export interface GenerateVectorTilesConfig {
 export interface BatchSessionConfig extends CommonSessionConfig {
   // Session-specific configurations
   download: DownloadSessionConfig;
-  simplify1: SimplifySession1Config;
-  simplify2: SimplifySession2Config;
+  extract1: ExtractSession1Config;
+  extract2: ExtractSession2Config;
   vectorTiles: GenerateVectorTilesConfig;
 
   // Legacy flat structure for backward compatibility
@@ -103,20 +103,20 @@ export interface BatchSessionConfig extends CommonSessionConfig {
   concurrentDownloads?: number;
   concurrentProcesses?: number;
   quantize?: number;
-  simplify?: number;
+  extract?: number;
   tolerance?: number;
   maxZoom?: number;
   minZoom?: number;
   featureAreaThreshold?: number;
   minVertexCountForAreaFilter?: number;
   enableFeatureFiltering?: boolean;
-  enablePerFeatureSimplification?: boolean;
+  enablePerFeatureExtraction?: boolean;
   aspectRatioThreshold?: number;
   featureFilterMethod?: FeatureFilterMethod;
   hybridFilterConfig?: HybridFilterConfig;
   deleteDownloadCacheOnComplete?: boolean;
-  deleteSimplify1CacheOnComplete?: boolean;
-  deleteSimplify2CacheOnComplete?: boolean;
+  deleteExtract1CacheOnComplete?: boolean;
+  deleteExtract2CacheOnComplete?: boolean;
 }
 
 // Aligned alias for cross-plugin naming consistency.

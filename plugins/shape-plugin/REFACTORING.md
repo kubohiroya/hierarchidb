@@ -18,7 +18,7 @@ from `plugins/shape-plugin/src/index.ts`, verify external usage before removal.
   - Evidence: `rg` hits only within this file
 - `plugins/shape-plugin/src/services/auth/WorkerAuthHandler.ts`
   - Evidence: `rg` hits only within this file
-- `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerSimplifyAdapters.ts`
+- `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerExtractAdapters.ts`
   - Evidence: `rg` hits only within this file
 - `plugins/shape-plugin/src/services/tiles/VectorTileService.ts`
   - Evidence: `rg` hits only within this file; referenced only in docs
@@ -38,7 +38,7 @@ from `plugins/shape-plugin/src/index.ts`, verify external usage before removal.
 
 - `plugins/shape-plugin/src/common/mock/data.ts`
   - `generateMockDownloadTasks`
-  - `generateMockSimplifyTasks`
+  - `generateMockExtractTasks`
   - `generateMockVectorTileTasks`
   - `generateSampleCheckboxMatrix`
   - `calculateEstimatedProcessingTime` (docs-only reference)

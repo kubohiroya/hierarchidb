@@ -1,5 +1,5 @@
 /**
-  * TreeTable State Management (Simplified)
+  * TreeTable State Management (Extracted)
   * Jotai atomsTreeTable
  * version
   */

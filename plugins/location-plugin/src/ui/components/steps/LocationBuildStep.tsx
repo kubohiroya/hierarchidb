@@ -85,12 +85,12 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
       description: t('build.stageDescriptions.download', 'Download points and metadata.'),
     },
     {
-      id: 'simplify1',
+      id: 'extract1',
       title: stageLabels.filtering ?? t('build.stages.filter', 'Filter'),
       description: t('build.stageDescriptions.filter', 'Normalize and filter the source data.'),
     },
     {
-      id: 'simplify2',
+      id: 'extract2',
       title: stageLabels.clustering ?? t('build.stages.cluster', 'Cluster'),
       description: t('build.stageDescriptions.cluster', 'Prepare point clusters and indexes.'),
     },

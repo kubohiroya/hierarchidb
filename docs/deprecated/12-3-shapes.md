@@ -9,7 +9,7 @@
   - 11章: docs/11-plugin-ui.md
 
 ## 12.3.1 概要
-- 目的: GeoJSON のアップロード、選択的読み込み、簡略化（simplify）、ベクトルタイル（tiles）生成を提供。
+- 目的: GeoJSON のアップロード、選択的読み込み、簡略化（extract）、ベクトルタイル（tiles）生成を提供。
 - TreeTypes: Resources ツリー配下。
 - NodeType: `shapes`
 
@@ -19,7 +19,7 @@
   - name: string
   - sourceType: 'geojson' | 'file' | 'url'
   - sourcePath?: string
-  - simplifyLevel?: number // 例: 0〜10
+  - extractLevel?: number // 例: 0〜10
   - filters?: Array<FilterRule>
   - stats?: ShapeStats // 例: フィーチャ数、バウンディングボックス
   - createdAt: number
@@ -41,7 +41,7 @@ export const ShapesUnifiedDefinition: UnifiedPluginDefinition<ShapeEntity, Featu
   routing: {
     actions: {
       upload: { component: lazy(() => import('../ui/GeoJsonUpload')), displayName: 'Upload' },
-      simplify: { component: lazy(() => import('../ui/ShapeSimplify')), displayName: 'Simplify' },
+      extract: { component: lazy(() => import('../ui/ShapeExtract')), displayName: 'Extract' },
       tiles: { component: lazy(() => import('../ui/VectorTiles')), displayName: 'Tiles' }
     },
     defaultAction: 'upload'
@@ -57,17 +57,17 @@ export const ShapesUnifiedDefinition: UnifiedPluginDefinition<ShapeEntity, Featu
 ## 12.3.4 ルーティングと UI
 - 外部仕様 URL（8章）
   - `/t/:treeId/.../shapes/upload`
-  - `/t/:treeId/.../shapes/simplify`
+  - `/t/:treeId/.../shapes/extract`
   - `/t/:treeId/.../shapes/tiles`
 - 想定 UI コンポーネント
   - GeoJsonUpload: ファイル/URL から読み込み、検証、統計表示
-  - ShapeSimplify: 簡略化パラメータの設定、実行、結果比較
+  - ShapeExtract: 簡略化パラメータの設定、実行、結果比較
   - VectorTiles: タイル生成（ローカル/ワーカー）、成果物の参照
 
 ## 12.3.5 Worker/API 拡張
 - 想定 API
   - loadGeoJson(path|url)
-  - simplifyGeoJson(geojson, level, opts?)
+  - extractGeoJson(geojson, level, opts?)
   - generateVectorTiles(geojson|datasetRef, opts?)
   - computeStats(geojson)
 - 処理コストが高い操作は Web Worker または専用 WorkerAPI で非同期実行。
@@ -81,7 +81,7 @@ export const ShapesUnifiedDefinition: UnifiedPluginDefinition<ShapeEntity, Featu
 
 ## 12.3.8 受け入れ基準（サマリ）
 - NodeTypeRegistry に `shapes` が登録可能
-- `/t/.../shapes/{upload|simplify|tiles}` で UI が動的ロード
+- `/t/.../shapes/{upload|extract|tiles}` で UI が動的ロード
 - GeoJSON 読み込み→簡略化→タイル生成の基本フローが成立
 
 ## 12.3.9 TODO（仕様の不備・設計の矛盾・未実装）

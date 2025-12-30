@@ -12,8 +12,8 @@ Shape pluginは、大規模な地理空間データ処理を効率的に実行�
 graph TD
     A[UI Layer] --> B[WorkerPoolManager]
     B --> C[DownloadPool<br/>2 Workers]
-    B --> D[Simplify1Pool<br/>4 Workers]
-    B --> E[Simplify2Pool<br/>4 Workers]
+    B --> D[Extract1Pool<br/>4 Workers]
+    B --> E[Extract2Pool<br/>4 Workers]
     B --> F[VectorTilePool<br/>2 Workers]
     
     C --> G[(CoreDB)]
@@ -78,8 +78,8 @@ export class WorkerPool<T extends object> {
 ```typescript
 const defaultPoolSizes = {
   download: 2,      // ネットワークI/O制約
-  simplify1: 4,     // CPU集約的（フィーチャー処理）
-  simplify2: 4,     // CPU集約的（タイル処理）
+  extract1: 4,     // CPU集約的（フィーチャー処理）
+  extract2: 4,     // CPU集約的（タイル処理）
   vectorTile: 2     // 中程度のCPU + I/O
 };
 ```
@@ -528,8 +528,8 @@ class MemoryManager {
   // Worker プールごとのメモリ上限
   private readonly memoryLimits = {
     download: 512 * 1024 * 1024,     // 512MB
-    simplify1: 256 * 1024 * 1024,    // 256MB
-    simplify2: 256 * 1024 * 1024,    // 256MB
+    extract1: 256 * 1024 * 1024,    // 256MB
+    extract2: 256 * 1024 * 1024,    // 256MB
     vectorTile: 128 * 1024 * 1024    // 128MB
   };
   

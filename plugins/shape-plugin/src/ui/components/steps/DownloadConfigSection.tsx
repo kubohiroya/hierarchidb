@@ -95,7 +95,7 @@ export const DownloadConfigSection: React.FC<Props> = ({ config, draft, nodeId, 
                 })
               }
               min={1}
-              max={2}
+              max={4}
               step={1}
               disabled={disabled}
             />

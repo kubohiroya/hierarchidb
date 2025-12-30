@@ -44,7 +44,7 @@ import {
 
 type ShapeBuildProgressPanelProps = Pick<ShapeDialogStepProps, 'data' | 'nodeId'>;
 
-type TaskWithMetadata = BatchTaskSummary & { metadata?: Record<string, unknown>; stage?: string; title?: string };
+type TaskWithMetadata = BatchTaskSummary & { title?: string };
 
 const isSkippedMessage = (message?: string | null): boolean => {
   if (!message) return false;
@@ -186,59 +186,11 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
   const lastWarningRef = useRef<string | null>(null);
   const isDev = import.meta.env.DEV;
 
-  const resolveTaskTitle = useCallback((task: TaskWithMetadata): string => {
-    const metadata = task.metadata ?? {};
-    const stage = task.stage;
-    const countryCode = (metadata.countryCode ?? metadata.country) as string | undefined;
-    const adminLevel = typeof metadata.adminLevel === 'number'
-      ? metadata.adminLevel
-      : metadata.adminLevel != null
-        ? Number(metadata.adminLevel)
-        : undefined;
-    const locationTitle = countryCode && typeof adminLevel === 'number'
-      ? `${countryCode}/${adminLevel}`
-      : undefined;
-    const featureLabel = (metadata.featureLabel ?? metadata.featureId) as string | undefined;
-    if (stage === 'download') {
-      return locationTitle ?? task.title ?? t('build.tasks.unknown', '(Title unavailable)');
-    }
-    if (stage === 'simplify1') {
-      if (locationTitle && featureLabel) return `${locationTitle} ${featureLabel}`;
-      return locationTitle ?? featureLabel ?? task.title ?? t('build.tasks.unknown', '(Title unavailable)');
-    }
-    if (stage === 'simplify2') {
-      if (locationTitle && featureLabel) return `${locationTitle} ${featureLabel}`;
-      return locationTitle ?? featureLabel ?? task.title ?? t('build.tasks.unknown', '(Title unavailable)');
-    }
-    if (stage === 'vectortile' || stage === 'vectorTiles') {
-      const tileZ = metadata.tileZ as number | undefined;
-      const tileX = metadata.tileX as number | undefined;
-      const tileY = metadata.tileY as number | undefined;
-      const featureLabel = (metadata.featureLabel ?? metadata.featureId) as string | undefined;
-      if (typeof tileZ === 'number' && typeof tileX === 'number' && typeof tileY === 'number') {
-        const tileLabel = `z${tileZ} / x${tileX} y${tileY}`;
-        return featureLabel ? `${tileLabel} • ${featureLabel}` : tileLabel;
-      }
-      const minZoom = metadata.minZoom as number | undefined;
-      const maxZoom = metadata.maxZoom as number | undefined;
-      const metadataContext = metadata.metadataContext as {
-        dataSource?: string;
-        countryCode?: string;
-        countryName?: string;
-        adminLevel?: number;
-      } | undefined;
-      const countryLabel = metadataContext?.countryName ?? metadataContext?.countryCode;
-      const adminLabel = metadataContext?.adminLevel != null ? `ADM${metadataContext.adminLevel}` : undefined;
-      const dataSourceLabel = metadataContext?.dataSource ? metadataContext.dataSource.toUpperCase() : undefined;
-      const zoomLabel = typeof minZoom === 'number' && typeof maxZoom === 'number'
-        ? `z${minZoom}-${maxZoom}`
-        : undefined;
-      const parts = [dataSourceLabel, countryLabel, adminLabel, zoomLabel].filter(Boolean);
-      if (parts.length > 0) return parts.join(' • ');
-      if (typeof minZoom === 'number' && typeof maxZoom === 'number') return `z${minZoom}-${maxZoom}`;
-    }
-    return t('build.tasks.unknown', '(Title unavailable)');
-  }, [t]);
+  const resolveTaskTitle = useCallback(
+    (task: TaskWithMetadata): string =>
+      task.title ?? t('build.tasks.unknown', '(Title unavailable)'),
+    [t],
+  );
 
   const resolveStatusLabel = useCallback((statusValue?: string, skipped?: boolean): string => {
     if (skipped) {
@@ -307,14 +259,9 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
               const statusLabelValue = resolveStatusLabel(statusValue, isSkipped);
               const statusColor = resolveStatusColor(statusValue, isSkipped);
               const taskTitle = resolveTaskTitle(task as TaskWithMetadata);
-              const taskMetadata = (task as TaskWithMetadata).metadata ?? {};
-              const downloadUrl = (taskMetadata.url ?? taskMetadata.endpoint) as string | undefined;
               const taskMessage = (() => {
-                if (task.stage === 'download') {
-                  if (task.status === 'completed') return task.message ?? downloadUrl;
-                  if (task.status === 'failed') return task.message ?? undefined;
-                }
-                return task.message && task.message !== taskTitle ? task.message : undefined;
+                if (task.message && task.message !== taskTitle) return task.message;
+                return undefined;
               })();
               return (
                 <ShapeBuildTaskItem
@@ -352,10 +299,10 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
       switch (stageId) {
         case 'download':
           return data?.batchConfig?.downloadConfig?.maxConcurrent;
-        case 'simplify1':
-          return data?.batchConfig?.simplify1Config?.workers;
-        case 'simplify2':
-          return data?.batchConfig?.simplify2Config?.workers;
+        case 'extract1':
+          return data?.batchConfig?.extract1Config?.workers;
+        case 'extract2':
+          return data?.batchConfig?.extract2Config?.workers;
         case 'vectorTiles':
           return data?.batchConfig?.tileConfig?.workers;
         default:
@@ -413,7 +360,11 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
   }, [crashHint]);
 
   useEffect(() => {
-    if (!warningMessage) return;
+    if (!warningMessage) {
+      setSizeWarningOpen(false);
+      lastWarningRef.current = null;
+      return;
+    }
     if (lastWarningRef.current === warningMessage) return;
     lastWarningRef.current = warningMessage;
     setSizeWarningOpen(true);

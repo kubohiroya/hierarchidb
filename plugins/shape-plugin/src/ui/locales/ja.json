@@ -63,24 +63,24 @@
       "retryDelay": "リトライ間隔 (ms)",
       "retryDelayHelp": "失敗時の再試行までの待機時間です。"
     },
-    "simplify1": {
-      "title": "一次簡略化（最詳細ズーム基準）",
+    "extract1": {
+      "title": "一次抽出（最詳細ズーム基準）",
       "omissionHelp": "有効化の場合には、面積しきい値・最小頂点数・縦横比/ハイブリッド判定により小さな地物が除外されます。"
     },
-    "simplify2": {
-      "title": "二次簡略化（タイル前処理）",
-      "omissionHelp": "有効化の場合には、簡略化・量子化で形状が空になる場合に、形状が省略されることがあります。",
-      "simplificationModeTitle": "簡略化方式",
-      "simplificationModeHelp": "タイル前処理で使用する簡略化方式を選択します。",
-      "simplificationModeOff": "簡略化をオフにする",
-      "simplificationModeTopo": "TopoJSON",
-      "simplificationModeGeo": "GeoJSON"
+    "extract2": {
+      "title": "二次抽出（タイル前処理）",
+      "omissionHelp": "有効化の場合には、抽出・量子化で形状が空になる場合に、形状が省略されることがあります。",
+      "extractionModeTitle": "抽出方式",
+      "extractionModeHelp": "タイル前処理で使用する抽出方式を選択します。",
+      "extractionModeOff": "フィルタリングをオフにする",
+      "extractionModeTopo": "TopoJSON",
+      "extractionModeGeo": "GeoJSON"
     },
     "filter": {
       "title": "抽出設定",
-      "workersStage1": "一次簡略化のワーカー数",
+      "workersStage1": "一次抽出のワーカー数",
       "workersStage1Help": "並列度を増やすと高速化しますがブラウザがメモリ不足で不安定化することがあります。",
-      "workersStage2": "二次簡略化（タイル前処理）のワーカー数",
+      "workersStage2": "二次抽出（タイル前処理）のワーカー数",
       "workersStage2Help": "並列度を増やすと高速化しますがブラウザがメモリ不足で不安定化することがあります。",
       "method": "フィルタリング方法",
       "methodNone": "フィルタリングをオフにする",
@@ -88,16 +88,16 @@
       "methodPolygon": "ポリゴンのみ",
       "methodHybrid": "ハイブリッド (推奨)",
       "areaFilterTitle": "面積フィルター",
-      "simplificationTitle": "簡略化",
+      "extractionTitle": "抽出",
       "precisionTitle": "精度・圧縮",
-      "methodHelp": "一次簡略化前に小さな地物を除外する方法を選びます。",
+      "methodHelp": "一次抽出前に小さな地物を除外する方法を選びます。",
       "minimumArea": "最小面積(平方km)",
-      "minimumAreaHelp": "簡略化ステージで、この面積より小さい特徴を除外します。",
-      "tolerance": "簡略化許容値 (度)",
-      "tolerancePrimary": "一次簡略化許容値 (度)",
-      "toleranceSecondary": "二次簡略化許容値 (度)",
-      "toleranceHelp": "最詳細ズームで必要な精度を満たす範囲で、最小限の簡略化を行います。",
-      "toleranceHelpStage2": "タイル前処理として、必要な範囲で再簡略化を行います。",
+      "minimumAreaHelp": "抽出ステージで、この面積より小さい特徴を除外します。",
+      "tolerance": "抽出許容値 (度)",
+      "tolerancePrimary": "簡略化の強さ",
+      "toleranceSecondary": "二次的な簡略化の強さ",
+      "toleranceHelp": "境界線がより直線的になり、細かな入り組みが消える。面積の小さな地物や細い地物が、フィルタ条件と組み合わさって除外されやすくなる。後段（二次抽出／タイル生成）の処理負荷・出力サイズは下がるが、地形の精度は落ちる。",
+      "toleranceHelpStage2": "タイル前処理として、必要な範囲で再抽出を行います。",
       "minVertexCount": "最小頂点数",
       "minVertexCountHelp": "頂点数がこの値以上の特徴に面積フィルタを適用します。",
       "quickRejectThreshold": "クイック除外しきい値",
@@ -110,12 +110,12 @@
       "quantizeSelected": "選択中: {value}",
       "quantizeHelp": "タイル前処理で使用する座標量子化です。データ量を抑え、境界整合を安定化します。",
       "quantizeStarHelp": "★1は最も粗い丸め（低精度）で、★が増えるほど精度が上がります。",
-      "enablePerFeatureSimplification": "簡略化により国や自治体が省略されることを許容",
-      "enablePerFeatureSimplificationHelp": "形状は省略される場合がありますが、メタデータは残ります。"
+      "enablePerFeatureExtraction": "簡略化により国や自治体の省略を許容",
+      "enablePerFeatureExtractionHelp": "形状は省略される場合がありますが、メタデータは残ります。"
     },
     "tile": {
-      "title": "タイル生成（ズーム別最終簡略化）",
-      "descriptionTooltip": "ズームごとに最終的な簡略化を行い、ベクトルタイルを生成します。",
+      "title": "タイル生成（ズーム別最終抽出）",
+      "descriptionTooltip": "ズームごとに最終的な抽出を行い、ベクトルタイルを生成します。",
       "workers": "タイル生成のワーカー数",
       "workersHelp": "タイル生成を並列実行する数です。",
       "bufferSize": "タイルマージン (px)",
@@ -161,10 +161,10 @@
         "originKey": "由来キー",
         "rawVertexCount": "元データ頂点数",
         "rawPolygonCount": "元データポリゴン数",
-        "simplify1VertexCount": "一次簡略化頂点数",
-        "simplify1PolygonCount": "一次簡略化ポリゴン数",
-        "simplify2VertexCount": "二次簡略化頂点数",
-        "simplify2PolygonCount": "二次簡略化ポリゴン数",
+        "extract1VertexCount": "一次抽出頂点数",
+        "extract1PolygonCount": "一次抽出ポリゴン数",
+        "extract2VertexCount": "二次抽出頂点数",
+        "extract2PolygonCount": "二次抽出ポリゴン数",
         "vectorTileVertexCount": "タイル頂点数",
         "vectorTilePolygonCount": "タイルポリゴン数",
         "vertexCount": "頂点数",
@@ -215,13 +215,13 @@
         "title": "ダウンロード",
         "description": "ソースデータをダウンロードして正規化します。"
       },
-      "simplify1": {
-        "title": "簡略化（ステージ1）",
-        "description": "選択内容に対して一次簡略化を適用します。"
+      "extract1": {
+        "title": "抽出（ステージ1）",
+        "description": "選択内容に対して一次抽出を適用します。"
       },
-      "simplify2": {
-        "title": "簡略化（ステージ2）",
-        "description": "タイル生成用に簡略化バッファを準備します。"
+      "extract2": {
+        "title": "抽出（ステージ2）",
+        "description": "タイル生成用に抽出バッファを準備します。"
       },
       "vectorTiles": {
         "title": "ベクトルタイル",

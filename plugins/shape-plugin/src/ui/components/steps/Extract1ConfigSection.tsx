@@ -17,9 +17,9 @@ import {
 import type { BatchConfig, ShapeEntity } from '../../../common/types/index.js';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { useTranslation } from '../../i18n.js';
-import { useSimplify1ConfigSection } from '../../hooks/useSimplificationConfigSection.js';
+import { useExtract1ConfigSection } from '../../hooks/useExtractionConfigSection.js';
 import { AreaFilterPanel } from '../processing/AreaFilterPanel.js';
-import { SimplificationPanel } from '../processing/SimplificationPanel.js';
+import { ExtractionPanel } from '../processing/ExtractionPanel.js';
 import { useBuildCrashInsight } from '../../hooks/useBuildCrashInsight.js';
 import { getStageConcurrencyWarning } from '../../utils/buildWarnings.js';
 
@@ -30,7 +30,7 @@ type Props = {
   onChange: (next: BatchConfig) => void;
 };
 
-export const Simplify1ConfigSection: React.FC<Props> = ({ config, draft, disabled, onChange }) => {
+export const Extract1ConfigSection: React.FC<Props> = ({ config, draft, disabled, onChange }) => {
   const { t } = useTranslation();
   const crashInsight = useBuildCrashInsight({
     draft,
@@ -38,23 +38,23 @@ export const Simplify1ConfigSection: React.FC<Props> = ({ config, draft, disable
   });
   const {
     controlId,
-    baseSimplify1Config,
+    baseExtract1Config,
     baseHybridConfig,
     quickRejectLogMin,
     quickRejectLogMax,
     quickRejectLogValue,
     update,
-  } = useSimplify1ConfigSection({ config, disabled, onChange });
-  const simplify1Warning = getStageConcurrencyWarning(
+  } = useExtract1ConfigSection({ config, disabled, onChange });
+  const extract1Warning = getStageConcurrencyWarning(
     crashInsight,
-    'simplify1',
-    baseSimplify1Config.workers,
+    'extract1',
+    baseExtract1Config.workers,
   );
-  const simplify1WarningText = simplify1Warning
+  const extract1WarningText = extract1Warning
     ? t(
-      'processing.simplify1.memoryWarning',
+      'processing.extract1.memoryWarning',
       'Possible memory pressure: {{message}}',
-      { message: simplify1Warning.message },
+      { message: extract1Warning.message },
     )
     : undefined;
 
@@ -64,11 +64,11 @@ export const Simplify1ConfigSection: React.FC<Props> = ({ config, draft, disable
         <Stack direction="row" spacing={2} alignItems="center">
           <FilterAltIcon color="primary" />
           <Typography variant="subtitle1">
-            {t('processing.simplify1.title', 'Primary Simplification')}
+            {t('processing.extract1.title', 'Primary Extraction')}
           </Typography>
           <Tooltip
             title={t(
-              'processing.simplify1.omissionHelp',
+              'processing.extract1.omissionHelp',
               'When enabled, small features may be removed based on area threshold, minimum vertex count, or hybrid filtering.',
             )}
             placement="top"
@@ -83,14 +83,14 @@ export const Simplify1ConfigSection: React.FC<Props> = ({ config, draft, disable
             <Grid size={{ xs: 12, sm: 4 }}>
               <WorkerNumberConfigCard
                 icon={<FilterAlt fontSize="small" color="primary" />}
-                title={t('processing.filter.workersStage1', 'Number of Workers for Polygon-Simplification (Stage 1)')}
-                value={baseSimplify1Config.workers ?? 2}
-                helperText={t('processing.filter.workersStage1Help', 'Parallel workers for feature simplification in stage 1.')}
-                warningText={simplify1WarningText}
+                title={t('processing.filter.workersStage1', 'Number of Workers for Polygon-Extraction (Stage 1)')}
+                value={baseExtract1Config.workers ?? 2}
+                helperText={t('processing.filter.workersStage1Help', 'Parallel workers for feature extraction in stage 1.')}
+                warningText={extract1WarningText}
                 onChange={(workers) =>
                   update({
-                    simplify1Config: {
-                      ...baseSimplify1Config,
+                    extract1Config: {
+                      ...baseExtract1Config,
                       workers,
                     },
                   })
@@ -107,7 +107,7 @@ export const Simplify1ConfigSection: React.FC<Props> = ({ config, draft, disable
               <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
                 <AreaFilterPanel
                   controlId={controlId}
-                  baseSimplify1Config={baseSimplify1Config}
+                  baseExtract1Config={baseExtract1Config}
                   baseHybridConfig={baseHybridConfig}
                   quickRejectLogMin={quickRejectLogMin}
                   quickRejectLogMax={quickRejectLogMax}
@@ -119,13 +119,13 @@ export const Simplify1ConfigSection: React.FC<Props> = ({ config, draft, disable
             </Grid>
             <Grid size={{ xs: 12, md: 4 }}>
               <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
-                <SimplificationPanel
-                  tolerance={baseSimplify1Config.tolerance ?? 0.05}
+                <ExtractionPanel
+                  tolerance={baseExtract1Config.tolerance ?? 0.05}
                   toleranceLabelKey="processing.filter.tolerancePrimary"
                   onToleranceChange={(tolerance) =>
                     update({
-                      simplify1Config: {
-                        ...baseSimplify1Config,
+                      extract1Config: {
+                        ...baseExtract1Config,
                         tolerance,
                       },
                     })

@@ -1,5 +1,5 @@
 /**
-  * TreeTableOrchestrator (Simplified)
+  * TreeTableOrchestrator (Extracted)
   * TreeTable
    */
 

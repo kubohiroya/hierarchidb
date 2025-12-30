@@ -249,7 +249,7 @@
     ],
     "script_support": [
       "Latin",
-      "Chinese (Simplified/Traditional)",
+      "Chinese (Extracted/Traditional)",
       "Japanese (Kanji/Hiragana/Katakana)",
       "Arabic",
       "Cyrillic",

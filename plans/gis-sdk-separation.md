@@ -14,7 +14,7 @@ The SDK effort should treat the code currently under `plugins/shape-plugin/src/s
 
 - [x] (2025-12-21 21:05) Draft plan created; no implementation yet.
 - [ ] (2025-12-21 21:30) GIS SDK package scaffolded with vector-tile generation, TilesDB, and shared
-      feature filtering/simplification utilities; runtime-worker begins delegating tile generation to SDK.
+      feature filtering/extraction utilities; runtime-worker begins delegating tile generation to SDK.
 - [ ] (2025-12-21 21:45) Ephemeral DB schema and lifecycle helpers moved into GIS SDK and re-used by shape-plugin
       via a thin wrapper.
 
@@ -26,7 +26,7 @@ No surprises yet. Update this section as investigation proceeds.
 
 - 2025-12-21: GIS SDK owns vector tile generation and metadata persistence (`TilesDB`), while runtime-worker
   only coordinates buffer access and delegates tile generation to the SDK.
-- 2025-12-21: Shared GIS utilities (feature filtering, geometry simplification) are moved into the SDK with
+- 2025-12-21: Shared GIS utilities (feature filtering, geometry extraction) are moved into the SDK with
   SDK-defined configuration types to decouple from shape-plugin constants.
 - 2025-12-21: Ephemeral DB schema and lifecycle operations are centralized in GIS SDK (`EphemeralGisDB`),
   and plugins use thin wrappers to bind plugin-specific DB names and config types.

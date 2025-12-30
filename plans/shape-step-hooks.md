@@ -12,7 +12,7 @@ Shape プラグインの Step2 以降の UI コンポーネントは現在、状
 
 - [x] (2025-12-21 22:01) plan 作成と対象コンポーネントの棚卸し。
 - [x] Step2: ShapeCountrySelectionStep のロジック抽出とフック化。
-- [x] Step3: ShapeProcessingSettingsStep と Download/Simplification/Tile 各セクションのロジック抽出。
+- [x] Step3: ShapeProcessingSettingsStep と Download/Extraction/Tile 各セクションのロジック抽出。
 - [x] Step4: ShapeBuildProgressStep のロジック抽出。
 - [x] Step5: ShapePreviewStep のロジック抽出。
 - [x] 付随コンポーネント（ErrorDisplay, BatchRecoveryDialog, ShapeDataSourceStep）のロジック外出し整備。
@@ -34,7 +34,7 @@ Typecheck が通過し、Step2 以降のロジック外出しが完了した。
 
 ## Context and Orientation
 
-対象は `plugins/shape-plugin/src/ui/components` にある Step コンポーネント群である。Step2 以降は `ShapeCountrySelectionStep.tsx`、`ShapeProcessingSettingsStep.tsx`、`DownloadConfigSection.tsx`、`SimplificationConfigSection.tsx`、`TileConfigSection.tsx`、`ShapeBuildProgressStep.tsx`、`ShapePreviewStep.tsx` が該当する。Step1 は `ShapeDataSourceStep.tsx` だが、要請により同様のロジック外出しを実施する。補助 UI として `BatchRecoveryDialog.tsx` と `ErrorDisplay.tsx` が存在する。ロジック外出し先は `plugins/shape-plugin/src/ui/hooks` を基本とし、既存の hooks export (`plugins/shape-plugin/src/ui/hooks/index.ts`) を更新する。
+対象は `plugins/shape-plugin/src/ui/components` にある Step コンポーネント群である。Step2 以降は `ShapeCountrySelectionStep.tsx`、`ShapeProcessingSettingsStep.tsx`、`DownloadConfigSection.tsx`、`ExtractionConfigSection.tsx`、`TileConfigSection.tsx`、`ShapeBuildProgressStep.tsx`、`ShapePreviewStep.tsx` が該当する。Step1 は `ShapeDataSourceStep.tsx` だが、要請により同様のロジック外出しを実施する。補助 UI として `BatchRecoveryDialog.tsx` と `ErrorDisplay.tsx` が存在する。ロジック外出し先は `plugins/shape-plugin/src/ui/hooks` を基本とし、既存の hooks export (`plugins/shape-plugin/src/ui/hooks/index.ts`) を更新する。
 
 この作業では UI の表示と挙動は変えず、コンポーネントは「受け取った props を描画するだけ」になるように設計する。ロジックはフックで完結し、イベントハンドラはフックが返す関数を使う。
 
@@ -42,7 +42,7 @@ Typecheck が通過し、Step2 以降のロジック外出しが完了した。
 
 まず Step2 から順に、各コンポーネント内の状態管理・派生データ・ハンドラを抽出し、新規の `useShape*` 系フックへ移す。フックは input として既存の `data`/`onChange` を受け取り、描画に必要なデータとイベントハンドラを返す。コンポーネントはフックの戻り値を使って表示だけを担う。
 
-次に Step3 の設定セクション（Download/Simplification/Tile）を同様に処理し、設定値の正規化や Ephemeral DB の集計、ボタンハンドラをフックへ移す。Step4 の BuildProgress と Step5 の Preview は状態が多いため、フック側で state と effect をまとめる。
+次に Step3 の設定セクション（Download/Extraction/Tile）を同様に処理し、設定値の正規化や Ephemeral DB の集計、ボタンハンドラをフックへ移す。Step4 の BuildProgress と Step5 の Preview は状態が多いため、フック側で state と effect をまとめる。
 
 最後に Step1 と補助コンポーネントにも同様の外出しを適用し、hooks の export を整理する。型チェックを行い、TASKS の運用ログに結果を記録する。
 

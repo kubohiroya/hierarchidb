@@ -1,11 +1,11 @@
 import { Dexie, type Table } from "dexie";
 import { getDBName } from "@hierarchidb/util";
 import { parseCsv } from "./csv.js";
-import {
-  type CountryRecord,
-  type EnsureIsoOptions,
-  type SubdivisionRecord,
-  type SubdivisionRow,
+import type {
+  CountryRecord,
+  EnsureIsoOptions,
+  SubdivisionRecord,
+  SubdivisionRow,
 } from "./types.js";
 import { generateIso3166Data } from "./scraper.js";
 class Iso3166Dexie extends Dexie {
@@ -28,24 +28,21 @@ const memoryStore = {
   subdivisions: new Map<string, SubdivisionRecord>(),
 };
 
-export function rowsToRecords(rows: SubdivisionRow): SubdivisionRecord;
-export function rowsToRecords(rows: SubdivisionRow[]): { countries: CountryRecord[]; subdivisions: SubdivisionRecord[] };
-export function rowsToRecords(rows: SubdivisionRow | SubdivisionRow[]) {
-  if (!Array.isArray(rows)) {
-    return {
-      code: rows.subdivisionCode,
-      alpha2: rows.alpha2,
-      alpha3: rows.alpha3,
-      countryEn: rows.countryEn,
-      location: rows.location,
-      subdivisionEn: rows.subdivisionEn,
-      subdivisionLocal: rows.subdivisionLocal,
-    } as SubdivisionRecord;
-  }
+const rowToRecord = (row: SubdivisionRow): SubdivisionRecord => ({
+  code: row.subdivisionCode,
+  alpha2: row.alpha2,
+  alpha3: row.alpha3,
+  countryEn: row.countryEn,
+  location: row.location,
+  subdivisionEn: row.subdivisionEn,
+  subdivisionLocal: row.subdivisionLocal,
+});
+
+export function rowsToRecords(rows: SubdivisionRow[]): { countries: CountryRecord[]; subdivisions: SubdivisionRecord[] } {
   const countriesMap = new Map<string, CountryRecord>();
   const subdivisions: SubdivisionRecord[] = [];
   rows.forEach((r) => {
-    subdivisions.push(rowsToRecords(r));
+    subdivisions.push(rowToRecord(r));
     if (!countriesMap.has(r.alpha2)) {
       countriesMap.set(r.alpha2, {
         alpha2: r.alpha2,
@@ -69,8 +66,8 @@ async function populateStore(
     });
     return "dexie" as const;
   }
-  records.countries.forEach((c) => memoryStore.countries.set(c.alpha2, c));
-  records.subdivisions.forEach((s) => memoryStore.subdivisions.set(s.code, s));
+  records.countries.map((c) => memoryStore.countries.set(c.alpha2, c));
+  records.subdivisions.map((s) => memoryStore.subdivisions.set(s.code, s));
   return "memory" as const;
 }
 

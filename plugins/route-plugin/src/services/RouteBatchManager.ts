@@ -102,7 +102,7 @@ export class RouteBatchManager {
         treeNodeId: nodeId,
         nodeId,
         taskType: 'route_generation',
-        stage: 'simplify1', // Reuse Shape's stage for processing
+        stage: 'extract1', // Reuse Shape's stage for processing
         status: 'pending',
         index: routeTasks.length,
         routeData: {
@@ -126,7 +126,7 @@ export class RouteBatchManager {
         treeNodeId: nodeId,
         nodeId,
         taskType: 'validation',
-        stage: 'simplify2', // Reuse Shape's stage for validation
+        stage: 'extract2', // Reuse Shape's stage for validation
         status: 'pending',
         index: routeTasks.length,
       });

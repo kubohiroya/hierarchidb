@@ -12,7 +12,7 @@ import { NaturalEarthDownloadStrategy } from '../services/batch/strategies/Natur
 const createConfig = (dataSource: string): BatchProcessConfig => ({
   dataSource: dataSource as BatchProcessConfig['dataSource'],
   download: { concurrentDownloads: 1 },
-  simplify1: {
+  extract1: {
     concurrentProcesses: 1,
     enableFeatureFiltering: true,
     featureAreaThreshold: 0,
@@ -20,12 +20,12 @@ const createConfig = (dataSource: string): BatchProcessConfig => ({
     aspectRatioThreshold: 0,
     featureFilterMethod: 'hybrid',
   },
-  simplify2: {
+  extract2: {
     concurrentProcesses: 1,
     quantize: 1,
-    simplify: 0.1,
+    extract: 0.1,
     tolerance: 0.1,
-    enablePerFeatureSimplification: true,
+    enablePerFeatureExtraction: true,
   },
   vectorTiles: {
     concurrentProcesses: 1,
@@ -40,14 +40,12 @@ const createDownloadTaskPayload = (overrides: Partial<DownloadTaskPayload>[]): D
     countryCode: 'JP',
     countryName: 'Japan',
     adminLevel: 0,
-    continent: 'Asia',
     dataSource: 'gadm',
     ...item,
   }))
 );
 
 describe('Download stage strategies', () => {
-  const sessionId = 'session-1';
   const nodeId = 'node-1' as NodeId;
   let db: ReturnType<typeof getEphemeralShapeDB>;
 
@@ -67,8 +65,7 @@ describe('Download stage strategies', () => {
       { countryCode: 'JP', adminLevel: 0, dataSource: 'gadm' },
       { countryCode: 'ID', adminLevel: 1, dataSource: 'gadm' },
     ]);
-    const tasks = await strategy.buildDownloadTasks({
-      sessionId,
+    const { tasks, inputsByTaskId } = await strategy.buildDownloadTasks({
       nodeId,
       downloadTaskPayloads,
       config: createConfig('gadm'),
@@ -77,16 +74,16 @@ describe('Download stage strategies', () => {
 
     expect(tasks).toHaveLength(2);
     const postprocess = await strategy.postprocessDownloadOutputs({
-      sessionId,
       nodeId,
       downloadTaskPayloads,
       config: createConfig('gadm'),
       options: {},
       downloadTasks: tasks,
+      downloadInputsById: inputsByTaskId,
     });
     expect(postprocess.outputs).toHaveLength(2);
-    expect(postprocess.outputs[0]?.inputBufferId).toBe(`${sessionId}-download-0`);
-    expect(postprocess.outputs[1]?.inputBufferId).toBe(`${sessionId}-download-1`);
+    expect(postprocess.outputs[0]?.inputBufferId).toBe(`${nodeId}-download-0`);
+    expect(postprocess.outputs[1]?.inputBufferId).toBe(`${nodeId}-download-1`);
   });
 
   it('NaturalEarth strategy groups download tasks by level and splits outputs by country', async () => {
@@ -97,8 +94,7 @@ describe('Download stage strategies', () => {
       { countryCode: 'JP', countryName: 'Japan', adminLevel: 1, dataSource: 'naturalearth' },
       { countryCode: 'ID', countryName: 'Indonesia', adminLevel: 1, dataSource: 'naturalearth' },
     ]);
-    const tasks = await strategy.buildDownloadTasks({
-      sessionId,
+    const { tasks, inputsByTaskId } = await strategy.buildDownloadTasks({
       nodeId,
       downloadTaskPayloads,
       config: createConfig('naturalearth'),
@@ -113,8 +109,7 @@ describe('Download stage strategies', () => {
     const collection = { type: 'FeatureCollection', features } as const;
     const encoded = await encodeFlatGeoJson(collection);
     await db.rawBuffers.put({
-      id: `${sessionId}-download-0`,
-      sessionId,
+      id: `${nodeId}-download-0`,
       nodeId,
       data: encoded,
       featureCount: features.length,
@@ -124,8 +119,7 @@ describe('Download stage strategies', () => {
       timestamp: Date.now(),
     });
     await db.rawBuffers.put({
-      id: `${sessionId}-download-1`,
-      sessionId,
+      id: `${nodeId}-download-1`,
       nodeId,
       data: encoded,
       featureCount: features.length,
@@ -136,12 +130,12 @@ describe('Download stage strategies', () => {
     });
 
     const postprocess = await strategy.postprocessDownloadOutputs({
-      sessionId,
       nodeId,
       downloadTaskPayloads,
       config: createConfig('naturalearth'),
       options: {},
       downloadTasks: tasks,
+      downloadInputsById: inputsByTaskId,
     });
     expect(postprocess.outputs.length).toBeGreaterThanOrEqual(4);
     const outputIds = new Set(postprocess.outputs.map((output) => output.inputBufferId));

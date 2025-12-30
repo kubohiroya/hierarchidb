@@ -20,8 +20,8 @@ import {
 import type { BatchConfig, ShapeEntity } from '../../../common/types/index.js';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { useTranslation } from '../../i18n.js';
-import { useSimplify2ConfigSection } from '../../hooks/useSimplificationConfigSection.js';
-import { SimplificationPanel } from '../processing/SimplificationPanel.js';
+import { useExtract2ConfigSection } from '../../hooks/useExtractionConfigSection.js';
+import { ExtractionPanel } from '../processing/ExtractionPanel.js';
 import { PrecisionPanel } from '../processing/PrecisionPanel.js';
 import { useBuildCrashInsight } from '../../hooks/useBuildCrashInsight.js';
 import { getStageConcurrencyWarning } from '../../utils/buildWarnings.js';
@@ -33,32 +33,32 @@ type Props = {
   onChange: (next: BatchConfig) => void;
 };
 
-export const Simplify2ConfigSection: React.FC<Props> = ({ config, draft, disabled, onChange }) => {
+export const Extract2ConfigSection: React.FC<Props> = ({ config, draft, disabled, onChange }) => {
   const { t } = useTranslation();
   const crashInsight = useBuildCrashInsight({
     draft,
     nodeId: draft?.nodeId ? String(draft.nodeId) : undefined,
   });
   const {
-    baseSimplify2Config,
+    baseExtract2Config,
     quantizeOptions,
     quantizeRank,
     quantizeLabel,
     update,
-  } = useSimplify2ConfigSection({ config, disabled, onChange });
-  const simplify2Warning = getStageConcurrencyWarning(
+  } = useExtract2ConfigSection({ config, disabled, onChange });
+  const extract2Warning = getStageConcurrencyWarning(
     crashInsight,
-    'simplify2',
-    baseSimplify2Config.workers,
+    'extract2',
+    baseExtract2Config.workers,
   );
-  const simplify2WarningText = simplify2Warning
+  const extract2WarningText = extract2Warning
     ? t(
-      'processing.simplify2.memoryWarning',
+      'processing.extract2.memoryWarning',
       'Possible memory pressure: {{message}}',
-      { message: simplify2Warning.message },
+      { message: extract2Warning.message },
     )
     : undefined;
-  const simplificationMode = baseSimplify2Config.simplificationMode ?? 'topojson';
+  const extractionMode = baseExtract2Config.extractionMode ?? 'topojson';
 
   return (
     <Accordion defaultExpanded>
@@ -66,12 +66,12 @@ export const Simplify2ConfigSection: React.FC<Props> = ({ config, draft, disable
         <Stack direction="row" spacing={2} alignItems="center">
           <TuneIcon color="primary" />
           <Typography variant="subtitle1">
-            {t('processing.simplify2.title', 'Tile Preprocessing')}
+            {t('processing.extract2.title', 'Tile Preprocessing')}
           </Typography>
           <Tooltip
             title={t(
-              'processing.simplify2.omissionHelp',
-              'When enabled, simplification/quantization can remove empty geometries.',
+              'processing.extract2.omissionHelp',
+              'When enabled, extraction/quantization can remove empty geometries.',
             )}
             placement="top"
           >
@@ -86,13 +86,13 @@ export const Simplify2ConfigSection: React.FC<Props> = ({ config, draft, disable
               <WorkerNumberConfigCard
                 icon={<TuneIcon fontSize="small" color="primary" />}
                 title={t('processing.filter.workersStage2', 'Number of Workers for Tile Generation (Stage 2)')}
-                value={baseSimplify2Config.workers ?? 2}
+                value={baseExtract2Config.workers ?? 2}
                 helperText={t('processing.filter.workersStage2Help', 'Parallel workers for tile preparation in stage 2.')}
-                warningText={simplify2WarningText}
+                warningText={extract2WarningText}
                 onChange={(workers) =>
                   update({
-                    simplify2Config: {
-                      ...baseSimplify2Config,
+                    extract2Config: {
+                      ...baseExtract2Config,
                       workers,
                     },
                   })
@@ -109,23 +109,23 @@ export const Simplify2ConfigSection: React.FC<Props> = ({ config, draft, disable
               <Paper variant="outlined" sx={{ p: 2 }}>
                 <Stack spacing={1}>
                   <Typography variant="subtitle2">
-                    {t('processing.simplify2.simplificationModeTitle', 'Simplification Mode')}
+                    {t('processing.extract2.extractionModeTitle', 'Extraction Mode')}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     {t(
-                      'processing.simplify2.simplificationModeHelp',
-                      'Choose how geometry is simplified during tile preprocessing.',
+                      'processing.extract2.extractionModeHelp',
+                      'Choose how geometry is extracted during tile preprocessing.',
                     )}
                   </Typography>
                   <FormControl>
                     <RadioGroup
-                      value={simplificationMode}
+                      value={extractionMode}
                       onChange={(event) => {
                         const nextValue = event.target.value;
                         update({
-                          simplify2Config: {
-                            ...baseSimplify2Config,
-                            simplificationMode: nextValue as typeof simplificationMode,
+                          extract2Config: {
+                            ...baseExtract2Config,
+                            extractionMode: nextValue as typeof extractionMode,
                           },
                         });
                       }}
@@ -133,17 +133,17 @@ export const Simplify2ConfigSection: React.FC<Props> = ({ config, draft, disable
                       <FormControlLabel
                         value="off"
                         control={<Radio size="small" />}
-                        label={t('processing.simplify2.simplificationModeOff', 'Off')}
+                        label={t('processing.extract2.extractionModeOff', 'Off')}
                       />
                       <FormControlLabel
                         value="topojson"
                         control={<Radio size="small" />}
-                        label={t('processing.simplify2.simplificationModeTopo', 'TopoJSON')}
+                        label={t('processing.extract2.extractionModeTopo', 'TopoJSON')}
                       />
                       <FormControlLabel
                         value="geojson"
                         control={<Radio size="small" />}
-                        label={t('processing.simplify2.simplificationModeGeo', 'GeoJSON')}
+                        label={t('processing.extract2.extractionModeGeo', 'GeoJSON')}
                       />
                     </RadioGroup>
                   </FormControl>
@@ -152,27 +152,37 @@ export const Simplify2ConfigSection: React.FC<Props> = ({ config, draft, disable
             </Grid>
             <Grid size={{ xs: 12, md: 4 }}>
               <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
-                <SimplificationPanel
-                  tolerance={baseSimplify2Config.tolerance ?? 0.5}
+                <ExtractionPanel
+                  tolerance={baseExtract2Config.tolerance ?? 0.3}
                   toleranceLabelKey="processing.filter.toleranceSecondary"
-                  enablePerFeatureSimplification={baseSimplify2Config.enablePerFeatureSimplification ?? true}
+                  enablePerFeatureExtraction={baseExtract2Config.enablePerFeatureExtraction ?? true}
                   toleranceHelpKey="processing.filter.toleranceHelpStage2"
                   onToleranceChange={(tolerance) =>
                     update({
-                      simplify2Config: {
-                        ...baseSimplify2Config,
+                      extract2Config: {
+                        ...baseExtract2Config,
                         tolerance,
                       },
                     })
                   }
-                  onPerFeatureChange={(enablePerFeatureSimplification) =>
+                  onPerFeatureChange={(enablePerFeatureExtraction) =>
                     update({
-                      simplify2Config: {
-                        ...baseSimplify2Config,
-                        enablePerFeatureSimplification,
+                      extract2Config: {
+                        ...baseExtract2Config,
+                        enablePerFeatureExtraction,
                       },
                     })
                   }
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  marks={[
+                    { value: 0, label: '0' },
+                    { value: 0.25, label: '0.25' },
+                    { value: 0.5, label: '0.5' },
+                    { value: 0.75, label: '0.75' },
+                    { value: 1, label: '1' },
+                  ]}
                   disabled={disabled}
                 />
               </Paper>
@@ -180,15 +190,15 @@ export const Simplify2ConfigSection: React.FC<Props> = ({ config, draft, disable
             <Grid size={{ xs: 12, md: 4 }}>
               <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
                 <PrecisionPanel
-                  quantize={baseSimplify2Config.quantize ?? 2000}
+                  quantize={baseExtract2Config.quantize ?? 2000}
                   quantizeOptions={quantizeOptions}
                   quantizeRank={quantizeRank}
                   quantizeLabel={quantizeLabel}
                   disabled={disabled}
                   onQuantizeChange={(quantize) =>
                     update({
-                      simplify2Config: {
-                        ...baseSimplify2Config,
+                      extract2Config: {
+                        ...baseExtract2Config,
                         quantize,
                       },
                     })

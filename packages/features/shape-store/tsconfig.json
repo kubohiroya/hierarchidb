@@ -1,12 +1,15 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
+    "baseUrl": ".",
     "paths": {
-      "~/*": [
-        "./src/*"
+      "@hierarchidb/gis-sdk": [
+        "../gis-sdk/src/index.ts"
+      ],
+      "@hierarchidb/gis-sdk/*": [
+        "../gis-sdk/src/*"
       ]
-    },
-    "baseUrl": "."
+    }
   },
   "include": [
     "src/**/*"

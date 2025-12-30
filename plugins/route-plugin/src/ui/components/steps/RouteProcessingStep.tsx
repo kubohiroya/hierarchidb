@@ -1,6 +1,6 @@
 /**
  * RouteProcessingStep - Step 4 of route creation dialog.
- * Configures API throttle, simplification, and vector tile settings.
+ * Configures API throttle, extraction, and vector tile settings.
  */
 
 import type React from 'react';
@@ -67,7 +67,7 @@ type ResolvedRouteProcessingConfig = {
     requestsPerSecond: number;
     maxConcurrent: number;
   };
-  simplification: {
+  extraction: {
     tolerance: number;
   };
   vectorTiles: {
@@ -79,7 +79,7 @@ type ResolvedRouteProcessingConfig = {
 
 type RouteProcessingConfigUpdate = {
   apiThrottle?: Partial<ResolvedRouteProcessingConfig['apiThrottle']>;
-  simplification?: Partial<ResolvedRouteProcessingConfig['simplification']>;
+  extraction?: Partial<ResolvedRouteProcessingConfig['extraction']>;
   vectorTiles?: Partial<ResolvedRouteProcessingConfig['vectorTiles']>;
 };
 
@@ -88,7 +88,7 @@ const DEFAULT_CONFIG: RouteProcessingConfig = {
     requestsPerSecond: 5,
     maxConcurrent: 2,
   },
-  simplification: {
+  extraction: {
     tolerance: 50,
   },
   vectorTiles: {
@@ -131,10 +131,10 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
         DEFAULT_CONFIG.apiThrottle?.maxConcurrent ??
         2,
     },
-    simplification: {
+    extraction: {
       tolerance:
-        processing.simplification?.tolerance ??
-        DEFAULT_CONFIG.simplification?.tolerance ??
+        processing.extraction?.tolerance ??
+        DEFAULT_CONFIG.extraction?.tolerance ??
         50,
     },
     vectorTiles: {
@@ -159,9 +159,9 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
         ...mergedConfig.apiThrottle,
         ...(updates.apiThrottle ?? {}),
       },
-      simplification: {
-        ...mergedConfig.simplification,
-        ...(updates.simplification ?? {}),
+      extraction: {
+        ...mergedConfig.extraction,
+        ...(updates.extraction ?? {}),
       },
       vectorTiles: {
         ...mergedConfig.vectorTiles,
@@ -169,7 +169,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
       },
     };
     onUpdate({ config: nextProcessing });
-  }, [mergedConfig.apiThrottle, mergedConfig.simplification, mergedConfig.vectorTiles, onUpdate]);
+  }, [mergedConfig.apiThrottle, mergedConfig.extraction, mergedConfig.vectorTiles, onUpdate]);
 
   const loadCounts = useCallback(async () => {
     if (!nodeId) {
@@ -277,24 +277,24 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
 
         <Grid size={{ xs: 12, md: 6 }}>
           <Typography variant="subtitle1" gutterBottom>
-            {t('processing.simplificationTitle', 'Geometry simplification')}
+            {t('processing.extractionTitle', 'Geometry extraction')}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            {t('processing.simplificationDescription', 'Reduce geometry complexity for faster rendering.')}
+            {t('processing.extractionDescription', 'Reduce geometry complexity for faster rendering.')}
           </Typography>
           <Typography variant="body2" gutterBottom>
-            {t('processing.tolerance', 'Tolerance')}: {mergedConfig.simplification.tolerance}
+            {t('processing.tolerance', 'Tolerance')}: {mergedConfig.extraction.tolerance}
           </Typography>
           <Slider
             min={0}
             max={100}
             step={1}
-            value={mergedConfig.simplification.tolerance}
+            value={mergedConfig.extraction.tolerance}
             valueLabelDisplay="auto"
             onChange={(_, value) => {
               const next = Array.isArray(value) ? value[0] ?? 50 : value ?? 50;
               updateProcessing({
-                simplification: {
+                extraction: {
                   tolerance: clamp(Number(next), 0, 100),
                 },
               });

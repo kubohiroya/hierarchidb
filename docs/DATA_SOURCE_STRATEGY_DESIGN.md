@@ -144,7 +144,7 @@ export class NaturalEarthShapeStrategy implements DataSourceStrategy<NaturalEart
       ],
       transformations: [
         { type: 'coordinate-system', from: 'EPSG:4326', to: 'EPSG:3857' },
-        { type: 'simplify', tolerance: 0.01 }
+        { type: 'extract', tolerance: 0.01 }
       ]
     },
     cache: {

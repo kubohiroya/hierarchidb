@@ -115,7 +115,7 @@
     - 右: `Stop All`（一括停止）, `Close`（実行中は無効化／確認ダイアログあり）。
   - タブ: `Progress` / `Map Preview` / `Error Report`（バッジで件数表示）。
   - Progress タブ:
-    - `BatchProgressSplitView`: Allotment で4ペイン表示（Download / Feature Processing / Tile Simplification / Vector Tiles）。
+    - `BatchProgressSplitView`: Allotment で4ペイン表示（Download / Feature Processing / Tile Extraction / Vector Tiles）。
     - 各ペイン: ステージ見出しカード（%チップ＋LinearProgress＋完了数/総数）→ 下に `TaskMonitor`（タスク単位で状態チップ、進行中は Pause、Paused は Resume、エラー表示、メタ情報）。
   - Map Preview タブ: ダウンロード／タイル生成状況を地図プレビュー（`MapPreview`）。
   - Error Report タブ: `ErrorReportPanel`（エラー一覧、クリア、ステージ別件数）。
@@ -138,7 +138,7 @@
   - ErrorConsole は UI ありだがソース（worker 由来）配線はモック。
 - 最小復旧プラン（1〜2日）
   - Start/Pause/Resume/Stop をインターフェース化し DI（実装: モック/本番）を切替可能に。
-  - 進捗イベント（download/simplify*/vectortile）をストアに集約（メモリ or Dexie）し、UI はストア購読に一本化。
+  - 進捗イベント（download/extract*/vectortile）をストアに集約（メモリ or Dexie）し、UI はストア購読に一本化。
   - MapPreview は vectorTileTasks 完了時にのみ有効化、タイル URL/レイヤーを注入。
   - 監視ダイアログの Close 確認ダイアログを本番モードでも活かす。
 - テスト・検証

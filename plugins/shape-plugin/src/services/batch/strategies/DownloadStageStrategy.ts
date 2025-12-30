@@ -1,6 +1,12 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { BatchProcessConfig } from '../types.js';
-import type { CountryMetadata, DownloadTask, DownloadTaskPayload, SelectedArrayByCountries } from '../../../common/types/index.js';
+import type {
+  CountryMetadata,
+  DownloadTask,
+  DownloadTaskInput,
+  DownloadTaskPayload,
+  SelectedArrayByCountries,
+} from '../../../common/types/index.js';
 
 export interface DownloadStageOptions {
   timeoutMs?: number;
@@ -15,8 +21,14 @@ export interface DownloadStageBuildContext {
   options: DownloadStageOptions;
 }
 
+export interface DownloadTaskBuildResult {
+  tasks: DownloadTask[];
+  inputsByTaskId: Map<string, DownloadTaskInput>;
+}
+
 export interface DownloadStagePostprocessContext extends DownloadStageBuildContext {
   downloadTasks: DownloadTask[];
+  downloadInputsById: Map<string, DownloadTaskInput>;
 }
 
 export interface DownloadTaskPayloadBuildContext {
@@ -32,6 +44,7 @@ export interface DownloadStageOutput {
   inputBufferId: string;
   countryCode?: string;
   countryName?: string;
+  continent?: string;
   adminLevel?: number;
   dataSource?: string;
   sourceUrl?: string;
@@ -46,6 +59,6 @@ export interface DownloadStagePostprocessResult {
 }
 
 export interface DownloadStageStrategy extends DownloadTaskPayloadFactory {
-  buildDownloadTasks(context: DownloadStageBuildContext): Promise<DownloadTask[]>;
+  buildDownloadTasks(context: DownloadStageBuildContext): Promise<DownloadTaskBuildResult>;
   postprocessDownloadOutputs(context: DownloadStagePostprocessContext): Promise<DownloadStagePostprocessResult>;
 }

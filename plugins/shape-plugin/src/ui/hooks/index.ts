@@ -9,7 +9,7 @@ export * from './useShapeDataSourceStep.js';
 export * from './useShapeCountrySelectionStep.js';
 export * from './useShapeProcessingSettingsStep.js';
 export * from './useDownloadConfigSection.js';
-export * from './useSimplificationConfigSection.js';
+export * from './useExtractionConfigSection.js';
 export * from './useTileConfigSection.js';
 export * from './useShapeBuildProgressStep.js';
 export * from './useShapePreviewStep.js';

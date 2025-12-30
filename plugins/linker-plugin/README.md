@@ -547,7 +547,7 @@ interface ProjectOutputConfig {
       layers: string[];            // 含めるレイヤー
       
       optimization: {
-        simplification: boolean;
+        extraction: boolean;
         compression: 'none' | 'gzip' | 'brotli';
         tileSize: 256 | 512;
       };

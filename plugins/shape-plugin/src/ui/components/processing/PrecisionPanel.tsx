@@ -47,7 +47,7 @@ export const PrecisionPanel: React.FC<Props> = ({
           {t('processing.filter.quantizeSelected', 'Selected: {value}', { value: quantizeLabel || quantize.toLocaleString() })}
         </Typography>
         <Typography variant="caption" color="text.secondary">
-          {t('processing.filter.quantizeHelp', 'Quantization factor used in simplify stage 2.')}
+          {t('processing.filter.quantizeHelp', 'Quantization factor used in extract stage 2.')}
         </Typography>
         <Typography variant="caption" color="text.secondary">
           {t('processing.filter.quantizeStarHelp', '★1 is the coarsest rounding (lowest precision); higher stars increase precision.')}

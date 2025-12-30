@@ -1,7 +1,7 @@
 @hierarchidb/route-searoute
 ===========================
 
-Specification-only package (no implementation yet) for maritime routing. Builds a simplified sea graph (ports + straits/canals + grid) and returns routes as ordered segment IDs.
+Specification-only package (no implementation yet) for maritime routing. Builds a extracted sea graph (ports + straits/canals + grid) and returns routes as ordered segment IDs.
 
 ## Goal
 - On-demand routing between ports without full APSP precompute; A* / Dijkstra with great-circle heuristic.

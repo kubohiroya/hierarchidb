@@ -1,6 +1,6 @@
 # Plugin dialog integration audit
 
-This memo captures the current implementation that discovers HierarchiDB plugins, surfaces their metadata to the UI, and wires plugin-provided dialog flows to the shared worker runtime. The goal is to document what exists today before attempting any simplification work.
+This memo captures the current implementation that discovers HierarchiDB plugins, surfaces their metadata to the UI, and wires plugin-provided dialog flows to the shared worker runtime. The goal is to document what exists today before attempting any extraction work.
 
 ## Build-time plugin discovery
 

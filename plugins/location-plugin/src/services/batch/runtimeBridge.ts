@@ -3,9 +3,9 @@ import type { BatchProgressEvent, BatchSessionStatus, ProgressPhase } from '@hie
 const stageMap: Record<string, BatchProgressEvent['stage']> = {
   download: 'download',
   import: 'download',
-  filter: 'simplify1',
-  normalize: 'simplify1',
-  cluster: 'simplify2',
+  filter: 'extract1',
+  normalize: 'extract1',
+  cluster: 'extract2',
   index: 'vectortile',
   tilegen: 'vectortile',
 };

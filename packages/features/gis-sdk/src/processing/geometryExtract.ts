@@ -1,19 +1,19 @@
 import * as turf from '@turf/turf';
 import type { Feature, FeatureCollection, Geometry, GeoJsonProperties } from 'geojson';
 
-export interface SimplifyOptions {
+export interface ExtractOptions {
   tolerance: number;
   perFeature: boolean;
   quantize?: number;
 }
 
-const simplifyFeature = (
+const extractFeature = (
   feature: Feature<Geometry, GeoJsonProperties>,
   tolerance: number,
 ): Feature<Geometry, GeoJsonProperties> => {
   if (!feature.geometry) return feature;
-  const simplified = turf.simplify(feature, { tolerance, highQuality: false, mutate: false });
-  return simplified as Feature<Geometry, GeoJsonProperties>;
+  const extracted = turf.simplify(feature, { tolerance, highQuality: false, mutate: false });
+  return extracted as Feature<Geometry, GeoJsonProperties>;
 };
 
 const quantizeCoordinates = <T>(coords: T, quantize: number): T => {
@@ -50,7 +50,7 @@ const quantizeGeometry = (
   };
 };
 
-export const simplifyGeoJson = (geojson: unknown, options: SimplifyOptions): unknown => {
+export const extractGeoJson = (geojson: unknown, options: ExtractOptions): unknown => {
   if (!geojson || typeof geojson !== 'object') return geojson;
 
   const collection = geojson as FeatureCollection;
@@ -59,12 +59,12 @@ export const simplifyGeoJson = (geojson: unknown, options: SimplifyOptions): unk
     return {
       ...collection,
       features: collection.features.map((feature) => {
-        const needsSimplify = Number.isFinite(options.tolerance) && options.tolerance > 0;
+        const needsExtract = Number.isFinite(options.tolerance) && options.tolerance > 0;
         try {
-          const simplified = needsSimplify
-            ? simplifyFeature(feature as Feature<Geometry>, options.tolerance)
+          const extracted = needsExtract
+            ? extractFeature(feature as Feature<Geometry>, options.tolerance)
             : (feature as Feature<Geometry>);
-          return quantizeGeometry(simplified, options.quantize);
+          return quantizeGeometry(extracted, options.quantize);
         } catch {
           return feature as Feature<Geometry>;
         }

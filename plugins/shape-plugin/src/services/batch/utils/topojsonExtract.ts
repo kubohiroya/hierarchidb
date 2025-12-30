@@ -1,9 +1,9 @@
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import { topology } from 'topojson-server';
 import { feature as topojsonFeature } from 'topojson-client';
-import { presimplify, simplify as simplifyTopology } from 'topojson-simplify';
+import { presimplify as preextract, simplify as extractTopology } from 'topojson-simplify';
 
-type SimplifyTopoOptions = {
+type ExtractTopoOptions = {
   tolerance: number;
   quantize?: number;
   zoomLevels?: number[];
@@ -93,9 +93,9 @@ const collectFeatures = (result: ReturnType<typeof topojsonFeature>): Feature[] 
   return [result as Feature];
 };
 
-export const simplifyTopoJsonByTiles = (
+export const extractTopoJsonByTiles = (
   collection: FeatureCollection,
-  options: SimplifyTopoOptions,
+  options: ExtractTopoOptions,
 ): FeatureCollection => {
   const zoomLevels = normalizeZoomLevels(options.zoomLevels);
   const zoom = Math.min(...zoomLevels);
@@ -131,11 +131,11 @@ export const simplifyTopoJsonByTiles = (
         features,
       } as FeatureCollection,
     });
-    const presimplified = presimplify(topo);
-    const simplified = Number.isFinite(options.tolerance) && options.tolerance > 0
-      ? simplifyTopology(presimplified, options.tolerance)
-      : presimplified;
-    const restored = topojsonFeature(simplified, simplified.objects.collection as typeof simplified.objects[keyof typeof simplified.objects]);
+    const preextracted = preextract(topo);
+    const extracted = Number.isFinite(options.tolerance) && options.tolerance > 0
+      ? extractTopology(preextracted, options.tolerance)
+      : preextracted;
+    const restored = topojsonFeature(extracted, extracted.objects.collection as typeof extracted.objects[keyof typeof extracted.objects]);
     results.push(...collectFeatures(restored).map((entry) => applyQuantize(entry, options.quantize)));
   }
 

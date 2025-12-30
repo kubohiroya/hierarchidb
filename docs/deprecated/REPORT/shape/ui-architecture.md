@@ -946,8 +946,8 @@ const BatchConsolePanel = ({ nodeId, config, urlMetadata, onBatchConsoleUpdated,
   // Web Worker管理とタスク状態
   const {
     downloadTasks,
-    simplify1Tasks,
-    simplify2Tasks,
+    extract1Tasks,
+    extract2Tasks,
     vectorTileTasks,
     canStart,
     hasStarted,
@@ -1004,20 +1004,20 @@ const BatchConsolePanel = ({ nodeId, config, urlMetadata, onBatchConsoleUpdated,
           <BatchProgressSplitView
             config={config}
             downloadTasks={downloadTasks}
-            simplify1Tasks={simplify1Tasks}
-            simplify2Tasks={simplify2Tasks}
+            extract1Tasks={extract1Tasks}
+            extract2Tasks={extract2Tasks}
             vectorTileTasks={vectorTileTasks}
             onCancelDownload={cancelDownloadTask}
             onResumeDownload={resumeDownloadTask}
-            onCancelSimplify1={cancelSimplify1Task}
-            onResumeSimplify1={resumeSimplify1Task}
-            onCancelSimplify2={cancelSimplify2Task}
-            onResumeSimplify2={resumeSimplify2Task}
+            onCancelExtract1={cancelExtract1Task}
+            onResumeExtract1={resumeExtract1Task}
+            onCancelExtract2={cancelExtract2Task}
+            onResumeExtract2={resumeExtract2Task}
             onCancelVectorTiles={cancelVectorTilesTask}
             onResumeVectorTiles={resumeVectorTilesTask}
             getDownloadTaskTitle={getDownloadTaskTitle}
-            getSimplify1TaskTitle={getSimplify1TaskTitle}
-            getSimplify2TaskTitle={getSimplify2TaskTitle}
+            getExtract1TaskTitle={getExtract1TaskTitle}
+            getExtract2TaskTitle={getExtract2TaskTitle}
             getVectorTilesTaskTitle={getVectorTilesTaskTitle}
           />
         )}
@@ -1063,7 +1063,7 @@ const BatchConsolePanel = ({ nodeId, config, urlMetadata, onBatchConsoleUpdated,
 **レイアウト**: Allotment使用の水平分割レイアウト（4ペイン）
 - **Download Pane**: 地理データダウンロード進捗
 - **Feature Processing Pane**: フィーチャー処理進捗  
-- **Tile Simplification Pane**: タイル簡略化進捗
+- **Tile Extraction Pane**: タイル簡略化進捗
 - **Vector Tiles Pane**: ベクタータイル生成進捗
 
 **インテリジェント表示制御**:
@@ -1073,9 +1073,9 @@ const BatchConsolePanel = ({ nodeId, config, urlMetadata, onBatchConsoleUpdated,
 
 ```tsx
 const BatchProgressSplitView = ({
-  config, downloadTasks, simplify1Tasks, simplify2Tasks, vectorTileTasks,
+  config, downloadTasks, extract1Tasks, extract2Tasks, vectorTileTasks,
   onCancelDownload, onResumeDownload, // タスク制御関数群
-  getDownloadTaskTitle, getSimplify1TaskTitle, // タスクタイトル取得関数群
+  getDownloadTaskTitle, getExtract1TaskTitle, // タスクタイトル取得関数群
 }) => {
   const theme = useTheme();
   
@@ -1083,17 +1083,17 @@ const BatchProgressSplitView = ({
   const [paneStates, setPaneStates] = useState<PaneState[]>([
     { id: 'download', title: `Download Shape Data (${config.concurrentDownloads} concurrent)`, isExpanded: true, ... },
     { id: 'features', title: 'Feature Processing', isExpanded: false, ... },
-    { id: 'simplify', title: 'Tile Simplification', isExpanded: false, ... },
+    { id: 'extract', title: 'Tile Extraction', isExpanded: false, ... },
     { id: 'vectortile', title: `Vector Tiles (${config.concurrentProcesses} concurrent)`, isExpanded: false, ... },
   ]);
   
   // 進捗状況計算
   const paneProgress = useMemo(() => ({
     download: calculateProgress(downloadTasks),
-    feature: calculateProgress(simplify1Tasks),
-    simplify: calculateProgress(simplify2Tasks),
+    feature: calculateProgress(extract1Tasks),
+    extract: calculateProgress(extract2Tasks),
     vectortile: calculateProgress(vectorTileTasks),
-  }), [downloadTasks, simplify1Tasks, simplify2Tasks, vectorTileTasks]);
+  }), [downloadTasks, extract1Tasks, extract2Tasks, vectorTileTasks]);
   
   // 進捗完了時の自動展開ロジック
   useEffect(() => {
@@ -1101,9 +1101,9 @@ const BatchProgressSplitView = ({
       autoExpandPane('features'); // ダウンロード完了→フィーチャー処理を展開
     }
     if (prevProgress.feature < 100 && paneProgress.feature === 100) {
-      autoExpandPane('simplify'); // フィーチャー処理完了→簡略化を展開
+      autoExpandPane('extract'); // フィーチャー処理完了→簡略化を展開
     }
-    if (prevProgress.simplify < 100 && paneProgress.simplify === 100) {
+    if (prevProgress.extract < 100 && paneProgress.extract === 100) {
       autoExpandPane('vectortile'); // 簡略化完了→ベクタータイルを展開
     }
   }, [paneProgress, prevProgress]);
@@ -1159,7 +1159,7 @@ const BatchProgressSplitView = ({
           </Box>
         </Allotment.Pane>
         
-        {/* 他の3ペイン（Feature Processing, Tile Simplification, Vector Tiles）も同様の構造 */}
+        {/* 他の3ペイン（Feature Processing, Tile Extraction, Vector Tiles）も同様の構造 */}
       </Allotment>
     </Box>
   );

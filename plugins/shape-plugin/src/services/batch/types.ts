@@ -10,8 +10,8 @@ import type { BatchSessionConfig } from '../../common/types/BatchConfig.js';
 export interface BatchProcessConfig extends BatchSessionConfig {
   // Worker configuration
   downloadWorkers?: number;
-  simplify1Workers?: number;
-  simplify2Workers?: number;
+  extract1Workers?: number;
+  extract2Workers?: number;
   vectorTileWorkers?: number;
 
   // Worker options
@@ -20,8 +20,8 @@ export interface BatchProcessConfig extends BatchSessionConfig {
   retryDelay?: number;
   maxMemoryPerWorker?: number;
 
-  // Simplification settings (if not already in BatchConfig)
-  simplifyTolerance?: number;
+  // Extraction settings (if not already in BatchConfig)
+  extractTolerance?: number;
   minArea?: number;
   minZoom?: number;
   maxZoom?: number;

@@ -75,8 +75,8 @@ export interface DownloadWorkerAPI {
   }>;
 }
 
-export interface SimplifyWorkerAPI {
-  simplifyStage1(
+export interface ExtractWorkerAPI {
+  extractStage1(
     inputBufferId: string,
     config: {
       tolerance: number;
@@ -84,7 +84,7 @@ export interface SimplifyWorkerAPI {
     }
   ): Promise<{ outputBufferId: string }>;
 
-  simplifyStage2(
+  extractStage2(
     inputBufferId: string,
     config: {
       zoomLevels: number[];

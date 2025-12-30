@@ -84,7 +84,7 @@ export interface ValidationRule {
 }
 
 export interface TransformationRule {
-  type: 'coordinate-system' | 'simplify' | 'project' | 'filter' | 'aggregate';
+  type: 'coordinate-system' | 'extract' | 'project' | 'filter' | 'aggregate';
   from?: string;
   to?: string;
   tolerance?: number;
@@ -128,7 +128,7 @@ export interface ProcessOptions {
   transformations?: TransformationRule[];
   validation?: boolean;
   outputFormat?: DataFormat;
-  simplify?: boolean;
+  extract?: boolean;
   tolerance?: number;
 
   [key: string]: unknown;
@@ -328,7 +328,7 @@ export abstract class BaseDataSourceStrategy<TRawData = unknown, TProcessedData 
     transformation: TransformationRule,
   ): Promise<T[]> {
     switch (transformation.type) {
-      case 'simplify':
+      case 'extract':
         return data;
       case 'filter':
         return data;

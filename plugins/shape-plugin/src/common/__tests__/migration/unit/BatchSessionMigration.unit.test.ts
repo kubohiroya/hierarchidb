@@ -2,10 +2,10 @@
   * @file BatchSessionMigration.test.ts
  * @description ERIA-Cartograph (TDD Red Phase)
    * - HierarchiDBWorkerBatchSessionManager
- * - 4DownloadSimplify1Simplify2VectorTiles
+ * - 4DownloadExtract1Extract2VectorTiles
  * - Comlink RPCWorker
    * - BatchSessionManagerWorkerAPI
- * - WorkerDownloadWorkerSimplify1WorkerSimplify2WorkerVectorTileWorker
+ * - WorkerDownloadWorkerExtract1WorkerExtract2WorkerVectorTileWorker
  * -
   */
 
@@ -34,7 +34,7 @@ describe('BatchSession Migration Tests', () => {
         concurrentDownloads: 2,
         deleteOnComplete: false,
       },
-      simplify1: {
+      extract1: {
         concurrentProcesses: 2,
         enableFeatureFiltering: true,
         featureAreaThreshold: 0.5,
@@ -50,12 +50,12 @@ describe('BatchSession Migration Tests', () => {
         },
         deleteOnComplete: false,
       },
-      simplify2: {
+      extract2: {
         concurrentProcesses: 2,
         quantize: 1e4,
-        simplify: 0.01,
+        extract: 0.01,
         tolerance: 0.1,
-        enablePerFeatureSimplification: true,
+        enablePerFeatureExtraction: true,
         deleteOnComplete: false,
       },
       vectorTiles: {
@@ -165,10 +165,10 @@ describe('BatchSession Migration Tests', () => {
       expect(downloadResult.failedTasks).toBe(0);
 
       const status = await batchSessionManager.getSessionStatus(sessionId);
-      expect(status.stage).toBe('simplify1');
+      expect(status.stage).toBe('extract1');
     });
 
-    it('Simplify1段階が正常に実行される', async () => {
+    it('Extract1段階が正常に実行される', async () => {
       //  Given: Download
       const sessionId = await batchSessionManager.startBatchSession(
         mockTreeNodeId,
@@ -178,21 +178,21 @@ describe('BatchSession Migration Tests', () => {
       );
       await batchSessionManager.executeDownloadStage(sessionId);
 
-      //  When: Simplify1
-      const simplify1Result = await batchSessionManager.executeSimplify1Stage(sessionId);
+      //  When: Extract1
+      const extract1Result = await batchSessionManager.executeExtract1Stage(sessionId);
 
-      //  Then: Simplify1
-      expect(simplify1Result).toBeDefined();
-      expect(simplify1Result.success).toBe(true);
-      expect(simplify1Result.processedFeatures).toBeGreaterThan(0);
-      expect(simplify1Result.filteredFeatures).toBeGreaterThanOrEqual(0);
+      //  Then: Extract1
+      expect(extract1Result).toBeDefined();
+      expect(extract1Result.success).toBe(true);
+      expect(extract1Result.processedFeatures).toBeGreaterThan(0);
+      expect(extract1Result.filteredFeatures).toBeGreaterThanOrEqual(0);
 
       const status = await batchSessionManager.getSessionStatus(sessionId);
-      expect(status.stage).toBe('simplify2');
+      expect(status.stage).toBe('extract2');
     });
 
-    it('Simplify2段階が正常に実行される', async () => {
-      //  Given: Simplify1
+    it('Extract2段階が正常に実行される', async () => {
+      //  Given: Extract1
       const sessionId = await batchSessionManager.startBatchSession(
         mockTreeNodeId,
         mockBatchConfig,
@@ -200,24 +200,24 @@ describe('BatchSession Migration Tests', () => {
         [0],
       );
       await batchSessionManager.executeDownloadStage(sessionId);
-      await batchSessionManager.executeSimplify1Stage(sessionId);
+      await batchSessionManager.executeExtract1Stage(sessionId);
 
-      //  When: Simplify2
-      const simplify2Result = await batchSessionManager.executeSimplify2Stage(sessionId);
+      //  When: Extract2
+      const extract2Result = await batchSessionManager.executeExtract2Stage(sessionId);
 
-      //  Then: Simplify2
-      expect(simplify2Result).toBeDefined();
-      expect(simplify2Result.success).toBe(true);
-      expect(simplify2Result.processedTiles).toBeGreaterThan(0);
-      expect(simplify2Result.simplificationRatio).toBeGreaterThan(0);
-      expect(simplify2Result.simplificationRatio).toBeLessThanOrEqual(1);
+      //  Then: Extract2
+      expect(extract2Result).toBeDefined();
+      expect(extract2Result.success).toBe(true);
+      expect(extract2Result.processedTiles).toBeGreaterThan(0);
+      expect(extract2Result.extractionRatio).toBeGreaterThan(0);
+      expect(extract2Result.extractionRatio).toBeLessThanOrEqual(1);
 
       const status = await batchSessionManager.getSessionStatus(sessionId);
       expect(status.stage).toBe('vectorTiles');
     });
 
     it('VectorTiles段階が正常に実行される', async () => {
-      //  Given: Simplify2
+      //  Given: Extract2
       const sessionId = await batchSessionManager.startBatchSession(
         mockTreeNodeId,
         mockBatchConfig,
@@ -225,8 +225,8 @@ describe('BatchSession Migration Tests', () => {
         [0],
       );
       await batchSessionManager.executeDownloadStage(sessionId);
-      await batchSessionManager.executeSimplify1Stage(sessionId);
-      await batchSessionManager.executeSimplify2Stage(sessionId);
+      await batchSessionManager.executeExtract1Stage(sessionId);
+      await batchSessionManager.executeExtract2Stage(sessionId);
 
       //  When: VectorTiles
       const vectorTilesResult = await batchSessionManager.executeVectorTilesStage(sessionId);
@@ -269,13 +269,13 @@ describe('BatchSession Migration Tests', () => {
       expect(progressEvents.length).toBeGreaterThan(0);
 
       const downloadProgress = progressEvents.find((e) => e.stage === 'download');
-      const simplify1Progress = progressEvents.find((e) => e.stage === 'simplify1');
-      const simplify2Progress = progressEvents.find((e) => e.stage === 'simplify2');
+      const extract1Progress = progressEvents.find((e) => e.stage === 'extract1');
+      const extract2Progress = progressEvents.find((e) => e.stage === 'extract2');
       const vectorTilesProgress = progressEvents.find((e) => e.stage === 'vectorTiles');
 
       expect(downloadProgress).toBeDefined();
-      expect(simplify1Progress).toBeDefined();
-      expect(simplify2Progress).toBeDefined();
+      expect(extract1Progress).toBeDefined();
+      expect(extract2Progress).toBeDefined();
       expect(vectorTilesProgress).toBeDefined();
     });
   });

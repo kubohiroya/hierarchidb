@@ -45,10 +45,10 @@ export interface SourceMetadataRow {
   updatedAt: number;
   rawVertexCount?: number;
   rawPolygonCount?: number;
-  simplify1VertexCount?: number;
-  simplify1PolygonCount?: number;
-  simplify2VertexCount?: number;
-  simplify2PolygonCount?: number;
+  extract1VertexCount?: number;
+  extract1PolygonCount?: number;
+  extract2VertexCount?: number;
+  extract2PolygonCount?: number;
   vectorTileVertexCount?: number;
   vectorTilePolygonCount?: number;
   bbox?: [number, number, number, number];

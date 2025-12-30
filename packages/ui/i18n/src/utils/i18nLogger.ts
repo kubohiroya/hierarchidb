@@ -33,7 +33,7 @@ const isDev: boolean = (() => {
 const noop = (..._args: unknown[]): void => void 0;
 const noopVoid = (): void => void 0;
 
-// Translation helper with fallback (simplified without i18n dependency)
+// Translation helper with fallback (extracted without i18n dependency)
 const t = (key: string, _options?: I18nInterpolationOptions): string => {
   // Simple fallback implementation - just return the key for now
   return key;

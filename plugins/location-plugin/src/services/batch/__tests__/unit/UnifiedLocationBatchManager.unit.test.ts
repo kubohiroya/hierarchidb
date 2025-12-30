@@ -241,7 +241,7 @@ describe('UnifiedLocationBatchManager persistence contract', () => {
           completed: 4,
           failed: 0,
           percentage: 40,
-          currentStage: 'simplify1',
+          currentStage: 'extract1',
           currentTask: 'normalizing',
         }),
       }));

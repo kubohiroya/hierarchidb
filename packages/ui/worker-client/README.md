@@ -291,7 +291,7 @@ MIT © HierarchiDB Project
 2. **Use meaningful progress messages** to help with debugging
 3. **Handle errors gracefully** with proper error reporting
 4. **Set appropriate timeouts** based on your initialization complexity
-5. **Use the React integration** for React apps to simplify state management
+5. **Use the React integration** for React apps to extract state management
 6. **Enable debug mode** during development for better visibility
 7. **Test initialization failure scenarios** to ensure robustness
 

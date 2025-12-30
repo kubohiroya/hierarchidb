@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { HybridFilterConfig } from './BatchConfig.js';
 import type { BatchSessionConfig } from './BatchConfig.js';
-import type { FeatureFilterMethod, Simplify2SimplificationMode } from './processing.js';
+import type { FeatureFilterMethod, Extract2ExtractionMode } from './processing.js';
 
 export interface BatchStatus {
   session: BatchSession;
@@ -29,7 +29,7 @@ export type BatchTaskStageType = (typeof BatchTaskStage)[keyof typeof BatchTaskS
 
 export type TaskStatus = 'waiting' | 'running' | 'completed' | 'failed' | 'regression';
 
-export type BatchTaskType = 'download' | 'simplify1' | 'simplify2' | 'vectortile';
+export type BatchTaskType = 'download' | 'extract1' | 'extract2' | 'vectortile';
 export type ProcessingStage = BatchTaskType;
 
 export interface BatchTaskBase {
@@ -44,18 +44,17 @@ export interface BatchTaskBase {
   startedAt?: number;
   completedAt?: number;
   retryCount?: number;
-  metadata?: Record<string, unknown>;
-  config?: unknown;
   error?: string;
 }
 
 export type BatchTask = BatchTaskBase;
 
-export interface DownloadTaskConfig {
+export interface DownloadTaskInput {
   url?: string;
   dataSource?: string;
+  countryCode?: string;
+  countryName?: string;
   inputBufferId?: string;
-  country?: string;
   adminLevel?: number;
   endpoint?: string;
   bbox?: BoundingBox;
@@ -80,19 +79,24 @@ export interface DownloadTask extends BatchTaskBase {
   adminLevel?: number;
   fileSize?: number;
   downloadedBytes?: number;
-  config?: DownloadTaskConfig;
 }
 
-export interface SimplifyTaskConfig {
+export interface ExtractTaskInput {
   inputBufferId?: string;
   sourceUrl?: string;
   sourceTaskId?: string;
   featureId?: string;
   featureLabel?: string;
   featureGroupId?: string;
+  adminCode?: string;
   featureIndex?: number;
   originKey?: string;
   originLabel?: string;
+  dataSource?: string;
+  countryCode?: string;
+  adminLevel?: number;
+  continent?: string;
+  countryName?: string;
   tolerance?: number;
   minimumArea?: number;
   zoomLevels?: number[];
@@ -103,33 +107,31 @@ export interface SimplifyTaskConfig {
   aspectRatioThreshold?: number;
   hybridFilterConfig?: HybridFilterConfig;
   enableFeatureFiltering?: boolean;
-  enablePerFeatureSimplification?: boolean;
+  enablePerFeatureExtraction?: boolean;
   preserveSharedBoundaries?: boolean;
-  simplificationMode?: Simplify2SimplificationMode;
+  extractionMode?: Extract2ExtractionMode;
   retry?: number;
 }
 
-export interface SimplifyTask extends BatchTaskBase {
-  taskType: 'simplify1' | 'simplify2';
+export interface ExtractTask extends BatchTaskBase {
+  taskType: 'extract1' | 'extract2';
   countryCode?: string;
+  countryName?: string;
+  continent?: string;
   adminLevel?: number;
+  adminCode?: string;
   inputBufferId?: string;
-  tolerance?: number;
-  minArea?: number;
-  zoomLevels?: number[];
-  tileSize?: number;
-  config?: SimplifyTaskConfig;
 }
 
-export interface Simplify1Task extends SimplifyTask {
-  taskType: 'simplify1';
+export interface Extract1Task extends ExtractTask {
+  taskType: 'extract1';
 }
 
-export interface Simplify2Task extends SimplifyTask {
-  taskType: 'simplify2';
+export interface Extract2Task extends ExtractTask {
+  taskType: 'extract2';
 }
 
-export interface VectorTileTaskConfig {
+export interface VectorTileTaskInput {
   inputBufferId?: string;
   minZoom?: number;
   maxZoom?: number;
@@ -143,25 +145,17 @@ export interface VectorTileTaskConfig {
   format?: 'mvt' | 'pbf';
   layers?: unknown[];
   outputBufferId?: string;
+  dataSource?: string;
+  countryCode?: string;
+  countryName?: string;
+  adminLevel?: number;
   metadataEnabled?: boolean;
   metadataReplace?: boolean;
   retry?: number;
-  metadataContext?: {
-    dataSource?: string;
-    countryCode?: string;
-    countryName?: string;
-    adminLevel?: number;
-  };
 }
 
 export interface VectorTileTask extends BatchTaskBase {
   taskType: 'vectortile';
-  countryCode?: string;
-  adminLevel?: number;
-  zoomLevel?: number;
-  tileCount?: number;
-  generatedTiles?: number;
-  config?: VectorTileTaskConfig;
 }
 
 export interface BatchSession {
@@ -244,7 +238,7 @@ export interface LayerConfig {
   minZoom?: number;
   maxZoom?: number;
   properties?: string[];
-  simplificationLevel?: number;
+  extractionLevel?: number;
 }
 
 export interface LayerInfo {
@@ -287,4 +281,4 @@ export interface CacheStatistics {
 }
 
 // Backward compatibility aliases
-export type TileSimplifyConfig = SimplifyTaskConfig;
+export type TileExtractConfig = ExtractTaskInput;

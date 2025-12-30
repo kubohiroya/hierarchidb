@@ -68,7 +68,7 @@ describe('ShapesService', () => {
         adminLevels: [1, 2],
         workerPoolSize: 4,
         enableFeatureExtraction: true,
-        simplificationLevels: [1, 2],
+        extractionLevels: [1, 2],
         tileZoomRange: [0, 10],
         cacheStrategy: {
           enableCache: true,

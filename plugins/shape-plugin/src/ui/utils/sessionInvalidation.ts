@@ -3,7 +3,7 @@ import { DEFAULT_PROCESSING_CONFIG, mergeBatchConfig } from '../../common/types/
 import { getEphemeralShapeDB, type EphemeralStage } from '../../services/database/EphemeralShapeDB.js';
 import { toNodeId, type NodeId } from '@hierarchidb/common-types';
 
-const STAGE_ORDER: EphemeralStage[] = ['download', 'simplify1', 'simplify2', 'vectorTiles'];
+const STAGE_ORDER: EphemeralStage[] = ['download', 'extract1', 'extract2', 'vectorTiles'];
 
 type SimpleRecord = object;
 
@@ -52,19 +52,19 @@ export function resolveBatchConfigInvalidation(
 
   if (hasDiff(prev.downloadConfig ?? {}, next.downloadConfig ?? {})) {
     stages.add('download');
-    stages.add('simplify1');
-    stages.add('simplify2');
+    stages.add('extract1');
+    stages.add('extract2');
     stages.add('vectorTiles');
   }
 
-  if (hasDiff(prev.simplify1Config ?? {}, next.simplify1Config ?? {})) {
-    stages.add('simplify1');
-    stages.add('simplify2');
+  if (hasDiff(prev.extract1Config ?? {}, next.extract1Config ?? {})) {
+    stages.add('extract1');
+    stages.add('extract2');
     stages.add('vectorTiles');
   }
 
-  if (hasDiff(prev.simplify2Config ?? {}, next.simplify2Config ?? {})) {
-    stages.add('simplify2');
+  if (hasDiff(prev.extract2Config ?? {}, next.extract2Config ?? {})) {
+    stages.add('extract2');
     stages.add('vectorTiles');
   }
 
@@ -77,7 +77,7 @@ export function resolveBatchConfigInvalidation(
 
 export const FULL_INVALIDATION_STAGES: EphemeralStage[] = [
   'download',
-  'simplify1',
-  'simplify2',
+  'extract1',
+  'extract2',
   'vectorTiles',
 ];

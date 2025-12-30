@@ -27,7 +27,7 @@ interface BatchConfig {
     concurrentDownloads: number;
     deleteOnComplete?: boolean;
   };
-  simplify1: {
+  extract1: {
     concurrentProcesses: number;
     enableFeatureFiltering: boolean;
     featureAreaThreshold: number;
@@ -37,12 +37,12 @@ interface BatchConfig {
     hybridFilterConfig?: any;
     deleteOnComplete?: boolean;
   };
-  simplify2: {
+  extract2: {
     concurrentProcesses: number;
     quantize: number;
-    simplify: number;
+    extract: number;
     tolerance: number;
-    enablePerFeatureSimplification: boolean;
+    enablePerFeatureExtraction: boolean;
     deleteOnComplete?: boolean;
   };
   vectorTiles: {
@@ -70,7 +70,7 @@ export function createTestBatchConfig(): BatchConfig {
       concurrentDownloads: 2,
       deleteOnComplete: false,
     },
-    simplify1: {
+    extract1: {
       concurrentProcesses: 2,
       enableFeatureFiltering: true,
       featureAreaThreshold: 0.05,
@@ -86,12 +86,12 @@ export function createTestBatchConfig(): BatchConfig {
       },
       deleteOnComplete: false,
     },
-    simplify2: {
+    extract2: {
       concurrentProcesses: 2,
       quantize: 1e5,
-      simplify: 0.005,
+      extract: 0.005,
       tolerance: 0.05,
-      enablePerFeatureSimplification: true,
+      enablePerFeatureExtraction: true,
       deleteOnComplete: false,
     },
     vectorTiles: {
@@ -133,9 +133,9 @@ export function createTestShapeEntityJapanOnly(): ShapeEntity {
     selectedArrayByCountries: { JP: [true] },
     batchConfig: {
       ...baseEntity.batchConfig!,
-      simplify2: {
-        ...baseEntity.batchConfig!.simplify2,
-        quantize: 1e4, simplify: 0.01,
+      extract2: {
+        ...baseEntity.batchConfig!.extract2,
+        quantize: 1e4, extract: 0.01,
       },
       vectorTiles: {
         ...baseEntity.batchConfig!.vectorTiles,
@@ -155,12 +155,12 @@ export const EXPECTED_BATCH_RESULTS = {
       expectedTotalFeatures: 3, //  1
       expectedDataSources: ['geoboundaries'],
     },
-    simplify1Stage: {
+    extract1Stage: {
       expectedProcessedFeatures: 3,
       expectedFilteredFeatures: 3,
     },
-    simplify2Stage: {
-      expectedSimplifiedFeatures: 3,
+    extract2Stage: {
+      expectedExtractedFeatures: 3,
       maxToleranceDeviation: 0.1,
     },
     vectorTilesStage: {
@@ -176,12 +176,12 @@ export const EXPECTED_BATCH_RESULTS = {
       expectedTotalFeatures: 1,
       expectedDataSources: ['geoboundaries'],
     },
-    simplify1Stage: {
+    extract1Stage: {
       expectedProcessedFeatures: 1,
       expectedFilteredFeatures: 1,
     },
-    simplify2Stage: {
-      expectedSimplifiedFeatures: 1,
+    extract2Stage: {
+      expectedExtractedFeatures: 1,
       maxToleranceDeviation: 0.1,
     },
     vectorTilesStage: {
@@ -208,8 +208,8 @@ export const GEOBOUNDARIES_TEST_ENDPOINTS = {
     */
 export const TEST_TIMEOUTS = {
   download: 30000,    //  30 -
-  simplify1: 60000,   //  60 -
-  simplify2: 60000,   //  60 -
+  extract1: 60000,   //  60 -
+  extract2: 60000,   //  60 -
   vectorTiles: 90000, //  90 -
   fullWorkflow: 300000, //  5 -
 };

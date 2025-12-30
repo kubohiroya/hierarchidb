@@ -1,5 +1,5 @@
 import type { ProgressInfo } from '../../../common/types/index.js';
-import type { VectorTileTask } from '../../../common/types/index.js';
+import type { VectorTileTask, VectorTileTaskInput } from '../../../common/types/index.js';
 import type { VectorTileStageAdapter } from './VectorTileStageAdapter.js';
 import type { StageControls } from './StageControls.js';
 import { shapeDB } from '../../database/ShapeDB.js';
@@ -15,7 +15,7 @@ const isAbortError = (error: unknown): boolean => (
   error instanceof Error && error.name === 'AbortError'
 );
 
-const MAX_VECTOR_TILE_INPUT_BYTES = 50 * 1024 * 1024;
+const MAX_VECTOR_TILE_INPUT_BYTES = 100 * 1024 * 1024;
 
 type OriginSummary = {
   totalFeatures: number;
@@ -140,11 +140,11 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     return a[0] <= b[2] && a[2] >= b[0] && a[1] <= b[3] && a[3] >= b[1];
   }
 
-  private async loadSimplify2Features(nodeId: string): Promise<Array<{ feature: Feature; bbox: [number, number, number, number] }>> {
+  private async loadExtract2Features(nodeId: string): Promise<Array<{ feature: Feature; bbox: [number, number, number, number] }>> {
     const cached = this.featureCache.get(nodeId);
     if (cached) return cached;
     const db = getEphemeralShapeDB();
-    const buffers = await db.simplifiedBuffers.where({ nodeId, stage: 'simplify2' }).toArray();
+    const buffers = await db.extractedBuffers.where({ nodeId, stage: 'extract2' }).toArray();
     const result: Array<{ feature: Feature; bbox: [number, number, number, number] }> = [];
     for (const row of buffers) {
       const decoded = await this.decodeGeoJson(row.data);
@@ -186,7 +186,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
 
   private async buildGeoJsonBuffer(inputBufferId: string): Promise<ArrayBuffer> {
     const db = getEphemeralShapeDB();
-    const input = await db.simplifiedBuffers.get(inputBufferId)
+    const input = await db.extractedBuffers.get(inputBufferId)
       ?? await db.rawBuffers.get(inputBufferId);
     if (!input) {
       throw new Error(`Vector tile input buffer not found: ${inputBufferId}`);
@@ -198,7 +198,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
 
   private async resolveInputByteLength(inputBufferId: string): Promise<number | null> {
     const db = getEphemeralShapeDB();
-    const input = await db.simplifiedBuffers.get(inputBufferId)
+    const input = await db.extractedBuffers.get(inputBufferId)
       ?? await db.rawBuffers.get(inputBufferId);
     if (!input) return null;
     return input.data.byteLength;
@@ -233,6 +233,18 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
   async process(tasks: VectorTileTask[], onProgress: (p: ProgressInfo) => void, controls?: StageControls) {
     const getSignal = controls?.getSignal;
     const shouldAbort = () => Boolean(getSignal?.()?.aborted);
+    const resolvedNodeId = tasks[0]?.nodeId ? String(tasks[0].nodeId) : null;
+    const inputByTaskId = new Map<string, VectorTileTaskInput>();
+    if (resolvedNodeId) {
+      const rows = await shapeDB.batchTasks
+        .where('nodeId')
+        .equals(resolvedNodeId)
+        .and((row) => row.taskType === 'vectortile')
+        .toArray();
+      rows.forEach((row) => {
+        inputByTaskId.set(row.taskId, (row.inputData ?? {}) as VectorTileTaskInput);
+      });
+    }
     const batch = new BatchService();
     const maxConcurrent = Math.max(1, controls?.maxConcurrent ?? 1);
     const clients = await Promise.all(
@@ -245,7 +257,8 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     const metadataReplaceRef = { value: true };
     const tasksByInput = new Map<string, VectorTileTask[]>();
     for (const task of tasks) {
-      const inputBufferId = task.config?.inputBufferId ?? '';
+      const input = inputByTaskId.get(task.taskId) ?? {};
+      const inputBufferId = input.inputBufferId ?? '';
       if (!tasksByInput.has(inputBufferId)) {
         tasksByInput.set(inputBufferId, []);
       }
@@ -277,11 +290,12 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
             finished = true;
             continue;
           }
+          const sampleInput = inputByTaskId.get(sample.taskId) ?? {};
           try {
           const isTileTask = (
-            typeof sample?.config?.tileZ === 'number'
-            && typeof sample?.config?.tileX === 'number'
-            && typeof sample?.config?.tileY === 'number'
+            typeof sampleInput.tileZ === 'number'
+            && typeof sampleInput.tileX === 'number'
+            && typeof sampleInput.tileY === 'number'
           );
           if (!isTileTask) {
             const inputBytes = await this.resolveInputByteLength(inputBufferId);
@@ -293,7 +307,8 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                   limitBytes: MAX_VECTOR_TILE_INPUT_BYTES,
                 });
                 for (const task of inputTasks) {
-                  const currentRetry = typeof task.config?.retry === 'number' ? task.config.retry : 0;
+                  const taskInput = inputByTaskId.get(task.taskId) ?? {};
+                  const currentRetry = typeof taskInput.retry === 'number' ? taskInput.retry : 0;
                   const shouldRegress = currentRetry <= 1;
                   const nextRetry = currentRetry + 1;
                   if (!shouldRegress) {
@@ -308,7 +323,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                       errorMessage: shouldRegress ? undefined : message,
                     };
                     if (shouldRegress) {
-                      updates.inputData = { ...(task.config ?? {}), retry: nextRetry };
+                      updates.inputData = { ...taskInput, retry: nextRetry };
                     }
                     await shapeDB.updateBatchTask(task.taskId, updates);
                   }
@@ -330,13 +345,13 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
           let tileKey: string | null = null;
           let tileInputBuffer: ArrayBuffer | undefined;
           if (isTileTask) {
-            const tileZ = sample?.config?.tileZ;
-            const tileX = sample?.config?.tileX;
-            const tileY = sample?.config?.tileY;
+            const tileZ = sampleInput.tileZ;
+            const tileX = sampleInput.tileX;
+            const tileY = sampleInput.tileY;
             if (typeof tileZ !== 'number' || typeof tileX !== 'number' || typeof tileY !== 'number') {
               throw new Error(`Invalid tile input: ${inputBufferId}`);
             }
-            const features = await this.loadSimplify2Features(String(sample.nodeId));
+            const features = await this.loadExtract2Features(String(sample.nodeId));
             const totalFeatures = features.length;
             const tileBBox = this.tileToBBox(tileZ, tileX, tileY);
             const tileFeatures = features
@@ -497,13 +512,13 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                 progress: 0,
               });
             }));
-            const compression = sample.config?.compression ?? false;
-            const format = (sample.config?.format ?? 'mvt') as 'mvt';
-            const tileSizeConfig = sample.config?.tileSize ?? 256;
-            const buffer = sample.config?.buffer;
-            const minZoom = sample.config?.minZoom;
-            const maxZoom = sample.config?.maxZoom;
-            const metadataEnabled = Boolean(sample.config?.metadataEnabled);
+            const compression = sampleInput.compression ?? false;
+            const format = (sampleInput.format ?? 'mvt') as 'mvt';
+            const tileSizeConfig = sampleInput.tileSize ?? 256;
+            const buffer = sampleInput.buffer;
+            const minZoom = sampleInput.minZoom;
+            const maxZoom = sampleInput.maxZoom;
+            const metadataEnabled = Boolean(sampleInput.metadataEnabled);
             const replace = metadataEnabled && metadataReplaceRef.value;
             if (metadataEnabled && metadataReplaceRef.value) {
               metadataReplaceRef.value = false;
@@ -545,7 +560,12 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                   maxZoom,
                   metadataEnabled,
                   metadataReplace: replace,
-                  metadataContext: sample.config?.metadataContext,
+                  metadataContext: {
+                    dataSource: sampleInput.dataSource,
+                    countryCode: sampleInput.countryCode,
+                    countryName: sampleInput.countryName,
+                    adminLevel: sampleInput.adminLevel,
+                  },
                   targetNodeId: String(sample.nodeId),
                   abortKey,
                 },

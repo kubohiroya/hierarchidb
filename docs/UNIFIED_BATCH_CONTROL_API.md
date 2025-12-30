@@ -14,7 +14,7 @@
 
 ```ts
 export type BatchSessionId = string;
-export type StageKey = string;              // download / simplify1 / vectortile などに正規化
+export type StageKey = string;              // download / extract1 / vectortile などに正規化
 export type ProgressPhase = 'queued' | 'running' | 'paused' | 'completed' | 'failed' | 'warning';
 
 interface BatchProgressEvent<P = BatchProgressPayload> {

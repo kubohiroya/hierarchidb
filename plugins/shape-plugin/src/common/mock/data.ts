@@ -258,7 +258,6 @@ export function generateDownloadTaskPayloads(
           url: `https://example.com/${dataSource}/${countryCode}/admin${level}.geojson`,
           countryCode,
           adminLevel: level,
-          continent: country.continent,
         });
       }
     });

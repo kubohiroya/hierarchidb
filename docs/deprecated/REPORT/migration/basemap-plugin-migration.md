@@ -120,7 +120,7 @@ registry.registerPlugin(BaseMapUnifiedDefinition);
 ### Changed
 - `BaseMapEntityHandler` → `BaseMapHandler`
 - `basemapPlugin` → `BaseMapUnifiedDefinition`
-- Component prop interfaces simplified
+- Component prop interfaces extracted
 
 ## Backward Compatibility
 

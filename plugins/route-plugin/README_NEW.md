@@ -263,7 +263,7 @@ interface VectorTileStep {
   tileGeneration: {
     enabled: boolean;
     zoomLevels: number[];           // [5, 8, 11, 14]
-    simplification: {
+    extraction: {
       algorithm: 'douglas-peucker' | 'visvalingam';
       tolerance: number;
     };

@@ -9,7 +9,7 @@ import type { RowSelectionState } from '@tanstack/react-table';
 import type { MouseEvent, ReactNode } from 'react';
 import type { TreeTablePlugin } from './plugin/types.js';
 
-// Base TreeNode interface (simplified from core)
+// Base TreeNode interface (extracted from core)
 export interface TreeNodeInUI extends TreeNode {
   type?: string;
   hasChildren?: boolean;

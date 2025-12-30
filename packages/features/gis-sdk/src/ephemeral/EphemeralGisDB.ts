@@ -1,7 +1,7 @@
 import { Dexie, type Table } from 'dexie';
 import type { NodeId } from '@hierarchidb/common-types';
 
-export type EphemeralStage = 'download' | 'simplify1' | 'simplify2' | 'vectorTiles';
+export type EphemeralStage = 'download' | 'extract1' | 'extract2' | 'vectorTiles';
 
 export interface RawFeatureBuffer {
   id: string;
@@ -14,13 +14,13 @@ export interface RawFeatureBuffer {
   timestamp: number;
 }
 
-export interface SimplifiedFeatureBuffer {
+export interface ExtractedFeatureBuffer {
   id: string;
   nodeId: NodeId;
-  stage: 'simplify1' | 'simplify2';
+  stage: 'extract1' | 'extract2';
   data: ArrayBuffer;
   featureCount: number;
-  simplificationRatio: number;
+  extractionRatio: number;
   tolerance: number;
   timestamp: number;
 }
@@ -56,7 +56,7 @@ export interface BatchSessionMetadata<Config = unknown> {
 export interface ProcessingCache {
   key: string;
   data: ArrayBuffer | string;
-  type: 'raw' | 'simplified' | 'tile';
+  type: 'raw' | 'extracted' | 'tile';
   size: number;
   lastAccessed: number;
   ttl: number;
@@ -64,32 +64,24 @@ export interface ProcessingCache {
 
 export class EphemeralGisDB<Config = unknown> extends Dexie {
   rawBuffers!: Table<RawFeatureBuffer>;
-  simplifiedBuffers!: Table<SimplifiedFeatureBuffer>;
+  extractedBuffers!: Table<ExtractedFeatureBuffer>;
   vectorTiles!: Table<VectorTileData>;
   sessions!: Table<BatchSessionMetadata<Config>>;
   cache!: Table<ProcessingCache>;
 
   constructor(name: string) {
     super(name);
-    this.version(1).stores({
-      rawBuffers: '&id, nodeId, timestamp',
-      simplifiedBuffers: '&id, nodeId, stage, timestamp, [nodeId+stage]',
-      vectorTiles: '&id, nodeId, [z+x+y], hash, timestamp',
-      sessions: '&id, nodeId, status, stage, startTime',
-      cache: '&key, type, lastAccessed, ttl',
-    });
-
     this.version(2)
       .stores({
         rawBuffers: '&id, nodeId, timestamp',
-        simplifiedBuffers: '&id, nodeId, stage, timestamp, [nodeId+stage]',
+        extractedBuffers: '&id, nodeId, stage, timestamp, [nodeId+stage]',
         vectorTiles: '&id, nodeId, [z+x+y], hash, timestamp',
         sessions: '&nodeId, status, stage, startTime',
         cache: '&key, type, lastAccessed, ttl',
       })
       .upgrade(async () => {
         await this.rawBuffers.clear();
-        await this.simplifiedBuffers.clear();
+        await this.extractedBuffers.clear();
         await this.vectorTiles.clear();
         await this.sessions.clear();
         await this.cache.clear();
@@ -99,13 +91,13 @@ export class EphemeralGisDB<Config = unknown> extends Dexie {
   async clearNodeData(nodeId: NodeId): Promise<void> {
     await this.transaction('rw', [
       this.rawBuffers,
-      this.simplifiedBuffers,
+      this.extractedBuffers,
       this.vectorTiles,
       this.sessions,
       this.cache,
     ], async () => {
       await this.rawBuffers.where('nodeId').equals(nodeId).delete();
-      await this.simplifiedBuffers.where('nodeId').equals(nodeId).delete();
+      await this.extractedBuffers.where('nodeId').equals(nodeId).delete();
       await this.vectorTiles.where('nodeId').equals(nodeId).delete();
       await this.sessions.where('nodeId').equals(nodeId).delete();
 
@@ -120,10 +112,10 @@ export class EphemeralGisDB<Config = unknown> extends Dexie {
     switch (stage) {
       case 'download':
         return (await this.rawBuffers.where('nodeId').equals(nodeId).count()) > 0;
-      case 'simplify1':
-      case 'simplify2':
+      case 'extract1':
+      case 'extract2':
         return (
-          (await this.simplifiedBuffers.where({ nodeId, stage }).count()) > 0
+          (await this.extractedBuffers.where({ nodeId, stage }).count()) > 0
         );
       case 'vectorTiles':
         return (await this.vectorTiles.where('nodeId').equals(nodeId).count()) > 0;
@@ -135,7 +127,7 @@ export class EphemeralGisDB<Config = unknown> extends Dexie {
   async clearStage(nodeId: NodeId, stage: EphemeralStage): Promise<void> {
     await this.transaction('rw', [
       this.rawBuffers,
-      this.simplifiedBuffers,
+      this.extractedBuffers,
       this.vectorTiles,
       this.sessions,
       this.cache,
@@ -144,9 +136,9 @@ export class EphemeralGisDB<Config = unknown> extends Dexie {
         case 'download':
           await this.rawBuffers.where('nodeId').equals(nodeId).delete();
           break;
-        case 'simplify1':
-        case 'simplify2':
-          await this.simplifiedBuffers.where({ nodeId, stage }).delete();
+        case 'extract1':
+        case 'extract2':
+          await this.extractedBuffers.where({ nodeId, stage }).delete();
           break;
         case 'vectorTiles':
           await this.vectorTiles.where('nodeId').equals(nodeId).delete();
@@ -179,15 +171,15 @@ export class EphemeralGisDB<Config = unknown> extends Dexie {
 
   async getStatistics(): Promise<{
     rawBuffers: number;
-    simplifiedBuffers: number;
+    extractedBuffers: number;
     vectorTiles: number;
     sessions: number;
     cacheEntries: number;
     totalSize: number;
   }> {
-    const [rawCount, simplifiedCount, tileCount, sessionCount, cacheCount] = await Promise.all([
+    const [rawCount, extractedCount, tileCount, sessionCount, cacheCount] = await Promise.all([
       this.rawBuffers.count(),
-      this.simplifiedBuffers.count(),
+      this.extractedBuffers.count(),
       this.vectorTiles.count(),
       this.sessions.count(),
       this.cache.count(),
@@ -206,7 +198,7 @@ export class EphemeralGisDB<Config = unknown> extends Dexie {
 
     return {
       rawBuffers: rawCount,
-      simplifiedBuffers: simplifiedCount,
+      extractedBuffers: extractedCount,
       vectorTiles: tileCount,
       sessions: sessionCount,
       cacheEntries: cacheCount,
@@ -217,14 +209,14 @@ export class EphemeralGisDB<Config = unknown> extends Dexie {
   async clearAll(): Promise<void> {
     await this.transaction('rw', [
       this.rawBuffers,
-      this.simplifiedBuffers,
+      this.extractedBuffers,
       this.vectorTiles,
       this.sessions,
       this.cache,
     ], async () => {
       await Promise.all([
         this.rawBuffers.clear(),
-        this.simplifiedBuffers.clear(),
+        this.extractedBuffers.clear(),
         this.vectorTiles.clear(),
         this.sessions.clear(),
         this.cache.clear(),

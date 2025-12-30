@@ -5,7 +5,7 @@ import type {
   DownloadStageStrategy,
   DownloadTaskPayloadBuildContext,
 } from './DownloadStageStrategy.js';
-import type { CountryMetadata, DownloadTask } from '../../../common/types/index.js';
+import type { CountryMetadata, DownloadTask, DownloadTaskInput } from '../../../common/types/index.js';
 import { metadataLoader } from '../../metadata/MetadataLoader.js';
 import { buildDownloadTaskId, generateDownloadTaskPayloadsFromSelection } from '../../utils/utils.js';
 
@@ -18,7 +18,7 @@ export class OsmDownloadStrategy implements DownloadStageStrategy {
     );
   }
 
-  async buildDownloadTasks(context: DownloadStageBuildContext): Promise<DownloadTask[]> {
+  async buildDownloadTasks(context: DownloadStageBuildContext) {
     const countryCodes = new Set<string>();
     context.downloadTaskPayloads.forEach((metadata) => {
       if (metadata.countryCode) {
@@ -26,21 +26,14 @@ export class OsmDownloadStrategy implements DownloadStageStrategy {
       }
     });
     const metadataMap = await this.buildCountryMetadata(Array.from(countryCodes.values()));
-    return context.downloadTaskPayloads.map((metadata, index) => {
+    const inputsByTaskId = new Map<string, DownloadTaskInput>();
+    const tasks = context.downloadTaskPayloads.map((metadata, index) => {
       const country = metadata.countryCode ? metadataMap.get(metadata.countryCode.toUpperCase()) : undefined;
-      return ({
-      taskId: buildDownloadTaskId(String(context.nodeId), metadata),
-      nodeId: context.nodeId,
-      taskType: 'download',
-      stage: 'wait',
-      type: 'download',
-      status: 'waiting',
-      index,
-      progress: 0,
-      url: metadata.url,
-      config: {
+      const taskId = buildDownloadTaskId(String(context.nodeId), metadata);
+      const input: DownloadTaskInput = {
         dataSource: 'openstreetmap',
-        country: metadata.countryCode ?? 'UNKNOWN',
+        countryCode: metadata.countryCode,
+        countryName: metadata.countryName,
         adminLevel: metadata.adminLevel,
         url: metadata.url,
         bbox: country?.bbox,
@@ -48,26 +41,37 @@ export class OsmDownloadStrategy implements DownloadStageStrategy {
         timeoutMs: context.options.timeoutMs ?? 0,
         retryDelay: context.options.retryDelay ?? 0,
         retryAttempts: context.options.retryAttempts ?? 0,
-        expectedFormat: 'geojson',
-        validateSSL: true,
-      },
-      });
+      };
+      inputsByTaskId.set(taskId, input);
+      return {
+        taskId,
+        nodeId: context.nodeId,
+        taskType: 'download',
+        stage: 'wait',
+        type: 'download',
+        status: 'waiting',
+        index,
+        progress: 0,
+        url: metadata.url,
+        countryCode: metadata.countryCode,
+        adminLevel: metadata.adminLevel,
+      };
     });
+    return { tasks, inputsByTaskId };
   }
 
   async postprocessDownloadOutputs(
     context: DownloadStagePostprocessContext,
   ): Promise<DownloadStagePostprocessResult> {
-    const payloadByUrl = new Map(context.downloadTaskPayloads.map((payload) => [payload.url, payload]));
     const outputs = context.downloadTasks.map((task) => {
-      const payload = task.config?.url ? payloadByUrl.get(task.config.url) : undefined;
+      const input = context.downloadInputsById.get(task.taskId);
       return {
         inputBufferId: `${context.nodeId}-download-${task.index ?? 0}`,
-        countryCode: payload?.countryCode ?? task.countryCode,
-        countryName: payload?.countryName,
-        adminLevel: payload?.adminLevel ?? task.config?.adminLevel,
-        dataSource: payload?.dataSource ?? 'openstreetmap',
-        sourceUrl: payload?.url ?? task.config?.url,
+        countryCode: input?.countryCode ?? task.countryCode,
+        countryName: input?.countryName,
+        adminLevel: input?.adminLevel ?? task.adminLevel,
+        dataSource: input?.dataSource ?? 'openstreetmap',
+        sourceUrl: input?.url ?? task.url,
       };
     });
     return { outputs };

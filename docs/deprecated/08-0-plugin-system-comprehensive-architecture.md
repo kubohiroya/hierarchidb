@@ -386,7 +386,7 @@ export const ShapesWorkerPlugin: WorkerPluginDefinition = {
   
   // マルチステップ処理定義
   multiStepProcess: {
-    steps: ['download', 'simplify1', 'simplify2', 'vectorTiles'],
+    steps: ['download', 'extract1', 'extract2', 'vectorTiles'],
     ephemeralEntities: ['ShapeDataEntity'],
     persistentEntities: ['VectorTilesEntity'],
     autoCleanup: true
@@ -865,8 +865,8 @@ export const StylerPluginDialog: React.FC<PluginDialogProps> = ({
 Shapesプラグインは、地理データ処理のための4段階バッチ処理を提供：
 
 1. **Download Stage** - 地理データのダウンロード（並列実行）
-2. **Simplify1 Stage** - フィーチャー処理とフィルタリング
-3. **Simplify2 Stage** - タイル前処理と簡略化
+2. **Extract1 Stage** - フィーチャー処理とフィルタリング
+3. **Extract2 Stage** - タイル前処理と簡略化
 4. **VectorTiles Stage** - ベクタータイル生成
 
 ```typescript
@@ -879,8 +879,8 @@ export const ShapesBatchProcessor: React.FC<BatchProcessorProps> = ({
   
   const stages = [
     { id: 'download', title: 'Download Geographic Data', icon: DownloadIcon },
-    { id: 'simplify1', title: 'Feature Processing', icon: FilterIcon },
-    { id: 'simplify2', title: 'Tile Preparation', icon: ProcessIcon },
+    { id: 'extract1', title: 'Feature Processing', icon: FilterIcon },
+    { id: 'extract2', title: 'Tile Preparation', icon: ProcessIcon },
     { id: 'vectorTiles', title: 'Vector Tile Generation', icon: TileIcon }
   ];
   
@@ -1054,7 +1054,7 @@ export const ShapesWorkerPlugin: WorkerPluginDefinition = {
     }]
   },
   multiStepProcess: {
-    steps: ['download', 'simplify1', 'simplify2', 'vectorTiles'],
+    steps: ['download', 'extract1', 'extract2', 'vectorTiles'],
     autoCleanup: true
   }
 };

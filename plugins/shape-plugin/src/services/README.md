@@ -45,7 +45,7 @@ packages/plugins/shape/src/services/
 │   │   ├── morton.ts                # Morton符号計算
 │   │   ├── bbox.ts                  # バウンディングボックス
 │   │   ├── area.ts                  # 面積計算
-│   │   └── simplification.ts        # 簡略化ユーティリティ
+│   │   └── extraction.ts        # 簡略化ユーティリティ
 │   │
 │   ├── compression/
 │   │   ├── geobuf.ts                # Geobufエンコード/デコード
@@ -286,7 +286,7 @@ export function useShapesAPI() {
    - EntityHandler実装
 
 ### Phase 2〜4: runtime-worker への移行
-- 旧 WorkerPool/ローカルWorker 実装は削除済み。Download/Simplify/VectorTile は `@hierarchidb/runtime-worker` に委譲します。
+- 旧 WorkerPool/ローカルWorker 実装は削除済み。Download/Extract/VectorTile は `@hierarchidb/runtime-worker` に委譲します。
 
 ### Phase 5: バッチ処理統合
 1. **BatchSessionManager** (`batch/`)

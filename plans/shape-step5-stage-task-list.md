@@ -36,7 +36,7 @@ After this change, the Step5 Build screen in the shape plugin shows a stage-by-s
 
 Step5 in the shape plugin uses `BuildStepPanel` (`packages/components/src/BuildStepPanel.tsx`), which in turn renders `LRUSplitView` panes with a simple stage title, description, and a stage-level progress bar. The pane headers are rendered by `packages/ui/lru-splitview/src/components/PaneHeader.tsx` and can show a task-count chip and progress percentage if `PaneProgress` includes `taskCount` and `completedCount`. The worker API exposed to the UI is defined in `packages/common/api/src/WorkerAPI.ts` and implemented in the worker entry at `app/src/worker-runtime/worker.ts`. The shape worker API lives in `plugins/shape-plugin/src/worker/api.ts` and currently has a stub for `getBatchTasks`.
 
-In this plan, “task summary” means the minimal data needed to show a task row in the UI: task id, stage, status, progress percentage, and optional message/timestamps. “Stage pane” refers to one `LRUSplitView` pane per batch stage (download, simplify1, simplify2, vectorTiles).
+In this plan, “task summary” means the minimal data needed to show a task row in the UI: task id, stage, status, progress percentage, and optional message/timestamps. “Stage pane” refers to one `LRUSplitView` pane per batch stage (download, extract1, extract2, vectorTiles).
 
 ## Plan of Work
 

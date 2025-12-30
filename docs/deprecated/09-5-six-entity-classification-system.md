@@ -120,7 +120,7 @@ export interface EphemeralGroupEntity extends GroupEntity {
   // バッチ処理セッション管理
   sessionMetadata: {
     batchSessionId: UUID;
-    processingStage: 'download' | 'simplify1' | 'simplify2' | 'vectortiles';
+    processingStage: 'download' | 'extract1' | 'extract2' | 'vectortiles';
     isIntermediate: boolean;
     dependsOn?: UUID[]; // 依存する他のEphemeralEntity
   };
@@ -297,7 +297,7 @@ export interface FeatureIndexEntity extends EphemeralGroupEntity {
   stats: FeatureStats;
   sessionMetadata: {
     batchSessionId: UUID;
-    processingStage: 'simplify1';
+    processingStage: 'extract1';
     isIntermediate: true;
     dependsOn: [/* BatchBufferEntity.id */];
   };
@@ -317,10 +317,10 @@ export interface TileBufferEntity extends EphemeralGroupEntity {
   zoom: number;
   x: number;
   y: number;
-  features: SimplifiedFeature[];
+  features: ExtractedFeature[];
   sessionMetadata: {
     batchSessionId: UUID;
-    processingStage: 'simplify2';
+    processingStage: 'extract2';
     isIntermediate: true;
     dependsOn: [/* FeatureIndexEntity.id */];
   };

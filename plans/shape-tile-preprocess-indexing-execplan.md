@@ -48,7 +48,7 @@ PLANS.md is located at `PLANS.md` in the repository root. This document must be 
 
 最初に、タイル前処理の成果物の保存形式を定義します。`ShapeTileMetadataDB.tiles` に、タイル座標ごとの FeatureCollection（JSON 文字列の ArrayBuffer）を保存します。キーは `stageTileKey = input:${nodeId}-${z}-${x}-${y}` とし、`contentType` は `application/json` とします。`sessionId` フィールドには `input:${nodeId}` を保存し、同じテーブル内で入力タイルと出力タイルを区別できるようにします。サイズも保存し、後続の警告表示に使います。
 
-次に、`SessionController` の simplify2 ステージ完了後にタイル前処理を追加します。簡略化済みフィーチャー（`EphemeralShapeDB.simplifiedBuffers`）を読み取り、各フィーチャーの bbox から z/x/y を計算し、タイルごとの FeatureCollection を構築して `ShapeTileMetadataDB.tiles` に保存します。ここでの「分割」は「同一フィーチャーが複数タイルに属するなら各タイルに同じフィーチャーを重複保存する」方式とします。重複はストレージ増加と引き換えに検索を簡単にするためで、ユーザーの要件（タイル座標キーで検索）に合致します。
+次に、`SessionController` の extract2 ステージ完了後にタイル前処理を追加します。簡略化済みフィーチャー（`EphemeralShapeDB.extractedBuffers`）を読み取り、各フィーチャーの bbox から z/x/y を計算し、タイルごとの FeatureCollection を構築して `ShapeTileMetadataDB.tiles` に保存します。ここでの「分割」は「同一フィーチャーが複数タイルに属するなら各タイルに同じフィーチャーを重複保存する」方式とします。重複はストレージ増加と引き換えに検索を簡単にするためで、ユーザーの要件（タイル座標キーで検索）に合致します。
 
 タイル生成ステージでは、`ShapeTileMetadataDB.tiles` を `input:${nodeId}` で検索して z/x/y の一覧を作り、そのタイル一覧から vectortile タスクを作成します。タスクの `inputBufferId` には `stage-tile:input:${nodeId}-${z}-${x}-${y}` を設定し、`RuntimeWorkerVectorTileAdapter` は `persistGeoJsonInput()` を呼ばずに `generateTiles()` を直接実行します。
 
@@ -62,7 +62,7 @@ runtime-worker 側の `RealVectorTileWorker.readBuffer()` に `stage-tile:` プ�
 
 1) タイル前処理の保存形式とメタデータ生成を実装する。
    - 編集: `plugins/shape-plugin/src/services/database/ShapeTileMetadataDB.ts`
-   - 編集: `plugins/shape-plugin/src/services/batch/SessionController.ts` に `buildTileFeatureIndex()` を追加し、simplify2 完了後に呼び出す。
+   - 編集: `plugins/shape-plugin/src/services/batch/SessionController.ts` に `buildTileFeatureIndex()` を追加し、extract2 完了後に呼び出す。
    - 目標: `ShapeTileMetadataDB.featureMetadata` に省略前のメタデータを保存し、`ShapeTileMetadataDB.tiles` に `input:${nodeId}-${z}-${x}-${y}` をキーとして JSON バッファを保存できる。
 
 2) vectortile タスクをタイル単位にする。

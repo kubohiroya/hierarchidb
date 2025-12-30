@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import { BatchService, createLaneSemaphoreRegistry } from '@hierarchidb/batch';
-import type { DownloadTask } from '../../../common/types/index.js';
+import type { DownloadTask, DownloadTaskInput } from '../../../common/types/index.js';
 import type { ProgressInfo } from '../../../common/types/index.js';
 import type { DownloadStageAdapter, DownloadStageAdapterResult } from './DownloadStageAdapter.js';
 import type { StageControls } from './StageControls.js';
@@ -54,6 +54,7 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
   async process(
     nodeId: NodeId,
     tasks: DownloadTask[],
+    inputsByTaskId: Map<string, DownloadTaskInput>,
     onProgress: (p: ProgressInfo) => void,
     controls?: StageControls,
   ): Promise<DownloadStageAdapterResult> {
@@ -62,7 +63,7 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
     console.debug('[ShapeDownloadAdapter] process', {
       nodeId,
       taskCount: tasks.length,
-      dataSources: Array.from(new Set(tasks.map((task) => task.config?.dataSource ?? 'unknown'))),
+      dataSources: Array.from(new Set(tasks.map((task) => inputsByTaskId.get(task.taskId)?.dataSource ?? 'unknown'))),
     });
     const batch = new BatchService();
     let completed = 0;
@@ -70,7 +71,7 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
     let totalBytes = 0;
 
     const recommendedConcurrency = this.laneRegistry.recommendConcurrency(
-      tasks.map((task) => (task.config?.dataSource ?? 'default').toLowerCase()),
+      tasks.map((task) => (inputsByTaskId.get(task.taskId)?.dataSource ?? 'default').toLowerCase()),
       4,
     );
     const maxConcurrent = Math.max(1, controls?.maxConcurrent ?? recommendedConcurrency);
@@ -80,7 +81,8 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
       await batch.mapChunks<DownloadTask, {}>(
         tasks,
         async (task: DownloadTask, index: number) => {
-          const lane = (task.config?.dataSource ?? 'default').toLowerCase();
+          const input = inputsByTaskId.get(task.taskId) ?? {};
+          const lane = (input.dataSource ?? 'default').toLowerCase();
           await this.laneRegistry.runWithLane(lane, async () => {
             if (controls?.waitIfPaused) {
               await controls.waitIfPaused();
@@ -104,6 +106,7 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
                 nodeId,
                 task,
                 taskIndex,
+                input,
               }));
               if (result.status === 'failed') {
                 failed += 1;
@@ -119,7 +122,7 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
                 completed += 1;
                 totalBytes += result.bytesWritten ?? 0;
                 if (task.taskId) {
-                  const url = task.url ?? task.config?.url;
+                  const url = input.url ?? task.url;
                   await shapeDB.updateBatchTask(task.taskId, {
                     status: 'completed',
                     completedAt: Date.now(),

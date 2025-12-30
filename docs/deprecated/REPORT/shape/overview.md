@@ -28,8 +28,8 @@ UI Layer (React Components) ←→ Comlink RPC ←→ Worker Layer (Processing) 
 ### 2. Processing Pipeline
 Four-stage Worker pool architecture:
 1. **Download**: Fetch and cache geographic data
-2. **Simplify1**: Initial geometry simplification with Douglas-Peucker
-3. **Simplify2**: TopoJSON-based topology-preserving simplification
+2. **Extract1**: Initial geometry extraction with Douglas-Peucker
+3. **Extract2**: TopoJSON-based topology-preserving extraction
 4. **VectorTiles**: Generate Mapbox Vector Tiles for efficient rendering
 
 ### 3. Data Storage

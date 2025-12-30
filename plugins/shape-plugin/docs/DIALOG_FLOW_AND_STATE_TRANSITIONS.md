@@ -58,9 +58,9 @@ stateDiagram-v2
     
     state Processing {
         [*] --> Download
-        Download --> Simplify1
-        Simplify1 --> Simplify2
-        Simplify2 --> VectorTiles
+        Download --> Extract1
+        Extract1 --> Extract2
+        Extract2 --> VectorTiles
         VectorTiles --> [*]
     }
 ```

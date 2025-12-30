@@ -17,7 +17,7 @@ type Props = {
   canDeleteMetadata: boolean;
   resetDisabled?: boolean;
   onDeleteRaw: () => void;
-  onDeleteStage: (stage: 'simplify1' | 'simplify2') => void;
+  onDeleteStage: (stage: 'extract1' | 'extract2') => void;
   onDeleteTiles: () => void;
   onDeleteMetadata: () => void;
   onResetDefaults: () => void;
@@ -60,7 +60,7 @@ export const DownloadCacheActions: React.FC<Props> = ({
           color="error"
           startIcon={<FilterAltIcon />}
           disabled={!canDeleteStage1}
-          onClick={() => onDeleteStage('simplify1')}
+          onClick={() => onDeleteStage('extract1')}
         >
           {t('processing.download.deleteStage1Cache', 'Delete Stage1 Cache')}
         </Button>
@@ -72,7 +72,7 @@ export const DownloadCacheActions: React.FC<Props> = ({
           color="error"
           startIcon={<FilterIcon />}
           disabled={!canDeleteStage2}
-          onClick={() => onDeleteStage('simplify2')}
+          onClick={() => onDeleteStage('extract2')}
         >
           {t('processing.download.deleteStage2Cache', 'Delete Stage2 Cache')}
         </Button>

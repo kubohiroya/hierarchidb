@@ -247,7 +247,7 @@ export function useTreeViewController(
           }
         });
       } else if (shiftKey && lastSelectedNode) {
-        // Range select with Shift key - simplified implementation for testing
+        // Range select with Shift key - extracted implementation for testing
         // Get all children from state manager (mocked in tests)
         // TODO: Implement getChildren when API is available
         // Type guard for stateManager with getChildren method

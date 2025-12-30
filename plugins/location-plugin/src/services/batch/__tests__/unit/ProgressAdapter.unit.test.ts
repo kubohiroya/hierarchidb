@@ -10,7 +10,7 @@ describe('ProgressAdapter', () => {
       completed: 7,
     });
     expect(std.nodeId).toBe('node-1');
-    expect(std.stage).toBe('simplify1');
+    expect(std.stage).toBe('extract1');
     expect(std.phase).toBe('running');
     expect(std.payload?.completed).toBe(7);
     expect(std.payload?.total).toBe(10);

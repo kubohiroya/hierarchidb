@@ -88,8 +88,8 @@
     "apiThrottleDescription": "APIのレート制限を避けるため呼び出しを制御します。",
     "requestsPerSecond": "1秒あたりのリクエスト数",
     "maxConcurrent": "最大同時リクエスト数",
-    "simplificationTitle": "ジオメトリ簡略化",
-    "simplificationDescription": "描画負荷を抑えるため形状を簡略化します。",
+    "extractionTitle": "ジオメトリ抽出",
+    "extractionDescription": "描画負荷を抑えるため形状を抽出します。",
     "tolerance": "許容値",
     "vectorTilesTitle": "ベクトルタイル設定",
     "vectorTilesDescription": "ズーム範囲とバッファを設定します。",
@@ -162,8 +162,8 @@
       "generating_routes": "ルート生成",
       "validating": "結果の検証",
       "download": "ダウンロード",
-      "simplify1": "形状の簡略化",
-      "simplify2": "形状の検証",
+      "extract1": "形状の抽出",
+      "extract2": "形状の検証",
       "vectortile": "ベクタタイル生成"
     },
     "phases": {

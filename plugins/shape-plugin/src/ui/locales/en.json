@@ -63,24 +63,24 @@
       "retryDelay": "Retry Delay (ms)",
       "retryDelayHelp": "Wait time between retry attempts when a download fails."
     },
-    "simplify1": {
-      "title": "Primary Simplification (Max Zoom Based)",
+    "extract1": {
+      "title": "Primary Extraction (Max Zoom Based)",
       "omissionHelp": "When enabled, small features may be removed based on area threshold, minimum vertex count, or hybrid filtering."
     },
-    "simplify2": {
-      "title": "Secondary Simplification (Tile Preprocessing)",
-      "omissionHelp": "When enabled, simplification/quantization can remove empty geometries.",
-      "simplificationModeTitle": "Simplification Mode",
-      "simplificationModeHelp": "Choose how geometry is simplified during tile preprocessing.",
-      "simplificationModeOff": "Off",
-      "simplificationModeTopo": "TopoJSON",
-      "simplificationModeGeo": "GeoJSON"
+    "extract2": {
+      "title": "Secondary Extraction (Tile Preprocessing)",
+      "omissionHelp": "When enabled, extraction/quantization can remove empty geometries.",
+      "extractionModeTitle": "Extraction Mode",
+      "extractionModeHelp": "Choose how geometry is extracted during tile preprocessing.",
+      "extractionModeOff": "Off",
+      "extractionModeTopo": "TopoJSON",
+      "extractionModeGeo": "GeoJSON"
     },
     "filter": {
       "title": "Extraction Setting",
-      "workersStage1": "Worker Count for Primary Simplification",
+      "workersStage1": "Worker Count for Primary Extraction",
       "workersStage1Help": "Higher concurrency can speed up processing but may exhaust browser memory.",
-      "workersStage2": "Worker Count for Secondary Simplification (Tile Preprocessing)",
+      "workersStage2": "Worker Count for Secondary Extraction (Tile Preprocessing)",
       "workersStage2Help": "Higher concurrency can speed up processing but may exhaust browser memory.",
       "method": "Filtering Method",
       "methodNone": "Filtering Off",
@@ -88,16 +88,16 @@
       "methodPolygon": "Polygon Only",
       "methodHybrid": "Hybrid (Recommended)",
       "areaFilterTitle": "Area Filter",
-      "simplificationTitle": "Simplification",
+      "extractionTitle": "Extraction",
       "precisionTitle": "Precision & Compression",
-      "methodHelp": "Selects how small features are filtered before primary simplification.",
+      "methodHelp": "Selects how small features are filtered before primary extraction.",
       "minimumArea": "Minimum Area (sq km)",
-      "minimumAreaHelp": "Filters out features smaller than this area during the simplify stage.",
-      "tolerance": "Simplification Tolerance (degrees)",
-      "tolerancePrimary": "Primary Simplification Tolerance (degrees)",
-      "toleranceSecondary": "Secondary Simplification Tolerance (degrees)",
-      "toleranceHelp": "Applies minimal simplification while preserving detail needed at the maximum zoom.",
-      "toleranceHelpStage2": "Applies secondary simplification for tile preprocessing.",
+      "minimumAreaHelp": "Filters out features smaller than this area during the extract stage.",
+      "tolerance": "Extraction Tolerance (degrees)",
+      "tolerancePrimary": "degree of simplification",
+      "toleranceSecondary": "Secondary Degree of Simplification",
+      "toleranceHelp": "Higher values straighten boundaries and remove fine details. Small or thin features are more likely to be filtered out in combination with the filters. Downstream (secondary extraction and tile generation) becomes lighter and smaller, but geometric fidelity decreases.",
+      "toleranceHelpStage2": "Applies secondary extraction for tile preprocessing.",
       "minVertexCount": "Min Vertex Count",
       "minVertexCountHelp": "Only apply area filtering when feature vertices exceed this count.",
       "quickRejectThreshold": "Quick Reject Threshold",
@@ -110,12 +110,12 @@
       "quantizeSelected": "Selected: {value}",
       "quantizeHelp": "Coordinate quantization used in tile preprocessing to reduce size and stabilize boundaries.",
       "quantizeStarHelp": "★1 is the coarsest rounding (lowest precision); higher stars increase precision.",
-      "enablePerFeatureSimplification": "Allow simplification to omit countries or municipalities",
-      "enablePerFeatureSimplificationHelp": "Geometries may be omitted, but metadata is retained."
+      "enablePerFeatureExtraction": "Allow extraction to omit countries or municipalities",
+      "enablePerFeatureExtractionHelp": "Geometries may be omitted, but metadata is retained."
     },
     "tile": {
-      "title": "Tile Generation (Zoom-Aware Final Simplification)",
-      "descriptionTooltip": "Performs final zoom-aware simplification and generates vector tiles.",
+      "title": "Tile Generation (Zoom-Aware Final Extraction)",
+      "descriptionTooltip": "Performs final zoom-aware extraction and generates vector tiles.",
       "workers": "Worker Count for Tile Generation",
       "workersHelp": "Parallel workers for tile generation.",
       "bufferSize": "Tile Margin (px)",
@@ -161,10 +161,10 @@
         "originKey": "Origin Key",
         "rawVertexCount": "Raw Vertices",
         "rawPolygonCount": "Raw Polygons",
-        "simplify1VertexCount": "Simplify1 Vertices",
-        "simplify1PolygonCount": "Simplify1 Polygons",
-        "simplify2VertexCount": "Simplify2 Vertices",
-        "simplify2PolygonCount": "Simplify2 Polygons",
+        "extract1VertexCount": "Extract1 Vertices",
+        "extract1PolygonCount": "Extract1 Polygons",
+        "extract2VertexCount": "Extract2 Vertices",
+        "extract2PolygonCount": "Extract2 Polygons",
         "vectorTileVertexCount": "Tile Vertices",
         "vectorTilePolygonCount": "Tile Polygons",
         "vertexCount": "Vertices",
@@ -215,13 +215,13 @@
         "title": "Download",
         "description": "Download and normalize source data."
       },
-      "simplify1": {
-        "title": "Simplify (Stage 1)",
-        "description": "Apply primary simplification for selections."
+      "extract1": {
+        "title": "Extract (Stage 1)",
+        "description": "Apply primary extraction for selections."
       },
-      "simplify2": {
-        "title": "Simplify (Stage 2)",
-        "description": "Prepare simplified buffers for tile generation."
+      "extract2": {
+        "title": "Extract (Stage 2)",
+        "description": "Prepare extracted buffers for tile generation."
       },
       "vectorTiles": {
         "title": "Vector Tiles",

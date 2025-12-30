@@ -96,21 +96,21 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
         expect(downloadResult.success).toBe(true);
         expect(downloadResult.filesDownloaded).toBe(EXPECTED_BATCH_RESULTS.japanOnly.downloadStage.expectedFiles);
 
-        // Stage 2: Simplify1 (Feature Processing)
-        console.log('🔄 Starting simplify1 stage...');
-        const simplify1Result = await simulateSimplify1Stage(downloadResult.data);
-        expect(simplify1Result.success).toBe(true);
-        expect(simplify1Result.processedFeatures).toBe(EXPECTED_BATCH_RESULTS.japanOnly.simplify1Stage.expectedProcessedFeatures);
+        // Stage 2: Extract1 (Feature Processing)
+        console.log('🔄 Starting extract1 stage...');
+        const extract1Result = await simulateExtract1Stage(downloadResult.data);
+        expect(extract1Result.success).toBe(true);
+        expect(extract1Result.processedFeatures).toBe(EXPECTED_BATCH_RESULTS.japanOnly.extract1Stage.expectedProcessedFeatures);
 
-        // Stage 3: Simplify2 (Geometry Processing)  
-        console.log('🔄 Starting simplify2 stage...');
-        const simplify2Result = await simulateSimplify2Stage(simplify1Result.data);
-        expect(simplify2Result.success).toBe(true);
-        expect(simplify2Result.simplifiedFeatures).toBe(EXPECTED_BATCH_RESULTS.japanOnly.simplify2Stage.expectedSimplifiedFeatures);
+        // Stage 3: Extract2 (Geometry Processing)  
+        console.log('🔄 Starting extract2 stage...');
+        const extract2Result = await simulateExtract2Stage(extract1Result.data);
+        expect(extract2Result.success).toBe(true);
+        expect(extract2Result.extractedFeatures).toBe(EXPECTED_BATCH_RESULTS.japanOnly.extract2Stage.expectedExtractedFeatures);
 
         // Stage 4: Vector Tiles Generation
         console.log('🔄 Starting vector tiles stage...');
-        const vectorTilesResult = await simulateVectorTilesStage(simplify2Result.data);
+        const vectorTilesResult = await simulateVectorTilesStage(extract2Result.data);
         expect(vectorTilesResult.success).toBe(true);
         expect(vectorTilesResult.tilesGenerated).toBeGreaterThanOrEqual(EXPECTED_BATCH_RESULTS.japanOnly.vectorTilesStage.expectedMinTiles);
         expect(vectorTilesResult.tilesGenerated).toBeLessThanOrEqual(EXPECTED_BATCH_RESULTS.japanOnly.vectorTilesStage.expectedMaxTiles);
@@ -145,21 +145,21 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
         expect(downloadResult.filesDownloaded).toBe(EXPECTED_BATCH_RESULTS.threeCountries.downloadStage.expectedFiles);
         expect(downloadResult.countriesProcessed).toEqual(['JPN', 'DEU', 'USA']);
 
-        // Stage 2: Simplify1 (bulk processing)
-        console.log('🔄 Starting simplify1 stage for 3 countries...');
-        const simplify1Result = await simulateSimplify1Stage(downloadResult.data);
-        expect(simplify1Result.success).toBe(true);
-        expect(simplify1Result.processedFeatures).toBe(EXPECTED_BATCH_RESULTS.threeCountries.simplify1Stage.expectedProcessedFeatures);
+        // Stage 2: Extract1 (bulk processing)
+        console.log('🔄 Starting extract1 stage for 3 countries...');
+        const extract1Result = await simulateExtract1Stage(downloadResult.data);
+        expect(extract1Result.success).toBe(true);
+        expect(extract1Result.processedFeatures).toBe(EXPECTED_BATCH_RESULTS.threeCountries.extract1Stage.expectedProcessedFeatures);
 
-        // Stage 3: Simplify2 (geometry optimization)
-        console.log('🔄 Starting simplify2 stage for 3 countries...');
-        const simplify2Result = await simulateSimplify2Stage(simplify1Result.data);
-        expect(simplify2Result.success).toBe(true);
-        expect(simplify2Result.simplifiedFeatures).toBe(EXPECTED_BATCH_RESULTS.threeCountries.simplify2Stage.expectedSimplifiedFeatures);
+        // Stage 3: Extract2 (geometry optimization)
+        console.log('🔄 Starting extract2 stage for 3 countries...');
+        const extract2Result = await simulateExtract2Stage(extract1Result.data);
+        expect(extract2Result.success).toBe(true);
+        expect(extract2Result.extractedFeatures).toBe(EXPECTED_BATCH_RESULTS.threeCountries.extract2Stage.expectedExtractedFeatures);
 
         // Stage 4: Vector Tiles (multi-country coverage)
         console.log('🔄 Starting vector tiles stage for 3 countries...');
-        const vectorTilesResult = await simulateVectorTilesStage(simplify2Result.data);
+        const vectorTilesResult = await simulateVectorTilesStage(extract2Result.data);
         expect(vectorTilesResult.success).toBe(true);
         expect(vectorTilesResult.tilesGenerated).toBeGreaterThanOrEqual(EXPECTED_BATCH_RESULTS.threeCountries.vectorTilesStage.expectedMinTiles);
         expect(vectorTilesResult.tilesGenerated).toBeLessThanOrEqual(EXPECTED_BATCH_RESULTS.threeCountries.vectorTilesStage.expectedMaxTiles);
@@ -194,13 +194,13 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
       // Given: Corrupt data scenario
       const corruptData = { invalid: 'data', missing: 'geometry' };
 
-      // When: Execute simplify1 with corrupt data
-      const simplify1Result = await simulateSimplify1Stage(corruptData);
+      // When: Execute extract1 with corrupt data
+      const extract1Result = await simulateExtract1Stage(corruptData);
 
       // Then: Data error should be handled  
-      expect(simplify1Result.success).toBe(false);
-      expect(simplify1Result.error).toBeDefined();
-      expect(simplify1Result.error?.type).toBe('INVALID_DATA_FORMAT');
+      expect(extract1Result.success).toBe(false);
+      expect(extract1Result.error).toBeDefined();
+      expect(extract1Result.error?.type).toBe('INVALID_DATA_FORMAT');
     });
 
     it('should provide detailed error context for debugging', async () => {
@@ -266,7 +266,7 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
     }
   }
 
-  async function simulateSimplify1Stage(data: unknown): Promise<unknown> {
+  async function simulateExtract1Stage(data: unknown): Promise<unknown> {
     try {
       if (!data || !data.features) {
         throw new Error('Invalid data format');
@@ -295,22 +295,22 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
     }
   }
 
-  async function simulateSimplify2Stage(data: unknown): Promise<unknown> {
+  async function simulateExtract2Stage(data: unknown): Promise<unknown> {
     try {
       if (!data || !data.features) {
         throw new Error('Invalid data format');
       }
 
-      // Simulate geometry simplification
-      const simplifiedFeatures = data.features.length;
+      // Simulate geometry extraction
+      const extractedFeatures = data.features.length;
 
       return {
         success: true,
-        simplifiedFeatures,
+        extractedFeatures,
         data: {
           features: data.features.map((f: unknown) => ({
             ...f,
-            simplified: true,
+            extracted: true,
             tolerance: 0.005,
           })),
         },

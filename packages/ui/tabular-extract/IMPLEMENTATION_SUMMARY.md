@@ -46,7 +46,7 @@ This document summarizes the successful implementation of the `ui-csv-extract` p
 - Handles reference counting for shared data
 - Converts between CSV and Styler data formats
 
-**Simplified Data Layer**:
+**Extracted Data Layer**:
 - `SimpleTableMetadata` - Streamlined table metadata type
 - `StylerMetadataManager` - In-memory table management
 - Compatible with existing Styler infrastructure

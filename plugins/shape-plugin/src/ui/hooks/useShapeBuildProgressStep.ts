@@ -105,7 +105,10 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
   const overallProgress = effectiveProgress?.percentage ?? effectiveStatus?.progress ?? 0;
   const warningMessage = useMemo(() => {
     if (buildStatus !== 'paused') return null;
-    return effectiveStatus?.error ?? null;
+    const message = effectiveStatus?.error;
+    if (typeof message !== 'string') return null;
+    const trimmed = message.trim();
+    return trimmed.length > 0 ? trimmed : null;
   }, [buildStatus, effectiveStatus?.error]);
   const completed = effectiveProgress?.completed ?? 0;
   const total = effectiveProgress?.total ?? 0;
@@ -207,7 +210,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     return () => {
       cancelled = true;
     };
-  }, [activeNodeId, tasks]);
+  }, [activeNodeId, persistedTasks, tasks]);
 
   useEffect(() => {
     if (!activeNodeId || !effectiveStatus?.status) return;
@@ -255,7 +258,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     const interval = window.setInterval(() => {
       appendBuildSample(buildMonitorConfig, monitorKey, {
         timestamp: Date.now(),
-        stage: currentStage as 'download' | 'simplify1' | 'simplify2' | 'vectorTiles' | undefined,
+        stage: currentStage as 'download' | 'extract1' | 'extract2' | 'vectorTiles' | undefined,
         ...getMemorySnapshot(),
       });
     }, BUILD_MONITOR_SAMPLE_INTERVAL_MS);

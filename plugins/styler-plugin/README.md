@@ -562,7 +562,7 @@ const customMapping: ColorMapping = {
 
 #### Automatic Optimizations
 
-1. **Data Simplification**: Reduce precision for display purposes
+1. **Data Extraction**: Reduce precision for display purposes
 2. **Spatial Indexing**: Create spatial indexes for geographic data
 3. **Caching**: Intelligent caching of processed data
 4. **Lazy Loading**: Load data progressively based on zoom level
@@ -573,7 +573,7 @@ const customMapping: ColorMapping = {
 const optimizationSettings: OptimizationSettings = {
   enableCaching: true,
   maxFeatureCount: 10000,
-  simplificationTolerance: 0.001,
+  extractionTolerance: 0.001,
   enableClustering: true,
   clusterRadius: 50,
   enableFiltering: true,

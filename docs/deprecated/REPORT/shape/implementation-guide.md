@@ -13,7 +13,7 @@ This guide provides a structured approach to implementing the Shape Plugin for H
 ### Phase 2: Worker Pool Architecture ✅ (Completed)
 - ✅ WorkerPool basic implementation
 - ✅ DownloadWorker implementation  
-- ✅ SimplifyWorker1/2 implementation
+- ✅ ExtractWorker1/2 implementation
 - ✅ VectorTileWorker implementation
 - ✅ Type safety improvements (removed all any types)
 
@@ -52,8 +52,8 @@ packages/plugins/shape/src/services/
 │   ├── WorkerPoolManager.ts     # Manages all worker pools
 │   ├── WorkerPool.ts            # Generic worker pool
 │   ├── DownloadWorker.ts        # Download processing
-│   ├── SimplifyWorker1.ts       # Initial simplification
-│   ├── SimplifyWorker2.ts       # Advanced simplification
+│   ├── ExtractWorker1.ts       # Initial extraction
+│   ├── ExtractWorker2.ts       # Advanced extraction
 │   └── VectorTileWorker.ts      # Tile generation
 ├── database/                    # Database management
 │   ├── ShapesDatabase.ts        # Main database
@@ -61,7 +61,7 @@ packages/plugins/shape/src/services/
 │   └── TileDatabase.ts          # Tile storage
 └── processors/                  # Processing logic
     ├── GeometryProcessor.ts     # Geometry operations
-    ├── SimplificationEngine.ts  # Simplification algorithms
+    ├── ExtractionEngine.ts  # Extraction algorithms
     └── TileGenerator.ts         # Vector tile generation
 ```
 
@@ -79,8 +79,8 @@ export class WorkerPoolManager {
   async initializePools(config: WorkerPoolConfig): Promise<void> {
     // Initialize all worker pools with optimal sizing
     this.pools.set('download', new WorkerPool('download', config.download));
-    this.pools.set('simplify1', new WorkerPool('simplify1', config.simplify1));
-    this.pools.set('simplify2', new WorkerPool('simplify2', config.simplify2));
+    this.pools.set('extract1', new WorkerPool('extract1', config.extract1));
+    this.pools.set('extract2', new WorkerPool('extract2', config.extract2));
     this.pools.set('vectorTile', new WorkerPool('vectorTile', config.vectorTile));
   }
 }
@@ -91,39 +91,39 @@ export class WorkerPoolManager {
 2. Complete `WorkerPool.ts` with Comlink integration
 3. Error handling and recovery mechanisms
 
-#### Step 2: Implement SimplifyWorker1
+#### Step 2: Implement ExtractWorker1
 
 **Priority: HIGH** - Core processing functionality
 
 ```typescript
-// SimplifyWorker1.ts - Douglas-Peucker simplification
-export class SimplifyWorker1 {
-  async processTask(task: Simplify1Task): Promise<Simplify1Result> {
+// ExtractWorker1.ts - Douglas-Peucker extraction
+export class ExtractWorker1 {
+  async processTask(task: Extract1Task): Promise<Extract1Result> {
     // 1. Load raw GeoJSON data
     // 2. Apply Douglas-Peucker algorithm
     // 3. Filter by area/complexity thresholds
-    // 4. Store simplified features
+    // 4. Store extracted features
     // 5. Generate spatial indices
   }
 }
 ```
 
 **Key algorithms to implement:**
-- Douglas-Peucker line simplification
+- Douglas-Peucker line extraction
 - Polygon area calculation and filtering
 - Feature complexity scoring
 - Spatial indexing with Morton codes
 
-#### Step 3: Implement SimplifyWorker2
+#### Step 3: Implement ExtractWorker2
 
-**Priority: HIGH** - Topology-preserving simplification
+**Priority: HIGH** - Topology-preserving extraction
 
 ```typescript
-// SimplifyWorker2.ts - TopoJSON-based simplification
-export class SimplifyWorker2 {
-  async processTask(task: Simplify2Task): Promise<Simplify2Result> {
+// ExtractWorker2.ts - TopoJSON-based extraction
+export class ExtractWorker2 {
+  async processTask(task: Extract2Task): Promise<Extract2Result> {
     // 1. Convert features to TopoJSON
-    // 2. Apply topology-preserving simplification
+    // 2. Apply topology-preserving extraction
     // 3. Resolve shared boundaries
     // 4. Generate optimized features buffers
   }
@@ -133,7 +133,7 @@ export class SimplifyWorker2 {
 **Key algorithms to implement:**
 - TopoJSON topology construction
 - Shared edge detection and preservation
-- Topology-aware simplification
+- Topology-aware extraction
 - Boundary consistency validation
 
 #### Step 4: Implement VectorTileWorker
@@ -185,12 +185,12 @@ Use Comlink for type-safe Worker communication:
 
 ```typescript
 // Worker proxy setup
-const workerProxy = Comlink.wrap<SimplifyWorker1API>(
-  new Worker('/workers/simplify1.js')
+const workerProxy = Comlink.wrap<ExtractWorker1API>(
+  new Worker('/workers/extract1.js')
 );
 
 // Type-safe method calls
-const result = await workerProxy.processSimplification({
+const result = await workerProxy.processExtraction({
   features: geoJsonFeatures,
   tolerance: 0.001,
   preserveTopology: true
@@ -235,8 +235,8 @@ Configure optimal worker counts based on system capabilities:
 ```typescript
 const defaultPoolSizes = {
   download: Math.min(2, navigator.hardwareConcurrency),      // Network I/O bound
-  simplify1: Math.max(2, navigator.hardwareConcurrency - 1), // CPU intensive
-  simplify2: Math.max(2, navigator.hardwareConcurrency - 1), // CPU intensive  
+  extract1: Math.max(2, navigator.hardwareConcurrency - 1), // CPU intensive
+  extract2: Math.max(2, navigator.hardwareConcurrency - 1), // CPU intensive  
   vectorTile: Math.min(2, navigator.hardwareConcurrency)     // Moderate CPU + I/O
 };
 ```
@@ -292,16 +292,16 @@ function calculateMortonCode(longitude: number, latitude: number): bigint {
 Test individual workers in isolation:
 
 ```typescript
-describe('SimplifyWorker1', () => {
-  let worker: SimplifyWorker1;
+describe('ExtractWorker1', () => {
+  let worker: ExtractWorker1;
   
   beforeEach(() => {
-    worker = new SimplifyWorker1();
+    worker = new ExtractWorker1();
   });
   
-  it('should simplify complex polygon', async () => {
+  it('should extract complex polygon', async () => {
     const complexPolygon = createComplexPolygon(1000); // 1000 vertices
-    const result = await worker.simplify(complexPolygon, { tolerance: 0.01 });
+    const result = await worker.extract(complexPolygon, { tolerance: 0.01 });
     
     expect(result.geometry.coordinates[0].length).toBeLessThan(500);
     expect(result.properties.originalComplexity).toBe(1000);
@@ -324,8 +324,8 @@ describe('Shape Processing Pipeline', () => {
     
     // Verify all stages completed
     expect(session.downloadProgress).toBe(100);
-    expect(session.simplify1Progress).toBe(100);
-    expect(session.simplify2Progress).toBe(100);
+    expect(session.extract1Progress).toBe(100);
+    expect(session.extract2Progress).toBe(100);
     expect(session.vectorTileProgress).toBe(100);
   });
 });
@@ -352,8 +352,8 @@ pnpm test
 ### 2. Implementation Order
 
 1. **Core Services** - Complete WorkerPoolManager and WorkerPool
-2. **SimplifyWorker1** - Implement Douglas-Peucker simplification
-3. **SimplifyWorker2** - Add TopoJSON processing
+2. **ExtractWorker1** - Implement Douglas-Peucker extraction
+3. **ExtractWorker2** - Add TopoJSON processing
 4. **VectorTileWorker** - Generate MVT output
 5. **Integration** - Connect all components
 6. **Testing** - Comprehensive test coverage
@@ -384,8 +384,8 @@ interface PerformanceMetrics {
 ## Next Steps
 
 1. **Immediate (Phase 2)**:
-   - Complete SimplifyWorker1 implementation
-   - Implement SimplifyWorker2 with TopoJSON
+   - Complete ExtractWorker1 implementation
+   - Implement ExtractWorker2 with TopoJSON
    - Add VectorTileWorker for MVT generation
 
 2. **Short-term (Phase 3)**:

@@ -18,7 +18,7 @@
 - **機能**: GeoJSONを選択的に読み込み簡略化しベクトルタイルデータを生成して提供
 - **エンティティ**: ShapeEntity（GeoJSONパス、簡略化レベル、フィルタ条件等）
 - **サブエンティティ**: FeatureSubEntity（個別のGeoJSONフィーチャー情報）
-- **ルーティング**: upload（GeoJSONアップロード）、simplify（形状簡略化）、tiles（ベクトルタイル生成）
+- **ルーティング**: upload（GeoJSONアップロード）、extract（形状簡略化）、tiles（ベクトルタイル生成）
 
 ## location（地点情報プラグイン）
 - **機能**: 都市、港湾、空港、駅、インターチェンジをもとに、地図上の地点情報を提供

@@ -24,6 +24,7 @@ type GeoBoundariesFeature = Feature<Geometry, GeoBoundariesProperties>;
 export interface GeoBoundariesApiResponse {
   gjDownloadURL?: string;
   simplifiedGeometryGeoJSON?: string;
+  Continent?: string;
   boundaryYear?: number;
   licenseDetail?: string;
   releaseType?: 'gbOpen';
@@ -42,6 +43,7 @@ export interface GeoBoundariesRawData {
     version: number;
     format: 'geojson' | 'shapefile' | 'kml' | 'topojson';
     apiResponse?: GeoBoundariesApiResponse;
+    continent?: string;
   };
 }
 
@@ -53,6 +55,7 @@ export type GeoBoundariesProcessedData = Array<ShapeEntity> & {
     count: number;
     country?: string;
     adminLevel?: string;
+    continent?: string;
     releaseType?: string;
     version: number;
     license?: string;
@@ -122,7 +125,6 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
     //  admin
     const normalizedCountry = this.normalizeCountryCode(country);
     const normalizedAdminLevel = this.normalizeAdminLevel(adminLevel.toString());
-
     try {
       //  APIURL
       const apiData = await this.fetchBoundaryMetadata(normalizedCountry, normalizedAdminLevel, signal);
@@ -130,21 +132,23 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
       if (!apiData || !apiData.simplifiedGeometryGeoJSON) {
         throw new Error(`No boundary data available for ${normalizedCountry} ${normalizedAdminLevel}`);
       }
+      const downloadUrl = apiData.simplifiedGeometryGeoJSON;
+      const continent = this.resolveContinent(apiData);
 
       console.log(`[GeoBoundaries] Downloading ${this.releaseType} data for ${normalizedCountry} ${normalizedAdminLevel}`);
-      console.log(`[GeoBoundaries] URL: ${apiData.simplifiedGeometryGeoJSON}`);
+      console.log(`[GeoBoundaries] URL: ${downloadUrl}`);
 
       //  GeoJSON
       const retries = this.config.access.retries ?? { count: 1, delay: 0, backoff: 'exponential' };
       ensureShapeDownloadDefaults();
       const buffer = await downloadArrayBuffer(
         'shape',
-        apiData.simplifiedGeometryGeoJSON,
+        downloadUrl,
         `geoboundaries:${normalizedCountry}:${normalizedAdminLevel}`,
         { retries: retries.count, delayMs: retries.delay, backoff: retries.backoff },
         signal,
       );
-      console.log(`[GeoBoundaries] Download succeeded: ${apiData.simplifiedGeometryGeoJSON}`);
+      console.log(`[GeoBoundaries] Download succeeded: ${downloadUrl}`);
       const geojson = JSON.parse(new TextDecoder('utf-8').decode(buffer)) as GeoBoundariesGeoJSON;
 
       return {
@@ -158,6 +162,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
           version: typeof apiData.boundaryYear === 'number' ? apiData.boundaryYear : 2023,
           format: 'geojson',
           apiResponse: apiData,
+          continent,
         },
       };
 
@@ -208,6 +213,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
             source: 'geoboundaries',
             country: rawData.metadata?.country,
             adminLevel: rawData.metadata?.adminLevel,
+            continent: rawData.metadata?.continent,
             releaseType: rawData.metadata?.releaseType,
             boundaryYear: rawData.metadata?.version,
             geoboundariesVersion: rawData.metadata?.version,
@@ -227,6 +233,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
         count: entities.length,
         country: rawData.metadata?.country,
         adminLevel: rawData.metadata?.adminLevel,
+        continent: rawData.metadata?.continent,
         releaseType: rawData.metadata?.releaseType,
         version,
         license: rawData.metadata?.apiResponse?.licenseDetail || 'Open Data',
@@ -314,6 +321,15 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
   private normalizeAdminLevel(adminLevel: string): string {
     const normalized = this.adminLevels[adminLevel.toLowerCase()];
     return normalized || `ADM${Math.min(Math.max(parseInt(adminLevel) || 0, 0), 5)}`;
+  }
+
+  private resolveContinent(apiData?: GeoBoundariesApiResponse): string | undefined {
+    if (!apiData) return undefined;
+    const value = apiData.Continent;
+    if (typeof value === 'string' && value.trim().length > 0) {
+      return value.trim();
+    }
+    return undefined;
   }
 
   private generateEntityId(properties: GeoBoundariesProperties, index: number): string {

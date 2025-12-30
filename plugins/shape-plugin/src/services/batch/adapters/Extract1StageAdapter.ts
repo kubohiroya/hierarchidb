@@ -1,16 +1,16 @@
 import type { ProgressInfo } from '../../../common/types/index.js';
-import type { Simplify1Task } from '../../../common/types/index.js';
+import type { Extract1Task } from '../../../common/types/index.js';
 import type { StageControls } from './StageControls.js';
 
-export interface SimplifyStageAdapterResult {
+export interface ExtractStageAdapterResult {
   processed: number;
   failed: number;
 }
 
-export interface Simplify1StageAdapter {
+export interface Extract1StageAdapter {
   process(
-    tasks: Simplify1Task[],
+    tasks: Extract1Task[],
     onProgress: (p: ProgressInfo) => void,
     controls?: StageControls,
-  ): Promise<SimplifyStageAdapterResult>;
+  ): Promise<ExtractStageAdapterResult>;
 }

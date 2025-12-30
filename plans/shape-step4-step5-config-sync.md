@@ -34,13 +34,13 @@ Shape の Step5 バッチ処理が Step4 の設定内容を正しく反映して
 
 ## Context and Orientation
 
-Step4 の設定 UI は `plugins/shape-plugin/src/ui/components/steps/DownloadConfigSection.tsx`、`SimplificationConfigSection.tsx`、`TileConfigSection.tsx` で構成されています。Step5 は `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx` で `WorkerBridge` を直接呼び出しています。バッチ処理の設定変換は `plugins/shape-plugin/src/worker/api.ts` の `startBatchProcessing` に集約されており、`ProcessingConfig` → `BatchProcessConfig` の変換がここで行われます。実処理は `plugins/shape-plugin/src/services/batch/SessionController.ts` が担当し、現在は固定値が多く設定されています。
+Step4 の設定 UI は `plugins/shape-plugin/src/ui/components/steps/DownloadConfigSection.tsx`、`ExtractionConfigSection.tsx`、`TileConfigSection.tsx` で構成されています。Step5 は `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx` で `WorkerBridge` を直接呼び出しています。バッチ処理の設定変換は `plugins/shape-plugin/src/worker/api.ts` の `startBatchProcessing` に集約されており、`ProcessingConfig` → `BatchProcessConfig` の変換がここで行われます。実処理は `plugins/shape-plugin/src/services/batch/SessionController.ts` が担当し、現在は固定値が多く設定されています。
 
 ## Plan of Work
 
 まず Step5 の開始経路を `startBatchProcessing(draftId, config, urlMetadata)` に統一します。Step5 から WorkerBridge ではなく、shape plugin の worker API 経由で処理が開始できるように UI とワーカー側の呼び出し経路を整理します。これにより Step4 の `processingConfig` と `urlMetadata` がバッチ処理に渡るようになります。
 
-次に Step4 の不足 UI を追加します。Download セクションに `timeoutMs`, `retryAttempts`, `retryDelay` を InputField で追加します。Filter（Simplification）セクションには `minVertexCountForAreaFilter`, `aspectRatioThreshold`, `hybridFilterConfig` の各項目、`quantize`, `enablePerFeatureSimplification` など、バッチ処理で必要な値を追加します。Tile セクションには `tileCountThresholdForZoomStop` や `zoomLevels` を追加します。入力方針として、論理的・分析的な実数値は InputField、感覚的な実数値は Slider、10 程度までの整数値は Rank を用います。
+次に Step4 の不足 UI を追加します。Download セクションに `timeoutMs`, `retryAttempts`, `retryDelay` を InputField で追加します。Filter（Extraction）セクションには `minVertexCountForAreaFilter`, `aspectRatioThreshold`, `hybridFilterConfig` の各項目、`quantize`, `enablePerFeatureExtraction` など、バッチ処理で必要な値を追加します。Tile セクションには `tileCountThresholdForZoomStop` や `zoomLevels` を追加します。入力方針として、論理的・分析的な実数値は InputField、感覚的な実数値は Slider、10 程度までの整数値は Rank を用います。
 
 最後に Tile の `bufferSize` を `SessionController.processVectorTileStage` の生成パラメータへ反映します。Step4 の設定値が vector tile の処理設定に確実に引き渡される状態を作ります。
 
@@ -50,7 +50,7 @@ Step4 の設定 UI は `plugins/shape-plugin/src/ui/components/steps/DownloadCon
 
 1) `ShapeBuildProgressStep.tsx` の開始処理を `startBatchProcessing` 呼び出しへ切替し、`processingConfig` と `urlMetadata` を渡す。
 2) `DownloadConfigSection.tsx` に `timeoutMs`, `retryAttempts`, `retryDelay` の入力 UI を追加する。
-3) `SimplificationConfigSection.tsx` に不足パラメータの入力 UI を追加する。
+3) `ExtractionConfigSection.tsx` に不足パラメータの入力 UI を追加する。
 4) `TileConfigSection.tsx` に `tileCountThresholdForZoomStop`, `zoomLevels` 等の入力 UI を追加する。
 5) `SessionController.ts` で `bufferSize` を tile 生成設定へ反映する。
 6) 追加 UI の文言を `plugins/shape-plugin/src/ui/locales/en.json` と `ja.json` へ追加し、i18n 参照に切り替える。
@@ -75,7 +75,7 @@ Step4 の設定 UI は `plugins/shape-plugin/src/ui/components/steps/DownloadCon
   Step5 の開始経路を `startBatchProcessing` に統一。
 - `plugins/shape-plugin/src/ui/components/steps/DownloadConfigSection.tsx`:
   `timeoutMs`, `retryAttempts`, `retryDelay` を追加。
-- `plugins/shape-plugin/src/ui/components/steps/SimplificationConfigSection.tsx`:
+- `plugins/shape-plugin/src/ui/components/steps/ExtractionConfigSection.tsx`:
   Filter 系の不足パラメータ UI を追加。
 - `plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx`:
   Tile 生成の不足パラメータ UI を追加。

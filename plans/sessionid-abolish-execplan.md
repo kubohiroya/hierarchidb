@@ -53,7 +53,7 @@
 
 次にWorker実装（`app/src/worker-runtime/worker.ts`）とUIブリッジ（`packages/ui/worker-client/src/workerBridge.ts`）を合わせ、`sessionId`を参照する呼び出しや型をすべて`nodeId`に置き換える。UIの進捗監視は`nodeId`をキーにする。これに合わせて`plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts`や`useShapeBatchTasks.ts`の引数やデバッグログを`nodeId`に変更し、`sessionId`変数名を排除する。
 
-DBスキーマは`sessionId`依存が強いので、Dexieテーブルの主キーやインデックスを`nodeId`基準に変更する。例えば`batchSessions`/`batchTasks`/`simplifiedBuffers`/`rawBuffers`/`vectorTiles`/`metadata`に存在する`sessionId`列を削除し、`nodeId`へ置換する。フォールバックは不要なので、バージョンアップ時に旧テーブルをクリアする移行を明示する。`EphemeralGisDB`系の`hasStageData`/`clearStage`は`nodeId`を受け取り、内部のクエリは`nodeId`を使う。
+DBスキーマは`sessionId`依存が強いので、Dexieテーブルの主キーやインデックスを`nodeId`基準に変更する。例えば`batchSessions`/`batchTasks`/`extractedBuffers`/`rawBuffers`/`vectorTiles`/`metadata`に存在する`sessionId`列を削除し、`nodeId`へ置換する。フォールバックは不要なので、バージョンアップ時に旧テーブルをクリアする移行を明示する。`EphemeralGisDB`系の`hasStageData`/`clearStage`は`nodeId`を受け取り、内部のクエリは`nodeId`を使う。
 
 shape/location/routeのサービス層は、`sessionId`という引数を持つAPIを削除し、`nodeId`を渡すように統一する。`ShapeEntity`の`batchSessionId`などのフィールドは不要なので削除し、既存の`buildStartedAt`/`buildFinishedAt`で進捗を管理する。location/routeも同様に、進捗と履歴の参照は`nodeId`基準で行う。
 

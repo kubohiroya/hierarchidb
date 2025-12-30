@@ -173,7 +173,7 @@ export interface ShapesEntity extends BaseEntity {
   
   // 処理設定
   processingOptions?: {
-    simplification?: {
+    extraction?: {
       enabled: boolean;
       tolerance: number;
     };
@@ -284,7 +284,7 @@ export interface VectorTileGenerationMessage {
     maxZoom: number;
     tileSize: number;
     buffer: number; // タイル境界バッファ
-    simplification: {
+    extraction: {
       [zoom: number]: number; // ズームレベル別簡素化許容値
     };
   };
@@ -459,14 +459,14 @@ class ShapesBatchProcessor {
       
       for (const tile of tileGrid) {
         // 4. 図形簡素化
-        const simplifiedFeatures = this.simplifyForZoom(
+        const extractedFeatures = this.extractForZoom(
           tile.features, 
-          options.simplification[zoom]
+          options.extraction[zoom]
         );
         
         // 5. タイル境界クリッピング
         const clippedFeatures = this.clipToTileBounds(
-          simplifiedFeatures, 
+          extractedFeatures, 
           tile.bounds,
           options.buffer
         );

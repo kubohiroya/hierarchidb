@@ -53,7 +53,7 @@ Finally, implement a map window manager in `app/src/router/routes/mapDialogWindo
 
 1) Create `packages/ui/dialog/src/headless/AbstractDialog.tsx` by moving the body of `HeadlessPluginDialog` into it. Update `HeadlessPluginDialog` to return `<AbstractDialog {...props} />`. Update exports in `packages/ui/dialog/src/index.ts`.
    - Working directory: repo root.
-   - Expected diff: new file, `PluginDialog.tsx` simplified, index export added.
+   - Expected diff: new file, `PluginDialog.tsx` extracted, index export added.
 
 2) Implement `packages/ui/dialog/src/headless/ModelessDialogFrame.tsx` with drag/resize, `zIndex`, optional portal support, and minimized height behavior. Export it from `packages/ui/dialog/src/index.ts`.
    - Working directory: repo root.

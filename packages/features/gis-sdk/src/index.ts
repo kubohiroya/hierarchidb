@@ -18,7 +18,7 @@ export {
   type FeatureFilterSettings,
   type HybridFilterConfig,
 } from './processing/featureFiltering.js';
-export { simplifyGeoJson, type SimplifyOptions } from './processing/geometrySimplify.js';
+export { extractGeoJson, type ExtractOptions } from './processing/geometryExtract.js';
 export {
   createVectorTileGeocodeCache,
   geocodePointInShapeTiles,
@@ -33,6 +33,6 @@ export {
   type EphemeralStage,
   type ProcessingCache,
   type RawFeatureBuffer,
-  type SimplifiedFeatureBuffer,
+  type ExtractedFeatureBuffer,
   type VectorTileData,
 } from './ephemeral/EphemeralGisDB.js';

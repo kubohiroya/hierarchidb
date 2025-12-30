@@ -1,11 +1,11 @@
 import type { CrashInsight } from '@hierarchidb/ui-monitoring';
 
-export type ShapeBuildStage = 'download' | 'simplify1' | 'simplify2' | 'vectorTiles';
+export type ShapeBuildStage = 'download' | 'extract1' | 'extract2' | 'vectorTiles';
 
 export type ShapeBuildConfigSnapshot = {
   downloadConcurrency?: number;
-  simplify1Workers?: number;
-  simplify2Workers?: number;
+  extract1Workers?: number;
+  extract2Workers?: number;
   tileWorkers?: number;
 };
 
@@ -22,10 +22,10 @@ export const getStageConcurrencyWarning = (
     switch (stage) {
       case 'download':
         return snapshot?.downloadConcurrency;
-      case 'simplify1':
-        return snapshot?.simplify1Workers;
-      case 'simplify2':
-        return snapshot?.simplify2Workers;
+      case 'extract1':
+        return snapshot?.extract1Workers;
+      case 'extract2':
+        return snapshot?.extract2Workers;
       case 'vectorTiles':
         return snapshot?.tileWorkers;
       default:
@@ -42,12 +42,12 @@ export const getStageConcurrencyWarning = (
 
 export const getBuildConfigSnapshot = (config?: {
   downloadConfig?: { maxConcurrent?: number };
-  simplify1Config?: { workers?: number };
-  simplify2Config?: { workers?: number };
+  extract1Config?: { workers?: number };
+  extract2Config?: { workers?: number };
   tileConfig?: { workers?: number };
 }): ShapeBuildConfigSnapshot => ({
   downloadConcurrency: config?.downloadConfig?.maxConcurrent,
-  simplify1Workers: config?.simplify1Config?.workers,
-  simplify2Workers: config?.simplify2Config?.workers,
+  extract1Workers: config?.extract1Config?.workers,
+  extract2Workers: config?.extract2Config?.workers,
   tileWorkers: config?.tileConfig?.workers,
 });

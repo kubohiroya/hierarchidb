@@ -17,9 +17,9 @@ const createBatchConfig = (
     ...DEFAULT_PROCESSING_CONFIG.downloadConfig,
     ...overrides.downloadConfig,
   },
-  simplificationConfig: {
-    ...DEFAULT_PROCESSING_CONFIG.simplificationConfig,
-    ...overrides.simplificationConfig,
+  extractionConfig: {
+    ...DEFAULT_PROCESSING_CONFIG.extractionConfig,
+    ...overrides.extractionConfig,
   },
   tileConfig: {
     ...DEFAULT_PROCESSING_CONFIG.tileConfig,

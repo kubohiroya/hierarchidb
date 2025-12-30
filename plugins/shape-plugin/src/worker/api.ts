@@ -67,22 +67,22 @@ const resolveBatchNodeId = (draft: DraftLike | null | undefined): NodeId | undef
 
 const buildBatchSessionConfig = (batchConfig: BatchConfig, draft?: DraftLike): BatchSessionConfig => {
   const downloadConfig = batchConfig.downloadConfig ?? DEFAULT_PROCESSING_CONFIG.downloadConfig;
-  const legacySimplification = batchConfig.simplificationConfig;
-  const simplify1Config = batchConfig.simplify1Config ?? (legacySimplification ? {
-    workers: legacySimplification.level1Workers,
-    tolerance: legacySimplification.tolerance,
-    featureFilterMethod: legacySimplification.featureFilterMethod,
-    areaThreshold: legacySimplification.areaThreshold,
-    minVertexCountForAreaFilter: legacySimplification.minVertexCountForAreaFilter,
-    aspectRatioThreshold: legacySimplification.aspectRatioThreshold,
-    hybridFilterConfig: legacySimplification.hybridFilterConfig,
-  } : undefined) ?? DEFAULT_PROCESSING_CONFIG.simplify1Config;
-  const simplify2Config = batchConfig.simplify2Config ?? (legacySimplification ? {
-    workers: legacySimplification.level2Workers,
-    tolerance: legacySimplification.tolerance,
-    quantize: legacySimplification.quantize,
-    enablePerFeatureSimplification: legacySimplification.enablePerFeatureSimplification,
-  } : undefined) ?? DEFAULT_PROCESSING_CONFIG.simplify2Config;
+  const legacyExtraction = batchConfig.extractionConfig;
+  const extract1Config = batchConfig.extract1Config ?? (legacyExtraction ? {
+    workers: legacyExtraction.level1Workers,
+    tolerance: legacyExtraction.tolerance,
+    featureFilterMethod: legacyExtraction.featureFilterMethod,
+    areaThreshold: legacyExtraction.areaThreshold,
+    minVertexCountForAreaFilter: legacyExtraction.minVertexCountForAreaFilter,
+    aspectRatioThreshold: legacyExtraction.aspectRatioThreshold,
+    hybridFilterConfig: legacyExtraction.hybridFilterConfig,
+  } : undefined) ?? DEFAULT_PROCESSING_CONFIG.extract1Config;
+  const extract2Config = batchConfig.extract2Config ?? (legacyExtraction ? {
+    workers: legacyExtraction.level2Workers,
+    tolerance: legacyExtraction.tolerance,
+    quantize: legacyExtraction.quantize,
+    enablePerFeatureExtraction: legacyExtraction.enablePerFeatureExtraction,
+  } : undefined) ?? DEFAULT_PROCESSING_CONFIG.extract2Config;
   const tileConfig = batchConfig.tileConfig ?? DEFAULT_PROCESSING_CONFIG.tileConfig;
   const cleanupConfig = batchConfig.cleanupConfig ?? DEFAULT_PROCESSING_CONFIG.cleanupConfig;
   const resolvedDataSource =
@@ -98,25 +98,25 @@ const buildBatchSessionConfig = (batchConfig: BatchConfig, draft?: DraftLike): B
       retryAttempts: downloadConfig?.retryAttempts ?? 3,
       retryDelay: downloadConfig?.retryDelay,
     },
-    simplify1: {
-      concurrentProcesses: simplify1Config?.workers ?? 2,
+    extract1: {
+      concurrentProcesses: extract1Config?.workers ?? 2,
       enableFeatureFiltering: true,
-      featureAreaThreshold: simplify1Config?.areaThreshold ?? 0.5,
-      minVertexCountForAreaFilter: simplify1Config?.minVertexCountForAreaFilter ?? 25,
-      aspectRatioThreshold: simplify1Config?.aspectRatioThreshold ?? 5,
-      featureFilterMethod: simplify1Config?.featureFilterMethod ?? 'hybrid',
+      featureAreaThreshold: extract1Config?.areaThreshold ?? 0.5,
+      minVertexCountForAreaFilter: extract1Config?.minVertexCountForAreaFilter ?? 25,
+      aspectRatioThreshold: extract1Config?.aspectRatioThreshold ?? 5,
+      featureFilterMethod: extract1Config?.featureFilterMethod ?? 'hybrid',
       hybridFilterConfig:
-        simplify1Config?.hybridFilterConfig
-        ?? DEFAULT_PROCESSING_CONFIG.simplify1Config?.hybridFilterConfig,
+        extract1Config?.hybridFilterConfig
+        ?? DEFAULT_PROCESSING_CONFIG.extract1Config?.hybridFilterConfig,
       deleteOnComplete: false,
     },
-    simplify2: {
-      concurrentProcesses: simplify2Config?.workers ?? 2,
-      enablePerFeatureSimplification: simplify2Config?.enablePerFeatureSimplification ?? true,
+    extract2: {
+      concurrentProcesses: extract2Config?.workers ?? 2,
+      enablePerFeatureExtraction: extract2Config?.enablePerFeatureExtraction ?? true,
       deleteOnComplete: false,
-      quantize: simplify2Config?.quantize ?? 0,
-      simplify: simplify2Config?.tolerance ?? 0,
-      tolerance: simplify2Config?.tolerance ?? 0,
+      quantize: extract2Config?.quantize ?? 0,
+      extract: extract2Config?.tolerance ?? 0,
+      tolerance: extract2Config?.tolerance ?? 0,
     },
     vectorTiles: {
       concurrentProcesses: tileConfig?.workers ?? 2,
@@ -127,9 +127,6 @@ const buildBatchSessionConfig = (batchConfig: BatchConfig, draft?: DraftLike): B
     },
   };
 };
-
-const resolveTaskTimestamp = (task: BatchTaskRecord): number =>
-  task.updatedAt ?? task.createdAt ?? task.startedAt ?? 0;
 
 const persistDownloadTaskPayloads = async (
   nodeId: NodeId,
@@ -142,12 +139,12 @@ const persistDownloadTaskPayloads = async (
     .equals(nodeId)
     .and((task) => task.taskType === 'download')
     .toArray();
-  const staleTasks = existingTasks.filter((task) => resolveTaskTimestamp(task) < buildStartedAt);
-  if (staleTasks.length > 0) {
-    await shapeDB.batchTasks.bulkDelete(staleTasks.map((task) => task.taskId));
+  const incompleteTasks = existingTasks.filter((task) => task.status !== 'completed');
+  if (incompleteTasks.length > 0) {
+    await shapeDB.batchTasks.bulkDelete(incompleteTasks.map((task) => task.taskId));
   }
-  const staleIds = new Set(staleTasks.map((task) => task.taskId));
-  const activeTasks = existingTasks.filter((task) => !staleIds.has(task.taskId));
+  const incompleteIds = new Set(incompleteTasks.map((task) => task.taskId));
+  const activeTasks = existingTasks.filter((task) => !incompleteIds.has(task.taskId));
   const existingTaskIds = new Set(activeTasks.map((task) => task.taskId));
   let nextIndex = activeTasks.reduce((max, task) => Math.max(max, task.index ?? 0), -1) + 1;
   const candidates = payloads.map((payload) => ({
@@ -206,10 +203,10 @@ const getOrCreateNodeMeta = (nodeId: string): ProgressSessionMeta => {
 
 const mapStageToBatchStage = (stage?: string): BatchStage => {
   switch (stage) {
-    case 'simplify1':
-      return 'simplify1';
-    case 'simplify2':
-      return 'simplify2';
+    case 'extract1':
+      return 'extract1';
+    case 'extract2':
+      return 'extract2';
     case 'vectortile':
     case 'vectorTiles':
       return 'vectorTiles';
@@ -287,7 +284,7 @@ const buildTaskTitle = (task: BatchTaskRecord): string | undefined => {
   if (task.taskType === 'download') {
     return (input.url as string | undefined) ?? (input.endpoint as string | undefined);
   }
-  if (task.taskType === 'simplify1' || task.taskType === 'simplify2') {
+  if (task.taskType === 'extract1' || task.taskType === 'extract2') {
     const sourceUrl = (input.sourceUrl ?? input.url) as string | undefined;
     const featureId = input.featureId as string | undefined;
     if (sourceUrl && featureId) return `${sourceUrl} • ${featureId}`;

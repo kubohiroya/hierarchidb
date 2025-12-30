@@ -3,7 +3,7 @@
  * @description Simple i18n logging for worker environment
  *
  * Worker environment has limited access to full i18next setup,
- * so we use a simplified translation system for logging.
+ * so we use a extracted translation system for logging.
  */
 
 // Simple translation map for worker logging

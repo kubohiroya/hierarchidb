@@ -6,7 +6,7 @@ This plan must be maintained in accordance with `PLANS.md` from the repository r
 
 ## Purpose / Big Picture
 
-Users will be able to run shape-plugin batch builds where each data source controls how download tasks are created, how downloaded data is post-processed, and how the next-stage tasks are generated. The common batch pipeline will only call the selected strategy and will not assume a 1:1 relationship between download tasks and simplify tasks. This enables data sources like GADM/GeoBoundaries to keep their 1:1 mapping, while OSM/NaturalEarth can download broader datasets and split them into country/admin-level outputs after download.
+Users will be able to run shape-plugin batch builds where each data source controls how download tasks are created, how downloaded data is post-processed, and how the next-stage tasks are generated. The common batch pipeline will only call the selected strategy and will not assume a 1:1 relationship between download tasks and extract tasks. This enables data sources like GADM/GeoBoundaries to keep their 1:1 mapping, while OSM/NaturalEarth can download broader datasets and split them into country/admin-level outputs after download.
 
 ## Progress
 
@@ -19,7 +19,7 @@ Users will be able to run shape-plugin batch builds where each data source contr
 ## Surprises & Discoveries
 
 - Observation: The current download stage builds tasks from `urlMetadata` and assumes one output buffer per download task. This implicitly forces a 1:1 mapping, which is incompatible with OSM/NaturalEarth requirements.
-  Evidence: `plugins/shape-plugin/src/services/batch/SessionController.ts` (download stage task build + simplify1 stage uses `urlMetadata` indices), `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerDownloadAdapter.ts` (writes one buffer per download task).
+  Evidence: `plugins/shape-plugin/src/services/batch/SessionController.ts` (download stage task build + extract1 stage uses `urlMetadata` indices), `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerDownloadAdapter.ts` (writes one buffer per download task).
 - Observation: Running `pnpm --filter @hierarchidb/shape-plugin test -- <file>` still executed `shape-batch-progress.headless.test.ts` which hit the GeoBoundaries API and failed without network access.
   Evidence: vitest run output shows `fetch failed` for `https://www.geoboundaries.org/api/current/gbOpen/JPN/ADM0/`.
 - Observation: FlatGeobuf serialization rejects features with `geometry: null`.
@@ -40,7 +40,7 @@ Users will be able to run shape-plugin batch builds where each data source contr
 
 ## Context and Orientation
 
-The shape-plugin batch pipeline lives under `plugins/shape-plugin/src/services/batch/`. The current download stage is implemented in `SessionController.processDownloadStage`, which builds `DownloadTask` entries directly from `urlMetadata`. The download adapter `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerDownloadAdapter.ts` executes these tasks by resolving a `DataSourceStrategy` and calling `fetchData` + `processData`, then writes a single FlatGeobuf buffer to `EphemeralShapeDB` per task. Simplify tasks are created in `SessionController.processSimplify1Stage` by mapping the same `urlMetadata` to the buffer ids created by the download stage. This assumes a 1:1 mapping between download tasks and simplify tasks.
+The shape-plugin batch pipeline lives under `plugins/shape-plugin/src/services/batch/`. The current download stage is implemented in `SessionController.processDownloadStage`, which builds `DownloadTask` entries directly from `urlMetadata`. The download adapter `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerDownloadAdapter.ts` executes these tasks by resolving a `DataSourceStrategy` and calling `fetchData` + `processData`, then writes a single FlatGeobuf buffer to `EphemeralShapeDB` per task. Extract tasks are created in `SessionController.processExtract1Stage` by mapping the same `urlMetadata` to the buffer ids created by the download stage. This assumes a 1:1 mapping between download tasks and extract tasks.
 
 Data source implementations exist at:
 
@@ -59,7 +59,7 @@ Introduce a new `DownloadStageStrategy` interface under `plugins/shape-plugin/sr
 
 1. Building download tasks from `urlMetadata` and session config.
 2. Postprocessing after download completion, including country/admin-level extraction.
-3. Producing the list of next-stage tasks (simplify1 or later) and their input buffer ids.
+3. Producing the list of next-stage tasks (extract1 or later) and their input buffer ids.
 
 Add a strategy registry that resolves an implementation based on `dataSource` (normalized name). The shared `SessionController` will:
 
@@ -67,7 +67,7 @@ Add a strategy registry that resolves an implementation based on `dataSource` (n
 2. Call `buildDownloadTasks(...)` to get the download tasks.
 3. Execute download tasks via the adapter (the adapter remains a pure executor and does not know about the per-source mapping).
 4. After all downloads are completed, call `postprocessDownloadOutputs(...)` on the strategy to perform any splitting/aggregation and to return the next-stage tasks.
-5. Use the returned tasks to continue the pipeline (simplify1 and onward).
+5. Use the returned tasks to continue the pipeline (extract1 and onward).
 
 For GADM and GeoBoundaries, the strategy will maintain the current 1:1 mapping. For NaturalEarth and OSM, the strategy will:
 
@@ -81,7 +81,7 @@ Add tests for the strategy behavior. Use fixture GeoJSON and metadata to verify 
 
 - GADM/GeoBoundaries produce one output buffer per download task.
 - NaturalEarth/OSM can produce multiple buffers from a single download task.
-- The generated simplify tasks match the produced buffers and include the correct `countryCode`/`adminLevel`.
+- The generated extract tasks match the produced buffers and include the correct `countryCode`/`adminLevel`.
 
 Update TASKS.md logs with start/progress/done, and add rollback steps referencing the touched files.
 
@@ -109,7 +109,7 @@ Update TASKS.md logs with start/progress/done, and add rollback steps referencin
    - Resolve the strategy by `dataSource`.
    - Build download tasks via the strategy.
    - After `downloadAdapter.process(...)` completes, call `postprocessDownloadOutputs(...)`.
-   - Use the returned tasks in `processSimplify1Stage`.
+   - Use the returned tasks in `processExtract1Stage`.
 
 4. Ensure `RuntimeWorkerDownloadAdapter` only executes download tasks and writes buffers.
 
@@ -134,7 +134,7 @@ Acceptance is met when:
 
 - The strategy tests pass and demonstrate correct mapping.
 - The download stage produces buffers for each country/admin-level as defined by the selected strategy.
-- Simplify tasks consume the derived buffers and no longer assume a fixed 1:1 mapping.
+- Extract tasks consume the derived buffers and no longer assume a fixed 1:1 mapping.
 
 ## Idempotence and Recovery
 
@@ -145,7 +145,7 @@ Edits are additive and can be retried safely. If a step fails, revert the change
 Example: expected task mapping summary (informal) for NaturalEarth
 
   Input: 1 download task (50m admin_0 + admin_1)
-  Output: N buffers (country/admin-level pairs) and N simplify1 tasks
+  Output: N buffers (country/admin-level pairs) and N extract1 tasks
 
 This example must be replaced by real test evidence as implementation progresses.
 

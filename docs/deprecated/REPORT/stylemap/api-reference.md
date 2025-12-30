@@ -339,7 +339,7 @@ class TableMetadataManager {
    */
   private async parseCSV(content: string): Promise<ParsedData> {
     // Implementation depends on CSV parsing library
-    // This is a simplified version
+    // This is a extracted version
     const lines = content.split('\n').filter(line => line.trim());
     const headers = lines[0].split(',').map(h => h.trim());
     const rows = lines.slice(1).map(line => line.split(',').map(cell => cell.trim()));

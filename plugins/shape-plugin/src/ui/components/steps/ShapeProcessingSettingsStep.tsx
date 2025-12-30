@@ -3,8 +3,8 @@ import { useMemo } from 'react';
 import { Alert, Box, Stack } from '@mui/material';
 import type { AlertColor } from '@mui/material';
 import { DownloadConfigSection } from './DownloadConfigSection.js';
-import { Simplify1ConfigSection } from './Simplify1ConfigSection.js';
-import { Simplify2ConfigSection } from './Simplify2ConfigSection.js';
+import { Extract1ConfigSection } from './Extract1ConfigSection.js';
+import { Extract2ConfigSection } from './Extract2ConfigSection.js';
 import { TileConfigSection } from './TileConfigSection.js';
 import type { ShapeDialogStepProps } from './ShapeDialogStepProps.ts';
 import { useShapeProcessingSettingsStep } from '../../hooks/useShapeProcessingSettingsStep.js';
@@ -60,8 +60,8 @@ export const ShapeProcessingSettingsStep: React.FC<ShapeDialogStepProps> = ({ da
           onChange={handleChange}
           onResetSession={resetSession}
         />
-        <Simplify1ConfigSection config={config} draft={data} onChange={handleChange} />
-        <Simplify2ConfigSection config={config} draft={data} onChange={handleChange} />
+        <Extract1ConfigSection config={config} draft={data} onChange={handleChange} />
+        <Extract2ConfigSection config={config} draft={data} onChange={handleChange} />
         <TileConfigSection config={config} draft={data} onChange={handleChange} />
       </Stack>
     </Box>

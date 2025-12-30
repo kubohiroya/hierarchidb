@@ -12,7 +12,7 @@ import { useTranslation } from '../../i18n.js';
 
 type Props = {
   tolerance: number;
-  enablePerFeatureSimplification?: boolean;
+  enablePerFeatureExtraction?: boolean;
   showPerFeatureToggle?: boolean;
   onToleranceChange: (next: number) => void;
   onPerFeatureChange?: (enabled: boolean) => void;
@@ -25,9 +25,9 @@ type Props = {
   disabled?: boolean;
 };
 
-export const SimplificationPanel: React.FC<Props> = ({
+export const ExtractionPanel: React.FC<Props> = ({
   tolerance,
-  enablePerFeatureSimplification,
+  enablePerFeatureExtraction,
   showPerFeatureToggle = true,
   onToleranceChange,
   onPerFeatureChange,
@@ -50,11 +50,11 @@ export const SimplificationPanel: React.FC<Props> = ({
   return (
     <Stack spacing={2}>
       <Typography variant="subtitle2">
-        {t('processing.filter.simplificationTitle', 'Simplification')}
+        {t('processing.filter.extractionTitle', 'Extraction')}
       </Typography>
       <div>
         <Typography gutterBottom>
-          {t(toleranceLabelKey, 'Simplification Tolerance (degrees)')}
+          {t(toleranceLabelKey, 'Extraction Tolerance (degrees)')}
         </Typography>
         <Box sx={{ px: 2 }}>
           <Slider
@@ -72,7 +72,7 @@ export const SimplificationPanel: React.FC<Props> = ({
           />
         </Box>
         <Typography variant="caption" color="text.secondary">
-          {t(toleranceHelpKey, 'Higher values simplify geometry more aggressively.')}
+          {t(toleranceHelpKey, 'Higher values extract geometry more aggressively.')}
         </Typography>
       </div>
       {showPerFeatureToggle && (
@@ -80,15 +80,15 @@ export const SimplificationPanel: React.FC<Props> = ({
           <FormControlLabel
             control={
               <Switch
-                checked={Boolean(enablePerFeatureSimplification)}
+                checked={Boolean(enablePerFeatureExtraction)}
                 onChange={(event) => onPerFeatureChange?.(event.target.checked)}
                 disabled={disabled}
               />
             }
-            label={t('processing.filter.enablePerFeatureSimplification', 'Enable per-feature simplification')}
+            label={t('processing.filter.enablePerFeatureExtraction', 'Enable per-feature extraction')}
           />
           <FormHelperText>
-            {t('processing.filter.enablePerFeatureSimplificationHelp', 'Apply tolerance per feature instead of globally.')}
+            {t('processing.filter.enablePerFeatureExtractionHelp', 'Apply tolerance per feature instead of globally.')}
           </FormHelperText>
         </FormGroup>
       )}

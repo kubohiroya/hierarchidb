@@ -7,7 +7,6 @@ const toSummaryStatus = (status: BatchTaskRecord['status']): BatchTaskSummary['s
 };
 
 type ShapeBatchTaskSummary = BatchTaskSummary & {
-  metadata?: Record<string, unknown>;
   title?: string;
 };
 
@@ -23,7 +22,7 @@ const buildTaskTitle = (task: BatchTaskRecord): string | undefined => {
   if (task.taskType === 'download') {
     return locationTitle ?? (input.url as string | undefined) ?? (input.endpoint as string | undefined);
   }
-  if (task.taskType === 'simplify1' || task.taskType === 'simplify2') {
+  if (task.taskType === 'extract1' || task.taskType === 'extract2') {
     return locationTitle;
   }
   if (task.taskType === 'vectortile') {
@@ -37,15 +36,12 @@ const buildTaskTitle = (task: BatchTaskRecord): string | undefined => {
     }
     const minZoom = getNumber(input.minZoom);
     const maxZoom = getNumber(input.maxZoom);
-    const metadataContext = input.metadataContext as {
-      dataSource?: string;
-      countryCode?: string;
-      countryName?: string;
-      adminLevel?: number;
-    } | undefined;
-    const countryLabel = metadataContext?.countryName ?? metadataContext?.countryCode;
-    const adminLabel = metadataContext?.adminLevel != null ? `ADM${metadataContext.adminLevel}` : undefined;
-    const dataSourceLabel = metadataContext?.dataSource ? metadataContext.dataSource.toUpperCase() : undefined;
+    const countryLabel = (input.countryName ?? input.countryCode) as string | undefined;
+    const adminLevel = getNumber(input.adminLevel);
+    const adminLabel = adminLevel != null ? `ADM${adminLevel}` : undefined;
+    const dataSourceLabel = typeof input.dataSource === 'string'
+      ? input.dataSource.toUpperCase()
+      : undefined;
     const zoomLabel = typeof minZoom === 'number' && typeof maxZoom === 'number'
       ? `z${minZoom}-${maxZoom}`
       : undefined;
@@ -66,7 +62,6 @@ export async function getBatchTaskSummaries(nodeId: string): Promise<ShapeBatchT
     message: task.message ?? task.errorMessage,
     startedAt: task.startedAt,
     completedAt: task.completedAt,
-    metadata: task.inputData,
     title: buildTaskTitle(task),
   }));
 }

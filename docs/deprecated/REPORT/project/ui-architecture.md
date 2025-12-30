@@ -574,7 +574,7 @@ const useResponsiveLayout = () => {
 
 - **Vertical Layout**: Stack panels vertically on mobile
 - **Touch-Friendly Controls**: Larger touch targets and gestures
-- **Simplified Navigation**: Reduced complexity for small screens
+- **Extracted Navigation**: Reduced complexity for small screens
 - **Progressive Enhancement**: Core functionality available on all devices
 
 ## Performance Optimizations
