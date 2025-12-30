@@ -9,19 +9,79 @@ import type { Feature } from 'geojson';
 import { BatchService } from '@hierarchidb/batch';
 import { createStageWorkerClient, getStageWorkerProxy, runVectorTileStage } from '@hierarchidb/runtime-worker';
 import { TilesDB, type VectorTileProgress } from '@hierarchidb/gis-sdk';
-import { assignFeatureIds } from '../utils/featureIds.js';
+import { assignFeatureIds, HDB_ORIGIN_KEY } from '../utils/featureIds.js';
 
 const isAbortError = (error: unknown): boolean => (
   error instanceof Error && error.name === 'AbortError'
 );
 
 const MAX_VECTOR_TILE_INPUT_BYTES = 50 * 1024 * 1024;
+
+type OriginSummary = {
+  totalFeatures: number;
+  uniqueOrigins: number;
+  originKeyCounts: Array<{ originKey: string; count: number }>;
+  truncated: boolean;
+};
+
+type OriginDiffSummary = {
+  removedOrigins: Array<{ originKey: string; count: number }>;
+  truncated: boolean;
+};
+
 export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
   private readonly featureCache = new Map<string, Array<{ feature: Feature; bbox: [number, number, number, number] }>>();
+  private readonly originSummaryCache = new Map<string, OriginSummary>();
 
+  private summarizeOriginKeys(features: Feature[], limit = 20): OriginSummary {
+    const counts = new Map<string, number>();
+    for (const feature of features) {
+      if (!feature) continue;
+      const properties = feature.properties ?? {};
+      const raw = properties[HDB_ORIGIN_KEY];
+      const originKey = typeof raw === 'string' && raw.trim().length > 0 ? raw : '__unknown__';
+      counts.set(originKey, (counts.get(originKey) ?? 0) + 1);
+    }
+    const sorted = Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([originKey, count]) => ({ originKey, count }));
+    const truncated = sorted.length > limit;
+    return {
+      totalFeatures: features.length,
+      uniqueOrigins: counts.size,
+      originKeyCounts: truncated ? sorted.slice(0, limit) : sorted,
+      truncated,
+    };
+  }
+
+  private diffOriginKeys(total: OriginSummary, intersecting: OriginSummary, limit = 20): OriginDiffSummary {
+    const totalMap = new Map(total.originKeyCounts.map((entry) => [entry.originKey, entry.count]));
+    const intersectMap = new Map(intersecting.originKeyCounts.map((entry) => [entry.originKey, entry.count]));
+    const removed: Array<{ originKey: string; count: number }> = [];
+    for (const [originKey, count] of totalMap.entries()) {
+      if (!intersectMap.has(originKey)) {
+        removed.push({ originKey, count });
+      }
+    }
+    removed.sort((a, b) => b.count - a.count);
+    const truncated = removed.length > limit;
+    return {
+      removedOrigins: truncated ? removed.slice(0, limit) : removed,
+      truncated,
+    };
+  }
+
+  private getOriginSummary(nodeId: string, features: Feature[]): OriginSummary {
+    const cached = this.originSummaryCache.get(nodeId);
+    if (cached) return cached;
+    const summary = this.summarizeOriginKeys(features);
+    this.originSummaryCache.set(nodeId, summary);
+    return summary;
+  }
 
   clearFeatureCache(nodeId: string): void {
     this.featureCache.delete(nodeId);
+    this.originSummaryCache.delete(nodeId);
   }
 
   private updateBounds(coords: unknown, bounds: { minX: number; minY: number; maxX: number; maxY: number }): void {
@@ -277,6 +337,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
               throw new Error(`Invalid tile input: ${inputBufferId}`);
             }
             const features = await this.loadSimplify2Features(String(sample.nodeId));
+            const totalFeatures = features.length;
             const tileBBox = this.tileToBBox(tileZ, tileX, tileY);
             const tileFeatures = features
               .filter((entry) => this.intersects(entry.bbox, tileBBox))
@@ -284,6 +345,20 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
               .filter(Boolean);
             tileFeatureCount = tileFeatures.length;
             tileKey = inputBufferId;
+            if (totalFeatures > 0 && tileFeatureCount !== totalFeatures) {
+              const totalOriginSummary = this.getOriginSummary(String(sample.nodeId), features.map((entry) => entry.feature));
+              const intersectOriginSummary = this.summarizeOriginKeys(tileFeatures);
+              const removedOriginSummary = this.diffOriginKeys(totalOriginSummary, intersectOriginSummary);
+              console.debug('[VectorTile] Tile feature reduction', {
+                nodeId: sample.nodeId,
+                tileId: this.formatTileId(tileZ, tileX, tileY),
+                totalFeatures,
+                intersectingFeatures: tileFeatureCount,
+                originKeyTotals: totalOriginSummary,
+                originKeyIntersecting: intersectOriginSummary,
+                originKeyRemoved: removedOriginSummary,
+              });
+            }
             if (tileFeatures.length === 0) {
               const skipMessage = `Skipped: no features intersect tile ${this.formatTileId(tileZ, tileX, tileY)}.`;
                 console.warn('[VectorTile] Skipping empty tile input', {
@@ -359,24 +434,15 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                   limitBytes: MAX_VECTOR_TILE_INPUT_BYTES,
                 });
                 for (const task of inputTasks) {
-                  const currentRetry = typeof task.config?.retry === 'number' ? task.config.retry : 0;
-                  const shouldRegress = currentRetry <= 1;
-                  const nextRetry = currentRetry + 1;
-                  if (!shouldRegress) {
-                    failed += 1;
-                  }
+                  failed += 1;
                   if (task.taskId) {
-                    const updates: Record<string, unknown> = {
-                      status: shouldRegress ? 'regression' : 'failed',
+                    await shapeDB.updateBatchTask(task.taskId, {
+                      status: 'failed',
                       completedAt: Date.now(),
                       progress: 100,
                       message: detailMessage,
-                      errorMessage: shouldRegress ? undefined : detailMessage,
-                    };
-                    if (shouldRegress) {
-                      updates.inputData = { ...(task.config ?? {}), retry: nextRetry };
-                    }
-                    await shapeDB.updateBatchTask(task.taskId, updates);
+                      errorMessage: detailMessage,
+                    });
                   }
                   onProgress({
                     total: tasks.length,

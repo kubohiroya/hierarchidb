@@ -18,10 +18,10 @@ export const DEFAULT_PROCESSING_CONFIG: BatchConfig = {
   },
   simplify1Config: {
     workers: 2,
-    tolerance: 0.5,
+    tolerance: 0.05,
     featureFilterMethod: 'hybrid',
-    areaThreshold: 1,
-    minVertexCountForAreaFilter: 200,
+    areaThreshold: 100,
+    minVertexCountForAreaFilter: 10,
     aspectRatioThreshold: 5,
     hybridFilterConfig: {
       quickRejectThreshold: 0.01,

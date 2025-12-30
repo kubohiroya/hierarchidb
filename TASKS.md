@@ -53,6 +53,92 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1995) shape-plugin: Step4 面積フィルターの最小頂点数/最小面積の範囲変更（P1）
+- ブランチ: `fix/shape-plugin/area-filter-range-defaults`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/ui/components/processing/AreaFilterPanel.tsx`, `plugins/shape-plugin/src/common/types/constants.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] 最小頂点数の範囲が 0-1000、デフォルトが 10 になる
+  - [ ] 最小面積(平方km)の範囲が 0-1000、デフォルトが 100 になる
+  - [ ] UI 表示と実際のデフォルトが一致する
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] AreaFilterPanel の min/max/marks を更新する
+  - [ ] DEFAULT_PROCESSING_CONFIG の簡略化既定値を更新する
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：上記ファイルの差分を revert する
+- 運用ログ：
+  - start: 2025-12-30 14:09 JST Step4 面積フィルターの範囲/デフォルト変更に着手。
+  - progress: 2025-12-30 14:09 JST 最小頂点数を 0-1000/デフォルト10、最小面積を 0-1000/デフォルト100 に更新。検証: 未実施。
+
+1994) shape-plugin: 一次簡略化許容値(度)の範囲/デフォルト調整（P1）
+- ブランチ: `fix/shape-plugin/simplify1-tolerance-range`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/ui/components/steps/Simplify1ConfigSection.tsx`, `plugins/shape-plugin/src/common/types/constants.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] 一次簡略化許容値(度)の範囲が 0.0-1.0 になる
+  - [ ] デフォルトが 0.05 になる
+  - [ ] UI の表示と実際のデフォルトが一致する
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] Simplify1ConfigSection の min/max/step/marks を更新する
+  - [ ] DEFAULT_PROCESSING_CONFIG の simplify1 tolerance を更新する
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：上記ファイルの差分を revert する
+- 運用ログ：
+  - start: 2025-12-30 14:02 JST 一次簡略化許容値(度)の範囲/デフォルト調整に着手。
+  - progress: 2025-12-30 14:02 JST Simplify1 の許容値範囲を 0.0-1.0 に拡大し、デフォルトを 0.05 に更新。検証: 未実施。
+
+1993) shape-plugin: メタデータ BBox 表示復活と vectortile 簡略化ログ/失敗扱い整理（P1）
+- ブランチ: `fix/shape-plugin/metadata-bbox-vectortile-logging`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/ui/hooks/preview/useVectorTilePreviewTable.ts`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `packages/features/gis-sdk/src/vectorTiles.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] メタデータ一覧テーブルで BBox 列が再表示される
+  - [ ] vectortile 生成で feature が削減/省略される場合に console.debug で実態が出力される
+  - [ ] 入力サイズ制限に該当するタイルは failed 扱いで詳細メッセージが記録される
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] BBox 列をテーブルに再追加し表示形式を整える
+  - [ ] 省略/削減が起きる箇所に debug ログを追加する
+  - [ ] 入力サイズ制限の扱いを failed に変更する
+- ロールバック手順：上記ファイルの差分を revert する
+- 運用ログ：
+  - start: 2025-12-30 23:26 JST メタデータ BBox 復活と vectortile のログ/失敗扱い整理に着手。
+  - progress: 2025-12-30 23:34 JST メタデータ表へ BBox 列を復活し、vectortile のタイル交差/空タイルの省略状況を console.debug で出力、タイル入力サイズ超過は failed と詳細メッセージを記録するよう変更。
+  - progress: 2025-12-30 23:45 JST BBox 列の表示を確認。vectortile で消えた国についても地図上の大きさに相当する BBox が残ることを確認。
+  - progress: 2025-12-30 23:52 JST タイル交差前後の originKey 集計（件数サマリ）を debug ログへ追加。
+  - progress: 2025-12-30 23:58 JST タイル交差で消えた originKey を抽出して debug ログへ追加。
+
+1992) shape-plugin: vectortile ステージの最終簡略化と描画欠落の原因整理（調査）
+- ブランチ: `chore/shape-plugin/vectortile-final-simplify-investigation`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/**`, `packages/**`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] vectortile ステージの「最終的な簡略化」処理内容を根拠コード付きで説明できる
+  - [ ] ポリゴンが作成される国が限定される条件/閾値を特定できる
+  - [ ] 日本などで描画されない理由を、どの段階で除外されるかまで分解して説明できる
+  - [ ] 調査内容/理由/参照箇所を運用ログに記載する
+- チェックリスト:
+  - [ ] vectortile ステージの最終簡略化処理箇所を特定する
+  - [ ] フィルタ/閾値/例外処理の条件を特定する
+  - [ ] 描画欠落の原因を段階別に整理する
+- ロールバック手順：調査のみ（コード変更なし）
+- 運用ログ：
+  - start: 2025-12-30 23:10 JST vectortile ステージの最終簡略化と描画欠落の原因調査に着手。
+  - progress: 2025-12-30 23:20 JST vectortile は geojson-vt によるズーム別簡略化＋タイル交差フィルタで最終出力。入力は simplify2 バッファのみで、bbox/交差なし・空レイヤーはタイル生成されない（`packages/features/gis-sdk/src/vectorTiles.ts`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `plugins/shape-plugin/src/services/batch/SessionController.ts`）。
+
+1991) shape-plugin: 再開時に download の completed タスクを再実行しない（P1）
+- ブランチ: `fix/shape-plugin/resume-download-skip-completed`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/services/batch/SessionController.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] 再開時に completed の download タスクが再実行されない
+  - [ ] download バッファが存在する場合は completed 扱いになる
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] download ステージ開始前に raw buffer を確認して task を completed 化する
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：`SessionController.ts` の差分を revert する
+- 運用ログ：
+  - start: 2025-12-30 13:23 JST 再開時に completed download が再実行される件の調査に着手。
+  - progress: 2025-12-30 13:23 JST download ステージ開始前に raw buffer がある task を completed に更新し再実行を防ぐ処理を追加。検証: 未実施。
+
 1990) ui-map: MapLibreMap のタイル境界/座標表示オプション対応（P1）
 - ブランチ: `feat/ui-map/maplibre-tile-debug`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `packages/ui/map/src/types/unified-map-props.ts`, `packages/ui/map/src/components/MapLibreMap.tsx`, `plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx`, `TASKS.md`

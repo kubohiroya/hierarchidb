@@ -107,7 +107,7 @@ export const AreaFilterPanel: React.FC<Props> = ({
               </Typography>
               <Box sx={{ px: 2 }}>
                 <Slider
-                  value={baseSimplify1Config.minVertexCountForAreaFilter ?? 100}
+                  value={baseSimplify1Config.minVertexCountForAreaFilter ?? 10}
                   onChange={(_, value) => {
                     const minVertexCountForAreaFilter = value as number;
                     update({
@@ -118,19 +118,16 @@ export const AreaFilterPanel: React.FC<Props> = ({
                     });
                   }}
                   min={0}
-                  max={5000}
+                  max={1000}
                   step={1}
                   valueLabelDisplay="auto"
                   marks={[
                     { value: 0, label: '0' },
+                    { value: 10, label: '10' },
                     { value: 100, label: '100' },
-                    { value: 200, label: '200' },
-                    { value: 300, label: '300' },
-                    { value: 400, label: '400' },
+                    { value: 250, label: '250' },
                     { value: 500, label: '500' },
                     { value: 1000, label: '1000' },
-                    { value: 2000, label: '2000' },
-                    { value: 5000, label: '5000' },
                   ]}
                   track="inverted"
                   disabled={disabled}
@@ -146,7 +143,7 @@ export const AreaFilterPanel: React.FC<Props> = ({
               </Typography>
               <Box sx={{ px: 2 }}>
                 <Slider
-                  value={baseSimplify1Config.areaThreshold ?? 300}
+                  value={baseSimplify1Config.areaThreshold ?? 100}
                   onChange={(_, value) => {
                     const areaThreshold = value as number;
                     update({
@@ -157,18 +154,16 @@ export const AreaFilterPanel: React.FC<Props> = ({
                     });
                   }}
                   min={0}
-                  max={10000}
+                  max={1000}
                   step={1}
                   valueLabelDisplay="auto"
                   marks={[
                     { value: 0, label: '0' },
-                    { value: 10, label: '10' },
                     { value: 50, label: '50' },
-                    { value: 200, label: '200' },
+                    { value: 100, label: '100' },
+                    { value: 250, label: '250' },
                     { value: 500, label: '500' },
                     { value: 1000, label: '1000' },
-                    { value: 5000, label: '5000' },
-                    { value: 10000, label: '10000' },
                   ]}
                   track="inverted"
                   disabled={disabled}

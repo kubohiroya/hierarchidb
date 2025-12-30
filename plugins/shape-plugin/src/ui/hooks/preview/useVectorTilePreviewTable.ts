@@ -14,6 +14,15 @@ const formatLogicalCode = (value: unknown) => {
   return text;
 };
 
+const formatBBox = (bbox?: [number, number, number, number]) => {
+  if (!bbox || bbox.length !== 4) return '';
+  const [minX, minY, maxX, maxY] = bbox;
+  if ([minX, minY, maxX, maxY].some((value) => typeof value !== 'number' || !Number.isFinite(value))) {
+    return '';
+  }
+  return `${minX.toFixed(4)}, ${minY.toFixed(4)}, ${maxX.toFixed(4)}, ${maxY.toFixed(4)}`;
+};
+
 export const useVectorTilePreviewTable = (
   metadataRows: PreviewMetadataRow[],
   matchedIdSet: Set<string>,
@@ -41,6 +50,7 @@ export const useVectorTilePreviewTable = (
       simplify2PolygonCount: normalizeCount(row.simplify2PolygonCount),
       vectorTileVertexCount: normalizeCount(row.vectorTileVertexCount),
       vectorTilePolygonCount: normalizeCount(row.vectorTilePolygonCount),
+      bbox: formatBBox(row.bbox),
       originKey: row.originKey,
     }));
     const keyword = searchKeyword.trim().toLowerCase();
@@ -79,6 +89,7 @@ export const useVectorTilePreviewTable = (
     { id: 'simplify2PolygonCount', label: t('preview.metadata.columns.simplify2PolygonCount', 'Simplify2 Polygons'), width: 160, align: 'right', sortable: true },
     { id: 'vectorTileVertexCount', label: t('preview.metadata.columns.vectorTileVertexCount', 'Tile Vertices'), width: 140, align: 'right', sortable: true },
     { id: 'vectorTilePolygonCount', label: t('preview.metadata.columns.vectorTilePolygonCount', 'Tile Polygons'), width: 140, align: 'right', sortable: true },
+    { id: 'bbox', label: t('preview.metadata.columns.bbox', 'Bounding Box'), width: 220, sortable: true },
     { id: 'originKey', label: t('preview.metadata.columns.originKey', 'Origin Key'), width: 240, sortable: true, format: formatLogicalCode },
   ]), [t]);
 

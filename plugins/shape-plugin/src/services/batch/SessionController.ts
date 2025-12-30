@@ -499,6 +499,7 @@ export class SessionController {
     });
     const existingTaskIds = await this.assignDownloadTaskIndices(tasks);
     await this.registerTasks('download', tasks, existingTaskIds);
+    await this.markDownloadTasksCompletedWhenBuffersExist(tasks);
     const { runnableTasks, completedCount, failedCount, total } = await this.resolveStageTasks('download', tasks);
     const baseCompleted = Math.min(completedCount, total);
     const baseFailed = Math.min(failedCount, total - baseCompleted);
@@ -1661,6 +1662,32 @@ export class SessionController {
     const completedCount = existing.filter((task) => task.status === 'completed').length;
     const failedCount = existing.filter((task) => task.status === 'failed').length;
     return { runnableTasks, completedCount, failedCount, total: tasks.length };
+  }
+
+  private async markDownloadTasksCompletedWhenBuffersExist(tasks: DownloadTask[]): Promise<void> {
+    if (tasks.length === 0) return;
+    const db = getEphemeralShapeDB();
+    const existing = await shapeDB.batchTasks
+      .where('nodeId')
+      .equals(this.nodeId)
+      .and((task) => task.taskType === 'download')
+      .toArray();
+    const statusById = new Map(existing.map((task) => [task.taskId, task.status]));
+    for (const task of tasks) {
+      const status = statusById.get(task.taskId);
+      if (status !== 'waiting' && status !== 'regression') continue;
+      const index = task.index ?? 0;
+      const bufferId = `${this.nodeId}-download-${index}`;
+      const raw = await db.rawBuffers.get(bufferId);
+      if (!raw) continue;
+      await shapeDB.updateBatchTask(task.taskId, {
+        status: 'completed',
+        progress: 100,
+        completedAt: Date.now(),
+        message: 'Skipped: already downloaded.',
+        errorMessage: undefined,
+      });
+    }
   }
 
   private getRetryValue(task: BatchTaskRecord): number {

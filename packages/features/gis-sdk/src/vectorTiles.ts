@@ -409,6 +409,8 @@ export const generateVectorTilesFromFeatureCollection = async (
   const db = await TilesDB.getSingleton();
   let tiles = 0;
   let totalBytes = 0;
+  let tilesWithFeatures = 0;
+  let tilesWithoutFeatures = 0;
   const createdTileKeys: string[] = [];
   try {
     for (const range of tileRanges) {
@@ -428,6 +430,7 @@ export const generateVectorTilesFromFeatureCollection = async (
             const pbf = vtpbf.fromGeojsonVt(layers as unknown as Tile[], { version: 2 });
             const bytes = pbf as Uint8Array;
             tiles++;
+            tilesWithFeatures++;
             totalBytes += bytes.byteLength;
             const key = `${nodeId}-${z}-${x}-${y}`;
             createdTileKeys.push(key);
@@ -442,6 +445,8 @@ export const generateVectorTilesFromFeatureCollection = async (
               contentType: 'application/vnd.mapbox-vector-tile',
               timestamp: Date.now(),
             });
+          } else {
+            tilesWithoutFeatures++;
           }
           reportProgress(z, x, y);
         }
@@ -458,6 +463,15 @@ export const generateVectorTilesFromFeatureCollection = async (
     throw error;
   }
 
+  if (tilesWithoutFeatures > 0) {
+    console.debug('[VectorTiles] Feature reduction summary', {
+      nodeId,
+      inputFeatures: features.length,
+      tileCandidates: totalTiles,
+      tilesWithFeatures,
+      tilesWithoutFeatures,
+    });
+  }
   return { tilesGenerated: tiles, totalBytes, metadataCount };
 };
 
