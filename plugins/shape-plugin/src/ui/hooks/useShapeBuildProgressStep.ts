@@ -207,7 +207,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     return () => {
       cancelled = true;
     };
-  }, [activeNodeId, buildStatus, tasks]);
+  }, [activeNodeId]);
 
   useEffect(() => {
     if (!activeNodeId || !effectiveStatus?.status) return;

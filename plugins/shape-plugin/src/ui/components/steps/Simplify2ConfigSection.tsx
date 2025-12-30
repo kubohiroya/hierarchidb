@@ -6,8 +6,16 @@ import {
   Stack,
   Typography,
   Paper,
+  ToggleButton,
+  ToggleButtonGroup,
+  Tooltip,
 } from '@mui/material';
-import { Tune as TuneIcon, ExpandMore as ExpandMoreIcon, FilterAlt } from '@mui/icons-material';
+import {
+  Tune as TuneIcon,
+  ExpandMore as ExpandMoreIcon,
+  FilterAlt,
+  InfoOutlined as InfoOutlinedIcon,
+} from '@mui/icons-material';
 import type { BatchConfig, ShapeEntity } from '../../../common/types/index.js';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { useTranslation } from '../../i18n.js';
@@ -49,6 +57,7 @@ export const Simplify2ConfigSection: React.FC<Props> = ({ config, draft, disable
       { message: simplify2Warning.message },
     )
     : undefined;
+  const simplificationMode = baseSimplify2Config.simplificationMode ?? 'topojson';
 
   return (
     <Accordion defaultExpanded>
@@ -58,30 +67,23 @@ export const Simplify2ConfigSection: React.FC<Props> = ({ config, draft, disable
           <Typography variant="subtitle1">
             {t('processing.simplify2.title', 'Tile Preprocessing')}
           </Typography>
+          <Tooltip
+            title={t(
+              'processing.simplify2.omissionHelp',
+              'When enabled, simplification/quantization can remove empty geometries.',
+            )}
+            placement="top"
+          >
+            <InfoOutlinedIcon color="action" fontSize="small" />
+          </Tooltip>
         </Stack>
       </AccordionSummary>
       <AccordionDetails sx={{ p: 3 }}>
         <Stack spacing={3}>
-          <Typography variant="body2" color="text.secondary">
-            {t('processing.simplify2.description', 'Preprocess geometry for stable tile generation.')}
-          </Typography>
-          <Paper variant="outlined" sx={{ p: 2, borderColor: 'divider', backgroundColor: 'background.paper' }}>
-            <Stack spacing={1}>
-              <Typography variant="subtitle2">
-                {t('processing.simplify2.dropConditionsTitle', 'When can geometries be omitted?')}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {t(
-                  'processing.simplify2.dropConditionsBody',
-                  'If enabled, simplification can omit geometries when: (1) the feature filter drops small or thin shapes based on area threshold, minimum vertex count, or aspect ratio/hybrid checks, or (2) simplification/quantization reduces a geometry to empty. In that case, metadata is still retained.',
-                )}
-              </Typography>
-            </Stack>
-          </Paper>
           <Grid container spacing={3}>
             <Grid size={{ xs: 12, sm: 4 }}>
               <WorkerNumberConfigCard
-                icon={<FilterAlt fontSize="small" color="primary" />}
+                icon={<TuneIcon fontSize="small" color="primary" />}
                 title={t('processing.filter.workersStage2', 'Number of Workers for Tile Generation (Stage 2)')}
                 value={baseSimplify2Config.workers ?? 2}
                 helperText={t('processing.filter.workersStage2Help', 'Parallel workers for tile preparation in stage 2.')}
@@ -102,6 +104,45 @@ export const Simplify2ConfigSection: React.FC<Props> = ({ config, draft, disable
             </Grid>
           </Grid>
           <Grid container spacing={3}>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Paper variant="outlined" sx={{ p: 2 }}>
+                <Stack spacing={1}>
+                  <Typography variant="subtitle2">
+                    {t('processing.simplify2.simplificationModeTitle', 'Simplification Mode')}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {t(
+                      'processing.simplify2.simplificationModeHelp',
+                      'Choose how geometry is simplified during tile preprocessing.',
+                    )}
+                  </Typography>
+                  <ToggleButtonGroup
+                    value={simplificationMode}
+                    exclusive
+                    size="small"
+                    onChange={(_, nextValue) => {
+                      if (!nextValue) return;
+                      update({
+                        simplify2Config: {
+                          ...baseSimplify2Config,
+                          simplificationMode: nextValue as typeof simplificationMode,
+                        },
+                      });
+                    }}
+                  >
+                    <ToggleButton value="off">
+                      {t('processing.simplify2.simplificationModeOff', 'Off')}
+                    </ToggleButton>
+                    <ToggleButton value="topojson">
+                      {t('processing.simplify2.simplificationModeTopo', 'TopoJSON')}
+                    </ToggleButton>
+                    <ToggleButton value="geojson">
+                      {t('processing.simplify2.simplificationModeGeo', 'GeoJSON')}
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+                </Stack>
+              </Paper>
+            </Grid>
             <Grid size={{ xs: 12, md: 4 }}>
               <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
                 <SimplificationPanel
@@ -125,18 +166,6 @@ export const Simplify2ConfigSection: React.FC<Props> = ({ config, draft, disable
                       },
                     })
                   }
-                  min={0.0005}
-                  max={0.2}
-                  step={0.0005}
-                  marks={[
-                    { value: 0.0005, label: '0.0005' },
-                    { value: 0.001, label: '0.001' },
-                    { value: 0.005, label: '0.005' },
-                    { value: 0.01, label: '0.01' },
-                    { value: 0.05, label: '0.05' },
-                    { value: 0.1, label: '0.1' },
-                    { value: 0.2, label: '0.2' },
-                  ]}
                   disabled={disabled}
                 />
               </Paper>

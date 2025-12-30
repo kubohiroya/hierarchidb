@@ -53,6 +53,21 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1987) shape-plugin: Step4 ダウンロード削除後の resume 失敗（missing download payloads）の修正（P1）
+- ブランチ: `fix/shape-plugin/resume-missing-download-payloads`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/services/batch/BatchSessionManager.ts`, `plugins/shape-plugin/src/services/batch/SessionController.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] 「ダウンロード済みファイルを削除」後に Step5 を再開しても `missing download payloads` が発生しない
+  - [ ] 再開不可の場合は、理由と復旧手順が UI/ログに明示される
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] resume 経路で download payloads の再生成/無効化の方針を決める
+  - [ ] missing payloads 発生条件を特定し、復旧手段を実装する
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：`BatchSessionManager.ts` と `SessionController.ts` の差分を revert する
+- 運用ログ：
+  - start: 2025-12-30 11:46 JST 「ダウンロード済みファイルを削除」後の resume 失敗（missing download payloads）の調査に着手。
+
 1975) shape-plugin: Step4 デフォルト見直し + simplify2 TopoJSON 簡略化（P1）
 - ブランチ: `feat/shape-plugin/simplify2-topojson`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/batch/adapters/LocalSimplifyAdapters.ts`, `plugins/shape-plugin/src/common/types/constants.ts`, `plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx`, `TASKS.md`, `plans/`
@@ -212,6 +227,9 @@
 - progress: 2025-12-31 07:05 JST Step6 の地図内右上に検索フィールドを追加し、検索は前方一致でマッチした地物を強調表示するよう調整。検証: 未実施。
 - progress: 2025-12-31 07:15 JST Step6 検索フィールドを左上へ移動し、地図コントロールは右上へ移設。検索文字列はメタデータ検索と共有（Jotai）を維持。検証: 未実施。
 - progress: 2025-12-31 07:40 JST 検索マッチ用の featureId を簡略化結果に付与し、metadata と vector tile で一致するよう補正。前方一致検索を地図強調へ反映。検証: 未実施。
+- progress: 2025-12-31 08:05 JST Step4 のタイル前処理に簡略化方式（オフ/TopoJSON/GeoJSON）の選択肢を追加し、simplify2 に反映。検証: 未実施。
+- progress: 2025-12-31 08:20 JST Step4 の説明カード削除・一次/二次の省略条件をツールチップ化し、ワーカー数のヘルプ文言をメモリ注意喚起へ更新。検証: 未実施。
+- progress: 2025-12-31 08:30 JST Step4 の説明文を削除し、簡略化方式カードを二次簡略化の左へ移設。タイル生成の説明はツールチップへ移動。検証: 未実施。
 
 1982) shape-plugin: Step6 プレビューのタイル参照を TilesDB に統一（P1）
 - ブランチ: `fix/shape-plugin/preview-tiles-tilesdb`（sandbox 制約で branch 作成不可なら main 上で作業）

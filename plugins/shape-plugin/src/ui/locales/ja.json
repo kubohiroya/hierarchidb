@@ -65,20 +65,23 @@
     },
     "simplify1": {
       "title": "一次簡略化（最詳細ズーム基準）",
-      "description": "最詳細ズームで必要な精度を満たしつつ、生データの過剰な複雑さを削減します。"
+      "omissionHelp": "有効化の場合には、面積しきい値・最小頂点数・縦横比/ハイブリッド判定により小さな地物が除外されます。"
     },
     "simplify2": {
-      "title": "タイル前処理（量子化・境界整合）",
-      "description": "タイル生成前に量子化や境界整合を行い、生成負荷を安定化します。",
-      "dropConditionsTitle": "いつ形状が省略されますか？",
-      "dropConditionsBody": "有効時は、(1) 面積しきい値・最小頂点数・縦横比/ハイブリッド判定により小さな地物が除外される、または (2) 簡略化/量子化で形状が空になる場合に、形状が省略されることがあります。その場合でもメタデータは残ります。"
+      "title": "二次簡略化（タイル前処理）",
+      "omissionHelp": "有効化の場合には、簡略化・量子化で形状が空になる場合に、形状が省略されることがあります。",
+      "simplificationModeTitle": "簡略化方式",
+      "simplificationModeHelp": "タイル前処理で使用する簡略化方式を選択します。",
+      "simplificationModeOff": "簡略化をオフにする",
+      "simplificationModeTopo": "TopoJSON",
+      "simplificationModeGeo": "GeoJSON"
     },
     "filter": {
       "title": "抽出設定",
       "workersStage1": "一次簡略化のワーカー数",
-      "workersStage1Help": "ステージ1の簡略化を並列実行する数です。",
-      "workersStage2": "タイル前処理のワーカー数",
-      "workersStage2Help": "ステージ2のタイル準備を並列実行する数です。",
+      "workersStage1Help": "並列度を増やすと高速化しますがブラウザがメモリ不足で不安定化することがあります。",
+      "workersStage2": "二次簡略化（タイル前処理）のワーカー数",
+      "workersStage2Help": "並列度を増やすと高速化しますがブラウザがメモリ不足で不安定化することがあります。",
       "method": "フィルタリング方法",
       "methodNone": "フィルタリングをオフにする",
       "methodBBox": "バウンディングボックスのみ (高速)",
@@ -112,7 +115,7 @@
     },
     "tile": {
       "title": "タイル生成（ズーム別最終簡略化）",
-      "description": "ズームごとに最終的な簡略化を行い、ベクトルタイルを生成します。",
+      "descriptionTooltip": "ズームごとに最終的な簡略化を行い、ベクトルタイルを生成します。",
       "workers": "タイル生成のワーカー数",
       "workersHelp": "タイル生成を並列実行する数です。",
       "bufferSize": "タイルマージン (px)",

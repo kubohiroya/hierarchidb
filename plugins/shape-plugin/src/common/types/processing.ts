@@ -46,11 +46,14 @@ export interface Simplify1Config {
   hybridFilterConfig?: HybridFilterConfig;
 }
 
+export type Simplify2SimplificationMode = 'off' | 'topojson' | 'geojson';
+
 export interface Simplify2Config {
   workers: number;
   tolerance: number;
   quantize?: number;
   enablePerFeatureSimplification?: boolean;
+  simplificationMode?: Simplify2SimplificationMode;
 }
 
 export interface TileBatchConfig {

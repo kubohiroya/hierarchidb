@@ -18,7 +18,7 @@ export const DEFAULT_PROCESSING_CONFIG: BatchConfig = {
   },
   simplify1Config: {
     workers: 2,
-    tolerance: 0.005,
+    tolerance: 0.5,
     featureFilterMethod: 'hybrid',
     areaThreshold: 1,
     minVertexCountForAreaFilter: 200,
@@ -33,9 +33,10 @@ export const DEFAULT_PROCESSING_CONFIG: BatchConfig = {
   },
   simplify2Config: {
     workers: 2,
-    tolerance: 0.005,
+    tolerance: 0.5,
     quantize: 50000,
     enablePerFeatureSimplification: true,
+    simplificationMode: 'topojson',
   },
   simplificationConfig: {
     featureFilterMethod: 'hybrid',
@@ -51,7 +52,7 @@ export const DEFAULT_PROCESSING_CONFIG: BatchConfig = {
     },
     level1Workers: 2,
     level2Workers: 2,
-    tolerance: 0.005,
+    tolerance: 0.5,
     quantize: 50000,
     enablePerFeatureSimplification: true,
   },

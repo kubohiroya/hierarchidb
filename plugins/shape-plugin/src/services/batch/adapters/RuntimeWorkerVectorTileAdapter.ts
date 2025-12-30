@@ -189,7 +189,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
       if (!tasksByInput.has(inputBufferId)) {
         tasksByInput.set(inputBufferId, []);
       }
-      tasksByInput.get(inputBufferId)!.push(task);
+      tasksByInput.get(inputBufferId)?.push(task);
     }
     try {
       const processInputTasks = async ([inputBufferId, inputTasks]: [string, VectorTileTask[]]) => {

@@ -6,8 +6,14 @@ import {
   Stack,
   Typography,
   Paper,
+  Tooltip,
 } from '@mui/material';
-import { FilterAlt as FilterAltIcon, ExpandMore as ExpandMoreIcon, FilterAlt } from '@mui/icons-material';
+import {
+  FilterAlt as FilterAltIcon,
+  ExpandMore as ExpandMoreIcon,
+  FilterAlt,
+  InfoOutlined as InfoOutlinedIcon,
+} from '@mui/icons-material';
 import type { BatchConfig, ShapeEntity } from '../../../common/types/index.js';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { useTranslation } from '../../i18n.js';
@@ -60,13 +66,19 @@ export const Simplify1ConfigSection: React.FC<Props> = ({ config, draft, disable
           <Typography variant="subtitle1">
             {t('processing.simplify1.title', 'Primary Simplification')}
           </Typography>
+          <Tooltip
+            title={t(
+              'processing.simplify1.omissionHelp',
+              'When enabled, small features may be removed based on area threshold, minimum vertex count, or hybrid filtering.',
+            )}
+            placement="top"
+          >
+            <InfoOutlinedIcon color="action" fontSize="small" />
+          </Tooltip>
         </Stack>
       </AccordionSummary>
       <AccordionDetails sx={{ p: 3 }}>
         <Stack spacing={3}>
-          <Typography variant="body2" color="text.secondary">
-            {t('processing.simplify1.description', 'Reduce geometry while preserving detail required at maximum zoom.')}
-          </Typography>
           <Grid container spacing={3}>
             <Grid size={{ xs: 12, sm: 4 }}>
               <WorkerNumberConfigCard

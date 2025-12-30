@@ -381,6 +381,63 @@ export class LocalSimplify2Adapter implements Simplify2StageAdapter {
             break;
           }
           const geojson = await decodeGeoJson(input.data);
+          const simplificationMode = task.config?.simplificationMode
+            ?? (task.config?.preserveSharedBoundaries ? 'topojson' : 'geojson');
+          if (simplificationMode === 'off') {
+            const outputBufferId = `${task.nodeId ?? ''}-simplify2-${taskIndex}`;
+            if (isFeatureCollection(geojson)) {
+              const sanitized = sanitizeFeatureCollection(geojson);
+              assignFeatureIds(sanitized, {
+                countryCode: task.countryCode,
+                adminLevel: task.adminLevel,
+              });
+              const data = await encodeGeoJson(sanitized);
+              const featureCount = sanitized.features.length;
+              await db.simplifiedBuffers.put({
+                id: outputBufferId,
+                nodeId: input.nodeId,
+                stage: 'simplify2',
+                data,
+                featureCount,
+                simplificationRatio: input.featureCount ? featureCount / input.featureCount : 1,
+                tolerance: 0,
+                timestamp: Date.now(),
+              });
+              completed++;
+              if (task.taskId) {
+                const completionMessage = buildSimplify2CompletionMessage(featureCount, data.byteLength);
+                await shapeDB.updateBatchTask(task.taskId, {
+                  status: 'completed',
+                  completedAt: Date.now(),
+                  progress: 100,
+                  message: completionMessage,
+                });
+              }
+            } else {
+              await db.simplifiedBuffers.put({
+                id: outputBufferId,
+                nodeId: input.nodeId,
+                stage: 'simplify2',
+                data: input.data,
+                featureCount: input.featureCount ?? 0,
+                simplificationRatio: 1,
+                tolerance: 0,
+                timestamp: Date.now(),
+              });
+              completed++;
+              if (task.taskId) {
+                const completionMessage = buildSimplify2CompletionMessage(input.featureCount ?? 0, input.data.byteLength);
+                await shapeDB.updateBatchTask(task.taskId, {
+                  status: 'completed',
+                  completedAt: Date.now(),
+                  progress: 100,
+                  message: completionMessage,
+                });
+              }
+            }
+            finished = true;
+            break;
+          }
           const baseTolerance = task.config?.tolerance ?? task.tolerance ?? 0;
           const retry = task.config?.retry ?? 0;
           const retryScale = retry > 0 ? 1 + retry * 2 : 1;
@@ -392,7 +449,7 @@ export class LocalSimplify2Adapter implements Simplify2StageAdapter {
           const enablePerFeatureSimplification = task.config?.enablePerFeatureSimplification ?? true;
           let simplifiedPayload: unknown = geojson;
           let usedTopo = false;
-          if (task.config?.preserveSharedBoundaries && isFeatureCollection(geojson)) {
+          if (simplificationMode === 'topojson' && task.config?.preserveSharedBoundaries && isFeatureCollection(geojson)) {
             try {
               simplifiedPayload = simplifyTopoJsonByTiles(geojson, {
                 tolerance,

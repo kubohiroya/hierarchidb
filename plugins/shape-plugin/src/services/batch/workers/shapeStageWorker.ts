@@ -263,6 +263,42 @@ const processSimplify2Task = async ({
     return { status: 'skipped', featureCount: 0 };
   }
   const geojson = await decodeGeoJson(input.data);
+  const simplificationMode = task.config?.simplificationMode
+    ?? (task.config?.preserveSharedBoundaries ? 'topojson' : 'geojson');
+  if (simplificationMode === 'off') {
+    const outputBufferId = `${nodeId}-simplify2-${taskIndex}`;
+    if (isFeatureCollection(geojson)) {
+      const sanitized = sanitizeFeatureCollection(geojson);
+      assignFeatureIds(sanitized, {
+        countryCode: task.countryCode,
+        adminLevel: task.adminLevel,
+      });
+      const data = await encodeGeoJson(sanitized);
+      const featureCount = sanitized.features.length;
+      await db.simplifiedBuffers.put({
+        id: outputBufferId,
+        nodeId: input.nodeId,
+        stage: 'simplify2',
+        data,
+        featureCount,
+        simplificationRatio: input.featureCount ? featureCount / input.featureCount : 1,
+        tolerance: 0,
+        timestamp: Date.now(),
+      });
+      return { status: 'completed', featureCount };
+    }
+    await db.simplifiedBuffers.put({
+      id: outputBufferId,
+      nodeId: input.nodeId,
+      stage: 'simplify2',
+      data: input.data,
+      featureCount: input.featureCount ?? 0,
+      simplificationRatio: 1,
+      tolerance: 0,
+      timestamp: Date.now(),
+    });
+    return { status: 'completed', featureCount: input.featureCount ?? 0 };
+  }
   const baseTolerance = task.config?.tolerance ?? task.tolerance ?? 0;
   const retry = task.config?.retry ?? 0;
   const retryScale = retry > 0 ? 1 + retry * 2 : 1;
@@ -274,7 +310,7 @@ const processSimplify2Task = async ({
   const enablePerFeatureSimplification = task.config?.enablePerFeatureSimplification ?? true;
   let simplifiedPayload: unknown = geojson;
   let usedTopo = false;
-  if (task.config?.preserveSharedBoundaries && isFeatureCollection(geojson)) {
+  if (simplificationMode === 'topojson' && task.config?.preserveSharedBoundaries && isFeatureCollection(geojson)) {
     try {
       simplifiedPayload = simplifyTopoJsonByTiles(geojson, {
         tolerance,

@@ -65,20 +65,23 @@
     },
     "simplify1": {
       "title": "Primary Simplification (Max Zoom Based)",
-      "description": "Reduces excessive geometry while preserving detail needed for the maximum zoom."
+      "omissionHelp": "When enabled, small features may be removed based on area threshold, minimum vertex count, or hybrid filtering."
     },
     "simplify2": {
-      "title": "Tile Preprocessing (Quantization & Boundary Alignment)",
-      "description": "Applies quantization and boundary alignment before tile generation to stabilize workload.",
-      "dropConditionsTitle": "When can geometries be omitted?",
-      "dropConditionsBody": "If enabled, simplification can omit geometries when: (1) the feature filter drops small or thin shapes based on area threshold, minimum vertex count, or aspect ratio/hybrid checks, or (2) simplification/quantization reduces a geometry to empty. In that case, metadata is still retained."
+      "title": "Secondary Simplification (Tile Preprocessing)",
+      "omissionHelp": "When enabled, simplification/quantization can remove empty geometries.",
+      "simplificationModeTitle": "Simplification Mode",
+      "simplificationModeHelp": "Choose how geometry is simplified during tile preprocessing.",
+      "simplificationModeOff": "Off",
+      "simplificationModeTopo": "TopoJSON",
+      "simplificationModeGeo": "GeoJSON"
     },
     "filter": {
       "title": "Extraction Setting",
       "workersStage1": "Worker Count for Primary Simplification",
-      "workersStage1Help": "Parallel workers for feature simplification in stage 1.",
-      "workersStage2": "Worker Count for Tile Preprocessing",
-      "workersStage2Help": "Parallel workers for tile preparation in stage 2.",
+      "workersStage1Help": "Higher concurrency can speed up processing but may exhaust browser memory.",
+      "workersStage2": "Worker Count for Secondary Simplification (Tile Preprocessing)",
+      "workersStage2Help": "Higher concurrency can speed up processing but may exhaust browser memory.",
       "method": "Filtering Method",
       "methodNone": "Filtering Off",
       "methodBBox": "Bounding Box Only (Fastest)",
@@ -112,7 +115,7 @@
     },
     "tile": {
       "title": "Tile Generation (Zoom-Aware Final Simplification)",
-      "description": "Performs final zoom-aware simplification and generates vector tiles.",
+      "descriptionTooltip": "Performs final zoom-aware simplification and generates vector tiles.",
       "workers": "Worker Count for Tile Generation",
       "workersHelp": "Parallel workers for tile generation.",
       "bufferSize": "Tile Margin (px)",

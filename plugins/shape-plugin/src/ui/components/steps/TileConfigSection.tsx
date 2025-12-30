@@ -1,5 +1,5 @@
-import { Accordion, AccordionDetails, AccordionSummary, Box, Grid, Stack, Typography, Slider } from '@mui/material';
-import { Layers as LayersIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
+import { Accordion, AccordionDetails, AccordionSummary, Box, Grid, Stack, Typography, Slider, Tooltip } from '@mui/material';
+import { Layers as LayersIcon, ExpandMore as ExpandMoreIcon, InfoOutlined as InfoOutlinedIcon } from '@mui/icons-material';
 import type { BatchConfig, ShapeEntity } from '../../../common/types/index.js';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { useTranslation } from '../../i18n.js';
@@ -92,12 +92,18 @@ export const TileConfigSection: React.FC<Props> = ({ config, draft, disabled, on
           <Typography variant="subtitle1">
             {t('processing.tile.title', 'Tile Generation Setting')}
           </Typography>
+          <Tooltip
+            title={t(
+              'processing.tile.descriptionTooltip',
+              'Generate vector tiles with zoom-aware simplification.',
+            )}
+            placement="top"
+          >
+            <InfoOutlinedIcon color="action" fontSize="small" />
+          </Tooltip>
         </Stack>
       </AccordionSummary>
       <AccordionDetails sx={{ p: 3 }}>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          {t('processing.tile.description', 'Generate vector tiles with zoom-aware simplification.')}
-        </Typography>
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, sm: 4 }}>
             <WorkerNumberConfigCard

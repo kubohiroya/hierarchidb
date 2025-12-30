@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { HybridFilterConfig } from './BatchConfig.js';
 import type { BatchSessionConfig } from './BatchConfig.js';
-import type { FeatureFilterMethod } from './processing.js';
+import type { FeatureFilterMethod, Simplify2SimplificationMode } from './processing.js';
 
 export interface BatchStatus {
   session: BatchSession;
@@ -102,6 +102,7 @@ export interface SimplifyTaskConfig {
   hybridFilterConfig?: HybridFilterConfig;
   enablePerFeatureSimplification?: boolean;
   preserveSharedBoundaries?: boolean;
+  simplificationMode?: Simplify2SimplificationMode;
   retry?: number;
 }
 

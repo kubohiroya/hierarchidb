@@ -685,6 +685,7 @@ export class SessionController {
     const zoomLevels = this.resolveZoomLevels();
     const tileSize = this.config.vectorTiles?.tileSize ?? this.config.tileSize ?? 512;
     const simplify2Config = this.config.simplify2;
+    const simplificationMode = simplify2Config?.simplificationMode ?? 'topojson';
     const retry = this.simplify2RetryOverride ?? 0;
 
     const tasks: Simplify2Task[] = this.simplify1Tasks.map((task, index) => ({
@@ -713,7 +714,8 @@ export class SessionController {
         adminLevel: task.adminLevel,
         zoomLevel: zoomLevels[0] ?? 10,
         tileSize,
-        preserveSharedBoundaries: true,
+        preserveSharedBoundaries: simplificationMode === 'topojson',
+        simplificationMode,
         quantize: simplify2Config?.quantize,
         algorithm: 'douglas-peucker',
         tolerance: simplify2Config?.tolerance,
