@@ -24,7 +24,8 @@ import {
   useVectorTilePreviewMapLayers,
 } from '@hierarchidb/ui-gis';
 import { useVectorTilePreviewTable } from './preview/useVectorTilePreviewTable.js';
-import { getShapeRuntimeWorkerClient } from '../../services/batch/adapters/RuntimeWorkerClient.js';
+import { TilesDB } from '@hierarchidb/gis-sdk';
+import { getDBName } from '@hierarchidb/util';
 import { shapeDB } from '../../services/database/ShapeDB.js';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 
@@ -46,10 +47,14 @@ const ISO3166_CSV_URL = '/iso3166-2-level1.csv';
 const ISO3166_UNRESOLVED = 'N/A';
 
 const fetchTileSummary = async (nodeId: string) => {
-  const client = await getShapeRuntimeWorkerClient();
-  const vectorTile = client?.vectortile;
-  if (!vectorTile?.getSummary) return { tiles: 0, totalBytes: 0 };
-  return vectorTile.getSummary(nodeId);
+  const tilesDb = await TilesDB.getSingleton();
+  const byNodeId = await tilesDb.tiles.where('nodeId').equals(nodeId).toArray();
+  const tiles = byNodeId.length > 0
+    ? byNodeId
+    : await tilesDb.tiles.where('key').startsWith(`${nodeId}-`).toArray();
+  if (tiles.length === 0) return { tiles: 0, totalBytes: 0 };
+  const totalBytes = tiles.reduce((sum, row) => sum + (row.size ?? 0), 0);
+  return { tiles: tiles.length, totalBytes };
 };
 
 const resolveTilesAvailable = async (nodeId: string): Promise<boolean> => {
@@ -64,16 +69,14 @@ const fetchTile = async (
   z: number,
   x: number,
   y: number,
-): Promise<Uint8Array | null> => {
-  const client = await getShapeRuntimeWorkerClient();
-  const vectorTile = client?.vectortile;
-  if (!vectorTile?.getTile) return null;
-  const result = await vectorTile.getTile(nodeId, z, x, y);
-  if (!result) return null;
-  return result instanceof Uint8Array ? result : new Uint8Array(result);
+): Promise<ArrayBuffer | null> => {
+  const tilesDb = await TilesDB.getSingleton();
+  const key = `${nodeId}-${z}-${x}-${y}`;
+  const row = await tilesDb.tiles.get(key);
+  return row?.data ?? null;
 };
 
-export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
+export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string) => {
   const { t } = useTranslation();
   const theme = useTheme();
   const [tabIndex, setTabIndex] = useState(0);
@@ -88,7 +91,11 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
   const previewDraft = data as ShapePreviewDraft;
   const tilesUrl = previewDraft.tilesUrl ?? previewDraft.tilesEndpoint ?? '';
   const tilesLayer = previewDraft.tilesLayer ?? 'layer0';
-  const activeNodeId = previewDraft.nodeId ? toNodeId(String(previewDraft.nodeId)) : null;
+  const activeNodeId = previewDraft.nodeId
+    ? toNodeId(String(previewDraft.nodeId))
+    : nodeId
+      ? toNodeId(String(nodeId))
+      : null;
   const nodeKey = activeNodeId;
   const [persistedStatus, setPersistedStatus] = useState<string | null>(null);
   const [statusLoaded, setStatusLoaded] = useState(false);
@@ -96,11 +103,12 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
     ? 'processing'
     : persistedStatus;
   const minZoom = previewDraft.batchConfig?.tileConfig?.minZoom;
+  const maxZoom = previewDraft.batchConfig?.tileConfig?.maxZoom;
   const [tilesAvailable, setTilesAvailable] = useState(false);
   const [tilesChecking, setTilesChecking] = useState(false);
   const baseLayerId = 'shape-preview';
   const baseSourceId = 'shape-preview-source';
-  const tileDbName = 'shape-preview-tiles';
+  const tileDbName = getDBName('vectortile');
   const [selectionMetadata, setSelectionMetadata] = useState<DownloadTaskPayload[]>([]);
   const workerClientHook = useMemo(() => {
     try {
@@ -163,6 +171,24 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
       cancelled = true;
     };
   }, [nodeKey]);
+
+  useEffect(() => {
+    if (!nodeKey || tilesAvailable) return;
+    if (!processingStatus || processingStatus === 'processing') return;
+    let cancelled = false;
+    setTilesChecking(true);
+    resolveTilesAvailable(String(nodeKey)).then((available) => {
+      if (cancelled) return;
+      setTilesAvailable(available);
+      setTilesChecking(false);
+    }).catch(() => {
+      if (cancelled) return;
+      setTilesChecking(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [nodeKey, processingStatus, tilesAvailable]);
 
   const statusForPolling = statusLoaded ? processingStatus : 'processing';
   const shouldPollTiles = Boolean(activeNodeId)
@@ -348,8 +374,18 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
           });
           invalidIds.add(row.featureId);
         }
+        const displayCountryName = row.countryName?.trim()
+          ? row.countryName
+          : resolvedLevel === 0 && row.adminName
+            ? row.adminName
+            : row.countryName;
+        const displayAdminName = resolvedLevel === 0 && row.adminName && !row.countryName
+          ? ''
+          : row.adminName;
         return {
           ...row,
+          countryName: displayCountryName,
+          adminName: displayAdminName,
           adminLevel: resolvedLevel ?? row.adminLevel,
           logicalCountryCode: iso2 ?? row.countryCode,
           logicalAdminCode: logicalCode,
@@ -357,7 +393,23 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
         };
       }));
       if (cancelled) return;
-      setNormalizedMetadataRows(rows);
+      const indexKey = (entry: typeof rows[number]) => {
+        const code = entry.logicalCountryCode ?? entry.countryCode ?? '';
+        const level = entry.adminLevel ?? '';
+        const source = entry.dataSource ?? '';
+        return `${source}:${code}:${level}`;
+      };
+      const realKeys = new Set<string>();
+      rows.forEach((entry) => {
+        if (entry.vertexCount > 0 || entry.polygonCount > 0) {
+          realKeys.add(indexKey(entry));
+        }
+      });
+      const filteredRows = rows.filter((entry) => {
+        if (entry.vertexCount > 0 || entry.polygonCount > 0) return true;
+        return !realKeys.has(indexKey(entry));
+      });
+      setNormalizedMetadataRows(filteredRows);
       setInvalidFeatureIds(invalidIds);
     };
     void run();
@@ -472,15 +524,19 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
   }, [mapInstance, minZoom, selectionBounds]);
 
   const getRowId = useCallback((row: ShapeFeatureMetadataRow) => row.featureId, []);
-  const buildSearchText = useCallback((row: ShapeFeatureMetadataRow) => {
+  const buildSearchText = useCallback((row: ShapeFeatureMetadataRow & {
+    logicalCountryCode?: string;
+    logicalAdminCode?: string;
+    logicalFeatureId?: string;
+  }) => {
     return [
       row.countryName,
-      row.countryCode,
+      row.logicalCountryCode ?? row.countryCode,
       row.adminName,
       row.adminLevel != null ? String(row.adminLevel) : undefined,
-      row.adminCode,
+      row.logicalAdminCode ?? row.adminCode,
       row.dataSource,
-      row.featureId,
+      row.logicalFeatureId ?? row.featureId,
     ]
       .filter(Boolean)
       .join(' ');
@@ -607,26 +663,13 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
     interactiveMap.touchZoomRotate?.enable?.();
   }, [mapInstance]);
 
-  useEffect(() => {
-    if (!mapInstance) return;
-    const canvas = (mapInstance as MapLibreMapInstance & { getCanvas?: () => HTMLCanvasElement }).getCanvas?.();
-    if (!canvas) return;
-    const handleWheel = (event: WheelEvent) => {
-      event.stopPropagation();
-    };
-    canvas.addEventListener('wheel', handleWheel, { passive: true });
-    return () => {
-      canvas.removeEventListener('wheel', handleWheel);
-    };
-  }, [mapInstance]);
-
   const tileDataProvider = useCallback<NonNullable<MapWithVectorTilesProps['tileDataProvider']>>(
     async (z: number, x: number, y: number, nodeId?: string) => {
       const resolvedNodeId = nodeId ?? (activeNodeId ? String(activeNodeId) : undefined);
       if (!resolvedNodeId) return null;
       const data = await fetchTile(resolvedNodeId, z, x, y);
       if (!data) return null;
-      return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+      return data;
     },
     [activeNodeId],
   );
@@ -671,6 +714,8 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
     mapInstance,
     setMapInstance,
     handleMapIdentify,
+    minZoom,
+    maxZoom,
     defaultView: initialViewState,
   };
 };

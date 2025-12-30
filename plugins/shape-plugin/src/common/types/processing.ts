@@ -1,7 +1,7 @@
 import type { DataSourceName } from './data-source.js';
 import type { HybridFilterConfig } from './BatchConfig.js';
 
-export type FeatureFilterMethod = 'bbox_only' | 'polygon_only' | 'hybrid';
+export type FeatureFilterMethod = 'bbox_only' | 'polygon_only' | 'hybrid' | 'none';
 
 export interface BatchConfig {
   dataSource?: DataSourceName;

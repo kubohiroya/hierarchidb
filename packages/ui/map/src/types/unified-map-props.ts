@@ -59,6 +59,8 @@ export interface MapInteractionOptions {
   dragRotate?: boolean;
   doubleClickZoom?: boolean;
   touchZoomRotate?: boolean;
+  minZoom?: number;
+  maxZoom?: number;
 }
 
 /**
@@ -306,6 +308,8 @@ export const DEFAULT_MAP_CONFIG = {
     dragRotate: true,
     doubleClickZoom: true,
     touchZoomRotate: true,
+    minZoom: 0,
+    maxZoom: 22,
   } as MapInteractionOptions,
 
   vectorTileLayer: {

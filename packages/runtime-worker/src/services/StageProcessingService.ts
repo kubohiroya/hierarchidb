@@ -6,7 +6,6 @@ import {
   listVectorTiles,
   getVectorTileSummary,
   EphemeralGisDB,
-  TilesDB,
   type VectorTileGenerateConfig,
 } from '@hierarchidb/gis-sdk';
 
@@ -75,14 +74,6 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
   }
 
   private async readBuffer(fileId: string): Promise<ArrayBuffer | null> {
-    if (fileId.startsWith('stage-tile:')) {
-      const key = fileId.slice('stage-tile:'.length);
-      const tilesDb = await TilesDB.getSingleton();
-      const row = await tilesDb.tiles.get(key);
-      if (row?.data && row.data.byteLength > 0) {
-        return row.data;
-      }
-    }
     try {
       const shared = await this.getShared();
       const data = await shared.readAll(fileId);
@@ -114,6 +105,7 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
         countryName?: string;
         adminLevel?: number;
       };
+      targetNodeId?: string;
       abortKey?: string;
     },
     onProgress?: (progress: VectorTileProgress) => void,
@@ -126,17 +118,10 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
     try {
       const buf = await this.readBuffer(inputBufferId);
       if (!buf) return { tilesGenerated: 0, totalBytes: 0 };
-      const resolveStageTileNodeId = (key: string): string | null => {
-        const match = key.match(/^input:(.+)-(\d+)-(\d+)-(\d+)$/);
-        if (match) return match[1] ?? null;
-        const fallback = key.match(/^(.+)-(\d+)-(\d+)-(\d+)$/);
-        return fallback?.[1] ?? null;
-      };
-      const nodeId = inputBufferId.startsWith('stage-tile:')
-        ? resolveStageTileNodeId(inputBufferId.slice('stage-tile:'.length)) ?? inputBufferId
-        : inputBufferId.includes('-simplify2-')
+      const nodeId = config.targetNodeId
+        ?? (inputBufferId.includes('-simplify2-')
           ? inputBufferId.substring(0, inputBufferId.lastIndexOf('-simplify2-'))
-          : inputBufferId;
+          : inputBufferId);
       const sdkConfig: VectorTileGenerateConfig = {
         buffer: config.buffer,
         minZoom: config.minZoom,

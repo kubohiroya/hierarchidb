@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Box, Typography, Alert, Tabs, Tab, Snackbar, CircularProgress } from '@mui/material';
 import { ResourceLayerMap, type ResourceVectorLayer } from '@hierarchidb/ui-map';
 import { GenericDataGrid } from '@hierarchidb/ui-grid';
@@ -6,7 +6,7 @@ import { SearchField } from '@hierarchidb/ui-search-field';
 import type { ShapeDialogStepProps } from './ShapeDialogStepProps.ts';
 import { useShapePreviewStep } from '../../hooks/useShapePreviewStep.js';
 
-export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
+export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId }) => {
   const {
     t,
     theme,
@@ -31,7 +31,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
     hoverMessage,
     tilesUrl,
     tilesLayer,
-    nodeId,
+    nodeId: resolvedNodeId,
     tilesAvailable,
     tilesChecking,
     tileDbName,
@@ -41,7 +41,9 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
     setMapInstance,
     handleMapIdentify,
     defaultView,
-  } = useShapePreviewStep(data ?? {});
+    minZoom,
+    maxZoom,
+  } = useShapePreviewStep(data ?? {}, nodeId);
   const baseMapStyleUrl = theme.palette.mode === 'dark'
     ? DARK_BASEMAP_STYLE_URL
     : LIGHT_BASEMAP_STYLE_URL;
@@ -49,6 +51,12 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
   const metadataPanelRef = useRef<HTMLDivElement | null>(null);
   const metadataToolbarRef = useRef<HTMLDivElement | null>(null);
   const [metadataTableHeight, setMetadataTableHeight] = useState(0);
+
+  useEffect(() => {
+    if (tabIndex !== 0) {
+      setMapInstance(null);
+    }
+  }, [setMapInstance, tabIndex]);
 
   useLayoutEffect(() => {
     const panel = metadataPanelRef.current;
@@ -69,12 +77,12 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
   }, [tabIndex]);
 
   const vectorLayers = useMemo<ResourceVectorLayer[]>(() => {
-    if (!nodeId) return [];
+    if (!resolvedNodeId) return [];
     const hasRemoteTiles = Boolean(tilesUrl);
     const tiles = hasRemoteTiles ? [tilesUrl] : undefined;
     return [
       {
-        nodeId: String(nodeId),
+        nodeId: String(resolvedNodeId),
         nodeType: 'shape' as const,
         tiles,
         dbName: !hasRemoteTiles ? tileDbName : undefined,
@@ -92,7 +100,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
         },
       },
     ];
-  }, [baseLayerId, baseSourceId, nodeId, theme.palette.primary.dark, theme.palette.primary.main, tileDataProvider, tileDbName, tilesLayer, tilesUrl]);
+  }, [baseLayerId, baseSourceId, resolvedNodeId, theme.palette.primary.dark, theme.palette.primary.main, tileDataProvider, tileDbName, tilesLayer, tilesUrl]);
 
   const renderMapPreview = () => {
     const hasRemoteTiles = Boolean(tilesUrl);
@@ -114,10 +122,12 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
       <Box
         ref={mapContainerRef}
         flex={1}
-        minHeight={420}
+        minHeight={0}
+        height="100%"
         borderRadius={1}
         overflow="hidden"
         border="1px solid #e0e0e0"
+        position="relative"
         sx={{ overscrollBehavior: 'contain' }}
       >
         <ResourceLayerMap
@@ -135,6 +145,12 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
             dragRotate: true,
             doubleClickZoom: true,
             touchZoomRotate: true,
+            minZoom,
+            maxZoom,
+          }}
+          controls={{
+            navigation: { position: 'top-right' },
+            scale: { position: 'bottom-left' },
           }}
           onLoad={setMapInstance}
           identifyFeatureOnClick={{
@@ -147,16 +163,29 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
             onIdentify: handleMapIdentify,
           }}
         />
+        <Box
+          position="absolute"
+          top={4}
+          left={4}
+          zIndex={1}
+          sx={{ pointerEvents: 'none' }}
+        >
+          <Box sx={{ pointerEvents: 'auto', width: 220 }}>
+            <SearchField
+              searchText={searchKeyword}
+              handleSearchTextChange={setSearchKeyword}
+              handleSearchCommit={() => undefined}
+              placeholder={t('preview.metadata.searchPlaceholder', 'Search metadata')}
+              ariaLabel={t('preview.metadata.searchAriaLabel', 'Search metadata')}
+            />
+          </Box>
+        </Box>
       </Box>
     );
   };
 
   return (
-    <Box display="flex" flexDirection="column" gap={2} height="100%" minHeight={520}>
-      <Typography variant="h6">{t('preview.title', 'Preview')}</Typography>
-      <Typography variant="body2" color="text.secondary">
-        {t('preview.description', 'Visualize generated vector tiles on the map.')}
-      </Typography>
+    <Box display="flex" flexDirection="column" gap={2} height="100%" minHeight={0} flex={1}>
       {metadataEnabled ? (
         <>
           <Tabs value={tabIndex} onChange={(_, next) => setTabIndex(next)} variant="scrollable">
@@ -169,7 +198,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
             <Box
               ref={metadataPanelRef}
               flex={1}
-              minHeight={420}
+              minHeight={0}
               display="flex"
               flexDirection="column"
               borderRadius={1}
@@ -240,12 +269,22 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
                       onSort={handleSort}
                       rowSx={(state) => {
                         if (state.selected) {
-                          return { backgroundColor: theme.palette.primary.light };
+                          const selectedBg = theme.palette.primary.light;
+                          const selectedText = theme.palette.getContrastText(selectedBg);
+                          return {
+                            backgroundColor: selectedBg,
+                            color: selectedText,
+                            '& td, & td *': { color: selectedText },
+                          };
                         }
                         if (state.matched) {
+                          const matchedBg = theme.palette.secondary.light;
+                          const matchedText = theme.palette.getContrastText(matchedBg);
                           return {
-                            backgroundColor: theme.palette.secondary.light,
+                            backgroundColor: matchedBg,
                             boxShadow: `inset 3px 0 0 0 ${theme.palette.secondary.main}`,
+                            color: matchedText,
+                            '& td, & td *': { color: matchedText },
                           };
                         }
                         if (state.hovered) {

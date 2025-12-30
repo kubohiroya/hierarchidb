@@ -108,7 +108,8 @@ export const Simplify1ConfigSection: React.FC<Props> = ({ config, draft, disable
             <Grid size={{ xs: 12, md: 4 }}>
               <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
                 <SimplificationPanel
-                  tolerance={baseSimplify1Config.tolerance ?? 8}
+                  tolerance={baseSimplify1Config.tolerance ?? 0.5}
+                  toleranceLabelKey="processing.filter.tolerancePrimary"
                   onToleranceChange={(tolerance) =>
                     update({
                       simplify1Config: {
@@ -117,16 +118,17 @@ export const Simplify1ConfigSection: React.FC<Props> = ({ config, draft, disable
                       },
                     })
                   }
-                  min={1}
-                  max={50}
-                  step={1}
+                  min={0.0005}
+                  max={0.2}
+                  step={0.0005}
                   marks={[
-                    { value: 1, label: '1' },
-                    { value: 10, label: '10' },
-                    { value: 20, label: '20' },
-                    { value: 30, label: '30' },
-                    { value: 40, label: '40' },
-                    { value: 50, label: '50' },
+                    { value: 0.0005, label: '0.0005' },
+                    { value: 0.001, label: '0.001' },
+                    { value: 0.005, label: '0.005' },
+                    { value: 0.01, label: '0.01' },
+                    { value: 0.05, label: '0.05' },
+                    { value: 0.1, label: '0.1' },
+                    { value: 0.2, label: '0.2' },
                   ]}
                   showPerFeatureToggle={false}
                   disabled={disabled}

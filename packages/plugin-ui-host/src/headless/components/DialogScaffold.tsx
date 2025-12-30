@@ -30,6 +30,10 @@ export const createContentComponent = (dialogRef: React.RefObject<HTMLElement | 
         <Box
           sx={(theme: Theme) => ({
             flex: 1,
+            height: '100%',
+            minHeight: 0,
+            display: 'flex',
+            flexDirection: 'column',
             overflow: 'auto',
             padding: theme.spacing(2),
           })}

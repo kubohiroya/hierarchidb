@@ -126,13 +126,13 @@ export function validateBatchConfig(config: Partial<BatchConfig>): ShapeStepVali
   const minZoom = config.tileConfig?.minZoom;
   const maxZoom = config.tileConfig?.maxZoom;
   if (minZoom !== undefined) {
-    if (minZoom < 0 || minZoom > 18) {
-      errors.push('Min zoom level must be between 0 and 18');
+    if (minZoom < 0 || minZoom > 22) {
+      errors.push('Min zoom level must be between 0 and 22');
     }
   }
   if (maxZoom !== undefined) {
-    if (maxZoom < 0 || maxZoom > 18) {
-      errors.push('Max zoom level must be between 0 and 18');
+    if (maxZoom < 0 || maxZoom > 22) {
+      errors.push('Max zoom level must be between 0 and 22');
     }
     if (maxZoom > 14) {
       warnings.push('High zoom levels may require significant storage and processing time');
@@ -144,8 +144,8 @@ export function validateBatchConfig(config: Partial<BatchConfig>): ShapeStepVali
 
   const areaThreshold = config.simplify1Config?.areaThreshold ?? legacySimplification?.areaThreshold;
   if (areaThreshold !== undefined) {
-    if (areaThreshold < 1 || areaThreshold > 10000) {
-      errors.push('Feature area threshold must be between 1 and 10000');
+    if (areaThreshold < 0 || areaThreshold > 10000) {
+      errors.push('Feature area threshold must be between 0 and 10000');
     }
   }
 

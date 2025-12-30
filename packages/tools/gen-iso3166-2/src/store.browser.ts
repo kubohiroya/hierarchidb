@@ -1,4 +1,5 @@
 import { Dexie, type Table } from "dexie";
+import { getDBName } from "@hierarchidb/util";
 import { parseCsv } from "./csv.js";
 import {
   type CountryRecord,
@@ -11,7 +12,7 @@ class Iso3166Dexie extends Dexie {
   countries!: Table<CountryRecord, string>;
   subdivisions!: Table<SubdivisionRecord, string>;
 
-  constructor(name = "iso3166-2-cache") {
+  constructor(name = getDBName("iso3166-2-cache")) {
     super(name);
     this.version(1).stores({
       countries: "&alpha2, alpha3",

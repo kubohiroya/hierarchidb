@@ -111,6 +111,7 @@ export interface VectorTileWorkerAPI {
         countryName?: string;
         adminLevel?: number;
       };
+      targetNodeId?: string;
       abortKey?: string;
     },
     onProgress?: (progress: VectorTileProgress) => void,

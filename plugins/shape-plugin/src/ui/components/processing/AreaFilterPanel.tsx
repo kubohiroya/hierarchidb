@@ -69,6 +69,13 @@ export const AreaFilterPanel: React.FC<Props> = ({
                 }}
               >
                 <FormControlLabel
+                  value="none"
+                  control={<Radio inputProps={{ id: `${controlId}-filtering-none`, name: 'filtering-method' }} />}
+                  label={t('processing.filter.methodNone', 'Filtering Off')}
+                  disabled={disabled}
+                  htmlFor={`${controlId}-filtering-none`}
+                />
+                <FormControlLabel
                   value="bbox_only"
                   control={<Radio inputProps={{ id: `${controlId}-filtering-bbox-only`, name: 'filtering-method' }} />}
                   label={t('processing.filter.methodBBox', 'Bounding Box Only (Fastest)')}
@@ -111,7 +118,7 @@ export const AreaFilterPanel: React.FC<Props> = ({
                     });
                   }}
                   min={0}
-                  max={500}
+                  max={5000}
                   step={1}
                   valueLabelDisplay="auto"
                   marks={[
@@ -121,6 +128,9 @@ export const AreaFilterPanel: React.FC<Props> = ({
                     { value: 300, label: '300' },
                     { value: 400, label: '400' },
                     { value: 500, label: '500' },
+                    { value: 1000, label: '1000' },
+                    { value: 2000, label: '2000' },
+                    { value: 5000, label: '5000' },
                   ]}
                   track="inverted"
                   disabled={disabled}
@@ -147,15 +157,18 @@ export const AreaFilterPanel: React.FC<Props> = ({
                     });
                   }}
                   min={0}
-                  max={2000}
+                  max={10000}
                   step={1}
                   valueLabelDisplay="auto"
                   marks={[
                     { value: 0, label: '0' },
+                    { value: 10, label: '10' },
+                    { value: 50, label: '50' },
+                    { value: 200, label: '200' },
                     { value: 500, label: '500' },
                     { value: 1000, label: '1000' },
-                    { value: 1500, label: '1500' },
-                    { value: 2000, label: '2000' },
+                    { value: 5000, label: '5000' },
+                    { value: 10000, label: '10000' },
                   ]}
                   track="inverted"
                   disabled={disabled}
@@ -195,6 +208,7 @@ export const AreaFilterPanel: React.FC<Props> = ({
                   valueLabelDisplay="auto"
                   valueLabelFormat={(value) => (10 ** Number(value)).toFixed(3)}
                   marks={[
+                    { value: Math.log10(0.001), label: '0.001' },
                     { value: Math.log10(0.01), label: '0.01' },
                     { value: Math.log10(0.1), label: '0.1' },
                     { value: Math.log10(1), label: '1' },

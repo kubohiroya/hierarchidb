@@ -103,9 +103,7 @@ export class ShapeMutationService implements ShapeMutationAPI {
   private async clearTileIndexArtifacts(nodeId: string): Promise<void> {
     try {
       const db = await TilesDB.getSingleton();
-      const inputKey = `input:${nodeId}`;
       await db.tiles.where('sessionId').equals(nodeId).delete();
-      await db.tiles.where('sessionId').equals(inputKey).delete();
       await db.featureMetadata.where('sessionId').equals(nodeId).delete();
     } catch (error) {
       console.warn('[ShapeMutationService] failed to clear TilesDB artifacts', error);

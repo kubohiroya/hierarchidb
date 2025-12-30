@@ -22,7 +22,12 @@ export const useVectorTilePreviewSearch = <Row,>(
       return;
     }
     const matches = rows
-      .filter((row) => buildSearchText(row).toLowerCase().includes(keyword))
+      .filter((row) => {
+        const haystack = buildSearchText(row).toLowerCase();
+        return haystack
+          .split(/\s+/)
+          .some((token) => token.startsWith(keyword));
+      })
       .map((row) => getRowId(row));
     setMatchedIds(matches);
   }, [buildSearchText, getRowId, metadataEnabled, rows, searchKeyword, setMatchedIds]);

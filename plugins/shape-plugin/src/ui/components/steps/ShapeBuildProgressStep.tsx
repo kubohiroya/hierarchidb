@@ -184,6 +184,7 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
   const [crashHintOpen, setCrashHintOpen] = useState(false);
   const [sizeWarningOpen, setSizeWarningOpen] = useState(false);
   const lastWarningRef = useRef<string | null>(null);
+  const isDev = import.meta.env.DEV;
 
   const resolveTaskTitle = useCallback((task: TaskWithMetadata): string => {
     const metadata = task.metadata ?? {};
@@ -382,6 +383,7 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
   }, [crashInsight, data?.batchConfig, effectiveStages, t]);
 
   const crashHint = useMemo(() => {
+    if (isDev) return null;
     if (!crashInsight) return null;
     if (!crashInsight.memoryPressure) {
       return t(
@@ -400,7 +402,7 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
       'Previous build likely hit memory pressure during {{stage}} (peak {{ratio}}). Lower concurrency to reduce memory usage.',
       { stage: stageLabel, ratio: ratioText },
     );
-  }, [crashInsight, effectiveStages, t]);
+  }, [crashInsight, effectiveStages, isDev, t]);
 
   useEffect(() => {
     if (crashHint) {

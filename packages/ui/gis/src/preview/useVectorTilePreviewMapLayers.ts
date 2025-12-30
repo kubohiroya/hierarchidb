@@ -44,8 +44,11 @@ export const useVectorTilePreviewMapLayers = ({
     const sourceId = baseSourceId;
     const sourceLayer = tilesLayer;
     const layerType = 'fill';
+    const hasStyle = () =>
+      Boolean(typeof map.getStyle === 'function' ? map.getStyle() : (map as { style?: unknown }).style);
 
     const ensureLayer = (id: string, color: string, opacity: number) => {
+      if (!hasStyle()) return;
       if (!map.getLayer(baseId) || map.getLayer(id)) return;
       map.addLayer(
         {
@@ -65,6 +68,7 @@ export const useVectorTilePreviewMapLayers = ({
     };
 
     const handleIdle = () => {
+      if (!hasStyle()) return;
       if (!map.getLayer(baseId)) return;
       ensureLayer(`${baseId}-invalid`, theme.palette.error.main, 0.55);
       ensureLayer(`${baseId}-matched`, theme.palette.secondary.light, 0.45);
@@ -82,13 +86,16 @@ export const useVectorTilePreviewMapLayers = ({
   useEffect(() => {
     if (!mapInstance) return;
     const map = mapInstance as MapLibreInteractiveMap;
+    const hasStyle = () =>
+      Boolean(typeof map.getStyle === 'function' ? map.getStyle() : (map as { style?: unknown }).style);
     const updateFilter = (id: string, ids: string[]) => {
+      if (!hasStyle()) return;
       if (!map.getLayer(id)) return;
       if (!ids.length) {
         map.setFilter(id, ['==', ['get', 'id'], '__none__']);
         return;
       }
-      map.setFilter(id, ['in', ['get', 'id'], ...ids]);
+      map.setFilter(id, ['in', ['get', 'id'], ['literal', ids]]);
     };
     updateFilter(`${baseLayerId}-invalid`, invalidFeatureIds);
     updateFilter(`${baseLayerId}-matched`, matchedIds);
@@ -99,6 +106,8 @@ export const useVectorTilePreviewMapLayers = ({
   useEffect(() => {
     if (!mapInstance) return;
     const map = mapInstance as MapLibreInteractiveMap;
+    const hasStyle = () =>
+      Boolean(typeof map.getStyle === 'function' ? map.getStyle() : (map as { style?: unknown }).style);
     let attached = false;
     const handleMouseMove = (...args: unknown[]) => {
       const event = args[0] as { features?: Array<{ id?: unknown; properties?: Record<string, unknown> }> };
@@ -113,6 +122,7 @@ export const useVectorTilePreviewMapLayers = ({
       setHoveredId(null);
     };
     const ensureHandlers = () => {
+      if (!hasStyle()) return;
       if (attached || !map.getLayer(baseLayerId)) return;
       map.on('mousemove', baseLayerId, handleMouseMove);
       map.on('mouseleave', baseLayerId, handleMouseLeave);

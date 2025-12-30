@@ -205,6 +205,8 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
           dragRotate={mapOptions.dragRotate}
           doubleClickZoom={mapOptions.doubleClickZoom}
           touchZoomRotate={mapOptions.touchZoomRotate}
+          minZoom={mapOptions.minZoom}
+          maxZoom={mapOptions.maxZoom}
         >
           {mapLoaded && children}
         </ReactMapLibreMap>

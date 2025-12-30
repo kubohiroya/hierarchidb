@@ -21,6 +21,7 @@ export type VectorTileStageInput = {
       countryName?: string;
       adminLevel?: number;
     };
+    targetNodeId?: string;
     abortKey?: string;
   };
   onProgress?: (progress: VectorTileProgress) => void;
@@ -57,7 +58,7 @@ export async function runVectorTileStage(
   options: VectorTileStageOptions = {},
 ): Promise<VectorTileStageResult> {
   const { bufferId, buffer, contentType, config, onProgress } = input;
-  if (buffer && !bufferId.startsWith('stage-tile:')) {
+  if (buffer) {
     await writeVectorTileInput(
       bufferId,
       buffer,

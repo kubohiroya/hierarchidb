@@ -30,6 +30,7 @@ export const useVectorTilePreviewTable = (
   const metadataTableRows = useMemo(() => {
     const rows = metadataRows.map((row) => ({
       id: row.featureId,
+      rawFeatureId: row.featureId,
       countryName: row.countryName ?? '',
       countryCode: row.logicalCountryCode ?? row.countryCode ?? '',
       adminName: row.adminName ?? '',
@@ -45,7 +46,7 @@ export const useVectorTilePreviewTable = (
     }));
     const keyword = searchKeyword.trim().toLowerCase();
     const filtered = keyword
-      ? rows.filter((row) => matchedIdSet.has(row.featureId))
+      ? rows.filter((row) => matchedIdSet.has(row.rawFeatureId))
       : rows;
     const sorted = [...filtered].sort((a, b) => {
       const av = a[sortColumn as keyof typeof a];

@@ -26,7 +26,7 @@ export const useSimplify1ConfigSection = ({ config, onChange }: Args) => {
   }
 
   const baseHybridConfig: HybridFilterConfig = baseSimplify1Config.hybridFilterConfig ?? defaultHybridConfig;
-  const quickRejectMin = 0.01;
+  const quickRejectMin = 0.001;
   const quickRejectMax = 1;
   const quickRejectValue = Math.min(
     Math.max(baseHybridConfig?.quickRejectThreshold ?? 0.1, quickRejectMin),
@@ -57,7 +57,7 @@ export const useSimplify2ConfigSection = ({ config, onChange }: Args) => {
     throw new Error('Simplify2ConfigSection: baseSimplify2Config is not defined');
   }
 
-  const quantizeOptions = [100, 300, 1000, 2000, 3000, 10000];
+  const quantizeOptions = [1000, 5000, 10000, 20000, 50000, 100000, 200000];
   const resolveQuantizeIndex = (value: number) => {
     const resolved = quantizeOptions.reduce((best, option, index) => {
       const diff = Math.abs(option - value);
@@ -66,7 +66,7 @@ export const useSimplify2ConfigSection = ({ config, onChange }: Args) => {
     }, null as null | { index: number; diff: number });
     return resolved?.index ?? 0;
   };
-  const quantizeValue = baseSimplify2Config.quantize ?? 10000;
+  const quantizeValue = baseSimplify2Config.quantize ?? 50000;
   const quantizeIndex = resolveQuantizeIndex(quantizeValue);
   const quantizeRank = quantizeIndex + 1;
 

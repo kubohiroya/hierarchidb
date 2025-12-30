@@ -165,7 +165,6 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
     const metadataDb = await getShapeTileMetadataDB();
     await metadataDb.featureMetadata.where('nodeId').equals(batchNodeId).delete();
     await metadataDb.tiles.where('nodeId').equals(batchNodeId).delete();
-    await metadataDb.tiles.where('nodeId').equals(`input:${batchNodeId}`).delete();
   }, [batchNodeId, nodeId]);
 
   const persistSessionReset = useCallback(async () => {

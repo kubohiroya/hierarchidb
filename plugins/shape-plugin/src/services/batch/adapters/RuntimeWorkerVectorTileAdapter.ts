@@ -4,37 +4,21 @@ import type { VectorTileStageAdapter } from './VectorTileStageAdapter.js';
 import type { StageControls } from './StageControls.js';
 import { shapeDB } from '../../database/ShapeDB.js';
 import { getEphemeralShapeDB } from '../../database/EphemeralShapeDB.js';
-import { getShapeTileMetadataDB } from '../../database/ShapeTileMetadataDB.js';
 import { geojson } from 'flatgeobuf';
 import type { Feature } from 'geojson';
 import { BatchService } from '@hierarchidb/batch';
 import { createStageWorkerClient, getStageWorkerProxy, runVectorTileStage } from '@hierarchidb/runtime-worker';
 import { TilesDB, type VectorTileProgress } from '@hierarchidb/gis-sdk';
+import { assignFeatureIds } from '../utils/featureIds.js';
 
 const isAbortError = (error: unknown): boolean => (
   error instanceof Error && error.name === 'AbortError'
 );
 
 const MAX_VECTOR_TILE_INPUT_BYTES = 50 * 1024 * 1024;
-const isStageTileInput = (inputBufferId: string): boolean => inputBufferId.startsWith('stage-tile:');
 export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
   private readonly featureCache = new Map<string, Array<{ feature: Feature; bbox: [number, number, number, number] }>>();
 
-  private parseStageTileInput(inputBufferId: string): { key: string; nodeId: string; z: number; x: number; y: number } | null {
-    if (!isStageTileInput(inputBufferId)) return null;
-    const key = inputBufferId.slice('stage-tile:'.length);
-    const match = key.match(/^input:(.+)-(\d+)-(\d+)-(\d+)$/) ?? key.match(/^(.+)-(\d+)-(\d+)-(\d+)$/);
-    if (!match) return null;
-    const [, nodeId, z, x, y] = match;
-    if (!nodeId) return null;
-    return {
-      key,
-      nodeId,
-      z: Number(z),
-      x: Number(x),
-      y: Number(y),
-    };
-  }
 
   clearFeatureCache(nodeId: string): void {
     this.featureCache.delete(nodeId);
@@ -112,6 +96,15 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
         if (!bbox) continue;
         result.push({ feature, bbox });
       }
+    }
+    if (result.length > 0) {
+      assignFeatureIds(
+        {
+          type: 'FeatureCollection',
+          features: result.map((entry) => entry.feature),
+        },
+        {},
+      );
     }
     this.featureCache.set(nodeId, result);
     return result;
@@ -225,10 +218,15 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
             continue;
           }
           try {
-            if (!isStageTileInput(inputBufferId)) {
-              const inputBytes = await this.resolveInputByteLength(inputBufferId);
-              if (typeof inputBytes === 'number' && inputBytes > MAX_VECTOR_TILE_INPUT_BYTES) {
-                const message = `Vector tile input too large (${this.formatBytes(inputBytes)} > ${this.formatBytes(MAX_VECTOR_TILE_INPUT_BYTES)}).`;
+          const isTileTask = (
+            typeof sample?.config?.tileZ === 'number'
+            && typeof sample?.config?.tileX === 'number'
+            && typeof sample?.config?.tileY === 'number'
+          );
+          if (!isTileTask) {
+            const inputBytes = await this.resolveInputByteLength(inputBufferId);
+            if (typeof inputBytes === 'number' && inputBytes > MAX_VECTOR_TILE_INPUT_BYTES) {
+              const message = `Vector tile input too large (${this.formatBytes(inputBytes)} > ${this.formatBytes(MAX_VECTOR_TILE_INPUT_BYTES)}).`;
                 console.error('[VectorTile] Input size exceeds limit', {
                   inputBufferId,
                   inputBytes,
@@ -270,24 +268,27 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
             }
           let tileFeatureCount: number | null = null;
           let tileKey: string | null = null;
-          if (isStageTileInput(inputBufferId)) {
-            const parsed = this.parseStageTileInput(inputBufferId);
-            if (!parsed) {
-              throw new Error(`Invalid stage tile input: ${inputBufferId}`);
+          let tileInputBuffer: ArrayBuffer | undefined;
+          if (isTileTask) {
+            const tileZ = sample?.config?.tileZ;
+            const tileX = sample?.config?.tileX;
+            const tileY = sample?.config?.tileY;
+            if (typeof tileZ !== 'number' || typeof tileX !== 'number' || typeof tileY !== 'number') {
+              throw new Error(`Invalid tile input: ${inputBufferId}`);
             }
-            const features = await this.loadSimplify2Features(parsed.nodeId);
-            const tileBBox = this.tileToBBox(parsed.z, parsed.x, parsed.y);
+            const features = await this.loadSimplify2Features(String(sample.nodeId));
+            const tileBBox = this.tileToBBox(tileZ, tileX, tileY);
             const tileFeatures = features
               .filter((entry) => this.intersects(entry.bbox, tileBBox))
               .map((entry) => entry.feature)
               .filter(Boolean);
             tileFeatureCount = tileFeatures.length;
-            tileKey = `${parsed.nodeId}-${parsed.z}-${parsed.x}-${parsed.y}`;
+            tileKey = inputBufferId;
             if (tileFeatures.length === 0) {
-              const skipMessage = `Skipped: no features intersect tile ${this.formatTileId(parsed.z, parsed.x, parsed.y)}.`;
+              const skipMessage = `Skipped: no features intersect tile ${this.formatTileId(tileZ, tileX, tileY)}.`;
                 console.warn('[VectorTile] Skipping empty tile input', {
                   inputBufferId,
-                  tileId: this.formatTileId(parsed.z, parsed.x, parsed.y),
+                  tileId: this.formatTileId(tileZ, tileX, tileY),
                 });
                 for (const task of inputTasks) {
                   skipped += 1;
@@ -317,10 +318,10 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                 json = JSON.stringify({ type: 'FeatureCollection', features: tileFeatures });
               } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : 'Tile input serialization failed';
-                const detailMessage = `Vector tile input serialization failed for ${this.formatTileId(parsed.z, parsed.x, parsed.y)}: ${errorMessage}`;
+                const detailMessage = `Vector tile input serialization failed for ${this.formatTileId(tileZ, tileX, tileY)}: ${errorMessage}`;
                 console.error('[VectorTile] Tile input serialization failed', {
                   inputBufferId,
-                  tileId: this.formatTileId(parsed.z, parsed.x, parsed.y),
+                  tileId: this.formatTileId(tileZ, tileX, tileY),
                   error,
                 });
                 for (const task of inputTasks) {
@@ -348,11 +349,12 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                 continue;
               }
               const buffer = new TextEncoder().encode(json).buffer;
+              tileInputBuffer = buffer;
               if (buffer.byteLength > MAX_VECTOR_TILE_INPUT_BYTES) {
-                const detailMessage = `Vector tile input too large for ${this.formatTileId(parsed.z, parsed.x, parsed.y)} (${this.formatBytes(buffer.byteLength)} > ${this.formatBytes(MAX_VECTOR_TILE_INPUT_BYTES)}).`;
+                const detailMessage = `Vector tile input too large for ${this.formatTileId(tileZ, tileX, tileY)} (${this.formatBytes(buffer.byteLength)} > ${this.formatBytes(MAX_VECTOR_TILE_INPUT_BYTES)}).`;
                 console.error('[VectorTile] Tile input exceeds size limit', {
                   inputBufferId,
-                  tileId: this.formatTileId(parsed.z, parsed.x, parsed.y),
+                  tileId: this.formatTileId(tileZ, tileX, tileY),
                   sizeBytes: buffer.byteLength,
                   limitBytes: MAX_VECTOR_TILE_INPUT_BYTES,
                 });
@@ -389,18 +391,6 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                 finished = true;
                 continue;
               }
-              const tileDb = await getShapeTileMetadataDB();
-              await tileDb.tiles.put({
-                key: parsed.key,
-                nodeId: parsed.key.startsWith('input:') ? `input:${parsed.nodeId}` : parsed.nodeId,
-                z: parsed.z,
-                x: parsed.x,
-                y: parsed.y,
-                data: buffer,
-                size: buffer.byteLength,
-                contentType: 'application/json',
-                timestamp: Date.now(),
-              });
             }
             const taskIds = inputTasks
               .map((task) => task.taskId)
@@ -455,8 +445,8 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
             if (shouldAbort()) {
               continue;
             }
-            const inputBuffer = isStageTileInput(inputBufferId)
-              ? undefined
+            const inputBuffer = isTileTask
+              ? tileInputBuffer
               : await this.buildGeoJsonBuffer(inputBufferId);
             if (shouldAbort()) {
               if (controls?.waitIfPaused) {
@@ -490,6 +480,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                   metadataEnabled,
                   metadataReplace: replace,
                   metadataContext: sample.config?.metadataContext,
+                  targetNodeId: String(sample.nodeId),
                   abortKey,
                 },
                 onProgress: progressReporter,

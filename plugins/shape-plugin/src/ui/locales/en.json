@@ -80,6 +80,7 @@
       "workersStage2": "Worker Count for Tile Preprocessing",
       "workersStage2Help": "Parallel workers for tile preparation in stage 2.",
       "method": "Filtering Method",
+      "methodNone": "Filtering Off",
       "methodBBox": "Bounding Box Only (Fastest)",
       "methodPolygon": "Polygon Only",
       "methodHybrid": "Hybrid (Recommended)",
@@ -90,6 +91,8 @@
       "minimumArea": "Minimum Area (sq km)",
       "minimumAreaHelp": "Filters out features smaller than this area during the simplify stage.",
       "tolerance": "Simplification Tolerance (degrees)",
+      "tolerancePrimary": "Primary Simplification Tolerance (degrees)",
+      "toleranceSecondary": "Secondary Simplification Tolerance (degrees)",
       "toleranceHelp": "Applies minimal simplification while preserving detail needed at the maximum zoom.",
       "toleranceHelpStage2": "Applies secondary simplification for tile preprocessing.",
       "minVertexCount": "Min Vertex Count",
@@ -137,7 +140,7 @@
       "metadata": "Metadata Table"
     },
     "metadata": {
-      "missingSession": "Build the dataset to generate metadata.",
+      "missingSession": "No metadata entries have been generated yet.",
       "empty": "No metadata entries have been generated yet.",
       "searchPlaceholder": "Search metadata",
       "searchAriaLabel": "Search metadata",

@@ -138,6 +138,23 @@
 - 受け入れ基準（DoD）:
   - [ ] vectortile の個別タスクが 0→100% 以外の中間進捗を表示できる
   - [ ] UI の LinearProgress が重いタイルでも段階的に進む
+
+1985) shape-plugin: vectortile 進捗通知と UI 完了判定の整合（P1）
+- ブランチ: `fix/shape-plugin/vectortile-progress-gate`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`, `plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts`, `plugins/shape-plugin/src/services/batch/SessionController.ts`, `packages/runtime-worker/src/services/StageProcessingService.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] UI の完了判定が vectortile タスクの進捗通知完了と一致する
+  - [ ] 進捗通知の欠落がある場合は完了扱いにならない
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] UI の完了判定条件（buildStatus/processing 状態）を整理する
+  - [ ] Worker からの進捗イベント欠落の可能性を確認する
+  - [ ] ガードまたは再購読の補強を追加する
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：進捗判定/購読補強の差分を revert する
+- 運用ログ：
+  - start: 2025-12-31 05:55 JST vectortile 進捗通知の欠落と UI 完了判定の不整合を調査する対応に着手。
+  - progress: 2025-12-31 06:10 JST UI 完了判定をタスクの未完了状態で抑止し、完了時でもタスクが残っていれば進捗ポーリング/表示を継続するガードを追加。検証: 未実施。
   - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
 - チェックリスト:
   - [ ] vector tile 生成処理でタイル単位の進捗コールバックを追加する
@@ -187,6 +204,68 @@
   - progress: 2025-12-30 23:30 JST simplify1 の最小面積を 0-2000 に調整し、デフォルトを 500 に変更。検証: 未実施。
   - progress: 2025-12-30 23:40 JST simplify1 の最小頂点数を 0-500 に調整し、デフォルトを 200 に変更。検証: 未実施。
   - progress: 2025-12-31 00:05 JST simplify1 のデフォルト最小頂点数を 100、最小面積を 300 に再調整。検証: 未実施。
+- progress: 2025-12-31 04:05 JST simplify1/2 の簡略化デフォルトを詳細寄りに調整（tolerance 2.0/1.5、quantize 5000）。検証: 未実施。
+- progress: 2025-12-31 05:30 JST Step4 の簡略化許容値の上限を 5、既定を 1 に統一（Simplify1/2 UI + デフォルト値）。検証: 未実施。
+- progress: 2025-12-31 06:20 JST Step4 の簡略化許容値を 0-3、既定 0.5 に再調整（Simplify1/2 UI + デフォルト値）。検証: 未実施。
+- progress: 2025-12-31 06:30 JST Step4 の簡略化許容値ラベルを一次/二次で区別（Simplify1/2 UI の表記変更）。検証: 未実施。
+- progress: 2025-12-31 06:45 JST Step6 のプレビューで map の wheel イベントを遮断していた処理を撤去し、マウスホイールズームを有効化。検証: 未実施。
+- progress: 2025-12-31 07:05 JST Step6 の地図内右上に検索フィールドを追加し、検索は前方一致でマッチした地物を強調表示するよう調整。検証: 未実施。
+- progress: 2025-12-31 07:15 JST Step6 検索フィールドを左上へ移動し、地図コントロールは右上へ移設。検索文字列はメタデータ検索と共有（Jotai）を維持。検証: 未実施。
+- progress: 2025-12-31 07:40 JST 検索マッチ用の featureId を簡略化結果に付与し、metadata と vector tile で一致するよう補正。前方一致検索を地図強調へ反映。検証: 未実施。
+
+1982) shape-plugin: Step6 プレビューのタイル参照を TilesDB に統一（P1）
+- ブランチ: `fix/shape-plugin/preview-tiles-tilesdb`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] Step5 ビルド完了後に Step6 プレビューで「ベクトルタイルがまだありません」が出ない
+  - [ ] タイル存在判定と取得が TilesDB を参照する
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] tilesAvailable 判定を TilesDB 基準へ統一する
+  - [ ] tileDataProvider を TilesDB 読み取りに切り替える
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：useShapePreviewStep の TilesDB 参照差分を revert する
+- 運用ログ：
+  - start: 2025-12-31 00:50 JST Step6 プレビューのタイル参照を TilesDB に統一する対応に着手。
+  - progress: 2025-12-31 01:05 JST Step6 の tiles 判定/取得を TilesDB 参照へ切替し、tileDbName を vectortile DB 名に統一。検証: 未実施。
+  - progress: 2025-12-31 01:15 JST TilesDB の nodeId が `input:` 前置になるケースを考慮し、tile 判定/取得で両方を確認するよう補強。検証: 未実施。
+  - progress: 2025-12-31 01:30 JST TilesDB の `nodeId` ではなく `key` プレフィックスでの検出フォールバックを追加し、`input:` 前置の分岐は撤去。検証: 未実施。
+  - progress: 2025-12-31 03:10 JST Step6 の tile 判定をビルド完了後にも再確認するよう補強。検証: 未実施。
+  - progress: 2025-12-31 03:25 JST Step6 の nodeId を props/nodeId からも解決し、メタデータの「missing」文言を統一。検証: 未実施。
+  - progress: 2025-12-31 03:40 JST iso3166-2-cache の DB 名を getDBName で hidb プレフィクスに統一。検証: 未実施。
+
+1983) shape-plugin: TilesDB の nodeId に `input:` を付与しないよう統一（P1）
+- ブランチ: `fix/shape-plugin/remove-input-prefix`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/services/batch/SessionController.ts`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `packages/runtime-worker/src/services/StageProcessingService.ts`, `packages/runtime-worker/src/services/ShapeMutationService.ts`, `plugins/shape-plugin/src/ui/hooks/useDownloadConfigSection.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] TilesDB の tile/metadata に `input:` を付与しない
+  - [ ] Step6 プレビューの nodeId 参照が単一形式になる
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] `input:` 付与箇所を削除し、nodeId を統一する
+  - [ ] 既存 cleanup の `input:` 参照を撤去する
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：`input:` 付与撤去の差分を revert する
+- 運用ログ：
+  - start: 2025-12-31 02:00 JST TilesDB の nodeId から `input:` を撤去する対応に着手。
+  - progress: 2025-12-31 02:10 JST stage tile key/cleanup から `input:` 前置を撤去し、TilesDB nodeId を純粋な nodeId に統一。検証: 未実施。
+
+1984) shape-plugin: stage-tile プレフィクス撤去と nodeId 解決の明示化（P1）
+- ブランチ: `refactor/shape-plugin/remove-stage-tile-prefix`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/services/batch/SessionController.ts`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `packages/runtime-worker/src/services/StageProcessingService.ts`, `packages/runtime-worker/src/services/vectorTileStageRunner.ts`, `packages/runtime-worker/src/types.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] stage-tile の文字列プレフィクスを廃止する
+  - [ ] vectortile 生成の nodeId を明示的に指定する
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] StageProcessingService の nodeId 解決を targetNodeId で明示化する
+  - [ ] RuntimeWorkerVectorTileAdapter の tile 判定を config の z/x/y に切り替える
+  - [ ] stage-tile 分岐とプレフィクス文字列を撤去する
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：stage-tile 撤去の差分を revert する
+- 運用ログ：
+  - start: 2025-12-31 02:30 JST stage-tile プレフィクス撤去と nodeId 明示化の対応に着手。
+  - progress: 2025-12-31 02:45 JST stage-tile プレフィクスを撤去し、tile 入力判定を z/x/y 設定に切替。vectortile 生成は targetNodeId で明示。検証: 未実施。
 
 1973) shape-plugin: vectortile DB 名称変更と中間生成物の ephemeral 移設（P1）
 - ブランチ: `refactor/shape-plugin/ephemeral-buffers-db`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -7095,6 +7174,82 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+
+1986) fix/shape/preview-zoom-and-filter-off (P1) — 完了 (2025-12-30)
+- 要点：Step6 プレビューのズーム範囲をタイル生成範囲に合わせ、simplify1 のフィルタリングOFFを追加。
+- 検証：未実施（手動確認未実行）。
+- ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx`, `plugins/shape-plugin/src/ui/components/processing/AreaFilterPanel.tsx`, `plugins/shape-plugin/src/common/types/processing.ts`, `packages/features/gis-sdk/src/processing/featureFiltering.ts`, `packages/ui/map/src/{components/MapLibreMap.tsx,types/unified-map-props.ts}`, `packages/features/shape-store/src/ShapeDB.ts`, `plugins/shape-plugin/src/ui/locales/{en.json,ja.json}` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-30 11:00 JST プレビューズーム制限とフィルタOFF追加に着手。
+  - done: 2025-12-30 11:06 JST mapOptions の min/max zoom 対応とフィルタOFFの選択肢追加を反映。検証: 未実施（手動確認未実行）。ロールバック: 上記差分を revert。
+
+1985) fix/shape/detail-defaults-and-ranges (P1) — 完了 (2025-12-30)
+- 要点：simplify1/2・area filter・tile の設定範囲を詳細寄りに拡大し、デフォルト値を詳細化方向へ調整。zoom/area のバリデーション上限も UI と整合させた。
+- 検証：未実施（手動確認未実行）。
+- ロールバック手順：`plugins/shape-plugin/src/common/types/constants.ts`, `plugins/shape-plugin/src/ui/hooks/useSimplificationConfigSection.ts`, `plugins/shape-plugin/src/ui/components/steps/{Simplify1ConfigSection.tsx,Simplify2ConfigSection.tsx,TileConfigSection.tsx}`, `plugins/shape-plugin/src/ui/components/processing/AreaFilterPanel.tsx`, `plugins/shape-plugin/src/services/utils/utils.ts` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-30 10:48 JST 詳細化向けの範囲/デフォルト調整に着手。
+  - done: 2025-12-30 10:55 JST 詳細化方向の既定値/範囲/バリデーションを更新。検証: 未実施（手動確認未実行）。ロールバック: 上記差分を revert。
+
+1984) fix/shape/metadata-match-text-contrast (P2) — 完了 (2025-12-30)
+- 要点：マッチ/選択行の背景色に対してセル文字色をコントラスト色で上書き。
+- 検証：未実施（手動確認未実行）。
+- ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-30 10:36 JST マッチ行の文字色コントラスト改善に着手。
+  - done: 2025-12-30 10:37 JST セル文字色をコントラスト色で上書き。検証: 未実施（手動確認未実行）。ロールバック: 上記差分を revert。
+
+1983) fix/shape/metadata-rows-and-match-contrast (P1) — 完了 (2025-12-30)
+- 要点：placeholder 行（0/0）を同一キーの実データ行がある場合は非表示にし、国名/自治体名の表示補正とマッチ/選択行の文字色をコントラスト色へ調整。
+- 検証：未実施（手動確認未実行）。
+- ロールバック手順：`plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts`, `plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-30 10:30 JST メタデータ二重表示とマッチ色コントラスト修正に着手。
+  - done: 2025-12-30 10:32 JST placeholder 行抑止と文字色調整を反映。検証: 未実施（手動確認未実行）。ロールバック: 上記差分を revert。
+
+1982) fix/shape/simplify1-defaults-rebalance (P1) — 完了 (2025-12-30)
+- 要点：simplify1 の default を詳細寄りに下げ、tolerance スライダーの範囲を小さく精密に調整。
+- 検証：未実施（手動確認未実行）。
+- ロールバック手順：`plugins/shape-plugin/src/common/types/constants.ts`, `plugins/shape-plugin/src/ui/components/steps/Simplify1ConfigSection.tsx` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-30 10:24 JST simplify1 デフォルト見直しに着手。
+  - done: 2025-12-30 10:26 JST simplify1 のデフォルトと tolerance 範囲を詳細寄りへ調整。検証: 未実施（手動確認未実行）。ロールバック: 上記差分を revert。
+
+1981) fix/shape/build-warning-dev-suppress (P2) — 完了 (2025-12-30)
+- 要点：開発環境では build warning の Snackbar を出さないようにし、本番は従来どおり表示。
+- 検証：未実施（手動確認未実行）。
+- ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-30 10:16 JST build warning の dev 抑制対応に着手。
+  - done: 2025-12-30 10:20 JST `import.meta.env.DEV` を用いて crash warning の Snackbar を dev では抑制。検証: 未実施（手動確認未実行）。ロールバック: 上記差分を revert。
+
+1980) fix/shape/step4-defaults-and-metadata-search (P1) — 完了 (2025-12-30)
+- 要点：Step4 のデフォルト値（simplify/tile/area filter）を詳細寄りへ調整し、範囲スライダーを精密化。メタデータ検索は logical* 値も検索対象に追加し、マッチ判定は raw featureId で行うように修正。
+- 検証：未実施（手動確認未実行）。
+- ロールバック手順：`plugins/shape-plugin/src/common/types/constants.ts`, `plugins/shape-plugin/src/ui/hooks/useSimplificationConfigSection.ts`, `plugins/shape-plugin/src/ui/components/steps/{Simplify1ConfigSection.tsx,Simplify2ConfigSection.tsx,TileConfigSection.tsx}`, `plugins/shape-plugin/src/ui/components/processing/AreaFilterPanel.tsx`, `plugins/shape-plugin/src/ui/hooks/{useShapePreviewStep.ts,preview/useVectorTilePreviewTable.ts}` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-30 09:45 JST Step4 デフォルト見直しとメタデータ検索不具合の修正に着手。
+  - progress: 2025-12-30 10:05 JST DEFAULT_PROCESSING_CONFIG と Step4 UI 範囲を見直し、簡略化/タイルのデフォルトを詳細寄りに変更。
+  - progress: 2025-12-30 10:15 JST 検索対象カラムを logical* に拡張し、matched 判定を raw featureId に統一。
+  - done: 2025-12-30 10:18 JST デフォルト/範囲/検索修正を反映。検証: 未実施（手動確認未実行）。ロールバック: 上記差分を revert。
+
+1979) fix/shape/step6-preview-map-filter-error (P1) — 完了 (2025-12-30)
+- 要点：`useVectorTilePreviewMapLayers` の `setFilter` で `in` 式に配列を `literal` として渡すよう修正し、引数数エラーを解消。
+- 検証：未実施（手動確認未実行）。
+- ロールバック手順：`packages/ui/gis/src/preview/useVectorTilePreviewMapLayers.ts` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-30 07:12 JST Step6 map preview の filter エラー修正に着手。
+  - done: 2025-12-30 07:13 JST `setFilter` の `in` 式を `literal` 配列で渡すよう修正し、引数数エラーを回避。検証: 未実施（手動確認未実行）。ロールバック: 上記差分を revert。
+
+1977) fix/shape/step6-preview-map-wheel-and-tab (P1) — 完了 (2025-12-30)
+- 要点：DialogContentWrapper を高さ100%+flex列にし、Step6 の map/metadata パネルをフルハイト化。タブ切替で mapInstance をクリアして stale instance を避け、`useVectorTilePreviewMapLayers` で style 未準備/破棄時の layer 操作をガードして `getLayer` エラーを回避。
+- 検証：未実施（手動確認未実行）。
+- ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx`, `packages/plugin-ui-host/src/headless/components/DialogScaffold.tsx`, `packages/ui/gis/src/preview/useVectorTilePreviewMapLayers.ts` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-30 07:05 JST Step6 プレビューのホイールズームとタブ切替エラー修正に着手。
+  - progress: 2025-12-30 07:06 JST `plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` と `packages/ui/gis/src/preview/useVectorTilePreviewMapLayers.ts` を確認し、map instance の切替/レイヤー参照の発火点を整理。
+  - progress: 2025-12-30 07:07 JST DialogContent の高さ/フレックス指定と ShapePreviewStep の map/metadata パネルサイズ調整、tab 切替時の mapInstance クリア、layer guard を実装。
+  - done: 2025-12-30 07:08 JST Step6 の map preview でホイールズームが拾えるよう高さを是正し、tab 切替時の getLayer エラーを抑止。検証: 未実施（手動確認未実行）。ロールバック: 上記差分を revert。
 
 1976) 調査: PluginDialog の activeStepIndex / uiDialogState 永続化タイミング特定（P2） — 完了 (2025-12-30)
 - 要点：activeStepIndex は step ナビゲーション時に `usePluginDialogController` の `handleNavigation` で更新され、URL（`useDialogUrlSync`）にも即反映される。`dialogUIState` は `useDialogUIStateSync` の `getPersistableDialogUIState()` で組み立てられ、保存系（commit/save-draft/autosave/close）で TreeNodeUpdater 経由で永続化される。
@@ -15345,6 +15500,12 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-30 06:48 progress: analysis/ui-dialog/persistence-timing — `packages/plugin-ui-host/src/headless/usePluginDialogController.tsx` と `packages/plugin-ui-host/src/headless/usePluginDialogController/dialog-ui-state.ts` を確認し、UI state 更新と永続化呼び出し箇所を整理。
 - 2025-12-30 06:49 progress: analysis/ui-dialog/persistence-timing — `packages/plugin-ui-sdk/src/hooks/useTreeNodeUpdater.ts` と `packages/plugin-ui-host/src/headless/usePluginDialogController/autosave.ts` を確認し、save-draft/commit/autosave 経路での dialogUIState 保存を確認。
 - 2025-12-30 06:50 done: analysis/ui-dialog/persistence-timing — activeStepIndex と dialogUIState の永続化タイミング（ナビゲーション/保存/クローズ/オートセーブ）を特定。検証: 調査のみ。ロールバック: 運用ログ追記を削除。
+- 2025-12-30 07:05 start: fix/shape/step6-preview-map-wheel-and-tab — Step6 プレビューのホイールズームとタブ切替エラー修正に着手。DoD: Kanban 1977 のとおり。
+- 2025-12-30 07:06 progress: fix/shape/step6-preview-map-wheel-and-tab — `plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` と `packages/ui/gis/src/preview/useVectorTilePreviewMapLayers.ts` を確認し、map instance の切替/レイヤー参照の発火点を整理。
+- 2025-12-30 07:07 progress: fix/shape/step6-preview-map-wheel-and-tab — DialogContent の高さ/フレックス指定と ShapePreviewStep の map/metadata パネルサイズ調整、tab 切替時の mapInstance クリア、layer guard を実装。
+- 2025-12-30 07:08 done: fix/shape/step6-preview-map-wheel-and-tab — Step6 の map preview でホイールズームが拾えるよう高さを是正し、tab 切替時の getLayer エラーを抑止。検証: 未実施（手動確認未実行）。ロールバック: Kanban 1977 の手順に従い差分を revert。
+- 2025-12-30 07:12 start: fix/shape/step6-preview-map-filter-error — Step6 map preview の filter エラー修正に着手。DoD: Kanban 1979 のとおり。
+- 2025-12-30 07:13 done: fix/shape/step6-preview-map-filter-error — `setFilter` の `in` 式を `literal` 配列で渡すよう修正し、引数数エラーを回避。検証: 未実施（手動確認未実行）。ロールバック: `packages/ui/gis/src/preview/useVectorTilePreviewMapLayers.ts` の差分を revert。
 - 2025-12-28 17:18 start: fix/runtime-worker/stage-processing-proxy-cast — StageProcessingService の proxy キャスト TS2352 を解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
 - 2025-12-28 17:20 done: fix/runtime-worker/stage-processing-proxy-cast — comlink client の proxy 参照を unknown 経由でキャストし、TS2352 を解消。検証: 未実施（typecheck 未実行）。ロールバック: `packages/runtime-worker/src/services/StageProcessingService.ts` と `TASKS.md` の差分を revert。
 - 2025-12-28 17:23 start: fix/ui-batch/task-summary-stage-key — useBuildTaskProgress の taskType 参照エラーを解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
@@ -15367,7 +15528,29 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-28 18:19 done: fix/runtime-worker/vector-tile-progress-types — VectorTileProgress を runtime-worker 側に定義し、generateTiles の config/onProgress 型と sdkConfig を拡張して型エラーを解消。検証: 未実施（typecheck 未実行）。ロールバック: `packages/runtime-worker/src/{types.ts,services/StageProcessingService.ts}` と `TASKS.md` の差分を revert。
 - 2025-12-28 18:26 start: fix/shape/download-config-defaults — useDownloadConfigSection の DownloadBatchConfig 既定値を明示し、maxConcurrent の undefined を解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
 - 2025-12-28 18:27 done: fix/shape/download-config-defaults — reset defaults で downloadConfig を明示設定し、maxConcurrent の undefined を回避。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/shape-plugin/src/ui/hooks/useDownloadConfigSection.ts` と `TASKS.md` の差分を revert。
+- 2025-12-28 18:31 start: fix/shape/preview-nodeid-shadow — ShapePreviewStep の nodeId 再宣言を解消する対応に着手。DoD: build/typecheck エラー解消、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 18:32 done: fix/shape/preview-nodeid-shadow — hook から返る nodeId を resolvedNodeId にリネームし、再宣言を解消。検証: 未実施（build/typecheck 未実行）。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` と `TASKS.md` の差分を revert。
+- 2025-12-28 18:36 start: fix/gen-iso3166-2/util-typecheck — gen-iso3166-2 の @hierarchidb/util 解決エラーを解消する対応に着手。DoD: typecheck エラー解消、必要なら turbo 依存追加、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 18:38 done: fix/gen-iso3166-2/util-typecheck — @hierarchidb/util を依存に追加し、typecheck のモジュール解決を修正。検証: 未実施（typecheck 未実行）。ロールバック: `packages/tools/gen-iso3166-2/package.json` と `TASKS.md` の差分を revert。
+- 2025-12-28 18:42 start: fix/runtime-worker/vector-tile-target-node — StageProcessingService の targetNodeId 型不足を解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 18:43 done: fix/runtime-worker/vector-tile-target-node — generateTiles の config 型に targetNodeId を追加し、参照エラーを解消。検証: 未実施（typecheck 未実行）。ロールバック: `packages/runtime-worker/src/services/StageProcessingService.ts` と `TASKS.md` の差分を revert。
 - 2025-12-29 15:06 start: analysis/shape/step5-lru-task-component — shape step5 の LRUSplitPane 内タスク表示コンポーネント特定の調査に着手。DoD: Kanban 1969 のとおり。
 - 2025-12-29 15:07 progress: analysis/shape/step5-lru-task-component — `rg -n "LRUSplitPane|LRUSplitView" plugins app packages` と `rg -n "Step5|step5|BuildStep" plugins/shape-plugin app packages` で参照箇所を探索。
 - 2025-12-29 15:08 progress: analysis/shape/step5-lru-task-component — `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx` と `packages/components/src/BuildStepPanel.tsx` を確認し、pane content とタスク表示の責務を切り分け。
 - 2025-12-29 15:09 done: analysis/shape/step5-lru-task-component — `ShapeBuildTaskItem`（`plugins/shape-plugin/src/ui/components/steps/ShapeBuildTaskItem.tsx`）が LRUSplitPane 内でタスク1件を描画するコンポーネントであることを特定。検証: 調査のみ。ロールバック: 運用ログ追記を削除。
+- 2025-12-30 09:45 start: fix/shape/step4-defaults-and-metadata-search — Step4 デフォルト見直しとメタデータ検索不具合の修正に着手。DoD: Kanban 1980 のとおり。
+- 2025-12-30 10:05 progress: fix/shape/step4-defaults-and-metadata-search — DEFAULT_PROCESSING_CONFIG と Step4 UI 範囲を見直し、簡略化/タイルのデフォルトを詳細寄りに変更。
+- 2025-12-30 10:15 progress: fix/shape/step4-defaults-and-metadata-search — 検索対象カラムを logical* に拡張し、matched 判定を raw featureId に統一。
+- 2025-12-30 10:18 done: fix/shape/step4-defaults-and-metadata-search — デフォルト/範囲/検索修正を反映。検証: 未実施（手動確認未実行）。ロールバック: Kanban 1980 の手順に従い差分を revert。
+- 2025-12-30 10:16 start: fix/shape/build-warning-dev-suppress — build warning の dev 抑制対応に着手。DoD: Kanban 1981 のとおり。
+- 2025-12-30 10:20 done: fix/shape/build-warning-dev-suppress — `import.meta.env.DEV` を用いて crash warning の Snackbar を dev では抑制。検証: 未実施（手動確認未実行）。ロールバック: Kanban 1981 の手順に従い差分を revert。
+- 2025-12-30 10:24 start: fix/shape/simplify1-defaults-rebalance — simplify1 デフォルト見直しに着手。DoD: Kanban 1982 のとおり。
+- 2025-12-30 10:26 done: fix/shape/simplify1-defaults-rebalance — simplify1 のデフォルトと tolerance 範囲を詳細寄りへ調整。検証: 未実施（手動確認未実行）。ロールバック: Kanban 1982 の手順に従い差分を revert。
+- 2025-12-30 10:30 start: fix/shape/metadata-rows-and-match-contrast — メタデータ二重表示とマッチ色コントラスト修正に着手。DoD: Kanban 1983 のとおり。
+- 2025-12-30 10:32 done: fix/shape/metadata-rows-and-match-contrast — placeholder 行を実データ行がある場合に抑止し、マッチ/選択行の文字色を背景に合わせて調整。検証: 未実施（手動確認未実行）。ロールバック: Kanban 1983 の手順に従い差分を revert。
+- 2025-12-30 10:36 start: fix/shape/metadata-match-text-contrast — マッチ行の文字色コントラスト改善に着手。DoD: Kanban 1984 のとおり。
+- 2025-12-30 10:37 done: fix/shape/metadata-match-text-contrast — セル文字色をコントラスト色で上書き。検証: 未実施（手動確認未実行）。ロールバック: Kanban 1984 の手順に従い差分を revert。
+- 2025-12-30 10:48 start: fix/shape/detail-defaults-and-ranges — 詳細化向けの範囲/デフォルト調整に着手。DoD: Kanban 1985 のとおり。
+- 2025-12-30 10:55 done: fix/shape/detail-defaults-and-ranges — 詳細化方向の既定値/範囲/バリデーションを更新。検証: 未実施（手動確認未実行）。ロールバック: Kanban 1985 の手順に従い差分を revert。
+- 2025-12-30 11:00 start: fix/shape/preview-zoom-and-filter-off — プレビューズーム制限とフィルタOFF追加に着手。DoD: Kanban 1986 のとおり。
+- 2025-12-30 11:06 done: fix/shape/preview-zoom-and-filter-off — mapOptions の min/max zoom 対応とフィルタOFFの選択肢追加を反映。検証: 未実施（手動確認未実行）。ロールバック: Kanban 1986 の手順に従い差分を revert。

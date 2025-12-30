@@ -15,7 +15,7 @@ import type { Geometry } from 'geojson';
 type CacheEntryData = Record<string, unknown> | string | number | boolean | null;
 
 export type DataSourceName = 'naturalearth' | 'geoboundaries' | 'gadm' | 'openstreetmap';
-export type FeatureFilterMethod = 'bbox_only' | 'polygon_only' | 'hybrid';
+export type FeatureFilterMethod = 'bbox_only' | 'polygon_only' | 'hybrid' | 'none';
 
 export interface HybridFilterConfig {
   quickRejectThreshold: number;

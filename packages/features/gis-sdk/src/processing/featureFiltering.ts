@@ -1,7 +1,7 @@
 import * as turf from '@turf/turf';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 
-export type FeatureFilterMethod = 'bbox_only' | 'polygon_only' | 'hybrid';
+export type FeatureFilterMethod = 'bbox_only' | 'polygon_only' | 'hybrid' | 'none';
 
 export type HybridFilterConfig = {
   quickRejectThreshold?: number;
@@ -70,6 +70,7 @@ const passesAreaThreshold = (geometry: Geometry, settings: FeatureFilterSettings
   if (!Number.isFinite(threshold) || threshold <= 0) return true;
 
   const method = settings.featureFilterMethod ?? 'hybrid';
+  if (method === 'none') return true;
   const minVertexCount = settings.minVertexCountForAreaFilter ?? 0;
   const hybridConfig = { ...DEFAULT_HYBRID_CONFIG, ...(settings.hybridFilterConfig ?? {}) };
 
@@ -113,6 +114,9 @@ export const applyFeatureFiltering = (geojson: unknown, settings: FeatureFilterS
   if (!geojson || typeof geojson !== 'object') return geojson;
   const collection = geojson as FeatureCollection;
   if (collection.type !== 'FeatureCollection' || !Array.isArray(collection.features)) {
+    return geojson;
+  }
+  if (settings.featureFilterMethod === 'none') {
     return geojson;
   }
   const filtered = collection.features.filter((feature: Feature) => {

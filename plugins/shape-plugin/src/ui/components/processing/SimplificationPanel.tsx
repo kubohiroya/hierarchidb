@@ -17,6 +17,7 @@ type Props = {
   onToleranceChange: (next: number) => void;
   onPerFeatureChange?: (enabled: boolean) => void;
   toleranceHelpKey?: string;
+  toleranceLabelKey?: string;
   min?: number;
   max?: number;
   step?: number;
@@ -31,15 +32,16 @@ export const SimplificationPanel: React.FC<Props> = ({
   onToleranceChange,
   onPerFeatureChange,
   toleranceHelpKey = 'processing.filter.toleranceHelp',
-  min = 1,
-  max = 20,
-  step = 0.5,
+  toleranceLabelKey = 'processing.filter.tolerance',
+  min = 0,
+  max = 3,
+  step = 0.1,
   marks = [
+    { value: 0, label: '0' },
+    { value: 0.5, label: '0.5' },
     { value: 1, label: '1' },
-    { value: 5, label: '5' },
-    { value: 10, label: '10' },
-    { value: 15, label: '15' },
-    { value: 20, label: '20' },
+    { value: 2, label: '2' },
+    { value: 3, label: '3' },
   ],
   disabled,
 }) => {
@@ -52,11 +54,11 @@ export const SimplificationPanel: React.FC<Props> = ({
       </Typography>
       <div>
         <Typography gutterBottom>
-          {t('processing.filter.tolerance', 'Simplification Tolerance (degrees)')}
+          {t(toleranceLabelKey, 'Simplification Tolerance (degrees)')}
         </Typography>
         <Box sx={{ px: 2 }}>
           <Slider
-            value={tolerance ?? 10}
+            value={tolerance ?? 0.5}
             onChange={(_, value) => {
               onToleranceChange(value as number);
             }}

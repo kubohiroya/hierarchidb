@@ -80,6 +80,7 @@
       "workersStage2": "タイル前処理のワーカー数",
       "workersStage2Help": "ステージ2のタイル準備を並列実行する数です。",
       "method": "フィルタリング方法",
+      "methodNone": "フィルタリングをオフにする",
       "methodBBox": "バウンディングボックスのみ (高速)",
       "methodPolygon": "ポリゴンのみ",
       "methodHybrid": "ハイブリッド (推奨)",
@@ -90,6 +91,8 @@
       "minimumArea": "最小面積(平方km)",
       "minimumAreaHelp": "簡略化ステージで、この面積より小さい特徴を除外します。",
       "tolerance": "簡略化許容値 (度)",
+      "tolerancePrimary": "一次簡略化許容値 (度)",
+      "toleranceSecondary": "二次簡略化許容値 (度)",
       "toleranceHelp": "最詳細ズームで必要な精度を満たす範囲で、最小限の簡略化を行います。",
       "toleranceHelpStage2": "タイル前処理として、必要な範囲で再簡略化を行います。",
       "minVertexCount": "最小頂点数",
@@ -137,7 +140,7 @@
       "metadata": "メタデータ一覧"
     },
     "metadata": {
-      "missingSession": "ビルドを実行してメタデータを生成してください。",
+      "missingSession": "メタデータがまだありません。",
       "empty": "メタデータがまだ生成されていません。",
       "searchPlaceholder": "メタデータを検索",
       "searchAriaLabel": "メタデータを検索",

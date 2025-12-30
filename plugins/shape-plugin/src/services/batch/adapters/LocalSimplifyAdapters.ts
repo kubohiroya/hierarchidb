@@ -7,6 +7,7 @@ import { getEphemeralShapeDB } from '../../database/EphemeralShapeDB.js';
 import { shapeDB } from '../../database/ShapeDB.js';
 import { applyFeatureFiltering, type FeatureFilterSettings, simplifyGeoJson } from '@hierarchidb/gis-sdk';
 import { simplifyTopoJsonByTiles } from '../utils/topojsonSimplify.js';
+import { assignFeatureIds } from '../utils/featureIds.js';
 import { BatchService } from '@hierarchidb/batch';
 import { geojson as geojsonApi } from 'flatgeobuf';
 import type { Feature } from 'geojson';
@@ -176,6 +177,12 @@ export class LocalSimplify1Adapter implements Simplify1StageAdapter {
           const sanitizedSimplified = hasSimplifiedFeatures
             ? sanitizeFeatureCollection(simplified)
             : null;
+          if (sanitizedSimplified) {
+            assignFeatureIds(sanitizedSimplified, {
+              countryCode: task.countryCode,
+              adminLevel: task.adminLevel,
+            });
+          }
           const featureCount = sanitizedSimplified
             ? sanitizedSimplified.features.length
             : raw.featureCount;

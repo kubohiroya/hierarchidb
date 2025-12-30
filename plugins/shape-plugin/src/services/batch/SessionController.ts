@@ -818,12 +818,9 @@ export class SessionController {
   }
 
   private buildStageTileKey(z: number, x: number, y: number): string {
-    return `input:${String(this.nodeId)}-${z}-${x}-${y}`;
+    return `${String(this.nodeId)}-${z}-${x}-${y}`;
   }
 
-  private buildStageTileInputBufferId(key: string): string {
-    return `stage-tile:${key}`;
-  }
 
   private pickFirstString(properties: Record<string, unknown>, keys: string[]): string | undefined {
     for (const key of keys) {
@@ -985,8 +982,9 @@ export class SessionController {
         const countryCode = task.countryCode ?? this.pickCountryCode(properties);
         const adminLevel = task.adminLevel ?? this.pickAdminLevel(properties);
         const adminCode = this.pickAdminCode(properties);
+        const precomputedId = this.pickFirstString(properties, ['__hdbFeatureId', 'hdbFeatureId']);
         const baseId = String(properties.id ?? feature.id ?? `feature-${index}`);
-        const featureId = this.buildFeatureId(baseId, index, countryCode, adminLevel, adminCode);
+        const featureId = precomputedId ?? this.buildFeatureId(baseId, index, countryCode, adminLevel, adminCode);
         properties.id = featureId;
         metadataRecords.push({
           id: `${String(this.nodeId)}-${featureId}`,
@@ -1057,7 +1055,7 @@ export class SessionController {
       progress: 0,
       zoomLevel: tile.z,
       config: {
-        inputBufferId: this.buildStageTileInputBufferId(tile.key),
+        inputBufferId: tile.key,
         minZoom,
         maxZoom,
         tileZ: tile.z,

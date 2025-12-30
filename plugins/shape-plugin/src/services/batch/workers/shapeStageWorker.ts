@@ -8,6 +8,7 @@ import { geojson as geojsonApi } from 'flatgeobuf';
 import { bbox as turfBbox } from '@turf/turf';
 import { applyFeatureFiltering, type FeatureFilterSettings, simplifyGeoJson } from '@hierarchidb/gis-sdk';
 import { simplifyTopoJsonByTiles } from '../utils/topojsonSimplify.js';
+import { assignFeatureIds } from '../utils/featureIds.js';
 import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
 
 const resolveStrategyId = (source?: string): DataSourceStrategyId | null => {
@@ -180,6 +181,12 @@ const processSimplify1Task = async ({
   const sanitizedSimplified = hasSimplifiedFeatures
     ? sanitizeFeatureCollection(simplified)
     : null;
+  if (sanitizedSimplified) {
+    assignFeatureIds(sanitizedSimplified, {
+      countryCode: task.countryCode,
+      adminLevel: task.adminLevel,
+    });
+  }
   const featureCount = sanitizedSimplified
     ? sanitizedSimplified.features.length
     : raw.featureCount;
