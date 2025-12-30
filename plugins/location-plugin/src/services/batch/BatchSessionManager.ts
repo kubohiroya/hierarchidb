@@ -46,8 +46,8 @@ export class LocationBatchSessionManager extends BaseBatchSessionManager {
     this.summaries.set(nodeId, summary);
     // Persist session meta (best-effort)
     try {
-      const { getEphemeralLocationDB } = await import('../../database/EphemeralLocationDB.js');
-      const db = getEphemeralLocationDB();
+      const { getLocationDB } = await import('../../database/EphemeralLocationDB.js');
+      const db = getLocationDB();
       try {
         await db.clearExpiredSessions(LocationBatchSessionManager.SESSION_TTL);
         await db.clearExpiredPendingSessions(LocationBatchSessionManager.PENDING_TTL);
@@ -130,8 +130,8 @@ export class LocationBatchSessionManager extends BaseBatchSessionManager {
     const failed = payload.failed ?? 0;
     const percentage = total > 0 ? (completed / total) * 100 : 0;
     try {
-      const { getEphemeralLocationDB } = await import('../../database/EphemeralLocationDB.js');
-      const db = getEphemeralLocationDB();
+      const { getLocationDB } = await import('../../database/EphemeralLocationDB.js');
+      const db = getLocationDB();
       await db.sessions?.update(session.getState().nodeId, {
         progress: {
           total,
@@ -156,8 +156,8 @@ export class LocationBatchSessionManager extends BaseBatchSessionManager {
       return;
     }
     try {
-      const { getEphemeralLocationDB } = await import('../../database/EphemeralLocationDB.js');
-      const db = getEphemeralLocationDB();
+      const { getLocationDB } = await import('../../database/EphemeralLocationDB.js');
+      const db = getLocationDB();
       await db.sessions?.update(state.nodeId, { status: state.status, updatedAt: Date.now() });
     } catch (error) {
       if (isDevEnvironment) {

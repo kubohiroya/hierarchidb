@@ -1,6 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { HybridFilterConfig } from './BatchConfig.js';
 import type { BatchSessionConfig } from './BatchConfig.js';
+import type { DataSourceName } from './data-source.js';
 import type { FeatureFilterMethod, Extract2ExtractionMode } from './processing.js';
 
 export interface BatchStatus {
@@ -51,7 +52,7 @@ export type BatchTask = BatchTaskBase;
 
 export interface DownloadTaskInput {
   url?: string;
-  dataSource?: string;
+  dataSource?: DataSourceName;
   countryCode?: string;
   countryName?: string;
   inputBufferId?: string;
@@ -92,7 +93,7 @@ export interface ExtractTaskInput {
   featureIndex?: number;
   originKey?: string;
   originLabel?: string;
-  dataSource?: string;
+  dataSource?: DataSourceName;
   countryCode?: string;
   adminLevel?: number;
   continent?: string;
@@ -145,7 +146,7 @@ export interface VectorTileTaskInput {
   format?: 'mvt' | 'pbf';
   layers?: unknown[];
   outputBufferId?: string;
-  dataSource?: string;
+  dataSource?: DataSourceName;
   countryCode?: string;
   countryName?: string;
   adminLevel?: number;

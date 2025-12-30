@@ -2,7 +2,7 @@
  * Location SessionController - minimal point -> MVT pipeline
  */
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-types';
-import { getEphemeralLocationDB } from '../../database/EphemeralLocationDB.js';
+import { getLocationDB } from '../../database/EphemeralLocationDB.js';
 import { TabularWriter } from '@hierarchidb/tabular-store';
 import { digestSha256Hex } from '@hierarchidb/util';
 // External libs (ambient types declared under types/external.d.ts)
@@ -61,7 +61,7 @@ export class LocationSessionController {
       }
       const { tableId: committedId } = await writer.commit();
       // Link tableId to session (best-effort)
-        const db = getEphemeralLocationDB();
+        const db = getLocationDB();
         await db.table('sessions').update(this.nodeId, { tableId: committedId });
     } catch (e) {
       console.warn('[Location][Session] tabular-source persist skipped:', e);
@@ -89,7 +89,7 @@ export class LocationSessionController {
     features: LocationFeature[];
     bbox: [number, number, number, number]
   }) {
-    const db = getEphemeralLocationDB();
+    const db = getLocationDB();
     try {
       await db.clearVectorTilesForNode(this.nodeId);
     } catch (error) {

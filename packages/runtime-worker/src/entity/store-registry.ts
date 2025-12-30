@@ -1,33 +1,48 @@
-import type { GroupItemBase, GroupStore, RelationBase, RelationStore } from './store.js';
+import type {
+  FeatureItemBase,
+  FeatureStore,
+  RelationBase,
+  RelationStore,
+  VectorTileItemBase,
+  VectorTileStore,
+} from './store.js';
 
 /**
  * Store registry for plugin-provided entity stores.
  *
  * Plugins register their stores per nodeType. Handlers can look up
  * appropriate stores via this registry. This keeps table names
- * consistent (peerEntities/groupEntities/relations) while allowing
+ * consistent (features/vectorTiles/relations) while allowing
  * per-plugin Dexie DBs.
  */
 
 class StoreRegistry {
-  private group = new Map<string, GroupStore<GroupItemBase<unknown>>>();
+  private features = new Map<string, FeatureStore<FeatureItemBase<unknown>>>();
+  private vectorTiles = new Map<string, VectorTileStore<VectorTileItemBase>>();
   private rel = new Map<string, RelationStore<RelationBase<unknown>>>();
 
-  registerGroup<TItem extends GroupItemBase<unknown>>(nodeType: string, store: GroupStore<TItem>) {
-    this.group.set(nodeType, store as GroupStore<GroupItemBase<unknown>>);
+  registerFeatures<TItem extends FeatureItemBase<unknown>>(nodeType: string, store: FeatureStore<TItem>) {
+    this.features.set(nodeType, store as FeatureStore<FeatureItemBase<unknown>>);
   }
 
-  registerRelations<TRel extends RelationBase<unknown>>(
-    nodeType: string,
-    store: RelationStore<TRel>
-  ) {
+  registerVectorTiles<TItem extends VectorTileItemBase>(nodeType: string, store: VectorTileStore<TItem>) {
+    this.vectorTiles.set(nodeType, store as VectorTileStore<VectorTileItemBase>);
+  }
+
+  registerRelations<TRel extends RelationBase<unknown>>(nodeType: string, store: RelationStore<TRel>) {
     this.rel.set(nodeType, store as RelationStore<RelationBase<unknown>>);
   }
 
-  getGroup<TItem extends GroupItemBase<unknown> = GroupItemBase<unknown>>(
+  getFeatures<TItem extends FeatureItemBase<unknown> = FeatureItemBase<unknown>>(
     nodeType: string
-  ): GroupStore<TItem> | undefined {
-    return this.group.get(nodeType) as GroupStore<TItem> | undefined;
+  ): FeatureStore<TItem> | undefined {
+    return this.features.get(nodeType) as FeatureStore<TItem> | undefined;
+  }
+
+  getVectorTiles<TItem extends VectorTileItemBase = VectorTileItemBase>(
+    nodeType: string
+  ): VectorTileStore<TItem> | undefined {
+    return this.vectorTiles.get(nodeType) as VectorTileStore<TItem> | undefined;
   }
 
   getRelations<TRel extends RelationBase<unknown> = RelationBase<unknown>>(

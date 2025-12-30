@@ -1,11 +1,11 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { GroupItemBase } from '@hierarchidb/runtime-worker';
-import { LocationEntitiesDB } from '../worker/locationEntitiesDB.js';
+import type { FeatureItemBase } from '@hierarchidb/runtime-worker';
+import { LocationDB } from '../worker/locationEntitiesDB.js';
 import { toGroupRow, fromGroupRow } from '../worker/normalizers.js';
 import type { LocationGroupItemData } from '../common/types/entities.js';
 import type { LocationPointProperties } from '../common/entities/LocationPoint.js';
 
-type PointItem = GroupItemBase<LocationGroupItemData>;
+type PointItem = FeatureItemBase<LocationGroupItemData>;
 type PointProperties = LocationPointProperties;
 
 export type LocationPointWriteProgress = {
@@ -15,12 +15,12 @@ export type LocationPointWriteProgress = {
   chunkSize: number;
 };
 
-let dbPromise: Promise<LocationEntitiesDB> | null = null;
+let dbPromise: Promise<LocationDB> | null = null;
 
-async function getDb(): Promise<LocationEntitiesDB> {
+async function getDb(): Promise<LocationDB> {
   if (!dbPromise) {
     dbPromise = (async () => {
-      const db = new LocationEntitiesDB();
+      const db = new LocationDB();
       await db.open?.();
       return db;
     })();
@@ -39,17 +39,17 @@ export async function appendLocationPoints(nodeId: NodeId, points: PointProperti
   const db = await getDb();
   const now = Date.now();
   const rows = points.map((point) => toGroupRow(nodeId, toItem(point), now));
-  await db.groupEntities.bulkPut(rows);
+  await db.features.bulkPut(rows);
 }
 
 export async function replaceLocationPoints(nodeId: NodeId, points: PointProperties[]): Promise<void> {
   const db = await getDb();
-  await db.transaction('rw', db.groupEntities, async () => {
-    await db.groupEntities.where('nodeId').equals(nodeId).delete();
+  await db.transaction('rw', db.features, async () => {
+    await db.features.where('nodeId').equals(nodeId).delete();
     if (!points.length) return;
     const now = Date.now();
     const rows = points.map((point) => toGroupRow(nodeId, toItem(point), now));
-    await db.groupEntities.bulkPut(rows);
+    await db.features.bulkPut(rows);
   });
 }
 
@@ -63,8 +63,8 @@ export async function replaceLocationPointsChunked(
 ): Promise<void> {
   const db = await getDb();
   const chunkSize = Math.max(1, options?.chunkSize ?? 1000);
-  await db.transaction('rw', db.groupEntities, async () => {
-    await db.groupEntities.where('nodeId').equals(nodeId).delete();
+  await db.transaction('rw', db.features, async () => {
+    await db.features.where('nodeId').equals(nodeId).delete();
     if (!points.length) {
       options?.onProgress?.({ total: 0, saved: 0, chunkIndex: 0, chunkSize });
       return;
@@ -76,7 +76,7 @@ export async function replaceLocationPointsChunked(
       const slice = points.slice(i, i + chunkSize);
       const now = Date.now();
       const rows = slice.map((point) => toGroupRow(nodeId, toItem(point), now));
-      await db.groupEntities.bulkPut(rows);
+      await db.features.bulkPut(rows);
       saved += slice.length;
       options?.onProgress?.({ total: points.length, saved, chunkIndex, chunkSize });
     }
@@ -85,7 +85,7 @@ export async function replaceLocationPointsChunked(
 
 export async function listLocationPoints(nodeId: NodeId): Promise<PointProperties[]> {
   const db = await getDb();
-  const rows = await db.groupEntities.where('nodeId').equals(nodeId).toArray();
+  const rows = await db.features.where('nodeId').equals(nodeId).toArray();
   return fromGroupRow(rows).map((item) => ({
     ...(item.data ?? {
       schemaVersion: 2,
@@ -103,14 +103,14 @@ export async function listLocationPoints(nodeId: NodeId): Promise<PointPropertie
 export async function deleteLocationPoints(nodeId: NodeId, pointIds: string[]): Promise<void> {
   if (!pointIds.length) return;
   const db = await getDb();
-  await db.transaction('rw', db.groupEntities, async () => {
+  await db.transaction('rw', db.features, async () => {
     for (const id of pointIds) {
-      await db.groupEntities.delete([nodeId, id]);
+      await db.features.delete([nodeId, id]);
     }
   });
 }
 
 export async function clearLocationPoints(nodeId: NodeId): Promise<void> {
   const db = await getDb();
-  await db.groupEntities.where('nodeId').equals(nodeId).delete();
+  await db.features.where('nodeId').equals(nodeId).delete();
 }

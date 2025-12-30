@@ -1,10 +1,10 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { RelationBase, RelationStore } from '@hierarchidb/runtime-worker';
-import type { ShapeEntitiesDB, ShapeRelationRow } from './shapeEntitiesDB.js';
+import type { ShapeDB, ShapeRelationRow } from '@hierarchidb/shape-store';
 
 type Rel = RelationBase<{ weight?: number }>;
 
-export function createShapeRelationStoreDexie(db: ShapeEntitiesDB): RelationStore<Rel> {
+export function createShapeRelationStoreDexie(db: ShapeDB): RelationStore<Rel> {
   return {
     async listByNode(nodeId: NodeId) {
       const rows = await db.relations.where('srcNodeId').equals(nodeId).toArray();

@@ -10,7 +10,7 @@ import { useTranslation } from '../../../common/i18n/index.js';
 import type { NodeId } from '@hierarchidb/common-types';
 import { notify } from '@hierarchidb/components';
 import { listLocationPoints, clearLocationPoints } from '../../../services/pointRepository.js';
-import { getEphemeralLocationDB } from '../../../database/EphemeralLocationDB.js';
+import { getLocationDB } from '../../../database/EphemeralLocationDB.js';
 import { LocationTabularMetadataManager } from '../../../common/tabular/LocationTabularMetadataManager.js';
 import { getRowStoreDB } from '@hierarchidb/tabular-store';
 
@@ -105,11 +105,11 @@ export const LocationBatchParametersStep: React.FC<LocationBatchParametersStepPr
     }
     const [points, cacheTiles, cacheSessions] = await Promise.all([
       listLocationPoints(nodeId).then((list) => list.length).catch(() => 0),
-      getEphemeralLocationDB().vectorTiles.where('nodeId').equals(nodeId).count().catch(() => 0),
-      getEphemeralLocationDB().sessions?.where('nodeId').equals(nodeId).count().catch(() => 0),
+      getLocationDB().vectorTiles.where('nodeId').equals(nodeId).count().catch(() => 0),
+      getLocationDB().sessions?.where('nodeId').equals(nodeId).count().catch(() => 0),
     ]);
     let latestTableId: string | null = null;
-    const sessions = await getEphemeralLocationDB().sessions?.where('nodeId').equals(nodeId).toArray().catch(() => []);
+    const sessions = await getLocationDB().sessions?.where('nodeId').equals(nodeId).toArray().catch(() => []);
     if (sessions && sessions.length > 0) {
       const [first] = sessions;
       if (first) {
@@ -163,7 +163,7 @@ export const LocationBatchParametersStep: React.FC<LocationBatchParametersStepPr
 
   const handleDeleteCache = async () => {
     if (!nodeId) return notify.warning('NodeId is missing.');
-    await getEphemeralLocationDB().clearNodeData(nodeId);
+    await getLocationDB().clearNodeData(nodeId);
     await loadCounts();
     notify.success(translations.processing?.deleteCacheDone ?? 'Deleted cached intermediate data');
   };
@@ -173,7 +173,7 @@ export const LocationBatchParametersStep: React.FC<LocationBatchParametersStepPr
     const metadataManager = new LocationTabularMetadataManager();
     await metadataManager.forceDelete(activeTableId);
     await getRowStoreDB().rowChunks.where('tableId').equals(activeTableId).delete();
-    await getEphemeralLocationDB().sessions?.where('nodeId').equals(nodeId).modify({ tableId: undefined });
+    await getLocationDB().sessions?.where('nodeId').equals(nodeId).modify({ tableId: undefined });
     await loadCounts();
     notify.success(translations.processing?.deleteMetadataDone ?? 'Deleted metadata');
   };

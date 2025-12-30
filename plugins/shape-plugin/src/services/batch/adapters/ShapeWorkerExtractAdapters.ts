@@ -2,10 +2,17 @@ import type { ProgressInfo, Extract1Task, Extract2Task, ExtractTaskInput } from 
 import type { Extract1StageAdapter } from './Extract1StageAdapter.js';
 import type { Extract2StageAdapter } from './Extract2StageAdapter.js';
 import type { StageControls } from './StageControls.js';
-import { shapeDB } from '../../database/ShapeDB.js';
+import {
+  shapeDB,
+  type Extract1TaskInputData,
+  type Extract1TaskOutputData,
+  type Extract2TaskInputData,
+  type Extract2TaskOutputData,
+} from '../../database/ShapeDB.js';
 import { getEphemeralShapeDB } from '../../database/EphemeralShapeDB.js';
 import { BatchService } from '@hierarchidb/batch';
 import { ShapeWorkerPool } from './ShapeWorkerPool.js';
+import { resolveExtractStageSettings } from '../utils/resolveExtractSettings.js';
 
 const isAbortError = (error: unknown): boolean => (
   error instanceof Error && error.name === 'AbortError'
@@ -71,7 +78,11 @@ export class ShapeWorkerExtract1Adapter implements Extract1StageAdapter {
     const getSignal = controls?.getSignal;
     const shouldAbort = () => Boolean(getSignal?.()?.aborted);
     const resolvedNodeId = tasks[0]?.nodeId ? requireNodeId(tasks[0].nodeId) : null;
-    const inputByTaskId = new Map<string, ExtractTaskInput>();
+    const extractSettings = resolvedNodeId ? await resolveExtractStageSettings(resolvedNodeId) : null;
+    if (!resolvedNodeId || !extractSettings) {
+      throw new Error('Extract1 tasks require nodeId to resolve batch settings.');
+    }
+    const inputByTaskId = new Map<string, Extract1TaskInputData>();
     if (resolvedNodeId) {
       const rows = await shapeDB.batchTasks
         .where('nodeId')
@@ -79,7 +90,7 @@ export class ShapeWorkerExtract1Adapter implements Extract1StageAdapter {
         .and((row) => row.taskType === 'extract1')
         .toArray();
       rows.forEach((row) => {
-        inputByTaskId.set(row.taskId, (row.inputData ?? {}) as ExtractTaskInput);
+        inputByTaskId.set(row.taskId, (row.inputData ?? {}) as Extract1TaskInputData);
       });
     }
     const batch = new BatchService();
@@ -109,7 +120,8 @@ export class ShapeWorkerExtract1Adapter implements Extract1StageAdapter {
         try {
           const taskIndex = task.index ?? index;
           const resolvedNodeId = requireNodeId(task.nodeId);
-          const input = inputByTaskId.get(task.taskId) ?? {};
+          const baseInput = inputByTaskId.get(task.taskId) ?? {};
+          const input: ExtractTaskInput = { ...baseInput, ...extractSettings.extract1 };
           const result = await workerPool.run((api) => api.processExtract1Task({
             nodeId: resolvedNodeId,
             task,
@@ -129,17 +141,24 @@ export class ShapeWorkerExtract1Adapter implements Extract1StageAdapter {
           } else if (result.status === 'skipped') {
             skipped += 1;
             if (task.taskId) {
+              const outputBufferId = `${String(resolvedNodeId)}-extract1-${taskIndex}`;
+              const outputData: Extract1TaskOutputData = {
+                outputBufferId,
+                featureCount: 0,
+                extractionRatio: 0,
+              };
               await shapeDB.updateBatchTask(task.taskId, {
                 status: 'completed',
                 completedAt: Date.now(),
                 progress: 100,
                 message: SIMPLIFY1_SKIP_MESSAGE,
+                outputData,
               });
             }
           } else {
             completed += 1;
             if (task.taskId) {
-              const inputBufferId = task.inputBufferId ?? input.inputBufferId ?? '';
+              const inputBufferId = input.inputBufferId ?? '';
               const outputBufferId = `${String(resolvedNodeId)}-extract1-${taskIndex}`;
               const db = getEphemeralShapeDB();
               const raw = await db.rawBuffers.get(inputBufferId);
@@ -148,11 +167,21 @@ export class ShapeWorkerExtract1Adapter implements Extract1StageAdapter {
                 raw?.data.byteLength,
                 output?.data.byteLength,
               );
+              const featureCount = output?.featureCount ?? 0;
+              const extractionRatio = raw?.featureCount
+                ? featureCount / raw.featureCount
+                : 1;
+              const outputData: Extract1TaskOutputData = {
+                outputBufferId,
+                featureCount,
+                extractionRatio,
+              };
               await shapeDB.updateBatchTask(task.taskId, {
                 status: 'completed',
                 completedAt: Date.now(),
                 progress: 100,
                 message: completionMessage,
+                outputData,
               });
             }
           }
@@ -200,7 +229,12 @@ export class ShapeWorkerExtract2Adapter implements Extract2StageAdapter {
     const getSignal = controls?.getSignal;
     const shouldAbort = () => Boolean(getSignal?.()?.aborted);
     const resolvedNodeId = tasks[0]?.nodeId ? requireNodeId(tasks[0].nodeId) : null;
-    const inputByTaskId = new Map<string, ExtractTaskInput>();
+    const extractSettings = resolvedNodeId ? await resolveExtractStageSettings(resolvedNodeId) : null;
+    if (!resolvedNodeId || !extractSettings) {
+      throw new Error('Extract2 tasks require nodeId to resolve batch settings.');
+    }
+    const inputByTaskId = new Map<string, Extract2TaskInputData>();
+    const outputByTaskId = new Map<string, Extract2TaskOutputData>();
     if (resolvedNodeId) {
       const rows = await shapeDB.batchTasks
         .where('nodeId')
@@ -208,7 +242,8 @@ export class ShapeWorkerExtract2Adapter implements Extract2StageAdapter {
         .and((row) => row.taskType === 'extract2')
         .toArray();
       rows.forEach((row) => {
-        inputByTaskId.set(row.taskId, (row.inputData ?? {}) as ExtractTaskInput);
+        inputByTaskId.set(row.taskId, (row.inputData ?? {}) as Extract2TaskInputData);
+        outputByTaskId.set(row.taskId, (row.outputData ?? {}) as Extract2TaskOutputData);
       });
     }
     const batch = new BatchService();
@@ -238,7 +273,9 @@ export class ShapeWorkerExtract2Adapter implements Extract2StageAdapter {
         try {
           const taskIndex = task.index ?? index;
           const resolvedNodeId = requireNodeId(task.nodeId);
-          const input = inputByTaskId.get(task.taskId) ?? {};
+          const baseInput = inputByTaskId.get(task.taskId) ?? {};
+          const baseOutput = outputByTaskId.get(task.taskId) ?? {};
+          const input: ExtractTaskInput = { ...baseInput, ...extractSettings.extract2, retry: baseOutput.retry };
           const sourceTaskId = input.sourceTaskId
             ?? `${String(resolvedNodeId)}-extract1-${taskIndex}`;
           const extract1Task = await shapeDB.batchTasks.get(sourceTaskId);
@@ -274,11 +311,19 @@ export class ShapeWorkerExtract2Adapter implements Extract2StageAdapter {
             } else if (result.status === 'skipped') {
               skipped += 1;
               if (task.taskId) {
+                const outputBufferId = `${String(resolvedNodeId)}-extract2-${taskIndex}`;
+                const outputData: Extract2TaskOutputData = {
+                  outputBufferId,
+                  featureCount: 0,
+                  extractionRatio: 0,
+                  retry: input.retry,
+                };
                 await shapeDB.updateBatchTask(task.taskId, {
                   status: 'completed',
                   completedAt: Date.now(),
                   progress: 100,
                   message: SIMPLIFY2_SKIP_MESSAGE,
+                  outputData,
                 });
               }
             } else {
@@ -290,11 +335,18 @@ export class ShapeWorkerExtract2Adapter implements Extract2StageAdapter {
                 const completionMessage = output
                   ? buildExtract2CompletionMessage(output.featureCount, output.data.byteLength)
                   : undefined;
+                const outputData: Extract2TaskOutputData = {
+                  outputBufferId,
+                  featureCount: output?.featureCount ?? 0,
+                  extractionRatio: output?.extractionRatio,
+                  retry: input.retry,
+                };
                 await shapeDB.updateBatchTask(task.taskId, {
                   status: 'completed',
                   completedAt: Date.now(),
                   progress: 100,
                   message: completionMessage,
+                  outputData,
                 });
               }
             }

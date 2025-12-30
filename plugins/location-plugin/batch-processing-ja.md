@@ -84,7 +84,7 @@ UnifiedLocationBatchManager と LocationBatchSessionManager の組み合わせ�
 
 2. **startBatchSession**
    - `pendingSessions` からデータを取り出し、`sessions` に `status=running`・`totalPoints`・`zoomMin/zoomMax` を記録する。
-   - LocationPoints の永続化（`appendLocationPoints`）完了後にタイル生成へ進む。統合テストでは `LocationEntitiesDB` に書き込まれるレコード数をアサートする。
+   - LocationPoints の永続化（`appendLocationPoints`）完了後にタイル生成へ進む。統合テストでは `LocationDB.features` に書き込まれるレコード数をアサートする。
 
 3. **progress / completion**
    - `onBatchProgress` で `sessions.progress` と `status` が更新され、完了時は `completed`、失敗時は `failed` となる。

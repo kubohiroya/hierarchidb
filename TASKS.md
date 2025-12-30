@@ -87,6 +87,7 @@
   - progress: 2025-12-31 02:12 JST Continent は geoBoundaries API 由来を正とする方針を確認し、DownloadTaskPayload から continent/country 重複の整理を進める。
   - progress: 2025-12-31 02:28 JST DownloadTaskPayload から continent/country を削除し、DownloadTaskInput も同様に整理。Download 戦略/SessionController/テストを新シグネチャに追従。
   - progress: 2025-12-31 02:46 JST ExtractTask/VectorTileTask を薄くし、tolerance/minArea/zoomLevels/tileSize および vector tile の country/admin/tileCount を撤去。実処理は input 参照へ移行。
+  - blocked: 2025-12-31 03:32 JST `pnpm --filter @hierarchidb/shape-plugin typecheck` が route-store/runtime-worker の型エラーで失敗（RouteVectorTileRecord 未定義 / StoreRegistry.getGroup / RouteQueryService 型不一致）。
 
 2007) shape-plugin: ダウンロード同時実行数の上限を4に変更（P1）
 - ブランチ: `fix/shape-plugin/download-concurrency-cap-4`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -879,6 +880,30 @@
   - progress: 2025-12-29 12:58 JST /map のプレビュー集約で root node が層に含まれない点を修正し、巻き戻り懸念の差分を再点検する対応を開始。
   - progress: 2025-12-29 12:59 JST location/route/shape プレビューでトグルUIとフィルタ適用が残っていることを再確認し、巻き戻りは未検出。
   - progress: 2025-12-29 13:03 JST location/route/shape のプレビュー依存を `@hierarchidb/ui-map` に揃え、peer/dev 依存へ追加。
+  - progress: 2025-12-29 13:10 JST /map 参照の DB/クラス/テーブル/API 命名を統一するための ExecPlan 作成に着手。
+
+1966) map 参照DB/クラス/テーブル/APIの命名統一（P1）
+- ブランチ: `refactor/map/db-naming-unify`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/features/*`, `packages/runtime-worker/*`, `packages/plugin-service-api/*`, `app/src/router/routes/map.tsx`, `TASKS.md`, `PLANS.md`
+- 受け入れ基準（DoD）:
+  - [ ] DB名は `getDBName('shape'|'location'|'route')` に統一される
+  - [ ] DBクラスは `ShapeDB` / `LocationDB` / `RouteDB` に統一される
+  - [ ] テーブル名は `features`（メタデータ）と `vectorTiles`（タイル）に統一される
+  - [ ] lifecycle で `groupEntities` 固定をやめ、`features`/`vectorTiles` が存在する場合に処理対象にする
+  - [ ] API は `ShapeQueryAPI/ShapeMutationAPI`・`LocationQueryAPI/LocationMutationAPI`・`RouteQueryAPI/RouteMutationAPI` に統一される
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] 既存の DB 名称/クラス/テーブル/API の現状を棚卸しする
+  - [ ] /map 参照経路の DB/テーブル/API を統一する
+  - [ ] Worker/ストア/SDK の保存先を統一し、参照経路を更新する
+  - [ ] lifecycle が `features`/`vectorTiles` を処理対象にするよう更新する
+  - [ ] 互換性のある移行・クリーン手順を定義する
+- ロールバック手順：該当 DB 名/クラス/テーブル/API の差分を revert し、必要なら旧DB名で再ビルドする。
+- 運用ログ：
+  - start: 2025-12-29 13:10 JST 命名統一の ExecPlan 作成と影響範囲の整理に着手。
+  - progress: 2025-12-30 19:44 JST 既存の DB 名/クラス/テーブルの差分（location: location-ephemeral + groupEntities, route: route-db + TilesDB）を棚卸し。
+  - progress: 2025-12-30 19:53 JST lifecycle の処理対象を groupEntities から features/vectorTiles へ移行する方針を追加。
+  - progress: 2025-12-30 20:21 JST 命名統一の実装継続と巻き戻り懸念の再確認に着手。
 
 1957) shape-plugin: stage5 タイル生成で task failed が出る原因調査/修正（P1）
 - ブランチ: `fix/shape-plugin/stage5-tile-task-failed`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -7636,6 +7661,14 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+
+2010) fix/route-plugin/typecheck-errors (P1) — 完了 (2025-12-30)
+- 要点：Location/Route の型整合を修正し、未使用 import と ID 型の不一致を解消。
+- 検証：`pnpm --filter @hierarchidb/route-plugin typecheck`（exit 0）
+- ロールバック手順：`plugins/location-plugin/src/worker/locationGroupStore.dexie.ts`, `plugins/location-plugin/src/worker/normalizers.ts`, `plugins/route-plugin/src/services/RouteBatchSession.ts` の差分を revert し、`pnpm --filter @hierarchidb/route-plugin typecheck` を再実行する。
+- 運用ログ：
+  - start: 2025-12-30 20:23 JST route-plugin の typecheck エラー修正に着手。
+  - done: 2025-12-30 20:25 JST ID 正規化と RouteVectorTileRecord 型指定を反映。検証: `pnpm --filter @hierarchidb/route-plugin typecheck`（exit 0）。
 
 1986) fix/shape/preview-zoom-and-filter-off (P1) — 完了 (2025-12-30)
 - 要点：Step6 プレビューのズーム範囲をタイル生成範囲に合わせ、extract1 のフィルタリングOFFを追加。
@@ -14803,6 +14836,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-30 20:21 start: refactor/map/db-naming-unify — 命名統一の実装継続と巻き戻り懸念の再確認に着手。DoD: Kanban 1966 のとおり。
 - 2025-12-29 14:41 start: fix/location/ide-gsm-selection-bootstrap — IDE-GSM CSV 選択後に国/選択状態が生成されず Step3 へ進めない問題の修正に着手。DoD: Kanban 記載どおり CSV 反映/運用ログ記載。（Kanban: 1862）
 - 2025-12-29 14:43 progress: fix/location/ide-gsm-selection-bootstrap — IDE-GSM CSV 選択時に parseIdeGsmCsv を実行し、国×種別の選択状態を selectedArrayByCountries に反映する処理を追加。
 - 2025-12-29 14:43 done: fix/location/ide-gsm-selection-bootstrap — 変更完了。検証: 未実施（既存エラーが多く個別 typecheck 未実行）。ロールバック: `plugins/location-plugin/src/ui/components/steps/LocationDataSourceStep.tsx` の差分を revert し、必要なら `pnpm --filter @hierarchidb/location-plugin typecheck` を再実行する。

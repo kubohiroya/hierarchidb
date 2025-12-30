@@ -623,7 +623,7 @@ export default function MapPage() {
                 nodeId: String(node.id),
                 nodeType: 'location',
                 absolutePath: withLayerOrder('location', absolutePath, String(node.id)),
-                dbName: getDBName('location-ephemeral'),
+                dbName: getDBName('location'),
                 tileDataProvider: async (z, x, y, tileNodeId) => {
                   if (!tileNodeId) return null;
                   const api = await getLocationQueryAPI();
@@ -657,7 +657,7 @@ export default function MapPage() {
                 nodeId: String(node.id),
                 nodeType: 'route',
                 absolutePath: withLayerOrder('route', absolutePath, String(node.id)),
-                dbName: getDBName('vectortile'),
+                dbName: getDBName('route'),
                 tileDataProvider: async (z, x, y) => {
                   const api = await getRouteQueryAPI();
                   return api.getVectorTile(String(node.id) as NodeId, z, x, y);

@@ -177,7 +177,7 @@ const processExtract1Task = async ({
   input,
 }: ExtractTaskRequest<Extract1Task>): Promise<ShapeStageWorkerTaskResult> => {
   const db = getEphemeralShapeDB();
-  const inputBufferId = task.inputBufferId ?? input.inputBufferId ?? '';
+  const inputBufferId = input.inputBufferId ?? '';
   const raw = await db.rawBuffers.get(inputBufferId);
   if (!raw) {
     return { status: 'failed', errorMessage: `Raw buffer not found: ${inputBufferId}` };
@@ -293,7 +293,7 @@ const processExtract2Task = async ({
   input: payload,
 }: ExtractTaskRequest<Extract2Task>): Promise<ShapeStageWorkerTaskResult> => {
   const db = getEphemeralShapeDB();
-  const inputBufferId = task.inputBufferId ?? payload.inputBufferId ?? '';
+  const inputBufferId = payload.inputBufferId ?? '';
   const buffer = await db.extractedBuffers.get(inputBufferId)
     ?? await db.rawBuffers.get(inputBufferId);
   if (!buffer) {
@@ -410,13 +410,13 @@ const processExtract2Task = async ({
   }
   const featureCount = sanitizedExtracted
     ? sanitizedExtracted.features.length
-    : input.featureCount;
+    : buffer.featureCount;
   if (sanitizedExtracted && featureCount === 0) {
     await db.extractedBuffers.put({
       id: outputBufferId,
-      nodeId: input.nodeId,
+      nodeId: buffer.nodeId,
       stage: 'extract2',
-      data: input.data,
+      data: buffer.data,
       featureCount: 0,
       extractionRatio: 0,
       tolerance,
@@ -426,14 +426,14 @@ const processExtract2Task = async ({
   }
   const data = sanitizedExtracted
     ? await encodeGeoJson(sanitizedExtracted)
-    : input.data;
+    : buffer.data;
   await db.extractedBuffers.put({
     id: outputBufferId,
-    nodeId: input.nodeId,
+    nodeId: buffer.nodeId,
     stage: 'extract2',
     data,
     featureCount,
-    extractionRatio: input.featureCount ? featureCount / input.featureCount : 1,
+    extractionRatio: buffer.featureCount ? featureCount / buffer.featureCount : 1,
     tolerance,
     timestamp: Date.now(),
   });

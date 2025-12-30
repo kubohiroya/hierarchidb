@@ -1,8 +1,8 @@
 import type { ProgressInfo } from '../../../common/types/index.js';
-import type { VectorTileTask, VectorTileTaskInput } from '../../../common/types/index.js';
+import type { VectorTileTask } from '../../../common/types/index.js';
 import type { VectorTileStageAdapter } from './VectorTileStageAdapter.js';
 import type { StageControls } from './StageControls.js';
-import { shapeDB } from '../../database/ShapeDB.js';
+import { shapeDB, type VectorTileTaskInputData, type VectorTileTaskOutputData } from '../../database/ShapeDB.js';
 import { getEphemeralShapeDB } from '../../database/EphemeralShapeDB.js';
 import { geojson } from 'flatgeobuf';
 import type { Feature } from 'geojson';
@@ -234,7 +234,8 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     const getSignal = controls?.getSignal;
     const shouldAbort = () => Boolean(getSignal?.()?.aborted);
     const resolvedNodeId = tasks[0]?.nodeId ? String(tasks[0].nodeId) : null;
-    const inputByTaskId = new Map<string, VectorTileTaskInput>();
+    const inputByTaskId = new Map<string, VectorTileTaskInputData>();
+    const outputByTaskId = new Map<string, VectorTileTaskOutputData>();
     if (resolvedNodeId) {
       const rows = await shapeDB.batchTasks
         .where('nodeId')
@@ -242,7 +243,8 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
         .and((row) => row.taskType === 'vectortile')
         .toArray();
       rows.forEach((row) => {
-        inputByTaskId.set(row.taskId, (row.inputData ?? {}) as VectorTileTaskInput);
+        inputByTaskId.set(row.taskId, (row.inputData ?? {}) as VectorTileTaskInputData);
+        outputByTaskId.set(row.taskId, (row.outputData ?? {}) as VectorTileTaskOutputData);
       });
     }
     const batch = new BatchService();
@@ -307,15 +309,22 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                   limitBytes: MAX_VECTOR_TILE_INPUT_BYTES,
                 });
                 for (const task of inputTasks) {
-                  const taskInput = inputByTaskId.get(task.taskId) ?? {};
-                  const currentRetry = typeof taskInput.retry === 'number' ? taskInput.retry : 0;
+                  const taskOutput = outputByTaskId.get(task.taskId) ?? {};
+                  const currentRetry = typeof taskOutput.retry === 'number' ? taskOutput.retry : 0;
                   const shouldRegress = currentRetry <= 1;
                   const nextRetry = currentRetry + 1;
                   if (!shouldRegress) {
                     failed += 1;
                   }
                   if (task.taskId) {
-                    const updates: Record<string, unknown> = {
+                    const updates: {
+                      status: 'regression' | 'failed';
+                      completedAt: number;
+                      progress: number;
+                      message: string;
+                      errorMessage?: string;
+                      outputData?: VectorTileTaskOutputData;
+                    } = {
                       status: shouldRegress ? 'regression' : 'failed',
                       completedAt: Date.now(),
                       progress: 100,
@@ -323,7 +332,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                       errorMessage: shouldRegress ? undefined : message,
                     };
                     if (shouldRegress) {
-                      updates.inputData = { ...taskInput, retry: nextRetry };
+                      updates.outputData = { ...taskOutput, retry: nextRetry };
                     }
                     await shapeDB.updateBatchTask(task.taskId, updates);
                   }
@@ -383,11 +392,17 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                 for (const task of inputTasks) {
                   skipped += 1;
                   if (task.taskId) {
+                    const outputData: VectorTileTaskOutputData = {
+                      tileId: inputBufferId,
+                      tileCount: 0,
+                      totalBytes: 0,
+                    };
                     await shapeDB.updateBatchTask(task.taskId, {
                       status: 'completed',
                       completedAt: Date.now(),
                       progress: 100,
                       message: skipMessage,
+                      outputData,
                     });
                   }
                   onProgress({
@@ -593,11 +608,17 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
             for (const task of inputTasks) {
               completed++;
               if (task.taskId) {
+                const outputData: VectorTileTaskOutputData = {
+                  tileId: tileKey ?? inputBufferId,
+                  tileCount: tileFeatureCount != null ? 1 : undefined,
+                  totalBytes: tileSizeBytes ?? undefined,
+                };
                 await shapeDB.updateBatchTask(task.taskId, {
                   status: 'completed',
                   completedAt: Date.now(),
                   progress: 100,
                   message: completionMessage,
+                  outputData,
                 });
               }
               onProgress({

@@ -1,6 +1,6 @@
 import { SingletonMixin } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
-import { getEphemeralLocationDB, type LocationQueryAPI } from '@hierarchidb/location-store';
+import { getLocationDB, type LocationQueryAPI } from '@hierarchidb/location-store';
 import type {
   LocationGroupItem,
   LocationRelation,
@@ -28,7 +28,7 @@ export class LocationQueryService implements LocationQueryAPI {
   }
 
   async listLocationGroups(nodeId: NodeId): Promise<LocationGroupItem[]> {
-    const store = storeRegistry.getGroup('location');
+    const store = storeRegistry.getFeatures('location');
     if (!store) return [];
     const items = await store.list(nodeId);
     return items.map((item) => ({ ...item })) as LocationGroupItem[];
@@ -81,7 +81,7 @@ export class LocationQueryService implements LocationQueryAPI {
   }
 
   async getVectorTile(nodeId: NodeId, z: number, x: number, y: number): Promise<ArrayBuffer | null> {
-    const db = getEphemeralLocationDB();
+    const db = getLocationDB();
     const record = await db.vectorTiles.get(`loc-mvt-${nodeId}-${z}-${x}-${y}`);
     return record?.data ?? null;
   }
@@ -96,7 +96,7 @@ export class LocationQueryService implements LocationQueryAPI {
     const cached = this.tileCache.get(cacheKey);
     if (cached) return cached;
 
-    const db = getEphemeralLocationDB();
+    const db = getLocationDB();
     const record = await db.vectorTiles.get(`loc-mvt-${nodeId}-${z}-${x}-${y}`);
     if (!record?.data) return null;
 

@@ -1,1 +1,1 @@
-export { RouteDatabase } from '@hierarchidb/route-store';
+export { RouteDB, RouteDB as RouteDatabase } from '@hierarchidb/route-store';

@@ -29,9 +29,7 @@ type ShapeDownloadTaskPayload = {
   countryCode: string;
   countryName?: string;
   adminLevel: number;
-  continent: string;
   dataSource?: ShapeDataSourceName;
-  country?: string;
 };
 
 export type CommandProcessorAPI = {

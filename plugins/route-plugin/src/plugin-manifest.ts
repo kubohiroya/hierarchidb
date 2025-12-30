@@ -33,7 +33,7 @@ export const PLUGIN_MANIFEST: PluginManifest = {
     prewarm: [
       {
         specifier: '@hierarchidb/route-plugin/database',
-        export: 'RouteDatabase',
+        export: 'RouteDB',
       },
     ],
   },

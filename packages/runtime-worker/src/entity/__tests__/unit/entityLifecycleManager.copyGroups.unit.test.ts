@@ -2,7 +2,7 @@ import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CoreDB } from '../../../services/CoreDB.js';
 import { EntityLifecycleManager } from '../../EntityLifecycleManager.js';
-import type { GroupItemBase, GroupStore } from '../../store.js';
+import type { FeatureItemBase, FeatureStore } from '../../store.js';
 import { storeRegistry } from '../../store-registry.js';
 
 describe('EntityLifecycleManager.copyGroupsByMapping', () => {
@@ -44,8 +44,8 @@ describe('EntityLifecycleManager.copyGroupsByMapping', () => {
     addNode(folderSrc, folderType);
     addNode(routeSrc, routeType);
 
-    const upserts: Array<{ nodeId: NodeId; items: GroupItemBase[] }> = [];
-    const makeStore = (items: GroupItemBase[]): GroupStore<GroupItemBase> => ({
+    const upserts: Array<{ nodeId: NodeId; items: FeatureItemBase[] }> = [];
+    const makeStore = (items: FeatureItemBase[]): FeatureStore<FeatureItemBase> => ({
       async list(nodeId) {
         return nodeId === folderSrc || nodeId === routeSrc ? items : [];
       },
@@ -55,8 +55,8 @@ describe('EntityLifecycleManager.copyGroupsByMapping', () => {
       async bulkDelete() {},
     });
 
-    storeRegistry.registerGroup('folder', makeStore([{ id: 'f1' }]));
-    storeRegistry.registerGroup('route', makeStore([{ id: 'r1' }]));
+    storeRegistry.registerFeatures('folder', makeStore([{ id: 'f1' }]));
+    storeRegistry.registerFeatures('route', makeStore([{ id: 'r1' }]));
 
     const core: Pick<CoreDB, 'getNode'> = {
       getNode: vi.fn(async (id: NodeId) => nodeMap.get(id)),

@@ -23,7 +23,6 @@ import {
   useVectorTilePreviewMapLayers,
 } from '@hierarchidb/ui-gis';
 import { useVectorTilePreviewTable } from './preview/useVectorTilePreviewTable.js';
-import { TilesDB } from '@hierarchidb/gis-sdk';
 import { getDBName } from '@hierarchidb/util';
 import { shapeDB } from '../../services/database/ShapeDB.js';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
@@ -44,11 +43,7 @@ const DEFAULT_BOUNDS_MARGIN = 0.1;
 const MIN_BOUNDS_MARGIN = 0.25;
 
 const fetchTileSummary = async (nodeId: string) => {
-  const tilesDb = await TilesDB.getSingleton();
-  const byNodeId = await tilesDb.tiles.where('nodeId').equals(nodeId).toArray();
-  const tiles = byNodeId.length > 0
-    ? byNodeId
-    : await tilesDb.tiles.where('key').startsWith(`${nodeId}-`).toArray();
+  const tiles = await shapeDB.vectorTiles.where('nodeId').equals(nodeId).toArray();
   if (tiles.length === 0) return { tiles: 0, totalBytes: 0 };
   const totalBytes = tiles.reduce((sum, row) => sum + (row.size ?? 0), 0);
   return { tiles: tiles.length, totalBytes };
@@ -56,9 +51,7 @@ const fetchTileSummary = async (nodeId: string) => {
 
 const resolveTilesAvailable = async (nodeId: string): Promise<boolean> => {
   const summary = await fetchTileSummary(nodeId);
-  if (summary.tiles > 0) return true;
-  const count = await shapeDB.vectorTiles.where('nodeId').equals(nodeId).count();
-  return count > 0;
+  return summary.tiles > 0;
 };
 
 const fetchTile = async (
@@ -67,10 +60,16 @@ const fetchTile = async (
   x: number,
   y: number,
 ): Promise<ArrayBuffer | null> => {
-  const tilesDb = await TilesDB.getSingleton();
-  const key = `${nodeId}-${z}-${x}-${y}`;
-  const row = await tilesDb.tiles.get(key);
-  return row?.data ?? null;
+  const row = await shapeDB.vectorTiles
+    .where('[nodeId+z+x+y]')
+    .equals([nodeId, z, x, y])
+    .toArray()
+    .then((rows) => rows[0]);
+  if (!row?.data_Uint8Array) return null;
+  const data = row.data_Uint8Array;
+  return data instanceof ArrayBuffer
+    ? data
+    : data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
 };
 
 export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string) => {
@@ -105,7 +104,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   const [tilesChecking, setTilesChecking] = useState(false);
   const baseLayerId = 'shape-preview';
   const baseSourceId = 'shape-preview-source';
-  const tileDbName = getDBName('vectortile');
+  const tileDbName = getDBName('shape');
   const [selectionMetadata, setSelectionMetadata] = useState<DownloadTaskPayload[]>([]);
   const workerClientHook = useMemo(() => {
     try {

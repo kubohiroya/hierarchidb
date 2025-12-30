@@ -33,7 +33,7 @@ import {
 import type { LocationEntity, LocationType } from '../../../common/types/index.js';
 import { formatBytes, useTranslation } from '../../../common/i18n/index.js';
 import { getLocationSessionSummary } from '../../../common/tiles/locationVectorTiles.js';
-import { getEphemeralLocationDB } from '@hierarchidb/location-store';
+import { getLocationDB } from '@hierarchidb/location-store';
 import { listLocationPoints } from '../../../services/pointRepository.js';
 import { DataGridPreview } from '@hierarchidb/ui-grid';
 import { LOCATION_TYPE_STYLES } from './locationTypes.js';
@@ -119,7 +119,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     setLoading(true);
     setError(null);
     try {
-      const db = getEphemeralLocationDB();
+      const db = getLocationDB();
       const sessions = db.sessions;
       if (!sessions || typeof sessions.where !== 'function') {
         setSummary(null);
@@ -292,9 +292,9 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       {
         nodeId: String(previewNodeId),
         nodeType: 'location',
-        dbName: getDBName('location-ephemeral'),
+        dbName: getDBName('location'),
         tileDataProvider: async (z, x, y) => {
-          const db = getEphemeralLocationDB();
+          const db = getLocationDB();
           const rec = await db.vectorTiles.get(`loc-mvt-${previewNodeId}-${z}-${x}-${y}`);
           return rec?.data ?? null;
         },

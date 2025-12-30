@@ -134,24 +134,27 @@ export class EntityLifecycleManager {
   async onDuplicateNodes(env: DuplicateNodesEnvelope): Promise<void> {
     const mapping = EntityLifecycleManager.takeIdMapping(env.commandId);
     if (!mapping) return;
-    await this.copyGroupsByMapping(mapping);
+    await this.copyFeaturesByMapping(mapping);
     await this.copyRelationsByMapping(mapping);
+    await this.copyVectorTilesByMapping(mapping);
   }
 
   async onPasteNodes(env: PasteNodesEnvelope): Promise<void> {
     const mapping = EntityLifecycleManager.takeIdMapping(env.commandId);
     if (!mapping) return;
     const sourceNodes = buildSourceNodeMap(env.payload.nodes);
-    await this.copyGroupsByMapping(mapping, sourceNodes);
+    await this.copyFeaturesByMapping(mapping, sourceNodes);
     await this.copyRelationsByMapping(mapping, sourceNodes);
+    await this.copyVectorTilesByMapping(mapping, sourceNodes);
   }
 
   async onImportNodes(env: ImportNodesEnvelope): Promise<void> {
     const mapping = EntityLifecycleManager.takeIdMapping(env.commandId);
     if (!mapping) return;
     const sourceNodes = buildSourceNodeMap(env.payload.nodes);
-    await this.copyGroupsByMapping(mapping, sourceNodes);
+    await this.copyFeaturesByMapping(mapping, sourceNodes);
     await this.copyRelationsByMapping(mapping, sourceNodes);
+    await this.copyVectorTilesByMapping(mapping, sourceNodes);
   }
 
   async handleRemovedNodes(nodes: TreeNode[]): Promise<void> {
@@ -170,13 +173,14 @@ export class EntityLifecycleManager {
     }
 
     for (const [nodeType, nodeIds] of byType) {
-      await this.deleteGroupEntities(nodeType, nodeIds);
+      await this.deleteFeatures(nodeType, nodeIds);
       await this.deleteRelations(nodeType, nodeIds);
+      await this.deleteVectorTiles(nodeType, nodeIds);
       await this.deletePluginArtifacts(nodeType, nodeIds);
     }
   }
 
-  private async copyGroupsByMapping(
+  private async copyFeaturesByMapping(
     mapping: NodeMapping,
     sourceNodes?: SourceNodeMap
   ): Promise<void> {
@@ -184,7 +188,7 @@ export class EntityLifecycleManager {
         const snapshot = await resolveNode(this.coreDB, src, sourceNodes);
         const nodeType = snapshot?.nodeType;
         if (!nodeType) continue;
-        const store = storeRegistry.getGroup(nodeType);
+        const store = storeRegistry.getFeatures(nodeType);
         if (!store) continue;
         const items = await store.list(src);
         if (!items || items.length === 0) continue;
@@ -215,8 +219,24 @@ export class EntityLifecycleManager {
       }
   }
 
-  private async deleteGroupEntities(nodeType: NodeType, nodeIds: NodeId[]): Promise<void> {
-    const store = storeRegistry.getGroup(nodeType);
+  private async copyVectorTilesByMapping(
+    mapping: NodeMapping,
+    sourceNodes?: SourceNodeMap
+  ): Promise<void> {
+      for (const [src, dst] of mapping.entries()) {
+        const snapshot = await resolveNode(this.coreDB, src, sourceNodes);
+        const nodeType = snapshot?.nodeType;
+        if (!nodeType) continue;
+        const store = storeRegistry.getVectorTiles(nodeType);
+        if (!store) continue;
+        const items = await store.list(src);
+        if (!items || items.length === 0) continue;
+        await store.bulkUpsert(dst, items);
+      }
+  }
+
+  private async deleteFeatures(nodeType: NodeType, nodeIds: NodeId[]): Promise<void> {
+    const store = storeRegistry.getFeatures(nodeType);
     if (!store) return;
     for (const nodeId of nodeIds) {
       const items = await store.list(nodeId);
@@ -233,6 +253,17 @@ export class EntityLifecycleManager {
       const rels = await relStore.listByNode(nodeId);
       if (!rels || rels.length === 0) continue;
       await relStore.bulkDelete(rels);
+    }
+  }
+
+  private async deleteVectorTiles(nodeType: NodeType, nodeIds: NodeId[]): Promise<void> {
+    const store = storeRegistry.getVectorTiles(nodeType);
+    if (!store) return;
+    for (const nodeId of nodeIds) {
+      const items = await store.list(nodeId);
+      if (!items || items.length === 0) continue;
+      const ids = items.map((item) => item.id);
+      await store.bulkDelete(nodeId, ids);
     }
   }
 

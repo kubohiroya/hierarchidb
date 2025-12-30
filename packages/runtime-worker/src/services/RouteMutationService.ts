@@ -34,11 +34,12 @@ export class RouteMutationService implements RouteMutationAPI {
 
   async deleteRouteLineStrings(nodeId: NodeId): Promise<void> {
     await this.ensureOpen();
-    await this.db.lineStrings.where('nodeId').equals(nodeId).delete?.();
+    await this.db.features.where('nodeId').equals(nodeId).delete?.();
   }
 
   async clearRouteArtifacts(nodeId: NodeId): Promise<void> {
     await this.deleteRouteLineStrings(nodeId);
+    await this.db.vectorTiles.where('nodeId').equals(nodeId).delete?.();
   }
 
   async applyIdeGsmWaypoints(lines: RouteWaypointInput[]): Promise<RouteWaypointResult[]> {
@@ -108,7 +109,7 @@ export class RouteMutationService implements RouteMutationAPI {
       });
 
       await this.ensureOpen();
-      await this.db.lineStrings.where('nodeId').equals(request.nodeId).delete?.();
+      await this.db.features.where('nodeId').equals(request.nodeId).delete?.();
       const chunkSize = request.chunkSize ?? IDE_GSM_BULK_CHUNK_SIZE;
       let saved = 0;
       let chunkIndex = 0;
@@ -116,7 +117,7 @@ export class RouteMutationService implements RouteMutationAPI {
       for (let i = 0; i < linesWithWaypoints.length; i += chunkSize) {
         chunkIndex += 1;
         const slice = linesWithWaypoints.slice(i, i + chunkSize);
-        await this.db.lineStrings.bulkPut?.(slice);
+        await this.db.features.bulkPut?.(slice);
         saved += slice.length;
         emit({
           phase: 'save',

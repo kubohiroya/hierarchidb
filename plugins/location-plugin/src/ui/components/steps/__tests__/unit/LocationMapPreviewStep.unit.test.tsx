@@ -16,7 +16,7 @@ const {
   getLocationSessionSummary,
   dbState,
   listLocationPointsMock,
-  getEphemeralLocationDBMock,
+  getLocationDBMock,
 } = vi.hoisted(() => {
   const summaryMock = {
     exists: true,
@@ -73,20 +73,20 @@ const {
     },
   };
 
-  const getEphemeralLocationDBMock = vi.fn(() => fakeDb);
+  const getLocationDBMock = vi.fn(() => fakeDb);
 
   return {
     summaryMock,
     getLocationSessionSummary,
     dbState,
     listLocationPointsMock,
-    getEphemeralLocationDBMock,
+    getLocationDBMock,
   };
 });
 
 vi.mock('@hierarchidb/location-store', () => ({
   __esModule: true,
-  getEphemeralLocationDB: getEphemeralLocationDBMock,
+  getLocationDB: getLocationDBMock,
 }));
 
 vi.mock('../../../../../common/tiles/locationVectorTiles', () => ({
@@ -113,7 +113,7 @@ describe('LocationMapPreviewStep', () => {
     dbState.sessions.splice(0, dbState.sessions.length);
     getLocationSessionSummary.mockReset();
     getLocationSessionSummary.mockResolvedValue(summaryMock);
-    getEphemeralLocationDBMock.mockClear();
+    getLocationDBMock.mockClear();
     listLocationPointsMock.mockReset();
     listLocationPointsMock.mockResolvedValue([
       {
@@ -131,7 +131,7 @@ describe('LocationMapPreviewStep', () => {
 
   it('shows summary when session data is available', async () => {
     if (!LocationMapPreviewStep) throw new Error('component not loaded');
-    const db = getEphemeralLocationDBMock();
+    const db = getLocationDBMock();
     await db.sessions.put({
       nodeId,
       createdAt: Date.now(),
@@ -142,7 +142,7 @@ describe('LocationMapPreviewStep', () => {
     render(<LocationMapPreviewStep draft={baseDraft} nodeId={nodeId} />);
 
     await waitFor(() => {
-      expect(getEphemeralLocationDBMock).toHaveBeenCalled();
+      expect(getLocationDBMock).toHaveBeenCalled();
     });
 
     await waitFor(() => {
@@ -166,7 +166,7 @@ describe('LocationMapPreviewStep', () => {
     render(<LocationMapPreviewStep draft={baseDraft} nodeId={nodeId} />);
 
     await waitFor(() => {
-      expect(getEphemeralLocationDBMock).toHaveBeenCalled();
+      expect(getLocationDBMock).toHaveBeenCalled();
     });
 
     const message = await screen.findByText(en.mapPreview.summary.noData);
@@ -176,7 +176,7 @@ describe('LocationMapPreviewStep', () => {
 
   it('shows error message when fetching summary fails', async () => {
     if (!LocationMapPreviewStep) throw new Error('component not loaded');
-    const db = getEphemeralLocationDBMock();
+    const db = getLocationDBMock();
     await db.sessions.put({
       nodeId,
       createdAt: Date.now(),
@@ -188,7 +188,7 @@ describe('LocationMapPreviewStep', () => {
     render(<LocationMapPreviewStep draft={baseDraft} nodeId={nodeId} />);
 
     await waitFor(() => {
-      expect(getEphemeralLocationDBMock).toHaveBeenCalled();
+      expect(getLocationDBMock).toHaveBeenCalled();
     });
 
     await waitFor(() => {

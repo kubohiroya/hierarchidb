@@ -160,7 +160,130 @@ export interface BatchSessionRecord {
   expiresAt?: number;
 }
 
-export interface BatchTaskRecord {
+export type DownloadTaskInputData = {
+  url?: string;
+  dataSource?: DataSourceName;
+  countryCode?: string;
+  countryName?: string;
+  adminLevel?: number;
+  endpoint?: string;
+  bbox?: [number, number, number, number];
+  tags?: Array<
+    | string
+    | {
+      key: string;
+      value?: string;
+      operator?: 'eq' | 'ne' | 'exists' | 'not_exists';
+      includeNodes?: boolean;
+    }
+  >;
+  timeoutMs?: number;
+  retryAttempts?: number;
+  retryDelay?: number;
+};
+
+export type DownloadTaskOutputData = {
+  outputBufferId?: string;
+  bytesWritten?: number;
+  featureCount?: number;
+};
+
+export type Extract1TaskInputData = {
+  inputBufferId?: string;
+  sourceUrl?: string;
+  featureId?: string;
+  featureLabel?: string;
+  featureGroupId?: string;
+  featureIndex?: number;
+  originKey?: string;
+  originLabel?: string;
+  adminCode?: string;
+  dataSource?: DataSourceName;
+  countryCode?: string;
+  adminLevel?: number;
+  continent?: string;
+  countryName?: string;
+};
+
+export type Extract1TaskOutputData = {
+  outputBufferId?: string;
+  featureCount?: number;
+  extractionRatio?: number;
+};
+
+export type Extract2TaskInputData = {
+  inputBufferId?: string;
+  sourceTaskId?: string;
+  sourceUrl?: string;
+  featureId?: string;
+  featureLabel?: string;
+  featureGroupId?: string;
+  featureIndex?: number;
+  originKey?: string;
+  originLabel?: string;
+  adminCode?: string;
+  dataSource?: DataSourceName;
+  countryCode?: string;
+  adminLevel?: number;
+  continent?: string;
+  countryName?: string;
+};
+
+export type Extract2TaskOutputData = {
+  outputBufferId?: string;
+  featureCount?: number;
+  extractionRatio?: number;
+  retry?: number;
+};
+
+export type VectorTileTaskInputData = {
+  inputBufferId?: string;
+  minZoom?: number;
+  maxZoom?: number;
+  tileZ?: number;
+  tileX?: number;
+  tileY?: number;
+  extent?: number;
+  tileSize?: number;
+  buffer?: number;
+  compression?: boolean;
+  format?: 'mvt' | 'pbf';
+  layers?: unknown[];
+  outputBufferId?: string;
+  dataSource?: DataSourceName;
+  countryCode?: string;
+  countryName?: string;
+  adminLevel?: number;
+  metadataEnabled?: boolean;
+  metadataReplace?: boolean;
+  metadataContext?: {
+    dataSource?: string;
+    countryCode?: string;
+    countryName?: string;
+    adminLevel?: number;
+  };
+};
+
+export type VectorTileTaskOutputData = {
+  tileId?: string;
+  tileCount?: number;
+  totalBytes?: number;
+  retry?: number;
+};
+
+export type ShapeBatchTaskInputData =
+  | DownloadTaskInputData
+  | Extract1TaskInputData
+  | Extract2TaskInputData
+  | VectorTileTaskInputData;
+
+export type ShapeBatchTaskOutputData =
+  | DownloadTaskOutputData
+  | Extract1TaskOutputData
+  | Extract2TaskOutputData
+  | VectorTileTaskOutputData;
+
+export interface BatchTaskRecord<TInput = ShapeBatchTaskInputData, TOutput = ShapeBatchTaskOutputData> {
   taskId: string;
   nodeId: NodeId;
   taskType: BatchTaskType;
@@ -173,8 +296,8 @@ export interface BatchTaskRecord {
   createdAt?: number;
   updatedAt?: number;
   retryCount?: number;
-  inputData?: Record<string, unknown>;
-  outputData?: Record<string, unknown>;
+  inputData?: TInput;
+  outputData?: TOutput;
   errorMessage?: string;
 }
 
@@ -206,6 +329,14 @@ export interface FeatureIndexRecord {
   complexity: number;
   adminLevel?: number;
   countryCode?: string;
+}
+
+export interface ShapeRelationRow {
+  srcNodeId: NodeId;
+  dstNodeId: NodeId;
+  type: string;
+  meta?: unknown;
+  updatedAt?: number;
 }
 
 export interface FeatureBufferRecord {
@@ -272,6 +403,7 @@ export class ShapeDB extends Dexie {
   // Feature storage tables
   features!: Table<FeatureRecord, number>;
   featureIndices!: Table<FeatureIndexRecord, string>;
+  relations!: Table<ShapeRelationRow, [NodeId, string, NodeId]>;
 
   // Tile storage tables
   vectorTiles!: Table<VectorTileRecord, string>;
@@ -291,6 +423,7 @@ export class ShapeDB extends Dexie {
         '++id, nodeId, [nodeId+adminLevel], [nodeId+countryCode], mortonCode, adminLevel, countryCode, name, createdAt',
       featureIndices:
         '&indexId, featureId, mortonCode, [mortonCode+adminLevel], adminLevel, countryCode, area, complexity',
+      relations: '&[srcNodeId+type+dstNodeId], srcNodeId, dstNodeId, type, updatedAt',
 
       // Vector tiles - spatial tile indexing
       vectorTiles: '&tileId, nodeId, [nodeId+z+x+y], [z+x+y], z, generatedAt, lastAccessed, size',
@@ -308,6 +441,7 @@ export class ShapeDB extends Dexie {
           '++id, nodeId, [nodeId+adminLevel], [nodeId+countryCode], mortonCode, adminLevel, countryCode, name, createdAt',
         featureIndices:
           '&indexId, featureId, mortonCode, [mortonCode+adminLevel], adminLevel, countryCode, area, complexity',
+        relations: '&[srcNodeId+type+dstNodeId], srcNodeId, dstNodeId, type, updatedAt',
 
         // Vector tiles - spatial tile indexing
         vectorTiles: '&tileId, nodeId, [nodeId+z+x+y], [z+x+y], z, generatedAt, lastAccessed, size',
@@ -316,6 +450,18 @@ export class ShapeDB extends Dexie {
         await this.batchSessions.clear();
         await this.batchTasks.clear();
       });
+
+    this.version(3).stores({
+      batchSessions: '&nodeId, status, startedAt, updatedAt',
+      batchTasks:
+        '&taskId, nodeId, [nodeId+status], [nodeId+type], [nodeId+index], status, type, startedAt',
+      features:
+        '++id, nodeId, [nodeId+adminLevel], [nodeId+countryCode], mortonCode, adminLevel, countryCode, name, createdAt',
+      featureIndices:
+        '&indexId, featureId, mortonCode, [mortonCode+adminLevel], adminLevel, countryCode, area, complexity',
+      relations: '&[srcNodeId+type+dstNodeId], srcNodeId, dstNodeId, type, updatedAt',
+      vectorTiles: '&tileId, nodeId, [nodeId+z+x+y], [z+x+y], z, generatedAt, lastAccessed, size',
+    });
   }
 
   // Batch Session Management

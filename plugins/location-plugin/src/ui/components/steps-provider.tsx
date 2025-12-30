@@ -11,7 +11,7 @@ import { notify } from '@hierarchidb/components';
 import { startLocationVectorTileSession } from '../../common/tiles/locationVectorTiles.js';
 import { i18n } from '@hierarchidb/ui-i18n';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
-import { getEphemeralLocationDB } from '@hierarchidb/location-store';
+import { getLocationDB } from '@hierarchidb/location-store';
 import { ensureIso3166Data, getAllCountries } from '@hierarchidb/gen-iso3166-2/browser';
 import { BASE_LOCATION_TYPES, resolveTypesForSource } from './steps/locationTypes.js';
 import { LocationBatchManager } from '../../services/LocationBatchManager.js';
@@ -84,7 +84,7 @@ const canStartLocationBatch = (data?: Partial<LocationEntity>): boolean => {
 const isLocationBuildPersisted = async (data?: Partial<LocationEntity>): Promise<boolean> => {
   const nodeId = data?.nodeId as NodeId | undefined;
   if (!nodeId) return Boolean(data?.processingStatus === 'completed');
-  const db = getEphemeralLocationDB();
+  const db = getLocationDB();
   const count = await db.vectorTiles.where('nodeId').equals(nodeId).count();
   if (count > 0) return true;
   return data?.processingStatus === 'completed';

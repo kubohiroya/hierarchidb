@@ -13,7 +13,7 @@ import {
 } from '@hierarchidb/common-api';
 import { UnifiedBatchManagerBase, type BatchPersistence, type UnifiedBatchSession } from '@hierarchidb/batch';
 import { LocationBatchSessionManager } from './BatchSessionManager.js';
-import { getEphemeralLocationDB, type EphemeralLocationDB } from '../../database/EphemeralLocationDB.js';
+import { getLocationDB, type LocationDB } from '../../database/EphemeralLocationDB.js';
 import { toBatchProgressEvent } from './ProgressAdapter.js';
 import type { LocationBatchData } from '../../common/types/batch-types.js';
 import type { UnifiedLocationBatchConfig } from '../../common/types/BatchConfig.js';
@@ -25,7 +25,7 @@ const VECTOR_TILE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
 type LocationBatchSessionPayload = UnifiedBatchSession<UnifiedLocationBatchConfig | undefined, LocationBatchData>;
 
 function createPersistence(
-  dbProvider: typeof getEphemeralLocationDB,
+  dbProvider: typeof getLocationDB,
 ): BatchPersistence<UnifiedLocationBatchConfig | undefined, LocationBatchData> {
   return {
     async savePending(nodeId: NodeId, payload: LocationBatchSessionPayload) {
@@ -74,9 +74,9 @@ function createPersistence(
 
 export class UnifiedLocationBatchManager extends UnifiedBatchManagerBase<UnifiedLocationBatchConfig | undefined, LocationBatchData> {
   private manager: LocationBatchSessionManager;
-  private getDb: () => EphemeralLocationDB;
+  private getDb: () => LocationDB;
 
-  constructor(dbProvider: typeof getEphemeralLocationDB = getEphemeralLocationDB) {
+  constructor(dbProvider: typeof getLocationDB = getLocationDB) {
     super(createPersistence(dbProvider));
     this.manager = new LocationBatchSessionManager();
     this.getDb = () => dbProvider();
@@ -88,7 +88,7 @@ export class UnifiedLocationBatchManager extends UnifiedBatchManagerBase<Unified
   }
 
   /** @internal Test-only injection hook */
-  setDbProvider(provider: () => EphemeralLocationDB): void {
+  setDbProvider(provider: () => LocationDB): void {
     const self = this as unknown as {
       persistence?: BatchPersistence<UnifiedLocationBatchConfig | undefined, LocationBatchData>;
     };

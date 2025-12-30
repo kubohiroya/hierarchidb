@@ -33,7 +33,14 @@ import { ShapeEntityHandler } from './handlers/index.js';
 
 import { metadataLoader } from '../services/metadata/MetadataLoader.js';
 import { UnifiedShapeBatchManager } from '../services/batch/UnifiedShapeBatchManager.js';
-import { shapeDB, type BatchTaskRecord } from '../services/database/ShapeDB.js';
+import {
+  shapeDB,
+  type BatchTaskRecord,
+  type DownloadTaskInputData,
+  type Extract1TaskInputData,
+  type Extract2TaskInputData,
+  type VectorTileTaskInputData,
+} from '../services/database/ShapeDB.js';
 import type { BatchProcessConfig } from '../services/batch/types.js';
 import { getEphemeralShapeDB } from '../services/database/EphemeralShapeDB.js';
 import type { BatchStage, BatchTaskStatus } from '../common/types/BatchTaskLike.js';
@@ -161,7 +168,7 @@ const persistDownloadTaskPayloads = async (
       status: 'waiting',
       index: nextIndex,
       progress: 0,
-      inputData: payload as unknown as Record<string, unknown>,
+      inputData: payload as DownloadTaskInputData,
       createdAt,
       updatedAt: createdAt,
     };
@@ -278,27 +285,24 @@ const mapTaskStatusToStage = (status: BatchTaskRecord['status']): BatchTaskStage
 };
 
 const buildTaskTitle = (task: BatchTaskRecord): string | undefined => {
-  const input = task.inputData ?? {};
   const getNumber = (value: unknown): number | undefined =>
     typeof value === 'number' && Number.isFinite(value) ? value : undefined;
   if (task.taskType === 'download') {
-    return (input.url as string | undefined) ?? (input.endpoint as string | undefined);
+    const input = task.inputData as DownloadTaskInputData | undefined;
+    return input?.url ?? input?.endpoint;
   }
   if (task.taskType === 'extract1' || task.taskType === 'extract2') {
-    const sourceUrl = (input.sourceUrl ?? input.url) as string | undefined;
-    const featureId = input.featureId as string | undefined;
+    const input = task.inputData as Extract1TaskInputData | Extract2TaskInputData | undefined;
+    const sourceUrl = input?.sourceUrl;
+    const featureId = input?.featureId;
     if (sourceUrl && featureId) return `${sourceUrl} • ${featureId}`;
     return sourceUrl ?? featureId;
   }
   if (task.taskType === 'vectortile') {
-    const minZoom = getNumber(input.minZoom);
-    const maxZoom = getNumber(input.maxZoom);
-    const metadataContext = input.metadataContext as {
-      dataSource?: string;
-      countryCode?: string;
-      countryName?: string;
-      adminLevel?: number;
-    } | undefined;
+    const input = task.inputData as VectorTileTaskInputData | undefined;
+    const minZoom = getNumber(input?.minZoom);
+    const maxZoom = getNumber(input?.maxZoom);
+    const metadataContext = input?.metadataContext;
     const countryLabel = metadataContext?.countryName ?? metadataContext?.countryCode;
     const adminLabel = metadataContext?.adminLevel != null ? `ADM${metadataContext.adminLevel}` : undefined;
     const dataSourceLabel = metadataContext?.dataSource ? metadataContext.dataSource.toUpperCase() : undefined;
@@ -323,8 +327,6 @@ const mapTaskRecordToBatchTask = (task: BatchTaskRecord): BatchTask & { title?: 
   startedAt: task.startedAt,
   completedAt: task.completedAt,
   retryCount: task.retryCount,
-  metadata: task.inputData,
-  config: task.outputData,
   error: task.errorMessage,
   title: buildTaskTitle(task),
 });

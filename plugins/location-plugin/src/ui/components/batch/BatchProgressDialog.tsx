@@ -52,7 +52,7 @@ import type { NodeId } from '../../../common/types/index.js';
 import { useLocationProgress } from '../../../common/hooks/useLocationProgress.js';
 import { isDevEnvironment } from '../../../common/utils/env.js';
 import { useTranslation, formatBytes as formatBytesIntl, formatNumber } from '../../../common/i18n/index.js';
-import { getEphemeralLocationDB } from '../../../services/index.js';
+import { getLocationDB } from '../../../services/index.js';
 import { CrossViewSnackbar, DataGridPreview } from '@hierarchidb/ui-grid';
 
 interface ProgressInfo {
@@ -261,7 +261,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
     let cancelled = false;
     (async () => {
       try {
-        const db = getEphemeralLocationDB();
+        const db = getLocationDB();
         const session = (await db.sessions?.get(nodeId)) ?? null;
         if (!cancelled) setTableId(session?.tableId ?? null);
       } catch (error) {

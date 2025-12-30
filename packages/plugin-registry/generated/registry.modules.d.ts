@@ -61,7 +61,7 @@ declare module '@hierarchidb/location-plugin/icon' {
 }
 
 declare module '@hierarchidb/location-plugin/database' {
-  export const getEphemeralLocationDB: unknown;
+  export const getLocationDB: unknown;
   const mod: Record<string, unknown>;
   export default mod;
 }
@@ -103,7 +103,7 @@ declare module '@hierarchidb/route-plugin/icon' {
 }
 
 declare module '@hierarchidb/route-plugin/database' {
-  export const RouteDatabase: unknown;
+  export const RouteDB: unknown;
   const mod: Record<string, unknown>;
   export default mod;
 }

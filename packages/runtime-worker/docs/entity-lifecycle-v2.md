@@ -45,8 +45,9 @@ vk:doc kind=design audience=dev scope=worker
 スキーマ案（CoreDB 例）
 ```ts
 peerEntities: '&nodeId, updatedAt'
-groupEntities: '&[nodeId+id], nodeId, id, updatedAt'
+features: '&[nodeId+id], nodeId, id, updatedAt'
 relations: '&[srcNodeId+type+dstNodeId], srcNodeId, dstNodeId, type, updatedAt'
+vectorTiles: '&id, nodeId, [nodeId+z+x+y], timestamp'
 ```
 
 Handler 構造（最小）

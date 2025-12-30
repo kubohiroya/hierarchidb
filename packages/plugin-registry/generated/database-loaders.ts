@@ -11,7 +11,7 @@ export const pluginDatabaseLoaders: Record<string, { moduleSpecifier?: string; l
     prewarm: [
       {
         specifier: "@hierarchidb/location-plugin/database",
-        exportName: "getEphemeralLocationDB",
+        exportName: "getLocationDB",
         async load() {
           const mod = await import("@hierarchidb/location-plugin/database");
           return mod;
@@ -45,7 +45,7 @@ export const pluginDatabaseLoaders: Record<string, { moduleSpecifier?: string; l
     prewarm: [
       {
         specifier: "@hierarchidb/route-plugin/database",
-        exportName: "RouteDatabase",
+        exportName: "RouteDB",
         async load() {
           const mod = await import("@hierarchidb/route-plugin/database");
           return mod;

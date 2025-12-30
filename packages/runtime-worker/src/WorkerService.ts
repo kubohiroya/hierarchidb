@@ -33,7 +33,7 @@ import { UIStateDB } from './services/UIStateDB.js';
 
 import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/location-store';
 import type { RouteDatabaseHandle, RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/route-store';
-import { RouteDatabase } from '@hierarchidb/route-store';
+import { RouteDB } from '@hierarchidb/route-store';
 import { ShapeDB, type VectorTileRecord } from '@hierarchidb/shape-store';
 import { StyleService } from './services/StyleService.js';
 import { ShapeQueryService } from './services/ShapeQueryService.js';
@@ -210,7 +210,7 @@ export class WorkerService {
       const shapeMutationService: ShapeMutationAPI = await ShapeMutationService.getSingleton(shapeDB);
       const locationQueryService: LocationQueryAPI = await LocationQueryService.getSingleton();
       const locationMutationService: LocationMutationAPI = await LocationMutationService.getSingleton();
-      const routeDB = new RouteDatabase() as RouteDatabaseHandle;
+      const routeDB = new RouteDB() as RouteDatabaseHandle;
       const routeQueryService: RouteQueryAPI = await RouteQueryService.getSingleton(routeDB);
       const routeMutationService: RouteMutationAPI = await RouteMutationService.getSingleton(
         routeDB,

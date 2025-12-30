@@ -10,7 +10,7 @@
 - テーブル名（camelCase, 複数形）
   - Peer: `xxxEntities`（例: `shapeEntities`, `spreadsheetEntities`, `projects`, `routes`, `baseMaps`, `folders`）
   - WorkingCopy: `workingCopies`（Peer の複本）
-  - Group: `groupEntities`
+  - Group/Features: `features`（map preview metadata）
   - Relational: `relations`
   - 補助: 機能が明確な名詞の複数形（例: `rawFileMetadata`, `rowChunks`, `featureBuffers`, `vectorTiles`, `tileBuffers`, `cache`, `snapshots`, `analysisResults`, `routeCache`）
 

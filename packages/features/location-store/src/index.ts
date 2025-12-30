@@ -186,14 +186,18 @@ export type { IdeGsmParseResult } from './ideGsmCsv.js';
 export { filterIdeGsmPointsBySelection, parseIdeGsmCsv } from './ideGsmCsv.js';
 
 export {
-  EphemeralLocationDB,
+  LocationDB,
+  type LocationFeatureRow,
+  type LocationRelationRow,
   type LocationSessionRecord,
   type PendingLocationSession,
   type VectorTileRecord,
-  closeEphemeralLocationDB,
-  getEphemeralLocationDB,
+  closeLocationDB,
+  getLocationDB,
   getLocationDatabase,
   LocationDatabase,
+  closeEphemeralLocationDB,
+  getEphemeralLocationDB,
 } from './EphemeralLocationDB.js';
 
 export type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/plugin-service-api';

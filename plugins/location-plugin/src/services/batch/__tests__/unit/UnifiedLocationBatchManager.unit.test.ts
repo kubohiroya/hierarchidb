@@ -21,7 +21,7 @@ type MockDbTables = {
 
 let mockDb: any;
 let mockState: MockDbTables;
-const closeEphemeralLocationDB = vi.fn();
+const closeLocationDB = vi.fn();
 
 function createMockDb(): [any, MockDbTables] {
   const pending = new Map<string, any>();
@@ -77,8 +77,8 @@ function createMockDb(): [any, MockDbTables] {
 
 vi.mock('../../database/EphemeralLocationDB', () => ({
   __esModule: true,
-  getEphemeralLocationDB: () => mockDb,
-  closeEphemeralLocationDB,
+  getLocationDB: () => mockDb,
+  closeLocationDB,
 }));
 
 const { UnifiedLocationBatchManager } = await import('../../UnifiedLocationBatchManager');
@@ -87,7 +87,7 @@ const { LocationBatchSessionManager } = await import('../../BatchSessionManager'
 describe('UnifiedLocationBatchManager.onBatchProgress', () => {
   beforeEach(() => {
     [mockDb, mockState] = createMockDb();
-    closeEphemeralLocationDB.mockClear();
+    closeLocationDB.mockClear();
   });
 
   it('converts plugin events to StandardProgressEvent via adapter', async () => {

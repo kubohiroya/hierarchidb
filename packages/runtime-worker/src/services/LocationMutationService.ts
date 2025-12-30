@@ -12,7 +12,7 @@ import {
 import type { LocationMutationAPI, LocationPointProperties } from '@hierarchidb/location-store';
 import { filterIdeGsmPointsBySelection, parseIdeGsmCsv } from '@hierarchidb/location-store';
 import { authFetch } from '@hierarchidb/download';
-import { getEphemeralLocationDB } from '@hierarchidb/location-store';
+import { getLocationDB } from '@hierarchidb/location-store';
 import { storeRegistry } from '../entity/store-registry.js';
 
 type LocationPointWriteProgress = {
@@ -28,13 +28,13 @@ export class LocationMutationService implements LocationMutationAPI {
   }
 
   async upsertLocationGroups(nodeId: NodeId, items: LocationGroupItem[]): Promise<void> {
-    const store = storeRegistry.getGroup<LocationGroupItem>('location');
+    const store = storeRegistry.getFeatures<LocationGroupItem>('location');
     if (!store) return;
     await store.bulkUpsert(nodeId, items);
   }
 
   async deleteLocationGroups(nodeId: NodeId, itemIds: string[]): Promise<void> {
-    const store = storeRegistry.getGroup<LocationGroupItem>('location');
+    const store = storeRegistry.getFeatures<LocationGroupItem>('location');
     if (!store) return;
     await store.bulkDelete(nodeId, itemIds);
   }
@@ -52,7 +52,7 @@ export class LocationMutationService implements LocationMutationAPI {
   }
 
   async clearLocationEntities(nodeId: NodeId): Promise<void> {
-    const groupStore = storeRegistry.getGroup<LocationGroupItem>('location');
+    const groupStore = storeRegistry.getFeatures<LocationGroupItem>('location');
     if (groupStore) {
       const items = await groupStore.list(nodeId);
       if (items.length > 0) {
@@ -70,7 +70,7 @@ export class LocationMutationService implements LocationMutationAPI {
 
   async clearLocationArtifacts(nodeId: NodeId): Promise<void> {
     await this.clearLocationEntities(nodeId);
-    const db = getEphemeralLocationDB();
+    const db = getLocationDB();
     await db.clearNodeData(nodeId);
   }
 
@@ -141,7 +141,7 @@ export class LocationMutationService implements LocationMutationAPI {
       onProgress?: (progress: LocationPointWriteProgress) => void;
     },
   ): Promise<void> {
-    const store = storeRegistry.getGroup<LocationGroupItem>('location');
+    const store = storeRegistry.getFeatures<LocationGroupItem>('location');
     const chunkSize = Math.max(1, options?.chunkSize ?? 1000);
     if (!store) {
       options?.onProgress?.({ total: points.length, saved: 0, chunkIndex: 0, chunkSize });
@@ -161,7 +161,7 @@ export class LocationMutationService implements LocationMutationAPI {
       chunkIndex += 1;
       const slice = points.slice(i, i + chunkSize);
       const now = Date.now();
-      const items: LocationGroupItem[] = slice.map((point) => ({
+      const items: LocationGroupItem[] = slice.map((point: LocationPointProperties) => ({
         id: point.pointId,
         data: { ...point },
         updatedAt: now,

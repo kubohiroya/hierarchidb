@@ -2,6 +2,7 @@ import type { NodeId } from '@hierarchidb/common-types';
 import type { BatchProcessConfig } from '../types.js';
 import type {
   CountryMetadata,
+  DataSourceName,
   DownloadTask,
   DownloadTaskInput,
   DownloadTaskPayload,
@@ -46,7 +47,7 @@ export interface DownloadStageOutput {
   countryName?: string;
   continent?: string;
   adminLevel?: number;
-  dataSource?: string;
+  dataSource?: DataSourceName;
   sourceUrl?: string;
   featureGroupId?: string;
   featureLabel?: string;

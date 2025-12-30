@@ -1,11 +1,20 @@
 /// <reference types="vite/client" />
 
-import type { GroupItemBase, GroupStore, RelationBase, RelationStore } from '@hierarchidb/runtime-worker';
-import type { ShapeEntitiesDB } from '../shapeEntitiesDB.js';
+import type {
+  FeatureItemBase,
+  FeatureStore,
+  RelationBase,
+  RelationStore,
+  VectorTileItemBase,
+  VectorTileStore,
+} from '@hierarchidb/runtime-worker';
+import type { ShapeDB } from '@hierarchidb/shape-store';
 
 type StoreRegistry = {
-  getGroup<T extends GroupItemBase<unknown> = GroupItemBase<unknown>>(nodeType: string): GroupStore<T> | undefined;
-  registerGroup<T extends GroupItemBase<unknown>>(nodeType: string, store: GroupStore<T>): void;
+  getFeatures<T extends FeatureItemBase<unknown> = FeatureItemBase<unknown>>(nodeType: string): FeatureStore<T> | undefined;
+  registerFeatures<T extends FeatureItemBase<unknown>>(nodeType: string, store: FeatureStore<T>): void;
+  getVectorTiles<T extends VectorTileItemBase = VectorTileItemBase>(nodeType: string): VectorTileStore<T> | undefined;
+  registerVectorTiles<T extends VectorTileItemBase>(nodeType: string, store: VectorTileStore<T>): void;
   getRelations<T extends RelationBase<unknown> = RelationBase<unknown>>(nodeType: string): RelationStore<T> | undefined;
   registerRelations<T extends RelationBase<unknown>>(nodeType: string, store: RelationStore<T>): void;
 };
@@ -28,26 +37,27 @@ async function resolveStoreRegistry(options: RegisterShapeWorkerStoresOptions = 
 }
 
 async function ensureShapeStores(registry: StoreRegistry): Promise<void> {
-  type ShapeEntitiesDbModule = {
-    ShapeEntitiesDB: new () => ShapeEntitiesDB & { open?: () => Promise<unknown> };
-  };
   type ShapeGroupStoreModule = {
-    createShapeGroupStoreDexie: (db: ShapeEntitiesDB) => GroupStore<GroupItemBase<{ value?: unknown }>>;
+    createShapeFeatureStoreDexie: (db: ShapeDB) => FeatureStore<FeatureItemBase<{ value?: unknown }>>;
   };
   type ShapeRelationStoreModule = {
-    createShapeRelationStoreDexie: (db: ShapeEntitiesDB) => RelationStore<RelationBase<{ weight?: number }>>;
+    createShapeRelationStoreDexie: (db: ShapeDB) => RelationStore<RelationBase<{ weight?: number }>>;
   };
 
-  const { ShapeEntitiesDB } = (await import('../shapeEntitiesDB.js')) as ShapeEntitiesDbModule;
-  const db = new ShapeEntitiesDB();
+  const { ShapeDB } = await import('@hierarchidb/shape-store');
+  const db = new ShapeDB();
   const maybeOpen = db.open;
   if (typeof maybeOpen === 'function') {
     await maybeOpen.call(db);
   }
 
-  if (!registry.getGroup('shape')) {
-    const { createShapeGroupStoreDexie } = (await import('../shapeGroupStore.dexie.js')) as ShapeGroupStoreModule;
-    registry.registerGroup('shape', createShapeGroupStoreDexie(db));
+  if (!registry.getFeatures('shape')) {
+    const { createShapeFeatureStoreDexie } = (await import('../shapeGroupStore.dexie.js')) as ShapeGroupStoreModule;
+    registry.registerFeatures('shape', createShapeFeatureStoreDexie(db));
+  }
+  if (!registry.getVectorTiles('shape')) {
+    const { createShapeVectorTileStoreDexie } = await import('../shapeVectorTileStore.dexie.js');
+    registry.registerVectorTiles('shape', createShapeVectorTileStoreDexie(db));
   }
 
   if (!registry.getRelations('shape')) {

@@ -22,8 +22,8 @@ import type React from 'react';
 import { GenericDataGrid, type GenericDataGridProps, type GridColumn } from '@hierarchidb/ui-grid';
 import type { NodeId } from '@hierarchidb/common-types';
 import { shapeDB, type FeatureRecord } from '@hierarchidb/shape-store';
-import { RouteDatabase, type RouteLineString } from '@hierarchidb/route-store';
-import { getEphemeralLocationDB } from '@hierarchidb/location-store';
+import { RouteDB, type RouteLineString } from '@hierarchidb/route-store';
+import { getLocationDB } from '@hierarchidb/location-store';
 import { SimpleTableMetadataManager, TabularQueryService } from '@hierarchidb/tabular-store';
 import { getDBName } from '@hierarchidb/util';
 import { useAtomValue, useSetAtom } from 'jotai';
@@ -192,7 +192,7 @@ const useRouteTableData = (
   rowsPerPage: number,
   visibleIds?: Set<string | number> | null,
 ): DataGridState => {
-  const routeDb = useMemo(() => new RouteDatabase(), []);
+  const routeDb = useMemo(() => new RouteDB(), []);
   const [state, setState] = useState<DataGridState>({
     rows: [],
     columns: buildColumns(['id', 'name', 'routeMode', 'startName', 'endName', 'distance', 'speed', 'featureId']),
@@ -205,7 +205,7 @@ const useRouteTableData = (
     const load = async () => {
       setState((prev) => ({ ...prev, loading: true, error: undefined }));
       try {
-        const collection = routeDb.lineStrings.where('nodeId').equals(nodeId);
+        const collection = routeDb.features.where('nodeId').equals(nodeId);
         const filterByViewport = visibleIds !== undefined && visibleIds !== null;
         let totalRows = 0;
         let items: RouteLineString[] = [];
@@ -283,7 +283,7 @@ const useLocationTableData = (
     const load = async () => {
       setState((prev) => ({ ...prev, loading: true, error: undefined }));
       try {
-        const db = getEphemeralLocationDB();
+        const db = getLocationDB();
         const sessions = await db.sessions.where('nodeId').equals(nodeId).toArray();
         const latest = sessions.sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))[0];
         const tableId = latest?.tableId;

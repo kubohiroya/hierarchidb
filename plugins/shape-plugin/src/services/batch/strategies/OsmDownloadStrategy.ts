@@ -27,7 +27,7 @@ export class OsmDownloadStrategy implements DownloadStageStrategy {
     });
     const metadataMap = await this.buildCountryMetadata(Array.from(countryCodes.values()));
     const inputsByTaskId = new Map<string, DownloadTaskInput>();
-    const tasks = context.downloadTaskPayloads.map((metadata, index) => {
+    const tasks: DownloadTask[] = context.downloadTaskPayloads.map((metadata, index) => {
       const country = metadata.countryCode ? metadataMap.get(metadata.countryCode.toUpperCase()) : undefined;
       const taskId = buildDownloadTaskId(String(context.nodeId), metadata);
       const input: DownloadTaskInput = {

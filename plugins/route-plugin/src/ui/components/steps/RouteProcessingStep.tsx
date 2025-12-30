@@ -11,7 +11,7 @@ import { useTranslation } from '../../../common/i18n/index.js';
 import type { NodeId } from '@hierarchidb/common-types';
 import { notify } from '@hierarchidb/components';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
-import { RouteDatabase } from '../../../services/database/RouteDatabase.js';
+import { RouteDB } from '../../../services/database/RouteDatabase.js';
 import { clearBuildMonitor, getBuildMonitorKey } from '@hierarchidb/ui-monitoring';
 
 export interface RouteProcessingStepProps {
@@ -176,8 +176,8 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
       setLineCount(0);
       return;
     }
-    const db = new RouteDatabase();
-    const count = await db.lineStrings.where('nodeId').equals(nodeId).count().catch(() => 0);
+    const db = new RouteDB();
+    const count = await db.features.where('nodeId').equals(nodeId).count().catch(() => 0);
     setLineCount(count);
   }, [nodeId]);
 

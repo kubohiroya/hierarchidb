@@ -1,11 +1,11 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { GroupItemBase, RelationBase } from '@hierarchidb/runtime-worker';
+import type { FeatureItemBase, RelationBase } from '@hierarchidb/runtime-worker';
 import type {
   LocationPeerData,
   LocationGroupItemData,
   LocationRelationMeta,
 } from '../common/types/entities.js';
-import type { LocationGroupRow, LocationRelationRow } from './locationEntitiesDB.js';
+import type { LocationFeatureRow, LocationRelationRow } from './locationEntitiesDB.js';
 
 type Progress = NonNullable<LocationPeerData['lastProgress']>;
 type ErrorInfo = NonNullable<LocationPeerData['lastError']>;
@@ -171,18 +171,18 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
 
 export const toGroupRow = (
   nodeId: NodeId,
-  item: GroupItemBase<LocationGroupItemData>,
+  item: FeatureItemBase<LocationGroupItemData>,
   timestamp = Date.now(),
-): LocationGroupRow => ({
+): LocationFeatureRow => ({
   nodeId,
-  id: item.id,
+  id: String(item.id),
   data: item.data ? normalizeGroupData(item.data) : undefined,
   updatedAt: timestamp,
 });
 
 export const fromGroupRow = (
-  rows: LocationGroupRow[],
-): GroupItemBase<LocationGroupItemData>[] =>
+  rows: LocationFeatureRow[],
+): FeatureItemBase<LocationGroupItemData>[] =>
   rows.map(({ id, data, updatedAt }) => ({
     id,
     data: data ? normalizeGroupData(data) : undefined,

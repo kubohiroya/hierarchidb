@@ -9,10 +9,12 @@ export { resolveDefaultNodeName } from './utils/default-node-name.js';
 
 // Public re-exports for plugin-side stores and registry
 export type {
-  GroupItemBase,
-  GroupStore,
+  FeatureItemBase,
+  FeatureStore,
   RelationBase,
   RelationStore,
+  VectorTileItemBase,
+  VectorTileStore,
 } from './entity/store.js';
 export { storeRegistry } from './entity/store-registry.js';
 export * from './module-paths.js';

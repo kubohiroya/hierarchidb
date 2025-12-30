@@ -1,12 +1,12 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { RelationBase, RelationStore } from '@hierarchidb/runtime-worker';
-import type { LocationEntitiesDB } from './locationEntitiesDB.js';
+import type { LocationDB } from './locationEntitiesDB.js';
 import type { LocationRelationMeta } from '../common/types/entities.js';
 import { fromRelationRows, toRelationRow } from './normalizers.js';
 
 type Rel = RelationBase<LocationRelationMeta>;
 
-export function createLocationRelationStoreDexie(db: LocationEntitiesDB): RelationStore<Rel> {
+export function createLocationRelationStoreDexie(db: LocationDB): RelationStore<Rel> {
   const store = {
     async listByNode(nodeId: NodeId): Promise<Rel[]> {
       const rows = await db.relations.where('srcNodeId').equals(nodeId).toArray();

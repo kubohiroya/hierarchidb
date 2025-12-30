@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { TabularDataResult } from '@hierarchidb/ui-tabular';
-import { RouteDatabase } from '../../services/database/RouteDatabase.js';
+import { RouteDB } from '../../services/database/RouteDatabase.js';
 import type { RouteEntity } from '../../common/entities/RouteEntity.js';
 import type { ProgressReporter } from '@hierarchidb/plugin-service-api';
 
@@ -12,7 +12,7 @@ export async function materializeRouteSegmentsFromTabular(
   rows: TabularDataResult,
   reportProgress?: ProgressReporter
 ): Promise<void> {
-  const db = new RouteDatabase();
+  const db = new RouteDB();
   await db.open();
   const now = Date.now();
 

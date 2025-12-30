@@ -1,30 +1,46 @@
 import type { NodeId } from '@hierarchidb/common-types';
 
 /**
- * Abstractions for plugin entity stores (Group/Relational).
+ * Abstractions for plugin entity stores (Feature/VectorTile/Relational).
  * Implementations should wrap per-plugin Dexie databases that expose
  * the same logical table names:
- *   - groupEntities
+ *   - features
+ *   - vectorTiles
  *   - relations
  *
  * Each plugin provides its own DB instance (e.g. `<pluginName>-entities`),
  * keeping table names consistent so that shared handlers/utilities can be reused.
  */
 
-// Group: 1:N under a node; primary key is [nodeId + id]
-export interface GroupItemBase<TItemData = unknown> {
-  id: string; // stable item id
+// Feature: 1:N under a node; primary key is [nodeId + id]
+export interface FeatureItemBase<TItemData = unknown> {
+  id: string | number; // stable item id (string or auto-increment)
   data?: TItemData;
   updatedAt?: number;
 }
 
-export interface GroupStore<TItem extends GroupItemBase = GroupItemBase> {
+export interface FeatureStore<TItem extends FeatureItemBase = FeatureItemBase> {
   // Read items under a node (needed for duplication/import)
   list(nodeId: NodeId): Promise<TItem[]>;
 
   bulkUpsert(nodeId: NodeId, items: TItem[]): Promise<void>;
 
-  bulkDelete(nodeId: NodeId, itemIds: string[]): Promise<void>;
+  bulkDelete(nodeId: NodeId, itemIds: Array<TItem['id']>): Promise<void>;
+}
+
+// VectorTile: 1:N under a node; primary key is [nodeId + z + x + y] (or tileId)
+export interface VectorTileItemBase {
+  id: string;
+  data?: ArrayBuffer | Uint8Array;
+  updatedAt?: number;
+}
+
+export interface VectorTileStore<TItem extends VectorTileItemBase = VectorTileItemBase> {
+  list(nodeId: NodeId): Promise<TItem[]>;
+
+  bulkUpsert(nodeId: NodeId, items: TItem[]): Promise<void>;
+
+  bulkDelete(nodeId: NodeId, itemIds: Array<TItem['id']>): Promise<void>;
 }
 
 // Relational: N:N between nodes; primary key is [srcNodeId + type + dstNodeId]

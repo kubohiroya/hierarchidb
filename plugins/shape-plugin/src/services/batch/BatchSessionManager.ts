@@ -12,7 +12,7 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import { BaseBatchSessionManager } from '@hierarchidb/batch-runtime-services';
 import type { BatchProgressEvent, BatchSessionStatus } from '@hierarchidb/common-api';
-import { type BatchSessionRecord, type BatchTaskRecord, shapeDB } from '../database/ShapeDB.js';
+import { type BatchSessionRecord, type BatchTaskRecord, type DownloadTaskInputData, shapeDB } from '../database/ShapeDB.js';
 import { SessionController } from './SessionController.js';
 import { ShapeBatchSession } from './ShapeBatchSession.js';
 import type { BatchSession, BatchStatus, ProcessingStage, ProgressInfo, StageStatus } from '../../common/types/index.js';
@@ -38,6 +38,9 @@ type SessionStartContext = {
   mode?: 'new' | 'resume';
   buildStartedAt?: number;
 };
+
+const isDownloadTaskPayload = (input?: DownloadTaskInputData): input is DownloadTaskPayload =>
+  Boolean(input?.url && input?.countryCode && typeof input.adminLevel === 'number');
 
 export class BatchSessionManager extends BaseBatchSessionManager {
   private legacyProgressCallbacks = new Map<string, (progress: ProgressInfo) => void>();
@@ -211,8 +214,8 @@ export class BatchSessionManager extends BaseBatchSessionManager {
       .and((task) => task.taskType === 'download')
       .toArray();
     const downloadPayloads = downloadTasks
-      .map((task) => task.inputData as DownloadTaskPayload | undefined)
-      .filter((payload): payload is DownloadTaskPayload => Boolean(payload));
+      .map((task) => task.inputData as DownloadTaskInputData | undefined)
+      .filter(isDownloadTaskPayload);
     if (downloadPayloads.length === 0) {
       throw new Error(`Session ${nodeId} missing download payloads`);
     }

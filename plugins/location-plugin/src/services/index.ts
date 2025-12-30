@@ -22,4 +22,4 @@ export type { IdeGsmParseResult } from './ide-gsm/ideGsmCsv.js';
 // Batch Session manager and unified adapters
 export { LocationBatchSessionManager } from './batch/BatchSessionManager.js';
 
-export { getEphemeralLocationDB } from '../database/EphemeralLocationDB.js';
+export { getLocationDB } from '../database/EphemeralLocationDB.js';

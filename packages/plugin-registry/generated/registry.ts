@@ -434,7 +434,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "database": {
           "prewarm": [
             {
-              "export": "getEphemeralLocationDB",
+              "export": "getLocationDB",
               "specifier": "@hierarchidb/location-plugin/database"
             }
           ]
@@ -671,7 +671,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "database": {
           "prewarm": [
             {
-              "export": "RouteDatabase",
+              "export": "RouteDB",
               "specifier": "@hierarchidb/route-plugin/database"
             }
           ]

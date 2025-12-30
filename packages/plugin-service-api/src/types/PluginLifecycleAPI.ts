@@ -114,8 +114,9 @@ export interface PluginResetResult {
   success: boolean;
   nodeType: NodeType;
   deletedEntities: {
-    groupEntities?: number;
-    relationalEntities?: number;
+    features?: number;
+    relations?: number;
+    vectorTiles?: number;
     treeNodes?: number; // Only for folder-plugin/system reset
     peerEntities?: number; // Only for folder-plugin/system reset
   };

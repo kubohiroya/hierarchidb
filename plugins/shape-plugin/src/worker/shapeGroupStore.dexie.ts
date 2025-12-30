@@ -1,35 +1,27 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { GroupItemBase, GroupStore } from '@hierarchidb/runtime-worker';
-import type { ShapeEntitiesDB, ShapeGroupRow } from './shapeEntitiesDB.js';
+import type { FeatureStore } from '@hierarchidb/runtime-worker';
+import type { FeatureRecord, ShapeDB } from '@hierarchidb/shape-store';
 
-type Item = GroupItemBase<{ value?: unknown }>;
+type Item = FeatureRecord;
 
-export function createShapeGroupStoreDexie(db: ShapeEntitiesDB): GroupStore<Item> {
+export function createShapeFeatureStoreDexie(db: ShapeDB): FeatureStore<Item> {
   return {
     async list(nodeId: NodeId) {
-      const rows = await db.groupEntities.where('nodeId').equals(nodeId).toArray();
-      return rows.map(({ id, data, updatedAt }) => ({
-        id,
-        data: (data ?? undefined) as Item['data'],
-        updatedAt,
-      }));
+      return db.features.where('nodeId').equals(nodeId).toArray();
     },
     async bulkUpsert(nodeId: NodeId, items: Item[]) {
-      const timestamp = Date.now();
-      const rows: ShapeGroupRow[] = items.map((item) => ({
+      if (!items.length) return;
+      const now = Date.now();
+      const rows = items.map(({ id: _id, ...rest }) => ({
+        ...rest,
         nodeId,
-        id: item.id,
-        data: item.data,
-        updatedAt: item.updatedAt ?? timestamp,
-      }));
-      await db.groupEntities.bulkPut(rows);
+        createdAt: now,
+        updatedAt: now,
+      })) as Omit<Item, 'id'>[];
+      await db.features.bulkAdd(rows);
     },
-    async bulkDelete(nodeId: NodeId, itemIds: string[]) {
-      await db.transaction('rw', db.groupEntities, async () => {
-        for (const id of itemIds) {
-          await db.groupEntities.delete([nodeId, id]);
-        }
-      });
+    async bulkDelete(_nodeId: NodeId, itemIds: Array<Item['id']>) {
+      await db.features.bulkDelete(itemIds);
     },
   };
 }

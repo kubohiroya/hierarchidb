@@ -7,7 +7,6 @@ import type {
   RouteNearestEndpoint,
 } from '@hierarchidb/plugin-service-api';
 import type { RouteDatabaseHandle, RouteQueryAPI } from '@hierarchidb/route-store';
-import { TilesDB } from '@hierarchidb/gis-sdk';
 import {
   BTree,
   LRUMap,
@@ -103,8 +102,12 @@ export class RouteQueryService implements RouteQueryAPI {
   }
 
   async getVectorTile(nodeId: NodeId, z: number, x: number, y: number): Promise<ArrayBuffer | null> {
-    const db = await TilesDB.getSingleton();
-    const record = await db.tiles.where('[sessionId+z+x+y]').equals([nodeId, z, x, y]).first();
+    await this.db.open?.();
+    const record = await this.db.vectorTiles
+      .where('[nodeId+z+x+y]')
+      .equals([nodeId, z, x, y])
+      .toArray()
+      .then((rows) => rows[0]);
     return record?.data ?? null;
   }
 
@@ -141,7 +144,7 @@ export class RouteQueryService implements RouteQueryAPI {
     if (cached && Date.now() - cached.checkedAt < LINESTRING_CACHE_TTL_MS) {
       return cached.items;
     }
-    const rows = await this.db.lineStrings.where('nodeId').equals(nodeId).toArray();
+    const rows = await this.db.features.where('nodeId').equals(nodeId).toArray();
     const items = (rows as RouteLineStringRecord[]).map((row) => ({ ...row }));
     this.lineStringCache.set(nodeId, { checkedAt: Date.now(), items });
     return items;

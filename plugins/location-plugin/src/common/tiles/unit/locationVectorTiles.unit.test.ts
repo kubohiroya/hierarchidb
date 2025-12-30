@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { toNodeId, type ProgressEvent, type NodeId, type NodeType } from '@hierarchidb/common-types';
 import type { LocationPointInput, LocationTileSettings, SessionSummary } from '@hierarchidb/location-store';
-import { closeEphemeralLocationDB, getEphemeralLocationDB } from '@hierarchidb/location-store';
+import { closeLocationDB, getLocationDB } from '@hierarchidb/location-store';
 import type { BatchProgressEvent, BatchSessionStatus } from '@hierarchidb/common-api';
 import { UnifiedLocationBatchManager } from '../../../services/batch/UnifiedLocationBatchManager.js';
 import { LocationBatchSessionManager } from '../../../services/batch/BatchSessionManager.js';
@@ -63,7 +63,7 @@ class TestSessionManager extends LocationBatchSessionManager {
 function createLocalBridge(manager: UnifiedLocationBatchManager): BridgeLike {
   const sessionManager = new TestSessionManager();
   manager.setInternalManager(sessionManager);
-  manager.setDbProvider(() => getEphemeralLocationDB());
+  manager.setDbProvider(() => getLocationDB());
 
   return {
     async initialize() {
@@ -71,7 +71,7 @@ function createLocalBridge(manager: UnifiedLocationBatchManager): BridgeLike {
     },
     async startBatchSession(_nodeType, nodeId) {
       const sessionNodeId = await manager.startBatchSession(nodeId);
-      const db = getEphemeralLocationDB();
+      const db = getLocationDB();
       await db.vectorTiles.put({
         id: `loc-mvt-${sessionNodeId}-5-28-12`,
         nodeId: sessionNodeId,
@@ -99,7 +99,7 @@ function createLocalBridge(manager: UnifiedLocationBatchManager): BridgeLike {
         },
       } satisfies BatchProgressEvent;
       const timer = setTimeout(() => {
-        const db = getEphemeralLocationDB();
+        const db = getLocationDB();
         void db.sessions?.update?.(nodeId, {
           status: 'completed',
           progress: event.payload?.completed,
@@ -137,11 +137,11 @@ async function waitForCompleted(on: (cb: (p: ProgressInfo) => void) => void, tim
 
 describe('locationVectorTiles', () => {
   beforeEach(async () => {
-    const db = getEphemeralLocationDB();
+    const db = getLocationDB();
     await db.vectorTiles.clear();
   });
   afterEach(async () => {
-    await closeEphemeralLocationDB();
+    await closeLocationDB();
   });
 
   it('generates at least one vector tile for small point set', async () => {
@@ -160,7 +160,7 @@ describe('locationVectorTiles', () => {
 
     await waitForCompleted((cb) => subscribeLocationBatchProgress(summary.nodeId, cb, { bridge }));
 
-    const db = getEphemeralLocationDB();
+    const db = getLocationDB();
     const tiles = await db.vectorTiles.where('nodeId').equals(summary.nodeId).toArray();
     expect(tiles.length).toBeGreaterThan(0);
 
@@ -193,7 +193,7 @@ describe('locationVectorTiles', () => {
     expect(sawTilegen).toBe(true);
     expect(p.phase).toBe('completed');
 
-    const db = getEphemeralLocationDB();
+    const db = getLocationDB();
     const all = await db.vectorTiles.where('nodeId').equals(summary.nodeId).toArray();
     expect(all.length).toBeGreaterThan(0);
 

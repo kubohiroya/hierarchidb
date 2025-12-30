@@ -35,8 +35,10 @@ export type OptionalFeatureId = keyof typeof OPTIONAL_FEATURE_MODULE_IDS;
 export type PluginWorkerId = keyof typeof PLUGIN_WORKER_MODULE_IDS;
 
 export type StoreRegistry = {
-  getGroup<T = unknown>(nodeType: string): T | undefined;
-  registerGroup<T = unknown>(nodeType: string, store: T): void;
+  getFeatures<T = unknown>(nodeType: string): T | undefined;
+  registerFeatures<T = unknown>(nodeType: string, store: T): void;
+  getVectorTiles<T = unknown>(nodeType: string): T | undefined;
+  registerVectorTiles<T = unknown>(nodeType: string, store: T): void;
   getRelations<T = unknown>(nodeType: string): T | undefined;
   registerRelations<T = unknown>(nodeType: string, store: T): void;
 };

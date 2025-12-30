@@ -1,10 +1,14 @@
 export {
-  EphemeralLocationDB,
+  LocationDB,
+  type LocationFeatureRow,
+  type LocationRelationRow,
   type LocationSessionRecord,
   type PendingLocationSession,
   type VectorTileRecord,
-  closeEphemeralLocationDB,
-  getEphemeralLocationDB,
+  closeLocationDB,
+  getLocationDB,
   getLocationDatabase,
   LocationDatabase,
+  closeEphemeralLocationDB,
+  getEphemeralLocationDB,
 } from '@hierarchidb/location-store';

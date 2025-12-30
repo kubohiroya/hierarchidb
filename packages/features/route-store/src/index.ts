@@ -1,5 +1,6 @@
 // Shared route store types extracted from route-plugin.
 import type { ISO2, GroupEntity, NodeId, Timestamp, TreeNodeUpdaterPayload } from '@hierarchidb/common-types';
+import type { RouteVectorTileRecord as RouteVectorTileRecordType } from './RouteDatabase.js';
 import type { LocationPointId } from '@hierarchidb/location-store';
 
 export const ROUTE_MODES = {
@@ -141,11 +142,12 @@ export interface RouteBatchConfig extends BaseBatchConfigShape {
 
 export type BatchConfig = RouteBatchConfig;
 
-export { RouteDatabase } from './RouteDatabase.js';
+export type { RouteVectorTileRecord } from './RouteDatabase.js';
+export { RouteDB, RouteDB as RouteDatabase } from './RouteDatabase.js';
 export type RouteDatabaseHandle = {
   open?: () => Promise<unknown>;
   close?: () => void;
-  lineStrings: {
+  features: {
     where: (key: string) => {
       equals: (value: NodeId) => {
         toArray: () => Promise<RouteLineString[]>;
@@ -153,6 +155,17 @@ export type RouteDatabaseHandle = {
       };
     };
     bulkPut?: (items: RouteLineString[]) => Promise<unknown>;
+  };
+  vectorTiles: {
+    where: (key: string) => {
+      equals: (value: NodeId | [NodeId, number, number, number]) => {
+        toArray: () => Promise<RouteVectorTileRecordType[]>;
+        delete?: () => Promise<number>;
+      };
+    };
+    bulkPut?: (items: RouteVectorTileRecordType[]) => Promise<unknown>;
+    bulkDelete?: (keys: string[]) => Promise<unknown>;
+    get?: (key: string) => Promise<RouteVectorTileRecordType | undefined>;
   };
 };
 

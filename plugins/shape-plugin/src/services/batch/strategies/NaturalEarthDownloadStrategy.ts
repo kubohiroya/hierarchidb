@@ -34,7 +34,7 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
       }
     }
     const inputsByTaskId = new Map<string, DownloadTaskInput>();
-    const tasks = Array.from(adminLevels.entries()).map(([adminLevel, metadata], index) => {
+    const tasks: DownloadTask[] = Array.from(adminLevels.entries()).map(([adminLevel, metadata], index) => {
       const taskId = buildDownloadTaskId(String(context.nodeId), metadata);
       const input: DownloadTaskInput = {
         dataSource: 'naturalearth',

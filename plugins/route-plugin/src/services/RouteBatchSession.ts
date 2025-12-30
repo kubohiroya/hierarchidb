@@ -6,6 +6,8 @@ import type { NodeId } from '@hierarchidb/common-types';
 import type { RouteBatchConfig } from '../common/types/BatchConfig.js';
 import type { Feature, LineString } from 'geojson';
 import { createStageWorkerClient, runVectorTileStage } from '@hierarchidb/runtime-worker';
+import { RouteDB } from './database/RouteDatabase.js';
+import type { RouteVectorTileRecord } from '@hierarchidb/route-store';
 
 export interface RouteBatchTask {
   taskId: string;
@@ -203,7 +205,7 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
       if (!vectorTileClient) {
         throw new Error('vectortile client unavailable');
       }
-      await runVectorTileStage({
+      const result = await runVectorTileStage({
         bufferId: nodeId,
         buffer: bytes,
         contentType: 'application/json',
@@ -215,6 +217,31 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
           buffer,
         },
       }, vectorTileClient);
+
+      const tiles = result.tiles;
+      if (tiles.length === 0) return;
+      const db = new RouteDB();
+      await db.open?.();
+      const records: RouteVectorTileRecord[] = [];
+      for (const tile of tiles) {
+        const data = await vectorTileClient.getTile(nodeId, tile.z, tile.x, tile.y);
+        if (!data) continue;
+        records.push({
+          tileId: `${nodeId}-${tile.z}-${tile.x}-${tile.y}`,
+          nodeId,
+          z: tile.z,
+          x: tile.x,
+          y: tile.y,
+          data: data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength),
+          size: data.byteLength,
+          contentType: 'application/vnd.mapbox-vector-tile',
+          timestamp: Date.now(),
+        });
+      }
+      if (records.length > 0) {
+        await db.vectorTiles.where('nodeId').equals(nodeId).delete();
+        await db.vectorTiles.bulkPut(records);
+      }
     } finally {
       (client as { terminate?: () => void }).terminate?.();
     }

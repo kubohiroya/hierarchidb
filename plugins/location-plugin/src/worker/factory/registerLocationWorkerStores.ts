@@ -1,12 +1,21 @@
 /// <reference types="vite/client" />
 
 
-import type { GroupItemBase, GroupStore, RelationBase, RelationStore } from '@hierarchidb/runtime-worker';
+import type {
+  FeatureItemBase,
+  FeatureStore,
+  RelationBase,
+  RelationStore,
+  VectorTileItemBase,
+  VectorTileStore,
+} from '@hierarchidb/runtime-worker';
 import { isDevEnvironment } from '../../common/utils/env.js';
 
 type StoreRegistry = {
-  getGroup<T extends GroupItemBase<any> = GroupItemBase<any>>(nodeType: string): GroupStore<T> | undefined;
-  registerGroup<T extends GroupItemBase<any>>(nodeType: string, store: GroupStore<T>): void;
+  getFeatures<T extends FeatureItemBase<any> = FeatureItemBase<any>>(nodeType: string): FeatureStore<T> | undefined;
+  registerFeatures<T extends FeatureItemBase<any>>(nodeType: string, store: FeatureStore<T>): void;
+  getVectorTiles<T extends VectorTileItemBase = VectorTileItemBase>(nodeType: string): VectorTileStore<T> | undefined;
+  registerVectorTiles<T extends VectorTileItemBase>(nodeType: string, store: VectorTileStore<T>): void;
   getRelations<T extends RelationBase<any> = RelationBase<any>>(nodeType: string): RelationStore<T> | undefined;
   registerRelations<T extends RelationBase<any>>(nodeType: string, store: RelationStore<T>): void;
 };
@@ -29,13 +38,17 @@ async function resolveStoreRegistry(options: RegisterLocationWorkerStoresOptions
 }
 
 async function ensureLocationStores(registry: StoreRegistry): Promise<void> {
-  const { LocationEntitiesDB } = await import('../locationEntitiesDB.js');
-  const db = new LocationEntitiesDB();
+  const { LocationDB } = await import('../locationEntitiesDB.js');
+  const db = new LocationDB();
   await db.open?.();
 
-  if (!registry.getGroup('location')) {
-    const { createLocationGroupStoreDexie } = await import('../locationGroupStore.dexie.js');
-    registry.registerGroup('location', createLocationGroupStoreDexie(db));
+  if (!registry.getFeatures('location')) {
+    const { createLocationFeatureStoreDexie } = await import('../locationGroupStore.dexie.js');
+    registry.registerFeatures('location', createLocationFeatureStoreDexie(db));
+  }
+  if (!registry.getVectorTiles('location')) {
+    const { createLocationVectorTileStoreDexie } = await import('../locationVectorTileStore.dexie.js');
+    registry.registerVectorTiles('location', createLocationVectorTileStoreDexie(db));
   }
   if (!registry.getRelations('location')) {
     const { createLocationRelationStoreDexie } = await import('../locationRelationStore.dexie.js');

@@ -3,7 +3,7 @@ import { toNodeType } from '@hierarchidb/common-types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CoreDB } from '../../../services/CoreDB.js';
 import { EntityLifecycleManager } from '../../EntityLifecycleManager.js';
-import type { GroupItemBase, GroupStore, RelationBase, RelationStore } from '../../store.js';
+import type { FeatureItemBase, FeatureStore, RelationBase, RelationStore } from '../../store.js';
 import { storeRegistry } from '../../store-registry.js';
 
 describe('Lifecycle: Group/Relations duplication via idMap', () => {
@@ -36,10 +36,10 @@ describe('Lifecycle: Group/Relations duplication via idMap', () => {
     });
 
     // Group store stub
-    const groupData = new Map<NodeId, GroupItemBase<{ v: number }>[]>();
+    const groupData = new Map<NodeId, FeatureItemBase<{ v: number }>[]>();
     groupData.set(src, [{ id: 'i1', data: { v: 1 } }]);
-    const upserts: Array<{ nodeId: NodeId; items: GroupItemBase[] }> = [];
-    const gstore: GroupStore<GroupItemBase<{ v: number }>> = {
+    const upserts: Array<{ nodeId: NodeId; items: FeatureItemBase[] }> = [];
+    const gstore: FeatureStore<FeatureItemBase<{ v: number }>> = {
       async list(nodeId: NodeId) {
         return groupData.get(nodeId) ?? [];
       },
@@ -50,7 +50,7 @@ describe('Lifecycle: Group/Relations duplication via idMap', () => {
         /* noop */
       },
     };
-    storeRegistry.registerGroup(folderType, gstore);
+    storeRegistry.registerFeatures(folderType, gstore);
 
     const mgr = EntityLifecycleManager.getSingleton(core as unknown as CoreDB);
     EntityLifecycleManager.setIdMapping('cmd-g', [[src, dst]]);

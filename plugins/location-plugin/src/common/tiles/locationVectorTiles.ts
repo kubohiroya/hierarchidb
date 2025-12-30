@@ -7,7 +7,7 @@ import type {
   UnifiedLocationBatchConfig,
 } from '@hierarchidb/location-store';
 import type { BatchProgressEvent, BatchSessionStatus } from '@hierarchidb/common-api';
-import { getEphemeralLocationDB } from '@hierarchidb/location-store';
+import { getLocationDB } from '@hierarchidb/location-store';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { UnifiedLocationBatchManager } from '../../services/batch/UnifiedLocationBatchManager.js';
 
@@ -28,7 +28,7 @@ const LOCATION_NODE_TYPE = 'location' as NodeType;
 type LocationVectorTileDeps = {
   manager?: UnifiedLocationBatchManager;
   bridge?: BatchBridge;
-  dbProvider?: typeof getEphemeralLocationDB;
+  dbProvider?: typeof getLocationDB;
 };
 
 export async function startLocationVectorTileSession(
@@ -87,7 +87,7 @@ export async function getLocationVectorTile(
   y: number,
   deps: LocationVectorTileDeps = {},
 ): Promise<Uint8Array | null> {
-  const db = (deps.dbProvider ?? getEphemeralLocationDB)();
+  const db = (deps.dbProvider ?? getLocationDB)();
   const id = `loc-mvt-${nodeId}-${z}-${x}-${y}`;
   const rec = await db.vectorTiles.get(id);
   if (!rec || rec.nodeId !== nodeId) return null;
@@ -105,7 +105,7 @@ export async function getLocationSessionSummary(
   sizeBytes: number;
   bbox?: [number, number, number, number];
 }> {
-  const db = (deps.dbProvider ?? getEphemeralLocationDB)();
+  const db = (deps.dbProvider ?? getLocationDB)();
   const list = await db.vectorTiles.where('nodeId').equals(nodeId).toArray();
   if (list.length === 0) return { exists: false, layers: [], tiles: 0, sizeBytes: 0 };
   const zmin = Math.min(...list.map(r => r.z));
