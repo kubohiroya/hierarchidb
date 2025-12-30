@@ -126,8 +126,6 @@ export class SessionTaskRegistry {
 
   async markDownloadTasksCompletedWhenBuffersExist(tasks: DownloadTask[]): Promise<void> {
     if (tasks.length === 0) return;
-    const session = await this.queryApi.getBatchSession(this.nodeId);
-    const startedAt = session?.startedAt ?? 0;
     const existing = await this.queryApi.listBatchTaskRecordsByStage(this.nodeId, 'download');
     const statusById = new Map(existing.map((task) => [task.taskId, task.status]));
     for (const task of tasks) {
@@ -137,14 +135,11 @@ export class SessionTaskRegistry {
       const bufferId = `${this.nodeId}-download-${index}`;
       const raw = await this.queryApi.getRawBuffer(bufferId);
       if (!raw) continue;
-      if (startedAt > 0 && raw.timestamp < startedAt) {
-        continue;
-      }
       await this.mutationApi.updateBatchTask(task.taskId, {
         status: 'completed',
         progress: 100,
         completedAt: Date.now(),
-        message: 'Skipped: already downloaded.',
+        message: 'Skipped: already downloaded (buffer exists).',
         errorMessage: undefined,
       });
     }

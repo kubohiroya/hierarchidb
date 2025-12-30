@@ -35,6 +35,7 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
   const bridgeRef = useMemo(() => getWorkerBridge(), []);
 
   const [counts, setCounts] = useState({ raw: 0, stage1: 0, stage2: 0, tiles: 0, cache: 0 });
+  const [countsLoading, setCountsLoading] = useState(false);
   const [taskCounts, setTaskCounts] = useState({ vectortile: 0 });
   const [finalCounts, setFinalCounts] = useState({ tiles: 0, metadata: 0 });
   const [failedCounts, setFailedCounts] = useState({ download: 0, extract1: 0, extract2: 0, vectortile: 0 });
@@ -54,53 +55,59 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
       setFinalCounts({ tiles: 0, metadata: 0 });
       setFailedCounts({ download: 0, extract1: 0, extract2: 0, vectortile: 0 });
       setTaskCounts({ vectortile: 0 });
+      setCountsLoading(false);
       return;
     }
-    const [
-      raw,
-      stage1,
-      stage2,
-      tiles,
-      cacheEntries,
-      finalTiles,
-      finalMetadata,
-      vectortileTasks,
-    ] = await Promise.all([
-      db.rawBuffers.where('nodeId').equals(batchNodeId).count(),
-      db.extractedBuffers.where({ nodeId: batchNodeId, stage: 'extract1' }).count(),
-      db.extractedBuffers.where({ nodeId: batchNodeId, stage: 'extract2' }).count(),
-      db.vectorTiles.where('nodeId').equals(batchNodeId).count(),
-      db.cache.filter((entry) => entry.key.includes(batchNodeId)).count(),
-      shapeDB.vectorTiles.where('nodeId').equals(batchNodeId).count(),
-      getShapeTileMetadataDB()
-        .then(async (metadataDb) => {
-          const [featureCount, sourceCount] = await Promise.all([
-            metadataDb.featureMetadata.where('nodeId').equals(batchNodeId).count(),
-            metadataDb.sourceMetadata.where('nodeId').equals(batchNodeId).count(),
-          ]);
-          return Math.max(featureCount, sourceCount);
-        }),
-      shapeDB.batchTasks
+    setCountsLoading(true);
+    try {
+      const [
+        raw,
+        stage1,
+        stage2,
+        tiles,
+        cacheEntries,
+        finalTiles,
+        finalMetadata,
+        vectortileTasks,
+      ] = await Promise.all([
+        db.rawBuffers.where('nodeId').equals(batchNodeId).count(),
+        db.extractedBuffers.where({ nodeId: batchNodeId, stage: 'extract1' }).count(),
+        db.extractedBuffers.where({ nodeId: batchNodeId, stage: 'extract2' }).count(),
+        db.vectorTiles.where('nodeId').equals(batchNodeId).count(),
+        db.cache.filter((entry) => entry.key.includes(batchNodeId)).count(),
+        shapeDB.vectorTiles.where('nodeId').equals(batchNodeId).count(),
+        getShapeTileMetadataDB()
+          .then(async (metadataDb) => {
+            const [featureCount, sourceCount] = await Promise.all([
+              metadataDb.featureMetadata.where('nodeId').equals(batchNodeId).count(),
+              metadataDb.sourceMetadata.where('nodeId').equals(batchNodeId).count(),
+            ]);
+            return Math.max(featureCount, sourceCount);
+          }),
+        shapeDB.batchTasks
+          .where('nodeId')
+          .equals(batchNodeId)
+          .and((task) => task.taskType === 'vectortile')
+          .count(),
+      ]);
+      const failedTasks = await shapeDB.batchTasks
         .where('nodeId')
         .equals(batchNodeId)
-        .and((task) => task.taskType === 'vectortile')
-        .count(),
-    ]);
-    const failedTasks = await shapeDB.batchTasks
-      .where('nodeId')
-      .equals(batchNodeId)
-      .and((task) => task.status === 'failed')
-      .toArray();
-    const failed = {
-      download: failedTasks.filter((task) => task.taskType === 'download').length,
-      extract1: failedTasks.filter((task) => task.taskType === 'extract1').length,
-      extract2: failedTasks.filter((task) => task.taskType === 'extract2').length,
-      vectortile: failedTasks.filter((task) => task.taskType === 'vectortile').length,
-    };
-    setCounts({ raw, stage1, stage2, tiles, cache: cacheEntries });
-    setFinalCounts({ tiles: finalTiles, metadata: finalMetadata });
-    setFailedCounts(failed);
-    setTaskCounts({ vectortile: vectortileTasks });
+        .and((task) => task.status === 'failed')
+        .toArray();
+      const failed = {
+        download: failedTasks.filter((task) => task.taskType === 'download').length,
+        extract1: failedTasks.filter((task) => task.taskType === 'extract1').length,
+        extract2: failedTasks.filter((task) => task.taskType === 'extract2').length,
+        vectortile: failedTasks.filter((task) => task.taskType === 'vectortile').length,
+      };
+      setCounts({ raw, stage1, stage2, tiles, cache: cacheEntries });
+      setFinalCounts({ tiles: finalTiles, metadata: finalMetadata });
+      setFailedCounts(failed);
+      setTaskCounts({ vectortile: vectortileTasks });
+    } finally {
+      setCountsLoading(false);
+    }
   }, [batchNodeId, db, resolvedNodeId]);
 
   useEffect(() => {
@@ -312,6 +319,7 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
     switchId,
     baseDownloadConfig,
     deleteLabel,
+    countsLoading,
     canDeleteRaw,
     canDeleteStage1,
     canDeleteStage2,

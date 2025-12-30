@@ -1,4 +1,4 @@
-import { Button, Grid } from '@mui/material';
+import { Button, Grid, Skeleton, Stack, Typography } from '@mui/material';
 import {
   CloudDownload as CloudDownloadIcon,
   FilterAlt as FilterAltIcon,
@@ -10,6 +10,7 @@ import { useTranslation } from '../../i18n.js';
 
 type Props = {
   deleteLabel: string;
+  countsLoading?: boolean;
   canDeleteRaw: boolean;
   canDeleteStage1: boolean;
   canDeleteStage2: boolean;
@@ -25,6 +26,7 @@ type Props = {
 
 export const DownloadCacheActions: React.FC<Props> = ({
   deleteLabel,
+  countsLoading = false,
   canDeleteRaw,
   canDeleteStage1,
   canDeleteStage2,
@@ -38,20 +40,28 @@ export const DownloadCacheActions: React.FC<Props> = ({
   onResetDefaults,
 }) => {
   const { t } = useTranslation();
+  const rawDisabled = countsLoading || !canDeleteRaw;
 
   return (
     <Grid container spacing={1} sx={{ width: '100%' }}>
       <Grid size={{ xs: 12, sm: 6 }}>
-        <Button
-          fullWidth
-          variant="outlined"
-          color="error"
-          startIcon={<CloudDownloadIcon />}
-          disabled={!canDeleteRaw}
-          onClick={onDeleteRaw}
-        >
-          {deleteLabel}
-        </Button>
+        <Stack spacing={0.5}>
+          <Button
+            fullWidth
+            variant="outlined"
+            color="error"
+            startIcon={<CloudDownloadIcon />}
+            disabled={rawDisabled}
+            onClick={onDeleteRaw}
+          >
+            {countsLoading ? <Skeleton width="70%" /> : deleteLabel}
+          </Button>
+          {countsLoading ? (
+            <Typography variant="caption" color="text.secondary">
+              {t('processing.download.deleteLoadingHint', 'Loading delete counts...')}
+            </Typography>
+          ) : null}
+        </Stack>
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
         <Button

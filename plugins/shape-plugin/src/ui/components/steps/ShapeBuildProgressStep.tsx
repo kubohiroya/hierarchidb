@@ -9,6 +9,7 @@ import {
   DialogContent,
   DialogTitle,
   LinearProgress,
+  Skeleton,
   Snackbar,
   Stack,
   Typography,
@@ -37,6 +38,8 @@ import {
   shapeBuildProgressAuthAtom,
   shapeBuildProgressControlsAtom,
   shapeBuildProgressSummaryAtom,
+  shapeBuildTaskSummaryLoadingAtom,
+  shapeBuildTasksLoadingAtom,
   shapeBuildWarningMessageAtom,
   shapeBuildStageProgressAtom,
   shapeBuildStagesAtom,
@@ -135,6 +138,7 @@ const ShapeBuildProgressAtomSync: React.FC<ShapeDialogStepProps> = ({ data, onCh
     failed,
     skipped,
     hasProgressData,
+    isTaskSummaryLoading,
     warningMessage,
     canStartOrResume,
     handleStartOrResume,
@@ -150,6 +154,7 @@ const ShapeBuildProgressAtomSync: React.FC<ShapeDialogStepProps> = ({ data, onCh
   const setTasksByStage = useSetAtom(shapeBuildTasksByStageAtom);
   const setBuildStatus = useSetAtom(shapeBuildBuildStatusAtom);
   const setSummary = useSetAtom(shapeBuildProgressSummaryAtom);
+  const setTaskSummaryLoading = useSetAtom(shapeBuildTaskSummaryLoadingAtom);
   const setWarningMessage = useSetAtom(shapeBuildWarningMessageAtom);
   const setControls = useSetAtom(shapeBuildProgressControlsAtom);
   const setAuth = useSetAtom(shapeBuildProgressAuthAtom);
@@ -200,6 +205,10 @@ const ShapeBuildProgressAtomSync: React.FC<ShapeDialogStepProps> = ({ data, onCh
   ]);
 
   useEffect(() => {
+    setTaskSummaryLoading(isTaskSummaryLoading);
+  }, [isTaskSummaryLoading, setTaskSummaryLoading]);
+
+  useEffect(() => {
     setWarningMessage(warningMessage ?? null);
   }, [setWarningMessage, warningMessage]);
 
@@ -238,6 +247,8 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
   const effectiveStages = stages.length > 0 ? stages : fallbackStages;
   const stageProgress = useAtomValue(shapeBuildStageProgressAtom);
   const paneProgress = useAtomValue(shapeBuildPaneProgressAtom);
+  const isTasksLoading = useAtomValue(shapeBuildTasksLoadingAtom);
+  const isTaskSummaryLoading = useAtomValue(shapeBuildTaskSummaryLoadingAtom);
   const tasksByStage = useAtomValue(shapeBuildTasksByStageAtom);
   const summary = useAtomValue(shapeBuildProgressSummaryAtom);
   const controls = useAtomValue(shapeBuildProgressControlsAtom);
@@ -303,9 +314,26 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
   const renderStageContent = useCallback((stage: BuildStage, stageValue: number) => {
     const stageTasks = tasksByStage[stage.id] ?? [];
     const hasTasks = stageTasks.length > 0;
+    const stagePane = paneProgress?.find((entry) => entry.paneId === stage.id);
+    const hasSummaryTasks = (stagePane?.taskCount ?? 0) > 0;
+    const isBuildRunning = summary?.buildStatus === 'running';
+    const showSummarySkeleton = isBuildRunning && isTaskSummaryLoading && !hasTasks && !hasSummaryTasks;
+    const showTaskSkeleton = isBuildRunning && !hasTasks && !showSummarySkeleton && (isTasksLoading || hasSummaryTasks);
     return (
       <Stack spacing={1} sx={{ p: 2, height: '100%', minHeight: 0 }}>
-        {!hasTasks ? (
+        {showSummarySkeleton ? (
+          <>
+            <Skeleton variant="text" width="40%" />
+            <Skeleton variant="text" width="70%" />
+            <Skeleton variant="rounded" height={88} />
+          </>
+        ) : showTaskSkeleton ? (
+          <>
+            <Typography variant="subtitle2">{stage.title}</Typography>
+            <Skeleton variant="text" width="60%" />
+            <Skeleton variant="rounded" height={160} />
+          </>
+        ) : !hasTasks ? (
           <>
             <Typography variant="subtitle2">{stage.title}</Typography>
             {stage.description ? (
@@ -328,7 +356,7 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
         )}
       </Stack>
     );
-  }, [resolveStatusColor, resolveStatusLabel, resolveTaskTitle, t, tasksByStage]);
+  }, [isTaskSummaryLoading, isTasksLoading, paneProgress, resolveStatusColor, resolveStatusLabel, resolveTaskTitle, t, tasksByStage]);
 
   const startWarning = useMemo(() => {
     if (!crashInsight || !crashInsight.memoryPressure) return null;

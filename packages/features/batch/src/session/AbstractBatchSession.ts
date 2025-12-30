@@ -114,6 +114,9 @@ export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = Bas
   }
 
   async pause(): Promise<void> {
+    if (this.state.status === 'paused') {
+      return;
+    }
     if (this.state.status !== 'running') {
       throw new Error(`Cannot pause session from state ${this.state.status}`);
     }

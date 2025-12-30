@@ -51,6 +51,7 @@
       "deleteNowTitle": "Delete build outputs immediately",
       "deleteDownloadedFiles": "Delete Downloaded Files",
       "deleteDownloadedFilesWithCount": "Delete Downloaded Files ({{count}} files)",
+      "deleteLoadingHint": "Loading delete counts...",
       "deleteStage1Cache": "Delete Stage1 Cache",
       "deleteStage2Cache": "Delete Stage2 Cache",
       "deleteTiles": "Delete Tiles",

@@ -10,6 +10,7 @@ import { BatchService } from '@hierarchidb/batch';
 import { createStageWorkerClient, getStageWorkerProxy, runVectorTileStage } from '@hierarchidb/runtime-worker';
 import { TilesDB, type VectorTileProgress } from '@hierarchidb/gis-sdk';
 import { assignFeatureIds, HDB_ORIGIN_KEY } from '../utils/featureIds.js';
+import { bbox as turfBbox } from '@turf/turf';
 
 const isAbortError = (error: unknown): boolean => (
   error instanceof Error && error.name === 'AbortError'
@@ -114,13 +115,33 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
         merged.maxX = Math.max(merged.maxX, childBox[2]);
         merged.maxY = Math.max(merged.maxY, childBox[3]);
       }
-      if (!Number.isFinite(merged.minX)) return null;
+      if (!Number.isFinite(merged.minX)) {
+        const fallback = this.computeFallbackBBox(geometry);
+        return fallback;
+      }
       return [merged.minX, merged.minY, merged.maxX, merged.maxY];
     }
     const bounds = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
     this.updateBounds(geometry.coordinates, bounds);
-    if (!Number.isFinite(bounds.minX)) return null;
+    if (!Number.isFinite(bounds.minX)) {
+      return this.computeFallbackBBox(geometry);
+    }
     return [bounds.minX, bounds.minY, bounds.maxX, bounds.maxY];
+  }
+
+  private computeFallbackBBox(geometry: Feature['geometry']): [number, number, number, number] | null {
+    try {
+      const bbox = turfBbox(geometry);
+      if (!bbox || bbox.length !== 4) return null;
+      const [minX, minY, maxX, maxY] = bbox;
+      if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY)) {
+        return null;
+      }
+      return [minX, minY, maxX, maxY];
+    } catch (error) {
+      console.debug('[VectorTile] BBox fallback failed', { error });
+      return null;
+    }
   }
 
   private tileToBBox(z: number, x: number, y: number): [number, number, number, number] {
@@ -146,14 +167,20 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     const db = getEphemeralShapeDB();
     const buffers = await db.extractedBuffers.where({ nodeId, stage: 'extract2' }).toArray();
     const result: Array<{ feature: Feature; bbox: [number, number, number, number] }> = [];
+    let totalFeatures = 0;
+    let missingBbox = 0;
     for (const row of buffers) {
       const decoded = await this.decodeGeoJson(row.data);
       if (!decoded || typeof decoded !== 'object') continue;
       const features = (decoded as { features?: Feature[] }).features ?? [];
       for (const feature of features) {
         if (!feature) continue;
+        totalFeatures += 1;
         const bbox = this.computeBBox(feature.geometry);
-        if (!bbox) continue;
+        if (!bbox) {
+          missingBbox += 1;
+          continue;
+        }
         result.push({ feature, bbox });
       }
     }
@@ -166,6 +193,13 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
         {},
       );
     }
+    console.debug('[VectorTile] Extract2 features loaded', {
+      nodeId,
+      buffers: buffers.length,
+      totalFeatures,
+      indexedFeatures: result.length,
+      missingBbox,
+    });
     this.featureCache.set(nodeId, result);
     return result;
   }

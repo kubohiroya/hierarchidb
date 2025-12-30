@@ -51,6 +51,7 @@
       "deleteNowTitle": "即時でのビルド生成物の削除",
       "deleteDownloadedFiles": "ダウンロード済みファイルを削除",
       "deleteDownloadedFilesWithCount": "ダウンロード済みファイルを削除 ({{count}}件)",
+      "deleteLoadingHint": "削除件数を読み込み中...",
       "deleteStage1Cache": "ステージ1キャッシュを削除",
       "deleteStage2Cache": "ステージ2キャッシュを削除",
       "deleteTiles": "タイルを削除",

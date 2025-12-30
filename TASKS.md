@@ -53,6 +53,18 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+2024) shape-plugin: Extract2 のタスクグループ化挙動の確認（P2）
+- ブランチ: `investigation/shape-plugin/extract2-grouping`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/services/batch/**`, `plugins/shape-plugin/src/worker/**`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] Extract2 のグループ化条件（TopoJSON/GeoJSON）をコード根拠で説明できる
+  - [ ] GeoJSON の場合のタスク生成/処理フローを説明できる
+  - [ ] 調査結果を運用ログに記載する
+- ロールバック手順：調査のみ（コード変更なし）
+- 運用ログ：
+  - start: 2025-12-31 06:26 JST Extract2 のタスクグループ化挙動の調査に着手。
+  - progress: 2025-12-31 06:29 JST SessionController の buildExtract2TasksWithTopoJSON / buildExtract2TasksFromExtract1 を確認。
+
 2017) shape-plugin: LRUSplitView のタスク一覧に Extract1/2 を表示 + Extract2 圧縮調整（P1）
 - ブランチ: `fix/shape-plugin/build-task-pane-and-extract2-tuning`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `packages/ui/batch/src/hooks/useBuildTaskProgress.ts`, `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`, `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/services/batch/**`, `TASKS.md`
@@ -77,6 +89,22 @@
   - progress: 2025-12-31 08:06 JST LRUSplitView のタスク一覧でステータス Chip を 4px 下げる調整を追加。
   - progress: 2025-12-31 08:10 JST LRUSplitView のタスク一覧でステータス Chip の下げ量を 8px に拡大。
   - progress: 2025-12-31 08:14 JST Chip の位置調整を transform へ切替し、横方向のズレを防止。
+  - progress: 2025-12-31 08:24 JST Extract2 のタスク表示を groupKey（dataSource/continent/adminLevel）優先に変更。
+  - progress: 2025-12-31 08:40 JST VectorTile の min/maxZoom を tileConfig/legacy から確実に採用し、maxZoom 未設定時は minZoom へ揃えるよう修正。
+  - progress: 2025-12-31 08:32 JST pause が二重に呼ばれた場合は no-op で返すよう AbstractBatchSession を修正。
+  - progress: 2025-12-31 09:02 JST VectorTile タスクのズーム逸脱調査のため、Worker側の有効ズーム範囲とタイル生成のログ/クランプ追加を準備。
+  - progress: 2025-12-31 09:10 JST VectorTile の有効ズーム範囲/タイル生成分布を console.debug に出力し、範囲外タイルは生成前にクランプするよう修正。
+  - progress: 2025-12-31 09:18 JST saveDraftBeforeBatch で sharedZoomRange を batchConfig.tileConfig に強制同期し、UI設定が Worker に反映されるよう修正。
+  - progress: 2025-12-31 09:20 JST TileConfigSection の sharedZoomRange デフォルトを toolbar と同じ 0-6 に揃えた。
+  - progress: 2025-12-31 09:30 JST resume時に sharedZoomRange と前回ビルドのズーム範囲が異なる場合は警告して再開をブロックするよう調整。
+  - progress: 2025-12-31 09:38 JST resume時にセッションの vectorTiles min/max と現在の batchConfig を比較し、不一致なら再開を拒否して警告するよう修正。
+  - progress: 2025-12-31 09:54 JST Step5 のタスク表示で summary/詳細待ちに Skeleton を表示し、Step4 の削除ボタンは件数取得中に Skeleton + ヒントを出すよう改善。
+  - progress: 2025-12-31 10:02 JST Step5 の Skeleton 表示で loading 状態が未定義になる不具合を修正（loading atom を追加）。
+  - progress: 2025-12-31 10:18 JST Download の再開時に既存 raw buffer があれば無条件で完了扱いにし、スキップ理由を message に出すよう修正。
+  - progress: 2025-12-31 10:32 JST Step4 のデフォルト設定を更新（簡略化0.02、クイック除外0.002、二次抽出=GeoJSON、量子化=★7=200000）。
+  - progress: 2025-12-31 10:46 JST Extract2 の extractionMode を config から参照するよう修正（GeoJSON指定時は1:1でタスク生成）。
+  - progress: 2025-12-31 11:02 JST buildBatchSessionConfig で extract2.extractionMode を BatchProcessConfig へ反映し、GeoJSON指定がWorkerに届くよう修正。
+  - progress: 2025-12-31 11:22 JST Step4 のフォーム項目と Step5 の結線状況を点検し、未結線の cleanupConfig.deleteStage1Cache/deleteStage2Cache を確認。
 
 2016) shape-plugin: Extract1 ステージの完了ログとスキップ理由を出力（P1）
 - ブランチ: `fix/shape-plugin/extract1-logging-summary`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -7755,6 +7783,22 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+
+2023) fix/shape-plugin/defaults-elongated-and-extract2 (P1) — 完了 (2025-12-31)
+- 要点：細長形状補正係数を 1.3、二次的な簡略化の強さを 0.1 に更新し、UI 既定値を同期。
+- 検証：未実施（手動確認未実行）。
+- ロールバック手順：`plugins/shape-plugin/src/common/types/constants.ts`, `plugins/shape-plugin/src/ui/components/steps/Extract2ConfigSection.tsx`, `TASKS.md` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-31 06:17 JST 既定値の更新に着手。
+  - done: 2025-12-31 06:17 JST 既定値の更新を反映。検証: 未実施（手動確認未実行）。ロールバック: 上記差分を revert。
+
+2022) fix/shape-plugin/batchconfig-minmaxzoom (P1) — 完了 (2025-12-31)
+- 要点：worker/api の min/max zoom を tileConfig に統一し、BatchConfig の型エラーを解消。
+- 検証：未実施（手動確認未実行）。
+- ロールバック手順：`plugins/shape-plugin/src/worker/api.ts` と `TASKS.md` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-31 01:28 JST BatchConfig の min/max zoom 参照修正に着手。
+  - done: 2025-12-31 01:28 JST tileConfig 由来に統一して型エラーを解消。検証: 未実施（手動確認未実行）。ロールバック: 上記差分を revert。
 
 2021) feat/styler-plugin/step6-opacity-width (P1) — 完了 (2025-12-30)
 - 要点：Step6で opacity/width 向けUIを追加し、初期レンジは opacity 0–1 / width 0.5–10。Step7 の Value チップはマッピング後の数値を表示。
@@ -16267,3 +16311,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 運用ログ：
   - start: 2025-12-30 12:41 JST 由来単位ごとの段階別頂点数・ポリゴン数の集計と Step6 表示拡張に着手。
   - progress: 2025-12-30 12:46 JST ExecPlan を `plans/shape-metadata-stage-geometry-stats-execplan.md` に作成。
+  - progress: 2025-12-31 06:39 JST fix/shape/auto-cleanup-stage-cache — Extract2/VectorTile 完了時に cleanupConfig を参照して extract1/extract2 キャッシュを自動削除する処理を追加。検証: 未実施（手動確認未実行）。ロールバック: `plugins/shape-plugin/src/services/batch/SessionController.ts` と `TASKS.md` の差分を revert。
+  - progress: 2025-12-31 06:39 JST fix/shape/task-summary-skeleton-flash — タスク一覧が空のときのみ taskSummary ロード/ Skeleton を出すように条件を厳密化。検証: 未実施（手動確認未実行）。ロールバック: `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`, `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`, `TASKS.md` の差分を revert。
+  - progress: 2025-12-31 06:39 JST fix/shape/skeleton-only-when-running — Skeleton 表示条件に buildStatus=running を追加し、停止中は表示しないよう制御。検証: 未実施（手動確認未実行）。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`, `TASKS.md` の差分を revert。
+  - progress: 2025-12-31 06:39 JST fix/shape/task-summary-zero-counts — taskSummary のステージキーを task.stage まで含めて算出し、サマリーが空のときは paneProgress の taskCount を優先するように修正。検証: 未実施（手動確認未実行）。ロールバック: `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`, `TASKS.md` の差分を revert。
+  - progress: 2025-12-31 06:39 JST fix/shape/extract2-mode-diagnostics — Extract2 のモード選択/タスク生成を SessionController でログ化し、resume 時に extract2 mode 変更を検知して再開をブロック。Extract1/Extract2/VectorTile の削減・bbox 落ちの診断ログを追加。検証: 未実施（手動確認未実行）。ロールバック: `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/services/batch/SessionController.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `TASKS.md` の差分を revert。
+  - progress: 2025-12-31 06:39 JST fix/shape/lru-summary-stale-on-resume — buildStartedAt 変更時にサマリーをリセットし、タスク一覧がある場合は paneProgress を優先するように変更。検証: 未実施（手動確認未実行）。ロールバック: `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`, `TASKS.md` の差分を revert。
+  - progress: 2025-12-31 06:39 JST fix/shape/extract2-config-type — ExtractSession2Config に extractionMode を追加し、SessionController の抽出モード参照の型不整合を解消。検証: 未実施（手動確認未実行）。ロールバック: `plugins/shape-plugin/src/common/types/BatchConfig.ts`, `TASKS.md` の差分を revert。

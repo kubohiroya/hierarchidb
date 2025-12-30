@@ -39,6 +39,7 @@ import { bbox as turfBbox, area as turfArea } from '@turf/turf';
 import { VectorTile } from '@mapbox/vector-tile';
 import Pbf from 'pbf';
 import { HDB_ORIGIN_KEY } from './utils/featureIds.js';
+import { getEphemeralShapeDB } from '../database/EphemeralShapeDB.js';
 
 type WorkerPoolStatistics = Record<string, number>;
 
@@ -860,7 +861,7 @@ export class SessionController {
     return Array.from(groups.entries()).map(([key, items]) => ({ key, items }));
   }
 
-  private async buildGroupedExtract2Tasks(
+  private async buildExtract2TasksWithTopoJSON(
     extract1InputsByTaskId: Map<string, ShapeExtract1TaskInputData>,
   ): Promise<{ tasks: Extract2Task[]; inputsByTaskId: Map<string, ShapeExtract2TaskInputData> }> {
     const maxFeaturesPerGroup = 2000;
@@ -878,11 +879,14 @@ export class SessionController {
     };
     const candidates: Candidate[] = [];
 
+    let missingMetadata = 0;
+    let missingBuffer = 0;
     for (const task of this.extract1Tasks) {
       const input = extract1InputsByTaskId.get(task.taskId);
       const continent = this.resolveTaskContinent(input);
       const countryName = this.resolveTaskCountryName(input);
       if (!continent || !countryName) {
+        missingMetadata += 1;
         console.warn(`[Session ${this.nodeId}] Missing continent/countryName; skipping extract2 task`, {
           taskId: task.taskId,
           continent,
@@ -894,6 +898,7 @@ export class SessionController {
       const inputBufferId = `${this.nodeId}-extract1-${task.index ?? 0}`;
       const buffer = await this.artifactStore.getExtractedBuffer(inputBufferId);
       if (!buffer) {
+        missingBuffer += 1;
         console.warn(`[Session ${this.nodeId}] Extract1 buffer missing; skipping extract2 task`, {
           taskId: task.taskId,
           inputBufferId,
@@ -1034,6 +1039,14 @@ export class SessionController {
     if (newBuffers.length > 0) {
       await this.artifactStore.putExtractedBuffers(newBuffers);
     }
+    console.debug(`[Session ${this.nodeId}] Extract2 topojson build summary`, {
+      extract1Tasks: this.extract1Tasks.length,
+      candidates: candidates.length,
+      groups: finalGroups.length,
+      tasks: tasks.length,
+      skippedMissingMetadata: missingMetadata,
+      skippedMissingBuffer: missingBuffer,
+    });
     return { tasks, inputsByTaskId };
   }
 
@@ -1045,15 +1058,26 @@ export class SessionController {
     console.log(`[Session ${this.nodeId}] Processing extract2 stage`);
 
     const zoomLevels = this.resolveZoomLevels();
-    const extractionMode = 'topojson';
+    const extractionMode = this.config.extract2?.extractionMode ?? 'topojson';
     const shouldGroupByContinent = extractionMode === 'topojson' && zoomLevels.includes(0);
+    console.debug(`[Session ${this.nodeId}] Extract2 mode selection`, {
+      extractionMode,
+      shouldGroupByContinent,
+      zoomLevels,
+      extract1Tasks: this.extract1Tasks.length,
+    });
     const extract1InputsByTaskId = await this.taskRegistry.loadStageInputs<ShapeExtract1TaskInputData>('extract1');
     const extract2Build = shouldGroupByContinent
-      ? await this.buildGroupedExtract2Tasks(extract1InputsByTaskId)
+      ? await this.buildExtract2TasksWithTopoJSON(extract1InputsByTaskId)
       : this.buildExtract2TasksFromExtract1(extract1InputsByTaskId);
     this.extract2Tasks = extract2Build.tasks;
+    console.debug(`[Session ${this.nodeId}] Extract2 tasks built`, {
+      extractionMode,
+      taskCount: this.extract2Tasks.length,
+    });
     if (this.extract2Tasks.length === 0) {
       console.warn(`[Session ${this.nodeId}] No extract2 tasks to process`);
+      await this.cleanupStageCache('extract1', 'extract2 stage skipped (no tasks)');
       return;
     }
     await this.taskRegistry.registerTasks('extract2', this.extract2Tasks, undefined, extract2Build.inputsByTaskId);
@@ -1072,6 +1096,7 @@ export class SessionController {
         currentStage: 'extract2',
         currentTask: 'Extract2 already completed',
       });
+      await this.cleanupStageCache('extract1', 'extract2 stage already completed');
       return;
     }
     const reportProgress = (p: ProgressInfo) => {
@@ -1128,6 +1153,7 @@ export class SessionController {
       }
       await this.updateSourceMetadataStage('extract2', statsByOrigin);
     }
+    await this.cleanupStageCache('extract1', 'extract2 stage completed');
   }
 
   private buildTileCoordinates(
@@ -1475,6 +1501,17 @@ export class SessionController {
 
   private async ensureTileFeatureIndex(): Promise<Array<{ key: string; z: number; x: number; y: number }>> {
     const zoomLevels = this.resolveZoomLevels();
+    const minZoom = this.config.vectorTiles?.minZoom ?? 0;
+    const maxZoom = this.config.vectorTiles?.maxZoom ?? minZoom;
+    const resolvedMin = zoomLevels.length > 0 ? Math.min(...zoomLevels) : undefined;
+    const resolvedMax = zoomLevels.length > 0 ? Math.max(...zoomLevels) : undefined;
+    console.debug(`[Session ${this.nodeId}] Vector tile zoom range`, {
+      minZoom,
+      maxZoom,
+      resolvedMin,
+      resolvedMax,
+      zoomLevels,
+    });
     if (zoomLevels.length === 0) {
       this.lastTileIndexStats = {
         totalTiles: 0,
@@ -1548,6 +1585,11 @@ export class SessionController {
       x: row.x,
       y: row.y,
     }));
+    const tilesByZoom = acceptedRows.reduce<Record<number, number>>((acc, row) => {
+      acc[row.z] = (acc[row.z] ?? 0) + 1;
+      return acc;
+    }, {});
+    console.debug(`[Session ${this.nodeId}] Vector tile inputs by zoom`, tilesByZoom);
     this.lastTileIndexStats = {
       totalTiles: tileRows.length,
       acceptedTiles: acceptedRows.length,
@@ -1563,10 +1605,18 @@ export class SessionController {
     const tileSize = this.config.vectorTiles?.tileSize ?? this.config.tileSize ?? 256;
     const buffer = this.config.vectorTiles?.bufferSize ?? 256;
     const minZoom = this.config.vectorTiles?.minZoom ?? 0;
-    const maxZoom = this.config.vectorTiles?.maxZoom ?? 10;
+    const maxZoom = this.config.vectorTiles?.maxZoom ?? minZoom;
+    const clampedRows = tileRows.filter((tile) => tile.z >= minZoom && tile.z <= maxZoom);
+    if (clampedRows.length !== tileRows.length) {
+      console.warn(`[Session ${this.nodeId}] Dropped vector tile inputs outside zoom range`, {
+        minZoom,
+        maxZoom,
+        dropped: tileRows.length - clampedRows.length,
+      });
+    }
     const metadataEnabled = false;
     const inputsByTaskId = new Map<string, ShapeVectorTileTaskInputData>();
-    const tasks: VectorTileTask[] = tileRows.map((tile, index) => {
+    const tasks: VectorTileTask[] = clampedRows.map((tile, index) => {
       const taskId = `${this.nodeId}-vectortile-${index}`;
       inputsByTaskId.set(taskId, {
         inputBufferId: tile.key,
@@ -1667,12 +1717,14 @@ export class SessionController {
         currentStage: 'vectortile',
         currentTask: 'No vector tile inputs',
       });
+      await this.cleanupStageCache('extract2', 'vector tile stage skipped (no inputs)');
       return;
     }
     const vectorTileBuild = this.buildVectorTileTasks(tileRows);
     const tasks = vectorTileBuild.tasks;
     if (tasks.length === 0) {
       console.warn(`[Session ${this.nodeId}] No vector tile tasks to process`);
+      await this.cleanupStageCache('extract2', 'vector tile stage skipped (no tasks)');
       return;
     }
 
@@ -1701,6 +1753,7 @@ export class SessionController {
         currentStage: 'vectortile',
         currentTask: 'Vector tiles already completed',
       });
+      await this.cleanupStageCache('extract2', 'vector tile stage already completed');
       return;
     }
     const reportProgress = (p: ProgressInfo) => {
@@ -1739,6 +1792,22 @@ export class SessionController {
     console.log(
       `[Session ${this.nodeId}] Vector tile stage completed: ${baseCompleted + r.processed}/${total} successful`,
     );
+    await this.cleanupStageCache('extract2', 'vector tile stage completed');
+  }
+
+  private shouldCleanupStage(stage: 'extract1' | 'extract2'): boolean {
+    const cleanupConfig = this.config;
+    if (!cleanupConfig) return false;
+    return stage === 'extract1'
+      ? cleanupConfig.deleteExtract1CacheOnComplete === true
+      : cleanupConfig.deleteExtract2CacheOnComplete === true;
+  }
+
+  private async cleanupStageCache(stage: 'extract1' | 'extract2', reason: string): Promise<void> {
+    if (!this.shouldCleanupStage(stage)) return;
+    console.log(`[Session ${this.nodeId}] Cleaning ${stage} cache (${reason})`);
+    await getEphemeralShapeDB().clearStage(this.nodeId, stage);
+    console.log(`[Session ${this.nodeId}] ${stage} cache cleared`);
   }
 
   private async prepareExtract2Retry(retry: number): Promise<void> {

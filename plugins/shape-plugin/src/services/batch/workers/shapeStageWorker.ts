@@ -234,6 +234,22 @@ const processExtract1Task = async ({
   const sanitizedExtracted = hasExtractedFeatures
     ? sanitizeFeatureCollection(extracted)
     : null;
+  const rawCount = raw.featureCount ?? 0;
+  const filteredCount = sanitizedFiltered ? sanitizedFiltered.features.length : rawCount;
+  const extractedCount = sanitizedExtracted ? sanitizedExtracted.features.length : filteredCount;
+  if (rawCount > 0 && (filteredCount < rawCount || extractedCount < filteredCount)) {
+    console.debug('[shapeStageWorker] Extract1 feature reduction', {
+      taskId: task.taskId,
+      countryCode: task.countryCode,
+      adminLevel: task.adminLevel,
+      method: input.featureFilterMethod,
+      minArea: input.minimumArea,
+      rawCount,
+      filteredCount,
+      extractedCount,
+      tolerance,
+    });
+  }
   if (sanitizedExtracted) {
     applyOriginKey(sanitizedExtracted, originKey);
     assignFeatureIds(sanitizedExtracted, {
@@ -389,6 +405,13 @@ const processExtract2Task = async ({
   let finalRatio = inputBytes > 0 ? finalData.byteLength / inputBytes : 1;
   let usedTopo = false;
   let pass = 0;
+  console.debug('[shapeStageWorker] Extract2 config', {
+    taskId: task.taskId,
+    extractionMode,
+    preserveSharedBoundaries: payload.preserveSharedBoundaries,
+    inputFeatures: buffer.featureCount ?? 0,
+    inputBytes,
+  });
   const runExtraction = async () => {
     let extractedPayload: unknown = geojson;
     usedTopo = false;
@@ -502,6 +525,8 @@ const processExtract2Task = async ({
     inputBytes,
     outputBytes: finalData.byteLength ?? 0,
     ratio: finalRatio,
+    inputFeatures: buffer.featureCount ?? 0,
+    outputFeatures: finalFeatureCount,
   });
   return { status: 'completed', featureCount: finalFeatureCount };
 };

@@ -153,7 +153,7 @@ export const Extract2ConfigSection: React.FC<Props> = ({ config, draft, disabled
             <Grid size={{ xs: 12, md: 4 }}>
               <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
                 <ExtractionPanel
-                  tolerance={baseExtract2Config.tolerance ?? 0.3}
+                  tolerance={baseExtract2Config.tolerance ?? 0.1}
                   toleranceLabelKey="processing.filter.toleranceSecondary"
                   enablePerFeatureExtraction={baseExtract2Config.enablePerFeatureExtraction ?? true}
                   toleranceHelpKey="processing.filter.toleranceHelpStage2"

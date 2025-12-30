@@ -119,6 +119,7 @@ const buildBatchSessionConfig = (batchConfig: BatchConfig, draft?: DraftLike): B
     extract2: {
       concurrentProcesses: extract2Config?.workers ?? 2,
       enablePerFeatureExtraction: extract2Config?.enablePerFeatureExtraction ?? true,
+      extractionMode: extract2Config?.extractionMode ?? DEFAULT_PROCESSING_CONFIG.extract2Config?.extractionMode,
       deleteOnComplete: false,
       quantize: extract2Config?.quantize ?? 0,
       extract: extract2Config?.tolerance ?? 0,
@@ -127,7 +128,7 @@ const buildBatchSessionConfig = (batchConfig: BatchConfig, draft?: DraftLike): B
     vectorTiles: {
       concurrentProcesses: tileConfig?.workers ?? 2,
       minZoom: tileConfig?.minZoom ?? 0,
-      maxZoom: tileConfig?.maxZoom ?? 14,
+      maxZoom: tileConfig?.maxZoom ?? (tileConfig?.minZoom ?? 0),
       bufferSize: tileConfig?.bufferSize,
       tileSize: tileConfig?.tileSize,
     },
@@ -273,8 +274,23 @@ const buildTaskTitle = (task: BatchTaskRecord): string | undefined => {
     const input = task.inputData as DownloadTaskInputData | undefined;
     return input?.url ?? input?.endpoint;
   }
-  if (task.taskType === 'extract1' || task.taskType === 'extract2') {
-    const input = task.inputData as Extract1TaskInputData | Extract2TaskInputData | undefined;
+  if (task.taskType === 'extract1') {
+    const input = task.inputData as Extract1TaskInputData | undefined;
+    const sourceUrl = input?.sourceUrl;
+    const featureId = input?.featureId;
+    if (sourceUrl && featureId) return `${sourceUrl} • ${featureId}`;
+    return sourceUrl ?? featureId;
+  }
+  if (task.taskType === 'extract2') {
+    const input = task.inputData as Extract2TaskInputData | undefined;
+    const dataSource = typeof input?.dataSource === 'string'
+      ? input.dataSource.toUpperCase()
+      : undefined;
+    const continent = typeof input?.continent === 'string' ? input.continent : undefined;
+    const adminLevel = getNumber(input?.adminLevel);
+    const adminLabel = adminLevel != null ? `ADM${adminLevel}` : undefined;
+    const parts = [dataSource, continent, adminLabel].filter(Boolean);
+    if (parts.length > 0) return parts.join(' • ');
     const sourceUrl = input?.sourceUrl;
     const featureId = input?.featureId;
     if (sourceUrl && featureId) return `${sourceUrl} • ${featureId}`;
@@ -473,14 +489,19 @@ export const shapeBatchAPI = {
     if (!batchConfig?.dataSource) {
       throw new Error('Data source is required to start batch processing');
     }
-    const validation = validateBatchConfig(batchConfig);
+    // Prefer persisted draft config when provided to avoid stale zoom settings.
+    const handler = getShapeEntityHandler();
+    const draftLike = await handler.getEntity(draftId) as DraftLike;
+    const mergedBatchConfig = mergeBatchConfig({
+      ...(draftLike?.draftData?.batchConfig ?? {}),
+      ...batchConfig,
+    });
+    const validation = validateBatchConfig(mergedBatchConfig);
     if (!validation.isValid) {
       throw new Error(`Invalid processing config: ${validation.errors?.join(', ')}`);
     }
 
     // Get draft to find the associated nodeId
-    const handler = getShapeEntityHandler();
-    const draftLike = await handler.getEntity(draftId) as DraftLike;
     if (!draftLike) {
       throw new Error(`Working copy not found: ${draftId}`);
     }
@@ -489,7 +510,7 @@ export const shapeBatchAPI = {
     if (!downloadTaskPayloads.length) {
       throw new Error('Shape batch session requires download task payloads');
     }
-    const baseConfig = buildBatchSessionConfig(batchConfig, { draftData: draftLike ?? undefined });
+    const baseConfig = buildBatchSessionConfig(mergedBatchConfig, { draftData: draftLike ?? undefined });
     const processConfig: BatchProcessConfig = {
       ...baseConfig,
       workerTimeout: downloadConfig?.timeoutMs,
@@ -520,6 +541,13 @@ export const shapeBatchAPI = {
       ) => void;
     };
     const nodeForSession = draftLike.nodeId ?? draftLike.treeNodeId ?? draftId;
+    console.debug('[ShapeBatch] startBatchProcess config', {
+      nodeId: nodeForSession,
+      extract2Config: mergedBatchConfig.extract2Config,
+      extractionMode: mergedBatchConfig.extract2Config?.extractionMode,
+      tileConfig: mergedBatchConfig.tileConfig,
+      vectorTiles: baseConfig.vectorTiles,
+    });
     await persistDownloadTaskPayloads(toNodeId(String(nodeForSession)), downloadTaskPayloads, buildStartedAt);
     managerWithPrepare.prepareSession?.(nodeForSession, processConfig, batchSessionData, sessionOptions);
     await batchSessionManager.startBatchSession(nodeForSession);
@@ -565,6 +593,33 @@ export const shapeBatchAPI = {
     const nodeId = resolveBatchNodeId(entity as DraftLike | undefined);
     if (!entity || !nodeId) {
       throw new Error(`No batch session to resume for draft: ${draftId}`);
+    }
+    const mergedConfig = mergeBatchConfig(entity?.batchConfig ?? DEFAULT_PROCESSING_CONFIG);
+    const desiredConfig = buildBatchSessionConfig(mergedConfig, { draftData: entity ?? undefined });
+    const session = await shapeDB.getBatchSession(nodeId);
+    if (session?.config?.vectorTiles && desiredConfig.vectorTiles) {
+      const currentMin = session.config.vectorTiles.minZoom;
+      const currentMax = session.config.vectorTiles.maxZoom;
+      const desiredMin = desiredConfig.vectorTiles.minZoom;
+      const desiredMax = desiredConfig.vectorTiles.maxZoom;
+      if (currentMin !== desiredMin || currentMax !== desiredMax) {
+        console.warn('[shapeBatchAPI] resume blocked: zoom range mismatch', {
+          nodeId,
+          current: { minZoom: currentMin, maxZoom: currentMax },
+          desired: { minZoom: desiredMin, maxZoom: desiredMax },
+        });
+        throw new Error('Zoom range changed. Restart build to apply the new range.');
+      }
+    }
+    const currentExtract2Mode = session?.config?.extract2?.extractionMode;
+    const desiredExtract2Mode = desiredConfig.extract2?.extractionMode;
+    if (currentExtract2Mode && desiredExtract2Mode && currentExtract2Mode !== desiredExtract2Mode) {
+      console.warn('[shapeBatchAPI] resume blocked: extract2 mode mismatch', {
+        nodeId,
+        current: currentExtract2Mode,
+        desired: desiredExtract2Mode,
+      });
+      throw new Error('Extract2 mode changed. Restart build to apply the new mode.');
     }
 
     if (batchManagerWithDispatch.dispatchCommand) {

@@ -31,6 +31,7 @@ export type ShapeBuildProgressAuthState = {
 export const shapeBuildTasksAtom = atom<ShapeBatchTaskSummary[]>([]);
 export const shapeBuildPersistedTasksAtom = atom<ShapeBatchTaskSummary[]>([]);
 export const shapeBuildTasksLoadingAtom = atom(false);
+export const shapeBuildTaskSummaryLoadingAtom = atom(false);
 export const shapeBuildTasksErrorAtom = atom<Error | null>(null);
 export const shapeBuildStagesAtom = atom<BuildStage[]>([]);
 export const shapeBuildStageProgressAtom = atom<Record<string, number>>({});

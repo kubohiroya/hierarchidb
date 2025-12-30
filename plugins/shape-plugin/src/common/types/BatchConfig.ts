@@ -4,7 +4,7 @@
  */
 
 import type { DataSourceName } from './data-source.js';
-import type { FeatureFilterMethod } from './processing.js';
+import type { Extract2ExtractionMode, FeatureFilterMethod } from './processing.js';
 
 /**
  * Configuration for hybrid features filtering algorithm
@@ -72,6 +72,7 @@ export interface ExtractSession2Config {
   extract: number;
   tolerance: number;
   enablePerFeatureExtraction: boolean;
+  extractionMode?: Extract2ExtractionMode;
 
   deleteOnComplete?: boolean; // Delete TileBuffer after session completes
 }

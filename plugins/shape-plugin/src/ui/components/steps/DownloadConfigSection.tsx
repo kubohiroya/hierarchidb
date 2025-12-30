@@ -42,6 +42,7 @@ export const DownloadConfigSection: React.FC<Props> = ({ config, draft, nodeId, 
     switchId,
     baseDownloadConfig,
     deleteLabel,
+    countsLoading,
     canDeleteRaw,
     canDeleteStage1,
     canDeleteStage2,
@@ -185,6 +186,7 @@ export const DownloadConfigSection: React.FC<Props> = ({ config, draft, nodeId, 
                 </Typography>
                 <DownloadCacheActions
                   deleteLabel={deleteLabel}
+                  countsLoading={countsLoading}
                   canDeleteRaw={canDeleteRaw}
                   canDeleteStage1={canDeleteStage1}
                   canDeleteStage2={canDeleteStage2}

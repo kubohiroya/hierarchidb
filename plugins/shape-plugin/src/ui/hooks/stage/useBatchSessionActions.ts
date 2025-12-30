@@ -7,6 +7,41 @@ import type { BuildStatus } from '@hierarchidb/components';
 import { normalizeDataSourceName, type DownloadTaskPayload, type ShapeEntity } from '../../../common/types/index.js';
 import { type AuthProviderType, useAuth } from '@hierarchidb/ui-auth';
 
+const SHARED_ZOOM_RANGE_KEY = 'sharedZoomRange';
+const DEFAULT_SHARED_ZOOM_RANGE: [number, number] = [0, 6];
+const SHARED_ZOOM_RANGE_MIN = 0;
+const SHARED_ZOOM_RANGE_MAX = 22;
+
+const normalizeSharedZoomRange = (value: unknown): [number, number] => {
+  if (!Array.isArray(value) || value.length < 2) {
+    return DEFAULT_SHARED_ZOOM_RANGE;
+  }
+  const rawMin = Number(value[0]);
+  const rawMax = Number(value[1]);
+  const min = Number.isFinite(rawMin) ? rawMin : DEFAULT_SHARED_ZOOM_RANGE[0];
+  const max = Number.isFinite(rawMax) ? rawMax : DEFAULT_SHARED_ZOOM_RANGE[1];
+  const clampedMin = Math.min(Math.max(min, SHARED_ZOOM_RANGE_MIN), SHARED_ZOOM_RANGE_MAX);
+  const clampedMax = Math.min(Math.max(max, SHARED_ZOOM_RANGE_MIN), SHARED_ZOOM_RANGE_MAX);
+  return clampedMin <= clampedMax ? [clampedMin, clampedMax] : [clampedMax, clampedMin];
+};
+
+const readSharedZoomRange = (): [number, number] => {
+  if (typeof window === 'undefined') {
+    return DEFAULT_SHARED_ZOOM_RANGE;
+  }
+  const stored = window.localStorage?.getItem(SHARED_ZOOM_RANGE_KEY);
+  if (!stored) {
+    return DEFAULT_SHARED_ZOOM_RANGE;
+  }
+  try {
+    const parsed = JSON.parse(stored);
+    return normalizeSharedZoomRange(parsed);
+  } catch (error) {
+    console.warn('[ShapeBuildProgressStep] Failed to parse shared zoom range', error);
+    return DEFAULT_SHARED_ZOOM_RANGE;
+  }
+};
+
 type Args = {
   nodeType: NodeType;
   nodeId?: NodeId;
@@ -80,6 +115,15 @@ export const useBatchSessionActions = ({
     const resolvedBatchConfig = resolvedDataSource
       ? { ...baseBatchConfig, dataSource: resolvedDataSource }
       : baseBatchConfig;
+    const [sharedMin, sharedMax] = readSharedZoomRange();
+    const mergedBatchConfig = {
+      ...resolvedBatchConfig,
+      tileConfig: {
+        ...(resolvedBatchConfig.tileConfig ?? {}),
+        minZoom: sharedMin,
+        maxZoom: sharedMax,
+      },
+    };
     try {
       console.debug(`${debugScope} saveDraftBeforeBatch:updateDraft`, {
         nodeId,
@@ -92,7 +136,7 @@ export const useBatchSessionActions = ({
         draftData: {
           ...(data ?? {}),
           ...(patch ?? {}),
-          batchConfig: resolvedBatchConfig,
+          batchConfig: mergedBatchConfig,
           dataSourceName: resolvedDataSource ?? data?.dataSourceName,
         } as Record<string, unknown>,
       });
@@ -179,6 +223,17 @@ export const useBatchSessionActions = ({
       await bridgeRef.current.initialize();
       console.debug(`${debugScope} startOrResume:bridgeReady`);
       if (buildStatus === 'paused') {
+        const [sharedMin, sharedMax] = readSharedZoomRange();
+        const lastBuild = data?.buildTileZoomRange;
+        if (lastBuild && (lastBuild.minZoom !== sharedMin || lastBuild.maxZoom !== sharedMax)) {
+          notify.warning('Zoom range changed. Restart build to apply the new range.');
+          console.debug(`${debugScope} startOrResume:resumeBlocked`, {
+            nodeId,
+            sharedZoomRange: [sharedMin, sharedMax],
+            lastBuild,
+          });
+          return false;
+        }
         console.debug(`${debugScope} startOrResume:resume`, { nodeId });
         try {
           await bridgeRef.current.resumeBatchSession(nodeType, nodeId);
@@ -187,6 +242,11 @@ export const useBatchSessionActions = ({
           return true;
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
+          if (/zoom range changed/i.test(message)) {
+            notify.warning('Zoom range changed. Restart build to apply the new range.');
+            console.debug(`${debugScope} startOrResume:resumeBlocked`, { nodeId, message });
+            return false;
+          }
           if (/missing download payloads/i.test(message)) {
             notify.info('Download cache was cleared. Restarting stage.');
           } else if (!/session .*not found/i.test(message)) {
@@ -200,12 +260,16 @@ export const useBatchSessionActions = ({
         console.debug(`${debugScope} startOrResume:missingPayloads`, { nodeId });
         return false;
       }
+      const [sharedMin, sharedMax] = readSharedZoomRange();
       console.debug(`${debugScope} startOrResume:startBatch`, {
         nodeId,
         nodeType,
         payloadCount: payloads.length,
       });
       const statusResult = await bridgeRef.current.startBatchSession(nodeType, nodeId, payloads);
+      await persistDraftPatch({
+        buildTileZoomRange: { minZoom: sharedMin, maxZoom: sharedMax },
+      });
       console.debug(`${debugScope} startOrResume:startBatchResult`, statusResult ?? null);
       const nextStatus = statusResult.status === 'paused'
         ? 'paused'
