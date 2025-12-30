@@ -104,7 +104,7 @@ export const DownloadConfigSection: React.FC<Props> = ({ config, draft, nodeId, 
             <Paper variant="outlined" sx={{ p: 2, width: '100%' }}>
               <Stack spacing={1.5}>
                 <Typography variant="subtitle2">
-                  {t('processing.download.retainTitle', 'Retain intermediate outputs after build')}
+                  {t('processing.download.retainTitle', 'Retain intermediate outputs after stage')}
                 </Typography>
                 <FormGroup>
                   <FormControlLabel
@@ -181,7 +181,7 @@ export const DownloadConfigSection: React.FC<Props> = ({ config, draft, nodeId, 
             <Paper variant="outlined" sx={{ p: 2, width: '100%' }}>
               <Stack spacing={1.5}>
                 <Typography variant="subtitle2">
-                  {t('processing.download.deleteNowTitle', 'Delete build outputs immediately')}
+                  {t('processing.download.deleteNowTitle', 'Delete stage outputs immediately')}
                 </Typography>
                 <DownloadCacheActions
                   deleteLabel={deleteLabel}

@@ -41,6 +41,7 @@ import { valueToColor } from '../../common/utils/colorUtils.ts';
 import { calculateStatistics } from '../../common/utils/dataAnalysis.ts';
 import { GradientSwatch } from './GradientSwatch.tsx';
 import { Insights as InsightsIcon, ShowChart as ShowChartIcon } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
 
 export const StylerAlgorithmStep2: React.FC<
   PluginStepProps<StylerStepData> & { showTargetPanel?: boolean }
@@ -51,6 +52,7 @@ export const StylerAlgorithmStep2: React.FC<
        setError,
      }) => {
   const { t } = useTranslation('styler-plugin');
+  const theme = useTheme();
   const {
 //menuContainer,
     pluginData,
@@ -68,7 +70,16 @@ export const StylerAlgorithmStep2: React.FC<
 
   const targetProperty = pluginData.mapping?.targetProperty ?? null;
   const targetMeta = targetProperty ? MAPLIBRE_PROPERTY_METADATA[targetProperty] : null;
-  const isColorTarget = targetMeta?.type === 'color';
+  const targetKind = useMemo(() => {
+    if (!targetProperty) return 'color' as const;
+    const normalized = targetProperty.toLowerCase();
+    if (normalized.endsWith('opacity')) return 'opacity' as const;
+    if (normalized.endsWith('width') || normalized.endsWith('radius')) return 'width' as const;
+    return targetMeta?.type === 'color' ? 'color' : 'number';
+  }, [targetMeta?.type, targetProperty]);
+  const isColorTarget = targetKind === 'color';
+  const isOpacityTarget = targetKind === 'opacity';
+  const isWidthTarget = targetKind === 'width';
 
   const initialConfig = useMemo<StylerConfig>(() => {
     const cfg = pluginData.stylerConfig ?? StylerConfigDefault;
@@ -114,6 +125,9 @@ export const StylerAlgorithmStep2: React.FC<
   );
 
   const histogramBarColor = useMemo(() => {
+    if (!isColorTarget) {
+      return () => theme.palette.primary.main;
+    }
     const mapping = {
       keyColumn: pluginData.keyColumn ?? '',
       valueColumn,
@@ -132,7 +146,16 @@ export const StylerAlgorithmStep2: React.FC<
             }: {
       midpoint: number;
     }) => valueToColor(midpoint, mapping, previewConfig, numericValues).color;
-  }, [histogramStats?.max, histogramStats?.min, localConfig, numericValues, pluginData, valueColumn]);
+  }, [
+    histogramStats?.max,
+    histogramStats?.min,
+    isColorTarget,
+    localConfig,
+    numericValues,
+    pluginData,
+    theme.palette.primary.main,
+    valueColumn,
+  ]);
 
   const algorithmDescriptions = useMemo(
     () =>
@@ -186,7 +209,23 @@ export const StylerAlgorithmStep2: React.FC<
     });
   };
 
-  const numericRangeControls = !isColorTarget ? (
+  const outputRangeDefaults = useMemo(() => {
+    if (isOpacityTarget) return { min: 0, max: 1 };
+    if (isWidthTarget) return { min: 0.5, max: 10 };
+    return { min: 0, max: 10 };
+  }, [isOpacityTarget, isWidthTarget]);
+  const outputMin = Number.isFinite(localConfig.outputMin)
+    ? localConfig.outputMin
+    : outputRangeDefaults.min;
+  const outputMax = Number.isFinite(localConfig.outputMax)
+    ? localConfig.outputMax
+    : outputRangeDefaults.max;
+  const previewSteps = useMemo(() => {
+    const mid = (outputMin + outputMax) / 2;
+    return [outputMin, mid, outputMax];
+  }, [outputMax, outputMin]);
+/*
+  const _numericRangeControls = !isColorTarget ? (
     <Stack spacing={1.5}>
       <Typography variant="subtitle2">{t('styleSettings.algorithm.numericRange', 'Numeric range')}</Typography>
       <Stack direction="row" spacing={1}>
@@ -228,6 +267,7 @@ export const StylerAlgorithmStep2: React.FC<
       </Stack>
     </Stack>
   ) : null;
+ */
 
   const customHSBControls =
     isColorTarget && (localConfig.colorScheme ?? 'grayscale') === 'custom' ? (
@@ -381,7 +421,89 @@ export const StylerAlgorithmStep2: React.FC<
                 </Box>
 
               </Stack>
-            ) : null}
+            ) : (
+              <Stack spacing={1.5}>
+                <Typography variant="subtitle2">
+                  {isOpacityTarget
+                    ? t('step6.opacity.range', 'Opacity range')
+                    : t('step6.width.range', 'Width range')}
+                </Typography>
+                <Stack direction="row" spacing={1}>
+                  <TextField
+                    type="number"
+                    label={t('step6.numericRange.min', 'Minimum')}
+                    value={outputMin}
+                    onChange={(e) => applyConfigPatch({ outputMin: Number(e.target.value) })}
+                    size="small"
+                    inputProps={{ step: isOpacityTarget ? 0.01 : 0.1 }}
+                  />
+                  <TextField
+                    type="number"
+                    label={t('step6.numericRange.max', 'Maximum')}
+                    value={outputMax}
+                    onChange={(e) => applyConfigPatch({ outputMax: Number(e.target.value) })}
+                    size="small"
+                    inputProps={{ step: isOpacityTarget ? 0.01 : 0.1 }}
+                  />
+                </Stack>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  {previewSteps.map((value, idx) => {
+                    if (isOpacityTarget) {
+                      const clamped = Math.max(0, Math.min(1, value));
+                      return (
+                        <Box
+                          key={`opacity-${idx}`}
+                          sx={{
+                            width: 64,
+                            height: 28,
+                            borderRadius: 1,
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            backgroundColor: `rgba(25, 118, 210, ${clamped})`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: 12,
+                          }}
+                        >
+                          {value.toFixed(2)}
+                        </Box>
+                      );
+                    }
+                    const lineWidth = Math.max(0.5, value);
+                    return (
+                      <Box
+                        key={`width-${idx}`}
+                        sx={{
+                          width: 64,
+                          height: 28,
+                          borderRadius: 1,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 12,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: '100%',
+                            height: lineWidth,
+                            backgroundColor: theme.palette.text.primary,
+                          }}
+                        />
+                      </Box>
+                    );
+                  })}
+                </Stack>
+                <Typography variant="caption" color="text.secondary">
+                  {isOpacityTarget
+                    ? t('step6.opacity.help', 'Lower values are more transparent.')
+                    : t('step6.width.help', 'Higher values produce thicker lines.')}
+                </Typography>
+              </Stack>
+            )}
           </Stack>
           <Stack spacing={2}>
             <Box sx={{paddingLeft: 6, paddingRight: 2}} >

@@ -281,7 +281,7 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
     <Box display="flex" flexDirection="column" gap={2}>
       <Typography variant="h6">{t('preview.title', 'Preview')}</Typography>
       <Typography variant="body2" color="text.secondary">
-        {t('preview.description', 'Preview the generated route geometry once the build is complete.')}
+        {t('preview.description', 'Preview the generated route geometry once the stage is complete.')}
       </Typography>
 
       {!hasGeometry && (

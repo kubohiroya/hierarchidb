@@ -91,7 +91,7 @@ npx playwright test e2e/auth-flow.spec.ts --grep "development環境"
 
 ```bash
 # ビルド実行
-pnpm build  # または ./scripts/run-env-vite.sh production build
+pnpm stage  # または ./scripts/run-env-vite.sh production stage
 
 # ターミナル1: プレビューサーバー起動
 cd app && npx vite preview --port 5173

@@ -1278,9 +1278,9 @@ export const WithLargeTree: Story = {
 ### 7.1 Build Verification
 
 ```bash
-# Clean build
+# Clean stage
 pnpm --filter @hierarchidb/ui-treeconsole clean
-pnpm --filter @hierarchidb/ui-treeconsole build
+pnpm --filter @hierarchidb/ui-treeconsole stage
 
 # Type checking
 pnpm --filter @hierarchidb/ui-treeconsole typecheck
@@ -1317,15 +1317,15 @@ Add to root `turbo.json`:
 {
   "pipeline": {
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^stage"],
       "outputs": ["dist/**"]
     },
     "@hierarchidb/ui-treeconsole#build": {
       "dependsOn": [
-        "@hierarchidb/core#build",
-        "@hierarchidb/ui-core#build",
-        "@hierarchidb/registry#build",
-        "@hierarchidb/ui-theme#build"
+        "@hierarchidb/core#stage",
+        "@hierarchidb/ui-core#stage",
+        "@hierarchidb/registry#stage",
+        "@hierarchidb/ui-theme#stage"
       ],
       "outputs": ["dist/**"]
     }
@@ -1377,7 +1377,7 @@ find packages -name "package.json" -exec grep -l "@hierarchidb/ui-treeconsole" {
 
 # Clean and rebuild
 pnpm install
-pnpm build
+pnpm stage
 ```
 
 #### 8.2.2 Dependency Cleanup
@@ -1411,7 +1411,7 @@ git revert <commit-hash>
 pnpm install
 pnpm typecheck
 pnpm test:run
-pnpm build
+pnpm stage
 
 # Verify all packages still work
 pnpm --filter @hierarchidb/_app dev

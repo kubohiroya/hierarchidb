@@ -394,14 +394,14 @@ describe('OpenStreetMap Strategy', () => {
     expect(presets).toHaveProperty('coastlines');
   });
 
-  it('should build preset query', () => {
+  it('should stage preset query', () => {
     const query = strategy.buildPresetQuery('countries');
     expect(query).toContain('admin_level=2');
     expect(query).toContain('boundary=administrative');
     expect(query).toContain('out geom');
   });
 
-  it('should build query with bbox', () => {
+  it('should stage query with bbox', () => {
     const bbox = { minLat: 35, maxLat: 36, minLng: 139, maxLng: 140 };
     const query = strategy.buildPresetQuery('countries', bbox);
     expect(query).toContain('(35,139,36,140)');

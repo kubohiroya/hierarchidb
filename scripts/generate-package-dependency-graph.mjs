@@ -82,7 +82,7 @@ for (const pkg of workspaceData) {
   addWorkspaceDeps(record, pkg.optionalDependencies);
 }
 
-// build edges and detect cycles
+// stage edges and detect cycles
 const edges = [];
 for (const record of packages.values()) {
   for (const depName of record.deps) {

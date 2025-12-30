@@ -209,7 +209,7 @@ VITE_GITHUB_CLIENT_ID=your-github-client-id
 
 1. Build and deploy:
    ```bash
-   pnpm build
+   pnpm stage
    gh-pages -d packages/app/dist
    ```
 

@@ -20,10 +20,11 @@ const KNOWN_DATA_SOURCE_NAMES = new Set<DataSourceName>(
   SHAPE_DATA_SOURCES.map((source) => source.name),
 );
 
-const stripNil = <T extends Record<string, unknown>>(value?: T | null): Partial<T> => {
+const stripNil = <T extends object>(value?: T | null): Partial<T> => {
   if (!value) return {};
   return Object.fromEntries(
-    Object.entries(value).filter(([, entryValue]) => entryValue !== null && entryValue !== undefined),
+    Object.entries(value as Record<string, unknown>)
+      .filter(([, entryValue]) => entryValue !== null && entryValue !== undefined),
   ) as Partial<T>;
 };
 

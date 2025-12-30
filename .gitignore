@@ -82,11 +82,11 @@ web_modules/
 .cache
 .parcel-cache
 
-# Next.js build output
+# Next.js stage output
 .next
 out
 
-# Nuxt.js build / generate output
+# Nuxt.js stage / generate output
 .nuxt
 dist
 
@@ -96,7 +96,7 @@ dist
 # https://nextjs.org/blog/next-9-1#public-directory-support
 # public
 
-# vuepress build output
+# vuepress stage output
 .vuepress/dist
 
 # vuepress v2.x temp and cache directory
@@ -106,7 +106,7 @@ dist
 # Sveltekit cache directory
 .svelte-kit/
 
-# vitepress build output
+# vitepress stage output
 **/.vitepress/dist
 
 # vitepress cache directory

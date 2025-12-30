@@ -65,7 +65,7 @@ const SPLITVIEW_AUTO_CLOSE_COUNTS = [
   0,
 ];
 const buildMonitorConfig = {
-  storagePrefix: 'hdb:route:build-monitor',
+  storagePrefix: 'hdb:route:stage-monitor',
   keyMode: 'node',
   maxSamples: 3,
   memoryPressureRatio: 0.85,
@@ -88,7 +88,7 @@ const resolveTransportLabel = (draft: RouteUpdaterPayload, t: (key: string, fall
   const data = getRouteUpdaterPayload(draft);
   const selection = data.transportSelection;
   if (selection == null) {
-    return t('build.notConfigured', 'Not configured');
+    return t('stage.notConfigured', 'Not configured');
   }
   if (!isTransportSelection(selection)) {
     throw new Error(`Unsupported transportSelection: ${String(selection)}`);
@@ -106,11 +106,11 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
 }) => {
   const { t } = useTranslation();
   const { api, initialize } = useWorkerAPI();
-  const dataSource = (draft as { dataSourceName?: string }).dataSourceName ?? t('build.notConfigured', 'Not configured');
-  const generationMethod = (draft as { generationMethod?: string }).generationMethod ?? t('build.notConfigured', 'Not configured');
+  const dataSource = (draft as { dataSourceName?: string }).dataSourceName ?? t('stage.notConfigured', 'Not configured');
+  const generationMethod = (draft as { generationMethod?: string }).generationMethod ?? t('stage.notConfigured', 'Not configured');
   const transportLabel = resolveTransportLabel(draft, t);
-  const startLocation = (draft as { startLocationId?: string }).startLocationId ?? t('build.notConfigured', 'Not configured');
-  const endLocation = (draft as { endLocationId?: string }).endLocationId ?? t('build.notConfigured', 'Not configured');
+  const startLocation = (draft as { startLocationId?: string }).startLocationId ?? t('stage.notConfigured', 'Not configured');
+  const endLocation = (draft as { endLocationId?: string }).endLocationId ?? t('stage.notConfigured', 'Not configured');
 
   const hasRequiredFields = Boolean(
     (draft as { dataSourceName?: string }).dataSourceName &&
@@ -191,10 +191,10 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
   }, [monitorKey, status]);
 
   const errorColumns = useMemo<GridColumn<IdeGsmRouteError>[]>(() => ([
-    { id: 'rowNumber', label: t('build.errors.columns.row', 'Row'), width: 90, sortable: true },
-    { id: 'start', label: t('build.errors.columns.start', 'Start'), width: 160 },
-    { id: 'end', label: t('build.errors.columns.end', 'End'), width: 160 },
-    { id: 'reason', label: t('build.errors.columns.reason', 'Reason'), width: 360 },
+    { id: 'rowNumber', label: t('stage.errors.columns.row', 'Row'), width: 90, sortable: true },
+    { id: 'start', label: t('stage.errors.columns.start', 'Start'), width: 160 },
+    { id: 'end', label: t('stage.errors.columns.end', 'End'), width: 160 },
+    { id: 'reason', label: t('stage.errors.columns.reason', 'Reason'), width: 360 },
   ]), [t]);
 
   const mapIdeGsmProgress = useCallback((progress: IdeGsmImportProgress): number => {
@@ -222,17 +222,17 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
   const resolveIdeGsmLabel = useCallback((progress: IdeGsmImportProgress): string => {
     switch (progress.phase) {
       case 'fetch':
-        return t('build.ideGsm.fetch', 'IDE-GSM: downloading');
+        return t('stage.ideGsm.fetch', 'IDE-GSM: downloading');
       case 'parse':
-        return t('build.ideGsm.parse', 'IDE-GSM: parsing rows');
+        return t('stage.ideGsm.parse', 'IDE-GSM: parsing rows');
       case 'waypoints':
-        return t('build.ideGsm.waypoints', 'IDE-GSM: generating waypoints');
+        return t('stage.ideGsm.waypoints', 'IDE-GSM: generating waypoints');
       case 'save':
-        return t('build.ideGsm.save', 'IDE-GSM: saving routes');
+        return t('stage.ideGsm.save', 'IDE-GSM: saving routes');
       case 'completed':
-        return t('build.ideGsm.completed', 'IDE-GSM: import completed');
+        return t('stage.ideGsm.completed', 'IDE-GSM: import completed');
       case 'failed':
-        return t('build.ideGsm.failed', 'IDE-GSM: import failed');
+        return t('stage.ideGsm.failed', 'IDE-GSM: import failed');
       default:
         return 'IDE-GSM';
     }
@@ -261,17 +261,17 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
   const runIdeGsmBuild = useCallback(async () => {
     if (buildInFlightRef.current) return;
     if (!api) {
-      notify.error(t('build.errors.missingApi', 'Worker API is unavailable.'));
+      notify.error(t('stage.errors.missingApi', 'Worker API is unavailable.'));
       return;
     }
     const dataSourceName = (draft as { dataSourceName?: string }).dataSourceName;
     if (dataSourceName !== 'ide-gsm') {
-      notify.info(t('build.errors.unsupportedSource', 'Selected data source is not supported yet.'));
+      notify.info(t('stage.errors.unsupportedSource', 'Selected data source is not supported yet.'));
       return;
     }
     const sourceUrl = (draft as { ideGsmSourceUrl?: string }).ideGsmSourceUrl;
     if (!sourceUrl) {
-      notify.error(t('build.errors.missingSource', 'IDE-GSM source URL is required.'));
+      notify.error(t('stage.errors.missingSource', 'IDE-GSM source URL is required.'));
       return;
     }
 
@@ -328,50 +328,50 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
   return (
     <Box display="flex" flexDirection="column" gap={2}>
       <Typography variant="body2" color="text.secondary">
-        {t('build.review', 'Review the configuration and press Build to start the batch route generation.')}
+        {t('stage.review', 'Review the configuration and press Build to start the batch route generation.')}
       </Typography>
 
       <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
-        <Typography variant="subtitle2">{t('build.dataSource', 'Data Source:')}</Typography>
+        <Typography variant="subtitle2">{t('stage.dataSource', 'Data Source:')}</Typography>
         <Chip size="small" label={String(dataSource)} />
       </Stack>
 
       <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
-        <Typography variant="subtitle2">{t('build.transportMode', 'Transport Mode:')}</Typography>
+        <Typography variant="subtitle2">{t('stage.transportMode', 'Transport Mode:')}</Typography>
         <Chip size="small" label={transportLabel} />
       </Stack>
 
       <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
-        <Typography variant="subtitle2">{t('build.routeType', 'Route Type:')}</Typography>
+        <Typography variant="subtitle2">{t('stage.routeType', 'Route Type:')}</Typography>
         <Chip size="small" label={String(generationMethod)} />
       </Stack>
 
       <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
-        <Typography variant="subtitle2">{t('build.startLocation', 'Start:')}</Typography>
+        <Typography variant="subtitle2">{t('stage.startLocation', 'Start:')}</Typography>
         <Chip size="small" label={String(startLocation)} />
       </Stack>
 
       <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
-        <Typography variant="subtitle2">{t('build.endLocation', 'End:')}</Typography>
+        <Typography variant="subtitle2">{t('stage.endLocation', 'End:')}</Typography>
         <Chip size="small" label={String(endLocation)} />
       </Stack>
 
       {!hasRequiredFields && (
         <Alert severity="info">
-          {t('build.missing', 'Provide transport, route type, and start/end locations before building.')}
+          {t('stage.missing', 'Provide transport, route type, and start/end locations before building.')}
         </Alert>
       )}
       {crashInsight ? (
         <Alert severity="warning">
           {t(
-            'build.crashHint',
-            'Previous build did not finish. Consider cleaning data before restarting.',
+            'stage.crashHint',
+            'Previous stage did not finish. Consider cleaning data before restarting.',
           )}
         </Alert>
       ) : null}
 
       <Typography variant="subtitle1">
-        {t('build.title', 'Build routes')}
+        {t('stage.title', 'Build routes')}
       </Typography>
       {ideGsmPhase ? (
         <Typography variant="caption" color="text.secondary">
@@ -400,9 +400,9 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
           setHeapDialogOpen(false);
           dismissHeapEvent();
         }}
-        title={t('build.heap.pauseTitle', 'Build paused due to memory pressure')}
-        confirmLabel={t('build.heap.pauseConfirm', 'OK')}
-        description={t('build.heap.pauseHint', 'Reduce concurrency and resume when ready.')}
+        title={t('stage.heap.pauseTitle', 'Build paused due to memory pressure')}
+        confirmLabel={t('stage.heap.pauseConfirm', 'OK')}
+        description={t('stage.heap.pauseHint', 'Reduce concurrency and resume when ready.')}
       />
       <Dialog
         open={errorDialogOpen}
@@ -410,10 +410,10 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>{t('build.errors.title', 'Build errors')}</DialogTitle>
+        <DialogTitle>{t('stage.errors.title', 'Build errors')}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <Typography variant="body2" color="text.secondary">
-            {t('build.errors.description', 'Some rows were skipped. Review the list below.')}
+            {t('stage.errors.description', 'Some rows were skipped. Review the list below.')}
           </Typography>
           <Box sx={{ height: 360 }}>
             <GenericDataGrid
@@ -430,11 +430,11 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
         </DialogContent>
         <DialogActions sx={{ justifyContent: 'space-between', px: 3 }}>
           <Typography variant="caption" color="text.secondary">
-            {`${errorRows.length} ${t('build.errors.countLabel', 'errors')}`}
+            {`${errorRows.length} ${t('stage.errors.countLabel', 'errors')}`}
           </Typography>
           <Chip
             size="small"
-            label={t('build.errors.close', 'Close')}
+            label={t('stage.errors.close', 'Close')}
             onClick={() => setErrorDialogOpen(false)}
             clickable
           />

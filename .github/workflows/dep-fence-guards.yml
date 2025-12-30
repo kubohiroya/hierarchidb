@@ -30,8 +30,8 @@ jobs:
       - name: Install dependencies (workspace)
         run: pnpm install --no-frozen-lockfile
 
-      - name: Run build
-        run: pnpm run build:turbo
+      - name: Run stage
+        run: pnpm run stage:turbo
 
       - name: Run guards (pre-commit equivalent)
         run: pnpm run guards:pre-commit

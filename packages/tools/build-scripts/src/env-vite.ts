@@ -1,7 +1,7 @@
 /**
- * Script: fix-spa-build
- * Purpose: Post-process the Vite SPA build so GitHub Pages deployments behave correctly.
- * Invocation: run via `pnpm --filter @hierarchidb/tools-build-scripts run fix-spa-build` after `pnpm -C app build`.
+ * Script: fix-spa-stage
+ * Purpose: Post-process the Vite SPA stage so GitHub Pages deployments behave correctly.
+ * Invocation: run via `pnpm --filter @hierarchidb/tools-stage-scripts run fix-spa-stage` after `pnpm -C app stage`.
  * Output: Writes `.nojekyll`, updates `dist/index.html`, and maintains `dist/404.html` in `app/dist`.
  */
 import { access, readFile, unlink, writeFile } from 'node:fs/promises';
@@ -55,7 +55,7 @@ function injectHashRouting(html: string, basePath: string): string {
     </script>`;
 
   if (!html.includes('</head>')) {
-    console.warn('[fix-spa-build] </head> not found; prepending hash routing snippet.');
+    console.warn('[fix-spa-stage] </head> not found; prepending hash routing snippet.');
     return `${script}\n${html}`;
   }
 
@@ -92,7 +92,7 @@ function createNotFoundHtml(basePath: string): string {
 
 async function main(): Promise<void> {
   await writeFile(nojekyllPath, '', 'utf8').catch((error) => {
-    console.warn('[fix-spa-build] Failed to create .nojekyll:', error);
+    console.warn('[fix-spa-stage] Failed to create .nojekyll:', error);
   });
 
   let indexHtml: string;
@@ -110,25 +110,25 @@ async function main(): Promise<void> {
   const useHashRouting = env.VITE_USE_HASH_ROUTING !== 'false';
 
   if (useHashRouting) {
-    console.log('[fix-spa-build] Hash routing enabled; injecting redirect snippet.');
+    console.log('[fix-spa-stage] Hash routing enabled; injecting redirect snippet.');
     const updatedHtml = injectHashRouting(indexHtml, basePath);
     if (updatedHtml !== indexHtml) {
       await writeFile(indexPath, updatedHtml, 'utf8').catch((error) => {
-        console.warn('[fix-spa-build] Failed to update index.html:', error);
+        console.warn('[fix-spa-stage] Failed to update index.html:', error);
       });
     }
     if (await exists(notFoundPath)) {
       await unlink(notFoundPath).catch((error) => {
-        console.warn('[fix-spa-build] Failed to remove 404.html:', error);
+        console.warn('[fix-spa-stage] Failed to remove 404.html:', error);
       });
     }
     return;
   }
 
-  console.log('[fix-spa-build] Hash routing disabled; ensuring 404.html exists.');
+  console.log('[fix-spa-stage] Hash routing disabled; ensuring 404.html exists.');
   const html = createNotFoundHtml(basePath);
   await writeFile(notFoundPath, html, 'utf8').catch((error) => {
-    console.warn('[fix-spa-build] Failed to write 404.html:', error);
+    console.warn('[fix-spa-stage] Failed to write 404.html:', error);
   });
 }
 

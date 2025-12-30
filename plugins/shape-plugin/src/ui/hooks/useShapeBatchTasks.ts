@@ -38,10 +38,44 @@ export function useShapeBatchTasks(
   const [isLoading, setIsLoading] = useAtom(shapeBuildTasksLoadingAtom);
   const [error, setError] = useAtom(shapeBuildTasksErrorAtom);
   const reportedFailuresRef = useRef<Set<string>>(new Set());
+  const pendingTasksRef = useRef<ShapeBatchTaskSummary[] | null>(null);
+  const flushTimerRef = useRef<number | null>(null);
+  const lastFlushRef = useRef<number>(0);
 
   useEffect(() => {
     reportedFailuresRef.current = new Set();
-  }, [nodeId]);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (flushTimerRef.current) {
+        window.clearTimeout(flushTimerRef.current);
+        flushTimerRef.current = null;
+      }
+      pendingTasksRef.current = null;
+    };
+  }, []);
+
+  const flushTasks = useCallback((next: ShapeBatchTaskSummary[]) => {
+    setTasks(next);
+    lastFlushRef.current = Date.now();
+    pendingTasksRef.current = null;
+  }, [setTasks]);
+
+  const scheduleFlush = useCallback((next: ShapeBatchTaskSummary[]) => {
+    pendingTasksRef.current = next;
+    if (flushTimerRef.current) return;
+    const now = Date.now();
+    const elapsed = now - lastFlushRef.current;
+    const delay = Math.max(0, 500 - elapsed);
+    flushTimerRef.current = window.setTimeout(() => {
+      const pending = pendingTasksRef.current;
+      flushTimerRef.current = null;
+      if (pending) {
+        flushTasks(pending);
+      }
+    }, delay);
+  }, [flushTasks]);
 
   const refresh = useCallback(async () => {
     if (!nodeId) {
@@ -53,11 +87,11 @@ export function useShapeBatchTasks(
     setIsLoading(true);
     try {
       await bridgeRef.current.initialize();
-      console.debug('[ShapeBuildProgressStep] batchTasks:fetch', { nodeId });
+      //console.debug('[ShapeBuildProgressStep] batchTasks:fetch', { nodeId });
       const next = await bridgeRef.current.getBatchTasks(SHAPE_NODE_TYPE, nodeId);
-      setTasks(next);
+      scheduleFlush(next);
       setError(null);
-      console.debug('[ShapeBuildProgressStep] batchTasks:ok', { nodeId, count: next.length });
+      //console.debug('[ShapeBuildProgressStep] batchTasks:ok', { nodeId, count: next.length });
     } catch (err) {
       const errObj = err instanceof Error ? err : new Error('Failed to fetch batch tasks');
       setError(errObj);
@@ -68,7 +102,7 @@ export function useShapeBatchTasks(
     } finally {
       setIsLoading(false);
     }
-  }, [nodeId]);
+  }, [nodeId, scheduleFlush, setError, setIsLoading, setTasks]);
 
   useEffect(() => {
     if (!nodeId) return;

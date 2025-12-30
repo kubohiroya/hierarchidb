@@ -186,7 +186,7 @@ pnpm --filter @hierarchidb/project-plugin typecheck
 # Phase 4完了後: 25件 → 0件（型定義修正）
 
 # 最終確認
-pnpm --filter @hierarchidb/project-plugin build
+pnpm --filter @hierarchidb/project-plugin stage
 ```
 
 ## 依存関係と注意点

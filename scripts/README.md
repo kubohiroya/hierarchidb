@@ -41,7 +41,7 @@ HierarchiDBプロジェクトでは、環境設定を**起動スクリプト**�
 
 ```bash
 # 本番環境向けにビルド
-./scripts/build-production.sh
+./scripts/stage-production.sh
 
 # GitHub Pagesへデプロイ
 pnpm deploy
@@ -160,8 +160,8 @@ VITE_APP_TITLE="HierarchiDB"
        "dev": "./scripts/start-staging.sh",
        "dev:local": "./scripts/start-local.sh",
        "dev:staging": "./scripts/start-staging.sh",
-       "build": "./scripts/build-production.sh",
-       "build:analyze": "ANALYZE=true ./scripts/build-production.sh"
+       "build": "./scripts/stage-production.sh",
+       "build:analyze": "ANALYZE=true ./scripts/stage-production.sh"
      }
    }
    ```

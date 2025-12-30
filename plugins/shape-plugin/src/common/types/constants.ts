@@ -20,7 +20,7 @@ export const DEFAULT_PROCESSING_CONFIG: BatchConfig = {
     workers: 2,
     tolerance: 0.05,
     featureFilterMethod: 'hybrid',
-    areaThreshold: 100,
+    areaThreshold: 50,
     minVertexCountForAreaFilter: 10,
     aspectRatioThreshold: 5,
     hybridFilterConfig: {

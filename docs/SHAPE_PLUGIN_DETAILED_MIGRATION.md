@@ -142,7 +142,7 @@ pnpm --filter @hierarchidb/plugin-loader-shape-plugin typecheck
 # Phase 2完了後: 3件 → 0件（未使用変数クリーンアップ）
 
 # 最終確認
-pnpm --filter @hierarchidb/plugin-loader-shape-plugin build
+pnpm --filter @hierarchidb/plugin-loader-shape-plugin stage
 ```
 
 ## 依存関係と注意点

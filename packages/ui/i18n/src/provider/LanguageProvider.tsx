@@ -15,7 +15,7 @@ import { i18n as configuredI18n } from '../i18n/index.js';
 import { isDevEnv } from '../utils/env.js';
 
 const sharedI18n = configuredI18n as unknown as I18nInstance;
-// Avoid hard type dependency on date-fns types during DTS build
+// Avoid hard type dependency on date-fns types during DTS stage
 type Locale = unknown;
 
 // Language configuration

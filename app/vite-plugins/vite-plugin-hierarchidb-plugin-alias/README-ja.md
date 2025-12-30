@@ -47,7 +47,7 @@ createNodeTypeAliasPlugin({
 ## スクリプト
 
 ```bash
-pnpm --filter @hierarchidb/vite-plugin-hierarchidb-plugin-alias build
+pnpm --filter @hierarchidb/vite-plugin-hierarchidb-plugin-alias stage
 pnpm --filter @hierarchidb/vite-plugin-hierarchidb-plugin-alias typecheck
 pnpm --filter @hierarchidb/vite-plugin-hierarchidb-plugin-alias lint
 ```

@@ -860,7 +860,7 @@ pnpm lint
 pnpm test:run
 
 # ビルド検証
-pnpm build
+pnpm stage
 ```
 
 ### 2. デバッグ手法
@@ -873,7 +873,7 @@ pnpm test MyPluginDialog --watch
 pnpm test:coverage --open
 
 # ビルド出力確認
-pnpm build && ls -la dist/
+pnpm stage && ls -la dist/
 ```
 
 ## Best Practices

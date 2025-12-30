@@ -435,7 +435,7 @@ if (typeof Comlink !== 'undefined') {
    ```bash
    rm -rf node_modules packages/*/node_modules packages/*/dist
    pnpm install
-   pnpm build
+   pnpm stage
    ```
 
 3. **最小限のグローバルログ追加**

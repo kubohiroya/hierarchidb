@@ -223,7 +223,7 @@ const entity = await handler.createEntity(nodeId, data);
 
 ### GitHub Pages
 ```bash
-pnpm build
+pnpm stage
 # Deploy app/dist directory
 ```
 

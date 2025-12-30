@@ -200,7 +200,7 @@ pnpm --filter @hierarchidb/plugin-loader-location-plugin typecheck
 # Phase 4完了後: 4件 → 0件（未定義型修正）
 
 # 最終確認
-pnpm --filter @hierarchidb/plugin-loader-location-plugin build
+pnpm --filter @hierarchidb/plugin-loader-location-plugin stage
 ```
 
 ## 依存関係と注意点

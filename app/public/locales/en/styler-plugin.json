@@ -134,6 +134,20 @@
       }
     }
   },
+  "step6": {
+    "opacity": {
+      "range": "Opacity range",
+      "help": "Lower values are more transparent."
+    },
+    "width": {
+      "range": "Width range",
+      "help": "Higher values produce thicker lines."
+    },
+    "numericRange": {
+      "min": "Minimum",
+      "max": "Maximum"
+    }
+  },
   "filtering": {
     "processing": "Processing tabular data..."
   },

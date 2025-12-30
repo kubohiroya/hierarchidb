@@ -379,39 +379,70 @@ const processExtract2Task = async ({
     ? Math.max(1, Math.round(quantizeBase / (1 + retry * 2)))
     : quantizeBase;
   const enablePerFeatureExtraction = payload.enablePerFeatureExtraction ?? true;
-  let extractedPayload: unknown = geojson;
+  const inputBytes = buffer.data.byteLength ?? 0;
+  const targetRatio = 0.1;
+  const maxTuningPasses = 3;
+  let tunedTolerance = tolerance;
+  let tunedQuantize = quantize;
+  let finalData = buffer.data;
+  let finalFeatureCount = buffer.featureCount ?? 0;
+  let finalRatio = inputBytes > 0 ? finalData.byteLength / inputBytes : 1;
   let usedTopo = false;
-  if (extractionMode === 'topojson' && payload.preserveSharedBoundaries && isFeatureCollection(geojson)) {
-    try {
-      extractedPayload = extractTopoJsonByTiles(geojson, {
-        tolerance,
-        quantize,
-        zoomLevels: payload.zoomLevels,
-      });
-      usedTopo = true;
-    } catch (error) {
-      console.warn('[shapeStageWorker] TopoJSON extract failed; falling back to per-feature', error);
+  let pass = 0;
+  const runExtraction = async () => {
+    let extractedPayload: unknown = geojson;
+    usedTopo = false;
+    if (extractionMode === 'topojson' && payload.preserveSharedBoundaries && isFeatureCollection(geojson)) {
+      try {
+        extractedPayload = extractTopoJsonByTiles(geojson, {
+          tolerance: tunedTolerance,
+          quantize: tunedQuantize,
+          zoomLevels: payload.zoomLevels,
+        });
+        usedTopo = true;
+      } catch (error) {
+        console.warn('[shapeStageWorker] TopoJSON extract failed; falling back to per-feature', error);
+      }
     }
-  }
-  const extracted = usedTopo
-    ? extractedPayload
-    : extractGeoJson(geojson, {
-      tolerance,
-      perFeature: enablePerFeatureExtraction,
-      quantize,
-    });
-  const hasExtractedFeatures = isFeatureCollection(extracted);
-  const outputBufferId = `${nodeId}-extract2-${taskIndex}`;
-  const sanitizedExtracted = hasExtractedFeatures
-    ? sanitizeFeatureCollection(extracted)
-    : null;
-  if (sanitizedExtracted) {
-    applyOriginKey(sanitizedExtracted, originKey);
-  }
-  const featureCount = sanitizedExtracted
-    ? sanitizedExtracted.features.length
-    : buffer.featureCount;
-  if (sanitizedExtracted && featureCount === 0) {
+    const extracted = usedTopo
+      ? extractedPayload
+      : extractGeoJson(geojson, {
+        tolerance: tunedTolerance,
+        perFeature: enablePerFeatureExtraction,
+        quantize: tunedQuantize,
+      });
+    const hasExtractedFeatures = isFeatureCollection(extracted);
+    const sanitizedExtracted = hasExtractedFeatures
+      ? sanitizeFeatureCollection(extracted)
+      : null;
+    if (sanitizedExtracted) {
+      applyOriginKey(sanitizedExtracted, originKey);
+    }
+    const featureCount = sanitizedExtracted
+      ? sanitizedExtracted.features.length
+      : buffer.featureCount;
+    if (sanitizedExtracted && featureCount === 0) {
+      return {
+        status: 'skipped' as const,
+        data: buffer.data,
+        featureCount: 0,
+        ratio: 0,
+      };
+    }
+    const data = sanitizedExtracted
+      ? await encodeGeoJson(sanitizedExtracted)
+      : buffer.data;
+    const ratio = inputBytes > 0 ? data.byteLength / inputBytes : 1;
+    return {
+      status: 'completed' as const,
+      data,
+      featureCount: featureCount ?? 0,
+      ratio,
+    };
+  };
+  let extraction = await runExtraction();
+  if (extraction.status === 'skipped') {
+    const outputBufferId = `${nodeId}-extract2-${taskIndex}`;
     await db.extractedBuffers.put({
       id: outputBufferId,
       nodeId: buffer.nodeId,
@@ -419,25 +450,60 @@ const processExtract2Task = async ({
       data: buffer.data,
       featureCount: 0,
       extractionRatio: 0,
-      tolerance,
+      tolerance: tunedTolerance,
       timestamp: Date.now(),
+    });
+    console.debug('[shapeStageWorker] Extract2 skipped', {
+      taskId: task.taskId,
+      reason: 'no features remain after extraction',
     });
     return { status: 'skipped', featureCount: 0 };
   }
-  const data = sanitizedExtracted
-    ? await encodeGeoJson(sanitizedExtracted)
-    : buffer.data;
+  finalData = extraction.data;
+  finalFeatureCount = extraction.featureCount;
+  finalRatio = extraction.ratio;
+  while (finalRatio > targetRatio && pass < maxTuningPasses) {
+    pass += 1;
+    tunedTolerance = tunedTolerance > 0 ? tunedTolerance * 2 : 0.1;
+    if (typeof tunedQuantize === 'number') {
+      tunedQuantize = Math.max(1, Math.round(tunedQuantize / 2));
+    }
+    console.debug('[shapeStageWorker] Extract2 tuning pass', {
+      taskId: task.taskId,
+      pass,
+      tolerance: tunedTolerance,
+      quantize: tunedQuantize,
+      ratio: finalRatio,
+    });
+    extraction = await runExtraction();
+    if (extraction.status === 'skipped') {
+      break;
+    }
+    finalData = extraction.data;
+    finalFeatureCount = extraction.featureCount;
+    finalRatio = extraction.ratio;
+  }
+  const outputBufferId = `${nodeId}-extract2-${taskIndex}`;
   await db.extractedBuffers.put({
     id: outputBufferId,
     nodeId: buffer.nodeId,
     stage: 'extract2',
-    data,
-    featureCount,
-    extractionRatio: buffer.featureCount ? featureCount / buffer.featureCount : 1,
-    tolerance,
+    data: finalData,
+    featureCount: finalFeatureCount,
+    extractionRatio: buffer.featureCount ? finalFeatureCount / buffer.featureCount : 1,
+    tolerance: tunedTolerance,
     timestamp: Date.now(),
   });
-  return { status: 'completed', featureCount };
+  console.debug('[shapeStageWorker] Extract2 result', {
+    taskId: task.taskId,
+    usedTopo,
+    tolerance: tunedTolerance,
+    quantize: tunedQuantize,
+    inputBytes,
+    outputBytes: finalData.byteLength ?? 0,
+    ratio: finalRatio,
+  });
+  return { status: 'completed', featureCount: finalFeatureCount };
 };
 
 export const shapeStageWorker: ShapeStageWorkerAPI = {

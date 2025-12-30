@@ -532,7 +532,7 @@ const packageHealth = {
 pnpm outdated
 
 # Analyze bundle size
-pnpm build --analyze
+pnpm stage --analyze
 
 # Security audit
 pnpm audit

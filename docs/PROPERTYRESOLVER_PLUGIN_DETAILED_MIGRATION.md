@@ -171,7 +171,7 @@ pnpm --filter @hierarchidb/propertyresolver-plugin typecheck
 # Phase 3完了後: 4件 → 0件（undefined対策）
 
 # 最終確認
-pnpm --filter @hierarchidb/propertyresolver-plugin build
+pnpm --filter @hierarchidb/propertyresolver-plugin stage
 ```
 
 ## 依存関係と注意点

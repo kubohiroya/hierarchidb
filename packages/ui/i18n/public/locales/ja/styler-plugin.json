@@ -118,6 +118,20 @@
       }
     }
   },
+  "step6": {
+    "opacity": {
+      "range": "透明度の範囲",
+      "help": "数値が小さいほど透明になります。"
+    },
+    "width": {
+      "range": "線幅の範囲",
+      "help": "数値が大きいほど線が太くなります。"
+    },
+    "numericRange": {
+      "min": "最小値",
+      "max": "最大値"
+    }
+  },
   "step3": {
     "description": "表の列とタイル側の feature ID を指定して、スタイル値を紐づけます。",
     "featureIdProperty": {

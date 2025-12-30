@@ -144,7 +144,7 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
       },
       {
         id: 'build',
-        label: t('steps.build.label', 'Build'),
+        label: t('steps.stage.label', 'Build'),
         componentFactory: (props: ShapeStepProps) => <ShapeBuildProgress {...props} />,
         validate: (data?: Partial<ShapeEntity>) => isShapeBuildPersisted(data),
         capabilities: {

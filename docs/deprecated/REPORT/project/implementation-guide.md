@@ -18,7 +18,7 @@ The Project Plugin implementation follows a phased approach:
 ```bash
 # Ensure HierarchiDB development environment is set up
 pnpm install
-pnpm build
+pnpm stage
 
 # Verify core dependencies
 pnpm typecheck
@@ -1086,7 +1086,7 @@ pnpm lint
 pnpm test:run
 
 # Build verification
-pnpm build
+pnpm stage
 ```
 
 ### Documentation Requirements

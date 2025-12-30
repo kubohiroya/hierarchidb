@@ -225,7 +225,7 @@ pnpm dev
 
 # アプリケーションとの統合テスト
 cd ../../..
-pnpm build:plugin-loader
+pnpm stage:plugin-loader
 pnpm dev
 ```
 

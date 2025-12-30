@@ -82,7 +82,7 @@ export const BaseMapPluginDefinition: ExtendingNodeTypeDefinition<
 ```bash
 # 各プラグインで実行
 pnpm typecheck
-pnpm build
+pnpm stage
 
 # 期待結果: エラー大幅減少（既存機能は動作）
 ```

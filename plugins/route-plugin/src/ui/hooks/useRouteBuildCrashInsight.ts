@@ -14,7 +14,7 @@ type Args = {
 };
 
 const buildMonitorConfig: BuildMonitorConfig = {
-  storagePrefix: 'hdb:route:build-monitor',
+  storagePrefix: 'hdb:route:stage-monitor',
   maxSamples: 3,
   memoryPressureRatio: 0.85,
 };

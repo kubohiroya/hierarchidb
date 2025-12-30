@@ -133,7 +133,7 @@ registry.registerConfigProvider<ResolverUpdaterPayload>({
         },
       },
       {
-        id: 'build',
+        id: 'stage',
         label: 'Build',
         optional: true,
         componentFactory: (p: ResolverStepProps) => {

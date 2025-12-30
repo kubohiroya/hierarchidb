@@ -206,7 +206,7 @@ pnpm --filter @hierarchidb/plugin-loader-spreadsheet-plugin typecheck
 # Phase 4-5完了後: 57件 → 10件以下（統合完了）
 
 # 最終確認
-pnpm --filter @hierarchidb/plugin-loader-spreadsheet-plugin build
+pnpm --filter @hierarchidb/plugin-loader-spreadsheet-plugin stage
 ```
 
 ## 依存関係と注意点

@@ -214,6 +214,10 @@ export class LocalExtract1Adapter implements Extract1StageAdapter {
                 message: SIMPLIFY1_SKIP_MESSAGE,
                 outputData,
               });
+              console.log('[ShapeExtract1] Task skipped', {
+                taskId: task.taskId,
+                reason: SIMPLIFY1_SKIP_MESSAGE,
+              });
             }
             finished = true;
             break;
@@ -301,6 +305,10 @@ export class LocalExtract1Adapter implements Extract1StageAdapter {
                 message: SIMPLIFY1_SKIP_MESSAGE,
                 outputData,
               });
+              console.log('[ShapeExtract1] Task skipped', {
+                taskId: task.taskId,
+                reason: SIMPLIFY1_SKIP_MESSAGE,
+              });
             }
             finished = true;
             break;
@@ -332,6 +340,10 @@ export class LocalExtract1Adapter implements Extract1StageAdapter {
                 progress: 100,
                 message: SIMPLIFY1_SKIP_MESSAGE,
                 outputData,
+              });
+              console.log('[ShapeExtract1] Task skipped', {
+                taskId: task.taskId,
+                reason: SIMPLIFY1_SKIP_MESSAGE,
               });
             }
             finished = true;
@@ -401,7 +413,7 @@ export class LocalExtract1Adapter implements Extract1StageAdapter {
       });
     };
     await batch.mapChunks(tasks, processTask, { concurrency: maxConcurrent });
-    return { processed: completed, failed };
+    return { processed: completed, failed, skipped };
   }
 }
 
@@ -613,36 +625,67 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
             ? Math.max(1, Math.round(quantizeBase / (1 + retry * 2)))
             : quantizeBase;
           const enablePerFeatureExtraction = input.enablePerFeatureExtraction ?? true;
-          let extractedPayload: unknown = geojson;
+          const inputBytes = buffer.data.byteLength ?? 0;
+          const targetRatio = 0.1;
+          const maxTuningPasses = 3;
+          let tunedTolerance = tolerance;
+          let tunedQuantize = quantize;
+          let finalData = buffer.data;
+          let finalFeatureCount = buffer.featureCount ?? 0;
+          let finalRatio = inputBytes > 0 ? finalData.byteLength / inputBytes : 1;
           let usedTopo = false;
-          if (extractionMode === 'topojson' && input.preserveSharedBoundaries && isFeatureCollection(geojson)) {
-            try {
-              extractedPayload = extractTopoJsonByTiles(geojson, {
-                tolerance,
-                quantize,
-                zoomLevels: input.zoomLevels,
-              });
-              usedTopo = true;
-            } catch (error) {
-              console.warn('[LocalExtract2Adapter] TopoJSON extract failed; falling back to per-feature', error);
+          let pass = 0;
+          const runExtraction = async () => {
+            let extractedPayload: unknown = geojson;
+            usedTopo = false;
+            if (extractionMode === 'topojson' && input.preserveSharedBoundaries && isFeatureCollection(geojson)) {
+              try {
+                extractedPayload = extractTopoJsonByTiles(geojson, {
+                  tolerance: tunedTolerance,
+                  quantize: tunedQuantize,
+                  zoomLevels: input.zoomLevels,
+                });
+                usedTopo = true;
+              } catch (error) {
+                console.warn('[LocalExtract2Adapter] TopoJSON extract failed; falling back to per-feature', error);
+              }
             }
-          }
-          const extracted = usedTopo
-            ? extractedPayload
-            : extractGeoJson(geojson, {
-              tolerance,
-              perFeature: enablePerFeatureExtraction,
-              quantize,
-            });
-          const hasExtractedFeatures = isFeatureCollection(extracted);
+            const extracted = usedTopo
+              ? extractedPayload
+              : extractGeoJson(geojson, {
+                tolerance: tunedTolerance,
+                perFeature: enablePerFeatureExtraction,
+                quantize: tunedQuantize,
+              });
+            const hasExtractedFeatures = isFeatureCollection(extracted);
+            const sanitizedExtracted = hasExtractedFeatures
+              ? sanitizeFeatureCollection(extracted)
+              : null;
+            const featureCount = sanitizedExtracted
+              ? sanitizedExtracted.features.length
+              : buffer.featureCount;
+            if (sanitizedExtracted && featureCount === 0) {
+              return {
+                status: 'skipped' as const,
+                data: buffer.data,
+                featureCount: 0,
+                ratio: 0,
+              };
+            }
+            const data = sanitizedExtracted
+              ? await encodeGeoJson(sanitizedExtracted)
+              : buffer.data;
+            const ratio = inputBytes > 0 ? data.byteLength / inputBytes : 1;
+            return {
+              status: 'completed' as const,
+              data,
+              featureCount: featureCount ?? 0,
+              ratio,
+            };
+          };
+          let extraction = await runExtraction();
           const outputBufferId = `${task.nodeId ?? ''}-extract2-${taskIndex}`;
-          const sanitizedExtracted = hasExtractedFeatures
-            ? sanitizeFeatureCollection(extracted)
-            : null;
-          const featureCount = sanitizedExtracted
-            ? sanitizedExtracted.features.length
-            : buffer.featureCount;
-          if (sanitizedExtracted && featureCount === 0) {
+          if (extraction.status === 'skipped') {
             await db.extractedBuffers.put({
               id: outputBufferId,
               nodeId: buffer.nodeId,
@@ -650,51 +693,76 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
               data: buffer.data,
               featureCount: 0,
               extractionRatio: 0,
-              tolerance,
+              tolerance: tunedTolerance,
               timestamp: Date.now(),
             });
             skipped += 1;
-              if (task.taskId) {
-                const outputData: Extract2TaskOutputData = {
-                  outputBufferId,
-                  featureCount: 0,
-                  extractionRatio: 0,
-                  retry: input.retry,
-                };
-                await shapeDB.updateBatchTask(task.taskId, {
-                  status: 'completed',
-                  completedAt: Date.now(),
-                  progress: 100,
-                  message: SIMPLIFY2_SKIP_MESSAGE,
-                  outputData,
-                });
-              }
+            if (task.taskId) {
+              const outputData: Extract2TaskOutputData = {
+                outputBufferId,
+                featureCount: 0,
+                extractionRatio: 0,
+                retry: input.retry,
+              };
+              await shapeDB.updateBatchTask(task.taskId, {
+                status: 'completed',
+                completedAt: Date.now(),
+                progress: 100,
+                message: SIMPLIFY2_SKIP_MESSAGE,
+                outputData,
+              });
+              console.debug('[LocalExtract2Adapter] Task skipped', {
+                taskId: task.taskId,
+                reason: SIMPLIFY2_SKIP_MESSAGE,
+              });
+            }
             finished = true;
             break;
           }
-          const data = sanitizedExtracted
-            ? await encodeGeoJson(sanitizedExtracted)
-            : buffer.data;
+          finalData = extraction.data;
+          finalFeatureCount = extraction.featureCount;
+          finalRatio = extraction.ratio;
+          while (finalRatio > targetRatio && pass < maxTuningPasses) {
+            pass += 1;
+            tunedTolerance = tunedTolerance > 0 ? tunedTolerance * 2 : 0.1;
+            if (typeof tunedQuantize === 'number') {
+              tunedQuantize = Math.max(1, Math.round(tunedQuantize / 2));
+            }
+            console.debug('[LocalExtract2Adapter] Extract2 tuning pass', {
+              taskId: task.taskId,
+              pass,
+              tolerance: tunedTolerance,
+              quantize: tunedQuantize,
+              ratio: finalRatio,
+            });
+            extraction = await runExtraction();
+            if (extraction.status === 'skipped') {
+              break;
+            }
+            finalData = extraction.data;
+            finalFeatureCount = extraction.featureCount;
+            finalRatio = extraction.ratio;
+          }
           await db.extractedBuffers.put({
             id: outputBufferId,
             nodeId: buffer.nodeId,
             stage: 'extract2',
-            data,
-            featureCount,
-            extractionRatio: buffer.featureCount ? featureCount / buffer.featureCount : 1,
-            tolerance,
+            data: finalData,
+            featureCount: finalFeatureCount,
+            extractionRatio: buffer.featureCount ? finalFeatureCount / buffer.featureCount : 1,
+            tolerance: tunedTolerance,
             timestamp: Date.now(),
           });
           completed++;
           if (task.taskId) {
-            const extractionRatio = buffer.featureCount ? featureCount / buffer.featureCount : 1;
+            const extractionRatio = buffer.featureCount ? finalFeatureCount / buffer.featureCount : 1;
             const outputData: Extract2TaskOutputData = {
               outputBufferId,
-              featureCount,
+              featureCount: finalFeatureCount,
               extractionRatio,
               retry: input.retry,
             };
-            const completionMessage = buildExtract2CompletionMessage(featureCount, data.byteLength);
+            const completionMessage = buildExtract2CompletionMessage(finalFeatureCount, finalData.byteLength);
             await shapeDB.updateBatchTask(task.taskId, {
               status: 'completed',
               completedAt: Date.now(),
@@ -703,6 +771,15 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
               outputData,
             });
           }
+          console.debug('[LocalExtract2Adapter] Extract2 result', {
+            taskId: task.taskId,
+            usedTopo,
+            tolerance: tunedTolerance,
+            quantize: tunedQuantize,
+            inputBytes,
+            outputBytes: finalData.byteLength ?? 0,
+            ratio: finalRatio,
+          });
           finished = true;
         } catch (error) {
           if (shouldAbort()) {

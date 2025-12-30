@@ -55,7 +55,7 @@ export default defineConfig({
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
-      '**/build/**',
+      '**/stage/**',
       '**/storybook-static/**',
       '**/e2e/**',
     ],
@@ -73,7 +73,7 @@ export default defineConfig({
         '**/__tests__/**',
         '**/*.stories.{ts,tsx}',
         '**/dist/**',
-        '**/build/**',
+        '**/stage/**',
         '**/storybook-static/**',
         '**/e2e/**',
         '**/references/**',

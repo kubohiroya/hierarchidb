@@ -248,7 +248,7 @@ for (const dir of workspaces) {
 // permitted only for local imports quality-of-life ("~/*"). Anything else risks mask/mis-resolution.
 const checkTsconfigOverrides = true;
 const allowTsconfigOverrides = new Set([
-  '@hierarchidb/app', // app-level may have custom routes/build tooling
+  '@hierarchidb/app', // app-level may have custom routes/stage tooling
   '@hierarchidb/bff', // server tooling
 ]);
 for (const dir of workspaces) {

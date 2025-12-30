@@ -38,7 +38,7 @@ const DEFAULT_MAX_DEPTH = 32;
  *
  * @param params.treeId Current console identifier (e.g. "r" for resources console).
  * @param params.rootNode Trash root node supplied by the worker.
- * @param params.targetNodeId The trashed node we want to build a path for.
+ * @param params.targetNodeId The trashed node we want to stage a path for.
  * @param params.nodeMap Optional map of node id to worker-provided TreeNode instances.
  * @param params.maxDepth Safety cap to avoid infinite loops on malformed data (defaults to 32).
  *

@@ -2,7 +2,7 @@
  * Module: tools/load-plugin-manifest
  * Purpose: utility used by generator scripts (e.g., `scripts/generate-plugin-loader.mjs`)
  * to load and evaluate TypeScript plugin manifest modules without spinning up a
- * build. It transpiles the manifest on the fly and returns the exported
+ * stage. It transpiles the manifest on the fly and returns the exported
  * metadata object.
  * Invocation: imported from Node scripts; not executed directly from the CLI.
  * Output: no files written. Consumers receive manifest JSON objects.

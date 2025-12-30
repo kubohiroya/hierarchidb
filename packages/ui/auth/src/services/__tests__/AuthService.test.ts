@@ -387,7 +387,7 @@ describe('AuthService', () => {
       AuthService.initialize(mockConfig);
     });
 
-    it('should build auth URL with all required parameters', async () => {
+    it('should stage auth URL with all required parameters', async () => {
       const service = AuthService.getInstance();
 
       // Start authentication to trigger URL building

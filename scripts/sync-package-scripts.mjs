@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * Normalize per-package build scripts across the workspace.
+ * Normalize per-package stage scripts across the workspace.
  *
  * Standard pattern enforced:
- *   - build            -> pnpm run build:bundle
- *   - prebuild:bundle  -> pnpm run build:types (if build:types exists)
- *   - build:clean      -> removed (tsup.clean handles dist removal)
- *   - prebuild         -> removed when it only called build:clean
+ *   - stage            -> pnpm run stage:bundle
+ *   - prebuild:bundle  -> pnpm run stage:types (if stage:types exists)
+ *   - stage:clean      -> removed (tsup.clean handles dist removal)
+ *   - prebuild         -> removed when it only called stage:clean
  *
  * The script is idempotent and can be rerun at any time.
  */
@@ -45,20 +45,20 @@ function normalisePackage(file) {
 
   let changed = false;
 
-  const hasBuildTypes = typeof scripts['build:types'] === 'string';
-  const hasBuildBundle = typeof scripts['build:bundle'] === 'string';
+  const hasBuildTypes = typeof scripts['stage:types'] === 'string';
+  const hasBuildBundle = typeof scripts['stage:bundle'] === 'string';
 
   if (hasBuildTypes && hasBuildBundle) {
-    if (scripts['build'] !== 'pnpm run build:bundle') {
-      scripts['build'] = 'pnpm run build:bundle';
+    if (scripts['build'] !== 'pnpm run stage:bundle') {
+      scripts['build'] = 'pnpm run stage:bundle';
       changed = true;
     }
-    if (scripts['prebuild:bundle'] !== 'pnpm run build:types') {
-      scripts['prebuild:bundle'] = 'pnpm run build:types';
+    if (scripts['prebuild:bundle'] !== 'pnpm run stage:types') {
+      scripts['prebuild:bundle'] = 'pnpm run stage:types';
       changed = true;
     }
-    if (scripts['build:clean']) {
-      delete scripts['build:clean'];
+    if (scripts['stage:clean']) {
+      delete scripts['stage:clean'];
       changed = true;
     }
     if (

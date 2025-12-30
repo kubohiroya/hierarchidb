@@ -1,4 +1,4 @@
-// Local copy of shared type to avoid build-time cross-package coupling
+// Local copy of shared type to avoid stage-time cross-package coupling
 export interface PluginRuntimeWiring {
   registerAuthNotifier?: () => Promise<void> | void;
   registerRuntimeWorkerAdapters?: () => Promise<void> | void;

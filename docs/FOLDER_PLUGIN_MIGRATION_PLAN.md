@@ -452,7 +452,7 @@ pnpm --filter @hierarchidb/plugin-loader-folder-plugin typecheck
 ### 最終確認
 ```bash
 # ビルド成功確認
-pnpm --filter @hierarchidb/plugin-loader-folder-plugin build
+pnpm --filter @hierarchidb/plugin-loader-folder-plugin stage
 
 # テスト実行確認
 pnpm --filter @hierarchidb/plugin-loader-folder-plugin test

@@ -184,23 +184,23 @@ const startLocationBatch = async (data: LocationStepData, context: StartBatchCon
   const nodeId = context.nodeId as NodeId | undefined;
 
   if (!nodeId) {
-    notify.error(tNs('build.errors.saveFirst', 'Save changes before starting a build.'));
+    notify.error(tNs('stage.errors.saveFirst', 'Save changes before starting a stage.'));
     return;
   }
 
   if (!draft.dataSource) {
-    notify.info(tNs('build.requiresApproval', 'Provide a data source and save the node before building.'));
+    notify.info(tNs('stage.requiresApproval', 'Provide a data source and save the node before building.'));
     return;
   }
   if (UNSUPPORTED_DATA_SOURCES.includes(draft.dataSource)) {
-    notify.warning(tNs('build.dataSourceUnsupported', 'This data source is not supported yet.'));
+    notify.warning(tNs('stage.dataSourceUnsupported', 'This data source is not supported yet.'));
     return;
   }
 
   const allowedTypes = resolveTypesForSource(draft.dataSource);
   const selectionEntries = await resolveSelectionEntries(draft.selectedArrayByCountries, allowedTypes);
   if (selectionEntries.length === 0) {
-    notify.info(tNs('build.noSelection', 'No country/type selections found.'));
+    notify.info(tNs('stage.noSelection', 'No country/type selections found.'));
     return;
   }
 
@@ -238,7 +238,7 @@ const startLocationBatch = async (data: LocationStepData, context: StartBatchCon
   } else {
     const searchConfigs = await buildSearchConfigs(draft.dataSource, draft.selectedArrayByCountries);
     if (searchConfigs.length === 0) {
-      notify.info(tNs('build.noSelection', 'No country/type selections found.'));
+      notify.info(tNs('stage.noSelection', 'No country/type selections found.'));
       return;
     }
     const rawConcurrency = draft.concurrentDownloads ?? 4;
@@ -257,7 +257,7 @@ const startLocationBatch = async (data: LocationStepData, context: StartBatchCon
   }
 
   if (!pointInputs.length) {
-    notify.info(tNs('build.noPoints', 'No location points available to process.'));
+    notify.info(tNs('stage.noPoints', 'No location points available to process.'));
     if (draft.dataSource === 'ide-gsm') {
       clearIdeGsmProgress(nodeId);
     }
@@ -289,7 +289,7 @@ const startLocationBatch = async (data: LocationStepData, context: StartBatchCon
     lastProcessedAt: Date.now(),
   });
 
-  notify.success(tNs('build.success', 'Build started.'));
+  notify.success(tNs('stage.success', 'Build started.'));
 };
 
 registry.registerConfigProvider<LocationStepData>({
@@ -344,12 +344,12 @@ registry.registerConfigProvider<LocationStepData>({
       },
       {
         id: 'build',
-        label: String(i18n.t('steps.build.label', { ns: 'location-plugin', defaultValue: 'Build' })),
+        label: String(i18n.t('steps.stage.label', { ns: 'location-plugin', defaultValue: 'Build' })),
         optional: false,
         componentFactory: (p: StepProps) => {
           const draft = ensureData(p.data);
           if (!p.nodeId) {
-            throw new Error('[LocationSteps] nodeId is required for build step');
+            throw new Error('[LocationSteps] nodeId is required for stage step');
           }
           return <LocationBuildStep draft={draft} nodeId={p.nodeId as NodeId} onUpdate={p.onChange} />;
         },

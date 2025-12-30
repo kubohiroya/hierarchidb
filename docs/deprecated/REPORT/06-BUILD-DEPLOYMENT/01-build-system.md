@@ -137,7 +137,7 @@ export default defineConfig({
   "$schema": "https://turbo.build/schema.json",
   "pipeline": {
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^stage"],
       "outputs": ["dist/**"],
       "cache": true
     },
@@ -146,11 +146,11 @@ export default defineConfig({
       "persistent": true
     },
     "typecheck": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^stage"],
       "cache": true
     },
     "test": {
-      "dependsOn": ["build"],
+      "dependsOn": ["stage"],
       "cache": false
     }
   }
@@ -160,13 +160,13 @@ export default defineConfig({
 ### 並列ビルド最適化
 ```bash
 # 依存関係を考慮した並列ビルド
-turbo run build
+turbo run stage
 
 # キャッシュ統計
-turbo run build --dry-run
+turbo run stage --dry-run
 
 # 特定パッケージのみ
-turbo run build --filter=@hierarchidb/worker
+turbo run stage --filter=@hierarchidb/worker
 ```
 
 ## パッケージエクスポート設定
@@ -253,12 +253,12 @@ plugin-loader: [
 ```json
 {
   "scripts": {
-    "build": "turbo run build",
-    "build:packages": "turbo run build --filter='./packages/*'",
-    "build:plugins": "turbo run build --filter='./packages/plugin-loader/*'",
-    "build:app": "turbo run build --filter=@hierarchidb/_app",
-    "build:force": "turbo run build --force",
-    "build:analyze": "ANALYZE=true pnpm build:_app",
+    "build": "turbo run stage",
+    "build:packages": "turbo run stage --filter='./packages/*'",
+    "build:plugins": "turbo run stage --filter='./packages/plugin-loader/*'",
+    "build:app": "turbo run stage --filter=@hierarchidb/_app",
+    "build:force": "turbo run stage --force",
+    "build:analyze": "ANALYZE=true pnpm stage:_app",
     "prebuild": "pnpm clean",
     "postbuild": "pnpm size"
   }
@@ -267,7 +267,7 @@ plugin-loader: [
 
 ### CI/CD用ビルド
 ```yaml
-# .github/workflows/build.yml
+# .github/workflows/stage.yml
 name: Build
 on: [push, pull_request]
 
@@ -284,12 +284,12 @@ jobs:
       
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
-      - run: pnpm build
+      - run: pnpm stage
       
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: build-output
+          name: stage-output
           path: packages/_app/dist
 ```
 
@@ -304,7 +304,7 @@ Error: Cannot find module '@hierarchidb/core' or its corresponding type declarat
 **解決策**: 
 ```bash
 # 型定義の再生成
-pnpm --filter @hierarchidb/core build
+pnpm --filter @hierarchidb/core stage
 ```
 
 #### 2. ESM/CJS互換性

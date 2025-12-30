@@ -1019,8 +1019,8 @@ packages/plugins/basemap/
     "./settings": "./dist/components/BasemapSettings.js"
   },
   "scripts": {
-    "build": "vite build",
-    "dev": "vite build --watch",
+    "build": "vite stage",
+    "dev": "vite stage --watch",
     "test": "vitest",
     "typecheck": "tsc --noEmit"
   },

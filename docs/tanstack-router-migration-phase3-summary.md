@@ -170,7 +170,7 @@ Updated `docs/tanstack-router-migration-plan.md` with:
 
 Full testing requires building all packages:
 ```bash
-pnpm build:turbo  # Build all packages (can take several minutes)
+pnpm stage:turbo  # Build all packages (can take several minutes)
 ```
 
 ### 2. E2E Testing

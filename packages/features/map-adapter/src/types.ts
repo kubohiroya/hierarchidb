@@ -1,4 +1,4 @@
-// Note: Keep this file decoupled from map-source to avoid workspace build order issues.
+// Note: Keep this file decoupled from map-source to avoid workspace stage order issues.
 
 export interface ViewState {
   longitude: number;

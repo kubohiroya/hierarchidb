@@ -364,7 +364,7 @@ module.exports = {
   ignorePatterns: [
     'node_modules/',
     'dist/',
-    'build/',
+    'stage/',
     '.turbo/',
     'coverage/',
     '**/*.config.js',

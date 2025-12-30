@@ -319,7 +319,7 @@ pnpm typecheck --filter @hierarchidb/plugin-loader-styler-plugin
 pnpm test --filter @hierarchidb/plugin-loader-styler-plugin
 
 # Build
-pnpm build --filter @hierarchidb/plugin-loader-styler-plugin
+pnpm stage --filter @hierarchidb/plugin-loader-styler-plugin
 ```
 
 ### Development Workflow

@@ -227,7 +227,7 @@ export function useTreeConsoleToolbarActions({
         } catch (error) {
           logIntegrationWarning('Import template handler failed', error);
           const hint =
-            ' If this is a dev build under a sub-path, set VITE_APP_NAME=hierarchidb and restart dev server.';
+            ' If this is a dev stage under a sub-path, set VITE_APP_NAME=hierarchidb and restart dev server.';
           try {
             alert(`Import Template failed: ${String(error)}${hint}`);
           } catch (alertError) {

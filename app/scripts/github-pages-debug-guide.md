@@ -7,12 +7,12 @@
 ```bash
 # ビルド実行
 cd packages/_app
-pnpm build
+pnpm stage
 
 # GitHub Pages環境をローカルで再現
-npx serve build/client -p 8080
+npx serve stage/client -p 8080
 # または
-python3 -m http.server 8080 --directory build/client
+python3 -m http.server 8080 --directory stage/client
 ```
 
 アクセス: http://localhost:8080/hierarchidb/
@@ -21,8 +21,8 @@ python3 -m http.server 8080 --directory build/client
 
 ```bash
 # デバッグ用HTMLをビルドディレクトリにコピー
-cp scripts/debug-404.html build/client/debug-404.html
-cp scripts/debug-index.html build/client/debug-index.html
+cp scripts/debug-404.html stage/client/debug-404.html
+cp scripts/debug-index.html stage/client/debug-index.html
 ```
 
 テストURL:

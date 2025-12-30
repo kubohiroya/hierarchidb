@@ -218,7 +218,7 @@ pnpm --filter @hierarchidb/plugin-loader-styler-plugin typecheck
 # Phase 2完了後: 37件 → 10件以下（依存関係解決）
 
 # 最終確認
-pnpm --filter @hierarchidb/plugin-loader-styler-plugin build
+pnpm --filter @hierarchidb/plugin-loader-styler-plugin stage
 ```
 
 ## 依存関係と注意点

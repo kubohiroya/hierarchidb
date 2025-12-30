@@ -30,9 +30,9 @@ pnpm dev
 ### Staging Environment
 
 ```bash
-# Preview build
+# Preview stage
 VITE_APP_NAME="hierarchidb-staging"
-pnpm build
+pnpm stage
 pnpm preview
 # Runs on http://localhost:4173/hierarchidb-staging
 ```
@@ -40,9 +40,9 @@ pnpm preview
 ### Production Environment
 
 ```bash
-# Production build
+# Production stage
 VITE_APP_NAME="hierarchidb"
-pnpm build
+pnpm stage
 # Deployed to https://[username].github.io/hierarchidb
 ```
 
@@ -71,12 +71,12 @@ pnpm build
 
 ```bash
 # Build application
-pnpm build
+pnpm stage
 
 # Create gh-pages branch
 git checkout -b gh-pages
 
-# Copy build output
+# Copy stage output
 cp -r packages/_app/dist/* .
 
 # Add nojekyll file
@@ -123,7 +123,7 @@ jobs:
         run: pnpm install --frozen-lockfile
       
       - name: Build application
-        run: pnpm build
+        run: pnpm stage
         env:
           VITE_APP_NAME: hierarchidb
       
@@ -137,7 +137,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    needs: build
+    needs: stage
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
@@ -230,7 +230,7 @@ gzip -9 dist/*.css
 
 - [ ] Verify build
   ```bash
-  pnpm build
+  pnpm stage
   pnpm preview
   ```
 
@@ -294,7 +294,7 @@ git push origin gh-pages
 
 ```bash
 # Analyze bundle size
-pnpm build --analyze
+pnpm stage --analyze
 
 # Generate report
 npx vite-bundle-visualizer

@@ -99,7 +99,7 @@ pnpm --filter @hierarchidb/api version 2.0.0
 
 1. **Build Verification**
    ```bash
-   pnpm build
+   pnpm stage
    pnpm typecheck
    pnpm test:run
    ```
@@ -196,13 +196,13 @@ pnpm install --fix-lockfile
 pnpm --filter @hierarchidb/core dev
 
 # Run in all packages
-pnpm -r build
+pnpm -r stage
 
 # Run in parallel
 pnpm -r --parallel dev
 
 # Run with dependencies
-pnpm --filter @hierarchidb/_app... build
+pnpm --filter @hierarchidb/_app... stage
 ```
 
 ## Troubleshooting
@@ -270,7 +270,7 @@ pnpm store verify
   run: pnpm install --frozen-lockfile
 
 - name: Build packages
-  run: pnpm build
+  run: pnpm stage
 ```
 
 ## Migration Guide

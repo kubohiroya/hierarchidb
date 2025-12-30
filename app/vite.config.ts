@@ -307,7 +307,7 @@ function createRuntimeAliasConfig({
     }
   } else {
     // Productionも原則srcを参照する（ビルド済みdistへのエイリアスは依存解決順や存在に依存し脆弱）
-    // runtime-worker は preview/worker build で循環的な facade re-export を避けるため dist を優先する。
+    // runtime-worker は preview/worker stage で循環的な facade re-export を避けるため dist を優先する。
     addAlias('@hierarchidb/runtime-worker', '../packages/runtime-worker/dist/index.js', { exclude: true, exact: true });
     addAlias('@hierarchidb/runtime-worker/stage-worker', '../packages/runtime-worker/dist/stageWorker.entry.js', {
       exclude: true,
@@ -542,7 +542,7 @@ function buildIndexResolveTracePlugin(): Plugin {
 
 function buildConfigTracePlugin(): Plugin {
   return {
-    name: 'hierarchidb:build-config-trace',
+    name: 'hierarchidb:stage-config-trace',
     apply: 'build',
     configResolved(config) {
       const input = config.build?.rollupOptions?.input ?? null;
@@ -859,7 +859,7 @@ export default defineConfig(({ mode, command: _, isSsrBuild }) => {
     ...(env.VITE_APP_DTS === 'true'
       ? [
           dts({
-            outDir: isSsrBuild ? 'build/server-types' : 'build/client-types',
+            outDir: isSsrBuild ? 'stage/server-types' : 'stage/client-types',
             rollupTypes: false,
             insertTypesEntry: false,
             copyDtsFiles: true,
@@ -923,7 +923,7 @@ export default defineConfig(({ mode, command: _, isSsrBuild }) => {
   }
 
   const buildBeaconPlugin: Plugin = {
-    name: 'hdb-build-beacon',
+    name: 'hdb-stage-beacon',
     configureServer(server: ViteDevServer) {
       const startedAt = new Date().toISOString();
       const beaconHandler = (_req: IncomingMessage, res: ServerResponse) => {
@@ -1087,7 +1087,7 @@ export default defineConfig(({ mode, command: _, isSsrBuild }) => {
     base,
     clearScreen: false,
     define: (() => {
-      // Inject version and build time for logging
+      // Inject version and stage time for logging
       return {
         __APP_VERSION__: JSON.stringify(appVersion),
         __BUILD_TIME__: JSON.stringify(buildTime),

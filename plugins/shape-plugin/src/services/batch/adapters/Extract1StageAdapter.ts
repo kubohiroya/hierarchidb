@@ -5,6 +5,7 @@ import type { StageControls } from './StageControls.js';
 export interface ExtractStageAdapterResult {
   processed: number;
   failed: number;
+  skipped?: number;
 }
 
 export interface Extract1StageAdapter {

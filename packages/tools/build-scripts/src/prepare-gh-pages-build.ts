@@ -1,7 +1,7 @@
 /**
- * Script: prepare-gh-pages-build
- * Purpose: Post-process the Vite SPA build so GitHub Pages deployments behave correctly.
- * Invocation: run via `pnpm --filter @hierarchidb/tools-build-scripts run prepare-gh-pages-build` after `pnpm -C app build`.
+ * Script: prepare-gh-pages-stage
+ * Purpose: Post-process the Vite SPA stage so GitHub Pages deployments behave correctly.
+ * Invocation: run via `pnpm --filter @hierarchidb/tools-stage-scripts run prepare-gh-pages-stage` after `pnpm -C app stage`.
  * Output: Writes `.nojekyll`, updates `dist/index.html`, and maintains `dist/404.html` in `app/dist`.
  */
 import { access, readFile, unlink, writeFile } from 'node:fs/promises';
@@ -55,7 +55,7 @@ function injectHashRouting(html: string, basePath: string): string {
     </script>`;
 
   if (!html.includes('</head>')) {
-    console.warn('[prepare-gh-pages-build] </head> not found; prepending hash routing snippet.');
+    console.warn('[prepare-gh-pages-stage] </head> not found; prepending hash routing snippet.');
     return `${script}\n${html}`;
   }
 
@@ -92,11 +92,11 @@ function createNotFoundHtml(basePath: string): string {
 
 async function main(): Promise<void> {
   await writeFile(nojekyllPath, '', 'utf8').catch((error) => {
-    console.warn('[prepare-gh-pages-build] Failed to create .nojekyll:', error);
+    console.warn('[prepare-gh-pages-stage] Failed to create .nojekyll:', error);
   });
 
   if (!(await exists(indexPath))) {
-    console.warn('[prepare-gh-pages-build] dist/index.html not found; skipping HTML adjustments.');
+    console.warn('[prepare-gh-pages-stage] dist/index.html not found; skipping HTML adjustments.');
     return;
   }
 
@@ -115,25 +115,25 @@ async function main(): Promise<void> {
   const useHashRouting = env.VITE_USE_HASH_ROUTING !== 'false';
 
   if (useHashRouting) {
-    console.log('[prepare-gh-pages-build] Hash routing enabled; injecting redirect snippet.');
+    console.log('[prepare-gh-pages-stage] Hash routing enabled; injecting redirect snippet.');
     const updatedHtml = injectHashRouting(indexHtml, basePath);
     if (updatedHtml !== indexHtml) {
       await writeFile(indexPath, updatedHtml, 'utf8').catch((error) => {
-        console.warn('[prepare-gh-pages-build] Failed to update index.html:', error);
+        console.warn('[prepare-gh-pages-stage] Failed to update index.html:', error);
       });
     }
     if (await exists(notFoundPath)) {
       await unlink(notFoundPath).catch((error) => {
-        console.warn('[prepare-gh-pages-build] Failed to remove 404.html:', error);
+        console.warn('[prepare-gh-pages-stage] Failed to remove 404.html:', error);
       });
     }
     return;
   }
 
-  console.log('[prepare-gh-pages-build] Hash routing disabled; ensuring 404.html exists.');
+  console.log('[prepare-gh-pages-stage] Hash routing disabled; ensuring 404.html exists.');
   const html = createNotFoundHtml(basePath);
   await writeFile(notFoundPath, html, 'utf8').catch((error) => {
-    console.warn('[prepare-gh-pages-build] Failed to write 404.html:', error);
+    console.warn('[prepare-gh-pages-stage] Failed to write 404.html:', error);
   });
 }
 

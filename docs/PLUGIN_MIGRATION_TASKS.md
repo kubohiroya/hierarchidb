@@ -207,10 +207,10 @@
 2. **ビルドテスト**
    ```bash
    # 特定プラグインのビルド
-   pnpm --filter @hierarchidb/plugin-loader-folder-plugin build
+   pnpm --filter @hierarchidb/plugin-loader-folder-plugin stage
    
    # 全体ビルド
-   pnpm build
+   pnpm stage
    ```
 
 3. **プラグイン登録テスト**

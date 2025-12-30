@@ -19,6 +19,10 @@ type TargetOption = {
   defaultLabel: string;
   valueType: StylerValueType;
   hasRange?: boolean;
+  defaultRange?: {
+    min: number;
+    max: number;
+  };
 };
 
 type TargetSection = {
@@ -47,6 +51,7 @@ const TARGET_SECTIONS: TargetSection[] = [
         labelKey: 'step5.target.options.fillOpacity',
         defaultLabel: 'Fill Transparency 🪄',
         valueType: 'number',
+        defaultRange: { min: 0, max: 1 },
       },
       {
         id: 'area-line-color',
@@ -61,6 +66,7 @@ const TARGET_SECTIONS: TargetSection[] = [
         labelKey: 'step5.target.options.lineOpacity',
         defaultLabel: 'Border Transparency 🪄',
         valueType: 'number',
+        defaultRange: { min: 0, max: 1 },
       },
       {
         id: 'area-line-width',
@@ -69,6 +75,7 @@ const TARGET_SECTIONS: TargetSection[] = [
         defaultLabel: 'Border Width 📐',
         valueType: 'number',
         hasRange: true,
+        defaultRange: { min: 0.5, max: 10 },
       },
     ],
   },
@@ -91,6 +98,7 @@ const TARGET_SECTIONS: TargetSection[] = [
         defaultLabel: 'Location Display Size 📐',
         valueType: 'number',
         hasRange: true,
+        defaultRange: { min: 0.5, max: 10 },
       },
     ],
   },
@@ -112,6 +120,7 @@ const TARGET_SECTIONS: TargetSection[] = [
         labelKey: 'step5.target.options.routeLineOpacity',
         defaultLabel: 'Line Transparency 🪄',
         valueType: 'number',
+        defaultRange: { min: 0, max: 1 },
       },
       {
         id: 'route-line-width',
@@ -120,6 +129,7 @@ const TARGET_SECTIONS: TargetSection[] = [
         defaultLabel: 'Line Width 📐',
         valueType: 'number',
         hasRange: true,
+        defaultRange: { min: 0.5, max: 10 },
       },
     ],
   },
@@ -197,8 +207,10 @@ export const StylerTargetStep: React.FC<
 
   const handleTargetSelect = useCallback(
     (option: TargetOption) => {
+      const currentOptionId = pluginData.mapping?.targetOptionId ?? null;
       const property = option.property;
       const valueType = getValueTypeForProperty(property);
+      const rangeDefaults = option.defaultRange ?? numericRangeDefaults;
       const mappingPatch: Partial<StylerStepData['mapping']> = {
         targetProperty: property,
         targetOptionId: option.id,
@@ -207,16 +219,16 @@ export const StylerTargetStep: React.FC<
       if (valueType === 'number' && !pluginData.mapping?.mappingMode) {
         mappingPatch.mappingMode = 'map-interpolate';
       }
-      if (valueType === 'number' && !pluginData.mapping?.targetNumericValueRange) {
-        mappingPatch.targetNumericValueRange = { ...numericRangeDefaults };
+      const shouldResetRange = valueType === 'number' && option.id !== currentOptionId;
+      if (shouldResetRange) {
+        mappingPatch.targetNumericValueRange = { ...rangeDefaults };
       }
-      const configPatch =
-        valueType === 'number' && !pluginData.mapping?.targetNumericValueRange
-          ? {
-              outputMin: numericRangeDefaults.min ?? 0,
-              outputMax: numericRangeDefaults.max ?? 10,
-            }
-          : undefined;
+      const configPatch = shouldResetRange
+        ? {
+            outputMin: rangeDefaults.min,
+            outputMax: rangeDefaults.max,
+          }
+        : undefined;
       applyChange(mappingPatch, configPatch);
     },
     [applyChange, numericRangeDefaults, pluginData.mapping]

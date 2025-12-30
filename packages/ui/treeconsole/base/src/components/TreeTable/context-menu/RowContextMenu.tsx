@@ -15,7 +15,7 @@ import {
 import { useIconRegistry } from '@hierarchidb/ui-icon';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
 
-// Defer resolving ui-core to runtime-worker to avoid build-time type resolution issues
+// Defer resolving ui-core to runtime-worker to avoid stage-time type resolution issues
 
 // import { TreeNodeType } from "~/types"; // Unused
 

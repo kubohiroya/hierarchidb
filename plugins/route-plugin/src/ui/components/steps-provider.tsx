@@ -73,7 +73,7 @@ const startRouteBatch = async (data: RouteStepData, _context: StartBatchContext)
   );
 
   if (!hasEssentials) {
-    notify.info(t('messages.completeBeforeBuild', 'Complete the required route settings before starting a build.'));
+    notify.info(t('messages.completeBeforeBuild', 'Complete the required route settings before starting a stage.'));
     return;
   }
 
@@ -136,7 +136,7 @@ registry.registerConfigProvider<RouteStepData>({
       },
       {
         id: 'build',
-        label: t('steps.build.label', 'Build'),
+        label: t('steps.stage.label', 'Build'),
         optional: false,
         componentFactory: (p: StepProps) => {
           const draft = ensureDraft(p.data);

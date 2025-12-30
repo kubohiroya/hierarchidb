@@ -429,7 +429,7 @@ export class BatchSessionManager extends BaseBatchSessionManager {
     }
   }
 
-  // (removed unused helpers to satisfy dts build rules)
+  // (removed unused helpers to satisfy dts stage rules)
 
   private calculateTimeRemaining(
     session: BatchSessionRecord,

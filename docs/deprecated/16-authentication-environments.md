@@ -158,7 +158,7 @@ VITE_DEBUG_MODE="false"
 
 ```bash
 # 本番ビルド
-pnpm build
+pnpm stage
 
 # GitHub Pagesへデプロイ
 gh-pages -d packages/app/dist

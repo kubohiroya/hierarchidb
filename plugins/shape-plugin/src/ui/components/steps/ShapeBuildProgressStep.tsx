@@ -21,6 +21,7 @@ import { createStore } from 'jotai/vanilla';
 import { BuildStepPanel, type BuildStage } from '@hierarchidb/components';
 import type { BatchTaskSummary } from '@hierarchidb/common-api';
 import type { NodeId } from '@hierarchidb/common-types';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import type { ShapeDialogStepProps } from './ShapeDialogStepProps.ts';
 import { useShapeBuildProgressStep } from '../../hooks/useShapeBuildProgressStep.js';
 import { ShapeBuildTaskItem } from './ShapeBuildTaskItem.js';
@@ -29,7 +30,7 @@ import { getStageConcurrencyWarning } from '../../utils/buildWarnings.js';
 import { HeapPressureDialog, useHeapPressureGuard } from '@hierarchidb/ui-memory';
 import { AuthProviderDialog } from '@hierarchidb/ui-auth';
 import { useTranslation } from '../../i18n.js';
-import { useBuildStages } from '../../hooks/build/useBuildStages.js';
+import { useBuildStages } from '../../hooks/stage/useBuildStages.js';
 import {
   shapeBuildBuildStatusAtom,
   shapeBuildPaneProgressAtom,
@@ -50,6 +51,71 @@ const isSkippedMessage = (message?: string | null): boolean => {
   if (!message) return false;
   const normalized = message.trim().toLowerCase();
   return normalized === 'skipped' || normalized.startsWith('skipped:');
+};
+
+type TaskListProps = {
+  tasks: BatchTaskSummary[];
+  stageValue: number;
+  resolveStatusLabel: (statusValue?: string, skipped?: boolean) => string;
+  resolveStatusColor: (statusValue?: string, skipped?: boolean) => 'default' | 'success' | 'error' | 'warning' | 'info';
+  resolveTaskTitle: (task: TaskWithMetadata) => string;
+};
+
+const TaskListVirtualized: React.FC<TaskListProps> = ({
+  tasks,
+  stageValue,
+  resolveStatusLabel,
+  resolveStatusColor,
+  resolveTaskTitle,
+}) => {
+  const parentRef = useRef<HTMLDivElement | null>(null);
+  const virtualizer = useVirtualizer({
+    count: tasks.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 72,
+    overscan: 8,
+  });
+
+  return (
+    <Box ref={parentRef} sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+      <Box sx={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
+        {virtualizer.getVirtualItems().map((virtualRow) => {
+          const task = tasks[virtualRow.index];
+          if (!task) return null;
+          const statusValue = task.status;
+          const isSkipped = isSkippedMessage(task.message);
+          const statusLabelValue = resolveStatusLabel(statusValue, isSkipped);
+          const statusColor = resolveStatusColor(statusValue, isSkipped);
+          const taskTitle = resolveTaskTitle(task as TaskWithMetadata);
+          const taskMessage = task.message && task.message !== taskTitle ? task.message : undefined;
+          return (
+            <Box
+              key={task.taskId ?? `${virtualRow.index}-${taskTitle}`}
+              data-index={virtualRow.index}
+              ref={virtualizer.measureElement}
+              sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                transform: `translateY(${virtualRow.start}px)`,
+                pr: 1,
+              }}
+            >
+              <ShapeBuildTaskItem
+                title={taskTitle}
+                statusLabel={statusLabelValue}
+                statusColor={statusColor}
+                message={taskMessage}
+                progress={task.progress}
+                fallbackProgress={stageValue}
+              />
+            </Box>
+          );
+        })}
+      </Box>
+    </Box>
+  );
 };
 
 const ShapeBuildProgressAtomSync: React.FC<ShapeDialogStepProps> = ({ data, onChange, nodeId }) => {
@@ -188,29 +254,29 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
 
   const resolveTaskTitle = useCallback(
     (task: TaskWithMetadata): string =>
-      task.title ?? t('build.tasks.unknown', '(Title unavailable)'),
+      task.title ?? t('stage.tasks.unknown', '(Title unavailable)'),
     [t],
   );
 
   const resolveStatusLabel = useCallback((statusValue?: string, skipped?: boolean): string => {
     if (skipped) {
-      return t('build.taskStatus.skipped', 'Skipped');
+      return t('stage.taskStatus.skipped', 'Skipped');
     }
     switch (statusValue) {
       case 'running':
-        return t('build.taskStatus.running', 'Running');
+        return t('stage.taskStatus.running', 'Running');
       case 'completed':
-        return t('build.taskStatus.completed', 'Completed');
+        return t('stage.taskStatus.completed', 'Completed');
       case 'failed':
-        return t('build.taskStatus.failed', 'Failed');
+        return t('stage.taskStatus.failed', 'Failed');
       case 'regression':
-        return t('build.taskStatus.regression', 'Regression');
+        return t('stage.taskStatus.regression', 'Regression');
       case 'paused':
-        return t('build.taskStatus.paused', 'Paused');
+        return t('stage.taskStatus.paused', 'Paused');
       case 'queued':
-        return t('build.taskStatus.queued', 'Queued');
+        return t('stage.taskStatus.queued', 'Queued');
       default:
-        return t('build.taskStatus.waiting', 'Waiting');
+        return t('stage.taskStatus.waiting', 'Waiting');
     }
   }, [t]);
 
@@ -238,7 +304,7 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
     const stageTasks = tasksByStage[stage.id] ?? [];
     const hasTasks = stageTasks.length > 0;
     return (
-      <Stack spacing={1} sx={{ p: 2 }}>
+      <Stack spacing={1} sx={{ p: 2, height: '100%', minHeight: 0 }}>
         {!hasTasks ? (
           <>
             <Typography variant="subtitle2">{stage.title}</Typography>
@@ -248,34 +314,17 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
               </Typography>
             ) : null}
             <Typography variant="caption" color="text.secondary">
-              {t('build.tasks.empty', 'No tasks yet.')}
+              {t('stage.tasks.empty', 'No tasks yet.')}
             </Typography>
           </>
         ) : (
-          <Stack spacing={1}>
-            {stageTasks.map((task) => {
-              const statusValue = task.status;
-              const isSkipped = isSkippedMessage(task.message);
-              const statusLabelValue = resolveStatusLabel(statusValue, isSkipped);
-              const statusColor = resolveStatusColor(statusValue, isSkipped);
-              const taskTitle = resolveTaskTitle(task as TaskWithMetadata);
-              const taskMessage = (() => {
-                if (task.message && task.message !== taskTitle) return task.message;
-                return undefined;
-              })();
-              return (
-                <ShapeBuildTaskItem
-                  key={task.taskId}
-                  title={taskTitle}
-                  statusLabel={statusLabelValue}
-                  statusColor={statusColor}
-                  message={taskMessage}
-                  progress={task.progress}
-                  fallbackProgress={stageValue}
-                />
-              );
-            })}
-          </Stack>
+          <TaskListVirtualized
+            tasks={stageTasks}
+            stageValue={stageValue}
+            resolveStatusLabel={resolveStatusLabel}
+            resolveStatusColor={resolveStatusColor}
+            resolveTaskTitle={resolveTaskTitle}
+          />
         )}
       </Stack>
     );
@@ -286,10 +335,10 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
     const stageId = crashInsight.stage;
     if (!stageId) {
       return {
-        title: t('build.warning.title', 'Build warning'),
+        title: t('stage.warning.title', 'Build warning'),
         message: t(
-          'build.warning.unknownStage',
-          'A previous build ended without a completion record. Consider lowering concurrency if it happens again.',
+          'stage.warning.unknownStage',
+          'A previous stage ended without a completion record. Consider lowering concurrency if it happens again.',
         ),
       };
     }
@@ -313,12 +362,12 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
     if (!warning) return null;
     const ratioText = crashInsight.peakRatio
       ? `${(crashInsight.peakRatio * 100).toFixed(1)}%`
-      : t('build.warning.memoryUnknown', 'unknown');
+      : t('stage.warning.memoryUnknown', 'unknown');
     return {
-      title: t('build.warning.title', 'Build warning'),
+      title: t('stage.warning.title', 'Build warning'),
       message: t(
-        'build.warning.message',
-        'The previous build ended without completion. Peak memory usage for {{stage}} was {{ratio}}. Current concurrency is {{value}} (threshold {{threshold}}). Consider lowering it.',
+        'stage.warning.message',
+        'The previous stage ended without completion. Peak memory usage for {{stage}} was {{ratio}}. Current concurrency is {{value}} (threshold {{threshold}}). Consider lowering it.',
         {
           stage: stageLabel,
           ratio: ratioText,
@@ -334,19 +383,19 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
     if (!crashInsight) return null;
     if (!crashInsight.memoryPressure) {
       return t(
-        'build.warning.genericHint',
-        'A previous build ended without a completion record. Consider reducing concurrency if it happens again.',
+        'stage.warning.genericHint',
+        'A previous stage ended without a completion record. Consider reducing concurrency if it happens again.',
       );
     }
     const stageLabel = crashInsight.stage
       ? effectiveStages.find((candidate) => candidate.id === crashInsight.stage)?.title ?? crashInsight.stage
-      : t('build.warning.unknownStageShort', 'unknown stage');
+      : t('stage.warning.unknownStageShort', 'unknown stage');
     const ratioText = crashInsight.peakRatio
       ? `${(crashInsight.peakRatio * 100).toFixed(1)}%`
-      : t('build.warning.memoryUnknown', 'unknown');
+      : t('stage.warning.memoryUnknown', 'unknown');
     return t(
-      'build.warning.memoryHint',
-      'Previous build likely hit memory pressure during {{stage}} (peak {{ratio}}). Lower concurrency to reduce memory usage.',
+      'stage.warning.memoryHint',
+      'Previous stage likely hit memory pressure during {{stage}} (peak {{ratio}}). Lower concurrency to reduce memory usage.',
       { stage: stageLabel, ratio: ratioText },
     );
   }, [crashInsight, effectiveStages, isDev, t]);
@@ -437,13 +486,13 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
         <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
           <Stack spacing={0.25} flex={1}>
             <Typography variant="caption" color="text.secondary">
-              {t('build.progress.stage', 'Stage')}
+              {t('stage.progress.stage', 'Stage')}
             </Typography>
             <Typography variant="body2">{summary.stageLabel}</Typography>
           </Stack>
           <Stack spacing={0.25} flex={1}>
             <Typography variant="caption" color="text.secondary">
-              {t('build.progress.task', 'Task')}
+              {t('stage.progress.task', 'Task')}
             </Typography>
             <Typography variant="body2">{summary.taskLabel}</Typography>
           </Stack>
@@ -454,7 +503,7 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
             <LinearProgress variant="indeterminate" sx={{ height: 6, borderRadius: 6 }} />
           ) : null}
           <Typography variant="caption" color="text.secondary">
-            {t('build.progress.counts', '{{percentage}}% ・ {{completed}}/{{total}} completed ・ failed {{failed}} ・ skipped {{skipped}}', {
+            {t('stage.progress.counts', '{{percentage}}% ・ {{completed}}/{{total}} completed ・ failed {{failed}} ・ skipped {{skipped}}', {
               percentage: Math.round(summary.overallProgress),
               completed: summary.completed,
               total: summary.total,
@@ -507,10 +556,10 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
           startIcon={<ConstructionIcon fontSize="small" />}
           onPause={controls.handlePause}
           onResume={controls.canStartOrResume ? handleStartClick : undefined}
-          controlLabel={t('build.controls.title', 'Build controls')}
-          pauseLabel={t('build.controls.pause', 'Pause')}
-          startLabel={t('build.controls.start', 'Start build')}
-          resumeLabel={t('build.controls.resume', 'Resume build')}
+          controlLabel={t('stage.controls.title', 'Build controls')}
+          pauseLabel={t('stage.controls.pause', 'Pause')}
+          startLabel={t('stage.controls.start', 'Start stage')}
+          resumeLabel={t('stage.controls.resume', 'Resume stage')}
           statusLabel={controls.statusLabel}
         />
       </Box>
@@ -544,10 +593,10 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setWarningDialogOpen(false)}>
-              {t('build.warning.cancel', 'Cancel')}
+              {t('stage.warning.cancel', 'Cancel')}
             </Button>
             <Button variant="contained" onClick={handleConfirmStart}>
-              {t('build.warning.proceed', 'Proceed')}
+              {t('stage.warning.proceed', 'Proceed')}
             </Button>
           </DialogActions>
         </Dialog>
@@ -604,9 +653,9 @@ const ShapeBuildProgressDialogs: React.FC<ShapeBuildProgressPanelProps> = ({ dat
           setHeapDialogOpen(false);
           dismissHeapEvent();
         }}
-        title={t('build.heap.pauseTitle', 'Build paused due to memory pressure')}
-        confirmLabel={t('build.heap.pauseConfirm', 'OK')}
-        description={t('build.heap.pauseHint', 'Reduce concurrency and resume when ready.')}
+        title={t('stage.heap.pauseTitle', 'Build paused due to memory pressure')}
+        confirmLabel={t('stage.heap.pauseConfirm', 'OK')}
+        description={t('stage.heap.pauseHint', 'Reduce concurrency and resume when ready.')}
       />
     </>
   );

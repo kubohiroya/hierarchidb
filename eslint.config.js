@@ -22,7 +22,7 @@ try {
 }
 
 /** @type {import('eslint').Linter.FlatConfig[]} */
-export default [// Ignore _obsolate_common build artifacts across the monorepo
+export default [// Ignore _obsolate_common stage artifacts across the monorepo
 // Base config for JS/TS files
 // TypeScript-specific tweaks
 // Browser-delivered code: forbid accidental `process` usage

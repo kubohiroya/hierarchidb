@@ -172,8 +172,8 @@ class MyEntityHandler extends BaseEntityHandler<MyEntity> {
 # Development
 pnpm install          # Install dependencies
 pnpm dev              # Start all development servers
-pnpm build            # Build all packages
-pnpm build --force    # Force rebuild without cache
+pnpm stage            # Build all packages
+pnpm stage --force    # Force rebuild without cache
 
 # Testing & Quality
 pnpm typecheck        # TypeScript checking
@@ -185,7 +185,7 @@ pnpm e2e              # E2E tests (Playwright)
 
 # Package-specific
 pnpm --filter @hierarchidb/[package] dev
-pnpm --filter @hierarchidb/[package] build
+pnpm --filter @hierarchidb/[package] stage
 pnpm --filter @hierarchidb/[package] test
 ```
 

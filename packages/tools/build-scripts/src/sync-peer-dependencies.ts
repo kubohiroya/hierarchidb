@@ -2,7 +2,7 @@
  * Script: sync-peer-dependencies
  * Purpose: Ensure designated shared libraries live in peerDependencies + devDependencies
  *          and are removed from dependencies for UI-oriented packages.
- * Invocation: run via `pnpm --filter @hierarchidb/tools-build-scripts run sync-peer-dependencies`.
+ * Invocation: run via `pnpm --filter @hierarchidb/tools-stage-scripts run sync-peer-dependencies`.
  * Output: Updates package-level `package.json` files (and optional tsup config) in place.
  */
 import fs from 'node:fs';

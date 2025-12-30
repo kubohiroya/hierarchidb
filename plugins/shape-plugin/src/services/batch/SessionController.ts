@@ -704,14 +704,25 @@ export class SessionController {
       });
     };
     const maxConcurrent = this.config.extract1?.concurrentProcesses ?? this.options.maxConcurrentTasks;
-    const r = await this.extract1Adapter!.process(runnableTasks, reportProgress, {
+    await this.extract1Adapter!.process(runnableTasks, reportProgress, {
       waitIfPaused: () => this.waitForStageResume('extract1'),
       getSignal: () => this.getStageAbortSignal('extract1'),
       maxConcurrent,
     });
-    console.log(
-      `[Session ${this.nodeId}] Extract1 stage completed: ${baseCompleted + r.processed}/${total} successful`,
+    const stageRecords = await this.taskRegistry.listStageRecords('extract1');
+    const stageTotal = stageRecords.length;
+    const stageSkipped = stageRecords.filter((task) => this.isSkippedMessage(task.message)).length;
+    const stageFailed = stageRecords.filter((task) => task.status === 'failed' || task.status === 'regression').length;
+    const stageCompleted = Math.max(
+      0,
+      stageRecords.filter((task) => task.status === 'completed').length - stageSkipped,
     );
+    console.log(`[Session ${this.nodeId}] Extract1 stage summary`, {
+      total: stageTotal,
+      completed: stageCompleted,
+      skipped: stageSkipped,
+      failed: stageFailed,
+    });
     if (isShapePreviewMetadataEnabled()) {
       const statsByOrigin = new Map<string, GeometryStatsSummary>();
       for (const task of this.extract1Tasks) {
@@ -795,6 +806,12 @@ export class SessionController {
   private resolveTaskAdminCode(input?: ShapeExtract1TaskInputData): string | undefined {
     const code = input?.adminCode ?? input?.featureGroupId;
     return typeof code === 'string' && code.trim() ? code.trim() : undefined;
+  }
+
+  private isSkippedMessage(message?: string | null): boolean {
+    if (!message) return false;
+    const normalized = message.trim().toLowerCase();
+    return normalized === 'skipped' || normalized.startsWith('skipped:');
   }
 
   private applyFeatureMetadata(

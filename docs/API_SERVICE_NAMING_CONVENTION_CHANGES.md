@@ -54,7 +54,7 @@
 これらの変更後、以下のコマンドでビルドエラーが解消されることを確認してください：
 ```bash
 pnpm typecheck
-pnpm build
+pnpm stage
 ```
 
 ## 今後の作業

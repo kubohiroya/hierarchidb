@@ -116,7 +116,7 @@ describe('Data Source Integration Tests', () => {
       }
     }, 30000); //  30
 
-    skipIf(!ENABLE_INTEGRATION_TESTS)('should build and execute administrative query', async () => {
+    skipIf(!ENABLE_INTEGRATION_TESTS)('should stage and execute administrative query', async () => {
       const query = strategy.buildPresetQuery('administrative', {
         minLat: 35.0,
         maxLat: 36.0,

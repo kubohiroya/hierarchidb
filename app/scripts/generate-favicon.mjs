@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Generate favicon assets used by the app build.
+ * Generate favicon assets used by the app stage.
  *
  * - favicon.png: 32x32 PNG used as canonical bitmap source
  * - favicon.ico: ICO container (PNG payload) served at /favicon.ico

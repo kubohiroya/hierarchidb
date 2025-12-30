@@ -154,6 +154,10 @@ export class ShapeWorkerExtract1Adapter implements Extract1StageAdapter {
                 message: SIMPLIFY1_SKIP_MESSAGE,
                 outputData,
               });
+              console.log('[ShapeExtract1] Task skipped', {
+                taskId: task.taskId,
+                reason: SIMPLIFY1_SKIP_MESSAGE,
+              });
             }
           } else {
             completed += 1;
@@ -220,7 +224,7 @@ export class ShapeWorkerExtract1Adapter implements Extract1StageAdapter {
     } finally {
       await workerPool.shutdown();
     }
-    return { processed: completed, failed };
+    return { processed: completed, failed, skipped };
   }
 }
 

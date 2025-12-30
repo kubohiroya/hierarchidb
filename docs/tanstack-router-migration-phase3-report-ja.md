@@ -237,7 +237,7 @@ return {
 
 完全なテストには全パッケージのビルドが必要：
 ```bash
-pnpm build:turbo  # 数分かかる可能性
+pnpm stage:turbo  # 数分かかる可能性
 ```
 
 ### 2. E2Eテスト

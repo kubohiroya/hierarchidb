@@ -114,7 +114,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
       }
       return (
         <Alert severity="info">
-          {t('preview.noTiles', 'No vector tiles are available yet. Run the build to generate tiles.')}
+          {t('preview.noTiles', 'No vector tiles are available yet. Run the stage to generate tiles.')}
         </Alert>
       );
     }

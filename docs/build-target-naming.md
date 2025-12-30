@@ -16,7 +16,7 @@
    {
      "scripts": {
        "clean": "rm -rf dist",
-       "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
+       "build": "pnpm run clean && pnpm run stage:types && pnpm run stage:bundle",
        "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
        "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean"
      }
@@ -32,9 +32,9 @@
    ```json
    {
      "tasks": {
-       "build": { "dependsOn": ["build:bundle", "build:types"], "outputs": ["dist/**", "build/**", "storybook-static/**"] },
-       "build:types": { "dependsOn": ["^build:types"], "outputs": ["dist/**"] },
-       "build:bundle": { "dependsOn": ["build:types", "^build:bundle"], "outputs": ["dist/**", "build/**"] }
+       "build": { "dependsOn": ["stage:bundle", "stage:types"], "outputs": ["dist/**", "stage/**", "storybook-static/**"] },
+       "build:types": { "dependsOn": ["^stage:types"], "outputs": ["dist/**"] },
+       "build:bundle": { "dependsOn": ["stage:types", "^stage:bundle"], "outputs": ["dist/**", "stage/**"] }
      }
    }
    ```

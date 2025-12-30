@@ -26,7 +26,7 @@ const DEFAULT_SHARED_ZOOM_RANGE: [number, number] = [0, 6];
 const SHARED_ZOOM_RANGE_MIN = 0;
 const SHARED_ZOOM_RANGE_MAX = 22;
 const buildMonitorConfig = {
-  storagePrefix: 'hdb:route:build-monitor',
+  storagePrefix: 'hdb:route:stage-monitor',
   keyMode: 'node',
   maxSamples: 3,
   memoryPressureRatio: 0.85,

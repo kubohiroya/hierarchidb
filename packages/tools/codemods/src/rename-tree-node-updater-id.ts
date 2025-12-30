@@ -53,7 +53,7 @@ async function main() {
     '**/.turbo/**',
     '**/coverage/**',
     '**/.cache/**',
-    '**/build/**',
+    '**/stage/**',
     '**/.next/**',
     '**/.storybook/**',
   ];

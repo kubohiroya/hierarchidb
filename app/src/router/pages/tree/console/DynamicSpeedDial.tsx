@@ -16,7 +16,7 @@ interface DynamicSpeedDialProps {
   onCreateAction: (action: string, node: HierarchicalTreeNode) => void;
   position?: { bottom?: number; right?: number; left?: number; top?: number };
   hidden?: boolean;
-  menuContext?: TreeContext; // Optional explicit context to build items from VM
+  menuContext?: TreeContext; // Optional explicit context to stage items from VM
   onSuppress?: () => void;
 }
 

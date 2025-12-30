@@ -23,7 +23,7 @@ rg -n "^export\\s+(type|interface|enum|class)\\s+([A-Za-z0-9_]+)" packages/_obso
 # 参照カウント（repo 全体。定義元の行は除外）
 > .codex/tmp/usage_raw.txt
 while IFS='|' read -r kind name file; do
-  count=$( (rg -n --glob '!node_modules' --glob '!**/*.map' --glob '!**/dist/**' --glob '!**/build/**' \
+  count=$( (rg -n --glob '!node_modules' --glob '!**/*.map' --glob '!**/dist/**' --glob '!**/stage/**' \
                 --glob '!**/e2e-results/**' --glob '!**/.turbo/**' -w "${name}" -g "**/*.{ts,tsx,js,jsx}" \
             | grep -v -F "${file}:" | wc -l | tr -d ' ') < /dev/null )
   printf "%s|%s|%s|%s\n" "$kind" "$name" "$file" "$count" >> .codex/tmp/usage_raw.txt

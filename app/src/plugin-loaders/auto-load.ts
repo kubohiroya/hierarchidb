@@ -1,5 +1,5 @@
 /**
- * Auto-load HierarchiDB UI plugin-loaders using virtual modules generated at build time.
+ * Auto-load HierarchiDB UI plugin-loaders using virtual modules generated at stage time.
  *
  * This module is responsible for discovering and importing UI plugin entry points so
  * that components, menus, and registrations are initialized in the browser. The module

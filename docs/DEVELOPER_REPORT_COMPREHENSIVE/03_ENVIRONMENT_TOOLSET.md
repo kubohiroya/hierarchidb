@@ -239,7 +239,7 @@ graph TB
 {
   "pipeline": {
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^stage"],
       "outputs": ["dist/**", ".turbo/**"]
     },
     "dev": {
@@ -247,14 +247,14 @@ graph TB
       "persistent": true
     },
     "test": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^stage"],
       "outputs": ["coverage/**"]
     },
     "lint": {
       "outputs": [".eslintcache"]
     },
     "typecheck": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^stage"],
       "outputs": ["**/*.tsbuildinfo"]
     }
   }
@@ -575,7 +575,7 @@ jobs:
       - name: Unit tests
         run: pnpm test:run
       - name: Build
-        run: pnpm build
+        run: pnpm stage
 
   e2e:
     needs: quality
@@ -822,7 +822,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Build application
-        run: pnpm build
+        run: pnpm stage
         env:
           VITE_APP_NAME: hierarchidb
       - name: Setup Pages

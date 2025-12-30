@@ -154,7 +154,7 @@ pnpm test
 pnpm test:watch
 
 # Build the plugin
-pnpm build
+pnpm stage
 
 # Type checking
 pnpm typecheck

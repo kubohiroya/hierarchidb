@@ -218,7 +218,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
       case 'failed':
         return 'Build failed';
       default:
-        return 'Ready to start build';
+        return 'Ready to start stage';
     }
   })();
 

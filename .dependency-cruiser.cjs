@@ -1,7 +1,7 @@
 /*
   Minimal dependency-cruiser config:
   - Error on cycles
-  - Ignore generated outputs (dist/build/coverage/.turbo/storybook-static/app/.debug/reports)
+  - Ignore generated outputs (dist/stage/coverage/.turbo/storybook-static/app/.debug/reports)
 */
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {

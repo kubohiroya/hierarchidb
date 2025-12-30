@@ -1,4 +1,4 @@
-// Note: Keep this file free of workspace type imports to extract build
+// Note: Keep this file free of workspace type imports to extract stage
 
 export type ColumnType = 'string' | 'number' | 'boolean' | 'date' | 'json' | 'null' | 'unknown';
 

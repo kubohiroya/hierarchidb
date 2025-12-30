@@ -59,17 +59,17 @@ const mapIdeGsmProgressToPercent = (progress: IdeGsmImportProgress): number => {
 const resolveIdeGsmTaskLabel = (t: (key: string, fallback?: string) => string, progress: IdeGsmImportProgress): string => {
   switch (progress.phase) {
     case 'fetch':
-      return t('build.ideGsm.fetch', 'IDE-GSM: downloading');
+      return t('stage.ideGsm.fetch', 'IDE-GSM: downloading');
     case 'parse':
-      return t('build.ideGsm.parse', 'IDE-GSM: parsing rows');
+      return t('stage.ideGsm.parse', 'IDE-GSM: parsing rows');
     case 'filter':
-      return t('build.ideGsm.filter', 'IDE-GSM: filtering rows');
+      return t('stage.ideGsm.filter', 'IDE-GSM: filtering rows');
     case 'save':
-      return t('build.ideGsm.save', 'IDE-GSM: saving locations');
+      return t('stage.ideGsm.save', 'IDE-GSM: saving locations');
     case 'completed':
-      return t('build.ideGsm.completed', 'IDE-GSM: import completed');
+      return t('stage.ideGsm.completed', 'IDE-GSM: import completed');
     case 'failed':
-      return t('build.ideGsm.failed', 'IDE-GSM: import failed');
+      return t('stage.ideGsm.failed', 'IDE-GSM: import failed');
     default:
       return 'IDE-GSM';
   }
@@ -81,23 +81,23 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
   const stages = useMemo<Array<BuildStage & { description: string }>>(() => ([
     {
       id: 'download',
-      title: stageLabels.download ?? t('build.stages.download', 'Download'),
-      description: t('build.stageDescriptions.download', 'Download points and metadata.'),
+      title: stageLabels.download ?? t('stage.stages.download', 'Download'),
+      description: t('stage.stageDescriptions.download', 'Download points and metadata.'),
     },
     {
       id: 'extract1',
-      title: stageLabels.filtering ?? t('build.stages.filter', 'Filter'),
-      description: t('build.stageDescriptions.filter', 'Normalize and filter the source data.'),
+      title: stageLabels.filtering ?? t('stage.stages.filter', 'Filter'),
+      description: t('stage.stageDescriptions.filter', 'Normalize and filter the source data.'),
     },
     {
       id: 'extract2',
-      title: stageLabels.clustering ?? t('build.stages.cluster', 'Cluster'),
-      description: t('build.stageDescriptions.cluster', 'Prepare point clusters and indexes.'),
+      title: stageLabels.clustering ?? t('stage.stages.cluster', 'Cluster'),
+      description: t('stage.stageDescriptions.cluster', 'Prepare point clusters and indexes.'),
     },
     {
       id: 'vectortile',
-      title: stageLabels.indexing ?? t('build.stages.index', 'Index'),
-      description: t('build.stageDescriptions.index', 'Generate vector tiles for previews.'),
+      title: stageLabels.indexing ?? t('stage.stages.index', 'Index'),
+      description: t('stage.stageDescriptions.index', 'Generate vector tiles for previews.'),
     },
   ]), [stageLabels.clustering, stageLabels.download, stageLabels.filtering, stageLabels.indexing, t]);
   const splitViewInitialSizes = useMemo(
@@ -256,36 +256,36 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
     : (unifiedProgress?.currentTask ?? progress?.currentTask ?? normalizedStage ?? '');
 
   const hasPrerequisites = Boolean(nodeId && draft.dataSource);
-  const statusLabel = t('build.statusLabel', 'Build status');
+  const statusLabel = t('stage.statusLabel', 'Build status');
   const statusText = buildStatus === 'idle'
-    ? t('build.status.idle', 'Waiting for build start.')
+    ? t('stage.status.idle', 'Waiting for stage start.')
     : buildStatus === 'paused'
-      ? t('build.status.paused', 'Build paused.')
+      ? t('stage.status.paused', 'Build paused.')
       : buildStatus === 'completed'
-        ? t('build.status.completed', 'Build completed.')
+        ? t('stage.status.completed', 'Build completed.')
         : buildStatus === 'failed'
-          ? t('build.status.failed', 'Build failed.')
-          : t('build.status.running', 'Build in progress.');
+          ? t('stage.status.failed', 'Build failed.')
+          : t('stage.status.running', 'Build in progress.');
 
   return (
     <Box display="flex" flexDirection="column" gap={3}>
       <Box>
         <Typography variant="h6" gutterBottom>
-          {t('build.title', 'Build vector tiles')}
+          {t('stage.title', 'Build vector tiles')}
         </Typography>
         <Typography variant="body2" color="text.secondary">
           {hasPrerequisites
             ? t(
-              'build.description',
-              'Review progress and control the build. Use the footer Build button to start when prerequisites are met.'
+              'stage.description',
+              'Review progress and control the stage. Use the footer Build button to start when prerequisites are met.'
             )
-            : t('build.prereq', 'Select a data source and complete previous steps before building.')}
+            : t('stage.prereq', 'Select a data source and complete previous steps before building.')}
         </Typography>
       </Box>
 
       {mutationError ? (
         <Alert severity="warning">
-          {t('build.mutationError', 'Build control failed: {{message}}').replace('{{message}}', mutationError)}
+          {t('stage.mutationError', 'Build control failed: {{message}}').replace('{{message}}', mutationError)}
         </Alert>
       ) : null}
 
@@ -305,21 +305,21 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
             <Typography variant="body2">{statusText}</Typography>
             {currentTask ? (
               <Typography variant="caption" color="text.secondary">
-                {t('build.currentTask', 'Current task: {{task}}').replace('{{task}}', currentTask)}
+                {t('stage.currentTask', 'Current task: {{task}}').replace('{{task}}', currentTask)}
               </Typography>
             ) : null}
             <Typography variant="caption" color="text.secondary">
-              {t('build.progressSummary', '{{completed}} / {{total}} (failed: {{failed}})')
+              {t('stage.progressSummary', '{{completed}} / {{total}} (failed: {{failed}})')
                 .replace('{{completed}}', String(completed))
                 .replace('{{total}}', String(total))
                 .replace('{{failed}}', String(failed))}
             </Typography>
           </Stack>
         )}
-        pauseLabel={t('build.pauseLabel', 'Pause')}
-        resumeLabel={t('build.resumeLabel', 'Resume')}
-        startLabel={t('build.startLabel', 'Start')}
-        controlLabel={t('build.controlsLabel', 'Build controls')}
+        pauseLabel={t('stage.pauseLabel', 'Pause')}
+        resumeLabel={t('stage.resumeLabel', 'Resume')}
+        startLabel={t('stage.startLabel', 'Start')}
+        controlLabel={t('stage.controlsLabel', 'Build controls')}
       />
       <HeapPressureDialog
         open={heapDialogOpen}
@@ -328,9 +328,9 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
           setHeapDialogOpen(false);
           dismissHeapEvent();
         }}
-        title={t('build.heap.pauseTitle', 'Build paused due to memory pressure')}
-        confirmLabel={t('build.heap.pauseConfirm', 'OK')}
-        description={t('build.heap.pauseHint', 'Reduce concurrency and resume when ready.')}
+        title={t('stage.heap.pauseTitle', 'Build paused due to memory pressure')}
+        confirmLabel={t('stage.heap.pauseConfirm', 'OK')}
+        description={t('stage.heap.pauseHint', 'Reduce concurrency and resume when ready.')}
       />
     </Box>
   );

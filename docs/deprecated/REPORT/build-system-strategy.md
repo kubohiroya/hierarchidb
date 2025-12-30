@@ -115,17 +115,17 @@ turbo.json更新:
 {
   "tasks": {
     "build:lib": {
-      "dependsOn": ["^build:utils"],
+      "dependsOn": ["^stage:utils"],
       "outputs": ["dist/**"],
       "inputs": ["src/**", "tsup.config.ts", "package.json"]
     },
     "build:app": {
-      "dependsOn": ["^build:utils"],
-      "outputs": ["build/**", "dist/**"],
+      "dependsOn": ["^stage:utils"],
+      "outputs": ["stage/**", "dist/**"],
       "inputs": ["src/**", "vite.config.ts", "package.json"]
     },
     "build": {
-      "dependsOn": ["build:utils", "build:_app"]
+      "dependsOn": ["stage:utils", "stage:_app"]
     }
   }
 }
@@ -168,7 +168,7 @@ pnpm add -D tsup --filter @hierarchidb/[package-name]
 # tsup.config.tsを作成
 # package.jsonのscriptsを更新
 # ビルドテスト
-pnpm build --filter @hierarchidb/[package-name]
+pnpm stage --filter @hierarchidb/[package-name]
 ```
 
 ### 2. 統一されたビルドコマンド
@@ -177,9 +177,9 @@ pnpm build --filter @hierarchidb/[package-name]
 ```json
 {
   "scripts": {
-    "build": "turbo run build",
-    "build:libs": "turbo run build --filter='./packages/*' --filter='!./packages/_app'",
-    "build:app": "turbo run build --filter=@hierarchidb/_app",
+    "build": "turbo run stage",
+    "build:libs": "turbo run stage --filter='./packages/*' --filter='!./packages/_app'",
+    "build:app": "turbo run stage --filter=@hierarchidb/_app",
     "dev": "turbo run dev --parallel",
     "dev:libs": "turbo run dev --filter='./packages/*' --filter='!./packages/_app' --parallel",
     "dev:app": "turbo run dev --filter=@hierarchidb/_app"

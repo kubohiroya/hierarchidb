@@ -15,7 +15,7 @@ type Args = {
 };
 
 const buildMonitorConfig: BuildMonitorConfig = {
-  storagePrefix: 'hdb:shape:build-monitor',
+  storagePrefix: 'hdb:shape:stage-monitor',
   maxSamples: 3,
   memoryPressureRatio: 0.85,
   heapWarningRatio: 0.85,

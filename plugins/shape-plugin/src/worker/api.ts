@@ -15,7 +15,6 @@ import {
   mergeBatchConfig,
   type BatchConfig,
   type BatchSessionConfig,
-  type BatchTaskStageType,
   type ProcessingStatus,
   type ProcessingStage,
   type BatchProgressEvent as ShapeBatchProgressEvent,
@@ -267,23 +266,6 @@ const mapProgressToStatus = (progress: ProgressInfo): BatchTaskStatus => {
   return 'running';
 };
 
-const mapTaskStatusToStage = (status: BatchTaskRecord['status']): BatchTaskStageType | undefined => {
-  switch (status) {
-    case 'waiting':
-      return 'wait';
-    case 'running':
-      return 'process';
-    case 'completed':
-      return 'success';
-    case 'failed':
-      return 'error';
-    case 'regression':
-      return 'error';
-    default:
-      return undefined;
-  }
-};
-
 const buildTaskTitle = (task: BatchTaskRecord): string | undefined => {
   const getNumber = (value: unknown): number | undefined =>
     typeof value === 'number' && Number.isFinite(value) ? value : undefined;
@@ -319,7 +301,6 @@ const buildTaskTitle = (task: BatchTaskRecord): string | undefined => {
 const mapTaskRecordToBatchTask = (task: BatchTaskRecord): BatchTask & { title?: string } => ({
   taskId: task.taskId,
   taskType: task.taskType,
-  stage: mapTaskStatusToStage(task.status),
   nodeId: task.nodeId,
   status: task.status,
   index: task.index,

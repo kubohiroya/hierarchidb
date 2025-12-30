@@ -50,7 +50,7 @@ pnpm --filter @hierarchidb/plugin-loader-route-plugin typecheck
 #### 2.1 機能確認
 ```bash
 # ビルド確認
-pnpm --filter @hierarchidb/plugin-loader-route-plugin build
+pnpm --filter @hierarchidb/plugin-loader-route-plugin stage
 
 # 既存機能の動作確認
 # - ルート検索機能
@@ -74,7 +74,7 @@ pnpm --filter @hierarchidb/plugin-loader-route-plugin typecheck
 # shape-plugin修正後: 4件 → 0件（間接エラー自動解決）
 
 # 最終確認
-pnpm --filter @hierarchidb/plugin-loader-route-plugin build
+pnpm --filter @hierarchidb/plugin-loader-route-plugin stage
 ```
 
 ## 依存関係と注意点

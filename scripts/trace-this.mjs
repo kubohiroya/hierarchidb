@@ -12,7 +12,7 @@ if (fs.existsSync(logPath)) {
   fs.rmSync(logPath);
 }
 
-console.log('[trace-this] running Vite build with TRACE_THIS=1 ...');
+console.log('[trace-this] running Vite stage with TRACE_THIS=1 ...');
 const result = spawnSync('pnpm', ['-C', 'app', 'build'], {
   env: { ...process.env, TRACE_THIS: '1' },
   stdio: 'inherit',

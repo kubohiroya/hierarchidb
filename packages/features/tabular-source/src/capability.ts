@@ -1,4 +1,4 @@
-// Keep this module self-contained to extract build; use string for NodeType here
+// Keep this module self-contained to extract stage; use string for NodeType here
 type NodeType = string;
 
 const tabularSet = new Set<NodeType>();

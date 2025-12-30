@@ -134,7 +134,7 @@ class MyClass {
 pnpm install
 
 # キャッシュクリア
-pnpm build --force
+pnpm stage --force
 
 # 型チェック
 pnpm typecheck

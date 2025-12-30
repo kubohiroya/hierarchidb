@@ -1,5 +1,5 @@
 // Placeholder implementation for @hierarchidb/route-searoute
-// Spec-only package scaffold for typecheck/build consistency.
+// Spec-only package scaffold for typecheck/stage consistency.
 
 export type SeaRoutePort = {}
 

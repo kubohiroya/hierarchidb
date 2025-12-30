@@ -53,6 +53,56 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+2017) shape-plugin: LRUSplitView のタスク一覧に Extract1/2 を表示 + Extract2 圧縮調整（P1）
+- ブランチ: `fix/shape-plugin/build-task-pane-and-extract2-tuning`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/ui/batch/src/hooks/useBuildTaskProgress.ts`, `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`, `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/services/batch/**`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] Extract1/Extract2 のタスク一覧が LRUSplitView 2nd ペインに表示される
+  - [ ] Extract2 の TopoJSON 統合/簡略化の進捗が console.debug で確認できる
+  - [ ] Extract2 の出力サイズを 5–10% へ近づけるための調整が実装されている
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] task.stage のマッピングと UI 集計ロジックを修正する
+  - [ ] Extract2 の簡略化パスでログと調整を追加する
+- ロールバック手順：`packages/ui/batch/src/hooks/useBuildTaskProgress.ts`, `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`, `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/services/batch/**`, `TASKS.md` の差分を revert する
+- 運用ログ：
+  - start: 2025-12-31 07:02 JST LRUSplitView のタスク一覧表示修正と Extract2 圧縮調整に着手。
+  - progress: 2025-12-31 07:12 JST task.stage を taskType に変更し、UI 集計で taskType を優先。Extract2 に簡略化のチューニングパスと console.debug を追加。
+  - progress: 2025-12-31 07:20 JST タスク一覧の更新を500msスロットルしてreflow頻度を低減。
+  - progress: 2025-12-31 07:30 JST LRUSplitView内のタスク一覧を仮想化し、大量タスク時の描画負荷を低減。
+  - progress: 2025-12-31 07:38 JST Extract2 の maxTuningPasses を 3 に増やし、仮想化の data-index 警告を解消。
+  - progress: 2025-12-31 07:46 JST extract1/extract2 のステージ名を simplify1/simplify2 にマッピングし、タスク一覧を表示可能に修正。
+  - progress: 2025-12-31 07:55 JST simplify1/simplify2 を extract1/extract2 に統一し、UIのステージID/ラベルを更新。
+  - progress: 2025-12-31 08:02 JST useBuildStages の import をローカル参照へ戻し、Vite の解決エラーを解消。
+
+2016) shape-plugin: Extract1 ステージの完了ログとスキップ理由を出力（P1）
+- ブランチ: `fix/shape-plugin/extract1-logging-summary`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/services/batch/**`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] Extract1 終了時に total/completed/skipped/failed を console.log で出力する
+  - [ ] Extract1 のスキップ時に理由を console.log で出力する
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] Extract1 の summary ログを追加する
+  - [ ] Extract1 のスキップ理由ログを追加する
+- ロールバック手順：`plugins/shape-plugin/src/services/batch/**` と `TASKS.md` の差分を revert する
+- 運用ログ：
+  - start: 2025-12-31 06:44 JST Extract1 の完了ログ/スキップ理由ログ出力に着手。
+  - progress: 2025-12-31 06:48 JST Extract1 adapter にスキップ理由ログを追加し、SessionController に summary ログを追加。
+
+2015) shape-plugin: Extract1 default areaThreshold を 50 に変更（P1）
+- ブランチ: `fix/shape-plugin/extract1-area-threshold-50`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/common/types/constants.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] Extract1 のデフォルト areaThreshold が 50 に変更されている
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] `DEFAULT_PROCESSING_CONFIG.extract1Config.areaThreshold` を更新する
+- ロールバック手順：`plugins/shape-plugin/src/common/types/constants.ts` と `TASKS.md` の差分を revert する
+- 運用ログ：
+  - start: 2025-12-31 06:34 JST Extract1 default areaThreshold を 50 に変更する対応に着手。
+  - progress: 2025-12-31 06:36 JST `DEFAULT_PROCESSING_CONFIG.extract1Config.areaThreshold` を 50 に更新。
+
 2014) shape-plugin: Step4 デフォルト復帰後に valid にならず進めない不具合修正（P1）
 - ブランチ: `fix/shape/step4-valid-defaults`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `plugins/shape-plugin/src/ui/**`, `plugins/shape-plugin/src/services/**`, `plugins/shape-plugin/src/common/**`, `TASKS.md`
@@ -7702,6 +7752,22 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+
+2021) feat/styler-plugin/step6-opacity-width (P1) — 完了 (2025-12-30)
+- 要点：Step6で opacity/width 向けUIを追加し、初期レンジは opacity 0–1 / width 0.5–10。Step7 の Value チップはマッピング後の数値を表示。
+- 検証：未実施（手動確認未実行）。
+- ロールバック手順：`plugins/styler-plugin/src/ui/components/{StylerAlgorithmStep2.tsx,StylerTargetStep.tsx,StylerPreviewStep.tsx}`, `app/public/locales/{en,ja}/styler-plugin.json`, `packages/ui/i18n/public/locales/{en,ja}/styler-plugin.json`, `TASKS.md` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-30 22:28 JST Step6 の opacity/width UI 拡張に着手。
+  - done: 2025-12-30 23:31 JST opacity/width UI と Value チップ表示を反映。検証: 未実施（手動確認未実行）。ロールバック: 上記差分を revert。
+
+2015) fix/shape-plugin/stripnil-typecheck (P1) — 完了 (2025-12-30)
+- 要点：`stripNil` の受け入れ型を拡張し、設定マージ時の型不一致を解消。
+- 検証：`pnpm --filter @hierarchidb/shape-plugin typecheck`（exit 0）
+- ロールバック手順：`plugins/shape-plugin/src/services/utils/utils.ts` の差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する。
+- 運用ログ：
+  - start: 2025-12-30 23:23 JST shape-plugin の stripNil 型エラー修正に着手。
+  - done: 2025-12-30 23:25 JST stripNil の受け入れ型を `object` に拡張。検証: `pnpm --filter @hierarchidb/shape-plugin typecheck`（exit 0）。
 
 2020) fix/styler-plugin/population-2023-template-target (P1) — 完了 (2025-12-30)
 - 要点：population-2023 テンプレートの styler ノードで「国・自治体の塗りの色」が選択済みになるよう targetOptionId を追加。

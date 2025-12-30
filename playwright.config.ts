@@ -26,7 +26,7 @@ export default defineConfig({
   testDir: './e2e',
   /* Run tests in files in parallel */
   fullyParallel: true,
-  /* Fail the build on CI if you accidentally left test.only in the source code. */
+  /* Fail the stage on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
@@ -97,10 +97,10 @@ export default defineConfig({
     : {
         // Build and preview the app to avoid file watcher limits in CI/sandboxes
         command:
-          'pnpm --filter @hierarchidb/app build && pnpm --filter @hierarchidb/app preview -- --host 127.0.0.1 --port 4173',
+          'pnpm --filter @hierarchidb/app stage && pnpm --filter @hierarchidb/app preview -- --host 127.0.0.1 --port 4173',
         url: baseURLWithSlash,
         reuseExistingServer: !process.env.CI,
-        timeout: 480 * 1000, // allow enough headroom because the app build routinely exceeds 3 minutes
+        timeout: 480 * 1000, // allow enough headroom because the app stage routinely exceeds 3 minutes
       },
 
   /* Global setup and teardown */

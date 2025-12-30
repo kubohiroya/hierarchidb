@@ -2,13 +2,24 @@ import { useMemo } from 'react';
 import type { BuildStage, BuildStatus } from '@hierarchidb/components';
 import type { BatchTaskSummary } from '@hierarchidb/common-api';
 
-const toStageKey = (stage?: string): string => {
-  if (!stage) return 'download';
-  if (stage === 'vectortile') return 'vectorTiles';
-  return stage;
+const toStageKey = (task: BatchTaskSummary & { taskType?: string }): string => {
+  const candidate = task.taskType ?? task.stage;
+  if (!candidate) return 'download';
+  if (candidate === 'vectortile') return 'vectorTiles';
+  if (candidate === 'extract1') return 'extract1';
+  if (candidate === 'extract2') return 'extract2';
+  if (candidate === 'wait' || candidate === 'process' || candidate === 'success' || candidate === 'error') {
+    return task.taskType ?? 'download';
+  }
+  return candidate;
 };
 
-const isSkippedTask = (task: BatchTaskSummary): boolean => task.message === 'skipped';
+const isSkippedTask = (task: BatchTaskSummary): boolean => {
+  const message = task.message;
+  if (!message) return false;
+  const normalized = message.trim().toLowerCase();
+  return normalized === 'skipped' || normalized.startsWith('skipped:');
+};
 
 export const useBuildTaskProgress = (
   stages: BuildStage[],
@@ -43,7 +54,7 @@ export const useBuildTaskProgress = (
   const tasksByStage = useMemo(() => {
     const grouped: Record<string, BatchTaskSummary[]> = {};
     tasks.forEach((task) => {
-      const key = toStageKey(task.stage);
+      const key = toStageKey(task);
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(task);
     });

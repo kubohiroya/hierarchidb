@@ -133,7 +133,7 @@ node scripts/fix-all-package-exports.cjs
 
 2. **ビルドを実行**
    ```bash
-   pnpm build
+   pnpm stage
    ```
 
 3. **dist内容を確認**

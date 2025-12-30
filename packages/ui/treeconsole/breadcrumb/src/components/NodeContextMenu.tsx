@@ -65,7 +65,7 @@ export interface NodeContextMenuProps {
   mode?: 'restore' | 'dispose';
   onRestoreToOriginal?: () => void;
   onRestoreToCurrent?: () => void;
-  /** Optional explicit create items list; if omitted, tries to build from global builders */
+  /** Optional explicit create items list; if omitted, tries to stage from global builders */
   createItems?: Array<{ type: string; label: string; description?: string }>;
 }
 
@@ -301,7 +301,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
         return (items || []).map((i) => ({ type: i.nodeType, label: i.label, description: i.description, icon: i.icon }));
       }
     } catch (error) {
-      logNodeContextMenuWarning('Failed to build dynamic create menu items', error);
+      logNodeContextMenuWarning('Failed to stage dynamic create menu items', error);
     }
     // Fallback minimal entries
     return [

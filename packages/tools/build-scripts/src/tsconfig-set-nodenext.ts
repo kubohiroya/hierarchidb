@@ -4,7 +4,7 @@
  * Purpose: bulk-update tsconfig files so `module`/`moduleResolution` are
  * switched to NodeNext during repository-wide ESM migrations.
  * Invocation: run from repo root via
- * `pnpm --filter @hierarchidb/tools-build-scripts run tsconfig:set-nodenext -- [roots...]`
+ * `pnpm --filter @hierarchidb/tools-stage-scripts run tsconfig:set-nodenext -- [roots...]`
  * Output: rewrites matching `tsconfig*.json` files in-place. No extra artefacts
  * are created beyond the edited JSON files.
  */

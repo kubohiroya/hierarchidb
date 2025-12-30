@@ -54,7 +54,7 @@ const DEFAULT_EXCLUDES = [
 
   '**/node_modules/**',
   '**/dist/**',
-  '**/build/**',
+  '**/stage/**',
   '**/.next/**',
   '**/.nuxt/**',
   '**/.output/**',

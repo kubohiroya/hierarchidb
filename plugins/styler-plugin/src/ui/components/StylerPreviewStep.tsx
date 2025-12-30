@@ -16,7 +16,8 @@ import {
   Typography,
 } from '@mui/material';
 import { FixedSizeList } from 'react-window';
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type React from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { i18n } from '@hierarchidb/ui-i18n';
 import {
   type StylerStepData,
@@ -74,6 +75,20 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const headRef = useRef<HTMLTableSectionElement | null>(null);
   const [listHeight, setListHeight] = useState<number>(Math.max(ROW_HEIGHT * 8, ROW_HEIGHT));
+  const mapNumericValue = useCallback(
+    (value: number) => {
+      if (!Number.isFinite(value)) return value;
+      const inMin = derivedConfig.min;
+      const inMax = derivedConfig.max;
+      const outMin = derivedConfig.outputMin;
+      const outMax = derivedConfig.outputMax;
+      if (inMax === inMin) return outMin;
+      const ratio = (value - inMin) / (inMax - inMin);
+      const clamped = Math.max(0, Math.min(1, ratio));
+      return outMin + clamped * (outMax - outMin);
+    },
+    [derivedConfig.max, derivedConfig.min, derivedConfig.outputMax, derivedConfig.outputMin]
+  );
 
   useLayoutEffect(() => {
     const updateHeight = () => {
@@ -386,10 +401,11 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
                       } else if (meta.type === 'number') {
                         const num = typeof cellValue === 'number' ? cellValue : Number(cellValue);
                         if (!Number.isNaN(num)) {
+                          const mappedValue = mapNumericValue(num);
                           chip = (
                             <Chip
                               size="small"
-                              label={num.toFixed(2)}
+                              label={mappedValue.toFixed(2)}
                               variant="outlined"
                               color="default"
                             />
