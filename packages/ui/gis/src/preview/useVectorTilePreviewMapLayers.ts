@@ -22,6 +22,7 @@ type Args = {
   hoveredId: string | null;
   setHoveredId: (id: string | null) => void;
   invalidFeatureIds?: string[];
+  featureIdProperty?: string;
   theme: Theme;
 };
 
@@ -36,7 +37,9 @@ export const useVectorTilePreviewMapLayers = ({
   setHoveredId,
   theme,
   invalidFeatureIds = [],
+  featureIdProperty,
 }: Args) => {
+  const idProperty = featureIdProperty ?? 'id';
   useEffect(() => {
     if (!mapInstance) return;
     const map = mapInstance as MapLibreInteractiveMap;
@@ -60,7 +63,7 @@ export const useVectorTilePreviewMapLayers = ({
             'fill-opacity': opacity,
             'fill-outline-color': color,
           },
-          filter: ['==', ['get', 'id'], '__none__'],
+          filter: ['==', ['get', idProperty], '__none__'],
           'source-layer': sourceLayer,
         },
         undefined,
@@ -81,7 +84,7 @@ export const useVectorTilePreviewMapLayers = ({
     return () => {
       map.off('idle', handleIdle);
     };
-  }, [baseLayerId, baseSourceId, mapInstance, theme.palette, tilesLayer]);
+  }, [baseLayerId, baseSourceId, idProperty, mapInstance, theme.palette, tilesLayer]);
 
   useEffect(() => {
     if (!mapInstance) return;
@@ -92,16 +95,16 @@ export const useVectorTilePreviewMapLayers = ({
       if (!hasStyle()) return;
       if (!map.getLayer(id)) return;
       if (!ids.length) {
-        map.setFilter(id, ['==', ['get', 'id'], '__none__']);
+        map.setFilter(id, ['==', ['get', idProperty], '__none__']);
         return;
       }
-      map.setFilter(id, ['in', ['get', 'id'], ['literal', ids]]);
+      map.setFilter(id, ['in', ['get', idProperty], ['literal', ids]]);
     };
     updateFilter(`${baseLayerId}-invalid`, invalidFeatureIds);
     updateFilter(`${baseLayerId}-matched`, matchedIds);
     updateFilter(`${baseLayerId}-selected`, selectedIds);
     updateFilter(`${baseLayerId}-hovered`, hoveredId ? [hoveredId] : []);
-  }, [baseLayerId, hoveredId, invalidFeatureIds, mapInstance, matchedIds, selectedIds]);
+  }, [baseLayerId, hoveredId, idProperty, invalidFeatureIds, mapInstance, matchedIds, selectedIds]);
 
   useEffect(() => {
     if (!mapInstance) return;
@@ -115,7 +118,9 @@ export const useVectorTilePreviewMapLayers = ({
       if (feature?.properties) {
         console.debug('[ShapePreview] hover properties', feature.properties);
       }
-      const featureId = feature ? String(feature.properties?.id ?? feature.id ?? '') : '';
+      const featureId = feature
+        ? String(feature.properties?.[idProperty] ?? feature.properties?.id ?? feature.id ?? '')
+        : '';
       setHoveredId(featureId || null);
     };
     const handleMouseLeave = () => {
@@ -137,5 +142,5 @@ export const useVectorTilePreviewMapLayers = ({
         map.off('mouseleave', baseLayerId, handleMouseLeave);
       }
     };
-  }, [baseLayerId, mapInstance, setHoveredId]);
+  }, [baseLayerId, idProperty, mapInstance, setHoveredId]);
 };

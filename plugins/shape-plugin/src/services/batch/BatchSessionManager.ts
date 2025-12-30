@@ -34,6 +34,11 @@ export interface BatchSessionOptions {
   enableResourceTracking?: boolean;
 }
 
+type SessionStartContext = {
+  mode?: 'new' | 'resume';
+  buildStartedAt?: number;
+};
+
 export class BatchSessionManager extends BaseBatchSessionManager {
   private legacyProgressCallbacks = new Map<string, (progress: ProgressInfo) => void>();
 
@@ -67,6 +72,7 @@ export class BatchSessionManager extends BaseBatchSessionManager {
     config: BatchProcessConfig,
     downloadTaskPayloads: DownloadTaskPayload[],
     options: BatchSessionOptions = {},
+    context: SessionStartContext = {},
   ): Promise<BatchSession> {
     const existing = await shapeDB.getBatchSession(nodeId);
     if (existing && this.sessions.has(nodeId)) {
@@ -82,8 +88,10 @@ export class BatchSessionManager extends BaseBatchSessionManager {
       this.sessions.delete(nodeId);
     }
 
+    const mode = context.mode ?? 'new';
+    const buildStartedAt = context.buildStartedAt ?? existing?.startedAt ?? Date.now();
     const now = Date.now();
-    const baseProgress = existing?.progress ?? {
+    const baseProgress: ProgressInfo = mode === 'new' ? {
       total: 0,
       completed: 0,
       failed: 0,
@@ -91,12 +99,23 @@ export class BatchSessionManager extends BaseBatchSessionManager {
       percentage: 0,
       currentStage: 'download',
       currentTask: 'Initializing...',
-    };
+    } : (existing?.progress ?? {
+      total: 0,
+      completed: 0,
+      failed: 0,
+      skipped: 0,
+      percentage: 0,
+      currentStage: 'download',
+      currentTask: 'Initializing...',
+    });
+    if (mode === 'new') {
+      await this.cleanupStaleTasks(nodeId, buildStartedAt);
+    }
     const session: BatchSessionRecord = existing ?? {
       nodeId,
       status: 'running' as const,
       config,
-      startedAt: now,
+      startedAt: buildStartedAt,
       updatedAt: now,
       progress: baseProgress,
       stages: this.initializeStages(config),
@@ -109,12 +128,13 @@ export class BatchSessionManager extends BaseBatchSessionManager {
         networkBytesSent: 0,
       },
     };
-    const stages = session.stages ?? this.initializeStages(config);
+    const stages = mode === 'new' ? this.initializeStages(config) : (session.stages ?? this.initializeStages(config));
     const updatedSession: BatchSessionRecord = {
       ...session,
       status: 'running',
       config,
       updatedAt: now,
+      startedAt: buildStartedAt,
       progress: {
         ...baseProgress,
         total: Math.max(baseProgress.total ?? 0, downloadTaskPayloads.length),
@@ -196,7 +216,10 @@ export class BatchSessionManager extends BaseBatchSessionManager {
     if (downloadPayloads.length === 0) {
       throw new Error(`Session ${nodeId} missing download payloads`);
     }
-    await this.createSession(resolved, existing.config as BatchProcessConfig, downloadPayloads);
+    await this.createSession(resolved, existing.config as BatchProcessConfig, downloadPayloads, {}, {
+      mode: 'resume',
+      buildStartedAt: existing.startedAt,
+    });
   }
 
   async getSessionStatus(nodeId: string): Promise<BatchStatus> {
@@ -364,11 +387,40 @@ export class BatchSessionManager extends BaseBatchSessionManager {
       .toArray();
 
     for (const session of incompleteSessions) {
+      const allTasks = await shapeDB.batchTasks
+        .where('nodeId')
+        .equals(session.nodeId)
+        .toArray();
+      const cutoff = session.startedAt ?? 0;
+      const staleTasks = cutoff > 0
+        ? allTasks.filter((task) => this.getTaskTimestamp(task) < cutoff)
+        : [];
+      if (staleTasks.length > 0) {
+        await shapeDB.batchTasks.bulkDelete(staleTasks.map((task) => task.taskId));
+      }
+      const staleIds = new Set(staleTasks.map((task) => task.taskId));
+      const runningTasks = allTasks.filter((task) => task.status === 'running' && !staleIds.has(task.taskId));
+      if (runningTasks.length > 0) {
+        const resetAt = Date.now();
+        const resetTasks = runningTasks.map((task) => ({
+          ...task,
+          status: 'waiting' as const,
+          progress: 0,
+          message: undefined,
+          startedAt: undefined,
+          completedAt: undefined,
+          retryCount: undefined,
+          outputData: undefined,
+          errorMessage: undefined,
+          updatedAt: resetAt,
+        }));
+        await shapeDB.batchTasks.bulkPut(resetTasks);
+      }
       if (session.status === 'running') {
-        // Mark as failed since we're restarting
+        // Switch to paused so users can resume after reload.
         await shapeDB.updateBatchSession(session.nodeId, {
-          status: 'failed',
-          completedAt: Date.now(),
+          status: 'paused',
+          updatedAt: Date.now(),
         });
       }
     }
@@ -410,5 +462,17 @@ export class BatchSessionManager extends BaseBatchSessionManager {
     const bytesPerSecond = 0; // Would need to track bytes processed
 
     return { tasksPerSecond, bytesPerSecond };
+  }
+
+  private getTaskTimestamp(task: BatchTaskRecord): number {
+    return task.updatedAt ?? task.createdAt ?? task.startedAt ?? 0;
+  }
+
+  private async cleanupStaleTasks(nodeId: NodeId, buildStartedAt: number): Promise<void> {
+    if (!Number.isFinite(buildStartedAt) || buildStartedAt <= 0) return;
+    const tasks = await shapeDB.batchTasks.where('nodeId').equals(nodeId).toArray();
+    const stale = tasks.filter((task) => this.getTaskTimestamp(task) < buildStartedAt);
+    if (stale.length === 0) return;
+    await shapeDB.batchTasks.bulkDelete(stale.map((task) => task.taskId));
   }
 }

@@ -5,8 +5,7 @@ import { toNodeId } from '@hierarchidb/common-types';
 import { normalizeDataSourceName } from '../../common/types/index.js';
 import { useTranslation } from '../i18n.js';
 import { isShapePreviewMetadataEnabled } from '../../common/config/previewFlags.js';
-import { getShapeTileMetadataDB, type ShapeFeatureMetadataRow } from '../../services/database/ShapeTileMetadataDB.js';
-import { ensureIso3166Data, getCountry, type SubdivisionRecord } from '@hierarchidb/gen-iso3166-2/browser';
+import { getShapeTileMetadataDB, type ShapeSourceMetadataRow } from '../../services/database/ShapeTileMetadataDB.js';
 import { useAtom } from 'jotai';
 import {
   shapePreviewSearchAtom,
@@ -43,8 +42,6 @@ const DEFAULT_VIEW: MapWithVectorTilesProps['initialViewState'] = {
 
 const DEFAULT_BOUNDS_MARGIN = 0.1;
 const MIN_BOUNDS_MARGIN = 0.25;
-const ISO3166_CSV_URL = '/iso3166-2-level1.csv';
-const ISO3166_UNRESOLVED = 'N/A';
 
 const fetchTileSummary = async (nodeId: string) => {
   const tilesDb = await TilesDB.getSingleton();
@@ -260,7 +257,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   const loadMetadataRows = useCallback(
     (targetNodeId: string) =>
       getShapeTileMetadataDB()
-        .then((db) => db.featureMetadata.where('nodeId').equals(String(targetNodeId)).toArray()),
+        .then((db) => db.sourceMetadata.where('nodeId').equals(String(targetNodeId)).toArray()),
     [],
   );
 
@@ -269,154 +266,6 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     metadataLoading,
     metadataError,
   } = useVectorTilePreviewMetadata(metadataEnabled, activeNodeId, loadMetadataRows);
-  const [normalizedMetadataRows, setNormalizedMetadataRows] = useState(rawMetadataRows);
-  const [invalidFeatureIds, setInvalidFeatureIds] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    if (!metadataEnabled) {
-      setNormalizedMetadataRows(rawMetadataRows);
-      setInvalidFeatureIds(new Set());
-      return;
-    }
-    let cancelled = false;
-    const subdivisionCache = new Map<string, SubdivisionRecord[]>();
-    const selectionLevelMap = new Map<string, number>();
-    selectionMetadata.forEach((entry) => {
-      const code = entry.countryCode?.trim().toUpperCase();
-      if (!code) return;
-      const level = entry.adminLevel;
-      if (typeof level !== 'number') return;
-      const existing = selectionLevelMap.get(code);
-      if (existing != null && existing !== level) {
-        selectionLevelMap.set(code, -1);
-        return;
-      }
-      selectionLevelMap.set(code, level);
-    });
-    const resolveIso2 = async (code?: string): Promise<string | null> => {
-      const trimmed = code?.trim().toUpperCase();
-      if (!trimmed) return null;
-      if (trimmed.length === 2) return trimmed;
-      const { country } = await getCountry(trimmed);
-      return country?.alpha2?.toUpperCase() ?? null;
-    };
-    const resolveSubdivisions = async (alpha2: string): Promise<SubdivisionRecord[]> => {
-      const key = alpha2.toUpperCase();
-      if (subdivisionCache.has(key)) {
-        return subdivisionCache.get(key) ?? [];
-      }
-      const { subdivisions } = await getCountry(key);
-      const rows = subdivisions ?? [];
-      subdivisionCache.set(key, rows);
-      return rows;
-    };
-    const normalizeName = (value?: string) => value?.trim().toLowerCase() ?? '';
-    const resolveIso3166Code = async (
-      alpha2: string,
-      adminName?: string,
-      adminCode?: string,
-    ): Promise<string | null> => {
-      const trimmedCode = adminCode?.trim().toUpperCase() ?? '';
-      if (trimmedCode.startsWith(`${alpha2}-`)) {
-        return trimmedCode;
-      }
-      const name = normalizeName(adminName);
-      if (!name) return null;
-      const subdivisions = await resolveSubdivisions(alpha2);
-      const match = subdivisions.find((row) => {
-        const en = normalizeName(row.subdivisionEn);
-        const local = normalizeName(row.subdivisionLocal);
-        return en === name || local === name;
-      });
-      return match?.code?.toUpperCase() ?? null;
-    };
-    const run = async () => {
-      await ensureIso3166Data({ csvUrl: ISO3166_CSV_URL, useScraper: false });
-      const invalidIds = new Set<string>();
-      const rows = await Promise.all(rawMetadataRows.map(async (row) => {
-        const iso2 = await resolveIso2(row.countryCode);
-        let resolvedLevel = row.adminLevel;
-        if (resolvedLevel == null) {
-          const selectionLevel = row.countryCode
-            ? selectionLevelMap.get(row.countryCode.trim().toUpperCase())
-            : undefined;
-          if (selectionLevel != null && selectionLevel >= 0) {
-            resolvedLevel = selectionLevel;
-          }
-          if (row.adminCode && row.adminCode.includes('-')) {
-            resolvedLevel = 1;
-          } else if (iso2 && row.adminCode?.toUpperCase() === iso2) {
-            resolvedLevel = 0;
-          }
-        }
-        let logicalCode = ISO3166_UNRESOLVED;
-        if (resolvedLevel === 0) {
-          if (iso2) {
-            logicalCode = iso2;
-          }
-        } else if (resolvedLevel === 1) {
-          if (iso2) {
-            const resolved = await resolveIso3166Code(iso2, row.adminName, row.adminCode);
-            if (resolved) {
-              logicalCode = resolved;
-            }
-          }
-        }
-        if (resolvedLevel == null && logicalCode !== ISO3166_UNRESOLVED) {
-          resolvedLevel = logicalCode.includes('-') ? 1 : 0;
-        }
-        if (logicalCode === ISO3166_UNRESOLVED) {
-          console.warn('[ShapePreview] ISO3166 code unresolved', {
-            countryCode: row.countryCode,
-            adminLevel: resolvedLevel,
-            adminName: row.adminName,
-            adminCode: row.adminCode,
-          });
-          invalidIds.add(row.featureId);
-        }
-        const displayCountryName = row.countryName?.trim()
-          ? row.countryName
-          : resolvedLevel === 0 && row.adminName
-            ? row.adminName
-            : row.countryName;
-        const displayAdminName = resolvedLevel === 0 && row.adminName && !row.countryName
-          ? ''
-          : row.adminName;
-        return {
-          ...row,
-          countryName: displayCountryName,
-          adminName: displayAdminName,
-          adminLevel: resolvedLevel ?? row.adminLevel,
-          logicalCountryCode: iso2 ?? row.countryCode,
-          logicalAdminCode: logicalCode,
-          logicalFeatureId: logicalCode,
-        };
-      }));
-      if (cancelled) return;
-      const indexKey = (entry: typeof rows[number]) => {
-        const code = entry.logicalCountryCode ?? entry.countryCode ?? '';
-        const level = entry.adminLevel ?? '';
-        const source = entry.dataSource ?? '';
-        return `${source}:${code}:${level}`;
-      };
-      const realKeys = new Set<string>();
-      rows.forEach((entry) => {
-        if (entry.vertexCount > 0 || entry.polygonCount > 0) {
-          realKeys.add(indexKey(entry));
-        }
-      });
-      const filteredRows = rows.filter((entry) => {
-        if (entry.vertexCount > 0 || entry.polygonCount > 0) return true;
-        return !realKeys.has(indexKey(entry));
-      });
-      setNormalizedMetadataRows(filteredRows);
-      setInvalidFeatureIds(invalidIds);
-    };
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, [metadataEnabled, rawMetadataRows, selectionMetadata]);
 
   const selectionFilters = useMemo(() => {
     if (selectionMetadata.length === 0) return null;
@@ -445,10 +294,9 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     return { byCode, byName };
   }, [selectionMetadata]);
 
-  const metadataRows = useMemo(() => {
-    const sourceRows = normalizedMetadataRows;
-    if (!selectionFilters) return sourceRows;
-    return sourceRows.filter((row) => {
+  const filteredMetadataRows = useMemo(() => {
+    if (!selectionFilters) return rawMetadataRows;
+    return rawMetadataRows.filter((row) => {
       const rowLevel = row.adminLevel;
       const rowCode = row.countryCode?.trim().toUpperCase();
       const rowName = row.countryName?.trim().toLowerCase();
@@ -462,7 +310,9 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       if (matchesFilter(rowCode, selectionFilters.byCode)) return true;
       return matchesFilter(rowName, selectionFilters.byName);
     });
-  }, [normalizedMetadataRows, selectionFilters]);
+  }, [rawMetadataRows, selectionFilters]);
+
+  const metadataRows = filteredMetadataRows;
 
   const selectionBounds = useMemo(() => {
     let minLng = Number.POSITIVE_INFINITY;
@@ -470,7 +320,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     let maxLng = Number.NEGATIVE_INFINITY;
     let maxLat = Number.NEGATIVE_INFINITY;
     let hasBounds = false;
-    metadataRows.forEach((row) => {
+    filteredMetadataRows.forEach((row) => {
       const bbox = row.bbox;
       if (!bbox || bbox.length !== 4) return;
       const [minX, minY, maxX, maxY] = bbox;
@@ -494,7 +344,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       maxLng: clampLng(maxLng + lngPadding),
       maxLat: clampLat(maxLat + latPadding),
     };
-  }, [metadataRows]);
+  }, [filteredMetadataRows]);
 
   const initialViewState = useMemo<MapWithVectorTilesProps['initialViewState']>(() => {
     const zoom = typeof minZoom === 'number' ? minZoom : DEFAULT_VIEW.zoom;
@@ -523,20 +373,17 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     });
   }, [mapInstance, minZoom, selectionBounds]);
 
-  const getRowId = useCallback((row: ShapeFeatureMetadataRow) => row.featureId, []);
-  const buildSearchText = useCallback((row: ShapeFeatureMetadataRow & {
-    logicalCountryCode?: string;
-    logicalAdminCode?: string;
-    logicalFeatureId?: string;
-  }) => {
+  const getRowId = useCallback((row: ShapeSourceMetadataRow) => row.originKey, []);
+  const buildSearchText = useCallback((row: ShapeSourceMetadataRow) => {
     return [
+      row.originLabel,
       row.countryName,
-      row.logicalCountryCode ?? row.countryCode,
-      row.adminName,
+      row.countryCode,
       row.adminLevel != null ? String(row.adminLevel) : undefined,
-      row.logicalAdminCode ?? row.adminCode,
+      row.featureLabel,
+      row.featureGroupId,
       row.dataSource,
-      row.logicalFeatureId ?? row.featureId,
+      row.originKey,
     ]
       .filter(Boolean)
       .join(' ');
@@ -552,11 +399,11 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   );
 
   const deriveSelectionContext = useCallback((
-    rows: ShapeFeatureMetadataRow[],
+    rows: ShapeSourceMetadataRow[],
     ids: string[],
   ) => {
     if (!ids.length) return null;
-    const selectedRows = rows.filter((row) => ids.includes(row.featureId));
+    const selectedRows = rows.filter((row) => ids.includes(row.originKey));
     const first = selectedRows[0];
     if (!first) return null;
     const consistent = selectedRows.every(
@@ -568,9 +415,9 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   }, []);
 
   const resolveSelection = useCallback((
-    row: ShapeFeatureMetadataRow,
+    row: ShapeSourceMetadataRow,
     current: typeof selectionContext,
-    rows: ShapeFeatureMetadataRow[],
+    rows: ShapeSourceMetadataRow[],
   ) => {
     const adminLevel = row.adminLevel ?? 0;
     const countryCode = row.countryCode ?? '';
@@ -589,20 +436,19 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     }
     const selectedIds = rows
       .filter((item) => item.countryCode === countryCode && item.adminLevel === nextLevel)
-      .map((item) => item.featureId);
+      .map((item) => item.originKey);
     return {
       nextContext: selectedIds.length ? { countryCode, adminLevel: nextLevel } : null,
       selectedIds,
     };
   }, []);
 
-  const getHoverLabel = useCallback((row: ShapeFeatureMetadataRow) => {
+  const getHoverLabel = useCallback((row: ShapeSourceMetadataRow) => {
     const parts = [
+      row.originLabel,
       row.countryName,
       row.countryCode,
-      row.adminName,
       row.adminLevel != null ? String(row.adminLevel) : undefined,
-      row.adminCode,
     ].filter((part) => part && String(part).trim().length > 0);
     return parts.join(' / ');
   }, []);
@@ -623,6 +469,8 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     resolveSelection,
     deriveSelectionContext,
     getHoverLabel,
+    resolveFeatureId: (feature) =>
+      String(feature.properties?.__hdbOriginKey ?? feature.properties?.id ?? feature.id ?? ''),
   });
 
   const matchedIdSet = useMemo<Set<string>>(() => new Set(matchedIds), [matchedIds]);
@@ -644,7 +492,8 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     hoveredId,
     setHoveredId,
     theme,
-    invalidFeatureIds: Array.from(invalidFeatureIds),
+    featureIdProperty: '__hdbOriginKey',
+    invalidFeatureIds: [],
   });
 
   useEffect(() => {

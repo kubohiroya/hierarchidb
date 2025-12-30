@@ -8,7 +8,7 @@ import { geojson as geojsonApi } from 'flatgeobuf';
 import { bbox as turfBbox } from '@turf/turf';
 import { applyFeatureFiltering, type FeatureFilterSettings, simplifyGeoJson } from '@hierarchidb/gis-sdk';
 import { simplifyTopoJsonByTiles } from '../utils/topojsonSimplify.js';
-import { assignFeatureIds } from '../utils/featureIds.js';
+import { applyOriginKey, assignFeatureIds } from '../utils/featureIds.js';
 import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
 
 const resolveStrategyId = (source?: string): DataSourceStrategyId | null => {
@@ -159,6 +159,23 @@ const processSimplify1Task = async ({
     });
     return { status: 'skipped', featureCount: 0 };
   }
+  const enableFeatureFiltering = task.config?.enableFeatureFiltering ?? true;
+  const originKey = task.config?.originKey;
+  if (!enableFeatureFiltering) {
+    const outputBufferId = `${nodeId}-simplify1-${taskIndex}`;
+    const featureCount = raw.featureCount ?? 0;
+    await db.simplifiedBuffers.put({
+      id: outputBufferId,
+      nodeId: raw.nodeId,
+      stage: 'simplify1',
+      data: raw.data,
+      featureCount,
+      simplificationRatio: 1,
+      tolerance: 0,
+      timestamp: Date.now(),
+    });
+    return { status: 'completed', featureCount };
+  }
   const geojson = await decodeGeoJson(raw.data);
   const filterSettings: FeatureFilterSettings = {
     minArea: task.minArea ?? task.config?.minimumArea ?? 0,
@@ -182,6 +199,7 @@ const processSimplify1Task = async ({
     ? sanitizeFeatureCollection(simplified)
     : null;
   if (sanitizedSimplified) {
+    applyOriginKey(sanitizedSimplified, originKey);
     assignFeatureIds(sanitizedSimplified, {
       countryCode: task.countryCode,
       adminLevel: task.adminLevel,
@@ -244,6 +262,7 @@ const processSimplify2Task = async ({
   if (!input) {
     return { status: 'failed', errorMessage: `Simplify2 input buffer not found: ${inputBufferId}` };
   }
+  const originKey = task.config?.originKey;
   if (!input.featureCount) {
     const outputBufferId = `${nodeId}-simplify2-${taskIndex}`;
     const baseTolerance = task.config?.tolerance ?? task.tolerance ?? 0;
@@ -269,6 +288,7 @@ const processSimplify2Task = async ({
     const outputBufferId = `${nodeId}-simplify2-${taskIndex}`;
     if (isFeatureCollection(geojson)) {
       const sanitized = sanitizeFeatureCollection(geojson);
+      applyOriginKey(sanitized, originKey);
       assignFeatureIds(sanitized, {
         countryCode: task.countryCode,
         adminLevel: task.adminLevel,
@@ -334,6 +354,9 @@ const processSimplify2Task = async ({
   const sanitizedSimplified = hasSimplifiedFeatures
     ? sanitizeFeatureCollection(simplified)
     : null;
+  if (sanitizedSimplified) {
+    applyOriginKey(sanitizedSimplified, originKey);
+  }
   const featureCount = sanitizedSimplified
     ? sanitizedSimplified.features.length
     : input.featureCount;

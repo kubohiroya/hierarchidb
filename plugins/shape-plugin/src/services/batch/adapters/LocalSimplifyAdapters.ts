@@ -155,6 +155,33 @@ export class LocalSimplify1Adapter implements Simplify1StageAdapter {
             finished = true;
             break;
           }
+          const enableFeatureFiltering = task.config?.enableFeatureFiltering ?? true;
+          if (!enableFeatureFiltering) {
+            const outputBufferId = `${task.nodeId ?? ''}-simplify1-${taskIndex}`;
+            const featureCount = raw.featureCount ?? 0;
+            await db.simplifiedBuffers.put({
+              id: outputBufferId,
+              nodeId: raw.nodeId,
+              stage: 'simplify1',
+              data: raw.data,
+              featureCount,
+              simplificationRatio: 1,
+              tolerance: 0,
+              timestamp: Date.now(),
+            });
+            completed++;
+            if (task.taskId) {
+              const completionMessage = buildSimplify1CompletionMessage(raw.data.byteLength, raw.data.byteLength);
+              await shapeDB.updateBatchTask(task.taskId, {
+                status: 'completed',
+                completedAt: Date.now(),
+                progress: 100,
+                message: completionMessage,
+              });
+            }
+            finished = true;
+            break;
+          }
           const geojson = await decodeGeoJson(raw.data);
           const filterSettings: FeatureFilterSettings = {
             minArea: task.minArea ?? task.config?.minimumArea ?? 0,

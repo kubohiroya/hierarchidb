@@ -128,9 +128,13 @@ const buildBatchSessionConfig = (batchConfig: BatchConfig, draft?: DraftLike): B
   };
 };
 
+const resolveTaskTimestamp = (task: BatchTaskRecord): number =>
+  task.updatedAt ?? task.createdAt ?? task.startedAt ?? 0;
+
 const persistDownloadTaskPayloads = async (
   nodeId: NodeId,
   payloads: DownloadTaskPayload[],
+  buildStartedAt: number,
 ): Promise<void> => {
   if (payloads.length === 0) return;
   const existingTasks = await shapeDB.batchTasks
@@ -138,13 +142,20 @@ const persistDownloadTaskPayloads = async (
     .equals(nodeId)
     .and((task) => task.taskType === 'download')
     .toArray();
-  const existingTaskIds = new Set(existingTasks.map((task) => task.taskId));
-  let nextIndex = existingTasks.reduce((max, task) => Math.max(max, task.index ?? 0), -1) + 1;
+  const staleTasks = existingTasks.filter((task) => resolveTaskTimestamp(task) < buildStartedAt);
+  if (staleTasks.length > 0) {
+    await shapeDB.batchTasks.bulkDelete(staleTasks.map((task) => task.taskId));
+  }
+  const staleIds = new Set(staleTasks.map((task) => task.taskId));
+  const activeTasks = existingTasks.filter((task) => !staleIds.has(task.taskId));
+  const existingTaskIds = new Set(activeTasks.map((task) => task.taskId));
+  let nextIndex = activeTasks.reduce((max, task) => Math.max(max, task.index ?? 0), -1) + 1;
   const candidates = payloads.map((payload) => ({
     payload,
     taskId: buildDownloadTaskId(nodeId, payload),
   }));
   const needRegistered = candidates.filter((candidate) => !existingTaskIds.has(candidate.taskId));
+  const createdAt = Number.isFinite(buildStartedAt) && buildStartedAt > 0 ? buildStartedAt : Date.now();
   const newTasks: BatchTaskRecord[] = needRegistered.map(({ payload, taskId }) => {
     const task: BatchTaskRecord = {
       taskId,
@@ -154,6 +165,8 @@ const persistDownloadTaskPayloads = async (
       index: nextIndex,
       progress: 0,
       inputData: payload as unknown as Record<string, unknown>,
+      createdAt,
+      updatedAt: createdAt,
     };
     nextIndex += 1;
     return task;
@@ -506,7 +519,8 @@ export const shapeBatchAPI = {
       maxZoom: baseConfig.vectorTiles?.maxZoom,
     };
 
-    const batchSessionData = { downloadTaskPayloads: downloadTaskPayloads };
+    const buildStartedAt = Date.now();
+    const batchSessionData = { downloadTaskPayloads: downloadTaskPayloads, buildStartedAt };
 
     // Start batch session using unified manager
     const sessionOptions = {
@@ -526,7 +540,7 @@ export const shapeBatchAPI = {
       ) => void;
     };
     const nodeForSession = draftLike.nodeId ?? draftLike.treeNodeId ?? draftId;
-    await persistDownloadTaskPayloads(toNodeId(String(nodeForSession)), downloadTaskPayloads);
+    await persistDownloadTaskPayloads(toNodeId(String(nodeForSession)), downloadTaskPayloads, buildStartedAt);
     managerWithPrepare.prepareSession?.(nodeForSession, processConfig, batchSessionData, sessionOptions);
     await batchSessionManager.startBatchSession(nodeForSession);
 

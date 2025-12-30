@@ -30,9 +30,34 @@ export interface ShapeFeatureMetadataRow {
   area: number;
 }
 
+export interface ShapeSourceMetadataRow {
+  id: string;
+  nodeId: string;
+  originKey: string;
+  originLabel: string;
+  dataSource?: string;
+  countryName?: string;
+  countryCode?: string;
+  adminLevel?: number;
+  featureGroupId?: string;
+  featureLabel?: string;
+  createdAt: number;
+  updatedAt: number;
+  rawVertexCount?: number;
+  rawPolygonCount?: number;
+  simplify1VertexCount?: number;
+  simplify1PolygonCount?: number;
+  simplify2VertexCount?: number;
+  simplify2PolygonCount?: number;
+  vectorTileVertexCount?: number;
+  vectorTilePolygonCount?: number;
+  bbox?: [number, number, number, number];
+}
+
 export class ShapeTileMetadataDB extends Dexie {
   tiles!: Table<StageTileRow, string>;
   featureMetadata!: Table<ShapeFeatureMetadataRow, string>;
+  sourceMetadata!: Table<ShapeSourceMetadataRow, string>;
 
   static async getSingleton(): Promise<ShapeTileMetadataDB> {
     return SingletonMixin.getSingleton('ShapeTileMetadataDB', async () => {
@@ -54,13 +79,23 @@ export class ShapeTileMetadataDB extends Dexie {
         tiles: '&key, nodeId, [nodeId+z+x+y], z, x, y, timestamp',
         featureMetadata:
           '&id, nodeId, featureId, countryCode, adminLevel, adminCode, dataSource, createdAt',
+        sourceMetadata:
+          '&id, nodeId, originKey, dataSource, countryCode, adminLevel, createdAt, updatedAt',
       })
       .upgrade(async () => {
         await this.table('tiles').clear();
         await this.table('featureMetadata').clear();
       });
+    this.version(4).stores({
+      tiles: '&key, nodeId, [nodeId+z+x+y], z, x, y, timestamp',
+      featureMetadata:
+        '&id, nodeId, featureId, countryCode, adminLevel, adminCode, dataSource, createdAt',
+      sourceMetadata:
+        '&id, nodeId, originKey, dataSource, countryCode, adminLevel, createdAt, updatedAt',
+    });
     this.tiles = this.table('tiles');
     this.featureMetadata = this.table('featureMetadata');
+    this.sourceMetadata = this.table('sourceMetadata');
   }
 }
 

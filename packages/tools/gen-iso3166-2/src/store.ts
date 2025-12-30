@@ -28,6 +28,8 @@ const memoryStore = {
   subdivisions: new Map<string, SubdivisionRecord>(),
 };
 
+export function rowsToRecords(rows: SubdivisionRow): SubdivisionRecord;
+export function rowsToRecords(rows: SubdivisionRow[]): { countries: CountryRecord[]; subdivisions: SubdivisionRecord[] };
 export function rowsToRecords(rows: SubdivisionRow | SubdivisionRow[]) {
   if (!Array.isArray(rows)) {
     return {

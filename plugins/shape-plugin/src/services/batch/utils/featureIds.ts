@@ -1,6 +1,7 @@
 import type { Feature, FeatureCollection } from 'geojson';
 
 export const HDB_FEATURE_ID_KEY = '__hdbFeatureId';
+export const HDB_ORIGIN_KEY = '__hdbOriginKey';
 
 type FeatureIdContext = {
   countryCode?: string;
@@ -73,6 +74,21 @@ export const assignFeatureIds = (
     properties.id = featureId;
     if (typeof feature.id !== 'string' && typeof feature.id !== 'number') {
       (feature as Feature).id = featureId;
+    }
+  });
+  return collection;
+};
+
+export const applyOriginKey = (
+  collection: FeatureCollection,
+  originKey?: string,
+): FeatureCollection => {
+  if (!originKey) return collection;
+  collection.features.forEach((feature) => {
+    if (!feature) return;
+    const properties = (feature.properties ??= {});
+    if (typeof properties[HDB_ORIGIN_KEY] !== 'string' || !properties[HDB_ORIGIN_KEY]) {
+      properties[HDB_ORIGIN_KEY] = originKey;
     }
   });
   return collection;

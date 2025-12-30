@@ -73,9 +73,13 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
       db.cache.filter((entry) => entry.key.includes(batchNodeId)).count(),
       shapeDB.vectorTiles.where('nodeId').equals(batchNodeId).count(),
       getShapeTileMetadataDB()
-        .then((metadataDb) =>
-          metadataDb.featureMetadata.where('nodeId').equals(batchNodeId).count()
-        ),
+        .then(async (metadataDb) => {
+          const [featureCount, sourceCount] = await Promise.all([
+            metadataDb.featureMetadata.where('nodeId').equals(batchNodeId).count(),
+            metadataDb.sourceMetadata.where('nodeId').equals(batchNodeId).count(),
+          ]);
+          return Math.max(featureCount, sourceCount);
+        }),
       shapeDB.batchTasks
         .where('nodeId')
         .equals(batchNodeId)
@@ -159,11 +163,36 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
       .delete();
   }, [batchNodeId]);
 
+  const resetDownloadTasks = useCallback(async () => {
+    if (!batchNodeId) return;
+    const tasks = await shapeDB.batchTasks
+      .where('nodeId')
+      .equals(batchNodeId)
+      .and((task) => task.taskType === 'download')
+      .toArray();
+    if (tasks.length === 0) return;
+    const resetAt = Date.now();
+    const resetTasks = tasks.map((task) => ({
+      ...task,
+      status: 'waiting' as const,
+      progress: 0,
+      message: undefined,
+      startedAt: undefined,
+      completedAt: undefined,
+      retryCount: undefined,
+      outputData: undefined,
+      errorMessage: undefined,
+      updatedAt: resetAt,
+    }) as (typeof tasks)[number]);
+    await shapeDB.batchTasks.bulkPut(resetTasks);
+  }, [batchNodeId]);
+
   const clearFinalOutputs = useCallback(async () => {
     if (!batchNodeId) return;
     await shapeDB.vectorTiles.where('nodeId').equals(batchNodeId).delete();
     const metadataDb = await getShapeTileMetadataDB();
     await metadataDb.featureMetadata.where('nodeId').equals(batchNodeId).delete();
+    await metadataDb.sourceMetadata.where('nodeId').equals(batchNodeId).delete();
     await metadataDb.tiles.where('nodeId').equals(batchNodeId).delete();
   }, [batchNodeId, nodeId]);
 
@@ -207,13 +236,21 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
   const handleDeleteRaw = useCallback(async () => {
     if (!batchNodeId) return notify.warning('NodeId is missing.');
     await db.clearStage(batchNodeId, 'download');
-    await clearBatchTasksForType('download');
+    await resetDownloadTasks();
     await clearFinalOutputs();
     await loadCounts();
     onResetSession?.();
     await persistSessionReset();
     notify.success('Deleted downloaded files');
-  }, [batchNodeId, clearBatchTasksForType, clearFinalOutputs, db, loadCounts, onResetSession, persistSessionReset]);
+  }, [
+    batchNodeId,
+    clearFinalOutputs,
+    db,
+    loadCounts,
+    onResetSession,
+    persistSessionReset,
+    resetDownloadTasks,
+  ]);
 
   const handleDeleteStage = useCallback(async (stage: 'simplify1' | 'simplify2') => {
     if (!batchNodeId) return notify.warning('NodeId is missing.');
@@ -248,6 +285,7 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
     if (!batchNodeId) return notify.warning('NodeId is missing.');
     const metadataDb = await getShapeTileMetadataDB();
     await metadataDb.featureMetadata.where('nodeId').equals(batchNodeId).delete();
+    await metadataDb.sourceMetadata.where('nodeId').equals(batchNodeId).delete();
     await loadCounts();
     notify.success('Deleted metadata');
   }, [batchNodeId, loadCounts]);

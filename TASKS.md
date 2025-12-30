@@ -53,6 +53,64 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1990) ui-map: MapLibreMap のタイル境界/座標表示オプション対応（P1）
+- ブランチ: `feat/ui-map/maplibre-tile-debug`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/ui/map/src/types/unified-map-props.ts`, `packages/ui/map/src/components/MapLibreMap.tsx`, `plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] MapLibreMap に showTileBoundaries / showTileCoordinates を追加できる
+  - [ ] shape-plugin Step6 で両方が有効になる
+  - [ ] 既定は無効で他の地図に影響しない
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] BaseMapProps に showTileBoundaries / showTileCoordinates を追加
+  - [ ] MapLibreMap で ReactMapLibreMap に props を渡す
+  - [ ] Step6 プレビューでオプションを true で渡す
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：上記ファイルの差分を revert する
+- 運用ログ：
+  - start: 2025-12-30 12:43 JST MapLibreMap のタイル境界/座標表示オプション対応に着手。
+  - progress: 2025-12-30 12:43 JST BaseMapProps に showTileBoundaries/showTileCoordinates を追加し、MapLibreMap へ渡すのと Step6 プレビューで有効化。検証: 未実施。
+  - progress: 2025-12-30 12:50 JST MapLibreMap の onLoad/useEffect で showTileBoundaries/showTileCoordinates を明示的に反映し、再描画を要求。検証: 未実施。
+
+1989) shape-plugin: simplify1 の「フィルタリングOFF」で素通し（P1）
+- ブランチ: `fix/shape-plugin/simplify1-pass-through`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/services/batch/SessionController.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/batch/adapters/LocalSimplifyAdapters.ts`, `plugins/shape-plugin/src/common/types/batch.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] Step4 の「フィルタリングOFF」で simplify1 が raw をそのまま出力する
+  - [ ] Worker/Local の両経路で同じ挙動になる
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] Simplify1TaskConfig に enableFeatureFiltering を追加する
+  - [ ] simplify1 task 生成時に enableFeatureFiltering を渡す
+  - [ ] simplify1 worker/local で enableFeatureFiltering=false を素通し処理にする
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：上記ファイルの差分を revert する
+- 運用ログ：
+  - start: 2025-12-30 12:03 JST simplify1 のフィルタリングOFF素通し対応に着手。
+  - progress: 2025-12-30 12:03 JST Simplify1TaskConfig に enableFeatureFiltering を追加し、task 生成と worker/local で素通し分岐を実装。検証: 未実施。
+
+1988) shape-plugin: リロード時に running タスクが残る問題の復旧（P1）
+- ブランチ: `fix/shape-plugin/reload-running-tasks`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/features/shape-store/src/ShapeDB.ts`, `plugins/shape-plugin/src/services/batch/BatchSessionManager.ts`, `plugins/shape-plugin/src/services/batch/SessionController.ts`, `plugins/shape-plugin/src/worker/api.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] ブラウザリロード後に running のタスクが waiting に戻り、再実行可能になる
+  - [ ] session の状態が再開可能な値（paused）に揃う
+  - [ ] task の createdAt/updatedAt が保存され、ビルド開始日時より古いタスクが削除または上書きされる
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [x] BatchTaskRecord に createdAt/updatedAt を追加する
+  - [x] task 作成/更新時に createdAt/updatedAt を設定する
+  - [x] initialize 時に running タスクを waiting に戻す
+  - [x] ビルド開始日時より古いタスクを削除または上書きする
+  - [x] running session を paused に移行する
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：上記ファイルの差分を revert する
+- 運用ログ：
+  - start: 2025-12-30 11:56 JST リロード時に running タスクが残る問題の調査に着手。
+  - progress: 2025-12-30 11:56 JST initialize 時に running タスクを waiting に戻し、running session を paused に切り替えるよう修正。検証: 未実施。
+  - start: 2025-12-30 22:15 JST createdAt/updatedAt による古いタスクの整理とリロード時復旧の共通化に着手。
+  - progress: 2025-12-30 22:35 JST BatchTaskRecord に createdAt/updatedAt を追加し、buildStartedAt 以前のタスク削除と running→waiting リセットに updatedAt を付与。検証: 未実施。
+
 1987) shape-plugin: Step4 ダウンロード削除後の resume 失敗（missing download payloads）の修正（P1）
 - ブランチ: `fix/shape-plugin/resume-missing-download-payloads`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `plugins/shape-plugin/src/services/batch/BatchSessionManager.ts`, `plugins/shape-plugin/src/services/batch/SessionController.ts`, `TASKS.md`
@@ -67,6 +125,7 @@
 - ロールバック手順：`BatchSessionManager.ts` と `SessionController.ts` の差分を revert する
 - 運用ログ：
   - start: 2025-12-30 11:46 JST 「ダウンロード済みファイルを削除」後の resume 失敗（missing download payloads）の調査に着手。
+  - progress: 2025-12-30 11:51 JST download 削除時はタスクを削除せず waiting にリセットし、resume で missing payloads が出た場合は新規ビルドへフォールバックするよう調整。検証: 未実施。
 
 1975) shape-plugin: Step4 デフォルト見直し + simplify2 TopoJSON 簡略化（P1）
 - ブランチ: `feat/shape-plugin/simplify2-topojson`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -15552,6 +15611,16 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-28 18:38 done: fix/gen-iso3166-2/util-typecheck — @hierarchidb/util を依存に追加し、typecheck のモジュール解決を修正。検証: 未実施（typecheck 未実行）。ロールバック: `packages/tools/gen-iso3166-2/package.json` と `TASKS.md` の差分を revert。
 - 2025-12-28 18:42 start: fix/runtime-worker/vector-tile-target-node — StageProcessingService の targetNodeId 型不足を解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
 - 2025-12-28 18:43 done: fix/runtime-worker/vector-tile-target-node — generateTiles の config 型に targetNodeId を追加し、参照エラーを解消。検証: 未実施（typecheck 未実行）。ロールバック: `packages/runtime-worker/src/services/StageProcessingService.ts` と `TASKS.md` の差分を revert。
+- 2025-12-28 18:50 start: fix/gen-iso3166-2/rows-to-records-overload — rowsToRecords の戻り型を明示し、store.ts/store.browser.ts の型不一致を解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 18:52 done: fix/gen-iso3166-2/rows-to-records-overload — rowsToRecords に overload を追加し、単件/配列の戻り型を明示して型エラーを解消。検証: 未実施（typecheck 未実行）。ロールバック: `packages/tools/gen-iso3166-2/src/{store.ts,store.browser.ts}` と `TASKS.md` の差分を revert。
+- 2025-12-28 18:58 start: fix/shape/simplify2-config-types — simplify2 設定の型不一致と未使用 import、BatchTaskRecord の status 型を整合する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 19:01 done: fix/shape/simplify2-config-types — simplify2 の simplificationMode 参照を固定化し、未使用 import を削除、download reset の status 型を TaskStatus に合わせて整合。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/shape-plugin/src/services/batch/SessionController.ts`, `plugins/shape-plugin/src/ui/components/steps/Simplify2ConfigSection.tsx`, `plugins/shape-plugin/src/ui/hooks/useDownloadConfigSection.ts` と `TASKS.md` の差分を revert。
+- 2025-12-28 19:05 start: fix/shape/simplify2-mode-radio — Step4 の簡略化方式をラジオボタン化する対応に着手。DoD: UI がラジオ表示になる、挙動維持、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 19:07 done: fix/shape/simplify2-mode-radio — ToggleButton を RadioGroup へ置換し、簡略化方式をラジオ表示に変更。検証: 未実施（build/typecheck 未実行）。ロールバック: `plugins/shape-plugin/src/ui/components/steps/Simplify2ConfigSection.tsx` と `TASKS.md` の差分を revert。
+- 2025-12-28 19:12 start: fix/lru-splitview/pane-chip-refresh — LRUSplitView のペインヘッダ Chip が再ビルド中に更新されない問題を解消する対応に着手。DoD: Chip 数が更新される、影響最小、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 19:13 done: fix/lru-splitview/pane-chip-refresh — stageTaskSummary を tasks 変化で再計算するよう依存関係を追加し、Chip 数の更新を反映。検証: 未実施（typecheck/build 未実行）。ロールバック: `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts` と `TASKS.md` の差分を revert。
+- 2025-12-28 19:20 start: fix/shape/batch-session-progress-stage — BatchSessionManager の progress.currentStage 型を整合する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 19:21 done: fix/shape/batch-session-progress-stage — baseProgress を ProgressInfo 型に固定し、currentStage の型不一致を解消。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/shape-plugin/src/services/batch/BatchSessionManager.ts` と `TASKS.md` の差分を revert。
 - 2025-12-29 15:06 start: analysis/shape/step5-lru-task-component — shape step5 の LRUSplitPane 内タスク表示コンポーネント特定の調査に着手。DoD: Kanban 1969 のとおり。
 - 2025-12-29 15:07 progress: analysis/shape/step5-lru-task-component — `rg -n "LRUSplitPane|LRUSplitView" plugins app packages` と `rg -n "Step5|step5|BuildStep" plugins/shape-plugin app packages` で参照箇所を探索。
 - 2025-12-29 15:08 progress: analysis/shape/step5-lru-task-component — `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx` と `packages/components/src/BuildStepPanel.tsx` を確認し、pane content とタスク表示の責務を切り分け。
@@ -15572,3 +15641,22 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-30 10:55 done: fix/shape/detail-defaults-and-ranges — 詳細化方向の既定値/範囲/バリデーションを更新。検証: 未実施（手動確認未実行）。ロールバック: Kanban 1985 の手順に従い差分を revert。
 - 2025-12-30 11:00 start: fix/shape/preview-zoom-and-filter-off — プレビューズーム制限とフィルタOFF追加に着手。DoD: Kanban 1986 のとおり。
 - 2025-12-30 11:06 done: fix/shape/preview-zoom-and-filter-off — mapOptions の min/max zoom 対応とフィルタOFFの選択肢追加を反映。検証: 未実施（手動確認未実行）。ロールバック: Kanban 1986 の手順に従い差分を revert。
+1990) shape-plugin: メタデータ一覧に段階別（元データ/簡略化1/簡略化2/ベクトルタイル集計）の頂点数・ポリゴン数を表示（P1）
+- ブランチ: `feat/shape-plugin/metadata-stage-geometry-stats`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plans/shape-metadata-stage-geometry-stats-execplan.md`, `packages/features/gis-sdk/src/vectorTiles.ts`, `plugins/shape-plugin/src/services/batch/SessionController.ts`, `plugins/shape-plugin/src/services/database/ShapeTileMetadataDB.ts`, `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts`, `plugins/shape-plugin/src/ui/hooks/preview/useVectorTilePreviewTable.ts`, `plugins/shape-plugin/src/ui/locales/{ja,en}.json`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] 既存のメタデータ一覧における頂点数・ポリゴン数の意味（どの時点の値か）が明確になる
+  - [ ] 元データ/簡略化1/簡略化2/ベクトルタイル集計の頂点数・ポリゴン数が由来単位ごとに保存される
+  - [ ] Step6 メタデータ一覧で上記4系統が列として表示される
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] ExecPlan を `plans/shape-metadata-stage-geometry-stats-execplan.md` に作成する
+  - [ ] 由来単位（ダウンロード元データ単位）ごとの集計キー定義を決める
+  - [ ] ShapeTileMetadataDB に段階別集計用の保存構造を追加する
+  - [ ] 元データ/簡略化1/簡略化2/ベクトルタイル集計の生成処理を追加する
+  - [ ] Step6 メタデータ一覧の表示を拡張する（4系統の列追加）
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：上記ファイルの差分を revert する
+- 運用ログ：
+  - start: 2025-12-30 12:41 JST 由来単位ごとの段階別頂点数・ポリゴン数の集計と Step6 表示拡張に着手。
+  - progress: 2025-12-30 12:46 JST ExecPlan を `plans/shape-metadata-stage-geometry-stats-execplan.md` に作成。

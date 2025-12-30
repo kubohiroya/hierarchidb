@@ -57,7 +57,11 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
       nodeId,
       config,
       data.downloadTaskPayloads,
-      options ?? {}
+      options ?? {},
+      {
+        mode: 'new',
+        buildStartedAt: data.buildStartedAt,
+      }
     );
     if (!session.nodeId) {
       throw new Error('Failed to create shape batch session: missing nodeId');
@@ -151,4 +155,5 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
  */
 export interface ShapeBatchData {
   downloadTaskPayloads: DownloadTaskPayload[];
+  buildStartedAt?: number;
 }

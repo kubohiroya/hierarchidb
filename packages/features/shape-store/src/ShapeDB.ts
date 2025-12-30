@@ -170,6 +170,8 @@ export interface BatchTaskRecord {
   message?: string;
   startedAt?: number;
   completedAt?: number;
+  createdAt?: number;
+  updatedAt?: number;
   retryCount?: number;
   inputData?: Record<string, unknown>;
   outputData?: Record<string, unknown>;
@@ -348,9 +350,13 @@ export class ShapeDB extends Dexie {
     task: Omit<BatchTaskRecord, 'taskId'> & { taskId?: string },
   ): Promise<BatchTaskRecord> {
     const taskId = task.taskId ?? crypto.randomUUID();
+    const createdAt = task.createdAt ?? Date.now();
+    const updatedAt = task.updatedAt ?? createdAt;
     const fullTask: BatchTaskRecord = {
       ...task,
       taskId,
+      createdAt,
+      updatedAt,
     };
 
     await this.batchTasks.put(fullTask);
@@ -358,7 +364,10 @@ export class ShapeDB extends Dexie {
   }
 
   async updateBatchTask(taskId: string, updates: Partial<BatchTaskRecord>): Promise<void> {
-    await this.batchTasks.update(taskId, updates);
+    await this.batchTasks.update(taskId, {
+      ...updates,
+      updatedAt: updates.updatedAt ?? Date.now(),
+    });
   }
 
   async getBatchTasks(nodeId: NodeId): Promise<BatchTaskRecord[]> {

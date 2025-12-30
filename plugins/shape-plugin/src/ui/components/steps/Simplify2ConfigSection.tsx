@@ -2,18 +2,19 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  FormControl,
+  FormControlLabel,
   Grid,
+  Radio,
+  RadioGroup,
   Stack,
   Typography,
   Paper,
-  ToggleButton,
-  ToggleButtonGroup,
   Tooltip,
 } from '@mui/material';
 import {
   Tune as TuneIcon,
   ExpandMore as ExpandMoreIcon,
-  FilterAlt,
   InfoOutlined as InfoOutlinedIcon,
 } from '@mui/icons-material';
 import type { BatchConfig, ShapeEntity } from '../../../common/types/index.js';
@@ -116,30 +117,36 @@ export const Simplify2ConfigSection: React.FC<Props> = ({ config, draft, disable
                       'Choose how geometry is simplified during tile preprocessing.',
                     )}
                   </Typography>
-                  <ToggleButtonGroup
-                    value={simplificationMode}
-                    exclusive
-                    size="small"
-                    onChange={(_, nextValue) => {
-                      if (!nextValue) return;
-                      update({
-                        simplify2Config: {
-                          ...baseSimplify2Config,
-                          simplificationMode: nextValue as typeof simplificationMode,
-                        },
-                      });
-                    }}
-                  >
-                    <ToggleButton value="off">
-                      {t('processing.simplify2.simplificationModeOff', 'Off')}
-                    </ToggleButton>
-                    <ToggleButton value="topojson">
-                      {t('processing.simplify2.simplificationModeTopo', 'TopoJSON')}
-                    </ToggleButton>
-                    <ToggleButton value="geojson">
-                      {t('processing.simplify2.simplificationModeGeo', 'GeoJSON')}
-                    </ToggleButton>
-                  </ToggleButtonGroup>
+                  <FormControl>
+                    <RadioGroup
+                      value={simplificationMode}
+                      onChange={(event) => {
+                        const nextValue = event.target.value;
+                        update({
+                          simplify2Config: {
+                            ...baseSimplify2Config,
+                            simplificationMode: nextValue as typeof simplificationMode,
+                          },
+                        });
+                      }}
+                    >
+                      <FormControlLabel
+                        value="off"
+                        control={<Radio size="small" />}
+                        label={t('processing.simplify2.simplificationModeOff', 'Off')}
+                      />
+                      <FormControlLabel
+                        value="topojson"
+                        control={<Radio size="small" />}
+                        label={t('processing.simplify2.simplificationModeTopo', 'TopoJSON')}
+                      />
+                      <FormControlLabel
+                        value="geojson"
+                        control={<Radio size="small" />}
+                        label={t('processing.simplify2.simplificationModeGeo', 'GeoJSON')}
+                      />
+                    </RadioGroup>
+                  </FormControl>
                 </Stack>
               </Paper>
             </Grid>

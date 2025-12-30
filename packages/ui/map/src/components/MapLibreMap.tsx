@@ -71,6 +71,8 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
                                                           mapOptions = defaultMapOptions,
                                                           controls,
                                                           identifyFeatureOnClick,
+                                                          showTileBoundaries,
+                                                          showTileCoordinates,
                                                         }) => {
   const mapRef = useRef<MapLibreMapInstance | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -83,7 +85,7 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
     radius: DEFAULT_IDENTIFY_RADIUS,
   }), []);
 
-  const handleMapLoad = useCallback((e: any) => {
+  const handleMapLoad = useCallback((e: {target: MapLibreMapInstance}) => {
     const map = e.target;
     mapRef.current = map;
     if (controls) {
@@ -113,8 +115,8 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
   }, [onLoad, controls]);
 
   const handleMove = useCallback(
-    (event: any) => {
-      const { longitude, latitude, zoom, bearing, pitch } = event.viewState as MapViewState;
+    (event: { viewState: MapViewState}) => {
+      const { longitude, latitude, zoom, bearing, pitch } = event.viewState;
       const nextState: MapViewState = { longitude, latitude, zoom, bearing, pitch };
       onMove?.(nextState);
       onViewStateChange?.(nextState);
@@ -123,8 +125,8 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
   );
 
   const handleMoveEnd = useCallback(
-    (event: any) => {
-      const { longitude, latitude, zoom, bearing, pitch } = event.viewState as MapViewState;
+    (event: { viewState: MapViewState}) => {
+      const { longitude, latitude, zoom, bearing, pitch } = event.viewState;
       const nextState: MapViewState = { longitude, latitude, zoom, bearing, pitch };
       onMoveEnd?.(nextState);
     },
@@ -132,8 +134,8 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
   );
 
   const handleMapClick = useCallback(
-    (event: any) => {
-      const mapEvent = event as MapClickEvent;
+    (event: MapClickEvent) => {
+      const mapEvent = event;
       const effectiveIdentifyConfig: MapFeatureIdentifyConfig = identifyFeatureOnClick ?? defaultIdentifyConfig;
 
       const baseResult = resolveIdentifyCandidates(mapRef.current, mapEvent, effectiveIdentifyConfig);
@@ -188,7 +190,7 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
   const resolvedMapStyle = (mapStyleObject ?? mapStyleUrl ?? defaultMapStyleUrl) as React.ComponentProps<typeof ReactMapLibreMap>['mapStyle'];
 
   return (
-    <div style={containerStyle as any}>
+    <div style={containerStyle}>
       <MapProvider>
         <ReactMapLibreMap
           style={mapStyleForMapLibre}
@@ -207,6 +209,8 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
           touchZoomRotate={mapOptions.touchZoomRotate}
           minZoom={mapOptions.minZoom}
           maxZoom={mapOptions.maxZoom}
+          showTileBoundaries={showTileBoundaries}
+          showTileCoordinates={showTileCoordinates}
         >
           {mapLoaded && children}
         </ReactMapLibreMap>

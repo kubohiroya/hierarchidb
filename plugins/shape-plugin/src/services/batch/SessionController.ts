@@ -24,15 +24,36 @@ import type { DownloadTask } from '../../common/types/index.js';
 import { isShapePreviewMetadataEnabled } from '../../common/config/previewFlags.js';
 import { shapeDB, type BatchTaskRecord, type VectorTileRecord } from '../database/ShapeDB.js';
 import { getEphemeralShapeDB } from '../database/EphemeralShapeDB.js';
-import { getShapeTileMetadataDB } from '../database/ShapeTileMetadataDB.js';
+import { getShapeTileMetadataDB, type ShapeSourceMetadataRow } from '../database/ShapeTileMetadataDB.js';
 import type { DownloadStageOutput } from './strategies/DownloadStageStrategy.js';
 import { resolveDownloadStageStrategy } from './strategies/resolveDownloadStageStrategy.js';
 import { geojson as geojsonApi } from 'flatgeobuf';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import { bbox as turfBbox, area as turfArea } from '@turf/turf';
 import { TilesDB } from '@hierarchidb/gis-sdk';
+import { VectorTile } from '@mapbox/vector-tile';
+import Pbf from 'pbf';
+import { HDB_ORIGIN_KEY } from './utils/featureIds.js';
 
 type WorkerPoolStatistics = Record<string, number>;
+
+type GeometryStatsSummary = {
+  vertexCount: number;
+  polygonCount: number;
+  bbox?: [number, number, number, number];
+};
+
+type OriginMetadata = {
+  originKey: string;
+  originLabel: string;
+  inputBufferId: string;
+  dataSource?: string;
+  countryName?: string;
+  countryCode?: string;
+  adminLevel?: number;
+  featureGroupId?: string;
+  featureLabel?: string;
+};
 
 const isSkippedMessage = (message?: string | null): boolean => {
   if (!message) return false;
@@ -81,6 +102,8 @@ export class SessionController {
     skippedSerialization: number;
     skippedSize: number;
   };
+  private originMetadataByKey = new Map<string, OriginMetadata>();
+  private originMetadataByBuffer = new Map<string, OriginMetadata>();
 
   constructor(
     nodeId: NodeId,
@@ -554,6 +577,22 @@ export class SessionController {
       downloadTasks: tasks,
     });
     const expandedOutputs = await this.expandOutputsForFeatureGroups(postprocess.outputs);
+    if (isShapePreviewMetadataEnabled()) {
+      const originEntries = this.indexOriginMetadata(expandedOutputs);
+      await this.updateSourceMetadataBase(originEntries);
+      const db = getEphemeralShapeDB();
+      const rawStatsByOrigin = new Map<string, GeometryStatsSummary>();
+      for (const entry of originEntries) {
+        const raw = await db.rawBuffers.get(entry.inputBufferId);
+        if (!raw) continue;
+        const stats = await this.summarizeBufferStats(raw.data);
+        const existing = rawStatsByOrigin.get(entry.originKey) ?? { vertexCount: 0, polygonCount: 0 };
+        rawStatsByOrigin.set(entry.originKey, this.accumulateStats(existing, stats));
+      }
+      await this.updateSourceMetadataStage('raw', rawStatsByOrigin);
+    } else {
+      this.indexOriginMetadata(expandedOutputs);
+    }
     this.simplify1Tasks = this.buildSimplify1Tasks(expandedOutputs);
   }
 
@@ -565,6 +604,7 @@ export class SessionController {
     const minArea = simplifyConfig?.featureAreaThreshold ?? 0;
 
     return outputs.map((output, index) => {
+      const origin = this.originMetadataByBuffer.get(output.inputBufferId) ?? this.buildOriginMetadata(output);
       const featureLabel = output.featureLabel ?? output.featureGroupId;
       const featureId = featureLabel
         ?? output.featureGroupId
@@ -596,6 +636,8 @@ export class SessionController {
           featureLabel,
           featureIndex: output.featureIndex,
           featureCount: output.featureCount,
+          originKey: origin.originKey,
+          originLabel: origin.originLabel,
         },
         config: {
           sourceUrl: output.sourceUrl,
@@ -603,12 +645,15 @@ export class SessionController {
           featureLabel,
           featureGroupId: output.featureGroupId,
           featureIndex: output.featureIndex,
+          originKey: origin.originKey,
+          originLabel: origin.originLabel,
           countryCode: output.countryCode,
           adminLevel: output.adminLevel,
           algorithm: 'douglas-peucker',
           tolerance: simplifyTolerance,
           preserveTopology: true,
           minimumArea: minArea,
+          enableFeatureFiltering: simplifyConfig?.enableFeatureFiltering ?? true,
           featureFilterMethod: simplifyConfig?.featureFilterMethod,
           minVertexCountForAreaFilter: simplifyConfig?.minVertexCountForAreaFilter,
           aspectRatioThreshold: simplifyConfig?.aspectRatioThreshold,
@@ -673,6 +718,21 @@ export class SessionController {
     console.log(
       `[Session ${this.nodeId}] Simplify1 stage completed: ${baseCompleted + r.processed}/${total} successful`,
     );
+    if (isShapePreviewMetadataEnabled()) {
+      const db = getEphemeralShapeDB();
+      const statsByOrigin = new Map<string, GeometryStatsSummary>();
+      for (const task of this.simplify1Tasks) {
+        const originKey = this.getOriginKeyFromTask(task);
+        if (!originKey) continue;
+        const bufferId = `${this.nodeId}-simplify1-${task.index ?? 0}`;
+        const buffer = await db.simplifiedBuffers.get(bufferId);
+        if (!buffer) continue;
+        const stats = await this.summarizeBufferStats(buffer.data);
+        const existing = statsByOrigin.get(originKey) ?? { vertexCount: 0, polygonCount: 0 };
+        statsByOrigin.set(originKey, this.accumulateStats(existing, stats));
+      }
+      await this.updateSourceMetadataStage('simplify1', statsByOrigin);
+    }
   }
 
   /**
@@ -685,48 +745,55 @@ export class SessionController {
     const zoomLevels = this.resolveZoomLevels();
     const tileSize = this.config.vectorTiles?.tileSize ?? this.config.tileSize ?? 512;
     const simplify2Config = this.config.simplify2;
-    const simplificationMode = simplify2Config?.simplificationMode ?? 'topojson';
+    const simplificationMode = 'topojson';
     const retry = this.simplify2RetryOverride ?? 0;
 
-    const tasks: Simplify2Task[] = this.simplify1Tasks.map((task, index) => ({
-      taskId: this.buildProcessingTaskId('simplify2', this.resolveTaskIdDetails(task)),
-      nodeId: this.nodeId,
-      taskType: 'simplify2',
-      stage: BatchTaskStage.WAIT,
-      type: 'simplify2',
-      status: 'waiting',
-      index,
-      progress: 0,
-      inputBufferId: `${this.nodeId}-simplify1-${index}`,
-      zoomLevels,
-      tileSize,
-      countryCode: task.countryCode,
-      adminLevel: task.adminLevel,
-      metadata: task.metadata,
-      config: {
-        sourceTaskId: task.taskId,
-        sourceUrl: task.config?.sourceUrl,
-        featureId: task.config?.featureId ?? `${task.countryCode ?? 'UNK'}:ADM${task.adminLevel ?? 'X'}`,
-        featureLabel: task.config?.featureLabel,
-        featureGroupId: task.config?.featureGroupId,
-        featureIndex: task.config?.featureIndex,
+    const tasks: Simplify2Task[] = this.simplify1Tasks.map((task, index) => {
+      const originKey = this.getOriginKeyFromTask(task);
+      const metadata = task.metadata ?? {};
+      const originLabel = typeof metadata.originLabel === 'string' ? metadata.originLabel : undefined;
+      return ({
+        taskId: this.buildProcessingTaskId('simplify2', this.resolveTaskIdDetails(task)),
+        nodeId: this.nodeId,
+        taskType: 'simplify2',
+        stage: BatchTaskStage.WAIT,
+        type: 'simplify2',
+        status: 'waiting',
+        index,
+        progress: 0,
+        inputBufferId: `${this.nodeId}-simplify1-${index}`,
+        zoomLevels,
+        tileSize,
         countryCode: task.countryCode,
         adminLevel: task.adminLevel,
-        zoomLevel: zoomLevels[0] ?? 10,
-        tileSize,
-        preserveSharedBoundaries: simplificationMode === 'topojson',
-        simplificationMode,
-        quantize: simplify2Config?.quantize,
-        algorithm: 'douglas-peucker',
-        tolerance: simplify2Config?.tolerance,
-        minimumArea: simplify2Config?.simplify,
-        preserveTopology: true,
-        maxVertices: undefined,
-        coordinatePrecision: 6,
-        enablePerFeatureSimplification: simplify2Config?.enablePerFeatureSimplification,
-        retry: retry > 0 ? retry : undefined,
-      },
-    }));
+        metadata: task.metadata,
+        config: {
+          sourceTaskId: task.taskId,
+          sourceUrl: task.config?.sourceUrl,
+          featureId: task.config?.featureId ?? `${task.countryCode ?? 'UNK'}:ADM${task.adminLevel ?? 'X'}`,
+          featureLabel: task.config?.featureLabel,
+          featureGroupId: task.config?.featureGroupId,
+          featureIndex: task.config?.featureIndex,
+          originKey,
+          originLabel,
+          countryCode: task.countryCode,
+          adminLevel: task.adminLevel,
+          zoomLevel: zoomLevels[0] ?? 10,
+          tileSize,
+          preserveSharedBoundaries: simplificationMode === 'topojson',
+          simplificationMode,
+          quantize: simplify2Config?.quantize,
+          algorithm: 'douglas-peucker',
+          tolerance: simplify2Config?.tolerance,
+          minimumArea: simplify2Config?.simplify,
+          preserveTopology: true,
+          maxVertices: undefined,
+          coordinatePrecision: 6,
+          enablePerFeatureSimplification: simplify2Config?.enablePerFeatureSimplification,
+          retry: retry > 0 ? retry : undefined,
+        },
+      });
+    });
     this.simplify2Tasks = tasks;
     if (tasks.length === 0) {
       console.warn(`[Session ${this.nodeId}] No simplify2 tasks to process`);
@@ -792,6 +859,21 @@ export class SessionController {
     console.log(
       `[Session ${this.nodeId}] Simplify2 stage completed: ${baseCompleted + r.processed}/${total} successful`,
     );
+    if (isShapePreviewMetadataEnabled()) {
+      const db = getEphemeralShapeDB();
+      const statsByOrigin = new Map<string, GeometryStatsSummary>();
+      for (const task of this.simplify2Tasks) {
+        const originKey = this.getOriginKeyFromTask(task);
+        if (!originKey) continue;
+        const bufferId = `${this.nodeId}-simplify2-${task.index ?? 0}`;
+        const buffer = await db.simplifiedBuffers.get(bufferId);
+        if (!buffer) continue;
+        const stats = await this.summarizeBufferStats(buffer.data);
+        const existing = statsByOrigin.get(originKey) ?? { vertexCount: 0, polygonCount: 0 };
+        statsByOrigin.set(originKey, this.accumulateStats(existing, stats));
+      }
+      await this.updateSourceMetadataStage('simplify2', statsByOrigin);
+    }
   }
 
   private buildTileCoordinates(
@@ -924,6 +1006,202 @@ export class SessionController {
       bbox,
       area,
     };
+  }
+
+  private buildOriginMetadata(output: DownloadStageOutput): OriginMetadata {
+    const dataSource = output.dataSource ?? this.resolveDataSource();
+    const countryCode = output.countryCode?.trim().toUpperCase();
+    const adminLevel = output.adminLevel;
+    const groupId = output.featureGroupId ?? output.featureLabel ?? output.inputBufferId;
+    const levelLabel = adminLevel != null ? `ADM${adminLevel}` : undefined;
+    const originLabel = output.featureLabel
+      ?? output.featureGroupId
+      ?? [output.countryName ?? countryCode ?? 'Unknown', levelLabel].filter(Boolean).join(' ');
+    const originKeyParts = [
+      dataSource ?? 'unknown',
+      countryCode ?? 'unknown',
+      levelLabel ?? 'ADM?',
+      groupId,
+    ];
+    return {
+      originKey: originKeyParts.join('|'),
+      originLabel,
+      inputBufferId: output.inputBufferId,
+      dataSource,
+      countryName: output.countryName,
+      countryCode,
+      adminLevel,
+      featureGroupId: output.featureGroupId,
+      featureLabel: output.featureLabel,
+    };
+  }
+
+  private indexOriginMetadata(outputs: DownloadStageOutput[]): OriginMetadata[] {
+    const entries = outputs.map((output) => this.buildOriginMetadata(output));
+    this.originMetadataByKey = new Map(entries.map((entry) => [entry.originKey, entry]));
+    this.originMetadataByBuffer = new Map(entries.map((entry) => [entry.inputBufferId, entry]));
+    return entries;
+  }
+
+  private getOriginKeyFromTask(task: { config?: { originKey?: string }; metadata?: Record<string, unknown> }): string | undefined {
+    if (task.config?.originKey) return task.config.originKey;
+    const metadata = task.metadata ?? {};
+    return typeof metadata.originKey === 'string' ? metadata.originKey : undefined;
+  }
+
+  private accumulateStats(target: GeometryStatsSummary, next: GeometryStatsSummary): GeometryStatsSummary {
+    const vertexCount = target.vertexCount + next.vertexCount;
+    const polygonCount = target.polygonCount + next.polygonCount;
+    let bbox = target.bbox;
+    if (next.bbox) {
+      if (!bbox) {
+        bbox = next.bbox;
+      } else {
+        bbox = [
+          Math.min(bbox[0], next.bbox[0]),
+          Math.min(bbox[1], next.bbox[1]),
+          Math.max(bbox[2], next.bbox[2]),
+          Math.max(bbox[3], next.bbox[3]),
+        ];
+      }
+    }
+    return { vertexCount, polygonCount, bbox };
+  }
+
+  private async summarizeBufferStats(buffer: ArrayBuffer): Promise<GeometryStatsSummary> {
+    const collection = await this.decodeFeatureCollection(buffer);
+    if (!collection || collection.features.length === 0) {
+      return { vertexCount: 0, polygonCount: 0 };
+    }
+    let summary: GeometryStatsSummary = { vertexCount: 0, polygonCount: 0 };
+    for (const feature of collection.features) {
+      if (!feature) continue;
+      const stats = this.extractGeometryStats(feature);
+      summary = this.accumulateStats(summary, {
+        vertexCount: stats.vertexCount,
+        polygonCount: stats.polygonCount,
+        bbox: stats.bbox,
+      });
+    }
+    return summary;
+  }
+
+  private async updateSourceMetadataBase(entries: OriginMetadata[]): Promise<void> {
+    const db = await getShapeTileMetadataDB();
+    const nodeKey = String(this.nodeId);
+    const existing = await db.sourceMetadata.where('nodeId').equals(nodeKey).toArray();
+    const existingByKey = new Map(existing.map((row) => [row.originKey, row]));
+    const nextKeys = new Set(entries.map((entry) => entry.originKey));
+    const staleIds = existing.filter((row) => !nextKeys.has(row.originKey)).map((row) => row.id);
+    if (staleIds.length > 0) {
+      await db.sourceMetadata.bulkDelete(staleIds);
+    }
+    const now = Date.now();
+    const rows: ShapeSourceMetadataRow[] = entries.map((entry) => {
+      const prior = existingByKey.get(entry.originKey);
+      return {
+        id: prior?.id ?? `${nodeKey}-${entry.originKey}`,
+        nodeId: nodeKey,
+        originKey: entry.originKey,
+        originLabel: entry.originLabel,
+        dataSource: entry.dataSource,
+        countryName: entry.countryName,
+        countryCode: entry.countryCode,
+        adminLevel: entry.adminLevel,
+        featureGroupId: entry.featureGroupId,
+        featureLabel: entry.featureLabel,
+        createdAt: prior?.createdAt ?? now,
+        updatedAt: now,
+        rawVertexCount: prior?.rawVertexCount,
+        rawPolygonCount: prior?.rawPolygonCount,
+        simplify1VertexCount: prior?.simplify1VertexCount,
+        simplify1PolygonCount: prior?.simplify1PolygonCount,
+        simplify2VertexCount: prior?.simplify2VertexCount,
+        simplify2PolygonCount: prior?.simplify2PolygonCount,
+        vectorTileVertexCount: prior?.vectorTileVertexCount,
+        vectorTilePolygonCount: prior?.vectorTilePolygonCount,
+        bbox: prior?.bbox,
+      };
+    });
+    if (rows.length > 0) {
+      await db.sourceMetadata.bulkPut(rows);
+    }
+  }
+
+  private async updateSourceMetadataStage(
+    stage: 'raw' | 'simplify1' | 'simplify2' | 'vectorTile',
+    statsByOrigin: Map<string, GeometryStatsSummary>,
+  ): Promise<void> {
+    if (statsByOrigin.size === 0) return;
+    const db = await getShapeTileMetadataDB();
+    const nodeKey = String(this.nodeId);
+    const existing = await db.sourceMetadata.where('nodeId').equals(nodeKey).toArray();
+    const existingByKey = new Map(existing.map((row) => [row.originKey, row]));
+    const now = Date.now();
+    const rows: ShapeSourceMetadataRow[] = [];
+    for (const [originKey, stats] of statsByOrigin.entries()) {
+      const prior = existingByKey.get(originKey);
+      const base = this.originMetadataByKey.get(originKey);
+      if (!prior && !base) continue;
+      const bbox = (stage === 'raw' || stage === 'simplify2')
+        ? (stats.bbox ?? prior?.bbox)
+        : prior?.bbox;
+      rows.push({
+        id: prior?.id ?? `${nodeKey}-${originKey}`,
+        nodeId: nodeKey,
+        originKey,
+        originLabel: prior?.originLabel ?? base?.originLabel ?? originKey,
+        dataSource: prior?.dataSource ?? base?.dataSource,
+        countryName: prior?.countryName ?? base?.countryName,
+        countryCode: prior?.countryCode ?? base?.countryCode,
+        adminLevel: prior?.adminLevel ?? base?.adminLevel,
+        featureGroupId: prior?.featureGroupId ?? base?.featureGroupId,
+        featureLabel: prior?.featureLabel ?? base?.featureLabel,
+        createdAt: prior?.createdAt ?? now,
+        updatedAt: now,
+        rawVertexCount: stage === 'raw' ? stats.vertexCount : prior?.rawVertexCount,
+        rawPolygonCount: stage === 'raw' ? stats.polygonCount : prior?.rawPolygonCount,
+        simplify1VertexCount: stage === 'simplify1' ? stats.vertexCount : prior?.simplify1VertexCount,
+        simplify1PolygonCount: stage === 'simplify1' ? stats.polygonCount : prior?.simplify1PolygonCount,
+        simplify2VertexCount: stage === 'simplify2' ? stats.vertexCount : prior?.simplify2VertexCount,
+        simplify2PolygonCount: stage === 'simplify2' ? stats.polygonCount : prior?.simplify2PolygonCount,
+        vectorTileVertexCount: stage === 'vectorTile' ? stats.vertexCount : prior?.vectorTileVertexCount,
+        vectorTilePolygonCount: stage === 'vectorTile' ? stats.polygonCount : prior?.vectorTilePolygonCount,
+        bbox,
+      });
+    }
+    if (rows.length > 0) {
+      await db.sourceMetadata.bulkPut(rows);
+    }
+  }
+
+  private async summarizeVectorTilesByOrigin(): Promise<Map<string, GeometryStatsSummary>> {
+    const statsByOrigin = new Map<string, GeometryStatsSummary>();
+    const tilesDb = await TilesDB.getSingleton();
+    const rows = await tilesDb.tiles.where('nodeId').equals(String(this.nodeId)).toArray();
+    for (const row of rows) {
+      const tile = new VectorTile(new Pbf(new Uint8Array(row.data)));
+      for (const layerName of Object.keys(tile.layers)) {
+        const layer = tile.layers[layerName];
+        if (!layer) continue;
+        for (let index = 0; index < layer.length; index += 1) {
+          const feature = layer.feature(index);
+          const geojson = feature.toGeoJSON(row.x, row.y, row.z) as Feature;
+          const properties = (geojson.properties ?? {}) as Record<string, unknown>;
+          const originKey = typeof properties[HDB_ORIGIN_KEY] === 'string'
+            ? String(properties[HDB_ORIGIN_KEY])
+            : undefined;
+          if (!originKey) continue;
+          const stats = this.extractGeometryStats(geojson);
+          const existing = statsByOrigin.get(originKey) ?? { vertexCount: 0, polygonCount: 0 };
+          statsByOrigin.set(originKey, this.accumulateStats(existing, {
+            vertexCount: stats.vertexCount,
+            polygonCount: stats.polygonCount,
+          }));
+        }
+      }
+    }
+    return statsByOrigin;
   }
 
   private buildFeatureId(base: string, index: number, countryCode?: string, adminLevel?: number, adminCode?: string): string {
@@ -1209,6 +1487,10 @@ export class SessionController {
     });
     await this.persistPlaceholderMetadata(false);
     await this.syncVectorTilesToShapeDb();
+    if (isShapePreviewMetadataEnabled()) {
+      const statsByOrigin = await this.summarizeVectorTilesByOrigin();
+      await this.updateSourceMetadataStage('vectorTile', statsByOrigin);
+    }
     this.vectorTileAdapter?.clearFeatureCache?.(String(this.nodeId));
     console.log(
       `[Session ${this.nodeId}] Vector tile stage completed: ${baseCompleted + r.processed}/${total} successful`,
@@ -1288,6 +1570,7 @@ export class SessionController {
     tasks: Array<{ taskId: string; config?: unknown; index?: number }>,
     existingTaskIds?: Set<string>,
   ): Promise<void> {
+    const now = Date.now();
     if (stage === 'vectortile') {
       const existing = await shapeDB.batchTasks
         .where('nodeId')
@@ -1307,6 +1590,8 @@ export class SessionController {
             index: task.index ?? index,
             progress: 0,
             inputData: typeof task.config === 'object' && task.config ? (task.config as Record<string, unknown>) : undefined,
+            createdAt: now,
+            updatedAt: now,
           });
           continue;
         }
@@ -1348,6 +1633,8 @@ export class SessionController {
         index: task.index ?? index,
         progress: 0,
         inputData: typeof task.config === 'object' && task.config ? (task.config as Record<string, unknown>) : undefined,
+        createdAt: now,
+        updatedAt: now,
       }));
     if (newTasks.length > 0) {
       const chunkSize = 50;

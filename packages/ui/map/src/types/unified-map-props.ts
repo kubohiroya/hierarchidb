@@ -175,6 +175,12 @@ interface BaseMapCommonProps extends MapDimensionsProps, MapEventHandlers, MapId
 
   /** Map interaction options */
   mapOptions?: MapInteractionOptions;
+
+  /** Draw debug tile boundaries */
+  showTileBoundaries?: boolean;
+
+  /** Draw debug tile coordinates */
+  showTileCoordinates?: boolean;
 }
 
 export interface UrlBasedBaseMapProps extends BaseMapCommonProps {

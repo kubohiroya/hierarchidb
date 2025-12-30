@@ -138,6 +138,8 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
           basemapStyles={[]}
           vectorLayers={vectorLayers}
           geoJsonLayers={[]}
+          showTileBoundaries
+          showTileCoordinates
           mapOptions={{
             interactive: true,
             scrollZoom: true,

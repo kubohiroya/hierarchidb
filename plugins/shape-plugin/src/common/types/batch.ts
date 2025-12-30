@@ -91,6 +91,8 @@ export interface SimplifyTaskConfig {
   featureLabel?: string;
   featureGroupId?: string;
   featureIndex?: number;
+  originKey?: string;
+  originLabel?: string;
   tolerance?: number;
   minimumArea?: number;
   zoomLevels?: number[];
@@ -100,6 +102,7 @@ export interface SimplifyTaskConfig {
   minVertexCountForAreaFilter?: number;
   aspectRatioThreshold?: number;
   hybridFilterConfig?: HybridFilterConfig;
+  enableFeatureFiltering?: boolean;
   enablePerFeatureSimplification?: boolean;
   preserveSharedBoundaries?: boolean;
   simplificationMode?: Simplify2SimplificationMode;

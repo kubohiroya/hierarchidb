@@ -30,9 +30,34 @@ export interface FeatureMetadataRow {
   area: number;
 }
 
+export interface SourceMetadataRow {
+  id: string;
+  nodeId: string;
+  originKey: string;
+  originLabel: string;
+  dataSource?: string;
+  countryName?: string;
+  countryCode?: string;
+  adminLevel?: number;
+  featureGroupId?: string;
+  featureLabel?: string;
+  createdAt: number;
+  updatedAt: number;
+  rawVertexCount?: number;
+  rawPolygonCount?: number;
+  simplify1VertexCount?: number;
+  simplify1PolygonCount?: number;
+  simplify2VertexCount?: number;
+  simplify2PolygonCount?: number;
+  vectorTileVertexCount?: number;
+  vectorTilePolygonCount?: number;
+  bbox?: [number, number, number, number];
+}
+
 export class TilesDB extends Dexie {
   tiles!: Table<TileRow, string>;
   featureMetadata!: Table<FeatureMetadataRow, string>;
+  sourceMetadata!: Table<SourceMetadataRow, string>;
 
   static async getSingleton(): Promise<TilesDB> {
     return SingletonMixin.getSingleton('TilesDB', async () => {
@@ -57,7 +82,15 @@ export class TilesDB extends Dexie {
       featureMetadata:
         '&id, nodeId, featureId, countryCode, adminLevel, adminCode, dataSource, createdAt',
     });
+    this.version(4).stores({
+      tiles: '&key, nodeId, [nodeId+z+x+y], z, x, y, timestamp',
+      featureMetadata:
+        '&id, nodeId, featureId, countryCode, adminLevel, adminCode, dataSource, createdAt',
+      sourceMetadata:
+        '&id, nodeId, originKey, dataSource, countryCode, adminLevel, createdAt, updatedAt',
+    });
     this.tiles = this.table('tiles');
     this.featureMetadata = this.table('featureMetadata');
+    this.sourceMetadata = this.table('sourceMetadata');
   }
 }
