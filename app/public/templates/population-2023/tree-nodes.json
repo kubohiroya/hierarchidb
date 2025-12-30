@@ -1437,13 +1437,6 @@
             },
             "filters": [
               {
-                "id": "dd8a2b5a-967d-494f-9c8e-bcf43155122d",
-                "column": "Year",
-                "operation": "equals",
-                "value": "2023",
-                "enabled": true
-              },
-              {
                 "id": "cell-dd8a2b5a-967d-494f-9c8e-bcf43155122d",
                 "column": "Year",
                 "operation": "equals",

@@ -53,6 +53,25 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+2010) styler-plugin: Step4 の対象プロパティ選択をカード式に変更し、値の種類を自動判定（P1）
+- ブランチ: `feat/styler-plugin/step4-property-cards`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/styler-plugin/src/ui/**`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] 対象プロパティがアイコン＋説明付きの択一ボタンで選択できる
+  - [ ] 「値の種類」の選択UIが廃止され、対象プロパティから自動判定される
+  - [ ] `*Color` は色、`Opacity`/`Radius`/`Width` は数値として内部判定される
+  - [ ] 数値のときのみ最小値/最大値の入力が有効化される
+  - [ ] 最小値 0.0 / 最大値 10.0 / デフォルト 5.0 が設定される
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] Step4 の対象プロパティ UI をカード式選択に置き換える
+  - [ ] 値の種類の選択UIを削除する
+  - [ ] 自動判定ロジックと数値入力の活性制御を実装する
+  - [ ] デフォルト値を設定する
+- ロールバック手順：`plugins/styler-plugin/src/ui/**` と `TASKS.md` の差分を revert する
+- 運用ログ：
+  - start: 2025-12-31 10:00 JST Step4 の対象プロパティ選択UIと値種別自動判定の対応に着手。
+
 2009) shape-plugin: Extract1/2 task の tolerance/minArea/zoomLevels/tileSize 重複保持の是非調査（P2）
 - ブランチ: `investigation/shape-plugin/extract-task-field-redundancy`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `plugins/shape-plugin/src/common/types/batch.ts`, `plugins/shape-plugin/src/services/**`, `TASKS.md`
@@ -881,6 +900,7 @@
   - progress: 2025-12-29 12:59 JST location/route/shape プレビューでトグルUIとフィルタ適用が残っていることを再確認し、巻き戻りは未検出。
   - progress: 2025-12-29 13:03 JST location/route/shape のプレビュー依存を `@hierarchidb/ui-map` に揃え、peer/dev 依存へ追加。
   - progress: 2025-12-29 13:10 JST /map 参照の DB/クラス/テーブル/API 命名を統一するための ExecPlan 作成に着手。
+  - progress: 2025-12-30 20:32 JST LocationMapPreviewStep/RoutePreviewStep の MapToggleCard/selection 実装を再確認し、巻き戻りは未検出。
 
 1966) map 参照DB/クラス/テーブル/APIの命名統一（P1）
 - ブランチ: `refactor/map/db-naming-unify`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -904,6 +924,8 @@
   - progress: 2025-12-30 19:44 JST 既存の DB 名/クラス/テーブルの差分（location: location-ephemeral + groupEntities, route: route-db + TilesDB）を棚卸し。
   - progress: 2025-12-30 19:53 JST lifecycle の処理対象を groupEntities から features/vectorTiles へ移行する方針を追加。
   - progress: 2025-12-30 20:21 JST 命名統一の実装継続と巻き戻り懸念の再確認に着手。
+  - progress: 2025-12-30 20:26 JST modeless/RouteProcessingStep の DB 参照を RouteDB/features と LocationDB に統一し、PluginLifecycleAPI の削除カウントを features/relations/vectorTiles へ更新。
+  - command: 2025-12-30 20:28 JST `pnpm tools:gen-plugin-registry` — exit 0（Warning: tsdown define 設定の Invalid input options 警告 / entry path validation warnings: basemap, folder, resolver, styler, timeline の worker export 欠落）。
 
 1957) shape-plugin: stage5 タイル生成で task failed が出る原因調査/修正（P1）
 - ブランチ: `fix/shape-plugin/stage5-tile-task-failed`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -14837,6 +14859,8 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
 - 2025-12-30 20:21 start: refactor/map/db-naming-unify — 命名統一の実装継続と巻き戻り懸念の再確認に着手。DoD: Kanban 1966 のとおり。
+- 2025-12-30 20:26 progress: refactor/map/db-naming-unify — modeless/RouteProcessingStep の DB 参照を RouteDB/features と LocationDB に統一し、PluginLifecycleAPI の削除カウントを features/relations/vectorTiles へ更新。
+- 2025-12-30 20:28 command: pnpm tools:gen-plugin-registry — exit 0（Warning: tsdown define の Invalid input options / entry path validation warnings: basemap, folder, resolver, styler, timeline の worker export 欠落）。
 - 2025-12-29 14:41 start: fix/location/ide-gsm-selection-bootstrap — IDE-GSM CSV 選択後に国/選択状態が生成されず Step3 へ進めない問題の修正に着手。DoD: Kanban 記載どおり CSV 反映/運用ログ記載。（Kanban: 1862）
 - 2025-12-29 14:43 progress: fix/location/ide-gsm-selection-bootstrap — IDE-GSM CSV 選択時に parseIdeGsmCsv を実行し、国×種別の選択状態を selectedArrayByCountries に反映する処理を追加。
 - 2025-12-29 14:43 done: fix/location/ide-gsm-selection-bootstrap — 変更完了。検証: 未実施（既存エラーが多く個別 typecheck 未実行）。ロールバック: `plugins/location-plugin/src/ui/components/steps/LocationDataSourceStep.tsx` の差分を revert し、必要なら `pnpm --filter @hierarchidb/location-plugin typecheck` を再実行する。
