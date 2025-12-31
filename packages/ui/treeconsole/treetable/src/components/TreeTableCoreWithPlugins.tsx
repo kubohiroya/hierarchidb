@@ -10,25 +10,10 @@ import type { TreeTableCoreProps } from '../types.js';
 import type { PluginEvent, TreeTablePlugin, TreeTablePluginConfig } from '../plugin/types.js';
 
 export interface TreeTableCorePropsWithPlugins extends TreeTableCoreProps {
-  /**
-            */
   plugins?: TreeTablePlugin[];
-
-  /**
-            */
   pluginConfig?: TreeTablePluginConfig;
-
-  /**
-            */
   onPluginEvent?: (event: PluginEvent) => void;
-
-  /**
-      * : false
-      */
   enablePlugins?: boolean;
-
-  /**
-            */
   debugPlugins?: boolean;
 }
 
