@@ -11,7 +11,16 @@ import {
   type StylerValueType,
 } from '../../common/types/StylerEntity.ts';
 import { useTranslation } from 'react-i18next';
-import { Box, FormControl, FormHelperText, Radio, Stack, TextField, Typography } from '@mui/material';
+import {
+  Box,
+  FormControl,
+  FormControlLabel,
+  FormHelperText,
+  Radio,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
 
 type TargetOption = {
   id: string;
@@ -302,17 +311,22 @@ export const StylerTargetStep: React.FC<
                       py: 1,
                     }}
                   >
-                    <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
-                      <Radio
-                        size="small"
-                        checked={selected}
-                        onChange={() => handleTargetSelect(option, section.id)}
-                        value={option.property}
-                      />
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {t(option.labelKey, option.defaultLabel)}
-                      </Typography>
-                    </Stack>
+                    <FormControlLabel
+                      control={
+                        <Radio
+                          size="small"
+                          checked={selected}
+                          onChange={() => handleTargetSelect(option, section.id)}
+                          value={option.property}
+                        />
+                      }
+                      label={
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          {t(option.labelKey, option.defaultLabel)}
+                        </Typography>
+                      }
+                      sx={{ minWidth: 0, m: 0, alignItems: 'center', gap: 1 }}
+                    />
                     {option.hasRange && !rangeDisabled && (
                       <Stack direction="row" spacing={1} alignItems="center">
                         <TextField
