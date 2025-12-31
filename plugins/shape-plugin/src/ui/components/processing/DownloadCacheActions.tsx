@@ -1,10 +1,10 @@
 import { Button, Grid, Stack, Typography } from '@mui/material';
 import {
   CloudDownload as CloudDownloadIcon,
-  FilterAlt as FilterAltIcon,
-  Filter as FilterIcon,
-  Layers as LayersIcon,
   Description as DescriptionIcon,
+  Filter as FilterIcon,
+  FilterAlt as FilterAltIcon,
+  Layers as LayersIcon,
 } from '@mui/icons-material';
 import { useTranslation } from '../../i18n.js';
 
@@ -25,27 +25,27 @@ type Props = {
 };
 
 export const DownloadCacheActions: React.FC<Props> = ({
-  deleteLabel,
-  countsLoading = false,
-  canDeleteRaw,
-  canDeleteStage1,
-  canDeleteStage2,
-  canDeleteTiles,
-  canDeleteMetadata,
-  resetDisabled,
-  onDeleteRaw,
-  onDeleteStage,
-  onDeleteTiles,
-  onDeleteMetadata,
-  onResetDefaults,
-}) => {
+                                                        deleteLabel,
+                                                        countsLoading = false,
+                                                        canDeleteRaw,
+                                                        canDeleteStage1,
+                                                        canDeleteStage2,
+                                                        canDeleteTiles,
+                                                        canDeleteMetadata,
+                                                        resetDisabled,
+                                                        onDeleteRaw,
+                                                        onDeleteStage,
+                                                        onDeleteTiles,
+                                                        onDeleteMetadata,
+                                                        onResetDefaults,
+                                                      }) => {
   const { t } = useTranslation();
   const rawDisabled = countsLoading || !canDeleteRaw;
 
   return (
-    <Grid container spacing={1} sx={{ width: '100%' }}>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Stack spacing={0.5}>
+    <>
+      <Grid container spacing={1} sx={{ width: '100%' }}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <Button
             fullWidth
             variant="outlined"
@@ -61,74 +61,77 @@ export const DownloadCacheActions: React.FC<Props> = ({
               {deleteLabel}
             </Typography>
           </Button>
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ visibility: countsLoading ? 'visible' : 'hidden' }}
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6 }}>
+          <Button
+            fullWidth
+            variant="outlined"
+            color="error"
+            startIcon={<FilterAltIcon />}
+            disabled={!canDeleteStage1}
+            onClick={() => onDeleteStage('extract1')}
           >
-            {t('processing.download.deleteLoadingHint', 'Loading delete counts...')}
-          </Typography>
-        </Stack>
+            {t('processing.download.deleteStage1Cache', 'Delete Stage1 Cache')}
+          </Button>
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6 }}>
+          <Button
+            fullWidth
+            variant="outlined"
+            color="error"
+            startIcon={<FilterIcon />}
+            disabled={!canDeleteStage2}
+            onClick={() => onDeleteStage('extract2')}
+          >
+            {t('processing.download.deleteStage2Cache', 'Delete Stage2 Cache')}
+          </Button>
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6 }}>
+          <Button
+            fullWidth
+            variant="outlined"
+            color="error"
+            startIcon={<LayersIcon />}
+            disabled={!canDeleteTiles}
+            onClick={onDeleteTiles}
+          >
+            {t('processing.download.deleteTiles', 'Delete Tiles')}
+          </Button>
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6 }}>
+          <Button
+            fullWidth
+            variant="outlined"
+            color="error"
+            startIcon={<DescriptionIcon />}
+            disabled={!canDeleteMetadata}
+            onClick={onDeleteMetadata}
+          >
+            {t('processing.download.deleteMetadata', 'Delete Metadata')}
+          </Button>
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6 }}>
+          <Button
+            fullWidth
+            variant="outlined"
+            color="warning"
+            disabled={resetDisabled}
+            onClick={onResetDefaults}
+          >
+            {t('processing.download.resetDefaultsAction', 'Reset to defaults')}
+          </Button>
+        </Grid>
       </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Button
-          fullWidth
-          variant="outlined"
-          color="error"
-          startIcon={<FilterAltIcon />}
-          disabled={!canDeleteStage1}
-          onClick={() => onDeleteStage('extract1')}
+      <Stack spacing={0.5}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ visibility: countsLoading ? 'visible' : 'hidden' }}
         >
-          {t('processing.download.deleteStage1Cache', 'Delete Stage1 Cache')}
-        </Button>
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Button
-          fullWidth
-          variant="outlined"
-          color="error"
-          startIcon={<FilterIcon />}
-          disabled={!canDeleteStage2}
-          onClick={() => onDeleteStage('extract2')}
-        >
-          {t('processing.download.deleteStage2Cache', 'Delete Stage2 Cache')}
-        </Button>
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Button
-          fullWidth
-          variant="outlined"
-          color="error"
-          startIcon={<LayersIcon />}
-          disabled={!canDeleteTiles}
-          onClick={onDeleteTiles}
-        >
-          {t('processing.download.deleteTiles', 'Delete Tiles')}
-        </Button>
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Button
-          fullWidth
-          variant="outlined"
-          color="error"
-          startIcon={<DescriptionIcon />}
-          disabled={!canDeleteMetadata}
-          onClick={onDeleteMetadata}
-        >
-          {t('processing.download.deleteMetadata', 'Delete Metadata')}
-        </Button>
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <Button
-          fullWidth
-          variant="outlined"
-          color="warning"
-          disabled={resetDisabled}
-          onClick={onResetDefaults}
-        >
-          {t('processing.download.resetDefaultsAction', 'Reset to defaults')}
-        </Button>
-      </Grid>
-    </Grid>
+          {t('processing.download.deleteLoadingHint', 'Loading delete counts...')}
+        </Typography>
+
+      </Stack>
+    </>
   );
 };
