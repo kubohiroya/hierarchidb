@@ -420,7 +420,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
 
           // Listen for localStorage events as backup communication method
           const handleStorageEvent = (event: StorageEvent) => {
-            if (event.key === 'auth_popup_success' || event.key === 'auth_popup_success_final') {
+            if (event.key === 'auth_popup_success' ? true : event.key === 'auth_popup_success_final') {
               cleanupPopupListeners();
               setIsAuthenticating(false);
                 if (!popup.closed) {
@@ -843,11 +843,13 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
 
   // Token expiration monitoring
   React.useEffect(() => {
-    if (!user || !user.expires_at) return;
+    const currentUser = user;
+    if (currentUser == null) return;
+    if (currentUser.expires_at == null) return;
 
     const checkTokenExpiry = () => {
       const now = Date.now();
-      const expiresAt = user.expires_at;
+      const expiresAt = currentUser.expires_at;
       const expiresIn = Math.floor((expiresAt - now) / 1000); // Convert to seconds
 
       if (expiresIn < 0) {
@@ -874,7 +876,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
     () => ({
       user,
       isAuthenticated: !!user,
-      isLoading: isLoading || isAuthenticating,
+      isLoading: isLoading ? true : isAuthenticating,
       signIn,
       signOut,
       getAccessToken,

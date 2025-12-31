@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
 import * as UIIcon from '@hierarchidb/ui-icon';
-import {
-  type PluginPresentationDefinition,
-  type PluginPresentation,
-  type PluginPresentationIconConfig,
-  type PluginPresentationManifest,
+import type {
+  PluginPresentationDefinition,
+  PluginPresentation,
+  PluginPresentationIconConfig,
+  PluginPresentationManifest,
 } from './types.js';
 
 const ICON_NAME_NORMALIZATION_MAP: Record<string, string> = {
