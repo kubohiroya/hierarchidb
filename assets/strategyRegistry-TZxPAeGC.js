@@ -1,0 +1,1 @@
+var e=[];function t(t){for(let n of e)try{if(n.supports(t))return n}catch{}return null}export{t as getLocationStrategy};

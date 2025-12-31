@@ -13,7 +13,7 @@
       return currentPath.replace(/\/auth\/callback\.html$/, '');
     }
 
-    // Helper function to build the SPA redirect URL
+    // Helper function to stage the SPA redirect URL
     function buildSPACallbackUrl(appPath, search, hash) {
       const baseUrl = window.location.origin;
       // Redirect to the React Router auth/callback route

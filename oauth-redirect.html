@@ -11,7 +11,7 @@
       return currentPath.replace(/\/oauth-redirect\.html$/, '');
     }
 
-    // Helper function to build redirect URL
+    // Helper function to stage redirect URL
     function buildRedirectUrl(appPath, search, hash) {
       const baseUrl = window.location.origin;
       // Use the regular path pattern for React Router v7 (no hash routing)
