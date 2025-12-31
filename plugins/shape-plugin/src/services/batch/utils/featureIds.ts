@@ -90,6 +90,9 @@ export const applyOriginKey = (
     if (typeof properties[HDB_ORIGIN_KEY] !== 'string' || !properties[HDB_ORIGIN_KEY]) {
       properties[HDB_ORIGIN_KEY] = originKey;
     }
+    if (typeof properties.originKey !== 'string' || !properties.originKey) {
+      properties.originKey = originKey;
+    }
   });
   return collection;
 };

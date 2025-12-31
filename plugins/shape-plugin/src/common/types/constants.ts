@@ -57,7 +57,7 @@ export const DEFAULT_PROCESSING_CONFIG: BatchConfig = {
     enablePerFeatureExtraction: true,
   },
   tileConfig: {
-    workers: 2,
+    workers: 4,
     minZoom: 0,
     maxZoom: 8,
     bufferSize: 256,

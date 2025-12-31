@@ -53,6 +53,59 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+2025) ui: modeless dialog の frameless/transparent 対応と /map の Terran Types/Route Modes へ適用（P1）
+- ブランチ: `feat/ui/modeless-frameless-transparent`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/ui/dialog/src/headless/ModelessDialogFrame.tsx`, `/map` のモードレスダイアログ定義, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] `ModelessDialogFrame` に `frameless?: boolean` / `transparent?: boolean` を追加し既定挙動は維持する
+  - [ ] `frameless` はヘッダ非表示になり、ダイアログ背景の右クリックでヘッダ表示/非表示がトグルできる
+  - [ ] `transparent` はダイアログコンテントの背景を透明化する
+  - [ ] `/map` の Terran Types / Route Modes モードレスダイアログで余白なしレイアウト + `frameless`/`transparent` が適用される
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] `ModelessDialogFrame` の描画/スタイル/イベントを確認し、追加の props を適用する
+  - [ ] `/map` の該当モードレスダイアログ定義を特定して props を適用する
+  - [ ] 余白なしレイアウトの指定箇所を調整する
+- ロールバック手順：`packages/ui/dialog/src/headless/ModelessDialogFrame.tsx` と `/map` モードレスダイアログ定義、`TASKS.md` の差分を revert する
+- 運用ログ：
+  - start: 2025-12-31 17:20 JST ModelessDialogFrame の frameless/transparent 対応と /map モードレスダイアログへの適用に着手。
+  - progress: 2025-12-31 17:25 JST ModelessDialogFrame に frameless/transparent と右クリックトグルを追加し、/map の Terrain Types/Route Modes に余白なし + frameless/transparent を適用。
+  - done: 2025-12-31 17:25 JST 右クリックでヘッダ表示切替できる frameless と透明背景指定を実装し、Terrain Types/Route Modes を余白なしで適用。検証: 未実施（手動/自動ともに未実行）。ロールバック: `packages/ui/dialog/src/headless/ModelessDialogFrame.tsx`, `app/src/router/routes/modeless/ModelessDialogManager.tsx`, `TASKS.md` の差分を revert。
+
+2018) docs: 素のWindows向けインストール/環境構築の要点を英語Markdownで整理（P2）
+- ブランチ: `chore/docs/windows-setup-notes`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `README.md`, `package.json`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] 素の Windows 環境向けに必要な前提（OS/Node/pnpm/Git/Bash）を英語で簡潔に整理する
+  - [ ] セットアップ手順（install → install deps → run）を英語の Markdown で提示する
+  - [ ] `TASKS.md` に変更内容/理由/ロールバック/検証結果（未実施なら理由）を記載する
+- チェックリスト:
+  - [ ] `package.json` の engines と scripts から前提条件を抽出する
+  - [ ] `README.md` の開発コマンドを反映する
+  - [ ] Windows で必要な Bash 実行環境を明記する
+- ロールバック手順：`TASKS.md` の追記を削除する
+- 運用ログ：
+  - start: 2025-12-31 07:56 JST 素の Windows 向けの環境構築要点を英語 Markdown で整理する作業に着手。
+  - done: 2025-12-31 07:56 JST Windows 向けに Node 20+/pnpm 10.x/Git Bash 前提と `pnpm install --frozen-lockfile`/`pnpm dev` を中心とした最小手順を英語 Markdown で整理。検証: 文書作成のみ（コマンド未実行）。ロールバック: `TASKS.md` の追記を削除。
+
+2015) app: トップページの表示名を VITE_APP_NAME 参照へ切替（P1）
+- ブランチ: `fix/app/home-app-name`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `app/src/router/pages/home/**`, `app/src/loadAppConfig.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] トップページの表示名が `VITE_APP_NAME` を参照する
+  - [ ] `VITE_APP_NAME=ERIA-Cartograph` の場合に「ERIA-Cartograph」と表示される
+  - [ ] 表示名の変更以外の挙動に影響がない
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] トップページの表示箇所を特定する
+  - [ ] `loadAppConfig` 経由で表示名を差し替える
+  - [ ] 影響範囲を最小化する
+- ロールバック手順：`app/src/router/pages/home/**`, `app/src/loadAppConfig.ts`, `TASKS.md` の差分を revert する
+- 運用ログ：
+  - start: 2025-12-31 06:34 JST トップページの表示名を VITE_APP_NAME 参照へ切替する対応に着手。
+  - progress: 2025-12-31 06:40 JST HomePage の meta と TitleLogo を appTitle/appDescription 参照に統一し、appTitle の既定値を VITE_APP_NAME フォールバックに変更。影響範囲: トップページ表示/メタ情報。ロールバック: `app/src/loadAppConfig.ts`, `app/src/router/pages/home/HomePage.tsx`, `app/src/router/pages/home/TitleLogo.tsx`, `TASKS.md` の差分を revert。
+  - progress: 2025-12-31 06:48 JST GuidedTour の Welcome/説明文言を appName 参照に変更し、トップページで VITE_APP_NAME が反映されるように修正。影響範囲: TopPage GuidedTour の表示テキスト。ロールバック: `app/src/router/pages/home/tour/TopPageGuidedTour.tsx`, `TASKS.md` の差分を revert。
+
 2024) shape-plugin: Extract2 のタスクグループ化挙動の確認（P2）
 - ブランチ: `investigation/shape-plugin/extract2-grouping`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `plugins/shape-plugin/src/services/batch/**`, `plugins/shape-plugin/src/worker/**`, `TASKS.md`
@@ -7783,6 +7836,14 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+
+2016) fix/styler-plugin/step5-valid (P1) — 完了 (2025-12-31)
+- 要点：ターゲット選択時に styleType を自動設定し、valid 判定がラジオ選択に連動するよう修正。
+- 検証：`pnpm --filter @hierarchidb/styler-plugin typecheck`（exit 0）
+- ロールバック手順：`plugins/styler-plugin/src/ui/components/StylerTargetStep.tsx` の差分を revert し、`pnpm --filter @hierarchidb/styler-plugin typecheck` を再実行する。
+- 運用ログ：
+  - start: 2025-12-31 08:58 JST Step5 valid 不具合の修正に着手。
+  - done: 2025-12-31 09:00 JST styleType 自動設定を追加し Next 判定を修正。検証: `pnpm --filter @hierarchidb/styler-plugin typecheck`（exit 0）。
 
 2023) fix/shape-plugin/defaults-elongated-and-extract2 (P1) — 完了 (2025-12-31)
 - 要点：細長形状補正係数を 1.3、二次的な簡略化の強さを 0.1 に更新し、UI 既定値を同期。
@@ -16318,3 +16379,5 @@ ToDo（Phase 2/3: any の完全撤去）
   - progress: 2025-12-31 06:39 JST fix/shape/extract2-mode-diagnostics — Extract2 のモード選択/タスク生成を SessionController でログ化し、resume 時に extract2 mode 変更を検知して再開をブロック。Extract1/Extract2/VectorTile の削減・bbox 落ちの診断ログを追加。検証: 未実施（手動確認未実行）。ロールバック: `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/services/batch/SessionController.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `TASKS.md` の差分を revert。
   - progress: 2025-12-31 06:39 JST fix/shape/lru-summary-stale-on-resume — buildStartedAt 変更時にサマリーをリセットし、タスク一覧がある場合は paneProgress を優先するように変更。検証: 未実施（手動確認未実行）。ロールバック: `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`, `TASKS.md` の差分を revert。
   - progress: 2025-12-31 06:39 JST fix/shape/extract2-config-type — ExtractSession2Config に extractionMode を追加し、SessionController の抽出モード参照の型不整合を解消。検証: 未実施（手動確認未実行）。ロールバック: `plugins/shape-plugin/src/common/types/BatchConfig.ts`, `TASKS.md` の差分を revert。
+  - progress: 2025-12-31 06:39 JST fix/shape/extract2-disable-tuning-geojson — Extract2 が geojson 方式のときは自動チューニング（tolerance/quantize 調整）を無効化。検証: 未実施（手動確認未実行）。ロールバック: `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `TASKS.md` の差分を revert。
+  - progress: 2025-12-31 07:12 JST fix/shape/vectortile-default-concurrency-and-omission-logs — VectorTile の既定並列度を 4 に変更し、Extract2 由来の欠落（originKey/bbox 不足）とタイル集計時の originKey 欠落をログ化。originKey のエイリアス付与を追加。検証: 未実施（手動確認未実行）。ロールバック: `plugins/shape-plugin/src/common/types/constants.ts`, `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `plugins/shape-plugin/src/services/batch/SessionController.ts`, `plugins/shape-plugin/src/services/batch/utils/featureIds.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `TASKS.md` の差分を revert。

@@ -10,7 +10,7 @@ import type { SxProps, Theme } from '@mui/material/styles';
 import { createPortal } from 'react-dom';
 import { FRAME_CONSTANTS } from './frameHelpers.js';
 import { AbstractDialog } from './AbstractDialog.js';
-import type { HeadlessDialogProps } from './types.js';
+import type { HeadlessDialogHeaderProps, HeadlessDialogProps } from './types.js';
 import { getDialogSurfaceColor } from '../utils/dialogSurfaceColor.js';
 import { useDialogInteractionGuards } from '../hooks/useDialogInteractionGuards.js';
 
@@ -30,6 +30,10 @@ export interface ModelessDialogFrameProps<TData> {
   portalContainer?: Element | DocumentFragment | null;
   /** Duration (ms) for the fade transition when the dialog mounts/unmounts. */
   transitionDuration?: number;
+  /** Hide dialog header and allow toggling via right-click on the dialog surface. */
+  frameless?: boolean;
+  /** Make the dialog content background transparent. */
+  transparent?: boolean;
   /** Called when the dialog surface should move to the front. */
   onRequestFocus?: () => void;
   /** Fixed height (px) when minimized. */
@@ -61,6 +65,8 @@ export function ModelessDialogFrame<TData>(props: ModelessDialogFrameProps<TData
     disablePortal = false,
     portalContainer,
     transitionDuration,
+    frameless = false,
+    transparent = false,
     onRequestFocus,
     minimizedHeight,
   } = props;
@@ -80,6 +86,20 @@ export function ModelessDialogFrame<TData>(props: ModelessDialogFrameProps<TData
   const transitionTimeout = shouldAnimate ? fadeDuration : 0;
 
   const [isInteracting, setIsInteracting] = useState(false);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(!frameless);
+
+  useEffect(() => {
+    if (!frameless) {
+      setIsHeaderVisible(true);
+    }
+  }, [frameless]);
+
+  const handleFrameContextMenu = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    if (!frameless) return;
+    event.preventDefault();
+    event.stopPropagation();
+    setIsHeaderVisible((prev) => !prev);
+  }, [frameless]);
 
   const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
     if (!open) return;
@@ -242,8 +262,23 @@ export function ModelessDialogFrame<TData>(props: ModelessDialogFrameProps<TData
     window.addEventListener('pointercancel', handlePointerEnd);
   }, [fullScreen, guards, headlessProps, isMinimized, position.x, position.y, size.height, size.width]);
 
+  const headerComponent = useMemo(() => {
+    if (!frameless) {
+      return headlessProps.HeaderComponent;
+    }
+    const OriginalHeader = headlessProps.HeaderComponent;
+    const WrappedHeader: React.FC<HeadlessDialogHeaderProps<TData>> = (headerProps) => {
+      if (!isHeaderVisible) return null;
+      if (!OriginalHeader) return null;
+      return <OriginalHeader {...headerProps} />;
+    };
+    WrappedHeader.displayName = OriginalHeader?.displayName ?? OriginalHeader?.name ?? 'FramelessHeader';
+    return WrappedHeader;
+  }, [frameless, headlessProps.HeaderComponent, isHeaderVisible]);
+
   const augmentedHeadlessProps = useMemo(() => ({
     ...headlessProps,
+    HeaderComponent: headerComponent,
     onDragHandlePointerDown: (event: React.PointerEvent<HTMLElement>) => {
       onRequestFocus?.();
       handleDragPointerDown(event);
@@ -252,7 +287,7 @@ export function ModelessDialogFrame<TData>(props: ModelessDialogFrameProps<TData
     onResizeHandlePointerDown: (event: React.PointerEvent<HTMLElement>) => {
       headlessProps.onResizeHandlePointerDown?.(event);
     },
-  }), [handleDragPointerDown, headlessProps, onRequestFocus]);
+  }), [handleDragPointerDown, headerComponent, headlessProps, onRequestFocus]);
 
   const defaultFrameSx = useMemo(() => (
     (theme: Theme) => {
@@ -279,7 +314,7 @@ export function ModelessDialogFrame<TData>(props: ModelessDialogFrameProps<TData
         borderRadius: fullScreen ? 0 : theme.shape.borderRadius,
         boxShadow: fullScreen ? 'none' : theme.shadows[8],
         overflow: 'hidden',
-        backgroundColor: getDialogSurfaceColor(theme),
+        backgroundColor: transparent ? 'transparent' : getDialogSurfaceColor(theme),
         pointerEvents: 'auto',
         ...(isInteracting
           ? {
@@ -293,7 +328,7 @@ export function ModelessDialogFrame<TData>(props: ModelessDialogFrameProps<TData
           }),
       } as const;
     }
-  ), [collapsedHeight, fullScreen, isInteracting, isMinimized, position.x, position.y, size.height, size.width]);
+  ), [collapsedHeight, fullScreen, isInteracting, isMinimized, position.x, position.y, size.height, size.width, transparent]);
 
   const combinedFrameSx = useMemo<SxProps<Theme>>(
     () => (frameSx
@@ -312,6 +347,7 @@ export function ModelessDialogFrame<TData>(props: ModelessDialogFrameProps<TData
         onRequestFocus?.();
       }}
       onWheelCapture={guards.handleWheelCapture}
+      onContextMenu={handleFrameContextMenu}
     >
       <AbstractDialog {...augmentedHeadlessProps} />
       {!fullScreen && !isMinimized && (

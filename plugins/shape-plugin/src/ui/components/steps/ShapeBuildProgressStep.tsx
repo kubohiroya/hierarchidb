@@ -356,7 +356,7 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
         )}
       </Stack>
     );
-  }, [isTaskSummaryLoading, isTasksLoading, paneProgress, resolveStatusColor, resolveStatusLabel, resolveTaskTitle, t, tasksByStage]);
+  }, [isTaskSummaryLoading, isTasksLoading, paneProgress, resolveStatusColor, resolveStatusLabel, resolveTaskTitle, summary?.buildStatus, t, tasksByStage]);
 
   const startWarning = useMemo(() => {
     if (!crashInsight || !crashInsight.memoryPressure) return null;

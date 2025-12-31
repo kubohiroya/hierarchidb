@@ -49,7 +49,7 @@ export function TitleLogo({
             display: 'block', // Prevent inline spacing issues
           }}
         >
-          <title id={svgTitleId}>HierarchiDB logo</title>
+          <title id={svgTitleId}>{`${title} logo`}</title>
           {/* TreeTypes structure with nodes and connections */}
           {/* Top node */}
           <circle cx="40" cy="15" r="8" fill="#1976d2" />

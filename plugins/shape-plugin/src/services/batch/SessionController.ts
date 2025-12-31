@@ -1461,6 +1461,8 @@ export class SessionController {
 
   private async summarizeVectorTilesByOrigin(): Promise<Map<string, GeometryStatsSummary>> {
     const statsByOrigin = new Map<string, GeometryStatsSummary>();
+    let totalFeatures = 0;
+    let missingOriginKey = 0;
     const rows = await this.artifactStore.listVectorTileRows();
     for (const row of rows) {
       const tile = new VectorTile(new Pbf(new Uint8Array(row.data)));
@@ -1471,10 +1473,15 @@ export class SessionController {
           const feature = layer.feature(index);
           const geojson = feature.toGeoJSON(row.x, row.y, row.z) as Feature;
           const properties = (geojson.properties ?? {}) as Record<string, unknown>;
-          const originKey = typeof properties[HDB_ORIGIN_KEY] === 'string'
-            ? String(properties[HDB_ORIGIN_KEY])
+          const rawOrigin = properties[HDB_ORIGIN_KEY] ?? properties.originKey;
+          const originKey = typeof rawOrigin === 'string'
+            ? String(rawOrigin)
             : undefined;
-          if (!originKey) continue;
+          totalFeatures += 1;
+          if (!originKey) {
+            missingOriginKey += 1;
+            continue;
+          }
           const stats = this.extractGeometryStats(geojson);
           const existing = statsByOrigin.get(originKey) ?? { vertexCount: 0, polygonCount: 0 };
           statsByOrigin.set(originKey, this.accumulateStats(existing, {
@@ -1483,6 +1490,12 @@ export class SessionController {
           }));
         }
       }
+    }
+    if (missingOriginKey > 0) {
+      console.warn(`[Session ${this.nodeId}] Vector tile features missing origin key`, {
+        totalFeatures,
+        missingOriginKey,
+      });
     }
     return statsByOrigin;
   }

@@ -6,6 +6,7 @@ import {
   StylerConfigDefault,
   type MapLibreStyleProperty,
   type StylerConfig,
+  type StyleType,
   type StylerStepData,
   type StylerValueType,
 } from '../../common/types/StylerEntity.ts';
@@ -144,6 +145,19 @@ const getValueTypeForProperty = (property: MapLibreStyleProperty): StylerValueTy
   return MAPLIBRE_PROPERTY_METADATA[property]?.type ?? 'color';
 };
 
+const getStyleTypeForSection = (sectionId: string): StyleType | undefined => {
+  switch (sectionId) {
+    case 'area':
+      return 'choropleth';
+    case 'point':
+      return 'points';
+    case 'route':
+      return 'lines';
+    default:
+      return undefined;
+  }
+};
+
 export const StylerTargetStep: React.FC<
   PluginStepProps<StylerStepData> & { showTargetPanel?: boolean }
 > = ({
@@ -177,12 +191,12 @@ export const StylerTargetStep: React.FC<
   },[pluginData.mapping?.targetNumericValueRange]);
 
   useEffect(() => {
-    const isValid = Boolean(targetProperty);
+    const isValid = Boolean(targetProperty && pluginData.mapping?.styleType);
     setValid(isValid);
     setError(
       isValid ? null : t('step5.target.validation.required', 'Select a target to continue.')
     );
-  }, [setError, setValid, t, targetProperty]);
+  }, [pluginData.mapping?.styleType, setError, setValid, t, targetProperty]);
 
   const applyChange = useCallback(
     (mappingPatch: Partial<StylerStepData['mapping']>, configPatch?: Partial<StylerConfig>) => {
@@ -206,15 +220,17 @@ export const StylerTargetStep: React.FC<
   );
 
   const handleTargetSelect = useCallback(
-    (option: TargetOption) => {
+    (option: TargetOption, sectionId: string) => {
       const currentOptionId = pluginData.mapping?.targetOptionId ?? null;
       const property = option.property;
       const valueType = getValueTypeForProperty(property);
       const rangeDefaults = option.defaultRange ?? numericRangeDefaults;
+      const styleType = getStyleTypeForSection(sectionId);
       const mappingPatch: Partial<StylerStepData['mapping']> = {
         targetProperty: property,
         targetOptionId: option.id,
         valueType,
+        ...(styleType ? { styleType } : {}),
       };
       if (valueType === 'number' && !pluginData.mapping?.mappingMode) {
         mappingPatch.mappingMode = 'map-interpolate';
@@ -290,7 +306,7 @@ export const StylerTargetStep: React.FC<
                       <Radio
                         size="small"
                         checked={selected}
-                        onChange={() => handleTargetSelect(option)}
+                        onChange={() => handleTargetSelect(option, section.id)}
                         value={option.property}
                       />
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>

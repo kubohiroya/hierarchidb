@@ -13,8 +13,10 @@ source "$SCRIPT_DIR/base.sh"
 # HierarchiDB専用BFF（複数デプロイ先対応、/auth ベース）
 export VITE_BFF_BASE_URL="https://hierarchidb-bff.kubohiroya.workers.dev"
 export VITE_USE_HASH_ROUTING="true"
-export VITE_APP_NAME="hierarchidb"
-export VITE_APP_TITLE="HierarchiDB (Development)"
+#export VITE_APP_NAME="hierarchidb"
+#export VITE_APP_TITLE="HierarchiDB (Development)"
+export VITE_APP_NAME="ERIA-Cartograph"
+export VITE_APP_TITLE="ERIA-Cartograph"
 export VITE_ENV_MODE="development"
 
 # 開発環境での追加設定

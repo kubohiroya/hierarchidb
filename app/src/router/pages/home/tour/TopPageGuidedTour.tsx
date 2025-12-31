@@ -1,6 +1,7 @@
 import { GenericGuidedTour } from '@hierarchidb/ui-plugin-shell/ui-tour';
 import { Box, Typography } from '@mui/material';
 import type { Step } from 'react-joyride';
+import { useAppConfig } from '~/contexts/AppConfigContext.js';
 
 interface TopPageGuidedTourProps {
   run: boolean;
@@ -9,6 +10,7 @@ interface TopPageGuidedTourProps {
 
 // Custom Welcome Screen Component for Top Page
 const TopPageWelcomeScreen = () => {
+  const { appName } = useAppConfig();
   return (
     <Box
       sx={{
@@ -26,7 +28,7 @@ const TopPageWelcomeScreen = () => {
         style={{ fontSize: '2rem', marginBottom: '1rem', marginTop: '5rem' }}
         variant="h1"
       >
-        Welcome to HierarchiDB! 🎉
+        {`Welcome to ${appName}! 🎉`}
       </Typography>
 
       <Typography
@@ -37,8 +39,7 @@ const TopPageWelcomeScreen = () => {
           color: 'text.secondary',
         }}
       >
-        HierarchiDB is a powerful tree-structured data management system. This guided tour will help
-        you understand the main features and navigation.
+        {`${appName} is a powerful tree-structured data management system. This guided tour will help you understand the main features and navigation.`}
       </Typography>
     </Box>
   );

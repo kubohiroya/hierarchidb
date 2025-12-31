@@ -126,7 +126,7 @@ const buildBatchSessionConfig = (batchConfig: BatchConfig, draft?: DraftLike): B
       tolerance: extract2Config?.tolerance ?? 0,
     },
     vectorTiles: {
-      concurrentProcesses: tileConfig?.workers ?? 2,
+      concurrentProcesses: tileConfig?.workers ?? 4,
       minZoom: tileConfig?.minZoom ?? 0,
       maxZoom: tileConfig?.maxZoom ?? (tileConfig?.minZoom ?? 0),
       bufferSize: tileConfig?.bufferSize,

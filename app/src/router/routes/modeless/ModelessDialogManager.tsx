@@ -62,6 +62,9 @@ type MapDialogDefinition = MapDialogDefinitionBase & {
   subtitle?: string;
   icon: React.ReactNode;
   content: React.ReactNode;
+  contentPadding?: number;
+  frameless?: boolean;
+  transparent?: boolean;
 };
 
 const EmptyFooter: React.FC = () => null;
@@ -74,9 +77,9 @@ function createHeaderComponent(title: string, subtitle: string | undefined, icon
   return Header;
 }
 
-function createContentComponent(content: React.ReactNode) {
+function createContentComponent(content: React.ReactNode, padding = 2) {
   const Content: React.FC = () => (
-    <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>{content}</Box>
+    <Box sx={{ flex: 1, overflow: 'auto', p: padding }}>{content}</Box>
   );
   Content.displayName = 'MapDialogContent';
   return Content;
@@ -116,8 +119,8 @@ const MapDialogWindow: React.FC<MapDialogWindowProps> = ({
     [definition.icon, definition.subtitle, definition.title],
   );
   const contentComponent = useMemo(
-    () => createContentComponent(definition.content),
-    [definition.content],
+    () => createContentComponent(definition.content, definition.contentPadding),
+    [definition.content, definition.contentPadding],
   );
   const stepComponents = useMemo(
     () => createStepComponents(definition.id, definition.title),
@@ -154,6 +157,8 @@ const MapDialogWindow: React.FC<MapDialogWindowProps> = ({
       onRequestFocus={() => onRequestFocus(definition.id)}
       disablePortal
       minimizedHeight={MINIMIZED_HEIGHT}
+      frameless={definition.frameless}
+      transparent={definition.transparent}
     />
   );
 };
@@ -378,6 +383,9 @@ export const ModelessDialogManager: React.FC<ModelessDialogManagerProps> = ({
       title: 'Terrain Types',
       icon: <PlaceOutlinedIcon fontSize="small" />,
       defaultSize: { width: 360, height: 220 },
+      contentPadding: 0,
+      frameless: true,
+      transparent: true,
       content: (
         <MapToggleCard
           title="Terrain Types"
@@ -392,6 +400,9 @@ export const ModelessDialogManager: React.FC<ModelessDialogManagerProps> = ({
       title: 'Route Modes',
       icon: <AltRouteIcon fontSize="small" />,
       defaultSize: { width: 360, height: 220 },
+      contentPadding: 0,
+      frameless: true,
+      transparent: true,
       content: (
         <MapToggleCard
           title="Route Modes"

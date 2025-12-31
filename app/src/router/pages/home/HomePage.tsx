@@ -18,11 +18,11 @@ import { loadAppConfig, resolveAssetHref } from '~/loadAppConfig.js';
 import { TitleLogo } from './TitleLogo.js';
 
 export function meta() {
-  const { appPrefix, appFavicon } = loadAppConfig();
+  const { appPrefix, appFavicon, appTitle, appDescription } = loadAppConfig();
   const faviconHref = resolveAssetHref(appPrefix, appFavicon);
   return [
-    { title: 'HierarchiDB' },
-    { name: 'description', content: 'High-performance console-structured data management framework' },
+    { title: appTitle },
+    { name: 'description', content: appDescription },
     {
       tagName: 'link',
       rel: 'icon',

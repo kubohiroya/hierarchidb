@@ -35,5 +35,5 @@ export const useBuildCrashInsight = (
   }, [key, draft?.buildStartedAt, draft?.buildFinishedAt, draft?.processingStatus]);
   return useMemo(() => (
     getCrashInsight(buildMonitorConfig, record, draft?.processingStatus ?? null)
-  ), [draft?.processingStatus, record]);
+  ), [draft?.processingStatus, record, draft?.buildStartedAt, draft?.buildFinishedAt, draft?.processingStatus]);
 };

@@ -96,6 +96,9 @@ const applyFeatureContext = (
     if (context.originKey && typeof properties[HDB_ORIGIN_KEY] !== 'string') {
       properties[HDB_ORIGIN_KEY] = context.originKey;
     }
+    if (context.originKey && typeof properties.originKey !== 'string') {
+      properties.originKey = context.originKey;
+    }
   }
 };
 
@@ -485,7 +488,8 @@ const processExtract2Task = async ({
   finalData = extraction.data;
   finalFeatureCount = extraction.featureCount;
   finalRatio = extraction.ratio;
-  while (finalRatio > targetRatio && pass < maxTuningPasses) {
+  const shouldTune = extractionMode !== 'geojson';
+  while (shouldTune && finalRatio > targetRatio && pass < maxTuningPasses) {
     pass += 1;
     tunedTolerance = tunedTolerance > 0 ? tunedTolerance * 2 : 0.1;
     if (typeof tunedQuantize === 'number') {

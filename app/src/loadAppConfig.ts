@@ -73,7 +73,7 @@ export function loadAppConfig(): LoadAppConfigReturn {
   return {
     appPrefix: normalizedPrefix,
     appName: VITE_APP_NAME || 'HierarchiDB',
-    appTitle: VITE_APP_TITLE || 'HierarchiDB',
+    appTitle: VITE_APP_TITLE || VITE_APP_NAME || 'HierarchiDB',
     appDescription:
       VITE_APP_DESCRIPTION ||
       'High-performance console-structured data management framework for browser environments',

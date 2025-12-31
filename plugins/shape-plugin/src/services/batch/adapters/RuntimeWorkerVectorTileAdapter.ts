@@ -39,7 +39,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     for (const feature of features) {
       if (!feature) continue;
       const properties = feature.properties ?? {};
-      const raw = properties[HDB_ORIGIN_KEY];
+      const raw = properties[HDB_ORIGIN_KEY] ?? properties.originKey;
       const originKey = typeof raw === 'string' && raw.trim().length > 0 ? raw : '__unknown__';
       counts.set(originKey, (counts.get(originKey) ?? 0) + 1);
     }
@@ -169,6 +169,8 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     const result: Array<{ feature: Feature; bbox: [number, number, number, number] }> = [];
     let totalFeatures = 0;
     let missingBbox = 0;
+    let missingOriginKey = 0;
+    const missingBboxByOrigin = new Map<string, number>();
     for (const row of buffers) {
       const decoded = await this.decodeGeoJson(row.data);
       if (!decoded || typeof decoded !== 'object') continue;
@@ -176,9 +178,18 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
       for (const feature of features) {
         if (!feature) continue;
         totalFeatures += 1;
+        const properties = feature.properties ?? {};
+        const rawOrigin = properties[HDB_ORIGIN_KEY] ?? properties.originKey;
+        const originKey = typeof rawOrigin === 'string' && rawOrigin.trim().length > 0
+          ? rawOrigin
+          : '__unknown__';
+        if (originKey === '__unknown__') {
+          missingOriginKey += 1;
+        }
         const bbox = this.computeBBox(feature.geometry);
         if (!bbox) {
           missingBbox += 1;
+          missingBboxByOrigin.set(originKey, (missingBboxByOrigin.get(originKey) ?? 0) + 1);
           continue;
         }
         result.push({ feature, bbox });
@@ -200,6 +211,27 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
       indexedFeatures: result.length,
       missingBbox,
     });
+    if (missingOriginKey > 0) {
+      console.warn('[VectorTile] Extract2 features missing origin key', {
+        nodeId,
+        missingOriginKey,
+        totalFeatures,
+      });
+    }
+    if (missingBbox > 0) {
+      const sorted = Array.from(missingBboxByOrigin.entries())
+        .sort((a, b) => b[1] - a[1]);
+      const limit = 10;
+      const truncated = sorted.length > limit;
+      const originKeyCounts = (truncated ? sorted.slice(0, limit) : sorted)
+        .map(([originKey, count]) => ({ originKey, count }));
+      console.warn('[VectorTile] Extract2 features missing bbox', {
+        nodeId,
+        missingBbox,
+        originKeyCounts,
+        truncated,
+      });
+    }
     this.featureCache.set(nodeId, result);
     return result;
   }
