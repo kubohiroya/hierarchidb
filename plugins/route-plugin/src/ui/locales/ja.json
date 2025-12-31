@@ -3,6 +3,7 @@
     "dataSource": { "label": "データソース" },
     "routeConfig": { "label": "交通経路の種類" },
     "processing": { "label": "処理設定" },
+    "tileSettings": { "label": "ベクタタイル設定" },
     "build": { "label": "ビルド" },
     "preview": { "label": "プレビュー" }
   },
@@ -102,6 +103,13 @@
     "cleanupMissingApi": "Worker API が利用できません。",
     "cleanupDone": "ルートラインデータを削除しました。"
   },
+  "tileSettings": {
+    "description": "ベクタタイル生成のパラメータを設定します。",
+    "workersLabel": "ベクタタイルワーカー数",
+    "zoomLabel": "タイルズーム範囲",
+    "minZoom": "最小ズーム",
+    "maxZoom": "最大ズーム"
+  },
   "build": {
     "review": "設定内容を確認し、ビルドを開始してください。",
     "dataSource": "データソース:",
@@ -115,6 +123,7 @@
     "start": "準備ができたらビルドボタンを押してください。",
     "title": "ルートビルド",
     "panelDescription": "ルートビルドの進捗を確認できます。",
+    "started": "ベクタタイルビルドを開始しました（セッション {{sessionId}}）",
     "ideGsm": {
       "fetch": "IDE-GSM: ダウンロード中",
       "parse": "IDE-GSM: 行を解析中",
@@ -131,6 +140,8 @@
       "missingApi": "Worker API が利用できません。",
       "missingSource": "IDE-GSM のソース URL が必要です。",
       "unsupportedSource": "選択中のデータソースは未対応です。",
+      "missingGeometry": "ベクタタイル生成にはルート形状が必要です。",
+      "startFailed": "ベクタタイルビルドの開始に失敗しました: {{message}}",
       "columns": {
         "row": "行",
         "start": "Start",
@@ -146,7 +157,16 @@
     "ready": "ルート形状が利用可能です。ここにマッププレビューが表示されます。",
     "mapTitle": "マッププレビュー",
     "hoverTemplate": "{mode} / {start} -> {end} / {distance}",
-    "hoverUnknown": "不明なルート"
+    "hoverUnknown": "不明なルート",
+    "tabs": {
+      "map": "地図",
+      "metadata": "メタデータ"
+    },
+    "metadataLoading": "メタデータを読み込み中...",
+    "metadataEmpty": "表示できるメタデータがまだありません。",
+    "metadataTiles": "生成タイル数: {count}",
+    "metadataZoom": "ズーム範囲: {min} - {max}",
+    "metadataSize": "合計サイズ: {size}"
   },
   "batch": {
     "pause": "一時停止",

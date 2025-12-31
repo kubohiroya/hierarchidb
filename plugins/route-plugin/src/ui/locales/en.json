@@ -3,6 +3,7 @@
     "dataSource": { "label": "Data Source" },
     "routeConfig": { "label": "Route modes" },
     "processing": { "label": "Processing Settings" },
+    "tileSettings": { "label": "Vector Tile Settings" },
     "build": { "label": "Build" },
     "preview": { "label": "Preview" }
   },
@@ -102,6 +103,13 @@
     "cleanupMissingApi": "Worker API is unavailable.",
     "cleanupDone": "Deleted route line data."
   },
+  "tileSettings": {
+    "description": "Configure vector tile generation parameters.",
+    "workersLabel": "Vector tile workers",
+    "zoomLabel": "Tile zoom range",
+    "minZoom": "Min zoom",
+    "maxZoom": "Max zoom"
+  },
   "build": {
     "review": "Review the configuration and press Build to start the batch route generation.",
     "dataSource": "Data Source:",
@@ -115,6 +123,7 @@
     "start": "When ready, click the Build button below to start the batch session.",
     "title": "Build routes",
     "panelDescription": "Monitor and control route build progress.",
+    "started": "Route vector tile build started (session {{sessionId}})",
     "ideGsm": {
       "fetch": "IDE-GSM: downloading",
       "parse": "IDE-GSM: parsing rows",
@@ -131,6 +140,8 @@
       "missingApi": "Worker API is unavailable.",
       "missingSource": "IDE-GSM source URL is required.",
       "unsupportedSource": "Selected data source is not supported yet.",
+      "missingGeometry": "Route geometry is required before starting vector tile generation.",
+      "startFailed": "Failed to start vector tile build: {{message}}",
       "columns": {
         "row": "Row",
         "start": "Start",
@@ -146,7 +157,16 @@
     "ready": "Route geometry is available. Map preview will appear here.",
     "mapTitle": "Map Preview",
     "hoverTemplate": "{mode} / {start} -> {end} / {distance}",
-    "hoverUnknown": "Unknown route"
+    "hoverUnknown": "Unknown route",
+    "tabs": {
+      "map": "Map",
+      "metadata": "Metadata"
+    },
+    "metadataLoading": "Loading metadata...",
+    "metadataEmpty": "No metadata available yet.",
+    "metadataTiles": "Generated tiles: {count}",
+    "metadataZoom": "Zoom range: {min} - {max}",
+    "metadataSize": "Total size: {size}"
   },
   "batch": {
     "pause": "Pause",

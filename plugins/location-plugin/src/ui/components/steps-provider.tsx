@@ -7,6 +7,7 @@ import { LocationSelectionStep } from './steps/LocationSelectionStep.js';
 import { LocationBatchParametersStep } from './steps/LocationBatchParametersStep.js';
 import { LocationMapPreviewStep } from './steps/LocationMapPreviewStep.js';
 import { LocationBuildStep } from './steps/LocationBuildStep.js';
+import { LocationTileSettingsStep } from './steps/LocationTileSettingsStep.js';
 import { notify } from '@hierarchidb/components';
 import { startLocationVectorTileSession } from '../../common/tiles/locationVectorTiles.js';
 import { i18n } from '@hierarchidb/ui-i18n';
@@ -60,6 +61,13 @@ const hasSelection = (data?: LocationStepData): boolean => {
   return Object.values(selected).some((row) => Array.isArray(row) && row.some(Boolean));
 };
 
+const hasTileSettings = (data?: LocationStepData): boolean => {
+  const minZoom = data?.tilesMinZoom ?? DEFAULT_MIN_ZOOM;
+  const maxZoom = data?.tilesMaxZoom ?? DEFAULT_MAX_ZOOM;
+  const workers = data?.tileWorkers ?? DEFAULT_TILE_WORKERS;
+  return Number.isFinite(minZoom) && Number.isFinite(maxZoom) && workers >= MIN_CONCURRENCY && minZoom <= maxZoom;
+};
+
 const clamp = (value: number, min: number, max: number): number => {
   if (Number.isNaN(value)) return min;
   return Math.min(max, Math.max(min, value));
@@ -69,6 +77,7 @@ const MIN_CONCURRENCY = 1;
 const MAX_CONCURRENCY = 16;
 const DEFAULT_MIN_ZOOM = 5;
 const DEFAULT_MAX_ZOOM = 12;
+const DEFAULT_TILE_WORKERS = 4;
 const LICENSE_REQUIRED = false;
 const UNSUPPORTED_DATA_SOURCES: LocationDataSource[] = ['geonames', 'wikidata', 'custom'];
 
@@ -268,16 +277,18 @@ const startLocationBatch = async (data: LocationStepData, context: StartBatchCon
     zoomMinGenerate: draft.tilesMinZoom ?? DEFAULT_MIN_ZOOM,
     zoomMaxGenerate: draft.tilesMaxZoom ?? DEFAULT_MAX_ZOOM,
     zoomMaxServe: draft.tilesMaxZoom ?? DEFAULT_MAX_ZOOM,
+    tileWorkers: draft.tileWorkers ?? DEFAULT_TILE_WORKERS,
   } as const;
 
   const rawConcurrency = draft.concurrentDownloads ?? 4;
   const concurrency = clamp(rawConcurrency || 4, MIN_CONCURRENCY, MAX_CONCURRENCY);
+  const tileWorkers = clamp(draft.tileWorkers ?? DEFAULT_TILE_WORKERS, MIN_CONCURRENCY, MAX_CONCURRENCY);
 
   await startLocationVectorTileSession(
     nodeId,
     pointInputs,
     settings,
-    { concurrency },
+    { concurrency: tileWorkers, tileWorkers },
   );
 
   if (draft.dataSource === 'ide-gsm') {
@@ -341,6 +352,21 @@ registry.registerConfigProvider<LocationStepData>({
           );
         },
         validate: () => true,
+      },
+      {
+        id: 'tile-settings',
+        label: String(i18n.t('steps.tileSettings.label', { ns: 'location-plugin', defaultValue: 'Vector Tile Settings' })),
+        componentFactory: (p: StepProps) => {
+          const draft = ensureData(p.data);
+          return (
+            <LocationTileSettingsStep
+              draft={draft}
+              onUpdate={(updates) => p.onChange(mergeData(draft, updates))}
+              disabled={Boolean(p.disabled)}
+            />
+          );
+        },
+        validate: hasTileSettings,
       },
       {
         id: 'build',

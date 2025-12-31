@@ -55,6 +55,7 @@ export interface LocationDraft extends Partial<LocationEntityDefinition> {
     tags?: string[];
     selectedArrayByCountries?: Record<ISO2, boolean[]>;
     concurrentDownloads?: number;
+    tileWorkers?: number;
     licenseAgreement?: boolean;
     dataSource?: LocationDataSource;
     tabularSourceId?: string;
@@ -67,6 +68,7 @@ export interface UpdateLocationData {
   dataSource?: LocationDataSource;
   selectedArrayByCountries?: Record<ISO2, boolean[]>;
   concurrentDownloads?: number;
+  tileWorkers?: number;
   licenseAgreement?: boolean;
   licenseAgreedAt?: Timestamp;
   lastProcessedAt?: number;
