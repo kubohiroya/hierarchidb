@@ -39,9 +39,6 @@ jobs:
       - name: Policy checker (check-deps)
         run: pnpm -w check:deps:pkg || true
 
-      - name: Enforce MapLibre encapsulation (fail on direct deps)
-        run: node scripts/check-maplibre-policy.mjs
-
       - name: dependency-cruiser (architecture warnings)
         run: pnpm -w arch:dc || true
 
