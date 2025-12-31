@@ -70,14 +70,13 @@ export function useTreeTableOrchestrator(
         controller?.startEdit?.(id);
       },
       finishEdit: (newValue: string) => {
-        // TODO: Get current editing node ID from state
         controller?.finishEdit?.('', newValue);
       },
       cancelEdit: () => {
         controller?.cancelEdit?.();
       },
     }),
-    [controller?.startEdit, controller?.cancelEdit],
+    [controller?.startEdit, controller?.cancelEdit, controller?.finishEdit],
   );
 
   // Search operations

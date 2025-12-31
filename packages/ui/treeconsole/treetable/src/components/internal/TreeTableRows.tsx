@@ -31,7 +31,7 @@ export interface TreeTableRowsProps {
   forbiddenTargets: Set<NodeId>;
   setForbiddenTargets: Dispatch<SetStateAction<Set<NodeId>>>;
   getDescendants: (nodeId: NodeId) => Set<NodeId>;
-  controller: any;
+  controller: {onMoveNodes?: (nodes: string[], target: string) => void | Promise<void>} | undefined;
   disableDragAndDrop: boolean;
   visualSelectionSet: Set<NodeId>;
   useTrashColumns: boolean;
