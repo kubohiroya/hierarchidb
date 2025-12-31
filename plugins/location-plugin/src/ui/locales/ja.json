@@ -4,6 +4,7 @@
     "license": { "label": "ライセンス同意" },
     "selection": { "label": "地点選択" },
     "batchParameters": { "label": "処理設定" },
+    "tileSettings": { "label": "ベクタタイル設定" },
     "build": { "label": "ビルド" },
     "mapPreview": { "label": "プレビュー" }
   },
@@ -107,9 +108,6 @@
   "processing": {
     "description": "バッチ処理のダウンロード/タイル生成パラメータを設定します。",
     "concurrentDownloadsLabel": "同時ダウンロード数",
-    "tilingZoomLabel": "タイルズーム範囲",
-    "minZoom": "最小ズーム",
-    "maxZoom": "最大ズーム",
     "cleanupTitle": "クリーンアップ",
     "deleteDownloads": "ダウンロード済みポイントを削除 ({count})",
     "deleteCache": "キャッシュ済みデータを削除 ({count})",
@@ -117,6 +115,13 @@
     "deleteDownloadsDone": "ダウンロード済みポイントを削除しました",
     "deleteCacheDone": "中間キャッシュを削除しました",
     "deleteMetadataDone": "メタデータを削除しました"
+  },
+  "tileSettings": {
+    "description": "ベクタタイル生成のパラメータを設定します。",
+    "workersLabel": "ベクタタイルワーカー数",
+    "zoomLabel": "タイルズーム範囲",
+    "minZoom": "最小ズーム",
+    "maxZoom": "最大ズーム"
   },
   "mapPreview": {
     "title": "地図プレビュー",

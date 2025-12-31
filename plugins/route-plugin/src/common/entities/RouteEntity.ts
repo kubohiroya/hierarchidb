@@ -51,6 +51,7 @@ export interface RouteProcessingConfig {
     minZoom: number;
     maxZoom: number;
     buffer: number;
+    tileWorkers?: number;
   };
 }
 

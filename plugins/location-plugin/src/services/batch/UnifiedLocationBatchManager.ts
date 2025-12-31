@@ -98,7 +98,9 @@ export class UnifiedLocationBatchManager extends UnifiedBatchManagerBase<Unified
   }
 
   protected async performStart(nodeId: NodeId, config: UnifiedLocationBatchConfig | undefined, data: LocationBatchData): Promise<BatchSessionId> {
-    const summary = await this.manager.createSession(nodeId, data.points, data.settings, { concurrency: config?.concurrency });
+    const summary = await this.manager.createSession(nodeId, data.points, data.settings, {
+      concurrency: config?.tileWorkers ?? config?.concurrency,
+    });
     try {
       const db = this.getDb();
       await db.clearVectorTilesForSession(summary.sessionId);

@@ -31,6 +31,7 @@ export class LocationSessionController {
     private readonly nodeId: NodeId,
     private readonly points: LocationPointInput[],
     private readonly settings: LocationTileSettings,
+    private readonly tileWorkers: number = 4,
   ) {
   }
 
@@ -122,7 +123,12 @@ export class LocationSessionController {
       return;
     }
     await LocationSessionController.laneRegistry.runWithLane('tilegen', async () => {
-      await tileClient.generateTiles(fileId, { format: 'mvt', compression: 'none' });
+      await tileClient.generateTiles(fileId, {
+        format: 'mvt',
+        compression: 'none',
+        minZoom: this.settings.zoomMinGenerate,
+        maxZoom: this.settings.zoomMaxGenerate,
+      });
     });
 
     // 3) Import generated tiles back into location DB for compatibility
@@ -138,7 +144,10 @@ export class LocationSessionController {
     let completed = 0;
     const batch = new BatchService();
     const laneName = 'tilegen';
-    const concurrency = LocationSessionController.laneRegistry.recommendConcurrency([laneName], 4);
+    const requested = Number.isFinite(this.tileWorkers) ? this.tileWorkers : undefined;
+    const concurrency = requested && requested > 0
+      ? Math.min(Math.max(1, Math.round(requested)), 32)
+      : LocationSessionController.laneRegistry.recommendConcurrency([laneName], 4);
 
     await batch.mapChunks<VectorTileRecord, void>(list, async (t) => {
       await LocationSessionController.laneRegistry.runWithLane(laneName, async () => {

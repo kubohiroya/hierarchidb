@@ -57,6 +57,8 @@ export interface LocationEntity extends TreeNodeData {
   /** Optional tiling zoom range for batch downloads. */
   tilesMinZoom?: number;
   tilesMaxZoom?: number;
+  /** Number of workers used for vector tile generation. */
+  tileWorkers?: number;
   concurrentDownloads: number;
   batchSessionId?: string;
   lastProcessedAt?: Timestamp;

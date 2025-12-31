@@ -4,6 +4,7 @@
     "license": { "label": "License Agreement" },
     "selection": { "label": "Location Selection" },
     "batchParameters": { "label": "Processing Settings" },
+    "tileSettings": { "label": "Vector Tile Settings" },
     "build": { "label": "Build" },
     "mapPreview": { "label": "Preview" }
   },
@@ -105,11 +106,8 @@
     }
   },
   "processing": {
-    "description": "Configure download and tiling parameters for batch processing.",
+    "description": "Configure download parameters and cleanup options.",
     "concurrentDownloadsLabel": "Concurrent Downloads",
-    "tilingZoomLabel": "Tile Zoom Range",
-    "minZoom": "Min zoom",
-    "maxZoom": "Max zoom",
     "cleanupTitle": "Cleanup",
     "deleteDownloads": "Delete downloaded points ({count})",
     "deleteCache": "Delete cached data ({count})",
@@ -117,6 +115,13 @@
     "deleteDownloadsDone": "Deleted downloaded points",
     "deleteCacheDone": "Deleted cached intermediate data",
     "deleteMetadataDone": "Deleted metadata"
+  },
+  "tileSettings": {
+    "description": "Configure vector tile generation parameters.",
+    "workersLabel": "Vector tile workers",
+    "zoomLabel": "Tile Zoom Range",
+    "minZoom": "Min zoom",
+    "maxZoom": "Max zoom"
   },
   "mapPreview": {
     "title": "Map Preview",
