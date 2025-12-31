@@ -18,7 +18,7 @@ interface TreeTableContextMenuProps {
   contextMenuState: TreeTableContextMenuState;
   onClose: () => void;
   treeId?: string;
-  controller: TreeTableController | null;
+  controller?: TreeTableController;
   ContextMenuComponent: ComponentType<NodeContextMenuProps>;
 }
 

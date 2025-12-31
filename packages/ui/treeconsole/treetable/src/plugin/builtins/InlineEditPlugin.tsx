@@ -1,47 +1,30 @@
 /**
-  * Inline Edit Plugin
-  * TreeTable
-  */
+ * Inline Edit Plugin (built-in)
+ */
 
-import type { TreeTablePlugin } from '../plugin/types.js';
-import type { TreeNodeInUI } from '../types.js';
+import type { TreeTablePlugin } from '../types.js';
+import type { TreeNodeInUI } from '../../types.js';
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import type { KeyboardEvent } from 'react';
 
-/**
-    */
 export interface InlineEditPluginConfig {
-  /**
-      * : F2
-      */
+  /** Key to start editing (default: F2) */
   editStartKey?: string;
 
-  /**
-      * : Enter
-      */
+  /** Key to confirm edit (default: Enter) */
   confirmKey?: string;
 
-  /**
-      * : Escape
-      */
+  /** Key to cancel edit (default: Escape) */
   cancelKey?: string;
 
-  /**
-      * : true
-      */
+  /** Enable double-click to start editing (default: true) */
   enableDoubleClickEdit?: boolean;
 
-  /**
-            */
   validateBeforeEdit?: (node: TreeNodeInUI) => boolean | Promise<boolean>;
 
-  /**
-            */
   validateBeforeSave?: (node: TreeNodeInUI, newValue: string) => boolean | Promise<boolean>;
 }
 
-/**
-    */
 export function createInlineEditPlugin(config?: InlineEditPluginConfig): TreeTablePlugin {
   const {
     editStartKey = 'F2',
@@ -50,7 +33,7 @@ export function createInlineEditPlugin(config?: InlineEditPluginConfig): TreeTab
     enableDoubleClickEdit = true,
     validateBeforeEdit,
     validateBeforeSave,
-  } = config || {};
+  } = config ?? {};
 
   return {
     name: 'inline-edit',
@@ -58,7 +41,7 @@ export function createInlineEditPlugin(config?: InlineEditPluginConfig): TreeTab
 
     hooks: {
       onKeyDown: (event: KeyboardEvent, context) => {
-        //  F2
+        // F2
         if (event.key === editStartKey) {
           const selectedNodes = context.selectedNodes;
           if (selectedNodes.length === 1) {
@@ -68,13 +51,14 @@ export function createInlineEditPlugin(config?: InlineEditPluginConfig): TreeTab
           }
         }
 
-        //  Enter/Escape
+        // Enter/Escape
         if (context.editingNodeId) {
           if (event.key === confirmKey) {
             event.preventDefault();
             console.log(`Confirming edit for node: ${context.editingNodeId}`);
             return true;
-          } else if (event.key === cancelKey) {
+          }
+          if (event.key === cancelKey) {
             event.preventDefault();
             console.log(`Canceling edit for node: ${context.editingNodeId}`);
             return true;
@@ -84,13 +68,13 @@ export function createInlineEditPlugin(config?: InlineEditPluginConfig): TreeTab
         return false;
       },
 
-      onRowDoubleClick: (node, _event) => {
+      onRowDoubleClick: (node) => {
         if (!enableDoubleClickEdit) return false;
 
         if (validateBeforeEdit) {
           const canEdit = validateBeforeEdit(node);
           if (canEdit instanceof Promise) {
-            canEdit.then(result => {
+            canEdit.then((result) => {
               if (result) {
                 console.log(`Starting inline edit via double-click: ${node.id}`);
               }
@@ -106,12 +90,11 @@ export function createInlineEditPlugin(config?: InlineEditPluginConfig): TreeTab
       },
 
       onEditingStateChange: (editingNodeId) => {
-        console.log(`Editing state changed: ${editingNodeId || 'none'}`);
+        console.log(`Editing state changed: ${editingNodeId ?? 'none'}`);
       },
 
       onBeforeNodeUpdate: async (nodeId, newData) => {
         if (validateBeforeSave && newData.metadata?.name) {
-          // Create a minimal TreeNodeInUI object for validation
           const node: TreeNodeInUI = {
             id: nodeId as NodeId,
             parentId: '' as NodeId,
@@ -122,9 +105,9 @@ export function createInlineEditPlugin(config?: InlineEditPluginConfig): TreeTab
             updatedAt: Date.now(),
             version: 1,
             visible: true,
-            data: {...newData.data},
-            draftData: {...newData.draftData},
-            metadata: {...newData.metadata},
+            data: { ...newData.data },
+            draftData: { ...newData.draftData },
+            metadata: { ...newData.metadata },
             draftMetadata: {
               ...newData.metadata,
             },

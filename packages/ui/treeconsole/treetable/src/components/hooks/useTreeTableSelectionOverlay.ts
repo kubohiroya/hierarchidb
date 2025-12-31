@@ -56,7 +56,7 @@ export function useTreeTableSelectionOverlay({
     actualSelectionIds.forEach((id) => {
       derived.add(id);
       const descendants = getDescendants(id);
-      descendants.forEach((descendantId) => derived.add(descendantId));
+      descendants.forEach((descendantId) => {derived.add(descendantId);});
     });
     return derived;
   }, [selectAll, data, actualSelectionIds, getDescendants]);

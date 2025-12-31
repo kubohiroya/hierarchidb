@@ -1,42 +1,27 @@
 /**
-  * Keyboard Navigation Plugin
-  * TreeTable
-  */
+ * Keyboard Navigation Plugin (built-in)
+ */
 
-import type { TreeTablePlugin } from '../plugin/types.js';
+import type { TreeTablePlugin } from '../types.js';
 import type { KeyboardEvent } from 'react';
 
-/**
-    */
 export interface KeyboardNavigationPluginConfig {
-  /**
-      * : true
-      */
+  /** Enable ArrowUp/ArrowDown navigation (default: true) */
   enableArrowKeyNavigation?: boolean;
 
-  /**
-      * Space: true
-      */
+  /** Enable Space key selection toggle (default: true) */
   enableSpaceKeySelection?: boolean;
 
-  /**
-      * Ctrl+A: true
-      */
+  /** Enable Ctrl/Cmd + A select all (default: true) */
   enableSelectAll?: boolean;
 
-  /**
-      * Shift+: true
-      */
+  /** Enable range selection with Shift (default: true) */
   enableRangeSelection?: boolean;
 
-  /**
-      * /
-      */
+  /** Enable expand/collapse keys via ArrowLeft/ArrowRight (default: true) */
   enableExpandCollapseKeys?: boolean;
 }
 
-/**
-    */
 export function createKeyboardNavigationPlugin(config?: KeyboardNavigationPluginConfig): TreeTablePlugin {
   const {
     enableArrowKeyNavigation = true,
@@ -44,7 +29,7 @@ export function createKeyboardNavigationPlugin(config?: KeyboardNavigationPlugin
     enableSelectAll = true,
     enableRangeSelection = true,
     enableExpandCollapseKeys = true,
-  } = config || {};
+  } = config ?? {};
 
   return {
     name: 'keyboard-navigation',
@@ -59,7 +44,7 @@ export function createKeyboardNavigationPlugin(config?: KeyboardNavigationPlugin
 
           console.log(`Navigating ${event.key === 'ArrowUp' ? 'up' : 'down'}`);
 
-          //  Shift
+          // Shift
           if (event.shiftKey && enableRangeSelection) {
             console.log('Range selection with arrow key');
           }
@@ -67,7 +52,7 @@ export function createKeyboardNavigationPlugin(config?: KeyboardNavigationPlugin
           return true;
         }
 
-        //  /
+        // Expand/collapse
         if (enableExpandCollapseKeys && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
           const currentNode = selectedNodes[0];
           if (currentNode) {
@@ -77,13 +62,13 @@ export function createKeyboardNavigationPlugin(config?: KeyboardNavigationPlugin
               if (expandedNodes.includes(currentNode)) {
                 console.log(`Collapsing node: ${currentNode}`);
               } else {
-                console.log(`Moving to parent node`);
+                console.log('Moving to parent node');
               }
             } else {
               if (!expandedNodes.includes(currentNode)) {
                 console.log(`Expanding node: ${currentNode}`);
               } else {
-                console.log(`Moving to first child`);
+                console.log('Moving to first child');
               }
             }
 
@@ -91,7 +76,7 @@ export function createKeyboardNavigationPlugin(config?: KeyboardNavigationPlugin
           }
         }
 
-        //  Space
+        // Space
         if (enableSpaceKeySelection && event.key === ' ') {
           event.preventDefault();
           const currentNode = selectedNodes[0];
@@ -101,28 +86,28 @@ export function createKeyboardNavigationPlugin(config?: KeyboardNavigationPlugin
           return true;
         }
 
-        //  Ctrl+A/Cmd+A
+        // Ctrl+A / Cmd+A
         if (enableSelectAll && event.key === 'a' && (event.ctrlKey || event.metaKey)) {
           event.preventDefault();
           console.log('Selecting all nodes');
           return true;
         }
 
-        //  Escape
+        // Escape
         if (event.key === 'Escape' && selectedNodes.length > 0) {
           event.preventDefault();
           console.log('Clearing selection');
           return true;
         }
 
-        //  home/End
+        // Home/End
         if (event.key === 'home' || event.key === 'End') {
           event.preventDefault();
           console.log(`Moving to ${event.key === 'home' ? 'first' : 'last'} node`);
           return true;
         }
 
-        //  Page Up/Page Down
+        // Page Up/Page Down
         if (event.key === 'PageUp' || event.key === 'PageDown') {
           event.preventDefault();
           console.log(`Page ${event.key === 'PageUp' ? 'up' : 'down'}`);
@@ -134,10 +119,6 @@ export function createKeyboardNavigationPlugin(config?: KeyboardNavigationPlugin
 
       onSelectionChange: (selectedIds) => {
         console.log(`Selection changed: ${selectedIds.length} nodes selected`);
-
-        if (selectedIds.length === 1) {
-          // lastSelectedIndex = 0;
-        }
       },
 
       onExpansionChange: (expandedIds) => {
@@ -146,14 +127,10 @@ export function createKeyboardNavigationPlugin(config?: KeyboardNavigationPlugin
 
       onPluginInit: () => {
         console.log('KeyboardNavigationPlugin initialized');
-
-        // document.addEventListener('keydown', globalKeyHandler);
       },
 
       onPluginDestroy: () => {
         console.log('KeyboardNavigationPlugin destroyed');
-
-        // document.removeEventListener('keydown', globalKeyHandler);
       },
     },
 
@@ -168,3 +145,4 @@ export function createKeyboardNavigationPlugin(config?: KeyboardNavigationPlugin
 }
 
 export const keyboardNavigationPlugin = createKeyboardNavigationPlugin();
+

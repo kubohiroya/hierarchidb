@@ -341,7 +341,7 @@ export function TreeTableCore({
           forbiddenTargets={forbiddenTargets}
           setForbiddenTargets={setForbiddenTargets}
           getDescendants={structure.getDescendants}
-          controller={controller}
+          controller={controller ?? undefined}
           disableDragAndDrop={disableDragAndDrop}
           visualSelectionSet={visualSelectionSet}
           useTrashColumns={useTrashColumns}
@@ -353,7 +353,7 @@ export function TreeTableCore({
         contextMenuState={contextMenuState}
         onClose={handleContextMenuClose}
         treeId={treeId}
-        controller={controller}
+        controller={controller ?? undefined}
         ContextMenuComponent={ContextMenuComponent}
       />
     </StyledTableContainer>

@@ -102,7 +102,7 @@ export function getAncestorIds(nodeId: NodeId, allNodes: TreeNode[]): NodeId[] {
   const ancestors: NodeId[] = [];
 
   const nodeMap = new Map<string, TreeNode>();
-  allNodes.forEach((node) => nodeMap.set(String(node.id), node));
+  allNodes.forEach((node) => {nodeMap.set(String(node.id), node)});
 
   const collectAncestors = (currentKey: string) => {
     const node = nodeMap.get(currentKey);
@@ -165,7 +165,7 @@ export function getNodePath(
     node,
   ];
 
-  return pathNodes.map((n) => n!.metadata.name).join(separator);
+  return pathNodes.map((n) => n?.metadata.name).join(separator);
 }
 
 /**

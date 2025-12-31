@@ -40,7 +40,7 @@ interface HookExecutionConfig {
 export class PluginRegistry implements IPluginRegistry {
   private plugins: Map<string, PluginRuntimeInfo> = new Map();
   private hookConfigs: Map<keyof TreeTableHooks, HookExecutionConfig> = new Map();
-  private eventListeners: Map<string, Set<(event: any) => void>> = new Map();
+  private eventListeners: Map<string, Set<(event: unknown) => void>> = new Map();
   private debugMode: boolean = false;
 
   constructor(options?: {
@@ -153,18 +153,18 @@ export class PluginRegistry implements IPluginRegistry {
   executeHook<T extends keyof TreeTableHooks>(
     hookName: T,
     ...args: Parameters<NonNullable<TreeTableHooks[T]>>
-  ): any[] {
-    const config = this.hookConfigs.get(hookName) || this.getDefaultHookConfig();
+  ): Array<Awaited<ReturnType<NonNullable<TreeTableHooks[T]>>>> {
+    const config = this.hookConfigs.get(hookName) ?? this.getDefaultHookConfig();
     const availablePlugins = this.getAvailablePluginsForHook(hookName);
 
     if (availablePlugins.length === 0) {
       return [];
     }
 
-    this.debug(`Executing hook: ${hookName} with ${availablePlugins.length} plugins`);
+    this.debug(`Executing hook: ${String(hookName)} with ${availablePlugins.length} plugins`);
 
     const startTime = performance.now();
-    let results: any[] = [];
+    let results: Array<Awaited<ReturnType<NonNullable<TreeTableHooks[T]>>>> = [];
 
     try {
       switch (config.mode) {
@@ -182,14 +182,14 @@ export class PluginRegistry implements IPluginRegistry {
           break;
       }
     } catch (error) {
-      this.debug(`Hook execution failed: ${hookName}`, error);
+      this.debug(`Hook execution failed: ${String(hookName)}`, error);
       if (!config.continueOnError) {
         throw error;
       }
     }
 
     const executionTime = performance.now() - startTime;
-    this.debug(`Hook ${hookName} completed in ${executionTime.toFixed(2)}ms`);
+    this.debug(`Hook ${String(hookName)} completed in ${executionTime.toFixed(2)}ms`);
 
     this.emit('hook:executed', {
       hookName,
@@ -241,16 +241,18 @@ export class PluginRegistry implements IPluginRegistry {
 
   /**
             */
-  on(event: string, listener: (event: any) => void): void {
-    if (!this.eventListeners.has(event)) {
-      this.eventListeners.set(event, new Set());
+  on(event: string, listener: (event: unknown) => void): void {
+    let listeners = this.eventListeners.get(event);
+    if (!listeners) {
+      listeners = new Set();
+      this.eventListeners.set(event, listeners);
     }
-    this.eventListeners.get(event)!.add(listener);
+    listeners.add(listener);
   }
 
   /**
             */
-  off(event: string, listener: (event: any) => void): void {
+  off(event: string, listener: (event: unknown) => void): void {
     this.eventListeners.get(event)?.delete(listener);
   }
 
@@ -333,23 +335,23 @@ export class PluginRegistry implements IPluginRegistry {
       .sort((a, b) => this.comparePriority(a.priority, b.priority));
   }
 
-  private executeHookSequential(
-    hookName: keyof TreeTableHooks,
+  private executeHookSequential<T extends keyof TreeTableHooks>(
+    hookName: T,
     plugins: PluginRuntimeInfo[],
-    args: any[],
+    args: Parameters<NonNullable<TreeTableHooks[T]>>,
     config: HookExecutionConfig,
-  ): any[] {
-    const results: any[] = [];
+  ): Array<Awaited<ReturnType<NonNullable<TreeTableHooks[T]>>>> {
+    const results: Array<Awaited<ReturnType<NonNullable<TreeTableHooks[T]>>>> = [];
 
     for (const pluginInfo of plugins) {
       try {
         const result = this.executePluginHook(pluginInfo, hookName, args);
         results.push(result);
 
-        if (hookName === 'onBeforeCellRender' && result) {
-          args[0] = result;
-        } else if (hookName === 'onAfterCellRender' && result) {
-          args[0] = result;
+        if (hookName === 'onBeforeCellRender' && result != null) {
+          (args as unknown as unknown[])[0] = result;
+        } else if (hookName === 'onAfterCellRender' && result != null) {
+          (args as unknown as unknown[])[0] = result;
         }
 
       } catch (error) {
@@ -363,47 +365,36 @@ export class PluginRegistry implements IPluginRegistry {
     return results;
   }
 
-  private executeHookParallel(
-    hookName: keyof TreeTableHooks,
+  private executeHookParallel<T extends keyof TreeTableHooks>(
+    hookName: T,
     plugins: PluginRuntimeInfo[],
-    args: any[],
+    args: Parameters<NonNullable<TreeTableHooks[T]>>,
     config: HookExecutionConfig,
-  ): any[] {
-    const promises = plugins.map(pluginInfo =>
-      Promise.resolve(this.executePluginHook(pluginInfo, hookName, args))
-        .catch(error => {
-          this.handlePluginError(pluginInfo, hookName, error);
-          return config.continueOnError ? undefined : Promise.reject(error);
-        }),
-    );
-
-    //  Note:
-    //  Promise.allSettled
-    return promises.map((_promise, index) => {
-      const plugin = plugins[index];
-      if (!plugin) return undefined;
-
+  ): Array<Awaited<ReturnType<NonNullable<TreeTableHooks[T]>>>> {
+    // Note: historical behavior executes synchronously; keep it to avoid behavior changes.
+    return plugins.map((pluginInfo) => {
       try {
-        return this.executePluginHook(plugin, hookName, args);
+        return this.executePluginHook(pluginInfo, hookName, args);
       } catch (error) {
-        this.handlePluginError(plugin, hookName, error as Error);
-        return config.continueOnError ? undefined : (() => {
-          throw error;
-        })();
+        this.handlePluginError(pluginInfo, hookName, error as Error);
+        if (config.continueOnError) {
+          return undefined as Awaited<ReturnType<NonNullable<TreeTableHooks[T]>>>;
+        }
+        throw error;
       }
     });
   }
 
-  private executeHookFirstMatch(
-    hookName: keyof TreeTableHooks,
+  private executeHookFirstMatch<T extends keyof TreeTableHooks>(
+    hookName: T,
     plugins: PluginRuntimeInfo[],
-    args: any[],
+    args: Parameters<NonNullable<TreeTableHooks[T]>>,
     config: HookExecutionConfig,
-  ): any[] {
+  ): Array<Awaited<ReturnType<NonNullable<TreeTableHooks[T]>>>> {
     for (const pluginInfo of plugins) {
       try {
         const result = this.executePluginHook(pluginInfo, hookName, args);
-        if (result !== undefined && result !== false) {
+        if (result !== undefined && result !== (false as unknown)) {
           return [result];
         }
       } catch (error) {
@@ -417,20 +408,20 @@ export class PluginRegistry implements IPluginRegistry {
     return [];
   }
 
-  private executeHookAccumulate(
-    hookName: keyof TreeTableHooks,
+  private executeHookAccumulate<T extends keyof TreeTableHooks>(
+    hookName: T,
     plugins: PluginRuntimeInfo[],
-    args: any[],
+    args: Parameters<NonNullable<TreeTableHooks[T]>>,
     config: HookExecutionConfig,
-  ): any[] {
-    const results: any[] = [];
+  ): Array<Awaited<ReturnType<NonNullable<TreeTableHooks[T]>>>> {
+    const results: Array<Awaited<ReturnType<NonNullable<TreeTableHooks[T]>>>> = [];
 
     for (const pluginInfo of plugins) {
       try {
         const result = this.executePluginHook(pluginInfo, hookName, args);
         if (result !== undefined) {
           if (Array.isArray(result)) {
-            results.push(...result);
+            results.push(...(result as Array<Awaited<ReturnType<NonNullable<TreeTableHooks[T]>>>>));
           } else {
             results.push(result);
           }
@@ -446,24 +437,23 @@ export class PluginRegistry implements IPluginRegistry {
     return results;
   }
 
-  private executePluginHook(
+  private executePluginHook<T extends keyof TreeTableHooks>(
     pluginInfo: PluginRuntimeInfo,
-    hookName: keyof TreeTableHooks,
-    args: any[],
-  ): any {
+    hookName: T,
+    args: Parameters<NonNullable<TreeTableHooks[T]>>,
+  ): Awaited<ReturnType<NonNullable<TreeTableHooks[T]>>> {
     const hook = pluginInfo.plugin.hooks[hookName];
-    if (!hook) return undefined;
+    if (!hook) return undefined as Awaited<ReturnType<NonNullable<TreeTableHooks[T]>>>;
 
     try {
       pluginInfo.executionCount++;
       pluginInfo.lastExecuted = Date.now();
 
-      // Type-safe hook execution with spread operator
-      const hookFunction = hook as (...params: unknown[]) => unknown;
+      const hookFunction = hook as (...params: Parameters<NonNullable<TreeTableHooks[T]>>) => ReturnType<NonNullable<TreeTableHooks[T]>>;
       const result = hookFunction(...args);
 
-      this.debug(`Hook ${hookName} executed successfully in plugin ${pluginInfo.plugin.name}`);
-      return result;
+      this.debug(`Hook ${String(hookName)} executed successfully in plugin ${pluginInfo.plugin.name}`);
+      return result as Awaited<ReturnType<NonNullable<TreeTableHooks[T]>>>;
 
     } catch (error) {
       throw new HookExecutionError(
@@ -508,7 +498,7 @@ export class PluginRegistry implements IPluginRegistry {
     };
   }
 
-  private emit(event: string, data: any): void {
+  private emit(event: string, data: unknown): void {
     const listeners = this.eventListeners.get(event);
     if (listeners) {
       for (const listener of listeners) {
@@ -521,7 +511,7 @@ export class PluginRegistry implements IPluginRegistry {
     }
   }
 
-  private debug(message: string, ...args: any[]): void {
+  private debug(message: string, ...args: unknown[]): void {
     if (this.debugMode) {
       console.debug(`[PluginRegistry] ${message}`, ...args);
     }

@@ -60,7 +60,7 @@ export function createPlugin(
   options?: {
     components?: import('./types.js').TreeTableComponentOverrides;
     dependencies?: string[];
-    config?: Record<string, any>;
+    config?: Record<string, unknown>;
   },
 ): import('./types.js').TreeTablePlugin {
   return {
@@ -114,3 +114,7 @@ export const PluginHelpers = {
     return major === targetMajor;
   },
 };
+
+// Built-in plugins (to avoid confusion with the plugin system folder itself)
+export * as BuiltinPlugins from './builtins/index.js';
+export * from './builtins/index.js';

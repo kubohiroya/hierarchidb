@@ -11,7 +11,21 @@ import type {
   PluginRegistry as IPluginRegistry,
   TreeTablePlugin,
   TreeTablePluginConfig,
+  PluginLifecycleState,
+  PluginPriority,
 } from './types.js';
+
+type PluginStats = {
+  name: string;
+  version: string;
+  state: PluginLifecycleState;
+  priority: PluginPriority;
+  registeredAt: number;
+  lastExecuted?: number;
+  executionCount: number;
+  errorCount: number;
+  recentErrors: Error[];
+};
 
 // =============================================================================
 // Context Definition
@@ -61,10 +75,10 @@ export function PluginProvider({
       // config?.global has different properties than HookExecutionConfig
       defaultHookConfig: undefined,
     });
-  }, [debugMode, config?.global]);
+  }, [debugMode]);
 
-  const [events, setEvents] = useState<PluginEvent[]>([]);
-  const [pluginStates, setPluginStates] = useState<Record<string, any>>({});
+  const [events, setEvents] = useState<Array<PluginEvent<unknown>>>([]);
+  const [pluginStates, setPluginStates] = useState<Record<string, PluginStats | undefined>>({});
 
   useEffect(() => {
     const registerPlugins = async () => {
@@ -115,15 +129,16 @@ export function PluginProvider({
   }, [plugins, config, registry, onPluginEvent]);
 
   useEffect(() => {
-    const handlePluginEvent = (event: any) => {
-      const pluginEvent: PluginEvent = {
-        type: event.type || 'unknown',
-        plugin: event.plugin || 'unknown',
+    const handlePluginEvent = (event: unknown) => {
+      const payload = (typeof event === 'object' && event !== null) ? (event as Record<string, unknown>) : undefined;
+      const pluginEvent: PluginEvent<unknown> = {
+        type: (payload?.type as string | undefined) ?? 'unknown',
+        plugin: (payload?.plugin as string | undefined) ?? 'unknown',
         timestamp: Date.now(),
         data: event,
       };
 
-      setEvents(prev => [...prev.slice(-99), pluginEvent]); //  100
+      setEvents((prev) => [...prev.slice(-99), pluginEvent]);
       onPluginEvent?.(pluginEvent);
     };
 
@@ -149,9 +164,9 @@ export function PluginProvider({
 
   useEffect(() => {
     const updatePluginStates = () => {
-      const states: Record<string, any> = {};
+      const states: Record<string, PluginStats | undefined> = {};
       for (const plugin of registry.getPlugins()) {
-        states[plugin.name] = registry.getPluginStats(plugin.name);
+        states[plugin.name] = registry.getPluginStats(plugin.name) as PluginStats | undefined;
       }
       setPluginStates(states);
     };
@@ -278,8 +293,8 @@ function sortPluginsByDependencies(plugins: TreeTablePlugin[]): TreeTablePlugin[
 // =============================================================================
 
 interface PluginDebugPanelProps {
-  events: PluginEvent[];
-  pluginStates: Record<string, any>;
+  events: Array<PluginEvent<unknown>>;
+  pluginStates: Record<string, PluginStats | undefined>;
 }
 
 function PluginDebugPanel({ events, pluginStates }: PluginDebugPanelProps) {
@@ -287,7 +302,8 @@ function PluginDebugPanel({ events, pluginStates }: PluginDebugPanelProps) {
 
   if (!isExpanded) {
     return (
-      <div
+      <button
+        type="button"
         style={{
           position: 'fixed',
           top: 10,
@@ -299,11 +315,12 @@ function PluginDebugPanel({ events, pluginStates }: PluginDebugPanelProps) {
           borderRadius: '4px',
           fontSize: '12px',
           cursor: 'pointer',
+          border: 'none',
         }}
         onClick={() => setIsExpanded(true)}
       >
         🔌 Plugins ({Object.keys(pluginStates).length})
-      </div>
+      </button>
     );
   }
 
@@ -334,6 +351,7 @@ function PluginDebugPanel({ events, pluginStates }: PluginDebugPanelProps) {
       >
         <strong>Plugin Debug Panel</strong>
         <button
+          type="button"
           onClick={() => setIsExpanded(false)}
           style={{
             background: 'none',
@@ -353,17 +371,17 @@ function PluginDebugPanel({ events, pluginStates }: PluginDebugPanelProps) {
             <strong>{name}</strong> v{state?.version}
             <div style={{ color: '#aaa' }}>
               State: {state?.state} | Executions: {state?.executionCount}
-              {state?.errorCount > 0 && (
+              {state?.errorCount && state.errorCount > 0 ? (
                 <span style={{ color: '#ff6b6b' }}> | Errors: {state.errorCount}</span>
-              )}
+              ) : null}
             </div>
           </div>
         ))}
 
         <h4>Recent Events ({events.length})</h4>
         <div style={{ maxHeight: 200, overflow: 'auto' }}>
-          {events.slice(-10).reverse().map((event, index) => (
-            <div key={index} style={{ marginBottom: '3px', fontSize: '10px' }}>
+          {events.slice(-10).reverse().map((event) => (
+            <div key={`${event.timestamp}-${event.type}-${event.plugin}`} style={{ marginBottom: '3px', fontSize: '10px' }}>
               <span style={{ color: '#61dafb' }}>
                 {new Date(event.timestamp).toLocaleTimeString()}
               </span>

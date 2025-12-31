@@ -11,12 +11,9 @@ import type { PluginContext as IPluginContext } from './types.js';
    * @returns null
   */
 export function useOptionalPluginContext(): IPluginContext | null {
-  try {
-    return useContext(PluginContext);
-  } catch {
-    // Context not found - plugin-loader are disabled
-    return null;
-  }
+  // PluginContext is created with a default `null` value, so this is safe even
+  // when no Provider is mounted.
+  return useContext(PluginContext);
 }
 
 /**
@@ -34,7 +31,7 @@ export function useSafePluginHook() {
   return <T extends keyof import('./types.js').TreeTableHooks>(
     hookName: T,
     ...args: Parameters<NonNullable<import('./types.js').TreeTableHooks[T]>>
-  ) => {
+  ): Array<Awaited<ReturnType<NonNullable<import('./types.js').TreeTableHooks[T]>>>> => {
     if (context) {
       return context.executeHook(hookName, ...args);
     }

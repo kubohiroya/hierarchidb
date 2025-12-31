@@ -32,7 +32,7 @@ export interface TreeTablePlugin {
   dependencies?: string[];
   /**
       */
-  config?: Record<string, any>;
+  config?: Record<string, unknown>;
 }
 
 /**
@@ -49,10 +49,10 @@ export interface TreeTableHooks {
   ) => ReactElement;
 
   // Row interaction extensions
-  onRowClick?: (node: TreeNodeInUI, event: MouseEvent) => boolean | void;
-  onRowDoubleClick?: (node: TreeNodeInUI, event: MouseEvent) => boolean | void;
-  onRowContextMenu?: (node: TreeNodeInUI, event: MouseEvent) => boolean | void;
-  onKeyDown?: (event: KeyboardEvent, context: KeyboardContext) => boolean | void;
+  onRowClick?: (node: TreeNodeInUI, event: MouseEvent) => boolean | undefined;
+  onRowDoubleClick?: (node: TreeNodeInUI, event: MouseEvent) => boolean | undefined;
+  onRowContextMenu?: (node: TreeNodeInUI, event: MouseEvent) => boolean | undefined;
+  onKeyDown?: (event: KeyboardEvent, context: KeyboardContext) => boolean | undefined;
 
   // State change extensions
   onEditingStateChange?: (editingNodeId: string | null) => void;
@@ -169,7 +169,7 @@ export interface TreeTableContext {
   showNotification?: (type: 'success' | 'error' | 'warning' | 'info', message: string) => void;
   contextMenuItems?: ContextMenuItem[];
 
-  [key: string]: any; // Allow for plugin-specific context data
+  [key: string]: unknown; // Allow for plugin-specific context data
 }
 
 export interface ToolbarContext {
@@ -201,7 +201,7 @@ export interface PluginContext {
   executeHook: <T extends keyof TreeTableHooks>(
     hookName: T,
     ...args: Parameters<NonNullable<TreeTableHooks[T]>>
-  ) => any[];
+  ) => Array<Awaited<ReturnType<NonNullable<TreeTableHooks[T]>>>>;
 }
 
 // =============================================================================
@@ -222,7 +222,7 @@ export interface PluginRegistry {
   executeHook<T extends keyof TreeTableHooks>(
     hookName: T,
     ...args: Parameters<NonNullable<TreeTableHooks[T]>>
-  ): any[];
+  ): Array<Awaited<ReturnType<NonNullable<TreeTableHooks[T]>>>>;
 }
 
 // =============================================================================
@@ -235,7 +235,7 @@ export interface PluginConfig {
   enabled: boolean;
   /**
       */
-  settings?: Record<string, any>;
+  settings?: Record<string, unknown>;
 }
 
 export interface TreeTablePluginConfig {
@@ -258,14 +258,14 @@ export interface TreeTablePluginConfig {
 // Event Interfaces
 // =============================================================================
 
-export interface PluginEvent {
+export interface PluginEvent<TData = unknown> {
   type: string;
   plugin: string;
   timestamp: number;
-  data?: any;
+  data?: TData;
 }
 
-export interface HookExecutionResult<T = any> {
+export interface HookExecutionResult<T = unknown> {
   plugin: string;
   success: boolean;
   result?: T;

@@ -25,7 +25,7 @@ export * from './utils/index.js';
 export * from './plugin/index.js';
 
 // Built-in Plugins
-export * from './plugins/index.js';
+export * from './plugin/builtins/index.js';
 
 // Types
 export type {
