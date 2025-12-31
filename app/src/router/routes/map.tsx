@@ -99,6 +99,7 @@ type BasemapStyleEntry = {
   nodeId: string;
   absolutePath?: string;
   style: string | MapLibreStyle;
+  viewport?: MapViewState;
 };
 
 type LayerStyleOverrides = Partial<Record<'fill' | 'line' | 'circle' | 'symbol', Record<string, unknown>>>;
@@ -136,6 +137,33 @@ const resolveMapStyleSource = (mapStyle?: MapStyle | null): string | MapLibreSty
     return mapStyle.customStyleUrl ?? null;
   }
   return BUILT_IN_STYLE_URLS[mapStyle.style] ?? DEFAULT_MAP_CONFIG.mapStyleUrl;
+};
+
+const isFiniteNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
+
+const normalizeBasemapViewport = (viewport: unknown): MapViewState | null => {
+  if (!isRecord(viewport)) return null;
+  const { center, zoom, bearing, pitch } = viewport as {
+    center?: unknown;
+    zoom?: unknown;
+    bearing?: unknown;
+    pitch?: unknown;
+  };
+
+  if (!Array.isArray(center) || center.length !== 2) return null;
+  const [longitude, latitude] = center;
+  if (!isFiniteNumber(longitude) || !isFiniteNumber(latitude) || !isFiniteNumber(zoom)) return null;
+  if (longitude < -180 || longitude > 180) return null;
+  if (latitude < -90 || latitude > 90) return null;
+  if (zoom < 0 || zoom > 22) return null;
+
+  return {
+    longitude,
+    latitude,
+    zoom,
+    bearing: isFiniteNumber(bearing) ? bearing : undefined,
+    pitch: isFiniteNumber(pitch) ? pitch : undefined,
+  };
 };
 
 const buildAbsolutePath = (nodeId: string, nodeById: Map<string, TreeNode>): string => {
@@ -377,7 +405,7 @@ export default function MapPage() {
     () => ROUTE_MODE_OPTIONS.map(({ id, label, icon }) => ({ id, label, icon })),
     [],
   );
-  const persistedZxyApplied = useRef(false);
+  const preferredInitialViewAppliedRef = useRef(false);
   const updateTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const lastUpdateRef = useRef<string>('');
   const mapInstanceRef = useRef<MapLibreMapInstance | null>(null);
@@ -420,22 +448,14 @@ export default function MapPage() {
           path: buildAbsolutePath(String(rootNode.id), nodeById),
         });
 
-        if (!search?.zxy && !persistedZxyApplied.current) {
+        let persistedViewState: LoaderMapViewState | null = null;
+        if (!search?.zxy) {
           const persisted =
             rootNode.map?.zxy ??
             (isRecord(rootNode.data) ? (rootNode.data as { map?: { zxy?: string } }).map?.zxy : undefined);
           const parsed = persisted ? parseZxyParam(persisted) : null;
           if (parsed) {
-            persistedZxyApplied.current = true;
-            setInitialViewState(parsed);
-            const formatted = formatZxyParam(parsed);
-            lastUpdateRef.current = formatted;
-            navigate({
-              to: '/map/$nodeId',
-              params: { nodeId },
-              search: (prev: MapSearch = {}) => ({ ...prev, zxy: formatted }),
-              replace: true,
-            });
+            persistedViewState = parsed;
           }
         }
 
@@ -512,13 +532,15 @@ export default function MapPage() {
         visibleDescendants.forEach((node) => {
           const absolutePath = buildAbsolutePath(String(node.id), nodeById);
           if (node.nodeType === 'basemap') {
-            const data = node.data as { mapStyle?: MapStyle } | null;
+            const data = node.data as { mapStyle?: MapStyle; viewport?: unknown } | null;
             const styleSource = resolveMapStyleSource(data?.mapStyle ?? null);
             if (styleSource) {
+              const viewport = normalizeBasemapViewport(data?.viewport);
               basemapEntries.push({
                 nodeId: String(node.id),
                 absolutePath,
                 style: styleSource,
+                viewport: viewport ?? undefined,
               });
             }
           }
@@ -622,8 +644,27 @@ export default function MapPage() {
           }
         });
 
+        const sortedBasemaps = sortByPath(basemapEntries);
+
+        if (!search?.zxy && !preferredInitialViewAppliedRef.current) {
+          const basemapViewport = sortedBasemaps.find((entry) => entry.viewport)?.viewport ?? null;
+          const targetViewState = basemapViewport ?? persistedViewState;
+          if (targetViewState) {
+            preferredInitialViewAppliedRef.current = true;
+            setInitialViewState(targetViewState);
+            const formatted = formatZxyParam(targetViewState);
+            lastUpdateRef.current = formatted;
+            navigate({
+              to: '/map/$nodeId',
+              params: { nodeId },
+              search: (prev: MapSearch = {}) => ({ ...prev, zxy: formatted }),
+              replace: true,
+            });
+          }
+        }
+
         if (!cancelled) {
-          setBasemapStyles(sortByPath(basemapEntries));
+          setBasemapStyles(sortedBasemaps);
           setVectorLayers([
             ...sortByPath(shapeEntries),
             ...sortByPath(routeEntries),
@@ -649,7 +690,7 @@ export default function MapPage() {
   }, [navigate, nodeId, search?.zxy]);
 
   useEffect(() => {
-    if (!search?.zxy && !persistedZxyApplied.current && geolocation.latitude && geolocation.longitude && !geolocation.error) {
+    if (!search?.zxy && !preferredInitialViewAppliedRef.current && geolocation.latitude && geolocation.longitude && !geolocation.error) {
       setInitialViewState({
         longitude: geolocation.longitude,
         latitude: geolocation.latitude,
