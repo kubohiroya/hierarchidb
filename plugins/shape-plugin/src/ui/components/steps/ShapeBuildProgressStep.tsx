@@ -426,7 +426,7 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
       'Previous stage likely hit memory pressure during {{stage}} (peak {{ratio}}). Lower concurrency to reduce memory usage.',
       { stage: stageLabel, ratio: ratioText },
     );
-  }, [crashInsight, effectiveStages, t]);
+  }, [crashInsight, effectiveStages, isDev, t]);
 
   useEffect(() => {
     if (crashHint) {
