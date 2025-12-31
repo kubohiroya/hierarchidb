@@ -30,10 +30,16 @@ export class LocationBatchSessionManager extends BaseBatchSessionManager {
     nodeId: NodeId,
     points: LocationPointInput[],
     settings: LocationTileSettings,
-    options?: { concurrency?: number },
+    options?: { concurrency?: number; tileWorkers?: number },
   ): Promise<SessionSummary> {
     const sessionId = `loc-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-    const controller = new LocationSessionController(sessionId, nodeId, points, settings);
+    const controller = new LocationSessionController(
+      sessionId,
+      nodeId,
+      points,
+      settings,
+      options?.tileWorkers ?? options?.concurrency ?? 4,
+    );
     const bbox = computeBbox(points);
     const summary: SessionSummary = {
       sessionId,
@@ -78,7 +84,7 @@ export class LocationBatchSessionManager extends BaseBatchSessionManager {
     const shared = new LocationBatchSession(
       sessionId,
       nodeId,
-      { concurrency: options?.concurrency ?? 4 },
+      { concurrency: options?.tileWorkers ?? options?.concurrency ?? 4 },
       controller,
       (ev) => this.emitLegacyProgress(sessionId, ev),
     );

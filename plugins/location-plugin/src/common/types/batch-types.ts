@@ -12,6 +12,7 @@ export interface LocationTileSettings {
   zoomMinGenerate: number;
   zoomMaxGenerate: number;
   zoomMaxServe?: number;
+  tileWorkers?: number;
   attributeAllowlist?: string[];
   tileFeatureLimit?: number;
   extent?: number;
@@ -33,6 +34,7 @@ export interface UnifiedLocationBatchConfig {
   corsProxyBaseURL?: string;
   maxRetries?: number;
   maxConcurrentTasks?: number;
+  tileWorkers?: number;
 }
 
 export interface LocationBatchData {

@@ -14,13 +14,20 @@ import { RouteProcessingStep } from './steps/RouteProcessingStep.js';
 import { RouteDataSourceStep } from './steps/RouteDataSourceStep.js';
 import { RouteBuildStep } from './steps/RouteBuildStep.js';
 import { RoutePreviewStep } from './steps/RoutePreviewStep.js';
+import { RouteTileSettingsStep } from './steps/RouteTileSettingsStep.js';
 import { notify } from '@hierarchidb/components';
+import { RouteVectorTileService } from '../../services/RouteVectorTileService.js';
+import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 
 const registry = PluginStepRegistry.getInstance();
 
 type RouteStepData = StepData & RouteUpdaterPayload;
 
 type StepProps = PluginStepProps<RouteStepData>;
+
+const DEFAULT_TILE_MIN_ZOOM = 5;
+const DEFAULT_TILE_MAX_ZOOM = 12;
+const DEFAULT_TILE_WORKERS = 4;
 
 const ensureDraft = (data?: PluginStepProps['data']): RouteStepData => {
   const fallbackId = 'route-draft' as NodeId;
@@ -65,12 +72,38 @@ const hasRouteConfig = (data?: RouteStepData): boolean => {
   );
 };
 
+const hasTileSettings = (data?: RouteStepData): boolean => {
+  const vectorTiles = data?.draftData?.processing?.vectorTiles;
+  const minZoom = vectorTiles?.minZoom ?? DEFAULT_TILE_MIN_ZOOM;
+  const maxZoom = vectorTiles?.maxZoom ?? DEFAULT_TILE_MAX_ZOOM;
+  const workers = vectorTiles?.tileWorkers ?? DEFAULT_TILE_WORKERS;
+  return Number.isFinite(minZoom) && Number.isFinite(maxZoom) && minZoom <= maxZoom && workers >= 1;
+};
+
 const isRouteBuildPersisted = (data?: RouteStepData): boolean =>
   data?.draftData?.processingStatus === 'completed';
 
-const startRouteBatch = async (data: RouteStepData, _context: StartBatchContext) => {
+const persistRouteDraft = async (nodeId: NodeId, data: RouteStepData, updates: Partial<RouteStepData['draftData']>): Promise<void> => {
+  try {
+    const bridge = getWorkerBridge();
+    await bridge.initialize();
+    const updater = await bridge.getTreeNodeUpdaterAPI();
+    await updater.updateTreeNode(nodeId, {
+      mode: 'save-draft',
+      draftData: {
+        ...(data.draftData ?? {}),
+        ...updates,
+      } as Record<string, unknown>,
+    });
+  } catch (error) {
+    console.warn('[RouteStepsProvider] failed to persist route draft', error);
+  }
+};
+
+const startRouteBatch = async (data: RouteStepData, context: StartBatchContext) => {
   const { t } = getTranslation();
   const draft = data?.draftData ?? {};
+  const nodeId = context.nodeId as NodeId | undefined;
   const hasEssentials = Boolean(
     draft.dataSourceName &&
       draft.transportMode &&
@@ -79,12 +112,45 @@ const startRouteBatch = async (data: RouteStepData, _context: StartBatchContext)
       draft.endLocationId
   );
 
+  if (!nodeId) {
+    notify.info(t('messages.completeBeforeBuild', 'Complete the required route settings before starting a build.'));
+    return;
+  }
+
   if (!hasEssentials) {
     notify.info(t('messages.completeBeforeBuild', 'Complete the required route settings before starting a build.'));
     return;
   }
 
-  notify.info(t('messages.batchNotImplemented', 'Route batch launch is not yet implemented in this dialog.'));
+  if (!Array.isArray(draft.lineGeometry) || draft.lineGeometry.length === 0) {
+    notify.error(t('build.errors.missingGeometry', 'Route geometry is required before starting vector tile generation.'));
+    return;
+  }
+
+  const vectorTiles = draft.processing?.vectorTiles ?? {};
+  const settings = {
+    minZoom: vectorTiles.minZoom ?? DEFAULT_TILE_MIN_ZOOM,
+    maxZoom: vectorTiles.maxZoom ?? DEFAULT_TILE_MAX_ZOOM,
+    tileWorkers: vectorTiles.tileWorkers ?? DEFAULT_TILE_WORKERS,
+  };
+
+  const service = new RouteVectorTileService();
+  try {
+    const summary = await service.startSession(nodeId, [draft.lineGeometry as [number, number][]], settings);
+    await persistRouteDraft(nodeId, data, {
+      batchSessionId: summary.sessionId,
+      processingStatus: 'completed',
+      zoomRange: [settings.minZoom, settings.maxZoom],
+      tabularSourceId: summary.tableId,
+      lastProcessedAt: Date.now(),
+    });
+    notify.success(
+      t('build.started', 'Route vector tile build started (session {{sessionId}})').replace('{{sessionId}}', summary.sessionId),
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    notify.error(t('build.errors.startFailed', 'Failed to start vector tile build: {{message}}').replace('{{message}}', message));
+  }
 };
 
 registry.registerConfigProvider<RouteStepData>({
@@ -142,6 +208,21 @@ registry.registerConfigProvider<RouteStepData>({
         validate: () => true,
       },
       {
+        id: 'tile-settings',
+        label: t('steps.tileSettings.label', 'Vector Tile Settings'),
+        componentFactory: (p: StepProps) => {
+          const draft = ensureDraft(p.data);
+          return (
+            <RouteTileSettingsStep
+              draft={draft as unknown as RouteUpdaterPayload}
+              onUpdate={(updates) => p.onChange(mergeDraft(draft, { draftData: updates }))}
+              disabled={Boolean(p.disabled)}
+            />
+          );
+        },
+        validate: hasTileSettings,
+      },
+      {
         id: 'build',
         label: t('steps.build.label', 'Build'),
         optional: false,
@@ -165,7 +246,8 @@ registry.registerConfigProvider<RouteStepData>({
                 draft.transportMode &&
                 draft.generationMethod &&
                 draft.startLocationId &&
-                draft.endLocationId
+                draft.endLocationId &&
+                hasTileSettings(data)
             );
           },
           startBatch: (data, context) => startRouteBatch(data as RouteStepData, context),

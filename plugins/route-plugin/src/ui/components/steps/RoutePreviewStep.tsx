@@ -4,12 +4,15 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
-import { Alert, Box, Paper, Snackbar, Typography } from '@mui/material';
+import { Alert, Box, CircularProgress, Divider, Paper, Snackbar, Stack, Tab, Tabs, Typography } from '@mui/material';
 import type { NodeId } from '@hierarchidb/common-types';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import type { RouteNearestLineResponse } from '@hierarchidb/plugin-service-api';
 import type { RouteUpdaterPayload } from '../../../common/entities/RouteEntity.js';
 import { formatDistance, getTransportModeName, useTranslation } from '../../../common/i18n/index.js';
+import { DataGridPreview } from '@hierarchidb/ui-grid';
+import { RouteVectorTileService } from '../../../services/RouteVectorTileService.js';
+import { getEphemeralRouteDB } from '../../../database/EphemeralRouteDB.js';
 
 interface RoutePreviewStepProps {
   draft: RouteUpdaterPayload;
@@ -76,6 +79,11 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
   const hoverTimerRef = useRef<number | null>(null);
   const hoverRequestIdRef = useRef(0);
   const lastHoverRef = useRef<{ longitude: number; latitude: number; zoom: number } | null>(null);
+  const [activeTab, setActiveTab] = useState(0);
+  const [metadataTableId, setMetadataTableId] = useState<string | null>(draft.draftData?.tabularSourceId ?? null);
+  const [metadataLoading, setMetadataLoading] = useState(false);
+  const [metadataError, setMetadataError] = useState<string | null>(null);
+  const [tileSummary, setTileSummary] = useState<{ tiles: number; zoomRange?: [number, number]; sizeBytes?: number } | null>(null);
 
   const hoverBounds = useMemo<Bounds>(() => bounds ?? { minLon: -180, maxLon: 180, minLat: -85, maxLat: 85 }, [bounds]);
   const zoomLevel = useMemo(() => {
@@ -104,6 +112,44 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
     observer.observe(mapRef.current);
     return () => observer.disconnect();
   }, []);
+
+  const loadMetadata = useCallback(async () => {
+    if (!previewNodeId) return;
+    setMetadataLoading(true);
+    setMetadataError(null);
+    try {
+      const db = getEphemeralRouteDB();
+      const sessions = await db.sessions.where('nodeId').equals(previewNodeId).toArray();
+      let latest = sessions[0] ?? null;
+      for (const session of sessions) {
+        if (!latest || (session.createdAt ?? 0) > (latest.createdAt ?? 0)) {
+          latest = session;
+        }
+      }
+      if (latest?.sessionId) {
+        const service = new RouteVectorTileService();
+        const summary = await service.getSessionSummary(latest.sessionId);
+        setTileSummary({
+          tiles: summary.tiles,
+          zoomRange: summary.zoomRange,
+          sizeBytes: summary.sizeBytes,
+        });
+        setMetadataTableId((prev) => prev ?? latest?.tableId ?? summary.tableId ?? null);
+      } else {
+        setTileSummary(null);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setMetadataError(message);
+      setTileSummary(null);
+    } finally {
+      setMetadataLoading(false);
+    }
+  }, [previewNodeId]);
+
+  useEffect(() => {
+    void loadMetadata();
+  }, [loadMetadata]);
 
   const scheduleHoverLookup = useCallback((longitude: number, latitude: number) => {
     if (!previewNodeId || mapSize.width === 0 || mapSize.height === 0) return;
@@ -212,6 +258,72 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
     }
   }, []);
 
+  const formatBytes = useCallback((value: number | undefined) => {
+    if (!value || Number.isNaN(value)) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let v = value;
+    let idx = 0;
+    while (v >= 1024 && idx < units.length - 1) {
+      v /= 1024;
+      idx += 1;
+    }
+    const fixed = v >= 10 ? v.toFixed(0) : v.toFixed(1);
+    return `${fixed} ${units[idx]}`;
+  }, []);
+
+  const metadataContent = useMemo(() => {
+    if (metadataLoading) {
+      return (
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <CircularProgress size={16} />
+          <Typography variant="body2" color="text.secondary">
+            {t('preview.metadataLoading', 'Loading metadata...')}
+          </Typography>
+        </Stack>
+      );
+    }
+    if (metadataError) {
+      return (
+        <Typography variant="body2" color="error">
+          {metadataError}
+        </Typography>
+      );
+    }
+    if (!metadataTableId) {
+      return (
+        <Typography variant="body2" color="text.secondary">
+          {t('preview.metadataEmpty', 'No metadata available yet.')}
+        </Typography>
+      );
+    }
+    return (
+      <Box display="flex" flexDirection="column" gap={2}>
+        {tileSummary ? (
+          <Stack spacing={0.5}>
+            <Typography variant="body2">
+              {t('preview.metadataTiles', 'Generated tiles: {count}').replace('{count}', String(tileSummary.tiles ?? 0))}
+            </Typography>
+            {tileSummary.zoomRange ? (
+              <Typography variant="body2" color="text.secondary">
+                {t('preview.metadataZoom', 'Zoom range: {min} - {max}')
+                  .replace('{min}', String(tileSummary.zoomRange[0]))
+                  .replace('{max}', String(tileSummary.zoomRange[1]))}
+              </Typography>
+            ) : null}
+            {tileSummary.sizeBytes ? (
+              <Typography variant="body2" color="text.secondary">
+                {t('preview.metadataSize', 'Total size: {size}').replace('{size}', formatBytes(tileSummary.sizeBytes))}
+              </Typography>
+            ) : null}
+          </Stack>
+        ) : null}
+        <Box sx={{ height: 360 }}>
+          <DataGridPreview pluginId="route" tableId={metadataTableId} />
+        </Box>
+      </Box>
+    );
+  }, [formatBytes, metadataError, metadataLoading, metadataTableId, t, tileSummary]);
+
   return (
     <Box display="flex" flexDirection="column" gap={2}>
       <Typography variant="h6">{t('preview.title', 'Preview')}</Typography>
@@ -231,47 +343,60 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
             {t('preview.ready', 'Route geometry is available. Map preview will appear here.')}
           </Alert>
           <Paper variant="outlined" sx={{ p: 2 }}>
-            <Typography variant="subtitle1">{t('preview.mapTitle', 'Map Preview')}</Typography>
-            <Box
-              ref={mapRef}
-              onMouseMove={handleMapMouseMove}
-              onMouseLeave={handleMapMouseLeave}
-              sx={{
-                position: 'relative',
-                mt: 1,
-                height: 320,
-                borderRadius: 1,
-                border: '1px solid',
-                borderColor: 'divider',
-                bgcolor: 'background.default',
-                overflow: 'hidden',
-              }}
+            <Tabs
+              value={activeTab}
+              onChange={(_, value) => setActiveTab(value)}
+              variant="scrollable"
+              scrollButtons="auto"
             >
+              <Tab label={t('preview.tabs.map', 'Map')} />
+              <Tab label={t('preview.tabs.metadata', 'Metadata')} />
+            </Tabs>
+            <Divider sx={{ my: 1 }} />
+            {activeTab === 0 ? (
               <Box
-                component="svg"
-                sx={{ position: 'absolute', inset: 0 }}
-                viewBox={`0 0 ${Math.max(1, mapSize.width)} ${Math.max(1, mapSize.height)}`}
-                preserveAspectRatio="none"
+                ref={mapRef}
+                onMouseMove={handleMapMouseMove}
+                onMouseLeave={handleMapMouseLeave}
+                sx={{
+                  position: 'relative',
+                  mt: 1,
+                  height: 320,
+                  borderRadius: 1,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: 'background.default',
+                  overflow: 'hidden',
+                }}
               >
-                <polyline
-                  points={polylinePoints}
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  opacity={0.6}
-                />
-                {isHoverActive && (
+                <Box
+                  component="svg"
+                  sx={{ position: 'absolute', inset: 0 }}
+                  viewBox={`0 0 ${Math.max(1, mapSize.width)} ${Math.max(1, mapSize.height)}`}
+                  preserveAspectRatio="none"
+                >
                   <polyline
                     points={polylinePoints}
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth={5}
-                    opacity={0.95}
-                    style={{ filter: 'drop-shadow(0 0 6px currentColor)' }}
+                    strokeWidth={2}
+                    opacity={0.6}
                   />
-                )}
+                  {isHoverActive && (
+                    <polyline
+                      points={polylinePoints}
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={5}
+                      opacity={0.95}
+                      style={{ filter: 'drop-shadow(0 0 6px currentColor)' }}
+                    />
+                  )}
+                </Box>
               </Box>
-            </Box>
+            ) : (
+              metadataContent
+            )}
           </Paper>
           <Snackbar
             open={hoverOpen && Boolean(hoverMessage)}
