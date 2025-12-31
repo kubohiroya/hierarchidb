@@ -1,1 +1,0 @@
-import{o as e}from"./rolldown-runtime-B72-3ape.js";import{r as t}from"./vendor-react-DpltIsIb.js";import{Gn as n}from"./index.js";var r=n((0,e(t()).jsx)(`path`,{d:`m14 6-3.75 5 2.85 3.8-1.6 1.2C9.81 13.75 7 10 7 10l-6 8h22z`}),`Terrain`);export{r as t};

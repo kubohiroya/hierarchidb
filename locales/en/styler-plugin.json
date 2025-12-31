@@ -50,18 +50,103 @@
     },
     "targetProperty": {
       "label": "Target style property",
-      "help": "Select the MapLibre paint property to map this value to."
+      "help": "Select the MapLibre paint property to map this value to.",
+      "groups": {
+        "fill": "Fill properties",
+        "line": "Line properties",
+        "circle": "Circle properties",
+        "text": "Text properties"
+      },
+      "options": {
+        "fillColor": "Fill Color",
+        "fillOpacity": "Fill Opacity",
+        "lineColor": "Line Color",
+        "lineWidth": "Line Width",
+        "lineOpacity": "Line Opacity",
+        "circleColor": "Circle Color",
+        "circleRadius": "Circle Radius",
+        "circleOpacity": "Circle Opacity",
+        "textColor": "Text Color",
+        "textHaloColor": "Text Halo Color",
+        "textHaloWidth": "Text Halo Width"
+      },
+      "descriptions": {
+        "fillColor": "Apply data-driven color fills to areas like polygons or regions.",
+        "fillOpacity": "Control the transparency of area fills using numeric values.",
+        "lineColor": "Apply data-driven colors to line or route strokes.",
+        "lineWidth": "Scale line thickness based on numeric values.",
+        "lineOpacity": "Set line transparency using numeric values.",
+        "circleColor": "Color points or markers using data values.",
+        "circleRadius": "Adjust point size with numeric values.",
+        "circleOpacity": "Control marker transparency using numeric values.",
+        "textColor": "Style label text colors with data-driven values.",
+        "textHaloColor": "Set label halo colors to improve contrast on the map.",
+        "textHaloWidth": "Adjust halo thickness around label text."
+      }
     },
     "validation": {
       "required": "Select a style type, value source, and target property to continue."
+    }
+  },
+  "step4": {
+    "numericRange": {
+      "label": "Numeric range",
+      "min": "Minimum",
+      "max": "Maximum",
+      "help": "Set the output range for numeric targets. Defaults are 0.0 to 10.0 with a 5.0 midpoint."
     }
   },
   "steps": {
     "dataSource": "Data Source",
     "filtering": "Filtering",
     "styleSettings": "Style Mapping",
-    "styleAlgorithm": "Style Algorithm",
+    "target": "Apply Target",
+    "styleAlgorithm": "Algorithm",
     "preview": "Preview"
+  },
+  "step5": {
+    "target": {
+      "sections": {
+        "area": "Render countries / municipalities",
+        "point": "Render points",
+        "route": "Render routes"
+      },
+      "options": {
+        "fillColor": "Fill color 🎨",
+        "fillOpacity": "Fill opacity 🪄",
+        "lineColor": "Line color 🎨",
+        "lineOpacity": "Line opacity 🪄",
+        "lineWidth": "Line width 📐",
+        "circleColor": "Point color 🎨",
+        "circleRadius": "Point size 📐",
+        "routeLineColor": "Line color 🎨",
+        "routeLineOpacity": "Line opacity 🪄",
+        "routeLineWidth": "Line thickness 📐"
+      },
+      "numericRange": {
+        "label": "Numeric range",
+        "min": "Minimum",
+        "max": "Maximum"
+      },
+      "help": "Select one target to map your data. Numeric targets enable a range.",
+      "validation": {
+        "required": "Select a target to continue."
+      }
+    }
+  },
+  "step6": {
+    "opacity": {
+      "range": "Opacity range",
+      "help": "Lower values are more transparent."
+    },
+    "width": {
+      "range": "Width range",
+      "help": "Higher values produce thicker lines."
+    },
+    "numericRange": {
+      "min": "Minimum",
+      "max": "Maximum"
+    }
   },
   "filtering": {
     "processing": "Processing tabular data..."

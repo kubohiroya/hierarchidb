@@ -1,1 +1,0 @@
-import{t as e}from"./import-wrapper-prod-Sv3TzLWw.js";import{s as t}from"./src-MxIw79LM.js";import{n}from"./dist-D3CCAcrS.js";async function r(){await e.delete(t(`route-db`))}export{n as RouteDatabase,r as clearDatabases};
