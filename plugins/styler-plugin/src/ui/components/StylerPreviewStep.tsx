@@ -290,34 +290,34 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
                     sortDirection={isActive && sortState.direction ? sortState.direction : false}
                     sx={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
                   >
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      {isKey && (
-                        <Chip
-                          label={t('stylePreview.keyColumn', 'Key')}
-                          size="small"
-                          color="primary"
-                          variant="outlined"
-                        />
-                      )}
-                      {isValue && (
-                        <Chip
-                          label={t('stylePreview.valueColumn', 'Value')}
-                          size="small"
-                          color="secondary"
-                          variant="outlined"
-                        />
-                      )}
-                      <TableSortLabel
-                        active={isActive}
-                        direction={sortState.direction ?? 'asc'}
-                        hideSortIcon={!isActive}
-                        onClick={() => handleToggleSort(col)}
-                      >
+                    <TableSortLabel
+                      active={isActive}
+                      direction={sortState.direction ?? 'asc'}
+                      hideSortIcon={!isActive}
+                      onClick={() => handleToggleSort(col)}
+                    >
+                      <Stack direction="row" spacing={1} alignItems="center">
                         <Typography variant="subtitle2" component="span">
                           {col}
                         </Typography>
-                      </TableSortLabel>
-                    </Stack>
+                        {isKey && (
+                          <Chip
+                            label={t('stylePreview.keyColumn', 'Key')}
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                          />
+                        )}
+                        {isValue && (
+                          <Chip
+                            label={t('stylePreview.valueColumn', 'Value')}
+                            size="small"
+                            color="secondary"
+                            variant="outlined"
+                          />
+                        )}
+                      </Stack>
+                    </TableSortLabel>
                   </TableCell>
                 );
               })}
