@@ -27,7 +27,7 @@ const normalizeGooglePhotoUrl = (photoUrl: string | undefined): string | undefin
     // Strategy 2: Remove any additional parameters that might cause issues
     const urlParts = normalizedUrl.split('?');
     if (urlParts.length > 1) {
-      normalizedUrl = urlParts[0] || normalizedUrl; // Remove query parameters
+      normalizedUrl = urlParts[0] ?? normalizedUrl; // Remove query parameters
     }
 
     // Strategy 3: Ensure we're using the correct size parameter format
@@ -114,7 +114,7 @@ async function generateCodeChallenge(verifier: string): Promise<string> {
 const isAbsoluteUrl = (value: string): boolean => /^https?:\/\//i.test(value);
 
 const normalizeAuthBase = (rawBase?: string): string => {
-  const base = (rawBase || '').trim().replace(/\/$/, '');
+  const base = (rawBase ?? '').trim().replace(/\/$/, '');
   if (isAbsoluteUrl(base)) {
     const url = new URL(base);
     const origin = `${url.protocol}//${url.host}`;
@@ -167,7 +167,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
         const storedUser = localStorage.getItem(STORAGE_KEY);
         // Check both locations for token (for backward compatibility)
         const storedToken =
-          sessionStorage.getItem(TOKEN_KEY) || sessionStorage.getItem('access_token');
+          sessionStorage.getItem(TOKEN_KEY) ?? sessionStorage.getItem('access_token');
 
         // Also check if we have userinfo in sessionStorage
         const userInfo = sessionStorage.getItem('userinfo');
@@ -194,13 +194,13 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
 
             const userData = JSON.parse(userInfo);
             const authUser: AuthUser = {
-              id: userData.sub || userData.id,
+              id: userData.sub ?? userData.id,
               email: userData.email,
               name: userData.name,
-              picture: normalizeProfilePhotoUrl(userData.picture, userData.provider || 'google'),
-              provider: (userData.provider || 'google') as AuthProviderType,
+              picture: normalizeProfilePhotoUrl(userData.picture, userData.provider ?? 'google'),
+              provider: (userData.provider ?? 'google') as AuthProviderType,
               access_token: storedToken,
-              id_token: sessionStorage.getItem('id_token') || undefined,
+              id_token: sessionStorage.getItem('id_token') ?? undefined,
               expires_at: Date.now() + 48 * 60 * 60 * 1000, // 48 hours default
             };
 
@@ -290,7 +290,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
         // CRITICAL: Store return URL BEFORE setting isAuthenticating
         // This ensures we capture the URL before any state changes
         const currentUrl = window.location.pathname + window.location.search + window.location.hash;
-        const returnUrl = options?.returnUrl || currentUrl;
+        const returnUrl = options?.returnUrl ?? currentUrl;
 
         // Don't store auth callback URLs as return URLs
         if (!returnUrl.includes('/auth/callback')) {
@@ -308,7 +308,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
         // sessionStorage.setItem('auth_start_time', Date.now().toString());
 
         // Get provider (default to google)
-        const provider = options?.provider || 'google';
+        const provider = options?.provider ?? 'google';
 
         // Generate PKCE parameters
         const codeVerifier = generateRandomString(64);
@@ -330,7 +330,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
 
         // Get configuration
         const bffBaseUrl =
-          import.meta.env.VITE_BFF_BASE_URL || DEFAULT_BFF_BASE_URL;
+          import.meta.env.VITE_BFF_BASE_URL ?? DEFAULT_BFF_BASE_URL;
         const authBase = normalizeAuthBase(bffBaseUrl);
 
         // Build authorization URL
@@ -366,7 +366,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
 
         // Check auth method preference - Default to redirect due to COOP issues
         const authMethod =
-          options?.method || localStorage.getItem('eria-Auth-method') || 'redirect';
+          options?.method ?? localStorage.getItem('eria-Auth-method') ?? 'redirect';
 
         // Test popup capability using the service
         const popupService = PopupDetectionService.getInstance();
@@ -410,7 +410,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
               } else if (event.data.type === 'AUTH_ERROR') {
                 cleanupPopupListeners();
                 setIsAuthenticating(false);
-                alert(event.data.error || 'Authentication failed');
+                alert(event.data.error ?? 'Authentication failed');
                 if (!popup.closed) {
                   popup.close();
                 }
@@ -429,7 +429,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
             } else if (event.key === 'auth_popup_error') {
               cleanupPopupListeners();
               setIsAuthenticating(false);
-              alert(event.newValue || 'Authentication failed');
+              alert(event.newValue ?? 'Authentication failed');
               if (!popup.closed) {
                 popup.close();
               }
@@ -615,7 +615,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
 
       // Optional: Call BFF logout endpoint
       const authBase = normalizeAuthBase(
-        import.meta.env.VITE_BFF_BASE_URL || DEFAULT_BFF_BASE_URL
+        import.meta.env.VITE_BFF_BASE_URL ?? DEFAULT_BFF_BASE_URL
       );
       const token = sessionStorage.getItem(TOKEN_KEY);
 
@@ -645,11 +645,11 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
   }, [homeUrl]);
 
   const getAccessToken = React.useCallback(() => {
-    return sessionStorage.getItem('access_token') || null;
+    return sessionStorage.getItem('access_token') ?? null;
   }, []);
 
   const getIdToken = React.useCallback(() => {
-    return sessionStorage.getItem('id_token') || null;
+    return sessionStorage.getItem('id_token') ?? null;
   }, []);
 
   // Token refresh function
@@ -675,7 +675,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
 
     try {
       const authBase = normalizeAuthBase(
-        import.meta.env.VITE_BFF_BASE_URL || DEFAULT_BFF_BASE_URL
+        import.meta.env.VITE_BFF_BASE_URL ?? DEFAULT_BFF_BASE_URL
       );
 
       // Call BFF refresh endpoint
@@ -718,14 +718,14 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
 
           // Update user state
           const authUser: AuthUser = {
-            id: data.userinfo.sub || data.userinfo.id,
+            id: data.userinfo.sub ?? data.userinfo.id,
             email: data.userinfo.email,
             name: data.userinfo.name,
-            picture: normalizeProfilePhotoUrl(data.userinfo.picture, data.provider || 'google'),
-            provider: (data.provider || 'google') as AuthProviderType,
+            picture: normalizeProfilePhotoUrl(data.userinfo.picture, data.provider ?? 'google'),
+            provider: (data.provider ?? 'google') as AuthProviderType,
             access_token: data.access_token,
-            id_token: data.id_token || data.access_token,
-            expires_at: data.expires_at || Date.now() + 3600000, // Default 1 hour
+            id_token: data.id_token ?? data.access_token,
+            expires_at: data.expires_at ?? Date.now() + 3600000, // Default 1 hour
           };
 
           setUser(authUser);
@@ -757,13 +757,13 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
       if (userInfo && accessToken) {
         const userData = JSON.parse(userInfo);
         const authUser: AuthUser = {
-          id: userData.sub || userData.id,
+          id: userData.sub ?? userData.id,
           email: userData.email,
           name: userData.name,
-          picture: normalizeProfilePhotoUrl(userData.picture, userData.provider || 'google'),
-          provider: (userData.provider || 'google') as AuthProviderType,
+          picture: normalizeProfilePhotoUrl(userData.picture, userData.provider ?? 'google'),
+          provider: (userData.provider ?? 'google') as AuthProviderType,
           access_token: accessToken,
-          id_token: sessionStorage.getItem('id_token') || undefined,
+          id_token: sessionStorage.getItem('id_token') ?? undefined,
           expires_at: Date.now() + 48 * 60 * 60 * 1000, // 48 hours default
         };
 
@@ -879,7 +879,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
       signOut,
       getAccessToken,
       getIdToken,
-      currentProvider: user?.provider || null,
+      currentProvider: user?.provider ?? null,
       refreshAccessToken, // Add refresh function
     }),
     [

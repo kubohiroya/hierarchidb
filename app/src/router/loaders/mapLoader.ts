@@ -71,5 +71,5 @@ export function formatZxyParam(viewState: MapViewState): string {
  */
 export function mapLoader(search: Record<string, unknown>): MapViewState {
   const zxy = typeof search.zxy === 'string' ? search.zxy : null;
-  return parseZxyParam(zxy) || DEFAULT_VIEW_STATE;
+  return parseZxyParam(zxy) ?? DEFAULT_VIEW_STATE;
 }

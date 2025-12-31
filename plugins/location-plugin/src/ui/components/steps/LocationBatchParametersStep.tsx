@@ -43,7 +43,8 @@ export const LocationBatchParametersStep: React.FC<LocationBatchParametersStepPr
   const [activeTableId, setActiveTableId] = useState<string | null>(null);
 
   const rawConcurrent = draft.concurrentDownloads ?? 2;
-  const concurrentDownloads = clamp(Number(rawConcurrent) || 2, MIN_CONCURRENCY, MAX_CONCURRENCY);
+  const parsedConcurrent = Number(rawConcurrent);
+  const concurrentDownloads = clamp(Number.isFinite(parsedConcurrent) ? parsedConcurrent : 2, MIN_CONCURRENCY, MAX_CONCURRENCY);
 
   const loadCounts = useCallback(async () => {
     if (!nodeId) {
@@ -82,7 +83,7 @@ export const LocationBatchParametersStep: React.FC<LocationBatchParametersStepPr
 
   useEffect(() => {
     void loadCounts();
-  }, [loadCounts, nodeId]);
+  }, [loadCounts]);
 
   const handleConcurrentDownloadsChange = (_: Event, value: number | number[]) => {
     const rawValue = Array.isArray(value) ? value[0] ?? concurrentDownloads : value ?? concurrentDownloads;

@@ -128,7 +128,7 @@ export const PLUGIN_CONFIGS: Record<string, PluginConfig> = {
  */
 export function getPluginConfig(): PluginConfig {
   const mode = resolveRuntimeMode();
-  return PLUGIN_CONFIGS[mode] || DEFAULT_PLUGIN_CONFIG;
+  return PLUGIN_CONFIGS[mode] ?? DEFAULT_PLUGIN_CONFIG;
 }
 
 function resolveRuntimeMode(): string {

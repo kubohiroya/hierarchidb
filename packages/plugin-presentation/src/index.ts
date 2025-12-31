@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
 import * as UIIcon from '@hierarchidb/ui-icon';
 import {
-  PluginPresentationDefinition,
-  PluginPresentation,
-  PluginPresentationIconConfig,
-  PluginPresentationManifest,
+  type PluginPresentationDefinition,
+  type PluginPresentation,
+  type PluginPresentationIconConfig,
+  type PluginPresentationManifest,
 } from './types.js';
 
 const ICON_NAME_NORMALIZATION_MAP: Record<string, string> = {
@@ -26,7 +26,7 @@ let presentationSignature: string | null = null;
 
 function normalizeMuiIconName(name?: string): string | undefined {
   if (!name) return undefined;
-  return ICON_NAME_NORMALIZATION_MAP[name] || name;
+  return ICON_NAME_NORMALIZATION_MAP[name] ?? name;
 }
 
 function toPascalCase(value: string | undefined): string | undefined {

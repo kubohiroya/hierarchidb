@@ -48,7 +48,7 @@ function normalizeMuiName(name?: string): string | undefined {
     styler: 'Palette',
   };
   const key = String(name).replace(/[^a-z0-9]/gi, '').toLowerCase();
-  return map[key] || name;
+  return map[key] ?? name;
 }
 
 // Small static map to avoid dynamic import pitfalls for _obsolate_common icons

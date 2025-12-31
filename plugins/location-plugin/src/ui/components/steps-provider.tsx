@@ -62,10 +62,16 @@ const hasSelection = (data?: LocationStepData): boolean => {
 };
 
 const hasTileSettings = (data?: LocationStepData): boolean => {
-  const minZoom = data?.tilesMinZoom ?? DEFAULT_MIN_ZOOM;
-  const maxZoom = data?.tilesMaxZoom ?? DEFAULT_MAX_ZOOM;
-  const workers = data?.tileWorkers ?? DEFAULT_TILE_WORKERS;
-  return Number.isFinite(minZoom) && Number.isFinite(maxZoom) && workers >= MIN_CONCURRENCY && minZoom <= maxZoom;
+  const minZoom = Number(data?.tilesMinZoom ?? DEFAULT_MIN_ZOOM);
+  const maxZoom = Number(data?.tilesMaxZoom ?? DEFAULT_MAX_ZOOM);
+  const workers = Number(data?.tileWorkers ?? DEFAULT_TILE_WORKERS);
+  return (
+    Number.isFinite(minZoom) &&
+    Number.isFinite(maxZoom) &&
+    Number.isFinite(workers) &&
+    workers >= MIN_CONCURRENCY &&
+    minZoom <= maxZoom
+  );
 };
 
 const clamp = (value: number, min: number, max: number): number => {
@@ -251,7 +257,7 @@ const startLocationBatch = async (data: LocationStepData, context: StartBatchCon
       return;
     }
     const rawConcurrency = draft.concurrentDownloads ?? 4;
-    const concurrency = clamp(rawConcurrency || 4, MIN_CONCURRENCY, MAX_CONCURRENCY);
+    const concurrency = clamp(rawConcurrency ?? 4, MIN_CONCURRENCY, MAX_CONCURRENCY);
     const manager = new LocationBatchManager();
     const points = await manager.collectLocationPoints(nodeId, {
       searchConfigs,
@@ -274,21 +280,19 @@ const startLocationBatch = async (data: LocationStepData, context: StartBatchCon
   }
 
   const settings = {
-    zoomMinGenerate: draft.tilesMinZoom ?? DEFAULT_MIN_ZOOM,
-    zoomMaxGenerate: draft.tilesMaxZoom ?? DEFAULT_MAX_ZOOM,
-    zoomMaxServe: draft.tilesMaxZoom ?? DEFAULT_MAX_ZOOM,
-    tileWorkers: draft.tileWorkers ?? DEFAULT_TILE_WORKERS,
+    zoomMinGenerate: Number(draft.tilesMinZoom ?? DEFAULT_MIN_ZOOM),
+    zoomMaxGenerate: Number(draft.tilesMaxZoom ?? DEFAULT_MAX_ZOOM),
+    zoomMaxServe: Number(draft.tilesMaxZoom ?? DEFAULT_MAX_ZOOM),
+    tileWorkers: Number(draft.tileWorkers ?? DEFAULT_TILE_WORKERS),
   } as const;
 
-  const rawConcurrency = draft.concurrentDownloads ?? 4;
-  const concurrency = clamp(rawConcurrency || 4, MIN_CONCURRENCY, MAX_CONCURRENCY);
-  const tileWorkers = clamp(draft.tileWorkers ?? DEFAULT_TILE_WORKERS, MIN_CONCURRENCY, MAX_CONCURRENCY);
+  const tileWorkers = clamp(Number(draft.tileWorkers ?? DEFAULT_TILE_WORKERS), MIN_CONCURRENCY, MAX_CONCURRENCY);
 
   await startLocationVectorTileSession(
     nodeId,
     pointInputs,
     settings,
-    { concurrency: tileWorkers, tileWorkers },
+    { concurrency: tileWorkers },
   );
 
   if (draft.dataSource === 'ide-gsm') {

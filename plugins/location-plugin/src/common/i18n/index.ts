@@ -70,6 +70,15 @@ type LocationTranslations = {
     deleteCacheDone?: string;
     deleteMetadataDone?: string;
   };
+  // Added tileSettings to reflect i18n resource structure used in UI components
+  tileSettings?: {
+    label?: string;
+    description?: string;
+    workersLabel?: string;
+    zoomLabel?: string;
+    minZoom?: string;
+    maxZoom?: string;
+  };
   selectionSettings: SelectionSettingsTranslations;
   locationTypes?: TranslationMap;
   mapPreview: {
@@ -195,6 +204,15 @@ const baseTranslations: LocationTranslations = {
     deleteDownloadsDone: 'Deleted downloaded points',
     deleteCacheDone: 'Deleted cached intermediate data',
     deleteMetadataDone: 'Deleted metadata',
+  },
+  // Provide default tileSettings translations so components referencing translations.tileSettings won't be undefined
+  tileSettings: {
+    label: 'Vector Tile Settings',
+    description: 'Configure vector tile generation parameters.',
+    workersLabel: 'Vector tile workers',
+    zoomLabel: 'Tile Zoom Range',
+    minZoom: 'Min zoom',
+    maxZoom: 'Max zoom',
   },
   selectionSettings: {
     generic: {

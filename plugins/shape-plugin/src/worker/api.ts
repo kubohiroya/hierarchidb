@@ -611,17 +611,6 @@ export const shapeBatchAPI = {
         throw new Error('Zoom range changed. Restart build to apply the new range.');
       }
     }
-    const currentExtract2Mode = session?.config?.extract2?.extractionMode;
-    const desiredExtract2Mode = desiredConfig.extract2?.extractionMode;
-    if (currentExtract2Mode && desiredExtract2Mode && currentExtract2Mode !== desiredExtract2Mode) {
-      console.warn('[shapeBatchAPI] resume blocked: extract2 mode mismatch', {
-        nodeId,
-        current: currentExtract2Mode,
-        desired: desiredExtract2Mode,
-      });
-      throw new Error('Extract2 mode changed. Restart build to apply the new mode.');
-    }
-
     if (batchManagerWithDispatch.dispatchCommand) {
       await batchManagerWithDispatch.dispatchCommand('session/resume', {
         nodeId,

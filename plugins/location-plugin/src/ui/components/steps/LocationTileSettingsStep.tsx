@@ -33,7 +33,8 @@ export const LocationTileSettingsStep: React.FC<LocationTileSettingsStepProps> =
   const draft = draftProp ?? {};
 
   const rawWorkers = draft.tileWorkers ?? DEFAULT_WORKERS;
-  const tileWorkers = clamp(Number(rawWorkers) || DEFAULT_WORKERS, MIN_WORKERS, MAX_WORKERS);
+  const parsedWorkers = Number(rawWorkers);
+  const tileWorkers = clamp(Number.isFinite(parsedWorkers) ? parsedWorkers : DEFAULT_WORKERS, MIN_WORKERS, MAX_WORKERS);
 
   const minZoom = clamp(draft.tilesMinZoom ?? DEFAULT_MIN_ZOOM, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
   const maxZoom = clamp(draft.tilesMaxZoom ?? DEFAULT_MAX_ZOOM, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);

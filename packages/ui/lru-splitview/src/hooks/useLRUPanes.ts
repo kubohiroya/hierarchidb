@@ -217,7 +217,7 @@ export function useLRUPanes({
       return paneStates.map((pane, index) =>
         pane.isExpanded
           ? (initialSizes[index] ?? pane.collapsedSize ?? DEFAULT_COLLAPSED_SIZE)
-          : pane.collapsedSize || DEFAULT_COLLAPSED_SIZE,
+          : pane.collapsedSize ?? DEFAULT_COLLAPSED_SIZE,
       );
     }
 
@@ -232,7 +232,7 @@ export function useLRUPanes({
     if (expandedCount === 1) {
       // Single expanded pane gets most space
       return paneStates.map((pane) =>
-        pane.isExpanded ? 1000 : pane.collapsedSize || DEFAULT_COLLAPSED_SIZE,
+        pane.isExpanded ? 1000 : pane.collapsedSize ?? DEFAULT_COLLAPSED_SIZE,
       );
     } else {
       // Multiple expanded panes share space equally
@@ -240,7 +240,7 @@ export function useLRUPanes({
       return paneStates.map((pane) =>
         pane.isExpanded
           ? spacePerExpanded
-          : pane.collapsedSize || DEFAULT_COLLAPSED_SIZE,
+          : pane.collapsedSize ?? DEFAULT_COLLAPSED_SIZE,
       );
     }
   }, [paneStates, initialSizes, equalizeOnAllExpanded, expandedCount]);

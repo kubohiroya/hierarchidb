@@ -84,7 +84,7 @@ export function useToast(onToast?: (config: ToastConfig) => void): UseToastRetur
               prev.config === config ? { open: false, config: null } : prev
             );
           },
-          config.duration || DEFAULT_TOAST_CONFIG.duration || 3000
+          config.duration ?? DEFAULT_TOAST_CONFIG.duration ?? 3000
         );
       }
     },

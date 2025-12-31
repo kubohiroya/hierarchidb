@@ -248,18 +248,24 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
         },
       }));
 
-      const requestedMinZoom = Number(dialogData.draft?.tilesMinZoom ?? DEFAULT_MIN_ZOOM) || DEFAULT_MIN_ZOOM;
-      const requestedMaxZoom = Number(dialogData.draft?.tilesMaxZoom ?? DEFAULT_MAX_ZOOM) || DEFAULT_MAX_ZOOM;
+      const parsedMinZoom = Number(dialogData.draft?.tilesMinZoom ?? DEFAULT_MIN_ZOOM);
+      const requestedMinZoom = Number.isFinite(parsedMinZoom) ? parsedMinZoom : DEFAULT_MIN_ZOOM;
+      const parsedMaxZoom = Number(dialogData.draft?.tilesMaxZoom ?? DEFAULT_MAX_ZOOM);
+      const requestedMaxZoom = Number.isFinite(parsedMaxZoom) ? parsedMaxZoom : DEFAULT_MAX_ZOOM;
       const zoomMin = Math.max(0, Math.min(requestedMinZoom, requestedMaxZoom));
       const zoomMax = Math.max(zoomMin, requestedMaxZoom);
+
+      const parsedZoomMaxServe = Number(dialogData.draft?.tilesMaxZoom ?? zoomMax);
+      const zoomMaxServe = Number.isFinite(parsedZoomMaxServe) ? parsedZoomMaxServe : zoomMax;
 
       const settings = {
         zoomMinGenerate: zoomMin,
         zoomMaxGenerate: zoomMax,
-        zoomMaxServe: dialogData.draft?.tilesMaxZoom ?? zoomMax,
+        zoomMaxServe,
       } as const;
 
-      const rawConcurrency = Number(dialogData.draft?.concurrentDownloads ?? DEFAULT_CONCURRENCY) || DEFAULT_CONCURRENCY;
+      const parsedConcurrency = Number(dialogData.draft?.concurrentDownloads ?? DEFAULT_CONCURRENCY);
+      const rawConcurrency = Number.isFinite(parsedConcurrency) ? parsedConcurrency : DEFAULT_CONCURRENCY;
       const concurrency = Math.min(MAX_CONCURRENCY, Math.max(MIN_CONCURRENCY, rawConcurrency));
 
       await startLocationVectorTileSession(nodeId, points, settings, { concurrency });

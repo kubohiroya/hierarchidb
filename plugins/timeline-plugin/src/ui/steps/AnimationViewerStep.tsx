@@ -127,7 +127,11 @@ export function AnimationViewerStep({ frames, initialIndex = 0, initialFps = 12,
             type="number"
             InputProps={{ inputProps: { min: 1, max: 60 } }}
             value={player.fps}
-            onChange={(e) => player.setFps(Math.max(1, Math.min(60, Number(e.target.value) || 1)))}
+            onChange={(e) => {
+              const parsed = Number(e.target.value);
+              const next = Number.isFinite(parsed) ? parsed : 1;
+              player.setFps(Math.max(1, Math.min(60, next)));
+            }}
             sx={{ width: 110 }}
           />
         </Tooltip>

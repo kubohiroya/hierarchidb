@@ -123,7 +123,11 @@ export function MapPreviewStep({ frames, initialIndex = 0, onIndexChange }: MapP
             name="fps"
             InputProps={{ inputProps: { min: 1, max: 60, id: `${controlId}-fps`, name: 'fps' } }}
             value={fps}
-            onChange={(e) => setFps(Math.max(1, Math.min(60, Number(e.target.value) || 1)))}
+            onChange={(e) => {
+              const parsed = Number(e.target.value);
+              const next = Number.isFinite(parsed) ? parsed : 1;
+              setFps(Math.max(1, Math.min(60, next)));
+            }}
             sx={{ width: 120 }}
           />
           <FormControlLabel

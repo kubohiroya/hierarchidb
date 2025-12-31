@@ -215,7 +215,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
           return summary[key];
         };
         rows.forEach((task) => {
-          const stageKey = normalizeStageId(task.taskType ?? task.stage) ?? 'download';
+          const stageKey = normalizeStageId(task.taskType) ?? 'download';
           const slot = ensure(stageKey);
           slot.total += 1;
           if (isSkippedMessage(task.message)) {
