@@ -1,4 +1,4 @@
-import { Button, Grid, Skeleton, Stack, Typography } from '@mui/material';
+import { Button, Grid, Stack, Typography } from '@mui/material';
 import {
   CloudDownload as CloudDownloadIcon,
   FilterAlt as FilterAltIcon,
@@ -54,13 +54,20 @@ export const DownloadCacheActions: React.FC<Props> = ({
             disabled={rawDisabled}
             onClick={onDeleteRaw}
           >
-            {countsLoading ? <Skeleton width="70%" /> : deleteLabel}
-          </Button>
-          {countsLoading ? (
-            <Typography variant="caption" color="text.secondary">
-              {t('processing.download.deleteLoadingHint', 'Loading delete counts...')}
+            <Typography
+              component="span"
+              sx={{ display: 'inline-flex', alignItems: 'center', minHeight: '1.2em' }}
+            >
+              {deleteLabel}
             </Typography>
-          ) : null}
+          </Button>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ visibility: countsLoading ? 'visible' : 'hidden' }}
+          >
+            {t('processing.download.deleteLoadingHint', 'Loading delete counts...')}
+          </Typography>
         </Stack>
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
