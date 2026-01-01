@@ -21,10 +21,8 @@ import {
   type ShapeBatchCommand,
   type ShapeBatchCommandPayload,
   type ProgressInfo,
-  type ShapeEntity,
   type TileInfo,
   type DownloadTaskPayload,
-  type SelectedArrayByCountries,
   validateBatchConfig,
   type ShapeStepValidationResult,
 } from '../common/types/index.js';
@@ -51,6 +49,7 @@ import {
 } from '../services/utils/utils.js';
 import { normalizeCountryCodeFormat } from '../services/utils/iso3166.js';
 import { resolveDownloadStageStrategy } from '../services/batch/strategies/resolveDownloadStageStrategy.js';
+import type { SelectedArrayByCountries, ShapeEntity } from '../common/types/ShapeEntity.ts';
 
 // Create singleton unified batch manager
 const batchSessionManager = new UnifiedShapeBatchManager();

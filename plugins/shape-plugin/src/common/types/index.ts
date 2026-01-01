@@ -4,7 +4,6 @@ export * from './BatchTaskLike.js';
 export * from './category-types.js';
 export * from './ShapeError.js';
 export * from './ShapeErrorHierarchy.js';
-export * from './entities.js';
 export * from './data-source.js';
 export * from './processing.js';
 export * from './batch.js';
@@ -13,13 +12,13 @@ export * from './create-update.js';
 export * from './core.js';
 export * from './constants.js';
 export type { ProcessingStatus, TileInfo } from './api.js';
+export type { ShapeEntity } from './ShapeEntity.js';
+export type { VectorTileEntity } from './VectorTileEntity.js';
+export type { MetaRow, SourceRow, TileIndexRow } from './tiles.js';
 export {
   mergeBatchConfig,
   summarizeCheckboxState,
   normalizeDataSourceName,
   validateBatchConfig,
 } from '../../services/utils/utils.js';
-export type { ShapeEntity, SelectedArrayByCountries } from '@hierarchidb/shape-plugin/common/types/ShapeEntity.ts';
-export type { ISO2, ISO3, CountryCode } from '@hierarchidb/common-types';
-export type { Feature } from '@hierarchidb/shape-plugin/common/types/Feature.ts';
-export type { VectorTileEntity } from '@hierarchidb/shape-plugin/common/types/VectorTileEntity.ts';
+export * from './entities.js';

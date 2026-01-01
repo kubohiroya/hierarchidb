@@ -13,13 +13,4 @@ export {
   clearLocationPoints,
 } from './pointRepository.js';
 export type { LocationPointWriteProgress } from './pointRepository.js';
-export {
-  parseIdeGsmCsv,
-  filterIdeGsmPointsBySelection,
-} from './ide-gsm/ideGsmCsv.js';
-export type { IdeGsmParseResult } from './ide-gsm/ideGsmCsv.js';
-
-// Batch Session manager and unified adapters
 export { LocationBatchSessionManager } from './batch/BatchSessionManager.js';
-
-export { getLocationDB } from '../database/EphemeralLocationDB.js';

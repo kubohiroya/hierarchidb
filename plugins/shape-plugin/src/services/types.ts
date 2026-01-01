@@ -83,8 +83,6 @@ export type {
   DataSourceValidationResult,
   BoundingBox,
 };
-// Re-export without importing into local scope to avoid unused import warnings
-export type { AdminLevelInfo } from '@hierarchidb/ui-datasource';
 
 export type CacheType =
   | 'features'

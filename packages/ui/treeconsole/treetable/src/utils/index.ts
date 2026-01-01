@@ -6,10 +6,6 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { TreeNode } from '@hierarchidb/common-types';
 
-// import type { TreeNode } from '../types.js';
-
-/**
-    */
 export function calculateNodeDepth(node: TreeNode, allNodes: TreeNode[]): number {
   if (!node.parentId) {
     return 0;
@@ -29,8 +25,6 @@ export function calculateNodeDepth(node: TreeNode, allNodes: TreeNode[]): number
   return 1 + calculateNodeDepth(parent, allNodes);
 }
 
-/**
-    */
 export function flattenTree(
   nodes: TreeNode[],
   expandedIds: Set<string>,
@@ -58,9 +52,6 @@ export function flattenTree(
   return result;
 }
 
-/**
-  * ID
-  */
 export function getDescendantIds(nodeId: NodeId, allNodes: TreeNode[]): Set<NodeId> {
   const descendants = new Set<NodeId>();
   const targetKey = String(nodeId);
@@ -119,8 +110,6 @@ export function getAncestorIds(nodeId: NodeId, allNodes: TreeNode[]): NodeId[] {
   return ancestors;
 }
 
-/**
-    */
 export function filterNodesBySearch(nodes: TreeNode[], searchText: string): TreeNode[] {
   if (!searchText.trim()) {
     return nodes;
@@ -168,9 +157,6 @@ export function getNodePath(
   return pathNodes.map((n) => n?.metadata.name).join(separator);
 }
 
-/**
-  * &
-  */
 /**
  * Determine whether a drag source can be dropped relative to a target.
  * - Prevents self-drop and dropping into own descendants (cycles)。

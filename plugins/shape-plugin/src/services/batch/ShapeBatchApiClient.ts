@@ -18,7 +18,7 @@ import type {
 } from '@hierarchidb/plugin-service-api';
 import { shapeDB } from '../database/ShapeDB.js';
 import { getEphemeralShapeDB } from '../database/EphemeralShapeDB.js';
-import { TilesDB } from '@hierarchidb/gis-sdk';
+import { TilesDB, type TileRow } from '@hierarchidb/vectortile-store';
 
 const mapStatus = (status: ShapeBatchSessionSummary['status'] | 'running' | 'idle'): ShapeProcessingStatus['status'] => {
   if (status === 'running') return 'processing';
@@ -318,8 +318,8 @@ export class LocalShapeMutationApi implements ShapeMutationAPI {
     if (tiles.length === 0) return;
     const records = await Promise.all(
       tiles
-        .filter((row) => row.contentType === 'application/vnd.mapbox-vector-tile' && row.data)
-        .map(async (row) => {
+        .filter((row: TileRow) => row.contentType === 'application/vnd.mapbox-vector-tile' && row.data)
+        .map(async (row: TileRow) => {
           const data = row.data instanceof Uint8Array ? row.data : new Uint8Array(row.data);
           const contentHash = await this.calculateTileHash(data);
           return {

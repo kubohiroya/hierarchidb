@@ -5,6 +5,15 @@ import { booleanPointInPolygon, point } from '@turf/turf';
 import { VectorTile } from '@mapbox/vector-tile';
 import Pbf from 'pbf';
 import { LRUCache } from 'typescript-lru-cache';
+import {
+  latToTileY,
+  lonToTileX,
+  pickAdminCode,
+  pickAdminLevel,
+  pickAdminName,
+  pickCountryCode,
+  pickCountryName,
+} from './vectorTileUtils.js';
 
 export type VectorTileGeocodeMatch = {
   nodeId: NodeId;
@@ -52,75 +61,10 @@ const defaultCache = new LRUCache<string, VectorTileLayerCache>({
   maxSize: DEFAULT_CACHE_SIZE,
 });
 
-const toPropertyString = (value: unknown): string | undefined => {
-  if (typeof value === 'string') return value.trim() || undefined;
-  if (typeof value === 'number') return Number.isFinite(value) ? String(value) : undefined;
-  return undefined;
-};
-
 const toFeatureId = (value: unknown): string | number | undefined => {
   if (typeof value === 'string') return value.trim() || undefined;
   if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
   return undefined;
-};
-
-const pickFirstString = (
-  properties: Record<string, unknown>,
-  keys: string[],
-): string | undefined => {
-  for (const key of keys) {
-    const value = toPropertyString(properties[key]);
-    if (value) return value;
-  }
-  return undefined;
-};
-
-const pickCountryName = (properties: Record<string, unknown>): string | undefined =>
-  pickFirstString(properties, ['country', 'COUNTRY', 'COUNTRY_NAME', 'NAME_0', 'ADMIN', 'SOVEREIGNT']);
-
-const pickCountryCode = (properties: Record<string, unknown>): string | undefined =>
-  pickFirstString(properties, ['ISO_A2', 'ISO2', 'ISO_2', 'ISO_A3', 'ADM0_A3', 'ISO3', 'shapeISO']);
-
-const pickAdminName = (properties: Record<string, unknown>): string | undefined =>
-  pickFirstString(properties, [
-    'name',
-    'NAME',
-    'name_en',
-    'NAME_EN',
-    'shapeName',
-    'NAME_1',
-    'NAME_2',
-    'NAME_3',
-    'NAME_4',
-    'NAME_5',
-  ]);
-
-const pickAdminCode = (properties: Record<string, unknown>): string | undefined =>
-  pickFirstString(properties, ['GID_0', 'GID_1', 'GID_2', 'GID_3', 'ADM1_CODE', 'ADM2_CODE', 'shapeID', 'code']);
-
-const pickAdminLevel = (properties: Record<string, unknown>): number | undefined => {
-  const candidates = [
-    properties.adminLevel,
-    properties.admin_level,
-    properties.ADM_LEVEL,
-    properties.level,
-    properties.admin_lvl,
-  ];
-  for (const value of candidates) {
-    if (typeof value === 'number' && Number.isFinite(value)) return value;
-    if (typeof value === 'string') {
-      const parsed = Number(value);
-      if (Number.isFinite(parsed)) return parsed;
-    }
-  }
-  return undefined;
-};
-
-const long2tile = (lon: number, z: number) => Math.floor(((lon + 180) / 360) * 2 ** z);
-
-const lat2tile = (lat: number, z: number) => {
-  const rad = (lat * Math.PI) / 180;
-  return Math.floor(((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * 2 ** z);
 };
 
 const buildCacheKey = (nodeId: NodeId, z: number, x: number, y: number, layerName: string) =>
@@ -207,8 +151,8 @@ export const geocodePointInShapeTiles = async (
 
   for (const nodeId of targets) {
     const z = await resolveZoom(query, nodeId, options);
-    const x = long2tile(location.longitude, z);
-    const y = lat2tile(location.latitude, z);
+    const x = lonToTileX(location.longitude, z);
+    const y = latToTileY(location.latitude, z);
     const layer = await loadVectorTileLayer(query, nodeId, z, x, y, layerName, cache);
     if (!layer?.features.length) {
       continue;

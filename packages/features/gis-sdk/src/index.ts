@@ -1,5 +1,3 @@
-export { TilesDB } from './TilesDB.js';
-export type { FeatureMetadataRow, TileRow } from './TilesDB.js';
 export {
   generateVectorTilesFromFeatureCollection,
   generateVectorTilesFromJsonBuffer,
@@ -12,6 +10,34 @@ export {
   type VectorTileMetadataContext,
   type VectorTileProgress,
 } from './vectorTiles.js';
+export {
+  lonToTileX,
+  latToTileY,
+  lonLatToTileXY,
+  tileToBbox,
+  getTilesInBounds,
+  pickCountryName,
+  pickCountryCode,
+  pickAdminName,
+  pickAdminCode,
+  pickAdminLevel,
+  type BoundingBox,
+  type TileXYZ,
+} from './vectorTileUtils.js';
+export {
+  encodeMvtFromGeojsonVt,
+  normalizeVectorTileFormat,
+  vectorTileContentType,
+  type EncodeMvtOptions,
+  type VectorTileContent,
+  type VectorTileFormat,
+} from './vectorTileFormats.js';
+export type {
+  VectorTileStore,
+  TileKey,
+  TileSummary,
+  StoredTile,
+} from './tileStore.js';
 export {
   applyFeatureFiltering,
   type FeatureFilterMethod,

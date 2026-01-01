@@ -20,12 +20,10 @@ import type {
   LocationBatchProcessingOptions,
   LocationType,
   LocationSearchConfig,
-} from '@hierarchidb/location-store';
-export type {
   LocationPoint,
   LocationPointProperties,
   LocationPointKind,
-  LocationPointId,
+  LocationPointId
 } from '@hierarchidb/location-store';
 
 export type LocationEntity = LocationEntityDefinition;
@@ -36,6 +34,10 @@ export type {
   LocationBatchFilterCriteria,
   LocationBatchProcessingOptions,
   LocationSearchConfig,
+  LocationPoint,
+  LocationPointProperties,
+  LocationPointKind,
+  LocationPointId,
 };
 export type { BatchConfig, UnifiedLocationBatchConfig } from '@hierarchidb/location-store';
 
@@ -90,8 +92,9 @@ export interface LocationDialogProps {
 }
 
 // Worker entity metadata types
-export type {
+import type {
   LocationPeerData,
   LocationGroupItemData,
   LocationRelationMeta,
 } from '@hierarchidb/location-store';
+export type { LocationPeerData, LocationGroupItemData, LocationRelationMeta };

@@ -17,7 +17,7 @@ import type {
   ShapeTileSummaryEntry,
 } from '@hierarchidb/plugin-service-api';
 import { getEphemeralShapeDB } from '@hierarchidb/shape-store';
-import { TilesDB } from '@hierarchidb/gis-sdk';
+import { TilesDB } from '@hierarchidb/vectortile-store';
 
 type ShapeBatchSessionRecord = {
   nodeId: NodeId;

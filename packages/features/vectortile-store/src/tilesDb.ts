@@ -1,21 +1,20 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName, SingletonMixin } from '@hierarchidb/util';
-import type { MetaRow, SourceRow, TileIndexRow } from '../../common/types/index.js';
 
-export interface StageTileRow {
-  key: string;
+export interface TileRow {
+  key: string; // `${nodeId}-${z}-${x}-${y}`
   nodeId: string;
   z: number;
   x: number;
   y: number;
   data: ArrayBuffer;
   size: number;
-  contentType: string;
+  contentType: 'application/vnd.mapbox-vector-tile';
   timestamp: number;
 }
 
-export interface ShapeFeatureMetadataRow {
-  id: string;
+export interface FeatureMetadataRow {
+  id: string; // `${nodeId}-${featureId}`
   nodeId: string;
   featureId: string;
   countryName?: string;
@@ -31,7 +30,7 @@ export interface ShapeFeatureMetadataRow {
   area: number;
 }
 
-export interface ShapeSourceMetadataRow {
+export interface SourceMetadataRow {
   id: string;
   nodeId: string;
   originKey: string;
@@ -56,14 +55,14 @@ export interface ShapeSourceMetadataRow {
   bbox?: [number, number, number, number];
 }
 
-export class VectorTileDB extends Dexie {
-  tiles!: Table<StageTileRow, string>;
-  featureMetadata!: Table<ShapeFeatureMetadataRow, string>;
-  sourceMetadata!: Table<ShapeSourceMetadataRow, string>;
+export class TilesDB extends Dexie {
+  tiles!: Table<TileRow, string>;
+  featureMetadata!: Table<FeatureMetadataRow, string>;
+  sourceMetadata!: Table<SourceMetadataRow, string>;
 
-  static async getSingleton(): Promise<VectorTileDB> {
-    return SingletonMixin.getSingleton('ShapeTileMetadataDB', async () => {
-      const db = new VectorTileDB(getDBName('vectortile'));
+  static async getSingleton(): Promise<TilesDB> {
+    return SingletonMixin.getSingleton('TilesDB', async () => {
+      const db = new TilesDB(getDBName('vectortile'));
       await db.open();
       return db;
     });
@@ -71,6 +70,19 @@ export class VectorTileDB extends Dexie {
 
   private constructor(name: string) {
     super(name);
+    this.version(1).stores({
+      tiles: '&key, nodeId, [nodeId+z+x+y], z, x, y, timestamp',
+    });
+    this.version(2).stores({
+      tiles: '&key, nodeId, [nodeId+z+x+y], z, x, y, timestamp',
+      featureMetadata:
+        '&id, nodeId, featureId, countryCode, adminLevel, adminCode, dataSource, createdAt',
+    });
+    this.version(3).stores({
+      tiles: '&key, nodeId, [nodeId+z+x+y], z, x, y, timestamp',
+      featureMetadata:
+        '&id, nodeId, featureId, countryCode, adminLevel, adminCode, dataSource, createdAt',
+    });
     this.version(4).stores({
       tiles: '&key, nodeId, [nodeId+z+x+y], z, x, y, timestamp',
       featureMetadata:
@@ -84,22 +96,3 @@ export class VectorTileDB extends Dexie {
   }
 }
 
-export async function getShapeTileMetadataDB(): Promise<VectorTileDB> {
-  return VectorTileDB.getSingleton();
-}
-
-export class VectorTileDB2 extends Dexie {
-    sources!: Table<SourceRow, string>;
-    tileIndex!: Table<TileIndexRow, [number, number, string]>;
-    meta!: Table<MetaRow, "zoomRange">;
-
-    constructor(dbName: string) {
-      super(dbName);
-      this.version(1).stores({
-        meta: "&key",
-        sources: "&id",
-        // 1行 = (z,tileId,sourceId)
-        tileIndex: "&[z+tileId+sourceId], [z+tileId], sourceId",
-      });
-    }
-  }

@@ -8,7 +8,8 @@ import { geojson } from 'flatgeobuf';
 import type { Feature } from 'geojson';
 import { BatchService } from '@hierarchidb/batch';
 import { createStageWorkerClient, getStageWorkerProxy, runVectorTileStage } from '@hierarchidb/runtime-worker';
-import { TilesDB, type VectorTileProgress } from '@hierarchidb/gis-sdk';
+import { TilesDB } from '@hierarchidb/vectortile-store';
+import type { VectorTileProgress } from '@hierarchidb/gis-sdk';
 import { assignFeatureIds, HDB_ORIGIN_KEY } from '../utils/featureIds.js';
 import { bbox as turfBbox } from '@turf/turf';
 

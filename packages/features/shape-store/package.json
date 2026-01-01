@@ -20,14 +20,12 @@
   },
   "peerDependencies": {
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/gis-sdk": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "dexie": "^4.2.0"
   },
   "devDependencies": {
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/gis-sdk": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@types/geojson": "^7946.0.14",

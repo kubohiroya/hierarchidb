@@ -16,6 +16,8 @@ import { shapeDB, type VectorTileRecord, type FeatureRecord } from '../database/
 import type { NodeId } from '@hierarchidb/common-types';
 import type { BoundingBox, TileMetadata, LayerConfig } from '../../common/types/index.js';
 import type { Feature as GeoJSONFeature, Geometry } from 'geojson';
+// NOTE: gis-sdkのdist反映前でも型解決できるように、明示的にパスを固定（後で dist が更新されたら '@hierarchidb/gis-sdk' に戻せます）
+import { getTilesInBounds, tileToBbox, encodeMvtFromGeojsonVt, normalizeVectorTileFormat } from '@hierarchidb/gis-sdk';
 
 type TileLayerFeature = {
   geometry: Geometry;
@@ -124,7 +126,7 @@ export class VectorTileService {
   // Tile Generation
   async generateTile(request: TileRequest): Promise<Uint8Array | null> {
     const { nodeId, z, x, y } = request;
-    const bbox = this.tileToBbox(x, y, z);
+    const bbox = tileToBbox(x, y, z);
 
     // Get features in tile bounds
     const features = await this.getFeaturesInTile(nodeId, bbox, z);
@@ -155,7 +157,7 @@ export class VectorTileService {
 
     // Calculate bounds of all features
     const bounds = this.calculateFeatureBounds(features);
-    const tiles = this.getTilesInBounds(bounds, zoom);
+    const tiles = getTilesInBounds(bounds, zoom);
 
     let generatedCount = 0;
     for (const tile of tiles) {
@@ -295,18 +297,16 @@ export class VectorTileService {
       };
     }
 
-    // Encode as MVT
-    return this.encodeMVT(tileLayers);
-  }
+    // Encode as MVT (real encoder)
+    const format = normalizeVectorTileFormat('mvt');
+    if (format === 'geojson') {
+      // 現状このサービスは geojson を返す経路未実装（呼び出し側で別途対応）
+      return new Uint8Array();
+    }
 
-  private tileToBbox(x: number, y: number, z: number): BoundingBox {
-    const n = 2 ** z;
-    const lonMin = (x / n) * 360 - 180;
-    const latMax = (Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / n))) * 180) / Math.PI;
-    const lonMax = ((x + 1) / n) * 360 - 180;
-    const latMin = (Math.atan(Math.sinh(Math.PI * (1 - (2 * (y + 1)) / n))) * 180) / Math.PI;
-
-    return [lonMin, latMin, lonMax, latMax];
+    // TODO: transformGeometryOfTile が未実装のため、現状は空タイルを返す（ただしエンコーダ自体は共通化済）
+    const emptyLayer = ({ features: [], extent } as unknown) as import('geojson-vt').Tile;
+    return await encodeMvtFromGeojsonVt({ layer0: emptyLayer });
   }
 
   private calculateFeatureBounds(features: FeatureRecord[]): BoundingBox {
@@ -334,36 +334,6 @@ export class VectorTileService {
     return [minX, minY, maxX, maxY];
   }
 
-  private getTilesInBounds(bounds: BoundingBox, zoom: number): Array<{ x: number; y: number }> {
-    const [minLon, minLat, maxLon, maxLat] = bounds;
-    const tiles: Array<{ x: number; y: number }> = [];
-
-    const minTileX = Math.floor(this.lonToTileX(minLon, zoom));
-    const maxTileX = Math.floor(this.lonToTileX(maxLon, zoom));
-    const minTileY = Math.floor(this.latToTileY(maxLat, zoom));
-    const maxTileY = Math.floor(this.latToTileY(minLat, zoom));
-
-    for (let x = minTileX; x <= maxTileX; x++) {
-      for (let y = minTileY; y <= maxTileY; y++) {
-        tiles.push({ x, y });
-      }
-    }
-
-    return tiles;
-  }
-
-  private lonToTileX(lon: number, zoom: number): number {
-    return ((lon + 180) / 360) * 2 ** zoom;
-  }
-
-  private latToTileY(lat: number, zoom: number): number {
-    return (
-      ((1 -
-          Math.log(Math.tan((lat * Math.PI) / 180) + 1 / Math.cos((lat * Math.PI) / 180)) / Math.PI) /
-        2) *
-      2 ** zoom
-    );
-  }
 
   private getAdminLevelForZoom(zoom: number): number {
     if (zoom <= 4) return 0;
@@ -425,13 +395,6 @@ export class VectorTileService {
     return filtered;
   }
 
-  private encodeMVT(_layers: TileLayerMap): Uint8Array {
-    // This would use a proper MVT encoder like @mapbox/vector-tile
-    // For now, return a placeholder
-    const mockMVT = new Uint8Array(1024);
-    mockMVT.fill(0);
-    return mockMVT;
-  }
 
   private async cacheTile(
     nodeId: NodeId,

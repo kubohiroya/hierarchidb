@@ -38,9 +38,9 @@ import {
   CheckCircle,
   Close,
   Download,
-  Error,
+  Error as ErrorIcon,
   HourglassEmpty,
-  Map,
+  Map as MapIcon,
   Pause,
   PlayArrow,
   Stop,
@@ -52,8 +52,8 @@ import type { NodeId } from '../../../common/types/index.js';
 import { useLocationProgress } from '../../../common/hooks/useLocationProgress.js';
 import { isDevEnvironment } from '../../../common/utils/env.js';
 import { useTranslation, formatBytes as formatBytesIntl, formatNumber } from '../../../common/i18n/index.js';
-import { getLocationDB } from '../../../services/index.js';
 import { CrossViewSnackbar, DataGridPreview } from '@hierarchidb/ui-grid';
+import { getLocationDB } from '@hierarchidb/location-store';
 
 interface ProgressInfo {
   percentage: number;
@@ -95,7 +95,7 @@ interface LogEntry {
   level: 'info' | 'warning' | 'error';
   source: string;
   message: string;
-  details?: any;
+  // details?: any;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> => (
@@ -300,7 +300,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
       case 'completed':
         return <CheckCircle color="success" />;
       case 'failed':
-        return <Error color="error" />;
+        return <ErrorIcon color="error" />;
     }
   };
 
@@ -350,7 +350,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
         <Tabs value={tabValue} onChange={handleTabChange}>
           <Tab icon={<Timeline />} label={translations.batch?.progressTitle ?? 'Progress'} />
           <Tab icon={<Assessment />} label={translations.batch?.logsTitle ?? 'Logs'} />
-          <Tab icon={<Map />} label={translations.batch?.mapPreviewTitle ?? 'Map Preview'} />
+          <Tab icon={<MapIcon />} label={translations.batch?.mapPreviewTitle ?? 'Map Preview'} />
           <Tab icon={<TableView />} label={translations.batch?.dataTableTitle ?? 'Data Table'} />
         </Tabs>
       </Box>
@@ -493,7 +493,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
                         {task.status === 'running' ? (
                           <CircularProgress size={20} />
                         ) : task.status === 'failed' ? (
-                          <Error color="error" />
+                          <ErrorIcon color="error" />
                         ) : (
                           <Warning color="warning" />
                         )}
@@ -548,10 +548,10 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
                   />
                 </ListItem>
               ) : logs.map((log, index) => (
-                <ListItem key={index} divider>
+                <ListItem key={String(index)} divider>
                   <ListItemIcon>
                     {log.level === 'error' ? (
-                      <Error color="error" />
+                      <ErrorIcon color="error" />
                     ) : log.level === 'warning' ? (
                       <Warning color="warning" />
                     ) : (

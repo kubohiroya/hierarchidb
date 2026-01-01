@@ -1,5 +1,5 @@
 {
-  "name": "@hierarchidb/gis-sdk",
+  "name": "@hierarchidb/vectortile-store",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -14,25 +14,20 @@
   },
   "scripts": {
     "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
+    "build:types": "tsc --emitDeclarationOnly --declaration --declarationMap --project tsconfig.json --outDir dist",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },
-  "dependencies": {
+  "peerDependencies": {
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/vectortile-store": "workspace:*",
-    "@mapbox/vector-tile": "^2.0.4",
-    "@maplibre/vt-pbf": "^4.0.3",
-    "@turf/area": "^7.0.0",
-    "@turf/turf": "^7.0.0",
-    "geojson-vt": "^3.2.1",
-    "pbf": "^4.0.1",
-    "typescript-lru-cache": "^2.0.0"
+    "dexie": "^4.2.0"
   },
   "devDependencies": {
-    "@types/geojson": "^7946.0.14",
-    "@types/vt-pbf": "^3.1.0",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
+    "dexie": "^4.2.1",
     "typescript": "workspace:^5.9.3"
   }
 }
+

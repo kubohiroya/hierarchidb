@@ -1,4 +1,4 @@
-import type { LayerInfo } from '@hierarchidb/shape-plugin';
+import type { LayerInfo } from './index.js';
 
 export interface VectorTileEntity {
   tileId: string;

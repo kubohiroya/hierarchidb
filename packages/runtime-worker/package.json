@@ -37,6 +37,7 @@
     "@hierarchidb/route-store": "workspace:*",
     "@hierarchidb/shape-store": "workspace:*",
     "@hierarchidb/styler-store": "workspace:*",
+    "@hierarchidb/vectortile-store": "workspace:*",
     "@mapbox/vector-tile": "^2.0.3",
     "comlink": "^4.4.2",
     "dexie": "^4.2.1",

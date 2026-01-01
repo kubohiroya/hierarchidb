@@ -1,7 +1,17 @@
 import type { Tile } from 'geojson-vt';
 import area from '@turf/area';
 import type vtPbfNS = require('@maplibre/vt-pbf');
-import { TilesDB, type FeatureMetadataRow } from './TilesDB.js';
+import { TilesDB, type FeatureMetadataRow } from '@hierarchidb/vectortile-store';
+
+import {
+  latToTileY,
+  lonToTileX,
+  pickAdminCode,
+  pickAdminLevel,
+  pickAdminName,
+  pickCountryCode,
+  pickCountryName,
+} from './vectorTileUtils.js';
 
 type GeojsonVtModule = typeof import('geojson-vt');
 type GeojsonVtData = Parameters<GeojsonVtModule>[0];
@@ -57,76 +67,18 @@ type FeatureLike = {
   geometry?: FeatureGeometry;
 };
 
-const normalizeFeatureId = (value: unknown): string => {
-  if (typeof value === 'string') return value;
-  if (typeof value === 'number') return String(value);
-  return String(value ?? '');
-};
-
-const toPropertyString = (value: unknown): string | undefined => {
-  if (typeof value === 'string') return value.trim() || undefined;
-  if (typeof value === 'number') return Number.isFinite(value) ? String(value) : undefined;
-  return undefined;
-};
-
-const pickFirstString = (
-  properties: Record<string, unknown>,
-  keys: string[],
-): string | undefined => {
-  for (const key of keys) {
-    const value = toPropertyString(properties[key]);
-    if (value) return value;
-  }
-  return undefined;
-};
-
-const pickCountryName = (properties: Record<string, unknown>): string | undefined =>
-  pickFirstString(properties, ['country', 'COUNTRY', 'COUNTRY_NAME', 'NAME_0', 'ADMIN', 'SOVEREIGNT']);
-
-const pickCountryCode = (properties: Record<string, unknown>): string | undefined =>
-  pickFirstString(properties, ['ISO_A2', 'ISO2', 'ISO_2', 'ISO_A3', 'ADM0_A3', 'ISO3', 'shapeISO']);
-
-const pickAdminName = (properties: Record<string, unknown>): string | undefined =>
-  pickFirstString(properties, [
-    'name',
-    'NAME',
-    'name_en',
-    'NAME_EN',
-    'shapeName',
-    'NAME_1',
-    'NAME_2',
-    'NAME_3',
-    'NAME_4',
-    'NAME_5',
-  ]);
-
-const pickAdminCode = (properties: Record<string, unknown>): string | undefined =>
-  pickFirstString(properties, ['GID_0', 'GID_1', 'GID_2', 'GID_3', 'ADM1_CODE', 'ADM2_CODE', 'shapeID', 'code']);
-
-const pickAdminLevel = (properties: Record<string, unknown>): number | undefined => {
-  const candidates = [
-    properties.adminLevel,
-    properties.admin_level,
-    properties.ADM_LEVEL,
-    properties.level,
-    properties.admin_lvl,
-  ];
-  for (const value of candidates) {
-    if (typeof value === 'number' && Number.isFinite(value)) return value;
-    if (typeof value === 'string') {
-      const parsed = Number(value);
-      if (Number.isFinite(parsed)) return parsed;
-    }
-  }
-  return undefined;
-};
-
-const buildUniqueFeatureId = (
+function buildUniqueFeatureId(
   feature: FeatureLike,
   index: number,
   metadataContext?: VectorTileMetadataContext,
-): string => {
-  const properties = (feature.properties ??= {});
+): string {
+  const normalizeFeatureId = (value: unknown): string => {
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number') return String(value);
+    return String(value ?? '');
+  };
+
+  const properties: Record<string, unknown> = feature.properties ?? {};
   const rawBaseId = properties.id ?? feature.id ?? index;
   const baseId = normalizeFeatureId(rawBaseId).trim();
   const adminCode = pickAdminCode(properties);
@@ -141,7 +93,11 @@ const buildUniqueFeatureId = (
   const prefix = prefixParts.join('-');
   const composed = prefix ? `${prefix}:${fallbackBaseId}` : fallbackBaseId;
   return `${composed}:${index}`;
-};
+}
+
+const long2tile = (lon: number, z: number) => lonToTileX(lon, z);
+
+const lat2tile = (lat: number, z: number) => latToTileY(lat, z);
 
 const updateBbox = (bbox: [number, number, number, number], coord: number[]) => {
   if (coord.length < 2) return;
@@ -257,12 +213,6 @@ const decodeFeatureCollectionFromJsonBuffer = async (buffer: ArrayBuffer): Promi
   }
 };
 
-const long2tile = (lon: number, z: number) => Math.floor(((lon + 180) / 360) * 2 ** z);
-
-const lat2tile = (lat: number, z: number) => {
-  const rad = (lat * Math.PI) / 180;
-  return Math.floor(((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * 2 ** z);
-};
 
 const loadGeojsonVt = async (): Promise<GeojsonVtModule> => {
   const mod = await import('geojson-vt');
@@ -314,7 +264,7 @@ export const generateVectorTilesFromFeatureCollection = async (
       throwIfAborted(config.signal);
       const feature = features[index];
       if (!feature) continue;
-      const properties = (feature.properties ??= {});
+      const properties = feature.properties ?? (feature.properties = {});
       const tileFeatureId = buildUniqueFeatureId(feature, index, metadataContext);
       properties.id = tileFeatureId;
       const stats = extractGeometryStats(feature.geometry);
@@ -344,7 +294,7 @@ export const generateVectorTilesFromFeatureCollection = async (
       throwIfAborted(config.signal);
       const feature = features[index];
       if (!feature) continue;
-      const properties = (feature.properties ??= {});
+      const properties = feature.properties ?? (feature.properties = {});
       properties.id = buildUniqueFeatureId(feature, index, metadataContext);
     }
   }
@@ -518,7 +468,7 @@ export const getVectorTile = async (
 export const listVectorTiles = async (nodeId: string) => {
   const db = await TilesDB.getSingleton();
   const rows = await db.tiles.where('nodeId').equals(nodeId).toArray();
-  return rows.map((row) => ({
+  return rows.map((row): { z: number; x: number; y: number; size: number; timestamp: number } => ({
     z: row.z,
     x: row.x,
     y: row.y,

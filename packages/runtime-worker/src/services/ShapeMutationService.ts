@@ -9,7 +9,7 @@ import type {
   ShapeSourceMetadataRow,
 } from '@hierarchidb/plugin-service-api';
 import { getEphemeralShapeDB } from '@hierarchidb/shape-store';
-import { TilesDB } from '@hierarchidb/gis-sdk';
+import { TilesDB, type TileRow } from '@hierarchidb/vectortile-store';
 
 type DexieCollection = {
   delete?: () => Promise<number>;
@@ -170,8 +170,8 @@ export class ShapeMutationService implements ShapeMutationAPI {
     if (tiles.length === 0) return;
     const records = await Promise.all(
       tiles
-        .filter((row) => row.contentType === 'application/vnd.mapbox-vector-tile' && row.data)
-        .map(async (row) => {
+        .filter((row: TileRow) => row.contentType === 'application/vnd.mapbox-vector-tile' && row.data)
+        .map(async (row: TileRow) => {
           const data = row.data instanceof Uint8Array ? row.data : new Uint8Array(row.data);
           const contentHash = await this.calculateTileHash(data);
           return {
