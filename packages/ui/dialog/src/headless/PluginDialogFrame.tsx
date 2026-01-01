@@ -63,6 +63,8 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
   } = props;
 
   const { open, onRequestClose } = headlessProps;
+  const frameless = headlessProps.frameless ?? false;
+  const transparent = headlessProps.transparent ?? false;
 
   const isBrowser = typeof document !== 'undefined';
   const theme = useTheme();
@@ -141,7 +143,9 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
   const handleDragPointerDown = useCallback((event: React.PointerEvent<HTMLElement>) => {
     if (fullScreen) return;
     if (!headlessProps.onPositionChange) return;
-    if (event.button !== 0) return;
+    const isPrimaryButton = event.button === 0;
+    const isSecondaryButton = frameless && event.button === 2;
+    if (!isPrimaryButton && !isSecondaryButton) return;
 
     event.preventDefault();
     event.stopPropagation();
@@ -179,7 +183,7 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
     window.addEventListener('pointermove', handlePointerMove);
     window.addEventListener('pointerup', handlePointerEnd);
     window.addEventListener('pointercancel', handlePointerEnd);
-  }, [fullScreen, headlessProps, guards, position.x, position.y]);
+  }, [frameless, fullScreen, headlessProps, guards, position.x, position.y]);
 
   const handleResizePointerDown = useCallback((direction: ResizeDirection, event: React.PointerEvent<HTMLElement>) => {
     if (fullScreen) return;
@@ -265,6 +269,8 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
 
   const augmentedHeadlessProps = useMemo(() => ({
     ...headlessProps,
+    frameless,
+    transparent,
     onDragHandlePointerDown: (event: React.PointerEvent<HTMLElement>) => {
       handleDragPointerDown(event);
       headlessProps.onDragHandlePointerDown?.(event);
@@ -286,9 +292,9 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
       display: 'flex',
       flexDirection: 'column',
       borderRadius: fullScreen ? 0 : theme.shape.borderRadius,
-      boxShadow: fullScreen ? 'none' : theme.shadows[8],
+      boxShadow: fullScreen || (frameless && transparent) ? 'none' : theme.shadows[8],
       overflow: 'hidden',
-      backgroundColor: getDialogSurfaceColor(theme),
+      backgroundColor: transparent ? 'transparent' : getDialogSurfaceColor(theme),
       ...(isInteracting
         ? {
           transition: 'none',
@@ -300,7 +306,7 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
           }),
         }),
     })
-  ), [fullScreen, isInteracting, position.x, position.y, size.height, size.width]);
+  ), [fullScreen, frameless, isInteracting, position.x, position.y, size.height, size.width, transparent]);
 
   const combinedFrameSx = useMemo<SxProps<Theme>>(
     () => (frameSx
@@ -333,6 +339,16 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
       role="dialog"
       aria-modal="true"
       onKeyDown={handleKeyDown}
+      onContextMenu={(event: React.MouseEvent<HTMLDivElement>) => {
+        if (frameless) {
+          event.preventDefault();
+        }
+      }}
+      onPointerDown={(event: React.PointerEvent<HTMLDivElement>) => {
+        if (frameless && event.button === 2) {
+          handleDragPointerDown(event);
+        }
+      }}
     >
       <HeadlessPluginDialog {...augmentedHeadlessProps} />
       {!fullScreen && (

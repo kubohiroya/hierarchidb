@@ -9,6 +9,7 @@ import {
   Button,
 } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
+import { useDialogContext } from '@hierarchidb/ui-dialog';
 import { PluginDialogHeader } from './PluginDialogHeader.js';
 import { PluginDialogFooter, type PluginDialogFooterProps } from './PluginDialogFooter.js';
 import type { DialogActionInFlight } from '../types.js';
@@ -26,6 +27,8 @@ export const createHeaderComponent = (
 export const createContentComponent = (dialogRef: React.RefObject<HTMLElement | null>) =>
   memo(
     function DialogContentWrapper(props: React.PropsWithChildren) {
+      const ctx = useDialogContext<Record<string, unknown>>();
+      const disablePadding = Boolean(ctx.frameless && ctx.transparent);
       return (
         <Box
           sx={(theme: Theme) => ({
@@ -35,7 +38,7 @@ export const createContentComponent = (dialogRef: React.RefObject<HTMLElement | 
             display: 'flex',
             flexDirection: 'column',
             overflow: 'auto',
-            padding: theme.spacing(2),
+            padding: disablePadding ? 0 : theme.spacing(2),
           })}
           ref={dialogRef}
         >
