@@ -12,7 +12,7 @@ export * from './create-update.js';
 export * from './core.js';
 export * from './constants.js';
 export type { ProcessingStatus, TileInfo } from './api.js';
-export type { ShapeEntity } from './ShapeEntity.js';
+export type { ShapeEntity, SelectedArrayByCountries } from './ShapeEntity.js';
 export type { VectorTileEntity } from './VectorTileEntity.js';
 export type { MetaRow, SourceRow, TileIndexRow } from './tiles.js';
 export {

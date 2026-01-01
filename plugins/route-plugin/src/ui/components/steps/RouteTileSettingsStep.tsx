@@ -16,7 +16,7 @@ const MIN_ZOOM_LEVEL = 0;
 const MAX_ZOOM_LEVEL = 22;
 const DEFAULT_MIN_ZOOM = 5;
 const DEFAULT_MAX_ZOOM = 12;
-const DEFAULT_WORKERS = 4;
+const DEFAULT_BUFFER = 1;
 
 const clamp = (value: number, min: number, max: number): number => {
   if (Number.isNaN(value)) return min;
@@ -26,20 +26,19 @@ const clamp = (value: number, min: number, max: number): number => {
 export const RouteTileSettingsStep: React.FC<RouteTileSettingsStepProps> = ({ draft, onUpdate, disabled }) => {
   const fieldId = useId();
   const { t } = useTranslation();
-  const vectorTiles = draft.draftData?.processing?.vectorTiles ?? {};
-  const minZoom = clamp(vectorTiles.minZoom ?? DEFAULT_MIN_ZOOM, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
-  const maxZoom = clamp(vectorTiles.maxZoom ?? DEFAULT_MAX_ZOOM, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
-  const tileWorkers = clamp(vectorTiles.tileWorkers ?? DEFAULT_WORKERS, MIN_WORKERS, MAX_WORKERS);
+  const vectorTiles = draft.draftData?.processing?.vectorTiles ?? undefined;
+  const minZoom = clamp(vectorTiles?.minZoom ?? DEFAULT_MIN_ZOOM, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
+  const maxZoom = clamp(vectorTiles?.maxZoom ?? DEFAULT_MAX_ZOOM, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
+  const buffer = clamp(vectorTiles?.buffer ?? DEFAULT_BUFFER, MIN_WORKERS, MAX_WORKERS);
 
   useEffect(() => {
     const next = {
       processing: {
         ...(draft.draftData?.processing ?? {}),
         vectorTiles: {
-          ...vectorTiles,
           minZoom,
           maxZoom,
-          tileWorkers,
+          buffer,
         },
       },
       zoomRange: [minZoom, maxZoom] as [number, number],
@@ -48,17 +47,16 @@ export const RouteTileSettingsStep: React.FC<RouteTileSettingsStepProps> = ({ dr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleWorkersChange = (_: Event, value: number | number[]) => {
-    const raw = Array.isArray(value) ? value[0] ?? tileWorkers : value ?? tileWorkers;
-    const nextWorkers = clamp(Number(raw), MIN_WORKERS, MAX_WORKERS);
+  const handleBufferChange = (_: Event, value: number | number[]) => {
+    const raw = Array.isArray(value) ? value[0] ?? buffer : value ?? buffer;
+    const nextBuffer = clamp(Number(raw), MIN_WORKERS, MAX_WORKERS);
     onUpdate({
       processing: {
         ...(draft.draftData?.processing ?? {}),
         vectorTiles: {
-          ...vectorTiles,
-          tileWorkers: nextWorkers,
           minZoom,
           maxZoom,
+          buffer: nextBuffer,
         },
       },
     });
@@ -72,10 +70,9 @@ export const RouteTileSettingsStep: React.FC<RouteTileSettingsStepProps> = ({ dr
       processing: {
         ...(draft.draftData?.processing ?? {}),
         vectorTiles: {
-          ...vectorTiles,
-          tileWorkers,
           minZoom: nextMin,
           maxZoom: adjustedMax,
+          buffer,
         },
       },
       zoomRange: [nextMin, adjustedMax],
@@ -90,10 +87,9 @@ export const RouteTileSettingsStep: React.FC<RouteTileSettingsStepProps> = ({ dr
       processing: {
         ...(draft.draftData?.processing ?? {}),
         vectorTiles: {
-          ...vectorTiles,
-          tileWorkers,
           minZoom: adjustedMin,
           maxZoom: nextMax,
+          buffer,
         },
       },
       zoomRange: [adjustedMin, nextMax],
@@ -109,14 +105,14 @@ export const RouteTileSettingsStep: React.FC<RouteTileSettingsStepProps> = ({ dr
       <Grid container spacing={3} columns={{ xs: 12 }}>
         <Grid size={{ xs: 12, md: 6 }}>
           <Typography gutterBottom>
-            {t('tileSettings.workersLabel', 'Vector tile workers')}: {tileWorkers}
+            {t('tileSettings.bufferLabel', 'Vector tile buffer size')}: {buffer}
           </Typography>
           <Slider
             min={MIN_WORKERS}
             max={MAX_WORKERS}
-            value={tileWorkers}
+            value={buffer}
             valueLabelDisplay="auto"
-            onChange={handleWorkersChange}
+            onChange={handleBufferChange}
             disabled={disabled}
           />
         </Grid>
