@@ -57,7 +57,15 @@ type BuildControlCardProps = {
 
 type LoadingButtonProps = React.ComponentProps<typeof Button> & { loading?: boolean };
 
-const LoadingButton: React.FC<LoadingButtonProps> = ({ loading = false, disabled, startIcon, endIcon, children, ...rest }) => {
+const LoadingButton: React.FC<LoadingButtonProps> = ({
+  loading = false,
+  disabled,
+  startIcon,
+  endIcon,
+  sx,
+  children,
+  ...rest
+}) => {
   const spinner = (
     <CircularProgress
       size={16}
@@ -65,12 +73,26 @@ const LoadingButton: React.FC<LoadingButtonProps> = ({ loading = false, disabled
       color="inherit"
     />
   );
+  const resolvedEndIcon = loading
+    ? spinner
+    : (
+      endIcon ?? (
+        <Box
+          component="span"
+          sx={{ display: 'inline-flex', width: 16, height: 16 }}
+        />
+      )
+    );
+  const mergedSx = sx
+    ? [{ minWidth: 160 }, ...(Array.isArray(sx) ? sx : [sx])]
+    : [{ minWidth: 160 }];
   return (
     <Button
       {...rest}
       disabled={disabled || loading}
       startIcon={startIcon}
-      endIcon={loading ? spinner : endIcon}
+      endIcon={resolvedEndIcon}
+      sx={mergedSx}
       data-loading={loading ? 'true' : undefined}
     >
       {children}
@@ -104,6 +126,7 @@ const BuildControlCard: React.FC<BuildControlCardProps> = ({
       sx={{
         minWidth: 252,
         maxWidth: 312,
+        width: 312,
         p: 2,
         borderRadius: 2,
         border: '1px solid',
