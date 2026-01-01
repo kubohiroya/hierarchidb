@@ -86,20 +86,7 @@ export function ModelessDialogFrame<TData>(props: ModelessDialogFrameProps<TData
   const transitionTimeout = shouldAnimate ? fadeDuration : 0;
 
   const [isInteracting, setIsInteracting] = useState(false);
-  const [isHeaderVisible, setIsHeaderVisible] = useState(!frameless);
-
-  useEffect(() => {
-    if (!frameless) {
-      setIsHeaderVisible(true);
-    }
-  }, [frameless]);
-
-  const handleFrameContextMenu = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
-    if (!frameless) return;
-    event.preventDefault();
-    event.stopPropagation();
-    setIsHeaderVisible((prev) => !prev);
-  }, [frameless]);
+  const isHeaderVisible = !frameless;
 
   const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
     if (!open) return;
@@ -140,7 +127,9 @@ export function ModelessDialogFrame<TData>(props: ModelessDialogFrameProps<TData
   const handleDragPointerDown = useCallback((event: React.PointerEvent<HTMLElement>) => {
     if (fullScreen) return;
     if (!headlessProps.onPositionChange) return;
-    if (event.button !== 0) return;
+    const isPrimaryButton = event.button === 0;
+    const isSecondaryButton = frameless && event.button === 2;
+    if (!isPrimaryButton && !isSecondaryButton) return;
 
     event.preventDefault();
     event.stopPropagation();
@@ -178,7 +167,7 @@ export function ModelessDialogFrame<TData>(props: ModelessDialogFrameProps<TData
     window.addEventListener('pointermove', handlePointerMove);
     window.addEventListener('pointerup', handlePointerEnd);
     window.addEventListener('pointercancel', handlePointerEnd);
-  }, [fullScreen, guards, headlessProps, position.x, position.y]);
+  }, [frameless, fullScreen, guards, headlessProps, position.x, position.y]);
 
   const handleResizePointerDown = useCallback((direction: ResizeDirection, event: React.PointerEvent<HTMLElement>) => {
     if (fullScreen || isMinimized) return;
@@ -278,6 +267,8 @@ export function ModelessDialogFrame<TData>(props: ModelessDialogFrameProps<TData
 
   const augmentedHeadlessProps = useMemo(() => ({
     ...headlessProps,
+    frameless,
+    transparent,
     HeaderComponent: headerComponent,
     onDragHandlePointerDown: (event: React.PointerEvent<HTMLElement>) => {
       onRequestFocus?.();
@@ -312,7 +303,7 @@ export function ModelessDialogFrame<TData>(props: ModelessDialogFrameProps<TData
         display: 'flex',
         flexDirection: 'column',
         borderRadius: fullScreen ? 0 : theme.shape.borderRadius,
-        boxShadow: fullScreen ? 'none' : theme.shadows[8],
+        boxShadow: fullScreen || (frameless && transparent) ? 'none' : theme.shadows[8],
         overflow: 'hidden',
         backgroundColor: transparent ? 'transparent' : getDialogSurfaceColor(theme),
         pointerEvents: 'auto',
@@ -328,7 +319,7 @@ export function ModelessDialogFrame<TData>(props: ModelessDialogFrameProps<TData
           }),
       } as const;
     }
-  ), [collapsedHeight, fullScreen, isInteracting, isMinimized, position.x, position.y, size.height, size.width, transparent]);
+  ), [collapsedHeight, fullScreen, frameless, isInteracting, isMinimized, position.x, position.y, size.height, size.width, transparent]);
 
   const combinedFrameSx = useMemo<SxProps<Theme>>(
     () => (frameSx
@@ -343,11 +334,19 @@ export function ModelessDialogFrame<TData>(props: ModelessDialogFrameProps<TData
       role="dialog"
       aria-modal={false}
       onKeyDown={handleKeyDown}
-      onPointerDown={() => {
+      onPointerDown={(event) => {
         onRequestFocus?.();
+        if (frameless && event.button === 2) {
+          handleDragPointerDown(event);
+        }
       }}
       onWheelCapture={guards.handleWheelCapture}
-      onContextMenu={handleFrameContextMenu}
+      onContextMenu={(event) => {
+        if (frameless) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      }}
     >
       <AbstractDialog {...augmentedHeadlessProps} />
       {!fullScreen && !isMinimized && (
