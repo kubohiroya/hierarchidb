@@ -1,6 +1,6 @@
 import type { DownloadTaskRequest, ShapeStageWorkerAPI, ShapeStageWorkerTaskResult, ExtractTaskRequest } from './ShapeStageWorkerTypes.js';
 import { getEphemeralShapeDB } from '../../database/EphemeralShapeDB.js';
-import { defaultDataSourceFactory, type DataSourceStrategyId } from '../../datasources/DataSourceStrategyFactory.js';
+import { defaultDataSourceFactory } from '../../datasources/DataSourceStrategyFactory.js';
 import type { BoundingBox as TaskBoundingBox, Extract1Task, Extract2Task } from '../../../common/types/index.js';
 import type { BoundingBox as DataSourceBoundingBox } from '../../datasources/DataSourceStrategy.js';
 import type { Feature, FeatureCollection } from 'geojson';
@@ -10,15 +10,7 @@ import { applyFeatureFiltering, type FeatureFilterSettings, extractGeoJson } fro
 import { extractTopoJsonByTiles } from '../utils/topojsonExtract.js';
 import { applyOriginKey, assignFeatureIds, HDB_ORIGIN_KEY } from '../utils/featureIds.js';
 import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
-
-const resolveStrategyId = (source?: string): DataSourceStrategyId | null => {
-  const key = (source ?? '').toLowerCase();
-  if (key.includes('gadm')) return 'gadm-administrative-areas';
-  if (key.includes('natural')) return 'natural-earth-shapes';
-  if (key.includes('geo')) return 'geoboundaries-admin-areas';
-  if (key.includes('osm') || key.includes('openstreet')) return 'openstreetmap-overpass';
-  return null;
-};
+import { resolveStrategyIdFromDataSource } from '../../datasources/strategyIds.js';
 
 const normalizeBoundingBox = (bbox?: TaskBoundingBox): DataSourceBoundingBox | undefined => {
   if (!bbox || bbox.length !== 4) return undefined;
@@ -108,7 +100,7 @@ const processDownloadTask = async ({
   taskIndex,
   input,
 }: DownloadTaskRequest): Promise<ShapeStageWorkerTaskResult> => {
-  const strategyId = resolveStrategyId(input.dataSource);
+  const strategyId = resolveStrategyIdFromDataSource(input.dataSource);
   if (!strategyId) {
     return { status: 'failed', errorMessage: 'No data source strategy available' };
   }
