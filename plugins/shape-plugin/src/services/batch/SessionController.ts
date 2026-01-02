@@ -40,6 +40,11 @@ import { VectorTile } from '@mapbox/vector-tile';
 import Pbf from 'pbf';
 import { HDB_ORIGIN_KEY } from './utils/featureIds.js';
 import { getEphemeralShapeDB } from '../database/EphemeralShapeDB.js';
+import { expandOutputsForFeatureGroups as expandOutputsForFeatureGroupsInDownloadStage } from './session/stages/download/expandOutputsForFeatureGroups.js';
+import { buildDownloadProgressReporter, resolveRunnableDownloadTasks } from './session/stages/download/resolveRunnableDownloadTasks.js';
+import { runDownloadAdapter } from './session/stages/download/runDownloadAdapter.js';
+import { postprocessDownloadOutputs as postprocessDownloadOutputsInDownloadStage } from './session/stages/download/postprocessDownloadOutputs.js';
+import { updateRawSourceMetadata } from './session/stages/download/metadata/updateRawSourceMetadata.js';
 
 type WorkerPoolStatistics = Record<string, number>;
 
@@ -268,67 +273,15 @@ export class SessionController {
   }
 
   private async expandOutputsForFeatureGroups(outputs: DownloadStageOutput[]): Promise<DownloadStageOutput[]> {
-    const expanded: DownloadStageOutput[] = [];
-    const newBuffers: Array<{
-      id: string;
-      nodeId: NodeId;
-      data: ArrayBuffer;
-      featureCount: number;
-      bbox: [number, number, number, number];
-      downloadTime: number;
-      size: number;
-      timestamp: number;
-    }> = [];
-    for (const output of outputs) {
-      const raw = await this.artifactStore.getRawBuffer(output.inputBufferId);
-      if (!raw) {
-        expanded.push(output);
-        continue;
-      }
-      const collection = await this.decodeFeatureCollection(raw.data);
-      if (!collection || collection.features.length === 0) {
-        expanded.push(output);
-        continue;
-      }
-      const resolvedContinent = output.continent
-        ?? this.resolveContinentFromFeature(collection.features[0]);
-      const fallbackPrefix = output.adminLevel != null ? `ADM${output.adminLevel}` : 'feature';
-      for (let index = 0; index < collection.features.length; index++) {
-        const feature = collection.features[index];
-        if (!feature) continue;
-        const featureLabel = this.resolveFeatureLabel(feature, index, fallbackPrefix);
-        const featureGroupId = String(
-          (feature.properties as Record<string, unknown> | undefined)?.id ?? feature.id ?? index,
-        );
-        const featureCollection: FeatureCollection = { type: 'FeatureCollection', features: [feature] };
-        const bufferId = `${output.inputBufferId}-feature-${index}`;
-        const data = await this.encodeFeatureCollection(featureCollection);
-        const bbox = turfBbox(featureCollection as unknown as FeatureCollection);
-        newBuffers.push({
-          id: bufferId,
-          nodeId: raw.nodeId,
-          data,
-          featureCount: 1,
-          bbox: [bbox[0], bbox[1], bbox[2], bbox[3]],
-          downloadTime: raw.downloadTime,
-          size: data.byteLength,
-          timestamp: Date.now(),
-        });
-        expanded.push({
-          ...output,
-          continent: resolvedContinent,
-          inputBufferId: bufferId,
-          featureGroupId,
-          featureLabel,
-          featureIndex: index,
-          featureCount: collection.features.length,
-        });
-      }
-    }
-    if (newBuffers.length > 0) {
-      await this.artifactStore.putRawBuffers(newBuffers);
-    }
-    return expanded;
+    return await expandOutputsForFeatureGroupsInDownloadStage({
+      nodeId: this.nodeId,
+      outputs,
+      artifactStore: this.artifactStore,
+      decodeFeatureCollection: (buffer) => this.decodeFeatureCollection(buffer),
+      encodeFeatureCollection: (collection) => this.encodeFeatureCollection(collection),
+      resolveFeatureLabel: (feature, index, fallbackPrefix) => this.resolveFeatureLabel(feature, index, fallbackPrefix),
+      resolveContinentFromFeature: (feature) => this.resolveContinentFromFeature(feature),
+    });
   }
 
   private resolveContinentFromFeature(feature?: Feature | null): string | undefined {
@@ -508,19 +461,11 @@ export class SessionController {
     const existingTaskIds = await this.taskRegistry.assignDownloadTaskIndices(tasks);
     await this.taskRegistry.registerTasks('download', tasks, existingTaskIds, inputsByTaskId);
     await this.taskRegistry.markDownloadTasksCompletedWhenBuffersExist(tasks);
-    const { runnableTasks, completedCount, failedCount, total } =
-      await this.taskRegistry.resolveStageTasks('download', tasks);
-    const baseCompleted = Math.min(completedCount, total);
-    const baseFailed = Math.min(failedCount, total - baseCompleted);
-    const baseDone = Math.min(total, baseCompleted + baseFailed);
-    if (baseDone > 0) {
-      console.debug(`[Session ${this.nodeId}] Skipping completed download tasks`, {
-        total,
-        runnable: runnableTasks.length,
-        completed: baseCompleted,
-        failed: baseFailed,
-      });
-    }
+    const { runnableTasks, baseCompleted, baseFailed, baseDone, total } = await resolveRunnableDownloadTasks({
+      nodeId: this.nodeId,
+      taskRegistry: this.taskRegistry,
+      tasks,
+    });
     if (runnableTasks.length === 0) {
       this.progressCallback?.({
         total,
@@ -532,34 +477,23 @@ export class SessionController {
         currentTask: 'Download already completed',
       });
     } else {
-      const reportProgress = (p: ProgressInfo) => {
-        const completed = Math.min(total, baseCompleted + p.completed);
-        const failed = Math.min(total - completed, baseFailed + p.failed);
-        const skipped = p.skipped ?? 0;
-        const done = Math.min(total, completed + failed + skipped);
-        const percentage = total > 0 ? (done / total) * 100 : 0;
-        this.progressCallback?.({
-          ...p,
-          total,
-          completed,
-          failed,
-          skipped,
-          percentage,
-          currentStage: 'download',
-        });
-      };
+      const reportProgress = buildDownloadProgressReporter({
+        total,
+        baseCompleted,
+        baseFailed,
+        progressCallback: this.progressCallback,
+      });
       const maxConcurrent = this.config.download?.concurrentDownloads ?? this.options.maxConcurrentTasks;
-      const res = await this.downloadAdapter.process(
-        this.nodeId,
+      const res = await runDownloadAdapter({
+        nodeId: this.nodeId,
+        adapter: this.downloadAdapter,
         runnableTasks,
         inputsByTaskId,
         reportProgress,
-        {
-          waitIfPaused: () => this.waitForStageResume('download'),
-          getSignal: () => this.getStageAbortSignal('download'),
-          maxConcurrent,
-        },
-      );
+        waitIfPaused: () => this.waitForStageResume('download'),
+        getSignal: () => this.getStageAbortSignal('download'),
+        maxConcurrent,
+      });
       const totalTasks = total;
       const processedTotal = baseCompleted + res.processed;
       const failedTotal = baseFailed + res.failed;
@@ -576,7 +510,8 @@ export class SessionController {
         currentTask: 'Download completed',
       });
     }
-    const postprocess = await strategy.postprocessDownloadOutputs({
+    const postprocess = await postprocessDownloadOutputsInDownloadStage({
+      strategy,
       nodeId: this.nodeId,
       downloadTaskPayloads: this.downloadTaskPayloads,
       config: this.config,
@@ -589,21 +524,18 @@ export class SessionController {
       downloadInputsById: inputsByTaskId,
     });
     const expandedOutputs = await this.expandOutputsForFeatureGroups(postprocess.outputs);
-    if (isShapePreviewMetadataEnabled()) {
-      const originEntries = this.indexOriginMetadata(expandedOutputs);
-      await this.updateSourceMetadataBase(originEntries);
-      const rawStatsByOrigin = new Map<string, GeometryStatsSummary>();
-      for (const entry of originEntries) {
-        const raw = await this.artifactStore.getRawBuffer(entry.inputBufferId);
-        if (!raw) continue;
-        const stats = await this.summarizeBufferStats(raw.data);
-        const existing = rawStatsByOrigin.get(entry.originKey) ?? { vertexCount: 0, polygonCount: 0 };
-        rawStatsByOrigin.set(entry.originKey, this.accumulateStats(existing, stats));
-      }
-      await this.updateSourceMetadataStage('raw', rawStatsByOrigin);
-    } else {
-      this.indexOriginMetadata(expandedOutputs);
-    }
+    const previewEnabled = isShapePreviewMetadataEnabled();
+    await updateRawSourceMetadata({
+      enabled: previewEnabled,
+      nodeId: this.nodeId,
+      outputs: expandedOutputs,
+      indexOriginMetadata: (outputs) => this.indexOriginMetadata(outputs),
+      updateSourceMetadataBase: (entries) => this.updateSourceMetadataBase(entries),
+      listRawBuffer: (bufferId) => this.artifactStore.getRawBuffer(bufferId),
+      summarizeBufferStats: (buffer) => this.summarizeBufferStats(buffer),
+      accumulateStats: (prev, next) => this.accumulateStats(prev, next),
+      updateSourceMetadataStage: (stage, statsByOrigin) => this.updateSourceMetadataStage(stage, statsByOrigin),
+    });
     this.extract1Tasks = this.buildExtract1Tasks(expandedOutputs);
   }
 
@@ -786,6 +718,7 @@ export class SessionController {
       });
     });
     return { tasks, inputsByTaskId };
+
   }
 
   private resolveTaskContinent(input?: ShapeExtract1TaskInputData): string | undefined {
@@ -1075,7 +1008,7 @@ export class SessionController {
       extractionMode,
       taskCount: this.extract2Tasks.length,
     });
-    if (this.extract2Tasks.length === 0) {
+    if this.extract2Tasks.length === 0) {
       console.warn(`[Session ${this.nodeId}] No extract2 tasks to process`);
       await this.cleanupStageCache('extract1', 'extract2 stage skipped (no tasks)');
       return;

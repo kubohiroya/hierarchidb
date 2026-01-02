@@ -63,7 +63,8 @@ export const assignFeatureIds = (
 ): FeatureCollection => {
   collection.features.forEach((feature, index) => {
     if (!feature) return;
-    const properties = (feature.properties ??= {});
+    const properties = feature.properties ?? {};
+    feature.properties = properties;
     const existing = pickFirstString(properties, [HDB_FEATURE_ID_KEY, 'hdbFeatureId']);
     const baseId = String(properties.id ?? feature.id ?? `feature-${index}`);
     const countryCode = context.countryCode ?? pickCountryCode(properties);
@@ -86,7 +87,8 @@ export const applyOriginKey = (
   if (!originKey) return collection;
   collection.features.forEach((feature) => {
     if (!feature) return;
-    const properties = (feature.properties ??= {});
+    const properties = feature.properties ?? {};
+    feature.properties = properties;
     if (typeof properties[HDB_ORIGIN_KEY] !== 'string' || !properties[HDB_ORIGIN_KEY]) {
       properties[HDB_ORIGIN_KEY] = originKey;
     }
