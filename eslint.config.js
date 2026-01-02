@@ -74,6 +74,16 @@ export default [// Ignore _obsolate_common stage artifacts across the monorepo
         { name: '@mui/material/Unstable_Grid2', message: 'Use @mui/material/Grid (MUI v7).' },
         { name: '@mui/material/Grid2', message: 'Use @mui/material/Grid (MUI v7).' },
       ],
+      patterns: [
+        {
+          group: ['../../../../packages/*', '../../../../../packages/*', '../../../../../../packages/*', '../../../../../../../packages/*'],
+          message: 'Do not import other packages via deep relative paths into /packages. Use the workspace package name (public exports) instead.',
+        },
+        {
+          group: ['**/packages/*/src/*'],
+          message: 'Do not import another package\'s /src via path. Use the package public entry (exports/dist) instead.',
+        },
+      ],
     }],
   },
 }, // Type-aware deprecation checks (runtime-worker-worker)
@@ -160,4 +170,18 @@ export default [// Ignore _obsolate_common stage artifacts across the monorepo
       ],
     }],
   },
-}, ...storybookConfigs];
+}, ...storybookConfigs,
+{
+  files: ['plugins/**/src/**/*.{js,jsx,ts,tsx}'],
+  rules: {
+    'no-restricted-imports': ['error', {
+      patterns: [
+        {
+          group: ['**/packages/*/src/*'],
+          message: 'plugins/* must not import packages/*/src directly. Import from the package name (exports) instead.',
+        },
+      ],
+    }],
+  },
+},
+];

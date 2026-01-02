@@ -521,17 +521,17 @@ export class SessionController {
     // Bridge shared orchestrator ProgressInfo -> shape-plugin ProgressInfo.
     // shared 側は stage-agnostic な string を許すが、shape-plugin 側は BatchTaskType | 'processing' のみを許す。
     const progressCallback = this.progressCallback
-      ? ((p: import('./session/stages/vectortile/orchestrator.shared.js').ProgressInfo) => {
-          const currentStageRaw = p.currentStage;
-          const currentStage = currentStageRaw === 'processing' || currentStageRaw === 'vectortile'
-            ? currentStageRaw
-            : undefined;
-          this.progressCallback?.({
-            ...p,
-            currentStage,
-          });
-        })
-      : undefined;
+      ? ((p: import('@hierarchidb/vectortile-orchestrator').ProgressInfo) => {
+           const currentStageRaw = p.currentStage;
+           const currentStage = currentStageRaw === 'processing' || currentStageRaw === 'vectortile'
+             ? currentStageRaw
+             : undefined;
+           this.progressCallback?.({
+             ...p,
+             currentStage,
+           });
+         })
+       : undefined;
 
     let stageSummary: { total: number; completed: number; failed: number; skipped: number } | undefined;
     await runVectorTileStageOrchestrator({
@@ -556,7 +556,7 @@ export class SessionController {
         updateSourceMetadataStage: (stage, statsByOrigin) => this.updateSourceMetadataStage(stage, statsByOrigin),
         clearFeatureCache: () => this.vectorTileAdapter.clearFeatureCache?.(String(this.nodeId)),
       }),
-      afterRun: async (summary: import('./session/stages/vectortile/orchestrator.shared.js').VectorTileStageSummary) => {
+      afterRun: async (summary: import('@hierarchidb/vectortile-orchestrator').VectorTileStageSummary) => {
         console.log(`[Session ${this.nodeId}] Vector tile stage completed`, summary);
         stageSummary = summary;
       },

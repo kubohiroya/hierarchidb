@@ -22,12 +22,15 @@ export type VectorTileStageSummary = {
   skipped: number;
 };
 
-export type VectorTileStageTaskRegistryPort<TTask = DefaultVectorTileTask> = {
+export type VectorTileStageTaskRegistryPort<
+  TTask = DefaultVectorTileTask,
+  TInput = VectorTileTaskInputData,
+> = {
   registerTasks: (
     stage: 'vectortile',
     tasks: TTask[],
     existingTaskIds: Set<string> | undefined,
-    inputsByTaskId: Map<string, VectorTileTaskInputData>,
+    inputsByTaskId: Map<string, TInput>,
   ) => Promise<void>;
 
   resolveStageTasks: (
@@ -47,14 +50,15 @@ export type VectorTileStagePostprocessPort = {
 export type RunVectorTileStageOrchestratorParams<
   TTask = DefaultVectorTileTask,
   TProgress = DefaultProgressInfo,
+  TInput = VectorTileTaskInputData,
 > = {
   nodeId: NodeId;
   metadataEnabled: boolean;
 
   tasks: TTask[];
-  inputsByTaskId: Map<string, VectorTileTaskInputData>;
+  inputsByTaskId: Map<string, TInput>;
 
-  taskRegistry: VectorTileStageTaskRegistryPort<TTask>;
+  taskRegistry: VectorTileStageTaskRegistryPort<TTask, TInput>;
 
   adapter: VectorTileStageAdapter<TTask, TProgress>;
   maxConcurrent?: number;

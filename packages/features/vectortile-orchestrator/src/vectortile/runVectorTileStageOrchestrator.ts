@@ -14,8 +14,8 @@ import { postprocessVectorTileStage } from './postprocessVectorTileStage.js';
  * - 進捗合成（baseCompleted/baseFailed を含む）
  * - 後処理（postprocess port）
  */
-export async function runVectorTileStageOrchestrator<TTask, TProgress extends ProgressInfo>(
-  params: RunVectorTileStageOrchestratorParams<TTask, TProgress>,
+export async function runVectorTileStageOrchestrator<TTask, TProgress extends ProgressInfo, TInput>(
+  params: RunVectorTileStageOrchestratorParams<TTask, TProgress, TInput>,
 ): Promise<void> {
   const defaults: {
     getSignal: () => AbortSignal;
