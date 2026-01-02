@@ -88,16 +88,16 @@ export const useTabularDataSource = ({
   const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => {
-    setImportMethod((prev) => (prev === derivedImportMethod ? prev : derivedImportMethod));
+    setImportMethod(derivedImportMethod);
   }, [derivedImportMethod]);
 
   useEffect(() => {
-    setDownloadUrl((prev) => (prev === derivedUrl ? prev : derivedUrl));
+    setDownloadUrl(derivedUrl);
   }, [derivedUrl]);
 
   useEffect(() => {
     if (derivedProcessing) {
-      setProcessingConfig((prev) => (prev === derivedProcessing ? prev : derivedProcessing));
+      setProcessingConfig(derivedProcessing);
     }
   }, [derivedProcessing]);
 
