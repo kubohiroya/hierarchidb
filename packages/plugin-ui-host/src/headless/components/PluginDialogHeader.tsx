@@ -54,6 +54,7 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
   const dragHandlePointerDown = ctx.onDragHandlePointerDown;
   const canMinimize = Boolean(ctx.onMinimizeChange);
   const isMinimized = Boolean(ctx.isMinimized);
+  const hideFrameControls = Boolean(ctx.frameless && ctx.transparent);
 
   const headerSubtitle = useMemo(() => {
     if (subtitle && ctx.stepComponents.length <= 1) return subtitle;
@@ -164,33 +165,35 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
         )}
       </Stack>
 
-      <Stack direction="row" spacing={1.5} alignItems="center">
-        <Stack direction="row" spacing={0.5} alignItems="center">
-          {canMinimize ? (
-            <PluginDialogMinimizeButton
-              isMinimized={isMinimized}
-              onClick={toggleMinimize}
+      {hideFrameControls ? null : (
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <Stack direction="row" spacing={0.5} alignItems="center">
+            {canMinimize ? (
+              <PluginDialogMinimizeButton
+                isMinimized={isMinimized}
+                onClick={toggleMinimize}
+                onPointerDown={stopPointerPropagation}
+              />
+            ) : null}
+            <PluginDialogMaximizeButton
+              displayMode={ctx.displayMode === 'maximize' ? 'maximize' : 'default'}
+              onClick={toggleMaximize}
+              onPointerDown={stopPointerPropagation}
+              disabled={!ctx.onDisplayModeChange}
+            />
+            <PluginDialogFullScreenButton
+              displayMode={ctx.displayMode === 'full-screen' ? 'full-screen' : 'default'}
+              onClick={toggleFullscreen}
+              onPointerDown={stopPointerPropagation}
+              disabled={!ctx.onDisplayModeChange}
+            />
+            <PluginDialogCloseButton
+              onClick={() => ctx.onRequestClose('close')}
               onPointerDown={stopPointerPropagation}
             />
-          ) : null}
-          <PluginDialogMaximizeButton
-            displayMode={ctx.displayMode === 'maximize' ? 'maximize' : 'default'}
-            onClick={toggleMaximize}
-            onPointerDown={stopPointerPropagation}
-            disabled={!ctx.onDisplayModeChange}
-          />
-          <PluginDialogFullScreenButton
-            displayMode={ctx.displayMode === 'full-screen' ? 'full-screen' : 'default'}
-            onClick={toggleFullscreen}
-            onPointerDown={stopPointerPropagation}
-            disabled={!ctx.onDisplayModeChange}
-          />
-          <PluginDialogCloseButton
-            onClick={() => ctx.onRequestClose('close')}
-            onPointerDown={stopPointerPropagation}
-          />
+          </Stack>
         </Stack>
-      </Stack>
+      )}
     </Box>
   );
 };

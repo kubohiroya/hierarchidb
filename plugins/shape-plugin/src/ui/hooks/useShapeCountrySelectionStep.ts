@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSnackbar } from 'notistack';
 import { useIsoCountries, type MatrixConfig, type MatrixSelection, type ContinentCode } from '@hierarchidb/ui-country-select';
 import type { CountryMetadata, ShapeEntity } from '../../common/types/index.js';
@@ -12,7 +12,8 @@ import {
 } from '../../common/mock/data.js';
 import { normalizeDataSourceName } from '../../services/utils/utils.js';
 import { clearStagesIfPresent, FULL_INVALIDATION_STAGES, resolveShapeNodeId } from '../utils/sessionInvalidation.js';
-import { fetchGeoBoundariesAvailability } from '../../services/utils/geoBoundariesAvailability.js';
+import type { CountryAvailabilityWorkerAPI, SerializedCountryAvailability } from '../workers/countryAvailability.types.js';
+import { wrap, releaseProxy } from 'comlink';
 
 const CONTINENT_CODES: ContinentCode[] = ['AF', 'AS', 'EU', 'NA', 'SA', 'OC', 'AN'];
 
@@ -78,6 +79,11 @@ const isSelectionEqual = (
   });
 };
 
+const createAvailabilityWorker = () => new Worker(
+  new URL('../workers/countryAvailability.worker.ts', import.meta.url),
+  { type: 'module' },
+);
+
 type Args = {
   data: Partial<ShapeEntity>;
   onChange: (patch: Partial<ShapeEntity>) => void;
@@ -89,11 +95,83 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
     data.batchConfig?.dataSource ?? data.dataSourceName,
   ) ?? 'gadm';
   const iso = useIsoCountries();
-  const { metadata: countries, loading, error } = useCountryMetadata({ dataSource: dataSourceKey });
-  const [availableAdminLevels, setAvailableAdminLevels] = useState<Map<string, number[]> | null>(null);
+  const { metadata: countries, loading: metadataLoading, error } = useCountryMetadata({ dataSource: dataSourceKey });
+  const [availability, setAvailability] = useState<SerializedCountryAvailability | null>(null);
+  const [availabilityError, setAvailabilityError] = useState<Error | null>(null);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
+  const [isAvailabilityWorkerReady, setAvailabilityWorkerReady] = useState(false);
+  const availabilityWorkerRef = useRef<{
+    worker: Worker;
+    api: ReturnType<typeof wrap<CountryAvailabilityWorkerAPI>>;
+  } | null>(null);
+  const availabilityRequestIdRef = useRef(0);
   const selectedArrayByCountries = data.selectedArrayByCountries;
   const dataSourceConfig = DATA_SOURCE_CONFIGS[dataSourceKey];
-  const maxAdminLevel = dataSourceConfig?.maxAdminLevel ?? 0;
+  const resolvedMaxAdminLevel = useMemo(() => {
+    const fallback = dataSourceConfig?.maxAdminLevel ?? 0;
+    const fromAvailability = availability?.maxAdminLevel;
+    if (typeof fromAvailability === 'number' && Number.isFinite(fromAvailability)) {
+      return Math.max(0, fromAvailability);
+    }
+    return Math.max(0, fallback);
+  }, [availability?.maxAdminLevel, dataSourceConfig]);
+
+  useEffect(() => {
+    const worker = createAvailabilityWorker();
+    const api = wrap<CountryAvailabilityWorkerAPI>(worker);
+    availabilityWorkerRef.current = { worker, api };
+    setAvailabilityWorkerReady(true);
+    return () => {
+      availabilityWorkerRef.current = null;
+      try {
+        api[releaseProxy]?.();
+      } catch (releaseError) {
+        console.warn('[ShapeCountrySelectionStep] failed to release availability worker', releaseError);
+      }
+      worker.terminate();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isAvailabilityWorkerReady) return;
+    const ref = availabilityWorkerRef.current;
+    if (!ref) return;
+    let cancelled = false;
+    const requestId = availabilityRequestIdRef.current + 1;
+    availabilityRequestIdRef.current = requestId;
+    setAvailabilityLoading(true);
+    setAvailabilityError(null);
+
+    const run = async () => {
+      try {
+        const result = await ref.api.loadAvailability(dataSourceKey);
+        if (cancelled || requestId !== availabilityRequestIdRef.current) return;
+        setAvailability(result);
+      } catch (err) {
+        if (cancelled || requestId !== availabilityRequestIdRef.current) return;
+        const errorObj = err instanceof Error ? err : new Error('Failed to load availability');
+        setAvailabilityError(errorObj);
+        setAvailability(null);
+      } finally {
+        if (!cancelled && requestId === availabilityRequestIdRef.current) {
+          setAvailabilityLoading(false);
+        }
+      }
+    };
+
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [dataSourceKey, isAvailabilityWorkerReady]);
+
+  useEffect(() => {
+    if (!availabilityError) return;
+    enqueueSnackbar(
+      'Failed to load data source availability. Falling back to bundled metadata.',
+      { variant: 'warning' },
+    );
+  }, [availabilityError, enqueueSnackbar]);
 
   const isoContinentByCode = useMemo(() => {
     if (iso.status !== 'ready') return new Map<string, ContinentCode>();
@@ -112,17 +190,43 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
     );
   }, [countries]);
 
+  const availabilityByCountryCode = useMemo(() => {
+    if (!availability) return null;
+    const map = new Map<string, number[]>();
+    availability.entries.forEach((entry) => {
+      const code = entry.countryCode?.trim().toUpperCase();
+      if (!code) return;
+      const levels = Array.from(new Set((entry.adminLevels ?? []).filter((level) => level >= 0))).sort((a, b) => a - b);
+      map.set(code, levels);
+    });
+    return map;
+  }, [availability]);
+
+  const normalizedAvailabilityByCountry = useMemo(() => {
+    if (!availabilityByCountryCode) return null;
+    const map = new Map<string, number[]>();
+    availabilityByCountryCode.forEach((levels, code) => {
+      const normalized = code.trim().toUpperCase();
+      const iso2 = normalized.length === 2 ? normalized : iso3ToIso2.get(normalized) ?? normalized;
+      map.set(iso2, levels);
+    });
+    return map;
+  }, [availabilityByCountryCode, iso3ToIso2]);
+
   const baseCountries = useMemo(() => {
     return countries.map((country, countryIndex) => {
       const normalizedCode = normalizeCountryCodeFromMetadata(country, countryIndex);
       const isoContinent = isoContinentByCode.get(normalizedCode);
       const normalizedContinent = normalizeContinentCode(country.continent) ?? isoContinent ?? 'NA';
-      const geoAdminLevels = dataSourceKey === 'geoboundaries' && availableAdminLevels
-        ? availableAdminLevels.get((country.iso3 ?? normalizedCode).toUpperCase()) ?? []
-        : null;
-      const filteredLevels = geoAdminLevels
-        ? (country.availableAdminLevels ?? []).filter((level) => geoAdminLevels.includes(level))
-        : (country.availableAdminLevels ?? []);
+      const resolvedLevels = normalizedAvailabilityByCountry?.get(normalizedCode)
+        ?? country.availableAdminLevels
+        ?? [];
+      const normalizedLevels = Array.from(
+        new Set(
+          resolvedLevels
+            .filter((level) => Number.isFinite(level) && level >= 0 && level <= resolvedMaxAdminLevel),
+        ),
+      ).sort((a, b) => a - b);
       return {
         country: {
           code: normalizedCode,
@@ -130,10 +234,10 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
           nativeName: country.countryName,
           continent: normalizedContinent,
         },
-        availableAdminLevels: geoAdminLevels ? filteredLevels : (country.availableAdminLevels ?? []),
+        availableAdminLevels: normalizedLevels,
       };
     });
-  }, [availableAdminLevels, countries, dataSourceKey, isoContinentByCode]);
+  }, [countries, isoContinentByCode, normalizedAvailabilityByCountry, resolvedMaxAdminLevel]);
 
   const normalizedSelection = useMemo<Record<string, boolean[]>>(() => {
     if (!selectedArrayByCountries) return {};
@@ -142,7 +246,7 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
       const mapped: Record<string, boolean[]> = {};
       baseCountries.forEach((entry, rowIndex) => {
         const row = legacy[rowIndex] ?? [];
-        mapped[entry.country.code] = Array.from({ length: maxAdminLevel + 1 }, (_, idx) => Boolean(row[idx]));
+        mapped[entry.country.code] = Array.from({ length: resolvedMaxAdminLevel + 1 }, (_, idx) => Boolean(row[idx]));
       });
       return mapped;
     }
@@ -155,18 +259,18 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
       Object.entries(selectedArrayByCountries).map(([code, row]) => [
         resolveSelectionKey(code),
         Array.isArray(row)
-          ? Array.from({ length: maxAdminLevel + 1 }, (_, idx) => Boolean(row[idx]))
-          : Array.from({ length: maxAdminLevel + 1 }, () => false),
+          ? Array.from({ length: resolvedMaxAdminLevel + 1 }, (_, idx) => Boolean(row[idx]))
+          : Array.from({ length: resolvedMaxAdminLevel + 1 }, () => false),
       ]),
     );
-  }, [baseCountries, iso3ToIso2, maxAdminLevel, selectedArrayByCountries]);
+  }, [baseCountries, iso3ToIso2, resolvedMaxAdminLevel, selectedArrayByCountries]);
 
   const checkboxMatrix = useMemo<boolean[][]>(() => {
     return baseCountries.map((entry) => {
       const row = normalizedSelection[entry.country.code] ?? [];
-      return Array.from({ length: maxAdminLevel + 1 }, (_, idx) => Boolean(row[idx]));
+      return Array.from({ length: resolvedMaxAdminLevel + 1 }, (_, idx) => Boolean(row[idx]));
     });
-  }, [baseCountries, maxAdminLevel, normalizedSelection]);
+  }, [baseCountries, normalizedSelection, resolvedMaxAdminLevel]);
 
   useEffect(() => {
     if (!Array.isArray(selectedArrayByCountries)) return;
@@ -175,56 +279,11 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
   }, [normalizedSelection, onChange, selectedArrayByCountries]);
 
   useEffect(() => {
-    let cancelled = false;
-    const run = async () => {
-      if (dataSourceKey !== 'geoboundaries') {
-        setAvailableAdminLevels(null);
-        return;
-      }
-      try {
-        const { entries, totalItems } = await fetchGeoBoundariesAvailability(
-          'https://www.geoboundaries.org/api/current/gbOpen/ALL/ALL/',
-        );
-        console.debug('[ShapeCountrySelectionStep] GeoBoundaries availability fetched', {
-          totalItems,
-          countries: entries.size,
-          sample: Array.from(entries.entries()).slice(0, 3),
-        });
-        if (!cancelled && entries.size > 0) {
-          setAvailableAdminLevels(entries);
-        } else if (!cancelled) {
-          setAvailableAdminLevels(null);
-          console.debug('[ShapeCountrySelectionStep] GeoBoundaries availability empty', {
-            totalItems,
-          });
-          enqueueSnackbar(
-            'GeoBoundaries availability is empty. Showing full selection.',
-            { variant: 'warning' },
-          );
-        }
-      } catch (fetchError) {
-        console.warn('[ShapeCountrySelectionStep] failed to load GeoBoundaries availability', fetchError);
-        if (!cancelled) {
-          setAvailableAdminLevels(null);
-          enqueueSnackbar(
-            'GeoBoundaries availability lookup failed. Showing full selection.',
-            { variant: 'warning' },
-          );
-        }
-      }
-    };
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, [dataSourceKey, enqueueSnackbar]);
-
-  useEffect(() => {
-    if (dataSourceKey !== 'geoboundaries' || !availableAdminLevels) return;
+    if (baseCountries.length === 0) return;
     const nextSelection: Record<string, boolean[]> = {};
     baseCountries.forEach((entry) => {
       const row = normalizedSelection[entry.country.code] ?? [];
-      nextSelection[entry.country.code] = Array.from({ length: maxAdminLevel + 1 }, (_, colIndex) => (
+      nextSelection[entry.country.code] = Array.from({ length: resolvedMaxAdminLevel + 1 }, (_, colIndex) => (
         entry.availableAdminLevels.includes(colIndex) ? Boolean(row[colIndex]) : false
       ));
     });
@@ -232,35 +291,27 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
       onChange({ selectedArrayByCountries: nextSelection });
     }
   }, [
-    availableAdminLevels,
     baseCountries,
-    dataSourceKey,
-    maxAdminLevel,
     normalizedSelection,
     onChange,
+    resolvedMaxAdminLevel,
   ]);
 
   const columns: MatrixConfig['columns'] = useMemo(
     () =>
-      Array.from({ length: maxAdminLevel + 1 }, (_, levelIndex) => ({
+      Array.from({ length: resolvedMaxAdminLevel + 1 }, (_, levelIndex) => ({
         id: `level-${levelIndex}`,
         label: `Level ${levelIndex}`,
         description: `Admin level ${levelIndex}`,
         type: 'custom',
       })),
-    [maxAdminLevel],
-  );
-
-  const disabledColumnIds = useMemo(
-    () => columns.filter((_, levelIndex) => levelIndex >= 2).map((column) => column.id),
-    [columns],
+    [resolvedMaxAdminLevel],
   );
 
   const matrixConfig: MatrixConfig = useMemo(() => ({
     columns,
-    disabledColumnIds,
     virtualization: { rowHeight: 40, overscan: 8 },
-  }), [columns, disabledColumnIds]);
+  }), [columns]);
 
   const currentSelections: MatrixSelection[] = useMemo(() => {
     return baseCountries.map((entry, countryIndex) => {
@@ -310,7 +361,6 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
       columns,
       countries,
       data,
-      dataSourceKey,
       enqueueSnackbar,
       onChange,
       normalizedSelection,
@@ -328,8 +378,10 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
     [baseCountries, columns],
   );
 
+  const combinedLoading = metadataLoading || (availabilityLoading && !availability);
+
   return {
-    loading,
+    loading: combinedLoading,
     error,
     matrixConfig,
     countries: baseCountries.map((entry) => entry.country),
