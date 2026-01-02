@@ -1,5 +1,5 @@
-import type { ProgressInfo, ProcessingStage } from '../../../common/types/index.js';
-import type { SessionTaskRegistry } from '../SessionTaskRegistry.js';
+import type { ProgressInfo, ProcessingStage } from '../../../../common/types/index.js';
+import type { SessionTaskRegistry } from '../../SessionTaskRegistry.js';
 import { computePercentage } from './stageProgress.js';
 import type { StageSummary } from './stageSummary.js';
 import { summarizeStageRecords } from './stageSummary.js';
@@ -41,4 +41,3 @@ export async function emitStageSummaryProgress(params: {
   progressCallback?.(buildStageSummaryProgressInfo({ stage, summary, currentTask }));
   return summary;
 }
-

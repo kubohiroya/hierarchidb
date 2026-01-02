@@ -1,5 +1,5 @@
-import type { ProgressInfo } from '../../../common/types/index.js';
-import type { ProcessingStage } from '../../../common/types/index.js';
+import type { ProgressInfo } from '../../../../common/types/index.js';
+import type { ProcessingStage } from '../../../../common/types/index.js';
 import { buildStageProgressReporter, computeBaseCounts, computePercentage } from './stageProgress.js';
 import { getDefaultStageMessages } from './stageTaskMessages.js';
 

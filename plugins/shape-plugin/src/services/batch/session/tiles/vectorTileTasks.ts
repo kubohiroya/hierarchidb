@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { VectorTileTask } from '../../../common/types/index.js';
-import { BatchTaskStage } from '../../../common/types/index.js';
+import type { VectorTileTask } from '../../../../common/types/index.js';
+import { BatchTaskStage } from '../../../../common/types/index.js';
 import type { ShapeVectorTileTaskInputData } from '@hierarchidb/plugin-service-api';
 
 export type VectorTileTaskInputRow = { key: string; z: number; x: number; y: number };
@@ -70,4 +70,3 @@ export function buildVectorTileTasks(params: {
 
   return { tasks, inputsByTaskId };
 }
-

@@ -41,10 +41,11 @@ import { runExtract1StageOrchestrator } from './session/stages/extract1/runExtra
 import { runExtract2StageOrchestrator } from './session/stages/extract2/runExtract2StageOrchestrator.js';
 import { resolveExtract2BuildStrategy } from './session/extract2/index.js';
 import { buildExtract1InputsByTaskId } from './session/extract1/index.js';
-import { buildVectorTileTasks } from './session/vectorTileTasks.js';
+import { buildVectorTileStageInputs } from './session/stages/vectortile/buildVectorTileStageInputs.js';
 import { runVectorTileStageOrchestrator } from './session/stages/vectortile/runVectorTileStageOrchestrator.js';
-import { postprocessVectorTileStage } from './session/stages/vectortile/postprocessVectorTileStage.js';
-import { persistPlaceholderMetadata, summarizeVectorTilesByOrigin } from './session/metadata/featureMetadata.js';
+import { buildVectorTileStagePostprocessPort } from './session/stages/vectortile/buildVectorTileStagePostprocessPort.js';
+import { buildStageControls, buildStagePauseAbortControls } from './session/stages/common/buildStageControls.js';
+import type { StageControls, StagePauseAbortControls } from './session/stages/common/buildStageControls.js';
 import type { OriginMetadata, WorkerPoolStatistics, GeometryStatsSummary } from './session/SessionTypes.js';
 import { buildProcessingTaskId } from './session/ids/processingIds.js';
 import { indexOriginMetadata as indexOriginMetadataInSession } from './session/metadata/originMetadata.js';
@@ -105,6 +106,24 @@ export class SessionController {
   private originMetadataByBuffer = new Map<string, OriginMetadata>();
   private readonly taskRegistry: SessionTaskRegistry;
   private readonly artifactStore: SessionArtifactStore;
+
+  private buildStagePauseAbortControls(stage: ProcessingStage): StagePauseAbortControls {
+    return buildStagePauseAbortControls(stage, {
+      waitForStageResume: (s) => this.waitForStageResume(s),
+      getStageAbortSignal: (s) => this.getStageAbortSignal(s),
+      pauseStage: (s) => this.pauseStage(s),
+      pauseHandler: this.pauseHandler,
+    });
+  }
+
+  private buildVectorTileControls(): StageControls {
+    return buildStageControls('vectortile', {
+      waitForStageResume: (s) => this.waitForStageResume(s),
+      getStageAbortSignal: (s) => this.getStageAbortSignal(s),
+      pauseStage: (s) => this.pauseStage(s),
+      pauseHandler: this.pauseHandler,
+    });
+  }
 
   constructor(
     nodeId: NodeId,
@@ -482,42 +501,45 @@ export class SessionController {
       return;
     }
 
-    // Minimal implementation: use extract2 buffers as tile inputs (one task per buffer)
-    // This keeps behavior deterministic without re-introducing the removed tile-index pipeline.
-    const extract2Buffers = await this.artifactStore.listExtractedBuffers('extract2');
-    const tileRows = extract2Buffers.map((buf, index) => ({
-      key: buf.id,
-      z: zoomLevels[0] ?? 0,
-      x: 0,
-      y: index,
-    }));
-
-    const { tasks, inputsByTaskId } = buildVectorTileTasks({
+    const metadataEnabled = isShapePreviewMetadataEnabled();
+    const { tasks, inputsByTaskId } = await buildVectorTileStageInputs({
       nodeId: this.nodeId,
-      tileRows,
+      zoomLevels,
       config: this.config,
+      tileInputSource: {
+        listExtract2Buffers: () => this.artifactStore.listExtractedBuffers('extract2'),
+      },
     });
     this.vectorTileTasks = tasks;
 
     const maxConcurrent = this.config.vectorTiles?.concurrentProcesses ?? this.options.maxConcurrentTasks;
     const adapter = this.vectorTileAdapter;
 
+    const controls = this.buildVectorTileControls();
+
     let stageSummary: { total: number; completed: number; failed: number; skipped: number } | undefined;
     await runVectorTileStageOrchestrator({
       nodeId: this.nodeId,
-      metadataEnabled: isShapePreviewMetadataEnabled(),
+      metadataEnabled,
       tasks: this.vectorTileTasks,
       inputsByTaskId,
       taskRegistry: this.taskRegistry,
       adapter,
       maxConcurrent,
-      waitIfPaused: () => this.waitForStageResume('vectortile'),
-      getSignal: () => this.getStageAbortSignal('vectortile'),
-      requestPause: async (message) => {
-        this.pauseStage('vectortile');
-        await this.pauseHandler?.('vectortile', message);
-      },
+      waitIfPaused: controls.waitIfPaused,
+      getSignal: controls.getSignal,
+      requestPause: controls.requestPause,
       progressCallback: this.progressCallback,
+      postprocess: buildVectorTileStagePostprocessPort({
+        enabled: metadataEnabled,
+        nodeId: this.nodeId,
+        dataSourceFallback: this.resolveDataSource(),
+        downloadTaskPayloads: this.downloadTaskPayloads,
+        artifactStore: this.artifactStore,
+        extractGeometryStats: (feature) => this.extractGeometryStats(feature),
+        updateSourceMetadataStage: (stage, statsByOrigin) => this.updateSourceMetadataStage(stage, statsByOrigin),
+        clearFeatureCache: () => this.vectorTileAdapter.clearFeatureCache?.(String(this.nodeId)),
+      }),
       afterRun: async (summary) => {
         stageSummary = summary;
       },
@@ -527,50 +549,7 @@ export class SessionController {
       console.log(`[Session ${this.nodeId}] Vector tile stage summary`, stageSummary);
     }
 
-    await postprocessVectorTileStage({
-      persistPlaceholderMetadata: async (replace: boolean) => {
-        return await persistPlaceholderMetadata({
-          enabled: isShapePreviewMetadataEnabled(),
-          replace,
-          nodeId: this.nodeId,
-          dataSourceFallback: this.resolveDataSource(),
-          downloadTaskPayloads: this.downloadTaskPayloads,
-          store: {
-            putFeatureMetadata: (rows) => this.artifactStore.putFeatureMetadata(rows),
-            listFeatureMetadata: () => this.artifactStore.listFeatureMetadata(),
-            deleteFeatureMetadataByNode: () => this.artifactStore.deleteFeatureMetadataByNode(),
-            listVectorTileRows: async () => {
-              const rows = await this.artifactStore.listVectorTileRows();
-              return rows.map((row) => ({
-                data: row.data,
-                x: row.x,
-                y: row.y,
-                z: row.z,
-              }));
-            },
-          },
-        });
-      },
-      syncVectorTilesToShapeStore: () => this.artifactStore.syncVectorTilesToShapeStore(),
-      metadataEnabled: isShapePreviewMetadataEnabled(),
-      summarizeVectorTilesByOrigin: async () => {
-        return await summarizeVectorTilesByOrigin({
-          nodeId: this.nodeId,
-          store: {
-            putFeatureMetadata: (rows) => this.artifactStore.putFeatureMetadata(rows),
-            listFeatureMetadata: () => this.artifactStore.listFeatureMetadata(),
-            deleteFeatureMetadataByNode: () => this.artifactStore.deleteFeatureMetadataByNode(),
-            listVectorTileRows: async () => {
-              const rows = await this.artifactStore.listVectorTileRows();
-              return rows.map((row) => ({ data: row.data, x: row.x, y: row.y, z: row.z }));
-            },
-          },
-          extractGeometryStats: (feature) => this.extractGeometryStats(feature),
-        });
-      },
-      updateSourceMetadataStage: (stage, statsByOrigin) => this.updateSourceMetadataStage(stage, statsByOrigin),
-      clearFeatureCache: () => this.vectorTileAdapter.clearFeatureCache?.(String(this.nodeId)),
-    });
+    // postprocess is handled by runVectorTileStageOrchestrator
   }
 
   /**
@@ -608,26 +587,7 @@ export class SessionController {
       }
       await waitForResumeIfPaused();
 
-      let regressionRounds = 0;
-      while (!this.isAborted && !this.isPaused) {
-        const retry = await this.taskRegistry.getVectorTileRegressionRetry();
-        if (retry == null) break;
-        regressionRounds += 1;
-        if (regressionRounds > 2) {
-          console.warn(`[Session ${this.nodeId}] Regression retry limit reached; skipping further retries.`);
-          break;
-        }
-        console.warn(
-          `[Session ${this.nodeId}] Vector tile regression detected (retry=${retry}); restarting extract2.`,
-        );
-        await this.prepareExtract2Retry(retry);
-        await this.processExtract2Stage();
-        await waitForResumeIfPaused();
-        if (this.isAborted || this.isPaused) break;
-        await this.processVectorTileStage();
-        await waitForResumeIfPaused();
-      }
-      this.extract2RetryOverride = 0;
+      await this.runVectorTileRegressionRetries(waitForResumeIfPaused);
 
       if (!this.isAborted && !this.isPaused) {
         console.log(`[Session ${this.nodeId}] Batch processing completed successfully`);
@@ -641,6 +601,29 @@ export class SessionController {
         await this.cleanup();
       }
     }
+  }
+
+  private async runVectorTileRegressionRetries(waitForResumeIfPaused: () => Promise<void>): Promise<void> {
+    let regressionRounds = 0;
+    while (!this.isAborted && !this.isPaused) {
+      const retry = await this.taskRegistry.getVectorTileRegressionRetry();
+      if (retry == null) break;
+      regressionRounds += 1;
+      if (regressionRounds > 2) {
+        console.warn(`[Session ${this.nodeId}] Regression retry limit reached; skipping further retries.`);
+        break;
+      }
+      console.warn(
+        `[Session ${this.nodeId}] Vector tile regression detected (retry=${retry}); restarting extract2.`,
+      );
+      await this.prepareExtract2Retry(retry);
+      await this.processExtract2Stage();
+      await waitForResumeIfPaused();
+      if (this.isAborted || this.isPaused) break;
+      await this.processVectorTileStage();
+      await waitForResumeIfPaused();
+    }
+    this.extract2RetryOverride = 0;
   }
 
   /**
@@ -727,12 +710,13 @@ export class SessionController {
       mappedInputsByTaskId.set(taskId, payload);
     }
     const maxConcurrent = this.config.download?.concurrentDownloads ?? this.options.maxConcurrentTasks;
+    const controls = this.buildStagePauseAbortControls('download');
     const summary = await runDownloadStageOrchestrator({
       nodeId: this.nodeId,
       adapter: this.downloadAdapter,
       maxConcurrent,
-      waitIfPaused: () => this.waitForStageResume('download'),
-      getSignal: () => this.getStageAbortSignal('download'),
+      waitIfPaused: controls.waitIfPaused,
+      getSignal: controls.getSignal,
       tasks,
       inputsByTaskId: mappedInputsByTaskId,
       taskRegistry: this.taskRegistry,
@@ -823,6 +807,8 @@ export class SessionController {
       throw new Error(`[Session ${this.nodeId}] Extract1 adapter is not initialized`);
     }
 
+    const extract1Controls = this.buildStagePauseAbortControls('extract1');
+
     let stageTotals: { total: number; completed: number; skipped: number; failed: number } | undefined;
 
     await runExtract1StageOrchestrator({
@@ -832,8 +818,8 @@ export class SessionController {
       taskRegistry: this.taskRegistry,
       adapter,
       maxConcurrent,
-      waitIfPaused: () => this.waitForStageResume('extract1'),
-      getSignal: () => this.getStageAbortSignal('extract1'),
+      waitIfPaused: extract1Controls.waitIfPaused,
+      getSignal: extract1Controls.getSignal,
       progressCallback: this.progressCallback,
       isSkippedMessage: (message) => this.isSkippedMessage(message),
       afterStageCompleted: async ({ total, completed, failed, skipped }) => {
@@ -915,6 +901,8 @@ export class SessionController {
       throw new Error(`[Session ${this.nodeId}] Extract2 adapter is not initialized`);
     }
 
+    const extract2Controls = this.buildStagePauseAbortControls('extract2');
+
     let alreadyCompleted = false;
     await runExtract2StageOrchestrator({
       nodeId: this.nodeId,
@@ -923,8 +911,8 @@ export class SessionController {
       taskRegistry: this.taskRegistry,
       adapter,
       maxConcurrent,
-      waitIfPaused: () => this.waitForStageResume('extract2'),
-      getSignal: () => this.getStageAbortSignal('extract2'),
+      waitIfPaused: extract2Controls.waitIfPaused,
+      getSignal: extract2Controls.getSignal,
       progressCallback: this.progressCallback,
       isSkippedMessage: (message) => isSkippedMessage(message),
       afterStageCompleted: async ({ total, completed, failed }) => {

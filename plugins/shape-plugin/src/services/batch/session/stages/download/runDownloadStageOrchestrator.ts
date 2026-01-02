@@ -1,11 +1,12 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { ProgressInfo } from '../../../../../common/types/index.js';
-import type { DownloadTask, DownloadTaskInput } from '../../../../../common/types/index.js';
+import type { DownloadTask, DownloadTaskPayload } from '../../../../../common/types/index.js';
 import type { SessionTaskRegistry } from '../../../SessionTaskRegistry.js';
 import type { DownloadStageAdapter } from '../../../adapters/DownloadStageAdapter.js';
 
 import { buildDownloadProgressReporter, resolveRunnableDownloadTasks } from './resolveRunnableDownloadTasks.js';
 import { runDownloadAdapter } from './runDownloadAdapter.js';
+import { defaultStageControls } from '../common/defaultStageControls.js';
 
 export async function runDownloadStageOrchestrator(params: {
   nodeId: NodeId;
@@ -13,26 +14,26 @@ export async function runDownloadStageOrchestrator(params: {
   // execution
   adapter: DownloadStageAdapter;
   maxConcurrent: number | undefined;
-  waitIfPaused: () => Promise<void>;
-  getSignal: () => AbortSignal;
+  waitIfPaused?: () => Promise<void>;
+  getSignal?: () => AbortSignal;
 
   // task data
   tasks: DownloadTask[];
-  // accept inputs produced by strategies (DownloadTaskInput) or payloads (DownloadTaskPayload)
-  inputsByTaskId: Map<string, DownloadTaskInput | import('../../../../../common/types/index.js').DownloadTaskPayload>;
+  inputsByTaskId: Map<string, DownloadTaskPayload>;
 
-  // registry (only minimal methods required by orchestrator)
-  taskRegistry: Pick<SessionTaskRegistry, 'assignDownloadTaskIndices' | 'registerTasks' | 'markDownloadTasksCompletedWhenBuffersExist'>;
+  // registry (minimal methods used + resolveStageTasks for runnable filtering)
+  taskRegistry: Pick<SessionTaskRegistry, 'assignDownloadTaskIndices' | 'registerTasks' | 'markDownloadTasksCompletedWhenBuffersExist' | 'resolveStageTasks'>;
 
   // UI
   progressCallback?: (progress: ProgressInfo) => void;
 }): Promise<{ total: number; completed: number; failed: number; skipped: number; alreadyCompleted: boolean }> {
+  const defaults = defaultStageControls();
   const {
     nodeId,
     adapter,
     maxConcurrent,
-    waitIfPaused,
-    getSignal,
+    waitIfPaused = defaults.waitIfPaused,
+    getSignal = defaults.getSignal,
     tasks,
     inputsByTaskId,
     taskRegistry,
@@ -45,7 +46,7 @@ export async function runDownloadStageOrchestrator(params: {
 
   const { runnableTasks, baseCompleted, baseFailed, baseDone, total } = await resolveRunnableDownloadTasks({
     nodeId,
-    taskRegistry: { resolveStageTasks: (stage, ts) => (taskRegistry as any).resolveStageTasks ? (taskRegistry as any).resolveStageTasks(stage, ts) : ({} as any) },
+    taskRegistry: { resolveStageTasks: (stage, ts) => taskRegistry.resolveStageTasks(stage, ts) },
     tasks,
   });
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { indexOriginMetadata } from './originMetadata.js';
+import { indexOriginMetadata } from './metadata/originMetadata.js';
 
 import type { DownloadStageOutput } from '../strategies/DownloadStageStrategy.js';
 
@@ -21,10 +21,11 @@ describe('originMetadata', () => {
     });
 
     expect(index.entries).toHaveLength(1);
-    const entry = index.entries[0]!;
+    const entry = index.entries[0];
+    expect(entry).toBeTruthy();
+    if (!entry) return;
     expect(entry.originKey).toBe('naturalearth|JPN|ADM1|JP.01');
     expect(index.byKey.get(entry.originKey)?.inputBufferId).toBe('buf-1');
     expect(index.byBuffer.get('buf-1')?.originKey).toBe(entry.originKey);
   });
 });
-

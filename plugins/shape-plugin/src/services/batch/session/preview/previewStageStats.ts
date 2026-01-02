@@ -1,4 +1,4 @@
-import type { GeometryStatsSummary } from './SessionTypes.js';
+import type { GeometryStatsSummary } from '../SessionTypes.js';
 
 export type PreviewStatsAccumulator = {
   summarizeBufferStats: (buffer: ArrayBuffer) => Promise<GeometryStatsSummary>;
@@ -44,4 +44,3 @@ export async function buildStatsByOrigin(params: {
 
   return statsByOrigin;
 }
-

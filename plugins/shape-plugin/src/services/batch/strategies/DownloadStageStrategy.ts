@@ -4,7 +4,6 @@ import type {
   CountryMetadata,
   DataSourceName,
   DownloadTask,
-  DownloadTaskInput,
   DownloadTaskPayload,
   SelectedArrayByCountries,
 } from '../../../common/types/index.js';
@@ -24,12 +23,13 @@ export interface DownloadStageBuildContext {
 
 export interface DownloadTaskBuildResult {
   tasks: DownloadTask[];
-  inputsByTaskId: Map<string, DownloadTaskInput>;
+  // strategies now produce DownloadTaskPayload directly (解決案A)
+  inputsByTaskId: Map<string, DownloadTaskPayload>;
 }
 
 export interface DownloadStagePostprocessContext extends DownloadStageBuildContext {
   downloadTasks: DownloadTask[];
-  downloadInputsById: Map<string, DownloadTaskInput>;
+  downloadInputsById: Map<string, DownloadTaskPayload>;
 }
 
 export interface DownloadTaskPayloadBuildContext {

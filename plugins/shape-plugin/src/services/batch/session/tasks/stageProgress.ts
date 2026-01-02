@@ -1,4 +1,4 @@
-import type { ProgressInfo } from '../../../common/types/index.js';
+import type { ProgressInfo } from '../../../../common/types/index.js';
 
 export type StageProgressBaseCounts = {
   total: number;
@@ -57,4 +57,3 @@ export function buildStageProgressReporter(params: {
     });
   };
 }
-

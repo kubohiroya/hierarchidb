@@ -5,7 +5,7 @@ import type {
   DownloadStageStrategy,
   DownloadTaskPayloadBuildContext,
 } from './DownloadStageStrategy.js';
-import type { DownloadTask, DownloadTaskInput } from '../../../common/types/index.js';
+import type { DownloadTask, DownloadTaskPayload } from '../../../common/types/index.js';
 import { buildDownloadTaskId, generateDownloadTaskPayloadsFromSelection } from '../../utils/utils.js';
 
 export class GadmDownloadStrategy implements DownloadStageStrategy {
@@ -18,20 +18,17 @@ export class GadmDownloadStrategy implements DownloadStageStrategy {
   }
 
   async buildDownloadTasks(context: DownloadStageBuildContext) {
-    const inputsByTaskId = new Map<string, DownloadTaskInput>();
+    const inputsByTaskId = new Map<string, DownloadTaskPayload>();
     const tasks: DownloadTask[] = context.downloadTaskPayloads.map((metadata, index) => {
       const taskId = buildDownloadTaskId(String(context.nodeId), metadata);
-      const input: DownloadTaskInput = {
-        dataSource: 'gadm',
+      const payload: DownloadTaskPayload = {
+        url: metadata.url,
         countryCode: metadata.countryCode,
         countryName: metadata.countryName,
         adminLevel: metadata.adminLevel,
-        url: metadata.url,
-        timeoutMs: context.options.timeoutMs ?? 0,
-        retryDelay: context.options.retryDelay ?? 0,
-        retryAttempts: context.options.retryAttempts ?? 0,
+        dataSource: 'gadm',
       };
-      inputsByTaskId.set(taskId, input);
+      inputsByTaskId.set(taskId, payload);
       return {
         taskId,
         nodeId: context.nodeId,

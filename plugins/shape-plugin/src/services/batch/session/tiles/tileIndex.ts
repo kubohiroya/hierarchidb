@@ -1,8 +1,13 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { Feature, FeatureCollection } from 'geojson';
 import type { ShapeFeatureMetadataRow } from '@hierarchidb/plugin-service-api';
-import type { DataSourceName, Extract2Task } from '../../../common/types/index.js';
-import { buildFeatureMetadataRecords, type FeatureIdBuilder, type FeatureMetadataPickers, type GeometryStatsExtractor } from './featureMetadata.js';
+import type { DataSourceName, Extract2Task } from '../../../../common/types/index.js';
+import {
+  buildFeatureMetadataRecords,
+  type FeatureIdBuilder,
+  type FeatureMetadataPickers,
+  type GeometryStatsExtractor,
+} from '../metadata/featureMetadata.js';
 
 export type TileIndexStats = {
   totalTiles: number;

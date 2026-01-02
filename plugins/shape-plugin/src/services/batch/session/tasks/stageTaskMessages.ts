@@ -1,4 +1,4 @@
-import type { ProcessingStage } from '../../../common/types/index.js';
+import type { ProcessingStage } from '../../../../common/types/index.js';
 
 export type StageMessages = {
   taskQueuedMessage: string;
@@ -44,4 +44,3 @@ export function getDefaultStageMessages(stage: ProcessingStage): StageMessages {
       };
   }
 }
-

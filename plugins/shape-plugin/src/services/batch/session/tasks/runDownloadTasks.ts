@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { ProgressInfo } from '../../../common/types/index.js';
+import type { ProgressInfo } from '../../../../common/types/index.js';
 import { buildStageProgressReporter, computeBaseCounts, computePercentage } from './stageProgress.js';
 
 export type RunDownloadTasksParams<TTask, TInput> = {
@@ -77,4 +77,3 @@ export async function runDownloadTasks<TTask, TInput>(params: RunDownloadTasksPa
 
   return { total: base.total, completed, failed };
 }
-

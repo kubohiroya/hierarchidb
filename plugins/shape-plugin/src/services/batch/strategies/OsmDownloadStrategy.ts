@@ -5,7 +5,7 @@ import type {
   DownloadStageStrategy,
   DownloadTaskPayloadBuildContext,
 } from './DownloadStageStrategy.js';
-import type { CountryMetadata, DownloadTask, DownloadTaskInput } from '../../../common/types/index.js';
+import type { CountryMetadata, DownloadTask, DownloadTaskPayload } from '../../../common/types/index.js';
 import { metadataLoader } from '../../metadata/MetadataLoader.js';
 import { buildDownloadTaskId, generateDownloadTaskPayloadsFromSelection } from '../../utils/utils.js';
 
@@ -26,23 +26,21 @@ export class OsmDownloadStrategy implements DownloadStageStrategy {
       }
     });
     const metadataMap = await this.buildCountryMetadata(Array.from(countryCodes.values()));
-    const inputsByTaskId = new Map<string, DownloadTaskInput>();
+    const inputsByTaskId = new Map<string, DownloadTaskPayload>();
     const tasks: DownloadTask[] = context.downloadTaskPayloads.map((metadata, index) => {
-      const country = metadata.countryCode ? metadataMap.get(metadata.countryCode.toUpperCase()) : undefined;
       const taskId = buildDownloadTaskId(String(context.nodeId), metadata);
-      const input: DownloadTaskInput = {
-        dataSource: 'openstreetmap',
+      const payload: DownloadTaskPayload = {
+        url: metadata.url,
         countryCode: metadata.countryCode,
         countryName: metadata.countryName,
         adminLevel: metadata.adminLevel,
-        url: metadata.url,
-        bbox: country?.bbox,
-        tags: [this.resolveAdminLevelTag(metadata.adminLevel)],
-        timeoutMs: context.options.timeoutMs ?? 0,
-        retryDelay: context.options.retryDelay ?? 0,
-        retryAttempts: context.options.retryAttempts ?? 0,
+        dataSource: 'openstreetmap',
       };
-      inputsByTaskId.set(taskId, input);
+      // NOTE: bbox/tags (OSM-specific) are intentionally not stored in payload.
+      // They should be derived by the download adapter/worker from country metadata when needed.
+      void metadataMap;
+      void this.resolveAdminLevelTag;
+      inputsByTaskId.set(taskId, payload);
       return {
         taskId,
         nodeId: context.nodeId,

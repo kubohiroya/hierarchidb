@@ -1,8 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { DownloadTaskPayload } from '../../../../../common/types/index.js';
 import type { BatchProcessConfig } from '../../../../batch/types.js';
 import type { DownloadStagePostprocessResult, DownloadStageStrategy, DownloadStageOptions } from '../../../strategies/DownloadStageStrategy.js';
-import type { DownloadTask, DownloadTaskInput } from '../../../../../common/types/index.js';
+import type { DownloadTask, DownloadTaskPayload } from '../../../../../common/types/index.js';
 
 export async function postprocessDownloadOutputs(params: {
   strategy: DownloadStageStrategy;
@@ -11,7 +10,7 @@ export async function postprocessDownloadOutputs(params: {
   config: BatchProcessConfig;
   options: DownloadStageOptions;
   downloadTasks: DownloadTask[];
-  downloadInputsById: Map<string, DownloadTaskInput>;
+  downloadInputsById: Map<string, DownloadTaskPayload>;
 }): Promise<DownloadStagePostprocessResult> {
   const {
     strategy,
@@ -32,4 +31,3 @@ export async function postprocessDownloadOutputs(params: {
     downloadInputsById,
   });
 }
-

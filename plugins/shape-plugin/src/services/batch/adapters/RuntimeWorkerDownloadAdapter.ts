@@ -1,15 +1,11 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import { BatchService, createLaneSemaphoreRegistry } from '@hierarchidb/batch';
-import type { DownloadTask, DownloadTaskInput } from '../../../common/types/index.js';
+import type { DownloadTask, DownloadTaskPayload } from '../../../common/types/index.js';
 import type { ProgressInfo } from '../../../common/types/index.js';
 import type { DownloadStageAdapter, DownloadStageAdapterResult } from './DownloadStageAdapter.js';
 import type { StageControls } from './StageControls.js';
 import { shapeDB } from '../../database/ShapeDB.js';
 import { ShapeWorkerPool } from './ShapeWorkerPool.js';
-
-const isAbortError = (error: unknown): boolean => (
-  error instanceof Error && error.name === 'AbortError'
-);
 
 const formatBytes = (bytes: number): string => {
   if (!Number.isFinite(bytes)) return 'unknown size';
@@ -54,7 +50,7 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
   async process(
     nodeId: NodeId,
     tasks: DownloadTask[],
-    inputsByTaskId: Map<string, DownloadTaskInput>,
+    inputsByTaskId: Map<string, DownloadTaskPayload>,
     onProgress: (p: ProgressInfo) => void,
     controls?: StageControls,
   ): Promise<DownloadStageAdapterResult> {
@@ -78,21 +74,19 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
     const workerPool = await ShapeWorkerPool.create(maxConcurrent);
 
     try {
-      await batch.mapChunks<DownloadTask, {}>(
+      await batch.mapChunks<DownloadTask, unknown>(
         tasks,
         async (task: DownloadTask, index: number) => {
-          const input = inputsByTaskId.get(task.taskId) ?? {};
+          const input: DownloadTaskPayload = inputsByTaskId.get(task.taskId) ?? {
+            url: task.url ?? '',
+            countryCode: (task.countryCode ?? 'UNK') as DownloadTaskPayload['countryCode'],
+            adminLevel: task.adminLevel ?? 0,
+          };
           const lane = (input.dataSource ?? 'default').toLowerCase();
           await this.laneRegistry.runWithLane(lane, async () => {
-            if (controls?.waitIfPaused) {
-              await controls.waitIfPaused();
-            }
-            if (shouldAbort()) {
-              if (controls?.waitIfPaused) {
-                await controls.waitIfPaused();
-              }
-              return;
-            }
+            if (controls?.waitIfPaused) await controls.waitIfPaused();
+            if (shouldAbort()) return;
+
             if (task.taskId) {
               await shapeDB.updateBatchTask(task.taskId, {
                 status: 'running',
@@ -100,6 +94,7 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
                 progress: 0,
               });
             }
+
             try {
               const taskIndex = task.index ?? index;
               const result = await workerPool.run((api) => api.processDownloadTask({
@@ -108,6 +103,8 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
                 taskIndex,
                 input,
               }));
+              if (shouldAbort()) return;
+
               if (result.status === 'failed') {
                 failed += 1;
                 if (task.taskId) {
@@ -132,12 +129,7 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
                 }
               }
             } catch (error) {
-              if (shouldAbort() || isAbortError(error)) {
-                if (controls?.waitIfPaused) {
-                  await controls.waitIfPaused();
-                }
-                return;
-              }
+              if (shouldAbort()) return;
               failed += 1;
               if (task.taskId) {
                 await shapeDB.updateBatchTask(task.taskId, {
@@ -148,9 +140,8 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
                 });
               }
             }
-            if (shouldAbort()) {
-              return;
-            }
+
+            if (shouldAbort()) return;
             onProgress({
               total: tasks.length,
               completed,

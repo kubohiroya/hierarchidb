@@ -4,6 +4,7 @@ import type { ShapeExtract1TaskInputData } from '@hierarchidb/plugin-service-api
 
 import { buildExtract1ProgressReporter, resolveRunnableExtract1Tasks } from './resolveRunnableExtract1Tasks.js';
 import { runExtract1Adapter } from './runExtract1Adapter.js';
+import { defaultStageControls } from '../common/defaultStageControls.js';
 
 export async function runExtract1StageOrchestrator(params: {
   nodeId: NodeId;
@@ -23,8 +24,8 @@ export async function runExtract1StageOrchestrator(params: {
   adapter: unknown;
   maxConcurrent: number;
 
-  waitIfPaused: () => Promise<void>;
-  getSignal: () => AbortSignal;
+  waitIfPaused?: () => Promise<void>;
+  getSignal?: () => AbortSignal;
 
   progressCallback?: (progress: ProgressInfo) => void;
 
@@ -38,6 +39,7 @@ export async function runExtract1StageOrchestrator(params: {
     stageRecords: Array<{ status: string; message?: string | null }>;
   }) => Promise<void>;
 }): Promise<void> {
+  const defaults = defaultStageControls();
   const {
     nodeId,
     tasks,
@@ -45,8 +47,8 @@ export async function runExtract1StageOrchestrator(params: {
     taskRegistry,
     adapter,
     maxConcurrent,
-    waitIfPaused,
-    getSignal,
+    waitIfPaused = defaults.waitIfPaused,
+    getSignal = defaults.getSignal,
     progressCallback,
     isSkippedMessage,
     afterStageCompleted,

@@ -8,7 +8,7 @@ import type {
   DownloadStageStrategy,
   DownloadTaskPayloadBuildContext,
 } from './DownloadStageStrategy.js';
-import type { CountryMetadata, DownloadTask, DownloadTaskInput, DownloadTaskPayload } from '../../../common/types/index.js';
+import type { CountryMetadata, DownloadTask, DownloadTaskPayload } from '../../../common/types/index.js';
 import { getEphemeralShapeDB } from '../../database/EphemeralShapeDB.js';
 import { decodeFlatGeoJson, encodeFlatGeoJson } from './flatgeobuf.js';
 import { metadataLoader } from '../../metadata/MetadataLoader.js';
@@ -33,18 +33,17 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
         adminLevels.set(level, metadata);
       }
     }
-    const inputsByTaskId = new Map<string, DownloadTaskInput>();
+    const inputsByTaskId = new Map<string, DownloadTaskPayload>();
     const tasks: DownloadTask[] = Array.from(adminLevels.entries()).map(([adminLevel, metadata], index) => {
       const taskId = buildDownloadTaskId(String(context.nodeId), metadata);
-      const input: DownloadTaskInput = {
-        dataSource: 'naturalearth',
-        adminLevel,
+      const payload: DownloadTaskPayload = {
         url: metadata.url,
-        timeoutMs: context.options.timeoutMs ?? 0,
-        retryDelay: context.options.retryDelay ?? 0,
-        retryAttempts: context.options.retryAttempts ?? 0,
+        countryCode: metadata.countryCode,
+        countryName: metadata.countryName,
+        adminLevel,
+        dataSource: 'naturalearth',
       };
-      inputsByTaskId.set(taskId, input);
+      inputsByTaskId.set(taskId, payload);
       return {
         taskId,
         nodeId: context.nodeId,

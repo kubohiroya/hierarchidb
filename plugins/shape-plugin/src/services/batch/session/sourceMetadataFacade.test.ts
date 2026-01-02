@@ -6,7 +6,7 @@ vi.mock('./metadata/sourceMetadata.js', () => ({
 }));
 
 import { updateSourceMetadataBase, updateSourceMetadataStage } from './metadata/sourceMetadata.js';
-import { updateSourceMetadataBaseIfEnabled, updateSourceMetadataStageIfEnabled } from './sourceMetadataFacade.js';
+import { updateSourceMetadataBaseIfEnabled, updateSourceMetadataStageIfEnabled } from './metadata/sourceMetadataFacade.js';
 import type { NodeId } from '@hierarchidb/common-types';
 
 describe('sourceMetadataFacade', () => {

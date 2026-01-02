@@ -7,7 +7,7 @@ import {
   buildFeatureMetadataRecords,
   persistPlaceholderMetadata,
   type FeatureMetadataStore,
-} from './featureMetadata.js';
+} from './metadata/featureMetadata.js';
 
 // Note: We keep these tests unit-level and avoid Dexie/DB.
 
@@ -23,7 +23,7 @@ describe('featureMetadata', () => {
 
     const rows = buildFeatureMetadataRecords({
       nodeId: 'node-1' as NodeId,
-      dataSource: 'example',
+      dataSource: 'naturalearth',
       createdAt: 123,
       features,
       pickers: {

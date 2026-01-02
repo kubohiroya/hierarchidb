@@ -1,4 +1,4 @@
-import type { GeometryStatsSummary } from './SessionTypes.js';
+import type { GeometryStatsSummary } from '../SessionTypes.js';
 
 export type OriginEntry = {
   originKey: string;
@@ -29,4 +29,3 @@ export async function buildRawStatsByOrigin(params: {
 
   return statsByOrigin;
 }
-

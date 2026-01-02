@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { GeometryStatsSummary, OriginMetadata } from './SessionTypes.js';
-import type { SessionArtifactStore } from '../SessionArtifactStore.js';
+import type { GeometryStatsSummary, OriginMetadata } from '../SessionTypes.js';
+import type { SessionArtifactStore } from '../../SessionArtifactStore.js';
 import { buildRawStatsByOrigin } from './previewRawStats.js';
 import { buildStatsByOrigin } from './previewStageStats.js';
 import { updatePreviewMetadataStage } from './previewMetadataUpdate.js';

@@ -1,42 +1,12 @@
-import type { NodeId } from '@hierarchidb/common-types';
-import type { ProgressInfo, VectorTileTask } from '../../../../../common/types/index.js';
-import type { ShapeVectorTileTaskInputData } from '@hierarchidb/plugin-service-api';
-
-import type { VectorTileStageAdapter } from '../../../adapters/VectorTileStageAdapter.js';
 import { buildVectorTileProgressReporter, resolveRunnableVectorTileTasks } from './resolveRunnableVectorTileTasks.js';
 import { runVectorTileAdapter } from './runVectorTileAdapter.js';
+import { postprocessVectorTileStage } from './postprocessVectorTileStage.js';
+import { defaultStageControls } from '../common/defaultStageControls.js';
 
-export async function runVectorTileStageOrchestrator(params: {
-  nodeId: NodeId;
-  metadataEnabled: boolean;
+import type { RunVectorTileStageOrchestratorParams } from './orchestratorTypes.js';
 
-  tasks: VectorTileTask[];
-  inputsByTaskId: Map<string, ShapeVectorTileTaskInputData>;
-
-  taskRegistry: {
-    registerTasks: (
-      stage: 'vectortile',
-      tasks: VectorTileTask[],
-      existingTaskIds: Set<string> | undefined,
-      inputsByTaskId: Map<string, ShapeVectorTileTaskInputData>,
-    ) => Promise<void>;
-    resolveStageTasks: (
-      stage: 'vectortile',
-      tasks: VectorTileTask[],
-    ) => Promise<{ runnableTasks: VectorTileTask[]; completedCount: number; failedCount: number; total: number }>;
-  };
-
-  adapter: VectorTileStageAdapter;
-  maxConcurrent?: number;
-
-  waitIfPaused: () => Promise<void>;
-  getSignal: () => AbortSignal;
-  requestPause?: (message: string) => void | Promise<void>;
-
-  progressCallback?: (progress: ProgressInfo) => void;
-
-  afterRun: (summary: { total: number; completed: number; failed: number; skipped: number }) => Promise<void>;
-}): Promise<void> {
+export async function runVectorTileStageOrchestrator(params: RunVectorTileStageOrchestratorParams): Promise<void> {
+  const defaults = defaultStageControls();
   const {
     nodeId,
     metadataEnabled,
@@ -45,10 +15,11 @@ export async function runVectorTileStageOrchestrator(params: {
     taskRegistry,
     adapter,
     maxConcurrent,
-    waitIfPaused,
-    getSignal,
-    requestPause,
+    waitIfPaused = defaults.waitIfPaused,
+    getSignal = defaults.getSignal,
+    requestPause = defaults.requestPause,
     progressCallback,
+    postprocess,
     afterRun,
   } = params;
 
@@ -107,5 +78,13 @@ export async function runVectorTileStageOrchestrator(params: {
   void metadataEnabled;
 
   await afterRun({ total, completed, failed, skipped });
-}
 
+  await postprocessVectorTileStage({
+    persistPlaceholderMetadata: postprocess.persistPlaceholderMetadata,
+    syncVectorTilesToShapeStore: postprocess.syncVectorTilesToShapeStore,
+    metadataEnabled,
+    summarizeVectorTilesByOrigin: postprocess.summarizeVectorTilesByOrigin,
+    updateSourceMetadataStage: postprocess.updateSourceMetadataStage,
+    clearFeatureCache: postprocess.clearFeatureCache,
+  });
+}

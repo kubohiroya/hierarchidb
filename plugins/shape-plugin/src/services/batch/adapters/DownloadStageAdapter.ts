@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { DownloadTask, DownloadTaskInput } from '../../../common/types/index.js';
+import type { DownloadTask, DownloadTaskPayload } from '../../../common/types/index.js';
 import type { ProgressInfo } from '../../../common/types/index.js';
 import type { StageControls } from './StageControls.js';
 
@@ -14,7 +14,7 @@ export interface DownloadStageAdapter {
   process(
     nodeId: NodeId,
     tasks: DownloadTask[],
-    inputsByTaskId: Map<string, DownloadTaskInput>,
+    inputsByTaskId: Map<string, DownloadTaskPayload>,
     onProgress: (p: ProgressInfo) => void,
     controls?: StageControls,
   ): Promise<DownloadStageAdapterResult>;

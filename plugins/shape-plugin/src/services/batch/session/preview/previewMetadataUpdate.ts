@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { GeometryStatsSummary, OriginMetadata } from './SessionTypes.js';
-import type { SessionArtifactStore } from '../SessionArtifactStore.js';
-import { updateSourceMetadataStageIfEnabled } from './sourceMetadataFacade.js';
+import type { GeometryStatsSummary, OriginMetadata } from '../SessionTypes.js';
+import type { SessionArtifactStore } from '../../SessionArtifactStore.js';
+import { updateSourceMetadataStageIfEnabled } from '../metadata/sourceMetadataFacade.js';
 
 export type PreviewMetadataStage = 'raw' | 'extract1' | 'extract2' | 'vectorTile';
 
