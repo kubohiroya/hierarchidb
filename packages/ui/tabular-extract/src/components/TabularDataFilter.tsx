@@ -23,6 +23,8 @@ import { TabularDataFilterRulesVirtual } from './TabularDataFilterRulesVirtual.j
 import { LinearProgress } from '@mui/material';
 import { TabularPreviewGrid } from './TabularPreviewGrid.js';
 
+const MAX_PREVIEW_ROWS = 500;
+
 export interface TabularDataFilterProps {
   tableMetadata: TabularTableMetadata;
   /**
@@ -90,7 +92,7 @@ export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
   } = useTabularFilter({
     tableId: tableMetadata.id,
     pluginId,
-    maxPreviewRows: Number.MAX_SAFE_INTEGER,
+    maxPreviewRows: MAX_PREVIEW_ROWS,
     initialRules: initialFilters,
   });
   const previewBusy = previewDirty || isLoading;
