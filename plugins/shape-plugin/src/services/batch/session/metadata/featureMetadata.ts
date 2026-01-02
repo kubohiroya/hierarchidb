@@ -2,7 +2,7 @@ import type { NodeId } from '@hierarchidb/common-types';
 import type { Feature } from 'geojson';
 import { VectorTile } from '@mapbox/vector-tile';
 import Pbf from 'pbf';
-import type { DownloadTaskPayload } from '../../../../common/types/index.js';
+import type { DataSourceName, DownloadTaskPayload } from '../../../../common/types/index.js';
 import type { ShapeFeatureMetadataRow } from '@hierarchidb/plugin-service-api';
 import { HDB_ORIGIN_KEY } from '../../utils/featureIds.js';
 import type { GeometryStatsSummary } from '../SessionTypes.js';
@@ -31,7 +31,7 @@ export type GeometryStatsExtractor = (feature: Feature) => {
   area: number;
 };
 
-export type DataSourceResolver = () => string;
+export type DataSourceResolver = () => DataSourceName;
 
 export type FeatureMetadataStore = {
   putFeatureMetadata: (rows: ShapeFeatureMetadataRow[]) => Promise<void>;
@@ -42,7 +42,7 @@ export type FeatureMetadataStore = {
 
 export function buildFeatureMetadataRecords(params: {
   nodeId: NodeId;
-  dataSource: string;
+  dataSource: DataSourceName;
   createdAt: number;
   features: Feature[];
   defaultCountryCode?: string;
@@ -106,7 +106,7 @@ export async function persistPlaceholderMetadata(params: {
   enabled: boolean;
   replace: boolean;
   nodeId: NodeId;
-  dataSourceFallback: string;
+  dataSourceFallback: DataSourceName;
   downloadTaskPayloads: DownloadTaskPayload[];
   store: FeatureMetadataStore;
 }): Promise<number> {
@@ -126,7 +126,7 @@ export async function persistPlaceholderMetadata(params: {
   const rows: ShapeFeatureMetadataRow[] = [];
 
   for (const payload of downloadTaskPayloads) {
-    const dataSource = payload.dataSource ?? dataSourceFallback;
+    const dataSource = (payload.dataSource ?? dataSourceFallback) as DataSourceName;
     const countryCode = (payload.countryCode ?? 'UNK').trim().toUpperCase();
     const adminLevel = payload.adminLevel;
     const featureKey = `${dataSource ?? 'unknown'}:${countryCode}:${adminLevel ?? 'NA'}`;

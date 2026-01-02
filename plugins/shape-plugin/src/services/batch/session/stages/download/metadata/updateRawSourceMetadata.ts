@@ -1,17 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { DownloadStageOutput } from '../../../../strategies/DownloadStageStrategy.js';
-
-export type GeometryStatsSummary = {
-  vertexCount: number;
-  polygonCount: number;
-  bbox?: [number, number, number, number];
-};
-
-export type OriginMetadata = {
-  originKey: string;
-  originLabel: string;
-  inputBufferId: string;
-};
+import type { GeometryStatsSummary, OriginMetadata } from '../../../SessionTypes.js';
 
 export async function updateRawSourceMetadata(params: {
   enabled: boolean;
@@ -55,4 +44,3 @@ export async function updateRawSourceMetadata(params: {
 
   await updateSourceMetadataStage('raw', rawStatsByOrigin);
 }
-

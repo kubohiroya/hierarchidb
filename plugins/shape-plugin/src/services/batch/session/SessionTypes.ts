@@ -12,7 +12,7 @@ export type OriginMetadata = {
   originKey: string;
   originLabel: string;
   inputBufferId: string;
-  dataSource?: DataSourceName;
+  dataSource: DataSourceName;
   sourceUrl?: string;
   countryName?: string;
   countryCode?: string;
@@ -28,4 +28,3 @@ export interface WorkerPoolHandle {
   shutdown(): Promise<void>;
   getPoolStatistics(): WorkerPoolStatistics;
 }
-

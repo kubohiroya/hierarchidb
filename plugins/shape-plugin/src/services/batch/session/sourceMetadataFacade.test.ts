@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('./sourceMetadata.js', () => ({
+vi.mock('./metadata/sourceMetadata.js', () => ({
   updateSourceMetadataBase: vi.fn(async () => undefined),
   updateSourceMetadataStage: vi.fn(async () => undefined),
 }));
 
-import { updateSourceMetadataBase, updateSourceMetadataStage } from './sourceMetadata.js';
+import { updateSourceMetadataBase, updateSourceMetadataStage } from './metadata/sourceMetadata.js';
 import { updateSourceMetadataBaseIfEnabled, updateSourceMetadataStageIfEnabled } from './sourceMetadataFacade.js';
-import { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/common-types';
 
 describe('sourceMetadataFacade', () => {
   it('no-ops when disabled', async () => {

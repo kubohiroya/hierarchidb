@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { Feature, FeatureCollection } from 'geojson';
 import type { ShapeFeatureMetadataRow } from '@hierarchidb/plugin-service-api';
-import type { Extract2Task } from '../../../common/types/index.js';
+import type { DataSourceName, Extract2Task } from '../../../common/types/index.js';
 import { buildFeatureMetadataRecords, type FeatureIdBuilder, type FeatureMetadataPickers, type GeometryStatsExtractor } from './featureMetadata.js';
 
 export type TileIndexStats = {
@@ -35,7 +35,7 @@ export async function ensureTileFeatureIndex(params: {
   decodeFeatureCollection: FeatureCollectionDecoder;
   buildTileCoordinates: TileCoordinateBuilder;
   buildStageTileKey: TileKeyBuilder;
-  resolveDataSource: () => string;
+  resolveDataSource: () => DataSourceName;
   pickers: FeatureMetadataPickers;
   buildFeatureId: FeatureIdBuilder;
   extractGeometryStats: GeometryStatsExtractor;
@@ -124,4 +124,3 @@ export async function ensureTileFeatureIndex(params: {
     },
   };
 }
-

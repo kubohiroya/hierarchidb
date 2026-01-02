@@ -1,29 +1,18 @@
 import { describe, expect, it, vi } from 'vitest';
-import { buildExtract2TasksWithTopoJSON } from './extract2TopojsonTasks.js';
-import type { SessionArtifactStore } from '../SessionArtifactStore.js';
+import { buildExtract2TasksWithTopoJSON } from './extract2/topojsonGrouping.js';
 import type { ShapeExtract1TaskInputData } from '@hierarchidb/plugin-service-api';
 import type { NodeId } from '@hierarchidb/common-types';
+import { BatchTaskStage } from '../../../common/types/index.js';
+import type { FeatureCollection } from 'geojson';
 
 const encoder = new TextEncoder();
 
 describe('buildExtract2TasksWithTopoJSON', () => {
   it('creates grouped buffers and extract2 tasks', async () => {
     const putExtractedBuffers = vi.fn(async () => undefined);
-    const store: Pick<SessionArtifactStore, 'getExtractedBuffer' | 'putExtractedBuffers'> = {
-      getExtractedBuffer: vi.fn(async () => ({
-        nodeId: 'node-1' as NodeId,
-        stage: 'extract1',
-        id: 'node-1-extract1-0',
-        data: encoder.encode('dummy').buffer,
-        featureCount: 1,
-        extractionRatio: 1,
-        tolerance: 0,
-        timestamp: Date.now(),
-      })),
-      putExtractedBuffers,
-    };
+    const getExtractedBuffer = vi.fn(async () => ({ data: encoder.encode('dummy').buffer }));
 
-    const decodeFeatureCollection = vi.fn(async () => ({
+    const decodeFeatureCollection = vi.fn(async (_buffer: ArrayBuffer): Promise<FeatureCollection> => ({
       type: 'FeatureCollection',
       features: [
         { type: 'Feature', geometry: null, properties: { any: 'x' } },
@@ -40,7 +29,7 @@ describe('buildExtract2TasksWithTopoJSON', () => {
           taskId: 't1',
           nodeId: 'node-1' as NodeId,
           taskType: 'extract1',
-          stage: 'WAIT',
+          stage: BatchTaskStage.WAIT,
           type: 'extract1',
           status: 'waiting',
           index: 0,
@@ -62,12 +51,17 @@ describe('buildExtract2TasksWithTopoJSON', () => {
           dataSource: 'naturalearth',
         } satisfies ShapeExtract1TaskInputData],
       ]),
-      originMetadataByBuffer: new Map(),
-      store,
+      buildTaskId: (_stage, details) => `id-${details.featureGroupId}`,
+      resolveTaskContinent: (input) => input?.continent,
+      resolveTaskCountryName: (input) => input?.countryName,
+      resolveTaskCountryCode: (task, input) => input?.countryCode ?? task.countryCode,
+      resolveTaskAdminCode: (input) => input?.adminCode,
+      getExtractedBuffer,
       decodeFeatureCollection,
       encodeFeatureCollection,
-      buildProcessingTaskId: (_stage, details) => `id-${details.featureGroupId}`,
-      maxFeaturesPerGroup: 1,
+      putExtractedBuffers,
+      consoleWarn: () => undefined,
+      consoleDebug: () => undefined,
     });
 
     expect(res.tasks.length).toBeGreaterThan(0);

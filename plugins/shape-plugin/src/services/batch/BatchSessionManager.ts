@@ -162,7 +162,7 @@ export class BatchSessionManager extends BaseBatchSessionManager {
       controller,
       (ev) => this.emitLegacyProgress(String(nodeId), ev),
     );
-    controller.setPauseHandler(async (stage, message) => {
+    controller.setPauseHandler(async (stage: ProcessingStage, message: string) => {
       await shared.pause();
       shared.emitWarning(stage, message);
     });
