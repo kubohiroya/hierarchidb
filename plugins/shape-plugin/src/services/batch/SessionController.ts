@@ -1008,7 +1008,7 @@ export class SessionController {
       extractionMode,
       taskCount: this.extract2Tasks.length,
     });
-    if this.extract2Tasks.length === 0) {
+    if(this.extract2Tasks.length === 0) {
       console.warn(`[Session ${this.nodeId}] No extract2 tasks to process`);
       await this.cleanupStageCache('extract1', 'extract2 stage skipped (no tasks)');
       return;
