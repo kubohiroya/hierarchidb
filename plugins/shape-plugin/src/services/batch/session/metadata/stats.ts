@@ -4,6 +4,7 @@ import type { GeometryStatsSummary } from '../SessionTypes.js';
 export function accumulateGeometryStats(target: GeometryStatsSummary, next: GeometryStatsSummary): GeometryStatsSummary {
   const vertexCount = target.vertexCount + next.vertexCount;
   const polygonCount = target.polygonCount + next.polygonCount;
+  const area = target.area + next.area;
   let bbox = target.bbox;
   if (next.bbox) {
     if (!bbox) {
@@ -17,7 +18,7 @@ export function accumulateGeometryStats(target: GeometryStatsSummary, next: Geom
       ];
     }
   }
-  return { vertexCount, polygonCount, bbox };
+  return { vertexCount, polygonCount, area, bbox };
 }
 
 export async function summarizeFeatureCollectionStats(params: {
@@ -31,19 +32,19 @@ export async function summarizeFeatureCollectionStats(params: {
 }): Promise<GeometryStatsSummary> {
   const collection = await params.decodeFeatureCollection(params.buffer);
   if (!collection || collection.features.length === 0) {
-    return { vertexCount: 0, polygonCount: 0 };
+    return { vertexCount: 0, polygonCount: 0, area: 0 };
   }
 
-  let summary: GeometryStatsSummary = { vertexCount: 0, polygonCount: 0 };
+  let summary: GeometryStatsSummary = { vertexCount: 0, polygonCount: 0, area: 0 };
   for (const feature of collection.features) {
     if (!feature) continue;
     const stats = params.extractGeometryStats(feature);
     summary = accumulateGeometryStats(summary, {
       vertexCount: stats.vertexCount,
       polygonCount: stats.polygonCount,
+      area: 0,
       bbox: stats.bbox,
     });
   }
   return summary;
 }
-

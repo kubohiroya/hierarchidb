@@ -55,7 +55,8 @@
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
-    "@hierarchidb/shape-store": "workspace:*"
+    "@hierarchidb/shape-store": "workspace:*",
+    "@hierarchidb/vectortile-orchestrator": "workspace:*"
   },
   "peerDependencies": {
     "@hierarchidb/auth-recovery": "workspace:*",

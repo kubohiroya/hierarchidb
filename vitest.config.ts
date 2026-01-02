@@ -19,8 +19,6 @@ const nodeTypeSrcAliases = Object.fromEntries(
 // own aliases (e.g. "~") are honored. We also exclude Playwright e2e.
 const projectRoots = [
   'packages/backend/bff',
-  'packages/_obsolate_common/api',
-  'packages/_obsolate_common/types',
   'packages/runtime-worker',
   'packages/plugin-ui-host',
   'packages/plugin-ui-sdk',
@@ -32,6 +30,7 @@ const projectRoots = [
   'packages/ui/dialog',
   'packages/ui/treeconsole/base',
   'packages/ui/treeconsole/treetable',
+  'packages/features/vectortile-orchestrator',
   'plugins/basemap-plugin',
   'plugins/folder-plugin',
   'plugins/location-plugin',

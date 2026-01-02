@@ -707,6 +707,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     version: "0.1.0",
     dependencies: [
         "@hierarchidb/shape-store",
+        "@hierarchidb/vectortile-orchestrator",
         "@hierarchidb/auth-recovery",
         "@hierarchidb/batch-runtime-services",
         "@hierarchidb/common-api",
@@ -776,6 +777,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "priority": 800,
         "dependencies": [
           "@hierarchidb/shape-store",
+          "@hierarchidb/vectortile-orchestrator",
           "@hierarchidb/auth-recovery",
           "@hierarchidb/batch-runtime-services",
           "@hierarchidb/common-api",

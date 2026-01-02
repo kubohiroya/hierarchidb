@@ -1,0 +1,27 @@
+{
+  "name": "@hierarchidb/vectortile-orchestrator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsdown src/index.ts --config ../../tsdown.config.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/plugin-service-api": "workspace:*",
+    "vitest": "^3.2.4"
+  },
+  "devDependencies": {
+    "typescript": "workspace:*"
+  }
+}

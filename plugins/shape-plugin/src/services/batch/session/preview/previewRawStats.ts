@@ -23,7 +23,7 @@ export async function buildRawStatsByOrigin(params: {
     if (!raw) continue;
 
     const stats = await summarizeBufferStats(raw.data);
-    const existing = statsByOrigin.get(entry.originKey) ?? { vertexCount: 0, polygonCount: 0 };
+    const existing = statsByOrigin.get(entry.originKey) ?? { vertexCount: 0, polygonCount: 0, area: 0 };
     statsByOrigin.set(entry.originKey, accumulateStats(existing, stats));
   }
 

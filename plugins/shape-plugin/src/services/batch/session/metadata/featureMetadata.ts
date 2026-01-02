@@ -183,10 +183,12 @@ export async function summarizeVectorTilesByOrigin(params: {
           continue;
         }
         const stats = extractGeometryStats(geojson);
-        const existing = statsByOrigin.get(originKey) ?? { vertexCount: 0, polygonCount: 0 };
+        const existing = statsByOrigin.get(originKey) ?? { vertexCount: 0, polygonCount: 0, area: 0 };
         statsByOrigin.set(originKey, {
           vertexCount: existing.vertexCount + stats.vertexCount,
           polygonCount: existing.polygonCount + stats.polygonCount,
+          area: existing.area + (stats.area ?? 0),
+          bbox: existing.bbox,
         });
       }
     }

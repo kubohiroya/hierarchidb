@@ -38,7 +38,7 @@ export async function buildStatsByOrigin(params: {
     if (!buffer) continue;
 
     const stats = await summarizeBufferStats(buffer.data);
-    const existing = statsByOrigin.get(originKey) ?? { vertexCount: 0, polygonCount: 0 };
+    const existing = statsByOrigin.get(originKey) ?? { vertexCount: 0, polygonCount: 0, area: 0 };
     statsByOrigin.set(originKey, accumulateStats(existing, stats));
   }
 

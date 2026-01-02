@@ -5,6 +5,10 @@ export type WorkerPoolStatistics = Record<string, number>;
 export type GeometryStatsSummary = {
   vertexCount: number;
   polygonCount: number;
+  /**
+   * 面積（投影系は集計元に依存）。vectortile-orchestrator の共通集計契約として必須。
+   */
+  area: number;
   bbox?: [number, number, number, number];
 };
 

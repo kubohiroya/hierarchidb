@@ -30,10 +30,12 @@ export async function summarizeVectorTilesByOrigin(params: {
         const originKey = typeof rawOrigin === 'string' ? rawOrigin : undefined;
         if (!originKey) continue;
         const stats = params.extractGeometryStats(geojson);
-        const existing = statsByOrigin.get(originKey) ?? { vertexCount: 0, polygonCount: 0 };
+        const existing = statsByOrigin.get(originKey) ?? { vertexCount: 0, polygonCount: 0, area: 0 };
         statsByOrigin.set(originKey, accumulateGeometryStats(existing, {
           vertexCount: stats.vertexCount,
           polygonCount: stats.polygonCount,
+          area: 0,
+          bbox: stats.bbox,
         }));
       }
     }
