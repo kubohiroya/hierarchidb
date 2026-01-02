@@ -109,6 +109,10 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
     setImportMethod(initialImportMethod);
   }, [initialImportMethod]);
 
+  useEffect(() => {
+    setUrlInput((prev) => (prev === initialUrl ? prev : initialUrl));
+  }, [initialUrl]);
+
   const processFile = (file: File) => {
     // Validate file type
     const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();

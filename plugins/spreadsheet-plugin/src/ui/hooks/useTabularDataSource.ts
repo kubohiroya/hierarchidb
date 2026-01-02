@@ -87,6 +87,20 @@ export const useTabularDataSource = ({
   const [detailsExpanded, setDetailsExpanded] = useState<boolean>(() => hasMetadata);
   const [localError, setLocalError] = useState<string | null>(null);
 
+  useEffect(() => {
+    setImportMethod((prev) => (prev === derivedImportMethod ? prev : derivedImportMethod));
+  }, [derivedImportMethod]);
+
+  useEffect(() => {
+    setDownloadUrl((prev) => (prev === derivedUrl ? prev : derivedUrl));
+  }, [derivedUrl]);
+
+  useEffect(() => {
+    if (derivedProcessing) {
+      setProcessingConfig((prev) => (prev === derivedProcessing ? prev : derivedProcessing));
+    }
+  }, [derivedProcessing]);
+
   const menuContainer = useMemo(() => {
     const dialogEl = dialogRef?.current;
     if (dialogEl instanceof HTMLElement) {

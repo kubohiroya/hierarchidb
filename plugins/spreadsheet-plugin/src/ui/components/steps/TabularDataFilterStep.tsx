@@ -78,9 +78,20 @@ const TabularDataFilterInner = <T extends SpreadsheetEntity>({
 
   if (shouldUploadFirst || !tableMetadata) {
     return (
-      <Typography color="text.secondary">
-        {t('filtering.instructions.uploadFirst', 'Upload a dataset in Step 1 to configure filters.')}
-      </Typography>
+      <Box display="grid" gap={0.5}>
+        <Typography color="text.secondary">
+          {t('filtering.instructions.uploadFirst', 'Upload a dataset in Step 1 to configure filters.')}
+        </Typography>
+        {dialogData?.dataSource?.source ? (
+          <Typography variant="body2" color="text.secondary">
+            {t(
+              'filtering.instructions.previousSource',
+              'Previous source: {{value}}. Reopen Step 1 to re-download the tabular file.',
+              { value: dialogData.dataSource.source },
+            )}
+          </Typography>
+        ) : null}
+      </Box>
     );
   }
   if (loading) {
