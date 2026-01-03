@@ -1,5 +1,5 @@
 import type { TabularDataApi, TabularProcessingConfig } from '@hierarchidb/ui-tabular';
-import type { SimpleTableMetadataManager } from '@hierarchidb/tabular-store';
+import type { TabularDatabaseManager } from '@hierarchidb/tabular-store';
 import { SpreadsheetTabularApiDriver } from './SpreadsheetTabularApiDriver.js';
 import { SPREADSHEET_PLUGIN_ID } from '../common/constants.js';
 
@@ -9,7 +9,7 @@ export function createSpreadsheetTabularApi(pluginId: string = SPREADSHEET_PLUGI
 
 export type PluginTabularApiOptions = {
   pluginId: string;
-  metadataManager: SimpleTableMetadataManager;
+  metadataManager: TabularDatabaseManager;
   corsProxyBaseURL?: string;
   resolveCorsProxyBaseURL?: () => string | undefined;
   enableCorsProxy?: boolean;

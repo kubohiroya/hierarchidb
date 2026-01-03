@@ -22,10 +22,8 @@ import {
 } from '../config/dev-alias-config.js';
 import { createIso3166Plugin } from '@hierarchidb/gen-iso3166-2/plugin';
 import type { DevAliasSelection, WorkspacePackageMeta } from '../config/dev-alias-config.js';
-import {
-  generatePluginRegistry,
-  type PluginSpecifierMode,
-} from '../packages/tools/build-scripts/src/gen-plugin-registry.js';
+import { generatePluginRegistry } from '../packages/tools/build-scripts/src/gen-plugin-registry.ts';
+import type { PluginSpecifierMode } from '../packages/tools/build-scripts/src/plugin-registry/types.ts';
 
 if (!process.listenerCount('uncaughtException')) {
   process.on('uncaughtException', (error) => {

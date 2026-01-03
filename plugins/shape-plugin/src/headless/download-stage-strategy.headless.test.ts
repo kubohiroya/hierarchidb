@@ -8,6 +8,7 @@ import { getEphemeralShapeDB, closeEphemeralShapeDB } from '../services/database
 import { encodeFlatGeoJson } from '../services/batch/strategies/flatgeobuf.js';
 import { GadmDownloadStrategy } from '../services/batch/strategies/GadmDownloadStrategy.js';
 import { NaturalEarthDownloadStrategy } from '../services/batch/strategies/NaturalEarthDownloadStrategy.js';
+import { Feature, FeatureCollection } from 'geojson';
 
 const createConfig = (dataSource: string): BatchProcessConfig => ({
   dataSource: dataSource as BatchProcessConfig['dataSource'],
@@ -105,8 +106,8 @@ describe('Download stage strategies', () => {
     const features = [
       { type: 'Feature', geometry: { type: 'Point', coordinates: [139.7, 35.6] }, properties: { ISO_A2: 'JP' } },
       { type: 'Feature', geometry: { type: 'Point', coordinates: [106.8, -6.2] }, properties: { ISO_A2: 'ID' } },
-    ];
-    const collection = { type: 'FeatureCollection', features } as const;
+    ] satisfies Feature[];
+    const collection = { type: 'FeatureCollection', features } satisfies FeatureCollection;
     const encoded = await encodeFlatGeoJson(collection);
     await db.rawBuffers.put({
       id: `${nodeId}-download-0`,
@@ -139,9 +140,9 @@ describe('Download stage strategies', () => {
     });
     expect(postprocess.outputs.length).toBeGreaterThanOrEqual(4);
     const outputIds = new Set(postprocess.outputs.map((output) => output.inputBufferId));
-    expect(outputIds.has(`${sessionId}-download-jp-adm0`)).toBe(true);
-    expect(outputIds.has(`${sessionId}-download-id-adm0`)).toBe(true);
-    expect(outputIds.has(`${sessionId}-download-jp-adm1`)).toBe(true);
-    expect(outputIds.has(`${sessionId}-download-id-adm1`)).toBe(true);
+    expect(outputIds.has(`${nodeId}-download-jp-adm0`)).toBe(true);
+    expect(outputIds.has(`${nodeId}-download-id-adm0`)).toBe(true);
+    expect(outputIds.has(`${nodeId}-download-jp-adm1`)).toBe(true);
+    expect(outputIds.has(`${nodeId}-download-id-adm1`)).toBe(true);
   }, 30_000);
 });
