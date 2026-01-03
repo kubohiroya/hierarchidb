@@ -5,7 +5,7 @@ import type { ShapeDialogStepProps } from './ShapeDialogStepProps.ts';
 import { useShapeCountrySelectionStep } from '../../hooks/useShapeCountrySelectionStep.js';
 import { useTranslation } from '../../i18n.js';
 
-export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ data, onChange, }) => {
+export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ data, onChange, nodeId }) => {
   const { t } = useTranslation();
   const {
     loading,
@@ -15,7 +15,7 @@ export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ data
     selections,
     applySelections,
     isCellEnabled,
-  } = useShapeCountrySelectionStep({ data, onChange });
+  } = useShapeCountrySelectionStep({ data, onChange, nodeId });
 
   if (loading) {
     return (
