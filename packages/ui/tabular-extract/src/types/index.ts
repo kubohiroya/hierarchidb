@@ -185,6 +185,7 @@ export interface TabularDataApi {
   downloadTabularFromUrl(
     url: string,
     config: TabularProcessingConfig,
+    nodeId?: string,
   ): Promise<TabularTableMetadata>;
 
   /**

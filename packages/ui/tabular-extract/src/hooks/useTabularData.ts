@@ -22,6 +22,8 @@ export interface UseTabularDataOptions {
   autoload?: boolean;
   /** Plugin ID for reference management */
   pluginId: string;
+  /** Node ID for chunk-store relation (optional) */
+  nodeId?: string;
   /** Callback when upload succeeds */
   onImportSuccess?: (metadata: TabularTableMetadata) => void;
   /** Callback when upload fails */
@@ -61,7 +63,7 @@ export interface UseTabularDataResult {
  * Hook for managing Tabular table metadata
  */
 export const useTabularData = (options: UseTabularDataOptions): UseTabularDataResult => {
-  const { tableMetadataId, autoload = true, pluginId, onImportSuccess, onImportError } = options;
+  const { tableMetadataId, autoload = true, pluginId, nodeId, onImportSuccess, onImportError } = options;
   const tabularApi = useTabularApi();
 
   const [tabularTableMetadata, setTabularTableMetadata] = useState<TabularTableMetadata | null>(null);
@@ -149,7 +151,7 @@ export const useTabularData = (options: UseTabularDataOptions): UseTabularDataRe
         ...config,
       };
 
-      const newMetadata = await tabularApi.downloadTabularFromUrl(url, defaultConfig);
+      const newMetadata = await tabularApi.downloadTabularFromUrl(url, defaultConfig, nodeId);
       setTabularTableMetadata(newMetadata);
 
       // Add reference for this plugin
@@ -167,7 +169,7 @@ export const useTabularData = (options: UseTabularDataOptions): UseTabularDataRe
     } finally {
       setIsUploading(false);
     }
-  }, [tabularApi, pluginId]);
+  }, [tabularApi, pluginId, nodeId]);
 
   /**
    * Reload current metadata

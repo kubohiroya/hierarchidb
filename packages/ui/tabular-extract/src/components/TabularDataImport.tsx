@@ -40,6 +40,7 @@ export interface TabularDataImportProps {
   acceptedFileTypes?: string[];
   maxFileSize?: number; // in bytes
   pluginId: string;
+  nodeId?: string;
   menuContainer?: Element | null;
   initialImportMethod?: 'file' | 'url';
   initialUrl?: string;
@@ -57,6 +58,7 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
                                                                       acceptedFileTypes = ['.csv', '.tsv', '.txt'],
                                                                       maxFileSize = 50 * 1024 * 1024, // 50MB default
                                                                       pluginId,
+                                                                      nodeId,
                                                                       menuContainer,
                                                                       initialImportMethod = 'file',
                                                                       initialUrl = '',
@@ -87,6 +89,7 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
     imortError,
   } = useTabularData({
     pluginId,
+    nodeId,
     onImportSuccess: onFileImported,
     onImportError: onError,
   });
