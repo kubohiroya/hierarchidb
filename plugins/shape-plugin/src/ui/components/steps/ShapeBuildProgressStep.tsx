@@ -586,8 +586,8 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
           onResume={controls.canStartOrResume ? handleStartClick : undefined}
           controlLabel={t('stage.controls.title', 'Build controls')}
           pauseLabel={t('stage.controls.pause', 'Pause')}
-          startLabel={t('stage.controls.start', 'Start stage')}
-          resumeLabel={t('stage.controls.resume', 'Resume stage')}
+          startLabel={t('stage.controls.start', 'Start Build')}
+          resumeLabel={t('stage.controls.resume', 'Resume Build')}
           statusLabel={controls.statusLabel}
         />
       </Box>

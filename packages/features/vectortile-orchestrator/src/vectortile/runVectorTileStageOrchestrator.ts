@@ -56,19 +56,19 @@ export async function runVectorTileStageOrchestrator<TTask, TProgress extends Pr
 
   if (runnableTasks.length === 0) {
     const baseProgress: ProgressInfo = {
-       total,
-       completed: baseCompleted,
-       failed: baseFailed,
-       skipped: 0,
-       percentage: total > 0 ? (baseDone / total) * 100 : 0,
-       currentStage: 'vectortile',
-       currentTask: 'Vector tiles already completed',
+      total,
+      completed: baseCompleted,
+      failed: baseFailed,
+      skipped: 0,
+      percentage: total > 0 ? (baseDone / total) * 100 : 0,
+      currentStage: 'vectortile',
+      currentTask: 'Vector tiles already completed',
     };
 
     // Orchestrator-generated progress events must be converted to TProgress explicitly.
     // (Adapter progress is already TProgress, so this affects only synthesized cases.)
     if (progressCallback) {
-      if (!progressFactory) {
+      if (typeof progressFactory !== 'function') {
         throw new Error('progressFactory is required when progressCallback is provided (vectortile orchestrator)');
       }
       progressCallback(progressFactory(baseProgress));

@@ -533,12 +533,9 @@ export class SessionController {
          })
        : undefined;
 
-    const progressFactory = progressCallback
-      ? ((p: import('@hierarchidb/vectortile-orchestrator').ProgressInfo) => p)
-      : undefined;
-
     let stageSummary: { total: number; completed: number; failed: number; skipped: number } | undefined;
-    await runVectorTileStageOrchestrator({
+
+    const commonParams = {
       nodeId: this.nodeId,
       metadataEnabled,
       tasks: this.vectorTileTasks,
@@ -549,8 +546,6 @@ export class SessionController {
       waitIfPaused: controls.waitIfPaused,
       getSignal: controls.getSignal,
       requestPause: controls.requestPause,
-      progressCallback,
-      progressFactory,
       postprocess: buildVectorTileStagePostprocessPort({
         enabled: metadataEnabled,
         nodeId: this.nodeId,
@@ -565,7 +560,19 @@ export class SessionController {
         console.log(`[Session ${this.nodeId}] Vector tile stage completed`, summary);
         stageSummary = summary;
       },
-    });
+    };
+
+    if (progressCallback) {
+      await runVectorTileStageOrchestrator({
+        ...commonParams,
+        progressCallback,
+        progressFactory: (p: import('@hierarchidb/vectortile-orchestrator').ProgressInfo) => p,
+      });
+    } else {
+      await runVectorTileStageOrchestrator({
+        ...commonParams,
+      });
+    }
 
     if (stageSummary) {
       console.log(`[Session ${this.nodeId}] Vector tile stage summary`, stageSummary);

@@ -176,6 +176,14 @@
       }
     }
   },
+  "stage": {
+    "controls": {
+      "title": "Build controls",
+      "pause": "Pause",
+      "start": "Start Build",
+      "resume": "Resume Build"
+    }
+  },
   "build": {
     "controls": {
       "title": "Build controls",

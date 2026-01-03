@@ -105,6 +105,7 @@ describe('vectortile orchestrator (stage-agnostic contract)', () => {
       maxConcurrent: 2,
       // Plan A: omit controls to validate defaults
       progressCallback,
+      progressFactory: (p) => p,
       postprocess,
       afterRun,
     });
@@ -250,6 +251,7 @@ describe('vectortile orchestrator (stage-agnostic contract)', () => {
       taskRegistry,
       adapter,
       progressCallback,
+      progressFactory: (p) => p,
       postprocess,
       afterRun: vi.fn(async () => {}),
     });
@@ -261,5 +263,31 @@ describe('vectortile orchestrator (stage-agnostic contract)', () => {
       failed: 0,
       currentStage: 'vectortile',
     });
+  });
+
+  it('rejects progressCallback without progressFactory at type-level', () => {
+    const tasks = makeTasks(2);
+
+    const adapter = makeAdapter({ result: { processed: 0, failed: 0 } });
+    const taskRegistry = makeTaskRegistry({ runnableTasks: [], completedCount: 2, failedCount: 0, total: 2 });
+    const postprocess = makePostprocess();
+
+    // This is a type-level contract test only. Do not execute it at runtime.
+    // @ts-expect-error progressFactory is required when progressCallback is provided.
+    const _params: RunVectorTileStageOrchestratorParams = {
+      nodeId: 'node:test' as unknown as RunVectorTileStageOrchestratorParams['nodeId'],
+      metadataEnabled: true,
+      tasks,
+      inputsByTaskId: makeInputs(tasks),
+      taskRegistry,
+      adapter,
+      maxConcurrent: 2,
+      progressCallback: vi.fn(),
+      // progressFactory intentionally omitted
+      postprocess,
+      afterRun: vi.fn(async () => {}),
+    };
+
+    void _params;
   });
 });
