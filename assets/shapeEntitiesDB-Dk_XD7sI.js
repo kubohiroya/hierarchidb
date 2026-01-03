@@ -1,1 +1,0 @@
-import{m as e}from"../worker.js";export{e as ShapeDB};

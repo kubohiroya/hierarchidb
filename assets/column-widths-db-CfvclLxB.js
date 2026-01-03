@@ -1,1 +1,0 @@
-import"./import-wrapper-prod-7cC7zLNf.js";import"./src-bijv59-w.js";import{getColumnWidths as e,saveColumnWidths as t}from"./properties-db-COVc952s.js";export{e as getColumnWidths,t as saveColumnWidths};

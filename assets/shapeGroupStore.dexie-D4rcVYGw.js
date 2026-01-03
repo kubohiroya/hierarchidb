@@ -1,1 +1,0 @@
-function e(e){return{async list(t){return e.features.where(`nodeId`).equals(t).toArray()},async bulkUpsert(t,n){if(!n.length)return;let r=Date.now(),i=n.map(({id:e,...n})=>({...n,nodeId:t,createdAt:r,updatedAt:r}));await e.features.bulkAdd(i)},async bulkDelete(t,n){await e.features.bulkDelete(n)}}}export{e as createShapeFeatureStoreDexie};
