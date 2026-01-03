@@ -1,9 +1,25 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const packageRoot = path.resolve(currentDir, '..', '..');
-export const repoRoot = path.resolve(packageRoot, '..', '..');
+const fallbackRepoRoot = path.resolve(packageRoot, '..', '..', '..');
+
+const findRepoRoot = (startDir: string): string => {
+  let cursor = path.resolve(startDir);
+  while (true) {
+    if (fs.existsSync(path.join(cursor, 'pnpm-workspace.yaml'))) {
+      return cursor;
+    }
+    const parent = path.dirname(cursor);
+    if (parent === cursor) break;
+    cursor = parent;
+  }
+  return fallbackRepoRoot;
+};
+
+export const repoRoot = findRepoRoot(packageRoot);
 
 export const appDir = path.join(repoRoot, 'app');
 export const appPkgPath = path.join(appDir, 'package.json');

@@ -11,8 +11,8 @@ export type * from './entity-types.js';
 export type {
   DraftId,
   EntityId,
-  NodeId,
   NodeType,
+  NodeId,
   TagId,
   TreeId,
   TreeNodeId,
@@ -20,7 +20,6 @@ export type {
 export { toNodeId, toNodeType } from './id-util.js';
 export type * from './import-export-types.js';
 export type * from './menu-types.js';
-export type { Timestamp } from './primitive-types.js';
 export type * from './progress-types.js';
 export type * from './subscription-types.js';
 export type * from './tag-entity-types.js';
@@ -46,3 +45,4 @@ export { SortOrder } from './tree-root-state-types.js';
 export type { Tree } from './tree-types.js';
 export type { UndoStateEvent } from './undo-state-events.js';
 export type * from './validation-types.js';
+export type * from './primitive-types.js';

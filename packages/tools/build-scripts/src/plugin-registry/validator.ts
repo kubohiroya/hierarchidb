@@ -1,5 +1,5 @@
-import type { ManifestSummary, PluginSpecifierMode } from './types.ts';
-import { hasExportPath } from './entry-resolver.ts';
+import type { ManifestSummary, PluginSpecifierMode } from './types.js';
+import { hasExportPath } from './entry-resolver.js';
 
 export function validateEntryPaths(summaries: ManifestSummary[], mode: PluginSpecifierMode): void {
   const issues: string[] = [];
@@ -44,6 +44,6 @@ export function validateEntryPaths(summaries: ManifestSummary[], mode: PluginSpe
   }
 
   if (issues.length > 0) {
-    console.warn('[generate-plugin-registry] Entry path validation warnings:\n- ' + issues.join('\n- '));
+    console.warn(`[generate-plugin-registry] Entry path validation warnings:\n- ${issues.join('\n- ')}`);
   }
 }

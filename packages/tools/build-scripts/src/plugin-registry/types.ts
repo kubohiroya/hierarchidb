@@ -11,7 +11,7 @@ export interface DatabasePrewarmTarget {
 }
 
 export interface ManifestSummary {
-  manifest: Record<string, any>;
+  manifest: Record<string, unknown>;
   nodeType: string;
   packageName: string;
   packageVersion: string;

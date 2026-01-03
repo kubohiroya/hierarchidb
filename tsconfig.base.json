@@ -80,10 +80,10 @@
         "packages/features/download/dist/*"
       ],
       "@hierarchidb/chunk-store": [
-        "packages/features/chunk-store/src/index.ts"
+        "packages/features/chunk-store/dist/index.d.ts"
       ],
       "@hierarchidb/chunk-store/*": [
-        "packages/features/chunk-store/src/*"
+        "packages/features/chunk-store/dist/*"
       ],
       "@hierarchidb/location-store": [
         "packages/features/location-store/dist/index.d.ts"

@@ -207,5 +207,3 @@ export interface ResourceUsage {
   networkBytesReceived?: number;
   networkBytesSent?: number;
 }
-
-// Runtime placeholders for type-only exports used by bundled worker modules.

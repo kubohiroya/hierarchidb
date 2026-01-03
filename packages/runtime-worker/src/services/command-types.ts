@@ -31,7 +31,7 @@ export interface CommandMeta {
 }
 
 // Error model unification: align with Core ErrorCode/CommandResult
-export const WorkerErrorCode: { [K in CoreErrorCode]: CoreErrorCode } = {
+export const WorkerErrorCodeValue: { [K in CoreErrorCode]: CoreErrorCode } = {
   NAME_NOT_UNIQUE: 'NAME_NOT_UNIQUE',
   STALE_VERSION: 'STALE_VERSION',
   HAS_INBOUND_REFS: 'HAS_INBOUND_REFS',
@@ -45,7 +45,11 @@ export const WorkerErrorCode: { [K in CoreErrorCode]: CoreErrorCode } = {
   DATABASE_ERROR: 'DATABASE_ERROR',
 };
 
+// 型として使う場合はこちらを参照する（value の WorkerErrorCodeValue とは別）
 export type WorkerErrorCode = CoreErrorCode;
+
+// 後方互換: 以前の名前（value）を残す
+export const WorkerErrorCode = WorkerErrorCodeValue;
 
 // Use core CommandResult directly for consistency across layers
 export type CommandResult = CoreCommandResult;

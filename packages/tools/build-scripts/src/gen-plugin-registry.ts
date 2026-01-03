@@ -13,8 +13,8 @@ import { promises as fs } from 'node:fs';
 import process from 'node:process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import type { GeneratePluginRegistryOptions, PluginSpecifierMode } from './plugin-registry/types.ts';
-import { collectManifests } from './plugin-registry/manifest-collector.ts';
+import type { GeneratePluginRegistryOptions, PluginSpecifierMode } from './plugin-registry/types.js';
+import { collectManifests } from './plugin-registry/manifest-collector.js';
 import {
   generateDatabaseLoadersSource,
   generateIconLoadersSource,
@@ -23,8 +23,8 @@ import {
   generateRegistrySource,
   generateUiLoadersSource,
   generateWorkerLoadersSource,
-} from './plugin-registry/registry-generator.ts';
-import { removeLegacyArtifacts, writeFileIfChanged } from './plugin-registry/fs-utils.ts';
+} from './plugin-registry/registry-generator.js';
+import { removeLegacyArtifacts, writeFileIfChanged } from './plugin-registry/fs-utils.js';
 import {
   registryDatabaseLoadersFile,
   registryDeclarationsFile,
@@ -34,8 +34,8 @@ import {
   registryPluginDefinitionsFile,
   registryUiLoadersFile,
   registryWorkerLoadersFile,
-} from './plugin-registry/paths.ts';
-import { validateEntryPaths } from './plugin-registry/validator.ts';
+} from './plugin-registry/paths.js';
+import { validateEntryPaths } from './plugin-registry/validator.js';
 
 export async function generatePluginRegistry(options: GeneratePluginRegistryOptions = {}): Promise<void> {
   const requestedMode = (options.mode ?? (process.env.HDB_PLUGIN_SPEC_MODE as PluginSpecifierMode | undefined) ?? 'package')

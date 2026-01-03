@@ -1,7 +1,8 @@
 import { PERFORMANCE_CONFIG } from '../../utils/performance-config.js';
-import { WorkerErrorCode } from '../command-types.js';
+import type { WorkerErrorCode } from '../command-types.js';
+import { WorkerErrorCode as WorkerErrorCodeValue } from '../command-types.js';
 
-const KNOWN_CODES = new Set<WorkerErrorCode>(Object.values(WorkerErrorCode));
+const KNOWN_CODES = new Set<WorkerErrorCode>(Object.values(WorkerErrorCodeValue));
 const DATABASE_ERROR_NAMES = new Set([
   'ConstraintError',
   'ModifyError',
@@ -40,7 +41,7 @@ export function sanitizeMessageText(
  */
 export function classifyWorkerError(
   error: unknown,
-  fallback: WorkerErrorCode = WorkerErrorCode.UNKNOWN_ERROR
+  fallback: WorkerErrorCode = WorkerErrorCodeValue.UNKNOWN_ERROR
 ): WorkerErrorClassification {
   const message = sanitizeMessageText(error);
 
@@ -52,35 +53,35 @@ export function classifyWorkerError(
   const name = extractNameFromError(error);
   if (name) {
     if (DATABASE_ERROR_NAMES.has(name)) {
-      return { code: WorkerErrorCode.DATABASE_ERROR, message };
+      return { code: WorkerErrorCodeValue.DATABASE_ERROR, message };
     }
     if (VALIDATION_ERROR_NAMES.has(name)) {
-      return { code: WorkerErrorCode.VALIDATION_ERROR, message };
+      return { code: WorkerErrorCodeValue.VALIDATION_ERROR, message };
     }
   }
 
   if (/draft|working copy/i.test(message)) {
-    return { code: WorkerErrorCode.WORKING_COPY_NOT_FOUND, message };
+    return { code: WorkerErrorCodeValue.WORKING_COPY_NOT_FOUND, message };
   }
 
   if (/name (conflict|already exists|must be unique)/i.test(message)) {
-    return { code: WorkerErrorCode.NAME_NOT_UNIQUE, message };
+    return { code: WorkerErrorCodeValue.NAME_NOT_UNIQUE, message };
   }
 
   if (/commit conflict|version conflict/i.test(message)) {
-    return { code: WorkerErrorCode.COMMIT_CONFLICT, message };
+    return { code: WorkerErrorCodeValue.COMMIT_CONFLICT, message };
   }
 
   if (/validation|invalid/i.test(message)) {
-    return { code: WorkerErrorCode.VALIDATION_ERROR, message };
+    return { code: WorkerErrorCodeValue.VALIDATION_ERROR, message };
   }
 
   if (/not found/i.test(message)) {
-    return { code: WorkerErrorCode.NODE_NOT_FOUND, message };
+    return { code: WorkerErrorCodeValue.NODE_NOT_FOUND, message };
   }
 
   if (/dexie|indexeddb|database|constraint/i.test(message)) {
-    return { code: WorkerErrorCode.DATABASE_ERROR, message };
+    return { code: WorkerErrorCodeValue.DATABASE_ERROR, message };
   }
 
   return { code: fallback, message };

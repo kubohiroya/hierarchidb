@@ -24,6 +24,3 @@ export type EntityId = NodeId;
 
 // Branded ID for console nodes when explicitly distinguished from NodeId in some modules
 export type TreeNodeId = string & { readonly __brand: 'TreeNodeId' };
-
-// Runtime placeholder to satisfy bundlers expecting a value export.
-export const NodeIdValue = undefined as unknown as NodeId;

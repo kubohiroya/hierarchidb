@@ -71,7 +71,7 @@ export const buildShapeCacheKey = (prefix: string, url: string): string => (
 export type RetryConfig = {
   count: number;
   delay: number;
-  backoff: 'linear' | 'exponential';
+  backoff?: 'linear' | 'exponential';
 };
 
 export const getOrFetchWithRetry = async <T>(

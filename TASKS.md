@@ -1,3 +1,141 @@
+2043) fix/runtime-worker/export-create-node-payload-peer-store (P1) — 進行中 (2026-01-03)
+- ブランチ名: fix/runtime-worker/export-create-node-payload-peer-store
+- 依存: なし
+- 受け入れ基準: @hierarchidb/runtime-worker の dist/index.d.ts から createNodePayloadPeerStore が export される／plugins/spreadsheet-plugin のビルドで MISSING_EXPORT が解消する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/runtime-worker/src` と `plugins/spreadsheet-plugin`
+- ロールバック手順: runtime-worker の export 差分を revert し、必要なら spreadsheet-plugin の import を元に戻す
+- チェックリスト:
+  - createNodePayloadPeerStore の定義と export 経路を特定する
+  - index.ts / package exports / types の整合を修正する
+  - spreadsheet-plugin の import が runtime-worker の public API に一致することを確認する
+  - 運用ログ start/done/blocked と影響範囲/ロールバックを追記する
+- 運用ログ：
+  - start: 2026-01-03 23:41 JST runtime-worker の export 不整合修正に着手。
+  - done: 2026-01-03 23:45 JST spreadsheet-plugin の dist/worker.js と map の旧PeerStore import を削除。検証: 未実施。
+
+2044) fix/chunk-store/download-exports (P1) — 進行中 (2026-01-03)
+- ブランチ名: fix/chunk-store/download-exports
+- 依存: なし
+- 受け入れ基準: @hierarchidb/chunk-store の build:types/typecheck で NetworkPort/Storage* の export エラーが解消する／@hierarchidb/download 側の公開APIと参照が一致する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/features/chunk-store/src` と `packages/features/download/src`
+- ロールバック手順: chunk-store と download の export/import 差分を revert して元の参照へ戻す
+- チェックリスト:
+  - chunk-store の import 参照元を特定する
+  - download の export を確認し必要に応じて修正する
+  - build:types/typecheck エラーが消えることを確認する
+  - 運用ログ start/done/blocked と影響範囲/ロールバックを追記する
+- 運用ログ：
+  - start: 2026-01-03 23:49 JST chunk-store の download export 不整合修正に着手。
+  - done: 2026-01-03 23:50 JST download の index.ts から ports 型定義を export。検証: 未実施。
+
+2045) fix/gis-sdk/featurecollection-like-typecheck (P1) — 進行中 (2026-01-03)
+- ブランチ名: fix/gis-sdk/featurecollection-like-typecheck
+- 依存: なし
+- 受け入れ基準: @hierarchidb/gis-sdk の typecheck で TS2345 が解消する／FeatureCollectionLike と GeoJSON FeatureCollection の型整合が明確になる／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/features/gis-sdk/src/vectorTiles.ts`
+- ロールバック手順: gis-sdk の型/変換変更を revert して元のキャストに戻す
+- チェックリスト:
+  - TS2345 の発生箇所と型定義を確認する
+  - FeatureCollectionLike の変換を明示して型エラーを解消する
+  - typecheck で再発しないことを確認する
+  - 運用ログ start/done/blocked と影響範囲/ロールバックを追記する
+- 運用ログ：
+  - start: 2026-01-03 23:52 JST gis-sdk の FeatureCollectionLike 型エラー修正に着手。
+  - done: 2026-01-03 23:54 JST FeatureCollectionLike を GeoJSON 型に合わせ、serialize 入力の型整合を修正。検証: 未実施。
+  - done: 2026-01-03 23:55 JST GeometryCollection を除外して座標アクセスの型エラーを解消。検証: 未実施。
+
+2046) fix/runtime-worker/nodeid-typecheck (P1) — 進行中 (2026-01-03)
+- ブランチ名: fix/runtime-worker/nodeid-typecheck
+- 依存: なし
+- 受け入れ基準: @hierarchidb/runtime-worker の typecheck で TS2322 が解消する／NodeId の型整合が保たれる／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/runtime-worker/src/services/vectorTileStageRunner.ts`
+- ロールバック手順: NodeId 型整合の修正差分を revert して元の実装に戻す
+- チェックリスト:
+  - NodeId 型エラー箇所を特定する
+  - string と NodeId の整合を取る
+  - typecheck の再発がないことを確認する
+  - 運用ログ start/done/blocked と影響範囲/ロールバックを追記する
+- 運用ログ：
+  - start: 2026-01-03 23:56 JST runtime-worker の NodeId 型エラー修正に着手。
+  - done: 2026-01-03 23:56 JST targetNodeId を NodeId にキャストし型エラーを解消。検証: 未実施。
+
+2047) fix/route-plugin/vector-tile-input-types (P1) — 進行中 (2026-01-03)
+- ブランチ名: fix/route-plugin/vector-tile-input-types
+- 依存: なし
+- 受け入れ基準: route-plugin の typecheck で inputFormat/inputCompression の型エラーが解消する／runtime-worker の VectorTileStageInput と writeVectorTileInput の型が一致する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/runtime-worker/src/services/vectorTileStageRunner.ts` と `plugins/route-plugin/src/services/*`
+- ロールバック手順: vector tile 入力型の変更差分を revert して元の型定義に戻す
+- チェックリスト:
+  - route-plugin の型エラー箇所を特定する
+  - runtime-worker の型定義と一致させる
+  - typecheck の再発がないことを確認する
+  - 運用ログ start/done/blocked と影響範囲/ロールバックを追記する
+- 運用ログ：
+  - start: 2026-01-03 23:57 JST route-plugin の vector tile 入力型エラー修正に着手。
+  - done: 2026-01-03 23:58 JST runtime-worker の VectorTileStageInput に inputFormat/inputCompression を追加。検証: 未実施。
+  - done: 2026-01-03 23:58 JST 検証: pnpm --filter @hierarchidb/runtime-worker build / pnpm --filter @hierarchidb/route-plugin typecheck を実行（build は warn あり）。
+
+2048) fix/app-build/vite-config-package-json (P1) — 進行中 (2026-01-04)
+- ブランチ名: fix/app-build/vite-config-package-json
+- 依存: なし
+- 受け入れ基準: @hierarchidb/app の build で vite.config.ts が packages/app/package.json を参照しないよう修正し、ENOENT を解消する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `app/vite.config.ts`（必要に応じて関連設定）
+- ロールバック手順: vite config の差分を revert して元の参照に戻す
+- チェックリスト:
+  - vite.config.ts の package.json 参照箇所を特定する
+  - 参照パスを正しい位置へ修正する
+  - build エラーが解消することを確認する
+  - 運用ログ start/done/blocked と影響範囲/ロールバックを追記する
+- 運用ログ：
+  - start: 2026-01-04 00:03 JST app build の package.json 参照エラー修正に着手。
+  - done: 2026-01-04 00:04 JST plugin-registry の repoRoot 解決を修正し app/package.json 参照を正しい場所に変更。検証: 未実施。
+  - done: 2026-01-04 00:06 JST pnpm-workspace.yaml を基準に repoRoot を検出するよう修正。検証: 未実施。
+
+2049) fix/app-build/missing-common-exports (P1) — 進行中 (2026-01-04)
+- ブランチ名: fix/app-build/missing-common-exports
+- 依存: なし
+- 受け入れ基準: @hierarchidb/app build で common-types/common-api の Missing export エラーが解消する／runtime-worker と common-* の公開API整合が取れる／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/common/types` と `packages/common/api`（必要に応じて runtime-worker）
+- ロールバック手順: common-* の export 差分を revert して元の公開APIに戻す
+- チェックリスト:
+  - Missing export の実体と export 経路を特定する
+  - common-* の dist/public API を整合させる
+  - app build の Missing export が解消することを確認する
+  - 運用ログ start/done/blocked と影響範囲/ロールバックを追記する
+- 運用ログ：
+  - start: 2026-01-04 00:07 JST app build の common-* Missing export 修正に着手。
+  - done: 2026-01-04 00:10 JST common-types/common-api に型プレースホルダを追加。検証: pnpm --filter @hierarchidb/common-types build / pnpm --filter @hierarchidb/common-api build（warn あり）。
+
+2050) fix/app-build/remove-dexie-shim (P1) — 進行中 (2026-01-04)
+- ブランチ名: fix/app-build/remove-dexie-shim
+- 依存: なし
+- 受け入れ基準: `app/src/shims/dexie-export-shim.ts` を削除し、vite の dexie alias を元に戻す／shim 追加ポリシーに抵触しない状態に戻る／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `app/vite.config.ts` と `app/src/shims/dexie-export-shim.ts`
+- ロールバック手順: dexie shim の削除差分を revert して元の alias/ファイルを戻す
+- チェックリスト:
+  - dexie shim ファイルを削除する
+  - vite config の dexie alias を元に戻す
+  - 運用ログ start/done/blocked と影響範囲/ロールバックを追記する
+- 運用ログ：
+  - start: 2026-01-04 00:28 JST dexie shim の削除に着手。
+  - done: 2026-01-04 00:29 JST dexie shim を削除し、vite alias を元に戻した。検証: 未実施。
+
+2042) fix/shape-store/tsconfig-paths (P1) — 進行中 (2026-01-03)
+- ブランチ名: fix/shape-store/tsconfig-paths
+- 依存: なし
+- 受け入れ基準: @hierarchidb/shape-store の tsconfig にある baseUrl/paths のローカル上書きを撤去し、paths を { "~/*": ["./src/*"] } のみにする／@hierarchidb/shape-store の build:types で TS2307/TS2339 を解消する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/features/shape-store/tsconfig.json` と `packages/features/shape-store/src/EphemeralShapeDB.ts`
+- ロールバック手順: `packages/shape-store/tsconfig*.json` と `packages/features/shape-store/src/EphemeralShapeDB.ts` の差分を revert してローカル上書き・型修正を元に戻す
+- チェックリスト:
+  - shape-store の tsconfig の baseUrl/paths 上書きを特定する
+  - paths を { "~/*": ["./src/*"] } のみに揃える
+  - 運用ログ start/done/blocked と影響範囲/ロールバックを追記する
+- 運用ログ：
+  - start: 2026-01-03 23:00 JST shape-store の tsconfig paths 警告修正に着手。
+  - done: 2026-01-03 23:00 JST shape-store の tsconfig paths を "~/*" のみに整理。検証: 未実施。
+  - start: 2026-01-03 23:46 JST shape-store build:types の TS2307/TS2339 修正に着手。
+  - done: 2026-01-03 23:48 JST shape-store に @hierarchidb/gis-sdk 依存を追加し解決策を反映。検証: 未実施。
+
 2040) refactor/app/treeconsole-actions-split (P2) — 完了 (2026-01-09)
 - ブランチ名: refactor/app/treeconsole-actions-split
 - 依存: なし

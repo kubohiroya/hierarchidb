@@ -2,7 +2,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 
-import { appDir, appPkgPath, repoRoot } from './paths.ts';
+import { appDir, appPkgPath, repoRoot } from './paths.js';
 
 const require = createRequire(import.meta.url);
 
@@ -45,18 +45,25 @@ export async function readPluginPackageJSON(pkgName: string, nodeType: string) {
   return { json: undefined, path: undefined, dir: undefined };
 }
 
-export async function loadJsonIfExists(filePath: string): Promise<Record<string, any> | null> {
+export async function loadJsonIfExists(filePath: string): Promise<Record<string, unknown> | null> {
   try {
     const raw = await fs.readFile(filePath, 'utf8');
-    return JSON.parse(raw);
+    const parsed: unknown = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : null;
   } catch {
     return null;
   }
 }
 
-export async function loadAppPackage() {
+export async function loadAppPackage(): Promise<Record<string, unknown>> {
   const raw = await fs.readFile(appPkgPath, 'utf8');
-  return JSON.parse(raw);
+  const parsed: unknown = JSON.parse(raw);
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('[generate-plugin-registry] app package.json is not an object');
+  }
+  return parsed as Record<string, unknown>;
 }
 
 export async function removeLegacyArtifacts(): Promise<void> {

@@ -19,9 +19,7 @@
   "include": [
     "src/**/*.ts",
     "src/**/*.d.ts",
-    "src*.d.ts",
-    "../../packages/plugin-registry/generated/**/*.ts",
-    "../../packages/plugin-registry/src/**/*.ts"
+    "src*.d.ts"
   ],
   "exclude": [
     "node_modules",

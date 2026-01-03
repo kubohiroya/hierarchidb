@@ -1,21 +1,17 @@
-import { pluginRegistry as canonicalRegistry } from '../../../plugin-registry/generated/registry.js';
-import { pluginWorkerLoaders as staticWorkerLoaders } from '../../../plugin-registry/generated/worker-loaders.js';
-import {
-  derivePluginModuleSources,
-  derivePluginModuleSpecifiers,
-} from '../../../plugin-registry/src/derivations.js';
-import type { PluginRegistryEntry } from '../../../plugin-registry/src/types.js';
+/**
+ * runtime-worker は plugin-registry には依存しない（turbo の依存グラフ循環を避けるため）。
+ * 実際の registry / loaders は UI 側が保持し、必要なら Comlink 越しに注入する。
+ */
+export type PluginRegistryEntry = {
+  nodeType: string;
+  manifest?: {
+    displayName?: string;
+    name?: string;
+  } | null;
+};
 
-export const pluginRegistry: PluginRegistryEntry[] = canonicalRegistry;
+export const pluginRegistry: PluginRegistryEntry[] = [];
 
-export const pluginWorkerModuleMap: Record<string, string> = derivePluginModuleSpecifiers(
-  pluginRegistry,
-  'worker'
-);
-
-export const pluginWorkerSourceMap: Record<string, string | undefined> = derivePluginModuleSources(
-  pluginRegistry,
-  'worker'
-);
-
-export const pluginWorkerLoaders: Record<string, () => Promise<unknown>> = staticWorkerLoaders;
+export const pluginWorkerModuleMap: Record<string, string> = {};
+export const pluginWorkerSourceMap: Record<string, string | undefined> = {};
+export const pluginWorkerLoaders: Record<string, () => Promise<unknown>> = {};

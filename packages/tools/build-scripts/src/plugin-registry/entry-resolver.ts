@@ -1,8 +1,8 @@
 import path from 'node:path';
 
-import type { ManifestSummary, PluginSpecifierMode } from './types.ts';
-import { repoRoot, registryOutputDir } from './paths.ts';
-import { fileExists } from './fs-utils.ts';
+import type { ManifestSummary, PluginSpecifierMode } from './types.js';
+import { repoRoot, registryOutputDir } from './paths.js';
+import { fileExists } from './fs-utils.js';
 
 export function hasExportPath(paths: string[], target: string): boolean {
   return paths.some((entry) =>
@@ -62,7 +62,6 @@ export function inferDistEntryForSpecifier(summary: ManifestSummary, specifier: 
 }
 
 export function resolveSpecifierExpression(
-  summary: ManifestSummary,
   fallbackSpecifier: string,
   distEntry: string | null | undefined,
   mode: PluginSpecifierMode,
@@ -74,8 +73,8 @@ export function resolveSpecifierExpression(
 }
 
 export function resolveTargetSpecifier(
-  summary: ManifestSummary,
   specifier: string,
+  summary: ManifestSummary,
   mode: PluginSpecifierMode,
 ): string {
   if (mode === 'dist-url') {

@@ -9,8 +9,8 @@ import type {
   TreeNode,
 } from '@hierarchidb/common-types';
 import type { CoreDB } from '../../CoreDB.js';
-import type { CommandEnvelope, CommandResult } from '../../command-types.js';
-import { WorkerErrorCode } from '../../command-types.js';
+import type { CommandEnvelope, CommandResult, WorkerErrorCode } from '../../command-types.js';
+import { WorkerErrorCode as WorkerErrorCodeValue } from '../../command-types.js';
 import { commitDraft, createNewName } from '../../DraftTreeNodeOperations.js';
 import type { CommandHistoryManager } from '../history/CommandHistoryManager.js';
 
@@ -54,7 +54,7 @@ export async function executeCoreCommand(
     case 'commitDraft':
       return handleCommitDraft(envelope, deps);
     case 'invalidCommand':
-      return deps.createErrorResult('Command not supported', WorkerErrorCode.INVALID_OPERATION);
+      return deps.createErrorResult('Command not supported', WorkerErrorCodeValue.INVALID_OPERATION);
     default:
       return null;
   }
@@ -98,7 +98,7 @@ async function handleCreateNode(
   } catch (error) {
     return deps.createErrorResult(
       error instanceof Error ? error.message : 'Create failed',
-      WorkerErrorCode.DATABASE_ERROR
+      WorkerErrorCodeValue.DATABASE_ERROR
     );
   }
 }
@@ -117,7 +117,7 @@ async function handleUpdateNode(
     };
     const node = await deps.coreDB.getNode?.(payload.nodeId);
     if (!node) {
-      return deps.createErrorResult('Node not found', WorkerErrorCode.INVALID_OPERATION);
+      return deps.createErrorResult('Node not found', WorkerErrorCodeValue.INVALID_OPERATION);
     }
 
     const meta =
@@ -133,7 +133,7 @@ async function handleUpdateNode(
       if (hasConflict) {
         return deps.createErrorResult(
           `Name conflict: '${meta.name}' already exists`,
-          WorkerErrorCode.NAME_NOT_UNIQUE
+          WorkerErrorCodeValue.NAME_NOT_UNIQUE
         );
       }
     }
@@ -159,7 +159,7 @@ async function handleUpdateNode(
   } catch (error) {
     return deps.createErrorResult(
       error instanceof Error ? error.message : 'Update failed',
-      WorkerErrorCode.DATABASE_ERROR
+      WorkerErrorCodeValue.DATABASE_ERROR
     );
   }
 }
@@ -227,7 +227,7 @@ async function handleMoveNodes(
   } catch (error) {
     return deps.createErrorResult(
       error instanceof Error ? error.message : 'Move failed',
-      WorkerErrorCode.DATABASE_ERROR
+      WorkerErrorCodeValue.DATABASE_ERROR
     );
   }
 }
@@ -359,7 +359,7 @@ async function handleMoveToTrash(
   } catch (error) {
     return deps.createErrorResult(
       error instanceof Error ? error.message : 'MoveToTrash failed',
-      WorkerErrorCode.DATABASE_ERROR
+      WorkerErrorCodeValue.DATABASE_ERROR
     );
   }
 }
@@ -425,7 +425,7 @@ async function handleRemove(
   } catch (error) {
     return deps.createErrorResult(
       error instanceof Error ? error.message : 'Remove failed',
-      WorkerErrorCode.DATABASE_ERROR
+      WorkerErrorCodeValue.DATABASE_ERROR
     );
   }
 }
@@ -481,7 +481,7 @@ async function handleRemoveSubtree(
   } catch (error) {
     return deps.createErrorResult(
       error instanceof Error ? error.message : 'RemoveSubtree failed',
-      WorkerErrorCode.DATABASE_ERROR
+      WorkerErrorCodeValue.DATABASE_ERROR
     );
   }
 }
@@ -545,7 +545,7 @@ async function handleRestoreFromTrash(
         const suggestedName = createNewName(Array.from(siblingNames), baseName);
         return deps.createErrorResult(
           `Name "${baseName}" already exists under the target parent`,
-          WorkerErrorCode.NAME_NOT_UNIQUE,
+          WorkerErrorCodeValue.NAME_NOT_UNIQUE,
           { status: 'NAME_CONFLICT', suggestedName }
         );
       }
@@ -593,7 +593,7 @@ async function handleRestoreFromTrash(
   } catch (error) {
     return deps.createErrorResult(
       error instanceof Error ? error.message : 'Recover failed',
-      WorkerErrorCode.DATABASE_ERROR
+      WorkerErrorCodeValue.DATABASE_ERROR
     );
   }
 }
@@ -611,7 +611,7 @@ async function handleCommitDraft(
 
     const wcNode = await deps.coreDB.nodes.get(payload.draftId);
     if (!wcNode) {
-      return deps.createErrorResult('Working copy not found', WorkerErrorCode.INVALID_OPERATION);
+      return deps.createErrorResult('Working copy not found', WorkerErrorCodeValue.INVALID_OPERATION);
     }
     const wcSnapshot: TreeNode = { ...wcNode };
     const result = await commitDraft(
@@ -644,7 +644,7 @@ async function handleCommitDraft(
     if (result.status === 'COMMIT_CONFLICT') {
       return deps.createErrorResult(
         `Commit conflict (original=${result.originalVersion}, wc=${result.wcVersion})`,
-        WorkerErrorCode.COMMIT_CONFLICT,
+        WorkerErrorCodeValue.COMMIT_CONFLICT,
         {
           status: 'COMMIT_CONFLICT',
           originalVersion: result.originalVersion,
@@ -655,7 +655,7 @@ async function handleCommitDraft(
 
     return deps.createErrorResult(
       `Name conflict. Suggested: ${result.suggestedName}`,
-      WorkerErrorCode.VALIDATION_ERROR,
+      WorkerErrorCodeValue.VALIDATION_ERROR,
       {
         status: 'NAME_CONFLICT',
         suggestedName: result.suggestedName,
@@ -664,7 +664,7 @@ async function handleCommitDraft(
   } catch (error) {
     return deps.createErrorResult(
       error instanceof Error ? error.message : 'Commit failed',
-      WorkerErrorCode.DATABASE_ERROR
+      WorkerErrorCodeValue.DATABASE_ERROR
     );
   }
 }

@@ -7,7 +7,7 @@ import type {
   StyleQueryAPI,
   StyleRecord,
 } from '@hierarchidb/plugin-service-api';
-import { StylerDB } from '@hierarchidb/styler-store';
+import type { StylerDB } from '@hierarchidb/styler-store';
 
 export class StyleService implements StyleQueryAPI, StyleMutationAPI {
   static async getSingleton(db: StylerDB): Promise<StyleService> {

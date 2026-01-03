@@ -452,8 +452,8 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
           let tileKey: string | null = null;
           let tileInputBuffer: ArrayBuffer | undefined;
           const compression = sampleInput.compression ?? false;
-          const inputFormat = sampleInput.inputFormat ?? 'geojson';
-          const inputCompression = sampleInput.inputCompression ?? 'none';
+          const inputFormat: 'geojson' | 'flatgeobuf' = sampleInput.buffer ? 'flatgeobuf' : 'geojson';
+          const inputCompression: 'none' | 'gzip' = compression ? 'gzip' : 'none';
           const format = (sampleInput.format ?? 'mvt') as 'mvt';
           const tileSizeConfig = sampleInput.tileSize ?? 256;
           const buffer = sampleInput.buffer;

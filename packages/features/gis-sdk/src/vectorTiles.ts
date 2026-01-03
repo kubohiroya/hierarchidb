@@ -1,3 +1,4 @@
+import type { Feature, FeatureCollection, Geometry, GeoJsonProperties } from 'geojson';
 import type { Tile } from 'geojson-vt';
 import area from '@turf/area';
 import type vtPbfNS = require('@maplibre/vt-pbf');
@@ -52,21 +53,11 @@ export type VectorTileProgress = {
   y: number;
 };
 
-export type FeatureCollectionLike = {
-  type: 'FeatureCollection';
-  features?: FeatureLike[];
-};
+export type FeatureCollectionLike = FeatureCollection<Geometry, GeoJsonProperties>;
 
-type FeatureGeometry = {
-  type?: string;
-  coordinates?: unknown;
-};
+type FeatureGeometry = Geometry | null;
 
-type FeatureLike = {
-  id?: string | number;
-  properties?: Record<string, unknown>;
-  geometry?: FeatureGeometry;
-};
+type FeatureLike = Feature<Geometry, GeoJsonProperties>;
 
 function buildUniqueFeatureId(
   feature: FeatureLike,
@@ -121,6 +112,15 @@ const extractGeometryStats = (geometry?: FeatureGeometry): {
   if (!geometry) {
     return { vertexCount: 0, polygonCount: 0, bbox: undefined, area: 0 };
   }
+  if (geometry.type === 'GeometryCollection') {
+    return {
+      vertexCount: 0,
+      polygonCount: 0,
+      bbox: undefined,
+      area: 0,
+    };
+  }
+
   const { type, coordinates } = geometry;
   if (type !== 'Polygon' && type !== 'MultiPolygon') {
     let fallbackArea = 0;
@@ -192,7 +192,8 @@ const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureColl
   if (!decoded || typeof decoded !== 'object') return null;
   const collection = decoded as FeatureCollectionLike;
   if (collection.type === 'FeatureCollection') {
-    return collection;
+    const features = Array.isArray(collection.features) ? collection.features : [];
+    return { ...collection, features };
   }
   if (typeof (decoded as AsyncIterable<unknown>)[Symbol.asyncIterator] === 'function') {
     const features: FeatureLike[] = [];
@@ -235,7 +236,7 @@ export const encodeFlatGeobufFromFeatureCollection = async (
   collection: FeatureCollectionLike,
 ): Promise<ArrayBuffer> => {
   const geojsonApi = await loadFlatGeobufGeojson();
-  const encoded = await geojsonApi.serialize(collection as unknown as FeatureCollectionLike);
+  const encoded = await geojsonApi.serialize(collection);
   return encoded.buffer.slice(encoded.byteOffset, encoded.byteOffset + encoded.byteLength);
 };
 

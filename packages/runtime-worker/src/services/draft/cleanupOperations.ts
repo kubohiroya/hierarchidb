@@ -1,6 +1,6 @@
 import { generateUUID } from '@hierarchidb/util';
 import type { DiscardDraftOptions } from '@hierarchidb/common-api';
-import type { NodeId, Timestamp } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { CommandEnvelope } from '../command-types.js';
 import type { CoreDB } from '../CoreDB.js';
 
@@ -54,7 +54,7 @@ export async function discardTreeNodeDraft(
     groupId: generateUUID(),
     kind: 'discardDraft',
     payload: { draftId: draftNodeId },
-    issuedAt: Date.now() as Timestamp,
+    issuedAt: Date.now(),
     type: 'discardDraft',
   };
   await lifecycle.handleCommand(envelope);

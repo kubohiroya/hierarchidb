@@ -1,4 +1,4 @@
-import type { DatabasePrewarmTarget, NormalizedDatabasePrewarmEntry } from './types.ts';
+import type { DatabasePrewarmTarget, NormalizedDatabasePrewarmEntry } from './types.js';
 
 export function deriveNodeType(pkgName: string): string | undefined {
   const match = pkgName.match(/@hierarchidb\/([a-z0-9-]+)-plugin$/);
@@ -134,21 +134,24 @@ export function filterValidDependencies(values: Array<string | null>): string[] 
   return values.filter((value): value is string => typeof value === 'string' && value.trim().length > 0);
 }
 
-export function sanitizeDependencies(pkgJson: any): string[] {
-  if (!pkgJson || typeof pkgJson !== 'object') return [];
-  const deps = pkgJson.dependencies ?? {};
-  const peerDeps = pkgJson.peerDependencies ?? {};
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+export function sanitizeDependencies(pkgJson: unknown): string[] {
+  if (!isRecord(pkgJson)) return [];
+  const deps = isRecord(pkgJson.dependencies) ? pkgJson.dependencies : {};
+  const peerDeps = isRecord(pkgJson.peerDependencies) ? pkgJson.peerDependencies : {};
   return filterValidDependencies([...Object.keys(deps), ...Object.keys(peerDeps)]);
 }
 
 export function sanitizeManifest(
-  manifest: any,
+  manifest: unknown,
   { packageDescription }: { packageDescription?: string } = {},
-) {
-  if (!manifest || typeof manifest !== 'object') return null;
-  const result: Record<string, any> = {};
+): Record<string, unknown> | null {
+  if (!isRecord(manifest)) return null;
+  const result: Record<string, unknown> = {};
 
-  const addString = (target: Record<string, any>, key: string, value: unknown) => {
+  const addString = (target: Record<string, unknown>, key: string, value: unknown) => {
     if (typeof value === 'string' && value.trim().length > 0) {
       target[key] = value.trim();
     }
@@ -174,19 +177,19 @@ export function sanitizeManifest(
     result.dependencies = manifest.dependencies.map(String);
   }
 
-  if (manifest.icon && typeof manifest.icon === 'object') {
-    const icon: Record<string, any> = {};
-    addString(icon, 'muiIconName', manifest.icon.muiIconName);
-    addString(icon, 'mui', manifest.icon.mui);
-    addString(icon, 'emoji', manifest.icon.emoji);
-    addString(icon, 'color', manifest.icon.color);
+  if (isRecord(manifest.icon)) {
+    const icon: Record<string, unknown> = {};
+    addString(icon, 'muiIconName', (manifest.icon as Record<string, unknown>).muiIconName);
+    addString(icon, 'mui', (manifest.icon as Record<string, unknown>).mui);
+    addString(icon, 'emoji', (manifest.icon as Record<string, unknown>).emoji);
+    addString(icon, 'color', (manifest.icon as Record<string, unknown>).color);
 
-    if (!icon.muiIconName && icon.mui) {
+    if (!icon.muiIconName && typeof icon.mui === 'string') {
       icon.muiIconName = icon.mui;
     }
 
-    const componentConfig = manifest.icon.component;
-    if (componentConfig && typeof componentConfig === 'object') {
+    const componentConfig = (manifest.icon as Record<string, unknown>).component;
+    if (isRecord(componentConfig)) {
       const specifier = typeof componentConfig.specifier === 'string'
         ? componentConfig.specifier.trim()
         : undefined;
@@ -211,8 +214,8 @@ export function sanitizeManifest(
 
   if (typeof manifest.category === 'string') {
     result.category = manifest.category;
-  } else if (manifest.category && typeof manifest.category === 'object') {
-    const category: Record<string, any> = {};
+  } else if (isRecord(manifest.category)) {
+    const category: Record<string, unknown> = {};
     addString(category, 'menuGroup', manifest.category.menuGroup);
     if (typeof manifest.category.createOrder === 'number' && Number.isFinite(manifest.category.createOrder)) {
       category.createOrder = manifest.category.createOrder;
@@ -223,13 +226,13 @@ export function sanitizeManifest(
     }
   }
 
-  if (manifest.schema && typeof manifest.schema === 'object') {
-    const schema: Record<string, any> = {};
+  if (isRecord(manifest.schema)) {
+    const schema: Record<string, unknown> = {};
     addString(schema, 'inherits', manifest.schema.inherits);
     if (Array.isArray(manifest.schema.fields)) {
       schema.fields = manifest.schema.fields
-        .filter((field: any) => field && typeof field === 'object')
-        .map((field: any) => ({
+        .filter((field) => isRecord(field))
+        .map((field) => ({
           name: String(field.name ?? ''),
           type: String(field.type ?? ''),
           required: Boolean(field.required ?? false),
@@ -240,12 +243,12 @@ export function sanitizeManifest(
     }
   }
 
-  if (manifest.worker && typeof manifest.worker === 'object') {
-    const worker: Record<string, any> = {};
+  if (isRecord(manifest.worker)) {
+    const worker: Record<string, unknown> = {};
     if (Array.isArray(manifest.worker.preload)) {
       const preload = manifest.worker.preload
         .map((value: unknown) => (typeof value === 'string' && value.trim().length > 0 ? value.trim() : null))
-        .filter((value: string | null): value is string => value !== null);
+        .filter((value): value is string => value !== null);
       if (preload.length > 0) {
         worker.preload = preload;
       }
@@ -255,14 +258,14 @@ export function sanitizeManifest(
     }
   }
 
-  if (manifest.database && typeof manifest.database === 'object') {
-    const database: Record<string, any> = {};
+  if (isRecord(manifest.database)) {
+    const database: Record<string, unknown> = {};
     addString(database, 'dbName', manifest.database.dbName);
     addString(database, 'tableName', manifest.database.tableName);
     if (typeof manifest.database.version === 'number' && Number.isFinite(manifest.database.version)) {
       database.version = manifest.database.version;
     }
-    if (manifest.database.schema && typeof manifest.database.schema === 'object') {
+    if (isRecord(manifest.database.schema)) {
       database.schema = manifest.database.schema;
     }
     const prewarmEntries = normalizeDatabasePrewarmValue(manifest.database.prewarm);

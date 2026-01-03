@@ -2,7 +2,6 @@ import type {
   CommandEnvelope,
   CommandResult,
   PasteNodesPayload,
-  Timestamp,
   TreeNode,
 } from '@hierarchidb/common-types';
 import { toNodeId, toNodeType } from '@hierarchidb/common-types';
@@ -54,7 +53,7 @@ describe('TreeMutationService bulk paths', () => {
       groupId: 'g1',
       kind: 'pasteNodes',
       payload,
-      issuedAt: Date.now() as Timestamp,
+      issuedAt: Date.now(),
     };
     const r = await svc.pasteNodes(env);
     expect(r.success).toBe(true);

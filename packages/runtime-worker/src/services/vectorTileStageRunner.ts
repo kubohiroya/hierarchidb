@@ -1,7 +1,6 @@
-import type { VectorTileWorkerAPI } from '../types.js';
-import type { VectorTileProgress } from '@hierarchidb/gis-sdk';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { VectorTileProgress, VectorTileWorkerAPI } from '../types.js';
 import { DexieChunkStore } from '@hierarchidb/chunk-store';
+import type { NodeId } from '@hierarchidb/common-types';
 
 export type VectorTileStageInput = {
   bufferId: string;
@@ -112,7 +111,7 @@ export async function runVectorTileStage(
   if (buffer) {
     const inputFormat = config.inputFormat ?? 'geojson';
     const inputCompression = config.inputCompression ?? 'none';
-    const nodeId = options.nodeId ?? config.targetNodeId ?? DEFAULT_NODE_ID;
+    const nodeId = options.nodeId ?? (config.targetNodeId as NodeId | undefined) ?? DEFAULT_NODE_ID;
     await writeVectorTileInput(
       bufferId,
       buffer,

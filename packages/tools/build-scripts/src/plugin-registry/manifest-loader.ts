@@ -1,10 +1,10 @@
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import { fileExists } from './fs-utils.ts';
-import { repoRoot } from './paths.ts';
+import { fileExists } from './fs-utils.js';
+import { repoRoot } from './paths.js';
 
-type PluginManifestLoader = (manifestPath: string) => Promise<any>;
+type PluginManifestLoader = (manifestPath: string) => Promise<unknown>;
 
 let loader: PluginManifestLoader | null = null;
 let resolved = false;
@@ -41,7 +41,7 @@ async function resolveLoader(): Promise<PluginManifestLoader | null> {
   return null;
 }
 
-export async function loadPluginManifestFromFile(manifestPath: string): Promise<any> {
+export async function loadPluginManifestFromFile(manifestPath: string): Promise<unknown> {
   const resolvedLoader = await resolveLoader();
   if (!resolvedLoader) {
     return undefined;

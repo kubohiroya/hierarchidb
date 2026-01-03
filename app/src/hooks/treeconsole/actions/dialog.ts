@@ -104,8 +104,8 @@ export const createDialogHelpers = (deps: TreeConsoleActionDeps) => {
     let mergedData: Record<string, unknown> = {};
     let nodeSnapshot: TreeNode | undefined;
     try {
-      const updaterAPI = await client.getTreeNodeUpdaterAPI();
-      nodeSnapshot = await updaterAPI.getTreeNode(nodeId);
+      const updaterAPI = await client?.getTreeNodeUpdaterAPI();
+      nodeSnapshot = await updaterAPI?.getTreeNode(nodeId);
       const baseData = isRecord(nodeSnapshot?.data) ? nodeSnapshot?.data : {};
       const draftData = isRecord(nodeSnapshot?.draftData) ? nodeSnapshot?.draftData : {};
       mergedData = { ...baseData, ...draftData };
