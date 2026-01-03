@@ -154,6 +154,8 @@ export interface LocationTileSettings {
   attributeAllowlist?: string[];
   tileFeatureLimit?: number;
   extent?: number;
+  inputFormat?: 'geojson' | 'flatgeobuf';
+  inputCompression?: 'gzip' | 'none';
 }
 
 export interface SessionSummary {

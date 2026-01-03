@@ -11,6 +11,7 @@ import { getLocationRuntimeWorkerClient } from './adapters/RuntimeWorkerClient.j
 import type { LocationPointInput, LocationTileSettings } from '../../common/types/batch-types.js';
 import type { Feature, Point } from 'geojson';
 import { runVectorTileStage } from '@hierarchidb/runtime-worker';
+import { encodeFlatGeobufFromFeatureCollection } from '@hierarchidb/gis-sdk';
 
 // Use _obsolate_common progress event type to decouple worker from UI
 export type ProgressInfo = ProgressEvent;
@@ -96,8 +97,11 @@ export class LocationSessionController {
       console.warn('[Location][Session] failed to clear existing vector tiles for session', error);
     }
     // 1) Prepare normalized GeoJSON input buffer for worker
-    const json = JSON.stringify(fc);
-    const bytes = new TextEncoder().encode(json).buffer;
+    const inputFormat = this.settings.inputFormat ?? 'geojson';
+    const inputCompression = this.settings.inputCompression ?? 'none';
+    const bytes = inputFormat === 'flatgeobuf'
+      ? await encodeFlatGeobufFromFeatureCollection(fc)
+      : new TextEncoder().encode(JSON.stringify(fc)).buffer;
     const fileId = this.nodeId; // worker uses this as nodeId
 
     // 2) Delegate tile generation to runtime-worker-worker
@@ -118,8 +122,12 @@ export class LocationSessionController {
         const result = await runVectorTileStage({
           bufferId: fileId,
           buffer: bytes,
-          contentType: 'application/json',
-          config: { format: 'mvt', compression: 'none' },
+          config: {
+            format: 'mvt',
+            compression: 'none',
+            inputFormat,
+            inputCompression,
+          },
         }, tileClient);
         list = result.tiles;
       });

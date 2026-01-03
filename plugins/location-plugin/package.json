@@ -86,6 +86,7 @@
     "@hierarchidb/ui-worker-client": "workspace:*",
     "@hierarchidb/ui-search-field": "workspace:*",
     "@hierarchidb/location-store": "workspace:*",
+    "@hierarchidb/gis-sdk": "workspace:*",
     "react-virtuoso": "^4.14.0"
   },
   "peerDependencies": {
@@ -121,6 +122,7 @@
     "@hierarchidb/ui-worker-client": "workspace:*",
     "@hierarchidb/ui-search-field": "workspace:*",
     "@hierarchidb/location-store": "workspace:*",
+    "@hierarchidb/gis-sdk": "workspace:*",
     "react-virtuoso": "^4.14.0",
     "notistack": "^3.0.2"
   },

@@ -20,7 +20,7 @@ import { parseOpenFlightsCsv, parseOurAirportsCsv, parseWorldPortIndexCsv } from
 import { appendLocationPoints, replaceLocationPoints } from './pointRepository.js';
 import type { RawNominatimResult, RawOverpassElement } from './download/rawTypes.js';
 import { getLocationDataSource } from '../common/datasources/LocationDataSourceDefinitions.js';
-import { getPluginDownloadService, notifyPluginAuthRequired, postJson } from '@hierarchidb/download';
+import { authFetch, FetchNetworkPort, getCorsProxyBaseURL, notifyPluginAuthRequired, postJson } from '@hierarchidb/download';
 
 const logLocationBatchWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -104,6 +104,7 @@ export class LocationBatchManager {
   private locationTasks: Map<NodeId, LocationBatchTask[]> = new Map();
   private progressCallbacks: Map<NodeId, (event: LocationBatchProgressEvent) => void> = new Map();
   private countryNameMap: Map<string, string> | null = null;
+  private net: FetchNetworkPort | null = null;
 
   private async persistLocationPoints(
     nodeId: NodeId,
@@ -567,12 +568,19 @@ export class LocationBatchManager {
     }
   }
 
-  private async getDownloadService() {
-    return getPluginDownloadService('location', { perHostConcurrency: 4 });
+  private getNetworkPort(): FetchNetworkPort {
+    if (this.net) return this.net;
+    const corsProxyBaseURL = getCorsProxyBaseURL() || undefined;
+    this.net = new FetchNetworkPort({
+      perHostConcurrency: 4,
+      corsProxyBaseURL,
+      authFetch: (url, init) => authFetch('location', url, init),
+    });
+    return this.net;
   }
 
   private async getJson(url: string, init?: RequestInit): Promise<unknown> {
-    const { net } = await this.getDownloadService();
+    const net = this.getNetworkPort();
     const res = await net.get(url, init);
     if (res.status === 401 || res.status === 403) {
       notifyPluginAuthRequired('location', { resource: url, provider: 'location', hint: 'Authentication required', status: res.status });
@@ -585,7 +593,7 @@ export class LocationBatchManager {
   }
 
   private async getText(url: string, init?: RequestInit): Promise<string> {
-    const { net } = await this.getDownloadService();
+    const net = this.getNetworkPort();
     const res = await net.get(url, init);
     if (res.status === 401 || res.status === 403) {
       notifyPluginAuthRequired('location', { resource: url, provider: 'location', hint: 'Authentication required', status: res.status });
