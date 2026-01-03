@@ -11,6 +11,7 @@ import {
   MAPLIBRE_PROPERTY_GROUPS,
   MAPLIBRE_PROPERTY_METADATA,
   type MapLibreStyleProperty,
+  type PropertyGroup,
 } from '@hierarchidb/styler-plugin';
 import { useIconRegistry } from '@hierarchidb/ui-icon';
 import Grid from '@mui/material/Grid';
@@ -216,13 +217,13 @@ export const StyleMappingTargetPanel = ({
             {t('styleSettings.targetProperty.label', 'Target style property')}
           </Typography>
           <Stack spacing={2}>
-            {MAPLIBRE_PROPERTY_GROUPS.map((group) => (
+            {MAPLIBRE_PROPERTY_GROUPS.map((group: PropertyGroup) => (
               <Box key={group.name}>
                 <Typography variant="overline" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                  {t(`styleSettings.targetProperty.groups.${group.name}`, group.displayName)}
+                  {String(t(`styleSettings.targetProperty.groups.${group.name}`, group.displayName))}
                 </Typography>
                 <Grid container spacing={2}>
-                  {group.properties.map((property) => {
+                  {group.properties.map((property: MapLibreStyleProperty) => {
                     const selected = selectedTargetProperty === property;
                     const card = TARGET_PROPERTY_CARDS[property];
                     const IconComponent = card?.icon ?? HelpOutlineIcon;
@@ -274,13 +275,14 @@ export const StyleMappingTargetPanel = ({
                             </Box>
                             <Box sx={{ minWidth: 0 }}>
                               <Typography variant="subtitle1" noWrap>
-                                {t(card?.labelKey ?? '', card?.defaultLabel ?? displayName)}
+                                {String(t(card?.labelKey ?? '', card?.defaultLabel ?? displayName))}
                               </Typography>
                               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                                {t(
-                                  card?.descriptionKey ?? '',
-                                  card?.defaultDescription ??
-                                    'Choose this property to map your data onto the style.',
+                                {String(
+                                  t(
+                                    card?.descriptionKey ?? '',
+                                    card?.defaultDescription ?? 'Choose this property to map your data onto the style.',
+                                  ),
                                 )}
                               </Typography>
                             </Box>

@@ -42,6 +42,20 @@
   - start: 2026-01-03 17:26 JST geoboundaries.json の iso2 空文字原因調査に着手。
   - done: 2026-01-03 17:28 JST 取得元URLと未加工保存の経路を特定し、空文字が元データ起因であることを整理。
 
+2032) feat/chunk-store/migrate-download (P1) — 進行中 (2026-01-03)
+- ブランチ名: feat/chunk-store/migrate-download
+- 依存: なし
+- ExecPlan: plans/chunk-store-migration-execplan.md
+- 受け入れ基準: @hierarchidb/chunk-store を新設し、Dexie DB/テーブルとシリアライザ/デシリアライザを注入できる設計になっている／@hierarchidb/chunk-store が簡素化した @hierarchidb/download を内部で利用する構成に移行できている／高レベルAPI側に混在していた責務がプラグイン側へ移譲されている／対象プラグインでシリアライザ/デシリアライザ注入の実装に置き換わっている／TASKS.md に運用ログ・影響範囲・ロールバック手順が記載されている
+- チェックリスト:
+  - ExecPlan を作成し、方針と検証手順を明文化する
+  - chunk-store パッケージの設計と API を定義する
+  - download から汎用 chunk store 責務を分離し、chunk-store 経由に整理する
+  - プラグイン側でシリアライザ/デシリアライザ注入の実装へ移行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-03 19:35 JST ExecPlan 作成に着手。
+
 2031) chore/analysis/geoboundaries-output-trace (P2) — 完了 (2026-01-03)
 - ブランチ名: chore/analysis/geoboundaries-output-trace
 - 依存: なし

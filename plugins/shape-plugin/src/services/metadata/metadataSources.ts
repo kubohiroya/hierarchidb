@@ -140,17 +140,22 @@ type GadmCountryEntry = {
 const parseGadmCountryEntries = (html: string): GadmCountryEntry[] => {
   const entries = new Map<string, GadmCountryEntry>();
   const linkRegex = /<a\s+[^>]*href="([^"]*maps\/([A-Za-z]{3})\.html[^"]*)"[^>]*>(.*?)<\/a>/gi;
-  let match: RegExpExecArray | null;
-  while ((match = linkRegex.exec(html)) !== null) {
+
+  // Biome: avoid assignment inside expressions.
+  let match: RegExpExecArray | null = linkRegex.exec(html);
+  while (match !== null) {
     const href = match[1];
     const iso3 = match[2]?.toUpperCase();
     const rawName = match[3]?.replace(/<[^>]+>/g, '') ?? '';
-    if (!iso3) continue;
-    const name = normalizeWhitespace(decodeHtmlEntities(rawName)) || iso3;
-    const url = new URL(href, 'https://gadm.org/').toString();
-    if (!entries.has(iso3)) {
-      entries.set(iso3, { iso3, name, url });
+    if (iso3 && href) {
+      const name = normalizeWhitespace(decodeHtmlEntities(rawName)) || iso3;
+      const url = new URL(href, 'https://gadm.org/').toString();
+      if (!entries.has(iso3)) {
+        entries.set(iso3, { iso3, name, url });
+      }
     }
+
+    match = linkRegex.exec(html);
   }
   return Array.from(entries.values());
 };
@@ -177,7 +182,6 @@ const mapWithConcurrency = async <T, R>(
   const results: R[] = [];
   for (let i = 0; i < items.length; i += concurrency) {
     const chunk = items.slice(i, i + concurrency);
-    // eslint-disable-next-line no-await-in-loop
     const chunkResults = await Promise.all(chunk.map(mapper));
     results.push(...chunkResults);
   }
@@ -195,7 +199,7 @@ export async function fetchGadmMetadata(): Promise<CountryMetadata[]> {
     throw new Error('GADM maps page did not include country entries.');
   }
 
-  const results = await mapWithConcurrency(entries, 6, async (entry) => {
+  const results = await mapWithConcurrency<GadmCountryEntry, CountryMetadata | undefined>(entries, 6, async (entry) => {
     try {
       const countryHtml = await downloadText('shape', entry.url, `gadm:country:${entry.iso3}`, {
         cache: 'conditional',
@@ -204,15 +208,19 @@ export async function fetchGadmMetadata(): Promise<CountryMetadata[]> {
       const levels = parseGadmLevelsFromHtml(countryHtml);
       const iso2 = await normalizeCountryCodeFormat(entry.iso3, 'iso2');
       const normalizedIso2 = iso2.length === 2 ? iso2 : undefined;
+
+      // CountryMetadata.countryCode は ISO2 必須。
+      if (!normalizedIso2) return undefined;
+
       return {
-        countryCode: normalizedIso2 ?? entry.iso3,
+        countryCode: normalizedIso2,
         countryName: entry.name,
         continent: '',
         availableAdminLevels: levels,
         iso2: normalizedIso2,
         iso3: entry.iso3,
         dataQuality: determineDataQuality(levels),
-      };
+      } satisfies CountryMetadata;
     } catch (error) {
       console.warn('[MetadataLoader] failed to parse GADM levels', {
         iso3: entry.iso3,
@@ -221,19 +229,23 @@ export async function fetchGadmMetadata(): Promise<CountryMetadata[]> {
       });
       const iso2 = await normalizeCountryCodeFormat(entry.iso3, 'iso2');
       const normalizedIso2 = iso2.length === 2 ? iso2 : undefined;
+
+      if (!normalizedIso2) return undefined;
+
       return {
-        countryCode: normalizedIso2 ?? entry.iso3,
+        countryCode: normalizedIso2,
         countryName: entry.name,
         continent: '',
         availableAdminLevels: [],
         iso2: normalizedIso2,
         iso3: entry.iso3,
         dataQuality: 'low',
-      };
+      } satisfies CountryMetadata;
     }
   });
 
-  return results;
+  // 変換できなかった行は除外（型も揃える）
+  return results.filter((v): v is CountryMetadata => v != null);
 }
 
 export async function fetchNaturalEarthMetadata(): Promise<CountryMetadata[]> {

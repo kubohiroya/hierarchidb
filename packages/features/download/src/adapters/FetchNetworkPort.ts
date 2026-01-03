@@ -130,7 +130,7 @@ export class FetchNetworkPort implements NetworkPort {
       for (const [key, value] of extra) merged.set(key, value);
     } else */
     if (extra instanceof Headers) {
-      extra.forEach((value, key) => merged.set(key, value));
+      extra.forEach((value, key) => {merged.set(key, value)});
     } else {
       Object.entries(extra as Record<string, string | number | readonly string[]>).forEach(([key, value]) => {
         if (Array.isArray(value)) merged.set(key, value.join(', '));
@@ -163,9 +163,11 @@ class Semaphore {
 
   release(): void {
     if (this.queue.length > 0) {
-      const resolve = this.queue.shift()!;
-      resolve();
-    } else this.count = Math.min(this.count + 1, this.capacity);
+      const resolve = this.queue.shift();
+      resolve?.();
+      return;
+    }
+    this.count = Math.min(this.count + 1, this.capacity);
   }
 }
 
@@ -188,8 +190,8 @@ class TokenBucket {
       this.lastRefill = now;
       while (this.tokens > 0 && this.queue.length) {
         this.tokens--;
-        const r = this.queue.shift()!;
-        r();
+        const r = this.queue.shift();
+        r?.();
       }
     }
   }
