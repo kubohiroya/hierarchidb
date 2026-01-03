@@ -219,6 +219,7 @@
   - start: 2026-01-03 21:05 JST chunk-store の relation/cas 移設作業に着手。
   - done: 2026-01-03 21:38 JST relation + CAS 移設と nodeId 必須 API への移行を完了（検証は node_modules 不在で未実施）。
   - start: 2026-01-09 02:55 JST shape Step3/spreadsheet の URL 取得で実ノードIDを渡す対応に着手。
+  - done: 2026-01-09 03:12 JST shape Step3 の metadata 取得と spreadsheet URL ダウンロードで nodeId を伝播する修正を反映（検証は未実施）。
 
 2031) chore/analysis/geoboundaries-output-trace (P2) — 完了 (2026-01-03)
 - ブランチ名: chore/analysis/geoboundaries-output-trace
