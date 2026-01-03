@@ -1,5 +1,7 @@
 export {
+  encodeFlatGeobufFromFeatureCollection,
   generateVectorTilesFromFeatureCollection,
+  generateVectorTilesFromFgbBuffer,
   generateVectorTilesFromJsonBuffer,
   getVectorTile,
   listVectorTiles,

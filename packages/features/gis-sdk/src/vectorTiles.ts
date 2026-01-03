@@ -30,6 +30,7 @@ export type VectorTileGenerateConfig = {
   buffer?: number;
   minZoom?: number;
   maxZoom?: number;
+  inputFormat?: 'geojson' | 'flatgeobuf';
   metadataEnabled?: boolean;
   metadataReplace?: boolean;
   metadataContext?: VectorTileMetadataContext;
@@ -213,6 +214,31 @@ const decodeFeatureCollectionFromJsonBuffer = async (buffer: ArrayBuffer): Promi
   }
 };
 
+const loadFlatGeobufGeojson = async () => {
+  const mod = await import('flatgeobuf');
+  return mod.geojson;
+};
+
+const decodeFeatureCollectionFromFlatGeobufBuffer = async (
+  buffer: ArrayBuffer,
+): Promise<FeatureCollectionLike | null> => {
+  try {
+    const geojsonApi = await loadFlatGeobufGeojson();
+    const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
+    return await normalizeFeatureCollection(decoded);
+  } catch {
+    return null;
+  }
+};
+
+export const encodeFlatGeobufFromFeatureCollection = async (
+  collection: FeatureCollectionLike,
+): Promise<ArrayBuffer> => {
+  const geojsonApi = await loadFlatGeobufGeojson();
+  const encoded = await geojsonApi.serialize(collection as unknown as FeatureCollectionLike);
+  return encoded.buffer.slice(encoded.byteOffset, encoded.byteOffset + encoded.byteLength);
+};
+
 
 const loadGeojsonVt = async (): Promise<GeojsonVtModule> => {
   const mod = await import('geojson-vt');
@@ -234,6 +260,19 @@ export const generateVectorTilesFromJsonBuffer = async (
 ): Promise<VectorTileGenerateResult> => {
   throwIfAborted(config.signal);
   const geojson = await decodeFeatureCollectionFromJsonBuffer(buffer);
+  throwIfAborted(config.signal);
+  if (!geojson) return { tilesGenerated: 0, totalBytes: 0 };
+  return generateVectorTilesFromFeatureCollection(nodeId, geojson, config, onProgress);
+};
+
+export const generateVectorTilesFromFgbBuffer = async (
+  nodeId: string,
+  buffer: ArrayBuffer,
+  config: VectorTileGenerateConfig,
+  onProgress?: (progress: VectorTileProgress) => void,
+): Promise<VectorTileGenerateResult> => {
+  throwIfAborted(config.signal);
+  const geojson = await decodeFeatureCollectionFromFlatGeobufBuffer(buffer);
   throwIfAborted(config.signal);
   if (!geojson) return { tilesGenerated: 0, totalBytes: 0 };
   return generateVectorTilesFromFeatureCollection(nodeId, geojson, config, onProgress);
