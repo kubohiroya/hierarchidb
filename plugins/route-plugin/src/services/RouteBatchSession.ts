@@ -6,6 +6,7 @@ import type { NodeId } from '@hierarchidb/common-types';
 import type { RouteBatchConfig } from '../common/types/BatchConfig.js';
 import type { Feature, LineString } from 'geojson';
 import { createStageWorkerClient, runVectorTileStage } from '@hierarchidb/runtime-worker';
+import { encodeFlatGeobufFromFeatureCollection } from '@hierarchidb/gis-sdk';
 import { RouteDB } from './database/RouteDatabase.js';
 import type { RouteVectorTileRecord } from '@hierarchidb/route-store';
 
@@ -192,13 +193,23 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
       type: 'FeatureCollection',
       features: this.vectorTileFeatures,
     } as const;
-    const bytes = new TextEncoder().encode(JSON.stringify(featureCollection)).buffer;
     const vectorTiles = (this.config as RouteBatchConfig & {
-      vectorTiles?: { minZoom?: number; maxZoom?: number; buffer?: number };
+      vectorTiles?: {
+        minZoom?: number;
+        maxZoom?: number;
+        buffer?: number;
+        inputFormat?: 'geojson' | 'flatgeobuf';
+        inputCompression?: 'gzip' | 'none';
+      };
     }).vectorTiles;
     const minZoom = vectorTiles?.minZoom ?? 4;
     const maxZoom = vectorTiles?.maxZoom ?? 12;
     const buffer = vectorTiles?.buffer ?? 8;
+    const inputFormat = vectorTiles?.inputFormat ?? 'geojson';
+    const inputCompression = vectorTiles?.inputCompression ?? 'none';
+    const bytes = inputFormat === 'flatgeobuf'
+      ? await encodeFlatGeobufFromFeatureCollection(featureCollection)
+      : new TextEncoder().encode(JSON.stringify(featureCollection)).buffer;
     const client = await createStageWorkerClient();
     try {
       const vectorTileClient = client.vectortile;
@@ -215,6 +226,8 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
           minZoom,
           maxZoom,
           buffer,
+          inputFormat,
+          inputCompression,
         },
       }, vectorTileClient);
 

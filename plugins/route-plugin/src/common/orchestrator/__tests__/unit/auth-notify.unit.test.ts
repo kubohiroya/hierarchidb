@@ -1,16 +1,14 @@
 import { describe, it, expect, vi } from 'vitest';
 import { RouteSourceOrchestrator } from '../RouteSourceOrchestrator.js';
-import * as download from '@hierarchidb/download';
+import { FetchNetworkPort, registerPluginAuthNotifier } from '@hierarchidb/download';
 import type { RouteBatchSpec } from '../types.js';
-import type { DownloadServiceBundle, FetchNetworkPort } from '@hierarchidb/download';
 
 describe('RouteSourceOrchestrator auth notifier', () => {
   it('notifies on auth error during preview download', async () => {
     const spy = vi.fn();
-    download.registerPluginAuthNotifier('route', spy);
+    registerPluginAuthNotifier('route', spy);
 
-    const fakeSvc = createDownloadServiceStub({ ok: false, status: 401 });
-    const svcMock = vi.spyOn(download, 'getPluginDownloadService').mockResolvedValue(fakeSvc);
+    const getMock = vi.spyOn(FetchNetworkPort.prototype, 'get').mockResolvedValue(createResponse({ ok: false, status: 401 }));
 
     const orch = new RouteSourceOrchestrator();
     const spec: RouteBatchSpec = { sources: [{ type: 'csv', url: 'https://example.com/protected.csv' }], defaults: {} };
@@ -20,41 +18,9 @@ describe('RouteSourceOrchestrator auth notifier', () => {
     const [[firstCall]] = spy.mock.calls as [[{ resource?: string }]];
     expect(firstCall?.resource).toContain('protected.csv');
 
-    svcMock.mockRestore();
+    getMock.mockRestore();
   });
 });
-
-function createDownloadServiceStub(response: { ok: boolean; status: number }): DownloadServiceBundle {
-  const net = {
-    async head() {
-      return createResponse(response);
-    },
-    async get() {
-      return createResponse(response);
-    },
-    async getRange() {
-      return createResponse(response);
-    },
-  } as unknown as FetchNetworkPort;
-
-  return {
-    service: {
-      download: async () => {
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return { fileId: 'stub', sizeBytes: 0 };
-      },
-    } as unknown as DownloadServiceBundle['service'],
-    readAll: async () => new ArrayBuffer(0),
-    store: {
-      async putChunk() {},
-      async commit() {},
-      async getResumeInfo() {
-        return undefined;
-      },
-    },
-    net,
-  };
-}
 
 function createResponse(response: { ok: boolean; status: number }) {
   return {

@@ -1,10 +1,11 @@
 import type { DataSourceSpec, DataSourceStrategy, OdPair, ParseTask, RouteBatchSpec, StrategyContext, TaskPlan } from './types.js';
-import { getPluginDownloadService, notifyPluginAuthRequired } from '@hierarchidb/download';
+import { authFetch, FetchNetworkPort, getCorsProxyBaseURL, notifyPluginAuthRequired } from '@hierarchidb/download';
 import { TabularStrategy } from './strategies/TabularStrategy.js';
 import { GeoJsonStrategy } from './strategies/GeoJsonStrategy.js';
 
 export class RouteSourceOrchestrator {
   private readonly strategies: DataSourceStrategy[] = [new TabularStrategy(), new GeoJsonStrategy()];
+  private net: FetchNetworkPort | null = null;
 
   constructor() {}
 
@@ -24,12 +25,18 @@ export class RouteSourceOrchestrator {
   async preview(spec: RouteBatchSpec): Promise<{ odPairs: OdPair[]; plan: TaskPlan }> {
     const plan = await this.plan(spec);
     const blobs = new Map<string, Blob>();
-    const { service, readAll } = await getPluginDownloadService('route', { perHostConcurrency: 4 });
+    const net = this.getNetworkPort();
     for (const f of plan.fetch) {
       try {
-        const fileId = `route-src:${crypto.randomUUID()}`;
-        await service.download(f.url, fileId);
-        const full = await readAll(fileId);
+        const response = await net.get(f.url);
+        if (response.status === 401 || response.status === 403) {
+          notifyPluginAuthRequired('route', { resource: f.url, provider: 'datasource', hint: 'Authentication required' });
+          throw new Error(`Auth required: ${response.status}`);
+        }
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const full = await response.arrayBuffer();
         blobs.set(f.url, new Blob([full]));
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -65,5 +72,16 @@ export class RouteSourceOrchestrator {
     const strategy = this.strategies.find((candidate) => candidate.supports(stub));
     if (!strategy) throw new Error(`No parse strategy for ${source}`);
     return strategy;
+  }
+
+  private getNetworkPort(): FetchNetworkPort {
+    if (this.net) return this.net;
+    const corsProxyBaseURL = getCorsProxyBaseURL() || undefined;
+    this.net = new FetchNetworkPort({
+      perHostConcurrency: 4,
+      corsProxyBaseURL,
+      authFetch: (url, init) => authFetch('route', url, init),
+    });
+    return this.net;
   }
 }

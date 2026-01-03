@@ -1,9 +1,10 @@
 import { BatchService } from '@hierarchidb/batch';
-import { DexieChunkStoragePort } from '@hierarchidb/download';
 import type { NodeId } from '@hierarchidb/common-types';
 import { digestSha256Hex } from '@hierarchidb/util';
 import { TabularWriter } from '@hierarchidb/tabular-store';
 import { getRouteRuntimeWorkerClient } from './batch/adapters/RuntimeWorkerClient.js';
+import { encodeFlatGeobufFromFeatureCollection } from '@hierarchidb/gis-sdk';
+import { writeVectorTileInput } from '@hierarchidb/runtime-worker';
 import {
   clearExpiredVectorTiles,
   clearVectorTilesForSession,
@@ -16,6 +17,8 @@ export interface RouteTileSettings {
   minZoom: number;
   maxZoom: number;
   tileWorkers?: number;
+  inputFormat?: 'geojson' | 'flatgeobuf';
+  inputCompression?: 'gzip' | 'none';
 }
 
 export interface RouteVectorTileSummary {
@@ -71,11 +74,17 @@ export class RouteVectorTileService {
       console.warn('[RouteVectorTileService] failed to clear previous vector tiles', error);
     }
     const fc = toFeatureCollection(lines);
-    const storage = new DexieChunkStoragePort('hidb-chunks');
-    const text = JSON.stringify(fc);
-    const bytes = new TextEncoder().encode(text).buffer;
-    await storage.putChunk(sessionId, 0, bytes);
-    await storage.commit(sessionId, { sizeBytes: bytes.byteLength, contentType: 'application/json' });
+    const inputFormat = settings.inputFormat ?? 'geojson';
+    const inputCompression = settings.inputCompression ?? 'none';
+    const bytes = inputFormat === 'flatgeobuf'
+      ? await encodeFlatGeobufFromFeatureCollection(fc)
+      : new TextEncoder().encode(JSON.stringify(fc)).buffer;
+    await writeVectorTileInput(sessionId, bytes, {
+      inputFormat,
+      inputCompression,
+      chunkStoreName: 'hidb-chunks',
+      nodeId,
+    });
 
     const client = await getRouteRuntimeWorkerClient();
     const vectorTileClient = client?.vectortile;
@@ -87,6 +96,8 @@ export class RouteVectorTileService {
       compression: 'none',
       minZoom: settings.minZoom,
       maxZoom: settings.maxZoom,
+      inputFormat,
+      inputCompression,
     });
     const tiles = await vectorTileClient.listTiles(sessionId);
     const laneConcurrency = clamp(settings.tileWorkers ?? tiles.length, MIN_LANE_CONCURRENCY, MAX_LANE_CONCURRENCY);

@@ -80,6 +80,8 @@ export interface RouteProcessingConfig {
     minZoom: number;
     maxZoom: number;
     buffer: number;
+    inputFormat?: 'geojson' | 'flatgeobuf';
+    inputCompression?: 'gzip' | 'none';
   };
 }
 
