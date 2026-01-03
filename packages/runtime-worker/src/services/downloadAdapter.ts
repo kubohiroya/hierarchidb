@@ -1,5 +1,6 @@
 import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
-import { DexieChunkStoragePort, DownloadService, FetchNetworkPort } from '@hierarchidb/download';
+import { DexieChunkStore } from '@hierarchidb/chunk-store';
+import { DownloadService, FetchNetworkPort } from '@hierarchidb/download';
 
 export interface SharedDownloadOptions {
   dbPrefix?: string;
@@ -22,7 +23,11 @@ export async function createSharedDownloadService(
     perHostConcurrency: opts?.perHostConcurrency ?? 4,
     authFetch: (url, init) => auth.fetchWithAuth(url, init, { pluginType: 'generic' }),
   });
-  const storage = new DexieChunkStoragePort(`${opts?.dbPrefix || 'hidb'}-chunks`);
+  const storage = new DexieChunkStore<ArrayBuffer>({
+    dbName: `${opts?.dbPrefix || 'hidb'}-chunks`,
+    serializer: (value) => value,
+    deserializer: (buffer) => buffer,
+  });
   const integrity = new (class {
     async compute(buffer: ArrayBuffer, algo: 'sha256' = 'sha256'): Promise<string> {
       const digest = await crypto.subtle.digest(algo.toUpperCase(), buffer);
@@ -30,9 +35,6 @@ export async function createSharedDownloadService(
     }
   })();
   const service = new DownloadService(net, storage, integrity);
-  if (!storage.readAll) {
-    throw new Error('DexieChunkStoragePort.readAll is not available');
-  }
   const readAll = storage.readAll.bind(storage) as (fileId: string) => Promise<ArrayBuffer>;
   return { service, net, readAll };
 }

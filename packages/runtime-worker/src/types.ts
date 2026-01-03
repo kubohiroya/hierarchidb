@@ -103,6 +103,8 @@ export interface VectorTileWorkerAPI {
       buffer?: number;
       minZoom?: number;
       maxZoom?: number;
+      inputFormat?: 'geojson' | 'flatgeobuf';
+      inputCompression?: 'gzip' | 'none';
       metadataEnabled?: boolean;
       metadataReplace?: boolean;
       metadataContext?: {

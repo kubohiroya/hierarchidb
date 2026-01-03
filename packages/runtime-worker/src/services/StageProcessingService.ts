@@ -1,6 +1,7 @@
 import type { DownloadWorkerAPI, ExtractWorkerAPI, VectorTileProgress, VectorTileWorkerAPI } from '../types.js';
 import { getDBName } from '@hierarchidb/util';
 import {
+  generateVectorTilesFromFgbBuffer,
   generateVectorTilesFromJsonBuffer,
   getVectorTile,
   listVectorTiles,
@@ -88,6 +89,21 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
     return row?.data ?? null;
   }
 
+  private async decodeInputBuffer(
+    buffer: ArrayBuffer,
+    inputCompression?: 'gzip' | 'none',
+  ): Promise<ArrayBuffer> {
+    if (inputCompression !== 'gzip') return buffer;
+    if (typeof DecompressionStream !== 'function') {
+      throw new Error('DecompressionStream is not available for gzip input compression');
+    }
+    const stream = new DecompressionStream('gzip');
+    const writer = stream.writable.getWriter();
+    await writer.write(new Uint8Array(buffer));
+    await writer.close();
+    return new Response(stream.readable).arrayBuffer();
+  }
+
   async generateTiles(
     inputBufferId: string,
     config: {
@@ -97,6 +113,8 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
       buffer?: number;
       minZoom?: number;
       maxZoom?: number;
+      inputFormat?: 'geojson' | 'flatgeobuf';
+      inputCompression?: 'gzip' | 'none';
       metadataEnabled?: boolean;
       metadataReplace?: boolean;
       metadataContext?: {
@@ -118,6 +136,7 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
     try {
       const buf = await this.readBuffer(inputBufferId);
       if (!buf) return { tilesGenerated: 0, totalBytes: 0 };
+      const inputBuffer = await this.decodeInputBuffer(buf, config.inputCompression);
       const nodeId = config.targetNodeId
         ?? (inputBufferId.includes('-extract2-')
           ? inputBufferId.substring(0, inputBufferId.lastIndexOf('-extract2-'))
@@ -131,7 +150,11 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
         metadataContext: config.metadataContext,
         signal: controller?.signal,
       };
-      return generateVectorTilesFromJsonBuffer(nodeId, buf, sdkConfig, onProgress);
+      const inputFormat = config.inputFormat ?? 'geojson';
+      if (inputFormat === 'flatgeobuf') {
+        return generateVectorTilesFromFgbBuffer(nodeId, inputBuffer, sdkConfig, onProgress);
+      }
+      return generateVectorTilesFromJsonBuffer(nodeId, inputBuffer, sdkConfig, onProgress);
     } finally {
       if (abortKey) {
         this.abortControllers.delete(abortKey);

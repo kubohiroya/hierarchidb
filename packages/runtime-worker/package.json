@@ -51,6 +51,7 @@
   },
   "peerDependencies": {
     "@hierarchidb/auth-recovery": "workspace:*",
+    "@hierarchidb/chunk-store": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/compute": "workspace:*",
@@ -78,6 +79,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.2.0",
     "@hierarchidb/auth-recovery": "workspace:*",
+    "@hierarchidb/chunk-store": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/compute": "workspace:*",

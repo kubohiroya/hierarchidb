@@ -1,6 +1,7 @@
 import { SingletonMixin } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
-import { getPluginDownloadService } from '@hierarchidb/download';
+import { DexieChunkStore } from '@hierarchidb/chunk-store';
+import { authFetch, FetchNetworkPort, getCorsProxyBaseURL } from '@hierarchidb/download';
 import {
   IDE_GSM_BULK_CHUNK_SIZE,
   type IdeGsmImportCallback,
@@ -66,11 +67,13 @@ export class RouteMutationService implements RouteMutationAPI {
         throw new Error('No related location nodes found.');
       }
 
-      const { service, readAll } = await getPluginDownloadService('route', { perHostConcurrency: 4 });
-      const fileId = `route-ide-gsm:${crypto.randomUUID()}`;
-      await service.download(request.sourceUrl, fileId);
-      const buffer = await readAll(fileId);
-      const csvText = new TextDecoder().decode(buffer);
+      const store = createRouteTextStore();
+      const cacheKey = buildCacheKey('route-ide-gsm', request.sourceUrl);
+      const entry = await store.getOrFetchForNode(request.nodeId, request.sourceUrl, {
+        accept: 'text/csv',
+        cacheKey,
+      });
+      const csvText = entry.value;
 
       const locationIndex = await buildIdeGsmLocationIndex(this.locationQueryService, request.locationNodeIds);
       const { lineStrings, errors } = parseIdeGsmCsv(csvText, locationIndex, request.nodeId);
@@ -182,3 +185,33 @@ function resolveIdeGsmMethod(routeMode?: string): 'great_circle' | 'searoute' | 
   if (routeMode === 'waterway') return 'searoute';
   return null;
 }
+
+const textEncoder = new TextEncoder();
+const textDecoder = new TextDecoder();
+
+const buildCacheKey = (prefix: string, url: string): string => (
+  `${prefix}:${hashString(url)}`
+);
+
+const hashString = (input: string): string => {
+  let hash = 0;
+  for (let i = 0; i < input.length; i += 1) {
+    hash = (hash * 31 + input.charCodeAt(i)) >>> 0;
+  }
+  return hash.toString(16);
+};
+
+const createRouteTextStore = (): DexieChunkStore<string> => {
+  const corsProxyBaseURL = getCorsProxyBaseURL() || undefined;
+  const net = new FetchNetworkPort({
+    perHostConcurrency: 4,
+    corsProxyBaseURL,
+    authFetch: (url, init) => authFetch('route', url, init),
+  });
+  return new DexieChunkStore<string>({
+    dbName: 'hidb-chunks',
+    serializer: (value) => textEncoder.encode(value).buffer,
+    deserializer: (buffer) => textDecoder.decode(new Uint8Array(buffer)),
+    networkPort: net,
+  });
+};
