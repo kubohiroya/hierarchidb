@@ -69,6 +69,15 @@ export type RunVectorTileStageOrchestratorParams<
 
   progressCallback?: (progress: TProgress) => void;
 
+  /**
+   * Orchestrator が内部で生成した ProgressInfo を、呼び出し側の Progress 型（TProgress）へ変換する。
+   *
+   * - adapter が返す progress はすでに TProgress のため不要だが、
+   *   runnableTasks=0 のように orchestrator が progress を合成する場合に必要。
+   * - 未指定の場合は ProgressInfo をそのまま TProgress として扱う（構造互換が前提）。
+   */
+  progressFactory?: (progress: ProgressInfo) => TProgress;
+
   postprocess: VectorTileStagePostprocessPort;
 
   afterRun: (summary: VectorTileStageSummary) => Promise<void>;

@@ -533,6 +533,10 @@ export class SessionController {
          })
        : undefined;
 
+    const progressFactory = progressCallback
+      ? ((p: import('@hierarchidb/vectortile-orchestrator').ProgressInfo) => p)
+      : undefined;
+
     let stageSummary: { total: number; completed: number; failed: number; skipped: number } | undefined;
     await runVectorTileStageOrchestrator({
       nodeId: this.nodeId,
@@ -546,6 +550,7 @@ export class SessionController {
       getSignal: controls.getSignal,
       requestPause: controls.requestPause,
       progressCallback,
+      progressFactory,
       postprocess: buildVectorTileStagePostprocessPort({
         enabled: metadataEnabled,
         nodeId: this.nodeId,

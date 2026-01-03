@@ -37,6 +37,7 @@ describe('vectortile orchestrator (stage-agnostic contract)', () => {
       maxConcurrent: 2,
       // Plan A: controls omitted
       progressCallback,
+      progressFactory: (p) => p,
       postprocess,
       afterRun,
     });
