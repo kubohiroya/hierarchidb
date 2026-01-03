@@ -60,6 +60,7 @@
   "peerDependencies": {
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/batch-runtime-services": "workspace:*",
+    "@hierarchidb/chunk-store": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-auth": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
@@ -119,6 +120,7 @@
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/batch-runtime-services": "workspace:*",
+    "@hierarchidb/chunk-store": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-auth": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",

@@ -24,7 +24,8 @@ Shape バッチ機能の新アーキテクチャ概要と利用メモ。
 ---------------
 - download → extract1 → extract2 → vectorTiles の段階実行。
 - 構成要素（feature への依存）
-  - download: `@hierarchidb/download`（DownloadService, FetchNetworkPort, DexieChunkStoragePort）
+  - download: `@hierarchidb/download`（DownloadService, FetchNetworkPort）
+  - chunk-store: `@hierarchidb/chunk-store`（DexieChunkStore）
   - auth: `@hierarchidb/auth-recovery`（401復帰, fetchWithAuth, setToken）
   - compute: `@hierarchidb/compute`（タスク実行）
   - batch: `@hierarchidb/batch`（段階並列・進捗）

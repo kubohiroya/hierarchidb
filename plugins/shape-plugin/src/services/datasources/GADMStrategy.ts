@@ -6,15 +6,15 @@
 import { BaseDataSourceStrategy, type DataSourceConfig, type FetchOptions, type ProcessOptions } from './DataSourceStrategy.js';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { ShapeEntity } from '../../common/types/index.js';
-import { configurePluginDownloadDefaults, downloadArrayBuffer, getCorsProxyBaseURL } from '@hierarchidb/download';
-
-const ensureShapeDownloadDefaults = (): void => {
-  const corsProxyBaseURL = getCorsProxyBaseURL() || undefined;
-  configurePluginDownloadDefaults('shape', {
-    dbPrefix: 'shape',
-    corsProxyBaseURL,
-  });
-};
+import {
+  buildShapeCacheKey,
+  bufferDeserializer,
+  bufferSerializer,
+  createShapeChunkStore,
+  getOrFetchWithRetry,
+  SHARED_SHAPE_NODE_ID,
+  type RetryConfig,
+} from '../utils/chunkStore.js';
 
 //  GADM
 export interface GADMRawData {
@@ -138,15 +138,20 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
 
       console.log(`[GADM] Downloading ${format.toUpperCase()} for ${normalizedCountry} level ${level}: ${downloadUrl}`);
 
-      const retries = this.config.access.retries ?? { count: 1, delay: 0, backoff: 'exponential' };
-      ensureShapeDownloadDefaults();
-      const zipBuffer = await downloadArrayBuffer(
-        'shape',
+      const retries = this.config.access.retries ?? { count: 1, delay: 0, backoff: 'exponential' } satisfies RetryConfig;
+      const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
+      const entry = await getOrFetchWithRetry(
+        store,
+        SHARED_SHAPE_NODE_ID,
         downloadUrl,
-        `gadm:${normalizedCountry}:${format}`,
-        { retries: retries.count, delayMs: retries.delay, backoff: retries.backoff },
-        signal,
+        {
+          accept: 'application/zip',
+          cacheKey: buildShapeCacheKey(`gadm:${normalizedCountry}:${format}`, downloadUrl),
+          signal,
+        },
+        retries,
       );
+      const zipBuffer = entry.value;
 
       if (format === 'gpkg') {
         const geopackage = await this.extractGeoPackageFromZip(zipBuffer);

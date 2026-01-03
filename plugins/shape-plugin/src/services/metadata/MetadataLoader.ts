@@ -9,7 +9,7 @@ import {
 
 /**
  * MetadataLoader service
- * Loads country metadata via @hierarchidb/download with source-specific parsing
+ * Loads country metadata via @hierarchidb/chunk-store with source-specific parsing
  */
 export class MetadataLoader {
   private static instance: MetadataLoader | null = null;

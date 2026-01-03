@@ -7,15 +7,17 @@ import { BaseDataSourceStrategy, type DataSourceConfig, type FetchOptions, type 
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { ShapeEntity } from '../../common/types/index.js';
 import type { NodeId } from '@hierarchidb/common-types';
-import { configurePluginDownloadDefaults, downloadArrayBuffer, downloadJson, getCorsProxyBaseURL } from '@hierarchidb/download';
-
-const ensureShapeDownloadDefaults = (): void => {
-  const corsProxyBaseURL = getCorsProxyBaseURL() || undefined;
-  configurePluginDownloadDefaults('shape', {
-    dbPrefix: 'shape',
-    corsProxyBaseURL,
-  });
-};
+import {
+  buildShapeCacheKey,
+  bufferDeserializer,
+  bufferSerializer,
+  createShapeChunkStore,
+  getOrFetchWithRetry,
+  jsonDeserializer,
+  jsonSerializer,
+  SHARED_SHAPE_NODE_ID,
+  type RetryConfig,
+} from '../utils/chunkStore.js';
 
 type GeoBoundariesProperties = Record<string, unknown>;
 type GeoBoundariesGeoJSON = FeatureCollection<Geometry, GeoBoundariesProperties>;
@@ -139,15 +141,20 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
       console.log(`[GeoBoundaries] URL: ${downloadUrl}`);
 
       //  GeoJSON
-      const retries = this.config.access.retries ?? { count: 1, delay: 0, backoff: 'exponential' };
-      ensureShapeDownloadDefaults();
-      const buffer = await downloadArrayBuffer(
-        'shape',
+      const retries = this.config.access.retries ?? { count: 1, delay: 0, backoff: 'exponential' } satisfies RetryConfig;
+      const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
+      const bufferEntry = await getOrFetchWithRetry(
+        store,
+        SHARED_SHAPE_NODE_ID,
         downloadUrl,
-        `geoboundaries:${normalizedCountry}:${normalizedAdminLevel}`,
-        { retries: retries.count, delayMs: retries.delay, backoff: retries.backoff },
-        signal,
+        {
+          accept: 'application/json',
+          cacheKey: buildShapeCacheKey(`geoboundaries:${normalizedCountry}:${normalizedAdminLevel}`, downloadUrl),
+          signal,
+        },
+        retries,
       );
+      const buffer = bufferEntry.value;
       console.log(`[GeoBoundaries] Download succeeded: ${downloadUrl}`);
       const geojson = JSON.parse(new TextDecoder('utf-8').decode(buffer)) as GeoBoundariesGeoJSON;
 
@@ -255,14 +262,13 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
     console.log(`[GeoBoundaries] Fetching metadata: ${url}`);
 
     try {
-      ensureShapeDownloadDefaults();
-      const data = await downloadJson<GeoBoundariesApiResponse>(
-        'shape',
-        url,
-        `geoboundaries:metadata:${country}:${adminLevel}`,
-        undefined,
+      const store = createShapeChunkStore(jsonSerializer, jsonDeserializer);
+      const entry = await store.getOrFetchForNode(SHARED_SHAPE_NODE_ID, url, {
+        accept: 'application/json',
+        cacheKey: buildShapeCacheKey(`geoboundaries:metadata:${country}:${adminLevel}`, url),
         signal,
-      );
+      });
+      const data = entry.value as GeoBoundariesApiResponse;
       data.releaseType = this.releaseType;
       return data;
     } catch (error) {
@@ -360,13 +366,13 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
 
   async getAvailableCountries(): Promise<string[]> {
     try {
-      ensureShapeDownloadDefaults();
-      const data = await downloadJson<Record<string, unknown>>(
-        'shape',
-        `${this.config.access.baseUrl}available/`,
-        'geoboundaries:available',
-        { cache: 'conditional' },
-      );
+      const store = createShapeChunkStore(jsonSerializer, jsonDeserializer);
+      const url = `${this.config.access.baseUrl}available/`;
+      const entry = await store.getOrFetchForNode(SHARED_SHAPE_NODE_ID, url, {
+        accept: 'application/json',
+        cacheKey: buildShapeCacheKey('geoboundaries:available', url),
+      });
+      const data = entry.value as Record<string, unknown>;
       return Object.keys(data);
     } catch (error) {
       console.warn('Failed to fetch available countries:', error);
@@ -377,13 +383,13 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
   async getAvailableAdminLevels(country: string): Promise<string[]> {
     try {
       const normalizedCountry = this.normalizeCountryCode(country);
-      ensureShapeDownloadDefaults();
-      const data = await downloadJson<Record<string, string[]>>(
-        'shape',
-        `${this.config.access.baseUrl}available/`,
-        'geoboundaries:available',
-        { cache: 'conditional' },
-      );
+      const store = createShapeChunkStore(jsonSerializer, jsonDeserializer);
+      const url = `${this.config.access.baseUrl}available/`;
+      const entry = await store.getOrFetchForNode(SHARED_SHAPE_NODE_ID, url, {
+        accept: 'application/json',
+        cacheKey: buildShapeCacheKey('geoboundaries:available', url),
+      });
+      const data = entry.value as Record<string, string[]>;
       return data[normalizedCountry] || [];
     } catch (error) {
       console.warn(`Failed to fetch available admin levels for ${country}:`, error);

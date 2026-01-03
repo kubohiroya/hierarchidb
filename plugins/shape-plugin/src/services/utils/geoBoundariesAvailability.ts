@@ -1,12 +1,10 @@
-import { configurePluginDownloadDefaults, downloadJson, getCorsProxyBaseURL } from '@hierarchidb/download';
-
-const ensureShapeDownloadDefaults = (): void => {
-  const corsProxyBaseURL = getCorsProxyBaseURL() || undefined;
-  configurePluginDownloadDefaults('shape', {
-    dbPrefix: 'shape',
-    corsProxyBaseURL,
-  });
-};
+import {
+  buildShapeCacheKey,
+  createShapeChunkStore,
+  jsonDeserializer,
+  jsonSerializer,
+  SHARED_SHAPE_NODE_ID,
+} from './chunkStore.js';
 
 const parseAdminLevel = (value: unknown): number | null => {
   if (typeof value === 'number' && Number.isInteger(value)) return value;
@@ -35,10 +33,12 @@ export type GeoBoundariesAvailability = {
 export async function fetchGeoBoundariesAvailability(
   url: string,
 ): Promise<GeoBoundariesAvailability> {
-  ensureShapeDownloadDefaults();
-  const availabilityPayload = await downloadJson<unknown>('shape', url, 'geoboundaries:availability', {
-    cache: 'conditional',
+  const store = createShapeChunkStore(jsonSerializer, jsonDeserializer);
+  const entry = await store.getOrFetchForNode(SHARED_SHAPE_NODE_ID, url, {
+    accept: 'application/json',
+    cacheKey: buildShapeCacheKey('geoboundaries:availability', url),
   });
+  const availabilityPayload = entry.value;
   const items = Array.isArray(availabilityPayload)
     ? availabilityPayload
     : Array.isArray((availabilityPayload as { data?: unknown }).data)

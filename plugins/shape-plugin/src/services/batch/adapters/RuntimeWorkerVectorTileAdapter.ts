@@ -9,7 +9,7 @@ import type { Feature } from 'geojson';
 import { BatchService } from '@hierarchidb/batch';
 import { createStageWorkerClient, getStageWorkerProxy, runVectorTileStage } from '@hierarchidb/runtime-worker';
 import { TilesDB } from '@hierarchidb/vectortile-store';
-import type { VectorTileProgress } from '@hierarchidb/gis-sdk';
+import { encodeFlatGeobufFromFeatureCollection, type VectorTileProgress } from '@hierarchidb/gis-sdk';
 import { assignFeatureIds, HDB_ORIGIN_KEY } from '../utils/featureIds.js';
 import { bbox as turfBbox } from '@turf/turf';
 
@@ -263,6 +263,37 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     return new TextEncoder().encode(text).buffer;
   }
 
+  private async buildFlatGeobufBuffer(inputBufferId: string): Promise<ArrayBuffer> {
+    const db = getEphemeralShapeDB();
+    const input = await db.extractedBuffers.get(inputBufferId)
+      ?? await db.rawBuffers.get(inputBufferId);
+    if (!input) {
+      throw new Error(`Vector tile input buffer not found: ${inputBufferId}`);
+    }
+    return input.data;
+  }
+
+  private async buildVectorTileInputBuffer(
+    inputBufferId: string,
+    inputFormat: 'geojson' | 'flatgeobuf',
+  ): Promise<ArrayBuffer> {
+    if (inputFormat === 'flatgeobuf') {
+      return this.buildFlatGeobufBuffer(inputBufferId);
+    }
+    return this.buildGeoJsonBuffer(inputBufferId);
+  }
+
+  private async encodeVectorTileFeatures(
+    features: Feature[],
+    inputFormat: 'geojson' | 'flatgeobuf',
+  ): Promise<ArrayBuffer> {
+    if (inputFormat === 'flatgeobuf') {
+      return encodeFlatGeobufFromFeatureCollection({ type: 'FeatureCollection', features });
+    }
+    const text = JSON.stringify({ type: 'FeatureCollection', features });
+    return new TextEncoder().encode(text).buffer;
+  }
+
   private async resolveInputByteLength(inputBufferId: string): Promise<number | null> {
     const db = getEphemeralShapeDB();
     const input = await db.extractedBuffers.get(inputBufferId)
@@ -420,6 +451,19 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
           let tileFeatureCount: number | null = null;
           let tileKey: string | null = null;
           let tileInputBuffer: ArrayBuffer | undefined;
+          const compression = sampleInput.compression ?? false;
+          const inputFormat = sampleInput.inputFormat ?? 'geojson';
+          const inputCompression = sampleInput.inputCompression ?? 'none';
+          const format = (sampleInput.format ?? 'mvt') as 'mvt';
+          const tileSizeConfig = sampleInput.tileSize ?? 256;
+          const buffer = sampleInput.buffer;
+          const minZoom = sampleInput.minZoom;
+          const maxZoom = sampleInput.maxZoom;
+          const metadataEnabled = Boolean(sampleInput.metadataEnabled);
+          const replace = metadataEnabled && metadataReplaceRef.value;
+          if (metadataEnabled && metadataReplaceRef.value) {
+            metadataReplaceRef.value = false;
+          }
           if (isTileTask) {
             const tileZ = sampleInput.tileZ;
             const tileX = sampleInput.tileX;
@@ -485,9 +529,9 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                 finished = true;
                 continue;
               }
-              let json: string;
+              let encodedBuffer: ArrayBuffer;
               try {
-                json = JSON.stringify({ type: 'FeatureCollection', features: tileFeatures });
+                encodedBuffer = await this.encodeVectorTileFeatures(tileFeatures, inputFormat);
               } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : 'Tile input serialization failed';
                 const detailMessage = `Vector tile input serialization failed for ${this.formatTileId(tileZ, tileX, tileY)}: ${errorMessage}`;
@@ -520,14 +564,13 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                 finished = true;
                 continue;
               }
-              const buffer = new TextEncoder().encode(json).buffer;
-              tileInputBuffer = buffer;
-              if (buffer.byteLength > MAX_VECTOR_TILE_INPUT_BYTES) {
-                const detailMessage = `Vector tile input too large for ${this.formatTileId(tileZ, tileX, tileY)} (${this.formatBytes(buffer.byteLength)} > ${this.formatBytes(MAX_VECTOR_TILE_INPUT_BYTES)}).`;
+              tileInputBuffer = encodedBuffer;
+              if (encodedBuffer.byteLength > MAX_VECTOR_TILE_INPUT_BYTES) {
+                const detailMessage = `Vector tile input too large for ${this.formatTileId(tileZ, tileX, tileY)} (${this.formatBytes(encodedBuffer.byteLength)} > ${this.formatBytes(MAX_VECTOR_TILE_INPUT_BYTES)}).`;
                 console.error('[VectorTile] Tile input exceeds size limit', {
                   inputBufferId,
                   tileId: this.formatTileId(tileZ, tileX, tileY),
-                  sizeBytes: buffer.byteLength,
+                  sizeBytes: encodedBuffer.byteLength,
                   limitBytes: MAX_VECTOR_TILE_INPUT_BYTES,
                 });
                 for (const task of inputTasks) {
@@ -594,23 +637,12 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                 progress: 0,
               });
             }));
-            const compression = sampleInput.compression ?? false;
-            const format = (sampleInput.format ?? 'mvt') as 'mvt';
-            const tileSizeConfig = sampleInput.tileSize ?? 256;
-            const buffer = sampleInput.buffer;
-            const minZoom = sampleInput.minZoom;
-            const maxZoom = sampleInput.maxZoom;
-            const metadataEnabled = Boolean(sampleInput.metadataEnabled);
-            const replace = metadataEnabled && metadataReplaceRef.value;
-            if (metadataEnabled && metadataReplaceRef.value) {
-              metadataReplaceRef.value = false;
-            }
             if (shouldAbort()) {
               continue;
             }
             const inputBuffer = isTileTask
               ? tileInputBuffer
-              : await this.buildGeoJsonBuffer(inputBufferId);
+              : await this.buildVectorTileInputBuffer(inputBufferId, inputFormat);
             if (shouldAbort()) {
               if (controls?.waitIfPaused) {
                 await controls.waitIfPaused();
@@ -632,7 +664,6 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
               await runVectorTileStage({
                 bufferId: inputBufferId,
                 buffer: inputBuffer,
-                contentType: 'application/json',
                 config: {
                   format,
                   compression: compression ? 'gzip' : 'none',
@@ -640,6 +671,8 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                   buffer,
                   minZoom,
                   maxZoom,
+                  inputFormat,
+                  inputCompression,
                   metadataEnabled,
                   metadataReplace: replace,
                   metadataContext: {

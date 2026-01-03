@@ -13,6 +13,8 @@ export type VectorTileTaskBuildConfig = {
     minZoom?: number;
     maxZoom?: number;
     concurrentProcesses?: number;
+    inputFormat?: 'geojson' | 'flatgeobuf';
+    inputCompression?: 'gzip' | 'none';
   };
 };
 
@@ -27,6 +29,8 @@ export function buildVectorTileTasks(params: {
   const buffer = config.vectorTiles?.bufferSize ?? 256;
   const minZoom = config.vectorTiles?.minZoom ?? 0;
   const maxZoom = config.vectorTiles?.maxZoom ?? minZoom;
+  const inputFormat = config.vectorTiles?.inputFormat ?? 'geojson';
+  const inputCompression = config.vectorTiles?.inputCompression ?? 'none';
   const clampedRows = tileRows.filter((tile) => tile.z >= minZoom && tile.z <= maxZoom);
 
   if (clampedRows.length !== tileRows.length) {
@@ -54,6 +58,8 @@ export function buildVectorTileTasks(params: {
       layers: [],
       format: 'mvt',
       compression: true,
+      inputFormat,
+      inputCompression,
       metadataEnabled,
     });
     return {

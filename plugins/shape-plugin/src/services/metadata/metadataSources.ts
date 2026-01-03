@@ -1,9 +1,12 @@
 import {
-  configurePluginDownloadDefaults,
-  downloadJson,
-  downloadText,
-  getCorsProxyBaseURL,
-} from '@hierarchidb/download';
+  buildShapeCacheKey,
+  createShapeChunkStore,
+  jsonDeserializer,
+  jsonSerializer,
+  SHARED_SHAPE_NODE_ID,
+  textDeserializer,
+  textSerializer,
+} from '../utils/chunkStore.js';
 import type { CountryMetadata } from '../../common/types/index.js';
 import { normalizeCountryCodeFormat } from '../utils/iso3166.js';
 
@@ -11,14 +14,6 @@ type GeoBoundariesRecord = Record<string, unknown>;
 
 const GEOBOUNDARIES_ALL_URL = 'https://www.geoboundaries.org/api/current/gbOpen/ALL/ALL/';
 const GADM_MAPS_URL = 'https://gadm.org/maps.html';
-
-const ensureShapeDownloadDefaults = (): void => {
-  const corsProxyBaseURL = getCorsProxyBaseURL() || undefined;
-  configurePluginDownloadDefaults('shape', {
-    dbPrefix: 'shape',
-    corsProxyBaseURL,
-  });
-};
 
 const parseAdminLevel = (value: unknown): number | null => {
   if (typeof value === 'number' && Number.isInteger(value)) return value;
@@ -69,11 +64,12 @@ const parseGeoBoundariesItems = (payload: unknown): GeoBoundariesRecord[] => {
 };
 
 export async function fetchGeoBoundariesMetadata(): Promise<CountryMetadata[]> {
-  ensureShapeDownloadDefaults();
-  const payload = await downloadJson<unknown>('shape', GEOBOUNDARIES_ALL_URL, 'geoboundaries:metadata:all', {
-    cache: 'conditional',
+  const store = createShapeChunkStore(jsonSerializer, jsonDeserializer);
+  const entry = await store.getOrFetchForNode(SHARED_SHAPE_NODE_ID, GEOBOUNDARIES_ALL_URL, {
+    accept: 'application/json',
+    cacheKey: buildShapeCacheKey('geoboundaries:metadata:all', GEOBOUNDARIES_ALL_URL),
   });
-  const items = parseGeoBoundariesItems(payload);
+  const items = parseGeoBoundariesItems(entry.value);
   const entries = new Map<string, { iso3: string; name?: string; continent?: string; levels: Set<number> }>();
 
   for (const item of items) {
@@ -189,11 +185,12 @@ const mapWithConcurrency = async <T, R>(
 };
 
 export async function fetchGadmMetadata(): Promise<CountryMetadata[]> {
-  ensureShapeDownloadDefaults();
-  const html = await downloadText('shape', GADM_MAPS_URL, 'gadm:maps', {
-    cache: 'conditional',
+  const store = createShapeChunkStore(textSerializer, textDeserializer);
+  const htmlEntry = await store.getOrFetchForNode(SHARED_SHAPE_NODE_ID, GADM_MAPS_URL, {
     accept: 'text/html',
+    cacheKey: buildShapeCacheKey('gadm:maps', GADM_MAPS_URL),
   });
+  const html = htmlEntry.value;
   const entries = parseGadmCountryEntries(html);
   if (entries.length === 0) {
     throw new Error('GADM maps page did not include country entries.');
@@ -201,10 +198,11 @@ export async function fetchGadmMetadata(): Promise<CountryMetadata[]> {
 
   const results = await mapWithConcurrency<GadmCountryEntry, CountryMetadata | undefined>(entries, 6, async (entry) => {
     try {
-      const countryHtml = await downloadText('shape', entry.url, `gadm:country:${entry.iso3}`, {
-        cache: 'conditional',
+      const countryEntry = await store.getOrFetchForNode(SHARED_SHAPE_NODE_ID, entry.url, {
         accept: 'text/html',
+        cacheKey: buildShapeCacheKey(`gadm:country:${entry.iso3}`, entry.url),
       });
+      const countryHtml = countryEntry.value;
       const levels = parseGadmLevelsFromHtml(countryHtml);
       const iso2 = await normalizeCountryCodeFormat(entry.iso3, 'iso2');
       const normalizedIso2 = iso2.length === 2 ? iso2 : undefined;
