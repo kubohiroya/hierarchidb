@@ -14,6 +14,7 @@ import { normalizeDataSourceName } from '../../services/utils/utils.js';
 import { clearStagesIfPresent, FULL_INVALIDATION_STAGES, resolveShapeNodeId } from '../utils/sessionInvalidation.js';
 import type { CountryAvailabilityWorkerAPI, SerializedCountryAvailability } from '../workers/countryAvailability.types.js';
 import { wrap, releaseProxy } from 'comlink';
+import { toNodeId } from '@hierarchidb/common-types';
 
 const CONTINENT_CODES: ContinentCode[] = ['AF', 'AS', 'EU', 'NA', 'SA', 'OC', 'AN'];
 
@@ -87,15 +88,20 @@ const createAvailabilityWorker = () => new Worker(
 type Args = {
   data: Partial<ShapeEntity>;
   onChange: (patch: Partial<ShapeEntity>) => void;
+  nodeId?: string;
 };
 
-export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
+export const useShapeCountrySelectionStep = ({ data, onChange, nodeId }: Args) => {
   const { enqueueSnackbar } = useSnackbar();
   const dataSourceKey = normalizeDataSourceName(
     data.batchConfig?.dataSource ?? data.dataSourceName,
   ) ?? 'gadm';
   const iso = useIsoCountries();
-  const { metadata: countries, loading: metadataLoading, error } = useCountryMetadata({ dataSource: dataSourceKey });
+  const resolvedNodeId = nodeId ? toNodeId(nodeId) : resolveShapeNodeId(data);
+  const { metadata: countries, loading: metadataLoading, error } = useCountryMetadata({
+    dataSource: dataSourceKey,
+    nodeId: resolvedNodeId,
+  });
   const [availability, setAvailability] = useState<SerializedCountryAvailability | null>(null);
   const [availabilityError, setAvailabilityError] = useState<Error | null>(null);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);

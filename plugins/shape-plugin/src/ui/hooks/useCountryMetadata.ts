@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { CountryMetadata } from '../../common/types/index.js';
+import type { NodeId } from '@hierarchidb/common-types';
 import { normalizeDataSourceName } from '../../services/utils/utils.js';
 import { metadataLoader } from '../../services/metadata/MetadataLoader.js';
 import { SAMPLE_COUNTRIES } from '../../common/mock/data.js';
@@ -7,6 +8,7 @@ import { SAMPLE_COUNTRIES } from '../../common/mock/data.js';
 export interface UseCountryMetadataOptions {
   dataSource: string;
   countryCodes?: string[];
+  nodeId?: NodeId;
 }
 
 export interface UseCountryMetadataResult {
@@ -24,6 +26,7 @@ export interface UseCountryMetadataResult {
 export function useCountryMetadata({
                                      dataSource,
                                      countryCodes,
+                                     nodeId,
                                    }: UseCountryMetadataOptions): UseCountryMetadataResult {
   const normalizedDataSource = normalizeDataSourceName(dataSource ?? '') ?? '';
   const [metadata, setMetadata] = useState<CountryMetadata[]>([]);
@@ -52,9 +55,9 @@ export function useCountryMetadata({
       let data: CountryMetadata[];
 
       if (countryCodes && countryCodes.length > 0) {
-        data = await metadataLoader.getCountriesMetadata(normalizedDataSource, countryCodes);
+        data = await metadataLoader.getCountriesMetadata(normalizedDataSource, countryCodes, nodeId);
       } else {
-        data = await metadataLoader.loadMetadata(normalizedDataSource);
+        data = await metadataLoader.loadMetadata(normalizedDataSource, nodeId);
       }
 
       if (!data?.length) {
@@ -68,7 +71,7 @@ export function useCountryMetadata({
     } finally {
       setLoading(false);
     }
-  }, [normalizedDataSource, countryCodes]);
+  }, [normalizedDataSource, countryCodes, nodeId]);
 
   useEffect(() => {
     loadMetadata();

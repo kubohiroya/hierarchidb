@@ -3,12 +3,12 @@ import {
   createShapeChunkStore,
   jsonDeserializer,
   jsonSerializer,
-  SHARED_SHAPE_NODE_ID,
   textDeserializer,
   textSerializer,
 } from '../utils/chunkStore.js';
 import type { CountryMetadata } from '../../common/types/index.js';
 import { normalizeCountryCodeFormat } from '../utils/iso3166.js';
+import type { NodeId } from '@hierarchidb/common-types';
 
 type GeoBoundariesRecord = Record<string, unknown>;
 
@@ -63,9 +63,9 @@ const parseGeoBoundariesItems = (payload: unknown): GeoBoundariesRecord[] => {
   return [];
 };
 
-export async function fetchGeoBoundariesMetadata(): Promise<CountryMetadata[]> {
+export async function fetchGeoBoundariesMetadata(nodeId: NodeId): Promise<CountryMetadata[]> {
   const store = createShapeChunkStore(jsonSerializer, jsonDeserializer);
-  const entry = await store.getOrFetchForNode(SHARED_SHAPE_NODE_ID, GEOBOUNDARIES_ALL_URL, {
+  const entry = await store.getOrFetchForNode(nodeId, GEOBOUNDARIES_ALL_URL, {
     accept: 'application/json',
     cacheKey: buildShapeCacheKey('geoboundaries:metadata:all', GEOBOUNDARIES_ALL_URL),
   });
@@ -184,9 +184,9 @@ const mapWithConcurrency = async <T, R>(
   return results;
 };
 
-export async function fetchGadmMetadata(): Promise<CountryMetadata[]> {
+export async function fetchGadmMetadata(nodeId: NodeId): Promise<CountryMetadata[]> {
   const store = createShapeChunkStore(textSerializer, textDeserializer);
-  const htmlEntry = await store.getOrFetchForNode(SHARED_SHAPE_NODE_ID, GADM_MAPS_URL, {
+  const htmlEntry = await store.getOrFetchForNode(nodeId, GADM_MAPS_URL, {
     accept: 'text/html',
     cacheKey: buildShapeCacheKey('gadm:maps', GADM_MAPS_URL),
   });
@@ -198,10 +198,10 @@ export async function fetchGadmMetadata(): Promise<CountryMetadata[]> {
 
   const results = await mapWithConcurrency<GadmCountryEntry, CountryMetadata | undefined>(entries, 6, async (entry) => {
     try {
-      const countryEntry = await store.getOrFetchForNode(SHARED_SHAPE_NODE_ID, entry.url, {
-        accept: 'text/html',
-        cacheKey: buildShapeCacheKey(`gadm:country:${entry.iso3}`, entry.url),
-      });
+    const countryEntry = await store.getOrFetchForNode(nodeId, entry.url, {
+      accept: 'text/html',
+      cacheKey: buildShapeCacheKey(`gadm:country:${entry.iso3}`, entry.url),
+    });
       const countryHtml = countryEntry.value;
       const levels = parseGadmLevelsFromHtml(countryHtml);
       const iso2 = await normalizeCountryCodeFormat(entry.iso3, 'iso2');
@@ -246,7 +246,7 @@ export async function fetchGadmMetadata(): Promise<CountryMetadata[]> {
   return results.filter((v): v is CountryMetadata => v != null);
 }
 
-export async function fetchNaturalEarthMetadata(): Promise<CountryMetadata[]> {
+export async function fetchNaturalEarthMetadata(_nodeId: NodeId): Promise<CountryMetadata[]> {
   return [{
     countryCode: 'WW',
     countryName: 'Worldwide',

@@ -1,5 +1,7 @@
 import type { CountryMetadata, DataSourceName } from '../../common/types/index.js';
 import { normalizeDataSourceName } from '../utils/utils.js';
+import type { NodeId } from '@hierarchidb/common-types';
+import { SHARED_SHAPE_NODE_ID } from '../utils/chunkStore.js';
 import {
   assertDataSourceSupported,
   fetchGeoBoundariesMetadata,
@@ -13,9 +15,9 @@ import {
  */
 export class MetadataLoader {
   private static instance: MetadataLoader | null = null;
-  private metadataCache: Map<DataSourceName, CountryMetadata[]> = new Map();
+  private metadataCache: Map<string, CountryMetadata[]> = new Map();
 
-  private readonly loaders: Record<DataSourceName, () => Promise<CountryMetadata[]>> = {
+  private readonly loaders: Record<DataSourceName, (nodeId: NodeId) => Promise<CountryMetadata[]>> = {
     gadm: fetchGadmMetadata,
     geoboundaries: fetchGeoBoundariesMetadata,
     naturalearth: fetchNaturalEarthMetadata,
@@ -38,15 +40,17 @@ export class MetadataLoader {
   /**
    * Load metadata for a specific data source
    */
-  async loadMetadata(dataSource: string): Promise<CountryMetadata[]> {
+  async loadMetadata(dataSource: string, nodeId?: NodeId): Promise<CountryMetadata[]> {
     const normalized = normalizeDataSourceName(dataSource);
     if (!normalized) {
       console.warn(`No metadata file mapping for data source: ${dataSource}`);
       return [];
     }
 
-    if (this.metadataCache.has(normalized)) {
-      return this.metadataCache.get(normalized)!;
+    const resolvedNodeId = nodeId ?? SHARED_SHAPE_NODE_ID;
+    const cacheKey = `${normalized}:${resolvedNodeId}`;
+    if (this.metadataCache.has(cacheKey)) {
+      return this.metadataCache.get(cacheKey)!;
     }
 
     try {
@@ -55,10 +59,10 @@ export class MetadataLoader {
         console.warn(`Unknown data source: ${normalized}`);
         return [];
       }
-      const metadata = await loader();
+      const metadata = await loader(resolvedNodeId);
 
       // Cache the result
-      this.metadataCache.set(normalized, metadata);
+      this.metadataCache.set(cacheKey, metadata);
 
       return metadata;
     } catch (error) {
@@ -76,8 +80,9 @@ export class MetadataLoader {
   async getCountryMetadata(
     dataSource: string,
     countryCode: string,
+    nodeId?: NodeId,
   ): Promise<CountryMetadata | undefined> {
-    const allMetadata = await this.loadMetadata(dataSource);
+    const allMetadata = await this.loadMetadata(dataSource, nodeId);
     return allMetadata.find(
       (country) =>
         country.countryCode === countryCode ||
@@ -91,8 +96,9 @@ export class MetadataLoader {
   async getCountriesMetadata(
     dataSource: string,
     countryCodes: string[],
+    nodeId?: NodeId,
   ): Promise<CountryMetadata[]> {
-    const allMetadata = await this.loadMetadata(dataSource);
+    const allMetadata = await this.loadMetadata(dataSource, nodeId);
     const lowerCodes = countryCodes.map((code) => code.toLowerCase());
 
     return allMetadata.filter((country) => lowerCodes.includes(country.countryCode.toLowerCase()));
@@ -104,8 +110,11 @@ export class MetadataLoader {
   clearCache(dataSource?: string): void {
     if (dataSource) {
       const normalized = normalizeDataSourceName(dataSource);
-      if (normalized) {
-        this.metadataCache.delete(normalized);
+      if (!normalized) return;
+      for (const key of this.metadataCache.keys()) {
+        if (key.startsWith(`${normalized}:`)) {
+          this.metadataCache.delete(key);
+        }
       }
     } else {
       this.metadataCache.clear();
