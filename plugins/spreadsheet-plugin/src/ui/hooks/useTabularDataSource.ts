@@ -17,7 +17,7 @@ type ImportMethod = 'file' | 'url';
 
 export type UseTabularDataSourceParams = Pick<
   PluginStepProps<SpreadsheetEntity>,
-  'data' | 'onChange' | 'setValid' | 'setError'
+  'data' | 'onChange' | 'setValid' | 'setError' | 'nodeId'
 > & { dialogRef?: RefObject<HTMLElement | null>; missingDatasetMessage?: string };
 
 type ExtendedImportProps = TabularDataImportProps & {
@@ -60,6 +60,7 @@ export const useTabularDataSource = ({
   onChange,
   setValid,
   setError,
+  nodeId,
   dialogRef,
   missingDatasetMessage = 'select or download a data file before continuing.',
 }: UseTabularDataSourceParams): UseTabularDataSourceResult => {
@@ -187,6 +188,7 @@ export const useTabularDataSource = ({
 
   const importStepProps: ExtendedImportProps = {
     pluginId: SPREADSHEET_NODE_TYPE,
+    nodeId,
     onFileImported,
     onError: handleImportError,
     menuContainer,

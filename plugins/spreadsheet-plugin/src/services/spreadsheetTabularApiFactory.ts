@@ -45,9 +45,9 @@ class PluginTabularApiDriver extends SpreadsheetTabularApiDriver {
     this.resolveCorsProxyBaseURL = buildCorsProxyResolver(options);
   }
 
-  override async downloadTabularFromUrl(url: string, config: TabularProcessingConfig = {}) {
+  override async downloadTabularFromUrl(url: string, config: TabularProcessingConfig = {}, nodeId?: string) {
     const proxied = withCorsProxy(url, this.resolveCorsProxyBaseURL());
-    return super.downloadTabularFromUrl(proxied, config);
+    return super.downloadTabularFromUrl(proxied, config, nodeId);
   }
 }
 

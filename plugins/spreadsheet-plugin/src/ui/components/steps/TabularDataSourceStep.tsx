@@ -23,6 +23,7 @@ export const TabularDataSourceStep: FC<PluginStepProps<SpreadsheetEntity>> = ({
   setValid,
   setError,
   dialogRef,
+  nodeId,
 }) => {
   const { t } = useTranslation('spreadsheet-plugin');
   const previewRows = useAtomValue(tabularRowsAtom);
@@ -32,6 +33,7 @@ export const TabularDataSourceStep: FC<PluginStepProps<SpreadsheetEntity>> = ({
       onChange,
       setValid,
       setError,
+      nodeId,
       dialogRef,
       missingDatasetMessage: t(
         'dataSource.errors.missingDataset',

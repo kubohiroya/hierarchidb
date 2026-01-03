@@ -17,6 +17,7 @@ import { TabularService } from '@hierarchidb/tabular-source';
 import { DexieChunkStore } from '@hierarchidb/chunk-store';
 import { FetchNetworkPort } from '@hierarchidb/download';
 import type { NodeId } from '@hierarchidb/common-types';
+import { toNodeId } from '@hierarchidb/common-types';
 import { getDBName } from '@hierarchidb/util';
 import { SpreadsheetMetadataManager } from './SpreadsheetMetadataManager.js';
 import { SpreadsheetStorePort } from './SpreadsheetStorePort.js';
@@ -40,7 +41,7 @@ const decodeChunkRows = (chunk: RowChunkLike): TabularRow[] => {
   }
 };
 
-const SHARED_TABULAR_NODE_ID = 'spreadsheet-shared' as NodeId;
+const DEFAULT_TABULAR_NODE_ID = 'spreadsheet-shared' as NodeId;
 
 const buildCacheKey = (pluginId: string, url: string): string => (
   `${pluginId}:${hashString(url)}`
@@ -101,9 +102,14 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
     return this.uploadTabularFile(file, config);
   }
 
-  async downloadTabularFromUrl(url: string, config: TabularProcessingConfig = {}): Promise<TabularTableMetadata> {
+  async downloadTabularFromUrl(
+    url: string,
+    config: TabularProcessingConfig = {},
+    nodeId?: string,
+  ): Promise<TabularTableMetadata> {
     try {
-      const entry = await this.getDownloadStore().getOrFetchForNode(SHARED_TABULAR_NODE_ID, url, {
+      const resolvedNodeId = nodeId ? toNodeId(nodeId) : DEFAULT_TABULAR_NODE_ID;
+      const entry = await this.getDownloadStore().getOrFetchForNode(resolvedNodeId, url, {
         accept: 'text/csv',
         cacheKey: buildCacheKey(this.pluginId, url),
       });
@@ -125,8 +131,12 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
     }
   }
 
-  async downloadCSVFromUrl(url: string, config: TabularProcessingConfig = {}): Promise<TabularTableMetadata> {
-    return this.downloadTabularFromUrl(url, config);
+  async downloadCSVFromUrl(
+    url: string,
+    config: TabularProcessingConfig = {},
+    nodeId?: string,
+  ): Promise<TabularTableMetadata> {
+    return this.downloadTabularFromUrl(url, config, nodeId);
   }
 
   private getDownloadStore(): DexieChunkStore<ArrayBuffer> {
