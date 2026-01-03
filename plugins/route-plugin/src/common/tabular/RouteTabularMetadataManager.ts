@@ -1,8 +1,8 @@
-import { SimpleTableMetadataManager } from '@hierarchidb/tabular-store';
 import { getDBName } from '@hierarchidb/util';
+import { TabularDatabaseManager } from '@hierarchidb/tabular-store/src/index';
 
-export class RouteTabularMetadataManager extends SimpleTableMetadataManager {
-  constructor(dbName: string = getDBName('route-tabular-metadata-db')) {
+export class RouteTabularMetadataManager extends TabularDatabaseManager {
+  constructor(dbName: string = getDBName('route-metadata')) {
     super(dbName);
   }
 }

@@ -9,7 +9,7 @@ import type {
 } from '@hierarchidb/ui-tabular';
 import {
   getRowStoreDB,
-  type SimpleTableMetadataManager,
+  type TabularDatabaseManager,
   type TabularTableMetadata,
   type TabularTableMetadataLike,
 } from '@hierarchidb/tabular-store';
@@ -57,12 +57,12 @@ const hashString = (input: string): string => {
 
 export class SpreadsheetTabularApiDriver implements TabularDataApi {
   private readonly pluginId: string;
-  private readonly metadataManager: SimpleTableMetadataManager;
+  private readonly metadataManager: TabularDatabaseManager;
   private readonly tabularService = new TabularService();
   private downloadStore: DexieChunkStore<ArrayBuffer> | null = null;
   private networkPort: FetchNetworkPort | null = null;
 
-  constructor(pluginIdOrManager: string | SimpleTableMetadataManager = SPREADSHEET_PLUGIN_ID, pluginIdOverride?: string) {
+  constructor(pluginIdOrManager: string | TabularDatabaseManager = SPREADSHEET_PLUGIN_ID, pluginIdOverride?: string) {
     if (typeof pluginIdOrManager === 'string') {
       this.pluginId = pluginIdOrManager;
       this.metadataManager = new SpreadsheetMetadataManager();

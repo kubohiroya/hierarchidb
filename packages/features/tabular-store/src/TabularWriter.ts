@@ -1,4 +1,4 @@
-import { SimpleTableMetadataManager } from './SimpleTableMetadataManager.js';
+import { TabularDatabaseManager } from './TabularDatabaseManager.js';
 import type { TabularColumnInfo, TabularTableMetadataLike } from './types.js';
 import { getDBName } from '@hierarchidb/util';
 import { getRowStoreDB, type RowChunk } from './RowStoreDB.js';
@@ -9,7 +9,7 @@ export class TabularWriter {
   private rowCursor = 0;
   private rowsBuffered: unknown[] = [];
   private readonly chunkSize: number;
-  private readonly manager: SimpleTableMetadataManager;
+  private readonly manager: TabularDatabaseManager;
 
   constructor(private readonly pluginId: string, opts?: {
     chunkSize?: number;
@@ -17,7 +17,7 @@ export class TabularWriter {
     indexColumns?: string[]
   }) {
     this.chunkSize = opts?.chunkSize ?? 2000;
-    this.manager = new SimpleTableMetadataManager(opts?.metadataDbName ?? getDBName(`${pluginId}-metadata-db`));
+    this.manager = new TabularDatabaseManager(opts?.metadataDbName ?? getDBName(`${pluginId}-metadata`));
     this.indexColumns = opts?.indexColumns ?? [];
   }
 

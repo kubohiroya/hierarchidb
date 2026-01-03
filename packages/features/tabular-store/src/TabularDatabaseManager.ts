@@ -17,10 +17,10 @@ class CSVMetadataDB extends Dexie {
  * Unified metadata manager used by both Spreadsheet and Styler plugin-loader.
  * Provides a superset API to remain backward compatible with both implementations.
  */
-export class SimpleTableMetadataManager {
+export class TabularDatabaseManager {
   private db: CSVMetadataDB;
 
-  constructor(dbName: string = getDBName('spreadsheet-metadata-db')) {
+  constructor(dbName: string = getDBName('spreadsheet')) {
     this.db = new CSVMetadataDB(dbName);
   }
 

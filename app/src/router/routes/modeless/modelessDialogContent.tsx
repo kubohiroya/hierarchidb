@@ -24,7 +24,7 @@ import type { NodeId } from '@hierarchidb/common-types';
 import { shapeDB, type FeatureRecord } from '@hierarchidb/shape-store';
 import { RouteDB, type RouteLineString } from '@hierarchidb/route-store';
 import { getLocationDB } from '@hierarchidb/location-store';
-import { SimpleTableMetadataManager, TabularQueryService } from '@hierarchidb/tabular-store';
+import { TabularDatabaseManager, TabularQueryService } from '@hierarchidb/tabular-store';
 import { getDBName } from '@hierarchidb/util';
 import { useAtomValue, useSetAtom } from 'jotai';
 import {
@@ -299,7 +299,7 @@ const useLocationTableData = (
           }
           return;
         }
-        const manager = new SimpleTableMetadataManager(getDBName('location-metadata-db'));
+        const manager = new TabularDatabaseManager(getDBName('location-metadata'));
         const metadata = await manager.get(tableId);
         const columnNames = extractColumnNames(metadata?.columns);
         const svc = new TabularQueryService('location');

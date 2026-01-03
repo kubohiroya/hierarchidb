@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, useId } from 'react';
 import { useCrossHighlightSync } from '../hooks/useCrossHighlightSync.js';
 import { ensureDefaultStyles } from '../utils/ensureDefaultStyles.js';
 import { getDBName } from '@hierarchidb/util';
-import { type ColumnFilter, SimpleTableMetadataManager, TabularQueryService } from '@hierarchidb/tabular-store';
+import { type ColumnFilter, TabularDatabaseManager, TabularQueryService } from '@hierarchidb/tabular-store';
 import type { Id } from '../CrossViewStyles.js';
 
 export type DataGridPreviewOp = ColumnFilter['op'];
@@ -103,7 +103,7 @@ export const useDataGridPreview = ({
       setLoading(true);
       setError(undefined);
       try {
-        const manager = new SimpleTableMetadataManager(getDBName(`${pluginId}-metadata-db`));
+        const manager = new TabularDatabaseManager(getDBName(`${pluginId}-metadata`));
         const meta = await manager.get(tableId);
         type ColumnMeta = string | { name?: unknown; id?: unknown } | undefined | null;
         const rawColumns: ColumnMeta[] = Array.isArray(meta?.columns) ? meta.columns : [];

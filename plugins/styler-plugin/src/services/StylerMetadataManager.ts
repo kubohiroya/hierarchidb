@@ -1,9 +1,9 @@
 // Thin wrapper to bind the shared table-metadata manager to the styler DB name
-import { SimpleTableMetadataManager as SharedManager } from '@hierarchidb/tabular-store';
+import { TabularDatabaseManager } from '@hierarchidb/tabular-store';
 import { getDBName } from '@hierarchidb/util';
 
-export class StylerMetadataManager extends SharedManager {
+export class StylerMetadataManager extends TabularDatabaseManager {
   constructor() {
-    super(getDBName('styler-metadata-db'));
+    super(getDBName('styler'));
   }
 }

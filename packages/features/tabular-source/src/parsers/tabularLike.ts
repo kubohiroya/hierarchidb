@@ -38,7 +38,7 @@ function splitLines(text: string): string[] {
   return text.replace(/\r\n?/g, '\n').split('\n');
 }
 
-function simpleTabularSplit(line: string, delimiter: string): string[] {
+function tabularDatabaseSplit(line: string, delimiter: string): string[] {
   // NOTE: intentionally simple; does not handle quotes/escapes fully.
   // Good enough as a placeholder until a robust CSV impl is added.
   return line.split(delimiter);
@@ -76,10 +76,10 @@ export function createTabularLikeParser(id: 'csv' | 'tsv', delimiter: string): T
       let headers: string[];
       let startIdx = 0;
       if (headerOn) {
-        headers = simpleTabularSplit(lines[0]!, delimiter);
+        headers = tabularDatabaseSplit(lines[0]!, delimiter);
         startIdx = 1;
       } else {
-        const first = simpleTabularSplit(lines[0]!, delimiter);
+        const first = tabularDatabaseSplit(lines[0]!, delimiter);
         headers = first.map((_, i) => `col${i + 1}`);
       }
 
@@ -89,9 +89,11 @@ export function createTabularLikeParser(id: 'csv' | 'tsv', delimiter: string): T
         let buf: Record<string, any>[] = [];
         let chunkIndex = 0;
         for (let i = startIdx; i < lines.length; i++) {
-          const parts = simpleTabularSplit(lines[i]!, delimiter);
+          const line = lines[i];
+          if(! line)continue;
+          const parts = tabularDatabaseSplit(line, delimiter);
           const row: Record<string, any> = {};
-          headers.forEach((h, idx) => (row[h] = parts[idx] ?? ''));
+          headers.forEach((h, idx) => {row[h] = parts[idx] ?? ''});
           if (previewRows.length < 50) previewRows.push(row);
           buf.push(row);
           if (buf.length >= chunkSize) {
