@@ -8,7 +8,7 @@ import type { TreeConsoleActionDeps } from '../types.js';
 import { attachChildrenToIndex, getOrCreateIndex } from './helpers.ts';
 
 export const createSelectionActions = (deps: TreeConsoleActionDeps) => {
-  const { client, expandedIds, loadChildrenOf, setSSOT, ssot, selectedIds } = deps;
+  const { client, expandedIds, setSSOT, ssot, selectedIds } = deps;
 
   return {
     handleNodeSelect: (nodeIds: string[], selected: boolean) => {

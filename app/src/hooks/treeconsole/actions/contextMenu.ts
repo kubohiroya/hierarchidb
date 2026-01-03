@@ -48,7 +48,6 @@ export const createContextMenuAction = (deps: TreeConsoleActionDeps, helpers: Co
     client,
     treeId,
     pageNodeId,
-    pageTreeNode,
     pushPath,
     selectedIds,
     ssot,
@@ -61,7 +60,11 @@ export const createContextMenuAction = (deps: TreeConsoleActionDeps, helpers: Co
   const { applyClipboard, openEditDialog, resolvePreviewGuardState, navigation } = helpers;
 
   return {
-    handleContextMenuAction: async (action: string, node: HierarchicalTreeNode, options = {}) => {
+    handleContextMenuAction: async (action: string, node: HierarchicalTreeNode, options: {
+      source: string,
+      nextVisible: boolean,
+      navigateToParent: boolean,
+    }) => {
       const normalizedAction = (action === 'remove' ? 'trash' : action) as ContextAction;
       console.log('Context menu action:', normalizedAction, 'for node:', node);
 
@@ -195,7 +198,7 @@ export const createContextMenuAction = (deps: TreeConsoleActionDeps, helpers: Co
 
       if (normalizedAction === 'rename-inline' && node?.id && typeof node.metadata?.name === 'string') {
         try {
-          const mutationAPI = await client.getMutationAPI();
+          const mutationAPI = await client?.getMutationAPI();
           const next = node.metadata.name.trim();
           const current = ssot.nodeIndex?.get(node.id as NodeId)?.metadata?.name ?? '';
           if (next === current) return;
@@ -211,9 +214,9 @@ export const createContextMenuAction = (deps: TreeConsoleActionDeps, helpers: Co
             showCommandError('VALIDATION_ERROR', 'Invalid characters in name');
             return;
           }
-          const res = await mutationAPI.updateNode({ nodeId: node.id as NodeId, name: next });
-          if (!res.success) {
-            showCommandError('INVALID_OPERATION', res.error || 'Update failed');
+          const res = await mutationAPI?.updateNode({ nodeId: node.id as NodeId, name: next });
+          if (!res || !res.success) {
+            showCommandError('INVALID_OPERATION', res?.error || 'Update failed');
             return;
           }
           await refreshParent(parentId ?? (pageNodeId as NodeId));
@@ -232,7 +235,7 @@ export const createContextMenuAction = (deps: TreeConsoleActionDeps, helpers: Co
         typeof node.metadata?.description === 'string'
       ) {
         try {
-          const mutationAPI = await client.getMutationAPI();
+          const mutationAPI = await client?.getMutationAPI();
           const next = String(node.metadata?.description ?? '').trim();
           const current = ssot.nodeIndex?.get(node.id as NodeId)?.metadata?.description ?? '';
           if (next === current) return;
@@ -240,12 +243,12 @@ export const createContextMenuAction = (deps: TreeConsoleActionDeps, helpers: Co
             showCommandError('VALIDATION_ERROR', 'Description is too long (max 1000)');
             return;
           }
-          const res = await mutationAPI.updateNode({
+          const res = await mutationAPI?.updateNode({
             nodeId: node.id as NodeId,
             description: next,
           });
-          if (!res.success) {
-            showCommandError('INVALID_OPERATION', res.error || 'Update failed');
+          if (!res || !res.success) {
+            showCommandError('INVALID_OPERATION', res?.error || 'Update failed');
             return;
           }
           await refreshParent(parentId ?? (pageNodeId as NodeId));

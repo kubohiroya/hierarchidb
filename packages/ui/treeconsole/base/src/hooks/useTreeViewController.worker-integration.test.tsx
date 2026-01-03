@@ -5,7 +5,6 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
-import type { TreeViewControllerProps } from './useTreeViewController.js';
 import { useTreeViewController } from './useTreeViewController.js';
 import { toNodeId, toNodeType, type NodeId, type TreeNode, type TreeNodeEvent } from '@hierarchidb/common-types';
 import type { WorkerAPI } from '@hierarchidb/common-api';
@@ -31,28 +30,8 @@ vi.mock('@hierarchidb/provider', () => ({
 }));
 
 describe('useTreeViewController', () => {
-  let mockProps: TreeViewControllerProps;
-  let mockStateManager: any;
-  let mockOnStateChange: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    mockOnStateChange = vi.fn();
-    mockStateManager = {
-      subscribe: vi.fn(),
-      unsubscribe: vi.fn(),
-      getNode: vi.fn(),
-      getChildren: vi.fn(),
-      updateNode: vi.fn(),
-      moveNode: vi.fn(),
-      trashNode: vi.fn(),
-      duplicateNode: vi.fn(),
-    } as any;
-
-    mockProps = {
-      treeId: 'test-console-id',
-      stateManager: mockStateManager,
-      onStateChange: mockOnStateChange,
-    };
   });
 
   describe('worker integration', () => {
@@ -60,13 +39,11 @@ describe('useTreeViewController', () => {
       const rootNodeId = 'root-node' as NodeId;
       const rootNode: Partial<TreeNode> = {
         id: rootNodeId,
-        name: 'Root Folder',
         nodeType: toNodeType('folder'),
         parentId: null,
       };
       const childNode: Partial<TreeNode> = {
         id: toNodeId('child-1'),
-        name: 'Child Node',
         nodeType: toNodeType('folder'),
         parentId: rootNodeId,
       };
@@ -145,7 +122,6 @@ describe('useTreeViewController', () => {
           nodeId: childNode.id as NodeId,
           node: {
             ...(childNode as TreeNode),
-            name: 'Updated Child Node',
           },
           parentId: rootNodeId,
           timestamp: Date.now(),
