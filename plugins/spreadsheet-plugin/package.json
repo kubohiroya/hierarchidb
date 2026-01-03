@@ -56,8 +56,10 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@hierarchidb/auth-recovery": "workspace:*",
+    "@hierarchidb/chunk-store": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/download": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
@@ -79,7 +81,9 @@
     "shpjs": "^6.2.0"
   },
   "devDependencies": {
+    "@hierarchidb/chunk-store": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
+    "@hierarchidb/download": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/ui-modal-select": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",

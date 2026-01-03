@@ -14,6 +14,10 @@ import {
   type TabularTableMetadataLike,
 } from '@hierarchidb/tabular-store';
 import { TabularService } from '@hierarchidb/tabular-source';
+import { DexieChunkStore } from '@hierarchidb/chunk-store';
+import { FetchNetworkPort } from '@hierarchidb/download';
+import type { NodeId } from '@hierarchidb/common-types';
+import { getDBName } from '@hierarchidb/util';
 import { SpreadsheetMetadataManager } from './SpreadsheetMetadataManager.js';
 import { SpreadsheetStorePort } from './SpreadsheetStorePort.js';
 import { hashFile } from './utils/hash.js';
@@ -36,10 +40,26 @@ const decodeChunkRows = (chunk: RowChunkLike): TabularRow[] => {
   }
 };
 
+const SHARED_TABULAR_NODE_ID = 'spreadsheet-shared' as NodeId;
+
+const buildCacheKey = (pluginId: string, url: string): string => (
+  `${pluginId}:${hashString(url)}`
+);
+
+const hashString = (input: string): string => {
+  let hash = 0;
+  for (let i = 0; i < input.length; i += 1) {
+    hash = (hash * 31 + input.charCodeAt(i)) >>> 0;
+  }
+  return hash.toString(16);
+};
+
 export class SpreadsheetTabularApiDriver implements TabularDataApi {
   private readonly pluginId: string;
   private readonly metadataManager: SimpleTableMetadataManager;
   private readonly tabularService = new TabularService();
+  private downloadStore: DexieChunkStore<ArrayBuffer> | null = null;
+  private networkPort: FetchNetworkPort | null = null;
 
   constructor(pluginIdOrManager: string | SimpleTableMetadataManager = SPREADSHEET_PLUGIN_ID, pluginIdOverride?: string) {
     if (typeof pluginIdOrManager === 'string') {
@@ -83,24 +103,53 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
 
   async downloadTabularFromUrl(url: string, config: TabularProcessingConfig = {}): Promise<TabularTableMetadata> {
     try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`CSV download failed: HTTP ${response.status}`);
-      }
-      const buffer = await response.arrayBuffer();
+      const entry = await this.getDownloadStore().getOrFetchForNode(SHARED_TABULAR_NODE_ID, url, {
+        accept: 'text/csv',
+        cacheKey: buildCacheKey(this.pluginId, url),
+      });
+      const buffer = entry.value;
+      const contentType = entry.metadata?.contentType ?? 'text/csv';
       const filename = this.deriveFilename(url);
       const file = new File([buffer], filename, {
-        type: response.headers.get('content-type') ?? 'text/csv',
+        type: contentType,
       });
       return await this.uploadTabularFile(file, config);
     } catch (error) {
-      if (error instanceof Error) throw error;
+      if (error instanceof Error) {
+        if (/^HTTP\s+\d+/.test(error.message)) {
+          throw new Error(`CSV download failed: ${error.message}`);
+        }
+        throw error;
+      }
       throw new Error(String(error));
     }
   }
 
   async downloadCSVFromUrl(url: string, config: TabularProcessingConfig = {}): Promise<TabularTableMetadata> {
     return this.downloadTabularFromUrl(url, config);
+  }
+
+  private getDownloadStore(): DexieChunkStore<ArrayBuffer> {
+    if (this.downloadStore) return this.downloadStore;
+    const networkPort = this.getNetworkPort();
+    this.downloadStore = new DexieChunkStore<ArrayBuffer>({
+      dbName: getDBName(`${this.pluginId}-chunks`),
+      serializer: (value) => value,
+      deserializer: (value) => value,
+      networkPort,
+    });
+    return this.downloadStore;
+  }
+
+  private getNetworkPort(): FetchNetworkPort {
+    if (this.networkPort) return this.networkPort;
+    this.networkPort = new FetchNetworkPort({
+      perHostConcurrency: 4,
+      retries: 0,
+      baseDelayMs: 0,
+      maxDelayMs: 0,
+    });
+    return this.networkPort;
   }
 
   async getTableMetadata(id: string): Promise<TabularTableMetadata | null> {
