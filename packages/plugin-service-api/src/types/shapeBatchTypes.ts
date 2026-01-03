@@ -92,6 +92,8 @@ export type ShapeVectorTileTaskInputData = {
   buffer?: number;
   compression?: boolean;
   format?: 'mvt' | 'pbf';
+  inputFormat?: 'geojson' | 'flatgeobuf';
+  inputCompression?: 'gzip' | 'none';
   layers?: unknown[];
   outputBufferId?: string;
   dataSource?: ShapeDataSourceName;
