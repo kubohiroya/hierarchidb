@@ -93,6 +93,7 @@
     "tools:sync-peer-dependencies": "pnpm --filter @hierarchidb/tools-build-scripts run sync-peer-dependencies",
     "turbo:watch": "pnpm run turbo:watch:internal",
     "turbo:watch:internal": "turbo run build --filter @hierarchidb/app^... --watch",
+    "guard:preflight": "pnpm run check:deps && pnpm run guard:deps:extra && pnpm policy:ban-tsconfig-paths-dist-dts && pnpm shims:check && pnpm as-any:check",
     "typecheck": "pnpm run guard:preflight && turbo run typecheck",
     "typecheck:ci": "CI=true NODE_OPTIONS=\"--max-old-space-size=4096\" pnpm run guard:preflight && turbo run typecheck",
     "typecheck:watch": "turbo run typecheck --watch",
