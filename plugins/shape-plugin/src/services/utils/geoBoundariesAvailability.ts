@@ -36,7 +36,9 @@ export async function fetchGeoBoundariesAvailability(
   url: string,
 ): Promise<GeoBoundariesAvailability> {
   ensureShapeDownloadDefaults();
-  const availabilityPayload = await downloadJson<unknown>('shape', url, 'geoboundaries:availability');
+  const availabilityPayload = await downloadJson<unknown>('shape', url, 'geoboundaries:availability', {
+    cache: 'conditional',
+  });
   const items = Array.isArray(availabilityPayload)
     ? availabilityPayload
     : Array.isArray((availabilityPayload as { data?: unknown }).data)

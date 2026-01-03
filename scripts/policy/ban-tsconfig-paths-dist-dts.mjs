@@ -4,20 +4,92 @@ import fs from 'fs';
 import path from 'path';
 
 /**
- * Policy: Ban tsconfig.paths entries that reference dist/*.d.ts
- * Rationale: Path aliasing to built declaration files hides source coupling,
- *            breaks editor features, and creates fragile cross-package types.
- *            Always map to source (e.g., src/RuntimeWorkerService.ts) or use references.
+ * Policy: Ban tsconfig.paths entries that reference dist/*.d.ts unless they represent a package public types entry.
+ *
+ * Repo rule:
+ * - Vite dev may alias to src for HMR.
+ * - TypeScript typecheck must rely on dist types (package public API) to prevent cross-package src coupling.
+ *
+ * Therefore, dist/*.d.ts is allowed only when the target path matches that package's declared public types
+ * (package.json "types" or exports["."].types).
  */
 
 const DIST_DTS_RE = /(?:^|[\/])dist[\/].*\.d\.ts$/i;
 
-function stripJsonComments(text) {
-  const noComments = text
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/^\s*\/\/.*$/gm, '');
-  // Naive trailing comma stripper: ,}\n or ,]\n
-  return noComments.replace(/,(\s*[}\]])/g, '$1');
+// Replace naive stripper with JSONC-safe parser (same approach as other repo scripts)
+function stripJsonCommentsAndTrailingCommas(text) {
+  let out = '';
+  let inStr = false;
+  let quote = '';
+  let esc = false;
+  let inLine = false;
+  let inBlock = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    const n = text[i + 1];
+
+    if (inLine) {
+      if (c === '\n' || c === '\r') {
+        inLine = false;
+        out += c;
+      }
+      continue;
+    }
+    if (inBlock) {
+      if (c === '*' && n === '/') {
+        inBlock = false;
+        i++;
+      }
+      continue;
+    }
+    if (inStr) {
+      out += c;
+      if (esc) {
+        esc = false;
+        continue;
+      }
+      if (c === '\\') {
+        esc = true;
+        continue;
+      }
+      if (c === quote) inStr = false;
+      continue;
+    }
+
+    if (c === '/' && n === '/') {
+      inLine = true;
+      i++;
+      continue;
+    }
+    if (c === '/' && n === '*') {
+      inBlock = true;
+      i++;
+      continue;
+    }
+
+    if (c === '"' || c === "'") {
+      inStr = true;
+      quote = c;
+      out += c;
+      continue;
+    }
+
+    if (c === ',') {
+      let j = i + 1;
+      while (j < text.length && /\s/.test(text[j])) j++;
+      const nxt = text[j];
+      if (nxt === '}' || nxt === ']') continue;
+    }
+
+    out += c;
+  }
+
+  return out;
+}
+
+function parseJSONC(raw) {
+  return JSON.parse(stripJsonCommentsAndTrailingCommas(raw));
 }
 
 function isAllowedDistReference(tsconfigPath, value) {
@@ -76,7 +148,7 @@ async function main() {
   for (const file of files) {
     try {
       const raw = fs.readFileSync(file, 'utf8');
-      const json = JSON.parse(stripJsonComments(raw));
+      const json = parseJSONC(raw);
       all.push(...findViolations(json, file));
     } catch (e) {
       // Fallback: do a loose scan limited to the paths block

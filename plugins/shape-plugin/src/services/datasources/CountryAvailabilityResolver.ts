@@ -108,6 +108,9 @@ const fetchAvailabilityFromStrategy = async (dataSource: string): Promise<Countr
 
 export const fetchCountryAvailability = async (dataSource: string): Promise<CountryAvailabilityMatrix> => {
   const normalized = normalizeDataSourceName(dataSource ?? '') ?? 'naturalearth';
+  if (normalized === 'openstreetmap') {
+    throw new Error('OpenStreetMap is not supported in Step3 country selection.');
+  }
   const strategyAvailability = await fetchAvailabilityFromStrategy(normalized).catch((error) => {
     console.warn('[CountryAvailabilityResolver] strategy availability failed', { normalized, error });
     return null;

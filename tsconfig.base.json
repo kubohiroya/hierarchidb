@@ -10,9 +10,6 @@
     "allowUnusedLabels": false,
     "moduleResolution": "NodeNext",
     "paths": {
-      "@hierarchidb/*-plugin": [
-        "plugins/*-plugin/src/index.ts"
-      ],
       "@hierarchidb/auth-recovery": [
         "packages/features/auth-recovery/dist/index.d.ts"
       ],
@@ -20,49 +17,49 @@
         "packages/features/auth-recovery/dist/*"
       ],
       "@hierarchidb/basemap-plugin": [
-        "plugins/basemap-plugin/src/index.ts"
+        "plugins/basemap-plugin/dist/index.d.ts"
       ],
       "@hierarchidb/basemap-plugin/worker": [
-        "plugins/basemap-plugin/src/worker/index.ts"
+        "plugins/basemap-plugin/dist/worker/index.d.ts"
       ],
       "@hierarchidb/basemap-plugin/*": [
-        "plugins/basemap-plugin/src/*"
+        "plugins/basemap-plugin/dist/*"
       ],
       "@hierarchidb/batch": [
-        "packages/features/batch/src/index.ts"
-      ],
-      "@hierarchidb/batch-runtime-services": [
-        "packages/batch-runtime-services/src/index.ts"
-      ],
-      "@hierarchidb/batch-runtime-services/*": [
-        "packages/batch-runtime-services/src/*"
+        "packages/features/batch/dist/index.d.ts"
       ],
       "@hierarchidb/batch/*": [
-        "packages/features/batch/src/*"
+        "packages/features/batch/dist/*"
+      ],
+      "@hierarchidb/batch-runtime-services": [
+        "packages/batch-runtime-services/dist/index.d.ts"
+      ],
+      "@hierarchidb/batch-runtime-services/*": [
+        "packages/batch-runtime-services/dist/*"
       ],
       "@hierarchidb/bff": [
-        "packages/backend/bff/src/index.ts"
+        "packages/backend/bff/dist/index.d.ts"
       ],
       "@hierarchidb/bff/*": [
-        "packages/backend/bff/src/*"
+        "packages/backend/bff/dist/*"
       ],
       "@hierarchidb/components": [
-        "packages/components/src/index.ts"
+        "packages/components/dist/index.d.ts"
       ],
       "@hierarchidb/components/*": [
-        "packages/components/src/*"
+        "packages/components/dist/*"
       ],
       "@hierarchidb/common-types": [
-        "packages/common/types/src/index.ts"
+        "packages/common/types/dist/index.d.ts"
       ],
       "@hierarchidb/common-types/*": [
-        "packages/common/types/src/*"
+        "packages/common/types/dist/*"
       ],
       "@hierarchidb/common-api": [
-        "packages/common/api/src/index.ts"
+        "packages/common/api/dist/index.d.ts"
       ],
       "@hierarchidb/common-api/*": [
-        "packages/common/api/src/*"
+        "packages/common/api/dist/*"
       ],
       "@hierarchidb/compute": [
         "packages/features/compute/dist/index.d.ts"
@@ -71,10 +68,10 @@
         "packages/features/compute/dist/*"
       ],
       "@hierarchidb/cors-proxy": [
-        "packages/backend/cors-proxy/src/index.mts"
+        "packages/backend/cors-proxy/dist/index.d.ts"
       ],
       "@hierarchidb/cors-proxy/*": [
-        "packages/backend/cors-proxy/src/*"
+        "packages/backend/cors-proxy/dist/*"
       ],
       "@hierarchidb/download": [
         "packages/features/download/dist/index.d.ts"
@@ -83,34 +80,34 @@
         "packages/features/download/dist/*"
       ],
       "@hierarchidb/location-store": [
-        "packages/features/location-store/src/index.ts"
+        "packages/features/location-store/dist/index.d.ts"
       ],
       "@hierarchidb/location-store/*": [
-        "packages/features/location-store/src/*"
+        "packages/features/location-store/dist/*"
       ],
       "@hierarchidb/shape-store": [
-        "packages/features/shape-store/src/index.ts"
+        "packages/features/shape-store/dist/index.d.ts"
       ],
       "@hierarchidb/shape-store/*": [
-        "packages/features/shape-store/src/*"
+        "packages/features/shape-store/dist/*"
       ],
       "@hierarchidb/styler-store": [
-        "packages/features/styler-store/src/index.ts"
+        "packages/features/styler-store/dist/index.d.ts"
       ],
       "@hierarchidb/styler-store/*": [
-        "packages/features/styler-store/src/*"
+        "packages/features/styler-store/dist/*"
       ],
       "@hierarchidb/spreadsheet-store": [
-        "packages/features/spreadsheet-store/src/index.ts"
+        "packages/features/spreadsheet-store/dist/index.d.ts"
       ],
       "@hierarchidb/spreadsheet-store/*": [
-        "packages/features/spreadsheet-store/src/*"
+        "packages/features/spreadsheet-store/dist/*"
       ],
       "@hierarchidb/memory": [
-        "packages/memory/src/index.ts"
+        "packages/memory/dist/index.d.ts"
       ],
       "@hierarchidb/memory/*": [
-        "packages/memory/src/*"
+        "packages/memory/dist/*"
       ],
       "@hierarchidb/feature-registry": [
         "packages/features/feature-registry/dist/index.d.ts"
@@ -119,31 +116,16 @@
         "packages/features/feature-registry/dist/*"
       ],
       "@hierarchidb/gis-sdk": [
-        "packages/features/gis-sdk/src/index.ts"
+        "packages/features/gis-sdk/dist/index.d.ts"
       ],
       "@hierarchidb/gis-sdk/*": [
-        "packages/features/gis-sdk/src/*"
-      ],
-      "@hierarchidb/fetch-save-metadata": [
-        "packages/features/fetch-save-metadata/dist/index.d.ts"
-      ],
-      "@hierarchidb/fetch-save-metadata/*": [
-        "packages/features/fetch-save-metadata/dist/*"
-      ],
-      "@hierarchidb/fetch-save-metadata/output": [
-        "packages/features/fetch-save-metadata/output"
-      ],
-      "@hierarchidb/fetch-save-metadata/output/*": [
-        "packages/features/fetch-save-metadata/output/*"
-      ],
-      "@hierarchidb/fetch-save-metadata/output/*.json": [
-        "packages/features/fetch-save-metadata/output/*.json"
+        "packages/features/gis-sdk/dist/*"
       ],
       "@hierarchidb/folder-plugin": [
-        "plugins/folder-plugin/src/index.ts"
+        "plugins/folder-plugin/dist/index.d.ts"
       ],
       "@hierarchidb/folder-plugin/*": [
-        "plugins/folder-plugin/src/*"
+        "plugins/folder-plugin/dist/*"
       ],
       "@hierarchidb/import-export": [
         "packages/features/import-export/dist/index.d.ts"
@@ -152,22 +134,22 @@
         "packages/features/import-export/dist/*"
       ],
       "@hierarchidb/linker-plugin": [
-        "plugins/linker-plugin/src/index.ts"
+        "plugins/linker-plugin/dist/index.d.ts"
       ],
       "@hierarchidb/linker-plugin/*": [
-        "plugins/linker-plugin/src/*"
+        "plugins/linker-plugin/dist/*"
       ],
       "@hierarchidb/location-plugin": [
-        "plugins/location-plugin/src/index.ts"
+        "plugins/location-plugin/dist/index.d.ts"
       ],
       "@hierarchidb/location-plugin/*": [
-        "plugins/location-plugin/src/*"
+        "plugins/location-plugin/dist/*"
       ],
       "@hierarchidb/map-adapter": [
-        "packages/features/map-adapter/src/index.ts"
+        "packages/features/map-adapter/dist/index.d.ts"
       ],
       "@hierarchidb/map-adapter/*": [
-        "packages/features/map-adapter/src/*"
+        "packages/features/map-adapter/dist/*"
       ],
       "@hierarchidb/map-source": [
         "packages/features/map-source/dist/index.d.ts"
@@ -176,41 +158,34 @@
         "packages/features/map-source/dist/*"
       ],
       "@hierarchidb/memory-usage": [
-        "packages/ui/memory-usage/src/index.ts"
+        "packages/ui/memory-usage/dist/index.d.ts"
       ],
       "@hierarchidb/memory-usage/*": [
-        "packages/ui/memory-usage/src/*"
+        "packages/ui/memory-usage/dist/*"
       ],
       "@hierarchidb/plugin-registry": [
-        "packages/plugin-registry/generated/registry.ts"
+        "packages/plugin-registry/dist/registry.d.ts"
       ],
       "@hierarchidb/plugin-registry/derivations": [
-        "packages/plugin-registry/src/derivations.ts"
+        "packages/plugin-registry/dist/derivations.d.ts"
       ],
       "@hierarchidb/plugin-registry/types": [
-        "packages/plugin-registry/src/types.ts"
+        "packages/plugin-registry/dist/types.d.ts"
       ],
       "@hierarchidb/plugin-registry/*": [
-        "packages/plugin-registry/generated/*",
-        "packages/plugin-registry/src/*"
+        "packages/plugin-registry/dist/*"
       ],
       "@hierarchidb/plugin-presentation": [
-        "packages/plugin-presentation/src/index.ts"
+        "packages/plugin-presentation/dist/index.d.ts"
       ],
       "@hierarchidb/plugin-presentation/*": [
-        "packages/plugin-presentation/src/*"
+        "packages/plugin-presentation/dist/*"
       ],
       "@hierarchidb/plugin-service-api": [
-        "packages/plugin-service-api/src/index.ts"
+        "packages/plugin-service-api/dist/index.d.ts"
       ],
       "@hierarchidb/plugin-service-api/*": [
-        "packages/plugin-service-api/src/*"
-      ],
-      "@hierarchidb/plugin-service-sdk": [
-        "packages/plugin-service-sdk/src/index.ts"
-      ],
-      "@hierarchidb/plugin-service-sdk/*": [
-        "packages/plugin-service-sdk/src/*"
+        "packages/plugin-service-api/dist/*"
       ],
       "@hierarchidb/plugin-ui-sdk": [
         "packages/plugin-ui-sdk/dist/index.d.ts"
@@ -219,19 +194,19 @@
         "packages/plugin-ui-sdk/dist/*"
       ],
       "@hierarchidb/resolver-plugin": [
-        "plugins/resolver-plugin/src/index.ts"
+        "plugins/resolver-plugin/dist/index.d.ts"
       ],
       "@hierarchidb/resolver-plugin/*": [
-        "plugins/resolver-plugin/src/*"
+        "plugins/resolver-plugin/dist/*"
       ],
       "@hierarchidb/resolver-plugin/database": [
-        "plugins/resolver-plugin/src/worker/database/index.ts"
+        "plugins/resolver-plugin/dist/worker/database/index.d.ts"
       ],
       "@hierarchidb/route-plugin": [
-        "plugins/route-plugin/src/index.ts"
+        "plugins/route-plugin/dist/index.d.ts"
       ],
       "@hierarchidb/route-plugin/*": [
-        "plugins/route-plugin/src/*"
+        "plugins/route-plugin/dist/*"
       ],
       "@hierarchidb/route-resolver": [
         "packages/features/route-resolver/dist/index.d.ts"
@@ -240,10 +215,10 @@
         "packages/features/route-resolver/dist/*"
       ],
       "@hierarchidb/route-engine": [
-        "packages/features/route-engine/src/index.ts"
+        "packages/features/route-engine/dist/index.d.ts"
       ],
       "@hierarchidb/route-engine/*": [
-        "packages/features/route-engine/src/*"
+        "packages/features/route-engine/dist/*"
       ],
       "@hierarchidb/route-searoute": [
         "packages/features/route-searoute/dist/index.d.ts"
@@ -252,97 +227,67 @@
         "packages/features/route-searoute/dist/*"
       ],
       "@hierarchidb/route-store": [
-        "packages/features/route-store/src/index.ts"
+        "packages/features/route-store/dist/index.d.ts"
       ],
       "@hierarchidb/route-store/*": [
-        "packages/features/route-store/src/*"
+        "packages/features/route-store/dist/*"
       ],
       "@hierarchidb/ui-worker-client": [
-        "packages/ui/worker-client/src/index.ts"
+        "packages/ui/worker-client/dist/index.d.ts"
       ],
       "@hierarchidb/ui-worker-client/*": [
-        "packages/ui/worker-client/src/*"
+        "packages/ui/worker-client/dist/*"
       ],
       "@hierarchidb/ui-worker-provider": [
-        "packages/ui/worker-provider/src/index.ts"
+        "packages/ui/worker-provider/dist/index.d.ts"
       ],
       "@hierarchidb/ui-worker-provider/*": [
-        "packages/ui/worker-provider/src/*"
+        "packages/ui/worker-provider/dist/*"
       ],
       "react-transition-group/Transition": [
         "types/react-transition-group/Transition.d.ts"
       ],
-      "@hierarchidb/runtime-shared-fetch-metadata": [
-        "packages/runtime-shared/fetch-metadata/src/index.ts"
-      ],
-      "@hierarchidb/runtime-shared-fetch-metadata/*": [
-        "packages/runtime-shared/fetch-metadata/src/*"
-      ],
-      "@hierarchidb/runtime-ui-license": [
-        "packages/runtime-ui/license/src/index.ts"
-      ],
-      "@hierarchidb/runtime-ui-license/*": [
-        "packages/runtime-ui/license/src/*"
-      ],
       "@hierarchidb/runtime-worker": [
-        "packages/runtime-worker/src/index.ts"
+        "packages/runtime-worker/dist/index.d.ts"
       ],
       "@hierarchidb/runtime-worker/stage-worker": [
-        "packages/runtime-worker/src/stageWorker.entry.ts"
+        "packages/runtime-worker/dist/stageWorker.entry.d.ts"
       ],
       "@hierarchidb/runtime-worker/*": [
-        "packages/runtime-worker/src/*"
+        "packages/runtime-worker/dist/*"
       ],
       "@hierarchidb/shape-plugin": [
-        "plugins/shape-plugin/src/index.ts"
+        "plugins/shape-plugin/dist/index.d.ts"
       ],
       "@hierarchidb/shape-plugin/shape-stage-worker": [
-        "plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.entry.ts"
+        "plugins/shape-plugin/dist/services/batch/workers/shapeStageWorker.entry.d.ts"
       ],
       "@hierarchidb/shape-plugin/*": [
-        "plugins/shape-plugin/src/*"
+        "plugins/shape-plugin/dist/*"
       ],
       "@hierarchidb/spreadsheet-plugin": [
-        "plugins/spreadsheet-plugin/src/index.ts"
+        "plugins/spreadsheet-plugin/dist/index.d.ts"
       ],
       "@hierarchidb/spreadsheet-plugin/*": [
-        "plugins/spreadsheet-plugin/src/*"
+        "plugins/spreadsheet-plugin/dist/*"
       ],
       "@hierarchidb/styler-plugin": [
-        "plugins/styler-plugin/src/index.ts"
+        "plugins/styler-plugin/dist/index.d.ts"
       ],
       "@hierarchidb/styler-plugin/*": [
-        "plugins/styler-plugin/src/*"
-      ],
-      "@hierarchidb/table-metadata": [
-        "packages/features/table-metadata/src/index.ts"
-      ],
-      "@hierarchidb/table-metadata/*": [
-        "packages/features/table-metadata/src/*"
-      ],
-      "@hierarchidb/tabular": [
-        "packages/features/tabular/src/index.ts"
+        "plugins/styler-plugin/dist/*"
       ],
       "@hierarchidb/tabular-source": [
         "packages/features/tabular-source/dist/index.d.ts"
       ],
       "@hierarchidb/tabular-source-xlsx": [
-        "packages/features/tabular-source-xlsx/src/index.ts"
+        "packages/features/tabular-source-xlsx/dist/index.d.ts"
       ],
       "@hierarchidb/tabular-source-xlsx/*": [
-        "packages/features/tabular-source-xlsx/src/*"
+        "packages/features/tabular-source-xlsx/dist/*"
       ],
       "@hierarchidb/tabular-source/*": [
         "packages/features/tabular-source/dist/*"
-      ],
-      "@hierarchidb/tabular-store": [
-        "packages/features/tabular-store/dist/index.d.ts"
-      ],
-      "@hierarchidb/tabular-store/*": [
-        "packages/features/tabular-store/dist/*"
-      ],
-      "@hierarchidb/tabular/*": [
-        "packages/features/tabular/src/*"
       ],
       "@hierarchidb/tag": [
         "packages/features/tag/dist/index.d.ts"
@@ -351,250 +296,244 @@
         "packages/features/tag/dist/*"
       ],
       "@hierarchidb/timeline-plugin": [
-        "plugins/timeline-plugin/src/index.ts"
+        "plugins/timeline-plugin/dist/index.d.ts"
       ],
       "@hierarchidb/timeline-plugin/*": [
-        "plugins/timeline-plugin/src/*"
+        "plugins/timeline-plugin/dist/*"
       ],
       "@hierarchidb/ui-accordion-config": [
-        "packages/ui/accordion-config/src/index.ts"
+        "packages/ui/accordion-config/dist/index.d.ts"
       ],
       "@hierarchidb/ui-accordion-config/*": [
-        "packages/ui/accordion-config/src/*"
+        "packages/ui/accordion-config/dist/*"
       ],
       "@hierarchidb/ui-auth": [
-        "packages/ui/auth/src/index.ts"
+        "packages/ui/auth/dist/index.d.ts"
       ],
       "@hierarchidb/ui-auth/*": [
-        "packages/ui/auth/src/*"
-      ],
-      "@hierarchidb/ui-core": [
-        "packages/ui/core/src/index.ts"
-      ],
-      "@hierarchidb/ui-core/*": [
-        "packages/ui/core/src/*"
+        "packages/ui/auth/dist/*"
       ],
       "@hierarchidb/ui-country-select": [
-        "packages/ui/country-select/src/index.ts"
+        "packages/ui/country-select/dist/index.d.ts"
       ],
       "@hierarchidb/ui-country-select/*": [
-        "packages/ui/country-select/src/*"
+        "packages/ui/country-select/dist/*"
       ],
       "@hierarchidb/ui-csv-extract": [
-        "packages/ui/tabular-extract/src/index.ts"
+        "packages/ui/tabular-extract/dist/index.d.ts"
       ],
       "@hierarchidb/ui-csv-extract/*": [
-        "packages/ui/tabular-extract/src/*"
+        "packages/ui/tabular-extract/dist/*"
       ],
       "@hierarchidb/ui-grid": [
-        "packages/ui/data-grid/src/index.ts"
+        "packages/ui/data-grid/dist/index.d.ts"
       ],
       "@hierarchidb/ui-grid/*": [
-        "packages/ui/data-grid/src/*"
+        "packages/ui/data-grid/dist/*"
       ],
       "@hierarchidb/ui-datasource": [
-        "packages/ui/datasource/src/index.ts"
+        "packages/ui/datasource/dist/index.d.ts"
       ],
       "@hierarchidb/ui-datasource/*": [
-        "packages/ui/datasource/src/*"
+        "packages/ui/datasource/dist/*"
       ],
       "@hierarchidb/ui-gis": [
-        "packages/ui/gis/src/index.ts"
+        "packages/ui/gis/dist/index.d.ts"
       ],
       "@hierarchidb/ui-gis/*": [
-        "packages/ui/gis/src/*"
+        "packages/ui/gis/dist/*"
       ],
       "@hierarchidb/ui-batch": [
-        "packages/ui/batch/src/index.ts"
+        "packages/ui/batch/dist/index.d.ts"
       ],
       "@hierarchidb/ui-batch/*": [
-        "packages/ui/batch/src/*"
+        "packages/ui/batch/dist/*"
       ],
       "@hierarchidb/ui-dialog": [
-        "packages/ui/dialog/src/index.ts"
+        "packages/ui/dialog/dist/index.d.ts"
       ],
       "@hierarchidb/ui-dialog/*": [
-        "packages/ui/dialog/src/*"
+        "packages/ui/dialog/dist/*"
       ],
       "@hierarchidb/ui-file": [
-        "packages/ui/file/src/index.ts"
+        "packages/ui/file/dist/index.d.ts"
       ],
       "@hierarchidb/ui-file/*": [
-        "packages/ui/file/src/*"
+        "packages/ui/file/dist/*"
       ],
       "@hierarchidb/ui-floating-window": [
-        "packages/ui/floating-window/src/index.ts"
+        "packages/ui/floating-window/dist/index.d.ts"
       ],
       "@hierarchidb/ui-floating-window/*": [
-        "packages/ui/floating-window/src/*"
+        "packages/ui/floating-window/dist/*"
       ],
       "@hierarchidb/ui-i18n": [
-        "packages/ui/i18n/src/index.ts"
+        "packages/ui/i18n/dist/index.d.ts"
       ],
       "@hierarchidb/ui-i18n/*": [
-        "packages/ui/i18n/src/*"
+        "packages/ui/i18n/dist/*"
       ],
       "@hierarchidb/ui-icon": [
-        "packages/ui/icon/src/index.ts"
+        "packages/ui/icon/dist/index.d.ts"
       ],
       "@hierarchidb/ui-icon/*": [
-        "packages/ui/icon/src/*"
+        "packages/ui/icon/dist/*"
       ],
       "@hierarchidb/ui-layout": [
-        "packages/ui/layout/src/index.ts"
+        "packages/ui/layout/dist/index.d.ts"
       ],
       "@hierarchidb/ui-layout/*": [
-        "packages/ui/layout/src/*"
+        "packages/ui/layout/dist/*"
       ],
       "@hierarchidb/ui-license": [
-        "packages/ui/license/src/index.ts"
+        "packages/ui/license/dist/index.d.ts"
       ],
       "@hierarchidb/ui-license/*": [
-        "packages/ui/license/src/*"
+        "packages/ui/license/dist/*"
       ],
       "@hierarchidb/gen-iso3166-2": [
-        "packages/tools/gen-iso3166-2/src/index.ts"
+        "packages/tools/gen-iso3166-2/dist/index.d.ts"
       ],
       "@hierarchidb/gen-iso3166-2/*": [
-        "packages/tools/gen-iso3166-2/src/*"
+        "packages/tools/gen-iso3166-2/dist/*"
       ],
       "@hierarchidb/ui-lru-splitview": [
-        "packages/ui/lru-splitview/src/index.ts"
+        "packages/ui/lru-splitview/dist/index.d.ts"
       ],
       "@hierarchidb/ui-lru-splitview/*": [
-        "packages/ui/lru-splitview/src/*"
+        "packages/ui/lru-splitview/dist/*"
       ],
       "@hierarchidb/ui-map": [
-        "packages/ui/map/src/index.ts"
+        "packages/ui/map/dist/index.d.ts"
       ],
       "@hierarchidb/ui-map/*": [
-        "packages/ui/map/src/*"
+        "packages/ui/map/dist/*"
       ],
       "@hierarchidb/ui-memory": [
-        "packages/ui/memory/src/index.ts"
+        "packages/ui/memory/dist/index.d.ts"
       ],
       "@hierarchidb/ui-memory/*": [
-        "packages/ui/memory/src/*"
+        "packages/ui/memory/dist/*"
       ],
       "@hierarchidb/ui-monitoring": [
-        "packages/ui/monitoring/src/index.ts"
+        "packages/ui/monitoring/dist/index.d.ts"
       ],
       "@hierarchidb/ui-monitoring/*": [
-        "packages/ui/monitoring/src/*"
+        "packages/ui/monitoring/dist/*"
       ],
       "@hierarchidb/ui-navigation": [
-        "packages/ui/navigation/src/index.ts"
+        "packages/ui/navigation/dist/index.d.ts"
       ],
       "@hierarchidb/ui-navigation/*": [
-        "packages/ui/navigation/src/*"
+        "packages/ui/navigation/dist/*"
       ],
       "@hierarchidb/ui-plugin-basic-info": [
-        "packages/ui/plugin-basic-info/src/index.ts"
+        "packages/ui/plugin-basic-info/dist/index.d.ts"
       ],
       "@hierarchidb/ui-plugin-basic-info/*": [
-        "packages/ui/plugin-basic-info/src/*"
+        "packages/ui/plugin-basic-info/dist/*"
       ],
       "@hierarchidb/plugin-ui-host": [
-        "packages/plugin-ui-host/src/index.ts"
+        "packages/plugin-ui-host/dist/index.d.ts"
       ],
       "@hierarchidb/plugin-ui-host/*": [
-        "packages/plugin-ui-host/src/*"
+        "packages/plugin-ui-host/dist/*"
       ],
       "@hierarchidb/plugin-base": [
-        "packages/plugin-base/src/index.ts"
+        "packages/plugin-base/dist/index.d.ts"
       ],
       "@hierarchidb/plugin-base/*": [
-        "packages/plugin-base/src/*"
+        "packages/plugin-base/dist/*"
       ],
       "@hierarchidb/ui-routing": [
-        "packages/ui/routing/src/index.ts"
+        "packages/ui/routing/dist/index.d.ts"
       ],
       "@hierarchidb/ui-routing/*": [
-        "packages/ui/routing/src/*"
+        "packages/ui/routing/dist/*"
       ],
       "@hierarchidb/ui-plugin-shell": [
-        "packages/ui/plugin-shell/src/index.ts"
+        "packages/ui/plugin-shell/dist/index.d.ts"
       ],
       "@hierarchidb/ui-plugin-shell/*": [
-        "packages/ui/plugin-shell/src/*"
+        "packages/ui/plugin-shell/dist/*"
       ],
       "@hierarchidb/ui-search-result-window": [
-        "packages/ui/search-result-window/src/index.ts"
+        "packages/ui/search-result-window/dist/index.d.ts"
       ],
       "@hierarchidb/ui-search-result-window/*": [
-        "packages/ui/search-result-window/src/*"
+        "packages/ui/search-result-window/dist/*"
       ],
       "@hierarchidb/ui-tabular": [
-        "packages/ui/tabular-extract/src/index.ts"
+        "packages/ui/tabular-extract/dist/index.d.ts"
       ],
       "@hierarchidb/ui-tabular/*": [
-        "packages/ui/tabular-extract/src/*"
+        "packages/ui/tabular-extract/dist/*"
       ],
       "@hierarchidb/ui-modal-select": [
-        "packages/ui/modal-select/src/index.ts"
+        "packages/ui/modal-select/dist/index.d.ts"
       ],
       "@hierarchidb/ui-modal-select/*": [
-        "packages/ui/modal-select/src/*"
+        "packages/ui/modal-select/dist/*"
       ],
       "@hierarchidb/ui-theme": [
-        "packages/ui/theme/src/index.ts"
+        "packages/ui/theme/dist/index.d.ts"
       ],
       "@hierarchidb/ui-theme/*": [
-        "packages/ui/theme/src/*"
+        "packages/ui/theme/dist/*"
       ],
       "@hierarchidb/ui-tour": [
-        "packages/ui/tour/src/index.ts"
+        "packages/ui/tour/dist/index.d.ts"
       ],
       "@hierarchidb/ui-tour/*": [
-        "packages/ui/tour/src/*"
+        "packages/ui/tour/dist/*"
       ],
       "@hierarchidb/ui-treeconsole-base": [
-        "packages/ui/treeconsole/base/src/index.ts"
+        "packages/ui/treeconsole/base/dist/index.d.ts"
       ],
       "@hierarchidb/ui-treeconsole-base/*": [
-        "packages/ui/treeconsole/base/src/*"
+        "packages/ui/treeconsole/base/dist/*"
       ],
       "@hierarchidb/ui-treeconsole-breadcrumb": [
-        "packages/ui/treeconsole/breadcrumb/src/index.ts"
+        "packages/ui/treeconsole/breadcrumb/dist/index.d.ts"
       ],
       "@hierarchidb/ui-treeconsole-breadcrumb/*": [
-        "packages/ui/treeconsole/breadcrumb/src/*"
+        "packages/ui/treeconsole/breadcrumb/dist/*"
       ],
       "@hierarchidb/ui-treeconsole-footer": [
-        "packages/ui/treeconsole/footer/src/index.ts"
+        "packages/ui/treeconsole/footer/dist/index.d.ts"
       ],
       "@hierarchidb/ui-treeconsole-footer/*": [
-        "packages/ui/treeconsole/footer/src/*"
+        "packages/ui/treeconsole/footer/dist/*"
       ],
       "@hierarchidb/ui-treeconsole-speeddial": [
-        "packages/ui/treeconsole/speeddial/src/index.ts"
+        "packages/ui/treeconsole/speeddial/dist/index.d.ts"
       ],
       "@hierarchidb/ui-treeconsole-speeddial/*": [
-        "packages/ui/treeconsole/speeddial/src/*"
+        "packages/ui/treeconsole/speeddial/dist/*"
       ],
       "@hierarchidb/ui-treeconsole-toolbar": [
-        "packages/ui/treeconsole/toolbar/src/index.ts"
+        "packages/ui/treeconsole/toolbar/dist/index.d.ts"
       ],
       "@hierarchidb/ui-treeconsole-toolbar/*": [
-        "packages/ui/treeconsole/toolbar/src/*"
+        "packages/ui/treeconsole/toolbar/dist/*"
       ],
       "@hierarchidb/ui-search-field": [
-        "packages/ui/search-field/src/index.ts"
+        "packages/ui/search-field/dist/index.d.ts"
       ],
       "@hierarchidb/ui-search-field/*": [
-        "packages/ui/search-field/src/*"
+        "packages/ui/search-field/dist/*"
       ],
       "@hierarchidb/ui-treeconsole-treetable": [
-        "packages/ui/treeconsole/treetable/src/index.ts"
+        "packages/ui/treeconsole/treetable/dist/index.d.ts"
       ],
       "@hierarchidb/ui-treeconsole-treetable/*": [
-        "packages/ui/treeconsole/treetable/src/*"
+        "packages/ui/treeconsole/treetable/dist/*"
       ],
       "@hierarchidb/ui-usermenu": [
-        "packages/ui/usermenu/src/index.ts"
+        "packages/ui/usermenu/dist/index.d.ts"
       ],
       "@hierarchidb/ui-usermenu/*": [
-        "packages/ui/usermenu/src/*"
+        "packages/ui/usermenu/dist/*"
       ],
       "@hierarchidb/util": [
         "packages/util/dist/index.d.ts"

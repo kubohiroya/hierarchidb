@@ -1,39 +1,28 @@
-import gadmMetadata from '@hierarchidb/fetch-save-metadata/output/gadm.json' with { type: 'json' };
-import geoboundariesMetadata from '@hierarchidb/fetch-save-metadata/output/geoboundaries.json' with { type: 'json' };
-import naturalearthMetadata from '@hierarchidb/fetch-save-metadata/output/naturalearth.json' with { type: 'json' };
-import osmMetadata from '@hierarchidb/fetch-save-metadata/output/osm.json' with { type: 'json' };
 import type { CountryMetadata, DataSourceName } from '../../common/types/index.js';
 import { normalizeDataSourceName } from '../utils/utils.js';
-import { normalizeCountryCodeFormat } from '../utils/iso3166.js';
-
-type RawCountryMetadata = Partial<CountryMetadata> & {
-  availableAdminLevels?: Array<number | { level?: number } | string>;
-  adminLevels?: Array<number | { level?: number }>;
-  maxAdminLevel?: number;
-  countryCode?: string;
-  iso2?: CountryMetadata['iso2'];
-  iso3?: CountryMetadata['iso3'];
-  countryName?: string;
-  continent?: string;
-  population?: number;
-  area?: number;
-  bbox?: number[];
-};
+import {
+  assertDataSourceSupported,
+  fetchGeoBoundariesMetadata,
+  fetchGadmMetadata,
+  fetchNaturalEarthMetadata,
+} from './metadataSources.js';
 
 /**
  * MetadataLoader service
- * Loads country metadata from @hierarchidb/fetch-save-metadata output files
+ * Loads country metadata via @hierarchidb/download with source-specific parsing
  */
 export class MetadataLoader {
   private static instance: MetadataLoader | null = null;
   private metadataCache: Map<DataSourceName, CountryMetadata[]> = new Map();
 
-  // Mapping of data source names to metadata file names
-  private readonly metadataModules: Record<DataSourceName, RawCountryMetadata[]> = {
-    gadm: gadmMetadata as unknown as RawCountryMetadata[],
-    geoboundaries: geoboundariesMetadata as unknown as RawCountryMetadata[],
-    naturalearth: naturalearthMetadata as unknown as RawCountryMetadata[],
-    openstreetmap: osmMetadata as unknown as RawCountryMetadata[],
+  private readonly loaders: Record<DataSourceName, () => Promise<CountryMetadata[]>> = {
+    gadm: fetchGadmMetadata,
+    geoboundaries: fetchGeoBoundariesMetadata,
+    naturalearth: fetchNaturalEarthMetadata,
+    openstreetmap: async () => {
+      assertDataSourceSupported('openstreetmap');
+      return [];
+    },
   };
 
   private constructor() {
@@ -61,15 +50,12 @@ export class MetadataLoader {
     }
 
     try {
-      // Import metadata from 02-fetch-save-metadata package
-      const moduleData = this.metadataModules[normalized];
-      if (!moduleData) {
+      const loader = this.loaders[normalized];
+      if (!loader) {
         console.warn(`Unknown data source: ${normalized}`);
         return [];
       }
-      const rawData = moduleData;
-
-      const metadata = await this.transformMetadata(rawData, normalized);
+      const metadata = await loader();
 
       // Cache the result
       this.metadataCache.set(normalized, metadata);
@@ -77,83 +63,11 @@ export class MetadataLoader {
       return metadata;
     } catch (error) {
       console.error(`Error loading metadata for ${normalized}:`, error);
+      if (error instanceof Error && /openstreetmap/i.test(error.message)) {
+        throw error;
+      }
       return [];
     }
-  }
-
-  /**
-   * Transform raw metadata to CountryMetadata format
-   */
-  private async transformMetadata(
-    rawData: RawCountryMetadata[],
-    _dataSource: string,
-  ): Promise<CountryMetadata[]> {
-    return Promise.all(rawData.map(async (item) => {
-      const resolvedLevels = this.normalizeAvailableLevels(item);
-      const rawCode = (item.iso2 ?? item.countryCode ?? item.iso3 ?? '').trim();
-      const normalizedIso2 = rawCode
-        ? await normalizeCountryCodeFormat(rawCode, 'iso2')
-        : '';
-      const iso2 = normalizedIso2.length === 2
-        ? normalizedIso2
-        : (item.iso2?.trim().toUpperCase() ?? '');
-      const countryCode = iso2 || 'UNKNOWN';
-      if (!iso2 && rawCode) {
-        console.warn('[MetadataLoader] failed to resolve ISO2 code', {
-          rawCode,
-          iso3: item.iso3,
-          countryName: item.countryName,
-        });
-      }
-      return {
-        countryCode,
-        countryName: item.countryName || '',
-        continent: item.continent || '',
-        availableAdminLevels: resolvedLevels,
-        iso2: iso2 || undefined,
-        iso3: item.iso3?.trim().toUpperCase(),
-        bbox: Array.isArray(item.bbox) && item.bbox.length === 4
-          ? [item.bbox[0] as number, item.bbox[1] as number, item.bbox[2] as number, item.bbox[3] as number]
-          : undefined,
-        population: item.population,
-        area: item.area,
-        dataQuality: this.determineDataQuality(resolvedLevels),
-      };
-    }));
-  }
-
-  private normalizeAvailableLevels(item: RawCountryMetadata): number[] {
-    if (Array.isArray(item.availableAdminLevels)) {
-      return item.availableAdminLevels
-        .map((v: unknown) => (typeof v === 'number' ? v : Number.NaN))
-        .filter((v: number) => Number.isFinite(v))
-        .sort((a: number, b: number) => a - b);
-    }
-    if (Array.isArray(item.adminLevels)) {
-      const levels = item.adminLevels
-        .map((v: unknown) => {
-          if (typeof v === 'number') return v;
-          if (v && typeof (v as { level?: unknown }).level === 'number') return (v as { level: number }).level;
-          return Number.NaN;
-        })
-        .filter((v: number) => Number.isFinite(v))
-        .sort((a: number, b: number) => a - b);
-      return levels.length ? levels : [];
-    }
-    if (typeof item.maxAdminLevel === 'number' && item.maxAdminLevel >= 0) {
-      return Array.from({ length: item.maxAdminLevel + 1 }, (_, idx) => idx);
-    }
-    return [];
-  }
-
-  /**
-   * Determine data quality based on available levels
-   */
-  private determineDataQuality(levels: number[]): 'high' | 'medium' | 'low' {
-    const numLevels = levels.length || 0;
-    if (numLevels >= 4) return 'high';
-    if (numLevels >= 2) return 'medium';
-    return 'low';
   }
 
   /**
@@ -202,7 +116,7 @@ export class MetadataLoader {
    * Get all available data sources
    */
   getAvailableDataSources(): string[] {
-    return Object.keys(this.metadataModules);
+    return Object.keys(this.loaders);
   }
 }
 

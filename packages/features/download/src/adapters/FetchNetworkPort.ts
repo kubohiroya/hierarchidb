@@ -81,7 +81,7 @@ export class FetchNetworkPort implements NetworkPort {
     try {
       const headers = await this.mergeHeaders(init?.headers);
       let attempt = 0;
-      let lastErr: any;
+      let lastErr: unknown;
       while (attempt <= this.opts.retries) {
         try {
           const target = resolveNetworkUrl(url, { corsProxyBaseURL: this.opts.corsProxyBaseURL });
@@ -98,7 +98,8 @@ export class FetchNetworkPort implements NetworkPort {
           await sleep(backoff(attempt++, this.opts.baseDelayMs, this.opts.maxDelayMs));
         }
       }
-      if (lastErr) throw lastErr;
+      if (lastErr instanceof Error) throw lastErr;
+      if (lastErr) throw new Error(String(lastErr));
       throw new Error('Fetch failed');
     } finally {
       sem.release();

@@ -1,0 +1,254 @@
+import {
+  configurePluginDownloadDefaults,
+  downloadJson,
+  downloadText,
+  getCorsProxyBaseURL,
+} from '@hierarchidb/download';
+import type { CountryMetadata } from '../../common/types/index.js';
+import { normalizeCountryCodeFormat } from '../utils/iso3166.js';
+
+type GeoBoundariesRecord = Record<string, unknown>;
+
+const GEOBOUNDARIES_ALL_URL = 'https://www.geoboundaries.org/api/current/gbOpen/ALL/ALL/';
+const GADM_MAPS_URL = 'https://gadm.org/maps.html';
+
+const ensureShapeDownloadDefaults = (): void => {
+  const corsProxyBaseURL = getCorsProxyBaseURL() || undefined;
+  configurePluginDownloadDefaults('shape', {
+    dbPrefix: 'shape',
+    corsProxyBaseURL,
+  });
+};
+
+const parseAdminLevel = (value: unknown): number | null => {
+  if (typeof value === 'number' && Number.isInteger(value)) return value;
+  if (typeof value !== 'string') return null;
+  const text = value.trim();
+  const admMatch = text.match(/ADM\s*([0-6])/i);
+  if (admMatch?.[1]) return Number.parseInt(admMatch[1], 10);
+  const levelMatch = text.match(/level\s*-?\s*(\d+)/i);
+  if (levelMatch?.[1]) return Number.parseInt(levelMatch[1], 10);
+  return null;
+};
+
+const readFirstString = (record: Record<string, unknown>, keys: string[]): string | null => {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === 'string' && value.trim().length > 0) {
+      return value.trim();
+    }
+  }
+  return null;
+};
+
+const determineDataQuality = (levels: number[]): 'high' | 'medium' | 'low' => {
+  const count = levels.length;
+  if (count >= 4) return 'high';
+  if (count >= 2) return 'medium';
+  return 'low';
+};
+
+const decodeHtmlEntities = (value: string): string => (
+  value
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+);
+
+const normalizeWhitespace = (value: string): string => value.replace(/\s+/g, ' ').trim();
+
+const parseGeoBoundariesItems = (payload: unknown): GeoBoundariesRecord[] => {
+  if (Array.isArray(payload)) return payload as GeoBoundariesRecord[];
+  if (payload && typeof payload === 'object') {
+    const data = (payload as { data?: unknown }).data;
+    if (Array.isArray(data)) return data as GeoBoundariesRecord[];
+  }
+  return [];
+};
+
+export async function fetchGeoBoundariesMetadata(): Promise<CountryMetadata[]> {
+  ensureShapeDownloadDefaults();
+  const payload = await downloadJson<unknown>('shape', GEOBOUNDARIES_ALL_URL, 'geoboundaries:metadata:all', {
+    cache: 'conditional',
+  });
+  const items = parseGeoBoundariesItems(payload);
+  const entries = new Map<string, { iso3: string; name?: string; continent?: string; levels: Set<number> }>();
+
+  for (const item of items) {
+    if (!item || typeof item !== 'object') continue;
+    const record = item as GeoBoundariesRecord;
+    const iso3 = readFirstString(record, [
+      'boundaryISO',
+      'iso3',
+      'ISO3',
+      'countryCode',
+      'countryISO',
+      'shapeISO',
+    ]);
+    if (!iso3) continue;
+    const level = parseAdminLevel(readFirstString(record, [
+      'boundaryType',
+      'boundaryLevel',
+      'adm',
+      'ADM',
+    ]));
+    const name = readFirstString(record, [
+      'boundaryName',
+      'shapeName',
+      'countryName',
+      'name',
+      'shapeGroup',
+    ]);
+    const continent = readFirstString(record, [
+      'Continent',
+      'continent',
+    ]);
+    const key = iso3.toUpperCase();
+    const entry = entries.get(key) ?? { iso3: key, levels: new Set<number>() };
+    if (name && !entry.name) entry.name = name;
+    if (continent && !entry.continent) entry.continent = continent;
+    if (typeof level === 'number') entry.levels.add(level);
+    entries.set(key, entry);
+  }
+
+  const results: CountryMetadata[] = [];
+  for (const entry of entries.values()) {
+    const iso2 = await normalizeCountryCodeFormat(entry.iso3, 'iso2');
+    const normalizedIso2 = iso2.length === 2 ? iso2 : undefined;
+    const levels = Array.from(entry.levels).sort((a, b) => a - b);
+    results.push({
+      countryCode: normalizedIso2 ?? entry.iso3,
+      countryName: entry.name ?? entry.iso3,
+      continent: entry.continent ?? '',
+      availableAdminLevels: levels,
+      iso2: normalizedIso2,
+      iso3: entry.iso3,
+      dataQuality: determineDataQuality(levels),
+    });
+  }
+  return results;
+}
+
+type GadmCountryEntry = {
+  iso3: string;
+  name: string;
+  url: string;
+};
+
+const parseGadmCountryEntries = (html: string): GadmCountryEntry[] => {
+  const entries = new Map<string, GadmCountryEntry>();
+  const linkRegex = /<a\s+[^>]*href="([^"]*maps\/([A-Za-z]{3})\.html[^"]*)"[^>]*>(.*?)<\/a>/gi;
+  let match: RegExpExecArray | null;
+  while ((match = linkRegex.exec(html)) !== null) {
+    const href = match[1];
+    const iso3 = match[2]?.toUpperCase();
+    const rawName = match[3]?.replace(/<[^>]+>/g, '') ?? '';
+    if (!iso3) continue;
+    const name = normalizeWhitespace(decodeHtmlEntities(rawName)) || iso3;
+    const url = new URL(href, 'https://gadm.org/').toString();
+    if (!entries.has(iso3)) {
+      entries.set(iso3, { iso3, name, url });
+    }
+  }
+  return Array.from(entries.values());
+};
+
+const parseGadmLevelsFromHtml = (html: string): number[] => {
+  const lower = html.toLowerCase();
+  const idx = lower.indexOf('geojson');
+  if (idx < 0) return [];
+  const window = html.slice(idx, idx + 400);
+  const matches = window.matchAll(/level\s*-?\s*(\d+)/gi);
+  const levels = new Set<number>();
+  for (const match of matches) {
+    const value = Number.parseInt(match[1] ?? '', 10);
+    if (Number.isFinite(value)) levels.add(value);
+  }
+  return Array.from(levels).sort((a, b) => a - b);
+};
+
+const mapWithConcurrency = async <T, R>(
+  items: T[],
+  concurrency: number,
+  mapper: (item: T, index: number) => Promise<R>,
+): Promise<R[]> => {
+  const results: R[] = [];
+  for (let i = 0; i < items.length; i += concurrency) {
+    const chunk = items.slice(i, i + concurrency);
+    // eslint-disable-next-line no-await-in-loop
+    const chunkResults = await Promise.all(chunk.map(mapper));
+    results.push(...chunkResults);
+  }
+  return results;
+};
+
+export async function fetchGadmMetadata(): Promise<CountryMetadata[]> {
+  ensureShapeDownloadDefaults();
+  const html = await downloadText('shape', GADM_MAPS_URL, 'gadm:maps', {
+    cache: 'conditional',
+    accept: 'text/html',
+  });
+  const entries = parseGadmCountryEntries(html);
+  if (entries.length === 0) {
+    throw new Error('GADM maps page did not include country entries.');
+  }
+
+  const results = await mapWithConcurrency(entries, 6, async (entry) => {
+    try {
+      const countryHtml = await downloadText('shape', entry.url, `gadm:country:${entry.iso3}`, {
+        cache: 'conditional',
+        accept: 'text/html',
+      });
+      const levels = parseGadmLevelsFromHtml(countryHtml);
+      const iso2 = await normalizeCountryCodeFormat(entry.iso3, 'iso2');
+      const normalizedIso2 = iso2.length === 2 ? iso2 : undefined;
+      return {
+        countryCode: normalizedIso2 ?? entry.iso3,
+        countryName: entry.name,
+        continent: '',
+        availableAdminLevels: levels,
+        iso2: normalizedIso2,
+        iso3: entry.iso3,
+        dataQuality: determineDataQuality(levels),
+      };
+    } catch (error) {
+      console.warn('[MetadataLoader] failed to parse GADM levels', {
+        iso3: entry.iso3,
+        url: entry.url,
+        error,
+      });
+      const iso2 = await normalizeCountryCodeFormat(entry.iso3, 'iso2');
+      const normalizedIso2 = iso2.length === 2 ? iso2 : undefined;
+      return {
+        countryCode: normalizedIso2 ?? entry.iso3,
+        countryName: entry.name,
+        continent: '',
+        availableAdminLevels: [],
+        iso2: normalizedIso2,
+        iso3: entry.iso3,
+        dataQuality: 'low',
+      };
+    }
+  });
+
+  return results;
+}
+
+export async function fetchNaturalEarthMetadata(): Promise<CountryMetadata[]> {
+  return [{
+    countryCode: 'WW',
+    countryName: 'Worldwide',
+    continent: '',
+    availableAdminLevels: [0, 1],
+    iso2: 'WW',
+    dataQuality: 'medium',
+  }];
+}
+
+export function assertDataSourceSupported(dataSource: string): void {
+  if (dataSource === 'openstreetmap') {
+    throw new Error('OpenStreetMap is not supported in Step3 country selection.');
+  }
+}

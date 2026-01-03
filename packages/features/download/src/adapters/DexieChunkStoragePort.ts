@@ -1,14 +1,25 @@
-import { Dexie } from 'dexie';
+import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
-import type { StoragePort } from '../ports.js';
+import type { StorageCommitMetadata, StorageMetadata, StoragePort } from '../ports.js';
 
-// runtime-worker-only; keep types in comments to avoid TS noUnusedLocals
-// type FileMeta = { id: string; sizeBytes?: number; committed?: boolean; createdAt: number; updatedAt: number; extra?: Record<string, any> };
-// type FileChunk = { fileId: string; index: number; data: ArrayBuffer };
+type FileRecord = {
+  id: string;
+  sizeBytes?: number;
+  committed?: boolean;
+  createdAt: number;
+  updatedAt: number;
+  extra?: StorageCommitMetadata;
+};
+
+type ChunkRecord = {
+  fileId: string;
+  index: number;
+  data: ArrayBuffer;
+};
 
 class ChunkDB extends Dexie {
-  files!: any;
-  chunks!: any;
+  files!: Table<FileRecord, string>;
+  chunks!: Table<ChunkRecord, [string, number]>;
 
   constructor(name: string = getDBName('chunks-db')) {
     super(name);
@@ -36,7 +47,7 @@ export class DexieChunkStoragePort implements StoragePort {
     });
   }
 
-  async commit(fileId: string, metadata: Record<string, any>): Promise<void> {
+  async commit(fileId: string, metadata: StorageCommitMetadata): Promise<void> {
     await this.db.files.update(fileId, {
       committed: true,
       sizeBytes: metadata?.sizeBytes,
@@ -54,7 +65,7 @@ export class DexieChunkStoragePort implements StoragePort {
   async readAll(fileId: string): Promise<ArrayBuffer> {
     const chunks = await this.db.chunks.where('fileId').equals(fileId).sortBy('index');
     // Concatenate in order
-    const total = chunks.reduce((s: number, c: any) => s + c.data.byteLength, 0);
+    const total = chunks.reduce((s: number, c: ChunkRecord) => s + c.data.byteLength, 0);
     const out = new Uint8Array(total);
     let offset = 0;
     for (const c of chunks) {
@@ -62,5 +73,17 @@ export class DexieChunkStoragePort implements StoragePort {
       offset += c.data.byteLength;
     }
     return out.buffer;
+  }
+
+  async getMetadata(fileId: string): Promise<StorageMetadata | undefined> {
+    const record = await this.db.files.get(fileId);
+    if (!record) return undefined;
+    return {
+      ...record.extra,
+      sizeBytes: record.sizeBytes,
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt,
+      committed: record.committed,
+    };
   }
 }

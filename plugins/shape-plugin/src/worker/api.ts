@@ -396,10 +396,12 @@ export const shapeBatchAPI = {
   },
 
   getCountryMetadata: async (dataSource: string | DataSourceName): Promise<CountryMetadata[]> => {
-    // Load from pre-fetched metadata files provided by @hierarchidb/runtime-worker-shared-fetch-metadata
-    // Use the centralized MetadataLoader service for caching and transformation
+    const normalized = toDataSourceName(dataSource);
+    if (normalized === 'openstreetmap') {
+      throw new Error('OpenStreetMap is not supported in Step3 country selection.');
+    }
     try {
-      const data = await metadataLoader.loadMetadata(toDataSourceName(dataSource));
+      const data = await metadataLoader.loadMetadata(normalized);
       if (Array.isArray(data) && data.length > 0) return data;
     } catch (err) {
       console.error('Failed to load country metadata for data source:', dataSource, err);

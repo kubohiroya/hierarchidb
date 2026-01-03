@@ -365,6 +365,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
         'shape',
         `${this.config.access.baseUrl}available/`,
         'geoboundaries:available',
+        { cache: 'conditional' },
       );
       return Object.keys(data);
     } catch (error) {
@@ -381,6 +382,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
         'shape',
         `${this.config.access.baseUrl}available/`,
         'geoboundaries:available',
+        { cache: 'conditional' },
       );
       return data[normalizedCountry] || [];
     } catch (error) {

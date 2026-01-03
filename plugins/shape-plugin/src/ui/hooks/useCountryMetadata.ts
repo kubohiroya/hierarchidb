@@ -19,7 +19,7 @@ export interface UseCountryMetadataResult {
 }
 
 /**
- * Hook to load and use country metadata from 02-fetch-save-metadata
+ * Hook to load and use country metadata via download-backed MetadataLoader
  */
 export function useCountryMetadata({
                                      dataSource,
@@ -32,6 +32,14 @@ export function useCountryMetadata({
 
   const loadMetadata = useCallback(async () => {
     if (!normalizedDataSource) {
+      setMetadata([]);
+      setLoading(false);
+      return;
+    }
+
+    if (normalizedDataSource === 'openstreetmap') {
+      const err = new Error('OpenStreetMap is not supported in Step3 country selection.');
+      setError(err);
       setMetadata([]);
       setLoading(false);
       return;

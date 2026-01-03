@@ -17,6 +17,13 @@ export type DownloadRetryOptions = {
 
 export type PluginDownloadOptions = DownloadServiceOptions;
 
+export type DownloadJsonOptions = DownloadRetryOptions & {
+  cache?: 'conditional';
+  accept?: string;
+  headers?: Record<string, string>;
+  allowStale?: boolean;
+};
+
 type Factory = (opts?: PluginDownloadOptions) => Promise<DownloadServiceBundle>;
 
 type AuthNotification = {
@@ -136,6 +143,46 @@ const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout
 const isAbortError = (error: unknown): boolean =>
   error instanceof Error && error.name === 'AbortError';
 
+const readHeader = (headers: Headers | Record<string, string>, key: string): string | undefined => {
+  if (headers instanceof Headers) {
+    return headers.get(key) ?? undefined;
+  }
+  const target = key.toLowerCase();
+  for (const [name, value] of Object.entries(headers)) {
+    if (name.toLowerCase() === target) {
+      return value;
+    }
+  }
+  return undefined;
+};
+
+const buildHeaders = (
+  accept: string | undefined,
+  extra: Record<string, string> | undefined,
+  conditional?: { etag?: string; lastModified?: string },
+): Headers => {
+  const headers = new Headers(extra);
+  if (accept) {
+    headers.set('Accept', accept);
+  }
+  if (conditional?.etag) {
+    headers.set('If-None-Match', conditional.etag);
+  }
+  if (conditional?.lastModified) {
+    headers.set('If-Modified-Since', conditional.lastModified);
+  }
+  return headers;
+};
+
+const parseJson = <T>(buffer: ArrayBuffer): T => {
+  const text = new TextDecoder('utf-8').decode(buffer);
+  return JSON.parse(text) as T;
+};
+
+const parseText = (buffer: ArrayBuffer): string => (
+  new TextDecoder('utf-8').decode(buffer)
+);
+
 export async function downloadArrayBuffer(
   pluginId: string,
   url: string,
@@ -177,12 +224,190 @@ export async function downloadJson<T>(
   pluginId: string,
   url: string,
   prefix: string,
-  retryOptions: DownloadRetryOptions = {},
+  options: DownloadJsonOptions = {},
   signal?: AbortSignal,
 ): Promise<T> {
-  const buffer = await downloadArrayBuffer(pluginId, url, prefix, retryOptions, signal);
-  const text = new TextDecoder('utf-8').decode(buffer);
-  return JSON.parse(text) as T;
+  if (options.cache !== 'conditional') {
+    const buffer = await downloadArrayBuffer(pluginId, url, prefix, options, signal);
+    return parseJson<T>(buffer);
+  }
+
+  const { net, readAll, store } = await getPluginDownloadService(pluginId);
+  const resolvedUrl = resolveNetworkUrl(url);
+  const fileId = buildDownloadFileId(pluginId, prefix, resolvedUrl);
+  const cachedMeta = await store.getMetadata?.(fileId);
+  const acceptHeader = options.accept ?? 'application/json';
+  const conditionalHeaders = cachedMeta && (cachedMeta.etag || cachedMeta.lastModified)
+    ? { etag: cachedMeta.etag, lastModified: cachedMeta.lastModified }
+    : undefined;
+
+  const attemptFetch = async (useConditional: boolean): Promise<ArrayBuffer> => {
+    const headers = buildHeaders(
+      acceptHeader,
+      options.headers,
+      useConditional ? conditionalHeaders : undefined,
+    );
+    const response = await net.get(resolvedUrl, { headers, signal });
+    if (response.status === 304) {
+      try {
+        const cachedBuffer = await readAll(fileId);
+        return cachedBuffer;
+      } catch (error) {
+        if (useConditional) {
+          return attemptFetch(false);
+        }
+        throw error;
+      }
+    }
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const buffer = await response.arrayBuffer();
+    await store.putChunk(fileId, 0, buffer);
+    await store.commit(fileId, {
+      sizeBytes: buffer.byteLength,
+      etag: readHeader(response.headers, 'etag'),
+      lastModified: readHeader(response.headers, 'last-modified'),
+      contentType: readHeader(response.headers, 'content-type'),
+      fetchedAt: Date.now(),
+    });
+    return buffer;
+  };
+
+  const retries = Math.max(1, options.retries ?? 1);
+  const delayMs = Math.max(0, options.delayMs ?? 0);
+  const backoff: BackoffMode = options.backoff ?? 'exponential';
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < retries; attempt += 1) {
+    try {
+      const buffer = await attemptFetch(Boolean(conditionalHeaders));
+      return parseJson<T>(buffer);
+    } catch (error) {
+      if (signal?.aborted || isAbortError(error)) {
+        throw error;
+      }
+      lastError = error;
+      if (attempt === retries - 1) {
+        break;
+      }
+      if (delayMs > 0) {
+        const wait = backoff === 'exponential'
+          ? delayMs * 2 ** attempt
+          : delayMs * (attempt + 1);
+        await sleep(wait);
+      }
+    }
+  }
+
+  if (options.allowStale !== false && cachedMeta) {
+    try {
+      const cachedBuffer = await readAll(fileId);
+      return parseJson<T>(cachedBuffer);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (lastError instanceof Error) {
+    throw lastError;
+  }
+  throw new Error('Download failed');
+}
+
+export async function downloadText(
+  pluginId: string,
+  url: string,
+  prefix: string,
+  options: DownloadJsonOptions = {},
+  signal?: AbortSignal,
+): Promise<string> {
+  if (options.cache !== 'conditional') {
+    const buffer = await downloadArrayBuffer(pluginId, url, prefix, options, signal);
+    return parseText(buffer);
+  }
+
+  const { net, readAll, store } = await getPluginDownloadService(pluginId);
+  const resolvedUrl = resolveNetworkUrl(url);
+  const fileId = buildDownloadFileId(pluginId, prefix, resolvedUrl);
+  const cachedMeta = await store.getMetadata?.(fileId);
+  const acceptHeader = options.accept ?? 'text/html';
+  const conditionalHeaders = cachedMeta && (cachedMeta.etag || cachedMeta.lastModified)
+    ? { etag: cachedMeta.etag, lastModified: cachedMeta.lastModified }
+    : undefined;
+
+  const attemptFetch = async (useConditional: boolean): Promise<ArrayBuffer> => {
+    const headers = buildHeaders(
+      acceptHeader,
+      options.headers,
+      useConditional ? conditionalHeaders : undefined,
+    );
+    const response = await net.get(resolvedUrl, { headers, signal });
+    if (response.status === 304) {
+      try {
+        const cachedBuffer = await readAll(fileId);
+        return cachedBuffer;
+      } catch (error) {
+        if (useConditional) {
+          return attemptFetch(false);
+        }
+        throw error;
+      }
+    }
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const buffer = await response.arrayBuffer();
+    await store.putChunk(fileId, 0, buffer);
+    await store.commit(fileId, {
+      sizeBytes: buffer.byteLength,
+      etag: readHeader(response.headers, 'etag'),
+      lastModified: readHeader(response.headers, 'last-modified'),
+      contentType: readHeader(response.headers, 'content-type'),
+      fetchedAt: Date.now(),
+    });
+    return buffer;
+  };
+
+  const retries = Math.max(1, options.retries ?? 1);
+  const delayMs = Math.max(0, options.delayMs ?? 0);
+  const backoff: BackoffMode = options.backoff ?? 'exponential';
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < retries; attempt += 1) {
+    try {
+      const buffer = await attemptFetch(Boolean(conditionalHeaders));
+      return parseText(buffer);
+    } catch (error) {
+      if (signal?.aborted || isAbortError(error)) {
+        throw error;
+      }
+      lastError = error;
+      if (attempt === retries - 1) {
+        break;
+      }
+      if (delayMs > 0) {
+        const wait = backoff === 'exponential'
+          ? delayMs * 2 ** attempt
+          : delayMs * (attempt + 1);
+        await sleep(wait);
+      }
+    }
+  }
+
+  if (options.allowStale !== false && cachedMeta) {
+    try {
+      const cachedBuffer = await readAll(fileId);
+      return parseText(cachedBuffer);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (lastError instanceof Error) {
+    throw lastError;
+  }
+  throw new Error('Download failed');
 }
 
 export async function postJson<T = unknown>(

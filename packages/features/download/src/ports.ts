@@ -17,11 +17,13 @@ export interface ResponseLike {
 export interface StoragePort {
   putChunk(fileId: string, index: number, data: ArrayBuffer): Promise<void>;
 
-  commit(fileId: string, metadata: Record<string, any>): Promise<void>;
+  commit(fileId: string, metadata: StorageCommitMetadata): Promise<void>;
 
   getResumeInfo(fileId: string): Promise<{ nextIndex: number } | undefined>;
 
   readAll?(fileId: string): Promise<ArrayBuffer>;
+
+  getMetadata?(fileId: string): Promise<StorageMetadata | undefined>;
 }
 
 export interface IntegrityPort {
@@ -67,3 +69,18 @@ export interface ContentIndexPort {
 
   getHashByUrl(url: string): Promise<{ hash: string; algo: HashAlgorithm } | undefined>;
 }
+
+export type StorageCommitMetadata = {
+  sizeBytes?: number;
+  hash?: string;
+  etag?: string;
+  lastModified?: string;
+  contentType?: string;
+  fetchedAt?: number;
+};
+
+export type StorageMetadata = StorageCommitMetadata & {
+  createdAt?: number;
+  updatedAt?: number;
+  committed?: boolean;
+};

@@ -61,10 +61,10 @@ describe('generateDownloadTaskPayloads', () => {
 
   it('creates gadm URLs for JP/ID levels 0/1', () => {
     assertUrls('gadm', [
-      'https://geodata.ucdavis.edu/gadm/gadm4.1/gpkg/JP_adm_gpkg.zip',
-      'https://geodata.ucdavis.edu/gadm/gadm4.1/gpkg/JP_adm_gpkg.zip',
-      'https://geodata.ucdavis.edu/gadm/gadm4.1/gpkg/ID_adm_gpkg.zip',
-      'https://geodata.ucdavis.edu/gadm/gadm4.1/gpkg/ID_adm_gpkg.zip',
+      'https://geodata.ucdavis.edu/gadm/gadm4.1/gpkg/JPN_adm_gpkg.zip',
+      'https://geodata.ucdavis.edu/gadm/gadm4.1/gpkg/JPN_adm_gpkg.zip',
+      'https://geodata.ucdavis.edu/gadm/gadm4.1/gpkg/IDN_adm_gpkg.zip',
+      'https://geodata.ucdavis.edu/gadm/gadm4.1/gpkg/IDN_adm_gpkg.zip',
     ]);
   });
 

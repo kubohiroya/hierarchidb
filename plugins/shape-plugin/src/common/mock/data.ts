@@ -43,7 +43,7 @@ export const DATA_SOURCE_CONFIGS: Record<string, DataSourceConfig> = {
     color: '#FF9800',
     icon: '📊',
     maxAdminLevel: 5,
-    countryCodeFormat: 'iso2',
+    countryCodeFormat: 'iso3',
   },
   openstreetmap: {
     name: 'openstreetmap',

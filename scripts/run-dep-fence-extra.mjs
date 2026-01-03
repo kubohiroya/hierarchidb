@@ -4,6 +4,7 @@
 // - For React Router v7+, forbid @types/react-router (v5 types)
 // - Detect unresolved runtime-worker dependencies (installed-but-not-resolvable)
 // - Advise when lockfile is newer than node_modules (restart + install)
+// - Forbid tsconfig paths mapping to cross-package src (must use dist/public exports)
 
 import fs from 'fs';
 import path from 'path';
@@ -53,8 +54,24 @@ function warn(msg) {
   warnings++;
 }
 
+// --- Rule 0: tsconfig.base.json paths must not point to packages/plugins src ---
+{
+  const checkerPath = path.join(repoRoot, 'scripts/dep-fence-rules/tsconfig-paths-no-src.mjs');
+  if (fs.existsSync(checkerPath)) {
+    const { spawnSync } = await import('child_process');
+    const res = spawnSync(process.execPath, [checkerPath], { stdio: 'inherit' });
+    if (typeof res.status === 'number' && res.status !== 0) {
+      errors++;
+    }
+  }
+}
+
 function readJSON(p) {
-  try { return JSON.parse(fs.readFileSync(p, 'utf-8')); } catch { return null; }
+  try {
+    return JSON.parse(fs.readFileSync(p, 'utf-8'));
+  } catch {
+    return null;
+  }
 }
 
 // Read JSON-with-comments (JSONC) safely — for tsconfig*.json

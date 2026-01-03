@@ -167,6 +167,10 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
 
   useEffect(() => {
     if (!availabilityError) return;
+    if (/openstreetmap/i.test(availabilityError.message)) {
+      enqueueSnackbar(availabilityError.message, { variant: 'error' });
+      return;
+    }
     enqueueSnackbar(
       'Failed to load data source availability. Falling back to bundled metadata.',
       { variant: 'warning' },

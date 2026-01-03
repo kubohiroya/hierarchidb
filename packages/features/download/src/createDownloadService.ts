@@ -2,6 +2,7 @@ import { DownloadService as DownloadEngine } from './DownloadService.js';
 import { DexieChunkStoragePort } from './adapters/DexieChunkStoragePort.js';
 import { FetchNetworkPort } from './adapters/FetchNetworkPort.js';
 import { AuthRecoveryService, type AuthPluginType } from '@hierarchidb/auth-recovery';
+import type { StoragePort } from './ports.js';
 
 export interface DownloadServiceOptions {
   dbPrefix?: string;
@@ -13,6 +14,7 @@ export interface DownloadServiceOptions {
 export interface DownloadServiceBundle {
   service: DownloadEngine;
   net: FetchNetworkPort;
+  store: StoragePort;
   readAll: (fileId: string) => Promise<ArrayBuffer>;
 }
 
@@ -37,5 +39,5 @@ export async function createDownloadService(opts?: DownloadServiceOptions): Prom
     throw new Error('DexieChunkStoragePort.readAll is not available');
   }
   const readAll = storage.readAll.bind(storage) as (fileId: string) => Promise<ArrayBuffer>;
-  return { service, net, readAll };
+  return { service, net, store: storage, readAll };
 }

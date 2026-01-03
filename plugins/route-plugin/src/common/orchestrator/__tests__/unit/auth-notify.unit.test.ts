@@ -45,6 +45,13 @@ function createDownloadServiceStub(response: { ok: boolean; status: number }): D
       },
     } as unknown as DownloadServiceBundle['service'],
     readAll: async () => new ArrayBuffer(0),
+    store: {
+      async putChunk() {},
+      async commit() {},
+      async getResumeInfo() {
+        return undefined;
+      },
+    },
     net,
   };
 }
