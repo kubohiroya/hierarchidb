@@ -104,4 +104,51 @@ location/route はデータソースが「URL/ローカルファイルの表デ�
 - `src/index.ts`
 - `src/vectortile/__tests__/runVectorTileStageOrchestrator.test.ts`
 
+---
 
+## 進捗通知の厳格契約（Policy B: progressCallback → progressFactory 必須）
+
+このパッケージは「Orchestrator が進捗イベントを合成して通知する」設計です。
+特に **runnableTasks が 0 の場合**など、adapter を実行しない早期 return パスでも、
+UI に対して「すでに完了している」ことを知らせるために **ProgressInfo を Orchestrator 側で合成**します。
+
+そのため、呼び出し側が `progressCallback` を渡す場合、
+**合成された ProgressInfo を呼び出し側の進捗型（TProgress）へ変換する手段が必要**です。
+
+### 契約
+
+- `progressCallback` を渡す場合は、**必ず** `progressFactory` も渡す。
+  - `progressFactory` は `ProgressInfo -> TProgress` 変換の責務を負う。
+- `progressCallback` を渡さない場合は、`progressFactory` は不要。
+
+### この契約が必要な理由（TypeScript 型システム上の理由）
+
+- adapter が report する progress はすでに `TProgress` として扱える
+- しかし orchestrator が合成する progress は **常に ProgressInfo**
+- `TProgress` が plugin 固有に拡張されている場合（例: stage の union が狭い等）、
+  `ProgressInfo` をそのまま `TProgress` として渡すのは型安全ではない
+
+よって、合成イベントについては **呼び出し側で明示変換する**設計を採用します。
+
+### 例（shape/location/route での最小実装）
+
+```ts
+import { runVectorTileStageOrchestrator, type ProgressInfo } from '@hierarchidb/vectortile-orchestrator';
+
+await runVectorTileStageOrchestrator({
+  // ...tasks/inputs/taskRegistry/adapter/postprocess...
+  progressCallback: (p) => {
+    // UI に通知（plugin 側の Progress 型に合わせて必要なら整形）
+    onProgress(p);
+  },
+  progressFactory: (p: ProgressInfo) => {
+    // 合成された ProgressInfo を plugin 側の Progress 型へ変換
+    // 例: currentStage を狭い union に落とす、余分なフィールドの補完など
+    return p;
+  },
+});
+```
+
+> 注意: `progressCallback` は任意です。
+> ただし UI で進捗表示/pause 表示等を行う場合は通常渡すため、
+> Policy B を採用するプロジェクトでは progressFactory も常にセットすることになります。

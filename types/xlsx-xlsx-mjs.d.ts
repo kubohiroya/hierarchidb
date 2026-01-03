@@ -1,3 +1,6 @@
+// Centralized module shim for xlsx ESM entry.
+// Keep this in /types to avoid hand-maintained .d.ts under src/.
+
 declare module 'xlsx/xlsx.mjs' {
   export interface WorkBook {
     SheetNames: string[];
@@ -12,3 +15,4 @@ declare module 'xlsx/xlsx.mjs' {
   export function read(data: ArrayBuffer | Uint8Array, options?: Record<string, unknown>): WorkBook;
   export function set_fs(fs: unknown): void;
 }
+

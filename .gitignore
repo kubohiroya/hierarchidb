@@ -200,3 +200,7 @@ app/node_modules/
 app/.debug/
 .codex/
 .github/
+
+# Generated TypeScript declarations should never live under src/ (generated artifacts)
+**/src/**/*.d.ts
+**/src/**/*.d.ts.map

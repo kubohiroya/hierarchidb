@@ -18,6 +18,7 @@
   },
   "include": [
     "../../global.d.ts",
+    "../../types/**/*.d.ts",
     "src/common/**/*",
     "src/shared/**/*",
     "src/types/**/*",

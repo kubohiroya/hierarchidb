@@ -1,6 +1,8 @@
-/// <reference path="./types/xlsx.module.d.ts" />
+// NOTE: Module shims live under /types/*.d.ts (do not keep hand-maintained .d.ts under src/).
 
-import type { TabularParserPort, DetectionResult,
+import type {
+  TabularParserPort,
+  DetectionResult,
   FileLike,
   ParseOptions,
   TabularChunk,

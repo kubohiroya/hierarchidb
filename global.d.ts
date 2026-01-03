@@ -19,22 +19,5 @@ declare module '*.module.css' {
 
 declare module 'maplibre-gl/dist/maplibre-gl.css';
 
-declare module '@hierarchidb/fetch-save-metadata/output/*.json' {
-  const data: Record<string, unknown>[];
-  export default data;
-}
 
-declare module 'xlsx/xlsx.mjs' {
-  export interface WorkBook {
-    SheetNames: string[];
-    Sheets: Record<string, unknown>;
-  }
-
-  export const utils: {
-    sheet_to_json<T = Record<string, unknown>>(sheet: unknown, options?: Record<string, unknown>): T[];
-    fs_stub?: unknown;
-  };
-
-  export function read(data: ArrayBuffer | Uint8Array, options?: Record<string, unknown>): WorkBook;
-  export function set_fs(fs: unknown): void;
-}
+// NOTE: Module declarations for non-TS assets / ESM-entry shims live under /types/*.d.ts

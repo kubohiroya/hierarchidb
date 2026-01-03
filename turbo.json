@@ -85,9 +85,7 @@
         "!e2e-results/**",
         "!tmp/**"
       ],
-      "outputs": [
-        "**/*.tsbuildinfo"
-      ]
+      "outputs": []
     },
     "dev": {
       "cache": false,
