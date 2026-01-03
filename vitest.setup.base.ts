@@ -155,6 +155,14 @@ if (!globalThis.CompressionStream) {
   } as any;
 }
 
+if (!globalThis.DecompressionStream) {
+  globalThis.DecompressionStream = class DecompressionStream {
+    constructor(public format: string) {}
+    writable = { getWriter: () => ({ write: vi.fn(), close: vi.fn() }) };
+    readable = { getReader: () => ({ read: vi.fn() }) };
+  } as any;
+}
+
 // URL.createObjectURL is used in worker bootstrap e2e-style tests
 if (!globalThis.URL?.createObjectURL) {
   (globalThis.URL as any) = globalThis.URL || {};

@@ -79,6 +79,12 @@
       "@hierarchidb/download/*": [
         "packages/features/download/dist/*"
       ],
+      "@hierarchidb/chunk-store": [
+        "packages/features/chunk-store/src/index.ts"
+      ],
+      "@hierarchidb/chunk-store/*": [
+        "packages/features/chunk-store/src/*"
+      ],
       "@hierarchidb/location-store": [
         "packages/features/location-store/dist/index.d.ts"
       ],

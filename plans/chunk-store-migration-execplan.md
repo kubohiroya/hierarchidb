@@ -11,15 +11,18 @@ Plugins need a reusable, URL-keyed chunk storage that can be configured with cus
 ## Progress
 
 - [x] (2026-01-03 19:35 JST) Created ExecPlan and task entry.
-- [ ] Define the `@hierarchidb/chunk-store` API surface and internal model (interfaces, serializer hooks, storage adapter contract).
-- [ ] Create the new package and implement Dexie-backed chunk storage with injectable DB/table and serializers.
-- [ ] Simplify `@hierarchidb/download` to depend on chunk-store for persistence, keeping download focused on network + orchestration.
-- [ ] Update plugin call sites to use chunk-store injection (serializer/deserializer), removing higher-level responsibilities from download helpers.
-- [ ] Update docs and typechecks; capture outcomes.
+- [x] Define the `@hierarchidb/chunk-store` API surface and internal model (interfaces, serializer hooks, storage adapter contract).
+- [x] Create the new package and implement Dexie-backed chunk storage with injectable DB/table and serializers.
+- [x] Simplify `@hierarchidb/download` to focus on network/auth helpers and drop plugin-level caching/registry APIs.
+- [x] Move CAS adapters (`HashPort`, `ContentIndexPort`, etc.) from download into chunk-store.
+- [x] Add relation management (nodeId + metadataId) and dedupe identity selection (url/etag/url+etag/hash).
+- [x] Update plugin call sites to use chunk-store injection (serializer/deserializer), removing higher-level responsibilities from download helpers.
+- [x] Update docs/tests and capture outcomes.
+- [ ] Run typechecks (blocked by missing node_modules).
 
 ## Surprises & Discoveries
 
-- Pending.
+- `pnpm --filter @hierarchidb/chunk-store typecheck` failed because node_modules were missing and @hierarchidb/download/@hierarchidb/util types could not resolve.
 
 ## Decision Log
 
@@ -31,9 +34,21 @@ Plugins need a reusable, URL-keyed chunk storage that can be configured with cus
   Rationale: Keeps download small and lets chunk-store own URL-keyed caching and serialization concerns.
   Date/Author: 2026-01-03 / Codex
 
+- Decision: CAS interfaces/adapters are hosted in chunk-store and reused for hash-based identity and dedupe.
+  Rationale: Consolidates content-addressable features with storage and avoids download owning lifecycle concerns.
+  Date/Author: 2026-01-03 / Codex
+
+- Decision: chunk-store requires nodeId when creating/deleting chunk sets and keeps a relation table for lifecycle cleanup.
+  Rationale: Aligns with TreeNode-driven lifecycle and enables safe cleanup when references drop to zero.
+  Date/Author: 2026-01-03 / Codex
+
 ## Outcomes & Retrospective
 
-- Pending implementation.
+- Implemented `@hierarchidb/chunk-store` with serializer/deserializer injection, relation management, and conditional GET support.
+- Moved CAS helpers (`ContentAddressableStore`, DexieContentIndexPort, CacheAPICachePort, NobleSha3HashPort) into chunk-store for hash-based dedupe.
+- Simplified `@hierarchidb/download` to network/auth helpers (`FetchNetworkPort`, `authFetch`, `postJson`, auth notifications).
+- Migrated shape/route/runtime-worker/spreadsheet call sites to chunk-store with explicit serializers and nodeId association.
+- Typechecks remain blocked until workspace node_modules are installed and download/util types resolve.
 
 ## Context and Orientation
 
@@ -51,7 +66,7 @@ First, define a `ChunkStore` interface in the new package that accepts:
 
 Second, implement a Dexie-backed chunk store adapter in `@hierarchidb/chunk-store` that stores raw `ArrayBuffer` chunks plus metadata (etag, last-modified, content-type) and a URL index. Provide helper methods to `get`, `put`, and `getOrFetch` that use download’s network layer to populate storage when missing or stale.
 
-Third, simplify `@hierarchidb/download` so that persistence is delegated to chunk-store. This likely means removing Dexie-specific storage from download helpers and keeping download focused on `NetworkPort` + retry + auth. Replace uses of `DexieChunkStoragePort` in download helper paths with chunk-store usage.
+Third, simplify `@hierarchidb/download` so that Dexie-specific storage and plugin-level caching helpers are removed. Keep download focused on `NetworkPort` + retry + auth helpers, and let chunk-store own persistence. CAS adapters move to chunk-store.
 
 Fourth, update plugin call sites (spreadsheet, styler, and any other chunk-store consumers) so they inject serializer/deserializer functions into chunk-store rather than relying on download helpers to parse or cache content. The plugin code should explicitly handle serialization boundaries.
 
@@ -62,7 +77,7 @@ Finally, update docs (download and chunk-store READMEs), run typechecks, and log
 1. Create `packages/features/chunk-store` with package.json, tsconfig, and README describing purpose and API.
 2. Implement `src/index.ts` exporting the chunk-store interfaces and adapters.
 3. Implement a Dexie adapter that accepts injected DB/table names and serializer/deserializer functions.
-4. Refactor download helpers to use chunk-store for persistence; update exports accordingly.
+4. Refactor download helpers to remove plugin-level caching/registry APIs; update exports accordingly.
 5. Update plugin code to call chunk-store with explicit serializers/deserializers.
 6. Run:
 
