@@ -103,3 +103,19 @@ strict, packages interoperable, and builds reproducible.
 - MUST: Mark Dexie as a `peerDependency` and add a matching `devDependency`.
 - MUST: Type Dexie usage (`Table<TEntity, EntityId>`, `Collection<TEntity,...>`)
   in handlers. No implicit `any`.
+
+## Ambient Declarations (.d.ts) Policy
+
+- MUST NOT: Create hand-maintained `.d.ts` files under any `src/` directory.
+  - Rationale: source-local shims drift and are hard to audit.
+- MUST: If you need an ambient module declaration (e.g. `declare module 'xlsx/xlsx.mjs'`), place it under the repository-level `types/` folder.
+- MUST: Keep ambient declarations minimal (prefer `unknown` boundaries internally, but do not leak `any` to public APIs).
+- MUST NOT: Introduce files whose name includes `shim` (e.g. `*shim*.d.ts`) unless explicitly allowlisted by `scripts/check-shims.mjs`.
+
+Recommended naming under `types/`:
+- Third-party package shim: `types/<package>.d.ts` (e.g. `types/topojson-simplify.d.ts`)
+- Third-party subpath shim: `types/<package>-<subpath>.d.ts` (e.g. `types/xlsx-xlsx-mjs.d.ts`)
+- Cross-cutting asset/module declarations: `types/ambient-modules.d.ts`
+
+Enforcement:
+- `pnpm run build:pre` runs `pnpm shims:check` and will fail if the shim policy is violated.
