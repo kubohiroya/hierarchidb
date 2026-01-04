@@ -20,7 +20,7 @@ import { parseOpenFlightsCsv, parseOurAirportsCsv, parseWorldPortIndexCsv } from
 import { appendLocationPoints, replaceLocationPoints } from './pointRepository.js';
 import type { RawNominatimResult, RawOverpassElement } from './download/rawTypes.js';
 import { getLocationDataSource } from '../common/datasources/LocationDataSourceDefinitions.js';
-import { authFetch, FetchNetworkPort, getCorsProxyBaseURL, notifyPluginAuthRequired, postJson } from '@hierarchidb/download';
+import { FetchNetworkPort, getCorsProxyBaseURL, notifyPluginAuthRequired, postJson } from '@hierarchidb/download';
 
 const logLocationBatchWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -574,7 +574,7 @@ export class LocationBatchManager {
     this.net = new FetchNetworkPort({
       perHostConcurrency: 4,
       corsProxyBaseURL,
-      authFetch: (url, init) => authFetch('location', url, init),
+      auth: { scope: 'location' },
     });
     return this.net;
   }

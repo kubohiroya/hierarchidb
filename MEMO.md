@@ -54,5 +54,12 @@
 4. 列幅永続化のキー設計最終化と、Worker イベント経由のクリーンアップ一元化。
 5. 表示モード永続化を他ダイアログ（Route/Resolver 等）へ横展開。
 
+## Testing (note for automation)
+
+- Use non-watch commands so the terminal returns promptly.
+  - Prefer: `pnpm -C plugins/shape-plugin vitest run`
+  - Or: `pnpm -C plugins/shape-plugin test -- --run`
+- Avoid starting `pnpm test` if it launches `vitest --watch` / `vitest dev` in this repo。
+
 ---
 以上。必要に応じてこのメモをタスク化（mrtask）し、順次着手します。

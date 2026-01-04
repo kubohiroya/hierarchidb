@@ -1,5 +1,6 @@
 import type { NetworkPort, ResponseLike } from '../ports.js';
 import { resolveNetworkUrl } from '../helpers/resolveNetworkUrl.js';
+import { smartFetch } from '../smartFetch.js';
 
 export interface FetchNetworkPortOptions {
   headers?: Record<string, string> | (() => Record<string, string> | Promise<Record<string, string>>);
@@ -11,13 +12,16 @@ export interface FetchNetworkPortOptions {
   rps?: number;                 // optional requests-per-second token bucket (global)
   corsProxyBaseURL?: string;
   authFetch?: (url: string, init?: RequestInit) => Promise<Response>;
+  auth?: {
+    enabled?: boolean;
+    /** 推奨: 認証/通知のルーティングに使うスコープ（例: 'shape' | 'location' | 'route'）。 */
+    scope?: string;
+    sessionId?: string;
+    maxRetries?: number;
+  };
 }
 
 type HostKey = string;
-
-const isAbortError = (error: unknown): boolean => (
-  error instanceof Error && error.name === 'AbortError'
-);
 
 const createAbortError = (): Error => {
   if (typeof DOMException === 'function') {
@@ -28,16 +32,91 @@ const createAbortError = (): Error => {
   return error;
 };
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+const wrap = (res: Response): ResponseLike => ({
+  status: res.status,
+  ok: res.ok,
+  headers: res.headers,
+  arrayBuffer: () => res.arrayBuffer(),
+});
+
+class Semaphore {
+  private available: number;
+  private readonly queue: Array<() => void> = [];
+
+  constructor(capacity: number) {
+    this.available = Math.max(1, capacity);
+  }
+
+  async acquire(): Promise<void> {
+    if (this.available > 0) {
+      this.available -= 1;
+      return;
+    }
+    await new Promise<void>((resolve) => {
+      this.queue.push(() => {
+        this.available -= 1;
+        resolve();
+      });
+    });
+  }
+
+  release(): void {
+    this.available += 1;
+    const next = this.queue.shift();
+    if (next) next();
+  }
+}
+
+class TokenBucket {
+  private tokens: number;
+  private lastRefill = Date.now();
+
+  constructor(private readonly rps: number) {
+    this.tokens = rps;
+  }
+
+  async take(): Promise<void> {
+    while (true) {
+      this.refill();
+      if (this.tokens >= 1) {
+        this.tokens -= 1;
+        return;
+      }
+      await sleep(50);
+    }
+  }
+
+  private refill(): void {
+    const now = Date.now();
+    const elapsedMs = now - this.lastRefill;
+    if (elapsedMs <= 0) return;
+    const refillTokens = (elapsedMs / 1000) * this.rps;
+    if (refillTokens >= 1) {
+      this.tokens = Math.min(this.rps, this.tokens + refillTokens);
+      this.lastRefill = now;
+    }
+  }
+}
+
 export class FetchNetworkPort implements NetworkPort {
   private opts: Required<Omit<FetchNetworkPortOptions, 'corsProxyBaseURL' | 'authFetch'>> & {
     corsProxyBaseURL: string;
     authFetch?: (url: string, init?: RequestInit) => Promise<Response>;
+    auth: { enabled: boolean; scope: string; sessionId?: string; maxRetries?: number };
   };
   private semaphores = new Map<HostKey, Semaphore>();
   private globalSemaphore?: Semaphore;
   private tokenBucket?: TokenBucket;
 
   constructor(opts: FetchNetworkPortOptions = {}) {
+    const authEnabled = opts.auth?.enabled ?? true;
+    const scopeProvided = typeof opts.auth?.scope === 'string' && opts.auth.scope.length > 0;
+    if (authEnabled && !scopeProvided && !opts.authFetch) {
+      throw new Error('[download][FetchNetworkPort] auth.scope is required when auth is enabled');
+    }
+
     this.opts = {
       headers: opts.headers || {},
       retries: opts.retries ?? 3,
@@ -48,6 +127,12 @@ export class FetchNetworkPort implements NetworkPort {
       rps: opts.rps ?? 0,
       corsProxyBaseURL: opts.corsProxyBaseURL ?? '',
       authFetch: opts.authFetch,
+      auth: {
+        enabled: opts.auth?.enabled ?? true,
+        scope: (opts.auth?.scope ?? ''),
+        sessionId: opts.auth?.sessionId,
+        maxRetries: opts.auth?.maxRetries,
+      },
     };
     if (this.opts.globalConcurrency > 0) this.globalSemaphore = new Semaphore(this.opts.globalConcurrency);
     if (this.opts.rps > 0) this.tokenBucket = new TokenBucket(this.opts.rps);
@@ -78,29 +163,38 @@ export class FetchNetworkPort implements NetworkPort {
       sem.acquire(),
       this.globalSemaphore ? this.globalSemaphore.acquire() : Promise.resolve(),
     ]);
+
     try {
       const headers = await this.mergeHeaders(init?.headers);
-      let attempt = 0;
-      let lastErr: unknown;
-      while (attempt <= this.opts.retries) {
-        try {
-          const target = resolveNetworkUrl(url, { corsProxyBaseURL: this.opts.corsProxyBaseURL });
-          const fetcher = this.opts.authFetch ?? fetch;
-          const res = await fetcher(target, { ...init, headers });
-          if (res.ok) return wrap(res);
-          if (!this.shouldRetry(res.status)) return wrap(res);
-          await sleep(backoff(attempt++, this.opts.baseDelayMs, this.opts.maxDelayMs));
-        } catch (e) {
-          if (isAbortError(e) || init?.signal?.aborted) {
-            throw e;
-          }
-          lastErr = e;
-          await sleep(backoff(attempt++, this.opts.baseDelayMs, this.opts.maxDelayMs));
-        }
+      // Backward compat: if caller injects authFetch, keep using it.
+      // (authFetch側にretryが無いケースもあるが、破壊的変更を避けるためここは維持)
+      if (this.opts.authFetch) {
+        const res = await this.opts.authFetch(
+          resolveNetworkUrl(url, { corsProxyBaseURL: this.opts.corsProxyBaseURL }),
+          { ...init, headers },
+        );
+        return wrap(res);
       }
-      if (lastErr instanceof Error) throw lastErr;
-      if (lastErr) throw new Error(String(lastErr));
-      throw new Error('Fetch failed');
+
+      const res = await smartFetch(url, {
+        request: { ...init, headers },
+        corsProxy: { baseURL: this.opts.corsProxyBaseURL || undefined },
+        auth: {
+          enabled: this.opts.auth.enabled,
+          scope: this.opts.auth.scope,
+          sessionId: this.opts.auth.sessionId,
+          maxRetries: this.opts.auth.maxRetries,
+        },
+        retry: {
+          enabled: this.opts.retries > 0,
+          retries: this.opts.retries,
+          baseDelayMs: this.opts.baseDelayMs,
+          maxDelayMs: this.opts.maxDelayMs,
+          shouldRetry: (r) => this.shouldRetry(r.status),
+        },
+      });
+
+      return wrap(res);
     } finally {
       sem.release();
       if (this.globalSemaphore) this.globalSemaphore.release();
@@ -121,101 +215,18 @@ export class FetchNetworkPort implements NetworkPort {
     return typeof h === 'function' ? await h() : h;
   }
 
-  private async mergeHeaders(extra?: HeadersInit): Promise<Headers> {
+  private async mergeHeaders(initHeaders: HeadersInit | undefined): Promise<Headers> {
     const base = await this.resolveHeaders();
-    const merged = new Headers(base);
-    if (!extra) return merged;
-    /*
-    if (Array.isArray(extra)) {
-      for (const [key, value] of extra) merged.set(key, value);
-    } else */
-    if (extra instanceof Headers) {
-      extra.forEach((value, key) => {merged.set(key, value)});
-    } else {
-      Object.entries(extra as Record<string, string | number | readonly string[]>).forEach(([key, value]) => {
-        if (Array.isArray(value)) merged.set(key, value.join(', '));
-        else merged.set(key, String(value));
-      });
+    const headers = new Headers(base);
+    if (initHeaders) {
+      const incoming = new Headers(initHeaders);
+      incoming.forEach((value, key) => headers.set(key, value));
     }
-    return merged;
+    return headers;
   }
 
   private shouldRetry(status: number): boolean {
-    return status === 429 || (status >= 500 && status < 600);
+    return status === 408 || status === 429 || (status >= 500 && status <= 599);
   }
 }
 
-class Semaphore {
-  private queue: Array<() => void> = [];
-  private count: number;
-
-  constructor(private capacity: number) {
-    this.count = capacity;
-  }
-
-  acquire(): Promise<void> {
-    if (this.count > 0) {
-      this.count--;
-      return Promise.resolve();
-    }
-    return new Promise((resolve) => this.queue.push(resolve));
-  }
-
-  release(): void {
-    if (this.queue.length > 0) {
-      const resolve = this.queue.shift();
-      resolve?.();
-      return;
-    }
-    this.count = Math.min(this.count + 1, this.capacity);
-  }
-}
-
-class TokenBucket {
-  private tokens: number;
-  private queue: Array<() => void> = [];
-  private lastRefill: number;
-
-  constructor(private rps: number) {
-    this.tokens = rps;
-    this.lastRefill = Date.now();
-    // Refill timer (best-effort)
-    setInterval(() => this.refill(), 1000);
-  }
-
-  private refill() {
-    const now = Date.now();
-    if (now - this.lastRefill >= 1000) {
-      this.tokens = this.rps;
-      this.lastRefill = now;
-      while (this.tokens > 0 && this.queue.length) {
-        this.tokens--;
-        const r = this.queue.shift();
-        r?.();
-      }
-    }
-  }
-
-  take(): Promise<void> {
-    this.refill();
-    if (this.tokens > 0) {
-      this.tokens--;
-      return Promise.resolve();
-    }
-    return new Promise((resolve) => this.queue.push(resolve));
-  }
-}
-
-function wrap(r: Response): ResponseLike {
-  return { ok: r.ok, status: r.status, headers: r.headers, arrayBuffer: () => r.arrayBuffer() };
-}
-
-function sleep(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
-function backoff(attempt: number, base: number, max: number): number {
-  const exp = Math.min(max, base * 2 ** attempt);
-  const jitter = Math.random() * base;
-  return Math.min(max, exp + jitter);
-}

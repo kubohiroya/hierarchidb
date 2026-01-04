@@ -1,9 +1,12 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { Feature, FeatureCollection } from 'geojson';
+import { bbox as turfBbox } from '@turf/turf';
 import type { Extract1Task, Extract2Task } from '../../../../common/types/index.js';
 import { BatchTaskStage } from '../../../../common/types/index.js';
 import type { ShapeExtract1TaskInputData, ShapeExtract2TaskInputData } from '@hierarchidb/plugin-service-api';
 import { HDB_ORIGIN_KEY } from '../../utils/featureIds.js';
+import { normalizeTaskIdSegment } from '../ids/processingIds.js';
+import { lat2tileY, lon2tileX, tileBBox } from '../../../utils/tiles-util.js';
 
 type Candidate = {
   task: Extract1Task;
@@ -16,6 +19,22 @@ type Candidate = {
   originLabel?: string;
   sourceUrl?: string;
   features: Feature[];
+};
+
+type GroupLevel = 'world' | 'continent' | 'country';
+
+type FeatureEntry = {
+  feature: Feature;
+  bbox: [number, number, number, number];
+  input?: ShapeExtract1TaskInputData;
+  task: Extract1Task;
+};
+
+type GroupRecord = {
+  key: string;
+  level: GroupLevel;
+  items: FeatureEntry[];
+  bbox: [number, number, number, number];
 };
 
 function applyFeatureMetadata(
@@ -52,24 +71,141 @@ function applyFeatureMetadata(
   return collection;
 }
 
-function splitGroupByKey<T>(
-  items: T[],
-  resolveKey: (item: T) => string,
-): Array<{ key: string; items: T[] }> {
-  const groups = new Map<string, T[]>();
-  for (const item of items) {
-    const key = resolveKey(item);
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key)?.push(item);
+const unionBBox = (current: [number, number, number, number] | null, next: [number, number, number, number]) => {
+  if (!current) return [...next] as [number, number, number, number];
+  return [
+    Math.min(current[0], next[0]),
+    Math.min(current[1], next[1]),
+    Math.max(current[2], next[2]),
+    Math.max(current[3], next[3]),
+  ] as [number, number, number, number];
+};
+
+const bboxIntersects = (a: [number, number, number, number], b: [number, number, number, number]): boolean => (
+  a[0] <= b[2] && a[2] >= b[0] && a[1] <= b[3] && a[3] >= b[1]
+);
+
+const clampBBox = (bbox: [number, number, number, number]): [number, number, number, number] => {
+  const minLon = Math.max(-180, Math.min(180, bbox[0]));
+  const maxLon = Math.max(-180, Math.min(180, bbox[2]));
+  const minLat = Math.max(-85.05112878, Math.min(85.05112878, bbox[1]));
+  const maxLat = Math.max(-85.05112878, Math.min(85.05112878, bbox[3]));
+  return [minLon, minLat, maxLon, maxLat];
+};
+
+const expandBBoxForZoom = (
+  bbox: [number, number, number, number],
+  zoom: number,
+  expandFactor: number,
+  expandMargin: number,
+): [number, number, number, number] => {
+  const centerLon = (bbox[0] + bbox[2]) / 2;
+  const centerLat = (bbox[1] + bbox[3]) / 2;
+  const tileX = lon2tileX(centerLon, zoom);
+  const tileY = lat2tileY(centerLat, zoom);
+  const tileBounds = tileBBox(zoom, tileX, tileY);
+  const tileWidth = tileBounds[2] - tileBounds[0];
+  const tileHeight = tileBounds[3] - tileBounds[1];
+  const expandTiles = Math.max(0, expandFactor) + Math.max(0, expandMargin);
+  const expandLon = tileWidth * expandTiles;
+  const expandLat = tileHeight * expandTiles;
+  return clampBBox([
+    bbox[0] - expandLon,
+    bbox[1] - expandLat,
+    bbox[2] + expandLon,
+    bbox[3] + expandLat,
+  ]);
+};
+
+const resolveGroupLevel = (zoomMax: number): GroupLevel => {
+  if (zoomMax <= 0) return 'world';
+  if (zoomMax <= 4) return 'continent';
+  return 'country';
+};
+
+const buildZoomLevels = (minZoom: number, maxZoom: number): number[] => (
+  Array.from({ length: Math.max(0, maxZoom - minZoom + 1) }, (_, index) => minZoom + index)
+);
+
+const splitZoomRange = (range: { minZoom: number; maxZoom: number; label: string }) => {
+  const segments: Array<{ minZoom: number; maxZoom: number; label: string; zoomLevels: number[] }> = [];
+  const lower = Math.min(range.minZoom, range.maxZoom);
+  const upper = Math.max(range.minZoom, range.maxZoom);
+
+  if (lower <= 0 && upper >= 0) {
+    segments.push({ minZoom: 0, maxZoom: 0, label: 'z0-0', zoomLevels: [0] });
   }
-  return Array.from(groups.entries()).map(([key, groupItems]) => ({ key, items: groupItems }));
-}
+  if (upper >= 1 && lower <= 4) {
+    const segMin = Math.max(1, lower);
+    const segMax = Math.min(4, upper);
+    if (segMin <= segMax) {
+      segments.push({ minZoom: segMin, maxZoom: segMax, label: `z${segMin}-${segMax}`, zoomLevels: buildZoomLevels(segMin, segMax) });
+    }
+  }
+  if (upper >= 5) {
+    const segMin = Math.max(5, lower);
+    const segMax = upper;
+    if (segMin <= segMax) {
+      segments.push({ minZoom: segMin, maxZoom: segMax, label: `z${segMin}-${segMax}`, zoomLevels: buildZoomLevels(segMin, segMax) });
+    }
+  }
+
+  return segments.length > 0
+    ? segments
+    : [{ minZoom: lower, maxZoom: upper, label: range.label, zoomLevels: buildZoomLevels(lower, upper) }];
+};
+
+const buildGroupBufferId = (nodeId: NodeId, level: GroupLevel, key: string, rangeLabel: string): string => (
+  `${String(nodeId)}-extract1-topo-${normalizeTaskIdSegment(level)}-${normalizeTaskIdSegment(key)}-${normalizeTaskIdSegment(rangeLabel)}`
+);
+
+const buildGroupRecords = (level: GroupLevel, entries: FeatureEntry[]): GroupRecord[] => {
+  if (level === 'world') {
+    const worldBBox = entries.reduce<[number, number, number, number] | null>(
+      (acc, entry) => unionBBox(acc, entry.bbox),
+      null,
+    );
+    if (!worldBBox) return [];
+    return [{
+      key: 'world',
+      level: 'world',
+      items: entries,
+      bbox: worldBBox,
+    }];
+  }
+
+  const groupMap = new Map<string, GroupRecord>();
+  for (const entry of entries) {
+    const input = entry.input;
+    const rawKey = level === 'continent'
+      ? (input?.continent ?? 'UNKNOWN')
+      : (input?.countryCode ?? input?.countryName ?? 'UNKNOWN');
+    const normalizedKey = normalizeTaskIdSegment(rawKey);
+    const existing = groupMap.get(normalizedKey);
+    if (existing) {
+      existing.items.push(entry);
+      existing.bbox = unionBBox(existing.bbox, entry.bbox);
+    } else {
+      groupMap.set(normalizedKey, {
+        key: rawKey,
+        level,
+        items: [entry],
+        bbox: entry.bbox,
+      });
+    }
+  }
+  return Array.from(groupMap.values());
+};
 
 export async function buildExtract2TasksWithTopoJSON(params: {
   nodeId: NodeId;
   extract1Tasks: Extract1Task[];
   extract1InputsByTaskId: Map<string, ShapeExtract1TaskInputData>;
-  buildTaskId: (stage: 'extract2', details: { countryCode?: string; adminLevel?: number; featureGroupId?: string }) => string;
+  zoomRanges: Array<{ minZoom: number; maxZoom: number; zoomLevels: number[]; label: string }>;
+  scaleTolerance: (zoomMax: number) => number;
+  tileExpandFactor?: number;
+  tileExpandMargin?: number;
+  buildTaskId: (stage: 'extract2', details: { countryCode?: string; adminLevel?: number; featureGroupId?: string; zoomRangeLabel?: string }) => string;
   resolveTaskContinent: (input?: ShapeExtract1TaskInputData) => string | undefined;
   resolveTaskCountryName: (input?: ShapeExtract1TaskInputData) => string | undefined;
   resolveTaskCountryCode: (task: Extract1Task, input?: ShapeExtract1TaskInputData) => string | undefined;
@@ -81,8 +217,8 @@ export async function buildExtract2TasksWithTopoJSON(params: {
   consoleWarn: (message: string, data?: unknown) => void;
   consoleDebug: (message: string, data?: unknown) => void;
 }): Promise<{ tasks: Extract2Task[]; inputsByTaskId: Map<string, ShapeExtract2TaskInputData> }> {
-  const maxFeaturesPerGroup = 2000;
   const candidates: Candidate[] = [];
+  const featureEntries: FeatureEntry[] = [];
 
   let missingMetadata = 0;
   let missingBuffer = 0;
@@ -142,35 +278,29 @@ export async function buildExtract2TasksWithTopoJSON(params: {
       sourceUrl: input?.sourceUrl,
       features: collection.features,
     });
+
+    for (const feature of collection.features) {
+      if (!feature) continue;
+      if (!feature.geometry) continue;
+      const bounds = turfBbox(feature);
+      if (!bounds || bounds.length !== 4) continue;
+      featureEntries.push({
+        feature,
+        bbox: [bounds[0], bounds[1], bounds[2], bounds[3]],
+        input,
+        task,
+      });
+    }
   }
 
   if (candidates.length === 0) {
     return { tasks: [], inputsByTaskId: new Map() };
   }
 
-  const continentGroups = splitGroupByKey(
-    candidates,
-    (entry) => `${params.extract1InputsByTaskId.get(entry.task.taskId)?.dataSource ?? 'unknown'}|${entry.adminLevel ?? 'NA'}|${entry.continent}`,
-  );
-
-  const sumFeatures = (items: Candidate[]) => items.reduce((total, item) => total + item.features.length, 0);
-
-  const finalGroups: { key: string; items: Candidate[] }[] = [];
-  for (const group of continentGroups) {
-    if (sumFeatures(group.items) <= maxFeaturesPerGroup) {
-      finalGroups.push(group);
-      continue;
-    }
-    const countryGroups = splitGroupByKey(group.items, (entry) => `${group.key}|${entry.countryCode ?? 'UNKNOWN'}`);
-    for (const countryGroup of countryGroups) {
-      if (sumFeatures(countryGroup.items) <= maxFeaturesPerGroup) {
-        finalGroups.push(countryGroup);
-        continue;
-      }
-      const adminGroups = splitGroupByKey(countryGroup.items, (entry) => `${countryGroup.key}|${entry.adminCode ?? 'UNKNOWN'}`);
-      finalGroups.push(...adminGroups);
-    }
-  }
+  const groupsByLevel = new Map<GroupLevel, GroupRecord[]>();
+  groupsByLevel.set('world', buildGroupRecords('world', featureEntries));
+  groupsByLevel.set('continent', buildGroupRecords('continent', featureEntries));
+  groupsByLevel.set('country', buildGroupRecords('country', featureEntries));
 
   const tasks: Extract2Task[] = [];
   const inputsByTaskId = new Map<string, ShapeExtract2TaskInputData>();
@@ -185,66 +315,100 @@ export async function buildExtract2TasksWithTopoJSON(params: {
     timestamp: number;
   }> = [];
 
-  const groupsToProcess: { key: string; items: Candidate[] }[] = finalGroups;
-  for (let index = 0; index < groupsToProcess.length; index += 1) {
-    const group = groupsToProcess[index];
-    if (!group) continue;
-    if (group.items.length === 0) continue;
-    const groupFeatures = group.items.flatMap((item) => item.features);
-    if (groupFeatures.length === 0) continue;
+  const expandFactor = params.tileExpandFactor ?? 1;
+  const expandMargin = params.tileExpandMargin ?? 0;
+  let nextTaskIndex = 0;
 
-    const groupCollection: FeatureCollection = { type: 'FeatureCollection', features: groupFeatures };
-    const groupBufferId = `${String(params.nodeId)}-extract1-group-${index}`;
-    const data = await params.encodeFeatureCollection(groupCollection);
+  const effectiveRanges = params.zoomRanges.flatMap((range) => splitZoomRange(range));
 
-    newBuffers.push({
-      id: groupBufferId,
-      nodeId: params.nodeId,
-      stage: 'extract1',
-      data,
-      featureCount: groupFeatures.length,
-      extractionRatio: 1,
-      tolerance: 0,
-      timestamp: Date.now(),
-    });
+  for (const range of effectiveRanges) {
+    const level = resolveGroupLevel(range.maxZoom);
+    const groups = groupsByLevel.get(level) ?? [];
+    for (const group of groups) {
+      if (!group) continue;
+      const expandedBBox = expandBBoxForZoom(group.bbox, range.maxZoom, expandFactor, expandMargin);
+      const neighborGroups = groups.filter((candidate) => bboxIntersects(candidate.bbox, expandedBBox));
+      const features: Feature[] = [];
+      for (const neighbor of neighborGroups) {
+        for (const entry of neighbor.items) {
+          if (bboxIntersects(entry.bbox, expandedBBox)) {
+            features.push(entry.feature);
+          }
+        }
+      }
+      if (features.length === 0) continue;
 
-    const primary = group.items[0];
-    if (!primary) continue;
-    const featureGroupId = `continent-group:${group.key}`;
-    const taskId = params.buildTaskId('extract2', {
-      countryCode: primary.countryCode,
-      adminLevel: primary.adminLevel,
-      featureGroupId,
-    });
+      const groupCollection: FeatureCollection = { type: 'FeatureCollection', features };
+      const groupBufferId = buildGroupBufferId(params.nodeId, level, group.key, range.label);
+      const data = await params.encodeFeatureCollection(groupCollection);
 
-    tasks.push({
-      taskId,
-      nodeId: params.nodeId,
-      taskType: 'extract2',
-      stage: BatchTaskStage.WAIT,
-      type: 'extract2',
-      status: 'waiting',
-      index,
-      progress: 0,
-      inputBufferId: groupBufferId,
-      continent: primary.continent,
-      adminLevel: primary.adminLevel,
-    });
+      newBuffers.push({
+        id: groupBufferId,
+        nodeId: params.nodeId,
+        stage: 'extract1',
+        data,
+        featureCount: features.length,
+        extractionRatio: 1,
+        tolerance: 0,
+        timestamp: Date.now(),
+      });
 
-    inputsByTaskId.set(taskId, {
-      inputBufferId: groupBufferId,
-      sourceTaskId: primary.task.taskId,
-      sourceUrl: primary.sourceUrl,
-      featureGroupId,
-      adminCode: primary.adminCode,
-      originKey: primary.originKey,
-      originLabel: primary.originLabel,
-      continent: primary.continent,
-      dataSource: params.extract1InputsByTaskId.get(primary.task.taskId)?.dataSource,
-      countryCode: primary.countryCode,
-      adminLevel: primary.adminLevel,
-      countryName: primary.countryName,
-    });
+      const primaryCandidate = candidates.find((candidate) => (
+        level === 'world'
+        || (level === 'continent' && normalizeTaskIdSegment(candidate.continent) === normalizeTaskIdSegment(group.key))
+        || (level === 'country' && normalizeTaskIdSegment(candidate.countryCode ?? candidate.countryName ?? '') === normalizeTaskIdSegment(group.key))
+      ));
+      const featureGroupId = level === 'world'
+        ? 'world-group'
+        : level === 'continent'
+          ? `continent-group:${group.key}`
+          : `country-group:${group.key}`;
+      const zoomRangeLabel = range.label;
+      const taskId = params.buildTaskId('extract2', {
+        countryCode: primaryCandidate?.countryCode,
+        adminLevel: primaryCandidate?.adminLevel,
+        featureGroupId,
+        zoomRangeLabel,
+      });
+      const tolerance = params.scaleTolerance(range.maxZoom);
+
+      tasks.push({
+        taskId,
+        nodeId: params.nodeId,
+        taskType: 'extract2',
+        stage: BatchTaskStage.WAIT,
+        type: 'extract2',
+        status: 'waiting',
+        index: nextTaskIndex,
+        progress: 0,
+        inputBufferId: groupBufferId,
+        continent: primaryCandidate?.continent,
+        adminLevel: primaryCandidate?.adminLevel,
+      });
+
+      inputsByTaskId.set(taskId, {
+        inputBufferId: groupBufferId,
+        sourceTaskId: primaryCandidate?.task.taskId,
+        sourceUrl: primaryCandidate?.sourceUrl,
+        featureGroupId,
+        adminCode: primaryCandidate?.adminCode,
+        originKey: primaryCandidate?.originKey,
+        originLabel: primaryCandidate?.originLabel,
+        continent: primaryCandidate?.continent,
+        dataSource: primaryCandidate
+          ? params.extract1InputsByTaskId.get(primaryCandidate.task.taskId)?.dataSource
+          : undefined,
+        countryCode: primaryCandidate?.countryCode,
+        adminLevel: primaryCandidate?.adminLevel,
+        countryName: primaryCandidate?.countryName,
+        zoomLevels: range.zoomLevels,
+        zoomRange: [range.minZoom, range.maxZoom],
+        zoomRangeLabel,
+        tolerance,
+      });
+
+      nextTaskIndex += 1;
+    }
   }
 
   if (newBuffers.length > 0) {
@@ -254,7 +418,11 @@ export async function buildExtract2TasksWithTopoJSON(params: {
   params.consoleDebug('Extract2 topojson build summary', {
     extract1Tasks: params.extract1Tasks.length,
     candidates: candidates.length,
-    groups: finalGroups.length,
+    groups: {
+      world: groupsByLevel.get('world')?.length ?? 0,
+      continent: groupsByLevel.get('continent')?.length ?? 0,
+      country: groupsByLevel.get('country')?.length ?? 0,
+    },
     tasks: tasks.length,
     skippedMissingMetadata: missingMetadata,
     skippedMissingBuffer: missingBuffer,

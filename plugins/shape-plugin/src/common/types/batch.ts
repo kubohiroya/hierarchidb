@@ -101,6 +101,8 @@ export interface ExtractTaskInput {
   tolerance?: number;
   minimumArea?: number;
   zoomLevels?: number[];
+  zoomRange?: [number, number];
+  zoomRangeLabel?: string;
   tileSize?: number;
   quantize?: number;
   featureFilterMethod?: FeatureFilterMethod;

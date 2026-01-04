@@ -4,7 +4,7 @@ import type { ShapeDB, VectorTileRecord } from '@hierarchidb/shape-store';
 
 type Item = VectorTileRecord & { id: string };
 
-const buildTileId = (nodeId: NodeId, z: number, x: number, y: number): string =>
+export const buildTileId = (nodeId: NodeId, z: number, x: number, y: number): string =>
   `${nodeId}-${z}-${x}-${y}`;
 
 export function createShapeVectorTileStoreDexie(db: ShapeDB): VectorTileStore<Item> {

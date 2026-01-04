@@ -39,6 +39,7 @@ import { postprocessDownloadOutputs as postprocessDownloadOutputsInDownloadStage
 import { updateSourceMetadataBaseIfEnabled, updateSourceMetadataStageIfEnabled } from './session/metadata/sourceMetadataFacade.js';
 import { runExtract1StageOrchestrator } from './session/stages/extract1/runExtract1StageOrchestrator.js';
 import { runExtract2StageOrchestrator } from './session/stages/extract2/runExtract2StageOrchestrator.js';
+import { buildZoomRangeSegments } from './session/extract2/zoomRanges.js';
 import { resolveExtract2BuildStrategy } from './session/extract2/index.js';
 import { buildExtract1InputsByTaskId } from './session/extract1/index.js';
 import { buildVectorTileStageInputs } from './session/stages/vectortile/buildVectorTileStageInputs.js';
@@ -152,6 +153,13 @@ export class SessionController {
     return Array.from({ length: upper - lower + 1 }, (_, index) => lower + index);
   }
 
+  private resolveZoomRanges(): Array<{ minZoom: number; maxZoom: number; zoomLevels: number[]; label: string }> {
+    const minZoom = this.config.vectorTiles?.minZoom ?? 0;
+    const maxZoom = this.config.vectorTiles?.maxZoom ?? minZoom;
+    const breakpoints = this.config.vectorTiles?.zoomBreakpoints;
+    return buildZoomRangeSegments({ minZoom, maxZoom, breakpoints });
+  }
+
   private resolveDataSource(): DataSourceName {
     const dataSource = this.config.dataSource ?? this.downloadTaskPayloads[0]?.dataSource;
     if (!dataSource) {
@@ -232,6 +240,7 @@ export class SessionController {
       adminLevel?: number;
       featureLabel?: string;
       featureGroupId?: string;
+      zoomRangeLabel?: string;
     },
   ): string {
     return buildProcessingTaskId(this.nodeId, stage, details);
@@ -251,6 +260,7 @@ export class SessionController {
     adminLevel?: number;
     featureLabel?: string;
     featureGroupId?: string;
+    zoomRangeLabel?: string;
   } {
     return {
       countryCode: task.countryCode,
@@ -509,6 +519,10 @@ export class SessionController {
       config: this.config,
       tileInputSource: {
         listExtract2Buffers: () => this.artifactStore.listExtractedBuffers('extract2'),
+        listTileIdRelations: () => getEphemeralShapeDB().tileIdToBufferRelations
+          .where('nodeId')
+          .equals(this.nodeId)
+          .toArray(),
       },
     });
     this.vectorTileTasks = tasks;
@@ -883,15 +897,34 @@ export class SessionController {
     console.log(`[Session ${this.nodeId}] Processing extract2 stage`);
 
     const zoomLevels = this.resolveZoomLevels();
+    const zoomRanges = this.resolveZoomRanges();
     const extractionMode = this.config.extract2?.extractionMode ?? 'topojson';
     const extract1InputsByTaskId = await this.taskRegistry.loadStageInputs<ShapeExtract1TaskInputData>('extract1');
+    const overallMaxZoom = Math.max(
+      this.config.vectorTiles?.minZoom ?? 0,
+      this.config.vectorTiles?.maxZoom ?? 0,
+    );
+    const baseTolerance = this.config.extract2?.tolerance ?? 0;
+    const tileExpandFactor = this.config.vectorTiles?.tileExpandFactor ?? 1;
+    const tileExpandMargin = this.config.vectorTiles?.tileExpandMargin ?? 0;
+    const scaleTolerance = (zoomMax: number): number => {
+      if (!Number.isFinite(baseTolerance)) return 0;
+      const normalizedMax = Math.max(1, Math.round(zoomMax));
+      const referenceMax = Math.max(1, Math.round(overallMaxZoom));
+      const scale = referenceMax / normalizedMax;
+      return baseTolerance * scale;
+    };
     const extract2Build = await resolveExtract2BuildStrategy({
       nodeId: this.nodeId,
       zoomLevels,
+      zoomRanges,
+      scaleTolerance,
+      tileExpandFactor,
+      tileExpandMargin,
       extractionMode,
       extract1Tasks: this.extract1Tasks,
       extract1InputsByTaskId,
-      buildTaskId: (_stage: 'extract2', details: { countryCode?: string; adminLevel?: number; featureLabel?: string; featureGroupId?: string }) =>
+      buildTaskId: (_stage: 'extract2', details: { countryCode?: string; adminLevel?: number; featureLabel?: string; featureGroupId?: string; zoomRangeLabel?: string }) =>
         this.buildProcessingTaskId('extract2', details),
       resolveTaskIdDetails: (task, input) => this.resolveTaskIdDetails(task, input),
       getOriginKeyFromInput: (input) => this.getOriginKeyFromInput(input),

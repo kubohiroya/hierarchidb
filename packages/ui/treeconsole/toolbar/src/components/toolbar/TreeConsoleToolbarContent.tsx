@@ -150,6 +150,17 @@ export function TreeConsoleToolbarContent({
       'settings.sharedZoomRange.helper',
       'Default zoom range applied to shape/location/route settings.',
     ),
+    sharedZoomRangeLabel: t('settings.sharedZoomRange.rangeLabel', 'Zoom range'),
+    sharedZoomSegmentsLabel: t('settings.sharedZoomRange.segmentsLabel', 'Zoom range segments'),
+    sharedZoomSegmentsHelper: t(
+      'settings.sharedZoomRange.segmentsHelper',
+      'Number of zoom ranges to segment.',
+    ),
+    sharedZoomBreakpointsLabel: t('settings.sharedZoomRange.breakpointsLabel', 'Zoom range breakpoints'),
+    sharedZoomBreakpointsHelper: t(
+      'settings.sharedZoomRange.breakpointsHelper',
+      'Set breakpoints inside the supported zoom range.',
+    ),
   } as const;
 
   return (
@@ -217,6 +228,11 @@ export function TreeConsoleToolbarContent({
             autosaveTitle: labels.autosaveTitle,
             sharedZoomRangeTitle: labels.sharedZoomRangeTitle,
             sharedZoomRangeHelper: labels.sharedZoomRangeHelper,
+            sharedZoomRangeLabel: labels.sharedZoomRangeLabel,
+            sharedZoomSegmentsLabel: labels.sharedZoomSegmentsLabel,
+            sharedZoomSegmentsHelper: labels.sharedZoomSegmentsHelper,
+            sharedZoomBreakpointsLabel: labels.sharedZoomBreakpointsLabel,
+            sharedZoomBreakpointsHelper: labels.sharedZoomBreakpointsHelper,
           }}
         />
       </Box>

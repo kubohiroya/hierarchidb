@@ -15,6 +15,21 @@ export const OAuthCallback: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(true);
 
+  const resolveReturnUrl = (rawUrl: string) => {
+    try {
+      const resolved = new URL(rawUrl, window.location.origin);
+      if (resolved.origin !== window.location.origin) {
+        return { isExternal: true, url: resolved.toString() };
+      }
+      return {
+        isExternal: false,
+        url: `${resolved.pathname}${resolved.search}${resolved.hash}`,
+      };
+    } catch {
+      return { isExternal: false, url: '/' };
+    }
+  };
+
   useEffect(() => {
     const handleCallback = async () => {
       try {
@@ -28,7 +43,12 @@ export const OAuthCallback: React.FC = () => {
         const returnUrl = localStorage.getItem('auth_return_url') || '/';
 
         // Navigate to the return URL
-        void navigate({ to: returnUrl, replace: true });
+        const resolved = resolveReturnUrl(returnUrl);
+        if (resolved.isExternal) {
+          window.location.assign(resolved.url);
+          return;
+        }
+        void navigate({ to: resolved.url, replace: true });
       } catch (err) {
         console.error('OAuth callback error:', err);
         setError(err instanceof Error ? err.message : 'Authentication failed');

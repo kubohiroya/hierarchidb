@@ -13,6 +13,7 @@ export function buildProcessingTaskId(
     adminLevel?: number;
     featureLabel?: string;
     featureGroupId?: string;
+    zoomRangeLabel?: string;
   },
 ): string {
   const countrySegment = normalizeTaskIdSegment(details.countryCode ?? 'UNK');
@@ -20,7 +21,7 @@ export function buildProcessingTaskId(
     ? `adm${details.adminLevel}`
     : 'adm-unknown';
 
-  const featureSegments = [details.featureLabel, details.featureGroupId]
+  const featureSegments = [details.featureLabel, details.featureGroupId, details.zoomRangeLabel]
     .flatMap((value) => {
       if (typeof value === 'number') return [String(value)];
       if (typeof value === 'string') return [value];

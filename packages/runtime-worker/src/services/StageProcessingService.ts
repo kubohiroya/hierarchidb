@@ -34,7 +34,7 @@ class RealDownloadWorker implements DownloadWorkerAPI {
 
   private async getShared(): Promise<SharedDownloadService> {
     if (!this.sharedPromise) {
-      this.sharedPromise = createSharedDownloadService({ dbPrefix: 'hidb', perHostConcurrency: 4 });
+      this.sharedPromise = createSharedDownloadService({ dbPrefix: 'hidb', perHostConcurrency: 4, scope: 'shape' });
     }
     return this.sharedPromise;
   }
@@ -69,7 +69,7 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
 
   private async getShared(): Promise<SharedDownloadService> {
     if (!this.sharedPromise) {
-      this.sharedPromise = createSharedDownloadService({ dbPrefix: 'hidb', perHostConcurrency: 2 });
+      this.sharedPromise = createSharedDownloadService({ dbPrefix: 'hidb', perHostConcurrency: 2, scope: 'shape' });
     }
     return this.sharedPromise;
   }

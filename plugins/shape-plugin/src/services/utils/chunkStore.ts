@@ -6,12 +6,14 @@ import {
   type ChunkStoreFetchOptions,
   type ChunkStoreSerializer,
 } from '@hierarchidb/chunk-store';
-import { authFetch, FetchNetworkPort, type FetchNetworkPortOptions, getCorsProxyBaseURL } from '@hierarchidb/download';
+import { FetchNetworkPort, type FetchNetworkPortOptions, getCorsProxyBaseURL } from '@hierarchidb/download';
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
 let sharedNet: FetchNetworkPort | null = null;
+
+// Auth is handled inside FetchNetworkPort via @hierarchidb/download smartFetch → AuthService.
 
 export const SHARED_SHAPE_NODE_ID = 'shape-shared' as NodeId;
 
@@ -20,7 +22,7 @@ export const createShapeNetworkPort = (options: FetchNetworkPortOptions = {}): F
   return new FetchNetworkPort({
     perHostConcurrency: 4,
     corsProxyBaseURL,
-    authFetch: (url, init) => authFetch('shape', url, init),
+    auth: { scope: 'shape' },
     ...options,
   });
 };

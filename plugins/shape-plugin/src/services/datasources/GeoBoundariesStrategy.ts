@@ -18,6 +18,11 @@ import {
   SHARED_SHAPE_NODE_ID,
   type RetryConfig,
 } from '../utils/chunkStore.js';
+import {
+  GEOBOUNDARIES_API_BASE_URL,
+  GEOBOUNDARIES_RELEASE_TYPE,
+  buildGeoBoundariesMetadataUrl,
+} from '../utils/geoboundariesEndpoints.js';
 
 type GeoBoundariesProperties = Record<string, unknown>;
 type GeoBoundariesGeoJSON = FeatureCollection<Geometry, GeoBoundariesProperties>;
@@ -77,7 +82,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
     version: '5.0.0',
     access: {
       method: 'REST',
-      baseUrl: 'https://www.geoboundaries.org/api/current/',
+      baseUrl: `${GEOBOUNDARIES_API_BASE_URL}/`,
       authentication: { type: 'none' },
       timeout: 60000, //  60
       retries: { count: 3, delay: 2000, backoff: 'exponential' },
@@ -115,7 +120,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
     '5': 'ADM5',
   };
 
-  private readonly releaseType: 'gbOpen' = 'gbOpen';
+  private readonly releaseType: 'gbOpen' = GEOBOUNDARIES_RELEASE_TYPE;
 
   async fetchData(options?: FetchOptions): Promise<GeoBoundariesRawData> {
     const {
@@ -258,7 +263,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
     adminLevel: string,
     signal?: AbortSignal,
   ): Promise<GeoBoundariesApiResponse> {
-    const url = `${this.config.access.baseUrl}${this.releaseType}/${country}/${adminLevel}/`;
+    const url = buildGeoBoundariesMetadataUrl(country, adminLevel);
     console.log(`[GeoBoundaries] Fetching metadata: ${url}`);
 
     try {
@@ -364,36 +369,5 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
     return typeof value === 'string' ? value : undefined;
   }
 
-  async getAvailableCountries(): Promise<string[]> {
-    try {
-      const store = createShapeChunkStore(jsonSerializer, jsonDeserializer);
-      const url = `${this.config.access.baseUrl}available/`;
-      const entry = await store.getOrFetchForNode(SHARED_SHAPE_NODE_ID, url, {
-        accept: 'application/json',
-        cacheKey: buildShapeCacheKey('geoboundaries:available', url),
-      });
-      const data = entry.value as Record<string, unknown>;
-      return Object.keys(data);
-    } catch (error) {
-      console.warn('Failed to fetch available countries:', error);
-    }
-    return [];
-  }
-
-  async getAvailableAdminLevels(country: string): Promise<string[]> {
-    try {
-      const normalizedCountry = this.normalizeCountryCode(country);
-      const store = createShapeChunkStore(jsonSerializer, jsonDeserializer);
-      const url = `${this.config.access.baseUrl}available/`;
-      const entry = await store.getOrFetchForNode(SHARED_SHAPE_NODE_ID, url, {
-        accept: 'application/json',
-        cacheKey: buildShapeCacheKey('geoboundaries:available', url),
-      });
-      const data = entry.value as Record<string, string[]>;
-      return data[normalizedCountry] || [];
-    } catch (error) {
-      console.warn(`Failed to fetch available admin levels for ${country}:`, error);
-    }
-    return [];
-  }
+  // Availability is derived from the ALL/ALL metadata payload.
 }

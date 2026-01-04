@@ -130,6 +130,9 @@ const buildBatchSessionConfig = (batchConfig: BatchConfig, draft?: DraftLike): B
       maxZoom: tileConfig?.maxZoom ?? (tileConfig?.minZoom ?? 0),
       bufferSize: tileConfig?.bufferSize,
       tileSize: tileConfig?.tileSize,
+      zoomBreakpoints: tileConfig?.zoomBreakpoints,
+      tileExpandFactor: tileConfig?.tileExpandFactor,
+      tileExpandMargin: tileConfig?.tileExpandMargin,
     },
   };
 };

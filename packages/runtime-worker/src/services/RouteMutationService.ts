@@ -1,7 +1,7 @@
 import { SingletonMixin } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
 import { DexieChunkStore } from '@hierarchidb/chunk-store';
-import { authFetch, FetchNetworkPort, getCorsProxyBaseURL } from '@hierarchidb/download';
+import { FetchNetworkPort, getCorsProxyBaseURL } from '@hierarchidb/download';
 import {
   IDE_GSM_BULK_CHUNK_SIZE,
   type IdeGsmImportCallback,
@@ -206,7 +206,7 @@ const createRouteTextStore = (): DexieChunkStore<string> => {
   const net = new FetchNetworkPort({
     perHostConcurrency: 4,
     corsProxyBaseURL,
-    authFetch: (url, init) => authFetch('route', url, init),
+    auth: { scope: 'route' },
   });
   return new DexieChunkStore<string>({
     dbName: 'hidb-chunks',

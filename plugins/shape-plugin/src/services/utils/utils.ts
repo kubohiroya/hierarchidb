@@ -15,6 +15,7 @@ import type {
   SelectedArrayByCountries,
 } from '../../common/types/index.js';
 import { SHAPE_DATA_SOURCES, DEFAULT_PROCESSING_CONFIG } from '../../common/types/constants.js';
+import { GEOBOUNDARIES_RELEASE_BASE_URL } from './geoboundariesEndpoints.js';
 
 const KNOWN_DATA_SOURCE_NAMES = new Set<DataSourceName>(
   SHAPE_DATA_SOURCES.map((source) => source.name),
@@ -295,7 +296,7 @@ function buildDataSourceUrl(
 ): string | null {
   const baseUrls = {
     naturalearth: 'https://www.naturalearthdata.com/download',
-    geoboundaries: 'https://www.geoboundaries.org/api/gbOpen',
+    geoboundaries: GEOBOUNDARIES_RELEASE_BASE_URL,
     // Use GADM v4.1 GPKG endpoint to align with runtime-worker workers/tests
     gadm: 'https://geodata.ucdavis.edu/gadm/gadm4.1/gpkg',
     openstreetmap: 'https://download.geofabrik.de',

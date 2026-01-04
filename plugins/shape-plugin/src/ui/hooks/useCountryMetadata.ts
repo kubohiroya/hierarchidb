@@ -3,7 +3,6 @@ import type { CountryMetadata } from '../../common/types/index.js';
 import type { NodeId } from '@hierarchidb/common-types';
 import { normalizeDataSourceName } from '../../services/utils/utils.js';
 import { metadataLoader } from '../../services/metadata/MetadataLoader.js';
-import { SAMPLE_COUNTRIES } from '../../common/mock/data.js';
 
 export interface UseCountryMetadataOptions {
   dataSource: string;
@@ -15,7 +14,7 @@ export interface UseCountryMetadataResult {
   metadata: CountryMetadata[];
   loading: boolean;
   error: Error | null;
-  reload: () => Promise<void>;
+  reload: (options?: { force?: boolean }) => Promise<void>;
   getCountryName: (countryCode: string) => string;
   getCountryByCode: (countryCode: string) => CountryMetadata | undefined;
 }
@@ -30,11 +29,13 @@ export function useCountryMetadata({
                                    }: UseCountryMetadataOptions): UseCountryMetadataResult {
   const normalizedDataSource = normalizeDataSourceName(dataSource ?? '') ?? '';
   const [metadata, setMetadata] = useState<CountryMetadata[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const loadMetadata = useCallback(async () => {
+  const loadMetadata = useCallback(async (options?: { force?: boolean }) => {
     if (!normalizedDataSource) {
+      const err = new Error('Data source is not set. Please go back to Step2 and select a data source.');
+      setError(err);
       setMetadata([]);
       setLoading(false);
       return;
@@ -46,6 +47,11 @@ export function useCountryMetadata({
       setMetadata([]);
       setLoading(false);
       return;
+    }
+
+    if (options?.force) {
+      // Clear in-memory cache so we can re-fetch from the underlying chunk-store/network.
+      metadataLoader.clearCache(normalizedDataSource);
     }
 
     setLoading(true);
@@ -60,14 +66,15 @@ export function useCountryMetadata({
         data = await metadataLoader.loadMetadata(normalizedDataSource, nodeId);
       }
 
+      setMetadata(Array.isArray(data) ? data : []);
+
       if (!data?.length) {
-        setMetadata(SAMPLE_COUNTRIES);
-      } else {
-        setMetadata(data);
+        throw new Error(`No country metadata returned for data source: ${normalizedDataSource}`);
       }
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to load metadata'));
-      setMetadata(SAMPLE_COUNTRIES);
+      const e = err instanceof Error ? err : new Error('Failed to load metadata');
+      setError(e);
+      setMetadata([]);
     } finally {
       setLoading(false);
     }

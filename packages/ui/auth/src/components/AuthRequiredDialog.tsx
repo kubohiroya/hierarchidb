@@ -9,11 +9,8 @@
 import {
   CheckCircle as CheckCircleIcon,
   Close as CloseIcon,
-  Error as ErrorIcon,
-  ExpandMore as ExpandMoreIcon,
   GitHub as GitHubIcon,
   Google as GoogleIcon,
-  Info as InfoIcon,
   Lock as LockIcon,
   Microsoft as MicrosoftIcon,
   PlayArrow as PlayIcon,
@@ -21,9 +18,6 @@ import {
   Warning as WarningIcon,
 } from '@mui/icons-material';
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
   Alert,
   Box,
   Button,
@@ -33,15 +27,11 @@ import {
   DialogTitle,
   IconButton,
   LinearProgress,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
   Typography,
 } from '@mui/material';
 import type React from 'react';
 import { useCallback, useEffect, useId, useMemo, useState } from 'react';
-import { useAuth } from '../hooks/useAuth.js';
+import { useBFFAuthService } from '../hooks/useAuth.js';
 import type { AuthProviderType } from '../types/AuthProviderType.js';
 
 // Local minimal type to avoid workspace linking issues during typecheck.
@@ -78,6 +68,8 @@ export interface AuthRequiredDialogProps {
   onRetry?: () => void;
   /** Whether to show session details */
   showSessionDetails?: boolean;
+  /** Override label for the cancel button */
+  cancelLabel?: string;
 }
 
 type AuthProvider = 'google' | 'github' | 'microsoft';
@@ -96,22 +88,20 @@ type AuthUserPayload = {
 };
 
 const createUserPayload = (
-  authUser: ReturnType<typeof useAuth>['user']
+  authUser: ReturnType<typeof useBFFAuthService>['user']
 ): AuthUserPayload | null => {
   if (!authUser?.access_token || !authUser.expires_at) {
     return null;
   }
 
-  const profile = authUser.profile ?? {};
-
   return {
     token: authUser.access_token,
     expiresAt: authUser.expires_at,
     info: {
-      id: profile.sub,
-      email: profile.email,
-      name: profile.name,
-      picture: profile.picture,
+      id: authUser.id,
+      email: authUser.email,
+      name: authUser.name,
+      picture: authUser.picture,
     },
   };
 };
@@ -153,8 +143,10 @@ export function AuthRequiredDialog({
   onCancel,
   onRetry,
   showSessionDetails = true,
+  cancelLabel,
 }: AuthRequiredDialogProps) {
-  const { signIn, user, isAuthenticated } = useAuth();
+  const bffAuth = useBFFAuthService();
+  const { signIn, user, isAuthenticated } = bffAuth;
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<AuthProvider | null>(null);
@@ -179,6 +171,17 @@ export function AuthRequiredDialog({
     if (open) {
       setAuthError(null);
       setSelectedProvider(null);
+
+      // Keep the UI compact. Log technical details to console instead of rendering them.
+      console.warn('[auth][ui] Authentication required details', {
+        requestId: context.requestId,
+        pluginType,
+        sessionId,
+        retryCount,
+        errorCode,
+        errorMessage,
+        url,
+      });
     }
   }, [open]);
 
@@ -198,12 +201,14 @@ export function AuthRequiredDialog({
       try {
         console.log(`🔐 Starting ${provider} authentication for batch processing`);
 
-        const signInResult = await signIn({
+        // Routerに依存しない: その場のURLへ戻れれば十分
+        await signIn({
           provider: provider as AuthProviderType,
-          // Context is not part of BFFSignInOptions, so we remove it
+          returnUrl: typeof window !== 'undefined' ? window.location.href : '/',
+          method: 'redirect',
         });
 
-        const payload = createUserPayload(signInResult ?? null) ?? currentUserPayload ?? null;
+        const payload = createUserPayload(bffAuth.user) ?? currentUserPayload ?? null;
 
         if (!payload) {
           throw new Error('Authentication failed');
@@ -221,10 +226,16 @@ export function AuthRequiredDialog({
         setSelectedProvider(null);
       }
     },
-    [currentUserPayload, onSuccess, signIn]
+    [bffAuth.user, currentUserPayload, onSuccess, signIn]
   );
 
   const handleCancel = useCallback(() => {
+    if (cancelLabel) {
+      console.log('🚫 User cancelled authentication for batch processing');
+      onCancel();
+      return;
+    }
+
     const hasSession = Boolean(sessionId);
     const confirmMessage = hasSession
       ? 'Canceling authentication will stop the batch processing session. Are you sure?'
@@ -235,7 +246,7 @@ export function AuthRequiredDialog({
       console.log('🚫 User cancelled authentication for batch processing');
       onCancel();
     }
-  }, [sessionId, onCancel]);
+  }, [cancelLabel, sessionId, onCancel]);
 
   const handleRetry = useCallback(() => {
     if (onRetry) {
@@ -254,12 +265,14 @@ export function AuthRequiredDialog({
     const info = AUTH_PROVIDERS[provider];
     const Icon = info.icon;
     const isSelected = selectedProvider === provider;
-    const isDisabled = isAuthenticating && !isSelected;
+    const isMicrosoft = provider === 'microsoft';
+    const isDisabled = isMicrosoft || (isAuthenticating && !isSelected);
 
     return (
       <Button
         key={provider}
-        variant={isSelected ? 'contained' : 'outlined'}
+        variant="contained"
+        color="secondary"
         size="large"
         startIcon={
           isSelected && isAuthenticating ? (
@@ -281,18 +294,13 @@ export function AuthRequiredDialog({
         onClick={() => handleSignIn(provider)}
         disabled={isDisabled}
         sx={{
-          minWidth: 200,
-          justifyContent: 'flex-start',
-          borderColor: info.color,
-          color: isSelected ? 'white' : info.color,
-          backgroundColor: isSelected ? info.color : 'transparent',
-          '&:hover': {
-            backgroundColor: isSelected ? info.color : `${info.color}10`,
-            borderColor: info.color,
-          },
-          '&:disabled': {
-            opacity: 0.5,
-          },
+          minWidth: 220,
+          height: 52,
+          px: 2,
+          justifyContent: 'center',
+          textTransform: 'none',
+          fontWeight: 700,
+          '&:disabled': { opacity: 0.5 },
         }}
       >
         {isSelected && isAuthenticating ? 'Signing in...' : info.name}
@@ -300,12 +308,18 @@ export function AuthRequiredDialog({
     );
   };
 
+  const cancelButtonLabel = cancelLabel ?? (sessionId ? 'Cancel Processing' : 'Cancel');
+
   return (
     <Dialog
       open={open}
       maxWidth="md"
       fullWidth
       disableEscapeKeyDown={isAuthenticating}
+      sx={{
+        // Ensure auth prompt stays above plugin dialogs / overlays.
+        zIndex: (theme) => theme.zIndex.modal + 200,
+      }}
       aria-labelledby={dialogTitleId}
       aria-describedby={dialogDescriptionId}
     >
@@ -331,7 +345,7 @@ export function AuthRequiredDialog({
 
       <DialogContent id={dialogDescriptionId}>
         {/* Main Alert */}
-        <Alert severity={getErrorSeverity()} icon={<LockIcon />} sx={{ mb: 3 }}>
+        <Alert severity={getErrorSeverity()} icon={<WarningIcon />} sx={{ mb: 3 }}>
           <Typography variant="body1">
             {message ||
               `The ${pluginType} plugin requires authentication to continue batch processing.`}
@@ -356,45 +370,6 @@ export function AuthRequiredDialog({
             </Box>
           </Alert>
         )}
-
-        {/* Error Details */}
-        <Accordion sx={{ mb: 3 }}>
-          <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="error-details-content">
-            <Typography variant="subtitle2" display="flex" alignItems="center" gap={1}>
-              <InfoIcon fontSize="small" />
-              Technical Details
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <List dense>
-              <ListItem>
-                <ListItemIcon>
-                  <ErrorIcon color="error" fontSize="small" />
-                </ListItemIcon>
-                <ListItemText primary="Error Code" secondary={errorCode} />
-              </ListItem>
-              <ListItem>
-                <ListItemIcon>
-                  <WarningIcon color="warning" fontSize="small" />
-                </ListItemIcon>
-                <ListItemText primary="Error Message" secondary={errorMessage} />
-              </ListItem>
-              <ListItem>
-                <ListItemIcon>
-                  <InfoIcon color="info" fontSize="small" />
-                </ListItemIcon>
-                <ListItemText
-                  primary="Request URL"
-                  secondary={
-                    <Typography variant="body2" sx={{ wordBreak: 'break-all' }}>
-                      {url}
-                    </Typography>
-                  }
-                />
-              </ListItem>
-            </List>
-          </AccordionDetails>
-        </Accordion>
 
         {/* Authentication Error */}
         {authError && (
@@ -422,7 +397,7 @@ export function AuthRequiredDialog({
           >
             <Typography variant="body2">
               You are currently signed in as{' '}
-              <strong>{user.profile.name || user.profile.email}</strong>
+              <strong>{user.name || user.email}</strong>
             </Typography>
           </Alert>
         )}
@@ -433,7 +408,14 @@ export function AuthRequiredDialog({
             Sign in to continue processing:
           </Typography>
 
-          <Box display="flex" flexDirection="column" gap={2} alignItems="stretch" sx={{ mt: 2 }}>
+          <Box
+            display="flex"
+            gap={2}
+            flexWrap="wrap"
+            alignItems="center"
+            justifyContent="center"
+            sx={{ mt: 2 }}
+          >
             {(Object.keys(AUTH_PROVIDERS) as AuthProvider[]).map(getProviderButton)}
           </Box>
         </Box>
@@ -467,8 +449,16 @@ export function AuthRequiredDialog({
               startIcon={<StopIcon />}
               color="error"
               variant="outlined"
+              size="large"
+              sx={{
+                minWidth: 240,
+                height: 52,
+                px: 3,
+                textTransform: 'none',
+                fontWeight: 600,
+              }}
             >
-              {sessionId ? 'Cancel Processing' : 'Cancel'}
+              {cancelButtonLabel}
             </Button>
 
             {isAuthenticated && user && (

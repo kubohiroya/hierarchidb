@@ -5,6 +5,7 @@ import { buildVectorTileTasks } from '../../tiles/vectorTileTasks.js';
 
 export type VectorTileStageTileInputSource = {
   listExtract2Buffers: () => Promise<Array<{ id: string }>>;
+  listTileIdRelations?: () => Promise<Array<{ tileId: string }>>;
 };
 
 export function buildVectorTileStageInputs(params: {
@@ -19,14 +20,34 @@ export function buildVectorTileStageInputs(params: {
   const { nodeId, zoomLevels, config, tileInputSource } = params;
 
   return (async () => {
-    const extract2Buffers = await tileInputSource.listExtract2Buffers();
-    const tileRows = buildMinimalVectorTileRowsFromExtract2({
-      nodeId,
-      zoomLevels,
-      extract2Buffers,
-    });
+    const parseTileId = (tileId: string): { key: string; z: number; x: number; y: number } | null => {
+      const prefix = `${String(nodeId)}-`;
+      if (!tileId.startsWith(prefix)) return null;
+      const rest = tileId.slice(prefix.length);
+      const parts = rest.split('-');
+      if (parts.length !== 3) return null;
+      const [zRaw, xRaw, yRaw] = parts;
+      const z = Number.parseInt(zRaw, 10);
+      const x = Number.parseInt(xRaw, 10);
+      const y = Number.parseInt(yRaw, 10);
+      if (!Number.isFinite(z) || !Number.isFinite(x) || !Number.isFinite(y)) return null;
+      return { key: tileId, z, x, y };
+    };
+
+    const relationRows = await tileInputSource.listTileIdRelations?.();
+    const tileRows = relationRows && relationRows.length > 0
+      ? Array.from(new Map(
+        relationRows
+          .map((row) => parseTileId(row.tileId))
+          .filter((row): row is { key: string; z: number; x: number; y: number } => Boolean(row))
+          .map((row) => [row.key, row]),
+      ).values())
+      : buildMinimalVectorTileRowsFromExtract2({
+        nodeId,
+        zoomLevels,
+        extract2Buffers: await tileInputSource.listExtract2Buffers(),
+      });
 
     return buildVectorTileTasks({ nodeId, tileRows, config });
   })();
 }
-

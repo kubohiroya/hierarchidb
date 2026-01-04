@@ -11,12 +11,24 @@ describe('buildExtract2TasksWithTopoJSON', () => {
   it('creates grouped buffers and extract2 tasks', async () => {
     const putExtractedBuffers = vi.fn(async () => undefined);
     const getExtractedBuffer = vi.fn(async () => ({ data: encoder.encode('dummy').buffer }));
+    const zoomRanges = [
+      { minZoom: 0, maxZoom: 3, zoomLevels: [0, 1, 2, 3], label: 'z0-3' },
+      { minZoom: 4, maxZoom: 7, zoomLevels: [4, 5, 6, 7], label: 'z4-7' },
+    ];
 
     const decodeFeatureCollection = vi.fn(async (_buffer: ArrayBuffer): Promise<FeatureCollection> => ({
       type: 'FeatureCollection',
       features: [
-        { type: 'Feature', geometry: null, properties: { any: 'x' } },
-        { type: 'Feature', geometry: null, properties: { any: 'y' } },
+        {
+          type: 'Feature',
+          geometry: { type: 'Polygon', coordinates: [[[139, 35], [140, 35], [140, 36], [139, 36], [139, 35]]] },
+          properties: { any: 'x' },
+        },
+        {
+          type: 'Feature',
+          geometry: { type: 'Polygon', coordinates: [[[140, 36], [141, 36], [141, 37], [140, 37], [140, 36]]] },
+          properties: { any: 'y' },
+        },
       ],
     }));
 
@@ -51,7 +63,9 @@ describe('buildExtract2TasksWithTopoJSON', () => {
           dataSource: 'naturalearth',
         } satisfies ShapeExtract1TaskInputData],
       ]),
-      buildTaskId: (_stage, details) => `id-${details.featureGroupId}`,
+      zoomRanges,
+      scaleTolerance: (zoomMax) => zoomMax * 0.1,
+      buildTaskId: (_stage, details) => `id-${details.featureGroupId}-${details.zoomRangeLabel ?? 'none'}`,
       resolveTaskContinent: (input) => input?.continent,
       resolveTaskCountryName: (input) => input?.countryName,
       resolveTaskCountryCode: (task, input) => input?.countryCode ?? task.countryCode,
@@ -64,7 +78,7 @@ describe('buildExtract2TasksWithTopoJSON', () => {
       consoleDebug: () => undefined,
     });
 
-    expect(res.tasks.length).toBeGreaterThan(0);
+    expect(res.tasks.length).toBe(4);
     expect(res.inputsByTaskId.size).toBe(res.tasks.length);
     expect(encodeFeatureCollection).toHaveBeenCalled();
     expect(putExtractedBuffers).toHaveBeenCalled();

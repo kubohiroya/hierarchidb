@@ -1,5 +1,5 @@
 import type { DataSourceSpec, DataSourceStrategy, OdPair, ParseTask, RouteBatchSpec, StrategyContext, TaskPlan } from './types.js';
-import { authFetch, FetchNetworkPort, getCorsProxyBaseURL, notifyPluginAuthRequired } from '@hierarchidb/download';
+import { FetchNetworkPort, getCorsProxyBaseURL, notifyPluginAuthRequired } from '@hierarchidb/download';
 import { TabularStrategy } from './strategies/TabularStrategy.js';
 import { GeoJsonStrategy } from './strategies/GeoJsonStrategy.js';
 
@@ -80,7 +80,7 @@ export class RouteSourceOrchestrator {
     this.net = new FetchNetworkPort({
       perHostConcurrency: 4,
       corsProxyBaseURL,
-      authFetch: (url, init) => authFetch('route', url, init),
+      auth: { scope: 'route' },
     });
     return this.net;
   }

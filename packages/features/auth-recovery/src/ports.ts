@@ -1,8 +1,8 @@
-export type AuthPluginType = 'shape' | 'location' | 'route' | 'spreadsheet' | 'styler' | 'generic';
+export type AuthScope = 'shape' | 'location' | 'route' | 'spreadsheet' | 'styler' | 'generic';
 
 export interface AuthContext {
   sessionId?: string;
-  pluginType?: AuthPluginType;
+  scope?: AuthScope;
   maxRetries?: number;
 }
 

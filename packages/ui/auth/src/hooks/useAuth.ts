@@ -22,7 +22,7 @@ const STORAGE_KEYS = {
 /**
  * BFF Auth Service Hook
  */
-const useBFFAuthService = () => {
+export const useBFFAuthService = () => {
   const authService = BFFAuthService.getInstance();
   const [user, setUser] = useState<BFFUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);

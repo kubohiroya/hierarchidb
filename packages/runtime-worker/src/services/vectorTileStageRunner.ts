@@ -94,6 +94,9 @@ export async function writeVectorTileInput(
     dbName: resolvedChunkStoreName,
     serializer: (value) => value,
     deserializer: (value) => value,
+    networkOptions: {
+      auth: { enabled: false },
+    },
   });
   await storage.setForNode(nodeId, bufferId, payload, {
     sizeBytes: payload.byteLength,

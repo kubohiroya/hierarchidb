@@ -279,7 +279,7 @@ export class ShapeWorkerExtract2Adapter implements Extract2StageAdapter {
           const resolvedNodeId = requireNodeId(task.nodeId);
           const baseInput = inputByTaskId.get(task.taskId) ?? {};
           const baseOutput = outputByTaskId.get(task.taskId) ?? {};
-          const input: ExtractTaskInput = { ...baseInput, ...extractSettings.extract2, retry: baseOutput.retry };
+          const input: ExtractTaskInput = { ...extractSettings.extract2, ...baseInput, retry: baseOutput.retry };
           const sourceTaskId = input.sourceTaskId
             ?? `${String(resolvedNodeId)}-extract1-${taskIndex}`;
           const extract1Task = await shapeDB.batchTasks.get(sourceTaskId);

@@ -8,37 +8,89 @@ import { normalizeDataSourceName, type DownloadTaskPayload, type ShapeEntity } f
 import { type AuthProviderType, useAuth } from '@hierarchidb/ui-auth';
 
 const SHARED_ZOOM_RANGE_KEY = 'sharedZoomRange';
-const DEFAULT_SHARED_ZOOM_RANGE: [number, number] = [0, 6];
+const DEFAULT_SHARED_ZOOM_RANGE: [number, number] = [0, 7];
+const DEFAULT_SHARED_ZOOM_SEGMENTS = 2;
+const DEFAULT_SHARED_ZOOM_BREAKPOINTS: number[] = [0, 4, 7];
 const SHARED_ZOOM_RANGE_MIN = 0;
-const SHARED_ZOOM_RANGE_MAX = 22;
+const SHARED_ZOOM_RANGE_MAX = 12;
 
-const normalizeSharedZoomRange = (value: unknown): [number, number] => {
-  if (!Array.isArray(value) || value.length < 2) {
-    return DEFAULT_SHARED_ZOOM_RANGE;
-  }
-  const rawMin = Number(value[0]);
-  const rawMax = Number(value[1]);
-  const min = Number.isFinite(rawMin) ? rawMin : DEFAULT_SHARED_ZOOM_RANGE[0];
-  const max = Number.isFinite(rawMax) ? rawMax : DEFAULT_SHARED_ZOOM_RANGE[1];
-  const clampedMin = Math.min(Math.max(min, SHARED_ZOOM_RANGE_MIN), SHARED_ZOOM_RANGE_MAX);
-  const clampedMax = Math.min(Math.max(max, SHARED_ZOOM_RANGE_MIN), SHARED_ZOOM_RANGE_MAX);
-  return clampedMin <= clampedMax ? [clampedMin, clampedMax] : [clampedMax, clampedMin];
+type SharedZoomConfig = {
+  range: [number, number];
+  segments: number;
+  breakpoints: number[];
 };
 
-const readSharedZoomRange = (): [number, number] => {
+const clampRange = (range: [number, number]): [number, number] => {
+  const min = Math.min(Math.max(range[0], SHARED_ZOOM_RANGE_MIN), SHARED_ZOOM_RANGE_MAX);
+  const max = Math.min(Math.max(range[1], SHARED_ZOOM_RANGE_MIN), SHARED_ZOOM_RANGE_MAX);
+  return min <= max ? [min, max] : [max, min];
+};
+
+const normalizeBreakpoints = (
+  range: [number, number],
+  segments: number,
+  breakpoints?: number[],
+): number[] => {
+  const [min, max] = range;
+  if (segments <= 1 || min === max) {
+    return [min, max];
+  }
+  const expectedLength = segments + 1;
+  if (!Array.isArray(breakpoints) || breakpoints.length !== expectedLength) {
+    const step = (max - min) / segments;
+    const points = Array.from({ length: expectedLength }, (_, index) => Math.round(min + step * index));
+    points[0] = min;
+    points[points.length - 1] = max;
+    return points;
+  }
+  const sorted = [...breakpoints]
+    .map((value) => Math.min(Math.max(Number(value), min), max))
+    .sort((a, b) => a - b);
+  sorted[0] = min;
+  sorted[sorted.length - 1] = max;
+  return sorted;
+};
+
+const normalizeSharedZoomConfig = (value: unknown): SharedZoomConfig => {
+  if (Array.isArray(value)) {
+    const range = clampRange([
+      Number.isFinite(Number(value[0])) ? Number(value[0]) : DEFAULT_SHARED_ZOOM_RANGE[0],
+      Number.isFinite(Number(value[1])) ? Number(value[1]) : DEFAULT_SHARED_ZOOM_RANGE[1],
+    ]);
+    const breakpoints = normalizeBreakpoints(range, DEFAULT_SHARED_ZOOM_SEGMENTS);
+    return { range, segments: DEFAULT_SHARED_ZOOM_SEGMENTS, breakpoints };
+  }
+  if (value && typeof value === 'object') {
+    const record = value as Partial<SharedZoomConfig>;
+    const range = clampRange([
+      Number.isFinite(Number(record.range?.[0])) ? Number(record.range?.[0]) : DEFAULT_SHARED_ZOOM_RANGE[0],
+      Number.isFinite(Number(record.range?.[1])) ? Number(record.range?.[1]) : DEFAULT_SHARED_ZOOM_RANGE[1],
+    ]);
+    const segments = Number.isFinite(Number(record.segments)) ? Number(record.segments) : DEFAULT_SHARED_ZOOM_SEGMENTS;
+    const breakpoints = normalizeBreakpoints(range, segments, record.breakpoints);
+    return { range, segments, breakpoints };
+  }
+  return {
+    range: DEFAULT_SHARED_ZOOM_RANGE,
+    segments: DEFAULT_SHARED_ZOOM_SEGMENTS,
+    breakpoints: DEFAULT_SHARED_ZOOM_BREAKPOINTS,
+  };
+};
+
+const readSharedZoomConfig = (): SharedZoomConfig => {
   if (typeof window === 'undefined') {
-    return DEFAULT_SHARED_ZOOM_RANGE;
+    return normalizeSharedZoomConfig(null);
   }
   const stored = window.localStorage?.getItem(SHARED_ZOOM_RANGE_KEY);
   if (!stored) {
-    return DEFAULT_SHARED_ZOOM_RANGE;
+    return normalizeSharedZoomConfig(null);
   }
   try {
     const parsed = JSON.parse(stored);
-    return normalizeSharedZoomRange(parsed);
+    return normalizeSharedZoomConfig(parsed);
   } catch (error) {
     console.warn('[ShapeBuildProgressStep] Failed to parse shared zoom range', error);
-    return DEFAULT_SHARED_ZOOM_RANGE;
+    return normalizeSharedZoomConfig(null);
   }
 };
 
@@ -115,13 +167,14 @@ export const useBatchSessionActions = ({
     const resolvedBatchConfig = resolvedDataSource
       ? { ...baseBatchConfig, dataSource: resolvedDataSource }
       : baseBatchConfig;
-    const [sharedMin, sharedMax] = readSharedZoomRange();
+    const { range: [sharedMin, sharedMax], breakpoints } = readSharedZoomConfig();
     const mergedBatchConfig = {
       ...resolvedBatchConfig,
       tileConfig: {
         ...(resolvedBatchConfig.tileConfig ?? {}),
         minZoom: sharedMin,
         maxZoom: sharedMax,
+        zoomBreakpoints: breakpoints,
       },
     };
     try {
@@ -223,7 +276,7 @@ export const useBatchSessionActions = ({
       await bridgeRef.current.initialize();
       console.debug(`${debugScope} startOrResume:bridgeReady`);
       if (buildStatus === 'paused') {
-        const [sharedMin, sharedMax] = readSharedZoomRange();
+        const { range: [sharedMin, sharedMax] } = readSharedZoomConfig();
         const lastBuild = data?.buildTileZoomRange;
         if (lastBuild && (lastBuild.minZoom !== sharedMin || lastBuild.maxZoom !== sharedMax)) {
           notify.warning('Zoom range changed. Restart build to apply the new range.');
@@ -260,7 +313,7 @@ export const useBatchSessionActions = ({
         console.debug(`${debugScope} startOrResume:missingPayloads`, { nodeId });
         return false;
       }
-      const [sharedMin, sharedMax] = readSharedZoomRange();
+      const { range: [sharedMin, sharedMax] } = readSharedZoomConfig();
       console.debug(`${debugScope} startOrResume:startBatch`, {
         nodeId,
         nodeType,

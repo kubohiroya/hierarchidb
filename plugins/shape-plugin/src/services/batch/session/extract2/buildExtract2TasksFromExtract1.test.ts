@@ -7,6 +7,10 @@ import { BatchTaskStage } from '../../../../common/types/index.js';
 describe('buildExtract2TasksFromExtract1', () => {
   it('builds extract2 tasks and inputs map derived from extract1 tasks', () => {
     const nodeId = 'node-1' as NodeId;
+    const zoomRanges = [
+      { minZoom: 0, maxZoom: 3, zoomLevels: [0, 1, 2, 3], label: 'z0-3' },
+      { minZoom: 4, maxZoom: 7, zoomLevels: [4, 5, 6, 7], label: 'z4-7' },
+    ];
 
     const extract1Tasks = [
       {
@@ -47,7 +51,10 @@ describe('buildExtract2TasksFromExtract1', () => {
       nodeId,
       extract1Tasks: [...extract1Tasks],
       extract1InputsByTaskId,
-      buildTaskId: (_stage, details) => `extract2:${details.featureGroupId ?? 'none'}:${details.featureLabel ?? 'none'}`,
+      zoomRanges,
+      scaleTolerance: (zoomMax) => zoomMax * 0.1,
+      buildTaskId: (_stage, details) =>
+        `extract2:${details.featureGroupId ?? 'none'}:${details.featureLabel ?? 'none'}:${details.zoomRangeLabel ?? 'none'}`,
       getOriginKeyFromInput: (input) => input?.originKey,
       resolveTaskIdDetails: (task, input) => ({
         countryCode: input?.countryCode ?? task.countryCode,
@@ -57,8 +64,8 @@ describe('buildExtract2TasksFromExtract1', () => {
       }),
     });
 
-    expect(res.tasks).toHaveLength(1);
-    expect(res.inputsByTaskId.size).toBe(1);
+    expect(res.tasks).toHaveLength(2);
+    expect(res.inputsByTaskId.size).toBe(2);
 
     const task = res.tasks[0];
     expect(task.taskType).toBe('extract2');
@@ -69,5 +76,7 @@ describe('buildExtract2TasksFromExtract1', () => {
     expect(input).toBeTruthy();
     expect(input?.inputBufferId).toBe('node-1-extract1-0');
     expect(input?.originKey).toBe('ne:asia:jpn:adm1');
+    expect(input?.zoomRange).toEqual([0, 3]);
+    expect(input?.zoomLevels).toEqual([0, 1, 2, 3]);
   });
 });

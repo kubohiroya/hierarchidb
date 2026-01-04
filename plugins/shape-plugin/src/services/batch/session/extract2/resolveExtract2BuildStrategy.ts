@@ -12,6 +12,10 @@ export type Extract2BuildStrategyParams = {
   // config-related
   zoomLevels: number[];
   extractionMode: 'topojson' | string;
+  zoomRanges: Array<{ minZoom: number; maxZoom: number; zoomLevels: number[]; label: string }>;
+  scaleTolerance: (zoomMax: number) => number;
+  tileExpandFactor?: number;
+  tileExpandMargin?: number;
 
   // inputs
   extract1Tasks: Extract1Task[];
@@ -20,12 +24,12 @@ export type Extract2BuildStrategyParams = {
   // shared helpers
   buildTaskId: (
     stage: 'extract2',
-    details: { countryCode?: string; adminLevel?: number; featureLabel?: string; featureGroupId?: string },
+    details: { countryCode?: string; adminLevel?: number; featureLabel?: string; featureGroupId?: string; zoomRangeLabel?: string },
   ) => string;
   resolveTaskIdDetails: (
     task: { countryCode?: string; adminLevel?: number },
     input?: { countryCode?: string; adminLevel?: number; featureLabel?: string; featureGroupId?: string },
-  ) => { countryCode?: string; adminLevel?: number; featureLabel?: string; featureGroupId?: string };
+  ) => { countryCode?: string; adminLevel?: number; featureLabel?: string; featureGroupId?: string; zoomRangeLabel?: string };
   getOriginKeyFromInput: (input?: { originKey?: string } | null) => string | undefined;
 
   // topojson specific
@@ -50,14 +54,18 @@ export type Extract2BuildStrategyResult = {
 export async function resolveExtract2BuildStrategy(
   params: Extract2BuildStrategyParams,
 ): Promise<Extract2BuildStrategyResult> {
-  const { extractionMode, zoomLevels } = params;
-  const shouldGroupByContinent = extractionMode === 'topojson' && zoomLevels.includes(0);
+  const { extractionMode } = params;
+  const shouldGroupByContinent = extractionMode === 'topojson';
 
   const build = shouldGroupByContinent
     ? await buildExtract2TasksWithTopojsonFacade({
       nodeId: params.nodeId,
       extract1Tasks: params.extract1Tasks,
       extract1InputsByTaskId: params.extract1InputsByTaskId,
+      zoomRanges: params.zoomRanges,
+      scaleTolerance: params.scaleTolerance,
+      tileExpandFactor: params.tileExpandFactor,
+      tileExpandMargin: params.tileExpandMargin,
       buildTaskId: params.buildTaskId,
       resolveTaskContinent: params.resolveTaskContinent,
       resolveTaskCountryName: params.resolveTaskCountryName,
@@ -74,6 +82,8 @@ export async function resolveExtract2BuildStrategy(
       nodeId: params.nodeId,
       extract1Tasks: params.extract1Tasks,
       extract1InputsByTaskId: params.extract1InputsByTaskId,
+      zoomRanges: params.zoomRanges,
+      scaleTolerance: params.scaleTolerance,
       buildTaskId: params.buildTaskId,
       getOriginKeyFromInput: params.getOriginKeyFromInput,
       resolveTaskIdDetails: params.resolveTaskIdDetails,
@@ -84,4 +94,3 @@ export async function resolveExtract2BuildStrategy(
     shouldGroupByContinent,
   };
 }
-

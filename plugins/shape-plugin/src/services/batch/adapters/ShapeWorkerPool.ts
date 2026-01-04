@@ -1,6 +1,6 @@
 import { releaseProxy, wrap } from 'comlink';
 import type { Remote } from 'comlink';
-import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
+import { AuthService } from '@hierarchidb/auth-recovery';
 import type { ShapeStageWorkerAPI } from '../workers/ShapeStageWorkerTypes.js';
 
 type WorkerHandle = {
@@ -20,7 +20,7 @@ export class ShapeWorkerPool {
 
   static async create(size: number): Promise<ShapeWorkerPool> {
     const count = Math.max(1, size);
-    const auth = await AuthRecoveryService.getSingleton();
+    const auth = await AuthService.getSingleton();
     const authHeader = auth.getAuthHeaders().Authorization;
     const handles = Array.from({ length: count }, () => {
       const worker = new Worker(new URL('@hierarchidb/shape-plugin/shape-stage-worker', import.meta.url), {
@@ -39,7 +39,7 @@ export class ShapeWorkerPool {
   }
 
   async run<T>(runner: (api: Remote<ShapeStageWorkerAPI>) => Promise<T>): Promise<T> {
-    const auth = await AuthRecoveryService.getSingleton();
+    const auth = await AuthService.getSingleton();
     const authHeader = auth.getAuthHeaders().Authorization;
     if (authHeader !== this.authHeader) {
       await this.syncAuthHeader(authHeader);

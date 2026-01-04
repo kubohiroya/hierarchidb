@@ -9,8 +9,15 @@ import { bbox as turfBbox } from '@turf/turf';
 import { applyFeatureFiltering, type FeatureFilterSettings, extractGeoJson } from '@hierarchidb/gis-sdk';
 import { extractTopoJsonByTiles } from '../utils/topojsonExtract.js';
 import { applyOriginKey, assignFeatureIds, HDB_ORIGIN_KEY } from '../utils/featureIds.js';
-import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
+import { AuthService } from '@hierarchidb/auth-recovery';
 import { resolveStrategyIdFromDataSource } from '../../datasources/strategyIds.js';
+import { buildTileCoordinates } from '../session/tiles/tileCoordinates.js';
+import { buildTileId } from '../../../worker/shapeVectorTileStore.dexie.js';
+import {
+  bufferDeserializer,
+  bufferSerializer,
+  createShapeChunkStore,
+} from '../../utils/chunkStore.js';
 
 const normalizeBoundingBox = (bbox?: TaskBoundingBox): DataSourceBoundingBox | undefined => {
   if (!bbox || bbox.length !== 4) return undefined;
@@ -94,6 +101,98 @@ const applyFeatureContext = (
   }
 };
 
+let downloadChunkStore: ReturnType<typeof createShapeChunkStore<ArrayBuffer>> | null = null;
+
+const getDownloadChunkStore = () => {
+  if (!downloadChunkStore) {
+    downloadChunkStore = createShapeChunkStore<ArrayBuffer>(bufferSerializer, bufferDeserializer);
+  }
+  return downloadChunkStore;
+};
+
+const compressGzip = async (buffer: ArrayBuffer): Promise<ArrayBuffer> => {
+  if (typeof CompressionStream !== 'function') {
+    throw new Error('CompressionStream is not available for gzip compression');
+  }
+  const stream = new CompressionStream('gzip');
+  const writer = stream.writable.getWriter();
+  await writer.write(new Uint8Array(buffer));
+  await writer.close();
+  return new Response(stream.readable).arrayBuffer();
+};
+
+const decompressGzip = async (buffer: ArrayBuffer): Promise<ArrayBuffer> => {
+  if (typeof DecompressionStream !== 'function') {
+    throw new Error('DecompressionStream is not available for gzip decompression');
+  }
+  const stream = new DecompressionStream('gzip');
+  const writer = stream.writable.getWriter();
+  await writer.write(new Uint8Array(buffer));
+  await writer.close();
+  return new Response(stream.readable).arrayBuffer();
+};
+
+const isGzipContentType = (contentType?: string | null): boolean => {
+  if (!contentType) return false;
+  const normalized = contentType.toLowerCase();
+  return normalized.includes('gzip') || normalized.endsWith('+gzip');
+};
+
+const loadRawBufferFromChunkStore = async (
+  nodeId: NodeId,
+  cacheKey: string,
+): Promise<{ data: ArrayBuffer; featureCount: number; nodeId: NodeId } | null> => {
+  const store = getDownloadChunkStore();
+  const entry = await store.get(cacheKey);
+  if (!entry) return null;
+  const decoded = isGzipContentType(entry.metadata?.contentType)
+    ? await decompressGzip(entry.value)
+    : entry.value;
+  const collection = await decodeGeoJson(decoded);
+  if (!isFeatureCollection(collection)) {
+    return null;
+  }
+  return {
+    data: decoded,
+    featureCount: collection.features.length,
+    nodeId,
+  };
+};
+
+const buildTileIdRelations = (params: {
+  nodeId: string;
+  bufferId: string;
+  zoomLevels?: number[];
+  features: Feature[];
+}): Array<{ id: string; nodeId: string; tileId: string; bufferId: string; createdAt: number }> => {
+  const { nodeId, bufferId, zoomLevels, features } = params;
+  if (!zoomLevels || zoomLevels.length === 0 || features.length === 0) return [];
+  const tileIds = new Set<string>();
+  for (const feature of features) {
+    if (!feature || !feature.geometry) continue;
+    let bbox: [number, number, number, number];
+    try {
+      const res = turfBbox(feature);
+      if (res.length !== 4) continue;
+      bbox = [res[0], res[1], res[2], res[3]];
+    } catch {
+      continue;
+    }
+    const tiles = buildTileCoordinates(bbox, zoomLevels);
+    for (const tile of tiles) {
+      tileIds.add(buildTileId(nodeId, tile.z, tile.x, tile.y));
+    }
+  }
+  const createdAt = Date.now();
+  return Array.from(tileIds).map((tileId) => ({
+    id: `${tileId}-${bufferId}`,
+    nodeId,
+    tileId,
+    bufferId,
+    createdAt,
+  }));
+};
+
 const processDownloadTask = async ({
   nodeId,
   task,
@@ -137,6 +236,12 @@ const processDownloadTask = async ({
       const bounds = turfBbox(featureCollection);
       const db = getEphemeralShapeDB();
       const bufferId = `${nodeId}-download-${taskIndex}`;
+      const compressed = await compressGzip(fgb);
+      const store = getDownloadChunkStore();
+      await store.setForNode(nodeId, bufferId, compressed, {
+        contentType: 'application/flatgeobuf+gzip',
+        sizeBytes: compressed.byteLength,
+      }, { identity: 'hash' });
       await db.rawBuffers.put({
         id: bufferId,
         nodeId: task.nodeId ?? nodeId,
@@ -173,7 +278,8 @@ const processExtract1Task = async ({
 }: ExtractTaskRequest<Extract1Task>): Promise<ShapeStageWorkerTaskResult> => {
   const db = getEphemeralShapeDB();
   const inputBufferId = input.inputBufferId ?? '';
-  const raw = await db.rawBuffers.get(inputBufferId);
+  const raw = await loadRawBufferFromChunkStore(nodeId, inputBufferId)
+    ?? await db.rawBuffers.get(inputBufferId);
   if (!raw) {
     return { status: 'failed', errorMessage: `Raw buffer not found: ${inputBufferId}` };
   }
@@ -357,6 +463,15 @@ const processExtract2Task = async ({
       });
       const data = await encodeGeoJson(sanitized);
       const featureCount = sanitized.features.length;
+      const tileRelations = buildTileIdRelations({
+        nodeId: String(nodeId),
+        bufferId: outputBufferId,
+        zoomLevels: payload.zoomLevels,
+        features: sanitized.features,
+      });
+      if (tileRelations.length > 0) {
+        await db.tileIdToBufferRelations.bulkPut(tileRelations);
+      }
       await db.extractedBuffers.put({
         id: outputBufferId,
         nodeId: buffer.nodeId,
@@ -415,7 +530,6 @@ const processExtract2Task = async ({
         extractedPayload = extractTopoJsonByTiles(geojson, {
           tolerance: tunedTolerance,
           quantize: tunedQuantize,
-          zoomLevels: payload.zoomLevels,
         });
         usedTopo = true;
       } catch (error) {
@@ -445,6 +559,7 @@ const processExtract2Task = async ({
         data: buffer.data,
         featureCount: 0,
         ratio: 0,
+        features: [],
       };
     }
     const data = sanitizedExtracted
@@ -456,6 +571,7 @@ const processExtract2Task = async ({
       data,
       featureCount: featureCount ?? 0,
       ratio,
+      features: sanitizedExtracted?.features ?? [],
     };
   };
   let extraction = await runExtraction();
@@ -480,6 +596,7 @@ const processExtract2Task = async ({
   finalData = extraction.data;
   finalFeatureCount = extraction.featureCount;
   finalRatio = extraction.ratio;
+  let finalFeatures = extraction.features ?? [];
   const shouldTune = extractionMode !== 'geojson';
   while (shouldTune && finalRatio > targetRatio && pass < maxTuningPasses) {
     pass += 1;
@@ -501,8 +618,18 @@ const processExtract2Task = async ({
     finalData = extraction.data;
     finalFeatureCount = extraction.featureCount;
     finalRatio = extraction.ratio;
+    finalFeatures = extraction.features ?? [];
   }
   const outputBufferId = `${nodeId}-extract2-${taskIndex}`;
+  const tileRelations = buildTileIdRelations({
+    nodeId: String(nodeId),
+    bufferId: outputBufferId,
+    zoomLevels: payload.zoomLevels,
+    features: finalFeatures,
+  });
+  if (tileRelations.length > 0) {
+    await db.tileIdToBufferRelations.bulkPut(tileRelations);
+  }
   await db.extractedBuffers.put({
     id: outputBufferId,
     nodeId: buffer.nodeId,
@@ -532,7 +659,7 @@ export const shapeStageWorker: ShapeStageWorkerAPI = {
   processExtract1Task,
   processExtract2Task,
   setAuthToken: async (token: string, type: 'Bearer' | 'Basic' = 'Bearer', expiresAt?: number) => {
-    const auth = await AuthRecoveryService.getSingleton();
+    const auth = await AuthService.getSingleton();
     auth.setToken(token, type, expiresAt);
   },
 };

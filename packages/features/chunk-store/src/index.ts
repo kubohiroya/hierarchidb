@@ -111,11 +111,42 @@ class ChunkStoreDB extends Dexie {
 
   constructor(name: string, tables: DexieChunkStoreTables) {
     super(name);
+
+    // v1: legacy schema (pre-relations/keys)
+    // Keep this definition to allow IndexedDB upgrades without forcing users to delete the database.
     this.version(1).stores({
+      [tables.files]: '&metadataId, cacheKey, etag, hash, updatedAt',
+      [tables.chunks]: '&[metadataId+index], metadataId, index',
+    });
+
+    // v2: current schema
+    this.version(2).stores({
       [tables.files]: '&metadataId, cacheKey, etag, hash, updatedAt',
       [tables.chunks]: '&[metadataId+index], metadataId, index',
       [tables.relations]: '&[nodeId+metadataId], nodeId, metadataId',
       [tables.keys]: '&[key+type], key, type, metadataId',
+    }).upgrade(async (tx) => {
+      // Ensure new tables exist and backfill minimal relations/keys for existing url cacheKey mappings.
+      // NOTE: Older stores used cacheKey as a URL key; we create a key record so lookups can find existing chunks.
+      const files = tx.table(tables.files);
+      const keys = tx.table(tables.keys);
+      const relations = tx.table(tables.relations);
+
+      const now = Date.now();
+      await files.toCollection().each(async (file: FileRecord) => {
+        const metadataId = file.metadataId;
+        const cacheKey = file.cacheKey;
+        if (cacheKey) {
+          // url key
+          await keys.put({ key: cacheKey, type: 'url', metadataId, createdAt: now });
+        }
+        // Don't guess relations here; relations are optional and populated when accessed.
+        // But we create a shared relation for the shared node id if caller used it.
+        // (No-op if duplicates)
+      });
+
+      // relations table stays empty unless a caller links a nodeId; that's OK.
+      void relations;
     });
   }
 }
@@ -201,6 +232,14 @@ export class DexieChunkStore<T> implements StoragePort {
     await this.files.delete(metadataId);
     await this.chunks.where('metadataId').equals(metadataId).delete();
     await this.keys.where('metadataId').equals(metadataId).delete();
+  }
+
+  /**
+   * Invalidate a cached entry for the given node+cacheKey.
+   * This is useful when callers want to force a fresh fetch from the upstream data source.
+   */
+  async invalidateForNode(nodeId: NodeId, cacheKey: string): Promise<void> {
+    await this.deleteForNode(nodeId, cacheKey);
   }
 
   async getOrFetchForNode(

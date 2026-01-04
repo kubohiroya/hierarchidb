@@ -18,6 +18,21 @@ export default function AuthCallbackRoute() {
   //const { handleCallback } = ;
   const [error, setError] = useState<string | null>(null);
 
+  const resolveReturnUrl = (rawUrl: string) => {
+    try {
+      const resolved = new URL(rawUrl, window.location.origin);
+      if (resolved.origin !== window.location.origin) {
+        return { isExternal: true, url: resolved.toString() };
+      }
+      return {
+        isExternal: false,
+        url: `${resolved.pathname}${resolved.search}${resolved.hash}`,
+      };
+    } catch {
+      return { isExternal: false, url: '/' };
+    }
+  };
+
   useEffect(() => {
     async function processCallback() {
       try {
@@ -27,7 +42,12 @@ export default function AuthCallbackRoute() {
         // If neither code nor error is present, assume a stray render and navigate away quietly.
         if (!code && !error) {
           const returnUrl = localStorage.getItem('auth_return_url') || '/';
-          navigate({ to: returnUrl, replace: true });
+          const resolved = resolveReturnUrl(returnUrl);
+          if (resolved.isExternal) {
+            window.location.assign(resolved.url);
+            return;
+          }
+          navigate({ to: resolved.url, replace: true });
           return;
         }
 
@@ -38,7 +58,12 @@ export default function AuthCallbackRoute() {
         if (!code) {
           // Nothing to process; go home without throwing.
           const returnUrl = localStorage.getItem('auth_return_url') || '/';
-          navigate({ to: returnUrl, replace: true });
+          const resolved = resolveReturnUrl(returnUrl);
+          if (resolved.isExternal) {
+            window.location.assign(resolved.url);
+            return;
+          }
+          navigate({ to: resolved.url, replace: true });
           return;
         }
 
@@ -46,7 +71,12 @@ export default function AuthCallbackRoute() {
         await authService.handleCallback(searchParams);
 
         const returnUrl = localStorage.getItem('auth_return_url') || '/';
-        navigate({ to: returnUrl, replace: true });
+        const resolved = resolveReturnUrl(returnUrl);
+        if (resolved.isExternal) {
+          window.location.assign(resolved.url);
+          return;
+        }
+        navigate({ to: resolved.url, replace: true });
       } catch (err) {
         console.error('Auth callback error:', err);
         setError(err instanceof Error ? err.message : 'Authentication failed');

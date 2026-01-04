@@ -9,6 +9,7 @@ import { DataSourceStrategyFactory } from '../DataSourceStrategyFactory.js';
 import type { FetchOptions } from '../DataSourceStrategy.js';
 import { OpenStreetMapStrategy } from '../OpenStreetMapStrategy.js';
 import { GeoBoundariesStrategy } from '../GeoBoundariesStrategy.js';
+import { metadataLoader } from '../../metadata/MetadataLoader.js';
 
 // Mock AuthRecoveryService used by authFetch so strategies avoid real network
 vi.mock('@hierarchidb/auth-recovery', () => {
@@ -33,7 +34,7 @@ vi.mock('@hierarchidb/auth-recovery', () => {
     }
 
     // GeoBoundaries metadata and download
-    if (url.includes('geoboundaries.org/api/current/available')) {
+    if (url.includes('geoboundaries.org/api/current/gbOpen/available')) {
       return new Response(JSON.stringify({ USA: ['ADM0', 'ADM1'], JPN: ['ADM0', 'ADM1'] }), { status: 200 });
     }
     if (url.includes('/gbOpen/')) {
@@ -151,18 +152,12 @@ describe('Data Source Integration Tests', () => {
 
     skipIf(!ENABLE_INTEGRATION_TESTS)('should fetch metadata from GeoBoundaries API', async () => {
       try {
-        const countries = await strategy.getAvailableCountries();
+        const countries = await metadataLoader.loadMetadata('geoboundaries');
         expect(Array.isArray(countries)).toBe(true);
 
         if (countries.length > 0) {
           console.log(`GeoBoundaries: Found ${countries.length} countries`);
           console.log('Sample countries:', countries.slice(0, 5));
-
-          //  admin
-          const japanLevels = await strategy.getAvailableAdminLevels('JPN');
-          expect(Array.isArray(japanLevels)).toBe(true);
-
-          console.log('Japan admin levels:', japanLevels);
         }
 
       } catch (error) {

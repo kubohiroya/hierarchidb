@@ -102,6 +102,10 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
     'australia': 'OC',
     'africa': 'AF',
     'antarctica': 'AN',
+    'n/a': 'XX',
+    'unknown': 'XX',
+    'unspecified': 'XX',
+    'none': 'XX',
     'アフリカ': 'AF',
     'アメリカ': 'NA',
     '北アメリカ': 'NA',
@@ -115,6 +119,8 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
     '中東': 'AS',
     '南極': 'AN',
     '南極大陸': 'AN',
+    '不明': 'XX',
+    '不詳': 'XX',
   }), []);
 
   const toRegionLabel = useCallback((continent?: string) => {

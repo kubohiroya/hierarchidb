@@ -5,13 +5,14 @@ import type { StageControls } from './StageControls.js';
 import { shapeDB, type VectorTileTaskInputData, type VectorTileTaskOutputData } from '../../database/ShapeDB.js';
 import { getEphemeralShapeDB } from '../../database/EphemeralShapeDB.js';
 import { geojson } from 'flatgeobuf';
-import type { Feature } from 'geojson';
+import type { Feature, FeatureCollection } from 'geojson';
 import { BatchService } from '@hierarchidb/batch';
 import { createStageWorkerClient, getStageWorkerProxy, runVectorTileStage } from '@hierarchidb/runtime-worker';
 import { TilesDB } from '@hierarchidb/vectortile-store';
 import { encodeFlatGeobufFromFeatureCollection, type VectorTileProgress } from '@hierarchidb/gis-sdk';
-import { assignFeatureIds, HDB_ORIGIN_KEY } from '../utils/featureIds.js';
+import { assignFeatureIds, HDB_FEATURE_ID_KEY, HDB_ORIGIN_KEY } from '../utils/featureIds.js';
 import { bbox as turfBbox } from '@turf/turf';
+import { assembleTileGeoJSON } from '../session/tiles/assembleTileGeoJSON.js';
 
 const isAbortError = (error: unknown): boolean => (
   error instanceof Error && error.name === 'AbortError'
@@ -34,6 +35,24 @@ type OriginDiffSummary = {
 export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
   private readonly featureCache = new Map<string, Array<{ feature: Feature; bbox: [number, number, number, number] }>>();
   private readonly originSummaryCache = new Map<string, OriginSummary>();
+
+  private dedupeFeatures(features: Feature[]): Feature[] {
+    const seen = new Set<string>();
+    return features.filter((feature) => {
+      if (!feature) return false;
+      const properties = feature.properties ?? {};
+      const featureId = String(
+        properties[HDB_FEATURE_ID_KEY]
+        ?? feature.id
+        ?? properties.id
+        ?? '',
+      );
+      if (!featureId) return true;
+      if (seen.has(featureId)) return false;
+      seen.add(featureId);
+      return true;
+    });
+  }
 
   private summarizeOriginKeys(features: Feature[], limit = 20): OriginSummary {
     const counts = new Map<string, number>();
@@ -235,6 +254,27 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     }
     this.featureCache.set(nodeId, result);
     return result;
+  }
+
+  private async listBufferIdsForTile(nodeId: string, tileId: string): Promise<string[]> {
+    const db = getEphemeralShapeDB();
+    const rows = await db.tileIdToBufferRelations
+      .where('[nodeId+tileId]')
+      .equals([nodeId, tileId])
+      .toArray();
+    if (!rows.length) return [];
+    return Array.from(new Set(rows.map((row) => row.bufferId)));
+  }
+
+  private async loadExtract2Collection(bufferId: string): Promise<FeatureCollection | null> {
+    const db = getEphemeralShapeDB();
+    const input = await db.extractedBuffers.get(bufferId);
+    if (!input) return null;
+    const decoded = await this.decodeGeoJson(input.data);
+    if (decoded && typeof decoded === 'object' && (decoded as FeatureCollection).type === 'FeatureCollection') {
+      return decoded as FeatureCollection;
+    }
+    return null;
   }
   private async decodeGeoJson(buffer: ArrayBuffer): Promise<unknown> {
     const decoded = geojson.deserialize(new Uint8Array(buffer));
@@ -452,8 +492,8 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
           let tileKey: string | null = null;
           let tileInputBuffer: ArrayBuffer | undefined;
           const compression = sampleInput.compression ?? false;
-          const inputFormat: 'geojson' | 'flatgeobuf' = sampleInput.buffer ? 'flatgeobuf' : 'geojson';
-          const inputCompression: 'none' | 'gzip' = compression ? 'gzip' : 'none';
+          const inputFormat: 'geojson' | 'flatgeobuf' = sampleInput.inputFormat ?? (sampleInput.buffer ? 'flatgeobuf' : 'geojson');
+          const inputCompression: 'none' | 'gzip' = sampleInput.inputCompression ?? (compression ? 'gzip' : 'none');
           const format = (sampleInput.format ?? 'mvt') as 'mvt';
           const tileSizeConfig = sampleInput.tileSize ?? 256;
           const buffer = sampleInput.buffer;
@@ -471,27 +511,57 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
             if (typeof tileZ !== 'number' || typeof tileX !== 'number' || typeof tileY !== 'number') {
               throw new Error(`Invalid tile input: ${inputBufferId}`);
             }
-            const features = await this.loadExtract2Features(String(sample.nodeId));
-            const totalFeatures = features.length;
-            const tileBBox = this.tileToBBox(tileZ, tileX, tileY);
-            const tileFeatures = features
-              .filter((entry) => this.intersects(entry.bbox, tileBBox))
-              .map((entry) => entry.feature)
-              .filter(Boolean);
-            tileFeatureCount = tileFeatures.length;
             tileKey = inputBufferId;
-            if (totalFeatures > 0 && tileFeatureCount !== totalFeatures) {
-              const totalOriginSummary = this.getOriginSummary(String(sample.nodeId), features.map((entry) => entry.feature));
-              const intersectOriginSummary = this.summarizeOriginKeys(tileFeatures);
-              const removedOriginSummary = this.diffOriginKeys(totalOriginSummary, intersectOriginSummary);
-              console.debug('[VectorTile] Tile feature reduction', {
+            const relationBufferIds = resolvedNodeId
+              ? await this.listBufferIdsForTile(String(sample.nodeId), tileKey)
+              : [];
+            let totalFeatures = 0;
+            let tileFeatures: Feature[] = [];
+            if (relationBufferIds.length > 0) {
+              const collections = (await Promise.all(
+                relationBufferIds.map((bufferId) => this.loadExtract2Collection(bufferId)),
+              )).filter((collection): collection is FeatureCollection => Boolean(collection));
+              totalFeatures = collections.reduce((sum, collection) => sum + collection.features.length, 0);
+              const assembled = assembleTileGeoJSON({
+                z: tileZ,
+                x: tileX,
+                y: tileY,
+                collections,
+              });
+              tileFeatures = assembled.features.filter(Boolean);
+            } else {
+              const features = await this.loadExtract2Features(String(sample.nodeId));
+              totalFeatures = features.length;
+              const tileBBox = this.tileToBBox(tileZ, tileX, tileY);
+              tileFeatures = features
+                .filter((entry) => this.intersects(entry.bbox, tileBBox))
+                .map((entry) => entry.feature)
+                .filter(Boolean);
+              tileFeatures = this.dedupeFeatures(tileFeatures);
+              if (totalFeatures > 0 && tileFeatures.length !== totalFeatures) {
+                const totalOriginSummary = this.getOriginSummary(String(sample.nodeId), features.map((entry) => entry.feature));
+                const intersectOriginSummary = this.summarizeOriginKeys(tileFeatures);
+                const removedOriginSummary = this.diffOriginKeys(totalOriginSummary, intersectOriginSummary);
+                console.debug('[VectorTile] Tile feature reduction', {
+                  nodeId: sample.nodeId,
+                  tileId: this.formatTileId(tileZ, tileX, tileY),
+                  totalFeatures,
+                  intersectingFeatures: tileFeatures.length,
+                  originKeyTotals: totalOriginSummary,
+                  originKeyIntersecting: intersectOriginSummary,
+                  originKeyRemoved: removedOriginSummary,
+                });
+              }
+            }
+            tileFeatureCount = tileFeatures.length;
+            if (totalFeatures > 0 && tileFeatureCount !== totalFeatures && relationBufferIds.length > 0) {
+              const totalOriginSummary = this.summarizeOriginKeys(tileFeatures);
+              console.debug('[VectorTile] Tile feature reduction (indexed)', {
                 nodeId: sample.nodeId,
                 tileId: this.formatTileId(tileZ, tileX, tileY),
                 totalFeatures,
                 intersectingFeatures: tileFeatureCount,
                 originKeyTotals: totalOriginSummary,
-                originKeyIntersecting: intersectOriginSummary,
-                originKeyRemoved: removedOriginSummary,
               });
             }
             if (tileFeatures.length === 0) {

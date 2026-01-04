@@ -1,9 +1,8 @@
-import type { AuthPluginType } from '@hierarchidb/auth-recovery';
 import { authFetch } from './helpers/authFetch.js';
 import { resolveNetworkUrl } from './helpers/resolveNetworkUrl.js';
 
 export async function postJson<T = unknown>(
-  pluginType: AuthPluginType,
+  scope: string,
   url: string,
   body: string | object,
   headers?: Record<string, string>,
@@ -27,7 +26,7 @@ export async function postJson<T = unknown>(
     body: initBody,
     headers: mergedHeaders,
   };
-  const response = await authFetch(pluginType, resolvedUrl, requestInit);
+  const response = await authFetch(scope, resolvedUrl, requestInit);
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}`);
   }

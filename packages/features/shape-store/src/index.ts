@@ -39,6 +39,7 @@ export {
   type RawFeatureBuffer,
   type ExtractedFeatureBuffer,
   type VectorTileData,
+  type TileIdToBufferRelation,
   closeEphemeralShapeDB,
   getEphemeralShapeDB,
 } from './EphemeralShapeDB.js';

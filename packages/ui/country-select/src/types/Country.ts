@@ -26,7 +26,7 @@ export interface Country {
   flag?: string;
 }
 
-export type ContinentCode = 'AF' | 'AS' | 'EU' | 'NA' | 'SA' | 'OC' | 'AN';
+export type ContinentCode = 'AF' | 'AS' | 'EU' | 'NA' | 'SA' | 'OC' | 'AN' | 'XX';
 
 export interface Continent {
   code: ContinentCode;
@@ -41,6 +41,7 @@ export const CONTINENTS: Record<ContinentCode, Continent> = {
   SA: { code: 'SA', name: 'South America' },
   OC: { code: 'OC', name: 'Oceania' },
   AN: { code: 'AN', name: 'Antarctica' },
+  XX: { code: 'XX', name: 'N/A' },
 };
 
 /** Selection state for a country */

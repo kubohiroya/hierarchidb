@@ -63,6 +63,9 @@ export interface GenerateVectorTilesConfig {
   maxZoom: number;
   bufferSize?: number;
   tileSize?: number;
+  zoomBreakpoints?: number[];
+  tileExpandFactor?: number;
+  tileExpandMargin?: number;
 }
 
 export interface BatchSessionConfig extends CommonSessionConfig {
@@ -227,6 +230,10 @@ export type Extract2TaskInputData = {
   adminLevel?: number;
   continent?: string;
   countryName?: string;
+  zoomLevels?: number[];
+  zoomRange?: [number, number];
+  zoomRangeLabel?: string;
+  tolerance?: number;
 };
 
 export type Extract2TaskOutputData = {

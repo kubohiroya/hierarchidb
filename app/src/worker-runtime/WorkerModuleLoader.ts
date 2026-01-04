@@ -4,6 +4,8 @@ import type { Remote } from 'comlink';
 import { pluginRegistry } from '~/plugin-loaders/index.ts';
 import { pluginWorkerPreloads } from '~/plugin-loaders/worker-loaders.ts';
 import { loadWorkerAPIClientModule } from './workerApiClientLoader.js';
+import { configureWorkerContainer, WorkerDiTokens } from '@hierarchidb/runtime-worker';
+import { pluginWorkerLoaders } from '~/plugin-loaders/worker-loaders.ts';
 
 // NOTE: Worker runtime-worker and plugin worker modules are no longer imported through
 // legacy `*/worker` subpath specifiers.  Instead we delegate to the
@@ -49,10 +51,26 @@ const loadModulePaths = async (): Promise<ModulePathsModule> => {
   return modulePathsPromise;
 };
 
+let containersConfigured = false;
+
+const ensureRuntimeWorkerContainerConfigured = () => {
+  if (containersConfigured) return;
+  containersConfigured = true;
+  try {
+    configureWorkerContainer((container) => {
+      container.rebind(WorkerDiTokens.PluginWorkerLoaderMap).toConstantValue(pluginWorkerLoaders);
+    });
+  } catch (error) {
+    console.warn('[WorkerModuleLoader] failed to configure worker container', error);
+  }
+};
+
 async function loadPluginWorkers(): Promise<void> {
   if (!isBrowserEnvironment) {
     return;
   }
+
+  ensureRuntimeWorkerContainerConfigured();
 
   const modulePaths = await loadModulePaths();
 
@@ -106,6 +124,7 @@ export async function preloadPluginWorkerStores(): Promise<void> {
 export async function ensureWorkerRuntime(): Promise<Remote<WorkerAPI>> {
   if (!runtimePromise) {
     runtimePromise = (async () => {
+      ensureRuntimeWorkerContainerConfigured();
       const [{ WorkerAPIClient }, modulePaths] = await Promise.all([
         loadWorkerAPIClientModule(),
         loadModulePaths().catch((error) => {

@@ -22,9 +22,9 @@ export interface RouteProcessingStepProps {
 }
 
 const SHARED_ZOOM_RANGE_KEY = 'sharedZoomRange';
-const DEFAULT_SHARED_ZOOM_RANGE: [number, number] = [0, 6];
+const DEFAULT_SHARED_ZOOM_RANGE: [number, number] = [0, 7];
 const SHARED_ZOOM_RANGE_MIN = 0;
-const SHARED_ZOOM_RANGE_MAX = 22;
+const SHARED_ZOOM_RANGE_MAX = 12;
 const buildMonitorConfig = {
   storagePrefix: 'hdb:route:stage-monitor',
   keyMode: 'node',
@@ -33,11 +33,16 @@ const buildMonitorConfig = {
 } as const;
 
 const normalizeSharedZoomRange = (value: unknown): [number, number] => {
-  if (!Array.isArray(value) || value.length < 2) {
+  const rangeValue = Array.isArray(value)
+    ? value
+    : value && typeof value === 'object' && Array.isArray((value as { range?: unknown }).range)
+      ? (value as { range?: unknown[] }).range
+      : null;
+  if (!rangeValue || rangeValue.length < 2) {
     return DEFAULT_SHARED_ZOOM_RANGE;
   }
-  const rawMin = Number(value[0]);
-  const rawMax = Number(value[1]);
+  const rawMin = Number(rangeValue[0]);
+  const rawMax = Number(rangeValue[1]);
   const min = Number.isFinite(rawMin) ? rawMin : DEFAULT_SHARED_ZOOM_RANGE[0];
   const max = Number.isFinite(rawMax) ? rawMax : DEFAULT_SHARED_ZOOM_RANGE[1];
   const clampedMin = Math.min(Math.max(min, SHARED_ZOOM_RANGE_MIN), SHARED_ZOOM_RANGE_MAX);

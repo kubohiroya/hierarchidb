@@ -7,12 +7,18 @@ import {
   textSerializer,
 } from '../utils/chunkStore.js';
 import type { CountryMetadata } from '../../common/types/index.js';
-import { normalizeCountryCodeFormat } from '../utils/iso3166.js';
+import {
+  DEFAULT_ISO3166_CSV_URL,
+  normalizeContinentCode,
+  normalizeCountryCodeFormat,
+  resolveCountryContinentCode,
+  resolveCountryContinentName,
+} from '../utils/iso3166.js';
 import type { NodeId } from '@hierarchidb/common-types';
+import { GEOBOUNDARIES_ALL_METADATA_URL } from '../utils/geoboundariesEndpoints.js';
 
 type GeoBoundariesRecord = Record<string, unknown>;
 
-const GEOBOUNDARIES_ALL_URL = 'https://www.geoboundaries.org/api/current/gbOpen/ALL/ALL/';
 const GADM_MAPS_URL = 'https://gadm.org/maps.html';
 
 const parseAdminLevel = (value: unknown): number | null => {
@@ -65,10 +71,32 @@ const parseGeoBoundariesItems = (payload: unknown): GeoBoundariesRecord[] => {
 
 export async function fetchGeoBoundariesMetadata(nodeId: NodeId): Promise<CountryMetadata[]> {
   const store = createShapeChunkStore(jsonSerializer, jsonDeserializer);
-  const entry = await store.getOrFetchForNode(nodeId, GEOBOUNDARIES_ALL_URL, {
+  const entry = await store.getOrFetchForNode(nodeId, GEOBOUNDARIES_ALL_METADATA_URL, {
     accept: 'application/json',
-    cacheKey: buildShapeCacheKey('geoboundaries:metadata:all', GEOBOUNDARIES_ALL_URL),
+    cacheKey: buildShapeCacheKey('geoboundaries:metadata:all', GEOBOUNDARIES_ALL_METADATA_URL),
   });
+
+  if (import.meta.env?.DEV) {
+    const payload = entry.value as unknown;
+    const isArray = Array.isArray(payload);
+    const hasDataArray = Boolean(
+      payload && typeof payload === 'object' && Array.isArray((payload as { data?: unknown }).data),
+    );
+    const keys = payload && typeof payload === 'object'
+      ? Object.keys(payload as Record<string, unknown>).slice(0, 20)
+      : [];
+    console.debug('[shape-plugin][geoboundaries] metadata payload probe', {
+      url: GEOBOUNDARIES_ALL_METADATA_URL,
+      nodeId,
+      isArray,
+      hasDataArray,
+      topLevelKeys: keys,
+      sample: isArray
+        ? (payload as unknown[]).slice(0, 1)
+        : (hasDataArray ? (payload as { data: unknown[] }).data.slice(0, 1) : payload),
+    });
+  }
+
   const items = parseGeoBoundariesItems(entry.value);
   const entries = new Map<string, { iso3: string; name?: string; continent?: string; levels: Set<number> }>();
 
@@ -110,18 +138,58 @@ export async function fetchGeoBoundariesMetadata(nodeId: NodeId): Promise<Countr
   }
 
   const results: CountryMetadata[] = [];
+  let missingContinentCount = 0;
+  let mismatchContinentCount = 0;
+  const missingSamples: Array<{ iso3: string; metadata: string | null }> = [];
+  const mismatchSamples: Array<{ iso3: string; metadata: string | null; iso3166: string }> = [];
   for (const entry of entries.values()) {
-    const iso2 = await normalizeCountryCodeFormat(entry.iso3, 'iso2');
+    const iso2 = await normalizeCountryCodeFormat(entry.iso3, 'iso2', {
+      csvUrl: DEFAULT_ISO3166_CSV_URL,
+    });
     const normalizedIso2 = iso2.length === 2 ? iso2 : undefined;
     const levels = Array.from(entry.levels).sort((a, b) => a - b);
+    const fallbackContinent = await resolveCountryContinentName(normalizedIso2 ?? entry.iso3, {
+      csvUrl: DEFAULT_ISO3166_CSV_URL,
+    });
+    const resolvedContinentCode = await resolveCountryContinentCode(normalizedIso2 ?? entry.iso3, {
+      csvUrl: DEFAULT_ISO3166_CSV_URL,
+    });
+    const rawContinent = (entry.continent ?? '').trim();
+    const rawContinentCode = normalizeContinentCode(rawContinent);
+
+    if (!rawContinent) {
+      missingContinentCount += 1;
+      if (missingSamples.length < 5) {
+        missingSamples.push({ iso3: entry.iso3, metadata: rawContinent || null });
+      }
+    } else if (!rawContinentCode || (resolvedContinentCode !== 'XX' && rawContinentCode !== resolvedContinentCode)) {
+      mismatchContinentCount += 1;
+      if (mismatchSamples.length < 5) {
+        mismatchSamples.push({
+          iso3: entry.iso3,
+          metadata: rawContinent || null,
+          iso3166: fallbackContinent,
+        });
+      }
+    }
+
+    const resolvedContinent = rawContinent || fallbackContinent || 'N/A';
     results.push({
       countryCode: normalizedIso2 ?? entry.iso3,
       countryName: entry.name ?? entry.iso3,
-      continent: entry.continent ?? '',
+      continent: resolvedContinent,
       availableAdminLevels: levels,
       iso2: normalizedIso2,
       iso3: entry.iso3,
       dataQuality: determineDataQuality(levels),
+    });
+  }
+  if (missingContinentCount > 0 || mismatchContinentCount > 0) {
+    console.warn('[shape-plugin][geoboundaries] continent metadata mismatch detected', {
+      missing: missingContinentCount,
+      mismatch: mismatchContinentCount,
+      missingSamples,
+      mismatchSamples,
     });
   }
   return results;
@@ -196,24 +264,36 @@ export async function fetchGadmMetadata(nodeId: NodeId): Promise<CountryMetadata
     throw new Error('GADM maps page did not include country entries.');
   }
 
+  let gadmMissingCount = 0;
+  const gadmMissingSamples: Array<{ iso3: string; metadata: string | null }> = [];
   const results = await mapWithConcurrency<GadmCountryEntry, CountryMetadata | undefined>(entries, 6, async (entry) => {
     try {
-    const countryEntry = await store.getOrFetchForNode(nodeId, entry.url, {
-      accept: 'text/html',
-      cacheKey: buildShapeCacheKey(`gadm:country:${entry.iso3}`, entry.url),
-    });
+      const countryEntry = await store.getOrFetchForNode(nodeId, entry.url, {
+        accept: 'text/html',
+        cacheKey: buildShapeCacheKey(`gadm:country:${entry.iso3}`, entry.url),
+      });
       const countryHtml = countryEntry.value;
       const levels = parseGadmLevelsFromHtml(countryHtml);
-      const iso2 = await normalizeCountryCodeFormat(entry.iso3, 'iso2');
+      const iso2 = await normalizeCountryCodeFormat(entry.iso3, 'iso2', {
+        csvUrl: DEFAULT_ISO3166_CSV_URL,
+      });
       const normalizedIso2 = iso2.length === 2 ? iso2 : undefined;
+      const continent = await resolveCountryContinentName(normalizedIso2 ?? entry.iso3, {
+        csvUrl: DEFAULT_ISO3166_CSV_URL,
+      });
 
       // CountryMetadata.countryCode は ISO2 必須。
       if (!normalizedIso2) return undefined;
 
+      gadmMissingCount += 1;
+      if (gadmMissingSamples.length < 5) {
+        gadmMissingSamples.push({ iso3: entry.iso3, metadata: null });
+      }
+
       return {
         countryCode: normalizedIso2,
         countryName: entry.name,
-        continent: '',
+        continent,
         availableAdminLevels: levels,
         iso2: normalizedIso2,
         iso3: entry.iso3,
@@ -225,15 +305,25 @@ export async function fetchGadmMetadata(nodeId: NodeId): Promise<CountryMetadata
         url: entry.url,
         error,
       });
-      const iso2 = await normalizeCountryCodeFormat(entry.iso3, 'iso2');
+      const iso2 = await normalizeCountryCodeFormat(entry.iso3, 'iso2', {
+        csvUrl: DEFAULT_ISO3166_CSV_URL,
+      });
       const normalizedIso2 = iso2.length === 2 ? iso2 : undefined;
+      const continent = await resolveCountryContinentName(normalizedIso2 ?? entry.iso3, {
+        csvUrl: DEFAULT_ISO3166_CSV_URL,
+      });
 
       if (!normalizedIso2) return undefined;
+
+      gadmMissingCount += 1;
+      if (gadmMissingSamples.length < 5) {
+        gadmMissingSamples.push({ iso3: entry.iso3, metadata: null });
+      }
 
       return {
         countryCode: normalizedIso2,
         countryName: entry.name,
-        continent: '',
+        continent,
         availableAdminLevels: [],
         iso2: normalizedIso2,
         iso3: entry.iso3,
@@ -243,14 +333,21 @@ export async function fetchGadmMetadata(nodeId: NodeId): Promise<CountryMetadata
   });
 
   // 変換できなかった行は除外（型も揃える）
-  return results.filter((v): v is CountryMetadata => v != null);
+  const filtered = results.filter((v): v is CountryMetadata => v != null);
+  if (gadmMissingCount > 0) {
+    console.warn('[shape-plugin][gadm] continent metadata missing (fallback to ISO3166)', {
+      missing: gadmMissingCount,
+      missingSamples: gadmMissingSamples,
+    });
+  }
+  return filtered;
 }
 
 export async function fetchNaturalEarthMetadata(_nodeId: NodeId): Promise<CountryMetadata[]> {
   return [{
     countryCode: 'WW',
     countryName: 'Worldwide',
-    continent: '',
+    continent: 'N/A',
     availableAdminLevels: [0, 1],
     iso2: 'WW',
     dataQuality: 'medium',

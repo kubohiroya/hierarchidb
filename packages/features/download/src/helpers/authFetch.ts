@@ -1,12 +1,17 @@
-import { AuthRecoveryService, type AuthPluginType } from '@hierarchidb/auth-recovery';
+import { AuthService, type AuthScope } from '@hierarchidb/auth-recovery';
 import { resolveNetworkUrl } from './resolveNetworkUrl.js';
 
+/**
+ * authFetch is a helper for authenticated network access.
+ * - It resolves URL via resolveNetworkUrl (CORS proxy/local proxy)
+ * - It delegates to AuthService (canonical authenticated fetch entry point)
+ */
 export async function authFetch(
-  pluginType: AuthPluginType,
+  scope: string,
   input: string,
   init?: RequestInit,
 ): Promise<Response> {
-  const auth = await AuthRecoveryService.getSingleton();
+  const auth = await AuthService.getSingleton();
   const target = resolveNetworkUrl(input);
-  return auth.fetchWithAuth(target, init, { pluginType });
+  return auth.fetchWithAuth(target, init, { scope: scope as AuthScope });
 }

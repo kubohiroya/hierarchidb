@@ -14,9 +14,13 @@ export async function buildExtract2TasksWithTopojsonFacade(params: {
   nodeId: NodeId;
   extract1Tasks: Extract1Task[];
   extract1InputsByTaskId: Map<string, ShapeExtract1TaskInputData>;
+  zoomRanges: Array<{ minZoom: number; maxZoom: number; zoomLevels: number[]; label: string }>;
+  scaleTolerance: (zoomMax: number) => number;
+  tileExpandFactor?: number;
+  tileExpandMargin?: number;
   buildTaskId: (
     stage: 'extract2',
-    details: { countryCode?: string; adminLevel?: number; featureLabel?: string; featureGroupId?: string },
+    details: { countryCode?: string; adminLevel?: number; featureLabel?: string; featureGroupId?: string; zoomRangeLabel?: string },
   ) => string;
   resolveTaskContinent: (input?: ShapeExtract1TaskInputData) => string | undefined;
   resolveTaskCountryName: (input?: ShapeExtract1TaskInputData) => string | undefined;

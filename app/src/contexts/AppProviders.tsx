@@ -2,6 +2,7 @@ import { NotificationSystem } from '@hierarchidb/ui-plugin-shell/components';
 import { SimpleBFFAuthProvider } from '@hierarchidb/ui-plugin-shell/ui-auth';
 import { LanguageProvider } from '@hierarchidb/ui-plugin-shell/ui-i18n';
 import { ThemeProvider as CustomThemeProvider } from '@hierarchidb/ui-plugin-shell/ui-theme';
+import { setCorsProxyBaseURL } from '@hierarchidb/download';
 import { Box, CircularProgress, CssBaseline } from '@mui/material';
 import { StyledEngineProvider } from '@mui/material/styles';
 import type { ReactNode } from 'react';
@@ -20,6 +21,14 @@ import {
   UIReadyReporter,
   WorkerProgressReporter,
 } from './AppReporters.js';
+
+// UI-thread default CORS proxy (worker側と同等に初期化しておく)
+if (typeof import.meta.env?.VITE_CORS_PROXY_BASE_URL === 'string') {
+  const value = import.meta.env.VITE_CORS_PROXY_BASE_URL;
+  if (value.length > 0) {
+    setCorsProxyBaseURL(value);
+  }
+}
 
 /**
  * Common providers wrapper for both React Router and TanStack Router

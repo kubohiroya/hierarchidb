@@ -14,9 +14,17 @@ import { normalizeDataSourceName } from '../../services/utils/utils.js';
 import { clearStagesIfPresent, FULL_INVALIDATION_STAGES, resolveShapeNodeId } from '../utils/sessionInvalidation.js';
 import type { CountryAvailabilityWorkerAPI, SerializedCountryAvailability } from '../workers/countryAvailability.types.js';
 import { wrap, releaseProxy } from 'comlink';
-import { toNodeId } from '@hierarchidb/common-types';
+import { invalidateCountrySelectionCaches } from './countrySelectionReload.js';
+import { SHARED_SHAPE_NODE_ID } from '../../services/utils/chunkStore.js';
 
-const CONTINENT_CODES: ContinentCode[] = ['AF', 'AS', 'EU', 'NA', 'SA', 'OC', 'AN'];
+// (availability is loaded in a dedicated worker thread)
+
+const createAvailabilityWorker = () => new Worker(
+  new URL('../workers/countryAvailability.worker.ts', import.meta.url),
+  { type: 'module' },
+);
+
+const CONTINENT_CODES: ContinentCode[] = ['AF', 'AS', 'EU', 'NA', 'SA', 'OC', 'AN', 'XX'];
 
 const CONTINENT_ALIASES: Record<string, ContinentCode> = {
   africa: 'AF',
@@ -35,6 +43,12 @@ const CONTINENT_ALIASES: Record<string, ContinentCode> = {
   oc: 'OC',
   antarctica: 'AN',
   an: 'AN',
+  'n/a': 'XX',
+  'unknown': 'XX',
+  'unspecified': 'XX',
+  'none': 'XX',
+  '不明': 'XX',
+  '不詳': 'XX',
 };
 
 const isContinentCode = (value: string): value is ContinentCode => CONTINENT_CODES.includes(value as ContinentCode);
@@ -80,10 +94,7 @@ const isSelectionEqual = (
   });
 };
 
-const createAvailabilityWorker = () => new Worker(
-  new URL('../workers/countryAvailability.worker.ts', import.meta.url),
-  { type: 'module' },
-);
+// Availability is resolved in a worker (and AuthRequired notifications are bridged to UI).
 
 type Args = {
   data: Partial<ShapeEntity>;
@@ -91,42 +102,89 @@ type Args = {
   nodeId?: string;
 };
 
-export const useShapeCountrySelectionStep = ({ data, onChange, nodeId }: Args) => {
+export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }: Args) => {
   const { enqueueSnackbar } = useSnackbar();
-  const dataSourceKey = normalizeDataSourceName(
-    data.batchConfig?.dataSource ?? data.dataSourceName,
-  ) ?? 'gadm';
+
+  // Current selection value must be available before any derived useMemo.
+  const selectedArrayByCountries = data.selectedArrayByCountries;
+
+  const { dataSourceKey, dataSourceError } = useMemo(() => {
+    const anyData = data as unknown as Record<string, unknown>;
+
+    const draftData = (anyData && typeof anyData === 'object' && 'draftData' in anyData)
+      ? (anyData as { draftData?: unknown }).draftData as Record<string, unknown> | undefined
+      : undefined;
+
+    const batchConfig = (anyData && typeof anyData === 'object' && 'batchConfig' in anyData)
+      ? (anyData as { batchConfig?: unknown }).batchConfig as Record<string, unknown> | undefined
+      : undefined;
+
+    const dsFromEntity = typeof batchConfig?.dataSource === 'string' ? batchConfig.dataSource : undefined;
+
+    const dsFromDraft = (() => {
+      const bc = draftData?.batchConfig;
+      if (!bc || typeof bc !== 'object') return undefined;
+      const value = (bc as Record<string, unknown>).dataSource;
+      return typeof value === 'string' ? value : undefined;
+    })();
+
+    const dsFromEntityName = typeof (anyData as { dataSourceName?: unknown }).dataSourceName === 'string'
+      ? (anyData as { dataSourceName: string }).dataSourceName
+      : undefined;
+
+    const dsFromDraftName = typeof (draftData as { dataSourceName?: unknown } | undefined)?.dataSourceName === 'string'
+      ? (draftData as { dataSourceName: string }).dataSourceName
+      : undefined;
+
+    const candidate = dsFromDraft ?? dsFromEntity ?? dsFromDraftName ?? dsFromEntityName;
+    const normalized = normalizeDataSourceName(candidate);
+
+    if (!normalized) {
+      // Don't guess a data source (no implicit fallback to GADM).
+      // Surface as an error and skip network work.
+      console.warn('[shape-plugin][step3] dataSource missing', {
+        batchConfigKeys: batchConfig ? Object.keys(batchConfig) : null,
+        dataSourceName: (anyData as { dataSourceName?: unknown }).dataSourceName,
+        draftDataKeys: draftData ? Object.keys(draftData) : null,
+      });
+      return {
+        dataSourceKey: undefined as unknown as string | undefined,
+        dataSourceError: new Error('Data source is not set. Please go back to Step2 and select a data source.'),
+      };
+    }
+
+    return { dataSourceKey: normalized, dataSourceError: null as Error | null };
+  }, [data]);
+
+  const resolvedMaxAdminLevel = useMemo(() => {
+    if (!dataSourceKey) return 0;
+    const normalized = normalizeDataSourceName(dataSourceKey) ?? dataSourceKey.toLowerCase();
+    return DATA_SOURCE_CONFIGS[normalized]?.maxAdminLevel ?? 0;
+  }, [dataSourceKey]);
+
   const iso = useIsoCountries();
-  const resolvedNodeId = nodeId ? toNodeId(nodeId) : resolveShapeNodeId(data);
-  const { metadata: countries, loading: metadataLoading, error } = useCountryMetadata({
-    dataSource: dataSourceKey,
-    nodeId: resolvedNodeId,
+  const sharedNodeId = SHARED_SHAPE_NODE_ID;
+
+  const { metadata: countries, loading: metadataLoading, error: metadataError, reload: reloadMetadata } = useCountryMetadata({
+    dataSource: dataSourceKey ?? '',
+    nodeId: sharedNodeId,
   });
+
+  const error = dataSourceError ?? metadataError;
+
   const [availability, setAvailability] = useState<SerializedCountryAvailability | null>(null);
   const [availabilityError, setAvailabilityError] = useState<Error | null>(null);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
-  const [isAvailabilityWorkerReady, setAvailabilityWorkerReady] = useState(false);
   const availabilityWorkerRef = useRef<{
     worker: Worker;
     api: ReturnType<typeof wrap<CountryAvailabilityWorkerAPI>>;
   } | null>(null);
   const availabilityRequestIdRef = useRef(0);
-  const selectedArrayByCountries = data.selectedArrayByCountries;
-  const dataSourceConfig = DATA_SOURCE_CONFIGS[dataSourceKey];
-  const resolvedMaxAdminLevel = useMemo(() => {
-    const fallback = dataSourceConfig?.maxAdminLevel ?? 0;
-    const fromAvailability = availability?.maxAdminLevel;
-    if (typeof fromAvailability === 'number' && Number.isFinite(fromAvailability)) {
-      return Math.max(0, fromAvailability);
-    }
-    return Math.max(0, fallback);
-  }, [availability?.maxAdminLevel, dataSourceConfig]);
 
   useEffect(() => {
     const worker = createAvailabilityWorker();
     const api = wrap<CountryAvailabilityWorkerAPI>(worker);
     availabilityWorkerRef.current = { worker, api };
-    setAvailabilityWorkerReady(true);
     return () => {
       availabilityWorkerRef.current = null;
       try {
@@ -138,38 +196,38 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId }: Args) =
     };
   }, []);
 
-  useEffect(() => {
-    if (!isAvailabilityWorkerReady) return;
+  const loadAvailability = useCallback(async () => {
+    if (!dataSourceKey) {
+      setAvailability(null);
+      return;
+    }
     const ref = availabilityWorkerRef.current;
     if (!ref) return;
-    let cancelled = false;
+
     const requestId = availabilityRequestIdRef.current + 1;
     availabilityRequestIdRef.current = requestId;
+
     setAvailabilityLoading(true);
     setAvailabilityError(null);
-
-    const run = async () => {
-      try {
-        const result = await ref.api.loadAvailability(dataSourceKey);
-        if (cancelled || requestId !== availabilityRequestIdRef.current) return;
-        setAvailability(result);
-      } catch (err) {
-        if (cancelled || requestId !== availabilityRequestIdRef.current) return;
-        const errorObj = err instanceof Error ? err : new Error('Failed to load availability');
-        setAvailabilityError(errorObj);
-        setAvailability(null);
-      } finally {
-        if (!cancelled && requestId === availabilityRequestIdRef.current) {
-          setAvailabilityLoading(false);
-        }
+    try {
+      const result = await ref.api.loadAvailability(dataSourceKey);
+      if (requestId !== availabilityRequestIdRef.current) return;
+      setAvailability(result);
+    } catch (e) {
+      if (requestId !== availabilityRequestIdRef.current) return;
+      const err = e instanceof Error ? e : new Error(String(e));
+      setAvailabilityError(err);
+      setAvailability(null);
+    } finally {
+      if (requestId === availabilityRequestIdRef.current) {
+        setAvailabilityLoading(false);
       }
-    };
+    }
+  }, [dataSourceKey]);
 
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, [dataSourceKey, isAvailabilityWorkerReady]);
+  useEffect(() => {
+    void loadAvailability();
+  }, [loadAvailability]);
 
   useEffect(() => {
     if (!availabilityError) return;
@@ -227,7 +285,7 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId }: Args) =
     return countries.map((country, countryIndex) => {
       const normalizedCode = normalizeCountryCodeFromMetadata(country, countryIndex);
       const isoContinent = isoContinentByCode.get(normalizedCode);
-      const normalizedContinent = normalizeContinentCode(country.continent) ?? isoContinent ?? 'NA';
+      const normalizedContinent = normalizeContinentCode(country.continent) ?? isoContinent ?? 'XX';
       const resolvedLevels = normalizedAvailabilityByCountry?.get(normalizedCode)
         ?? country.availableAdminLevels
         ?? [];
@@ -388,15 +446,47 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId }: Args) =
     [baseCountries, columns],
   );
 
+  const createDefaultSelectionRow = useCallback(
+    (levels: number[]) => Array.from({ length: resolvedMaxAdminLevel + 1 }, (_, idx) => levels.includes(idx)),
+    [resolvedMaxAdminLevel],
+  );
+
+  useEffect(() => {
+    if (baseCountries.length === 0) return;
+    if (selectedArrayByCountries && !Array.isArray(selectedArrayByCountries)) return;
+    const nextSelection: Record<string, boolean[]> = {};
+    baseCountries.forEach((entry) => {
+      nextSelection[entry.country.code] = createDefaultSelectionRow(entry.availableAdminLevels);
+    });
+    if (Object.keys(nextSelection).length > 0) {
+      onChange({ selectedArrayByCountries: nextSelection });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [baseCountries.length]);
+
+  const reloadAll = useCallback(async () => {
+    if (!dataSourceKey) return;
+    await invalidateCountrySelectionCaches(dataSourceKey, sharedNodeId);
+    await reloadMetadata({ force: true });
+    await loadAvailability();
+  }, [dataSourceKey, loadAvailability, reloadMetadata, sharedNodeId]);
+
   const combinedLoading = metadataLoading || (availabilityLoading && !availability);
 
   return {
-    loading: combinedLoading,
+    loading: Boolean(dataSourceKey) && combinedLoading,
     error,
+    availabilityInfo: availability
+      ? {
+        source: availability.source,
+        fetchedAt: availability.fetchedAt,
+      }
+      : null,
     matrixConfig,
     countries: baseCountries.map((entry) => entry.country),
     selections: currentSelections,
     applySelections,
     isCellEnabled,
+    reloadAll,
   };
 };

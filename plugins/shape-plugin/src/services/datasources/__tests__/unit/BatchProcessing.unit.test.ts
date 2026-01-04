@@ -27,7 +27,7 @@ vi.mock('@hierarchidb/auth-recovery', () => {
       return new Response(buf, { status: 200 });
     }
     // GeoBoundaries metadata and download
-    if (url.includes('geoboundaries.org/api/current/available')) {
+    if (url.includes('geoboundaries.org/api/current/gbOpen/available')) {
       return new Response(JSON.stringify({ USA: ['ADM0', 'ADM1'], JPN: ['ADM0', 'ADM1'] }), { status: 200 });
     }
     if (url.includes('/gbOpen/')) {

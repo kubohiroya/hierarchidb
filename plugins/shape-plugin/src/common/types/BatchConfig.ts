@@ -88,6 +88,9 @@ export interface GenerateVectorTilesConfig {
   tileSize?: number;
   inputFormat?: 'geojson' | 'flatgeobuf';
   inputCompression?: 'gzip' | 'none';
+  zoomBreakpoints?: number[];
+  tileExpandFactor?: number;
+  tileExpandMargin?: number;
 }
 
 /**

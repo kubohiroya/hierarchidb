@@ -62,6 +62,9 @@ export interface TileBatchConfig {
   maxZoom: number;
   bufferSize?: number;
   tileSize?: number;
+  zoomBreakpoints?: number[];
+  tileExpandFactor?: number;
+  tileExpandMargin?: number;
 }
 
 export interface CleanupBatchConfig {

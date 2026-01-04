@@ -21,11 +21,13 @@ export async function buildExtract2TasksWithTopoJSON(params: {
   nodeId: NodeId;
   extract1Tasks: Extract1Task[];
   extract1InputsByTaskId: Map<string, ShapeExtract1TaskInputData>;
+  zoomRanges: Array<{ minZoom: number; maxZoom: number; zoomLevels: number[]; label: string }>;
+  scaleTolerance: (zoomMax: number) => number;
   originMetadataByBuffer: Map<string, OriginMetadata>;
   store: SessionArtifactStore;
   decodeFeatureCollection: (buffer: ArrayBuffer) => Promise<FeatureCollection | null>;
   encodeFeatureCollection: (collection: FeatureCollection) => Promise<ArrayBuffer>;
-  buildProcessingTaskId: (stage: 'extract2', details: { countryCode?: string; adminLevel?: number; featureGroupId?: string }) => string;
+  buildProcessingTaskId: (stage: 'extract2', details: { countryCode?: string; adminLevel?: number; featureGroupId?: string; zoomRangeLabel?: string }) => string;
   maxFeaturesPerGroup?: number;
   originKeyPropertyName?: string;
 }): Promise<Extract2TopojsonBuildResult> {
@@ -92,6 +94,7 @@ export async function buildExtract2TasksWithTopoJSON(params: {
     timestamp: number;
   }> = [];
 
+  let nextTaskIndex = 0;
   for (let index = 0; index < finalGroups.length; index += 1) {
     const group = finalGroups[index];
     const groupFeatures = group?.items.flatMap((item) => item.features);
@@ -120,41 +123,52 @@ export async function buildExtract2TasksWithTopoJSON(params: {
     if (!primary) continue;
 
     const featureGroupId = `continent-group:${group.key}`;
-    const taskId = buildProcessingTaskId('extract2', {
-      countryCode: primary.countryCode,
-      adminLevel: primary.adminLevel,
-      featureGroupId,
-    });
+    params.zoomRanges.forEach((range) => {
+      const zoomRangeLabel = range.label;
+      const taskId = buildProcessingTaskId('extract2', {
+        countryCode: primary.countryCode,
+        adminLevel: primary.adminLevel,
+        featureGroupId,
+        zoomRangeLabel,
+      });
+      const tolerance = params.scaleTolerance(range.maxZoom);
 
-    tasks.push({
-      taskId,
-      nodeId,
-      taskType: 'extract2',
-      stage: BatchTaskStage.WAIT,
-      type: 'extract2',
-      status: 'waiting',
-      index,
-      progress: 0,
-      inputBufferId: groupBufferId,
-      continent: primary.continent,
-      adminLevel: primary.adminLevel,
-      countryCode: primary.countryCode,
-      adminCode: primary.adminCode,
-    });
+      tasks.push({
+        taskId,
+        nodeId,
+        taskType: 'extract2',
+        stage: BatchTaskStage.WAIT,
+        type: 'extract2',
+        status: 'waiting',
+        index: nextTaskIndex,
+        progress: 0,
+        inputBufferId: groupBufferId,
+        continent: primary.continent,
+        adminLevel: primary.adminLevel,
+        countryCode: primary.countryCode,
+        adminCode: primary.adminCode,
+      });
 
-    inputsByTaskId.set(taskId, {
-      inputBufferId: groupBufferId,
-      sourceTaskId: primary.task.taskId,
-      sourceUrl: primary.sourceUrl,
-      featureGroupId,
-      adminCode: primary.adminCode,
-      originKey: primary.originKey,
-      originLabel: primary.originLabel,
-      continent: primary.continent,
-      dataSource: primary.dataSource,
-      countryCode: primary.countryCode,
-      adminLevel: primary.adminLevel,
-      countryName: primary.countryName,
+      inputsByTaskId.set(taskId, {
+        inputBufferId: groupBufferId,
+        sourceTaskId: primary.task.taskId,
+        sourceUrl: primary.sourceUrl,
+        featureGroupId,
+        adminCode: primary.adminCode,
+        originKey: primary.originKey,
+        originLabel: primary.originLabel,
+        continent: primary.continent,
+        dataSource: primary.dataSource,
+        countryCode: primary.countryCode,
+        adminLevel: primary.adminLevel,
+        countryName: primary.countryName,
+        zoomLevels: range.zoomLevels,
+        zoomRange: [range.minZoom, range.maxZoom],
+        zoomRangeLabel,
+        tolerance,
+      });
+
+      nextTaskIndex += 1;
     });
   }
 

@@ -24,7 +24,7 @@ import {
   WorkerService,
 } from '@hierarchidb/runtime-worker';
 import { setCorsProxyBaseURL } from '@hierarchidb/download';
-import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
+import { AuthService } from '@hierarchidb/auth-recovery';
 import {
   createHeapPressureMonitor,
   type HeapPressureContext,
@@ -437,7 +437,7 @@ reporter.reportStepProgress('Load Comlink', 0);
           type: 'Bearer' | 'Basic' = 'Bearer',
           expiresAt?: number,
         ): Promise<void> => {
-          const auth = await AuthRecoveryService.getSingleton();
+          const auth = await AuthService.getSingleton();
           auth.setToken(token, type, expiresAt);
         },
         setCorsProxyBaseURL: async (url: string): Promise<void> => {

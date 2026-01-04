@@ -6,63 +6,6 @@ import { presimplify as preextract, simplify as extractTopology } from 'topojson
 type ExtractTopoOptions = {
   tolerance: number;
   quantize?: number;
-  zoomLevels?: number[];
-};
-
-type Bounds = { minX: number; minY: number; maxX: number; maxY: number };
-
-const updateBounds = (coords: unknown, bounds: Bounds): void => {
-  if (!Array.isArray(coords)) return;
-  if (coords.length >= 2 && typeof coords[0] === 'number' && typeof coords[1] === 'number') {
-    const x = coords[0];
-    const y = coords[1];
-    if (Number.isFinite(x) && Number.isFinite(y)) {
-      bounds.minX = Math.min(bounds.minX, x);
-      bounds.minY = Math.min(bounds.minY, y);
-      bounds.maxX = Math.max(bounds.maxX, x);
-      bounds.maxY = Math.max(bounds.maxY, y);
-    }
-    return;
-  }
-  for (const child of coords) {
-    updateBounds(child, bounds);
-  }
-};
-
-const computeBBox = (geometry?: Geometry | null): [number, number, number, number] | null => {
-  if (!geometry) return null;
-  if (geometry.type === 'GeometryCollection') {
-    const merged = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
-    for (const child of geometry.geometries ?? []) {
-      const childBox = computeBBox(child);
-      if (!childBox) continue;
-      merged.minX = Math.min(merged.minX, childBox[0]);
-      merged.minY = Math.min(merged.minY, childBox[1]);
-      merged.maxX = Math.max(merged.maxX, childBox[2]);
-      merged.maxY = Math.max(merged.maxY, childBox[3]);
-    }
-    if (!Number.isFinite(merged.minX)) return null;
-    return [merged.minX, merged.minY, merged.maxX, merged.maxY];
-  }
-  if ('coordinates' in geometry) {
-    const bounds: Bounds = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
-    updateBounds(geometry.coordinates, bounds);
-    if (!Number.isFinite(bounds.minX)) return null;
-    return [bounds.minX, bounds.minY, bounds.maxX, bounds.maxY];
-  }
-  return null;
-};
-
-const long2tile = (lon: number, z: number) => Math.floor(((lon + 180) / 360) * 2 ** z);
-
-const lat2tile = (lat: number, z: number) => {
-  const rad = (lat * Math.PI) / 180;
-  return Math.floor(((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * 2 ** z);
-};
-
-const normalizeZoomLevels = (zoomLevels?: number[]): number[] => {
-  if (!zoomLevels || zoomLevels.length === 0) return [0];
-  return zoomLevels.filter((value) => Number.isFinite(value));
 };
 
 const quantizeCoordinates = <T>(coords: T, quantize: number): T => {
@@ -97,48 +40,21 @@ export const extractTopoJsonByTiles = (
   collection: FeatureCollection,
   options: ExtractTopoOptions,
 ): FeatureCollection => {
-  const zoomLevels = normalizeZoomLevels(options.zoomLevels);
-  const zoom = Math.min(...zoomLevels);
-  const groups = new Map<string, Feature[]>();
-  const orphaned: Feature[] = [];
-  for (const feature of collection.features) {
-    const bbox = computeBBox(feature.geometry ?? null);
-    if (!bbox) {
-      orphaned.push(feature);
-      continue;
-    }
-    const [minLon, minLat, maxLon, maxLat] = bbox;
-    const midLon = (minLon + maxLon) / 2;
-    const midLat = (minLat + maxLat) / 2;
-    const x = long2tile(midLon, zoom);
-    const y = lat2tile(midLat, zoom);
-    const key = `${zoom}-${x}-${y}`;
-    if (!groups.has(key)) {
-      groups.set(key, []);
-    }
-    groups.get(key)!.push(feature);
-  }
-
-  if (groups.size === 0) {
-    return collection;
-  }
-
-  const results: Feature[] = [...orphaned];
-  for (const features of groups.values()) {
-    const topo = topology({
-      collection: {
-        type: 'FeatureCollection',
-        features,
-      } as FeatureCollection,
-    });
-    const preextracted = preextract(topo);
-    const extracted = Number.isFinite(options.tolerance) && options.tolerance > 0
-      ? extractTopology(preextracted, options.tolerance)
-      : preextracted;
-    const restored = topojsonFeature(extracted, extracted.objects.collection as typeof extracted.objects[keyof typeof extracted.objects]);
-    results.push(...collectFeatures(restored).map((entry) => applyQuantize(entry, options.quantize)));
-  }
-
+  const topo = topology({
+    collection: {
+      type: 'FeatureCollection',
+      features: collection.features,
+    } as FeatureCollection,
+  });
+  const preextracted = preextract(topo);
+  const extracted = Number.isFinite(options.tolerance) && options.tolerance > 0
+    ? extractTopology(preextracted, options.tolerance)
+    : preextracted;
+  const restored = topojsonFeature(
+    extracted,
+    extracted.objects.collection as typeof extracted.objects[keyof typeof extracted.objects],
+  );
+  const results = collectFeatures(restored).map((entry) => applyQuantize(entry, options.quantize));
   return {
     type: 'FeatureCollection',
     features: results,

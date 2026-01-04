@@ -30,6 +30,7 @@ type StepContextSnapshot = {
   parentId: NodeId;
   basicInfo: TreeNodeMetadata;
   uiState: DialogUiState;
+  draftData: Partial<PluginDefinedEntity>;
   setDraftData: React.Dispatch<React.SetStateAction<Partial<PluginDefinedEntity>>>;
   updateUiState: (next: DialogUiState) => void;
   handleBasicInfoBridge: (data: TreeNodeMetadata) => void;
@@ -223,6 +224,7 @@ export function useDialogSteps({
     parentId: pageNodeId,
     basicInfo,
     uiState,
+    draftData,
     setDraftData,
     updateUiState: setUiState,
     handleBasicInfoBridge,
@@ -235,6 +237,7 @@ export function useDialogSteps({
     parentId: pageNodeId,
     basicInfo,
     uiState,
+    draftData,
     setDraftData,
     updateUiState: setUiState,
     handleBasicInfoBridge,
@@ -387,7 +390,7 @@ export function useDialogSteps({
             }
             dialogRef={ctx.dialogRef}
             stepProps={stepProps}
-            stepData={cfg.id === 'basic-info' ? ctx.basicInfo : stepProps.data ?? {}}
+            stepData={cfg.id === 'basic-info' ? ctx.basicInfo : ctx.draftData}
           />
         );
       };

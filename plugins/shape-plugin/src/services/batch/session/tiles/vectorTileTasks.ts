@@ -29,7 +29,7 @@ export function buildVectorTileTasks(params: {
   const buffer = config.vectorTiles?.bufferSize ?? 256;
   const minZoom = config.vectorTiles?.minZoom ?? 0;
   const maxZoom = config.vectorTiles?.maxZoom ?? minZoom;
-  const inputFormat = config.vectorTiles?.inputFormat ?? 'geojson';
+  const inputFormat = config.vectorTiles?.inputFormat ?? 'flatgeobuf';
   const inputCompression = config.vectorTiles?.inputCompression ?? 'none';
   const clampedRows = tileRows.filter((tile) => tile.z >= minZoom && tile.z <= maxZoom);
 

@@ -17,7 +17,7 @@ const DEFAULT_CSV_URL = '/iso3166-2-level1.csv';
 
 const normalizeContinent = (location: string | undefined): ContinentCode => {
   const trimmed = (location ?? '').trim();
-  if (!trimmed) return 'NA';
+  if (!trimmed) return 'XX';
   const lower = trimmed.toLowerCase();
   const includesAny = (haystack: string, needles: string[]) => needles.some((needle) => haystack.includes(needle));
 
@@ -30,7 +30,7 @@ const normalizeContinent = (location: string | undefined): ContinentCode => {
   if (includesAny(lower, ['oceania', 'australia']) || includesAny(trimmed, ['\u30aa\u30bb\u30a2\u30cb\u30a2', '\u5927\u6d0b\u5dde'])) return 'OC';
   if (includesAny(lower, ['antarctica']) || includesAny(trimmed, ['\u5357\u6975', '\u5357\u6975\u5927\u9678'])) return 'AN';
   if (includesAny(lower, ['russia', 'mediterranean', 'indian ocean'])) return 'EU';
-  return 'NA';
+  return 'XX';
 };
 
 export function useIsoCountries(options: UseIsoCountriesOptions = {}) {

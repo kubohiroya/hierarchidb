@@ -468,7 +468,7 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
           }
           const baseInput = inputByTaskId.get(task.taskId) ?? {};
           const baseOutput = outputByTaskId.get(task.taskId) ?? {};
-          const input: ExtractTaskInput = { ...baseInput, ...extractSettings.extract2, retry: baseOutput.retry };
+          const input: ExtractTaskInput = { ...extractSettings.extract2, ...baseInput, retry: baseOutput.retry };
           const taskIndex = task.index ?? 0;
           const sourceTaskId = input.sourceTaskId
             ?? `${task.nodeId ?? ''}-extract1-${taskIndex}`;
@@ -643,7 +643,6 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
                 extractedPayload = extractTopoJsonByTiles(geojson, {
                   tolerance: tunedTolerance,
                   quantize: tunedQuantize,
-                  zoomLevels: input.zoomLevels,
                 });
                 usedTopo = true;
               } catch (error) {

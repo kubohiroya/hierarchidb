@@ -10,6 +10,7 @@ import {
   type SelectedArrayByCountries,
 } from '../../common/types/index.js';
 import { toNodeId } from '@hierarchidb/common-types';
+import { TilesDB } from '@hierarchidb/vectortile-store';
 import { shapeDB } from '../../services/database/ShapeDB.js';
 import { ShapeDataSourceStep } from './steps/ShapeDataSourceStep.js';
 import { ShapeProcessingSettingsStep } from './steps/ShapeProcessingSettingsStep.js';
@@ -82,8 +83,11 @@ const hasTileSummary = (data?: Partial<ShapeEntity>): boolean =>
 const hasPersistedVectorTiles = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
   const nodeKey = resolveShapeNodeKey(data);
   if (!nodeKey) return false;
-  const count = await shapeDB.vectorTiles.where('nodeId').equals(toNodeId(nodeKey)).count();
-  return count > 0;
+  const tilesDb = await TilesDB.getSingleton();
+  const tileCount = await tilesDb.tiles.where('nodeId').equals(nodeKey).count();
+  if (tileCount > 0) return true;
+  const legacyCount = await shapeDB.vectorTiles.where('nodeId').equals(toNodeId(nodeKey)).count();
+  return legacyCount > 0;
 };
 
 const hasCompletedVectorTileTasks = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
@@ -108,6 +112,8 @@ const hasCompletedBatchSession = async (data?: Partial<ShapeEntity>): Promise<bo
 
 const isShapeBuildPersisted = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
   if (!data) return false;
+  if (data.processingStatus === 'completed') return true;
+  if (data.processingStatus === 'failed') return false;
   if (hasTileSummary(data)) return true;
   if (await hasPersistedVectorTiles(data)) return true;
   if (await hasCompletedVectorTileTasks(data)) return true;

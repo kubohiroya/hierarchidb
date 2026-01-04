@@ -24,7 +24,7 @@ vi.mock('@hierarchidb/auth-recovery', () => {
     }
 
     // GeoBoundaries metadata endpoints
-    if (url.includes('geoboundaries.org/api/current/available')) {
+    if (url.includes('geoboundaries.org/api/current/gbOpen/available')) {
       return new Response(JSON.stringify({ USA: ['ADM0', 'ADM1'], JPN: ['ADM0', 'ADM1'] }), { status: 200 });
     }
     if (url.includes('/gbOpen/')) {
@@ -422,25 +422,7 @@ describe('GeoBoundaries Strategy', () => {
     expect(strategy.config.access.baseUrl).toContain('geoboundaries.org');
   });
 
-  it('should get available countries (mocked)', async () => {
-    mockFetch.mockResolvedValue(new Response(JSON.stringify({
-      USA: ['ADM0', 'ADM1', 'ADM2'],
-      JPN: ['ADM0', 'ADM1'],
-    }), { status: 200 }));
-
-    const countries = await strategy.getAvailableCountries();
-    expect(Array.isArray(countries)).toBe(true);
-  });
-
-  it('should get available admin levels (mocked)', async () => {
-    mockFetch.mockResolvedValue(new Response(JSON.stringify({
-      USA: ['ADM0', 'ADM1', 'ADM2'],
-      JPN: ['ADM0', 'ADM1'],
-    }), { status: 200 }));
-
-    const levels = await strategy.getAvailableAdminLevels('USA');
-    expect(Array.isArray(levels)).toBe(true);
-  });
+  // Availability is derived from metadata (ALL/ALL); no separate endpoint.
 });
 
 describe('Integration Tests', () => {

@@ -59,8 +59,11 @@ export const DEFAULT_PROCESSING_CONFIG: BatchConfig = {
   tileConfig: {
     workers: 4,
     minZoom: 0,
-    maxZoom: 8,
+    maxZoom: 7,
     bufferSize: 256,
+    zoomBreakpoints: [0, 4, 7],
+    tileExpandFactor: 1,
+    tileExpandMargin: 0,
   },
   cleanupConfig: {
     deleteDownloadedFiles: false,

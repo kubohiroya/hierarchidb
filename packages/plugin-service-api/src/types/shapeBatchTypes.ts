@@ -71,6 +71,10 @@ export type ShapeExtract2TaskInputData = {
   adminLevel?: number;
   continent?: string;
   countryName?: string;
+  zoomLevels?: number[];
+  zoomRange?: [number, number];
+  zoomRangeLabel?: string;
+  tolerance?: number;
 };
 
 export type ShapeExtract2TaskOutputData = {

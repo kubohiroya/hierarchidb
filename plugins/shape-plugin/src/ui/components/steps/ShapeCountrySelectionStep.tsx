@@ -1,5 +1,6 @@
-import type React from 'react';
-import { Alert, Box, CircularProgress, Typography } from '@mui/material';
+import React from 'react';
+import { Alert, Box, CircularProgress, IconButton, Tooltip, Typography } from '@mui/material';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { CountryMatrixSelector } from '@hierarchidb/ui-country-select';
 import type { ShapeDialogStepProps } from './ShapeDialogStepProps.ts';
 import { useShapeCountrySelectionStep } from '../../hooks/useShapeCountrySelectionStep.js';
@@ -10,12 +11,35 @@ export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ data
   const {
     loading,
     error,
+    availabilityInfo,
     matrixConfig,
     countries,
     selections,
     applySelections,
     isCellEnabled,
+    reloadAll,
   } = useShapeCountrySelectionStep({ data, onChange, nodeId });
+
+  const metadataReloadTooltip = React.useMemo(() => {
+    if (!availabilityInfo?.fetchedAt) {
+      return t('countrySelection.reload', 'Reload');
+    }
+    try {
+      const ts = new Date(availabilityInfo.fetchedAt);
+      const iso = ts.toISOString().replace('T', ' ').slice(0, 16);
+      return `Reload Metadata (Current: downloaded at ${iso})`;
+    } catch {
+      return t('countrySelection.reload', 'Reload');
+    }
+  }, [availabilityInfo?.fetchedAt, t]);
+
+  if (error) {
+    return (
+      <Alert severity="error">
+        {t('countrySelection.loadError', 'Failed to load country metadata: {{message}}', { message: error.message })}
+      </Alert>
+    );
+  }
 
   if (loading) {
     return (
@@ -28,19 +52,28 @@ export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ data
     );
   }
 
-  if (error) {
-    return (
-      <Alert severity="error">
-        {t('countrySelection.loadError', 'Failed to load country metadata: {{message}}', { message: error.message })}
-      </Alert>
-    );
-  }
-
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, height: '100%', minHeight: 0 }}>
-      <Typography variant="h6" gutterBottom>
-        {t('countrySelection.title', 'Select Countries & Administrative Levels')}
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+          <Typography variant="h6" gutterBottom>
+            {t('countrySelection.title', 'Select Countries & Administrative Levels')}
+          </Typography>
+        </Box>
+        <Tooltip title={metadataReloadTooltip}>
+          <span>
+            <IconButton
+              size="small"
+              onClick={() => void reloadAll()}
+              disabled={loading}
+              aria-label={t('countrySelection.reload', 'Reload')}
+            >
+              <RefreshIcon fontSize="small" />
+            </IconButton>
+          </span>
+        </Tooltip>
+      </Box>
+
       <Typography variant="body2" color="text.secondary" paragraph>
         {t(
           'countrySelection.description',
