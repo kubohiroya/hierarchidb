@@ -34,7 +34,7 @@ import { UIStateDB } from './services/UIStateDB.js';
 import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/location-store';
 import type { RouteDatabaseHandle, RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/route-store';
 import { RouteDB } from '@hierarchidb/route-store';
-import { ShapeDB, type VectorTileRecord } from '@hierarchidb/shape-store';
+import { ShapeDB } from '@hierarchidb/shape-store';
 import { StyleService } from './services/StyleService.js';
 import { ShapeQueryService } from './services/ShapeQueryService.js';
 import { ShapeMutationService } from './services/ShapeMutationService.js';
@@ -52,61 +52,6 @@ interface PerformanceMemoryStats {
   jsHeapSizeLimit?: number;
 }
 
-type ShapeBatchSessionRecord = {
-  nodeId: NodeId;
-  status: 'running' | 'paused' | 'completed' | 'failed' | 'idle';
-  startedAt?: number;
-  updatedAt?: number;
-  completedAt?: number;
-  progress?: {
-    total: number;
-    completed: number;
-    failed: number;
-    skipped: number;
-    percentage: number;
-    currentStage?: string;
-    currentTask?: string;
-  };
-};
-
-type ShapeBatchTaskRecord = {
-  taskId: string;
-  nodeId: NodeId;
-  taskType: string;
-  status: string;
-  index: number;
-  progress: number;
-  message?: string;
-  startedAt?: number;
-  completedAt?: number;
-  errorMessage?: string;
-};
-
-type DexieCollectionHandle<T> = {
-  toArray: () => Promise<T[]>;
-  count: () => Promise<number>;
-  delete?: () => Promise<number>;
-};
-
-type DexieWhereHandle<T> = {
-  equals: (value: unknown) => DexieCollectionHandle<T>;
-};
-
-type DexieTableHandle<T> = {
-  where: (key: string) => DexieWhereHandle<T>;
-  get?: (...args: unknown[]) => Promise<T | undefined>;
-  delete?: (...args: unknown[]) => Promise<void>;
-};
-
-type ShapeDatabaseHandle = {
-  open?: () => Promise<unknown>;
-  close?: () => void;
-  batchSessions: DexieTableHandle<ShapeBatchSessionRecord>;
-  batchTasks: DexieTableHandle<ShapeBatchTaskRecord>;
-  features: DexieTableHandle<{ nodeId: NodeId }>;
-  vectorTiles: DexieTableHandle<VectorTileRecord>;
-  getVectorTile?: (nodeId: NodeId, z: number, x: number, y: number) => Promise<VectorTileRecord | undefined>;
-};
 
 const readHeapStats = (): { used: number; limit: number } => {
   const perf =
@@ -205,7 +150,7 @@ export class WorkerService {
       const styleService: StyleQueryAPI & StyleMutationAPI = await StyleService.getSingleton(
         styleDB,
       );
-      const shapeDB = new ShapeDB() as ShapeDatabaseHandle;
+      const shapeDB = new ShapeDB();
       const shapeQueryService: ShapeQueryAPI = await ShapeQueryService.getSingleton(shapeDB);
       const shapeMutationService: ShapeMutationAPI = await ShapeMutationService.getSingleton(shapeDB);
       const locationQueryService: LocationQueryAPI = await LocationQueryService.getSingleton();
@@ -260,7 +205,7 @@ export class WorkerService {
     private treeTableExpandedService: TreeTableExpandedAPI,
     private stylerDB: StylerDB,
     private stylerService: StyleQueryAPI & StyleMutationAPI,
-    private shapeDB: ShapeDatabaseHandle,
+    private shapeDB: ShapeDB,
     private shapeQueryService: ShapeQueryAPI,
     private shapeMutationService: ShapeMutationAPI,
     private locationQueryService: LocationQueryAPI,

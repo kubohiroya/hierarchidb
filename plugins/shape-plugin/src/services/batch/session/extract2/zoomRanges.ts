@@ -44,6 +44,7 @@ export const buildZoomRangeSegments = (params: {
   for (let index = 0; index < points.length - 1; index += 1) {
     const minZoom = points[index];
     const maxZoom = points[index + 1];
+    if (minZoom == null || maxZoom == null) continue;
     if (!Number.isFinite(minZoom) || !Number.isFinite(maxZoom)) continue;
     segments.push({
       minZoom,

@@ -26,7 +26,10 @@ export function buildVectorTileStageInputs(params: {
       const rest = tileId.slice(prefix.length);
       const parts = rest.split('-');
       if (parts.length !== 3) return null;
-      const [zRaw, xRaw, yRaw] = parts;
+      const zRaw = parts[0];
+      const xRaw = parts[1];
+      const yRaw = parts[2];
+      if (zRaw == null || xRaw == null || yRaw == null) return null;
       const z = Number.parseInt(zRaw, 10);
       const x = Number.parseInt(xRaw, 10);
       const y = Number.parseInt(yRaw, 10);

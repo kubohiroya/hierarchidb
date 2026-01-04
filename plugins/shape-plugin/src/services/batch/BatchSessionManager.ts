@@ -15,7 +15,15 @@ import type { BatchProgressEvent, BatchSessionStatus } from '@hierarchidb/common
 import { type BatchSessionRecord, type BatchTaskRecord, type DownloadTaskInputData, shapeDB } from '../database/ShapeDB.js';
 import { SessionController } from './SessionController.js';
 import { ShapeBatchSession } from './ShapeBatchSession.js';
-import type { BatchSession, BatchStatus, ProcessingStage, ProgressInfo, StageStatus } from '../../common/types/index.js';
+import type {
+  BatchSession,
+  BatchStatus,
+  ProcessingStage,
+  ProgressInfo,
+  StageStatus,
+  BatchTaskBase,
+} from '../../common/types/index.js';
+import { BatchTaskStage } from '../../common/types/index.js';
 import type { BatchProcessConfig } from './types.js';
 import type { DownloadTaskPayload, ShapeBatchCommandMap } from '../../common/types/index.js';
 
@@ -25,6 +33,27 @@ const logBatchSessionWarning = (message: string, error: unknown): void => {
 };
 
 const STAGES: ProcessingStage[] = ['download', 'extract1', 'extract2', 'vectortile'];
+const mapTaskStatusToStage = (status: BatchTaskRecord['status']) => {
+  if (status === 'waiting') return BatchTaskStage.WAIT;
+  if (status === 'running') return BatchTaskStage.PROCESS;
+  if (status === 'completed') return BatchTaskStage.SUCCESS;
+  return BatchTaskStage.ERROR;
+};
+
+const mapTaskRecordToBatchTask = (task: BatchTaskRecord): BatchTaskBase => ({
+  taskId: task.taskId,
+  taskType: task.taskType,
+  nodeId: task.nodeId,
+  stage: mapTaskStatusToStage(task.status),
+  status: task.status,
+  type: task.taskType,
+  index: task.index,
+  progress: task.progress,
+  startedAt: task.startedAt,
+  completedAt: task.completedAt,
+  retryCount: task.retryCount,
+  error: task.errorMessage,
+});
 
 export interface BatchSessionOptions {
   maxConcurrentTasks?: number;
@@ -232,7 +261,9 @@ export class BatchSessionManager extends BaseBatchSessionManager {
     }
 
     const tasks = await shapeDB.getBatchTasks(nodeId as NodeId);
-    const currentTasks = tasks.filter((t: BatchTaskRecord) => t.status === 'running');
+    const currentTasks = tasks
+      .filter((t: BatchTaskRecord) => t.status === 'running')
+      .map(mapTaskRecordToBatchTask);
     const queuedTasks = tasks.filter((t: BatchTaskRecord) => t.status === 'waiting').length;
     const errors = tasks
       .filter((t: BatchTaskRecord) => t.status === 'failed')

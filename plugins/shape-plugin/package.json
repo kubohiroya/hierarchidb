@@ -55,6 +55,7 @@
   },
   "dependencies": {
     "@hierarchidb/shape-store": "workspace:*",
+    "@hierarchidb/vectortile-store": "workspace:*",
     "@hierarchidb/vectortile-orchestrator": "workspace:*"
   },
   "peerDependencies": {

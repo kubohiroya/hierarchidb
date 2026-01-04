@@ -9,41 +9,14 @@ import type {
   ShapeSourceMetadataRow,
 } from '@hierarchidb/plugin-service-api';
 import { getEphemeralShapeDB } from '@hierarchidb/shape-store';
-
-type DexieCollection = {
-  delete?: () => Promise<number>;
-  count?: () => Promise<number>;
-  toArray?: () => Promise<unknown[]>;
-};
-
-type DexieWhere = {
-  equals(value: unknown): DexieCollection;
-};
-
-type DexieTable = {
-  where(key: string): DexieWhere;
-  delete?: (id: string) => Promise<void>;
-  update?: (id: string, changes: Record<string, unknown>) => Promise<void>;
-  bulkPut?: (items: Array<object>) => Promise<void>;
-  bulkDelete?: (ids: string[]) => Promise<void>;
-};
-
-type ShapeDatabaseLike = {
-  open?: () => Promise<unknown>;
-  batchSessions: DexieTable;
-  batchTasks: DexieTable;
-  features: DexieTable;
-  vectorTiles: DexieTable;
-  featureMetadata: DexieTable;
-  sourceMetadata: DexieTable;
-};
+import type { ShapeDB } from '@hierarchidb/shape-store';
 
 export class ShapeMutationService implements ShapeMutationAPI {
-  static async getSingleton(db: ShapeDatabaseLike): Promise<ShapeMutationService> {
+  static async getSingleton(db: ShapeDB): Promise<ShapeMutationService> {
     return SingletonMixin.getSingleton('ShapeMutationService', async () => new ShapeMutationService(db));
   }
 
-  constructor(private db: ShapeDatabaseLike) {}
+  constructor(private db: ShapeDB) {}
 
   private async ensureOpen(): Promise<void> {
     await this.db.open?.();
@@ -51,7 +24,7 @@ export class ShapeMutationService implements ShapeMutationAPI {
 
   async deleteBatchSession(nodeId: NodeId): Promise<void> {
     await this.ensureOpen();
-    await this.db.batchSessions.delete?.(String(nodeId));
+    await this.db.batchSessions.delete(nodeId);
   }
 
   async deleteBatchTasks(nodeId: NodeId): Promise<void> {
@@ -95,8 +68,8 @@ export class ShapeMutationService implements ShapeMutationAPI {
 
   async cleanupProcessingData(nodeId: NodeId): Promise<void> {
     await this.ensureOpen();
-    await this.db.batchTasks.where('nodeId').equals(nodeId).delete?.();
-    await this.db.batchSessions.where('nodeId').equals(nodeId).delete?.();
+    await this.db.batchTasks.where('nodeId').equals(nodeId).delete();
+    await this.db.batchSessions.where('nodeId').equals(nodeId).delete();
     await this.deleteFeatures(nodeId);
     await this.deleteFeatureBuffers(nodeId);
     await this.deleteTileBuffers(nodeId);

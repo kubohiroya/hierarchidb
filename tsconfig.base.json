@@ -232,6 +232,12 @@
       "@hierarchidb/route-store/*": [
         "packages/features/route-store/dist/*"
       ],
+      "@hierarchidb/vectortile-store": [
+        "packages/features/vectortile-store/dist/index.d.ts"
+      ],
+      "@hierarchidb/vectortile-store/*": [
+        "packages/features/vectortile-store/dist/*"
+      ],
       "@hierarchidb/ui-worker-client": [
         "packages/ui/worker-client/dist/index.d.ts"
       ],

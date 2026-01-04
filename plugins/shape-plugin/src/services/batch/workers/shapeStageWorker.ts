@@ -4,6 +4,7 @@ import { defaultDataSourceFactory } from '../../datasources/DataSourceStrategyFa
 import type { BoundingBox as TaskBoundingBox, Extract1Task, Extract2Task } from '../../../common/types/index.js';
 import type { BoundingBox as DataSourceBoundingBox } from '../../datasources/DataSourceStrategy.js';
 import type { Feature, FeatureCollection } from 'geojson';
+import type { NodeId } from '@hierarchidb/common-types';
 import { geojson as geojsonApi } from 'flatgeobuf';
 import { bbox as turfBbox } from '@turf/turf';
 import { applyFeatureFiltering, type FeatureFilterSettings, extractGeoJson } from '@hierarchidb/gis-sdk';
@@ -160,11 +161,11 @@ const loadRawBufferFromChunkStore = async (
 };
 
 const buildTileIdRelations = (params: {
-  nodeId: string;
+  nodeId: NodeId;
   bufferId: string;
   zoomLevels?: number[];
   features: Feature[];
-}): Array<{ id: string; nodeId: string; tileId: string; bufferId: string; createdAt: number }> => {
+}): Array<{ id: string; nodeId: NodeId; tileId: string; bufferId: string; createdAt: number }> => {
   const { nodeId, bufferId, zoomLevels, features } = params;
   if (!zoomLevels || zoomLevels.length === 0 || features.length === 0) return [];
   const tileIds = new Set<string>();
@@ -463,8 +464,8 @@ const processExtract2Task = async ({
       });
       const data = await encodeGeoJson(sanitized);
       const featureCount = sanitized.features.length;
-      const tileRelations = buildTileIdRelations({
-        nodeId: String(nodeId),
+    const tileRelations = buildTileIdRelations({
+        nodeId,
         bufferId: outputBufferId,
         zoomLevels: payload.zoomLevels,
         features: sanitized.features,
@@ -622,7 +623,7 @@ const processExtract2Task = async ({
   }
   const outputBufferId = `${nodeId}-extract2-${taskIndex}`;
   const tileRelations = buildTileIdRelations({
-    nodeId: String(nodeId),
+    nodeId,
     bufferId: outputBufferId,
     zoomLevels: payload.zoomLevels,
     features: finalFeatures,

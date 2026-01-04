@@ -402,8 +402,8 @@ export default function MapPage() {
         onSearch={runSearch}
         onClear={handleSearchClear}
         onOpenSettings={() => setSearchSettingsOpen(true)}
-        clearIcon={<CloseIcon fontSize=\"small\" />}
-        settingsIcon={<TuneIcon fontSize=\"small\" />}
+        clearIcon={<CloseIcon fontSize="small" />}
+        settingsIcon={<TuneIcon fontSize="small" />}
       />
 
       <MapPreviewSearchSettingsDialog

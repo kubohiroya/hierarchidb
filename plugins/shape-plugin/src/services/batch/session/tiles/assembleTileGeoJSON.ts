@@ -1,5 +1,5 @@
 import { bboxClip, bboxPolygon, booleanIntersects } from '@turf/turf';
-import type { Feature, FeatureCollection, GeoJsonObject } from 'geojson';
+import type { Feature, FeatureCollection, LineString, MultiLineString, MultiPolygon, Polygon } from 'geojson';
 import { tileBBox } from '../../../utils/tiles-util.js';
 import { HDB_FEATURE_ID_KEY } from '../../utils/featureIds.js';
 
@@ -15,10 +15,25 @@ export function assembleTileGeoJSON(params: {
   const features: Feature[] = [];
   const seen = new Set<string>();
 
+  const isClipCandidate = (
+    feature: Feature,
+  ): feature is Feature<LineString | MultiLineString | Polygon | MultiPolygon> => {
+    const geom = feature.geometry;
+    if (!geom) return false;
+    return (
+      geom.type === 'LineString'
+      || geom.type === 'MultiLineString'
+      || geom.type === 'Polygon'
+      || geom.type === 'MultiPolygon'
+    );
+  };
+
   for (const collection of collections) {
     for (const feature of collection.features ?? []) {
       if (!feature) continue;
-      const properties = feature.properties ?? {};
+      if (!isClipCandidate(feature)) continue;
+      const candidate = feature;
+      const properties = candidate.properties ?? {};
       const featureId = String(
         properties[HDB_FEATURE_ID_KEY]
         ?? feature.id
@@ -29,7 +44,6 @@ export function assembleTileGeoJSON(params: {
         if (seen.has(featureId)) continue;
         seen.add(featureId);
       }
-      const candidate = feature as GeoJsonObject;
       if (!booleanIntersects(tilePoly, candidate)) continue;
       const clipped = bboxClip(candidate, bbox);
       if (clipped) {

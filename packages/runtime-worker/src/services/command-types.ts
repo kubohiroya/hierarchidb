@@ -3,6 +3,7 @@ import type {
   ErrorCode as CoreErrorCode,
   Timestamp,
 } from '@hierarchidb/common-types';
+export type { CommandResult } from '@hierarchidb/common-types';
 
 /**
  * Worker-specific command envelope

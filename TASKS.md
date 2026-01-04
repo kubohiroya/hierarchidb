@@ -14,6 +14,20 @@
   - start: 2026-01-09 19:40 JST runtime-stage-worker の削除作業に着手。
   - done: 2026-01-09 19:46 JST runtime-stage-worker を削除し、計画ドキュメントと lockfile を整理。検証: 未実施。
 
+2061) fix/ui-treeconsole-toolbar/shared-zoom-range-guard (P1) — 進行中 (2026-01-09)
+- ブランチ名: fix/ui-treeconsole-toolbar/shared-zoom-range-guard
+- 依存: なし
+- 受け入れ基準: SettingsMenu の shared zoom range 変更で TS2322 が解消する／min/max が未定義の場合でも安全に動作する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/ui/treeconsole/toolbar/src/components/toolbar/SettingsMenu.tsx`
+- ロールバック手順: shared zoom range のガード追加を revert して元に戻す
+- チェックリスト:
+  - Slider onChange の min/max ガードを追加する
+  - typecheck でエラーが出ないことを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-09 17:20 JST shared zoom range の TS2322 修正に着手。
+  - done: 2026-01-09 17:22 JST Slider の min/max 未定義をガードして型エラーを解消。検証: 未実施。
+
 2057) chore/remove/compute-feature (P1) — 進行中 (2026-01-09)
 - ブランチ名: chore/remove/compute-feature
 - 依存: なし
@@ -28,6 +42,21 @@
 - 運用ログ：
   - start: 2026-01-09 16:10 JST @hierarchidb/compute の削除作業に着手。
   - done: 2026-01-09 16:25 JST compute パッケージを削除し、runtime-worker の FeatureRegistry/依存、tsconfig paths、関連ドキュメントの参照を整理。検証: 未実施。
+
+2060) fix/shape-plugin/preview-tiles-availability (P1) — 進行中 (2026-01-09)
+- ブランチ名: fix/shape-plugin/preview-tiles-availability
+- 依存: なし
+- 受け入れ基準: Step6 のプレビューでタイル生成済みなら地図が表示される／"No vector tiles are available yet" が誤判定で出ない／ui-map の tileDataProvider が runtime-worker のタイル取得に追従する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts`
+- ロールバック手順: useShapePreviewStep のタイル可用性判定と tileDataProvider を shapeDB 参照のみの実装へ戻す
+- チェックリスト:
+  - タイル可用性判定の参照元（runtime-worker/ローカル）を整理する
+  - tileDataProvider が runtime-worker から取得できるようにする
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-09 16:45 JST Step6 プレビューのタイル判定修正に着手。
+  - done: 2026-01-09 16:55 JST Step6 プレビューのタイル可用性判定を runtime-worker 経由に優先し、tileDataProvider も runtime-worker から取得するよう更新。検証: 未実施。
+  - done: 2026-01-09 17:02 JST Step6 プレビューのタイル判定をローカルDB参照のみに戻し、runtime-worker 依存を撤去。検証: 未実施。
 
 2059) refactor/ui-batch/rename-to-ui-batch-progress (P1) — 進行中 (2026-01-09)
 - ブランチ名: refactor/ui-batch/rename-to-ui-batch-progress
@@ -342,6 +371,81 @@
 - 運用ログ：
   - start: 2026-01-09 10:06 JST TreeConsole actions 分割の実装に着手。
   - done: 2026-01-09 10:28 JST TreeConsole actions を actions 配下へ分割し、createTreeConsoleActions を配線のみへ整理。検証: 未実施。
+
+2042) fix/gis-sdk/vector-tiles-empty-result (P2) — 完了 (2026-01-09)
+- ブランチ名: fix/gis-sdk/vector-tiles-empty-result
+- 依存: なし
+- 受け入れ基準: VectorTileGenerateResult の空ケースで tiles を必ず返す／typecheck エラーが消える／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/features/gis-sdk/src/vectorTiles.ts`
+- ロールバック手順: `packages/features/gis-sdk/src/vectorTiles.ts` の差分を revert する
+- チェックリスト:
+  - 空ケースの戻り値に tiles を追加する
+  - typecheck エラーが消えることを確認する
+  - 運用ログ/影響範囲/ロールバック手順を追記する
+- 運用ログ：
+  - start: 2026-01-09 10:44 JST VectorTileGenerateResult の空結果修正に着手。
+  - done: 2026-01-09 10:45 JST 空結果で tiles 配列を返すよう統一し型エラーを解消。検証: 未実施。
+
+2043) fix/runtime-worker/typecheck-commandresult-and-shape-db (P2) — 完了 (2026-01-09)
+- ブランチ名: fix/runtime-worker/typecheck-commandresult-and-shape-db
+- 依存: なし
+- 受け入れ基準: CommandResult を正しく re-export し typecheck エラーを解消する／StageProcessingService の型変換警告を解消する／ShapeDB のハンドル型が ShapeDatabaseLike を満たす／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/runtime-worker/src/command-types.ts`, `packages/runtime-worker/src/services/command-types.ts`, `packages/runtime-worker/src/services/StageProcessingService.ts`, `packages/runtime-worker/src/WorkerService.ts`
+- ロールバック手順: 上記ファイルの差分を revert する
+- チェックリスト:
+  - CommandResult の re-export を追加する
+  - StageProcessingService の unsafe cast を明示的に解消する
+  - ShapeDatabaseHandle の型を ShapeDatabaseLike に合わせる
+  - 運用ログ/影響範囲/ロールバック手順を追記する
+- 運用ログ：
+  - start: 2026-01-09 10:52 JST runtime-worker typecheck エラー修正に着手。
+  - done: 2026-01-09 10:56 JST CommandResult の re-export 追加、StageProcessingService の cast を明示化、ShapeDatabaseHandle に metadata テーブルを追加。検証: 未実施。
+
+2044) refactor/runtime-worker/shape-db-concrete-types (P2) — 完了 (2026-01-09)
+- ブランチ名: refactor/runtime-worker/shape-db-concrete-types
+- 依存: なし
+- 受け入れ基準: ShapeDatabaseLike/ShapeDatabaseHandle を撤去し ShapeDB 型を直接使う／StageProcessingService の Record<string, unknown> キャストを撤去する／挙動は変更しない／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/runtime-worker/src/services/ShapeMutationService.ts`, `packages/runtime-worker/src/services/ShapeQueryService.ts`, `packages/runtime-worker/src/services/StageProcessingService.ts`, `packages/runtime-worker/src/WorkerService.ts`
+- ロールバック手順: 上記ファイルの差分を revert し、旧来の ShapeDatabaseLike/ShapeDatabaseHandle/Record キャストに戻す
+- チェックリスト:
+  - ShapeDatabaseLike/ShapeDatabaseHandle を撤去する
+  - Record<string, unknown> のキャストを削除する
+  - 運用ログ/影響範囲/ロールバック手順を追記する
+- 運用ログ：
+  - start: 2026-01-09 11:10 JST ShapeDB 型の直接利用と Record キャスト撤去に着手。
+  - done: 2026-01-09 11:15 JST ShapeDB へ置換し、VectorTile アイテム型を明示して Record キャストを撤去。検証: 未実施。
+
+2045) fix/shape-plugin/typecheck-batch-and-tiles (P2) — 完了 (2026-01-09)
+- ブランチ名: fix/shape-plugin/typecheck-batch-and-tiles
+- 依存: なし
+- 受け入れ基準: shape-plugin の typecheck エラー（BatchTaskBase/zoomRanges/GeoJSON/NodeId/VectorTileDB2Procedure）を解消する／挙動は維持する／抽象化や Record キャストの追加をしない／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `plugins/shape-plugin/src/services/batch/BatchSessionManager.ts`, `plugins/shape-plugin/src/common/types/batch.ts`, `plugins/shape-plugin/src/services/batch/session/extract2/zoomRanges.ts`, `plugins/shape-plugin/src/services/batch/session/stages/vectortile/buildVectorTileStageInputs.ts`, `plugins/shape-plugin/src/services/batch/session/tiles/assembleTileGeoJSON.ts`, `plugins/shape-plugin/src/services/batch/ShapeBatchApiClient.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/VectorTileDB2Procedure.ts`, `plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx`, `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/package.json`
+- ロールバック手順: 上記ファイルの差分を revert する
+- チェックリスト:
+  - BatchTaskBase の stage/type を埋める
+  - zoomRanges と TileConfigSection の undefined を解消する
+  - GeoJSON 判定と NodeId 型を整える
+  - VectorTileDB2Procedure の型と依存を整理する
+  - 運用ログ/影響範囲/ロールバック手順を追記する
+- 運用ログ：
+  - start: 2026-01-09 11:24 JST shape-plugin typecheck エラー修正に着手。
+  - done: 2026-01-09 11:39 JST BatchTaskBase の stage/type 付与、zoom/NodeId/GeoJSON の型修正、VectorTileDB2Procedure の依存と型を整理。検証: 未実施。
+  - done: 2026-01-09 11:44 JST tsconfig.base.json の vectortile-store path を dist に修正（dependency-guard 対応）。検証: 未実施。
+  - done: 2026-01-09 12:03 JST assembleTileGeoJSON の geometry ガード強化と VectorTileDB2Procedure の bbox 入力型ガードを追加。検証: 未実施。
+
+2041) fix/ui-map/full-map-display-mapstyle-undefined (P2) — 完了 (2026-01-09)
+- ブランチ名: fix/ui-map/full-map-display-mapstyle-undefined
+- 依存: なし
+- 受け入れ基準: FullMapDisplay が mapStyleObject の undefined を渡さず typecheck を通す／挙動を維持する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/ui/map/src/components/FullMapDisplay.tsx`
+- ロールバック手順: `packages/ui/map/src/components/FullMapDisplay.tsx` の差分を revert する
+- チェックリスト:
+  - mapStyleObject の undefined を解消する
+  - typecheck エラーが消えることを確認する
+  - 運用ログ/影響範囲/ロールバック手順を追記する
+- 運用ログ：
+  - start: 2026-01-09 10:34 JST FullMapDisplay の mapStyleObject 型エラー修正に着手。
+  - done: 2026-01-09 10:38 JST FullMapDisplay の props 定義を style URL/obj の union へ整理し、mapStyleObject の undefined を排除。検証: 未実施。
 
 2037) chore/analysis/list-large-ts-files (P3) — 完了 (2026-01-03)
 - ブランチ名: chore/analysis/list-large-ts-files

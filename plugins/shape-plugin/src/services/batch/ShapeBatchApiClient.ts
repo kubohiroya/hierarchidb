@@ -261,7 +261,7 @@ export class LocalShapeMutationApi implements ShapeMutationAPI {
     await this.deleteTileBuffers(nodeId);
     await this.deleteVectorTiles(nodeId);
     await this.clearCache(nodeId);
-    await this.clearTileIndexArtifacts(String(nodeId));
+    await this.clearTileIndexArtifacts(nodeId);
   }
 
   async clearShapeArtifacts(nodeId: NodeId): Promise<void> {

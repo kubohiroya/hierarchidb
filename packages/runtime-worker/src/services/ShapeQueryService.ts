@@ -16,83 +16,21 @@ import type {
   ShapeTileSummary,
   ShapeTileSummaryEntry,
 } from '@hierarchidb/plugin-service-api';
-import { getEphemeralShapeDB, shapeDB } from '@hierarchidb/shape-store';
+import {
+  getEphemeralShapeDB,
+  shapeDB,
+  type BatchSessionRecord,
+  type BatchTaskRecord,
+  type ShapeDB,
+} from '@hierarchidb/shape-store';
 
-type ShapeBatchSessionRecord = {
-  nodeId: NodeId;
-  status: 'running' | 'paused' | 'completed' | 'failed' | 'idle';
-  startedAt?: number;
-  updatedAt?: number;
-  completedAt?: number;
-  progress?: {
-    total: number;
-    completed: number;
-    failed: number;
-    skipped: number;
-    percentage: number;
-    currentStage?: string;
-    currentTask?: string;
-  };
-};
-
-type ShapeBatchTaskRow = {
-  taskId: string;
-  nodeId: NodeId;
-  taskType: string;
-  status: string;
-  index: number;
-  progress: number;
-  message?: string;
-  startedAt?: number;
-  completedAt?: number;
-  errorMessage?: string;
-  inputData?: unknown;
-  outputData?: unknown;
-};
-
-type ShapeVectorTileRecord = {
-  nodeId: NodeId;
-  z: number;
-  x: number;
-  y: number;
-  size: number;
-  features: number;
-  layers: Array<{ name: string; featureCount?: number; geometryType?: string }>;
-  generatedAt: number;
-  lastAccessed?: number;
-  data_Uint8Array: Uint8Array | ArrayBuffer;
-};
-
-type DexieCollection<T> = {
-  toArray(): Promise<T[]>;
-  count(): Promise<number>;
-};
-
-type DexieWhere<T> = {
-  equals(value: unknown): DexieCollection<T> & { delete?: () => Promise<number> };
-};
-
-type DexieTable<T> = {
-  where(key: string): DexieWhere<T>;
-  get?(id: string): Promise<T | undefined>;
-};
-
-type ShapeDatabaseLike = {
-  open?: () => Promise<unknown>;
-  batchSessions: DexieTable<ShapeBatchSessionRecord>;
-  batchTasks: DexieTable<ShapeBatchTaskRow>;
-  features: DexieTable<{ nodeId: NodeId }>;
-  vectorTiles: DexieTable<ShapeVectorTileRecord>;
-  getVectorTile?: (nodeId: NodeId, z: number, x: number, y: number) => Promise<ShapeVectorTileRecord | undefined>;
-};
-
-const mapStatus = (status: ShapeBatchSessionRecord['status']): ShapeProcessingStatus['status'] => {
+const mapStatus = (status: BatchSessionRecord['status']): ShapeProcessingStatus['status'] => {
   if (status === 'running') return 'processing';
   if (status === 'idle') return 'idle';
   return status;
 };
 
-const toSessionSummary = (session: ShapeBatchSessionRecord): ShapeBatchSessionSummary => ({
+const toSessionSummary = (session: BatchSessionRecord): ShapeBatchSessionSummary => ({
   nodeId: session.nodeId,
   status: mapStatus(session.status),
   startedAt: session.startedAt,
@@ -101,7 +39,7 @@ const toSessionSummary = (session: ShapeBatchSessionRecord): ShapeBatchSessionSu
   progress: session.progress,
 });
 
-const toTaskSummary = (task: ShapeBatchTaskRow): ShapeBatchTaskSummary => ({
+const toTaskSummary = (task: BatchTaskRecord): ShapeBatchTaskSummary => ({
   taskId: task.taskId,
   nodeId: task.nodeId,
   taskType: task.taskType,
@@ -115,11 +53,11 @@ const toTaskSummary = (task: ShapeBatchTaskRow): ShapeBatchTaskSummary => ({
 });
 
 export class ShapeQueryService implements ShapeQueryAPI {
-  static async getSingleton(db: ShapeDatabaseLike): Promise<ShapeQueryService> {
+  static async getSingleton(db: ShapeDB): Promise<ShapeQueryService> {
     return SingletonMixin.getSingleton('ShapeQueryService', async () => new ShapeQueryService(db));
   }
 
-  constructor(private db: ShapeDatabaseLike) {}
+  constructor(private db: ShapeDB) {}
 
   private async ensureOpen(): Promise<void> {
     await this.db.open?.();
@@ -133,7 +71,7 @@ export class ShapeQueryService implements ShapeQueryAPI {
 
   async getBatchSession(nodeId: NodeId): Promise<ShapeBatchSessionSummary | null> {
     await this.ensureOpen();
-    const session = await this.db.batchSessions.get?.(String(nodeId));
+    const session = await this.db.batchSessions.get(nodeId);
     return session ? toSessionSummary(session) : null;
   }
 

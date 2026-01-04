@@ -289,6 +289,7 @@ export function SettingsMenu({
                 onChange={(_, value) => {
                   if (!Array.isArray(value)) return;
                   const [minZoom, maxZoom] = value;
+                  if (typeof minZoom !== 'number' || typeof maxZoom !== 'number') return;
                   const nextRange = clampRange([minZoom, maxZoom]);
                   const nextConfig = {
                     range: nextRange,

@@ -275,7 +275,7 @@ export const generateVectorTilesFromJsonBuffer = async (
   throwIfAborted(config.signal);
   const geojson = await decodeFeatureCollectionFromJsonBuffer(buffer);
   throwIfAborted(config.signal);
-  if (!geojson) return { tilesGenerated: 0, totalBytes: 0 };
+  if (!geojson) return { tilesGenerated: 0, totalBytes: 0, tiles: [] };
   return generateVectorTilesFromFeatureCollection(nodeId, geojson, config, onProgress);
 };
 
@@ -288,7 +288,7 @@ export const generateVectorTilesFromFgbBuffer = async (
   throwIfAborted(config.signal);
   const geojson = await decodeFeatureCollectionFromFlatGeobufBuffer(buffer);
   throwIfAborted(config.signal);
-  if (!geojson) return { tilesGenerated: 0, totalBytes: 0 };
+  if (!geojson) return { tilesGenerated: 0, totalBytes: 0, tiles: [] };
   return generateVectorTilesFromFeatureCollection(nodeId, geojson, config, onProgress);
 };
 
@@ -300,7 +300,7 @@ export const generateVectorTilesFromFeatureCollection = async (
 ): Promise<VectorTileGenerateResult> => {
   throwIfAborted(config.signal);
   const features = geojson.features ?? [];
-  if (features.length === 0) return { tilesGenerated: 0, totalBytes: 0 };
+  if (features.length === 0) return { tilesGenerated: 0, totalBytes: 0, tiles: [] };
 
   const metadataEnabled = Boolean(config.metadataEnabled);
   const metadataContext = config.metadataContext ?? {};
@@ -376,7 +376,7 @@ export const generateVectorTilesFromFeatureCollection = async (
     updateBbox(bbox, [stats.bbox[2], stats.bbox[3]]);
   }
   if (!bbox.every((value) => Number.isFinite(value))) {
-    return { tilesGenerated: 0, totalBytes: 0 };
+    return { tilesGenerated: 0, totalBytes: 0, tiles: [] };
   }
   const [minLon, minLat, maxLon, maxLat] = bbox;
 

@@ -8,6 +8,7 @@ import {
   type VectorTileRow,
 } from '@hierarchidb/gis-sdk';
 import { storeRegistry } from '../entity/store-registry.js';
+import type { VectorTileItemBase } from '../entity/store.js';
 import { shapeDB } from '@hierarchidb/shape-store';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { FeatureMetadataRow } from '@hierarchidb/vectortile-store';
@@ -21,6 +22,17 @@ const getEphemeralDb = (): EphemeralGisDB => {
     ephemeralDb = new EphemeralGisDB(getDBName('shape-ephemeral'));
   }
   return ephemeralDb;
+};
+
+type VectorTileStoreItem = VectorTileItemBase & {
+  z: number;
+  x: number;
+  y: number;
+  size?: number;
+  timestamp?: number;
+  generatedAt?: number;
+  data?: ArrayBuffer | Uint8Array;
+  data_Uint8Array?: Uint8Array;
 };
 
 /**
@@ -185,7 +197,7 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
     await shapeDB.featureMetadata.bulkPut(featureMetadata);
   }
 
-  private resolveItemBytes(item: Record<string, unknown>): Uint8Array | null {
+  private resolveItemBytes(item: VectorTileStoreItem): Uint8Array | null {
     const direct = item.data;
     if (direct instanceof Uint8Array) return direct;
     if (direct instanceof ArrayBuffer) return new Uint8Array(direct);
@@ -268,33 +280,29 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
   }
 
   async getTile(nodeId: NodeId, z: number, x: number, y: number, nodeType?: string) {
-    const store = storeRegistry.getVectorTiles(this.resolveNodeType(nodeType));
+    const store = storeRegistry.getVectorTiles<VectorTileStoreItem>(this.resolveNodeType(nodeType));
     if (!store) return null;
     const items = await store.list(nodeId);
-    const item = items.find((entry) => {
-      const candidate = entry as Record<string, unknown>;
-      return candidate.z === z && candidate.x === x && candidate.y === y;
-    });
-    const bytes = item ? this.resolveItemBytes(item as Record<string, unknown>) : null;
+    const item = items.find((entry) => entry.z === z && entry.x === x && entry.y === y);
+    const bytes = item ? this.resolveItemBytes(item) : null;
     return bytes;
   }
 
   async listTiles(nodeId: NodeId, nodeType?: string) {
-    const store = storeRegistry.getVectorTiles(this.resolveNodeType(nodeType));
+    const store = storeRegistry.getVectorTiles<VectorTileStoreItem>(this.resolveNodeType(nodeType));
     if (!store) return [];
     const items = await store.list(nodeId);
     return items
       .map((entry) => {
-        const item = entry as Record<string, unknown>;
-        const bytes = this.resolveItemBytes(item);
-        const size = typeof item.size === 'number' ? item.size : (bytes?.byteLength ?? 0);
-        const timestamp = typeof item.timestamp === 'number'
-          ? item.timestamp
-          : (typeof item.generatedAt === 'number' ? item.generatedAt : Date.now());
+        const bytes = this.resolveItemBytes(entry);
+        const size = typeof entry.size === 'number' ? entry.size : (bytes?.byteLength ?? 0);
+        const timestamp = typeof entry.timestamp === 'number'
+          ? entry.timestamp
+          : (typeof entry.generatedAt === 'number' ? entry.generatedAt : Date.now());
         return {
-          z: Number(item.z),
-          x: Number(item.x),
-          y: Number(item.y),
+          z: Number(entry.z),
+          x: Number(entry.x),
+          y: Number(entry.y),
           size,
           timestamp,
         };

@@ -25,6 +25,7 @@ import {
   type DownloadTaskPayload,
   validateBatchConfig,
   type ShapeStepValidationResult,
+  BatchTaskStage,
 } from '../common/types/index.js';
 import { ShapeEntityHandler } from './handlers/index.js';
 
@@ -320,7 +321,16 @@ const mapTaskRecordToBatchTask = (task: BatchTaskRecord): BatchTask & { title?: 
   taskId: task.taskId,
   taskType: task.taskType,
   nodeId: task.nodeId,
+  stage:
+    task.status === 'waiting'
+      ? BatchTaskStage.WAIT
+      : task.status === 'running'
+        ? BatchTaskStage.PROCESS
+        : task.status === 'completed'
+          ? BatchTaskStage.SUCCESS
+          : BatchTaskStage.ERROR,
   status: task.status,
+  type: task.taskType,
   index: task.index,
   progress: task.progress,
   startedAt: task.startedAt,

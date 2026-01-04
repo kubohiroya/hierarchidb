@@ -236,7 +236,9 @@ export const TileConfigSection: React.FC<Props> = ({ config, draft, disabled, on
               <Slider
                 value={zoomConfig.range}
                 onChange={(_, value: number[]) => {
-                  const [nextMin, nextMax] = value as number[];
+                  const rawRange = value as number[];
+                  const nextMin = rawRange[0] ?? zoomConfig.range[0];
+                  const nextMax = rawRange[1] ?? zoomConfig.range[1];
                   const nextRange = clampRange([nextMin, nextMax]);
                   const breakpoints = normalizeBreakpoints(nextRange, zoomConfig.segments, zoomConfig.breakpoints);
                   const nextConfig = {
