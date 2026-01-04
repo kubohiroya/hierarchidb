@@ -304,7 +304,13 @@ export function useDialogFrameState({
         targetPosition = recentered.position;
       }
 
-      const normalized = normalizeDialogState(targetSize, targetPosition, viewport, options);
+      const normalizationViewport = displayMode === 'normal' ? viewport : layoutViewport;
+      const normalized = normalizeDialogState(
+        targetSize,
+        targetPosition,
+        normalizationViewport,
+        options
+      );
       if (!sizesEqual(dialogSizeRef.current, normalized.size)) {
         dialogSizeRef.current = normalized.size;
         persistSize(normalized.size);

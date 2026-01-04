@@ -1,3 +1,39 @@
+2067) fix/ui-dialog/maximize-layout-viewport (P1) — 完了 (2026-01-05)
+- ブランチ名: fix/ui-dialog/maximize-layout-viewport
+- 依存: なし
+- 要点：最大化時の layoutViewport が実ウィンドウサイズより小さくなる問題を避けるため、layoutViewport は innerWidth/innerHeight を優先するように変更。
+- 原因/影響範囲：layoutViewport が visualViewport/screen の最小値を採用していたため、ウィンドウ拡大時に最大化サイズが小さめに正規化されるケースがあった。影響範囲は `packages/ui/dialog/src/headless/frameHelpers.ts`。
+- 修正内容と適用範囲：getDialogLayoutViewport を window.innerWidth/innerHeight 優先（screen はフォールバック）へ変更。適用範囲は `packages/ui/dialog/src/headless/frameHelpers.ts`。
+- 検証：未実施（UI 操作のみ）。
+- 受け入れ基準: layoutViewport の検出と正規化処理の不整合を特定する／最大化時にウィンドウ拡大後でも中央寄せが崩れないよう修正する／TASKS.md に運用ログ・影響範囲・ロールバック手順を追記する
+- 影響範囲: `packages/ui/dialog/src/headless/frameHelpers.ts`
+- ロールバック手順: 上記ファイルと本項目の差分を revert して元に戻す
+- チェックリスト:
+  - layoutViewport の算出ロジックを見直して実ウィンドウサイズを優先する
+  - 最大化時の正規化が実ウィンドウサイズに追従することを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-05 07:33 JST layoutViewport の正規化不整合の修正に着手。
+  - done: 2026-01-05 07:33 JST layoutViewport を innerWidth/innerHeight 優先に更新。検証: 未実施（UI 操作のみ）。
+
+2066) fix/plugin-ui-host/dialog-maximize-center (P1) — 完了 (2026-01-05)
+- ブランチ名: fix/plugin-ui-host/dialog-maximize-center
+- 依存: なし
+- 要点：最大化時の中央寄せが崩れる原因として、正規化時のビューポート基準が不一致だったため、最大化時はレイアウト用ビューポートで正規化するように修正。
+- 原因/影響範囲：最大化時のサイズ算出に layoutViewport を使いつつ正規化は viewport を使っていたため、位置補正がずれて右寄り・上寄りになるケースがあった。影響範囲は `packages/plugin-ui-host/src/headless/usePluginDialogController/frame-state.ts`。
+- 修正内容と適用範囲：最大化/全画面時の正規化に layoutViewport を使うよう統一し、中央寄せを維持。適用範囲は `packages/plugin-ui-host/src/headless/usePluginDialogController/frame-state.ts`。
+- 検証：未実施（UI 操作のみ）。
+- 受け入れ基準: 最大化時に中央寄せが崩れる原因を特定して修正する／最大化時の位置算出が中央寄せになることを確認する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/plugin-ui-host/src/headless/usePluginDialogController/frame-state.ts`
+- ロールバック手順: 上記ファイルと本項目の差分を revert して元に戻す
+- チェックリスト:
+  - 最大化時の位置算出と正規化処理の不整合を修正する
+  - 画面サイズ変更時の最大化レイアウトが中央寄せになることを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-05 07:25 JST 最大化時の中央寄せ崩れの原因調査と修正に着手。
+  - done: 2026-01-05 07:26 JST 最大化時の正規化を layoutViewport 基準へ統一。検証: 未実施（UI 操作のみ）。
+
 2065) fix/plugin-ui-host/dialog-header-restore-position (P1) — 完了 (2026-01-05)
 - ブランチ名: fix/plugin-ui-host/dialog-header-restore-position
 - 依存: なし

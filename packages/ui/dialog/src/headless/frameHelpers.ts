@@ -24,16 +24,19 @@ export function getViewportSize(): { width: number; height: number } {
 }
 
 export function getDialogLayoutViewport(): { width: number; height: number } {
-  const viewport = getViewportSize();
   if (typeof window === 'undefined') {
-    return viewport;
+    return getViewportSize();
   }
-  const screenWidth = window.screen?.availWidth ?? window.screen?.width ?? viewport.width;
-  const screenHeight = window.screen?.availHeight ?? window.screen?.height ?? viewport.height;
-  return {
-    width: Math.min(viewport.width, screenWidth),
-    height: Math.min(viewport.height, screenHeight),
-  };
+  const layoutViewport = { width: window.innerWidth, height: window.innerHeight };
+  if (Number.isFinite(layoutViewport.width) && Number.isFinite(layoutViewport.height)) {
+    return layoutViewport;
+  }
+  const screenWidth = window.screen?.availWidth ?? window.screen?.width;
+  const screenHeight = window.screen?.availHeight ?? window.screen?.height;
+  if (typeof screenWidth === 'number' && typeof screenHeight === 'number') {
+    return { width: screenWidth, height: screenHeight };
+  }
+  return getViewportSize();
 }
 
 export function getPresetSize(
