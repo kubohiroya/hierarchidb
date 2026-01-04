@@ -33,7 +33,7 @@ describe('FetchNetworkPort throttling', () => {
   it('limits per-host concurrency', async () => {
     const { fake, getPeak } = makeFakeFetch(30);
     vi.stubGlobal('fetch', fake as unknown as typeof fetch);
-    const port = new FetchNetworkPort({ perHostConcurrency: 2 });
+    const port = new FetchNetworkPort({ perHostConcurrency: 2, auth: { enabled: false } });
     const urls = [1, 2, 3, 4, 5].map(i => `https://example.com/r${i}`);
     await Promise.all(urls.map(u => port.get(u)));
     expect(getPeak()).toBeLessThanOrEqual(2);
@@ -42,7 +42,7 @@ describe('FetchNetworkPort throttling', () => {
   it('honors globalConcurrency when provided', async () => {
     const { fake, getPeak } = makeFakeFetch(20);
     vi.stubGlobal('fetch', fake as unknown as typeof fetch);
-    const port = new FetchNetworkPort({ perHostConcurrency: 10, globalConcurrency: 3 });
+    const port = new FetchNetworkPort({ perHostConcurrency: 10, globalConcurrency: 3, auth: { enabled: false } });
     const urls = Array.from({ length: 8 }, (_, i) => `https://a.example/r${i}`);
     await Promise.all(urls.map(u => port.get(u)));
     expect(getPeak()).toBeLessThanOrEqual(3);
@@ -51,7 +51,7 @@ describe('FetchNetworkPort throttling', () => {
   it('throttles by rps tokens when provided', async () => {
     const { fake } = makeFakeFetch(0);
     vi.stubGlobal('fetch', fake as unknown as typeof fetch);
-    const port = new FetchNetworkPort({ rps: 2, perHostConcurrency: 5 });
+    const port = new FetchNetworkPort({ rps: 2, perHostConcurrency: 5, auth: { enabled: false } });
     const start = Date.now();
     await Promise.all([1, 2, 3, 4].map(i => port.get(`https://b.example/r${i}`)));
     const elapsed = Date.now() - start;

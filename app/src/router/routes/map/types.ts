@@ -30,3 +30,17 @@ export type MapStyle = {
 };
 
 export type PersistedZxyHandler = (viewState: MapViewState) => void;
+
+export type MapStylerSummary = {
+  nodeId: string;
+  absolutePath?: string;
+  description?: string;
+  styleType?: 'choropleth' | 'points' | 'lines';
+  featureIdProperty?: string;
+  targetProperty?: string;
+  valueType?: 'number' | 'color';
+  colorStops?: Array<{ key: string; color: string }>;
+  scalarStops?: Array<{ key: string; scalarValue: number }>;
+  paintOverrides?: LayerStyleOverrides;
+  enabled: boolean;
+};

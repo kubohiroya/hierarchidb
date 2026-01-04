@@ -1,11 +1,14 @@
 import { SingletonMixin } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
 import type {
+  ShapeBatchProgressSummary,
+  ShapeBatchSessionRecord,
   ShapeBatchSessionSummary,
   ShapeBatchTaskRecord,
   ShapeBatchTaskStage,
   ShapeBatchTaskSummary,
   ShapeExtractedBufferRecord,
+  ShapeFeatureRecord,
   ShapeFeatureMetadataRow,
   ShapeProcessingStatus,
   ShapeQueryAPI,
@@ -15,14 +18,47 @@ import type {
   ShapeTileRow,
   ShapeTileSummary,
   ShapeTileSummaryEntry,
+  ShapeVectorTileRecord,
 } from '@hierarchidb/plugin-service-api';
 import {
   getEphemeralShapeDB,
-  shapeDB,
   type BatchSessionRecord,
   type BatchTaskRecord,
+  type ProgressInfo,
   type ShapeDB,
 } from '@hierarchidb/shape-store';
+
+const toProgressSummary = (progress: ProgressInfo): ShapeBatchProgressSummary => ({
+  total: progress.total,
+  completed: progress.completed,
+  failed: progress.failed,
+  skipped: progress.skipped,
+  percentage: progress.percentage,
+  currentStage: progress.currentStage,
+  currentTask: progress.currentTask,
+});
+
+const toShapeBatchSessionRecord = (session: BatchSessionRecord): ShapeBatchSessionRecord => {
+  const resourceUsage: Record<string, unknown> | undefined = session.resourceUsage
+    ? { ...session.resourceUsage }
+    : undefined;
+  const stages: Record<string, unknown> = { ...session.stages };
+  return {
+    nodeId: session.nodeId,
+    draftId: session.draftId,
+    status: session.status,
+    config: session.config,
+    startedAt: session.startedAt,
+    updatedAt: session.updatedAt,
+    completedAt: session.completedAt,
+    progress: toProgressSummary(session.progress),
+    stages,
+    resourceUsage,
+    canResume: session.canResume,
+    lastActivity: session.lastActivity,
+    expiresAt: session.expiresAt,
+  };
+};
 
 const mapStatus = (status: BatchSessionRecord['status']): ShapeProcessingStatus['status'] => {
   if (status === 'running') return 'processing';
@@ -75,15 +111,37 @@ export class ShapeQueryService implements ShapeQueryAPI {
     return session ? toSessionSummary(session) : null;
   }
 
+  async listBatchSessionRecords(nodeId: NodeId): Promise<ShapeBatchSessionRecord[]> {
+    await this.ensureOpen();
+    const sessions = await this.db.batchSessions.where('nodeId').equals(nodeId).toArray();
+    return sessions.map(toShapeBatchSessionRecord);
+  }
+
+  async getBatchSessionRecord(nodeId: NodeId): Promise<ShapeBatchSessionRecord | null> {
+    await this.ensureOpen();
+    const session = await this.db.getBatchSession(nodeId);
+    return session ? toShapeBatchSessionRecord(session) : null;
+  }
+
+  async listBatchSessionRecordsByStatus(
+    statuses: Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>,
+  ): Promise<ShapeBatchSessionRecord[]> {
+    await this.ensureOpen();
+    const sessions = await this.db.batchSessions.where('status').anyOf(statuses).toArray();
+    return sessions.map(toShapeBatchSessionRecord);
+  }
+
   async listBatchTasks(nodeId: NodeId): Promise<ShapeBatchTaskSummary[]> {
     await this.ensureOpen();
-    const tasks = await this.db.batchTasks.where('nodeId').equals(nodeId).toArray();
+    const ephemeral = getEphemeralShapeDB();
+    const tasks = await ephemeral.batchTasks.where('nodeId').equals(nodeId).toArray();
     return tasks.map(toTaskSummary);
   }
 
   async listBatchTaskRecords(nodeId: NodeId): Promise<ShapeBatchTaskRecord[]> {
     await this.ensureOpen();
-    return this.db.batchTasks.where('nodeId').equals(nodeId).toArray() as Promise<ShapeBatchTaskRecord[]>;
+    const ephemeral = getEphemeralShapeDB();
+    return ephemeral.batchTasks.where('nodeId').equals(nodeId).toArray() as Promise<ShapeBatchTaskRecord[]>;
   }
 
   async listBatchTaskRecordsByStage(nodeId: NodeId, stage: ShapeBatchTaskStage): Promise<ShapeBatchTaskRecord[]> {
@@ -93,7 +151,8 @@ export class ShapeQueryService implements ShapeQueryAPI {
 
   async getBatchTaskRecord(taskId: string): Promise<ShapeBatchTaskRecord | null> {
     await this.ensureOpen();
-    const task = await this.db.batchTasks.get?.(taskId);
+    const ephemeral = getEphemeralShapeDB();
+    const task = await ephemeral.batchTasks.get?.(taskId);
     return (task as ShapeBatchTaskRecord | undefined) ?? null;
   }
 
@@ -143,6 +202,13 @@ export class ShapeQueryService implements ShapeQueryAPI {
     };
   }
 
+  async getVectorTileRecord(nodeId: NodeId, z: number, x: number, y: number): Promise<ShapeVectorTileRecord | null> {
+    await this.ensureOpen();
+    const tile = await this.db.getVectorTile?.(nodeId, z, x, y)
+      ?? (await this.db.vectorTiles.where('[nodeId+z+x+y]').equals([nodeId, z, x, y]).toArray())[0];
+    return (tile as ShapeVectorTileRecord | undefined) ?? null;
+  }
+
   async getVectorTile(nodeId: NodeId, z: number, x: number, y: number): Promise<Uint8Array | null> {
     await this.ensureOpen();
     const tile = await this.db.getVectorTile?.(nodeId, z, x, y)
@@ -181,6 +247,20 @@ export class ShapeQueryService implements ShapeQueryAPI {
     };
   }
 
+  async listFeatures(nodeId: NodeId): Promise<ShapeFeatureRecord[]> {
+    await this.ensureOpen();
+    return this.db.features.where('nodeId').equals(nodeId).toArray() as Promise<ShapeFeatureRecord[]>;
+  }
+
+  async listFeaturesInBbox(
+    nodeId: NodeId,
+    bbox: [number, number, number, number],
+    adminLevel?: number,
+  ): Promise<ShapeFeatureRecord[]> {
+    await this.ensureOpen();
+    return this.db.getFeaturesInBbox(nodeId, bbox, adminLevel) as Promise<ShapeFeatureRecord[]>;
+  }
+
   async listRawBuffers(nodeId: NodeId): Promise<ShapeRawBufferRecord[]> {
     const db = getEphemeralShapeDB();
     return db.rawBuffers.where('nodeId').equals(nodeId).toArray() as Promise<ShapeRawBufferRecord[]>;
@@ -211,7 +291,7 @@ export class ShapeQueryService implements ShapeQueryAPI {
   }
 
   async listVectorTileRows(nodeId: NodeId): Promise<ShapeTileRow[]> {
-    const rows = await shapeDB.vectorTiles.where('nodeId').equals(nodeId).toArray();
+    const rows = await this.db.vectorTiles.where('nodeId').equals(nodeId).toArray();
     return rows.map((row) => ({
       key: row.tileId,
       nodeId: String(nodeId),
@@ -229,10 +309,10 @@ export class ShapeQueryService implements ShapeQueryAPI {
   }
 
   async listSourceMetadata(nodeId: NodeId): Promise<ShapeSourceMetadataRow[]> {
-    return shapeDB.sourceMetadata.where('nodeId').equals(String(nodeId)).toArray() as Promise<ShapeSourceMetadataRow[]>;
+    return this.db.sourceMetadata.where('nodeId').equals(String(nodeId)).toArray() as Promise<ShapeSourceMetadataRow[]>;
   }
 
   async listFeatureMetadata(nodeId: NodeId): Promise<ShapeFeatureMetadataRow[]> {
-    return shapeDB.featureMetadata.where('nodeId').equals(String(nodeId)).toArray() as Promise<ShapeFeatureMetadataRow[]>;
+    return this.db.featureMetadata.where('nodeId').equals(String(nodeId)).toArray() as Promise<ShapeFeatureMetadataRow[]>;
   }
 }

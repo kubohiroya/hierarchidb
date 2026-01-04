@@ -10,8 +10,10 @@ import {
   MapPreviewSearchSettingsDialog,
   ResourceLayerMap,
   defaultFeatureIdAccessor,
+  useMapFeatureHoverCandidates,
   useMapFeatureHighlights,
   useMapFeatureSearch,
+  useMapFeatureSelectionGestures,
   mergeFilters,
 } from '@hierarchidb/ui-plugin-shell/ui-map';
 import { Box } from '@mui/material';
@@ -29,9 +31,10 @@ import {
   mapSearchTargetSelectionAtom,
   mapSearchTextAtom,
   mapSelectedMatchAtom,
+  mapStylerToggleAtom,
   mapViewportFeatureIdsAtom,
 } from '../../../state/mapSearch.atoms.js';
-import type { MapLayerInfo, MapViewportFeatureIds } from '../../../state/mapSearch.atoms.js';
+import type { MapFeatureIdSet, MapHighlightEntry, MapLayerInfo } from '../../../state/mapSearch.atoms.js';
 import { ModelessDialogManager } from '../modeless/ModelessDialogManager.js';
 import { LOCATION_TYPE_OPTIONS, ROUTE_MODE_OPTIONS, SEARCH_TARGET_DEFINITIONS, SEARCH_TARGET_GROUPS } from './constants.js';
 import { useFolderLayers } from './useFolderLayers.js';
@@ -51,11 +54,13 @@ export default function MapPage() {
   const geolocation = useGeolocation();
   const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
   const [searchSettingsOpen, setSearchSettingsOpen] = useState(false);
+  const [hoveredFeatures, setHoveredFeatures] = useState<MapLibreGeoJSONFeature[]>([]);
   const [searchText, setSearchText] = useAtom(mapSearchTextAtom);
+  const [stylerToggles, setStylerToggles] = useAtom(mapStylerToggleAtom);
   const [searchTargets, setSearchTargets] = useAtom(mapSearchTargetSelectionAtom);
-  const [searchMatches, setSearchMatches] = useAtom(mapSearchMatchesAtom);
-  const [hoverMatch, setHoverMatch] = useAtom(mapHoverMatchAtom);
-  const [selectedMatch, setSelectedMatch] = useAtom(mapSelectedMatchAtom);
+  const [searchMatchIds, setSearchMatchIds] = useAtom(mapSearchMatchesAtom);
+  const [hoverMatchIds, setHoverMatchIds] = useAtom(mapHoverMatchAtom);
+  const [selectedMatchIds, setSelectedMatchIds] = useAtom(mapSelectedMatchAtom);
   const setViewportFeatureIds = useSetAtom(mapViewportFeatureIdsAtom);
   const [locationTypeSelection, setLocationTypeSelection] = useState<MapToggleSelection>(() =>
     Object.fromEntries(LOCATION_TYPE_OPTIONS.map((option) => [option.id, true])) as MapToggleSelection
@@ -73,10 +78,11 @@ export default function MapPage() {
     geolocation,
   });
 
-  const { basemapStyles, vectorLayers, geoJsonLayers, styleOverridesByType, mapInfo } = useFolderLayers({
+  const { basemapStyles, vectorLayers, geoJsonLayers, styleOverridesByType, mapInfo, stylerSummaries } = useFolderLayers({
     nodeId,
     searchZxy: search?.zxy,
     onPersistedZxy: applyPersistedZxy,
+    stylerToggles,
   });
 
   const setMapLayerInfo = useSetAtom(mapLayerInfoAtom);
@@ -104,9 +110,57 @@ export default function MapPage() {
     setMapLayerInfo(layerInfoList);
   }, [layerInfoList, setMapLayerInfo]);
 
+  useEffect(() => {
+    if (stylerSummaries.length === 0) return;
+    setStylerToggles((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      stylerSummaries.forEach((entry) => {
+        if (next[entry.nodeId] === undefined) {
+          next[entry.nodeId] = true;
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [setStylerToggles, stylerSummaries]);
+
   const highlightLayerIds = useMemo(
     () => vectorLayers.map((layer) => layer.layerConfig?.layerId ?? `resource-layer-${layer.nodeId}`),
     [vectorLayers],
+  );
+
+  const layerInfoByNodeType = useMemo(() => {
+    const map = new Map<string, MapLayerInfo>();
+    layerInfoList.forEach((info) => {
+      map.set(`${info.nodeId}:${info.nodeType}`, info);
+    });
+    return map;
+  }, [layerInfoList]);
+
+  const buildEntriesFromIdSet = useCallback(
+    (idSet: MapFeatureIdSet): MapHighlightEntry[] => {
+      const entries: MapHighlightEntry[] = [];
+      Object.entries(idSet).forEach(([nodeId, byType]) => {
+        if (!byType) return;
+        Object.entries(byType).forEach(([nodeType, ids]) => {
+          if (!ids) return;
+          const info = layerInfoByNodeType.get(`${nodeId}:${nodeType}`);
+          if (!info) return;
+          ids.forEach((id) => {
+            entries.push({
+              source: info.sourceId,
+              id,
+              layerId: info.layerId,
+              nodeId: info.nodeId,
+              nodeType: info.nodeType,
+            });
+          });
+        });
+      });
+      return entries;
+    },
+    [layerInfoByNodeType],
   );
 
   const buildHighlightEntry = useCallback(
@@ -131,29 +185,54 @@ export default function MapPage() {
 
   const handleViewportLayerIdsChange = useCallback(
     (layerIds: Map<string, Set<string | number>>) => {
-      const next: MapViewportFeatureIds = {};
+      const next: MapFeatureIdSet = {};
       layerInfoById.forEach((info, layerId) => {
         const ids = layerIds.get(layerId);
         if (!ids) return;
         if (!next[info.nodeId]) next[info.nodeId] = {};
-        next[info.nodeId]![info.nodeType] = Array.from(ids);
+        next[info.nodeId]![info.nodeType] = new Set(ids);
       });
       setViewportFeatureIds(next);
     },
     [layerInfoById, setViewportFeatureIds]
   );
 
-  const { handleIdentify } = useMapFeatureHighlights({
+  const searchMatchEntries = useMemo(
+    () => buildEntriesFromIdSet(searchMatchIds),
+    [buildEntriesFromIdSet, searchMatchIds],
+  );
+  const hoverEntries = useMemo(
+    () => buildEntriesFromIdSet(hoverMatchIds),
+    [buildEntriesFromIdSet, hoverMatchIds],
+  );
+  const selectedEntries = useMemo(
+    () => buildEntriesFromIdSet(selectedMatchIds),
+    [buildEntriesFromIdSet, selectedMatchIds],
+  );
+
+  useMapFeatureHighlights({
     mapInstance,
     highlightLayerIds,
-    buildHighlightEntry,
-    searchMatches,
-    hoverMatch,
-    selectedMatch,
-    setHoverMatch,
-    setSelectedMatch,
+    searchMatches: searchMatchEntries,
+    hoverMatches: hoverEntries,
+    selectedMatches: selectedEntries,
     onViewportLayerIdsChange: handleViewportLayerIdsChange,
   });
+
+  const updateIdSetFromEntries = useCallback(
+    (entries: MapHighlightEntry[]): MapFeatureIdSet => {
+      const next: MapFeatureIdSet = {};
+      entries.forEach((entry) => {
+        if (!entry.nodeId || !entry.nodeType) return;
+        if (!next[entry.nodeId]) next[entry.nodeId] = {};
+        const typeSet = next[entry.nodeId]![entry.nodeType] ?? new Set<string | number>();
+        typeSet.add(entry.id);
+        next[entry.nodeId]![entry.nodeType] = typeSet;
+      });
+      return next;
+    },
+    [],
+  );
 
   const { runSearch, handleSearchClear, handleSearchTargetToggle } = useMapFeatureSearch({
     mapInstance,
@@ -162,9 +241,73 @@ export default function MapPage() {
     searchTargets,
     targetDefinitions: SEARCH_TARGET_DEFINITIONS,
     buildHighlightEntry,
-    setSearchMatches,
+    onMatchesChange: (entries) => {
+      setSearchMatchIds(updateIdSetFromEntries(entries));
+    },
     setSearchText,
     setSearchTargets,
+  });
+
+  useMapFeatureHoverCandidates({
+    mapInstance,
+    highlightLayerIds,
+    buildHighlightEntry,
+    onHoverChange: (entries, features) => {
+      setHoverMatchIds(updateIdSetFromEntries(entries));
+      setHoveredFeatures(features);
+    },
+  });
+
+  const applySelectionChange = useCallback(
+    (mode: 'replace' | 'toggle' | 'add' | 'clear' | 'box', entries: MapHighlightEntry[]) => {
+      if (mode === 'clear') {
+        setSelectedMatchIds({});
+        return;
+      }
+      if (mode === 'replace') {
+        setSelectedMatchIds(updateIdSetFromEntries(entries));
+        return;
+      }
+      if (mode === 'box') {
+        setSelectedMatchIds(updateIdSetFromEntries(entries));
+        return;
+      }
+      setSelectedMatchIds((prev) => {
+        const next: MapFeatureIdSet = {};
+        Object.entries(prev).forEach(([nodeId, byType]) => {
+          next[nodeId] = {};
+          if (!byType) return;
+          Object.entries(byType).forEach(([nodeType, ids]) => {
+            if (!ids) return;
+            next[nodeId]![nodeType as MapLayerInfo['nodeType']] = new Set(ids);
+          });
+        });
+        entries.forEach((entry) => {
+          if (!entry.nodeId || !entry.nodeType) return;
+          if (!next[entry.nodeId]) next[entry.nodeId] = {};
+          const current = next[entry.nodeId]![entry.nodeType] ?? new Set<string | number>();
+          if (mode === 'toggle') {
+            if (current.has(entry.id)) {
+              current.delete(entry.id);
+            } else {
+              current.add(entry.id);
+            }
+          } else if (mode === 'add') {
+            current.add(entry.id);
+          }
+          next[entry.nodeId]![entry.nodeType] = current;
+        });
+        return next;
+      });
+    },
+    [setSelectedMatchIds, updateIdSetFromEntries],
+  );
+
+  useMapFeatureSelectionGestures({
+    mapInstance,
+    highlightLayerIds,
+    buildHighlightEntry,
+    onSelectionChange: applySelectionChange,
   });
 
   const routeModeOptions = useMemo(
@@ -387,6 +530,11 @@ export default function MapPage() {
           vectorLayers={vectorLayers}
           geoJsonLayers={geoJsonLayers}
           mapInfo={mapInfo}
+          stylerSummaries={stylerSummaries}
+          stylerToggles={stylerToggles}
+          onToggleStyler={(stylerId, enabled) => {
+            setStylerToggles((prev) => ({ ...prev, [stylerId]: enabled }));
+          }}
           locationTypeOptions={LOCATION_TYPE_OPTIONS}
           routeModeOptions={routeModeOptions}
           locationTypeSelection={locationTypeSelection}
@@ -425,14 +573,26 @@ export default function MapPage() {
         geoJsonLayers={geoJsonLayers}
         styleOverridesByType={styleOverridesByType}
         highlightOverridesByType={highlightPaintByType}
+        hoveredFeatures={hoveredFeatures}
+        snackbar={{
+          position: 'bottom',
+          renderContent: (features) => {
+            if (features.length === 0) return null;
+            const labels = features.slice(0, 3).map((feature) => {
+              const props = (feature.properties ?? {}) as Record<string, unknown>;
+              const label =
+                (props.name as string | undefined) ??
+                (props.NAME as string | undefined) ??
+                (props.label as string | undefined) ??
+                (props.id as string | number | undefined);
+              return label ? String(label) : 'Feature';
+            });
+            return labels.join(' / ');
+          },
+        }}
         onLoad={handleMapLoad}
         onViewStateChange={handleViewStateChange}
-        identifyFeatureOnClick={{
-          layerIds: highlightLayerIds,
-          radius: 6,
-          onIdentify: handleIdentify,
-          disableDefaultSnackbar: true,
-        }}
+        identifyFeatureOnClick={{ layerIds: highlightLayerIds, radius: 6, disableDefaultSnackbar: true }}
         controls={{ navigation: { position: 'top-right' } }}
         mapOptions={{
           interactive: true,

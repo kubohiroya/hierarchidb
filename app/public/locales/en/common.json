@@ -133,7 +133,7 @@
           "cancel": "Cancel",
           "close": "Close",
           "maximize": "Maximize",
-          "restoreSize": "Restore size",
+          "restoreSize": "Restore",
           "fullscreen": "Full screen",
           "exitFullscreen": "Exit full screen"
         },
@@ -141,7 +141,7 @@
           "saveDraftDisabled": "No changes to save",
           "close": "Close dialog",
           "maximize": "Maximize",
-          "restoreSize": "Restore size",
+          "restoreSize": "Restore",
           "fullscreen": "Full screen",
           "exitFullscreen": "Exit full screen"
         }

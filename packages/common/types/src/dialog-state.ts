@@ -41,6 +41,8 @@ export interface DialogWindowState {
   mode?: DialogDisplayMode;
   position?: DialogPosition | null;
   size?: DialogSize | null;
+  restorePosition?: DialogPosition | null;
+  restoreSize?: DialogSize | null;
 }
 
 export interface DialogProgressState {

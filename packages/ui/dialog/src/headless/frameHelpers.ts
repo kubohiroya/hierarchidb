@@ -16,7 +16,24 @@ export function getViewportSize(): { width: number; height: number } {
   if (typeof window === 'undefined') {
     return { width: 1280, height: 720 };
   }
+  const viewport = window.visualViewport;
+  if (viewport) {
+    return { width: viewport.width, height: viewport.height };
+  }
   return { width: window.innerWidth, height: window.innerHeight };
+}
+
+export function getDialogLayoutViewport(): { width: number; height: number } {
+  const viewport = getViewportSize();
+  if (typeof window === 'undefined') {
+    return viewport;
+  }
+  const screenWidth = window.screen?.availWidth ?? window.screen?.width ?? viewport.width;
+  const screenHeight = window.screen?.availHeight ?? window.screen?.height ?? viewport.height;
+  return {
+    width: Math.min(viewport.width, screenWidth),
+    height: Math.min(viewport.height, screenHeight),
+  };
 }
 
 export function getPresetSize(
@@ -128,7 +145,7 @@ export function useDialogDisplayTransition(options: TransitionOptions) {
     positionRef,
     onSizeChange,
     onPositionChange,
-    viewportResolver = getViewportSize,
+    viewportResolver = getDialogLayoutViewport,
   } = options;
 
   const handleDisplayModeChange = useCallback(async (mode: DialogDisplayMode) => {

@@ -24,6 +24,7 @@ import type React from 'react';
 import { useCallback, useMemo, useRef } from 'react';
 import {
   AltRoute as AltRouteIcon,
+  Brush as BrushIcon,
   InfoOutlined as InfoOutlinedIcon,
   Layers as LayersIcon,
   PlaceOutlined as PlaceOutlinedIcon,
@@ -33,8 +34,10 @@ import {
   MapGeneratedDataContent,
   MapInfoContent,
   MapLayerContent,
+  MapStylerContent,
   type MapInfoSummary,
 } from './modelessDialogContent.js';
+import type { MapStylerSummary } from '../map/types.js';
 import type { MapDialogDefinitionBase, MapDialogWindowState } from './modelessDialogLayout.js';
 import type { ModelessIconAppearance, ModelessIconPlacement } from './ModelessDialogProvider.js';
 import { ModelessDialogProvider, useModelessDialogContext } from './ModelessDialogProvider.js';
@@ -49,6 +52,9 @@ export type MapDialogLayerInput = {
   vectorLayers: ResourceVectorLayer[];
   geoJsonLayers: ResourceGeoJsonLayer[];
   mapInfo: MapInfoSummary;
+  stylerSummaries: MapStylerSummary[];
+  stylerToggles: Record<string, boolean>;
+  onToggleStyler: (stylerId: string, enabled: boolean) => void;
   locationTypeOptions: MapToggleOption[];
   routeModeOptions: MapToggleOption[];
   locationTypeSelection: MapToggleSelection;
@@ -339,6 +345,9 @@ export const ModelessDialogManager: React.FC<ModelessDialogManagerProps> = ({
   vectorLayers,
   geoJsonLayers,
   mapInfo,
+  stylerSummaries,
+  stylerToggles,
+  onToggleStyler,
   locationTypeOptions,
   routeModeOptions,
   locationTypeSelection,
@@ -376,6 +385,19 @@ export const ModelessDialogManager: React.FC<ModelessDialogManagerProps> = ({
       defaultSize: { width: 720, height: 420 },
       content: (
         <MapGeneratedDataContent nodeId={nodeId as NodeId} />
+      ),
+    },
+    {
+      id: 'map-style-table',
+      title: 'Styles',
+      icon: <BrushIcon fontSize="small" />,
+      defaultSize: { width: 860, height: 420 },
+      content: (
+        <MapStylerContent
+          stylerSummaries={stylerSummaries}
+          stylerToggles={stylerToggles}
+          onToggleStyler={onToggleStyler}
+        />
       ),
     },
     {

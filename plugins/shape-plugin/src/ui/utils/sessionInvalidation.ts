@@ -1,9 +1,10 @@
 import type { BatchConfig, ShapeEntity } from '../../common/types/index.js';
 import { DEFAULT_PROCESSING_CONFIG, mergeBatchConfig } from '../../common/types/index.js';
-import { getEphemeralShapeDB, type EphemeralStage } from '../../services/database/EphemeralShapeDB.js';
+import type { ShapeEphemeralStage } from '@hierarchidb/plugin-service-api';
+import { getShapeDbApiClient } from '../../services/batch/ShapeBatchApiClient.js';
 import { toNodeId, type NodeId } from '@hierarchidb/common-types';
 
-const STAGE_ORDER: EphemeralStage[] = ['download', 'extract1', 'extract2', 'vectorTiles'];
+const STAGE_ORDER: ShapeEphemeralStage[] = ['download', 'extract1', 'extract2', 'vectorTiles'];
 
 type SimpleRecord = object;
 
@@ -19,8 +20,8 @@ const hasDiff = (left: SimpleRecord, right: SimpleRecord): boolean => {
   return false;
 };
 
-const uniqueStages = (stages: EphemeralStage[]): EphemeralStage[] => {
-  const set = new Set<EphemeralStage>();
+const uniqueStages = (stages: ShapeEphemeralStage[]): ShapeEphemeralStage[] => {
+  const set = new Set<ShapeEphemeralStage>();
   for (const stage of stages) set.add(stage);
   return STAGE_ORDER.filter((stage) => set.has(stage));
 };
@@ -28,13 +29,13 @@ const uniqueStages = (stages: EphemeralStage[]): EphemeralStage[] => {
 export const resolveShapeNodeId = (draft?: Partial<ShapeEntity> | null): NodeId | undefined =>
   draft?.nodeId ? toNodeId(String(draft.nodeId)) : undefined;
 
-export async function clearStagesIfPresent(nodeId: NodeId, stages: EphemeralStage[]): Promise<EphemeralStage[]> {
-  const db = getEphemeralShapeDB();
+export async function clearStagesIfPresent(nodeId: NodeId, stages: ShapeEphemeralStage[]): Promise<ShapeEphemeralStage[]> {
+  const ephemeral = getShapeDbApiClient().ephemeral;
   const targetStages = uniqueStages(stages);
-  const cleared: EphemeralStage[] = [];
+  const cleared: ShapeEphemeralStage[] = [];
   for (const stage of targetStages) {
-    if (await db.hasStageData(nodeId, stage)) {
-      await db.clearStage(nodeId, stage);
+    if (await ephemeral.hasStageData(nodeId, stage)) {
+      await ephemeral.clearStage(nodeId, stage);
       cleared.push(stage);
     }
   }
@@ -44,11 +45,11 @@ export async function clearStagesIfPresent(nodeId: NodeId, stages: EphemeralStag
 export function resolveBatchConfigInvalidation(
   prevConfig: BatchConfig | undefined,
   nextConfig: BatchConfig | undefined,
-): EphemeralStage[] {
+): ShapeEphemeralStage[] {
   const prev = mergeBatchConfig(prevConfig ?? DEFAULT_PROCESSING_CONFIG);
   const next = mergeBatchConfig(nextConfig ?? DEFAULT_PROCESSING_CONFIG);
 
-  const stages = new Set<EphemeralStage>();
+  const stages = new Set<ShapeEphemeralStage>();
 
   if (hasDiff(prev.downloadConfig ?? {}, next.downloadConfig ?? {})) {
     stages.add('download');
@@ -75,7 +76,7 @@ export function resolveBatchConfigInvalidation(
   return uniqueStages(Array.from(stages));
 }
 
-export const FULL_INVALIDATION_STAGES: EphemeralStage[] = [
+export const FULL_INVALIDATION_STAGES: ShapeEphemeralStage[] = [
   'download',
   'extract1',
   'extract2',

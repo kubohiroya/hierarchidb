@@ -14,7 +14,10 @@ type RestoreDeps = {
   setUrlStep: (next: number) => void;
   handleSizeChange: (next?: DialogSize) => void;
   handlePositionChange: (next?: DialogPosition) => void;
-  transitionDisplayMode: (mode: DialogDisplayMode) => Promise<void>;
+  transitionDisplayMode: (
+    mode: DialogDisplayMode,
+    options?: { restoreSize?: DialogSize | null; restorePosition?: DialogPosition | null }
+  ) => Promise<void>;
 };
 
 export function useDialogUIStateSync(params: {
@@ -126,6 +129,8 @@ export function useDialogUIStateSync(params: {
         mode: currentWindow.mode ?? displayMode,
         position: currentWindow.position ?? dialogPosition,
         size: currentWindow.size ?? dialogSize,
+        restorePosition: currentWindow.restorePosition ?? null,
+        restoreSize: currentWindow.restoreSize ?? null,
       },
       dialogProgress: {
         activeStepIndex: persistedIndex,
@@ -154,6 +159,8 @@ export function useDialogUIStateSync(params: {
         position:
           patch.position ?? dialogUIStateRef.current?.dialogWindow?.position ?? dialogPosition,
         size: patch.size ?? dialogUIStateRef.current?.dialogWindow?.size ?? dialogSize,
+        restorePosition: dialogUIStateRef.current?.dialogWindow?.restorePosition ?? null,
+        restoreSize: dialogUIStateRef.current?.dialogWindow?.restoreSize ?? null,
       };
       const nextProgress: DialogProgressState | null =
         patch.activeStepIndex !== undefined

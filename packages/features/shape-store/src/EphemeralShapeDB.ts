@@ -1,7 +1,7 @@
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { Table } from 'dexie';
-import type { BatchProcessConfig } from './ShapeDB.js';
+import type { BatchProcessConfig, BatchTaskRecord, TaskStatus } from './ShapeDB.js';
 import type { FeatureBufferRecord, TileBufferRecord } from './ShapeDB.js';
 import {
   EphemeralGisDB,
@@ -31,6 +31,7 @@ export class EphemeralShapeDB extends EphemeralGisDB<BatchProcessConfig> {
   featureBuffers!: Table<FeatureBufferRecord, string>;
   tileBuffers!: Table<TileBufferRecord, string>;
   tileIdToBufferRelations!: Table<TileIdToBufferRelation, string>;
+  batchTasks!: Table<BatchTaskRecord, string>;
 
   constructor() {
     super(getDBName('shape-ephemeral'));
@@ -53,9 +54,21 @@ export class EphemeralShapeDB extends EphemeralGisDB<BatchProcessConfig> {
       tileBuffers: '&bufferId, nodeId, [nodeId+z+x+y], [z+x+y], z, stage, createdAt',
       tileIdToBufferRelations: '&id, nodeId, tileId, bufferId, [nodeId+tileId]',
     });
+    this.version(5).stores({
+      rawBuffers: '&id, nodeId, timestamp',
+      extractedBuffers: '&id, nodeId, stage, timestamp, [nodeId+stage]',
+      vectorTiles: '&id, nodeId, [z+x+y], hash, timestamp',
+      sessions: '&nodeId, status, stage, startTime',
+      cache: '&key, type, lastAccessed, ttl',
+      featureBuffers: '&bufferId, nodeId, [nodeId+stage], stage, createdAt, byteSize',
+      tileBuffers: '&bufferId, nodeId, [nodeId+z+x+y], [z+x+y], z, stage, createdAt',
+      tileIdToBufferRelations: '&id, nodeId, tileId, bufferId, [nodeId+tileId]',
+      batchTasks: '&taskId, nodeId, [nodeId+status], [nodeId+taskType], [nodeId+index], status, taskType, startedAt',
+    });
     this.featureBuffers = this.table('featureBuffers');
     this.tileBuffers = this.table('tileBuffers');
     this.tileIdToBufferRelations = this.table('tileIdToBufferRelations');
+    this.batchTasks = this.table('batchTasks');
   }
 
   async clearNodeData(nodeId: NodeId): Promise<void> {
@@ -63,6 +76,7 @@ export class EphemeralShapeDB extends EphemeralGisDB<BatchProcessConfig> {
     await this.featureBuffers.where('nodeId').equals(nodeId).delete();
     await this.tileBuffers.where('nodeId').equals(nodeId).delete();
     await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();
+    await this.batchTasks.where('nodeId').equals(nodeId).delete();
   }
 
   async clearStage(nodeId: NodeId, stage: BaseEphemeralStage): Promise<void> {
@@ -79,6 +93,39 @@ export class EphemeralShapeDB extends EphemeralGisDB<BatchProcessConfig> {
     await this.featureBuffers.clear();
     await this.tileBuffers.clear();
     await this.tileIdToBufferRelations.clear();
+    await this.batchTasks.clear();
+  }
+
+  async createBatchTask(
+    task: Omit<BatchTaskRecord, 'taskId'> & { taskId?: string },
+  ): Promise<BatchTaskRecord> {
+    const taskId = task.taskId ?? crypto.randomUUID();
+    const createdAt = task.createdAt ?? Date.now();
+    const updatedAt = task.updatedAt ?? createdAt;
+    const fullTask: BatchTaskRecord = {
+      ...task,
+      taskId,
+      createdAt,
+      updatedAt,
+    };
+
+    await this.batchTasks.put(fullTask);
+    return fullTask;
+  }
+
+  async updateBatchTask(taskId: string, updates: Partial<BatchTaskRecord>): Promise<void> {
+    await this.batchTasks.update(taskId, {
+      ...updates,
+      updatedAt: updates.updatedAt ?? Date.now(),
+    });
+  }
+
+  async getBatchTasks(nodeId: NodeId): Promise<BatchTaskRecord[]> {
+    return await this.batchTasks.where('nodeId').equals(nodeId).sortBy('index');
+  }
+
+  async getTasksByStatus(nodeId: NodeId, status: TaskStatus): Promise<BatchTaskRecord[]> {
+    return await this.batchTasks.where('[nodeId+status]').equals([nodeId, status]).toArray();
   }
 }
 

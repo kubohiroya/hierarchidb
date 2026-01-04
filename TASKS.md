@@ -1,3 +1,60 @@
+2065) fix/plugin-ui-host/dialog-header-restore-position (P1) — 完了 (2026-01-05)
+- ブランチ名: fix/plugin-ui-host/dialog-header-restore-position
+- 依存: なし
+- 要点：復元ツールチップを「元に戻す」に変更し、最大化/全画面への遷移時に元の位置・サイズを保存、復元時に保存値で戻すようにした。全画面/最大化のレイアウトはビューポート/スクリーンから算出する。
+- 原因/影響範囲：最大化/全画面の復元が初期中心位置・サイズに戻るだけで、元の位置・サイズが保持されていなかった。影響範囲は DialogUIState とフレーム遷移ロジック、ツールチップ文言。
+- 修正内容と適用範囲：DialogUIState に restorePosition/restoreSize を追加し、最大化/全画面遷移時に保存・復元時に使用するよう更新。最大化/全画面のサイズ計算は viewport + screen の検出値を使う。適用範囲は `packages/common/types/src/dialog-state.ts`, `packages/ui/dialog/src/headless/frameHelpers.ts`, `packages/plugin-ui-host/src/headless/usePluginDialogController/*`, `packages/plugin-ui-host/src/headless/components/PluginDialogControls.tsx`, `app/public/locales/*/common.json`, `packages/ui/i18n/public/locales/*/common.json`。
+- 検証：未実施（UI 操作のみ）。
+- 受け入れ基準: 「元のサイズに戻す」ツールチップを「元に戻す」に変更する／最大化・全画面移行時に元の位置/サイズを DialogUIState へ保存する／全画面・最大化のレイアウトはビューポート/スクリーン検出で算出した値を使用する／「元に戻す」は保存した元の位置/サイズに復帰する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/common/types/src/dialog-state.ts`, `packages/ui/dialog/src/headless/frameHelpers.ts`, `packages/plugin-ui-host/src/headless/usePluginDialogController/*`, `packages/plugin-ui-host/src/headless/components/PluginDialogControls.tsx`, `app/public/locales/*/common.json`, `packages/ui/i18n/public/locales/*/common.json`
+- ロールバック手順: 上記ファイルと本項目の差分を revert して元に戻す
+- チェックリスト:
+  - 「元のサイズに戻す」を「元に戻す」へ変更する
+  - 最大化/全画面化の直前に元の位置/サイズを保存する
+  - 最大化/全画面のレイアウトをビューポート/スクリーン検出で算出する
+  - 元に戻す際は保存した元の位置/サイズに復帰する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-05 00:29 JST PluginDialogHeader の復元ツールチップと位置/サイズ復帰対応に着手。
+  - done: 2026-01-05 00:43 JST 最大化/全画面の復元位置・サイズ保持とツールチップ文言変更を反映。検証: 未実施（UI 操作のみ）。
+
+2064) fix/plugin-ui-host/dialog-header-doubleclick (P1) — 完了 (2026-01-05)
+- ブランチ名: fix/plugin-ui-host/dialog-header-doubleclick
+- 依存: なし
+- 要点：ヘッダ背景のダブルクリックで通常/最大化をトグルし、全画面時は無効化した。
+- 原因/影響範囲：PluginDialogHeader でダブルクリックによる状態切替が未実装だった。影響範囲は `packages/plugin-ui-host/src/headless/components/PluginDialogHeader.tsx`。
+- 修正内容と適用範囲：ヘッダの Box に onDoubleClick を追加し、full-screen をガード。ステッパーや操作ボタン領域のダブルクリックは伝播を停止。適用範囲は `packages/plugin-ui-host/src/headless/components/PluginDialogHeader.tsx`。
+- 検証：未実施（UI 操作のみ）。
+- 受け入れ基準: PluginDialogHeader のヘッダ背景ダブルクリックで通常/最大化をトグルできる／全画面状態ではダブルクリックで状態が変わらない／既存のヘッダ操作に影響がない／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/plugin-ui-host/src/headless/components/PluginDialogHeader.tsx`
+- ロールバック手順: 上記ファイルと本項目の差分を revert して元に戻す
+- チェックリスト:
+  - ヘッダ背景ダブルクリックで通常/最大化のトグルを実装する
+  - 全画面時はトグルしないガードを入れる
+  - 既存のクリック/ボタン操作への影響がないことを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-05 00:28 JST PluginDialogHeader のダブルクリックで最大化トグル実装に着手。
+  - done: 2026-01-05 00:29 JST ヘッダ背景のダブルクリックで最大化トグルを追加。検証: 未実施（UI 操作のみ）。
+
+2063) refactor/shape-plugin/batch-storage-ephemeral (P1) — 進行中 (2026-01-09)
+- ブランチ名: refactor/shape-plugin/batch-storage-ephemeral
+- 依存: なし
+- 受け入れ基準: batchTasks を hdb-shape-ephemeral へ移設し hdb-shape 側を撤去する／TreeNode削除時に batchSessions を削除する／バッチ成功時に Step3 の保持スイッチ設定に従って batchTasks を自動削除する／rawBuffers の chunk-store 経由書き込みを撤去し ephem 保存へ統一する／ShapeEphemeralDBAPI を追加し ShapeDB/ShapeEphemeralDB の直接読み書きを API 経由へ統一する／参照先を一括で更新する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/plugin-service-api/src/types`, `packages/common/api/src/WorkerAPI.ts`, `packages/runtime-worker/src/services`, `packages/features/shape-store/src/ShapeDB.ts`, `packages/features/shape-store/src/EphemeralShapeDB.ts`, `plugins/shape-plugin/src/services/batch`, `plugins/shape-plugin/src/worker/api.ts`, `packages/runtime-worker/src/entity/EntityLifecycleManager.ts`（他参照先含む）
+- ロールバック手順: batchTasks の参照/定義と rawBuffers 書き込み経路を元に戻し、TreeNode削除連動の batchSessions 削除を撤回する
+- チェックリスト:
+  - hdb-shape の batchTasks を撤去し、ephemeral に移設する
+  - TreeNode削除時に batchSessions を削除する
+  - Step3 の保持スイッチに従って成功時に batchTasks を自動削除する
+  - rawBuffers の chunk-store 経由書き込みを撤去する
+  - ShapeEphemeralDBAPI を追加し、ShapeDB/ShapeEphemeralDB の直接読み書きを API 経由へ統一する
+  - 参照先をまとめて更新する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-09 20:10 JST shape-plugin の batchTasks 移設と rawBuffers 経路整理に着手。
+  - start: 2026-01-05 00:43 JST ShapeEphemeralDBAPI/BatchTasks 移設/削除連動の継続対応に着手。
+
 2058) chore/remove/runtime-stage-worker (P1) — 進行中 (2026-01-09)
 - ブランチ名: chore/remove/runtime-stage-worker
 - 依存: なし
@@ -27,6 +84,48 @@
 - 運用ログ：
   - start: 2026-01-09 17:20 JST shared zoom range の TS2322 修正に着手。
   - done: 2026-01-09 17:22 JST Slider の min/max 未定義をガードして型エラーを解消。検証: 未実施。
+
+2062) fix/shape-plugin/step5-download-stuck (P1) — 進行中 (2026-01-09)
+- ブランチ名: fix/shape-plugin/step5-download-stuck
+- 依存: なし
+- 受け入れ基準: Step5 の Download タスクが開始ボタン押下で進捗する／Step4 の「ダウンロードタスク済みファイル」削除ボタンがタスク残存時に有効化される／リロード後に残留したタスクが整合する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `plugins/shape-plugin/src/services/batch/BatchSessionManager.ts`, `plugins/shape-plugin/src/ui/hooks/useDownloadConfigSection.ts`
+- ロールバック手順: download タスクの再開リセット処理と delete 有効化条件を revert して元に戻す
+- チェックリスト:
+  - Download タスクの再開時に running を waiting へ戻す
+  - タスク残存時に削除ボタンが有効になるよう条件を更新する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-09 19:55 JST Step5 の download タスク停滞と削除ボタン無効の修正に着手。
+  - done: 2026-01-09 20:10 JST download 再開時の running → waiting リセットと Step4 削除ボタン有効化/削除時の pause を反映。検証: 未実施。
+
+2063) test/verify/smart-fetch-chunk-store (P1) — 進行中 (2026-01-09)
+- ブランチ名: test/verify/smart-fetch-chunk-store
+- 依存: なし
+- 受け入れ基準: @hierarchidb/smart-fetch と @hierarchidb/chunk-store の利用経路を整理する／既存テストの内容を確認し不足があれば最小修正または追加する／関連テストを実行して結果を記録する／TASKS.md に運用ログ・影響範囲・検証結果を記載する
+- 影響範囲: `packages/features/download`, `packages/features/chunk-store`, `plugins/shape-plugin`（必要に応じて）
+- ロールバック手順: テスト追加/修正の差分を revert して元に戻す
+- チェックリスト:
+  - smart-fetch/chunk-store の使用箇所と経路を確認する
+  - 既存テストの内容を確認し必要な修正/追加を行う
+  - 関連テストを実行し結果を運用ログに記載する
+- 運用ログ：
+  - start: 2026-01-09 20:15 JST smart-fetch/chunk-store のテスト確認と実行に着手。
+  - done: 2026-01-09 20:20 JST smartFetch/DexieChunkStore テストを追加し、FetchNetworkPort.throttle を auth 無効化で修正。検証: `pnpm exec vitest run --config packages/features/download/vitest.config.ts` / `pnpm exec vitest run --config packages/features/chunk-store/vitest.config.ts`（成功）。
+
+2058) test/shape-plugin/enable-headless-batch (P1) — 進行中 (2026-01-09)
+- ブランチ名: test/shape-plugin/enable-headless-batch
+- 依存: なし
+- 受け入れ基準: shape-plugin の headless バッチテストがスキップされずに実行可能になる／実アプリ相当の依存を使い、Dexie は FakeIndexedDB を利用する／実行方法と注意点を TASKS.md に記録する
+- 影響範囲: `plugins/shape-plugin/src/headless/shape-batch-progress.headless.test.ts`, `plugins/shape-plugin/vitest.setup.ts`（必要に応じて）
+- ロールバック手順: headless テストの変更を revert してスキップ状態へ戻す
+- チェックリスト:
+  - headless テストを実行可能にし、実アプリ相当の依存構成で動作させる
+  - Dexie を FakeIndexedDB に切り替える
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-09 16:40 JST shape-plugin headless バッチテストの有効化に着手。
+  - done: 2026-01-09 16:55 JST headless バッチテストを実行可能にし、FakeIndexedDB 前提の in-process 実行へ調整。検証: 未実施。
 
 2057) chore/remove/compute-feature (P1) — 進行中 (2026-01-09)
 - ブランチ名: chore/remove/compute-feature
@@ -342,6 +441,68 @@
   - start: 2026-01-04 00:28 JST dexie shim の削除に着手。
   - done: 2026-01-04 00:29 JST dexie shim を削除し、vite alias を元に戻した。検証: 未実施。
 
+2051) fix/ui-map/selection-gesture-undefined (P1) — 進行中 (2026-01-04)
+- ブランチ名: fix/ui-map/selection-gesture-undefined
+- 依存: なし
+- 受け入れ基準: `@hierarchidb/ui-map` の typecheck で TS2322 が解消する／`onSelectionChange` の挙動が維持される／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/ui/map/src/preview/useMapFeatureSelectionGestures.ts`
+- ロールバック手順: 変更差分を revert して元の選択処理に戻す
+- チェックリスト:
+  - entries[0] が undefined の場合の取り扱いを整理する
+  - typecheck のエラーが解消することを確認する
+  - 運用ログ start/done/blocked と影響範囲/ロールバックを追記する
+- 運用ログ：
+  - start: 2026-01-04 00:33 JST ui-map selection gesture の型エラー修正に着手。
+  - done: 2026-01-04 00:34 JST entries[0] の null チェックを追加し TS2322 を回避。検証: 未実施。
+
+2052) fix/runtime-worker/shape-batch-session-types (P1) — 進行中 (2026-01-04)
+- ブランチ名: fix/runtime-worker/shape-batch-session-types
+- 依存: なし
+- 受け入れ基準: `@hierarchidb/runtime-worker` の typecheck で ShapeMutationService/ShapeQueryService の TS2345/TS2352 が解消する／BatchSessionRecord と ShapeBatchSessionRecord の型整合が取れる／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/runtime-worker/src/services/ShapeMutationService.ts` と `packages/runtime-worker/src/services/ShapeQueryService.ts`（必要に応じて関連型）
+- ロールバック手順: 変更差分を revert して元の型定義へ戻す
+- チェックリスト:
+  - ShapeMutationService/ShapeQueryService の型エラー箇所を特定する
+  - BatchSessionRecord/ShapeBatchSessionRecord の整合を取る
+  - typecheck のエラーが解消することを確認する
+  - 運用ログ start/done/blocked と影響範囲/ロールバックを追記する
+- 運用ログ：
+  - start: 2026-01-04 00:40 JST runtime-worker の shape batch session 型エラー修正に着手。
+  - done: 2026-01-04 00:44 JST ShapeMutationService/ShapeQueryService で batch session/vector tile の型変換を追加。検証: 未実施。
+  - done: 2026-01-04 00:47 JST ResourceUsage などの型変換に unknown 経由のキャストを追加。検証: 未実施。
+  - done: 2026-01-04 00:55 JST unknown キャストを撤去し、型ガード/明示的変換で BatchSessionRecord を構築。検証: 未実施。
+  - done: 2026-01-04 01:02 JST currentStage の許容値へ正規化して型エラーを解消。検証: 未実施。
+
+2053) fix/shape-plugin/batch-session-types (P1) — 進行中 (2026-01-04)
+- ブランチ名: fix/shape-plugin/batch-session-types
+- 依存: なし
+- 受け入れ基準: `@hierarchidb/shape-plugin` の typecheck で batch session/vector tile/geometry/NodeId 関連の型エラーが解消する／plugin-service-api と shape-store の型境界が明確になる／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `plugins/shape-plugin/src/services/batch/*` と `plugins/shape-plugin/src/services/tiles/VectorTileService.ts`、`plugins/shape-plugin/src/ui/components/steps-provider.tsx`、`plugins/shape-plugin/src/worker/api.ts`
+- ロールバック手順: 変更差分を revert して元の型定義へ戻す
+- チェックリスト:
+  - batch session の型変換経路を整理する
+  - vector tile/geometry/NodeId の型エラーを解消する
+  - typecheck のエラーが解消することを確認する
+  - 運用ログ start/done/blocked と影響範囲/ロールバックを追記する
+- 運用ログ：
+  - start: 2026-01-04 01:12 JST shape-plugin の型エラー修正に着手。
+  - done: 2026-01-04 01:24 JST shape batch session/vector tile の変換ヘルパーを追加し、関連箇所へ適用。検証: 未実施。
+  - done: 2026-01-04 01:30 JST VectorTileService の geometry 判定を Record ベースで安全化。検証: 未実施。
+
+2054) fix/app/modeless-dialog-type (P1) — 進行中 (2026-01-04)
+- ブランチ名: fix/app/modeless-dialog-type
+- 依存: なし
+- 受け入れ基準: `app/src/router/routes/modeless/modelessDialogContent.tsx` の TS2339 が解消する／`type` の参照元の型が明確になる／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `app/src/router/routes/modeless/modelessDialogContent.tsx`
+- ロールバック手順: 変更差分を revert して元の型参照に戻す
+- チェックリスト:
+  - `type` を参照している値の型を特定する
+  - TypeScript の型エラーを解消する
+  - 運用ログ start/done/blocked と影響範囲/ロールバックを追記する
+- 運用ログ：
+  - start: 2026-01-04 01:34 JST modelessDialogContent の型エラー修正に着手。
+  - done: 2026-01-04 01:39 JST geometry.type 参照を型ガード経由に変更。検証: 未実施。
+
 2042) fix/shape-store/tsconfig-paths (P1) — 進行中 (2026-01-03)
 - ブランチ名: fix/shape-store/tsconfig-paths
 - 依存: なし
@@ -497,6 +658,32 @@
 - 運用ログ：
   - start: 2026-01-04 19:14 JST map preview 部品の ui-map 移設に着手。
   - done: 2026-01-04 19:21 JST search UI と検索/ハイライト hook を ui-map に移設し、app 側を置換。
+
+2042) feat/ui-map/preview-selection-gestures (P1) — 完了 (2026-01-04)
+- ブランチ名: feat/ui-map/preview-selection-gestures
+- 依存: なし
+- 受け入れ基準: Meta/Shift クリックと背景クリック、Meta+ドラッグの矩形選択を実装し、Jotai の選択Setへ反映される／Snackbar をオプションで有効化でき、近傍メタデータを表示できる／/map 既存機能を破壊しない／TASKS.md に運用ログを記載する
+- チェックリスト:
+  - 選択Set/hoverSet を Jotai へ整理し、既存利用箇所を移行する
+  - クリック/ドラッグの入力判定を実装する
+  - Snackbar 表示オプションと表示内容ビルダを追加する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-04 22:05 JST preview 選択ジェスチャと Snackbar の実装に着手。
+  - done: 2026-01-04 22:20 JST クリック/ドラッグ選択と hover Snackbar を ui-map に追加し /map を更新。
+
+2043) feat/ui-map/styler-toggle-dialog (P1) — 完了 (2026-01-04)
+- ブランチ名: feat/ui-map/styler-toggle-dialog
+- 依存: なし
+- 受け入れ基準: styler ノード由来のスタイル一覧を ModelessDialog で表示し、チェックボックスでオン/オフできる／スタイルの切替が地図に反映される／TASKS.md に運用ログを記載する
+- チェックリスト:
+  - styler の一覧と詳細情報（パス/説明/データソース/フィルタ/カラーチャート）を用意する
+  - ModelessDialog へ専用のスタイル一覧を追加する
+  - トグル状態を地図描画へ反映する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-04 22:20 JST styler 一覧ダイアログの実装に着手。
+  - done: 2026-01-04 23:07 JST スタイル一覧とトグルを追加し地図描画へ反映。
 
 2038) chore/analysis/gen-plugin-registry-split-proposal (P3) — 完了 (2026-01-03)
 - ブランチ名: chore/analysis/gen-plugin-registry-split-proposal

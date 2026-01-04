@@ -7,6 +7,7 @@ import {
   FRAME_CONSTANTS,
   sizesEqual,
   positionsEqual,
+  getDialogLayoutViewport,
 } from '@hierarchidb/ui-dialog';
 import {
   type DialogDisplayMode,
@@ -47,7 +48,10 @@ export function useDialogFrameState({
   displayMode: DialogDisplayMode;
   dialogSize: DialogSize;
   dialogPosition: DialogPosition;
-  transitionDisplayMode: (mode: DialogDisplayMode) => Promise<void>;
+  transitionDisplayMode: (
+    mode: DialogDisplayMode,
+    options?: { restoreSize?: DialogSize | null; restorePosition?: DialogPosition | null }
+  ) => Promise<void>;
   handleSizeChange: (next?: DialogSize) => void;
   handlePositionChange: (next?: DialogPosition) => void;
   dialogRef: React.RefObject<HTMLDivElement | null>;
@@ -145,6 +149,7 @@ export function useDialogFrameState({
     if (hydratedKeyRef.current === key) return;
 
     const viewport = getViewportSize();
+    const layoutViewport = getDialogLayoutViewport();
     const windowState = initialDialogUIState.dialogWindow;
     const progressState = initialDialogUIState.dialogProgress;
     const mode = windowState?.mode ?? 'normal';
@@ -153,8 +158,8 @@ export function useDialogFrameState({
 
     if (mode === 'full-screen') {
       persistSize({
-        width: Math.max(viewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
-        height: Math.max(viewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
+        width: Math.max(layoutViewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
+        height: Math.max(layoutViewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
       });
       persistPosition({ x: 0, y: 0 });
     } else {
@@ -190,8 +195,14 @@ export function useDialogFrameState({
   ]);
 
   const transitionDisplayMode = useCallback(
-    async (mode: DialogDisplayMode) => {
+    async (
+      mode: DialogDisplayMode,
+      options?: { restoreSize?: DialogSize | null; restorePosition?: DialogPosition | null }
+    ) => {
+      const layoutViewport = getDialogLayoutViewport();
       const viewport = getViewportSize();
+      const restoreSize = options?.restoreSize ?? null;
+      const restorePosition = options?.restorePosition ?? null;
 
       const applyNormalizedState = (size: DialogSize, position: DialogPosition) => {
         dialogSizeRef.current = size;
@@ -202,22 +213,22 @@ export function useDialogFrameState({
 
       if (mode === 'full-screen') {
         const fullSize: DialogSize = {
-          width: Math.max(viewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
-          height: Math.max(viewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
+          width: Math.max(layoutViewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
+          height: Math.max(layoutViewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
         };
         applyNormalizedState(fullSize, { x: 0, y: 0 });
       } else if (mode === 'maximize') {
-        const size = getPresetSize('maximize', viewport);
-        const position = initialPosition(size, viewport);
-        const normalized = normalizeDialogState(size, position, viewport, {
+        const size = getPresetSize('maximize', layoutViewport);
+        const position = initialPosition(size, layoutViewport);
+        const normalized = normalizeDialogState(size, position, layoutViewport, {
           enforceTopLeftMargin: false,
           minPosition: 0,
           clampSizeToViewport: true,
         });
         applyNormalizedState(normalized.size, normalized.position);
       } else {
-        const size = getPresetSize('normal', viewport);
-        const position = initialPosition(size, viewport);
+        const size = restoreSize ?? getPresetSize('normal', viewport);
+        const position = restorePosition ?? initialPosition(size, viewport);
         const normalized = normalizeDialogState(size, position, viewport, {
           enforceTopLeftMargin: true,
         });
@@ -247,6 +258,7 @@ export function useDialogFrameState({
     const normalize = () => {
       rafId = null;
       const viewport = getViewportSize();
+      const layoutViewport = getDialogLayoutViewport();
       let targetSize = dialogSizeRef.current;
       let targetPosition = dialogPositionRef.current;
       let options = {
@@ -257,8 +269,8 @@ export function useDialogFrameState({
 
       if (displayMode === 'full-screen') {
         targetSize = {
-          width: Math.max(viewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
-          height: Math.max(viewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
+          width: Math.max(layoutViewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
+          height: Math.max(layoutViewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
         };
         targetPosition = { x: 0, y: 0 };
         options = {
@@ -267,8 +279,8 @@ export function useDialogFrameState({
           clampSizeToViewport: false,
         };
       } else if (displayMode === 'maximize') {
-        targetSize = getPresetSize('maximize', viewport);
-        targetPosition = initialPosition(targetSize, viewport);
+        targetSize = getPresetSize('maximize', layoutViewport);
+        targetPosition = initialPosition(targetSize, layoutViewport);
         options = {
           enforceTopLeftMargin: false,
           minPosition: 0,

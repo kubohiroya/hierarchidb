@@ -88,6 +88,8 @@ export { useVectorTilePreviewSelection } from './preview/useVectorTilePreviewSel
 export { useVectorTilePreviewMapLayers } from './preview/useVectorTilePreviewMapLayers.js';
 export { useMapFeatureSearch } from './preview/useMapFeatureSearch.js';
 export { useMapFeatureHighlights } from './preview/useMapFeatureHighlights.js';
+export { useMapFeatureHoverCandidates } from './preview/useMapFeatureHoverCandidates.js';
+export { useMapFeatureSelectionGestures } from './preview/useMapFeatureSelectionGestures.js';
 export { MapPreviewSearchPanel } from './preview/MapPreviewSearchPanel.js';
 export { MapPreviewSearchSettingsDialog } from './preview/MapPreviewSearchSettingsDialog.js';
 export type { MapSearchTargetDefinition, MapSearchTargetGroup } from './preview/mapPreviewSearchTypes.js';

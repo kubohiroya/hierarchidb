@@ -4,7 +4,7 @@ import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { BatchProcessConfig } from '../services/batch/types.js';
 import type { DownloadTaskPayload } from '../common/types/index.js';
-import { getEphemeralShapeDB, closeEphemeralShapeDB } from '../services/database/EphemeralShapeDB.js';
+import { getShapeDbApiClient } from '../services/batch/ShapeBatchApiClient.js';
 import { encodeFlatGeoJson } from '../services/batch/strategies/flatgeobuf.js';
 import { GadmDownloadStrategy } from '../services/batch/strategies/GadmDownloadStrategy.js';
 import { NaturalEarthDownloadStrategy } from '../services/batch/strategies/NaturalEarthDownloadStrategy.js';
@@ -48,16 +48,14 @@ const createDownloadTaskPayload = (overrides: Partial<DownloadTaskPayload>[]): D
 
 describe('Download stage strategies', () => {
   const nodeId = 'node-1' as NodeId;
-  let db: ReturnType<typeof getEphemeralShapeDB>;
+  const ephemeral = getShapeDbApiClient().ephemeral;
 
   beforeEach(async () => {
-    db = getEphemeralShapeDB();
-    await db.clearAll();
+    await ephemeral.clearAll();
   });
 
   afterEach(async () => {
-    await db.clearAll();
-    await closeEphemeralShapeDB();
+    await ephemeral.clearAll();
   });
 
   it('GADM strategy keeps 1:1 mapping between download tasks and outputs', async () => {
@@ -109,7 +107,7 @@ describe('Download stage strategies', () => {
     ] satisfies Feature[];
     const collection = { type: 'FeatureCollection', features } satisfies FeatureCollection;
     const encoded = await encodeFlatGeoJson(collection);
-    await db.rawBuffers.put({
+    await ephemeral.putRawBuffer({
       id: `${nodeId}-download-0`,
       nodeId,
       data: encoded,

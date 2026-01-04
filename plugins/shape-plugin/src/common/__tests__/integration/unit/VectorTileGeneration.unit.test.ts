@@ -7,7 +7,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-types';
 import { BatchSessionManager } from '../../services/BatchSessionManager.js';
-import { closeEphemeralShapeDB, getEphemeralShapeDB } from '../../services/database/EphemeralShapeDB.js';
+import { getShapeDbApiClient } from '../../services/batch/ShapeBatchApiClient.js';
 import type { BatchConfig } from '../../types/BatchConfig.js';
 
 // Helper function to generate node IDs
@@ -78,23 +78,21 @@ global.fetch = async (url: string) => {
 
 describe('Vector Tile Generation - End to End', () => {
   let manager: BatchSessionManager;
-  let ephemeralDB: ReturnType<typeof getEphemeralShapeDB>;
+  const ephemeral = getShapeDbApiClient().ephemeral;
   let nodeId: NodeId;
 
   beforeEach(async () => {
     // Setup
     manager = new BatchSessionManager();
-    ephemeralDB = getEphemeralShapeDB();
     nodeId = createNodeId('test-node');
 
     // Clear any existing data
-    await ephemeralDB.clearAll();
+    await ephemeral.clearAll();
   });
 
   afterEach(async () => {
     // Cleanup
-    await ephemeralDB.clearAll();
-    await closeEphemeralShapeDB();
+    await ephemeral.clearAll();
   });
 
   it('should complete full pipeline from download to vector tiles', async () => {
@@ -143,10 +141,7 @@ describe('Vector Tile Generation - End to End', () => {
     expect(downloadResult.processedTasks).toBeGreaterThan(0);
 
     // Verify data was saved to EphemeralDB
-    const rawBuffers = await ephemeralDB.rawBuffers
-      .where('sessionId')
-      .equals(sessionId)
-      .toArray();
+    const rawBuffers = await ephemeral.listRawBuffers(nodeId);
     expect(rawBuffers.length).toBeGreaterThan(0);
     expect(rawBuffers[0].featureCount).toBe(2);
     console.log(`Downloaded ${rawBuffers[0].featureCount} features`);
@@ -182,7 +177,7 @@ describe('Vector Tile Generation - End to End', () => {
     expect(finalEvent.stage).toBe('vectorTiles');
 
     // Get database statistics
-    const stats = await ephemeralDB.getStatistics();
+    const stats = await ephemeral.getStatistics();
     console.log('Database statistics:', stats);
     expect(stats.rawBuffers).toBeGreaterThan(0);
     expect(stats.sessions).toBeGreaterThan(0);
@@ -221,9 +216,9 @@ describe('Vector Tile Generation - End to End', () => {
     expect(status?.isAborted).toBe(true);
 
     // Clean up aborted session data
-    await ephemeralDB.clearSession(sessionId);
+    await ephemeral.clearNodeData(sessionId as NodeId);
 
-    const stats = await ephemeralDB.getStatistics();
+    const stats = await ephemeral.getStatistics();
     expect(stats.sessions).toBe(0);
   });
 
@@ -296,10 +291,7 @@ describe('Vector Tile Generation - End to End', () => {
     expect(status?.isCompleted).toBe(true);
 
     // Verify all tasks were processed
-    const rawBuffers = await ephemeralDB.rawBuffers
-      .where('sessionId')
-      .equals(sessionId)
-      .toArray();
+    const rawBuffers = await ephemeral.listRawBuffers(nodeId);
 
     // Should have data for each country/level combination
     expect(rawBuffers.length).toBeGreaterThan(0);
@@ -307,7 +299,7 @@ describe('Vector Tile Generation - End to End', () => {
 
   it('should clean up expired cache entries', async () => {
     // Add some cache entries with short TTL
-    await ephemeralDB.cache.bulkAdd([
+    await ephemeral.putCacheEntries([
       {
         key: 'test-cache-1',
         data: 'test data 1',
@@ -327,11 +319,11 @@ describe('Vector Tile Generation - End to End', () => {
     ]);
 
     // Clear expired cache
-    const cleared = await ephemeralDB.clearExpiredCache();
+    const cleared = await ephemeral.clearExpiredCache();
     expect(cleared).toBe(1);
 
     // Verify only non-expired entry remains
-    const remaining = await ephemeralDB.cache.count();
-    expect(remaining).toBe(1);
+    const remainingStats = await ephemeral.getStatistics();
+    expect(remainingStats.cacheEntries).toBe(1);
   });
 });

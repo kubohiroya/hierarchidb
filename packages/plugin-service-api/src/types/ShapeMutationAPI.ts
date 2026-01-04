@@ -6,10 +6,14 @@ import type {
   ShapeRawBufferRecord,
   ShapeSourceMetadataRow,
 } from './shapeBatchTypes.js';
+import type { ShapeBatchSessionRecord, ShapeVectorTileRecord } from './shapeDbTypes.js';
 
 export interface ShapeMutationAPI {
+  upsertBatchSession(session: ShapeBatchSessionRecord): Promise<void>;
+  updateBatchSession(nodeId: NodeId, updates: Partial<ShapeBatchSessionRecord>): Promise<void>;
   deleteBatchSession(nodeId: NodeId): Promise<void>;
   deleteBatchTasks(nodeId: NodeId): Promise<void>;
+  deleteVectorTile(tileId: string): Promise<void>;
   deleteVectorTiles(nodeId: NodeId): Promise<void>;
   deleteTileBuffers(nodeId: NodeId): Promise<void>;
   deleteFeatureBuffers(nodeId: NodeId): Promise<void>;
@@ -27,4 +31,5 @@ export interface ShapeMutationAPI {
   putFeatureMetadata(rows: ShapeFeatureMetadataRow[]): Promise<void>;
   deleteFeatureMetadataByNode(nodeId: string): Promise<void>;
   syncVectorTilesFromTilesDb(nodeId: NodeId): Promise<void>;
+  storeVectorTile(tile: ShapeVectorTileRecord): Promise<void>;
 }

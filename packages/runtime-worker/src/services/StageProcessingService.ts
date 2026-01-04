@@ -10,6 +10,7 @@ import {
 import { storeRegistry } from '../entity/store-registry.js';
 import type { VectorTileItemBase } from '../entity/store.js';
 import { shapeDB } from '@hierarchidb/shape-store';
+import { ShapeMutationService } from './ShapeMutationService.js';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { FeatureMetadataRow } from '@hierarchidb/vectortile-store';
 
@@ -191,10 +192,11 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
     replace?: boolean,
   ): Promise<void> {
     if (nodeType !== 'shape' || !featureMetadata || featureMetadata.length === 0) return;
+    const mutation = await ShapeMutationService.getSingleton(shapeDB);
     if (replace) {
-      await shapeDB.featureMetadata.where('nodeId').equals(nodeId).delete();
+      await mutation.deleteFeatureMetadataByNode(nodeId);
     }
-    await shapeDB.featureMetadata.bulkPut(featureMetadata);
+    await mutation.putFeatureMetadata(featureMetadata);
   }
 
   private resolveItemBytes(item: VectorTileStoreItem): Uint8Array | null {

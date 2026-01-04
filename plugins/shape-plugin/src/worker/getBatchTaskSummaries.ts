@@ -1,5 +1,6 @@
 import type { BatchTaskSummary } from '@hierarchidb/common-api';
-import { shapeDB, type BatchTaskRecord } from '../services/database/ShapeDB.js';
+import { getShapeDbApiClient } from '../services/batch/ShapeBatchApiClient.js';
+import type { BatchTaskRecord } from '../services/database/ShapeDB.js';
 
 const toSummaryStatus = (status: BatchTaskRecord['status']): BatchTaskSummary['status'] => {
   if (status === 'waiting') return 'waiting';
@@ -53,7 +54,7 @@ const buildTaskTitle = (task: BatchTaskRecord): string | undefined => {
 };
 
 export async function getBatchTaskSummaries(nodeId: string): Promise<ShapeBatchTaskSummary[]> {
-  const tasks = await shapeDB.getBatchTasks(nodeId);
+  const tasks = await getShapeDbApiClient().ephemeral.listBatchTasks(nodeId as BatchTaskRecord['nodeId']);
   return tasks.map((task) => ({
     taskId: task.taskId,
     stage: task.taskType,

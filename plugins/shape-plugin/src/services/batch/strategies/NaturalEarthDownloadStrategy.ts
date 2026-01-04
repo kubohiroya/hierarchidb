@@ -9,7 +9,7 @@ import type {
   DownloadTaskPayloadBuildContext,
 } from './DownloadStageStrategy.js';
 import type { CountryMetadata, DownloadTask, DownloadTaskPayload } from '../../../common/types/index.js';
-import { getEphemeralShapeDB } from '../../database/EphemeralShapeDB.js';
+import { getShapeDbApiClient } from '../ShapeBatchApiClient.js';
 import { decodeFlatGeoJson, encodeFlatGeoJson } from './flatgeobuf.js';
 import { metadataLoader } from '../../metadata/MetadataLoader.js';
 import { buildDownloadTaskId, generateDownloadTaskPayloadsFromSelection } from '../../utils/utils.js';
@@ -62,7 +62,7 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
   async postprocessDownloadOutputs(
     context: DownloadStagePostprocessContext,
   ): Promise<DownloadStagePostprocessResult> {
-    const db = getEphemeralShapeDB();
+    const ephemeral = getShapeDbApiClient().ephemeral;
     const outputs: DownloadStageOutput[] = [];
     const selectedCountries = this.collectSelectedCountries(context.downloadTaskPayloads);
     const countryMetadata = await metadataLoader.getCountriesMetadata('naturalearth', selectedCountries);
@@ -70,7 +70,7 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
 
     for (const task of context.downloadTasks) {
       const inputBufferId = `${context.nodeId}-download-${task.index ?? 0}`;
-      const raw = await db.rawBuffers.get(inputBufferId);
+      const raw = await ephemeral.getRawBuffer(inputBufferId);
       if (!raw) continue;
 
       const geojson = await decodeFlatGeoJson(raw.data);
@@ -88,7 +88,7 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
         const data = await encodeFlatGeoJson(collection);
         const bounds = turfBbox(collection);
         const outputBufferId = this.buildOutputBufferId(context.nodeId, countryCode, adminLevel);
-        await db.rawBuffers.put({
+        await ephemeral.putRawBuffer({
           id: outputBufferId,
           nodeId: raw.nodeId,
           data,

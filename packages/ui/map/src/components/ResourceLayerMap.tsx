@@ -5,7 +5,8 @@
 
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { MapLibreMapInstance, MapLibreStyle } from '../types/maplibre-public.js';
+import { Snackbar } from '@mui/material';
+import type { MapLibreGeoJSONFeature, MapLibreMapInstance, MapLibreStyle } from '../types/maplibre-public.js';
 import type { FeatureCollection } from 'geojson';
 import { VectorTileLayer } from './VectorTileLayer.js';
 import {
@@ -53,6 +54,12 @@ export type ResourceLayerMapProps = BaseMapProps & {
   styleOverridesByType?: LayerStyleOverrides;
   highlightOverridesByType?: LayerStyleOverrides;
   controls?: MapLibreMapProps['controls'];
+  hoveredFeatures?: MapLibreGeoJSONFeature[];
+  snackbar?: {
+    position?: 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+    renderContent?: (features: MapLibreGeoJSONFeature[]) => React.ReactNode;
+    autoHideDuration?: number | null;
+  };
 };
 
 const LAYER_PAINT_KEYS: Record<MapLayerType, Set<string>> = {
@@ -100,6 +107,8 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
     styleOverrides,
     styleOverridesByType,
     highlightOverridesByType,
+    hoveredFeatures,
+    snackbar,
     mapStyleUrl,
     mapStyleObject,
     onLoad,
@@ -173,45 +182,77 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
     };
   }, [mapInstance, orderedGeoJsonLayers]);
 
-  return (
-    <MapLibreMap
-      {...baseMapProps}
-      {...mapStyleProps}
-      onLoad={handleMapLoad}
-    >
-      {mapInstance &&
-        orderedLayers.map((layer) => {
-          const layerConfig = { ...DEFAULT_MAP_CONFIG.vectorTileLayer, ...layer.layerConfig };
-          const layerType = layerConfig.layerType ?? 'fill';
-          const paintOverrides = pickStyleOverrides(layerType, styleOverrides, styleOverridesByType);
-          const highlightOverrides = highlightOverridesByType?.[layerType] ?? {};
-          const layerPaint = { ...(layerConfig.paint ?? {}), ...paintOverrides, ...highlightOverrides };
-          const layerId = layerConfig.layerId ?? `resource-layer-${layer.nodeId}`;
-          const sourceId = layerConfig.sourceId ?? `resource-source-${layer.nodeId}`;
+  const snackbarFeatures = hoveredFeatures ?? [];
+  const snackbarEnabled = Boolean(snackbar) && snackbarFeatures.length > 0;
+  const snackbarPosition = snackbar?.position ?? 'bottom';
+  const anchorOrigin = (() => {
+    switch (snackbarPosition) {
+      case 'top':
+        return { vertical: 'top', horizontal: 'center' } as const;
+      case 'top-left':
+        return { vertical: 'top', horizontal: 'left' } as const;
+      case 'top-right':
+        return { vertical: 'top', horizontal: 'right' } as const;
+      case 'bottom-left':
+        return { vertical: 'bottom', horizontal: 'left' } as const;
+      case 'bottom-right':
+        return { vertical: 'bottom', horizontal: 'right' } as const;
+      default:
+        return { vertical: 'bottom', horizontal: 'center' } as const;
+    }
+  })();
+  const snackbarContent =
+    snackbar?.renderContent?.(snackbarFeatures) ?? (snackbarFeatures.length ? `(${snackbarFeatures.length} features)` : '');
 
-          return (
-            <VectorTileLayer
-              key={layerId}
-              map={mapInstance}
-              dbName={layer.dbName}
-              nodeId={layer.nodeId}
-              tiles={layer.tiles}
-              tileDataProvider={layer.tileDataProvider}
-              layerId={layerId}
-              sourceId={sourceId}
-              promoteId={layer.promoteId}
-              featureState={layer.featureState}
-              paint={layerPaint}
-              layout={layerConfig.layout}
-              filter={layerConfig.filter}
-              minzoom={layerConfig.minzoom}
-              maxzoom={layerConfig.maxzoom}
-              layerType={layerType}
-              sourceLayer={layerConfig.sourceLayer}
-              visible={layerConfig.visible}
-            />
-          );
-        })}
-    </MapLibreMap>
+  return (
+    <>
+      <MapLibreMap
+        {...baseMapProps}
+        {...mapStyleProps}
+        onLoad={handleMapLoad}
+      >
+        {mapInstance &&
+          orderedLayers.map((layer) => {
+            const layerConfig = { ...DEFAULT_MAP_CONFIG.vectorTileLayer, ...layer.layerConfig };
+            const layerType = layerConfig.layerType ?? 'fill';
+            const paintOverrides = pickStyleOverrides(layerType, styleOverrides, styleOverridesByType);
+            const highlightOverrides = highlightOverridesByType?.[layerType] ?? {};
+            const layerPaint = { ...(layerConfig.paint ?? {}), ...paintOverrides, ...highlightOverrides };
+            const layerId = layerConfig.layerId ?? `resource-layer-${layer.nodeId}`;
+            const sourceId = layerConfig.sourceId ?? `resource-source-${layer.nodeId}`;
+
+            return (
+              <VectorTileLayer
+                key={layerId}
+                map={mapInstance}
+                dbName={layer.dbName}
+                nodeId={layer.nodeId}
+                tiles={layer.tiles}
+                tileDataProvider={layer.tileDataProvider}
+                layerId={layerId}
+                sourceId={sourceId}
+                promoteId={layer.promoteId}
+                featureState={layer.featureState}
+                paint={layerPaint}
+                layout={layerConfig.layout}
+                filter={layerConfig.filter}
+                minzoom={layerConfig.minzoom}
+                maxzoom={layerConfig.maxzoom}
+                layerType={layerType}
+                sourceLayer={layerConfig.sourceLayer}
+                visible={layerConfig.visible}
+              />
+            );
+          })}
+      </MapLibreMap>
+      {snackbar && (
+        <Snackbar
+          open={snackbarEnabled}
+          autoHideDuration={snackbar.autoHideDuration ?? null}
+          message={snackbarContent}
+          anchorOrigin={anchorOrigin}
+        />
+      )}
+    </>
   );
 };

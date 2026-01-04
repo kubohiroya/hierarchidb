@@ -20,6 +20,7 @@ import type {
   FeatureStateBundle,
   LayerStyleOverrides,
   MapStyle,
+  MapStylerSummary,
   PersistedZxyHandler,
 } from './types.js';
 import { resolveMapStyleSource, sortByLayerPath, sortByPath } from './styleUtils.js';
@@ -104,23 +105,27 @@ export type UseFolderLayersResult = {
   geoJsonLayers: ResourceGeoJsonLayer[];
   styleOverridesByType: LayerStyleOverrides;
   mapInfo: MapInfoSummary;
+  stylerSummaries: MapStylerSummary[];
 };
 
 export type UseFolderLayersParams = {
   nodeId?: string;
   searchZxy?: string;
   onPersistedZxy: PersistedZxyHandler;
+  stylerToggles?: Record<string, boolean>;
 };
 
 export const useFolderLayers = ({
   nodeId,
   searchZxy,
   onPersistedZxy,
+  stylerToggles,
 }: UseFolderLayersParams): UseFolderLayersResult => {
   const [basemapStyles, setBasemapStyles] = useState<BasemapStyleEntry[]>([]);
   const [vectorLayers, setVectorLayers] = useState<ResourceVectorLayer[]>([]);
   const [geoJsonLayers, setGeoJsonLayers] = useState<ResourceGeoJsonLayer[]>([]);
   const [styleOverridesByType, setStyleOverridesByType] = useState<LayerStyleOverrides>({});
+  const [stylerSummaries, setStylerSummaries] = useState<MapStylerSummary[]>([]);
   const [mapInfo, setMapInfo] = useState<MapInfoSummary>({});
 
   useEffect(() => {
@@ -190,6 +195,7 @@ export const useFolderLayers = ({
         const geoJsonEntries: ResourceGeoJsonLayer[] = [];
         const styleOverrides: LayerStyleOverrides = {};
         const featureStateByStyleType: Partial<Record<'choropleth' | 'points' | 'lines', FeatureStateBundle>> = {};
+        const stylerSummaries: MapStylerSummary[] = [];
 
         const stylerNodes = nodesForLayers.filter((node) => node.nodeType === 'styler');
         const sortedStylers = sortByPath(
@@ -200,7 +206,7 @@ export const useFolderLayers = ({
           }))
         );
 
-        sortedStylers.forEach(({ node }) => {
+        sortedStylers.forEach(({ nodeId: stylerNodeId, absolutePath, node }) => {
           const data = node.data as {
             generatedStyle?: { maplibreStyleSpec?: MapLibreStyle | Record<string, unknown> };
             mapping?: {
@@ -214,20 +220,23 @@ export const useFolderLayers = ({
               scalars?: Array<{ key: string; scalarValue: number }>;
             };
           } | null;
+          const enabled = stylerToggles?.[stylerNodeId] ?? true;
           const spec = isMapLibreStyle(data?.generatedStyle?.maplibreStyleSpec)
             ? data?.generatedStyle?.maplibreStyleSpec
             : undefined;
           const layers = spec?.layers ?? [];
+          const paintOverrides: LayerStyleOverrides = {};
           layers.forEach((layer) => {
             const type = layer.type as keyof LayerStyleOverrides | undefined;
             if (!type || !layer.paint) return;
-            styleOverrides[type] = { ...(styleOverrides[type] ?? {}), ...(layer.paint ?? {}) };
+            paintOverrides[type] = { ...(paintOverrides[type] ?? {}), ...(layer.paint ?? {}) };
+            if (enabled) {
+              styleOverrides[type] = { ...(styleOverrides[type] ?? {}), ...(layer.paint ?? {}) };
+            }
           });
 
           const styleType = data?.mapping?.styleType;
           const featureIdProperty = data?.mapping?.featureIdProperty;
-          if (!styleType || !featureIdProperty) return;
-
           const targetProperty = data?.mapping?.targetProperty;
           const targetMeta = targetProperty ? MAPLIBRE_PROPERTY_METADATA[targetProperty] : null;
           const valueType = data?.mapping?.valueType ?? targetMeta?.type ?? 'color';
@@ -248,6 +257,21 @@ export const useFolderLayers = ({
             });
           }
 
+          stylerSummaries.push({
+            nodeId: stylerNodeId,
+            absolutePath,
+            description: node.metadata?.description ? String(node.metadata.description) : undefined,
+            styleType,
+            featureIdProperty,
+            targetProperty: targetProperty ? String(targetProperty) : undefined,
+            valueType,
+            colorStops: data?.styleKeyValues?.colors ?? [],
+            scalarStops: data?.styleKeyValues?.scalars ?? [],
+            paintOverrides,
+            enabled,
+          });
+
+          if (!enabled || !styleType || !featureIdProperty) return;
           if (entries.length > 0) {
             featureStateByStyleType[styleType] = { featureIdProperty, entries };
           }
@@ -371,6 +395,7 @@ export const useFolderLayers = ({
           ]);
           setGeoJsonLayers(sortByLayerPath(geoJsonEntries));
           setStyleOverridesByType(styleOverrides);
+          setStylerSummaries(stylerSummaries);
         }
       } catch (error) {
         if (cancelled) return;
@@ -379,6 +404,7 @@ export const useFolderLayers = ({
         setVectorLayers([]);
         setGeoJsonLayers([]);
         setStyleOverridesByType({});
+        setStylerSummaries([]);
       }
     };
 
@@ -386,7 +412,7 @@ export const useFolderLayers = ({
     return () => {
       cancelled = true;
     };
-  }, [nodeId, onPersistedZxy, searchZxy]);
+  }, [nodeId, onPersistedZxy, searchZxy, stylerToggles]);
 
   return {
     basemapStyles,
@@ -394,5 +420,6 @@ export const useFolderLayers = ({
     geoJsonLayers,
     styleOverridesByType,
     mapInfo,
+    stylerSummaries,
   };
 };

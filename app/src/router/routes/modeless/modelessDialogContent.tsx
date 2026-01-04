@@ -7,6 +7,7 @@ import type { ResourceGeoJsonLayer, ResourceVectorLayer } from '@hierarchidb/ui-
 import {
   Box,
   CircularProgress,
+  Checkbox,
   Divider,
   List,
   ListItem,
@@ -17,11 +18,12 @@ import {
   Typography,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { GenericDataGrid, type GenericDataGridProps, type GridColumn } from '@hierarchidb/ui-grid';
 import type { NodeId } from '@hierarchidb/common-types';
-import { shapeDB, type FeatureRecord } from '@hierarchidb/shape-store';
+import type { ShapeFeatureRecord } from '@hierarchidb/plugin-service-api';
+import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { RouteDB, type RouteLineString } from '@hierarchidb/route-store';
 import { getLocationDB } from '@hierarchidb/location-store';
 import { TabularDatabaseManager, TabularQueryService } from '@hierarchidb/tabular-store';
@@ -33,10 +35,11 @@ import {
   mapSearchMatchesAtom,
   mapSelectedMatchAtom,
   mapViewportFeatureIdsAtom,
-  type MapHighlightEntry,
+  type MapFeatureIdSet,
   type MapLayerInfo,
   type MapNodeType,
 } from '../../../state/mapSearch.atoms.js';
+import type { MapStylerSummary } from '../map/types.js';
 
 export type MapInfoSummary = {
   name?: string | null;
@@ -87,6 +90,15 @@ const buildColumns = (names: string[]): GridColumn[] =>
     sortable: true,
   }));
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const resolveGeometryType = (geometry: unknown): string => {
+  if (!isRecord(geometry)) return '';
+  const type = geometry.type;
+  return typeof type === 'string' ? type : '';
+};
+
 const extractColumnNames = (columns: Array<unknown> | undefined | null): string[] => {
   if (!Array.isArray(columns)) return [];
   return columns
@@ -120,42 +132,41 @@ const useShapeTableData = (
     loading: false,
   });
 
+  const bridgeRef = useRef(getWorkerBridge());
+
   useEffect(() => {
     if (!nodeId) return;
     let cancelled = false;
     const load = async () => {
       setState((prev) => ({ ...prev, loading: true, error: undefined }));
       try {
-        const collection = shapeDB.features.where('nodeId').equals(nodeId);
+        await bridgeRef.current.initialize();
+        const query = await bridgeRef.current.getShapeQueryAPI();
+        const collection = await query.listFeatures(nodeId);
         const filterByViewport = visibleIds !== undefined && visibleIds !== null;
         let totalRows = 0;
-        let items: FeatureRecord[] = [];
+        let items: ShapeFeatureRecord[] = [];
         if (filterByViewport) {
           if (visibleIds.size === 0) {
             totalRows = 0;
             items = [];
           } else {
-            const filtered = await collection
-              .and((feature) => visibleIds.has(feature.id))
-              .toArray();
+            const filtered = collection.filter((feature) => visibleIds.has(feature.id));
             totalRows = filtered.length;
             items = filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
           }
         } else {
-          totalRows = await collection.count();
-          items = await collection
-            .offset(page * rowsPerPage)
-            .limit(rowsPerPage)
-            .toArray();
+          totalRows = collection.length;
+          items = collection.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
         }
-        const rows = items.map((feature: FeatureRecord) => ({
+        const rows = items.map((feature: ShapeFeatureRecord) => ({
           id: feature.id,
           name: feature.name ?? '',
           countryCode: feature.countryCode ?? '',
           adminLevel: feature.adminLevel ?? '',
           area: feature.area ?? '',
           population: feature.population ?? '',
-          geometryType: feature.geometry?.type ?? '',
+          geometryType: resolveGeometryType(feature.geometry),
         }));
         if (!cancelled) {
           setState((prev) => ({
@@ -433,6 +444,108 @@ export const MapLayerContent: React.FC<{
   </Stack>
 );
 
+type StylerRow = {
+  id: string;
+  enabled: boolean;
+  path: string;
+  description: string;
+  dataSource: string;
+  filter: string;
+  featureIdProperty: string;
+  valueType: string;
+  colorChart: string;
+  scalarChart: string;
+};
+
+const formatStops = (items: Array<{ key: string; value: string }>, max = 4) => {
+  if (items.length === 0) return '—';
+  const trimmed = items.slice(0, max).map((item) => `${item.key}:${item.value}`);
+  return items.length > max ? `${trimmed.join(', ')} ...` : trimmed.join(', ');
+};
+
+const styleTypeToDataSource = (styleType?: MapStylerSummary['styleType']) => {
+  if (styleType === 'points') return 'location';
+  if (styleType === 'lines') return 'route';
+  if (styleType === 'choropleth') return 'shape';
+  return '—';
+};
+
+export const MapStylerContent: React.FC<{
+  stylerSummaries: MapStylerSummary[];
+  stylerToggles: Record<string, boolean>;
+  onToggleStyler: (stylerId: string, enabled: boolean) => void;
+}> = ({ stylerSummaries, stylerToggles, onToggleStyler }) => {
+  const rows: StylerRow[] = stylerSummaries.map((entry) => {
+    const enabled = stylerToggles[entry.nodeId] ?? entry.enabled;
+    const colorChart = formatStops(
+      (entry.colorStops ?? []).map((item) => ({ key: item.key, value: item.color })),
+    );
+    const scalarChart = formatStops(
+      (entry.scalarStops ?? []).map((item) => ({ key: item.key, value: String(item.scalarValue) })),
+    );
+    return {
+      id: entry.nodeId,
+      enabled,
+      path: entry.absolutePath ?? entry.nodeId,
+      description: entry.description ?? '—',
+      dataSource: styleTypeToDataSource(entry.styleType),
+      filter: entry.targetProperty ?? '—',
+      featureIdProperty: entry.featureIdProperty ?? '—',
+      valueType: entry.valueType ?? '—',
+      colorChart,
+      scalarChart,
+    };
+  });
+
+  const columns: GridColumn<StylerRow>[] = [
+    {
+      id: 'enabled',
+      label: 'On',
+      width: 70,
+      align: 'center',
+      sortable: false,
+      format: (_value, row) => (
+        <Checkbox
+          checked={row.enabled}
+          size="small"
+          inputProps={{ 'aria-label': `Toggle style ${row.id}` }}
+        />
+      ),
+    },
+    { id: 'path', label: 'Path', width: 220, sortable: true },
+    { id: 'description', label: 'Description', width: 200, sortable: false },
+    { id: 'dataSource', label: 'Data Source', width: 140, sortable: false },
+    { id: 'filter', label: 'Filter', width: 160, sortable: false },
+    { id: 'featureIdProperty', label: 'Feature ID', width: 160, sortable: false },
+    { id: 'valueType', label: 'Value Type', width: 120, sortable: false },
+    { id: 'colorChart', label: 'Color Chart', width: 220, sortable: false },
+    { id: 'scalarChart', label: 'Scalar Chart', width: 220, sortable: false },
+  ];
+
+  if (rows.length === 0) {
+    return (
+      <Box p={2}>
+        <Typography variant="body2" color="text.secondary">No styler entries.</Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <GenericDataGrid
+      columns={columns}
+      rows={rows}
+      maxHeight={360}
+      enableVirtualization
+      onCellClick={({ row, columnId }) => {
+        if (columnId !== 'enabled') return;
+        const next = !row.enabled;
+        onToggleStyler(row.id, next);
+      }}
+      getRowId={(row) => row.id}
+    />
+  );
+};
+
 const DataGridPanel: React.FC<{
   state: DataGridState;
   pagination?: DataGridPagination;
@@ -509,10 +622,10 @@ export const MapGeneratedDataContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }
   const viewportFeatureIds = useAtomValue(mapViewportFeatureIdsAtom);
   const mapLayerInfo = useAtomValue(mapLayerInfoAtom);
   const searchMatches = useAtomValue(mapSearchMatchesAtom);
-  const hoverMatch = useAtomValue(mapHoverMatchAtom);
-  const selectedMatch = useAtomValue(mapSelectedMatchAtom);
-  const setHoverMatch = useSetAtom(mapHoverMatchAtom);
-  const setSelectedMatch = useSetAtom(mapSelectedMatchAtom);
+  const hoverMatchIds = useAtomValue(mapHoverMatchAtom);
+  const selectedMatchIds = useAtomValue(mapSelectedMatchAtom);
+  const setHoverMatchIds = useSetAtom(mapHoverMatchAtom);
+  const setSelectedMatchIds = useSetAtom(mapSelectedMatchAtom);
 
   const layerInfoByType = useMemo(() => {
     const infoByType: Partial<Record<MapNodeType, MapLayerInfo>> = {};
@@ -530,7 +643,8 @@ export const MapGeneratedDataContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }
       if (!layerInfoByType[nodeType]) return null;
       const entry = viewportFeatureIds[nodeKey];
       if (!entry) return new Set<string | number>();
-      return new Set(entry[nodeType] ?? []);
+      const ids = entry[nodeType];
+      return ids ? new Set(ids) : new Set<string | number>();
     },
     [layerInfoByType, nodeKey, viewportFeatureIds],
   );
@@ -539,49 +653,77 @@ export const MapGeneratedDataContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }
   const locationVisibleIds = useMemo(() => getViewportIds('location'), [getViewportIds]);
   const routeVisibleIds = useMemo(() => getViewportIds('route'), [getViewportIds]);
 
-  const buildEntryForRow = useCallback(
-    (nodeType: MapNodeType, rowId: string | number): MapHighlightEntry | null => {
-      const info = layerInfoByType[nodeType];
-      if (!info) return null;
-      return {
-        source: info.sourceId,
-        id: rowId,
-        nodeId: info.nodeId,
-        nodeType: info.nodeType,
-        layerId: info.layerId,
-      };
-    },
-    [layerInfoByType],
-  );
-
   const getMatchedRows = useCallback(
     (nodeType: MapNodeType) => {
-      const matches = searchMatches.filter(
-        (entry) => entry.nodeId === nodeKey && entry.nodeType === nodeType,
-      );
-      return new Set(matches.map((entry) => entry.id));
+      const entry = searchMatches[nodeKey];
+      if (!entry) return new Set<string | number>();
+      const ids = entry[nodeType];
+      return ids ? new Set(ids) : new Set<string | number>();
     },
     [nodeKey, searchMatches],
   );
 
   const getHoveredRows = useCallback(
     (nodeType: MapNodeType) => {
-      if (hoverMatch?.nodeId === nodeKey && hoverMatch?.nodeType === nodeType) {
-        return new Set([hoverMatch.id]);
-      }
-      return new Set<string | number>();
+      const entry = hoverMatchIds[nodeKey];
+      if (!entry) return new Set<string | number>();
+      const ids = entry[nodeType];
+      return ids ? new Set(ids) : new Set<string | number>();
     },
-    [hoverMatch, nodeKey],
+    [hoverMatchIds, nodeKey],
   );
 
   const getSelectedRows = useCallback(
     (nodeType: MapNodeType) => {
-      if (selectedMatch?.nodeId === nodeKey && selectedMatch?.nodeType === nodeType) {
-        return new Set([selectedMatch.id]);
-      }
-      return new Set<string | number>();
+      const entry = selectedMatchIds[nodeKey];
+      if (!entry) return new Set<string | number>();
+      const ids = entry[nodeType];
+      return ids ? new Set(ids) : new Set<string | number>();
     },
-    [nodeKey, selectedMatch],
+    [nodeKey, selectedMatchIds],
+  );
+
+  const updateIdSet = useCallback(
+    (
+      prev: MapFeatureIdSet,
+      mode: 'replace' | 'toggle' | 'clear',
+      nodeType: MapNodeType,
+      rowId?: string | number,
+    ): MapFeatureIdSet => {
+      if (mode === 'clear' && !rowId) return {};
+      if (!rowId) return prev;
+      const next: MapFeatureIdSet = {};
+      Object.entries(prev).forEach(([nodeId, byType]) => {
+        next[nodeId] = {};
+        if (!byType) return;
+        Object.entries(byType).forEach(([type, ids]) => {
+          if (!ids) return;
+          next[nodeId]![type as MapNodeType] = new Set(ids);
+        });
+      });
+      if (!next[nodeKey]) next[nodeKey] = {};
+      if (mode === 'replace') {
+        next[nodeKey] = { [nodeType]: new Set([rowId]) };
+        return next;
+      }
+      if (mode === 'clear') {
+        const current = next[nodeKey]?.[nodeType];
+        if (current) {
+          current.delete(rowId);
+          next[nodeKey]![nodeType] = current;
+        }
+        return next;
+      }
+      const current = next[nodeKey]![nodeType] ?? new Set<string | number>();
+      if (current.has(rowId)) {
+        current.delete(rowId);
+      } else {
+        current.add(rowId);
+      }
+      next[nodeKey]![nodeType] = current;
+      return next;
+    },
+    [nodeKey],
   );
 
   const rowSx = useCallback<DataGridRowSx>(
@@ -629,22 +771,13 @@ export const MapGeneratedDataContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }
           selectedRows={getSelectedRows('shape')}
           hoveredRows={getHoveredRows('shape')}
           onRowHover={(_, rowId) => {
-            const entry = buildEntryForRow('shape', rowId);
-            if (entry) setHoverMatch(entry);
+            setHoverMatchIds((prev) => updateIdSet(prev, 'replace', 'shape', rowId));
           }}
           onRowLeave={(_, rowId) => {
-            if (hoverMatch?.nodeId === nodeKey && hoverMatch?.nodeType === 'shape' && hoverMatch.id === rowId) {
-              setHoverMatch(null);
-            }
+            setHoverMatchIds((prev) => updateIdSet(prev, 'clear', 'shape', rowId));
           }}
           onRowClick={(_, rowId) => {
-            const entry = buildEntryForRow('shape', rowId);
-            if (!entry) return;
-            if (selectedMatch?.nodeId === nodeKey && selectedMatch?.nodeType === 'shape' && selectedMatch.id === rowId) {
-              setSelectedMatch(null);
-              return;
-            }
-            setSelectedMatch(entry);
+            setSelectedMatchIds((prev) => updateIdSet(prev, 'toggle', 'shape', rowId));
           }}
           rowSx={rowSx}
           pagination={{
@@ -667,22 +800,13 @@ export const MapGeneratedDataContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }
           selectedRows={getSelectedRows('location')}
           hoveredRows={getHoveredRows('location')}
           onRowHover={(_, rowId) => {
-            const entry = buildEntryForRow('location', rowId);
-            if (entry) setHoverMatch(entry);
+            setHoverMatchIds((prev) => updateIdSet(prev, 'replace', 'location', rowId));
           }}
           onRowLeave={(_, rowId) => {
-            if (hoverMatch?.nodeId === nodeKey && hoverMatch?.nodeType === 'location' && hoverMatch.id === rowId) {
-              setHoverMatch(null);
-            }
+            setHoverMatchIds((prev) => updateIdSet(prev, 'clear', 'location', rowId));
           }}
           onRowClick={(_, rowId) => {
-            const entry = buildEntryForRow('location', rowId);
-            if (!entry) return;
-            if (selectedMatch?.nodeId === nodeKey && selectedMatch?.nodeType === 'location' && selectedMatch.id === rowId) {
-              setSelectedMatch(null);
-              return;
-            }
-            setSelectedMatch(entry);
+            setSelectedMatchIds((prev) => updateIdSet(prev, 'toggle', 'location', rowId));
           }}
           rowSx={rowSx}
         />
@@ -694,22 +818,13 @@ export const MapGeneratedDataContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }
           selectedRows={getSelectedRows('route')}
           hoveredRows={getHoveredRows('route')}
           onRowHover={(_, rowId) => {
-            const entry = buildEntryForRow('route', rowId);
-            if (entry) setHoverMatch(entry);
+            setHoverMatchIds((prev) => updateIdSet(prev, 'replace', 'route', rowId));
           }}
           onRowLeave={(_, rowId) => {
-            if (hoverMatch?.nodeId === nodeKey && hoverMatch?.nodeType === 'route' && hoverMatch.id === rowId) {
-              setHoverMatch(null);
-            }
+            setHoverMatchIds((prev) => updateIdSet(prev, 'clear', 'route', rowId));
           }}
           onRowClick={(_, rowId) => {
-            const entry = buildEntryForRow('route', rowId);
-            if (!entry) return;
-            if (selectedMatch?.nodeId === nodeKey && selectedMatch?.nodeType === 'route' && selectedMatch.id === rowId) {
-              setSelectedMatch(null);
-              return;
-            }
-            setSelectedMatch(entry);
+            setSelectedMatchIds((prev) => updateIdSet(prev, 'toggle', 'route', rowId));
           }}
           rowSx={rowSx}
           pagination={{

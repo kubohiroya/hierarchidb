@@ -2,8 +2,8 @@ import type { ProgressInfo } from '../../../common/types/index.js';
 import type { VectorTileTask } from '../../../common/types/index.js';
 import type { VectorTileStageAdapter } from './VectorTileStageAdapter.js';
 import type { StageControls } from './StageControls.js';
-import { shapeDB, type VectorTileTaskInputData, type VectorTileTaskOutputData } from '../../database/ShapeDB.js';
-import { getEphemeralShapeDB } from '../../database/EphemeralShapeDB.js';
+import { type VectorTileTaskInputData, type VectorTileTaskOutputData } from '../../database/ShapeDB.js';
+import { getShapeDbApiClient } from '../ShapeBatchApiClient.js';
 import { geojson } from 'flatgeobuf';
 import type { Feature, FeatureCollection } from 'geojson';
 import { BatchService } from '@hierarchidb/batch';
@@ -184,8 +184,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
   private async loadExtract2Features(nodeId: NodeId): Promise<Array<{ feature: Feature; bbox: [number, number, number, number] }>> {
     const cached = this.featureCache.get(nodeId);
     if (cached) return cached;
-    const db = getEphemeralShapeDB();
-    const buffers = await db.extractedBuffers.where({ nodeId, stage: 'extract2' }).toArray();
+    const buffers = await getShapeDbApiClient().ephemeral.listExtractedBuffers(nodeId, 'extract2');
     const result: Array<{ feature: Feature; bbox: [number, number, number, number] }> = [];
     let totalFeatures = 0;
     let missingBbox = 0;
@@ -257,18 +256,13 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
   }
 
   private async listBufferIdsForTile(nodeId: NodeId, tileId: string): Promise<string[]> {
-    const db = getEphemeralShapeDB();
-    const rows = await db.tileIdToBufferRelations
-      .where('[nodeId+tileId]')
-      .equals([nodeId, tileId])
-      .toArray();
+    const rows = await getShapeDbApiClient().ephemeral.listTileIdRelationsByTileId(nodeId, tileId);
     if (!rows.length) return [];
     return Array.from(new Set(rows.map((row) => row.bufferId)));
   }
 
   private async loadExtract2Collection(bufferId: string): Promise<FeatureCollection | null> {
-    const db = getEphemeralShapeDB();
-    const input = await db.extractedBuffers.get(bufferId);
+    const input = await getShapeDbApiClient().ephemeral.getExtractedBuffer(bufferId);
     if (!input) return null;
     const decoded = await this.decodeGeoJson(input.data);
     if (decoded && typeof decoded === 'object' && (decoded as FeatureCollection).type === 'FeatureCollection') {
@@ -292,9 +286,9 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
   }
 
   private async buildGeoJsonBuffer(inputBufferId: string): Promise<ArrayBuffer> {
-    const db = getEphemeralShapeDB();
-    const input = await db.extractedBuffers.get(inputBufferId)
-      ?? await db.rawBuffers.get(inputBufferId);
+    const ephemeral = getShapeDbApiClient().ephemeral;
+    const input = await ephemeral.getExtractedBuffer(inputBufferId)
+      ?? await ephemeral.getRawBuffer(inputBufferId);
     if (!input) {
       throw new Error(`Vector tile input buffer not found: ${inputBufferId}`);
     }
@@ -304,9 +298,9 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
   }
 
   private async buildFlatGeobufBuffer(inputBufferId: string): Promise<ArrayBuffer> {
-    const db = getEphemeralShapeDB();
-    const input = await db.extractedBuffers.get(inputBufferId)
-      ?? await db.rawBuffers.get(inputBufferId);
+    const ephemeral = getShapeDbApiClient().ephemeral;
+    const input = await ephemeral.getExtractedBuffer(inputBufferId)
+      ?? await ephemeral.getRawBuffer(inputBufferId);
     if (!input) {
       throw new Error(`Vector tile input buffer not found: ${inputBufferId}`);
     }
@@ -335,9 +329,9 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
   }
 
   private async resolveInputByteLength(inputBufferId: string): Promise<number | null> {
-    const db = getEphemeralShapeDB();
-    const input = await db.extractedBuffers.get(inputBufferId)
-      ?? await db.rawBuffers.get(inputBufferId);
+    const ephemeral = getShapeDbApiClient().ephemeral;
+    const input = await ephemeral.getExtractedBuffer(inputBufferId)
+      ?? await ephemeral.getRawBuffer(inputBufferId);
     if (!input) return null;
     return input.data.byteLength;
   }
@@ -375,11 +369,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     const inputByTaskId = new Map<string, VectorTileTaskInputData>();
     const outputByTaskId = new Map<string, VectorTileTaskOutputData>();
     if (resolvedNodeId) {
-      const rows = await shapeDB.batchTasks
-        .where('nodeId')
-        .equals(resolvedNodeId)
-        .and((row) => row.taskType === 'vectortile')
-        .toArray();
+      const rows = await getShapeDbApiClient().ephemeral.listBatchTasksByType(resolvedNodeId as NodeId, 'vectortile');
       rows.forEach((row) => {
         inputByTaskId.set(row.taskId, (row.inputData ?? {}) as VectorTileTaskInputData);
         outputByTaskId.set(row.taskId, (row.outputData ?? {}) as VectorTileTaskOutputData);
@@ -472,7 +462,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                     if (shouldRegress) {
                       updates.outputData = { ...taskOutput, retry: nextRetry };
                     }
-                    await shapeDB.updateBatchTask(task.taskId, updates);
+                    await getShapeDbApiClient().ephemeral.updateBatchTask(task.taskId, updates);
                   }
                   onProgress({
                     total: tasks.length,
@@ -577,7 +567,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                       tileCount: 0,
                       totalBytes: 0,
                     };
-                    await shapeDB.updateBatchTask(task.taskId, {
+                    await getShapeDbApiClient().ephemeral.updateBatchTask(task.taskId, {
                       status: 'completed',
                       completedAt: Date.now(),
                       progress: 100,
@@ -612,7 +602,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                 for (const task of inputTasks) {
                   failed += 1;
                   if (task.taskId) {
-                    await shapeDB.updateBatchTask(task.taskId, {
+                    await getShapeDbApiClient().ephemeral.updateBatchTask(task.taskId, {
                       status: 'failed',
                       completedAt: Date.now(),
                       progress: 100,
@@ -645,7 +635,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                 for (const task of inputTasks) {
                   failed += 1;
                   if (task.taskId) {
-                    await shapeDB.updateBatchTask(task.taskId, {
+                    await getShapeDbApiClient().ephemeral.updateBatchTask(task.taskId, {
                       status: 'failed',
                       completedAt: Date.now(),
                       progress: 100,
@@ -684,7 +674,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
               lastProgressAt = now;
               try {
                 await Promise.all(taskIds.map((taskId) => (
-                  shapeDB.updateBatchTask(taskId, {
+                  getShapeDbApiClient().ephemeral.updateBatchTask(taskId, {
                     status: 'running',
                     progress: percent,
                   })
@@ -700,7 +690,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
               : undefined;
             await Promise.all(inputTasks.map(async (task) => {
               if (!task.taskId) return;
-              await shapeDB.updateBatchTask(task.taskId, {
+              await getShapeDbApiClient().ephemeral.updateBatchTask(task.taskId, {
                 status: 'running',
                 startedAt: Date.now(),
                 progress: 0,
@@ -787,7 +777,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                   tileCount: tileFeatureCount != null ? 1 : undefined,
                   totalBytes: tileSizeBytes ?? undefined,
                 };
-                await shapeDB.updateBatchTask(task.taskId, {
+                await getShapeDbApiClient().ephemeral.updateBatchTask(task.taskId, {
                   status: 'completed',
                   completedAt: Date.now(),
                   progress: 100,
@@ -830,7 +820,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
             for (const task of inputTasks) {
               failed++;
               if (task.taskId) {
-                await shapeDB.updateBatchTask(task.taskId, {
+                await getShapeDbApiClient().ephemeral.updateBatchTask(task.taskId, {
                   status: 'failed',
                   completedAt: Date.now(),
                   progress: 100,

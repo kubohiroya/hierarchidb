@@ -4,7 +4,7 @@ import { InfoOutlined as InfoOutlinedIcon } from '@mui/icons-material';
 import { Box, IconButton, Stack, Tooltip, Typography } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import type React from 'react';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import type { DialogActionInFlight } from '../types.js';
 import { PluginDialogStepper } from './PluginDialogStepper.js';
 import {
@@ -61,10 +61,20 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
     return undefined;
   }, [subtitle, ctx.stepComponents.length]);
 
+  const handleHeaderDoubleClick = useCallback(
+    (event: React.MouseEvent) => {
+      event.stopPropagation();
+      if (ctx.displayMode === 'full-screen' || !ctx.onDisplayModeChange) return;
+      toggleMaximize();
+    },
+    [ctx.displayMode, ctx.onDisplayModeChange, toggleMaximize]
+  );
+
   return (
     <Box
       data-dialog-drag-handle="true"
       onPointerDown={dragHandlePointerDown}
+      onDoubleClick={handleHeaderDoubleClick}
       sx={(theme) => ({
         display: 'flex',
         alignItems: 'flex-start',
@@ -122,6 +132,7 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
                   sx={{ p: 0.25 }}
                   aria-label={pluginDescription}
                   onPointerDown={stopPointerPropagation}
+                  onDoubleClick={stopPointerPropagation}
                 >
                   <InfoOutlinedIcon fontSize="small" />
                 </IconButton>
@@ -142,6 +153,7 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
               padding: 0,
             }}
             onPointerDown={stopPointerPropagation}
+            onDoubleClick={stopPointerPropagation}
             onMouseEnter={stopPointerPropagation}
             onMouseLeave={stopPointerPropagation}
             onMouseMove={stopPointerPropagation}
@@ -166,7 +178,7 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
       </Stack>
 
       {hideFrameControls ? null : (
-        <Stack direction="row" spacing={1.5} alignItems="center">
+        <Stack direction="row" spacing={1.5} alignItems="center" onDoubleClick={stopPointerPropagation}>
           <Stack direction="row" spacing={0.5} alignItems="center">
             {canMinimize ? (
               <PluginDialogMinimizeButton

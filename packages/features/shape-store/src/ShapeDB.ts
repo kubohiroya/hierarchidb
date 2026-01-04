@@ -406,7 +406,6 @@ export class ShapeDB extends VectorTileDbBase {
 
   // Batch processing tables
   batchSessions!: Table<BatchSessionRecord, NodeId>;
-  batchTasks!: Table<BatchTaskRecord, string>;
 
   // Feature storage tables
   features!: Table<FeatureRecord, number>;
@@ -423,8 +422,6 @@ export class ShapeDB extends VectorTileDbBase {
 
       // Batch processing - indexed for session and task management
       batchSessions: '&sessionId, nodeId, status, startedAt, updatedAt',
-      batchTasks:
-        '&taskId, sessionId, [sessionId+status], [sessionId+type], [sessionId+index], status, type, startedAt',
 
       // Features - spatial and attribute indexing
       features:
@@ -441,8 +438,6 @@ export class ShapeDB extends VectorTileDbBase {
       .stores({
         // Batch processing - indexed for node-based session and task management
         batchSessions: '&nodeId, status, startedAt, updatedAt',
-        batchTasks:
-          '&taskId, nodeId, [nodeId+status], [nodeId+type], [nodeId+index], status, type, startedAt',
 
         // Features - spatial and attribute indexing
         features:
@@ -456,13 +451,10 @@ export class ShapeDB extends VectorTileDbBase {
       })
       .upgrade(async () => {
         await this.batchSessions.clear();
-        await this.batchTasks.clear();
       });
 
     this.version(3).stores({
       batchSessions: '&nodeId, status, startedAt, updatedAt',
-      batchTasks:
-        '&taskId, nodeId, [nodeId+status], [nodeId+type], [nodeId+index], status, type, startedAt',
       features:
         '++id, nodeId, [nodeId+adminLevel], [nodeId+countryCode], mortonCode, adminLevel, countryCode, name, createdAt',
       featureIndices:
@@ -473,8 +465,6 @@ export class ShapeDB extends VectorTileDbBase {
 
     this.version(4).stores(this.mergeVectorTileStores({
       batchSessions: '&nodeId, status, startedAt, updatedAt',
-      batchTasks:
-        '&taskId, nodeId, [nodeId+status], [nodeId+type], [nodeId+index], status, type, startedAt',
       features:
         '++id, nodeId, [nodeId+adminLevel], [nodeId+countryCode], mortonCode, adminLevel, countryCode, name, createdAt',
       featureIndices:
@@ -514,38 +504,6 @@ export class ShapeDB extends VectorTileDbBase {
   }
 
   // Batch Task Management
-  async createBatchTask(
-    task: Omit<BatchTaskRecord, 'taskId'> & { taskId?: string },
-  ): Promise<BatchTaskRecord> {
-    const taskId = task.taskId ?? crypto.randomUUID();
-    const createdAt = task.createdAt ?? Date.now();
-    const updatedAt = task.updatedAt ?? createdAt;
-    const fullTask: BatchTaskRecord = {
-      ...task,
-      taskId,
-      createdAt,
-      updatedAt,
-    };
-
-    await this.batchTasks.put(fullTask);
-    return fullTask;
-  }
-
-  async updateBatchTask(taskId: string, updates: Partial<BatchTaskRecord>): Promise<void> {
-    await this.batchTasks.update(taskId, {
-      ...updates,
-      updatedAt: updates.updatedAt ?? Date.now(),
-    });
-  }
-
-  async getBatchTasks(nodeId: NodeId): Promise<BatchTaskRecord[]> {
-    return await this.batchTasks.where('nodeId').equals(nodeId).sortBy('index');
-  }
-
-  async getTasksByStatus(nodeId: NodeId, status: TaskStatus): Promise<BatchTaskRecord[]> {
-    return await this.batchTasks.where('[nodeId+status]').equals([nodeId, status]).toArray();
-  }
-
   // Feature Management
   async storeFeature(feature: Omit<FeatureRecord, 'id'>): Promise<number> {
     return await this.features.add({
@@ -649,10 +607,9 @@ export class ShapeDB extends VectorTileDbBase {
   }
 
   async getStorageUsage(): Promise<{ totalSize: number; breakdown: Record<string, number> }> {
-    const [sessionsSize, tasksSize, featuresSize, tilesSize] =
+    const [sessionsSize, featuresSize, tilesSize] =
       await Promise.all([
         this.batchSessions.toArray().then((items: BatchSessionRecord[]) => items.length * 2000),
-        this.batchTasks.toArray().then((items: BatchTaskRecord[]) => items.length * 1000),
         this.features
           .toArray()
           .then((items: FeatureRecord[]) =>
@@ -666,10 +623,9 @@ export class ShapeDB extends VectorTileDbBase {
       ]);
 
     return {
-      totalSize: sessionsSize + tasksSize + featuresSize + tilesSize,
+      totalSize: sessionsSize + featuresSize + tilesSize,
       breakdown: {
         sessions: sessionsSize,
-        tasks: tasksSize,
         features: featuresSize,
         tiles: tilesSize,
       },

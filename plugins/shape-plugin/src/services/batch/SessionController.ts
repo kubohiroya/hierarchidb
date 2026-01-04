@@ -51,7 +51,7 @@ import type { StageControls, StagePauseAbortControls } from './session/stages/co
 import type { OriginMetadata, WorkerPoolStatistics, GeometryStatsSummary } from './session/SessionTypes.js';
 import { buildProcessingTaskId } from './session/ids/processingIds.js';
 import { indexOriginMetadata as indexOriginMetadataInSession } from './session/metadata/originMetadata.js';
-import { getEphemeralShapeDB } from '../database/EphemeralShapeDB.js';
+import { getShapeDbApiClient } from './ShapeBatchApiClient.js';
 import { geojson as geojsonApi } from 'flatgeobuf';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import { bbox as turfBbox, area as turfArea } from '@turf/turf';
@@ -408,7 +408,7 @@ export class SessionController {
       : cleanupConfig.deleteExtract2CacheOnComplete === true;
     if (!shouldCleanup) return;
     console.log(`[Session ${this.nodeId}] Cleaning ${stage} cache (${reason})`);
-    await getEphemeralShapeDB().clearStage(this.nodeId, stage);
+    await getShapeDbApiClient().ephemeral.clearStage(this.nodeId, stage);
     console.log(`[Session ${this.nodeId}] ${stage} cache cleared`);
   }
 
@@ -519,10 +519,7 @@ export class SessionController {
       config: this.config,
       tileInputSource: {
         listExtract2Buffers: () => this.artifactStore.listExtractedBuffers('extract2'),
-        listTileIdRelations: () => getEphemeralShapeDB().tileIdToBufferRelations
-          .where('nodeId')
-          .equals(this.nodeId)
-          .toArray(),
+        listTileIdRelations: () => getShapeDbApiClient().ephemeral.listTileIdRelations(this.nodeId),
       },
     });
     this.vectorTileTasks = tasks;

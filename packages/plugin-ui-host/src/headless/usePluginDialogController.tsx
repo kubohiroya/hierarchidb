@@ -634,6 +634,8 @@ export function usePluginDialogController(
         mode: patch.mode ?? prevWindow?.mode ?? displayMode,
         position: patch.position ?? prevWindow?.position ?? dialogPosition,
         size: patch.size ?? prevWindow?.size ?? dialogSize,
+        restorePosition: patch.restorePosition ?? prevWindow?.restorePosition ?? null,
+        restoreSize: patch.restoreSize ?? prevWindow?.restoreSize ?? null,
       };
       updateDialogUIState({ dialogWindow: next });
     },
@@ -927,15 +929,24 @@ export function usePluginDialogController(
       onSizeChange: handleSizeChangeWithPersist as (next?: DialogSize) => void,
       displayMode,
       onDisplayModeChange: (mode: DialogDisplayMode) => {
-        void transitionDisplayMode(mode).then(() => {
-          persistDialogWindow({ mode });
+        const currentWindow = dialogUIStateRef.current?.dialogWindow ?? null;
+        const shouldCaptureRestore =
+          displayMode === 'normal' && (mode === 'maximize' || mode === 'full-screen');
+        const restorePosition = shouldCaptureRestore
+          ? dialogPosition
+          : currentWindow?.restorePosition ?? null;
+        const restoreSize = shouldCaptureRestore
+          ? dialogSize
+          : currentWindow?.restoreSize ?? null;
+        void transitionDisplayMode(mode, { restorePosition, restoreSize }).then(() => {
+          persistDialogWindow({ mode, restorePosition, restoreSize });
         });
       },
       HeaderComponent,
       ContentComponent,
       FooterComponent,
     }),
-    [open, isDialogReady, safeStepDescriptors, stableStepData, handleStepDataChange, activeStepIndex, handleNavigation, stableEnabledStepIndices, stableValidatedStepIndices, stableCommittableStepIndices, invalidMessageMap, handleCloseRequest, handleRequestCommit, dialogDirty, dialogPosition, handlePositionChangeWithPersist, dialogSize, handleSizeChangeWithPersist, displayMode, HeaderComponent, ContentComponent, FooterComponent, transitionDisplayMode, persistDialogWindow],
+    [open, isDialogReady, safeStepDescriptors, stableStepData, handleStepDataChange, activeStepIndex, handleNavigation, stableEnabledStepIndices, stableValidatedStepIndices, stableCommittableStepIndices, invalidMessageMap, handleCloseRequest, handleRequestCommit, dialogDirty, dialogPosition, handlePositionChangeWithPersist, dialogSize, handleSizeChangeWithPersist, displayMode, HeaderComponent, ContentComponent, FooterComponent, transitionDisplayMode, persistDialogWindow, dialogUIStateRef],
   );
 
   return {

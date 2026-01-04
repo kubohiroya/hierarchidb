@@ -12,9 +12,10 @@
 //import { VectorTile } from '@mapbox/vector-tile';
 //import Protobuf from 'pbf';
 import * as turf from '@turf/turf';
-import { shapeDB, type VectorTileRecord, type FeatureRecord } from '../database/ShapeDB.js';
+import { getShapeDbApiClient } from '../batch/ShapeBatchApiClient.js';
+import type { ShapeFeatureRecord, ShapeTileLayerInfo, ShapeVectorTileRecord } from '@hierarchidb/plugin-service-api';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { BoundingBox, TileMetadata, LayerConfig } from '../../common/types/index.js';
+import type { BoundingBox, TileMetadata, LayerConfig, LayerInfo } from '../../common/types/index.js';
 import type { Feature as GeoJSONFeature, Geometry } from 'geojson';
 // NOTE: gis-sdkのdist反映前でも型解決できるように、明示的にパスを固定（後で dist が更新されたら '@hierarchidb/gis-sdk' に戻せます）
 import { getTilesInBounds, tileToBbox, encodeMvtFromGeojsonVt, normalizeVectorTileFormat } from '@hierarchidb/gis-sdk';
@@ -30,6 +31,35 @@ type TileLayer = {
 };
 
 type TileLayerMap = Record<string, TileLayer>;
+
+type ShapeFeatureWithGeometry = ShapeFeatureRecord & { geometry: Geometry };
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isGeometry = (value: unknown): value is Geometry => {
+  if (!isRecord(value)) return false;
+  const type = value.type;
+  if (typeof type !== 'string') return false;
+  if (type === 'GeometryCollection') {
+    return Array.isArray((value as { geometries?: unknown }).geometries);
+  }
+  return 'coordinates' in value;
+};
+
+const toLayerInfo = (layers: ShapeTileLayerInfo[] | undefined, zoom: number): LayerInfo[] =>
+  (layers ?? []).map((layer) => ({
+    name: layer.name,
+    featureCount: layer.featureCount ?? 0,
+    minZoom: zoom,
+    maxZoom: zoom,
+    fields: [],
+  }));
+
+const normalizeContentEncoding = (value?: string): TileMetadata['contentEncoding'] => {
+  if (value === 'gzip' || value === 'br') return value;
+  return undefined;
+};
 
 export interface TileRequest {
   nodeId: NodeId;
@@ -79,9 +109,9 @@ export class VectorTileService {
     const { nodeId, z, x, y } = request;
 
     // Check cache first
-    const cachedTile = await shapeDB.getVectorTile(nodeId, z, x, y);
+    const cachedTile = await getShapeDbApiClient().query.getVectorTile(nodeId, z, x, y);
     if (cachedTile) {
-      return cachedTile.data_Uint8Array;
+      return cachedTile;
     }
 
     // Generate tile if not cached
@@ -100,7 +130,7 @@ export class VectorTileService {
     x: number,
     y: number,
   ): Promise<TileMetadata | null> {
-    const tile = await shapeDB.getVectorTile(nodeId, z, x, y);
+    const tile = await getShapeDbApiClient().query.getVectorTileRecord(nodeId, z, x, y);
     if (!tile) {
       return null;
     }
@@ -114,12 +144,12 @@ export class VectorTileService {
       y,
       size: tile.size,
       features: tile.features,
-      layers: tile.layers,
+      layers: toLayerInfo(tile.layers, z),
       generatedAt: tile.generatedAt,
       lastAccessed: tile.lastAccessed,
-      contentHash: tile.contentHash,
-      contentEncoding: tile.contentEncoding,
-      version: tile.version,
+      contentHash: tile.contentHash ?? '',
+      contentEncoding: normalizeContentEncoding(tile.contentEncoding),
+      version: tile.version ?? 1,
     };
   }
 
@@ -149,7 +179,7 @@ export class VectorTileService {
   }
 
   async generateTilesForZoomLevel(nodeId: NodeId, zoom: number): Promise<number> {
-    const features = await shapeDB.features.where('nodeId').equals(nodeId).toArray();
+    const features = await getShapeDbApiClient().query.listFeatures(nodeId);
 
     if (features.length === 0) {
       return 0;
@@ -186,23 +216,17 @@ export class VectorTileService {
     let count = 0;
 
     if (zoomLevel !== undefined) {
-      const tiles = await shapeDB.vectorTiles
-        .where('nodeId')
-        .equals(nodeId)
-        .filter((tile: VectorTileRecord) => tile.z === zoomLevel)
-        .toArray();
+      const tiles = await getShapeDbApiClient().query.listVectorTileRows(nodeId);
+      const filtered = tiles.filter((tile) => tile.z === zoomLevel);
 
-      for (const tile of tiles) {
-        await shapeDB.vectorTiles.delete(tile.tileId);
+      for (const tile of filtered) {
+        await getShapeDbApiClient().mutation.deleteVectorTile(tile.key);
         count++;
       }
     } else {
-      const tiles = await shapeDB.vectorTiles.where('nodeId').equals(nodeId).toArray();
-
-      for (const tile of tiles) {
-        await shapeDB.vectorTiles.delete(tile.tileId);
-        count++;
-      }
+      const tiles = await getShapeDbApiClient().query.listVectorTileRows(nodeId);
+      await getShapeDbApiClient().mutation.deleteVectorTiles(nodeId);
+      count = tiles.length;
     }
 
     return count;
@@ -213,11 +237,11 @@ export class VectorTileService {
     totalSize: number;
     byZoomLevel: Record<number, { count: number; size: number }>;
   }> {
-    const tiles = await shapeDB.vectorTiles.where('nodeId').equals(nodeId).toArray();
+    const tiles = await getShapeDbApiClient().query.listVectorTileRows(nodeId);
 
     const stats = {
       totalTiles: tiles.length,
-      totalSize: tiles.reduce((sum: number, tile: VectorTileRecord) => sum + tile.size, 0),
+      totalSize: tiles.reduce((sum: number, tile) => sum + tile.size, 0),
       byZoomLevel: {} as Record<number, { count: number; size: number }>,
     };
 
@@ -242,25 +266,29 @@ export class VectorTileService {
     nodeId: NodeId,
     bbox: BoundingBox,
     zoom: number,
-  ): Promise<FeatureRecord[]> {
+  ): Promise<ShapeFeatureWithGeometry[]> {
     // Get features that intersect with tile bounds
-    const features = await shapeDB.getFeaturesInBbox(nodeId, bbox);
+    const features = await getShapeDbApiClient().query.listFeaturesInBbox(nodeId, bbox);
 
     // Filter by zoom-appropriate admin level
     const adminLevel = this.getAdminLevelForZoom(zoom);
     const filteredFeatures = features.filter(
-      (feature: FeatureRecord) => !feature.adminLevel || feature.adminLevel <= adminLevel,
+      (feature) => !feature.adminLevel || feature.adminLevel <= adminLevel,
     );
 
     // Extract geometries based on zoom level
-    return filteredFeatures.map((feature: FeatureRecord) => ({
+    const withGeometry = filteredFeatures.filter(
+      (feature): feature is ShapeFeatureWithGeometry => isGeometry(feature.geometry),
+    );
+
+    return withGeometry.map((feature) => ({
       ...feature,
       geometry: this.extractGeometryForZoom(feature.geometry, zoom),
     }));
   }
 
   private async generateMVT(config: {
-    features: FeatureRecord[];
+    features: ShapeFeatureWithGeometry[];
     z: number;
     x: number;
     y: number;
@@ -309,7 +337,7 @@ export class VectorTileService {
     return await encodeMvtFromGeojsonVt({ layer0: emptyLayer });
   }
 
-  private calculateFeatureBounds(features: FeatureRecord[]): BoundingBox {
+  private calculateFeatureBounds(features: ShapeFeatureRecord[]): BoundingBox {
     let minX = Infinity,
       minY = Infinity,
       maxX = -Infinity,
@@ -322,6 +350,9 @@ export class VectorTileService {
         maxX = Math.max(maxX, feature.bbox[2]);
         maxY = Math.max(maxY, feature.bbox[3]);
       } else {
+        if (!isGeometry(feature.geometry)) {
+          continue;
+        }
         // Calculate bbox from geometry
         const bbox = turf.bbox(feature.geometry);
         minX = Math.min(minX, bbox[0]);
@@ -361,7 +392,7 @@ export class VectorTileService {
     return Math.max(0.0001, 0.01 / 2 ** (zoom - 8));
   }
 
-  private featureMatchesLayer(_feature: FeatureRecord, _layerConfig: LayerConfig): boolean {
+  private featureMatchesLayer(_feature: ShapeFeatureRecord, _layerConfig: LayerConfig): boolean {
     // Simple matching - could be more sophisticated
     return true;
   }
@@ -406,7 +437,7 @@ export class VectorTileService {
     const tileId = `${nodeId}-${z}-${x}-${y}`;
     const contentHash = await this.calculateHash(data);
 
-    const tile: VectorTileRecord = {
+    const tile: ShapeVectorTileRecord = {
       tileId,
       nodeId,
       z,
@@ -421,7 +452,7 @@ export class VectorTileService {
       version: 1,
     };
 
-    await shapeDB.storeVectorTile(tile);
+    await getShapeDbApiClient().mutation.storeVectorTile(tile);
   }
 
   private async calculateHash(data: Uint8Array): Promise<string> {

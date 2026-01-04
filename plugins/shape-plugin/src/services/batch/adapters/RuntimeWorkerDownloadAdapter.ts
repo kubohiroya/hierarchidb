@@ -4,7 +4,7 @@ import type { DownloadTask, DownloadTaskPayload } from '../../../common/types/in
 import type { ProgressInfo } from '../../../common/types/index.js';
 import type { DownloadStageAdapter, DownloadStageAdapterResult } from './DownloadStageAdapter.js';
 import type { StageControls } from './StageControls.js';
-import { shapeDB } from '../../database/ShapeDB.js';
+import { getShapeDbApiClient } from '../ShapeBatchApiClient.js';
 import { ShapeWorkerPool } from './ShapeWorkerPool.js';
 
 const formatBytes = (bytes: number): string => {
@@ -88,7 +88,7 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
             if (shouldAbort()) return;
 
             if (task.taskId) {
-              await shapeDB.updateBatchTask(task.taskId, {
+              await getShapeDbApiClient().ephemeral.updateBatchTask(task.taskId, {
                 status: 'running',
                 startedAt: Date.now(),
                 progress: 0,
@@ -108,36 +108,36 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
               if (result.status === 'failed') {
                 failed += 1;
                 if (task.taskId) {
-                  await shapeDB.updateBatchTask(task.taskId, {
-                    status: 'failed',
-                    completedAt: Date.now(),
-                    progress: 100,
-                    errorMessage: result.errorMessage ?? 'Download failed',
-                  });
+              await getShapeDbApiClient().ephemeral.updateBatchTask(task.taskId, {
+                status: 'failed',
+                completedAt: Date.now(),
+                progress: 100,
+                errorMessage: result.errorMessage ?? 'Download failed',
+              });
                 }
               } else {
                 completed += 1;
                 totalBytes += result.bytesWritten ?? 0;
                 if (task.taskId) {
                   const url = input.url ?? task.url;
-                  await shapeDB.updateBatchTask(task.taskId, {
-                    status: 'completed',
-                    completedAt: Date.now(),
-                    progress: 100,
-                    message: buildDownloadCompletionMessage(url, result.bytesWritten),
-                  });
+                await getShapeDbApiClient().ephemeral.updateBatchTask(task.taskId, {
+                  status: 'completed',
+                  completedAt: Date.now(),
+                  progress: 100,
+                  message: buildDownloadCompletionMessage(url, result.bytesWritten),
+                });
                 }
               }
             } catch (error) {
               if (shouldAbort()) return;
               failed += 1;
               if (task.taskId) {
-                await shapeDB.updateBatchTask(task.taskId, {
-                  status: 'failed',
-                  completedAt: Date.now(),
-                  progress: 100,
-                  errorMessage: error instanceof Error ? error.message : 'Download failed',
-                });
+              await getShapeDbApiClient().ephemeral.updateBatchTask(task.taskId, {
+                status: 'failed',
+                completedAt: Date.now(),
+                progress: 100,
+                errorMessage: error instanceof Error ? error.message : 'Download failed',
+              });
               }
             }
 

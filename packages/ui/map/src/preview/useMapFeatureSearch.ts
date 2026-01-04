@@ -58,7 +58,7 @@ export type UseMapFeatureSearchParams<TargetId extends string, HighlightEntry ex
   searchTargets: Record<TargetId, boolean>;
   targetDefinitions: Record<TargetId, MapSearchTargetDefinition>;
   buildHighlightEntry: (feature?: MapLibreGeoJSONFeature | null) => HighlightEntry | null;
-  setSearchMatches: (entries: HighlightEntry[]) => void;
+  onMatchesChange: (entries: HighlightEntry[]) => void;
   setSearchText?: (value: string) => void;
   setSearchTargets?: (updater: (prev: Record<TargetId, boolean>) => Record<TargetId, boolean>) => void;
 };
@@ -76,13 +76,13 @@ export const useMapFeatureSearch = <TargetId extends string, HighlightEntry exte
   searchTargets,
   targetDefinitions,
   buildHighlightEntry,
-  setSearchMatches,
+  onMatchesChange,
   setSearchText,
   setSearchTargets,
 }: UseMapFeatureSearchParams<TargetId, HighlightEntry>): UseMapFeatureSearchResult<TargetId> => {
   const clearSearchHighlights = useCallback(() => {
-    setSearchMatches([]);
-  }, [setSearchMatches]);
+    onMatchesChange([]);
+  }, [onMatchesChange]);
 
   const handleSearchClear = useCallback(() => {
     if (setSearchText) {
@@ -137,8 +137,8 @@ export const useMapFeatureSearch = <TargetId extends string, HighlightEntry exte
       matchedEntries.set(`${entry.source}:${entry.id}`, entry);
     }
 
-    setSearchMatches(Array.from(matchedEntries.values()));
-  }, [buildHighlightEntry, clearSearchHighlights, highlightLayerIds, mapInstance, searchText, searchTargets, setSearchMatches, targetDefinitions]);
+    onMatchesChange(Array.from(matchedEntries.values()));
+  }, [buildHighlightEntry, clearSearchHighlights, highlightLayerIds, mapInstance, onMatchesChange, searchText, searchTargets, targetDefinitions]);
 
   return {
     runSearch,

@@ -19,7 +19,7 @@ const useDialogTooltips = () => {
   const { t } = useTranslation('common');
   return {
     maximize: t('dialogs.pluginDialog.tooltips.maximize', 'Maximize'),
-    restoreSize: t('dialogs.pluginDialog.tooltips.restoreSize', 'Restore size'),
+    restoreSize: t('dialogs.pluginDialog.tooltips.restoreSize', 'Restore'),
     fullscreen: t('dialogs.pluginDialog.tooltips.fullscreen', 'Full screen'),
     exitFullscreen: t('dialogs.pluginDialog.tooltips.exitFullscreen', 'Exit full screen'),
     minimize: t('dialogs.pluginDialog.tooltips.minimize', 'Minimize'),

@@ -26,7 +26,7 @@ import {
   recordBuildStart,
 } from '@hierarchidb/ui-monitoring';
 import { getBuildConfigSnapshot } from '../utils/buildWarnings.js';
-import { shapeDB } from '../../services/database/ShapeDB.js';
+import { getShapeDbApiClient } from '../../services/batch/ShapeBatchApiClient.js';
 
 const normalizeStageId = (stage?: string): string | undefined => {
   if (!stage) return undefined;
@@ -205,7 +205,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     const nodeKey = toNodeId(String(activeNodeId));
     const run = async () => {
       try {
-        const rows = await shapeDB.batchTasks.where('nodeId').equals(nodeKey).toArray();
+        const rows = await getShapeDbApiClient().ephemeral.listBatchTasks(nodeKey as NodeId);
         if (cancelled) return;
         const summary: Record<string, { total: number; success: number; error: number; skip: number }> = {};
         const ensure = (key: string) => {

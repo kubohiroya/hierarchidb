@@ -3,14 +3,13 @@ import type { Extract1Task, Extract2Task, ExtractTaskInput } from '../../../comm
 import type { Extract1StageAdapter } from './Extract1StageAdapter.js';
 import type { Extract2StageAdapter } from './Extract2StageAdapter.js';
 import type { StageControls } from './StageControls.js';
-import { getEphemeralShapeDB } from '../../database/EphemeralShapeDB.js';
 import {
-  shapeDB,
   type Extract1TaskInputData,
   type Extract1TaskOutputData,
   type Extract2TaskInputData,
   type Extract2TaskOutputData,
 } from '../../database/ShapeDB.js';
+import { getShapeDbApiClient } from '../ShapeBatchApiClient.js';
 import { applyFeatureFiltering, type FeatureFilterSettings, extractGeoJson } from '@hierarchidb/gis-sdk';
 import { extractTopoJsonByTiles } from '../utils/topojsonExtract.js';
 import { assignFeatureIds, HDB_ORIGIN_KEY } from '../utils/featureIds.js';
@@ -135,7 +134,7 @@ const buildExtract1CompletionMessage = (
 
 export class LocalExtract1Adapter implements Extract1StageAdapter {
   async process(tasks: Extract1Task[], onProgress: (p: ProgressInfo) => void, controls?: StageControls) {
-    const db = getEphemeralShapeDB();
+    const ephemeral = getShapeDbApiClient().ephemeral;
     const getSignal = controls?.getSignal;
     const shouldAbort = () => Boolean(getSignal?.()?.aborted);
     const resolvedNodeId = tasks[0]?.nodeId ?? null;
@@ -145,11 +144,7 @@ export class LocalExtract1Adapter implements Extract1StageAdapter {
     }
     const inputByTaskId = new Map<string, Extract1TaskInputData>();
     if (resolvedNodeId) {
-      const rows = await shapeDB.batchTasks
-        .where('nodeId')
-        .equals(resolvedNodeId)
-        .and((row) => row.taskType === 'extract1')
-        .toArray();
+      const rows = await ephemeral.listBatchTasksByType(resolvedNodeId, 'extract1');
       rows.forEach((row) => {
         inputByTaskId.set(row.taskId, (row.inputData ?? {}) as Extract1TaskInputData);
       });
@@ -174,7 +169,7 @@ export class LocalExtract1Adapter implements Extract1StageAdapter {
         }
         try {
           if (task.taskId) {
-            await shapeDB.updateBatchTask(task.taskId, {
+            await getShapeDbApiClient().ephemeral.updateBatchTask(task.taskId, {
               status: 'running',
               startedAt: Date.now(),
               progress: 0,
@@ -183,14 +178,14 @@ export class LocalExtract1Adapter implements Extract1StageAdapter {
           const baseInput = inputByTaskId.get(task.taskId) ?? {};
           const input: ExtractTaskInput = { ...baseInput, ...extractSettings.extract1 };
           const inputBufferId = input.inputBufferId ?? '';
-          const raw = await db.rawBuffers.get(inputBufferId);
+          const raw = await ephemeral.getRawBuffer(inputBufferId);
           if (!raw) {
             throw new Error(`Raw buffer not found: ${inputBufferId}`);
           }
           const taskIndex = task.index ?? 0;
           if (!raw.featureCount) {
             const outputBufferId = `${task.nodeId ?? ''}-extract1-${taskIndex}`;
-            await db.extractedBuffers.put({
+            await ephemeral.putExtractedBuffer({
               id: outputBufferId,
               nodeId: raw.nodeId,
               stage: 'extract1',
@@ -207,7 +202,7 @@ export class LocalExtract1Adapter implements Extract1StageAdapter {
                 featureCount: 0,
                 extractionRatio: 0,
               };
-              await shapeDB.updateBatchTask(task.taskId, {
+              await getShapeDbApiClient().ephemeral.updateBatchTask(task.taskId, {
                 status: 'completed',
                 completedAt: Date.now(),
                 progress: 100,
@@ -226,7 +221,7 @@ export class LocalExtract1Adapter implements Extract1StageAdapter {
           if (!enableFeatureFiltering) {
             const outputBufferId = `${task.nodeId ?? ''}-extract1-${taskIndex}`;
             const featureCount = raw.featureCount ?? 0;
-            await db.extractedBuffers.put({
+            await ephemeral.putExtractedBuffer({
               id: outputBufferId,
               nodeId: raw.nodeId,
               stage: 'extract1',
@@ -239,7 +234,7 @@ export class LocalExtract1Adapter implements Extract1StageAdapter {
             completed++;
             if (task.taskId) {
               const completionMessage = buildExtract1CompletionMessage(raw.data.byteLength, raw.data.byteLength);
-              await shapeDB.updateBatchTask(task.taskId, {
+              await getShapeDbApiClient().ephemeral.updateBatchTask(task.taskId, {
                 status: 'completed',
                 completedAt: Date.now(),
                 progress: 100,
@@ -281,7 +276,7 @@ export class LocalExtract1Adapter implements Extract1StageAdapter {
             ? sanitizedExtracted.features.length
             : raw.featureCount;
           if (sanitizedFiltered && featureCount === 0) {
-            await db.extractedBuffers.put({
+            await ephemeral.putExtractedBuffer({
               id: outputBufferId,
               nodeId: raw.nodeId,
               stage: 'extract1',
@@ -298,7 +293,7 @@ export class LocalExtract1Adapter implements Extract1StageAdapter {
                 featureCount: 0,
                 extractionRatio: 0,
               };
-              await shapeDB.updateBatchTask(task.taskId, {
+              await getShapeDbApiClient().ephemeral.updateBatchTask(task.taskId, {
                 status: 'completed',
                 completedAt: Date.now(),
                 progress: 100,
@@ -317,7 +312,7 @@ export class LocalExtract1Adapter implements Extract1StageAdapter {
             ? await encodeGeoJson(sanitizedExtracted)
             : raw.data;
           if (!featureCount) {
-            await db.extractedBuffers.put({
+            await ephemeral.putExtractedBuffer({
               id: outputBufferId,
               nodeId: raw.nodeId,
               stage: 'extract1',
@@ -334,7 +329,7 @@ export class LocalExtract1Adapter implements Extract1StageAdapter {
                 featureCount: 0,
                 extractionRatio: 0,
               };
-              await shapeDB.updateBatchTask(task.taskId, {
+              await getShapeDbApiClient().ephemeral.updateBatchTask(task.taskId, {
                 status: 'completed',
                 completedAt: Date.now(),
                 progress: 100,
@@ -349,7 +344,7 @@ export class LocalExtract1Adapter implements Extract1StageAdapter {
             finished = true;
             break;
           }
-          await db.extractedBuffers.put({
+          await ephemeral.putExtractedBuffer({
             id: outputBufferId,
             nodeId: raw.nodeId,
             stage: 'extract1',
@@ -368,7 +363,7 @@ export class LocalExtract1Adapter implements Extract1StageAdapter {
               extractionRatio,
             };
             const completionMessage = buildExtract1CompletionMessage(raw.data.byteLength, data.byteLength);
-            await shapeDB.updateBatchTask(task.taskId, {
+            await getShapeDbApiClient().ephemeral.updateBatchTask(task.taskId, {
               status: 'completed',
               completedAt: Date.now(),
               progress: 100,
@@ -387,7 +382,7 @@ export class LocalExtract1Adapter implements Extract1StageAdapter {
           }
           failed++;
           if (task.taskId) {
-            await shapeDB.updateBatchTask(task.taskId, {
+            await getShapeDbApiClient().ephemeral.updateBatchTask(task.taskId, {
               status: 'failed',
               completedAt: Date.now(),
               progress: 100,
@@ -419,7 +414,7 @@ export class LocalExtract1Adapter implements Extract1StageAdapter {
 
 export class LocalExtract2Adapter implements Extract2StageAdapter {
   async process(tasks: Extract2Task[], onProgress: (p: ProgressInfo) => void, controls?: StageControls) {
-    const db = getEphemeralShapeDB();
+    const ephemeral = getShapeDbApiClient().ephemeral;
     const getSignal = controls?.getSignal;
     const shouldAbort = () => Boolean(getSignal?.()?.aborted);
     const resolvedNodeId = tasks[0]?.nodeId ?? null;
@@ -430,11 +425,7 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
     const inputByTaskId = new Map<string, Extract2TaskInputData>();
     const outputByTaskId = new Map<string, Extract2TaskOutputData>();
     if (resolvedNodeId) {
-      const rows = await shapeDB.batchTasks
-        .where('nodeId')
-        .equals(resolvedNodeId)
-        .and((row) => row.taskType === 'extract2')
-        .toArray();
+      const rows = await ephemeral.listBatchTasksByType(resolvedNodeId, 'extract2');
       rows.forEach((row) => {
         inputByTaskId.set(row.taskId, (row.inputData ?? {}) as Extract2TaskInputData);
         outputByTaskId.set(row.taskId, (row.outputData ?? {}) as Extract2TaskOutputData);
@@ -460,7 +451,7 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
         }
         try {
           if (task.taskId) {
-            await shapeDB.updateBatchTask(task.taskId, {
+            await getShapeDbApiClient().ephemeral.updateBatchTask(task.taskId, {
               status: 'running',
               startedAt: Date.now(),
               progress: 0,
@@ -472,13 +463,13 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
           const taskIndex = task.index ?? 0;
           const sourceTaskId = input.sourceTaskId
             ?? `${task.nodeId ?? ''}-extract1-${taskIndex}`;
-          const extract1Task = await shapeDB.batchTasks.get(sourceTaskId);
+          const extract1Task = await getShapeDbApiClient().ephemeral.getBatchTask(sourceTaskId);
           if (extract1Task?.status === 'failed') {
             failed++;
             if (task.taskId) {
               const extract1TaskLabel = extract1Task.taskId ?? sourceTaskId;
               const extract1Reason = extract1Task.errorMessage ?? 'unknown error';
-              await shapeDB.updateBatchTask(task.taskId, {
+              await getShapeDbApiClient().ephemeral.updateBatchTask(task.taskId, {
                 status: 'failed',
                 completedAt: Date.now(),
                 progress: 100,
@@ -489,8 +480,8 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
             continue;
           }
           const inputBufferId = input.inputBufferId ?? '';
-          const buffer = await db.extractedBuffers.get(inputBufferId)
-            ?? await db.rawBuffers.get(inputBufferId);
+          const buffer = await ephemeral.getExtractedBuffer(inputBufferId)
+            ?? await ephemeral.getRawBuffer(inputBufferId);
           if (!buffer) {
             throw new Error(`Extract2 input buffer not found: ${inputBufferId}`);
           }
@@ -500,7 +491,7 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
             const retry = input.retry ?? 0;
             const retryScale = retry > 0 ? 1 + retry * 2 : 1;
             const effectiveTolerance = baseTolerance * retryScale;
-            await db.extractedBuffers.put({
+            await ephemeral.putExtractedBuffer({
               id: outputBufferId,
               nodeId: buffer.nodeId,
               stage: 'extract2',
@@ -518,7 +509,7 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
                   extractionRatio: 0,
                   retry: input.retry,
                 };
-                await shapeDB.updateBatchTask(task.taskId, {
+                await getShapeDbApiClient().ephemeral.updateBatchTask(task.taskId, {
                   status: 'completed',
                   completedAt: Date.now(),
                   progress: 100,
@@ -556,7 +547,7 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
               });
               const data = await encodeGeoJson(sanitized);
               const featureCount = sanitized.features.length;
-              await db.extractedBuffers.put({
+              await ephemeral.putExtractedBuffer({
                 id: outputBufferId,
                 nodeId: buffer.nodeId,
                 stage: 'extract2',
@@ -576,7 +567,7 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
                   retry: input.retry,
                 };
                 const completionMessage = buildExtract2CompletionMessage(featureCount, data.byteLength);
-                await shapeDB.updateBatchTask(task.taskId, {
+                await getShapeDbApiClient().ephemeral.updateBatchTask(task.taskId, {
                   status: 'completed',
                   completedAt: Date.now(),
                   progress: 100,
@@ -585,7 +576,7 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
                 });
               }
             } else {
-              await db.extractedBuffers.put({
+              await ephemeral.putExtractedBuffer({
                 id: outputBufferId,
                 nodeId: buffer.nodeId,
                 stage: 'extract2',
@@ -604,7 +595,7 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
                   retry: input.retry,
                 };
                 const completionMessage = buildExtract2CompletionMessage(buffer.featureCount ?? 0, buffer.data.byteLength);
-                await shapeDB.updateBatchTask(task.taskId, {
+                await getShapeDbApiClient().ephemeral.updateBatchTask(task.taskId, {
                   status: 'completed',
                   completedAt: Date.now(),
                   progress: 100,
@@ -685,7 +676,7 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
           let extraction = await runExtraction();
           const outputBufferId = `${task.nodeId ?? ''}-extract2-${taskIndex}`;
           if (extraction.status === 'skipped') {
-            await db.extractedBuffers.put({
+            await ephemeral.putExtractedBuffer({
               id: outputBufferId,
               nodeId: buffer.nodeId,
               stage: 'extract2',
@@ -703,7 +694,7 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
                 extractionRatio: 0,
                 retry: input.retry,
               };
-              await shapeDB.updateBatchTask(task.taskId, {
+              await getShapeDbApiClient().ephemeral.updateBatchTask(task.taskId, {
                 status: 'completed',
                 completedAt: Date.now(),
                 progress: 100,
@@ -742,7 +733,7 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
             finalFeatureCount = extraction.featureCount;
             finalRatio = extraction.ratio;
           }
-          await db.extractedBuffers.put({
+          await ephemeral.putExtractedBuffer({
             id: outputBufferId,
             nodeId: buffer.nodeId,
             stage: 'extract2',
@@ -762,7 +753,7 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
               retry: input.retry,
             };
             const completionMessage = buildExtract2CompletionMessage(finalFeatureCount, finalData.byteLength);
-            await shapeDB.updateBatchTask(task.taskId, {
+            await getShapeDbApiClient().ephemeral.updateBatchTask(task.taskId, {
               status: 'completed',
               completedAt: Date.now(),
               progress: 100,
@@ -790,7 +781,7 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
           }
           failed++;
           if (task.taskId) {
-            await shapeDB.updateBatchTask(task.taskId, {
+            await getShapeDbApiClient().ephemeral.updateBatchTask(task.taskId, {
               status: 'failed',
               completedAt: Date.now(),
               progress: 100,

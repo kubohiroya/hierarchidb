@@ -12,9 +12,15 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import { BaseBatchSessionManager } from '@hierarchidb/batch-runtime-services';
 import type { BatchProgressEvent, BatchSessionStatus } from '@hierarchidb/common-api';
-import { type BatchSessionRecord, type BatchTaskRecord, type DownloadTaskInputData, shapeDB } from '../database/ShapeDB.js';
+import { type BatchSessionRecord, type BatchTaskRecord, type DownloadTaskInputData } from '../database/ShapeDB.js';
+import { getShapeDbApiClient } from './ShapeBatchApiClient.js';
 import { SessionController } from './SessionController.js';
 import { ShapeBatchSession } from './ShapeBatchSession.js';
+import {
+  toBatchSessionRecord,
+  toShapeBatchSessionRecord,
+  toShapeBatchSessionUpdates,
+} from './shapeSessionMappers.js';
 import type {
   BatchSession,
   BatchStatus,
@@ -106,22 +112,26 @@ export class BatchSessionManager extends BaseBatchSessionManager {
     options: BatchSessionOptions = {},
     context: SessionStartContext = {},
   ): Promise<BatchSession> {
-    const existing = await shapeDB.getBatchSession(nodeId);
-    if (existing && this.sessions.has(nodeId)) {
-      return existing;
+    const existing = await getShapeDbApiClient().query.getBatchSessionRecord(nodeId);
+    const existingRecord = existing ? toBatchSessionRecord(existing) : null;
+    if (existing && !existingRecord) {
+      logBatchSessionWarning('Invalid batch session config detected', existing);
     }
-    if (existing?.status === 'running') {
-      const taskCount = await shapeDB.batchTasks.where('nodeId').equals(nodeId).count();
+    if (existingRecord && this.sessions.has(nodeId)) {
+      return existingRecord;
+    }
+    if (existingRecord?.status === 'running') {
+      const taskCount = await getShapeDbApiClient().ephemeral.countBatchTasks(nodeId);
       if (taskCount > 0) {
         this.sessions.delete(nodeId);
       }
     }
-    if (existing) {
+    if (existingRecord) {
       this.sessions.delete(nodeId);
     }
 
     const mode = context.mode ?? 'new';
-    const buildStartedAt = context.buildStartedAt ?? existing?.startedAt ?? Date.now();
+    const buildStartedAt = context.buildStartedAt ?? existingRecord?.startedAt ?? Date.now();
     const now = Date.now();
     const baseProgress: ProgressInfo = mode === 'new' ? {
       total: 0,
@@ -131,7 +141,7 @@ export class BatchSessionManager extends BaseBatchSessionManager {
       percentage: 0,
       currentStage: 'download',
       currentTask: 'Initializing...',
-    } : (existing?.progress ?? {
+    } : (existingRecord?.progress ?? {
       total: 0,
       completed: 0,
       failed: 0,
@@ -143,7 +153,7 @@ export class BatchSessionManager extends BaseBatchSessionManager {
     if (mode === 'new') {
       await this.cleanupStaleTasks(nodeId, buildStartedAt);
     }
-    const session: BatchSessionRecord = existing ?? {
+    const session: BatchSessionRecord = existingRecord ?? {
       nodeId,
       status: 'running' as const,
       config,
@@ -174,7 +184,7 @@ export class BatchSessionManager extends BaseBatchSessionManager {
       stages,
     };
 
-    await shapeDB.batchSessions.put(updatedSession);
+    await getShapeDbApiClient().mutation.upsertBatchSession(toShapeBatchSessionRecord(updatedSession));
 
     // Create session controller with per-session worker pool
     const controller = new SessionController(
@@ -217,11 +227,11 @@ export class BatchSessionManager extends BaseBatchSessionManager {
       await this.pauseBatchSession(resolved);
       return;
     }
-    const existing = await shapeDB.getBatchSession(resolved);
+    const existing = await getShapeDbApiClient().query.getBatchSessionRecord(resolved);
     if (!existing) {
       throw new Error(`Session ${nodeId} not found`);
     }
-    await shapeDB.updateBatchSession(resolved, {
+    await getShapeDbApiClient().mutation.updateBatchSession(resolved, {
       status: 'paused',
       updatedAt: Date.now(),
     });
@@ -233,34 +243,46 @@ export class BatchSessionManager extends BaseBatchSessionManager {
       await this.resumeBatchSession(resolved);
       return;
     }
-    const existing = await shapeDB.getBatchSession(resolved);
-    if (!existing) {
+    const existing = await getShapeDbApiClient().query.getBatchSessionRecord(resolved);
+    const existingRecord = existing ? toBatchSessionRecord(existing) : null;
+    if (!existingRecord) {
       throw new Error(`Session ${nodeId} not found`);
     }
-    const downloadTasks = await shapeDB.batchTasks
-      .where('nodeId')
-      .equals(resolved)
-      .and((task) => task.taskType === 'download')
-      .toArray();
+    const downloadTasks = await getShapeDbApiClient().ephemeral.listBatchTasksByType(resolved, 'download');
+    const runningTasks = downloadTasks.filter((task) => task.status === 'running');
+    if (runningTasks.length > 0) {
+      const resetAt = Date.now();
+      await getShapeDbApiClient().ephemeral.putBatchTasks(
+        runningTasks.map((task) => ({
+          ...task,
+          status: 'waiting' as const,
+          progress: 0,
+          startedAt: undefined,
+          completedAt: undefined,
+          updatedAt: resetAt,
+        })),
+      );
+    }
     const downloadPayloads = downloadTasks
       .map((task) => task.inputData as DownloadTaskInputData | undefined)
       .filter(isDownloadTaskPayload);
     if (downloadPayloads.length === 0) {
       throw new Error(`Session ${nodeId} missing download payloads`);
     }
-    await this.createSession(resolved, existing.config as BatchProcessConfig, downloadPayloads, {}, {
+    await this.createSession(resolved, existingRecord.config, downloadPayloads, {}, {
       mode: 'resume',
-      buildStartedAt: existing.startedAt,
+      buildStartedAt: existingRecord.startedAt,
     });
   }
 
   async getSessionStatus(nodeId: string): Promise<BatchStatus> {
-    const session = await shapeDB.getBatchSession(nodeId as NodeId);
-    if (!session) {
+    const session = await getShapeDbApiClient().query.getBatchSessionRecord(nodeId as NodeId);
+    const sessionRecord = session ? toBatchSessionRecord(session) : null;
+    if (!sessionRecord) {
       throw new Error(`Session ${nodeId} not found`);
     }
 
-    const tasks = await shapeDB.getBatchTasks(nodeId as NodeId);
+    const tasks = await getShapeDbApiClient().ephemeral.listBatchTasks(nodeId as NodeId);
     const currentTasks = tasks
       .filter((t: BatchTaskRecord) => t.status === 'running')
       .map(mapTaskRecordToBatchTask);
@@ -277,12 +299,12 @@ export class BatchSessionManager extends BaseBatchSessionManager {
       }));
 
     return {
-      session,
+      session: sessionRecord,
       currentTasks,
       queuedTasks,
       errors,
       warnings: [],
-      estimatedTimeRemaining: this.calculateTimeRemaining(session, tasks),
+      estimatedTimeRemaining: this.calculateTimeRemaining(sessionRecord, tasks),
       throughput: this.calculateThroughput(tasks),
     };
   }
@@ -345,7 +367,8 @@ export class BatchSessionManager extends BaseBatchSessionManager {
       currentStage: (event.stage as ProcessingStage) ?? 'processing',
       currentTask: payload.currentTask,
     };
-    await shapeDB.updateBatchSession(session.getState().nodeId, { progress });
+    const updates = toShapeBatchSessionUpdates({ progress });
+    await getShapeDbApiClient().mutation.updateBatchSession(session.getState().nodeId, updates);
   }
 
   protected async onSessionStatusChange(session: ShapeBatchSession): Promise<void> {
@@ -362,7 +385,7 @@ export class BatchSessionManager extends BaseBatchSessionManager {
       this.sessions.delete(state.nodeId);
       this.legacyProgressCallbacks.delete(String(state.nodeId));
     }
-    await shapeDB.updateBatchSession(state.nodeId, updates);
+    await getShapeDbApiClient().mutation.updateBatchSession(state.nodeId, toShapeBatchSessionUpdates(updates));
   }
 
   private emitLegacyProgress(nodeId: string, progress: ProgressInfo): void {
@@ -377,14 +400,14 @@ export class BatchSessionManager extends BaseBatchSessionManager {
 
   /*
   private async updateProgress(nodeId: string, progress: Partial<ProgressInfo>): Promise<void> {
-    const session = await shapeDB.getBatchSession(nodeId as NodeId);
+    const session = await getShapeDbApiClient().query.getBatchSessionRecord(nodeId as NodeId);
     if (!session) return;
 
     const updatedProgress = { ...session.progress, ...progress };
     updatedProgress.percentage =
       updatedProgress.total > 0 ? (updatedProgress.completed / updatedProgress.total) * 100 : 0;
 
-    await shapeDB.updateBatchSession(nodeId as NodeId, {
+    await getShapeDbApiClient().mutation.updateBatchSession(nodeId as NodeId, {
       progress: updatedProgress,
     });
 
@@ -415,22 +438,19 @@ export class BatchSessionManager extends BaseBatchSessionManager {
   }
 
   private async resumeIncompleteSessions(): Promise<void> {
-    const incompleteSessions = await shapeDB.batchSessions
-      .where('status')
-      .anyOf(['running', 'paused'])
-      .toArray();
+    const rawSessions = await getShapeDbApiClient().query.listBatchSessionRecordsByStatus(['running', 'paused']);
+    const incompleteSessions = rawSessions
+      .map((session) => toBatchSessionRecord(session))
+      .filter((session): session is BatchSessionRecord => Boolean(session));
 
     for (const session of incompleteSessions) {
-      const allTasks = await shapeDB.batchTasks
-        .where('nodeId')
-        .equals(session.nodeId)
-        .toArray();
+      const allTasks = await getShapeDbApiClient().ephemeral.listBatchTasks(session.nodeId);
       const cutoff = session.startedAt ?? 0;
       const staleTasks = cutoff > 0
         ? allTasks.filter((task) => this.getTaskTimestamp(task) < cutoff)
         : [];
       if (staleTasks.length > 0) {
-        await shapeDB.batchTasks.bulkDelete(staleTasks.map((task) => task.taskId));
+        await getShapeDbApiClient().ephemeral.deleteBatchTasksByIds(staleTasks.map((task) => task.taskId));
       }
       const staleIds = new Set(staleTasks.map((task) => task.taskId));
       const runningTasks = allTasks.filter((task) => task.status === 'running' && !staleIds.has(task.taskId));
@@ -448,11 +468,11 @@ export class BatchSessionManager extends BaseBatchSessionManager {
           errorMessage: undefined,
           updatedAt: resetAt,
         }));
-        await shapeDB.batchTasks.bulkPut(resetTasks);
+        await getShapeDbApiClient().ephemeral.putBatchTasks(resetTasks);
       }
       if (session.status === 'running') {
         // Switch to paused so users can resume after reload.
-        await shapeDB.updateBatchSession(session.nodeId, {
+        await getShapeDbApiClient().mutation.updateBatchSession(session.nodeId, {
           status: 'paused',
           updatedAt: Date.now(),
         });
@@ -504,9 +524,9 @@ export class BatchSessionManager extends BaseBatchSessionManager {
 
   private async cleanupStaleTasks(nodeId: NodeId, buildStartedAt: number): Promise<void> {
     if (!Number.isFinite(buildStartedAt) || buildStartedAt <= 0) return;
-    const tasks = await shapeDB.batchTasks.where('nodeId').equals(nodeId).toArray();
+    const tasks = await getShapeDbApiClient().ephemeral.listBatchTasks(nodeId);
     const stale = tasks.filter((task) => this.getTaskTimestamp(task) < buildStartedAt);
     if (stale.length === 0) return;
-    await shapeDB.batchTasks.bulkDelete(stale.map((task) => task.taskId));
+    await getShapeDbApiClient().ephemeral.deleteBatchTasksByIds(stale.map((task) => task.taskId));
   }
 }

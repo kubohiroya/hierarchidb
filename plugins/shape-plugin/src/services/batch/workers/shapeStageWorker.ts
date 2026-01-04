@@ -1,5 +1,5 @@
 import type { DownloadTaskRequest, ShapeStageWorkerAPI, ShapeStageWorkerTaskResult, ExtractTaskRequest } from './ShapeStageWorkerTypes.js';
-import { getEphemeralShapeDB } from '../../database/EphemeralShapeDB.js';
+import { getShapeDbApiClient } from '../ShapeBatchApiClient.js';
 import { defaultDataSourceFactory } from '../../datasources/DataSourceStrategyFactory.js';
 import type { BoundingBox as TaskBoundingBox, Extract1Task, Extract2Task } from '../../../common/types/index.js';
 import type { BoundingBox as DataSourceBoundingBox } from '../../datasources/DataSourceStrategy.js';
@@ -14,11 +14,6 @@ import { AuthService } from '@hierarchidb/auth-recovery';
 import { resolveStrategyIdFromDataSource } from '../../datasources/strategyIds.js';
 import { buildTileCoordinates } from '../session/tiles/tileCoordinates.js';
 import { buildTileId } from '../../../worker/shapeVectorTileStore.dexie.js';
-import {
-  bufferDeserializer,
-  bufferSerializer,
-  createShapeChunkStore,
-} from '../../utils/chunkStore.js';
 
 const normalizeBoundingBox = (bbox?: TaskBoundingBox): DataSourceBoundingBox | undefined => {
   if (!bbox || bbox.length !== 4) return undefined;
@@ -102,64 +97,6 @@ const applyFeatureContext = (
   }
 };
 
-let downloadChunkStore: ReturnType<typeof createShapeChunkStore<ArrayBuffer>> | null = null;
-
-const getDownloadChunkStore = () => {
-  if (!downloadChunkStore) {
-    downloadChunkStore = createShapeChunkStore<ArrayBuffer>(bufferSerializer, bufferDeserializer);
-  }
-  return downloadChunkStore;
-};
-
-const compressGzip = async (buffer: ArrayBuffer): Promise<ArrayBuffer> => {
-  if (typeof CompressionStream !== 'function') {
-    throw new Error('CompressionStream is not available for gzip compression');
-  }
-  const stream = new CompressionStream('gzip');
-  const writer = stream.writable.getWriter();
-  await writer.write(new Uint8Array(buffer));
-  await writer.close();
-  return new Response(stream.readable).arrayBuffer();
-};
-
-const decompressGzip = async (buffer: ArrayBuffer): Promise<ArrayBuffer> => {
-  if (typeof DecompressionStream !== 'function') {
-    throw new Error('DecompressionStream is not available for gzip decompression');
-  }
-  const stream = new DecompressionStream('gzip');
-  const writer = stream.writable.getWriter();
-  await writer.write(new Uint8Array(buffer));
-  await writer.close();
-  return new Response(stream.readable).arrayBuffer();
-};
-
-const isGzipContentType = (contentType?: string | null): boolean => {
-  if (!contentType) return false;
-  const normalized = contentType.toLowerCase();
-  return normalized.includes('gzip') || normalized.endsWith('+gzip');
-};
-
-const loadRawBufferFromChunkStore = async (
-  nodeId: NodeId,
-  cacheKey: string,
-): Promise<{ data: ArrayBuffer; featureCount: number; nodeId: NodeId } | null> => {
-  const store = getDownloadChunkStore();
-  const entry = await store.get(cacheKey);
-  if (!entry) return null;
-  const decoded = isGzipContentType(entry.metadata?.contentType)
-    ? await decompressGzip(entry.value)
-    : entry.value;
-  const collection = await decodeGeoJson(decoded);
-  if (!isFeatureCollection(collection)) {
-    return null;
-  }
-  return {
-    data: decoded,
-    featureCount: collection.features.length,
-    nodeId,
-  };
-};
-
 const buildTileIdRelations = (params: {
   nodeId: NodeId;
   bufferId: string;
@@ -235,15 +172,9 @@ const processDownloadTask = async ({
       const fgbBytes = await geojsonApi.serialize(featureCollection);
       const fgb = fgbBytes.buffer.slice(fgbBytes.byteOffset, fgbBytes.byteOffset + fgbBytes.byteLength);
       const bounds = turfBbox(featureCollection);
-      const db = getEphemeralShapeDB();
+      const ephemeral = getShapeDbApiClient().ephemeral;
       const bufferId = `${nodeId}-download-${taskIndex}`;
-      const compressed = await compressGzip(fgb);
-      const store = getDownloadChunkStore();
-      await store.setForNode(nodeId, bufferId, compressed, {
-        contentType: 'application/flatgeobuf+gzip',
-        sizeBytes: compressed.byteLength,
-      }, { identity: 'hash' });
-      await db.rawBuffers.put({
+      await ephemeral.putRawBuffer({
         id: bufferId,
         nodeId: task.nodeId ?? nodeId,
         data: fgb,
@@ -277,15 +208,14 @@ const processExtract1Task = async ({
   taskIndex,
   input,
 }: ExtractTaskRequest<Extract1Task>): Promise<ShapeStageWorkerTaskResult> => {
-  const db = getEphemeralShapeDB();
+  const ephemeral = getShapeDbApiClient().ephemeral;
   const inputBufferId = input.inputBufferId ?? '';
-  const raw = await loadRawBufferFromChunkStore(nodeId, inputBufferId)
-    ?? await db.rawBuffers.get(inputBufferId);
+  const raw = await ephemeral.getRawBuffer(inputBufferId);
   if (!raw) {
     return { status: 'failed', errorMessage: `Raw buffer not found: ${inputBufferId}` };
   }
   if (!raw.featureCount) {
-    await db.extractedBuffers.put({
+    await ephemeral.putExtractedBuffer({
       id: `${nodeId}-extract1-${taskIndex}`,
       nodeId: raw.nodeId,
       stage: 'extract1',
@@ -302,7 +232,7 @@ const processExtract1Task = async ({
   if (!enableFeatureFiltering) {
     const outputBufferId = `${nodeId}-extract1-${taskIndex}`;
     const featureCount = raw.featureCount ?? 0;
-    await db.extractedBuffers.put({
+    await ephemeral.putExtractedBuffer({
       id: outputBufferId,
       nodeId: raw.nodeId,
       stage: 'extract1',
@@ -363,7 +293,7 @@ const processExtract1Task = async ({
     ? sanitizedExtracted.features.length
     : raw.featureCount;
   if (sanitizedFiltered && featureCount === 0) {
-    await db.extractedBuffers.put({
+    await ephemeral.putExtractedBuffer({
       id: outputBufferId,
       nodeId: raw.nodeId,
       stage: 'extract1',
@@ -379,7 +309,7 @@ const processExtract1Task = async ({
     ? await encodeGeoJson(sanitizedExtracted)
     : raw.data;
   if (!featureCount) {
-    await db.extractedBuffers.put({
+    await ephemeral.putExtractedBuffer({
       id: outputBufferId,
       nodeId: raw.nodeId,
       stage: 'extract1',
@@ -391,7 +321,7 @@ const processExtract1Task = async ({
     });
     return { status: 'skipped', featureCount: 0 };
   }
-  await db.extractedBuffers.put({
+  await ephemeral.putExtractedBuffer({
     id: outputBufferId,
     nodeId: raw.nodeId,
     stage: 'extract1',
@@ -410,10 +340,10 @@ const processExtract2Task = async ({
   taskIndex,
   input: payload,
 }: ExtractTaskRequest<Extract2Task>): Promise<ShapeStageWorkerTaskResult> => {
-  const db = getEphemeralShapeDB();
+  const ephemeral = getShapeDbApiClient().ephemeral;
   const inputBufferId = payload.inputBufferId ?? '';
-  const buffer = await db.extractedBuffers.get(inputBufferId)
-    ?? await db.rawBuffers.get(inputBufferId);
+  const buffer = await ephemeral.getExtractedBuffer(inputBufferId)
+    ?? await ephemeral.getRawBuffer(inputBufferId);
   if (!buffer) {
     return { status: 'failed', errorMessage: `Extract2 input buffer not found: ${inputBufferId}` };
   }
@@ -424,7 +354,7 @@ const processExtract2Task = async ({
     const retry = payload.retry ?? 0;
     const retryScale = retry > 0 ? 1 + retry * 2 : 1;
     const effectiveTolerance = baseTolerance * retryScale;
-    await db.extractedBuffers.put({
+    await ephemeral.putExtractedBuffer({
       id: outputBufferId,
       nodeId: buffer.nodeId,
       stage: 'extract2',
@@ -471,9 +401,9 @@ const processExtract2Task = async ({
         features: sanitized.features,
       });
       if (tileRelations.length > 0) {
-        await db.tileIdToBufferRelations.bulkPut(tileRelations);
+        await ephemeral.putTileIdRelations(tileRelations);
       }
-      await db.extractedBuffers.put({
+      await ephemeral.putExtractedBuffer({
         id: outputBufferId,
         nodeId: buffer.nodeId,
         stage: 'extract2',
@@ -485,7 +415,7 @@ const processExtract2Task = async ({
       });
       return { status: 'completed', featureCount };
     }
-    await db.extractedBuffers.put({
+    await ephemeral.putExtractedBuffer({
       id: outputBufferId,
       nodeId: buffer.nodeId,
       stage: 'extract2',
@@ -578,7 +508,7 @@ const processExtract2Task = async ({
   let extraction = await runExtraction();
   if (extraction.status === 'skipped') {
     const outputBufferId = `${nodeId}-extract2-${taskIndex}`;
-    await db.extractedBuffers.put({
+    await ephemeral.putExtractedBuffer({
       id: outputBufferId,
       nodeId: buffer.nodeId,
       stage: 'extract2',
@@ -629,9 +559,9 @@ const processExtract2Task = async ({
     features: finalFeatures,
   });
   if (tileRelations.length > 0) {
-    await db.tileIdToBufferRelations.bulkPut(tileRelations);
+    await ephemeral.putTileIdRelations(tileRelations);
   }
-  await db.extractedBuffers.put({
+  await ephemeral.putExtractedBuffer({
     id: outputBufferId,
     nodeId: buffer.nodeId,
     stage: 'extract2',

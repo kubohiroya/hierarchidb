@@ -24,7 +24,7 @@ import {
 } from '@hierarchidb/ui-map';
 import { useVectorTilePreviewTable } from './preview/useVectorTilePreviewTable.js';
 import { getDBName } from '@hierarchidb/util';
-import { shapeDB } from '../../services/database/ShapeDB.js';
+import { getShapeDbApiClient } from '../../services/batch/ShapeBatchApiClient.js';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 
 type ShapePreviewDraft = Partial<ShapeEntity> & {
@@ -43,10 +43,8 @@ const DEFAULT_BOUNDS_MARGIN = 0.1;
 const MIN_BOUNDS_MARGIN = 0.25;
 
 const fetchTileSummary = async (nodeId: string) => {
-  const tiles = await shapeDB.vectorTiles.where('nodeId').equals(nodeId).toArray();
-  if (tiles.length === 0) return { tiles: 0, totalBytes: 0 };
-  const totalBytes = tiles.reduce((sum, row) => sum + (row.size ?? 0), 0);
-  return { tiles: tiles.length, totalBytes };
+  const summary = await getShapeDbApiClient().query.getVectorTileSummary(toNodeId(nodeId));
+  return { tiles: summary.tiles, totalBytes: summary.totalBytes };
 };
 
 const resolveTilesAvailable = async (nodeId: string): Promise<boolean> => {
@@ -60,16 +58,9 @@ const fetchTile = async (
   x: number,
   y: number,
 ): Promise<ArrayBuffer | null> => {
-  const row = await shapeDB.vectorTiles
-    .where('[nodeId+z+x+y]')
-    .equals([nodeId, z, x, y])
-    .toArray()
-    .then((rows) => rows[0]);
-  if (!row?.data_Uint8Array) return null;
-  const data = row.data_Uint8Array;
-  return data instanceof ArrayBuffer
-    ? data
-    : data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+  const data = await getShapeDbApiClient().query.getVectorTile(toNodeId(nodeId), z, x, y);
+  if (!data) return null;
+  return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
 };
 
 export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string) => {
@@ -129,7 +120,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       };
     }
     setStatusLoaded(false);
-    shapeDB.batchSessions.get(activeNodeId).then((session) => {
+    getShapeDbApiClient().query.getBatchSessionRecord(activeNodeId).then((session) => {
       if (cancelled) return;
       setPersistedStatus(session?.status ?? null);
       setStatusLoaded(true);
@@ -255,10 +246,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
 
   const loadMetadataRows = useCallback(
     (targetNodeId: NodeId) =>
-      shapeDB.sourceMetadata
-        .where('nodeId')
-        .equals(targetNodeId)
-        .toArray() as Promise<ShapeSourceMetadataRow[]>,
+      getShapeDbApiClient().query.listSourceMetadata(targetNodeId) as Promise<ShapeSourceMetadataRow[]>,
     [],
   );
 

@@ -32,20 +32,20 @@ export type MapLayerInfo = {
   sourceId: string;
 };
 
-export type MapViewportFeatureIds = Record<
+export type MapFeatureIdSet = Record<
   string,
-  Partial<Record<MapNodeType, Array<string | number>>>
+  Partial<Record<MapNodeType, Set<string | number>>>
 >;
 
-export const mapSearchMatchesAtom = atom<MapHighlightEntry[]>([]);
+export const mapSearchMatchesAtom = atom<MapFeatureIdSet>({});
 
-export const mapHoverMatchAtom = atom<MapHighlightEntry | null>(null);
+export const mapHoverMatchAtom = atom<MapFeatureIdSet>({});
 
-export const mapSelectedMatchAtom = atom<MapHighlightEntry | null>(null);
+export const mapSelectedMatchAtom = atom<MapFeatureIdSet>({});
 
 export const mapLayerInfoAtom = atom<MapLayerInfo[]>([]);
 
-export const mapViewportFeatureIdsAtom = atom<MapViewportFeatureIds | null>(null);
+export const mapViewportFeatureIdsAtom = atom<MapFeatureIdSet | null>(null);
 
 export const mapSearchTargetSelectionAtom = atom<MapSearchTargetSelection>({
   pointName: true,
@@ -58,3 +58,5 @@ export const mapSearchTargetSelectionAtom = atom<MapSearchTargetSelection>({
   shapeRegionCode: true,
   shapeCountryCode: true,
 });
+
+export const mapStylerToggleAtom = atom<Record<string, boolean>>({});

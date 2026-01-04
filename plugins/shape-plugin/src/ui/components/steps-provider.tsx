@@ -10,7 +10,7 @@ import {
   type SelectedArrayByCountries,
 } from '../../common/types/index.js';
 import { toNodeId } from '@hierarchidb/common-types';
-import { shapeDB } from '../../services/database/ShapeDB.js';
+import { getShapeDbApiClient } from '../../services/batch/ShapeBatchApiClient.js';
 import { ShapeDataSourceStep } from './steps/ShapeDataSourceStep.js';
 import { ShapeProcessingSettingsStep } from './steps/ShapeProcessingSettingsStep.js';
 import { ShapeCountrySelectionStep } from './steps/ShapeCountrySelectionStep.js';
@@ -82,18 +82,14 @@ const hasTileSummary = (data?: Partial<ShapeEntity>): boolean =>
 const hasPersistedVectorTiles = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
   const nodeKey = resolveShapeNodeKey(data);
   if (!nodeKey) return false;
-  const legacyCount = await shapeDB.vectorTiles.where('nodeId').equals(toNodeId(nodeKey)).count();
-  return legacyCount > 0;
+  const summary = await getShapeDbApiClient().query.getVectorTileSummary(toNodeId(nodeKey));
+  return summary.tiles > 0;
 };
 
 const hasCompletedVectorTileTasks = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
   const nodeKey = resolveShapeNodeKey(data);
   if (!nodeKey) return false;
-  const tasks = await shapeDB.batchTasks
-    .where('nodeId')
-    .equals(nodeKey)
-    .and((task) => task.taskType === 'vectortile')
-    .toArray();
+  const tasks = await getShapeDbApiClient().ephemeral.listBatchTasksByType(toNodeId(nodeKey), 'vectortile');
   if (tasks.length === 0) return false;
   const completed = tasks.filter((task) => task.status === 'completed').length;
   return completed === tasks.length;
@@ -102,7 +98,7 @@ const hasCompletedVectorTileTasks = async (data?: Partial<ShapeEntity>): Promise
 const hasCompletedBatchSession = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
   const nodeId = data?.nodeId;
   if (!nodeId) return false;
-  const session = await shapeDB.batchSessions.get(nodeId);
+  const session = await getShapeDbApiClient().query.getBatchSessionRecord(nodeId);
   return session?.status === 'completed';
 };
 

@@ -1,46 +1,27 @@
-import { useCallback, useEffect, useRef, type MutableRefObject } from 'react';
-import type { MapFeatureIdentifyResult } from '../types/unified-map-props.js';
-import type {
-  MapLibreGeoJSONFeature,
-  MapLibreMapInstance,
-  MapLibreMapMouseEvent,
-} from '../types/maplibre-public.js';
-import {
-  defaultFeatureIdAccessor,
-  resolveIdentifyCandidates,
-} from '../lib/feature-identification.js';
+import { useCallback, useEffect, useRef } from 'react';
+import type { MapLibreGeoJSONFeature, MapLibreMapInstance } from '../types/maplibre-public.js';
+import { defaultFeatureIdAccessor } from '../lib/feature-identification.js';
 
 export type UseMapFeatureHighlightsParams<HighlightEntry extends { source: string; id: string | number }> = {
   mapInstance: MapLibreMapInstance | null;
   highlightLayerIds: string[];
-  buildHighlightEntry: (feature?: MapLibreGeoJSONFeature | null) => HighlightEntry | null;
   searchMatches: HighlightEntry[];
-  hoverMatch: HighlightEntry | null;
-  selectedMatch: HighlightEntry | null;
-  setHoverMatch: (entry: HighlightEntry | null) => void;
-  setSelectedMatch: (entry: HighlightEntry | null) => void;
+  hoverMatches: HighlightEntry[];
+  selectedMatches: HighlightEntry[];
   onViewportLayerIdsChange?: (layerIds: Map<string, Set<string | number>>) => void;
-};
-
-export type UseMapFeatureHighlightsResult<HighlightEntry> = {
-  buildHighlightEntry: (feature?: MapLibreGeoJSONFeature | null) => HighlightEntry | null;
-  handleIdentify: (result: MapFeatureIdentifyResult) => void;
 };
 
 export const useMapFeatureHighlights = <HighlightEntry extends { source: string; id: string | number }>({
   mapInstance,
   highlightLayerIds,
-  buildHighlightEntry,
   searchMatches,
-  hoverMatch,
-  selectedMatch,
-  setHoverMatch,
-  setSelectedMatch,
+  hoverMatches,
+  selectedMatches,
   onViewportLayerIdsChange,
-}: UseMapFeatureHighlightsParams<HighlightEntry>): UseMapFeatureHighlightsResult<HighlightEntry> => {
+}: UseMapFeatureHighlightsParams<HighlightEntry>): void => {
   const appliedSearchMatchesRef = useRef<HighlightEntry[]>([]);
-  const appliedHoverRef = useRef<HighlightEntry | null>(null);
-  const appliedSelectedRef = useRef<HighlightEntry | null>(null);
+  const appliedHoverRef = useRef<HighlightEntry[]>([]);
+  const appliedSelectedRef = useRef<HighlightEntry[]>([]);
 
   const updateViewportFeatures = useCallback(() => {
     if (!mapInstance || !onViewportLayerIdsChange) return;
@@ -100,57 +81,6 @@ export const useMapFeatureHighlights = <HighlightEntry extends { source: string;
     [mapInstance],
   );
 
-  const setSingleHighlight = useCallback(
-    (
-      ref: MutableRefObject<HighlightEntry | null>,
-      key: 'hdbHover' | 'hdbSelected',
-      next: HighlightEntry | null,
-    ) => {
-      const current = ref.current;
-      if (current && (!next || current.source !== next.source || current.id !== next.id)) {
-        clearHighlightKey(current, key);
-      }
-      if (next) {
-        applyHighlightKey(next, key);
-      }
-      ref.current = next;
-    },
-    [applyHighlightKey, clearHighlightKey],
-  );
-
-  const handleIdentify = useCallback(
-    (result: MapFeatureIdentifyResult) => {
-      const entry = buildHighlightEntry(result.features[0]);
-      setSelectedMatch(entry);
-    },
-    [buildHighlightEntry, setSelectedMatch],
-  );
-
-  useEffect(() => {
-    if (!mapInstance) return undefined;
-    const handleMouseMove = (event: MapLibreMapMouseEvent) => {
-      const result = resolveIdentifyCandidates(mapInstance, event, {
-        layerIds: highlightLayerIds,
-        radius: 6,
-        getFeatureId: defaultFeatureIdAccessor,
-      });
-      const entry = buildHighlightEntry(result.features[0]);
-      setHoverMatch(entry);
-    };
-
-    const handleMouseLeave = () => {
-      setHoverMatch(null);
-    };
-
-    const canvas = mapInstance.getCanvas();
-    mapInstance.on('mousemove', handleMouseMove as (...args: unknown[]) => void);
-    canvas.addEventListener('mouseleave', handleMouseLeave);
-    return () => {
-      mapInstance.off('mousemove', handleMouseMove as (...args: unknown[]) => void);
-      canvas.removeEventListener('mouseleave', handleMouseLeave);
-    };
-  }, [buildHighlightEntry, highlightLayerIds, mapInstance, setHoverMatch]);
-
   useEffect(() => {
     if (!mapInstance || !onViewportLayerIdsChange) return;
     updateViewportFeatures();
@@ -172,16 +102,15 @@ export const useMapFeatureHighlights = <HighlightEntry extends { source: string;
 
   useEffect(() => {
     if (!mapInstance) return;
-    setSingleHighlight(appliedHoverRef, 'hdbHover', hoverMatch);
-  }, [hoverMatch, mapInstance, setSingleHighlight]);
+    appliedHoverRef.current.forEach((entry) => {clearHighlightKey(entry, 'hdbHover');});
+    hoverMatches.forEach((entry) => {applyHighlightKey(entry, 'hdbHover');});
+    appliedHoverRef.current = hoverMatches;
+  }, [applyHighlightKey, clearHighlightKey, hoverMatches, mapInstance]);
 
   useEffect(() => {
     if (!mapInstance) return;
-    setSingleHighlight(appliedSelectedRef, 'hdbSelected', selectedMatch);
-  }, [mapInstance, selectedMatch, setSingleHighlight]);
-
-  return {
-    buildHighlightEntry,
-    handleIdentify,
-  };
+    appliedSelectedRef.current.forEach((entry) => {clearHighlightKey(entry, 'hdbSelected');});
+    selectedMatches.forEach((entry) => {applyHighlightKey(entry, 'hdbSelected');});
+    appliedSelectedRef.current = selectedMatches;
+  }, [applyHighlightKey, clearHighlightKey, mapInstance, selectedMatches]);
 };

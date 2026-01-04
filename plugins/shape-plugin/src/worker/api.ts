@@ -32,7 +32,6 @@ import { ShapeEntityHandler } from './handlers/index.js';
 import { metadataLoader } from '../services/metadata/MetadataLoader.js';
 import { UnifiedShapeBatchManager } from '../services/batch/UnifiedShapeBatchManager.js';
 import {
-  shapeDB,
   type BatchTaskRecord,
   type DownloadTaskInputData,
   type Extract1TaskInputData,
@@ -40,7 +39,8 @@ import {
   type VectorTileTaskInputData,
 } from '../services/database/ShapeDB.js';
 import type { BatchProcessConfig } from '../services/batch/types.js';
-import { getEphemeralShapeDB } from '../services/database/EphemeralShapeDB.js';
+import { getShapeDbApiClient } from '../services/batch/ShapeBatchApiClient.js';
+import { toBatchSessionRecord } from '../services/batch/shapeSessionMappers.js';
 import type { BatchStage, BatchTaskStatus } from '../common/types/BatchTaskLike.js';
 import type { BatchProgressEvent as RuntimeBatchProgressEvent } from '@hierarchidb/common-api';
 import {
@@ -144,14 +144,11 @@ const persistDownloadTaskPayloads = async (
   buildStartedAt: number,
 ): Promise<void> => {
   if (payloads.length === 0) return;
-  const existingTasks = await shapeDB.batchTasks
-    .where('nodeId')
-    .equals(nodeId)
-    .and((task) => task.taskType === 'download')
-    .toArray();
+  const ephemeral = getShapeDbApiClient().ephemeral;
+  const existingTasks = await ephemeral.listBatchTasksByType(nodeId, 'download');
   const incompleteTasks = existingTasks.filter((task) => task.status !== 'completed');
   if (incompleteTasks.length > 0) {
-    await shapeDB.batchTasks.bulkDelete(incompleteTasks.map((task) => task.taskId));
+    await ephemeral.deleteBatchTasksByIds(incompleteTasks.map((task) => task.taskId));
   }
   const incompleteIds = new Set(incompleteTasks.map((task) => task.taskId));
   const activeTasks = existingTasks.filter((task) => !incompleteIds.has(task.taskId));
@@ -184,7 +181,7 @@ const persistDownloadTaskPayloads = async (
     total: candidates.length,
   });
   if (newTasks.length > 0) {
-    await shapeDB.batchTasks.bulkPut(newTasks);
+  await ephemeral.putBatchTasks(newTasks);
   }
 };
 
@@ -388,8 +385,7 @@ const hydrateSessionMeta = async (nodeId: string): Promise<void> => {
   const meta = getOrCreateNodeMeta(nodeId);
   if (meta.treeNodeId) return;
   try {
-    const db = getEphemeralShapeDB();
-    const record = await db.sessions.get(nodeId);
+    const record = await getShapeDbApiClient().ephemeral.getSessionRecord(nodeId as NodeId);
     if (record?.nodeId) {
       meta.treeNodeId = record.nodeId as unknown as TreeNodeId;
     }
@@ -610,10 +606,11 @@ export const shapeBatchAPI = {
     }
     const mergedConfig = mergeBatchConfig(entity?.batchConfig ?? DEFAULT_PROCESSING_CONFIG);
     const desiredConfig = buildBatchSessionConfig(mergedConfig, { draftData: entity ?? undefined });
-    const session = await shapeDB.getBatchSession(nodeId);
-    if (session?.config?.vectorTiles && desiredConfig.vectorTiles) {
-      const currentMin = session.config.vectorTiles.minZoom;
-      const currentMax = session.config.vectorTiles.maxZoom;
+    const session = await getShapeDbApiClient().query.getBatchSessionRecord(nodeId);
+    const sessionRecord = session ? toBatchSessionRecord(session) : null;
+    if (sessionRecord?.config?.vectorTiles && desiredConfig.vectorTiles) {
+      const currentMin = sessionRecord.config.vectorTiles.minZoom;
+      const currentMax = sessionRecord.config.vectorTiles.maxZoom;
       const desiredMin = desiredConfig.vectorTiles.minZoom;
       const desiredMax = desiredConfig.vectorTiles.maxZoom;
       if (currentMin !== desiredMin || currentMax !== desiredMax) {
@@ -713,7 +710,7 @@ export const shapeBatchAPI = {
   },
 
   getBatchTasks: async (nodeId: NodeId): Promise<BatchTask[]> => {
-    const tasks = await shapeDB.getBatchTasks(nodeId);
+    const tasks = await getShapeDbApiClient().ephemeral.listBatchTasks(nodeId);
     return tasks.map(mapTaskRecordToBatchTask);
   },
 
@@ -910,7 +907,7 @@ export const shapeBatchAPI = {
   // ===================================
 
   getProcessedFeatureCount: async (nodeId: NodeId): Promise<number> => {
-    return shapeDB.features.where('nodeId').equals(nodeId).count();
+    return getShapeDbApiClient().query.getProcessedFeatureCount(nodeId);
   },
 
   getVectorTileInfo: async (
@@ -919,7 +916,7 @@ export const shapeBatchAPI = {
     x: number,
     y: number,
   ): Promise<TileInfo | undefined> => {
-    const tile = await shapeDB.getVectorTile(nodeId, z, x, y);
+    const tile = await getShapeDbApiClient().query.getVectorTileInfo(nodeId, z, x, y);
     if (!tile) return undefined;
     return {
       exists: true,
@@ -978,19 +975,7 @@ export const shapeBatchAPI = {
   },
 
   cleanupProcessingData: async (nodeId: NodeId): Promise<void> => {
-    const ephemeral = getEphemeralShapeDB();
-    await shapeDB.batchTasks.where('nodeId').equals(nodeId).delete();
-    await shapeDB.batchSessions.where('nodeId').equals(nodeId).delete();
-    await shapeDB.features.where('nodeId').equals(nodeId).delete();
-    await ephemeral.featureBuffers.where('nodeId').equals(nodeId).delete();
-    await ephemeral.tileBuffers.where('nodeId').equals(nodeId).delete();
-    await shapeDB.vectorTiles.where('nodeId').equals(nodeId).delete();
-    const cacheKeys = await ephemeral.cache
-      .filter((entry) => entry.key.includes(String(nodeId)))
-      .primaryKeys();
-    if (cacheKeys.length > 0) {
-      await ephemeral.cache.bulkDelete(cacheKeys);
-    }
+    await getShapeDbApiClient().mutation.cleanupProcessingData(nodeId);
   },
 };
 
