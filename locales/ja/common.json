@@ -133,7 +133,7 @@
           "cancel": "キャンセル",
           "close": "閉じる",
           "maximize": "最大化",
-          "restoreSize": "元のサイズに戻す",
+          "restoreSize": "元に戻す",
           "fullscreen": "全画面",
           "exitFullscreen": "全画面を終了"
         },
@@ -141,7 +141,7 @@
           "saveDraftDisabled": "変更がないため保存できません",
           "close": "ダイアログを閉じる",
           "maximize": "最大化",
-          "restoreSize": "元のサイズに戻す",
+          "restoreSize": "元に戻す",
           "fullscreen": "全画面",
           "exitFullscreen": "全画面を終了"
         }
@@ -287,7 +287,12 @@
         },
         "sharedZoomRange": {
           "title": "共通ズーム範囲",
-          "helper": "shape/location/route のズーム範囲に共通の既定値を適用します。"
+          "helper": "shape/location/route のズーム範囲に共通の既定値を適用します。",
+          "rangeLabel": "ズーム範囲",
+          "segmentsLabel": "ズーム範囲の分割数",
+          "segmentsHelper": "ズーム範囲を分割する数を指定します。",
+          "breakpointsLabel": "ズーム範囲のブレークポイント",
+          "breakpointsHelper": "サポート範囲内で境界となるズーム率を指定します。"
         }
       },
       "developerMenu": {

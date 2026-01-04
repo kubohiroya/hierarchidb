@@ -1,0 +1,1 @@
+import"./vendor-react-DpltIsIb.js";import{Bn as e}from"./index.js";const t=e;var n=t;export{t as FolderPluginIcon,n as default};

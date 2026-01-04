@@ -1,0 +1,1 @@
+import"./vendor-react-DpltIsIb.js";import"./ui-plugin-loader-CUhyJOt4.js";import{t as e}from"./rootRoute-D_LNzNZq.js";export{e as rootRoute};

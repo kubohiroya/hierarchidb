@@ -1,0 +1,1 @@
+import"./vendor-react-DpltIsIb.js";import{n as e}from"./dist-FXu-_Rkn.js";e.getInstance().registerConfigProvider({nodeType:`folder`,getCreateStepConfigs(){return[]},getEditStepConfigs(){return this.getCreateStepConfigs()}});const t=()=>null;export{t as FolderDialogHost,t as default};
