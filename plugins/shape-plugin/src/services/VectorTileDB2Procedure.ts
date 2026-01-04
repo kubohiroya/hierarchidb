@@ -1,13 +1,13 @@
 // build-index.ts
 import { bbox, bboxClip, bboxPolygon, booleanIntersects } from "@turf/turf";
 import { readFile } from "node:fs/promises";
-import type { VectorTileDB2 } from './database/VectorTileDB.ts';
+import type { VectorTileDbBase } from '@hierarchidb/vectortile-store';
 import { enumerateTilesForBBox, tileBBox } from './utils/tiles-util.ts';
 import type { Feature, MultiPolygon } from 'geojson';
 
 type CountryInput = { id: string; filePath: string };
 
-export async function vectorTileDB2Procedure(db: VectorTileDB2, range: { zMin: number; zMax: number }, inputs: CountryInput[]) {
+export async function vectorTileDB2Procedure(db: VectorTileDbBase, range: { zMin: number; zMax: number }, inputs: CountryInput[]) {
   await db.meta.put({ key: "zoomRange", value: range });
 
   for (const src of inputs) {
@@ -26,14 +26,14 @@ export async function vectorTileDB2Procedure(db: VectorTileDB2, range: { zMin: n
   }
 }
 
-export async function getSourceIdsForTile(db: VectorTileDB2, z: number, tileId: number): Promise<string[]> {
+export async function getSourceIdsForTile(db: VectorTileDbBase, z: number, tileId: number): Promise<string[]> {
   const rows = await db.tileIndex.where("[z+tileId]").equals([z, tileId]).toArray();
   // sourceId重複除去
   return [...new Set(rows.map(r => r.sourceId))];
 }
 
 export async function assembleTileGeoJSON(
-  db: VectorTileDB2,
+  db: VectorTileDbBase,
   z: number,
   x: number,
   y: number,

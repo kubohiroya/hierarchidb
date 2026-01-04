@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import type { GridColumn } from '@hierarchidb/ui-grid';
 import { useTranslation } from '../../i18n.js';
-import type { ShapeSourceMetadataRow } from '../../../services/database/VectorTileDB.ts';
+import type { ShapeSourceMetadataRow } from '@hierarchidb/plugin-service-api';
 import { Typography } from '@mui/material';
 
 type PreviewMetadataRow = ShapeSourceMetadataRow;

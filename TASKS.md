@@ -1,3 +1,137 @@
+2058) chore/remove/runtime-stage-worker (P1) — 進行中 (2026-01-09)
+- ブランチ名: chore/remove/runtime-stage-worker
+- 依存: なし
+- 受け入れ基準: `packages/features/runtime-stage-worker` を削除し参照/依存を撤去する／計画ドキュメントの runtime-stage-worker 記述を整理する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 要点：runtime-stage-worker パッケージを削除し、計画ドキュメントと pnpm-lock の参照を整理。
+- 影響範囲: `packages/features/runtime-stage-worker`, `docs/refactoring-plan-shape-to-location-route.md`, `pnpm-lock.yaml`
+- 検証：未実施（削除作業のみ）。
+- ロールバック手順: runtime-stage-worker パッケージと pnpm-lock のエントリ、計画ドキュメントの記述を復元する
+- チェックリスト:
+  - runtime-stage-worker パッケージを削除する
+  - 参照ドキュメント/ロックファイルを整理する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-09 19:40 JST runtime-stage-worker の削除作業に着手。
+  - done: 2026-01-09 19:46 JST runtime-stage-worker を削除し、計画ドキュメントと lockfile を整理。検証: 未実施。
+
+2057) chore/remove/compute-feature (P1) — 進行中 (2026-01-09)
+- ブランチ名: chore/remove/compute-feature
+- 依存: なし
+- 受け入れ基準: `packages/features/compute` を削除し参照/依存を撤去する／runtime-worker の FeatureRegistry から compute を外す／ドキュメントの compute 参照を整理する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/features/compute`, `packages/runtime-worker/src/services/FeatureBootstrap.ts`, `packages/runtime-worker/package.json`, `packages/features/batch/README.md`, `plugins/*/PLAN.md`, `plugins/shape-plugin/README.md`（必要に応じて）
+- ロールバック手順: compute パッケージと参照を復元し、FeatureRegistry への登録を元に戻す
+- チェックリスト:
+  - compute パッケージと package.json 参照を削除する
+  - runtime-worker の FeatureRegistry から compute を外す
+  - ドキュメント/計画の compute 参照を整理する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-09 16:10 JST @hierarchidb/compute の削除作業に着手。
+  - done: 2026-01-09 16:25 JST compute パッケージを削除し、runtime-worker の FeatureRegistry/依存、tsconfig paths、関連ドキュメントの参照を整理。検証: 未実施。
+
+2059) refactor/ui-batch/rename-to-ui-batch-progress (P1) — 進行中 (2026-01-09)
+- ブランチ名: refactor/ui-batch/rename-to-ui-batch-progress
+- 依存: なし
+- 受け入れ基準: @hierarchidb/ui-batch を @hierarchidb/ui-batch-progress に改名し、import/依存/paths/文書の参照を更新する／旧名称参照が残らない／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/ui/batch`, `plugins/*-plugin`, `tsconfig.base.json`, `app/tsconfig.json`, `plans/*`, `packages/plugin-registry/generated/registry.ts`
+- ロールバック手順: package.json の name と全参照を @hierarchidb/ui-batch に戻す
+- チェックリスト:
+  - パッケージ名と依存/インポートを更新する
+  - tsconfig paths とプラグイン依存を更新する
+  - 計画ドキュメントの記述を更新する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-09 16:05 JST ui-batch → ui-batch-progress 改名に着手。
+  - done: 2026-01-09 16:28 JST ui-batch を ui-batch-progress に改名し、依存/import/paths/計画文書/registry を更新。検証: 未実施。
+
+2058) chore/analysis/ui-batch-usage (P2) — 進行中 (2026-01-09)
+- ブランチ名: chore/analysis/ui-batch-usage
+- 依存: なし
+- 受け入れ基準: @hierarchidb/ui-batch の目的を一次情報から要約する／参照元（import/依存関係）を列挙し実際の利用有無を判断する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/ui/batch`, `plugins/*-plugin`
+- ロールバック手順: 調査のみのためロールバック不要
+- チェックリスト:
+  - ui-batch の目的と主要 exports を確認する
+  - import 参照元を列挙する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-09 15:38 JST ui-batch の利用状況調査に着手。
+  - done: 2026-01-09 15:44 JST ui-batch の hooks が shape/location/route プラグインで利用されていることを確認。検証: 調査のみ。
+
+2057) chore/analysis/download-smart-fetch-status (P2) — 進行中 (2026-01-09)
+- ブランチ名: chore/analysis/download-smart-fetch-status
+- 依存: なし
+- 受け入れ基準: packages/features/download の現状と目的を整理する／smart-fetch という名称計画の有無と進捗を一次情報から確認する／再編・整理の進捗（完了/未完）を整理する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/features/download`, `plans/*`, `TASKS.md`
+- ロールバック手順: 調査のみのためロールバック不要
+- チェックリスト:
+  - smart-fetch 名称の記述有無を確認する
+  - download の現状/目的と整理状況をまとめる
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-09 15:22 JST download/smart-fetch 再編状況の調査に着手。
+  - done: 2026-01-09 15:28 JST smart-fetch パッケージ名の記述は確認できず、download 内の smartFetch 実装が存在。download の再編は chunk-store 分離と API 整理まで完了、名称変更は未実施と判断。検証: 調査のみ。
+
+2056) chore/remove/ui-gis (P1) — 進行中 (2026-01-09)
+- ブランチ名: chore/remove/ui-gis
+- 依存: なし
+- 受け入れ基準: packages/ui/gis を削除し参照をすべて撤去する／tsconfig.base.json の ui-gis paths を削除する／計画ドキュメントの ui-gis 記述を ui-map へ更新する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/ui/gis`, `tsconfig.base.json`, `plans/shape-ui-shared-packages.md`
+- ロールバック手順: ui-gis のディレクトリと paths を復元し、参照を元に戻す
+- チェックリスト:
+  - ui-gis パッケージと参照を削除する
+  - tsconfig.base.json の paths を更新する
+  - 計画ドキュメントの記述を更新する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-09 15:05 JST ui-gis の削除作業に着手。
+  - done: 2026-01-09 15:14 JST packages/ui/gis を削除し、tsconfig.base.json の paths と計画ドキュメントの ui-gis 記述を ui-map に更新。検証: 未実施。
+
+2055) refactor/ui-map/simple-full-components (P1) — 進行中 (2026-01-09)
+- ブランチ名: refactor/ui-map/simple-full-components
+- 依存: なし
+- 受け入れ基準: ui-map にシンプル/フルスペックの地図表示コンポーネントを提供する／shape-plugin の preview で ui-gis 依存を撤去し ui-map へ移行する／ui-gis 提供が独自コンポーネント奨励に見えない構成にする／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/ui/map/src`, `plugins/shape-plugin/src`, `plugins/shape-plugin/package.json`, `packages/ui/gis`（必要に応じて）
+- ロールバック手順: ui-map 追加コンポーネントと shape-plugin の import 変更を revert し、ui-gis 参照に戻す
+- チェックリスト:
+  - ui-map のシンプル/フルスペック UI コンポーネント設計を確定する
+  - ui-gis のプレビュー用フックを ui-map に移動/統合する
+  - shape-plugin の preview 依存を ui-map に切り替える
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-09 14:32 JST ui-map への統合と ui-gis 依存撤去に着手。
+  - done: 2026-01-09 14:52 JST ui-map に Simple/Full Map コンポーネントとプレビュー用フックを追加し、shape-plugin の ui-gis 依存を ui-map に移行。ui-gis は ui-map への再エクスポートと deprecated 記述へ変更。検証: 未実施。
+
+2054) chore/analysis/ui-gis-usage (P2) — 進行中 (2026-01-09)
+- ブランチ名: chore/analysis/ui-gis-usage
+- 依存: なし
+- 受け入れ基準: @hierarchidb/ui-gis の目的を一次情報から要約する／参照元（import/依存関係）を列挙し実際の利用有無を判断する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/ui/gis`, `plugins/shape-plugin`（参照確認のみ）
+- ロールバック手順: 本項目は調査のみのためロールバック不要
+- チェックリスト:
+  - package.json/計画ドキュメントから目的を確認する
+  - import/依存関係の参照元を列挙する
+  - 実際の利用有無の判断を整理する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-09 14:18 JST @hierarchidb/ui-gis の目的と利用状況の調査に着手。
+  - done: 2026-01-09 14:23 JST ui-gis の目的（ベクタタイルプレビュー系フックの共有化）と参照元（shape-plugin のプレビュー手順）を整理。検証: 調査のみ。
+
+2053) fix/runtime-worker/worker-error-code-export (P1) — 進行中 (2026-01-09)
+- ブランチ名: fix/runtime-worker/worker-error-code-export
+- 依存: なし
+- 受け入れ基準: commitOperations.ts で WorkerErrorCode の参照が実行時/型ともに解決する／Vite の "does not provide an export named 'WorkerErrorCode'" が再現しない／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/runtime-worker/src/services/commitOperations.ts`, `packages/runtime-worker/src/services/command-types.ts`（必要に応じて）
+- ロールバック手順: WorkerErrorCode の export/参照変更を revert して元の import/export に戻す
+- チェックリスト:
+  - WorkerErrorCode が型/値どちらとして定義されているかを確認する
+  - commitOperations.ts の import を実体に合わせて修正する
+  - runtime-worker の export 状態を確認し、必要なら公開経路を整える
+  - 運用ログ start/done/blocked と影響範囲/ロールバックを追記する
+- 運用ログ：
+  - start: 2026-01-09 14:05 JST WorkerErrorCode の export/参照不整合の修正に着手。
+  - done: 2026-01-09 14:12 JST WorkerErrorCode の値参照を WorkerErrorCodeValue に統一し、runtime-worker 内の import/参照を修正。検証: 未実施。
+
 2052) fix/shape-plugin/batch-resume-stuck (P1) — 進行中 (2026-01-04)
 - ブランチ名: fix/shape-plugin/batch-resume-stuck
 - 依存: なし
@@ -30,6 +164,9 @@
   - start: 2026-01-04 17:10 JST Toolbar 設定メニューの share zoom range に分割スライダーを配置する作業に着手。
   - done: 2026-01-04 17:20 JST Toolbar 設定メニューの share zoom range に分割スライダー（分割数/ブレークポイント）を追加し、共有設定の保存形式を range+segments+breakpoints に統一。route-plugin の共有ズーム読み込みも新形式対応。検証: 未実施。
   - done: 2026-01-04 17:35 JST Step5 の Next 判定を processingStatus 完了で許可し、vectortile の保存確認を TilesDB（+ legacy shapeDB）参照に更新。検証: 未実施。
+  - start: 2026-01-04 18:05 JST vectortile 保存先を shape/location/route DB へ戻し、共通スーパークラスへ VectorTileDB2 由来機能と metadata テーブルを集約、vectortile-store 廃止の対応に着手。
+  - start: 2026-01-04 18:45 JST vectortile-store を維持しつつ nodeId を NodeId へ具体化するリファクタリングに着手。
+  - done: 2026-01-04 19:30 JST vectortile-store を共通ベース（VectorTileDbBase/metadata）として維持し、vector-tile-db を撤去。runtime-worker/gis-sdk/shape・route・location で import/依存を vectortile-store へ統一し、vectortile API の nodeId を NodeId 型へ更新。検証: 未実施。
 
 2051) fix/shape-plugin/auth-dialog-buttons (P2) — 進行中 (2026-01-09)
 - ブランチ名: fix/shape-plugin/auth-dialog-buttons
@@ -243,6 +380,19 @@
 - 運用ログ：
   - start: 2026-01-03 21:24 JST map.tsx の分割実装に着手。
   - done: 2026-01-03 21:34 JST MapPage/hooks/検索UIへ分割し、map.tsx を薄いエントリに変更。
+
+2041) refactor/ui-map/extract-map-preview-parts (P2) — 完了 (2026-01-04)
+- ブランチ名: refactor/ui-map/extract-map-preview-parts
+- 依存: なし
+- 受け入れ基準: app/src/router/routes/map* の再利用性が高い preview 部品（検索UI/検索ロジック/ハイライト等）を ui-map に移設する／呼び出し側を ui-map の新部品に置換する／挙動が維持されることを確認する／TASKS.md に運用ログを記載する
+- チェックリスト:
+  - map* から移設対象コンポーネント/フックを抽出する
+  - ui-map に移設し exports を追加する
+  - app 側を ui-map の部品に差し替える
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-04 19:14 JST map preview 部品の ui-map 移設に着手。
+  - done: 2026-01-04 19:21 JST search UI と検索/ハイライト hook を ui-map に移設し、app 側を置換。
 
 2038) chore/analysis/gen-plugin-registry-split-proposal (P3) — 完了 (2026-01-03)
 - ブランチ名: chore/analysis/gen-plugin-registry-split-proposal
@@ -492,7 +642,7 @@
 - 要点：Shape Step3 の国×自治体レベルマトリクスをメタデータ駆動でオンデマンド生成し、データソース別ストラテジー＋WebWorkerで可用レベルを取得してUIへ反映するようにした。
 - 原因/影響範囲：従来は geoBoundaries 固定でレベル2までの静的前提だったため、他データソースや実際の可用レベルに追随できず UI が実態と乖離するリスクがあった。影響範囲は shape-plugin Step3 UI（国×自治体レベル選択）と可用性取得の裏側ロジック。
 - 修正内容と適用範囲：ストラテジーID解決を共通化、データソース可用性解決サービスと Comlink WebWorker を追加し、各ストラテジーが提供する可用性情報やメタデータから国別レベルを構築。Step3 フックは可用性通知を受けてマトリクスを再構成し、非対応セルは「-」を表示、仮想化を維持。適用範囲は `plugins/shape-plugin/src/services/datasources/*`, `plugins/shape-plugin/src/ui/hooks/useShapeCountrySelectionStep.ts`, `plugins/shape-plugin/src/ui/workers/*`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`。
-- 検証：`pnpm --filter @hierarchidb/shape-plugin test -- --runInBand --testTimeout=20000`（依存パッケージ @hierarchidb/shape-store / @hierarchidb/util / @hierarchidb/ui-batch の解決不可で失敗。テストは走らず。環境依存のため後続で要再実行）。
+- 検証：`pnpm --filter @hierarchidb/shape-plugin test -- --runInBand --testTimeout=20000`（依存パッケージ @hierarchidb/shape-store / @hierarchidb/util / @hierarchidb/ui-batch-progress の解決不可で失敗。テストは走らず。環境依存のため後続で要再実行）。
 - ロールバック手順：上記ファイルの差分を revert（特に `CountryAvailabilityResolver` 追加や Step3 フックの worker 連携部分を戻す）。
 - 運用ログ：
   - start: 2026-01-09 00:55 JST Step3 可用性動的化と worker 背景取得の設計開始。

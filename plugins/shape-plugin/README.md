@@ -27,7 +27,6 @@ Shape バッチ機能の新アーキテクチャ概要と利用メモ。
   - download: `@hierarchidb/download`（DownloadService, FetchNetworkPort）
   - chunk-store: `@hierarchidb/chunk-store`（DexieChunkStore）
   - auth: `@hierarchidb/auth-recovery`（401復帰, fetchWithAuth, setToken）
-  - compute: `@hierarchidb/compute`（タスク実行）
   - batch: `@hierarchidb/batch`（段階並列・進捗）
   - source/view: `@hierarchidb/map-source`, `@hierarchidb/map-adapter`（任意）
 

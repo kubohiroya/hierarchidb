@@ -32,7 +32,6 @@ graph LR
   subgraph G_packages_feature["packages/feature"]
     N9["@hierarchidb/auth-recovery"]
     N10["@hierarchidb/batch"]
-    N11["@hierarchidb/compute"]
     N12["@hierarchidb/download"]
     N13["@hierarchidb/feature-registry"]
     N14["@hierarchidb/fetch-save-metadata"]

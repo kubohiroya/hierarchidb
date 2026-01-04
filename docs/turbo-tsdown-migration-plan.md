@@ -21,7 +21,6 @@
 | `packages/components` | tsconfig.json, tsconfig.typecheck.json |
 | `packages/features/auth-recovery` | tsconfig.json |
 | `packages/features/batch` | tsconfig.json |
-| `packages/features/compute` | tsconfig.json |
 | `packages/features/download` | tsconfig.json, tsconfig.typecheck.json |
 | `packages/features/feature-registry` | tsconfig.json, tsconfig.typecheck.json |
 | `packages/features/fetch-save-metadata` | tsconfig.json |

@@ -1,88 +1,49 @@
-import { useAtom, useSetAtom } from 'jotai';
 import { useCallback, useEffect, useRef, type MutableRefObject } from 'react';
+import type { MapFeatureIdentifyResult } from '../types/unified-map-props.js';
 import type {
-  MapFeatureIdentifyResult,
   MapLibreGeoJSONFeature,
   MapLibreMapInstance,
   MapLibreMapMouseEvent,
-} from '@hierarchidb/ui-plugin-shell/ui-map';
+} from '../types/maplibre-public.js';
 import {
   defaultFeatureIdAccessor,
   resolveIdentifyCandidates,
-} from '@hierarchidb/ui-plugin-shell/ui-map';
-import type {
-  MapHighlightEntry,
-  MapLayerInfo,
-  MapViewportFeatureIds,
-} from '../../../state/mapSearch.atoms.js';
-import {
-  mapHoverMatchAtom,
-  mapSearchMatchesAtom,
-  mapSelectedMatchAtom,
-  mapViewportFeatureIdsAtom,
-} from '../../../state/mapSearch.atoms.js';
+} from '../lib/feature-identification.js';
 
-export type UseMapHighlightsParams = {
+export type UseMapFeatureHighlightsParams<HighlightEntry extends { source: string; id: string | number }> = {
   mapInstance: MapLibreMapInstance | null;
   highlightLayerIds: string[];
-  layerInfoById: Map<string, MapLayerInfo>;
-  layerInfoBySource: Map<string, MapLayerInfo>;
+  buildHighlightEntry: (feature?: MapLibreGeoJSONFeature | null) => HighlightEntry | null;
+  searchMatches: HighlightEntry[];
+  hoverMatch: HighlightEntry | null;
+  selectedMatch: HighlightEntry | null;
+  setHoverMatch: (entry: HighlightEntry | null) => void;
+  setSelectedMatch: (entry: HighlightEntry | null) => void;
+  onViewportLayerIdsChange?: (layerIds: Map<string, Set<string | number>>) => void;
 };
 
-export type UseMapHighlightsResult = {
-  buildHighlightEntry: (feature?: MapLibreGeoJSONFeature | null) => MapHighlightEntry | null;
+export type UseMapFeatureHighlightsResult<HighlightEntry> = {
+  buildHighlightEntry: (feature?: MapLibreGeoJSONFeature | null) => HighlightEntry | null;
   handleIdentify: (result: MapFeatureIdentifyResult) => void;
 };
 
-export const useMapHighlights = ({
+export const useMapFeatureHighlights = <HighlightEntry extends { source: string; id: string | number }>({
   mapInstance,
   highlightLayerIds,
-  layerInfoById,
-  layerInfoBySource,
-}: UseMapHighlightsParams): UseMapHighlightsResult => {
-  const [searchMatches] = useAtom(mapSearchMatchesAtom);
-  const [hoverMatch, setHoverMatch] = useAtom(mapHoverMatchAtom);
-  const [selectedMatch, setSelectedMatch] = useAtom(mapSelectedMatchAtom);
-  const setViewportFeatureIds = useSetAtom(mapViewportFeatureIdsAtom);
-  const appliedSearchMatchesRef = useRef<MapHighlightEntry[]>([]);
-  const appliedHoverRef = useRef<MapHighlightEntry | null>(null);
-  const appliedSelectedRef = useRef<MapHighlightEntry | null>(null);
-
-  const resolveLayerMeta = useCallback(
-    (feature?: MapLibreGeoJSONFeature | null) => {
-      if (!feature) return undefined;
-      const layerId = typeof feature.layer?.id === 'string' ? feature.layer.id : undefined;
-      if (layerId) {
-        const byId = layerInfoById.get(layerId);
-        if (byId) return byId;
-      }
-      const sourceId = typeof feature.source === 'string' ? feature.source : undefined;
-      return sourceId ? layerInfoBySource.get(sourceId) : undefined;
-    },
-    [layerInfoById, layerInfoBySource],
-  );
-
-  const buildHighlightEntry = useCallback(
-    (feature?: MapLibreGeoJSONFeature | null): MapHighlightEntry | null => {
-      if (!feature) return null;
-      const id = defaultFeatureIdAccessor(feature);
-      const source = typeof feature.source === 'string' ? feature.source : undefined;
-      if (id === undefined || id === null || !source) return null;
-      const layerId = typeof feature.layer?.id === 'string' ? feature.layer.id : undefined;
-      const meta = resolveLayerMeta(feature);
-      return {
-        source,
-        id,
-        layerId,
-        nodeId: meta?.nodeId,
-        nodeType: meta?.nodeType,
-      };
-    },
-    [resolveLayerMeta]
-  );
+  buildHighlightEntry,
+  searchMatches,
+  hoverMatch,
+  selectedMatch,
+  setHoverMatch,
+  setSelectedMatch,
+  onViewportLayerIdsChange,
+}: UseMapFeatureHighlightsParams<HighlightEntry>): UseMapFeatureHighlightsResult<HighlightEntry> => {
+  const appliedSearchMatchesRef = useRef<HighlightEntry[]>([]);
+  const appliedHoverRef = useRef<HighlightEntry | null>(null);
+  const appliedSelectedRef = useRef<HighlightEntry | null>(null);
 
   const updateViewportFeatures = useCallback(() => {
-    if (!mapInstance) return;
+    if (!mapInstance || !onViewportLayerIdsChange) return;
     const canvas = mapInstance.getCanvas();
     let features: MapLibreGeoJSONFeature[] = [];
     try {
@@ -94,52 +55,46 @@ export const useMapHighlights = ({
         { layers: highlightLayerIds },
       ) as MapLibreGeoJSONFeature[];
     } catch (error) {
-      console.debug('[MapPage] Failed to query viewport features', error);
+      console.debug('[MapPreview] Failed to query viewport features', error);
       return;
     }
 
     const idsByLayer = new Map<string, Set<string | number>>();
-    layerInfoById.forEach((_info, layerId) => {
+    highlightLayerIds.forEach((layerId) => {
       idsByLayer.set(layerId, new Set());
     });
 
     for (const feature of features) {
       const layerId = typeof feature.layer?.id === 'string' ? feature.layer.id : undefined;
       if (!layerId) continue;
-      if (!layerInfoById.has(layerId)) continue;
+      if (!idsByLayer.has(layerId)) continue;
       const id = defaultFeatureIdAccessor(feature);
       if (id === undefined || id === null) continue;
       idsByLayer.get(layerId)?.add(id);
     }
 
-    const next: MapViewportFeatureIds = {};
-    layerInfoById.forEach((info, layerId) => {
-      if (!next[info.nodeId]) next[info.nodeId] = {};
-      next[info.nodeId]![info.nodeType] = Array.from(idsByLayer.get(layerId) ?? []);
-    });
-
-    setViewportFeatureIds(next);
-  }, [highlightLayerIds, layerInfoById, mapInstance, setViewportFeatureIds]);
+    onViewportLayerIdsChange(idsByLayer);
+  }, [highlightLayerIds, mapInstance, onViewportLayerIdsChange]);
 
   const clearHighlightKey = useCallback(
-    (entry: MapHighlightEntry | null, key: 'hdbSearch' | 'hdbHover' | 'hdbSelected') => {
+    (entry: HighlightEntry | null, key: 'hdbSearch' | 'hdbHover' | 'hdbSelected') => {
       if (!mapInstance || !entry) return;
       try {
         mapInstance.removeFeatureState({ source: entry.source, id: entry.id, key });
       } catch (error) {
-        console.debug('[MapPage] Failed to clear feature-state', error);
+        console.debug('[MapPreview] Failed to clear feature-state', error);
       }
     },
     [mapInstance],
   );
 
   const applyHighlightKey = useCallback(
-    (entry: MapHighlightEntry | null, key: 'hdbSearch' | 'hdbHover' | 'hdbSelected') => {
+    (entry: HighlightEntry | null, key: 'hdbSearch' | 'hdbHover' | 'hdbSelected') => {
       if (!mapInstance || !entry) return;
       try {
         mapInstance.setFeatureState({ source: entry.source, id: entry.id }, { [key]: true });
       } catch (error) {
-        console.debug('[MapPage] Failed to set feature-state', error);
+        console.debug('[MapPreview] Failed to set feature-state', error);
       }
     },
     [mapInstance],
@@ -147,9 +102,9 @@ export const useMapHighlights = ({
 
   const setSingleHighlight = useCallback(
     (
-      ref: MutableRefObject<MapHighlightEntry | null>,
+      ref: MutableRefObject<HighlightEntry | null>,
       key: 'hdbHover' | 'hdbSelected',
-      next: MapHighlightEntry | null,
+      next: HighlightEntry | null,
     ) => {
       const current = ref.current;
       if (current && (!next || current.source !== next.source || current.id !== next.id)) {
@@ -197,7 +152,7 @@ export const useMapHighlights = ({
   }, [buildHighlightEntry, highlightLayerIds, mapInstance, setHoverMatch]);
 
   useEffect(() => {
-    if (!mapInstance) return;
+    if (!mapInstance || !onViewportLayerIdsChange) return;
     updateViewportFeatures();
     const handleViewportChange = () => updateViewportFeatures();
     mapInstance.on('moveend', handleViewportChange);
@@ -206,7 +161,7 @@ export const useMapHighlights = ({
       mapInstance.off('moveend', handleViewportChange);
       mapInstance.off('zoomend', handleViewportChange);
     };
-  }, [mapInstance, updateViewportFeatures]);
+  }, [mapInstance, onViewportLayerIdsChange, updateViewportFeatures]);
 
   useEffect(() => {
     if (!mapInstance) return;

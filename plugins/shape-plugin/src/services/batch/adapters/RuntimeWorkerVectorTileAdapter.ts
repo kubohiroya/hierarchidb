@@ -8,11 +8,11 @@ import { geojson } from 'flatgeobuf';
 import type { Feature, FeatureCollection } from 'geojson';
 import { BatchService } from '@hierarchidb/batch';
 import { createStageWorkerClient, getStageWorkerProxy, runVectorTileStage } from '@hierarchidb/runtime-worker';
-import { TilesDB } from '@hierarchidb/vectortile-store';
 import { encodeFlatGeobufFromFeatureCollection, type VectorTileProgress } from '@hierarchidb/gis-sdk';
 import { assignFeatureIds, HDB_FEATURE_ID_KEY, HDB_ORIGIN_KEY } from '../utils/featureIds.js';
 import { bbox as turfBbox } from '@turf/turf';
 import { assembleTileGeoJSON } from '../session/tiles/assembleTileGeoJSON.js';
+import type { NodeId } from '@hierarchidb/common-types';
 
 const isAbortError = (error: unknown): boolean => (
   error instanceof Error && error.name === 'AbortError'
@@ -92,7 +92,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     };
   }
 
-  private getOriginSummary(nodeId: string, features: Feature[]): OriginSummary {
+  private getOriginSummary(nodeId: NodeId, features: Feature[]): OriginSummary {
     const cached = this.originSummaryCache.get(nodeId);
     if (cached) return cached;
     const summary = this.summarizeOriginKeys(features);
@@ -100,7 +100,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     return summary;
   }
 
-  clearFeatureCache(nodeId: string): void {
+  clearFeatureCache(nodeId: NodeId): void {
     this.featureCache.delete(nodeId);
     this.originSummaryCache.delete(nodeId);
   }
@@ -181,7 +181,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     return a[0] <= b[2] && a[2] >= b[0] && a[1] <= b[3] && a[3] >= b[1];
   }
 
-  private async loadExtract2Features(nodeId: string): Promise<Array<{ feature: Feature; bbox: [number, number, number, number] }>> {
+  private async loadExtract2Features(nodeId: NodeId): Promise<Array<{ feature: Feature; bbox: [number, number, number, number] }>> {
     const cached = this.featureCache.get(nodeId);
     if (cached) return cached;
     const db = getEphemeralShapeDB();
@@ -256,7 +256,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     return result;
   }
 
-  private async listBufferIdsForTile(nodeId: string, tileId: string): Promise<string[]> {
+  private async listBufferIdsForTile(nodeId: NodeId, tileId: string): Promise<string[]> {
     const db = getEphemeralShapeDB();
     const rows = await db.tileIdToBufferRelations
       .where('[nodeId+tileId]')
@@ -491,9 +491,8 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
           let tileFeatureCount: number | null = null;
           let tileKey: string | null = null;
           let tileInputBuffer: ArrayBuffer | undefined;
-          const compression = sampleInput.compression ?? false;
-          const inputFormat: 'geojson' | 'flatgeobuf' = sampleInput.inputFormat ?? (sampleInput.buffer ? 'flatgeobuf' : 'geojson');
-          const inputCompression: 'none' | 'gzip' = sampleInput.inputCompression ?? (compression ? 'gzip' : 'none');
+          const inputFormat: 'geojson' | 'flatgeobuf' = (sampleInput.format ?? 'geojson') as ('geojson' | 'flatgeobuf');
+          const inputCompression: 'none' | 'gzip' = (sampleInput.compression ?? 'none') as ('none' | 'gzip');
           const format = (sampleInput.format ?? 'mvt') as 'mvt';
           const tileSizeConfig = sampleInput.tileSize ?? 256;
           const buffer = sampleInput.buffer;
@@ -513,7 +512,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
             }
             tileKey = inputBufferId;
             const relationBufferIds = resolvedNodeId
-              ? await this.listBufferIdsForTile(String(sample.nodeId), tileKey)
+              ? await this.listBufferIdsForTile(sample.nodeId, tileKey)
               : [];
             let totalFeatures = 0;
             let tileFeatures: Feature[] = [];
@@ -530,7 +529,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
               });
               tileFeatures = assembled.features.filter(Boolean);
             } else {
-              const features = await this.loadExtract2Features(String(sample.nodeId));
+              const features = await this.loadExtract2Features(sample.nodeId);
               totalFeatures = features.length;
               const tileBBox = this.tileToBBox(tileZ, tileX, tileY);
               tileFeatures = features
@@ -539,7 +538,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                 .filter(Boolean);
               tileFeatures = this.dedupeFeatures(tileFeatures);
               if (totalFeatures > 0 && tileFeatures.length !== totalFeatures) {
-                const totalOriginSummary = this.getOriginSummary(String(sample.nodeId), features.map((entry) => entry.feature));
+                const totalOriginSummary = this.getOriginSummary(sample.nodeId, features.map((entry) => entry.feature));
                 const intersectOriginSummary = this.summarizeOriginKeys(tileFeatures);
                 const removedOriginSummary = this.diffOriginKeys(totalOriginSummary, intersectOriginSummary);
                 console.debug('[VectorTile] Tile feature reduction', {
@@ -730,13 +729,14 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
             if (signal) {
               signal.addEventListener('abort', abortListener, { once: true });
             }
+            let stageResult: Awaited<ReturnType<typeof runVectorTileStage>> | null = null;
             try {
-              await runVectorTileStage({
+              stageResult = await runVectorTileStage({
                 bufferId: inputBufferId,
                 buffer: inputBuffer,
                 config: {
                   format,
-                  compression: compression ? 'gzip' : 'none',
+                  compression: inputCompression,
                   tileSize: tileSizeConfig,
                   buffer,
                   minZoom,
@@ -751,7 +751,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                     countryName: sampleInput.countryName,
                     adminLevel: sampleInput.adminLevel,
                   },
-                  targetNodeId: String(sample.nodeId),
+                  targetNodeId: sample.nodeId,
                   abortKey,
                 },
                 onProgress: progressReporter,
@@ -762,10 +762,14 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
               }
             }
             let tileSizeBytes: number | null = null;
-            if (tileKey) {
-              const tilesDb = await TilesDB.getSingleton();
-              const row = await tilesDb.tiles.get(tileKey);
-              tileSizeBytes = typeof row?.size === 'number' ? row.size : null;
+            if (tileKey && stageResult?.tiles?.length) {
+              const tileZ = sampleInput.tileZ;
+              const tileX = sampleInput.tileX;
+              const tileY = sampleInput.tileY;
+              const match = stageResult.tiles.find((tile) => (
+                tile.z === tileZ && tile.x === tileX && tile.y === tileY
+              ));
+              tileSizeBytes = typeof match?.size === 'number' ? match.size : null;
             }
             const completionMessage = this.buildCompletionMessage(tileFeatureCount, tileSizeBytes);
             if (shouldAbort()) {

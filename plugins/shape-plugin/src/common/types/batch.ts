@@ -36,11 +36,11 @@ export type ProcessingStage = BatchTaskType;
 export interface BatchTaskBase {
   taskId: string;
   taskType: BatchTaskType;
-  nodeId?: NodeId;
-  stage?: BatchTaskStageType|undefined;
-  status?: TaskStatus;
-  type?: string;
-  index?: number;
+  nodeId: NodeId;
+  stage: BatchTaskStageType|undefined;
+  status: TaskStatus;
+  type: string;
+  index: number;
   progress?: number;
   startedAt?: number;
   completedAt?: number;

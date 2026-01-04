@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { NodeId, NodeType, ProgressEvent } from '@hierarchidb/common-types';
 import type { BatchSessionStatus, UnifiedProgressInfo } from '@hierarchidb/common-api';
 import { AuthNotificationRegistry } from '@hierarchidb/common-auth';
-import { usePluginBatchProgress } from '@hierarchidb/ui-batch';
+import { usePluginBatchProgress } from '@hierarchidb/ui-batch-progress';
 
 export interface UseLocationProgressOptions {
   autoSubscribe?: boolean;

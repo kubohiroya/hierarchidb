@@ -1,22 +1,32 @@
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent, ReactNode } from 'react';
+import type { SxProps } from '@mui/material/styles';
 import { Box, IconButton, InputAdornment, Paper, TextField } from '@mui/material';
-import { Close as CloseIcon, Tune as TuneIcon } from '@mui/icons-material';
 
-export type SearchPanelProps = {
+export type MapPreviewSearchPanelProps = {
   searchText: string;
   onSearchTextChange: (value: string) => void;
   onSearch: () => void;
   onClear: () => void;
   onOpenSettings: () => void;
+  clearIcon: ReactNode;
+  settingsIcon: ReactNode;
+  placeholder?: string;
+  containerSx?: SxProps;
+  panelSx?: SxProps;
 };
 
-export const SearchPanel = ({
+export const MapPreviewSearchPanel = ({
   searchText,
   onSearchTextChange,
   onSearch,
   onClear,
   onOpenSettings,
-}: SearchPanelProps) => {
+  clearIcon,
+  settingsIcon,
+  placeholder = '検索...',
+  containerSx,
+  panelSx,
+}: MapPreviewSearchPanelProps) => {
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     onSearchTextChange(event.target.value);
   };
@@ -30,13 +40,14 @@ export const SearchPanel = ({
         zIndex: 200,
         width: 360,
         pointerEvents: 'auto',
+        ...containerSx,
       }}
     >
-      <Paper elevation={4} sx={{ p: 1 }}>
+      <Paper elevation={4} sx={{ p: 1, ...panelSx }}>
         <TextField
           fullWidth
           size="small"
-          placeholder="検索..."
+          placeholder={placeholder}
           value={searchText}
           onChange={handleChange}
           onKeyDown={(event) => {
@@ -54,14 +65,14 @@ export const SearchPanel = ({
                   onClick={onClear}
                   disabled={!searchText.trim()}
                 >
-                  <CloseIcon fontSize="small" />
+                  {clearIcon}
                 </IconButton>
                 <IconButton
                   aria-label="Search settings"
                   size="small"
                   onClick={onOpenSettings}
                 >
-                  <TuneIcon fontSize="small" />
+                  {settingsIcon}
                 </IconButton>
               </InputAdornment>
             ),

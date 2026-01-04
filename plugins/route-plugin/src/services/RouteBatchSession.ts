@@ -228,6 +228,8 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
           buffer,
           inputFormat,
           inputCompression,
+          targetNodeId: nodeId,
+          targetNodeType: 'route',
         },
       }, vectorTileClient);
 
@@ -237,7 +239,7 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
       await db.open?.();
       const records: RouteVectorTileRecord[] = [];
       for (const tile of tiles) {
-        const data = await vectorTileClient.getTile(nodeId, tile.z, tile.x, tile.y);
+        const data = await vectorTileClient.getTile(nodeId, tile.z, tile.x, tile.y, 'route');
         if (!data) continue;
         records.push({
           tileId: `${nodeId}-${tile.z}-${tile.x}-${tile.y}`,

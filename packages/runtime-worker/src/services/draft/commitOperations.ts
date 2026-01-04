@@ -1,7 +1,7 @@
 import type { NodeId, Timestamp, TreeNode, OnNameConflict, DialogUIState } from '@hierarchidb/common-types';
 import type { CoreDB } from '../CoreDB.js';
 import type { CommandResult } from '../command-types.js';
-import { WorkerErrorCode } from '../command-types.js';
+import { WorkerErrorCodeValue } from '../command-types.js';
 import { createNewName, getChildNames } from './nameUtilities.js';
 import { checkDraftConflict } from './lookupOperations.js';
 
@@ -108,19 +108,19 @@ export async function commitDraftCommand(
       return {
         success: false,
         error: `Name conflict: ${result.suggestedName}`,
-        code: WorkerErrorCode.VALIDATION_ERROR,
+        code: WorkerErrorCodeValue.VALIDATION_ERROR,
       };
     }
     return {
       success: false,
       error: 'Commit conflict',
-      code: WorkerErrorCode.COMMIT_CONFLICT,
+      code: WorkerErrorCodeValue.COMMIT_CONFLICT,
     };
   } catch (error) {
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
-      code: WorkerErrorCode.UNKNOWN_ERROR,
+      code: WorkerErrorCodeValue.UNKNOWN_ERROR,
     };
   }
 }

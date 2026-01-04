@@ -113,17 +113,20 @@ export interface VectorTileWorkerAPI {
         countryName?: string;
         adminLevel?: number;
       };
-      targetNodeId?: string;
+      targetNodeId?: NodeId;
+      targetNodeType?: string;
       abortKey?: string;
     },
     onProgress?: (progress: VectorTileProgress) => void,
   ): Promise<{ tilesGenerated: number; totalBytes?: number; metadataCount?: number }>;
   abortGenerateTiles?(abortKey: string): Promise<void>;
-  getTile(nodeId: string, z: number, x: number, y: number): Promise<Uint8Array | null>;
+  getTile(nodeId: NodeId, z: number, x: number, y: number, nodeType?: string): Promise<Uint8Array | null>;
   listTiles(
-    nodeId: string
+    nodeId: NodeId,
+    nodeType?: string
   ): Promise<Array<{ z: number; x: number; y: number; size: number; timestamp: number }>>;
   getSummary(
-    nodeId: string
+    nodeId: NodeId,
+    nodeType?: string
   ): Promise<{ tiles: number; totalBytes: number; zoomMin?: number; zoomMax?: number }>;
 }

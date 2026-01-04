@@ -1,6 +1,6 @@
 import { PERFORMANCE_CONFIG } from '../../utils/performance-config.js';
 import type { WorkerErrorCode } from '../command-types.js';
-import { WorkerErrorCode as WorkerErrorCodeValue } from '../command-types.js';
+import { WorkerErrorCodeValue } from '../command-types.js';
 
 const KNOWN_CODES = new Set<WorkerErrorCode>(Object.values(WorkerErrorCodeValue));
 const DATABASE_ERROR_NAMES = new Set([

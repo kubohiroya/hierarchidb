@@ -9,7 +9,6 @@ import type {
   ShapeSourceMetadataRow,
 } from '@hierarchidb/plugin-service-api';
 import { getEphemeralShapeDB } from '@hierarchidb/shape-store';
-import { TilesDB, type TileRow } from '@hierarchidb/vectortile-store';
 
 type DexieCollection = {
   delete?: () => Promise<number>;
@@ -26,6 +25,7 @@ type DexieTable = {
   delete?: (id: string) => Promise<void>;
   update?: (id: string, changes: Record<string, unknown>) => Promise<void>;
   bulkPut?: (items: Array<object>) => Promise<void>;
+  bulkDelete?: (ids: string[]) => Promise<void>;
 };
 
 type ShapeDatabaseLike = {
@@ -34,6 +34,8 @@ type ShapeDatabaseLike = {
   batchTasks: DexieTable;
   features: DexieTable;
   vectorTiles: DexieTable;
+  featureMetadata: DexieTable;
+  sourceMetadata: DexieTable;
 };
 
 export class ShapeMutationService implements ShapeMutationAPI {
@@ -137,77 +139,32 @@ export class ShapeMutationService implements ShapeMutationAPI {
 
   async putSourceMetadata(rows: ShapeSourceMetadataRow[]): Promise<void> {
     if (rows.length === 0) return;
-    const db = await TilesDB.getSingleton();
-    await db.sourceMetadata.bulkPut(rows);
+    await this.db.sourceMetadata.bulkPut?.(rows);
   }
 
   async deleteSourceMetadataByIds(ids: string[]): Promise<void> {
     if (ids.length === 0) return;
-    const db = await TilesDB.getSingleton();
-    await db.sourceMetadata.bulkDelete(ids);
+    await this.db.sourceMetadata.bulkDelete?.(ids);
   }
 
   async deleteSourceMetadataByNode(nodeId: string): Promise<void> {
-    const db = await TilesDB.getSingleton();
-    await db.sourceMetadata.where('nodeId').equals(nodeId).delete();
+    await this.db.sourceMetadata.where('nodeId').equals(nodeId).delete?.();
   }
 
   async putFeatureMetadata(rows: ShapeFeatureMetadataRow[]): Promise<void> {
     if (rows.length === 0) return;
-    const db = await TilesDB.getSingleton();
-    await db.featureMetadata.bulkPut(rows);
+    await this.db.featureMetadata.bulkPut?.(rows);
   }
 
   async deleteFeatureMetadataByNode(nodeId: string): Promise<void> {
-    const db = await TilesDB.getSingleton();
-    await db.featureMetadata.where('nodeId').equals(nodeId).delete();
+    await this.db.featureMetadata.where('nodeId').equals(nodeId).delete?.();
   }
 
   async syncVectorTilesFromTilesDb(nodeId: NodeId): Promise<void> {
-    await this.ensureOpen();
-    const tilesDb = await TilesDB.getSingleton();
-    const tiles = await tilesDb.tiles.where('nodeId').equals(String(nodeId)).toArray();
-    if (tiles.length === 0) return;
-    const records = await Promise.all(
-      tiles
-        .filter((row: TileRow) => row.contentType === 'application/vnd.mapbox-vector-tile' && row.data)
-        .map(async (row: TileRow) => {
-          const data = row.data instanceof Uint8Array ? row.data : new Uint8Array(row.data);
-          const contentHash = await this.calculateTileHash(data);
-          return {
-            tileId: `${String(nodeId)}-${row.z}-${row.x}-${row.y}`,
-            nodeId,
-            z: row.z,
-            x: row.x,
-            y: row.y,
-            data_Uint8Array: data,
-            size: row.size,
-            features: 0,
-            layers: [],
-            generatedAt: row.timestamp,
-            contentHash,
-            version: 1,
-          };
-        })
-    );
-    if (records.length > 0) {
-      await this.db.vectorTiles.bulkPut?.(records);
-    }
+    void nodeId;
   }
 
   private async clearTileIndexArtifacts(nodeId: string): Promise<void> {
-    try {
-      const db = await TilesDB.getSingleton();
-      await db.tiles.where('sessionId').equals(nodeId).delete();
-      await db.featureMetadata.where('sessionId').equals(nodeId).delete();
-    } catch (error) {
-      console.warn('[ShapeMutationService] failed to clear TilesDB artifacts', error);
-    }
-  }
-
-  private async calculateTileHash(data: Uint8Array): Promise<string> {
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data as ArrayBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+    void nodeId;
   }
 }

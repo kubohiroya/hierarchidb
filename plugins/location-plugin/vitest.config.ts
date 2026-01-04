@@ -11,7 +11,7 @@ export default defineConfig({
       '@hierarchidb/plugin-ui-sdk': basePluginEntry,
       '@hierarchidb/runtime-worker': path.resolve(__dirname, 'src/common/test-shims/runtime-worker.ts'),
       '@hierarchidb/ui-worker-client': path.resolve(__dirname, 'src/common/test-shims/runtime-worker.ts'),
-      '@hierarchidb/ui-batch': path.resolve(__dirname, 'src/common/test-shims/external-mocks.ts'),
+      '@hierarchidb/ui-batch-progress': path.resolve(__dirname, 'src/common/test-shims/external-mocks.ts'),
       '@hierarchidb/ui-i18n': path.resolve(__dirname, 'src/common/test-shims/ui-i18n.ts'),
       '@hierarchidb/map-adapter': path.resolve(__dirname, 'src/common/test-shims/optional-features.ts'),
       '@hierarchidb/tabular-xlsx': path.resolve(__dirname, 'src/common/test-shims/optional-features.ts'),

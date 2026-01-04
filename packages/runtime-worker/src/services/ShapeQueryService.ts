@@ -16,8 +16,7 @@ import type {
   ShapeTileSummary,
   ShapeTileSummaryEntry,
 } from '@hierarchidb/plugin-service-api';
-import { getEphemeralShapeDB } from '@hierarchidb/shape-store';
-import { TilesDB } from '@hierarchidb/vectortile-store';
+import { getEphemeralShapeDB, shapeDB } from '@hierarchidb/shape-store';
 
 type ShapeBatchSessionRecord = {
   nodeId: NodeId;
@@ -274,17 +273,28 @@ export class ShapeQueryService implements ShapeQueryAPI {
   }
 
   async listVectorTileRows(nodeId: NodeId): Promise<ShapeTileRow[]> {
-    const db = await TilesDB.getSingleton();
-    return db.tiles.where('nodeId').equals(String(nodeId)).toArray() as Promise<ShapeTileRow[]>;
+    const rows = await shapeDB.vectorTiles.where('nodeId').equals(nodeId).toArray();
+    return rows.map((row) => ({
+      key: row.tileId,
+      nodeId: String(nodeId),
+      z: row.z,
+      x: row.x,
+      y: row.y,
+      data: row.data_Uint8Array.buffer.slice(
+        row.data_Uint8Array.byteOffset,
+        row.data_Uint8Array.byteOffset + row.data_Uint8Array.byteLength,
+      ),
+      size: row.size,
+      contentType: 'application/vnd.mapbox-vector-tile',
+      timestamp: row.generatedAt,
+    }));
   }
 
   async listSourceMetadata(nodeId: NodeId): Promise<ShapeSourceMetadataRow[]> {
-    const db = await TilesDB.getSingleton();
-    return db.sourceMetadata.where('nodeId').equals(String(nodeId)).toArray() as Promise<ShapeSourceMetadataRow[]>;
+    return shapeDB.sourceMetadata.where('nodeId').equals(String(nodeId)).toArray() as Promise<ShapeSourceMetadataRow[]>;
   }
 
   async listFeatureMetadata(nodeId: NodeId): Promise<ShapeFeatureMetadataRow[]> {
-    const db = await TilesDB.getSingleton();
-    return db.featureMetadata.where('nodeId').equals(String(nodeId)).toArray() as Promise<ShapeFeatureMetadataRow[]>;
+    return shapeDB.featureMetadata.where('nodeId').equals(String(nodeId)).toArray() as Promise<ShapeFeatureMetadataRow[]>;
   }
 }

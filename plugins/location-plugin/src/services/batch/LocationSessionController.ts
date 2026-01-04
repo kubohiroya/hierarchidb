@@ -127,6 +127,8 @@ export class LocationSessionController {
             compression: 'none',
             inputFormat,
             inputCompression,
+            targetNodeId: this.nodeId,
+            targetNodeType: 'location',
           },
         }, tileClient);
         list = result.tiles;
@@ -146,7 +148,7 @@ export class LocationSessionController {
     await batch.mapChunks<TileInfo, void>(list, async (t) => {
       await LocationSessionController.laneRegistry.runWithLane(laneName, async () => {
         while (this.paused) await new Promise(r => setTimeout(r, 100));
-        const u8 = await tileClient.getTile(fileId, t.z, t.x, t.y);
+        const u8 = await tileClient.getTile(this.nodeId, t.z, t.x, t.y, 'location');
         if (!u8) return;
         const copy = new Uint8Array(u8);
         const data: ArrayBuffer = copy.buffer.slice(0);

@@ -5,6 +5,8 @@
 // Core map components
 export { VectorTileLayer } from './components/VectorTileLayer.js';
 export { ResourceLayerMap } from './components/ResourceLayerMap.js';
+export { SimpleMapDisplay } from './components/SimpleMapDisplay.js';
+export { FullMapDisplay } from './components/FullMapDisplay.js';
 export const loadMapWithDeckGL = () =>
   import('./components/MapWithDeckGL.js') as Promise<typeof import('./components/MapWithDeckGL.js')>;
 export const loadMapLibreMap = () =>
@@ -46,6 +48,8 @@ export type { MapLibreMapProps } from './components/MapLibreMap.js';
 export type { VectorTileLayerProps } from './components/VectorTileLayer.js';
 export type { MapWithVectorTilesProps, LayerOptions } from './components/MapWithVectorTiles.js';
 export type { DeckOverlayProps } from './components/MapWithDeckGL.js';
+export type { SimpleMapDisplayProps } from './components/SimpleMapDisplay.js';
+export type { FullMapDisplayProps } from './components/FullMapDisplay.js';
 export type {
   ResourceLayerMapProps,
   ResourceVectorLayer,
@@ -76,3 +80,20 @@ export {
   resolveIdentifyCandidates,
 } from './lib/feature-identification.js';
 export type { MapFeatureIdentifyCandidates } from './lib/feature-identification.js';
+
+// Vector tile preview helpers
+export { useVectorTilePreviewMetadata } from './preview/useVectorTilePreviewMetadata.js';
+export { useVectorTilePreviewSearch } from './preview/useVectorTilePreviewSearch.js';
+export { useVectorTilePreviewSelection } from './preview/useVectorTilePreviewSelection.js';
+export { useVectorTilePreviewMapLayers } from './preview/useVectorTilePreviewMapLayers.js';
+export { useMapFeatureSearch } from './preview/useMapFeatureSearch.js';
+export { useMapFeatureHighlights } from './preview/useMapFeatureHighlights.js';
+export { MapPreviewSearchPanel } from './preview/MapPreviewSearchPanel.js';
+export { MapPreviewSearchSettingsDialog } from './preview/MapPreviewSearchSettingsDialog.js';
+export type { MapSearchTargetDefinition, MapSearchTargetGroup } from './preview/mapPreviewSearchTypes.js';
+export type { VectorTileMetadataLoader } from './preview/useVectorTilePreviewMetadata.js';
+export type {
+  SelectionResult,
+  SelectionResolver,
+  SelectionContextDeriver,
+} from './preview/useVectorTilePreviewSelection.js';

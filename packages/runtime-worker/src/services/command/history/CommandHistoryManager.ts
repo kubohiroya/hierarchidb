@@ -7,8 +7,8 @@ import type {
   TreeNode,
 } from '@hierarchidb/common-types';
 import type { CoreDB } from '../../CoreDB.js';
-import type { CommandEnvelope, CommandEvent, CommandResult } from '../../command-types.js';
-import { WorkerErrorCode } from '../../command-types.js';
+import type { CommandEnvelope, CommandEvent, CommandResult, WorkerErrorCode } from '../../command-types.js';
+import { WorkerErrorCodeValue } from '../../command-types.js';
 import { createNewName } from '../../DraftTreeNodeOperations.js';
 
 type SanitizedLogResult = {
@@ -157,7 +157,7 @@ export class CommandHistoryManager {
   async undo(): Promise<CommandResult> {
     const command = this.undoStack.pop();
     if (!command) {
-      return this.deps.createErrorResult('No command to undo', WorkerErrorCode.INVALID_OPERATION);
+      return this.deps.createErrorResult('No command to undo', WorkerErrorCodeValue.INVALID_OPERATION);
     }
 
     try {
@@ -167,14 +167,14 @@ export class CommandHistoryManager {
     } catch (error) {
       this.undoStack.push(command);
       const message = error instanceof Error ? error.message : 'Undo operation failed';
-      return this.deps.createErrorResult(message, WorkerErrorCode.INVALID_OPERATION);
+      return this.deps.createErrorResult(message, WorkerErrorCodeValue.INVALID_OPERATION);
     }
   }
 
   async redo(): Promise<CommandResult> {
     const command = this.redoStack.pop();
     if (!command) {
-      return this.deps.createErrorResult('No command to redo', WorkerErrorCode.INVALID_OPERATION);
+      return this.deps.createErrorResult('No command to redo', WorkerErrorCodeValue.INVALID_OPERATION);
     }
 
     try {
@@ -184,7 +184,7 @@ export class CommandHistoryManager {
     } catch (error) {
       this.redoStack.push(command);
       const message = error instanceof Error ? error.message : 'Redo operation failed';
-      return this.deps.createErrorResult(message, WorkerErrorCode.INVALID_OPERATION);
+      return this.deps.createErrorResult(message, WorkerErrorCodeValue.INVALID_OPERATION);
     }
   }
 

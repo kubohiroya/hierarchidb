@@ -2,9 +2,10 @@
  * LocationDB - storage for Location plugin artifacts
  */
 
-import { Dexie, type Table } from 'dexie';
+import type { Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId, Timestamp } from '@hierarchidb/common-types';
+import { VectorTileDbBase } from '@hierarchidb/vectortile-store';
 import type {
   LocationBatchData,
   LocationGroupItemData,
@@ -70,7 +71,7 @@ export interface PendingLocationSession {
   storedAt: Timestamp;
 }
 
-export class LocationDB extends Dexie {
+export class LocationDB extends VectorTileDbBase {
   features!: Table<LocationFeatureRow, [NodeId, string]>;
   relations!: Table<LocationRelationRow, [NodeId, string, NodeId]>;
   vectorTiles!: Table<VectorTileRecord>;
@@ -127,11 +128,20 @@ export class LocationDB extends Dexie {
         }
       });
 
+    this.version(7).stores(this.mergeVectorTileStores({
+      features: '&[nodeId+id], nodeId, id, updatedAt',
+      relations: '&[srcNodeId+type+dstNodeId], srcNodeId, dstNodeId, type, updatedAt',
+      vectorTiles: '&id, nodeId, [z+x+y], timestamp',
+      sessions: '&nodeId, createdAt, status',
+      pendingSessions: '&nodeId, storedAt',
+    }));
+
     this.features = this.table('features');
     this.relations = this.table('relations');
     this.vectorTiles = this.table('vectorTiles');
     this.sessions = this.table('sessions');
     this.pendingSessions = this.table('pendingSessions');
+    this.initVectorTileTables();
   }
 
   async clearSession(nodeId: NodeId) {

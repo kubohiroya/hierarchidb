@@ -498,7 +498,7 @@ Reference plan: `plans/shape-shared-extraction-stage4-progress-hooks.md`
 
 ### Goals
 
-- Route progress hook delegates to shared UI-batch helper.
+- Route progress hook delegates to shared UI-batch-progress helper.
 - Route-specific status mapping remains in plugin-local logic.
 - Pause/resume controls remain available and use WorkerBridge.
 
@@ -510,7 +510,7 @@ Reference plan: `plans/shape-shared-extraction-stage4-progress-hooks.md`
 
 ### Current State (Observed)
 
-- Route already uses `usePluginBatchProgress` from `@hierarchidb/ui-batch`.
+- Route already uses `usePluginBatchProgress` from `@hierarchidb/ui-batch-progress`.
 - `useRouteBatchProgress` owns pause/resume mutations and maps status to unified
   progress locally.
 - Route uses WorkerBridge to pause/resume, and local state to show mutation status.

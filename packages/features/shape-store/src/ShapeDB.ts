@@ -8,10 +8,11 @@
  * - Vector tiles
  */
 
-import { Dexie, type Table } from 'dexie';
+import type { Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { Geometry } from 'geojson';
+import { VectorTileDbBase } from '@hierarchidb/vectortile-store';
 type CacheEntryData = Record<string, unknown> | string | number | boolean | null;
 
 export type DataSourceName = 'naturalearth' | 'geoboundaries' | 'gadm' | 'openstreetmap';
@@ -401,7 +402,7 @@ export interface CacheEntryRecord {
   expiresAt?: number;
 }
 
-export class ShapeDB extends Dexie {
+export class ShapeDB extends VectorTileDbBase {
 
   // Batch processing tables
   batchSessions!: Table<BatchSessionRecord, NodeId>;
@@ -469,6 +470,20 @@ export class ShapeDB extends Dexie {
       relations: '&[srcNodeId+type+dstNodeId], srcNodeId, dstNodeId, type, updatedAt',
       vectorTiles: '&tileId, nodeId, [nodeId+z+x+y], [z+x+y], z, generatedAt, lastAccessed, size',
     });
+
+    this.version(4).stores(this.mergeVectorTileStores({
+      batchSessions: '&nodeId, status, startedAt, updatedAt',
+      batchTasks:
+        '&taskId, nodeId, [nodeId+status], [nodeId+type], [nodeId+index], status, type, startedAt',
+      features:
+        '++id, nodeId, [nodeId+adminLevel], [nodeId+countryCode], mortonCode, adminLevel, countryCode, name, createdAt',
+      featureIndices:
+        '&indexId, featureId, mortonCode, [mortonCode+adminLevel], adminLevel, countryCode, area, complexity',
+      relations: '&[srcNodeId+type+dstNodeId], srcNodeId, dstNodeId, type, updatedAt',
+      vectorTiles: '&tileId, nodeId, [nodeId+z+x+y], [z+x+y], z, generatedAt, lastAccessed, size',
+    }));
+
+    this.initVectorTileTables();
   }
 
   // Batch Session Management

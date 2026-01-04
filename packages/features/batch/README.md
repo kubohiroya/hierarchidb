@@ -1,7 +1,7 @@
 @hierarchidb/batch
 ===================
 
-Lightweight batch orchestration on top of `@hierarchidb/compute`. Currently offers a minimal `mapChunks` helper; designed to evolve toward pipelines/DAGs with checkpointing.
+Lightweight batch orchestration with a minimal `mapChunks` helper; designed to evolve toward pipelines/DAGs with checkpointing.
 
 ## Directory layout
 ```
@@ -15,7 +15,7 @@ index.ts          Public exports + FeatureDefinition
 - `FeatureDefinition.manifest` (`provides: ['batch']`).
 
 ## Consumers / usage
-- Pair with `@hierarchidb/compute` for task execution; compose with `@hierarchidb/download` to process URL lists.
+- Compose with `@hierarchidb/download` to process URL lists.
 - Plugins (e.g., route/shape) can wrap long-running steps with `mapChunks`.
 
 ## Notes / roadmap

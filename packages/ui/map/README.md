@@ -18,7 +18,10 @@ index.ts                 Public exports
 - `MapLibreMap` — accepts `initialViewState`, `mapStyleUrl`/`mapStyleObject`, `controls`, `identifyFeatureOnClick`, `onViewStateChange/onClick/onLoad`, and children (layers/controls).
 - `MapWithDeckGL` — mounts a deck.gl `MapboxOverlay` over MapLibre; pass `deckLayers` and optional constructors.
 - `MapWithVectorTiles` / `VectorTileLayer` — helpers to add vector tile sources/layers.
+- `SimpleMapDisplay` — minimal map display wrapper with shared defaults.
+- `FullMapDisplay` — full-featured wrapper for resource/vector layers and style overrides.
 - Types: `BaseMapProps`, `MapLibreMapProps`, identify handlers/options.
+- Preview hooks: `useVectorTilePreviewMetadata`, `useVectorTilePreviewSearch`, `useVectorTilePreviewSelection`, `useVectorTilePreviewMapLayers`.
 
 ## Feature identification
 - `identifyFeatureOnClick` uses `queryRenderedFeatures` with layer filters/radius and optional `getFeatureId`; results are deduped and passed to `onClick`.

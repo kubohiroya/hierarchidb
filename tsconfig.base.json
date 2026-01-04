@@ -61,12 +61,6 @@
       "@hierarchidb/common-api/*": [
         "packages/common/api/dist/*"
       ],
-      "@hierarchidb/compute": [
-        "packages/features/compute/dist/index.d.ts"
-      ],
-      "@hierarchidb/compute/*": [
-        "packages/features/compute/dist/*"
-      ],
       "@hierarchidb/cors-proxy": [
         "packages/backend/cors-proxy/dist/index.d.ts"
       ],
@@ -343,16 +337,10 @@
       "@hierarchidb/ui-datasource/*": [
         "packages/ui/datasource/dist/*"
       ],
-      "@hierarchidb/ui-gis": [
-        "packages/ui/gis/dist/index.d.ts"
-      ],
-      "@hierarchidb/ui-gis/*": [
-        "packages/ui/gis/dist/*"
-      ],
-      "@hierarchidb/ui-batch": [
+      "@hierarchidb/ui-batch-progress": [
         "packages/ui/batch/dist/index.d.ts"
       ],
-      "@hierarchidb/ui-batch/*": [
+      "@hierarchidb/ui-batch-progress/*": [
         "packages/ui/batch/dist/*"
       ],
       "@hierarchidb/ui-dialog": [

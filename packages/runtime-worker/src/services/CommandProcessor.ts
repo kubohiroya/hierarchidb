@@ -11,8 +11,8 @@ import {
 } from './command/execution/CommandExecutionRunner.js';
 import { CommandHistoryManager } from './command/history/CommandHistoryManager.js';
 import { type CommandHandlerContext, commandRegistry } from './command/registry.js';
-import type { CommandEnvelope, CommandEvent, CommandMeta, CommandResult } from './command-types.js';
-import { WorkerErrorCode } from './command-types.js';
+import type { CommandEnvelope, CommandEvent, CommandMeta, CommandResult, WorkerErrorCode } from './command-types.js';
+import { WorkerErrorCodeValue } from './command-types.js';
 import { TreeSubscriptionService } from './TreeSubscriptionService.js';
 import { classifyWorkerError, sanitizeMessageText } from './utils/error-adapter.js';
 import { isValidationFailure, validateAndNormalizeEnvelope } from './validation/envelope.js';
@@ -79,7 +79,7 @@ export class CommandProcessor {
       // Validate and normalize envelope
       const validation = validateAndNormalizeEnvelope(envelope);
       if (isValidationFailure(validation)) {
-        return this.createErrorResult(validation.error, WorkerErrorCode.VALIDATION_ERROR);
+        return this.createErrorResult(validation.error, WorkerErrorCodeValue.VALIDATION_ERROR);
       }
       envelope = validation.envelope as CommandEnvelope<TType, TPayload>;
 
@@ -87,7 +87,7 @@ export class CommandProcessor {
       if (envelope.commandId.length > PERFORMANCE_CONFIG.MAX_COMMAND_ID_LENGTH) {
         return this.createErrorResult(
           `Command ID too long (max ${PERFORMANCE_CONFIG.MAX_COMMAND_ID_LENGTH} chars)`,
-          WorkerErrorCode.INVALID_OPERATION
+          WorkerErrorCodeValue.INVALID_OPERATION
         );
       }
 
@@ -95,7 +95,7 @@ export class CommandProcessor {
       if (!this.isValidCommand(envelope.kind)) {
         return this.createErrorResult(
           `Invalid command type: ${envelope.kind}`,
-          WorkerErrorCode.INVALID_OPERATION
+          WorkerErrorCodeValue.INVALID_OPERATION
         );
       }
 
@@ -125,7 +125,7 @@ export class CommandProcessor {
       await this.emitUndoStateIfChanged();
       return result;
     } catch (error) {
-      const classification = classifyWorkerError(error, WorkerErrorCode.INVALID_OPERATION);
+      const classification = classifyWorkerError(error, WorkerErrorCodeValue.INVALID_OPERATION);
       console.error('CommandProcessor error:', error);
       const failure = this.createErrorResult(classification.message, classification.code);
       await this.emitUndoStateIfChanged();
@@ -156,7 +156,7 @@ export class CommandProcessor {
         if (handler.validate) {
           const valid = await handler.validate(envelope.payload);
           if (!valid) {
-            return this.createErrorResult('Validation failed', WorkerErrorCode.VALIDATION_ERROR);
+            return this.createErrorResult('Validation failed', WorkerErrorCodeValue.VALIDATION_ERROR);
           }
         }
         const contextForHandler: CommandHandlerContext<TType, TPayload> = {
@@ -165,7 +165,7 @@ export class CommandProcessor {
         };
         return await handler.execute(contextForHandler);
       } catch (err) {
-        const classification = classifyWorkerError(err, WorkerErrorCode.UNKNOWN_ERROR);
+        const classification = classifyWorkerError(err, WorkerErrorCodeValue.UNKNOWN_ERROR);
         return this.createErrorResult(classification.message, classification.code);
       }
     }
@@ -190,7 +190,7 @@ export class CommandProcessor {
       return coreResult;
     }
 
-    return this.createErrorResult('Command not supported', WorkerErrorCode.INVALID_OPERATION);
+    return this.createErrorResult('Command not supported', WorkerErrorCodeValue.INVALID_OPERATION);
   }
 
   /**

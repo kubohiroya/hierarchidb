@@ -127,10 +127,10 @@
       "@hierarchidb/ui-dialog/*": [
         "../packages/ui/dialog/src/*"
       ],
-      "@hierarchidb/ui-batch": [
+      "@hierarchidb/ui-batch-progress": [
         "../packages/ui/batch/src/index.ts"
       ],
-      "@hierarchidb/ui-batch/*": [
+      "@hierarchidb/ui-batch-progress/*": [
         "../packages/ui/batch/src/*"
       ],
       "@hierarchidb/ui-plugin-basic-info": [

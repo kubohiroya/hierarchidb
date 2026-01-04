@@ -19,7 +19,6 @@ graph LR
   FR["@hierarchidb/feature-registry"]
   MAP["@hierarchidb/map-adapter"]
   MS["@hierarchidb/map-source"]
-  CMP["@hierarchidb/compute"]
   IE["@hierarchidb/import-export"]
   TS["@hierarchidb/tabular-source"]
   TSX["@hierarchidb/tabular-source-xlsx"]
@@ -49,7 +48,6 @@ graph LR
   RW --> FR
   RW --> MAP
   RW --> MS
-  RW --> CMP
   RW --> IE
   RW --> DL
   RW --> TS

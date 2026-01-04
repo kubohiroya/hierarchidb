@@ -1,5 +1,5 @@
 {
-  "name": "@hierarchidb/ui-batch",
+  "name": "@hierarchidb/ui-batch-progress",
   "version": "0.1.0",
   "description": "Shared batch progress hooks for HierarchiDB UI",
   "type": "module",

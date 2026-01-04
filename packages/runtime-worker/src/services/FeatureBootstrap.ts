@@ -3,7 +3,6 @@
 // Import features definitions (static list for now; scanning can be added later)
 
 import { FeatureDefinition as AuthRecoveryFeatureDefinition } from '@hierarchidb/auth-recovery';
-import { FeatureDefinition as ComputeFeatureDefinition } from '@hierarchidb/compute';
 import { FeatureDefinition as DownloadFeatureDefinition } from '@hierarchidb/download';
 import type { FeatureDefinition as FeatureDefinitionContract } from '@hierarchidb/feature-registry';
 import { FeatureRegistry } from '@hierarchidb/feature-registry';
@@ -18,7 +17,6 @@ export async function bootstrapFeatures(): Promise<FeatureRegistry> {
     TagFeatureDefinition,
     ImportExportFeatureDefinition,
     TabularFeatureDefinition,
-    ComputeFeatureDefinition,
     // BatchFeatureDefinition,
     DownloadFeatureDefinition,
     MapSourceFeatureDefinition,

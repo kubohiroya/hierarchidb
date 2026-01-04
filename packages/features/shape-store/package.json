@@ -23,6 +23,7 @@
     "@hierarchidb/gis-sdk": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/util": "workspace:*",
+    "@hierarchidb/vectortile-store": "workspace:*",
     "dexie": "^4.2.0"
   },
   "devDependencies": {
@@ -30,6 +31,7 @@
     "@hierarchidb/gis-sdk": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/util": "workspace:*",
+    "@hierarchidb/vectortile-store": "workspace:*",
     "@types/geojson": "^7946.0.14",
     "dexie": "^4.2.0",
     "typescript": "workspace:^5.9.3"

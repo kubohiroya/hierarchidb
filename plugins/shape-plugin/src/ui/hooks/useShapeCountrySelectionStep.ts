@@ -42,13 +42,7 @@ const CONTINENT_ALIASES: Record<string, ContinentCode> = {
   australia: 'OC',
   oc: 'OC',
   antarctica: 'AN',
-  an: 'AN',
-  'n/a': 'XX',
-  'unknown': 'XX',
-  'unspecified': 'XX',
-  'none': 'XX',
-  '不明': 'XX',
-  '不詳': 'XX',
+  an: 'AN'
 };
 
 const isContinentCode = (value: string): value is ContinentCode => CONTINENT_CODES.includes(value as ContinentCode);
@@ -461,7 +455,6 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
     if (Object.keys(nextSelection).length > 0) {
       onChange({ selectedArrayByCountries: nextSelection });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baseCountries.length]);
 
   const reloadAll = useCallback(async () => {

@@ -1,3 +1,9 @@
-export { TilesDB } from './tilesDb.js';
-export type { TileRow, FeatureMetadataRow, SourceMetadataRow } from './tilesDb.js';
-
+export { VectorTileDbBase } from './tilesDb.js';
+export type {
+  FeatureMetadataRow,
+  SourceMetadataRow,
+  MetaRow,
+  SourceRow,
+  TileIndexRow,
+  ZoomRange,
+} from './tilesDb.js';

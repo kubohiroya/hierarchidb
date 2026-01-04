@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo } from 'react';
-import type { MapFeatureIdentifyResult } from '@hierarchidb/ui-map';
+import type { MapFeatureIdentifyResult } from '../types/unified-map-props.js';
 
 type RowIdGetter<Row> = (row: Row) => string;
 type HoverLabelGetter<Row> = (row: Row) => string;

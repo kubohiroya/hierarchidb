@@ -14,7 +14,7 @@ import {
 } from '../../common/types/index.js';
 import { useBuildStages } from './stage/useBuildStages.js';
 import { useBuildStatus } from './stage/useBuildStatus.js';
-import { useBuildTaskProgress } from '@hierarchidb/ui-batch';
+import { useBuildTaskProgress } from '@hierarchidb/ui-batch-progress';
 import { useBatchSessionActions } from './stage/useBatchSessionActions.js';
 import { getShapeRuntimeWorkerClient } from '../../services/batch/adapters/RuntimeWorkerClient.js';
 import {
@@ -43,11 +43,11 @@ const buildMonitorConfig = {
   heapCriticalRatio: 0.9,
 } as const;
 
-const fetchTileSummary = async (nodeId: string) => {
+const fetchTileSummary = async (nodeId: NodeId) => {
   const client = await getShapeRuntimeWorkerClient();
   const vectorTile = client?.vectortile;
   if (!vectorTile?.getSummary) return { tiles: 0, totalBytes: 0 };
-  return vectorTile.getSummary(nodeId);
+  return vectorTile.getSummary(nodeId, 'shape');
 };
 
 const isSkippedMessage = (message?: string | null): boolean => {
@@ -314,7 +314,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     let cancelled = false;
     const loadSummary = async () => {
       try {
-        const summary = await fetchTileSummary(activeNodeId);
+        const summary = await fetchTileSummary(activeNodeId as NodeId);
         if (cancelled) return;
         if (summary.tiles > 0) {
           onChange({ tileSummary: summary });

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import type { Theme } from '@mui/material/styles';
-import type { MapLibreMapInstance } from '@hierarchidb/ui-map';
+import type { MapLibreMapInstance } from '../types/maplibre-public.js';
 
 type MapLibreInteractiveMap = MapLibreMapInstance & {
   on(event: string, cb: (...args: unknown[]) => void): void;
@@ -10,6 +10,8 @@ type MapLibreInteractiveMap = MapLibreMapInstance & {
   setFilter(layerId: string, filter: unknown): void;
   getLayer(id: string): unknown;
   addLayer(layer: unknown, beforeId?: string): void;
+  getStyle?: () => unknown;
+  style?: unknown;
 };
 
 type Args = {
@@ -48,7 +50,7 @@ export const useVectorTilePreviewMapLayers = ({
     const sourceLayer = tilesLayer;
     const layerType = 'fill';
     const hasStyle = () =>
-      Boolean(typeof map.getStyle === 'function' ? map.getStyle() : (map as { style?: unknown }).style);
+      Boolean(typeof map.getStyle === 'function' ? map.getStyle() : map.style);
 
     const ensureLayer = (id: string, color: string, opacity: number) => {
       if (!hasStyle()) return;
@@ -90,7 +92,7 @@ export const useVectorTilePreviewMapLayers = ({
     if (!mapInstance) return;
     const map = mapInstance as MapLibreInteractiveMap;
     const hasStyle = () =>
-      Boolean(typeof map.getStyle === 'function' ? map.getStyle() : (map as { style?: unknown }).style);
+      Boolean(typeof map.getStyle === 'function' ? map.getStyle() : map.style);
     const updateFilter = (id: string, ids: string[]) => {
       if (!hasStyle()) return;
       if (!map.getLayer(id)) return;
@@ -110,7 +112,7 @@ export const useVectorTilePreviewMapLayers = ({
     if (!mapInstance) return;
     const map = mapInstance as MapLibreInteractiveMap;
     const hasStyle = () =>
-      Boolean(typeof map.getStyle === 'function' ? map.getStyle() : (map as { style?: unknown }).style);
+      Boolean(typeof map.getStyle === 'function' ? map.getStyle() : map.style);
     let attached = false;
     const handleMouseMove = (...args: unknown[]) => {
       const event = args[0] as { features?: Array<{ id?: unknown; properties?: Record<string, unknown> }> };

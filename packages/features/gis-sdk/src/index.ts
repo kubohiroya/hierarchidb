@@ -3,14 +3,12 @@ export {
   generateVectorTilesFromFeatureCollection,
   generateVectorTilesFromFgbBuffer,
   generateVectorTilesFromJsonBuffer,
-  getVectorTile,
-  listVectorTiles,
-  getVectorTileSummary,
   type FeatureCollectionLike,
   type VectorTileGenerateConfig,
   type VectorTileGenerateResult,
   type VectorTileMetadataContext,
   type VectorTileProgress,
+  type VectorTileRow,
 } from './vectorTiles.js';
 export {
   lonToTileX,

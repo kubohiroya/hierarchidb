@@ -706,16 +706,6 @@ importers:
         specifier: 5.8.2
         version: 5.8.2
 
-  packages/features/compute:
-    dependencies:
-      '@hierarchidb/util':
-        specifier: workspace:*
-        version: link:../../util
-    devDependencies:
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
   packages/features/download:
     devDependencies:
       '@hierarchidb/auth-recovery':
@@ -815,6 +805,9 @@ importers:
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../util
+      '@hierarchidb/vectortile-store':
+        specifier: workspace:*
+        version: link:../vectortile-store
       dexie:
         specifier: 4.2.0
         version: 4.2.0
@@ -903,25 +896,15 @@ importers:
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../util
+      '@hierarchidb/vectortile-store':
+        specifier: workspace:*
+        version: link:../vectortile-store
       dexie:
         specifier: 4.2.0
         version: 4.2.0
       typescript:
         specifier: 5.8.2
         version: 5.8.2
-
-  packages/features/runtime-stage-worker:
-    dependencies:
-      '@hierarchidb/batch-session-ports':
-        specifier: workspace:*
-        version: link:../batch-session-ports
-    devDependencies:
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(esbuild@0.25.12)(happy-dom@18.0.1)(jiti@2.6.1)(jsdom@26.1.0)(tsx@4.21.0)(yaml@2.8.2)
 
   packages/features/shape-store:
     devDependencies:
@@ -937,6 +920,9 @@ importers:
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../util
+      '@hierarchidb/vectortile-store':
+        specifier: workspace:*
+        version: link:../vectortile-store
       '@types/geojson':
         specifier: ^7946.0.14
         version: 7946.0.16
@@ -1065,6 +1051,9 @@ importers:
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../common/types
+      '@hierarchidb/plugin-service-api':
+        specifier: workspace:*
+        version: link:../../plugin-service-api
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../util
@@ -1381,9 +1370,6 @@ importers:
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../common/types
-      '@hierarchidb/compute':
-        specifier: workspace:*
-        version: link:../features/compute
       '@hierarchidb/download':
         specifier: workspace:*
         version: link:../features/download
@@ -1752,21 +1738,6 @@ importers:
       react-dom:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
-  packages/ui/gis:
-    devDependencies:
-      '@hierarchidb/ui-map':
-        specifier: workspace:*
-        version: link:../map
-      '@mui/material':
-        specifier: ^7.3.6
-        version: 7.3.6(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      react:
-        specifier: '>=18.0.0'
-        version: 18.3.1
       typescript:
         specifier: 5.8.2
         version: 5.8.2
@@ -3087,7 +3058,7 @@ importers:
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../../packages/runtime-worker
-      '@hierarchidb/ui-batch':
+      '@hierarchidb/ui-batch-progress':
         specifier: workspace:*
         version: link:../../packages/ui/batch
       '@hierarchidb/ui-grid':
@@ -3423,7 +3394,7 @@ importers:
       '@hierarchidb/ui-accordion-config':
         specifier: workspace:*
         version: link:../../packages/ui/accordion-config
-      '@hierarchidb/ui-batch':
+      '@hierarchidb/ui-batch-progress':
         specifier: workspace:*
         version: link:../../packages/ui/batch
       '@hierarchidb/ui-country-select':
@@ -3435,9 +3406,6 @@ importers:
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../packages/ui/dialog
-      '@hierarchidb/ui-gis':
-        specifier: workspace:*
-        version: link:../../packages/ui/gis
       '@hierarchidb/ui-grid':
         specifier: workspace:*
         version: link:../../packages/ui/data-grid
@@ -3468,9 +3436,6 @@ importers:
       '@hierarchidb/ui-worker-provider':
         specifier: workspace:*
         version: link:../../packages/ui/worker-provider
-      '@hierarchidb/vectortile-store':
-        specifier: workspace:*
-        version: link:../../packages/features/vectortile-store
       '@mui/icons-material':
         specifier: ^7.3.6
         version: 7.3.6(@mui/material@7.3.6(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.27)(react@18.3.1)

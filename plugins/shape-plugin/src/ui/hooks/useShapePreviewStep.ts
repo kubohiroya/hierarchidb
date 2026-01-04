@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTheme } from '@mui/material/styles';
 import type { DownloadTaskPayload, ShapeEntity } from '../../common/types/index.js';
-import { toNodeId } from '@hierarchidb/common-types';
+import { toNodeId, type NodeId } from '@hierarchidb/common-types';
 import { normalizeDataSourceName } from '../../common/types/index.js';
 import { useTranslation } from '../i18n.js';
 import { isShapePreviewMetadataEnabled } from '../../common/config/previewFlags.js';
-import { getShapeTileMetadataDB, type ShapeSourceMetadataRow } from '../../services/database/VectorTileDB.ts';
+import type { ShapeSourceMetadataRow } from '@hierarchidb/plugin-service-api';
 import { useAtom } from 'jotai';
 import {
   shapePreviewSearchAtom,
@@ -21,7 +21,7 @@ import {
   useVectorTilePreviewSearch,
   useVectorTilePreviewSelection,
   useVectorTilePreviewMapLayers,
-} from '@hierarchidb/ui-gis';
+} from '@hierarchidb/ui-map';
 import { useVectorTilePreviewTable } from './preview/useVectorTilePreviewTable.js';
 import { getDBName } from '@hierarchidb/util';
 import { shapeDB } from '../../services/database/ShapeDB.js';
@@ -254,9 +254,11 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   }, [selectionDataSource, selectionMatrix, workerClient]);
 
   const loadMetadataRows = useCallback(
-    (targetNodeId: string) =>
-      getShapeTileMetadataDB()
-        .then((db) => db.sourceMetadata.where('nodeId').equals(String(targetNodeId)).toArray()),
+    (targetNodeId: NodeId) =>
+      shapeDB.sourceMetadata
+        .where('nodeId')
+        .equals(targetNodeId)
+        .toArray() as Promise<ShapeSourceMetadataRow[]>,
     [],
   );
 

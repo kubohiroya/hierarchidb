@@ -1,17 +1,9 @@
-import { useAtom } from 'jotai';
 import { useCallback } from 'react';
-import type { MapLibreGeoJSONFeature, MapLibreMapInstance } from '@hierarchidb/ui-plugin-shell/ui-map';
-import type { MapHighlightEntry, MapSearchTargetId } from '../../../state/mapSearch.atoms.js';
-import {
-  mapSearchMatchesAtom,
-  mapSearchTargetSelectionAtom,
-  mapSearchTextAtom,
-} from '../../../state/mapSearch.atoms.js';
-import { SEARCH_TARGET_DEFINITIONS, SEARCH_TARGET_GROUPS } from './constants.js';
-
-const POINT_TARGETS = SEARCH_TARGET_GROUPS[0]?.targetIds ?? [];
-const ROUTE_TARGETS = SEARCH_TARGET_GROUPS[1]?.targetIds ?? [];
-const SHAPE_TARGETS = SEARCH_TARGET_GROUPS[2]?.targetIds ?? [];
+import type {
+  MapLibreGeoJSONFeature,
+  MapLibreMapInstance,
+} from '../types/maplibre-public.js';
+import type { MapSearchTargetDefinition } from './mapPreviewSearchTypes.js';
 
 const normalizeSearchValue = (value: string) => value.trim().toLowerCase();
 
@@ -48,48 +40,60 @@ const collectSearchValues = (properties: Record<string, unknown>, keys: string[]
   return Array.from(values);
 };
 
-const getTargetsForLayerType = (layerType?: string): MapSearchTargetId[] => {
-  if (layerType === 'circle') return POINT_TARGETS;
-  if (layerType === 'line') return ROUTE_TARGETS;
-  if (layerType === 'fill') return SHAPE_TARGETS;
-  return [...POINT_TARGETS, ...ROUTE_TARGETS, ...SHAPE_TARGETS];
+const getTargetsForLayerType = <TargetId extends string>(
+  layerType: string | undefined,
+  definitions: Record<TargetId, MapSearchTargetDefinition>,
+): TargetId[] => {
+  const group =
+    layerType === 'circle' ? 'point' : layerType === 'line' ? 'route' : layerType === 'fill' ? 'shape' : null;
+  const targetIds = Object.keys(definitions) as TargetId[];
+  if (!group) return targetIds;
+  return targetIds.filter((targetId) => definitions[targetId].group === group);
 };
 
-export type UseMapSearchParams = {
+export type UseMapFeatureSearchParams<TargetId extends string, HighlightEntry extends { source: string; id: string | number }> = {
   mapInstance: MapLibreMapInstance | null;
   highlightLayerIds: string[];
-  buildHighlightEntry: (feature?: MapLibreGeoJSONFeature | null) => MapHighlightEntry | null;
+  searchText: string;
+  searchTargets: Record<TargetId, boolean>;
+  targetDefinitions: Record<TargetId, MapSearchTargetDefinition>;
+  buildHighlightEntry: (feature?: MapLibreGeoJSONFeature | null) => HighlightEntry | null;
+  setSearchMatches: (entries: HighlightEntry[]) => void;
+  setSearchText?: (value: string) => void;
+  setSearchTargets?: (updater: (prev: Record<TargetId, boolean>) => Record<TargetId, boolean>) => void;
 };
 
-export type UseMapSearchResult = {
-  searchText: string;
-  searchTargets: Record<MapSearchTargetId, boolean>;
-  setSearchText: (value: string) => void;
+export type UseMapFeatureSearchResult<TargetId extends string> = {
   runSearch: () => void;
   handleSearchClear: () => void;
-  handleSearchTargetToggle: (targetId: MapSearchTargetId) => void;
+  handleSearchTargetToggle: (targetId: TargetId) => void;
 };
 
-export const useMapSearch = ({
+export const useMapFeatureSearch = <TargetId extends string, HighlightEntry extends { source: string; id: string | number }>({
   mapInstance,
   highlightLayerIds,
+  searchText,
+  searchTargets,
+  targetDefinitions,
   buildHighlightEntry,
-}: UseMapSearchParams): UseMapSearchResult => {
-  const [searchText, setSearchText] = useAtom(mapSearchTextAtom);
-  const [searchTargets, setSearchTargets] = useAtom(mapSearchTargetSelectionAtom);
-  const [, setSearchMatches] = useAtom(mapSearchMatchesAtom);
-
+  setSearchMatches,
+  setSearchText,
+  setSearchTargets,
+}: UseMapFeatureSearchParams<TargetId, HighlightEntry>): UseMapFeatureSearchResult<TargetId> => {
   const clearSearchHighlights = useCallback(() => {
     setSearchMatches([]);
   }, [setSearchMatches]);
 
   const handleSearchClear = useCallback(() => {
-    setSearchText('');
+    if (setSearchText) {
+      setSearchText('');
+    }
     clearSearchHighlights();
   }, [clearSearchHighlights, setSearchText]);
 
   const handleSearchTargetToggle = useCallback(
-    (targetId: MapSearchTargetId) => {
+    (targetId: TargetId) => {
+      if (!setSearchTargets) return;
       setSearchTargets((prev) => ({ ...prev, [targetId]: !prev[targetId] }));
     },
     [setSearchTargets]
@@ -112,15 +116,15 @@ export const useMapSearch = ({
       { layers: highlightLayerIds },
     ) as MapLibreGeoJSONFeature[];
 
-    const matchedEntries = new Map<string, MapHighlightEntry>();
+    const matchedEntries = new Map<string, HighlightEntry>();
     for (const feature of features) {
       const properties = (feature?.properties ?? {}) as Record<string, unknown>;
       const layerType = feature.layer?.type;
-      const targetIds = getTargetsForLayerType(layerType);
+      const targetIds = getTargetsForLayerType(layerType, targetDefinitions);
       let matched = false;
       for (const targetId of targetIds) {
         if (!searchTargets[targetId]) continue;
-        const targetKeys = SEARCH_TARGET_DEFINITIONS[targetId].keys;
+        const targetKeys = targetDefinitions[targetId].keys;
         const values = collectSearchValues(properties, targetKeys);
         if (values.some((value) => normalizeSearchValue(value).startsWith(query))) {
           matched = true;
@@ -134,19 +138,9 @@ export const useMapSearch = ({
     }
 
     setSearchMatches(Array.from(matchedEntries.values()));
-  }, [buildHighlightEntry, clearSearchHighlights, highlightLayerIds, mapInstance, searchTargets, searchText, setSearchMatches]);
-
-  const setSearchTextValue = useCallback(
-    (value: string) => {
-      setSearchText(value);
-    },
-    [setSearchText]
-  );
+  }, [buildHighlightEntry, clearSearchHighlights, highlightLayerIds, mapInstance, searchText, searchTargets, setSearchMatches, targetDefinitions]);
 
   return {
-    searchText,
-    searchTargets,
-    setSearchText: setSearchTextValue,
     runSearch,
     handleSearchClear,
     handleSearchTargetToggle,

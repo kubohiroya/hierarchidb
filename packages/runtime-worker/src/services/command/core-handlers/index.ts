@@ -10,7 +10,7 @@ import type {
 } from '@hierarchidb/common-types';
 import type { CoreDB } from '../../CoreDB.js';
 import type { CommandEnvelope, CommandResult, WorkerErrorCode } from '../../command-types.js';
-import { WorkerErrorCode as WorkerErrorCodeValue } from '../../command-types.js';
+import { WorkerErrorCodeValue } from '../../command-types.js';
 import { commitDraft, createNewName } from '../../DraftTreeNodeOperations.js';
 import type { CommandHistoryManager } from '../history/CommandHistoryManager.js';
 

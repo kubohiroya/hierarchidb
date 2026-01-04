@@ -1,29 +1,40 @@
 import type {
+  MapLibreGeoJSONFeature,
   MapLibreMapInstance,
   MapToggleSelection,
 } from '@hierarchidb/ui-plugin-shell/ui-map';
 import {
   buildCategoryFilter,
   DEFAULT_MAP_CONFIG,
+  MapPreviewSearchPanel,
+  MapPreviewSearchSettingsDialog,
   ResourceLayerMap,
+  defaultFeatureIdAccessor,
+  useMapFeatureHighlights,
+  useMapFeatureSearch,
   mergeFilters,
 } from '@hierarchidb/ui-plugin-shell/ui-map';
 import { Box } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { Close as CloseIcon, Tune as TuneIcon } from '@mui/icons-material';
 import { useLoaderData, useParams, useSearch } from '@tanstack/react-router';
-import { useSetAtom } from 'jotai';
+import { useAtom, useSetAtom } from 'jotai';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useGeolocationImport from 'react-hook-geolocation';
 import { MaplibreExportControl } from '@watergis/maplibre-gl-export';
-import { mapLayerInfoAtom } from '../../../state/mapSearch.atoms.js';
-import type { MapLayerInfo } from '../../../state/mapSearch.atoms.js';
+import {
+  mapHoverMatchAtom,
+  mapLayerInfoAtom,
+  mapSearchMatchesAtom,
+  mapSearchTargetSelectionAtom,
+  mapSearchTextAtom,
+  mapSelectedMatchAtom,
+  mapViewportFeatureIdsAtom,
+} from '../../../state/mapSearch.atoms.js';
+import type { MapLayerInfo, MapViewportFeatureIds } from '../../../state/mapSearch.atoms.js';
 import { ModelessDialogManager } from '../modeless/ModelessDialogManager.js';
-import { LOCATION_TYPE_OPTIONS, ROUTE_MODE_OPTIONS } from './constants.js';
-import { SearchPanel } from './SearchPanel.js';
-import { SearchSettingsDialog } from './SearchSettingsDialog.js';
+import { LOCATION_TYPE_OPTIONS, ROUTE_MODE_OPTIONS, SEARCH_TARGET_DEFINITIONS, SEARCH_TARGET_GROUPS } from './constants.js';
 import { useFolderLayers } from './useFolderLayers.js';
-import { useMapHighlights } from './useMapHighlights.js';
-import { useMapSearch } from './useMapSearch.js';
 import { useMapViewState } from './useMapViewState.js';
 import type { MapSearch } from './types.js';
 import type { MapViewState as LoaderMapViewState } from '../../loaders/mapLoader.js';
@@ -40,6 +51,12 @@ export default function MapPage() {
   const geolocation = useGeolocation();
   const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
   const [searchSettingsOpen, setSearchSettingsOpen] = useState(false);
+  const [searchText, setSearchText] = useAtom(mapSearchTextAtom);
+  const [searchTargets, setSearchTargets] = useAtom(mapSearchTargetSelectionAtom);
+  const [searchMatches, setSearchMatches] = useAtom(mapSearchMatchesAtom);
+  const [hoverMatch, setHoverMatch] = useAtom(mapHoverMatchAtom);
+  const [selectedMatch, setSelectedMatch] = useAtom(mapSelectedMatchAtom);
+  const setViewportFeatureIds = useSetAtom(mapViewportFeatureIdsAtom);
   const [locationTypeSelection, setLocationTypeSelection] = useState<MapToggleSelection>(() =>
     Object.fromEntries(LOCATION_TYPE_OPTIONS.map((option) => [option.id, true])) as MapToggleSelection
   );
@@ -92,24 +109,62 @@ export default function MapPage() {
     [vectorLayers],
   );
 
-  const { buildHighlightEntry, handleIdentify } = useMapHighlights({
-    mapInstance,
-    highlightLayerIds,
-    layerInfoById,
-    layerInfoBySource,
-  });
+  const buildHighlightEntry = useCallback(
+    (feature?: MapLibreGeoJSONFeature | null) => {
+      if (!feature) return null;
+      const id = defaultFeatureIdAccessor(feature);
+      const source = typeof feature.source === 'string' ? feature.source : undefined;
+      if (id === undefined || id === null || !source) return null;
+      const layerId = typeof feature.layer?.id === 'string' ? feature.layer.id : undefined;
+      const meta = layerId ? layerInfoById.get(layerId) : undefined;
+      const resolved = meta ?? (typeof feature.source === 'string' ? layerInfoBySource.get(feature.source) : undefined);
+      return {
+        source,
+        id,
+        layerId,
+        nodeId: resolved?.nodeId,
+        nodeType: resolved?.nodeType,
+      };
+    },
+    [layerInfoById, layerInfoBySource]
+  );
 
-  const {
-    searchText,
-    searchTargets,
-    setSearchText,
-    runSearch,
-    handleSearchClear,
-    handleSearchTargetToggle,
-  } = useMapSearch({
+  const handleViewportLayerIdsChange = useCallback(
+    (layerIds: Map<string, Set<string | number>>) => {
+      const next: MapViewportFeatureIds = {};
+      layerInfoById.forEach((info, layerId) => {
+        const ids = layerIds.get(layerId);
+        if (!ids) return;
+        if (!next[info.nodeId]) next[info.nodeId] = {};
+        next[info.nodeId]![info.nodeType] = Array.from(ids);
+      });
+      setViewportFeatureIds(next);
+    },
+    [layerInfoById, setViewportFeatureIds]
+  );
+
+  const { handleIdentify } = useMapFeatureHighlights({
     mapInstance,
     highlightLayerIds,
     buildHighlightEntry,
+    searchMatches,
+    hoverMatch,
+    selectedMatch,
+    setHoverMatch,
+    setSelectedMatch,
+    onViewportLayerIdsChange: handleViewportLayerIdsChange,
+  });
+
+  const { runSearch, handleSearchClear, handleSearchTargetToggle } = useMapFeatureSearch({
+    mapInstance,
+    highlightLayerIds,
+    searchText,
+    searchTargets,
+    targetDefinitions: SEARCH_TARGET_DEFINITIONS,
+    buildHighlightEntry,
+    setSearchMatches,
+    setSearchText,
+    setSearchTargets,
   });
 
   const routeModeOptions = useMemo(
@@ -341,17 +396,21 @@ export default function MapPage() {
         />
       ) : null}
 
-      <SearchPanel
+      <MapPreviewSearchPanel
         searchText={searchText}
         onSearchTextChange={setSearchText}
         onSearch={runSearch}
         onClear={handleSearchClear}
         onOpenSettings={() => setSearchSettingsOpen(true)}
+        clearIcon={<CloseIcon fontSize=\"small\" />}
+        settingsIcon={<TuneIcon fontSize=\"small\" />}
       />
 
-      <SearchSettingsDialog
+      <MapPreviewSearchSettingsDialog
         open={searchSettingsOpen}
         searchTargets={searchTargets}
+        targetGroups={SEARCH_TARGET_GROUPS}
+        targetDefinitions={SEARCH_TARGET_DEFINITIONS}
         onClose={() => setSearchSettingsOpen(false)}
         onToggleTarget={handleSearchTargetToggle}
       />

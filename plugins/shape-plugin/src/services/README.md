@@ -37,7 +37,7 @@ packages/plugins/shape/src/services/
 │   ├── FeatureIndexDB.ts            # フィーチャーインデックス
 │   ├── FeatureBufferDB.ts           # フィーチャーバッファ
 │   ├── TileBufferDB.ts              # タイルバッファ
-│   ├── VectorTileDB.ts              # ベクタータイル
+│   ├── (vectorTiles stored in ShapeDB)
 │   └── openstreetmap-type.ts
 │
 ├── utils/                             # ユーティリティ

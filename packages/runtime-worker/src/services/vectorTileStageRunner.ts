@@ -23,7 +23,8 @@ export type VectorTileStageInput = {
       countryName?: string;
       adminLevel?: number;
     };
-    targetNodeId?: string;
+    targetNodeId?: NodeId;
+    targetNodeType?: string;
     abortKey?: string;
   };
   onProgress?: (progress: VectorTileProgress) => void;
@@ -114,7 +115,7 @@ export async function runVectorTileStage(
   if (buffer) {
     const inputFormat = config.inputFormat ?? 'geojson';
     const inputCompression = config.inputCompression ?? 'none';
-    const nodeId = options.nodeId ?? (config.targetNodeId as NodeId | undefined) ?? DEFAULT_NODE_ID;
+    const nodeId = options.nodeId ?? config.targetNodeId ?? DEFAULT_NODE_ID;
     await writeVectorTileInput(
       bufferId,
       buffer,
@@ -128,6 +129,7 @@ export async function runVectorTileStage(
     );
   }
   const generated = await client.generateTiles(bufferId, config, onProgress);
-  const tiles = await client.listTiles(bufferId);
+  const resolvedNodeId = config.targetNodeId ?? (bufferId as NodeId);
+  const tiles = await client.listTiles(resolvedNodeId, config.targetNodeType);
   return { generated, tiles };
 }

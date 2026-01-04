@@ -7,13 +7,13 @@ Last Updated: 2025-09-06
 ## 1. Goals / Non‑Goals
 
 - Goals:
-  - Add a robust, resumable batch processing foundation to the Route plugin, reusing existing extracted features: `@hierarchidb/batch`, `@hierarchidb/download`, `@hierarchidb/compute`.
+  - Add a robust, resumable batch processing foundation to the Route plugin, reusing existing extracted features: `@hierarchidb/batch`, `@hierarchidb/download`.
   - Support large sets of route computations (e.g., bulk re-routing, distance/duration calculations, segment enrichment, route smoothing) with progress reporting, cancellation, retry, and export.
   - Keep work off the main thread via Runtime Worker; persist job state and outputs; expose UI affordances for launching and monitoring jobs.
   - Provide idempotent APIs so the same batch spec doesn’t duplicate work when retried.
 
 - Non‑Goals:
-  - Building new routing algorithms from scratch (we will integrate existing engines/services or the `feature/compute` building blocks).
+  - Building new routing algorithms from scratch (we will integrate existing engines/services or shared compute building blocks when available).
   - New server/BFF functionality beyond minimal passthrough/proxy if absolutely necessary.
   - Replacing `feature/*` job/execution model; we will compose it.
   - Duplicating utilities/components already present in the workspace. Prefer promotion/reuse over re‑implementation.
@@ -22,7 +22,7 @@ Last Updated: 2025-09-06
 
 - Throttling/Backoff: promote the lightweight RateLimiter currently embedded in `runtime-ui/datasource` into a shared module (e.g., `runtime-shared/batch-processor` or `@hierarchidb/util`) and reuse. Do not create a new limiter.
 - Storage/Schema: use `feature/batch` Dexie stores for jobs/tasks/results. For route outputs, extend existing route stores or add a small route‑specific table; avoid parallel bespoke stores.
-- Geometry/Encoding/Extraction: reuse capabilities from the refactored `shape-plugin` services (quantization, TopoJSON extraction, geobuf, pako). Wire through `feature/compute` steps instead of re‑writing.
+- Geometry/Encoding/Extraction: reuse capabilities from the refactored `shape-plugin` services (quantization, TopoJSON extraction, geobuf, pako). Wire through shared compute steps (TBD) instead of re‑writing.
 - Vector Tiles: if MVT generation exists in shape pipeline (or documented as planned), factor common parts into shared steps; otherwise keep tiler as optional follow‑up, not a blocker for the first delivery.
 - Engine adapters: check for existing `feature/route-searoute` and any OSRM client. Implement thin adapters that conform to a common engine interface.
 
@@ -75,7 +75,7 @@ Deliverables MUST reference these files/paths to avoid drift.
   - Idempotency: `jobKey` derived from job spec hash (inputs + parameters + plugin version + compute profile).
   - Persistence: Dexie stores via runtime worker; job progress events via worker postMessage channel.
 
-- Execution (reuse `@hierarchidb/compute`):
+- Execution (shared compute pipeline; TBD):
   - Compose a pipeline from small, pure steps (e.g., decode input → chunk → compute → persist result → emit progress).
   - Concurrency controls: pool size, per-domain rate limits (to avoid API throttling), backpressure to storage.
   - Retry policy: exponential backoff up to N attempts; permanent failure classification (4xx, validation, invariant violations).
@@ -88,7 +88,7 @@ Deliverables MUST reference these files/paths to avoid drift.
     - `route/recompute`: recompute geometry/attributes under a routing profile.
     - `route/matrix`: origin-destination distance/duration matrix.
     - `route/enrich`: smoothing, elevation, snap-to-network, segment stats, etc.
-  - Each job type defines its task mapper (input → tasks) and compute step(s) wired through `feature/compute`.
+  - Each job type defines its task mapper (input → tasks) and compute step(s) wired through a shared compute pipeline (TBD).
 
 ### 3.A End‑to‑End Flow (Stage Pipeline)
 
@@ -182,7 +182,7 @@ Implementation notes in this repo:
 
 ### 7.1 route/recompute
 - Input: route ids or waypoint arrays.
-- Steps: fetch inputs → chunk → compute route (profile) via `feature/compute` → persist route geometries/attrs → emit metrics.
+- Steps: fetch inputs → chunk → compute route (profile) via shared compute pipeline (TBD) → persist route geometries/attrs → emit metrics.
 - Edge cases: unreachable segments; fallback profile; partial path success.
 
 ### 7.2 route/matrix
@@ -192,7 +192,7 @@ Implementation notes in this repo:
 
 ### 7.3 route/enrich
 - Input: route ids or geometries.
-- Steps: fetch → run one or more enrichment steps (smoothing, elevation, segment stats) via `feature/compute` chain → write back enriched attributes.
+- Steps: fetch → run one or more enrichment steps (smoothing, elevation, segment stats) via shared compute pipeline (TBD) → write back enriched attributes.
 - Config: step list, tolerances, sources (DEM, network), fail-strategy (skip/stop).
 
 ## 8. Concurrency, Chunking, and Limits
@@ -259,7 +259,7 @@ M1: Scaffolding (1–2 days)
 
 M2: Pipelines (3–5 days)
 - [ ] Implement task mappers for each job type.
-- [ ] Compose compute chains using `@hierarchidb/compute` (routing call, smoothing, etc.).
+- [ ] Compose compute chains using the shared compute pipeline (TBD) (routing call, smoothing, etc.).
 - [ ] Implement checkpointing and idempotent jobKey logic.
 - [x] Implement per‑lane semaphores (OSRM/SEA/LOCAL) to cap concurrency regardless of batch size.
   - Defaults: osm_route=1, searoute=3, direct=64, great_circle=64, custom=8.
@@ -301,7 +301,7 @@ Exit Criteria
 
 ## 16. Dependencies & Risks
 
-- Dependencies: `@hierarchidb/batch`, `@hierarchidb/compute`, `@hierarchidb/download`, Runtime Worker bootstrap, Feature Registry.
+- Dependencies: `@hierarchidb/batch`, `@hierarchidb/download`, Runtime Worker bootstrap, Feature Registry.
 - Risks: external routing API rate limits; large geometry write performance; IndexedDB quotas.
 - Mitigations: rate limiter, chunking, incremental flush, output size caps, export-first workflows.
 

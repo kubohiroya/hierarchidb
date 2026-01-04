@@ -8,26 +8,31 @@ import {
   Paper,
   Typography,
 } from '@mui/material';
-import type { MapSearchTargetId, MapSearchTargetSelection } from '../../../state/mapSearch.atoms.js';
-import { SEARCH_TARGET_DEFINITIONS, SEARCH_TARGET_GROUPS } from './constants.js';
+import type { MapSearchTargetDefinition, MapSearchTargetGroup } from './mapPreviewSearchTypes.js';
 
-export type SearchSettingsDialogProps = {
+export type MapPreviewSearchSettingsDialogProps<TargetId extends string> = {
   open: boolean;
-  searchTargets: MapSearchTargetSelection;
+  searchTargets: Record<TargetId, boolean>;
+  targetGroups: Array<MapSearchTargetGroup<TargetId>>;
+  targetDefinitions: Record<TargetId, MapSearchTargetDefinition>;
   onClose: () => void;
-  onToggleTarget: (targetId: MapSearchTargetId) => void;
+  onToggleTarget: (targetId: TargetId) => void;
+  dialogTitle?: string;
 };
 
-export const SearchSettingsDialog = ({
+export const MapPreviewSearchSettingsDialog = <TargetId extends string>({
   open,
   searchTargets,
+  targetGroups,
+  targetDefinitions,
   onClose,
   onToggleTarget,
-}: SearchSettingsDialogProps) => (
+  dialogTitle = '検索対象',
+}: MapPreviewSearchSettingsDialogProps<TargetId>) => (
   <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
-    <DialogTitle>検索対象</DialogTitle>
+    <DialogTitle>{dialogTitle}</DialogTitle>
     <DialogContent dividers>
-      {SEARCH_TARGET_GROUPS.map((group) => (
+      {targetGroups.map((group) => (
         <Paper key={group.title} variant="outlined" sx={{ p: 1.5, mb: 2 }}>
           <Typography variant="subtitle2" sx={{ mb: 1 }}>
             {group.title}
@@ -42,7 +47,7 @@ export const SearchSettingsDialog = ({
                     onChange={() => onToggleTarget(targetId)}
                   />
                 )}
-                label={SEARCH_TARGET_DEFINITIONS[targetId].label}
+                label={targetDefinitions[targetId].label}
               />
             ))}
           </FormGroup>

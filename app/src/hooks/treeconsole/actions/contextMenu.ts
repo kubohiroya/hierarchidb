@@ -54,8 +54,6 @@ export const createContextMenuAction = (deps: TreeConsoleActionDeps, helpers: Co
     setSSOT,
     loadChildrenOf,
     refreshUndoRedo,
-    teardownSubscription,
-    setupSubscription,
   } = deps;
   const { applyClipboard, openEditDialog, resolvePreviewGuardState, navigation } = helpers;
 

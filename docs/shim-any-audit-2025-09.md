@@ -1053,10 +1053,9 @@ total occurrences: 50
 total occurrences: 0
 
 追加メモ:
-  - ui-map・ui-monitoring・ui-lru-splitview・runtime-client・feature-compute など残存ホットスポットの `as any` を段階的に除去。Deck.gl ストーリー向けに最小限の ambient module を追加し、Node16 モジュール解決に合わせて `.js` 拡張子を補完。
+  - ui-map・ui-monitoring・ui-lru-splitview・runtime-client など残存ホットスポットの `as any` を段階的に除去。Deck.gl ストーリー向けに最小限の ambient module を追加し、Node16 モジュール解決に合わせて `.js` 拡張子を補完。
   - feature-auth-recovery / tabular-xlsx / runtime-shared-batch-processor / linker-plugin 等も正式型で再構築し、ログ出力や環境判定ロジックでの `process` 依存を `globalThis` ベースへ統一。
   - `pnpm as-any:report` で 0 件を確認。あわせて以下を実行し、対応パッケージの型検証がすべてグリーンであることを確認済み。
-    - `pnpm --filter @hierarchidb/compute typecheck`
     - `pnpm --filter @hierarchidb/util typecheck`
     - `pnpm --filter @hierarchidb/ui-worker-client typecheck`
     - `pnpm --filter @hierarchidb/vite-plugin-hierarchidb-plugin-alias run build`（旧 `@hierarchidb/tools-vite-plugin-package-reader` の typecheck 相当）

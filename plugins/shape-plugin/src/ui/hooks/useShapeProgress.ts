@@ -1,6 +1,6 @@
 import type { NodeType } from '@hierarchidb/common-types';
 import type { BatchSessionStatus } from '@hierarchidb/common-api';
-import { usePluginBatchProgress } from '@hierarchidb/ui-batch';
+import { usePluginBatchProgress } from '@hierarchidb/ui-batch-progress';
 import {
   statusToUnified,
   toShapeProgress,

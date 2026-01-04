@@ -2,7 +2,8 @@ import type { Feature, FeatureCollection, Geometry, GeoJsonProperties } from 'ge
 import type { Tile } from 'geojson-vt';
 import area from '@turf/area';
 import type vtPbfNS = require('@maplibre/vt-pbf');
-import { TilesDB, type FeatureMetadataRow } from '@hierarchidb/vectortile-store';
+import type { FeatureMetadataRow } from '@hierarchidb/vectortile-store';
+import type { NodeId } from '@hierarchidb/common-types';
 
 import {
   latToTileY,
@@ -42,6 +43,18 @@ export type VectorTileGenerateResult = {
   tilesGenerated: number;
   totalBytes: number;
   metadataCount?: number;
+  tiles: VectorTileRow[];
+  featureMetadata?: FeatureMetadataRow[];
+};
+
+export type VectorTileRow = {
+  z: number;
+  x: number;
+  y: number;
+  data: Uint8Array;
+  size: number;
+  contentType: 'application/vnd.mapbox-vector-tile';
+  timestamp: number;
 };
 
 export type VectorTileProgress = {
@@ -254,7 +267,7 @@ const loadVtPbf = async (): Promise<typeof vtPbfNS> => {
 };
 
 export const generateVectorTilesFromJsonBuffer = async (
-  nodeId: string,
+  nodeId: NodeId,
   buffer: ArrayBuffer,
   config: VectorTileGenerateConfig,
   onProgress?: (progress: VectorTileProgress) => void,
@@ -267,7 +280,7 @@ export const generateVectorTilesFromJsonBuffer = async (
 };
 
 export const generateVectorTilesFromFgbBuffer = async (
-  nodeId: string,
+  nodeId: NodeId,
   buffer: ArrayBuffer,
   config: VectorTileGenerateConfig,
   onProgress?: (progress: VectorTileProgress) => void,
@@ -280,7 +293,7 @@ export const generateVectorTilesFromFgbBuffer = async (
 };
 
 export const generateVectorTilesFromFeatureCollection = async (
-  nodeId: string,
+  nodeId: NodeId,
   geojson: FeatureCollectionLike,
   config: VectorTileGenerateConfig,
   onProgress?: (progress: VectorTileProgress) => void,
@@ -293,12 +306,9 @@ export const generateVectorTilesFromFeatureCollection = async (
   const metadataContext = config.metadataContext ?? {};
   const createdAt = Date.now();
   let metadataCount: number | undefined;
+  let featureMetadata: FeatureMetadataRow[] | undefined;
 
   if (metadataEnabled) {
-    const db = await TilesDB.getSingleton();
-    if (config.metadataReplace) {
-      await db.featureMetadata.where('nodeId').equals(nodeId).delete();
-    }
     const records: FeatureMetadataRow[] = [];
     for (let index = 0; index < features.length; index++) {
       throwIfAborted(config.signal);
@@ -325,9 +335,7 @@ export const generateVectorTilesFromFeatureCollection = async (
         area: stats.area,
       });
     }
-    if (records.length > 0) {
-      await db.featureMetadata.bulkPut(records);
-    }
+    featureMetadata = records;
     metadataCount = records.length;
   } else {
     for (let index = 0; index < features.length; index++) {
@@ -396,61 +404,45 @@ export const generateVectorTilesFromFeatureCollection = async (
     }
   };
 
-  const db = await TilesDB.getSingleton();
-  let tiles = 0;
+  const tiles: VectorTileRow[] = [];
+  let tilesGenerated = 0;
   let totalBytes = 0;
   let tilesWithFeatures = 0;
   let tilesWithoutFeatures = 0;
-  const createdTileKeys: string[] = [];
-  try {
-    for (const range of tileRanges) {
-      const { z, x1, x2, y1, y2 } = range;
+  for (const range of tileRanges) {
+    const { z, x1, x2, y1, y2 } = range;
+    throwIfAborted(config.signal);
+    for (let x = x1; x <= x2; x++) {
       throwIfAborted(config.signal);
-      for (let x = x1; x <= x2; x++) {
+      for (let y = y1; y <= y2; y++) {
         throwIfAborted(config.signal);
-        for (let y = y1; y <= y2; y++) {
-          throwIfAborted(config.signal);
-          const tile = index.getTile(z, x, y);
-          const layer =
-            tile && Array.isArray((tile as { features?: unknown[] }).features)
-              ? (tile as Tile)
-              : null;
-          if (layer?.features?.length) {
-            const layers: Record<string, Tile> = { layer0: layer };
-            const pbf = vtpbf.fromGeojsonVt(layers as unknown as Tile[], { version: 2 });
-            const bytes = pbf as Uint8Array;
-            tiles++;
-            tilesWithFeatures++;
-            totalBytes += bytes.byteLength;
-            const key = `${nodeId}-${z}-${x}-${y}`;
-            createdTileKeys.push(key);
-            await db.tiles.put({
-              key,
-              nodeId,
-              z,
-              x,
-              y,
-              data: bytes.slice().buffer,
-              size: bytes.byteLength,
-              contentType: 'application/vnd.mapbox-vector-tile',
-              timestamp: Date.now(),
-            });
-          } else {
-            tilesWithoutFeatures++;
-          }
-          reportProgress(z, x, y);
+        const tile = index.getTile(z, x, y);
+        const layer =
+          tile && Array.isArray((tile as { features?: unknown[] }).features)
+            ? (tile as Tile)
+            : null;
+        if (layer?.features?.length) {
+          const layers: Record<string, Tile> = { layer0: layer };
+          const pbf = vtpbf.fromGeojsonVt(layers as unknown as Tile[], { version: 2 });
+          const bytes = pbf as Uint8Array;
+          tilesGenerated++;
+          tilesWithFeatures++;
+          totalBytes += bytes.byteLength;
+          tiles.push({
+            z,
+            x,
+            y,
+            data: bytes,
+            size: bytes.byteLength,
+            contentType: 'application/vnd.mapbox-vector-tile',
+            timestamp: Date.now(),
+          });
+        } else {
+          tilesWithoutFeatures++;
         }
+        reportProgress(z, x, y);
       }
     }
-  } catch (error) {
-    if (isAbortError(error) && createdTileKeys.length > 0) {
-      await deleteTilesInBatches(db, createdTileKeys);
-      console.debug('[VectorTiles] aborted; cleaned up generated tiles', {
-        nodeId,
-        tiles: createdTileKeys.length,
-      });
-    }
-    throw error;
   }
 
   if (tilesWithoutFeatures > 0) {
@@ -462,7 +454,7 @@ export const generateVectorTilesFromFeatureCollection = async (
       tilesWithoutFeatures,
     });
   }
-  return { tilesGenerated: tiles, totalBytes, metadataCount };
+  return { tilesGenerated, totalBytes, metadataCount, tiles, featureMetadata };
 };
 
 const throwIfAborted = (signal?: AbortSignal): void => {
@@ -475,59 +467,4 @@ const throwIfAborted = (signal?: AbortSignal): void => {
   throw error;
 };
 
-const isAbortError = (error: unknown): boolean => {
-  if (!error || typeof error !== 'object') return false;
-  const maybeError = error as Error & { name?: string };
-  return maybeError.name === 'AbortError';
-};
-
-const deleteTilesInBatches = async (
-  db: TilesDB,
-  keys: string[],
-  batchSize = 500,
-): Promise<void> => {
-  for (let index = 0; index < keys.length; index += batchSize) {
-    const batch = keys.slice(index, index + batchSize);
-    await db.tiles.bulkDelete(batch);
-  }
-};
-
-export const getVectorTile = async (
-  nodeId: string,
-  z: number,
-  x: number,
-  y: number,
-): Promise<Uint8Array | null> => {
-  const db = await TilesDB.getSingleton();
-  const key = `${nodeId}-${z}-${x}-${y}`;
-  const row = await db.tiles.get(key);
-  if (!row) return null;
-  return new Uint8Array(row.data);
-};
-
-export const listVectorTiles = async (nodeId: string) => {
-  const db = await TilesDB.getSingleton();
-  const rows = await db.tiles.where('nodeId').equals(nodeId).toArray();
-  return rows.map((row): { z: number; x: number; y: number; size: number; timestamp: number } => ({
-    z: row.z,
-    x: row.x,
-    y: row.y,
-    size: row.size,
-    timestamp: row.timestamp,
-  }));
-};
-
-export const getVectorTileSummary = async (nodeId: string) => {
-  const db = await TilesDB.getSingleton();
-  const rows = await db.tiles.where('nodeId').equals(nodeId).toArray();
-  if (rows.length === 0) return { tiles: 0, totalBytes: 0 };
-  const tiles = rows.length;
-  const totalBytes = rows.reduce((sum, row) => sum + row.size, 0);
-  let zoomMin = rows[0]?.z ?? 0;
-  let zoomMax = rows[0]?.z ?? 0;
-  for (const row of rows) {
-    if (row.z < zoomMin) zoomMin = row.z;
-    if (row.z > zoomMax) zoomMax = row.z;
-  }
-  return { tiles, totalBytes, zoomMin, zoomMax };
-};
+// Tile persistence is handled by callers (runtime-worker adapters) instead of this module.

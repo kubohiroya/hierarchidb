@@ -8,7 +8,6 @@ import { toNodeId, type NodeId } from '@hierarchidb/common-types';
 import { notify } from '@hierarchidb/components';
 import { useTranslation } from '../i18n.js';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
-import { getShapeTileMetadataDB } from '../../services/database/VectorTileDB.ts';
 import { useSetAtom } from 'jotai';
 import { shapeBuildPersistedTasksAtom, shapeBuildTasksAtom } from '../state/shapeBuildProgressAtoms.js';
 
@@ -76,14 +75,10 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
         db.vectorTiles.where('nodeId').equals(batchNodeId).count(),
         db.cache.filter((entry) => entry.key.includes(batchNodeId)).count(),
         shapeDB.vectorTiles.where('nodeId').equals(batchNodeId).count(),
-        getShapeTileMetadataDB()
-          .then(async (metadataDb) => {
-            const [featureCount, sourceCount] = await Promise.all([
-              metadataDb.featureMetadata.where('nodeId').equals(batchNodeId).count(),
-              metadataDb.sourceMetadata.where('nodeId').equals(batchNodeId).count(),
-            ]);
-            return Math.max(featureCount, sourceCount);
-          }),
+        Promise.all([
+          shapeDB.featureMetadata.where('nodeId').equals(batchNodeId).count(),
+          shapeDB.sourceMetadata.where('nodeId').equals(batchNodeId).count(),
+        ]).then(([featureCount, sourceCount]) => Math.max(featureCount, sourceCount)),
         shapeDB.batchTasks
           .where('nodeId')
           .equals(batchNodeId)
@@ -197,10 +192,8 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
   const clearFinalOutputs = useCallback(async () => {
     if (!batchNodeId) return;
     await shapeDB.vectorTiles.where('nodeId').equals(batchNodeId).delete();
-    const metadataDb = await getShapeTileMetadataDB();
-    await metadataDb.featureMetadata.where('nodeId').equals(batchNodeId).delete();
-    await metadataDb.sourceMetadata.where('nodeId').equals(batchNodeId).delete();
-    await metadataDb.tiles.where('nodeId').equals(batchNodeId).delete();
+    await shapeDB.featureMetadata.where('nodeId').equals(batchNodeId).delete();
+    await shapeDB.sourceMetadata.where('nodeId').equals(batchNodeId).delete();
   }, [batchNodeId, nodeId]);
 
   const persistSessionReset = useCallback(async () => {
@@ -290,9 +283,8 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
 
   const handleDeleteMetadata = useCallback(async () => {
     if (!batchNodeId) return notify.warning('NodeId is missing.');
-    const metadataDb = await getShapeTileMetadataDB();
-    await metadataDb.featureMetadata.where('nodeId').equals(batchNodeId).delete();
-    await metadataDb.sourceMetadata.where('nodeId').equals(batchNodeId).delete();
+    await shapeDB.featureMetadata.where('nodeId').equals(batchNodeId).delete();
+    await shapeDB.sourceMetadata.where('nodeId').equals(batchNodeId).delete();
     await loadCounts();
     notify.success('Deleted metadata');
   }, [batchNodeId, loadCounts]);

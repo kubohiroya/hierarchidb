@@ -4,7 +4,7 @@ import { assertCommandFailure } from '../../../test-utils/assertions.js';
 import { CommandProcessor } from '../../CommandProcessor.js';
 import { CoreDB } from '../../CoreDB.js';
 import { commandRegistry } from '../../command/registry.js';
-import { WorkerErrorCode } from '../../command-types.js';
+import { WorkerErrorCodeValue } from '../../command-types.js';
 
 describe('CommandProcessor error model', () => {
   let core: CoreDB;
@@ -27,7 +27,7 @@ describe('CommandProcessor error model', () => {
     const result = await processor.processCommand(envelope);
 
     assertCommandFailure(result);
-    expect(result.code).toBe(WorkerErrorCode.UNKNOWN_ERROR);
+    expect(result.code).toBe(WorkerErrorCodeValue.UNKNOWN_ERROR);
     expect(result.error).toBe('line1 line2 with extra whitespace');
     expect(result.seq).toBeDefined();
   });
@@ -51,7 +51,7 @@ describe('CommandProcessor error model', () => {
     const result = await processor.processCommand(envelope);
 
     assertCommandFailure(result);
-    expect(result.code).toBe(WorkerErrorCode.DATABASE_ERROR);
+    expect(result.code).toBe(WorkerErrorCodeValue.DATABASE_ERROR);
     expect(result.error).toBe('Constraint failure: unique index violated');
   });
 });

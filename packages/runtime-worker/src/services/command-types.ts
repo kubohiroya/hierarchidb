@@ -1,5 +1,5 @@
 import type {
-  CommandResult as CoreCommandResult,
+  CommandResult,
   ErrorCode as CoreErrorCode,
   Timestamp,
 } from '@hierarchidb/common-types';
@@ -47,12 +47,6 @@ export const WorkerErrorCodeValue: { [K in CoreErrorCode]: CoreErrorCode } = {
 
 // 型として使う場合はこちらを参照する（value の WorkerErrorCodeValue とは別）
 export type WorkerErrorCode = CoreErrorCode;
-
-// 後方互換: 以前の名前（value）を残す
-export const WorkerErrorCode = WorkerErrorCodeValue;
-
-// Use core CommandResult directly for consistency across layers
-export type CommandResult = CoreCommandResult;
 
 /**
  * Command event for tracking

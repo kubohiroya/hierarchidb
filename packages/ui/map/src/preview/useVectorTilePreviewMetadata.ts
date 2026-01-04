@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
+import type { NodeId } from '@hierarchidb/common-types';
 
-export type VectorTileMetadataLoader<Row> = (nodeId: string) => Promise<Row[]>;
+export type VectorTileMetadataLoader<Row> = (nodeId: NodeId) => Promise<Row[]>;
 
 export const useVectorTilePreviewMetadata = <Row,>(
   metadataEnabled: boolean,
-  nodeId: string | null,
+  nodeId: NodeId | null,
   loadRows: VectorTileMetadataLoader<Row>,
 ) => {
   const [metadataRows, setMetadataRows] = useState<Row[]>([]);

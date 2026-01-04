@@ -98,12 +98,14 @@ export class RouteVectorTileService {
       maxZoom: settings.maxZoom,
       inputFormat,
       inputCompression,
+      targetNodeId: nodeId,
+      targetNodeType: 'route',
     });
-    const tiles = await vectorTileClient.listTiles(sessionId);
+    const tiles = await vectorTileClient.listTiles(nodeId, 'route');
     const laneConcurrency = clamp(settings.tileWorkers ?? tiles.length, MIN_LANE_CONCURRENCY, MAX_LANE_CONCURRENCY);
     const batch = new BatchService();
     await batch.mapChunks<typeof tiles[number], void>(tiles, async (tile) => {
-      const u8 = await vectorTileClient.getTile(sessionId, tile.z, tile.x, tile.y);
+      const u8 = await vectorTileClient.getTile(nodeId, tile.z, tile.x, tile.y, 'route');
       if (!u8) return;
       const copy = new Uint8Array(u8);
       const data: ArrayBuffer = copy.buffer.slice(0);

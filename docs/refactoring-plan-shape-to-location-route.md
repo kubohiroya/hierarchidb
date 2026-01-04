@@ -63,16 +63,7 @@
 成果物（予定）:
 - `packages/features/batch-session-ports/`（新規）
 
-### 2) Layer2: `runtime-stage-worker` を新設（Worker 実行基盤）
-
-**目的**: WebWorker 並列実行・進捗・pause/abort・throttle を共通モジュール化。
-
-- WorkerPool executor
-- `runTasksInWorkers(tasks, workerFactory, controls, onProgress)`
-
-※ 本段階では shape-plugin の実装を壊さず、共通化の「器」を作る。
-
-### 3) Layer1: download/extract 系の orchestrator 骨格を共通化
+### 2) Layer1: download/extract 系の orchestrator 骨格を共通化
 
 **目的**: download/extract1/extract2 の「繰り返し構造」を共通化して、location/route でも同型にする。
 
@@ -80,7 +71,7 @@
 - StageControls（pause/abort/maxConcurrent/requestPause）
 - StageSummary（total/completed/failed/skipped）
 
-### 4) メタデータ・統計（metadata pipeline）を共通化
+### 3) メタデータ・統計（metadata pipeline）を共通化
 
 **目的**: origin 別統計や sourceMetadata 更新などの共通化。
 
@@ -135,6 +126,4 @@
 ### Next
 
 - `packages/features/batch-session-ports/` の新設（Layer0）
-- `packages/features/runtime-stage-worker/` の新設（Layer2）
 - shape-plugin の download/extract を Layer1 orchestrator 骨格へ寄せる
-

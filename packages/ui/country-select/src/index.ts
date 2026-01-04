@@ -59,13 +59,5 @@ export {
 
 export type { SelectionExport } from './utils/index.js';
 
-// Sample data
-export {
-  SAMPLE_COUNTRIES,
-  getCountriesByContinent,
-  getCountryByCode,
-  searchCountries,
-} from './data/index.js';
-
 // ISO country loader (from ISO-3166-2 CSV; returns Country[])
 export { useIsoCountries } from './hooks/useIsoCountries.js';

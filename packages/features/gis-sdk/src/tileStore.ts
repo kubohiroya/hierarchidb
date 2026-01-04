@@ -29,7 +29,7 @@ export type StoredTile = {
  * Abstract tile persistence and listing.
  *
  * Implementations:
- * - gis-sdk: in-memory/ephemeral or default TilesDB backing
+ * - gis-sdk: in-memory/ephemeral backing (caller-provided persistence)
  * - shape-store/location-store/route-store: Dexie-backed concrete stores
  */
 export interface VectorTileStore {
@@ -39,4 +39,3 @@ export interface VectorTileStore {
   summary(nodeId: NodeId): Promise<TileSummary>;
   deleteByNodeId(nodeId: NodeId): Promise<number>;
 }
-

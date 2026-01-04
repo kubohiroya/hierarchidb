@@ -183,7 +183,7 @@ export function AuthRequiredDialog({
         url,
       });
     }
-  }, [open]);
+  }, [context.requestId, errorCode, errorMessage, open, pluginType, retryCount, sessionId, url]);
 
   // Auto-use current session if already authenticated
   useEffect(() => {
