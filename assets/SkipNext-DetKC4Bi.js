@@ -1,0 +1,1 @@
+import{o as e}from"./rolldown-runtime-B72-3ape.js";import{r as t}from"./vendor-react-DpltIsIb.js";import{Oi as n}from"./index.js";var r=n((0,e(t()).jsx)(`path`,{d:`m6 18 8.5-6L6 6zM16 6v12h2V6z`}),`SkipNext`);export{r as t};

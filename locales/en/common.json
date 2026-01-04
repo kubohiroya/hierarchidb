@@ -133,7 +133,7 @@
           "cancel": "Cancel",
           "close": "Close",
           "maximize": "Maximize",
-          "restoreSize": "Restore size",
+          "restoreSize": "Restore",
           "fullscreen": "Full screen",
           "exitFullscreen": "Exit full screen"
         },
@@ -141,7 +141,7 @@
           "saveDraftDisabled": "No changes to save",
           "close": "Close dialog",
           "maximize": "Maximize",
-          "restoreSize": "Restore size",
+          "restoreSize": "Restore",
           "fullscreen": "Full screen",
           "exitFullscreen": "Exit full screen"
         }
@@ -318,7 +318,12 @@
         },
         "sharedZoomRange": {
           "title": "Shared zoom range",
-          "helper": "Default zoom range applied to shape/location/route settings."
+          "helper": "Default zoom range applied to shape/location/route settings.",
+          "rangeLabel": "Zoom range",
+          "segmentsLabel": "Zoom range segments",
+          "segmentsHelper": "Number of zoom ranges to segment.",
+          "breakpointsLabel": "Zoom range breakpoints",
+          "breakpointsHelper": "Set breakpoints inside the supported zoom range."
         }
       }
     },

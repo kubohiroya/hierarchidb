@@ -1,1 +1,0 @@
-import"./vendor-react-DpltIsIb.js";import{R as e}from"./index.js";const t=e;var n=t;export{t as BasemapPluginIcon,n as default};
