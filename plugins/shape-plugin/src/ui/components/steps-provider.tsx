@@ -30,12 +30,19 @@ function createStepAdapter(
   return function ShapeStepAdapter(props: ShapeStepProps) {
     const latestDataRef = useRef<ShapeEntity | null>(null);
     useEffect(() => {
-      latestDataRef.current = props.data ?? null;
+      latestDataRef.current = {
+        nodeId: props.nodeId as NodeId,
+        ...(props.data ?? {}),
+      };
     }, [props.data]);
-    const data = (props.data ?? {}) as Partial<ShapeEntity>;
+    const data = ({
+      nodeId: props.nodeId as NodeId,
+      ...(props.data ?? {}),
+    }) as Partial<ShapeEntity>;
     const handleChange = (updates: Partial<ShapeEntity>) => {
       const next = {
         ...(latestDataRef.current ?? {}),
+        nodeId: props.nodeId as NodeId,
         ...updates,
       } as ShapeEntity;
       latestDataRef.current = next;

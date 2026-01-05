@@ -84,12 +84,6 @@ export const buildShapeCacheKey = (prefix: string, url: string): string => (
 );
 
 const DOWNLOAD_CONTENT_TYPE = 'application/flatgeobuf';
-const DOWNLOAD_CONTENT_TYPE_GZIP = `${DOWNLOAD_CONTENT_TYPE}+gzip`;
-const canUseCompressionStream = (): boolean => (
-  typeof CompressionStream === 'function'
-  && typeof window !== 'undefined'
-  && typeof window.document !== 'undefined'
-);
 
 export type DownloadCacheKeyParams = {
   dataSource?: string;
@@ -108,16 +102,9 @@ export const buildDownloadCacheKey = (params: DownloadCacheKeyParams): string =>
   return buildShapeCacheKey(prefix, params.url ?? '');
 };
 
-const compressGzip = async (buffer: ArrayBuffer): Promise<{ buffer: ArrayBuffer; contentType: string }> => {
-  if (!canUseCompressionStream()) {
-    return { buffer, contentType: DOWNLOAD_CONTENT_TYPE };
-  }
-  const stream = new CompressionStream('gzip');
-  const writer = stream.writable.getWriter();
-  await writer.write(new Uint8Array(buffer));
-  await writer.close();
-  return { buffer: await new Response(stream.readable).arrayBuffer(), contentType: DOWNLOAD_CONTENT_TYPE_GZIP };
-};
+const compressGzip = async (buffer: ArrayBuffer): Promise<{ buffer: ArrayBuffer; contentType: string }> => (
+  { buffer, contentType: DOWNLOAD_CONTENT_TYPE }
+);
 
 const decompressGzip = async (buffer: ArrayBuffer): Promise<ArrayBuffer> => {
   if (typeof DecompressionStream !== 'function') {

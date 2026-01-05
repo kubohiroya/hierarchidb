@@ -298,6 +298,7 @@ export const generateVectorTilesFromFeatureCollection = async (
   config: VectorTileGenerateConfig,
   onProgress?: (progress: VectorTileProgress) => void,
 ): Promise<VectorTileGenerateResult> => {
+  const startedAt = Date.now();
   throwIfAborted(config.signal);
   const features = geojson.features ?? [];
   if (features.length === 0) return { tilesGenerated: 0, totalBytes: 0, tiles: [] };
@@ -308,6 +309,7 @@ export const generateVectorTilesFromFeatureCollection = async (
   let metadataCount: number | undefined;
   let featureMetadata: FeatureMetadataRow[] | undefined;
 
+  const metaStart = Date.now();
   if (metadataEnabled) {
     const records: FeatureMetadataRow[] = [];
     for (let index = 0; index < features.length; index++) {
@@ -346,9 +348,17 @@ export const generateVectorTilesFromFeatureCollection = async (
       properties.id = buildUniqueFeatureId(feature, index, metadataContext);
     }
   }
+  console.debug('[VectorTiles] metadata pass', {
+    nodeId,
+    features: features.length,
+    metadataEnabled,
+    ms: Date.now() - metaStart,
+  });
 
+  const moduleStart = Date.now();
   const geojsonvt = await loadGeojsonVt();
   const vtpbf = await loadVtPbf();
+  console.debug('[VectorTiles] modules loaded', { ms: Date.now() - moduleStart });
   const extent = 4096;
   const bufferValue = typeof config.buffer === 'number' ? config.buffer : 64;
   const fallbackMaxZoom = 6;
@@ -358,6 +368,7 @@ export const generateVectorTilesFromFeatureCollection = async (
   const zoomMax = Math.max(resolvedMinZoom, resolvedMaxZoom);
   const targetZooms = Array.from({ length: zoomMax - zoomMin + 1 }, (_, z) => zoomMin + z);
   const indexMaxZoom = targetZooms.length > 0 ? Math.max(...targetZooms) : fallbackMaxZoom;
+  const indexStart = Date.now();
   const index = geojsonvt(geojson as GeojsonVtData, {
     maxZoom: indexMaxZoom,
     extent,
@@ -366,7 +377,9 @@ export const generateVectorTilesFromFeatureCollection = async (
     promoteId: 'id',
   });
   throwIfAborted(config.signal);
+  console.debug('[VectorTiles] index built', { ms: Date.now() - indexStart });
 
+  const bboxStart = Date.now();
   const bbox: [number, number, number, number] = [Infinity, Infinity, -Infinity, -Infinity];
   for (const feature of features) {
     throwIfAborted(config.signal);
@@ -375,6 +388,7 @@ export const generateVectorTilesFromFeatureCollection = async (
     updateBbox(bbox, [stats.bbox[0], stats.bbox[1]]);
     updateBbox(bbox, [stats.bbox[2], stats.bbox[3]]);
   }
+  console.debug('[VectorTiles] bbox computed', { ms: Date.now() - bboxStart });
   if (!bbox.every((value) => Number.isFinite(value))) {
     return { tilesGenerated: 0, totalBytes: 0, tiles: [] };
   }
@@ -409,6 +423,7 @@ export const generateVectorTilesFromFeatureCollection = async (
   let totalBytes = 0;
   let tilesWithFeatures = 0;
   let tilesWithoutFeatures = 0;
+  const tileStart = Date.now();
   for (const range of tileRanges) {
     const { z, x1, x2, y1, y2 } = range;
     throwIfAborted(config.signal);
@@ -444,6 +459,12 @@ export const generateVectorTilesFromFeatureCollection = async (
       }
     }
   }
+  console.debug('[VectorTiles] tiles built', {
+    nodeId,
+    tilesGenerated,
+    totalTiles,
+    ms: Date.now() - tileStart,
+  });
 
   if (tilesWithoutFeatures > 0) {
     console.debug('[VectorTiles] Feature reduction summary', {
@@ -454,6 +475,7 @@ export const generateVectorTilesFromFeatureCollection = async (
       tilesWithoutFeatures,
     });
   }
+  console.debug('[VectorTiles] total', { nodeId, ms: Date.now() - startedAt });
   return { tilesGenerated, totalBytes, metadataCount, tiles, featureMetadata };
 };
 

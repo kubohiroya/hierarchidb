@@ -279,33 +279,31 @@ export const useBatchSessionActions = ({
         const { range: [sharedMin, sharedMax] } = readSharedZoomConfig();
         const lastBuild = data?.buildTileZoomRange;
         if (lastBuild && (lastBuild.minZoom !== sharedMin || lastBuild.maxZoom !== sharedMax)) {
-          notify.warning('Zoom range changed. Restart build to apply the new range.');
+          notify.warning('Zoom range changed. Restarting build to apply the new range.');
           console.debug(`${debugScope} startOrResume:resumeBlocked`, {
             nodeId,
             sharedZoomRange: [sharedMin, sharedMax],
             lastBuild,
           });
-          return false;
-        }
-        console.debug(`${debugScope} startOrResume:resume`, { nodeId });
-        try {
-          await bridgeRef.current.resumeBatchSession(nodeType, nodeId);
-          console.debug(`${debugScope} startOrResume:resumeOk`, { nodeId });
-          await persistDraftPatch({ processingStatus: 'processing' });
-          return true;
-        } catch (error) {
-          const message = error instanceof Error ? error.message : String(error);
-          if (/zoom range changed/i.test(message)) {
-            notify.warning('Zoom range changed. Restart build to apply the new range.');
-            console.debug(`${debugScope} startOrResume:resumeBlocked`, { nodeId, message });
-            return false;
+        } else {
+          console.debug(`${debugScope} startOrResume:resume`, { nodeId });
+          try {
+            await bridgeRef.current.resumeBatchSession(nodeType, nodeId);
+            console.debug(`${debugScope} startOrResume:resumeOk`, { nodeId });
+            await persistDraftPatch({ processingStatus: 'processing' });
+            return true;
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            if (/zoom range changed/i.test(message)) {
+              notify.warning('Zoom range changed. Restarting build to apply the new range.');
+              console.debug(`${debugScope} startOrResume:resumeBlocked`, { nodeId, message });
+            } else if (/missing download payloads/i.test(message)) {
+              notify.info('Download cache was cleared. Restarting stage.');
+            } else if (!/session .*not found/i.test(message)) {
+              throw error;
+            }
+            console.debug(`${debugScope} startOrResume:resumeNotFound`, { nodeId });
           }
-          if (/missing download payloads/i.test(message)) {
-            notify.info('Download cache was cleared. Restarting stage.');
-          } else if (!/session .*not found/i.test(message)) {
-            throw error;
-          }
-          console.debug(`${debugScope} startOrResume:resumeNotFound`, { nodeId });
         }
       }
       const payloads = await buildDownloadTaskPayloads();

@@ -71,7 +71,7 @@ export const DownloadCacheActions: React.FC<Props> = ({
             disabled={!canDeleteStage1}
             onClick={() => onDeleteStage('extract1')}
           >
-            {t('processing.download.deleteStage1Cache', 'Delete Stage1 Cache')}
+            {t('processing.download.deleteStage1Cache', 'Delete extract1 cache')}
           </Button>
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
@@ -83,7 +83,7 @@ export const DownloadCacheActions: React.FC<Props> = ({
             disabled={!canDeleteStage2}
             onClick={() => onDeleteStage('extract2')}
           >
-            {t('processing.download.deleteStage2Cache', 'Delete Stage2 Cache')}
+            {t('processing.download.deleteStage2Cache', 'Delete extract2 cache')}
           </Button>
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>

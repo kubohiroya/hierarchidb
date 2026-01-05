@@ -1,3 +1,91 @@
+2103) fix/shape/step5-pause-flapping (P1) — 完了 (2026-01-05)
+- ブランチ名: fix/shape/step5-pause-flapping
+- 依存: なし
+- 受け入れ基準: Step5 のタイル生成で一時停止が勝手に再開/再停止しない／再現条件と原因・発生範囲を説明する／修正方法と適用範囲を明記する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/**`, `packages/runtime-worker/src/**`, `packages/plugin-service-sdk/src/**`（調査後に絞り込み）
+- ロールバック手順: 該当差分を revert し、一時停止ロジックを元に戻す
+- チェックリスト:
+  - 再現条件とログを確認する
+  - 一時停止/再開の状態遷移を特定する
+  - 安定化の修正を実装する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-05 21:15 JST Step5 タイル生成の一時停止フラッピング調査に着手。
+  - done: 2026-01-05 21:21 JST progress phase と session status の不一致で paused が running に上書きされる問題を修正。影響は shape-plugin の progress status 判定のみ。検証: 未実施。
+
+2104) fix/shape/step5-status-phase-flap (P1) — 完了 (2026-01-05)
+- ブランチ名: fix/shape/step5-status-phase-flap
+- 依存: なし
+- 受け入れ基準: Step5 のタイル生成で completed/running の揺れが発生しない／原因・発生範囲・修正方法と適用範囲を説明する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/hooks/progress/shapeProgressMapping.ts`
+- ロールバック手順: 上記ファイルの差分を revert し、従来の status 判定へ戻す
+- チェックリスト:
+  - 進捗 phase と session status の優先順位を整理する
+  - Step5 で status が揺れないように修正する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-05 21:24 JST Step5 の completed/running フラップ調査に着手。
+  - done: 2026-01-05 21:25 JST progress phase より session status を優先するように修正し、completed/running の揺れを抑止。検証: 未実施。
+
+2105) fix/shape/step5-zoom-range-block (P1) — 完了 (2026-01-05)
+- ブランチ名: fix/shape/step5-zoom-range-block
+- 依存: なし
+- 受け入れ基準: Step5 のビルド開始で「Zoom range changed...」が誤検知されず開始できる／原因・発生範囲・修正方法と適用範囲を説明する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/hooks/stage/useBatchSessionActions.ts`, `plugins/shape-plugin/src/worker/api.ts`（調査後に絞り込み）
+- ロールバック手順: 該当差分を revert し、ズーム範囲判定を元に戻す
+- チェックリスト:
+  - Zoom range mismatch の判定条件を確認する
+  - Start/Resume の分岐とステータス更新を整理する
+  - ビルド開始のブロックを解消する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-05 22:39 JST Step5 のズーム範囲警告で開始できない問題の調査に着手。
+  - done: 2026-01-05 22:40 JST ズーム範囲不一致時は resume をスキップして新規開始へ進むよう修正。検証: 未実施。
+
+2106) fix/shape/step5-next-disabled (P1) — 完了 (2026-01-05)
+- ブランチ名: fix/shape/step5-next-disabled
+- 依存: なし
+- 受け入れ基準: Step5 でタイル/メタデータが生成されている場合に valid となり「次へ」が有効化される／原因・発生範囲・修正方法と適用範囲を説明する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`（調査後に絞り込み）
+- ロールバック手順: 該当差分を revert し、Step5 の valid 判定を元に戻す
+- チェックリスト:
+  - Step5 の valid 判定条件と「次へ」制御を確認する
+  - 生成済みタイル/メタデータの検知経路を整理する
+  - 「次へ」無効化の原因を修正する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-05 22:45 JST Step5 の「次へ」無効化調査に着手。
+  - done: 2026-01-05 22:46 JST Step データに nodeId を常時付与し、プレビュー可否判定が DB 検索に到達できるよう修正。検証: 未実施。
+
+2107) fix/shape/step6-vector-tile-missing (P1) — 完了 (2026-01-05)
+- ブランチ名: fix/shape/step6-vector-tile-missing
+- 依存: なし
+- 受け入れ基準: Step6 で「ベクトルタイルがまだありません」が出ずプレビューが表示される／原因・発生範囲・修正方法と適用範囲を説明する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`, `packages/runtime-worker/src/**`（調査後に絞り込み）
+- ロールバック手順: 該当差分を revert し、従来のプレビュー判定へ戻す
+- チェックリスト:
+  - ベクトルタイル保存・参照の経路を確認する
+  - Step6 の「タイルなし」判定条件を確認する
+  - 不整合の原因を修正する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-05 22:50 JST Step6 のベクトルタイル未検知問題の調査に着手。
+  - done: 2026-01-05 22:55 JST stage worker 起動時に shape の vector tile store を登録し、タイル保存先が欠ける問題を修正。検証: 未実施。
+
+2102) fix/shape/step4-cache-labels (P2) — 完了 (2026-01-05)
+- ブランチ名: fix/shape/step4-cache-labels
+- 依存: なし
+- 受け入れ基準: shape-plugin Step4 の「ステージ1キャッシュ/ステージ2キャッシュ」を「一次抽出キャッシュ/二次抽出キャッシュ」に置換する／英語表記を extract1 cache / extract2 cache に揃える／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`（該当箇所）
+- ロールバック手順: 該当ファイルの文言差分を revert し、従来の表記へ戻す
+- チェックリスト:
+  - Step4 の日本語表記を更新する
+  - Step4 の英語表記を更新する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-05 21:11 JST Step4 のキャッシュ表記変更に着手。
+  - done: 2026-01-05 21:12 JST Step4 のキャッシュ表記を一次/二次抽出に更新し、英語表記を extract1/extract2 cache に統一。検証: 未実施。
+
 2101) investigate/shape/vectortile-hotspots-and-wasm (P1) — 進行中 (2026-01-11)
 - ブランチ名: investigate/shape/vectortile-hotspots-and-wasm
 - 依存: なし
@@ -11,6 +99,9 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-11 03:10 JST タイル生成のボトルネック調査に着手。
+  - update: 2026-01-11 03:25 JST runtime-worker と gis-sdk にタイル生成の区間別計測ログを追加。検証: 未実施。
+  - update: 2026-01-11 03:45 JST 計測ログから tiles built（tile 走査/エンコード）と geojson-vt index が主要コストで、read/decode/store は軽微と判明。WASM 置換は geojson-vt/vt-pbf がJS実装のため難易度高く、まずはタイル候補削減/ズーム範囲/入力削減で最適化検討が必要と整理。検証: 未実施。
+  - update: 2026-01-11 04:05 JST extract2 の tileId relations を実形状交差で絞る独立ExecPlanを作成。`docs/shape-tileid-intersection-execplan.md` を追加。検証: 未実施。
 
 2100) fix/shape/download-stall-chunk-store-response (P1) — 進行中 (2026-01-11)
 - ブランチ名: fix/shape/download-stall-chunk-store-response
@@ -28,6 +119,7 @@
   - done: 2026-01-11 02:25 JST download タスクに timeout signal を追加し、chunk-store 経由の fetch がハングした際に abort→stale キャッシュへフォールバックできるよう調整。検証: 未実施。
   - update: 2026-01-11 02:40 JST chunk-store のキャッシュ整合性チェックを追加し、download タスクの段階ログを追加。検証: 未実施。
   - update: 2026-01-11 02:55 JST worker での CompressionStream を無効化し、chunk-store 書き込み前後のログを追加。検証: 未実施。
+  - update: 2026-01-11 03:15 JST download バッファの gzip 圧縮を無効化し、保存は非圧縮で統一。検証: 未実施。
 
 2099) feat/download/smartfetch-inflight (P2) — 完了 (2026-01-11)
 - ブランチ名: feat/download/smartfetch-inflight

@@ -150,7 +150,7 @@ export const DownloadConfigSection: React.FC<Props> = ({ config, draft, nodeId, 
                         }}
                       />
                     }
-                    label={t('processing.download.retainStage1Cache', 'Stage 1 cache')}
+                    label={t('processing.download.retainStage1Cache', 'extract1 cache')}
                   />
                   <FormControlLabel
                     control={
@@ -172,7 +172,7 @@ export const DownloadConfigSection: React.FC<Props> = ({ config, draft, nodeId, 
                         }}
                       />
                     }
-                    label={t('processing.download.retainStage2Cache', 'Stage 2 cache')}
+                    label={t('processing.download.retainStage2Cache', 'extract2 cache')}
                   />
                 </FormGroup>
               </Stack>

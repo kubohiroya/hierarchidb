@@ -62,7 +62,10 @@ export function toShapeStatus(
   info: ExtendedProgress | null,
   fallback?: BatchSessionStatus | null,
 ): ShapeProgressStatus | null {
-  const phase = info?.phase ?? fallback?.status;
+  const fallbackStatus = fallback?.status;
+  const phase = fallbackStatus && fallbackStatus !== 'idle'
+    ? fallbackStatus
+    : info?.phase ?? fallbackStatus;
   if (!phase) return null;
   const status = mapPhaseToStatus(phase);
   const error = fallback?.error ?? info?.message ?? null;

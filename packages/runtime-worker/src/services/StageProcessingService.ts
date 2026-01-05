@@ -16,6 +16,32 @@ import type { SharedDownloadService } from './downloadAdapter.js';
 import { createSharedDownloadService } from './downloadAdapter.js';
 
 const getEphemeralDb = () => getEphemeralShapeDB();
+const buildShapeTileId = (nodeId: NodeId, z: number, x: number, y: number): string =>
+  `${nodeId}-${z}-${x}-${y}`;
+
+const ensureShapeVectorTileStore = (): void => {
+  if (storeRegistry.getVectorTiles('shape')) return;
+  storeRegistry.registerVectorTiles('shape', {
+    async list(nodeId: NodeId) {
+      const rows = await shapeDB.vectorTiles.where('nodeId').equals(nodeId).toArray();
+      return rows.map((row) => ({ ...row, id: row.tileId }));
+    },
+    async bulkUpsert(nodeId: NodeId, items: Array<VectorTileStoreItem & { id?: string }>): Promise<void> {
+      if (!items.length) return;
+      const now = Date.now();
+      const rows = items.map((item) => ({
+        ...item,
+        tileId: buildShapeTileId(nodeId, item.z, item.x, item.y),
+        nodeId,
+        generatedAt: now,
+      }));
+      await shapeDB.vectorTiles.bulkPut(rows);
+    },
+    async bulkDelete(_nodeId: NodeId, itemIds: Array<string>): Promise<void> {
+      await shapeDB.vectorTiles.bulkDelete(itemIds);
+    },
+  });
+};
 
 type VectorTileStoreItem = VectorTileItemBase & {
   z: number;
@@ -229,15 +255,23 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
     },
     onProgress?: (progress: VectorTileProgress) => void,
     ) {
+    const startedAt = Date.now();
     const abortKey = config.abortKey;
     const controller = abortKey ? new AbortController() : null;
     if (abortKey && controller) {
       this.abortControllers.set(abortKey, controller);
     }
     try {
+      const readStart = Date.now();
       const buf = await this.readBuffer(inputBufferId);
+      console.debug('[VectorTiles] readInputBuffer', {
+        bufferId: inputBufferId,
+        ms: Date.now() - readStart,
+      });
       if (!buf) return { tilesGenerated: 0, totalBytes: 0 };
+      const decodeStart = Date.now();
       const inputBuffer = await this.decodeInputBuffer(buf, config.inputCompression);
+      console.debug('[VectorTiles] decodeInputBuffer', { ms: Date.now() - decodeStart });
       const nodeId = (config.targetNodeId
         ?? (inputBufferId.includes('-extract2-')
           ? inputBufferId.substring(0, inputBufferId.lastIndexOf('-extract2-'))
@@ -254,14 +288,35 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
       const inputFormat = config.inputFormat ?? 'geojson';
       const nodeType = this.resolveNodeType(config.targetNodeType);
       if (inputFormat === 'flatgeobuf') {
+        const genStart = Date.now();
         const result = await generateVectorTilesFromFgbBuffer(nodeId, inputBuffer, sdkConfig, onProgress);
+        console.debug('[VectorTiles] generateFromFgb', {
+          tilesGenerated: result.tilesGenerated,
+          totalBytes: result.totalBytes,
+          ms: Date.now() - genStart,
+        });
+        const storeStart = Date.now();
         await this.storeVectorTiles(nodeType, nodeId, result.tiles);
+        console.debug('[VectorTiles] storeTiles', { ms: Date.now() - storeStart });
+        const metaStart = Date.now();
         await this.storeFeatureMetadata(nodeType, nodeId, result.featureMetadata, config.metadataReplace);
+        console.debug('[VectorTiles] storeMetadata', { ms: Date.now() - metaStart });
         return { tilesGenerated: result.tilesGenerated, totalBytes: result.totalBytes, metadataCount: result.metadataCount };
       }
+      const genStart = Date.now();
       const result = await generateVectorTilesFromJsonBuffer(nodeId, inputBuffer, sdkConfig, onProgress);
+      console.debug('[VectorTiles] generateFromJson', {
+        tilesGenerated: result.tilesGenerated,
+        totalBytes: result.totalBytes,
+        ms: Date.now() - genStart,
+      });
+      const storeStart = Date.now();
       await this.storeVectorTiles(nodeType, nodeId, result.tiles);
+      console.debug('[VectorTiles] storeTiles', { ms: Date.now() - storeStart });
+      const metaStart = Date.now();
       await this.storeFeatureMetadata(nodeType, nodeId, result.featureMetadata, config.metadataReplace);
+      console.debug('[VectorTiles] storeMetadata', { ms: Date.now() - metaStart });
+      console.debug('[VectorTiles] generateTiles total', { ms: Date.now() - startedAt });
       return { tilesGenerated: result.tilesGenerated, totalBytes: result.totalBytes, metadataCount: result.metadataCount };
     } finally {
       if (abortKey) {
@@ -328,6 +383,7 @@ let singleton: StageProcessingService | null = null;
 
 export async function getStageProcessingService(): Promise<StageProcessingService> {
   if (!singleton) {
+    ensureShapeVectorTileStore();
     singleton = {
       download: new RealDownloadWorker(),
       extract: new RealExtractWorker(),
