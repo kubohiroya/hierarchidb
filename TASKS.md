@@ -1,3 +1,16 @@
+2112) fix/shape/step5-clear-stage-cache-counters (P1) — 進行中 (2026-01-11)
+- ブランチ名: fix/shape/step5-clear-stage-cache-counters
+- 依存: なし
+- 受け入れ基準: Step4 で extract1/extract2 のキャッシュ削除を実行した後、Step5 のタスク一覧と集計が `0/0` `0%` `No tasks yet.` 表示になる／既存の進捗・タスク集計に回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`, `plugins/shape-plugin/src/services/batch/**`（調査後に絞り込み）
+- ロールバック手順: Step4/Step5 周辺の差分を revert し、従来の表示へ戻す
+- チェックリスト:
+  - Step4 のキャッシュ削除後に Step5 のタスク集計が残る原因を特定する
+  - Step5 のタスク集計/一覧を 0 に更新する処理を実装する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 14:20 JST Step4 のキャッシュ削除後に Step5 のタスク集計が残る問題の調査に着手。
+
 2111) fix/app/geojson-vt-resolve (P1) — 進行中 (2026-01-06)
 - ブランチ名: fix/app/geojson-vt-resolve
 - 依存: なし
@@ -194,6 +207,46 @@
   - start: 2026-01-11 02:20 JST vectortile タスクの並び順補正に着手。
   - update: 2026-01-11 03:10 JST Step5 の vectortile 並び順をタイトル由来の z/x/y で再調整する作業に着手。
   - done: 2026-01-11 03:20 JST vectortile タスクのタイトル表記から z/x/y を抽出して昇順ソートするよう統一。検証: 未実施。
+
+2102) fix/shape/step4-zoom-config-card (P2) — 完了 (2026-01-11)
+- ブランチ名: fix/shape/step4-zoom-config-card
+- 依存: なし
+- 受け入れ基準: Stage4 のズーム範囲/分割数/区切りが単一カードに統合される／挙動が現状と同等である／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx`
+- ロールバック手順: 上記ファイルの差分を revert して現行レイアウトへ戻す
+- チェックリスト:
+  - ズーム範囲/分割数/区切りを単一カードに統合する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 03:30 JST Step4 のズーム設定を単一カードへ統合する作業に着手。
+  - done: 2026-01-11 03:40 JST ズーム範囲/分割数/区切りを単一カードに統合しレイアウトを調整。検証: 未実施。
+
+2103) fix/shape/step4-tile-margin-layout (P2) — 完了 (2026-01-11)
+- ブランチ名: fix/shape/step4-tile-margin-layout
+- 依存: なし
+- 受け入れ基準: タイルマージンがズームカードの下に移設される／タイルマージン/拡張係数/拡張マージンが横並び3列になる／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx`
+- ロールバック手順: 上記ファイルの差分を revert して現行レイアウトへ戻す
+- チェックリスト:
+  - タイルマージンの位置をズームカード下へ移動する
+  - 3列レイアウトへ揃える
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 03:50 JST タイルマージンの配置と3列レイアウトの調整に着手。
+  - done: 2026-01-11 04:00 JST タイルマージンをズームカード下へ移設し、マージン/拡張係数/拡張マージンを3列で配置。検証: 未実施。
+
+2104) fix/shape/step4-zoom-card-columns (P2) — 完了 (2026-01-11)
+- ブランチ名: fix/shape/step4-zoom-card-columns
+- 依存: なし
+- 受け入れ基準: ズームカード内のズーム範囲/分割数/区切りが横並び3列になる／挙動が現状と同等である／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx`
+- ロールバック手順: 上記ファイルの差分を revert して現行レイアウトへ戻す
+- チェックリスト:
+  - ズームカード内の3項目を横並びにする
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 04:10 JST ズームカード内の3項目を横並びにする作業に着手。
+  - done: 2026-01-11 04:15 JST ズームカード内を3列レイアウトに変更。検証: 未実施。
 
 2100) fix/shape/step5-vectortile-task-sort (P2) — 完了 (2026-01-11)
 - ブランチ名: fix/shape/step5-vectortile-task-sort

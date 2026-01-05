@@ -1,4 +1,4 @@
-import { Accordion, AccordionDetails, AccordionSummary, Box, Grid, Stack, Typography, Slider, Tooltip } from '@mui/material';
+import { Accordion, AccordionDetails, AccordionSummary, Box, Card, CardContent, Grid, Stack, Typography, Slider, Tooltip } from '@mui/material';
 import { Layers as LayersIcon, ExpandMore as ExpandMoreIcon, InfoOutlined as InfoOutlinedIcon } from '@mui/icons-material';
 import type { BatchConfig, ShapeEntity } from '../../../common/types/index.js';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
@@ -208,6 +208,123 @@ export const TileConfigSection: React.FC<Props> = ({ config, draft, disabled, on
             />
           </Grid>
 
+          <Grid size={{ xs: 12, sm: 12 }}>
+            <Card variant="outlined">
+              <CardContent>
+                <Grid container spacing={3}>
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      {t('processing.tile.zoomRange', 'Zoom Range')}
+                    </Typography>
+                    <Box sx={{ px: 2 }}>
+                      <Slider
+                        value={zoomConfig.range}
+                        onChange={(_, value: number[]) => {
+                          const rawRange = value as number[];
+                          const nextMin = rawRange[0] ?? zoomConfig.range[0];
+                          const nextMax = rawRange[1] ?? zoomConfig.range[1];
+                          const nextRange = clampRange([nextMin, nextMax]);
+                          const breakpoints = normalizeBreakpoints(nextRange, zoomConfig.segments, zoomConfig.breakpoints);
+                          const nextConfig = {
+                            range: nextRange,
+                            segments: zoomConfig.segments,
+                            breakpoints,
+                          };
+                          setZoomConfig(nextConfig);
+                          persistSharedZoomConfig(nextConfig);
+                        }}
+                        min={SHARED_ZOOM_RANGE_MIN}
+                        max={SHARED_ZOOM_RANGE_MAX}
+                        step={1}
+                        marks={[
+                          { value: 0, label: '0' },
+                          { value: 4, label: '4' },
+                          { value: 8, label: '8' },
+                          { value: 12, label: '12' },
+                        ]}
+                        valueLabelDisplay="auto"
+                        disabled={disabled}
+                      />
+                    </Box>
+                    <Typography variant="caption" color="text.secondary">
+                      {t('processing.tile.zoomRangeHelp', 'Generate tiles within this zoom range.')}
+                    </Typography>
+                  </Grid>
+
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      {t('processing.tile.zoomSegments', 'Zoom Range Segments')}
+                    </Typography>
+                    <Box sx={{ px: 2 }}>
+                      <Slider
+                        value={zoomConfig.segments}
+                        onChange={(_, value: number | number[]) => {
+                          const nextSegments = Math.min(
+                            Math.max(Number(value), SHARED_ZOOM_SEGMENT_MIN),
+                            SHARED_ZOOM_SEGMENT_MAX,
+                          );
+                          const breakpoints = normalizeBreakpoints(zoomConfig.range, nextSegments);
+                          const nextConfig = {
+                            range: zoomConfig.range,
+                            segments: nextSegments,
+                            breakpoints,
+                          };
+                          setZoomConfig(nextConfig);
+                          persistSharedZoomConfig(nextConfig);
+                        }}
+                        min={SHARED_ZOOM_SEGMENT_MIN}
+                        max={SHARED_ZOOM_SEGMENT_MAX}
+                        step={1}
+                        marks
+                        valueLabelDisplay="auto"
+                        disabled={disabled}
+                      />
+                    </Box>
+                    <Typography variant="caption" color="text.secondary">
+                      {t('processing.tile.zoomSegmentsHelp', 'Number of zoom ranges to segment.')}
+                    </Typography>
+                  </Grid>
+
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      {t('processing.tile.zoomBreakpoints', 'Zoom Range Breakpoints')}
+                    </Typography>
+                    <Box sx={{ px: 2 }}>
+                      <Slider
+                        value={zoomConfig.breakpoints}
+                        onChange={(_, value: number | number[]) => {
+                          const values = Array.isArray(value) ? value : [Number(value)];
+                          const nextBreakpoints = normalizeBreakpoints(zoomConfig.range, zoomConfig.segments, values);
+                          const nextConfig = {
+                            range: zoomConfig.range,
+                            segments: zoomConfig.segments,
+                            breakpoints: nextBreakpoints,
+                          };
+                          setZoomConfig(nextConfig);
+                          persistSharedZoomConfig(nextConfig);
+                        }}
+                        min={SHARED_ZOOM_RANGE_MIN}
+                        max={SHARED_ZOOM_RANGE_MAX}
+                        step={1}
+                        marks={[
+                          { value: 0, label: '0' },
+                          { value: 4, label: '4' },
+                          { value: 8, label: '8' },
+                          { value: 12, label: '12' },
+                        ]}
+                        valueLabelDisplay="auto"
+                        disabled={disabled}
+                      />
+                    </Box>
+                    <Typography variant="caption" color="text.secondary">
+                      {t('processing.tile.zoomBreakpointsHelp', 'Set breakpoints inside the supported zoom range.')}
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+          </Grid>
+
           <Grid size={{ xs: 12, sm: 4 }} style={{ paddingRight: '20px' }}>
             <Typography gutterBottom>
               {t('processing.tile.bufferSize', 'Tile Margin (px)')}
@@ -238,115 +355,6 @@ export const TileConfigSection: React.FC<Props> = ({ config, draft, disabled, on
           </Grid>
 
           <Grid size={{ xs: 12, sm: 4 }} style={{ paddingRight: '20px' }}>
-            <Typography gutterBottom>
-              {t('processing.tile.zoomRange', 'Zoom Range')}
-            </Typography>
-            <Box sx={{ px: 2 }}>
-              <Slider
-                value={zoomConfig.range}
-                onChange={(_, value: number[]) => {
-                  const rawRange = value as number[];
-                  const nextMin = rawRange[0] ?? zoomConfig.range[0];
-                  const nextMax = rawRange[1] ?? zoomConfig.range[1];
-                  const nextRange = clampRange([nextMin, nextMax]);
-                  const breakpoints = normalizeBreakpoints(nextRange, zoomConfig.segments, zoomConfig.breakpoints);
-                  const nextConfig = {
-                    range: nextRange,
-                    segments: zoomConfig.segments,
-                    breakpoints,
-                  };
-                  setZoomConfig(nextConfig);
-                  persistSharedZoomConfig(nextConfig);
-                }}
-                min={SHARED_ZOOM_RANGE_MIN}
-                max={SHARED_ZOOM_RANGE_MAX}
-                step={1}
-                marks={[
-                  { value: 0, label: '0' },
-                  { value: 4, label: '4' },
-                  { value: 8, label: '8' },
-                  { value: 12, label: '12' },
-                ]}
-                valueLabelDisplay="auto"
-                disabled={disabled}
-              />
-            </Box>
-            <Typography variant="caption" color="text.secondary">
-              {t('processing.tile.zoomRangeHelp', 'Generate tiles within this zoom range.')}
-            </Typography>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 4 }} style={{ paddingRight: '20px' }}>
-            <Typography gutterBottom>
-              {t('processing.tile.zoomSegments', 'Zoom Range Segments')}
-            </Typography>
-            <Box sx={{ px: 2 }}>
-              <Slider
-                value={zoomConfig.segments}
-                onChange={(_, value: number | number[]) => {
-                  const nextSegments = Math.min(
-                    Math.max(Number(value), SHARED_ZOOM_SEGMENT_MIN),
-                    SHARED_ZOOM_SEGMENT_MAX,
-                  );
-                  const breakpoints = normalizeBreakpoints(zoomConfig.range, nextSegments);
-                  const nextConfig = {
-                    range: zoomConfig.range,
-                    segments: nextSegments,
-                    breakpoints,
-                  };
-                  setZoomConfig(nextConfig);
-                  persistSharedZoomConfig(nextConfig);
-                }}
-                min={SHARED_ZOOM_SEGMENT_MIN}
-                max={SHARED_ZOOM_SEGMENT_MAX}
-                step={1}
-                marks
-                valueLabelDisplay="auto"
-                disabled={disabled}
-              />
-            </Box>
-            <Typography variant="caption" color="text.secondary">
-              {t('processing.tile.zoomSegmentsHelp', 'Number of zoom ranges to segment.')}
-            </Typography>
-          </Grid>
-
-          <Grid size={{ xs: 12 }} style={{ paddingRight: '20px' }}>
-            <Typography gutterBottom>
-              {t('processing.tile.zoomBreakpoints', 'Zoom Range Breakpoints')}
-            </Typography>
-            <Box sx={{ px: 2 }}>
-              <Slider
-                value={zoomConfig.breakpoints}
-                onChange={(_, value: number | number[]) => {
-                  const values = Array.isArray(value) ? value : [Number(value)];
-                  const nextBreakpoints = normalizeBreakpoints(zoomConfig.range, zoomConfig.segments, values);
-                  const nextConfig = {
-                    range: zoomConfig.range,
-                    segments: zoomConfig.segments,
-                    breakpoints: nextBreakpoints,
-                  };
-                  setZoomConfig(nextConfig);
-                  persistSharedZoomConfig(nextConfig);
-                }}
-                min={SHARED_ZOOM_RANGE_MIN}
-                max={SHARED_ZOOM_RANGE_MAX}
-                step={1}
-                marks={[
-                  { value: 0, label: '0' },
-                  { value: 4, label: '4' },
-                  { value: 8, label: '8' },
-                  { value: 12, label: '12' },
-                ]}
-                valueLabelDisplay="auto"
-                disabled={disabled}
-              />
-            </Box>
-            <Typography variant="caption" color="text.secondary">
-              {t('processing.tile.zoomBreakpointsHelp', 'Set breakpoints inside the supported zoom range.')}
-            </Typography>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6 }} style={{ paddingRight: '20px' }}>
             <Typography gutterBottom>
               {t('processing.tile.expandFactor', 'Tile Expansion Factor')}
             </Typography>
@@ -380,7 +388,7 @@ export const TileConfigSection: React.FC<Props> = ({ config, draft, disabled, on
             </Typography>
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 6 }} style={{ paddingRight: '20px' }}>
+          <Grid size={{ xs: 12, sm: 4 }} style={{ paddingRight: '20px' }}>
             <Typography gutterBottom>
               {t('processing.tile.expandMargin', 'Tile Expansion Margin')}
             </Typography>

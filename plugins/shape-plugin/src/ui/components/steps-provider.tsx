@@ -34,7 +34,7 @@ function createStepAdapter(
         nodeId: props.nodeId as NodeId,
         ...(props.data ?? {}),
       };
-    }, [props.data]);
+    }, [props.data, props.nodeId]);
     const data = ({
       nodeId: props.nodeId as NodeId,
       ...(props.data ?? {}),
