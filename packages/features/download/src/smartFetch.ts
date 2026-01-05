@@ -55,7 +55,8 @@ const backoff = (attempt: number, baseDelayMs: number, maxDelayMs: number): numb
 };
 
 const shouldRetryStatus = (status: number, retryOnStatuses: number[]) => retryOnStatuses.includes(status);
-const inFlightMap = new Map<string, Promise<Response>>();
+type InFlightEntry = { authKey: string; promise: Promise<Response> };
+const inFlightMap = new Map<string, InFlightEntry[]>();
 const inFlightGetAccept = (request?: RequestInit): string => {
   if (!request?.headers) return '';
   const headers = new Headers(request.headers);
@@ -70,6 +71,9 @@ const isInFlightMethod = (method: string): boolean => (
 const shouldShareInFlight = (opts: SmartFetchOptions): boolean => (
   opts.inFlight?.enabled === true
 );
+const buildAuthKey = (auth: { enabled: boolean; scope?: string; sessionId?: string }): string => (
+  `${auth.enabled ? '1' : '0'}:${auth.scope ?? ''}:${auth.sessionId ?? ''}`
+);
 const resolveInFlightKey = (
   opts: SmartFetchOptions,
   method: string,
@@ -82,6 +86,27 @@ const resolveInFlightKey = (
     return builder({ method, resolvedUrl, accept, auth });
   }
   return inFlightKeyDefault(method, resolvedUrl, accept);
+};
+const getInFlightEntry = (key: string, authKey: string): InFlightEntry | undefined => {
+  const entries = inFlightMap.get(key);
+  if (!entries) return undefined;
+  return entries.find((entry) => entry.authKey === authKey);
+};
+const registerInFlight = (key: string, authKey: string, promise: Promise<Response>): void => {
+  const entry: InFlightEntry = { authKey, promise };
+  const entries = inFlightMap.get(key) ?? [];
+  entries.push(entry);
+  inFlightMap.set(key, entries);
+  void promise.finally(() => {
+    const current = inFlightMap.get(key);
+    if (!current) return;
+    const next = current.filter((item) => item !== entry);
+    if (next.length === 0) {
+      inFlightMap.delete(key);
+    } else {
+      inFlightMap.set(key, next);
+    }
+  }).catch(() => {});
 };
 
 /**
@@ -138,36 +163,33 @@ export async function smartFetch(input: string, options: SmartFetchOptions = {})
       sessionId: options.auth?.sessionId,
     })
     : null;
+  const authKey = buildAuthKey({
+    enabled: authEnabled,
+    scope,
+    sessionId: options.auth?.sessionId,
+  });
 
   try {
     let attempt = 0;
     while (true) {
       try {
         const init: RequestInit = { ...request, method, signal };
-        const inFlight = inFlightKey ? inFlightMap.get(inFlightKey) : undefined;
-        if (inFlight) {
-          const shared = await inFlight;
-          return shared.clone();
-        }
-        let fetchPromise = (inFlightKey ? inFlightMap.get(inFlightKey) : undefined) as Promise<Response> | undefined;
-        if (!fetchPromise) {
-          fetchPromise = (async () => {
-            return authEnabled
-              ? await (await AuthService.getSingleton()).fetchWithAuth(target, init, ctx)
-              : await fetch(target, init);
-          })();
-          if (inFlightKey) {
-            inFlightMap.set(inFlightKey, fetchPromise);
-            fetchPromise = fetchPromise.finally(() => {
-              inFlightMap.delete(inFlightKey);
-            });
-            inFlightMap.set(inFlightKey, fetchPromise);
+        if (inFlightKey) {
+          const entry = getInFlightEntry(inFlightKey, authKey);
+          if (entry) {
+            const shared = await entry.promise;
+            return shared.clone();
           }
         }
-        const res = await fetchPromise;
-        if (inFlightKey && fetchPromise !== inFlightMap.get(inFlightKey)) {
-          // no-op; in-flight map already cleaned up
+        const fetchPromise = (async () => {
+          return authEnabled
+            ? await (await AuthService.getSingleton()).fetchWithAuth(target, init, ctx)
+            : await fetch(target, init);
+        })();
+        if (inFlightKey) {
+          registerInFlight(inFlightKey, authKey, fetchPromise);
         }
+        const res = await fetchPromise;
 
         const needRetry = shouldRetry
           ? shouldRetry(res)

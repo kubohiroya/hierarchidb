@@ -1,4 +1,35 @@
-2099) feat/download/smartfetch-inflight (P2) — 進行中 (2026-01-11)
+2101) investigate/shape/vectortile-hotspots-and-wasm (P1) — 進行中 (2026-01-11)
+- ブランチ名: investigate/shape/vectortile-hotspots-and-wasm
+- 依存: なし
+- 受け入れ基準: タイル生成処理の重い区間を計測ログで特定する／最適化余地と候補を列挙する／WASM 化の適用候補と可否を整理する／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/runtime-worker/src/services/vectorTileStageRunner.ts`, `packages/runtime-worker/src/services/StageProcessingService.ts`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`（必要に応じて）
+- ロールバック手順: 上記ファイルの差分を revert し、計測ログ追加前に戻す
+- チェックリスト:
+  - タイル生成のボトルネックを計測ログで可視化する
+  - 最適化候補を整理する
+  - WASM 化の適用可能箇所を整理する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 03:10 JST タイル生成のボトルネック調査に着手。
+
+2100) fix/shape/download-stall-chunk-store-response (P1) — 進行中 (2026-01-11)
+- ブランチ名: fix/shape/download-stall-chunk-store-response
+- 依存: なし
+- 受け入れ基準: download ステージで chunk-store 経由取得が停止しない／URL 取得の HEAD/GET と Dexie キャッシュの復元が期待通りに動作する／必要なら不整合の原因を説明し修正する／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/chunk-store/src/index.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/datasources/*.ts`（必要に応じて）
+- ロールバック手順: 上記ファイルの差分を revert し、chunk-store 関連の変更を元に戻す
+- チェックリスト:
+  - download ステージの取得経路で chunk-store の利用有無を確認する
+  - HEAD/GET と Dexie 読み出しの挙動を確認する
+  - 停止の原因を特定し修正する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 02:10 JST chunk-store と download 停止の関係調査に着手。
+  - done: 2026-01-11 02:25 JST download タスクに timeout signal を追加し、chunk-store 経由の fetch がハングした際に abort→stale キャッシュへフォールバックできるよう調整。検証: 未実施。
+  - update: 2026-01-11 02:40 JST chunk-store のキャッシュ整合性チェックを追加し、download タスクの段階ログを追加。検証: 未実施。
+  - update: 2026-01-11 02:55 JST worker での CompressionStream を無効化し、chunk-store 書き込み前後のログを追加。検証: 未実施。
+
+2099) feat/download/smartfetch-inflight (P2) — 完了 (2026-01-11)
 - ブランチ名: feat/download/smartfetch-inflight
 - 依存: なし
 - 受け入れ基準: smartFetch に in-flight 共有オプションを追加しGET/HEADのみ対象にする／既定キーは method+resolvedUrl+accept／キー生成を差し替え可能／TASKS.md に運用ログを記載する
@@ -11,6 +42,7 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-11 01:40 JST smartFetch の in-flight 共有実装に着手。
+  - done: 2026-01-11 01:50 JST in-flight 共有のオプション実装とキー差し替え対応を追加。検証: 未実施。
 
 2098) fix/shape/step3-worker-metadata-reuse (P1) — 完了 (2026-01-11)
 - ブランチ名: fix/shape/step3-worker-metadata-reuse

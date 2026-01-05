@@ -85,6 +85,11 @@ export const buildShapeCacheKey = (prefix: string, url: string): string => (
 
 const DOWNLOAD_CONTENT_TYPE = 'application/flatgeobuf';
 const DOWNLOAD_CONTENT_TYPE_GZIP = `${DOWNLOAD_CONTENT_TYPE}+gzip`;
+const canUseCompressionStream = (): boolean => (
+  typeof CompressionStream === 'function'
+  && typeof window !== 'undefined'
+  && typeof window.document !== 'undefined'
+);
 
 export type DownloadCacheKeyParams = {
   dataSource?: string;
@@ -104,7 +109,7 @@ export const buildDownloadCacheKey = (params: DownloadCacheKeyParams): string =>
 };
 
 const compressGzip = async (buffer: ArrayBuffer): Promise<{ buffer: ArrayBuffer; contentType: string }> => {
-  if (typeof CompressionStream !== 'function') {
+  if (!canUseCompressionStream()) {
     return { buffer, contentType: DOWNLOAD_CONTENT_TYPE };
   }
   const stream = new CompressionStream('gzip');
@@ -131,12 +136,24 @@ export const storeDownloadBufferForNode = async (params: {
   buffer: ArrayBuffer;
 }): Promise<{ contentType: string; sizeBytes: number }> => {
   const { nodeId, cacheKey, buffer } = params;
+  const startedAt = Date.now();
   const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
   const compressed = await compressGzip(buffer);
+  const compressedMs = Date.now() - startedAt;
+  console.debug('[shape-chunk-store] Download buffer compressed', {
+    cacheKey,
+    bytes: compressed.buffer.byteLength,
+    contentType: compressed.contentType,
+    ms: compressedMs,
+  });
   await store.setForNode(nodeId, cacheKey, compressed.buffer, {
     sizeBytes: compressed.buffer.byteLength,
     contentType: compressed.contentType,
     fetchedAt: Date.now(),
+  });
+  console.debug('[shape-chunk-store] Download buffer stored', {
+    cacheKey,
+    ms: Date.now() - startedAt,
   });
   return { contentType: compressed.contentType, sizeBytes: compressed.buffer.byteLength };
 };

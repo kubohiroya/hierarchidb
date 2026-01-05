@@ -132,9 +132,22 @@ const buildTileIdRelations = (params: {
   }));
 };
 
+const createTimeoutSignal = (timeoutMs?: number): { signal?: AbortSignal; cleanup: () => void } => {
+  if (!timeoutMs || timeoutMs <= 0 || typeof AbortController === 'undefined') {
+    return { signal: undefined, cleanup: () => {} };
+  }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return {
+    signal: controller.signal,
+    cleanup: () => clearTimeout(timer),
+  };
+};
+
 const processDownloadTask = async ({
   nodeId,
   input,
+  task,
 }: DownloadTaskRequest): Promise<ShapeStageWorkerTaskResult> => {
   const strategyId = resolveStrategyIdFromDataSource(input.dataSource);
   if (!strategyId) {
@@ -149,6 +162,7 @@ const processDownloadTask = async ({
   const country = input.countryCode;
   const adminLevel = input.adminLevel;
   const sourceUrl = input.url;
+  const taskId = task.taskId;
   const cacheCountry = input.dataSource === 'naturalearth' ? undefined : country;
   const cacheKey = buildDownloadCacheKey({
     dataSource: input.dataSource,
@@ -158,7 +172,14 @@ const processDownloadTask = async ({
   });
   let lastError: unknown;
   for (let attempt = 0; attempt <= retryAttempts; attempt++) {
+    const timeout = createTimeoutSignal(timeoutMs);
     try {
+      const startedAt = Date.now();
+      console.debug('[shapeStageWorker] Download task start', {
+        taskId,
+        attempt,
+        url: sourceUrl,
+      });
       const raw = await ds.fetchData({
         nodeId,
         country,
@@ -167,8 +188,18 @@ const processDownloadTask = async ({
         bbox,
         tags,
         timeout: timeoutMs,
+        signal: timeout.signal,
       });
+      const fetchMs = Date.now() - startedAt;
+      console.debug('[shapeStageWorker] Download fetch complete', { taskId, attempt, ms: fetchMs });
       const processed = await ds.processData(raw, { adminLevel });
+      const processMs = Date.now() - startedAt;
+      console.debug('[shapeStageWorker] Download process complete', {
+        taskId,
+        attempt,
+        ms: processMs,
+        features: processed.length,
+      });
       const featureCollection = {
         type: 'FeatureCollection',
         features: processed.map((entity) => ({
@@ -179,10 +210,23 @@ const processDownloadTask = async ({
       } as FeatureCollection;
       const fgbBytes = await geojsonApi.serialize(featureCollection);
       const fgb = fgbBytes.buffer.slice(fgbBytes.byteOffset, fgbBytes.byteOffset + fgbBytes.byteLength);
+      const serializeMs = Date.now() - startedAt;
+      console.debug('[shapeStageWorker] Download serialize complete', {
+        taskId,
+        attempt,
+        ms: serializeMs,
+        bytes: fgb.byteLength,
+      });
       await storeDownloadBufferForNode({
         nodeId,
         cacheKey,
         buffer: fgb,
+      });
+      const storeMs = Date.now() - startedAt;
+      console.debug('[shapeStageWorker] Download store complete', {
+        taskId,
+        attempt,
+        ms: storeMs,
       });
       return {
         status: 'completed',
@@ -194,6 +238,8 @@ const processDownloadTask = async ({
       if (attempt < retryAttempts && retryDelay > 0) {
         await new Promise((resolve) => setTimeout(resolve, retryDelay));
       }
+    } finally {
+      timeout.cleanup();
     }
   }
   return {

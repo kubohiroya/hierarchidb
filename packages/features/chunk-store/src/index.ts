@@ -285,7 +285,20 @@ export class DexieChunkStore<T> implements StoragePort {
 
       const reuseCached = async (): Promise<ChunkStoreEntry<T> | null> => {
         if (!cachedMetadataId || !cachedMeta) return null;
+        if (cachedMeta.committed === false) {
+          return null;
+        }
         const buffer = await this.readAll(cachedMetadataId);
+        if (typeof cachedMeta.sizeBytes === 'number' && cachedMeta.sizeBytes > 0) {
+          if (buffer.byteLength !== cachedMeta.sizeBytes) {
+            console.warn('[chunk-store] cached buffer size mismatch; refetching', {
+              cacheKey,
+              expected: cachedMeta.sizeBytes,
+              actual: buffer.byteLength,
+            });
+            return null;
+          }
+        }
         await this.ensureRelation(nodeId, cachedMetadataId);
         return {
           key: cacheKey,
