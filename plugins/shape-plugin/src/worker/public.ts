@@ -2,8 +2,8 @@
 // Keep this file type-only and decoupled from internal Dexie types
 
 import type { NodeId } from '@hierarchidb/common-types';
+import type { BatchProgressEvent } from '@hierarchidb/common-api';
 import type {
-  BatchProgressEvent,
   BatchSession,
   BatchTask,
   CountryMetadata,

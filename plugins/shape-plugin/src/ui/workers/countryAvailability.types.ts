@@ -13,4 +13,7 @@ export type SerializedCountryAvailability = {
 
 export interface CountryAvailabilityWorkerAPI {
   loadAvailability(dataSource: string, nodeId: string): Promise<SerializedCountryAvailability>;
+  loadMetadata(dataSource: string, nodeId: string): Promise<CountryMetadata[]>;
+  clearMetadataCache(dataSource?: string): Promise<void>;
 }
+import type { CountryMetadata } from '../../common/types/index.js';

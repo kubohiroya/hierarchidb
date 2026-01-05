@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSnackbar } from 'notistack';
 import { useIsoCountries, type MatrixConfig, type MatrixSelection, type ContinentCode } from '@hierarchidb/ui-country-select';
 import type { CountryMetadata, ShapeEntity } from '../../common/types/index.js';
-import { useCountryMetadata } from './useCountryMetadata.js';
 import {
   calculateEstimatedFeatures,
   calculateEstimatedSize,
@@ -155,10 +154,10 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
     }
   }, [dataSourceKey, setDialogStep]);
   const iso = useIsoCountries();
-  const { metadata: countries, loading: metadataLoading, error: metadataError, reload: reloadMetadata } = useCountryMetadata({
-    dataSource: dataSourceKey,
-    nodeId,
-  });
+  const [countries, setCountries] = useState<CountryMetadata[]>([]);
+  const [metadataLoading, setMetadataLoading] = useState(false);
+  const [metadataError, setMetadataError] = useState<Error | null>(null);
+  const metadataRequestIdRef = useRef(0);
 
   const error = dataSourceError ?? metadataError;
 
@@ -215,9 +214,51 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
     }
   }, [dataSourceKey, nodeId]);
 
+  const loadMetadata = useCallback(async (options?: { force?: boolean }) => {
+    if (!dataSourceKey) {
+      setCountries([]);
+      setMetadataError(null);
+      setMetadataLoading(false);
+      return;
+    }
+    const ref = availabilityWorkerRef.current;
+    if (!ref) return;
+
+    const requestId = metadataRequestIdRef.current + 1;
+    metadataRequestIdRef.current = requestId;
+
+    setMetadataLoading(true);
+    setMetadataError(null);
+    try {
+      if (options?.force) {
+        await ref.api.clearMetadataCache(dataSourceKey);
+      }
+      const result = await ref.api.loadMetadata(dataSourceKey, nodeId);
+      if (requestId !== metadataRequestIdRef.current) return;
+      setCountries(Array.isArray(result) ? result : []);
+      if (!result?.length) {
+        throw new Error(`No country metadata returned for data source: ${dataSourceKey}`);
+      }
+    } catch (e) {
+      if (requestId !== metadataRequestIdRef.current) return;
+      const err = e instanceof Error ? e : new Error(String(e));
+      setMetadataError(err);
+      setCountries([]);
+    } finally {
+      if (requestId === metadataRequestIdRef.current) {
+        setMetadataLoading(false);
+      }
+    }
+  }, [dataSourceKey, nodeId]);
+
+  const loadAll = useCallback(async (options?: { force?: boolean }) => {
+    await loadMetadata(options);
+    await loadAvailability();
+  }, [loadAvailability, loadMetadata]);
+
   useEffect(() => {
-    void loadAvailability();
-  }, [loadAvailability]);
+    void loadAll();
+  }, [loadAll]);
 
   useEffect(() => {
     if (!availabilityError) return;
@@ -226,10 +267,15 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
       return;
     }
     enqueueSnackbar(
-      'Failed to load data source availability. Falling back to bundled metadata.',
-      { variant: 'warning' },
+      'Failed to load data source availability.',
+      { variant: 'error' },
     );
   }, [availabilityError, enqueueSnackbar]);
+
+  useEffect(() => {
+    if (!metadataError) return;
+    enqueueSnackbar(metadataError.message, { variant: 'error' });
+  }, [metadataError, enqueueSnackbar]);
 
   const isoContinentByCode = useMemo(() => {
     if (iso.status !== 'ready') return new Map<string, ContinentCode>();
@@ -453,9 +499,8 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
   const reloadAll = useCallback(async () => {
     if (!dataSourceKey) return;
     await invalidateCountrySelectionCaches(dataSourceKey, nodeId);
-    await reloadMetadata({ force: true });
-    await loadAvailability();
-  }, [dataSourceKey, loadAvailability, reloadMetadata, nodeId]);
+    await loadAll({ force: true });
+  }, [dataSourceKey, loadAll, nodeId]);
 
   const combinedLoading = metadataLoading || (availabilityLoading && !availability);
 

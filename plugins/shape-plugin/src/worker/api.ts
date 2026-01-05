@@ -3,7 +3,7 @@
  * Exposes batch-oriented operations for runtime worker adapters
  */
 
-import { toNodeId, type NodeId, type TreeNodeId } from '@hierarchidb/common-types';
+import { toNodeId, type NodeId } from '@hierarchidb/common-types';
 import {
   type BatchSession,
   type BatchTask,
@@ -17,7 +17,6 @@ import {
   type BatchSessionConfig,
   type ProcessingStatus,
   type ProcessingStage,
-  type BatchProgressEvent as ShapeBatchProgressEvent,
   type ShapeBatchCommand,
   type ShapeBatchCommandPayload,
   type ProgressInfo,
@@ -41,8 +40,8 @@ import {
 import type { BatchProcessConfig } from '../services/batch/types.js';
 import { getShapeDbApiClient } from '../services/batch/ShapeBatchApiClient.js';
 import { toBatchSessionRecord } from '../services/batch/shapeSessionMappers.js';
-import type { BatchStage, BatchTaskStatus } from '../common/types/BatchTaskLike.js';
-import type { BatchProgressEvent as RuntimeBatchProgressEvent } from '@hierarchidb/common-api';
+import type { BatchStage } from '../common/types/BatchTaskLike.js';
+import type { BatchProgressEvent } from '@hierarchidb/common-api';
 import {
   buildDownloadTaskId,
   generateDownloadTaskPayloads,
@@ -192,24 +191,10 @@ interface ProgressSubscription {
   unsubscribe?: () => void;
 }
 
-interface ProgressSessionMeta {
-  treeNodeId?: TreeNodeId;
-}
-
 const progressCallbacks = new Map<string, ProgressSubscription>();
-const progressSessionMeta = new Map<string, ProgressSessionMeta>();
 
 const shapeEntityHandlerSingleton = new ShapeEntityHandler();
 const getShapeEntityHandler = (): ShapeEntityHandler => shapeEntityHandlerSingleton;
-
-const getOrCreateNodeMeta = (nodeId: string): ProgressSessionMeta => {
-  let meta = progressSessionMeta.get(nodeId);
-  if (!meta) {
-    meta = {};
-    progressSessionMeta.set(nodeId, meta);
-  }
-  return meta;
-};
 
 const mapStageToBatchStage = (stage?: string): BatchStage => {
   switch (stage) {
@@ -262,12 +247,6 @@ const getBatchSessionStatusSafe = async (
     }
     return { missing: false, error };
   }
-};
-
-const mapProgressToStatus = (progress: ProgressInfo): BatchTaskStatus => {
-  if (progress.failed > 0) return 'failed';
-  if (progress.total > 0 && progress.completed >= progress.total) return 'completed';
-  return 'running';
 };
 
 const buildTaskTitle = (task: BatchTaskRecord): string | undefined => {
@@ -339,63 +318,6 @@ const mapTaskRecordToBatchTask = (task: BatchTaskRecord): BatchTask & { title?: 
   error: task.errorMessage,
   title: buildTaskTitle(task),
 });
-
-const buildBatchProgressEvent = (
-  nodeId: string,
-  progress: ProgressInfo,
-  meta: ProgressSessionMeta,
-): ShapeBatchProgressEvent => {
-  const status = mapProgressToStatus(progress);
-  return {
-    nodeId,
-    treeNodeId: (meta.treeNodeId ?? nodeId) as TreeNodeId,
-    stage: mapStageToBatchStage(progress.currentStage),
-    status,
-    progress: Math.round(progress.percentage ?? 0),
-    completedTasks: progress.completed,
-    totalTasks: progress.total,
-    currentTask: progress.currentTask ?? '',
-    message: progress.currentTask,
-    timestamp: Date.now(),
-    type: status === 'completed' ? 'complete' : status === 'failed' ? 'error' : 'progress',
-  };
-};
-
-const batchEventToProgressInfo = (event: RuntimeBatchProgressEvent): ProgressInfo => {
-  const payload = event.payload ?? {};
-  const total = payload.total ?? 0;
-  const completed = payload.completed ?? 0;
-  const failed = payload.failed ?? 0;
-  const skipped = payload.skipped ?? Math.max(total - completed - failed, 0);
-  const percentageFromPayload = payload.meta?.percentage;
-  const percentage = typeof percentageFromPayload === 'number'
-    ? percentageFromPayload
-    : total > 0
-      ? Math.round((completed / total) * 100)
-      : 0;
-  return {
-    total,
-    completed,
-    failed,
-    skipped,
-    percentage,
-    currentStage: mapStageToProcessingStage(event.stage),
-    currentTask: payload.currentTask ?? event.message,
-  };
-};
-
-const hydrateSessionMeta = async (nodeId: string): Promise<void> => {
-  const meta = getOrCreateNodeMeta(nodeId);
-  if (meta.treeNodeId) return;
-  try {
-    const record = await getShapeDbApiClient().ephemeral.getSessionRecord(nodeId as NodeId);
-    if (record?.nodeId) {
-      meta.treeNodeId = record.nodeId as unknown as TreeNodeId;
-    }
-  } catch (error) {
-    console.warn('[shapeBatchAPI] Failed to hydrate session metadata', error);
-  }
-};
 
 export const shapeBatchAPI = {
 
@@ -487,7 +409,7 @@ export const shapeBatchAPI = {
     draftId: NodeId,
     batchConfig: BatchConfig,
     downloadTaskPayloads: DownloadTaskPayload[],
-    progressCallback?: (event: ShapeBatchProgressEvent) => void,
+    progressCallback?: (event: BatchProgressEvent) => void,
   ): Promise<NodeId> => {
     if (!batchConfig?.dataSource) {
       throw new Error('Data source is required to start batch processing');
@@ -555,17 +477,12 @@ export const shapeBatchAPI = {
     managerWithPrepare.prepareSession?.(nodeForSession, processConfig, batchSessionData, sessionOptions);
     await batchSessionManager.startBatchSession(nodeForSession);
 
-    const sessionMeta = getOrCreateNodeMeta(String(nodeForSession));
-    sessionMeta.treeNodeId = nodeForSession as unknown as TreeNodeId;
-
     // Register progress callback if provided
     if (progressCallback) {
       const existing = progressCallbacks.get(String(nodeForSession));
       existing?.unsubscribe?.();
       const unsubscribe = batchSessionManager.onBatchProgress(nodeForSession, (event) => {
-        const info = batchEventToProgressInfo(event);
-        const normalized = buildBatchProgressEvent(String(nodeForSession), info, sessionMeta);
-        progressCallback(normalized);
+        progressCallback(event);
       });
       progressCallbacks.set(String(nodeForSession), { unsubscribe });
     }
@@ -857,17 +774,11 @@ export const shapeBatchAPI = {
   // Real-time Progress Subscription
   // ===================================
 
-  subscribeToProgress: (nodeId: NodeId, callback: (event: ShapeBatchProgressEvent) => void): (() => void) => {
-    const sessionMeta = getOrCreateNodeMeta(String(nodeId));
-    if (!sessionMeta.treeNodeId) {
-      void hydrateSessionMeta(String(nodeId));
-    }
+  subscribeToProgress: (nodeId: NodeId, callback: (event: BatchProgressEvent) => void): (() => void) => {
     const existing = progressCallbacks.get(String(nodeId));
     existing?.unsubscribe?.();
     const unsubscribe = batchSessionManager.onBatchProgress(nodeId, (event) => {
-      const info = batchEventToProgressInfo(event);
-      const normalized = buildBatchProgressEvent(String(nodeId), info, sessionMeta);
-      callback(normalized);
+      callback(event);
     });
     progressCallbacks.set(String(nodeId), { unsubscribe });
 

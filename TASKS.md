@@ -1,3 +1,31 @@
+2099) feat/download/smartfetch-inflight (P2) — 進行中 (2026-01-11)
+- ブランチ名: feat/download/smartfetch-inflight
+- 依存: なし
+- 受け入れ基準: smartFetch に in-flight 共有オプションを追加しGET/HEADのみ対象にする／既定キーは method+resolvedUrl+accept／キー生成を差し替え可能／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/download/src/smartFetch.ts`
+- ロールバック手順: 上記ファイルの差分を revert し、in-flight 共有オプションを削除する
+- チェックリスト:
+  - in-flight オプション型を追加する
+  - GET/HEAD のみ共有する処理を追加する
+  - 既定キーと差し替えロジックを実装する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 01:40 JST smartFetch の in-flight 共有実装に着手。
+
+2098) fix/shape/step3-worker-metadata-reuse (P1) — 完了 (2026-01-11)
+- ブランチ名: fix/shape/step3-worker-metadata-reuse
+- 依存: なし
+- 受け入れ基準: Step3 のメタデータ取得が worker 経由になり UI から直接URLアクセスしない／CountryAvailabilityResolver の取得結果を再利用する／重複アクセスが解消される／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/hooks/useShapeCountrySelectionStep.ts`, `plugins/shape-plugin/src/ui/workers/countryAvailability.types.ts`, `plugins/shape-plugin/src/ui/workers/countryAvailability.worker.ts`
+- ロールバック手順: 上記ファイルの差分を revert し、UI 直接取得に戻す
+- チェックリスト:
+  - worker API にメタデータ取得を追加する
+  - UI hook を worker経由のメタデータ取得へ切り替える
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 01:15 JST Step3 のメタデータ取得を worker 経由に切り替える対応に着手。
+  - done: 2026-01-11 01:26 JST worker 経由でメタデータ取得するよう変更し UI 直接アクセスを排除。検証: 未実施。
+
 2097) fix/shape/step3-geoboundaries-proxy-auth (P1) — 完了 (2026-01-11)
 - ブランチ名: fix/shape/step3-geoboundaries-proxy-auth
 - 依存: なし
@@ -152,6 +180,20 @@
 - 運用ログ：
   - start: 2026-01-11 01:05 JST gen-iso3166-2 の Node/Browser エントリ分離に着手。
   - done: 2026-01-11 01:15 JST browser エントリを既定化し node エントリを追加、参照を整理。検証: 未実施。
+
+2095) fix/shape/progress-event-mismatch (P1) — 完了 (2026-01-11)
+- ブランチ名: fix/shape/progress-event-mismatch
+- 依存: なし
+- 受け入れ基準: UI が受け取る progress event が common-api の BatchProgressEvent 形式に統一される／progress の更新が subscription と polling で矛盾しない／タスク進行が UI に反映される／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/worker/public.ts`
+- ロールバック手順: 上記ファイルの差分を revert し、shape 独自イベントを返す挙動へ戻す
+- チェックリスト:
+  - worker の progress callback を common-api の BatchProgressEvent に合わせる
+  - subscribeToProgress のイベントを変換せずに 전달する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 01:35 JST shape progress event の型不一致調査に着手。
+  - done: 2026-01-11 01:55 JST worker progress を common-api の BatchProgressEvent に統一し、shape 独自イベント変換を廃止。検証: 未実施。
 
 2091) refactor/ui/dialog-mode-single-type (P1) — 完了 (2026-01-05)
 - ブランチ名: refactor/ui/dialog-mode-single-type

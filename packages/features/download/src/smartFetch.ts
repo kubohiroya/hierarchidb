@@ -29,12 +29,23 @@ export type SmartFetchTimeoutOptions = {
   timeoutMs?: number;
 };
 
+export type SmartFetchInFlightOptions = {
+  enabled?: boolean;
+  keyBuilder?: (context: {
+    method: string;
+    resolvedUrl: string;
+    accept: string;
+    auth: { enabled: boolean; scope?: string; sessionId?: string };
+  }) => string | null;
+};
+
 export type SmartFetchOptions = {
   request?: RequestInit;
   auth?: SmartFetchAuthOptions;
   retry?: SmartFetchRetryOptions;
   corsProxy?: SmartFetchCorsProxyOptions;
   timeout?: SmartFetchTimeoutOptions;
+  inFlight?: SmartFetchInFlightOptions;
 };
 
 const backoff = (attempt: number, baseDelayMs: number, maxDelayMs: number): number => {
@@ -44,6 +55,34 @@ const backoff = (attempt: number, baseDelayMs: number, maxDelayMs: number): numb
 };
 
 const shouldRetryStatus = (status: number, retryOnStatuses: number[]) => retryOnStatuses.includes(status);
+const inFlightMap = new Map<string, Promise<Response>>();
+const inFlightGetAccept = (request?: RequestInit): string => {
+  if (!request?.headers) return '';
+  const headers = new Headers(request.headers);
+  return headers.get('accept') ?? '';
+};
+const inFlightKeyDefault = (method: string, resolvedUrl: string, accept: string): string => (
+  `${method}:${resolvedUrl}:${accept}`
+);
+const isInFlightMethod = (method: string): boolean => (
+  method === 'GET' || method === 'HEAD'
+);
+const shouldShareInFlight = (opts: SmartFetchOptions): boolean => (
+  opts.inFlight?.enabled === true
+);
+const resolveInFlightKey = (
+  opts: SmartFetchOptions,
+  method: string,
+  resolvedUrl: string,
+  accept: string,
+  auth: { enabled: boolean; scope?: string; sessionId?: string },
+): string | null => {
+  const builder = opts.inFlight?.keyBuilder;
+  if (builder) {
+    return builder({ method, resolvedUrl, accept, auth });
+  }
+  return inFlightKeyDefault(method, resolvedUrl, accept);
+};
 
 /**
  * smartFetch
@@ -54,6 +93,7 @@ const shouldRetryStatus = (status: number, retryOnStatuses: number[]) => retryOn
  */
 export async function smartFetch(input: string, options: SmartFetchOptions = {}): Promise<Response> {
   const request = options.request ?? {};
+  const method = (request.method ?? 'GET').toUpperCase();
 
   // timeout handling (AbortController)
   const timeoutMs = options.timeout?.timeoutMs;
@@ -90,15 +130,44 @@ export async function smartFetch(input: string, options: SmartFetchOptions = {})
   const maxDelayMs = options.retry?.maxDelayMs ?? 2500;
   const retryOnStatuses = options.retry?.retryOnStatuses ?? [408, 429, 500, 502, 503, 504];
   const shouldRetry = options.retry?.shouldRetry;
+  const accept = inFlightGetAccept(request);
+  const inFlightKey = (shouldShareInFlight(options) && isInFlightMethod(method))
+    ? resolveInFlightKey(options, method, target, accept, {
+      enabled: authEnabled,
+      scope,
+      sessionId: options.auth?.sessionId,
+    })
+    : null;
 
   try {
     let attempt = 0;
     while (true) {
       try {
-        const init: RequestInit = { ...request, signal };
-        const res = authEnabled
-          ? await (await AuthService.getSingleton()).fetchWithAuth(target, init, ctx)
-          : await fetch(target, init);
+        const init: RequestInit = { ...request, method, signal };
+        const inFlight = inFlightKey ? inFlightMap.get(inFlightKey) : undefined;
+        if (inFlight) {
+          const shared = await inFlight;
+          return shared.clone();
+        }
+        let fetchPromise = (inFlightKey ? inFlightMap.get(inFlightKey) : undefined) as Promise<Response> | undefined;
+        if (!fetchPromise) {
+          fetchPromise = (async () => {
+            return authEnabled
+              ? await (await AuthService.getSingleton()).fetchWithAuth(target, init, ctx)
+              : await fetch(target, init);
+          })();
+          if (inFlightKey) {
+            inFlightMap.set(inFlightKey, fetchPromise);
+            fetchPromise = fetchPromise.finally(() => {
+              inFlightMap.delete(inFlightKey);
+            });
+            inFlightMap.set(inFlightKey, fetchPromise);
+          }
+        }
+        const res = await fetchPromise;
+        if (inFlightKey && fetchPromise !== inFlightMap.get(inFlightKey)) {
+          // no-op; in-flight map already cleaned up
+        }
 
         const needRetry = shouldRetry
           ? shouldRetry(res)

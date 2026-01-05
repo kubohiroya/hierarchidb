@@ -3,6 +3,7 @@ import { setCorsProxyBaseURL } from '@hierarchidb/download';
 import { fetchCountryAvailability } from '../../services/datasources/CountryAvailabilityResolver.js';
 import type { CountryAvailabilityWorkerAPI, SerializedCountryAvailability } from './countryAvailability.types.js';
 import { NodeId } from '@hierarchidb/common-types';
+import { metadataLoader } from '../../services/metadata/MetadataLoader.js';
 
 const corsProxyBaseURL = typeof import.meta.env?.VITE_CORS_PROXY_BASE_URL === 'string'
   ? import.meta.env.VITE_CORS_PROXY_BASE_URL
@@ -24,6 +25,12 @@ const api: CountryAvailabilityWorkerAPI = {
       source: availability.source,
       fetchedAt: Date.now(),
     };
+  },
+  async loadMetadata(dataSource: string, nodeId: NodeId) {
+    return metadataLoader.loadMetadata(dataSource, nodeId);
+  },
+  async clearMetadataCache(dataSource?: string) {
+    metadataLoader.clearCache(dataSource);
   },
 };
 
