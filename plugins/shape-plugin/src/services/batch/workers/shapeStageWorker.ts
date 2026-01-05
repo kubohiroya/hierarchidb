@@ -134,7 +134,6 @@ const buildTileIdRelations = (params: {
 
 const processDownloadTask = async ({
   nodeId,
-  task,
   input,
 }: DownloadTaskRequest): Promise<ShapeStageWorkerTaskResult> => {
   const strategyId = resolveStrategyIdFromDataSource(input.dataSource);

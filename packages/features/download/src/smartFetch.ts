@@ -1,6 +1,7 @@
 import type { AuthContext, AuthScope } from '@hierarchidb/auth-recovery';
 import { AuthService } from '@hierarchidb/auth-recovery';
 import { resolveNetworkUrl } from './helpers/resolveNetworkUrl.js';
+import { sleep } from '@hierarchidb/util';
 
 export type SmartFetchAuthOptions = {
   enabled?: boolean;
@@ -35,8 +36,6 @@ export type SmartFetchOptions = {
   corsProxy?: SmartFetchCorsProxyOptions;
   timeout?: SmartFetchTimeoutOptions;
 };
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const backoff = (attempt: number, baseDelayMs: number, maxDelayMs: number): number => {
   const delay = Math.min(maxDelayMs, baseDelayMs * 2 ** attempt);

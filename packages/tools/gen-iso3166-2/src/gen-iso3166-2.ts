@@ -1,5 +1,5 @@
 import { generateIso3166Files } from "./scraper.js";
-export * from "./index.js";
+export * from "./node.js";
 import * as process from "node:process";
 
 const isDirectRun = (() => {

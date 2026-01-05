@@ -136,7 +136,7 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
         draftDataKeys: draftData ? Object.keys(draftData) : null,
       });
       return {
-        dataSourceKey: undefined as unknown as string | undefined,
+        dataSourceKey: undefined,
         dataSourceError: new Error('Data source is not set. Please go back to Step2 and select a data source.'),
       };
     }

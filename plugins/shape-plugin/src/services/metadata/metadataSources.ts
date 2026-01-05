@@ -71,11 +71,15 @@ const parseGeoBoundariesItems = (payload: unknown): GeoBoundariesRecord[] => {
 };
 
 export async function fetchGeoBoundariesMetadata(nodeId: NodeId): Promise<CountryMetadata[]> {
-  const publicNet = createShapeNetworkPort({ auth: { enabled: false } });
-  const store = createShapeChunkStoreWithNetworkPort(jsonSerializer, jsonDeserializer, publicNet);
+  const store = createShapeChunkStoreWithNetworkPort(
+    jsonSerializer,
+    jsonDeserializer,
+    createShapeNetworkPort(),
+  );
   const entry = await store.getOrFetchForNode(nodeId, GEOBOUNDARIES_ALL_METADATA_URL, {
     accept: 'application/json',
     cacheKey: buildShapeCacheKey('geoboundaries:metadata:all', GEOBOUNDARIES_ALL_METADATA_URL),
+    allowStale: false,
   });
 
   if (import.meta.env?.DEV) {
@@ -255,8 +259,11 @@ const mapWithConcurrency = async <T, R>(
 };
 
 export async function fetchGadmMetadata(nodeId: NodeId): Promise<CountryMetadata[]> {
-  const publicNet = createShapeNetworkPort({ auth: { enabled: false } });
-  const store = createShapeChunkStoreWithNetworkPort(textSerializer, textDeserializer, publicNet);
+  const store = createShapeChunkStoreWithNetworkPort(
+    textSerializer,
+    textDeserializer,
+    createShapeNetworkPort(),
+  );
   const htmlEntry = await store.getOrFetchForNode(nodeId, GADM_MAPS_URL, {
     accept: 'text/html',
     cacheKey: buildShapeCacheKey('gadm:maps', GADM_MAPS_URL),

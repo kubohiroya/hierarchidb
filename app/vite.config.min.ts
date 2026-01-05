@@ -6,7 +6,7 @@ import type { Plugin } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { comlink } from 'vite-plugin-comlink';
 import { faviconPlugin } from './vite-plugins/vite-plugin-favicon.js';
-import { createIso3166Plugin } from '@hierarchidb/gen-iso3166-2';
+import { createIso3166Plugin } from '@hierarchidb/gen-iso3166-2/plugin';
 import { createNodeTypeAliasPlugin } from './vite-plugins/vite-plugin-hierarchidb-plugin-alias/src/index.js';
 import { pluginWorkerVirtualModule } from './vite-plugins/vite-plugin-plugin-worker-virtual.js';
 import {

@@ -4,7 +4,6 @@ import { normalizeDataSourceName } from '../utils/utils.js';
 import { defaultDataSourceFactory } from './DataSourceStrategyFactory.js';
 import { resolveStrategyIdFromDataSource } from './strategyIds.js';
 import { DATA_SOURCE_CONFIGS } from '../../common/mock/data.js';
-import { seedStep3CacheIfMissing } from '../utils/seedStep3Cache.js';
 
 type AvailabilitySource = 'strategy' | 'metadata' | 'none';
 
@@ -109,17 +108,12 @@ const fetchAvailabilityFromStrategy = async (dataSource: string): Promise<Countr
 };
 
 export const fetchCountryAvailability = async (dataSource: string, nodeId: NodeId): Promise<CountryAvailabilityMatrix> => {
-  const normalized = normalizeDataSourceName(dataSource ?? '') ?? 'naturalearth';
+  const normalized = normalizeDataSourceName(dataSource ?? '');
+  if (!normalized) {
+    throw new Error('Data source is not set. Please go back to Step2 and select a data source.');
+  }
   if (normalized === 'openstreetmap') {
     throw new Error('OpenStreetMap is not supported in Step3 country selection.');
-  }
-
-  // Ensure Step3 can render even when the cache database is empty (first run / cleared DB).
-  // This is network-independent and will be overwritten by successful upstream fetches.
-  try {
-    await seedStep3CacheIfMissing(normalized, nodeId);
-  } catch (error) {
-    console.warn('[CountryAvailabilityResolver] failed to seed builtin Step3 cache', error);
   }
 
   const strategyAvailability = await fetchAvailabilityFromStrategy(normalized).catch((error) => {

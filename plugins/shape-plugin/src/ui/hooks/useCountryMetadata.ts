@@ -5,7 +5,7 @@ import { normalizeDataSourceName } from '../../services/utils/utils.js';
 import { metadataLoader } from '../../services/metadata/MetadataLoader.js';
 
 export interface UseCountryMetadataOptions {
-  dataSource: string;
+  dataSource: string|undefined;
   countryCodes?: string[];
   nodeId: NodeId;
 }

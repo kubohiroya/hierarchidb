@@ -8,6 +8,7 @@ import {
   type ChunkStoreSerializer,
 } from '@hierarchidb/chunk-store';
 import { FetchNetworkPort, type FetchNetworkPortOptions, getCorsProxyBaseURL } from '@hierarchidb/download';
+import { sleep } from '@hierarchidb/util';
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
@@ -229,10 +230,6 @@ const hashString = (input: string): string => {
 
 const isAbortError = (error: unknown): boolean => (
   error instanceof Error && error.name === 'AbortError'
-);
-
-const sleep = (ms: number): Promise<void> => (
-  new Promise((resolve) => setTimeout(resolve, ms))
 );
 
 const computeDelay = (retries: RetryConfig, attempt: number): number => {

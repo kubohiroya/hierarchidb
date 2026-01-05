@@ -75,7 +75,7 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
     const usesHashRouting = hash.startsWith('#/');
     const pathWithQuery = usesHashRouting ? hash.slice(1) : window.location.pathname;
     const [pathOnly] = pathWithQuery.split('?');
-    const normalizedPath = pathOnly.startsWith('/') ? pathOnly : `/${pathOnly}`;
+    const normalizedPath = pathOnly?.startsWith('/') ? pathOnly : `/${pathOnly}`;
     const segments = normalizedPath.split('/').filter(Boolean);
     const tIndex = segments.indexOf('t');
     if (tIndex < 0 || segments.length < tIndex + 6) return null;
@@ -99,7 +99,7 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
     if (!isBrowser) return;
     const dialogPath = getDialogPathState();
     if (dialogPath?.mode) {
-      setMode(dialogPath.mode);
+      setMode(dialogPath.mode as DialogModeState);
     }
     if (typeof dialogPath?.step === 'number') {
       setStep(dialogPath.step);

@@ -1,6 +1,7 @@
 import type { NetworkPort, ResponseLike } from '../ports.js';
 import { resolveNetworkUrl } from '../helpers/resolveNetworkUrl.js';
 import { smartFetch } from '../smartFetch.js';
+import { sleep } from '@hierarchidb/util';
 
 export interface FetchNetworkPortOptions {
   headers?: Record<string, string> | (() => Record<string, string> | Promise<Record<string, string>>);
@@ -31,8 +32,6 @@ const createAbortError = (): Error => {
   (error as Error & { name: string }).name = 'AbortError';
   return error;
 };
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const wrap = (res: Response): ResponseLike => ({
   status: res.status,
@@ -229,4 +228,3 @@ export class FetchNetworkPort implements NetworkPort {
     return status === 408 || status === 429 || (status >= 500 && status <= 599);
   }
 }
-

@@ -1,3 +1,4 @@
+import * as process from "node:process";
 import * as cheerio from "cheerio";
 import type { CheerioAPI } from "cheerio";
 import { DEFAULT_FAILURES, DEFAULT_OUTPUT, toCsv } from "./csv.js";
@@ -9,6 +10,7 @@ import {
 } from "./types.js";
 import pLimit from "p-limit";
 import { FetchNetworkPort } from "@hierarchidb/download";
+import { sleep } from "@hierarchidb/util";
 
 const START_URL = "https://ja.wikipedia.org/wiki/ISO_3166-1";
 const JA_WIKI = "https://ja.wikipedia.org";
@@ -17,8 +19,6 @@ const EN_WIKI = "https://en.wikipedia.org";
 const CONCURRENCY = 6;
 const REQUEST_DELAY_MS = 400; // polite delay
 const USER_AGENT = "iso3166-2-level1-csv-generator/1.0 (contact: example@example.com)";
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const CONTINENT_I18N: Record<string, Record<string, string>> = {
   en: {

@@ -1,3 +1,72 @@
+2097) fix/shape/step3-geoboundaries-proxy-auth (P1) — 完了 (2026-01-11)
+- ブランチ名: fix/shape/step3-geoboundaries-proxy-auth
+- 依存: なし
+- 受け入れ基準: geoBoundaries のメタデータ取得が CORS プロキシ経由で認証付きで成功する／401 が発生しない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/metadata/metadataSources.ts`
+- ロールバック手順: 上記ファイルの差分を revert し、従来のネットワーク設定へ戻す
+- チェックリスト:
+  - geoBoundaries 取得で auth 無効化を撤廃する
+  - CORS プロキシ経由の取得を有効化する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 01:05 JST geoBoundaries 取得時の CORS プロキシ認証対応に着手。
+  - done: 2026-01-11 01:07 JST geoBoundaries 取得で auth 無効化を撤廃し CORS プロキシ認証を通すよう修正。検証: 未実施。
+
+2096) fix/shape/step3-disable-stale-metadata (P1) — 完了 (2026-01-11)
+- ブランチ名: fix/shape/step3-disable-stale-metadata
+- 依存: なし
+- 受け入れ基準: Step3 のメタデータ取得で stale キャッシュフォールバックを行わない／ダミーキャッシュが使われない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/metadata/metadataSources.ts`
+- ロールバック手順: 上記ファイルの差分を revert し、stale キャッシュ許可へ戻す
+- チェックリスト:
+  - geoboundaries metadata 取得で allowStale を false にする
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 00:50 JST Step3 メタデータの stale フォールバック排除に着手。
+  - done: 2026-01-11 00:52 JST geoboundaries メタデータ取得で allowStale を無効化。検証: 未実施。
+
+2095) refactor/util/dedupe-sleep (P2) — 完了 (2026-01-11)
+- ブランチ名: refactor/util/dedupe-sleep
+- 依存: なし
+- 受け入れ基準: 指定ファイルの sleep 定義を共通ユーティリティへ集約し重複を解消する／各ファイルの動作は保持される／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/util/src/sleep.ts`, `packages/util/src/index.ts`, `packages/tools/gen-iso3166-2/src/scraper.ts`, `packages/features/chunk-store/src/index.ts`, `packages/features/download/src/adapters/FetchNetworkPort.ts`, `packages/features/download/src/smartFetch.ts`, `plugins/shape-plugin/src/services/utils/chunkStore.ts`
+- ロールバック手順: 上記ファイルの差分を revert し、各ファイルのローカル sleep 定義を復元する
+- チェックリスト:
+  - 共通 sleep ユーティリティを追加する
+  - 指定ファイルの sleep 定義を置換する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 00:35 JST sleep ユーティリティの重複解消に着手。
+  - done: 2026-01-11 00:40 JST 共通 sleep を追加し各ファイルのローカル定義を置換。検証: 未実施。
+
+2094) fix/shape/step3-gadm-cors-proxy-auth (P1) — 完了 (2026-01-11)
+- ブランチ名: fix/shape/step3-gadm-cors-proxy-auth
+- 依存: なし
+- 受け入れ基準: GADM メタデータ取得が CORS プロキシ経由で成功する／401 が発生しない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/metadata/metadataSources.ts`
+- ロールバック手順: 上記ファイルの差分を revert し、従来の FetchNetworkPort 設定に戻す
+- チェックリスト:
+  - GADM メタデータ取得で auth 無効化をやめる
+  - CORS プロキシ経由の取得を有効化する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 00:25 JST GADM 取得時の CORS プロキシ認証対応に着手。
+  - done: 2026-01-11 00:27 JST GADM 取得で auth 無効化を撤廃し CORS プロキシ認証を通すよう修正。検証: 未実施。
+
+2093) fix/shape/step3-remove-dummy-metadata-seed (P1) — 完了 (2026-01-11)
+- ブランチ名: fix/shape/step3-remove-dummy-metadata-seed
+- 依存: なし
+- 受け入れ基準: Step3 のハードコード済みダミー国メタデータを削除する／シードによるサイレントフォールバックを排除する／データ不足時は明示的にエラーを返す／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/utils/seedStep3Cache.ts`, `plugins/shape-plugin/src/services/datasources/CountryAvailabilityResolver.ts`, `plugins/shape-plugin/src/common/mock/data.ts`
+- ロールバック手順: 上記ファイルの差分を revert し、シードとダミーデータ定義を復元する
+- チェックリスト:
+  - Step3 のダミー国メタデータ定義を削除する
+  - シード処理を排除しフォールバックを止める
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 00:15 JST Step3 ダミーメタデータ削除に着手。
+  - done: 2026-01-11 00:20 JST ダミー国メタデータとシード処理を削除。検証: 未実施。
+
 2092) fix/ui/tree-node-info-panel-close-root (P2) — 完了 (2026-01-11)
 - ブランチ名: fix/ui/tree-node-info-panel-close-root
 - 依存: なし
@@ -68,6 +137,21 @@
 - 運用ログ：
   - start: 2026-01-11 00:35 JST chunk-store の URL 取得重複を抑止するロック機構対応に着手。
   - blocked: 2026-01-11 00:50 JST ユーザー指示によりロック方式を中止し、singleflight 方式に切り替え。
+
+2094) refactor/tools/gen-iso3166-2-node-browser-entry (P1) — 完了 (2026-01-11)
+- ブランチ名: refactor/tools/gen-iso3166-2-node-browser-entry
+- 依存: なし
+- 受け入れ基準: Node専用スクレイパー/ストアとブラウザ用エントリが分離される／React側の参照が browser エントリに統一される／Node用途は node/cli/plugin エントリへ整理される／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/tools/gen-iso3166-2/package.json`, `packages/tools/gen-iso3166-2/src/index.ts`, `packages/tools/gen-iso3166-2/src/node.ts`, `packages/tools/gen-iso3166-2/src/gen-iso3166-2.ts`, `packages/tools/gen-iso3166-2/src/store.browser.ts`, `plugins/shape-plugin/src/services/utils/iso3166.ts`, `plugins/location-plugin/src/services/LocationBatchManager.ts`, `plugins/location-plugin/src/services/__tests__/unit/LocationBatchManager.iso-normalization.unit.test.ts`, `app/vite.config.min.ts`
+- ロールバック手順: 上記ファイルの差分を revert し、gen-iso3166-2 の単一エントリ運用へ戻す
+- チェックリスト:
+  - browser エントリと node エントリを分離する
+  - browser 側の参照先を /browser に統一する
+  - Node 側は /plugin・/node を使用する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 01:05 JST gen-iso3166-2 の Node/Browser エントリ分離に着手。
+  - done: 2026-01-11 01:15 JST browser エントリを既定化し node エントリを追加、参照を整理。検証: 未実施。
 
 2091) refactor/ui/dialog-mode-single-type (P1) — 完了 (2026-01-05)
 - ブランチ名: refactor/ui/dialog-mode-single-type

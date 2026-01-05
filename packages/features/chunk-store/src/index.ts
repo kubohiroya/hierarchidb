@@ -651,10 +651,6 @@ const generateMetadataId = (): ChunkStoreMetadataId => {
   return `meta-${Date.now().toString(36)}-${rand}`;
 };
 
-const sleep = (ms: number): Promise<void> => (
-  new Promise((resolve) => setTimeout(resolve, ms))
-);
-
 export * from './ports.js';
 export * from './cas/ContentAddressableStore.js';
 export * from './adapters/DexieContentIndexPort.js';

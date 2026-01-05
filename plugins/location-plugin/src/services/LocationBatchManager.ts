@@ -865,7 +865,7 @@ export class LocationBatchManager {
   private async getCountryNameMap(): Promise<Map<string, string>> {
     if (this.countryNameMap) return this.countryNameMap;
     try {
-      const { ensureIso3166Data, getAllCountries } = await import('@hierarchidb/gen-iso3166-2');
+      const { ensureIso3166Data, getAllCountries } = await import('@hierarchidb/gen-iso3166-2/browser');
       await ensureIso3166Data({ csvUrl: ISO3166_CSV_URL });
       const countries = await getAllCountries();
       const map = new Map<string, string>();

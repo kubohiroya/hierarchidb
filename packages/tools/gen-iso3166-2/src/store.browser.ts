@@ -79,7 +79,6 @@ async function loadCsvToStore(csvText: string, db: Iso3166Dexie | null) {
 
 export async function ensureIso3166Data(options: EnsureIsoOptions = {}) {
   const db = hasIndexedDB() ? (dexieDb ?? (dexieDb = new Iso3166Dexie())) : null;
-  const useScraper = options.useScraper ?? (typeof window === "undefined");
 
   if (db) {
     const count = await db.subdivisions.count();
@@ -102,14 +101,6 @@ export async function ensureIso3166Data(options: EnsureIsoOptions = {}) {
     } catch {
       // continue
     }
-  }
-
-  if (useScraper) {
-    const { generateIso3166Data } = await import("./scraper.js");
-    const { rows } = await generateIso3166Data();
-    const records = rowsToRecords(rows);
-    const source = await populateStore(records, db);
-    return { source: source === "dexie" ? "scrape-dexie" : "scrape-memory" };
   }
 
   return { source: "none" as const };

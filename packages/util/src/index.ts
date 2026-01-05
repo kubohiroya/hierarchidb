@@ -19,4 +19,5 @@ export * from './env.js';
 export * from './webCrypto.js';
 export * from './dualKeyMap.js';
 export * from './treeConsoleSettings.js';
+export * from './sleep.js';
 // Note: Dexie-specific helpers are internal; avoid leaking Dexie types to consumers

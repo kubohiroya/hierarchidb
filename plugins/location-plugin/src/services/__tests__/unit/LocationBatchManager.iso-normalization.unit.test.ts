@@ -18,7 +18,7 @@ vi.mock('../../pointRepository.js', () => ({
   replaceLocationPoints: vi.fn(async () => {}),
 }));
 
-vi.mock('@hierarchidb/gen-iso3166-2', () => ({
+vi.mock('@hierarchidb/gen-iso3166-2/browser', () => ({
   ensureIso3166Data: vi.fn(async () => ({ source: 'memory' })),
   getAllCountries: vi.fn(async () => ([
     { alpha2: 'US', alpha3: 'USA', countryEn: 'United States', location: 'Americas' },

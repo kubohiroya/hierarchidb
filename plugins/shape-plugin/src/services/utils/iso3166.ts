@@ -1,4 +1,4 @@
-import { ensureIso3166Data, getCountry, type EnsureIsoOptions } from '@hierarchidb/gen-iso3166-2';
+import { ensureIso3166Data, getCountry, type EnsureIsoOptions } from '@hierarchidb/gen-iso3166-2/browser';
 
 export type ContinentCode = 'AF' | 'AS' | 'EU' | 'NA' | 'SA' | 'OC' | 'AN' | 'XX';
 
