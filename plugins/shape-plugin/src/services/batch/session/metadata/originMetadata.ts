@@ -44,11 +44,13 @@ export function buildOriginLabel(params: {
 
 export function buildOriginMetadata(params: {
   output: DownloadStageOutput;
-  resolveDataSource: () => DataSourceName;
 }): OriginMetadata {
-  const { output, resolveDataSource } = params;
+  const { output } = params;
 
-  const dataSource = output.dataSource ?? resolveDataSource();
+  const dataSource = output.dataSource;
+  if (!dataSource) {
+    throw new Error('[shape-plugin] DownloadStageOutput.dataSource is required');
+  }
   const countryCode = output.countryCode?.trim().toUpperCase();
   const adminLevel = output.adminLevel;
   const groupId = output.featureGroupId ?? output.featureLabel ?? output.inputBufferId;
@@ -86,10 +88,9 @@ export function buildOriginMetadata(params: {
 export function indexOriginMetadata(params: {
   nodeId?: unknown; // kept for backward compatibility; unused
   outputs: DownloadStageOutput[];
-  resolveDataSource: () => DataSourceName;
 }): OriginMetadataIndex {
-  const { outputs, resolveDataSource } = params;
-  const entries = outputs.map((output) => buildOriginMetadata({ output, resolveDataSource }));
+  const { outputs } = params;
+  const entries = outputs.map((output) => buildOriginMetadata({ output }));
   const byKey = new Map(entries.map((entry) => [entry.originKey, entry] as const));
   const byBuffer = new Map(entries.map((entry) => [entry.inputBufferId, entry] as const));
   return { entries, byKey, byBuffer };

@@ -8,6 +8,7 @@ describe('originMetadata', () => {
     const outputs: DownloadStageOutput[] = [
       {
         inputBufferId: 'buf-1',
+        dataSource: 'naturalearth',
         countryCode: ' jpn ',
         adminLevel: 1,
         featureGroupId: 'JP.01',
@@ -17,7 +18,6 @@ describe('originMetadata', () => {
 
     const index = indexOriginMetadata({
       outputs,
-      resolveDataSource: () => 'naturalearth' as never,
     });
 
     expect(index.entries).toHaveLength(1);

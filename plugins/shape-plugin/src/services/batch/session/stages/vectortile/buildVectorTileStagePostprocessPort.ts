@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { Feature } from 'geojson';
 
-import type { DataSourceName, DownloadTaskPayload } from '../../../../../common/types/index.js';
+import type { DownloadTaskPayload } from '../../../../../common/types/index.js';
 import type { GeometryStatsSummary } from '../../SessionTypes.js';
 import type { SessionArtifactStore } from '../../../SessionArtifactStore.js';
 
@@ -10,7 +10,6 @@ import { buildVectorTilePostprocessPortFromController } from './buildVectorTileP
 export type VectorTileStagePostprocessDeps = {
   enabled: boolean;
   nodeId: NodeId;
-  dataSourceFallback: DataSourceName;
   downloadTaskPayloads: DownloadTaskPayload[];
   artifactStore: SessionArtifactStore;
   extractGeometryStats: (feature: Feature) => {
@@ -30,7 +29,6 @@ export function buildVectorTileStagePostprocessPort(deps: VectorTileStagePostpro
   return buildVectorTilePostprocessPortFromController({
     enabled: deps.enabled,
     nodeId: deps.nodeId,
-    dataSourceFallback: deps.dataSourceFallback,
     downloadTaskPayloads: deps.downloadTaskPayloads,
     artifactStore: deps.artifactStore,
     extractGeometryStats: deps.extractGeometryStats,

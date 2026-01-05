@@ -147,9 +147,9 @@ const processDownloadTask = async ({
   const timeoutMs = input.timeoutMs;
   const bbox = normalizeBoundingBox(input.bbox);
   const tags = input.tags;
-  const country = input.countryCode ?? task.countryCode;
+  const country = input.countryCode;
   const adminLevel = input.adminLevel;
-  const sourceUrl = input.url ?? task.url;
+  const sourceUrl = input.url;
   const cacheCountry = input.dataSource === 'naturalearth' ? undefined : country;
   const cacheKey = buildDownloadCacheKey({
     dataSource: input.dataSource,

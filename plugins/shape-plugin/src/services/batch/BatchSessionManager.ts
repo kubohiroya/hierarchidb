@@ -75,7 +75,7 @@ type SessionStartContext = {
 };
 
 const isDownloadTaskPayload = (input?: DownloadTaskInputData): input is DownloadTaskPayload =>
-  Boolean(input?.url && input?.countryCode && typeof input.adminLevel === 'number');
+  Boolean(input?.url && input?.countryCode && input?.dataSource && typeof input.adminLevel === 'number');
 
 export class BatchSessionManager extends BaseBatchSessionManager {
   private legacyProgressCallbacks = new Map<string, (progress: ProgressInfo) => void>();

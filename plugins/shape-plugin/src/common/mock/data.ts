@@ -244,7 +244,7 @@ export const SAMPLE_COUNTRIES: CountryMetadata[] = [
 export function generateDownloadTaskPayloads(
   countries: string[],
   adminLevels: number[],
-  dataSource: string,
+  dataSource: DownloadTaskPayload['dataSource'],
 ): DownloadTaskPayload[] {
   const metadata: DownloadTaskPayload[] = [];
 
@@ -258,6 +258,7 @@ export function generateDownloadTaskPayloads(
           url: `https://example.com/${dataSource}/${countryCode}/admin${level}.geojson`,
           countryCode,
           adminLevel: level,
+          dataSource,
         });
       }
     });

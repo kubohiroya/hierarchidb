@@ -207,6 +207,9 @@ export function generateDownloadTaskPayloads(
       if (!country.availableAdminLevels.includes(level)) return;
 
       const resolvedCode = resolveCountryCodeForDataSource(dataSource, country, countryCode);
+      if (!resolvedCode) {
+        throw new Error(`[shape-plugin] Failed to resolve country code for ${dataSource} (${countryCode})`);
+      }
       const url = buildDataSourceUrl(dataSource, resolvedCode, level);
       if (url) {
         payloads.push({
@@ -263,6 +266,9 @@ export function generateDownloadTaskPayloadsFromSelection(
     return selectedLevels.flatMap((level) => {
       if (!country.availableAdminLevels.includes(level)) return [];
       const resolvedCode = resolveCountryCodeForDataSource(dataSource, country, normalizedCode);
+      if (!resolvedCode) {
+        throw new Error(`[shape-plugin] Failed to resolve country code for ${dataSource} (${normalizedCode})`);
+      }
       const url = buildDataSourceUrl(dataSource, resolvedCode, level);
       if (!url) return [];
       return [{
@@ -277,7 +283,10 @@ export function generateDownloadTaskPayloadsFromSelection(
 }
 
 export const buildDownloadTaskId = (nodeId: string, payload: DownloadTaskPayload): string => {
-  const countryId = payload.countryCode || 'unknown';
+  const countryId = payload.countryCode.trim();
+  if (!countryId) {
+    throw new Error(`[shape-plugin] DownloadTaskPayload.countryCode is required (${nodeId})`);
+  }
   return `${nodeId}+${countryId}+${payload.adminLevel}`;
 };
 

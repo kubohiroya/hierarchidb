@@ -52,19 +52,22 @@ export class GadmDownloadStrategy implements DownloadStageStrategy {
   ): Promise<DownloadStagePostprocessResult> {
     const outputs = context.downloadTasks.map((task) => {
       const input = context.downloadInputsById.get(task.taskId);
-      const sourceUrl = input?.url ?? task.url;
+      if (!input) {
+        throw new Error(`[GadmDownloadStrategy] Missing input for task ${task.taskId}`);
+      }
+      const sourceUrl = input.url;
       const cacheKey = buildDownloadCacheKey({
-        dataSource: input?.dataSource ?? 'gadm',
-        countryCode: input?.countryCode ?? task.countryCode,
-        adminLevel: input?.adminLevel ?? task.adminLevel,
+        dataSource: input.dataSource,
+        countryCode: input.countryCode,
+        adminLevel: input.adminLevel,
         url: sourceUrl,
       });
       return {
         inputBufferId: cacheKey,
-        countryCode: input?.countryCode ?? task.countryCode,
-        countryName: input?.countryName,
-        adminLevel: input?.adminLevel ?? task.adminLevel,
-        dataSource: input?.dataSource ?? 'gadm',
+        countryCode: input.countryCode,
+        countryName: input.countryName,
+        adminLevel: input.adminLevel,
+        dataSource: input.dataSource,
         sourceUrl,
       };
     });

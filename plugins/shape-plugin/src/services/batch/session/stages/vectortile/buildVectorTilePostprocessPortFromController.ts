@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { DataSourceName, DownloadTaskPayload } from '../../../../../common/types/index.js';
+import type { DownloadTaskPayload } from '../../../../../common/types/index.js';
 import type { GeometryStatsSummary } from '../../SessionTypes.js';
 import type { GeometryStatsExtractor } from '../../metadata/featureMetadata.js';
 import { persistPlaceholderMetadata, summarizeVectorTilesByOrigin } from '../../metadata/featureMetadata.js';
@@ -12,7 +12,6 @@ import type { SessionArtifactStore } from '../../../SessionArtifactStore.js';
 export function buildVectorTilePostprocessPortFromController(params: {
   enabled: boolean;
   nodeId: NodeId;
-  dataSourceFallback: DataSourceName;
   downloadTaskPayloads: DownloadTaskPayload[];
 
   artifactStore: SessionArtifactStore;
@@ -29,7 +28,6 @@ export function buildVectorTilePostprocessPortFromController(params: {
   const {
     enabled,
     nodeId,
-    dataSourceFallback,
     downloadTaskPayloads,
     artifactStore,
     extractGeometryStats,
@@ -40,7 +38,6 @@ export function buildVectorTilePostprocessPortFromController(params: {
   return buildVectorTilePostprocessPort({
     enabled,
     nodeId,
-    dataSourceFallback,
     downloadTaskPayloads,
     store: buildVectorTilePostprocessStore(artifactStore),
     persistPlaceholderMetadata,

@@ -47,7 +47,7 @@ export interface DownloadStageOutput {
   countryName?: string;
   continent?: string;
   adminLevel?: number;
-  dataSource?: DataSourceName;
+  dataSource: DataSourceName;
   sourceUrl?: string;
   featureGroupId?: string;
   featureLabel?: string;

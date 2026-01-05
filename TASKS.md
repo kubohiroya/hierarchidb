@@ -1,3 +1,18 @@
+2086) feat/ui/dialog-backdrop-dismiss-toggle (P1) — 進行中 (2026-01-05)
+- ブランチ名: feat/ui/dialog-backdrop-dismiss-toggle
+- 依存: なし
+- 受け入れ基準: PluginDialogRoute の外側クリックで閉じる挙動を設定で on/off できる／ツールバー設定メニューに Switch を追加する／既定は off／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: 調査中（PluginDialogRoute/ツールバー設定）
+- ロールバック手順: PluginDialogRoute と設定 UI の差分を revert し、外側クリックで閉じる挙動を固定に戻す
+- チェックリスト:
+  - ダイアログ外クリックの制御ポイントを特定する
+  - 設定の保存/参照場所を追加する
+  - ツールバー設定メニューに Switch を追加する
+  - 影響範囲とロールバック手順を更新する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-05 15:30 JST ダイアログ外クリックのトグル設定追加に着手。
+
 2085) fix/ui/tile-config-section-render-loop (P1) — 完了 (2026-01-05)
 - ブランチ名: fix/ui/tile-config-section-render-loop
 - 依存: なし
@@ -346,6 +361,7 @@
 - 運用ログ：
   - start: 2026-01-10 21:45 JST geoboundaries のキャッシュ完了更新不備の調査に着手。
   - start: 2026-01-10 22:30 JST geoboundaries の download 停滞原因をコードで再調査。
+  - done: 2026-01-10 23:20 JST download 入力のフォールバックを撤廃し、DownloadTaskPayload/DownloadStageOutput を必須化して入力欠落時に即時エラー化。download キャッシュ判定も入力必須に統一。検証: 未実施。
 
 2067) fix/ui-dialog/maximize-layout-viewport (P1) — 完了 (2026-01-05)
 - ブランチ名: fix/ui-dialog/maximize-layout-viewport

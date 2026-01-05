@@ -56,10 +56,17 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
   ): Promise<DownloadStageAdapterResult> {
     const getSignal = controls?.getSignal;
     const shouldAbort = () => Boolean(getSignal?.()?.aborted);
+    const dataSources = tasks.map((task) => {
+      const input = inputsByTaskId.get(task.taskId);
+      if (!input) {
+        throw new Error(`[ShapeDownloadAdapter] Missing input for task ${task.taskId}`);
+      }
+      return input.dataSource;
+    });
     console.debug('[ShapeDownloadAdapter] process', {
       nodeId,
       taskCount: tasks.length,
-      dataSources: Array.from(new Set(tasks.map((task) => inputsByTaskId.get(task.taskId)?.dataSource ?? 'unknown'))),
+      dataSources: Array.from(new Set(dataSources)),
     });
     const batch = new BatchService();
     let completed = 0;
@@ -67,7 +74,7 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
     let totalBytes = 0;
 
     const recommendedConcurrency = this.laneRegistry.recommendConcurrency(
-      tasks.map((task) => (inputsByTaskId.get(task.taskId)?.dataSource ?? 'default').toLowerCase()),
+      dataSources.map((source) => source.toLowerCase()),
       4,
     );
     const maxConcurrent = Math.max(1, controls?.maxConcurrent ?? recommendedConcurrency);
@@ -77,12 +84,11 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
       await batch.mapChunks<DownloadTask, unknown>(
         tasks,
         async (task: DownloadTask, index: number) => {
-          const input: DownloadTaskPayload = inputsByTaskId.get(task.taskId) ?? {
-            url: task.url ?? '',
-            countryCode: (task.countryCode ?? 'UNK') as DownloadTaskPayload['countryCode'],
-            adminLevel: task.adminLevel ?? 0,
-          };
-          const lane = (input.dataSource ?? 'default').toLowerCase();
+          const input = inputsByTaskId.get(task.taskId);
+          if (!input) {
+            throw new Error(`[ShapeDownloadAdapter] Missing input for task ${task.taskId}`);
+          }
+          const lane = input.dataSource.toLowerCase();
           await this.laneRegistry.runWithLane(lane, async () => {
             if (controls?.waitIfPaused) await controls.waitIfPaused();
             if (shouldAbort()) return;

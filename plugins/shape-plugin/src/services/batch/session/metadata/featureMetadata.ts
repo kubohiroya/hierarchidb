@@ -106,11 +106,10 @@ export async function persistPlaceholderMetadata(params: {
   enabled: boolean;
   replace: boolean;
   nodeId: NodeId;
-  dataSourceFallback: DataSourceName;
   downloadTaskPayloads: DownloadTaskPayload[];
   store: FeatureMetadataStore;
 }): Promise<number> {
-  const { enabled, replace, nodeId, dataSourceFallback, downloadTaskPayloads, store } = params;
+  const { enabled, replace, nodeId, downloadTaskPayloads, store } = params;
   if (!enabled) return 0;
 
   const nodeKey = String(nodeId);
@@ -126,10 +125,13 @@ export async function persistPlaceholderMetadata(params: {
   const rows: ShapeFeatureMetadataRow[] = [];
 
   for (const payload of downloadTaskPayloads) {
-    const dataSource = (payload.dataSource ?? dataSourceFallback) as DataSourceName;
-    const countryCode = (payload.countryCode ?? 'UNK').trim().toUpperCase();
+    const dataSource = payload.dataSource;
+    const countryCode = payload.countryCode.trim().toUpperCase();
+    if (!countryCode) {
+      throw new Error('[shape-plugin] DownloadTaskPayload.countryCode is required for placeholder metadata');
+    }
     const adminLevel = payload.adminLevel;
-    const featureKey = `${dataSource ?? 'unknown'}:${countryCode}:${adminLevel ?? 'NA'}`;
+    const featureKey = `${dataSource}:${countryCode}:${adminLevel}`;
     if (existing.has(featureKey)) continue;
     existing.add(featureKey);
     rows.push({

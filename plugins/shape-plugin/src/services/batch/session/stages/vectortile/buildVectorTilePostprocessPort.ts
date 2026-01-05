@@ -1,4 +1,4 @@
-import type { DataSourceName, DownloadTaskPayload } from '../../../../../common/types/index.js';
+import type { DownloadTaskPayload } from '../../../../../common/types/index.js';
 import type { NodeId } from '@hierarchidb/common-types';
 
 import type { GeometryStatsSummary } from './types.js';
@@ -11,7 +11,6 @@ export function buildVectorTilePostprocessPort(params: {
   enabled: boolean;
   nodeId: NodeId;
 
-  dataSourceFallback: DataSourceName;
   downloadTaskPayloads: DownloadTaskPayload[];
 
   store: FeatureMetadataStore & { syncVectorTilesToShapeStore: () => Promise<void> };
@@ -20,7 +19,6 @@ export function buildVectorTilePostprocessPort(params: {
     enabled: boolean;
     replace: boolean;
     nodeId: NodeId;
-    dataSourceFallback: DataSourceName;
     downloadTaskPayloads: DownloadTaskPayload[];
     store: FeatureMetadataStore;
   }) => Promise<number>;
@@ -39,7 +37,6 @@ export function buildVectorTilePostprocessPort(params: {
   const {
     enabled,
     nodeId,
-    dataSourceFallback,
     downloadTaskPayloads,
     store,
     persistPlaceholderMetadata,
@@ -55,7 +52,6 @@ export function buildVectorTilePostprocessPort(params: {
         enabled,
         replace,
         nodeId,
-        dataSourceFallback,
         downloadTaskPayloads,
         store,
       });

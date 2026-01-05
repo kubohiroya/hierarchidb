@@ -19,7 +19,7 @@ import type { VectorTileStageAdapter } from './adapters/VectorTileStageAdapter.j
 import { ShapeWorkerExtract1Adapter, ShapeWorkerExtract2Adapter } from './adapters/ShapeWorkerExtractAdapters.js';
 import { RuntimeWorkerVectorTileAdapter } from './adapters/RuntimeWorkerVectorTileAdapter.js';
 import type { BatchProcessConfig } from './types.js';
-import type { DataSourceName, DownloadTaskPayload, ProgressInfo, ProcessingStage, CountryCode } from '../../common/types/index.js';
+import type { DataSourceName, DownloadTaskPayload, ProgressInfo, ProcessingStage } from '../../common/types/index.js';
 import type { BatchTaskPauseHandler } from './session/types/PauseHandler.js';
 import { BatchTaskStage } from '../../common/types/index.js';
 import { isShapePreviewMetadataEnabled } from '../../common/config/previewFlags.js';
@@ -161,7 +161,7 @@ export class SessionController {
   }
 
   private resolveDataSource(): DataSourceName {
-    const dataSource = this.config.dataSource ?? this.downloadTaskPayloads[0]?.dataSource;
+    const dataSource = this.config.dataSource;
     if (!dataSource) {
       throw new Error('Data source is required for batch processing');
     }
@@ -469,7 +469,6 @@ export class SessionController {
     const { entries, byKey, byBuffer } = indexOriginMetadataInSession({
       nodeId: this.nodeId,
       outputs,
-      resolveDataSource: () => this.resolveDataSource(),
     });
     this.originMetadataByKey = byKey;
     this.originMetadataByBuffer = byBuffer;
@@ -558,7 +557,6 @@ export class SessionController {
       postprocess: buildVectorTileStagePostprocessPort({
         enabled: metadataEnabled,
         nodeId: this.nodeId,
-        dataSourceFallback: this.resolveDataSource(),
         downloadTaskPayloads: this.downloadTaskPayloads,
         artifactStore: this.artifactStore,
         extractGeometryStats: (feature) => this.extractGeometryStats(feature),
@@ -731,21 +729,10 @@ export class SessionController {
         retryDelay: this.options.retryDelay,
       },
     });
-    // Convert DownloadTaskInput -> DownloadTaskPayload so downstream orchestrators and postprocessors
-    // always receive a consistent payload shape (解決案C)。Strategies produce DownloadTaskInput which may
-    // omit some fields; we fill sensible defaults from downloadTaskPayloads where available.
-    const mappedInputsByTaskId = new Map<string, DownloadTaskPayload>();
-    for (const [taskId, input] of inputsByTaskId.entries()) {
-      const partial = input as Partial<DownloadTaskPayload>;
-      const candidateCountry = partial.countryCode ?? this.downloadTaskPayloads[0]?.countryCode ?? '';
-      const payload: DownloadTaskPayload = {
-        url: partial.url ?? (this.downloadTaskPayloads[0]?.url ?? ''),
-        countryCode: (candidateCountry as unknown) as CountryCode,
-        countryName: partial.countryName ?? this.downloadTaskPayloads[0]?.countryName,
-        adminLevel: partial.adminLevel ?? this.downloadTaskPayloads[0]?.adminLevel ?? 0,
-        dataSource: partial.dataSource ?? this.downloadTaskPayloads[0]?.dataSource,
-      };
-      mappedInputsByTaskId.set(taskId, payload);
+    const missingInputs = tasks.filter((task) => !inputsByTaskId.has(task.taskId));
+    if (missingInputs.length > 0) {
+      const missingIds = missingInputs.map((task) => task.taskId).join(', ');
+      throw new Error(`[Session ${this.nodeId}] Download task inputs missing for: ${missingIds}`);
     }
     const maxConcurrent = this.config.download?.concurrentDownloads ?? this.options.maxConcurrentTasks;
     const controls = this.buildStagePauseAbortControls('download');
@@ -756,7 +743,7 @@ export class SessionController {
       waitIfPaused: controls.waitIfPaused,
       getSignal: controls.getSignal,
       tasks,
-      inputsByTaskId: mappedInputsByTaskId,
+      inputsByTaskId,
       taskRegistry: this.taskRegistry,
       progressCallback: this.progressCallback,
     });

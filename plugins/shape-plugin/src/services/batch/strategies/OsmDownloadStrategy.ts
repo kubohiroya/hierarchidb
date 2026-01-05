@@ -23,9 +23,7 @@ export class OsmDownloadStrategy implements DownloadStageStrategy {
   async buildDownloadTasks(context: DownloadStageBuildContext) {
     const countryCodes = new Set<string>();
     context.downloadTaskPayloads.forEach((metadata) => {
-      if (metadata.countryCode) {
-        countryCodes.add(metadata.countryCode);
-      }
+      countryCodes.add(metadata.countryCode);
     });
     const metadataMap = await this.buildCountryMetadata(context.nodeId, Array.from(countryCodes.values()));
     const inputsByTaskId = new Map<string, DownloadTaskPayload>();
@@ -65,19 +63,22 @@ export class OsmDownloadStrategy implements DownloadStageStrategy {
   ): Promise<DownloadStagePostprocessResult> {
     const outputs = context.downloadTasks.map((task) => {
       const input = context.downloadInputsById.get(task.taskId);
-      const sourceUrl = input?.url ?? task.url;
+      if (!input) {
+        throw new Error(`[OsmDownloadStrategy] Missing input for task ${task.taskId}`);
+      }
+      const sourceUrl = input.url;
       const cacheKey = buildDownloadCacheKey({
-        dataSource: input?.dataSource ?? 'openstreetmap',
-        countryCode: input?.countryCode ?? task.countryCode,
-        adminLevel: input?.adminLevel ?? task.adminLevel,
+        dataSource: input.dataSource,
+        countryCode: input.countryCode,
+        adminLevel: input.adminLevel,
         url: sourceUrl,
       });
       return {
         inputBufferId: cacheKey,
-        countryCode: input?.countryCode ?? task.countryCode,
-        countryName: input?.countryName,
-        adminLevel: input?.adminLevel ?? task.adminLevel,
-        dataSource: input?.dataSource ?? 'openstreetmap',
+        countryCode: input.countryCode,
+        countryName: input.countryName,
+        adminLevel: input.adminLevel,
+        dataSource: input.dataSource,
         sourceUrl,
       };
     });

@@ -75,7 +75,6 @@ describe('featureMetadata', () => {
       enabled: true,
       replace: true,
       nodeId: 'node-1' as NodeId,
-      dataSourceFallback: 'naturalearth',
       downloadTaskPayloads,
       store,
     });

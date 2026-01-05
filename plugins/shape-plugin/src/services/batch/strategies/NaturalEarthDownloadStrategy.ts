@@ -68,8 +68,11 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
 
     for (const task of context.downloadTasks) {
       const input = context.downloadInputsById.get(task.taskId);
-      const adminLevel = input?.adminLevel ?? 0;
-      const sourceUrl = input?.url ?? task.url;
+      if (!input) {
+        throw new Error(`[NaturalEarthDownloadStrategy] Missing input for task ${task.taskId}`);
+      }
+      const adminLevel = input.adminLevel;
+      const sourceUrl = input.url;
       const datasetCacheKey = buildDownloadCacheKey({
         dataSource: 'naturalearth',
         adminLevel,
@@ -117,9 +120,7 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
   private collectSelectedCountries(payloads: DownloadTaskPayload[]): string[] {
     const codes = new Set<string>();
     payloads.forEach((metadata) => {
-      if (metadata.countryCode) {
-        codes.add(metadata.countryCode);
-      }
+      codes.add(metadata.countryCode);
     });
     return Array.from(codes.values());
   }

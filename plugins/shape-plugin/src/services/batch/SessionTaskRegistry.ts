@@ -136,13 +136,16 @@ export class SessionTaskRegistry {
       const status = statusById.get(task.taskId);
       if (status !== 'waiting' && status !== 'regression') continue;
       const input = inputsByTaskId.get(task.taskId);
-      const sourceUrl = input?.url ?? task.url;
-      const dataSource = input?.dataSource;
-      const cacheCountry = dataSource === 'naturalearth' ? undefined : (input?.countryCode ?? task.countryCode);
+      if (!input) {
+        throw new Error(`[SessionTaskRegistry] Missing input for download task ${task.taskId}`);
+      }
+      const sourceUrl = input.url;
+      const dataSource = input.dataSource;
+      const cacheCountry = dataSource === 'naturalearth' ? undefined : input.countryCode;
       const cacheKey = buildDownloadCacheKey({
         dataSource,
         countryCode: cacheCountry,
-        adminLevel: input?.adminLevel ?? task.adminLevel,
+        adminLevel: input.adminLevel,
         url: sourceUrl,
       });
       const linked = await ensureDownloadBufferForNode(this.nodeId, cacheKey);
