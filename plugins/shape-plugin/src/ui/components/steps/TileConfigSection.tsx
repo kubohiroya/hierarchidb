@@ -90,6 +90,13 @@ const normalizeSharedZoomConfig = (value: unknown): SharedZoomConfig => {
   };
 };
 
+const areNumberArraysEqual = (left?: number[], right?: number[]): boolean => {
+  if (left === right) return true;
+  if (!left || !right) return false;
+  if (left.length !== right.length) return false;
+  return left.every((value, index) => value === right[index]);
+};
+
 const readSharedZoomConfig = (): SharedZoomConfig => {
   if (typeof window === 'undefined') {
     return normalizeSharedZoomConfig(null);
@@ -143,8 +150,10 @@ export const TileConfigSection: React.FC<Props> = ({ config, draft, disabled, on
 
   useEffect(() => {
     const [sharedMin, sharedMax] = zoomConfig.range;
-    if (baseTileConfig.minZoom !== sharedMin || baseTileConfig.maxZoom !== sharedMax
-      || baseTileConfig.zoomBreakpoints !== zoomConfig.breakpoints) {
+    const shouldSync = baseTileConfig.minZoom !== sharedMin
+      || baseTileConfig.maxZoom !== sharedMax
+      || !areNumberArraysEqual(baseTileConfig.zoomBreakpoints, zoomConfig.breakpoints);
+    if (shouldSync) {
       update({
         tileConfig: {
           ...baseTileConfig,

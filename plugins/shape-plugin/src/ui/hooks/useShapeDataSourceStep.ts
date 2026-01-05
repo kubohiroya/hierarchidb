@@ -28,12 +28,8 @@ export const useShapeDataSourceStep = ({ data, onChange }: Args) => {
     [sources],
   );
 
-  const normalizedValue = normalizeDataSourceName(
-    draftData.batchConfig?.dataSource ?? draftData.dataSourceName,
-  );
-  const defaultGeoBoundaries = options.find((option) => option.id === 'geoboundaries')?.id;
-  const fallbackValue = (defaultGeoBoundaries ?? options[0]?.id) as DataSourceName | undefined;
-  const dataSourceId = normalizedValue ?? fallbackValue ?? options[0]?.id ?? 'openstreetmap';
+  const normalizedValue = normalizeDataSourceName(draftData.batchConfig?.dataSource);
+  const dataSourceId = normalizedValue;
 
   const handleChange = useCallback((next: {
     dataSourceId?: string;
@@ -42,7 +38,7 @@ export const useShapeDataSourceStep = ({ data, onChange }: Args) => {
   }) => {
     const updates: Partial<typeof draftData> = {};
     if (typeof next.dataSourceId !== 'undefined') {
-      const nextSource = (next.dataSourceId as DataSourceName | undefined) ?? fallbackValue;
+      const nextSource = next.dataSourceId as DataSourceName | undefined;
       if (nextSource && nextSource !== draftData.batchConfig?.dataSource) {
         const nodeId = resolveShapeNodeId(draftData);
         if (nodeId) {
@@ -57,7 +53,6 @@ export const useShapeDataSourceStep = ({ data, onChange }: Args) => {
           ...(draftData.batchConfig?.cleanupConfig ?? {}),
         },
       };
-      updates.dataSourceName = nextSource;
     }
     if (typeof next.licenseAgreement !== 'undefined') {
       updates.licenseAgreement = next.licenseAgreement;
@@ -68,7 +63,7 @@ export const useShapeDataSourceStep = ({ data, onChange }: Args) => {
     if (Object.keys(updates).length) {
       onChange(updates);
     }
-  }, [draftData, fallbackValue, onChange]);
+  }, [draftData, onChange]);
 
   return {
     options,

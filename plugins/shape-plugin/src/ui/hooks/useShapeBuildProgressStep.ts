@@ -540,7 +540,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     ).isValid
   ), [data?.batchConfig]);
   const hasSelection = summarizeCheckboxState(selectedArrayByCountries).hasSelection;
-  const hasDataSource = Boolean(data?.batchConfig?.dataSource ?? data?.dataSourceName);
+  const hasDataSource = Boolean(data?.batchConfig?.dataSource);
   const canStartOrResume = !isStartPending && normalizedBuildStatus !== 'running'
     && hasDataSource
     && hasSelection

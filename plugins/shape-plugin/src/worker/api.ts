@@ -92,9 +92,11 @@ const buildBatchSessionConfig = (batchConfig: BatchConfig, draft?: DraftLike): B
   } : undefined) ?? DEFAULT_PROCESSING_CONFIG.extract2Config;
   const tileConfig = batchConfig.tileConfig ?? DEFAULT_PROCESSING_CONFIG.tileConfig;
   const cleanupConfig = batchConfig.cleanupConfig ?? DEFAULT_PROCESSING_CONFIG.cleanupConfig;
-  const resolvedDataSource =
+  const resolvedDataSource = requireDataSourceName(
     batchConfig.dataSource
-    ?? toDataSourceName(draft?.draftData?.batchConfig?.dataSource ?? 'naturalearth');
+    ?? draft?.draftData?.batchConfig?.dataSource,
+    'buildBatchSessionConfig',
+  );
 
   return {
     dataSource: resolvedDataSource,
@@ -405,40 +407,39 @@ export const shapeBatchAPI = {
     return SHAPE_DATA_SOURCES;
   },
 
-  getCountryMetadata: async (nodeId: NodeId, dataSource: string | DataSourceName): Promise<CountryMetadata[]> => {
-    const normalized = toDataSourceName(dataSource);
-    if (normalized === 'openstreetmap') {
+  getCountryMetadata: async (nodeId: NodeId, dataSource: DataSourceName): Promise<CountryMetadata[]> => {
+    if (dataSource === 'openstreetmap') {
       throw new Error('OpenStreetMap is not supported in Step3 country selection.');
     }
-    const data = await metadataLoader.loadMetadata(normalized, nodeId);
+    const data = await metadataLoader.loadMetadata(dataSource, nodeId);
     if (Array.isArray(data) && data.length > 0) return data;
-    throw new Error(`No country metadata returned for data source: ${normalized}`);
+    throw new Error(`No country metadata returned for data source: ${dataSource}`);
   },
 
   generateDownloadTaskPayloads: async (
     nodeId: NodeId,
-    dataSource: string,
+    dataSource: DataSourceName,
     countries: string[],
     adminLevels: number[],
   ): Promise<DownloadTaskPayload[]> => {
+    const resolvedDataSource = requireDataSourceName(dataSource, 'generateDownloadTaskPayloads');
     // Get country metadata first
-    const dataSourceName = toDataSourceName(dataSource);
-    const preferredFormat = getPreferredCountryCodeFormat(dataSourceName);
+    const preferredFormat = getPreferredCountryCodeFormat(resolvedDataSource);
     const normalizedCountries = await Promise.all(
       countries.map((code) => normalizeCountryCodeFormat(code, preferredFormat)),
     );
-    const countryMetadata = await shapeBatchAPI.getCountryMetadata(nodeId, dataSourceName);
-    return generateDownloadTaskPayloads(dataSourceName, normalizedCountries, adminLevels, countryMetadata);
+    const countryMetadata = await shapeBatchAPI.getCountryMetadata(nodeId, resolvedDataSource);
+    return generateDownloadTaskPayloads(resolvedDataSource, normalizedCountries, adminLevels, countryMetadata);
   },
 
   generateDownloadTaskPayloadsFromSelection: async (
     nodeId: NodeId,
-    dataSource: string,
-    selectedArrayByCountries: SelectedArrayByCountries | undefined,
+    dataSource: DataSourceName,
+    selectedArrayByCountries: SelectedArrayByCountries,
   ): Promise<DownloadTaskPayload[]> => {
-    const dataSourceName = toDataSourceName(dataSource);
-    const countryMetadata = await shapeBatchAPI.getCountryMetadata(nodeId, dataSourceName);
-    const strategy = resolveDownloadStageStrategy(dataSourceName);
+    const resolvedDataSource = requireDataSourceName(dataSource, 'generateDownloadTaskPayloadsFromSelection');
+    const countryMetadata = await shapeBatchAPI.getCountryMetadata(nodeId, resolvedDataSource);
+    const strategy = resolveDownloadStageStrategy(resolvedDataSource);
     return strategy.buildDownloadTaskPayloads({
       selectedArrayByCountries,
       countryMetadata,
@@ -452,22 +453,19 @@ export const shapeBatchAPI = {
   validateSelection: async (
     countries: string[],
     adminLevels: number[],
-    dataSource: string,
+    dataSource: DataSourceName,
   ): Promise<ShapeStepValidationResult> => {
     const errors: string[] = [];
     const warnings: string[] = [];
-    const dataSourceName = toDataSourceName(dataSource);
-
+    if (!isDataSourceName(dataSource)) {
+      errors.push('Invalid data source selected');
+    }
     if (countries.length === 0) {
       errors.push('At least one country must be selected');
     }
 
     if (adminLevels.length === 0) {
       errors.push('At least one administrative level must be selected');
-    }
-
-    if (!SHAPE_DATA_SOURCES.find((ds: DataSourceConfig) => ds.name === dataSourceName)) {
-      errors.push('Invalid data source selected');
     }
 
     if (countries.length > 10) {
@@ -980,12 +978,12 @@ export const shapeBatchAPI = {
   },
 };
 
-function toDataSourceName(value: string | DataSourceName): DataSourceName {
+function requireDataSourceName(value: unknown, context: string): DataSourceName {
+  if (typeof value !== 'string') {
+    throw new Error(`[shape-plugin] ${context} requires a data source name.`);
+  }
   if (isDataSourceName(value)) return value;
-  const normalized = value.trim().toLowerCase();
-  if (isDataSourceName(normalized)) return normalized;
-  console.warn('[shape-plugin] Unknown data source name:', value, '—fallback to naturalearth');
-  return 'naturalearth';
+  throw new Error(`[shape-plugin] ${context} received invalid data source: ${value}`);
 }
 
 function isDataSourceName(value: string): value is DataSourceName {

@@ -106,9 +106,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   }, []);
   const workerClient = workerClientHook ? workerClientHook() : null;
   const selectionMatrix = previewDraft.selectedArrayByCountries;
-  const selectionDataSource = normalizeDataSourceName(
-    previewDraft.batchConfig?.dataSource ?? previewDraft.dataSourceName,
-  );
+  const selectionDataSource = normalizeDataSourceName(previewDraft.batchConfig?.dataSource);
 
   useEffect(() => {
     let cancelled = false;
@@ -222,13 +220,14 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   useEffect(() => {
     let cancelled = false;
     const run = async () => {
-      if (!workerClient || !selectionDataSource || !selectionMatrix) {
+      if (!workerClient || !selectionDataSource || !selectionMatrix || !activeNodeId) {
         setSelectionMetadata([]);
         return;
       }
       try {
         const api = workerClient.getAPI();
         const payloads = await api.generateShapeDownloadTaskPayloadsFromSelection(
+          activeNodeId,
           selectionDataSource,
           selectionMatrix,
         );
@@ -246,7 +245,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     return () => {
       cancelled = true;
     };
-  }, [selectionDataSource, selectionMatrix, workerClient]);
+  }, [activeNodeId, selectionDataSource, selectionMatrix, workerClient]);
 
   const loadMetadataRows = useCallback(
     (targetNodeId: NodeId) =>

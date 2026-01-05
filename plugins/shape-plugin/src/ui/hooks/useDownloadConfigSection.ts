@@ -108,7 +108,7 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
     return () => {
       cancelled = true;
     };
-  }, [config, loadCounts]);
+  }, [loadCounts]);
 
   useEffect(() => {
     let cancelled = false;

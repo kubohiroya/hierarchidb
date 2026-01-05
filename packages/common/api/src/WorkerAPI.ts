@@ -9,6 +9,7 @@ import type {
 } from '@hierarchidb/plugin-service-api';
 import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/location-store';
 import type { RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/route-store';
+import type { ShapeDataSourceName } from '@hierarchidb/plugin-service-api';
 import type { TagAPI } from './TagAPI.js';
 import type { TreeMutationAPI } from './TreeMutationAPI.js';
 import type { TreeQueryAPI } from './TreeQueryAPI.js';
@@ -21,8 +22,6 @@ import type {
 } from './BatchControlAPI.js';
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import type { HeapPressureEvent } from '@hierarchidb/memory';
-
-type ShapeDataSourceName = 'naturalearth' | 'geoboundaries' | 'gadm' | 'openstreetmap';
 
 type ShapeDownloadTaskPayload = {
   url: string;
@@ -83,8 +82,9 @@ export interface WorkerAPI {
   resumeBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<void>;
   getBatchTasks(nodeType: NodeType, nodeId: NodeId): Promise<BatchTaskSummary[]>;
   generateShapeDownloadTaskPayloadsFromSelection(
+    nodeId: NodeId,
     dataSource: ShapeDataSourceName,
-    selectedArrayByCountries: Record<string, boolean[]> | undefined,
+    selectedArrayByCountries: Record<string, boolean[]>,
   ): Promise<ShapeDownloadTaskPayload[]>;
   subscribeBatchProgress(
     nodeType: NodeType,

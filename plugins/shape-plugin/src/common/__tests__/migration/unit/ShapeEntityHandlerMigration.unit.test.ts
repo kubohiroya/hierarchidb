@@ -14,6 +14,7 @@ import type { NodeId } from '@hierarchidb/common-types';
 import { ShapeEntityHandler } from '../../services/ShapeEntityHandler.js';
 import type { ShapeDraft } from '../../types/ShapeEntity.js';
 import type { BatchConfig } from '../../types/BatchConfig.js';
+import { DEFAULT_PROCESSING_CONFIG } from '../../../common/types/constants.js';
 
 const toIso2 = (index: number): string => {
   const first = String.fromCharCode(65 + Math.floor(index / 26));
@@ -40,7 +41,10 @@ describe('ShapeEntityHandler Migration Tests', () => {
     it('新しいShapeエンティティが正常に作成される', async () => {
       //  Given: Shape
       const shapeData = {
-        dataSourceName: 'naturalearth' as const,
+        batchConfig: {
+          ...DEFAULT_PROCESSING_CONFIG,
+          dataSource: 'naturalearth' as const,
+        },
         selectedArrayByCountries: buildSelectionMap(2, 2),
         licenseAgreement: true,
       };
@@ -52,7 +56,7 @@ describe('ShapeEntityHandler Migration Tests', () => {
       expect(createdEntity).toBeDefined();
       expect(createdEntity.id).toBeDefined();
       expect(createdEntity.nodeId).toBe(mockNodeId);
-      expect(createdEntity.dataSourceName).toBe('naturalearth');
+      expect(createdEntity.batchConfig?.dataSource).toBe('naturalearth');
       expect(createdEntity.selectedArrayByCountries).toEqual(buildSelectionMap(2, 2));
       expect(createdEntity.licenseAgreement).toBe(true);
     });
@@ -60,7 +64,10 @@ describe('ShapeEntityHandler Migration Tests', () => {
     it('既存のShapeエンティティが正常に取得される', async () => {
       //  Given: Shape
       await entityHandler.createEntity(mockNodeId, {
-        dataSourceName: 'gadm',
+        batchConfig: {
+          ...DEFAULT_PROCESSING_CONFIG,
+          dataSource: 'gadm',
+        },
         selectedArrayByCountries: buildSelectionMap(1, 3),
         licenseAgreement: true,
       });
@@ -71,13 +78,16 @@ describe('ShapeEntityHandler Migration Tests', () => {
       //  Then:
       expect(retrievedEntity).toBeDefined();
       expect(retrievedEntity?.nodeId).toBe(mockNodeId);
-      expect(retrievedEntity?.dataSourceName).toBe('gadm');
+      expect(retrievedEntity?.batchConfig?.dataSource).toBe('gadm');
     });
 
     it('Shapeエンティティが正常に更新される', async () => {
       //  Given: Shape
       await entityHandler.createEntity(mockNodeId, {
-        dataSourceName: 'naturalearth',
+        batchConfig: {
+          ...DEFAULT_PROCESSING_CONFIG,
+          dataSource: 'naturalearth',
+        },
         selectedArrayByCountries: buildSelectionMap(1, 2),
         licenseAgreement: true,
       });
@@ -97,7 +107,10 @@ describe('ShapeEntityHandler Migration Tests', () => {
     it('Shapeエンティティが正常に削除される', async () => {
       //  Given: Shape
       await entityHandler.createEntity(mockNodeId, {
-        dataSourceName: 'naturalearth',
+        batchConfig: {
+          ...DEFAULT_PROCESSING_CONFIG,
+          dataSource: 'naturalearth',
+        },
         selectedArrayByCountries: buildSelectionMap(1, 2),
         licenseAgreement: true,
       });
@@ -115,7 +128,10 @@ describe('ShapeEntityHandler Migration Tests', () => {
     it('Working Copyが正常に作成される', async () => {
       //  Given: Shape
       const baseEntity = await entityHandler.createEntity(mockNodeId, {
-        dataSourceName: 'naturalearth',
+        batchConfig: {
+          ...DEFAULT_PROCESSING_CONFIG,
+          dataSource: 'naturalearth',
+        },
         selectedArrayByCountries: buildSelectionMap(1, 2),
         licenseAgreement: true,
       });
@@ -151,7 +167,10 @@ describe('ShapeEntityHandler Migration Tests', () => {
     it('Working Copyのコミットが正常に動作する', async () => {
       //  Given:
       await entityHandler.createEntity(mockNodeId, {
-        dataSourceName: 'naturalearth',
+        batchConfig: {
+          ...DEFAULT_PROCESSING_CONFIG,
+          dataSource: 'naturalearth',
+        },
         selectedArrayByCountries: buildSelectionMap(1, 2),
         licenseAgreement: true,
       });
@@ -163,7 +182,10 @@ describe('ShapeEntityHandler Migration Tests', () => {
         isModified: true,
         changes: {
           selectedArrayByCountries: buildSelectionMap(3, 2),
-          dataSourceName: 'geoboundaries',
+          batchConfig: {
+            ...DEFAULT_PROCESSING_CONFIG,
+            dataSource: 'geoboundaries',
+          },
         },
       };
 
@@ -173,7 +195,7 @@ describe('ShapeEntityHandler Migration Tests', () => {
       //  Then: CoreDB
       expect(committedEntity).toBeDefined();
       expect(committedEntity.selectedArrayByCountries).toEqual(buildSelectionMap(3, 2));
-      expect(committedEntity.dataSourceName).toBe('geoboundaries');
+      expect(committedEntity.batchConfig?.dataSource).toBe('geoboundaries');
     });
 
     it('Working Copyの破棄が正常に動作する', async () => {
@@ -200,7 +222,10 @@ describe('ShapeEntityHandler Migration Tests', () => {
     it('BatchConfigが正常に設定される', async () => {
       //  Given: BatchConfig
       await entityHandler.createEntity(mockNodeId, {
-        dataSourceName: 'naturalearth',
+        batchConfig: {
+          ...DEFAULT_PROCESSING_CONFIG,
+          dataSource: 'naturalearth',
+        },
         selectedArrayByCountries: buildSelectionMap(1, 2),
         licenseAgreement: true,
       });
@@ -248,7 +273,10 @@ describe('ShapeEntityHandler Migration Tests', () => {
     it('BatchConfigが正常に取得される', async () => {
       //  Given: BatchConfigShape
       await entityHandler.createEntity(mockNodeId, {
-        dataSourceName: 'naturalearth',
+        batchConfig: {
+          ...DEFAULT_PROCESSING_CONFIG,
+          dataSource: 'naturalearth',
+        },
         selectedArrayByCountries: buildSelectionMap(1, 2),
         licenseAgreement: true,
       });

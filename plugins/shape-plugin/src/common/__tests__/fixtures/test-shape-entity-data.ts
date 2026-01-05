@@ -15,7 +15,6 @@ type EntityId = string & { readonly __brand: 'EntityId' };
 interface ShapeEntity {
   id: EntityId;
   nodeId: NodeId;
-  dataSourceName: string;
   licenseAgreement: boolean;
   batchConfig?: BatchConfig;
   selectedArrayByCountries?: Record<string, boolean[]>;
@@ -109,7 +108,6 @@ export function createTestShapeEntity(): ShapeEntity {
   return {
     id: TEST_ENTITY_ID,
     nodeId: TEST_NODE_ID,
-    dataSourceName: 'geoboundaries',
     licenseAgreement: true,
     batchConfig: createTestBatchConfig(),
     selectedArrayByCountries: {

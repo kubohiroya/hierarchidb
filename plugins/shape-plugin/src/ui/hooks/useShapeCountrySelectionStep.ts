@@ -123,15 +123,7 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
       return typeof value === 'string' ? value : undefined;
     })();
 
-    const dsFromEntityName = typeof (anyData as { dataSourceName?: unknown }).dataSourceName === 'string'
-      ? (anyData as { dataSourceName: string }).dataSourceName
-      : undefined;
-
-    const dsFromDraftName = typeof (draftData as { dataSourceName?: unknown } | undefined)?.dataSourceName === 'string'
-      ? (draftData as { dataSourceName: string }).dataSourceName
-      : undefined;
-
-    const candidate = dsFromDraft ?? dsFromEntity ?? dsFromDraftName ?? dsFromEntityName;
+    const candidate = dsFromDraft ?? dsFromEntity;
     const normalized = normalizeDataSourceName(candidate);
 
     if (!normalized) {
@@ -139,7 +131,6 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
       // Surface as an error and skip network work.
       console.warn('[shape-plugin][step3] dataSource missing', {
         batchConfigKeys: batchConfig ? Object.keys(batchConfig) : null,
-        dataSourceName: (anyData as { dataSourceName?: unknown }).dataSourceName,
         draftDataKeys: draftData ? Object.keys(draftData) : null,
       });
       return {

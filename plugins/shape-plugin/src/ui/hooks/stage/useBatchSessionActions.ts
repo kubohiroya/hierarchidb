@@ -161,9 +161,7 @@ export const useBatchSessionActions = ({
       ...(data?.batchConfig ?? {}),
       ...(patch?.batchConfig ?? {}),
     };
-    const resolvedDataSource = normalizeDataSourceName(
-      baseBatchConfig.dataSource ?? data?.dataSourceName,
-    );
+    const resolvedDataSource = normalizeDataSourceName(baseBatchConfig.dataSource);
     const resolvedBatchConfig = resolvedDataSource
       ? { ...baseBatchConfig, dataSource: resolvedDataSource }
       : baseBatchConfig;
@@ -190,7 +188,6 @@ export const useBatchSessionActions = ({
           ...(data ?? {}),
           ...(patch ?? {}),
           batchConfig: mergedBatchConfig,
-          dataSourceName: resolvedDataSource ?? data?.dataSourceName,
         } as Record<string, unknown>,
       });
       console.debug(`${debugScope} saveDraftBeforeBatch:complete`, {
@@ -228,9 +225,11 @@ export const useBatchSessionActions = ({
       notify.error('Worker client is unavailable.');
       return null;
     }
-    const resolvedDataSource = normalizeDataSourceName(
-      data?.batchConfig?.dataSource ?? data?.dataSourceName,
-    );
+    if (!nodeId) {
+      notify.warning('NodeId is missing.');
+      return null;
+    }
+    const resolvedDataSource = normalizeDataSourceName(data?.batchConfig?.dataSource);
     if (!resolvedDataSource) {
       notify.warning('Data source is missing.');
       return null;
@@ -242,10 +241,11 @@ export const useBatchSessionActions = ({
     }
     const api = workerClient.getAPI();
     return api.generateShapeDownloadTaskPayloadsFromSelection(
+      nodeId,
       resolvedDataSource,
       selectionRecord,
     ) as Promise<DownloadTaskPayload[]>;
-  }, [data?.batchConfig?.dataSource, data?.dataSourceName, data?.selectedArrayByCountries, workerClient]);
+  }, [data?.batchConfig?.dataSource, data?.selectedArrayByCountries, nodeId, workerClient]);
 
   const handleStartOrResume = useCallback(async (): Promise<boolean> => {
     console.debug(`${debugScope} startOrResume:click`, {

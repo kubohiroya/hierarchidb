@@ -1,3 +1,33 @@
+2085) fix/ui/tile-config-section-render-loop (P1) — 完了 (2026-01-05)
+- ブランチ名: fix/ui/tile-config-section-render-loop
+- 依存: なし
+- 受け入れ基準: TileConfigSection の Maximum update depth exceeded が解消される／再レンダーが安定し無限ループしない／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx`
+- ロールバック手順: `plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx` の差分を revert し、警告が出ていた状態へ戻す
+- チェックリスト:
+  - TileConfigSection のレンダーループ原因を特定する
+  - 依存配列/状態更新の安定化を実装する
+  - 影響範囲とロールバック手順を更新する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-05 14:35 JST TileConfigSection の Maximum update depth エラー対応に着手。
+  - done: 2026-01-05 14:36 JST zoomBreakpoints の比較を値ベースに修正し、同期ループを抑止。
+
+2084) fix/ui/download-retry-controls-render-loop (P1) — 完了 (2026-01-05)
+- ブランチ名: fix/ui/download-retry-controls-render-loop
+- 依存: なし
+- 受け入れ基準: DownloadRetryControls の Maximum update depth exceeded が解消される／再レンダーが安定し無限ループしない／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/hooks/useDownloadConfigSection.ts`
+- ロールバック手順: `plugins/shape-plugin/src/ui/hooks/useDownloadConfigSection.ts` の差分を revert し、警告が出ていた状態へ戻す
+- チェックリスト:
+  - DownloadRetryControls のレンダーループ原因を特定する
+  - 依存配列/状態更新の安定化を実装する
+  - 影響範囲とロールバック手順を更新する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-05 14:33 JST DownloadRetryControls の Maximum update depth エラー対応に着手。
+  - done: 2026-01-05 14:34 JST useDownloadConfigSection の loadCounts effect 依存を整理し、無限レンダーを抑止。
+
 2068) docs/shape-plugin/geojson-vector-tile-build-flow (P2) — 完了 (2026-01-09)
 - ブランチ名: docs/shape-plugin/geojson-vector-tile-build-flow
 - 依存: なし
@@ -141,7 +171,7 @@
   - start: 2026-01-10 13:05 JST extract1入力をchunk-store決め打ちへ修正・downloadのrawBuffers廃止方針で対応を進める。
   - start: 2026-01-10 13:30 JST extract1入力のchunk-store固定化とrawBuffers廃止、nodeId必須化の整理に着手。
 
-2078) chore/docs/agents-no-fallback (P2) — 進行中 (2026-01-10)
+2078) chore/docs/agents-no-fallback (P2) — 完了 (2026-01-10)
 - ブランチ名: chore/docs/agents-no-fallback
 - 依存: なし
 - 受け入れ基準: AGENTS.md に「ユーザー指示なしのフォールバック実装を禁止」ルールを明記する／TASKS.md に運用ログを記載する
@@ -150,6 +180,7 @@
   - 運用ログ start を追記する
 - 運用ログ：
   - start: 2026-01-10 13:20 JST フォールバック実装禁止ルールをAGENTS.mdへ反映する対応に着手。
+  - done: 2026-01-10 18:50 JST AGENTS.md にフォールバック禁止ルールを追記済みであることを確認。
 
 2079) feat/shape/step6-progressive-display (P1) — 完了 (2026-01-10)
 - ブランチ名: feat/shape/step6-progressive-display
@@ -213,6 +244,108 @@
 - 運用ログ：
   - start: 2026-01-10 17:00 JST vectortile 入力型の厳格化とフォールバック撤去に着手。
   - done: 2026-01-10 17:20 JST VectorTileAdapter の {} フォールバックを撤去し、ExtractSourceBuffer 参照を統一。検証: 未実施。
+
+2083) fix/shape/datasource-nonempty (P1) — 完了 (2026-01-10)
+- ブランチ名: fix/shape/datasource-nonempty
+- 依存: なし
+- 受け入れ基準: toDataSourceName から trim を撤去し、入力型を非空文字列に限定する／generateDownloadTaskPayloadsFromSelection 経路で dataSource が undefined/空にならないよう型と検証を修正する／フォールバック禁止を維持する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/common/types`, `plugins/shape-plugin/src/services`（必要に応じて）
+- ロールバック手順: 上記ファイルの差分を revert し、従来の toDataSourceName/入力処理へ戻す
+- チェックリスト:
+  - dataSource の型を非空文字列に制約する
+  - toDataSourceName の trim 依存を撤去する
+  - generateDownloadTaskPayloadsFromSelection の入力検証を明示化する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 18:05 JST dataSource の非空型化と trim 撤去に着手。
+  - start: 2026-01-10 18:40 JST dataSource 必須化の整理とAPI型更新に再着手。
+  - done: 2026-01-10 18:55 JST dataSource の trim/フォールバック撤去とAPI境界の必須化を反映。検証: 未実施。
+
+2084) fix/shape/download-payloads-require-nodeid (P1) — 完了 (2026-01-10)
+- ブランチ名: fix/shape/download-payloads-require-nodeid
+- 依存: なし
+- 受け入れ基準: generateShapeDownloadTaskPayloadsFromSelection の引数に nodeId を追加し、UI→worker→shapeBatchAPI の呼び出しで nodeId が渡される／dataSource が欠落したまま呼ばれない／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/common/api/src/WorkerAPI.ts`, `app/src/worker-runtime/worker.ts`, `plugins/shape-plugin/src/ui/hooks/*`（必要に応じて）
+- ロールバック手順: 上記ファイルの差分を revert し、旧シグネチャへ戻す
+- チェックリスト:
+  - WorkerAPI のシグネチャに nodeId を追加する
+  - worker-runtime で shapeBatchAPI へ nodeId を渡す
+  - UI 呼び出し側で nodeId を必須化する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 19:10 JST generateShapeDownloadTaskPayloadsFromSelection の nodeId 欠落修正に着手。
+  - done: 2026-01-10 19:20 JST WorkerAPI/worker-runtime/UI 呼び出しに nodeId を追加。検証: 未実施。
+
+2085) refactor/shape/typed-download-payloads-entry (P1) — 完了 (2026-01-10)
+- ブランチ名: refactor/shape/typed-download-payloads-entry
+- 依存: なし
+- 受け入れ基準: generateShapeDownloadTaskPayloadsFromSelection の引数が nodeId/DataSourceName 必須で型保証される／UI からの呼び出しが dataSource 未確定時にビルドで落ちる形になる／worker 入口で string を受け取らない型になる／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/common/api/src/WorkerAPI.ts`, `app/src/worker-runtime/worker.ts`, `plugins/shape-plugin/src/ui/hooks/*`, `plugins/shape-plugin/src/worker/public.ts`（必要に応じて）
+- ロールバック手順: 上記ファイルの差分を revert し、旧シグネチャと緩い型へ戻す
+- チェックリスト:
+  - WorkerAPI の型を DataSourceName で固定する
+  - worker-runtime の引数型を更新する
+  - UI 呼び出しで dataSource 未設定を型で禁止する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 19:30 JST generateShapeDownloadTaskPayloadsFromSelection の型厳格化に着手。
+  - done: 2026-01-10 19:45 JST WorkerAPI/worker-runtime/shape worker で nodeId+ShapeDataSourceName 必須化と selection 非optional 化を反映。検証: 未実施。
+
+2086) fix/shape/step3-delete-download-button-refresh (P1) — 完了 (2026-01-10)
+- ブランチ名: fix/shape/step3-delete-download-button-refresh
+- 依存: なし
+- 受け入れ基準: Step3 の「ダウンロード済みファイルを削除(N件)」ボタンが削除後に件数0へ更新され、無効化される／削除完了後に UI 状態が再取得される／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/chunk-store/src/index.ts`（必要に応じて）
+- ロールバック手順: 上記ファイルの差分を revert し、削除後に relation が残る挙動へ戻す
+- チェックリスト:
+  - 削除完了後に download 状態を再取得する
+  - ボタンラベルと disabled が一致する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 20:05 JST Step3 削除ボタンの状態更新修正に着手。
+  - done: 2026-01-10 20:20 JST chunk-store の deleteAllForNode を relation 直接削除に変更し、削除後の件数更新を保証。検証: 未実施。
+
+2087) refactor/shape/remove-legacy-datasource (P1) — 完了 (2026-01-10)
+- ブランチ名: refactor/shape/remove-legacy-datasource
+- 依存: なし
+- 受け入れ基準: dataSourceName のレガシー参照/フォールバックを削除し、batchConfig.dataSource を唯一の参照点にする／未設定時は明示エラーで止まる／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/common/types/ShapeEntity.ts`, `plugins/shape-plugin/src/ui/hooks/*`, `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/services/utils/utils.ts`（必要に応じて）
+- ロールバック手順: 上記ファイルの差分を revert し、dataSourceName の参照を復帰する
+- チェックリスト:
+  - dataSourceName の参照を削除する
+  - batchConfig.dataSource 未設定時に明示エラーで止まる
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 20:35 JST dataSourceName レガシー参照の削除に着手。
+  - done: 2026-01-10 21:05 JST dataSourceName の参照を削除し batchConfig.dataSource に統一。検証: 未実施。
+
+2088) fix/shape/download-stalls-after-two (P1) — 完了 (2026-01-10)
+- ブランチ名: fix/shape/download-stalls-after-two
+- 依存: なし
+- 受け入れ基準: download が2タスクで止まる原因を特定し、必要なら修正する／停止が正常待機の場合は根拠を示す／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/batch/*`, `packages/features/chunk-store/src/index.ts`（必要に応じて）
+- ロールバック手順: 上記ファイルの差分を revert し、旧挙動へ戻す
+- チェックリスト:
+  - download ステージの停止要因を特定する
+  - 必要なら修正し再現を防ぐ
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 21:20 JST download が2タスクで止まる問題の調査に着手。
+  - done: 2026-01-10 21:30 JST NaturalEarth では adminLevel 単位で2タスクに集約される設計であることを確認。検証: 未実施。
+
+2089) fix/shape/geoboundaries-cache-complete (P1) — 進行中 (2026-01-10)
+- ブランチ名: fix/shape/geoboundaries-cache-complete
+- 依存: なし
+- 受け入れ基準: geoboundaries の download でキャッシュヒット時に task を completed に更新できる／0/230 停滞を解消する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `packages/features/chunk-store/src/index.ts`（必要に応じて）
+- ロールバック手順: 上記ファイルの差分を revert し、従来のキャッシュ判定/完了更新に戻す
+- チェックリスト:
+  - cache hit 時の task 更新経路を修正する
+  - download の 0/230 停滞が解消する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 21:45 JST geoboundaries のキャッシュ完了更新不備の調査に着手。
+  - start: 2026-01-10 22:30 JST geoboundaries の download 停滞原因をコードで再調査。
 
 2067) fix/ui-dialog/maximize-layout-viewport (P1) — 完了 (2026-01-05)
 - ブランチ名: fix/ui-dialog/maximize-layout-viewport

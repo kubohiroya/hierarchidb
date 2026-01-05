@@ -11,6 +11,7 @@ import type {
   BatchSessionStatus,
   BatchTaskSummary,
 } from '@hierarchidb/common-api';
+import type { ShapeDataSourceName } from '@hierarchidb/plugin-service-api';
 import {
   getAllRuntimeExports,
   WorkerInitializationReporter,
@@ -55,8 +56,9 @@ type BatchProgressSubscriber = (nodeId: NodeId, callback: (event: BatchProgressE
 type ShapeBatchAPI = {
   startBatchProcess: (draftId: NodeId, batchConfig: unknown, downloadTaskPayloads: unknown[]) => Promise<NodeId>;
   generateDownloadTaskPayloadsFromSelection?: (
-    dataSource: string,
-    selectedArrayByCountries: Record<string, boolean[]> | undefined,
+    nodeId: NodeId,
+    dataSource: ShapeDataSourceName,
+    selectedArrayByCountries: Record<string, boolean[]>,
   ) => Promise<unknown[]>;
   getDraft?: (draftId: NodeId) => Promise<unknown>;
   getBatchSession?: (nodeId: NodeId) => Promise<unknown>;
@@ -354,14 +356,15 @@ reporter.reportStepProgress('Load Comlink', 0);
           return status;
         },
         generateShapeDownloadTaskPayloadsFromSelection: async (
-          dataSource: string,
-          selectedArrayByCountries: Record<string, boolean[]> | undefined,
+          nodeId: NodeId,
+          dataSource: ShapeDataSourceName,
+          selectedArrayByCountries: Record<string, boolean[]>,
         ): Promise<unknown[]> => {
           const api = resolveShapeBatchApiOrThrow(SHAPE_NODE_TYPE);
           if (!api.generateDownloadTaskPayloadsFromSelection) {
             throw new Error('[worker bootstrap] generateDownloadTaskPayloadsFromSelection is not available');
           }
-          return api.generateDownloadTaskPayloadsFromSelection(dataSource, selectedArrayByCountries);
+          return api.generateDownloadTaskPayloadsFromSelection(nodeId, dataSource, selectedArrayByCountries);
         },
         getBatchSessionStatus: async (nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus> => {
           const api = resolveShapeBatchApiOrThrow(nodeType);

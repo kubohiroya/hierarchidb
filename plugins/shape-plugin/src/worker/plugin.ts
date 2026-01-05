@@ -27,8 +27,8 @@ export const ShapeWorkerPlugin = {
   // Database schema definition
   database: {
     tableName: 'shapes',
-    schema: '&id, nodeId, name, dataSourceName, processingStatus, createdAt, updatedAt',
-    version: 1,
+    schema: '&id, nodeId, name, processingStatus, createdAt, updatedAt',
+    version: 2,
 
     // Additional tables for shape-plugin data
     additionalTables: {

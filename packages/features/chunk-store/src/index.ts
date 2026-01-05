@@ -239,16 +239,12 @@ export class DexieChunkStore<T> implements StoragePort {
     if (relations.length === 0) return 0;
     let deleted = 0;
     for (const relation of relations) {
-      const file = await this.files.get(relation.metadataId);
-      const cacheKey = file?.cacheKey;
-      if (cacheKey) {
-        await this.deleteForNode(nodeId, cacheKey);
+      await this.relations.delete([nodeId, relation.metadataId]);
+      const remaining = await this.relations.where('metadataId').equals(relation.metadataId).count();
+      if (remaining > 0) {
         deleted += 1;
         continue;
       }
-      await this.relations.delete([nodeId, relation.metadataId]);
-      const remaining = await this.relations.where('metadataId').equals(relation.metadataId).count();
-      if (remaining > 0) continue;
       await this.files.delete(relation.metadataId);
       await this.chunks.where('metadataId').equals(relation.metadataId).delete();
       await this.keys.where('metadataId').equals(relation.metadataId).delete();

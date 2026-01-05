@@ -2,7 +2,7 @@ import type { NodeId } from '@hierarchidb/common-types';
 import type { Geometry } from 'geojson';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import type { TabularDataResult } from '@hierarchidb/ui-tabular';
-import type { BatchConfig, DataSourceName } from './index.js';
+import type { BatchConfig } from './index.js';
 import type { ISO2 } from '@hierarchidb/common-types';
 
 export interface ShapeEntity {
@@ -24,10 +24,7 @@ export interface ShapeEntity {
   licenseAgreement?: boolean;
   licenseAgreedAt?: string;
 
-  // Data source (legacy, derived from batchConfig.dataSource)
-  dataSourceName?: DataSourceName;
-
-// Processing Configuration
+  // Processing Configuration
   batchConfig?: BatchConfig;
 
 // Country & Admin Selection

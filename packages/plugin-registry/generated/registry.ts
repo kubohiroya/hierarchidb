@@ -861,11 +861,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "inherits": "folder",
           "fields": [
             {
-              "name": "dataSourceName",
-              "type": "string",
-              "required": true
-            },
-            {
               "name": "selectedArrayByCountries",
               "type": "array",
               "required": true

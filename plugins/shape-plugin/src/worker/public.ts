@@ -8,6 +8,7 @@ import type {
   BatchTask,
   CountryMetadata,
   DataSourceConfig,
+  DataSourceName,
   BatchConfig,
   ProcessingStatus,
   ShapeBatchCommand,
@@ -30,24 +31,24 @@ export interface ShapeBatchAPI {
 
   // Data sources
   getDataSourceConfigs(): Promise<DataSourceConfig[]>;
-  getCountryMetadata(nodeId: NodeId, dataSource: string): Promise<CountryMetadata[]>;
+  getCountryMetadata(nodeId: NodeId, dataSource: DataSourceName): Promise<CountryMetadata[]>;
   generateDownloadTaskPayloads(
     nodeId: NodeId,
-    dataSource: string,
+    dataSource: DataSourceName,
     countries: string[],
     adminLevels: number[],
   ): Promise<DownloadTaskPayload[]>;
   generateDownloadTaskPayloadsFromSelection(
     nodeId: NodeId,
-    dataSource: string,
-    selectedArrayByCountries: SelectedArrayByCountries | undefined,
+    dataSource: DataSourceName,
+    selectedArrayByCountries: SelectedArrayByCountries,
   ): Promise<DownloadTaskPayload[]>;
 
   // Validation / estimation
   validateSelection(
     countries: string[],
     adminLevels: number[],
-    dataSource: string,
+    dataSource: DataSourceName,
   ): Promise<ShapeStepValidationResult>;
 
   // Batch processing (Draft-based)

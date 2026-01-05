@@ -31,9 +31,8 @@ const stripNil = <T extends object>(value?: T | null): Partial<T> => {
 
 export function normalizeDataSourceName(value?: string | null): DataSourceName | undefined {
   if (typeof value !== 'string') return undefined;
-  const normalized = value.trim().toLowerCase();
-  return KNOWN_DATA_SOURCE_NAMES.has(normalized as DataSourceName)
-    ? (normalized as DataSourceName)
+  return KNOWN_DATA_SOURCE_NAMES.has(value as DataSourceName)
+    ? (value as DataSourceName)
     : undefined;
 }
 
@@ -73,9 +72,8 @@ type ShapeDraft = {
 
 export function createDraftFromEntity(entity: ShapeEntity): ShapeDraft {
   const normalizedDataSourceName =
-    normalizeDataSourceName(entity.batchConfig?.dataSource ?? entity.dataSourceName)
-    ?? entity.batchConfig?.dataSource
-    ?? entity.dataSourceName;
+    normalizeDataSourceName(entity.batchConfig?.dataSource)
+    ?? entity.batchConfig?.dataSource;
   return {
     draftData: {
       ...entity,
@@ -83,7 +81,6 @@ export function createDraftFromEntity(entity: ShapeEntity): ShapeDraft {
         ...entity.batchConfig,
         dataSource: normalizedDataSourceName,
       },
-      dataSourceName: normalizedDataSourceName,
     },
   };
 }
@@ -91,16 +88,14 @@ export function createDraftFromEntity(entity: ShapeEntity): ShapeDraft {
 export function mapDraftToUpdates(draft: ShapeDraft): Partial<ShapeEntity> {
   const draftData = draft.draftData;
   const normalizedDataSourceName =
-    normalizeDataSourceName(draftData.batchConfig?.dataSource ?? draftData.dataSourceName)
-    ?? draftData.batchConfig?.dataSource
-    ?? draftData.dataSourceName;
+    normalizeDataSourceName(draftData.batchConfig?.dataSource)
+    ?? draftData.batchConfig?.dataSource;
   return {
     ...draftData,
     batchConfig: {
       ...draftData.batchConfig,
       dataSource: normalizedDataSourceName,
     },
-    dataSourceName: normalizedDataSourceName,
   };
 }
 

@@ -8,7 +8,7 @@ import { NaturalEarthStrategy } from '../NaturalEarthStrategy.js';
 import { GADMStrategy } from '../GADMStrategy.js';
 import { OpenStreetMapStrategy } from '../OpenStreetMapStrategy.js';
 import { GeoBoundariesStrategy } from '../GeoBoundariesStrategy.js';
-import type { ShapeEntity } from '../../../_obsolate_common/types/ShapeEntity.js';
+import type { ShapeEntity } from '../../../common/types/ShapeEntity.js';
 
 // Mock AuthRecoveryService used by authFetch so strategies avoid real network
 vi.mock('@hierarchidb/auth-recovery', () => {
@@ -56,6 +56,40 @@ const mockFetch = vi.mocked(fetch);
 
 // (Removed unused mock fixtures)
 
+const minimalBatchConfig = {
+  dataSource: 'naturalearth' as const,
+  downloadConfig: {
+    maxConcurrent: 1,
+    retryAttempts: 1,
+    retryDelay: 1,
+    timeoutMs: 1000,
+  },
+  extract1Config: {
+    workers: 1,
+    tolerance: 0.01,
+    featureFilterMethod: 'hybrid' as const,
+    areaThreshold: 1,
+    minVertexCountForAreaFilter: 1,
+    aspectRatioThreshold: 1,
+  },
+  extract2Config: {
+    workers: 1,
+    tolerance: 0.01,
+    quantize: 1,
+    enablePerFeatureExtraction: true,
+  },
+  tileConfig: {
+    workers: 1,
+    minZoom: 0,
+    maxZoom: 0,
+  },
+  cleanupConfig: {
+    deleteDownloadedFiles: false,
+    deleteStage1Cache: false,
+    deleteStage2Cache: false,
+  },
+};
+
 class TestStrategy extends BaseDataSourceStrategy<any, ShapeEntity[]> {
   readonly id = 'test-strategy';
   readonly name = 'Test Strategy';
@@ -84,7 +118,7 @@ class TestStrategy extends BaseDataSourceStrategy<any, ShapeEntity[]> {
       // Cast string to branded ids for test purposes
       id: 'test-entity-1' as unknown as any,
       nodeId: 'test-node-1' as unknown as any,
-      dataSourceName: 'naturalearth',
+      batchConfig: { ...minimalBatchConfig, dataSource: 'naturalearth' },
       licenseAgreement: true,
       selectedArrayByCountries: { US: [true] },
     };
@@ -137,7 +171,7 @@ describe('DataSourceStrategy', () => {
       const data: ShapeEntity[] = [{
         id: 'test' as unknown as any,
         nodeId: 'node' as unknown as any,
-        dataSourceName: 'naturalearth',
+        batchConfig: { ...minimalBatchConfig, dataSource: 'naturalearth' },
         licenseAgreement: true,
         selectedArrayByCountries: {},
       }];
@@ -157,7 +191,7 @@ describe('DataSourceStrategy', () => {
       const data = [{
         id: 'test' as unknown as any,
         nodeId: 'node' as unknown as any,
-        dataSourceName: 'naturalearth',
+        batchConfig: { ...minimalBatchConfig, dataSource: 'naturalearth' },
         licenseAgreement: true,
         selectedArrayByCountries: {},
       }] as ShapeEntity[];
