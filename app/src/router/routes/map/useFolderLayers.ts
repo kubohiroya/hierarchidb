@@ -292,12 +292,15 @@ export const useFolderLayers = ({
           }
 
           if (node.nodeType === 'shape') {
+            const data = node.data as { batchConfig?: { dataSource?: string } } | null;
+            const dataSourceName = data?.batchConfig?.dataSource;
             const featureState = featureStateByStyleType.choropleth;
             const layerId = `resource-layer-${node.id}`;
             const sourceId = `resource-source-${node.id}`;
             shapeEntries.push({
               nodeId: String(node.id),
               nodeType: 'shape',
+              dataSourceName,
               absolutePath: withLayerOrder('shape', absolutePath, String(node.id)),
               dbName: getDBName('shape'),
               tileDataProvider: async (z, x, y, tileNodeId) => {
@@ -319,7 +322,12 @@ export const useFolderLayers = ({
           }
 
           if (node.nodeType === 'location') {
-            const data = node.data as { processingStatus?: string; features?: Array<{ position?: { lat?: number; lon?: number } }> } | null;
+            const data = node.data as {
+              processingStatus?: string;
+              dataSource?: string;
+              features?: Array<{ position?: { lat?: number; lon?: number } }>;
+            } | null;
+            const dataSourceName = data?.dataSource;
             if (data?.processingStatus) {
               const featureState = featureStateByStyleType.points;
               const layerId = `resource-layer-${node.id}`;
@@ -327,6 +335,7 @@ export const useFolderLayers = ({
               locationEntries.push({
                 nodeId: String(node.id),
                 nodeType: 'location',
+                dataSourceName,
                 absolutePath: withLayerOrder('location', absolutePath, String(node.id)),
                 dbName: getDBName('location'),
                 tileDataProvider: async (z, x, y, tileNodeId) => {
@@ -353,7 +362,8 @@ export const useFolderLayers = ({
           }
 
           if (node.nodeType === 'route') {
-            const data = node.data as { processingStatus?: string } | null;
+            const data = node.data as { processingStatus?: string; dataSourceName?: string } | null;
+            const dataSourceName = data?.dataSourceName;
             if (data?.processingStatus) {
               const featureState = featureStateByStyleType.lines;
               const layerId = `resource-layer-${node.id}`;
@@ -361,6 +371,7 @@ export const useFolderLayers = ({
               routeEntries.push({
                 nodeId: String(node.id),
                 nodeType: 'route',
+                dataSourceName,
                 absolutePath: withLayerOrder('route', absolutePath, String(node.id)),
                 dbName: getDBName('route'),
                 tileDataProvider: async (z, x, y) => {

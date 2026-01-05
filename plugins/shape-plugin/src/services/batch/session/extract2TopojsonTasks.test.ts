@@ -64,6 +64,8 @@ describe('buildExtract2TasksWithTopoJSON', () => {
         } satisfies ShapeExtract1TaskInputData],
       ]),
       zoomRanges,
+      vectorTileBuffer: 256,
+      vectorTileExtent: 4096,
       scaleTolerance: (zoomMax) => zoomMax * 0.1,
       buildTaskId: (_stage, details) => `id-${details.featureGroupId}-${details.zoomRangeLabel ?? 'none'}`,
       resolveTaskContinent: (input) => input?.continent,

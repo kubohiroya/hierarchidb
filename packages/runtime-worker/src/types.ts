@@ -1,4 +1,5 @@
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
+import type { FeatureMetadataRow } from '@hierarchidb/vectortile-store';
 
 export type VectorTileProgress = {
   total: number;
@@ -94,6 +95,23 @@ export interface ExtractWorkerAPI {
 }
 
 export interface VectorTileWorkerAPI {
+  storeTiles(
+    nodeId: NodeId,
+    nodeType: string,
+    tiles: Array<{
+      z: number;
+      x: number;
+      y: number;
+      data: Uint8Array;
+      size: number;
+      contentType?: string;
+      timestamp?: number;
+    }>,
+    metadata?: {
+      featureMetadata?: FeatureMetadataRow[];
+      metadataReplace?: boolean;
+    },
+  ): Promise<{ tilesStored: number }>;
   generateTiles(
     inputBufferId: string,
     config: {

@@ -67,6 +67,20 @@ export interface ShapeTileIdToBufferRelation {
   createdAt: number;
 }
 
+export interface ShapeGeojsonVtIndexRecord {
+  id: string;
+  nodeId: NodeId;
+  bufferId: string;
+  index: Record<string, unknown>;
+  options: {
+    extent: number;
+    buffer: number;
+    indexMaxZoom: number;
+    promoteId: string;
+  };
+  createdAt: number;
+}
+
 export interface ShapeEphemeralSessionRecord {
   nodeId: NodeId;
   status?: string;

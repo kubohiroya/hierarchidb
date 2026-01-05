@@ -7,6 +7,7 @@ import type React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Snackbar } from '@mui/material';
 import type { MapLibreGeoJSONFeature, MapLibreMapInstance, MapLibreStyle } from '../types/maplibre-public.js';
+import type { MapAttributionItem } from '../types/attribution.js';
 import type { FeatureCollection } from 'geojson';
 import { VectorTileLayer } from './VectorTileLayer.js';
 import {
@@ -30,6 +31,7 @@ type LayerStyleOverrides = Partial<Record<MapLayerType, Record<string, unknown>>
 export type ResourceVectorLayer = VectorTileDataSource & {
   nodeId: string;
   nodeType: 'shape' | 'location' | 'route';
+  dataSourceName?: string;
   absolutePath?: string;
   layerConfig?: VectorTileLayerConfig;
 };
@@ -53,6 +55,7 @@ export type ResourceLayerMapProps = BaseMapProps & {
   styleOverrides?: Record<string, unknown>;
   styleOverridesByType?: LayerStyleOverrides;
   highlightOverridesByType?: LayerStyleOverrides;
+  attributionItems?: MapAttributionItem[];
   controls?: MapLibreMapProps['controls'];
   hoveredFeatures?: MapLibreGeoJSONFeature[];
   snackbar?: {
@@ -112,11 +115,26 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
     mapStyleUrl,
     mapStyleObject,
     onLoad,
+    attributionItems,
+    controls,
     ...baseMapProps
   } = props as ResourceLayerMapProps & {
     mapStyleUrl?: string;
     mapStyleObject?: MapLibreStyle;
   };
+
+  const resolvedControls = useMemo(() => {
+    if (!attributionItems || attributionItems.length === 0) return controls;
+    if (controls?.attribution === false) return controls;
+    const existing = typeof controls?.attribution === 'object' ? controls.attribution : {};
+    return {
+      ...controls,
+      attribution: {
+        ...existing,
+        items: attributionItems,
+      },
+    };
+  }, [attributionItems, controls]);
 
   const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
 
@@ -210,6 +228,7 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
         {...baseMapProps}
         {...mapStyleProps}
         onLoad={handleMapLoad}
+        controls={resolvedControls}
       >
         {mapInstance &&
           orderedLayers.map((layer) => {

@@ -1,4 +1,5 @@
 import type {
+  MapAttributionItem,
   MapLibreGeoJSONFeature,
   MapLibreMapInstance,
   MapToggleSelection,
@@ -24,6 +25,9 @@ import { useAtom, useSetAtom } from 'jotai';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useGeolocationImport from 'react-hook-geolocation';
 import { MaplibreExportControl } from '@watergis/maplibre-gl-export';
+import { SHAPE_DATA_SOURCES } from '@hierarchidb/shape-plugin';
+import { resolveLocationAttribution } from '@hierarchidb/location-plugin';
+import { ROUTE_DATA_SOURCES } from '@hierarchidb/route-plugin';
 import {
   mapHoverMatchAtom,
   mapLayerInfoAtom,
@@ -129,6 +133,7 @@ export default function MapPage() {
     () => vectorLayers.map((layer) => layer.layerConfig?.layerId ?? `resource-layer-${layer.nodeId}`),
     [vectorLayers],
   );
+
 
   const layerInfoByNodeType = useMemo(() => {
     const map = new Map<string, MapLayerInfo>();
@@ -392,6 +397,66 @@ export default function MapPage() {
     });
   }, [enabledLocationKinds, enabledRouteModes, locationKinds, routeModeValues, vectorLayers]);
 
+  const attributionItems = useMemo<MapAttributionItem[]>(() => {
+    const items: MapAttributionItem[] = [];
+    const resolveShape = (dataSourceName?: string | null) => {
+      if (!dataSourceName) return null;
+      const normalized = dataSourceName.toLowerCase();
+      const config = SHAPE_DATA_SOURCES.find((source) => source.name.toLowerCase() === normalized);
+      if (!config) return null;
+      return {
+        id: `shape:${config.name}`,
+        label: config.displayName ?? config.name,
+        attribution: config.attribution,
+        license: config.license,
+        licenseUrl: config.licenseUrl,
+      } satisfies MapAttributionItem;
+    };
+    const resolveRoute = (dataSourceName?: string | null) => {
+      if (!dataSourceName) return null;
+      const normalized = dataSourceName.toLowerCase();
+      const config = ROUTE_DATA_SOURCES.find((source) => source.name.toLowerCase() === normalized);
+      if (!config) return null;
+      return {
+        id: `route:${config.name}`,
+        label: config.displayName ?? config.name,
+        attribution: config.attribution,
+        url: config.website,
+        license: config.license,
+        licenseUrl: config.licenseUrl,
+      } satisfies MapAttributionItem;
+    };
+
+    filteredVectorLayers.forEach((layer) => {
+      const dataSourceName = layer.dataSourceName ?? null;
+      if (!dataSourceName) return;
+      if (layer.nodeType === 'shape') {
+        const item = resolveShape(dataSourceName);
+        if (item) items.push(item);
+        return;
+      }
+      if (layer.nodeType === 'route') {
+        const item = resolveRoute(dataSourceName);
+        if (item) items.push(item);
+        return;
+      }
+      if (layer.nodeType === 'location') {
+        const info = resolveLocationAttribution(dataSourceName);
+        if (!info) return;
+        items.push({
+          id: `location:${info.id}`,
+          label: info.label,
+          attribution: info.attribution,
+          url: info.url,
+          license: info.license,
+          licenseUrl: info.licenseUrl,
+        });
+      }
+    });
+
+    return items;
+  }, [filteredVectorLayers]);
+
   const highlightPaintByType = useMemo(() => {
     const searchColor = '#ffd54f';
     const hoverColor = '#ffecb3';
@@ -571,6 +636,7 @@ export default function MapPage() {
         basemapStyles={basemapStyles}
         vectorLayers={filteredVectorLayers}
         geoJsonLayers={geoJsonLayers}
+        attributionItems={attributionItems}
         styleOverridesByType={styleOverridesByType}
         highlightOverridesByType={highlightPaintByType}
         hoveredFeatures={hoveredFeatures}

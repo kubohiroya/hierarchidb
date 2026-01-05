@@ -56,7 +56,8 @@
   "dependencies": {
     "@hierarchidb/shape-store": "workspace:*",
     "@hierarchidb/vectortile-store": "workspace:*",
-    "@hierarchidb/vectortile-orchestrator": "workspace:*"
+    "@hierarchidb/vectortile-orchestrator": "workspace:*",
+    "geojson-vt": "^3.2.1"
   },
   "peerDependencies": {
     "@hierarchidb/auth-recovery": "workspace:*",

@@ -20,6 +20,7 @@ import type { NodeId } from '@hierarchidb/common-types';
 import type {
   MapToggleSelection,
   MapViewState,
+  MapAttributionItem,
   ResourceGeoJsonLayer,
   ResourceVectorLayer,
 } from '@hierarchidb/ui-map';
@@ -38,6 +39,7 @@ import { listLocationPoints } from '../../../services/pointRepository.js';
 import { DataGridPreview } from '@hierarchidb/ui-grid';
 import { LOCATION_TYPE_STYLES } from './locationTypes.js';
 import { getDBName } from '@hierarchidb/util';
+import { resolveLocationAttribution } from '../../../common/datasources/attribution.js';
 
 const KNOWN_LOCATION_TYPES: readonly LocationType[] = [
   'area_centroid',
@@ -98,6 +100,21 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
   const [locationTypeSelection, setLocationTypeSelection] = useState<MapToggleSelection>(() =>
     Object.fromEntries(LOCATION_TYPE_OPTIONS.map((option) => [option.id, true])) as MapToggleSelection
   );
+  const dataSourceAttribution = useMemo(
+    () => resolveLocationAttribution(_draft.dataSource ?? null),
+    [_draft.dataSource],
+  );
+  const attributionItems = useMemo<MapAttributionItem[]>(() => {
+    if (!dataSourceAttribution) return [];
+    return [{
+      id: `location:${dataSourceAttribution.id}`,
+      label: dataSourceAttribution.label,
+      attribution: dataSourceAttribution.attribution,
+      url: dataSourceAttribution.url,
+      license: dataSourceAttribution.license,
+      licenseUrl: dataSourceAttribution.licenseUrl,
+    }];
+  }, [dataSourceAttribution]);
 
   const loadData = useCallback(async () => {
     if (!isMountedRef.current) return;
@@ -413,6 +430,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
                 basemapStyles={[]}
                 vectorLayers={filteredVectorLayers}
                 geoJsonLayers={locationGeoJsonLayers}
+                attributionItems={attributionItems}
                 mapOptions={DEFAULT_MAP_CONFIG.interactionOptions}
               />
             </Box>

@@ -11,6 +11,7 @@ import type {
   ShapeProcessingCacheEntry,
   ShapeEphemeralSessionRecord,
   ShapeTileIdToBufferRelation,
+  ShapeGeojsonVtIndexRecord,
 } from './shapeDbTypes.js';
 
 export interface ShapeEphemeralDBAPI {
@@ -42,6 +43,9 @@ export interface ShapeEphemeralDBAPI {
   listTileIdRelationsByTileId(nodeId: NodeId, tileId: string): Promise<ShapeTileIdToBufferRelation[]>;
   putTileIdRelations(relations: ShapeTileIdToBufferRelation[]): Promise<void>;
   deleteTileIdRelations(nodeId: NodeId): Promise<void>;
+
+  getGeojsonVtIndex(nodeId: NodeId, bufferId: string): Promise<ShapeGeojsonVtIndexRecord | null>;
+  putGeojsonVtIndex(record: ShapeGeojsonVtIndexRecord): Promise<void>;
 
   getSessionRecord(nodeId: NodeId): Promise<ShapeEphemeralSessionRecord | null>;
 

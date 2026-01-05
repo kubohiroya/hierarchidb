@@ -8,6 +8,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { Map as ReactMapLibreMap, MapProvider } from '@vis.gl/react-maplibre';
 import { Snackbar } from '@mui/material';
 import type { MapLibreMapInstance } from '../types/maplibre-public.js';
+import type { MapAttributionControlOptions } from '../types/attribution.js';
 import {
   type BaseMapProps,
   DEFAULT_MAP_CONFIG,
@@ -18,6 +19,7 @@ import {
 } from '../types/unified-map-props.js';
 import { DEFAULT_IDENTIFY_RADIUS, resolveIdentifyCandidates } from '../lib/feature-identification.js';
 import { loadMapLibreModule } from '../utils/maplibre-loader.js';
+import { formatAttributionItems } from '../utils/attribution.js';
 // Load MapLibre CSS only in browser contexts to avoid worker/SSR errors
 if (typeof document !== 'undefined') {
   // dynamic import prevents Vite HMR client from injecting styles in workers
@@ -39,6 +41,7 @@ export type MapLibreMapProps = BaseMapProps & {
       position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
       options?: Record<string, unknown>;
     };
+    attribution?: boolean | MapAttributionControlOptions;
   };
 };
 
@@ -107,6 +110,15 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
           const pos = typeof controls.geolocate === 'object' && controls.geolocate.position ? controls.geolocate.position : 'top-right';
           const opts = typeof controls.geolocate === 'object' && controls.geolocate.options ? controls.geolocate.options : { trackUserLocation: true };
           if (mlib.GeolocateControl) map.addControl(new mlib.GeolocateControl(opts), pos);
+        }
+        const attributionControl = controls.attribution;
+        if (attributionControl) {
+          const options = typeof attributionControl === 'object' ? attributionControl : {};
+          const pos = options.position ?? 'bottom-right';
+          const customAttribution = options.items && options.items.length > 0
+            ? formatAttributionItems(options.items)
+            : undefined;
+          map.addControl(new mlib.AttributionControl({ compact: options.compact ?? true, customAttribution }), pos);
         }
       });
     }
@@ -188,6 +200,7 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
   };
 
   const resolvedMapStyle = (mapStyleObject ?? mapStyleUrl ?? defaultMapStyleUrl) as React.ComponentProps<typeof ReactMapLibreMap>['mapStyle'];
+  const disableDefaultAttribution = Boolean(controls?.attribution);
 
   return (
     <div style={containerStyle}>
@@ -197,6 +210,7 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
           mapStyle={resolvedMapStyle}
           initialViewState={initialViewState}
           viewState={viewState}
+          attributionControl={!disableDefaultAttribution}
           onLoad={handleMapLoad}
           onMove={handleMove}
           onMoveEnd={handleMoveEnd}

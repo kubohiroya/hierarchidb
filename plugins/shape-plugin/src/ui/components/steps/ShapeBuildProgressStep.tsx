@@ -64,6 +64,36 @@ type TaskListProps = {
   resolveTaskTitle: (task: TaskWithMetadata) => string;
 };
 
+const getVectorTileCoordsFromTitle = (task: BatchTaskSummary): { z: number; x: number; y: number } | null => {
+  const title = (task as TaskWithMetadata).title;
+  if (!title) return null;
+  const match = title.match(/z\s*(\d+)\s*\/\s*x\s*(\d+)\s*y\s*(\d+)/i);
+  if (!match) return null;
+  const z = Number.parseInt(match[1] ?? '', 10);
+  const x = Number.parseInt(match[2] ?? '', 10);
+  const y = Number.parseInt(match[3] ?? '', 10);
+  if (!Number.isFinite(z) || !Number.isFinite(x) || !Number.isFinite(y)) return null;
+  return { z, x, y };
+};
+
+const sortVectorTileTasks = (tasks: BatchTaskSummary[]): BatchTaskSummary[] => {
+  const sorted = [...tasks];
+  sorted.sort((a, b) => {
+    const aCoord = getVectorTileCoordsFromTitle(a);
+    const bCoord = getVectorTileCoordsFromTitle(b);
+    if (aCoord && bCoord) {
+      if (aCoord.z !== bCoord.z) return aCoord.z - bCoord.z;
+      if (aCoord.x !== bCoord.x) return aCoord.x - bCoord.x;
+      if (aCoord.y !== bCoord.y) return aCoord.y - bCoord.y;
+      return a.taskId.localeCompare(b.taskId);
+    }
+    if (aCoord) return -1;
+    if (bCoord) return 1;
+    return a.taskId.localeCompare(b.taskId);
+  });
+  return sorted;
+};
+
 const TaskListVirtualized: React.FC<TaskListProps> = ({
   tasks,
   stageValue,
@@ -313,6 +343,9 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
 
   const renderStageContent = useCallback((stage: BuildStage, stageValue: number) => {
     const stageTasks = tasksByStage[stage.id] ?? [];
+    const displayTasks = stage.id === 'vectorTiles'
+      ? sortVectorTileTasks(stageTasks)
+      : stageTasks;
     const hasTasks = stageTasks.length > 0;
     const stagePane = paneProgress?.find((entry) => entry.paneId === stage.id);
     const hasSummaryTasks = (stagePane?.taskCount ?? 0) > 0;
@@ -347,7 +380,7 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
           </>
         ) : (
           <TaskListVirtualized
-            tasks={stageTasks}
+            tasks={displayTasks}
             stageValue={stageValue}
             resolveStatusLabel={resolveStatusLabel}
             resolveStatusColor={resolveStatusColor}

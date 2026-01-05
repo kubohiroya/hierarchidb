@@ -563,5 +563,6 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     minZoom,
     maxZoom,
     defaultView: initialViewState,
+    selectionDataSource,
   };
 };

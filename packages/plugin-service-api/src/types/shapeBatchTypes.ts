@@ -75,6 +75,9 @@ export type ShapeExtract2TaskInputData = {
   zoomRange?: [number, number];
   zoomRangeLabel?: string;
   tolerance?: number;
+  vectorTileBuffer?: number;
+  vectorTileExtent?: number;
+  vectorTileMaxZoom?: number;
 };
 
 export type ShapeExtract2TaskOutputData = {

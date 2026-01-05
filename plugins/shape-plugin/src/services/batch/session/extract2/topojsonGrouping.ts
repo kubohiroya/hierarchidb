@@ -202,6 +202,8 @@ export async function buildExtract2TasksWithTopoJSON(params: {
   extract1Tasks: Extract1Task[];
   extract1InputsByTaskId: Map<string, ShapeExtract1TaskInputData>;
   zoomRanges: Array<{ minZoom: number; maxZoom: number; zoomLevels: number[]; label: string }>;
+  vectorTileBuffer: number;
+  vectorTileExtent: number;
   scaleTolerance: (zoomMax: number) => number;
   tileExpandFactor?: number;
   tileExpandMargin?: number;
@@ -405,6 +407,9 @@ export async function buildExtract2TasksWithTopoJSON(params: {
         zoomRange: [range.minZoom, range.maxZoom],
         zoomRangeLabel,
         tolerance,
+        vectorTileBuffer: params.vectorTileBuffer,
+        vectorTileExtent: params.vectorTileExtent,
+        vectorTileMaxZoom: range.maxZoom,
       });
 
       nextTaskIndex += 1;

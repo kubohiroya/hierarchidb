@@ -37,6 +37,7 @@ export {
   type EphemeralStage,
   type Extract1SourceBuffer,
   type Extract2SourceBuffer,
+  type GeojsonVtIndexRecord,
   type ProcessingCache,
   type RawFeatureBuffer,
   type VectorTileData,

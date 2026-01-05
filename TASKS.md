@@ -1,3 +1,33 @@
+2111) fix/app/geojson-vt-resolve (P1) — 進行中 (2026-01-06)
+- ブランチ名: fix/app/geojson-vt-resolve
+- 依存: なし
+- 受け入れ基準: @hierarchidb/app の build で geojson-vt の解決エラーが発生しない／TASKS.md に運用ログを記載する／ロールバック手順を明記する
+- 影響範囲: `app/vite.config.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`（調査後に絞り込み）
+- ロールバック手順: 追加した依存または build 設定の差分を revert し、従来のビルド設定に戻す
+- チェックリスト:
+  - build 時に geojson-vt が解決できない原因を確認する
+  - build を通すための修正を実施する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-06 00:26 JST geojson-vt の build 解決エラー対応に着手。
+
+2110) feat/ui-map/attribution-badge (P1) — 進行中 (2026-01-11)
+- ブランチ名: feat/ui-map/attribution-badge
+- 依存: なし
+- ExecPlan: plans/ui-map-attribution-badge-execplan.md
+- 受け入れ基準: shape/location/route で選択可能なデータソースの attribution を網羅できる／MapLibre 標準の Attribution/License バッジで表示される／Step6 プレビューに限定せず `@hierarchidb/ui-map` の標準機能として `/map` 等で再利用できる／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/**`, `plugins/shape-plugin/src/ui/**`, `plugins/location-plugin/src/ui/**`, `plugins/route-plugin/src/ui/**`（調査後に絞り込み）
+- ロールバック手順: 追加した attribution 表示とデータソース定義の差分を revert し、従来の地図表示に戻す
+- チェックリスト:
+  - ui-map に attribution 表示の共通 API を追加する
+  - shape/location/route のデータソース attribution 定義を整理する
+  - Step6 と /map で attribution が表示されることを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 05:30 JST attribution 表示の共通実装とデータソース網羅の設計に着手。
+  - update: 2026-01-11 06:00 JST ExecPlan を作成（plans/ui-map-attribution-badge-execplan.md）。
+  - update: 2026-01-11 06:55 JST ui-map に attribution 制御とフォーマッタを追加し、shape/location/route のプレビューと /map で attributionItems を配線。location は選択肢に合わせて alias/fallback で対応。検証: 未実施。
+
 2109) feat/shape/geojson-vt-index-reuse (P1) — 進行中 (2026-01-11)
 - ブランチ名: feat/shape/geojson-vt-index-reuse
 - 依存: なし
@@ -12,6 +42,7 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-11 04:20 JST extract2 で geojson-vt index を保存し vectortile で再利用する対応に着手。
+  - update: 2026-01-11 05:30 JST extract2 入力に vectorTiles 設定を追加し、EphemeralShapeDB に geojson-vt index の保存テーブル/APIを追加。extract2 で index 保存、vectortile で復元して storeTiles に保存する経路を実装。検証: 未実施。
 
 2103) fix/shape/step5-pause-flapping (P1) — 完了 (2026-01-05)
 - ブランチ名: fix/shape/step5-pause-flapping
@@ -149,6 +180,34 @@
   - update: 2026-01-11 02:40 JST chunk-store のキャッシュ整合性チェックを追加し、download タスクの段階ログを追加。検証: 未実施。
   - update: 2026-01-11 02:55 JST worker での CompressionStream を無効化し、chunk-store 書き込み前後のログを追加。検証: 未実施。
   - update: 2026-01-11 03:15 JST download バッファの gzip 圧縮を無効化し、保存は非圧縮で統一。検証: 未実施。
+
+2101) fix/shape/step5-vectortile-sort-title-parse (P2) — 完了 (2026-01-11)
+- ブランチ名: fix/shape/step5-vectortile-sort-title-parse
+- 依存: なし
+- 受け入れ基準: Step5 の vectortile タスク一覧が z/x/y 数値昇順で表示される／タスクタイトルの z/x/y 表記から並び順が決まる／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`
+- ロールバック手順: 上記ファイルの差分を revert し、現行の並び順へ戻す
+- チェックリスト:
+  - タイトル表記から z/x/y を抽出してソートする
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 02:20 JST vectortile タスクの並び順補正に着手。
+  - update: 2026-01-11 03:10 JST Step5 の vectortile 並び順をタイトル由来の z/x/y で再調整する作業に着手。
+  - done: 2026-01-11 03:20 JST vectortile タスクのタイトル表記から z/x/y を抽出して昇順ソートするよう統一。検証: 未実施。
+
+2100) fix/shape/step5-vectortile-task-sort (P2) — 完了 (2026-01-11)
+- ブランチ名: fix/shape/step5-vectortile-task-sort
+- 依存: なし
+- 受け入れ基準: Step5 の vectortile タスク一覧が z/x/y 数値昇順で表示される／他ステージの並びに影響しない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`
+- ロールバック手順: 上記ファイルの差分を revert し、現行の並び順へ戻す
+- チェックリスト:
+  - vectortile タスクのメタデータに z/x/y を付与する
+  - Step5 の表示で z/x/y 昇順にソートする
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 02:00 JST Step5 の vectortile タスク並び順修正に着手。
+  - done: 2026-01-11 02:06 JST vectortile タスクに z/x/y メタデータを付与し表示を昇順ソート。検証: 未実施。
 
 2099) feat/download/smartfetch-inflight (P2) — 完了 (2026-01-11)
 - ブランチ名: feat/download/smartfetch-inflight

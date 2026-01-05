@@ -18,6 +18,7 @@ import type {
   ShapeQueryAPI,
   ShapeRawBufferRecord,
   ShapeSourceMetadataRow,
+  ShapeGeojsonVtIndexRecord,
   ShapeTileIdToBufferRelation,
   ShapeTileInfo,
   ShapeTileRow,
@@ -692,6 +693,20 @@ export class LocalShapeEphemeralDbApi implements ShapeEphemeralDBAPI {
   async deleteTileIdRelations(nodeId: NodeId): Promise<void> {
     const db = getEphemeralShapeDB();
     await db.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();
+  }
+
+  async getGeojsonVtIndex(nodeId: NodeId, bufferId: string): Promise<ShapeGeojsonVtIndexRecord | null> {
+    const db = getEphemeralShapeDB();
+    const record = await db.geojsonVtIndexes
+      .where('[nodeId+bufferId]')
+      .equals([nodeId, bufferId])
+      .first();
+    return (record as ShapeGeojsonVtIndexRecord | undefined) ?? null;
+  }
+
+  async putGeojsonVtIndex(record: ShapeGeojsonVtIndexRecord): Promise<void> {
+    const db = getEphemeralShapeDB();
+    await db.geojsonVtIndexes.put(record);
   }
 
   async getSessionRecord(nodeId: NodeId): Promise<ShapeEphemeralSessionRecord | null> {

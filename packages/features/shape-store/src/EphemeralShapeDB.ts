@@ -51,6 +51,20 @@ export type VectorTileSourceBuffer = {
   contentType?: string;
 };
 
+export type GeojsonVtIndexRecord = {
+  id: string;
+  nodeId: NodeId;
+  bufferId: string;
+  index: Record<string, unknown>;
+  options: {
+    extent: number;
+    buffer: number;
+    indexMaxZoom: number;
+    promoteId: string;
+  };
+  createdAt: number;
+};
+
 export class EphemeralShapeDB extends EphemeralGisDB<BatchProcessConfig> {
   featureBuffers!: Table<FeatureBufferRecord, string>;
   tileBuffers!: Table<TileBufferRecord, string>;
@@ -58,6 +72,7 @@ export class EphemeralShapeDB extends EphemeralGisDB<BatchProcessConfig> {
   batchTasks!: Table<BatchTaskRecord, string>;
   extract2SourceBuffers!: Table<Extract2SourceBuffer, string>;
   vectorTileSourceBuffers!: Table<VectorTileSourceBuffer, string>;
+  geojsonVtIndexes!: Table<GeojsonVtIndexRecord, string>;
 
   constructor() {
     super(getDBName('shape-ephemeral'));
@@ -104,12 +119,27 @@ export class EphemeralShapeDB extends EphemeralGisDB<BatchProcessConfig> {
       extract2SourceBuffers: '&id, nodeId, countryCode, adminLevel, [nodeId+countryCode+adminLevel], timestamp',
       vectorTileSourceBuffers: '&id, nodeId, tileId, [nodeId+tileId], timestamp',
     });
+    this.version(7).stores({
+      rawBuffers: '&id, nodeId, timestamp',
+      extractedBuffers: '&id, nodeId, stage, timestamp, [nodeId+stage]',
+      vectorTiles: '&id, nodeId, [z+x+y], hash, timestamp',
+      sessions: '&nodeId, status, stage, startTime',
+      cache: '&key, type, lastAccessed, ttl',
+      featureBuffers: '&bufferId, nodeId, [nodeId+stage], stage, createdAt, byteSize',
+      tileBuffers: '&bufferId, nodeId, [nodeId+z+x+y], [z+x+y], z, stage, createdAt',
+      tileIdToBufferRelations: '&id, nodeId, tileId, bufferId, [nodeId+tileId]',
+      batchTasks: '&taskId, nodeId, [nodeId+status], [nodeId+taskType], [nodeId+index], status, taskType, startedAt',
+      extract2SourceBuffers: '&id, nodeId, countryCode, adminLevel, [nodeId+countryCode+adminLevel], timestamp',
+      vectorTileSourceBuffers: '&id, nodeId, tileId, [nodeId+tileId], timestamp',
+      geojsonVtIndexes: '&id, nodeId, bufferId, [nodeId+bufferId], createdAt',
+    });
     this.featureBuffers = this.table('featureBuffers');
     this.tileBuffers = this.table('tileBuffers');
     this.tileIdToBufferRelations = this.table('tileIdToBufferRelations');
     this.batchTasks = this.table('batchTasks');
     this.extract2SourceBuffers = this.table('extract2SourceBuffers');
     this.vectorTileSourceBuffers = this.table('vectorTileSourceBuffers');
+    this.geojsonVtIndexes = this.table('geojsonVtIndexes');
   }
 
   async clearNodeData(nodeId: NodeId): Promise<void> {
@@ -120,6 +150,7 @@ export class EphemeralShapeDB extends EphemeralGisDB<BatchProcessConfig> {
     await this.batchTasks.where('nodeId').equals(nodeId).delete();
     await this.extract2SourceBuffers.where('nodeId').equals(nodeId).delete();
     await this.vectorTileSourceBuffers.where('nodeId').equals(nodeId).delete();
+    await this.geojsonVtIndexes.where('nodeId').equals(nodeId).delete();
   }
 
   async hasStageData(nodeId: NodeId, stage: BaseEphemeralStage): Promise<boolean> {
@@ -149,6 +180,7 @@ export class EphemeralShapeDB extends EphemeralGisDB<BatchProcessConfig> {
       this.tileBuffers,
       this.tileIdToBufferRelations,
       this.batchTasks,
+      this.geojsonVtIndexes,
     ], async () => {
       switch (stage) {
         case 'download':
@@ -160,6 +192,7 @@ export class EphemeralShapeDB extends EphemeralGisDB<BatchProcessConfig> {
         case 'extract2':
           await this.extract2SourceBuffers.where('nodeId').equals(nodeId).delete();
           await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();
+          await this.geojsonVtIndexes.where('nodeId').equals(nodeId).delete();
           break;
         case 'vectorTiles':
           await this.vectorTileSourceBuffers.where('nodeId').equals(nodeId).delete();
@@ -206,6 +239,7 @@ export class EphemeralShapeDB extends EphemeralGisDB<BatchProcessConfig> {
     await this.batchTasks.clear();
     await this.extract2SourceBuffers.clear();
     await this.vectorTileSourceBuffers.clear();
+    await this.geojsonVtIndexes.clear();
   }
 
   async createBatchTask(

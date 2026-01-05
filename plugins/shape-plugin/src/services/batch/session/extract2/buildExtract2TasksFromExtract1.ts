@@ -18,6 +18,8 @@ export function buildExtract2TasksFromExtract1(params: {
     zoomLevels: number[];
     label: string;
   }>;
+  vectorTileBuffer: number;
+  vectorTileExtent: number;
   scaleTolerance: (zoomMax: number) => number;
   buildTaskId: (
     stage: 'extract2',
@@ -34,6 +36,8 @@ export function buildExtract2TasksFromExtract1(params: {
     extract1Tasks,
     extract1InputsByTaskId,
     zoomRanges,
+    vectorTileBuffer,
+    vectorTileExtent,
     scaleTolerance,
     buildTaskId,
     getOriginKeyFromInput,
@@ -84,6 +88,9 @@ export function buildExtract2TasksFromExtract1(params: {
         zoomRange: [range.minZoom, range.maxZoom],
         zoomRangeLabel,
         tolerance,
+        vectorTileBuffer,
+        vectorTileExtent,
+        vectorTileMaxZoom: range.maxZoom,
       });
 
       tasks.push({

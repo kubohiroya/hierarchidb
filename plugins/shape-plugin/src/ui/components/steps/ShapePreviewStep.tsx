@@ -1,10 +1,11 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Box, Typography, Alert, Tabs, Tab, Snackbar, CircularProgress } from '@mui/material';
-import { ResourceLayerMap, type ResourceVectorLayer } from '@hierarchidb/ui-map';
+import { ResourceLayerMap, type MapAttributionItem, type ResourceVectorLayer } from '@hierarchidb/ui-map';
 import { GenericDataGrid } from '@hierarchidb/ui-grid';
 import { SearchField } from '@hierarchidb/ui-search-field';
 import type { ShapeDialogStepProps } from './ShapeDialogStepProps.ts';
 import { useShapePreviewStep } from '../../hooks/useShapePreviewStep.js';
+import { getDataSourceConfig } from '../../../services/utils/utils.js';
 
 export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId }) => {
   const {
@@ -43,6 +44,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
     defaultView,
     minZoom,
     maxZoom,
+    selectionDataSource,
   } = useShapePreviewStep(data ?? {}, nodeId);
   const baseMapStyleUrl = theme.palette.mode === 'dark'
     ? DARK_BASEMAP_STYLE_URL
@@ -102,6 +104,19 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
     ];
   }, [baseLayerId, baseSourceId, resolvedNodeId, theme.palette.primary.dark, theme.palette.primary.main, tileDataProvider, tileDbName, tilesLayer, tilesUrl]);
 
+  const attributionItems = useMemo<MapAttributionItem[]>(() => {
+    if (!selectionDataSource) return [];
+    const config = getDataSourceConfig(selectionDataSource);
+    if (!config) return [];
+    return [{
+      id: `shape:${config.name}`,
+      label: config.displayName ?? config.name,
+      attribution: config.attribution,
+      license: config.license,
+      licenseUrl: config.licenseUrl,
+    }];
+  }, [selectionDataSource]);
+
   const renderMapPreview = () => {
     const hasRemoteTiles = Boolean(tilesUrl);
     if (!hasRemoteTiles && !tilesAvailable) {
@@ -138,6 +153,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
           basemapStyles={[]}
           vectorLayers={vectorLayers}
           geoJsonLayers={[]}
+          attributionItems={attributionItems}
           showTileBoundaries
           showTileCoordinates
           mapOptions={{

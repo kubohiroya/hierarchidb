@@ -11,6 +11,7 @@ import {
   MapToggleCard,
   mergeFilters,
   ResourceLayerMap,
+  type MapAttributionItem,
   type MapLibreMapInstance,
   type MapToggleSelection,
   type MapViewState,
@@ -29,6 +30,7 @@ import type { RouteNearestLineResponse } from '@hierarchidb/plugin-service-api';
 import type { RouteUpdaterPayload } from '../../../common/entities/RouteEntity.js';
 import { formatDistance, getTransportModeName, useTranslation } from '../../../common/i18n/index.js';
 import { ROUTE_MODES, type RouteMode } from '@hierarchidb/route-plugin';
+import { ROUTE_DATA_SOURCES } from '../../../common/datasource/configs.js';
 
 interface RoutePreviewStepProps {
   draft: RouteUpdaterPayload;
@@ -109,6 +111,23 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
   const hoverTimerRef = useRef<number | null>(null);
   const hoverRequestIdRef = useRef(0);
   const lastHoverRef = useRef<{ longitude: number; latitude: number; zoom: number } | null>(null);
+  const dataSourceConfig = useMemo(() => {
+    const name = draft.draftData?.dataSourceName;
+    if (!name) return undefined;
+    const normalized = name.toLowerCase();
+    return ROUTE_DATA_SOURCES.find((source) => source.name.toLowerCase() === normalized);
+  }, [draft.draftData?.dataSourceName]);
+  const attributionItems = useMemo<MapAttributionItem[]>(() => {
+    if (!dataSourceConfig) return [];
+    return [{
+      id: `route:${dataSourceConfig.name}`,
+      label: dataSourceConfig.displayName ?? dataSourceConfig.name,
+      attribution: dataSourceConfig.attribution,
+      url: dataSourceConfig.website,
+      license: dataSourceConfig.license,
+      licenseUrl: dataSourceConfig.licenseUrl,
+    }];
+  }, [dataSourceConfig]);
 
   const formatTemplate = useCallback(
     (template: string, values: Record<string, string | number>) =>
@@ -327,6 +346,7 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
                   basemapStyles={[]}
                   vectorLayers={[]}
                   geoJsonLayers={filteredGeoJsonLayers}
+                  attributionItems={attributionItems}
                   mapOptions={DEFAULT_MAP_CONFIG.interactionOptions}
                   onLoad={setMapInstance}
                 />

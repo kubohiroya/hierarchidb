@@ -55,6 +55,7 @@ export type {
   ResourceVectorLayer,
   ResourceGeoJsonLayer,
 } from './components/ResourceLayerMap.js';
+export type { MapAttributionItem, MapAttributionControlOptions } from './types/attribution.js';
 export { buildCategoryFilter, mergeFilters } from './utils/layerFilters.js';
 
 // Layer presets

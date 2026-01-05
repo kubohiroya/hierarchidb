@@ -52,6 +52,8 @@ describe('buildExtract2TasksFromExtract1', () => {
       extract1Tasks: [...extract1Tasks],
       extract1InputsByTaskId,
       zoomRanges,
+      vectorTileBuffer: 256,
+      vectorTileExtent: 4096,
       scaleTolerance: (zoomMax) => zoomMax * 0.1,
       buildTaskId: (_stage, details) =>
         `extract2:${details.featureGroupId ?? 'none'}:${details.featureLabel ?? 'none'}:${details.zoomRangeLabel ?? 'none'}`,

@@ -221,6 +221,38 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
     await mutation.putFeatureMetadata(featureMetadata);
   }
 
+  async storeTiles(
+    nodeId: NodeId,
+    nodeType: string,
+    tiles: Array<{
+      z: number;
+      x: number;
+      y: number;
+      data: Uint8Array;
+      size: number;
+      contentType?: string;
+      timestamp?: number;
+    }>,
+    metadata?: {
+      featureMetadata?: FeatureMetadataRow[];
+      metadataReplace?: boolean;
+    },
+  ): Promise<{ tilesStored: number }> {
+    if (!tiles.length) return { tilesStored: 0 };
+    const resolvedNodeType = this.resolveNodeType(nodeType);
+    const now = Date.now();
+    const normalizedTiles = tiles.map((tile) => ({
+      ...tile,
+      contentType: tile.contentType ?? 'application/vnd.mapbox-vector-tile',
+      timestamp: tile.timestamp ?? now,
+    }));
+    await this.storeVectorTiles(resolvedNodeType, nodeId, normalizedTiles);
+    if (metadata?.featureMetadata?.length) {
+      await this.storeFeatureMetadata(resolvedNodeType, nodeId, metadata.featureMetadata, metadata.metadataReplace);
+    }
+    return { tilesStored: normalizedTiles.length };
+  }
+
   private resolveItemBytes(item: VectorTileStoreItem): Uint8Array | null {
     const direct = item.data;
     if (direct instanceof Uint8Array) return direct;

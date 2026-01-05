@@ -15,6 +15,8 @@ export async function buildExtract2TasksWithTopojsonFacade(params: {
   extract1Tasks: Extract1Task[];
   extract1InputsByTaskId: Map<string, ShapeExtract1TaskInputData>;
   zoomRanges: Array<{ minZoom: number; maxZoom: number; zoomLevels: number[]; label: string }>;
+  vectorTileBuffer: number;
+  vectorTileExtent: number;
   scaleTolerance: (zoomMax: number) => number;
   tileExpandFactor?: number;
   tileExpandMargin?: number;

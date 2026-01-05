@@ -886,6 +886,8 @@ export class SessionController {
       this.config.vectorTiles?.minZoom ?? 0,
       this.config.vectorTiles?.maxZoom ?? 0,
     );
+    const vectorTileBuffer = this.config.vectorTiles?.bufferSize ?? 256;
+    const vectorTileExtent = 4096;
     const baseTolerance = this.config.extract2?.tolerance ?? 0;
     const tileExpandFactor = this.config.vectorTiles?.tileExpandFactor ?? 1;
     const tileExpandMargin = this.config.vectorTiles?.tileExpandMargin ?? 0;
@@ -900,6 +902,8 @@ export class SessionController {
       nodeId: this.nodeId,
       zoomLevels,
       zoomRanges,
+      vectorTileBuffer,
+      vectorTileExtent,
       scaleTolerance,
       tileExpandFactor,
       tileExpandMargin,

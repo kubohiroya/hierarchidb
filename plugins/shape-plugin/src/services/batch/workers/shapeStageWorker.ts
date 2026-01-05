@@ -16,6 +16,15 @@ import { buildTileCoordinates } from '../session/tiles/tileCoordinates.js';
 import { buildTileId } from '../../../worker/shapeVectorTileStore.dexie.js';
 import { buildDownloadCacheKey, readDownloadBuffer, storeDownloadBufferForNode } from '../../utils/chunkStore.js';
 
+type GeojsonVtModule = typeof import('geojson-vt');
+
+type GeojsonVtIndexOptions = {
+  extent: number;
+  buffer: number;
+  indexMaxZoom: number;
+  promoteId: string;
+};
+
 const normalizeBoundingBox = (bbox?: TaskBoundingBox): DataSourceBoundingBox | undefined => {
   if (!bbox || bbox.length !== 4) return undefined;
   const [minLng, minLat, maxLng, maxLat] = bbox;
@@ -56,6 +65,45 @@ const isFeatureCollection = (value: unknown): value is FeatureCollection => (
 const encodeGeoJson = async (geojsonData: FeatureCollection): Promise<ArrayBuffer> => {
   const bytes = await geojsonApi.serialize(geojsonData);
   return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+};
+
+const loadGeojsonVt = async (): Promise<GeojsonVtModule> => {
+  const mod = await import('geojson-vt');
+  const candidate = mod as unknown as { default?: GeojsonVtModule } & GeojsonVtModule;
+  return candidate.default ?? candidate;
+};
+
+const buildGeojsonVtIndex = async (
+  collection: FeatureCollection,
+  options: GeojsonVtIndexOptions,
+): Promise<Record<string, unknown>> => {
+  const geojsonvt = await loadGeojsonVt();
+  const index = geojsonvt(collection, {
+    maxZoom: options.indexMaxZoom,
+    indexMaxZoom: options.indexMaxZoom,
+    extent: options.extent,
+    buffer: options.buffer,
+    promoteId: options.promoteId,
+  });
+  return index as Record<string, unknown>;
+};
+
+const resolveVectorTileIndexOptions = (
+  payload: { vectorTileBuffer?: number; vectorTileExtent?: number; vectorTileMaxZoom?: number; zoomLevels?: number[] },
+): GeojsonVtIndexOptions | null => {
+  const buffer = payload.vectorTileBuffer;
+  const extent = payload.vectorTileExtent;
+  const maxZoomFromLevels = payload.zoomLevels?.length ? Math.max(...payload.zoomLevels) : undefined;
+  const indexMaxZoom = payload.vectorTileMaxZoom ?? maxZoomFromLevels;
+  if (!Number.isFinite(buffer) || !Number.isFinite(extent) || !Number.isFinite(indexMaxZoom)) {
+    return null;
+  }
+  return {
+    buffer: Number(buffer),
+    extent: Number(extent),
+    indexMaxZoom: Number(indexMaxZoom),
+    promoteId: 'id',
+  };
 };
 
 const sanitizeFeatureCollection = (collection: FeatureCollection): FeatureCollection => ({
@@ -446,6 +494,32 @@ const processExtract2Task = async ({
   }
   const extractionMode = payload.extractionMode
     ?? (payload.preserveSharedBoundaries ? 'topojson' : 'geojson');
+  const vectorTileOptions = resolveVectorTileIndexOptions(payload);
+  if (!vectorTileOptions) {
+    return {
+      status: 'failed',
+      errorMessage: `Vector tile index config is required for extract2: ${task.taskId}`,
+    };
+  }
+  const storeGeojsonVtIndexRecord = async (bufferId: string, features: Feature[]) => {
+    if (!features.length) return;
+    const collection = assignFeatureIds(
+      { type: 'FeatureCollection', features },
+      {
+        countryCode: task.countryCode,
+        adminLevel: task.adminLevel,
+      },
+    );
+    const index = await buildGeojsonVtIndex(collection, vectorTileOptions);
+    await ephemeral.putGeojsonVtIndex({
+      id: `${String(nodeId)}:${bufferId}`,
+      nodeId,
+      bufferId,
+      index,
+      options: vectorTileOptions,
+      createdAt: Date.now(),
+    });
+  };
   if (extractionMode === 'off') {
     const outputBufferId = `${nodeId}-extract2-${taskIndex}`;
     if (isFeatureCollection(geojson)) {
@@ -457,7 +531,7 @@ const processExtract2Task = async ({
       });
       const data = await encodeGeoJson(sanitized);
       const featureCount = sanitized.features.length;
-    const tileRelations = buildTileIdRelations({
+      const tileRelations = buildTileIdRelations({
         nodeId,
         bufferId: outputBufferId,
         zoomLevels: payload.zoomLevels,
@@ -466,6 +540,7 @@ const processExtract2Task = async ({
       if (tileRelations.length > 0) {
         await ephemeral.putTileIdRelations(tileRelations);
       }
+      await storeGeojsonVtIndexRecord(outputBufferId, sanitized.features);
       await ephemeral.putExtractedBuffer({
         id: outputBufferId,
         nodeId: buffer.nodeId,
@@ -621,6 +696,16 @@ const processExtract2Task = async ({
     finalFeatures = extraction.features ?? [];
   }
   const outputBufferId = `${nodeId}-extract2-${taskIndex}`;
+  if (finalFeatures.length > 0) {
+    const collection = assignFeatureIds(
+      { type: 'FeatureCollection', features: finalFeatures },
+      {
+        countryCode: task.countryCode,
+        adminLevel: task.adminLevel,
+      },
+    );
+    finalFeatures = collection.features;
+  }
   const tileRelations = buildTileIdRelations({
     nodeId,
     bufferId: outputBufferId,
@@ -630,6 +715,7 @@ const processExtract2Task = async ({
   if (tileRelations.length > 0) {
     await ephemeral.putTileIdRelations(tileRelations);
   }
+  await storeGeojsonVtIndexRecord(outputBufferId, finalFeatures);
   await ephemeral.putExtractedBuffer({
     id: outputBufferId,
     nodeId: buffer.nodeId,

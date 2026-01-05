@@ -13,6 +13,8 @@ export type Extract2BuildStrategyParams = {
   zoomLevels: number[];
   extractionMode: 'topojson' | string;
   zoomRanges: Array<{ minZoom: number; maxZoom: number; zoomLevels: number[]; label: string }>;
+  vectorTileBuffer: number;
+  vectorTileExtent: number;
   scaleTolerance: (zoomMax: number) => number;
   tileExpandFactor?: number;
   tileExpandMargin?: number;
@@ -63,6 +65,8 @@ export async function resolveExtract2BuildStrategy(
       extract1Tasks: params.extract1Tasks,
       extract1InputsByTaskId: params.extract1InputsByTaskId,
       zoomRanges: params.zoomRanges,
+      vectorTileBuffer: params.vectorTileBuffer,
+      vectorTileExtent: params.vectorTileExtent,
       scaleTolerance: params.scaleTolerance,
       tileExpandFactor: params.tileExpandFactor,
       tileExpandMargin: params.tileExpandMargin,
@@ -83,6 +87,8 @@ export async function resolveExtract2BuildStrategy(
       extract1Tasks: params.extract1Tasks,
       extract1InputsByTaskId: params.extract1InputsByTaskId,
       zoomRanges: params.zoomRanges,
+      vectorTileBuffer: params.vectorTileBuffer,
+      vectorTileExtent: params.vectorTileExtent,
       scaleTolerance: params.scaleTolerance,
       buildTaskId: params.buildTaskId,
       getOriginKeyFromInput: params.getOriginKeyFromInput,

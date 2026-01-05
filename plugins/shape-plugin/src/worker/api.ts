@@ -296,7 +296,9 @@ const buildTaskTitle = (task: BatchTaskRecord): string | undefined => {
   return undefined;
 };
 
-const mapTaskRecordToBatchTask = (task: BatchTaskRecord): BatchTask & { title?: string } => ({
+const mapTaskRecordToBatchTask = (
+  task: BatchTaskRecord,
+): BatchTask & { title?: string; metadata?: Record<string, unknown> } => ({
   taskId: task.taskId,
   taskType: task.taskType,
   nodeId: task.nodeId,
@@ -317,6 +319,17 @@ const mapTaskRecordToBatchTask = (task: BatchTaskRecord): BatchTask & { title?: 
   retryCount: task.retryCount,
   error: task.errorMessage,
   title: buildTaskTitle(task),
+  metadata: task.taskType === 'vectortile'
+    ? (() => {
+      const input = task.inputData as VectorTileTaskInputData | undefined;
+      if (!input) return undefined;
+      const tileZ = typeof input.tileZ === 'number' ? input.tileZ : undefined;
+      const tileX = typeof input.tileX === 'number' ? input.tileX : undefined;
+      const tileY = typeof input.tileY === 'number' ? input.tileY : undefined;
+      if (tileZ == null || tileX == null || tileY == null) return undefined;
+      return { tileZ, tileX, tileY };
+    })()
+    : undefined,
 });
 
 export const shapeBatchAPI = {
