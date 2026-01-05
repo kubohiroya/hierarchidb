@@ -26,12 +26,26 @@ export function useTrashFrameState(initialMode: DialogDisplayMode = 'normal') {
     initialPosition(DEFAULT_SIZE, getViewportSize())
   );
 
+  const isSameSize = useCallback(
+    (next: DialogSize) => next.width === dialogSize.width && next.height === dialogSize.height,
+    [dialogSize.height, dialogSize.width]
+  );
+
+  const isSamePosition = useCallback(
+    (next: DialogPosition) => next.x === dialogPosition.x && next.y === dialogPosition.y,
+    [dialogPosition.x, dialogPosition.y]
+  );
+
   const applyNormalizedState = useCallback(
     (size: DialogSize, position: DialogPosition) => {
-      setDialogSize(size);
-      setDialogPosition(position);
+      if (!isSameSize(size)) {
+        setDialogSize(size);
+      }
+      if (!isSamePosition(position)) {
+        setDialogPosition(position);
+      }
     },
-    []
+    [isSamePosition, isSameSize]
   );
 
   const normalizeFromState = useCallback(
@@ -401,7 +415,7 @@ export function useTrashDialog(data: TrashDialogData, params: TrashDialogRoutePa
         console.error('Restore failed:', result.error);
         return;
       }
-      closeDialog({ reload: true });
+      closeDialog();
     } catch (error) {
       console.error('Error restoring trash nodes:', error);
     } finally {

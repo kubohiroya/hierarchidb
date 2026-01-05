@@ -9,6 +9,7 @@ export type UseMapFeatureHighlightsParams<HighlightEntry extends { source: strin
   hoverMatches: HighlightEntry[];
   selectedMatches: HighlightEntry[];
   onViewportLayerIdsChange?: (layerIds: Map<string, Set<string | number>>) => void;
+  onMissingLayers?: (layerIds: string[]) => void;
 };
 
 export const useMapFeatureHighlights = <HighlightEntry extends { source: string; id: string | number }>({
@@ -18,13 +19,22 @@ export const useMapFeatureHighlights = <HighlightEntry extends { source: string;
   hoverMatches,
   selectedMatches,
   onViewportLayerIdsChange,
+  onMissingLayers,
 }: UseMapFeatureHighlightsParams<HighlightEntry>): void => {
   const appliedSearchMatchesRef = useRef<HighlightEntry[]>([]);
   const appliedHoverRef = useRef<HighlightEntry[]>([]);
   const appliedSelectedRef = useRef<HighlightEntry[]>([]);
 
   const updateViewportFeatures = useCallback(() => {
-    if (!mapInstance || !onViewportLayerIdsChange) return;
+    if (!mapInstance) return;
+    if (typeof mapInstance.getLayer === 'function') {
+      const missingLayerIds = highlightLayerIds.filter((layerId) => !mapInstance.getLayer(layerId));
+      if (missingLayerIds.length > 0) {
+        onMissingLayers?.(missingLayerIds);
+        return;
+      }
+    }
+    if (!onViewportLayerIdsChange) return;
     const canvas = mapInstance.getCanvas();
     let features: MapLibreGeoJSONFeature[] = [];
     try {
@@ -55,7 +65,7 @@ export const useMapFeatureHighlights = <HighlightEntry extends { source: string;
     }
 
     onViewportLayerIdsChange(idsByLayer);
-  }, [highlightLayerIds, mapInstance, onViewportLayerIdsChange]);
+  }, [highlightLayerIds, mapInstance, onMissingLayers, onViewportLayerIdsChange]);
 
   const clearHighlightKey = useCallback(
     (entry: HighlightEntry | null, key: 'hdbSearch' | 'hdbHover' | 'hdbSelected') => {

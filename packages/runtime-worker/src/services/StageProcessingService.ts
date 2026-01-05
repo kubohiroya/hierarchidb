@@ -7,7 +7,7 @@ import {
 } from '@hierarchidb/gis-sdk';
 import { storeRegistry } from '../entity/store-registry.js';
 import type { VectorTileItemBase } from '../entity/store.js';
-import { getEphemeralShapeDB, shapeDB } from '@hierarchidb/shape-store';
+import { getEphemeralShapeDB, shapeDB, type LayerInfo } from '@hierarchidb/shape-store';
 import { ShapeMutationService } from './ShapeMutationService.js';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { FeatureMetadataRow } from '@hierarchidb/vectortile-store';
@@ -29,12 +29,26 @@ const ensureShapeVectorTileStore = (): void => {
     async bulkUpsert(nodeId: NodeId, items: Array<VectorTileStoreItem & { id?: string }>): Promise<void> {
       if (!items.length) return;
       const now = Date.now();
-      const rows = items.map((item) => ({
-        ...item,
-        tileId: buildShapeTileId(nodeId, item.z, item.x, item.y),
-        nodeId,
-        generatedAt: now,
-      }));
+      const rows = items.map((item) => {
+        const bytes = item.data_Uint8Array
+          ?? (item.data instanceof Uint8Array
+            ? item.data
+            : (item.data ? new Uint8Array(item.data) : null));
+        const size = typeof item.size === 'number' ? item.size : (bytes?.byteLength ?? 0);
+        return {
+          ...item,
+          tileId: buildShapeTileId(nodeId, item.z, item.x, item.y),
+          nodeId,
+          data_Uint8Array: bytes ?? new Uint8Array(),
+          size,
+          features: item.features ?? 0,
+          layers: (item.layers ?? []) as LayerInfo[],
+          generatedAt: item.generatedAt ?? now,
+          contentHash: item.contentHash ?? '',
+          contentEncoding: item.contentEncoding,
+          version: item.version ?? 1,
+        };
+      });
       await shapeDB.vectorTiles.bulkPut(rows);
     },
     async bulkDelete(_nodeId: NodeId, itemIds: Array<string>): Promise<void> {
@@ -52,6 +66,11 @@ type VectorTileStoreItem = VectorTileItemBase & {
   generatedAt?: number;
   data?: ArrayBuffer | Uint8Array;
   data_Uint8Array?: Uint8Array;
+  features?: number;
+  layers?: LayerInfo[];
+  contentHash?: string;
+  contentEncoding?: 'gzip' | 'br';
+  version?: number;
 };
 
 /**
@@ -230,7 +249,7 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
       y: number;
       data: Uint8Array;
       size: number;
-      contentType?: string;
+      contentType?: 'application/vnd.mapbox-vector-tile';
       timestamp?: number;
     }>,
     metadata?: {
@@ -241,7 +260,7 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
     if (!tiles.length) return { tilesStored: 0 };
     const resolvedNodeType = this.resolveNodeType(nodeType);
     const now = Date.now();
-    const normalizedTiles = tiles.map((tile) => ({
+    const normalizedTiles: VectorTileRow[] = tiles.map((tile) => ({
       ...tile,
       contentType: tile.contentType ?? 'application/vnd.mapbox-vector-tile',
       timestamp: tile.timestamp ?? now,

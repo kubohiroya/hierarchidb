@@ -104,7 +104,7 @@ export interface VectorTileWorkerAPI {
       y: number;
       data: Uint8Array;
       size: number;
-      contentType?: string;
+      contentType?: 'application/vnd.mapbox-vector-tile';
       timestamp?: number;
     }>,
     metadata?: {

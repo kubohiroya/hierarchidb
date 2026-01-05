@@ -252,31 +252,72 @@ const getBatchSessionStatusSafe = async (
 const buildTaskTitle = (task: BatchTaskRecord): string | undefined => {
   const getNumber = (value: unknown): number | undefined =>
     typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+  const getString = (value: unknown): string | undefined =>
+    typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
+  const buildLocationTitle = (input: {
+    countryCode?: unknown;
+    country?: unknown;
+    adminLevel?: unknown;
+  }): string | undefined => {
+    const countryCode = getString(input.countryCode ?? input.country)?.toUpperCase();
+    const adminLevel = getNumber(input.adminLevel);
+    return countryCode && typeof adminLevel === 'number'
+      ? `${countryCode}/${adminLevel}`
+      : undefined;
+  };
+  const buildRegionLabel = (input: {
+    countryName?: unknown;
+    countryCode?: unknown;
+    country?: unknown;
+    featureLabel?: unknown;
+    featureGroupId?: unknown;
+    originLabel?: unknown;
+  }): string | undefined => {
+    const countryLabel = getString(input.countryName)
+      ?? getString(input.countryCode ?? input.country)?.toUpperCase();
+    const featureLabel = getString(input.featureLabel)
+      ?? getString(input.featureGroupId)
+      ?? getString(input.originLabel);
+    if (!countryLabel && !featureLabel) return undefined;
+    if (!countryLabel) return featureLabel;
+    if (!featureLabel) return countryLabel;
+    const countryLower = countryLabel.toLowerCase();
+    const featureLower = featureLabel.toLowerCase();
+    if (featureLower.includes(countryLower)) return featureLabel;
+    return `${countryLabel}/${featureLabel}`;
+  };
+  const buildZoomRangeLabel = (input: {
+    zoomRangeLabel?: unknown;
+    zoomRange?: unknown;
+  }): string | undefined => {
+    const rawLabel = getString(input.zoomRangeLabel);
+    if (rawLabel) return rawLabel;
+    const zoomRange = Array.isArray(input.zoomRange) ? input.zoomRange : undefined;
+    if (!zoomRange || zoomRange.length !== 2) return undefined;
+    const minZoom = getNumber(zoomRange[0]);
+    const maxZoom = getNumber(zoomRange[1]);
+    if (typeof minZoom !== 'number' || typeof maxZoom !== 'number') return undefined;
+    return `z${minZoom}-${maxZoom}`;
+  };
   if (task.taskType === 'download') {
     const input = task.inputData as DownloadTaskInputData | undefined;
-    return input?.url ?? input?.endpoint;
+    const locationTitle = buildLocationTitle(input ?? {});
+    return locationTitle ?? getString(input?.url) ?? getString(input?.endpoint);
   }
   if (task.taskType === 'extract1') {
     const input = task.inputData as Extract1TaskInputData | undefined;
-    const sourceUrl = input?.sourceUrl;
-    const featureId = input?.featureId;
-    if (sourceUrl && featureId) return `${sourceUrl} • ${featureId}`;
-    return sourceUrl ?? featureId;
+    const locationTitle = buildLocationTitle(input ?? {});
+    const regionLabel = buildRegionLabel(input ?? {});
+    const parts = [locationTitle, regionLabel].filter(Boolean);
+    return parts.length > 0 ? parts.join(' | ') : locationTitle ?? regionLabel;
   }
   if (task.taskType === 'extract2') {
     const input = task.inputData as Extract2TaskInputData | undefined;
-    const dataSource = typeof input?.dataSource === 'string'
-      ? input.dataSource.toUpperCase()
-      : undefined;
-    const continent = typeof input?.continent === 'string' ? input.continent : undefined;
-    const adminLevel = getNumber(input?.adminLevel);
-    const adminLabel = adminLevel != null ? `ADM${adminLevel}` : undefined;
-    const parts = [dataSource, continent, adminLabel].filter(Boolean);
-    if (parts.length > 0) return parts.join(' • ');
-    const sourceUrl = input?.sourceUrl;
-    const featureId = input?.featureId;
-    if (sourceUrl && featureId) return `${sourceUrl} • ${featureId}`;
-    return sourceUrl ?? featureId;
+    const locationTitle = buildLocationTitle(input ?? {});
+    const regionLabel = buildRegionLabel(input ?? {});
+    const zoomRangeLabel = buildZoomRangeLabel(input ?? {});
+    const parts = [locationTitle, regionLabel, zoomRangeLabel].filter(Boolean);
+    return parts.length > 0 ? parts.join(' | ') : locationTitle ?? regionLabel ?? zoomRangeLabel;
   }
   if (task.taskType === 'vectortile') {
     const input = task.inputData as VectorTileTaskInputData | undefined;

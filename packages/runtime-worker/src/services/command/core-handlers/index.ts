@@ -554,7 +554,7 @@ async function handleRestoreFromTrash(
       toUpdate.push({
         ...node,
         parentId: targetParentId,
-        name: nextName,
+        metadata: { ...node.metadata, name: nextName },
         originalName: undefined,
         originalParentId: undefined,
         removedAt: undefined,

@@ -1,3 +1,59 @@
+2116) fix/app/trash-restore-refresh (P1) — 進行中 (2026-01-11)
+- ブランチ名: fix/app/trash-restore-refresh
+- 依存: なし
+- 受け入れ基準: ゴミ箱復元時に強制リロード相当の初期化が走らず、TreeSubscriptionAPI の更新で画面が反映される／原因・発生範囲・修正方法と適用範囲を説明する／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/pages/tree/trash/useTrashDialog.ts` と復元後の画面遷移処理（調査後に絞り込み）
+- ロールバック手順: 該当差分を revert し、復元後の挙動を元に戻す
+- チェックリスト:
+  - Trash 復元後のリロード経路を特定する
+  - TreeSubscriptionAPI の更新だけで済むよう調整する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 16:20 JST Trash 復元時の強制リロード挙動の調査に着手。
+  - update: 2026-01-11 16:25 JST restore 後の closeDialog から reload 指定を外し、TreeSubscriptionAPI 更新に委ねるよう修正。検証: 未実施。
+
+2115) fix/app/trash-restore-originalname (P1) — 進行中 (2026-01-11)
+- ブランチ名: fix/app/trash-restore-originalname
+- 依存: なし
+- 受け入れ基準: ゴミ箱から復元したノードの `originalName` が復旧される／原因・発生範囲・修正方法と適用範囲を説明する／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/pages/tree/trash/**` と復元処理周辺（調査後に絞り込み）
+- ロールバック手順: 該当差分を revert し、復元前の挙動へ戻す
+- チェックリスト:
+  - originalName が復元されない経路を特定する
+  - 復元処理で originalName を反映する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 16:00 JST Trash 復元時の originalName 未復旧の調査に着手。
+  - update: 2026-01-11 16:10 JST restoreFromTrash で metadata.name を originalName 由来の値に復旧するよう修正。検証: 未実施。
+
+2114) fix/app/trash-dialog-useeffect-loop (P1) — 進行中 (2026-01-11)
+- ブランチ名: fix/app/trash-dialog-useeffect-loop
+- 依存: なし
+- 受け入れ基準: TrashDialog の useEffect が無限更新にならない／原因・発生範囲・修正方法と適用範囲を説明する／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/pages/tree/trash/TrashDialog.tsx`（必要に応じて関連 hook）
+- ロールバック手順: `app/src/router/pages/tree/trash/TrashDialog.tsx` の差分を revert し、useEffect 修正前に戻す
+- チェックリスト:
+  - TrashDialog の useEffect を特定し依存と state 更新の関係を確認する
+  - 無限更新の原因を整理し修正する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 15:40 JST TrashDialog の useEffect 無限更新警告の調査に着手。
+  - update: 2026-01-06 07:03 JST useTrashFrameState の正規化処理で同値更新を抑止し、useEffect の再実行ループを回避。検証: 未実施。
+
+2113) fix/runtime-worker/stageprocessing-typecheck (P1) — 進行中 (2026-01-11)
+- ブランチ名: fix/runtime-worker/stageprocessing-typecheck
+- 依存: なし
+- 受け入れ基準: `@hierarchidb/runtime-worker` の typecheck で StageProcessingService の TS2345 が解消する／VectorTileRecord と VectorTileRow の型整合が取れる／挙動は変更しない／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/runtime-worker/src/services/StageProcessingService.ts`（必要に応じて型定義）
+- ロールバック手順: `packages/runtime-worker/src/services/StageProcessingService.ts` の差分を revert し、型修正前に戻す
+- チェックリスト:
+  - StageProcessingService の vector tile 取り扱い型を確認する
+  - TS2345 を解消するための型修正を行う
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 15:20 JST runtime-worker の StageProcessingService typecheck 修正に着手。
+  - update: 2026-01-11 15:30 JST shape vector tile の bulkUpsert で必須フィールドを補完し、storeTiles の contentType を型に合わせて統一。検証: 未実施。
+
 2112) fix/shape/step5-clear-stage-cache-counters (P1) — 進行中 (2026-01-11)
 - ブランチ名: fix/shape/step5-clear-stage-cache-counters
 - 依存: なし
@@ -10,6 +66,8 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-11 14:20 JST Step4 のキャッシュ削除後に Step5 のタスク集計が残る問題の調査に着手。
+  - update: 2026-01-11 14:30 JST Step4 の削除処理で extract1/2 のローカルタスク表示を消去し、Step5 側で taskSummary を再評価して 0 件時にリセットする対応を追加。検証: 未実施。
+  - update: 2026-01-11 14:40 JST Step4 の削除ボタン判定に extract1/extract2 タスク数を追加し、停止中でタスクが残っている場合に削除可能とする対応を追加。検証: 未実施。
 
 2111) fix/app/geojson-vt-resolve (P1) — 進行中 (2026-01-06)
 - ブランチ名: fix/app/geojson-vt-resolve
@@ -23,6 +81,35 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-06 00:26 JST geojson-vt の build 解決エラー対応に着手。
+
+2111) fix/shape/step5-task-titles (P1) — 進行中 (2026-01-11)
+- ブランチ名: fix/shape/step5-task-titles
+- 依存: なし
+- 受け入れ基準: ダウンロードタスクは `JPN/1` のまま／一次抽出タスクは `JPN/1 | Japan/Tokyo` 形式で英語国名/地域名を付与／二次抽出タスクは `JPN/1 | Japan/Tokyo | z4-6` のようにズーム範囲を表示／既存の並び順や処理内容は維持／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/worker/**`, `plugins/shape-plugin/src/ui/**`（調査後に絞り込み）
+- ロールバック手順: タスクタイトル生成の差分を revert し、従来の `JPN/1` 表記へ戻す
+- チェックリスト:
+  - タスクタイトル生成の実装箇所を特定する
+  - 一次抽出/二次抽出のタイトル拡張を実装する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 07:10 JST Step5 タスクタイトルの拡張対応に着手。
+  - update: 2026-01-11 15:35 JST タスク表記を「JPN/1 | Japan/Tokyo | z4-6」形式へ変更する方針で合意。
+  - update: 2026-01-11 15:45 JST extract1/extract2 のタイトル生成を「JPN/1 | Japan/Tokyo | z4-6」形式へ更新。検証: 未実施。
+
+2113) fix/ui-map/map-preview-basemap-and-missing-layer-warning (P1) — 進行中 (2026-01-11)
+- ブランチ名: fix/ui-map/map-preview-basemap-and-missing-layer-warning
+- 依存: なし
+- 受け入れ基準: `/map` のデフォルト basemap が Satellite ではなく Terrain になる／`/map` のプレビューで対象レイヤが未生成の場合に内部エラーではなく「まだビルドされていないノードがあります」系の警告ダイアログを毎回表示する／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/routes/map/**`, `packages/ui/map/src/**`（調査後に絞り込み）
+- ロールバック手順: `/map` のデフォルト style と警告ダイアログの差分を revert し、従来の表示に戻す
+- チェックリスト:
+  - `/map` のデフォルト basemap を Terrain へ変更する
+  - 未生成レイヤ検知時の警告ダイアログを追加する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 16:05 JST /map のデフォルト basemap と未生成レイヤ警告の対応に着手。
+  - update: 2026-01-11 16:20 JST /map のデフォルト style を Terrain に変更し、未生成レイヤ検知時に警告ダイアログを表示する処理を追加。検証: 未実施。
 
 2110) feat/ui-map/attribution-badge (P1) — 進行中 (2026-01-11)
 - ブランチ名: feat/ui-map/attribution-badge
@@ -247,6 +334,33 @@
 - 運用ログ：
   - start: 2026-01-11 04:10 JST ズームカード内の3項目を横並びにする作業に着手。
   - done: 2026-01-11 04:15 JST ズームカード内を3列レイアウトに変更。検証: 未実施。
+
+2105) investigate/shape/step5-next-disabled (P2) — 完了 (2026-01-11)
+- ブランチ名: investigate/shape/step5-next-disabled
+- 依存: なし
+- 受け入れ基準: Step5 の Next が enabled なのに押せない要因を特定し説明する／必要であれば修正方針を示す／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/*`, `packages/plugin-ui-host/src/headless/usePluginDialogController/*`（必要に応じて）
+- ロールバック手順: 変更があれば差分を revert して現行挙動へ戻す
+- チェックリスト:
+  - Step5 の Next 判定・クリック処理の経路を確認する
+  - Stepper の遷移経路との差分を特定する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 04:25 JST Step5 の Next が押せない事象の原因調査に着手。
+  - done: 2026-01-11 04:35 JST Next は onStepNavigate→handleNavigation を通るが、runWithPending が in-flight を検知すると無視されるため、pendingAction が残っていると「見た目は有効だが反応なし」になり得る点を確認。Step6 直行は direct ナビゲーション経路で同じ onStepNavigate を使うため、pendingAction/ensureNoConflict/updateLocalDraft のブロックが主な候補。検証: 未実施。
+
+2106) fix/shape/step3-auth-warning-suppress (P2) — 完了 (2026-01-11)
+- ブランチ名: fix/shape/step3-auth-warning-suppress
+- 依存: なし
+- 受け入れ基準: shape Step3 の認証が必要警告がUIに表示されない／内部処理やログに影響しない／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui-auth/src/AuthRequiredDialog.tsx`（必要に応じて）
+- ロールバック手順: 表示抑制の差分を revert して現行表示へ戻す
+- チェックリスト:
+  - shape Step3 の警告表示を抑制する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 04:45 JST Step3 の認証警告表示の抑制に着手。
+  - update: 2026-01-11 05:05 JST shape の AUTH_REQUIRED を UI 表示せず、キャンセル通知も返さないよう修正。検証: 未実施。
 
 2100) fix/shape/step5-vectortile-task-sort (P2) — 完了 (2026-01-11)
 - ブランチ名: fix/shape/step5-vectortile-task-sort

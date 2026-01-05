@@ -17,7 +17,15 @@ import {
   useMapFeatureSelectionGestures,
   mergeFilters,
 } from '@hierarchidb/ui-plugin-shell/ui-map';
-import { Box } from '@mui/material';
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+} from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { Close as CloseIcon, Tune as TuneIcon } from '@mui/icons-material';
 import { useLoaderData, useParams, useSearch } from '@tanstack/react-router';
@@ -40,7 +48,13 @@ import {
 } from '../../../state/mapSearch.atoms.js';
 import type { MapFeatureIdSet, MapHighlightEntry, MapLayerInfo } from '../../../state/mapSearch.atoms.js';
 import { ModelessDialogManager } from '../modeless/ModelessDialogManager.js';
-import { LOCATION_TYPE_OPTIONS, ROUTE_MODE_OPTIONS, SEARCH_TARGET_DEFINITIONS, SEARCH_TARGET_GROUPS } from './constants.js';
+import {
+  BUILT_IN_STYLE_URLS,
+  LOCATION_TYPE_OPTIONS,
+  ROUTE_MODE_OPTIONS,
+  SEARCH_TARGET_DEFINITIONS,
+  SEARCH_TARGET_GROUPS,
+} from './constants.js';
 import { useFolderLayers } from './useFolderLayers.js';
 import { useMapViewState } from './useMapViewState.js';
 import type { MapSearch } from './types.js';
@@ -57,6 +71,8 @@ export default function MapPage() {
   const loaderViewState = useLoaderData({ from: '/map/$nodeId' }) as LoaderMapViewState;
   const geolocation = useGeolocation();
   const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
+  const [missingLayerDialogOpen, setMissingLayerDialogOpen] = useState(false);
+  const [missingLayerIds, setMissingLayerIds] = useState<string[]>([]);
   const [searchSettingsOpen, setSearchSettingsOpen] = useState(false);
   const [hoveredFeatures, setHoveredFeatures] = useState<MapLibreGeoJSONFeature[]>([]);
   const [searchText, setSearchText] = useAtom(mapSearchTextAtom);
@@ -222,6 +238,10 @@ export default function MapPage() {
     hoverMatches: hoverEntries,
     selectedMatches: selectedEntries,
     onViewportLayerIdsChange: handleViewportLayerIdsChange,
+    onMissingLayers: (layerIds) => {
+      setMissingLayerIds(layerIds);
+      setMissingLayerDialogOpen(true);
+    },
   });
 
   const updateIdSetFromEntries = useCallback(
@@ -251,6 +271,10 @@ export default function MapPage() {
     },
     setSearchText,
     setSearchTargets,
+    onMissingLayers: (layerIds) => {
+      setMissingLayerIds(layerIds);
+      setMissingLayerDialogOpen(true);
+    },
   });
 
   useMapFeatureHoverCandidates({
@@ -346,7 +370,7 @@ export default function MapPage() {
 
   const mapStyleUrl = useMemo(() => {
     if (basemapStyles.length) return undefined;
-    return DEFAULT_MAP_CONFIG.mapStyleUrl;
+    return BUILT_IN_STYLE_URLS.terrain ?? DEFAULT_MAP_CONFIG.mapStyleUrl;
   }, [basemapStyles.length]);
 
   const locationKinds = useMemo(
@@ -627,6 +651,26 @@ export default function MapPage() {
         onClose={() => setSearchSettingsOpen(false)}
         onToggleTarget={handleSearchTargetToggle}
       />
+      <Dialog
+        open={missingLayerDialogOpen}
+        onClose={() => setMissingLayerDialogOpen(false)}
+        aria-labelledby="map-missing-layer-title"
+      >
+        <DialogTitle id="map-missing-layer-title">まだビルドされていないノードがあります</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            対象ノードのビルドが完了していないため、プレビューに表示できません。ビルド完了後に再度お試しください。
+          </DialogContentText>
+          {missingLayerIds.length > 0 ? (
+            <DialogContentText sx={{ mt: 2 }}>
+              対象レイヤ: {missingLayerIds.join(', ')}
+            </DialogContentText>
+          ) : null}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setMissingLayerDialogOpen(false)}>OK</Button>
+        </DialogActions>
+      </Dialog>
 
       <ResourceLayerMap
         initialViewState={initialViewState}

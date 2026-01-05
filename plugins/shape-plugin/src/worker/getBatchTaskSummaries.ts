@@ -12,19 +12,51 @@ type ShapeBatchTaskSummary = BatchTaskSummary & {
 };
 
 const buildTaskTitle = (task: BatchTaskRecord): string | undefined => {
-  const input = task.inputData ?? {};
+  const input = (task.inputData ?? {}) as Record<string, unknown>;
   const getNumber = (value: unknown): number | undefined =>
     typeof value === 'number' && Number.isFinite(value) ? value : undefined;
-  const countryCode = (input.countryCode ?? input.country) as string | undefined;
+  const getString = (value: unknown): string | undefined =>
+    typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
+  const countryCode = getString(input.countryCode ?? input.country)?.toUpperCase();
   const adminLevel = getNumber(input.adminLevel);
   const locationTitle = countryCode && typeof adminLevel === 'number'
     ? `${countryCode}/${adminLevel}`
     : undefined;
+  const countryLabel = getString(input.countryName) ?? countryCode;
+  const featureLabel = getString(input.featureLabel)
+    ?? getString(input.featureGroupId)
+    ?? getString(input.originLabel);
+  const buildRegionLabel = (country?: string, feature?: string): string | undefined => {
+    if (!country && !feature) return undefined;
+    if (!country) return feature;
+    if (!feature) return country;
+    const countryLower = country.toLowerCase();
+    const featureLower = feature.toLowerCase();
+    if (featureLower.includes(countryLower)) return feature;
+    return `${country}/${feature}`;
+  };
+  const regionLabel = buildRegionLabel(countryLabel, featureLabel);
+  const buildZoomRangeLabel = (): string | undefined => {
+    const rawLabel = getString(input.zoomRangeLabel);
+    if (rawLabel) return rawLabel;
+    const zoomRange = Array.isArray(input.zoomRange) ? input.zoomRange : undefined;
+    if (!zoomRange || zoomRange.length !== 2) return undefined;
+    const minZoom = getNumber(zoomRange[0]);
+    const maxZoom = getNumber(zoomRange[1]);
+    if (typeof minZoom !== 'number' || typeof maxZoom !== 'number') return undefined;
+    return `z${minZoom}-${maxZoom}`;
+  };
   if (task.taskType === 'download') {
-    return locationTitle ?? (input.url as string | undefined) ?? (input.endpoint as string | undefined);
+    return locationTitle ?? getString(input.url) ?? getString(input.endpoint);
   }
   if (task.taskType === 'extract1' || task.taskType === 'extract2') {
-    return locationTitle;
+    if (task.taskType === 'extract1') {
+      const parts = [locationTitle, regionLabel].filter(Boolean);
+      return parts.length > 0 ? parts.join(' | ') : locationTitle ?? regionLabel;
+    }
+    const zoomRangeLabel = buildZoomRangeLabel();
+    const parts = [locationTitle, regionLabel, zoomRangeLabel].filter(Boolean);
+    return parts.length > 0 ? parts.join(' | ') : locationTitle ?? regionLabel ?? zoomRangeLabel;
   }
   if (task.taskType === 'vectortile') {
     const tileZ = getNumber(input.tileZ);

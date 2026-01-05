@@ -61,6 +61,7 @@ export type UseMapFeatureSearchParams<TargetId extends string, HighlightEntry ex
   onMatchesChange: (entries: HighlightEntry[]) => void;
   setSearchText?: (value: string) => void;
   setSearchTargets?: (updater: (prev: Record<TargetId, boolean>) => Record<TargetId, boolean>) => void;
+  onMissingLayers?: (layerIds: string[]) => void;
 };
 
 export type UseMapFeatureSearchResult<TargetId extends string> = {
@@ -79,6 +80,7 @@ export const useMapFeatureSearch = <TargetId extends string, HighlightEntry exte
   onMatchesChange,
   setSearchText,
   setSearchTargets,
+  onMissingLayers,
 }: UseMapFeatureSearchParams<TargetId, HighlightEntry>): UseMapFeatureSearchResult<TargetId> => {
   const clearSearchHighlights = useCallback(() => {
     onMatchesChange([]);
@@ -107,14 +109,28 @@ export const useMapFeatureSearch = <TargetId extends string, HighlightEntry exte
       return;
     }
 
+    if (typeof mapInstance.getLayer === 'function') {
+      const missingLayerIds = highlightLayerIds.filter((layerId) => !mapInstance.getLayer(layerId));
+      if (missingLayerIds.length > 0) {
+        onMissingLayers?.(missingLayerIds);
+        return;
+      }
+    }
+
     const canvas = mapInstance.getCanvas();
-    const features = mapInstance.queryRenderedFeatures(
-      [
-        [0, 0],
-        [canvas.width, canvas.height],
-      ],
-      { layers: highlightLayerIds },
-    ) as MapLibreGeoJSONFeature[];
+    let features: MapLibreGeoJSONFeature[] = [];
+    try {
+      features = mapInstance.queryRenderedFeatures(
+        [
+          [0, 0],
+          [canvas.width, canvas.height],
+        ],
+        { layers: highlightLayerIds },
+      ) as MapLibreGeoJSONFeature[];
+    } catch (error) {
+      console.debug('[MapPreview] Failed to query search features', error);
+      return;
+    }
 
     const matchedEntries = new Map<string, HighlightEntry>();
     for (const feature of features) {
@@ -138,7 +154,17 @@ export const useMapFeatureSearch = <TargetId extends string, HighlightEntry exte
     }
 
     onMatchesChange(Array.from(matchedEntries.values()));
-  }, [buildHighlightEntry, clearSearchHighlights, highlightLayerIds, mapInstance, onMatchesChange, searchText, searchTargets, targetDefinitions]);
+  }, [
+    buildHighlightEntry,
+    clearSearchHighlights,
+    highlightLayerIds,
+    mapInstance,
+    onMatchesChange,
+    onMissingLayers,
+    searchText,
+    searchTargets,
+    targetDefinitions,
+  ]);
 
   return {
     runSearch,

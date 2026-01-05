@@ -244,6 +244,31 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
   }, [activeNodeId, displayTasks.length, hasTaskSummary]);
 
   useEffect(() => {
+    if (!activeNodeId) return;
+    if (displayTasks.length > 0) return;
+    if (!hasTaskSummary) return;
+    let cancelled = false;
+    const nodeKey = toNodeId(String(activeNodeId));
+    const run = async () => {
+      try {
+        const total = await getShapeDbApiClient().ephemeral.countBatchTasks(nodeKey as NodeId);
+        if (cancelled) return;
+        if (total === 0) {
+          setStageTaskSummary({});
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.debug('[ShapeBuildProgressStep] taskSummary:resetFailed', error);
+        }
+      }
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeNodeId, displayTasks.length, hasTaskSummary]);
+
+  useEffect(() => {
     if (!activeNodeId || !effectiveStatus?.status) return;
     const nextStatus = (() => {
       switch (effectiveStatus.status) {

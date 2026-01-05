@@ -34,7 +34,7 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
 
   const [counts, setCounts] = useState({ raw: 0, stage1: 0, stage2: 0, tiles: 0, cache: 0 });
   const [countsLoading, setCountsLoading] = useState(false);
-  const [taskCounts, setTaskCounts] = useState({ download: 0, vectortile: 0 });
+  const [taskCounts, setTaskCounts] = useState({ download: 0, extract1: 0, extract2: 0, vectortile: 0 });
   const [finalCounts, setFinalCounts] = useState({ tiles: 0, metadata: 0 });
   const [failedCounts, setFailedCounts] = useState({ download: 0, extract1: 0, extract2: 0, vectortile: 0 });
   const [persistedStatus, setPersistedStatus] = useState<string | null>(null);
@@ -52,7 +52,7 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
       setCounts({ raw: 0, stage1: 0, stage2: 0, tiles: 0, cache: 0 });
       setFinalCounts({ tiles: 0, metadata: 0 });
       setFailedCounts({ download: 0, extract1: 0, extract2: 0, vectortile: 0 });
-      setTaskCounts({ download: 0, vectortile: 0 });
+      setTaskCounts({ download: 0, extract1: 0, extract2: 0, vectortile: 0 });
       setCountsLoading(false);
       return;
     }
@@ -67,6 +67,8 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
         finalTiles,
         finalMetadata,
         downloadTasks,
+        extract1Tasks,
+        extract2Tasks,
         vectortileTasks,
       ] = await Promise.all([
         ephemeral.countRawBuffers(batchNodeId),
@@ -80,6 +82,8 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
           query.listSourceMetadata(batchNodeId),
         ]).then(([featureRows, sourceRows]) => Math.max(featureRows.length, sourceRows.length)),
         ephemeral.listBatchTasksByType(batchNodeId, 'download').then((rows) => rows.length),
+        ephemeral.listBatchTasksByType(batchNodeId, 'extract1').then((rows) => rows.length),
+        ephemeral.listBatchTasksByType(batchNodeId, 'extract2').then((rows) => rows.length),
         ephemeral.listBatchTasksByType(batchNodeId, 'vectortile').then((rows) => rows.length),
       ]);
       const failedTasks = await ephemeral.listBatchTasksByStatus(batchNodeId, 'failed');
@@ -92,7 +96,12 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
       setCounts({ raw, stage1, stage2, tiles, cache: cacheEntries });
       setFinalCounts({ tiles: finalTiles, metadata: finalMetadata });
       setFailedCounts(failed);
-      setTaskCounts({ download: downloadTasks, vectortile: vectortileTasks });
+      setTaskCounts({
+        download: downloadTasks,
+        extract1: extract1Tasks,
+        extract2: extract2Tasks,
+        vectortile: vectortileTasks,
+      });
     } finally {
       setCountsLoading(false);
     }
@@ -143,8 +152,16 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
     || failedCounts.download > 0
     || taskCounts.download > 0
   );
-  const canDeleteStage1 = !isRunning && !disabled && (counts.stage1 > 0 || failedCounts.extract1 > 0);
-  const canDeleteStage2 = !isRunning && !disabled && (counts.stage2 > 0 || failedCounts.extract2 > 0);
+  const canDeleteStage1 = !isRunning && !disabled && (
+    counts.stage1 > 0
+    || failedCounts.extract1 > 0
+    || taskCounts.extract1 > 0
+  );
+  const canDeleteStage2 = !isRunning && !disabled && (
+    counts.stage2 > 0
+    || failedCounts.extract2 > 0
+    || taskCounts.extract2 > 0
+  );
   const canDeleteTiles = !isRunning && !disabled && (
     counts.tiles > 0
     || failedCounts.vectortile > 0
@@ -237,9 +254,11 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
     if (!batchNodeId) return notify.warning('NodeId is missing.');
     await ephemeral.clearStage(batchNodeId, stage);
     await clearBatchTasksForType(stage);
+    setBuildTasks((prev) => prev.filter((task) => task.stage !== stage && task.taskType !== stage));
+    setPersistedTasks((prev) => prev.filter((task) => task.stage !== stage && task.taskType !== stage));
     await loadCounts();
     notify.success(stage === 'extract1' ? 'Deleted Stage1 cache' : 'Deleted Stage2 cache');
-  }, [batchNodeId, clearBatchTasksForType, ephemeral, loadCounts]);
+  }, [batchNodeId, clearBatchTasksForType, ephemeral, loadCounts, setBuildTasks, setPersistedTasks]);
 
   const handleDeleteTiles = useCallback(async () => {
     if (!batchNodeId) return notify.warning('NodeId is missing.');
