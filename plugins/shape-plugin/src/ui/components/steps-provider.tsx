@@ -123,6 +123,7 @@ const hasCompletedBatchSession = async (data?: Partial<ShapeEntity>): Promise<bo
 
 const isShapeBuildPersisted = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
   if (!data) return false;
+  if (data.processingStatus === 'processing' || data.processingStatus === 'paused') return true;
   if (data.processingStatus === 'completed') return true;
   if (data.processingStatus === 'failed') return false;
   if (hasTileSummary(data)) return true;
@@ -133,6 +134,7 @@ const isShapeBuildPersisted = async (data?: Partial<ShapeEntity>): Promise<boole
 
 const isShapePreviewReady = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
   if (!data) return false;
+  if (data.processingStatus === 'processing' || data.processingStatus === 'paused') return true;
   if (await hasPersistedMetadata(data)) return true;
   if (hasTileSummary(data)) return true;
   return hasPersistedVectorTiles(data);

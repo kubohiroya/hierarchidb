@@ -1,3 +1,18 @@
+2109) feat/shape/geojson-vt-index-reuse (P1) — 進行中 (2026-01-11)
+- ブランチ名: feat/shape/geojson-vt-index-reuse
+- 依存: なし
+- 受け入れ基準: extract2 で geojson-vt の index を生成して IndexedDB に保存できる／vectortile ステージで保存済み index を復元して再利用できる／既存の per-tile index 生成が抑制される／設計と手順を doc に整理する／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/runtime-worker/src/**`, `packages/features/gis-sdk/src/**`, `plugins/shape-plugin/src/services/**`（調査後に絞り込み）
+- ロールバック手順: 追加した index 保存/復元の処理を revert し、従来の per-tile index 生成へ戻す
+- チェックリスト:
+  - idb-geojson-vt-test.html の復元手順をコードに反映する
+  - extract2 で geojson-vt index を生成して IndexedDB に保存する
+  - vectortile で index を復元し geojson-vt 生成を再利用する
+  - 既存の index 生成経路が重複しないよう制御する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 04:20 JST extract2 で geojson-vt index を保存し vectortile で再利用する対応に着手。
+
 2103) fix/shape/step5-pause-flapping (P1) — 完了 (2026-01-05)
 - ブランチ名: fix/shape/step5-pause-flapping
 - 依存: なし
@@ -71,6 +86,20 @@
 - 運用ログ：
   - start: 2026-01-05 22:50 JST Step6 のベクトルタイル未検知問題の調査に着手。
   - done: 2026-01-05 22:55 JST stage worker 起動時に shape の vector tile store を登録し、タイル保存先が欠ける問題を修正。検証: 未実施。
+
+2108) fix/shape/step5-next-during-build (P1) — 完了 (2026-01-05)
+- ブランチ名: fix/shape/step5-next-during-build
+- 依存: なし
+- 受け入れ基準: Step5 のビルド進行中でも「次へ」が有効化される／Step6 で進行中のタイル生成が待機/表示される／原因・発生範囲・修正方法と適用範囲を説明する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/steps-provider.tsx`
+- ロールバック手順: 上記ファイルの差分を revert し、Step5/Step6 の判定を元に戻す
+- チェックリスト:
+  - Step5 の valid 判定にビルド中を含める
+  - Step6 の canProceed 判定にビルド中を含める
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-05 23:01 JST Step5 のビルド中「次へ」無効化の調査に着手。
+  - done: 2026-01-05 23:01 JST processing/paused を Step5/Step6 の判定に含め、ビルド中も「次へ」を許可。検証: 未実施。
 
 2102) fix/shape/step4-cache-labels (P2) — 完了 (2026-01-05)
 - ブランチ名: fix/shape/step4-cache-labels
