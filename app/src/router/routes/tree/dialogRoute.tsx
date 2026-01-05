@@ -1,7 +1,7 @@
 /**
  * console Dialog Route for TanStack Router
  *
- * This route handles the `/t/:treeId/:pageNodeId/:targetNodeId/:nodeType/:action` path
+ * This route handles the `/t/:treeId/:pageNodeId/:targetNodeId/:nodeType/:action/:mode?/:step?` path
  * and displays the appropriate dialog component.
  * Corresponds to React Router route `t.($treeId).($pageNodeId).($targetNodeId).$nodeType.$action.tsx`
  */
@@ -34,77 +34,84 @@ export type TreeDialogLoaderResult =
 
 const TrashDialogLazy = lazy(() => import('~/router/pages/tree/trash/TrashDialog.js'));
 
-export const treeDialogRoute = createRoute({
-  getParentRoute: () => treeNodeTypeRoute,
-  path: '$action',
-  loader: async ({ params }) => {
-    const { treeId, pageNodeId, targetNodeId, nodeType, action } = params;
-    if (!treeId || !targetNodeId || !nodeType || !action) {
-      throw new Error('Missing required parameters');
-    }
-    const resolvedPageNodeId = pageNodeId ?? `${treeId}:root`;
+const loadTreeDialog = async ({
+  params,
+}: {
+  params: {
+    treeId?: string;
+    pageNodeId?: string;
+    targetNodeId?: string;
+    nodeType?: string;
+    action?: string;
+    mode?: string;
+    step?: string;
+  };
+}): Promise<TreeDialogLoaderResult> => {
+  const { treeId, pageNodeId, targetNodeId, nodeType, action, mode, step } = params;
+  if (!treeId || !targetNodeId || !nodeType || !action) {
+    throw new Error('Missing required parameters');
+  }
+  const resolvedPageNodeId = pageNodeId ?? `${treeId}:root`;
 
-    const resolvedParams: TreeDialogResolvedParams = {
-      treeId,
-      pageNodeId: resolvedPageNodeId,
-      targetNodeId,
-      nodeType,
-      action,
-    };
+  const resolvedParams: TreeDialogResolvedParams = {
+    treeId,
+    pageNodeId: resolvedPageNodeId,
+    targetNodeId,
+    nodeType,
+    action,
+    mode,
+    step,
+  };
 
-    const normalizedNodeType = nodeType.toLowerCase();
+  const normalizedNodeType = nodeType.toLowerCase();
 
-    // Special handling for trash dialog
-    if (normalizedNodeType === 'trash') {
-      const trashDialogModule = await import('~/router/pages/tree/trash/TrashDialog.js');
-      if (trashDialogModule.clientLoader) {
-        const trashParams = toTrashDialogParams(resolvedParams);
-        const data = await trashDialogModule.clientLoader({ params: trashParams });
-        return {
-          kind: 'trash',
-          data,
-          params: trashParams,
-        } satisfies TreeDialogLoaderResult;
-      }
-    }
-
-    if (normalizedNodeType === 'folder') {
-      const { client } = await loadWorkerAPIClient();
+  // Special handling for trash dialog
+  if (normalizedNodeType === 'trash') {
+    const trashDialogModule = await import('~/router/pages/tree/trash/TrashDialog.js');
+    if (trashDialogModule.clientLoader) {
+      const trashParams = toTrashDialogParams(resolvedParams);
+      const data = await trashDialogModule.clientLoader({ params: trashParams });
       return {
-        kind: 'plugin',
-        data: {
-          client,
-          tree: undefined,
-          pageNodeId: resolvedPageNodeId as NodeId,
-          pageNode: undefined,
-          targetNodeId: targetNodeId as NodeId,
-          targetNode: undefined,
-          nodeType: undefined,
-          action: undefined,
-          params: resolvedParams,
-        },
+        kind: 'trash',
+        data,
+        params: trashParams,
       } satisfies TreeDialogLoaderResult;
     }
+  }
 
-    const pluginData = await loadNodeAction({
-      treeId,
-      pageNodeId: resolvedPageNodeId,
-      targetNodeId,
-      nodeType,
-      action,
-    });
-
+  if (normalizedNodeType === 'folder') {
+    const { client } = await loadWorkerAPIClient();
     return {
       kind: 'plugin',
-      data: toPluginDialogLoaderData(pluginData, resolvedParams),
+      data: {
+        client,
+        tree: undefined,
+        pageNodeId: resolvedPageNodeId as NodeId,
+        pageNode: undefined,
+        targetNodeId: targetNodeId as NodeId,
+        targetNode: undefined,
+        nodeType: undefined,
+        action: undefined,
+        params: resolvedParams,
+      },
     } satisfies TreeDialogLoaderResult;
-  },
-  component: TreeDialogGuarded,
-});
+  }
 
-function TreeDialogGuarded() {
-  const loaderResult = treeDialogRoute.useLoaderData() as TreeDialogLoaderResult;
+  const pluginData = await loadNodeAction({
+    treeId,
+    pageNodeId: resolvedPageNodeId,
+    targetNodeId,
+    nodeType,
+    action,
+  });
 
+  return {
+    kind: 'plugin',
+    data: toPluginDialogLoaderData(pluginData, resolvedParams),
+  } satisfies TreeDialogLoaderResult;
+};
+
+const renderTreeDialog = (loaderResult: TreeDialogLoaderResult) => {
   if (loaderResult.kind === 'trash') {
     const { data, params } = loaderResult;
     return (
@@ -119,7 +126,37 @@ function TreeDialogGuarded() {
   }
 
   return null;
-}
+};
+
+export const treeDialogRoute = createRoute({
+  getParentRoute: () => treeNodeTypeRoute,
+  path: '$action',
+  loader: loadTreeDialog,
+  component: () => {
+    const loaderResult = treeDialogRoute.useLoaderData() as TreeDialogLoaderResult;
+    return renderTreeDialog(loaderResult);
+  },
+});
+
+export const treeDialogModeRoute = createRoute({
+  getParentRoute: () => treeNodeTypeRoute,
+  path: '$action/$mode',
+  loader: loadTreeDialog,
+  component: () => {
+    const loaderResult = treeDialogModeRoute.useLoaderData() as TreeDialogLoaderResult;
+    return renderTreeDialog(loaderResult);
+  },
+});
+
+export const treeDialogModeStepRoute = createRoute({
+  getParentRoute: () => treeNodeTypeRoute,
+  path: '$action/$mode/$step',
+  loader: loadTreeDialog,
+  component: () => {
+    const loaderResult = treeDialogModeStepRoute.useLoaderData() as TreeDialogLoaderResult;
+    return renderTreeDialog(loaderResult);
+  },
+});
 
 type TreeDialogResolvedParams = {
   treeId: string;
@@ -127,6 +164,8 @@ type TreeDialogResolvedParams = {
   targetNodeId: string;
   nodeType: string;
   action: string;
+  mode?: string;
+  step?: string;
 };
 
 function toTrashDialogParams(params: TreeDialogResolvedParams): TrashDialogRouteParams {
@@ -136,6 +175,8 @@ function toTrashDialogParams(params: TreeDialogResolvedParams): TrashDialogRoute
     targetNodeId: params.targetNodeId,
     nodeType: params.nodeType,
     action: params.action,
+    mode: params.mode,
+    step: params.step,
   };
 }
 

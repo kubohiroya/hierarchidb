@@ -19,7 +19,8 @@ export type TreeConsoleToolbarAction =
   | { action: 'import' }
   | { action: 'export' }
   | { action: 'setRowClickAction'; params: 'Select/Navigate' | 'Edit' }
-  | { action: 'setAutosaveEnabled'; params: boolean };
+  | { action: 'setAutosaveEnabled'; params: boolean }
+  | { action: 'setDialogBackdropDismissEnabled'; params: boolean };
 
 /**
  * Parameters type for TreeConsoleToolbar_Deprecated actions
@@ -113,6 +114,16 @@ export interface TreeConsoleToolbarProps {
    * Callback when autosave toggle changes.
    */
   onAutosaveEnabledChange?: (enabled: boolean) => void;
+
+  /**
+   * Toggle closing plugin dialogs by clicking outside the dialog.
+   */
+  dialogBackdropDismissEnabled?: boolean;
+
+  /**
+   * Callback when backdrop dismiss toggle changes.
+   */
+  onDialogBackdropDismissEnabledChange?: (enabled: boolean) => void;
 
   /**
    * Undo/Redo availability

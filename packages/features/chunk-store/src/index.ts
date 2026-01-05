@@ -148,6 +148,7 @@ class ChunkStoreDB extends Dexie {
       // relations table stays empty unless a caller links a nodeId; that's OK.
       void relations;
     });
+
   }
 }
 
@@ -168,6 +169,7 @@ export class DexieChunkStore<T> implements StoragePort {
   private readonly network: NetworkPort;
   private readonly hashPort: HashPort;
   private readonly hashAlgorithm: HashAlgorithm;
+  private static readonly inFlight = new Map<string, Promise<ChunkStoreEntry<unknown>>>();
 
   constructor(options: DexieChunkStoreOptions<T>) {
     const tables: DexieChunkStoreTables = {
@@ -269,90 +271,20 @@ export class DexieChunkStore<T> implements StoragePort {
     const cacheKey = options.cacheKey ?? url;
     const fetchUrl = options.fetchUrl ?? url;
     const identity = options.identity ?? 'url+etag';
-    const cachedMetadataId = await this.getMetadataIdByCacheKey(cacheKey);
-    const cachedMeta = cachedMetadataId ? await this.files.get(cachedMetadataId) : undefined;
-
-    const reuseCached = async (): Promise<ChunkStoreEntry<T> | null> => {
-      if (!cachedMetadataId || !cachedMeta) return null;
-      const buffer = await this.readAll(cachedMetadataId);
-      await this.ensureRelation(nodeId, cachedMetadataId);
-      return {
-        key: cacheKey,
-        metadataId: cachedMetadataId,
-        value: this.deserializer(buffer),
-        metadata: this.toMetadata(cachedMetadataId, cachedMeta),
-      };
-    };
-
-    const useConditional = Boolean(cachedMeta?.etag || cachedMeta?.lastModified);
-    if (useConditional && cachedMetadataId && cachedMeta) {
-      try {
-        const headers = buildHeaders(
-          options.accept,
-          options.headers,
-          { etag: cachedMeta.etag, lastModified: cachedMeta.lastModified },
-        );
-        const head = await this.network.head(fetchUrl, { headers, signal: options.signal });
-        if (head.status === 304) {
-          const cached = await reuseCached();
-          if (cached) return cached;
-        }
-        if (head.ok) {
-          const headEtag = readHeader(head.headers, 'etag');
-          const headLastModified = readHeader(head.headers, 'last-modified');
-          const sameEtag = headEtag && cachedMeta.etag && headEtag === cachedMeta.etag;
-          const sameLastModified = headLastModified && cachedMeta.lastModified && headLastModified === cachedMeta.lastModified;
-          if (sameEtag || sameLastModified) {
-            const cached = await reuseCached();
-            if (cached) return cached;
-          }
-        }
-      } catch {
-        // Fallback to conditional GET below.
-      }
+    const inFlightKey = `${this.getDbName()}:${cacheKey}`;
+    const existing = DexieChunkStore.inFlight.get(inFlightKey);
+    if (existing) {
+      const entry = await (existing as Promise<ChunkStoreEntry<T>>);
+      await this.ensureRelation(nodeId, entry.metadataId);
+      return entry;
     }
 
-    const attemptFetch = async (useConditional: boolean): Promise<{ buffer: ArrayBuffer; meta: Partial<FileRecord> }> => {
-      const headers = buildHeaders(
-        options.accept,
-        options.headers,
-        useConditional && cachedMeta ? { etag: cachedMeta.etag, lastModified: cachedMeta.lastModified } : undefined,
-      );
-      const response = await this.network.get(fetchUrl, { headers, signal: options.signal });
-      if (response.status === 304) {
-        if (cachedMetadataId) {
-          const cachedBuffer = await this.readAll(cachedMetadataId);
-          return { buffer: cachedBuffer, meta: { ...cachedMeta } };
-        }
-        return attemptFetch(false);
-      }
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      const buffer = await response.arrayBuffer();
-      return {
-        buffer,
-        meta: {
-          contentType: readHeader(response.headers, 'content-type'),
-          etag: readHeader(response.headers, 'etag'),
-          lastModified: readHeader(response.headers, 'last-modified'),
-          fetchedAt: Date.now(),
-          sizeBytes: buffer.byteLength,
-        },
-      };
-    };
+    const fetchPromise = (async (): Promise<ChunkStoreEntry<T>> => {
+      const cachedMetadataId = await this.getMetadataIdByCacheKey(cacheKey);
+      const cachedMeta = cachedMetadataId ? await this.files.get(cachedMetadataId) : undefined;
 
-    try {
-      const fetched = await attemptFetch(useConditional);
-      const stored = await this.storeBufferForNode(nodeId, cacheKey, fetched.buffer, fetched.meta, identity);
-      return {
-        key: cacheKey,
-        metadataId: stored.metadataId,
-        value: this.deserializer(fetched.buffer),
-        metadata: stored.metadata,
-      };
-    } catch (error) {
-      if (options.allowStale !== false && cachedMetadataId && cachedMeta) {
+      const reuseCached = async (): Promise<ChunkStoreEntry<T> | null> => {
+        if (!cachedMetadataId || !cachedMeta) return null;
         const buffer = await this.readAll(cachedMetadataId);
         await this.ensureRelation(nodeId, cachedMetadataId);
         return {
@@ -361,9 +293,103 @@ export class DexieChunkStore<T> implements StoragePort {
           value: this.deserializer(buffer),
           metadata: this.toMetadata(cachedMetadataId, cachedMeta),
         };
+      };
+
+      const useConditional = Boolean(cachedMeta?.etag || cachedMeta?.lastModified);
+      if (useConditional && cachedMetadataId && cachedMeta) {
+        try {
+          const headers = buildHeaders(
+            options.accept,
+            options.headers,
+            { etag: cachedMeta.etag, lastModified: cachedMeta.lastModified },
+          );
+          const head = await this.network.head(fetchUrl, { headers, signal: options.signal });
+          if (head.status === 304) {
+            const cached = await reuseCached();
+            if (cached) return cached;
+          }
+          if (head.ok) {
+            const headEtag = readHeader(head.headers, 'etag');
+            const headLastModified = readHeader(head.headers, 'last-modified');
+            const sameEtag = headEtag && cachedMeta.etag && headEtag === cachedMeta.etag;
+            const sameLastModified = headLastModified && cachedMeta.lastModified && headLastModified === cachedMeta.lastModified;
+            if (sameEtag || sameLastModified) {
+              const cached = await reuseCached();
+              if (cached) return cached;
+            }
+          }
+        } catch {
+          // Fallback to conditional GET below.
+        }
       }
-      throw error;
+
+      const attemptFetch = async (useConditional: boolean): Promise<{ buffer: ArrayBuffer; meta: Partial<FileRecord> }> => {
+        const headers = buildHeaders(
+          options.accept,
+          options.headers,
+          useConditional && cachedMeta ? { etag: cachedMeta.etag, lastModified: cachedMeta.lastModified } : undefined,
+        );
+        const response = await this.network.get(fetchUrl, { headers, signal: options.signal });
+        if (response.status === 304) {
+          if (cachedMetadataId) {
+            const cachedBuffer = await this.readAll(cachedMetadataId);
+            return { buffer: cachedBuffer, meta: { ...cachedMeta } };
+          }
+          return attemptFetch(false);
+        }
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const buffer = await response.arrayBuffer();
+        return {
+          buffer,
+          meta: {
+            contentType: readHeader(response.headers, 'content-type'),
+            etag: readHeader(response.headers, 'etag'),
+            lastModified: readHeader(response.headers, 'last-modified'),
+            fetchedAt: Date.now(),
+            sizeBytes: buffer.byteLength,
+          },
+        };
+      };
+
+      try {
+        const fetched = await attemptFetch(useConditional);
+        const stored = await this.storeBufferForNode(nodeId, cacheKey, fetched.buffer, fetched.meta, identity);
+        return {
+          key: cacheKey,
+          metadataId: stored.metadataId,
+          value: this.deserializer(fetched.buffer),
+          metadata: stored.metadata,
+        };
+      } catch (error) {
+        if (options.allowStale !== false && cachedMetadataId && cachedMeta) {
+          const buffer = await this.readAll(cachedMetadataId);
+          await this.ensureRelation(nodeId, cachedMetadataId);
+          return {
+            key: cacheKey,
+            metadataId: cachedMetadataId,
+            value: this.deserializer(buffer),
+            metadata: this.toMetadata(cachedMetadataId, cachedMeta),
+          };
+        }
+        throw error;
+      }
+    })();
+
+    DexieChunkStore.inFlight.set(inFlightKey, fetchPromise as Promise<ChunkStoreEntry<unknown>>);
+    try {
+      const entry = await fetchPromise;
+      await this.ensureRelation(nodeId, entry.metadataId);
+      return entry;
+    } finally {
+      DexieChunkStore.inFlight.delete(inFlightKey);
     }
+  }
+
+  private getDbName(): string {
+    const db = this.files.db;
+    return db?.name ?? 'chunk-store';
   }
 
   async putChunk(fileId: string, index: number, data: ArrayBuffer): Promise<void> {
@@ -624,6 +650,10 @@ const generateMetadataId = (): ChunkStoreMetadataId => {
   const rand = Math.random().toString(36).slice(2, 10);
   return `meta-${Date.now().toString(36)}-${rand}`;
 };
+
+const sleep = (ms: number): Promise<void> => (
+  new Promise((resolve) => setTimeout(resolve, ms))
+);
 
 export * from './ports.js';
 export * from './cas/ContentAddressableStore.js';

@@ -44,6 +44,19 @@ export const createShapeChunkStore = <T>(
   })
 );
 
+export const createShapeChunkStoreWithNetworkPort = <T>(
+  serializer: ChunkStoreSerializer<T>,
+  deserializer: ChunkStoreDeserializer<T>,
+  networkPort: FetchNetworkPort,
+): DexieChunkStore<T> => (
+  new DexieChunkStore<T>({
+    dbName: 'shape-chunks',
+    serializer,
+    deserializer,
+    networkPort,
+  })
+);
+
 export const jsonSerializer = (value: unknown): ArrayBuffer => (
   textEncoder.encode(JSON.stringify(value)).buffer
 );

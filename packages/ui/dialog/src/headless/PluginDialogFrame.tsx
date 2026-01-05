@@ -33,6 +33,8 @@ export interface PluginDialogFrameComponentProps<TData> {
   portalContainer?: Element | DocumentFragment | null;
   /** Duration (ms) for the fade transition when the dialog mounts/unmounts. */
   transitionDuration?: number;
+  /** Whether clicking the backdrop should request close (default: true). */
+  backdropDismissEnabled?: boolean;
 }
 
 const DEFAULT_DIALOG_SIZE = { width: 960, height: 640 } as const;
@@ -60,6 +62,7 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
     disablePortal = false,
     portalContainer,
     transitionDuration,
+    backdropDismissEnabled = true,
   } = props;
 
   const { open, onRequestClose } = headlessProps;
@@ -117,9 +120,11 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
   const size = headlessProps.size ?? DEFAULT_DIALOG_SIZE;
 
   const guards = useDialogInteractionGuards({
-    onBackdropClick: () => {
-      headlessProps.onRequestClose?.('close');
-    },
+    onBackdropClick: backdropDismissEnabled
+      ? () => {
+          headlessProps.onRequestClose?.('close');
+        }
+      : undefined,
     backdropIgnoreDelayMs,
     stopWheelPropagation,
   });

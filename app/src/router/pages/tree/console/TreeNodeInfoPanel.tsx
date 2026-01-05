@@ -3,6 +3,7 @@ import { Edit as EditIcon, PlayArrow as PlayArrowIcon, Close as CloseIcon } from
 import { NodeContextMenu, NodeTypeIcon } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import type { TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { TreeConsolePanelProps } from '@hierarchidb/ui-treeconsole-base';
+import { useNavigate } from '@tanstack/react-router';
 import { useTreeNodeInfoPanel } from './useTreeNodeInfoPanel.js';
 
 type ContextMenuHandler = NonNullable<TreeConsolePanelProps['onContextMenuAction']>;
@@ -14,6 +15,7 @@ export interface TreeNodeInfoPanelProps {
 }
 
 export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNodeInfoPanelProps) {
+  const navigate = useNavigate();
   const {
     currentNode,
     menuAnchorEl,
@@ -27,6 +29,12 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
     isDraft,
   } = useTreeNodeInfoPanel({ treeId, node, onContextMenuAction });
   const isVisible = currentNode?.visible !== false;
+  const parentNodeId = currentNode?.parentId;
+  const isRootNode =
+    (treeId && currentNode?.id === `${treeId}:root`) ||
+    currentNode?.depth === 0 ||
+    (currentNode?.id && parentNodeId === currentNode.id);
+  const showCloseButton = Boolean(treeId && parentNodeId && !isRootNode);
 
   if (!currentNode) {
     return (
@@ -61,15 +69,19 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
           position: 'relative',
         }}
       >
-        <IconButton
-          aria-label={labels.closeAria}
-          size="small"
-          onClick={() => handleContextMenuTrigger('navigate', { navigateToParent: true })}
-          disabled={!canMutate}
-          sx={{ position: 'absolute', top: 8, right: 8 }}
-        >
-          <CloseIcon fontSize="small" />
-        </IconButton>
+        {showCloseButton && (
+          <IconButton
+            aria-label={labels.closeAria}
+            size="small"
+            onClick={() => {
+              if (!treeId || !parentNodeId) return;
+              navigate({ to: `/t/${treeId}/${parentNodeId}` });
+            }}
+            sx={{ position: 'absolute', top: 8, right: 8 }}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        )}
         <Tooltip title={labels.iconTooltip}>
           <span style={{ display: 'inline-flex', justifyContent: 'center' }}>
             <NodeTypeIcon

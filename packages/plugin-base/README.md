@@ -23,7 +23,7 @@ index.ts     Public exports
 ## Consumers / usage
 - `@hierarchidb/plugin-ui-host` — dialog shell uses registries/hooks to drive navigation and URL sync.
 - Feature plugins — register steps and capabilities via `PluginStepRegistry`.
-- `app/src` treeconsole dialog routes — read `step`/`mode`/`map` query params synced by `useDialogUrlSync`.
+- `app/src` treeconsole dialog routes — read `step`/`mode` from path segments (`.../:action/:mode/:step`).
 
 ## Build
 ```

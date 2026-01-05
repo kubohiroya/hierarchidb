@@ -27,6 +27,8 @@ interface TreeConsoleToolbarContentProps {
   onRowClickActionChange?: TreeConsoleToolbarProps['onRowClickActionChange'];
   autosaveEnabled?: boolean;
   onAutosaveEnabledChange?: TreeConsoleToolbarProps['onAutosaveEnabledChange'];
+  dialogBackdropDismissEnabled?: boolean;
+  onDialogBackdropDismissEnabledChange?: TreeConsoleToolbarProps['onDialogBackdropDismissEnabledChange'];
   canUndo: boolean;
   canRedo: boolean;
   canCopy: boolean;
@@ -49,6 +51,8 @@ export function TreeConsoleToolbarContent({
   onRowClickActionChange,
   autosaveEnabled = false,
   onAutosaveEnabledChange,
+  dialogBackdropDismissEnabled = false,
+  onDialogBackdropDismissEnabledChange,
   canUndo,
   canRedo,
   canCopy,
@@ -145,6 +149,10 @@ export function TreeConsoleToolbarContent({
     },
     developerMenuLabel: t('developerMenu.clearIndexedDb'),
     autosaveTitle: t('settings.autosave.title', 'Autosave'),
+    dialogBackdropDismissTitle: t(
+      'settings.dialogBackdropDismiss.title',
+      'Close dialogs on outside click',
+    ),
     sharedZoomRangeTitle: t('settings.sharedZoomRange.title', 'Shared zoom range'),
     sharedZoomRangeHelper: t(
       'settings.sharedZoomRange.helper',
@@ -213,20 +221,23 @@ export function TreeConsoleToolbarContent({
           portalContainer={portalContainer}
         />
 
-        <SettingsMenu
-          rowClickAction={rowClickAction}
-          onRowClickActionChange={onRowClickActionChange}
-          autosaveEnabled={autosaveEnabled}
-          onAutosaveEnabledChange={onAutosaveEnabledChange}
-          onAction={handleAction}
-          portalContainer={portalContainer}
-          labels={{
-            settingsButton: settingsButtonLabel,
-            rowClickTitle: labels.rowClickTitle,
-            rowClickSelectNavigate: labels.rowClickSelectNavigate,
-            rowClickEdit: labels.rowClickEdit,
-            autosaveTitle: labels.autosaveTitle,
-            sharedZoomRangeTitle: labels.sharedZoomRangeTitle,
+      <SettingsMenu
+        rowClickAction={rowClickAction}
+        onRowClickActionChange={onRowClickActionChange}
+        autosaveEnabled={autosaveEnabled}
+        onAutosaveEnabledChange={onAutosaveEnabledChange}
+        dialogBackdropDismissEnabled={dialogBackdropDismissEnabled}
+        onDialogBackdropDismissEnabledChange={onDialogBackdropDismissEnabledChange}
+        onAction={handleAction}
+        portalContainer={portalContainer}
+        labels={{
+          settingsButton: settingsButtonLabel,
+          rowClickTitle: labels.rowClickTitle,
+          rowClickSelectNavigate: labels.rowClickSelectNavigate,
+          rowClickEdit: labels.rowClickEdit,
+          autosaveTitle: labels.autosaveTitle,
+          dialogBackdropDismissTitle: labels.dialogBackdropDismissTitle,
+          sharedZoomRangeTitle: labels.sharedZoomRangeTitle,
             sharedZoomRangeHelper: labels.sharedZoomRangeHelper,
             sharedZoomRangeLabel: labels.sharedZoomRangeLabel,
             sharedZoomSegmentsLabel: labels.sharedZoomSegmentsLabel,

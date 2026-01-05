@@ -52,6 +52,8 @@ export type ToolbarControllerResult = {
   setRowClickAction: React.Dispatch<React.SetStateAction<'Select/Navigate' | 'Edit'>>;
   autosaveEnabled: boolean;
   setAutosaveEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  dialogBackdropDismissEnabled: boolean;
+  setDialogBackdropDismissEnabled: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 export function useTreeConsoleToolbarActions({
@@ -95,6 +97,10 @@ export function useTreeConsoleToolbarActions({
     const stored = loadTreeConsoleSettings().autosaveEnabled;
     return typeof stored === 'boolean' ? stored : false;
   });
+  const [dialogBackdropDismissEnabled, setDialogBackdropDismissEnabled] = useState<boolean>(() => {
+    const stored = loadTreeConsoleSettings().dialogBackdropDismissEnabled;
+    return typeof stored === 'boolean' ? stored : false;
+  });
 
   useEffect(() => {
     const global = typeof window !== 'undefined' ? window : null;
@@ -104,6 +110,9 @@ export function useTreeConsoleToolbarActions({
       const next = loadTreeConsoleSettings();
       setRowClickAction(next.rowClickAction === 'Edit' ? 'Edit' : 'Select/Navigate');
       setAutosaveEnabled(typeof next.autosaveEnabled === 'boolean' ? next.autosaveEnabled : false);
+      setDialogBackdropDismissEnabled(
+        typeof next.dialogBackdropDismissEnabled === 'boolean' ? next.dialogBackdropDismissEnabled : false,
+      );
     };
     global.addEventListener('storage', handleStorage);
     return () => {
@@ -112,13 +121,14 @@ export function useTreeConsoleToolbarActions({
   }, []);
 
   const persistSettings = useCallback(
-    (patch: Partial<{ rowClickAction: 'Select/Navigate' | 'Edit'; autosaveEnabled: boolean }>) => {
+    (patch: Partial<{ rowClickAction: 'Select/Navigate' | 'Edit'; autosaveEnabled: boolean; dialogBackdropDismissEnabled: boolean }>) => {
       saveTreeConsoleSettings({
         rowClickAction: patch.rowClickAction ?? rowClickAction,
         autosaveEnabled: patch.autosaveEnabled ?? autosaveEnabled,
+        dialogBackdropDismissEnabled: patch.dialogBackdropDismissEnabled ?? dialogBackdropDismissEnabled,
       });
     },
-    [autosaveEnabled, rowClickAction]
+    [autosaveEnabled, dialogBackdropDismissEnabled, rowClickAction]
   );
 
   const handleToolbarAction = useCallback(
@@ -251,6 +261,12 @@ export function useTreeConsoleToolbarActions({
             persistSettings({ autosaveEnabled: params });
           }
           break;
+        case 'setDialogBackdropDismissEnabled':
+          if (typeof params === 'boolean') {
+            setDialogBackdropDismissEnabled(params);
+            persistSettings({ dialogBackdropDismissEnabled: params });
+          }
+          break;
         case 'import-template':
           if (
             params &&
@@ -366,9 +382,14 @@ export function useTreeConsoleToolbarActions({
     allowImport: canImportFromNode(pageTreeNode),
     developerModeEnabled,
     autosaveEnabled,
+    dialogBackdropDismissEnabled,
     onAutosaveEnabledChange: (enabled: boolean) => {
       setAutosaveEnabled(enabled);
       persistSettings({ autosaveEnabled: enabled });
+    },
+    onDialogBackdropDismissEnabledChange: (enabled: boolean) => {
+      setDialogBackdropDismissEnabled(enabled);
+      persistSettings({ dialogBackdropDismissEnabled: enabled });
     },
     onRowClickActionChange: (nextAction: 'Select/Navigate' | 'Edit') => {
       setRowClickAction(nextAction);
@@ -376,5 +397,13 @@ export function useTreeConsoleToolbarActions({
     },
   } as React.ComponentProps<typeof TreeConsoleToolbar>;
 
-  return { toolbarProps, rowClickAction, setRowClickAction, autosaveEnabled, setAutosaveEnabled };
+  return {
+    toolbarProps,
+    rowClickAction,
+    setRowClickAction,
+    autosaveEnabled,
+    setAutosaveEnabled,
+    dialogBackdropDismissEnabled,
+    setDialogBackdropDismissEnabled,
+  };
 }

@@ -173,15 +173,16 @@ export function AuthRequiredDialog({
       setSelectedProvider(null);
 
       // Keep the UI compact. Log technical details to console instead of rendering them.
-      console.warn('[auth][ui] Authentication required details', {
+      const details = {
         requestId: context.requestId,
         pluginType,
-        sessionId,
         retryCount,
         errorCode,
         errorMessage,
         url,
-      });
+        ...(sessionId ? { sessionId } : {}),
+      };
+      console.warn('[auth][ui] Authentication required details', details);
     }
   }, [context.requestId, errorCode, errorMessage, open, pluginType, retryCount, sessionId, url]);
 

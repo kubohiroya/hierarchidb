@@ -96,22 +96,22 @@ export interface StepCapabilities {
 
 ##### 新規作成（create）
 ```
-/t/tree-001/node-123/550e8400-e29b-41d4-a716-446655440000/shape/create?step=2
+/t/tree-001/node-123/550e8400-e29b-41d4-a716-446655440000/shape/create/normal/2
 ```
 - `550e8400-e29b-41d4-a716-446655440000`: 事前採番されたワーキングコピーID（UUID）
 - `create`: 新規作成アクション
-- `?step=2`: ステップ2を表示（1ベースのインデックス）
+- `/normal/2`: 通常表示モードでステップ2を表示（1ベースのインデックス）
 
 ##### 編集（edit）
 ```
-/t/tree-001/node-456/abc12345-def6-7890-ghij-klmnopqrstuv/spreadsheet/edit?step=3
+/t/tree-001/node-456/abc12345-def6-7890-ghij-klmnopqrstuv/spreadsheet/edit/normal/3
 ```
 - 既存ノードのワーキングコピーIDを使用
 - `edit`: 編集アクション
 
 ##### 地図の初期位置指定
 ```
-/t/tree-001/node-789/def45678-9012-3456-7890-abcdefghijkl/basemap/create?step=1&zxy=10,139.7,35.6
+/t/tree-001/node-789/def45678-9012-3456-7890-abcdefghijkl/basemap/create/normal/1?zxy=10,139.7,35.6
 ```
 - `zxy=10,139.7,35.6`: ズームレベル10、経度139.7度、緯度35.6度
 

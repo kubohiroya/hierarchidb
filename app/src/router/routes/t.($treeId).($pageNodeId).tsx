@@ -61,9 +61,13 @@ function useTreeDocumentTitle() {
     () => matches.find((match) => match.routeId === treeRouteIds.target),
     [matches]
   );
+  const dialogRouteIds = useMemo(
+    () => [treeRouteIds.dialog, treeRouteIds.dialogMode, treeRouteIds.dialogModeStep],
+    []
+  );
   const dialogMatch = useMemo(
-    () => matches.find((match) => match.routeId === treeRouteIds.dialog),
-    [matches]
+    () => matches.find((match) => dialogRouteIds.includes(match.routeId)),
+    [dialogRouteIds, matches]
   );
 
   const nextTitle = useMemo(() => {

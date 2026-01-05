@@ -5,9 +5,10 @@
 
 import { NodeAction, type NodeId, type TreeId } from '@hierarchidb/common-types';
 import { PluginDialogHost } from '@hierarchidb/ui-plugin-shell/plugin-ui-host';
-import { useLoaderData, useLocation, useNavigate } from '@tanstack/react-router';
+import { useLoaderData, useNavigate } from '@tanstack/react-router';
 import React from 'react';
 import type { LoadNodeActionReturn } from '../../loaders/treeLoaders.js';
+import { TREE_CONSOLE_SETTINGS_STORAGE_KEY, loadTreeConsoleSettings } from '@hierarchidb/util';
 
 type TreeDialogRouteParams = {
   treeId: string;
@@ -15,6 +16,8 @@ type TreeDialogRouteParams = {
   targetNodeId: string;
   nodeType: string;
   action: string;
+  mode?: string;
+  step?: string;
 };
 
 export interface PluginDialogLoaderData extends LoadNodeActionReturn {
@@ -34,9 +37,26 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
   const { tree, pageNodeId, targetNodeId, nodeType, action, params } = data;
 
   const navigate = useNavigate();
-  const location = useLocation();
   // State
   const [isOpen, setIsOpen] = React.useState(true);
+  const [backdropDismissEnabled, setBackdropDismissEnabled] = React.useState<boolean>(() => {
+    const stored = loadTreeConsoleSettings().dialogBackdropDismissEnabled;
+    return typeof stored === 'boolean' ? stored : false;
+  });
+
+  React.useEffect(() => {
+    const global = typeof window !== 'undefined' ? window : null;
+    if (!global) return undefined;
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key && event.key !== TREE_CONSOLE_SETTINGS_STORAGE_KEY) return;
+      const stored = loadTreeConsoleSettings().dialogBackdropDismissEnabled;
+      setBackdropDismissEnabled(typeof stored === 'boolean' ? stored : false);
+    };
+    global.addEventListener('storage', handleStorage);
+    return () => {
+      global.removeEventListener('storage', handleStorage);
+    };
+  }, []);
 
   const treeId: TreeId | undefined = tree?.id ?? (params.treeId as TreeId | undefined);
   const effectiveTargetNodeId: NodeId | undefined =
@@ -52,9 +72,7 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
     treeId && effectiveTargetNodeId && effectivePageNodeId && effectiveNodeType && effectiveAction
   );
 
-  // Parse query params for additional context
-  const searchParams = new URLSearchParams(location.searchStr ? location.searchStr.slice(1) : '');
-  const stepParam = searchParams.get('step');
+  const stepParam = params.step ?? null;
   const dialogKey = React.useMemo(
     () =>
       [
@@ -72,7 +90,7 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
     forceInitialStepRef.current = null;
   }, [dialogKey]);
   const parsedStep = React.useMemo(() => {
-    if (stepParam !== null) {
+    if (stepParam !== null && stepParam !== undefined) {
       const n = parseInt(stepParam, 10);
       return Number.isFinite(n) && n >= 1 ? n : 1;
     }
@@ -142,6 +160,7 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
       onSuccess={handleSuccess}
       initialStep={currentStep}
       forceInitialStep={forceInitialStep}
+      backdropDismissEnabled={backdropDismissEnabled}
     />
   );
 };
@@ -171,13 +190,13 @@ export const PluginDialogRoute: React.FC<PluginDialogRouteProps> = ({ loaderData
 
 /**
  * Create route configuration for plugin console
- * Uses the existing route pattern: /t/:treeId/:pageNodeId/:targetNodeId/:nodeType/:action
+ * Uses the route pattern: /t/:treeId/:pageNodeId/:targetNodeId/:nodeType/:action/:mode?/:step?
  */
 export function createPluginDialogRoutes() {
   return [
     // Standard route pattern with action
     {
-      path: 't/:treeId/:pageNodeId/:targetNodeId/:nodeType/:action',
+      path: 't/:treeId/:pageNodeId/:targetNodeId/:nodeType/:action/:mode?/:step?',
       element: <PluginDialogRoute />,
     },
   ];

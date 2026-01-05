@@ -5,7 +5,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-export type DialogModeState = 'full' | 'normal';
+export type DialogModeState = 'full' | 'maximize' | 'normal';
 
 export interface DialogMapState {
   lng: number;
@@ -69,8 +69,58 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
     return new URLSearchParams(window.location.search);
   }, [isBrowser, readFrom]);
 
+  const getDialogPathState = useCallback(() => {
+    if (!isBrowser || namespace) return null;
+    const hash = window.location.hash ?? '';
+    const usesHashRouting = hash.startsWith('#/');
+    const pathWithQuery = usesHashRouting ? hash.slice(1) : window.location.pathname;
+    const [pathOnly] = pathWithQuery.split('?');
+    const normalizedPath = pathOnly.startsWith('/') ? pathOnly : `/${pathOnly}`;
+    const segments = normalizedPath.split('/').filter(Boolean);
+    const tIndex = segments.indexOf('t');
+    if (tIndex < 0 || segments.length < tIndex + 6) return null;
+    const modeSegment = segments[tIndex + 6];
+    const stepSegment = segments[tIndex + 7];
+    const parsedMode =
+      modeSegment === 'full' || modeSegment === 'maximize' || modeSegment === 'normal'
+        ? modeSegment
+        : undefined;
+    const parsedStep = stepSegment !== undefined ? Number(stepSegment) : undefined;
+    return {
+      usesHashRouting,
+      segments,
+      tIndex,
+      mode: parsedMode,
+      step: Number.isFinite(parsedStep) ? parsedStep : undefined,
+    };
+  }, [isBrowser, namespace]);
+
   const readUrl = useCallback(() => {
     if (!isBrowser) return;
+    const dialogPath = getDialogPathState();
+    if (dialogPath?.mode) {
+      setMode(dialogPath.mode);
+    }
+    if (typeof dialogPath?.step === 'number') {
+      setStep(dialogPath.step);
+    }
+    if (dialogPath) {
+      const q = makeParams();
+      const mp = q.get('map');
+      if (mp) {
+        const parts = mp.split(',');
+        if (parts.length === 3) {
+          const [lngStr, latStr, zoomStr] = parts as [string, string, string];
+          const lng = Number(lngStr);
+          const lat = Number(latStr);
+          const zoom = Number(zoomStr);
+          if ([lng, lat, zoom].every((v) => Number.isFinite(v))) {
+            setMap({ lng, lat, zoom });
+          }
+        }
+      }
+      return;
+    }
     let q = makeParams();
     if (readFrom === 'hash' && !hasDialogParams(q)) {
       const fallback = new URLSearchParams(window.location.search);
@@ -85,7 +135,7 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
       if (Number.isFinite(n)) setStep(n);
     }
     const m = q.get(ns('mode')) as DialogModeState | null;
-    if (m === 'full' || m === 'normal') setMode(m);
+    if (m === 'full' || m === 'maximize' || m === 'normal') setMode(m);
     const mp = q.get(ns('map'));
     if (mp) {
       const parts = mp.split(',');
@@ -112,6 +162,7 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
       which: 'step' | 'mode' | 'map'
     ) => {
       if (!isBrowser) return;
+      const dialogPath = getDialogPathState();
       const ns = (k: string) => (namespace ? `${namespace}_${k}` : k);
       const url = new URL(window.location.href);
       const q = (() => {
@@ -123,6 +174,37 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
         return new URLSearchParams(url.search);
       })();
 
+      if (dialogPath && !namespace) {
+        const currentMode = dialogPath.mode ?? (fields.mode ?? 'normal');
+        const currentStep = dialogPath.step ?? fields.step ?? defaults?.step ?? 1;
+        const modeValue = fields.mode ?? currentMode ?? 'normal';
+        const stepValue = Math.max(fields.step ?? currentStep ?? 1, 1);
+        const baseSegments = dialogPath.segments.slice(0, dialogPath.tIndex + 6);
+        const nextSegments = [...baseSegments, modeValue, String(stepValue)];
+        const nextPath = `/${nextSegments.join('/')}`;
+
+        if (dialogPath.usesHashRouting) {
+          const [, query = ''] = (url.hash ?? '').split('?');
+          const hashParams = new URLSearchParams(query);
+          hashParams.delete('step');
+          hashParams.delete('mode');
+          if (fields.map) {
+            const { lng, lat, zoom } = fields.map;
+            hashParams.set('map', `${lng.toFixed(6)},${lat.toFixed(6)},${zoom.toFixed(2)}`);
+          }
+          const queryString = hashParams.toString();
+          url.hash = `#${nextPath}${queryString.length > 0 ? `?${queryString}` : ''}`;
+        } else {
+          url.pathname = nextPath;
+          if (fields.map) {
+            const { lng, lat, zoom } = fields.map;
+            q.set('map', `${lng.toFixed(6)},${lat.toFixed(6)},${zoom.toFixed(2)}`);
+          }
+          q.delete('step');
+          q.delete('mode');
+          url.search = q.toString();
+        }
+      } else {
       if (fields.step != null) q.set(ns('step'), String(fields.step));
       if (fields.mode) q.set(ns('mode'), fields.mode);
       if (fields.map) {
@@ -143,6 +225,7 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
       } else {
         url.search = q.toString();
       }
+      }
 
       writingRef.current = true;
       const method =
@@ -157,7 +240,7 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
         writingRef.current = false;
       }, 0);
     },
-    [isBrowser, namespace, readFrom, history?.step]
+    [defaults?.step, getDialogPathState, history?.step, isBrowser, namespace, readFrom]
   );
 
   // state -> URL (step, immediate)

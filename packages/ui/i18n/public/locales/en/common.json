@@ -309,6 +309,9 @@
         },
         "autosave": {
           "title": "Autosave"
+        },
+        "dialogBackdropDismiss": {
+          "title": "Close dialogs on outside click"
         }
       },
       "developerMenu": {

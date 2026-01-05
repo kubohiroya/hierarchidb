@@ -3,10 +3,12 @@ export const TREE_CONSOLE_SETTINGS_STORAGE_KEY = 'hdb.treeConsole.settings';
 export type TreeConsoleSettings = {
   rowClickAction?: 'Select/Navigate' | 'Edit';
   autosaveEnabled?: boolean;
+  dialogBackdropDismissEnabled?: boolean;
 };
 
-const defaultSettings: Required<Pick<TreeConsoleSettings, 'autosaveEnabled'>> = {
+const defaultSettings: Required<Pick<TreeConsoleSettings, 'autosaveEnabled' | 'dialogBackdropDismissEnabled'>> = {
   autosaveEnabled: false,
+  dialogBackdropDismissEnabled: false,
 };
 
 const safeGlobal = (): typeof window | null => {
@@ -30,7 +32,11 @@ export function loadTreeConsoleSettings(): TreeConsoleSettings {
       typeof parsed?.autosaveEnabled === 'boolean'
         ? parsed.autosaveEnabled
         : defaultSettings.autosaveEnabled;
-    return { rowClickAction, autosaveEnabled };
+    const dialogBackdropDismissEnabled =
+      typeof parsed?.dialogBackdropDismissEnabled === 'boolean'
+        ? parsed.dialogBackdropDismissEnabled
+        : defaultSettings.dialogBackdropDismissEnabled;
+    return { rowClickAction, autosaveEnabled, dialogBackdropDismissEnabled };
   } catch (err) {
     if (typeof console !== 'undefined' && typeof console.warn === 'function') {
       console.warn('[treeConsoleSettings] failed to parse settings; using defaults', err);
@@ -46,6 +52,10 @@ export function saveTreeConsoleSettings(patch: Partial<TreeConsoleSettings>): Tr
     rowClickAction: patch.rowClickAction ?? current.rowClickAction,
     autosaveEnabled:
       patch.autosaveEnabled !== undefined ? patch.autosaveEnabled : current.autosaveEnabled,
+    dialogBackdropDismissEnabled:
+      patch.dialogBackdropDismissEnabled !== undefined
+        ? patch.dialogBackdropDismissEnabled
+        : current.dialogBackdropDismissEnabled,
   };
 
   if (!global?.localStorage) return next;

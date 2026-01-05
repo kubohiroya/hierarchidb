@@ -74,17 +74,11 @@ export const createDialogHelpers = (deps: TreeConsoleActionDeps) => {
         (nodeHint as { holderTargetId?: NodeId } | undefined)?.holderTargetId ??
         targetNodeId;
 
-      const searchParams = new URLSearchParams();
-      if (typeof dialogOptions?.initialStep === 'number' && dialogOptions.initialStep >= 1) {
-        searchParams.set('step', String(dialogOptions.initialStep));
-      }
-      if (dialogOptions?.displayMode === 'full') {
-        searchParams.set('mode', 'full');
-      }
-      const query = searchParams.toString();
       const action = dialogOptions?.action ?? 'edit';
       const basePath = `/t/${treeId}/${parentForRoute}/${canonicalId}/${nodeType}/${action}`;
-      pushPath(query ? `${basePath}?${query}` : basePath);
+      const mode = dialogOptions?.displayMode ?? 'normal';
+      const step = dialogOptions?.initialStep ?? 1;
+      pushPath(`${basePath}/${mode}/${step}`);
     } catch (error) {
       console.error('Failed to launch edit dialog:', error);
       showCommandError('UNKNOWN_ERROR', error instanceof Error ? error.message : String(error));

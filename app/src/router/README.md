@@ -20,7 +20,7 @@ router/
 │       ├── pageRoute.tsx     # /t/:treeId/:pageNodeId page
 │       ├── targetRoute.tsx   # /t/:treeId/:pageNodeId/:targetNodeId
 │       ├── nodeTypeRoute.tsx # /t/:treeId/:pageNodeId/:targetNodeId/:nodeType
-│       └── dialogRoute.tsx   # /t/:treeId/:pageNodeId/:targetNodeId/:nodeType/:action
+│       └── dialogRoute.tsx   # /t/:treeId/:pageNodeId/:targetNodeId/:nodeType/:action/:mode?/:step?
 ├── loaders/            # Data loading functions
 │   ├── uiPlugins.ts        # UI plugin setup
 │   ├── mapLoader.ts        # Map zxy parameter handling
@@ -123,7 +123,7 @@ Tree-related routes have been migrated to TanStack Router:
 - `/t/:treeId/:pageNodeId` - Page with TreeConsoleIntegration and AppBar
 - `/t/:treeId/:pageNodeId/:targetNodeId` - Target node selection
 - `/t/:treeId/:pageNodeId/:targetNodeId/:nodeType` - Node type with NotFound handling
-- `/t/:treeId/:pageNodeId/:targetNodeId/:nodeType/:action` - Dialog route (including TrashDialog)
+- `/t/:treeId/:pageNodeId/:targetNodeId/:nodeType/:action/:mode?/:step?` - Dialog route (including TrashDialog)
 
 ### Root Route Features
 

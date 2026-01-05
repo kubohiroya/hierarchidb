@@ -1,9 +1,156 @@
-2086) feat/ui/dialog-backdrop-dismiss-toggle (P1) — 進行中 (2026-01-05)
+2092) fix/ui/tree-node-info-panel-close-root (P2) — 完了 (2026-01-11)
+- ブランチ名: fix/ui/tree-node-info-panel-close-root
+- 依存: なし
+- 受け入れ基準: `/t/r` で×ボタンが表示されない／ルート以外は×ボタンが表示され親ノードへ遷移する／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx`
+- ロールバック手順: 上記ファイルの差分を revert し、従来の表示条件へ戻す
+- チェックリスト:
+  - ルート判定ロジックを修正し×ボタンを非表示にする
+  - 親ノード遷移が維持されることを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 00:07 JST ルート表示時に×ボタンが残る不具合対応に着手。
+  - done: 2026-01-11 00:10 JST ルート判定を追加し×ボタンを非表示化。検証: 未実施。
+
+2091) fix/ui/tree-node-info-panel-close-parent (P2) — 完了 (2026-01-11)
+- ブランチ名: fix/ui/tree-node-info-panel-close-parent
+- 依存: なし
+- 受け入れ基準: TreeNodeInfoPanel の×ボタンが親ノードへ遷移する／ルートノードでは×ボタンが非表示になる／`INVALID_OPERATION Unknown action: navigate` が出ない／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx`
+- ロールバック手順: 上記ファイルの差分を revert し、既存の×ボタン挙動に戻す
+- チェックリスト:
+  - ×ボタンの遷移を親ノードURLへ切り替える
+  - ルートノード表示時は×ボタンを非表示にする
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 00:00 JST TreeNodeInfoPanel の×ボタン遷移修正に着手。
+  - done: 2026-01-11 00:05 JST 親ノード遷移とルート時の非表示を実装。検証: 未実施。
+
+2090) fix/ui/dialog-backdrop-dismiss-icon (P2) — 完了 (2026-01-10)
+- ブランチ名: fix/ui/dialog-backdrop-dismiss-icon
+- 依存: なし
+- 受け入れ基準: 「ダイアログ外クリックで閉じる」のアイコンを DisabledByDefault に変更する／表示のみ変更し挙動は維持する／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/treeconsole/toolbar/src/components/toolbar/SettingsMenu.tsx`
+- ロールバック手順: 上記ファイルの icon 差分を revert し、SettingsIcon に戻す
+- チェックリスト:
+  - 設定メニューの該当アイコンを DisabledByDefault に差し替える
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 23:55 JST ダイアログ外クリックのアイコン変更に着手。
+  - done: 2026-01-10 23:56 JST SettingsMenu の表示アイコンを DisabledByDefault に更新。検証: 未実施。
+
+2092) fix/shape/step3-auth-required-warning (P1) — 完了 (2026-01-11)
+- ブランチ名: fix/shape/step3-auth-required-warning
+- 依存: なし
+- 受け入れ基準: Step3 の auth-required 警告の発生源が特定される／認証ヘッダ未付与の有無が確認される／sessionId 表示の理由が整理され、不要なら除去される／必要な修正で警告が解消される／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `plugins/shape-plugin/src/services/utils/chunkStore.ts`, `plugins/shape-plugin/src/services/metadata/metadataSources.ts`, `packages/ui/auth/src/components/AuthRequiredDialog.tsx`
+- ロールバック手順: 上記ファイルの差分を revert し、Step3 のネットワークが auth 有効に戻る／ログに sessionId が常時表示される状態へ戻す
+- チェックリスト:
+  - auth-required 発生経路とリクエスト元を特定する
+  - 認証ヘッダ付与の有無を確認する
+  - sessionId 表示の由来を確認する
+  - 影響範囲とロールバック手順を更新する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-05 16:15 JST Step3 auth-required 警告の原因調査に着手。
+  - done: 2026-01-11 00:25 JST Step3 の metadata 取得で auth を無効化し、AuthRequiredDialog のログから sessionId を省略。検証: 未実施。
+
+2093) fix/chunk-store/fetch-singleflight-dedupe (P1) — 進行中 (2026-01-11)
+- ブランチ名: fix/chunk-store/fetch-singleflight-dedupe
+- 依存: なし
+- 受け入れ基準: 同一URL/キャッシュキーの取得で in-flight を合流させる／Strict Mode などの二重実行でも外部URLアクセスが1回に抑止される／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/features/chunk-store/src/index.ts`
+- ロールバック手順: 上記ファイルの in-flight 合流ロジック差分を revert し、従来の直接フェッチ挙動に戻す
+- チェックリスト:
+  - in-flight 合流ロジックを追加する
+  - getOrFetchForNode で並列取得を1回に抑止する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 00:35 JST chunk-store の URL 取得重複を抑止するロック機構対応に着手。
+  - blocked: 2026-01-11 00:50 JST ユーザー指示によりロック方式を中止し、singleflight 方式に切り替え。
+
+2091) refactor/ui/dialog-mode-single-type (P1) — 完了 (2026-01-05)
+- ブランチ名: refactor/ui/dialog-mode-single-type
+- 依存: なし
+- 受け入れ基準: DialogUrlMode が廃止され DialogDisplayMode のみで統一される／URLのmode解釈が DialogDisplayMode に集約される／frame-state.ts の型エラーが解消される／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/plugin-ui-host/src/headless/usePluginDialogController/frame-state.ts`
+- ロールバック手順: `packages/plugin-ui-host/src/headless/usePluginDialogController/frame-state.ts` の差分を revert し、mode 変換ロジックを元に戻す
+- チェックリスト:
+  - DialogUrlMode の利用箇所を整理する
+  - DialogDisplayMode へ統一する
+  - 影響範囲とロールバック手順を更新する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-05 16:11 JST mode 型の統一作業に着手。
+  - done: 2026-01-05 16:12 JST DialogDisplayMode のみでURL modeを解釈するよう整理。
+
+2090) fix/ui/dialog-mode-mapping-and-maximize (P1) — 完了 (2026-01-05)
+- ブランチ名: fix/ui/dialog-mode-mapping-and-maximize
+- 依存: なし
+- 受け入れ基準: dialogUrlMode と dialogDisplayMode の対応が整理される／`full`/`full-screen`/`maximize` の混乱が解消される／`/t/.../:mode/:step` で maximize を扱える／frame-state.ts の型エラーが解消される／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/plugin-ui-host/src/headless/usePluginDialogController/frame-state.ts`, `packages/plugin-base/src/hooks/useDialogUrlSync.ts`
+- ロールバック手順: 上記ファイルの差分を revert し、従来の mode 解釈へ戻す
+- チェックリスト:
+  - mode の定義とマッピングを整理する
+  - maximize のURL表現と表示モードを整合させる
+  - frame-state の型エラーを解消する
+  - 影響範囲とロールバック手順を更新する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-05 16:08 JST dialog mode の整理と型エラー修正に着手。
+  - done: 2026-01-05 16:09 JST mode のURL表現を full/normal/maximize に統一し、frame-state の型を修正。
+
+2089) fix/ui/dialog-step-mode-query-leak (P1) — 完了 (2026-01-05)
+- ブランチ名: fix/ui/dialog-step-mode-query-leak
+- 依存: なし
+- 受け入れ基準: ダイアログ遷移で `?step=&mode=` が付与されない／`/t/.../:action/:mode/:step` のパス形式のみになる／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/plugin-base/src/hooks/useDialogUrlSync.ts`
+- ロールバック手順: `packages/plugin-base/src/hooks/useDialogUrlSync.ts` の差分を revert し、クエリ付与挙動へ戻す
+- チェックリスト:
+  - 付与元のロジックを特定する
+  - パス形式のみへ統一する
+  - 影響範囲とロールバック手順を更新する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-05 16:00 JST step/mode クエリ付与の原因調査に着手。
+  - done: 2026-01-05 16:01 JST useDialogUrlSync をパス優先に更新し、step/mode のクエリ付与を抑止。
+
+2088) chore/ui/dialog-backdrop-dismiss-icon (P2) — 完了 (2026-01-05)
+- ブランチ名: chore/ui/dialog-backdrop-dismiss-icon
+- 依存: なし
+- 受け入れ基準: 「ダイアログ外クリックで閉じる」アイコンが DisabledByDefault に変更される／設定挙動は維持される／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/ui/treeconsole/toolbar/src/components/toolbar/SettingsMenu.tsx`
+- ロールバック手順: `packages/ui/treeconsole/toolbar/src/components/toolbar/SettingsMenu.tsx` の差分を revert し、従来のアイコンに戻す
+- チェックリスト:
+  - アイコン差し替え対象を特定する
+  - DisabledByDefault に変更する
+  - 影響範囲とロールバック手順を更新する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-05 15:59 JST ダイアログ外クリック設定のアイコン変更に着手。
+  - done: 2026-01-05 15:59 JST DisabledByDefault アイコンへの差し替えを確認。
+
+2087) feat/ui/plugin-dialog-route-path-mode-step (P1) — 完了 (2026-01-05)
+- ブランチ名: feat/ui/plugin-dialog-route-path-mode-step
+- 依存: なし
+- 受け入れ基準: PluginDialogRoute の URL が `/t/:treeId/:pageNodeId/:targetNodeId?/:nodeType?/:action?/:mode?/:step?` 形式で動作する／旧クエリ形式から新パス形式へ移行する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `app/src/router/routes/tree/PluginDialogRoute.tsx`, `app/src/router/routes/tree/dialogRoute.tsx`, `app/src/router/routes/tree/shared.ts`, `app/src/router/index.tsx`, `app/src/router/routes/t.($treeId).($pageNodeId).tsx`, `app/src/hooks/treeconsole/actions/dialog.ts`, `packages/plugin-ui-host/src/headless/usePluginDialogController/frame-state.ts`, `packages/plugin-ui-host/docs/ARCHITECTURE.md`, `packages/plugin-base/README.md`, `app/src/router/README.md`
+- ロールバック手順: 上記ファイルの差分を revert し、クエリパラメータ形式のルーティングへ戻す
+- チェックリスト:
+  - ルート定義とパラメータ解釈を更新する
+  - 旧クエリパラメータとの互換性/移行を実装する
+  - 影響範囲とロールバック手順を更新する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-05 15:43 JST PluginDialogRoute のパス形式刷新に着手。
+  - done: 2026-01-05 15:44 JST mode/step をパス化し、ルート定義とURL同期を更新。
+
+2086) feat/ui/dialog-backdrop-dismiss-toggle (P1) — 完了 (2026-01-05)
 - ブランチ名: feat/ui/dialog-backdrop-dismiss-toggle
 - 依存: なし
 - 受け入れ基準: PluginDialogRoute の外側クリックで閉じる挙動を設定で on/off できる／ツールバー設定メニューに Switch を追加する／既定は off／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
-- 影響範囲: 調査中（PluginDialogRoute/ツールバー設定）
-- ロールバック手順: PluginDialogRoute と設定 UI の差分を revert し、外側クリックで閉じる挙動を固定に戻す
+- 影響範囲: `app/src/router/routes/tree/PluginDialogRoute.tsx`, `app/src/router/pages/tree/console/useTreeConsoleToolbarActions.ts`, `packages/util/src/treeConsoleSettings.ts`, `packages/ui/treeconsole/toolbar/src/components/TreeConsoleToolbar.tsx`, `packages/ui/treeconsole/toolbar/src/components/toolbar/TreeConsoleToolbarContent.tsx`, `packages/ui/treeconsole/toolbar/src/components/toolbar/SettingsMenu.tsx`, `packages/ui/treeconsole/toolbar/src/types.ts`, `packages/ui/dialog/src/headless/PluginDialogFrame.tsx`, `packages/plugin-ui-host/src/headless/PluginDialogShell.tsx`, `packages/ui/i18n/public/locales/en/common.json`, `packages/ui/i18n/public/locales/ja/common.json`
+- ロールバック手順: 上記ファイルの差分を revert し、外側クリックで閉じる挙動と設定メニューの追加を取り消す
 - チェックリスト:
   - ダイアログ外クリックの制御ポイントを特定する
   - 設定の保存/参照場所を追加する
@@ -12,6 +159,7 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-05 15:30 JST ダイアログ外クリックのトグル設定追加に着手。
+  - done: 2026-01-05 15:31 JST 外側クリックで閉じる設定の保存/切替とツールバーSwitchを追加。
 
 2085) fix/ui/tile-config-section-render-loop (P1) — 完了 (2026-01-05)
 - ブランチ名: fix/ui/tile-config-section-render-loop
@@ -362,6 +510,8 @@
   - start: 2026-01-10 21:45 JST geoboundaries のキャッシュ完了更新不備の調査に着手。
   - start: 2026-01-10 22:30 JST geoboundaries の download 停滞原因をコードで再調査。
   - done: 2026-01-10 23:20 JST download 入力のフォールバックを撤廃し、DownloadTaskPayload/DownloadStageOutput を必須化して入力欠落時に即時エラー化。download キャッシュ判定も入力必須に統一。検証: 未実施。
+  - start: 2026-01-10 23:35 JST Step2 未選択時の Step3 直アクセスをリダイレクトし、テンプレート dataSource 明示を確認する対応に着手。
+  - done: 2026-01-10 23:45 JST Step3 で dataSource 未設定なら URL step=2 に戻し、Step3 側は空表示で待機するよう変更。検証: 未実施。
 
 2067) fix/ui-dialog/maximize-layout-viewport (P1) — 完了 (2026-01-05)
 - ブランチ名: fix/ui-dialog/maximize-layout-viewport

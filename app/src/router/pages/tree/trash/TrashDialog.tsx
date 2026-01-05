@@ -58,6 +58,8 @@ export type TrashDialogRouteParams = {
   targetNodeId?: string;
   nodeType?: string;
   action?: string;
+  mode?: string;
+  step?: string;
 };
 
 export async function clientLoader({

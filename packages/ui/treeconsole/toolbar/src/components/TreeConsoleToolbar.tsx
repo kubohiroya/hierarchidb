@@ -17,6 +17,8 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
     onRowClickActionChange,
     autosaveEnabled = false,
     onAutosaveEnabledChange,
+    dialogBackdropDismissEnabled = false,
+    onDialogBackdropDismissEnabledChange,
     canUndo = false,
     canRedo = false,
     canCopy = false,
@@ -61,6 +63,8 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
         onRowClickActionChange={onRowClickActionChange}
         autosaveEnabled={autosaveEnabled}
         onAutosaveEnabledChange={onAutosaveEnabledChange}
+        dialogBackdropDismissEnabled={dialogBackdropDismissEnabled}
+        onDialogBackdropDismissEnabledChange={onDialogBackdropDismissEnabledChange}
         canUndo={canUndo}
         canRedo={canRedo}
         canCopy={canCopy}

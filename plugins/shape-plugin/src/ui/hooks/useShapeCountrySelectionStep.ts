@@ -16,6 +16,7 @@ import type { CountryAvailabilityWorkerAPI, SerializedCountryAvailability } from
 import { wrap, releaseProxy } from 'comlink';
 import { invalidateCountrySelectionCaches } from './countrySelectionReload.js';
 import { NodeId } from '@hierarchidb/common-types';
+import { useDialogUrlSync } from '@hierarchidb/plugin-base';
 
 // (availability is loaded in a dedicated worker thread)
 
@@ -99,6 +100,7 @@ type Args = {
 export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }: Args) => {
   const { enqueueSnackbar } = useSnackbar();
   const nodeId = _nodeId;
+  const { setStep: setDialogStep } = useDialogUrlSync();
 
   // Current selection value must be available before any derived useMemo.
   const selectedArrayByCountries = data.selectedArrayByCountries;
@@ -147,9 +149,11 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
     const normalized = normalizeDataSourceName(dataSourceKey) ?? dataSourceKey.toLowerCase();
     return DATA_SOURCE_CONFIGS[normalized]?.maxAdminLevel ?? 0;
   }, [dataSourceKey]);
-  if(!dataSourceKey) {
-    throw new Error('[shape-plugin][step3] dataSource is undefiend');
-  }
+  useEffect(() => {
+    if (!dataSourceKey) {
+      setDialogStep(2);
+    }
+  }, [dataSourceKey, setDialogStep]);
   const iso = useIsoCountries();
   const { metadata: countries, loading: metadataLoading, error: metadataError, reload: reloadMetadata } = useCountryMetadata({
     dataSource: dataSourceKey,
@@ -454,6 +458,20 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
   }, [dataSourceKey, loadAvailability, reloadMetadata, nodeId]);
 
   const combinedLoading = metadataLoading || (availabilityLoading && !availability);
+
+  if (!dataSourceKey) {
+    return {
+      loading: true,
+      error: null,
+      availabilityInfo: null,
+      matrixConfig: { columns: [], virtualization: { rowHeight: 40, overscan: 8 } },
+      countries: [],
+      selections: [],
+      applySelections: () => {},
+      isCellEnabled: () => false,
+      reloadAll: async () => {},
+    };
+  }
 
   return {
     loading: Boolean(dataSourceKey) && combinedLoading,

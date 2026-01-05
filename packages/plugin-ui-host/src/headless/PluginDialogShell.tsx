@@ -5,10 +5,13 @@ import type { PluginDialogControllerOptions } from './usePluginDialogController.
 import { usePluginDialogController } from './usePluginDialogController.js';
 import type { Theme } from '@mui/material';
 
-export type PluginDialogShellProps = PluginDialogControllerOptions;
+export interface PluginDialogShellProps extends PluginDialogControllerOptions {
+  backdropDismissEnabled?: boolean;
+}
 
 export const PluginDialogShell: React.FC<PluginDialogShellProps> = (props) => {
-  const { headlessProps, unsavedChangeDialog, conflictDialog } = usePluginDialogController(props);
+  const { backdropDismissEnabled, ...controllerOptions } = props;
+  const { headlessProps, unsavedChangeDialog, conflictDialog } = usePluginDialogController(controllerOptions);
 
   const backdropSx = unsavedChangeDialog?.open
     ? { pointerEvents: 'none' as const }
@@ -28,7 +31,11 @@ export const PluginDialogShell: React.FC<PluginDialogShellProps> = (props) => {
   } as const;
   return (
     <>
-      <PluginDialogFrame headlessProps={headlessProps} backdropSx={backdropSx} />
+      <PluginDialogFrame
+        headlessProps={headlessProps}
+        backdropSx={backdropSx}
+        backdropDismissEnabled={backdropDismissEnabled}
+      />
       {conflictDialog}
       {unsavedChangeDialog ? (
         <UnsavedChangesDialog

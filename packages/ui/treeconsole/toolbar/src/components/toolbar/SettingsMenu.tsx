@@ -1,5 +1,6 @@
 import {
   CheckBox,
+  DisabledByDefault,
   Edit,
   Settings as SettingsIcon,
   Save,
@@ -134,6 +135,8 @@ interface SettingsMenuProps {
   onRowClickActionChange?: (action: 'Select/Navigate' | 'Edit') => void;
   autosaveEnabled: boolean;
   onAutosaveEnabledChange?: (enabled: boolean) => void;
+  dialogBackdropDismissEnabled: boolean;
+  onDialogBackdropDismissEnabledChange?: (enabled: boolean) => void;
   onAction: (action: string, params?: TreeConsoleToolbarActionParams) => void;
   portalContainer?: HTMLElement;
   labels: {
@@ -142,6 +145,7 @@ interface SettingsMenuProps {
     rowClickSelectNavigate: string;
     rowClickEdit: string;
     autosaveTitle: string;
+    dialogBackdropDismissTitle: string;
     sharedZoomRangeTitle: string;
     sharedZoomRangeHelper: string;
     sharedZoomRangeLabel: string;
@@ -157,6 +161,8 @@ export function SettingsMenu({
   onRowClickActionChange,
   autosaveEnabled,
   onAutosaveEnabledChange,
+  dialogBackdropDismissEnabled,
+  onDialogBackdropDismissEnabledChange,
   onAction,
   portalContainer,
   labels,
@@ -208,6 +214,15 @@ export function SettingsMenu({
       onAutosaveEnabledChange(value);
     } else {
       onAction('setAutosaveEnabled', value);
+    }
+    scheduleCloseSettingsMenu();
+  };
+
+  const handleDialogBackdropDismissChange = (value: boolean) => {
+    if (onDialogBackdropDismissEnabledChange) {
+      onDialogBackdropDismissEnabledChange(value);
+    } else {
+      onAction('setDialogBackdropDismissEnabled', value);
     }
     scheduleCloseSettingsMenu();
   };
@@ -270,6 +285,17 @@ export function SettingsMenu({
                 />
               }
               label={<LabelWithIcon icon={<Save fontSize="small" />} text={labels.autosaveTitle} />}
+            />
+
+            <FormControlLabel
+              control={
+                <Switch
+                  size="small"
+                  checked={dialogBackdropDismissEnabled}
+                  onChange={(e) => handleDialogBackdropDismissChange(e.target.checked)}
+                />
+              }
+              label={<LabelWithIcon icon={<DisabledByDefault fontSize="small" />} text={labels.dialogBackdropDismissTitle} />}
             />
 
             <Divider sx={{ my: 1.5 }} />

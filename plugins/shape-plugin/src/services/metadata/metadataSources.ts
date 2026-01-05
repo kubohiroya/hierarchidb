@@ -1,6 +1,7 @@
 import {
   buildShapeCacheKey,
-  createShapeChunkStore,
+  createShapeChunkStoreWithNetworkPort,
+  createShapeNetworkPort,
   jsonDeserializer,
   jsonSerializer,
   textDeserializer,
@@ -70,7 +71,8 @@ const parseGeoBoundariesItems = (payload: unknown): GeoBoundariesRecord[] => {
 };
 
 export async function fetchGeoBoundariesMetadata(nodeId: NodeId): Promise<CountryMetadata[]> {
-  const store = createShapeChunkStore(jsonSerializer, jsonDeserializer);
+  const publicNet = createShapeNetworkPort({ auth: { enabled: false } });
+  const store = createShapeChunkStoreWithNetworkPort(jsonSerializer, jsonDeserializer, publicNet);
   const entry = await store.getOrFetchForNode(nodeId, GEOBOUNDARIES_ALL_METADATA_URL, {
     accept: 'application/json',
     cacheKey: buildShapeCacheKey('geoboundaries:metadata:all', GEOBOUNDARIES_ALL_METADATA_URL),
@@ -253,7 +255,8 @@ const mapWithConcurrency = async <T, R>(
 };
 
 export async function fetchGadmMetadata(nodeId: NodeId): Promise<CountryMetadata[]> {
-  const store = createShapeChunkStore(textSerializer, textDeserializer);
+  const publicNet = createShapeNetworkPort({ auth: { enabled: false } });
+  const store = createShapeChunkStoreWithNetworkPort(textSerializer, textDeserializer, publicNet);
   const htmlEntry = await store.getOrFetchForNode(nodeId, GADM_MAPS_URL, {
     accept: 'text/html',
     cacheKey: buildShapeCacheKey('gadm:maps', GADM_MAPS_URL),

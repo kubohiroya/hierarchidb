@@ -309,6 +309,9 @@
         },
         "autosave": {
           "title": "自動保存"
+        },
+        "dialogBackdropDismiss": {
+          "title": "ダイアログ外クリックで閉じる"
         }
       },
       "developerMenu": {
