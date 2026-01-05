@@ -1,4 +1,5 @@
 import { metadataLoader } from '../metadata/MetadataLoader.js';
+import type { NodeId } from '@hierarchidb/common-types';
 import { normalizeDataSourceName } from '../utils/utils.js';
 import { defaultDataSourceFactory } from './DataSourceStrategyFactory.js';
 import { resolveStrategyIdFromDataSource } from './strategyIds.js';
@@ -43,8 +44,8 @@ const toMaxAdminLevel = (levels: Iterable<number>): number => {
   return max;
 };
 
-const buildAvailabilityFromMetadata = async (dataSource: string): Promise<CountryAvailabilityMatrix> => {
-  const metadata = await metadataLoader.loadMetadata(dataSource);
+const buildAvailabilityFromMetadata = async (dataSource: string, nodeId: NodeId): Promise<CountryAvailabilityMatrix> => {
+  const metadata = await metadataLoader.loadMetadata(dataSource, nodeId);
   const entries = new Map<string, number[]>();
   metadata.forEach((country) => {
     const code = (country.iso3 ?? country.countryCode ?? country.iso2 ?? '').toUpperCase();
@@ -107,7 +108,7 @@ const fetchAvailabilityFromStrategy = async (dataSource: string): Promise<Countr
   };
 };
 
-export const fetchCountryAvailability = async (dataSource: string): Promise<CountryAvailabilityMatrix> => {
+export const fetchCountryAvailability = async (dataSource: string, nodeId: NodeId): Promise<CountryAvailabilityMatrix> => {
   const normalized = normalizeDataSourceName(dataSource ?? '') ?? 'naturalearth';
   if (normalized === 'openstreetmap') {
     throw new Error('OpenStreetMap is not supported in Step3 country selection.');
@@ -116,7 +117,7 @@ export const fetchCountryAvailability = async (dataSource: string): Promise<Coun
   // Ensure Step3 can render even when the cache database is empty (first run / cleared DB).
   // This is network-independent and will be overwritten by successful upstream fetches.
   try {
-    await seedStep3CacheIfMissing(normalized);
+    await seedStep3CacheIfMissing(normalized, nodeId);
   } catch (error) {
     console.warn('[CountryAvailabilityResolver] failed to seed builtin Step3 cache', error);
   }
@@ -128,6 +129,5 @@ export const fetchCountryAvailability = async (dataSource: string): Promise<Coun
   if (strategyAvailability) {
     return strategyAvailability;
   }
-  return buildAvailabilityFromMetadata(normalized);
+  return buildAvailabilityFromMetadata(normalized, nodeId);
 };
-

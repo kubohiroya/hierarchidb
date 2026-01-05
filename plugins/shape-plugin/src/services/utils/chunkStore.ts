@@ -1,6 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import {
   DexieChunkStore,
+  type ChunkStoreMetadata,
   type ChunkStoreDeserializer,
   type ChunkStoreEntry,
   type ChunkStoreFetchOptions,
@@ -14,8 +15,6 @@ const textDecoder = new TextDecoder();
 let sharedNet: FetchNetworkPort | null = null;
 
 // Auth is handled inside FetchNetworkPort via @hierarchidb/download smartFetch → AuthService.
-
-export const SHARED_SHAPE_NODE_ID = 'shape-shared' as NodeId;
 
 export const createShapeNetworkPort = (options: FetchNetworkPortOptions = {}): FetchNetworkPort => {
   const corsProxyBaseURL = getCorsProxyBaseURL() || undefined;
@@ -69,6 +68,110 @@ export const bufferDeserializer = (value: ArrayBuffer): ArrayBuffer => value;
 export const buildShapeCacheKey = (prefix: string, url: string): string => (
   `${prefix}:${hashString(url)}`
 );
+
+const DOWNLOAD_CONTENT_TYPE = 'application/flatgeobuf';
+const DOWNLOAD_CONTENT_TYPE_GZIP = `${DOWNLOAD_CONTENT_TYPE}+gzip`;
+
+export type DownloadCacheKeyParams = {
+  dataSource?: string;
+  countryCode?: string;
+  adminLevel?: number;
+  url?: string;
+  variant?: string;
+};
+
+export const buildDownloadCacheKey = (params: DownloadCacheKeyParams): string => {
+  const dataSource = params.dataSource ?? 'unknown';
+  const countryCode = params.countryCode?.toLowerCase() ?? 'all';
+  const adminLevel = typeof params.adminLevel === 'number' ? `adm${params.adminLevel}` : 'adm-na';
+  const variant = params.variant ? `:${params.variant}` : '';
+  const prefix = `download:${dataSource}:${countryCode}:${adminLevel}${variant}`;
+  return buildShapeCacheKey(prefix, params.url ?? '');
+};
+
+const compressGzip = async (buffer: ArrayBuffer): Promise<{ buffer: ArrayBuffer; contentType: string }> => {
+  if (typeof CompressionStream !== 'function') {
+    return { buffer, contentType: DOWNLOAD_CONTENT_TYPE };
+  }
+  const stream = new CompressionStream('gzip');
+  const writer = stream.writable.getWriter();
+  await writer.write(new Uint8Array(buffer));
+  await writer.close();
+  return { buffer: await new Response(stream.readable).arrayBuffer(), contentType: DOWNLOAD_CONTENT_TYPE_GZIP };
+};
+
+const decompressGzip = async (buffer: ArrayBuffer): Promise<ArrayBuffer> => {
+  if (typeof DecompressionStream !== 'function') {
+    throw new Error('DecompressionStream is not available for gzip download buffers');
+  }
+  const stream = new DecompressionStream('gzip');
+  const writer = stream.writable.getWriter();
+  await writer.write(new Uint8Array(buffer));
+  await writer.close();
+  return new Response(stream.readable).arrayBuffer();
+};
+
+export const storeDownloadBufferForNode = async (params: {
+  nodeId: NodeId;
+  cacheKey: string;
+  buffer: ArrayBuffer;
+}): Promise<{ contentType: string; sizeBytes: number }> => {
+  const { nodeId, cacheKey, buffer } = params;
+  const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
+  const compressed = await compressGzip(buffer);
+  await store.setForNode(nodeId, cacheKey, compressed.buffer, {
+    sizeBytes: compressed.buffer.byteLength,
+    contentType: compressed.contentType,
+    fetchedAt: Date.now(),
+  });
+  return { contentType: compressed.contentType, sizeBytes: compressed.buffer.byteLength };
+};
+
+export const readDownloadBuffer = async (nodeId: NodeId, cacheKey: string): Promise<ArrayBuffer | null> => {
+  const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
+  const hasRelation = await store.hasRelationForNode(nodeId, cacheKey);
+  if (!hasRelation) return null;
+  const entry = await store.get(cacheKey);
+  if (!entry) return null;
+  const contentType = entry.metadata?.contentType ?? '';
+  if (contentType.includes('+gzip')) {
+    return await decompressGzip(entry.value);
+  }
+  return entry.value;
+};
+
+export const listDownloadMetadataForNode = async (nodeId: NodeId): Promise<ChunkStoreMetadata[]> => {
+  const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
+  return store.listMetadataForNode(nodeId);
+};
+
+export const countDownloadBuffersForNode = async (nodeId: NodeId): Promise<number> => {
+  const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
+  return store.countForNode(nodeId);
+};
+
+export const hasDownloadBuffer = async (nodeId: NodeId, cacheKey: string): Promise<boolean> => {
+  const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
+  return store.hasRelationForNode(nodeId, cacheKey);
+};
+
+export const ensureDownloadBufferForNode = async (
+  nodeId: NodeId,
+  cacheKey: string,
+): Promise<boolean> => {
+  const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
+  const entry = await store.get(cacheKey);
+  if (!entry) return false;
+  await store.setForNode(nodeId, cacheKey, entry.value, {
+    sizeBytes: entry.metadata?.sizeBytes,
+    contentType: entry.metadata?.contentType,
+    etag: entry.metadata?.etag,
+    lastModified: entry.metadata?.lastModified,
+    fetchedAt: entry.metadata?.fetchedAt,
+    hash: entry.metadata?.hash,
+  });
+  return true;
+};
 
 export type RetryConfig = {
   count: number;

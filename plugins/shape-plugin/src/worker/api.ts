@@ -48,6 +48,7 @@ import {
   generateDownloadTaskPayloads,
   getPreferredCountryCodeFormat,
 } from '../services/utils/utils.js';
+import { bufferDeserializer, bufferSerializer, createShapeChunkStore } from '../services/utils/chunkStore.js';
 import { normalizeCountryCodeFormat } from '../services/utils/iso3166.js';
 import { resolveDownloadStageStrategy } from '../services/batch/strategies/resolveDownloadStageStrategy.js';
 import type { SelectedArrayByCountries, ShapeEntity } from '../common/types/ShapeEntity.ts';
@@ -404,25 +405,18 @@ export const shapeBatchAPI = {
     return SHAPE_DATA_SOURCES;
   },
 
-  getCountryMetadata: async (dataSource: string | DataSourceName): Promise<CountryMetadata[]> => {
+  getCountryMetadata: async (nodeId: NodeId, dataSource: string | DataSourceName): Promise<CountryMetadata[]> => {
     const normalized = toDataSourceName(dataSource);
     if (normalized === 'openstreetmap') {
       throw new Error('OpenStreetMap is not supported in Step3 country selection.');
     }
-    try {
-      const data = await metadataLoader.loadMetadata(normalized);
-      if (Array.isArray(data) && data.length > 0) return data;
-    } catch (err) {
-      console.error('Failed to load country metadata for data source:', dataSource, err);
-    }
-    // Fallback minimal metadata for tests/offline
-    return [
-      { countryCode: 'US', countryName: 'United States', continent: 'North America', availableAdminLevels: [0, 1, 2] },
-      { countryCode: 'JP', countryName: 'Japan', continent: 'Asia', availableAdminLevels: [0, 1, 2] },
-    ];
+    const data = await metadataLoader.loadMetadata(normalized, nodeId);
+    if (Array.isArray(data) && data.length > 0) return data;
+    throw new Error(`No country metadata returned for data source: ${normalized}`);
   },
 
   generateDownloadTaskPayloads: async (
+    nodeId: NodeId,
     dataSource: string,
     countries: string[],
     adminLevels: number[],
@@ -433,16 +427,17 @@ export const shapeBatchAPI = {
     const normalizedCountries = await Promise.all(
       countries.map((code) => normalizeCountryCodeFormat(code, preferredFormat)),
     );
-    const countryMetadata = await shapeBatchAPI.getCountryMetadata(dataSourceName);
+    const countryMetadata = await shapeBatchAPI.getCountryMetadata(nodeId, dataSourceName);
     return generateDownloadTaskPayloads(dataSourceName, normalizedCountries, adminLevels, countryMetadata);
   },
 
   generateDownloadTaskPayloadsFromSelection: async (
+    nodeId: NodeId,
     dataSource: string,
     selectedArrayByCountries: SelectedArrayByCountries | undefined,
   ): Promise<DownloadTaskPayload[]> => {
     const dataSourceName = toDataSourceName(dataSource);
-    const countryMetadata = await shapeBatchAPI.getCountryMetadata(dataSourceName);
+    const countryMetadata = await shapeBatchAPI.getCountryMetadata(nodeId, dataSourceName);
     const strategy = resolveDownloadStageStrategy(dataSourceName);
     return strategy.buildDownloadTaskPayloads({
       selectedArrayByCountries,
@@ -976,6 +971,12 @@ export const shapeBatchAPI = {
 
   cleanupProcessingData: async (nodeId: NodeId): Promise<void> => {
     await getShapeDbApiClient().mutation.cleanupProcessingData(nodeId);
+    try {
+      const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
+      await store.deleteAllForNode(nodeId);
+    } catch (error) {
+      console.warn('[shapeBatchAPI] failed to clean chunk-store relations', error);
+    }
   },
 };
 

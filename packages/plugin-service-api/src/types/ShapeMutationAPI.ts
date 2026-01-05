@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type {
   ShapeBatchTaskRecord,
-  ShapeExtractedBufferRecord,
+  ShapeExtractSourceBufferRecord,
   ShapeFeatureMetadataRow,
   ShapeRawBufferRecord,
   ShapeSourceMetadataRow,
@@ -24,7 +24,7 @@ export interface ShapeMutationAPI {
   upsertBatchTasks(tasks: ShapeBatchTaskRecord[]): Promise<void>;
   updateBatchTask(taskId: string, updates: Partial<ShapeBatchTaskRecord>): Promise<void>;
   putRawBuffers(buffers: ShapeRawBufferRecord[]): Promise<void>;
-  putExtractedBuffers(buffers: ShapeExtractedBufferRecord[]): Promise<void>;
+  putExtractedBuffers(buffers: ShapeExtractSourceBufferRecord[]): Promise<void>;
   putSourceMetadata(rows: ShapeSourceMetadataRow[]): Promise<void>;
   deleteSourceMetadataByIds(ids: string[]): Promise<void>;
   deleteSourceMetadataByNode(nodeId: string): Promise<void>;

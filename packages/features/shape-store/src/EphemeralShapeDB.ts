@@ -9,12 +9,12 @@ import {
   type EphemeralStage as BaseEphemeralStage,
   type ProcessingCache as BaseProcessingCache,
   type RawFeatureBuffer as BaseRawFeatureBuffer,
-  type ExtractedFeatureBuffer as BaseExtractedFeatureBuffer,
+  type ExtractedFeatureBuffer as BaseExtract1SourceBuffer,
   type VectorTileData as BaseVectorTileData,
 } from '@hierarchidb/gis-sdk';
 
 export type RawFeatureBuffer = BaseRawFeatureBuffer;
-export type ExtractedFeatureBuffer = BaseExtractedFeatureBuffer;
+export type Extract1SourceBuffer = Omit<BaseExtract1SourceBuffer, 'stage'> & { stage: 'extract1' };
 export type VectorTileData = BaseVectorTileData;
 export type EphemeralStage = BaseEphemeralStage;
 export type ProcessingCache = BaseProcessingCache;
@@ -27,11 +27,37 @@ export type TileIdToBufferRelation = {
   createdAt: number;
 };
 
+export type Extract2SourceBuffer = {
+  id: string;
+  nodeId: NodeId;
+  stage: 'extract2';
+  countryCode?: string;
+  adminLevel?: number;
+  data: ArrayBuffer;
+  featureCount: number;
+  extractionRatio: number;
+  tolerance: number;
+  timestamp: number;
+};
+
+export type VectorTileSourceBuffer = {
+  id: string;
+  nodeId: NodeId;
+  tileId: string;
+  data: ArrayBuffer;
+  size: number;
+  featureCount?: number;
+  timestamp: number;
+  contentType?: string;
+};
+
 export class EphemeralShapeDB extends EphemeralGisDB<BatchProcessConfig> {
   featureBuffers!: Table<FeatureBufferRecord, string>;
   tileBuffers!: Table<TileBufferRecord, string>;
   tileIdToBufferRelations!: Table<TileIdToBufferRelation, string>;
   batchTasks!: Table<BatchTaskRecord, string>;
+  extract2SourceBuffers!: Table<Extract2SourceBuffer, string>;
+  vectorTileSourceBuffers!: Table<VectorTileSourceBuffer, string>;
 
   constructor() {
     super(getDBName('shape-ephemeral'));
@@ -65,10 +91,25 @@ export class EphemeralShapeDB extends EphemeralGisDB<BatchProcessConfig> {
       tileIdToBufferRelations: '&id, nodeId, tileId, bufferId, [nodeId+tileId]',
       batchTasks: '&taskId, nodeId, [nodeId+status], [nodeId+taskType], [nodeId+index], status, taskType, startedAt',
     });
+    this.version(6).stores({
+      rawBuffers: '&id, nodeId, timestamp',
+      extractedBuffers: '&id, nodeId, stage, timestamp, [nodeId+stage]',
+      vectorTiles: '&id, nodeId, [z+x+y], hash, timestamp',
+      sessions: '&nodeId, status, stage, startTime',
+      cache: '&key, type, lastAccessed, ttl',
+      featureBuffers: '&bufferId, nodeId, [nodeId+stage], stage, createdAt, byteSize',
+      tileBuffers: '&bufferId, nodeId, [nodeId+z+x+y], [z+x+y], z, stage, createdAt',
+      tileIdToBufferRelations: '&id, nodeId, tileId, bufferId, [nodeId+tileId]',
+      batchTasks: '&taskId, nodeId, [nodeId+status], [nodeId+taskType], [nodeId+index], status, taskType, startedAt',
+      extract2SourceBuffers: '&id, nodeId, countryCode, adminLevel, [nodeId+countryCode+adminLevel], timestamp',
+      vectorTileSourceBuffers: '&id, nodeId, tileId, [nodeId+tileId], timestamp',
+    });
     this.featureBuffers = this.table('featureBuffers');
     this.tileBuffers = this.table('tileBuffers');
     this.tileIdToBufferRelations = this.table('tileIdToBufferRelations');
     this.batchTasks = this.table('batchTasks');
+    this.extract2SourceBuffers = this.table('extract2SourceBuffers');
+    this.vectorTileSourceBuffers = this.table('vectorTileSourceBuffers');
   }
 
   async clearNodeData(nodeId: NodeId): Promise<void> {
@@ -77,15 +118,84 @@ export class EphemeralShapeDB extends EphemeralGisDB<BatchProcessConfig> {
     await this.tileBuffers.where('nodeId').equals(nodeId).delete();
     await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();
     await this.batchTasks.where('nodeId').equals(nodeId).delete();
+    await this.extract2SourceBuffers.where('nodeId').equals(nodeId).delete();
+    await this.vectorTileSourceBuffers.where('nodeId').equals(nodeId).delete();
+  }
+
+  async hasStageData(nodeId: NodeId, stage: BaseEphemeralStage): Promise<boolean> {
+    switch (stage) {
+      case 'download':
+        return (await this.rawBuffers.where('nodeId').equals(nodeId).count()) > 0;
+      case 'extract1':
+        return (await this.extractedBuffers.where('nodeId').equals(nodeId).count()) > 0;
+      case 'extract2':
+        return (await this.extract2SourceBuffers.where('nodeId').equals(nodeId).count()) > 0;
+      case 'vectorTiles':
+        return (await this.vectorTileSourceBuffers.where('nodeId').equals(nodeId).count()) > 0;
+      default:
+        return false;
+    }
   }
 
   async clearStage(nodeId: NodeId, stage: BaseEphemeralStage): Promise<void> {
-    await super.clearStage(nodeId, stage);
-    await this.featureBuffers.where('[nodeId+stage]').equals([nodeId, stage]).delete();
-    await this.tileBuffers.where('nodeId').equals(nodeId).and((entry) => entry.stage === stage).delete();
-    if (stage === 'extract2') {
-      await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();
-    }
+    await this.transaction('rw', [
+      this.rawBuffers,
+      this.extractedBuffers,
+      this.extract2SourceBuffers,
+      this.vectorTileSourceBuffers,
+      this.sessions,
+      this.cache,
+      this.featureBuffers,
+      this.tileBuffers,
+      this.tileIdToBufferRelations,
+      this.batchTasks,
+    ], async () => {
+      switch (stage) {
+        case 'download':
+          await this.rawBuffers.where('nodeId').equals(nodeId).delete();
+          break;
+        case 'extract1':
+          await this.extractedBuffers.where('nodeId').equals(nodeId).delete();
+          break;
+        case 'extract2':
+          await this.extract2SourceBuffers.where('nodeId').equals(nodeId).delete();
+          await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();
+          break;
+        case 'vectorTiles':
+          await this.vectorTileSourceBuffers.where('nodeId').equals(nodeId).delete();
+          break;
+        default:
+          break;
+      }
+      await this.sessions.where('nodeId').equals(nodeId).delete();
+      const cacheKeys = await this.cache
+        .filter(entry => entry.key.includes(String(nodeId)))
+        .primaryKeys();
+      await this.cache.bulkDelete(cacheKeys);
+
+      await this.featureBuffers.where('[nodeId+stage]').equals([nodeId, stage]).delete();
+      await this.tileBuffers.where('nodeId').equals(nodeId).and((entry) => entry.stage === stage).delete();
+    });
+  }
+
+  async getStatistics(): Promise<{
+    rawBuffers: number;
+    extractedBuffers: number;
+    vectorTiles: number;
+    sessions: number;
+    cacheEntries: number;
+    totalSize: number;
+  }> {
+    const base = await super.getStatistics();
+    const [extract2Count, vectorTileSourceCount] = await Promise.all([
+      this.extract2SourceBuffers.count(),
+      this.vectorTileSourceBuffers.count(),
+    ]);
+    return {
+      ...base,
+      extractedBuffers: base.extractedBuffers + extract2Count,
+      vectorTiles: vectorTileSourceCount,
+    };
   }
 
   async clearAll(): Promise<void> {
@@ -94,6 +204,8 @@ export class EphemeralShapeDB extends EphemeralGisDB<BatchProcessConfig> {
     await this.tileBuffers.clear();
     await this.tileIdToBufferRelations.clear();
     await this.batchTasks.clear();
+    await this.extract2SourceBuffers.clear();
+    await this.vectorTileSourceBuffers.clear();
   }
 
   async createBatchTask(

@@ -85,7 +85,7 @@ export type ShapeExtract2TaskOutputData = {
 };
 
 export type ShapeVectorTileTaskInputData = {
-  inputBufferId?: string;
+  inputBufferId: string;
   minZoom?: number;
   maxZoom?: number;
   tileZ?: number;
@@ -115,7 +115,7 @@ export type ShapeVectorTileTaskInputData = {
 };
 
 export type ShapeVectorTileTaskOutputData = {
-  tileId?: string;
+  tileId: string;
   tileCount?: number;
   totalBytes?: number;
   retry?: number;
@@ -165,16 +165,33 @@ export interface ShapeRawBufferRecord {
   timestamp: number;
 }
 
-export interface ShapeExtractedBufferRecord {
+export interface ShapeExtract1SourceBufferRecord {
   id: string;
   nodeId: NodeId;
-  stage: 'extract1' | 'extract2';
+  stage: 'extract1';
   data: ArrayBuffer;
   featureCount: number;
   extractionRatio: number;
   tolerance: number;
   timestamp: number;
+  countryCode?: string;
+  adminLevel?: number;
 }
+
+export interface ShapeExtract2SourceBufferRecord {
+  id: string;
+  nodeId: NodeId;
+  stage: 'extract2';
+  data: ArrayBuffer;
+  featureCount: number;
+  extractionRatio: number;
+  tolerance: number;
+  timestamp: number;
+  countryCode?: string;
+  adminLevel?: number;
+}
+
+export type ShapeExtractSourceBufferRecord = ShapeExtract1SourceBufferRecord | ShapeExtract2SourceBufferRecord;
 
 export interface ShapeTileRow {
   key: string;

@@ -12,7 +12,6 @@ import {
   bufferSerializer,
   createShapeChunkStore,
   getOrFetchWithRetry,
-  SHARED_SHAPE_NODE_ID,
   type RetryConfig,
 } from '../utils/chunkStore.js';
 
@@ -118,6 +117,10 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
       endpoint = 'country-gpkg',
       signal,
     } = options || {};
+    const resolvedNodeId = options?.nodeId;
+    if (!resolvedNodeId) {
+      throw new Error('GADM fetchData requires nodeId.');
+    }
 
     const normalizedCountry = this.normalizeCountryCode(country);
     const level = Math.min(Math.max(adminLevel, 0), 5); // GADM supports levels 0-5
@@ -142,7 +145,7 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
       const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
       const entry = await getOrFetchWithRetry(
         store,
-        SHARED_SHAPE_NODE_ID,
+        resolvedNodeId,
         downloadUrl,
         {
           accept: 'application/zip',

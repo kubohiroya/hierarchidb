@@ -6,7 +6,8 @@ import type {
   ShapeMutationAPI,
   ShapeQueryAPI,
 } from '@hierarchidb/plugin-service-api';
-import type { DownloadTask, ProcessingStage } from '../../common/types/index.js';
+import type { DownloadTask, DownloadTaskPayload, ProcessingStage } from '../../common/types/index.js';
+import { buildDownloadCacheKey, ensureDownloadBufferForNode } from '../utils/chunkStore.js';
 
 export class SessionTaskRegistry {
   constructor(
@@ -124,17 +125,28 @@ export class SessionTaskRegistry {
     return { runnableTasks, completedCount, failedCount, total: tasks.length };
   }
 
-  async markDownloadTasksCompletedWhenBuffersExist(tasks: DownloadTask[]): Promise<void> {
+  async markDownloadTasksCompletedWhenBuffersExist(
+    tasks: DownloadTask[],
+    inputsByTaskId: Map<string, DownloadTaskPayload>,
+  ): Promise<void> {
     if (tasks.length === 0) return;
     const existing = await this.queryApi.listBatchTaskRecordsByStage(this.nodeId, 'download');
     const statusById = new Map(existing.map((task) => [task.taskId, task.status]));
     for (const task of tasks) {
       const status = statusById.get(task.taskId);
       if (status !== 'waiting' && status !== 'regression') continue;
-      const index = task.index ?? 0;
-      const bufferId = `${this.nodeId}-download-${index}`;
-      const raw = await this.queryApi.getRawBuffer(bufferId);
-      if (!raw) continue;
+      const input = inputsByTaskId.get(task.taskId);
+      const sourceUrl = input?.url ?? task.url;
+      const dataSource = input?.dataSource;
+      const cacheCountry = dataSource === 'naturalearth' ? undefined : (input?.countryCode ?? task.countryCode);
+      const cacheKey = buildDownloadCacheKey({
+        dataSource,
+        countryCode: cacheCountry,
+        adminLevel: input?.adminLevel ?? task.adminLevel,
+        url: sourceUrl,
+      });
+      const linked = await ensureDownloadBufferForNode(this.nodeId, cacheKey);
+      if (!linked) continue;
       await this.mutationApi.updateBatchTask(task.taskId, {
         status: 'completed',
         progress: 100,

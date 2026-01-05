@@ -3297,6 +3297,9 @@ importers:
       '@hierarchidb/vectortile-orchestrator':
         specifier: workspace:*
         version: link:../../packages/features/vectortile-orchestrator
+      '@hierarchidb/vectortile-store':
+        specifier: workspace:*
+        version: link:../../packages/features/vectortile-store
       '@mapbox/vector-tile':
         specifier: ^2.0.3
         version: 2.0.4

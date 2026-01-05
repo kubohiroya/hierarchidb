@@ -30,9 +30,15 @@ export interface ShapeBatchAPI {
 
   // Data sources
   getDataSourceConfigs(): Promise<DataSourceConfig[]>;
-  getCountryMetadata(dataSource: string): Promise<CountryMetadata[]>;
-  generateDownloadTaskPayloads(dataSource: string, countries: string[], adminLevels: number[]): Promise<DownloadTaskPayload[]>;
+  getCountryMetadata(nodeId: NodeId, dataSource: string): Promise<CountryMetadata[]>;
+  generateDownloadTaskPayloads(
+    nodeId: NodeId,
+    dataSource: string,
+    countries: string[],
+    adminLevels: number[],
+  ): Promise<DownloadTaskPayload[]>;
   generateDownloadTaskPayloadsFromSelection(
+    nodeId: NodeId,
     dataSource: string,
     selectedArrayByCountries: SelectedArrayByCountries | undefined,
   ): Promise<DownloadTaskPayload[]>;

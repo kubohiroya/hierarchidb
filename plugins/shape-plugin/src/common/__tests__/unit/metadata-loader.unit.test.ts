@@ -23,7 +23,6 @@ vi.mock('../../../services/utils/chunkStore.js', () => ({
   createShapeChunkStore: vi.fn(() => ({ getOrFetchForNode })),
   jsonSerializer: vi.fn(),
   jsonDeserializer: vi.fn(),
-  SHARED_SHAPE_NODE_ID: 'shape-shared',
   textSerializer: vi.fn(),
   textDeserializer: vi.fn(),
 }));
@@ -35,7 +34,7 @@ describe('MetadataLoader', () => {
   });
 
   it('loads metadata for lowercase geoBoundaries', async () => {
-    const result = await metadataLoader.loadMetadata('geoboundaries');
+    const result = await metadataLoader.loadMetadata('geoboundaries', 'node-1');
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBeGreaterThan(0);
     expect(chunkStore.createShapeChunkStore).toHaveBeenCalled();
@@ -44,8 +43,8 @@ describe('MetadataLoader', () => {
 
   it('normalizes casing and reuses cache without warnings', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    await metadataLoader.loadMetadata('geoboundaries');
-    const second = await metadataLoader.loadMetadata('GeoBoundaries');
+    await metadataLoader.loadMetadata('geoboundaries', 'node-1');
+    const second = await metadataLoader.loadMetadata('GeoBoundaries', 'node-1');
     expect(second.length).toBeGreaterThan(0);
     expect(warnSpy).not.toHaveBeenCalled();
     expect(getOrFetchForNode).toHaveBeenCalled();
@@ -53,7 +52,7 @@ describe('MetadataLoader', () => {
   });
 
   it('throws on openstreetmap', async () => {
-    await expect(metadataLoader.loadMetadata('openstreetmap')).rejects.toThrow(
+    await expect(metadataLoader.loadMetadata('openstreetmap', 'node-1')).rejects.toThrow(
       'OpenStreetMap is not supported in Step3 country selection.',
     );
   });

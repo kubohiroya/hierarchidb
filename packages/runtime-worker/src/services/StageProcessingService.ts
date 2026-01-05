@@ -1,15 +1,13 @@
 import type { DownloadWorkerAPI, ExtractWorkerAPI, VectorTileProgress, VectorTileWorkerAPI } from '../types.js';
-import { getDBName } from '@hierarchidb/util';
 import {
   generateVectorTilesFromFgbBuffer,
   generateVectorTilesFromJsonBuffer,
-  EphemeralGisDB,
   type VectorTileGenerateConfig,
   type VectorTileRow,
 } from '@hierarchidb/gis-sdk';
 import { storeRegistry } from '../entity/store-registry.js';
 import type { VectorTileItemBase } from '../entity/store.js';
-import { shapeDB } from '@hierarchidb/shape-store';
+import { getEphemeralShapeDB, shapeDB } from '@hierarchidb/shape-store';
 import { ShapeMutationService } from './ShapeMutationService.js';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { FeatureMetadataRow } from '@hierarchidb/vectortile-store';
@@ -17,13 +15,7 @@ import type { FeatureMetadataRow } from '@hierarchidb/vectortile-store';
 import type { SharedDownloadService } from './downloadAdapter.js';
 import { createSharedDownloadService } from './downloadAdapter.js';
 
-let ephemeralDb: EphemeralGisDB | null = null;
-const getEphemeralDb = (): EphemeralGisDB => {
-  if (!ephemeralDb) {
-    ephemeralDb = new EphemeralGisDB(getDBName('shape-ephemeral'));
-  }
-  return ephemeralDb;
-};
+const getEphemeralDb = () => getEphemeralShapeDB();
 
 type VectorTileStoreItem = VectorTileItemBase & {
   z: number;
@@ -100,8 +92,12 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
       // Ignore and fall back to ephemeral buffers.
     }
     const db = getEphemeralDb();
-    const row = await db.extractedBuffers.get(fileId);
-    return row?.data ?? null;
+    const tileInput = await db.vectorTileSourceBuffers.get(fileId);
+    if (tileInput?.data) return tileInput.data;
+    const extract2 = await db.extract2SourceBuffers.get(fileId);
+    if (extract2?.data) return extract2.data;
+    const extract1 = await db.extractedBuffers.get(fileId);
+    return extract1?.data ?? null;
   }
 
   private async decodeInputBuffer(

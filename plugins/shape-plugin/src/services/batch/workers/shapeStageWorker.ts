@@ -14,6 +14,7 @@ import { AuthService } from '@hierarchidb/auth-recovery';
 import { resolveStrategyIdFromDataSource } from '../../datasources/strategyIds.js';
 import { buildTileCoordinates } from '../session/tiles/tileCoordinates.js';
 import { buildTileId } from '../../../worker/shapeVectorTileStore.dexie.js';
+import { buildDownloadCacheKey, readDownloadBuffer, storeDownloadBufferForNode } from '../../utils/chunkStore.js';
 
 const normalizeBoundingBox = (bbox?: TaskBoundingBox): DataSourceBoundingBox | undefined => {
   if (!bbox || bbox.length !== 4) return undefined;
@@ -134,7 +135,6 @@ const buildTileIdRelations = (params: {
 const processDownloadTask = async ({
   nodeId,
   task,
-  taskIndex,
   input,
 }: DownloadTaskRequest): Promise<ShapeStageWorkerTaskResult> => {
   const strategyId = resolveStrategyIdFromDataSource(input.dataSource);
@@ -149,10 +149,19 @@ const processDownloadTask = async ({
   const tags = input.tags;
   const country = input.countryCode ?? task.countryCode;
   const adminLevel = input.adminLevel;
+  const sourceUrl = input.url ?? task.url;
+  const cacheCountry = input.dataSource === 'naturalearth' ? undefined : country;
+  const cacheKey = buildDownloadCacheKey({
+    dataSource: input.dataSource,
+    countryCode: cacheCountry,
+    adminLevel,
+    url: sourceUrl,
+  });
   let lastError: unknown;
   for (let attempt = 0; attempt <= retryAttempts; attempt++) {
     try {
       const raw = await ds.fetchData({
+        nodeId,
         country,
         adminLevel,
         endpoint: input.endpoint,
@@ -171,18 +180,10 @@ const processDownloadTask = async ({
       } as FeatureCollection;
       const fgbBytes = await geojsonApi.serialize(featureCollection);
       const fgb = fgbBytes.buffer.slice(fgbBytes.byteOffset, fgbBytes.byteOffset + fgbBytes.byteLength);
-      const bounds = turfBbox(featureCollection);
-      const ephemeral = getShapeDbApiClient().ephemeral;
-      const bufferId = `${nodeId}-download-${taskIndex}`;
-      await ephemeral.putRawBuffer({
-        id: bufferId,
-        nodeId: task.nodeId ?? nodeId,
-        data: fgb,
-        featureCount: featureCollection.features.length,
-        bbox: [bounds[0], bounds[1], bounds[2], bounds[3]],
-        downloadTime: Date.now(),
-        size: fgb.byteLength,
-        timestamp: Date.now(),
+      await storeDownloadBufferForNode({
+        nodeId,
+        cacheKey,
+        buffer: fgb,
       });
       return {
         status: 'completed',
@@ -210,16 +211,21 @@ const processExtract1Task = async ({
 }: ExtractTaskRequest<Extract1Task>): Promise<ShapeStageWorkerTaskResult> => {
   const ephemeral = getShapeDbApiClient().ephemeral;
   const inputBufferId = input.inputBufferId ?? '';
-  const raw = await ephemeral.getRawBuffer(inputBufferId);
-  if (!raw) {
+  const rawBuffer = await readDownloadBuffer(nodeId, inputBufferId);
+  if (!rawBuffer) {
     return { status: 'failed', errorMessage: `Raw buffer not found: ${inputBufferId}` };
   }
-  if (!raw.featureCount) {
+  const rawNodeId = nodeId;
+  const enableFeatureFiltering = input.enableFeatureFiltering ?? true;
+  const originKey = input.originKey;
+  const geojson = await decodeGeoJson(rawBuffer);
+  const rawCount = isFeatureCollection(geojson) ? geojson.features.length : 0;
+  if (rawCount === 0) {
     await ephemeral.putExtractedBuffer({
       id: `${nodeId}-extract1-${taskIndex}`,
-      nodeId: raw.nodeId,
+      nodeId: rawNodeId,
       stage: 'extract1',
-      data: raw.data,
+      data: rawBuffer,
       featureCount: 0,
       extractionRatio: 0,
       tolerance: input.tolerance ?? 0,
@@ -227,16 +233,14 @@ const processExtract1Task = async ({
     });
     return { status: 'skipped', featureCount: 0 };
   }
-  const enableFeatureFiltering = input.enableFeatureFiltering ?? true;
-  const originKey = input.originKey;
   if (!enableFeatureFiltering) {
     const outputBufferId = `${nodeId}-extract1-${taskIndex}`;
-    const featureCount = raw.featureCount ?? 0;
+    const featureCount = rawCount;
     await ephemeral.putExtractedBuffer({
       id: outputBufferId,
-      nodeId: raw.nodeId,
+      nodeId: rawNodeId,
       stage: 'extract1',
-      data: raw.data,
+      data: rawBuffer,
       featureCount,
       extractionRatio: 1,
       tolerance: 0,
@@ -244,7 +248,6 @@ const processExtract1Task = async ({
     });
     return { status: 'completed', featureCount };
   }
-  const geojson = await decodeGeoJson(raw.data);
   const filterSettings: FeatureFilterSettings = {
     minArea: input.minimumArea ?? 0,
     featureFilterMethod: input.featureFilterMethod,
@@ -266,7 +269,6 @@ const processExtract1Task = async ({
   const sanitizedExtracted = hasExtractedFeatures
     ? sanitizeFeatureCollection(extracted)
     : null;
-  const rawCount = raw.featureCount ?? 0;
   const filteredCount = sanitizedFiltered ? sanitizedFiltered.features.length : rawCount;
   const extractedCount = sanitizedExtracted ? sanitizedExtracted.features.length : filteredCount;
   if (rawCount > 0 && (filteredCount < rawCount || extractedCount < filteredCount)) {
@@ -291,13 +293,13 @@ const processExtract1Task = async ({
   }
   const featureCount = sanitizedExtracted
     ? sanitizedExtracted.features.length
-    : raw.featureCount;
+    : rawCount;
   if (sanitizedFiltered && featureCount === 0) {
     await ephemeral.putExtractedBuffer({
       id: outputBufferId,
-      nodeId: raw.nodeId,
+      nodeId: rawNodeId,
       stage: 'extract1',
-      data: raw.data,
+      data: rawBuffer,
       featureCount: 0,
       extractionRatio: 0,
       tolerance: input.tolerance ?? 0,
@@ -307,11 +309,11 @@ const processExtract1Task = async ({
   }
   const data = sanitizedExtracted
     ? await encodeGeoJson(sanitizedExtracted)
-    : raw.data;
+    : rawBuffer;
   if (!featureCount) {
     await ephemeral.putExtractedBuffer({
       id: outputBufferId,
-      nodeId: raw.nodeId,
+      nodeId: rawNodeId,
       stage: 'extract1',
       data,
       featureCount: 0,
@@ -323,11 +325,11 @@ const processExtract1Task = async ({
   }
   await ephemeral.putExtractedBuffer({
     id: outputBufferId,
-    nodeId: raw.nodeId,
+    nodeId: rawNodeId,
     stage: 'extract1',
     data,
     featureCount,
-    extractionRatio: raw.featureCount > 0 ? featureCount / raw.featureCount : 1,
+    extractionRatio: rawCount > 0 ? featureCount / rawCount : 1,
     tolerance: input.tolerance ?? 0,
     timestamp: Date.now(),
   });
@@ -342,11 +344,25 @@ const processExtract2Task = async ({
 }: ExtractTaskRequest<Extract2Task>): Promise<ShapeStageWorkerTaskResult> => {
   const ephemeral = getShapeDbApiClient().ephemeral;
   const inputBufferId = payload.inputBufferId ?? '';
-  const buffer = await ephemeral.getExtractedBuffer(inputBufferId)
-    ?? await ephemeral.getRawBuffer(inputBufferId);
-  if (!buffer) {
+  const extracted = await ephemeral.getExtractedBuffer(inputBufferId);
+  const rawBuffer = extracted ? null : await readDownloadBuffer(nodeId, inputBufferId);
+  if (!extracted && !rawBuffer) {
     return { status: 'failed', errorMessage: `Extract2 input buffer not found: ${inputBufferId}` };
   }
+  const rawGeojson = extracted ? null : await decodeGeoJson(rawBuffer as ArrayBuffer);
+  const rawCount = extracted
+    ? extracted.featureCount
+    : (isFeatureCollection(rawGeojson) ? rawGeojson.features.length : 0);
+  const buffer = extracted ?? {
+    id: inputBufferId,
+    nodeId,
+    stage: 'extract1' as const,
+    data: rawBuffer as ArrayBuffer,
+    featureCount: rawCount,
+    extractionRatio: 1,
+    tolerance: 0,
+    timestamp: Date.now(),
+  };
   const originKey = payload.originKey;
   if (!buffer.featureCount) {
     const outputBufferId = `${nodeId}-extract2-${taskIndex}`;
@@ -358,6 +374,8 @@ const processExtract2Task = async ({
       id: outputBufferId,
       nodeId: buffer.nodeId,
       stage: 'extract2',
+      countryCode: task.countryCode,
+      adminLevel: task.adminLevel,
       data: buffer.data,
       featureCount: 0,
       extractionRatio: 0,
@@ -366,7 +384,7 @@ const processExtract2Task = async ({
     });
     return { status: 'skipped', featureCount: 0 };
   }
-  const geojson = await decodeGeoJson(buffer.data);
+  const geojson = extracted ? await decodeGeoJson(buffer.data) : rawGeojson;
   if (isFeatureCollection(geojson)) {
     const continent = payload.continent;
     const countryName = payload.countryName;
@@ -407,6 +425,8 @@ const processExtract2Task = async ({
         id: outputBufferId,
         nodeId: buffer.nodeId,
         stage: 'extract2',
+        countryCode: task.countryCode,
+        adminLevel: task.adminLevel,
         data,
         featureCount,
         extractionRatio: buffer.featureCount ? featureCount / buffer.featureCount : 1,
@@ -419,6 +439,8 @@ const processExtract2Task = async ({
       id: outputBufferId,
       nodeId: buffer.nodeId,
       stage: 'extract2',
+      countryCode: task.countryCode,
+      adminLevel: task.adminLevel,
       data: buffer.data,
       featureCount: buffer.featureCount ?? 0,
       extractionRatio: 1,
@@ -512,6 +534,8 @@ const processExtract2Task = async ({
       id: outputBufferId,
       nodeId: buffer.nodeId,
       stage: 'extract2',
+      countryCode: task.countryCode,
+      adminLevel: task.adminLevel,
       data: buffer.data,
       featureCount: 0,
       extractionRatio: 0,
@@ -565,6 +589,8 @@ const processExtract2Task = async ({
     id: outputBufferId,
     nodeId: buffer.nodeId,
     stage: 'extract2',
+    countryCode: task.countryCode,
+    adminLevel: task.adminLevel,
     data: finalData,
     featureCount: finalFeatureCount,
     extractionRatio: buffer.featureCount ? finalFeatureCount / buffer.featureCount : 1,

@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import { SAMPLE_COUNTRIES } from '../../common/mock/data.js';
-import { buildShapeCacheKey, createShapeChunkStore, jsonDeserializer, jsonSerializer, SHARED_SHAPE_NODE_ID } from './chunkStore.js';
+import { buildShapeCacheKey, createShapeChunkStore, jsonDeserializer, jsonSerializer } from './chunkStore.js';
 import { GEOBOUNDARIES_ALL_METADATA_URL } from './geoboundariesEndpoints.js';
 
 // URLs must match the ones used by metadataSources/GeoBoundariesStrategy so the cache keys line up.
@@ -12,7 +12,7 @@ import { GEOBOUNDARIES_ALL_METADATA_URL } from './geoboundariesEndpoints.js';
  * - ネットワークや認証に依存せず、最低限のUI表示を成立させる
  * - 後続のネットワーク取得が成功すれば、通常通りchunk-storeが更新される
  */
-export async function seedStep3CacheIfMissing(dataSource: string, nodeId: NodeId = SHARED_SHAPE_NODE_ID): Promise<void> {
+export async function seedStep3CacheIfMissing(dataSource: string, nodeId: NodeId): Promise<void> {
   const normalized = (dataSource || '').toLowerCase();
   if (normalized !== 'geoboundaries') {
     // 現状の要件はStep3のgeoBoundariesで致命的に止まるケースへの救済。

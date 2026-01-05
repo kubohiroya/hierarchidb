@@ -3,6 +3,7 @@
   */
 
 import type { ShapeEntity } from '../../common/types/ShapeEntity.js';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { ShapeStepValidationResult } from '../../common/types/index.js';
 
 export interface DataSourceConfig {
@@ -108,6 +109,7 @@ export interface AggregationRule {
 }
 
 export interface FetchOptions {
+  nodeId?: NodeId;
   bbox?: BoundingBox;
   adminLevel?: number;
   endpoint?: string;

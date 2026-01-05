@@ -7,7 +7,7 @@ import { metadataLoader } from '../../services/metadata/MetadataLoader.js';
 export interface UseCountryMetadataOptions {
   dataSource: string;
   countryCodes?: string[];
-  nodeId?: NodeId;
+  nodeId: NodeId;
 }
 
 export interface UseCountryMetadataResult {

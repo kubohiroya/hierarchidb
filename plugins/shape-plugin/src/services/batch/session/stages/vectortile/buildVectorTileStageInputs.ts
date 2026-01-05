@@ -1,23 +1,20 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { BatchProcessConfig } from '../../../types.js';
-import { buildMinimalVectorTileRowsFromExtract2 } from '../../tiles/buildMinimalVectorTileRowsFromExtract2.js';
 import { buildVectorTileTasks } from '../../tiles/vectorTileTasks.js';
 
 export type VectorTileStageTileInputSource = {
-  listExtract2Buffers: () => Promise<Array<{ id: string }>>;
-  listTileIdRelations?: () => Promise<Array<{ tileId: string }>>;
+  listTileIdRelations: () => Promise<Array<{ tileId: string }>>;
 };
 
 export function buildVectorTileStageInputs(params: {
   nodeId: NodeId;
-  zoomLevels: number[];
   config: BatchProcessConfig;
   tileInputSource: VectorTileStageTileInputSource;
 }): Promise<{
   tasks: ReturnType<typeof buildVectorTileTasks>['tasks'];
   inputsByTaskId: ReturnType<typeof buildVectorTileTasks>['inputsByTaskId'];
 }> {
-  const { nodeId, zoomLevels, config, tileInputSource } = params;
+  const { nodeId, config, tileInputSource } = params;
 
   return (async () => {
     const parseTileId = (tileId: string): { key: string; z: number; x: number; y: number } | null => {
@@ -37,19 +34,19 @@ export function buildVectorTileStageInputs(params: {
       return { key: tileId, z, x, y };
     };
 
-    const relationRows = await tileInputSource.listTileIdRelations?.();
-    const tileRows = relationRows && relationRows.length > 0
-      ? Array.from(new Map(
-        relationRows
-          .map((row) => parseTileId(row.tileId))
-          .filter((row): row is { key: string; z: number; x: number; y: number } => Boolean(row))
-          .map((row) => [row.key, row]),
-      ).values())
-      : buildMinimalVectorTileRowsFromExtract2({
-        nodeId,
-        zoomLevels,
-        extract2Buffers: await tileInputSource.listExtract2Buffers(),
-      });
+    const relationRows = await tileInputSource.listTileIdRelations();
+    if (relationRows.length === 0) {
+      throw new Error(`[Session ${String(nodeId)}] tileId relations are required for vectortile stage.`);
+    }
+    const tileRows = Array.from(new Map(
+      relationRows
+        .map((row) => parseTileId(row.tileId))
+        .filter((row): row is { key: string; z: number; x: number; y: number } => Boolean(row))
+        .map((row) => [row.key, row]),
+    ).values());
+    if (tileRows.length === 0) {
+      throw new Error(`[Session ${String(nodeId)}] tileId relations are invalid for vectortile stage.`);
+    }
 
     return buildVectorTileTasks({ nodeId, tileRows, config });
   })();

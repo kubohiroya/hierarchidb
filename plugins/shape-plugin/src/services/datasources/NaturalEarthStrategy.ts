@@ -14,7 +14,6 @@ import {
   bufferSerializer,
   createShapeChunkStore,
   getOrFetchWithRetry,
-  SHARED_SHAPE_NODE_ID,
   type RetryConfig,
 } from '../utils/chunkStore.js';
 
@@ -111,6 +110,10 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
       bbox: _bbox,
       signal,
     } = options || {};
+    const resolvedNodeId = options?.nodeId;
+    if (!resolvedNodeId) {
+      throw new Error('NaturalEarth fetchData requires nodeId.');
+    }
 
     const selectedEndpoint = this.selectEndpoint(endpoint, adminLevel);
     if (!selectedEndpoint || !this.config.access.endpoints?.[selectedEndpoint]) {
@@ -127,7 +130,7 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
       const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
       const entry = await getOrFetchWithRetry(
         store,
-        SHARED_SHAPE_NODE_ID,
+        resolvedNodeId,
         downloadUrl,
         {
           accept: 'application/zip',

@@ -515,10 +515,8 @@ export class SessionController {
     const metadataEnabled = isShapePreviewMetadataEnabled();
     const { tasks, inputsByTaskId } = await buildVectorTileStageInputs({
       nodeId: this.nodeId,
-      zoomLevels,
       config: this.config,
       tileInputSource: {
-        listExtract2Buffers: () => this.artifactStore.listExtractedBuffers('extract2'),
         listTileIdRelations: () => getShapeDbApiClient().ephemeral.listTileIdRelations(this.nodeId),
       },
     });

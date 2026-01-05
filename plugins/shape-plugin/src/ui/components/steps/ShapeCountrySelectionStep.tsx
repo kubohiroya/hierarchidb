@@ -5,6 +5,7 @@ import { CountryMatrixSelector } from '@hierarchidb/ui-country-select';
 import type { ShapeDialogStepProps } from './ShapeDialogStepProps.ts';
 import { useShapeCountrySelectionStep } from '../../hooks/useShapeCountrySelectionStep.js';
 import { useTranslation } from '../../i18n.js';
+import { NodeId } from '@hierarchidb/common-types';
 
 export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ data, onChange, nodeId }) => {
   const { t } = useTranslation();
@@ -18,7 +19,7 @@ export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ data
     applySelections,
     isCellEnabled,
     reloadAll,
-  } = useShapeCountrySelectionStep({ data, onChange, nodeId });
+  } = useShapeCountrySelectionStep({ data, onChange, nodeId: nodeId as NodeId });
 
   const metadataReloadTooltip = React.useMemo(() => {
     if (!availabilityInfo?.fetchedAt) {

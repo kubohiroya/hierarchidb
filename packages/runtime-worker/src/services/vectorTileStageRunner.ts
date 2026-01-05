@@ -1,6 +1,7 @@
 import type { VectorTileProgress, VectorTileWorkerAPI } from '../types.js';
 import { DexieChunkStore } from '@hierarchidb/chunk-store';
 import type { NodeId } from '@hierarchidb/common-types';
+import { getEphemeralShapeDB } from '@hierarchidb/shape-store';
 
 export type VectorTileStageInput = {
   bufferId: string;
@@ -38,10 +39,12 @@ export type VectorTileStageResult = {
 export type VectorTileStageOptions = {
   chunkStoreName?: string;
   nodeId?: NodeId;
+  tileId?: string;
+  storage?: 'chunk-store' | 'ephemeral';
 };
 
-const DEFAULT_CHUNK_STORE = 'hidb-chunks';
 const DEFAULT_NODE_ID = 'vectortile-shared' as NodeId;
+const DEFAULT_CHUNK_STORE = 'hidb-chunks';
 
 type VectorTileInputFormat = 'geojson' | 'flatgeobuf';
 type VectorTileInputCompression = 'gzip' | 'none';
@@ -74,12 +77,13 @@ export async function writeVectorTileInput(
   buffer: ArrayBuffer,
   contentTypeOrOptions: string | {
     contentType?: string;
-    chunkStoreName?: string;
     inputFormat?: VectorTileInputFormat;
     inputCompression?: VectorTileInputCompression;
     nodeId?: NodeId;
+    tileId?: string;
+    storage?: 'chunk-store' | 'ephemeral';
+    chunkStoreName?: string;
   } = 'application/json',
-  chunkStoreName = DEFAULT_CHUNK_STORE,
 ): Promise<void> {
   const options = typeof contentTypeOrOptions === 'string' ? null : contentTypeOrOptions;
   const inputFormat = options?.inputFormat ?? 'geojson';
@@ -88,10 +92,25 @@ export async function writeVectorTileInput(
     ? contentTypeOrOptions
     : options?.contentType
   ) ?? resolveInputContentType(inputFormat, inputCompression);
-  const resolvedChunkStoreName = options?.chunkStoreName ?? chunkStoreName;
   const nodeId = options?.nodeId ?? DEFAULT_NODE_ID;
+  const tileId = options?.tileId ?? bufferId;
+  const storage = options?.storage ?? 'chunk-store';
   const payload = await compressBuffer(buffer, inputCompression);
-  const storage = new DexieChunkStore<ArrayBuffer>({
+  if (storage === 'ephemeral') {
+    const db = getEphemeralShapeDB();
+    await db.vectorTileSourceBuffers.put({
+      id: bufferId,
+      nodeId,
+      tileId,
+      data: payload,
+      size: payload.byteLength,
+      timestamp: Date.now(),
+      contentType,
+    });
+    return;
+  }
+  const resolvedChunkStoreName = options?.chunkStoreName ?? DEFAULT_CHUNK_STORE;
+  const storageAdapter = new DexieChunkStore<ArrayBuffer>({
     dbName: resolvedChunkStoreName,
     serializer: (value) => value,
     deserializer: (value) => value,
@@ -99,7 +118,7 @@ export async function writeVectorTileInput(
       auth: { enabled: false },
     },
   });
-  await storage.setForNode(nodeId, bufferId, payload, {
+  await storageAdapter.setForNode(nodeId, bufferId, payload, {
     sizeBytes: payload.byteLength,
     contentType,
     fetchedAt: Date.now(),
@@ -116,6 +135,7 @@ export async function runVectorTileStage(
     const inputFormat = config.inputFormat ?? 'geojson';
     const inputCompression = config.inputCompression ?? 'none';
     const nodeId = options.nodeId ?? config.targetNodeId ?? DEFAULT_NODE_ID;
+    const tileId = options.tileId ?? bufferId;
     await writeVectorTileInput(
       bufferId,
       buffer,
@@ -123,8 +143,10 @@ export async function runVectorTileStage(
         contentType,
         inputFormat,
         inputCompression,
-        chunkStoreName: options.chunkStoreName ?? DEFAULT_CHUNK_STORE,
         nodeId,
+        tileId,
+        storage: options.storage ?? 'chunk-store',
+        chunkStoreName: options.chunkStoreName ?? DEFAULT_CHUNK_STORE,
       },
     );
   }

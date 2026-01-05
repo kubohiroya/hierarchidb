@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type {
-  ShapeExtractedBufferRecord,
+  ShapeExtractSourceBufferRecord,
   ShapeFeatureMetadataRow,
   ShapeMutationAPI,
   ShapeQueryAPI,
@@ -21,22 +21,22 @@ export class SessionArtifactStore {
   }
 
   getRawBuffer(bufferId: string): Promise<ShapeRawBufferRecord | null> {
-    return this.queryApi.getRawBuffer(bufferId);
+    return this.queryApi.getRawBuffer(this.nodeId, bufferId);
   }
 
   putRawBuffers(buffers: ShapeRawBufferRecord[]): Promise<void> {
     return this.mutationApi.putRawBuffers(buffers);
   }
 
-  listExtractedBuffers(stage?: 'extract1' | 'extract2'): Promise<ShapeExtractedBufferRecord[]> {
+  listExtractedBuffers(stage?: 'extract1' | 'extract2'): Promise<ShapeExtractSourceBufferRecord[]> {
     return this.queryApi.listExtractedBuffers(this.nodeId, stage);
   }
 
-  getExtractedBuffer(bufferId: string): Promise<ShapeExtractedBufferRecord | null> {
+  getExtractedBuffer(bufferId: string): Promise<ShapeExtractSourceBufferRecord | null> {
     return this.queryApi.getExtractedBuffer(bufferId);
   }
 
-  putExtractedBuffers(buffers: ShapeExtractedBufferRecord[]): Promise<void> {
+  putExtractedBuffers(buffers: ShapeExtractSourceBufferRecord[]): Promise<void> {
     return this.mutationApi.putExtractedBuffers(buffers);
   }
 

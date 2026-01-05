@@ -1,3 +1,219 @@
+2068) docs/shape-plugin/geojson-vector-tile-build-flow (P2) — 完了 (2026-01-09)
+- ブランチ名: docs/shape-plugin/geojson-vector-tile-build-flow
+- 依存: なし
+- 受け入れ基準: shape-plugin のビルドにおける geojson 方式ベクトルタイル生成の処理内容を段階的に説明する／参照すべき実ファイルの場所を列挙する／TASKS.md に運用ログを記載する
+- 要点：shape-plugin の vectortile ステージで geojson 入力が選択された場合の入出力バッファ作成・worker 実行・タイル生成までのフローを整理し、参照ファイルを列挙。
+- チェックリスト:
+  - geojson 方式のベクトルタイル生成フローを調査して整理する
+  - 参照すべきファイルパスを具体的に列挙する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-09 21:05 JST shape-plugin の geojson 方式ベクトルタイル生成フロー調査に着手。
+  - done: 2026-01-09 21:20 JST geojson 方式の vectortile 生成フローと参照ファイルを整理。
+
+2069) docs/shape-plugin/extract2-buffer-format-check (P2) — 完了 (2026-01-09)
+- ブランチ名: docs/shape-plugin/extract2-buffer-format-check
+- 依存: なし
+- 受け入れ基準: extract2 のバッファ保存形式が標準で flatgeobuf であるかをコードで確認する／参照箇所を列挙する／TASKS.md に運用ログを記載する
+- 要点：extract2 は flatgeobuf の geojson.serialize を使って保存しており、raw/extract1 も同様に flatgeobuf を保存していることを確認。
+- チェックリスト:
+  - extract2 の保存経路とフォーマットをコードで確認する
+  - 参照すべきファイルパスを列挙する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-09 21:24 JST extract2 のバッファ保存フォーマット確認に着手。
+  - done: 2026-01-09 21:29 JST extract2 は flatgeobuf を保存していることを確認。
+
+2070) docs/shape-plugin/vectortile-bottleneck-analysis (P2) — 完了 (2026-01-09)
+- ブランチ名: docs/shape-plugin/vectortile-bottleneck-analysis
+- 依存: なし
+- 受け入れ基準: vectortile ステージの処理を分解しボトルネック候補を列挙する／各候補の理由を具体的に説明する／参照ファイルを列挙する／TASKS.md に運用ログを記載する
+- チェックリスト:
+  - vectortile ステージの処理フローを整理する
+  - ボトルネック候補と根拠を列挙する
+  - 参照ファイルパスを具体的に記載する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-09 21:33 JST vectortile ステージのボトルネック推測整理に着手。
+  - done: 2026-01-09 21:40 JST ボトルネック候補と根拠、参照箇所を整理。
+
+2071) docs/shape-plugin/vectortile-qa-followups (P2) — 完了 (2026-01-09)
+- ブランチ名: docs/shape-plugin/vectortile-qa-followups
+- 依存: なし
+- 受け入れ基準: chunk-store 書き込み経路と理由をコードで説明する／geojson-vt の対象範囲をコードで説明する／Worker並列数の妥当性を推測する／Step6のプログレッシブ表示の可否をコードで確認する／TASKS.md に運用ログを記載する
+- チェックリスト:
+  - chunk-store 書き込み経路と理由を確認する
+  - geojson-vt の対象範囲とタイル交差の関係を整理する
+  - Worker並列数の妥当性を推測し根拠を示す
+  - Step6 のプログレッシブ表示可否を確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-09 21:50 JST vectortile 周辺の追加QAに着手。
+  - done: 2026-01-09 22:05 JST chunk-store 経路、geojson-vt 対象範囲、並列度、Step6進行表示の可否を整理。
+
+2072) docs/shape-plugin/chunk-store-overhead-benefit (P2) — 完了 (2026-01-09)
+- ブランチ名: docs/shape-plugin/chunk-store-overhead-benefit
+- 依存: なし
+- 受け入れ基準: chunk-store 経由のCPU/I/Oオーバーヘッド要因を整理する／chunk-store を介するメリットをコード根拠から説明する／推測と事実を分けて回答する／TASKS.md に運用ログを記載する
+- チェックリスト:
+  - chunk-store 経由の処理コストを整理する
+  - chunk-store を介する利点を整理する
+  - 事実と推測を分けて回答する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-09 22:12 JST chunk-store 経由のオーバーヘッドと利点の整理に着手。
+  - done: 2026-01-09 22:18 JST chunk-store 経由のコストとメリットを整理。
+
+2073) docs/shape-plugin/chunk-store-overhead-quantitative (P2) — 完了 (2026-01-09)
+- ブランチ名: docs/shape-plugin/chunk-store-overhead-quantitative
+- 依存: なし
+- 受け入れ基準: gzipなしのchunk-store読み書きの追加オーバーヘッド要因を整理する／IndexedDB直書きとの差分を推測として明示する／不確実性と測定ポイントを明示する／TASKS.md に運用ログを記載する
+- チェックリスト:
+  - gzipなしのchunk-store経路の差分要因を整理する
+  - 推測と事実を分けて説明する
+  - 測定が必要な点を列挙する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-09 22:25 JST gzipなしのchunk-storeオーバーヘッド整理に着手。
+  - done: 2026-01-09 22:30 JST chunk-storeとIndexedDB直書き差分の推測を整理。
+
+2074) docs/shape-plugin/chunk-store-chunk-size-qa (P2) — 完了 (2026-01-09)
+- ブランチ名: docs/shape-plugin/chunk-store-chunk-size-qa
+- 依存: なし
+- 受け入れ基準: chunk-store のチャンクサイズ指定可否をコードで確認する／「直書きと同等になるか」を推測として明示する／不確実性を明示する／TASKS.md に運用ログを記載する
+- チェックリスト:
+  - chunk-store のチャンク分割仕様を確認する
+  - 直書き相当になるかを推測で整理する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-09 22:38 JST chunk-storeのチャンクサイズ可否の確認に着手。
+  - done: 2026-01-09 22:45 JST chunk-storeは単一チャンク保存が基本で直書きと同等ではない点を整理。
+
+2075) docs/shape-plugin/chunk-store-sharing-qa (P2) — 完了 (2026-01-09)
+- ブランチ名: docs/shape-plugin/chunk-store-sharing-qa
+- 依存: なし
+- 受け入れ基準: downloadステージにおけるchunk-store利用と共有の仕組みをコードで確認する／参照カウント方式の有無を明確にする／正しい点/誤解点を分けて回答する／TASKS.md に運用ログを記載する
+- チェックリスト:
+  - downloadでのchunk-store利用経路を確認する
+  - nodeId/セッション間共有の仕組みを確認する
+  - 参照カウント方式の有無を明確化する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-09 23:00 JST chunk-store共有理解の確認に着手。
+  - done: 2026-01-09 23:08 JST 共有と参照関係の実装有無を整理。
+
+2076) feat/shape/chunk-store-cache-and-cleanup (P1) — 完了 (2026-01-10)
+- ブランチ名: feat/shape/chunk-store-cache-and-cleanup
+- 依存: なし
+- ExecPlan: plans/shape-chunk-store-cache-and-cleanup-execplan.md
+- 受け入れ基準: shape download のchunk-store利用がnodeId単位で参照関係を作成する／chunk-storeがHEAD+ETag/Last-Modifiedでキャッシュ判定する／hash同一性の利用状況を明確化し必要なら適用する／TreeNode削除経路でchunk-storeのdeleteForNodeが実行され参照0ならデータが削除される／TASKS.mdに運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/features/chunk-store/src/index.ts`, `plugins/shape-plugin/src/services/datasources/*.ts`, `plugins/shape-plugin/src/services/utils/chunkStore.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/worker/plugin.ts`（必要に応じて）
+- ロールバック手順: 上記ファイルとExecPlanの差分をrevertし、chunk-storeのHEAD判定とnodeId関連付けを元に戻す
+- チェックリスト:
+  - ExecPlanを作成し設計と検証手順を明記する
+  - chunk-storeのHEAD判定と条件付きキャッシュを実装する
+  - shape data sourceのchunk-store利用をnodeId関連付けに変更する
+  - node削除経路でchunk-storeのdeleteForNodeが走るようにする
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-09 23:20 JST chunk-storeキャッシュ/削除の改善に着手。
+  - done: 2026-01-10 00:10 JST HEAD判定・nodeId関連付け・削除連携を実装。検証: 未実施。
+
+2077) refactor/shape/ephemeral-stage-buffers (P1) — 進行中 (2026-01-10)
+- ブランチ名: refactor/shape/ephemeral-stage-buffers
+- 依存: なし
+- ExecPlan: plans/shape-ephemeral-stage-buffers-execplan.md
+- 受け入れ基準: extract1入力はchunk-storeのダウンロードキャッシュを利用し、extract2/vectortileの入出力はsourceBuffersへ移行される／extract2SourceBuffersはnodeId+国コード+自治体レベルで検索できる／vectortileSourceBuffersはnodeId+tileIdで検索できる／TreeNode削除で対象バッファが一括削除される／TASKS.mdに運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/features/gis-sdk/src/ephemeral/EphemeralGisDB.ts`, `packages/features/shape-store/src/EphemeralShapeDB.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/batch/adapters/LocalExtractAdapters.ts`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `packages/runtime-worker/src/services/vectorTileStageRunner.ts`, `packages/runtime-worker/src/services/StageProcessingService.ts`, `plugins/shape-plugin/src/services/batch/ShapeBatchApiClient.ts`（必要に応じて）
+- ロールバック手順: 上記ファイルとExecPlanの差分をrevertし、chunk-store入力経路と旧bufferスキーマに戻す
+- チェックリスト:
+  - ExecPlanを作成し設計と検証手順を明記する
+  - sourceBuffersのスキーマとインデックスを追加する
+  - extract1入力はchunk-store利用、extract2/vectortileの入出力をsourceBuffersへ移行する
+  - node削除で新バッファが削除されることを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 00:20 JST chunk-store依存をephemeral buffersへ移行する対応に着手。
+  - start: 2026-01-10 09:42 JST extract1/2/vectortileのephemeral buffers移行とスキーマ更新に着手。
+  - start: 2026-01-10 11:20 JST sourceBuffersのスキーマ追加とextract2/vectortile経路の置換を進行中。
+  - start: 2026-01-10 11:45 JST downloadのchunk-store共有/削除とextract1入力の確認に着手。
+  - start: 2026-01-10 12:45 JST download出力をchunk-storeへ保存しextract1入力をchunk-store参照に変更。
+  - start: 2026-01-10 13:05 JST extract1入力をchunk-store決め打ちへ修正・downloadのrawBuffers廃止方針で対応を進める。
+  - start: 2026-01-10 13:30 JST extract1入力のchunk-store固定化とrawBuffers廃止、nodeId必須化の整理に着手。
+
+2078) chore/docs/agents-no-fallback (P2) — 進行中 (2026-01-10)
+- ブランチ名: chore/docs/agents-no-fallback
+- 依存: なし
+- 受け入れ基準: AGENTS.md に「ユーザー指示なしのフォールバック実装を禁止」ルールを明記する／TASKS.md に運用ログを記載する
+- チェックリスト:
+  - AGENTS.md にフォールバック禁止ルールを追記する
+  - 運用ログ start を追記する
+- 運用ログ：
+  - start: 2026-01-10 13:20 JST フォールバック実装禁止ルールをAGENTS.mdへ反映する対応に着手。
+
+2079) feat/shape/step6-progressive-display (P1) — 完了 (2026-01-10)
+- ブランチ名: feat/shape/step6-progressive-display
+- 依存: 2077
+- ExecPlan: plans/shape-step6-progressive-display-execplan.md
+- 受け入れ基準: Step6の遷移条件が「メタデータまたはタイルの存在」で即OKになる／downloadステージでメタデータ基本レコードを永続化し後続ステージで頂点数・フィーチャー数等を段階的に書き込み更新する／Step6のメタデータ一覧が段階的に増える・更新される／nodeId必須とフォールバック禁止の方針が維持される／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/steps`, `plugins/shape-plugin/src/ui/hooks`, `plugins/shape-plugin/src/services/metadata`, `plugins/shape-plugin/src/services/batch`, `packages/runtime-worker/src/services`（必要に応じて）
+- ロールバック手順: Step6遷移条件とメタデータ集計の差分をrevertし、従来の集計完了後遷移の挙動に戻す
+- チェックリスト:
+  - ExecPlanを作成し設計と検証手順を明記する
+  - Step6遷移条件を「メタデータまたはタイル存在」で許可する
+  - downloadステージでメタデータ基本レコードを永続化する
+  - 後続ステージで統計を段階的に更新する
+  - Step6の一覧表示が段階的に更新されることを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 14:05 JST Step6のプログレッシブ表示とメタデータ段階更新に着手。
+  - done: 2026-01-10 14:40 JST Step6遷移条件をメタデータ/タイル存在で許可し、Previewメタデータのポーリング更新を追加。検証: 未実施。
+
+2080) refactor/shape/extract-buffer-naming-align (P1) — 完了 (2026-01-10)
+- ブランチ名: refactor/shape/extract-buffer-naming-align
+- 依存: なし
+- 受け入れ基準: ShapeBatchApiClient.ts の型不整合を解消する／Extract1SourceBuffer/Extract2SourceBuffer の命名へ統一する／関連型とAPIの参照が揃っている／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/plugin-service-api/src/types/*`, `packages/features/shape-store/src/EphemeralShapeDB.ts`, `packages/features/shape-store/src/index.ts`, `plugins/shape-plugin/src/services/batch/ShapeBatchApiClient.ts`, `plugins/shape-plugin/src/services/batch/*`, `packages/runtime-worker/src/services/*`（必要に応じて）
+- ロールバック手順: 上記ファイルの命名/型変更を revert し、従来の ShapeExtractedBufferRecord / ExtractedFeatureBuffer 名称へ戻す
+- チェックリスト:
+  - ShapeBatchApiClient.ts の型不整合箇所を修正する
+  - Extracted 系の命名を SourceBuffer 系へ統一する
+  - 参照箇所の型と実体が一致していることを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 15:05 JST extractバッファ命名の統一と型不整合修正に着手。
+  - done: 2026-01-10 15:35 JST ShapeBatchApiClient の listExtractedBuffers を復旧し、Extract1/2SourceBuffer 命名と型参照を統一。検証: 未実施。
+
+2081) fix/shape/vectortile-no-empty-tileid (P1) — 完了 (2026-01-10)
+- ブランチ名: fix/shape/vectortile-no-empty-tileid
+- 依存: なし
+- 受け入れ基準: vectortile の tileId 関係が空のフォールバックを撤去し失敗扱いにする／tileId が空を許容する型定義を修正する／関連参照が更新されている／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `plugins/shape-plugin/src/services/batch/session/stages/vectortile/buildVectorTileStageInputs.ts`, `packages/plugin-service-api/src/types/shapeBatchTypes.ts`, `packages/features/shape-store/src/ShapeDB.ts`（必要に応じて）
+- ロールバック手順: 上記ファイルの差分を revert し、tileId 未設定時のフォールバックと型定義を元に戻す
+- チェックリスト:
+  - tileId 関係が空のフォールバックを削除する
+  - tileId が空を許容する型定義を修正する
+  - 参照先の型エラーを解消する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 16:05 JST vectortile の tileId 空フォールバック撤去に着手。
+  - done: 2026-01-10 16:30 JST tileId 関係なしのフォールバックを撤去し、tileId必須型へ更新。検証: 未実施。
+
+2082) fix/shape/vectortile-input-typing (P1) — 完了 (2026-01-10)
+- ブランチ名: fix/shape/vectortile-input-typing
+- 依存: なし
+- 受け入れ基準: RuntimeWorkerVectorTileAdapter の {} フォールバックを撤去し入力型を明示する／ShapeExtractedBufferRecord の参照を ShapeExtractSourceBufferRecord に統一する／未使用変数の警告を解消する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `plugins/shape-plugin/src/services/batch/SessionArtifactStore.ts`, `plugins/shape-plugin/src/services/batch/ShapeBatchApiClient.ts`（必要に応じて）
+- ロールバック手順: 上記ファイルの差分を revert し、入力のフォールバック/旧型参照へ戻す
+- チェックリスト:
+  - VectorTileAdapter の入力取得を明示型で強制する
+  - ShapeExtractSourceBufferRecord へ参照を統一する
+  - 未使用変数の警告を解消する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 17:00 JST vectortile 入力型の厳格化とフォールバック撤去に着手。
+  - done: 2026-01-10 17:20 JST VectorTileAdapter の {} フォールバックを撤去し、ExtractSourceBuffer 参照を統一。検証: 未実施。
+
 2067) fix/ui-dialog/maximize-layout-viewport (P1) — 完了 (2026-01-05)
 - ブランチ名: fix/ui-dialog/maximize-layout-viewport
 - 依存: なし

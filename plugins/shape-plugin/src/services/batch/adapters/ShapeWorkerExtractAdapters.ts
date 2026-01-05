@@ -9,9 +9,12 @@ import {
   type Extract2TaskOutputData,
 } from '../../database/ShapeDB.js';
 import { getShapeDbApiClient } from '../ShapeBatchApiClient.js';
+import { readDownloadBuffer } from '../../utils/chunkStore.js';
 import { BatchService } from '@hierarchidb/batch';
 import { ShapeWorkerPool } from './ShapeWorkerPool.js';
 import { resolveExtractStageSettings } from '../utils/resolveExtractSettings.js';
+import { geojson as geojsonApi } from 'flatgeobuf';
+import type { Feature } from 'geojson';
 
 const isAbortError = (error: unknown): boolean => (
   error instanceof Error && error.name === 'AbortError'
@@ -70,6 +73,22 @@ const buildExtract1CompletionMessage = (
   }
   const ratio = (extractedBytes / rawBytes) * 100;
   return `Completed (Raw: ${formatBytes(rawBytes)}, Extracted: ${formatBytes(extractedBytes)}, Ratio: ${ratio.toFixed(1)}%)`;
+};
+
+const countFeaturesInFlatGeobuf = async (buffer: ArrayBuffer): Promise<number> => {
+  const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
+  if (decoded && typeof (decoded as AsyncIterable<unknown>)[Symbol.asyncIterator] === 'function') {
+    let count = 0;
+    for await (const feature of decoded as AsyncIterable<Feature>) {
+      if (feature) count += 1;
+    }
+    return count;
+  }
+  const collection = decoded as { type?: string; features?: unknown[] } | null;
+  if (collection?.type === 'FeatureCollection' && Array.isArray(collection.features)) {
+    return collection.features.filter(Boolean).length;
+  }
+  return 0;
 };
 
 export class ShapeWorkerExtract1Adapter implements Extract1StageAdapter {
@@ -160,16 +179,15 @@ export class ShapeWorkerExtract1Adapter implements Extract1StageAdapter {
               const inputBufferId = input.inputBufferId ?? '';
               const outputBufferId = `${String(resolvedNodeId)}-extract1-${taskIndex}`;
               const ephemeral = getShapeDbApiClient().ephemeral;
-              const raw = await ephemeral.getRawBuffer(inputBufferId);
+              const rawBuffer = await readDownloadBuffer(requireNodeId(resolvedNodeId), inputBufferId);
               const output = await ephemeral.getExtractedBuffer(outputBufferId);
+              const rawFeatureCount = rawBuffer ? await countFeaturesInFlatGeobuf(rawBuffer) : 0;
               const completionMessage = buildExtract1CompletionMessage(
-                raw?.data.byteLength,
+                rawBuffer?.byteLength,
                 output?.data.byteLength,
               );
               const featureCount = output?.featureCount ?? 0;
-              const extractionRatio = raw?.featureCount
-                ? featureCount / raw.featureCount
-                : 1;
+              const extractionRatio = rawFeatureCount > 0 ? featureCount / rawFeatureCount : 1;
               const outputData: Extract1TaskOutputData = {
                 outputBufferId,
                 featureCount,

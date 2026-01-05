@@ -1,7 +1,6 @@
 import type { CountryMetadata, DataSourceName } from '../../common/types/index.js';
 import { normalizeDataSourceName } from '../utils/utils.js';
 import type { NodeId } from '@hierarchidb/common-types';
-import { SHARED_SHAPE_NODE_ID } from '../utils/chunkStore.js';
 import {
   assertDataSourceSupported,
   fetchGeoBoundariesMetadata,
@@ -40,15 +39,14 @@ export class MetadataLoader {
   /**
    * Load metadata for a specific data source
    */
-  async loadMetadata(dataSource: string, nodeId?: NodeId): Promise<CountryMetadata[]> {
+  async loadMetadata(dataSource: string, nodeId: NodeId): Promise<CountryMetadata[]> {
     const normalized = normalizeDataSourceName(dataSource);
     if (!normalized) {
       console.warn(`No metadata file mapping for data source: ${dataSource}`);
       return [];
     }
 
-    const resolvedNodeId = nodeId ?? SHARED_SHAPE_NODE_ID;
-    const cacheKey = `${normalized}:${resolvedNodeId}`;
+    const cacheKey = `${normalized}:${nodeId}`;
     if (this.metadataCache.has(cacheKey)) {
       return this.metadataCache.get(cacheKey)!;
     }
@@ -59,7 +57,7 @@ export class MetadataLoader {
         console.warn(`Unknown data source: ${normalized}`);
         return [];
       }
-      const metadata = await loader(resolvedNodeId);
+      const metadata = await loader(nodeId);
 
       // Cache the result
       this.metadataCache.set(cacheKey, metadata);
@@ -80,7 +78,7 @@ export class MetadataLoader {
   async getCountryMetadata(
     dataSource: string,
     countryCode: string,
-    nodeId?: NodeId,
+    nodeId: NodeId,
   ): Promise<CountryMetadata | undefined> {
     const allMetadata = await this.loadMetadata(dataSource, nodeId);
     return allMetadata.find(
@@ -96,7 +94,7 @@ export class MetadataLoader {
   async getCountriesMetadata(
     dataSource: string,
     countryCodes: string[],
-    nodeId?: NodeId,
+    nodeId: NodeId,
   ): Promise<CountryMetadata[]> {
     const allMetadata = await this.loadMetadata(dataSource, nodeId);
     const lowerCodes = countryCodes.map((code) => code.toLowerCase());

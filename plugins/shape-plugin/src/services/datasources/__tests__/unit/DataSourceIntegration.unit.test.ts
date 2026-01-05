@@ -152,7 +152,7 @@ describe('Data Source Integration Tests', () => {
 
     skipIf(!ENABLE_INTEGRATION_TESTS)('should fetch metadata from GeoBoundaries API', async () => {
       try {
-        const countries = await metadataLoader.loadMetadata('geoboundaries');
+        const countries = await metadataLoader.loadMetadata('geoboundaries', 'node-1');
         expect(Array.isArray(countries)).toBe(true);
 
         if (countries.length > 0) {

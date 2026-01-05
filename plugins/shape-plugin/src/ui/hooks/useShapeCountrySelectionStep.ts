@@ -11,11 +11,11 @@ import {
   formatNumber,
 } from '../../common/mock/data.js';
 import { normalizeDataSourceName } from '../../services/utils/utils.js';
-import { clearStagesIfPresent, FULL_INVALIDATION_STAGES, resolveShapeNodeId } from '../utils/sessionInvalidation.js';
+import { clearStagesIfPresent, FULL_INVALIDATION_STAGES } from '../utils/sessionInvalidation.js';
 import type { CountryAvailabilityWorkerAPI, SerializedCountryAvailability } from '../workers/countryAvailability.types.js';
 import { wrap, releaseProxy } from 'comlink';
 import { invalidateCountrySelectionCaches } from './countrySelectionReload.js';
-import { SHARED_SHAPE_NODE_ID } from '../../services/utils/chunkStore.js';
+import { NodeId } from '@hierarchidb/common-types';
 
 // (availability is loaded in a dedicated worker thread)
 
@@ -93,11 +93,12 @@ const isSelectionEqual = (
 type Args = {
   data: Partial<ShapeEntity>;
   onChange: (patch: Partial<ShapeEntity>) => void;
-  nodeId?: string;
+  nodeId: NodeId;
 };
 
 export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }: Args) => {
   const { enqueueSnackbar } = useSnackbar();
+  const nodeId = _nodeId;
 
   // Current selection value must be available before any derived useMemo.
   const selectedArrayByCountries = data.selectedArrayByCountries;
@@ -155,13 +156,13 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
     const normalized = normalizeDataSourceName(dataSourceKey) ?? dataSourceKey.toLowerCase();
     return DATA_SOURCE_CONFIGS[normalized]?.maxAdminLevel ?? 0;
   }, [dataSourceKey]);
-
+  if(!dataSourceKey) {
+    throw new Error('[shape-plugin][step3] dataSource is undefiend');
+  }
   const iso = useIsoCountries();
-  const sharedNodeId = SHARED_SHAPE_NODE_ID;
-
   const { metadata: countries, loading: metadataLoading, error: metadataError, reload: reloadMetadata } = useCountryMetadata({
-    dataSource: dataSourceKey ?? '',
-    nodeId: sharedNodeId,
+    dataSource: dataSourceKey,
+    nodeId,
   });
 
   const error = dataSourceError ?? metadataError;
@@ -204,7 +205,7 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
     setAvailabilityLoading(true);
     setAvailabilityError(null);
     try {
-      const result = await ref.api.loadAvailability(dataSourceKey);
+      const result = await ref.api.loadAvailability(dataSourceKey, nodeId);
       if (requestId !== availabilityRequestIdRef.current) return;
       setAvailability(result);
     } catch (e) {
@@ -217,7 +218,7 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
         setAvailabilityLoading(false);
       }
     }
-  }, [dataSourceKey]);
+  }, [dataSourceKey, nodeId]);
 
   useEffect(() => {
     void loadAvailability();
@@ -401,10 +402,7 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
         return acc;
       }, {});
       if (!isSelectionEqual(normalizedSelection, nextSelection)) {
-        const nodeId = resolveShapeNodeId(data);
-        if (nodeId) {
-          void clearStagesIfPresent(nodeId, FULL_INVALIDATION_STAGES);
-        }
+        void clearStagesIfPresent(nodeId, FULL_INVALIDATION_STAGES);
       }
       onChange({ selectedArrayByCountries: nextSelection });
 
@@ -459,10 +457,10 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
 
   const reloadAll = useCallback(async () => {
     if (!dataSourceKey) return;
-    await invalidateCountrySelectionCaches(dataSourceKey, sharedNodeId);
+    await invalidateCountrySelectionCaches(dataSourceKey, nodeId);
     await reloadMetadata({ force: true });
     await loadAvailability();
-  }, [dataSourceKey, loadAvailability, reloadMetadata, sharedNodeId]);
+  }, [dataSourceKey, loadAvailability, reloadMetadata, nodeId]);
 
   const combinedLoading = metadataLoading || (availabilityLoading && !availability);
 

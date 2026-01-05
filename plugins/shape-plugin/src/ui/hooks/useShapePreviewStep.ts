@@ -181,6 +181,10 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   const shouldPollTiles = Boolean(activeNodeId)
     && !tilesAvailable
     && ['processing', 'paused'].includes(statusForPolling ?? '');
+  const shouldPollMetadata = Boolean(activeNodeId)
+    && metadataEnabled
+    && ['processing', 'paused'].includes(statusForPolling ?? '');
+  const metadataPollIntervalMs = shouldPollMetadata ? 2000 : undefined;
 
   useEffect(() => {
     if (!shouldPollTiles) {
@@ -254,7 +258,12 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     metadataRows: rawMetadataRows,
     metadataLoading,
     metadataError,
-  } = useVectorTilePreviewMetadata(metadataEnabled, activeNodeId, loadMetadataRows);
+  } = useVectorTilePreviewMetadata(
+    metadataEnabled,
+    activeNodeId,
+    loadMetadataRows,
+    metadataPollIntervalMs,
+  );
 
   const selectionFilters = useMemo(() => {
     if (selectionMetadata.length === 0) return null;

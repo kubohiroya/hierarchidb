@@ -234,6 +234,29 @@ export class DexieChunkStore<T> implements StoragePort {
     await this.keys.where('metadataId').equals(metadataId).delete();
   }
 
+  async deleteAllForNode(nodeId: NodeId): Promise<number> {
+    const relations = await this.relations.where('nodeId').equals(nodeId).toArray();
+    if (relations.length === 0) return 0;
+    let deleted = 0;
+    for (const relation of relations) {
+      const file = await this.files.get(relation.metadataId);
+      const cacheKey = file?.cacheKey;
+      if (cacheKey) {
+        await this.deleteForNode(nodeId, cacheKey);
+        deleted += 1;
+        continue;
+      }
+      await this.relations.delete([nodeId, relation.metadataId]);
+      const remaining = await this.relations.where('metadataId').equals(relation.metadataId).count();
+      if (remaining > 0) continue;
+      await this.files.delete(relation.metadataId);
+      await this.chunks.where('metadataId').equals(relation.metadataId).delete();
+      await this.keys.where('metadataId').equals(relation.metadataId).delete();
+      deleted += 1;
+    }
+    return deleted;
+  }
+
   /**
    * Invalidate a cached entry for the given node+cacheKey.
    * This is useful when callers want to force a fresh fetch from the upstream data source.
@@ -252,6 +275,46 @@ export class DexieChunkStore<T> implements StoragePort {
     const identity = options.identity ?? 'url+etag';
     const cachedMetadataId = await this.getMetadataIdByCacheKey(cacheKey);
     const cachedMeta = cachedMetadataId ? await this.files.get(cachedMetadataId) : undefined;
+
+    const reuseCached = async (): Promise<ChunkStoreEntry<T> | null> => {
+      if (!cachedMetadataId || !cachedMeta) return null;
+      const buffer = await this.readAll(cachedMetadataId);
+      await this.ensureRelation(nodeId, cachedMetadataId);
+      return {
+        key: cacheKey,
+        metadataId: cachedMetadataId,
+        value: this.deserializer(buffer),
+        metadata: this.toMetadata(cachedMetadataId, cachedMeta),
+      };
+    };
+
+    const useConditional = Boolean(cachedMeta?.etag || cachedMeta?.lastModified);
+    if (useConditional && cachedMetadataId && cachedMeta) {
+      try {
+        const headers = buildHeaders(
+          options.accept,
+          options.headers,
+          { etag: cachedMeta.etag, lastModified: cachedMeta.lastModified },
+        );
+        const head = await this.network.head(fetchUrl, { headers, signal: options.signal });
+        if (head.status === 304) {
+          const cached = await reuseCached();
+          if (cached) return cached;
+        }
+        if (head.ok) {
+          const headEtag = readHeader(head.headers, 'etag');
+          const headLastModified = readHeader(head.headers, 'last-modified');
+          const sameEtag = headEtag && cachedMeta.etag && headEtag === cachedMeta.etag;
+          const sameLastModified = headLastModified && cachedMeta.lastModified && headLastModified === cachedMeta.lastModified;
+          if (sameEtag || sameLastModified) {
+            const cached = await reuseCached();
+            if (cached) return cached;
+          }
+        }
+      } catch {
+        // Fallback to conditional GET below.
+      }
+    }
 
     const attemptFetch = async (useConditional: boolean): Promise<{ buffer: ArrayBuffer; meta: Partial<FileRecord> }> => {
       const headers = buildHeaders(
@@ -284,7 +347,6 @@ export class DexieChunkStore<T> implements StoragePort {
     };
 
     try {
-      const useConditional = Boolean(cachedMeta?.etag || cachedMeta?.lastModified);
       const fetched = await attemptFetch(useConditional);
       const stored = await this.storeBufferForNode(nodeId, cacheKey, fetched.buffer, fetched.meta, identity);
       return {
@@ -366,6 +428,32 @@ export class DexieChunkStore<T> implements StoragePort {
     const record = await this.files.get(fileId);
     if (!record) return undefined;
     return this.toMetadata(fileId, record);
+  }
+
+  async listMetadataForNode(nodeId: NodeId): Promise<ChunkStoreMetadata[]> {
+    const relations = await this.relations.where('nodeId').equals(nodeId).toArray();
+    if (relations.length === 0) return [];
+    const metadataIds = relations.map((relation) => relation.metadataId);
+    const files = await this.files.where('metadataId').anyOf(metadataIds).toArray();
+    return files.map((file) => this.toMetadata(file.metadataId, file));
+  }
+
+  async countForNode(nodeId: NodeId): Promise<number> {
+    return this.relations.where('nodeId').equals(nodeId).count();
+  }
+
+  async listNodeIdsForCacheKey(cacheKey: string): Promise<NodeId[]> {
+    const metadataId = await this.getMetadataIdByCacheKey(cacheKey);
+    if (!metadataId) return [];
+    const relations = await this.relations.where('metadataId').equals(metadataId).toArray();
+    return relations.map((relation) => relation.nodeId);
+  }
+
+  async hasRelationForNode(nodeId: NodeId, cacheKey: string): Promise<boolean> {
+    const metadataId = await this.getMetadataIdByCacheKey(cacheKey);
+    if (!metadataId) return false;
+    const count = await this.relations.where('[nodeId+metadataId]').equals([nodeId, metadataId]).count();
+    return count > 0;
   }
 
   private async storeBufferForNode(

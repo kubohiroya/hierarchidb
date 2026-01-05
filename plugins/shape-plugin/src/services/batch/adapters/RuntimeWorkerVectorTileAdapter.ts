@@ -9,10 +9,9 @@ import type { Feature, FeatureCollection } from 'geojson';
 import { BatchService } from '@hierarchidb/batch';
 import { createStageWorkerClient, getStageWorkerProxy, runVectorTileStage } from '@hierarchidb/runtime-worker';
 import { encodeFlatGeobufFromFeatureCollection, type VectorTileProgress } from '@hierarchidb/gis-sdk';
-import { assignFeatureIds, HDB_FEATURE_ID_KEY, HDB_ORIGIN_KEY } from '../utils/featureIds.js';
-import { bbox as turfBbox } from '@turf/turf';
 import { assembleTileGeoJSON } from '../session/tiles/assembleTileGeoJSON.js';
 import type { NodeId } from '@hierarchidb/common-types';
+import { readDownloadBuffer } from '../../utils/chunkStore.js';
 
 const isAbortError = (error: unknown): boolean => (
   error instanceof Error && error.name === 'AbortError'
@@ -20,239 +19,9 @@ const isAbortError = (error: unknown): boolean => (
 
 const MAX_VECTOR_TILE_INPUT_BYTES = 100 * 1024 * 1024;
 
-type OriginSummary = {
-  totalFeatures: number;
-  uniqueOrigins: number;
-  originKeyCounts: Array<{ originKey: string; count: number }>;
-  truncated: boolean;
-};
-
-type OriginDiffSummary = {
-  removedOrigins: Array<{ originKey: string; count: number }>;
-  truncated: boolean;
-};
-
 export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
-  private readonly featureCache = new Map<string, Array<{ feature: Feature; bbox: [number, number, number, number] }>>();
-  private readonly originSummaryCache = new Map<string, OriginSummary>();
-
-  private dedupeFeatures(features: Feature[]): Feature[] {
-    const seen = new Set<string>();
-    return features.filter((feature) => {
-      if (!feature) return false;
-      const properties = feature.properties ?? {};
-      const featureId = String(
-        properties[HDB_FEATURE_ID_KEY]
-        ?? feature.id
-        ?? properties.id
-        ?? '',
-      );
-      if (!featureId) return true;
-      if (seen.has(featureId)) return false;
-      seen.add(featureId);
-      return true;
-    });
-  }
-
-  private summarizeOriginKeys(features: Feature[], limit = 20): OriginSummary {
-    const counts = new Map<string, number>();
-    for (const feature of features) {
-      if (!feature) continue;
-      const properties = feature.properties ?? {};
-      const raw = properties[HDB_ORIGIN_KEY] ?? properties.originKey;
-      const originKey = typeof raw === 'string' && raw.trim().length > 0 ? raw : '__unknown__';
-      counts.set(originKey, (counts.get(originKey) ?? 0) + 1);
-    }
-    const sorted = Array.from(counts.entries())
-      .sort((a, b) => b[1] - a[1])
-      .map(([originKey, count]) => ({ originKey, count }));
-    const truncated = sorted.length > limit;
-    return {
-      totalFeatures: features.length,
-      uniqueOrigins: counts.size,
-      originKeyCounts: truncated ? sorted.slice(0, limit) : sorted,
-      truncated,
-    };
-  }
-
-  private diffOriginKeys(total: OriginSummary, intersecting: OriginSummary, limit = 20): OriginDiffSummary {
-    const totalMap = new Map(total.originKeyCounts.map((entry) => [entry.originKey, entry.count]));
-    const intersectMap = new Map(intersecting.originKeyCounts.map((entry) => [entry.originKey, entry.count]));
-    const removed: Array<{ originKey: string; count: number }> = [];
-    for (const [originKey, count] of totalMap.entries()) {
-      if (!intersectMap.has(originKey)) {
-        removed.push({ originKey, count });
-      }
-    }
-    removed.sort((a, b) => b.count - a.count);
-    const truncated = removed.length > limit;
-    return {
-      removedOrigins: truncated ? removed.slice(0, limit) : removed,
-      truncated,
-    };
-  }
-
-  private getOriginSummary(nodeId: NodeId, features: Feature[]): OriginSummary {
-    const cached = this.originSummaryCache.get(nodeId);
-    if (cached) return cached;
-    const summary = this.summarizeOriginKeys(features);
-    this.originSummaryCache.set(nodeId, summary);
-    return summary;
-  }
-
   clearFeatureCache(nodeId: NodeId): void {
-    this.featureCache.delete(nodeId);
-    this.originSummaryCache.delete(nodeId);
-  }
-
-  private updateBounds(coords: unknown, bounds: { minX: number; minY: number; maxX: number; maxY: number }): void {
-    if (!Array.isArray(coords)) return;
-    if (coords.length >= 2 && typeof coords[0] === 'number' && typeof coords[1] === 'number') {
-      const x = coords[0];
-      const y = coords[1];
-      if (Number.isFinite(x) && Number.isFinite(y)) {
-        bounds.minX = Math.min(bounds.minX, x);
-        bounds.minY = Math.min(bounds.minY, y);
-        bounds.maxX = Math.max(bounds.maxX, x);
-        bounds.maxY = Math.max(bounds.maxY, y);
-      }
-      return;
-    }
-    for (const child of coords) {
-      this.updateBounds(child, bounds);
-    }
-  }
-
-  private computeBBox(geometry?: Feature['geometry'] | null): [number, number, number, number] | null {
-    if (!geometry) return null;
-    if (geometry.type === 'GeometryCollection') {
-      const merged = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
-      for (const child of geometry.geometries ?? []) {
-        const childBox = this.computeBBox(child);
-        if (!childBox) continue;
-        merged.minX = Math.min(merged.minX, childBox[0]);
-        merged.minY = Math.min(merged.minY, childBox[1]);
-        merged.maxX = Math.max(merged.maxX, childBox[2]);
-        merged.maxY = Math.max(merged.maxY, childBox[3]);
-      }
-      if (!Number.isFinite(merged.minX)) {
-        const fallback = this.computeFallbackBBox(geometry);
-        return fallback;
-      }
-      return [merged.minX, merged.minY, merged.maxX, merged.maxY];
-    }
-    const bounds = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
-    this.updateBounds(geometry.coordinates, bounds);
-    if (!Number.isFinite(bounds.minX)) {
-      return this.computeFallbackBBox(geometry);
-    }
-    return [bounds.minX, bounds.minY, bounds.maxX, bounds.maxY];
-  }
-
-  private computeFallbackBBox(geometry: Feature['geometry']): [number, number, number, number] | null {
-    try {
-      const bbox = turfBbox(geometry);
-      if (!bbox || bbox.length !== 4) return null;
-      const [minX, minY, maxX, maxY] = bbox;
-      if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY)) {
-        return null;
-      }
-      return [minX, minY, maxX, maxY];
-    } catch (error) {
-      console.debug('[VectorTile] BBox fallback failed', { error });
-      return null;
-    }
-  }
-
-  private tileToBBox(z: number, x: number, y: number): [number, number, number, number] {
-    const n = 2 ** z;
-    const lon1 = (x / n) * 360 - 180;
-    const lon2 = ((x + 1) / n) * 360 - 180;
-    const lat1 = (180 / Math.PI) * Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / n)));
-    const lat2 = (180 / Math.PI) * Math.atan(Math.sinh(Math.PI * (1 - (2 * (y + 1)) / n)));
-    const minLon = Math.min(lon1, lon2);
-    const maxLon = Math.max(lon1, lon2);
-    const minLat = Math.min(lat1, lat2);
-    const maxLat = Math.max(lat1, lat2);
-    return [minLon, minLat, maxLon, maxLat];
-  }
-
-  private intersects(a: [number, number, number, number], b: [number, number, number, number]): boolean {
-    return a[0] <= b[2] && a[2] >= b[0] && a[1] <= b[3] && a[3] >= b[1];
-  }
-
-  private async loadExtract2Features(nodeId: NodeId): Promise<Array<{ feature: Feature; bbox: [number, number, number, number] }>> {
-    const cached = this.featureCache.get(nodeId);
-    if (cached) return cached;
-    const buffers = await getShapeDbApiClient().ephemeral.listExtractedBuffers(nodeId, 'extract2');
-    const result: Array<{ feature: Feature; bbox: [number, number, number, number] }> = [];
-    let totalFeatures = 0;
-    let missingBbox = 0;
-    let missingOriginKey = 0;
-    const missingBboxByOrigin = new Map<string, number>();
-    for (const row of buffers) {
-      const decoded = await this.decodeGeoJson(row.data);
-      if (!decoded || typeof decoded !== 'object') continue;
-      const features = (decoded as { features?: Feature[] }).features ?? [];
-      for (const feature of features) {
-        if (!feature) continue;
-        totalFeatures += 1;
-        const properties = feature.properties ?? {};
-        const rawOrigin = properties[HDB_ORIGIN_KEY] ?? properties.originKey;
-        const originKey = typeof rawOrigin === 'string' && rawOrigin.trim().length > 0
-          ? rawOrigin
-          : '__unknown__';
-        if (originKey === '__unknown__') {
-          missingOriginKey += 1;
-        }
-        const bbox = this.computeBBox(feature.geometry);
-        if (!bbox) {
-          missingBbox += 1;
-          missingBboxByOrigin.set(originKey, (missingBboxByOrigin.get(originKey) ?? 0) + 1);
-          continue;
-        }
-        result.push({ feature, bbox });
-      }
-    }
-    if (result.length > 0) {
-      assignFeatureIds(
-        {
-          type: 'FeatureCollection',
-          features: result.map((entry) => entry.feature),
-        },
-        {},
-      );
-    }
-    console.debug('[VectorTile] Extract2 features loaded', {
-      nodeId,
-      buffers: buffers.length,
-      totalFeatures,
-      indexedFeatures: result.length,
-      missingBbox,
-    });
-    if (missingOriginKey > 0) {
-      console.warn('[VectorTile] Extract2 features missing origin key', {
-        nodeId,
-        missingOriginKey,
-        totalFeatures,
-      });
-    }
-    if (missingBbox > 0) {
-      const sorted = Array.from(missingBboxByOrigin.entries())
-        .sort((a, b) => b[1] - a[1]);
-      const limit = 10;
-      const truncated = sorted.length > limit;
-      const originKeyCounts = (truncated ? sorted.slice(0, limit) : sorted)
-        .map(([originKey, count]) => ({ originKey, count }));
-      console.warn('[VectorTile] Extract2 features missing bbox', {
-        nodeId,
-        missingBbox,
-        originKeyCounts,
-        truncated,
-      });
-    }
-    this.featureCache.set(nodeId, result);
-    return result;
+    void nodeId;
   }
 
   private async listBufferIdsForTile(nodeId: NodeId, tileId: string): Promise<string[]> {
@@ -285,36 +54,38 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     return decoded;
   }
 
-  private async buildGeoJsonBuffer(inputBufferId: string): Promise<ArrayBuffer> {
+  private async buildGeoJsonBuffer(nodeId: NodeId, inputBufferId: string): Promise<ArrayBuffer> {
     const ephemeral = getShapeDbApiClient().ephemeral;
-    const input = await ephemeral.getExtractedBuffer(inputBufferId)
-      ?? await ephemeral.getRawBuffer(inputBufferId);
-    if (!input) {
+    const input = await ephemeral.getExtractedBuffer(inputBufferId);
+    const rawBuffer = input ? null : await readDownloadBuffer(nodeId, inputBufferId);
+    if (!input && !rawBuffer) {
       throw new Error(`Vector tile input buffer not found: ${inputBufferId}`);
     }
-    const geojsonPayload = await this.decodeGeoJson(input.data);
+    const geojsonPayload = await this.decodeGeoJson(input?.data ?? (rawBuffer as ArrayBuffer));
     const text = JSON.stringify(geojsonPayload);
     return new TextEncoder().encode(text).buffer;
   }
 
-  private async buildFlatGeobufBuffer(inputBufferId: string): Promise<ArrayBuffer> {
+  private async buildFlatGeobufBuffer(nodeId: NodeId, inputBufferId: string): Promise<ArrayBuffer> {
     const ephemeral = getShapeDbApiClient().ephemeral;
-    const input = await ephemeral.getExtractedBuffer(inputBufferId)
-      ?? await ephemeral.getRawBuffer(inputBufferId);
-    if (!input) {
+    const input = await ephemeral.getExtractedBuffer(inputBufferId);
+    if (input) return input.data;
+    const rawBuffer = await readDownloadBuffer(nodeId, inputBufferId);
+    if (!rawBuffer) {
       throw new Error(`Vector tile input buffer not found: ${inputBufferId}`);
     }
-    return input.data;
+    return rawBuffer;
   }
 
   private async buildVectorTileInputBuffer(
+    nodeId: NodeId,
     inputBufferId: string,
     inputFormat: 'geojson' | 'flatgeobuf',
   ): Promise<ArrayBuffer> {
     if (inputFormat === 'flatgeobuf') {
-      return this.buildFlatGeobufBuffer(inputBufferId);
+      return this.buildFlatGeobufBuffer(nodeId, inputBufferId);
     }
-    return this.buildGeoJsonBuffer(inputBufferId);
+    return this.buildGeoJsonBuffer(nodeId, inputBufferId);
   }
 
   private async encodeVectorTileFeatures(
@@ -328,12 +99,12 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     return new TextEncoder().encode(text).buffer;
   }
 
-  private async resolveInputByteLength(inputBufferId: string): Promise<number | null> {
+  private async resolveInputByteLength(nodeId: NodeId, inputBufferId: string): Promise<number | null> {
     const ephemeral = getShapeDbApiClient().ephemeral;
-    const input = await ephemeral.getExtractedBuffer(inputBufferId)
-      ?? await ephemeral.getRawBuffer(inputBufferId);
-    if (!input) return null;
-    return input.data.byteLength;
+    const input = await ephemeral.getExtractedBuffer(inputBufferId);
+    if (input) return input.data.byteLength;
+    const rawBuffer = await readDownloadBuffer(nodeId, inputBufferId);
+    return rawBuffer ? rawBuffer.byteLength : null;
   }
 
   private formatBytes(bytes: number): string {
@@ -365,16 +136,23 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
   async process(tasks: VectorTileTask[], onProgress: (p: ProgressInfo) => void, controls?: StageControls) {
     const getSignal = controls?.getSignal;
     const shouldAbort = () => Boolean(getSignal?.()?.aborted);
-    const resolvedNodeId = tasks[0]?.nodeId ? String(tasks[0].nodeId) : null;
-    const inputByTaskId = new Map<string, VectorTileTaskInputData>();
-    const outputByTaskId = new Map<string, VectorTileTaskOutputData>();
-    if (resolvedNodeId) {
-      const rows = await getShapeDbApiClient().ephemeral.listBatchTasksByType(resolvedNodeId as NodeId, 'vectortile');
-      rows.forEach((row) => {
-        inputByTaskId.set(row.taskId, (row.inputData ?? {}) as VectorTileTaskInputData);
-        outputByTaskId.set(row.taskId, (row.outputData ?? {}) as VectorTileTaskOutputData);
-      });
+    const resolvedNodeId = tasks[0]?.nodeId ?? null;
+    if (!resolvedNodeId) {
+      throw new Error('Vector tile tasks require nodeId to resolve download buffers.');
     }
+    const inputByTaskId = new Map<string, VectorTileTaskInputData>();
+    const outputByTaskId = new Map<string, Partial<VectorTileTaskOutputData>>();
+    const rows = await getShapeDbApiClient().ephemeral.listBatchTasksByType(resolvedNodeId, 'vectortile');
+    rows.forEach((row) => {
+      const inputData = row.inputData as VectorTileTaskInputData | undefined;
+      if (!inputData) {
+        throw new Error(`Vector tile input data is missing for task ${row.taskId}.`);
+      }
+      inputByTaskId.set(row.taskId, inputData);
+      if (row.outputData) {
+        outputByTaskId.set(row.taskId, row.outputData as Partial<VectorTileTaskOutputData>);
+      }
+    });
     const batch = new BatchService();
     const maxConcurrent = Math.max(1, controls?.maxConcurrent ?? 1);
     const clients = await Promise.all(
@@ -387,8 +165,11 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     const metadataReplaceRef = { value: true };
     const tasksByInput = new Map<string, VectorTileTask[]>();
     for (const task of tasks) {
-      const input = inputByTaskId.get(task.taskId) ?? {};
-      const inputBufferId = input.inputBufferId ?? '';
+      const input = inputByTaskId.get(task.taskId);
+      if (!input) {
+        throw new Error(`Vector tile input is missing for task ${task.taskId}.`);
+      }
+      const inputBufferId = input.inputBufferId;
       if (!tasksByInput.has(inputBufferId)) {
         tasksByInput.set(inputBufferId, []);
       }
@@ -420,7 +201,13 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
             finished = true;
             continue;
           }
-          const sampleInput = inputByTaskId.get(sample.taskId) ?? {};
+          const sampleInput = inputByTaskId.get(sample.taskId);
+          if (!sampleInput) {
+            throw new Error(`Vector tile input is missing for task ${sample.taskId}.`);
+          }
+          if (!inputBufferId) {
+            throw new Error('Vector tile input bufferId is required.');
+          }
           try {
           const isTileTask = (
             typeof sampleInput.tileZ === 'number'
@@ -428,7 +215,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
             && typeof sampleInput.tileY === 'number'
           );
           if (!isTileTask) {
-            const inputBytes = await this.resolveInputByteLength(inputBufferId);
+            const inputBytes = await this.resolveInputByteLength(resolvedNodeId, inputBufferId);
             if (typeof inputBytes === 'number' && inputBytes > MAX_VECTOR_TILE_INPUT_BYTES) {
               const message = `Vector tile input too large (${this.formatBytes(inputBytes)} > ${this.formatBytes(MAX_VECTOR_TILE_INPUT_BYTES)}).`;
                 console.error('[VectorTile] Input size exceeds limit', {
@@ -437,8 +224,8 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                   limitBytes: MAX_VECTOR_TILE_INPUT_BYTES,
                 });
                 for (const task of inputTasks) {
-                  const taskOutput = outputByTaskId.get(task.taskId) ?? {};
-                  const currentRetry = typeof taskOutput.retry === 'number' ? taskOutput.retry : 0;
+                  const taskOutput = outputByTaskId.get(task.taskId);
+                  const currentRetry = typeof taskOutput?.retry === 'number' ? taskOutput.retry : 0;
                   const shouldRegress = currentRetry <= 1;
                   const nextRetry = currentRetry + 1;
                   if (!shouldRegress) {
@@ -460,7 +247,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                       errorMessage: shouldRegress ? undefined : message,
                     };
                     if (shouldRegress) {
-                      updates.outputData = { ...taskOutput, retry: nextRetry };
+                      updates.outputData = { tileId: inputBufferId, retry: nextRetry };
                     }
                     await getShapeDbApiClient().ephemeral.updateBatchTask(task.taskId, updates);
                   }
@@ -501,58 +288,22 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
               throw new Error(`Invalid tile input: ${inputBufferId}`);
             }
             tileKey = inputBufferId;
-            const relationBufferIds = resolvedNodeId
-              ? await this.listBufferIdsForTile(sample.nodeId, tileKey)
-              : [];
-            let totalFeatures = 0;
+            const relationBufferIds = await this.listBufferIdsForTile(resolvedNodeId, tileKey);
             let tileFeatures: Feature[] = [];
-            if (relationBufferIds.length > 0) {
-              const collections = (await Promise.all(
-                relationBufferIds.map((bufferId) => this.loadExtract2Collection(bufferId)),
-              )).filter((collection): collection is FeatureCollection => Boolean(collection));
-              totalFeatures = collections.reduce((sum, collection) => sum + collection.features.length, 0);
-              const assembled = assembleTileGeoJSON({
-                z: tileZ,
-                x: tileX,
-                y: tileY,
-                collections,
-              });
-              tileFeatures = assembled.features.filter(Boolean);
-            } else {
-              const features = await this.loadExtract2Features(sample.nodeId);
-              totalFeatures = features.length;
-              const tileBBox = this.tileToBBox(tileZ, tileX, tileY);
-              tileFeatures = features
-                .filter((entry) => this.intersects(entry.bbox, tileBBox))
-                .map((entry) => entry.feature)
-                .filter(Boolean);
-              tileFeatures = this.dedupeFeatures(tileFeatures);
-              if (totalFeatures > 0 && tileFeatures.length !== totalFeatures) {
-                const totalOriginSummary = this.getOriginSummary(sample.nodeId, features.map((entry) => entry.feature));
-                const intersectOriginSummary = this.summarizeOriginKeys(tileFeatures);
-                const removedOriginSummary = this.diffOriginKeys(totalOriginSummary, intersectOriginSummary);
-                console.debug('[VectorTile] Tile feature reduction', {
-                  nodeId: sample.nodeId,
-                  tileId: this.formatTileId(tileZ, tileX, tileY),
-                  totalFeatures,
-                  intersectingFeatures: tileFeatures.length,
-                  originKeyTotals: totalOriginSummary,
-                  originKeyIntersecting: intersectOriginSummary,
-                  originKeyRemoved: removedOriginSummary,
-                });
-              }
+            if (relationBufferIds.length === 0) {
+              throw new Error(`Missing tileId relations for ${this.formatTileId(tileZ, tileX, tileY)}.`);
             }
+            const collections = (await Promise.all(
+              relationBufferIds.map((bufferId) => this.loadExtract2Collection(bufferId)),
+            )).filter((collection): collection is FeatureCollection => Boolean(collection));
+            const assembled = assembleTileGeoJSON({
+              z: tileZ,
+              x: tileX,
+              y: tileY,
+              collections,
+            });
+            tileFeatures = assembled.features.filter(Boolean);
             tileFeatureCount = tileFeatures.length;
-            if (totalFeatures > 0 && tileFeatureCount !== totalFeatures && relationBufferIds.length > 0) {
-              const totalOriginSummary = this.summarizeOriginKeys(tileFeatures);
-              console.debug('[VectorTile] Tile feature reduction (indexed)', {
-                nodeId: sample.nodeId,
-                tileId: this.formatTileId(tileZ, tileX, tileY),
-                totalFeatures,
-                intersectingFeatures: tileFeatureCount,
-                originKeyTotals: totalOriginSummary,
-              });
-            }
             if (tileFeatures.length === 0) {
               const skipMessage = `Skipped: no features intersect tile ${this.formatTileId(tileZ, tileX, tileY)}.`;
                 console.warn('[VectorTile] Skipping empty tile input', {
@@ -701,7 +452,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
             }
             const inputBuffer = isTileTask
               ? tileInputBuffer
-              : await this.buildVectorTileInputBuffer(inputBufferId, inputFormat);
+              : await this.buildVectorTileInputBuffer(resolvedNodeId, inputBufferId, inputFormat);
             if (shouldAbort()) {
               if (controls?.waitIfPaused) {
                 await controls.waitIfPaused();
@@ -745,7 +496,11 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                   abortKey,
                 },
                 onProgress: progressReporter,
-              }, vectorTileClient);
+              }, vectorTileClient, {
+                nodeId: sample.nodeId,
+                tileId: tileKey ?? inputBufferId,
+                storage: 'ephemeral',
+              });
             } finally {
               if (signal) {
                 signal.removeEventListener('abort', abortListener);

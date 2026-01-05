@@ -15,7 +15,6 @@ import {
   getOrFetchWithRetry,
   jsonDeserializer,
   jsonSerializer,
-  SHARED_SHAPE_NODE_ID,
   type RetryConfig,
 } from '../utils/chunkStore.js';
 import {
@@ -128,13 +127,17 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
       adminLevel = '1',
       signal,
     } = options || {};
+    const resolvedNodeId = options?.nodeId;
+    if (!resolvedNodeId) {
+      throw new Error('GeoBoundaries fetchData requires nodeId.');
+    }
 
     //  admin
     const normalizedCountry = this.normalizeCountryCode(country);
     const normalizedAdminLevel = this.normalizeAdminLevel(adminLevel.toString());
     try {
       //  APIURL
-      const apiData = await this.fetchBoundaryMetadata(normalizedCountry, normalizedAdminLevel, signal);
+      const apiData = await this.fetchBoundaryMetadata(resolvedNodeId, normalizedCountry, normalizedAdminLevel, signal);
 
       if (!apiData || !apiData.simplifiedGeometryGeoJSON) {
         throw new Error(`No boundary data available for ${normalizedCountry} ${normalizedAdminLevel}`);
@@ -150,7 +153,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
       const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
       const bufferEntry = await getOrFetchWithRetry(
         store,
-        SHARED_SHAPE_NODE_ID,
+        resolvedNodeId,
         downloadUrl,
         {
           accept: 'application/json',
@@ -259,6 +262,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
   }
 
   private async fetchBoundaryMetadata(
+    nodeId: NodeId,
     country: string,
     adminLevel: string,
     signal?: AbortSignal,
@@ -268,7 +272,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
 
     try {
       const store = createShapeChunkStore(jsonSerializer, jsonDeserializer);
-      const entry = await store.getOrFetchForNode(SHARED_SHAPE_NODE_ID, url, {
+      const entry = await store.getOrFetchForNode(nodeId, url, {
         accept: 'application/json',
         cacheKey: buildShapeCacheKey(`geoboundaries:metadata:${country}:${adminLevel}`, url),
         signal,

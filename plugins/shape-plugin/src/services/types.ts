@@ -42,7 +42,7 @@ export interface ShapesAPIMethods {
   // Data sources
   getAvailableDataSources(): Promise<DataSourceInfo[]>;
 
-  getCountryMetadata(dataSource: string, countryCode?: string): Promise<CountryMetadata[]>;
+  getCountryMetadata(nodeId: NodeId, dataSource: string, countryCode?: string): Promise<CountryMetadata[]>;
 
   validateDataSource(dataSource: string, config: DataSourceConfig): Promise<DataSourceValidationResult>;
 

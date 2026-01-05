@@ -66,7 +66,7 @@ describe('Shape Plugin API', () => {
     });
 
     it('should return mock country metadata', async () => {
-      const metadata = await shapeBatchAPI.getCountryMetadata('naturalearth');
+      const metadata = await shapeBatchAPI.getCountryMetadata('node-1', 'naturalearth');
 
       expect(Array.isArray(metadata)).toBe(true);
       expect(metadata.length).toBeGreaterThan(0);

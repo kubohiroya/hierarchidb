@@ -42,7 +42,7 @@ export async function runDownloadStageOrchestrator(params: {
 
   const existingTaskIds = await taskRegistry.assignDownloadTaskIndices(tasks);
   await taskRegistry.registerTasks('download', tasks, existingTaskIds, inputsByTaskId);
-  await taskRegistry.markDownloadTasksCompletedWhenBuffersExist(tasks);
+  await taskRegistry.markDownloadTasksCompletedWhenBuffersExist(tasks, inputsByTaskId);
 
   const { runnableTasks, baseCompleted, baseFailed, baseDone, total } = await resolveRunnableDownloadTasks({
     nodeId,

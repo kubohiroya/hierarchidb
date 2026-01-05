@@ -3,6 +3,7 @@ import type { Extract1Task, Extract2Task, ExtractTaskInput } from '../../../comm
 import type { Extract1StageAdapter } from './Extract1StageAdapter.js';
 import type { Extract2StageAdapter } from './Extract2StageAdapter.js';
 import type { StageControls } from './StageControls.js';
+import type { NodeId } from '@hierarchidb/common-types';
 import {
   type Extract1TaskInputData,
   type Extract1TaskOutputData,
@@ -14,6 +15,7 @@ import { applyFeatureFiltering, type FeatureFilterSettings, extractGeoJson } fro
 import { extractTopoJsonByTiles } from '../utils/topojsonExtract.js';
 import { assignFeatureIds, HDB_ORIGIN_KEY } from '../utils/featureIds.js';
 import { resolveExtractStageSettings } from '../utils/resolveExtractSettings.js';
+import { readDownloadBuffer } from '../../utils/chunkStore.js';
 import { BatchService } from '@hierarchidb/batch';
 import { geojson as geojsonApi } from 'flatgeobuf';
 import type { Feature } from 'geojson';
@@ -132,6 +134,17 @@ const buildExtract1CompletionMessage = (
   return `Completed (Raw: ${formatBytes(rawBytes)}, Extracted: ${formatBytes(extractedBytes)}, Ratio: ${ratio.toFixed(1)}%)`;
 };
 
+const loadDownloadBuffer = async (
+  nodeId: NodeId,
+  bufferId: string,
+): Promise<{ nodeId: NodeId; data: ArrayBuffer; featureCount?: number } | null> => {
+  const data = await readDownloadBuffer(nodeId, bufferId);
+  if (!data) return null;
+  const geojson = await decodeGeoJson(data);
+  const featureCount = isFeatureCollection(geojson) ? geojson.features.length : 0;
+  return { nodeId, data, featureCount };
+};
+
 export class LocalExtract1Adapter implements Extract1StageAdapter {
   async process(tasks: Extract1Task[], onProgress: (p: ProgressInfo) => void, controls?: StageControls) {
     const ephemeral = getShapeDbApiClient().ephemeral;
@@ -178,13 +191,16 @@ export class LocalExtract1Adapter implements Extract1StageAdapter {
           const baseInput = inputByTaskId.get(task.taskId) ?? {};
           const input: ExtractTaskInput = { ...baseInput, ...extractSettings.extract1 };
           const inputBufferId = input.inputBufferId ?? '';
-          const raw = await ephemeral.getRawBuffer(inputBufferId);
+          if (!resolvedNodeId) {
+            throw new Error('Extract1 tasks require nodeId to resolve download buffers.');
+          }
+          const raw = await loadDownloadBuffer(resolvedNodeId, inputBufferId);
           if (!raw) {
             throw new Error(`Raw buffer not found: ${inputBufferId}`);
           }
           const taskIndex = task.index ?? 0;
-          if (!raw.featureCount) {
-            const outputBufferId = `${task.nodeId ?? ''}-extract1-${taskIndex}`;
+          if (raw.featureCount === 0) {
+            const outputBufferId = `${resolvedNodeId}-extract1-${taskIndex}`;
             await ephemeral.putExtractedBuffer({
               id: outputBufferId,
               nodeId: raw.nodeId,
@@ -219,7 +235,7 @@ export class LocalExtract1Adapter implements Extract1StageAdapter {
           }
           const enableFeatureFiltering = input.enableFeatureFiltering ?? true;
           if (!enableFeatureFiltering) {
-            const outputBufferId = `${task.nodeId ?? ''}-extract1-${taskIndex}`;
+            const outputBufferId = `${resolvedNodeId}-extract1-${taskIndex}`;
             const featureCount = raw.featureCount ?? 0;
             await ephemeral.putExtractedBuffer({
               id: outputBufferId,
@@ -254,7 +270,7 @@ export class LocalExtract1Adapter implements Extract1StageAdapter {
           const filtered = applyFeatureFiltering(geojson, filterSettings);
           const baseTolerance = input.tolerance ?? 0;
           const tolerance = Number.isFinite(baseTolerance) ? baseTolerance : 0;
-          const outputBufferId = `${task.nodeId ?? ''}-extract1-${taskIndex}`;
+          const outputBufferId = `${resolvedNodeId}-extract1-${taskIndex}`;
           const hasFilteredFeatures = isFeatureCollection(filtered);
           const sanitizedFiltered = hasFilteredFeatures
             ? sanitizeFeatureCollection(filtered)
@@ -272,9 +288,10 @@ export class LocalExtract1Adapter implements Extract1StageAdapter {
               adminLevel: task.adminLevel,
             });
           }
+          const rawCount = raw.featureCount ?? (isFeatureCollection(geojson) ? geojson.features.length : 0);
           const featureCount = sanitizedExtracted
             ? sanitizedExtracted.features.length
-            : raw.featureCount;
+            : raw.featureCount ?? rawCount;
           if (sanitizedFiltered && featureCount === 0) {
             await ephemeral.putExtractedBuffer({
               id: outputBufferId,
@@ -350,13 +367,13 @@ export class LocalExtract1Adapter implements Extract1StageAdapter {
             stage: 'extract1',
             data,
             featureCount,
-            extractionRatio: raw.featureCount > 0 ? featureCount / raw.featureCount : 1,
+            extractionRatio: rawCount > 0 ? featureCount / rawCount : 1,
             tolerance: input.tolerance ?? 0,
             timestamp: Date.now(),
           });
           completed++;
           if (task.taskId) {
-            const extractionRatio = raw.featureCount > 0 ? featureCount / raw.featureCount : 1;
+            const extractionRatio = rawCount > 0 ? featureCount / rawCount : 1;
             const outputData: Extract1TaskOutputData = {
               outputBufferId,
               featureCount,
@@ -462,7 +479,7 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
           const input: ExtractTaskInput = { ...extractSettings.extract2, ...baseInput, retry: baseOutput.retry };
           const taskIndex = task.index ?? 0;
           const sourceTaskId = input.sourceTaskId
-            ?? `${task.nodeId ?? ''}-extract1-${taskIndex}`;
+            ?? `${resolvedNodeId}-extract1-${taskIndex}`;
           const extract1Task = await getShapeDbApiClient().ephemeral.getBatchTask(sourceTaskId);
           if (extract1Task?.status === 'failed') {
             failed++;
@@ -480,13 +497,27 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
             continue;
           }
           const inputBufferId = input.inputBufferId ?? '';
-          const buffer = await ephemeral.getExtractedBuffer(inputBufferId)
-            ?? await ephemeral.getRawBuffer(inputBufferId);
-          if (!buffer) {
+          const extracted = await ephemeral.getExtractedBuffer(inputBufferId);
+          const rawBuffer = extracted ? null : await readDownloadBuffer(resolvedNodeId, inputBufferId);
+          if (!extracted && !rawBuffer) {
             throw new Error(`Extract2 input buffer not found: ${inputBufferId}`);
           }
+          const rawGeojson = extracted ? null : await decodeGeoJson(rawBuffer as ArrayBuffer);
+          const rawCount = extracted
+            ? extracted.featureCount
+            : (isFeatureCollection(rawGeojson) ? rawGeojson.features.length : 0);
+          const buffer = extracted ?? {
+            id: inputBufferId,
+              nodeId: resolvedNodeId,
+            stage: 'extract1' as const,
+            data: rawBuffer as ArrayBuffer,
+            featureCount: rawCount,
+            extractionRatio: 1,
+            tolerance: 0,
+            timestamp: Date.now(),
+          };
           if (!buffer.featureCount) {
-            const outputBufferId = `${task.nodeId ?? ''}-extract2-${taskIndex}`;
+            const outputBufferId = `${resolvedNodeId}-extract2-${taskIndex}`;
             const baseTolerance = input.tolerance ?? 0;
             const retry = input.retry ?? 0;
             const retryScale = retry > 0 ? 1 + retry * 2 : 1;
@@ -495,6 +526,8 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
               id: outputBufferId,
               nodeId: buffer.nodeId,
               stage: 'extract2',
+              countryCode: task.countryCode,
+              adminLevel: task.adminLevel,
               data: buffer.data,
               featureCount: 0,
               extractionRatio: 0,
@@ -520,7 +553,7 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
             finished = true;
             break;
           }
-          const geojson = await decodeGeoJson(buffer.data);
+          const geojson = extracted ? await decodeGeoJson(buffer.data) : rawGeojson;
           if (isFeatureCollection(geojson)) {
             const continent = input.continent;
             const countryName = input.countryName;
@@ -538,7 +571,7 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
           const extractionMode = input.extractionMode
             ?? (input.preserveSharedBoundaries ? 'topojson' : 'geojson');
           if (extractionMode === 'off') {
-            const outputBufferId = `${task.nodeId ?? ''}-extract2-${taskIndex}`;
+            const outputBufferId = `${resolvedNodeId}-extract2-${taskIndex}`;
             if (isFeatureCollection(geojson)) {
               const sanitized = sanitizeFeatureCollection(geojson);
               assignFeatureIds(sanitized, {
@@ -551,6 +584,8 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
                 id: outputBufferId,
                 nodeId: buffer.nodeId,
                 stage: 'extract2',
+                countryCode: task.countryCode,
+                adminLevel: task.adminLevel,
                 data,
                 featureCount,
                 extractionRatio: buffer.featureCount ? featureCount / buffer.featureCount : 1,
@@ -580,6 +615,8 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
                 id: outputBufferId,
                 nodeId: buffer.nodeId,
                 stage: 'extract2',
+                countryCode: task.countryCode,
+                adminLevel: task.adminLevel,
                 data: buffer.data,
                 featureCount: buffer.featureCount ?? 0,
                 extractionRatio: 1,
@@ -674,12 +711,14 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
             };
           };
           let extraction = await runExtraction();
-          const outputBufferId = `${task.nodeId ?? ''}-extract2-${taskIndex}`;
+          const outputBufferId = `${resolvedNodeId}-extract2-${taskIndex}`;
           if (extraction.status === 'skipped') {
             await ephemeral.putExtractedBuffer({
               id: outputBufferId,
               nodeId: buffer.nodeId,
               stage: 'extract2',
+              countryCode: task.countryCode,
+              adminLevel: task.adminLevel,
               data: buffer.data,
               featureCount: 0,
               extractionRatio: 0,
@@ -737,6 +776,8 @@ export class LocalExtract2Adapter implements Extract2StageAdapter {
             id: outputBufferId,
             nodeId: buffer.nodeId,
             stage: 'extract2',
+            countryCode: task.countryCode,
+            adminLevel: task.adminLevel,
             data: finalData,
             featureCount: finalFeatureCount,
             extractionRatio: buffer.featureCount ? finalFeatureCount / buffer.featureCount : 1,

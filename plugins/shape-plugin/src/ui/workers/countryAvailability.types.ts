@@ -12,5 +12,5 @@ export type SerializedCountryAvailability = {
 };
 
 export interface CountryAvailabilityWorkerAPI {
-  loadAvailability(dataSource: string): Promise<SerializedCountryAvailability>;
+  loadAvailability(dataSource: string, nodeId: string): Promise<SerializedCountryAvailability>;
 }

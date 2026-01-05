@@ -3,7 +3,7 @@ import type {
   ShapeBatchTaskRecord,
   ShapeBatchTaskStage,
   ShapeBatchTaskStatus,
-  ShapeExtractedBufferRecord,
+  ShapeExtractSourceBufferRecord,
   ShapeRawBufferRecord,
 } from './shapeBatchTypes.js';
 import type {
@@ -25,16 +25,16 @@ export interface ShapeEphemeralDBAPI {
   updateBatchTask(taskId: string, updates: Partial<ShapeBatchTaskRecord>): Promise<void>;
 
   listRawBuffers(nodeId: NodeId): Promise<ShapeRawBufferRecord[]>;
-  getRawBuffer(bufferId: string): Promise<ShapeRawBufferRecord | null>;
+  getRawBuffer(nodeId: NodeId, bufferId: string): Promise<ShapeRawBufferRecord | null>;
   countRawBuffers(nodeId: NodeId): Promise<number>;
   putRawBuffer(buffer: ShapeRawBufferRecord): Promise<void>;
   putRawBuffers(buffers: ShapeRawBufferRecord[]): Promise<void>;
 
-  listExtractedBuffers(nodeId: NodeId, stage?: 'extract1' | 'extract2'): Promise<ShapeExtractedBufferRecord[]>;
-  getExtractedBuffer(bufferId: string): Promise<ShapeExtractedBufferRecord | null>;
+  listExtractedBuffers(nodeId: NodeId, stage?: 'extract1' | 'extract2'): Promise<ShapeExtractSourceBufferRecord[]>;
+  getExtractedBuffer(bufferId: string): Promise<ShapeExtractSourceBufferRecord | null>;
   countExtractedBuffers(nodeId: NodeId, stage?: 'extract1' | 'extract2'): Promise<number>;
-  putExtractedBuffer(buffer: ShapeExtractedBufferRecord): Promise<void>;
-  putExtractedBuffers(buffers: ShapeExtractedBufferRecord[]): Promise<void>;
+  putExtractedBuffer(buffer: ShapeExtractSourceBufferRecord): Promise<void>;
+  putExtractedBuffers(buffers: ShapeExtractSourceBufferRecord[]): Promise<void>;
 
   countVectorTiles(nodeId: NodeId): Promise<number>;
 

@@ -9,7 +9,7 @@ import type {
   ShapeEphemeralDBAPI,
   ShapeEphemeralSessionRecord,
   ShapeEphemeralStage,
-  ShapeExtractedBufferRecord,
+  ShapeExtractSourceBufferRecord,
   ShapeFeatureRecord,
   ShapeFeatureMetadataRow,
   ShapeMutationAPI,
@@ -28,6 +28,18 @@ import type {
 import { shapeDB } from '../database/ShapeDB.js';
 import { getEphemeralShapeDB } from '../database/EphemeralShapeDB.js';
 import {
+  bufferDeserializer,
+  bufferSerializer,
+  countDownloadBuffersForNode,
+  createShapeChunkStore,
+  listDownloadMetadataForNode,
+  readDownloadBuffer,
+  storeDownloadBufferForNode,
+} from '../utils/chunkStore.js';
+import { geojson as geojsonApi } from 'flatgeobuf';
+import { bbox as turfBbox } from '@turf/turf';
+import type { Feature, FeatureCollection } from 'geojson';
+import {
   toBatchSessionRecord,
   toBatchSessionUpdates,
   toProgressSummary,
@@ -39,6 +51,40 @@ const mapStatus = (status: ShapeBatchSessionSummary['status'] | 'running' | 'idl
   if (status === 'running') return 'processing';
   if (status === 'idle') return 'idle';
   return status;
+};
+
+const isFeatureCollection = (value: unknown): value is FeatureCollection => (
+  !!value
+  && typeof value === 'object'
+  && (value as FeatureCollection).type === 'FeatureCollection'
+  && Array.isArray((value as FeatureCollection).features)
+);
+
+const decodeDownloadGeoJson = async (buffer: ArrayBuffer): Promise<unknown> => {
+  const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
+  if (decoded && typeof (decoded as AsyncIterable<unknown>)[Symbol.asyncIterator] === 'function') {
+    const features: Feature[] = [];
+    for await (const feature of decoded as AsyncIterable<Feature>) {
+      if (feature) features.push(feature);
+    }
+    return { type: 'FeatureCollection', features };
+  }
+  return decoded;
+};
+
+const summarizeDownloadBuffer = async (buffer: ArrayBuffer): Promise<{
+  featureCount: number;
+  bbox: [number, number, number, number];
+}> => {
+  const decoded = await decodeDownloadGeoJson(buffer);
+  if (!isFeatureCollection(decoded)) {
+    return { featureCount: 0, bbox: [0, 0, 0, 0] };
+  }
+  const bounds = turfBbox(decoded);
+  return {
+    featureCount: decoded.features.filter(Boolean).length,
+    bbox: [bounds[0], bounds[1], bounds[2], bounds[3]],
+  };
 };
 
 const toTaskSummary = (task: ShapeBatchTaskRecord): ShapeBatchTaskSummary => ({
@@ -213,32 +259,67 @@ export class LocalShapeQueryApi implements ShapeQueryAPI {
   }
 
   async listRawBuffers(nodeId: NodeId): Promise<ShapeRawBufferRecord[]> {
-    const db = getEphemeralShapeDB();
-    return db.rawBuffers.where('nodeId').equals(nodeId).toArray() as Promise<ShapeRawBufferRecord[]>;
+    const metadata = await listDownloadMetadataForNode(nodeId);
+    const records = await Promise.all(metadata.map(async (entry) => {
+      const cacheKey = entry.cacheKey;
+      if (!cacheKey) return null;
+      const data = await readDownloadBuffer(nodeId, cacheKey);
+      if (!data) return null;
+      const summary = await summarizeDownloadBuffer(data);
+      return {
+        id: cacheKey,
+        nodeId,
+        data,
+        featureCount: summary.featureCount,
+        bbox: summary.bbox,
+        downloadTime: entry.fetchedAt ?? entry.createdAt ?? Date.now(),
+        size: entry.sizeBytes ?? data.byteLength,
+        timestamp: entry.updatedAt ?? entry.createdAt ?? Date.now(),
+      };
+    }));
+    return records.filter(Boolean) as ShapeRawBufferRecord[];
   }
 
-  async getRawBuffer(bufferId: string): Promise<ShapeRawBufferRecord | null> {
-    const db = getEphemeralShapeDB();
-    const buffer = await db.rawBuffers.get(bufferId);
-    return buffer ?? null;
+  async getRawBuffer(nodeId: NodeId, bufferId: string): Promise<ShapeRawBufferRecord | null> {
+    const data = await readDownloadBuffer(nodeId, bufferId);
+    if (!data) return null;
+    const summary = await summarizeDownloadBuffer(data);
+    return {
+      id: bufferId,
+      nodeId,
+      data,
+      featureCount: summary.featureCount,
+      bbox: summary.bbox,
+      downloadTime: Date.now(),
+      size: data.byteLength,
+      timestamp: Date.now(),
+    };
   }
 
   async listExtractedBuffers(
     nodeId: NodeId,
     stage?: 'extract1' | 'extract2',
-  ): Promise<ShapeExtractedBufferRecord[]> {
+  ): Promise<ShapeExtractSourceBufferRecord[]> {
     const db = getEphemeralShapeDB();
     if (!stage) {
-      return db.extractedBuffers.where('nodeId').equals(nodeId).toArray() as Promise<ShapeExtractedBufferRecord[]>;
+      const [extract1Buffers, extract2Buffers] = await Promise.all([
+        db.extractedBuffers.where('nodeId').equals(nodeId).toArray(),
+        db.extract2SourceBuffers.where('nodeId').equals(nodeId).toArray(),
+      ]);
+      return [...extract1Buffers, ...extract2Buffers];
     }
-    return db.extractedBuffers.where('[nodeId+stage]').equals([nodeId, stage]).toArray() as
-      Promise<ShapeExtractedBufferRecord[]>;
+    if (stage === 'extract1') {
+      return db.extractedBuffers.where('nodeId').equals(nodeId).toArray();
+    }
+    return db.extract2SourceBuffers.where('nodeId').equals(nodeId).toArray();
   }
 
-  async getExtractedBuffer(bufferId: string): Promise<ShapeExtractedBufferRecord | null> {
+  async getExtractedBuffer(bufferId: string): Promise<ShapeExtractSourceBufferRecord | null> {
     const db = getEphemeralShapeDB();
-    const buffer = await db.extractedBuffers.get(bufferId);
-    return buffer ?? null;
+    const extract1 = await db.extractedBuffers.get(bufferId);
+    if (extract1) return extract1;
+    const extract2 = await db.extract2SourceBuffers.get(bufferId);
+    return extract2 ?? null;
   }
 
   async listVectorTileRows(nodeId: NodeId): Promise<ShapeTileRow[]> {
@@ -360,11 +441,16 @@ export class LocalShapeMutationApi implements ShapeMutationAPI {
 
   async putRawBuffers(buffers: ShapeRawBufferRecord[]): Promise<void> {
     if (buffers.length === 0) return;
-    const db = getEphemeralShapeDB();
-    await db.rawBuffers.bulkPut(buffers);
+    await Promise.all(buffers.map((buffer) => (
+      storeDownloadBufferForNode({
+        nodeId: buffer.nodeId,
+        cacheKey: buffer.id,
+        buffer: buffer.data,
+      })
+    )));
   }
 
-  async putExtractedBuffers(buffers: ShapeExtractedBufferRecord[]): Promise<void> {
+  async putExtractedBuffers(buffers: ShapeExtractSourceBufferRecord[]): Promise<void> {
     if (buffers.length === 0) return;
     const db = getEphemeralShapeDB();
     await db.extractedBuffers.bulkPut(buffers);
@@ -456,70 +542,132 @@ export class LocalShapeEphemeralDbApi implements ShapeEphemeralDBAPI {
   }
 
   async listRawBuffers(nodeId: NodeId): Promise<ShapeRawBufferRecord[]> {
-    const db = getEphemeralShapeDB();
-    return db.rawBuffers.where('nodeId').equals(nodeId).toArray() as Promise<ShapeRawBufferRecord[]>;
+    const metadata = await listDownloadMetadataForNode(nodeId);
+    const records = await Promise.all(metadata.map(async (entry) => {
+      const cacheKey = entry.cacheKey;
+      if (!cacheKey) return null;
+      const data = await readDownloadBuffer(nodeId, cacheKey);
+      if (!data) return null;
+      const summary = await summarizeDownloadBuffer(data);
+      return {
+        id: cacheKey,
+        nodeId,
+        data,
+        featureCount: summary.featureCount,
+        bbox: summary.bbox,
+        downloadTime: entry.fetchedAt ?? entry.createdAt ?? Date.now(),
+        size: entry.sizeBytes ?? data.byteLength,
+        timestamp: entry.updatedAt ?? entry.createdAt ?? Date.now(),
+      };
+    }));
+    return records.filter(Boolean) as ShapeRawBufferRecord[];
   }
 
-  async getRawBuffer(bufferId: string): Promise<ShapeRawBufferRecord | null> {
-    const db = getEphemeralShapeDB();
-    return (await db.rawBuffers.get(bufferId)) ?? null;
+  async getRawBuffer(nodeId: NodeId, bufferId: string): Promise<ShapeRawBufferRecord | null> {
+    const data = await readDownloadBuffer(nodeId, bufferId);
+    if (!data) return null;
+    const summary = await summarizeDownloadBuffer(data);
+    return {
+      id: bufferId,
+      nodeId,
+      data,
+      featureCount: summary.featureCount,
+      bbox: summary.bbox,
+      downloadTime: Date.now(),
+      size: data.byteLength,
+      timestamp: Date.now(),
+    };
   }
 
   async countRawBuffers(nodeId: NodeId): Promise<number> {
-    const db = getEphemeralShapeDB();
-    return db.rawBuffers.where('nodeId').equals(nodeId).count();
+    return countDownloadBuffersForNode(nodeId);
   }
 
   async putRawBuffer(buffer: ShapeRawBufferRecord): Promise<void> {
-    const db = getEphemeralShapeDB();
-    await db.rawBuffers.put(buffer);
+    await storeDownloadBufferForNode({
+      nodeId: buffer.nodeId,
+      cacheKey: buffer.id,
+      buffer: buffer.data,
+    });
   }
 
   async putRawBuffers(buffers: ShapeRawBufferRecord[]): Promise<void> {
     if (buffers.length === 0) return;
-    const db = getEphemeralShapeDB();
-    await db.rawBuffers.bulkPut(buffers);
+    await Promise.all(buffers.map((buffer) => (
+      storeDownloadBufferForNode({
+        nodeId: buffer.nodeId,
+        cacheKey: buffer.id,
+        buffer: buffer.data,
+      })
+    )));
   }
 
   async listExtractedBuffers(
     nodeId: NodeId,
     stage?: 'extract1' | 'extract2',
-  ): Promise<ShapeExtractedBufferRecord[]> {
+  ): Promise<ShapeExtractSourceBufferRecord[]> {
     const db = getEphemeralShapeDB();
     if (!stage) {
-      return db.extractedBuffers.where('nodeId').equals(nodeId).toArray() as Promise<ShapeExtractedBufferRecord[]>;
+      const [extract1Buffers, extract2Buffers] = await Promise.all([
+        db.extractedBuffers.where('nodeId').equals(nodeId).toArray(),
+        db.extract2SourceBuffers.where('nodeId').equals(nodeId).toArray(),
+      ]);
+      return [...extract1Buffers, ...extract2Buffers] as ShapeExtractSourceBufferRecord[];
     }
-    return db.extractedBuffers.where('[nodeId+stage]').equals([nodeId, stage]).toArray() as
-      Promise<ShapeExtractedBufferRecord[]>;
+    if (stage === 'extract1') {
+      return db.extractedBuffers.where('nodeId').equals(nodeId).toArray() as Promise<ShapeExtractSourceBufferRecord[]>;
+    }
+    return db.extract2SourceBuffers.where('nodeId').equals(nodeId).toArray() as Promise<ShapeExtractSourceBufferRecord[]>;
   }
 
-  async getExtractedBuffer(bufferId: string): Promise<ShapeExtractedBufferRecord | null> {
+  async getExtractedBuffer(bufferId: string): Promise<ShapeExtractSourceBufferRecord | null> {
     const db = getEphemeralShapeDB();
-    return (await db.extractedBuffers.get(bufferId)) ?? null;
+    const extract1 = await db.extractedBuffers.get(bufferId);
+    if (extract1) return extract1 as ShapeExtractSourceBufferRecord;
+    const extract2 = await db.extract2SourceBuffers.get(bufferId);
+    return (extract2 as ShapeExtractSourceBufferRecord | undefined) ?? null;
   }
 
   async countExtractedBuffers(nodeId: NodeId, stage?: 'extract1' | 'extract2'): Promise<number> {
     const db = getEphemeralShapeDB();
     if (!stage) {
+      const [extract1Count, extract2Count] = await Promise.all([
+        db.extractedBuffers.where('nodeId').equals(nodeId).count(),
+        db.extract2SourceBuffers.where('nodeId').equals(nodeId).count(),
+      ]);
+      return extract1Count + extract2Count;
+    }
+    if (stage === 'extract1') {
       return db.extractedBuffers.where('nodeId').equals(nodeId).count();
     }
-    return db.extractedBuffers.where('[nodeId+stage]').equals([nodeId, stage]).count();
+    return db.extract2SourceBuffers.where('nodeId').equals(nodeId).count();
   }
 
-  async putExtractedBuffer(buffer: ShapeExtractedBufferRecord): Promise<void> {
+  async putExtractedBuffer(buffer: ShapeExtractSourceBufferRecord): Promise<void> {
     const db = getEphemeralShapeDB();
+    if (buffer.stage === 'extract2') {
+      await db.extract2SourceBuffers.put(buffer);
+      return;
+    }
     await db.extractedBuffers.put(buffer);
   }
 
-  async putExtractedBuffers(buffers: ShapeExtractedBufferRecord[]): Promise<void> {
+  async putExtractedBuffers(buffers: ShapeExtractSourceBufferRecord[]): Promise<void> {
     if (buffers.length === 0) return;
     const db = getEphemeralShapeDB();
-    await db.extractedBuffers.bulkPut(buffers);
+    const extract1Buffers = buffers.filter((buffer) => buffer.stage === 'extract1');
+    const extract2Buffers = buffers.filter((buffer) => buffer.stage === 'extract2');
+    if (extract1Buffers.length > 0) {
+      await db.extractedBuffers.bulkPut(extract1Buffers);
+    }
+    if (extract2Buffers.length > 0) {
+      await db.extract2SourceBuffers.bulkPut(extract2Buffers);
+    }
   }
 
   async countVectorTiles(nodeId: NodeId): Promise<number> {
     const db = getEphemeralShapeDB();
-    return db.vectorTiles.where('nodeId').equals(nodeId).count();
+    return db.vectorTileSourceBuffers.where('nodeId').equals(nodeId).count();
   }
 
   async listTileIdRelations(nodeId: NodeId): Promise<ShapeTileIdToBufferRelation[]> {
@@ -589,6 +737,14 @@ export class LocalShapeEphemeralDbApi implements ShapeEphemeralDBAPI {
   async clearStage(nodeId: NodeId, stage: ShapeEphemeralStage): Promise<void> {
     const db = getEphemeralShapeDB();
     await db.clearStage(nodeId, stage);
+    if (stage === 'download') {
+      try {
+        const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
+        await store.deleteAllForNode(nodeId);
+      } catch (error) {
+        console.warn('[shapeBatchAPI] failed to clear download chunk-store entries', error);
+      }
+    }
   }
 
   async clearNodeData(nodeId: NodeId): Promise<void> {

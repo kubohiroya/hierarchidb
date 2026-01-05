@@ -3,8 +3,8 @@ import {
   createShapeChunkStore,
   jsonDeserializer,
   jsonSerializer,
-  SHARED_SHAPE_NODE_ID,
 } from './chunkStore.js';
+import type { NodeId } from '@hierarchidb/common-types';
 
 const parseAdminLevel = (value: unknown): number | null => {
   if (typeof value === 'number' && Number.isInteger(value)) return value;
@@ -31,10 +31,11 @@ export type GeoBoundariesAvailability = {
 };
 
 export async function fetchGeoBoundariesAvailability(
+  nodeId: NodeId,
   url: string,
 ): Promise<GeoBoundariesAvailability> {
   const store = createShapeChunkStore(jsonSerializer, jsonDeserializer);
-  const entry = await store.getOrFetchForNode(SHARED_SHAPE_NODE_ID, url, {
+  const entry = await store.getOrFetchForNode(nodeId, url, {
     accept: 'application/json',
     cacheKey: buildShapeCacheKey('geoboundaries:availability', url),
   });

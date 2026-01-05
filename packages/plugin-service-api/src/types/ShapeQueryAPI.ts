@@ -10,7 +10,7 @@ import type {
 import type {
   ShapeBatchTaskRecord,
   ShapeBatchTaskStage,
-  ShapeExtractedBufferRecord,
+  ShapeExtractSourceBufferRecord,
   ShapeFeatureMetadataRow,
   ShapeRawBufferRecord,
   ShapeSourceMetadataRow,
@@ -44,9 +44,9 @@ export interface ShapeQueryAPI {
     adminLevel?: number,
   ): Promise<ShapeFeatureRecord[]>;
   listRawBuffers(nodeId: NodeId): Promise<ShapeRawBufferRecord[]>;
-  getRawBuffer(bufferId: string): Promise<ShapeRawBufferRecord | null>;
-  listExtractedBuffers(nodeId: NodeId, stage?: 'extract1' | 'extract2'): Promise<ShapeExtractedBufferRecord[]>;
-  getExtractedBuffer(bufferId: string): Promise<ShapeExtractedBufferRecord | null>;
+  getRawBuffer(nodeId: NodeId, bufferId: string): Promise<ShapeRawBufferRecord | null>;
+  listExtractedBuffers(nodeId: NodeId, stage?: 'extract1' | 'extract2'): Promise<ShapeExtractSourceBufferRecord[]>;
+  getExtractedBuffer(bufferId: string): Promise<ShapeExtractSourceBufferRecord | null>;
   listVectorTileRows(nodeId: NodeId): Promise<ShapeTileRow[]>;
   listSourceMetadata(nodeId: NodeId): Promise<ShapeSourceMetadataRow[]>;
   listFeatureMetadata(nodeId: NodeId): Promise<ShapeFeatureMetadataRow[]>;

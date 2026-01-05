@@ -1,5 +1,4 @@
 import type { Feature, FeatureCollection } from 'geojson';
-import { bbox as turfBbox } from '@turf/turf';
 import type {
   DownloadStageBuildContext,
   DownloadStageOutput,
@@ -9,10 +8,10 @@ import type {
   DownloadTaskPayloadBuildContext,
 } from './DownloadStageStrategy.js';
 import type { CountryMetadata, DownloadTask, DownloadTaskPayload } from '../../../common/types/index.js';
-import { getShapeDbApiClient } from '../ShapeBatchApiClient.js';
 import { decodeFlatGeoJson, encodeFlatGeoJson } from './flatgeobuf.js';
 import { metadataLoader } from '../../metadata/MetadataLoader.js';
 import { buildDownloadTaskId, generateDownloadTaskPayloadsFromSelection } from '../../utils/utils.js';
+import { buildDownloadCacheKey, readDownloadBuffer, storeDownloadBufferForNode } from '../../utils/chunkStore.js';
 
 type CountryLookup = Map<string, CountryMetadata>;
 
@@ -62,22 +61,25 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
   async postprocessDownloadOutputs(
     context: DownloadStagePostprocessContext,
   ): Promise<DownloadStagePostprocessResult> {
-    const ephemeral = getShapeDbApiClient().ephemeral;
     const outputs: DownloadStageOutput[] = [];
     const selectedCountries = this.collectSelectedCountries(context.downloadTaskPayloads);
-    const countryMetadata = await metadataLoader.getCountriesMetadata('naturalearth', selectedCountries);
+    const countryMetadata = await metadataLoader.getCountriesMetadata('naturalearth', selectedCountries, context.nodeId);
     const lookup = this.buildCountryLookup(countryMetadata);
 
     for (const task of context.downloadTasks) {
-      const inputBufferId = `${context.nodeId}-download-${task.index ?? 0}`;
-      const raw = await ephemeral.getRawBuffer(inputBufferId);
-      if (!raw) continue;
-
-      const geojson = await decodeFlatGeoJson(raw.data);
-      const buckets = this.partitionFeaturesByCountry(geojson, lookup);
       const input = context.downloadInputsById.get(task.taskId);
       const adminLevel = input?.adminLevel ?? 0;
       const sourceUrl = input?.url ?? task.url;
+      const datasetCacheKey = buildDownloadCacheKey({
+        dataSource: 'naturalearth',
+        adminLevel,
+        url: sourceUrl,
+      });
+      const rawBuffer = await readDownloadBuffer(context.nodeId, datasetCacheKey);
+      if (!rawBuffer) continue;
+
+      const geojson = await decodeFlatGeoJson(rawBuffer);
+      const buckets = this.partitionFeaturesByCountry(geojson, lookup);
 
       for (const [countryCode, features] of buckets.entries()) {
         if (!features.length) continue;
@@ -86,17 +88,16 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
         const continent = country?.continent;
         const collection: FeatureCollection = { type: 'FeatureCollection', features };
         const data = await encodeFlatGeoJson(collection);
-        const bounds = turfBbox(collection);
-        const outputBufferId = this.buildOutputBufferId(context.nodeId, countryCode, adminLevel);
-        await ephemeral.putRawBuffer({
-          id: outputBufferId,
-          nodeId: raw.nodeId,
-          data,
-          featureCount: features.length,
-          bbox: [bounds[0], bounds[1], bounds[2], bounds[3]],
-          downloadTime: Date.now(),
-          size: data.byteLength,
-          timestamp: Date.now(),
+        const outputBufferId = buildDownloadCacheKey({
+          dataSource: 'naturalearth',
+          countryCode,
+          adminLevel,
+          url: sourceUrl,
+        });
+        await storeDownloadBufferForNode({
+          nodeId: context.nodeId,
+          cacheKey: outputBufferId,
+          buffer: data,
         });
         outputs.push({
           inputBufferId: outputBufferId,
@@ -170,8 +171,4 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
     return undefined;
   }
 
-  private buildOutputBufferId(nodeId: string, countryCode: string, adminLevel: number): string {
-    const normalizedCountry = countryCode.toLowerCase().replace(/[^a-z0-9]/g, '-');
-    return `${nodeId}-download-${normalizedCountry}-adm${adminLevel}`;
-  }
 }

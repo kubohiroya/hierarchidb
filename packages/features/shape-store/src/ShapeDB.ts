@@ -245,7 +245,7 @@ export type Extract2TaskOutputData = {
 };
 
 export type VectorTileTaskInputData = {
-  inputBufferId?: string;
+  inputBufferId: string;
   minZoom?: number;
   maxZoom?: number;
   tileZ?: number;
@@ -273,7 +273,7 @@ export type VectorTileTaskInputData = {
 };
 
 export type VectorTileTaskOutputData = {
-  tileId?: string;
+  tileId: string;
   tileCount?: number;
   totalBytes?: number;
   retry?: number;

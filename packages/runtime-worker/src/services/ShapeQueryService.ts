@@ -7,7 +7,7 @@ import type {
   ShapeBatchTaskRecord,
   ShapeBatchTaskStage,
   ShapeBatchTaskSummary,
-  ShapeExtractedBufferRecord,
+  ShapeExtractSourceBufferRecord,
   ShapeFeatureRecord,
   ShapeFeatureMetadataRow,
   ShapeProcessingStatus,
@@ -27,6 +27,11 @@ import {
   type ProgressInfo,
   type ShapeDB,
 } from '@hierarchidb/shape-store';
+import {
+  countDownloadBuffersForNode,
+  listDownloadMetadataForNode,
+  readDownloadBuffer,
+} from './shapeChunkStore.js';
 
 const toProgressSummary = (progress: ProgressInfo): ShapeBatchProgressSummary => ({
   total: progress.total,
@@ -262,32 +267,69 @@ export class ShapeQueryService implements ShapeQueryAPI {
   }
 
   async listRawBuffers(nodeId: NodeId): Promise<ShapeRawBufferRecord[]> {
-    const db = getEphemeralShapeDB();
-    return db.rawBuffers.where('nodeId').equals(nodeId).toArray() as Promise<ShapeRawBufferRecord[]>;
+    const metadata = await listDownloadMetadataForNode(nodeId);
+    const records = await Promise.all(metadata.map(async (entry) => {
+      const cacheKey = entry.cacheKey;
+      if (!cacheKey) return null;
+      const data = await readDownloadBuffer(nodeId, cacheKey);
+      if (!data) return null;
+      return {
+        id: cacheKey,
+        nodeId,
+        data,
+        featureCount: 0,
+        bbox: [0, 0, 0, 0],
+        downloadTime: entry.fetchedAt ?? entry.createdAt ?? Date.now(),
+        size: entry.sizeBytes ?? data.byteLength,
+        timestamp: entry.updatedAt ?? entry.createdAt ?? Date.now(),
+      };
+    }));
+    return records.filter(Boolean) as ShapeRawBufferRecord[];
   }
 
-  async getRawBuffer(bufferId: string): Promise<ShapeRawBufferRecord | null> {
-    const db = getEphemeralShapeDB();
-    const buffer = await db.rawBuffers.get(bufferId);
-    return buffer ?? null;
+  async getRawBuffer(nodeId: NodeId, bufferId: string): Promise<ShapeRawBufferRecord | null> {
+    const data = await readDownloadBuffer(nodeId, bufferId);
+    if (!data) return null;
+    return {
+      id: bufferId,
+      nodeId,
+      data,
+      featureCount: 0,
+      bbox: [0, 0, 0, 0],
+      downloadTime: Date.now(),
+      size: data.byteLength,
+      timestamp: Date.now(),
+    };
+  }
+
+  async countRawBuffers(nodeId: NodeId): Promise<number> {
+    return countDownloadBuffersForNode(nodeId);
   }
 
   async listExtractedBuffers(
     nodeId: NodeId,
     stage?: 'extract1' | 'extract2',
-  ): Promise<ShapeExtractedBufferRecord[]> {
+  ): Promise<ShapeExtractSourceBufferRecord[]> {
     const db = getEphemeralShapeDB();
     if (!stage) {
-      return db.extractedBuffers.where('nodeId').equals(nodeId).toArray() as Promise<ShapeExtractedBufferRecord[]>;
+      const [extract1Buffers, extract2Buffers] = await Promise.all([
+        db.extractedBuffers.where('nodeId').equals(nodeId).toArray(),
+        db.extract2SourceBuffers.where('nodeId').equals(nodeId).toArray(),
+      ]);
+      return [...extract1Buffers, ...extract2Buffers] as ShapeExtractSourceBufferRecord[];
     }
-    return db.extractedBuffers.where('[nodeId+stage]').equals([nodeId, stage]).toArray() as
-      Promise<ShapeExtractedBufferRecord[]>;
+    if (stage === 'extract1') {
+      return db.extractedBuffers.where('nodeId').equals(nodeId).toArray() as Promise<ShapeExtractSourceBufferRecord[]>;
+    }
+    return db.extract2SourceBuffers.where('nodeId').equals(nodeId).toArray() as Promise<ShapeExtractSourceBufferRecord[]>;
   }
 
-  async getExtractedBuffer(bufferId: string): Promise<ShapeExtractedBufferRecord | null> {
+  async getExtractedBuffer(bufferId: string): Promise<ShapeExtractSourceBufferRecord | null> {
     const db = getEphemeralShapeDB();
-    const buffer = await db.extractedBuffers.get(bufferId);
-    return buffer ?? null;
+    const extract1 = await db.extractedBuffers.get(bufferId);
+    if (extract1) return extract1 as ShapeExtractSourceBufferRecord;
+    const extract2 = await db.extract2SourceBuffers.get(bufferId);
+    return (extract2 as ShapeExtractSourceBufferRecord | undefined) ?? null;
   }
 
   async listVectorTileRows(nodeId: NodeId): Promise<ShapeTileRow[]> {

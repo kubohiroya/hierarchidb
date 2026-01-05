@@ -7,6 +7,7 @@ import type {
 } from './DownloadStageStrategy.js';
 import type { DownloadTask, DownloadTaskPayload } from '../../../common/types/index.js';
 import { buildDownloadTaskId, generateDownloadTaskPayloadsFromSelection } from '../../utils/utils.js';
+import { buildDownloadCacheKey } from '../../utils/chunkStore.js';
 
 export class GeoBoundariesDownloadStrategy implements DownloadStageStrategy {
   buildDownloadTaskPayloads(context: DownloadTaskPayloadBuildContext) {
@@ -51,13 +52,20 @@ export class GeoBoundariesDownloadStrategy implements DownloadStageStrategy {
   ): Promise<DownloadStagePostprocessResult> {
     const outputs = context.downloadTasks.map((task) => {
       const input = context.downloadInputsById.get(task.taskId);
+      const sourceUrl = input?.url ?? task.url;
+      const cacheKey = buildDownloadCacheKey({
+        dataSource: input?.dataSource ?? 'geoboundaries',
+        countryCode: input?.countryCode ?? task.countryCode,
+        adminLevel: input?.adminLevel ?? task.adminLevel,
+        url: sourceUrl,
+      });
       return {
-        inputBufferId: `${context.nodeId}-download-${task.index ?? 0}`,
+        inputBufferId: cacheKey,
         countryCode: input?.countryCode ?? task.countryCode,
         countryName: input?.countryName,
         adminLevel: input?.adminLevel ?? task.adminLevel,
         dataSource: input?.dataSource ?? 'geoboundaries',
-        sourceUrl: input?.url ?? task.url,
+        sourceUrl,
       };
     });
     return { outputs };

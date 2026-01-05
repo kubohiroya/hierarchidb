@@ -3,13 +3,14 @@ import type { NodeId } from '@hierarchidb/common-types';
 import type {
   ShapeBatchTaskRecord,
   ShapeBatchSessionRecord,
-  ShapeExtractedBufferRecord,
+  ShapeExtractSourceBufferRecord,
   ShapeFeatureMetadataRow,
   ShapeMutationAPI,
   ShapeRawBufferRecord,
   ShapeSourceMetadataRow,
   ShapeVectorTileRecord,
 } from '@hierarchidb/plugin-service-api';
+import { storeDownloadBufferForNode } from './shapeChunkStore.js';
 import { getEphemeralShapeDB } from '@hierarchidb/shape-store';
 import type {
   BatchProcessConfig,
@@ -292,15 +293,27 @@ export class ShapeMutationService implements ShapeMutationAPI {
   }
 
   async putRawBuffers(buffers: ShapeRawBufferRecord[]): Promise<void> {
-    const db = getEphemeralShapeDB();
     if (buffers.length === 0) return;
-    await db.rawBuffers.bulkPut(buffers);
+    await Promise.all(buffers.map((buffer) => (
+      storeDownloadBufferForNode({
+        nodeId: buffer.nodeId,
+        cacheKey: buffer.id,
+        buffer: buffer.data,
+      })
+    )));
   }
 
-  async putExtractedBuffers(buffers: ShapeExtractedBufferRecord[]): Promise<void> {
+  async putExtractedBuffers(buffers: ShapeExtractSourceBufferRecord[]): Promise<void> {
     const db = getEphemeralShapeDB();
     if (buffers.length === 0) return;
-    await db.extractedBuffers.bulkPut(buffers);
+    const extract1Buffers = buffers.filter((buffer) => buffer.stage === 'extract1');
+    const extract2Buffers = buffers.filter((buffer) => buffer.stage === 'extract2');
+    if (extract1Buffers.length > 0) {
+      await db.extractedBuffers.bulkPut(extract1Buffers);
+    }
+    if (extract2Buffers.length > 0) {
+      await db.extract2SourceBuffers.bulkPut(extract2Buffers);
+    }
   }
 
   async putSourceMetadata(rows: ShapeSourceMetadataRow[]): Promise<void> {

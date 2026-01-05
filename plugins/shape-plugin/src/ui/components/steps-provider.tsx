@@ -9,7 +9,7 @@ import {
   type ShapeEntity,
   type SelectedArrayByCountries,
 } from '../../common/types/index.js';
-import { toNodeId } from '@hierarchidb/common-types';
+import { NodeId, toNodeId } from '@hierarchidb/common-types';
 import { getShapeDbApiClient } from '../../services/batch/ShapeBatchApiClient.js';
 import { ShapeDataSourceStep } from './steps/ShapeDataSourceStep.js';
 import { ShapeProcessingSettingsStep } from './steps/ShapeProcessingSettingsStep.js';
@@ -44,7 +44,7 @@ function createStepAdapter(
 
     return (
       <Component
-        nodeId={props.nodeId}
+        nodeId={props.nodeId as NodeId}
         data={data}
         onChange={handleChange}
         disabled={Boolean(props.disabled)}
@@ -71,33 +71,45 @@ const canStartShapeBatch = (data?: Partial<ShapeEntity>): boolean => {
   ).isValid;
   return hasSelection && hasDataSource && processingValid;
 };
+
 const resolveShapeNodeKey = (data?: Partial<ShapeEntity>): string | null => {
   const key = data?.nodeId;
   return key ? String(key) : null;
+};
+
+const requireShapeNodeId = (data?: Partial<ShapeEntity>): NodeId => {
+  const nodeKey = resolveShapeNodeKey(data);
+  if (!nodeKey) {
+    throw new Error('Shape nodeId is required for preview readiness checks.');
+  }
+  return toNodeId(nodeKey);
 };
 
 const hasTileSummary = (data?: Partial<ShapeEntity>): boolean =>
   Boolean(data?.tileSummary && (data.tileSummary.tiles ?? 0) > 0);
 
 const hasPersistedVectorTiles = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
-  const nodeKey = resolveShapeNodeKey(data);
-  if (!nodeKey) return false;
-  const summary = await getShapeDbApiClient().query.getVectorTileSummary(toNodeId(nodeKey));
+  const nodeId = requireShapeNodeId(data);
+  const summary = await getShapeDbApiClient().query.getVectorTileSummary(nodeId);
   return summary.tiles > 0;
 };
 
+const hasPersistedMetadata = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
+  const nodeId = requireShapeNodeId(data);
+  const rows = await getShapeDbApiClient().query.listSourceMetadata(nodeId);
+  return rows.length > 0;
+};
+
 const hasCompletedVectorTileTasks = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
-  const nodeKey = resolveShapeNodeKey(data);
-  if (!nodeKey) return false;
-  const tasks = await getShapeDbApiClient().ephemeral.listBatchTasksByType(toNodeId(nodeKey), 'vectortile');
+  const nodeId = requireShapeNodeId(data);
+  const tasks = await getShapeDbApiClient().ephemeral.listBatchTasksByType(nodeId, 'vectortile');
   if (tasks.length === 0) return false;
   const completed = tasks.filter((task) => task.status === 'completed').length;
   return completed === tasks.length;
 };
 
 const hasCompletedBatchSession = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
-  const nodeId = data?.nodeId;
-  if (!nodeId) return false;
+  const nodeId = requireShapeNodeId(data);
   const session = await getShapeDbApiClient().query.getBatchSessionRecord(nodeId);
   return session?.status === 'completed';
 };
@@ -110,6 +122,13 @@ const isShapeBuildPersisted = async (data?: Partial<ShapeEntity>): Promise<boole
   if (await hasPersistedVectorTiles(data)) return true;
   if (await hasCompletedVectorTileTasks(data)) return true;
   return hasCompletedBatchSession(data);
+};
+
+const isShapePreviewReady = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
+  if (!data) return false;
+  if (await hasPersistedMetadata(data)) return true;
+  if (hasTileSummary(data)) return true;
+  return hasPersistedVectorTiles(data);
 };
 
 registry.registerConfigProvider<Partial<ShapeEntity>>({
@@ -147,6 +166,7 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
         validate: (data?: Partial<ShapeEntity>) => isShapeBuildPersisted(data),
         capabilities: {
           canStartBatch: (data?: Partial<ShapeEntity>) => canStartShapeBatch(data),
+          canProceedToNext: (data?: Partial<ShapeEntity>) => isShapePreviewReady(data),
           canSave: (data?: Partial<ShapeEntity>) => isShapeBuildPersisted(data),
         },
       },
@@ -154,7 +174,10 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
         id: 'preview',
         label: t('steps.preview.label', 'Preview'),
         componentFactory: (props: ShapeStepProps) => <ShapePreview {...props} />,
-        validate: (data?: Partial<ShapeEntity>) => isShapeBuildPersisted(data),
+        validate: (data?: Partial<ShapeEntity>) => isShapePreviewReady(data),
+        capabilities: {
+          canNavigateTo: (_fromStep: number, data?: Partial<ShapeEntity>) => isShapePreviewReady(data),
+        },
       },
     ];
   },

@@ -1,15 +1,15 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { Feature, FeatureCollection } from 'geojson';
-import { bbox as turfBbox } from '@turf/turf';
 import type { DownloadStageOutput } from '../../../strategies/DownloadStageStrategy.js';
 import type { SessionArtifactStore } from '../../../SessionArtifactStore.js';
+import { storeDownloadBufferForNode } from '../../../../utils/chunkStore.js';
 
 export type FeatureLabelResolver = (feature: Feature, index: number, fallbackPrefix: string) => string;
 
 export async function expandOutputsForFeatureGroups(params: {
   nodeId: NodeId;
   outputs: DownloadStageOutput[];
-  artifactStore: Pick<SessionArtifactStore, 'getRawBuffer' | 'putRawBuffers'>;
+  artifactStore: Pick<SessionArtifactStore, 'getRawBuffer'>;
   decodeFeatureCollection: (buffer: ArrayBuffer) => Promise<FeatureCollection | null>;
   encodeFeatureCollection: (collection: FeatureCollection) => Promise<ArrayBuffer>;
   resolveFeatureLabel: FeatureLabelResolver;
@@ -26,16 +26,6 @@ export async function expandOutputsForFeatureGroups(params: {
   } = params;
 
   const expanded: DownloadStageOutput[] = [];
-  const newBuffers: Array<{
-    id: string;
-    nodeId: NodeId;
-    data: ArrayBuffer;
-    featureCount: number;
-    bbox: [number, number, number, number];
-    downloadTime: number;
-    size: number;
-    timestamp: number;
-  }> = [];
 
   for (const output of outputs) {
     const raw = await artifactStore.getRawBuffer(output.inputBufferId);
@@ -64,17 +54,11 @@ export async function expandOutputsForFeatureGroups(params: {
       const featureCollection: FeatureCollection = { type: 'FeatureCollection', features: [feature] };
       const bufferId = `${output.inputBufferId}-feature-${index}`;
       const data = await encodeFeatureCollection(featureCollection);
-      const bbox = turfBbox(featureCollection);
-
-      newBuffers.push({
-        id: bufferId,
-        nodeId: raw.nodeId,
-        data,
-        featureCount: 1,
-        bbox: [bbox[0], bbox[1], bbox[2], bbox[3]],
-        downloadTime: raw.downloadTime,
-        size: data.byteLength,
-        timestamp: Date.now(),
+      //const bbox = turfBbox(featureCollection);
+      await storeDownloadBufferForNode({
+        nodeId,
+        cacheKey: bufferId,
+        buffer: data,
       });
 
       expanded.push({
@@ -89,16 +73,11 @@ export async function expandOutputsForFeatureGroups(params: {
     }
   }
 
-  if (newBuffers.length > 0) {
-    await artifactStore.putRawBuffers(newBuffers);
-  }
-
   console.debug(`[Session ${String(nodeId)}] Expanded outputs for feature groups`, {
     inputOutputs: outputs.length,
     expandedOutputs: expanded.length,
-    createdBuffers: newBuffers.length,
+    createdBuffers: expanded.length - outputs.length,
   });
 
   return expanded;
 }
-
