@@ -15,8 +15,9 @@ import {
 } from '@tanstack/react-table';
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import { NodeContextMenu, NodeTypeIcon } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import { Skeleton, TableBody, TableCell, TableRow } from '@mui/material';
 import type { TreeNodeInUI, TreeTableCoreProps } from '../types.js';
-import { StyledTable, StyledTableContainer } from './TreeTableStyles.js';
+import { StyledTable, StyledTableContainer, StyledTableHead } from './TreeTableStyles.js';
 import { TreeTableRows } from './internal/TreeTableRows.js';
 import { TreeTableHeader } from './internal/TreeTableHeader.js';
 import { TreeTableContextMenu } from './internal/TreeTableContextMenu.js';
@@ -72,6 +73,7 @@ export function TreeTableCore({
     setObserverTarget,
     handleResizeStart,
     resizingColumn,
+    columnWidthsReady,
   } = useTreeTableColumnWidths({ pageNodeId });
 
   const handleContainerRef = useCallback((node: HTMLDivElement | null) => {
@@ -310,43 +312,101 @@ export function TreeTableCore({
     setContextMenuState({ anchorEl: null, anchorPosition: null, node: null });
   };
 
+  const renderSkeletonHeader = () => (
+    <TableRow>
+      {columns.map((column, index) => {
+        const columnId = column.id ?? (typeof column.accessorKey === 'string' ? column.accessorKey : `col-${index}`);
+        const width = columnWidths[columnId];
+        const isSelection = columnId === 'selection';
+        return (
+          <TableCell
+            key={`skeleton-header-${columnId}`}
+            sx={{
+              width: width ? `${width}px` : undefined,
+              minWidth: width ? `${width}px` : undefined,
+              maxWidth: width ? `${width}px` : undefined,
+              paddingLeft: '4px',
+              paddingRight: '4px',
+            }}
+          >
+            <Skeleton variant="text" width={isSelection ? 24 : '60%'} />
+          </TableCell>
+        );
+      })}
+    </TableRow>
+  );
+
+  const renderSkeletonRows = (count = 8) =>
+    Array.from({ length: count }).map((_, rowIndex) => (
+      <TableRow key={`skeleton-row-${rowIndex}`}>
+        {columns.map((column, index) => {
+          const columnId = column.id ?? (typeof column.accessorKey === 'string' ? column.accessorKey : `col-${index}`);
+          const width = columnWidths[columnId];
+          const isSelection = columnId === 'selection';
+          return (
+            <TableCell
+              key={`skeleton-cell-${columnId}-${rowIndex}`}
+              sx={{
+                width: width ? `${width}px` : undefined,
+                minWidth: width ? `${width}px` : undefined,
+                maxWidth: width ? `${width}px` : undefined,
+                paddingLeft: '4px',
+                paddingRight: '4px',
+              }}
+            >
+              <Skeleton variant={isSelection ? 'rectangular' : 'text'} width={isSelection ? 16 : '80%'} height={isSelection ? 16 : undefined} />
+            </TableCell>
+          );
+        })}
+      </TableRow>
+    ));
+
   return (
     <StyledTableContainer ref={handleContainerRef} sx={{ height: viewHeight || '100%', width: '100%' }}>
       <StyledTable>
-        <TreeTableHeader
-          table={table}
-          columnWidths={columnWidths}
-          resizingColumn={resizingColumn}
-          handleResizeStart={handleResizeStart}
-        />
+        {columnWidthsReady ? (
+          <>
+            <TreeTableHeader
+              table={table}
+              columnWidths={columnWidths}
+              resizingColumn={resizingColumn}
+              handleResizeStart={handleResizeStart}
+            />
 
-        <TreeTableRows
-          table={table}
-          visibleData={structure.visibleData}
-          columnWidths={columnWidths}
-          columnsLength={columns.length}
-          selectAll={selectAll}
-          selectAllHydrated={selectAllHydrated}
-          hasSelectedAncestor={structure.hasSelectedAncestor}
-          rowSelection={structure.rowSelection}
-          collectDescendantIds={structure.collectDescendantIds}
-          batchSelect={batchSelect}
-          depthOffset={depthOffset}
-          treeId={treeId}
-          pageNodeId={pageNodeId}
-          handleRowClick={handleRowClick}
-          handleRowDoubleClick={handleRowDoubleClick}
-          hoverDropTargetId={hoverDropTargetId}
-          setHoverDropTargetId={setHoverDropTargetId}
-          forbiddenTargets={forbiddenTargets}
-          setForbiddenTargets={setForbiddenTargets}
-          getDescendants={structure.getDescendants}
-          controller={controller ?? undefined}
-          disableDragAndDrop={disableDragAndDrop}
-          visualSelectionSet={visualSelectionSet}
-          useTrashColumns={useTrashColumns}
-          trashAction={trashAction}
-        />
+            <TreeTableRows
+              table={table}
+              visibleData={structure.visibleData}
+              columnWidths={columnWidths}
+              columnsLength={columns.length}
+              selectAll={selectAll}
+              selectAllHydrated={selectAllHydrated}
+              hasSelectedAncestor={structure.hasSelectedAncestor}
+              rowSelection={structure.rowSelection}
+              collectDescendantIds={structure.collectDescendantIds}
+              batchSelect={batchSelect}
+              depthOffset={depthOffset}
+              treeId={treeId}
+              pageNodeId={pageNodeId}
+              handleRowClick={handleRowClick}
+              handleRowDoubleClick={handleRowDoubleClick}
+              hoverDropTargetId={hoverDropTargetId}
+              setHoverDropTargetId={setHoverDropTargetId}
+              forbiddenTargets={forbiddenTargets}
+              setForbiddenTargets={setForbiddenTargets}
+              getDescendants={structure.getDescendants}
+              controller={controller ?? undefined}
+              disableDragAndDrop={disableDragAndDrop}
+              visualSelectionSet={visualSelectionSet}
+              useTrashColumns={useTrashColumns}
+              trashAction={trashAction}
+            />
+          </>
+        ) : (
+          <>
+            <StyledTableHead>{renderSkeletonHeader()}</StyledTableHead>
+            <TableBody>{renderSkeletonRows()}</TableBody>
+          </>
+        )}
       </StyledTable>
 
       <TreeTableContextMenu

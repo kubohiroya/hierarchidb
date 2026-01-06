@@ -4,7 +4,7 @@
  */
 
 import type React from 'react';
-import { useEffect, useRef, useState, useId } from 'react';
+import { useCallback, useEffect, useRef, useState, useId } from 'react';
 import {
   Alert,
   Box,
@@ -49,6 +49,7 @@ export interface TabularDataImportProps {
   onImportMethodChange?: (method: 'file' | 'url') => void;
   onUrlChange?: (url: string) => void;
   importSucceeded?: boolean;
+  autoStartDownload?: boolean;
 }
 
 export const TabularDataImport: React.FC<TabularDataImportProps> = ({
@@ -67,6 +68,7 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
                                                                       onImportMethodChange,
                                                                       onUrlChange,
                                                                       importSucceeded = false,
+                                                                      autoStartDownload = false,
                                                                     }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [urlInput, setUrlInput] = useState(initialUrl);
@@ -107,6 +109,7 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
   const quoteSelectId = `${quoteLabelId}-select`;
   const hasHeaderSwitchId = `${idPrefix}-has-header`;
   const skipEmptyLinesSwitchId = `${idPrefix}-skip-empty-lines`;
+  const autoDownloadTriggeredRef = useRef(false);
 
   useEffect(() => {
     setImportMethod(initialImportMethod);
@@ -139,7 +142,7 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
     processFile(file);
   };
 
-  const handleUrlDownload = () => {
+  const handleUrlDownload = useCallback(() => {
     if (!urlInput.trim()) {
       onError('Please enter a valid URL');
       return;
@@ -151,7 +154,21 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
     } catch {
       onError('Invalid URL format');
     }
-  };
+  }, [downloadTabularFromUrl, onError, processingConfig, urlInput]);
+
+  useEffect(() => {
+    if (!autoStartDownload) {
+      autoDownloadTriggeredRef.current = false;
+      return;
+    }
+    if (autoDownloadTriggeredRef.current) return;
+    if (disabled || isImporting) return;
+    if (importMethod !== 'url') return;
+    if (!urlInput.trim()) return;
+    if (importSucceeded) return;
+    autoDownloadTriggeredRef.current = true;
+    handleUrlDownload();
+  }, [autoStartDownload, disabled, handleUrlDownload, importMethod, importSucceeded, isImporting, urlInput]);
 
   const handleImportClick = () => {
     fileInputRef.current?.click();

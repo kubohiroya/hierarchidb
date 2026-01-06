@@ -360,7 +360,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
             flex: 1,
             minHeight: 0,
             display: 'grid',
-            gridTemplateColumns: { md: 'minmax(280px, 360px) 1fr' },
+            gridTemplateColumns: { md: 'minmax(281px, 420px) 1fr' },
             gap: { md: 2 },
             p: { md: 2 },
           }}

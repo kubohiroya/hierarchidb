@@ -16,8 +16,12 @@ import type {
   HierarchicalTreeNode,
 } from '@hierarchidb/ui-treeconsole-base';
 import { useTreeConsoleSSOT } from '~/state/treeconsole.atoms.ts';
+import { useLocation, useNavigate } from '@tanstack/react-router';
+import { resolveBuildTargetForNode, startBuildFlow } from './buildFlow.ts';
 
 type ContextMenuHandler = NonNullable<TreeConsolePanelProps['onContextMenuAction']>;
+
+type BuildStepTarget = import('./buildFlow.ts').BuildStepTarget;
 
 export interface UseTreeNodeInfoPanelParams {
   treeId?: TreeId;
@@ -32,6 +36,8 @@ export function useTreeNodeInfoPanel({
 }: UseTreeNodeInfoPanelParams) {
   const { t, i18n } = useTranslation();
   const locale = i18n?.resolvedLanguage ?? i18n?.language ?? 'en';
+  const navigate = useNavigate();
+  const location = useLocation();
   const workerCtx = useWorker();
   const workerClient = workerCtx?.client ?? null;
   const { state: ssot } = useTreeConsoleSSOT(node?.id ? String(node.id) : undefined);
@@ -40,6 +46,8 @@ export function useTreeNodeInfoPanel({
     [node?.id, ssot.nodeIndex]
   );
   const [currentNode, setCurrentNode] = useState<TreeNode | undefined>(node);
+  const [buildTarget, setBuildTarget] = useState<BuildStepTarget | null>(null);
+  const [buildTargetLoading, setBuildTargetLoading] = useState(false);
   const nodeData = useMemo(
     () => (currentNode ? convertTreeNodeToTreeNodeData(currentNode) : undefined),
     [currentNode]
@@ -69,6 +77,37 @@ export function useTreeNodeInfoPanel({
       return prev;
     });
   }, [indexedNode, node]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const resolveTarget = async () => {
+      const candidate = currentNode ?? node;
+      const nodeType = String(candidate?.nodeType ?? '');
+      if (!candidate?.id || !nodeType) {
+        setBuildTarget(null);
+        setBuildTargetLoading(false);
+        return;
+      }
+      if (isFolderNodeType(nodeType)) {
+        setBuildTarget(null);
+        setBuildTargetLoading(false);
+        return;
+      }
+      setBuildTargetLoading(true);
+      const target = await resolveBuildTargetForNode({
+        node: candidate,
+        workerClient,
+      });
+      if (!cancelled) {
+        setBuildTarget(target);
+        setBuildTargetLoading(false);
+      }
+    };
+    void resolveTarget();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentNode, node, workerClient]);
 
   useEffect(() => {
     setMenuNode(nodeData ?? null);
@@ -176,6 +215,25 @@ export function useTreeNodeInfoPanel({
     [nodeData, onContextMenuAction, currentNode]
   );
 
+  const returnTo = useMemo(() => {
+    const search = location.searchStr ?? '';
+    return `${location.pathname}${search}`;
+  }, [location.pathname, location.searchStr]);
+
+  const handleBuild = useCallback(async () => {
+    if (!treeId) return;
+    const candidate = currentNode ?? node;
+    if (!candidate?.id) return;
+    await startBuildFlow({
+      treeId,
+      pageNodeId: candidate.id as NodeId,
+      node: candidate,
+      returnTo,
+      workerClient,
+      navigate: (to) => navigate({ to }),
+    });
+  }, [treeId, currentNode, node, workerClient, returnTo, navigate]);
+
   const handleIconClick = useCallback(
     (event: MouseEvent<HTMLElement>) => {
       event.preventDefault();
@@ -218,7 +276,9 @@ export function useTreeNodeInfoPanel({
   const isDraft = Boolean(currentNode?.draftData);
 
   const labels = {
+    createdLabel: getString('treeConsole.infoPanel.createdLabel', 'Created'),
     createdAtLabel: formatTimestamp(currentNode?.createdAt),
+    updatedLabel: getString('treeConsole.infoPanel.updatedLabel', 'Updated'),
     updatedAtLabel: formatTimestamp(currentNode?.updatedAt),
     description,
     nodeTypeLabel,
@@ -226,8 +286,11 @@ export function useTreeNodeInfoPanel({
     nodeTypeCaption: getString('treeConsole.infoPanel.nodeTypeLabel', '{{type}}', {
       type: nodeTypeLabel,
     }),
+    draftLabel: getString('treeConsole.infoPanel.draftLabel', 'Draft'),
     editLabel: getString('treeConsole.infoPanel.editLabel', 'Edit'),
     editAria: getString('treeConsole.infoPanel.editButton', 'Edit node'),
+    buildLabel: getString('treeConsole.infoPanel.buildLabel', 'Build'),
+    buildAria: getString('treeConsole.infoPanel.buildButton', 'Start build'),
     previewLabel: getString('treeConsole.infoPanel.previewLabel', 'Preview'),
     previewAria: getString('treeConsole.infoPanel.previewButton', 'Preview node'),
     unnamedNodeLabel: getString('treeConsole.infoPanel.unnamedNode', 'Untitled node'),
@@ -238,6 +301,10 @@ export function useTreeNodeInfoPanel({
     ),
   };
 
+  const isBuildable =
+    Boolean(nodeTypeLabel && isFolderNodeType(nodeTypeLabel)) ||
+    Boolean(buildTarget?.stepNumber);
+
   return {
     currentNode,
     nodeData,
@@ -246,10 +313,13 @@ export function useTreeNodeInfoPanel({
     handleContextMenuTrigger,
     handleIconClick,
     handleMenuClose,
+    handleBuild,
     labels,
     nodeIconColor,
     canMutate,
     isDraft,
+    isBuildable,
+    buildTargetLoading,
     treeId,
   };
 }

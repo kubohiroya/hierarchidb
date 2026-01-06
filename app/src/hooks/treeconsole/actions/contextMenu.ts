@@ -14,9 +14,10 @@ import {
   resolvePreviewStepIndex,
   showCommandError,
 } from './helpers.ts';
-import type { NavigationHelpers } from './navigation.ts';
-import { PREVIEW_GUARD_MESSAGE, PREVIEW_GUARD_NODE_TYPES } from './dialog.ts';
-import { loadUIPlugin } from '../../../plugin-loaders/ui-plugin-loader.ts';
+import type { NavigationHelpers } from './navigation.js';
+import { PREVIEW_GUARD_MESSAGE, PREVIEW_GUARD_NODE_TYPES } from './dialog.js';
+import { loadUIPlugin } from '../../../plugin-loaders/ui-plugin-loader.js';
+import { startBuildFlow } from '../../../router/pages/tree/console/buildFlow.ts';
 
 type OpenEditDialog = (
   targetNodeId: NodeId,
@@ -50,6 +51,7 @@ export const createContextMenuAction = (deps: TreeConsoleActionDeps, helpers: Co
     pageNodeId,
     pushPath,
     selectedIds,
+    returnTo,
     ssot,
     setSSOT,
     loadChildrenOf,
@@ -194,6 +196,19 @@ export const createContextMenuAction = (deps: TreeConsoleActionDeps, helpers: Co
             initialStep: previewStepIndex ?? undefined,
             displayMode: shouldGuardPreview || previewStepIndex != null ? 'full' : undefined,
             action: 'preview',
+          });
+          return;
+        }
+
+        if (normalizedAction === 'build') {
+          if (!client || !treeId || !pushPath || !returnTo) return;
+          await startBuildFlow({
+            treeId,
+            pageNodeId: targetNodeId,
+            node,
+            returnTo,
+            workerClient: client,
+            navigate: (to) => pushPath(to),
           });
           return;
         }
@@ -361,4 +376,3 @@ export const createContextMenuAction = (deps: TreeConsoleActionDeps, helpers: Co
     },
   };
 };
-

@@ -26,6 +26,7 @@ export interface UseTreeTableColumnWidthsOptions {
 export interface UseTreeTableColumnWidthsResult {
   columnWidths: Record<string, number>;
   columnWidthsHydrated: boolean;
+  columnWidthsReady: boolean;
   resizingColumn: string | null;
   containerRef: RefObject<HTMLDivElement | null>;
   setContainerElement: (element: HTMLDivElement | null) => void;
@@ -57,6 +58,13 @@ export function useTreeTableColumnWidths({ pageNodeId }: UseTreeTableColumnWidth
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => resolveInitialColumnWidths(pageNodeId));
   const [columnWidthsHydrated, setColumnWidthsHydrated] = useState<boolean>(!pageNodeId);
   const [resizingColumn, setResizingColumn] = useState<string | null>(null);
+  const [hasMeasured, setHasMeasured] = useState<boolean>(false);
+  const hasMeasuredRef = useRef(false);
+
+  useEffect(() => {
+    setHasMeasured(false);
+    hasMeasuredRef.current = false;
+  }, [pageNodeId]);
 
   // Hydrate widths from cache/IndexedDB
   useEffect(() => {
@@ -120,6 +128,10 @@ export function useTreeTableColumnWidths({ pageNodeId }: UseTreeTableColumnWidth
       const rect = container.getBoundingClientRect();
       const width = Math.floor(container.clientWidth || rect.width);
       if (Number.isNaN(width) || width <= 0) return;
+      if (!hasMeasuredRef.current) {
+        hasMeasuredRef.current = true;
+        setHasMeasured(true);
+      }
 
       setColumnWidths((prev) => {
         const fixedSum = Object.entries(prev)
@@ -220,6 +232,7 @@ export function useTreeTableColumnWidths({ pageNodeId }: UseTreeTableColumnWidth
   return {
     columnWidths,
     columnWidthsHydrated,
+    columnWidthsReady: columnWidthsHydrated && hasMeasured,
     resizingColumn,
     containerRef,
     setContainerElement,

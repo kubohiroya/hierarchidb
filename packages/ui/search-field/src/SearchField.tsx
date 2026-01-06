@@ -4,8 +4,8 @@ import { styled } from '@mui/material/styles';
 import SearchIcon from '@mui/icons-material/Search';
 
 const BASE_SEARCH_FIELD_WIDTH_PX = 300;
-const SEARCH_FIELD_WIDTH_PX = Math.round(BASE_SEARCH_FIELD_WIDTH_PX * 1.4);
-const SEARCH_FIELD_MIN_WIDTH_PX = Math.round(SEARCH_FIELD_WIDTH_PX * 0.67);
+export const SEARCH_FIELD_WIDTH_PX = Math.round(BASE_SEARCH_FIELD_WIDTH_PX * 1.4);
+export const SEARCH_FIELD_MIN_WIDTH_PX = Math.round(SEARCH_FIELD_WIDTH_PX * 0.67);
 const SEARCH_INPUT_ID = 'ui-search-field-input';
 const SEARCH_INPUT_LABEL_ID = 'ui-search-field-input-label';
 

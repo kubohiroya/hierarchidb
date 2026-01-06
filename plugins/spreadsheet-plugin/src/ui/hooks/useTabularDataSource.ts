@@ -71,6 +71,14 @@ export const useTabularDataSource = ({
     dialogData.dataSource?.type === 'url' || dialogData.dataSource?.source?.startsWith('http') ? 'url' : 'file';
   const derivedUrl = dialogData.dataSource?.source ?? '';
   const derivedProcessing = dialogData.tabularProcessingConfig;
+  const autoStartDownload = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    const { search, hash } = window.location;
+    const hashQueryIndex = hash.indexOf('?');
+    const hashQuery = hashQueryIndex >= 0 ? hash.slice(hashQueryIndex + 1) : '';
+    const params = new URLSearchParams(search || hashQuery);
+    return params.get('build') === '1';
+  }, []);
 
   const [importMethod, setImportMethod] = useState<ImportMethod>(derivedImportMethod);
   const [downloadUrl, setDownloadUrl] = useState(derivedUrl);
@@ -224,6 +232,7 @@ export const useTabularDataSource = ({
       onChange({ ...dialogData, tabularProcessingConfig: cfg });
     },
     importSucceeded,
+    autoStartDownload,
   };
 
   return {

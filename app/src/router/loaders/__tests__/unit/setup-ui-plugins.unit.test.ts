@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { setupUIPlugins } from '../../uiPlugins.js';
 
 // Mock the ui-loader to avoid loading actual plugin-loaders in tests
-vi.mock('../../../../plugin-loaders/ui-plugin-loader.ts', () => ({
+vi.mock('../../../../plugin-loaders/ui-plugin-loader.js', () => ({
   loadAllUIPlugins: vi.fn().mockResolvedValue(undefined),
   resetUiPluginLoadStateForTesting: vi.fn(),
 }));

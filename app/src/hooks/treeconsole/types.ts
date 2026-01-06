@@ -25,6 +25,7 @@ export type ContextAction =
   | 'open'
   | 'openFolder'
   | 'preview'
+  | 'build'
   | 'edit'
   | 'rename-inline'
   | 'update-desc-inline'
@@ -46,6 +47,7 @@ export interface UseTreeConsoleIntegrationParams {
   pageTreeNode?: TreeNode;
   pushPath?: (to: string | number) => void;
   locationSearch?: string;
+  returnTo?: string;
 }
 
 export interface TreeConsoleState {
@@ -131,6 +133,7 @@ export interface TreeConsoleActionDeps {
   selectedIds: NodeId[];
   expandedIds: NodeId[];
   locale?: string;
+  returnTo?: string;
   setState: Dispatch<SetStateAction<TreeConsoleState>>;
   setSSOT: (patch: Partial<TreeConsoleSSOTEntry>) => void;
   ssot: TreeConsoleSSOTEntry;

@@ -74,7 +74,7 @@ export async function fetchGeoBoundariesMetadata(nodeId: NodeId): Promise<Countr
   const store = createShapeChunkStoreWithNetworkPort(
     jsonSerializer,
     jsonDeserializer,
-    createShapeNetworkPort(),
+    createShapeNetworkPort({ auth: { enabled: false } }),
   );
   const entry = await store.getOrFetchForNode(nodeId, GEOBOUNDARIES_ALL_METADATA_URL, {
     accept: 'application/json',
@@ -262,7 +262,7 @@ export async function fetchGadmMetadata(nodeId: NodeId): Promise<CountryMetadata
   const store = createShapeChunkStoreWithNetworkPort(
     textSerializer,
     textDeserializer,
-    createShapeNetworkPort(),
+    createShapeNetworkPort({ auth: { enabled: false } }),
   );
   const htmlEntry = await store.getOrFetchForNode(nodeId, GADM_MAPS_URL, {
     accept: 'text/html',

@@ -38,6 +38,7 @@ export function useTreeConsoleIntegration({
   pageTreeNode,
   pushPath,
   locationSearch,
+  returnTo,
 }: UseTreeConsoleIntegrationParams) {
   const {
     state: ssot,
@@ -334,6 +335,7 @@ export function useTreeConsoleIntegration({
         locale,
         selectedIds,
         expandedIds,
+        returnTo,
         setState,
         setSSOT,
         ssot,
@@ -361,6 +363,7 @@ export function useTreeConsoleIntegration({
       ssot,
       teardownSubscription,
       treeId,
+      returnTo,
     ]
   );
 

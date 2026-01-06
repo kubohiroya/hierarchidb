@@ -8,7 +8,7 @@ import { composeStepConfigs } from '@hierarchidb/plugin-base';
 import { DualKeyMap } from '@hierarchidb/util';
 import type { TreeConsoleActionDeps } from '../types.js';
 import { showCommandError } from './helpers.ts';
-import { loadUIPlugin } from '../../../plugin-loaders/ui-plugin-loader.ts';
+import { loadUIPlugin } from '../../../plugin-loaders/ui-plugin-loader.js';
 
 export const PREVIEW_GUARD_NODE_TYPES = new Set([
   'basemap',

@@ -12,6 +12,7 @@ import {
   Clear as ClearIcon,
   ContentCopy as ContentCopyIcon,
   ContentCut as ContentCutIcon,
+  Construction as ConstructionIcon,
   Edit as EditIcon,
   FileCopy as DuplicateIcon,
   Folder as FolderIcon,
@@ -21,9 +22,11 @@ import {
 } from '@mui/icons-material';
 import { useIconRegistry } from '@hierarchidb/ui-icon';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
+import { isFolderNodeType } from '../utils/nodeTypeIconColor.js';
 type CreateMenuEntry = { key: string; nodeType: string; label: string; description?: string; icon?: { muiIconName?: string; emoji?: string; color?: string } };
 type CreateMenuBuilder = (treeId?: string) => CreateMenuEntry[];
 type GlobalMenuBuilders = { buildMenuItemsForTreeId?: CreateMenuBuilder; buildMenuItemsForContext?: CreateMenuBuilder };
+const buildableNodeTypes = new Set(['styler', 'shape', 'location', 'route']);
 
 const logNodeContextMenuWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -48,9 +51,11 @@ export interface NodeContextMenuProps {
   canDuplicate?: boolean;
   canCopy?: boolean;
   canCut?: boolean;
+  canBuild?: boolean;
   onOpen?: () => void;
   onOpenFolder?: () => void;
   onPreview?: () => void;
+  onBuild?: () => void;
   onEdit?: () => void;
   onCreate?: (type: string) => void;
   onDuplicate?: () => void;
@@ -89,9 +94,11 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     canDuplicate = true,
     canCopy = true,
     canCut = true,
+    canBuild,
     onOpen: _onOpen,
     onOpenFolder: _onOpenFolder,
     onPreview: _onPreview,
+    onBuild: _onBuild,
     onEdit: _onEdit,
     onCreate: _onCreate,
     onDuplicate: _onDuplicate,
@@ -132,10 +139,17 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
   const visibleLabel = translateWithFallback('treeConsole.contextMenu.visible', 'Visible');
   const hiddenLabel = translateWithFallback('treeConsole.contextMenu.hidden', 'Hidden');
   const previewLabel = translateWithFallback('treeConsole.contextMenu.preview', 'Preview');
+  const buildLabel = translateWithFallback('treeConsole.contextMenu.build', 'Build');
   const effectiveVisible =
     localInvisible !== null ? !localInvisible : (typeof isVisible === 'boolean' ? isVisible : true);
   const effectiveInvisible = !effectiveVisible;
   const canPreview = !effectiveInvisible;
+  const normalizedNodeType = String(nodeType ?? '').trim().toLowerCase();
+  const canBuildEntry =
+    Boolean(_onBuild) &&
+    (typeof canBuild === 'boolean'
+      ? canBuild
+      : isFolderNodeType(nodeType) || buildableNodeTypes.has(normalizedNodeType));
 
   // Use refs to store the latest props to avoid stale closures
   const propsRef = useRef(props);
@@ -244,6 +258,13 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     blurActive();
     handleMainMenuClose();
     setTimeout(() => { onPreview?.(); }, 0);
+  }, [blurActive, handleMainMenuClose]);
+
+  const handleBuildClick = useCallback(() => {
+    const onBuild = propsRef.current.onBuild;
+    blurActive();
+    handleMainMenuClose();
+    setTimeout(() => { onBuild?.(); }, 0);
   }, [blurActive, handleMainMenuClose]);
 
   const handleToggleVisible = useCallback(() => {
@@ -441,6 +462,18 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
 
         {[
           <Divider key="divider-preview" />,
+          canBuildEntry ? (
+            <MenuItem
+              key="menuitem-build"
+              onClick={handleBuildClick}
+              aria-label={buildLabel}
+            >
+              <ListItemIcon>
+                <ConstructionIcon />
+              </ListItemIcon>
+              <ListItemText primary={buildLabel} />
+            </MenuItem>
+          ) : null,
           <MenuItem
             key="menuitem-preview"
             onClick={handlePreviewClick}
@@ -452,7 +485,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
             </ListItemIcon>
             <ListItemText primary={previewLabel} />
           </MenuItem>,
-        ]}
+        ].filter(Boolean)}
       </Menu>
 
       {/*

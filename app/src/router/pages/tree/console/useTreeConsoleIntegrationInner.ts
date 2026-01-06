@@ -93,6 +93,7 @@ export function useTreeConsoleIntegrationInner({
       navigate({ to, replace: false });
     },
     locationSearch: location.searchStr,
+    returnTo: `${location.pathname}${location.searchStr ?? ''}`,
   });
 
   const [speedDialSuppressed, setSpeedDialSuppressed] = useState(false);

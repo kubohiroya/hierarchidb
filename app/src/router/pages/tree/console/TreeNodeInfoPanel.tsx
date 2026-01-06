@@ -1,8 +1,9 @@
 import { Button, Divider, Paper, Stack, Tooltip, Typography, Alert, Box, IconButton, Chip } from '@mui/material';
-import { Edit as EditIcon, PlayArrow as PlayArrowIcon, Close as CloseIcon } from '@mui/icons-material';
+import { Edit as EditIcon, PlayArrow as PlayArrowIcon, Close as CloseIcon, Construction as ConstructionIcon } from '@mui/icons-material';
 import { NodeContextMenu, NodeTypeIcon } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import type { TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { TreeConsolePanelProps } from '@hierarchidb/ui-treeconsole-base';
+import { SEARCH_FIELD_MIN_WIDTH_PX, SEARCH_FIELD_WIDTH_PX } from '@hierarchidb/ui-search-field';
 import { useNavigate } from '@tanstack/react-router';
 import { useTreeNodeInfoPanel } from './useTreeNodeInfoPanel.js';
 
@@ -23,10 +24,13 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
     handleContextMenuTrigger,
     handleIconClick,
     handleMenuClose,
+    handleBuild,
     labels,
     nodeIconColor,
     canMutate,
     isDraft,
+    isBuildable,
+    buildTargetLoading,
   } = useTreeNodeInfoPanel({ treeId, node, onContextMenuAction });
   const isVisible = currentNode?.visible !== false;
   const parentNodeId = currentNode?.parentId;
@@ -60,7 +64,8 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
         elevation={2}
         sx={{
           width: '100%',
-          maxWidth: 640,
+          maxWidth: `${SEARCH_FIELD_WIDTH_PX}px`,
+          minWidth: `${SEARCH_FIELD_MIN_WIDTH_PX}px`,
           p: { xs: 1, md: 1 },
           textAlign: 'center',
           display: 'flex',
@@ -110,7 +115,7 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
           </Typography>
           {isDraft && (
             <Chip
-              label="Draft"
+              label={labels.draftLabel}
               size="small"
               color="error"
               variant="filled"
@@ -141,10 +146,10 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
           alignItems="center"
         >
           <Typography variant="body2" color="text.secondary">
-            Created: {labels.createdAtLabel}
+            {labels.createdLabel}: {labels.createdAtLabel}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Updated: {labels.updatedAtLabel}
+            {labels.updatedLabel}: {labels.updatedAtLabel}
           </Typography>
         </Stack>
 
@@ -158,6 +163,17 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
           >
             {labels.editLabel}
           </Button>
+          {isBuildable && (
+            <Button
+              variant="outlined"
+              startIcon={<ConstructionIcon />}
+              onClick={handleBuild}
+              aria-label={labels.buildAria}
+              disabled={buildTargetLoading}
+            >
+              {labels.buildLabel}
+            </Button>
+          )}
           <Button
             variant="outlined"
             startIcon={<PlayArrowIcon />}
@@ -186,9 +202,11 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
         canCut={canMutate}
         canTrash={canMutate}
         canRemove={canMutate}
+        canBuild={isBuildable}
         onOpen={() => handleContextMenuTrigger('navigate')}
         onOpenFolder={() => handleContextMenuTrigger('navigate')}
         onPreview={() => handleContextMenuTrigger('preview')}
+        onBuild={handleBuild}
         onEdit={() => handleContextMenuTrigger('edit')}
         onDuplicate={() => handleContextMenuTrigger('duplicate')}
         onCopy={() => handleContextMenuTrigger('copy')}

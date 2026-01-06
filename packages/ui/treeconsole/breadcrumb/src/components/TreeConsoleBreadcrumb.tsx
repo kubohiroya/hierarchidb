@@ -274,6 +274,12 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
     }
   };
 
+  const handleBuild = () => {
+    if (contextMenuNode && onContextAction) {
+      onContextAction('build', contextMenuNode, { source: 'breadcrumb' });
+    }
+  };
+
   const handleTrash = () => {
     if (contextMenuNode) {
       setPendingDeleteNodeId(contextMenuNode.id || contextMenuNode.id || '');
@@ -502,6 +508,10 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
           if (contextMenuNode && onContextAction) {
             onContextAction('preview', contextMenuNode, { source: 'breadcrumb' });
           }
+          handleContextMenuClose();
+        }}
+        onBuild={() => {
+          handleBuild();
           handleContextMenuClose();
         }}
       />

@@ -1,3 +1,81 @@
+2118) fix/app/treetable-skeleton-until-columns-ready (P1) — 進行中 (2026-01-11)
+- ブランチ名: fix/app/treetable-skeleton-until-columns-ready
+- 依存: なし
+- 受け入れ基準: TreeTableCore 表示時にカラム幅調整完了までは TreeTableConsole の本体が MUI Skeleton 表示になる／調整完了後に実データ表示へ切り替わる／/t/... の初回表示でコンテンツの激しい動揺が発生しない／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/pages/tree/console/**`（調査後に絞り込み）
+- ロールバック手順: TreeTableConsole の Skeleton 表示差分を revert し、従来の即時表示へ戻す
+- チェックリスト:
+  - TreeTableCore/TreeTableConsole でカラム幅安定化の検知ポイントを特定する
+  - 安定化完了まで Skeleton 表示に切り替える
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 17:05 JST TreeTableCore のカラム幅安定化前に Skeleton 表示へ切替する対応に着手。
+  - update: 2026-01-11 17:20 JST カラム幅の計測完了までは Skeleton を表示し、完了後に本体表示へ切替するよう実装。検証: 未実施。
+
+2119) fix/app/tree-node-info-panel-i18n (P1) — 進行中 (2026-01-11)
+- ブランチ名: fix/app/tree-node-info-panel-i18n
+- 依存: なし
+- 受け入れ基準: `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx` の表示文言が i18n 経由になる／既存の挙動と文言の意味が変わらない／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx`
+- ロールバック手順: i18n 化の差分を revert し、従来の固定文言へ戻す
+- チェックリスト:
+  - TreeNodeInfoPanel の固定文言を抽出する
+  - i18n キーへ置換し既存文言をデフォルト値に設定する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 18:05 JST TreeNodeInfoPanel の i18n 化対応に着手。
+  - update: 2026-01-11 18:10 JST Draft/Created/Updated ラベルを i18n 経由に置換。検証: 未実施。
+  - update: 2026-01-11 18:20 JST TreeNodeInfoPanel のボタン/ラベル文言をロケール辞書へ追加し i18n 化を補完。検証: 未実施。
+
+2120) feat/app/tree-console-contextmenu-build (P1) — 完了 (2026-01-11)
+- ブランチ名: feat/app/tree-console-contextmenu-build
+- 依存: なし
+- 受け入れ基準: styler/shape/location/route/folder のノードでコンテキストメニューに Build が表示される／アイコンは Construction でラベルは i18n 化される／ビルド起動は TreeNodeInfoPanel と同じ導線で実行される／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/treeconsole/breadcrumb/src/components/NodeContextMenu.tsx`, `app/src/hooks/treeconsole/actions/contextMenu.ts`, `app/src/router/pages/tree/console/**`, `app/public/locales/**`, `packages/ui/i18n/public/locales/**`
+- ロールバック手順: 追加した Build メニュー項目とアクションの差分を revert し、従来のコンテキストメニューに戻す
+- チェックリスト:
+  - Build メニュー項目の表示条件（nodeType 判定）を実装する
+  - ContextMenu の Build クリックでビルド導線を開始する
+  - i18n ラベルを追加する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 19:00 JST TreeConsole のコンテキストメニューに Build を追加する対応に着手。
+  - update: 2026-01-11 19:40 JST Build メニュー項目の表示条件・i18n・ビルド導線を接続。検証: 未実施。
+  - done: 2026-01-11 19:45 JST Build メニューの結線と TreeNodeInfoPanel 経路の共通化まで完了。検証: 未実施。
+
+2121) fix/app/tree-node-info-panel-width-align-searchfield (P1) — 進行中 (2026-01-11)
+- ブランチ名: fix/app/tree-node-info-panel-width-align-searchfield
+- 依存: なし
+- 受け入れ基準: TreeConsole の TreeNodeInfoPanel 表示時に横幅が SearchField と一致する／他画面や他パネルのレイアウトに影響がない／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx`, `packages/ui/search-field/src/SearchField.tsx`（必要に応じて）
+- ロールバック手順: 追加した幅調整差分を revert し、従来の幅へ戻す
+- チェックリスト:
+  - SearchField の幅仕様を確認する
+  - TreeNodeInfoPanel の幅を SearchField に揃える
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 19:20 JST TreeNodeInfoPanel の幅を SearchField に揃える対応に着手。
+  - update: 2026-01-11 19:30 JST SearchField の幅定数をエクスポートし TreeNodeInfoPanel の max/min 幅を揃えるよう調整。検証: 未実施。
+  - update: 2026-01-11 20:05 JST TreeConsole の split view カラム幅を SearchField と同じ 281-420px に調整。検証: 未実施。
+
+2117) feat/app/tree-node-info-panel-build-flow (P1) — 進行中 (2026-01-11)
+- ブランチ名: feat/app/tree-node-info-panel-build-flow
+- 依存: なし
+- ExecPlan: plans/tree-node-info-panel-build-flow-execplan.md
+- 受け入れ基準: TreeNodeInfoPanel に Build ボタンが追加され、build/download 対象ノードで自動ビルド/自動ダウンロードが実行される／folder ノードで子孫・先祖の自動ビルドが順次実行される／完了後に元の pageNodeId に戻る／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx`, `app/src/router/pages/tree/console/useTreeNodeInfoPanel.ts`, `app/src/router/routes/tree/PluginDialogRoute.tsx`, `packages/plugin-ui-host/src/headless/usePluginDialogController.tsx`, `packages/ui/tabular-extract/src/components/TabularDataImport.tsx`（必要に応じて）
+- ロールバック手順: 上記ファイルの差分を revert し、Build ボタン/自動ビルド導線を元に戻す
+- チェックリスト:
+  - build/download 対象ノードの判定と遷移 URL を整理する
+  - ?build=1 で自動ビルド/ダウンロードが走る導線を実装する
+  - folder のビルドシーケンス遷移と復帰を実装する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 16:40 JST TreeNodeInfoPanel の Build ボタンと自動ビルド導線の設計に着手。
+  - update: 2026-01-06 07:53 JST ExecPlan を作成（plans/tree-node-info-panel-build-flow-execplan.md）。検証: 未実施。
+  - update: 2026-01-11 17:35 JST Build ボタンのアイコンを Construction に統一する指示を反映する作業に着手。検証: 未実施。
+  - update: 2026-01-11 17:45 JST Build ボタンのアイコン更新、auto build/return と auto download を実装。検証: 未実施。
+
 2116) fix/app/trash-restore-refresh (P1) — 進行中 (2026-01-11)
 - ブランチ名: fix/app/trash-restore-refresh
 - 依存: なし
@@ -361,6 +439,7 @@
 - 運用ログ：
   - start: 2026-01-11 04:45 JST Step3 の認証警告表示の抑制に着手。
   - update: 2026-01-11 05:05 JST shape の AUTH_REQUIRED を UI 表示せず、キャンセル通知も返さないよう修正。検証: 未実施。
+  - update: 2026-01-11 05:15 JST Step3 のメタデータ取得は auth 無効のネットワークポートに変更し、AUTH_REQUIRED を発生させない形へ調整。検証: 未実施。
 
 2100) fix/shape/step5-vectortile-task-sort (P2) — 完了 (2026-01-11)
 - ブランチ名: fix/shape/step5-vectortile-task-sort
@@ -2004,3 +2083,16 @@
 - 運用ログ：
   - start: 2026-01-07 10:15 JST Step5 ラジオボタンのラベルクリック対応に着手。
   - done: 2026-01-07 11:05 JST FormControlLabel でラジオとラベルを結合し、ラベルクリックで選択できるよう修正。検証: 未実施（UI クリック範囲改善のみ、手動/自動テスト未実行）。ロールバック: 上記差分を revert。
+2118) fix/app/comlink-apply-on-load (P1) — 進行中 (2026-01-11)
+- ブランチ名: fix/app/comlink-apply-on-load
+- 依存: なし
+- 受け入れ基準: `http://localhost:4200/` へのアクセスだけで `comlink.mjs:51 ... apply` エラーが再現しない／原因・発生範囲・修正方法と適用範囲を説明する／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/**`, `packages/plugin-service-sdk/src/**`, `packages/runtime-worker/src/**`（調査後に絞り込み）
+- ロールバック手順: 該当差分を revert し、アクセス時の Comlink 初期化挙動を元に戻す
+- チェックリスト:
+  - エラー発生箇所と再現条件を特定する
+  - Comlink 呼び出しで undefined になる経路を修正する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 17:10 JST localhost:4200 アクセス時の Comlink apply エラー調査に着手。
+  - update: 2026-01-11 17:32 JST useTreeNodeInfoPanel の ui-plugin-loader import パスを修正し、Vite の import 解決エラーを解消。検証: 未実施。

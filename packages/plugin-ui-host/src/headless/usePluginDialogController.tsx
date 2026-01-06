@@ -69,6 +69,10 @@ export interface PluginDialogControllerOptions {
   onSuccess?: (nodeId: NodeId) => void;
   footerOptions?: PluginDialogFooterOptions;
   autosaveEnabled?: boolean;
+  autoBuild?: {
+    enabled?: boolean;
+    onComplete?: () => void;
+  };
 }
 
 export interface PluginDialogFooterOptions {
@@ -212,6 +216,7 @@ export function usePluginDialogController(
     onSuccess,
     footerOptions,
     autosaveEnabled: autosaveEnabledProp,
+    autoBuild,
   } = options;
   const dialogMode = mode;
   const stepMode: 'create' | 'edit' = dialogMode === 'preview' ? 'edit' : dialogMode;
@@ -435,6 +440,31 @@ export function usePluginDialogController(
     [iconNodeType, presentation?.icon, resolveIcon]
   );
   const isFolder = nodeType === 'folder';
+  const autoBuildEnabled = Boolean(autoBuild?.enabled);
+
+  const isAutoBuildComplete = useCallback(
+    (data: Partial<PluginDefinedEntity>): boolean => {
+      const record = data as Record<string, unknown>;
+      const processingStatus = record.processingStatus;
+      const buildFinishedAt = record.buildFinishedAt;
+      if (typeof processingStatus === 'string' && processingStatus === 'completed') {
+        return true;
+      }
+      if (typeof buildFinishedAt === 'number' && Number.isFinite(buildFinishedAt)) {
+        return true;
+      }
+      const spreadsheetMetadataId = record.spreadsheetMetadataId;
+      if (typeof spreadsheetMetadataId === 'string' && spreadsheetMetadataId.trim().length > 0) {
+        return true;
+      }
+      const dataSource = record.dataSource as { sizeBytes?: unknown } | undefined;
+      if (typeof dataSource?.sizeBytes === 'number' && dataSource.sizeBytes > 0) {
+        return true;
+      }
+      return false;
+    },
+    []
+  );
 
   const dialogTitle = useMemo(() => {
     const label = presentation?.label || nodeType;
@@ -750,6 +780,20 @@ export function usePluginDialogController(
     startBatchHandlerRef.current = handleStartBatch;
   }, [handleStartBatch]);
 
+  const autoBuildStartedRef = useRef(false);
+  const autoBuildCompleteRef = useRef(false);
+  useEffect(() => {
+    autoBuildStartedRef.current = false;
+    autoBuildCompleteRef.current = false;
+  }, [nodeId, autoBuildEnabled]);
+  useEffect(() => {
+    if (!autoBuildEnabled || !open) return;
+    if (!activeStartBatch || !canStartBatch) return;
+    if (autoBuildStartedRef.current) return;
+    autoBuildStartedRef.current = true;
+    handleStartBatch().catch(() => void 0);
+  }, [autoBuildEnabled, open, activeStartBatch, canStartBatch, handleStartBatch]);
+
   const HeaderComponent = useMemo<HeadlessDialogProps<Partial<PluginDefinedEntity>>['HeaderComponent']>(
     () => createHeaderComponent(dialogTitle, headerSubtitle, icon, pendingAction),
     [dialogTitle, headerSubtitle, icon, pendingAction],
@@ -831,6 +875,16 @@ export function usePluginDialogController(
     () => createFooterComponent(footerPropsRef),
     [],
   );
+
+  useEffect(() => {
+    if (!autoBuildEnabled || !open) return;
+    if (autoBuildCompleteRef.current) return;
+    const requiresStartBatch = Boolean(activeStartBatch);
+    if (requiresStartBatch && !autoBuildStartedRef.current) return;
+    if (!isAutoBuildComplete(dialogData)) return;
+    autoBuildCompleteRef.current = true;
+    autoBuild?.onComplete?.();
+  }, [activeStartBatch, autoBuild, autoBuildEnabled, dialogData, isAutoBuildComplete, open]);
 
   const persistDialogUIStateOnClose = useCallback(async () => {
     if (dialogMode === 'create' || dialogMode === 'preview') return;

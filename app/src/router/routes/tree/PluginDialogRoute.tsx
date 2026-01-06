@@ -5,10 +5,11 @@
 
 import { NodeAction, type NodeId, type TreeId } from '@hierarchidb/common-types';
 import { PluginDialogHost } from '@hierarchidb/ui-plugin-shell/plugin-ui-host';
-import { useLoaderData, useNavigate } from '@tanstack/react-router';
+import { useLoaderData, useLocation, useNavigate } from '@tanstack/react-router';
 import React from 'react';
 import type { LoadNodeActionReturn } from '../../loaders/treeLoaders.js';
 import { TREE_CONSOLE_SETTINGS_STORAGE_KEY, loadTreeConsoleSettings } from '@hierarchidb/util';
+import { shiftBuildQueue } from '../../pages/tree/console/buildQueue.ts';
 
 type TreeDialogRouteParams = {
   treeId: string;
@@ -37,6 +38,14 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
   const { tree, pageNodeId, targetNodeId, nodeType, action, params } = data;
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchParams = React.useMemo(
+    () => new URLSearchParams(location.searchStr ?? ''),
+    [location.searchStr],
+  );
+  const autoBuildEnabled = searchParams.get('build') === '1';
+  const buildQueueKey = searchParams.get('buildQueue') ?? undefined;
+  const returnToParam = searchParams.get('returnTo') ?? undefined;
   // State
   const [isOpen, setIsOpen] = React.useState(true);
   const [backdropDismissEnabled, setBackdropDismissEnabled] = React.useState<boolean>(() => {
@@ -132,6 +141,27 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
   const resolvedPageNodeId = effectivePageNodeId as NodeId;
   const resolvedNodeType = effectiveNodeType as string;
 
+  const handleAutoBuildComplete = React.useCallback(() => {
+    if (!autoBuildEnabled) return;
+    if (buildQueueKey) {
+      const next = shiftBuildQueue(buildQueueKey);
+      if (next?.nextUrl) {
+        void navigate({ to: next.nextUrl });
+        return;
+      }
+      const fallback = next?.returnTo ?? returnToParam;
+      if (fallback) {
+        void navigate({ to: fallback });
+        return;
+      }
+    }
+    if (returnToParam) {
+      void navigate({ to: returnToParam });
+      return;
+    }
+    void navigate({ to: `/t/${resolvedTreeId}/${resolvedPageNodeId}` });
+  }, [autoBuildEnabled, buildQueueKey, navigate, resolvedPageNodeId, resolvedTreeId, returnToParam]);
+
   // Handle close
   const handleClose = () => {
     setIsOpen(false);
@@ -161,6 +191,7 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
       initialStep={currentStep}
       forceInitialStep={forceInitialStep}
       backdropDismissEnabled={backdropDismissEnabled}
+      autoBuild={autoBuildEnabled ? { enabled: true, onComplete: handleAutoBuildComplete } : undefined}
     />
   );
 };

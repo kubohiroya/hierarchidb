@@ -137,6 +137,12 @@ export function TreeTableContextMenu({
         }
         handleClose();
       }}
+      onBuild={() => {
+        if (node) {
+          triggerContextAction('build', { source: 'treetable' });
+        }
+        handleClose();
+      }}
     />
   );
 }
