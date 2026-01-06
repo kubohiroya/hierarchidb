@@ -146,7 +146,7 @@ export function AuthRequiredDialog({
   cancelLabel,
 }: AuthRequiredDialogProps) {
   const bffAuth = useBFFAuthService();
-  const { signIn, user, isAuthenticated, refreshToken } = bffAuth;
+  const { signIn, user, isAuthenticated } = bffAuth;
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<AuthProvider | null>(null);

@@ -75,7 +75,7 @@ export function AuthRequiredDialogHost(): JSX.Element | null {
     return () => {
       registry.unregister(HANDLER_ID);
     };
-  }, [registry]);
+  }, [getAccessToken, isAuthenticated, registry, user?.expires_at]);
 
   if (!notification) return null;
 
