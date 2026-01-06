@@ -88,13 +88,13 @@
 
         // Add a flag to prevent redirect loops
         const redirectKey = 'auth_callback_redirect_' + Date.now();
-        if (sessionStorage.getItem(redirectKey)) {
+        if (localStorage.getItem(redirectKey)) {
           console.log('[auth-callback] Redirect loop detected, skipping');
           return;
         }
-        sessionStorage.setItem(redirectKey, 'true');
+        localStorage.setItem(redirectKey, 'true');
         // Clean up after a short delay
-        setTimeout(() => sessionStorage.removeItem(redirectKey), 5000);
+        setTimeout(() => localStorage.removeItem(redirectKey), 5000);
 
         // Build the SPA callback URL
         const spaCallbackUrl = buildSPACallbackUrl(appPath, currentSearch, currentHash);

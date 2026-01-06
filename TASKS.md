@@ -1,3 +1,18 @@
+2122) fix/auth/localstorage-only-worker-bridge (P1) — 進行中 (2026-01-11)
+- ブランチ名: fix/auth/localstorage-only-worker-bridge
+- 依存: なし
+- 受け入れ基準: 認証関連の sessionStorage 利用が完全に撤去され localStorage に統一される／Worker 側から UI の localStorage を操作できるブリッジ API が追加される／auth フローが sessionStorage なしで動作する／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/auth/src/**`, `packages/features/auth-recovery/src/**`, `app/src/contexts/WorkerProvider.tsx`, `app/src/worker-runtime/**`（調査後に絞り込み）
+- ロールバック手順: auth の localStorage 統一差分と Worker ブリッジ追加差分を revert し、従来の sessionStorage 併用へ戻す
+- チェックリスト:
+  - 認証関連の sessionStorage 参照/書き込みを削除する
+  - localStorage への統一と型の厳格化を反映する
+  - Worker→UI の localStorage ブリッジ API を追加する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 20:35 JST sessionStorage 全廃・localStorage 統一と Worker ブリッジ追加に着手。
+  - update: 2026-01-11 21:25 JST auth 関連の sessionStorage を localStorage へ統一し、Worker→UI の localStorage ブリッジ API を追加。検証: 未実施。
+
 2118) fix/app/treetable-skeleton-until-columns-ready (P1) — 進行中 (2026-01-11)
 - ブランチ名: fix/app/treetable-skeleton-until-columns-ready
 - 依存: なし
@@ -147,7 +162,7 @@
   - update: 2026-01-11 14:30 JST Step4 の削除処理で extract1/2 のローカルタスク表示を消去し、Step5 側で taskSummary を再評価して 0 件時にリセットする対応を追加。検証: 未実施。
   - update: 2026-01-11 14:40 JST Step4 の削除ボタン判定に extract1/extract2 タスク数を追加し、停止中でタスクが残っている場合に削除可能とする対応を追加。検証: 未実施。
 
-2111) fix/app/geojson-vt-resolve (P1) — 進行中 (2026-01-06)
+2111) fix/app/geojson-vt-resolve (P1) — 完了 (2026-01-06)
 - ブランチ名: fix/app/geojson-vt-resolve
 - 依存: なし
 - 受け入れ基準: @hierarchidb/app の build で geojson-vt の解決エラーが発生しない／TASKS.md に運用ログを記載する／ロールバック手順を明記する
@@ -159,6 +174,7 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-06 00:26 JST geojson-vt の build 解決エラー対応に着手。
+  - done: 2026-01-06 10:01 JST shape-plugin に geojson-vt 依存を追加し、lockfile を更新。検証: 未実施。
 
 2111) fix/shape/step5-task-titles (P1) — 進行中 (2026-01-11)
 - ブランチ名: fix/shape/step5-task-titles
@@ -440,6 +456,111 @@
   - start: 2026-01-11 04:45 JST Step3 の認証警告表示の抑制に着手。
   - update: 2026-01-11 05:05 JST shape の AUTH_REQUIRED を UI 表示せず、キャンセル通知も返さないよう修正。検証: 未実施。
   - update: 2026-01-11 05:15 JST Step3 のメタデータ取得は auth 無効のネットワークポートに変更し、AUTH_REQUIRED を発生させない形へ調整。検証: 未実施。
+
+2107) fix/app/ui-search-field-dep (P1) — 完了 (2026-01-11)
+- ブランチ名: fix/app/ui-search-field-dep
+- 依存: なし
+- 受け入れ基準: @hierarchidb/app の build で ui-search-field が UNLOADABLE_DEPENDENCY にならない／依存が package.json に明示される／TASKS.md に運用ログを記載する
+- 影響範囲: `app/package.json`
+- ロールバック手順: 依存追加差分を revert する
+- チェックリスト:
+  - app/package.json に ui-search-field を追加する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 05:25 JST app の ui-search-field 依存追加に着手。
+  - done: 2026-01-11 05:27 JST app に @hierarchidb/ui-search-field を追加して UNLOADABLE_DEPENDENCY を回避。検証: 未実施。
+
+2108) fix/ui-treeconsole-treetable/column-id-accessor (P1) — 完了 (2026-01-11)
+- ブランチ名: fix/ui-treeconsole-treetable/column-id-accessor
+- 依存: なし
+- 受け入れ基準: TreeTableCore の accessorKey 参照がなくなり typecheck が通る／ColumnDef の型に沿った判定になる／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/treeconsole/treetable/src/components/TreeTableCore.tsx`
+- ロールバック手順: 参照変更の差分を revert する
+- チェックリスト:
+  - accessorKey 参照を削除する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 05:40 JST TreeTableCore の accessorKey 参照修正に着手。
+  - done: 2026-01-11 05:42 JST column.id のみを使う形へ変更し accessorKey 参照を削除。検証: 未実施。
+
+2109) fix/shape-plugin/typecheck-missing-vt-pbf (P1) — 完了 (2026-01-11)
+- ブランチ名: fix/shape-plugin/typecheck-missing-vt-pbf
+- 依存: なし
+- 受け入れ基準: shape-plugin の typecheck で vt-pbf と型エラーが解消する／依存追加と型修正が最小差分で入る／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/package.json`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/ui/hooks/useDownloadConfigSection.ts`
+- ロールバック手順: 上記ファイルの差分を revert して現行挙動へ戻す
+- チェックリスト:
+  - vt-pbf 依存を追加する
+  - GeoJSONVT / tileZ などの型エラーを修正する
+  - taskType 参照を削除する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 05:55 JST shape-plugin typecheck の vt-pbf/型エラー修正に着手。
+  - done: 2026-01-11 06:05 JST vt-pbf 依存を追加し、GeoJSONVT/タイル座標/taskType の型エラーを修正。検証: 未実施。
+  - update: 2026-01-11 06:10 JST geojson-vt Tile 型を明示して vt-pbf 変換の型エラーを解消。検証: 未実施。
+  - update: 2026-01-11 06:15 JST tile null を明示的に除外して spread の型エラーを解消。検証: 未実施。
+
+2110) feat/shape-plugin/step5-i18n (P2) — 完了 (2026-01-11)
+- ブランチ名: feat/shape-plugin/step5-i18n
+- 依存: なし
+- 受け入れ基準: Step5 のラベル/全体進捗カードの文言が i18n され日本語訳が入る／英語は既存文言を維持／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/locales/ja.json`, `plugins/shape-plugin/src/ui/locales/en.json`（必要に応じて）
+- ロールバック手順: 翻訳追加の差分を revert して現行表示へ戻す
+- チェックリスト:
+  - Step5 の文言キーを確認して翻訳を追加する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 06:25 JST Step5 の i18n 文言追加に着手。
+  - done: 2026-01-11 06:30 JST Step5 の Build/Stage/Task ラベルを i18n 化し日本語訳を追加。検証: 未実施。
+
+2111) fix/shape-plugin/step3-geoboundaries-auth (P1) — 完了 (2026-01-11)
+- ブランチ名: fix/shape-plugin/step3-geoboundaries-auth
+- 依存: なし
+- 受け入れ基準: Step3 の geoboundaries メタデータ取得が 401 で失敗しない／shape の認証要求が UI を出さずに解決される／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/metadata/metadataSources.ts`, `app/src/contexts/AuthRequiredDialogHost.tsx`
+- ロールバック手順: 依存箇所の差分を revert して現行挙動へ戻す
+- チェックリスト:
+  - geoboundaries/gadm のネットワークポートを auth 有効に戻す
+  - shape の AUTH_REQUIRED をストレージトークンで即時解決する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 06:40 JST Step3 の geoboundaries 401 問題修正に着手。
+  - done: 2026-01-11 06:45 JST shape の AUTH_REQUIRED を保存済みトークンで自動解決し、メタデータ取得の auth を復帰。検証: 未実施。
+
+2112) fix/shape-plugin/step3-auth-dialog-flow (P1) — 進行中 (2026-01-11)
+- ブランチ名: fix/shape-plugin/step3-auth-dialog-flow
+- 依存: なし
+- 受け入れ基準: geoboundaries の 401 で AuthRequiredDialog が開き、認証完了後に取得が再開する／401ループが解消する／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/contexts/AuthRequiredDialogHost.tsx`, `packages/ui/auth/src/components/AuthRequiredDialog.tsx`, `packages/features/auth-recovery/src/AuthService.ts`, `packages/features/download/src/smartFetch.ts`, `plugins/shape-plugin/src/services/metadata/MetadataLoader.ts`
+- ロールバック手順: 自動解決削除の差分を revert して前の挙動へ戻す
+- チェックリスト:
+  - AUTH_REQUIRED の自動解決を削除する
+  - 認証ダイアログが開くことを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 06:55 JST Step3 の auth ダイアログフロー復旧に着手。
+  - update: 2026-01-11 16:20 JST 401ループとAuthRequiredDialogの連携不全を調査し、ダイアログ表示/復帰フローを再整備予定。検証: 未実施。
+  - update: 2026-01-11 16:45 JST AuthService の認証後レスポンス再利用と AuthRequiredDialog のログ/挙動を修正。検証: 未実施。
+  - update: 2026-01-11 16:55 JST AuthService の res 再宣言エラーを修正。検証: 未実施。
+  - update: 2026-01-11 17:15 JST AuthRequiredDialog の自動セッション使用を停止し、refreshToken 検証を追加。Step3 の dataSource 未設定警告をロード前は抑止。検証: 未実施。
+  - update: 2026-01-11 17:35 JST Step3 の dataSource 未設定判定を batchConfig 準備後に限定し、Step2 への誤リダイレクトを抑止。検証: 未実施。
+  - update: 2026-01-11 17:55 JST AuthRequiredDialog から「Use Current Session」ボタンを撤去。検証: 未実施。
+  - update: 2026-01-11 18:15 JST Cancel (Back to Step 2) を useDialogUrlSync で遷移させ、認証済み時の警告理由を表示。検証: 未実施。
+  - update: 2026-01-11 18:35 JST AUTH_REQUIRED の errorCode/source を実状に合わせて分岐し、UIで有効トークンなら自動解決。検証: 未実施。
+
+2113) chore/docs/agents-no-fallback-rule (P2) — 進行中 (2026-01-11)
+- ブランチ名: chore/docs/agents-no-fallback-rule
+- 依存: なし
+- 受け入れ基準: AGENTS.md に「指示がない限りフォールバック禁止・型で強制」方針を明記する／TASKS.md に運用ログを記載する
+- 影響範囲: `AGENTS.md`
+- ロールバック手順: AGENTS.md の追記差分を revert して元に戻す
+- チェックリスト:
+  - フォールバック禁止方針を明文化する
+  - 型の厳格利用を明記する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 16:20 JST AGENTS.md にフォールバック禁止方針の追記に着手。
+  - done: 2026-01-11 16:45 JST AGENTS.md に型の厳格運用方針を追記。検証: 該当なし。
 
 2100) fix/shape/step5-vectortile-task-sort (P2) — 完了 (2026-01-11)
 - ブランチ名: fix/shape/step5-vectortile-task-sort

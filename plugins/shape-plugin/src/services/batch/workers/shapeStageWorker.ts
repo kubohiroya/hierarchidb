@@ -85,7 +85,7 @@ const buildGeojsonVtIndex = async (
     buffer: options.buffer,
     promoteId: options.promoteId,
   });
-  return index as Record<string, unknown>;
+  return index as unknown as Record<string, unknown>;
 };
 
 const resolveVectorTileIndexOptions = (

@@ -2,7 +2,7 @@
 import { FetchNetworkPort } from '../adapters/FetchNetworkPort.js';
 
 export interface AuthHeadersProviderLike {
-  getAuthHeaders(): Record<string, string>;
+  getAuthHeaders(): Promise<Record<string, string>>;
 }
 
 export function createAuthAwareNetworkPort(provider: AuthHeadersProviderLike, opts?: {
@@ -15,4 +15,3 @@ export function createAuthAwareNetworkPort(provider: AuthHeadersProviderLike, op
     retries: opts?.retries,
   });
 }
-

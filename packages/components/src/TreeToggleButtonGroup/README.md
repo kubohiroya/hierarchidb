@@ -22,8 +22,8 @@ index.ts                  Public exports
   selectedTreeId={selected}
   currentPageNodeId={currentNodeId}
   appPrefix="hierarchidb"
-  getSavedPageNodeId={(treeId) => sessionStorage.getItem(`${treeId}PageNodeId`)}
-  savePageNodeId={(treeId, nodeId) => sessionStorage.setItem(`${treeId}PageNodeId`, nodeId)}
+  getSavedPageNodeId={(treeId) => localStorage.getItem(`${treeId}PageNodeId`)}
+  savePageNodeId={(treeId, nodeId) => localStorage.setItem(`${treeId}PageNodeId`, nodeId)}
   onTreeSelect={setSelected}
 />;
 ```

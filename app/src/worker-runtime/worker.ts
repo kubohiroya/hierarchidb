@@ -435,6 +435,10 @@ reporter.reportStepProgress('Load Comlink', 0);
             return [];
           }
         },
+        setUiStorageBridge: async (bridge): Promise<void> => {
+          const auth = await AuthService.getSingleton();
+          await auth.setUiStorageBridge(bridge);
+        },
         setAuthToken: async (
           token: string,
           type: 'Bearer' | 'Basic' = 'Bearer',

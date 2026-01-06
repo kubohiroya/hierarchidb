@@ -21,8 +21,8 @@ export function useUrlDownload({
   const retryCountRef = useRef(0);
   const abortControllerRef = useRef(null);
   // Check if we have a valid access token
-  const hasValidToken = !!(user?.access_token || sessionStorage.getItem('access_token'));
-  // Simply use the defaultDownloadUrl without sessionStorage
+  const hasValidToken = !!(user?.access_token || localStorage.getItem('access_token'));
+  // Simply use the defaultDownloadUrl without storage
   const [downloadUrl, setDownloadUrl] = useState(defaultDownloadUrl || '');
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState();
@@ -88,12 +88,7 @@ export function useUrlDownload({
       const validatedUrl = validationResult.url || trimmedUrl;
       const needsCorsProxy = !validatedUrl.startsWith(window.location.origin || '');
       let corsProxyBaseURL = '';
-      try {
-        // Vite-style env where available
-        // eslint-disable-next-line no-undef
-        corsProxyBaseURL =
-          (import.meta && import.meta.env && import.meta.env.VITE_CORS_PROXY_BASE_URL) || '';
-      } catch {}
+      corsProxyBaseURL = (import.meta && import.meta.env && import.meta.env.VITE_CORS_PROXY_BASE_URL) || '';
       if (needsCorsProxy && corsProxyBaseURL && !hasValidToken) {
         setIsAuthError(true);
         throw new Error(

@@ -13,7 +13,7 @@ export function AuthErrorListener({ fallbackTo }: { fallbackTo: string }): null 
       console.log('認証エラーを検出しました:', _event.detail?.message);
       // }
 
-      sessionStorage.setItem('oidc.redirect', window.location.pathname);
+      localStorage.setItem('oidc.redirect', window.location.pathname);
 
       void navigate({ to: fallbackTo, replace: true });
     };

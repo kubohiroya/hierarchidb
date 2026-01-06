@@ -46,6 +46,7 @@
     "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/ui-lru-splitview": "workspace:*",
     "@hierarchidb/ui-plugin-shell": "workspace:*",
+    "@hierarchidb/ui-search-field": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@mui/icons-material": "^7.3.6",

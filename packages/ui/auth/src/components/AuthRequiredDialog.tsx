@@ -7,7 +7,6 @@
  */
 
 import {
-  CheckCircle as CheckCircleIcon,
   Close as CloseIcon,
   GitHub as GitHubIcon,
   Google as GoogleIcon,
@@ -38,6 +37,7 @@ import type { AuthProviderType } from '../types/AuthProviderType.js';
 // Aligns with @hierarchidb/_obsolate_common-auth AuthRequiredNotification shape used here.
 type AuthRequiredNotification = {
   type: 'AUTH_REQUIRED';
+  source?: 'worker' | 'cors-proxy' | 'bff' | 'external-api';
   context: {
     requestId: string;
     url: string;
@@ -146,10 +146,17 @@ export function AuthRequiredDialog({
   cancelLabel,
 }: AuthRequiredDialogProps) {
   const bffAuth = useBFFAuthService();
-  const { signIn, user, isAuthenticated } = bffAuth;
+  const { signIn, user, isAuthenticated, refreshToken } = bffAuth;
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<AuthProvider | null>(null);
+  const isAuthDebugEnabled = () => {
+    try {
+      return typeof localStorage !== 'undefined' && localStorage.getItem('hidb_auth_debug') === '1';
+    } catch {
+      return false;
+    }
+  };
 
   const dialogTitleId = useId();
   const dialogDescriptionId = useId();
@@ -158,13 +165,18 @@ export function AuthRequiredDialog({
   const { url, errorMessage, sessionId, pluginType, retryCount = 0, errorCode } = context;
 
   const currentUserPayload = useMemo(() => createUserPayload(user), [user]);
-
-  const handleUseCurrentSession = useCallback(() => {
-    if (currentUserPayload) {
-      console.log('✅ Using current authentication session for batch processing');
-      onSuccess(currentUserPayload.token, currentUserPayload.expiresAt, currentUserPayload.info);
+  const tokenExpiresAt = currentUserPayload?.expiresAt;
+  const isTokenExpired = typeof tokenExpiresAt === 'number' && tokenExpiresAt <= Date.now();
+  const authStatusMessage = useMemo(() => {
+    if (!isAuthenticated || !user) return null;
+    if (isTokenExpired) {
+      return 'Your current session has expired. Please sign in again to continue.';
     }
-  }, [currentUserPayload, onSuccess]);
+    if (errorCode === 401) {
+      return 'Your current session token was rejected (HTTP 401). It may be revoked or invalid.';
+    }
+    return null;
+  }, [errorCode, isAuthenticated, isTokenExpired, user]);
 
   // Clear error when base-dialog opens/closes
   useEffect(() => {
@@ -172,26 +184,22 @@ export function AuthRequiredDialog({
       setAuthError(null);
       setSelectedProvider(null);
 
-      // Keep the UI compact. Log technical details to console instead of rendering them.
-      const details = {
-        requestId: context.requestId,
-        pluginType,
-        retryCount,
-        errorCode,
-        errorMessage,
-        url,
-        ...(sessionId ? { sessionId } : {}),
-      };
-      console.warn('[auth][ui] Authentication required details', details);
+      if (isAuthDebugEnabled()) {
+        const details = {
+          requestId: context.requestId,
+          pluginType,
+          retryCount,
+          errorCode,
+          errorMessage,
+          url,
+          ...(sessionId ? { sessionId } : {}),
+        };
+        console.debug('[auth][ui] Authentication required details', details);
+      }
     }
   }, [context.requestId, errorCode, errorMessage, open, pluginType, retryCount, sessionId, url]);
 
-  // Auto-use current session if already authenticated
-  useEffect(() => {
-    if (isAuthenticated && currentUserPayload && !isAuthenticating) {
-      handleUseCurrentSession();
-    }
-  }, [currentUserPayload, handleUseCurrentSession, isAuthenticated, isAuthenticating]);
+  // Keep the dialog visible even when a session exists; user chooses how to proceed.
 
   const handleSignIn = useCallback(
     async (provider: AuthProvider) => {
@@ -210,10 +218,7 @@ export function AuthRequiredDialog({
         });
 
         const payload = createUserPayload(bffAuth.user) ?? currentUserPayload ?? null;
-
-        if (!payload) {
-          throw new Error('Authentication failed');
-        }
+        if (!payload) return;
 
         console.log(`✅ Authentication successful with ${provider}`);
         onSuccess(payload.token, payload.expiresAt, payload.info);
@@ -381,25 +386,16 @@ export function AuthRequiredDialog({
 
         {/* Current Session */}
         {isAuthenticated && user && (
-          <Alert
-            severity="success"
-            action={
-              <Button
-                color="inherit"
-                size="small"
-                onClick={handleUseCurrentSession}
-                disabled={isAuthenticating}
-                startIcon={<CheckCircleIcon />}
-              >
-                Use Current Session
-              </Button>
-            }
-            sx={{ mb: 3 }}
-          >
+          <Alert severity="success" sx={{ mb: authStatusMessage ? 1.5 : 3 }}>
             <Typography variant="body2">
               You are currently signed in as{' '}
               <strong>{user.name || user.email}</strong>
             </Typography>
+          </Alert>
+        )}
+        {authStatusMessage && (
+          <Alert severity="warning" sx={{ mb: 3 }}>
+            {authStatusMessage}
           </Alert>
         )}
 
@@ -462,16 +458,6 @@ export function AuthRequiredDialog({
               {cancelButtonLabel}
             </Button>
 
-            {isAuthenticated && user && (
-              <Button
-                variant="contained"
-                onClick={handleUseCurrentSession}
-                disabled={isAuthenticating}
-                startIcon={<CheckCircleIcon />}
-              >
-                Continue with Current Session
-              </Button>
-            )}
           </Box>
         </Box>
       </DialogActions>

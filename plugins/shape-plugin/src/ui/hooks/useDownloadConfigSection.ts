@@ -254,8 +254,8 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
     if (!batchNodeId) return notify.warning('NodeId is missing.');
     await ephemeral.clearStage(batchNodeId, stage);
     await clearBatchTasksForType(stage);
-    setBuildTasks((prev) => prev.filter((task) => task.stage !== stage && task.taskType !== stage));
-    setPersistedTasks((prev) => prev.filter((task) => task.stage !== stage && task.taskType !== stage));
+    setBuildTasks((prev) => prev.filter((task) => task.stage !== stage));
+    setPersistedTasks((prev) => prev.filter((task) => task.stage !== stage));
     await loadCounts();
     notify.success(stage === 'extract1' ? 'Deleted Stage1 cache' : 'Deleted Stage2 cache');
   }, [batchNodeId, clearBatchTasksForType, ephemeral, loadCounts, setBuildTasks, setPersistedTasks]);

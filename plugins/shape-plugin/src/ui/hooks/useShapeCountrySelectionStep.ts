@@ -106,6 +106,11 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
 
   const { dataSourceKey, dataSourceError } = useMemo(() => {
     const anyData = data as unknown as Record<string, unknown>;
+    const hasData = Boolean(
+      anyData
+      && typeof anyData === 'object'
+      && Object.keys(anyData).length > 0
+    );
 
     const draftData = (anyData && typeof anyData === 'object' && 'draftData' in anyData)
       ? (anyData as { draftData?: unknown }).draftData as Record<string, unknown> | undefined
@@ -126,18 +131,24 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
 
     const candidate = dsFromDraft ?? dsFromEntity;
     const normalized = normalizeDataSourceName(candidate);
+    const hasBatchConfig =
+      (batchConfig && typeof batchConfig === 'object')
+      || (draftData?.batchConfig && typeof draftData.batchConfig === 'object');
 
     if (!normalized) {
       // Don't guess a data source (no implicit fallback to GADM).
-      // Surface as an error and skip network work.
-      console.warn('[shape-plugin][step3] dataSource missing', {
-        batchConfigKeys: batchConfig ? Object.keys(batchConfig) : null,
-        draftDataKeys: draftData ? Object.keys(draftData) : null,
-      });
-      return {
-        dataSourceKey: undefined,
-        dataSourceError: new Error('Data source is not set. Please go back to Step2 and select a data source.'),
-      };
+      // Surface an error only after data is available.
+      if (hasData && hasBatchConfig) {
+        console.warn('[shape-plugin][step3] dataSource missing', {
+          batchConfigKeys: batchConfig ? Object.keys(batchConfig) : null,
+          draftDataKeys: draftData ? Object.keys(draftData) : null,
+        });
+        return {
+          dataSourceKey: undefined,
+          dataSourceError: new Error('Data source is not set. Please go back to Step2 and select a data source.'),
+        };
+      }
+      return { dataSourceKey: undefined, dataSourceError: null as Error | null };
     }
 
     return { dataSourceKey: normalized, dataSourceError: null as Error | null };
@@ -149,10 +160,10 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
     return DATA_SOURCE_CONFIGS[normalized]?.maxAdminLevel ?? 0;
   }, [dataSourceKey]);
   useEffect(() => {
-    if (!dataSourceKey) {
+    if (dataSourceError) {
       setDialogStep(2);
     }
-  }, [dataSourceKey, setDialogStep]);
+  }, [dataSourceError, setDialogStep]);
   const iso = useIsoCountries();
   const [countries, setCountries] = useState<CountryMetadata[]>([]);
   const [metadataLoading, setMetadataLoading] = useState(false);

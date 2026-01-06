@@ -7,7 +7,7 @@ export interface AuthContext {
 }
 
 export interface AuthHeadersProvider {
-  getAuthHeaders(): Record<string, string>;
+  getAuthHeaders(): Promise<Record<string, string>>;
 
   setToken(token: string, type?: 'Bearer' | 'Basic', expiresAt?: number): void;
 }

@@ -31,6 +31,12 @@ type ShapeDownloadTaskPayload = {
   dataSource?: ShapeDataSourceName;
 };
 
+export type UiStorageBridge = {
+  getItem(key: string): Promise<string | null>;
+  setItem(key: string, value: string): Promise<void>;
+  removeItem(key: string): Promise<void>;
+};
+
 export type CommandProcessorAPI = {
   canUndo?: () => boolean;
   canRedo?: () => boolean;
@@ -94,6 +100,7 @@ export interface WorkerAPI {
   subscribeHeapPressure(
     callback: (event: HeapPressureEvent) => void
   ): Promise<() => void>;
+  setUiStorageBridge(bridge: UiStorageBridge): Promise<void>;
   setAuthToken(token: string, type?: 'Bearer' | 'Basic', expiresAt?: number): Promise<void>;
   setCorsProxyBaseURL(url: string): Promise<void>;
 }

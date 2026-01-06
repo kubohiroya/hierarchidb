@@ -167,24 +167,24 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
         const storedUser = localStorage.getItem(STORAGE_KEY);
         // Check both locations for token (for backward compatibility)
         const storedToken =
-          sessionStorage.getItem(TOKEN_KEY) ?? sessionStorage.getItem('access_token');
+          localStorage.getItem(TOKEN_KEY) ?? localStorage.getItem('access_token');
 
-        // Also check if we have userinfo in sessionStorage
-        const userInfo = sessionStorage.getItem('userinfo');
+        // Also check if we have userinfo in localStorage
+        const userInfo = localStorage.getItem('userinfo');
 
         // Check for stuck authentication state
-        const pkceTimestamp = sessionStorage.getItem('pkce_timestamp');
+        const pkceTimestamp = localStorage.getItem('pkce_timestamp');
         if (pkceTimestamp && !storedUser) {
           const pkceAge = Date.now() - Number.parseInt(pkceTimestamp, 10);
           if (pkceAge > 10 * 60 * 1000) {
             // 10 minutes
 
-            sessionStorage.removeItem('pkce_code_verifier');
-            sessionStorage.removeItem('pkce_state');
-            sessionStorage.removeItem('pkce_timestamp');
-            sessionStorage.removeItem('auth_provider');
-            sessionStorage.removeItem('auth_callback_processing');
-            sessionStorage.removeItem('auth_processing_code');
+            localStorage.removeItem('pkce_code_verifier');
+            localStorage.removeItem('pkce_state');
+            localStorage.removeItem('pkce_timestamp');
+            localStorage.removeItem('auth_provider');
+            localStorage.removeItem('auth_callback_processing');
+            localStorage.removeItem('auth_processing_code');
             setIsAuthenticating(false);
           }
         }
@@ -200,13 +200,13 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
               picture: normalizeProfilePhotoUrl(userData.picture, userData.provider ?? 'google'),
               provider: (userData.provider ?? 'google') as AuthProviderType,
               access_token: storedToken,
-              id_token: sessionStorage.getItem('id_token') ?? undefined,
+              id_token: localStorage.getItem('id_token') ?? undefined,
               expires_at: Date.now() + 48 * 60 * 60 * 1000, // 48 hours default
             };
 
             setUser(authUser);
             localStorage.setItem(STORAGE_KEY, JSON.stringify(authUser));
-            sessionStorage.setItem(TOKEN_KEY, storedToken);
+            localStorage.setItem(TOKEN_KEY, storedToken);
 
             // Mark as authenticated
             setIsAuthenticating(false);
@@ -242,7 +242,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
       provider?: AuthProviderType;
     }) => {
       // Check if user is already authenticated
-      if (user && sessionStorage.getItem('access_token')) {
+      if (user && localStorage.getItem('access_token')) {
         return;
       }
 
@@ -262,28 +262,28 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
       }
 
       // Clean up any stale PKCE parameters older than 5 minutes
-      const pkceTimestamp = sessionStorage.getItem('pkce_timestamp');
+      const pkceTimestamp = localStorage.getItem('pkce_timestamp');
       if (pkceTimestamp) {
         const pkceAge = Date.now() - Number.parseInt(pkceTimestamp, 10);
         if (pkceAge > 5 * 60 * 1000) {
           // 5 minutes
-          sessionStorage.removeItem('pkce_code_verifier');
-          sessionStorage.removeItem('pkce_state');
-          sessionStorage.removeItem('pkce_timestamp');
-          sessionStorage.removeItem('auth_provider');
+          localStorage.removeItem('pkce_code_verifier');
+          localStorage.removeItem('pkce_state');
+          localStorage.removeItem('pkce_timestamp');
+          localStorage.removeItem('auth_provider');
         }
       }
 
       // Force cleanup of any authentication remnants if needed
-      const forceCleanup = sessionStorage.getItem('auth_force_cleanup');
+      const forceCleanup = localStorage.getItem('auth_force_cleanup');
       if (forceCleanup) {
-        sessionStorage.removeItem('auth_force_cleanup');
-        sessionStorage.removeItem('pkce_code_verifier');
-        sessionStorage.removeItem('pkce_state');
-        sessionStorage.removeItem('pkce_timestamp');
-        sessionStorage.removeItem('auth_provider');
-        sessionStorage.removeItem('auth_callback_processing');
-        sessionStorage.removeItem('auth_processing_code');
+        localStorage.removeItem('auth_force_cleanup');
+        localStorage.removeItem('pkce_code_verifier');
+        localStorage.removeItem('pkce_state');
+        localStorage.removeItem('pkce_timestamp');
+        localStorage.removeItem('auth_provider');
+        localStorage.removeItem('auth_callback_processing');
+        localStorage.removeItem('auth_processing_code');
       }
 
       try {
@@ -294,7 +294,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
 
         // Don't store auth callback URLs as return URLs
         if (!returnUrl.includes('/auth/callback')) {
-          // Use localStorage instead of sessionStorage to persist across redirects
+          // Use localStorage instead of localStorage to persist across redirects
           localStorage.setItem('auth_redirect_url', returnUrl);
         } else {
           localStorage.setItem('auth_redirect_url', homeUrl);
@@ -304,8 +304,8 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
         setIsAuthenticating(true);
 
         // Don't store history state - history manipulation causes more problems than it solves
-        // sessionStorage.setItem('auth_history_length', window.history.length.toString());
-        // sessionStorage.setItem('auth_start_time', Date.now().toString());
+        // localStorage.setItem('auth_history_length', window.history.length.toString());
+        // localStorage.setItem('auth_start_time', Date.now().toString());
 
         // Get provider (default to google)
         const provider = options?.provider ?? 'google';
@@ -323,10 +323,10 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
         const state = btoa(JSON.stringify(stateData));
 
         // Store code verifier for later use - with timestamp to track freshness
-        sessionStorage.setItem('pkce_code_verifier', codeVerifier);
-        sessionStorage.setItem('pkce_state', state);
-        sessionStorage.setItem('pkce_timestamp', Date.now().toString());
-        sessionStorage.setItem('auth_provider', provider);
+        localStorage.setItem('pkce_code_verifier', codeVerifier);
+        localStorage.setItem('pkce_state', state);
+        localStorage.setItem('pkce_timestamp', Date.now().toString());
+        localStorage.setItem('auth_provider', provider);
 
         // Get configuration
         const bffBaseUrl =
@@ -483,7 +483,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
           const coopFallbackCheck = setInterval(() => {
             const currentTimestamp = windowWithAuth.authCheckTimestamp;
             if (currentTimestamp && currentTimestamp !== lastAuthCheck) {
-              const token = sessionStorage.getItem('access_token');
+              const token = localStorage.getItem('access_token');
               if (token) {
                 cleanupPopupListeners();
                 setIsAuthenticating(false);
@@ -517,7 +517,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
 
                 // Check if auth was successful by looking for stored tokens
                 setTimeout(() => {
-                  const token = sessionStorage.getItem('access_token');
+                  const token = localStorage.getItem('access_token');
 
                   if (!token) {
                     setIsAuthenticating(false);
@@ -540,7 +540,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
 
               // In COOP environment, we rely heavily on storage events and postMessage
               // Check if we should assume popup is done based on storage changes
-              const token = sessionStorage.getItem('access_token');
+              const token = localStorage.getItem('access_token');
               if (token && consecutiveErrors > 5) {
                 cleanupPopupListeners();
                 setIsAuthenticating(false);
@@ -580,7 +580,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
         setIsAuthenticating(false);
 
         // Mark for force cleanup on next attempt
-        sessionStorage.setItem('auth_force_cleanup', 'true');
+        localStorage.setItem('auth_force_cleanup', 'true');
       }
     },
     [homeUrl, isAuthenticating, user]
@@ -590,24 +590,24 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
     try {
       // Clear local storage
       localStorage.removeItem(STORAGE_KEY);
-      sessionStorage.removeItem(TOKEN_KEY);
-      sessionStorage.removeItem('access_token');
-      sessionStorage.removeItem('id_token');
-      sessionStorage.removeItem('userinfo');
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('id_token');
+      localStorage.removeItem('userinfo');
 
       // Clear auth history tracking
-      sessionStorage.removeItem('auth_history_length');
-      sessionStorage.removeItem('auth_start_time');
+      localStorage.removeItem('auth_history_length');
+      localStorage.removeItem('auth_start_time');
       localStorage.removeItem('auth_redirect_url');
       localStorage.removeItem('last_auth_completion');
-      sessionStorage.removeItem('auth_callback_processed');
-      sessionStorage.removeItem('auth_callback_processing');
-      sessionStorage.removeItem('pkce_code_verifier');
-      sessionStorage.removeItem('pkce_state');
-      sessionStorage.removeItem('pkce_timestamp');
-      sessionStorage.removeItem('auth_provider');
-      sessionStorage.removeItem('auth_processing_code');
-      sessionStorage.removeItem('auth_force_cleanup');
+      localStorage.removeItem('auth_callback_processed');
+      localStorage.removeItem('auth_callback_processing');
+      localStorage.removeItem('pkce_code_verifier');
+      localStorage.removeItem('pkce_state');
+      localStorage.removeItem('pkce_timestamp');
+      localStorage.removeItem('auth_provider');
+      localStorage.removeItem('auth_processing_code');
+      localStorage.removeItem('auth_force_cleanup');
 
       // Reset auth state - CRITICAL: Must reset isAuthenticating
       setUser(null);
@@ -617,7 +617,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
       const authBase = normalizeAuthBase(
         import.meta.env.VITE_BFF_BASE_URL ?? DEFAULT_BFF_BASE_URL
       );
-      const token = sessionStorage.getItem(TOKEN_KEY);
+      const token = localStorage.getItem(TOKEN_KEY);
 
       if (token) {
         await fetch(buildAuthUrl(authBase, '/logout').toString(), {
@@ -638,18 +638,18 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
       setIsAuthenticating(false);
 
       // Force cleanup on next auth attempt
-      sessionStorage.setItem('auth_force_cleanup', 'true');
+      localStorage.setItem('auth_force_cleanup', 'true');
 
       window.location.replace(homeUrl);
     }
   }, [homeUrl]);
 
   const getAccessToken = React.useCallback(() => {
-    return sessionStorage.getItem('access_token') ?? null;
+    return localStorage.getItem('access_token') ?? null;
   }, []);
 
   const getIdToken = React.useCallback(() => {
-    return sessionStorage.getItem('id_token') ?? null;
+    return localStorage.getItem('id_token') ?? null;
   }, []);
 
   // Token refresh function
@@ -690,9 +690,21 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
 
       if (!response.ok) {
         if (response.status === 401) {
-          // Clear session and trigger re-authentication
-          sessionStorage.clear();
+          // Clear auth storage and trigger re-authentication
           localStorage.removeItem(STORAGE_KEY);
+          localStorage.removeItem(TOKEN_KEY);
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('id_token');
+          localStorage.removeItem('userinfo');
+          localStorage.removeItem('auth_provider');
+          localStorage.removeItem('auth_callback_processing');
+          localStorage.removeItem('auth_processing_code');
+          localStorage.removeItem('auth_force_cleanup');
+          localStorage.removeItem('pkce_code_verifier');
+          localStorage.removeItem('pkce_state');
+          localStorage.removeItem('pkce_timestamp');
+          localStorage.removeItem('token_expires_at');
+          localStorage.removeItem('token_expires_in');
           localStorage.removeItem('last_auth_completion');
           setUser(null);
 
@@ -706,15 +718,15 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
       const data = await response.json();
 
       if (data.access_token) {
-        // Update tokens in session storage
-        sessionStorage.setItem('access_token', data.access_token);
+        // Update tokens in local storage
+        localStorage.setItem('access_token', data.access_token);
         if (data.id_token) {
-          sessionStorage.setItem('id_token', data.id_token);
+          localStorage.setItem('id_token', data.id_token);
         }
 
         // Update user info if provided
         if (data.userinfo) {
-          sessionStorage.setItem('userinfo', JSON.stringify(data.userinfo));
+          localStorage.setItem('userinfo', JSON.stringify(data.userinfo));
 
           // Update user state
           const authUser: AuthUser = {
@@ -743,11 +755,11 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
     }
   }, [getAccessToken]);
 
-  // Update user from session storage (called by callback page)
+  // Update user from local storage (called by callback page)
   React.useEffect(() => {
     const handleStorageChange = () => {
-      const userInfo = sessionStorage.getItem('userinfo');
-      const accessToken = sessionStorage.getItem('access_token');
+      const userInfo = localStorage.getItem('userinfo');
+      const accessToken = localStorage.getItem('access_token');
 
       // Skip if user is already authenticated with same access token
       if (user && user.access_token === accessToken) {
@@ -763,19 +775,19 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
           picture: normalizeProfilePhotoUrl(userData.picture, userData.provider ?? 'google'),
           provider: (userData.provider ?? 'google') as AuthProviderType,
           access_token: accessToken,
-          id_token: sessionStorage.getItem('id_token') ?? undefined,
+          id_token: localStorage.getItem('id_token') ?? undefined,
           expires_at: Date.now() + 48 * 60 * 60 * 1000, // 48 hours default
         };
 
         setUser(authUser);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(authUser));
-        sessionStorage.setItem(TOKEN_KEY, accessToken);
+        localStorage.setItem(TOKEN_KEY, accessToken);
 
         // Store token expiry time for monitoring
-        const expiresIn = sessionStorage.getItem('token_expires_in');
+        const expiresIn = localStorage.getItem('token_expires_in');
         if (expiresIn) {
           const expiresAt = Date.now() + Number.parseInt(expiresIn, 10) * 1000;
-          sessionStorage.setItem('token_expires_at', expiresAt.toString());
+          localStorage.setItem('token_expires_at', expiresAt.toString());
         }
 
         // Mark authentication as completed - use localStorage to persist
@@ -783,11 +795,11 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
         setIsAuthenticating(false);
 
         // Clean up PKCE data after successful auth
-        sessionStorage.removeItem('pkce_code_verifier');
-        sessionStorage.removeItem('pkce_state');
-        sessionStorage.removeItem('pkce_timestamp');
-        sessionStorage.removeItem('auth_callback_processing');
-        sessionStorage.removeItem('auth_processing_code');
+        localStorage.removeItem('pkce_code_verifier');
+        localStorage.removeItem('pkce_state');
+        localStorage.removeItem('pkce_timestamp');
+        localStorage.removeItem('auth_callback_processing');
+        localStorage.removeItem('auth_processing_code');
       }
     };
 
@@ -801,8 +813,8 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
       // Check for auth completion more frequently and for longer duration
       checkInterval = setInterval(() => {
         monitoringCount++;
-        const userInfo = sessionStorage.getItem('userinfo');
-        const accessToken = sessionStorage.getItem('access_token');
+        const userInfo = localStorage.getItem('userinfo');
+        const accessToken = localStorage.getItem('access_token');
 
         if (monitoringCount % 100 === 0) {
           // Log every 5 seconds
@@ -822,8 +834,8 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
     };
 
     // Always check for existing auth data on mount
-    const userInfo = sessionStorage.getItem('userinfo');
-    const accessToken = sessionStorage.getItem('access_token');
+    const userInfo = localStorage.getItem('userinfo');
+    const accessToken = localStorage.getItem('access_token');
 
     if (userInfo && accessToken && !user) {
       handleStorageChange();

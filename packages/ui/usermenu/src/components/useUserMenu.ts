@@ -176,7 +176,6 @@ export const useUserMenu = (): UserMenuState => {
     try {
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token_id');
-      sessionStorage.removeItem('access_token');
     } catch {
       // ignore storage errors
     }

@@ -83,7 +83,7 @@ export function useUrlDownload({
   const retryCountRef = useRef(0);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const hasValidToken = !!(accessToken || sessionStorage.getItem('access_token'));
+  const hasValidToken = !!(accessToken || localStorage.getItem('access_token'));
 
   const [downloadUrl, setDownloadUrl] = useState(defaultDownloadUrl || '');
   const [isDownloading, setIsDownloading] = useState(false);

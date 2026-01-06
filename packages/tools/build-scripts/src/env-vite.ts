@@ -37,7 +37,7 @@ function injectHashRouting(html: string, basePath: string): string {
       // Hash routing handler for GitHub Pages
       (function() {
         if (typeof window === 'undefined') return;
-        if (sessionStorage.getItem('hash-routing-processed')) {
+        if (localStorage.getItem('hash-routing-processed')) {
           return;
         }
 
@@ -45,11 +45,11 @@ function injectHashRouting(html: string, basePath: string): string {
         var base = '${basePath}';
 
         if (path !== base + '/' && path.startsWith(base + '/') && !window.location.hash) {
-          sessionStorage.setItem('hash-routing-processed', 'true');
+          localStorage.setItem('hash-routing-processed', 'true');
           var hashPath = path.substring(base.length);
           window.location.replace(base + '/#' + hashPath + window.location.search);
         } else if (path === base + '/') {
-          sessionStorage.setItem('hash-routing-processed', 'true');
+          localStorage.setItem('hash-routing-processed', 'true');
         }
       })();
     </script>`;

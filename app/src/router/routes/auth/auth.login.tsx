@@ -22,7 +22,7 @@ export default function LoginRoute() {
       setError(null);
 
       // Store return URL for after authentication
-      sessionStorage.setItem('auth.returnUrl', from);
+      localStorage.setItem('auth.returnUrl', from);
 
       // Initiate OAuth flow with Turnstile token
       // TODO: Add Turnstile token support to signIn

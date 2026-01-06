@@ -318,7 +318,7 @@ async function generatePKCE() {
 
 // Initiate OAuth2 with PKCE
 const { codeVerifier, codeChallenge } = await generatePKCE();
-sessionStorage.setItem('code_verifier', codeVerifier);
+localStorage.setItem('code_verifier', codeVerifier);
 
 const authUrl = new URL('https://your-bff-worker.workers.dev/auth/authorize/google');
 authUrl.searchParams.set('code_challenge', codeChallenge);
@@ -333,7 +333,7 @@ const response = await fetch('https://your-bff-worker.workers.dev/auth/token', {
   },
   body: JSON.stringify({
     code,
-    code_verifier: sessionStorage.getItem('code_verifier'),
+    code_verifier: localStorage.getItem('code_verifier'),
     provider: 'google'
   })
 });

@@ -340,6 +340,9 @@ importers:
       '@hierarchidb/ui-plugin-shell':
         specifier: workspace:*
         version: link:../packages/ui/plugin-shell
+      '@hierarchidb/ui-search-field':
+        specifier: workspace:*
+        version: link:../packages/ui/search-field
       '@hierarchidb/ui-worker-client':
         specifier: workspace:*
         version: link:../packages/ui/worker-client
@@ -3303,6 +3306,9 @@ importers:
       '@mapbox/vector-tile':
         specifier: ^2.0.3
         version: 2.0.4
+      '@maplibre/vt-pbf':
+        specifier: ^4.0.3
+        version: 4.0.3
       '@ngageoint/geopackage':
         specifier: ^4.2.6
         version: 4.2.6

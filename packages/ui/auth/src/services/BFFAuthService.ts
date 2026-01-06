@@ -119,9 +119,9 @@ export class BFFAuthService {
     const codeChallenge = await generateCodeChallenge(codeVerifier);
 
     // Store for later use
-    sessionStorage.setItem('pkce_code_verifier', codeVerifier);
+    localStorage.setItem('pkce_code_verifier', codeVerifier);
     if (returnUrl) {
-      sessionStorage.setItem('auth_return_url', returnUrl);
+      localStorage.setItem('auth_return_url', returnUrl);
     }
 
     // Build OAuth2 authorization URL
@@ -147,7 +147,7 @@ export class BFFAuthService {
         provider: user.provider,
         expires_at: user.expires_at,
       };
-      sessionStorage.setItem(this.USERINFO_STORAGE_KEYS.userinfo, JSON.stringify(payload));
+      localStorage.setItem(this.USERINFO_STORAGE_KEYS.userinfo, JSON.stringify(payload));
       localStorage.setItem(this.USERINFO_STORAGE_KEYS.user, JSON.stringify(payload));
     } catch {
       // Ignore storage errors (e.g., quota)
@@ -204,7 +204,7 @@ export class BFFAuthService {
     // Add state for CSRF protection
     const state = this.generateState();
     authUrl.searchParams.set('state', state);
-    sessionStorage.setItem('oauth_state', state);
+    localStorage.setItem('oauth_state', state);
 
     // Add redirect URI (BFF will handle the actual OAuth redirect)
     if (method === 'redirect') {
@@ -262,7 +262,7 @@ export class BFFAuthService {
             clearInterval(checkInterval);
 
             // Check if authentication was successful
-            const token = sessionStorage.getItem('access_token');
+            const token = localStorage.getItem('access_token');
             if (token) {
               // Parse and return user data
               const user = this.parseTokenToUser(token);
@@ -308,7 +308,7 @@ export class BFFAuthService {
 
     // If we already have a token (e.g., callback executed once and re-rendered),
     // short-circuit to avoid double-exchanging the same code.
-    const existingToken = sessionStorage.getItem('access_token');
+    const existingToken = localStorage.getItem('access_token');
     if (existingToken) {
       try {
         return this.parseTokenToUser(existingToken);
@@ -324,15 +324,14 @@ export class BFFAuthService {
     }
 
     // Verify state for CSRF protection
-    const savedState = sessionStorage.getItem('oauth_state');
+    const savedState = localStorage.getItem('oauth_state');
     if (state && savedState && state !== savedState) {
       console.warn('State mismatch detected; proceeding (BFF validates state)');
     }
 
     const exchangePromise = (async () => {
       // Get stored PKCE verifier
-      const codeVerifier =
-        localStorage.getItem('pkce_code_verifier') || sessionStorage.getItem('pkce_code_verifier');
+      const codeVerifier = localStorage.getItem('pkce_code_verifier');
       if (!codeVerifier) {
         throw new Error('No PKCE code verifier found');
       }
@@ -369,7 +368,6 @@ export class BFFAuthService {
 
       // Store tokens
       if (data.access_token) {
-        sessionStorage.setItem('access_token', data.access_token);
         localStorage.setItem('access_token', data.access_token);
       }
       if (data.refresh_token_id) {
@@ -378,7 +376,7 @@ export class BFFAuthService {
 
       // Clean up (keep return URL until caller consumes it)
       this.clearAuthData({ preserveReturnUrl: true });
-      sessionStorage.removeItem('oauth_state');
+      localStorage.removeItem('oauth_state');
 
       // Parse user from token response
       const user = this.parseTokenResponse(data);
@@ -421,7 +419,7 @@ export class BFFAuthService {
 
     // Clear local storage
     this.clearAuthData();
-    sessionStorage.removeItem(this.USERINFO_STORAGE_KEYS.userinfo);
+    localStorage.removeItem(this.USERINFO_STORAGE_KEYS.userinfo);
     localStorage.removeItem(this.USERINFO_STORAGE_KEYS.user);
   }
 
@@ -461,7 +459,6 @@ export class BFFAuthService {
       // Update tokens
       if (data.access_token) {
         localStorage.setItem('access_token', data.access_token);
-        sessionStorage.setItem('access_token', data.access_token);
       }
       if (data.refresh_token_id) {
         localStorage.setItem('refresh_token_id', data.refresh_token_id);
@@ -483,11 +480,10 @@ export class BFFAuthService {
     try {
       const persisted =
         localStorage.getItem(this.USERINFO_STORAGE_KEYS.user) ||
-        sessionStorage.getItem(this.USERINFO_STORAGE_KEYS.userinfo);
+        localStorage.getItem(this.USERINFO_STORAGE_KEYS.userinfo);
       if (persisted) {
         const parsed = JSON.parse(persisted) as Partial<BFFUser> & { expires_at?: number };
-        const token =
-          sessionStorage.getItem('access_token') || localStorage.getItem('access_token') || '';
+        const token = localStorage.getItem('access_token') || '';
         if (token && parsed.id) {
           return {
             id: parsed.id,
@@ -603,11 +599,9 @@ export class BFFAuthService {
   private clearAuthData(options: { preserveReturnUrl?: boolean } = {}): void {
     // Clear PKCE data
     localStorage.removeItem('pkce_code_verifier');
-    sessionStorage.removeItem('pkce_code_verifier');
 
     // Clear OAuth state
     localStorage.removeItem('oauth_state');
-    sessionStorage.removeItem('oauth_state');
 
     // Clear tokens (keep these for getCurrentUser)
     // localStorage.removeItem('access_token');
@@ -617,7 +611,6 @@ export class BFFAuthService {
     localStorage.removeItem('auth_provider');
     if (!options.preserveReturnUrl) {
       localStorage.removeItem('auth_return_url');
-      sessionStorage.removeItem('auth_return_url');
     }
   }
 }

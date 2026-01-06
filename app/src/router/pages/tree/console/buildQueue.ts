@@ -9,8 +9,8 @@ type BuildQueueState = {
 
 const STORAGE_PREFIX = 'hdb.buildQueue.';
 
-const hasSessionStorage = (): boolean =>
-  typeof window !== 'undefined' && typeof window.sessionStorage !== 'undefined';
+const hasLocalStorage = (): boolean =>
+  typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
 
 const safeParse = (raw: string | null): BuildQueueState | null => {
   if (!raw) return null;
@@ -42,7 +42,7 @@ export const createBuildQueue = (
   treeId?: TreeId,
   key?: string
 ): string | null => {
-  if (!hasSessionStorage()) return null;
+  if (!hasLocalStorage()) return null;
   if (!Array.isArray(urls) || urls.length === 0) return null;
   const queueKey = key ?? createQueueKey();
   const payload: BuildQueueState = {
@@ -51,28 +51,28 @@ export const createBuildQueue = (
     createdAt: Date.now(),
     treeId,
   };
-  window.sessionStorage.setItem(buildStorageKey(queueKey), JSON.stringify(payload));
+  window.localStorage.setItem(buildStorageKey(queueKey), JSON.stringify(payload));
   return queueKey;
 };
 
 export const shiftBuildQueue = (key: string): { nextUrl?: string; returnTo?: string; remaining: number } | null => {
-  if (!hasSessionStorage()) return null;
+  if (!hasLocalStorage()) return null;
   const storageKey = buildStorageKey(key);
-  const state = safeParse(window.sessionStorage.getItem(storageKey));
+  const state = safeParse(window.localStorage.getItem(storageKey));
   if (!state) {
-    window.sessionStorage.removeItem(storageKey);
+    window.localStorage.removeItem(storageKey);
     return null;
   }
   const [nextUrl, ...rest] = state.urls;
   if (!nextUrl) {
-    window.sessionStorage.removeItem(storageKey);
+    window.localStorage.removeItem(storageKey);
     return { returnTo: state.returnTo, remaining: 0 };
   }
   const remaining = rest.length;
   if (remaining === 0) {
-    window.sessionStorage.removeItem(storageKey);
+    window.localStorage.removeItem(storageKey);
   } else {
-    window.sessionStorage.setItem(
+    window.localStorage.setItem(
       storageKey,
       JSON.stringify({ ...state, urls: rest })
     );
@@ -81,6 +81,6 @@ export const shiftBuildQueue = (key: string): { nextUrl?: string; returnTo?: str
 };
 
 export const clearBuildQueue = (key: string): void => {
-  if (!hasSessionStorage()) return;
-  window.sessionStorage.removeItem(buildStorageKey(key));
+  if (!hasLocalStorage()) return;
+  window.localStorage.removeItem(buildStorageKey(key));
 };

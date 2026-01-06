@@ -6,7 +6,8 @@ import {
   type AuthRequiredNotification,
   type AuthSuccessNotification,
 } from '@hierarchidb/common-auth';
-import { AuthRequiredDialog } from '@hierarchidb/ui-plugin-shell/ui-auth';
+import { AuthRequiredDialog, useSimpleBFFAuth } from '@hierarchidb/ui-plugin-shell/ui-auth';
+import { useDialogUrlSync } from '@hierarchidb/plugin-base';
 
 const HANDLER_ID = 'app-auth-required-dialog';
 
@@ -14,6 +15,8 @@ export function AuthRequiredDialogHost(): JSX.Element | null {
   const registry = AuthNotificationRegistry.getInstance();
   const [notification, setNotification] = useState<AuthRequiredNotification | null>(null);
   const activeRequestIdRef = useRef<string | null>(null);
+  const { step, setStep } = useDialogUrlSync();
+  const { user, isAuthenticated, getAccessToken } = useSimpleBFFAuth();
 
   const isAuthDebugEnabled = () => {
     try {
@@ -32,6 +35,20 @@ export function AuthRequiredDialogHost(): JSX.Element | null {
             pluginType: next.context.pluginType,
             url: next.context.url,
           });
+        }
+        const token = getAccessToken()
+          ?? (typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null);
+        const expiresAt = user?.expires_at;
+        const isTokenValid = Boolean(token) && (!expiresAt || expiresAt > Date.now());
+        if (next.context.errorCode !== 401 && isAuthenticated && isTokenValid && token) {
+          const success = AuthNotificationFactory.createAuthSuccess({
+            requestId: next.context.requestId,
+            newToken: token,
+            expiresAt: expiresAt ?? Date.now() + 60 * 60 * 1000,
+            sessionId: next.context.sessionId,
+          });
+          void registry.dispatch(success);
+          return;
         }
         activeRequestIdRef.current = next.context.requestId;
         setNotification(next);
@@ -98,18 +115,8 @@ export function AuthRequiredDialogHost(): JSX.Element | null {
     activeRequestIdRef.current = null;
     setNotification(null);
 
-    // Best-effort: when auth is declined during a multi-step plugin dialog,
-    // guide the user back to Step2 (data source selection) instead of re-prompting.
-    try {
-      const current = new URL(window.location.href);
-      const step = current.searchParams.get('step');
-      if (step === '3') {
-        current.searchParams.set('step', '2');
-        window.history.replaceState(window.history.state, '', current.toString());
-        window.dispatchEvent(new PopStateEvent('popstate'));
-      }
-    } catch {
-      // ignore
+    if (notification.context.pluginType === 'shape' && step === 3) {
+      setStep(2);
     }
   };
 

@@ -315,7 +315,7 @@ export function TreeTableCore({
   const renderSkeletonHeader = () => (
     <TableRow>
       {columns.map((column, index) => {
-        const columnId = column.id ?? (typeof column.accessorKey === 'string' ? column.accessorKey : `col-${index}`);
+        const columnId = column.id ?? `col-${index}`;
         const width = columnWidths[columnId];
         const isSelection = columnId === 'selection';
         return (
@@ -340,7 +340,7 @@ export function TreeTableCore({
     Array.from({ length: count }).map((_, rowIndex) => (
       <TableRow key={`skeleton-row-${rowIndex}`}>
         {columns.map((column, index) => {
-          const columnId = column.id ?? (typeof column.accessorKey === 'string' ? column.accessorKey : `col-${index}`);
+          const columnId = column.id ?? `col-${index}`;
           const width = columnWidths[columnId];
           const isSelection = columnId === 'selection';
           return (

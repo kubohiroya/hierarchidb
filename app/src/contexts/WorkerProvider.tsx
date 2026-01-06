@@ -10,6 +10,7 @@ import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type { WorkerInitializationChannel } from '@hierarchidb/ui-worker-client';
 import type { Remote } from 'comlink';
+import * as Comlink from 'comlink';
 import React, { type CSSProperties, type ReactNode } from 'react';
 import {
   createContext,
@@ -432,14 +433,9 @@ export const WorkerProvider = ({
     if (!status.client || !status.isInitialized) return;
     if (typeof window === 'undefined') return;
     try {
-      const token =
-        sessionStorage.getItem('access_token') ||
-        localStorage.getItem('access_token') ||
-        '';
+      const token = localStorage.getItem('access_token') || '';
       if (!token || token === lastAuthTokenRef.current) return;
-      const rawExpires =
-        sessionStorage.getItem('token_expires_at') ||
-        localStorage.getItem('token_expires_at');
+      const rawExpires = localStorage.getItem('token_expires_at');
       const expiresAt = rawExpires ? Number(rawExpires) : undefined;
       status.client.setAuthToken(token, 'Bearer', Number.isFinite(expiresAt) ? expiresAt : undefined)
         .catch((error) => {
@@ -449,6 +445,27 @@ export const WorkerProvider = ({
     } catch (error) {
       logWorkerProviderWarning('Failed to read access_token for worker', error);
     }
+  }, [status.client, status.isInitialized]);
+
+  const storageBridgeClientRef = useRef<Remote<WorkerAPI> | null>(null);
+
+  useEffect(() => {
+    if (!status.client || !status.isInitialized) return;
+    if (typeof window === 'undefined') return;
+    if (storageBridgeClientRef.current === status.client) return;
+    storageBridgeClientRef.current = status.client;
+    const bridge = Comlink.proxy({
+      getItem: async (key: string) => localStorage.getItem(key),
+      setItem: async (key: string, value: string) => {
+        localStorage.setItem(key, value);
+      },
+      removeItem: async (key: string) => {
+        localStorage.removeItem(key);
+      },
+    });
+    status.client.setUiStorageBridge(bridge).catch((error) => {
+      logWorkerProviderWarning('Failed to register UI storage bridge', error);
+    });
   }, [status.client, status.isInitialized]);
 
   const finalizeInitialized = useCallback(async () => {

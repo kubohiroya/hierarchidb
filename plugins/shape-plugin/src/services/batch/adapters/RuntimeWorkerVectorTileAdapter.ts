@@ -5,7 +5,8 @@ import type { StageControls } from './StageControls.js';
 import { type VectorTileTaskInputData, type VectorTileTaskOutputData } from '../../database/ShapeDB.js';
 import { getShapeDbApiClient } from '../ShapeBatchApiClient.js';
 import { geojson } from 'flatgeobuf';
-import type { Feature } from 'geojson';
+import type { Feature, FeatureCollection, Geometry, GeoJsonProperties } from 'geojson';
+import type { Tile } from 'geojson-vt';
 import { BatchService } from '@hierarchidb/batch';
 import { createStageWorkerClient, getStageWorkerProxy, runVectorTileStage } from '@hierarchidb/runtime-worker';
 import { type VectorTileProgress } from '@hierarchidb/gis-sdk';
@@ -24,7 +25,7 @@ type GeojsonVtIndexOptions = {
 type GeojsonVtIndexObject = {
   getTile: (z: number, x: number, y: number) => GeojsonVtTileObject | null;
 };
-type GeojsonVtTileObject = { features?: unknown[] } & Record<string, unknown>;
+type GeojsonVtTileObject = Tile;
 type VtPbfModule = typeof vtPbfNS;
 
 const isAbortError = (error: unknown): boolean => (
@@ -66,7 +67,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     const cached = this.geojsonVtPrototypeCache.get(cacheKey);
     if (cached) return cached;
     const geojsonvt = await this.loadGeojsonVt();
-    const emptyCollection = { type: 'FeatureCollection', features: [] };
+    const emptyCollection: FeatureCollection<Geometry, GeoJsonProperties> = { type: 'FeatureCollection', features: [] };
     const index = geojsonvt(emptyCollection, {
       maxZoom: options.indexMaxZoom,
       indexMaxZoom: options.indexMaxZoom,
@@ -143,7 +144,8 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
         throw new Error(`Geojson-vt index maxZoom mismatch for buffer ${bufferId}`);
       }
       const tile = index.getTile(z, x, y);
-      const tileFeatures = tile?.features;
+      if (!tile) continue;
+      const tileFeatures = tile.features;
       if (!Array.isArray(tileFeatures) || tileFeatures.length === 0) continue;
       if (!mergedTile) {
         mergedTile = { ...tile, features: [...tileFeatures] };
@@ -157,8 +159,8 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
       return null;
     }
     const vtpbf = await this.loadVtPbf();
-    const layers: Record<string, GeojsonVtTileObject> = { layer0: mergedTile };
-    const pbf = vtpbf.fromGeojsonVt(layers as unknown as GeojsonVtTileObject[], { version: 2 });
+    const layers: Record<string, Tile> = { layer0: mergedTile };
+    const pbf = vtpbf.fromGeojsonVt(layers as unknown as Tile[], { version: 2 });
     return { bytes: pbf as Uint8Array, featureCount };
   }
 
@@ -525,6 +527,9 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
               const tileZ = sampleInput.tileZ;
               const tileX = sampleInput.tileX;
               const tileY = sampleInput.tileY;
+              if (typeof tileZ !== 'number' || typeof tileX !== 'number' || typeof tileY !== 'number') {
+                throw new Error('Vector tile task is missing tile coordinates.');
+              }
               const bytes = new Uint8Array(tileInputBuffer);
               tileSizeBytes = bytes.byteLength;
               await vectorTileClient.storeTiles(

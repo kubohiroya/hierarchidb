@@ -55,30 +55,30 @@ export default function HomePage() {
     setIsClient(true);
   }, []);
 
-  const getSessionStorageKey = useCallback((treeId: string) => `lastPageNodeId_${treeId}`, []);
+  const getStorageKey = useCallback((treeId: string) => `lastPageNodeId_${treeId}`, []);
 
   const getSavedPageNodeId = useCallback(
     (treeId: string): string | null => {
       if (!isClient) return null;
       try {
-        return sessionStorage.getItem(getSessionStorageKey(treeId));
+        return localStorage.getItem(getStorageKey(treeId));
       } catch {
         return null;
       }
     },
-    [isClient, getSessionStorageKey]
+    [isClient, getStorageKey]
   );
 
   const savePageNodeId = useCallback(
     (treeId: string, pageNodeId: string) => {
       if (!isClient) return;
       try {
-        sessionStorage.setItem(getSessionStorageKey(treeId), pageNodeId);
+        localStorage.setItem(getStorageKey(treeId), pageNodeId);
       } catch {
         /* ignore */
       }
     },
-    [isClient, getSessionStorageKey]
+    [isClient, getStorageKey]
   );
 
   const handleTreeSelect = useCallback(

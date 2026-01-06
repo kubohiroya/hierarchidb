@@ -5,6 +5,7 @@ import type {
   AuthRequiredNotification,
   AuthSuccessNotification,
   PluginType,
+  AuthSource,
 } from '@hierarchidb/common-auth/AuthNotificationSystem';
 import { AUTH_CONSTANTS, AuthNotificationFactory, AuthNotificationRegistry } from '@hierarchidb/common-auth/AuthNotificationSystem';
 
@@ -13,6 +14,12 @@ type Pending = {
   reject: (e: Error) => void;
   timeout: ReturnType<typeof setTimeout>;
   context: { requestId: string; url: string; init: RequestInit; ctx: AuthContext };
+};
+
+type UiStorageBridge = {
+  getItem(key: string): Promise<string | null>;
+  setItem(key: string, value: string): Promise<void>;
+  removeItem(key: string): Promise<void>;
 };
 
 /**
@@ -25,6 +32,7 @@ export class AuthService implements AuthHeadersProvider {
   private registry = AuthNotificationRegistry.getInstance();
   private pending = new Map<string, Pending>();
   private currentToken?: { token: string; type: 'Bearer' | 'Basic'; expiresAt?: number };
+  private uiStorage?: UiStorageBridge;
 
   // Prevent immediate re-prompt loops after user cancels.
   private cancelledUntilByScope = new Map<AuthScope, number>();
@@ -60,12 +68,15 @@ export class AuthService implements AuthHeadersProvider {
     this.currentToken = { token, type, expiresAt };
   }
 
-  getAuthHeaders(): Record<string, string> {
-    // Fallback: if no in-memory token, reuse BFF access_token persisted by UI (sessionStorage/localStorage).
+  async setUiStorageBridge(bridge: UiStorageBridge): Promise<void> {
+    this.uiStorage = bridge;
+    await this.syncTokenFromStorage();
+  }
+
+  async getAuthHeaders(): Promise<Record<string, string>> {
+    // If no in-memory token, reuse BFF access_token persisted by UI localStorage.
     if (!this.currentToken?.token) {
-      const storedToken =
-        (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('access_token')) ||
-        (typeof localStorage !== 'undefined' && localStorage.getItem('access_token'));
+      const storedToken = await this.resolveStoredToken();
       if (storedToken) {
         this.setToken(storedToken, 'Bearer');
       }
@@ -89,7 +100,7 @@ export class AuthService implements AuthHeadersProvider {
     for (; attempt <= maxRetries; attempt++) {
       try {
         const headers = new Headers(init.headers);
-        const auth = this.getAuthHeaders();
+        const auth = await this.getAuthHeaders();
         Object.entries(auth).forEach(([k, v]) => headers.set(k, v));
 
         // If we're about to call a CORS proxy endpoint without a token, prompt auth first.
@@ -101,29 +112,37 @@ export class AuthService implements AuthHeadersProvider {
 
           const inFlight = this.inFlightAuthByScope.get(scope);
           if (inFlight) {
-            return await inFlight;
+            const res = await inFlight;
+            if (res.status !== 401) return res;
+            lastErr = new Error(`HTTP ${res.status}`);
+            continue;
           }
 
           if (this.isAuthDebugEnabled()) {
             console.debug('[auth][service] no token for cors-proxy url -> awaiting auth (preflight)', { scope, url });
           }
           const requestId = `auth-req-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-          const authPromise = this.awaitAuth(requestId, url, init, { sessionId: ctx.sessionId, scope, maxRetries })
+          const authPromise = this.awaitAuth(requestId, url, init, { sessionId: ctx.sessionId, scope, maxRetries }, {
+            errorCode: 0,
+            errorMessage: 'Missing authentication token',
+            source: 'cors-proxy',
+          })
             .finally(() => {
               this.inFlightAuthByScope.delete(scope);
             });
           this.inFlightAuthByScope.set(scope, authPromise);
-          // Wait for auth (or cancellation), then retry loop will continue.
-          await authPromise;
+          // Wait for auth (or cancellation), then reuse the authenticated response.
+          const res = await authPromise;
+          if (res.status !== 401) return res;
+          lastErr = new Error(`HTTP ${res.status}`);
           continue;
         }
 
         if (this.isAuthDebugEnabled()) {
           let hasStoredToken = false;
           try {
-            const s = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('access_token') : null;
-            const l = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
-            hasStoredToken = Boolean(s || l);
+            const storedToken = await this.resolveStoredToken();
+            hasStoredToken = Boolean(storedToken);
           } catch {
             // ignore
           }
@@ -136,14 +155,20 @@ export class AuthService implements AuthHeadersProvider {
            });
          }
 
-        const res = await fetch(url, { ...init, headers });
-        if (res.status !== 401) return res;
+        const fetchRes = await fetch(url, { ...init, headers });
+        if (fetchRes.status !== 401) return fetchRes;
 
         if (this.isAuthDebugEnabled()) {
           console.debug('[auth][service] 401 received -> awaiting auth', { scope, url });
         }
         const requestId = `auth-req-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-        await this.awaitAuth(requestId, url, init, { sessionId: ctx.sessionId, scope, maxRetries });
+        const authRes = await this.awaitAuth(requestId, url, init, { sessionId: ctx.sessionId, scope, maxRetries }, {
+          errorCode: 401,
+          errorMessage: 'Unauthorized',
+          source: isLikelyCorsProxyUrl(url) ? 'cors-proxy' : 'external-api',
+        });
+        if (authRes.status !== 401) return authRes;
+        lastErr = new Error(`HTTP ${authRes.status}`);
       } catch (error) {
         lastErr = error;
       }
@@ -152,7 +177,18 @@ export class AuthService implements AuthHeadersProvider {
     throw new Error(lastErr === undefined ? 'Authentication failed' : String(lastErr));
   }
 
-  private async awaitAuth(requestId: string, url: string, init: RequestInit, ctx: AuthContext): Promise<Response> {
+  private async awaitAuth(
+    requestId: string,
+    url: string,
+    init: RequestInit,
+    ctx: AuthContext,
+    params?: {
+      errorCode?: number;
+      errorMessage?: string;
+      source?: AuthSource;
+      retryCount?: number;
+    },
+  ): Promise<Response> {
     const pluginTypeNarrow: PluginType = ((): PluginType => {
       const p = ctx.scope ?? 'shape';
       return (p === 'shape' || p === 'location' || p === 'route' || p === 'spreadsheet' || p === 'styler') ? p : 'shape';
@@ -168,15 +204,15 @@ export class AuthService implements AuthHeadersProvider {
     }
 
     const notification = AuthNotificationFactory.createAuthRequired({
-      source: 'worker',
+      source: params?.source ?? 'worker',
       requestId,
       url,
       method: init.method || 'GET',
-      errorCode: 401,
-      errorMessage: 'Unauthorized',
+      errorCode: params?.errorCode ?? 401,
+      errorMessage: params?.errorMessage ?? 'Unauthorized',
       sessionId: ctx.sessionId,
       pluginType: pluginTypeNarrow,
-      retryCount: 0,
+      retryCount: params?.retryCount ?? 0,
     });
 
     return new Promise<Response>((resolve, reject) => {
@@ -196,6 +232,16 @@ export class AuthService implements AuthHeadersProvider {
     clearTimeout(p.timeout);
     this.pending.delete(requestId);
     this.setToken(token, type, expiresAt);
+    if (this.uiStorage) {
+      try {
+        await this.uiStorage.setItem('access_token', token);
+        if (typeof expiresAt === 'number') {
+          await this.uiStorage.setItem('token_expires_at', String(expiresAt));
+        }
+      } catch {
+        // ignore storage bridge errors
+      }
+    }
     try {
       const headers = new Headers(p.context.init.headers);
       headers.set('Authorization', `${type} ${token}`);
@@ -223,6 +269,28 @@ export class AuthService implements AuthHeadersProvider {
     const until = this.cancelledUntilByScope.get(scope);
     if (!until) return false;
     return Date.now() < until;
+  }
+
+  private async syncTokenFromStorage(): Promise<void> {
+    if (this.currentToken?.token) return;
+    const storedToken = await this.resolveStoredToken();
+    if (storedToken) {
+      this.setToken(storedToken, 'Bearer');
+    }
+  }
+
+  private async resolveStoredToken(): Promise<string | null> {
+    if (this.uiStorage) {
+      try {
+        return await this.uiStorage.getItem('access_token');
+      } catch {
+        return null;
+      }
+    }
+    if (typeof localStorage !== 'undefined') {
+      return localStorage.getItem('access_token');
+    }
+    return null;
   }
 }
 
