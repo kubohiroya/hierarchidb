@@ -21,7 +21,8 @@ export class ShapeWorkerPool {
   static async create(size: number): Promise<ShapeWorkerPool> {
     const count = Math.max(1, size);
     const auth = await AuthService.getSingleton();
-    const authHeader = auth.getAuthHeaders().Authorization;
+    const authHeaders = await auth.getAuthHeaders();
+    const authHeader = authHeaders.Authorization;
     const handles = Array.from({ length: count }, () => {
       const worker = new Worker(new URL('@hierarchidb/shape-plugin/shape-stage-worker', import.meta.url), {
         type: 'module',
@@ -40,7 +41,8 @@ export class ShapeWorkerPool {
 
   async run<T>(runner: (api: Remote<ShapeStageWorkerAPI>) => Promise<T>): Promise<T> {
     const auth = await AuthService.getSingleton();
-    const authHeader = auth.getAuthHeaders().Authorization;
+    const authHeaders = await auth.getAuthHeaders();
+    const authHeader = authHeaders.Authorization;
     if (authHeader !== this.authHeader) {
       await this.syncAuthHeader(authHeader);
     }
