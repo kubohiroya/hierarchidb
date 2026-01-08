@@ -22,6 +22,19 @@ export const en: RoutePluginTranslations = {
     warning: 'Warning',
   },
 
+  dataSource: {
+    title: 'Data Source',
+    description: 'Choose the primary dataset or service that provides route geometry.',
+    selectionTitle: 'Data Source',
+    detailsTitle: 'Data Source Details',
+    licenseRequired: 'License agreement is required to proceed.',
+    clearCache: 'Clear cache for selected data source',
+    cacheCleared: 'Cleared cache for selected data source.',
+    cacheClearFailed: 'Failed to clear data source cache.',
+    cacheMissing: 'Select a data source first.',
+    cacheMissingNode: 'NodeId is missing.',
+  },
+
   // Basic info
   basicInfo: {
     title: 'Route Basic Information',

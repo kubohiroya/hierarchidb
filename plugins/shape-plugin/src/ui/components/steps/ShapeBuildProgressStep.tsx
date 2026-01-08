@@ -56,6 +56,26 @@ const isSkippedMessage = (message?: string | null): boolean => {
   return normalized === 'skipped' || normalized.startsWith('skipped:');
 };
 
+const normalizeStageId = (stage?: string): 'fetch' | 'transform' | 'vt' | undefined => {
+  if (!stage) return undefined;
+  switch (stage) {
+    case 'download':
+    case 'shape-fetch':
+    case 'fetch':
+      return 'fetch';
+    case 'extract1':
+    case 'extract2':
+    case 'transform':
+      return 'transform';
+    case 'vectortile':
+    case 'vectorTiles':
+    case 'vt':
+      return 'vt';
+    default:
+      return undefined;
+  }
+};
+
 type TaskListProps = {
   tasks: BatchTaskSummary[];
   stageValue: number;
@@ -343,7 +363,7 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
 
   const renderStageContent = useCallback((stage: BuildStage, stageValue: number) => {
     const stageTasks = tasksByStage[stage.id] ?? [];
-    const displayTasks = stage.id === 'vectorTiles'
+    const displayTasks = stage.id === 'vt'
       ? sortVectorTileTasks(stageTasks)
       : stageTasks;
     const hasTasks = stageTasks.length > 0;
@@ -393,7 +413,7 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
 
   const startWarning = useMemo(() => {
     if (!crashInsight || !crashInsight.memoryPressure) return null;
-    const stageId = crashInsight.stage;
+    const stageId = normalizeStageId(crashInsight.stage);
     if (!stageId) {
       return {
         title: t('stage.warning.title', 'Build warning'),
@@ -407,13 +427,12 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
     const stageLabel = stage?.title ?? stageId;
     const currentValue = (() => {
       switch (stageId) {
-        case 'download':
+        case 'fetch':
           return data?.batchConfig?.downloadConfig?.maxConcurrent;
-        case 'extract1':
-          return data?.batchConfig?.extract1Config?.workers;
-        case 'extract2':
-          return data?.batchConfig?.extract2Config?.workers;
-        case 'vectorTiles':
+        case 'transform':
+          return data?.batchConfig?.extract2Config?.workers
+            ?? data?.batchConfig?.extract1Config?.workers;
+        case 'vt':
           return data?.batchConfig?.tileConfig?.workers;
         default:
           return undefined;
@@ -449,7 +468,9 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
       );
     }
     const stageLabel = crashInsight.stage
-      ? effectiveStages.find((candidate) => candidate.id === crashInsight.stage)?.title ?? crashInsight.stage
+      ? effectiveStages.find((candidate) => candidate.id === normalizeStageId(crashInsight.stage))?.title
+        ?? normalizeStageId(crashInsight.stage)
+        ?? crashInsight.stage
       : t('stage.warning.unknownStageShort', 'unknown stage');
     const ratioText = crashInsight.peakRatio
       ? `${(crashInsight.peakRatio * 100).toFixed(1)}%`

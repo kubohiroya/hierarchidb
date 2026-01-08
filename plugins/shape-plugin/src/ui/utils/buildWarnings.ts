@@ -1,12 +1,38 @@
 import type { CrashInsight } from '@hierarchidb/ui-monitoring';
 
-export type ShapeBuildStage = 'download' | 'extract1' | 'extract2' | 'vectorTiles';
+export type ShapeBuildStage =
+  | 'fetch'
+  | 'transform'
+  | 'vt'
+  | 'download'
+  | 'extract1'
+  | 'extract2'
+  | 'vectorTiles';
 
 export type ShapeBuildConfigSnapshot = {
   downloadConcurrency?: number;
-  extract1Workers?: number;
-  extract2Workers?: number;
+  transformWorkers?: number;
   tileWorkers?: number;
+};
+
+export const normalizeShapeBuildStage = (stage?: string): 'fetch' | 'transform' | 'vt' | undefined => {
+  if (!stage) return undefined;
+  switch (stage) {
+    case 'download':
+    case 'shape-fetch':
+    case 'fetch':
+      return 'fetch';
+    case 'extract1':
+    case 'extract2':
+    case 'transform':
+      return 'transform';
+    case 'vectortile':
+    case 'vectorTiles':
+    case 'vt':
+      return 'vt';
+    default:
+      return undefined;
+  }
 };
 
 export const getStageConcurrencyWarning = (
@@ -14,19 +40,19 @@ export const getStageConcurrencyWarning = (
   stage: ShapeBuildStage,
   currentValue?: number,
 ): { message: string; threshold?: number } | null => {
-  if (!insight || insight.stage !== stage) return null;
+  const normalizedStage = normalizeShapeBuildStage(stage);
+  const normalizedInsightStage = normalizeShapeBuildStage(insight?.stage);
+  if (!insight || !normalizedStage || normalizedInsightStage !== normalizedStage) return null;
   if (!insight.memoryPressure) return null;
   if (currentValue == null) return null;
   const snapshot = insight.configSnapshot;
   const threshold = (() => {
-    switch (stage) {
-      case 'download':
+    switch (normalizedStage) {
+      case 'fetch':
         return snapshot?.downloadConcurrency;
-      case 'extract1':
-        return snapshot?.extract1Workers;
-      case 'extract2':
-        return snapshot?.extract2Workers;
-      case 'vectorTiles':
+      case 'transform':
+        return snapshot?.transformWorkers;
+      case 'vt':
         return snapshot?.tileWorkers;
       default:
         return undefined;
@@ -47,7 +73,6 @@ export const getBuildConfigSnapshot = (config?: {
   tileConfig?: { workers?: number };
 }): ShapeBuildConfigSnapshot => ({
   downloadConcurrency: config?.downloadConfig?.maxConcurrent,
-  extract1Workers: config?.extract1Config?.workers,
-  extract2Workers: config?.extract2Config?.workers,
+  transformWorkers: config?.extract2Config?.workers ?? config?.extract1Config?.workers,
   tileWorkers: config?.tileConfig?.workers,
 });

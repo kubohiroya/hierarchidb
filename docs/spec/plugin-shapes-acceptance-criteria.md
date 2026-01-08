@@ -8,7 +8,8 @@
 
 ## 関連文書
 
-- **要件定義**: [📋 plugin-shapes-requirements.md](plugin-shapes-requirements.md)
+- **要件定義（旧）**: [📋 docs/obsolate/spec/plugin-shapes-requirements.md](../obsolate/spec/plugin-shapes-requirements.md)
+- **新設計（現行）**: [📌 docs/vt-shape-pipeline-design.md](../vt-shape-pipeline-design.md), [📌 docs/vt-pipeline-design.md](../vt-pipeline-design.md)
 - **ユーザストーリー**: [📖 plugin-shapes-user-stories.md](plugin-shapes-user-stories.md)
 - **参考実装**: `/packages/plugins/basemap/` - BaseMapプラグイン実装
 

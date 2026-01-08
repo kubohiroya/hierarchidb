@@ -3,20 +3,24 @@
  * @description Step 2: select data source for route generation.
  */
 
-import { useCallback, useEffect, useMemo } from 'react';
-import { Box } from '@mui/material';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Box, Button } from '@mui/material';
+import { notify } from '@hierarchidb/components';
 import { FileInputWithUrl } from '@hierarchidb/ui-file';
 import { DataSourceSelectionStep, type DataSourceSelectionOption } from '@hierarchidb/ui-datasource';
 import { useTranslation } from '../../../common/i18n/index.js';
 import type { RouteEntity, RouteUpdaterPayload } from '../../../common/entities/RouteEntity.js';
 import { getRouteUpdaterPayload } from '../../../common/utils/draft.js';
 import { ROUTE_DATA_SOURCES } from '../../../common/datasource/configs.js';
+import { clearRouteDataSourceCache } from '../../utils/clearDataSourceCache.js';
+import { toNodeId } from '@hierarchidb/common-types';
 
 export interface RouteDataSourceStepProps {
   draft: RouteUpdaterPayload;
   onUpdate: (updates: Partial<RouteEntity>) => void;
   onValidationChange: (isValid: boolean) => void;
   disabled?: boolean;
+  nodeId?: string;
 }
 
 const DATA_SOURCE_OPTIONS = [
@@ -33,10 +37,13 @@ export const RouteDataSourceStep: React.FC<RouteDataSourceStepProps> = ({
   onUpdate,
   onValidationChange,
   disabled = false,
+  nodeId,
 }) => {
   const { t } = useTranslation();
   const draft = useMemo(() => getRouteUpdaterPayload(draftProp), [draftProp]);
   const resolvedSource = (draft.dataSourceName as DataSourceKey | undefined) ?? 'openstreetmap';
+  const resolvedNodeId = nodeId ? toNodeId(String(nodeId)) : undefined;
+  const [isClearing, setIsClearing] = useState(false);
   const dataSourceMap = useMemo(
     () => new Map(ROUTE_DATA_SOURCES.map((source) => [source.name, source])),
     [],
@@ -130,6 +137,34 @@ export const RouteDataSourceStep: React.FC<RouteDataSourceStepProps> = ({
           );
         }}
       />
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+        <Button
+          variant="outlined"
+          onClick={async () => {
+            if (!resolvedNodeId) {
+              notify.warning(t('dataSource.cacheMissingNode', 'NodeId is missing.'));
+              return;
+            }
+            if (!resolvedSource) {
+              notify.warning(t('dataSource.cacheMissing', 'Select a data source first.'));
+              return;
+            }
+            try {
+              setIsClearing(true);
+              await clearRouteDataSourceCache(resolvedNodeId, resolvedSource);
+              notify.success(t('dataSource.cacheCleared', 'Cleared cache for selected data source.'));
+            } catch (error) {
+              console.error('[route] failed to clear data source cache', error);
+              notify.error(t('dataSource.cacheClearFailed', 'Failed to clear data source cache.'));
+            } finally {
+              setIsClearing(false);
+            }
+          }}
+          disabled={Boolean(disabled || !resolvedSource || isClearing)}
+        >
+          {t('dataSource.clearCache', 'Clear cache for selected data source')}
+        </Button>
+      </Box>
     </Box>
   );
 };

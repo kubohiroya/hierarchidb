@@ -1,3 +1,242 @@
+2123) fix/shape/typecheck-auth-headers (P1) — 完了 (2026-01-11)
+- ブランチ名: fix/shape/typecheck-auth-headers
+- 依存: なし
+- 受け入れ基準: `plugins/shape-plugin/src/services/batch/adapters/ShapeWorkerPool.ts` の Authorization 参照に起因する TS2339 が解消される／認証ヘッダーの取得ロジックは現状維持／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/batch/adapters/ShapeWorkerPool.ts`
+- ロールバック手順: 該当ファイルの差分を revert し、修正前の型エラー状態へ戻す
+- チェックリスト:
+  - Authorization ヘッダー取得の型エラー原因を特定する
+  - 最小修正で typecheck を通す
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 22:05 JST shape-plugin の Authorization ヘッダー型エラー修正に着手。
+  - update: 2026-01-11 22:08 JST getAuthHeaders の await を追加し Authorization 取得の型エラーを解消。検証: `pnpm --filter @hierarchidb/shape-plugin typecheck`（成功）。
+  - done: 2026-01-11 22:08 JST shape-plugin の typecheck エラー修正を完了。
+
+2124) feat/ui/datasource-cache-clear (P1) — 進行中 (2026-01-12)
+- ブランチ名: feat/ui/datasource-cache-clear
+- 依存: なし
+- 受け入れ基準: Step2 のデータソース選択画面に「選択中データソースのキャッシュ削除」ボタンが表示される／shape・route の双方でキャッシュ削除が動作し、成功/失敗が通知される／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`, `plugins/route-plugin/src/ui/**`, `plugins/shape-plugin/src/services/utils/chunkStore.ts`（必要に応じて）
+- ロールバック手順: 追加したボタンとキャッシュ削除処理の差分を revert し、従来の Step2 へ戻す
+- チェックリスト:
+  - shape/route の Step2 にキャッシュ削除ボタンを追加する
+  - data source ごとのキャッシュ削除処理を実装する
+  - 成功/失敗の通知を表示する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-12 18:30 JST Step2 のデータソースキャッシュ削除ボタン実装に着手。
+  - update: 2026-01-12 19:00 JST shape/route のキャッシュ削除ボタンとデータソース別削除処理を追加し、i18n と通知を接続。検証: 未実施。
+  - update: 2026-01-12 19:20 JST location Step2 にキャッシュ削除ボタンを追加し、location データ削除と通知/i18n を接続。検証: 未実施。
+  - update: 2026-01-12 19:40 JST Step2/Step5 の削除対象と有効条件を整理し、Step5 ボタンの無効化方針に着手。検証: 未実施。
+  - update: 2026-01-12 20:00 JST shape/location の Step4 ダウンロード削除をポリシーで無効化。検証: 未実施。
+  - update: 2026-01-12 20:20 JST vt パイプライン共通設計の棚卸しと矛盾補修に着手。検証: 未実施。
+  - update: 2026-01-12 20:40 JST srcId/dstId 命名とリトライ方針、fetch実行責務を反映。検証: 未実施。
+  - update: 2026-01-12 20:50 JST taskQueue UI 可視化は現行実装を踏襲する方針を明記。検証: 未実施。
+  - update: 2026-01-12 21:00 JST fetch実行/記録の整合と taskQueue→LRUSplitPane 接続点の補強に着手。検証: 未実施。
+  - update: 2026-01-12 21:20 JST vt-pipeline-design の taskQueue/図表整合と LRUSplitPane 接続記述の補強に着手。検証: 未実施。
+  - update: 2026-01-12 21:35 JST vt-pipeline-design の taskQueue 記述と Mermaid 図を整合化し、LRUSplitPane 接続の説明を補強。検証: 未実施。
+  - update: 2026-01-12 22:20 JST 新設計の用語/要件に合わせて vt ドキュメントと ExecPlan を更新。検証: 未実施。
+  - update: 2026-01-12 22:30 JST shape-fetch の国コード基準を ISO2 として明文化。検証: 未実施。
+
+2125) docs/shape-design-consistency-review (P2) — 進行中 (2026-01-12)
+- ブランチ名: docs/shape-design-consistency-review
+- 依存: なし
+- 受け入れ基準: shape-plugin 設計ドキュメントの所在を特定し、当該ドキュメントのみを手掛かりに実装作業が一貫して進められるかを評価する／不足や曖昧な点を項目立てで指摘する／TASKS.md に運用ログを記載する
+- 影響範囲: `docs/**`, `plugins/shape-plugin/**`（調査対象）
+- ロールバック手順: ドキュメント/ログの更新差分を revert し、調査着手前の状態へ戻す
+- チェックリスト:
+  - shape-plugin 設計ドキュメントの所在を確認する
+  - 設計ドキュメントの不足点を項目立てで整理する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-12 21:45 JST shape-plugin 設計ドキュメントの実装一貫性レビューに着手。
+  - done: 2026-01-12 22:05 JST shape-plugin 設計ドキュメントの不足/矛盾点を整理し、実装一貫性の観点で指摘をまとめた。検証: 該当ドキュメントの読解のみ。
+
+2126) docs/shape-design-alignment (P2) — 進行中 (2026-01-12)
+- ブランチ名: docs/shape-design-alignment
+- 依存: なし
+- 受け入れ基準: 旧仕様ドキュメントを obsolate に移動し、参照関係を更新する／新設計（shape-fetch/transform/vt）に合わせた補足（Step4設定要素、ISO2基準）を反映する／TASKS.md に運用ログを記載する
+- 影響範囲: `docs/**`
+- ロールバック手順: 移動・更新したドキュメントの差分を revert し、元の配置へ戻す
+- チェックリスト:
+  - 旧仕様のドキュメントを obsolate に移動する
+  - 参照リンクを新しいパスに更新する
+  - 新設計の追加要素をドキュメントへ追記する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-12 22:35 JST 旧仕様ドキュメント移動と新設計整合の追記に着手。
+  - done: 2026-01-12 22:50 JST 旧仕様ドキュメントを obsolate に移動し、参照リンクと Step4 設定要素/ISO2 方針を反映。検証: 未実施。
+
+2128) docs/step4-structure-and-alignment (P2) — 進行中 (2026-01-13)
+- ブランチ名: docs/step4-structure-and-alignment
+- 依存: なし
+- 受け入れ基準: Step4 の UI 構造を4階層ツリーで整理し、(A)-(D) の対応区分を記載する／TASKS.md に運用ログを記載する
+- 影響範囲: `docs/vt-pipeline-design.md`
+- ロールバック手順: 追記差分を revert し、追記前の状態へ戻す
+- チェックリスト:
+  - Step4 の UI 構造ツリーを追記する
+  - (A)-(D) の対応区分を追記する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-13 00:05 JST Step4 のUI構造ツリーと(A)-(D)整理の追記に着手。
+  - done: 2026-01-13 00:20 JST Step4 のUI構造ツリーと(A)-(D)の対応区分を vt-pipeline-design に追記。検証: 未実施。
+  - update: 2026-01-13 00:35 JST transform の格子スナップ→RDP の順序と解像度条件を追記。検証: 未実施。
+  - update: 2026-01-13 00:50 JST transform の adminLevel 優先順位と stagePriority 付与を仕様に追記。検証: 未実施。
+  - update: 2026-01-13 01:05 JST transform/vt の境界ライン保存とタイル生成への適用を追記。検証: 未実施。
+  - update: 2026-01-13 01:15 JST vt ステージで boundary LineString のデデュープを追加で明記。検証: 未実施。
+  - update: 2026-01-13 01:25 JST ui-map の admin-boundary 描画タスクを関連項目として追記。検証: 未実施。
+  - update: 2026-01-13 01:35 JST boundary デデュープの実装メモを vt-pipeline-design に追記。検証: 未実施。
+  - update: 2026-01-13 01:55 JST GeoBoundaries/GADM の ISO2→ISO3 変換例と boundary デデュープの高速キー化を追記。検証: 未実施。
+  - update: 2026-01-13 02:15 JST taskQueue 優先度の運用と Step4 入力仕様の暫定整理を追記。検証: 未実施。
+  - update: 2026-01-13 02:35 JST Step4 の高度な設定扱いと extractionMode 削除を反映。検証: 未実施。
+  - update: 2026-01-13 03:00 JST 簡略化 tolerance の4分類と座標系の橋渡し前提を追記。検証: 未実施。
+  - update: 2026-01-13 03:20 JST WebMercator(meters) での tolerance 計算式とコード例を追記。検証: 未実施。
+  - update: 2026-01-13 03:40 JST 簡略化強度のUI表記とk=1.0既定、route tolerance 範囲/既定値を反映。検証: 未実施。
+  - update: 2026-01-13 04:05 JST 印刷用途を含む解像度基準（extent=4096/表示px=256/512）を明文化する追記に着手。検証: 未実施。
+  - update: 2026-01-13 04:15 JST MVT extent=4096 を格子基準とし、印刷/表示は tileSize+pixelRatio で制御する旨を追記。検証: 未実施。
+  - update: 2026-01-13 04:25 JST maplibre-gl-export の印刷向け pixelRatio/DPI ガイド追記に着手。検証: 未実施。
+  - update: 2026-01-13 04:35 JST Step4 UI ツリーに簡略化強度（Transform/VT）の配置を具体化する追記に着手。検証: 未実施。
+  - update: 2026-01-13 04:45 JST Step4 UI ツリーへ Transform/VT 簡略化強度の配置（shape/route）を追記。検証: 未実施。
+  - update: 2026-01-13 04:55 JST Step4 入力仕様に Transform/VT の簡略化強度（shape/route）の範囲/既定値を追記する作業に着手。検証: 未実施。
+  - update: 2026-01-13 05:05 JST Step4 入力仕様へ Transform/VT 簡略化強度の項目（shape/route）を追加。検証: 未実施。
+  - update: 2026-01-13 05:15 JST Step4 入力仕様の既定値出典を現行実装に合わせて補正。検証: 未実施。
+  - update: 2026-01-13 05:25 JST Step4 既存UIと新設計の衝突点一覧を追記する作業に着手。検証: 未実施。
+  - update: 2026-01-13 05:30 JST Step4 既存UIと新設計の衝突点（tolerance系中心）を整理して追記。検証: 未実施。
+  - update: 2026-01-13 05:40 JST Step4 衝突点の優先度（P1/P2/P3）と理由を追記する作業に着手。検証: 未実施。
+  - update: 2026-01-13 05:45 JST Step4 衝突点の優先度を付与し、理由を併記。検証: 未実施。
+  - update: 2026-01-13 05:55 JST Step4 衝突点の削除/残置/移行判断を追記する作業に着手。検証: 未実施。
+  - update: 2026-01-13 06:00 JST Step4 衝突点に削除/残置/移行判断を追記。検証: 未実施。
+  - update: 2026-01-13 06:10 JST 新設計に合わせた UI 文言変更項目の棚卸しに着手。検証: 未実施。
+  - update: 2026-01-13 06:15 JST Step4 UI 文言の置換表（新設計用語）を追記。検証: 未実施。
+  - update: 2026-01-13 06:25 JST Step4 入力項目のUI表記（日本語/英語）案を追記する作業に着手。検証: 未実施。
+  - update: 2026-01-13 06:30 JST Step4 UI 表記案（日本語/英語）を shape/route で追記。検証: 未実施。
+  - update: 2026-01-13 06:40 JST 文言置換表とUI表記案の統合整理に着手。検証: 未実施。
+  - update: 2026-01-13 06:45 JST 文言置換表とUI表記案を統合し、旧→新と最終表記を整理。検証: 未実施。
+  - update: 2026-01-13 06:55 JST 旧用語（Legacy 等）の整理方針追記に着手。検証: 未実施。
+  - update: 2026-01-13 07:00 JST 旧用語（Legacy 等）の整理方針を Step4 文書に追記。検証: 未実施。
+  - update: 2026-01-13 07:10 JST 旧表記に依存する説明文の差し替え整理に着手。検証: 未実施。
+  - update: 2026-01-13 07:15 JST 旧表記に依存する説明文の差し替え対象と新文面を追記。検証: 未実施。
+  - update: 2026-01-13 07:25 JST Step4 入力項目名と説明文の対応表追記に着手。検証: 未実施。
+  - update: 2026-01-13 07:30 JST Step4 入力項目名と説明文の対応表（shape/route）を追記。検証: 未実施。
+  - update: 2026-01-13 07:40 JST Step4 入力仕様とUI表記案の整合微修正に着手。検証: 未実施。
+  - update: 2026-01-13 07:45 JST Step4 入力仕様/表記の整合修正（route移行方針とlegacy記述）を反映。検証: 未実施。
+  - update: 2026-01-13 07:55 JST 説明文の移行方針整合（legacy/新設計併存）を反映する作業に着手。検証: 未実施。
+  - update: 2026-01-13 08:00 JST 説明文に移行中の注意文を追記し、legacy/新設計併存の整合を反映。検証: 未実施。
+  - update: 2026-01-13 08:10 JST Legacy controls（旧Extract互換）の別枠整理案追記に着手。検証: 未実施。
+  - update: 2026-01-13 08:15 JST Legacy controls（旧Extract互換）の別枠整理案を追記。検証: 未実施。
+  - update: 2026-01-13 08:25 JST Step4 UI 構造ツリーに Legacy controls 集約の注記を追加する作業に着手。検証: 未実施。
+  - update: 2026-01-13 08:30 JST Step4 UI 構造ツリーに Legacy controls を Advanced Settings へ集約する注記を追記。検証: 未実施。
+  - update: 2026-01-13 08:40 JST Legacy controls のUI補足文（旧互換）を追記する作業に着手。検証: 未実施。
+  - update: 2026-01-13 08:45 JST Legacy controls のUI補足文（旧互換/Advanced Settings）を追記。検証: 未実施。
+  - update: 2026-01-13 08:55 JST Legacy controls 対象項目へのタグ付け追記に着手。検証: 未実施。
+  - update: 2026-01-13 09:00 JST Legacy controls 対象項目にタグ付け（UI表記案）を追記。検証: 未実施。
+  - update: 2026-01-13 09:10 JST Legacy controls 対象項目の説明文対応表へ注記追加に着手。検証: 未実施。
+  - update: 2026-01-13 09:15 JST Legacy controls 対象項目に Advanced Settings 注記を説明文対応表へ追記。検証: 未実施。
+  - update: 2026-01-13 09:25 JST Step4 入力仕様へ Legacy controls（Advanced Settings）注記を追記する作業に着手。検証: 未実施。
+  - update: 2026-01-13 09:30 JST Step4 入力仕様の Legacy controls 項目へ Advanced Settings 注記を追記。検証: 未実施。
+  - update: 2026-01-13 09:35 JST Legacy controls の注記とUI構造の整合を確認し、対応区分の文言を補正。検証: 未実施。
+  - update: 2026-01-13 09:45 JST route の Advanced Settings に Legacy controls なしの注記を追記する作業に着手。検証: 未実施。
+  - update: 2026-01-13 09:50 JST route の Advanced Settings に Legacy controls なしの注記を追記。検証: 未実施。
+  - update: 2026-01-13 10:00 JST route 入力仕様の legacy/new 併記整理に着手。検証: 未実施。
+  - update: 2026-01-13 10:05 JST route 入力仕様の legacy/new 併記を現行/移行後で整理。検証: 未実施。
+  - update: 2026-01-13 10:15 JST shape 入力仕様の legacy/new 併記整理に着手。検証: 未実施。
+  - update: 2026-01-13 10:20 JST shape 入力仕様の legacy/new 併記を現行/移行後で整理。検証: 未実施。
+  - update: 2026-01-13 10:30 JST Step4 入力仕様の先頭に Legacy controls 一覧を追加する作業に着手。検証: 未実施。
+  - update: 2026-01-13 10:35 JST Step4 入力仕様の先頭に Legacy controls 一覧を追記。検証: 未実施。
+  - update: 2026-01-13 10:45 JST Legacy controls 一覧に対応注記を追加する作業に着手。検証: 未実施。
+  - update: 2026-01-13 10:50 JST Legacy controls 一覧に UI 構造/表記/説明文との対応注記を追記。検証: 未実施。
+  - update: 2026-01-13 11:00 JST Step4 入力仕様の非Legacy項目を簡潔に再整理する作業に着手。検証: 未実施。
+  - update: 2026-01-13 11:05 JST Step4 入力仕様に非Legacy項目の要約を追記。検証: 未実施。
+  - update: 2026-01-13 11:15 JST Step4 入力仕様の詳細を fetch/transform/vt の順で読みやすくする修正に着手。検証: 未実施。
+  - update: 2026-01-13 11:20 JST Step4 入力仕様の詳細に fetch/transform/vt の小見出しを追加し読みやすく整理。検証: 未実施。
+  - update: 2026-01-13 11:30 JST route 入力仕様に task split の小見出しと項目を明記する作業に着手。検証: 未実施。
+  - update: 2026-01-13 11:35 JST route 入力仕様に task split の小見出しと項目を追記。検証: 未実施。
+  - update: 2026-01-13 11:45 JST shape 入力仕様に task split の小見出しと項目を追記する作業に着手。検証: 未実施。
+  - update: 2026-01-13 11:50 JST shape 入力仕様に task split の小見出しと項目を追記。検証: 未実施。
+  - update: 2026-01-13 12:00 JST task split と Advanced Settings の相互参照注記を追記する作業に着手。検証: 未実施。
+  - update: 2026-01-13 12:05 JST task split 項目に Advanced Settings 参照注記を追記。検証: 未実施。
+  - update: 2026-01-13 12:15 JST UI 構造ツリーの Legacy controls を Advanced Settings に集約し、重複配置を解消。検証: 未実施。
+  - update: 2026-01-13 12:25 JST Legacy controls の注記とUI構造整合を明示する文言を追記。検証: 未実施。
+  - update: 2026-01-13 12:30 JST Legacy controls の注記にUI構造側の整合（重複なし）を明記。検証: 未実施。
+  - update: 2026-01-13 12:40 JST Step4 入力仕様周辺の冗長表現整理に着手。検証: 未実施。
+  - update: 2026-01-13 12:45 JST Step4 入力仕様の Legacy controls 注記を簡潔化して重複を削減。検証: 未実施。
+  - update: 2026-01-13 12:55 JST 非Legacy要約に詳細参照の注記を追加する作業に着手。検証: 未実施。
+  - update: 2026-01-13 13:00 JST 非Legacy要約に詳細参照の注記を追記。検証: 未実施。
+  - update: 2026-01-13 13:10 JST Step4 入力仕様の利用ガイド（要約→詳細→UI構造）を追記する作業に着手。検証: 未実施。
+  - update: 2026-01-13 13:15 JST Step4 入力仕様の使い方ガイド（要約→詳細→UI構造）を追記。検証: 未実施。
+  - update: 2026-01-13 13:25 JST 旧用語の削除タイミングを簡潔に追記する作業に着手。検証: 未実施。
+  - update: 2026-01-13 13:30 JST 旧用語の削除タイミング（旧Extract削除完了+移行後適用確認）を追記。検証: 未実施。
+  - update: 2026-01-13 13:40 JST 移行後に有効化する項目のチェックリスト追記に着手。検証: 未実施。
+  - update: 2026-01-13 13:45 JST 移行後に有効化する項目のチェックリストを追記。検証: 未実施。
+  - update: 2026-01-13 13:55 JST 移行後チェックリストとTASKS運用のリンク文を追記する作業に着手。検証: 未実施。
+  - update: 2026-01-13 14:00 JST 移行後チェックリストに TASKS 運用ログ記録の注記を追記。検証: 未実施。
+  - update: 2026-01-13 14:10 JST Step4 入力仕様が最終仕様ソースである旨を明記する作業に着手。検証: 未実施。
+  - update: 2026-01-13 14:15 JST Step4 入力仕様が最終仕様ソースである旨を追記。検証: 未実施。
+  - update: 2026-01-13 14:25 JST 他ドキュメントの重複記述を参照表記へ置換する作業に着手。検証: 未実施。
+  - update: 2026-01-13 14:30 JST vt-shape/vt-route の Step4 に入力仕様の参照先を追記。検証: 未実施。
+  - update: 2026-01-13 14:35 JST vt-shape/vt-route/location-route の Step4 参照注記を追加し重複記述を抑制。検証: 未実施。
+  - update: 2026-01-13 14:45 JST Step4 の「Processing Settings」を「Build Settings」に統一する作業に着手。検証: 未実施。
+  - update: 2026-01-13 14:50 JST Step4 の「Processing Settings」を「Build Settings」に統一。検証: 未実施。
+  - update: 2026-01-13 15:00 JST 置換表から旧表記を削除し Build Settings 表記に整理する作業に着手。検証: 未実施。
+  - update: 2026-01-13 15:05 JST 置換表から旧表記を削除し Build Settings 表記のみに整理。検証: 未実施。
+  - update: 2026-01-13 15:15 JST UI 表記セクションの見出し簡潔化に着手。検証: 未実施。
+  - update: 2026-01-13 15:20 JST UI 表記セクション見出しを「最終版」に簡潔化。検証: 未実施。
+  - update: 2026-01-13 15:30 JST Step4 衝突点セクション見出しの簡潔化に着手。検証: 未実施。
+  - update: 2026-01-13 15:35 JST Step4 差分・移行点セクションに簡潔化と説明文を反映。検証: 未実施。
+  - update: 2026-01-13 15:45 JST Legacy controls 見出し簡潔化に着手。検証: 未実施。
+  - update: 2026-01-13 15:50 JST Legacy controls 見出しを簡潔化し説明文を追加。検証: 未実施。
+  - update: 2026-01-13 16:00 JST 非Legacy要約見出しの簡潔化に着手。検証: 未実施。
+  - update: 2026-01-13 16:05 JST 非Legacy要約見出しを簡潔化。検証: 未実施。
+  - update: 2026-01-13 16:15 JST 入力項目の対応表見出し簡潔化に着手。検証: 未実施。
+  - update: 2026-01-13 16:20 JST 入力項目の対応表見出しを簡潔化。検証: 未実施。
+  - update: 2026-01-13 16:35 JST Step4 入力仕様セクションを全体再編（Legacy/非Legacy/移行/表記/詳細/説明）し、重複を統合。検証: 未実施。
+  - update: 2026-01-13 16:40 JST location-route 設計差分ドキュメントの Step4 参照を統一（vt-pipeline 参照）。検証: 未実施。
+  - update: 2026-01-13 16:50 JST Step4 補足セクションを簡潔化し、UI表記と整合する形に再整理。検証: 未実施。
+  - update: 2026-01-13 17:00 JST 再実行/再利用の判定計画（fetch/transform/vt）を明文化。検証: 未実施。
+  - update: 2026-01-13 17:10 JST 判定キーのハッシュ対象項目と正規化ルールを追記。検証: 未実施。
+  - update: 2026-01-13 17:15 JST ハッシュ用シリアライズ形式（JSONキー順固定）を追記。検証: 未実施。
+  - update: 2026-01-13 17:20 JST taskId 構成例に hash を含める拡張例を追記。検証: 未実施。
+  - update: 2026-01-13 17:30 JST 再実行/再利用の実装手順（taskQueue更新）とFGB保存先再掲を追記。検証: 未実施。
+  - update: 2026-01-13 17:40 JST fetch-shape は URL を smartFetch キーとして扱う前提を追記。検証: 未実施。
+  - update: 2026-01-13 17:45 JST ハッシュ生成は既存の SHA3 実装を使用する方針を追記。検証: 未実施。
+  - update: 2026-01-13 17:50 JST band3 上限超過はエラー扱い、Step3 判定依存、vt-store 保存キー連結方式を追記。検証: 未実施。
+  - update: 2026-01-13 17:55 JST band3 上限超過エラーは安全策・非サポートである旨を明記。検証: 未実施。
+  - update: 2026-01-13 18:00 JST vt-store 保存キーの区切り文字例を追記。検証: 未実施。
+
+2129) feat/shape/vt-pipeline-implementation (P1) — 進行中 (2026-01-13)
+- ブランチ名: feat/shape/vt-pipeline-implementation
+- 依存: なし
+- 受け入れ基準:
+  - shape-fetch/transform/vt の新仕様に沿って実装が更新される
+  - taskQueue の状態更新ルール（waiting/running/completed/failed + message 前置詞）が反映される
+  - vt-shape-store/vt-store のデータ保存が設計に一致する
+  - TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/**`, `packages/vt-orchestrator/**`, `packages/features/shape-store/**`（調査後に絞り込み）
+- ロールバック手順: 追加・変更した差分を revert し、旧パイプラインへ戻す
+- チェックリスト:
+  - 設計ドキュメントを再読し実装の不足点を洗い出す
+  - shape-fetch/transform/vt の実装差分を確定する
+  - taskQueue 記録・進捗更新を現行UIと整合させる
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-13 18:20 JST shape-plugin の新 vt パイプライン実装に着手。
+
+2127) feat/shape/step5-three-stage-columns (P2) — 進行中 (2026-01-12)
+- ブランチ名: feat/shape/step5-three-stage-columns
+- 依存: なし
+- 受け入れ基準: Step5 の LRUSplitPane が fetch/transform/vt の3列になっている／旧ステージ名が混在しない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`, `packages/components/src/BuildStepPanel.tsx`, `plugins/shape-plugin/src/ui/locales/**`
+- ロールバック手順: Step5 のステージ定義と進捗表示の差分を revert し、4列構成へ戻す
+- チェックリスト:
+  - Step5 のステージ定義を fetch/transform/vt の3列に更新する
+  - 進捗集計とクラッシュ警告のステージ名を新仕様に合わせる
+  - i18n ラベルを追加する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-12 23:05 JST Step5 の3列化とステージ名更新に着手。
+  - done: 2026-01-12 23:30 JST Step5 のステージを fetch/transform/vt の3列に更新し、進捗集計と警告表示のステージ名を整合。検証: 未実施。
+
 2122) fix/auth/localstorage-only-worker-bridge (P1) — 進行中 (2026-01-11)
 - ブランチ名: fix/auth/localstorage-only-worker-bridge
 - 依存: なし
@@ -72,6 +311,86 @@
   - start: 2026-01-11 19:20 JST TreeNodeInfoPanel の幅を SearchField に揃える対応に着手。
   - update: 2026-01-11 19:30 JST SearchField の幅定数をエクスポートし TreeNodeInfoPanel の max/min 幅を揃えるよう調整。検証: 未実施。
   - update: 2026-01-11 20:05 JST TreeConsole の split view カラム幅を SearchField と同じ 281-420px に調整。検証: 未実施。
+
+2122) docs/shape-step5-batch-modeling (P1) — 進行中 (2026-01-11)
+- ブランチ名: docs/shape-step5-batch-modeling
+- 依存: なし
+- 受け入れ基準: Step5 の extract2/vectortile 処理をモデル化して I/O/CPU/メモリの流れとボトルネック仮説を整理する／改善方向の候補を列挙する／着手優先度の判断材料を示す／TASKS.md に運用ログを記載する
+- 影響範囲: ドキュメント/調査（コード変更なし）
+- ロールバック手順: 記載した検討内容を削除する
+- チェックリスト:
+  - 現状の処理モデル（タスク単位・データ流・永続化）を整理する
+  - ボトルネック仮説と改善方向を整理する
+  - 着手優先度の判断材料を整理する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 20:30 JST shape Step5 のバッチ処理モデル化に着手。
+  - update: 2026-01-11 21:10 JST vt ステージ名への移行方針（併存なし/データ破棄/帯3はOFF）を前提にデータモデル設計を整理。検証: 未実施。
+  - update: 2026-01-11 21:25 JST 帯内は最小zのみインデックス化・vtタスクの上限導入・帯別featureIdユニーク化・band3対象条件を反映する設計更新に着手。検証: 未実施。
+  - update: 2026-01-11 21:40 JST tileIndexBand のテーブル設計と vt タスク分割ルール（maxBuffers/maxVertices）案を整理。検証: 未実施。
+  - update: 2026-01-11 22:00 JST band3 の自動ON条件を「いずれかの国で自治体レベル2以上を選択した場合」に更新し、対象国限定の実行ルールを明文化。検証: 未実施。
+  - update: 2026-01-11 22:10 JST band3 の重複・一貫性方針として、extract 時にBBox→z9タイル集合へ変換し vt タスク予約を行う設計を追記。検証: 未実施。
+  - update: 2026-01-11 22:25 JST band3 予約の軽量永続化（重複排除/上限管理）と固定タスク生成時の追加投入フローを追記。検証: 未実施。
+  - update: 2026-01-11 22:45 JST TileId/TileBBox 変換コードと一気移行の作業手順を文書へ追記。検証: 未実施。
+  - update: 2026-01-11 23:10 JST shape-vt ドキュメントを実装者向けに再構成し、DBスキーマ/タスクpayload/分割ルール/座標系を追記。検証: 未実施。
+  - update: 2026-01-11 23:30 JST vt-store/vt-shape-store/vt-orchestrator の再編成方針と旧実装の削除方針を追記。検証: 未実施。
+  - update: 2026-01-11 23:45 JST vt-store API 互換維持と vt-route-store/location-store の追加整理、vt 完全稼働後の旧実装削除方針を追記。検証: 未実施。
+  - update: 2026-01-12 00:10 JST 共通/差分ドキュメントを vt-pipeline-design.md / vt-shape-pipeline-design.md / vt-route-pipeline-design.md に分割。旧ファイルは移動案内に差し替え。検証: 未実施。
+  - update: 2026-01-12 09:10 JST shape/route の fetch ステージ命名変更と smartFetch/責務分担の共通化を反映する作業に着手。検証: 未実施。
+  - update: 2026-01-12 09:20 JST shape-fetch/route-fetch 命名と smartFetch/責務分担を共通ドキュメントに反映し、shape/route 差分ドキュメントも更新。検証: 未実施。
+  - update: 2026-01-12 09:30 JST stage1Buffers への共通名統一を反映する作業に着手。検証: 未実施。
+  - update: 2026-01-12 09:35 JST stage1Buffers への共通名統一を shape/route 差分ドキュメントへ反映。検証: 未実施。
+  - update: 2026-01-12 09:45 JST stage1Buffers の命名をスキーマ/保存単位/識別キー観点で追記する作業に着手。検証: 未実施。
+  - update: 2026-01-12 09:55 JST stage1Buffers の共通スキーマと domainType/sourceKey を明記し、shape/route での値の例を追記。検証: 未実施。
+  - update: 2026-01-12 10:10 JST vt パイプライン3ドキュメントを通読し、不備・不足の補強に着手。検証: 未実施。
+  - update: 2026-01-12 10:25 JST 用語/責務/タスクpayload/入出力/ストア分担/中間ストア寿命/簡略化/BuildConfig を追記し、shape/route差分へタスク単位と band3 条件を補強。検証: 未実施。
+  - update: 2026-01-12 10:35 JST extract ステージ名を transform に統一する作業に着手。検証: 未実施。
+  - update: 2026-01-12 10:45 JST transform ステージ名の統一を共通/差分ドキュメントへ反映。検証: 未実施。
+  - update: 2026-01-12 10:55 JST パッケージ責務と旧実装の移行対応表の補強に着手。検証: 未実施。
+  - update: 2026-01-12 11:05 JST パッケージ責務の明文化と旧実装対応表を共通設計へ追記し、shape/route 差分に旧ストアの注釈を追加。検証: 未実施。
+  - update: 2026-01-12 11:15 JST ファイル単位の実装スケッチ追記に着手。検証: 未実施。
+  - update: 2026-01-12 11:30 JST 共通設計にファイル単位の実装スケッチを追加し、shape/route 側に固有ファイル補足を追記。検証: 未実施。
+  - update: 2026-01-12 11:40 JST vt-orchestrator の runStage1 命名を runFetch に統一する作業に着手。検証: 未実施。
+  - update: 2026-01-12 11:45 JST vt-orchestrator の runFetch 命名をドキュメントへ反映。検証: 未実施。
+  - update: 2026-01-12 12:00 JST stage1/transform 責務の明確化、route band3 条件、sourceKey、tile coverage/index 仕様の反映に着手。検証: 未実施。
+  - update: 2026-01-12 12:20 JST plugin側fetch/transform責務と route band3 条件/route sourceKey/coverage-index仕様を反映。検証: 未実施。
+  - update: 2026-01-12 12:35 JST fetchDispatcher のI/Fと plugin接続点の明文化に着手。検証: 未実施。
+  - update: 2026-01-12 12:45 JST fetchDispatcher のI/F（FetchContext/FetchResult/Dispatcher）を追記し、shape/route 側の接続点を明記。検証: 未実施。
+  - update: 2026-01-12 13:00 JST route の band3 判定手順と依存データの具体化に着手。検証: 未実施。
+  - update: 2026-01-12 13:10 JST route の band3 判定手順（入力/手順/出力）を追記し、BuildConfig に保存する方針を明記。検証: 未実施。
+  - update: 2026-01-12 13:20 JST route band3 判定を shape 依存のみに修正する作業に着手。検証: 未実施。
+  - update: 2026-01-12 13:25 JST route band3 判定を shape band3 のみに変更し、意図（タイル跨ぎの LineString 抽出一致）を注記。検証: 未実施。
+  - update: 2026-01-12 13:40 JST route transform のタイル跨ぎ LineString 仕様を明文化する作業に着手。検証: 未実施。
+  - update: 2026-01-12 13:45 JST route transform にタイル跨ぎ LineString 仕様を追記し、band3 条件の説明を shape 依存に統一。検証: 未実施。
+  - update: 2026-01-12 14:00 JST band3 条件と plugin/orchestrator 責務の整合整理に着手。検証: 未実施。
+  - update: 2026-01-12 14:10 JST band3 条件を shape/route で分離し、plugin→orchestrator 責務を明記。検証: 未実施。
+  - update: 2026-01-12 14:20 JST runFetch の位置付け整理に着手。検証: 未実施。
+  - update: 2026-01-12 14:30 JST runFetch を削除し、plugin→orchestrator のタスク投入に整理。検証: 未実施。
+  - update: 2026-01-12 14:40 JST taskQueue の payload 仕様明確化に着手。検証: 未実施。
+  - update: 2026-01-12 14:50 JST transform/vt タスク payload を plugin→taskQueue 前提で明記し、stage1 は plugin 内完結と注記。検証: 未実施。
+  - update: 2026-01-12 15:00 JST マージ後の齟齬を整理し、plugin→orchestrator 責務と stage1 タスク表記を整合。検証: 未実施。
+  - update: 2026-01-12 15:10 JST taskQueue の役割（Dexie 永続化/メタデータ/進捗通知）を補強する作業に着手。検証: 未実施。
+  - update: 2026-01-12 15:15 JST taskQueue の Dexie 永続化と進捗/エラー通知の責務を明記。検証: 未実施。
+  - update: 2026-01-12 15:30 JST stage1 を taskQueue 管理対象に戻す修正に着手。検証: 未実施。
+  - update: 2026-01-12 15:40 JST fetch タスクを taskQueue 管理対象にし、payload と責務表記を整合。検証: 未実施。
+  - update: 2026-01-12 15:50 JST taskQueue の状態遷移と進捗イベント仕様の明文化に着手。検証: 未実施。
+  - update: 2026-01-12 16:00 JST taskQueue の状態遷移と進捗イベント最小フォーマットを追記。検証: 未実施。
+  - update: 2026-01-12 16:10 JST taskQueue に queued→running→skipped を追加する作業に着手。検証: 未実施。
+  - update: 2026-01-12 16:15 JST taskQueue の状態遷移に skipped を追加し、イベントstatusと条件例を明記。検証: 未実施。
+  - update: 2026-01-12 16:25 JST reused 状態の追加と skipped 条件の分離に着手。検証: 未実施。
+  - update: 2026-01-12 16:30 JST reused 状態を追加し、既存成果は reused に分類。skipped の条件を分離。検証: 未実施。
+  - update: 2026-01-12 16:40 JST reused/skipped の後段タスク・リソース提供の差を明記する作業に着手。検証: 未実施。
+  - update: 2026-01-12 16:45 JST reused は後段タスク/リソース提供、skipped は提供なしと明記。検証: 未実施。
+  - update: 2026-01-12 16:55 JST reused/skipped の定義をキャッシュ/無提供の意味に沿って更新する作業に着手。検証: 未実施。
+  - update: 2026-01-12 17:00 JST reused はキャッシュ等で成功時同等の成果を提供、skipped は提供なしと明記。検証: 未実施。
+  - update: 2026-01-12 17:05 JST skipped を「提供なし・エラー報告不要」と明記する作業に着手。検証: 未実施。
+  - update: 2026-01-12 17:10 JST skipped は提供なしだがエラー報告不要と明記。検証: 未実施。
+  - update: 2026-01-12 17:20 JST fetch 成功時のキャッシュと reused 処理の連携を明記する作業に着手。検証: 未実施。
+  - update: 2026-01-12 17:25 JST fetch 成功時に smartFetch キャッシュし、以降は reused とする仕様を追記。検証: 未実施。
+  - update: 2026-01-12 17:35 JST route-fetch の waypoints 計算結果のキャッシュと reused 扱いの追記に着手。検証: 未実施。
+  - update: 2026-01-12 17:40 JST route-fetch の waypoints（大圏航路/ searoute-jp）キャッシュと reused 扱いを追記。検証: 未実施。
+  - update: 2026-01-12 18:00 JST taskId/キャッシュキー/カバレッジ/リトライ仕様の詳細化に着手。検証: 未実施。
+  - update: 2026-01-12 18:15 JST taskId 規則・キャッシュキー・tile coverage/index・リトライ方針を批判的検討と新仕様で追記。検証: 未実施。
 
 2117) feat/app/tree-node-info-panel-build-flow (P1) — 進行中 (2026-01-11)
 - ブランチ名: feat/app/tree-node-info-panel-build-flow

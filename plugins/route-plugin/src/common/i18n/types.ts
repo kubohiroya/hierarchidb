@@ -22,6 +22,19 @@ export interface RoutePluginTranslations {
     warning: string;
   };
 
+  dataSource: {
+    title: string;
+    description: string;
+    selectionTitle: string;
+    detailsTitle: string;
+    licenseRequired: string;
+    clearCache: string;
+    cacheCleared: string;
+    cacheClearFailed: string;
+    cacheMissing: string;
+    cacheMissingNode: string;
+  };
+
   basicInfo: {
     title: string;
     subtitle: string;

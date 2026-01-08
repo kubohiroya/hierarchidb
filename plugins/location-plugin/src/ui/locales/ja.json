@@ -16,6 +16,11 @@
     "detailsTitle": "データソース詳細",
     "unsupported": "このデータソースはまだ未対応です。別のソースを選択してください。",
     "licenseRequired": "続行するにはライセンス同意が必要です。",
+    "clearCache": "選択中データソースのキャッシュを削除",
+    "cacheCleared": "選択中データソースのキャッシュを削除しました。",
+    "cacheClearFailed": "データソースのキャッシュ削除に失敗しました。",
+    "cacheMissing": "先にデータソースを選択してください。",
+    "cacheMissingNode": "NodeId が不足しています。",
     "options": {
       "openstreetmap": {
         "name": "OpenStreetMap",

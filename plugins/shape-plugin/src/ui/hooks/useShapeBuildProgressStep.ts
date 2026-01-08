@@ -30,8 +30,22 @@ import { getShapeDbApiClient } from '../../services/batch/ShapeBatchApiClient.js
 
 const normalizeStageId = (stage?: string): string | undefined => {
   if (!stage) return undefined;
-  if (stage === 'vectortile') return 'vectorTiles';
-  return stage;
+  switch (stage) {
+    case 'download':
+    case 'shape-fetch':
+    case 'fetch':
+      return 'fetch';
+    case 'extract1':
+    case 'extract2':
+    case 'transform':
+      return 'transform';
+    case 'vectortile':
+    case 'vectorTiles':
+    case 'vt':
+      return 'vt';
+    default:
+      return stage;
+  }
 };
 
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
@@ -215,7 +229,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
           return summary[key];
         };
         rows.forEach((task) => {
-          const stageKey = normalizeStageId(task.taskType) ?? 'download';
+          const stageKey = normalizeStageId(task.taskType) ?? 'fetch';
           const slot = ensure(stageKey);
           slot.total += 1;
           if (isSkippedMessage(task.message)) {
@@ -314,7 +328,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     const interval = window.setInterval(() => {
       appendBuildSample(buildMonitorConfig, monitorKey, {
         timestamp: Date.now(),
-        stage: currentStage as 'download' | 'extract1' | 'extract2' | 'vectorTiles' | undefined,
+        stage: currentStage as 'fetch' | 'transform' | 'vt' | undefined,
         ...getMemorySnapshot(),
       });
     }, BUILD_MONITOR_SAMPLE_INTERVAL_MS);
@@ -391,9 +405,16 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
       ?? effectiveStatus?.error
       ?? t('stage.progress.working', 'Working...');
   })();
+  const normalizedDisplayTasks = useMemo(() => (
+    displayTasks.map((task) => ({
+      ...task,
+      stage: normalizeStageId(task.stage ?? task.taskType) ?? task.stage,
+    }))
+  ), [displayTasks]);
+
   const taskSummary = useMemo(() => {
     const summary: Record<string, { total: number; completed: number; failed: number; skipped: number }> = {};
-    for (const task of displayTasks) {
+    for (const task of normalizedDisplayTasks) {
       const stageKey = task.stage ?? 'unknown';
       if (!summary[stageKey]) {
         summary[stageKey] = { total: 0, completed: 0, failed: 0, skipped: 0 };
@@ -413,38 +434,38 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
       }
     }
     return summary;
-  }, [displayTasks]);
+  }, [normalizedDisplayTasks]);
   const hasProgressData = Boolean(effectiveProgress)
     || Boolean(effectiveStatus && effectiveStatus.status !== 'idle')
-    || displayTasks.length > 0
+    || normalizedDisplayTasks.length > 0
     || hasTaskSummary;
   useEffect(() => {
-    if (displayTasks.length === 0) return;
+    if (normalizedDisplayTasks.length === 0) return;
     const warned = warnedSkippedTasksRef.current;
-    for (const task of displayTasks) {
+    for (const task of normalizedDisplayTasks) {
       if (!task.taskId || !isSkippedMessage(task.message)) continue;
       if (warned.has(task.taskId)) continue;
       warned.add(task.taskId);
       console.warn('[ShapeBuildProgressStep] Task skipped', {
         taskId: task.taskId,
-        stage: task.stage ?? 'download',
+        stage: task.stage ?? 'fetch',
         message: task.message,
       });
     }
-  }, [displayTasks]);
+  }, [normalizedDisplayTasks]);
   useEffect(() => {
-    if (displayTasks.length === 0) return;
+    if (normalizedDisplayTasks.length === 0) return;
     console.debug('[ShapeBuildProgressStep] taskSummary', {
-      total: displayTasks.length,
+      total: normalizedDisplayTasks.length,
       byStage: taskSummary,
     });
-  }, [displayTasks.length, taskSummary]);
+  }, [normalizedDisplayTasks.length, taskSummary]);
   const { stageProgress, tasksByStage, paneProgress } = useBuildTaskProgress(
     stages,
     currentStage,
     overallProgress,
     normalizedBuildStatus,
-    displayTasks,
+    normalizedDisplayTasks,
   );
   const paneProgressWithSummary = useMemo(() => {
     const allowSummaryOverride = displayTasks.length === 0;

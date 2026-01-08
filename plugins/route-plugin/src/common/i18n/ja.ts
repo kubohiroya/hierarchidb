@@ -21,6 +21,19 @@ export const ja: RoutePluginTranslations = {
     warning: '警告',
   },
 
+  dataSource: {
+    title: 'データソース',
+    description: 'ルート生成の元になるデータセットまたはサービスを選択してください。',
+    selectionTitle: 'データソース',
+    detailsTitle: 'データソース詳細',
+    licenseRequired: '続行するにはライセンス同意が必要です。',
+    clearCache: '選択中データソースのキャッシュを削除',
+    cacheCleared: '選択中データソースのキャッシュを削除しました。',
+    cacheClearFailed: 'データソースのキャッシュ削除に失敗しました。',
+    cacheMissing: '先にデータソースを選択してください。',
+    cacheMissingNode: 'NodeId が不足しています。',
+  },
+
   basicInfo: {
     title: 'ルート基本情報',
     subtitle: 'ルート情報の基本的な設定を行います。ルートタイプや交通手段を指定してルートを分類できます。',

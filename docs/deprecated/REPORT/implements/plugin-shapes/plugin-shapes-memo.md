@@ -2,7 +2,8 @@
 
 ## 確認すべきドキュメント
 
-- `docs/implements/plugin-shapes/plugin-shapes-requirements.md`
+- `docs/obsolate/spec/plugin-shapes-requirements.md`（旧要件）
+- `docs/vt-shape-pipeline-design.md`（新設計）
 - `docs/implements/plugin-shapes/plugin-shapes-testcases.md`
 
 ## 🎯 最終結果 (2025-08-15)

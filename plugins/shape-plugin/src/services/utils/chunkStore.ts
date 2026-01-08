@@ -173,6 +173,24 @@ export const hasDownloadBuffer = async (nodeId: NodeId, cacheKey: string): Promi
   return store.hasRelationForNode(nodeId, cacheKey);
 };
 
+export const deleteDownloadBuffersForDataSource = async (
+  nodeId: NodeId,
+  dataSource: string,
+): Promise<number> => {
+  const normalized = (dataSource ?? '').toLowerCase();
+  if (!normalized) return 0;
+  const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
+  const prefix = `download:${normalized}:`;
+  const metadata = await store.listMetadataForNode(nodeId);
+  const keys = metadata
+    .map((entry) => entry.cacheKey)
+    .filter((key): key is string => Boolean(key && key.startsWith(prefix)));
+  for (const key of keys) {
+    await store.deleteForNode(nodeId, key);
+  }
+  return keys.length;
+};
+
 export const ensureDownloadBufferForNode = async (
   nodeId: NodeId,
   cacheKey: string,

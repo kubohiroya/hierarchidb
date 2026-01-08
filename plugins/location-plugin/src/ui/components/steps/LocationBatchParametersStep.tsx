@@ -115,6 +115,8 @@ export const LocationBatchParametersStep: React.FC<LocationBatchParametersStepPr
     notify.success(translations.processing?.deleteMetadataDone ?? 'Deleted metadata');
   };
 
+  const allowDeleteDownloadsByPolicy = false;
+
   return (
     <Box display="flex" flexDirection="column" gap={3}>
       <Typography variant="body2" color="text.secondary">
@@ -147,7 +149,7 @@ export const LocationBatchParametersStep: React.FC<LocationBatchParametersStepPr
             <Button
               variant="outlined"
               fullWidth
-              disabled={disabled || pointCount === 0}
+              disabled={Boolean(disabled || pointCount === 0 || !allowDeleteDownloadsByPolicy)}
               onClick={handleDeleteDownloads}
             >
               {(translations.processing?.deleteDownloads ?? 'Delete Downloaded Points').replace('{count}', String(pointCount))}

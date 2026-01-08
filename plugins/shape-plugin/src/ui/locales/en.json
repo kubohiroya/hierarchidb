@@ -38,9 +38,23 @@
     "description": "Choose a geographic data provider. Each source has different coverage, accuracy, and licensing requirements.",
     "selectionTitle": "Data Source",
     "detailsTitle": "Data Source Details",
-    "licenseRequired": "License agreement is required to proceed."
+    "licenseRequired": "License agreement is required to proceed.",
+    "clearCache": "Clear cache for selected data source",
+    "cacheCleared": "Cleared cache for selected data source.",
+    "cacheClearFailed": "Failed to clear data source cache.",
+    "cacheMissing": "Select a data source first.",
+    "cacheMissingNode": "NodeId is missing."
   },
   "processing": {
+    "fetch": {
+      "title": "Fetch / Cache Management"
+    },
+    "transform": {
+      "title": "Transform"
+    },
+    "vt": {
+      "title": "VT Generation"
+    },
     "download": {
       "title": "Download Setting / Cache Management",
       "workers": "Number of Workers for Concurrent Download",
@@ -233,6 +247,18 @@
       "failed": "Build failed"
     },
     "stages": {
+      "fetch": {
+        "title": "Fetch",
+        "description": "Fetch and normalize source data."
+      },
+      "transform": {
+        "title": "Transform",
+        "description": "Simplify and index buffers for tile generation."
+      },
+      "vt": {
+        "title": "VT",
+        "description": "Generate vector tiles for the selected zoom range."
+      },
       "download": {
         "title": "Download",
         "description": "Download and normalize source data."

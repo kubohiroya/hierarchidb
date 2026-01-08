@@ -38,9 +38,23 @@
     "description": "地理データ提供元を選択してください。ソースごとにカバレッジや精度、ライセンス要件が異なります。",
     "selectionTitle": "データソース",
     "detailsTitle": "データソース詳細",
-    "licenseRequired": "続行するにはライセンス同意が必要です。"
+    "licenseRequired": "続行するにはライセンス同意が必要です。",
+    "clearCache": "選択中データソースのキャッシュを削除",
+    "cacheCleared": "選択中データソースのキャッシュを削除しました。",
+    "cacheClearFailed": "データソースのキャッシュ削除に失敗しました。",
+    "cacheMissing": "先にデータソースを選択してください。",
+    "cacheMissingNode": "NodeId が不足しています。"
   },
   "processing": {
+    "fetch": {
+      "title": "取得 / キャッシュ管理"
+    },
+    "transform": {
+      "title": "変換"
+    },
+    "vt": {
+      "title": "VT 生成"
+    },
     "download": {
       "title": "ダウンロード設定 / キャッシュ管理",
       "workers": "同時ダウンロードのワーカー数",
@@ -233,6 +247,18 @@
       "failed": "ビルド失敗"
     },
     "stages": {
+      "fetch": {
+        "title": "取得",
+        "description": "ソースデータを取得し正規化します。"
+      },
+      "transform": {
+        "title": "変換",
+        "description": "簡略化とタイル向けのインデックス化を行います。"
+      },
+      "vt": {
+        "title": "VT",
+        "description": "指定したズーム帯のベクトルタイルを生成します。"
+      },
       "download": {
         "title": "ダウンロード",
         "description": "ソースデータをダウンロードして正規化します。"

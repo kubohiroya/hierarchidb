@@ -3,8 +3,8 @@
  */
 
 import type React from 'react';
-import { useMemo } from 'react';
-import { Alert, Box, Stack, Typography } from '@mui/material';
+import { useMemo, useState } from 'react';
+import { Alert, Box, Button, Stack, Typography } from '@mui/material';
 import {
   DataSourceSelectionStep,
   type DataSourceSelectionOption,
@@ -15,8 +15,10 @@ import { notify } from '@hierarchidb/components';
 import type { LocationDataSource, LocationEntity, LocationType } from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
 import type { Timestamp } from '@hierarchidb/common-types';
+import { toNodeId } from '@hierarchidb/common-types';
 import { parseIdeGsmCsv } from '@hierarchidb/location-store';
 import { BASE_LOCATION_TYPES } from './locationTypes.js';
+import { clearLocationDataSourceCache } from '../../utils/clearDataSourceCache.js';
 
 const ORDERED_DATA_SOURCES: LocationDataSource[] = [
   'openstreetmap',
@@ -37,6 +39,7 @@ interface LocationDataSourceStepProps {
   onUpdate: (updates: Partial<LocationEntity>) => void;
   licenseRequired?: boolean;
   disabled?: boolean;
+  nodeId?: string;
 }
 
 const LICENSE_DETAILS: Record<
@@ -145,8 +148,11 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
   onUpdate,
   licenseRequired = true,
   disabled,
+  nodeId,
 }) => {
   const { t } = useTranslation();
+  const [isClearing, setIsClearing] = useState(false);
+  const resolvedNodeId = nodeId ? toNodeId(String(nodeId)) : undefined;
 
   const value = useMemo<LocationDataSource>(
     () => (draft.dataSource as LocationDataSource) ?? 'openstreetmap',
@@ -199,95 +205,125 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
   };
 
   return (
-    <DataSourceSelectionStep<Timestamp>
-      title={t('dataSource.title', 'Data Source')}
-      options={options}
-      state={{
-        dataSourceId: value,
-        licenseAgreement: Boolean(draft.licenseAgreement),
-        licenseAgreedAt: draft.licenseAgreedAt,
-      }}
-      onChange={(next) => {
-        const nextSource = (next.dataSourceId as LocationDataSource | undefined) ?? value;
-        onUpdate({
-          dataSource: nextSource,
-          licenseAgreement: next.licenseAgreement,
-          licenseAgreedAt: next.licenseAgreedAt,
-          ideGsmFileName: nextSource === 'ide-gsm' ? draft.ideGsmFileName : undefined,
-          ideGsmSourceUrl: nextSource === 'ide-gsm' ? draft.ideGsmSourceUrl : undefined,
-        });
-      }}
-      licenseRequired={licenseRequired}
-      licenseRequiredText={t(
-        'dataSource.licenseRequired',
-        'License agreement is required to proceed.',
-      )}
-      disabled={disabled}
-      description={description}
-      renderOption={renderOption}
-      createAgreedAt={() => Date.now() as Timestamp}
-      selectionTitle={t('dataSource.selectionTitle', 'Data Source')}
-      detailsTitle={t('dataSource.detailsTitle', 'Data Source Details')}
-      renderDetails={(selected) => {
-        if (DISABLED_SOURCES.includes(selected.id as LocationDataSource)) {
+    <Box>
+      <DataSourceSelectionStep<Timestamp>
+        title={t('dataSource.title', 'Data Source')}
+        options={options}
+        state={{
+          dataSourceId: value,
+          licenseAgreement: Boolean(draft.licenseAgreement),
+          licenseAgreedAt: draft.licenseAgreedAt,
+        }}
+        onChange={(next) => {
+          const nextSource = (next.dataSourceId as LocationDataSource | undefined) ?? value;
+          onUpdate({
+            dataSource: nextSource,
+            licenseAgreement: next.licenseAgreement,
+            licenseAgreedAt: next.licenseAgreedAt,
+            ideGsmFileName: nextSource === 'ide-gsm' ? draft.ideGsmFileName : undefined,
+            ideGsmSourceUrl: nextSource === 'ide-gsm' ? draft.ideGsmSourceUrl : undefined,
+          });
+        }}
+        licenseRequired={licenseRequired}
+        licenseRequiredText={t(
+          'dataSource.licenseRequired',
+          'License agreement is required to proceed.',
+        )}
+        disabled={disabled}
+        description={description}
+        renderOption={renderOption}
+        createAgreedAt={() => Date.now() as Timestamp}
+        selectionTitle={t('dataSource.selectionTitle', 'Data Source')}
+        detailsTitle={t('dataSource.detailsTitle', 'Data Source Details')}
+        renderDetails={(selected) => {
+          if (DISABLED_SOURCES.includes(selected.id as LocationDataSource)) {
+            return (
+              <Alert severity="warning">
+                {t(
+                  'dataSource.unsupported',
+                  'This data source is not supported yet. Please select another source.',
+                )}
+              </Alert>
+            );
+          }
+          if (selected.id !== 'ide-gsm') return null;
           return (
-            <Alert severity="warning">
-              {t(
-                'dataSource.unsupported',
-                'This data source is not supported yet. Please select another source.',
+            <FileInputWithUrl
+              accept=".csv,.xlsx,.xls"
+              buttonLabel={t('dataSource.ideGsm.buttonLabel', 'Select IDE-GSM file')}
+              instructions={t(
+                'dataSource.ideGsm.instructions',
+                'Provide an IDE-GSM CSV file via upload or URL.',
               )}
-            </Alert>
-          );
-        }
-        if (selected.id !== 'ide-gsm') return null;
-        return (
-          <FileInputWithUrl
-            accept=".csv,.xlsx,.xls"
-            buttonLabel={t('dataSource.ideGsm.buttonLabel', 'Select IDE-GSM file')}
-            instructions={t(
-              'dataSource.ideGsm.instructions',
-              'Provide an IDE-GSM CSV file via upload or URL.',
-            )}
-            defaultDownloadUrl={draft.ideGsmSourceUrl}
-            onFileSelect={async (file, downloadUrl) => {
-              const updates: Partial<LocationEntity> = {
-                ideGsmFileName: file.name,
-                ideGsmSourceUrl: downloadUrl ?? undefined,
-              };
-              try {
-                const csvText = await file.text();
-                const parsed = await parseIdeGsmCsv(csvText);
-                if (!parsed.points.length) {
-                  notify.warning(t('dataSource.ideGsm.empty', 'No valid IDE-GSM rows found.'));
-                  updates.selectedArrayByCountries = {};
-                } else {
-                  const typeIndex = new Map(
-                    BASE_LOCATION_TYPES.map((typeDef, index) => [typeDef.id, index]),
+              defaultDownloadUrl={draft.ideGsmSourceUrl}
+              onFileSelect={async (file, downloadUrl) => {
+                const updates: Partial<LocationEntity> = {
+                  ideGsmFileName: file.name,
+                  ideGsmSourceUrl: downloadUrl ?? undefined,
+                };
+                try {
+                  const csvText = await file.text();
+                  const parsed = await parseIdeGsmCsv(csvText);
+                  if (!parsed.points.length) {
+                    notify.warning(t('dataSource.ideGsm.empty', 'No valid IDE-GSM rows found.'));
+                    updates.selectedArrayByCountries = {};
+                  } else {
+                    const typeIndex = new Map(
+                      BASE_LOCATION_TYPES.map((typeDef, index) => [typeDef.id, index]),
+                    );
+                    const selectionMap: Record<string, boolean[]> = {};
+                    parsed.points.forEach((point) => {
+                      const countryCode = point.countryCode?.toUpperCase();
+                      if (!countryCode) return;
+                      const idx = typeIndex.get(point.kind as LocationType);
+                      if (idx == null) return;
+                      if (!selectionMap[countryCode]) {
+                        selectionMap[countryCode] = Array(BASE_LOCATION_TYPES.length).fill(false);
+                      }
+                      selectionMap[countryCode][idx] = true;
+                    });
+                    updates.selectedArrayByCountries = selectionMap;
+                  }
+                } catch (error) {
+                  const message = error instanceof Error ? error.message : String(error);
+                  notify.error(
+                    `${t('dataSource.ideGsm.parseError', 'Failed to parse IDE-GSM CSV.')} ${message}`,
                   );
-                  const selectionMap: Record<string, boolean[]> = {};
-                  parsed.points.forEach((point) => {
-                    const countryCode = point.countryCode?.toUpperCase();
-                    if (!countryCode) return;
-                    const idx = typeIndex.get(point.kind as LocationType);
-                    if (idx == null) return;
-                    if (!selectionMap[countryCode]) {
-                      selectionMap[countryCode] = Array(BASE_LOCATION_TYPES.length).fill(false);
-                    }
-                    selectionMap[countryCode][idx] = true;
-                  });
-                  updates.selectedArrayByCountries = selectionMap;
                 }
-              } catch (error) {
-                const message = error instanceof Error ? error.message : String(error);
-                notify.error(
-                  `${t('dataSource.ideGsm.parseError', 'Failed to parse IDE-GSM CSV.')} ${message}`,
-                );
-              }
-              onUpdate(updates);
-            }}
-          />
-        );
-      }}
-    />
+                onUpdate(updates);
+              }}
+            />
+          );
+        }}
+      />
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+        <Button
+          variant="outlined"
+          onClick={async () => {
+            if (!resolvedNodeId) {
+              notify.warning(t('dataSource.cacheMissingNode', 'NodeId is missing.'));
+              return;
+            }
+            if (!value) {
+              notify.warning(t('dataSource.cacheMissing', 'Select a data source first.'));
+              return;
+            }
+            try {
+              setIsClearing(true);
+              await clearLocationDataSourceCache(resolvedNodeId);
+              notify.success(t('dataSource.cacheCleared', 'Cleared cache for selected data source.'));
+            } catch (error) {
+              console.error('[location] failed to clear data source cache', error);
+              notify.error(t('dataSource.cacheClearFailed', 'Failed to clear data source cache.'));
+            } finally {
+              setIsClearing(false);
+            }
+          }}
+          disabled={Boolean(disabled || !value || isClearing)}
+        >
+          {t('dataSource.clearCache', 'Clear cache for selected data source')}
+        </Button>
+      </Box>
+    </Box>
   );
 };

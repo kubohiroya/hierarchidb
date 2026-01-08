@@ -95,6 +95,7 @@ registry.registerConfigProvider<RouteStepData>({
               draft={draft as unknown as RouteUpdaterPayload}
               onUpdate={(updates) => p.onChange(mergeDraft(draft, { draftData: updates }))}
               onValidationChange={p.setValid}
+              nodeId={p.nodeId}
             />
           );
         },

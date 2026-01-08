@@ -147,7 +147,8 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
     ? Boolean(batchNodeId)
     : persistedStatus === 'running';
   const hasFinalOutputs = finalCounts.tiles > 0 || finalCounts.metadata > 0;
-  const canDeleteRaw = !disabled && (
+  const allowDeleteRawByPolicy = false;
+  const canDeleteRaw = !disabled && allowDeleteRawByPolicy && (
     counts.raw > 0
     || failedCounts.download > 0
     || taskCounts.download > 0

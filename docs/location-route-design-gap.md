@@ -10,7 +10,7 @@
 - 作成フロー:
   1. Step2: データソース選択。
   2. Step3: 国 × データ種別（セントロイド / 空港 / 港 / 駅 / インターチェンジ）の選択。
-  3. Step4: ズームレベル範囲などの処理設定。
+3. Step4: ズームレベル範囲などの処理設定（入力仕様は `docs/vt-pipeline-design.md` を参照）。
   4. Step5: 選択データソースから以下をダウンロードし、メタデータとして保存。
      - 国名
      - 位置名
@@ -26,7 +26,7 @@
 - 作成フロー:
   1. Step2: データソース選択。
   2. Step3: 国 × データ種別（空路 / 海路 / 高速鉄道 / 在来線鉄道 / 高速道路 / 一般道路）の選択。
-  3. Step4: ズームレベル範囲などの処理設定。
+  3. Step4: ズームレベル範囲などの処理設定（入力仕様は `docs/vt-pipeline-design.md` を参照）。
   4. Step5: データソースからダウンロード後、メタデータとして保存。さらに以下を行う:
      - 対象 route ノードの兄弟ノード
      - 兄弟フォルダの子孫ノード
@@ -53,7 +53,7 @@
 
 - Step2 データソース選択: `plugins/location-plugin/src/ui/components/steps/LocationDataSourceStep.tsx`
 - Step3 国×タイプ選択: `plugins/location-plugin/src/ui/components/steps/LocationSelectionStep.tsx`
-- Step4 設定: `plugins/location-plugin/src/ui/components/steps/LocationBatchParametersStep.tsx`
+- Step4 設定: `plugins/location-plugin/src/ui/components/steps/LocationBatchParametersStep.tsx`（入力仕様は `docs/vt-pipeline-design.md` を参照）
 - Step5 ビルド UI: `plugins/location-plugin/src/ui/components/steps/LocationBuildStep.tsx`
 - Step5 起動処理: `plugins/location-plugin/src/ui/components/steps-provider.tsx` の `startLocationBatch`
 - Step6 プレビュー: `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`
@@ -66,7 +66,7 @@
 
 - Step2 データソース選択: `plugins/route-plugin/src/ui/components/steps/RouteDataSourceStep.tsx`
 - Step3 設定: `plugins/route-plugin/src/ui/components/steps/RouteSelectionStep.tsx`
-- Step4 設定: `plugins/route-plugin/src/ui/components/steps/RouteProcessingStep.tsx`
+- Step4 設定: `plugins/route-plugin/src/ui/components/steps/RouteProcessingStep.tsx`（入力仕様は `docs/vt-pipeline-design.md` を参照）
 - Step5 ビルド UI: `plugins/route-plugin/src/ui/components/steps/RouteBuildStep.tsx`
 - Step5 起動処理: `plugins/route-plugin/src/ui/components/steps-provider.tsx` の `startRouteBatch`（未実装で通知のみ）
 - Step6 プレビュー: `plugins/route-plugin/src/ui/components/steps/RoutePreviewStep.tsx`（メッセージのみ）

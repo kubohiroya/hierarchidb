@@ -16,6 +16,11 @@
     "detailsTitle": "Data Source Details",
     "unsupported": "This data source is not supported yet. Please select another source.",
     "licenseRequired": "License agreement is required to proceed.",
+    "clearCache": "Clear cache for selected data source",
+    "cacheCleared": "Cleared cache for selected data source.",
+    "cacheClearFailed": "Failed to clear data source cache.",
+    "cacheMissing": "Select a data source first.",
+    "cacheMissingNode": "NodeId is missing.",
     "options": {
       "openstreetmap": {
         "name": "OpenStreetMap",
