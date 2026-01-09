@@ -339,7 +339,26 @@
       "visible": "Visible",
       "hidden": "Hidden",
       "checkReference": "Check reference",
-      "preview": "Preview"
+      "preview": "Preview",
+      "build": "Build"
+    },
+    "infoPanel": {
+      "noTimestamp": "—",
+      "emptyDescription": "No description provided.",
+      "openContextMenu": "Node actions",
+      "nodeTypeLabel": "{{type}}",
+      "draftLabel": "Draft",
+      "editLabel": "Edit",
+      "editButton": "Edit node",
+      "buildLabel": "Build",
+      "buildButton": "Start build",
+      "previewLabel": "Preview",
+      "previewButton": "Preview node",
+      "unnamedNode": "Untitled node",
+      "closeButton": "Close and navigate to parent",
+      "noNode": "Node information is not available for this page.",
+      "createdLabel": "Created",
+      "updatedLabel": "Updated"
     },
     "developerMenu": {
       "clearIndexedDb": "Delete all IndexedDB created by this app",
