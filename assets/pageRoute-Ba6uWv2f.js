@@ -1,1 +1,0 @@
-import"./vendor-react-7Qv6hoHe.js";import"./t.(_treeId).(_pageNodeId)-C3-PYaZ6.js";import"./ui-usermenu-DPdG3D9S.js";import"./ui-plugin-loader-C78vrH0M.js";import"./loader-iyTx-c6r.js";import"./rootRoute-COrmQWwJ.js";import"./baseRoute-C5UbvFSz.js";import"./layoutRoute-BbyfiKeO.js";import{t as e}from"./pageRoute-Zu4tqxsW.js";export{e as treePageRoute};
