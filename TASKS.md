@@ -1,3 +1,141 @@
+2130) docs/location-plugin-design (P1) — 完了 (2026-01-09)
+- ブランチ名: docs/location-plugin-design
+- 依存: なし
+- 受け入れ基準: `docs/location-plugin-design.md` を新規作成し、Step2-6 の UI/処理フロー、データソース/範囲/ビルド設定/ビルド/プレビューの方針、MapLibreGL 表示 + Dexie.js + モートン順序共通接頭辞検索による LocationQueryAPI 設計、vt 系ドキュメントとの差分を明記し、確認事項を列挙する／TASKS.md に運用ログを記載する
+- 影響範囲: `docs/location-plugin-design.md`
+- ロールバック手順: 追加したドキュメントと本項目の差分を revert する
+- チェックリスト:
+  - location-plugin 設計ドキュメントの章立てを作成する
+  - Step2-6 の UI/処理フローと API/データモデル方針を記述する
+  - vt 系ドキュメントとの差分と未決事項を整理する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-09 08:01 JST location-plugin 設計ドキュメント作成に着手。
+  - done: 2026-01-09 08:03 JST `docs/location-plugin-design.md` を作成し、Step2-6 と非VT方針・LocationQueryAPI 設計・ui-map 方針を整理。
+
+2131) docs/location-plugin-design-prefetch-margin (P1) — 完了 (2026-01-09)
+- ブランチ名: docs/location-plugin-design-prefetch-margin
+- 依存: なし
+- 受け入れ基準: `docs/location-plugin-design.md` に表示範囲のマージン指定（prefetch）を追加し、LocationQueryAPI のマージン指定パラメータ、ui-map 側の bbox 拡張フロー、既定値/上限を明記する／TASKS.md に運用ログを記載する
+- 影響範囲: `docs/location-plugin-design.md`
+- ロールバック手順: 追加したドキュメント差分と本項目の差分を revert する
+- チェックリスト:
+  - マージン指定の用語と単位を定義する
+  - LocationQueryAPI にマージン指定を追記する
+  - ui-map 側の bbox 拡張フローと既定値/上限を明記する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-09 08:07 JST location-plugin の prefetch マージン仕様追記に着手。
+  - done: 2026-01-09 08:07 JST prefetch マージンの指定方法と既定/上限値、検索フローと ui-map の呼び出し手順を追記。
+
+2132) docs/location-plugin-design-details (P1) — 完了 (2026-01-09)
+- ブランチ名: docs/location-plugin-design-details
+- 依存: なし
+- 受け入れ基準: `docs/location-plugin-design.md` に CSV 列定義（必須/任意/型変換）を現行実装から抽出して明記し、LocationType の表示名対応、ズーム上限 11、アイコン/円のスタイル方針（既存アイコン利用、仮色、サイズ計算プロパティ化/既定線形）を追記し、LocationDB.vectorTiles の停止/削除方針を明記する／TASKS.md に運用ログを記載する
+- 影響範囲: `docs/location-plugin-design.md`
+- ロールバック手順: 追加したドキュメント差分と本項目の差分を revert する
+- チェックリスト:
+  - CSV 列定義と型変換ルールを整理する
+  - LocationType の表示名対応を明記する
+  - ズーム上限とスタイル方針を追記する
+  - vectorTiles 停止/削除方針を明記する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-09 08:15 JST location-plugin 設計詳細の反映に着手。
+  - done: 2026-01-09 08:16 JST CSV列定義/LocationType表示名/ズーム上限/スタイル方針/vectorTiles停止の仕様を追記。
+
+2133) docs/location-plugin-design-csv-missing-cases (P1) — 完了 (2026-01-09)
+- ブランチ名: docs/location-plugin-design-csv-missing-cases
+- 依存: なし
+- 受け入れ基準: `docs/location-plugin-design.md` に CSV の不足ケース（必須列欠落・数値変換失敗・ヘッダ不一致・国情報欠落）の扱いを明記し、確認事項を解消済みに更新する／TASKS.md に運用ログを記載する
+- 影響範囲: `docs/location-plugin-design.md`
+- ロールバック手順: 追加したドキュメント差分と本項目の差分を revert する
+- チェックリスト:
+  - CSV の不足ケース運用を明記する
+  - 確認事項の該当項目を解消済みに更新する
+  - 運用ログ start/done を追記する
+- 運用ログ：
+  - start: 2026-01-09 08:34 JST CSV 不足ケース仕様の追記に着手。
+  - done: 2026-01-09 08:34 JST CSV 不足ケースの扱いと確認事項の解消を追記。
+
+2134) docs/location-plugin-design-style-defaults (P1) — 完了 (2026-01-09)
+- ブランチ名: docs/location-plugin-design-style-defaults
+- 依存: なし
+- 受け入れ基準: `docs/location-plugin-design.md` に仮色の具体値（circle/icon）、サイズ計算式の既定値（線形）と `sizeFn` の入力/出力仕様、ui-map レイヤへの適用方法を明記する／TASKS.md に運用ログを記載する
+- 影響範囲: `docs/location-plugin-design.md`
+- ロールバック手順: 追加したドキュメント差分と本項目の差分を revert する
+- チェックリスト:
+  - 仮色の具体値を決めて追記する
+  - 既定サイズ計算式と `sizeFn` 仕様を追記する
+  - ui-map の circle/icon への適用方法を明記する
+  - 運用ログ start/done を追記する
+- 運用ログ：
+  - start: 2026-01-09 08:35 JST location-plugin のスタイル既定値追記に着手。
+  - done: 2026-01-09 08:36 JST 仮色/sizeFn 既定式と ui-map 適用方法を追記。
+
+2135) plans/location-plugin-repair-execplan (P1) — 完了 (2026-01-09)
+- ブランチ名: plans/location-plugin-repair-execplan
+- 依存: なし
+- ExecPlan: `plans/location-plugin-repair-execplan.md`
+- 受け入れ基準: location-plugin 修復の ExecPlan を作成し、Step2〜Step6 と LocationQuery/Mutation/ui-map 連携の実装方針、検証、ロールバックを自己完結で記述する／TASKS.md に運用ログを記載する
+- 影響範囲: `plans/location-plugin-repair-execplan.md`
+- ロールバック手順: 追加した ExecPlan と本項目の差分を revert する
+- チェックリスト:
+  - ExecPlan を作成して自己完結の仕様と手順を記載する
+  - 実装フェーズと検証/ロールバックを具体化する
+  - 運用ログ start/done を追記する
+- 運用ログ：
+  - start: 2026-01-09 09:32 JST location-plugin 修復 ExecPlan 作成に着手。
+  - done: 2026-01-09 09:49 JST ExecPlan を作成し、修復マイルストーンと検証/ロールバックを整理。
+
+2136) feat/location/non-vt-viewport-query (P1) — 進行中 (2026-01-09)
+- ブランチ名: feat/location/non-vt-viewport-query
+- 依存: なし
+- ExecPlan: `plans/location-plugin-repair-execplan.md`
+- 受け入れ基準: location-plugin の Step2-6 が CSV ソースのビルドと非VTの MapLibre プレビューに対応し、LocationQueryAPI が viewport 検索と prefetch マージン指定を受けられる／vectorTiles を参照せず points を描画できる／地物種類トグル・前方一致検索・ホバー/選択（半径8px）の強調表示が非VTでも動作する／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/plugin-service-api/src/types/LocationQueryAPI.ts`, `packages/plugin-service-api/src/types/LocationMutationAPI.ts`, `packages/runtime-worker/src/services/LocationQueryService.ts`, `packages/runtime-worker/src/services/LocationMutationService.ts`, `packages/features/location-store/src/EphemeralLocationDB.ts`, `plugins/location-plugin/src/worker/**`, `plugins/location-plugin/src/ui/components/**`, `docs/location-plugin-design.md`（参照整合が必要な場合）
+- ロールバック手順: 上記差分を revert し、vectorTiles ベースの LocationQueryService と UI の既存プレビューへ戻す
+- チェックリスト:
+  - LocationQuery/Mutation API と worker 実装を非VT検索へ移行する
+  - LocationDB と worker store のインデックスを更新する
+  - Step2-6 UI を CSV + viewport クエリに合わせる
+  - トグル/検索/ホバー/選択の UI を非VT検索に接続する
+  - 検証と運用ログを追記する
+- 運用ログ：
+  - start: 2026-01-09 09:53 JST location 非VT viewport 検索への移行に着手。
+  - update: 2026-01-09 10:19 JST LocationQueryAPI に viewport 検索型を追加し、LocationQueryService を非VT検索へ置換。LocationDB に mortonKey/kind インデックスを追加し、プレビューは viewport クエリで GeoJSON 描画へ切替。vectorTiles 参照は UI/worker から除去中。
+  - update: 2026-01-13 09:10 JST 地物種類トグル/前方一致検索/ホバー選択(8px)を非VT検索で再現する方針で進行する。
+  - update: 2026-01-13 10:15 JST map ページで location ノードを非VT検索で描画するため、location レイヤ情報/GeoJSON レイヤを追加し、viewport クエリ/hover+selection(8px)を接続。MapLibre での hover/selection を距離順に整列。LocationMapPreviewStep のテストを新仕様へ更新。
+  - update: 2026-01-13 11:05 JST map/LocationMapPreview のアイコン表示を追加し、MUI アイコンから SVG を生成して MapLibre に登録。GeoJSON 複数レイヤ共有ソースの扱いを ResourceLayerMap で改善。
+  - blocked: 2026-01-13 11:20 JST `pnpm typecheck` が guard:deps:extra で失敗。tsconfig.base.json の vt-* パスが src 指向のためポリシー違反（@hierarchidb/vt-store / vt-shape-store / vt-orchestrator）。対応方針の指示待ち。
+  - update: 2026-01-13 11:25 JST tsconfig.base.json の vt-* paths を dist 指向へ修正し、guard:deps:extra 違反の解消を実施。
+  - update: 2026-01-13 11:35 JST `pnpm typecheck` は runtime-worker の型エラーで失敗（LocationQueryService の型キャスト/ShapeMutationService のステージ不足）。修正後 `pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行し成功。
+  - update: 2026-01-13 11:45 JST LocationMapPreviewStep の typecheck エラーを修正し、`pnpm --filter @hierarchidb/location-plugin typecheck` を再実行して成功。
+  - blocked: 2026-01-13 11:55 JST `pnpm typecheck` は shape-plugin の既存型エラーで失敗（vt-* モジュール解決と BatchTaskType/StageStatus 不整合、暗黙 any など）。対応方針の指示待ち。
+  - update: 2026-01-13 12:10 JST shape-plugin の型エラー解消に向けて ShapeBatchTaskStage を fetch/transform/vt へ拡張し、shapeSessionMappers のステージ変換/集計を補正。vt-* の paths を src 指向へ戻し、`pnpm --filter @hierarchidb/plugin-service-api build` を実行後、`pnpm --filter @hierarchidb/shape-plugin typecheck` が成功。
+
+2137) fix/workspace/include-vt-packages (P1) — 進行中 (2026-01-13)
+- ブランチ名: fix/workspace/include-vt-packages
+- 依存: なし
+- 受け入れ基準: `pnpm i` が `@hierarchidb/vt-orchestrator` の未解決で失敗しない／workspace 設定の変更は最小限／TASKS.md に運用ログを記載する
+- 影響範囲: `pnpm-workspace.yaml`
+- ロールバック手順: workspace 追加行を削除して revert する
+- チェックリスト:
+  - workspace に vt-* パッケージを含める
+  - `pnpm i` で未解決エラーが再現しないことを確認する
+  - 運用ログ start/done を追記する
+- 運用ログ：
+  - start: 2026-01-13 12:25 JST vt-* パッケージが workspace に含まれず pnpm i が失敗する問題の修正に着手。
+  - update: 2026-01-13 12:27 JST `pnpm i` が EPERM（pnpm store への symlink 作成）で失敗。sandbox 権限の影響と判断。
+  - done: 2026-01-13 12:28 JST `pnpm i` を権限昇格で再実行し成功。workspace への vt-* 追加を反映。
+  - update: 2026-01-13 12:40 JST tsconfig.base.json の vt-* paths を dist 指向へ復帰し、`pnpm --filter @hierarchidb/vt-store build` / `pnpm --filter @hierarchidb/vt-shape-store build` / `pnpm --filter @hierarchidb/vt-orchestrator build` を実行して d.ts を生成。
+  - update: 2026-01-13 13:05 JST vt-orchestrator の build:types 失敗に対応し、geojson 型導入と chunk-store 参照を調整。`pnpm i`（権限昇格）、`pnpm --filter @hierarchidb/chunk-store build`、`pnpm --filter @hierarchidb/vt-orchestrator build:types` を実行して成功。
+  - update: 2026-01-13 13:20 JST app build の vt-store 未解決に対応し、`app/package.json` に `@hierarchidb/vt-store` を追加。`pnpm i` を権限昇格で実行し、app の node_modules に symlink を確認。
+  - update: 2026-01-13 14:05 JST app typecheck エラー対応として MapPage/worker-runtime/gis-sdk/runtime-worker/location-plugin の型修正と turf 依存整理を実施。`pnpm i`（権限昇格）後、`pnpm --filter @hierarchidb/app typecheck` が成功。
+  - update: 2026-01-13 14:30 JST GitHub Pages での iso3166 CSV 取得パス修正として resolveIso3166CsvUrl を追加し、各利用箇所の既定 URL を BASE_URL 連動へ置換。
+  - update: 2026-01-13 14:50 JST GitHub Pages で BASE_URL が dist 依存に反映されないケースに対応するため、resolveIso3166CsvUrl に document.baseURI/ window.location のフォールバックを追加し、`pnpm --filter @hierarchidb/gen-iso3166-2 build` を実行。
+  - update: 2026-01-13 15:10 JST VITE_BASE_URL の明示設定を追加し、resolveIso3166CsvUrl が VITE_BASE_URL/BASE_URL を優先参照するように拡張。`pnpm --filter @hierarchidb/gen-iso3166-2 build` を再実行。
+
 2123) fix/shape/typecheck-auth-headers (P1) — 完了 (2026-01-11)
 - ブランチ名: fix/shape/typecheck-auth-headers
 - 依存: なし
@@ -221,6 +359,23 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-13 18:20 JST shape-plugin の新 vt パイプライン実装に着手。
+  - update: 2026-01-13 18:30 JST ExecPlan 作成に着手（shape-plugin 新実装の作業計画策定）。検証: 未実施。
+  - update: 2026-01-13 18:45 JST ExecPlan を作成し `plans/shape-vt-pipeline-implementation-execplan.md` を追加。検証: 未実施。
+  - update: 2026-01-13 19:05 JST vt-store/vt-shape-store/vt-orchestrator の雛形パッケージと tsconfig base のエイリアスを追加。検証: 未実施。
+  - update: 2026-01-13 19:30 JST vt-shape-store の Dexie スキーマ/Query/Mutation を雛形実装として追加。検証: 未実施。
+  - update: 2026-01-13 20:00 JST vt-store の Dexie スキーマ/VTQueryAPI/VTMutationAPI を雛形実装として追加。検証: 未実施。
+  - update: 2026-01-13 20:25 JST vt-orchestrator の taskQueue（Dexie 永続化 + in-memory 通知）雛形を追加。検証: 未実施。
+  - update: 2026-01-13 20:45 JST vt-orchestrator の runStageTasks 雛形を追加（waiting→running→completed/failed 遷移）。検証: 未実施。
+  - update: 2026-01-13 21:20 JST vt-orchestrator に transform/vt の基本ハンドラ（簡略化・tileIndex生成・band3予約・vt生成）を追加。検証: 未実施。
+  - update: 2026-01-13 22:10 JST shape-fetch の taskQueue 登録と stage1Buffers 保存の土台（shapeFetchStage）を追加。検証: 未実施。
+  - update: 2026-01-13 22:15 JST fetchData の cacheKey を URL で使えるよう dataSource 戦略を更新し、GADM の ISO3 設定を修正。検証: 未実施。
+  - update: 2026-01-13 22:40 JST shape-fetch/transform/vt を直列実行する shapeVtPipeline を追加し、taskQueue 進捗を worker へ結線。検証: 未実施。
+  - update: 2026-01-13 23:10 JST worker/api の getBatchSessionStatus と getProcessingStatus を taskQueue 優先に切替。検証: 未実施。
+  - update: 2026-01-13 23:25 JST worker/api から batchSessionManager フォールバックを削除し、taskQueue のみで進捗/状態を管理。検証: 未実施。
+  - update: 2026-01-14 00:05 JST Step5 の pause/resume を無効化し、UI と worker API から旧 batch セッション操作/回復 UI を削除。検証: 未実施。
+  - update: 2026-01-14 00:20 JST 旧 batch セッションの実装群（SessionController/BatchSessionManager/SessionTaskRegistry 等）と関連テストを削除。検証: 未実施。
+  - update: 2026-01-14 00:45 JST vt-orchestrator/shape-plugin の型エラーを解消し typecheck を再実行。検証: `pnpm --filter @hierarchidb/shape-plugin typecheck`（成功）。
+  - update: 2026-01-14 01:10 JST worker-runtime の pause/resume 経路を shape では no-op 化し、shape-plugin README から旧 batch セッション記述を整理。検証: 未実施。
 
 2127) feat/shape/step5-three-stage-columns (P2) — 進行中 (2026-01-12)
 - ブランチ名: feat/shape/step5-three-stage-columns

@@ -1,28 +1,96 @@
 import { SingletonMixin } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
-import { getLocationDB, type LocationQueryAPI } from '@hierarchidb/location-store';
+import {
+  clampMortonZoom,
+  getLocationDB,
+  lonLatToTileXY,
+  mortonRangeForTile,
+  MORTON_KEY_HEX_LENGTH,
+} from '@hierarchidb/location-store';
 import type {
   LocationGroupItem,
-  LocationRelation,
   LocationNearestPoint,
   LocationNearestPointQuery,
   LocationNearestPointResponse,
+  LocationQueryAPI,
+  LocationRelation,
+  LocationViewportBbox,
+  LocationViewportQueryOptions,
 } from '@hierarchidb/plugin-service-api';
-import { storeRegistry } from '../entity/store-registry.js';
-import { VectorTile } from '@mapbox/vector-tile';
-import Pbf from 'pbf';
 import {
-  BTree,
-  LRUMap,
-  clampZoom,
-  findWithinDistanceInTree,
   haversineMeters,
-  toTileCoord,
+  metersToLongitudeDelta,
 } from './nearest/tileNearest.js';
+import { storeRegistry } from '../entity/store-registry.js';
+
+const MAX_LATITUDE = 85.05112878;
+
+const clamp = (value: number, min: number, max: number): number =>
+  Math.min(max, Math.max(min, value));
+
+const clampBbox = (bbox: LocationViewportBbox): LocationViewportBbox => {
+  const [minLon, minLat, maxLon, maxLat] = bbox;
+  return [
+    clamp(minLon, -180, 180),
+    clamp(minLat, -MAX_LATITUDE, MAX_LATITUDE),
+    clamp(maxLon, -180, 180),
+    clamp(maxLat, -MAX_LATITUDE, MAX_LATITUDE),
+  ];
+};
+
+const normalizeBbox = (bbox: LocationViewportBbox): LocationViewportBbox => {
+  const [minLon, minLat, maxLon, maxLat] = bbox;
+  const normalized: LocationViewportBbox = [
+    Math.min(minLon, maxLon),
+    Math.min(minLat, maxLat),
+    Math.max(minLon, maxLon),
+    Math.max(minLat, maxLat),
+  ];
+  return clampBbox(normalized);
+};
+
+const expandBbox = (bbox: LocationViewportBbox, options?: LocationViewportQueryOptions): LocationViewportBbox => {
+  const [minLon, minLat, maxLon, maxLat] = normalizeBbox(bbox);
+  const width = Math.max(0, maxLon - minLon);
+  const height = Math.max(0, maxLat - minLat);
+
+  let marginLon = 0;
+  let marginLat = 0;
+
+  if (options?.prefetchMarginRatio && Number.isFinite(options.prefetchMarginRatio)) {
+    const ratio = Math.max(0, options.prefetchMarginRatio);
+    marginLon = Math.max(marginLon, width * ratio);
+    marginLat = Math.max(marginLat, height * ratio);
+  }
+
+  if (options?.prefetchMarginPx && options.viewportSizePx) {
+    const px = Math.max(0, options.prefetchMarginPx);
+    const widthPx = Math.max(1, options.viewportSizePx.width);
+    const heightPx = Math.max(1, options.viewportSizePx.height);
+    marginLon = Math.max(marginLon, width * (px / widthPx));
+    marginLat = Math.max(marginLat, height * (px / heightPx));
+  }
+
+  return clampBbox([
+    minLon - marginLon,
+    minLat - marginLat,
+    maxLon + marginLon,
+    maxLat + marginLat,
+  ]);
+};
+
+const isWithinBbox = (longitude: number, latitude: number, bbox: LocationViewportBbox): boolean => {
+  const [minLon, minLat, maxLon, maxLat] = bbox;
+  return longitude >= minLon && longitude <= maxLon && latitude >= minLat && latitude <= maxLat;
+};
+
+const toGroupItem = (row: { id: string; data?: LocationGroupItem['data']; updatedAt?: number }): LocationGroupItem => ({
+  id: row.id,
+  data: row.data,
+  updatedAt: row.updatedAt,
+});
 
 export class LocationQueryService implements LocationQueryAPI {
-  private readonly tileCache = new LRUMap<string, BTree<LocationNearestPoint>>(DEFAULT_TILE_CACHE_SIZE);
-
   static async getSingleton(): Promise<LocationQueryService> {
     return SingletonMixin.getSingleton('LocationQueryService', async () => new LocationQueryService());
   }
@@ -41,36 +109,159 @@ export class LocationQueryService implements LocationQueryAPI {
     return relations.map((rel) => ({ ...rel })) as LocationRelation[];
   }
 
-  async findNearestLocationPoint(query: LocationNearestPointQuery): Promise<LocationNearestPointResponse> {
-    const cursor = { longitude: query.longitude, latitude: query.latitude };
-    const zoom = clampZoom(query.zoom);
-    const maxDistanceMeters = query.maxDistanceMeters;
-    const nodeId = query.nodeId;
+  async queryByMortonPrefixes(
+    nodeId: NodeId,
+    prefixes: string[],
+    kinds?: string[],
+  ): Promise<LocationGroupItem[]> {
+    const db = getLocationDB();
+    const results = new Map<string, LocationGroupItem>();
+    const normalizedPrefixes = prefixes.filter((prefix) => typeof prefix === 'string' && prefix.length > 0);
+    if (normalizedPrefixes.length === 0) return [];
 
-    const tile = toTileCoord(cursor.longitude, cursor.latitude, zoom);
-    const maxIndex = 2 ** zoom;
-    const candidates: { point: LocationNearestPoint; distanceMeters: number }[] = [];
-    for (let dx = -1; dx <= 1; dx += 1) {
-      for (let dy = -1; dy <= 1; dy += 1) {
-        const x = tile.x + dx;
-        const y = tile.y + dy;
-        if (x < 0 || y < 0 || x >= maxIndex || y >= maxIndex) continue;
-        const tree = await this.getTileTree(nodeId, zoom, x, y);
-        if (!tree) continue;
-        const matches = findWithinDistanceInTree(
-          tree,
-          cursor.longitude,
-          cursor.latitude,
-          maxDistanceMeters,
-          (longitude, latitude, value) => haversineMeters(latitude, longitude, value.latitude, value.longitude),
-        );
-        for (const match of matches) {
-          candidates.push({ point: match.item, distanceMeters: match.distanceMeters });
+    const collect = async (prefix: string, kind?: string) => {
+      const normalizedPrefix = prefix.length > MORTON_KEY_HEX_LENGTH
+        ? prefix.slice(0, MORTON_KEY_HEX_LENGTH)
+        : prefix;
+      const start = normalizedPrefix.padEnd(MORTON_KEY_HEX_LENGTH, '0');
+      const end = normalizedPrefix.padEnd(MORTON_KEY_HEX_LENGTH, 'f');
+      const rows = kind
+        ? await db.features.where('[nodeId+kind+mortonKey]')
+          .between([nodeId, kind, start], [nodeId, kind, end], true, true)
+          .toArray()
+        : await db.features.where('[nodeId+mortonKey]')
+          .between([nodeId, start], [nodeId, end], true, true)
+          .toArray();
+      for (const row of rows) {
+        if (!row.data) continue;
+        results.set(row.id, toGroupItem(row));
+      }
+    };
+
+    if (kinds && kinds.length > 0) {
+      for (const kind of kinds) {
+        for (const prefix of normalizedPrefixes) {
+          await collect(prefix, kind);
+        }
+      }
+    } else {
+      for (const prefix of normalizedPrefixes) {
+        await collect(prefix);
+      }
+    }
+
+    return Array.from(results.values());
+  }
+
+  async queryByViewport(
+    nodeId: NodeId,
+    bbox: LocationViewportBbox,
+    zoom: number,
+    kinds?: string[],
+    options?: LocationViewportQueryOptions,
+  ): Promise<LocationGroupItem[]> {
+    const expanded = expandBbox(bbox, options);
+    const targetBbox = normalizeBbox(bbox);
+    const z = clampMortonZoom(zoom);
+    const topLeft = lonLatToTileXY(expanded[0], expanded[3], z);
+    const bottomRight = lonLatToTileXY(expanded[2], expanded[1], z);
+    const minX = Math.min(topLeft.x, bottomRight.x);
+    const maxX = Math.max(topLeft.x, bottomRight.x);
+    const minY = Math.min(topLeft.y, bottomRight.y);
+    const maxY = Math.max(topLeft.y, bottomRight.y);
+    const db = getLocationDB();
+    const results = new Map<string, LocationGroupItem>();
+    const maxPoints = options?.maxPoints ?? 0;
+
+    const collectRange = async (start: string, end: string, kind?: string) => {
+      const rows = kind
+        ? await db.features.where('[nodeId+kind+mortonKey]')
+          .between([nodeId, kind, start], [nodeId, kind, end], true, true)
+          .toArray()
+        : await db.features.where('[nodeId+mortonKey]')
+          .between([nodeId, start], [nodeId, end], true, true)
+          .toArray();
+      for (const row of rows) {
+        const data = row.data as { latitude?: number; longitude?: number; kind?: string } | undefined;
+        const longitude = data?.longitude;
+        const latitude = data?.latitude;
+        if (
+          typeof longitude !== 'number'
+          || !Number.isFinite(longitude)
+          || typeof latitude !== 'number'
+          || !Number.isFinite(latitude)
+        ) {
+          continue;
+        }
+        if (kinds && kinds.length > 0) {
+          const kind = data?.kind;
+          if (!kind || !kinds.includes(String(kind))) continue;
+        }
+        if (!isWithinBbox(longitude, latitude, targetBbox)) continue;
+        results.set(row.id, toGroupItem(row));
+        if (maxPoints > 0 && results.size >= maxPoints) return;
+      }
+    };
+
+    for (let x = minX; x <= maxX; x += 1) {
+      for (let y = minY; y <= maxY; y += 1) {
+        const range = mortonRangeForTile(x, y, z);
+        if (kinds && kinds.length > 0) {
+          for (const kind of kinds) {
+            await collectRange(range.start, range.end, kind);
+            if (maxPoints > 0 && results.size >= maxPoints) return Array.from(results.values());
+          }
+        } else {
+          await collectRange(range.start, range.end);
+          if (maxPoints > 0 && results.size >= maxPoints) return Array.from(results.values());
         }
       }
     }
 
-    const matches = candidates
+    return Array.from(results.values());
+  }
+
+  async findNearestLocationPoint(query: LocationNearestPointQuery): Promise<LocationNearestPointResponse> {
+    const cursor = { longitude: query.longitude, latitude: query.latitude };
+    const maxDistanceMeters = query.maxDistanceMeters;
+    const latDelta = maxDistanceMeters / 111_320;
+    const lonDelta = metersToLongitudeDelta(maxDistanceMeters, query.latitude);
+    const bbox: LocationViewportBbox = [
+      query.longitude - lonDelta,
+      query.latitude - latDelta,
+      query.longitude + lonDelta,
+      query.latitude + latDelta,
+    ];
+
+    const items = await this.queryByViewport(query.nodeId, bbox, query.zoom, undefined, { maxPoints: 5000 });
+    const matches = items
+      .map((item) => {
+        const data = item.data as { latitude?: number; longitude?: number } | undefined;
+        const longitude = data?.longitude;
+        const latitude = data?.latitude;
+        if (
+          typeof longitude !== 'number'
+          || !Number.isFinite(longitude)
+          || typeof latitude !== 'number'
+          || !Number.isFinite(latitude)
+        ) {
+          return null;
+        }
+        const distanceMeters = haversineMeters(query.latitude, query.longitude, latitude, longitude);
+        if (!Number.isFinite(distanceMeters) || distanceMeters > maxDistanceMeters) return null;
+        const point: LocationNearestPoint = {
+          id: item.id,
+          name: (item.data as { name?: string } | undefined)?.name,
+          kind: (item.data as { kind?: string } | undefined)?.kind,
+          region: (item.data as { admin1?: string } | undefined)?.admin1,
+          countryName: (item.data as { countryName?: string } | undefined)?.countryName,
+          longitude,
+          latitude,
+          properties: item.data as unknown as Record<string, unknown>,
+        };
+        return { point, distanceMeters };
+      })
+      .filter((item): item is { point: LocationNearestPoint; distanceMeters: number } => Boolean(item))
       .sort((a, b) => a.distanceMeters - b.distanceMeters)
       .map((candidate) => ({
         point: candidate.point,
@@ -79,115 +270,4 @@ export class LocationQueryService implements LocationQueryAPI {
 
     return { cursor, matches };
   }
-
-  async getVectorTile(nodeId: NodeId, z: number, x: number, y: number): Promise<ArrayBuffer | null> {
-    const db = getLocationDB();
-    const record = await db.vectorTiles.get(`loc-mvt-${nodeId}-${z}-${x}-${y}`);
-    return record?.data ?? null;
-  }
-
-  private async getTileTree(
-    nodeId: NodeId,
-    z: number,
-    x: number,
-    y: number,
-  ): Promise<BTree<LocationNearestPoint> | null> {
-    const cacheKey = `${nodeId}:${z}:${x}:${y}`;
-    const cached = this.tileCache.get(cacheKey);
-    if (cached) return cached;
-
-    const db = getLocationDB();
-    const record = await db.vectorTiles.get(`loc-mvt-${nodeId}-${z}-${x}-${y}`);
-    if (!record?.data) return null;
-
-    const points = decodeLocationPoints(record.data, z, x, y);
-    if (points.length === 0) return null;
-
-    const tree = new BTree<LocationNearestPoint>();
-    for (const point of points) {
-      tree.insert(point.longitude, point);
-    }
-    this.tileCache.set(cacheKey, tree);
-    return tree;
-  }
-}
-
-const DEFAULT_TILE_CACHE_SIZE = 256;
-const DEFAULT_LAYER_NAME = 'location_points';
-
-function decodeLocationPoints(
-  tileData: ArrayBuffer,
-  z: number,
-  x: number,
-  y: number,
-): LocationNearestPoint[] {
-  const tile = new VectorTile(new Pbf(new Uint8Array(tileData)));
-  const layer = tile.layers[DEFAULT_LAYER_NAME];
-  if (!layer) return [];
-  const points: LocationNearestPoint[] = [];
-  for (let index = 0; index < layer.length; index += 1) {
-    const feature = layer.feature(index);
-    const geojson = feature.toGeoJSON(x, y, z) as {
-      geometry?: { type?: string; coordinates?: [number, number] };
-      properties?: Record<string, unknown>;
-      id?: string | number;
-    };
-    if (!geojson?.geometry || geojson.geometry.type !== 'Point') continue;
-    const coords = geojson.geometry.coordinates;
-    if (!coords || coords.length !== 2) continue;
-    const properties = (feature.properties ?? geojson.properties ?? {}) as Record<string, unknown>;
-    points.push({
-      id: toOptionalString(feature.id ?? geojson.id),
-      name: resolveName(properties),
-      kind: resolveKind(properties),
-      region: resolveRegion(properties),
-      countryName: resolveCountryName(properties),
-      longitude: coords[0],
-      latitude: coords[1],
-      properties,
-    });
-  }
-  return points;
-}
-
-
-function toOptionalString(value: unknown): string | undefined {
-  if (typeof value === 'string') return value.trim() || undefined;
-  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
-  return undefined;
-}
-
-function toStringValue(value: unknown): string | undefined {
-  if (typeof value === 'string') return value.trim() || undefined;
-  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
-  return undefined;
-}
-
-function resolveName(properties: Record<string, unknown>): string | undefined {
-  return toStringValue(properties.name)
-    ?? toStringValue(properties.label)
-    ?? toStringValue(properties.NAME)
-    ?? toStringValue(properties.title);
-}
-
-function resolveKind(properties: Record<string, unknown>): string | undefined {
-  return toStringValue(properties.kind)
-    ?? toStringValue(properties.type)
-    ?? toStringValue(properties.locationType);
-}
-
-function resolveRegion(properties: Record<string, unknown>): string | undefined {
-  return toStringValue(properties.admin1)
-    ?? toStringValue(properties.admin2)
-    ?? toStringValue(properties.region)
-    ?? toStringValue(properties.countryName)
-    ?? toStringValue(properties.country);
-}
-
-function resolveCountryName(properties: Record<string, unknown>): string | undefined {
-  return toStringValue(properties.countryName)
-    ?? toStringValue(properties.country)
-    ?? toStringValue(properties.country_name)
-    ?? toStringValue(properties.COUNTRY)
-    ?? toStringValue(properties.NAME_0);
 }

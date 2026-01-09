@@ -16,6 +16,8 @@ import type {
 export type LocationFeatureRow = {
   nodeId: NodeId;
   id: string;
+  kind?: string;
+  mortonKey?: string;
   data?: LocationGroupItemData;
   updatedAt?: number;
 };
@@ -135,6 +137,17 @@ export class LocationDB extends VectorTileDbBase {
       sessions: '&nodeId, createdAt, status',
       pendingSessions: '&nodeId, storedAt',
     }));
+
+    this.version(8).stores(this.mergeVectorTileStores({
+      features: '&[nodeId+id], nodeId, id, kind, mortonKey, [nodeId+mortonKey], [nodeId+kind+mortonKey], updatedAt',
+      relations: '&[srcNodeId+type+dstNodeId], srcNodeId, dstNodeId, type, updatedAt',
+      vectorTiles: '&id, nodeId, [z+x+y], timestamp',
+      sessions: '&nodeId, createdAt, status',
+      pendingSessions: '&nodeId, storedAt',
+    })).upgrade(async (tx) => {
+      await tx.table('features').clear();
+      await tx.table('vectorTiles').clear();
+    });
 
     this.features = this.table('features');
     this.relations = this.table('relations');

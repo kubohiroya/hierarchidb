@@ -7,13 +7,11 @@ import { LocationSelectionStep } from './steps/LocationSelectionStep.js';
 import { LocationBatchParametersStep } from './steps/LocationBatchParametersStep.js';
 import { LocationMapPreviewStep } from './steps/LocationMapPreviewStep.js';
 import { LocationBuildStep } from './steps/LocationBuildStep.js';
-import { LocationTileSettingsStep } from './steps/LocationTileSettingsStep.js';
 import { notify } from '@hierarchidb/components';
-import { startLocationVectorTileSession } from '../../common/tiles/locationVectorTiles.js';
 import { i18n } from '@hierarchidb/ui-i18n';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { getLocationDB } from '@hierarchidb/location-store';
-import { ensureIso3166Data, getAllCountries } from '@hierarchidb/gen-iso3166-2/browser';
+import { ensureIso3166Data, getAllCountries, resolveIso3166CsvUrl } from '@hierarchidb/gen-iso3166-2/browser';
 import { BASE_LOCATION_TYPES, resolveTypesForSource } from './steps/locationTypes.js';
 import { LocationBatchManager } from '../../services/LocationBatchManager.js';
 import { proxy } from 'comlink';
@@ -21,6 +19,7 @@ import {
   IDE_GSM_BULK_CHUNK_SIZE,
   type IdeGsmImportProgress,
   type IdeGsmLocationPointInput,
+  type LocationGroupItem,
 } from '@hierarchidb/plugin-service-api';
 import { clearIdeGsmProgress, updateIdeGsmProgress } from '../state/ideGsmProgress.js';
 
@@ -31,7 +30,7 @@ type LocationStepData = Partial<LocationEntity> & {
   draftMetadata?: TreeNodeMetadata | null;
 };
 
-const DEFAULT_CSV_URL = '/iso3166-2-level1.csv';
+const DEFAULT_CSV_URL = resolveIso3166CsvUrl();
 
 const LOCATION_QUERY_LABELS: Record<LocationType, string> = {
   area_centroid: 'administrative center',
@@ -61,18 +60,6 @@ const hasSelection = (data?: LocationStepData): boolean => {
   return Object.values(selected).some((row) => Array.isArray(row) && row.some(Boolean));
 };
 
-const hasTileSettings = (data?: LocationStepData): boolean => {
-  const minZoom = Number(data?.tilesMinZoom ?? DEFAULT_MIN_ZOOM);
-  const maxZoom = Number(data?.tilesMaxZoom ?? DEFAULT_MAX_ZOOM);
-  const workers = Number(data?.tileWorkers ?? DEFAULT_TILE_WORKERS);
-  return (
-    Number.isFinite(minZoom) &&
-    Number.isFinite(maxZoom) &&
-    Number.isFinite(workers) &&
-    workers >= MIN_CONCURRENCY &&
-    minZoom <= maxZoom
-  );
-};
 
 const clamp = (value: number, min: number, max: number): number => {
   if (Number.isNaN(value)) return min;
@@ -81,9 +68,6 @@ const clamp = (value: number, min: number, max: number): number => {
 
 const MIN_CONCURRENCY = 1;
 const MAX_CONCURRENCY = 16;
-const DEFAULT_MIN_ZOOM = 5;
-const DEFAULT_MAX_ZOOM = 12;
-const DEFAULT_TILE_WORKERS = 4;
 const LICENSE_REQUIRED = false;
 const UNSUPPORTED_DATA_SOURCES: LocationDataSource[] = ['geonames', 'wikidata', 'custom'];
 
@@ -100,7 +84,7 @@ const isLocationBuildPersisted = async (data?: Partial<LocationEntity>): Promise
   const nodeId = data?.nodeId as NodeId | undefined;
   if (!nodeId) return Boolean(data?.processingStatus === 'completed');
   const db = getLocationDB();
-  const count = await db.vectorTiles.where('nodeId').equals(nodeId).count();
+  const count = await db.features.where('nodeId').equals(nodeId).count();
   if (count > 0) return true;
   return data?.processingStatus === 'completed';
 };
@@ -220,15 +204,15 @@ const startLocationBatch = async (data: LocationStepData, context: StartBatchCon
   }
 
   let pointInputs: IdeGsmLocationPointInput[] = [];
+  const bridge = getWorkerBridge();
+  await bridge.initialize();
+  const mutationApi = await bridge.getLocationMutationAPI();
   if (draft.dataSource === 'ide-gsm') {
     if (!draft.ideGsmSourceUrl) {
       notify.error(tNs('dataSource.ideGsm.missing', 'IDE-GSM source URL is required.'));
       return;
     }
     try {
-      const bridge = getWorkerBridge();
-      await bridge.initialize();
-      const mutationApi = await bridge.getLocationMutationAPI();
       const progressHandler = proxy((progress: IdeGsmImportProgress) => {
         updateIdeGsmProgress(nodeId, progress);
       });
@@ -269,6 +253,14 @@ const startLocationBatch = async (data: LocationStepData, context: StartBatchCon
       },
     });
     pointInputs = points.map(toLocationPointInput);
+    await mutationApi.clearLocationEntities(nodeId);
+    const now = Date.now();
+    const items: LocationGroupItem[] = points.map((point) => ({
+      id: point.pointId,
+      data: { ...point },
+      updatedAt: now,
+    }));
+    await mutationApi.upsertLocationGroups(nodeId, items);
   }
 
   if (!pointInputs.length) {
@@ -279,32 +271,17 @@ const startLocationBatch = async (data: LocationStepData, context: StartBatchCon
     return;
   }
 
-  const settings = {
-    zoomMinGenerate: Number(draft.tilesMinZoom ?? DEFAULT_MIN_ZOOM),
-    zoomMaxGenerate: Number(draft.tilesMaxZoom ?? DEFAULT_MAX_ZOOM),
-    zoomMaxServe: Number(draft.tilesMaxZoom ?? DEFAULT_MAX_ZOOM),
-    tileWorkers: Number(draft.tileWorkers ?? DEFAULT_TILE_WORKERS),
-  } as const;
-
-  const tileWorkers = clamp(Number(draft.tileWorkers ?? DEFAULT_TILE_WORKERS), MIN_CONCURRENCY, MAX_CONCURRENCY);
-
-  await startLocationVectorTileSession(
-    nodeId,
-    pointInputs,
-    settings,
-    { concurrency: tileWorkers },
-  );
-
   if (draft.dataSource === 'ide-gsm') {
     clearIdeGsmProgress(nodeId);
   }
 
   await persistLocationDraft(nodeId, draft, {
-    processingStatus: 'processing',
+    processingStatus: 'completed',
+    processedAt: Date.now(),
     lastProcessedAt: Date.now(),
   });
 
-  notify.success(tNs('stage.success', 'Build started.'));
+  notify.success(tNs('stage.success', 'Build completed.'));
 };
 
 registry.registerConfigProvider<LocationStepData>({
@@ -357,21 +334,6 @@ registry.registerConfigProvider<LocationStepData>({
           );
         },
         validate: () => true,
-      },
-      {
-        id: 'tile-settings',
-        label: String(i18n.t('steps.tileSettings.label', { ns: 'location-plugin', defaultValue: 'Vector Tile Settings' })),
-        componentFactory: (p: StepProps) => {
-          const draft = ensureData(p.data);
-          return (
-            <LocationTileSettingsStep
-              draft={draft}
-              onUpdate={(updates) => p.onChange(mergeData(draft, updates))}
-              disabled={Boolean(p.disabled)}
-            />
-          );
-        },
-        validate: hasTileSettings,
       },
       {
         id: 'build',

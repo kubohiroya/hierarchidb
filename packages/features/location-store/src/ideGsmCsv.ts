@@ -1,10 +1,10 @@
 import { generateId } from '@hierarchidb/util';
-import { ensureIso3166Data, getAllCountries, getCountry } from '@hierarchidb/gen-iso3166-2/browser';
+import { ensureIso3166Data, getAllCountries, getCountry, resolveIso3166CsvUrl } from '@hierarchidb/gen-iso3166-2/browser';
 import type { IdeGsmSelectionEntry } from '@hierarchidb/plugin-service-api';
 import type { LocationPointId, LocationPointProperties, LocationType } from './index.js';
 import { parseCsvTable } from './csvUtils.js';
 
-const DEFAULT_CSV_URL = '/iso3166-2-level1.csv';
+const DEFAULT_CSV_URL = resolveIso3166CsvUrl();
 
 export type IdeGsmParseResult = {
   points: LocationPointProperties[];

@@ -39,7 +39,7 @@ export const ShapeDataSourceStep: React.FC<ShapeDialogStepProps> = ({ data, onCh
     } finally {
       setIsClearing(false);
     }
-  }, [dataSourceId, nodeId, t]);
+  }, [dataSourceId, resolvedNodeId, t]);
 
   return (
     <Box sx={{ p: 3 }}>

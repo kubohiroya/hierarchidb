@@ -24,6 +24,14 @@ export const LOCATION_TYPE_OPTIONS = [
   { id: 'interchange' as LocationType, label: 'Interchange', icon: <ForkRightIcon fontSize="small" /> },
 ] satisfies MapToggleOption[];
 
+export const LOCATION_TYPE_COLORS: Record<LocationType, string> = {
+  area_centroid: '#1f77b4',
+  airport: '#ff7f0e',
+  port: '#2ca02c',
+  railway_station: '#d62728',
+  interchange: '#9467bd',
+};
+
 export const ROUTE_MODE_OPTIONS = [
   { id: ROUTE_MODES.AIRWAY, label: 'Air', icon: <FlightIcon fontSize="small" />, modes: [ROUTE_MODES.AIRWAY] },
   { id: ROUTE_MODES.WATERWAY, label: 'Sea', icon: <DirectionsBoatIcon fontSize="small" />, modes: [ROUTE_MODES.WATERWAY] },

@@ -30,7 +30,7 @@ export type BatchTaskStageType = (typeof BatchTaskStage)[keyof typeof BatchTaskS
 
 export type TaskStatus = 'waiting' | 'running' | 'completed' | 'failed' | 'regression';
 
-export type BatchTaskType = 'download' | 'extract1' | 'extract2' | 'vectortile';
+export type BatchTaskType = 'download' | 'extract1' | 'extract2' | 'vectortile' | 'fetch' | 'transform' | 'vt';
 export type ProcessingStage = BatchTaskType;
 
 export interface BatchTaskBase {
@@ -46,6 +46,7 @@ export interface BatchTaskBase {
   completedAt?: number;
   retryCount?: number;
   error?: string;
+  message?: string;
 }
 
 export type BatchTask = BatchTaskBase;

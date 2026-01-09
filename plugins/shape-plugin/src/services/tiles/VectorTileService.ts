@@ -379,7 +379,9 @@ export class VectorTileService {
     try {
       const extracted = turf.simplify(geometry, { tolerance, highQuality: false }) as GeoJSONFeature<Geometry> | Geometry;
       if ((extracted as GeoJSONFeature<Geometry>).type === 'Feature') {
-        return (extracted as GeoJSONFeature<Geometry>).geometry;
+        const featureGeometry = (extracted as GeoJSONFeature<Geometry>).geometry;
+        if (featureGeometry) return featureGeometry;
+        return geometry;
       }
       return extracted as Geometry;
     } catch {

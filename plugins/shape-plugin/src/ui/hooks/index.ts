@@ -14,4 +14,3 @@ export * from './useTileConfigSection.js';
 export * from './useShapeBuildProgressStep.js';
 export * from './useShapePreviewStep.js';
 export * from './useErrorDisplay.js';
-export * from './useBatchRecoveryDialog.js';

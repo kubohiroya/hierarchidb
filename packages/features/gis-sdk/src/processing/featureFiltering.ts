@@ -1,4 +1,6 @@
-import * as turf from '@turf/turf';
+import area from '@turf/area';
+import bbox from '@turf/bbox';
+import bboxPolygon from '@turf/bbox-polygon';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 
 export type FeatureFilterMethod = 'bbox_only' | 'polygon_only' | 'hybrid' | 'none';
@@ -33,32 +35,32 @@ const countVertices = (geometry: Geometry | null | undefined): number => {
       return 1;
     case 'MultiPoint':
     case 'LineString':
-      return geometry.coordinates.length;
+      return (geometry.coordinates as number[][]).length;
     case 'MultiLineString':
     case 'Polygon':
-      return geometry.coordinates.reduce((sum, ring) => sum + ring.length, 0);
+      return (geometry.coordinates as number[][][]).reduce((sum, ring) => sum + ring.length, 0);
     case 'MultiPolygon':
-      return geometry.coordinates.reduce(
+      return (geometry.coordinates as number[][][][]).reduce(
         (sum, poly) => sum + poly.reduce((inner, ring) => inner + ring.length, 0),
         0,
       );
     case 'GeometryCollection':
-      return geometry.geometries.reduce((sum, geom) => sum + countVertices(geom), 0);
+      return (geometry.geometries ?? []).reduce((sum, geom) => sum + countVertices(geom), 0);
     default:
       return 0;
   }
 };
 
 const computeBboxAreaSqKm = (geometry: Geometry): number => {
-  const bbox = turf.bbox(geometry);
-  const polygon = turf.bboxPolygon(bbox);
-  return turf.area(polygon) / 1_000_000;
+  const bounds = bbox(geometry);
+  const polygon = bboxPolygon(bounds);
+  return area(polygon) / 1_000_000;
 };
 
-const computePolygonAreaSqKm = (geometry: Geometry): number => turf.area(geometry) / 1_000_000;
+const computePolygonAreaSqKm = (geometry: Geometry): number => area(geometry) / 1_000_000;
 
 const computeAspectRatio = (geometry: Geometry): number => {
-  const [minX, minY, maxX, maxY] = turf.bbox(geometry);
+  const [minX, minY, maxX, maxY] = bbox(geometry);
   const width = Math.abs(maxX - minX);
   const height = Math.abs(maxY - minY);
   if (width === 0 || height === 0) return Number.POSITIVE_INFINITY;

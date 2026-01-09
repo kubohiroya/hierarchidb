@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ensureIso3166Data, getAllCountries, type CountryRecord } from '@hierarchidb/gen-iso3166-2/browser';
+import { ensureIso3166Data, getAllCountries, resolveIso3166CsvUrl, type CountryRecord } from '@hierarchidb/gen-iso3166-2/browser';
 import type { Country, ContinentCode } from '../types/Country.js';
 
 type State =
@@ -13,7 +13,7 @@ export interface UseIsoCountriesOptions {
   csvUrl?: string;
 }
 
-const DEFAULT_CSV_URL = '/iso3166-2-level1.csv';
+const DEFAULT_CSV_URL = resolveIso3166CsvUrl();
 
 const normalizeContinent = (location: string | undefined): ContinentCode => {
   const trimmed = (location ?? '').trim();

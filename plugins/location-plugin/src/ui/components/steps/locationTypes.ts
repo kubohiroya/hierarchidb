@@ -17,24 +17,24 @@ type LocationTypeStyle = {
 
 export const LOCATION_TYPE_STYLES: Record<LocationType, LocationTypeStyle> = {
   area_centroid: {
-    color: '#6A5ACD',
+    color: '#1f77b4',
     icon: Public,
     altIcon: LocationCity,
   },
   airport: {
-    color: '#2196F3',
+    color: '#ff7f0e',
     icon: FlightTakeoff,
   },
   port: {
-    color: '#FF9800',
+    color: '#2ca02c',
     icon: DirectionsBoat,
   },
   railway_station: {
-    color: '#4CAF50',
+    color: '#d62728',
     icon: Train,
   },
   interchange: {
-    color: '#FFA000',
+    color: '#9467bd',
     icon: ForkRight,
   },
 };

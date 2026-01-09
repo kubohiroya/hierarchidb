@@ -10,6 +10,7 @@ import type {
   BatchProgressEvent,
   BatchSessionStatus,
   BatchTaskSummary,
+  UiStorageBridge,
 } from '@hierarchidb/common-api';
 import type { ShapeDataSourceName } from '@hierarchidb/plugin-service-api';
 import {
@@ -376,6 +377,7 @@ reporter.reportStepProgress('Load Comlink', 0);
         },
         pauseBatchSession: async (nodeType: NodeType, nodeId: NodeId): Promise<void> => {
           const api = resolveShapeBatchApiOrThrow(nodeType);
+          if (nodeType === SHAPE_NODE_TYPE) return;
           if (api.invokeBatchCommand) {
             await api.invokeBatchCommand('session/pause', { nodeId });
             return;
@@ -390,6 +392,7 @@ reporter.reportStepProgress('Load Comlink', 0);
         },
         resumeBatchSession: async (nodeType: NodeType, nodeId: NodeId): Promise<void> => {
           const api = resolveShapeBatchApiOrThrow(nodeType);
+          if (nodeType === SHAPE_NODE_TYPE) return;
           if (api.invokeBatchCommand) {
             await api.invokeBatchCommand('session/resume', { nodeId });
             setHeapContext({ nodeType, nodeId });
@@ -435,7 +438,7 @@ reporter.reportStepProgress('Load Comlink', 0);
             return [];
           }
         },
-        setUiStorageBridge: async (bridge): Promise<void> => {
+        setUiStorageBridge: async (bridge: UiStorageBridge): Promise<void> => {
           const auth = await AuthService.getSingleton();
           await auth.setUiStorageBridge(bridge);
         },

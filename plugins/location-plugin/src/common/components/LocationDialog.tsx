@@ -16,7 +16,6 @@ import { useTranslation } from '../i18n/index.js';
 import { LocationSelectionStep } from '../../ui/components/steps/LocationSelectionStep.js';
 import { LocationBatchParametersStep } from '../../ui/components/steps/LocationBatchParametersStep.js';
 import { LocationMapPreviewStep } from '../../ui/components/steps/LocationMapPreviewStep.js';
-import { startLocationVectorTileSession } from '../tiles/locationVectorTiles.js';
 import { listLocationPoints } from '../../services/pointRepository.js';
 import { runLocationTabularBuild } from '../../worker/tabular/task.js';
 import {
@@ -64,11 +63,6 @@ const buildDefaultFrame = (): { size: PluginDialogSize; position: PluginDialogPo
   return { size, position };
 };
 
-const DEFAULT_MIN_ZOOM = 5;
-const DEFAULT_MAX_ZOOM = 12;
-const DEFAULT_CONCURRENCY = 4;
-const MIN_CONCURRENCY = 1;
-const MAX_CONCURRENCY = 16;
 
 type LocationDraftPayload = Partial<LocationEntity>;
 
@@ -233,43 +227,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
         return;
       }
 
-      const points = pointsRaw.map((point) => ({
-        lon: point.longitude,
-        lat: point.latitude,
-        id: point.pointId,
-        properties: {
-          name: point.name,
-          kind: point.kind,
-          countryCode: point.countryCode,
-          countryName: point.countryName,
-          admin1: point.admin1,
-          admin2: point.admin2,
-          ...(point.metadata ?? {}),
-        },
-      }));
-
-      const parsedMinZoom = Number(dialogData.draft?.tilesMinZoom ?? DEFAULT_MIN_ZOOM);
-      const requestedMinZoom = Number.isFinite(parsedMinZoom) ? parsedMinZoom : DEFAULT_MIN_ZOOM;
-      const parsedMaxZoom = Number(dialogData.draft?.tilesMaxZoom ?? DEFAULT_MAX_ZOOM);
-      const requestedMaxZoom = Number.isFinite(parsedMaxZoom) ? parsedMaxZoom : DEFAULT_MAX_ZOOM;
-      const zoomMin = Math.max(0, Math.min(requestedMinZoom, requestedMaxZoom));
-      const zoomMax = Math.max(zoomMin, requestedMaxZoom);
-
-      const parsedZoomMaxServe = Number(dialogData.draft?.tilesMaxZoom ?? zoomMax);
-      const zoomMaxServe = Number.isFinite(parsedZoomMaxServe) ? parsedZoomMaxServe : zoomMax;
-
-      const settings = {
-        zoomMinGenerate: zoomMin,
-        zoomMaxGenerate: zoomMax,
-        zoomMaxServe,
-      } as const;
-
-      const parsedConcurrency = Number(dialogData.draft?.concurrentDownloads ?? DEFAULT_CONCURRENCY);
-      const rawConcurrency = Number.isFinite(parsedConcurrency) ? parsedConcurrency : DEFAULT_CONCURRENCY;
-      const concurrency = Math.min(MAX_CONCURRENCY, Math.max(MIN_CONCURRENCY, rawConcurrency));
-
-      await startLocationVectorTileSession(nodeId, points, settings, { concurrency });
-      notify.success('Build started.');
+      notify.success('Build completed.');
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       notify.error(`Failed to start batch session: ${message}`);

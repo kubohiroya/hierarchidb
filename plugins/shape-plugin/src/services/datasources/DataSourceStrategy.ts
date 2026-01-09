@@ -122,6 +122,8 @@ export interface FetchOptions {
   signal?: AbortSignal;
   filters?: FilterRule[];
   geoFilters?: GeographicFilter[];
+  cacheKeyMode?: 'url' | 'legacy';
+  retryConfig?: RetryConfig;
 
   [key: string]: unknown;
 }

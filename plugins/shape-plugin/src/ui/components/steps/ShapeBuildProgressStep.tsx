@@ -636,10 +636,8 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
           renderStageContent={renderStageContent}
           statusContent={summary.hasProgressData ? <BatchProgressSummaryCard /> : undefined}
           startIcon={<ConstructionIcon fontSize="small" />}
-          onPause={controls.handlePause}
           onResume={controls.canStartOrResume ? handleStartClick : undefined}
           controlLabel={t('stage.controls.title', 'Build controls')}
-          pauseLabel={t('stage.controls.pause', 'Pause')}
           startLabel={t('stage.controls.start', 'Start Build')}
           resumeLabel={t('stage.controls.resume', 'Resume Build')}
           statusLabel={controls.statusLabel}
@@ -687,13 +685,11 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
   );
 };
 
-const ShapeBuildProgressDialogs: React.FC<ShapeBuildProgressPanelProps> = ({ data }) => {
+const ShapeBuildProgressDialogs: React.FC = () => {
   const { t } = useTranslation();
   const buildStatus = useAtomValue(shapeBuildBuildStatusAtom);
   const authState = useAtomValue(shapeBuildProgressAuthAtom);
-  const controls = useAtomValue(shapeBuildProgressControlsAtom);
   const [heapDialogOpen, setHeapDialogOpen] = useState(false);
-  const heapPauseRef = useRef<string | null>(null);
   const { event: heapEvent, dismiss: dismissHeapEvent } = useHeapPressureGuard({
     enabled: buildStatus === 'running' || buildStatus === 'paused',
   });
@@ -702,24 +698,6 @@ const ShapeBuildProgressDialogs: React.FC<ShapeBuildProgressPanelProps> = ({ dat
     if (!heapEvent) return;
     setHeapDialogOpen(true);
   }, [heapEvent]);
-
-  useEffect(() => {
-    if (buildStatus !== 'running') {
-      heapPauseRef.current = null;
-      return;
-    }
-    if (!heapEvent) return;
-    const activeNodeId = data?.nodeId ?? null;
-    if (!activeNodeId) return;
-    const eventKey = `${activeNodeId}:${heapEvent.source}:${heapEvent.timestamp}`;
-    if (heapPauseRef.current === eventKey) return;
-    heapPauseRef.current = eventKey;
-    const pauseAndWarn = async () => {
-      await controls.handlePause?.();
-      setHeapDialogOpen(true);
-    };
-    void pauseAndWarn();
-  }, [buildStatus, controls, controls.handlePause, data?.nodeId, heapEvent]);
 
   return (
     <>
@@ -735,9 +713,9 @@ const ShapeBuildProgressDialogs: React.FC<ShapeBuildProgressPanelProps> = ({ dat
           setHeapDialogOpen(false);
           dismissHeapEvent();
         }}
-        title={t('stage.heap.pauseTitle', 'Build paused due to memory pressure')}
+        title={t('stage.heap.pauseTitle', 'Memory pressure detected')}
         confirmLabel={t('stage.heap.pauseConfirm', 'OK')}
-        description={t('stage.heap.pauseHint', 'Reduce concurrency and resume when ready.')}
+        description={t('stage.heap.pauseHint', 'Reduce concurrency and try again if the build becomes unstable.')}
       />
     </>
   );
@@ -749,7 +727,7 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = (props) =>
     <Provider store={store}>
       <ShapeBuildProgressAtomSync {...props} />
       <ShapeBuildProgressPanel data={props.data} nodeId={props.nodeId} />
-      <ShapeBuildProgressDialogs data={props.data} nodeId={props.nodeId} />
+      <ShapeBuildProgressDialogs />
     </Provider>
   );
 };

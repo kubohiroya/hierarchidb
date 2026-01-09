@@ -239,7 +239,9 @@ function determineColumns(features: LocationFeature[], allow?: string[]): string
 
 function featuresToRows(features: LocationFeature[]): Array<Record<string, unknown>> {
   return features.map((f) => {
-    const [lon, lat] = f.geometry.coordinates ?? [0, 0];
+    const coords = f.geometry?.coordinates;
+    const lon = Array.isArray(coords) ? coords[0] ?? 0 : 0;
+    const lat = Array.isArray(coords) ? coords[1] ?? 0 : 0;
     return {
       id: f?.id,
       lon,

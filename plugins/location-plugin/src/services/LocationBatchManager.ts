@@ -21,6 +21,7 @@ import { appendLocationPoints, replaceLocationPoints } from './pointRepository.j
 import type { RawNominatimResult, RawOverpassElement } from './download/rawTypes.js';
 import { getLocationDataSource } from '../common/datasources/LocationDataSourceDefinitions.js';
 import { FetchNetworkPort, getCorsProxyBaseURL, notifyPluginAuthRequired, postJson } from '@hierarchidb/download';
+import { resolveIso3166CsvUrl } from '@hierarchidb/gen-iso3166-2/browser';
 
 const logLocationBatchWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -40,7 +41,7 @@ const isRawNominatimArray = (value: unknown): value is RawNominatimLike[] => (
   Array.isArray(value) && value.every((item) => isRawNominatimLike(item))
 );
 
-const ISO3166_CSV_URL = '/iso3166-2-level1.csv';
+const ISO3166_CSV_URL = resolveIso3166CsvUrl();
 
 /**
  * Location batch task interface

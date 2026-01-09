@@ -114,6 +114,8 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
     if (!resolvedNodeId) {
       throw new Error('NaturalEarth fetchData requires nodeId.');
     }
+    const cacheKeyMode = options?.cacheKeyMode ?? 'legacy';
+    const retries = options?.retryConfig ?? { count: 1, delay: 0, backoff: 'exponential' } satisfies RetryConfig;
 
     const selectedEndpoint = this.selectEndpoint(endpoint, adminLevel);
     if (!selectedEndpoint || !this.config.access.endpoints?.[selectedEndpoint]) {
@@ -126,7 +128,6 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
 
     try {
       //  ZIP
-      const retries = this.config.access.retries ?? { count: 1, delay: 0, backoff: 'exponential' } satisfies RetryConfig;
       const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
       const entry = await getOrFetchWithRetry(
         store,
@@ -134,7 +135,9 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
         downloadUrl,
         {
           accept: 'application/zip',
-          cacheKey: buildShapeCacheKey(`naturalearth:${selectedEndpoint}`, downloadUrl),
+          cacheKey: cacheKeyMode === 'url'
+            ? downloadUrl
+            : buildShapeCacheKey(`naturalearth:${selectedEndpoint}`, downloadUrl),
           signal,
         },
         retries,
@@ -196,7 +199,7 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
         return {
           id: entityId,
           nodeId,
-          geometry: feature.geometry,
+          geometry: feature.geometry ?? undefined,
           properties: {
             ...properties,
             source: 'natural-earth',

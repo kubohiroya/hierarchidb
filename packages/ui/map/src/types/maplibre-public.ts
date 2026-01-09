@@ -85,6 +85,12 @@ export interface MapLibreMapInstance {
   getCenter(): { lng: number; lat: number };
   getZoom(): number;
   getCanvas(): HTMLCanvasElement;
+  getBounds(): {
+    getWest(): number;
+    getSouth(): number;
+    getEast(): number;
+    getNorth(): number;
+  };
   getBearing(): number;
   getPitch(): number;
   zoomIn(): void;

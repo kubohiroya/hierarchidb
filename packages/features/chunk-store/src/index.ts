@@ -12,6 +12,8 @@ import { getDBName } from '@hierarchidb/util';
 import { NobleSha3HashPort } from './adapters/NobleSha3HashPort.js';
 import type { HashAlgorithm, HashPort } from './ports.js';
 
+export { NobleSha3HashPort };
+
 export type ChunkStoreMetadataId = string;
 export type ChunkStoreIdentity = 'url' | 'etag' | 'url+etag' | 'hash';
 

@@ -28,6 +28,7 @@ packages:
   - packages/batch-runtime-worker-services
   - packages/batch-runtime-services
   - packages/batch-types
+  - packages/vt-*
   - plugins/*
 
 ignoredBuiltDependencies:

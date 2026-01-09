@@ -238,6 +238,24 @@
       "@hierarchidb/vectortile-store/*": [
         "packages/features/vectortile-store/dist/*"
       ],
+      "@hierarchidb/vt-store": [
+        "packages/vt-store/dist/index.d.ts"
+      ],
+      "@hierarchidb/vt-store/*": [
+        "packages/vt-store/dist/*"
+      ],
+      "@hierarchidb/vt-shape-store": [
+        "packages/vt-shape-store/dist/index.d.ts"
+      ],
+      "@hierarchidb/vt-shape-store/*": [
+        "packages/vt-shape-store/dist/*"
+      ],
+      "@hierarchidb/vt-orchestrator": [
+        "packages/vt-orchestrator/dist/index.d.ts"
+      ],
+      "@hierarchidb/vt-orchestrator/*": [
+        "packages/vt-orchestrator/dist/*"
+      ],
       "@hierarchidb/ui-worker-client": [
         "packages/ui/worker-client/dist/index.d.ts"
       ],

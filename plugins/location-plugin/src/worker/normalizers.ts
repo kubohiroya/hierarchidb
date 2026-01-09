@@ -5,6 +5,7 @@ import type {
   LocationGroupItemData,
   LocationRelationMeta,
 } from '../common/types/entities.js';
+import { mortonKeyFromLonLat } from '@hierarchidb/location-store';
 import type { LocationFeatureRow, LocationRelationRow } from './locationEntitiesDB.js';
 
 type Progress = NonNullable<LocationPeerData['lastProgress']>;
@@ -176,6 +177,10 @@ export const toGroupRow = (
 ): LocationFeatureRow => ({
   nodeId,
   id: String(item.id),
+  kind: item.data && typeof item.data.kind === 'string' ? item.data.kind : undefined,
+  mortonKey: item.data && Number.isFinite(item.data.longitude) && Number.isFinite(item.data.latitude)
+    ? mortonKeyFromLonLat(item.data.longitude, item.data.latitude)
+    : undefined,
   data: item.data ? normalizeGroupData(item.data) : undefined,
   updatedAt: timestamp,
 });

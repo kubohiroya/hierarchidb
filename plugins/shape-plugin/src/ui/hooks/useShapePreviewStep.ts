@@ -84,11 +84,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       ? toNodeId(String(nodeId))
       : null;
   const nodeKey = activeNodeId;
-  const [persistedStatus, setPersistedStatus] = useState<string | null>(null);
-  const [statusLoaded, setStatusLoaded] = useState(false);
-  const processingStatus = persistedStatus === 'running'
-    ? 'processing'
-    : persistedStatus;
+  const processingStatus = data?.processingStatus ?? null;
   const minZoom = previewDraft.batchConfig?.tileConfig?.minZoom;
   const maxZoom = previewDraft.batchConfig?.tileConfig?.maxZoom;
   const [tilesAvailable, setTilesAvailable] = useState(false);
@@ -107,30 +103,6 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   const workerClient = workerClientHook ? workerClientHook() : null;
   const selectionMatrix = previewDraft.selectedArrayByCountries;
   const selectionDataSource = normalizeDataSourceName(previewDraft.batchConfig?.dataSource);
-
-  useEffect(() => {
-    let cancelled = false;
-    if (!activeNodeId) {
-      setPersistedStatus(null);
-      setStatusLoaded(true);
-      return () => {
-        cancelled = true;
-      };
-    }
-    setStatusLoaded(false);
-    getShapeDbApiClient().query.getBatchSessionRecord(activeNodeId).then((session) => {
-      if (cancelled) return;
-      setPersistedStatus(session?.status ?? null);
-      setStatusLoaded(true);
-    }).catch(() => {
-      if (cancelled) return;
-      setPersistedStatus(null);
-      setStatusLoaded(true);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [activeNodeId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -175,13 +147,13 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     };
   }, [nodeKey, processingStatus, tilesAvailable]);
 
-  const statusForPolling = statusLoaded ? processingStatus : 'processing';
+  const statusForPolling = processingStatus ?? 'processing';
   const shouldPollTiles = Boolean(activeNodeId)
     && !tilesAvailable
-    && ['processing', 'paused'].includes(statusForPolling ?? '');
+    && statusForPolling === 'processing';
   const shouldPollMetadata = Boolean(activeNodeId)
     && metadataEnabled
-    && ['processing', 'paused'].includes(statusForPolling ?? '');
+    && statusForPolling === 'processing';
   const metadataPollIntervalMs = shouldPollMetadata ? 2000 : undefined;
 
   useEffect(() => {

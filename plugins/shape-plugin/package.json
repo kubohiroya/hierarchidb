@@ -45,7 +45,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsdown src/common/shared/index.ts src/index.ts src/services/index.ts src/services/batch/workers/shapeStageWorker.entry.ts src/ui/index.ts src/worker/index.ts src/worker/public.ts src/worker/shapeEntitiesDB.ts src/worker/shapeGroupStore.dexie.ts src/worker/shapeRelationStore.dexie.ts src/icon/index.ts --config ../../tsdown.config.ts --splitting false",
+    "build": "tsdown src/common/shared/index.ts src/index.ts src/services/index.ts src/ui/index.ts src/worker/index.ts src/worker/public.ts src/worker/shapeEntitiesDB.ts src/worker/shapeGroupStore.dexie.ts src/worker/shapeRelationStore.dexie.ts src/icon/index.ts --config ../../tsdown.config.ts --splitting false",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -57,6 +57,9 @@
     "@hierarchidb/shape-store": "workspace:*",
     "@hierarchidb/vectortile-store": "workspace:*",
     "@hierarchidb/vectortile-orchestrator": "workspace:*",
+    "@hierarchidb/vt-orchestrator": "workspace:*",
+    "@hierarchidb/vt-shape-store": "workspace:*",
+    "@hierarchidb/vt-store": "workspace:*",
     "geojson-vt": "^3.2.1"
   },
   "peerDependencies": {

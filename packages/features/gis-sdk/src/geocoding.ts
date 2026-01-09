@@ -1,7 +1,8 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { ShapeQueryAPI } from '@hierarchidb/plugin-service-api';
 import type { Feature, MultiPolygon, Polygon } from 'geojson';
-import { booleanPointInPolygon, point } from '@turf/turf';
+import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
+import { point } from '@turf/helpers';
 import { VectorTile } from '@mapbox/vector-tile';
 import Pbf from 'pbf';
 import { LRUCache } from 'typescript-lru-cache';

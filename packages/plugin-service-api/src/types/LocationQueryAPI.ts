@@ -15,6 +15,18 @@ export interface LocationRelation {
   updatedAt?: number;
 }
 
+export type LocationViewportBbox = [number, number, number, number];
+
+export interface LocationViewportQueryOptions {
+  prefetchMarginPx?: number;
+  prefetchMarginRatio?: number;
+  viewportSizePx?: {
+    width: number;
+    height: number;
+  };
+  maxPoints?: number;
+}
+
 export interface LocationNearestPointQuery {
   nodeId: NodeId;
   longitude: number;
@@ -54,6 +66,13 @@ export interface LocationNearestPointResponse {
 export interface LocationQueryAPI {
   listLocationGroups(nodeId: NodeId): Promise<LocationGroupItem[]>;
   listLocationRelations(nodeId: NodeId): Promise<LocationRelation[]>;
+  queryByViewport(
+    nodeId: NodeId,
+    bbox: LocationViewportBbox,
+    zoom: number,
+    kinds?: string[],
+    options?: LocationViewportQueryOptions,
+  ): Promise<LocationGroupItem[]>;
+  queryByMortonPrefixes(nodeId: NodeId, prefixes: string[], kinds?: string[]): Promise<LocationGroupItem[]>;
   findNearestLocationPoint(query: LocationNearestPointQuery): Promise<LocationNearestPointResponse>;
-  getVectorTile(nodeId: NodeId, z: number, x: number, y: number): Promise<ArrayBuffer | null>;
 }

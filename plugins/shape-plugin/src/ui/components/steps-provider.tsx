@@ -107,34 +107,19 @@ const hasPersistedMetadata = async (data?: Partial<ShapeEntity>): Promise<boolea
   return rows.length > 0;
 };
 
-const hasCompletedVectorTileTasks = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
-  const nodeId = requireShapeNodeId(data);
-  const tasks = await getShapeDbApiClient().ephemeral.listBatchTasksByType(nodeId, 'vectortile');
-  if (tasks.length === 0) return false;
-  const completed = tasks.filter((task) => task.status === 'completed').length;
-  return completed === tasks.length;
-};
-
-const hasCompletedBatchSession = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
-  const nodeId = requireShapeNodeId(data);
-  const session = await getShapeDbApiClient().query.getBatchSessionRecord(nodeId);
-  return session?.status === 'completed';
-};
-
 const isShapeBuildPersisted = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
   if (!data) return false;
-  if (data.processingStatus === 'processing' || data.processingStatus === 'paused') return true;
+  if (data.processingStatus === 'processing') return true;
   if (data.processingStatus === 'completed') return true;
   if (data.processingStatus === 'failed') return false;
   if (hasTileSummary(data)) return true;
   if (await hasPersistedVectorTiles(data)) return true;
-  if (await hasCompletedVectorTileTasks(data)) return true;
-  return hasCompletedBatchSession(data);
+  return false;
 };
 
 const isShapePreviewReady = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
   if (!data) return false;
-  if (data.processingStatus === 'processing' || data.processingStatus === 'paused') return true;
+  if (data.processingStatus === 'processing') return true;
   if (await hasPersistedMetadata(data)) return true;
   if (hasTileSummary(data)) return true;
   return hasPersistedVectorTiles(data);

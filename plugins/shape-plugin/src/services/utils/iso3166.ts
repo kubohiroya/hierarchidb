@@ -1,8 +1,13 @@
-import { ensureIso3166Data, getCountry, type EnsureIsoOptions } from '@hierarchidb/gen-iso3166-2/browser';
+import {
+  ensureIso3166Data,
+  getCountry,
+  resolveIso3166CsvUrl,
+  type EnsureIsoOptions,
+} from '@hierarchidb/gen-iso3166-2/browser';
 
 export type ContinentCode = 'AF' | 'AS' | 'EU' | 'NA' | 'SA' | 'OC' | 'AN' | 'XX';
 
-export const DEFAULT_ISO3166_CSV_URL = '/iso3166-2-level1.csv';
+export const DEFAULT_ISO3166_CSV_URL = resolveIso3166CsvUrl();
 
 const CONTINENT_NAMES: Record<ContinentCode, string> = {
   AF: 'Africa',

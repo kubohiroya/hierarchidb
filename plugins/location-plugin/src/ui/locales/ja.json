@@ -139,7 +139,7 @@
     "metadataEmpty": "表示できるメタデータがまだありません。",
     "metadataLoading": "メタデータを読み込み中…",
     "summary": {
-      "noData": "まだベクトルタイルが生成されていません。",
+      "noData": "表示できる地点データがまだありません。",
       "zoomRange": "ズーム範囲: {min} - {max}",
       "size": "合計サイズ: {size}",
       "tiles": "生成済みタイル数: {count}",

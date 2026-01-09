@@ -135,9 +135,18 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
     //  admin
     const normalizedCountry = this.normalizeCountryCode(country);
     const normalizedAdminLevel = this.normalizeAdminLevel(adminLevel.toString());
+    const cacheKeyMode = options?.cacheKeyMode ?? 'legacy';
+    const retries = options?.retryConfig ?? { count: 1, delay: 0, backoff: 'exponential' } satisfies RetryConfig;
     try {
       //  APIURL
-      const apiData = await this.fetchBoundaryMetadata(resolvedNodeId, normalizedCountry, normalizedAdminLevel, signal);
+      const apiData = await this.fetchBoundaryMetadata(
+        resolvedNodeId,
+        normalizedCountry,
+        normalizedAdminLevel,
+        signal,
+        cacheKeyMode,
+        retries,
+      );
 
       if (!apiData || !apiData.simplifiedGeometryGeoJSON) {
         throw new Error(`No boundary data available for ${normalizedCountry} ${normalizedAdminLevel}`);
@@ -149,7 +158,6 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
       console.log(`[GeoBoundaries] URL: ${downloadUrl}`);
 
       //  GeoJSON
-      const retries = this.config.access.retries ?? { count: 1, delay: 0, backoff: 'exponential' } satisfies RetryConfig;
       const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
       const bufferEntry = await getOrFetchWithRetry(
         store,
@@ -157,7 +165,9 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
         downloadUrl,
         {
           accept: 'application/json',
-          cacheKey: buildShapeCacheKey(`geoboundaries:${normalizedCountry}:${normalizedAdminLevel}`, downloadUrl),
+          cacheKey: cacheKeyMode === 'url'
+            ? downloadUrl
+            : buildShapeCacheKey(`geoboundaries:${normalizedCountry}:${normalizedAdminLevel}`, downloadUrl),
           signal,
         },
         retries,
@@ -222,7 +232,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
         return {
           id: this.generateEntityId(properties, index),
           nodeId: this.generateNodeId(properties, index),
-          geometry: feature.geometry,
+          geometry: feature.geometry ?? undefined,
           properties: {
             ...properties,
             source: 'geoboundaries',
@@ -266,17 +276,35 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
     country: string,
     adminLevel: string,
     signal?: AbortSignal,
+    cacheKeyMode: 'url' | 'legacy' = 'legacy',
+    retryConfig?: RetryConfig,
   ): Promise<GeoBoundariesApiResponse> {
     const url = buildGeoBoundariesMetadataUrl(country, adminLevel);
     console.log(`[GeoBoundaries] Fetching metadata: ${url}`);
 
     try {
       const store = createShapeChunkStore(jsonSerializer, jsonDeserializer);
-      const entry = await store.getOrFetchForNode(nodeId, url, {
-        accept: 'application/json',
-        cacheKey: buildShapeCacheKey(`geoboundaries:metadata:${country}:${adminLevel}`, url),
-        signal,
-      });
+      const entry = retryConfig
+        ? await getOrFetchWithRetry(
+          store,
+          nodeId,
+          url,
+          {
+            accept: 'application/json',
+            cacheKey: cacheKeyMode === 'url'
+              ? url
+              : buildShapeCacheKey(`geoboundaries:metadata:${country}:${adminLevel}`, url),
+            signal,
+          },
+          retryConfig,
+        )
+        : await store.getOrFetchForNode(nodeId, url, {
+          accept: 'application/json',
+          cacheKey: cacheKeyMode === 'url'
+            ? url
+            : buildShapeCacheKey(`geoboundaries:metadata:${country}:${adminLevel}`, url),
+          signal,
+        });
       const data = entry.value as GeoBoundariesApiResponse;
       data.releaseType = this.releaseType;
       return data;

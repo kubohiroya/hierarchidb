@@ -124,6 +124,8 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
 
     const normalizedCountry = this.normalizeCountryCode(country);
     const level = Math.min(Math.max(adminLevel, 0), 5); // GADM supports levels 0-5
+    const cacheKeyMode = options?.cacheKeyMode ?? 'legacy';
+    const retries = options?.retryConfig ?? { count: 1, delay: 0, backoff: 'exponential' } satisfies RetryConfig;
 
     try {
       let downloadUrl: string;
@@ -141,7 +143,6 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
 
       console.log(`[GADM] Downloading ${format.toUpperCase()} for ${normalizedCountry} level ${level}: ${downloadUrl}`);
 
-      const retries = this.config.access.retries ?? { count: 1, delay: 0, backoff: 'exponential' } satisfies RetryConfig;
       const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
       const entry = await getOrFetchWithRetry(
         store,
@@ -149,7 +150,9 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
         downloadUrl,
         {
           accept: 'application/zip',
-          cacheKey: buildShapeCacheKey(`gadm:${normalizedCountry}:${format}`, downloadUrl),
+          cacheKey: cacheKeyMode === 'url'
+            ? downloadUrl
+            : buildShapeCacheKey(`gadm:${normalizedCountry}:${format}`, downloadUrl),
           signal,
         },
         retries,
@@ -229,7 +232,7 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
           // nodeId: this.generateNodeId(properties, index),
           // name: this.extractName(properties),
           // description: this.extractDescription(properties),
-          geometry: feature.geometry,
+          geometry: feature.geometry ?? undefined,
           properties: {
             ...properties,
             source: 'gadm',

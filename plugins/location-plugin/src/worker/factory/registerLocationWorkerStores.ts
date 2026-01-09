@@ -6,16 +6,12 @@ import type {
   FeatureStore,
   RelationBase,
   RelationStore,
-  VectorTileItemBase,
-  VectorTileStore,
 } from '@hierarchidb/runtime-worker';
 import { isDevEnvironment } from '../../common/utils/env.js';
 
 type StoreRegistry = {
   getFeatures<T extends FeatureItemBase<any> = FeatureItemBase<any>>(nodeType: string): FeatureStore<T> | undefined;
   registerFeatures<T extends FeatureItemBase<any>>(nodeType: string, store: FeatureStore<T>): void;
-  getVectorTiles<T extends VectorTileItemBase = VectorTileItemBase>(nodeType: string): VectorTileStore<T> | undefined;
-  registerVectorTiles<T extends VectorTileItemBase>(nodeType: string, store: VectorTileStore<T>): void;
   getRelations<T extends RelationBase<any> = RelationBase<any>>(nodeType: string): RelationStore<T> | undefined;
   registerRelations<T extends RelationBase<any>>(nodeType: string, store: RelationStore<T>): void;
 };
@@ -45,10 +41,6 @@ async function ensureLocationStores(registry: StoreRegistry): Promise<void> {
   if (!registry.getFeatures('location')) {
     const { createLocationFeatureStoreDexie } = await import('../locationGroupStore.dexie.js');
     registry.registerFeatures('location', createLocationFeatureStoreDexie(db));
-  }
-  if (!registry.getVectorTiles('location')) {
-    const { createLocationVectorTileStoreDexie } = await import('../locationVectorTileStore.dexie.js');
-    registry.registerVectorTiles('location', createLocationVectorTileStoreDexie(db));
   }
   if (!registry.getRelations('location')) {
     const { createLocationRelationStoreDexie } = await import('../locationRelationStore.dexie.js');

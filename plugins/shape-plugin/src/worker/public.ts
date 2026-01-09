@@ -11,8 +11,6 @@ import type {
   DataSourceName,
   BatchConfig,
   ProcessingStatus,
-  ShapeBatchCommand,
-  ShapeBatchCommandPayload,
   ShapeEntity,
   TileInfo,
   DownloadTaskPayload,
@@ -58,9 +56,6 @@ export interface ShapeBatchAPI {
     downloadTaskPayloads: DownloadTaskPayload[],
     progressCallback?: (event: BatchProgressEvent) => void,
   ): Promise<NodeId>;
-  pauseBatchProcessing(draftId: NodeId): Promise<void>;
-  resumeBatchProcessing(draftId: NodeId): Promise<NodeId>;
-  invokeBatchCommand<K extends ShapeBatchCommand>(command: K, payload: ShapeBatchCommandPayload<K>): Promise<void>;
   getBatchSession(nodeId: NodeId): Promise<BatchSession | undefined>;
   listBatchTasks(nodeId: NodeId): Promise<BatchTask[]>;
   getBatchStatus(nodeId: NodeId): Promise<ProcessingStatus>;

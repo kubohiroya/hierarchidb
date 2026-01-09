@@ -6,6 +6,43 @@ import type {
 } from '../types/maplibre-public.js';
 import { defaultFeatureIdAccessor, resolveIdentifyCandidates } from '../lib/feature-identification.js';
 
+const isPointLayer = (feature: MapLibreGeoJSONFeature): boolean => {
+  const layerType = feature.layer?.type;
+  return layerType === 'circle' || layerType === 'symbol';
+};
+
+const hasPointGeometry = (
+  feature: MapLibreGeoJSONFeature,
+): feature is MapLibreGeoJSONFeature & { geometry: { type: 'Point'; coordinates: [number, number] } } => {
+  const geometry = (feature as { geometry?: { type?: string; coordinates?: unknown } }).geometry;
+  if (geometry?.type !== 'Point' || !Array.isArray(geometry.coordinates)) return false;
+  const [lng, lat] = geometry.coordinates;
+  return typeof lng === 'number' && typeof lat === 'number';
+};
+
+const canSortByDistance = (features: MapLibreGeoJSONFeature[]): boolean =>
+  features.length > 1 && features.every((feature) => isPointLayer(feature) && hasPointGeometry(feature));
+
+const sortByDistance = (
+  map: MapLibreMapInstance,
+  event: MapLibreMapMouseEvent,
+  features: MapLibreGeoJSONFeature[],
+): MapLibreGeoJSONFeature[] => {
+  if (!event.point || !canSortByDistance(features)) return features;
+  const mapWithProject = map as MapLibreMapInstance & {
+    project: (lngLat: { lng: number; lat: number }) => { x: number; y: number };
+  };
+  const { x, y } = event.point;
+  const scored = features.map((feature, index) => {
+    const [lng, lat] = (feature as { geometry: { coordinates: [number, number] } }).geometry.coordinates;
+    const projected = mapWithProject.project({ lng, lat });
+    const distance = Math.hypot(projected.x - x, projected.y - y);
+    return { feature, distance, index };
+  });
+  scored.sort((a, b) => a.distance - b.distance || a.index - b.index);
+  return scored.map((entry) => entry.feature);
+};
+
 export type SelectionGestureMode = 'replace' | 'toggle' | 'add' | 'clear' | 'box';
 
 export type UseMapFeatureSelectionGesturesParams<HighlightEntry extends { source: string; id: string | number }> = {
@@ -44,7 +81,8 @@ export const useMapFeatureSelectionGestures = <HighlightEntry extends { source: 
         radius,
         getFeatureId: defaultFeatureIdAccessor,
       });
-      const entries = result.features
+      const orderedFeatures = sortByDistance(mapInstance, event, result.features);
+      const entries = orderedFeatures
         .map((feature) => buildHighlightEntry(feature))
         .filter((entry): entry is HighlightEntry => Boolean(entry));
 

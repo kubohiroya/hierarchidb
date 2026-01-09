@@ -1,7 +1,14 @@
 import type { NodeId } from '@hierarchidb/common-types';
 
 export type ShapeDataSourceName = 'naturalearth' | 'geoboundaries' | 'gadm' | 'openstreetmap';
-export type ShapeBatchTaskStage = 'download' | 'extract1' | 'extract2' | 'vectortile';
+export type ShapeBatchTaskStage =
+  | 'download'
+  | 'extract1'
+  | 'extract2'
+  | 'vectortile'
+  | 'fetch'
+  | 'transform'
+  | 'vt';
 export type ShapeBatchTaskStatus = 'waiting' | 'running' | 'completed' | 'failed' | 'regression';
 
 export type ShapeDownloadTaskInputData = {

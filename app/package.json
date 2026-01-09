@@ -41,6 +41,7 @@
     "@hierarchidb/styler-store": "workspace:*",
     "@hierarchidb/tag": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
+    "@hierarchidb/vt-store": "workspace:*",
     "@hierarchidb/ui-grid": "workspace:*",
     "@hierarchidb/ui-country-select": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",

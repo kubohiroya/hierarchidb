@@ -3,7 +3,7 @@ import { useId } from 'react';
 import type { DownloadBatchConfig, BatchConfig, ShapeEntity } from '../../common/types/index.js';
 import { DEFAULT_PROCESSING_CONFIG, mergeBatchConfig } from '../../common/types/index.js';
 import { getShapeDbApiClient } from '../../services/batch/ShapeBatchApiClient.js';
-import { toNodeId, type NodeId, type NodeType } from '@hierarchidb/common-types';
+import { toNodeId, type NodeId } from '@hierarchidb/common-types';
 import { notify } from '@hierarchidb/components';
 import { useTranslation } from '../i18n.js';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
@@ -37,8 +37,6 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
   const [taskCounts, setTaskCounts] = useState({ download: 0, extract1: 0, extract2: 0, vectortile: 0 });
   const [finalCounts, setFinalCounts] = useState({ tiles: 0, metadata: 0 });
   const [failedCounts, setFailedCounts] = useState({ download: 0, extract1: 0, extract2: 0, vectortile: 0 });
-  const [persistedStatus, setPersistedStatus] = useState<string | null>(null);
-  const [statusLoaded, setStatusLoaded] = useState(false);
   const setBuildTasks = useSetAtom(shapeBuildTasksAtom);
   const setPersistedTasks = useSetAtom(shapeBuildPersistedTasksAtom);
   const deleteLabel = useMemo(() => (
@@ -119,33 +117,7 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
     };
   }, [loadCounts]);
 
-  useEffect(() => {
-    let cancelled = false;
-    if (!batchNodeId) {
-      setPersistedStatus(null);
-      setStatusLoaded(true);
-      return () => {
-        cancelled = true;
-      };
-    }
-    setStatusLoaded(false);
-    query.getBatchSessionRecord(batchNodeId).then((session) => {
-      if (cancelled) return;
-      setPersistedStatus(session?.status ?? null);
-      setStatusLoaded(true);
-    }).catch(() => {
-      if (cancelled) return;
-      setPersistedStatus(null);
-      setStatusLoaded(true);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [batchNodeId]);
-
-  const isRunning = !statusLoaded
-    ? Boolean(batchNodeId)
-    : persistedStatus === 'running';
+  const isRunning = draft?.processingStatus === 'processing';
   const hasFinalOutputs = finalCounts.tiles > 0 || finalCounts.metadata > 0;
   const allowDeleteRawByPolicy = false;
   const canDeleteRaw = !disabled && allowDeleteRawByPolicy && (
@@ -223,14 +195,6 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
 
   const handleDeleteRaw = useCallback(async () => {
     if (!batchNodeId) return notify.warning('NodeId is missing.');
-    if (isRunning && nodeId) {
-      try {
-        await bridgeRef.initialize();
-        await bridgeRef.pauseBatchSession('shape' as NodeType, nodeId);
-      } catch (error) {
-        console.warn('[ShapeDownloadConfigSection] failed to pause running session', error);
-      }
-    }
     await ephemeral.clearStage(batchNodeId, 'download');
     await clearBatchTasksForType('download');
     await clearFinalOutputs();

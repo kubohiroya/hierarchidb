@@ -49,7 +49,15 @@ export const toProcessingStage = (
   stage: ShapeBatchProgressSummary['currentStage'],
 ): ProgressInfo['currentStage'] => {
   if (stage === 'processing') return stage;
-  if (stage === 'download' || stage === 'extract1' || stage === 'extract2' || stage === 'vectortile') {
+  if (
+    stage === 'download'
+    || stage === 'extract1'
+    || stage === 'extract2'
+    || stage === 'vectortile'
+    || stage === 'fetch'
+    || stage === 'transform'
+    || stage === 'vt'
+  ) {
     return stage;
   }
   return undefined;
@@ -92,6 +100,9 @@ const toStageMap = (stages: Record<string, unknown> | undefined): Record<Process
     extract1: read('extract1'),
     extract2: read('extract2'),
     vectortile: read('vectortile'),
+    fetch: read('fetch'),
+    transform: read('transform'),
+    vt: read('vt'),
   };
 };
 

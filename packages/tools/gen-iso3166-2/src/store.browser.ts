@@ -28,6 +28,33 @@ const memoryStore = {
   subdivisions: new Map<string, SubdivisionRecord>(),
 };
 
+const resolveBaseUrl = (): string => {
+  const meta = (typeof import.meta !== "undefined"
+    ? (import.meta as { env?: { BASE_URL?: string; VITE_BASE_URL?: string } })
+    : null);
+  const envBase = meta?.env?.VITE_BASE_URL || meta?.env?.BASE_URL;
+  if (typeof envBase === "string" && envBase.length > 0) return envBase;
+  if (typeof document !== "undefined" && typeof document.baseURI === "string") {
+    try {
+      const url = new URL(document.baseURI);
+      return url.pathname.endsWith("/") ? url.pathname : `${url.pathname}/`;
+    } catch {
+      // ignore
+    }
+  }
+  if (typeof window !== "undefined" && typeof window.location?.pathname === "string") {
+    const path = window.location.pathname;
+    return path.endsWith("/") ? path : `${path}/`;
+  }
+  return "/";
+};
+
+export const resolveIso3166CsvUrl = (csvFile = "iso3166-2-level1.csv"): string => {
+  const baseUrl = resolveBaseUrl();
+  const normalizedBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+  return `${normalizedBase}${csvFile}`;
+};
+
 const rowToRecord = (row: SubdivisionRow): SubdivisionRecord => ({
   code: row.subdivisionCode,
   alpha2: row.alpha2,

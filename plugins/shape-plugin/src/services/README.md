@@ -18,10 +18,7 @@ packages/plugins/shape/src/services/
 │   ├── ShapesLifecycleManager.ts    # ライフサイクル管理
 │   └── openstreetmap-type.ts
 │
-├── batch/                             # バッチ処理
-│   ├── BatchSessionManager.ts       # セッション管理
-│   ├── BatchTaskQueue.ts            # タスクキュー管理
-│   ├── BatchProgressTracker.ts      # 進捗追跡
+├── batch/                             # (deprecated) 旧バッチ処理
 │   └── openstreetmap-type.ts
 │
 ├── strategies/                        # データソース戦略
@@ -76,17 +73,7 @@ export interface ShapesAPIMethods {
   // バッチ処理制御
   startBatchProcess: WorkerAPIMethod<
     [nodeId: NodeId, config: ProcessingConfig, downloadTaskPayloads: DownloadTaskPayload[]],
-    { batchId: string; sessionId: string }
-  >;
-  
-  pauseBatchProcessing: WorkerAPIMethod<
-    [batchId: string],
-    void
-  >;
-  
-  resumeBatchProcessing: WorkerAPIMethod<
-    [batchId: string],
-    void
+    { batchId: string }
   >;
   
   // バッチ状態取得
@@ -136,14 +123,6 @@ export class ShapesPluginAPI implements PluginAPI<ShapesAPIMethods> {
     return {
       startBatchProcess: async (nodeId, config, downloadTaskPayloads) => {
         return await this.service.startBatchProcess(nodeId, config, downloadTaskPayloads);
-      },
-      
-      pauseBatchProcessing: async (batchId) => {
-        await this.service.pauseBatch(batchId);
-      },
-      
-      resumeBatchProcessing: async (batchId) => {
-        await this.service.resumeBatch(batchId);
       },
       
       getBatchStatus: async (batchId) => {
@@ -286,12 +265,7 @@ export function useShapesAPI() {
    - EntityHandler実装
 
 ### Phase 2〜4: runtime-worker への移行
-- 旧 WorkerPool/ローカルWorker 実装は削除済み。Download/Extract/VectorTile は `@hierarchidb/runtime-worker` に委譲します。
-
-### Phase 5: バッチ処理統合
-1. **BatchSessionManager** (`batch/`)
-   - セッション管理
-   - 進捗追跡
+- 旧 WorkerPool/ローカルWorker 実装は削除済み。Download/Transform/VT は vt パイプラインに委譲します。
 
 ## 📝 実装上の注意点
 

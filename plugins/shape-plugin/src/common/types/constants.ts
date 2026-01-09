@@ -116,7 +116,7 @@ export const SHAPE_DATA_SOURCES = [
     color: '#FF6347',
     icon: '🌐',
     maxAdminLevel: 4,
-    countryCodeFormat: 'iso2',
+    countryCodeFormat: 'iso3',
   },
   {
     name: 'openstreetmap',

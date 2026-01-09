@@ -275,37 +275,6 @@ export const useBatchSessionActions = ({
     try {
       await bridgeRef.current.initialize();
       console.debug(`${debugScope} startOrResume:bridgeReady`);
-      if (buildStatus === 'paused') {
-        const { range: [sharedMin, sharedMax] } = readSharedZoomConfig();
-        const lastBuild = data?.buildTileZoomRange;
-        if (lastBuild && (lastBuild.minZoom !== sharedMin || lastBuild.maxZoom !== sharedMax)) {
-          notify.warning('Zoom range changed. Restarting build to apply the new range.');
-          console.debug(`${debugScope} startOrResume:resumeBlocked`, {
-            nodeId,
-            sharedZoomRange: [sharedMin, sharedMax],
-            lastBuild,
-          });
-        } else {
-          console.debug(`${debugScope} startOrResume:resume`, { nodeId });
-          try {
-            await bridgeRef.current.resumeBatchSession(nodeType, nodeId);
-            console.debug(`${debugScope} startOrResume:resumeOk`, { nodeId });
-            await persistDraftPatch({ processingStatus: 'processing' });
-            return true;
-          } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            if (/zoom range changed/i.test(message)) {
-              notify.warning('Zoom range changed. Restarting build to apply the new range.');
-              console.debug(`${debugScope} startOrResume:resumeBlocked`, { nodeId, message });
-            } else if (/missing download payloads/i.test(message)) {
-              notify.info('Download cache was cleared. Restarting stage.');
-            } else if (!/session .*not found/i.test(message)) {
-              throw error;
-            }
-            console.debug(`${debugScope} startOrResume:resumeNotFound`, { nodeId });
-          }
-        }
-      }
       const payloads = await buildDownloadTaskPayloads();
       if (!payloads || payloads.length === 0) {
         console.debug(`${debugScope} startOrResume:missingPayloads`, { nodeId });
@@ -322,13 +291,11 @@ export const useBatchSessionActions = ({
         buildTileZoomRange: { minZoom: sharedMin, maxZoom: sharedMax },
       });
       console.debug(`${debugScope} startOrResume:startBatchResult`, statusResult ?? null);
-      const nextStatus = statusResult.status === 'paused'
-        ? 'paused'
-        : statusResult.status === 'completed'
-          ? 'completed'
-          : statusResult.status === 'failed'
-            ? 'failed'
-            : 'processing';
+      const nextStatus = statusResult.status === 'completed'
+        ? 'completed'
+        : statusResult.status === 'failed'
+          ? 'failed'
+          : 'processing';
       await persistDraftPatch({ processingStatus: nextStatus });
       return true;
     } catch (error) {
@@ -338,32 +305,8 @@ export const useBatchSessionActions = ({
     }
   }, [buildDownloadTaskPayloads, buildStatus, nodeId, nodeType, persistDraftPatch, saveDraftBeforeBatch]);
 
-  const handlePause = useCallback(async () => {
-    console.debug(`${debugScope} pause:click`, { nodeId, nodeType });
-    if (!nodeId) {
-      notify.warning('NodeId is missing.');
-      return;
-    }
-    const saved = await saveDraftBeforeBatch();
-    if (!saved) {
-      console.debug(`${debugScope} pause:saveDraftFailed`, { nodeId });
-      return;
-    }
-    try {
-      await bridgeRef.current.initialize();
-      console.debug(`${debugScope} pause:bridgeReady`, { nodeId });
-      await bridgeRef.current.pauseBatchSession(nodeType, nodeId);
-      console.debug(`${debugScope} pause:ok`, { nodeId });
-      await persistDraftPatch({ processingStatus: 'paused' });
-    } catch (error) {
-      notify.error('Failed to pause build.');
-      console.error('[ShapeBuildProgressStep] pause failed', error);
-    }
-  }, [nodeId, nodeType, saveDraftBeforeBatch]);
-
   return {
     handleStartOrResume,
-    handlePause,
     authDialogOpen,
     closeAuthDialog,
     handleProviderSelect,

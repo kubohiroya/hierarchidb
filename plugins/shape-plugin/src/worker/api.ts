@@ -16,34 +16,20 @@ import {
   type BatchConfig,
   type BatchSessionConfig,
   type ProcessingStatus,
-  type ProcessingStage,
-  type ShapeBatchCommand,
-  type ShapeBatchCommandPayload,
   type ProgressInfo,
   type TileInfo,
   type DownloadTaskPayload,
   validateBatchConfig,
   type ShapeStepValidationResult,
   BatchTaskStage,
+  type BatchTaskStageType,
 } from '../common/types/index.js';
 import { ShapeEntityHandler } from './handlers/index.js';
 
 import { metadataLoader } from '../services/metadata/MetadataLoader.js';
-import { UnifiedShapeBatchManager } from '../services/batch/UnifiedShapeBatchManager.js';
-import {
-  type BatchTaskRecord,
-  type DownloadTaskInputData,
-  type Extract1TaskInputData,
-  type Extract2TaskInputData,
-  type VectorTileTaskInputData,
-} from '../services/database/ShapeDB.js';
-import type { BatchProcessConfig } from '../services/batch/types.js';
 import { getShapeDbApiClient } from '../services/batch/ShapeBatchApiClient.js';
-import { toBatchSessionRecord } from '../services/batch/shapeSessionMappers.js';
-import type { BatchStage } from '../common/types/BatchTaskLike.js';
 import type { BatchProgressEvent } from '@hierarchidb/common-api';
 import {
-  buildDownloadTaskId,
   generateDownloadTaskPayloads,
   getPreferredCountryCodeFormat,
 } from '../services/utils/utils.js';
@@ -51,14 +37,13 @@ import { bufferDeserializer, bufferSerializer, createShapeChunkStore } from '../
 import { normalizeCountryCodeFormat } from '../services/utils/iso3166.js';
 import { resolveDownloadStageStrategy } from '../services/batch/strategies/resolveDownloadStageStrategy.js';
 import type { SelectedArrayByCountries, ShapeEntity } from '../common/types/ShapeEntity.ts';
-
-// Create singleton unified batch manager
-const batchSessionManager = new UnifiedShapeBatchManager();
-const batchManagerWithDispatch = batchSessionManager as unknown as {
-  dispatchCommand?: (command: string, payload: Record<string, unknown>) => Promise<void>;
-};
-
-type BatchSessionStatusResult = Awaited<ReturnType<typeof batchSessionManager.getBatchSessionStatus>>;
+import {
+  VtTaskQueueDb,
+  listTasks,
+  onTaskQueueUpdate,
+  type TaskQueueRecord,
+} from '@hierarchidb/vt-orchestrator';
+import { runShapeVtPipeline } from '../services/vt/shapeVtPipeline.js';
 
 type DraftLike = {
   nodeId?: NodeId;
@@ -140,53 +125,6 @@ const buildBatchSessionConfig = (batchConfig: BatchConfig, draft?: DraftLike): B
   };
 };
 
-const persistDownloadTaskPayloads = async (
-  nodeId: NodeId,
-  payloads: DownloadTaskPayload[],
-  buildStartedAt: number,
-): Promise<void> => {
-  if (payloads.length === 0) return;
-  const ephemeral = getShapeDbApiClient().ephemeral;
-  const existingTasks = await ephemeral.listBatchTasksByType(nodeId, 'download');
-  const incompleteTasks = existingTasks.filter((task) => task.status !== 'completed');
-  if (incompleteTasks.length > 0) {
-    await ephemeral.deleteBatchTasksByIds(incompleteTasks.map((task) => task.taskId));
-  }
-  const incompleteIds = new Set(incompleteTasks.map((task) => task.taskId));
-  const activeTasks = existingTasks.filter((task) => !incompleteIds.has(task.taskId));
-  const existingTaskIds = new Set(activeTasks.map((task) => task.taskId));
-  let nextIndex = activeTasks.reduce((max, task) => Math.max(max, task.index ?? 0), -1) + 1;
-  const candidates = payloads.map((payload) => ({
-    payload,
-    taskId: buildDownloadTaskId(nodeId, payload),
-  }));
-  const needRegistered = candidates.filter((candidate) => !existingTaskIds.has(candidate.taskId));
-  const createdAt = Number.isFinite(buildStartedAt) && buildStartedAt > 0 ? buildStartedAt : Date.now();
-  const newTasks: BatchTaskRecord[] = needRegistered.map(({ payload, taskId }) => {
-    const task: BatchTaskRecord = {
-      taskId,
-      nodeId,
-      taskType: 'download',
-      status: 'waiting',
-      index: nextIndex,
-      progress: 0,
-      inputData: payload as DownloadTaskInputData,
-      createdAt,
-      updatedAt: createdAt,
-    };
-    nextIndex += 1;
-    return task;
-  });
-  console.debug('[ShapeBatch] download task registration', {
-    registered: existingTaskIds.size,
-    needRegistered: needRegistered.length,
-    total: candidates.length,
-  });
-  if (newTasks.length > 0) {
-  await ephemeral.putBatchTasks(newTasks);
-  }
-};
-
 interface ProgressSubscription {
   unsubscribe?: () => void;
 }
@@ -196,182 +134,106 @@ const progressCallbacks = new Map<string, ProgressSubscription>();
 const shapeEntityHandlerSingleton = new ShapeEntityHandler();
 const getShapeEntityHandler = (): ShapeEntityHandler => shapeEntityHandlerSingleton;
 
-const mapStageToBatchStage = (stage?: string): BatchStage => {
-  switch (stage) {
-    case 'extract1':
-      return 'extract1';
-    case 'extract2':
-      return 'extract2';
-    case 'vectortile':
-    case 'vectorTiles':
-      return 'vectorTiles';
-    case 'download':
-    default:
-      return 'download';
-  }
+const isSkippedMessage = (message?: string | null): boolean => {
+  if (!message) return false;
+  const normalized = message.trim().toLowerCase();
+  return normalized === 'skipped' || normalized.startsWith('skipped:');
 };
 
-const mapStageToProcessingStage = (stage?: string): ProcessingStage | 'processing' =>
-  mapStageToBatchStage(stage) as ProcessingStage;
-
-const mapManagerStatusToShapeStatus = (
-  status: string,
-): BatchSession['status'] => {
+const mapTaskQueueStatusToStage = (status: TaskQueueRecord['status']): BatchTaskStageType => {
   switch (status) {
-    case 'paused':
-      return 'paused';
-    case 'completed':
-      return 'completed';
-    case 'failed':
-      return 'failed';
+    case 'waiting':
+      return BatchTaskStage.WAIT;
     case 'running':
-    case 'idle':
+      return BatchTaskStage.PROCESS;
+    case 'completed':
+      return BatchTaskStage.SUCCESS;
+    case 'failed':
     default:
-      return 'running';
+      return BatchTaskStage.ERROR;
   }
 };
 
-const isSessionNotFoundError = (error: unknown): boolean => (
-  error instanceof Error && /session .*not found/i.test(error.message)
-);
-
-const getBatchSessionStatusSafe = async (
-  nodeId: NodeId,
-): Promise<{ status?: BatchSessionStatusResult; missing: boolean; error?: unknown }> => {
-  try {
-    const status = await batchSessionManager.getBatchSessionStatus(nodeId);
-    return { status, missing: false };
-  } catch (error) {
-    if (isSessionNotFoundError(error)) {
-      return { missing: true };
-    }
-    return { missing: false, error };
-  }
+const mapTaskQueueStatusToPhase = (status: TaskQueueRecord['status']): BatchProgressEvent['phase'] => {
+  if (status === 'waiting') return 'queued';
+  return status as BatchProgressEvent['phase'];
 };
 
-const buildTaskTitle = (task: BatchTaskRecord): string | undefined => {
-  const getNumber = (value: unknown): number | undefined =>
-    typeof value === 'number' && Number.isFinite(value) ? value : undefined;
-  const getString = (value: unknown): string | undefined =>
-    typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
-  const buildLocationTitle = (input: {
-    countryCode?: unknown;
-    country?: unknown;
-    adminLevel?: unknown;
-  }): string | undefined => {
-    const countryCode = getString(input.countryCode ?? input.country)?.toUpperCase();
-    const adminLevel = getNumber(input.adminLevel);
-    return countryCode && typeof adminLevel === 'number'
-      ? `${countryCode}/${adminLevel}`
-      : undefined;
-  };
-  const buildRegionLabel = (input: {
-    countryName?: unknown;
-    countryCode?: unknown;
-    country?: unknown;
-    featureLabel?: unknown;
-    featureGroupId?: unknown;
-    originLabel?: unknown;
-  }): string | undefined => {
-    const countryLabel = getString(input.countryName)
-      ?? getString(input.countryCode ?? input.country)?.toUpperCase();
-    const featureLabel = getString(input.featureLabel)
-      ?? getString(input.featureGroupId)
-      ?? getString(input.originLabel);
-    if (!countryLabel && !featureLabel) return undefined;
-    if (!countryLabel) return featureLabel;
-    if (!featureLabel) return countryLabel;
-    const countryLower = countryLabel.toLowerCase();
-    const featureLower = featureLabel.toLowerCase();
-    if (featureLower.includes(countryLower)) return featureLabel;
-    return `${countryLabel}/${featureLabel}`;
-  };
-  const buildZoomRangeLabel = (input: {
-    zoomRangeLabel?: unknown;
-    zoomRange?: unknown;
-  }): string | undefined => {
-    const rawLabel = getString(input.zoomRangeLabel);
-    if (rawLabel) return rawLabel;
-    const zoomRange = Array.isArray(input.zoomRange) ? input.zoomRange : undefined;
-    if (!zoomRange || zoomRange.length !== 2) return undefined;
-    const minZoom = getNumber(zoomRange[0]);
-    const maxZoom = getNumber(zoomRange[1]);
-    if (typeof minZoom !== 'number' || typeof maxZoom !== 'number') return undefined;
-    return `z${minZoom}-${maxZoom}`;
-  };
-  if (task.taskType === 'download') {
-    const input = task.inputData as DownloadTaskInputData | undefined;
-    const locationTitle = buildLocationTitle(input ?? {});
-    return locationTitle ?? getString(input?.url) ?? getString(input?.endpoint);
+const buildTaskQueueTitle = (task: TaskQueueRecord): string | undefined => {
+  const input = task.inputData as Record<string, unknown> | undefined;
+  if (!input) return undefined;
+  if (task.stage === 'fetch') {
+    const country = typeof input.countryCode === 'string' ? input.countryCode : undefined;
+    const adminLevel = typeof input.adminLevel === 'number' ? `ADM${input.adminLevel}` : undefined;
+    return [country, adminLevel].filter(Boolean).join(' ');
   }
-  if (task.taskType === 'extract1') {
-    const input = task.inputData as Extract1TaskInputData | undefined;
-    const locationTitle = buildLocationTitle(input ?? {});
-    const regionLabel = buildRegionLabel(input ?? {});
-    const parts = [locationTitle, regionLabel].filter(Boolean);
-    return parts.length > 0 ? parts.join(' | ') : locationTitle ?? regionLabel;
+  if (task.stage === 'transform') {
+    const adminLevel = typeof input.adminLevel === 'number' ? `ADM${input.adminLevel}` : undefined;
+    const bandId = typeof input.bandId === 'number' ? `band${input.bandId}` : undefined;
+    return [adminLevel, bandId].filter(Boolean).join(' ');
   }
-  if (task.taskType === 'extract2') {
-    const input = task.inputData as Extract2TaskInputData | undefined;
-    const locationTitle = buildLocationTitle(input ?? {});
-    const regionLabel = buildRegionLabel(input ?? {});
-    const zoomRangeLabel = buildZoomRangeLabel(input ?? {});
-    const parts = [locationTitle, regionLabel, zoomRangeLabel].filter(Boolean);
-    return parts.length > 0 ? parts.join(' | ') : locationTitle ?? regionLabel ?? zoomRangeLabel;
-  }
-  if (task.taskType === 'vectortile') {
-    const input = task.inputData as VectorTileTaskInputData | undefined;
-    const minZoom = getNumber(input?.minZoom);
-    const maxZoom = getNumber(input?.maxZoom);
-    const metadataContext = input?.metadataContext;
-    const countryLabel = metadataContext?.countryName ?? metadataContext?.countryCode;
-    const adminLabel = metadataContext?.adminLevel != null ? `ADM${metadataContext.adminLevel}` : undefined;
-    const dataSourceLabel = metadataContext?.dataSource ? metadataContext.dataSource.toUpperCase() : undefined;
-    const zoomLabel = typeof minZoom === 'number' && typeof maxZoom === 'number'
-      ? `z${minZoom}-${maxZoom}`
-      : undefined;
-    const parts = [dataSourceLabel, countryLabel, adminLabel, zoomLabel].filter(Boolean);
-    if (parts.length > 0) return parts.join(' • ');
-    if (typeof minZoom === 'number' && typeof maxZoom === 'number') return `z${minZoom}-${maxZoom}`;
+  if (task.stage === 'vt') {
+    const bandId = typeof input.bandId === 'number' ? `band${input.bandId}` : undefined;
+    const tileId = typeof input.tileId === 'number' ? `tile:${input.tileId}` : undefined;
+    return [bandId, tileId].filter(Boolean).join(' ');
   }
   return undefined;
 };
 
-const mapTaskRecordToBatchTask = (
-  task: BatchTaskRecord,
-): BatchTask & { title?: string; metadata?: Record<string, unknown> } => ({
+const mapTaskQueueRecordToBatchTask = (
+  task: TaskQueueRecord,
+): BatchTask & { title?: string; message?: string } => ({
   taskId: task.taskId,
-  taskType: task.taskType,
+  taskType: task.stage,
   nodeId: task.nodeId,
-  stage:
-    task.status === 'waiting'
-      ? BatchTaskStage.WAIT
-      : task.status === 'running'
-        ? BatchTaskStage.PROCESS
-        : task.status === 'completed'
-          ? BatchTaskStage.SUCCESS
-          : BatchTaskStage.ERROR,
+  stage: mapTaskQueueStatusToStage(task.status),
   status: task.status,
-  type: task.taskType,
+  type: task.stage,
   index: task.index,
   progress: task.progress,
   startedAt: task.startedAt,
   completedAt: task.completedAt,
   retryCount: task.retryCount,
   error: task.errorMessage,
-  title: buildTaskTitle(task),
-  metadata: task.taskType === 'vectortile'
-    ? (() => {
-      const input = task.inputData as VectorTileTaskInputData | undefined;
-      if (!input) return undefined;
-      const tileZ = typeof input.tileZ === 'number' ? input.tileZ : undefined;
-      const tileX = typeof input.tileX === 'number' ? input.tileX : undefined;
-      const tileY = typeof input.tileY === 'number' ? input.tileY : undefined;
-      if (tileZ == null || tileX == null || tileY == null) return undefined;
-      return { tileZ, tileX, tileY };
-    })()
-    : undefined,
+  message: task.message,
+  title: buildTaskQueueTitle(task),
 });
+
+const summarizeTaskQueue = (tasks: TaskQueueRecord[]) => {
+  const total = tasks.length;
+  const completed = tasks.filter((task) => task.status === 'completed' && !isSkippedMessage(task.message)).length;
+  const failed = tasks.filter((task) => task.status === 'failed').length;
+  const skipped = tasks.filter((task) => isSkippedMessage(task.message)).length;
+  const runningTask = tasks.find((task) => task.status === 'running');
+  const waitingTask = tasks.find((task) => task.status === 'waiting');
+  const currentTask = runningTask?.taskId ?? waitingTask?.taskId;
+  const stageOrder: Array<TaskQueueRecord['stage']> = ['fetch', 'transform', 'vt'];
+  const currentStage = stageOrder.find((stage) => (
+    tasks.some((task) => task.stage === stage && task.status !== 'completed' && task.status !== 'failed')
+  ));
+  const doneCount = Math.min(total, completed + skipped + failed);
+  const percentage = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+  const status: BatchSession['status'] = failed > 0
+    ? 'failed'
+    : total > 0 && doneCount >= total
+      ? 'completed'
+      : total > 0
+        ? 'running'
+        : 'idle';
+  return {
+    status,
+    progress: {
+      total,
+      completed,
+      failed,
+      skipped,
+      percentage,
+      currentStage,
+      currentTask,
+    },
+  };
+};
+
 
 export const shapeBatchAPI = {
 
@@ -485,58 +347,47 @@ export const shapeBatchAPI = {
       throw new Error(`Working copy not found: ${draftId}`);
     }
 
-    const downloadConfig = batchConfig.downloadConfig ?? DEFAULT_PROCESSING_CONFIG.downloadConfig;
-    if (!downloadTaskPayloads.length) {
-      throw new Error('Shape batch session requires download task payloads');
+    if (!downloadTaskPayloads.length && !draftLike?.draftData?.selectedArrayByCountries) {
+      throw new Error('Shape batch session requires download task payloads or selection');
     }
-    const baseConfig = buildBatchSessionConfig(mergedBatchConfig, { draftData: draftLike ?? undefined });
-    const processConfig: BatchProcessConfig = {
-      ...baseConfig,
-      workerTimeout: downloadConfig?.timeoutMs,
-      workerRetries: downloadConfig?.retryAttempts ?? 3,
-      retryDelay: downloadConfig?.retryDelay,
-      minZoom: baseConfig.vectorTiles?.minZoom,
-      maxZoom: baseConfig.vectorTiles?.maxZoom,
-    };
 
-    const buildStartedAt = Date.now();
-    const batchSessionData = { downloadTaskPayloads: downloadTaskPayloads, buildStartedAt };
-
-    // Start batch session using unified manager
-    const sessionOptions = {
-      maxConcurrentTasks: undefined,
-      retryAttempts: downloadConfig?.retryAttempts ?? 3,
-      retryDelay: downloadConfig?.retryDelay,
-      timeoutMs: downloadConfig?.timeoutMs,
-      enableResourceTracking: false,
-    };
-
-    const managerWithPrepare = batchSessionManager as unknown as {
-      prepareSession?: (
-        nodeId: NodeId,
-        config: BatchProcessConfig,
-        data: typeof batchSessionData,
-        options?: typeof sessionOptions,
-      ) => void;
-    };
     const nodeForSession = draftLike.nodeId ?? draftLike.treeNodeId ?? draftId;
-    console.debug('[ShapeBatch] startBatchProcess config', {
-      nodeId: nodeForSession,
-      extract2Config: mergedBatchConfig.extract2Config,
-      extractionMode: mergedBatchConfig.extract2Config?.extractionMode,
-      tileConfig: mergedBatchConfig.tileConfig,
-      vectorTiles: baseConfig.vectorTiles,
+    const buildStartedAt = Date.now();
+    await handler.updateEntity(nodeForSession, {
+      buildStartedAt,
+      buildFinishedAt: undefined,
+      processingStatus: 'processing',
     });
-    await persistDownloadTaskPayloads(toNodeId(String(nodeForSession)), downloadTaskPayloads, buildStartedAt);
-    managerWithPrepare.prepareSession?.(nodeForSession, processConfig, batchSessionData, sessionOptions);
-    await batchSessionManager.startBatchSession(nodeForSession);
 
-    // Register progress callback if provided
+    void runShapeVtPipeline({
+      nodeId: nodeForSession,
+      dataSource: mergedBatchConfig.dataSource as DataSourceName,
+      batchConfig: mergedBatchConfig,
+      selectedArrayByCountries: draftLike?.draftData?.selectedArrayByCountries,
+      downloadTaskPayloads,
+    }).then(async () => {
+      await handler.updateEntity(nodeForSession, {
+        buildFinishedAt: Date.now(),
+        processingStatus: 'completed',
+      });
+    }).catch(async (error) => {
+      console.error('[shapeBatchAPI] vt pipeline failed', error);
+      await handler.updateEntity(nodeForSession, {
+        processingStatus: 'failed',
+      });
+    });
+
     if (progressCallback) {
       const existing = progressCallbacks.get(String(nodeForSession));
       existing?.unsubscribe?.();
-      const unsubscribe = batchSessionManager.onBatchProgress(nodeForSession, (event) => {
-        progressCallback(event);
+      const unsubscribe = onTaskQueueUpdate(nodeForSession, (event) => {
+        progressCallback({
+          nodeId: event.nodeId,
+          stage: event.task.stage,
+          phase: mapTaskQueueStatusToPhase(event.task.status),
+          timestamp: Date.now(),
+          message: event.task.message,
+        });
       });
       progressCallbacks.set(String(nodeForSession), { unsubscribe });
     }
@@ -544,138 +395,42 @@ export const shapeBatchAPI = {
     return nodeForSession;
   },
 
-  pauseBatchProcessing: async (draftId: NodeId): Promise<void> => {
-    const handler = getShapeEntityHandler();
-    const entity = await handler.getEntity(draftId);
-    const nodeId = resolveBatchNodeId(entity as DraftLike | undefined);
-    if (!entity || !nodeId) {
-      throw new Error(`No active batch session for draft: ${draftId}`);
-    }
-
-    if (batchManagerWithDispatch.dispatchCommand) {
-      await batchManagerWithDispatch.dispatchCommand('session/pause', {
-        nodeId,
-      });
-      return;
-    }
-    await batchSessionManager.pauseBatchSession(nodeId);
-  },
-
-  resumeBatchProcessing: async (draftId: NodeId): Promise<NodeId> => {
-    const handler = getShapeEntityHandler();
-    const entity = await handler.getEntity(draftId);
-    const nodeId = resolveBatchNodeId(entity as DraftLike | undefined);
-    if (!entity || !nodeId) {
-      throw new Error(`No batch session to resume for draft: ${draftId}`);
-    }
-    const mergedConfig = mergeBatchConfig(entity?.batchConfig ?? DEFAULT_PROCESSING_CONFIG);
-    const desiredConfig = buildBatchSessionConfig(mergedConfig, { draftData: entity ?? undefined });
-    const session = await getShapeDbApiClient().query.getBatchSessionRecord(nodeId);
-    const sessionRecord = session ? toBatchSessionRecord(session) : null;
-    if (sessionRecord?.config?.vectorTiles && desiredConfig.vectorTiles) {
-      const currentMin = sessionRecord.config.vectorTiles.minZoom;
-      const currentMax = sessionRecord.config.vectorTiles.maxZoom;
-      const desiredMin = desiredConfig.vectorTiles.minZoom;
-      const desiredMax = desiredConfig.vectorTiles.maxZoom;
-      if (currentMin !== desiredMin || currentMax !== desiredMax) {
-        console.warn('[shapeBatchAPI] resume blocked: zoom range mismatch', {
-          nodeId,
-          current: { minZoom: currentMin, maxZoom: currentMax },
-          desired: { minZoom: desiredMin, maxZoom: desiredMax },
-        });
-        throw new Error('Zoom range changed. Restart build to apply the new range.');
-      }
-    }
-    if (batchManagerWithDispatch.dispatchCommand) {
-      await batchManagerWithDispatch.dispatchCommand('session/resume', {
-        nodeId,
-      });
-      return nodeId;
-    }
-    await batchSessionManager.resumeBatchSession(nodeId);
-    return nodeId;
-  },
-
-  invokeBatchCommand: async <K extends ShapeBatchCommand>(
-    command: K,
-    payload: ShapeBatchCommandPayload<K>,
-  ): Promise<void> => {
-    if (batchManagerWithDispatch.dispatchCommand) {
-      await batchManagerWithDispatch.dispatchCommand(command, payload);
-      return;
-    }
-    const nodeId = (payload as { nodeId?: NodeId }).nodeId;
-    if (!nodeId) {
-      console.warn('[shapeBatchAPI] batch command missing nodeId', command);
-      return;
-    }
-    switch (command) {
-      case 'session/pause':
-        await batchSessionManager.pauseBatchSession(nodeId);
-        break;
-      case 'session/resume':
-        await batchSessionManager.resumeBatchSession(nodeId);
-        break;
-      default:
-        console.warn('[shapeBatchAPI] batch command unavailable in unified manager', command);
-        break;
-    }
-  },
-
   getBatchSession: async (nodeId: NodeId): Promise<BatchSession | undefined> => {
-    try {
-      const { status, missing, error } = await getBatchSessionStatusSafe(nodeId);
-      if (!status) {
-        if (!missing && error) {
-          console.warn('[shapeBatchAPI] failed to fetch batch session', error);
-        }
-        return undefined;
-      }
+    const taskQueue = new VtTaskQueueDb();
+    const vtTasks = await listTasks(taskQueue, nodeId);
+    if (vtTasks.length > 0) {
       const handler = getShapeEntityHandler();
       const entity = await handler.getEntity(nodeId);
       const mergedConfig = mergeBatchConfig(entity?.batchConfig ?? DEFAULT_PROCESSING_CONFIG);
       const config = buildBatchSessionConfig(mergedConfig, { draftData: entity ?? undefined });
-      const progress = status.progress ?? {
-        total: 0,
-        completed: 0,
-        failed: 0,
-        percentage: 0,
-      };
-      const normalizedStatus = mapManagerStatusToShapeStatus(status.status);
+      const summary = summarizeTaskQueue(vtTasks);
+      const startedAt = Math.min(...vtTasks.map((task) => task.createdAt ?? Date.now()));
       return {
         draftId: nodeId,
         nodeId,
-        status: normalizedStatus,
+        status: summary.status,
         config,
-        startedAt: status.startedAt ?? Date.now(),
-        updatedAt: status.lastActivity ?? status.startedAt ?? Date.now(),
-        completedAt: status.completedAt,
-        progress: {
-          total: progress.total ?? 0,
-          completed: progress.completed ?? 0,
-          failed: progress.failed ?? 0,
-          skipped: progress.skipped ?? 0,
-          percentage: progress.percentage ?? 0,
-          currentStage: mapStageToProcessingStage(progress.currentStage),
-          currentTask: progress.currentTask,
-        },
-        canResume: normalizedStatus === 'paused',
-        lastActivity: status.lastActivity ?? status.startedAt ?? Date.now(),
-        expiresAt: status.lastActivity ?? Date.now(),
+        startedAt,
+        updatedAt: Date.now(),
+        completedAt: summary.status === 'completed' ? Date.now() : undefined,
+        progress: summary.progress,
+        canResume: false,
+        lastActivity: Date.now(),
+        expiresAt: Date.now(),
         stages: {},
         resourceUsage: undefined,
       };
-    } catch (error) {
-      if (!isSessionNotFoundError(error)) {
-        console.warn('[shapeBatchAPI] failed to fetch batch session', error);
-      }
-      return undefined;
     }
+    return undefined;
   },
 
   getBatchTasks: async (nodeId: NodeId): Promise<BatchTask[]> => {
-    const tasks = await getShapeDbApiClient().ephemeral.listBatchTasks(nodeId);
-    return tasks.map(mapTaskRecordToBatchTask);
+    const taskQueue = new VtTaskQueueDb();
+    const vtTasks = await listTasks(taskQueue, nodeId);
+    if (vtTasks.length > 0) {
+      return vtTasks.map(mapTaskQueueRecordToBatchTask);
+    }
+    return [];
   },
 
   getBatchProgress: async (draftId: NodeId): Promise<ProgressInfo> => {
@@ -691,32 +446,18 @@ export const shapeBatchAPI = {
         percentage: 0,
       };
     }
-    try {
-      const status = await batchSessionManager.getBatchSessionStatus(nodeId);
-      const progress = status.progress ?? {
-        total: 0,
-        completed: 0,
-        failed: 0,
-        percentage: 0,
-      };
-      return {
-        total: progress.total ?? 0,
-        completed: progress.completed ?? 0,
-        failed: progress.failed ?? 0,
-        skipped: progress.skipped ?? 0,
-        percentage: progress.percentage ?? 0,
-        currentStage: mapStageToProcessingStage(progress.currentStage),
-        currentTask: progress.currentTask,
-      };
-    } catch {
-      return {
-        total: 0,
-        completed: 0,
-        failed: 0,
-        skipped: 0,
-        percentage: 0,
-      };
+    const taskQueue = new VtTaskQueueDb();
+    const vtTasks = await listTasks(taskQueue, nodeId);
+    if (vtTasks.length > 0) {
+      return summarizeTaskQueue(vtTasks).progress;
     }
+    return {
+      total: 0,
+      completed: 0,
+      failed: 0,
+      skipped: 0,
+      percentage: 0,
+    };
   },
 
   getBatchStatus: async (
@@ -729,24 +470,22 @@ export const shapeBatchAPI = {
     completedTasks?: number;
     totalTasks?: number;
   }> => {
-    try {
-      const status = await batchSessionManager.getBatchSessionStatus(nodeId);
-      const normalizedStatus = mapManagerStatusToShapeStatus(status.status);
+    const taskQueue = new VtTaskQueueDb();
+    const vtTasks = await listTasks(taskQueue, nodeId);
+    if (vtTasks.length > 0) {
+      const summary = summarizeTaskQueue(vtTasks);
       return {
         nodeId,
-        draftId: status.nodeId as NodeId,
-        status: normalizedStatus,
-        progress: status.progress?.percentage,
-        completedTasks: status.progress?.completed,
-        totalTasks: status.progress?.total,
-      };
-    } catch (error) {
-      console.warn('[shapeBatchAPI] failed to fetch batch status', error);
-      return {
-        nodeId,
-        status: 'idle',
+        status: summary.status,
+        progress: summary.progress.percentage,
+        completedTasks: summary.progress.completed,
+        totalTasks: summary.progress.total,
       };
     }
+    return {
+      nodeId,
+      status: 'idle',
+    };
   },
 
   // ===================================
@@ -766,24 +505,26 @@ export const shapeBatchAPI = {
     lastActivity: number;
     expiresAt: number;
   }> => {
-    try {
-      const status = await batchSessionManager.getBatchSessionStatus(nodeId);
-      const lastActivity = status.lastActivity ?? status.startedAt ?? Date.now();
-      const normalizedStatus = mapManagerStatusToShapeStatus(status.status);
+    const taskQueue = new VtTaskQueueDb();
+    const vtTasks = await listTasks(taskQueue, nodeId);
+    if (vtTasks.length > 0) {
+      const lastActivity = vtTasks.reduce((latest, task) => {
+        const candidate = task.updatedAt ?? task.startedAt ?? task.createdAt ?? 0;
+        return candidate > latest ? candidate : latest;
+      }, 0);
       return {
         exists: true,
-        canResume: normalizedStatus === 'paused',
+        canResume: false,
         lastActivity,
         expiresAt: lastActivity + 5 * 60 * 1000,
       };
-    } catch {
-      return {
-        exists: false,
-        canResume: false,
-        lastActivity: 0,
-        expiresAt: 0,
-      };
     }
+    return {
+      exists: false,
+      canResume: false,
+      lastActivity: 0,
+      expiresAt: 0,
+    };
   },
 
   // ===================================
@@ -831,9 +572,18 @@ export const shapeBatchAPI = {
   subscribeToProgress: (nodeId: NodeId, callback: (event: BatchProgressEvent) => void): (() => void) => {
     const existing = progressCallbacks.get(String(nodeId));
     existing?.unsubscribe?.();
-    const unsubscribe = batchSessionManager.onBatchProgress(nodeId, (event) => {
-      callback(event);
+    const unsubscribeTaskQueue = onTaskQueueUpdate(nodeId, (event) => {
+      callback({
+        nodeId: event.nodeId,
+        stage: event.task.stage,
+        phase: mapTaskQueueStatusToPhase(event.task.status),
+        timestamp: Date.now(),
+        message: event.task.message,
+      });
     });
+    const unsubscribe = () => {
+      unsubscribeTaskQueue();
+    };
     progressCallbacks.set(String(nodeId), { unsubscribe });
 
     return () => {
@@ -895,30 +645,29 @@ export const shapeBatchAPI = {
     const entity = await handler.getEntity(nodeId);
     if (!entity) return { status: 'idle', hasErrors: false, errorMessages: [] };
 
-    // NodeId is the only batch session identifier.
-    const { status, missing, error } = await getBatchSessionStatusSafe(nodeId);
-    if (!missing) {
-      if (error) {
-        console.warn('[shapeBatchAPI] failed to fetch batch session status', error);
-      } else if (status) {
-        const normalizedStatus = mapManagerStatusToShapeStatus(status.status);
-        return {
-          status: normalizedStatus === 'running'
-            ? 'processing'
-            : normalizedStatus === 'completed'
-              ? 'completed'
-              : normalizedStatus === 'failed'
-                ? 'failed'
-                : 'idle',
-          lastProcessed: status.lastActivity ?? status.startedAt,
-          hasErrors: normalizedStatus === 'failed',
-          errorMessages: normalizedStatus === 'failed' ? ['Batch processing failed'] : [],
-          // Optionally map aggregates if available
-          totalFeatures: undefined,
-          totalVectorTiles: undefined,
-          storageUsed: undefined,
-        };
-      }
+    const taskQueue = new VtTaskQueueDb();
+    const vtTasks = await listTasks(taskQueue, nodeId);
+    if (vtTasks.length > 0) {
+      const summary = summarizeTaskQueue(vtTasks);
+      const lastProcessed = vtTasks.reduce((latest, task) => {
+        const candidate = task.completedAt ?? task.updatedAt ?? task.startedAt ?? task.createdAt ?? 0;
+        return candidate > latest ? candidate : latest;
+      }, 0);
+      return {
+        status: summary.status === 'running'
+          ? 'processing'
+          : summary.status === 'completed'
+            ? 'completed'
+            : summary.status === 'failed'
+              ? 'failed'
+              : 'idle',
+        lastProcessed: lastProcessed || undefined,
+        hasErrors: summary.status === 'failed',
+        errorMessages: summary.status === 'failed' ? ['Batch processing failed'] : [],
+        totalFeatures: undefined,
+        totalVectorTiles: undefined,
+        storageUsed: undefined,
+      };
     }
 
     return {

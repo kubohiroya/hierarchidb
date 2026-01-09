@@ -139,7 +139,7 @@
     "metadataEmpty": "No metadata available yet.",
     "metadataLoading": "Loading metadata...",
     "summary": {
-      "noData": "No vector tiles generated yet.",
+      "noData": "No location points available yet.",
       "zoomRange": "Zoom range: {min} - {max}",
       "size": "Total size: {size}",
       "tiles": "Generated tiles: {count}",

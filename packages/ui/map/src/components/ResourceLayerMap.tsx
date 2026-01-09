@@ -174,11 +174,26 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
       removeLayer: (id: string) => void;
       removeSource: (id: string) => void;
     };
+    const sourceData = new Map<string, FeatureCollection>();
+    orderedGeoJsonLayers.forEach((layer) => {
+      if (!sourceData.has(layer.sourceId)) {
+        sourceData.set(layer.sourceId, layer.data);
+      }
+    });
 
     orderedGeoJsonLayers.forEach((layer) => {
       if (map.getLayer(layer.layerId)) map.removeLayer(layer.layerId);
-      if (map.getSource(layer.sourceId)) map.removeSource(layer.sourceId);
-      map.addSource(layer.sourceId, { type: 'geojson', data: layer.data });
+    });
+
+    sourceData.forEach((_data, sourceId) => {
+      if (map.getSource(sourceId)) map.removeSource(sourceId);
+    });
+
+    sourceData.forEach((data, sourceId) => {
+      map.addSource(sourceId, { type: 'geojson', data });
+    });
+
+    orderedGeoJsonLayers.forEach((layer) => {
       map.addLayer(
         {
           id: layer.layerId,
@@ -195,7 +210,9 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
     return () => {
       orderedGeoJsonLayers.forEach((layer) => {
         if (map.getLayer(layer.layerId)) map.removeLayer(layer.layerId);
-        if (map.getSource(layer.sourceId)) map.removeSource(layer.sourceId);
+      });
+      sourceData.forEach((_data, sourceId) => {
+        if (map.getSource(sourceId)) map.removeSource(sourceId);
       });
     };
   }, [mapInstance, orderedGeoJsonLayers]);

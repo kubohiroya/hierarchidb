@@ -8,7 +8,6 @@ import type {
 } from '@hierarchidb/ui-plugin-shell/ui-map';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';
-import type { LocationQueryAPI } from '@hierarchidb/location-store';
 import type { ShapeQueryAPI } from '@hierarchidb/shape-store';
 import type { RouteQueryAPI } from '@hierarchidb/route-store';
 import { MAPLIBRE_PROPERTY_METADATA } from '@hierarchidb/styler-store';
@@ -83,13 +82,6 @@ const getShapeQueryAPI = async (): Promise<ShapeQueryAPI> => {
   return shapeQueryPromise;
 };
 
-let locationQueryPromise: Promise<LocationQueryAPI> | null = null;
-const getLocationQueryAPI = async (): Promise<LocationQueryAPI> => {
-  if (!locationQueryPromise) {
-    locationQueryPromise = ensureWorkerAPI().then((api) => api.getLocationQueryAPI());
-  }
-  return locationQueryPromise;
-};
 
 let routeQueryPromise: Promise<RouteQueryAPI> | null = null;
 const getRouteQueryAPI = async (): Promise<RouteQueryAPI> => {
@@ -103,9 +95,19 @@ export type UseFolderLayersResult = {
   basemapStyles: BasemapStyleEntry[];
   vectorLayers: ResourceVectorLayer[];
   geoJsonLayers: ResourceGeoJsonLayer[];
+  locationLayers: LocationLayerEntry[];
   styleOverridesByType: LayerStyleOverrides;
   mapInfo: MapInfoSummary;
   stylerSummaries: MapStylerSummary[];
+};
+
+export type LocationLayerEntry = {
+  nodeId: string;
+  nodeType: 'location';
+  dataSourceName?: string;
+  absolutePath?: string;
+  layerId: string;
+  sourceId: string;
 };
 
 export type UseFolderLayersParams = {
@@ -124,6 +126,7 @@ export const useFolderLayers = ({
   const [basemapStyles, setBasemapStyles] = useState<BasemapStyleEntry[]>([]);
   const [vectorLayers, setVectorLayers] = useState<ResourceVectorLayer[]>([]);
   const [geoJsonLayers, setGeoJsonLayers] = useState<ResourceGeoJsonLayer[]>([]);
+  const [locationLayers, setLocationLayers] = useState<LocationLayerEntry[]>([]);
   const [styleOverridesByType, setStyleOverridesByType] = useState<LayerStyleOverrides>({});
   const [stylerSummaries, setStylerSummaries] = useState<MapStylerSummary[]>([]);
   const [mapInfo, setMapInfo] = useState<MapInfoSummary>({});
@@ -191,8 +194,8 @@ export const useFolderLayers = ({
         const basemapEntries: BasemapStyleEntry[] = [];
         const shapeEntries: ResourceVectorLayer[] = [];
         const routeEntries: ResourceVectorLayer[] = [];
-        const locationEntries: ResourceVectorLayer[] = [];
         const geoJsonEntries: ResourceGeoJsonLayer[] = [];
+        const locationEntries: LocationLayerEntry[] = [];
         const styleOverrides: LayerStyleOverrides = {};
         const featureStateByStyleType: Partial<Record<'choropleth' | 'points' | 'lines', FeatureStateBundle>> = {};
         const stylerSummaries: MapStylerSummary[] = [];
@@ -322,44 +325,20 @@ export const useFolderLayers = ({
           }
 
           if (node.nodeType === 'location') {
-            const data = node.data as {
-              processingStatus?: string;
-              dataSource?: string;
-              features?: Array<{ position?: { lat?: number; lon?: number } }>;
-            } | null;
+            const data = node.data as { dataSource?: string } | null;
             const dataSourceName = data?.dataSource;
-            if (data?.processingStatus) {
-              const featureState = featureStateByStyleType.points;
-              const layerId = `resource-layer-${node.id}`;
-              const sourceId = `resource-source-${node.id}`;
-              locationEntries.push({
-                nodeId: String(node.id),
-                nodeType: 'location',
-                dataSourceName,
-                absolutePath: withLayerOrder('location', absolutePath, String(node.id)),
-                dbName: getDBName('location'),
-                tileDataProvider: async (z, x, y, tileNodeId) => {
-                  if (!tileNodeId) return null;
-                  const api = await getLocationQueryAPI();
-                  return api.getVectorTile(tileNodeId as NodeId, z, x, y);
-                },
-                layerConfig: {
-                  layerType: 'circle',
-                  sourceLayer: 'location_points',
-                  layerId,
-                  sourceId,
-                  paint: {
-                    'circle-radius': 4,
-                    'circle-color': '#2f74ff',
-                    'circle-opacity': 0.8,
-                    ...(styleOverrides.circle ?? {}),
-                  },
-                },
-                promoteId: featureState?.featureIdProperty,
-                featureState: featureState?.entries,
-              });
-            }
+            const layerId = `resource-layer-${node.id}`;
+            const sourceId = `resource-source-${node.id}`;
+            locationEntries.push({
+              nodeId: String(node.id),
+              nodeType: 'location',
+              dataSourceName,
+              absolutePath: withLayerOrder('location', absolutePath, String(node.id)),
+              layerId,
+              sourceId,
+            });
           }
+
 
           if (node.nodeType === 'route') {
             const data = node.data as { processingStatus?: string; dataSourceName?: string } | null;
@@ -402,9 +381,9 @@ export const useFolderLayers = ({
           setVectorLayers([
             ...sortByPath(shapeEntries),
             ...sortByPath(routeEntries),
-            ...sortByPath(locationEntries),
           ]);
           setGeoJsonLayers(sortByLayerPath(geoJsonEntries));
+          setLocationLayers(sortByPath(locationEntries));
           setStyleOverridesByType(styleOverrides);
           setStylerSummaries(stylerSummaries);
         }
@@ -414,6 +393,7 @@ export const useFolderLayers = ({
         setBasemapStyles([]);
         setVectorLayers([]);
         setGeoJsonLayers([]);
+        setLocationLayers([]);
         setStyleOverridesByType({});
         setStylerSummaries([]);
       }
@@ -429,6 +409,7 @@ export const useFolderLayers = ({
     basemapStyles,
     vectorLayers,
     geoJsonLayers,
+    locationLayers,
     styleOverridesByType,
     mapInfo,
     stylerSummaries,

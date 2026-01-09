@@ -54,10 +54,10 @@ export const LocationBatchParametersStep: React.FC<LocationBatchParametersStepPr
       setActiveTableId(null);
       return;
     }
-    const [points, cacheTiles, cacheSessions] = await Promise.all([
+    const [points, cacheSessions, cachePending] = await Promise.all([
       listLocationPoints(nodeId).then((list) => list.length).catch(() => 0),
-      getLocationDB().vectorTiles.where('nodeId').equals(nodeId).count().catch(() => 0),
       getLocationDB().sessions?.where('nodeId').equals(nodeId).count().catch(() => 0),
+      getLocationDB().pendingSessions?.where('nodeId').equals(nodeId).count().catch(() => 0),
     ]);
     let latestTableId: string | null = null;
     const sessions = await getLocationDB().sessions?.where('nodeId').equals(nodeId).toArray().catch(() => []);
@@ -76,7 +76,7 @@ export const LocationBatchParametersStep: React.FC<LocationBatchParametersStepPr
       metadataRows = await getRowStoreDB().rowChunks.where('tableId').equals(latestTableId).count();
     }
     setPointCount(points);
-    setCacheCount(cacheTiles + cacheSessions);
+    setCacheCount(cacheSessions + cachePending);
     setMetadataCount(metadataRows);
     setActiveTableId(latestTableId);
   }, [nodeId]);
@@ -120,7 +120,7 @@ export const LocationBatchParametersStep: React.FC<LocationBatchParametersStepPr
   return (
     <Box display="flex" flexDirection="column" gap={3}>
       <Typography variant="body2" color="text.secondary">
-        {translations.processing?.description ?? 'Configure download and tiling parameters for batch processing.'}
+        {translations.processing?.description ?? 'Configure download and cache parameters for batch processing.'}
       </Typography>
 
       <Grid container spacing={3} columns={{ xs: 12 }}>

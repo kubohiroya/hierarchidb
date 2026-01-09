@@ -1,4 +1,4 @@
-import * as turf from '@turf/turf';
+import simplify from '@turf/simplify';
 import type { Feature, FeatureCollection, Geometry, GeoJsonProperties } from 'geojson';
 
 export interface ExtractOptions {
@@ -12,7 +12,7 @@ const extractFeature = (
   tolerance: number,
 ): Feature<Geometry, GeoJsonProperties> => {
   if (!feature.geometry) return feature;
-  const extracted = turf.simplify(feature, { tolerance, highQuality: false, mutate: false });
+  const extracted = simplify(feature, { tolerance, highQuality: false, mutate: false });
   return extracted as Feature<Geometry, GeoJsonProperties>;
 };
 
@@ -29,7 +29,7 @@ const quantizeGeometryObject = (geometry: Geometry, quantize: number): Geometry 
   if (geometry.type === 'GeometryCollection') {
     return {
       ...geometry,
-      geometries: geometry.geometries.map((child) => quantizeGeometryObject(child, quantize)),
+      geometries: (geometry.geometries ?? []).map((child) => quantizeGeometryObject(child, quantize)),
     };
   }
   const coordinates = quantizeCoordinates(geometry.coordinates, quantize) as typeof geometry.coordinates;

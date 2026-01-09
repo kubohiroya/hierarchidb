@@ -16,7 +16,6 @@ import { useBuildStages } from './stage/useBuildStages.js';
 import { useBuildStatus } from './stage/useBuildStatus.js';
 import { useBuildTaskProgress } from '@hierarchidb/ui-batch-progress';
 import { useBatchSessionActions } from './stage/useBatchSessionActions.js';
-import { getShapeRuntimeWorkerClient } from '../../services/batch/adapters/RuntimeWorkerClient.js';
 import {
   appendBuildSample,
   BUILD_MONITOR_SAMPLE_INTERVAL_MS,
@@ -58,10 +57,8 @@ const buildMonitorConfig = {
 } as const;
 
 const fetchTileSummary = async (nodeId: NodeId) => {
-  const client = await getShapeRuntimeWorkerClient();
-  const vectorTile = client?.vectortile;
-  if (!vectorTile?.getSummary) return { tiles: 0, totalBytes: 0 };
-  return vectorTile.getSummary(nodeId, 'shape');
+  const summary = await getShapeDbApiClient().query.getVectorTileSummary(nodeId);
+  return { tiles: summary.tiles, totalBytes: summary.totalBytes };
 };
 
 const isSkippedMessage = (message?: string | null): boolean => {
@@ -408,7 +405,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
   const normalizedDisplayTasks = useMemo(() => (
     displayTasks.map((task) => ({
       ...task,
-      stage: normalizeStageId(task.stage ?? task.taskType) ?? task.stage,
+      stage: normalizeStageId(task.stage) ?? task.stage,
     }))
   ), [displayTasks]);
 
@@ -594,7 +591,6 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
 
   const {
     handleStartOrResume,
-    handlePause,
     authDialogOpen,
     closeAuthDialog,
     handleProviderSelect,
@@ -640,7 +636,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     warningMessage,
     canStartOrResume,
     handleStartOrResume: startOrResume,
-    handlePause,
+    handlePause: undefined,
     authDialogOpen,
     closeAuthDialog,
     handleProviderSelect,

@@ -94,7 +94,7 @@ export interface BatchSessionConfig extends CommonSessionConfig {
 }
 
 export type BatchProcessConfig = BatchSessionConfig;
-export type BatchTaskType = 'download' | 'extract1' | 'extract2' | 'vectortile';
+export type BatchTaskType = 'download' | 'extract1' | 'extract2' | 'vectortile' | 'fetch' | 'transform' | 'vt';
 export type ProcessingStage = BatchTaskType;
 export type TaskStatus = 'waiting' | 'running' | 'completed' | 'failed' | 'regression';
 

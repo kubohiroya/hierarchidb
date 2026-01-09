@@ -22,18 +22,6 @@ export type { CreateShapeData, UpdateShapeData, BatchTaskStageType, BatchTaskSta
 // Export plugin definition for worker fallback loading
 // Plugin definition export removed: metadata is sourced from package.json
 
-// Optional runtime-worker wiring for shared bootstrap (no shared imports)
-export class RuntimeWiring {
-  static async registerRuntimeWorkerAdapters(): Promise<void> {
-    try {
-      const mod = await import('./services/batch/adapters/registerRuntimeWorker.js');
-      await mod.registerShapeRuntimeWorkerAdapters();
-    } catch {
-      /* noop */
-    }
-  }
-}
-
 let initialized = false;
 
 export async function onRegister(): Promise<void> {
