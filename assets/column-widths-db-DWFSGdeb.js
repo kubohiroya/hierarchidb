@@ -1,1 +1,0 @@
-import{getColumnWidths as e,saveColumnWidths as t}from"./properties-db-Cg31lysE.js";export{e as getColumnWidths,t as saveColumnWidths};

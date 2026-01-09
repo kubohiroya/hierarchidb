@@ -1,1 +1,0 @@
-import{Gt as e,Mt as t,Qt as n,X as r}from"./index.js";e();async function i(){await t.delete(n(`route`))}export{r as RouteDB,r as RouteDatabase,i as clearDatabases};

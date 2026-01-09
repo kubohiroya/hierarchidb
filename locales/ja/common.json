@@ -317,7 +317,26 @@
       "visible": "表示",
       "hidden": "非表示",
       "checkReference": "参照を確認",
-      "preview": "プレビュー"
+      "preview": "プレビュー",
+      "build": "ビルド"
+    },
+    "infoPanel": {
+      "noTimestamp": "—",
+      "emptyDescription": "説明がありません。",
+      "openContextMenu": "ノード操作",
+      "nodeTypeLabel": "{{type}}",
+      "draftLabel": "下書き",
+      "editLabel": "編集",
+      "editButton": "ノードを編集",
+      "buildLabel": "ビルド",
+      "buildButton": "ビルドを開始",
+      "previewLabel": "プレビュー",
+      "previewButton": "ノードをプレビュー",
+      "unnamedNode": "無題のノード",
+      "closeButton": "閉じて親へ移動",
+      "noNode": "このページではノード情報を表示できません。",
+      "createdLabel": "作成",
+      "updatedLabel": "更新"
     }
   },
   "treeTable": {
