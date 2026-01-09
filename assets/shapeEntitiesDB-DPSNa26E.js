@@ -1,0 +1,1 @@
+import{Tt as e}from"./index.js";export{e as ShapeDB};

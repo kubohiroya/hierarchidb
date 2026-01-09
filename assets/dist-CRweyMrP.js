@@ -1,1 +1,0 @@
-import{C as e,S as t,T as n,w as r}from"../worker.js";export{e as ShapeDB,e as ShapeDatabase};
