@@ -5,6 +5,7 @@
 import type { ShapeEntity } from '../../common/types/ShapeEntity.js';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { ShapeStepValidationResult } from '../../common/types/index.js';
+import type { ChunkStoreMetadata } from '@hierarchidb/chunk-store';
 
 export interface DataSourceConfig {
   id: string;
@@ -139,6 +140,30 @@ export interface ProcessOptions {
   [key: string]: unknown;
 }
 
+export type RawDataPipelineRequest = {
+  url: string;
+  cacheKey: string;
+  accept?: string;
+  headers?: Record<string, string>;
+};
+
+export type RawDataPipelineTransformResult = {
+  stream: ReadableStream<Uint8Array>;
+  contentType?: string;
+};
+
+export interface RawDataPipeline<TRawData> {
+  prepareRequest(options: FetchOptions): RawDataPipelineRequest;
+  transformStream(stream: ReadableStream<Uint8Array>, options: FetchOptions): Promise<RawDataPipelineTransformResult>;
+  decodeBuffer(buffer: ArrayBuffer, metadata?: ChunkStoreMetadata): Promise<TRawData>;
+}
+
+export type RawDataPipelineContext = {
+  nodeId: NodeId;
+  fetchOptions: FetchOptions;
+  metadata?: Record<string, unknown>;
+};
+
 export interface BoundingBox {
   minLat: number;
   maxLat: number;
@@ -185,6 +210,8 @@ export interface DataSourceStrategy<TRawData = unknown, TProcessedData = ShapeEn
   fetchData(options?: FetchOptions): Promise<TRawData>;
 
   processData(rawData: TRawData, options?: ProcessOptions): Promise<TProcessedData>;
+
+  createRawDataPipeline?(context: RawDataPipelineContext): RawDataPipeline<TRawData>;
 
   validateData(data: TProcessedData): Promise<ShapeStepValidationResult>;
 

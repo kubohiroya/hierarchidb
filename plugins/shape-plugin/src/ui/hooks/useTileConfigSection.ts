@@ -4,7 +4,6 @@ import { DEFAULT_PROCESSING_CONFIG, mergeBatchConfig } from '../../common/types/
 
 type Args = {
   config: BatchConfig;
-  disabled?: boolean;
   onChange: (next: BatchConfig) => void;
 };
 
@@ -19,13 +18,8 @@ export const useTileConfigSection = ({ config, onChange }: Args) => {
     throw new Error('TileConfigSection: baseTileConfig is not defined');
   }
 
-  const minZoom = baseTileConfig.minZoom ?? 0;
-  const maxZoom = baseTileConfig.maxZoom ?? 12;
-  const zoomRange: [number, number] = minZoom <= maxZoom ? [minZoom, maxZoom] : [maxZoom, minZoom];
-
   return {
     baseTileConfig,
-    zoomRange,
     update,
   };
 };

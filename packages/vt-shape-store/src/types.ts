@@ -12,6 +12,7 @@ export type Stage1Buffer = {
   data: ArrayBuffer;
   featureCount: number;
   vertexCount: number;
+  polygonCount: number;
   timestamp: number;
 };
 
@@ -26,6 +27,7 @@ export type TransformBuffer = {
   data: ArrayBuffer;
   featureCount: number;
   vertexCount: number;
+  polygonCount: number;
   timestamp: number;
 };
 

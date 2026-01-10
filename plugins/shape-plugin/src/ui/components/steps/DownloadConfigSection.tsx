@@ -74,7 +74,7 @@ export const DownloadConfigSection: React.FC<Props> = ({ config, draft, nodeId, 
         <Stack direction="row" spacing={2} alignItems="center">
           <CloudDownloadIcon color="primary" />
           <Typography variant="subtitle1">
-            {t('processing.download.title', 'Download Setting / Cache Management')}
+            {t('processing.download.title', 'Fetch Settings / Cache Management')}
           </Typography>
         </Stack>
       </AccordionSummary>
@@ -82,10 +82,10 @@ export const DownloadConfigSection: React.FC<Props> = ({ config, draft, nodeId, 
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, sm: 4 }}>
             <WorkerNumberConfigCard
-              title={t('processing.download.workers', 'Number of Workers for Concurrent Download')}
+              title={t('processing.download.workers', 'Concurrent Fetch Workers')}
               value={baseDownloadConfig.maxConcurrent ?? 2}
               icon={<CloudDownloadIcon fontSize="small" color="primary" />}
-              helperText={t('processing.download.workersHelp', 'Controls how many downloads run in parallel.')}
+              helperText={t('processing.download.workersHelp', 'Controls how many fetches run in parallel.')}
               warningText={downloadWarningText}
               onChange={(maxConcurrent) =>
                 update({
@@ -105,7 +105,7 @@ export const DownloadConfigSection: React.FC<Props> = ({ config, draft, nodeId, 
             <Paper variant="outlined" sx={{ p: 2, width: '100%' }}>
               <Stack spacing={1.5}>
                 <Typography variant="subtitle2">
-                  {t('processing.download.retainTitle', 'Retain intermediate outputs after stage')}
+                  {t('processing.download.retainTitle', 'Retain intermediate outputs after build')}
                 </Typography>
                 <FormGroup>
                   <FormControlLabel
@@ -128,7 +128,7 @@ export const DownloadConfigSection: React.FC<Props> = ({ config, draft, nodeId, 
                         }}
                       />
                     }
-                    label={t('processing.download.retainDownloadedFiles', 'Downloaded files')}
+                    label={t('processing.download.retainDownloadedFiles', 'Fetch cache')}
                   />
                   <FormControlLabel
                     control={
@@ -150,7 +150,7 @@ export const DownloadConfigSection: React.FC<Props> = ({ config, draft, nodeId, 
                         }}
                       />
                     }
-                    label={t('processing.download.retainStage1Cache', 'extract1 cache')}
+                    label={t('processing.download.retainStage1Cache', 'Transform cache (filtering)')}
                   />
                   <FormControlLabel
                     control={
@@ -172,7 +172,7 @@ export const DownloadConfigSection: React.FC<Props> = ({ config, draft, nodeId, 
                         }}
                       />
                     }
-                    label={t('processing.download.retainStage2Cache', 'extract2 cache')}
+                    label={t('processing.download.retainStage2Cache', 'Transform cache (preprocessing)')}
                   />
                 </FormGroup>
               </Stack>
@@ -182,7 +182,7 @@ export const DownloadConfigSection: React.FC<Props> = ({ config, draft, nodeId, 
             <Paper variant="outlined" sx={{ p: 2, width: '100%' }}>
               <Stack spacing={1.5}>
                 <Typography variant="subtitle2">
-                  {t('processing.download.deleteNowTitle', 'Delete stage outputs immediately')}
+                  {t('processing.download.deleteNowTitle', 'Delete build outputs immediately')}
                 </Typography>
                 <DownloadCacheActions
                   deleteLabel={deleteLabel}

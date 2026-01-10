@@ -2,6 +2,26 @@ import type { PluginDialogAPI, StepCapabilities } from '@hierarchidb/common-api'
 import type { TreeNodeUpdater, TreeNodeUpdaterPayload } from '@hierarchidb/common-types';
 import type { NodeId, ValidationResult } from '@hierarchidb/common-types';
 
+type DraftData = {
+  name?: unknown;
+  permissions?: unknown;
+  locationType?: unknown;
+  latitude?: unknown;
+  longitude?: unknown;
+  contact?: { email?: unknown };
+  mapStyle?: { style?: string; customStyleUrl?: string };
+  viewport?: { center?: [number, number]; zoom?: number };
+};
+
+type ValidationResultWithDetails =
+  | { valid: true; errors?: string[]; warnings?: string[] }
+  | { valid: false; message: string; errors?: string[]; warnings?: string[] };
+
+const getDraftData = (input: unknown): DraftData => {
+  if (input && typeof input === 'object') return input as DraftData;
+  return {};
+};
+
 function genId(prefix: string = 'wc'): NodeId {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}` as NodeId;
 }
@@ -102,7 +122,7 @@ export class WorkerAPIImpl {
 
       async evaluateCapabilities(draftId: NodeId, step: number): Promise<StepCapabilities> {
         const wc = await requireDraft(draftId);
-        const data = wc.payload.draftData ?? {};
+        const data = getDraftData(wc.payload.draftData);
         const nodeType = wc.nodeType ?? 'folder';
 
         if (nodeType === 'project') {
@@ -123,7 +143,7 @@ export class WorkerAPIImpl {
           canBackToPrevious: step > 0,
         };
 
-        const namePresent = Boolean((data as { name?: unknown }).name);
+        const namePresent = Boolean(data.name);
 
         if (nodeType === 'folder' || nodeType === 'folder-plugin') {
           if (step === 0) {
@@ -140,10 +160,14 @@ export class WorkerAPIImpl {
         }
 
         if (nodeType.startsWith('location')) {
+          const hasLocationType = typeof data.locationType === 'string'
+            ? data.locationType.trim().length > 0
+            : Boolean(data.locationType);
           if (step === 0) {
-            result.canProceedToNext = Boolean((data as any).locationType && namePresent);
+            result.canProceedToNext = Boolean(hasLocationType && namePresent);
           } else if (step === 1) {
-            const { latitude, longitude } = data as any;
+            const latitude = data.latitude;
+            const longitude = data.longitude;
             const coordsOk = typeof latitude === 'number'
               && typeof longitude === 'number'
               && latitude >= -90 && latitude <= 90
@@ -166,7 +190,7 @@ export class WorkerAPIImpl {
             return result;
           }
           if (step === 1) {
-            const style = (data as any).mapStyle;
+            const style = data.mapStyle;
             const styleOk = !!style?.style && (style.style !== 'custom' || Boolean(style?.customStyleUrl));
             result.canNavigateTo = true;
             result.canProceedToNext = namePresent && styleOk;
@@ -175,7 +199,7 @@ export class WorkerAPIImpl {
             return result;
           }
           if (step === 2) {
-            const viewport = (data as any).viewport;
+            const viewport = data.viewport;
             const coordsOk = Array.isArray(viewport?.center)
               && typeof viewport.center[0] === 'number'
               && typeof viewport.center[1] === 'number';
@@ -202,27 +226,30 @@ export class WorkerAPIImpl {
       async batchValidate(ids: NodeId[]): Promise<Record<NodeId, ValidationResult>> {
         const out = Object.create(null) as Record<NodeId, ValidationResult>;
         for (const id of ids) {
-          const validation: ValidationResult = { valid: true } as ValidationResult;
+          const errors: string[] = [];
+          const warnings: string[] = [];
           try {
             const wc = await requireDraft(id);
             const nodeType = wc.nodeType;
-            const data = (wc.payload?.draftData ?? {}) as Record<string, any>;
+            const data = getDraftData(wc.payload?.draftData);
 
             const pushError = (message: string) => {
-              validation.valid = false;
-              (validation as any).errors ??= [];
-              (validation as any).errors.push(message);
+              errors.push(message);
             };
             const pushWarning = (message: string) => {
-              (validation as any).warnings ??= [];
-              (validation as any).warnings.push(message);
+              warnings.push(message);
             };
 
             if (nodeType === 'folder' || nodeType === 'folder-plugin') {
               if (!data.name || typeof data.name !== 'string' || data.name.trim().length === 0) {
                 pushError('フォルダー名は必須です');
               }
-              if (data.permissions && !['read-only', 'read-write'].includes(data.permissions)) {
+              const permissions = data.permissions;
+              if (
+                permissions !== undefined
+                && permissions !== null
+                && (typeof permissions !== 'string' || !['read-only', 'read-write'].includes(permissions))
+              ) {
                 pushError('権限設定の形式が正しくありません');
               }
             } else if (nodeType === 'location' || nodeType === 'location-plugin') {
@@ -237,16 +264,23 @@ export class WorkerAPIImpl {
               if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
                 pushError('経度は-180から180の数値である必要があります');
               }
-              const email = typeof data?.contact?.email === 'string' ? data.contact.email.trim() : '';
+              const contact = data.contact;
+              const email = typeof contact?.email === 'string' ? contact.email.trim() : '';
               if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
                 pushWarning('メールアドレスの形式が正しくない可能性があります');
               }
             }
           } catch (error) {
-            (validation as any).errors ??= [];
-            (validation as any).errors.push(error instanceof Error ? error.message : String(error));
-            validation.valid = false;
+            errors.push(error instanceof Error ? error.message : String(error));
           }
+          const baseValidation = errors.length === 0
+            ? { valid: true }
+            : { valid: false, message: errors[0] ?? 'validation failed' };
+          const validation: ValidationResultWithDetails = {
+            ...baseValidation,
+            ...(errors.length ? { errors } : {}),
+            ...(warnings.length ? { warnings } : {}),
+          };
           out[id] = validation;
         }
         return out;

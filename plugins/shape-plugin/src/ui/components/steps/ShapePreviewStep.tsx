@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Box, Typography, Alert, Tabs, Tab, Snackbar, CircularProgress } from '@mui/material';
 import { ResourceLayerMap, type MapAttributionItem, type ResourceVectorLayer } from '@hierarchidb/ui-map';
 import { GenericDataGrid } from '@hierarchidb/ui-grid';
@@ -42,10 +42,10 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
     setMapInstance,
     handleMapIdentify,
     defaultView,
-    minZoom,
-    maxZoom,
     selectionDataSource,
   } = useShapePreviewStep(data ?? {}, nodeId);
+  const minZoom = 0;
+  const maxZoom = 11;
   const baseMapStyleUrl = theme.palette.mode === 'dark'
     ? DARK_BASEMAP_STYLE_URL
     : LIGHT_BASEMAP_STYLE_URL;
@@ -53,6 +53,19 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
   const metadataPanelRef = useRef<HTMLDivElement | null>(null);
   const metadataToolbarRef = useRef<HTMLDivElement | null>(null);
   const [metadataTableHeight, setMetadataTableHeight] = useState(0);
+  const lastZoomRef = useRef<number | null>(null);
+  const [zoomSnackbarMessage, setZoomSnackbarMessage] = useState<string>('');
+  const [zoomSnackbarOpen, setZoomSnackbarOpen] = useState(false);
+
+  const handleViewStateChange = useCallback((viewState: { zoom: number }) => {
+    const zoom = Number(viewState.zoom);
+    if (!Number.isFinite(zoom)) return;
+    const lastZoom = lastZoomRef.current;
+    if (lastZoom !== null && Math.abs(lastZoom - zoom) < 0.01) return;
+    lastZoomRef.current = zoom;
+    setZoomSnackbarMessage(t('preview.zoom', 'Zoom: {{zoom}}', { zoom: zoom.toFixed(2) }));
+    setZoomSnackbarOpen(true);
+  }, [t]);
 
   useEffect(() => {
     if (tabIndex !== 0) {
@@ -171,6 +184,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
             scale: { position: 'bottom-left' },
           }}
           onLoad={setMapInstance}
+          onViewStateChange={handleViewStateChange}
           identifyFeatureOnClick={{
             layerIds: [baseLayerId],
             disableDefaultSnackbar: true,
@@ -327,6 +341,13 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
         autoHideDuration={3600}
         onClose={() => setHoveredId(null)}
+      />
+      <Snackbar
+        open={zoomSnackbarOpen}
+        message={zoomSnackbarMessage}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        autoHideDuration={800}
+        onClose={() => setZoomSnackbarOpen(false)}
       />
     </Box>
   );

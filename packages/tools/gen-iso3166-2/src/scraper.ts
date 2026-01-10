@@ -1,6 +1,7 @@
 import * as process from "node:process";
 import * as cheerio from "cheerio";
-import type { CheerioAPI } from "cheerio";
+import type { Cheerio, CheerioAPI } from "cheerio";
+import type { AnyNode } from "domhandler";
 import { DEFAULT_FAILURES, DEFAULT_OUTPUT, toCsv } from "./csv.js";
 import {
   type CountryRow,
@@ -105,18 +106,24 @@ const absoluteUrl = (base: string, href?: string | null): string | undefined => 
   return undefined;
 };
 
+type CheerioElementInput = Parameters<CheerioAPI>[0];
+
+const selectNode = ($: CheerioAPI, node: CheerioElementInput): Cheerio<AnyNode> =>
+  $(node as CheerioElementInput) as Cheerio<AnyNode>;
+
 export async function parseIso3166_1Countries(): Promise<CountryRow[]> {
   const html = await fetchHtml(START_URL);
   const $ = cheerio.load(html);
 
   // Find the main "wikitable" that contains alpha-2 and alpha-3 columns.
   const tables = $("table.wikitable");
-  let target: any = null;
+  let target: Cheerio<AnyNode> | null = null;
 
-  tables.each((_, el: any) => {
-    const headerText = normText($(el as any).find("tr").first().text());
+  tables.each((_, el) => {
+    const candidate = selectNode($, el);
+    const headerText = normText(candidate.find("tr").first().text());
     if (headerText.includes("alpha-2") && headerText.includes("alpha-3")) {
-      target = $(el as any);
+      target = candidate;
       return false;
     }
   });
@@ -125,11 +132,11 @@ export async function parseIso3166_1Countries(): Promise<CountryRow[]> {
     throw new Error("Could not find ISO 3166-1 country table on the start page.");
   }
 
-  const table = target as any;
+  const table: Cheerio<AnyNode> = target;
 
   // Identify column indices by header cells.
   const headerCells = table.find("tr").first().find("th,td").toArray();
-  const headers = headerCells.map((c: any) => normText($(c as any).text()));
+  const headers = headerCells.map((cell) => normText(selectNode($, cell as CheerioElementInput).text()));
 
   const idxCountryEn = headers.findIndex((h: string) => h.includes("英語名"));
   const idxAlpha3 = headers.findIndex((h: string) => h.includes("alpha-3"));
@@ -143,21 +150,25 @@ export async function parseIso3166_1Countries(): Promise<CountryRow[]> {
 
   const rows: CountryRow[] = [];
 
-  table.find("tr").slice(1).each((_: any, tr: any) => {
-    const tds = $(tr as any).find("td").toArray();
+  table.find("tr").slice(1).each((_index, tr) => {
+    const tds = selectNode($, tr as CheerioElementInput).find("td").toArray();
     if (tds.length < Math.max(idxAlpha2, idxAlpha3, idxCountryEn) + 1) return;
 
-    const countryEn = stripWrappedQuotes(normText($(tds[idxCountryEn]).text()));
-    const alpha3 = normText($(tds[idxAlpha3]).text()).replace(/`/g, "");
-    const alpha2 = normText($(tds[idxAlpha2]).text()).replace(/`/g, "");
-    const locationRaw = idxLocation >= 0 ? normText($(tds[idxLocation]).text()) : "";
+    const countryEn = stripWrappedQuotes(
+      normText(selectNode($, tds[idxCountryEn] as CheerioElementInput).text())
+    );
+    const alpha3 = normText(selectNode($, tds[idxAlpha3] as CheerioElementInput).text()).replace(/`/g, "");
+    const alpha2 = normText(selectNode($, tds[idxAlpha2] as CheerioElementInput).text()).replace(/`/g, "");
+    const locationRaw = idxLocation >= 0
+      ? normText(selectNode($, tds[idxLocation] as CheerioElementInput).text())
+      : "";
     const location = normalizeContinent(locationRaw, 'ja');
 
     if (!alpha2 || alpha2.length !== 2) return;
 
     let iso3166_2_url: string | undefined;
     if (idxAdminLink >= 0 && tds[idxAdminLink]) {
-      const a = $(tds[idxAdminLink]).find("a").first();
+      const a = selectNode($, tds[idxAdminLink] as CheerioElementInput).find("a").first();
       const href = a.attr("href");
       iso3166_2_url = absoluteUrl(JA_WIKI, href);
     }
@@ -173,8 +184,8 @@ type ParsedTable = {
   rows: Array<{ code: string; nameLocal: string; nameEn: string }>;
 };
 
-function scoreTable($: CheerioAPI, table: any, alpha2: string): ParsedTable {
-  const $table = $(table as any);
+function scoreTable($: CheerioAPI, table: CheerioElementInput, alpha2: string): ParsedTable {
+  const $table = selectNode($, table);
   const header = normText($table.find("tr").first().text()).toLowerCase();
 
   const hasEnCol = header.includes("(en)") || header.includes("english") || header.includes("英");
@@ -183,8 +194,11 @@ function scoreTable($: CheerioAPI, table: any, alpha2: string): ParsedTable {
   // Parse rows
   const rows: Array<{ code: string; nameLocal: string; nameEn: string }> = [];
 
-  $table.find("tr").slice(1).each((_: any, tr: any) => {
-    const cells = $(tr as any).find("td,th").toArray().map((c: any) => normText($(c as any).text()));
+  $table.find("tr").slice(1).each((_index, tr) => {
+    const cells = selectNode($, tr as CheerioElementInput)
+      .find("td,th")
+      .toArray()
+      .map((cell) => normText(selectNode($, cell as CheerioElementInput).text()));
     if (cells.length < 2) return;
 
     const codeCell = cells.find((c) => c.startsWith(alpha2 + "-"));
@@ -200,7 +214,7 @@ function scoreTable($: CheerioAPI, table: any, alpha2: string): ParsedTable {
       .first()
       .find("th,td")
       .toArray()
-      .map((c: any) => normText($(c as any).text()).toLowerCase());
+      .map((cell) => normText(selectNode($, cell as CheerioElementInput).text()).toLowerCase());
 
     const idxEn = headerCells.findIndex((h: string) => h.includes("(en)") || h.includes("english") || h.includes("英語"));
     const idxLocal = headerCells.findIndex((h: string) => h.includes("(ja)") || h.includes("現地") || h.includes("日本語") || h.includes("name"));
@@ -245,12 +259,14 @@ export async function parseIso3166_2Page(alpha2: string): Promise<Array<{ code: 
     const $en = cheerio.load(enHtml);
     const enTables = $en("table.wikitable").toArray();
     if (enTables.length === 0) return [];
-    const scored = enTables.map((t: any) => scoreTable($en, t, alpha2)).sort((a, b) => b.score - a.score)[0];
+    const scored = enTables
+      .map((t) => scoreTable($en, t as CheerioElementInput, alpha2))
+      .sort((a, b) => b.score - a.score)[0];
     return scored?.rows ?? [];
   }
 
   const scoredBest = tables
-    .map((t: any) => scoreTable($, t, alpha2))
+    .map((t) => scoreTable($, t as CheerioElementInput, alpha2))
     .sort((a, b) => b.score - a.score)[0];
 
   return scoredBest?.rows ?? [];
@@ -284,8 +300,9 @@ export async function generateIso3166Data(): Promise<GenerateResult> {
               subdivisionCode: s.code,
             });
           }
-        } catch (e: any) {
-          failures.push({ alpha2: c.alpha2, reason: String(e?.message ?? e) });
+        } catch (error) {
+          const reason = error instanceof Error ? error.message : String(error);
+          failures.push({ alpha2: c.alpha2, reason });
         }
       }),
     ),

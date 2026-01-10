@@ -12,7 +12,6 @@ import type { AuthProviderType } from '../types/AuthProviderType.js';
 // Storage keys
 const STORAGE_KEYS = {
   REDIRECT_URL: 'bff-auth-redirect-url',
-  USER_DATA: 'bff-auth-user',
   REFRESH_TOKEN: 'bff-auth-refresh-token',
   AUTH_METHOD: 'bff-auth-method',
 } as const;
@@ -162,7 +161,6 @@ export function useAuth(homeUrl = '/') {
   const signOut = useCallback(async () => {
     // Clear stored data
     localStorage.removeItem(STORAGE_KEYS.REDIRECT_URL);
-    localStorage.removeItem(STORAGE_KEYS.USER_DATA);
     localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
 
     // Clear refresh timer

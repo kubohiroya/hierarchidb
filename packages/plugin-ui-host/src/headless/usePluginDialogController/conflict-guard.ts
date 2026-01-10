@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { TreeNodeUpdaterState } from '@hierarchidb/plugin-ui-sdk';
-import type { NodeId, TreeNodeData } from '@hierarchidb/common-types';
+import type { NodeId, TreeNodeData, TreeNodeMetadata } from '@hierarchidb/common-types';
 import type { Remote } from 'comlink';
 
 export function useConflictGuard(params: {
@@ -12,8 +12,18 @@ export function useConflictGuard(params: {
   discardDraft: (opts?: { forceDelete?: boolean }) => Promise<void>;
   onClose: () => void;
   updateTreeNodeUpdater: (patch: Partial<TreeNodeUpdaterState<TreeNodeData>>) => void;
+  getLocalDraftSnapshot?: () => { draftMetadata?: TreeNodeMetadata | null; draftData?: TreeNodeData | null } | null;
 }) {
-  const { mode, client, nodeId, draftVersion, discardDraft, onClose, updateTreeNodeUpdater } = params;
+  const {
+    mode,
+    client,
+    nodeId,
+    draftVersion,
+    discardDraft,
+    onClose,
+    updateTreeNodeUpdater,
+    getLocalDraftSnapshot,
+  } = params;
 
   const acknowledgedVersionRef = useRef<number>(draftVersion ?? 0);
   useEffect(() => {
@@ -49,10 +59,11 @@ export function useConflictGuard(params: {
     if (mode !== 'edit') return null;
     if (!client) return null;
     try {
-      const query = await client.getQueryAPI();
-      const latest = await query.getNode(nodeId);
+      const query = await withTimeout(client.getQueryAPI(), 2000);
+      if (!query) return null;
+      const latest = await withTimeout(query.getNode(nodeId), 2000);
       if (!latest) return null;
-      return { version: latest.version ?? 0, updatedAt: latest.updatedAt };
+      return { latest, version: latest.version ?? 0, updatedAt: latest.updatedAt };
     } catch (err) {
       console.warn('[PluginDialogShell] failed to fetch latest node for version check', err);
       return null;
@@ -64,6 +75,23 @@ export function useConflictGuard(params: {
     if (!latest) return true;
     const localVersion = acknowledgedVersionRef.current ?? 0;
     if (latest.version > localVersion) {
+      const localSnapshot = getLocalDraftSnapshot?.() ?? null;
+      const latestDraftData =
+        (latest.latest as { draftData?: TreeNodeData | null }).draftData ?? null;
+      const latestDraftMetadata =
+        (latest.latest as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata ?? null;
+      const isSameContent = compareDraftSnapshots(
+        localSnapshot,
+        { draftData: latestDraftData, draftMetadata: latestDraftMetadata },
+      );
+      if (isSameContent) {
+        acknowledgedVersionRef.current = latest.version;
+        updateTreeNodeUpdater({
+          version: latest.version,
+          updatedAt: latest.updatedAt,
+        });
+        return true;
+      }
       const decision = await requestConflictResolution(latest.version, latest.updatedAt);
       resolveConflict(decision);
       if (decision === 'discard') {
@@ -86,4 +114,33 @@ export function useConflictGuard(params: {
     ensureNoConflict,
     acknowledgedVersionRef,
   };
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T | null> {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  return new Promise((resolve) => {
+    timeoutId = setTimeout(() => resolve(null), timeoutMs);
+    promise
+      .then((value) => {
+        if (timeoutId) clearTimeout(timeoutId);
+        resolve(value);
+      })
+      .catch((error) => {
+        if (timeoutId) clearTimeout(timeoutId);
+        console.warn('[PluginDialogShell] timed out waiting for worker response', error);
+        resolve(null);
+      });
+  });
+}
+
+function compareDraftSnapshots(
+  localSnapshot: { draftMetadata?: TreeNodeMetadata | null; draftData?: TreeNodeData | null } | null,
+  remoteSnapshot: { draftMetadata?: TreeNodeMetadata | null; draftData?: TreeNodeData | null },
+): boolean {
+  const localMeta = localSnapshot?.draftMetadata ?? null;
+  const localData = localSnapshot?.draftData ?? null;
+  const remoteMeta = remoteSnapshot.draftMetadata ?? null;
+  const remoteData = remoteSnapshot.draftData ?? null;
+  return JSON.stringify(localMeta) === JSON.stringify(remoteMeta)
+    && JSON.stringify(localData) === JSON.stringify(remoteData);
 }

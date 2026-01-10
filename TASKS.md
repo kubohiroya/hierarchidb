@@ -1,3 +1,446 @@
+2181) refactor/shape/batch-progress-summary-card-component (P2) — 進行中 (2026-01-10)
+- ブランチ名: refactor/shape/batch-progress-summary-card-component
+- 依存: なし
+- 受け入れ基準: BatchProgressSummaryCard がコンポーネントとして切り出される／ShapeBuildProgressPanel からの利用は既存挙動と同等である／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressPanel.tsx`
+- ロールバック手順: 該当差分を revert し、関数定義のまま戻す
+- チェックリスト:
+  - BatchProgressSummaryCard をコンポーネントとして定義する
+  - ShapeBuildProgressPanel からコンポーネントとして利用する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 20:36 JST BatchProgressSummaryCard のコンポーネント化に着手。
+  - done: 2026-01-10 20:36 JST BatchProgressSummaryCard をコンポーネントとして分離し、ShapeBuildProgressPanel から利用。検証: 未実施。
+  - update: 2026-01-10 20:36 JST renderStageContent のコンポーネント化に着手。
+  - done: 2026-01-10 20:36 JST ProgressStageContent コンポーネントへ切り出し、ShapeBuildProgressPanel から利用。検証: 未実施。
+  - update: 2026-01-10 20:41 JST renderTaskProgressBar のコンポーネント化に着手。
+  - done: 2026-01-10 20:41 JST TaskProgressBar コンポーネントへ切り出し、ShapeBuildProgressPanel から利用。検証: 未実施。
+
+2127) fix/components/build-stage-content-filtering (P1) — 進行中 (2026-01-11)
+- ブランチ名: fix/components/build-stage-content-filtering
+- 依存: なし
+- 受け入れ基準: BuildStepStageDetailsPanel の文法エラーが解消される／failed/completed のフィルタは renderStageContent 側で行われる／failed/completed の ON/OFF に応じて表示内容が切り替わる／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/components/src/BuildStepStageDetailsPanel.tsx`, `packages/components/src/BuildStepStagePanel.tsx`, `packages/components/src/BuildStepPanel.tsx`, `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`
+- ロールバック手順: 該当ファイルの差分を revert し、BuildStepStageDetailsPanel 側のフィルタ処理へ戻す
+- チェックリスト:
+  - BuildStepStageDetailsPanel の文法エラーを解消する
+  - renderStageContent に failed/completed フィルタ引数を追加する
+  - フィルタ挙動を renderStageContent 側へ移動する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 22:55 JST BuildStepStageDetailsPanel のフィルタ移設と文法修正に着手。
+  - update: 2026-01-11 23:02 JST BuildStepStageDetailsPanel からフィルタ処理を撤去し、renderStageContent 側で failed/completed フィルタを適用。検証: 未実施。
+  - done: 2026-01-11 23:02 JST BuildStepStageDetailsPanel の文法修正とフィルタ移設を完了。
+
+2128) refactor/shape/build-progress-step-split (P1) — 進行中 (2026-01-11)
+- ブランチ名: refactor/shape/build-progress-step-split
+- 依存: なし
+- 受け入れ基準: ShapeBuildProgressStep がコンポーネント/ロジック単位で分割され行数が大幅に削減される／挙動差分がない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx` と新規分割ファイル
+- ロールバック手順: 分割差分を revert し単一ファイル構成へ戻す
+- チェックリスト:
+  - UI サブコンポーネントの分割先を設計する
+  - ロジックをカスタムフックへ移動する
+  - 元ファイルの行数削減と動作確認を行う
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 23:10 JST ShapeBuildProgressStep の分割リファクタに着手。
+  - update: 2026-01-11 23:25 JST サブコンポーネント/フックを分割し、ShapeBuildProgressStep を薄くする構成へ移行。検証: 未実施。
+  - done: 2026-01-11 23:25 JST ShapeBuildProgressStep の分割リファクタを完了。
+
+2178) feat/shape/raw-buffer-pipeline (P1) — 完了 (2026-01-10)
+- ブランチ名: feat/shape/raw-buffer-pipeline
+- 依存: なし
+- ExecPlan: `plans/shape-raw-buffer-pipeline-execplan.md`
+- 受け入れ基準: DownloadBuffersForNode の命名を rawDataDataSourceBuffers に統一する／データソース戦略で raw ストリームの変換パイプを差し込める（入口でハッシュ計算）／GeoBoundaries は GeoJSON→FlatGeobuf を保存する／GADM は admin0 を zip 化して保存し admin1+ は zip のまま保存する／transformSource でバッファ形式ごとの解凍/再変換を戦略側で行う／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/utils/chunkStore.ts`, `plugins/shape-plugin/src/services/datasources/*`, `packages/runtime-worker/src/services/shapeChunkStore.ts`, `packages/features/download` など（調査結果に応じて）
+- ロールバック手順: 該当差分と ExecPlan を revert し、旧 download/raw バッファ経路に戻す
+- チェックリスト:
+  - raw buffer の命名と API を整理する
+  - raw 取得の変換パイプとハッシュ計算を導入する
+  - GeoBoundaries と GADM の保存フォーマットを仕様に合わせる
+  - transformSource の前処理を戦略側に寄せる
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 22:05 JST raw バッファ命名と fetch パイプ整備に着手。
+  - update: 2026-01-10 22:10 JST ExecPlan を作成（`plans/shape-raw-buffer-pipeline-execplan.md`）。
+  - update: 2026-01-10 22:30 JST GADM を GeoJSON 取得へ統一し、gpkg/shp 前提コードを削除する方針で確定。
+  - update: 2026-01-10 22:55 JST raw バッファ命名の更新、raw pipeline helper、GeoBoundaries/GADM の変換パイプラインを実装。
+  - done: 2026-01-10 23:05 JST raw バッファ命名更新と GADM/GeoBoundaries の GeoJSON/zip 変換パイプラインを適用。検証: 未実施。
+
+2177) fix/shape/step4-fetch-cache-count (P1) — 進行中 (2026-01-10)
+- ブランチ名: fix/shape/step4-fetch-cache-count
+- 依存: なし
+- 受け入れ基準: Step4 の「fetchキャッシュを削除(n件)」件数が実データと一致する／算出元が明確で矛盾がない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/hooks/useDownloadConfigSection.ts`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、従来の件数算出へ戻す
+- チェックリスト:
+  - fetch の件数算出を実データに合わせる
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 21:40 JST fetch キャッシュ件数表示の不整合対応に着手。
+
+2176) fix/ui/step5-completed-chip-on-fail (P1) — 完了 (2026-01-10)
+- ブランチ名: fix/ui/step5-completed-chip-on-fail
+- 依存: なし
+- 受け入れ基準: 失敗時でも Completed チップが表示される／失敗時の Completed チップはアウトライン表示になる／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/lru-splitview/src/components/PaneProgressSummary.tsx`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、従来の表示へ戻す
+- チェックリスト:
+  - Failed と Completed の併記を許可する
+  - 失敗時は Completed チップを outlined にする
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 21:20 JST 失敗時の Completed チップ表示復帰に着手。
+  - done: 2026-01-10 21:23 JST 失敗時も Completed チップを表示し、outline 表示に調整。検証: 未実施。
+
+2175) fix/log/shape-tasksummary-spam (P1) — 完了 (2026-01-10)
+- ブランチ名: fix/log/shape-tasksummary-spam
+- 依存: なし
+- 受け入れ基準: taskSummary の同一内容ログが連続出力されない／進捗計算や UI 表示に影響がない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、従来のログ出力へ戻す
+- チェックリスト:
+  - taskSummary のログを差分時のみ出力する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 21:05 JST taskSummary ログの連続出力抑止に着手。
+  - done: 2026-01-10 21:08 JST taskSummary を差分時のみログ出力するよう抑制。検証: 未実施。
+
+2174) fix/shape/transform-error-message-compact (P1) — 完了 (2026-01-10)
+- ブランチ名: fix/shape/transform-error-message-compact
+- 依存: なし
+- 受け入れ基準: transform の失敗メッセージが features/polygons/missingGeometry のみになる／余分な識別子が出ない／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/vt-orchestrator/src/transform/transformStage.ts`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、従来のメッセージへ戻す
+- チェックリスト:
+  - 失敗メッセージから band/admin/source を削除する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 20:55 JST transform 失敗メッセージの簡略化に着手。
+  - done: 2026-01-10 20:58 JST 失敗メッセージを features/polygons/missingGeometry のみに簡略化。検証: 未実施。
+
+2173) fix/ui/step5-pane-failed-chip-dup (P1) — 完了 (2026-01-10)
+- ブランチ名: fix/ui/step5-pane-failed-chip-dup
+- 依存: なし
+- 受け入れ基準: 失敗時の Chip が「Failed x」だけ表示され、重複表示が消える／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/lru-splitview/src/components/PaneHeader.tsx`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、従来の表示へ戻す
+- チェックリスト:
+  - Failed チップの重複表示を抑止する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 20:40 JST Failed チップ重複表示の対応に着手。
+  - done: 2026-01-10 20:45 JST 失敗時は Failed チップのみ表示し、Completed チップを抑止。検証: 未実施。
+
+2172) fix/ui/step5-pane-chip-labels (P1) — 完了 (2026-01-10)
+- ブランチ名: fix/ui/step5-pane-chip-labels
+- 依存: なし
+- 受け入れ基準: 上部のステージ別 Chip が「Completed n/m」形式になる／失敗がある場合は「Failed x」「Completed y/z」が表示される／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/lru-splitview/src/components/PaneProgressSummary.tsx`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、従来の表示へ戻す
+- チェックリスト:
+  - Completed/Failed 表記を適用する
+  - 失敗がある場合は2つの Chip を表示する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 20:25 JST ステージ別 Chip 表記の改善に着手。
+  - done: 2026-01-10 20:30 JST Completed/Failed の Chip 表記へ変更し、失敗時は2つの Chip を表示。検証: 未実施。
+
+2171) fix/shape/step5-pane-failed-counts (P1) — 完了 (2026-01-10)
+- ブランチ名: fix/shape/step5-pane-failed-counts
+- 依存: なし
+- 受け入れ基準: ペインヘッダの failed 数が実際の失敗件数と一致する／タスクリストの status が実態と一致する／全体進捗の failed 数とペインヘッダが整合する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、従来の集計ロジックへ戻す
+- チェックリスト:
+  - taskSummary の stage 集計が taskType ベースで行われる
+  - ペイン summary の failed 件数が一致する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 20:10 JST Step5 failed 件数の不整合対応に着手。
+  - done: 2026-01-10 20:15 JST taskType 優先でステージ集計するよう補正し、ペインの failed 数が実数を反映。検証: 未実施。
+
+2170) fix/shape/step5-error-visibility-and-vt-status (P1) — 完了 (2026-01-10)
+- ブランチ名: fix/shape/step5-error-visibility-and-vt-status
+- 依存: なし
+- 受け入れ基準: 失敗タスクの message が詳細な原因を含む／失敗タスクのタイトルに国名が表示される／ペインヘッダに失敗数が明示され、不要な PlayCircle が表示されない／vt ステージ 0/0 の場合に全体進捗が Ready にならない／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/vt-orchestrator/src/transform/transformStage.ts`, `plugins/shape-plugin/src/services/vt/shapeVtPipeline.ts`, `packages/ui/lru-splitview/src/components/PaneHeader.tsx`, `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、従来の表示/進捗判定へ戻す
+- チェックリスト:
+  - transform の失敗メッセージに feature 数/簡易化結果を含める
+  - transform タスクに国名を付与する
+  - PaneHeader に失敗数を表示し、0/0 で PlayCircle を出さない
+  - vt 0/0 時の全体進捗/Ready 表示を抑止する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 19:10 JST Step5 の失敗情報とペイン表示の不整合対応に着手。
+  - done: 2026-01-10 19:40 JST 変換失敗の詳細メッセージと国名付与、ペインヘッダの失敗数表示と0/0時のアイコン抑制、vt 0/0時のReady表示補正を実施。検証: 未実施。
+
+2169) fix/shape/step4-5-task-labels-and-delete (P1) — 完了 (2026-01-10)
+- ブランチ名: fix/shape/step4-5-task-labels-and-delete
+- 依存: なし
+- 受け入れ基準: Step5 の transform タスクに国情報が表示される／成功・失敗メッセージが表示される／Step4 の Transform キャッシュ削除ボタンが対象タスクありで有効化される／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/ui/hooks/useDownloadConfigSection.ts`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、従来の表示/削除判定へ戻す
+- チェックリスト:
+  - transform タスクタイトルに国コード/国名を含める
+  - タスクの message/errorMessage を UI へ表示する
+  - vt-task-queue のタスク数で削除ボタンが有効になる
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 18:20 JST Step5 タスク表示と Step4 削除ボタンの不整合対応に着手。
+  - done: 2026-01-10 18:45 JST transform タスクの国表示とエラーメッセージ表示を追加し、vt-task-queue の件数で削除ボタンを有効化。検証: 未実施。
+
+2168) fix/dialog/conflict-autosave-policy (P1) — 完了 (2026-01-10)
+- ブランチ名: fix/dialog/conflict-autosave-policy
+- 依存: なし
+- 受け入れ基準: 競合チェックが保存時のみ実行される／autosave は実編集後にのみ実行される／UI state 保存による version 変化は競合判定に含まれない／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/plugin-ui-host/src/headless/usePluginDialogController.tsx`, `packages/plugin-ui-host/src/headless/usePluginDialogController/conflict-guard.ts`, `packages/plugin-ui-host/src/headless/usePluginDialogController/autosave.ts`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、従来の競合チェック/ autosave の挙動へ戻す
+- チェックリスト:
+  - ステップ遷移で競合チェックを実行しない
+  - autosave を実編集後にのみ許可する
+  - UI state 変更のみの version 変化を競合扱いしない
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 17:30 JST 競合チェックと autosave の方針修正に着手。
+  - done: 2026-01-10 18:05 JST 競合チェックを保存時のみ実行し、autosave は実編集後に限定、UI state のみの更新は競合扱いしないよう補正。検証: 未実施。
+
+2167) fix/shape/step4-stepper-stall (P1) — 完了 (2026-01-10)
+- ブランチ名: fix/shape/step4-stepper-stall
+- 依存: なし
+- 受け入れ基準: Step4「処理設定」への遷移で CircularProgress が無限に残らず操作可能になる／無限ローディングの原因を特定し修正する／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/plugin-ui-host/src/headless/usePluginDialogController/conflict-guard.ts`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、従来の Step4 遷移挙動へ戻す
+- チェックリスト:
+  - ステップ遷移時の pendingAction が解放されることを確認する
+  - 影響範囲を最小にする
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 17:05 JST Step4 遷移で Stepper の CircularProgress が固まる問題の調査に着手。
+  - done: 2026-01-10 17:12 JST ステップ遷移時の競合チェックが応答待ちで固まるケースにタイムアウトを追加し、pendingAction が解放されるよう補正。検証: 未実施。
+
+2166) fix/shape-route/step5-tasklist-vt-queue (P1) — 完了 (2026-01-10)
+- ブランチ名: fix/shape-route/step5-tasklist-vt-queue
+- 依存: なし
+- 受け入れ基準: Step5 のタスク一覧が vt-task-queue を唯一の参照元として表示される／旧 getBatchTaskSummaries（ephemeral）を参照しない／shape・route の双方で「no tasks yet」が解消され完了タスクが一覧に表示される／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/worker-runtime/worker.ts`, `plugins/shape-plugin/src/worker/*`, `plugins/route-plugin/src/worker/*`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、従来のタスク一覧取得ロジックへ戻す
+- チェックリスト:
+  - vt-task-queue を唯一のタスク取得元に統一する
+  - shape/route の Step5 でタスク一覧が表示されることを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 16:05 JST Step5 のタスク一覧が vt-task-queue を参照しない問題の修正に着手。
+  - done: 2026-01-10 16:35 JST getBatchTaskSummaries を撤去し vt-task-queue のみからタスク一覧を取得するよう統一。route 側も vt-task-queue 連携を追加。検証: 未実施。
+
+2165) fix/shape/step5-progress-phase-stability (P1) — 完了 (2026-01-10)
+- ブランチ名: fix/shape/step5-progress-phase-stability
+- 依存: なし
+- 受け入れ基準: Step5 のビルド中に Start/Pause の表示が安定し、頻繁な切替が起きない／fetch の進捗が表示され Skeleton の明滅が収まる／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/worker/api.ts`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、従来の進捗イベント運用へ戻す
+- チェックリスト:
+  - 進捗イベントの phase をセッション状態に合わせて安定させる
+  - UI のビルド状態がタスク完了イベントで完了へ切り替わらないことを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 15:41 JST Step5 の進捗 phase が不安定でボタン状態が揺れる問題の対応に着手。
+  - done: 2026-01-10 15:43 JST taskQueue 進捗イベントの phase をセッション状態へ統一し、完了/一時停止で揺れないよう補正。検証: 未実施。
+
+2164) fix/ui/batch-progress-debounce (P1) — 完了 (2026-01-10)
+- ブランチ名: fix/ui/batch-progress-debounce
+- 依存: なし
+- 受け入れ基準: batch progress の UI 更新が適度にバウンスされ、Maximum update depth 警告が発生しない／更新頻度が抑制されても最終状態が反映される／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/batch/src/progress/useBatchProgress.ts`（必要に応じて）
+- ロールバック手順: 該当差分を revert し、従来の即時更新へ戻す
+- チェックリスト:
+  - progress 反映をデバウンスし、UI 更新頻度を抑制する
+  - 最終状態が反映されることを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 15:38 JST progress 更新のバウンス対応に着手。
+  - done: 2026-01-10 15:39 JST useBatchProgress の更新を 100ms デバウンスし、連続通知を抑制。検証: 未実施。
+
+2163) fix/shape/step5-build-progress-and-pause (P1) — 完了 (2026-01-10)
+- ブランチ名: fix/shape/step5-build-progress-and-pause
+- 依存: なし
+- 受け入れ基準: Step5 のビルド中に「停止」ボタンが有効化される／BuildStepPanel に進捗が反映され Skeleton のみにならない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`, `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`, `packages/components/src/BuildStepPanel.tsx`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、従来の Step5 表示/操作へ戻す
+- チェックリスト:
+  - 停止ボタンの有効条件と i18n 表示を確認する
+  - ビルド進捗の反映経路を整理し UI へ反映する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 15:17 JST Step5 の停止ボタン未有効化と進捗未反映の調査に着手。
+  - done: 2026-01-10 15:32 JST pause/resume の実装と Step5 の進捗ポーリング補正、Pause ラベルの i18n 反映を実施。検証: 未実施。
+
+2162) fix/shape/step4-delete-cache-disabled (P1) — 完了 (2026-01-10)
+- ブランチ名: fix/shape/step4-delete-cache-disabled
+- 依存: なし
+- 受け入れ基準: Step4 の「fetchキャッシュを削除(n件)」ボタンが件数>0で有効化される／クリックで削除が実行され件数表示が更新される／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/hooks/useDownloadConfigSection.ts`, `plugins/shape-plugin/src/ui/components/steps/DownloadConfigSection.tsx`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、従来のボタン状態へ戻す
+- チェックリスト:
+  - ボタンの disabled 条件が件数>0の時に有効化されるよう整理する
+  - クリック時の削除処理と件数更新を確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 15:05 JST Step4 の fetch キャッシュ削除ボタンが無効な問題の調査に着手。
+  - done: 2026-01-10 15:08 JST Step4 の削除ボタン有効/無効判定を実際の batch session 状態で評価するよう補正。検証: 未実施。
+
+2161) fix/shape/step5-fetch-progress-live (P1) — 完了 (2026-01-10)
+- ブランチ名: fix/shape/step5-fetch-progress-live
+- 依存: なし
+- 受け入れ基準: Step5 の fetch 進捗がリアルタイムで反映される／進捗イベントの送信元とUI側の購読・集計が一致していることを確認する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`, `plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts`, `packages/features/batch/src/session/AbstractBatchSession.ts`, `plugins/shape-plugin/src/worker/api.ts`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、従来の進捗表示仕様へ戻す
+- チェックリスト:
+  - fetch の進捗イベントが UI に届いているか確認する
+  - 集計/表示が進捗イベントのステージ名と一致するよう補正する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 15:00 JST Step5 の fetch 進捗がリアルタイムに反映されない問題の調査に着手。
+  - done: 2026-01-10 15:03 JST 進捗イベントにタスク集計ペイロードを付与し、Step5 の進捗集計が更新されるように修正。検証: 未実施。
+
+2160) fix/shape/step5-progress-stage-naming (P1) — 完了 (2026-01-10)
+- ブランチ名: fix/shape/step5-progress-stage-naming
+- 依存: なし
+- 受け入れ基準: Step5 の進捗表示で誤ったステージ名を許容せず、正しいステージ名のみが扱われる／誤ったステージ名の発生源が修正される（コード内に残らない）／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`, `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`, `plugins/shape-plugin/src/ui/utils/buildWarnings.ts`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、従来のステージ名許容へ戻す
+- チェックリスト:
+  - 誤ったステージ名の発生源を特定し、正しい命名へ修正する
+  - UI 側の誤名称フォールバックを撤去する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 14:58 JST Step5 進捗ステージ名の誤表記対応に着手。
+  - done: 2026-01-10 14:59 JST コード内の `fetch-shape` 発生源を確認したが該当なしのため、UI側の誤名称フォールバックを撤去。検証: 未実施。
+
+2159) fix/shape/step5-progress-ui-stability (P1) — 完了 (2026-01-10)
+- ブランチ名: fix/shape/step5-progress-ui-stability
+- 依存: なし
+- 受け入れ基準: shape Step5 で LinearProgress の表示有無によるレイアウトの縦揺れが発生しない／fetch-shape ステージの進捗が Step5 の画面に反映される／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`, `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`, `plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、従来の Step5 進捗表示へ戻す
+- チェックリスト:
+  - LinearProgress の表示有無でレイアウトが跳ねないようスペースを確保する
+  - fetch-shape ステージの進捗状態を Step5 画面に反映させる
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 14:44 JST shape Step5 の進捗表示ゆれと fetch-shape 反映漏れの修正に着手。
+  - done: 2026-01-10 14:46 JST fetch-shape を進捗集計へ正規化し、Step5 の進捗バーを常時高さ固定にして縦揺れを解消。検証: 未実施。
+
+2158) fix/ui-map/add-deckgl-core-deps (P1) — 完了 (2026-01-12)
+- ブランチ名: fix/ui-map/add-deckgl-core-deps
+- 依存: なし
+- 受け入れ基準: `@hierarchidb/ui-map` の devDependencies/peerDependencies に `@deck.gl/core` を追加する／`app` の dependencies に `@deck.gl/core` を追加する／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/package.json`, `app/package.json`
+- ロールバック手順: 該当 package.json の差分を revert する
+- チェックリスト:
+  - ui-map の peer/dev に @deck.gl/core を追加する
+  - app の dependencies に @deck.gl/core を追加する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-12 00:50 JST deck.gl core 依存の追加対応に着手。
+  - done: 2026-01-12 00:55 JST ui-map の peer/dev と app dependencies に @deck.gl/core を追加。検証: 未実施。
+
+2157) refactor/ci/turbo-preflight-parallel (P1) — 完了 (2026-01-11)
+- ブランチ名: refactor/ci/turbo-preflight-parallel
+- 依存: なし
+- 受け入れ基準: `guard:preflight` の直列実行を turbo タスクで並列化する／`pnpm typecheck` の実行内容を維持する／依存関係が必要なもののみ順序付けする／TASKS.md に運用ログを記載する
+- 影響範囲: `package.json`, `turbo.json`, `scripts/**`（必要時）
+- ロールバック手順: 該当差分を revert して直列実行へ戻す
+- チェックリスト:
+  - guard:preflight の各チェックを turbo タスク化する
+  - 依存関係があるものだけ dependsOn で明示する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 23:20 JST guard:preflight の並列化設計に着手。
+  - done: 2026-01-11 23:35 JST turbo の preflight タスクに分割し、guard:preflight を turbo 実行へ移行。検証: 未実施。
+  - update: 2026-01-11 23:45 JST package.json の JSON 構文エラーを修正し、preflight スクリプトを scripts に配置し直した。検証: `node -e "JSON.parse(...)"`（成功）。
+
+2156) fix/types/any-replacement (P1) — 完了 (2026-01-11)
+- ブランチ名: fix/types/any-replacement
+- 依存: なし
+- 受け入れ基準: 指定された `any` 使用箇所を厳密な型に置換する／必要な型定義を追加する／`any` を残さない／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/testing/plugin-dialog-mocks/src/mocks/WorkerAPIImpl.ts`, `packages/tools/gen-iso3166-2/src/scraper.ts`, `packages/ui/map/src/components/MapWithVectorTiles.tsx`, `packages/ui/map/src/components/MapWithDeckGL.tsx`, `app/src/router/pages/tree/console/useTreeConsoleToolbarActions.ts`, `packages/plugin-ui-host/src/PluginDialogHost.tsx`
+- ロールバック手順: 該当ファイルの差分を revert して `any` 利用に戻す
+- チェックリスト:
+  - 指定ファイルの `any` 使用箇所を特定する
+  - 既存型または新規型定義で置換する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 22:40 JST any 使用箇所の型厳格化に着手。
+  - done: 2026-01-11 23:05 JST 指定ファイルの any を厳密な型へ置換し、入力検証/型定義を追加。検証: 未実施。
+  - update: 2026-01-11 23:55 JST gen-iso3166-2 の型チェックエラーに対応し、cheerio 型の参照を domhandler 直接依存から外した。
+  - update: 2026-01-12 00:05 JST cheerio の型推論が never になるため、最小限の CheerioCollection 型と型ガードで処理を明示した。
+  - update: 2026-01-12 00:20 JST gen-iso3166-2 に domhandler を明示依存として追加し、cheerio 由来の AnyNode 型で型を整理した。
+  - update: 2026-01-12 00:30 JST domhandler 直接参照を撤回し、CheerioAPI の入力型へ明示キャストする helper で型安全に統一した。
+  - update: 2026-01-12 00:40 JST Cheerio<AnyNode> の this コンテキスト不整合を解消するため domhandler 依存を復帰し、selectNode の戻り型を AnyNode に揃えた。
+
+2155) chore/ui-plugin-shell/remove-pretypecheck (P1) — 完了 (2026-01-10)
+- ブランチ名: chore/ui-plugin-shell/remove-pretypecheck
+- 依存: なし
+- 受け入れ基準: `packages/ui/plugin-shell` の pretypecheck を削除する／`scripts/pretypecheck-ui-shell.mjs` を削除する／turbo の依存関係を必要最小限で補正する／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/plugin-shell/package.json`, `scripts/pretypecheck-ui-shell.mjs`, `turbo.json`（必要時）
+- ロールバック手順: 該当差分を revert し、pretypecheck を復元する
+- チェックリスト:
+  - pretypecheck の削除と不要ファイルの撤去
+  - turbo 依存関係の補正
+  - 運用ログ start/done を追記する
+- 運用ログ：
+  - start: 2026-01-10 12:34 JST pretypecheck の削除と turbo 依存関係の補正に着手。
+  - done: 2026-01-10 12:38 JST pretypecheck を削除し、ui-plugin-shell の typecheck 依存を turbo に移行。
+
+2154) chore/analysis/turbo-cache-miss (P1) — 完了 (2026-01-10)
+- ブランチ名: chore/analysis/turbo-cache-miss
+- 依存: なし
+- 受け入れ基準: `pnpm build`/`pnpm typecheck` の turbo キャッシュ無効化要因を特定し、根拠（設定/ログ/入力差分）を示す／改善策を即時対応と構造改善に分けて整理する／TASKS.md に運用ログを記載する
+- 影響範囲: `turbo.json`, `package.json`, `pnpm-workspace.yaml`, `tsconfig*.json`, `packages/**/package.json`（調査に応じて）
+- ロールバック手順: 調査のみのためロールバック不要（変更が入った場合は該当差分を revert）
+- チェックリスト:
+  - turbo の cache miss 要因（inputs/outputs/env/pipeline）を特定する
+  - build/typecheck の実行条件と差分発生源を整理する
+  - 改善策と副作用を整理する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 12:25 JST turbo キャッシュ無効化の原因調査に着手。
+  - update: 2026-01-10 12:45 JST `app/package.json` の build が `tools:gen-plugin-registry` と複数 `pnpm --filter ... build` を内包し、turbo の外で再ビルドが走る構成を確認。`packages/ui/plugin-shell/package.json` の pretypecheck が `scripts/pretypecheck-ui-shell.mjs` 経由で依存パッケージ build を直叩きするため、dist 不在時に typecheck が広範に再ビルドする経路を確認。ワークツリーの変更が多数あるため当該パッケージの cache miss が発生しやすい状態であることを確認。
+  - done: 2026-01-10 12:50 JST turbo キャッシュ無効化の要因と改善案を整理。
+
+2125) fix/auth/cancel-cooldown-prevent-reopen (P1) — 進行中 (2026-01-11)
+- ブランチ名: fix/auth/cancel-cooldown-prevent-reopen
+- 依存: なし
+- 受け入れ基準: Cancel 押下後に auth-required ダイアログが即再表示されない／Cancel 後はクールダウン中に AUTH_REQUIRED を再発行しない／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/auth-recovery/src/AuthService.ts`
+- ロールバック手順: 該当ファイルの差分を revert し、Cancel 後も即再表示する挙動へ戻す
+- チェックリスト:
+  - Cancel 後の再表示発生経路を確認する
+  - クールダウン中は AUTH_REQUIRED を dispatch しないよう抑止する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 22:20 JST Cancel 後に auth-required が再表示される問題の修正に着手。
+  - update: 2026-01-11 22:23 JST awaitAuth の開始時にクールダウン判定を追加し、Cancel 後は AUTH_REQUIRED を再発行しないよう抑止。検証: 未実施。
+  - done: 2026-01-11 22:23 JST Cancel 後の auth-required 再表示抑止を完了。
+
+2126) fix/shape/retry-fetch-tasks-on-restart (P1) — 進行中 (2026-01-11)
+- ブランチ名: fix/shape/retry-fetch-tasks-on-restart
+- 依存: なし
+- 受け入れ基準: fetch ステージで HTTP 502 失敗したタスクが「ビルド開始」押下時の再開で再実行される／ダウンロードが再試行される／既存の pause/resume 挙動を壊さない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`, `plugins/shape-plugin/src/ui/hooks/stage/useBatchSessionActions.ts`
+- ロールバック手順: 該当ファイルの差分を revert し、再開時に再実行しない挙動へ戻す
+- チェックリスト:
+  - 失敗した fetch タスク検知を追加する
+  - 再開時に強制的に startBatchSession を選択する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 22:40 JST fetch 失敗タスクの再実行対応に着手。
+  - update: 2026-01-11 22:44 JST fetch 失敗タスクがある場合は再開時に startBatchSession を強制し再実行させるよう調整。検証: 未実施。
+  - done: 2026-01-11 22:44 JST fetch 失敗タスクの再実行対応を完了。
+
 2130) docs/location-plugin-design (P1) — 完了 (2026-01-09)
 - ブランチ名: docs/location-plugin-design
 - 依存: なし
@@ -135,6 +578,312 @@
   - update: 2026-01-13 14:30 JST GitHub Pages での iso3166 CSV 取得パス修正として resolveIso3166CsvUrl を追加し、各利用箇所の既定 URL を BASE_URL 連動へ置換。
   - update: 2026-01-13 14:50 JST GitHub Pages で BASE_URL が dist 依存に反映されないケースに対応するため、resolveIso3166CsvUrl に document.baseURI/ window.location のフォールバックを追加し、`pnpm --filter @hierarchidb/gen-iso3166-2 build` を実行。
   - update: 2026-01-13 15:10 JST VITE_BASE_URL の明示設定を追加し、resolveIso3166CsvUrl が VITE_BASE_URL/BASE_URL を優先参照するように拡張。`pnpm --filter @hierarchidb/gen-iso3166-2 build` を再実行。
+
+2138) fix/auth/dialog-loop-shape (P1) — 進行中 (2026-01-13)
+- ブランチ名: fix/auth/dialog-loop-shape
+- 依存: なし
+- 受け入れ基準: shape-plugin の認証ダイアログが新UIに統一され旧ダイアログが出ない／認証後に新ダイアログが再表示されず次へ進める／`Cancel (Back to Step 2)` で Step2 に遷移しループしない／localhost と GitHub Pages の双方で再現しない／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/contexts/AuthRequiredDialogHost.tsx`, `packages/ui/auth/src/components/AuthProviderDialog.tsx`, `plugins/shape-plugin/src/ui/**`, `packages/plugin-base/src/hooks/useDialogUrlSync.ts`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、旧ダイアログ/現行遷移仕様へ戻す
+- チェックリスト:
+  - 旧/新ダイアログの表示条件を調査し重複経路を特定する
+  - shape-plugin の認証表示を新ダイアログへ統一する
+  - Cancel の Step2 遷移が URL/内部ステップと整合するよう調整する
+  - 影響範囲と検証結果を運用ログに記載する
+- 運用ログ：
+  - start: 2026-01-13 16:10 JST 認証ダイアログの二重表示とキャンセル遷移ループの修正に着手。
+  - update: 2026-01-13 16:35 JST useDialogUrlSync のパス解析と AuthRequiredDialogHost のキャンセル遷移を修正し、shape の旧認証ダイアログ表示を停止。AuthRequiredDialog に「Continue」導線を追加。
+  - update: 2026-01-13 17:05 JST CORS proxy を dev/prod 共通運用に統一するため、VITE_CORS_PROXY_BASE_URL の既定値を base.sh に追加し、development.sh の dev URL を削除。app/.env.production に共通 URL を追記。
+
+2139) fix/shape/zoom-band-ui (P1) — 進行中 (2026-01-13)
+- ブランチ名: fix/shape/zoom-band-ui
+- 依存: なし
+- 受け入れ基準: toolbar-menu の共通ズーム率UIが削除され、band0 z0-3 / band1 z3-6 / band2 z6-9 / band3 z9-11(optional) の表示に置換される／shape Step4 のズーム関連UI（範囲/分割/区切り）が削除され、同バンド表示に置換される／設定・型・ロジックから tileConfig.minZoom/maxZoom/zoomBreakpoints が削除される／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/treeconsole/toolbar/src/components/toolbar/SettingsMenu.tsx`, `packages/ui/treeconsole/toolbar/src/components/TreeConsoleToolbarContent.tsx`, `plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx`, `plugins/shape-plugin/src/ui/hooks/useTileConfigSection.ts`, `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts`, `plugins/shape-plugin/src/services/batch/useBatchSessionActions.ts`, `plugins/shape-plugin/src/common/types/**`, `plugins/shape-plugin/src/services/utils/utils.ts`, `plugins/shape-plugin/src/worker/api.ts`
+- ロールバック手順: 上記差分を revert し、旧ズームUIと min/max/zoomBreakpoints を復帰する
+- チェックリスト:
+  - toolbar-menu の共通ズーム率UIを削除し、ズーム帯の説明へ置換する
+  - shape Step4 のズーム関連UIを削除し、ズーム帯の説明へ置換する
+  - tileConfig の min/max/zoomBreakpoints を型・設定・ロジックから削除する
+  - 影響箇所の表示/挙動を確認する
+  - 運用ログ start/done を追記する
+- 運用ログ：
+  - start: 2026-01-13 22:10 JST ズーム帯UIの統一と min/max/zoomBreakpoints の削除に着手。
+  - done: 2026-01-13 23:05 JST toolbar と Step4 のズームUIをズーム帯表示へ置換し、tileConfig から min/max/zoomBreakpoints を削除。
+
+2140) fix/shape/progress-state-unify (P1) — 進行中 (2026-01-14)
+- ブランチ名: fix/shape/progress-state-unify
+- 依存: なし
+- 受け入れ基準: currentState/currentTask と status/buildStatus の二重化を整理し、不要な重複は一本化する／進捗ログとUIのステージ表示が一致する／Step5 transform のLRUSplitPaneに failed/skipped の集計が表示される／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`, `plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts`, `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`, `packages/ui/lru-splitview/src/types/LRUSplitView.ts`, `packages/ui/lru-splitview/src/utils/lruUtils.ts`（必要に応じて）
+- ロールバック手順: 上記差分を revert し、旧表示/旧ログに戻す
+- チェックリスト:
+  - currentState/currentTask と status/buildStatus の用途を整理する
+  - 進捗イベントの集計とUI表示を揃える
+  - transform ステージで failed/skipped 件数を表示する
+  - 運用ログ start/done を追記する
+- 運用ログ：
+  - start: 2026-01-14 00:20 JST progressState の二重化整理と transform の失敗/スキップ件数表示に着手。
+  - done: 2026-01-14 00:55 JST 進捗ログの重複項目を整理し、LRUSplitPaneに failed/skipped 集計を表示するように更新。
+
+2141) fix/auth/suspense-gated-steps (P1) — 進行中 (2026-01-14)
+- ブランチ名: fix/auth/suspense-gated-steps
+- 依存: なし
+- 受け入れ基準: shape Step3 / location Step3 / route Step3 / styler Step2 で認証判定を React Context + Suspense で同期的に扱い、UI 独自判定で認証ダイアログを出さない／AUTH_REQUIRED の通知のみで認証ダイアログが開く／bff-auth-user と bff-auth-token を完全撤去し localStorage を SSOT に統一／Worker 側は localStorage を直接読まず UI Storage Bridge を使用／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/auth/src/contexts/SimpleBFFAuthContext.tsx`, `packages/ui/auth/src/services/BFFAuthService.ts`, `packages/ui/auth/src/hooks/useAuth.ts`, `app/src/contexts/AuthRequiredDialogHost.tsx`, `plugins/shape-plugin/src/ui/components/steps/ShapeCountrySelectionStep.tsx`, `plugins/location-plugin/src/ui/components/steps/LocationCountrySelectionStep.tsx`, `plugins/route-plugin/src/ui/components/steps/RouteCountrySelectionStep.tsx`, `plugins/styler-plugin/src/ui/components/steps/StylerCountrySelectionStep.tsx`（実装結果に応じて）
+- ロールバック手順: 上記差分を revert し、旧認証判定/旧 storage キー運用へ戻す
+- チェックリスト:
+  - 認証判定を Suspense で同期的に扱うゲートを各 Step に導入する
+  - AUTH_REQUIRED 通知のみで認証ダイアログが開くよう UI 判定を撤去する
+  - bff-auth-user / bff-auth-token の保存・参照・削除を全撤去する
+
+2142) fix/shape/step4-6-ui-terminology (P2) — 進行中 (2026-01-14)
+- ブランチ名: fix/shape/step4-6-ui-terminology
+- 依存: なし
+- 受け入れ基準: shape の Step4/5/6 UI から一次抽出/二次抽出/extract1/extract2 など旧用語を排除し、`docs/vt-pipeline-design.md` の Step4 表記（fetch/transform/vt）に準拠する／Step5/6 の進捗・削除操作・ラベルに旧用語が残らない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`（該当UI文言）
+- ロールバック手順: 該当差分を revert し、旧文言へ戻す
+- チェックリスト:
+  - Step4 の見出し/説明/操作ラベルを fetch/transform/vt に更新する
+  - Step5/6 の進捗・削除操作の文言を fetch/transform/vt に更新する
+  - `docs/vt-pipeline-design.md` の Step4 UI 表記と整合することを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-14 09:30 JST Step4/5/6 UI の旧用語刷新に着手。
+  - done: 2026-01-14 09:55 JST Step4/5/6 のUI文言を fetch/transform/vt に統一し、一次/二次抽出の表記を撤去。検証: 未実施。
+
+2143) refactor/shape/step6-metadata-stage-stats (P1) — 進行中 (2026-01-14)
+- ブランチ名: refactor/shape/step6-metadata-stage-stats
+- 依存: なし
+- ExecPlan: `plans/shape-metadata-stage-geometry-stats-execplan.md`
+- 受け入れ基準: shape Step6 のメタデータ集計が fetch/transform/vt の新ステージ構成に基づいて集計される／集計結果がメタデータとして保存される／Step6 の表示カラムが新ステージ構成に一致する／旧ステージ名の集計/表示が残らない／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/plugin-service-api/src/types/shapeBatchTypes.ts`, `packages/features/vectortile-store/src/tilesDb.ts`, `packages/runtime-worker/src/services/*`, `plugins/shape-plugin/src/services/**`, `plugins/shape-plugin/src/ui/**`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、既存のメタデータ集計/表示へ戻す
+- チェックリスト:
+  - ExecPlan を更新し、ステージ再編後の集計/保存/表示方針を明記する
+  - 集計ロジックを fetch/transform/vt 構成へ作り直す
+  - 集計結果を保存するスキーマ/保存経路を更新する
+  - Step6 の表示カラムを新ステージ構成へ更新する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-14 10:20 JST Step6 のメタデータ集計/保存/表示の再設計に着手。
+  - update: 2026-01-14 11:40 JST ExecPlan を fetch/transform/vt 前提で更新し、集計・保存・UI 列更新の実装を反映。
+  - done: 2026-01-14 11:40 JST Step6 メタデータの集計/保存/表示を新ステージ構成に刷新。検証: 未実施。
+  - UI Storage Bridge 経由での token 取得に統一する
+  - 運用ログ start/done を追記する
+- 運用ログ：
+  - start: 2026-01-14 01:40 JST 認証判定の Suspense 化と storage 統一対応に着手。
+  - update: 2026-01-14 02:05 JST AuthReadyGate を追加し、shape/location/route/styler の対象ステップを Suspense でゲート。bff-auth-user/token を撤去し localStorage SSOT に統一。AuthRequiredDialogHost の UI 判定を削除。
+  - done: 2026-01-14 02:05 JST 認証判定の Suspense 化と storage 統一を完了。
+  - update: 2026-01-14 02:20 JST ui-auth の import を ui-plugin-shell から直接参照へ変更し、各プラグインに ui-auth 依存を追加。プラグイン UI ロード失敗に起因する Stepper 非表示の修正に対応。
+  - update: 2026-01-14 02:40 JST shape の countryAvailability worker に UI storage bridge を追加し、認証トークンが worker に渡らない問題を修正。
+
+2141) fix/shape/progress-visual-consistency (P1) — 進行中 (2026-01-14)
+- ブランチ名: fix/shape/progress-visual-consistency
+- 依存: なし
+- 受け入れ基準: build全体のFailed表示はLinearProgressがerror色になる／build全体の表示とLRUSplitPaneのステージ表示が矛盾しないように集計ロジックが統一される／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`, `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`
+- ロールバック手順: 上記差分を revert し、従来の色/集計へ戻す
+- チェックリスト:
+  - Failed時の全体進捗バーの色を error に統一する
+  - 全体表示とLRUSplitPaneの集計が同じ基準で更新される
+  - 運用ログ start/done を追記する
+- 運用ログ：
+  - start: 2026-01-14 01:10 JST 進捗表示の色と集計整合の修正に着手。
+
+2142) fix/shape/step4-delete-downloads-button (P1) — 進行中 (2026-01-14)
+- ブランチ名: fix/shape/step4-delete-downloads-button
+- 依存: なし
+- 受け入れ基準: Step4 の「ダウンロード済みファイルを削除(n件)」ボタンが件数>0で有効化され、クリックで削除が実行され件数表示が更新される／0件時は無効のまま／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`（Step4 UI/状態）、`plugins/shape-plugin/src/services/**`（削除処理経路）
+- ロールバック手順: 該当差分を revert し、従来のボタン状態/削除挙動へ戻す
+- チェックリスト:
+  - ボタンのdisabled条件を件数>0に一致させる
+  - クリック時に削除処理が呼ばれ、件数ラベルが更新される
+  - 0件時の無効化を維持する
+  - 運用ログ start/done を追記する
+- 運用ログ：
+  - start: 2026-01-14 01:25 JST Step4 の削除ボタンが無効な問題の修正に着手。
+  - done: 2026-01-14 01:32 JST canDeleteRaw の条件からポリシー固定 false を除外し、件数>0で有効化されるよう修正。
+
+2143) fix/shape/progress-tasktype-unify (P1) — 完了 (2026-01-14)
+- ブランチ名: fix/shape/progress-tasktype-unify
+- 依存: なし
+- 受け入れ基準: currentStage/currentTask を廃止して taskType に統合するか、残す場合は正当性をコードで説明できる／autoSubscribe/enablePollingFallback/isSubscribed の必要性をコードで説明できるか不要なら削除／Step5 の全体進捗が 0/0 へ揺れる表示をしない／LRUSplitPane の error/percent/checked/no-tasks の矛盾が解消される／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/hooks/**`, `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`, `plugins/shape-plugin/src/ui/hooks/progress/**`, `packages/runtime-worker/src/services/**`（進捗通知）、関連する型定義
+- ロールバック手順: 該当差分を revert し、現行の進捗通知/表示へ戻す
+- チェックリスト:
+  - currentStage/currentTask と taskType の発生箇所を洗い出す
+  - 不要な進捗プロパティを削除または統合する
+  - 0/0 表示の発生条件を除去する
+  - LRUSplitPane 表示の矛盾を解消する
+  - 運用ログ start/done を追記する
+- 運用ログ：
+  - start: 2026-01-14 01:40 JST Step5 進捗通知と表示の統合修正に着手。
+  - done: 2026-01-14 02:10 JST taskType へ統合し、0/0 揺れ回避・LRUSplitPane 表示矛盾・タスク取得の不足を修正。
+
+2144) fix/shape/progress-protocol-tasktype (P1) — 完了 (2026-01-14)
+- ブランチ名: fix/shape/progress-protocol-tasktype
+- 依存: なし
+- 受け入れ基準: worker→UI進捗プロトコルから currentStage/currentTask を廃止し taskType に統一する／送受信側と型定義が整合し型エラーが出ない／Step5の進捗表示が taskType で判定される／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/common/api/src/BatchControlAPI.ts`, `packages/common/types/src/progress-types.ts`, `packages/features/batch/src/session/**`, `packages/runtime-worker/src/services/**`, `plugins/shape-plugin/src/**`, `packages/ui/batch/src/**`
+- ロールバック手順: 該当差分を revert し、currentStage/currentTask を含む旧プロトコルに戻す
+- チェックリスト:
+  - currentStage/currentTask の送信元/受信先/型定義を洗い出す
+  - 進捗イベントの taskType 統一へ置換する
+  - UI表示と taskType の一致を確認する
+  - autoSubscribe/enablePollingFallback/isSubscribed の用途を精査し、不要ならペイロードから除去する
+  - 進捗購読の登録単位がUI側で1つのコールバックになっているか確認する
+  - 運用ログ start/done を追記する
+- 運用ログ：
+  - start: 2026-01-14 02:20 JST 進捗プロトコルを taskType に統一する修正に着手。
+  - update: 2026-01-14 03:05 JST 進捗購読のプロパティ整理と購読単位の確認に着手。
+  - done: 2026-01-14 03:30 JST 進捗購読のpollingフォールバックと関連プロパティを撤去し、UI側の進捗状態をpush購読のみで統一。
+
+2145) fix/shape/batch-task-schema-cleanup (P1) — 完了 (2026-01-14)
+- ブランチ名: fix/shape/batch-task-schema-cleanup
+- 依存: なし
+- 受け入れ基準: batchTasks の未使用インデックスを削除する／BatchTaskRecord/ShapeBatchTaskRecord/ShapeBatchTaskSummary の未使用プロパティを削除する／ShapeBatchTaskStatus と ProgressPhase の関係を整理する／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/shape-store/src/EphemeralShapeDB.ts`, `packages/features/shape-store/src/ShapeDB.ts`, `packages/plugin-service-api/src/types/shapeBatchTypes.ts`, `packages/plugin-service-api/src/types/shapeTypes.ts`, `plugins/shape-plugin/src/services/batch/ShapeBatchApiClient.ts`, `packages/runtime-worker/src/services/ShapeQueryService.ts`, `plugins/shape-plugin/src/worker/getBatchTaskSummaries.ts`
+- ロールバック手順: 該当差分を revert し、batchTasks のインデックスとタスク型を元に戻す
+- チェックリスト:
+  - batchTasks の未使用インデックスを削除する
+  - タスク型の未使用プロパティを削除する
+  - task status の表記を ProgressPhase に揃える
+  - 運用ログ start/done を追記する
+- 運用ログ：
+  - start: 2026-01-14 04:05 JST batchTasks のインデックス整理とタスク型の簡素化に着手。
+  - done: 2026-01-14 05:20 JST batchTasks インデックスを整理し、タスク status を queued に統一して不要プロパティを削除。
+
+2146) fix/route/typecheck-batch-progress (P1) — 完了 (2026-01-14)
+- ブランチ名: fix/route/typecheck-batch-progress
+- 依存: なし
+- 受け入れ基準: RouteBatchSession の未使用引数を削除して TS6133 を解消する／useRouteBatchProgress の percentage を number に統一して TS2322 を解消する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/route-plugin/src/services/RouteBatchSession.ts`, `plugins/route-plugin/src/ui/hooks/useRouteBatchProgress.ts`
+- ロールバック手順: 該当差分を revert し、RouteBatchSession/useRouteBatchProgress を修正前に戻す
+- チェックリスト:
+  - 未使用引数の削除で TS6133 を解消する
+  - percentage の型不整合を解消する
+  - 運用ログ start/done を追記する
+- 運用ログ：
+  - start: 2026-01-14 05:30 JST route-plugin の typecheck エラー修正に着手。
+  - done: 2026-01-14 05:35 JST 未使用引数を削除し、percentage を number に統一。
+
+2147) fix/shape/typecheck-progress-hooks (P1) — 完了 (2026-01-14)
+- ブランチ名: fix/shape/typecheck-progress-hooks
+- 依存: なし
+- 受け入れ基準: shapeProgressMapping の未使用引数を削除して TS6133 を解消する／useShapeBuildProgressStep の変数順序を修正して TS2448/TS2454 を解消する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/hooks/progress/shapeProgressMapping.ts`, `plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts`, `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`
+- ロールバック手順: 該当差分を revert し、progress hooks の修正前に戻す
+- チェックリスト:
+  - 未使用引数の削除で TS6133 を解消する
+  - normalizedBuildStatus の参照順序を修正する
+  - 運用ログ start/done を追記する
+- 運用ログ：
+  - start: 2026-01-14 05:45 JST shape-plugin の progress hooks typecheck エラー修正に着手。
+  - done: 2026-01-14 05:50 JST toShapeProgress の引数削除と normalizedBuildStatus の宣言順を調整。
+
+2148) fix/app/typecheck-batch-progress-tasktype (P1) — 完了 (2026-01-14)
+- ブランチ名: fix/app/typecheck-batch-progress-tasktype
+- 依存: なし
+- 受け入れ基準: worker-runtime の BatchProgress 生成から currentStage/currentTask を除去し taskType を使用する／TS2353 を解消する／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/worker-runtime/worker.ts`
+- ロールバック手順: 該当差分を revert し、BatchProgress の taskType 反映を修正前に戻す
+- チェックリスト:
+  - currentStage/currentTask を taskType に置換する
+  - typecheck エラーが消えることを確認する
+  - 運用ログ start/done を追記する
+- 運用ログ：
+  - start: 2026-01-14 06:00 JST worker-runtime の BatchProgress 型不整合修正に着手。
+  - done: 2026-01-14 06:02 JST taskType へ置換し currentStage/currentTask を削除。
+
+2149) fix/shape/auth-dialog-loop-step3 (P1) — 完了 (2026-01-14)
+- ブランチ名: fix/shape/auth-dialog-loop-step3
+- 依存: なし
+- 受け入れ基準: Step3 の認証ダイアログは Worker からの認証失敗通知のみで開く／認証成功直後はダイアログが再表示されない／Worker 側のメタデータ取得は UI に待機表示→成功/失敗通知を返す／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/auth-recovery/src/AuthService.ts`, `plugins/shape-plugin/src/ui/hooks/useShapeCountrySelectionStep.ts`
+- ロールバック手順: 該当差分を revert し、認証フローの挙動を修正前に戻す
+- チェックリスト:
+  - UI 側の認証判断を撤去し、Worker 結果を起点にする
+  - 事前の認証プロンプトを廃止し 401 ベースで通知する
+  - 復帰直後のダイアログ再表示を防止する
+  - 運用ログ start/done を追記する
+- 運用ログ：
+  - start: 2026-01-14 06:15 JST Step3 認証ループ対策に着手。
+  - done: 2026-01-14 06:35 JST 事前認証プロンプトを撤去し、メタデータ取得エラーを Worker から返すよう整理。
+
+2150) fix/auth/token-ssot-localstorage (P1) — 完了 (2026-01-14)
+- ブランチ名: fix/auth/token-ssot-localstorage
+- 依存: なし
+- 受け入れ基準: AuthService の in-memory token を廃止し localStorage を SSOT にする／401 検知時に access_token を削除する／bff-auth-user を廃止して userinfo に統一する／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/auth-recovery/src/AuthService.ts`, `packages/ui/auth/src/services/BFFAuthService.ts`, `packages/ui/auth/src/hooks/useAuth.ts`
+- ロールバック手順: 該当差分を revert し、トークン保持/ユーザ情報の保存を修正前に戻す
+- チェックリスト:
+  - AuthService の currentToken を撤去して storage 参照に統一する
+  - 401 検知時に token を削除する
+  - bff-auth-user を廃止し userinfo のみにする
+  - 運用ログ start/done を追記する
+- 運用ログ：
+  - start: 2026-01-14 06:50 JST トークン SSOT 化と bff-auth-user 廃止に着手。
+  - done: 2026-01-14 07:05 JST AuthService の in-memory token を撤去し、userinfo に統一。
+
+2151) fix/auth/remove-authsuccess-dispatch (P1) — 完了 (2026-01-14)
+- ブランチ名: fix/auth/remove-authsuccess-dispatch
+- 依存: なし
+- 受け入れ基準: AuthRequiredDialogHost から AuthSuccess/AuthCancelled の dispatch を撤去する／AuthService は AUTH_REQUIRED 通知後に待機せず例外で返す／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/contexts/AuthRequiredDialogHost.tsx`, `packages/features/auth-recovery/src/AuthService.ts`
+- ロールバック手順: 該当差分を revert し、AuthSuccess/AuthCancelled の dispatch と awaitAuth の待機を復元する
+- チェックリスト:
+  - AuthRequiredDialogHost の success/cancel dispatch を削除する
+  - AuthService.awaitAuth を即時例外で返す
+  - 運用ログ start/done を追記する
+- 運用ログ：
+  - start: 2026-01-14 07:20 JST AuthSuccess dispatch 経路の撤去に着手。
+  - done: 2026-01-14 07:30 JST AuthRequired 通知後の即時例外化と UI 側 dispatch 撤去。
+
+2152) fix/auth/worker-authrequired-ui-only (P1) — 完了 (2026-01-14)
+- ブランチ名: fix/auth/worker-authrequired-ui-only
+- 依存: なし
+- 受け入れ基準: Worker が AuthRequired を dispatch し UI が受信してのみ認証ダイアログを開く／AuthService が AuthSuccess/Cancelled を待機して再試行する／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/auth-recovery/src/AuthService.ts`, `app/src/contexts/AuthRequiredDialogHost.tsx`
+- ロールバック手順: 該当差分を revert し、AuthRequired 連携を修正前に戻す
+- チェックリスト:
+  - AuthService.awaitAuth の待機と再試行を復元する
+  - AuthRequiredDialogHost の success/cancel dispatch を復元する
+  - 運用ログ start/done を追記する
+- 運用ログ：
+  - start: 2026-01-14 07:40 JST Worker→UI AuthRequired フローの復元に着手。
+  - done: 2026-01-14 07:45 JST AuthSuccess/Cancelled の dispatch と待機を復元。
+
+2153) fix/auth/worker-authrequired-no-wait (P1) — 完了 (2026-01-14)
+- ブランチ名: fix/auth/worker-authrequired-no-wait
+- 依存: なし
+- 受け入れ基準: AuthService.awaitAuth は AUTH_REQUIRED を dispatch したら即例外で終了する／Worker は UI storage ブリッジ経由のみでトークンを読む／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/auth-recovery/src/AuthService.ts`
+- ロールバック手順: 該当差分を revert し、AUTH_REQUIRED 待機と直接 localStorage 参照を復元する
+- チェックリスト:
+  - awaitAuth を即例外化する
+  - localStorage 直接参照を撤去する
+  - 運用ログ start/done を追記する
+- 運用ログ：
+  - start: 2026-01-14 07:55 JST Worker 認証フローの待機撤去に着手。
+  - done: 2026-01-14 08:00 JST AuthRequired 通知後に即例外で終了し、UIブリッジ経由のみでトークン参照。
+
+2124) fix/ui-auth/auth-required-dialog-order-and-spinner (P1) — 進行中 (2026-01-11)
+- ブランチ名: fix/ui-auth/auth-required-dialog-order-and-spinner
+- 依存: なし
+- 受け入れ基準: AuthRequiredDialog のプロバイダー押下時ローディングは CircularProgress になる／ダイアログ本文の順序が「plugin requires auth」「token rejected」「signed in as」になる／本文先頭の警告アイコンを非表示にする／Continue ボタンを撤去する／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/auth/src/components/AuthRequiredDialog.tsx`
+- ロールバック手順: 該当ファイルの差分を revert し、ダイアログ表示/順序/ボタンを修正前に戻す
+- チェックリスト:
+  - 認証プロバイダーボタンのローディング表示を CircularProgress に置換する
+  - 本文の表示順と先頭アイコンの有無を調整する
+  - Continue ボタンを削除する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 22:12 JST AuthRequiredDialog の表示順・スピナー・ボタン修正に着手。
+  - update: 2026-01-11 22:16 JST ローディングを CircularProgress に変更し、本文順序と先頭アイコンを調整、Continue ボタンを削除。検証: 未実施。
+  - done: 2026-01-11 22:16 JST AuthRequiredDialog の表示順・スピナー・ボタン修正を完了。
 
 2123) fix/shape/typecheck-auth-headers (P1) — 完了 (2026-01-11)
 - ブランチ名: fix/shape/typecheck-auth-headers
@@ -407,6 +1156,19 @@
   - start: 2026-01-11 20:35 JST sessionStorage 全廃・localStorage 統一と Worker ブリッジ追加に着手。
   - update: 2026-01-11 21:25 JST auth 関連の sessionStorage を localStorage へ統一し、Worker→UI の localStorage ブリッジ API を追加。検証: 未実施。
 
+2123) fix/shape/preview-zoom-snackbar (P1) — 進行中 (2026-01-11)
+- ブランチ名: fix/shape/preview-zoom-snackbar
+- 依存: なし
+- 受け入れ基準: Shape Step6 プレビューでズーム操作時に Snackbar で現在のズーム値が表示される／他の Snackbar 表示を阻害しない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx`
+- ロールバック手順: 追加したズーム Snackbar 表示の差分を revert し、従来の表示へ戻す
+- チェックリスト:
+  - ズーム変更イベントを取得する
+  - Snackbar でズーム値を表示する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 21:35 JST Step6 プレビューでズーム値を Snackbar 表示する対応に着手。
+
 2118) fix/app/treetable-skeleton-until-columns-ready (P1) — 進行中 (2026-01-11)
 - ブランチ名: fix/app/treetable-skeleton-until-columns-ready
 - 依存: なし
@@ -678,6 +1440,20 @@
 - 運用ログ：
   - start: 2026-01-11 16:05 JST /map のデフォルト basemap と未生成レイヤ警告の対応に着手。
   - update: 2026-01-11 16:20 JST /map のデフォルト style を Terrain に変更し、未生成レイヤ検知時に警告ダイアログを表示する処理を追加。検証: 未実施。
+
+2114) investigate/shape/step4-filter-config-usage (P2) — 進行中 (2026-01-11)
+- ブランチ名: investigate/shape/step4-filter-config-usage
+- 依存: なし
+- 受け入れ基準: Step4 の面積フィルター/最小頂点数/最小面積/クイック除外しきい値/シンプル形状頂点しきい値/細長形状補正係数が実処理で参照されているかを確認し、参照箇所または未使用を報告する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/**`, `packages/features/gis-sdk/src/**`, `packages/runtime-worker/src/**`（調査結果に応じて）
+- ロールバック手順: 調査のみのため不要
+- チェックリスト:
+  - Step4 UI で設定される項目の保存先を確認する
+  - ワーカー/処理パイプラインでの参照有無を確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 16:35 JST Step4 のフィルタ設定が実処理で参照されているかの調査に着手。
+  - done: 2026-01-11 16:45 JST Step4 のフィルタ設定は batchConfig へ保存されるが、現行の shape-vt パイプラインでは参照されていないことを確認。報告のみ、変更なし。
 
 2110) feat/ui-map/attribution-badge (P1) — 進行中 (2026-01-11)
 - ブランチ名: feat/ui-map/attribution-badge
@@ -2691,3 +3467,31 @@
 - 運用ログ：
   - start: 2026-01-11 17:10 JST localhost:4200 アクセス時の Comlink apply エラー調査に着手。
   - update: 2026-01-11 17:32 JST useTreeNodeInfoPanel の ui-plugin-loader import パスを修正し、Vite の import 解決エラーを解消。検証: 未実施。
+2179) refactor/ui/build-step-stage-panel (P2) — 完了 (2026-01-10)
+- ブランチ名: refactor/ui/build-step-stage-panel
+- 依存: なし
+- 受け入れ基準: BuildStepPanel のステージ描画が BuildStepStagePanel に分離され、BuildStepStagePanel 内で要約表示が BuildStepStageSummaryPanel、詳細表示が BuildStepStageDetailsPanel に分離されている／表示内容と挙動が現状と同等である／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/components/src/BuildStepPanel.tsx`, `packages/components/src/BuildStepStagePanel.tsx`, `packages/components/src/BuildStepStageSummaryPanel.tsx`, `packages/components/src/BuildStepStageDetailsPanel.tsx`
+- ロールバック手順: 追加ファイルと差分を revert し、BuildStepPanel 内のインライン描画へ戻す
+- チェックリスト:
+  - BuildStepStagePanel を追加し、BuildStepPanel から分離する
+  - BuildStepStageSummaryPanel/BuildStepStageDetailsPanel を追加し、役割を分ける
+  - 表示/進捗/展開の挙動を維持する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 18:40 JST BuildStepPanel のステージ描画分離に着手。
+  - done: 2026-01-10 18:54 JST BuildStepStagePanel/BuildStepStageSummaryPanel/BuildStepStageDetailsPanel を追加し、BuildStepPanel から分離。検証: 未実施。
+2180) feat/ui/build-step-stage-mode-toggle (P2) — 完了 (2026-01-10)
+- ブランチ名: feat/ui/build-step-stage-mode-toggle
+- 依存: なし
+- 受け入れ基準: BuildStepStagePanel が taskCount を管理しステージ単位で渡す／BuildStepStageSummaryPanel と BuildStepStageDetailsPanel が memo 化される／Failed/Completed Chip がアイコン付きでクリック時に mode 更新できる／failedMode/completedMode の真偽でタスク表示を制御できる／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/components/src/BuildStepPanel.tsx`, `packages/components/src/BuildStepStagePanel.tsx`, `packages/components/src/BuildStepStageSummaryPanel.tsx`, `packages/components/src/BuildStepStageDetailsPanel.tsx`
+- ロールバック手順: 追加差分を revert し、従来のステージ表示と固定表示へ戻す
+- チェックリスト:
+  - taskCount 集計を BuildStepStagePanel に集約する
+  - Failed/Completed モードのトグルを追加する
+  - summary/details を memo 化する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 19:28 JST BuildStepStagePanel のモード切替と taskCount 集計に着手。
+  - done: 2026-01-10 19:38 JST summary/details の memo 化、Chip トグルとモード制御、taskCount 集計とフィルタを追加。検証: 未実施。

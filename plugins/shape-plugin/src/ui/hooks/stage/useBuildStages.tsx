@@ -12,7 +12,7 @@ export const useBuildStages = (): BuildStage[] => {
   return useMemo(() => ([
     {
       id: 'fetch',
-      title: t('processing.fetch.title', 'Fetch / Cache Management'),
+      title: t('processing.fetch.title', 'Fetch'),
       description: t('stage.stages.fetch.description', 'Fetch and normalize source data.'),
       icon: <CloudDownloadIcon color="primary" />,
     },

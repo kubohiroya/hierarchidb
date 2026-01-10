@@ -28,7 +28,7 @@ import { ShapeEntityHandler } from './handlers/index.js';
 
 import { metadataLoader } from '../services/metadata/MetadataLoader.js';
 import { getShapeDbApiClient } from '../services/batch/ShapeBatchApiClient.js';
-import type { BatchProgressEvent } from '@hierarchidb/common-api';
+import type { BatchProgressEvent, BatchProgressPayload } from '@hierarchidb/common-api';
 import {
   generateDownloadTaskPayloads,
   getPreferredCountryCodeFormat,
@@ -114,11 +114,8 @@ const buildBatchSessionConfig = (batchConfig: BatchConfig, draft?: DraftLike): B
     },
     vectorTiles: {
       concurrentProcesses: tileConfig?.workers ?? 4,
-      minZoom: tileConfig?.minZoom ?? 0,
-      maxZoom: tileConfig?.maxZoom ?? (tileConfig?.minZoom ?? 0),
       bufferSize: tileConfig?.bufferSize,
       tileSize: tileConfig?.tileSize,
-      zoomBreakpoints: tileConfig?.zoomBreakpoints,
       tileExpandFactor: tileConfig?.tileExpandFactor,
       tileExpandMargin: tileConfig?.tileExpandMargin,
     },
@@ -127,9 +124,16 @@ const buildBatchSessionConfig = (batchConfig: BatchConfig, draft?: DraftLike): B
 
 interface ProgressSubscription {
   unsubscribe?: () => void;
+  callback?: (event: BatchProgressEvent) => void;
 }
 
+type PauseState = {
+  paused: boolean;
+  waiters: Array<() => void>;
+};
+
 const progressCallbacks = new Map<string, ProgressSubscription>();
+const pauseStates = new Map<string, PauseState>();
 
 const shapeEntityHandlerSingleton = new ShapeEntityHandler();
 const getShapeEntityHandler = (): ShapeEntityHandler => shapeEntityHandlerSingleton;
@@ -142,7 +146,7 @@ const isSkippedMessage = (message?: string | null): boolean => {
 
 const mapTaskQueueStatusToStage = (status: TaskQueueRecord['status']): BatchTaskStageType => {
   switch (status) {
-    case 'waiting':
+    case 'queued':
       return BatchTaskStage.WAIT;
     case 'running':
       return BatchTaskStage.PROCESS;
@@ -154,23 +158,31 @@ const mapTaskQueueStatusToStage = (status: TaskQueueRecord['status']): BatchTask
   }
 };
 
-const mapTaskQueueStatusToPhase = (status: TaskQueueRecord['status']): BatchProgressEvent['phase'] => {
-  if (status === 'waiting') return 'queued';
-  return status as BatchProgressEvent['phase'];
+const mapTaskQueueStatusToTaskStatus = (status: TaskQueueRecord['status']): BatchTask['status'] => {
+  return status as BatchTask['status'];
 };
 
 const buildTaskQueueTitle = (task: TaskQueueRecord): string | undefined => {
   const input = task.inputData as Record<string, unknown> | undefined;
   if (!input) return undefined;
   if (task.stage === 'fetch') {
-    const country = typeof input.countryCode === 'string' ? input.countryCode : undefined;
+    const country = typeof input.countryName === 'string'
+      ? input.countryName
+      : typeof input.countryCode === 'string'
+        ? input.countryCode
+        : undefined;
     const adminLevel = typeof input.adminLevel === 'number' ? `ADM${input.adminLevel}` : undefined;
     return [country, adminLevel].filter(Boolean).join(' ');
   }
   if (task.stage === 'transform') {
+    const country = typeof input.countryName === 'string'
+      ? input.countryName
+      : typeof input.countryCode === 'string'
+        ? input.countryCode
+        : undefined;
     const adminLevel = typeof input.adminLevel === 'number' ? `ADM${input.adminLevel}` : undefined;
     const bandId = typeof input.bandId === 'number' ? `band${input.bandId}` : undefined;
-    return [adminLevel, bandId].filter(Boolean).join(' ');
+    return [country, adminLevel, bandId].filter(Boolean).join(' ');
   }
   if (task.stage === 'vt') {
     const bandId = typeof input.bandId === 'number' ? `band${input.bandId}` : undefined;
@@ -187,15 +199,13 @@ const mapTaskQueueRecordToBatchTask = (
   taskType: task.stage,
   nodeId: task.nodeId,
   stage: mapTaskQueueStatusToStage(task.status),
-  status: task.status,
+  status: mapTaskQueueStatusToTaskStatus(task.status),
   type: task.stage,
   index: task.index,
   progress: task.progress,
-  startedAt: task.startedAt,
-  completedAt: task.completedAt,
   retryCount: task.retryCount,
   error: task.errorMessage,
-  message: task.message,
+  message: task.message ?? task.errorMessage,
   title: buildTaskQueueTitle(task),
 });
 
@@ -204,11 +214,8 @@ const summarizeTaskQueue = (tasks: TaskQueueRecord[]) => {
   const completed = tasks.filter((task) => task.status === 'completed' && !isSkippedMessage(task.message)).length;
   const failed = tasks.filter((task) => task.status === 'failed').length;
   const skipped = tasks.filter((task) => isSkippedMessage(task.message)).length;
-  const runningTask = tasks.find((task) => task.status === 'running');
-  const waitingTask = tasks.find((task) => task.status === 'waiting');
-  const currentTask = runningTask?.taskId ?? waitingTask?.taskId;
   const stageOrder: Array<TaskQueueRecord['stage']> = ['fetch', 'transform', 'vt'];
-  const currentStage = stageOrder.find((stage) => (
+  const taskType = stageOrder.find((stage) => (
     tasks.some((task) => task.stage === stage && task.status !== 'completed' && task.status !== 'failed')
   ));
   const doneCount = Math.min(total, completed + skipped + failed);
@@ -228,10 +235,84 @@ const summarizeTaskQueue = (tasks: TaskQueueRecord[]) => {
       failed,
       skipped,
       percentage,
-      currentStage,
-      currentTask,
+      taskType,
     },
   };
+};
+
+const buildProgressPayloadFromTasks = (tasks: TaskQueueRecord[]): BatchProgressPayload => {
+  const summary = summarizeTaskQueue(tasks).progress;
+  return {
+    total: summary.total,
+    completed: summary.completed,
+    failed: summary.failed,
+    skipped: summary.skipped,
+  };
+};
+
+const getPauseState = (nodeId: NodeId): PauseState => {
+  const key = String(nodeId);
+  const existing = pauseStates.get(key);
+  if (existing) return existing;
+  const state: PauseState = { paused: false, waiters: [] };
+  pauseStates.set(key, state);
+  return state;
+};
+
+const waitIfPaused = async (nodeId: NodeId): Promise<void> => {
+  const state = getPauseState(nodeId);
+  if (!state.paused) return;
+  await new Promise<void>((resolve) => {
+    state.waiters.push(resolve);
+  });
+};
+
+const setPaused = (nodeId: NodeId, paused: boolean): void => {
+  const state = getPauseState(nodeId);
+  state.paused = paused;
+  if (!paused && state.waiters.length > 0) {
+    const pending = [...state.waiters];
+    state.waiters.length = 0;
+    pending.forEach((resolve) => resolve());
+  }
+};
+
+const resolveProgressPhase = (nodeId: NodeId, tasks: TaskQueueRecord[]): BatchProgressEvent['phase'] => {
+  if (getPauseState(nodeId).paused) return 'paused';
+  const status = summarizeTaskQueue(tasks).status;
+  switch (status) {
+    case 'running':
+      return 'running';
+    case 'completed':
+      return 'completed';
+    case 'failed':
+      return 'failed';
+    default:
+      return 'queued';
+  }
+};
+
+const emitProgressSnapshot = async (
+  nodeId: NodeId,
+  message?: string,
+): Promise<void> => {
+  const sub = progressCallbacks.get(String(nodeId));
+  if (!sub?.callback) return;
+  try {
+    const taskQueue = new VtTaskQueueDb();
+    const vtTasks = await listTasks(taskQueue, nodeId);
+    const phase = resolveProgressPhase(nodeId, vtTasks);
+    sub.callback({
+      nodeId,
+      stage: summarizeTaskQueue(vtTasks).progress.taskType ?? 'fetch',
+      phase,
+      timestamp: Date.now(),
+      message,
+      payload: buildProgressPayloadFromTasks(vtTasks),
+    });
+  } catch (error) {
+    console.error('[shapeBatchAPI] progress snapshot build failed', error);
+  }
 };
 
 
@@ -365,6 +446,7 @@ export const shapeBatchAPI = {
       batchConfig: mergedBatchConfig,
       selectedArrayByCountries: draftLike?.draftData?.selectedArrayByCountries,
       downloadTaskPayloads,
+      waitIfPaused: () => waitIfPaused(nodeForSession),
     }).then(async () => {
       await handler.updateEntity(nodeForSession, {
         buildFinishedAt: Date.now(),
@@ -375,24 +457,53 @@ export const shapeBatchAPI = {
       await handler.updateEntity(nodeForSession, {
         processingStatus: 'failed',
       });
+    }).finally(() => {
+      pauseStates.delete(String(nodeForSession));
     });
 
     if (progressCallback) {
       const existing = progressCallbacks.get(String(nodeForSession));
       existing?.unsubscribe?.();
+      const taskQueue = new VtTaskQueueDb();
       const unsubscribe = onTaskQueueUpdate(nodeForSession, (event) => {
-        progressCallback({
-          nodeId: event.nodeId,
-          stage: event.task.stage,
-          phase: mapTaskQueueStatusToPhase(event.task.status),
-          timestamp: Date.now(),
-          message: event.task.message,
-        });
+        void (async () => {
+          try {
+            const vtTasks = await listTasks(taskQueue, event.nodeId);
+            progressCallback({
+              nodeId: event.nodeId,
+              stage: event.task.stage,
+              phase: resolveProgressPhase(event.nodeId, vtTasks),
+              timestamp: Date.now(),
+              message: event.task.message,
+              payload: buildProgressPayloadFromTasks(vtTasks),
+            });
+          } catch (error) {
+            console.error('[shapeBatchAPI] progress payload build failed', error);
+          }
+        })();
       });
-      progressCallbacks.set(String(nodeForSession), { unsubscribe });
+      progressCallbacks.set(String(nodeForSession), { unsubscribe, callback: progressCallback });
     }
 
     return nodeForSession;
+  },
+
+  invokeBatchCommand: async (command: string, payload: Record<string, unknown>): Promise<void> => {
+    if (command === 'session/pause') {
+      const nodeId = payload.nodeId as NodeId;
+      if (!nodeId) throw new Error('[shapeBatchAPI] session/pause requires nodeId');
+      setPaused(nodeId, true);
+      await emitProgressSnapshot(nodeId);
+      return;
+    }
+    if (command === 'session/resume') {
+      const nodeId = payload.nodeId as NodeId;
+      if (!nodeId) throw new Error('[shapeBatchAPI] session/resume requires nodeId');
+      setPaused(nodeId, false);
+      await emitProgressSnapshot(nodeId);
+      return;
+    }
+    throw new Error(`[shapeBatchAPI] Unknown batch command: ${command}`);
   },
 
   getBatchSession: async (nodeId: NodeId): Promise<BatchSession | undefined> => {
@@ -404,17 +515,18 @@ export const shapeBatchAPI = {
       const mergedConfig = mergeBatchConfig(entity?.batchConfig ?? DEFAULT_PROCESSING_CONFIG);
       const config = buildBatchSessionConfig(mergedConfig, { draftData: entity ?? undefined });
       const summary = summarizeTaskQueue(vtTasks);
+      const paused = getPauseState(nodeId).paused;
       const startedAt = Math.min(...vtTasks.map((task) => task.createdAt ?? Date.now()));
       return {
         draftId: nodeId,
         nodeId,
-        status: summary.status,
+        status: paused ? 'paused' : summary.status,
         config,
         startedAt,
         updatedAt: Date.now(),
         completedAt: summary.status === 'completed' ? Date.now() : undefined,
         progress: summary.progress,
-        canResume: false,
+        canResume: paused,
         lastActivity: Date.now(),
         expiresAt: Date.now(),
         stages: {},
@@ -474,9 +586,10 @@ export const shapeBatchAPI = {
     const vtTasks = await listTasks(taskQueue, nodeId);
     if (vtTasks.length > 0) {
       const summary = summarizeTaskQueue(vtTasks);
+      const paused = getPauseState(nodeId).paused;
       return {
         nodeId,
-        status: summary.status,
+        status: paused ? 'paused' : summary.status,
         progress: summary.progress.percentage,
         completedTasks: summary.progress.completed,
         totalTasks: summary.progress.total,
@@ -512,9 +625,10 @@ export const shapeBatchAPI = {
         const candidate = task.updatedAt ?? task.startedAt ?? task.createdAt ?? 0;
         return candidate > latest ? candidate : latest;
       }, 0);
+      const paused = getPauseState(nodeId).paused;
       return {
         exists: true,
-        canResume: false,
+        canResume: paused,
         lastActivity,
         expiresAt: lastActivity + 5 * 60 * 1000,
       };
@@ -572,19 +686,28 @@ export const shapeBatchAPI = {
   subscribeToProgress: (nodeId: NodeId, callback: (event: BatchProgressEvent) => void): (() => void) => {
     const existing = progressCallbacks.get(String(nodeId));
     existing?.unsubscribe?.();
+    const taskQueue = new VtTaskQueueDb();
     const unsubscribeTaskQueue = onTaskQueueUpdate(nodeId, (event) => {
-      callback({
-        nodeId: event.nodeId,
-        stage: event.task.stage,
-        phase: mapTaskQueueStatusToPhase(event.task.status),
-        timestamp: Date.now(),
-        message: event.task.message,
-      });
+      void (async () => {
+        try {
+          const vtTasks = await listTasks(taskQueue, event.nodeId);
+          callback({
+            nodeId: event.nodeId,
+            stage: event.task.stage,
+            phase: resolveProgressPhase(event.nodeId, vtTasks),
+            timestamp: Date.now(),
+            message: event.task.message,
+            payload: buildProgressPayloadFromTasks(vtTasks),
+          });
+        } catch (error) {
+          console.error('[shapeBatchAPI] progress payload build failed', error);
+        }
+      })();
     });
     const unsubscribe = () => {
       unsubscribeTaskQueue();
     };
-    progressCallbacks.set(String(nodeId), { unsubscribe });
+    progressCallbacks.set(String(nodeId), { unsubscribe, callback });
 
     return () => {
       const active = progressCallbacks.get(String(nodeId));
@@ -649,12 +772,15 @@ export const shapeBatchAPI = {
     const vtTasks = await listTasks(taskQueue, nodeId);
     if (vtTasks.length > 0) {
       const summary = summarizeTaskQueue(vtTasks);
+      const paused = getPauseState(nodeId).paused;
       const lastProcessed = vtTasks.reduce((latest, task) => {
         const candidate = task.completedAt ?? task.updatedAt ?? task.startedAt ?? task.createdAt ?? 0;
         return candidate > latest ? candidate : latest;
       }, 0);
       return {
-        status: summary.status === 'running'
+        status: paused
+          ? 'paused'
+          : summary.status === 'running'
           ? 'processing'
           : summary.status === 'completed'
             ? 'completed'

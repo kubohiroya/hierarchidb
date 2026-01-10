@@ -23,7 +23,5 @@ export interface BatchProcessConfig extends BatchSessionConfig {
   // Extraction settings (if not already in BatchConfig)
   extractTolerance?: number;
   minArea?: number;
-  minZoom?: number;
-  maxZoom?: number;
   tileSize?: number;
 }

@@ -18,7 +18,7 @@ describe('RouteBatchLiveProgress', () => {
     mockUseRouteBatchProgress.mockReturnValue({
       snapshot: undefined,
       ready: true,
-      progress: { percentage: 42, stage: 'routing', currentTask: 'routing' },
+      progress: { percentage: 42, stage: 'routing' },
       status: { status: 'running' },
       isPaused: false,
       isMutating: false,
@@ -41,7 +41,7 @@ describe('RouteBatchLiveProgress', () => {
     mockUseRouteBatchProgress.mockReturnValue({
       snapshot: undefined,
       ready: true,
-      progress: { percentage: 55, stage: 'routing', currentTask: 'routing' },
+      progress: { percentage: 55, stage: 'routing' },
       status: { status: 'paused' },
       isPaused: true,
       isMutating: false,

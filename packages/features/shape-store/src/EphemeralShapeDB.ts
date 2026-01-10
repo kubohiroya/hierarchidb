@@ -133,6 +133,28 @@ export class EphemeralShapeDB extends EphemeralGisDB<BatchProcessConfig> {
       vectorTileSourceBuffers: '&id, nodeId, tileId, [nodeId+tileId], timestamp',
       geojsonVtIndexes: '&id, nodeId, bufferId, [nodeId+bufferId], createdAt',
     });
+    this.version(8).stores({
+      rawBuffers: '&id, nodeId, timestamp',
+      extractedBuffers: '&id, nodeId, stage, timestamp, [nodeId+stage]',
+      vectorTiles: '&id, nodeId, [z+x+y], hash, timestamp',
+      sessions: '&nodeId, status, stage, startTime',
+      cache: '&key, type, lastAccessed, ttl',
+      featureBuffers: '&bufferId, nodeId, [nodeId+stage], stage, createdAt, byteSize',
+      tileBuffers: '&bufferId, nodeId, [nodeId+z+x+y], [z+x+y], z, stage, createdAt',
+      tileIdToBufferRelations: '&id, nodeId, tileId, bufferId, [nodeId+tileId]',
+      batchTasks: '&taskId, nodeId, [nodeId+status], [nodeId+taskType]',
+      extract2SourceBuffers: '&id, nodeId, countryCode, adminLevel, [nodeId+countryCode+adminLevel], timestamp',
+      vectorTileSourceBuffers: '&id, nodeId, tileId, [nodeId+tileId], timestamp',
+      geojsonVtIndexes: '&id, nodeId, bufferId, [nodeId+bufferId], createdAt',
+    }).upgrade((tx) =>
+      tx.table('batchTasks')
+        .toCollection()
+        .modify((task) => {
+          if (task.status === 'waiting') {
+            task.status = 'queued';
+          }
+        })
+    );
     this.featureBuffers = this.table('featureBuffers');
     this.tileBuffers = this.table('tileBuffers');
     this.tileIdToBufferRelations = this.table('tileIdToBufferRelations');
@@ -246,13 +268,9 @@ export class EphemeralShapeDB extends EphemeralGisDB<BatchProcessConfig> {
     task: Omit<BatchTaskRecord, 'taskId'> & { taskId?: string },
   ): Promise<BatchTaskRecord> {
     const taskId = task.taskId ?? crypto.randomUUID();
-    const createdAt = task.createdAt ?? Date.now();
-    const updatedAt = task.updatedAt ?? createdAt;
     const fullTask: BatchTaskRecord = {
       ...task,
       taskId,
-      createdAt,
-      updatedAt,
     };
 
     await this.batchTasks.put(fullTask);
@@ -260,10 +278,7 @@ export class EphemeralShapeDB extends EphemeralGisDB<BatchProcessConfig> {
   }
 
   async updateBatchTask(taskId: string, updates: Partial<BatchTaskRecord>): Promise<void> {
-    await this.batchTasks.update(taskId, {
-      ...updates,
-      updatedAt: updates.updatedAt ?? Date.now(),
-    });
+    await this.batchTasks.update(taskId, updates);
   }
 
   async getBatchTasks(nodeId: NodeId): Promise<BatchTaskRecord[]> {

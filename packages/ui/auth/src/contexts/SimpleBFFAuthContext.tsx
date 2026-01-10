@@ -6,8 +6,6 @@ import type { AuthUser } from '../types/AuthUser.js';
 
 const SimpleBFFAuthContext = React.createContext<AuthContextType | null>(null);
 
-const STORAGE_KEY = 'bff-auth-user';
-const TOKEN_KEY = 'bff-auth-token';
 const DEFAULT_BFF_BASE_URL = 'https://hierarchidb-bff.kubohiroya.workers.dev';
 
 /**
@@ -164,17 +162,12 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
   React.useEffect(() => {
     const loadUser = () => {
       try {
-        const storedUser = localStorage.getItem(STORAGE_KEY);
-        // Check both locations for token (for backward compatibility)
-        const storedToken =
-          localStorage.getItem(TOKEN_KEY) ?? localStorage.getItem('access_token');
-
-        // Also check if we have userinfo in localStorage
+        const storedToken = localStorage.getItem('access_token');
         const userInfo = localStorage.getItem('userinfo');
 
         // Check for stuck authentication state
         const pkceTimestamp = localStorage.getItem('pkce_timestamp');
-        if (pkceTimestamp && !storedUser) {
+        if (pkceTimestamp && !userInfo) {
           const pkceAge = Date.now() - Number.parseInt(pkceTimestamp, 10);
           if (pkceAge > 10 * 60 * 1000) {
             // 10 minutes
@@ -189,38 +182,23 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
           }
         }
 
-        // If we have token and userinfo but no stored user, reconstruct from session
-        if (!storedUser && storedToken && userInfo) {
-
-            const userData = JSON.parse(userInfo);
-            const authUser: AuthUser = {
-              id: userData.sub ?? userData.id,
-              email: userData.email,
-              name: userData.name,
-              picture: normalizeProfilePhotoUrl(userData.picture, userData.provider ?? 'google'),
-              provider: (userData.provider ?? 'google') as AuthProviderType,
-              access_token: storedToken,
-              id_token: localStorage.getItem('id_token') ?? undefined,
-              expires_at: Date.now() + 48 * 60 * 60 * 1000, // 48 hours default
-            };
-
-            setUser(authUser);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(authUser));
-            localStorage.setItem(TOKEN_KEY, storedToken);
-
-            // Mark as authenticated
-            setIsAuthenticating(false);
-            return; // Exit early to prevent further processing
-        }
-
-        if (storedUser && storedToken) {
-          const userData = JSON.parse(storedUser);
+        if (storedToken && userInfo) {
+          const userData = JSON.parse(userInfo);
           // Normalize photo URL based on provider
           if (userData.picture && userData.provider) {
             userData.picture = normalizeProfilePhotoUrl(userData.picture, userData.provider);
           }
-          // Check if token is still valid (simple check - you might want to decode JWT)
-          setUser(userData);
+          const authUser: AuthUser = {
+            id: userData.sub ?? userData.id,
+            email: userData.email,
+            name: userData.name,
+            picture: userData.picture,
+            provider: (userData.provider ?? 'google') as AuthProviderType,
+            access_token: storedToken,
+            id_token: localStorage.getItem('id_token') ?? undefined,
+            expires_at: Date.now() + 48 * 60 * 60 * 1000, // 48 hours default
+          };
+          setUser(authUser);
         } else {
           // Ensure isAuthenticating is false if no user
           setIsAuthenticating(false);
@@ -589,8 +567,6 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
   const signOut = React.useCallback(async () => {
     try {
       // Clear local storage
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem('access_token');
       localStorage.removeItem('id_token');
       localStorage.removeItem('userinfo');
@@ -617,7 +593,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
       const authBase = normalizeAuthBase(
         import.meta.env.VITE_BFF_BASE_URL ?? DEFAULT_BFF_BASE_URL
       );
-      const token = localStorage.getItem(TOKEN_KEY);
+      const token = localStorage.getItem('access_token');
 
       if (token) {
         await fetch(buildAuthUrl(authBase, '/logout').toString(), {
@@ -691,8 +667,6 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
       if (!response.ok) {
         if (response.status === 401) {
           // Clear auth storage and trigger re-authentication
-          localStorage.removeItem(STORAGE_KEY);
-          localStorage.removeItem(TOKEN_KEY);
           localStorage.removeItem('access_token');
           localStorage.removeItem('id_token');
           localStorage.removeItem('userinfo');
@@ -741,7 +715,6 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
           };
 
           setUser(authUser);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(authUser));
         }
 
         return true;
@@ -780,8 +753,6 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
         };
 
         setUser(authUser);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(authUser));
-        localStorage.setItem(TOKEN_KEY, accessToken);
 
         // Store token expiry time for monitoring
         const expiresIn = localStorage.getItem('token_expires_in');

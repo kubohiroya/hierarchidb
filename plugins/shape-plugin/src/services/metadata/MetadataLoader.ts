@@ -51,12 +51,12 @@ export class MetadataLoader {
       return this.metadataCache.get(cacheKey)!;
     }
 
+    const loader = this.loaders[normalized];
+    if (!loader) {
+      console.warn(`Unknown data source: ${normalized}`);
+      return [];
+    }
     try {
-      const loader = this.loaders[normalized];
-      if (!loader) {
-        console.warn(`Unknown data source: ${normalized}`);
-        return [];
-      }
       const metadata = await loader(nodeId);
 
       // Cache the result
@@ -65,10 +65,7 @@ export class MetadataLoader {
       return metadata;
     } catch (error) {
       console.error(`Error loading metadata for ${normalized}:`, error);
-      if (error instanceof Error && /openstreetmap/i.test(error.message)) {
-        throw error;
-      }
-      return [];
+      throw error instanceof Error ? error : new Error(String(error));
     }
   }
 

@@ -83,9 +83,9 @@ export const buildShapeCacheKey = (prefix: string, url: string): string => (
   `${prefix}:${hashString(url)}`
 );
 
-const DOWNLOAD_CONTENT_TYPE = 'application/flatgeobuf';
+const RAW_DATA_DEFAULT_CONTENT_TYPE = 'application/octet-stream';
 
-export type DownloadCacheKeyParams = {
+export type RawDataDataSourceCacheKeyParams = {
   dataSource?: string;
   countryCode?: string;
   adminLevel?: number;
@@ -93,7 +93,7 @@ export type DownloadCacheKeyParams = {
   variant?: string;
 };
 
-export const buildDownloadCacheKey = (params: DownloadCacheKeyParams): string => {
+export const buildRawDataDataSourceCacheKey = (params: RawDataDataSourceCacheKeyParams): string => {
   const dataSource = params.dataSource ?? 'unknown';
   const countryCode = params.countryCode?.toLowerCase() ?? 'all';
   const adminLevel = typeof params.adminLevel === 'number' ? `adm${params.adminLevel}` : 'adm-na';
@@ -103,12 +103,12 @@ export const buildDownloadCacheKey = (params: DownloadCacheKeyParams): string =>
 };
 
 const compressGzip = async (buffer: ArrayBuffer): Promise<{ buffer: ArrayBuffer; contentType: string }> => (
-  { buffer, contentType: DOWNLOAD_CONTENT_TYPE }
+  { buffer, contentType: RAW_DATA_DEFAULT_CONTENT_TYPE }
 );
 
 const decompressGzip = async (buffer: ArrayBuffer): Promise<ArrayBuffer> => {
   if (typeof DecompressionStream !== 'function') {
-    throw new Error('DecompressionStream is not available for gzip download buffers');
+    throw new Error('DecompressionStream is not available for gzip raw data buffers');
   }
   const stream = new DecompressionStream('gzip');
   const writer = stream.writable.getWriter();
@@ -117,35 +117,37 @@ const decompressGzip = async (buffer: ArrayBuffer): Promise<ArrayBuffer> => {
   return new Response(stream.readable).arrayBuffer();
 };
 
-export const storeDownloadBufferForNode = async (params: {
+export const storeRawDataDataSourceBufferForNode = async (params: {
   nodeId: NodeId;
   cacheKey: string;
   buffer: ArrayBuffer;
+  contentType?: string;
 }): Promise<{ contentType: string; sizeBytes: number }> => {
   const { nodeId, cacheKey, buffer } = params;
   const startedAt = Date.now();
   const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
   const compressed = await compressGzip(buffer);
+  const resolvedContentType = params.contentType ?? compressed.contentType ?? RAW_DATA_DEFAULT_CONTENT_TYPE;
   const compressedMs = Date.now() - startedAt;
-  console.debug('[shape-chunk-store] Download buffer compressed', {
+  console.debug('[shape-chunk-store] Raw data buffer compressed', {
     cacheKey,
     bytes: compressed.buffer.byteLength,
-    contentType: compressed.contentType,
+    contentType: resolvedContentType,
     ms: compressedMs,
   });
   await store.setForNode(nodeId, cacheKey, compressed.buffer, {
     sizeBytes: compressed.buffer.byteLength,
-    contentType: compressed.contentType,
+    contentType: resolvedContentType,
     fetchedAt: Date.now(),
   });
-  console.debug('[shape-chunk-store] Download buffer stored', {
+  console.debug('[shape-chunk-store] Raw data buffer stored', {
     cacheKey,
     ms: Date.now() - startedAt,
   });
-  return { contentType: compressed.contentType, sizeBytes: compressed.buffer.byteLength };
+  return { contentType: resolvedContentType, sizeBytes: compressed.buffer.byteLength };
 };
 
-export const readDownloadBuffer = async (nodeId: NodeId, cacheKey: string): Promise<ArrayBuffer | null> => {
+export const readRawDataDataSourceBuffer = async (nodeId: NodeId, cacheKey: string): Promise<ArrayBuffer | null> => {
   const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
   const hasRelation = await store.hasRelationForNode(nodeId, cacheKey);
   if (!hasRelation) return null;
@@ -158,22 +160,22 @@ export const readDownloadBuffer = async (nodeId: NodeId, cacheKey: string): Prom
   return entry.value;
 };
 
-export const listDownloadMetadataForNode = async (nodeId: NodeId): Promise<ChunkStoreMetadata[]> => {
+export const listRawDataDataSourceMetadataForNode = async (nodeId: NodeId): Promise<ChunkStoreMetadata[]> => {
   const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
   return store.listMetadataForNode(nodeId);
 };
 
-export const countDownloadBuffersForNode = async (nodeId: NodeId): Promise<number> => {
+export const countRawDataDataSourceBuffersForNode = async (nodeId: NodeId): Promise<number> => {
   const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
   return store.countForNode(nodeId);
 };
 
-export const hasDownloadBuffer = async (nodeId: NodeId, cacheKey: string): Promise<boolean> => {
+export const hasRawDataDataSourceBuffer = async (nodeId: NodeId, cacheKey: string): Promise<boolean> => {
   const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
   return store.hasRelationForNode(nodeId, cacheKey);
 };
 
-export const deleteDownloadBuffersForDataSource = async (
+export const deleteRawDataDataSourceBuffersForDataSource = async (
   nodeId: NodeId,
   dataSource: string,
 ): Promise<number> => {
@@ -191,7 +193,7 @@ export const deleteDownloadBuffersForDataSource = async (
   return keys.length;
 };
 
-export const ensureDownloadBufferForNode = async (
+export const ensureRawDataDataSourceBufferForNode = async (
   nodeId: NodeId,
   cacheKey: string,
 ): Promise<boolean> => {

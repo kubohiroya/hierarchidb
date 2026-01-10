@@ -17,11 +17,11 @@ export type BatchStage =
 
 export interface ProgressEvent {
   nodeId: NodeId;
-  stage: BatchStage;
+  taskType: BatchStage;
   total: number;
   completed: number;
   failed: number;
   percentage: number;
-  currentTask: string;
   timestamp?: number;
+  message?: string;
 }

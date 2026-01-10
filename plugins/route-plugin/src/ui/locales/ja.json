@@ -7,6 +7,9 @@
     "build": { "label": "ビルド" },
     "preview": { "label": "プレビュー" }
   },
+  "auth": {
+    "loading": "認証状態を確認中..."
+  },
   "messages": {
     "completeBeforeBuild": "ビルド開始前に国ごとの交通経路の選択を完了してください。",
     "batchNotImplemented": "このダイアログからのルートバッチ起動は未実装です。"

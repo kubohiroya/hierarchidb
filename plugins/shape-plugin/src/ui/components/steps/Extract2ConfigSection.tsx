@@ -66,12 +66,12 @@ export const Extract2ConfigSection: React.FC<Props> = ({ config, draft, disabled
         <Stack direction="row" spacing={2} alignItems="center">
           <TuneIcon color="primary" />
           <Typography variant="subtitle1">
-            {t('processing.extract2.title', 'Tile Preprocessing')}
+            {t('processing.extract2.title', 'Transform (Tile Preprocessing)')}
           </Typography>
           <Tooltip
             title={t(
               'processing.extract2.omissionHelp',
-              'When enabled, extraction/quantization can remove empty geometries.',
+              'When enabled, preprocessing/quantization can remove empty geometries.',
             )}
             placement="top"
           >
@@ -85,9 +85,9 @@ export const Extract2ConfigSection: React.FC<Props> = ({ config, draft, disabled
             <Grid size={{ xs: 12, sm: 4 }}>
               <WorkerNumberConfigCard
                 icon={<TuneIcon fontSize="small" color="primary" />}
-                title={t('processing.filter.workersStage2', 'Number of Workers for Tile Generation (Stage 2)')}
+                title={t('processing.filter.workersStage2', 'Transform Workers (Preprocessing)')}
                 value={baseExtract2Config.workers ?? 2}
-                helperText={t('processing.filter.workersStage2Help', 'Parallel workers for tile preparation in stage 2.')}
+                helperText={t('processing.filter.workersStage2Help', 'Parallel workers for transform preprocessing.')}
                 warningText={extract2WarningText}
                 onChange={(workers) =>
                   update({
@@ -109,12 +109,12 @@ export const Extract2ConfigSection: React.FC<Props> = ({ config, draft, disabled
               <Paper variant="outlined" sx={{ p: 2 }}>
                 <Stack spacing={1}>
                   <Typography variant="subtitle2">
-                    {t('processing.extract2.extractionModeTitle', 'Extraction Mode')}
+                    {t('processing.extract2.extractionModeTitle', 'Preprocessing Mode')}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     {t(
                       'processing.extract2.extractionModeHelp',
-                      'Choose how geometry is extracted during tile preprocessing.',
+                      'Choose how geometry is prepared during tile preprocessing.',
                     )}
                   </Typography>
                   <FormControl>

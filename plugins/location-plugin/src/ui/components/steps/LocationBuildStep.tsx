@@ -131,10 +131,10 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
     });
   }, [activeNodeId]);
 
-  const phase = unifiedProgress?.phase ?? progress?.stage;
+  const phase = unifiedProgress?.phase ?? progress?.taskType;
   const baseStatus = mapStatusToBuildStatus(
     typeof phase === 'string' ? phase : undefined,
-    progress?.stage,
+    progress?.taskType,
     activeNodeId,
   );
   const ideGsmActive = Boolean(ideGsmProgress && ideGsmProgress.phase !== 'completed' && ideGsmProgress.phase !== 'failed');
@@ -156,7 +156,7 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
   }, [buildStatus, progress?.percentage, unifiedProgress?.percentage]);
   const ideGsmOverallProgress = ideGsmProgress ? mapIdeGsmProgressToPercent(ideGsmProgress) : overallProgress;
 
-  const normalizedStage = unifiedProgress?.stage ?? progress?.stage;
+  const normalizedStage = unifiedProgress?.stage ?? progress?.taskType;
   const stageProgress = useMemo(() => {
     if (ideGsmActive) {
       return stages.reduce<Record<string, number>>((acc, stage, index) => {
@@ -251,9 +251,9 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
   const failed = ideGsmActive
     ? 0
     : (unifiedProgress?.failed ?? progress?.failed ?? 0);
-  const currentTask = ideGsmProgress
+  const taskLabel = ideGsmProgress
     ? resolveIdeGsmTaskLabel(t, ideGsmProgress)
-    : (unifiedProgress?.currentTask ?? progress?.currentTask ?? normalizedStage ?? '');
+    : (unifiedProgress?.message ?? progress?.message ?? normalizedStage ?? '');
 
   const hasPrerequisites = Boolean(nodeId && draft.dataSource);
   const statusLabel = t('stage.statusLabel', 'Build status');
@@ -303,9 +303,9 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
         statusContent={(
           <Stack spacing={0.5}>
             <Typography variant="body2">{statusText}</Typography>
-            {currentTask ? (
+            {taskLabel ? (
               <Typography variant="caption" color="text.secondary">
-                {t('stage.currentTask', 'Current task: {{task}}').replace('{{task}}', currentTask)}
+                {t('stage.currentTask', 'Current task: {{task}}').replace('{{task}}', taskLabel)}
               </Typography>
             ) : null}
             <Typography variant="caption" color="text.secondary">

@@ -29,8 +29,7 @@ export interface ProgressSnapshot {
   completed: number;
   failed: number;
   percentage: number;
-  currentStage?: string;
-  currentTask?: string;
+  taskType?: string;
 }
 
 export const toProgressSnapshot = (event: BatchProgressEvent): ProgressSnapshot => {
@@ -43,7 +42,6 @@ export const toProgressSnapshot = (event: BatchProgressEvent): ProgressSnapshot 
     completed,
     failed,
     percentage,
-    currentStage: event.stage,
-    currentTask: event.payload?.currentTask,
+    taskType: event.stage,
   };
 };

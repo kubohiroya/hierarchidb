@@ -29,6 +29,7 @@ export type ShapeFetchTaskInput = {
   dataSource: DataSourceName;
   sourceKey: string;
   countryCode: ISO2;
+  countryName?: string;
   urlCountryCode: string;
   adminLevel: number;
 };
@@ -37,6 +38,7 @@ export type ShapeFetchTaskOutput = {
   stage1BufferId?: string;
   featureCount?: number;
   vertexCount?: number;
+  polygonCount?: number;
 };
 
 export type ShapeFetchStageParams = {
@@ -48,6 +50,7 @@ export type ShapeFetchStageParams = {
   taskQueue: VtTaskQueueDb;
   shapeStore: VtShapeDb;
   metadata?: CountryMetadata[];
+  waitIfPaused?: () => Promise<void>;
 };
 
 const buildRetryConfig = (config: BatchConfig): RetryConfig => {
@@ -78,18 +81,31 @@ const buildShapeFetchTaskId = (nodeId: NodeId, sourceKey: string): string => (
   `${String(nodeId)}:fetch:${sourceKey}`
 );
 
-const buildStage1FeatureCollection = (entities: ShapeEntity[]): FeatureCollection => {
+const buildStage1FeatureCollection = (
+  entities: ShapeEntity[],
+  originKey: string
+): FeatureCollection => {
   const features: Feature[] = [];
   for (const entity of entities) {
     if (!entity?.geometry) continue;
+    const properties = {
+      ...(entity.properties ?? {}),
+    } as Record<string, unknown>;
+    if (!properties.__hdbOriginKey) {
+      properties.__hdbOriginKey = originKey;
+    }
     features.push({
       type: 'Feature',
       geometry: entity.geometry,
-      properties: entity.properties ?? {},
+      properties,
     });
   }
   return { type: 'FeatureCollection', features };
 };
+
+const buildOriginKey = (dataSource: DataSourceName, sourceKey: string): string => (
+  `${dataSource}:${sourceKey}`
+);
 
 const countVertices = (coords: unknown): number => {
   if (!Array.isArray(coords)) return 0;
@@ -107,13 +123,32 @@ const countVerticesFromGeometry = (geometry: Feature['geometry']): number => {
   return countVertices(geometry.coordinates);
 };
 
-const summarizeFeatureCollection = (collection: FeatureCollection): { featureCount: number; vertexCount: number } => {
+const countPolygonsFromGeometry = (geometry: Feature['geometry']): number => {
+  if (!geometry) return 0;
+  if (geometry.type === 'GeometryCollection') {
+    const geometries = Array.isArray(geometry.geometries) ? geometry.geometries : [];
+    return geometries.reduce((sum: number, child) => sum + countPolygonsFromGeometry(child), 0);
+  }
+  if (geometry.type === 'Polygon') {
+    return 1;
+  }
+  if (geometry.type === 'MultiPolygon') {
+    return Array.isArray(geometry.coordinates) ? geometry.coordinates.length : 0;
+  }
+  return 0;
+};
+
+const summarizeFeatureCollection = (
+  collection: FeatureCollection
+): { featureCount: number; vertexCount: number; polygonCount: number } => {
   const featureCount = collection.features.length;
   let vertexCount = 0;
+  let polygonCount = 0;
   for (const feature of collection.features) {
     vertexCount += countVerticesFromGeometry(feature.geometry);
+    polygonCount += countPolygonsFromGeometry(feature.geometry);
   }
-  return { featureCount, vertexCount };
+  return { featureCount, vertexCount, polygonCount };
 };
 
 const buildFetchTasks = (
@@ -137,7 +172,7 @@ const buildFetchTasks = (
       taskId: buildShapeFetchTaskId(nodeId, sourceKey),
       nodeId,
       stage: 'fetch',
-      status: 'waiting',
+      status: 'queued',
       index,
       progress: 0,
       inputData: {
@@ -145,6 +180,7 @@ const buildFetchTasks = (
         dataSource: payload.dataSource,
         sourceKey,
         countryCode: iso2,
+        countryName: countryMeta.countryName,
         urlCountryCode: payload.countryCode.trim().toUpperCase(),
         adminLevel: payload.adminLevel,
       },
@@ -199,7 +235,8 @@ const createFetchHandler = (params: {
       validation: true,
     });
 
-    const collection = buildStage1FeatureCollection(processed);
+    const originKey = buildOriginKey(input.dataSource, input.sourceKey);
+    const collection = buildStage1FeatureCollection(processed, originKey);
     if (collection.features.length === 0) {
       return {
         status: 'completed',
@@ -207,7 +244,7 @@ const createFetchHandler = (params: {
       };
     }
 
-    const { featureCount, vertexCount } = summarizeFeatureCollection(collection);
+    const { featureCount, vertexCount, polygonCount } = summarizeFeatureCollection(collection);
     const data = await encodeFlatGeobufFromFeatureCollection(collection);
     const buffer = await putStage1Buffer(params.shapeStore, params.nodeId, {
       sourceKey: input.sourceKey,
@@ -216,6 +253,7 @@ const createFetchHandler = (params: {
       data,
       featureCount,
       vertexCount,
+      polygonCount,
     });
 
     return {
@@ -225,6 +263,7 @@ const createFetchHandler = (params: {
         stage1BufferId: buffer.id,
         featureCount,
         vertexCount,
+        polygonCount,
       },
     };
   };
@@ -253,5 +292,6 @@ export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise
       shapeStore: params.shapeStore,
       dataSource: params.dataSource,
     }),
+    waitIfPaused: params.waitIfPaused,
   });
 };

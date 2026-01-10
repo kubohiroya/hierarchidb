@@ -3,7 +3,7 @@ import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
 
 export type TaskStage = 'fetch' | 'transform' | 'vt';
-export type TaskStatus = 'waiting' | 'running' | 'completed' | 'failed';
+export type TaskStatus = 'queued' | 'running' | 'completed' | 'failed';
 
 export type TaskQueueRecord<TInput = unknown, TOutput = unknown> = {
   taskId: string;
@@ -39,6 +39,19 @@ export class VtTaskQueueDb extends Dexie {
         '&taskId, nodeId, stage, status, index, stagePriority'
         + ', [nodeId+stage], [nodeId+status], [nodeId+stage+status], [nodeId+stage+stagePriority]',
     });
+    this.version(2).stores({
+      tasks:
+        '&taskId, nodeId, stage, status, index, stagePriority'
+        + ', [nodeId+stage], [nodeId+status], [nodeId+stage+status], [nodeId+stage+stagePriority]',
+    }).upgrade((tx) =>
+      tx.table('tasks')
+        .toCollection()
+        .modify((task) => {
+          if (task.status === 'waiting') {
+            task.status = 'queued';
+          }
+        })
+    );
     this.tasks = this.table('tasks');
   }
 }
@@ -82,7 +95,7 @@ export async function putTasks(
   const payload = tasks.map((task) => ({
     ...task,
     progress: Number.isFinite(task.progress) ? task.progress : 0,
-    status: task.status ?? 'waiting',
+    status: task.status ?? 'queued',
     createdAt: task.createdAt ?? now,
     updatedAt: now,
   }));

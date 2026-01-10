@@ -4,13 +4,14 @@
  */
 
 import type React from 'react';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { Alert, Box, Typography } from '@mui/material';
+import { Suspense, useCallback, useEffect, useMemo, useRef } from 'react';
+import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import type { RouteEntity, RouteUpdaterPayload } from '../../../common/entities/RouteEntity.js';
 import { useTranslation } from '../../../common/i18n/index.js';
 import { getRouteUpdaterPayload } from '../../../common/utils/draft.js';
 import { CountryMatrixSelector, useIsoCountries, type MatrixConfig, type MatrixSelection } from '@hierarchidb/ui-country-select';
 import { ROUTE_MODES, type RouteMode } from '@hierarchidb/route-store';
+import { AuthReadyGate } from '@hierarchidb/ui-auth';
 
 export interface RouteSelectionStepProps {
   draft: RouteUpdaterPayload;
@@ -58,7 +59,7 @@ const resolveModePolicy = (source?: string | null): ModePolicy => {
   }
 };
 
-export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
+const RouteSelectionContent: React.FC<RouteSelectionStepProps> = ({
   draft: draftProp,
   onUpdate,
   onValidationChange,
@@ -266,5 +267,25 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
         </Typography>
       )}
     </Box>
+  );
+};
+
+export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = (props) => {
+  const { t } = useTranslation();
+  return (
+    <Suspense
+      fallback={
+        <Box sx={{ height: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <CircularProgress />
+          <Typography sx={{ ml: 2 }}>
+            {t('auth.loading', 'Checking authentication...')}
+          </Typography>
+        </Box>
+      }
+    >
+      <AuthReadyGate>
+        <RouteSelectionContent {...props} />
+      </AuthReadyGate>
+    </Suspense>
   );
 };

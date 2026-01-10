@@ -9,13 +9,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { IControl } from 'maplibre-gl';
 import type { MapLibreMapInstance } from '../types/maplibre-public.js';
 import type { MapboxOverlay as DeckMapboxOverlay } from '@deck.gl/mapbox';
+import type { Layer, PickingInfo } from '@deck.gl/core';
 import type { MapLibreMapProps } from './MapLibreMap.js';
 
 export interface DeckOverlayProps {
-  layers: any[];
+  layers: Layer[];
   interleaved?: boolean;
-  getTooltip?: (info: any) => any;
-  onClick?: (info: any) => void;
+  getTooltip?: (info: PickingInfo) => DeckTooltip;
+  onClick?: (info: PickingInfo) => void;
 }
 
 export type MapWithDeckGLProps = MapLibreMapProps & {
@@ -26,6 +27,13 @@ type DeckOverlayCtor = typeof DeckMapboxOverlay;
 
 type DeckOverlayControl = IControl & {
   setProps: (props: DeckOverlayProps) => void;
+};
+
+type DeckTooltip = null | string | {
+  text?: string;
+  html?: string;
+  className?: string;
+  style?: Partial<CSSStyleDeclaration>;
 };
 
 let cachedOverlayCtor: DeckOverlayCtor | null = null;
@@ -42,7 +50,7 @@ const normalizeStyle = (style?: React.CSSProperties): SafeStyle | undefined => {
   if (!style) return undefined;
   const { background, ...rest } = style;
   const safeBackground = typeof background === 'string' ? background : undefined;
-  return (safeBackground !== undefined ? { ...rest, background: safeBackground } : { ...rest }) as SafeStyle;
+  return safeBackground !== undefined ? { ...rest, background: safeBackground } : { ...rest };
 };
 
 const getCachedMapLibreComponent = (): MapLibreComponent | null => cachedMapLibreComponent;
@@ -168,7 +176,7 @@ export const MapWithDeckGL: React.FC<MapWithDeckGLProps> = ({ deck, onLoad, ...m
       position: 'relative',
       ...(normalizeStyle(mapProps.style) ?? {}),
     };
-    return <div style={fallbackStyle as any} />;
+    return <div style={fallbackStyle} />;
   }
 
   return <MapComponent {...mapProps} onLoad={handleLoad} />;

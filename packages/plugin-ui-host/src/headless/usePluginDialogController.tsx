@@ -261,7 +261,8 @@ export function usePluginDialogController(
     initialDraftData,
   });
 
-  useAutosave({ open, draft, hasUnsavedChanges, saveDraft, enabled: autosaveEnabled });
+  const [autosaveReady, setAutosaveReady] = useState(false);
+  const autosaveDirtyRef = useRef(false);
 
   const treeUpdater: TreeNodeUpdaterPayload<PluginDefinedEntity> | null = useMemo(
     () =>
@@ -373,6 +374,26 @@ export function usePluginDialogController(
     basicInfo,
     treeUpdater,
     localDraftData: toRecord(localDraftData ?? {}) ?? {},
+  });
+  useEffect(() => {
+    if (!open) {
+      autosaveDirtyRef.current = false;
+      setAutosaveReady(false);
+      return;
+    }
+    const wasDirty = autosaveDirtyRef.current;
+    autosaveDirtyRef.current = dialogDirty;
+    if (!wasDirty && dialogDirty) {
+      setAutosaveReady(true);
+    }
+  }, [dialogDirty, open]);
+
+  useAutosave({
+    open,
+    draft,
+    hasUnsavedChanges,
+    saveDraft,
+    enabled: autosaveEnabled && autosaveReady,
   });
 
   const [regTick, setRegTick] = useState(0);
@@ -526,6 +547,10 @@ export function usePluginDialogController(
     discardDraft,
     onClose,
     updateTreeNodeUpdater,
+    getLocalDraftSnapshot: () => ({
+      draftMetadata: treeUpdater?.draftMetadata ?? null,
+      draftData: treeUpdater?.draftData ?? null,
+    }),
   });
 
   const updateLocalDraft = useCallback(async () => {
@@ -608,8 +633,6 @@ export function usePluginDialogController(
           ? { type: 'step', index: event.targetIndex ?? activeStepIndexRef.current }
           : { type: event.type };
       void runWithPending(action, async () => {
-        const ok = await ensureNoConflictRef.current();
-        if (!ok) return;
         let nextIndex = activeStepIndexRef.current;
         switch (event.type) {
           case 'direct':

@@ -9,6 +9,8 @@ import { createStageWorkerClient, runVectorTileStage } from '@hierarchidb/runtim
 import { encodeFlatGeobufFromFeatureCollection } from '@hierarchidb/gis-sdk';
 import { RouteDB } from './database/RouteDatabase.js';
 import type { RouteVectorTileRecord } from '@hierarchidb/route-store';
+import { updateTask, type TaskStatus } from '@hierarchidb/vt-orchestrator';
+import type { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 
 export interface RouteBatchTask {
   taskId: string;
@@ -38,13 +40,16 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
   private writer: TabularWriter | null = null;
   private writerReady = false;
   private readonly vectorTileFeatures: Feature<LineString, Record<string, unknown>>[] = [];
+  private taskQueue?: VtTaskQueueDb;
 
   constructor(nodeId: NodeId, config: RouteBatchConfig, tasks: RouteBatchTask[], deps?: {
-    generator?: RouteGenerator
+    generator?: RouteGenerator;
+    taskQueue?: VtTaskQueueDb;
   }) {
     super(nodeId, config);
     this.tasks = tasks;
     this.generator = deps?.generator ?? new RouteGenerator({ searoute: new SearouteEngine() });
+    this.taskQueue = deps?.taskQueue;
     // Apply lane cap overrides from config (best-effort, safe parse)
     if (config.laneCaps) {
       this.laneConfig = { ...this.laneConfig, ...pickNumeric(config.laneCaps) };
@@ -77,10 +82,11 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
     const maxConcurrent = this.config.routeGeneration.maxConcurrent;
     const batch = new BatchService();
     let completed = 0;
-    await batch.mapChunks<RouteBatchTask, void>(this.tasks, async (task: RouteBatchTask, index: number) => {
+    await batch.mapChunks<RouteBatchTask, void>(this.tasks, async (task: RouteBatchTask) => {
       if (signal.aborted) {
         throw abortError();
       }
+      await this.updateTaskQueue(task, 'running', 0);
       if (task.taskType === 'route_generation') {
         const method = (task.routeData?.method || this.config.routeGeneration.method) as string;
         const sem = this.getLaneSemaphore(method);
@@ -93,16 +99,22 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
       } else {
         await this.processTask(task);
       }
+      const finalStatus: TaskStatus = task.status === 'completed'
+        ? 'completed'
+        : task.status === 'failed'
+          ? 'failed'
+          : 'running';
+      const progress = finalStatus === 'running' ? 0 : 100;
+      await this.updateTaskQueue(task, finalStatus, progress, task.error);
       completed += 1;
       this.updateProgress({
         total: this.tasks.length,
         completed,
-        currentStage: task.stage,
-        currentTask: `Processing ${task.taskType}#${index}`,
+        taskType: task.stage,
       });
       // Pause handling (poll cursor flag)
       while (this.getState().status === 'paused') {
-        this.updateProgress({ currentTask: `paused:${task.taskType}` });
+        this.updateProgress({ taskType: task.stage });
         await new Promise((resolve) => setTimeout(resolve, 250));
       }
     }, { concurrency: maxConcurrent });
@@ -133,8 +145,28 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
                 taskId: task.taskId,
                 method,
               },
-            });
-          }
+    });
+  }
+
+  private async updateTaskQueue(
+    task: RouteBatchTask,
+    status: TaskStatus,
+    progress: number,
+    errorMessage?: string,
+  ): Promise<void> {
+    if (!this.taskQueue) return;
+    try {
+      await updateTask(this.taskQueue, task.taskId, {
+        status,
+        progress,
+        errorMessage,
+      });
+    } catch (error) {
+      if (typeof console !== 'undefined') {
+        console.warn('[RouteBatchSession] task queue update failed', error);
+      }
+    }
+  }
           if (this.writer && this.writerReady) {
             const row = {
               taskId: task.taskId,
@@ -162,7 +194,7 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
     } catch (error: unknown) {
       task.status = 'failed';
       task.error = error instanceof Error ? error.message : String(error);
-      this.updateProgress({ failed: (this.getProgress().failed || 0) + 1, currentTask: `error:${task.taskType}` });
+      this.updateProgress({ failed: (this.getProgress().failed || 0) + 1, taskType: task.stage });
       if (this.config.routeGeneration.retryOnFailure) {
         // rudimentary retry with small delay
         const max = this.config.routeGeneration.maxRetries || 0;

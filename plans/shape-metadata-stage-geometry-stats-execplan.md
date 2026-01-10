@@ -1,4 +1,4 @@
-# Stage Geometry Stats in Shape Metadata
+# Rebuild shape Step6 metadata stage stats for fetch/transform/vt
 
 This ExecPlan is a living document. The sections `Progress`, `Surprises & Discoveries`, `Decision Log`, and `Outcomes & Retrospective` must be kept up to date as work proceeds.
 
@@ -6,104 +6,108 @@ This plan must be maintained in accordance with `PLANS.md` at the repository roo
 
 ## Purpose / Big Picture
 
-Users need to understand how vertex and polygon counts change from raw downloads through extraction and into vector tiles. After this change, the Step6 metadata table shows one row per origin dataset (the downloaded file unit) with vertex and polygon totals for four stages: raw, extract1, extract2, and vector tiles. A user can build a dataset and immediately see those four pairs of numbers for each origin in the metadata table, instead of relying on a single per-feature statistic whose stage was unclear.
+Shape Step6 currently shows per-origin metadata rows with vertex and polygon counts tied to the old stage naming (raw/extract1/extract2/vector tiles). After this change, the metadata table reflects the current pipeline stages: fetch, transform, and vt. Users will be able to build a shape dataset and immediately see how geometry counts evolve from fetch outputs to transform buffers and finally to vt tiles. The change is visible in Step6: the column headers match fetch/transform/vt, and the numbers update after a build.
 
 ## Progress
 
-- [x] (2025-12-30 12:44 JST) Confirmed the relevant metadata storage and UI entry points for Step6 and located where per-feature vertex/polygon counts are currently generated.
-- [x] (2025-12-30 12:46 JST) Created the initial ExecPlan document.
-- [ ] Maintain this ExecPlan while implementing the change end-to-end.
-- [ ] Define and store stage-level geometry aggregates per origin dataset in the shape metadata DB.
-- [ ] Update vector tile stage to compute aggregates from tile contents grouped by origin.
-- [ ] Update Step6 metadata table to display the new stage-level columns and labels.
-- [ ] Validate manually (and with a targeted test if feasible) that the new aggregates appear after a build.
+- [x] (2026-01-14 10:20 JST) Confirmed Step6 metadata flow, storage tables, and the current vt pipeline entry points.
+- [x] (2026-01-14 11:05 JST) Updated this ExecPlan with fetch/transform/vt stage definitions and storage strategy.
+- [x] (2026-01-14 11:30 JST) Implemented stage-level aggregation for fetch/transform/vt and persisted results to source metadata rows.
+- [x] (2026-01-14 11:35 JST) Updated Step6 UI columns and labels to show fetch/transform/vt counts.
+- [ ] Validate that a build produces the new metadata rows and they render in Step6.
 
 ## Surprises & Discoveries
 
-- Observation: The existing `ShapeTileMetadataDB.featureMetadata` rows are created from extract2 feature buffers inside `plugins/shape-plugin/src/services/batch/SessionController.ts` (`ensureTileFeatureIndex`), not from raw downloads or vector tiles.
-  Evidence: `ensureTileFeatureIndex` decodes extract2 buffers and writes `vertexCount`/`polygonCount` to `featureMetadata`.
+- Observation: the source metadata table exists in `packages/features/vectortile-store/src/tilesDb.ts`, but there is no current writer path in the shape vt pipeline.
+  Evidence: `ShapeMutationService.putSourceMetadata` exists, yet no code calls it during `runShapeVtPipeline`.
+- Observation: stage1 and transform buffers store `featureCount` and `vertexCount` only; polygon counts must be computed and added.
+  Evidence: `packages/vt-shape-store/src/types.ts` only defines `vertexCount` and `featureCount`.
+- Observation: transform outputs are per-band, and each buffer includes boundary features; transform totals must be defined carefully to avoid ambiguity.
+  Evidence: `packages/vt-orchestrator/src/transform/transformStage.ts` adds boundary features per input.
 
 ## Decision Log
 
-- Decision: Treat the “origin dataset” as the unit described by a download output (data source + country/admin level, plus optional feature group identifiers when present).
-  Rationale: Download outputs are the only stable, existing unit shared across stages; they align with the user’s request to aggregate by the downloaded file rather than per-feature.
-  Date/Author: 2025-12-30 / Codex
+- Decision: Use the origin key format `${dataSource}:${sourceKey}` where `sourceKey` is the existing `ISO2:adminLevel` key from fetch tasks.
+  Rationale: it is stable across stages, already available in fetch/transform buffers, and avoids collisions across data sources.
+  Date/Author: 2026-01-14 / Codex
+- Decision: Define transform totals as the sum of per-band transform buffers for a given origin key.
+  Rationale: per-band outputs are the actual persisted transform artifacts used for vt generation; summing them matches “total transform output size” even if features are duplicated across bands.
+  Date/Author: 2026-01-14 / Codex
+- Decision: Compute vt totals by decoding vt tile pbf data and aggregating geometry stats by `__hdbOriginKey` embedded in feature properties.
+  Rationale: vt output is the user-visible result, and the origin key must survive tiling to attribute counts accurately.
+  Date/Author: 2026-01-14 / Codex
 
 ## Outcomes & Retrospective
 
-Pending. This section will be updated after the first milestone and again on completion.
+Pending.
 
 ## Context and Orientation
 
-Step6 metadata currently comes from `ShapeTileMetadataDB.featureMetadata` and is rendered by `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` and `plugins/shape-plugin/src/ui/hooks/preview/useVectorTilePreviewTable.ts`. The feature metadata rows are created in `plugins/shape-plugin/src/services/batch/SessionController.ts` by `ensureTileFeatureIndex`, which reads extract2 buffers and computes vertex/polygon counts per feature. Vector tile generation lives in `packages/features/gis-sdk/src/vectorTiles.ts`, which can also emit per-feature metadata when `metadataEnabled` is true, but the shape pipeline currently disables that.
+Step6 metadata is rendered in `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` and `plugins/shape-plugin/src/ui/hooks/preview/useVectorTilePreviewTable.ts`. The UI calls `ShapeQueryAPI.listSourceMetadata` and displays columns based on `ShapeSourceMetadataRow` from `packages/plugin-service-api/src/types/shapeBatchTypes.ts`.
 
-The requested change is to add a new per-origin aggregate table in `plugins/shape-plugin/src/services/database/ShapeTileMetadataDB.ts`. Each row represents one downloaded origin dataset (typically keyed by data source + country code + admin level, with an optional feature group key when present). Each row stores vertex and polygon totals for four stages. The UI should load this new table and display those totals in Step6.
+The vt pipeline is executed by `plugins/shape-plugin/src/worker/api.ts` through `runShapeVtPipeline` in `plugins/shape-plugin/src/services/vt/shapeVtPipeline.ts`. Fetch outputs are stored in `@hierarchidb/vt-shape-store` (`stage1Buffers`), transform outputs are stored in `transformBandBuffers`, and final vt tiles are stored in `@hierarchidb/vt-store` (`vtTiles`). The metadata tables are defined by `VectorTileDbBase` in `packages/features/vectortile-store/src/tilesDb.ts` and exposed through `@hierarchidb/shape-store`.
 
-“Origin dataset” means the unit derived from `DownloadStageOutput` in `plugins/shape-plugin/src/services/batch/strategies/DownloadStageStrategy.ts`. Each output corresponds to a raw buffer ID and carries `dataSource`, `countryCode`, and `adminLevel`. Some strategies may also set `featureGroupId`/`featureLabel`; those should be part of the origin key when present.
-
-“Vertex” and “polygon” counts are computed from GeoJSON geometries. In the shape pipeline, this logic already exists in `SessionController.extractGeometryStats`, which counts vertices and polygons in a feature. We will reuse that logic to aggregate totals.
+“Origin” means one fetched dataset unit keyed by the fetch task’s `sourceKey`. For shape, `sourceKey` is `ISO2:adminLevel`. The origin key used in metadata will be `${dataSource}:${sourceKey}` and will be embedded into feature properties as `__hdbOriginKey` so that vt tiles can be attributed back to the origin.
 
 ## Plan of Work
 
-First, extend `plugins/shape-plugin/src/services/database/ShapeTileMetadataDB.ts` with a new table, for example `sourceMetadata`, with a new `ShapeSourceMetadataRow` interface. The row should include identifying fields (`originKey`, `dataSource`, `countryCode`, `countryName`, `adminLevel`, optional `featureGroupId`/`featureLabel`) plus `createdAt`, `updatedAt`, and eight numeric counters: raw/extract1/extract2/vectorTile vertex and polygon totals.
+First, update the metadata type definitions. In `packages/plugin-service-api/src/types/shapeBatchTypes.ts`, replace the old raw/extract1/extract2/vectorTile fields with fetch/transform/vt fields. Update any dependent imports, and keep the table indexes in `packages/features/vectortile-store/src/tilesDb.ts` unchanged unless new indexed fields are required (they should not be).
 
-Next, add origin key and label logic to the batch session. In `plugins/shape-plugin/src/services/batch/SessionController.ts`, define a helper that converts `DownloadStageOutput` into a stable origin key string and a user-facing label. Use this to:
+Second, add polygon counts to stage1 and transform buffers. Update `packages/vt-shape-store/src/types.ts` and the `putStage1Buffer` and `putTransformBuffer` helpers to include `polygonCount`. In `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts`, compute both vertex and polygon counts from the fetched FeatureCollection and store them in the stage1 buffer. In `packages/vt-orchestrator/src/transform/transformStage.ts`, compute polygon counts from the transform output features and store them in the transform buffers.
 
-1) Compute raw-stage totals by decoding each output’s raw buffer.
-2) Ensure extract1 and extract2 buffers can be traced back to the same origin key.
+Third, preserve origin keys through the pipeline. In `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts`, inject `__hdbOriginKey` into each feature’s properties before encoding stage1 buffers. This value must be the same origin key that will be used in the metadata rows.
 
-To make vector tile aggregation possible, add a small metadata property on features so the origin survives through the tiling pipeline. Update `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts` to set a property like `__hdbOriginKey` on every feature when writing extract1 outputs (and keep it when extracting). This property will survive into extract2 outputs and vector tiles via GeoJSON-VT.
+Fourth, implement metadata aggregation and persistence in the shape vt pipeline. Add a new helper module under `plugins/shape-plugin/src/services/vt/` (for example `shapeStageMetadata.ts`) that:
 
-After extract1 and extract2 stages complete, compute totals by reading the corresponding extracted buffers and summing geometry stats per origin key. Store the totals by updating the `sourceMetadata` table.
+- Builds a map from `sourceKey` to `{ originKey, originLabel, countryName }` using `metadataLoader` and the fetch payloads.
+- Aggregates fetch counts from `stage1Buffers` (vertex/polygon totals per origin).
+- Aggregates transform counts by summing over `transformBandBuffers` per origin.
+- Aggregates vt counts by decoding `VtDb.vtTiles` and summing geometry stats per `__hdbOriginKey` in each tile feature’s properties.
+- Writes `ShapeSourceMetadataRow` entries through `ShapeMutationAPI.putSourceMetadata` (or `shapeDB.sourceMetadata.bulkPut`) with updated timestamps.
 
-After vector tile generation completes, decode the vector tiles from `TilesDB` and sum geometry stats per origin key by reading the `__hdbOriginKey` property from each tile feature. Then write those totals to the `sourceMetadata` table. Use `@mapbox/vector-tile` and `pbf` for decoding (already available in the shape-plugin dependencies).
+Call this aggregation helper in `runShapeVtPipeline` after each stage completes, or at least once after the vt stage completes. If the data is written only once, ensure that rows include all three stages’ totals at that time.
 
-Finally, update Step6 UI. In `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts`, load the new `sourceMetadata` rows instead of (or in addition to) `featureMetadata`. Update `plugins/shape-plugin/src/ui/hooks/preview/useVectorTilePreviewTable.ts` to render the new columns for the four stages. Add the corresponding labels to `plugins/shape-plugin/src/ui/locales/ja.json` and `plugins/shape-plugin/src/ui/locales/en.json`. Ensure the selection filters still behave sensibly by using `countryCode`/`countryName` and `adminLevel` from the new rows.
+Finally, update the Step6 UI to read and display the new fields. In `plugins/shape-plugin/src/ui/hooks/preview/useVectorTilePreviewTable.ts`, replace `raw/extract1/extract2/vectorTile` columns with fetch/transform/vt columns, update field mapping, and adjust column labels in `plugins/shape-plugin/src/ui/locales/en.json` and `plugins/shape-plugin/src/ui/locales/ja.json`.
 
 ## Concrete Steps
 
-1) Update `plugins/shape-plugin/src/services/database/ShapeTileMetadataDB.ts`:
-   - Add `ShapeSourceMetadataRow` interface.
-   - Add `sourceMetadata` table in a new version (bump to version 4).
-   - Ensure previous tables remain intact.
+All commands are run from the repository root.
 
-2) Add origin key handling and stage aggregation in `plugins/shape-plugin/src/services/batch/SessionController.ts`:
-   - Add a helper to build `originKey` and `originLabel` from `DownloadStageOutput`.
-   - After download postprocess, compute raw totals per output and write to `sourceMetadata`.
-   - After extract1 and extract2, compute totals from extracted buffers and update `sourceMetadata`.
-   - After vector tile stage, decode tiles and update vector tile totals.
+1) Update type definitions and stage buffer schema changes.
+   - Edit `packages/plugin-service-api/src/types/shapeBatchTypes.ts`.
+   - Edit `packages/vt-shape-store/src/types.ts`, `packages/vt-shape-store/src/mutation/stage1Mutation.ts`, and `packages/vt-shape-store/src/mutation/transformMutation.ts`.
 
-3) Preserve origin info in feature properties in `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`:
-   - When constructing extract1 outputs, set `properties.__hdbOriginKey` to the origin key passed via task config.
-   - Ensure extract2 uses the property already present; only set if missing.
+2) Add polygon counts and origin key propagation.
+   - Edit `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts`.
+   - Edit `packages/vt-orchestrator/src/transform/transformStage.ts`.
 
-4) Update UI data loading and table columns:
-   - `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts`: load `sourceMetadata` rows for the active node.
-   - `plugins/shape-plugin/src/ui/hooks/preview/useVectorTilePreviewTable.ts`: map source rows to columns for raw/extract1/extract2/vector tile vertex/polygon counts.
-   - `plugins/shape-plugin/src/ui/locales/ja.json` and `plugins/shape-plugin/src/ui/locales/en.json`: add column labels.
+3) Implement aggregation and persistence.
+   - Add `plugins/shape-plugin/src/services/vt/shapeStageMetadata.ts` (or similar) and call it from `plugins/shape-plugin/src/services/vt/shapeVtPipeline.ts`.
 
-5) Keep this ExecPlan updated with progress, decisions, and surprises as the implementation proceeds.
+4) Update UI columns and labels.
+   - Edit `plugins/shape-plugin/src/ui/hooks/preview/useVectorTilePreviewTable.ts`.
+   - Edit `plugins/shape-plugin/src/ui/locales/en.json` and `plugins/shape-plugin/src/ui/locales/ja.json`.
 
 ## Validation and Acceptance
 
-Run the UI and perform a shape build on a small selection. In Step6, open the metadata tab and confirm that each origin dataset shows all four stages’ vertex/polygon totals. The values should be non-zero when the build produced output for that stage. If a stage was skipped, the totals should remain zero or blank.
+Run a small shape build and open Step6. You should see fetch/transform/vt columns populated per origin row. If a stage has not run, its counts should be zero or empty. The counts should change after a rebuild.
 
-If tests are added, run them from the repo root:
+If running type checks, use:
 
-  pnpm --filter @hierarchidb/shape-plugin test
+  pnpm --filter @hierarchidb/shape-plugin typecheck
 
 ## Idempotence and Recovery
 
-All changes are additive: a new metadata table, new aggregation logic, and new UI columns. Re-running the build should overwrite or update the same `sourceMetadata` rows for a node, because they are keyed by origin and node ID. If a rollback is required, revert the changes in `ShapeTileMetadataDB`, `SessionController`, `shapeStageWorker`, and the UI table files; existing per-feature metadata remains untouched.
+The aggregation is safe to re-run. The origin key is stable, and rows are updated in place using the same `originKey`. If a rollback is required, revert the changes in the aggregation helper, stage buffers, and UI columns, and the system will fall back to the old metadata schema (though any new fields will be ignored).
 
 ## Artifacts and Notes
 
-Expected metadata table column additions in Step6 (example labels):
-
-  Raw Vertices, Raw Polygons, Extract1 Vertices, Extract1 Polygons, Extract2 Vertices, Extract2 Polygons, Tile Vertices, Tile Polygons
+Not applicable yet. Record any notable diffs or validation output here once implemented.
 
 ## Interfaces and Dependencies
 
-Use `plugins/shape-plugin/src/services/database/ShapeTileMetadataDB.ts` for storage. Use `getEphemeralShapeDB()` to access raw and extracted buffers. Use `TilesDB` from `@hierarchidb/gis-sdk` to read vector tiles for the final stage. Decode vector tiles with `@mapbox/vector-tile` and `pbf` (already listed in `plugins/shape-plugin/package.json`). Keep the origin key string stable across stages so UI rows remain consistent.
+The key interfaces are `ShapeSourceMetadataRow` in `packages/plugin-service-api/src/types/shapeBatchTypes.ts`, stage buffer types in `packages/vt-shape-store/src/types.ts`, and vector tile decode helpers from `@mapbox/vector-tile` and `pbf`. The aggregation helper should export a function like `updateShapeStageMetadata(params: { nodeId: NodeId; dataSource: DataSourceName; shapeStore: VtShapeDb; vtStore: VtDb; })` and be called from `runShapeVtPipeline`.
 
-Plan Update Note (2025-12-30 12:46 JST): Marked ExecPlan creation as complete and split the maintenance step into its own ongoing progress item so later updates can track it.
+Plan Update Note (2026-01-14 10:20 JST): Rewrote the ExecPlan to align with the fetch/transform/vt pipeline and the PLANS.md formatting requirements, and to describe the new aggregation, storage, and UI updates.
+
+Plan Update Note (2026-01-14 11:35 JST): Marked implementation steps as complete after updating aggregation logic, metadata storage, and UI columns; left validation pending until a build is run.

@@ -1,4 +1,7 @@
 {
+  "auth": {
+    "loading": "認証状態を確認中..."
+  },
   "styleSettings": {
     "title": "スタイル設定",
     "description": "表データの列の組み合わせを、地図上のスタイルへと対応づけします。",

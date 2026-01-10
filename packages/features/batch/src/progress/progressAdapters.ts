@@ -7,15 +7,12 @@ export function progressEventToUnified(event: BatchProgressEvent): UnifiedProgre
   const failed = typeof payload.failed === 'number' ? payload.failed : 0;
   const basePercentage = total > 0 ? Math.round((completed / total) * 100) : 0;
   const percentage = event.phase === 'completed' ? 100 : Math.min(100, Math.max(0, basePercentage));
-  const currentTask = payload.currentTask ?? event.message ?? event.stage;
-
   return {
     stage: event.stage,
     total,
     completed,
     failed,
     percentage,
-    currentTask,
     phase: event.phase,
     timestamp: event.timestamp,
     payload,

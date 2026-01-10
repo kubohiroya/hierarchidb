@@ -12,7 +12,7 @@ import {
 import { normalizeDataSourceName } from '../../services/utils/utils.js';
 import { clearStagesIfPresent, FULL_INVALIDATION_STAGES } from '../utils/sessionInvalidation.js';
 import type { CountryAvailabilityWorkerAPI, SerializedCountryAvailability } from '../workers/countryAvailability.types.js';
-import { wrap, releaseProxy } from 'comlink';
+import { wrap, releaseProxy, proxy } from 'comlink';
 import { invalidateCountrySelectionCaches } from './countrySelectionReload.js';
 import { NodeId } from '@hierarchidb/common-types';
 import { useDialogUrlSync } from '@hierarchidb/plugin-base';
@@ -179,14 +179,29 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
     worker: Worker;
     api: ReturnType<typeof wrap<CountryAvailabilityWorkerAPI>>;
   } | null>(null);
+  const availabilityBridgeReadyRef = useRef<Promise<void> | null>(null);
   const availabilityRequestIdRef = useRef(0);
 
   useEffect(() => {
     const worker = createAvailabilityWorker();
     const api = wrap<CountryAvailabilityWorkerAPI>(worker);
+    availabilityBridgeReadyRef.current = api.setUiStorageBridge(
+      proxy({
+        getItem: async (key: string) => localStorage.getItem(key),
+        setItem: async (key: string, value: string) => {
+          localStorage.setItem(key, value);
+        },
+        removeItem: async (key: string) => {
+          localStorage.removeItem(key);
+        },
+      }),
+    ).catch((error) => {
+      console.warn('[ShapeCountrySelectionStep] failed to register storage bridge', error);
+    });
     availabilityWorkerRef.current = { worker, api };
     return () => {
       availabilityWorkerRef.current = null;
+      availabilityBridgeReadyRef.current = null;
       try {
         api[releaseProxy]?.();
       } catch (releaseError) {
@@ -203,13 +218,17 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
     }
     const ref = availabilityWorkerRef.current;
     if (!ref) return;
-
     const requestId = availabilityRequestIdRef.current + 1;
     availabilityRequestIdRef.current = requestId;
 
     setAvailabilityLoading(true);
     setAvailabilityError(null);
     try {
+      const bridgeReady = availabilityBridgeReadyRef.current;
+      if (!bridgeReady) {
+        throw new Error('UI storage bridge is not initialized for availability worker');
+      }
+      await bridgeReady;
       const result = await ref.api.loadAvailability(dataSourceKey, nodeId);
       if (requestId !== availabilityRequestIdRef.current) return;
       setAvailability(result);
@@ -234,13 +253,17 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
     }
     const ref = availabilityWorkerRef.current;
     if (!ref) return;
-
     const requestId = metadataRequestIdRef.current + 1;
     metadataRequestIdRef.current = requestId;
 
     setMetadataLoading(true);
     setMetadataError(null);
     try {
+      const bridgeReady = availabilityBridgeReadyRef.current;
+      if (!bridgeReady) {
+        throw new Error('UI storage bridge is not initialized for availability worker');
+      }
+      await bridgeReady;
       if (options?.force) {
         await ref.api.clearMetadataCache(dataSourceKey);
       }

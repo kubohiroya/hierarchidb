@@ -58,11 +58,8 @@ export interface Extract2Config {
 
 export interface TileBatchConfig {
   workers: number;
-  minZoom: number;
-  maxZoom: number;
   bufferSize?: number;
   tileSize?: number;
-  zoomBreakpoints?: number[];
   tileExpandFactor?: number;
   tileExpandMargin?: number;
 }

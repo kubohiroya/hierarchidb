@@ -58,8 +58,7 @@ export interface LocationSessionRecord {
     completed: number;
     failed: number;
     percentage: number;
-    currentStage?: string;
-    currentTask?: string;
+    taskType?: string;
   };
   updatedAt?: number;
   config?: UnifiedLocationBatchConfig;

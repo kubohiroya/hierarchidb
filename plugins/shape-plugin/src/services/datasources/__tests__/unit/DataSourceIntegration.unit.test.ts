@@ -24,13 +24,16 @@ vi.mock('@hierarchidb/auth-recovery', () => {
       return new Response(buf, { status: 200 });
     }
 
-    // GADM ZIP with .gpkg file inside
-    if (url.includes('geodata.ucdavis.edu/gadm')) {
-      const JSZip = (await import('jszip'));
-      const zip = new JSZip();
-      zip.file('gadm41_JPN.gpkg', 'dummy');
-      const buf = await zip.generateAsync({ type: 'arraybuffer' });
-      return new Response(buf, { status: 200 });
+    // GADM JSON (admin0) or JSON ZIP (admin1+)
+    if (url.includes('geodata.ucdavis.edu/gadm/gadm4.1/json/')) {
+      if (url.endsWith('.json.zip')) {
+        const JSZip = (await import('jszip'));
+        const zip = new JSZip();
+        zip.file('gadm41_JPN_1.json', JSON.stringify({ type: 'FeatureCollection', features: [] }));
+        const buf = await zip.generateAsync({ type: 'arraybuffer' });
+        return new Response(buf, { status: 200 });
+      }
+      return new Response(JSON.stringify({ type: 'FeatureCollection', features: [] }), { status: 200 });
     }
 
     // GeoBoundaries metadata and download

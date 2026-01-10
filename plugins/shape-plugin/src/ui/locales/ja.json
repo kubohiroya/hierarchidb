@@ -10,6 +10,9 @@
     "build": { "label": "ビルド" },
     "stage": { "label": "ビルド" }
   },
+  "auth": {
+    "loading": "認証状態を確認中..."
+  },
   "messages": {
     "completeRequired": "ビルド前に必須項目と選択を完了してください。",
     "notImplemented": "Shape のバッチビルドはこのダイアログでは未実装です。"
@@ -47,56 +50,56 @@
   },
   "processing": {
     "fetch": {
-      "title": "取得 / キャッシュ管理"
+      "title": "Fetch"
     },
     "transform": {
-      "title": "変換"
+      "title": "Transform"
     },
     "vt": {
       "title": "VT 生成"
     },
     "download": {
-      "title": "ダウンロード設定 / キャッシュ管理",
-      "workers": "同時ダウンロードのワーカー数",
-      "workersHelp": "同時に実行するダウンロード数を指定します。",
+      "title": "Fetch 設定 / キャッシュ管理",
+      "workers": "Fetch の同時ワーカー数",
+      "workersHelp": "同時に実行する fetch 数を指定します。",
       "retainTitle": "ビルド終了時の中間生成物の保持",
-      "retainDownloadedFiles": "ダウンロード済みファイル",
-      "retainStage1Cache": "一次抽出キャッシュ",
-      "retainStage2Cache": "二次抽出キャッシュ",
+      "retainDownloadedFiles": "fetch キャッシュ",
+      "retainStage1Cache": "Transform キャッシュ（フィルタリング）",
+      "retainStage2Cache": "Transform キャッシュ（前処理）",
       "deleteNowTitle": "即時でのビルド生成物の削除",
-      "deleteDownloadedFiles": "ダウンロード済みファイルを削除",
-      "deleteDownloadedFilesWithCount": "ダウンロード済みファイルを削除 ({{count}}件)",
+      "deleteDownloadedFiles": "fetch キャッシュを削除",
+      "deleteDownloadedFilesWithCount": "fetch キャッシュを削除 ({{count}}件)",
       "deleteLoadingHint": "削除件数を読み込み中...",
-      "deleteStage1Cache": "一次抽出キャッシュを削除",
-      "deleteStage2Cache": "二次抽出キャッシュを削除",
-      "deleteTiles": "タイルを削除",
+      "deleteStage1Cache": "Transform キャッシュ（フィルタリング）を削除",
+      "deleteStage2Cache": "Transform キャッシュ（前処理）を削除",
+      "deleteTiles": "VT キャッシュを削除",
       "deleteMetadata": "メタデータを削除",
       "resetDefaultsAction": "設定値をデフォルトに戻す",
       "timeoutMs": "タイムアウト (ms)",
-      "timeoutHelp": "各ダウンロードの待機時間上限です。",
+      "timeoutHelp": "各 fetch の待機時間上限です。",
       "retryAttempts": "リトライ回数",
       "retryAttemptsHelp": "失敗時に再試行する回数です。",
       "retryDelay": "リトライ間隔 (ms)",
       "retryDelayHelp": "失敗時の再試行までの待機時間です。"
     },
     "extract1": {
-      "title": "一次抽出（最詳細ズーム基準）",
+      "title": "Transform（フィルタリング）",
       "omissionHelp": "有効化の場合には、面積しきい値・最小頂点数・縦横比/ハイブリッド判定により小さな地物が除外されます。"
     },
     "extract2": {
-      "title": "二次抽出（タイル前処理）",
-      "omissionHelp": "有効化の場合には、抽出・量子化で形状が空になる場合に、形状が省略されることがあります。",
-      "extractionModeTitle": "抽出方式",
-      "extractionModeHelp": "タイル前処理で使用する抽出方式を選択します。",
+      "title": "Transform（タイル前処理）",
+      "omissionHelp": "有効化の場合には、前処理・量子化で形状が空になる場合に、形状が省略されることがあります。",
+      "extractionModeTitle": "前処理方式",
+      "extractionModeHelp": "タイル前処理で使用する方式を選択します。",
       "extractionModeOff": "パススルー",
       "extractionModeTopo": "TopoJSONでフィルタリング",
       "extractionModeGeo": "GeoJSONでフィルタリング"
     },
     "filter": {
-      "title": "抽出設定",
-      "workersStage1": "一次抽出のワーカー数",
+      "title": "Transform 設定",
+      "workersStage1": "Transform のワーカー数（フィルタリング）",
       "workersStage1Help": "並列度を増やすと高速化しますがブラウザがメモリ不足で不安定化することがあります。",
-      "workersStage2": "二次抽出（タイル前処理）のワーカー数",
+      "workersStage2": "Transform のワーカー数（前処理）",
       "workersStage2Help": "並列度を増やすと高速化しますがブラウザがメモリ不足で不安定化することがあります。",
       "method": "フィルタリング方法",
       "methodNone": "パススルー",
@@ -104,16 +107,16 @@
       "methodPolygon": "ポリゴンのみ",
       "methodHybrid": "ハイブリッド (推奨)",
       "areaFilterTitle": "面積フィルター",
-      "extractionTitle": "抽出",
+      "extractionTitle": "簡略化",
       "precisionTitle": "精度・圧縮",
-      "methodHelp": "一次抽出前に小さな地物を除外する方法を選びます。",
+      "methodHelp": "Transform 前に小さな地物を除外する方法を選びます。",
       "minimumArea": "最小面積(平方km)",
-      "minimumAreaHelp": "抽出ステージで、この面積より小さい特徴を除外します。",
-      "tolerance": "抽出許容値 (度)",
-      "tolerancePrimary": "簡略化の強さ",
-      "toleranceSecondary": "二次的な簡略化の強さ",
-      "toleranceHelp": "境界線がより直線的になり、細かな入り組みが消える。面積の小さな地物や細い地物が、フィルタ条件と組み合わさって除外されやすくなる。後段（二次抽出／タイル生成）の処理負荷・出力サイズは下がるが、地形の精度は落ちる。",
-      "toleranceHelpStage2": "タイル前処理として、必要な範囲で再抽出を行います。",
+      "minimumAreaHelp": "Transform で、この面積より小さい特徴を除外します。",
+      "tolerance": "簡略化の強さ",
+      "tolerancePrimary": "簡略化の強さ（フィルタリング）",
+      "toleranceSecondary": "簡略化の強さ（前処理）",
+      "toleranceHelp": "境界線がより直線的になり、細かな入り組みが消える。面積の小さな地物や細い地物が、フィルタ条件と組み合わさって除外されやすくなる。後段（Transform 前処理／VT 生成）の処理負荷・出力サイズは下がるが、地形の精度は落ちる。",
+      "toleranceHelpStage2": "タイル前処理として Transform の前処理を行います。",
       "minVertexCount": "最小頂点数",
       "minVertexCountHelp": "頂点数がこの値以上の特徴に面積フィルタを適用します。",
       "quickRejectThreshold": "クイック除外しきい値",
@@ -124,26 +127,20 @@
       "elongatedShapeHelp": "細長い形状の補正係数です。",
       "quantize": "座標値の量子化",
       "quantizeSelected": "選択中: {value}",
-      "quantizeHelp": "タイル前処理で使用する座標量子化です。データ量を抑え、境界整合を安定化します。",
+      "quantizeHelp": "Transform 前処理で使用する座標量子化です。データ量を抑え、境界整合を安定化します。",
       "quantizeStarHelp": "★1は最も粗い丸め（低精度）で、★が増えるほど精度が上がります。",
-      "enablePerFeatureExtraction": "簡略化により国や自治体の省略を許容",
+      "enablePerFeatureExtraction": "Transform により国や自治体の省略を許容",
       "enablePerFeatureExtractionHelp": "形状は省略される場合がありますが、メタデータは残ります。"
     },
     "tile": {
-      "title": "タイル生成（ズーム別最終抽出）",
-      "descriptionTooltip": "ズームごとに最終的な抽出を行い、ベクトルタイルを生成します。",
-      "workers": "タイル生成のワーカー数",
+      "title": "VT 生成",
+      "descriptionTooltip": "選択したズーム範囲でベクトルタイルを生成します。",
+      "workers": "VT 生成のワーカー数",
       "workersHelp": "タイル生成を並列実行する数です。",
       "bufferSize": "タイルマージン (px)",
       "bufferSizeHelp": "タイル境界の欠けを防ぐための余白（バッファ）です。",
-      "maxZoom": "最大ズームレベル",
-      "maxZoomHelp": "生成するタイルの最大ズームです。",
-      "zoomRange": "ズーム範囲",
-      "zoomRangeHelp": "生成対象となるズーム範囲を指定します。",
-      "zoomSegments": "ズーム範囲の分割数",
-      "zoomSegmentsHelp": "ズーム範囲をいくつに分割するかを指定します。",
-      "zoomBreakpoints": "ズーム範囲の区切り",
-      "zoomBreakpointsHelp": "サポート範囲内の区切りズームを指定します。",
+      "zoomBands": "ズーム帯",
+      "zoomBandsSummary": "band0: z0-3\nband1: z3-6\nband2: z6-9\nband3: z9-11（任意）",
       "expandFactor": "タイル拡張係数",
       "expandFactorHelp": "TopoJSON 生成時に周辺タイルを追加する係数です。",
       "expandMargin": "タイル拡張マージン",
@@ -183,14 +180,12 @@
         "createdAt": "作成日",
         "originLabel": "由来",
         "originKey": "由来キー",
-        "rawVertexCount": "元データ頂点数",
-        "rawPolygonCount": "元データポリゴン数",
-        "extract1VertexCount": "一次抽出頂点数",
-        "extract1PolygonCount": "一次抽出ポリゴン数",
-        "extract2VertexCount": "二次抽出頂点数",
-        "extract2PolygonCount": "二次抽出ポリゴン数",
-        "vectorTileVertexCount": "タイル頂点数",
-        "vectorTilePolygonCount": "タイルポリゴン数",
+        "fetchVertexCount": "Fetch 頂点数",
+        "fetchPolygonCount": "Fetch ポリゴン数",
+        "transformVertexCount": "Transform 頂点数",
+        "transformPolygonCount": "Transform ポリゴン数",
+        "vtVertexCount": "VT 頂点数",
+        "vtPolygonCount": "VT ポリゴン数",
         "vertexCount": "頂点数",
         "polygonCount": "ポリゴン数",
         "bbox": "バウンディングボックス",
@@ -228,7 +223,8 @@
       "counts": "{{percentage}}% ・ {{completed}}/{{total}} 完了 ・ 失敗 {{failed}} ・ スキップ {{skipped}}"
     },
     "tasks": {
-      "empty": "タスクがまだありません。"
+      "empty": "タスクがまだありません。",
+      "summaryOnly": "タスクは集計のみ表示されています。詳細一覧は取得できません。"
     },
     "taskStatus": {
       "waiting": "待機中",
@@ -248,31 +244,31 @@
     },
     "stages": {
       "fetch": {
-        "title": "取得",
-        "description": "ソースデータを取得し正規化します。"
+        "title": "Fetch",
+        "description": "データを取得して正規化します。"
       },
       "transform": {
-        "title": "変換",
-        "description": "簡略化とタイル向けのインデックス化を行います。"
+        "title": "Transform",
+        "description": "簡略化とタイル生成用の索引を作成します。"
       },
       "vt": {
         "title": "VT",
         "description": "指定したズーム帯のベクトルタイルを生成します。"
       },
       "download": {
-        "title": "ダウンロード",
-        "description": "ソースデータをダウンロードして正規化します。"
+        "title": "Fetch",
+        "description": "データを取得して正規化します。"
       },
       "extract1": {
-        "title": "抽出（ステージ1）",
-        "description": "選択内容に対して一次抽出を適用します。"
+        "title": "Transform（フィルタリング）",
+        "description": "元データをフィルタリングして簡略化します。"
       },
       "extract2": {
-        "title": "抽出（ステージ2）",
-        "description": "タイル生成用に抽出バッファを準備します。"
+        "title": "Transform（前処理）",
+        "description": "タイル生成のために前処理を行います。"
       },
       "vectorTiles": {
-        "title": "ベクトルタイル",
+        "title": "VT",
         "description": "選択したズーム範囲のベクトルタイルを生成します。"
       }
     }

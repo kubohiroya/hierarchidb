@@ -28,9 +28,9 @@ import {
   type ShapeDB,
 } from '@hierarchidb/shape-store';
 import {
-  countDownloadBuffersForNode,
-  listDownloadMetadataForNode,
-  readDownloadBuffer,
+  countRawDataDataSourceBuffersForNode,
+  listRawDataDataSourceMetadataForNode,
+  readRawDataDataSourceBuffer,
 } from './shapeChunkStore.js';
 
 const toProgressSummary = (progress: ProgressInfo): ShapeBatchProgressSummary => ({
@@ -39,8 +39,7 @@ const toProgressSummary = (progress: ProgressInfo): ShapeBatchProgressSummary =>
   failed: progress.failed,
   skipped: progress.skipped,
   percentage: progress.percentage,
-  currentStage: progress.currentStage,
-  currentTask: progress.currentTask,
+  taskType: progress.taskType,
 });
 
 const toShapeBatchSessionRecord = (session: BatchSessionRecord): ShapeBatchSessionRecord => {
@@ -88,8 +87,6 @@ const toTaskSummary = (task: BatchTaskRecord): ShapeBatchTaskSummary => ({
   index: task.index,
   progress: task.progress,
   message: task.message,
-  startedAt: task.startedAt,
-  completedAt: task.completedAt,
   errorMessage: task.errorMessage,
 });
 
@@ -181,7 +178,7 @@ export class ShapeQueryService implements ShapeQueryAPI {
       totalVectorTiles,
       hasErrors: latest.status === 'failed',
       errorMessages: latest.status === 'failed' ? ['Batch processing failed'] : [],
-      stage: latest.progress?.currentStage,
+      stage: latest.progress?.taskType,
       progress: latest.progress?.percentage,
       lastUpdated: latest.updatedAt,
     };
@@ -267,11 +264,11 @@ export class ShapeQueryService implements ShapeQueryAPI {
   }
 
   async listRawBuffers(nodeId: NodeId): Promise<ShapeRawBufferRecord[]> {
-    const metadata = await listDownloadMetadataForNode(nodeId);
+    const metadata = await listRawDataDataSourceMetadataForNode(nodeId);
     const records = await Promise.all(metadata.map(async (entry) => {
       const cacheKey = entry.cacheKey;
       if (!cacheKey) return null;
-      const data = await readDownloadBuffer(nodeId, cacheKey);
+      const data = await readRawDataDataSourceBuffer(nodeId, cacheKey);
       if (!data) return null;
       return {
         id: cacheKey,
@@ -288,7 +285,7 @@ export class ShapeQueryService implements ShapeQueryAPI {
   }
 
   async getRawBuffer(nodeId: NodeId, bufferId: string): Promise<ShapeRawBufferRecord | null> {
-    const data = await readDownloadBuffer(nodeId, bufferId);
+    const data = await readRawDataDataSourceBuffer(nodeId, bufferId);
     if (!data) return null;
     return {
       id: bufferId,
@@ -303,7 +300,7 @@ export class ShapeQueryService implements ShapeQueryAPI {
   }
 
   async countRawBuffers(nodeId: NodeId): Promise<number> {
-    return countDownloadBuffersForNode(nodeId);
+    return countRawDataDataSourceBuffersForNode(nodeId);
   }
 
   async listExtractedBuffers(

@@ -1,11 +1,20 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import { VtTaskQueueDb, deleteTasksByNode, putTasks, runTransform, runVt } from '@hierarchidb/vt-orchestrator';
-import type { TaskQueueRecord } from '@hierarchidb/vt-orchestrator';
+import {
+  VtTaskQueueDb,
+  deleteTasksByNode,
+  putTasks,
+  runStageTasks,
+  createTransformHandler,
+  createVtHandler,
+} from '@hierarchidb/vt-orchestrator';
+import type { TaskQueueRecord, StageHandler } from '@hierarchidb/vt-orchestrator';
 import { VtShapeDb, listStage1Buffers, listBufferIdsByTile } from '@hierarchidb/vt-shape-store';
 import { VtDb } from '@hierarchidb/vt-store';
-import type { BatchConfig, DataSourceName, DownloadTaskPayload, SelectedArrayByCountries } from '../../common/types/index.js';
+import type { BatchConfig, CountryMetadata, DataSourceName, DownloadTaskPayload, SelectedArrayByCountries } from '../../common/types/index.js';
 import { DEFAULT_PROCESSING_CONFIG } from '../../common/types/constants.js';
 import { runShapeFetchStage } from './shapeFetchStage.js';
+import { updateShapeStageMetadata } from './shapeStageMetadata.js';
+import { metadataLoader } from '../metadata/MetadataLoader.js';
 
 type ShapeTransformTaskInput = {
   stage1BufferId: string;
@@ -14,6 +23,7 @@ type ShapeTransformTaskInput = {
   sourceKey: string;
   stagePriority?: number;
   countryCode?: string;
+  countryName?: string;
   adminLevel?: number;
 };
 
@@ -34,9 +44,9 @@ const DEFAULT_TASK_SPLIT = {
 
 const buildBands = (enableBand3: boolean) => {
   const bands = [
-    { bandId: 0, zMin: 0, zMax: 2, zBase: 0 },
-    { bandId: 1, zMin: 3, zMax: 5, zBase: 3 },
-    { bandId: 2, zMin: 6, zMax: 8, zBase: 6 },
+    { bandId: 0, zMin: 0, zMax: 3, zBase: 0 },
+    { bandId: 1, zMin: 3, zMax: 6, zBase: 3 },
+    { bandId: 2, zMin: 6, zMax: 9, zBase: 6 },
   ];
   if (enableBand3) {
     bands.push({ bandId: 3, zMin: 9, zMax: 11, zBase: 9 });
@@ -58,6 +68,7 @@ const buildTransformTasks = async (
   shapeStore: VtShapeDb,
   bands: Array<{ bandId: number; zMin: number; zMax: number; zBase: number }>,
   enableBand3: boolean,
+  countryLookup: Map<string, CountryMetadata>,
 ): Promise<Array<TaskQueueRecord<ShapeTransformTaskInput>>> => {
   const buffers = await listStage1Buffers(shapeStore, nodeId);
   const tasks: Array<TaskQueueRecord<ShapeTransformTaskInput>> = [];
@@ -66,6 +77,8 @@ const buildTransformTasks = async (
   for (const buffer of buffers) {
     const adminLevel = buffer.adminLevel;
     const stagePriority = typeof adminLevel === 'number' ? adminLevel : 0;
+    const countryCode = buffer.countryCode?.trim().toUpperCase();
+    const countryMeta = countryCode ? countryLookup.get(countryCode) : undefined;
     for (const band of bands) {
       if (band.bandId === 3) {
         if (!enableBand3) continue;
@@ -75,7 +88,7 @@ const buildTransformTasks = async (
         taskId: `${String(nodeId)}:transform:${band.bandId}:${buffer.sourceKey}`,
         nodeId,
         stage: 'transform',
-        status: 'waiting',
+        status: 'queued',
         index,
         stagePriority,
         progress: 0,
@@ -85,7 +98,8 @@ const buildTransformTasks = async (
           domainType: 'shape',
           sourceKey: buffer.sourceKey,
           stagePriority,
-          countryCode: buffer.countryCode,
+          countryCode,
+          countryName: countryMeta?.countryName,
           adminLevel: buffer.adminLevel,
         },
       });
@@ -93,6 +107,18 @@ const buildTransformTasks = async (
     }
   }
   return tasks;
+};
+
+const buildCountryLookup = (metadata: CountryMetadata[]): Map<string, CountryMetadata> => {
+  const map = new Map<string, CountryMetadata>();
+  metadata.forEach((entry) => {
+    const iso2 = entry.iso2?.trim().toUpperCase() ?? entry.countryCode?.trim().toUpperCase();
+    const iso3 = entry.iso3?.trim().toUpperCase();
+    if (iso2) map.set(iso2, entry);
+    if (iso3) map.set(iso3, entry);
+    if (entry.countryCode) map.set(entry.countryCode.trim().toUpperCase(), entry);
+  });
+  return map;
 };
 
 const splitBufferIds = (
@@ -165,7 +191,7 @@ const buildVtTasks = async (
           taskId: `${String(nodeId)}:vt:${band.bandId}:${band.zBase}:${tileId}:${chunkIndex}`,
           nodeId,
           stage: 'vt',
-          status: 'waiting',
+          status: 'queued',
           index,
           progress: 0,
           inputData: {
@@ -218,6 +244,7 @@ export type ShapeVtPipelineParams = {
   batchConfig: BatchConfig;
   selectedArrayByCountries?: SelectedArrayByCountries;
   downloadTaskPayloads?: DownloadTaskPayload[];
+  waitIfPaused?: () => Promise<void>;
 };
 
 export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise<void> => {
@@ -226,6 +253,8 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
   const vtStore = new VtDb();
   await deleteTasksByNode(taskQueue, params.nodeId);
 
+  const metadata = await metadataLoader.loadMetadata(params.dataSource, params.nodeId);
+  const countryLookup = buildCountryLookup(metadata);
   const enableBand3 = hasBand3Selection(params.selectedArrayByCountries, params.downloadTaskPayloads);
   const bands = buildBands(enableBand3);
 
@@ -237,20 +266,26 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
     batchConfig: params.batchConfig,
     taskQueue,
     shapeStore,
+    metadata,
+    waitIfPaused: params.waitIfPaused,
   });
 
-  const transformTasks = await buildTransformTasks(params.nodeId, shapeStore, bands, enableBand3);
+  const transformTasks = await buildTransformTasks(params.nodeId, shapeStore, bands, enableBand3, countryLookup);
   if (transformTasks.length > 0) {
+    await params.waitIfPaused?.();
     await putTasks(taskQueue, transformTasks as Array<TaskQueueRecord<ShapeTransformTaskInput>>);
-    await runTransform({
+    const transformHandler = createTransformHandler({
+      shapeStore,
+      transformConfig: resolveTransformConfig(params.batchConfig),
+      bands,
+      maxBand3Reservations: DEFAULT_TASK_SPLIT.maxBand3Reservations,
+    });
+    await runStageTasks({
+      db: taskQueue,
       nodeId: params.nodeId,
-      taskQueue,
-      transformContext: {
-        shapeStore,
-        transformConfig: resolveTransformConfig(params.batchConfig),
-        bands,
-        maxBand3Reservations: DEFAULT_TASK_SPLIT.maxBand3Reservations,
-      },
+      stage: 'transform',
+      handler: transformHandler as unknown as StageHandler<ShapeTransformTaskInput>,
+      waitIfPaused: params.waitIfPaused,
     });
   }
 
@@ -263,16 +298,27 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
     DEFAULT_TASK_SPLIT.maxVerticesPerTask,
   );
   if (vtTasks.length > 0) {
+    await params.waitIfPaused?.();
     await putTasks(taskQueue, vtTasks as Array<TaskQueueRecord<ShapeVtTaskInput>>);
-    await runVt({
+    const vtHandler = createVtHandler({
+      shapeStore,
+      vtStore,
+      vtConfig: resolveVtConfig(params.batchConfig),
+      bands,
+    });
+    await runStageTasks({
+      db: taskQueue,
       nodeId: params.nodeId,
-      taskQueue,
-      vtContext: {
-        shapeStore,
-        vtStore,
-        vtConfig: resolveVtConfig(params.batchConfig),
-        bands,
-      },
+      stage: 'vt',
+      handler: vtHandler as unknown as StageHandler<ShapeVtTaskInput>,
+      waitIfPaused: params.waitIfPaused,
     });
   }
+
+  await updateShapeStageMetadata({
+    nodeId: params.nodeId,
+    dataSource: params.dataSource,
+    shapeStore,
+    vtStore,
+  });
 };

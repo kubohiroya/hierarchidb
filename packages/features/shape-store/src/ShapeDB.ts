@@ -60,11 +60,8 @@ export interface ExtractSession2Config {
 
 export interface GenerateVectorTilesConfig {
   concurrentProcesses: number;
-  minZoom: number;
-  maxZoom: number;
   bufferSize?: number;
   tileSize?: number;
-  zoomBreakpoints?: number[];
   tileExpandFactor?: number;
   tileExpandMargin?: number;
 }
@@ -79,8 +76,6 @@ export interface BatchSessionConfig extends CommonSessionConfig {
   quantize?: number;
   extract?: number;
   tolerance?: number;
-  maxZoom?: number;
-  minZoom?: number;
   featureAreaThreshold?: number;
   minVertexCountForAreaFilter?: number;
   enableFeatureFiltering?: boolean;
@@ -96,7 +91,7 @@ export interface BatchSessionConfig extends CommonSessionConfig {
 export type BatchProcessConfig = BatchSessionConfig;
 export type BatchTaskType = 'download' | 'extract1' | 'extract2' | 'vectortile' | 'fetch' | 'transform' | 'vt';
 export type ProcessingStage = BatchTaskType;
-export type TaskStatus = 'waiting' | 'running' | 'completed' | 'failed' | 'regression';
+export type TaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'regression';
 
 export interface ProgressInfo {
   total: number;
@@ -104,8 +99,7 @@ export interface ProgressInfo {
   failed: number;
   skipped: number;
   percentage: number;
-  currentStage?: ProcessingStage | 'processing';
-  currentTask?: string;
+  taskType?: ProcessingStage | 'processing';
 }
 
 export interface StageStatus {
@@ -246,8 +240,6 @@ export type Extract2TaskOutputData = {
 
 export type VectorTileTaskInputData = {
   inputBufferId: string;
-  minZoom?: number;
-  maxZoom?: number;
   tileZ?: number;
   tileX?: number;
   tileY?: number;
@@ -299,10 +291,6 @@ export interface BatchTaskRecord<TInput = ShapeBatchTaskInputData, TOutput = Sha
   index: number;
   progress: number;
   message?: string;
-  startedAt?: number;
-  completedAt?: number;
-  createdAt?: number;
-  updatedAt?: number;
   retryCount?: number;
   inputData?: TInput;
   outputData?: TOutput;

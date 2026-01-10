@@ -85,7 +85,7 @@ export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = Bas
       this.state.lastActivity = this.state.completedAt;
       this.emitProgress({
         phase: 'completed',
-        stage: this.progress.currentStage ?? 'completed',
+        stage: this.progress.taskType ?? 'completed',
         payload: this.toProgressPayload(),
       });
       await this.onComplete();
@@ -95,7 +95,7 @@ export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = Bas
         this.state.error = 'Session aborted';
         this.emitProgress({
           phase: 'failed',
-          stage: this.progress.currentStage ?? 'failed',
+          stage: this.progress.taskType ?? 'failed',
           payload: this.toProgressPayload(),
         });
         throw abortError('Session aborted');
@@ -105,7 +105,7 @@ export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = Bas
       this.state.completedAt = Date.now();
       this.emitProgress({
         phase: 'failed',
-        stage: this.progress.currentStage ?? 'failed',
+        stage: this.progress.taskType ?? 'failed',
         error: formatProgressError(error),
         payload: this.toProgressPayload(),
       });
@@ -123,7 +123,7 @@ export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = Bas
     this.state.status = 'paused';
     this.state.lastActivity = Date.now();
     await this.onPause();
-    this.emitProgress({ phase: 'paused', stage: this.progress.currentStage ?? 'paused', payload: this.toProgressPayload() });
+    this.emitProgress({ phase: 'paused', stage: this.progress.taskType ?? 'paused', payload: this.toProgressPayload() });
   }
 
   async resume(): Promise<void> {
@@ -133,7 +133,7 @@ export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = Bas
     this.state.status = 'running';
     this.state.lastActivity = Date.now();
     await this.onResume();
-    this.emitProgress({ phase: 'running', stage: this.progress.currentStage ?? 'running', payload: this.toProgressPayload() });
+    this.emitProgress({ phase: 'running', stage: this.progress.taskType ?? 'running', payload: this.toProgressPayload() });
   }
 
   addBatchProgressListener(listener: (event: BatchProgressEvent) => void): () => void {
@@ -154,20 +154,20 @@ export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = Bas
       merged.percentage = Math.min(100, Math.round((merged.completed / total) * 100));
     }
     if (stage) {
-      merged.currentStage = stage;
+      merged.taskType = stage;
     }
     this.progress = merged;
     this.state.lastActivity = Date.now();
     this.emitProgress({
-      stage: merged.currentStage ?? stage ?? 'unknown',
+      stage: merged.taskType ?? stage ?? 'unknown',
       phase: this.state.status === 'running' ? 'running' : (this.state.status as ProgressPhase),
       payload: this.toProgressPayload(),
     });
   }
 
   protected toProgressPayload(): BatchProgressPayload {
-    const { total, completed, failed, skipped, currentTask, estimatedTimeRemaining } = this.progress;
-    return { total, completed, failed, skipped, currentTask, estimatedTimeRemaining };
+    const { total, completed, failed, skipped, estimatedTimeRemaining } = this.progress;
+    return { total, completed, failed, skipped, estimatedTimeRemaining };
   }
 
   protected emitProgress(event: Partial<BatchProgressEvent>): void {
@@ -178,7 +178,7 @@ export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = Bas
         : event.error;
     const full: BatchProgressEvent = {
       nodeId: this.nodeId,
-      stage: event.stage ?? this.progress.currentStage ?? 'unknown',
+      stage: event.stage ?? this.progress.taskType ?? 'unknown',
       phase: event.phase ?? (this.state.status as ProgressPhase),
       timestamp: Date.now(),
       payload: event.payload,

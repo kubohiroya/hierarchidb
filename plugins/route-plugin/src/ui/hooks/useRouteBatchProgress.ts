@@ -34,23 +34,21 @@ export function useRouteBatchProgress(nodeId: NodeId | null, _deps?: unknown): R
 
   const {
     progress,
-    rawStatus,
+    status: derivedStatus,
   } = usePluginBatchProgress<UnifiedProgressInfo, BatchSessionStatus>(
     ROUTE_NODE_TYPE,
     nodeId,
     {
       autoSubscribe: true,
-      enablePollingFallback: true,
-      mapStatusToUnified: statusToUnified,
       mapUnifiedToProgress: (info) => info ?? null,
-      mapUnifiedToStatus: (_info, nextStatus) => nextStatus,
+      mapUnifiedToStatus: (info) => (nodeId && info ? toBatchSessionStatus(nodeId, info) : null),
     },
   );
 
   useEffect(() => {
-    if (!rawStatus) return;
-    setStatus(rawStatus);
-  }, [rawStatus]);
+    if (!derivedStatus) return;
+    setStatus(derivedStatus);
+  }, [derivedStatus]);
 
   const [snapshot, setSnapshot] = useState<UnifiedProgressInfo | null>(null);
   useEffect(() => {
@@ -119,69 +117,38 @@ export function useRouteBatchProgress(nodeId: NodeId | null, _deps?: unknown): R
   };
 }
 
-function statusToUnified(status: BatchSessionStatus): UnifiedProgressInfo {
-  const progress = status.progress ?? {};
-  const total = numeric(progress.total);
-  const completed = numeric(progress.completed);
-  const failed = numeric(progress.failed);
-  const phase = mapStatusToPhase(status.status);
-  const percentage = computePercentage(phase, total, completed, progress.percentage);
-  const meta: Record<string, unknown> = {};
-  if (status.error) {
-    meta.lastError = status.error;
-    meta.errors = [status.error];
-  }
-
+function toBatchSessionStatus(nodeId: NodeId, info: UnifiedProgressInfo): BatchSessionStatus {
+  const phase = info.phase as ProgressPhase | undefined;
   return {
-    stage: progress.currentStage ?? 'processing',
-    total,
-    completed,
-    failed,
-    percentage,
-    currentTask: progress.currentTask ?? progress.currentStage ?? 'processing',
-    phase,
-    timestamp: status.lastActivity ?? Date.now(),
-    payload: {
-      total,
-      completed,
-      failed,
-      currentTask: progress.currentTask ?? progress.currentStage ?? 'processing',
-      ...(Object.keys(meta).length > 0 ? { meta } : {}),
+    nodeId,
+    status: mapPhaseToStatus(phase),
+    progress: {
+      total: info.total ?? 0,
+      completed: info.completed ?? 0,
+      failed: info.failed ?? 0,
+      skipped: typeof info.payload?.skipped === 'number' ? info.payload?.skipped : undefined,
+      percentage: typeof info.percentage === 'number' ? info.percentage : 0,
+      taskType: info.stage,
     },
-    message: status.error,
-    nodeId: status.nodeId,
+    lastActivity: typeof info.timestamp === 'number' ? info.timestamp : Date.now(),
+    error: typeof info.message === 'string' ? info.message : undefined,
   };
 }
 
-function numeric(value: number | undefined): number {
-  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
-}
-
-function computePercentage(
-  phase: string | undefined,
-  total: number,
-  completed: number,
-  provided?: number,
-): number {
-  if (phase === 'completed') return 100;
-  if (typeof provided === 'number' && Number.isFinite(provided)) return provided;
-  if (total > 0) {
-    return Math.max(0, Math.min(100, Math.round((completed / total) * 100)));
-  }
-  return 0;
-}
-
-function mapStatusToPhase(status: BatchSessionStatus['status']): ProgressPhase {
-  switch (status) {
+function mapPhaseToStatus(phase?: ProgressPhase): BatchSessionStatus['status'] {
+  switch (phase) {
     case 'completed':
       return 'completed';
     case 'failed':
+    case 'regression':
       return 'failed';
     case 'paused':
       return 'paused';
-    case 'idle':
-      return 'queued';
-  default:
+    case 'queued':
+      return 'idle';
+    case 'warning':
+    case 'running':
+    default:
       return 'running';
   }
 }

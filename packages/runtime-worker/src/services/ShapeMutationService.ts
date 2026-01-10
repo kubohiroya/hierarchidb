@@ -10,7 +10,7 @@ import type {
   ShapeSourceMetadataRow,
   ShapeVectorTileRecord,
 } from '@hierarchidb/plugin-service-api';
-import { storeDownloadBufferForNode } from './shapeChunkStore.js';
+import { storeRawDataDataSourceBufferForNode } from './shapeChunkStore.js';
 import { getEphemeralShapeDB } from '@hierarchidb/shape-store';
 import type {
   BatchProcessConfig,
@@ -32,7 +32,7 @@ const isNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
 
 const isTaskStatus = (value: unknown): value is StageStatus['status'] =>
-  value === 'waiting'
+  value === 'queued'
   || value === 'running'
   || value === 'completed'
   || value === 'failed'
@@ -62,13 +62,12 @@ const toProgressInfo = (progress: ShapeBatchProgressSummary): ProgressInfo => ({
   failed: progress.failed,
   skipped: progress.skipped,
   percentage: progress.percentage,
-  currentStage: toProcessingStage(progress.currentStage),
-  currentTask: progress.currentTask,
+  taskType: toProcessingStage(progress.taskType),
 });
 
 const toProcessingStage = (
-  stage: ShapeBatchProgressSummary['currentStage'],
-): ProgressInfo['currentStage'] => {
+  stage: ShapeBatchProgressSummary['taskType'],
+): ProgressInfo['taskType'] => {
   if (stage === 'processing') return stage;
   if (
     stage === 'download'
@@ -86,7 +85,7 @@ const toProcessingStage = (
 
 const toStageMap = (stages: Record<string, unknown>): Record<ProcessingStage, StageStatus> => {
   const empty: StageStatus = {
-    status: 'waiting',
+    status: 'queued',
     progress: 0,
     tasksTotal: 0,
     tasksCompleted: 0,
@@ -297,16 +296,13 @@ export class ShapeMutationService implements ShapeMutationAPI {
   async updateBatchTask(taskId: string, updates: Partial<ShapeBatchTaskRecord>): Promise<void> {
     await this.ensureOpen();
     const ephemeral = getEphemeralShapeDB();
-    await ephemeral.batchTasks.update?.(taskId, {
-      ...updates,
-      updatedAt: updates.updatedAt ?? Date.now(),
-    });
+    await ephemeral.batchTasks.update?.(taskId, updates);
   }
 
   async putRawBuffers(buffers: ShapeRawBufferRecord[]): Promise<void> {
     if (buffers.length === 0) return;
     await Promise.all(buffers.map((buffer) => (
-      storeDownloadBufferForNode({
+      storeRawDataDataSourceBufferForNode({
         nodeId: buffer.nodeId,
         cacheKey: buffer.id,
         buffer: buffer.data,

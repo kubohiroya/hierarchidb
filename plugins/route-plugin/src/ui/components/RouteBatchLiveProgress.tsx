@@ -26,7 +26,7 @@ export function RouteBatchLiveProgress({ jobId }: { jobId: string }) {
   }, [progress?.percentage]);
 
   const phaseKey = progress?.phase ?? status?.status ?? (isPaused ? 'paused' : 'running');
-  const stageKey = progress?.stage ?? progress?.currentTask ?? '';
+  const stageKey = progress?.stage ?? '';
   const stages = translations.batch?.stages as Record<string, string> | undefined;
   const phases = translations.batch?.phases as Record<string, string> | undefined;
   const phaseLabel = phaseKey ? phases?.[phaseKey] ?? phaseKey : 'running';

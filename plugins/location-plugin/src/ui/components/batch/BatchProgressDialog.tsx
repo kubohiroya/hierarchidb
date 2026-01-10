@@ -59,7 +59,7 @@ interface ProgressInfo {
   percentage: number;
   phase: string;
   phaseLabel: string;
-  currentTask: string;
+  taskLabel: string;
   timeElapsed: string;
   timeRemaining: string;
   estimatedCompletion: string;
@@ -155,7 +155,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
     progress: locationProgress,
     unifiedProgress,
   } = useLocationProgress(nodeId, { autoSubscribe: true });
-  const showAuthRequired = locationProgress?.stage === 'auth-required';
+  const showAuthRequired = locationProgress?.taskType === 'auth-required';
   const phaseLabel = useCallback((phase: string) => {
     const phases = translations.batch?.phases;
     if (isRecord(phases)) {
@@ -172,11 +172,10 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
     const completed = typeof payload?.completed === 'number' ? payload.completed : locationProgress?.completed ?? 0;
     const failed = typeof payload?.failed === 'number' ? payload.failed : locationProgress?.failed ?? 0;
     const percentageRaw = unifiedProgress?.percentage ?? locationProgress?.percentage ?? 0;
-    const phase = (unifiedProgress?.phase ?? locationProgress?.stage ?? 'running').toLowerCase();
+    const phase = (unifiedProgress?.phase ?? locationProgress?.taskType ?? 'running').toLowerCase();
     const phaseText = phaseLabel(phase);
-    const currentTask = unifiedProgress?.currentTask
-      ?? payload?.currentTask
-      ?? locationProgress?.currentTask
+    const taskLabel = unifiedProgress?.message
+      ?? locationProgress?.message
       ?? phaseText;
     const { itemsPerSecond = 0, bytesPerSecond = 0 } = extractThroughputMeta(payload?.meta);
 
@@ -184,7 +183,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
       percentage: Math.max(0, Math.min(100, Math.round(percentageRaw))),
       phase,
       phaseLabel: phaseText,
-      currentTask,
+      taskLabel,
       timeElapsed: '--:--:--',
       timeRemaining: '--:--:--',
       estimatedCompletion: '--:--',
@@ -204,7 +203,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
   ]), [translations.batch?.stages]);
 
   const stages: StageInfo[] = useMemo(() => {
-    const normalizedStage = (unifiedProgress?.stage ?? locationProgress?.stage ?? '').toLowerCase();
+    const normalizedStage = (unifiedProgress?.stage ?? locationProgress?.taskType ?? '').toLowerCase();
     const currentIndex = stageDefinitions.findIndex((stage) => normalizedStage.includes(stage.id));
     return stageDefinitions.map((stage, index) => {
       let status: StageInfo['status'];
@@ -238,7 +237,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
   const activeTasks = useMemo<ActiveTask[]>(() => [], []);
 
   const logs: LogEntry[] = useMemo(() => {
-    if (!locationProgress?.currentTask && !locationProgress?.message) {
+    if (!locationProgress?.message) {
       return [];
     }
 
@@ -246,9 +245,9 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
       timestamp: new Date(locationProgress?.timestamp ?? Date.now()),
       level: 'info',
       source: 'BatchWorker',
-      message: locationProgress?.currentTask ?? locationProgress?.message ?? translations.batch?.logsDefault ?? 'Running',
+      message: locationProgress?.message ?? translations.batch?.logsDefault ?? 'Running',
     }];
-  }, [locationProgress?.currentTask, locationProgress?.message, locationProgress?.timestamp, translations.batch?.logsDefault]);
+  }, [locationProgress?.message, locationProgress?.timestamp, translations.batch?.logsDefault]);
 
   const [isPaused, setIsPaused] = useState(false);
 
@@ -327,7 +326,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
 
         <Box mt={2}>
           <Box display="flex" justifyContent="space-between" mb={1}>
-            <Typography variant="body2">{derivedProgress.currentTask}</Typography>
+            <Typography variant="body2">{derivedProgress.taskLabel}</Typography>
             <Typography variant="body2">{derivedProgress.percentage}%</Typography>
           </Box>
           <LinearProgress
@@ -360,7 +359,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
         {showAuthRequired ? (
           <Alert severity="warning" sx={{ m: 2 }}>
             {`🔐 ${formatTemplate(translations.batch?.authRequired ?? 'Authentication required — {message}', {
-              message: locationProgress?.currentTask ?? translations.batch?.authFallback ?? 'Authentication required to continue',
+              message: locationProgress?.message ?? translations.batch?.authFallback ?? 'Authentication required to continue',
             })}`}
           </Alert>
         ) : null}

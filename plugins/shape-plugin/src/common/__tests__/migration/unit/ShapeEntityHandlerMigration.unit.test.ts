@@ -255,8 +255,6 @@ describe('ShapeEntityHandler Migration Tests', () => {
         },
         vectorTiles: {
           concurrentProcesses: 4,
-          minZoom: 0,
-          maxZoom: 8,
         },
       };
 
@@ -303,8 +301,6 @@ describe('ShapeEntityHandler Migration Tests', () => {
         },
         vectorTiles: {
           concurrentProcesses: 4,
-          minZoom: 0,
-          maxZoom: 8,
         },
       };
 

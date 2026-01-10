@@ -129,7 +129,6 @@ export function progressEventToUnified(event: BatchProgressEvent): UnifiedProgre
   const failed = typeof payload.failed === 'number' ? payload.failed : 0;
   const basePercentage = total > 0 ? Math.round((completed / total) * 100) : 0;
   const percentage = event.phase === 'completed' ? 100 : Math.min(100, Math.max(0, basePercentage));
-  const currentTask = payload.currentTask ?? event.message ?? event.stage;
 
   return {
     stage: event.stage,
@@ -137,7 +136,6 @@ export function progressEventToUnified(event: BatchProgressEvent): UnifiedProgre
     completed,
     failed,
     percentage,
-    currentTask,
     phase: event.phase,
     timestamp: event.timestamp,
     payload,
@@ -165,7 +163,7 @@ type SubscribeResult = Unsubscribe | Promise<Unsubscribe>;
 
 export function useBatchProgress(
   adapter: BatchProgressAdapter | null,
-  { autoSubscribe = true, poll }: UseBatchProgressOptions = {},
+  { autoSubscribe = true }: UseBatchProgressOptions = {},
 ) {
   const [progress, setProgress] = useState<UnifiedProgressInfo | null>(null);
   const [subscribed, setSubscribed] = useState(false);
@@ -201,21 +199,6 @@ export function useBatchProgress(
     };
   }, [adapter, autoSubscribe, subscribe, unsubscribe]);
 
-  useEffect(() => {
-    if (!poll) return;
-    if (progress?.phase === 'completed' || progress?.phase === 'failed') return;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const tick = async () => {
-      const value = await poll();
-      if (value) setProgress(value);
-      timer = setTimeout(tick, 2000);
-    };
-    void tick();
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [poll, progress?.phase]);
-
   return { progress, subscribed, subscribe, unsubscribe } as const;
 }
 
@@ -227,7 +210,6 @@ export function usePluginBatchProgress<TProgress>(
   return {
     progress: null as TProgress | null,
     unifiedProgress: null,
-    isSubscribed: false,
     error: null as Error | null,
     subscribe: () => undefined,
     unsubscribe: () => undefined,

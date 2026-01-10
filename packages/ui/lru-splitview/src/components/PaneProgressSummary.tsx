@@ -1,19 +1,15 @@
-import { Chip } from '@mui/material';
+import { Chip, Stack } from '@mui/material';
 import type { PaneProgress } from '../types/LRUSplitView.js';
 
 type Props = {
   summary: NonNullable<PaneProgress['summary']>;
 };
 
-const buildLabel = (summary: NonNullable<PaneProgress['summary']>): string => {
+const buildCompletedLabel = (summary: NonNullable<PaneProgress['summary']>): string => {
   const { total, success, error, skip } = summary;
   if (total === 0) return '0 / 0';
-  const isComplete = success + skip >= total && error === 0;
-  const numerator = isComplete ? total : Math.min(success, total);
-  const base = `${numerator}/${total}`;
-  const skipPart = skip > 0 ? ` skip ${skip}` : '';
-  const errorPart = error > 0 ? ` | ${error}` : '';
-  return `${base}${skipPart}${errorPart}`;
+  const numerator = Math.min(success + skip, total);
+  return `Completed ${numerator}/${total}`;
 };
 
 const resolveColor = (summary: NonNullable<PaneProgress['summary']>): 'default' | 'success' | 'warning' | 'error' => {
@@ -26,12 +22,24 @@ const resolveColor = (summary: NonNullable<PaneProgress['summary']>): 'default' 
 
 export const PaneProgressSummary: React.FC<Props> = ({ summary }) => {
   const color = resolveColor(summary);
+  const failedCount = summary.error ?? 0;
+  const completedColor = failedCount > 0 ? 'default' : color;
   return (
-    <Chip
-      label={buildLabel(summary)}
-      size="small"
-      color={color}
-      variant={color === 'default' ? 'outlined' : 'filled'}
-    />
+    <Stack direction="row" spacing={0.5} alignItems="center">
+      {failedCount > 0 ? (
+        <Chip
+          label={`Failed ${failedCount}`}
+          size="small"
+          color="error"
+          variant="filled"
+        />
+      ) : null}
+      <Chip
+        label={buildCompletedLabel(summary)}
+        size="small"
+        color={completedColor}
+        variant={completedColor === 'default' ? 'outlined' : 'filled'}
+      />
+    </Stack>
   );
 };

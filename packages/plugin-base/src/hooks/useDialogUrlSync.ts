@@ -78,18 +78,33 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
     const normalizedPath = pathOnly?.startsWith('/') ? pathOnly : `/${pathOnly}`;
     const segments = normalizedPath.split('/').filter(Boolean);
     const tIndex = segments.indexOf('t');
-    if (tIndex < 0 || segments.length < tIndex + 6) return null;
-    const modeSegment = segments[tIndex + 6];
-    const stepSegment = segments[tIndex + 7];
-    const parsedMode =
-      modeSegment === 'full' || modeSegment === 'maximize' || modeSegment === 'normal'
-        ? modeSegment
-        : undefined;
-    const parsedStep = stepSegment !== undefined ? Number(stepSegment) : undefined;
+    if (tIndex < 0 || segments.length < tIndex + 7) return null;
+    const modeCandidate = segments[tIndex + 6];
+    const nextModeCandidate = segments[tIndex + 7];
+    const nextStepCandidate = segments[tIndex + 8];
+    const parseMode = (value?: string) => (
+      value === 'full' || value === 'maximize' || value === 'normal' ? value : undefined
+    );
+    let modeIndex = tIndex + 6;
+    let stepIndex = tIndex + 7;
+    let parsedMode = parseMode(modeCandidate);
+    let parsedStep = nextModeCandidate !== undefined ? Number(nextModeCandidate) : undefined;
+    if (!parsedMode && nextModeCandidate) {
+      parsedMode = parseMode(nextModeCandidate);
+      modeIndex = tIndex + 7;
+      stepIndex = tIndex + 8;
+      parsedStep = nextStepCandidate !== undefined ? Number(nextStepCandidate) : undefined;
+    }
+    if (!parsedMode && !nextModeCandidate) {
+      modeIndex = tIndex + 7;
+      stepIndex = tIndex + 8;
+    }
     return {
       usesHashRouting,
       segments,
       tIndex,
+      modeIndex,
+      stepIndex,
       mode: parsedMode,
       step: Number.isFinite(parsedStep) ? parsedStep : undefined,
     };
@@ -179,7 +194,7 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
         const currentStep = dialogPath.step ?? fields.step ?? defaults?.step ?? 1;
         const modeValue = fields.mode ?? currentMode ?? 'normal';
         const stepValue = Math.max(fields.step ?? currentStep ?? 1, 1);
-        const baseSegments = dialogPath.segments.slice(0, dialogPath.tIndex + 6);
+        const baseSegments = dialogPath.segments.slice(0, dialogPath.modeIndex);
         const nextSegments = [...baseSegments, modeValue, String(stepValue)];
         const nextPath = `/${nextSegments.join('/')}`;
 

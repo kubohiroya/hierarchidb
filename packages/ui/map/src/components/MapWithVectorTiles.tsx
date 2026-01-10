@@ -10,6 +10,7 @@ import { VectorTileLayer } from './VectorTileLayer.js';
 import {
   type BaseMapProps,
   DEFAULT_MAP_CONFIG,
+  type MapClickEvent,
   type VectorTileDataSource,
   type VectorTileLayerConfig,
 } from '../types/unified-map-props.js';
@@ -28,7 +29,7 @@ const normalizeStyle = (style?: React.CSSProperties): SafeStyle | undefined => {
   if (!style) return undefined;
   const { background, ...rest } = style;
   const safeBackground = typeof background === 'string' ? background : undefined;
-  return (safeBackground !== undefined ? { ...rest, background: safeBackground } : { ...rest }) as SafeStyle;
+  return safeBackground !== undefined ? { ...rest, background: safeBackground } : { ...rest };
 };
 
 const loadMapLibreComponent = async (): Promise<MapLibreComponent> => {
@@ -69,7 +70,7 @@ export type MapWithVectorTilesProps = BaseMapProps & VectorTileDataSource & {
   /**
    * @deprecated Use onClick instead
    */
-  onMapClick?: (event: any) => void;
+  onMapClick?: (event: MapClickEvent) => void;
 };
 
 // Default values from unified config
@@ -132,7 +133,7 @@ export const MapWithVectorTiles: React.FC<MapWithVectorTilesProps> = ({
       position: 'relative',
       ...(normalizeStyle(style) ?? {}),
     };
-    return <div style={fallbackStyle as any} />;
+    return <div style={fallbackStyle} />;
   }
 
   // Merge layer config with backward compatibility support
@@ -146,7 +147,7 @@ export const MapWithVectorTiles: React.FC<MapWithVectorTilesProps> = ({
       {...mapStyleProps}
       width={width}
       height={height}
-      style={normalizeStyle(style) as any}
+      style={normalizeStyle(style)}
       onLoad={handleMapLoad}
       onViewStateChange={onViewStateChange}
       onClick={onClick || onMapClick}

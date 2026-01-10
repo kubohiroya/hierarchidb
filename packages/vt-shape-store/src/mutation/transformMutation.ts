@@ -20,6 +20,7 @@ export async function putTransformBuffer(
     data: payload.data,
     featureCount: payload.featureCount,
     vertexCount: payload.vertexCount,
+    polygonCount: payload.polygonCount,
     timestamp: payload.timestamp ?? Date.now(),
   };
   await db.transformBandBuffers.put(buffer);

@@ -85,8 +85,6 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       : null;
   const nodeKey = activeNodeId;
   const processingStatus = data?.processingStatus ?? null;
-  const minZoom = previewDraft.batchConfig?.tileConfig?.minZoom;
-  const maxZoom = previewDraft.batchConfig?.tileConfig?.maxZoom;
   const [tilesAvailable, setTilesAvailable] = useState(false);
   const [tilesChecking, setTilesChecking] = useState(false);
   const baseLayerId = 'shape-preview';
@@ -316,20 +314,19 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   }, [filteredMetadataRows]);
 
   const initialViewState = useMemo<MapWithVectorTilesProps['initialViewState']>(() => {
-    const zoom = typeof minZoom === 'number' ? minZoom : DEFAULT_VIEW.zoom;
     if (!selectionBounds) {
-      return { ...DEFAULT_VIEW, zoom };
+      return DEFAULT_VIEW;
     }
     const centerLng = (selectionBounds.minLng + selectionBounds.maxLng) / 2;
     const centerLat = (selectionBounds.minLat + selectionBounds.maxLat) / 2;
     return {
       longitude: centerLng,
       latitude: centerLat,
-      zoom,
+      zoom: DEFAULT_VIEW.zoom,
       bearing: 0,
       pitch: 0,
     };
-  }, [minZoom, selectionBounds]);
+  }, [selectionBounds]);
 
   useEffect(() => {
     if (!mapInstance || !selectionBounds) return;
@@ -340,7 +337,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     mapInstance.fitBounds(bounds, {
       padding: 24,
     });
-  }, [mapInstance, minZoom, selectionBounds]);
+  }, [mapInstance, selectionBounds]);
 
   const getRowId = useCallback((row: ShapeSourceMetadataRow) => row.originKey, []);
   const buildSearchText = useCallback((row: ShapeSourceMetadataRow) => {
@@ -532,8 +529,6 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     mapInstance,
     setMapInstance,
     handleMapIdentify,
-    minZoom,
-    maxZoom,
     defaultView: initialViewState,
     selectionDataSource,
   };

@@ -23,7 +23,7 @@ const isSkippedTask = (task: BatchTaskSummary): boolean => {
 
 export const useBuildTaskProgress = (
   stages: BuildStage[],
-  currentStage: string | undefined,
+  taskType: string | undefined,
   overallProgress: number,
   buildStatus: BuildStatus,
   tasks: BatchTaskSummary[],
@@ -36,7 +36,7 @@ export const useBuildTaskProgress = (
       });
       return map;
     }
-    const stageIndex = stages.findIndex((stage) => stage.id === currentStage);
+    const stageIndex = stages.findIndex((stage) => stage.id === taskType);
     stages.forEach((stage, idx) => {
       if (stageIndex < 0) {
         map[stage.id] = 0;
@@ -49,7 +49,7 @@ export const useBuildTaskProgress = (
       }
     });
     return map;
-  }, [buildStatus, currentStage, overallProgress, stages]);
+  }, [buildStatus, taskType, overallProgress, stages]);
 
   const tasksByStage = useMemo(() => {
     const grouped: Record<string, BatchTaskSummary[]> = {};

@@ -10,6 +10,9 @@
     "build": { "label": "Build" },
     "stage": { "label": "Build" }
   },
+  "auth": {
+    "loading": "Checking authentication..."
+  },
   "messages": {
     "completeRequired": "Complete required fields and selections before building.",
     "notImplemented": "Shape batch build is not yet implemented in this dialog."
@@ -47,7 +50,7 @@
   },
   "processing": {
     "fetch": {
-      "title": "Fetch / Cache Management"
+      "title": "Fetch"
     },
     "transform": {
       "title": "Transform"
@@ -56,47 +59,47 @@
       "title": "VT Generation"
     },
     "download": {
-      "title": "Download Setting / Cache Management",
-      "workers": "Number of Workers for Concurrent Download",
-      "workersHelp": "Controls how many downloads run in parallel.",
+      "title": "Fetch Settings / Cache Management",
+      "workers": "Concurrent Fetch Workers",
+      "workersHelp": "Controls how many fetches run in parallel.",
       "retainTitle": "Retain intermediate outputs after build",
-      "retainDownloadedFiles": "Downloaded files",
-      "retainStage1Cache": "extract1 cache",
-      "retainStage2Cache": "extract2 cache",
+      "retainDownloadedFiles": "Fetch cache",
+      "retainStage1Cache": "Transform cache (filtering)",
+      "retainStage2Cache": "Transform cache (preprocessing)",
       "deleteNowTitle": "Delete build outputs immediately",
-      "deleteDownloadedFiles": "Delete Downloaded Files",
-      "deleteDownloadedFilesWithCount": "Delete Downloaded Files ({{count}} files)",
+      "deleteDownloadedFiles": "Delete fetch cache",
+      "deleteDownloadedFilesWithCount": "Delete fetch cache ({{count}} items)",
       "deleteLoadingHint": "Loading delete counts...",
-      "deleteStage1Cache": "Delete extract1 cache",
-      "deleteStage2Cache": "Delete extract2 cache",
-      "deleteTiles": "Delete Tiles",
+      "deleteStage1Cache": "Delete transform cache (filtering)",
+      "deleteStage2Cache": "Delete transform cache (preprocessing)",
+      "deleteTiles": "Delete vt cache",
       "deleteMetadata": "Delete Metadata",
       "resetDefaultsAction": "Reset to defaults",
       "timeoutMs": "Timeout (ms)",
-      "timeoutHelp": "Maximum time to wait for each download before failing.",
+      "timeoutHelp": "Maximum time to wait for each fetch before failing.",
       "retryAttempts": "Retry Attempts",
-      "retryAttemptsHelp": "Number of retries per failed download request.",
+      "retryAttemptsHelp": "Number of retries per failed fetch request.",
       "retryDelay": "Retry Delay (ms)",
-      "retryDelayHelp": "Wait time between retry attempts when a download fails."
+      "retryDelayHelp": "Wait time between retry attempts when a fetch fails."
     },
     "extract1": {
-      "title": "Primary Extraction (Max Zoom Based)",
+      "title": "Transform (Filtering)",
       "omissionHelp": "When enabled, small features may be removed based on area threshold, minimum vertex count, or hybrid filtering."
     },
     "extract2": {
-      "title": "Secondary Extraction (Tile Preprocessing)",
-      "omissionHelp": "When enabled, extraction/quantization can remove empty geometries.",
-      "extractionModeTitle": "Extraction Mode",
-      "extractionModeHelp": "Choose how geometry is extracted during tile preprocessing.",
+      "title": "Transform (Tile Preprocessing)",
+      "omissionHelp": "When enabled, preprocessing/quantization can remove empty geometries.",
+      "extractionModeTitle": "Preprocessing Mode",
+      "extractionModeHelp": "Choose how geometry is prepared during tile preprocessing.",
       "extractionModeOff": "Pass-through",
       "extractionModeTopo": "TopoJSON",
       "extractionModeGeo": "GeoJSON"
     },
     "filter": {
-      "title": "Extraction Setting",
-      "workersStage1": "Worker Count for Primary Extraction",
+      "title": "Transform Settings",
+      "workersStage1": "Transform Workers (Filtering)",
       "workersStage1Help": "Higher concurrency can speed up processing but may exhaust browser memory.",
-      "workersStage2": "Worker Count for Secondary Extraction (Tile Preprocessing)",
+      "workersStage2": "Transform Workers (Preprocessing)",
       "workersStage2Help": "Higher concurrency can speed up processing but may exhaust browser memory.",
       "method": "Filtering Method",
       "methodNone": "Pass-through",
@@ -104,16 +107,16 @@
       "methodPolygon": "Polygon Only",
       "methodHybrid": "Hybrid (Recommended)",
       "areaFilterTitle": "Area Filter",
-      "extractionTitle": "Extraction",
+      "extractionTitle": "Simplification",
       "precisionTitle": "Precision & Compression",
-      "methodHelp": "Selects how small features are filtered before primary extraction.",
+      "methodHelp": "Selects how small features are filtered before transform.",
       "minimumArea": "Minimum Area (sq km)",
-      "minimumAreaHelp": "Filters out features smaller than this area during the extract stage.",
-      "tolerance": "Extraction Tolerance (degrees)",
-      "tolerancePrimary": "degree of simplification",
-      "toleranceSecondary": "Secondary Degree of Simplification",
-      "toleranceHelp": "Higher values straighten boundaries and remove fine details. Small or thin features are more likely to be filtered out in combination with the filters. Downstream (secondary extraction and tile generation) becomes lighter and smaller, but geometric fidelity decreases.",
-      "toleranceHelpStage2": "Applies secondary extraction for tile preprocessing.",
+      "minimumAreaHelp": "Filters out features smaller than this area during transform.",
+      "tolerance": "Simplification Strength",
+      "tolerancePrimary": "Simplification strength (filtering)",
+      "toleranceSecondary": "Simplification strength (preprocessing)",
+      "toleranceHelp": "Higher values straighten boundaries and remove fine details. Small or thin features are more likely to be filtered out in combination with the filters. Downstream (transform preprocessing and VT generation) becomes lighter and smaller, but geometric fidelity decreases.",
+      "toleranceHelpStage2": "Applies transform preprocessing for tile generation.",
       "minVertexCount": "Min Vertex Count",
       "minVertexCountHelp": "Only apply area filtering when feature vertices exceed this count.",
       "quickRejectThreshold": "Quick Reject Threshold",
@@ -124,26 +127,20 @@
       "elongatedShapeHelp": "Correction factor for elongated simple shapes.",
       "quantize": "Coordinate Quantization",
       "quantizeSelected": "Selected: {value}",
-      "quantizeHelp": "Coordinate quantization used in tile preprocessing to reduce size and stabilize boundaries.",
+      "quantizeHelp": "Coordinate quantization used in transform preprocessing to reduce size and stabilize boundaries.",
       "quantizeStarHelp": "★1 is the coarsest rounding (lowest precision); higher stars increase precision.",
-      "enablePerFeatureExtraction": "Allow extraction to omit countries or municipalities",
+      "enablePerFeatureExtraction": "Allow transform to omit countries or municipalities",
       "enablePerFeatureExtractionHelp": "Geometries may be omitted, but metadata is retained."
     },
     "tile": {
-      "title": "Tile Generation (Zoom-Aware Final Extraction)",
-      "descriptionTooltip": "Performs final zoom-aware extraction and generates vector tiles.",
-      "workers": "Worker Count for Tile Generation",
+      "title": "VT Generation",
+      "descriptionTooltip": "Generates vector tiles for the selected zoom range.",
+      "workers": "VT Worker Count",
       "workersHelp": "Parallel workers for tile generation.",
       "bufferSize": "Tile Margin (px)",
       "bufferSizeHelp": "Extra margin to avoid visible seams at tile edges.",
-      "maxZoom": "Max Zoom Level",
-      "maxZoomHelp": "Highest zoom level to generate tiles for.",
-      "zoomRange": "Zoom Range",
-      "zoomRangeHelp": "Generate tiles within this zoom range.",
-      "zoomSegments": "Zoom Range Segments",
-      "zoomSegmentsHelp": "Number of zoom ranges to segment.",
-      "zoomBreakpoints": "Zoom Range Breakpoints",
-      "zoomBreakpointsHelp": "Set breakpoints inside the supported zoom range.",
+      "zoomBands": "Zoom bands",
+      "zoomBandsSummary": "band0: z0-3\nband1: z3-6\nband2: z6-9\nband3: z9-11 (optional)",
       "expandFactor": "Tile Expansion Factor",
       "expandFactorHelp": "Extra tiles to include around each group when building TopoJSON.",
       "expandMargin": "Tile Expansion Margin",
@@ -183,14 +180,12 @@
         "createdAt": "Created At",
         "originLabel": "Origin",
         "originKey": "Origin Key",
-        "rawVertexCount": "Raw Vertices",
-        "rawPolygonCount": "Raw Polygons",
-        "extract1VertexCount": "Extract1 Vertices",
-        "extract1PolygonCount": "Extract1 Polygons",
-        "extract2VertexCount": "Extract2 Vertices",
-        "extract2PolygonCount": "Extract2 Polygons",
-        "vectorTileVertexCount": "Tile Vertices",
-        "vectorTilePolygonCount": "Tile Polygons",
+        "fetchVertexCount": "Fetch Vertices",
+        "fetchPolygonCount": "Fetch Polygons",
+        "transformVertexCount": "Transform Vertices",
+        "transformPolygonCount": "Transform Polygons",
+        "vtVertexCount": "VT Vertices",
+        "vtPolygonCount": "VT Polygons",
         "vertexCount": "Vertices",
         "polygonCount": "Polygons",
         "bbox": "Bounding Box",
@@ -228,7 +223,8 @@
       "counts": "{{percentage}}% ・ {{completed}}/{{total}} completed ・ failed {{failed}} ・ skipped {{skipped}}"
     },
     "tasks": {
-      "empty": "No tasks yet."
+      "empty": "No tasks yet.",
+      "summaryOnly": "Tasks are summarized. Detailed list is unavailable."
     },
     "taskStatus": {
       "waiting": "Waiting",
@@ -260,19 +256,19 @@
         "description": "Generate vector tiles for the selected zoom range."
       },
       "download": {
-        "title": "Download",
-        "description": "Download and normalize source data."
+        "title": "Fetch",
+        "description": "Fetch and normalize source data."
       },
       "extract1": {
-        "title": "Extract (Stage 1)",
-        "description": "Apply primary extraction for selections."
+        "title": "Transform (Filtering)",
+        "description": "Filter and simplify source buffers."
       },
       "extract2": {
-        "title": "Extract (Stage 2)",
-        "description": "Prepare extracted buffers for tile generation."
+        "title": "Transform (Preprocessing)",
+        "description": "Prepare buffers for tile generation."
       },
       "vectorTiles": {
-        "title": "Vector Tiles",
+        "title": "VT",
         "description": "Generate vector tiles for the selected zoom range."
       }
     }

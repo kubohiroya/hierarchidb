@@ -25,8 +25,7 @@ export class LocationBatchSession extends AbstractBatchSession<LocationBatchConf
         total: ev.total,
         completed: ev.completed,
         failed: ev.failed,
-        currentStage: ev.stage,
-        currentTask: ev.currentTask,
+        taskType: ev.taskType,
       });
     });
     await this.controller.start();
@@ -51,12 +50,12 @@ export class LocationBatchSession extends AbstractBatchSession<LocationBatchConf
 
     const legacyEvent: ProgressEvent = {
       nodeId: event.nodeId,
-      stage: event.stage,
+      taskType: event.stage,
       total,
       completed,
       failed,
       percentage,
-      currentTask: payload.currentTask ?? '',
+      message: event.message,
     };
     this.sink?.(legacyEvent);
   }

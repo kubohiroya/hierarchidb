@@ -10,6 +10,7 @@ import type { RouteGenerationConfig } from '../common/entities/RouteEntity.js';
 import type { RouteBatchConfig } from '../common/types/BatchConfig.js';
 import { RouteBatchSession, type RouteBatchTask } from './RouteBatchSession.js';
 import type { BatchProgressEvent } from '@hierarchidb/common-api';
+import { VtTaskQueueDb, putTasks, type TaskQueueRecord, type TaskStage } from '@hierarchidb/vt-orchestrator';
 
 export type ProgressUpdate = { jobId: string; progress: number; phase: string; ts: number };
 export type ProgressEmitter = { emit?: (event: ProgressUpdate) => void };
@@ -146,8 +147,11 @@ export class RouteBatchManager {
     // Store route-specific tasks
     this.routeSpecificTasks.set(nodeId, routeTasks);
 
+    const taskQueue = new VtTaskQueueDb();
+    await putTasks(taskQueue, routeTasks.map((task) => toTaskQueueRecord(task)));
+
     // Start processing using Shape's infrastructure
-    const session = new RouteBatchSession(nodeId, config, routeTasks);
+    const session = new RouteBatchSession(nodeId, config, routeTasks, { taskQueue });
     this.activeSessions.set(nodeId, session);
     const unsubscribe = session.addBatchProgressListener((event: BatchProgressEvent) => this.emitProgressEvent(event));
     await session.initialize();
@@ -288,6 +292,35 @@ export class RouteBatchManager {
       r: routes.map(r => ({ s: r.startCoordinates, e: r.endCoordinates, m: r.method })).slice(0, 200),
     };
     return hashCyrb53(stableStringify(payload));
+  }
+}
+
+function toTaskQueueRecord(task: RouteBatchTask): TaskQueueRecord {
+  return {
+    taskId: task.taskId,
+    nodeId: task.nodeId,
+    stage: mapRouteStageToVtStage(task.stage),
+    status: 'queued',
+    index: task.index,
+    progress: 0,
+    inputData: {
+      taskType: task.taskType,
+      routeData: task.routeData,
+    },
+  };
+}
+
+function mapRouteStageToVtStage(stage: string): TaskStage {
+  switch (stage) {
+    case 'download':
+      return 'fetch';
+    case 'extract1':
+    case 'extract2':
+      return 'transform';
+    case 'vectortile':
+      return 'vt';
+    default:
+      throw new Error(`Unsupported route stage for vt task queue: ${stage}`);
   }
 }
 

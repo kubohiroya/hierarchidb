@@ -7,20 +7,20 @@ import type {
   PluginType,
   AuthSource,
 } from '@hierarchidb/common-auth/AuthNotificationSystem';
-import { AUTH_CONSTANTS, AuthNotificationFactory, AuthNotificationRegistry } from '@hierarchidb/common-auth/AuthNotificationSystem';
-
-type Pending = {
-  resolve: (r: Response) => void;
-  reject: (e: Error) => void;
-  timeout: ReturnType<typeof setTimeout>;
-  context: { requestId: string; url: string; init: RequestInit; ctx: AuthContext };
-};
+import { AuthNotificationFactory, AuthNotificationRegistry } from '@hierarchidb/common-auth/AuthNotificationSystem';
 
 type UiStorageBridge = {
   getItem(key: string): Promise<string | null>;
   setItem(key: string, value: string): Promise<void>;
   removeItem(key: string): Promise<void>;
 };
+
+class AuthRequiredError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'AuthRequiredError';
+  }
+}
 
 /**
  * AuthService
@@ -30,15 +30,11 @@ type UiStorageBridge = {
  */
 export class AuthService implements AuthHeadersProvider {
   private registry = AuthNotificationRegistry.getInstance();
-  private pending = new Map<string, Pending>();
-  private currentToken?: { token: string; type: 'Bearer' | 'Basic'; expiresAt?: number };
   private uiStorage?: UiStorageBridge;
 
   // Prevent immediate re-prompt loops after user cancels.
   private cancelledUntilByScope = new Map<AuthScope, number>();
 
-  // Coalesce concurrent auth prompts per scope.
-  private inFlightAuthByScope = new Map<AuthScope, Promise<Response>>();
 
   static async getSingleton(): Promise<AuthService> {
     // Keep singleton key stable so existing instances are reused.
@@ -46,26 +42,32 @@ export class AuthService implements AuthHeadersProvider {
   }
 
   constructor() {
-    // Listen for success/cancel notifications from UI (bridged via common-auth).
     this.registry.register('features-auth-recovery', {
       onAuthRequired: async (_notification: AuthRequiredNotification) => {
         // No-op: the fetcher initiates auth flows directly via awaitAuth.
       },
-      onAuthSuccess: async (notification: AuthSuccessNotification) => this.onAuthSuccess(
-        notification.context.requestId,
-        notification.context.newToken,
-        notification.context.tokenType || 'Bearer',
-        notification.context.expiresAt,
-      ),
-      onAuthCancelled: async (notification: AuthCancelledNotification) => this.onAuthCancelled(
-        notification.context.requestId,
-        notification.context.reason,
-      ),
+      onAuthSuccess: async (_notification: AuthSuccessNotification) => {},
+      onAuthCancelled: async (_notification: AuthCancelledNotification) => {},
     });
   }
 
-  setToken(token: string, type: 'Bearer' | 'Basic' = 'Bearer', expiresAt?: number): void {
-    this.currentToken = { token, type, expiresAt };
+  setToken(token: string, _type: 'Bearer' | 'Basic' = 'Bearer', expiresAt?: number): void {
+    const write = async (): Promise<void> => {
+      if (this.uiStorage) {
+        await this.uiStorage.setItem('access_token', token);
+        if (typeof expiresAt === 'number') {
+          await this.uiStorage.setItem('token_expires_at', String(expiresAt));
+        }
+        return;
+      }
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('access_token', token);
+        if (typeof expiresAt === 'number') {
+          localStorage.setItem('token_expires_at', String(expiresAt));
+        }
+      }
+    };
+    void write();
   }
 
   async setUiStorageBridge(bridge: UiStorageBridge): Promise<void> {
@@ -74,14 +76,8 @@ export class AuthService implements AuthHeadersProvider {
   }
 
   async getAuthHeaders(): Promise<Record<string, string>> {
-    // If no in-memory token, reuse BFF access_token persisted by UI localStorage.
-    if (!this.currentToken?.token) {
-      const storedToken = await this.resolveStoredToken();
-      if (storedToken) {
-        this.setToken(storedToken, 'Bearer');
-      }
-    }
-    return this.currentToken?.token ? { Authorization: `${this.currentToken.type} ${this.currentToken.token}` } : {};
+    const storedToken = await this.resolveStoredToken();
+    return storedToken ? { Authorization: `Bearer ${storedToken}` } : {};
   }
 
   private isAuthDebugEnabled(): boolean {
@@ -93,7 +89,7 @@ export class AuthService implements AuthHeadersProvider {
   }
 
   async fetchWithAuth(url: string, init: RequestInit = {}, ctx: AuthContext = {}): Promise<Response> {
-    const maxRetries = ctx.maxRetries ?? AUTH_CONSTANTS.MAX_RETRY_COUNT;
+    const maxRetries = ctx.maxRetries ?? 3;
     const scope: AuthScope = ctx.scope ?? 'shape';
     let attempt = 0;
     let lastErr: unknown;
@@ -102,41 +98,6 @@ export class AuthService implements AuthHeadersProvider {
         const headers = new Headers(init.headers);
         const auth = await this.getAuthHeaders();
         Object.entries(auth).forEach(([k, v]) => headers.set(k, v));
-
-        // If we're about to call a CORS proxy endpoint without a token, prompt auth first.
-        // This avoids a guaranteed 401 round-trip and reduces the chance of "Loading..." stalls.
-        if (!headers.has('Authorization') && isLikelyCorsProxyUrl(url)) {
-          if (this.isCancelledCooldownActive(scope)) {
-            throw new Error(`Authentication was cancelled for scope "${scope}"`);
-          }
-
-          const inFlight = this.inFlightAuthByScope.get(scope);
-          if (inFlight) {
-            const res = await inFlight;
-            if (res.status !== 401) return res;
-            lastErr = new Error(`HTTP ${res.status}`);
-            continue;
-          }
-
-          if (this.isAuthDebugEnabled()) {
-            console.debug('[auth][service] no token for cors-proxy url -> awaiting auth (preflight)', { scope, url });
-          }
-          const requestId = `auth-req-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-          const authPromise = this.awaitAuth(requestId, url, init, { sessionId: ctx.sessionId, scope, maxRetries }, {
-            errorCode: 0,
-            errorMessage: 'Missing authentication token',
-            source: 'cors-proxy',
-          })
-            .finally(() => {
-              this.inFlightAuthByScope.delete(scope);
-            });
-          this.inFlightAuthByScope.set(scope, authPromise);
-          // Wait for auth (or cancellation), then reuse the authenticated response.
-          const res = await authPromise;
-          if (res.status !== 401) return res;
-          lastErr = new Error(`HTTP ${res.status}`);
-          continue;
-        }
 
         if (this.isAuthDebugEnabled()) {
           let hasStoredToken = false;
@@ -157,6 +118,7 @@ export class AuthService implements AuthHeadersProvider {
 
         const fetchRes = await fetch(url, { ...init, headers });
         if (fetchRes.status !== 401) return fetchRes;
+        await this.clearStoredToken();
 
         if (this.isAuthDebugEnabled()) {
           console.debug('[auth][service] 401 received -> awaiting auth', { scope, url });
@@ -170,6 +132,9 @@ export class AuthService implements AuthHeadersProvider {
         if (authRes.status !== 401) return authRes;
         lastErr = new Error(`HTTP ${authRes.status}`);
       } catch (error) {
+        if (error instanceof AuthRequiredError) {
+          throw error;
+        }
         lastErr = error;
       }
     }
@@ -189,6 +154,10 @@ export class AuthService implements AuthHeadersProvider {
       retryCount?: number;
     },
   ): Promise<Response> {
+    const scope = (ctx.scope ?? 'shape') as AuthScope;
+    if (this.isCancelledCooldownActive(scope)) {
+      throw new Error(`Authentication was cancelled for scope "${scope}"`);
+    }
     const pluginTypeNarrow: PluginType = ((): PluginType => {
       const p = ctx.scope ?? 'shape';
       return (p === 'shape' || p === 'location' || p === 'route' || p === 'spreadsheet' || p === 'styler') ? p : 'shape';
@@ -215,54 +184,12 @@ export class AuthService implements AuthHeadersProvider {
       retryCount: params?.retryCount ?? 0,
     });
 
-    return new Promise<Response>((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        this.pending.delete(requestId);
-        reject(new Error('Authentication timeout'));
-      }, AUTH_CONSTANTS.DEFAULT_TIMEOUT);
-      this.pending.set(requestId, { resolve, reject, timeout, context: { requestId, url, init, ctx } });
-      this.registry.dispatch(notification).catch(() => {
-      });
-    });
-  }
-
-  private async onAuthSuccess(requestId: string, token: string, type: 'Bearer' | 'Basic', expiresAt?: number) {
-    const p = this.pending.get(requestId);
-    if (!p) return;
-    clearTimeout(p.timeout);
-    this.pending.delete(requestId);
-    this.setToken(token, type, expiresAt);
-    if (this.uiStorage) {
-      try {
-        await this.uiStorage.setItem('access_token', token);
-        if (typeof expiresAt === 'number') {
-          await this.uiStorage.setItem('token_expires_at', String(expiresAt));
-        }
-      } catch {
-        // ignore storage bridge errors
-      }
-    }
-    try {
-      const headers = new Headers(p.context.init.headers);
-      headers.set('Authorization', `${type} ${token}`);
-      const res = await fetch(p.context.url, { ...p.context.init, headers });
-      p.resolve(res);
-    } catch (error) {
-      p.reject(error instanceof Error ? error : new Error(String(error)));
-    }
-  }
-
-  private onAuthCancelled(requestId: string, reason: string): void {
-    const p = this.pending.get(requestId);
-    if (!p) return;
-    clearTimeout(p.timeout);
-    this.pending.delete(requestId);
-
-    // Apply short cooldown to avoid immediately re-opening auth dialog.
-    const scope = (p.context.ctx.scope ?? 'shape') as AuthScope;
-    this.cancelledUntilByScope.set(scope, Date.now() + 60_000); // 60s
-
-    p.reject(new Error(`Authentication cancelled: ${reason}`));
+    void requestId;
+    void url;
+    void init;
+    void ctx;
+    this.registry.dispatch(notification).catch(() => {});
+    throw new AuthRequiredError('Authentication required');
   }
 
   private isCancelledCooldownActive(scope: AuthScope): boolean {
@@ -272,10 +199,19 @@ export class AuthService implements AuthHeadersProvider {
   }
 
   private async syncTokenFromStorage(): Promise<void> {
-    if (this.currentToken?.token) return;
-    const storedToken = await this.resolveStoredToken();
-    if (storedToken) {
-      this.setToken(storedToken, 'Bearer');
+    // No-op: token is always read from storage on demand.
+  }
+
+  private async clearStoredToken(): Promise<void> {
+    if (this.uiStorage) {
+      try {
+        await this.uiStorage.removeItem('access_token');
+        await this.uiStorage.removeItem('token_expires_at');
+        await this.uiStorage.removeItem('refresh_token_id');
+        return;
+      } catch {
+        // fall through
+      }
     }
   }
 
@@ -286,9 +222,6 @@ export class AuthService implements AuthHeadersProvider {
       } catch {
         return null;
       }
-    }
-    if (typeof localStorage !== 'undefined') {
-      return localStorage.getItem('access_token');
     }
     return null;
   }

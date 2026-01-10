@@ -83,13 +83,13 @@ const setHeapContext = (context: HeapPressureContext | null) => {
 const resolveBatchTaskProvider = (mod: unknown): BatchTaskProvider | null => {
   if (!mod || (typeof mod !== 'object' && typeof mod !== 'function')) return null;
   const record = mod as Record<string, unknown>;
-  const direct = record.getBatchTaskSummaries ?? record.getBatchTasks;
+  const direct = record.getBatchTasks;
   if (typeof direct === 'function') {
     return direct as BatchTaskProvider;
   }
   const shapePlugin = record.ShapeWorkerPlugin as { api?: Record<string, unknown>; batch?: Record<string, unknown> } | undefined;
   const api = shapePlugin?.batch ?? shapePlugin?.api;
-  const apiFn = api?.getBatchTasks ?? api?.listBatchTasks;
+  const apiFn = api?.getBatchTasks;
   if (typeof apiFn === 'function') {
     return (nodeId: NodeId) => (apiFn as (id: NodeId) => Promise<BatchTaskSummary[]>)(nodeId);
   }
@@ -125,8 +125,7 @@ const toBatchSessionStatus = (
       failed: (progress.failed as number | undefined) ?? 0,
       skipped: (progress.skipped as number | undefined) ?? 0,
       percentage: (progress.percentage as number | undefined) ?? 0,
-      currentStage: progress.currentStage as string | undefined,
-      currentTask: progress.currentTask as string | undefined,
+      taskType: progress.taskType as string | undefined,
     },
     startedAt: session?.startedAt as number | undefined,
     completedAt: session?.completedAt as number | undefined,
@@ -377,7 +376,6 @@ reporter.reportStepProgress('Load Comlink', 0);
         },
         pauseBatchSession: async (nodeType: NodeType, nodeId: NodeId): Promise<void> => {
           const api = resolveShapeBatchApiOrThrow(nodeType);
-          if (nodeType === SHAPE_NODE_TYPE) return;
           if (api.invokeBatchCommand) {
             await api.invokeBatchCommand('session/pause', { nodeId });
             return;
@@ -392,7 +390,6 @@ reporter.reportStepProgress('Load Comlink', 0);
         },
         resumeBatchSession: async (nodeType: NodeType, nodeId: NodeId): Promise<void> => {
           const api = resolveShapeBatchApiOrThrow(nodeType);
-          if (nodeType === SHAPE_NODE_TYPE) return;
           if (api.invokeBatchCommand) {
             await api.invokeBatchCommand('session/resume', { nodeId });
             setHeapContext({ nodeType, nodeId });

@@ -8,6 +8,9 @@
     "build": { "label": "Build" },
     "mapPreview": { "label": "Preview" }
   },
+  "auth": {
+    "loading": "Checking authentication..."
+  },
   "dataSource": {
     "title": "Data Source",
     "description": "Choose a dataset source to fetch location data.",

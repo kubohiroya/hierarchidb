@@ -3,28 +3,31 @@
  * https://gadm.org/
   */
 
-import { BaseDataSourceStrategy, type DataSourceConfig, type FetchOptions, type ProcessOptions } from './DataSourceStrategy.js';
+import {
+  BaseDataSourceStrategy,
+  type DataSourceConfig,
+  type FetchOptions,
+  type ProcessOptions,
+  type RawDataPipeline,
+  type RawDataPipelineContext,
+} from './DataSourceStrategy.js';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { ShapeEntity } from '../../common/types/index.js';
 import {
-  buildShapeCacheKey,
-  bufferDeserializer,
-  bufferSerializer,
-  createShapeChunkStore,
-  getOrFetchWithRetry,
+  buildRawDataDataSourceCacheKey,
   type RetryConfig,
 } from '../utils/chunkStore.js';
+import { bufferToStream, fetchRawDataWithPipeline, streamToBuffer } from '../utils/rawDataPipeline.js';
 
 //  GADM
 export interface GADMRawData {
-  geopackage?: ArrayBuffer;
-  shapefile?: Map<string, ArrayBuffer>;
+  geojson?: GADMGeoJSON;
   metadata: {
     source: 'gadm';
     downloadedAt: string;
     country: string;
     level: number;
-    format: 'gpkg' | 'shp';
+    format: 'json';
     version: string;
   };
 }
@@ -60,17 +63,15 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
       method: 'File',
       baseUrl: 'https://geodata.ucdavis.edu/gadm/gadm4.1/',
       endpoints: {
-        'country-gpkg': '{format}/{country}_adm_{level}.{format}',
-        'country-shp': 'shp/{country}_adm_shp.zip',
-        'world-gpkg': 'gadm41.gpkg',
-        'world-levels': 'gadm41_levels.gpkg',
+        'country-json': 'json/gadm41_{country}_{level}.json',
+        'country-json-zip': 'json/gadm41_{country}_{level}.json.zip',
       },
       authentication: { type: 'none' },
       timeout: 120000, //  2
       retries: { count: 3, delay: 5000, backoff: 'linear' },
     },
     processing: {
-      inputFormat: 'geojson', //  GeoPackage
+      inputFormat: 'geojson',
       outputFormat: 'geojson',
       validation: [
         { field: 'geometry', rule: 'required' },
@@ -114,8 +115,6 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
     const {
       country = 'JPN',
       adminLevel = 1,
-      endpoint = 'country-gpkg',
-      signal,
     } = options || {};
     const resolvedNodeId = options?.nodeId;
     if (!resolvedNodeId) {
@@ -128,70 +127,83 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
     const retries = options?.retryConfig ?? { count: 1, delay: 0, backoff: 'exponential' } satisfies RetryConfig;
 
     try {
-      let downloadUrl: string;
-      let format: 'gpkg' | 'shp';
+      const downloadUrl = level === 0
+        ? `${this.config.access.baseUrl}json/gadm41_${normalizedCountry}_${level}.json`
+        : `${this.config.access.baseUrl}json/gadm41_${normalizedCountry}_${level}.json.zip`;
 
-      if (endpoint === 'country-shp') {
-        //  Shapefile
-        format = 'shp';
-        downloadUrl = `${this.config.access.baseUrl}shp/${normalizedCountry}_adm_shp.zip`;
-      } else {
-        //  GeoPackage
-        format = 'gpkg';
-        downloadUrl = `${this.config.access.baseUrl}gpkg/${normalizedCountry}_adm_gpkg.zip`;
-      }
+      console.log(`[GADM] Downloading JSON for ${normalizedCountry} level ${level}: ${downloadUrl}`);
 
-      console.log(`[GADM] Downloading ${format.toUpperCase()} for ${normalizedCountry} level ${level}: ${downloadUrl}`);
-
-      const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
-      const entry = await getOrFetchWithRetry(
-        store,
-        resolvedNodeId,
-        downloadUrl,
-        {
-          accept: 'application/zip',
-          cacheKey: cacheKeyMode === 'url'
-            ? downloadUrl
-            : buildShapeCacheKey(`gadm:${normalizedCountry}:${format}`, downloadUrl),
-          signal,
+      const pipeline = this.createRawDataPipeline({
+        nodeId: resolvedNodeId,
+        fetchOptions: options ?? {},
+        metadata: {
+          normalizedCountry,
+          level,
+          downloadUrl,
+          cacheKeyMode,
         },
-        retries,
-      );
-      const zipBuffer = entry.value;
+      });
 
-      if (format === 'gpkg') {
-        const geopackage = await this.extractGeoPackageFromZip(zipBuffer);
-
-        return {
-          geopackage,
-          metadata: {
-            source: 'gadm',
-            downloadedAt: new Date().toISOString(),
-            country: normalizedCountry,
-            level,
-            format,
-            version: '4.1',
-          },
-        };
-      } else {
-        const shapefile = await this.extractShapefileFromZip(zipBuffer);
-
-        return {
-          shapefile,
-          metadata: {
-            source: 'gadm',
-            downloadedAt: new Date().toISOString(),
-            country: normalizedCountry,
-            level,
-            format,
-            version: '4.1',
-          },
-        };
-      }
+      const { decoded } = await fetchRawDataWithPipeline({
+        nodeId: resolvedNodeId,
+        fetchOptions: options ?? {},
+        pipeline,
+        retryConfig: retries,
+      });
+      return decoded;
 
     } catch (error) {
       throw new Error(`Failed to download GADM data for ${normalizedCountry}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  }
+
+  createRawDataPipeline(context: RawDataPipelineContext): RawDataPipeline<GADMRawData> {
+    const metadata = context.metadata as {
+      normalizedCountry: string;
+      level: number;
+      downloadUrl: string;
+      cacheKeyMode: 'url' | 'legacy';
+    };
+    const zipContentType = 'application/zip';
+    return {
+      prepareRequest: () => {
+        const cacheKey = metadata.cacheKeyMode === 'url'
+          ? metadata.downloadUrl
+          : buildRawDataDataSourceCacheKey({
+            dataSource: 'gadm',
+            countryCode: metadata.normalizedCountry,
+            adminLevel: metadata.level,
+            url: metadata.downloadUrl,
+          });
+        return {
+          url: metadata.downloadUrl,
+          cacheKey,
+          accept: metadata.level === 0 ? 'application/json' : 'application/zip',
+        };
+      },
+      transformStream: async (stream) => {
+        const rawBuffer = await streamToBuffer(stream);
+        if (metadata.level === 0) {
+          const zipped = await this.zipJsonBuffer(rawBuffer, metadata.normalizedCountry, metadata.level);
+          return { stream: bufferToStream(zipped), contentType: zipContentType };
+        }
+        return { stream: bufferToStream(rawBuffer), contentType: zipContentType };
+      },
+      decodeBuffer: async (buffer) => {
+        const geojson = await this.decodeGeoJson(buffer);
+        return {
+          geojson,
+          metadata: {
+            source: 'gadm',
+            downloadedAt: new Date().toISOString(),
+            country: metadata.normalizedCountry,
+            level: metadata.level,
+            format: 'json',
+            version: '4.1',
+          },
+        };
+      },
+    };
   }
 
   async processData(rawData: GADMRawData, options?: ProcessOptions): Promise<GADMProcessedData> {
@@ -200,12 +212,8 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
     try {
       let geojson: GADMGeoJSON;
 
-      if (rawData.geopackage) {
-        //  GeoPackage
-        geojson = await this.processGeoPackage(rawData.geopackage, rawData.metadata.level);
-      } else if (rawData.shapefile) {
-        //  Shapefile
-        geojson = await this.processShapefile(rawData.shapefile);
+      if (rawData.geojson) {
+        geojson = rawData.geojson;
       } else {
         throw new Error('No valid data found in raw data');
       }
@@ -251,25 +259,6 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
     }
   }
 
-  private async processGeoPackage(_geopackage: ArrayBuffer, _level: number): Promise<GADMGeoJSON> {
-    return { type: 'FeatureCollection', features: [] };
-  }
-
-  private async processShapefile(shapefile: Map<string, ArrayBuffer>): Promise<GADMGeoJSON> {
-    if (!shapefile || shapefile.size === 0) {
-      throw new Error('No shapefile content to process');
-    }
-    const JSZipCtor = (await import('jszip')).default;
-    const zip = new JSZipCtor();
-    for (const [name, buf] of shapefile.entries()) {
-      zip.file(name, buf);
-    }
-    const zipBuffer = await zip.generateAsync({ type: 'arraybuffer' });
-    const shp = (await import('shpjs')).default;
-    const geojson = (await shp.parseZip(zipBuffer)) as GADMGeoJSON;
-    return geojson;
-  }
-
   private extractAdminLevel(properties: Record<string, unknown>): number {
     const value =
       properties.adminLevel ??
@@ -290,36 +279,36 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
     return this.countryMappings[lower] || country.toUpperCase();
   }
 
-  private async extractGeoPackageFromZip(zipBuffer: ArrayBuffer): Promise<ArrayBuffer> {
-    const JSZip = (await import('jszip')).default;
-    const zip = new JSZip();
-    const zipData = await zip.loadAsync(zipBuffer);
-
-    //  .gpkg
-    for (const [fileName, fileData] of Object.entries(zipData.files)) {
-      if (fileName.endsWith('.gpkg') && !fileData.dir) {
-        return await fileData.async('arraybuffer');
-      }
-    }
-
-    throw new Error('No .gpkg file found in archive');
+  private async decodeGeoJson(buffer: ArrayBuffer): Promise<GADMGeoJSON> {
+    const rawBuffer = this.isZipBuffer(buffer) ? await this.unzipJsonBuffer(buffer) : buffer;
+    const text = new TextDecoder('utf-8').decode(rawBuffer);
+    return JSON.parse(text) as GADMGeoJSON;
   }
 
-  private async extractShapefileFromZip(zipBuffer: ArrayBuffer): Promise<Map<string, ArrayBuffer>> {
+  private isZipBuffer(buffer: ArrayBuffer): boolean {
+    const bytes = new Uint8Array(buffer);
+    return bytes.length >= 2 && bytes[0] === 0x50 && bytes[1] === 0x4b;
+  }
+
+  private async unzipJsonBuffer(buffer: ArrayBuffer): Promise<ArrayBuffer> {
     const JSZip = (await import('jszip')).default;
     const zip = new JSZip();
-    const zipData = await zip.loadAsync(zipBuffer);
-
-    const files = new Map<string, ArrayBuffer>();
-
+    const zipData = await zip.loadAsync(buffer);
     for (const [fileName, fileData] of Object.entries(zipData.files)) {
-      if (!fileData.dir) {
-        const buffer = await fileData.async('arraybuffer');
-        files.set(fileName, buffer);
+      if (fileName.endsWith('.json') && !fileData.dir) {
+        const text = await fileData.async('string');
+        return new TextEncoder().encode(text).buffer;
       }
     }
+    throw new Error('No JSON file found in archive');
+  }
 
-    return files;
+  private async zipJsonBuffer(buffer: ArrayBuffer, country: string, level: number): Promise<ArrayBuffer> {
+    const JSZip = (await import('jszip')).default;
+    const zip = new JSZip();
+    const fileName = `gadm41_${country}_${level}.json`;
+    zip.file(fileName, buffer);
+    return await zip.generateAsync({ type: 'arraybuffer', compression: 'DEFLATE' });
   }
 
 }

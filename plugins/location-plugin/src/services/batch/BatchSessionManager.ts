@@ -138,8 +138,7 @@ export class LocationBatchSessionManager extends BaseBatchSessionManager {
           completed,
           failed,
           percentage,
-          currentStage: event.stage,
-          currentTask: payload.currentTask,
+          taskType: event.stage,
         },
         updatedAt: event.timestamp,
       });

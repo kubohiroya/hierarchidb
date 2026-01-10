@@ -38,7 +38,6 @@ export class RouteBatchSessionOrchestrator extends BaseBatchSessionManager {
             total: 100,
             completed: update.progress,
             failed: 0,
-            currentTask: update.phase,
           },
         };
         this.emitProgress(update.jobId as NodeId, event);

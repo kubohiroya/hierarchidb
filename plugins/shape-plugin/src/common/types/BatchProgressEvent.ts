@@ -20,7 +20,6 @@ export interface BatchProgressEvent {
   progress: number;
   completedTasks: number;
   totalTasks: number;
-  currentTask: string;
   /** Optional human-readable message for UI */
   message?: string;
   /** Error message for error events */

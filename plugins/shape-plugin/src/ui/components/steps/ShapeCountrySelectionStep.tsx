@@ -6,8 +6,9 @@ import type { ShapeDialogStepProps } from './ShapeDialogStepProps.ts';
 import { useShapeCountrySelectionStep } from '../../hooks/useShapeCountrySelectionStep.js';
 import { useTranslation } from '../../i18n.js';
 import { NodeId } from '@hierarchidb/common-types';
+import { AuthReadyGate } from '@hierarchidb/ui-auth';
 
-export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ data, onChange, nodeId }) => {
+const ShapeCountrySelectionContent: React.FC<ShapeDialogStepProps> = ({ data, onChange, nodeId }) => {
   const { t } = useTranslation();
   const {
     loading,
@@ -99,5 +100,25 @@ export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ data
         />
       </Box>
     </Box>
+  );
+};
+
+export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = (props) => {
+  const { t } = useTranslation();
+  return (
+    <React.Suspense
+      fallback={
+        <Box sx={{ height: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <CircularProgress />
+          <Typography sx={{ ml: 2 }}>
+            {t('auth.loading', 'Checking authentication...')}
+          </Typography>
+        </Box>
+      }
+    >
+      <AuthReadyGate>
+        <ShapeCountrySelectionContent {...props} />
+      </AuthReadyGate>
+    </React.Suspense>
   );
 };

@@ -9,7 +9,7 @@ export type ShapeBatchTaskStage =
   | 'fetch'
   | 'transform'
   | 'vt';
-export type ShapeBatchTaskStatus = 'waiting' | 'running' | 'completed' | 'failed' | 'regression';
+export type ShapeBatchTaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'regression';
 
 export type ShapeDownloadTaskInputData = {
   url?: string;
@@ -96,8 +96,6 @@ export type ShapeExtract2TaskOutputData = {
 
 export type ShapeVectorTileTaskInputData = {
   inputBufferId: string;
-  minZoom?: number;
-  maxZoom?: number;
   tileZ?: number;
   tileX?: number;
   tileY?: number;
@@ -154,10 +152,6 @@ export interface ShapeBatchTaskRecord<
   index: number;
   progress: number;
   message?: string;
-  startedAt?: number;
-  completedAt?: number;
-  createdAt?: number;
-  updatedAt?: number;
   retryCount?: number;
   inputData?: TInput;
   outputData?: TOutput;
@@ -246,13 +240,11 @@ export interface ShapeSourceMetadataRow {
   featureLabel?: string;
   createdAt: number;
   updatedAt: number;
-  rawVertexCount?: number;
-  rawPolygonCount?: number;
-  extract1VertexCount?: number;
-  extract1PolygonCount?: number;
-  extract2VertexCount?: number;
-  extract2PolygonCount?: number;
-  vectorTileVertexCount?: number;
-  vectorTilePolygonCount?: number;
+  fetchVertexCount?: number;
+  fetchPolygonCount?: number;
+  transformVertexCount?: number;
+  transformPolygonCount?: number;
+  vtVertexCount?: number;
+  vtPolygonCount?: number;
   bbox?: [number, number, number, number];
 }

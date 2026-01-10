@@ -8,17 +8,8 @@ import { useCallback, useEffect, useState } from 'react';
 import type { Remote } from 'comlink';
 import { canImportFromNode, logIntegrationWarning } from './treeConsoleIntegrationUtils.js';
 
-type TemplateNode = {
-  treeNodeId: string;
-  parentTreeNodeId?: string | null;
-  name: string;
-  treeNodeType?: string;
-  description?: string;
-  metadata?: Record<string, unknown>;
-};
-
 type TemplateData = {
-  nodes?: Record<string, TemplateNode>;
+  nodes?: TemplateNodeInput[];
   rootNodeIds?: string[];
 };
 
@@ -45,6 +36,34 @@ type IntegrationState = {
   canPaste?: boolean;
   canTrash: boolean;
 };
+
+type TemplateNodeInput = {
+  metadata?: unknown;
+  nodeType?: unknown;
+  treeNodeType?: unknown;
+  description?: unknown;
+  draftMetadata?: unknown;
+  draftData?: unknown;
+  data?: unknown;
+  children?: unknown;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const normalizeRecord = (value: unknown): Record<string, unknown> | null | undefined => {
+  if (value === null) return null;
+  if (isRecord(value)) return value;
+  return undefined;
+};
+
+const isTreeNodeLike = (value: unknown): value is HierarchicalTreeNode | TreeNode =>
+  isRecord(value) && typeof value.id === 'string' && typeof value.nodeType === 'string';
+
+const hasNodeIdParam = (value: unknown): value is { nodeId: NodeId } =>
+  isRecord(value) && typeof value.nodeId === 'string';
+
+const toNodeType = (value: string): NodeType => value as NodeType;
 
 export type ToolbarControllerResult = {
   toolbarProps: React.ComponentProps<typeof TreeConsoleToolbar>;
@@ -190,26 +209,32 @@ export function useTreeConsoleToolbarActions({
             throw new Error(`Failed to load template: ${templateId} (${String(lastErr)})`);
           }
 
-          const toImportNode = (n: any): ImportNode => {
-            if (!n || typeof n !== 'object') throw new Error('Invalid template node');
-            if (!n.metadata || typeof n.metadata !== 'object') throw new Error('Template node missing metadata');
-            if (typeof n.metadata.name !== 'string' || n.metadata.name.trim().length === 0) {
+          const toImportNode = (node: TemplateNodeInput): ImportNode => {
+            if (!isRecord(node)) throw new Error('Invalid template node');
+            const rawMetadata = node.metadata;
+            if (!isRecord(rawMetadata)) throw new Error('Template node missing metadata');
+            if (typeof rawMetadata.name !== 'string' || rawMetadata.name.trim().length === 0) {
               throw new Error('Template node missing metadata.name');
             }
-            const name = n.metadata.name as string;
+            const name = rawMetadata.name;
             const description =
-              typeof n.metadata.description === 'string' ? (n.metadata.description as string) : undefined;
-            const children = Array.isArray(n.children)
-              ? n.children.map((c: any) => toImportNode(c)).filter(Boolean)
+              typeof rawMetadata.description === 'string' ? rawMetadata.description : undefined;
+            const children = Array.isArray(node.children)
+              ? node.children.map((child) => toImportNode(child))
               : undefined;
+            const resolvedNodeType = typeof node.nodeType === 'string'
+              ? toNodeType(node.nodeType)
+              : typeof node.treeNodeType === 'string'
+                ? toNodeType(node.treeNodeType)
+                : toNodeType('folder');
             return {
               name,
-              nodeType: (n.nodeType ?? n.treeNodeType ?? 'folder') as NodeType,
+              nodeType: resolvedNodeType,
               description,
-              metadata: n.metadata,
-              draftMetadata: n.draftMetadata,
-              draftData: n.draftData,
-              data: n.data,
+              metadata: rawMetadata,
+              draftMetadata: normalizeRecord(node.draftMetadata),
+              draftData: normalizeRecord(node.draftData),
+              data: normalizeRecord(node.data),
               children: children && children.length ? children : undefined,
             };
           };
@@ -301,10 +326,11 @@ export function useTreeConsoleToolbarActions({
         }
         case 'edit': {
           const targetId =
-            params && typeof params === 'object' && 'nodeId' in params
-              ? (params.nodeId as NodeId)
+            hasNodeIdParam(params)
+              ? params.nodeId
               : currentPageNodeId;
-          void requestEdit(targetId as NodeId, params as any);
+          const hint = isTreeNodeLike(params) ? params : undefined;
+          void requestEdit(targetId as NodeId, hint);
           break;
         }
         case 'undo':

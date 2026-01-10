@@ -8,6 +8,7 @@ export { AuthProviderOptions } from './components/AuthProviderOptions.js';
 export { AuthProviderPrompt, AuthRequiredPrompt } from './components/AuthProviderPrompt.js';
 export type { AuthRequiredDialogProps } from './components/AuthRequiredDialog.js';
 export { AuthRequiredDialog } from './components/AuthRequiredDialog.js';
+export { AuthReadyGate } from './components/AuthReadyGate.js';
 export { LoginForm } from './components/LoginForm.js';
 export { MicrosoftIcon } from './components/MicrosoftIcon.js';
 export { OAuthCallback } from './components/OAuthCallback.js';

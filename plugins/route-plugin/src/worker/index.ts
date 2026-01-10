@@ -7,6 +7,7 @@ import type {
   VectorTileStore,
 } from '@hierarchidb/runtime-worker';
 import type { RouteDB } from '@hierarchidb/route-store';
+export { getBatchTasks } from './getBatchTasks.js';
 
 type StoreRegistry = {
   getFeatures<T extends FeatureItemBase<unknown> = FeatureItemBase<unknown>>(nodeType: string): FeatureStore<T> | undefined;

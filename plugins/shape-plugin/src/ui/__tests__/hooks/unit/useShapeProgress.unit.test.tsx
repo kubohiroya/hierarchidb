@@ -36,8 +36,7 @@ describeUiProgress('useShapeProgress', () => {
         completed: 3,
         failed: 0,
         percentage: 30,
-        currentStage: 'download',
-        currentTask: 'task-3',
+        taskType: 'download',
       },
       startedAt: Date.now(),
       lastActivity: Date.now(),
@@ -61,7 +60,6 @@ const emit = async (event: BatchProgressEvent) => {
   it('updates progress and status from runtime-worker worker events', async () => {
     const { result } = renderHook(() => useShapeProgress('session-1', {
       autoSubscribe: false,
-      enablePollingFallback: false,
     }));
 
     await act(async () => {
@@ -78,7 +76,6 @@ const emit = async (event: BatchProgressEvent) => {
         total: 10,
         completed: 3,
         failed: 0,
-        currentTask: 'task-3',
       },
     });
 
@@ -87,10 +84,9 @@ const emit = async (event: BatchProgressEvent) => {
       total: 10,
       completed: 3,
       failed: 0,
-      skipped: 7,
+      skipped: 0,
       percentage: 30,
-      currentStage: 'download',
-      currentTask: 'task-3',
+      taskType: 'download',
     });
     expect(result.current.status).toMatchObject({
       status: 'processing',
@@ -104,7 +100,6 @@ const emit = async (event: BatchProgressEvent) => {
   it('records errors from progress events', async () => {
     const { result } = renderHook(() => useShapeProgress('session-err', {
       autoSubscribe: false,
-      enablePollingFallback: false,
     }));
 
     await act(async () => {
@@ -121,7 +116,6 @@ const emit = async (event: BatchProgressEvent) => {
         total: 10,
         completed: 4,
         failed: 1,
-        currentTask: 'task-5',
       },
       error: { detail: 'download failed' },
     });
@@ -138,7 +132,6 @@ const emit = async (event: BatchProgressEvent) => {
   it('unsubscribes from runtime-worker updates', async () => {
     const { result, unmount } = renderHook(() => useShapeProgress('session-unsub', {
       autoSubscribe: false,
-      enablePollingFallback: false,
     }));
 
     await act(async () => {
@@ -150,8 +143,6 @@ const emit = async (event: BatchProgressEvent) => {
     });
 
     expect(unsubscribeSpy).toHaveBeenCalled();
-    expect(result.current.isSubscribed).toBe(false);
-
     unmount();
   });
 });

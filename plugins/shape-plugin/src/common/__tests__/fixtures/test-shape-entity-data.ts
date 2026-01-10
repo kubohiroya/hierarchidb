@@ -46,8 +46,6 @@ interface BatchConfig {
   };
   vectorTiles: {
     concurrentProcesses: number;
-    minZoom: number;
-    maxZoom: number;
   };
 }
 
@@ -95,8 +93,6 @@ export function createTestBatchConfig(): BatchConfig {
     },
     vectorTiles: {
       concurrentProcesses: 2,
-      minZoom: 0,
-      maxZoom: 10,
     },
   };
 }
@@ -137,7 +133,6 @@ export function createTestShapeEntityJapanOnly(): ShapeEntity {
       },
       vectorTiles: {
         ...baseEntity.batchConfig!.vectorTiles,
-        maxZoom: 8,
       },
     },
   };
@@ -163,8 +158,8 @@ export const EXPECTED_BATCH_RESULTS = {
     },
     vectorTilesStage: {
       expectedMinTiles: 1, //  1
-      expectedMaxTiles: 100, //  100zoom level 10
-      expectedZoomLevels: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      expectedMaxTiles: 100, //  100zoom level 11
+      expectedZoomLevels: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
     },
   },
 
@@ -184,7 +179,8 @@ export const EXPECTED_BATCH_RESULTS = {
     },
     vectorTilesStage: {
       expectedMinTiles: 1,
-      expectedMaxTiles: 50, expectedZoomLevels: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+      expectedMaxTiles: 50,
+      expectedZoomLevels: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
     },
   },
 };

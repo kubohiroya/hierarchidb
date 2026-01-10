@@ -3,14 +3,20 @@
  * https://www.geoboundaries.org/
   */
 
-import { BaseDataSourceStrategy, type DataSourceConfig, type FetchOptions, type ProcessOptions } from './DataSourceStrategy.js';
+import {
+  BaseDataSourceStrategy,
+  type DataSourceConfig,
+  type FetchOptions,
+  type ProcessOptions,
+  type RawDataPipeline,
+  type RawDataPipelineContext,
+} from './DataSourceStrategy.js';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { ShapeEntity } from '../../common/types/index.js';
 import type { NodeId } from '@hierarchidb/common-types';
 import {
+  buildRawDataDataSourceCacheKey,
   buildShapeCacheKey,
-  bufferDeserializer,
-  bufferSerializer,
   createShapeChunkStore,
   getOrFetchWithRetry,
   jsonDeserializer,
@@ -22,6 +28,8 @@ import {
   GEOBOUNDARIES_RELEASE_TYPE,
   buildGeoBoundariesMetadataUrl,
 } from '../utils/geoboundariesEndpoints.js';
+import { decodeFlatGeoJson, encodeFlatGeoJson } from '../batch/strategies/flatgeobuf.js';
+import { bufferToStream, fetchRawDataWithPipeline, streamToBuffer } from '../utils/rawDataPipeline.js';
 
 type GeoBoundariesProperties = Record<string, unknown>;
 type GeoBoundariesGeoJSON = FeatureCollection<Geometry, GeoBoundariesProperties>;
@@ -39,7 +47,6 @@ export interface GeoBoundariesApiResponse {
 
 export interface GeoBoundariesRawData {
   geojson?: GeoBoundariesGeoJSON;
-  shapefile?: Map<string, ArrayBuffer>;
   metadata: {
     source: 'geoboundaries';
     downloadedAt: string;
@@ -47,7 +54,7 @@ export interface GeoBoundariesRawData {
     adminLevel: string;
     releaseType: 'gbOpen';
     version: number;
-    format: 'geojson' | 'shapefile' | 'kml' | 'topojson';
+    format: 'geojson';
     apiResponse?: GeoBoundariesApiResponse;
     continent?: string;
   };
@@ -157,45 +164,85 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
       console.log(`[GeoBoundaries] Downloading ${this.releaseType} data for ${normalizedCountry} ${normalizedAdminLevel}`);
       console.log(`[GeoBoundaries] URL: ${downloadUrl}`);
 
-      //  GeoJSON
-      const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
-      const bufferEntry = await getOrFetchWithRetry(
-        store,
-        resolvedNodeId,
-        downloadUrl,
-        {
-          accept: 'application/json',
-          cacheKey: cacheKeyMode === 'url'
-            ? downloadUrl
-            : buildShapeCacheKey(`geoboundaries:${normalizedCountry}:${normalizedAdminLevel}`, downloadUrl),
-          signal,
-        },
-        retries,
-      );
-      const buffer = bufferEntry.value;
-      console.log(`[GeoBoundaries] Download succeeded: ${downloadUrl}`);
-      const geojson = JSON.parse(new TextDecoder('utf-8').decode(buffer)) as GeoBoundariesGeoJSON;
-
-      return {
-        geojson,
+      const pipeline = this.createRawDataPipeline({
+        nodeId: resolvedNodeId,
+        fetchOptions: options ?? {},
         metadata: {
-          source: 'geoboundaries',
-          downloadedAt: new Date().toISOString(),
-          country: normalizedCountry,
-          adminLevel: normalizedAdminLevel,
-          releaseType: this.releaseType,
-          version: typeof apiData.boundaryYear === 'number' ? apiData.boundaryYear : 2023,
-          format: 'geojson',
-          apiResponse: apiData,
+          apiData,
+          normalizedCountry,
+          normalizedAdminLevel,
           continent,
+          downloadUrl,
+          cacheKeyMode,
         },
-      };
+      });
+
+      const { decoded } = await fetchRawDataWithPipeline({
+        nodeId: resolvedNodeId,
+        fetchOptions: options ?? {},
+        pipeline,
+        retryConfig: retries,
+      });
+      console.log(`[GeoBoundaries] Download succeeded: ${downloadUrl}`);
+      return decoded;
 
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       console.warn(`[GeoBoundaries] Download failed: ${normalizedCountry} ${normalizedAdminLevel}`, message);
       throw new Error(`Failed to fetch GeoBoundaries data for ${normalizedCountry} ${normalizedAdminLevel}: ${message}`);
     }
+  }
+
+  createRawDataPipeline(context: RawDataPipelineContext): RawDataPipeline<GeoBoundariesRawData> {
+    const metadata = context.metadata as {
+      apiData: GeoBoundariesApiResponse;
+      normalizedCountry: string;
+      normalizedAdminLevel: string;
+      continent: string | null;
+      downloadUrl: string;
+      cacheKeyMode: 'url' | 'legacy';
+    };
+    const contentType = 'application/flatgeobuf';
+    return {
+      prepareRequest: () => {
+        const cacheKey = metadata.cacheKeyMode === 'url'
+          ? metadata.downloadUrl
+          : buildRawDataDataSourceCacheKey({
+            dataSource: 'geoboundaries',
+            countryCode: metadata.normalizedCountry,
+            adminLevel: Number(metadata.normalizedAdminLevel),
+            url: metadata.downloadUrl,
+          });
+        return {
+          url: metadata.downloadUrl,
+          cacheKey,
+          accept: 'application/json',
+        };
+      },
+      transformStream: async (stream) => {
+        const buffer = await streamToBuffer(stream);
+        const geojson = JSON.parse(new TextDecoder('utf-8').decode(buffer)) as GeoBoundariesGeoJSON;
+        const encoded = await encodeFlatGeoJson(geojson);
+        return { stream: bufferToStream(encoded), contentType };
+      },
+      decodeBuffer: async (buffer) => {
+        const geojson = await decodeFlatGeoJson(buffer);
+        return {
+          geojson,
+          metadata: {
+            source: 'geoboundaries',
+            downloadedAt: new Date().toISOString(),
+            country: metadata.normalizedCountry,
+            adminLevel: metadata.normalizedAdminLevel,
+            releaseType: this.releaseType,
+            version: typeof metadata.apiData.boundaryYear === 'number' ? metadata.apiData.boundaryYear : 2023,
+            format: 'geojson',
+            apiResponse: metadata.apiData,
+            continent: metadata.continent,
+          },
+        };
+      },
+    };
   }
 
   async processData(rawData: GeoBoundariesRawData, options?: ProcessOptions): Promise<GeoBoundariesProcessedData> {

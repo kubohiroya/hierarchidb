@@ -7,7 +7,7 @@ import type {
 } from './DownloadStageStrategy.js';
 import type { DownloadTask, DownloadTaskPayload } from '../../../common/types/index.js';
 import { buildDownloadTaskId, generateDownloadTaskPayloadsFromSelection } from '../../utils/utils.js';
-import { buildDownloadCacheKey } from '../../utils/chunkStore.js';
+import { buildRawDataDataSourceCacheKey } from '../../utils/chunkStore.js';
 
 export class GadmDownloadStrategy implements DownloadStageStrategy {
   buildDownloadTaskPayloads(context: DownloadTaskPayloadBuildContext) {
@@ -36,7 +36,7 @@ export class GadmDownloadStrategy implements DownloadStageStrategy {
         taskType: 'download',
         stage: 'wait',
         type: 'download',
-        status: 'waiting',
+        status: 'queued',
         index,
         progress: 0,
         url: metadata.url,
@@ -56,7 +56,7 @@ export class GadmDownloadStrategy implements DownloadStageStrategy {
         throw new Error(`[GadmDownloadStrategy] Missing input for task ${task.taskId}`);
       }
       const sourceUrl = input.url;
-      const cacheKey = buildDownloadCacheKey({
+      const cacheKey = buildRawDataDataSourceCacheKey({
         dataSource: input.dataSource,
         countryCode: input.countryCode,
         adminLevel: input.adminLevel,

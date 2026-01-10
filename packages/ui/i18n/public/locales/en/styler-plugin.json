@@ -1,4 +1,7 @@
 {
+  "auth": {
+    "loading": "Checking authentication..."
+  },
   "styleSettings": {
     "title": "Style Mapping",
     "description": "Map the source columns to the styles",

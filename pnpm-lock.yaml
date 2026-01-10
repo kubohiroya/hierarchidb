@@ -268,6 +268,9 @@ importers:
 
   app:
     dependencies:
+      '@deck.gl/core':
+        specifier: ^9.1.14
+        version: 9.2.1
       '@emotion/react':
         specifier: 11.14.0
         version: 11.14.0(@types/react@18.3.27)(react@18.3.1)
@@ -1511,6 +1514,9 @@ importers:
       dexie:
         specifier: 4.2.0
         version: 4.2.0
+      domhandler:
+        specifier: ^5.0.3
+        version: 5.0.3
       p-limit:
         specifier: ^4.0.0
         version: 4.0.0
@@ -1885,6 +1891,9 @@ importers:
         specifier: ^5.7.3
         version: 5.9.0
     devDependencies:
+      '@deck.gl/core':
+        specifier: ^9.1.14
+        version: 9.2.1
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../common/types
@@ -3157,6 +3166,9 @@ importers:
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../../packages/runtime-worker
+      '@hierarchidb/ui-auth':
+        specifier: workspace:*
+        version: link:../../packages/ui/auth
       '@hierarchidb/ui-batch-progress':
         specifier: workspace:*
         version: link:../../packages/ui/batch
@@ -3320,6 +3332,9 @@ importers:
       '@hierarchidb/ui-worker-provider':
         specifier: workspace:*
         version: link:../../packages/ui/worker-provider
+      '@hierarchidb/vt-orchestrator':
+        specifier: workspace:*
+        version: link:../../packages/vt-orchestrator
       '@mui/material':
         specifier: ^7.3.6
         version: 7.3.6(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -3360,6 +3375,9 @@ importers:
       '@hierarchidb/tabular-store':
         specifier: workspace:*
         version: link:../../packages/features/tabular-store
+      '@hierarchidb/ui-auth':
+        specifier: workspace:*
+        version: link:../../packages/ui/auth
       '@hierarchidb/ui-map':
         specifier: workspace:*
         version: link:../../packages/ui/map
@@ -3511,6 +3529,9 @@ importers:
       '@hierarchidb/ui-accordion-config':
         specifier: workspace:*
         version: link:../../packages/ui/accordion-config
+      '@hierarchidb/ui-auth':
+        specifier: workspace:*
+        version: link:../../packages/ui/auth
       '@hierarchidb/ui-batch-progress':
         specifier: workspace:*
         version: link:../../packages/ui/batch
@@ -3716,6 +3737,9 @@ importers:
       '@hierarchidb/styler-store':
         specifier: workspace:*
         version: link:../../packages/features/styler-store
+      '@hierarchidb/ui-auth':
+        specifier: workspace:*
+        version: link:../../packages/ui/auth
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../packages/ui/dialog

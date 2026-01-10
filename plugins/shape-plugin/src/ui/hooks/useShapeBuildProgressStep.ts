@@ -77,7 +77,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
   const { t } = useTranslation();
   const activeNodeId = nodeId ?? data?.nodeId ?? null;
 
-  const { progress, status, error, isSubscribed } = useShapeProgress(activeNodeId, { autoSubscribe: Boolean(activeNodeId) });
+  const { progress, status, error } = useShapeProgress(activeNodeId, { autoSubscribe: Boolean(activeNodeId) });
   const [persistedTasks, setPersistedTasks] = useAtom(shapeBuildPersistedTasksAtom);
   const [isStartPending, setIsStartPending] = useState(false);
   const warnedSkippedTasksRef = useRef<Set<string>>(new Set());
@@ -98,12 +98,19 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     ? 'running'
     : buildStatus;
   const shouldPollTasks = Boolean(activeNodeId)
-    && gatedBuildStatus !== 'idle'
-    && gatedBuildStatus !== 'failed'
     && (
-      gatedBuildStatus !== 'completed'
-      || hasIncompletePersistedTasks
-      || persistedTasks.length === 0
+      isStartPending
+      || data?.processingStatus === 'processing'
+      || data?.processingStatus === 'paused'
+      || (
+        gatedBuildStatus !== 'idle'
+        && gatedBuildStatus !== 'failed'
+        && (
+          gatedBuildStatus !== 'completed'
+          || hasIncompletePersistedTasks
+          || persistedTasks.length === 0
+        )
+      )
     );
   const shouldPollTasksRef = useCallback(() => shouldPollTasks, [shouldPollTasks]);
   const { tasks, isLoading: isTasksLoading, refresh: refreshTasks } = useShapeBatchTasks(activeNodeId, {
@@ -120,10 +127,19 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
       || (summary?.skip ?? 0) > 0
     ));
   }, [stageTaskSummary]);
+  const hasIncompleteTasks = useMemo(() => {
+    if (displayTasks.length === 0) return false;
+    return displayTasks.some((task) => {
+      if (isSkippedMessage(task.message)) return false;
+      return task.status !== 'completed' && task.status !== 'failed' && task.status !== 'regression';
+    });
+  }, [displayTasks]);
+  const shouldForceRunning = gatedBuildStatus === 'completed' && hasIncompleteTasks;
+  const normalizedBuildStatus = shouldForceRunning ? 'running' : gatedBuildStatus;
   const lastBuildStartedAtRef = useRef<number | undefined>(data?.buildStartedAt);
   const selectedArrayByCountries = data?.selectedArrayByCountries;
 
-  const currentStage = normalizeStageId(effectiveProgress?.currentStage);
+  const taskType = normalizeStageId(effectiveProgress?.taskType);
   const overallProgress = effectiveProgress?.percentage ?? effectiveStatus?.progress ?? 0;
   const warningMessage = useMemo(() => {
     if (buildStatus !== 'paused') return null;
@@ -138,6 +154,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
   const skipped = effectiveProgress?.skipped ?? 0;
   const debugStateRef = useRef<Record<string, unknown> | null>(null);
   const lastSyncedStatusRef = useRef<string | null>(null);
+  const lastStableCountsRef = useRef<{ total: number; completed: number; failed: number; skipped: number; percentage: number } | null>(null);
   const monitorKey = useMemo(() => {
     const resolvedNodeId = nodeId ?? data?.nodeId;
     return getBuildMonitorKey(buildMonitorConfig, resolvedNodeId ? String(resolvedNodeId) : null);
@@ -152,11 +169,9 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
       nodeId: activeNodeId,
       hasNodeId,
       buildStatus: gatedBuildStatus,
-      status: effectiveStatus?.status ?? null,
       progress: effectiveProgress?.percentage ?? null,
-      currentStage: currentStage ?? null,
-      currentTask: effectiveProgress?.currentTask ?? null,
-      isSubscribed,
+      taskType: taskType ?? null,
+      message: effectiveProgress?.message ?? null,
       error: error?.message ?? null,
     };
     const prev = debugStateRef.current;
@@ -170,11 +185,9 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     activeNodeId,
     hasNodeId,
     gatedBuildStatus,
-    effectiveStatus?.status,
     effectiveProgress?.percentage,
-    effectiveProgress?.currentTask,
-    currentStage,
-    isSubscribed,
+    effectiveProgress?.message,
+    taskType,
     error?.message,
   ]);
 
@@ -192,6 +205,14 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
       setPersistedTasks(tasks);
     }
   }, [activeNodeId, tasks, setPersistedTasks]);
+
+  useEffect(() => {
+    if (!activeNodeId) return;
+    if (displayTasks.length > 0) return;
+    if (isTasksLoading) return;
+    if (!hasTaskSummary && !['failed', 'completed'].includes(normalizedBuildStatus)) return;
+    void refreshTasks();
+  }, [activeNodeId, displayTasks.length, hasTaskSummary, isTasksLoading, normalizedBuildStatus, refreshTasks]);
 
   useEffect(() => {
     if (lastBuildStartedAtRef.current !== data?.buildStartedAt) {
@@ -325,14 +346,14 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     const interval = window.setInterval(() => {
       appendBuildSample(buildMonitorConfig, monitorKey, {
         timestamp: Date.now(),
-        stage: currentStage as 'fetch' | 'transform' | 'vt' | undefined,
+        stage: taskType as 'fetch' | 'transform' | 'vt' | undefined,
         ...getMemorySnapshot(),
       });
     }, BUILD_MONITOR_SAMPLE_INTERVAL_MS);
     return () => {
       window.clearInterval(interval);
     };
-  }, [gatedBuildStatus, configSnapshot, currentStage, data?.buildStartedAt, data?.nodeId, monitorKey]);
+  }, [gatedBuildStatus, configSnapshot, taskType, data?.buildStartedAt, data?.nodeId, monitorKey]);
 
   useEffect(() => {
     if (!monitorKey) return;
@@ -372,42 +393,18 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     }
   }, [buildStatus, isStartPending]);
 
-  const hasIncompleteTasks = useMemo(() => {
-    if (displayTasks.length === 0) return false;
-    return displayTasks.some((task) => {
-      if (isSkippedMessage(task.message)) return false;
-      return task.status !== 'completed' && task.status !== 'failed' && task.status !== 'regression';
-    });
-  }, [displayTasks]);
-  const shouldForceRunning = gatedBuildStatus === 'completed' && hasIncompleteTasks;
-  const normalizedBuildStatus = shouldForceRunning ? 'running' : gatedBuildStatus;
-  const taskLabel = (() => {
-    if (normalizedBuildStatus === 'completed') {
-      return t('stage.progress.done', 'Completed');
-    }
-    if (normalizedBuildStatus === 'failed') {
-      return t('stage.progress.failed', 'Failed');
-    }
-    if (normalizedBuildStatus === 'paused') {
-      return t('stage.progress.paused', 'Paused');
-    }
-    if (normalizedBuildStatus !== 'running') {
-      if (effectiveStatus?.error) return effectiveStatus.error;
-      if (effectiveProgress?.currentTask && effectiveProgress.currentTask !== 'processing' && effectiveProgress.currentTask !== activeNodeId) {
-        return effectiveProgress.currentTask;
-      }
-      return t('stage.progress.ready', 'Ready');
-    }
-    return effectiveProgress?.currentTask
-      ?? effectiveStatus?.error
-      ?? t('stage.progress.working', 'Working...');
-  })();
   const normalizedDisplayTasks = useMemo(() => (
-    displayTasks.map((task) => ({
-      ...task,
-      stage: normalizeStageId(task.stage) ?? task.stage,
-    }))
+    displayTasks.map((task) => {
+      const normalizedStage = normalizeStageId(task.stage) ?? task.stage;
+      return {
+        ...task,
+        stage: normalizedStage
+      };
+    })
   ), [displayTasks]);
+  const hasFailedFetchTasks = useMemo(() => (
+    normalizedDisplayTasks.some((task) => task.status === 'failed' && task.stage === 'fetch')
+  ), [normalizedDisplayTasks]);
 
   const taskSummary = useMemo(() => {
     const summary: Record<string, { total: number; completed: number; failed: number; skipped: number }> = {};
@@ -432,6 +429,35 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     }
     return summary;
   }, [normalizedDisplayTasks]);
+  const aggregatedCounts = useMemo(() => {
+    const counts = { total: 0, completed: 0, failed: 0, skipped: 0 };
+    normalizedDisplayTasks.forEach((task) => {
+      counts.total += 1;
+      if (isSkippedMessage(task.message)) {
+        counts.skipped += 1;
+        return;
+      }
+      if (task.status === 'failed' || task.status === 'regression') {
+        counts.failed += 1;
+        return;
+      }
+      if (task.status === 'completed') {
+        counts.completed += 1;
+      }
+    });
+    return counts;
+  }, [normalizedDisplayTasks]);
+  const summaryCounts = useMemo(() => {
+    const counts = { total: 0, completed: 0, failed: 0, skipped: 0 };
+    Object.values(stageTaskSummary).forEach((summary) => {
+      if (!summary) return;
+      counts.total += summary.total ?? 0;
+      counts.completed += summary.success ?? 0;
+      counts.failed += summary.error ?? 0;
+      counts.skipped += summary.skip ?? 0;
+    });
+    return counts;
+  }, [stageTaskSummary]);
   const hasProgressData = Boolean(effectiveProgress)
     || Boolean(effectiveStatus && effectiveStatus.status !== 'idle')
     || normalizedDisplayTasks.length > 0
@@ -450,37 +476,55 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
       });
     }
   }, [normalizedDisplayTasks]);
+  const lastTaskSummaryRef = useRef<string | null>(null);
   useEffect(() => {
     if (normalizedDisplayTasks.length === 0) return;
-    console.debug('[ShapeBuildProgressStep] taskSummary', {
+    const snapshot = JSON.stringify({
       total: normalizedDisplayTasks.length,
       byStage: taskSummary,
     });
+    if (snapshot === lastTaskSummaryRef.current) return;
+    lastTaskSummaryRef.current = snapshot;
+    console.debug('[ShapeBuildProgressStep] taskSummary', JSON.parse(snapshot));
   }, [normalizedDisplayTasks.length, taskSummary]);
   const { stageProgress, tasksByStage, paneProgress } = useBuildTaskProgress(
     stages,
-    currentStage,
+    taskType,
     overallProgress,
     normalizedBuildStatus,
     normalizedDisplayTasks,
   );
   const paneProgressWithSummary = useMemo(() => {
-    const allowSummaryOverride = displayTasks.length === 0;
+    const failureStageId = normalizedBuildStatus === 'failed'
+      ? taskType
+      : undefined;
     return stages.map((stage) => {
       const base = paneProgress?.find((entry) => entry.paneId === stage.id);
-      const summary = stageTaskSummary[stage.id];
+      const inlineSummary = taskSummary[stage.id];
+      const fallbackSummary = stageTaskSummary[stage.id];
+      const resolvedSummary = inlineSummary
+        ? {
+          total: inlineSummary.total,
+          success: inlineSummary.completed,
+          error: inlineSummary.failed,
+          skip: inlineSummary.skipped,
+        }
+        : fallbackSummary;
       const hasSummaryData = Boolean(
-        allowSummaryOverride
-        && summary
-        && ((summary.total ?? 0) > 0
-          || (summary.success ?? 0) > 0
-          || (summary.error ?? 0) > 0
-          || (summary.skip ?? 0) > 0),
+        resolvedSummary
+        && ((resolvedSummary.total ?? 0) > 0
+          || (resolvedSummary.success ?? 0) > 0
+          || (resolvedSummary.error ?? 0) > 0
+          || (resolvedSummary.skip ?? 0) > 0),
       );
-      const total = hasSummaryData ? (summary?.total ?? 0) : (base?.taskCount ?? 0);
-      const success = hasSummaryData ? (summary?.success ?? 0) : (base?.completedCount ?? 0);
-      const error = hasSummaryData ? (summary?.error ?? 0) : 0;
-      const skip = hasSummaryData ? (summary?.skip ?? 0) : 0;
+      let total = hasSummaryData ? (resolvedSummary?.total ?? 0) : (base?.taskCount ?? 0);
+      let success = hasSummaryData ? (resolvedSummary?.success ?? 0) : (base?.completedCount ?? 0);
+      let error = hasSummaryData ? (resolvedSummary?.error ?? 0) : 0;
+      let skip = hasSummaryData ? (resolvedSummary?.skip ?? 0) : 0;
+      if (failureStageId && stage.id === failureStageId) {
+        error = Math.max(error, 1);
+        total = Math.max(total, error + success + skip);
+      }
       const done = Math.min(total, success + error + skip);
       const progressValue = total > 0 ? Math.round((done / total) * 100) : (base?.progress ?? 0);
       const status = error > 0
@@ -488,7 +532,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
         : total > 0 && success + skip >= total
           ? 'completed'
           : total > 0
-            ? 'paused'
+            ? 'running'
             : (base?.status ?? normalizedBuildStatus);
       return {
         paneId: stage.id,
@@ -499,7 +543,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
         summary: { total, success, error, skip },
       };
     });
-  }, [normalizedBuildStatus, paneProgress, stageTaskSummary, stages]);
+  }, [taskType, normalizedBuildStatus, paneProgress, stageTaskSummary, stages, taskSummary]);
   const lastUnfinishedStageId = useMemo(() => {
     if (normalizedBuildStatus !== 'running') return undefined;
     let candidate: string | undefined;
@@ -513,7 +557,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     });
     return candidate;
   }, [normalizedBuildStatus, stages, tasksByStage]);
-  const displayStageId = lastUnfinishedStageId ?? currentStage;
+  const displayStageId = lastUnfinishedStageId ?? taskType;
   const displayStageLabel = (() => {
     if (displayStageId) {
       return stages.find((stage) => stage.id === displayStageId)?.title
@@ -544,7 +588,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
       skipped: skippedCount,
     };
   }, [lastUnfinishedStageId, tasksByStage]);
-  const displayCounts = useMemo(() => {
+  const rawDisplayCounts = useMemo(() => {
     const applySkippedAdjustment = (next: { total: number; completed: number; failed: number; skipped: number; percentage: number }) => {
       if (next.skipped === 0) return next;
       if (next.completed + next.failed + next.skipped < next.total) return next;
@@ -562,6 +606,18 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
         percentage,
       };
     };
+    if (total === 0 && completed === 0 && failed === 0 && skipped === 0 && aggregatedCounts.total > 0) {
+      return applySkippedAdjustment({
+        ...aggregatedCounts,
+        percentage: Math.round(((aggregatedCounts.completed + aggregatedCounts.failed) / aggregatedCounts.total) * 100),
+      });
+    }
+    if (total === 0 && completed === 0 && failed === 0 && skipped === 0 && summaryCounts.total > 0) {
+      return applySkippedAdjustment({
+        ...summaryCounts,
+        percentage: Math.round(((summaryCounts.completed + summaryCounts.failed) / summaryCounts.total) * 100),
+      });
+    }
     if (normalizedBuildStatus === 'running' && total === 0 && completed === 0 && failed === 0 && skipped === 0 && derivedCounts?.total) {
       return applySkippedAdjustment({
         ...derivedCounts,
@@ -575,7 +631,45 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
       skipped,
       percentage: Math.round(overallProgress),
     });
-  }, [normalizedBuildStatus, completed, derivedCounts, failed, overallProgress, skipped, total]);
+  }, [aggregatedCounts, summaryCounts, normalizedBuildStatus, completed, derivedCounts, failed, overallProgress, skipped, total]);
+  useEffect(() => {
+    if (rawDisplayCounts.total > 0) {
+      lastStableCountsRef.current = rawDisplayCounts;
+    }
+  }, [rawDisplayCounts]);
+  const displayCounts = useMemo(() => {
+    if (normalizedBuildStatus === 'running' && rawDisplayCounts.total === 0 && hasProgressData) {
+      return lastStableCountsRef.current ?? rawDisplayCounts;
+    }
+    return rawDisplayCounts;
+  }, [hasProgressData, normalizedBuildStatus, rawDisplayCounts]);
+
+  const taskLabel = (() => {
+    if (normalizedBuildStatus === 'completed') {
+      return t('stage.progress.done', 'Completed');
+    }
+    if (normalizedBuildStatus === 'failed') {
+      return t('stage.progress.failed', 'Failed');
+    }
+    if (normalizedBuildStatus === 'paused') {
+      return t('stage.progress.paused', 'Paused');
+    }
+    if (normalizedBuildStatus !== 'running') {
+      if (normalizedBuildStatus === 'idle' && rawDisplayCounts.total > 0) {
+        const doneCount = rawDisplayCounts.completed + rawDisplayCounts.failed + rawDisplayCounts.skipped;
+        return doneCount >= rawDisplayCounts.total
+          ? t('stage.progress.done', 'Completed')
+          : t('stage.progress.working', 'Working...');
+      }
+      if (effectiveStatus?.error) return effectiveStatus.error;
+      if (effectiveProgress?.message) return effectiveProgress.message;
+      return t('stage.progress.ready', 'Ready');
+    }
+    return effectiveProgress?.message
+      ?? (taskType ? stages.find((stage) => stage.id === taskType)?.title ?? taskType : undefined)
+      ?? effectiveStatus?.error
+      ?? t('stage.progress.working', 'Working...');
+  })();
 
   const isProcessingValid = useMemo(() => (
     validateBatchConfig(
@@ -591,6 +685,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
 
   const {
     handleStartOrResume,
+    handlePause,
     authDialogOpen,
     closeAuthDialog,
     handleProviderSelect,
@@ -604,15 +699,28 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
   const startOrResume = useCallback(async () => {
     if (isStartPending) return;
     setIsStartPending(true);
-    const ok = await handleStartOrResume();
+    const ok = await handleStartOrResume({ forceRestart: hasFailedFetchTasks });
     if (!ok) {
       setIsStartPending(false);
     }
-  }, [handleStartOrResume, isStartPending]);
-  const effectiveBuildStatus = isStartPending ? 'running' : normalizedBuildStatus;
-  const effectiveStatusLabel = isStartPending && normalizedBuildStatus === 'idle'
+  }, [handleStartOrResume, hasFailedFetchTasks, isStartPending]);
+  const taskDrivenStatus = useMemo(() => {
+    if (normalizedBuildStatus !== 'idle') return normalizedBuildStatus;
+    const totalTasks = rawDisplayCounts.total;
+    if (totalTasks <= 0) return normalizedBuildStatus;
+    const doneCount = rawDisplayCounts.completed + rawDisplayCounts.failed + rawDisplayCounts.skipped;
+    return doneCount >= totalTasks ? 'completed' : 'running';
+  }, [normalizedBuildStatus, rawDisplayCounts]);
+  const effectiveBuildStatus = isStartPending ? 'running' : taskDrivenStatus;
+  const effectiveStatusLabel = isStartPending && taskDrivenStatus === 'idle'
     ? t('stage.status.starting', 'Starting stage...')
-    : (shouldForceRunning ? t('stage.status.running', 'Build in progress') : statusLabel);
+    : (shouldForceRunning
+      ? t('stage.status.running', 'Build in progress')
+      : taskDrivenStatus !== normalizedBuildStatus
+        ? taskDrivenStatus === 'completed'
+          ? t('stage.status.completed', 'Build completed')
+          : t('stage.status.running', 'Build in progress')
+        : statusLabel);
 
   return {
     t,
@@ -636,7 +744,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     warningMessage,
     canStartOrResume,
     handleStartOrResume: startOrResume,
-    handlePause: undefined,
+    handlePause,
     authDialogOpen,
     closeAuthDialog,
     handleProviderSelect,

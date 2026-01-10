@@ -11,7 +11,5 @@ export interface ProgressInfoBase {
   failed: number;
   skipped: number;
   percentage: number;
-  currentStage?: ProcessingStage | 'processing';
-  currentTask?: string;
+  taskType?: ProcessingStage | 'processing';
 }
-

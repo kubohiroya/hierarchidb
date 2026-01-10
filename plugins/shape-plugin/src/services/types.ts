@@ -170,8 +170,6 @@ export interface TaskInfo {
   index: number;
   progress: number;
   message?: string;
-  startedAt?: number;
-  completedAt?: number;
   retryCount?: number;
 }
 

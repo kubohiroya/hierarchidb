@@ -9,17 +9,28 @@ type Adapter = BatchProgressAdapter | null;
 
 export function useBatchProgress(
   adapter: Adapter,
-  { autoSubscribe = true, poll }: UseBatchProgressOptions = {},
+  { autoSubscribe = true }: UseBatchProgressOptions = {},
 ) {
   const [progress, setProgress] = useState<UnifiedProgressInfo | null>(null);
   const [subscribed, setSubscribed] = useState(false);
   const unsubRef = useRef<Unsubscribe | null>(null);
   const subscribedRef = useRef(false);
+  const pendingRef = useRef<UnifiedProgressInfo | null>(null);
+  const flushTimerRef = useRef<number | null>(null);
 
   const subscribe = useCallback(() => {
     if (!adapter || subscribedRef.current) return;
     const result: SubscribeResult = adapter.subscribe((info: UnifiedProgressInfo) => {
-      setProgress(info);
+      pendingRef.current = info;
+      if (flushTimerRef.current) return;
+      flushTimerRef.current = window.setTimeout(() => {
+        flushTimerRef.current = null;
+        const next = pendingRef.current;
+        pendingRef.current = null;
+        if (next) {
+          setProgress(next);
+        }
+      }, 100);
     });
     if (typeof result === 'function') {
       unsubRef.current = result;
@@ -50,19 +61,14 @@ export function useBatchProgress(
   }, [adapter, autoSubscribe, subscribe, unsubscribe]);
 
   useEffect(() => {
-    if (!poll) return;
-    if (progress?.phase === 'completed') return;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const tick = async () => {
-      const value = await poll();
-      if (value) setProgress(value);
-      timer = setTimeout(tick, 2000);
-    };
-    void tick();
     return () => {
-      if (timer) clearTimeout(timer);
+      if (flushTimerRef.current) {
+        window.clearTimeout(flushTimerRef.current);
+        flushTimerRef.current = null;
+      }
+      pendingRef.current = null;
     };
-  }, [poll, progress?.phase]);
+  }, []);
 
   return { progress, subscribed, subscribe, unsubscribe } as const;
 }

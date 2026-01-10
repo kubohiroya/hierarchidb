@@ -18,6 +18,7 @@ export interface RunStageOptions<TInput = unknown, TOutput = unknown> {
   nodeId: TaskQueueRecord['nodeId'];
   stage: TaskStage;
   handler: StageHandler<TInput, TOutput>;
+  waitIfPaused?: () => Promise<void>;
 }
 
 const compareTaskOrder = (a: TaskQueueRecord, b: TaskQueueRecord): number => {
@@ -30,11 +31,14 @@ const compareTaskOrder = (a: TaskQueueRecord, b: TaskQueueRecord): number => {
 export async function runStageTasks<TInput = unknown, TOutput = unknown>(
   options: RunStageOptions<TInput, TOutput>
 ): Promise<void> {
-  const { db, nodeId, stage, handler } = options;
+  const { db, nodeId, stage, handler, waitIfPaused } = options;
   const tasks = await listTasksByStage(db, nodeId, stage);
-  const pending = tasks.filter((task) => task.status === 'waiting').sort(compareTaskOrder);
+  const pending = tasks.filter((task) => task.status === 'queued').sort(compareTaskOrder);
 
   for (const task of pending) {
+    if (waitIfPaused) {
+      await waitIfPaused();
+    }
     await updateTask(db, task.taskId, {
       status: 'running',
       startedAt: Date.now(),

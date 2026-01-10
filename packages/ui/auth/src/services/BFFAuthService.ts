@@ -74,7 +74,6 @@ export class BFFAuthService {
   private static codeExchangePromises = new Map<string, Promise<BFFUser>>();
   private readonly USERINFO_STORAGE_KEYS = {
     userinfo: 'userinfo',
-    user: 'bff-auth-user',
   } as const;
   private baseUrl: string;
   private popupWindow: Window | null = null;
@@ -148,7 +147,6 @@ export class BFFAuthService {
         expires_at: user.expires_at,
       };
       localStorage.setItem(this.USERINFO_STORAGE_KEYS.userinfo, JSON.stringify(payload));
-      localStorage.setItem(this.USERINFO_STORAGE_KEYS.user, JSON.stringify(payload));
     } catch {
       // Ignore storage errors (e.g., quota)
     }
@@ -420,7 +418,6 @@ export class BFFAuthService {
     // Clear local storage
     this.clearAuthData();
     localStorage.removeItem(this.USERINFO_STORAGE_KEYS.userinfo);
-    localStorage.removeItem(this.USERINFO_STORAGE_KEYS.user);
   }
 
   /**
@@ -479,7 +476,6 @@ export class BFFAuthService {
     // Prefer persisted user info if available
     try {
       const persisted =
-        localStorage.getItem(this.USERINFO_STORAGE_KEYS.user) ||
         localStorage.getItem(this.USERINFO_STORAGE_KEYS.userinfo);
       if (persisted) {
         const parsed = JSON.parse(persisted) as Partial<BFFUser> & { expires_at?: number };

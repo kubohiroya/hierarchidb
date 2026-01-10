@@ -25,6 +25,8 @@ export type ChunkStoreMetadata = StorageMetadata & {
   cacheKey?: string;
   hash?: string;
   hashAlgorithm?: HashAlgorithm;
+  sourceHash?: string;
+  sourceHashAlgorithm?: HashAlgorithm;
 };
 
 export type ChunkStoreEntry<T> = {
@@ -86,6 +88,8 @@ type FileRecord = {
   committed?: boolean;
   hash?: string;
   hashAlgorithm?: HashAlgorithm;
+  sourceHash?: string;
+  sourceHashAlgorithm?: HashAlgorithm;
 };
 
 type ChunkRecord = {
@@ -523,6 +527,8 @@ export class DexieChunkStore<T> implements StoragePort {
           fetchedAt: metadata?.fetchedAt,
           hash: resolved.hash,
           hashAlgorithm: resolved.hashAlgorithm,
+          sourceHash: metadata?.sourceHash,
+          sourceHashAlgorithm: metadata?.sourceHashAlgorithm,
         });
         await this.keys.put({ key: resolved.key, type: resolved.type, metadataId: existingId, createdAt: now });
       }
@@ -553,6 +559,8 @@ export class DexieChunkStore<T> implements StoragePort {
       fetchedAt: metadata?.fetchedAt,
       hash: resolved.hash,
       hashAlgorithm: resolved.hashAlgorithm,
+      sourceHash: metadata?.sourceHash,
+      sourceHashAlgorithm: metadata?.sourceHashAlgorithm,
     });
     await this.keys.put({ key: cacheKey, type: 'url', metadataId, createdAt: now });
     await this.keys.put({ key: resolved.key, type: resolved.type, metadataId, createdAt: now });
@@ -568,13 +576,15 @@ export class DexieChunkStore<T> implements StoragePort {
         sizeBytes: metadata?.sizeBytes ?? buffer.byteLength,
         contentType: metadata?.contentType,
         etag: metadata?.etag,
-        lastModified: metadata?.lastModified,
-        fetchedAt: metadata?.fetchedAt,
-        hash: resolved.hash,
-        hashAlgorithm: resolved.hashAlgorithm,
-      }),
-    };
-  }
+      lastModified: metadata?.lastModified,
+      fetchedAt: metadata?.fetchedAt,
+      hash: resolved.hash,
+      hashAlgorithm: resolved.hashAlgorithm,
+      sourceHash: metadata?.sourceHash,
+      sourceHashAlgorithm: metadata?.sourceHashAlgorithm,
+    }),
+  };
+}
 
   private async ensureRelation(nodeId: NodeId, metadataId: ChunkStoreMetadataId): Promise<void> {
     await this.relations.put({ nodeId, metadataId, createdAt: Date.now() });
@@ -631,6 +641,8 @@ export class DexieChunkStore<T> implements StoragePort {
       committed: record.committed,
       hash: record.hash,
       hashAlgorithm: record.hashAlgorithm,
+      sourceHash: record.sourceHash,
+      sourceHashAlgorithm: record.sourceHashAlgorithm,
     };
   }
 }

@@ -7,6 +7,9 @@
     "build": { "label": "Build" },
     "preview": { "label": "Preview" }
   },
+  "auth": {
+    "loading": "Checking authentication..."
+  },
   "messages": {
     "completeBeforeBuild": "Select route modes by country before starting a build.",
     "batchNotImplemented": "Route batch launch is not yet implemented in this dialog."

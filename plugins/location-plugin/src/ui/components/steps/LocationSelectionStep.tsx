@@ -3,13 +3,14 @@
  */
 
 import type React from 'react';
-import { useCallback, useMemo } from 'react';
-import { Alert, Box } from '@mui/material';
+import { Suspense, useCallback, useMemo } from 'react';
+import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import type { LocationEntity } from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
 import type { LocationType } from '../../../common/types/index.js';
 import { CountryMatrixSelector, useIsoCountries, type MatrixConfig, type MatrixSelection } from '@hierarchidb/ui-country-select';
 import { BASE_LOCATION_TYPES, resolveTypesForSource } from './locationTypes.js';
+import { AuthReadyGate } from '@hierarchidb/ui-auth';
 
 interface LocationSelectionStepProps {
   draft: Partial<LocationEntity>;
@@ -39,7 +40,7 @@ export const buildSelectionRecord = (
   return normalized;
 };
 
-export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ draft, onUpdate }) => {
+const LocationSelectionContent: React.FC<LocationSelectionStepProps> = ({ draft, onUpdate }) => {
   const { translations, t } = useTranslation();
   const iso = useIsoCountries();
   const allowedTypes = resolveTypesForSource(draft.dataSource ?? '');
@@ -167,5 +168,25 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ dr
         maxHeight={undefined}
       />
     </Box>
+  );
+};
+
+export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = (props) => {
+  const { t } = useTranslation();
+  return (
+    <Suspense
+      fallback={
+        <Box sx={{ height: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <CircularProgress />
+          <Typography sx={{ ml: 2 }}>
+            {t('auth.loading', 'Checking authentication...')}
+          </Typography>
+        </Box>
+      }
+    >
+      <AuthReadyGate>
+        <LocationSelectionContent {...props} />
+      </AuthReadyGate>
+    </Suspense>
   );
 };

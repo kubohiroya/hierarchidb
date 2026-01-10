@@ -46,6 +46,21 @@ const countVerticesFromGeometry = (geometry?: Geometry | null): number => {
   return countVertices(geometry.coordinates);
 };
 
+const countPolygonsFromGeometry = (geometry?: Geometry | null): number => {
+  if (!geometry) return 0;
+  if (geometry.type === 'GeometryCollection') {
+    const geometries = Array.isArray(geometry.geometries) ? geometry.geometries : [];
+    return geometries.reduce((sum: number, child: Geometry) => sum + countPolygonsFromGeometry(child), 0);
+  }
+  if (geometry.type === 'Polygon') {
+    return 1;
+  }
+  if (geometry.type === 'MultiPolygon') {
+    return Array.isArray(geometry.coordinates) ? geometry.coordinates.length : 0;
+  }
+  return 0;
+};
+
 const loadGeojsonVt = async () => {
   const mod = await import('geojson-vt');
   const candidate = mod as unknown as { default?: typeof import('geojson-vt') } & typeof import('geojson-vt');
@@ -154,7 +169,28 @@ export const createTransformHandler = (context: TransformStageContext): StageHan
       return { status: 'completed', message: 'skipped: empty stage1 buffer' };
     }
 
-    const simplified = simplifyFeatureCollection(collection, band.zMax, transformConfig.toleranceK);
+    const inputFeatureCount = collection.features.length;
+    const inputMissingGeometry = collection.features.filter((feature) => !feature?.geometry).length;
+    const inputPolygonCount = collection.features.reduce(
+      (sum, feature) => sum + countPolygonsFromGeometry(feature?.geometry),
+      0,
+    );
+    let simplified: FeatureCollection;
+    try {
+      simplified = simplifyFeatureCollection(collection, band.zMax, transformConfig.toleranceK);
+    } catch (error) {
+      const err = error instanceof Error ? error.message : String(error);
+      return {
+        status: 'failed',
+        errorMessage: `transform failed: ${err} (features=${inputFeatureCount}, polygons=${inputPolygonCount}, missingGeometry=${inputMissingGeometry})`,
+      };
+    }
+    if (simplified.features.length === 0) {
+      return {
+        status: 'failed',
+        errorMessage: `transform failed: simplified features empty (features=${inputFeatureCount}, polygons=${inputPolygonCount}, missingGeometry=${inputMissingGeometry})`,
+      };
+    }
 
     const adminLevel = input.adminLevel;
     const layerName = typeof adminLevel === 'number' ? `admin${adminLevel}` : 'admin0';
@@ -184,6 +220,7 @@ export const createTransformHandler = (context: TransformStageContext): StageHan
     };
 
     const vertexCount = features.reduce((sum, feature) => sum + countVerticesFromGeometry(feature.geometry), 0);
+    const polygonCount = features.reduce((sum, feature) => sum + countPolygonsFromGeometry(feature.geometry), 0);
     const encoded = await encodeFlatGeobufFromFeatureCollection(outputCollection);
 
     await shapeStore.transformBandBuffers.put({
@@ -197,6 +234,7 @@ export const createTransformHandler = (context: TransformStageContext): StageHan
       data: encoded,
       featureCount: features.length,
       vertexCount,
+      polygonCount,
       timestamp: Date.now(),
     });
 

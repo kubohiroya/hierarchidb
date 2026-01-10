@@ -102,7 +102,7 @@ describe('UnifiedLocationBatchManager.onBatchProgress', () => {
       }
     }
     const stub = new StubManager((cb) => {
-      cb({ nodeId: 'node-1' as NodeId, stage: 'index', total: 20, completed: 10, failed: 0, percentage: 50, currentTask: 'indexing' });
+      cb({ nodeId: 'node-1' as NodeId, taskType: 'index', total: 20, completed: 10, failed: 0, percentage: 50, message: 'indexing' });
     });
     mgr.setInternalManager(stub);
     mgr.setDbProvider(() => mockDb);
@@ -224,12 +224,12 @@ describe('UnifiedLocationBatchManager persistence contract', () => {
 
     stub.emit({
       nodeId: sessionNodeId,
-      stage: 'normalize',
+      taskType: 'normalize',
       total: 10,
       completed: 4,
       failed: 0,
       percentage: 40,
-      currentTask: 'normalizing',
+      message: 'normalizing',
     });
 
     await waitFor(() => {
@@ -241,20 +241,19 @@ describe('UnifiedLocationBatchManager persistence contract', () => {
           completed: 4,
           failed: 0,
           percentage: 40,
-          currentStage: 'extract1',
-          currentTask: 'normalizing',
+          taskType: 'extract1',
         }),
       }));
     });
 
     stub.emit({
       nodeId: sessionNodeId,
-      stage: 'completed',
+      taskType: 'completed',
       total: 10,
       completed: 10,
       failed: 0,
       percentage: 100,
-      currentTask: 'done',
+      message: 'done',
     });
 
     await waitFor(() => {

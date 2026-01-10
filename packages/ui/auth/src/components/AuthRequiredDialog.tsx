@@ -14,18 +14,17 @@ import {
   Microsoft as MicrosoftIcon,
   PlayArrow as PlayIcon,
   Stop as StopIcon,
-  Warning as WarningIcon,
 } from '@mui/icons-material';
 import {
   Alert,
   Box,
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   IconButton,
-  LinearProgress,
   Typography,
 } from '@mui/material';
 import type React from 'react';
@@ -177,7 +176,6 @@ export function AuthRequiredDialog({
     }
     return null;
   }, [errorCode, isAuthenticated, isTokenExpired, user]);
-
   // Clear error when base-dialog opens/closes
   useEffect(() => {
     if (open) {
@@ -282,17 +280,7 @@ export function AuthRequiredDialog({
         size="large"
         startIcon={
           isSelected && isAuthenticating ? (
-            <Box sx={{ width: 20, height: 20 }}>
-              <LinearProgress
-                variant="indeterminate"
-                sx={{
-                  borderRadius: 1,
-                  '& .MuiLinearProgress-bar': {
-                    backgroundColor: 'white',
-                  },
-                }}
-              />
-            </Box>
+            <CircularProgress size={20} color="inherit" />
           ) : (
             <Icon />
           )
@@ -351,7 +339,7 @@ export function AuthRequiredDialog({
 
       <DialogContent id={dialogDescriptionId}>
         {/* Main Alert */}
-        <Alert severity={getErrorSeverity()} icon={<WarningIcon />} sx={{ mb: 3 }}>
+        <Alert severity={getErrorSeverity()} icon={false} sx={{ mb: 3 }}>
           <Typography variant="body1">
             {message ||
               `The ${pluginType} plugin requires authentication to continue batch processing.`}
@@ -384,18 +372,18 @@ export function AuthRequiredDialog({
           </Alert>
         )}
 
+        {authStatusMessage && (
+          <Alert severity="warning" sx={{ mb: 3 }}>
+            {authStatusMessage}
+          </Alert>
+        )}
         {/* Current Session */}
         {isAuthenticated && user && (
-          <Alert severity="success" sx={{ mb: authStatusMessage ? 1.5 : 3 }}>
+          <Alert severity="success" sx={{ mb: 3 }}>
             <Typography variant="body2">
               You are currently signed in as{' '}
               <strong>{user.name || user.email}</strong>
             </Typography>
-          </Alert>
-        )}
-        {authStatusMessage && (
-          <Alert severity="warning" sx={{ mb: 3 }}>
-            {authStatusMessage}
           </Alert>
         )}
 

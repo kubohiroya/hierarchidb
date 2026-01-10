@@ -21,7 +21,7 @@ const isNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
 
 const isTaskStatus = (value: unknown): value is StageStatus['status'] =>
-  value === 'waiting'
+  value === 'queued'
   || value === 'running'
   || value === 'completed'
   || value === 'failed'
@@ -46,8 +46,8 @@ export const isBatchProcessConfig = (value: unknown): value is BatchProcessConfi
 };
 
 export const toProcessingStage = (
-  stage: ShapeBatchProgressSummary['currentStage'],
-): ProgressInfo['currentStage'] => {
+  stage: ShapeBatchProgressSummary['taskType'],
+): ProgressInfo['taskType'] => {
   if (stage === 'processing') return stage;
   if (
     stage === 'download'
@@ -69,8 +69,7 @@ export const toProgressInfo = (progress: ShapeBatchProgressSummary): ProgressInf
   failed: progress.failed,
   skipped: progress.skipped,
   percentage: progress.percentage,
-  currentStage: toProcessingStage(progress.currentStage),
-  currentTask: progress.currentTask,
+  taskType: toProcessingStage(progress.taskType),
 });
 
 export const toProgressSummary = (progress: ProgressInfo): ShapeBatchProgressSummary => ({
@@ -79,13 +78,12 @@ export const toProgressSummary = (progress: ProgressInfo): ShapeBatchProgressSum
   failed: progress.failed,
   skipped: progress.skipped,
   percentage: progress.percentage,
-  currentStage: progress.currentStage,
-  currentTask: progress.currentTask,
+  taskType: progress.taskType,
 });
 
 const toStageMap = (stages: Record<string, unknown> | undefined): Record<ProcessingStage, StageStatus> => {
   const empty: StageStatus = {
-    status: 'waiting',
+    status: 'queued',
     progress: 0,
     tasksTotal: 0,
     tasksCompleted: 0,

@@ -62,6 +62,7 @@
     "@hierarchidb/styler-store": "workspace:*",
     "@hierarchidb/ui-modal-select": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/ui-auth": "workspace:*",
     "@hierarchidb/ui-worker-provider": "workspace:*",
     "@hierarchidb/ui-grid": "workspace:*"
   },
@@ -87,6 +88,7 @@
     "@hierarchidb/plugin-base": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/ui-auth": "workspace:*",
     "@hierarchidb/ui-worker-provider": "workspace:*",
     "@hierarchidb/ui-grid": "workspace:*",
     "jotai": "^2.11.2"

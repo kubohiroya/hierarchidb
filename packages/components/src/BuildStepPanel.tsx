@@ -1,24 +1,16 @@
-import { useCallback, useMemo, type ReactNode } from 'react';
-import {
-  Box,
-  Button,
-  CircularProgress,
-  LinearProgress,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { type ReactNode, useCallback, useMemo } from 'react';
+import { Box, Button, LinearProgress, Stack, Typography } from '@mui/material';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { LRUSplitView, type PaneConfig, type PaneProgress } from '@hierarchidb/ui-lru-splitview';
+import { type BuildStage, type BuildStageContentFilter, BuildStepStagePanel } from './BuildStepStagePanel.js';
+import type { BuildStepStageTaskCount } from './BuildStepStageSummaryPanel.js';
+import { LoadingButton } from './LoadingButton.tsx';
+
 
 export type BuildStatus = 'idle' | 'running' | 'paused' | 'completed' | 'failed';
 
-export interface BuildStage {
-  id: string;
-  title: string;
-  description?: string;
-  icon?: ReactNode;
-}
+export type { BuildStage } from './BuildStepStagePanel.js';
 
 export interface BuildStepPanelProps {
   status: BuildStatus;
@@ -29,7 +21,7 @@ export interface BuildStepPanelProps {
   splitViewBreakpoints?: number[];
   splitViewInitialSizesByBreakpoint?: number[][];
   splitViewAutoCloseCountsByBreakpoint?: number[];
-  renderStageContent?: (stage: BuildStage, progress: number) => ReactNode;
+  renderStageContent?: (stage: BuildStage, progress: number, filter: BuildStageContentFilter) => ReactNode;
   onPause?: () => void;
   onResume?: () => void;
   onComplete?: () => void;
@@ -53,51 +45,6 @@ type BuildControlCardProps = {
   resumeLabel?: string;
   startIcon?: ReactNode;
   resumeIcon?: ReactNode;
-};
-
-type LoadingButtonProps = React.ComponentProps<typeof Button> & { loading?: boolean };
-
-const LoadingButton: React.FC<LoadingButtonProps> = ({
-  loading = false,
-  disabled,
-  startIcon,
-  endIcon,
-  sx,
-  children,
-  ...rest
-}) => {
-  const spinner = (
-    <CircularProgress
-      size={16}
-      thickness={5}
-      color="inherit"
-    />
-  );
-  const resolvedEndIcon = loading
-    ? spinner
-    : (
-      endIcon ?? (
-        <Box
-          component="span"
-          sx={{ display: 'inline-flex', width: 16, height: 16 }}
-        />
-      )
-    );
-  const mergedSx = sx
-    ? [{ minWidth: 160 }, ...(Array.isArray(sx) ? sx : [sx])]
-    : [{ minWidth: 160 }];
-  return (
-    <Button
-      {...rest}
-      disabled={disabled || loading}
-      startIcon={startIcon}
-      endIcon={resolvedEndIcon}
-      sx={mergedSx}
-      data-loading={loading ? 'true' : undefined}
-    >
-      {children}
-    </Button>
-  );
 };
 
 const BuildControlCard: React.FC<BuildControlCardProps> = ({
@@ -144,7 +91,7 @@ const BuildControlCard: React.FC<BuildControlCardProps> = ({
         <Button
           variant="outlined"
           size="small"
-          startIcon={<PauseIcon fontSize="small" />}
+          endIcon={<PauseIcon fontSize="small" />}
           disabled={disablePause}
           onClick={onPause}
         >
@@ -154,7 +101,7 @@ const BuildControlCard: React.FC<BuildControlCardProps> = ({
           color="secondary"
           variant="contained"
           size="large"
-          startIcon={computedIcon}
+          endIcon={computedIcon}
           disabled={disableStart}
           onClick={onResume}
           loading={isLoading}
@@ -195,31 +142,6 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
     stageProgress, overallProgress
   ]);
 
-  const panes = useMemo<PaneConfig[]>(() =>
-    stages.map((stage, index) => ({
-      id: stage.id,
-      title: stage.title,
-      icon: stage.icon,
-      defaultExpanded: index === 0,
-      content: renderStageContent
-        ? renderStageContent(stage, resolveStageProgress(stage.id))
-        : (
-          <Stack spacing={1} sx={{ p: 2 }}>
-            <Typography variant="subtitle2">{stage.title}</Typography>
-            {stage.description ? (
-              <Typography variant="body2" color="text.secondary">
-                {stage.description}
-              </Typography>
-            ) : null}
-            <LinearProgress
-              variant="determinate"
-              value={resolveStageProgress(stage.id)}
-            />
-          </Stack>
-        ),
-    })),
-  [renderStageContent, resolveStageProgress, stages]);
-
   const computedPaneProgress = useMemo<PaneProgress[]>(
     () =>
       stages.map((stage) => ({
@@ -229,6 +151,42 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
       })),
     [resolveStageProgress, stages, status],
   );
+
+  const taskCountByStage = useMemo<Record<string, BuildStepStageTaskCount>>(() => {
+    const progressList = paneProgress ?? computedPaneProgress;
+    return stages.reduce<Record<string, BuildStepStageTaskCount>>((acc, stage) => {
+      const progressEntry = progressList.find((entry) => entry.paneId === stage.id);
+      const summary = progressEntry?.summary;
+      const completed = summary?.success ?? progressEntry?.completedCount ?? 0;
+      const failed = summary?.error ?? 0;
+      const skipped = summary?.skip ?? 0;
+      const total = summary?.total ?? progressEntry?.taskCount ?? (completed + failed + skipped);
+      acc[stage.id] = {
+        Completed: completed,
+        Failed: failed,
+        Skip: skipped,
+        Total: total,
+      };
+      return acc;
+    }, {});
+  }, [computedPaneProgress, paneProgress, stages]);
+
+  const panes = useMemo<PaneConfig[]>(() =>
+    stages.map((stage, index) => ({
+      id: stage.id,
+      title: stage.title,
+      icon: stage.icon,
+      defaultExpanded: index === 0,
+      content: (
+        <BuildStepStagePanel
+          stage={stage}
+          progress={resolveStageProgress(stage.id)}
+          renderStageContent={renderStageContent}
+          taskCount={taskCountByStage[stage.id]}
+        />
+      ),
+    })),
+  [renderStageContent, resolveStageProgress, stages, taskCountByStage]);
 
   const computedStatusLabel = (() => {
     switch (status) {
@@ -272,7 +230,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
             <LinearProgress
               variant="determinate"
               value={overallProgress}
-              sx={{ height: 10, borderRadius: 6 }}
+              sx={{ height: 10, borderRadius: 6, margin: 0, padding: 0, border: 0}}
             />
           </Stack>
         )}

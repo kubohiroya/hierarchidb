@@ -127,25 +127,6 @@ export function validateBatchConfig(config: Partial<BatchConfig>): ShapeStepVali
     }
   }
 
-  const minZoom = normalized.tileConfig?.minZoom;
-  const maxZoom = normalized.tileConfig?.maxZoom;
-  if (minZoom !== undefined) {
-    if (minZoom < 0 || minZoom > 22) {
-      errors.push('Min zoom level must be between 0 and 22');
-    }
-  }
-  if (maxZoom !== undefined) {
-    if (maxZoom < 0 || maxZoom > 22) {
-      errors.push('Max zoom level must be between 0 and 22');
-    }
-    if (maxZoom > 14) {
-      warnings.push('High zoom levels may require significant storage and processing time');
-    }
-  }
-  if (minZoom !== undefined && maxZoom !== undefined && minZoom > maxZoom) {
-    errors.push('Min zoom level must be less than or equal to max zoom level');
-  }
-
   const areaThreshold = normalized.extract1Config?.areaThreshold;
   if (areaThreshold !== undefined) {
     if (areaThreshold < 0 || areaThreshold > 10000) {
@@ -301,8 +282,7 @@ function buildDataSourceUrl(
   const baseUrls = {
     naturalearth: 'https://www.naturalearthdata.com/download',
     geoboundaries: GEOBOUNDARIES_RELEASE_BASE_URL,
-    // Use GADM v4.1 GPKG endpoint to align with runtime-worker workers/tests
-    gadm: 'https://geodata.ucdavis.edu/gadm/gadm4.1/gpkg',
+    gadm: 'https://geodata.ucdavis.edu/gadm/gadm4.1',
     openstreetmap: 'https://download.geofabrik.de',
   } as const;
 
@@ -321,8 +301,9 @@ function buildDataSourceUrl(
     case 'geoboundaries':
       return `${baseUrl}/${countryCode}/ADM${adminLevel}`;
     case 'gadm':
-      // v4.1 GPKG bundles levels per country; adminLevel is not encoded in filename
-      return `${baseUrl}/${countryCode}_adm_gpkg.zip`;
+      return adminLevel === 0
+        ? `${baseUrl}/json/gadm41_${countryCode.toUpperCase()}_${adminLevel}.json`
+        : `${baseUrl}/json/gadm41_${countryCode.toUpperCase()}_${adminLevel}.json.zip`;
     case 'openstreetmap':
       return `${baseUrl}/${countryCode.toLowerCase()}-latest.osm.pbf`;
     default:
@@ -386,8 +367,6 @@ export function mergeBatchConfig(config: Partial<BatchConfig>): BatchConfig {
     tileConfig: {
       ...(DEFAULT_PROCESSING_CONFIG.tileConfig ?? {
         workers: 2,
-        minZoom: 0,
-        maxZoom: 12,
       }),
       ...sanitizedTileConfig,
     } as TileBatchConfig,

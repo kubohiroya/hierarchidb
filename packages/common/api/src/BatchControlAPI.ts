@@ -20,7 +20,6 @@ export interface BatchProgressPayload {
   completed?: number;
   failed?: number;
   skipped?: number;
-  currentTask?: string;
   estimatedTimeRemaining?: number;
   meta?: Record<string, unknown>;
 }
@@ -31,7 +30,6 @@ export interface UnifiedProgressInfo {
   completed: number;
   failed: number;
   percentage: number;
-  currentTask: string;
   phase?: string;
   timestamp?: number;
   payload?: BatchProgressPayload;
@@ -41,7 +39,6 @@ export interface UnifiedProgressInfo {
 
 export interface UseBatchProgressOptions {
   autoSubscribe?: boolean;
-  poll?: () => Promise<UnifiedProgressInfo | null>;
 }
 
 export interface BatchProgressAdapter {
@@ -120,11 +117,9 @@ export interface BatchProgressEvent<P = BatchProgressPayload> {
 export interface BatchTaskSummary {
   taskId: string;
   stage: StageKey;
-  status: ProgressPhase | 'waiting';
+  status: ProgressPhase;
   progress: number;
   message?: string;
-  startedAt?: number;
-  completedAt?: number;
 }
 
 /** @deprecated Use BatchProgressEvent instead. */
@@ -191,8 +186,7 @@ export interface BatchProgress {
   failed: number;
   skipped?: number;
   percentage: number;
-  currentStage?: string;
-  currentTask?: string;
+  taskType?: string;
   estimatedTimeRemaining?: number;
 }
 

@@ -31,11 +31,11 @@ import { getEphemeralShapeDB } from '../database/EphemeralShapeDB.js';
 import {
   bufferDeserializer,
   bufferSerializer,
-  countDownloadBuffersForNode,
+  countRawDataDataSourceBuffersForNode,
   createShapeChunkStore,
-  listDownloadMetadataForNode,
-  readDownloadBuffer,
-  storeDownloadBufferForNode,
+  listRawDataDataSourceMetadataForNode,
+  readRawDataDataSourceBuffer,
+  storeRawDataDataSourceBufferForNode,
 } from '../utils/chunkStore.js';
 import { geojson as geojsonApi } from 'flatgeobuf';
 import { bbox as turfBbox } from '@turf/turf';
@@ -73,11 +73,11 @@ const decodeDownloadGeoJson = async (buffer: ArrayBuffer): Promise<unknown> => {
   return decoded;
 };
 
-const summarizeDownloadBuffer = async (buffer: ArrayBuffer): Promise<{
+const summarizeDownloadBuffer = async (buffer: ArrayBuffer, contentType?: string): Promise<{
   featureCount: number;
   bbox: [number, number, number, number];
 }> => {
-  const decoded = await decodeDownloadGeoJson(buffer);
+  const decoded = await decodeRawDataBuffer(buffer, contentType);
   if (!isFeatureCollection(decoded)) {
     return { featureCount: 0, bbox: [0, 0, 0, 0] };
   }
@@ -88,6 +88,40 @@ const summarizeDownloadBuffer = async (buffer: ArrayBuffer): Promise<{
   };
 };
 
+const decodeRawDataBuffer = async (buffer: ArrayBuffer, contentType?: string): Promise<unknown> => {
+  try {
+    const normalized = (contentType ?? '').toLowerCase();
+    if (normalized.includes('zip') || isZipBuffer(buffer)) {
+      const jsonBuffer = await unzipJsonBuffer(buffer);
+      return JSON.parse(new TextDecoder('utf-8').decode(jsonBuffer));
+    }
+    if (normalized.includes('json')) {
+      return JSON.parse(new TextDecoder('utf-8').decode(buffer));
+    }
+    return await decodeDownloadGeoJson(buffer);
+  } catch {
+    return null;
+  }
+};
+
+const isZipBuffer = (buffer: ArrayBuffer): boolean => {
+  const bytes = new Uint8Array(buffer);
+  return bytes.length >= 2 && bytes[0] === 0x50 && bytes[1] === 0x4b;
+};
+
+const unzipJsonBuffer = async (buffer: ArrayBuffer): Promise<ArrayBuffer> => {
+  const JSZip = (await import('jszip')).default;
+  const zip = new JSZip();
+  const zipData = await zip.loadAsync(buffer);
+  for (const [fileName, fileData] of Object.entries(zipData.files)) {
+    if (fileName.endsWith('.json') && !fileData.dir) {
+      const text = await fileData.async('string');
+      return new TextEncoder().encode(text).buffer;
+    }
+  }
+  throw new Error('No JSON file found in archive');
+};
+
 const toTaskSummary = (task: ShapeBatchTaskRecord): ShapeBatchTaskSummary => ({
   taskId: task.taskId,
   nodeId: task.nodeId,
@@ -96,8 +130,6 @@ const toTaskSummary = (task: ShapeBatchTaskRecord): ShapeBatchTaskSummary => ({
   index: task.index,
   progress: task.progress,
   message: task.message,
-  startedAt: task.startedAt,
-  completedAt: task.completedAt,
   errorMessage: task.errorMessage,
 });
 
@@ -185,7 +217,7 @@ export class LocalShapeQueryApi implements ShapeQueryAPI {
       totalVectorTiles,
       hasErrors: latest.status === 'failed',
       errorMessages: latest.status === 'failed' ? ['Batch processing failed'] : [],
-      stage: latest.progress?.currentStage,
+      stage: latest.progress?.taskType,
       progress: latest.progress?.percentage,
       lastUpdated: latest.updatedAt,
     };
@@ -260,13 +292,13 @@ export class LocalShapeQueryApi implements ShapeQueryAPI {
   }
 
   async listRawBuffers(nodeId: NodeId): Promise<ShapeRawBufferRecord[]> {
-    const metadata = await listDownloadMetadataForNode(nodeId);
+    const metadata = await listRawDataDataSourceMetadataForNode(nodeId);
     const records = await Promise.all(metadata.map(async (entry) => {
       const cacheKey = entry.cacheKey;
       if (!cacheKey) return null;
-      const data = await readDownloadBuffer(nodeId, cacheKey);
+      const data = await readRawDataDataSourceBuffer(nodeId, cacheKey);
       if (!data) return null;
-      const summary = await summarizeDownloadBuffer(data);
+      const summary = await summarizeDownloadBuffer(data, entry.contentType);
       return {
         id: cacheKey,
         nodeId,
@@ -282,9 +314,11 @@ export class LocalShapeQueryApi implements ShapeQueryAPI {
   }
 
   async getRawBuffer(nodeId: NodeId, bufferId: string): Promise<ShapeRawBufferRecord | null> {
-    const data = await readDownloadBuffer(nodeId, bufferId);
+    const data = await readRawDataDataSourceBuffer(nodeId, bufferId);
     if (!data) return null;
-    const summary = await summarizeDownloadBuffer(data);
+    const metadata = await listRawDataDataSourceMetadataForNode(nodeId);
+    const entry = metadata.find((item) => item.cacheKey === bufferId);
+    const summary = await summarizeDownloadBuffer(data, entry?.contentType);
     return {
       id: bufferId,
       nodeId,
@@ -434,16 +468,13 @@ export class LocalShapeMutationApi implements ShapeMutationAPI {
 
   async updateBatchTask(taskId: string, updates: Partial<ShapeBatchTaskRecord>): Promise<void> {
     const db = getEphemeralShapeDB();
-    await db.updateBatchTask(taskId, {
-      ...updates,
-      updatedAt: updates.updatedAt ?? Date.now(),
-    });
+    await db.updateBatchTask(taskId, updates);
   }
 
   async putRawBuffers(buffers: ShapeRawBufferRecord[]): Promise<void> {
     if (buffers.length === 0) return;
     await Promise.all(buffers.map((buffer) => (
-      storeDownloadBufferForNode({
+      storeRawDataDataSourceBufferForNode({
         nodeId: buffer.nodeId,
         cacheKey: buffer.id,
         buffer: buffer.data,
@@ -543,13 +574,13 @@ export class LocalShapeEphemeralDbApi implements ShapeEphemeralDBAPI {
   }
 
   async listRawBuffers(nodeId: NodeId): Promise<ShapeRawBufferRecord[]> {
-    const metadata = await listDownloadMetadataForNode(nodeId);
+    const metadata = await listRawDataDataSourceMetadataForNode(nodeId);
     const records = await Promise.all(metadata.map(async (entry) => {
       const cacheKey = entry.cacheKey;
       if (!cacheKey) return null;
-      const data = await readDownloadBuffer(nodeId, cacheKey);
+      const data = await readRawDataDataSourceBuffer(nodeId, cacheKey);
       if (!data) return null;
-      const summary = await summarizeDownloadBuffer(data);
+      const summary = await summarizeDownloadBuffer(data, entry.contentType);
       return {
         id: cacheKey,
         nodeId,
@@ -565,9 +596,11 @@ export class LocalShapeEphemeralDbApi implements ShapeEphemeralDBAPI {
   }
 
   async getRawBuffer(nodeId: NodeId, bufferId: string): Promise<ShapeRawBufferRecord | null> {
-    const data = await readDownloadBuffer(nodeId, bufferId);
+    const data = await readRawDataDataSourceBuffer(nodeId, bufferId);
     if (!data) return null;
-    const summary = await summarizeDownloadBuffer(data);
+    const metadata = await listRawDataDataSourceMetadataForNode(nodeId);
+    const entry = metadata.find((item) => item.cacheKey === bufferId);
+    const summary = await summarizeDownloadBuffer(data, entry?.contentType);
     return {
       id: bufferId,
       nodeId,
@@ -581,11 +614,11 @@ export class LocalShapeEphemeralDbApi implements ShapeEphemeralDBAPI {
   }
 
   async countRawBuffers(nodeId: NodeId): Promise<number> {
-    return countDownloadBuffersForNode(nodeId);
+    return countRawDataDataSourceBuffersForNode(nodeId);
   }
 
   async putRawBuffer(buffer: ShapeRawBufferRecord): Promise<void> {
-    await storeDownloadBufferForNode({
+    await storeRawDataDataSourceBufferForNode({
       nodeId: buffer.nodeId,
       cacheKey: buffer.id,
       buffer: buffer.data,
@@ -595,7 +628,7 @@ export class LocalShapeEphemeralDbApi implements ShapeEphemeralDBAPI {
   async putRawBuffers(buffers: ShapeRawBufferRecord[]): Promise<void> {
     if (buffers.length === 0) return;
     await Promise.all(buffers.map((buffer) => (
-      storeDownloadBufferForNode({
+      storeRawDataDataSourceBufferForNode({
         nodeId: buffer.nodeId,
         cacheKey: buffer.id,
         buffer: buffer.data,

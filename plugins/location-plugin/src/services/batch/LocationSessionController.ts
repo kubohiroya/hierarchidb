@@ -171,15 +171,15 @@ export class LocationSessionController {
     }, { concurrency });
   }
 
-  private emit(stage: ProgressInfo['stage'], total: number, completed: number, failed: number, currentTask: string) {
+  private emit(taskType: ProgressInfo['taskType'], total: number, completed: number, failed: number, message: string) {
     this.progressCb?.({
       nodeId: this.nodeId,
-      stage,
+      taskType,
       total,
       completed,
       failed,
       percentage: total > 0 ? (completed / total) * 100 : 0,
-      currentTask,
+      message,
       timestamp: Date.now(),
     });
   }

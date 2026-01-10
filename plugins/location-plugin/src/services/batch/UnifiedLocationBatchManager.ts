@@ -177,8 +177,7 @@ export class UnifiedLocationBatchManager extends UnifiedBatchManagerBase<Unified
         completed,
         failed: progress?.failed ?? 0,
         percentage,
-        currentStage: mapStageToBatchStage(progress?.currentStage),
-        currentTask: progress?.currentTask,
+        taskType: mapStageToBatchStage(progress?.taskType),
       },
       startedAt: record?.createdAt,
       lastActivity: record?.updatedAt,
@@ -190,12 +189,12 @@ export class UnifiedLocationBatchManager extends UnifiedBatchManagerBase<Unified
       const summary = this.manager.getInitialSummary(nodeId);
       const event = toBatchProgressEvent({
         nodeId: summary?.nodeId ?? legacy.nodeId,
-        stage: legacy.stage,
+        stage: legacy.taskType,
         total: legacy.total,
         completed: legacy.completed,
         failed: legacy.failed,
         percentage: legacy.percentage,
-        currentTask: legacy.currentTask,
+        message: legacy.message,
       });
       callback(event);
     });

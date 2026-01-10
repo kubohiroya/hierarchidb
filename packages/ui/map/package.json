@@ -23,6 +23,7 @@
     "react": ">=18.0.0",
     "@vis.gl/react-maplibre": "^8.0.4",
     "maplibre-gl": "^5.7.3",
+    "@deck.gl/core": "^9.1.14",
     "@deck.gl/geo-layers": "^9.1.14",
     "@deck.gl/layers": "^9.1.14",
     "@deck.gl/mapbox": "^9.1.14",
@@ -33,6 +34,7 @@
     "react": ">=18.0.0",
     "@mui/material": "^7.3.6",
     "@types/geojson": "^7946.0.8",
+    "@deck.gl/core": "^9.1.14",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/ui-grid": "workspace:*",
     "@storybook/react-vite": "7.6.20"

@@ -153,21 +153,14 @@ export function TreeConsoleToolbarContent({
       'settings.dialogBackdropDismiss.title',
       'Close dialogs on outside click',
     ),
-    sharedZoomRangeTitle: t('settings.sharedZoomRange.title', 'Shared zoom range'),
-    sharedZoomRangeHelper: t(
-      'settings.sharedZoomRange.helper',
-      'Default zoom range applied to shape/location/route settings.',
+    zoomBandsTitle: t('settings.zoomBands.title', 'Zoom bands'),
+    zoomBandsHelper: t(
+      'settings.zoomBands.helper',
+      'Shape tiles are generated with fixed zoom bands.',
     ),
-    sharedZoomRangeLabel: t('settings.sharedZoomRange.rangeLabel', 'Zoom range'),
-    sharedZoomSegmentsLabel: t('settings.sharedZoomRange.segmentsLabel', 'Zoom range segments'),
-    sharedZoomSegmentsHelper: t(
-      'settings.sharedZoomRange.segmentsHelper',
-      'Number of zoom ranges to segment.',
-    ),
-    sharedZoomBreakpointsLabel: t('settings.sharedZoomRange.breakpointsLabel', 'Zoom range breakpoints'),
-    sharedZoomBreakpointsHelper: t(
-      'settings.sharedZoomRange.breakpointsHelper',
-      'Set breakpoints inside the supported zoom range.',
+    zoomBandsSummary: t(
+      'settings.zoomBands.summary',
+      'band0: z0-3\nband1: z3-6\nband2: z6-9\nband3: z9-11 (optional)',
     ),
   } as const;
 
@@ -237,13 +230,9 @@ export function TreeConsoleToolbarContent({
           rowClickEdit: labels.rowClickEdit,
           autosaveTitle: labels.autosaveTitle,
           dialogBackdropDismissTitle: labels.dialogBackdropDismissTitle,
-          sharedZoomRangeTitle: labels.sharedZoomRangeTitle,
-            sharedZoomRangeHelper: labels.sharedZoomRangeHelper,
-            sharedZoomRangeLabel: labels.sharedZoomRangeLabel,
-            sharedZoomSegmentsLabel: labels.sharedZoomSegmentsLabel,
-            sharedZoomSegmentsHelper: labels.sharedZoomSegmentsHelper,
-            sharedZoomBreakpointsLabel: labels.sharedZoomBreakpointsLabel,
-            sharedZoomBreakpointsHelper: labels.sharedZoomBreakpointsHelper,
+          zoomBandsTitle: labels.zoomBandsTitle,
+          zoomBandsHelper: labels.zoomBandsHelper,
+          zoomBandsSummary: labels.zoomBandsSummary,
           }}
         />
       </Box>

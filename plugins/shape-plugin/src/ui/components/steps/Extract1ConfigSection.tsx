@@ -64,7 +64,7 @@ export const Extract1ConfigSection: React.FC<Props> = ({ config, draft, disabled
         <Stack direction="row" spacing={2} alignItems="center">
           <FilterAltIcon color="primary" />
           <Typography variant="subtitle1">
-            {t('processing.extract1.title', 'Primary Extraction')}
+            {t('processing.extract1.title', 'Transform (Filtering)')}
           </Typography>
           <Tooltip
             title={t(
@@ -83,9 +83,9 @@ export const Extract1ConfigSection: React.FC<Props> = ({ config, draft, disabled
             <Grid size={{ xs: 12, sm: 4 }}>
               <WorkerNumberConfigCard
                 icon={<FilterAlt fontSize="small" color="primary" />}
-                title={t('processing.filter.workersStage1', 'Number of Workers for Polygon-Extraction (Stage 1)')}
+                title={t('processing.filter.workersStage1', 'Transform Workers (Filtering)')}
                 value={baseExtract1Config.workers ?? 2}
-                helperText={t('processing.filter.workersStage1Help', 'Parallel workers for feature extraction in stage 1.')}
+                helperText={t('processing.filter.workersStage1Help', 'Parallel workers for transform filtering.')}
                 warningText={extract1WarningText}
                 onChange={(workers) =>
                   update({

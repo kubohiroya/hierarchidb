@@ -71,7 +71,7 @@ export const DownloadCacheActions: React.FC<Props> = ({
             disabled={!canDeleteStage1}
             onClick={() => onDeleteStage('extract1')}
           >
-            {t('processing.download.deleteStage1Cache', 'Delete extract1 cache')}
+            {t('processing.download.deleteStage1Cache', 'Delete transform cache (filtering)')}
           </Button>
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
@@ -83,7 +83,7 @@ export const DownloadCacheActions: React.FC<Props> = ({
             disabled={!canDeleteStage2}
             onClick={() => onDeleteStage('extract2')}
           >
-            {t('processing.download.deleteStage2Cache', 'Delete extract2 cache')}
+            {t('processing.download.deleteStage2Cache', 'Delete transform cache (preprocessing)')}
           </Button>
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
@@ -95,7 +95,7 @@ export const DownloadCacheActions: React.FC<Props> = ({
             disabled={!canDeleteTiles}
             onClick={onDeleteTiles}
           >
-            {t('processing.download.deleteTiles', 'Delete Tiles')}
+            {t('processing.download.deleteTiles', 'Delete vt cache')}
           </Button>
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>

@@ -61,7 +61,8 @@
     "dexie": "^4.2.0",
     "@hierarchidb/location-store": "workspace:*",
     "@hierarchidb/route-engine": "workspace:*",
-    "@hierarchidb/route-store": "workspace:*"
+    "@hierarchidb/route-store": "workspace:*",
+    "@hierarchidb/vt-orchestrator": "workspace:*"
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
@@ -73,6 +74,7 @@
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/download": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
+    "@hierarchidb/ui-auth": "workspace:*",
     "@hierarchidb/ui-worker-provider": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
@@ -104,6 +106,7 @@
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/download": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
+    "@hierarchidb/ui-auth": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/location-store": "workspace:*",
     "@hierarchidb/route-engine": "workspace:*",

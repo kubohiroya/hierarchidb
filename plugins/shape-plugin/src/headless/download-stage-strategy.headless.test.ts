@@ -30,8 +30,6 @@ const createConfig = (dataSource: string): BatchProcessConfig => ({
   },
   vectorTiles: {
     concurrentProcesses: 1,
-    minZoom: 0,
-    maxZoom: 1,
   },
 });
 

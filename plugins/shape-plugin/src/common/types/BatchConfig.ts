@@ -82,13 +82,10 @@ export interface ExtractSession2Config {
  */
 export interface GenerateVectorTilesConfig {
   concurrentProcesses: number;
-  minZoom: number;
-  maxZoom: number;
   bufferSize?: number;
   tileSize?: number;
   inputFormat?: 'geojson' | 'flatgeobuf';
   inputCompression?: 'gzip' | 'none';
-  zoomBreakpoints?: number[];
   tileExpandFactor?: number;
   tileExpandMargin?: number;
 }
@@ -111,8 +108,6 @@ export interface BatchSessionConfig extends CommonSessionConfig {
   quantize?: number;
   extract?: number;
   tolerance?: number;
-  maxZoom?: number;
-  minZoom?: number;
   featureAreaThreshold?: number;
   minVertexCountForAreaFilter?: number;
   enableFeatureFiltering?: boolean;

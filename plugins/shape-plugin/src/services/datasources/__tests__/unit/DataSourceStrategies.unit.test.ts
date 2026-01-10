@@ -80,8 +80,6 @@ const minimalBatchConfig = {
   },
   tileConfig: {
     workers: 1,
-    minZoom: 0,
-    maxZoom: 0,
   },
   cleanupConfig: {
     deleteDownloadedFiles: false,
@@ -401,8 +399,8 @@ describe('GADM Strategy', () => {
   });
 
   it('should normalize country codes', () => {
-    expect(strategy.config.access.endpoints).toHaveProperty('country-gpkg');
-    expect(strategy.config.access.endpoints).toHaveProperty('country-shp');
+    expect(strategy.config.access.endpoints).toHaveProperty('country-json');
+    expect(strategy.config.access.endpoints).toHaveProperty('country-json-zip');
   });
 });
 

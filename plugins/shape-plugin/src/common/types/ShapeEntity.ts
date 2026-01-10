@@ -35,7 +35,6 @@ export interface ShapeEntity {
   tileSummary?: { tiles: number; totalBytes: number; zoomMin?: number; zoomMax?: number };
   buildStartedAt?: number;
   buildFinishedAt?: number;
-  buildTileZoomRange?: { minZoom: number; maxZoom: number };
 }
 
 export type SelectedArrayByCountries = Record<ISO2, boolean[]>;

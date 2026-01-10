@@ -9,7 +9,7 @@ export function toBatchProgressEvent(ev: {
   completed?: number;
   failed?: number;
   percentage?: number;
-  currentTask?: string;
+  message?: string;
 }): BatchProgressEvent {
   const mappedStage = mapStageToBatchStage(ev.stage);
   const total = ev.total ?? 100;
@@ -22,7 +22,6 @@ export function toBatchProgressEvent(ev: {
     total,
     completed: ev.completed ?? Math.round((pct / 100) * total),
     failed: ev.failed ?? 0,
-    currentTask: ev.currentTask,
   };
   return {
     nodeId: ev.nodeId,
@@ -30,5 +29,6 @@ export function toBatchProgressEvent(ev: {
     phase: pct >= 100 ? 'completed' : 'running',
     timestamp: Date.now(),
     payload,
+    message: ev.message,
   };
 }

@@ -63,6 +63,35 @@
       ],
       "outputs": []
     },
+    "check:deps": {
+      "outputs": []
+    },
+    "guard:deps:extra": {
+      "outputs": []
+    },
+    "policy:ban-tsconfig-paths-dist-dts": {
+      "outputs": []
+    },
+    "policy:ban-tsconfig-paths-src": {
+      "outputs": []
+    },
+    "shims:check": {
+      "outputs": []
+    },
+    "as-any:check": {
+      "outputs": []
+    },
+    "preflight": {
+      "dependsOn": [
+        "check:deps",
+        "guard:deps:extra",
+        "policy:ban-tsconfig-paths-dist-dts",
+        "policy:ban-tsconfig-paths-src",
+        "shims:check",
+        "as-any:check"
+      ],
+      "outputs": []
+    },
     "clean": {
       "cache": false,
       "outputs": []

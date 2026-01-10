@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { NodeId, NodeType, ProgressEvent } from '@hierarchidb/common-types';
-import type { BatchSessionStatus, UnifiedProgressInfo } from '@hierarchidb/common-api';
+import type { UnifiedProgressInfo } from '@hierarchidb/common-api';
 import { AuthNotificationRegistry } from '@hierarchidb/common-auth';
 import { usePluginBatchProgress } from '@hierarchidb/ui-batch-progress';
 
@@ -15,7 +15,6 @@ export interface LocationProgressEvent extends ProgressEvent {
 export interface UseLocationProgressState {
   progress: LocationProgressEvent | null;
   unifiedProgress: UnifiedProgressInfo | null;
-  isSubscribed: boolean;
   error: Error | null;
 }
 
@@ -28,50 +27,20 @@ type ExtendedProgressInfo = UnifiedProgressInfo & {
   nodeId?: NodeId;
 };
 
-const statusToUnified = (status: BatchSessionStatus): UnifiedProgressInfo => {
-  const progress = status.progress ?? {};
-  const total = progress.total ?? 0;
-  const completed = progress.completed ?? 0;
-  const failed = progress.failed ?? 0;
-  const percentage = progress.percentage
-    ?? (total > 0 ? Math.max(0, Math.min(100, Math.round((completed / total) * 100))) : 0);
-  const stage = progress.currentStage ?? 'processing';
-  return {
-    stage,
-    total,
-    completed,
-    failed,
-    percentage,
-    currentTask: progress.currentTask ?? stage,
-    phase: status.status,
-    timestamp: status.lastActivity ?? Date.now(),
-    payload: {
-      total,
-      completed,
-      failed,
-      currentTask: progress.currentTask ?? stage,
-      meta: status.error ? { errors: [status.error] } : undefined,
-    },
-    message: status.error,
-    nodeId: status.nodeId,
-  };
-};
-
 function toProgressEvent(
   info: ExtendedProgressInfo | null,
   fallbackNodeId: NodeId,
 ): LocationProgressEvent | null {
   if (!info) return null;
   const resolvedNodeId = info.nodeId ?? fallbackNodeId;
-  const stage = info.phase === 'completed' ? 'completed' : info.stage;
+  const taskType = info.phase === 'completed' ? 'completed' : info.stage;
   const event: LocationProgressEvent = {
     nodeId: resolvedNodeId,
-    stage,
+    taskType,
     total: info.total ?? 0,
     completed: info.completed ?? 0,
     failed: info.failed ?? 0,
     percentage: info.percentage ?? 0,
-    currentTask: info.currentTask ?? info.message ?? stage,
     timestamp: typeof info.timestamp === 'number' ? info.timestamp : Date.now(),
     message: info.message,
   };
@@ -90,7 +59,6 @@ export function useLocationProgress(
   const {
     progress: derivedProgress,
     unifiedProgress,
-    isSubscribed,
     error,
     subscribe,
     unsubscribe,
@@ -99,8 +67,6 @@ export function useLocationProgress(
     nodeId,
     {
       autoSubscribe,
-      enablePollingFallback: false,
-      mapStatusToUnified: statusToUnified,
       mapUnifiedToProgress: (info: UnifiedProgressInfo | null) =>
         toProgressEvent(info as ExtendedProgressInfo | null, nodeId),
     },
@@ -124,12 +90,11 @@ export function useLocationProgress(
       onAuthRequired: async (n) => {
         setOverrideProgress({
           nodeId,
-          stage: 'auth-required',
+          taskType: 'auth-required',
           total: 1,
           completed: 0,
           failed: 0,
           percentage: 0,
-          currentTask: n?.context?.errorMessage || 'Authentication required',
           timestamp: Date.now(),
           message: n?.context?.errorMessage,
         });
@@ -137,12 +102,11 @@ export function useLocationProgress(
       onAuthSuccess: async (_n) => {
         setOverrideProgress({
           nodeId,
-          stage: 'resumed',
+          taskType: 'resumed',
           total: 1,
           completed: 1,
           failed: 0,
           percentage: 100,
-          currentTask: 'Authentication successful - resuming',
           timestamp: Date.now(),
           message: 'Authentication successful - resuming',
         });
@@ -150,12 +114,11 @@ export function useLocationProgress(
       onAuthCancelled: async (n) => {
         setOverrideProgress({
           nodeId,
-          stage: 'failed',
+          taskType: 'failed',
           total: 1,
           completed: 0,
           failed: 1,
           percentage: 0,
-          currentTask: 'Authentication stopped',
           timestamp: Date.now(),
           message: n?.context?.reason,
         });
@@ -169,7 +132,6 @@ export function useLocationProgress(
   return {
     progress: derivedProgress ?? overrideProgress,
     unifiedProgress: unifiedProgress ?? null,
-    isSubscribed,
     error,
     subscribe,
     unsubscribe,

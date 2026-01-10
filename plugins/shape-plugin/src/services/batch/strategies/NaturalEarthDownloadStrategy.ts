@@ -11,7 +11,7 @@ import type { CountryMetadata, DownloadTask, DownloadTaskPayload } from '../../.
 import { decodeFlatGeoJson, encodeFlatGeoJson } from './flatgeobuf.js';
 import { metadataLoader } from '../../metadata/MetadataLoader.js';
 import { buildDownloadTaskId, generateDownloadTaskPayloadsFromSelection } from '../../utils/utils.js';
-import { buildDownloadCacheKey, readDownloadBuffer, storeDownloadBufferForNode } from '../../utils/chunkStore.js';
+import { buildRawDataDataSourceCacheKey, readRawDataDataSourceBuffer, storeRawDataDataSourceBufferForNode } from '../../utils/chunkStore.js';
 
 type CountryLookup = Map<string, CountryMetadata>;
 
@@ -49,7 +49,7 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
         taskType: 'download',
         stage: 'wait',
         type: 'download',
-        status: 'waiting',
+        status: 'queued',
         index,
         progress: 0,
         url: metadata.url,
@@ -73,12 +73,12 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
       }
       const adminLevel = input.adminLevel;
       const sourceUrl = input.url;
-      const datasetCacheKey = buildDownloadCacheKey({
+      const datasetCacheKey = buildRawDataDataSourceCacheKey({
         dataSource: 'naturalearth',
         adminLevel,
         url: sourceUrl,
       });
-      const rawBuffer = await readDownloadBuffer(context.nodeId, datasetCacheKey);
+      const rawBuffer = await readRawDataDataSourceBuffer(context.nodeId, datasetCacheKey);
       if (!rawBuffer) continue;
 
       const geojson = await decodeFlatGeoJson(rawBuffer);
@@ -91,16 +91,17 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
         const continent = country?.continent;
         const collection: FeatureCollection = { type: 'FeatureCollection', features };
         const data = await encodeFlatGeoJson(collection);
-        const outputBufferId = buildDownloadCacheKey({
+        const outputBufferId = buildRawDataDataSourceCacheKey({
           dataSource: 'naturalearth',
           countryCode,
           adminLevel,
           url: sourceUrl,
         });
-        await storeDownloadBufferForNode({
+        await storeRawDataDataSourceBufferForNode({
           nodeId: context.nodeId,
           cacheKey: outputBufferId,
           buffer: data,
+          contentType: 'application/flatgeobuf',
         });
         outputs.push({
           inputBufferId: outputBufferId,

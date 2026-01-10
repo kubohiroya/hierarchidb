@@ -92,13 +92,15 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
 
   const statusIcon = useMemo(() => {
     if (!progress) return null;
-    const isZeroTasks = (progress.taskCount ?? 0) === 0 && (progress.completedCount ?? 0) === 0;
-    if (isZeroTasks) return <PauseCircleOutlineIcon fontSize="small" />;
+    const summaryTotal = progress.summary?.total ?? 0;
+    const isZeroTasks = summaryTotal === 0
+      || ((progress.taskCount ?? 0) === 0 && (progress.completedCount ?? 0) === 0);
     const status = progress.status;
+    if (status === 'failed') return <ErrorOutlineIcon fontSize="small" />;
+    if (isZeroTasks) return <PauseCircleOutlineIcon fontSize="small" />;
     if (status === 'running') return <PlayCircleIcon fontSize="small" />;
     if (status === 'paused') return <PauseCircleIcon fontSize="small" />;
     if (status === 'completed' || progress.progress >= 100) return <CheckCircleIcon fontSize="small" />;
-    if (status === 'failed') return <ErrorOutlineIcon fontSize="small" />;
     if (status === 'idle') return <PauseCircleOutlineIcon fontSize="small" />;
     if (progress.progress > 0) return <AutorenewIcon fontSize="small" />;
     return <PauseCircleOutlineIcon fontSize="small" />;
@@ -106,7 +108,10 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
 
   const statusColor = useMemo(() => {
     if (!progress) return theme.palette.text.secondary;
-    const isZeroTasks = (progress.taskCount ?? 0) === 0 && (progress.completedCount ?? 0) === 0;
+    const summaryTotal = progress.summary?.total ?? 0;
+    const isZeroTasks = summaryTotal === 0
+      || ((progress.taskCount ?? 0) === 0 && (progress.completedCount ?? 0) === 0);
+    if (progress.status === 'failed') return theme.palette.error.main;
     if (isZeroTasks) return theme.palette.text.secondary;
     switch (progress.status) {
       case 'running':
@@ -115,8 +120,6 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
         return theme.palette.warning.main;
       case 'completed':
         return theme.palette.success.main;
-      case 'failed':
-        return theme.palette.error.main;
       default:
         return theme.palette.text.secondary;
     }

@@ -3,12 +3,14 @@ import { useId } from 'react';
 import type { DownloadBatchConfig, BatchConfig, ShapeEntity } from '../../common/types/index.js';
 import { DEFAULT_PROCESSING_CONFIG, mergeBatchConfig } from '../../common/types/index.js';
 import { getShapeDbApiClient } from '../../services/batch/ShapeBatchApiClient.js';
-import { toNodeId, type NodeId } from '@hierarchidb/common-types';
+import { toNodeId, type NodeId, type NodeType } from '@hierarchidb/common-types';
 import { notify } from '@hierarchidb/components';
 import { useTranslation } from '../i18n.js';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useSetAtom } from 'jotai';
 import { shapeBuildPersistedTasksAtom, shapeBuildTasksAtom } from '../state/shapeBuildProgressAtoms.js';
+import { VtTaskQueueDb, listTasksByStage, type TaskStage } from '@hierarchidb/vt-orchestrator';
+import { VtShapeDb, SHAPE_DOMAIN } from '@hierarchidb/vt-shape-store';
 
 type Args = {
   config: BatchConfig;
@@ -20,6 +22,7 @@ type Args = {
 };
 
 const isVectorTileStage = (stage?: string): boolean => stage === 'vectortile' || stage === 'vectorTiles';
+const SHAPE_NODE_TYPE = 'shape' as NodeType;
 
 export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onChange, onResetSession }: Args) => {
   const { t } = useTranslation();
@@ -37,12 +40,13 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
   const [taskCounts, setTaskCounts] = useState({ download: 0, extract1: 0, extract2: 0, vectortile: 0 });
   const [finalCounts, setFinalCounts] = useState({ tiles: 0, metadata: 0 });
   const [failedCounts, setFailedCounts] = useState({ download: 0, extract1: 0, extract2: 0, vectortile: 0 });
+  const [sessionRunning, setSessionRunning] = useState<boolean | null>(null);
   const setBuildTasks = useSetAtom(shapeBuildTasksAtom);
   const setPersistedTasks = useSetAtom(shapeBuildPersistedTasksAtom);
   const deleteLabel = useMemo(() => (
     counts.raw > 0
-      ? t('processing.download.deleteDownloadedFilesWithCount', 'Delete Downloaded Files ({{count}} files)', { count: counts.raw })
-      : t('processing.download.deleteDownloadedFiles', 'Delete Downloaded Files')
+      ? t('processing.download.deleteDownloadedFilesWithCount', 'Delete fetch cache ({{count}} items)', { count: counts.raw })
+      : t('processing.download.deleteDownloadedFiles', 'Delete fetch cache')
   ), [counts.raw, t]);
 
   const loadCounts = useCallback(async () => {
@@ -51,13 +55,23 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
       setFinalCounts({ tiles: 0, metadata: 0 });
       setFailedCounts({ download: 0, extract1: 0, extract2: 0, vectortile: 0 });
       setTaskCounts({ download: 0, extract1: 0, extract2: 0, vectortile: 0 });
+      setSessionRunning(false);
       setCountsLoading(false);
       return;
     }
     setCountsLoading(true);
     try {
+      const sessionStatusPromise = batchNodeId
+        ? bridgeRef
+          .initialize()
+          .then(() => bridgeRef.getBatchSessionStatus(SHAPE_NODE_TYPE, batchNodeId))
+          .catch(() => null)
+        : Promise.resolve(null);
+      const taskQueue = new VtTaskQueueDb();
+      const vtShapeDb = new VtShapeDb();
       const [
         raw,
+        stage1Count,
         stage1,
         stage2,
         tiles,
@@ -68,8 +82,16 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
         extract1Tasks,
         extract2Tasks,
         vectortileTasks,
+        vtFetchTasks,
+        vtTransformTasks,
+        vtVtTasks,
+        sessionStatus,
       ] = await Promise.all([
         ephemeral.countRawBuffers(batchNodeId),
+        vtShapeDb.stage1Buffers
+          .where('[nodeId+domainType]')
+          .equals([batchNodeId, SHAPE_DOMAIN])
+          .count(),
         ephemeral.countExtractedBuffers(batchNodeId, 'extract1'),
         ephemeral.countExtractedBuffers(batchNodeId, 'extract2'),
         ephemeral.countVectorTiles(batchNodeId),
@@ -83,27 +105,35 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
         ephemeral.listBatchTasksByType(batchNodeId, 'extract1').then((rows) => rows.length),
         ephemeral.listBatchTasksByType(batchNodeId, 'extract2').then((rows) => rows.length),
         ephemeral.listBatchTasksByType(batchNodeId, 'vectortile').then((rows) => rows.length),
+        listTasksByStage(taskQueue, batchNodeId, 'fetch'),
+        listTasksByStage(taskQueue, batchNodeId, 'transform'),
+        listTasksByStage(taskQueue, batchNodeId, 'vt'),
+        sessionStatusPromise,
       ]);
+      setSessionRunning(sessionStatus?.status === 'running' || sessionStatus?.status === 'paused');
       const failedTasks = await ephemeral.listBatchTasksByStatus(batchNodeId, 'failed');
+      const vtFailedFetch = vtFetchTasks.filter((task) => task.status === 'failed').length;
+      const vtFailedTransform = vtTransformTasks.filter((task) => task.status === 'failed').length;
+      const vtFailedVt = vtVtTasks.filter((task) => task.status === 'failed').length;
       const failed = {
-        download: failedTasks.filter((task) => task.taskType === 'download').length,
-        extract1: failedTasks.filter((task) => task.taskType === 'extract1').length,
-        extract2: failedTasks.filter((task) => task.taskType === 'extract2').length,
-        vectortile: failedTasks.filter((task) => task.taskType === 'vectortile').length,
+        download: failedTasks.filter((task) => task.taskType === 'download').length + vtFailedFetch,
+        extract1: failedTasks.filter((task) => task.taskType === 'extract1').length + vtFailedTransform,
+        extract2: failedTasks.filter((task) => task.taskType === 'extract2').length + vtFailedTransform,
+        vectortile: failedTasks.filter((task) => task.taskType === 'vectortile').length + vtFailedVt,
       };
-      setCounts({ raw, stage1, stage2, tiles, cache: cacheEntries });
+      setCounts({ raw: raw + stage1Count, stage1, stage2, tiles, cache: cacheEntries });
       setFinalCounts({ tiles: finalTiles, metadata: finalMetadata });
       setFailedCounts(failed);
       setTaskCounts({
-        download: downloadTasks,
-        extract1: extract1Tasks,
-        extract2: extract2Tasks,
-        vectortile: vectortileTasks,
+        download: downloadTasks + vtFetchTasks.length,
+        extract1: extract1Tasks + vtTransformTasks.length,
+        extract2: extract2Tasks + vtTransformTasks.length,
+        vectortile: vectortileTasks + vtVtTasks.length,
       });
     } finally {
       setCountsLoading(false);
     }
-  }, [batchNodeId, ephemeral, query, resolvedNodeId]);
+  }, [batchNodeId, bridgeRef, ephemeral, query, resolvedNodeId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -117,10 +147,9 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
     };
   }, [loadCounts]);
 
-  const isRunning = draft?.processingStatus === 'processing';
+  const isRunning = sessionRunning ?? draft?.processingStatus === 'processing';
   const hasFinalOutputs = finalCounts.tiles > 0 || finalCounts.metadata > 0;
-  const allowDeleteRawByPolicy = false;
-  const canDeleteRaw = !disabled && allowDeleteRawByPolicy && (
+  const canDeleteRaw = !isRunning && !disabled && (
     counts.raw > 0
     || failedCounts.download > 0
     || taskCounts.download > 0
@@ -143,11 +172,33 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
   );
   const canDeleteMetadata = !isRunning && !disabled && finalCounts.metadata > 0;
 
+  const resolveVtStage = useCallback((taskType: string): TaskStage | null => {
+    switch (taskType) {
+      case 'download':
+        return 'fetch';
+      case 'extract1':
+      case 'extract2':
+        return 'transform';
+      case 'vectortile':
+        return 'vt';
+      default:
+        return null;
+    }
+  }, []);
+
   const clearBatchTasksForType = useCallback(async (taskType: string) => {
     if (!batchNodeId) return;
     const rows = await ephemeral.listBatchTasksByType(batchNodeId, taskType as 'download' | 'extract1' | 'extract2' | 'vectortile');
     await ephemeral.deleteBatchTasksByIds(rows.map((task) => task.taskId));
-  }, [batchNodeId, ephemeral]);
+    const vtStage = resolveVtStage(taskType);
+    if (vtStage) {
+      const taskQueue = new VtTaskQueueDb();
+      await taskQueue.tasks
+        .where('[nodeId+stage]')
+        .equals([batchNodeId, vtStage])
+        .delete();
+    }
+  }, [batchNodeId, ephemeral, resolveVtStage]);
 
   const clearFinalOutputs = useCallback(async () => {
     if (!batchNodeId) return;
@@ -197,11 +248,16 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
     if (!batchNodeId) return notify.warning('NodeId is missing.');
     await ephemeral.clearStage(batchNodeId, 'download');
     await clearBatchTasksForType('download');
+    const vtShapeDb = new VtShapeDb();
+    await vtShapeDb.stage1Buffers
+      .where('[nodeId+domainType]')
+      .equals([batchNodeId, SHAPE_DOMAIN])
+      .delete();
     await clearFinalOutputs();
     await loadCounts();
     onResetSession?.();
     await persistSessionReset();
-    notify.success('Deleted downloaded files');
+    notify.success('Deleted fetch cache');
   }, [
     batchNodeId,
     bridgeRef,
@@ -219,10 +275,12 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
     if (!batchNodeId) return notify.warning('NodeId is missing.');
     await ephemeral.clearStage(batchNodeId, stage);
     await clearBatchTasksForType(stage);
-    setBuildTasks((prev) => prev.filter((task) => task.stage !== stage));
-    setPersistedTasks((prev) => prev.filter((task) => task.stage !== stage));
+    setBuildTasks((prev) => prev.filter((task) => task.stage !== stage && task.stage !== 'transform'));
+    setPersistedTasks((prev) => prev.filter((task) => task.stage !== stage && task.stage !== 'transform'));
     await loadCounts();
-    notify.success(stage === 'extract1' ? 'Deleted Stage1 cache' : 'Deleted Stage2 cache');
+    notify.success(stage === 'extract1'
+      ? 'Deleted transform cache (filtering)'
+      : 'Deleted transform cache (preprocessing)');
   }, [batchNodeId, clearBatchTasksForType, ephemeral, loadCounts, setBuildTasks, setPersistedTasks]);
 
   const handleDeleteTiles = useCallback(async () => {
@@ -234,7 +292,7 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
     setPersistedTasks((prev) => prev.filter((task) => !isVectorTileStage(task.stage)));
     await persistTileSummaryReset();
     await loadCounts();
-    notify.success('Deleted tiles');
+    notify.success('Deleted vt cache');
   }, [
     batchNodeId,
     clearBatchTasksForType,

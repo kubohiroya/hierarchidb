@@ -211,7 +211,6 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
           ...testEntity.batchConfig,
           // Invalid configuration to trigger errors
           concurrentDownloads: -1,
-          maxZoom: 50, // Unrealistic zoom level
         },
       };
 
@@ -332,7 +331,7 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
 
       // Simulate vector tile generation
       const features = data.features.length;
-      const maxZoom = testEntity.batchConfig?.vectorTiles?.maxZoom || 8;
+      const maxZoom = 11;
       const zoomLevels = Array.from({ length: maxZoom + 1 }, (_, i) => i);
       const tilesGenerated = Math.min(features * zoomLevels.length, 100);
 

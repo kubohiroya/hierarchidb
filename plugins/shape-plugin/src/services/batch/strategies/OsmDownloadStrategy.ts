@@ -9,7 +9,7 @@ import type { NodeId } from '@hierarchidb/common-types';
 import type { CountryMetadata, DownloadTask, DownloadTaskPayload } from '../../../common/types/index.js';
 import { metadataLoader } from '../../metadata/MetadataLoader.js';
 import { buildDownloadTaskId, generateDownloadTaskPayloadsFromSelection } from '../../utils/utils.js';
-import { buildDownloadCacheKey } from '../../utils/chunkStore.js';
+import { buildRawDataDataSourceCacheKey } from '../../utils/chunkStore.js';
 
 export class OsmDownloadStrategy implements DownloadStageStrategy {
   buildDownloadTaskPayloads(context: DownloadTaskPayloadBuildContext) {
@@ -47,7 +47,7 @@ export class OsmDownloadStrategy implements DownloadStageStrategy {
         taskType: 'download',
         stage: 'wait',
         type: 'download',
-        status: 'waiting',
+        status: 'queued',
         index,
         progress: 0,
         url: metadata.url,
@@ -67,7 +67,7 @@ export class OsmDownloadStrategy implements DownloadStageStrategy {
         throw new Error(`[OsmDownloadStrategy] Missing input for task ${task.taskId}`);
       }
       const sourceUrl = input.url;
-      const cacheKey = buildDownloadCacheKey({
+      const cacheKey = buildRawDataDataSourceCacheKey({
         dataSource: input.dataSource,
         countryCode: input.countryCode,
         adminLevel: input.adminLevel,

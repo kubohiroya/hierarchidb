@@ -1,19 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toNodeId, type NodeType } from '@hierarchidb/common-types';
-import type { BatchSessionStatus, UnifiedProgressInfo } from '@hierarchidb/common-api';
+import type { UnifiedProgressInfo } from '@hierarchidb/common-api';
 import { useBatchProgress, createAdapterFromProgressSubscribe } from '@hierarchidb/batch';
 import { getWorkerBridge, type WorkerBridge } from '@hierarchidb/ui-worker-client';
 
 export type UseBatchProgressStateOptions = {
   autoSubscribe?: boolean;
-  enablePollingFallback?: boolean;
-  mapStatusToUnified: (status: BatchSessionStatus) => UnifiedProgressInfo;
 };
 
 export interface BatchProgressState {
   progress: UnifiedProgressInfo | null;
-  status: BatchSessionStatus | null;
-  isSubscribed: boolean;
   error: Error | null;
   subscribe: () => void;
   unsubscribe: () => void;
@@ -24,15 +20,9 @@ export const useBatchProgressState = (
   nodeId: string | null,
   options: UseBatchProgressStateOptions,
 ): BatchProgressState => {
-  const { autoSubscribe = true, enablePollingFallback = true, mapStatusToUnified } = options;
+  const { autoSubscribe = true } = options;
   const bridgeRef = useRef<WorkerBridge>(getWorkerBridge());
-  const mapStatusRef = useRef(mapStatusToUnified);
   const [error, setError] = useState<Error | null>(null);
-  const [status, setStatus] = useState<BatchSessionStatus | null>(null);
-
-  useEffect(() => {
-    mapStatusRef.current = mapStatusToUnified;
-  }, [mapStatusToUnified]);
 
   useEffect(() => {
     if (!nodeId || !autoSubscribe) return;
@@ -43,7 +33,6 @@ export const useBatchProgressState = (
   }, [autoSubscribe, nodeId]);
 
   useEffect(() => {
-    setStatus(null);
     setError(null);
   }, [nodeId]);
 
@@ -65,28 +54,11 @@ export const useBatchProgressState = (
     );
   }, [nodeType, nodeId]);
 
-  const poll = useMemo(() => {
-    if (!nodeId || !enablePollingFallback) return undefined;
-    const resolvedNodeId = toNodeId(nodeId);
-    return async (): Promise<UnifiedProgressInfo | null> => {
-      try {
-        const nextStatus = await bridgeRef.current.getBatchSessionStatus(nodeType, resolvedNodeId);
-        setStatus(nextStatus);
-        return mapStatusRef.current(nextStatus);
-      } catch (err: unknown) {
-        const errObj = err instanceof Error ? err : new Error('Failed to fetch batch status');
-        setError(errObj);
-        return null;
-      }
-    };
-  }, [enablePollingFallback, nodeType, nodeId]);
-
   const {
     progress: unifiedProgress,
-    subscribed,
     subscribe: sharedSubscribe,
     unsubscribe: sharedUnsubscribe,
-  } = useBatchProgress(adapter, { autoSubscribe, poll });
+  } = useBatchProgress(adapter, { autoSubscribe });
 
   const subscribe = useCallback(() => {
     void bridgeRef.current.initialize().catch((err: unknown) => {
@@ -102,8 +74,6 @@ export const useBatchProgressState = (
 
   return {
     progress: unifiedProgress,
-    status,
-    isSubscribed: subscribed,
     error,
     subscribe,
     unsubscribe,

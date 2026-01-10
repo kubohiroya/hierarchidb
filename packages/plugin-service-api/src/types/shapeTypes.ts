@@ -57,8 +57,7 @@ export interface ShapeBatchProgressSummary {
   failed: number;
   skipped: number;
   percentage: number;
-  currentStage?: string;
-  currentTask?: string;
+  taskType?: string;
 }
 
 export interface ShapeBatchSessionSummary {
@@ -78,7 +77,5 @@ export interface ShapeBatchTaskSummary {
   index: number;
   progress: number;
   message?: string;
-  startedAt?: number;
-  completedAt?: number;
   errorMessage?: string;
 }
