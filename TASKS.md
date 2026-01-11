@@ -1,3 +1,17 @@
+2186) fix/app/build-unresolved-shape-preview-import (P1) — 進行中 (2026-01-14)
+- ブランチ名: fix/app/build-unresolved-shape-preview-import
+- 依存: なし
+- 受け入れ基準: useShapePreviewStep の import 解決エラーが解消される／`@hierarchidb/app build` が通る／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/useShapePreviewStep.ts`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、import を修正前に戻す
+- チェックリスト:
+  - useShapePreviewStep の import を解決する
+  - app build が通ることを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-14 11:10 JST shape preview の import 解決エラー修正に着手。
+  - done: 2026-01-14 11:20 JST shape preview/step5 の ShapeBuildApiClient import を相対パスへ修正。検証: 未実施。
+
 2185) fix/runtime-worker/tsconfig-missing-path (P1) — 進行中 (2026-01-14)
 - ブランチ名: fix/runtime-worker/tsconfig-missing-path
 - 依存: なし

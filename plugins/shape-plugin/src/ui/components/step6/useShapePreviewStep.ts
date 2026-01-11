@@ -26,7 +26,7 @@ import { getDBName } from '@hierarchidb/util';
 //import { getShapeDbAPIClient } from '../../../services/batch/ShapeBuildApiClient.ts';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import { useVectorTilePreviewTable } from './useVectorTilePreviewTable.ts';
-import { shapeQueryAPIImpl } from 'plugins/shape-plugin/src/services/batch/ShapeBuildApiClient.ts';
+import { shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildApiClient.ts';
 
 type ShapePreviewDraft = Partial<ShapeEntity> & {
   tilesUrl?: string;

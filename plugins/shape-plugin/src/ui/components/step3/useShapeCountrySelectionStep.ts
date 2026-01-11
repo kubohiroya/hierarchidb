@@ -18,7 +18,7 @@ import { useDialogUrlSync } from '@hierarchidb/plugin-base';
 // (availability is loaded in a dedicated worker thread)
 
 const createAvailabilityWorker = () => new Worker(
-  new URL('../workers/countryAvailability.worker.ts', import.meta.url),
+  new URL('../../workers/countryAvailability.worker.ts', import.meta.url),
   { type: 'module' },
 );
 

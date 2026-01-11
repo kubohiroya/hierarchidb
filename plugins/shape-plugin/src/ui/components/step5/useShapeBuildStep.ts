@@ -24,7 +24,7 @@ import {
   recordBuildFinish,
   recordBuildStart,
 } from '@hierarchidb/ui-monitoring';
-import { shapeEphemeralAPIImpl, shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildApiClient.ts';
+import { shapeEphemeralAPIImpl, shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildApiClient.js';
 
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
 const buildMonitorConfig = {
