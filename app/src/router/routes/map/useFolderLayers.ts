@@ -8,7 +8,7 @@ import type {
 } from '@hierarchidb/ui-plugin-shell/ui-map';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';
-import type { ShapeQueryAPI } from '@hierarchidb/shape-store';
+import type { ShapeQueryAPI } from '@hierarchidb/plugin-service-api';
 import type { RouteQueryAPI } from '@hierarchidb/route-store';
 import { MAPLIBRE_PROPERTY_METADATA } from '@hierarchidb/styler-store';
 import { ensureWorkerAPI } from '@hierarchidb/ui-worker-client';
