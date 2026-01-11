@@ -303,12 +303,12 @@ export class ShapeQueryService implements ShapeQueryAPI {
   async listTransformSourceBuffers(
     nodeId: NodeId
   ): Promise<ShapeTransformSourceBufferRecord[]> {
-    return ephemeralShapeDB.transformBuffers.where('nodeId').equals(nodeId).toArray();
+    return ephemeralShapeDB.transformSourceBuffers.where('nodeId').equals(nodeId).toArray();
   }
 
   async getTransformSourceBuffer(bufferId: string): Promise<ShapeTransformSourceBufferRecord | null> {
-    return await ephemeralShapeDB.transformBuffers.get(bufferId);
-
+    const record = await ephemeralShapeDB.transformSourceBuffers.get(bufferId);
+    return record ?? null;
   }
 
   async listVectorTileRows(nodeId: NodeId): Promise<ShapeTileRow[]> {

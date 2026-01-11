@@ -29,7 +29,7 @@ export async function onRegister(): Promise<void> {
   initialized = true;
 
   try {
-    const { ShapeDB } = await import('./services/index.js');
+    const { ShapeDB } = await import('@hierarchidb/shape-store');
     const db = new ShapeDB();
     await db.open();
     await db.close();

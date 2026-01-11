@@ -1,3 +1,18 @@
+2187) fix/app/typecheck-runtime-worker-shape-imports (P1) — 進行中 (2026-01-14)
+- ブランチ名: fix/app/typecheck-runtime-worker-shape-imports
+- 依存: なし
+- 受け入れ基準: ShapeQueryService の戻り値型不整合（TS2322）が解消される／StageProcessingService の戻り値不足（TS2366）が解消される／shape-plugin index の ShapeDB import エラー（TS2339）が解消される／`@hierarchidb/app typecheck` が通る／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/runtime-worker/src/services/ShapeQueryService.ts`, `packages/runtime-worker/src/services/StageProcessingService.ts`, `plugins/shape-plugin/src/index.ts`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、各ファイルを修正前に戻す
+- チェックリスト:
+  - ShapeQueryService の戻り型を修正する
+  - StageProcessingService の return を補完する
+  - shape-plugin の ShapeDB import を修正する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-14 11:35 JST app typecheck の runtime-worker/shape-plugin エラー修正に着手。
+  - done: 2026-01-14 11:50 JST transformSourceBuffers 参照と ShapeDB import を修正し戻り値不足を補正。検証: 未実施。
+
 2186) fix/app/build-unresolved-shape-preview-import (P1) — 進行中 (2026-01-14)
 - ブランチ名: fix/app/build-unresolved-shape-preview-import
 - 依存: なし

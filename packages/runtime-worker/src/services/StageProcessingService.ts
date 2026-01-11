@@ -139,6 +139,7 @@ class RealVTWorker implements VTWorkerAPI {
     if (tileInput?.data) return tileInput.data;
     const transform = await ephemeralShapeDB.transformBuffers.get(fileId);
     if (transform?.data) return transform.data;
+    return null;
   }
 
   private async decodeInputBuffer(
