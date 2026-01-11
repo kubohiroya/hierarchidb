@@ -73,7 +73,7 @@ export const useMapFeatureHighlights = <HighlightEntry extends { source: string;
       try {
         mapInstance.removeFeatureState({ source: entry.source, id: entry.id, key });
       } catch (error) {
-        console.debug('[MapPreview] Failed to clear feature-state', error);
+        console.debug('[MapPreview] Failed to clear feature-atoms', error);
       }
     },
     [mapInstance],
@@ -85,7 +85,7 @@ export const useMapFeatureHighlights = <HighlightEntry extends { source: string;
       try {
         mapInstance.setFeatureState({ source: entry.source, id: entry.id }, { [key]: true });
       } catch (error) {
-        console.debug('[MapPreview] Failed to set feature-state', error);
+        console.debug('[MapPreview] Failed to set feature-atoms', error);
       }
     },
     [mapInstance],

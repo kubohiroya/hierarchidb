@@ -188,7 +188,7 @@ describe('MultiAuthProvider', () => {
       expect(screen.getByTestId('user-name')).toHaveTextContent('none');
     });
 
-    it('should initialize with loading state and then complete', async () => {
+    it('should initialize with loading atoms and then complete', async () => {
       render(
         <MultiAuthProvider>
           <TestComponent />

@@ -1,6 +1,6 @@
 /**
  * useTreeTableSelectionOverlay
- * Provides derived selection state for TreeTable, including select-all orchestration
+ * Provides derived selection atoms for TreeTable, including select-all orchestration
  * and transitive visual selection for ancestor relationships.
  */
 

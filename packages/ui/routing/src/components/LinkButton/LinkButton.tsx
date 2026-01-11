@@ -63,7 +63,7 @@ export interface LinkButtonProps extends Omit<ButtonProps, 'onClick'> {
   replace?: boolean;
 
   /**
-   * Optional state to pass with navigation.
+   * Optional atoms to pass with navigation.
    */
   state?: unknown;
 
@@ -182,7 +182,7 @@ export interface LinkButtonProps extends Omit<ButtonProps, 'onClick'> {
 
 /**
  * A versatile navigation button with async pre-processing,
- * built-in loading state, double-click prevention, and accessibility support.
+ * built-in loading atoms, double-click prevention, and accessibility support.
  *
  * @example
  * ```tsx

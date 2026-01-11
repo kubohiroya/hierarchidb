@@ -1,22 +1,22 @@
 import type { Feature, FeatureCollection } from 'geojson';
 import type {
-  DownloadStageBuildContext,
-  DownloadStageOutput,
-  DownloadStagePostprocessContext,
-  DownloadStagePostprocessResult,
-  DownloadStageStrategy,
-  DownloadTaskPayloadBuildContext,
-} from './DownloadStageStrategy.js';
-import type { CountryMetadata, DownloadTask, DownloadTaskPayload } from '../../../common/types/index.js';
+  FetchStageBuildContext,
+  FetchStageOutput,
+  FetchStagePostprocessContext,
+  FetchStagePostprocessResult,
+  FetchStageStrategy,
+  FetchPayloadBuildContext,
+} from './FetchStageStrategy.ts';
+import type { CountryMetadata, FetchTask, FetchTaskPayload } from '../../../common/types/index.js';
 import { decodeFlatGeoJson, encodeFlatGeoJson } from './flatgeobuf.js';
 import { metadataLoader } from '../../metadata/MetadataLoader.js';
-import { buildDownloadTaskId, generateDownloadTaskPayloadsFromSelection } from '../../utils/utils.js';
+import { buildFetchTaskId, generateDownloadTaskPayloadsFromSelection } from '../../utils/utils.js';
 import { buildRawDataDataSourceCacheKey, readRawDataDataSourceBuffer, storeRawDataDataSourceBufferForNode } from '../../utils/chunkStore.js';
 
 type CountryLookup = Map<string, CountryMetadata>;
 
-export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
-  buildDownloadTaskPayloads(context: DownloadTaskPayloadBuildContext) {
+export class NaturalEarthDownloadStrategy implements FetchStageStrategy {
+  buildFetchTaskPayloads(context: FetchPayloadBuildContext) {
     return generateDownloadTaskPayloadsFromSelection(
       'naturalearth',
       context.selectedArrayByCountries,
@@ -24,18 +24,18 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
     );
   }
 
-  async buildDownloadTasks(context: DownloadStageBuildContext) {
-    const adminLevels = new Map<number, DownloadTaskPayload>();
-    for (const metadata of context.downloadTaskPayloads) {
+  async buildFetchTasks(context: FetchStageBuildContext) {
+    const adminLevels = new Map<number, FetchTaskPayload>();
+    for (const metadata of context.fetchTaskPayloads) {
       const level = metadata.adminLevel;
       if (!adminLevels.has(level)) {
         adminLevels.set(level, metadata);
       }
     }
-    const inputsByTaskId = new Map<string, DownloadTaskPayload>();
-    const tasks: DownloadTask[] = Array.from(adminLevels.entries()).map(([adminLevel, metadata], index) => {
-      const taskId = buildDownloadTaskId(String(context.nodeId), metadata);
-      const payload: DownloadTaskPayload = {
+    const inputsByTaskId = new Map<string, FetchTaskPayload>();
+    const tasks: FetchTask[] = Array.from(adminLevels.entries()).map(([adminLevel, metadata], index) => {
+      const taskId = buildFetchTaskId(String(context.nodeId), metadata);
+      const payload: FetchTaskPayload = {
         url: metadata.url,
         countryCode: metadata.countryCode,
         countryName: metadata.countryName,
@@ -46,9 +46,8 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
       return {
         taskId,
         nodeId: context.nodeId,
-        taskType: 'download',
         stage: 'wait',
-        type: 'download',
+        type: 'fetch',
         status: 'queued',
         index,
         progress: 0,
@@ -58,16 +57,16 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
     return { tasks, inputsByTaskId };
   }
 
-  async postprocessDownloadOutputs(
-    context: DownloadStagePostprocessContext,
-  ): Promise<DownloadStagePostprocessResult> {
-    const outputs: DownloadStageOutput[] = [];
-    const selectedCountries = this.collectSelectedCountries(context.downloadTaskPayloads);
+  async buildPostprocessOutputs(
+    context: FetchStagePostprocessContext,
+  ): Promise<FetchStagePostprocessResult> {
+    const outputs: FetchStageOutput[] = [];
+    const selectedCountries = this.collectSelectedCountries(context.fetchTaskPayloads);
     const countryMetadata = await metadataLoader.getCountriesMetadata('naturalearth', selectedCountries, context.nodeId);
     const lookup = this.buildCountryLookup(countryMetadata);
 
-    for (const task of context.downloadTasks) {
-      const input = context.downloadInputsById.get(task.taskId);
+    for (const task of context.fetchTask) {
+      const input = context.fetchTaskInputsById.get(task.taskId);
       if (!input) {
         throw new Error(`[NaturalEarthDownloadStrategy] Missing input for task ${task.taskId}`);
       }
@@ -118,7 +117,7 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
     return { outputs };
   }
 
-  private collectSelectedCountries(payloads: DownloadTaskPayload[]): string[] {
+  private collectSelectedCountries(payloads: FetchTaskPayload[]): string[] {
     const codes = new Set<string>();
     payloads.forEach((metadata) => {
       codes.add(metadata.countryCode);

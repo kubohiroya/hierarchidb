@@ -70,7 +70,7 @@ function shallowEqualData(a: unknown, b: unknown): boolean {
 
 /**
  * Headless dialog container. Renders provided header/content/footer components
- * inside a context provider so that each layer can access dialog state and callbacks.
+ * inside a context provider so that each layer can access dialog atoms and callbacks.
  */
 export function AbstractDialog<TData>(props: HeadlessDialogProps<TData>) {
   const {

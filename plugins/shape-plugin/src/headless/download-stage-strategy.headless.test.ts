@@ -3,12 +3,13 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { BatchProcessConfig } from '../services/batch/types.js';
-import type { DownloadTaskPayload } from '../common/types/index.js';
-import { getShapeDbApiClient } from '../services/batch/ShapeBatchApiClient.js';
+import type { FetchTaskPayload } from '../common/types/index.js';
+//import { getShapeDbApiClient } from '../services/batch/ShapeBuildApiClient.js';
 import { encodeFlatGeoJson } from '../services/batch/strategies/flatgeobuf.js';
-import { GadmDownloadStrategy } from '../services/batch/strategies/GadmDownloadStrategy.js';
+import { GadmFetchStageStrategy } from '../services/batch/strategies/GadmFetchStageStrategy.js';
 import { NaturalEarthDownloadStrategy } from '../services/batch/strategies/NaturalEarthDownloadStrategy.js';
-import { Feature, FeatureCollection } from 'geojson';
+import type { Feature, FeatureCollection } from 'geojson';
+import {ephemeralShapeDB} from '@hierarchidb/shape-store';
 
 const createConfig = (dataSource: string): BatchProcessConfig => ({
   dataSource: dataSource as BatchProcessConfig['dataSource'],
@@ -33,7 +34,7 @@ const createConfig = (dataSource: string): BatchProcessConfig => ({
   },
 });
 
-const createDownloadTaskPayload = (overrides: Partial<DownloadTaskPayload>[]): DownloadTaskPayload[] => (
+const createDownloadTaskPayload = (overrides: Partial<FetchTaskPayload>[]): FetchTaskPayload[] => (
   overrides.map((item, index) => ({
     url: `https://example.com/${index}`,
     countryCode: 'JP',
@@ -46,37 +47,36 @@ const createDownloadTaskPayload = (overrides: Partial<DownloadTaskPayload>[]): D
 
 describe('Download stage strategies', () => {
   const nodeId = 'node-1' as NodeId;
-  const ephemeral = getShapeDbApiClient().ephemeral;
 
   beforeEach(async () => {
-    await ephemeral.clearAll();
+    await ephemeralShapeDB.clearAll();
   });
 
   afterEach(async () => {
-    await ephemeral.clearAll();
+    await ephemeralShapeDB.clearAll();
   });
 
   it('GADM strategy keeps 1:1 mapping between download tasks and outputs', async () => {
-    const strategy = new GadmDownloadStrategy();
+    const strategy = new GadmFetchStageStrategy();
     const downloadTaskPayloads = createDownloadTaskPayload([
       { countryCode: 'JP', adminLevel: 0, dataSource: 'gadm' },
       { countryCode: 'ID', adminLevel: 1, dataSource: 'gadm' },
     ]);
-    const { tasks, inputsByTaskId } = await strategy.buildDownloadTasks({
+    const { tasks, inputsByTaskId } = await strategy.buildFetchTasks({
       nodeId,
-      downloadTaskPayloads,
+      fetchTaskPayloads: downloadTaskPayloads,
       config: createConfig('gadm'),
       options: {},
     });
 
     expect(tasks).toHaveLength(2);
-    const postprocess = await strategy.postprocessDownloadOutputs({
+    const postprocess = await strategy.buildPostprocessOutputs({
       nodeId,
-      downloadTaskPayloads,
+      fetchTaskPayloads: downloadTaskPayloads,
       config: createConfig('gadm'),
       options: {},
-      downloadTasks: tasks,
-      downloadInputsById: inputsByTaskId,
+      fetchTask: tasks,
+      fetchTaskInputsById: inputsByTaskId,
     });
     expect(postprocess.outputs).toHaveLength(2);
     expect(postprocess.outputs[0]?.inputBufferId).toBe(`${nodeId}-download-0`);
@@ -91,9 +91,9 @@ describe('Download stage strategies', () => {
       { countryCode: 'JP', countryName: 'Japan', adminLevel: 1, dataSource: 'naturalearth' },
       { countryCode: 'ID', countryName: 'Indonesia', adminLevel: 1, dataSource: 'naturalearth' },
     ]);
-    const { tasks, inputsByTaskId } = await strategy.buildDownloadTasks({
+    const { tasks, inputsByTaskId } = await strategy.buildFetchTasks({
       nodeId,
-      downloadTaskPayloads,
+      fetchTaskPayloads: downloadTaskPayloads,
       config: createConfig('naturalearth'),
       options: {},
     });
@@ -105,8 +105,10 @@ describe('Download stage strategies', () => {
     ] satisfies Feature[];
     const collection = { type: 'FeatureCollection', features } satisfies FeatureCollection;
     const encoded = await encodeFlatGeoJson(collection);
-    await ephemeral.putRawBuffer({
-      id: `${nodeId}-download-0`,
+    const bufferId0 = `${nodeId}-download-0`;
+    const bufferId1 = `${nodeId}-download-1`;
+    await ephemeralShapeDB.fetchBuffers.put({
+      id: bufferId0,
       nodeId,
       data: encoded,
       featureCount: features.length,
@@ -115,8 +117,8 @@ describe('Download stage strategies', () => {
       size: encoded.byteLength,
       timestamp: Date.now(),
     });
-    await db.rawBuffers.put({
-      id: `${nodeId}-download-1`,
+    ephemeralShapeDB.fetchBuffers.put({
+      id: bufferId1,
       nodeId,
       data: encoded,
       featureCount: features.length,
@@ -126,13 +128,13 @@ describe('Download stage strategies', () => {
       timestamp: Date.now(),
     });
 
-    const postprocess = await strategy.postprocessDownloadOutputs({
+    const postprocess = await strategy.buildPostprocessOutputs({
       nodeId,
-      downloadTaskPayloads,
+      fetchTaskPayloads: downloadTaskPayloads,
       config: createConfig('naturalearth'),
       options: {},
-      downloadTasks: tasks,
-      downloadInputsById: inputsByTaskId,
+      fetchTask: tasks,
+      fetchTaskInputsById: inputsByTaskId,
     });
     expect(postprocess.outputs.length).toBeGreaterThanOrEqual(4);
     const outputIds = new Set(postprocess.outputs.map((output) => output.inputBufferId));

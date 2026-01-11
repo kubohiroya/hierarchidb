@@ -166,7 +166,7 @@ export interface BaseBatchConfig {
 }
 
 /**
- * Base batch session state
+ * Base batch session atoms
  */
 export interface BatchSessionState {
   nodeId: NodeId;

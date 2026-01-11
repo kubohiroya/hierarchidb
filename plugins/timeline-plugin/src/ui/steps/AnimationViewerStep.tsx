@@ -86,7 +86,7 @@ export function AnimationViewerStep({ frames, initialIndex = 0, initialFps = 12,
           }}
         >
           <Typography variant="body2">
-            {t('animation.playback', 'Playback {{state}} at {{fps}} fps', {
+            {t('animation.playback', 'Playback {{atoms}} at {{fps}} fps', {
               state: player.playing ? t('animation.running', 'running') : t('animation.paused', 'paused'),
               fps: player.fps,
             })}

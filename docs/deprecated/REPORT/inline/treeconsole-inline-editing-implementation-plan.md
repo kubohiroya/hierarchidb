@@ -28,7 +28,7 @@ TreeTableコンポーネントでのインライン編集機能を完成させ�
 **現在の問題**:
 ```typescript
 // orchestrator/openstreetmap-type.ts
-editingNodeId: null, // TODO: Add editing state
+editingNodeId: null, // TODO: Add editing atoms
 
 // TreeTableCore.tsx  
 const [editingNodeId, setEditingNodeId] = useState<string | null>(null);

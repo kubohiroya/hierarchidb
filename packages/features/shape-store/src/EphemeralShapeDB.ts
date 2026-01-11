@@ -7,30 +7,13 @@ import {
   EphemeralGisDB,
   type BatchSessionMetadata as BaseBatchSessionMetadata,
   type EphemeralStage as BaseEphemeralStage,
-  type ProcessingCache as BaseProcessingCache,
-  type RawFeatureBuffer as BaseRawFeatureBuffer,
-  type ExtractedFeatureBuffer as BaseExtract1SourceBuffer,
-  type VectorTileData as BaseVectorTileData,
 } from '@hierarchidb/gis-sdk';
 
-export type RawFeatureBuffer = BaseRawFeatureBuffer;
-export type Extract1SourceBuffer = Omit<BaseExtract1SourceBuffer, 'stage'> & { stage: 'extract1' };
-export type VectorTileData = BaseVectorTileData;
-export type EphemeralStage = BaseEphemeralStage;
-export type ProcessingCache = BaseProcessingCache;
 export type BatchSessionMetadata = BaseBatchSessionMetadata<BatchProcessConfig>;
-export type TileIdToBufferRelation = {
-  id: string;
-  nodeId: NodeId;
-  tileId: string;
-  bufferId: string;
-  createdAt: number;
-};
 
-export type Extract2SourceBuffer = {
+export type TransformSourceBuffer = {
   id: string;
   nodeId: NodeId;
-  stage: 'extract2';
   countryCode?: string;
   adminLevel?: number;
   data: ArrayBuffer;
@@ -40,7 +23,7 @@ export type Extract2SourceBuffer = {
   timestamp: number;
 };
 
-export type VectorTileSourceBuffer = {
+export type VTSourceBuffer = {
   id: string;
   nodeId: NodeId;
   tileId: string;
@@ -65,74 +48,25 @@ export type GeojsonVtIndexRecord = {
   createdAt: number;
 };
 
+export type TileIdToBufferRelation = {
+  id: string;
+  nodeId: NodeId;
+  tileId: string;
+  bufferId: string;
+  createdAt: number;
+};
+
 export class EphemeralShapeDB extends EphemeralGisDB<BatchProcessConfig> {
+  batchTasks!: Table<BatchTaskRecord, string>;
   featureBuffers!: Table<FeatureBufferRecord, string>;
   tileBuffers!: Table<TileBufferRecord, string>;
   tileIdToBufferRelations!: Table<TileIdToBufferRelation, string>;
-  batchTasks!: Table<BatchTaskRecord, string>;
-  extract2SourceBuffers!: Table<Extract2SourceBuffer, string>;
-  vectorTileSourceBuffers!: Table<VectorTileSourceBuffer, string>;
+  transformSourceBuffers!: Table<TransformSourceBuffer, string>;
+  vectorTileSourceBuffers!: Table<VTSourceBuffer, string>;
   geojsonVtIndexes!: Table<GeojsonVtIndexRecord, string>;
 
   constructor() {
     super(getDBName('shape-ephemeral'));
-    this.version(3).stores({
-      rawBuffers: '&id, nodeId, timestamp',
-      extractedBuffers: '&id, nodeId, stage, timestamp, [nodeId+stage]',
-      vectorTiles: '&id, nodeId, [z+x+y], hash, timestamp',
-      sessions: '&nodeId, status, stage, startTime',
-      cache: '&key, type, lastAccessed, ttl',
-      featureBuffers: '&bufferId, nodeId, [nodeId+stage], stage, createdAt, byteSize',
-      tileBuffers: '&bufferId, nodeId, [nodeId+z+x+y], [z+x+y], z, stage, createdAt',
-    });
-    this.version(4).stores({
-      rawBuffers: '&id, nodeId, timestamp',
-      extractedBuffers: '&id, nodeId, stage, timestamp, [nodeId+stage]',
-      vectorTiles: '&id, nodeId, [z+x+y], hash, timestamp',
-      sessions: '&nodeId, status, stage, startTime',
-      cache: '&key, type, lastAccessed, ttl',
-      featureBuffers: '&bufferId, nodeId, [nodeId+stage], stage, createdAt, byteSize',
-      tileBuffers: '&bufferId, nodeId, [nodeId+z+x+y], [z+x+y], z, stage, createdAt',
-      tileIdToBufferRelations: '&id, nodeId, tileId, bufferId, [nodeId+tileId]',
-    });
-    this.version(5).stores({
-      rawBuffers: '&id, nodeId, timestamp',
-      extractedBuffers: '&id, nodeId, stage, timestamp, [nodeId+stage]',
-      vectorTiles: '&id, nodeId, [z+x+y], hash, timestamp',
-      sessions: '&nodeId, status, stage, startTime',
-      cache: '&key, type, lastAccessed, ttl',
-      featureBuffers: '&bufferId, nodeId, [nodeId+stage], stage, createdAt, byteSize',
-      tileBuffers: '&bufferId, nodeId, [nodeId+z+x+y], [z+x+y], z, stage, createdAt',
-      tileIdToBufferRelations: '&id, nodeId, tileId, bufferId, [nodeId+tileId]',
-      batchTasks: '&taskId, nodeId, [nodeId+status], [nodeId+taskType], [nodeId+index], status, taskType, startedAt',
-    });
-    this.version(6).stores({
-      rawBuffers: '&id, nodeId, timestamp',
-      extractedBuffers: '&id, nodeId, stage, timestamp, [nodeId+stage]',
-      vectorTiles: '&id, nodeId, [z+x+y], hash, timestamp',
-      sessions: '&nodeId, status, stage, startTime',
-      cache: '&key, type, lastAccessed, ttl',
-      featureBuffers: '&bufferId, nodeId, [nodeId+stage], stage, createdAt, byteSize',
-      tileBuffers: '&bufferId, nodeId, [nodeId+z+x+y], [z+x+y], z, stage, createdAt',
-      tileIdToBufferRelations: '&id, nodeId, tileId, bufferId, [nodeId+tileId]',
-      batchTasks: '&taskId, nodeId, [nodeId+status], [nodeId+taskType], [nodeId+index], status, taskType, startedAt',
-      extract2SourceBuffers: '&id, nodeId, countryCode, adminLevel, [nodeId+countryCode+adminLevel], timestamp',
-      vectorTileSourceBuffers: '&id, nodeId, tileId, [nodeId+tileId], timestamp',
-    });
-    this.version(7).stores({
-      rawBuffers: '&id, nodeId, timestamp',
-      extractedBuffers: '&id, nodeId, stage, timestamp, [nodeId+stage]',
-      vectorTiles: '&id, nodeId, [z+x+y], hash, timestamp',
-      sessions: '&nodeId, status, stage, startTime',
-      cache: '&key, type, lastAccessed, ttl',
-      featureBuffers: '&bufferId, nodeId, [nodeId+stage], stage, createdAt, byteSize',
-      tileBuffers: '&bufferId, nodeId, [nodeId+z+x+y], [z+x+y], z, stage, createdAt',
-      tileIdToBufferRelations: '&id, nodeId, tileId, bufferId, [nodeId+tileId]',
-      batchTasks: '&taskId, nodeId, [nodeId+status], [nodeId+taskType], [nodeId+index], status, taskType, startedAt',
-      extract2SourceBuffers: '&id, nodeId, countryCode, adminLevel, [nodeId+countryCode+adminLevel], timestamp',
-      vectorTileSourceBuffers: '&id, nodeId, tileId, [nodeId+tileId], timestamp',
-      geojsonVtIndexes: '&id, nodeId, bufferId, [nodeId+bufferId], createdAt',
-    });
     this.version(8).stores({
       rawBuffers: '&id, nodeId, timestamp',
       extractedBuffers: '&id, nodeId, stage, timestamp, [nodeId+stage]',
@@ -159,7 +93,7 @@ export class EphemeralShapeDB extends EphemeralGisDB<BatchProcessConfig> {
     this.tileBuffers = this.table('tileBuffers');
     this.tileIdToBufferRelations = this.table('tileIdToBufferRelations');
     this.batchTasks = this.table('batchTasks');
-    this.extract2SourceBuffers = this.table('extract2SourceBuffers');
+    this.transformSourceBuffers = this.table('extract2SourceBuffers');
     this.vectorTileSourceBuffers = this.table('vectorTileSourceBuffers');
     this.geojsonVtIndexes = this.table('geojsonVtIndexes');
   }
@@ -170,21 +104,19 @@ export class EphemeralShapeDB extends EphemeralGisDB<BatchProcessConfig> {
     await this.tileBuffers.where('nodeId').equals(nodeId).delete();
     await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();
     await this.batchTasks.where('nodeId').equals(nodeId).delete();
-    await this.extract2SourceBuffers.where('nodeId').equals(nodeId).delete();
+    await this.transformSourceBuffers.where('nodeId').equals(nodeId).delete();
     await this.vectorTileSourceBuffers.where('nodeId').equals(nodeId).delete();
     await this.geojsonVtIndexes.where('nodeId').equals(nodeId).delete();
   }
 
   async hasStageData(nodeId: NodeId, stage: BaseEphemeralStage): Promise<boolean> {
     switch (stage) {
-      case 'download':
-        return (await this.rawBuffers.where('nodeId').equals(nodeId).count()) > 0;
-      case 'extract1':
-        return (await this.extractedBuffers.where('nodeId').equals(nodeId).count()) > 0;
-      case 'extract2':
-        return (await this.extract2SourceBuffers.where('nodeId').equals(nodeId).count()) > 0;
-      case 'vectorTiles':
-        return (await this.vectorTileSourceBuffers.where('nodeId').equals(nodeId).count()) > 0;
+      case 'fetch':
+        return (await this.fetchBuffers.where('nodeId').equals(nodeId).count()) > 0;
+      case 'transform':
+        return (await this.transformBuffers.where('nodeId').equals(nodeId).count()) > 0;
+      case 'vt':
+        return (await this.vtBuffers.where('nodeId').equals(nodeId).count()) > 0;
       default:
         return false;
     }
@@ -192,12 +124,11 @@ export class EphemeralShapeDB extends EphemeralGisDB<BatchProcessConfig> {
 
   async clearStage(nodeId: NodeId, stage: BaseEphemeralStage): Promise<void> {
     await this.transaction('rw', [
-      this.rawBuffers,
-      this.extractedBuffers,
-      this.extract2SourceBuffers,
+      this.fetchBuffers,
+      this.transformBuffers,
+      this.transformSourceBuffers,
       this.vectorTileSourceBuffers,
       this.sessions,
-      this.cache,
       this.featureBuffers,
       this.tileBuffers,
       this.tileIdToBufferRelations,
@@ -205,34 +136,27 @@ export class EphemeralShapeDB extends EphemeralGisDB<BatchProcessConfig> {
       this.geojsonVtIndexes,
     ], async () => {
       switch (stage) {
-        case 'download':
-          await this.rawBuffers.where('nodeId').equals(nodeId).delete();
+        case 'fetch':
+          await this.fetchBuffers.where('nodeId').equals(nodeId).delete();
           break;
-        case 'extract1':
-          await this.extractedBuffers.where('nodeId').equals(nodeId).delete();
+        case 'transform':
+          await this.transformBuffers.where('nodeId').equals(nodeId).delete();
           break;
-        case 'extract2':
-          await this.extract2SourceBuffers.where('nodeId').equals(nodeId).delete();
+        case 'vt':
           await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();
           await this.geojsonVtIndexes.where('nodeId').equals(nodeId).delete();
-          break;
-        case 'vectorTiles':
           await this.vectorTileSourceBuffers.where('nodeId').equals(nodeId).delete();
           break;
         default:
           break;
       }
       await this.sessions.where('nodeId').equals(nodeId).delete();
-      const cacheKeys = await this.cache
-        .filter(entry => entry.key.includes(String(nodeId)))
-        .primaryKeys();
-      await this.cache.bulkDelete(cacheKeys);
-
       await this.featureBuffers.where('[nodeId+stage]').equals([nodeId, stage]).delete();
       await this.tileBuffers.where('nodeId').equals(nodeId).and((entry) => entry.stage === stage).delete();
     });
   }
 
+  /*
   async getStatistics(): Promise<{
     rawBuffers: number;
     extractedBuffers: number;
@@ -252,6 +176,7 @@ export class EphemeralShapeDB extends EphemeralGisDB<BatchProcessConfig> {
       vectorTiles: vectorTileSourceCount,
     };
   }
+   */
 
   async clearAll(): Promise<void> {
     await super.clearAll();
@@ -259,7 +184,7 @@ export class EphemeralShapeDB extends EphemeralGisDB<BatchProcessConfig> {
     await this.tileBuffers.clear();
     await this.tileIdToBufferRelations.clear();
     await this.batchTasks.clear();
-    await this.extract2SourceBuffers.clear();
+    await this.transformSourceBuffers.clear();
     await this.vectorTileSourceBuffers.clear();
     await this.geojsonVtIndexes.clear();
   }
@@ -290,18 +215,4 @@ export class EphemeralShapeDB extends EphemeralGisDB<BatchProcessConfig> {
   }
 }
 
-let ephemeralDBInstance: EphemeralShapeDB | null = null;
-
-export function getEphemeralShapeDB(): EphemeralShapeDB {
-  if (!ephemeralDBInstance) {
-    ephemeralDBInstance = new EphemeralShapeDB();
-  }
-  return ephemeralDBInstance;
-}
-
-export async function closeEphemeralShapeDB(): Promise<void> {
-  if (ephemeralDBInstance) {
-    await ephemeralDBInstance.close();
-    ephemeralDBInstance = null;
-  }
-}
+export const ephemeralShapeDB = new EphemeralShapeDB();

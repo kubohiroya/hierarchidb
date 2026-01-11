@@ -23,7 +23,7 @@ export const DEFAULT_VIEW_STATE: MapViewState = {
  * Example: zxy=3,135,40
  *
  * @param zxy - The zxy parameter string from URL
- * @returns Parsed view state or null if invalid
+ * @returns Parsed view atoms or null if invalid
  */
 export function parseZxyParam(zxy: string | null): MapViewState | null {
   if (!zxy) return null;
@@ -49,9 +49,9 @@ export function parseZxyParam(zxy: string | null): MapViewState | null {
 }
 
 /**
- * Format view state to zxy parameter
+ * Format view atoms to zxy parameter
  *
- * @param viewState - The map view state to format
+ * @param viewState - The map view atoms to format
  * @returns Formatted zxy string
  */
 export function formatZxyParam(viewState: MapViewState): string {
@@ -67,7 +67,7 @@ export function formatZxyParam(viewState: MapViewState): string {
  * Map loader for TanStack Router
  *
  * @param search - Search params from route
- * @returns Initial view state for the map
+ * @returns Initial view atoms for the map
  */
 export function mapLoader(search: Record<string, unknown>): MapViewState {
   const zxy = typeof search.zxy === 'string' ? search.zxy : null;

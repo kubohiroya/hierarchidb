@@ -206,7 +206,7 @@ const { initialSubTree, unsubscribeSubTree } = await service.subscribeSubTree(
   (subTreeChanges) => handleTreeChanges(subTreeChanges)
 );
 
-// Apply initial state
+// Apply initial atoms
 const initial = await initialSubTree;
 applyInitialState(initial);
 
@@ -232,7 +232,7 @@ interface SubTreeChanges {
   timestamp: number;
   rootNodeId: TreeNodeId;
   changes: Record<TreeNodeId, TreeNode | null>; // null = delete
-  expanded: Record<TreeNodeId, boolean>;        // Current state
+  expanded: Record<TreeNodeId, boolean>;        // Current atoms
 }
 ```
 
@@ -384,7 +384,7 @@ changes$.pipe(
 
 ### 9.1 TreeTypes View Pattern
 ```typescript
-// Combine subtree with expansion state
+// Combine subtree with expansion atoms
 const treeView$ = combineLatest([
   subtree$,
   expansionState$

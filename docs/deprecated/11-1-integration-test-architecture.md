@@ -77,7 +77,7 @@ const comlinkMock = {
 #### Jotaiのヘッドレス実行
 
 ```typescript
-// packages/worker/src/__tests__/state/JotaiStateManager.test.ts
+// packages/worker/src/__tests__/atoms/JotaiStateManager.test.ts
 
 import { createStore, atom } from 'jotai';
 
@@ -177,7 +177,7 @@ describe('Pub/Sub Service Node環境テスト', () => {
 **目的**: Jotai ベースの状態管理をReact非依存でテスト
 
 ```typescript
-// packages/worker/src/__tests__/state/JotaiStateManager.test.ts
+// packages/worker/src/__tests__/atoms/JotaiStateManager.test.ts
 
 describe('Jotai State Manager Node環境テスト', () => {
   it('Worker変更をUI状態に反映できる', async () => {

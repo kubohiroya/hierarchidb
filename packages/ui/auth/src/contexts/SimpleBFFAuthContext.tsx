@@ -165,7 +165,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
         const storedToken = localStorage.getItem('access_token');
         const userInfo = localStorage.getItem('userinfo');
 
-        // Check for stuck authentication state
+        // Check for stuck authentication atoms
         const pkceTimestamp = localStorage.getItem('pkce_timestamp');
         if (pkceTimestamp && !userInfo) {
           const pkceAge = Date.now() - Number.parseInt(pkceTimestamp, 10);
@@ -266,7 +266,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
 
       try {
         // CRITICAL: Store return URL BEFORE setting isAuthenticating
-        // This ensures we capture the URL before any state changes
+        // This ensures we capture the URL before any atoms changes
         const currentUrl = window.location.pathname + window.location.search + window.location.hash;
         const returnUrl = options?.returnUrl ?? currentUrl;
 
@@ -278,10 +278,10 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
           localStorage.setItem('auth_redirect_url', homeUrl);
         }
 
-        // NOW set authenticating state
+        // NOW set authenticating atoms
         setIsAuthenticating(true);
 
-        // Don't store history state - history manipulation causes more problems than it solves
+        // Don't store history atoms - history manipulation causes more problems than it solves
         // localStorage.setItem('auth_history_length', window.history.length.toString());
         // localStorage.setItem('auth_start_time', Date.now().toString());
 
@@ -292,7 +292,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
         const codeVerifier = generateRandomString(64);
         const codeChallenge = await generateCodeChallenge(codeVerifier);
 
-        // Include environment info in state for BFF to redirect to correct frontend
+        // Include environment info in atoms for BFF to redirect to correct frontend
         const stateData = {
           nonce: generateRandomString(32),
           returnOrigin: window.location.origin,
@@ -549,7 +549,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
 
           // Redirect to BFF authorization endpoint using replace to avoid history entry
 
-          // Small delay to ensure state is saved
+          // Small delay to ensure atoms is saved
           setTimeout(() => {
             window.location.replace(authUrl.toString());
           }, 100);
@@ -585,7 +585,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
       localStorage.removeItem('auth_processing_code');
       localStorage.removeItem('auth_force_cleanup');
 
-      // Reset auth state - CRITICAL: Must reset isAuthenticating
+      // Reset auth atoms - CRITICAL: Must reset isAuthenticating
       setUser(null);
       setIsAuthenticating(false);
 
@@ -609,7 +609,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
       // Redirect to home using replace to avoid history entry
       window.location.replace(homeUrl);
     } catch {
-      // Still clear local state - CRITICAL: Must reset isAuthenticating
+      // Still clear local atoms - CRITICAL: Must reset isAuthenticating
       setUser(null);
       setIsAuthenticating(false);
 
@@ -702,7 +702,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
         if (data.userinfo) {
           localStorage.setItem('userinfo', JSON.stringify(data.userinfo));
 
-          // Update user state
+          // Update user atoms
           const authUser: AuthUser = {
             id: data.userinfo.sub ?? data.userinfo.id,
             email: data.userinfo.email,

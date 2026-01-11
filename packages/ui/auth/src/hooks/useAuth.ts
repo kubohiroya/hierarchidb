@@ -275,7 +275,7 @@ export function useAuth(homeUrl = '/') {
     // Original auth object for compatibility
     auth,
 
-    // Refresh state
+    // Refresh atoms
     isRefreshing,
     tokenExpiresAt: bffAuth.user?.expires_at,
   };

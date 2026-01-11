@@ -1,6 +1,6 @@
 /**
  * visible-nodes.ts
- * Utility helpers to derive the visible TreeTable rows based on expansion state.
+ * Utility helpers to derive the visible TreeTable rows based on expansion atoms.
  */
 
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';

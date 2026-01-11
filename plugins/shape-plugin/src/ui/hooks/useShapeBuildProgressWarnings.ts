@@ -1,13 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { BuildStage } from '@hierarchidb/components';
+import type { CrashInsight } from '@hierarchidb/ui-monitoring';
 import type { ShapeEntity } from '../../common/types/index.js';
-import { getStageConcurrencyWarning } from '../utils/buildWarnings.js';
-
-type CrashInsight = {
-  stage?: string;
-  peakRatio?: number;
-  memoryPressure?: boolean;
-};
+import { getStageConcurrencyWarning, type ShapeBuildConfigSnapshot, type ShapeBuildStage } from '../utils/buildWarnings.js';
 
 type StartWarning = {
   title: string;
@@ -15,7 +10,7 @@ type StartWarning = {
 };
 
 type Params = {
-  crashInsight: CrashInsight | null;
+  crashInsight: CrashInsight<ShapeBuildStage, ShapeBuildConfigSnapshot> | null;
   data?: Partial<ShapeEntity>;
   stages: BuildStage[];
   warningMessage?: string | null;
@@ -55,7 +50,7 @@ export const useShapeBuildProgressWarnings = ({
     const currentValue = (() => {
       switch (stageId) {
         case 'fetch':
-          return data?.batchConfig?.downloadConfig?.maxConcurrent;
+          return data?.batchConfig?.fetchConfig?.maxConcurrent;
         case 'transform':
           return data?.batchConfig?.extract2Config?.workers
             ?? data?.batchConfig?.extract1Config?.workers;

@@ -7,7 +7,7 @@
  * - datasetId ごとにチャネルを分離します（例: `shape:table-123`）。
  * - 行⇔フィーチャのマッピング（1:n / n:n）を保持し、片側の状態変更をもう片側へ反映します。
  * - スタイル辞書（Map<StyleId,StyleSpec>）は表用(row)と地図用(map)の両表現を持てます。priority により競合解消が可能です。
- * - deck.gl/MapLibreGL への適用を補助するアクセサ/features-state 更新関数を提供します。
+ * - deck.gl/MapLibreGL への適用を補助するアクセサ/features-atoms 更新関数を提供します。
  * - フォーカスイベント（hover/selection 時に付帯情報を Snackbar へ表示する等）を publish/subscribe できます。
  *
  * 典型的な利用手順:
@@ -131,7 +131,7 @@ export const CrossViewStyles = {
     // Collect applicable specs sorted by priority asc
     const specs: Array<{pr:number; spec: StyleSpec}> = [];
     ch.registry.rowAssignments.forEach((ids,sid)=>{ if(!ids.has(rowId)) return; const st=ch.registry.styles.get(sid); if(st?.row) specs.push({ pr: st.priority??0, spec: st}); });
-    // Add default state-driven styles if defined
+    // Add default atoms-driven styles if defined
     if (ch.rows.matched.has(rowId)) { const st = ch.registry.styles.get('match'); if (st?.row) specs.push({ pr: st.priority??5, spec: st}); }
     if (ch.rows.hovered.has(rowId)) { const st = ch.registry.styles.get('hover'); if (st?.row) specs.push({ pr: st.priority??10, spec: st}); }
     if (ch.rows.selected.has(rowId)) { const st = ch.registry.styles.get('select'); if (st?.row) specs.push({ pr: st.priority??20, spec: st}); }
@@ -157,7 +157,7 @@ export const CrossViewStyles = {
   getDeckAccessors(datasetId: DatasetId){ const ch=getCh(datasetId); const pick=(fid:Id)=>{
       const specs: Array<{pr:number; spec: StyleSpec}> = [];
       ch.registry.featureAssignments.forEach((ids,sid)=>{ if(!ids.has(fid)) return; const st=ch.registry.styles.get(sid); if(st?.map) specs.push({ pr: st.priority??0, spec: st}); });
-      // Add default state-driven styles if defined
+      // Add default atoms-driven styles if defined
       if (ch.features.matched.has(fid)) { const st = ch.registry.styles.get('match'); if (st?.map) specs.push({ pr: st.priority??5, spec: st}); }
       if (ch.features.hovered.has(fid)) { const st = ch.registry.styles.get('hover'); if (st?.map) specs.push({ pr: st.priority??10, spec: st}); }
       if (ch.features.selected.has(fid)) { const st = ch.registry.styles.get('select'); if (st?.map) specs.push({ pr: st.priority??20, spec: st}); }
@@ -177,8 +177,8 @@ export const CrossViewStyles = {
   },
 
   /**
-   * MapLibre の features-state をスタイル辞書にもとづいて一括更新します。
-   * paint/line-paint の式側で ['features-state','selected'] などを参照してください。
+   * MapLibre の features-atoms をスタイル辞書にもとづいて一括更新します。
+   * paint/line-paint の式側で ['features-atoms','selected'] などを参照してください。
    */
   applyMapLibreFeatureState(datasetId: DatasetId, map:any, sourceId:string){
     const ch=getCh(datasetId);

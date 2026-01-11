@@ -13,7 +13,7 @@ export interface SharedDownloadOptions {
   scope?: AuthScope;
 }
 
-export interface SharedDownloadService {
+export interface SharedFetchService {
   service: DownloadService;
   // net is intentionally typed as unknown to avoid leaking DOM-dependent types into public API
   net: FetchNetworkPort;
@@ -22,7 +22,7 @@ export interface SharedDownloadService {
 
 export async function createSharedDownloadService(
   opts?: SharedDownloadOptions
-): Promise<SharedDownloadService> {
+): Promise<SharedFetchService> {
   const auth = await AuthService.getSingleton();
   const scope = opts?.scope ?? 'generic';
   const net = new FetchNetworkPort({

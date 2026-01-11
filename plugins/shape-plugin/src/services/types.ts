@@ -12,7 +12,7 @@ import type {
   DataSourceValidationResult,
 } from '@hierarchidb/ui-datasource';
 import type {
-  DownloadTaskPayload,
+  FetchTaskPayload,
   ErrorInfo as SharedErrorInfo,
   ProcessingStage,
   ProgressInfo as SharedProgressInfo,
@@ -30,7 +30,7 @@ export interface ShapesAPIMethods {
   startBatchProcess(
     nodeId: NodeId,
     config: BatchProcessConfig,
-    downloadTaskPayloads: DownloadTaskPayload[],
+    downloadTaskPayloads: FetchTaskPayload[],
   ): Promise<BatchSession>;
 
   pauseBatchProcess(nodeId: NodeId): Promise<void>;
@@ -286,7 +286,7 @@ export interface OptimizationResult {
 // (Legacy Worker Pool types removed)
 
 export type {
-  DownloadTask,
+  FetchTask,
   //DownloadTaskInput,
   ExtractTask,
   Extract1Task,

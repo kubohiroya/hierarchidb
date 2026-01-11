@@ -55,7 +55,7 @@ shape/location/route のベクトルタイル生成において、chunk-store �
    - location: `packages/features/location-store/src/index.ts` の `LocationTileSettings` に inputFormat/inputCompression を追加し、`plugins/location-plugin/src/services/batch/LocationSessionController.ts` で inputFormat に応じたバッファ生成を行う。
    - route: `packages/features/route-store/src/index.ts` の `RouteProcessingConfig.vectorTiles` と `plugins/route-plugin/src/services/RouteVectorTileService.ts` / `RouteBatchSession.ts` に inputFormat/inputCompression を追加し、chunk-store 書き込みを `writeVectorTileInput` に集約する。
 
-4) plugin-service-api の `packages/plugin-service-api/src/types/shapeBatchTypes.ts` に inputFormat/inputCompression を追加する。
+4) plugin-service-api の `packages/plugin-service-api/src/types/shapeBuildTypes.ts` に inputFormat/inputCompression を追加する。
 
 ## Validation and Acceptance
 

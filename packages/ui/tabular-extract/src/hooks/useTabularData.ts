@@ -36,7 +36,7 @@ export interface UseTabularDataOptions {
 export interface UseTabularDataResult {
   /** Table metadata */
   tabularTableMetadata: TabularTableMetadata | null;
-  /** Loading state */
+  /** Loading atoms */
   loading: boolean;
   /** Error message */
   error: string | null;
@@ -54,7 +54,7 @@ export interface UseTabularDataResult {
   /** Clear current data */
   clear: () => void;
 
-  // Upload state management
+  // Upload atoms management
   isImporting: boolean;
   imortError: string | null;
 }
@@ -205,7 +205,7 @@ export const useTabularData = (options: UseTabularDataOptions): UseTabularDataRe
       try {
         await tabularApi.removeTableReference(tabularTableMetadata.id, pluginId);
         // Note: Table might be auto-deleted if reference count reaches zero
-        // So we don't reload here, just clear local state
+        // So we don't reload here, just clear local atoms
         setTabularTableMetadata(null);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to remove reference';
@@ -266,7 +266,7 @@ export interface UseTabularTableListResult {
   tables: TabularTableMetadataLike[];
   /** Total number of tables */
   total: number;
-  /** Loading state */
+  /** Loading atoms */
   loading: boolean;
   /** Error message */
   error: string | null;

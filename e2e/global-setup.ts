@@ -57,7 +57,7 @@ async function globalSetup(config: FullConfig) {
     await page.evaluate(() => {
       // Clear any existing test data
       if (typeof window !== 'undefined' && 'indexedDB' in window) {
-        // Clear IndexedDB for clean test state
+        // Clear IndexedDB for clean test atoms
         const clearDB = async () => {
           const databases = await indexedDB.databases();
           await Promise.all(

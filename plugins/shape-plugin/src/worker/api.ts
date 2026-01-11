@@ -18,16 +18,17 @@ import {
   type ProcessingStatus,
   type ProgressInfo,
   type TileInfo,
-  type DownloadTaskPayload,
+  type FetchTaskPayload,
   validateBatchConfig,
   type ShapeStepValidationResult,
   BatchTaskStage,
   type BatchTaskStageType,
+  type ShapeEntity,
+  type SelectedArrayByCountries,
 } from '../common/types/index.js';
 import { ShapeEntityHandler } from './handlers/index.js';
 
 import { metadataLoader } from '../services/metadata/MetadataLoader.js';
-import { getShapeDbApiClient } from '../services/batch/ShapeBatchApiClient.js';
 import type { BatchProgressEvent, BatchProgressPayload } from '@hierarchidb/common-api';
 import {
   generateDownloadTaskPayloads,
@@ -35,8 +36,7 @@ import {
 } from '../services/utils/utils.js';
 import { bufferDeserializer, bufferSerializer, createShapeChunkStore } from '../services/utils/chunkStore.js';
 import { normalizeCountryCodeFormat } from '../services/utils/iso3166.js';
-import { resolveDownloadStageStrategy } from '../services/batch/strategies/resolveDownloadStageStrategy.js';
-import type { SelectedArrayByCountries, ShapeEntity } from '../common/types/ShapeEntity.ts';
+import { resolveFetchStageStrategy } from '../services/batch/strategies/resolveFetchStageStrategy.ts';
 import {
   VtTaskQueueDb,
   listTasks,
@@ -44,6 +44,7 @@ import {
   type TaskQueueRecord,
 } from '@hierarchidb/vt-orchestrator';
 import { runShapeVtPipeline } from '../services/vt/shapeVtPipeline.js';
+import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../services/batch/ShapeBuildApiClient.ts';
 
 type DraftLike = {
   nodeId?: NodeId;
@@ -57,7 +58,7 @@ const resolveBatchNodeId = (draft: DraftLike | null | undefined): NodeId | undef
 };
 
 const buildBatchSessionConfig = (batchConfig: BatchConfig, draft?: DraftLike): BatchSessionConfig => {
-  const downloadConfig = batchConfig.downloadConfig ?? DEFAULT_PROCESSING_CONFIG.downloadConfig;
+  const downloadConfig = batchConfig.fetchConfig ?? DEFAULT_PROCESSING_CONFIG.fetchConfig;
   const legacyExtraction = batchConfig.extractionConfig;
   const extract1Config = batchConfig.extract1Config ?? (legacyExtraction ? {
     workers: legacyExtraction.level1Workers,
@@ -196,7 +197,6 @@ const mapTaskQueueRecordToBatchTask = (
   task: TaskQueueRecord,
 ): BatchTask & { title?: string; message?: string } => ({
   taskId: task.taskId,
-  taskType: task.stage,
   nodeId: task.nodeId,
   stage: mapTaskQueueStatusToStage(task.status),
   status: mapTaskQueueStatusToTaskStatus(task.status),
@@ -273,7 +273,7 @@ const setPaused = (nodeId: NodeId, paused: boolean): void => {
   if (!paused && state.waiters.length > 0) {
     const pending = [...state.waiters];
     state.waiters.length = 0;
-    pending.forEach((resolve) => resolve());
+    pending.forEach((resolve) => {resolve()});
   }
 };
 
@@ -340,7 +340,7 @@ export const shapeBatchAPI = {
     dataSource: DataSourceName,
     countries: string[],
     adminLevels: number[],
-  ): Promise<DownloadTaskPayload[]> => {
+  ): Promise<FetchTaskPayload[]> => {
     const resolvedDataSource = requireDataSourceName(dataSource, 'generateDownloadTaskPayloads');
     // Get country metadata first
     const preferredFormat = getPreferredCountryCodeFormat(resolvedDataSource);
@@ -355,11 +355,11 @@ export const shapeBatchAPI = {
     nodeId: NodeId,
     dataSource: DataSourceName,
     selectedArrayByCountries: SelectedArrayByCountries,
-  ): Promise<DownloadTaskPayload[]> => {
+  ): Promise<FetchTaskPayload[]> => {
     const resolvedDataSource = requireDataSourceName(dataSource, 'generateDownloadTaskPayloadsFromSelection');
     const countryMetadata = await shapeBatchAPI.getCountryMetadata(nodeId, resolvedDataSource);
-    const strategy = resolveDownloadStageStrategy(resolvedDataSource);
-    return strategy.buildDownloadTaskPayloads({
+    const strategy = resolveFetchStageStrategy(resolvedDataSource);
+    return strategy.buildFetchTaskPayloads({
       selectedArrayByCountries,
       countryMetadata,
     });
@@ -405,7 +405,7 @@ export const shapeBatchAPI = {
   startBatchProcess: async (
     draftId: NodeId,
     batchConfig: BatchConfig,
-    downloadTaskPayloads: DownloadTaskPayload[],
+    downloadTaskPayloads: FetchTaskPayload[],
     progressCallback?: (event: BatchProgressEvent) => void,
   ): Promise<NodeId> => {
     if (!batchConfig?.dataSource) {
@@ -738,7 +738,7 @@ export const shapeBatchAPI = {
   // ===================================
 
   getProcessedFeatureCount: async (nodeId: NodeId): Promise<number> => {
-    return getShapeDbApiClient().query.getProcessedFeatureCount(nodeId);
+    return shapeQueryAPIImpl.getProcessedFeatureCount(nodeId);
   },
 
   getVectorTileInfo: async (
@@ -747,7 +747,7 @@ export const shapeBatchAPI = {
     x: number,
     y: number,
   ): Promise<TileInfo | undefined> => {
-    const tile = await getShapeDbApiClient().query.getVectorTileInfo(nodeId, z, x, y);
+    const tile = await shapeQueryAPIImpl.getVectorTileInfo(nodeId, z, x, y);
     if (!tile) return undefined;
     return {
       exists: true,
@@ -808,7 +808,7 @@ export const shapeBatchAPI = {
   },
 
   cleanupProcessingData: async (nodeId: NodeId): Promise<void> => {
-    await getShapeDbApiClient().mutation.cleanupProcessingData(nodeId);
+    await shapeMutationAPIImpl.cleanupProcessingData(nodeId);
     try {
       const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
       await store.deleteAllForNode(nodeId);

@@ -91,7 +91,7 @@ describe('Undo/Redo for restoreFromTrash', () => {
     expect(restored?.parentId).toBe('r_root');
     expect(restored?.removedAt).toBeUndefined();
 
-    // undo -> back to trash state
+    // undo -> back to trash atoms
     const u = await cp.undo();
     expect(u.success).toBe(true);
     expect(state.get('x' as NodeId)?.parentId).toBe('t_trash');

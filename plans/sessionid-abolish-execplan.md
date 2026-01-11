@@ -51,7 +51,7 @@
 
 最初に共通APIから`sessionId`を削除する。`BatchControlAPI`の`BatchSessionId`型と、`BatchSessionStatus`/`BatchProgressEvent`/`BatchSessionState`の`sessionId`フィールドを削除し、すべて`nodeId`をキーとする形に変更する。同時に`WorkerAPI`の`getBatchSessionStatus`/`pauseBatchSession`/`resumeBatchSession`/`cancelBatchSession`/`getBatchTasks`は`nodeId`を引数に取るよう変更し、`startBatchSession`は`nodeId`を受け取り`BatchSessionStatus`を返す形に統一する。
 
-次にWorker実装（`app/src/worker-runtime/worker.ts`）とUIブリッジ（`packages/ui/worker-client/src/workerBridge.ts`）を合わせ、`sessionId`を参照する呼び出しや型をすべて`nodeId`に置き換える。UIの進捗監視は`nodeId`をキーにする。これに合わせて`plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts`や`useShapeBatchTasks.ts`の引数やデバッグログを`nodeId`に変更し、`sessionId`変数名を排除する。
+次にWorker実装（`app/src/worker-runtime/worker.ts`）とUIブリッジ（`packages/ui/worker-client/src/workerBridge.ts`）を合わせ、`sessionId`を参照する呼び出しや型をすべて`nodeId`に置き換える。UIの進捗監視は`nodeId`をキーにする。これに合わせて`plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts`や`useShapeBuildTasks.ts`の引数やデバッグログを`nodeId`に変更し、`sessionId`変数名を排除する。
 
 DBスキーマは`sessionId`依存が強いので、Dexieテーブルの主キーやインデックスを`nodeId`基準に変更する。例えば`batchSessions`/`batchTasks`/`extractedBuffers`/`rawBuffers`/`vectorTiles`/`metadata`に存在する`sessionId`列を削除し、`nodeId`へ置換する。フォールバックは不要なので、バージョンアップ時に旧テーブルをクリアする移行を明示する。`EphemeralGisDB`系の`hasStageData`/`clearStage`は`nodeId`を受け取り、内部のクエリは`nodeId`を使う。
 
@@ -105,7 +105,7 @@ shape/location/routeのサービス層は、`sessionId`という引数を持つA
 - `packages/common/api/src/BatchControlAPI.ts` の`BatchSessionStatus`は `nodeId` のみを必須にする。
 - `packages/common/api/src/WorkerAPI.ts` は `nodeId` でバッチ操作を行うメソッド群を持つ。
 - `packages/features/shape-store/src/ShapeDB.ts` は `nodeId` をキーとする。`sessionId` フィールドは持たない。
-- `plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts` や `useShapeBatchTasks.ts` は `nodeId` をキーに進捗とタスクを取得する。
+- `plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts` や `useShapeBuildTasks.ts` は `nodeId` をキーに進捗とタスクを取得する。
 
 ---
 

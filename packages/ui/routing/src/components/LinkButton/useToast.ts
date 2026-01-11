@@ -27,7 +27,7 @@ const DEFAULT_ERROR_TOAST: Partial<ToastConfig> = {
 };
 
 /**
- * Toast notification state
+ * Toast notification atoms
  */
 export interface ToastState {
   open: boolean;

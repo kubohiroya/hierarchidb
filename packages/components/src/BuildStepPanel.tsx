@@ -1,12 +1,9 @@
 import { type ReactNode, useCallback, useMemo } from 'react';
-import { Box, Button, LinearProgress, Stack, Typography } from '@mui/material';
-import PauseIcon from '@mui/icons-material/Pause';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import { Box, LinearProgress, Stack, Typography } from '@mui/material';
 import { LRUSplitView, type PaneConfig, type PaneProgress } from '@hierarchidb/ui-lru-splitview';
-import { type BuildStage, type BuildStageContentFilter, BuildStepStagePanel } from './BuildStepStagePanel.js';
+import { type BuildStage, BuildStepStagePanel } from './BuildStepStagePanel.js';
 import type { BuildStepStageTaskCount } from './BuildStepStageSummaryPanel.js';
-import { LoadingButton } from './LoadingButton.tsx';
-
+import { BuildControlCard } from './BuildControlCard.tsx';
 
 export type BuildStatus = 'idle' | 'running' | 'paused' | 'completed' | 'failed';
 
@@ -21,7 +18,7 @@ export interface BuildStepPanelProps {
   splitViewBreakpoints?: number[];
   splitViewInitialSizesByBreakpoint?: number[][];
   splitViewAutoCloseCountsByBreakpoint?: number[];
-  renderStageContent?: (stage: BuildStage, progress: number, filter: BuildStageContentFilter) => ReactNode;
+  stageContents?: Record<string, ReactNode>;
   onPause?: () => void;
   onResume?: () => void;
   onComplete?: () => void;
@@ -35,84 +32,6 @@ export interface BuildStepPanelProps {
   statusContent?: ReactNode;
 }
 
-type BuildControlCardProps = {
-  status: BuildStatus;
-  onPause?: () => void;
-  onResume?: () => void;
-  controlLabel?: string;
-  pauseLabel?: string;
-  startLabel?: string;
-  resumeLabel?: string;
-  startIcon?: ReactNode;
-  resumeIcon?: ReactNode;
-};
-
-const BuildControlCard: React.FC<BuildControlCardProps> = ({
-  status,
-  onPause,
-  onResume,
-  controlLabel,
-  pauseLabel,
-  startLabel,
-  resumeLabel,
-  startIcon,
-  resumeIcon,
-}) => {
-  const computedLabel = status === 'paused'
-    ? (resumeLabel ?? 'Resume Build')
-    : (startLabel ?? 'Start Build');
-  const computedIcon = status === 'paused'
-    ? (resumeIcon ?? <PlayArrowIcon fontSize="small" />)
-    : (startIcon ?? <PlayArrowIcon fontSize="small" />);
-  const disablePause = status !== 'running' || !onPause;
-  const disableStart = !onResume || status === 'running';
-  const isLoading = status === 'running';
-
-  return (
-    <Box
-      sx={{
-        minWidth: 252,
-        maxWidth: 312,
-        width: 312,
-        p: 2,
-        borderRadius: 2,
-        border: '1px solid',
-        borderColor: 'divider',
-        backgroundColor: 'background.paper',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 1.5,
-      }}
-    >
-      <Typography variant="subtitle2" color="text.secondary">
-        {controlLabel ?? 'Build Controls'}
-      </Typography>
-      <Stack direction="row" spacing={1}>
-        <Button
-          variant="outlined"
-          size="small"
-          endIcon={<PauseIcon fontSize="small" />}
-          disabled={disablePause}
-          onClick={onPause}
-        >
-          {pauseLabel ?? 'Pause'}
-        </Button>
-        <LoadingButton
-          color="secondary"
-          variant="contained"
-          size="large"
-          endIcon={computedIcon}
-          disabled={disableStart}
-          onClick={onResume}
-          loading={isLoading}
-        >
-          {computedLabel}
-        </LoadingButton>
-      </Stack>
-    </Box>
-  );
-};
-
 export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   status,
   overallProgress,
@@ -122,7 +41,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   splitViewBreakpoints,
   splitViewInitialSizesByBreakpoint,
   splitViewAutoCloseCountsByBreakpoint,
-  renderStageContent,
+  stageContents,
   onPause,
   onResume,
   onComplete,
@@ -181,12 +100,12 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
         <BuildStepStagePanel
           stage={stage}
           progress={resolveStageProgress(stage.id)}
-          renderStageContent={renderStageContent}
+          content={stageContents?.[stage.id]}
           taskCount={taskCountByStage[stage.id]}
         />
       ),
     })),
-  [renderStageContent, resolveStageProgress, stages, taskCountByStage]);
+  [resolveStageProgress, stageContents, stages, taskCountByStage]);
 
   const computedStatusLabel = (() => {
     switch (status) {

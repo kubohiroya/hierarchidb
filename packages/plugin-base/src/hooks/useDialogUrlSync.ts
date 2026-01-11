@@ -1,6 +1,6 @@
 /**
  * useDialogUrlSync
- * - Synchronize dialog state (step, mode, map) with URL query/hash.
+ * - Synchronize dialog atoms (step, mode, map) with URL query/hash.
  * - Debounced writes for high-frequency updates (map).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -258,17 +258,17 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
     [defaults?.step, getDialogPathState, history?.step, isBrowser, namespace, readFrom]
   );
 
-  // state -> URL (step, immediate)
+  // atoms -> URL (step, immediate)
   useEffect(() => {
     writeUrl({ step }, 'step');
   }, [step, writeUrl]);
 
-  // state -> URL (mode, immediate replace)
+  // atoms -> URL (mode, immediate replace)
   useEffect(() => {
     writeUrl({ mode }, 'mode');
   }, [mode, writeUrl]);
 
-  // state -> URL (map, debounced)
+  // atoms -> URL (map, debounced)
   const debouncedWriteMap = useMemo(
     () => debounceFn((m: DialogMapState) => writeUrl({ map: m }, 'map'), debounce?.map ?? 400),
     [writeUrl, debounce?.map]
@@ -277,7 +277,7 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
     if (map) debouncedWriteMap(map);
   }, [map, debouncedWriteMap]);
 
-  // URL -> state on back/forward
+  // URL -> atoms on back/forward
   useEffect(() => {
     if (!isBrowser) return;
     const onPop = () => {

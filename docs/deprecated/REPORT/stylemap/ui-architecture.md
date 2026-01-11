@@ -55,7 +55,7 @@ const STEPS = [
 **State Management:**
 ```typescript
 interface DialogState {
-  // Stepper state
+  // Stepper atoms
   activeStep: number;
   isSubmitting: boolean;
   
@@ -238,7 +238,7 @@ interface StylerEditorProps {
 
 // Features:
 // - Working copy management
-// - Dirty state tracking
+// - Dirty atoms tracking
 // - Auto-save capabilities
 // - Validation feedback
 ```
@@ -344,22 +344,22 @@ interface StylerImportProps {
 
 ```typescript
 interface StylerUIState {
-  // Dialog state
+  // Dialog atoms
   dialogOpen: boolean;
   currentStep: number;
   isLoading: boolean;
   
-  // Form state
+  // Form atoms
   formData: Partial<StylerEntity>;
   validationErrors: ValidationErrors;
   isDirty: boolean;
   
-  // Data state
+  // Data atoms
   tableMetadata: TableMetadataEntity | null;
   previewData: PreviewData | null;
   generatedStyles: MapLibreStyle | null;
   
-  // UI state
+  // UI atoms
   showAdvanced: boolean;
   previewMode: 'table' | 'map' | 'legend';
 }

@@ -65,7 +65,7 @@ export function useTreeTableOrchestrator(
   // Editing operations
   const editing = useMemo(
     () => ({
-      editingNodeId: null, // TODO: Add editing state
+      editingNodeId: null, // TODO: Add editing atoms
       startEdit: (id: string) => {
         controller?.startEdit?.(id);
       },

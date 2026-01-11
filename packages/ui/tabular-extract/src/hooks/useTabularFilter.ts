@@ -33,7 +33,7 @@ export interface UseTabularFilterResult {
   filterRules: TabularFilterRule[];
   /** Preview data */
   previewData: TabularDataResult | null;
-  /** Loading state */
+  /** Loading atoms */
   isLoading: boolean;
   /** Error message */
   error: string | null;
@@ -50,7 +50,7 @@ export interface UseTabularFilterResult {
   removeRule: (id: string) => void;
   /** Clear all filter rules */
   clearRules: () => void;
-  /** Toggle rule enabled state */
+  /** Toggle rule enabled atoms */
   toggleRule: (id: string) => void;
   /** Manually refresh preview */
   refreshPreview: () => Promise<void>;
@@ -234,7 +234,7 @@ export const useTabularFilter = (options: UseTabularFilterOptions): UseTabularFi
   }, []);
 
   /**
-   * Toggle rule enabled state
+   * Toggle rule enabled atoms
    */
   const toggleRule = useCallback(
     (id: string) => {
@@ -307,7 +307,7 @@ export interface UseTabularSelectionResult {
   selection: TabularSelectionConfig;
   /** Preview data with current selection */
   previewData: TabularDataResult | null;
-  /** Loading state */
+  /** Loading atoms */
   loading: boolean;
   /** Error message */
   error: string | null;

@@ -73,7 +73,7 @@ describeIf('BFF Service Integration Tests', () => {
         const response = await fetch(
           `${config.bffUrl}/auth/authorize/google?` +
           'scope=openid%20profile%20email&' +
-          'state=test-state',
+          'state=test-atoms',
           {
             redirect: 'manual',
           },
@@ -84,7 +84,7 @@ describeIf('BFF Service Integration Tests', () => {
         expect(location).toContain('accounts.google.com/o/oauth2/v2/auth');
         expect(location).toContain('response_type=code');
         expect(location).toContain('scope=openid%20profile%20email');
-        expect(location).toContain('state=test-state');
+        expect(location).toContain('atoms=test-atoms');
 
         if (config.googleClientId) {
           expect(location).toContain(`client_id=${config.googleClientId}`);
@@ -120,7 +120,7 @@ describeIf('BFF Service Integration Tests', () => {
           const location = response.headers.get('location');
           expect(location).toContain('github.com/login/oauth/authorize');
           expect(location).toContain('response_type=code');
-          expect(location).toContain('state=test-state');
+          expect(location).toContain('atoms=test-atoms');
         } else {
           expect(response.status).toBe(501);
           const data = await response.json();
@@ -140,7 +140,7 @@ describeIf('BFF Service Integration Tests', () => {
           const location = response.headers.get('location');
           expect(location).toContain('login.microsoftonline.com');
           expect(location).toContain('response_type=code');
-          expect(location).toContain('state=test-state');
+          expect(location).toContain('atoms=test-atoms');
         } else {
           expect(response.status).toBe(501);
           const data = await response.json();

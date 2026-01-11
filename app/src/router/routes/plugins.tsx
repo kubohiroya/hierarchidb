@@ -633,7 +633,7 @@ export default function PluginsPage() {
         // 4. Clear ALL RelationalEntity data
         // 5. Recreate initial trees and root nodes
         // await client.resetSystem();
-        console.log('System reset: Clearing ALL data and recreating initial state');
+        console.log('System reset: Clearing ALL data and recreating initial atoms');
       } else {
         // Reset specific plugin and dependents
         // This only clears GroupEntity and RelationalEntity data

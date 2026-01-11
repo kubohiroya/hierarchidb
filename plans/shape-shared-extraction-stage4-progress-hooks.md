@@ -15,7 +15,7 @@ After this change, shape, location, and route use a shared progress hook that ha
 ## Surprises & Discoveries
 
 - Observation: Shape uses `@hierarchidb/ui/batch` and has a dedicated mapping file, while location and route each reimplement progress hooks with different packages and error handling.
-  Evidence: `plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts`, `plugins/shape-plugin/src/ui/hooks/progress/shapeProgressMapping.ts`, `plugins/location-plugin/src/common/hooks/useLocationProgress.ts`, `plugins/route-plugin/src/ui/hooks/useRouteBatchProgress.ts`.
+  Evidence: `plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts`, `plugins/shape-plugin/src/ui/hooks/progress/shapeBuildProgressMapping.ts`, `plugins/location-plugin/src/common/hooks/useLocationProgress.ts`, `plugins/route-plugin/src/ui/hooks/useRouteBatchProgress.ts`.
 
 ## Decision Log
 
@@ -35,7 +35,7 @@ Key files:
 
 - `packages/ui/batch/src/hooks/useBatchProgressState.ts`
 - `plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts`
-- `plugins/shape-plugin/src/ui/hooks/progress/shapeProgressMapping.ts`
+- `plugins/shape-plugin/src/ui/hooks/progress/shapeBuildProgressMapping.ts`
 - `plugins/location-plugin/src/common/hooks/useLocationProgress.ts`
 - `plugins/route-plugin/src/ui/hooks/useRouteBatchProgress.ts`
 
@@ -55,7 +55,7 @@ Create a shared hook in `packages/ui/batch` that wraps `useBatchProgressState` a
 
 2) Export the helper from `packages/ui/batch/src/index.ts`.
 
-3) Refactor shape’s `useShapeProgress` to call `usePluginBatchProgress`, keeping `shapeProgressMapping.ts` for `statusToUnified`, `toShapeProgress`, and `toShapeStatus` functions.
+3) Refactor shape’s `useShapeProgress` to call `usePluginBatchProgress`, keeping `shapeBuildProgressMapping.ts` for `statusToUnified`, `toShapeProgress`, and `toShapeStatus` functions.
 
 4) Refactor location’s `useLocationProgress` to use the shared helper, porting its mapping logic into a plugin-local mapper. Preserve any auth-notification behavior by either adding optional callbacks to the shared helper or keeping a small wrapper that injects the auth override state.
 
@@ -86,7 +86,7 @@ Expected usage example in a plugin:
 
 ## 追加調査メモ（2025-12-26）
 
-- shape: UI から pause/resume の導線が存在（`ShapeBuildProgressStep` → `BuildStepPanel`）。
+- shape: UI から pause/resume の導線が存在（`ShapeBuildStep` → `BuildStepPanel`）。
 - route: UI hook が `pauseBatchSession`/`resumeBatchSession` を直接呼ぶ実装あり（`useRouteBatchProgress`）。
 - location: UI に pause/resume ボタンはあるが、現状はローカル state の切替のみで WorkerBridge へ未接続（`BatchProgressDialog`）。
 - location/route 開発時は pause/resume の UI ⇔ Worker の接続状況を前提条件として明記し、location 側の実配線を優先課題として扱う。

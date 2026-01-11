@@ -38,7 +38,7 @@ Enable extract2 to generate tasks per configured zoom range segment and scale si
 - Batch stages are orchestrated in `plugins/shape-plugin/src/services/batch/SessionController.ts` in the order download → extract1 → extract2 → vectortile.
 - extract2 task generation lives in `plugins/shape-plugin/src/services/batch/session/extract2/resolveExtract2BuildStrategy.ts` and the task builders under `session/extract2/`.
 - extract2 execution uses per-task inputs loaded by `plugins/shape-plugin/src/services/batch/adapters/ShapeWorkerExtractAdapters.ts` and forwarded to the worker pool.
-- Task input data types live in `packages/features/shape-store/src/ShapeDB.ts` and `packages/plugin-service-api/src/types/shapeBatchTypes.ts`.
+- Task input data types live in `packages/features/shape-store/src/ShapeDB.ts` and `packages/plugin-service-api/src/types/shapeBuildTypes.ts`.
 - Zoom segmentation settings originate in `BatchConfig.tileConfig.zoomBreakpoints` and are mapped into `BatchSessionConfig.vectorTiles` in `plugins/shape-plugin/src/worker/api.ts`.
 
 ## Plan of Work
@@ -47,7 +47,7 @@ Add `zoomBreakpoints` to the session config for vector tiles, build zoom range s
 
 ## Concrete Steps
 
-1. Extend `Extract2TaskInputData` in `packages/features/shape-store/src/ShapeDB.ts` and `packages/plugin-service-api/src/types/shapeBatchTypes.ts` with `zoomRange`, `zoomRangeLabel`, and `tolerance`.
+1. Extend `Extract2TaskInputData` in `packages/features/shape-store/src/ShapeDB.ts` and `packages/plugin-service-api/src/types/shapeBuildTypes.ts` with `zoomRange`, `zoomRangeLabel`, and `tolerance`.
 2. Add `zoomBreakpoints?: number[]` to `GenerateVectorTilesConfig` in `plugins/shape-plugin/src/common/types/BatchConfig.ts` and map `tileConfig.zoomBreakpoints` in `plugins/shape-plugin/src/worker/api.ts`.
 3. Introduce `plugins/shape-plugin/src/services/batch/session/extract2/zoomRanges.ts` and use it from SessionController.
 4. Update extract2 task builders (`buildExtract2TasksFromExtract1.ts`, `extract2/topojsonGrouping.ts`) to create tasks per zoom range and store per-range inputs.

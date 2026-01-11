@@ -431,9 +431,9 @@ export const useTreeViewController = (
 ): TreeViewControllerReturn => {
   const workerServices = useWorkerServices();
   
-  // Migrate state management logic
+  // Migrate atoms management logic
   // Preserve CRUD operations
-  // Maintain selection/expansion state
+  // Maintain selection/expansion atoms
   // Keep search functionality
   
   return useMemo(() => ({
@@ -670,7 +670,7 @@ import type { TreeNode } from '@hierarchidb/core';
 import type { TreeViewControllerConfig } from '../types/api';
 
 export interface TreeTableConsolePanelContextValue {
-  // Current state
+  // Current atoms
   selectedNodes: TreeNode[];
   expandedNodeIds: Set<string>;
   searchQuery: string;
@@ -1004,7 +1004,7 @@ describe('Package Integration', () => {
   it('should integrate with registry services', async () => {
     // Test worker service integration
     // Test API communication
-    // Test state synchronization
+    // Test atoms synchronization
   });
   
   it('should integrate with ui-theme', () => {

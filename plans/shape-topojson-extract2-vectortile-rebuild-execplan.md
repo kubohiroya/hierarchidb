@@ -37,7 +37,7 @@ Rebuild the shape-plugin TopoJSON path so extract2 and vectortile follow a unifi
 - extract2 task building uses `plugins/shape-plugin/src/services/batch/session/extract2/resolveExtract2BuildStrategy.ts` and the task builders under `session/extract2/`.
 - extract2 worker processing lives in `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`.
 - vectortile inputs use `plugins/shape-plugin/src/services/batch/session/stages/vectortile/buildVectorTileStageInputs.ts` and tileId relations in `shape-ephemeral`.
-- UI Step4 is the processing configuration step, with tile settings in `plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx`.
+- UI Step4 is the processing configuration step, with tile settings in `plugins/shape-plugin/src/ui/components/steps/VTConfigSection.tsx`.
 
 ## Plan of Work
 
@@ -46,7 +46,7 @@ Add two Step4 controls for tileBBox expansion factor and margin, storing them in
 ## Concrete Steps
 
 1. Extend `TileBatchConfig` and related processing config with `tileExpandFactor` and `tileExpandMargin` (number values) and default values in `plugins/shape-plugin/src/common/types/constants.ts`.
-2. Update Step4 UI (`plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx`) to expose sliders/inputs for expand factor and margin, and persist them to `BatchConfig.tileConfig`.
+2. Update Step4 UI (`plugins/shape-plugin/src/ui/components/steps/VTConfigSection.tsx`) to expose sliders/inputs for expand factor and margin, and persist them to `BatchConfig.tileConfig`.
 3. Map these fields into worker config in `plugins/shape-plugin/src/worker/api.ts` so they reach `BatchSessionConfig.vectorTiles`.
 4. Implement a new TopoJSON extract2 path under `plugins/shape-plugin/src/services/batch/session/extract2/` that:
    - Builds zoom grouping rules (z0 / z1–4 / z5–9).

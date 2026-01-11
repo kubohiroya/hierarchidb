@@ -50,7 +50,7 @@ const getDesignTokens = (mode: PaletteMode): ThemeOptions => ({
         action: {
           hover: 'rgba(0, 0, 0, 0.08)', // Increased opacity for better contrast
           selected: 'rgba(0, 0, 0, 0.12)', // Increased opacity for better visibility
-          disabled: 'rgba(0, 0, 0, 0.38)', // Darker disabled state
+          disabled: 'rgba(0, 0, 0, 0.38)', // Darker disabled atoms
           disabledBackground: 'rgba(0, 0, 0, 0.12)',
           // Include standard opacity fields expected by MUI containers
           hoverOpacity: 0.08,

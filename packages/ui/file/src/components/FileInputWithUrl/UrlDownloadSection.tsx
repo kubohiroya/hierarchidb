@@ -196,7 +196,7 @@ export const UrlDownloadSection: React.FC<UrlDownloadSectionProps> = ({
             </Box>
           )}
 
-          {/* Show error if download failed, otherwise show warning/info based on state */}
+          {/* Show error if download failed, otherwise show warning/info based on atoms */}
           {downloadError ? (
             <Alert severity="error" variant="outlined" sx={{ backgroundColor: 'transparent' }}>
               <Typography variant="caption" sx={{ fontSize: compact ? '0.75rem' : '0.875rem' }}>

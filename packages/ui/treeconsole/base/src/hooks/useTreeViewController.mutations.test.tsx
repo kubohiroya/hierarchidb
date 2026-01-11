@@ -55,7 +55,7 @@ describe('useTreeViewController', () => {
   });
 
   describe('moveNode', () => {
-    it('should move node and update state on success', async () => {
+    it('should move node and update atoms on success', async () => {
       mockStateManager.moveNode = vi.fn().mockResolvedValue({ success: true });
 
       const { result } = renderHook(() => useTreeViewController(mockProps));
@@ -101,7 +101,7 @@ describe('useTreeViewController', () => {
       consoleSpy.mockRestore();
     });
 
-    it('should update node order in state after successful move', async () => {
+    it('should update node order in atoms after successful move', async () => {
       mockStateManager.moveNode = vi.fn().mockResolvedValue({ success: true });
       mockStateManager.getChildren = vi
         .fn()
@@ -118,7 +118,7 @@ describe('useTreeViewController', () => {
   });
 
   describe('deleteNode', () => {
-    it('should delete node and update state on success', async () => {
+    it('should delete node and update atoms on success', async () => {
       mockStateManager.deleteNode = vi.fn().mockResolvedValue({ success: true });
 
       const { result } = renderHook(() => useTreeViewController(mockProps));
@@ -206,7 +206,7 @@ describe('useTreeViewController', () => {
   });
 
   describe('duplicateNode', () => {
-    it('should duplicate node and update state on success', async () => {
+    it('should duplicate node and update atoms on success', async () => {
       const duplicatedNode = {
         id: 'node-1-copy',
         name: 'Test Node (Copy)',

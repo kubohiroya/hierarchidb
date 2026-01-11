@@ -157,7 +157,7 @@ export interface TabularTableListResult {
  * CSV Processing Status
  */
 export interface TabularProcessingStatus {
-  /** Processing state */
+  /** Processing atoms */
   status: 'pending' | 'processing' | 'completed' | 'error';
   /** Progress percentage (0-100) */
   progress: number;

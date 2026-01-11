@@ -477,7 +477,7 @@ describe('useLinkButton Hook', () => {
     expect(result.current).toHaveProperty('setConfirmOpen');
   });
 
-  it('manages loading state correctly', async () => {
+  it('manages loading atoms correctly', async () => {
     const onSave = vi
       .fn()
       .mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100)));

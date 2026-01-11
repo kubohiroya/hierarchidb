@@ -64,7 +64,7 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
   interactive = false,
   title = 'BaseMap Preview',
 }) => {
-  // Convert to MapLibre view state
+  // Convert to MapLibre view atoms
   const initialViewState = useMemo<MapViewState>(
     () => ({
       longitude: viewport.center[0],

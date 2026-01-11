@@ -1,6 +1,6 @@
 /**
- * @file useTreeViewController.state-sync.test.tsx
- * @description TDD tests for TreeViewController state synchronization
+ * @file useTreeViewController.atoms-sync.test.tsx
+ * @description TDD tests for TreeViewController atoms synchronization
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -54,8 +54,8 @@ describe('useTreeViewController', () => {
     };
   });
 
-  describe('state synchronization', () => {
-    it('should notify all state changes through onStateChange callback', () => {
+  describe('atoms synchronization', () => {
+    it('should notify all atoms changes through onStateChange callback', () => {
       const { result } = renderHook(() => useTreeViewController(mockProps));
 
       act(() => {
@@ -77,7 +77,7 @@ describe('useTreeViewController', () => {
       expect(mockOnStateChange).toHaveBeenCalledTimes(3);
     });
 
-    it('should maintain consistent state object structure', () => {
+    it('should maintain consistent atoms object structure', () => {
       const { result } = renderHook(() => useTreeViewController(mockProps));
 
       act(() => {

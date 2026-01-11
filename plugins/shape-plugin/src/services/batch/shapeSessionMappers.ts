@@ -3,16 +3,8 @@ import type {
   ShapeBatchSessionRecord,
   ShapeVectorTileRecord,
 } from '@hierarchidb/plugin-service-api';
-import type {
-  BatchProcessConfig,
-  BatchSessionRecord,
-  LayerInfo,
-  ProcessingStage,
-  ProgressInfo,
-  ResourceUsage,
-  StageStatus,
-  VectorTileRecord,
-} from '../database/ShapeDB.js';
+import type { BatchProcessConfig, LayerInfo, ProcessingStage, ProgressInfo, ResourceUsage, StageStatus } from '../types.ts';
+import type { BatchSessionRecord, VectorTileRecord } from '@hierarchidb/shape-store';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -50,11 +42,7 @@ export const toProcessingStage = (
 ): ProgressInfo['taskType'] => {
   if (stage === 'processing') return stage;
   if (
-    stage === 'download'
-    || stage === 'extract1'
-    || stage === 'extract2'
-    || stage === 'vectortile'
-    || stage === 'fetch'
+    stage === 'fetch'
     || stage === 'transform'
     || stage === 'vt'
   ) {
@@ -94,10 +82,6 @@ const toStageMap = (stages: Record<string, unknown> | undefined): Record<Process
     return isStageStatus(candidate) ? candidate : empty;
   };
   return {
-    download: read('download'),
-    extract1: read('extract1'),
-    extract2: read('extract2'),
-    vectortile: read('vectortile'),
     fetch: read('fetch'),
     transform: read('transform'),
     vt: read('vt'),

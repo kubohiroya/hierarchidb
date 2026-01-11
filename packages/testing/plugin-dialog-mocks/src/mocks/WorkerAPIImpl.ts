@@ -13,9 +13,7 @@ type DraftData = {
   viewport?: { center?: [number, number]; zoom?: number };
 };
 
-type ValidationResultWithDetails =
-  | { valid: true; errors?: string[]; warnings?: string[] }
-  | { valid: false; message: string; errors?: string[]; warnings?: string[] };
+type ValidationResultWithDetails = { valid: boolean; message?: string; errors?: string[]; warnings?: string[] };
 
 const getDraftData = (input: unknown): DraftData => {
   if (input && typeof input === 'object') return input as DraftData;
@@ -224,7 +222,7 @@ export class WorkerAPIImpl {
       },
 
       async batchValidate(ids: NodeId[]): Promise<Record<NodeId, ValidationResult>> {
-        const out = Object.create(null) as Record<NodeId, ValidationResult>;
+        const out = Object.create(null);
         for (const id of ids) {
           const errors: string[] = [];
           const warnings: string[] = [];

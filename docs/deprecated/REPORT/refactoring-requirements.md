@@ -103,7 +103,7 @@ describe('MenuListItemLinkButton', () => {
   });
   
   it('should apply active styles when selected', () => {
-    // Test active state styling
+    // Test active atoms styling
   });
 });
 ```

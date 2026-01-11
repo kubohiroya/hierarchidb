@@ -112,7 +112,7 @@ export const StylerMappingKeysStep: React.FC<PluginStepProps<StylerStepData>> = 
         <FormHelperText>
           {t(
             'step3.featureIdProperty.help',
-            'The property name on the vector tile feature used for promoteId and feature-state lookup.',
+            'The property name on the vector tile feature used for promoteId and feature-atoms lookup.',
           )}
         </FormHelperText>
       </FormControl>

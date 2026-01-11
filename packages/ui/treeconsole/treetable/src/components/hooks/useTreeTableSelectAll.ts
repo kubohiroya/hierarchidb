@@ -3,7 +3,7 @@ import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 export interface UseTreeTableSelectAllOptions {
   pageNodeId?: string;
   /**
-   * 'page' (default) persists select-all state per pageNodeId.
+   * 'page' (default) persists select-all atoms per pageNodeId.
    * 'session' keeps the toggle in-memory only and always boots as false.
    */
   persistence?: 'page' | 'session';

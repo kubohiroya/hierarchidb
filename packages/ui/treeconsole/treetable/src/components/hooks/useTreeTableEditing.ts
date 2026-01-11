@@ -1,6 +1,6 @@
 /**
  * useTreeTableEditing
- * Centralises inline editing state and helpers for TreeTable rows.
+ * Centralises inline editing atoms and helpers for TreeTable rows.
  */
 
 import { useCallback, useState } from 'react';

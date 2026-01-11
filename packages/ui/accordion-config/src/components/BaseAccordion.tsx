@@ -15,7 +15,7 @@ export interface BaseAccordionProps {
   defaultExpanded?: boolean;
   /** Whether the accordion is disabled */
   disabled?: boolean;
-  /** Callback when expansion state changes */
+  /** Callback when expansion atoms changes */
   onExpansionChange?: (expanded: boolean) => void;
   /** Custom styles for the accordion */
   sx?: SxProps<Theme>;

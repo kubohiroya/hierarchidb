@@ -10,7 +10,7 @@ import {
 import type { TaskQueueRecord, StageHandler } from '@hierarchidb/vt-orchestrator';
 import { VtShapeDb, listStage1Buffers, listBufferIdsByTile } from '@hierarchidb/vt-shape-store';
 import { VtDb } from '@hierarchidb/vt-store';
-import type { BatchConfig, CountryMetadata, DataSourceName, DownloadTaskPayload, SelectedArrayByCountries } from '../../common/types/index.js';
+import type { BatchConfig, CountryMetadata, DataSourceName, FetchTaskPayload, SelectedArrayByCountries } from '../../common/types/index.js';
 import { DEFAULT_PROCESSING_CONFIG } from '../../common/types/constants.js';
 import { runShapeFetchStage } from './shapeFetchStage.js';
 import { updateShapeStageMetadata } from './shapeStageMetadata.js';
@@ -56,7 +56,7 @@ const buildBands = (enableBand3: boolean) => {
 
 const hasBand3Selection = (
   selection?: SelectedArrayByCountries,
-  payloads?: DownloadTaskPayload[],
+  payloads?: FetchTaskPayload[],
 ): boolean => {
   if (payloads && payloads.some((payload) => payload.adminLevel >= 2)) return true;
   if (!selection) return false;
@@ -243,7 +243,7 @@ export type ShapeVtPipelineParams = {
   dataSource: DataSourceName;
   batchConfig: BatchConfig;
   selectedArrayByCountries?: SelectedArrayByCountries;
-  downloadTaskPayloads?: DownloadTaskPayload[];
+  downloadTaskPayloads?: FetchTaskPayload[];
   waitIfPaused?: () => Promise<void>;
 };
 

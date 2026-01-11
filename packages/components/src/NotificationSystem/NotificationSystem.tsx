@@ -30,7 +30,7 @@ interface NotificationSystemState {
   clearAll: () => void;
 }
 
-// Global state management
+// Global atoms management
 let globalState: NotificationSystemState | null = null;
 const listeners = new Set<() => void>();
 
@@ -145,7 +145,7 @@ export function NotificationSystem(): JSX.Element | null {
     setNotifications([]);
   }, []);
 
-  // Set up global state
+  // Set up global atoms
   useEffect(() => {
     globalState = {
       notifications,

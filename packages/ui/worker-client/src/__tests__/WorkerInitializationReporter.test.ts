@@ -303,7 +303,7 @@ describe('WorkerInitializationReporter', () => {
   });
 
   describe('状態管理', () => {
-    it('should track initialization state correctly', () => {
+    it('should track initialization atoms correctly', () => {
       expect(reporter.isReady()).toBe(false);
 
       reporter.reportComplete();

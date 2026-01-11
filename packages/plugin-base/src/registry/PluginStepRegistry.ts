@@ -68,7 +68,7 @@ export interface StartBatchContext<TData extends StepData = StepData, TUiState =
   dialogData: TData;
 
   /**
-   * Ephemeral UI state (validation, button enables, etc.). Not persisted.
+   * Ephemeral UI atoms (validation, button enables, etc.). Not persisted.
    */
   uiState?: TUiState;
 }
@@ -123,13 +123,13 @@ export interface PluginStepProps<TData extends StepData = StepData, TUiState = u
   /** Current data */
   data: TData;
 
-  /** Optional UI state shared across steps (not persisted) */
+  /** Optional UI atoms shared across steps (not persisted) */
   uiState?: TUiState;
 
   /** Update data */
   onChange: (data: TData) => void;
 
-  /** Update UI state */
+  /** Update UI atoms */
   onUiStateChange?: (uiState: TUiState) => void;
 
   /** Mark step as valid/invalid */

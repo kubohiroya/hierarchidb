@@ -178,12 +178,12 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
           }
         }
       } catch (error) {
-        console.debug('VectorTileLayer cleanup skipped due to map state:', error);
+        console.debug('VectorTileLayer cleanup skipped due to map atoms:', error);
       }
     };
   }, [map, computedTiles, sourceId, minzoom, maxzoom, layerId, promoteId]);
 
-  // Apply feature-state values
+  // Apply feature-atoms values
   useEffect(() => {
     if (!map || !sourceAdded || !featureState) return;
     const mapRef = map;
@@ -194,7 +194,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
         try {
           mapRef.removeFeatureState({ source: sourceId!, id, key });
         } catch (error) {
-          console.debug('VectorTileLayer feature-state cleanup skipped:', error);
+          console.debug('VectorTileLayer feature-atoms cleanup skipped:', error);
         }
       });
     };
@@ -215,7 +215,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
             try {
               mapRef.removeFeatureState({ source: sourceId!, id: entry.id, key });
             } catch (error) {
-              console.debug('VectorTileLayer feature-state cleanup skipped:', error);
+              console.debug('VectorTileLayer feature-atoms cleanup skipped:', error);
             }
           }
         });
@@ -288,7 +288,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
           }
         }
       } catch (error) {
-        console.debug('VectorTileLayer layer cleanup skipped due to map state:', error);
+        console.debug('VectorTileLayer layer cleanup skipped due to map atoms:', error);
       }
     };
   }, [map, sourceAdded, layerId, layerType, sourceId, paint, layout, filter, visible, minzoom, maxzoom, sourceLayer]);

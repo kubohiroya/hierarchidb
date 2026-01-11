@@ -44,7 +44,7 @@ export interface BaseMapDisplayProps {
   style?: React.CSSProperties;
   /** Callback when map loads */
   onLoad?: (map: MapLibreMapInstance) => void;
-  /** Callback when view state changes */
+  /** Callback when view atoms changes */
   onViewStateChange?: (viewState: MapViewState) => void;
   /** Show loading indicator */
   showLoadingIndicator?: boolean;
@@ -106,7 +106,7 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
     setError(remoteError ? remoteError.message ?? 'Failed to load map configuration' : null);
   }, [providedEntity, remoteLoading, remoteError]);
 
-  // Convert entity viewport to MapLibre view state
+  // Convert entity viewport to MapLibre view atoms
   const initialViewState = useMemo<MapViewState | undefined>(() => {
     // Use viewport configuration
     if (!entity?.viewport) return undefined;
@@ -176,9 +176,9 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
             paint: {
               'fill-color': [
                 'case',
-                ['to-boolean', ['features-state', 'selected']],
+                ['to-boolean', ['features-atoms', 'selected']],
                 '#1976d2',
-                ['to-boolean', ['features-state', 'hovered']],
+                ['to-boolean', ['features-atoms', 'hovered']],
                 '#64b5f6',
                 '#3f51b5',
               ],
@@ -194,17 +194,17 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
             paint: {
               'line-color': [
                 'case',
-                ['to-boolean', ['features-state', 'selected']],
+                ['to-boolean', ['features-atoms', 'selected']],
                 '#0d47a1',
-                ['to-boolean', ['features-state', 'hovered']],
+                ['to-boolean', ['features-atoms', 'hovered']],
                 '#1976d2',
                 '#283593',
               ],
               'line-width': [
                 'case',
-                ['to-boolean', ['features-state', 'selected']],
+                ['to-boolean', ['features-atoms', 'selected']],
                 3,
-                ['to-boolean', ['features-state', 'hovered']],
+                ['to-boolean', ['features-atoms', 'hovered']],
                 2.5,
                 2,
               ],
@@ -231,7 +231,7 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
     };
   }, [_mapInstance]);
 
-  // Handle view state changes
+  // Handle view atoms changes
   const handleViewStateChange = useCallback(
     (viewState: MapViewState) => {
       // Could update entity here if needed
@@ -240,7 +240,7 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
     [onViewStateChange]
   );
 
-  // Loading state
+  // Loading atoms
   if (loading && showLoadingIndicator) {
     return (
       <Box
@@ -258,7 +258,7 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
     );
   }
 
-  // Error state
+  // Error atoms
   if (error) {
     return (
       <Box sx={{ width, height, p: 2, ...style }}>
@@ -269,7 +269,7 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
     );
   }
 
-  // No entity state
+  // No entity atoms
   if (!entity || !initialViewState) {
     return (
       <Box sx={{ width, height, p: 2, ...style }}>

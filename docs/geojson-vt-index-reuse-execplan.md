@@ -51,9 +51,9 @@ extract2 ステージで geojson-vt の index オブジェクトを生成して 
 
 ## Plan of Work
 
-まず、extract2 タスクに vectortile 設定（buffer/extent/zoom レンジ）を渡すため、`packages/plugin-service-api/src/types/shapeBatchTypes.ts` の `ShapeExtract2TaskInputData` に `vectorTileBuffer`、`vectorTileExtent`、`vectorTileMaxZoom` のようなフィールドを追加し、`plugins/shape-plugin/src/services/batch/session/extract2/buildExtract2TasksFromExtract1.ts` と `plugins/shape-plugin/src/services/batch/session/extract2/topojsonGrouping.ts` で設定を入力に埋め込みます。ここでの設定値は `BatchProcessConfig.vectorTiles` と `ShapeVectorTileTaskInputData` が使用している `buffer`/`extent` と同じ値に揃えます。
+まず、extract2 タスクに vectortile 設定（buffer/extent/zoom レンジ）を渡すため、`packages/plugin-service-api/src/types/shapeBuildTypes.ts` の `ShapeExtract2TaskInputData` に `vectorTileBuffer`、`vectorTileExtent`、`vectorTileMaxZoom` のようなフィールドを追加し、`plugins/shape-plugin/src/services/batch/session/extract2/buildExtract2TasksFromExtract1.ts` と `plugins/shape-plugin/src/services/batch/session/extract2/topojsonGrouping.ts` で設定を入力に埋め込みます。ここでの設定値は `BatchProcessConfig.vectorTiles` と `ShapeVectorTileTaskInputData` が使用している `buffer`/`extent` と同じ値に揃えます。
 
-次に、`packages/features/shape-store/src/EphemeralShapeDB.ts` に geojson-vt index を格納するテーブルを追加します。レコード型には `id`、`nodeId`、`bufferId`、`index`、`options`、`createdAt` を含め、`clearStage()` と `clearNodeData()` で extract2 と一緒に削除されるようにします。これに合わせて `packages/plugin-service-api/src/types/shapeDbTypes.ts` と `packages/plugin-service-api/src/types/ShapeEphemeralDBAPI.ts` を更新し、`plugins/shape-plugin/src/services/batch/ShapeBatchApiClient.ts` に `putGeojsonVtIndex()` と `getGeojsonVtIndex()` を実装します。
+次に、`packages/features/shape-store/src/EphemeralShapeDB.ts` に geojson-vt index を格納するテーブルを追加します。レコード型には `id`、`nodeId`、`bufferId`、`index`、`options`、`createdAt` を含め、`clearStage()` と `clearNodeData()` で extract2 と一緒に削除されるようにします。これに合わせて `packages/plugin-service-api/src/types/shapeDbTypes.ts` と `packages/plugin-service-api/src/types/ShapeEphemeralDBAPI.ts` を更新し、`plugins/shape-plugin/src/services/batch/ShapeBuildApiClient.ts` に `putGeojsonVtIndex()` と `getGeojsonVtIndex()` を実装します。
 
 extract2 ステージでは `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts` の `processExtract2Task()` 内で `finalFeatures` が確定した後に geojson-vt index を作成し、上記 API を通じて保存します。index の生成オプションは vectortile と同じ `extent=4096`、`buffer=vectorTileBuffer`、`indexMaxZoom=max(zoomLevels)` を使い、`promoteId: 'id'` を指定します。保存時に `Object.getPrototypeOf(index)` の復元用プロトタイプは持たず、保存後の復元側で geojson-vt を一度呼び出してプロトタイプを得る方針にします。
 
@@ -66,14 +66,14 @@ runtime-worker 側の `packages/runtime-worker/src/services/StageProcessingServi
 作業ディレクトリはリポジトリ直下です。
 
 1) 型とタスク構築を確認するために次を実行し、extract2 入力に vectortile 設定を追加する箇所を特定する。
-   - `rg -n "ShapeExtract2TaskInputData" packages/plugin-service-api/src/types/shapeBatchTypes.ts`
+   - `rg -n "ShapeExtract2TaskInputData" packages/plugin-service-api/src/types/shapeBuildTypes.ts`
    - `rg -n "buildExtract2Tasks" plugins/shape-plugin/src/services/batch/session/extract2`
 
 2) EphemeralShapeDB のスキーマに geojson-vt index テーブルを追加し、ShapeBatchApiClient と API 型を更新する。
    - `packages/features/shape-store/src/EphemeralShapeDB.ts`
    - `packages/plugin-service-api/src/types/shapeDbTypes.ts`
    - `packages/plugin-service-api/src/types/ShapeEphemeralDBAPI.ts`
-   - `plugins/shape-plugin/src/services/batch/ShapeBatchApiClient.ts`
+   - `plugins/shape-plugin/src/services/batch/ShapeBuildApiClient.ts`
 
 3) extract2 に index 生成と保存を追加する。
    - `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`

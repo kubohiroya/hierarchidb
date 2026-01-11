@@ -27,7 +27,7 @@ export interface PaneConfig {
   customHeader?: ReactNode;
 }
 
-/** Pane state (internal) */
+/** Pane atoms (internal) */
 export interface PaneState extends Omit<PaneConfig, 'content' | 'headerActions' | 'customHeader'> {
   /** Whether pane is currently expanded */
   isExpanded: boolean;
@@ -95,7 +95,7 @@ export interface LRUSplitViewConfig {
 export interface PaneHeaderProps {
   /** Pane configuration */
   pane: PaneConfig;
-  /** Current pane state */
+  /** Current pane atoms */
   state: PaneState;
   /** Progress information */
   progress?: PaneProgress;

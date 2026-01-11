@@ -92,7 +92,7 @@ export interface TreeSubscriptionAPI {
   /**
    * Subscribe to undo/redo availability updates emitted by the command processor.
    *
-   * Subscribers receive the current state immediately followed by subsequent changes.
+   * Subscribers receive the current atoms immediately followed by subsequent changes.
    */
   subscribeUndoState(callback: (event: UndoStateEvent) => void): Promise<SubscriptionId>;
 

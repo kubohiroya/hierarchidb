@@ -228,7 +228,7 @@ export function useLRUPanes({
       return paneStates.map(() => sizePerPane);
     }
 
-    // Calculate sizes based on expansion state
+    // Calculate sizes based on expansion atoms
     if (expandedCount === 1) {
       // Single expanded pane gets most space
       return paneStates.map((pane) =>

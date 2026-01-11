@@ -59,7 +59,7 @@ export interface InitializationStep {
 }
 
 /**
- * Worker initialization state
+ * Worker initialization atoms
  */
 export type WorkerInitState = 'uninitialized' | 'initializing' | 'ready' | 'error';
 

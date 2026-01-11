@@ -136,7 +136,7 @@ export function DataGridPreview({
           sortColumn={sortState.column}
           sortDirection={sortState.direction}
           onSort={onSort}
-          // Cross-view synced row state and handlers
+          // Cross-view synced row atoms and handlers
           selectedRows={rowSets.selected}
           hoveredRows={rowSets.hovered}
           matchedRows={matchedRowSet}

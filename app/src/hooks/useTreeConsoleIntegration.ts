@@ -1,7 +1,7 @@
 /**
  * useTreeConsoleIntegration Hook
  *
- * Manages TreeConsole state and interactions with WorkerAPIClient.
+ * Manages TreeConsole atoms and interactions with WorkerAPIClient.
  * Avoids Orchestrated APIs and uses direct Worker API calls.
  */
 
@@ -184,7 +184,7 @@ export function useTreeConsoleIntegration({
         }
       } catch (error) {
         if (!cancelled) {
-          console.warn('[TreeConsoleIntegration] failed to initialize expanded state API', error);
+          console.warn('[TreeConsoleIntegration] failed to initialize expanded atoms API', error);
         }
       }
     })();
@@ -228,7 +228,7 @@ export function useTreeConsoleIntegration({
         }
       } catch (error) {
         if (!cancelled) {
-          console.warn('[TreeConsoleIntegration] failed to load persisted expanded state', error);
+          console.warn('[TreeConsoleIntegration] failed to load persisted expanded atoms', error);
         }
       }
 

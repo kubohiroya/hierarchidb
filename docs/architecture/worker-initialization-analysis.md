@@ -399,7 +399,7 @@ const bridgeRef = window.__HDB_WORKER_CLIENT_REF__;
 if (!bridgeRef) {
   console.warn('WorkerBridge client ref is not injected (WorkerProvider not initialized yet).');
 } else {
-  console.log('WorkerBridge state', {
+  console.log('WorkerBridge atoms', {
     isInitialized: bridgeRef.isInitialized,
     hasClient: Boolean(bridgeRef.client),
   });

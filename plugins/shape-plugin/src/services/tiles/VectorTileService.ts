@@ -12,13 +12,13 @@
 //import { VectorTile } from '@mapbox/vector-tile';
 //import Protobuf from 'pbf';
 import * as turf from '@turf/turf';
-import { getShapeDbApiClient } from '../batch/ShapeBatchApiClient.js';
 import type { ShapeFeatureRecord, ShapeTileLayerInfo, ShapeVectorTileRecord } from '@hierarchidb/plugin-service-api';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { BoundingBox, TileMetadata, LayerConfig, LayerInfo } from '../../common/types/index.js';
 import type { Feature as GeoJSONFeature, Geometry } from 'geojson';
 // NOTE: gis-sdkのdist反映前でも型解決できるように、明示的にパスを固定（後で dist が更新されたら '@hierarchidb/gis-sdk' に戻せます）
 import { getTilesInBounds, tileToBbox, encodeMvtFromGeojsonVt, normalizeVectorTileFormat } from '@hierarchidb/gis-sdk';
+import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../batch/ShapeBuildApiClient.ts';
 
 type TileLayerFeature = {
   geometry: Geometry;
@@ -109,7 +109,7 @@ export class VectorTileService {
     const { nodeId, z, x, y } = request;
 
     // Check cache first
-    const cachedTile = await getShapeDbApiClient().query.getVectorTile(nodeId, z, x, y);
+    const cachedTile = await shapeQueryAPIImpl.getVectorTile(nodeId, z, x, y);
     if (cachedTile) {
       return cachedTile;
     }
@@ -130,7 +130,7 @@ export class VectorTileService {
     x: number,
     y: number,
   ): Promise<TileMetadata | null> {
-    const tile = await getShapeDbApiClient().query.getVectorTileRecord(nodeId, z, x, y);
+    const tile = await shapeQueryAPIImpl.getVectorTileRecord(nodeId, z, x, y);
     if (!tile) {
       return null;
     }
@@ -179,7 +179,7 @@ export class VectorTileService {
   }
 
   async generateTilesForZoomLevel(nodeId: NodeId, zoom: number): Promise<number> {
-    const features = await getShapeDbApiClient().query.listFeatures(nodeId);
+    const features = await shapeQueryAPIImpl.listFeatures(nodeId);
 
     if (features.length === 0) {
       return 0;
@@ -216,16 +216,16 @@ export class VectorTileService {
     let count = 0;
 
     if (zoomLevel !== undefined) {
-      const tiles = await getShapeDbApiClient().query.listVectorTileRows(nodeId);
+      const tiles = await shapeQueryAPIImpl.listVectorTileRows(nodeId);
       const filtered = tiles.filter((tile) => tile.z === zoomLevel);
 
       for (const tile of filtered) {
-        await getShapeDbApiClient().mutation.deleteVectorTile(tile.key);
+        await shapeMutationAPIImpl.deleteVectorTile(tile.key);
         count++;
       }
     } else {
-      const tiles = await getShapeDbApiClient().query.listVectorTileRows(nodeId);
-      await getShapeDbApiClient().mutation.deleteVectorTiles(nodeId);
+      const tiles = await shapeQueryAPIImpl.listVectorTileRows(nodeId);
+      await shapeMutationAPIImpl.deleteVectorTiles(nodeId);
       count = tiles.length;
     }
 
@@ -237,7 +237,7 @@ export class VectorTileService {
     totalSize: number;
     byZoomLevel: Record<number, { count: number; size: number }>;
   }> {
-    const tiles = await getShapeDbApiClient().query.listVectorTileRows(nodeId);
+    const tiles = await shapeQueryAPIImpl.listVectorTileRows(nodeId);
 
     const stats = {
       totalTiles: tiles.length,
@@ -268,7 +268,7 @@ export class VectorTileService {
     zoom: number,
   ): Promise<ShapeFeatureWithGeometry[]> {
     // Get features that intersect with tile bounds
-    const features = await getShapeDbApiClient().query.listFeaturesInBbox(nodeId, bbox);
+    const features = await shapeQueryAPIImpl.listFeaturesInBbox(nodeId, bbox);
 
     // Filter by zoom-appropriate admin level
     const adminLevel = this.getAdminLevelForZoom(zoom);
@@ -454,7 +454,7 @@ export class VectorTileService {
       version: 1,
     };
 
-    await getShapeDbApiClient().mutation.storeVectorTile(tile);
+    await shapeMutationAPIImpl.storeVectorTile(tile);
   }
 
   private async calculateHash(data: Uint8Array): Promise<string> {

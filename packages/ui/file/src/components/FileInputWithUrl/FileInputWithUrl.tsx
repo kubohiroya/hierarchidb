@@ -25,7 +25,7 @@ export interface FileInputWithUrlProps {
   buttonLabel?: string;
 
   /**
-   * Whether the component is in a loading state
+   * Whether the component is in a loading atoms
    */
   loading?: boolean;
 

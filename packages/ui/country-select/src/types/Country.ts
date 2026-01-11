@@ -44,7 +44,7 @@ export const CONTINENTS: Record<ContinentCode, Continent> = {
   XX: { code: 'XX', name: 'N/A' },
 };
 
-/** Selection state for a country */
+/** Selection atoms for a country */
 export interface CountrySelection {
   country: Country;
   /** Matrix selections for this country */

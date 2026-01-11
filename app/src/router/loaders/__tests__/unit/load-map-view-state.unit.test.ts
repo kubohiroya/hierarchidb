@@ -74,7 +74,7 @@ describe('parseZxyParam', () => {
 });
 
 describe('formatZxyParam', () => {
-  it('should format view state correctly', () => {
+  it('should format view atoms correctly', () => {
     const result = formatZxyParam({
       zoom: 3,
       longitude: 135,
@@ -112,12 +112,12 @@ describe('formatZxyParam', () => {
 });
 
 describe('mapLoader', () => {
-  it('should return default view state when zxy is not provided', () => {
+  it('should return default view atoms when zxy is not provided', () => {
     const result = mapLoader({});
     expect(result).toEqual(DEFAULT_VIEW_STATE);
   });
 
-  it('should return default view state when zxy is invalid', () => {
+  it('should return default view atoms when zxy is invalid', () => {
     const result = mapLoader({ zxy: 'invalid' });
     expect(result).toEqual(DEFAULT_VIEW_STATE);
   });

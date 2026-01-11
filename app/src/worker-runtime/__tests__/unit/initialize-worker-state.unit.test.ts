@@ -58,7 +58,7 @@ describe('WorkerStateStore', () => {
     expect(observedStates).toEqual(['uninitialized', 'initializing', 'ready']);
   });
 
-  it('records failure state when initialization rejects', async () => {
+  it('records failure atoms when initialization rejects', async () => {
     const loaderError = new Error('boom');
     workerClientMock.isReady.mockReturnValue(false);
     workerClientMock.getSingleton.mockImplementation(() => {

@@ -449,7 +449,7 @@ export function useTrashDialog(data: TrashDialogData, params: TrashDialogRoutePa
           const expandedApi = await client.getTreeTableExpandedAPI?.();
           await expandedApi?.clearExpandedForSubtree(removalNodeIds);
         } catch (error) {
-          console.warn('Failed to clear expanded state after empty trash', error);
+          console.warn('Failed to clear expanded atoms after empty trash', error);
         }
         closeDialog();
       }

@@ -40,8 +40,8 @@ export interface TreeNodeUpdaterAPI {
 
   /**
  * Persist draft changes and optionally commit them in a single call.
- * - `mode: 'save-draft'` stores draft payloads/UI state without committing.
- * - `mode: 'save'` (default) optionally applies provided draft payloads/UI state
+ * - `mode: 'save-draft'` stores draft payloads/UI atoms without committing.
+ * - `mode: 'save'` (default) optionally applies provided draft payloads/UI atoms
  *   and commits the draft.
  */
   updateTreeNode(nodeId: NodeId, request?: CommitDraftRequest): Promise<CommitResult>;

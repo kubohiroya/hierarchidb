@@ -96,7 +96,7 @@ export interface GenericDataGridProps<T extends RowRecord = RowRecord> {
   rows: T[];
   /** Total row count (for server-side pagination) */
   totalRows?: number;
-  /** Loading state */
+  /** Loading atoms */
   loading?: boolean;
   /** Error message */
   error?: string;
@@ -145,7 +145,7 @@ export interface GenericDataGridProps<T extends RowRecord = RowRecord> {
   /** Selection change handler */
   onSelectionChange?: (selectedRows: Set<string | number>) => void;
 
-  // Row visual state sets (controlled)
+  // Row visual atoms sets (controlled)
   /** Disabled rows (dimmed, non-interactive) */
   disabledRows?: Set<string | number>;
   /** Matched rows (e.g., search hits) */
@@ -158,11 +158,11 @@ export interface GenericDataGridProps<T extends RowRecord = RowRecord> {
   dropTargetRows?: Set<string | number>;
 
   // Row visual customization
-  /** Compute per-row inline style from row state */
+  /** Compute per-row inline style from row atoms */
   rowStyle?: (state: RowState<T>) => CSSProperties | undefined;
-  /** Compute per-row css class from row state */
+  /** Compute per-row css class from row atoms */
   rowClassName?: (state: RowState<T>) => string | undefined;
-  /** Compute per-row MUI sx from row state */
+  /** Compute per-row MUI sx from row atoms */
   rowSx?: (state: RowState<T>) => SxProps<Theme> | undefined;
   /** Optional sx override for header cells */
   headerCellSx?: SxProps<Theme>;
@@ -223,7 +223,7 @@ export interface GenericDataGridProps<T extends RowRecord = RowRecord> {
   hover?: boolean;
 
   // Customization
-  /** Custom empty state component */
+  /** Custom empty atoms component */
   emptyComponent?: ReactNode;
   /** Custom loading component */
   loadingComponent?: ReactNode;
@@ -440,7 +440,7 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
 
   const visibleColumns = useMemo(() => columns.filter((col) => !col.hidden), [columns]);
 
-  // Render error state
+  // Render error atoms
   if (error) {
     if (errorComponent) {
       return <>{errorComponent(error)}</>;
@@ -452,7 +452,7 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
     );
   }
 
-  // Render empty state
+  // Render empty atoms
   if (!loading && rows.length === 0) {
     if (emptyComponent) {
       return <>{emptyComponent}</>;

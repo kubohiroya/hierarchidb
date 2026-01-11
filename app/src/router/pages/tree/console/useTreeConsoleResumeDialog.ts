@@ -35,7 +35,7 @@ export function useTreeConsoleResumeDialog({
         const nodeData = convertTreeNodeToTreeNodeData(sourceNode);
         actions.handleContextMenuAction('edit', nodeData, { navigateToParent: false });
       } catch (error) {
-        logIntegrationWarning('Failed to check draft state before edit', error);
+        logIntegrationWarning('Failed to check draft atoms before edit', error);
         actions.handleEdit?.();
       }
     },

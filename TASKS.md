@@ -1,16 +1,61 @@
+2183) fix/shape/typecheck-missing-shape-types (P1) — 進行中 (2026-01-14)
+- ブランチ名: fix/shape/typecheck-missing-shape-types
+- 依存: なし
+- 受け入れ基準: ShapeEntity/SelectedArrayByCountries の export 解決エラー（TS2305）が解消される／GeoBoundariesStrategy の decodeBuffer 型不整合（TS2322）が解消される／shapeVtPipeline/utils の型エラーが解消される／CrashInsight の型エラー（TS2345）が解消される／`@hierarchidb/shape-plugin typecheck` が通る／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/common/types/index.ts`, `plugins/shape-plugin/src/services/datasources/GeoBoundariesStrategy.ts`, `plugins/shape-plugin/src/services/vt/shapeVtPipeline.ts`, `plugins/shape-plugin/src/services/utils/utils.ts`, `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressWarnings.ts`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、shape-plugin の型定義/参照を修正前に戻す
+- チェックリスト:
+  - ShapeEntity/SelectedArrayByCountries の export を整理する
+  - GeoBoundariesStrategy の decodeBuffer 型不整合を解消する
+  - selection 型由来の TS2339/TS7006/TS2345 を解消する
+  - CrashInsight の型整合を取る
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-14 09:40 JST shape-plugin の typecheck エラー修正に着手。
+  - done: 2026-01-14 10:10 JST ShapeEntity/SelectedArrayByCountries の export を追加し、GeoBoundaries/CrashInsight の型不整合を修正。検証: 未実施。
+  - update: 2026-01-14 10:15 JST GeoBoundaries metadata.continent の null を undefined に補正。検証: 未実施。
+
+2182) fix/route/typecheck-missing-route-batch-session (P1) — 進行中 (2026-01-14)
+- ブランチ名: fix/route/typecheck-missing-route-batch-session
+- 依存: なし
+- 受け入れ基準: RouteBatchSession の import 解決エラー（TS2307）が解消される／`@hierarchidb/route-plugin typecheck` が通る／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/route-plugin/src/services/RouteBatchManager.ts`, `plugins/route-plugin/src/services/RouteBatchSessionOrchestrator.ts`, `plugins/route-plugin/src/services/RouteBatchSession.ts`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、RouteBatchSession の参照パスを修正前に戻す
+- チェックリスト:
+  - RouteBatchSession の import 解決を修正する
+  - route-plugin の typecheck が通ることを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-14 09:10 JST RouteBatchSession の import 解決エラー修正に着手。
+  - done: 2026-01-14 09:25 JST RouteBatchSession.ts を追加し、RouteBatchSession の import 解決エラーを解消。検証: 未実施。
+
+2181) refactor/shape/preview-step-hook (P2) — 完了 (2026-01-10)
+- ブランチ名: refactor/shape/preview-step-hook
+- 依存: なし
+- 受け入れ基準: ShapePreviewStep のロジックがカスタムフックに抽出される／挙動と表示が現状と同等である／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx`, `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts`（予定）
+- ロールバック手順: 追加フックと差分を revert し、ShapePreviewStep の直接実装へ戻す
+- チェックリスト:
+  - ShapePreviewStep のロジックをフックへ抽出する
+  - 影響範囲を最小に保つ
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-10 22:59 JST ShapePreviewStep のロジック抽出に着手。
+  - done: 2026-01-10 23:04 JST ShapePreviewStep の表示ロジックを useShapePreviewStepView に抽出。検証: 未実施。
+
 2181) refactor/shape/batch-progress-summary-card-component (P2) — 進行中 (2026-01-10)
 - ブランチ名: refactor/shape/batch-progress-summary-card-component
 - 依存: なし
-- 受け入れ基準: BatchProgressSummaryCard がコンポーネントとして切り出される／ShapeBuildProgressPanel からの利用は既存挙動と同等である／TASKS.md に運用ログを記載する
+- 受け入れ基準: TaskProgressSummaryCard がコンポーネントとして切り出される／ShapeBuildProgressPanel からの利用は既存挙動と同等である／TASKS.md に運用ログを記載する
 - 影響範囲: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressPanel.tsx`
 - ロールバック手順: 該当差分を revert し、関数定義のまま戻す
 - チェックリスト:
-  - BatchProgressSummaryCard をコンポーネントとして定義する
+  - TaskProgressSummaryCard をコンポーネントとして定義する
   - ShapeBuildProgressPanel からコンポーネントとして利用する
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
-  - start: 2026-01-10 20:36 JST BatchProgressSummaryCard のコンポーネント化に着手。
-  - done: 2026-01-10 20:36 JST BatchProgressSummaryCard をコンポーネントとして分離し、ShapeBuildProgressPanel から利用。検証: 未実施。
+  - start: 2026-01-10 20:36 JST TaskProgressSummaryCard のコンポーネント化に着手。
+  - done: 2026-01-10 20:36 JST TaskProgressSummaryCard をコンポーネントとして分離し、ShapeBuildProgressPanel から利用。検証: 未実施。
   - update: 2026-01-10 20:36 JST renderStageContent のコンポーネント化に着手。
   - done: 2026-01-10 20:36 JST ProgressStageContent コンポーネントへ切り出し、ShapeBuildProgressPanel から利用。検証: 未実施。
   - update: 2026-01-10 20:41 JST renderTaskProgressBar のコンポーネント化に着手。
@@ -20,7 +65,7 @@
 - ブランチ名: fix/components/build-stage-content-filtering
 - 依存: なし
 - 受け入れ基準: BuildStepStageDetailsPanel の文法エラーが解消される／failed/completed のフィルタは renderStageContent 側で行われる／failed/completed の ON/OFF に応じて表示内容が切り替わる／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/components/src/BuildStepStageDetailsPanel.tsx`, `packages/components/src/BuildStepStagePanel.tsx`, `packages/components/src/BuildStepPanel.tsx`, `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`
+- 影響範囲: `packages/components/src/BuildStepStageDetailsPanel.tsx`, `packages/components/src/BuildStepStagePanel.tsx`, `packages/components/src/BuildStepPanel.tsx`, `plugins/shape-plugin/src/ui/components/steps/ShapeBuildStep.tsx`
 - ロールバック手順: 該当ファイルの差分を revert し、BuildStepStageDetailsPanel 側のフィルタ処理へ戻す
 - チェックリスト:
   - BuildStepStageDetailsPanel の文法エラーを解消する
@@ -35,8 +80,8 @@
 2128) refactor/shape/build-progress-step-split (P1) — 進行中 (2026-01-11)
 - ブランチ名: refactor/shape/build-progress-step-split
 - 依存: なし
-- 受け入れ基準: ShapeBuildProgressStep がコンポーネント/ロジック単位で分割され行数が大幅に削減される／挙動差分がない／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx` と新規分割ファイル
+- 受け入れ基準: ShapeBuildStep がコンポーネント/ロジック単位で分割され行数が大幅に削減される／挙動差分がない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildStep.tsx` と新規分割ファイル
 - ロールバック手順: 分割差分を revert し単一ファイル構成へ戻す
 - チェックリスト:
   - UI サブコンポーネントの分割先を設計する
@@ -44,9 +89,41 @@
   - 元ファイルの行数削減と動作確認を行う
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
-  - start: 2026-01-11 23:10 JST ShapeBuildProgressStep の分割リファクタに着手。
-  - update: 2026-01-11 23:25 JST サブコンポーネント/フックを分割し、ShapeBuildProgressStep を薄くする構成へ移行。検証: 未実施。
-  - done: 2026-01-11 23:25 JST ShapeBuildProgressStep の分割リファクタを完了。
+  - start: 2026-01-11 23:10 JST ShapeBuildStep の分割リファクタに着手。
+  - update: 2026-01-11 23:25 JST サブコンポーネント/フックを分割し、ShapeBuildStep を薄くする構成へ移行。検証: 未実施。
+  - done: 2026-01-11 23:25 JST ShapeBuildStep の分割リファクタを完了。
+
+2129) refactor/shape/build-progress-stage-content-component (P1) — 進行中 (2026-01-11)
+- ブランチ名: refactor/shape/build-progress-stage-content-component
+- 依存: なし
+- 受け入れ基準: ShapeBuildProgressPanel の renderStageContent を専用コンポーネントへ分割し、挙動を維持する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressPanel.tsx` と新規コンポーネント
+- ロールバック手順: 分割差分を revert し renderStageContent のまま戻す
+- チェックリスト:
+  - renderStageContent を専用コンポーネントへ移す
+  - 呼び出し側を props 経由で整理する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-11 23:40 JST renderStageContent のコンポーネント化に着手。
+  - update: 2026-01-11 23:55 JST renderStageContent を専用コンポーネントへ移設し、Panel 側は組み立てのみへ整理。検証: 未実施。
+  - done: 2026-01-11 23:55 JST renderStageContent のコンポーネント化を完了。
+
+2130) refactor/shape/build-progress-stage-content-props (P1) — 完了 (2026-01-14)
+- ブランチ名: refactor/shape/build-progress-stage-content-props
+- 依存: なし
+- 受け入れ基準: BuildStepPanel への renderStageContent 渡しが廃止され、stageContents の素直な構成へ移行する／BuildStepStagePanel の filter 状態は context 経由で stage content から参照できる／ShapeBuildProgressPanel はコンポーネントを返す関数を持たず整理される／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/components/src/BuildStepPanel.tsx`, `packages/components/src/BuildStepStagePanel.tsx`, `packages/components/src/BuildStepStageFilterContext.tsx`, `packages/components/src/index.ts`, `plugins/shape-plugin/src/ui/components/step5/ShapeBuildProgressPanel.tsx`, `plugins/shape-plugin/src/ui/components/step5/ShapeBuildProgressStageContent.tsx`
+- ロールバック手順: 該当差分を revert し、renderStageContent props を利用する構成へ戻す
+- チェックリスト:
+  - BuildStepPanel/BuildStepStagePanel の props とレンダリング経路を整理する
+  - stage content 側で filter を context 参照に変更する
+  - ShapeBuildProgressPanel の組み立てを stageContents へ統一する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-14 10:30 JST renderStageContent props の廃止と stageContents 化に着手。
+  - update: 2026-01-14 10:35 JST BuildStepPanel/BuildStepStagePanel の props を stageContents/context へ整理。検証: 未実施。
+  - done: 2026-01-14 10:40 JST ShapeBuildProgressPanel の stageContents 化と StageContent の filter context 参照を完了。検証: 未実施。
+
 
 2178) feat/shape/raw-buffer-pipeline (P1) — 完了 (2026-01-10)
 - ブランチ名: feat/shape/raw-buffer-pipeline
@@ -72,7 +149,7 @@
 - ブランチ名: fix/shape/step4-fetch-cache-count
 - 依存: なし
 - 受け入れ基準: Step4 の「fetchキャッシュを削除(n件)」件数が実データと一致する／算出元が明確で矛盾がない／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/hooks/useDownloadConfigSection.ts`（調査結果に応じて）
+- 影響範囲: `plugins/shape-plugin/src/ui/hooks/useFetchConfigSection.ts`（調査結果に応じて）
 - ロールバック手順: 該当差分を revert し、従来の件数算出へ戻す
 - チェックリスト:
   - fetch の件数算出を実データに合わせる
@@ -98,7 +175,7 @@
 - ブランチ名: fix/log/shape-tasksummary-spam
 - 依存: なし
 - 受け入れ基準: taskSummary の同一内容ログが連続出力されない／進捗計算や UI 表示に影響がない／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`（調査結果に応じて）
+- 影響範囲: `plugins/shape-plugin/src/ui/hooks/useShapeBuildStep.ts`（調査結果に応じて）
 - ロールバック手順: 該当差分を revert し、従来のログ出力へ戻す
 - チェックリスト:
   - taskSummary のログを差分時のみ出力する
@@ -151,7 +228,7 @@
 - ブランチ名: fix/shape/step5-pane-failed-counts
 - 依存: なし
 - 受け入れ基準: ペインヘッダの failed 数が実際の失敗件数と一致する／タスクリストの status が実態と一致する／全体進捗の failed 数とペインヘッダが整合する／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`（調査結果に応じて）
+- 影響範囲: `plugins/shape-plugin/src/ui/hooks/useShapeBuildStep.ts`（調査結果に応じて）
 - ロールバック手順: 該当差分を revert し、従来の集計ロジックへ戻す
 - チェックリスト:
   - taskSummary の stage 集計が taskType ベースで行われる
@@ -165,7 +242,7 @@
 - ブランチ名: fix/shape/step5-error-visibility-and-vt-status
 - 依存: なし
 - 受け入れ基準: 失敗タスクの message が詳細な原因を含む／失敗タスクのタイトルに国名が表示される／ペインヘッダに失敗数が明示され、不要な PlayCircle が表示されない／vt ステージ 0/0 の場合に全体進捗が Ready にならない／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/vt-orchestrator/src/transform/transformStage.ts`, `plugins/shape-plugin/src/services/vt/shapeVtPipeline.ts`, `packages/ui/lru-splitview/src/components/PaneHeader.tsx`, `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`（調査結果に応じて）
+- 影響範囲: `packages/vt-orchestrator/src/transform/transformStage.ts`, `plugins/shape-plugin/src/services/vt/shapeVtPipeline.ts`, `packages/ui/lru-splitview/src/components/PaneHeader.tsx`, `plugins/shape-plugin/src/ui/hooks/useShapeBuildStep.ts`（調査結果に応じて）
 - ロールバック手順: 該当差分を revert し、従来の表示/進捗判定へ戻す
 - チェックリスト:
   - transform の失敗メッセージに feature 数/簡易化結果を含める
@@ -181,7 +258,7 @@
 - ブランチ名: fix/shape/step4-5-task-labels-and-delete
 - 依存: なし
 - 受け入れ基準: Step5 の transform タスクに国情報が表示される／成功・失敗メッセージが表示される／Step4 の Transform キャッシュ削除ボタンが対象タスクありで有効化される／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/ui/hooks/useDownloadConfigSection.ts`（調査結果に応じて）
+- 影響範囲: `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/ui/hooks/useFetchConfigSection.ts`（調査結果に応じて）
 - ロールバック手順: 該当差分を revert し、従来の表示/削除判定へ戻す
 - チェックリスト:
   - transform タスクタイトルに国コード/国名を含める
@@ -267,7 +344,7 @@
 - ブランチ名: fix/shape/step5-build-progress-and-pause
 - 依存: なし
 - 受け入れ基準: Step5 のビルド中に「停止」ボタンが有効化される／BuildStepPanel に進捗が反映され Skeleton のみにならない／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`, `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`, `packages/components/src/BuildStepPanel.tsx`（調査結果に応じて）
+- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildStep.tsx`, `plugins/shape-plugin/src/ui/hooks/useShapeBuildStep.ts`, `packages/components/src/BuildStepPanel.tsx`（調査結果に応じて）
 - ロールバック手順: 該当差分を revert し、従来の Step5 表示/操作へ戻す
 - チェックリスト:
   - 停止ボタンの有効条件と i18n 表示を確認する
@@ -281,7 +358,7 @@
 - ブランチ名: fix/shape/step4-delete-cache-disabled
 - 依存: なし
 - 受け入れ基準: Step4 の「fetchキャッシュを削除(n件)」ボタンが件数>0で有効化される／クリックで削除が実行され件数表示が更新される／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/hooks/useDownloadConfigSection.ts`, `plugins/shape-plugin/src/ui/components/steps/DownloadConfigSection.tsx`（調査結果に応じて）
+- 影響範囲: `plugins/shape-plugin/src/ui/hooks/useFetchConfigSection.ts`, `plugins/shape-plugin/src/ui/components/steps/DownloadConfigSection.tsx`（調査結果に応じて）
 - ロールバック手順: 該当差分を revert し、従来のボタン状態へ戻す
 - チェックリスト:
   - ボタンの disabled 条件が件数>0の時に有効化されるよう整理する
@@ -295,7 +372,7 @@
 - ブランチ名: fix/shape/step5-fetch-progress-live
 - 依存: なし
 - 受け入れ基準: Step5 の fetch 進捗がリアルタイムで反映される／進捗イベントの送信元とUI側の購読・集計が一致していることを確認する／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`, `plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts`, `packages/features/batch/src/session/AbstractBatchSession.ts`, `plugins/shape-plugin/src/worker/api.ts`（調査結果に応じて）
+- 影響範囲: `plugins/shape-plugin/src/ui/hooks/useShapeBuildStep.ts`, `plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts`, `packages/features/batch/src/session/AbstractBatchSession.ts`, `plugins/shape-plugin/src/worker/api.ts`（調査結果に応じて）
 - ロールバック手順: 該当差分を revert し、従来の進捗表示仕様へ戻す
 - チェックリスト:
   - fetch の進捗イベントが UI に届いているか確認する
@@ -309,7 +386,7 @@
 - ブランチ名: fix/shape/step5-progress-stage-naming
 - 依存: なし
 - 受け入れ基準: Step5 の進捗表示で誤ったステージ名を許容せず、正しいステージ名のみが扱われる／誤ったステージ名の発生源が修正される（コード内に残らない）／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`, `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`, `plugins/shape-plugin/src/ui/utils/buildWarnings.ts`（調査結果に応じて）
+- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildStep.tsx`, `plugins/shape-plugin/src/ui/hooks/useShapeBuildStep.ts`, `plugins/shape-plugin/src/ui/utils/buildWarnings.ts`（調査結果に応じて）
 - ロールバック手順: 該当差分を revert し、従来のステージ名許容へ戻す
 - チェックリスト:
   - 誤ったステージ名の発生源を特定し、正しい命名へ修正する
@@ -323,7 +400,7 @@
 - ブランチ名: fix/shape/step5-progress-ui-stability
 - 依存: なし
 - 受け入れ基準: shape Step5 で LinearProgress の表示有無によるレイアウトの縦揺れが発生しない／fetch-shape ステージの進捗が Step5 の画面に反映される／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`, `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`, `plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts`（調査結果に応じて）
+- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildStep.tsx`, `plugins/shape-plugin/src/ui/hooks/useShapeBuildStep.ts`, `plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts`（調査結果に応じて）
 - ロールバック手順: 該当差分を revert し、従来の Step5 進捗表示へ戻す
 - チェックリスト:
   - LinearProgress の表示有無でレイアウトが跳ねないようスペースを確保する
@@ -430,7 +507,7 @@
 - ブランチ名: fix/shape/retry-fetch-tasks-on-restart
 - 依存: なし
 - 受け入れ基準: fetch ステージで HTTP 502 失敗したタスクが「ビルド開始」押下時の再開で再実行される／ダウンロードが再試行される／既存の pause/resume 挙動を壊さない／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`, `plugins/shape-plugin/src/ui/hooks/stage/useBatchSessionActions.ts`
+- 影響範囲: `plugins/shape-plugin/src/ui/hooks/useShapeBuildStep.ts`, `plugins/shape-plugin/src/ui/hooks/stage/useBatchSessionActions.ts`
 - ロールバック手順: 該当ファイルの差分を revert し、再開時に再実行しない挙動へ戻す
 - チェックリスト:
   - 失敗した fetch タスク検知を追加する
@@ -599,7 +676,7 @@
 - ブランチ名: fix/shape/zoom-band-ui
 - 依存: なし
 - 受け入れ基準: toolbar-menu の共通ズーム率UIが削除され、band0 z0-3 / band1 z3-6 / band2 z6-9 / band3 z9-11(optional) の表示に置換される／shape Step4 のズーム関連UI（範囲/分割/区切り）が削除され、同バンド表示に置換される／設定・型・ロジックから tileConfig.minZoom/maxZoom/zoomBreakpoints が削除される／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/ui/treeconsole/toolbar/src/components/toolbar/SettingsMenu.tsx`, `packages/ui/treeconsole/toolbar/src/components/TreeConsoleToolbarContent.tsx`, `plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx`, `plugins/shape-plugin/src/ui/hooks/useTileConfigSection.ts`, `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts`, `plugins/shape-plugin/src/services/batch/useBatchSessionActions.ts`, `plugins/shape-plugin/src/common/types/**`, `plugins/shape-plugin/src/services/utils/utils.ts`, `plugins/shape-plugin/src/worker/api.ts`
+- 影響範囲: `packages/ui/treeconsole/toolbar/src/components/toolbar/SettingsMenu.tsx`, `packages/ui/treeconsole/toolbar/src/components/TreeConsoleToolbarContent.tsx`, `plugins/shape-plugin/src/ui/components/steps/VTConfigSection.tsx`, `plugins/shape-plugin/src/ui/hooks/useTileConfigSection.ts`, `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts`, `plugins/shape-plugin/src/services/batch/useBatchSessionActions.ts`, `plugins/shape-plugin/src/common/types/**`, `plugins/shape-plugin/src/services/utils/utils.ts`, `plugins/shape-plugin/src/worker/api.ts`
 - ロールバック手順: 上記差分を revert し、旧ズームUIと min/max/zoomBreakpoints を復帰する
 - チェックリスト:
   - toolbar-menu の共通ズーム率UIを削除し、ズーム帯の説明へ置換する
@@ -615,7 +692,7 @@
 - ブランチ名: fix/shape/progress-state-unify
 - 依存: なし
 - 受け入れ基準: currentState/currentTask と status/buildStatus の二重化を整理し、不要な重複は一本化する／進捗ログとUIのステージ表示が一致する／Step5 transform のLRUSplitPaneに failed/skipped の集計が表示される／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`, `plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts`, `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`, `packages/ui/lru-splitview/src/types/LRUSplitView.ts`, `packages/ui/lru-splitview/src/utils/lruUtils.ts`（必要に応じて）
+- 影響範囲: `plugins/shape-plugin/src/ui/hooks/useShapeBuildStep.ts`, `plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts`, `plugins/shape-plugin/src/ui/components/steps/ShapeBuildStep.tsx`, `packages/ui/lru-splitview/src/types/LRUSplitView.ts`, `packages/ui/lru-splitview/src/utils/lruUtils.ts`（必要に応じて）
 - ロールバック手順: 上記差分を revert し、旧表示/旧ログに戻す
 - チェックリスト:
   - currentState/currentTask と status/buildStatus の用途を整理する
@@ -657,7 +734,7 @@
 - 依存: なし
 - ExecPlan: `plans/shape-metadata-stage-geometry-stats-execplan.md`
 - 受け入れ基準: shape Step6 のメタデータ集計が fetch/transform/vt の新ステージ構成に基づいて集計される／集計結果がメタデータとして保存される／Step6 の表示カラムが新ステージ構成に一致する／旧ステージ名の集計/表示が残らない／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/plugin-service-api/src/types/shapeBatchTypes.ts`, `packages/features/vectortile-store/src/tilesDb.ts`, `packages/runtime-worker/src/services/*`, `plugins/shape-plugin/src/services/**`, `plugins/shape-plugin/src/ui/**`（調査結果に応じて）
+- 影響範囲: `packages/plugin-service-api/src/types/shapeBuildTypes.ts`, `packages/features/vectortile-store/src/tilesDb.ts`, `packages/runtime-worker/src/services/*`, `plugins/shape-plugin/src/services/**`, `plugins/shape-plugin/src/ui/**`（調査結果に応じて）
 - ロールバック手順: 該当差分を revert し、既存のメタデータ集計/表示へ戻す
 - チェックリスト:
   - ExecPlan を更新し、ステージ再編後の集計/保存/表示方針を明記する
@@ -682,7 +759,7 @@
 - ブランチ名: fix/shape/progress-visual-consistency
 - 依存: なし
 - 受け入れ基準: build全体のFailed表示はLinearProgressがerror色になる／build全体の表示とLRUSplitPaneのステージ表示が矛盾しないように集計ロジックが統一される／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`, `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`
+- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildStep.tsx`, `plugins/shape-plugin/src/ui/hooks/useShapeBuildStep.ts`
 - ロールバック手順: 上記差分を revert し、従来の色/集計へ戻す
 - チェックリスト:
   - Failed時の全体進捗バーの色を error に統一する
@@ -710,7 +787,7 @@
 - ブランチ名: fix/shape/progress-tasktype-unify
 - 依存: なし
 - 受け入れ基準: currentStage/currentTask を廃止して taskType に統合するか、残す場合は正当性をコードで説明できる／autoSubscribe/enablePollingFallback/isSubscribed の必要性をコードで説明できるか不要なら削除／Step5 の全体進捗が 0/0 へ揺れる表示をしない／LRUSplitPane の error/percent/checked/no-tasks の矛盾が解消される／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/hooks/**`, `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`, `plugins/shape-plugin/src/ui/hooks/progress/**`, `packages/runtime-worker/src/services/**`（進捗通知）、関連する型定義
+- 影響範囲: `plugins/shape-plugin/src/ui/hooks/**`, `plugins/shape-plugin/src/ui/components/steps/ShapeBuildStep.tsx`, `plugins/shape-plugin/src/ui/hooks/progress/**`, `packages/runtime-worker/src/services/**`（進捗通知）、関連する型定義
 - ロールバック手順: 該当差分を revert し、現行の進捗通知/表示へ戻す
 - チェックリスト:
   - currentStage/currentTask と taskType の発生箇所を洗い出す
@@ -744,7 +821,7 @@
 - ブランチ名: fix/shape/batch-task-schema-cleanup
 - 依存: なし
 - 受け入れ基準: batchTasks の未使用インデックスを削除する／BatchTaskRecord/ShapeBatchTaskRecord/ShapeBatchTaskSummary の未使用プロパティを削除する／ShapeBatchTaskStatus と ProgressPhase の関係を整理する／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/shape-store/src/EphemeralShapeDB.ts`, `packages/features/shape-store/src/ShapeDB.ts`, `packages/plugin-service-api/src/types/shapeBatchTypes.ts`, `packages/plugin-service-api/src/types/shapeTypes.ts`, `plugins/shape-plugin/src/services/batch/ShapeBatchApiClient.ts`, `packages/runtime-worker/src/services/ShapeQueryService.ts`, `plugins/shape-plugin/src/worker/getBatchTaskSummaries.ts`
+- 影響範囲: `packages/features/shape-store/src/EphemeralShapeDB.ts`, `packages/features/shape-store/src/ShapeDB.ts`, `packages/plugin-service-api/src/types/shapeBuildTypes.ts`, `packages/plugin-service-api/src/types/shapeTypes.ts`, `plugins/shape-plugin/src/services/batch/ShapeBuildApiClient.ts`, `packages/runtime-worker/src/services/ShapeQueryService.ts`, `plugins/shape-plugin/src/worker/getBatchTaskSummaries.ts`
 - ロールバック手順: 該当差分を revert し、batchTasks のインデックスとタスク型を元に戻す
 - チェックリスト:
   - batchTasks の未使用インデックスを削除する
@@ -772,8 +849,8 @@
 2147) fix/shape/typecheck-progress-hooks (P1) — 完了 (2026-01-14)
 - ブランチ名: fix/shape/typecheck-progress-hooks
 - 依存: なし
-- 受け入れ基準: shapeProgressMapping の未使用引数を削除して TS6133 を解消する／useShapeBuildProgressStep の変数順序を修正して TS2448/TS2454 を解消する／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/hooks/progress/shapeProgressMapping.ts`, `plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts`, `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`
+- 受け入れ基準: shapeProgressMapping の未使用引数を削除して TS6133 を解消する／useShapeBuildStep の変数順序を修正して TS2448/TS2454 を解消する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/hooks/progress/shapeBuildProgressMapping.ts`, `plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts`, `plugins/shape-plugin/src/ui/hooks/useShapeBuildStep.ts`
 - ロールバック手順: 該当差分を revert し、progress hooks の修正前に戻す
 - チェックリスト:
   - 未使用引数の削除で TS6133 を解消する
@@ -1507,7 +1584,7 @@
 - ブランチ名: fix/shape/step5-status-phase-flap
 - 依存: なし
 - 受け入れ基準: Step5 のタイル生成で completed/running の揺れが発生しない／原因・発生範囲・修正方法と適用範囲を説明する／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/hooks/progress/shapeProgressMapping.ts`
+- 影響範囲: `plugins/shape-plugin/src/ui/hooks/progress/shapeBuildProgressMapping.ts`
 - ロールバック手順: 上記ファイルの差分を revert し、従来の status 判定へ戻す
 - チェックリスト:
   - 進捗 phase と session status の優先順位を整理する
@@ -1629,7 +1706,7 @@
 - ブランチ名: fix/shape/step5-vectortile-sort-title-parse
 - 依存: なし
 - 受け入れ基準: Step5 の vectortile タスク一覧が z/x/y 数値昇順で表示される／タスクタイトルの z/x/y 表記から並び順が決まる／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`
+- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildStep.tsx`
 - ロールバック手順: 上記ファイルの差分を revert し、現行の並び順へ戻す
 - チェックリスト:
   - タイトル表記から z/x/y を抽出してソートする
@@ -1643,7 +1720,7 @@
 - ブランチ名: fix/shape/step4-zoom-config-card
 - 依存: なし
 - 受け入れ基準: Stage4 のズーム範囲/分割数/区切りが単一カードに統合される／挙動が現状と同等である／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx`
+- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/VTConfigSection.tsx`
 - ロールバック手順: 上記ファイルの差分を revert して現行レイアウトへ戻す
 - チェックリスト:
   - ズーム範囲/分割数/区切りを単一カードに統合する
@@ -1656,7 +1733,7 @@
 - ブランチ名: fix/shape/step4-tile-margin-layout
 - 依存: なし
 - 受け入れ基準: タイルマージンがズームカードの下に移設される／タイルマージン/拡張係数/拡張マージンが横並び3列になる／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx`
+- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/VTConfigSection.tsx`
 - ロールバック手順: 上記ファイルの差分を revert して現行レイアウトへ戻す
 - チェックリスト:
   - タイルマージンの位置をズームカード下へ移動する
@@ -1670,7 +1747,7 @@
 - ブランチ名: fix/shape/step4-zoom-card-columns
 - 依存: なし
 - 受け入れ基準: ズームカード内のズーム範囲/分割数/区切りが横並び3列になる／挙動が現状と同等である／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx`
+- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/VTConfigSection.tsx`
 - ロールバック手順: 上記ファイルの差分を revert して現行レイアウトへ戻す
 - チェックリスト:
   - ズームカード内の3項目を横並びにする
@@ -1737,7 +1814,7 @@
 - ブランチ名: fix/shape-plugin/typecheck-missing-vt-pbf
 - 依存: なし
 - 受け入れ基準: shape-plugin の typecheck で vt-pbf と型エラーが解消する／依存追加と型修正が最小差分で入る／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/package.json`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/ui/hooks/useDownloadConfigSection.ts`
+- 影響範囲: `plugins/shape-plugin/package.json`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/ui/hooks/useFetchConfigSection.ts`
 - ロールバック手順: 上記ファイルの差分を revert して現行挙動へ戻す
 - チェックリスト:
   - vt-pbf 依存を追加する
@@ -1816,7 +1893,7 @@
 - ブランチ名: fix/shape/step5-vectortile-task-sort
 - 依存: なし
 - 受け入れ基準: Step5 の vectortile タスク一覧が z/x/y 数値昇順で表示される／他ステージの並びに影響しない／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`
+- 影響範囲: `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/ui/components/steps/ShapeBuildStep.tsx`
 - ロールバック手順: 上記ファイルの差分を revert し、現行の並び順へ戻す
 - チェックリスト:
   - vectortile タスクのメタデータに z/x/y を付与する
@@ -2119,24 +2196,24 @@
 2085) fix/ui/tile-config-section-render-loop (P1) — 完了 (2026-01-05)
 - ブランチ名: fix/ui/tile-config-section-render-loop
 - 依存: なし
-- 受け入れ基準: TileConfigSection の Maximum update depth exceeded が解消される／再レンダーが安定し無限ループしない／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx`
-- ロールバック手順: `plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx` の差分を revert し、警告が出ていた状態へ戻す
+- 受け入れ基準: VTConfigSection の Maximum update depth exceeded が解消される／再レンダーが安定し無限ループしない／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/VTConfigSection.tsx`
+- ロールバック手順: `plugins/shape-plugin/src/ui/components/steps/VTConfigSection.tsx` の差分を revert し、警告が出ていた状態へ戻す
 - チェックリスト:
-  - TileConfigSection のレンダーループ原因を特定する
+  - VTConfigSection のレンダーループ原因を特定する
   - 依存配列/状態更新の安定化を実装する
   - 影響範囲とロールバック手順を更新する
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
-  - start: 2026-01-05 14:35 JST TileConfigSection の Maximum update depth エラー対応に着手。
+  - start: 2026-01-05 14:35 JST VTConfigSection の Maximum update depth エラー対応に着手。
   - done: 2026-01-05 14:36 JST zoomBreakpoints の比較を値ベースに修正し、同期ループを抑止。
 
 2084) fix/ui/download-retry-controls-render-loop (P1) — 完了 (2026-01-05)
 - ブランチ名: fix/ui/download-retry-controls-render-loop
 - 依存: なし
 - 受け入れ基準: DownloadRetryControls の Maximum update depth exceeded が解消される／再レンダーが安定し無限ループしない／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/hooks/useDownloadConfigSection.ts`
-- ロールバック手順: `plugins/shape-plugin/src/ui/hooks/useDownloadConfigSection.ts` の差分を revert し、警告が出ていた状態へ戻す
+- 影響範囲: `plugins/shape-plugin/src/ui/hooks/useFetchConfigSection.ts`
+- ロールバック手順: `plugins/shape-plugin/src/ui/hooks/useFetchConfigSection.ts` の差分を revert し、警告が出ていた状態へ戻す
 - チェックリスト:
   - DownloadRetryControls のレンダーループ原因を特定する
   - 依存配列/状態更新の安定化を実装する
@@ -2144,7 +2221,7 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-05 14:33 JST DownloadRetryControls の Maximum update depth エラー対応に着手。
-  - done: 2026-01-05 14:34 JST useDownloadConfigSection の loadCounts effect 依存を整理し、無限レンダーを抑止。
+  - done: 2026-01-05 14:34 JST useFetchConfigSection の loadCounts effect 依存を整理し、無限レンダーを抑止。
 
 2068) docs/shape-plugin/geojson-vector-tile-build-flow (P2) — 完了 (2026-01-09)
 - ブランチ名: docs/shape-plugin/geojson-vector-tile-build-flow
@@ -2272,7 +2349,7 @@
 - 依存: なし
 - ExecPlan: plans/shape-ephemeral-stage-buffers-execplan.md
 - 受け入れ基準: extract1入力はchunk-storeのダウンロードキャッシュを利用し、extract2/vectortileの入出力はsourceBuffersへ移行される／extract2SourceBuffersはnodeId+国コード+自治体レベルで検索できる／vectortileSourceBuffersはnodeId+tileIdで検索できる／TreeNode削除で対象バッファが一括削除される／TASKS.mdに運用ログ・影響範囲・ロールバック手順を記載する
-- 影響範囲: `packages/features/gis-sdk/src/ephemeral/EphemeralGisDB.ts`, `packages/features/shape-store/src/EphemeralShapeDB.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/batch/adapters/LocalExtractAdapters.ts`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `packages/runtime-worker/src/services/vectorTileStageRunner.ts`, `packages/runtime-worker/src/services/StageProcessingService.ts`, `plugins/shape-plugin/src/services/batch/ShapeBatchApiClient.ts`（必要に応じて）
+- 影響範囲: `packages/features/gis-sdk/src/ephemeral/EphemeralGisDB.ts`, `packages/features/shape-store/src/EphemeralShapeDB.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/batch/adapters/LocalExtractAdapters.ts`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `packages/runtime-worker/src/services/vectorTileStageRunner.ts`, `packages/runtime-worker/src/services/StageProcessingService.ts`, `plugins/shape-plugin/src/services/batch/ShapeBuildApiClient.ts`（必要に応じて）
 - ロールバック手順: 上記ファイルとExecPlanの差分をrevertし、chunk-store入力経路と旧bufferスキーマに戻す
 - チェックリスト:
   - ExecPlanを作成し設計と検証手順を明記する
@@ -2321,11 +2398,11 @@
 2080) refactor/shape/extract-buffer-naming-align (P1) — 完了 (2026-01-10)
 - ブランチ名: refactor/shape/extract-buffer-naming-align
 - 依存: なし
-- 受け入れ基準: ShapeBatchApiClient.ts の型不整合を解消する／Extract1SourceBuffer/Extract2SourceBuffer の命名へ統一する／関連型とAPIの参照が揃っている／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
-- 影響範囲: `packages/plugin-service-api/src/types/*`, `packages/features/shape-store/src/EphemeralShapeDB.ts`, `packages/features/shape-store/src/index.ts`, `plugins/shape-plugin/src/services/batch/ShapeBatchApiClient.ts`, `plugins/shape-plugin/src/services/batch/*`, `packages/runtime-worker/src/services/*`（必要に応じて）
+- 受け入れ基準: ShapeBuildApiClient.ts の型不整合を解消する／Extract1SourceBuffer/Extract2SourceBuffer の命名へ統一する／関連型とAPIの参照が揃っている／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/plugin-service-api/src/types/*`, `packages/features/shape-store/src/EphemeralShapeDB.ts`, `packages/features/shape-store/src/index.ts`, `plugins/shape-plugin/src/services/batch/ShapeBuildApiClient.ts`, `plugins/shape-plugin/src/services/batch/*`, `packages/runtime-worker/src/services/*`（必要に応じて）
 - ロールバック手順: 上記ファイルの命名/型変更を revert し、従来の ShapeExtractedBufferRecord / ExtractedFeatureBuffer 名称へ戻す
 - チェックリスト:
-  - ShapeBatchApiClient.ts の型不整合箇所を修正する
+  - ShapeBuildApiClient.ts の型不整合箇所を修正する
   - Extracted 系の命名を SourceBuffer 系へ統一する
   - 参照箇所の型と実体が一致していることを確認する
   - 運用ログ start/done/blocked を追記する
@@ -2337,7 +2414,7 @@
 - ブランチ名: fix/shape/vectortile-no-empty-tileid
 - 依存: なし
 - 受け入れ基準: vectortile の tileId 関係が空のフォールバックを撤去し失敗扱いにする／tileId が空を許容する型定義を修正する／関連参照が更新されている／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
-- 影響範囲: `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `plugins/shape-plugin/src/services/batch/session/stages/vectortile/buildVectorTileStageInputs.ts`, `packages/plugin-service-api/src/types/shapeBatchTypes.ts`, `packages/features/shape-store/src/ShapeDB.ts`（必要に応じて）
+- 影響範囲: `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `plugins/shape-plugin/src/services/batch/session/stages/vectortile/buildVectorTileStageInputs.ts`, `packages/plugin-service-api/src/types/shapeBuildTypes.ts`, `packages/features/shape-store/src/ShapeDB.ts`（必要に応じて）
 - ロールバック手順: 上記ファイルの差分を revert し、tileId 未設定時のフォールバックと型定義を元に戻す
 - チェックリスト:
   - tileId 関係が空のフォールバックを削除する
@@ -2352,7 +2429,7 @@
 - ブランチ名: fix/shape/vectortile-input-typing
 - 依存: なし
 - 受け入れ基準: RuntimeWorkerVectorTileAdapter の {} フォールバックを撤去し入力型を明示する／ShapeExtractedBufferRecord の参照を ShapeExtractSourceBufferRecord に統一する／未使用変数の警告を解消する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
-- 影響範囲: `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `plugins/shape-plugin/src/services/batch/SessionArtifactStore.ts`, `plugins/shape-plugin/src/services/batch/ShapeBatchApiClient.ts`（必要に応じて）
+- 影響範囲: `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `plugins/shape-plugin/src/services/batch/SessionArtifactStore.ts`, `plugins/shape-plugin/src/services/batch/ShapeBuildApiClient.ts`（必要に応じて）
 - ロールバック手順: 上記ファイルの差分を revert し、入力のフォールバック/旧型参照へ戻す
 - チェックリスト:
   - VectorTileAdapter の入力取得を明示型で強制する
@@ -2595,7 +2672,7 @@
 - ブランチ名: fix/shape-plugin/step5-download-stuck
 - 依存: なし
 - 受け入れ基準: Step5 の Download タスクが開始ボタン押下で進捗する／Step4 の「ダウンロードタスク済みファイル」削除ボタンがタスク残存時に有効化される／リロード後に残留したタスクが整合する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
-- 影響範囲: `plugins/shape-plugin/src/services/batch/BatchSessionManager.ts`, `plugins/shape-plugin/src/ui/hooks/useDownloadConfigSection.ts`
+- 影響範囲: `plugins/shape-plugin/src/services/batch/BatchSessionManager.ts`, `plugins/shape-plugin/src/ui/hooks/useFetchConfigSection.ts`
 - ロールバック手順: download タスクの再開リセット処理と delete 有効化条件を revert して元に戻す
 - チェックリスト:
   - Download タスクの再開時に running を waiting へ戻す
@@ -3086,11 +3163,11 @@
 - ブランチ名: fix/shape-plugin/typecheck-batch-and-tiles
 - 依存: なし
 - 受け入れ基準: shape-plugin の typecheck エラー（BatchTaskBase/zoomRanges/GeoJSON/NodeId/VectorTileDB2Procedure）を解消する／挙動は維持する／抽象化や Record キャストの追加をしない／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
-- 影響範囲: `plugins/shape-plugin/src/services/batch/BatchSessionManager.ts`, `plugins/shape-plugin/src/common/types/batch.ts`, `plugins/shape-plugin/src/services/batch/session/extract2/zoomRanges.ts`, `plugins/shape-plugin/src/services/batch/session/stages/vectortile/buildVectorTileStageInputs.ts`, `plugins/shape-plugin/src/services/batch/session/tiles/assembleTileGeoJSON.ts`, `plugins/shape-plugin/src/services/batch/ShapeBatchApiClient.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/VectorTileDB2Procedure.ts`, `plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx`, `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/package.json`
+- 影響範囲: `plugins/shape-plugin/src/services/batch/BatchSessionManager.ts`, `plugins/shape-plugin/src/common/types/batch.ts`, `plugins/shape-plugin/src/services/batch/session/extract2/zoomRanges.ts`, `plugins/shape-plugin/src/services/batch/session/stages/vectortile/buildVectorTileStageInputs.ts`, `plugins/shape-plugin/src/services/batch/session/tiles/assembleTileGeoJSON.ts`, `plugins/shape-plugin/src/services/batch/ShapeBuildApiClient.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/VectorTileDB2Procedure.ts`, `plugins/shape-plugin/src/ui/components/steps/VTConfigSection.tsx`, `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/package.json`
 - ロールバック手順: 上記ファイルの差分を revert する
 - チェックリスト:
   - BatchTaskBase の stage/type を埋める
-  - zoomRanges と TileConfigSection の undefined を解消する
+  - zoomRanges と VTConfigSection の undefined を解消する
   - GeoJSON 判定と NodeId 型を整える
   - VectorTileDB2Procedure の型と依存を整理する
   - 運用ログ/影響範囲/ロールバック手順を追記する
@@ -3301,7 +3378,7 @@
 - ExecPlan: plans/vector-tiles-chunkstore-input-formats-execplan.md
 - 受け入れ基準: shape/location/route のベクトルタイル生成で chunk-store の素材保存形式を geojson/geojson+gzip/flatgeobuf/flatgeobuf+gzip から選べる／保存と読み出しが形式ごとに動作する／既存の geojson 既定動作が維持される／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
 - 要点：runtime-worker の chunk-store 入力に inputFormat/inputCompression を追加し gzip 圧縮/解凍を実装。gis-sdk に FlatGeobuf エンコードを追加し、shape/location/route の入力生成と config 配線を更新。RouteVectorTileService は writeVectorTileInput 経由で chunk-store 書き込みを共通化。
-- 影響範囲：`packages/runtime-worker/src/services/vectorTileStageRunner.ts`, `packages/runtime-worker/src/services/StageProcessingService.ts`, `packages/runtime-worker/src/types.ts`, `packages/features/gis-sdk/src/vectorTiles.ts`, `packages/features/gis-sdk/src/index.ts`, `packages/plugin-service-api/src/types/shapeBatchTypes.ts`, `plugins/shape-plugin/src/common/types/BatchConfig.ts`, `plugins/shape-plugin/src/services/batch/session/tiles/vectorTileTasks.ts`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `packages/features/location-store/src/index.ts`, `plugins/location-plugin/src/services/batch/LocationSessionController.ts`, `plugins/location-plugin/package.json`, `packages/features/route-store/src/index.ts`, `plugins/route-plugin/src/services/RouteBatchSession.ts`, `plugins/route-plugin/src/services/RouteVectorTileService.ts`, `plugins/route-plugin/package.json`, `vitest.setup.base.ts`。
+- 影響範囲：`packages/runtime-worker/src/services/vectorTileStageRunner.ts`, `packages/runtime-worker/src/services/StageProcessingService.ts`, `packages/runtime-worker/src/types.ts`, `packages/features/gis-sdk/src/vectorTiles.ts`, `packages/features/gis-sdk/src/index.ts`, `packages/plugin-service-api/src/types/shapeBuildTypes.ts`, `plugins/shape-plugin/src/common/types/BatchConfig.ts`, `plugins/shape-plugin/src/services/batch/session/tiles/vectorTileTasks.ts`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `packages/features/location-store/src/index.ts`, `plugins/location-plugin/src/services/batch/LocationSessionController.ts`, `plugins/location-plugin/package.json`, `packages/features/route-store/src/index.ts`, `plugins/route-plugin/src/services/RouteBatchSession.ts`, `plugins/route-plugin/src/services/RouteVectorTileService.ts`, `plugins/route-plugin/package.json`, `vitest.setup.base.ts`。
 - 検証：未実施（手動/自動テスト未実行）。
 - ロールバック手順：上記ファイルの差分を revert し、chunk-store 入力を JSON のみに戻す。route は DexieChunkStore 直接書き込みへ戻し、inputFormat/inputCompression の追加型定義を削除する。
 - チェックリスト:
@@ -3416,7 +3493,7 @@
 - 依存: なし
 - 要点：Step5 の Resume 表記を「Resume Build」へ戻し、i18n（英語/日本語）も Build 表記に揃えた。
 - 原因/影響範囲：commit 3c8168b（2025-12-31）の “build” → “stage” 置換で Resume ラベルが「Resume stage」へ変わっていた。影響範囲は Shape Step5 の開始/再開コントロール表示とロケール定義。
-- 修正内容と適用範囲：`ShapeBuildProgressStep` の Resume ラベル既定文字列を「Resume Build」に戻し、`stage.controls` の i18n を追加。適用範囲は `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx` と `plugins/shape-plugin/src/ui/locales/{en,ja}.json`。
+- 修正内容と適用範囲：`ShapeBuildStep` の Resume ラベル既定文字列を「Resume Build」に戻し、`stage.controls` の i18n を追加。適用範囲は `plugins/shape-plugin/src/ui/components/steps/ShapeBuildStep.tsx` と `plugins/shape-plugin/src/ui/locales/{en,ja}.json`。
 - 検証：未実施（文言差し替えのみ）。
 - ロールバック手順：上記ファイルと本項目の差分を revert。
 - 運用ログ：
@@ -3427,8 +3504,8 @@
 - ブランチ名: fix/shape/step5-start-build-label
 - 依存: なし
 - 要点：Shape Step5 の開始ボタンラベルを「Start Build」に戻した。
-- 原因/影響範囲：commit 3c8168b（2025-12-31）で “build” から “stage” へ用語統一した結果、Step5 の開始ラベルが「Start stage」へ変更されていた。影響範囲は `ShapeBuildProgressStep` の開始ボタン表示。
-- 修正内容と適用範囲：`startLabel` のデフォルト文字列を「Start Build」に戻した。適用範囲は `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`。
+- 原因/影響範囲：commit 3c8168b（2025-12-31）で “build” から “stage” へ用語統一した結果、Step5 の開始ラベルが「Start stage」へ変更されていた。影響範囲は `ShapeBuildStep` の開始ボタン表示。
+- 修正内容と適用範囲：`startLabel` のデフォルト文字列を「Start Build」に戻した。適用範囲は `plugins/shape-plugin/src/ui/components/steps/ShapeBuildStep.tsx`。
 - 検証：未実施（ラベル文言の差し替えのみ）。
 - ロールバック手順：上記ファイルと本項目の差分を revert。
 - 運用ログ：

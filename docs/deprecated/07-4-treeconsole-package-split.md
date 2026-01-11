@@ -106,7 +106,7 @@ export type { TreeConsoleSpeedDialProps } from './types';
 export { TreeTableConsolePanel } from './TreeTableConsolePanel';
 export { useTreeTableOrchestrator } from './orchestrator';
 export { WorkerAPIAdapter } from './adapters';
-export * from './state'; // Jotai atoms
+export * from './atoms'; // Jotai atoms
 ```
 
 **依存関係**:

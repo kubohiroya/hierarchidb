@@ -30,7 +30,7 @@ export interface CommonSessionConfig {
   dataSource?: DataSourceName;
 }
 
-export interface DownloadSessionConfig {
+export interface FetchConfig {
   concurrentDownloads: number;
   deleteOnComplete?: boolean;
   timeoutMs?: number;
@@ -38,7 +38,7 @@ export interface DownloadSessionConfig {
   retryDelay?: number;
 }
 
-export interface ExtractSession1Config {
+export interface Extract1Config {
   concurrentProcesses: number;
   enableFeatureFiltering: boolean;
   featureAreaThreshold: number;
@@ -49,7 +49,7 @@ export interface ExtractSession1Config {
   deleteOnComplete?: boolean;
 }
 
-export interface ExtractSession2Config {
+export interface Extract2Config {
   concurrentProcesses: number;
   quantize: number;
   extract: number;
@@ -58,7 +58,7 @@ export interface ExtractSession2Config {
   deleteOnComplete?: boolean;
 }
 
-export interface GenerateVectorTilesConfig {
+export interface VTConfig {
   concurrentProcesses: number;
   bufferSize?: number;
   tileSize?: number;
@@ -67,10 +67,10 @@ export interface GenerateVectorTilesConfig {
 }
 
 export interface BatchSessionConfig extends CommonSessionConfig {
-  download: DownloadSessionConfig;
-  extract1: ExtractSession1Config;
-  extract2: ExtractSession2Config;
-  vectorTiles: GenerateVectorTilesConfig;
+  download: FetchConfig;
+  extract1: Extract1Config;
+  extract2: Extract2Config;
+  vectorTiles: VTConfig;
   concurrentDownloads?: number;
   concurrentProcesses?: number;
   quantize?: number;
@@ -89,7 +89,7 @@ export interface BatchSessionConfig extends CommonSessionConfig {
 }
 
 export type BatchProcessConfig = BatchSessionConfig;
-export type BatchTaskType = 'download' | 'extract1' | 'extract2' | 'vectortile' | 'fetch' | 'transform' | 'vt';
+export type BatchTaskType = 'fetch' | 'transform' | 'vt';
 export type ProcessingStage = BatchTaskType;
 export type TaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'regression';
 
@@ -405,51 +405,6 @@ export class ShapeDB extends VectorTileDbBase {
 
   constructor() {
     super(getDBName('shape'));
-
-    this.version(1).stores({
-
-      // Batch processing - indexed for session and task management
-      batchSessions: '&sessionId, nodeId, status, startedAt, updatedAt',
-
-      // Features - spatial and attribute indexing
-      features:
-        '++id, nodeId, [nodeId+adminLevel], [nodeId+countryCode], mortonCode, adminLevel, countryCode, name, createdAt',
-      featureIndices:
-        '&indexId, featureId, mortonCode, [mortonCode+adminLevel], adminLevel, countryCode, area, complexity',
-      relations: '&[srcNodeId+type+dstNodeId], srcNodeId, dstNodeId, type, updatedAt',
-
-      // Vector tiles - spatial tile indexing
-      vectorTiles: '&tileId, nodeId, [nodeId+z+x+y], [z+x+y], z, generatedAt, lastAccessed, size',
-    });
-
-    this.version(2)
-      .stores({
-        // Batch processing - indexed for node-based session and task management
-        batchSessions: '&nodeId, status, startedAt, updatedAt',
-
-        // Features - spatial and attribute indexing
-        features:
-          '++id, nodeId, [nodeId+adminLevel], [nodeId+countryCode], mortonCode, adminLevel, countryCode, name, createdAt',
-        featureIndices:
-          '&indexId, featureId, mortonCode, [mortonCode+adminLevel], adminLevel, countryCode, area, complexity',
-        relations: '&[srcNodeId+type+dstNodeId], srcNodeId, dstNodeId, type, updatedAt',
-
-        // Vector tiles - spatial tile indexing
-        vectorTiles: '&tileId, nodeId, [nodeId+z+x+y], [z+x+y], z, generatedAt, lastAccessed, size',
-      })
-      .upgrade(async () => {
-        await this.batchSessions.clear();
-      });
-
-    this.version(3).stores({
-      batchSessions: '&nodeId, status, startedAt, updatedAt',
-      features:
-        '++id, nodeId, [nodeId+adminLevel], [nodeId+countryCode], mortonCode, adminLevel, countryCode, name, createdAt',
-      featureIndices:
-        '&indexId, featureId, mortonCode, [mortonCode+adminLevel], adminLevel, countryCode, area, complexity',
-      relations: '&[srcNodeId+type+dstNodeId], srcNodeId, dstNodeId, type, updatedAt',
-      vectorTiles: '&tileId, nodeId, [nodeId+z+x+y], [z+x+y], z, generatedAt, lastAccessed, size',
-    });
 
     this.version(4).stores(this.mergeVectorTileStores({
       batchSessions: '&nodeId, status, startedAt, updatedAt',

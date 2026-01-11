@@ -31,13 +31,13 @@ describe('RouteBatchLiveProgress', () => {
     render(<RouteBatchLiveProgress jobId="job-1" enableControls={true} />);
 
     const root = screen.getByTestId('route-live-progress');
-    expect(root).toHaveAttribute('data-progress-state', 'running');
+    expect(root).toHaveAttribute('data-progress-atoms', 'running');
     expect(screen.getByTestId('route-live-progress-percentage').textContent).toBe('42%');
     expect(screen.getByTestId('route-live-progress-stage').textContent).toBe('ルート生成');
     expect(screen.getByTestId('route-live-progress-toggle')).toHaveAttribute('aria-pressed', 'false');
   });
 
-  it('marks paused state and surfaces mutation errors', () => {
+  it('marks paused atoms and surfaces mutation errors', () => {
     mockUseRouteBatchProgress.mockReturnValue({
       snapshot: undefined,
       ready: true,
@@ -53,7 +53,7 @@ describe('RouteBatchLiveProgress', () => {
 
     render(<RouteBatchLiveProgress jobId="job-2" enableControls={true} />);
 
-    expect(screen.getByTestId('route-live-progress')).toHaveAttribute('data-progress-state', 'paused');
+    expect(screen.getByTestId('route-live-progress')).toHaveAttribute('data-progress-atoms', 'paused');
     expect(screen.getByTestId('route-live-progress-toggle')).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByTestId('route-live-progress-error')).toHaveTextContent('Network error');
   });
@@ -82,7 +82,7 @@ describe('RouteBatchSummary', () => {
 
     expect(screen.getByTestId('route-summary-results').textContent).toContain('結果: 4');
     expect(screen.getByTestId('route-summary-failed').textContent).toBe('失敗: 2');
-    expect(screen.getByTestId('route-summary-last-error')).toHaveAttribute('data-error-state', 'error');
+    expect(screen.getByTestId('route-summary-last-error')).toHaveAttribute('data-error-atoms', 'error');
     expect(screen.getByTestId('route-summary-last-error').textContent).toContain('最新のエラー: Worker error');
   });
 });

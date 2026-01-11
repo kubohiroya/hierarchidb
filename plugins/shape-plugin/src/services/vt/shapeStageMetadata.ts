@@ -1,13 +1,13 @@
 import type { Feature, Geometry } from 'geojson';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { ShapeSourceMetadataRow } from '@hierarchidb/plugin-service-api';
-import { VtShapeDb, listStage1Buffers } from '@hierarchidb/vt-shape-store';
-import { VtDb } from '@hierarchidb/vt-store';
+import { type VtShapeDb, listStage1Buffers } from '@hierarchidb/vt-shape-store';
+import type { VtDb } from '@hierarchidb/vt-store';
 import { VectorTile } from '@mapbox/vector-tile';
 import Pbf from 'pbf';
 import type { CountryMetadata, DataSourceName } from '../../common/types/index.js';
 import { metadataLoader } from '../metadata/MetadataLoader.js';
-import { getShapeDbApiClient } from '../batch/ShapeBatchApiClient.js';
+import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../batch/ShapeBuildApiClient.ts';
 
 const ORIGIN_KEY_PROP = '__hdbOriginKey';
 
@@ -204,8 +204,7 @@ export const updateShapeStageMetadata = async (params: ShapeStageMetadataParams)
   const metadata = await metadataLoader.loadMetadata(params.dataSource, params.nodeId);
   const lookup = buildCountryLookup(metadata);
   const now = Date.now();
-  const { query, mutation } = getShapeDbApiClient();
-  const existingRows = await query.listSourceMetadata(params.nodeId);
+  const existingRows = await shapeQueryAPIImpl.listSourceMetadata(params.nodeId);
   const createdAtByOrigin = new Map(existingRows.map((row) => [row.originKey, row.createdAt] as const));
 
   const origins = new Map<string, OriginMetadata>();
@@ -289,6 +288,6 @@ export const updateShapeStageMetadata = async (params: ShapeStageMetadataParams)
     vtPolygonCount: origin.vt.polygonCount,
   }));
 
-  await mutation.deleteSourceMetadataByNode(params.nodeId);
-  await mutation.putSourceMetadata(rows);
+  await shapeMutationAPIImpl.deleteSourceMetadataByNode(params.nodeId);
+  await shapeMutationAPIImpl.putSourceMetadata(rows);
 };

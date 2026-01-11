@@ -175,14 +175,14 @@ test.describe('Route progress controls', () => {
       if (scenario.flagValue === '1') {
         await expect(progress.toggleButton).toBeVisible();
         await expect(progress.toggleButton).toBeEnabled();
-        await expect(progress.card).toHaveAttribute('data-progress-state', /running|completed/, { timeout: 5000 });
+        await expect(progress.card).toHaveAttribute('data-progress-atoms', /running|completed/, { timeout: 5000 });
 
         await progress.toggleButton.click();
-        await expect(progress.card).toHaveAttribute('data-progress-state', 'paused', { timeout: 5000 });
+        await expect(progress.card).toHaveAttribute('data-progress-atoms', 'paused', { timeout: 5000 });
         await expect(progress.toggleButton).toHaveAttribute('aria-pressed', 'true');
 
         await progress.toggleButton.click();
-        await expect(progress.card).toHaveAttribute('data-progress-state', /running|completed/, { timeout: 5000 });
+        await expect(progress.card).toHaveAttribute('data-progress-atoms', /running|completed/, { timeout: 5000 });
         await expect(progress.toggleButton).toHaveAttribute('aria-pressed', 'false');
       } else {
         await expect(progress.toggleButton).toHaveCount(0);

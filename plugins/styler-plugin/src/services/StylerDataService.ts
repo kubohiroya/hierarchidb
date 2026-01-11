@@ -131,7 +131,7 @@ export class StylerDataService {
     const targetMeta = targetProperty ? MAPLIBRE_PROPERTY_METADATA[targetProperty] : null;
     const valueType = mapping.valueType ?? targetMeta?.type ?? 'color';
     const mappingMode = mapping.mappingMode ?? 'map-interpolate';
-    const featureStateExpr = ['feature-state', 'value'];
+    const featureStateExpr = ['feature-atoms', 'value'];
 
     const colorMapping: Record<string, string> = {};
     const needsNumericValues =

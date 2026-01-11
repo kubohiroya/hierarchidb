@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type FC, type ReactNode } from 'react';
+import { BuildStageFilterProvider } from './BuildStepStageFilterContext.tsx';
 import { BuildStepStageSummaryPanel, type BuildStepStageTaskCount } from './BuildStepStageSummaryPanel.js';
 
 export type BuildStage = {
@@ -8,26 +9,17 @@ export type BuildStage = {
   icon?: ReactNode;
 };
 
-export type BuildStageContentFilter = {
-  failedMode: boolean;
-  completedMode: boolean;
-};
-
 export type BuildStepStagePanelProps = {
   stage: BuildStage;
   progress: number;
-  renderStageContent?: (
-    stage: BuildStage,
-    progress: number,
-    filter: BuildStageContentFilter,
-  ) => ReactNode;
+  content?: ReactNode;
   taskCount?: BuildStepStageTaskCount;
 };
 
 export const BuildStepStagePanel: FC<BuildStepStagePanelProps> = ({
   stage,
   progress,
-  renderStageContent,
+  content,
   taskCount,
 }) => {
   const [failedMode, setFailedMode] = useState(true);
@@ -58,8 +50,12 @@ export const BuildStepStagePanel: FC<BuildStepStagePanelProps> = ({
     setCompletedMode(newMode);
   }, []);
 
-  const stageContent = renderStageContent
-    ? renderStageContent(stage, progress, { failedMode, completedMode })
+  const stageContent = content
+    ? (
+      <BuildStageFilterProvider value={{ failedMode, completedMode }}>
+        {content}
+      </BuildStageFilterProvider>
+    )
     : null;
 
   return (

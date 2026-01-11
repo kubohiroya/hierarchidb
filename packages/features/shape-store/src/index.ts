@@ -34,16 +34,9 @@ export {
 export {
   EphemeralShapeDB,
   type BatchSessionMetadata,
-  type EphemeralStage,
-  type Extract1SourceBuffer,
-  type Extract2SourceBuffer,
+  type TransformSourceBuffer,
   type GeojsonVtIndexRecord,
-  type ProcessingCache,
-  type RawFeatureBuffer,
-  type VectorTileData,
-  type VectorTileSourceBuffer,
+  type VTSourceBuffer,
   type TileIdToBufferRelation,
-  closeEphemeralShapeDB,
-  getEphemeralShapeDB,
+  ephemeralShapeDB
 } from './EphemeralShapeDB.js';
-export type { ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/plugin-service-api';

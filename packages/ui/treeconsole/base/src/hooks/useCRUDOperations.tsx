@@ -13,7 +13,7 @@ export interface UseCRUDOperationsOptions {
   stateManager?: StateManagerLike;
   /** Worker API adapter */
   workerAdapter?: WorkerAPIAdapter;
-  /** Loading state setter */
+  /** Loading atoms setter */
   setIsLoading?: (loading: boolean) => void;
   /** Callback to update selected nodes */
   onSelectedNodesChange?: (updater: (prev: NodeId[]) => NodeId[]) => void;

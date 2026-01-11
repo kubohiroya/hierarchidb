@@ -1,6 +1,6 @@
 /**
  * @file ModelessDialogProvider.tsx
- * @description Context provider for modeless dialog state and configuration.
+ * @description Context provider for modeless dialog atoms and configuration.
  */
 
 import type { DialogDisplayMode, DialogPosition } from '@hierarchidb/common-types';

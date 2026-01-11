@@ -39,7 +39,7 @@ describe('useCopyPasteOperations', () => {
     expect(canPaste).toHaveBeenCalledWith('denied-target');
   });
 
-  it('should rely on clipboard fallback when no state manager guard is provided', async () => {
+  it('should rely on clipboard fallback when no atoms manager guard is provided', async () => {
     const { result } = renderHook(() => useCopyPasteOperations());
 
     await act(async () => {

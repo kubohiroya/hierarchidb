@@ -1,6 +1,6 @@
 /**
  * @file useFloatingWindow.ts
- * @description Custom hook for managing floating window state
+ * @description Custom hook for managing floating window atoms
  */
 
  
@@ -36,7 +36,7 @@ export function useFloatingWindow(options: UseFloatingWindowOptions = {}): UseFl
     onStateChange: externalOnStateChange,
   } = options;
 
-  // Load persisted state if available
+  // Load persisted atoms if available
   const loadPersistedState = useCallback((): Partial<WindowState> | null => {
     if (!persistKey) return null;
 
@@ -51,7 +51,7 @@ export function useFloatingWindow(options: UseFloatingWindowOptions = {}): UseFl
     return null;
   }, [persistKey]);
 
-  // Initialize state
+  // Initialize atoms
   const [windowState, setWindowState] = useState<WindowState>(() => {
     const persisted = loadPersistedState();
     return {
@@ -63,7 +63,7 @@ export function useFloatingWindow(options: UseFloatingWindowOptions = {}): UseFl
     };
   });
 
-  // Persist state when it changes
+  // Persist atoms when it changes
   useEffect(() => {
     if (persistKey) {
       try {
@@ -74,12 +74,12 @@ export function useFloatingWindow(options: UseFloatingWindowOptions = {}): UseFl
     }
   }, [windowState, persistKey]);
 
-  // Notify external listener of state changes
+  // Notify external listener of atoms changes
   useEffect(() => {
     externalOnStateChange?.(windowState);
   }, [windowState, externalOnStateChange]);
 
-  // Handler for state changes from the FloatingWindow component
+  // Handler for atoms changes from the FloatingWindow component
   const onStateChange = useCallback((newState: WindowState) => {
     setWindowState(newState);
   }, []);

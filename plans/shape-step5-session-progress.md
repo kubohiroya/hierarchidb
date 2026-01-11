@@ -36,7 +36,7 @@ Implemented sessionId=nodeId reuse, EphemeralShapeDB stage cleanup, auto-invalid
 
 ## Context and Orientation
 
-Shape batch processing uses the Shape plugin’s worker-side batch manager and Dexie databases. The persistent store lives in `plugins/shape-plugin/src/services/database/ShapeDB.ts` (batchSessions/batchTasks/etc). Temporary per-session data is stored in `plugins/shape-plugin/src/services/database/EphemeralShapeDB.ts` (rawBuffers/extractedBuffers/vectorTiles/sessions). The UI step that hosts Step4 settings is `plugins/shape-plugin/src/ui/components/steps/ShapeProcessingSettingsStep.tsx`, and Step5 is `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`.
+Shape batch processing uses the Shape plugin’s worker-side batch manager and Dexie databases. The persistent store lives in `plugins/shape-plugin/src/services/database/ShapeDB.ts` (batchSessions/batchTasks/etc). Temporary per-session data is stored in `plugins/shape-plugin/src/services/database/EphemeralShapeDB.ts` (rawBuffers/extractedBuffers/vectorTiles/sessions). The UI step that hosts Step4 settings is `plugins/shape-plugin/src/ui/components/steps/ShapeBuildConfigStep.tsx`, and Step5 is `plugins/shape-plugin/src/ui/components/steps/ShapeBuildStep.tsx`.
 
 The current sessionId is generated as a UUID in `ShapeDB.createBatchSession`, and the worker-side batch manager starts a session in `plugins/shape-plugin/src/services/batch/BatchSessionManager.ts` via `createSession`. Step4 deletion is implemented in `DownloadConfigSection.tsx` but filters by `nodeId` rather than `sessionId` and does not consider auto-delete rules. Step5 uses local component state rather than worker progress.
 
@@ -50,14 +50,14 @@ Third, introduce auto-delete logic on UI setting changes. For Step2 (`ShapeDataS
 
 Fourth, wire Step5 to worker progress. Use `useShapeProgress` to subscribe to progress for the current sessionId (nodeId). Map the progress and status to `BuildStepPanel` props. Replace local `useState` placeholders with real values. Integrate control handlers to call the worker bridge (start/pause/resume/cancel) if the worker bridge provides batch methods for the shape node type. This wiring may initially be optimistic; if worker API does not expose those methods, the UI should fail gracefully with warnings rather than crashing.
 
-Finally, apply i18n for Step5 display strings. Add shape-plugin locale keys for build stage titles/descriptions, control labels, and status messages in `plugins/shape-plugin/src/ui/locales/en.json` and `plugins/shape-plugin/src/ui/locales/ja.json`, and use `useTranslation` inside `ShapeBuildProgressStep.tsx` (and possibly `BuildStepPanel` if additional labels are needed). Ensure English defaults are preserved as fallbacks.
+Finally, apply i18n for Step5 display strings. Add shape-plugin locale keys for build stage titles/descriptions, control labels, and status messages in `plugins/shape-plugin/src/ui/locales/en.json` and `plugins/shape-plugin/src/ui/locales/ja.json`, and use `useTranslation` inside `ShapeBuildStep.tsx` (and possibly `BuildStepPanel` if additional labels are needed). Ensure English defaults are preserved as fallbacks.
 
 ## Concrete Steps
 
 1) Update `ShapeDB.createBatchSession` to accept an explicit sessionId and to insert or update by that key. Then update `BatchSessionManager.createSession` to reuse the existing record when the same sessionId (nodeId) exists, including when status is `completed`.
 2) Add EphemeralShapeDB helpers for `clearStage`, `hasStageData`, and `clearSession` that all use `sessionId` filtering. Update Step4 delete handlers in `DownloadConfigSection.tsx` to use these helpers.
 3) Add a shared UI helper (for example, `plugins/shape-plugin/src/ui/utils/sessionInvalidation.ts`) that, given the previous and next data/config, returns which Ephemeral stages to clear. Call this helper in Step2, Step3, and Step4 change handlers before applying the state update.
-4) Update `ShapeBuildProgressStep.tsx` to derive `sessionId` from `data.nodeId` (and/or `data.batchSessionId` if present), use `useShapeProgress`, and map progress/status to `BuildStepPanel`. Add action handlers that call worker batch control APIs.
+4) Update `ShapeBuildStep.tsx` to derive `sessionId` from `data.nodeId` (and/or `data.batchSessionId` if present), use `useShapeProgress`, and map progress/status to `BuildStepPanel`. Add action handlers that call worker batch control APIs.
 5) Add i18n keys for Step5 stage titles, descriptions, control labels, and status strings in the shape-plugin locales, and update the component to use them.
 
 ## Validation and Acceptance
@@ -82,7 +82,7 @@ Expected deletion flow example (sessionId == nodeId):
 - `plugins/shape-plugin/src/ui/components/steps/DownloadConfigSection.tsx`: delete handlers use sessionId and new DB helpers.
 - `plugins/shape-plugin/src/ui/components/steps/ShapeDataSourceStep.tsx`: data source change triggers invalidation cleanup.
 - `plugins/shape-plugin/src/ui/components/steps/ShapeCountrySelectionStep.tsx`: selection change triggers invalidation cleanup.
-- `plugins/shape-plugin/src/ui/components/steps/ShapeProcessingSettingsStep.tsx` and subcomponents: processing config change triggers invalidation cleanup.
-- `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`: uses `useShapeProgress` and i18n strings for Step5.
+- `plugins/shape-plugin/src/ui/components/steps/ShapeBuildConfigStep.tsx` and subcomponents: processing config change triggers invalidation cleanup.
+- `plugins/shape-plugin/src/ui/components/steps/ShapeBuildStep.tsx`: uses `useShapeProgress` and i18n strings for Step5.
 
 Plan change note: Updated Progress/Decision Log/Outcomes after implementing session reuse, invalidation, and Step5 wiring; validation remains pending.

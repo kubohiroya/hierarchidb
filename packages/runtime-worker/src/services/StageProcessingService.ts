@@ -1,4 +1,4 @@
-import type { DownloadWorkerAPI, ExtractWorkerAPI, VectorTileProgress, VectorTileWorkerAPI } from '../types.js';
+import type { FetchWorkerAPI, TransformWorkerAPI, VectorTileProgress, VTWorkerAPI } from '../types.js';
 import {
   generateVectorTilesFromFgbBuffer,
   generateVectorTilesFromJsonBuffer,
@@ -7,15 +7,14 @@ import {
 } from '@hierarchidb/gis-sdk';
 import { storeRegistry } from '../entity/store-registry.js';
 import type { VectorTileItemBase } from '../entity/store.js';
-import { getEphemeralShapeDB, shapeDB, type LayerInfo } from '@hierarchidb/shape-store';
+import { ephemeralShapeDB, shapeDB, type LayerInfo } from '@hierarchidb/shape-store';
 import { ShapeMutationService } from './ShapeMutationService.js';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { FeatureMetadataRow } from '@hierarchidb/vectortile-store';
 
-import type { SharedDownloadService } from './downloadAdapter.js';
+import type { SharedFetchService } from './downloadAdapter.js';
 import { createSharedDownloadService } from './downloadAdapter.js';
 
-const getEphemeralDb = () => getEphemeralShapeDB();
 const buildShapeTileId = (nodeId: NodeId, z: number, x: number, y: number): string =>
   `${nodeId}-${z}-${x}-${y}`;
 
@@ -81,10 +80,10 @@ type VectorTileStoreItem = VectorTileItemBase & {
  *       Implementations can be incrementally replaced with real worker logic.
  */
 
-class RealDownloadWorker implements DownloadWorkerAPI {
-  private sharedPromise: Promise<SharedDownloadService> | null = null;
+class RealFetchWorker implements FetchWorkerAPI {
+  private sharedPromise: Promise<SharedFetchService> | null = null;
 
-  private async getShared(): Promise<SharedDownloadService> {
+  private async getShared(): Promise<SharedFetchService> {
     if (!this.sharedPromise) {
       this.sharedPromise = createSharedDownloadService({ dbPrefix: 'hidb', perHostConcurrency: 4, scope: 'shape' });
     }
@@ -102,24 +101,24 @@ class RealDownloadWorker implements DownloadWorkerAPI {
 const bufferRegistry: Map<string, { parent?: string; stage: 's1' | 's2' | 'src'; ts: number }> =
   new Map();
 
-class RealExtractWorker implements ExtractWorkerAPI {
-  async extractStage1(inputBufferId: string, _config: { tolerance: number; minArea: number }) {
+class RealTransformWorker implements TransformWorkerAPI {
+  async transformStage(inputBufferId: string, _config: { tolerance: number; minArea: number }) {
     const out = `${inputBufferId}-s1`;
     bufferRegistry.set(out, { parent: inputBufferId, stage: 's1', ts: Date.now() });
     return { outputBufferId: out };
   }
-  async extractStage2(inputBufferId: string, _config: { zoomLevels: number[]; tileSize: number }) {
+  async transformStage2(inputBufferId: string, _config: { zoomLevels: number[]; tileSize: number }) {
     const out = `${inputBufferId}-s2`;
     bufferRegistry.set(out, { parent: inputBufferId, stage: 's2', ts: Date.now() });
     return { outputBufferId: out };
   }
 }
 
-class RealVectorTileWorker implements VectorTileWorkerAPI {
-  private sharedPromise: Promise<SharedDownloadService> | null = null;
+class RealVTWorker implements VTWorkerAPI {
+  private sharedPromise: Promise<SharedFetchService> | null = null;
   private readonly abortControllers = new Map<string, AbortController>();
 
-  private async getShared(): Promise<SharedDownloadService> {
+  private async getShared(): Promise<SharedFetchService> {
     if (!this.sharedPromise) {
       this.sharedPromise = createSharedDownloadService({ dbPrefix: 'hidb', perHostConcurrency: 2, scope: 'shape' });
     }
@@ -136,13 +135,10 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
     } catch {
       // Ignore and fall back to ephemeral buffers.
     }
-    const db = getEphemeralDb();
-    const tileInput = await db.vectorTileSourceBuffers.get(fileId);
+    const tileInput = await ephemeralShapeDB.vectorTileSourceBuffers.get(fileId);
     if (tileInput?.data) return tileInput.data;
-    const extract2 = await db.extract2SourceBuffers.get(fileId);
-    if (extract2?.data) return extract2.data;
-    const extract1 = await db.extractedBuffers.get(fileId);
-    return extract1?.data ?? null;
+    const transform = await ephemeralShapeDB.transformBuffers.get(fileId);
+    if (transform?.data) return transform.data;
   }
 
   private async decodeInputBuffer(
@@ -425,9 +421,9 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
 }
 
 export type StageProcessingService = {
-  download: DownloadWorkerAPI;
-  extract: ExtractWorkerAPI;
-  vectortile: VectorTileWorkerAPI;
+  download: FetchWorkerAPI;
+  extract: TransformWorkerAPI;
+  vectortile: VTWorkerAPI;
 };
 
 let singleton: StageProcessingService | null = null;
@@ -436,9 +432,9 @@ export async function getStageProcessingService(): Promise<StageProcessingServic
   if (!singleton) {
     ensureShapeVectorTileStore();
     singleton = {
-      download: new RealDownloadWorker(),
-      extract: new RealExtractWorker(),
-      vectortile: new RealVectorTileWorker(),
+      download: new RealFetchWorker(),
+      extract: new RealTransformWorker(),
+      vectortile: new RealVTWorker(),
     };
   }
   return singleton;

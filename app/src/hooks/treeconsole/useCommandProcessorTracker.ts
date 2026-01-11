@@ -69,7 +69,7 @@ export function useCommandProcessorTracker({ client, setState, setSSOT }: Params
 
         subscriptionId = await subscriptionAPI.subscribeUndoState(handler);
       } catch (error) {
-        console.warn('[useCommandProcessorTracker] undo-state subscription failed', error);
+        console.warn('[useCommandProcessorTracker] undo-atoms subscription failed', error);
       }
     };
 

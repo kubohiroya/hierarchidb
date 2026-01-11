@@ -198,7 +198,7 @@ export interface StylerFormData {
 }
 
 /**
- * 🟡 PreviewStep state for real-time updates
+ * 🟡 PreviewStep atoms for real-time updates
  */
 export interface StylerPreviewState {
   /** Working copy ID */
@@ -214,18 +214,18 @@ export interface StylerPreviewState {
 }
 
 /**
- * 🟡 Dialog step state
+ * 🟡 Dialog step atoms
  */
 export interface StylerDialogState {
   /** Current step index */
   currentStep: number;
   /** Maximum step reached */
   maxReachedStep: number;
-  /** Form validation state per step */
+  /** Form validation atoms per step */
   stepValidation: Record<number, boolean>;
   /** Whether base-dialog has unsaved changes */
   hasUnsavedChanges: boolean;
-  /** Loading state */
+  /** Loading atoms */
   isLoading: boolean;
 }
 
@@ -445,7 +445,7 @@ export interface StylerConfigurationProps {
   values: number[];
   /** Whether component is disabled */
   disabled?: boolean;
-  /** Loading state */
+  /** Loading atoms */
   loading?: boolean;
 }
 
@@ -467,7 +467,7 @@ export interface StylerPreviewProps {
   filterRules: FilterRule[];
   /** Table rows for preview */
   tableRows: (string | number)[][];
-  /** Loading state */
+  /** Loading atoms */
   loading?: boolean;
 }
 

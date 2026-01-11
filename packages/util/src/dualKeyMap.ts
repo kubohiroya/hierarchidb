@@ -58,7 +58,7 @@ export class DualKeyMap<PrimaryKey extends PropertyKey, SecondaryKey extends Pro
 
   /**
    * Return the primary keys registered under a secondary key. A new Set is returned to keep
-   * internal state encapsulated.
+   * internal atoms encapsulated.
    */
   getPrimaryKeysBySecondary(secondaryKey: SecondaryKey): ReadonlySet<PrimaryKey> {
     const set = this.secondaryIndex.get(secondaryKey);

@@ -10,7 +10,7 @@
 - [ ] Rewire `ShapeDialog` to use headless multi-step dialog with Steps 2-5 components.
 - [ ] Reconnect step validation and navigation logic (using summary utilities) to enable user flow.
 - [ ] Restore `steps-provider.tsx` to register steps via `PluginStepRegistry`.
-- [ ] Revive `useShapeAPI` / `useShapeBatchCommand` to call actual worker APIs.
+- [ ] Revive `useShapeAPI` / `useBatchCommand` to call actual worker APIs.
 
 ## Phase 2: Batch UI Restoration
 - [ ] Reimplement `useShapeProgress` to subscribe to batch progress via worker events.

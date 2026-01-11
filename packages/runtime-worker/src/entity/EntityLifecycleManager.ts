@@ -10,10 +10,10 @@ import type {
 } from '@hierarchidb/common-types';
 import type { LocationMutationAPI } from '@hierarchidb/location-store';
 import type { RouteMutationAPI } from '@hierarchidb/route-store';
-import type { ShapeMutationAPI } from '@hierarchidb/shape-store';
 import type { CoreDB } from '../services/CoreDB.js';
 import type { CommandEnvelope } from '../services/command-types.js';
 import { storeRegistry } from './store-registry.js';
+import type { ShapeMutationAPI } from '@hierarchidb/plugin-service-api';
 
 type DiscardDraftEnvelope = CommandEnvelope<'discardDraft', DiscardDraftPayload>;
 type CommitDraftEnvelope = CommandEnvelope<'commitDraft', CommitDraftPayload>;

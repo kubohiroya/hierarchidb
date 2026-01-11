@@ -34,7 +34,7 @@ export class CommandProcessor {
   private readonly MAX_REDO_STACK_SIZE = PERFORMANCE_CONFIG.MAX_REDO_STACK_SIZE;
   private readonly MAX_EVENT_HISTORY_SIZE = PERFORMANCE_CONFIG.MAX_EVENT_HISTORY_SIZE;
 
-  // Internal state
+  // Internal atoms
   private readonly history: CommandHistoryManager;
   private readonly runner: CommandExecutionRunner;
   private sequenceNumber = 0;
@@ -258,13 +258,13 @@ export class CommandProcessor {
       this.lastUndoState = { canUndo, canRedo };
       const service = await this.getUndoStateService();
       service.publishUndoState({
-        type: 'undo-state',
+        type: 'undo-atoms',
         canUndo,
         canRedo,
         timestamp: Date.now() as Timestamp,
       });
     } catch (error) {
-      console.warn('[CommandProcessor] failed to publish undo state', error);
+      console.warn('[CommandProcessor] failed to publish undo atoms', error);
     }
   }
 

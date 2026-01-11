@@ -269,7 +269,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
   //const selectedItems = props.selectedIds.length;
   // const visibleItems = props.data.length; // In real implementation, this would be filtered count
 
-  // Compute footer counters for loading state (controller not yet available)
+  // Compute footer counters for loading atoms (controller not yet available)
   /*
   const countLoadedRecursive = (nodes: readonly TreeNodeData[]): number => {
     let c = 0;

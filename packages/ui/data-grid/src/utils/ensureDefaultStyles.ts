@@ -8,7 +8,7 @@ export interface EnsureDefaultStylesOptions {
 /**
  * Ensure a minimal default style dictionary exists for a dataset channel.
  * Adds 'match' (priority 5), 'hover' (10), 'select' (20) entries.
- * Row styles are light (outline / background), map side uses features-state flags.
+ * Row styles are light (outline / background), map side uses features-atoms flags.
  */
 export function ensureDefaultStyles(datasetId: string, opts: EnsureDefaultStylesOptions = {}) {
   const { includeRow = true, includeMap = true } = opts;

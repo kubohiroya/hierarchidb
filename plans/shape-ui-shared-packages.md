@@ -42,7 +42,7 @@ The shape-plugin UI hooks live under `plugins/shape-plugin/src/ui/hooks` and wer
 
 ## Plan of Work
 
-Create the new `packages/ui/gis` and `packages/ui/batch` packages with `package.json`, `tsconfig.json`, and `src/index.ts`. Move the preview hooks into `ui-map` and adapt them to accept generic row/selection callbacks so shape-plugin can keep its domain rules outside of the shared package. Move the batch progress hook and stage task aggregation hook into `ui-batch-progress`. Update `tsconfig.base.json` paths so the workspace can resolve the new packages, and update `plugins/shape-plugin/package.json` peer/dev dependencies to include `@hierarchidb/ui-map` and `@hierarchidb/ui-batch-progress`. Finally, update `useShapePreviewStep` and `useShapeProgress`/`useShapeBuildProgressStep` to import the shared hooks.
+Create the new `packages/ui/gis` and `packages/ui/batch` packages with `package.json`, `tsconfig.json`, and `src/index.ts`. Move the preview hooks into `ui-map` and adapt them to accept generic row/selection callbacks so shape-plugin can keep its domain rules outside of the shared package. Move the batch progress hook and stage task aggregation hook into `ui-batch-progress`. Update `tsconfig.base.json` paths so the workspace can resolve the new packages, and update `plugins/shape-plugin/package.json` peer/dev dependencies to include `@hierarchidb/ui-map` and `@hierarchidb/ui-batch-progress`. Finally, update `useShapePreviewStep` and `useShapeProgress`/`useShapeBuildStep` to import the shared hooks.
 
 ## Concrete Steps
 

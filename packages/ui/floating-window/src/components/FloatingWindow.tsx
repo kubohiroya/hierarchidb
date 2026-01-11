@@ -138,7 +138,7 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
   const effectiveMaxWidth = maxWidth || window.innerWidth - 50;
   const effectiveMaxHeight = maxHeight || window.innerHeight - 50;
 
-  // Update external state
+  // Update external atoms
   useEffect(() => {
     onStateChange?.(state);
   }, [state, onStateChange]);

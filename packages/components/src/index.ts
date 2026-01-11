@@ -23,5 +23,6 @@ export * from './SelectionMatrix/index.js';
 export * from './BuildStepPanel.js';
 export * from './BuildStepStagePanel.js';
 export * from './BuildStepStageSummaryPanel.js';
+export * from './BuildStepStageFilterContext.tsx';
 export * from './LoadingButton.tsx';
 

@@ -12,8 +12,8 @@ Shape プラグインの Step2 以降の UI コンポーネントは現在、状
 
 - [x] (2025-12-21 22:01) plan 作成と対象コンポーネントの棚卸し。
 - [x] Step2: ShapeCountrySelectionStep のロジック抽出とフック化。
-- [x] Step3: ShapeProcessingSettingsStep と Download/Extraction/Tile 各セクションのロジック抽出。
-- [x] Step4: ShapeBuildProgressStep のロジック抽出。
+- [x] Step3: ShapeBuildConfigStep と Download/Extraction/Tile 各セクションのロジック抽出。
+- [x] Step4: ShapeBuildStep のロジック抽出。
 - [x] Step5: ShapePreviewStep のロジック抽出。
 - [x] 付随コンポーネント（ErrorDisplay, BatchRecoveryDialog, ShapeDataSourceStep）のロジック外出し整備。
 - [x] (2025-12-21 22:19) typecheck 実行と挙動確認ログの記録。
@@ -34,7 +34,7 @@ Typecheck が通過し、Step2 以降のロジック外出しが完了した。
 
 ## Context and Orientation
 
-対象は `plugins/shape-plugin/src/ui/components` にある Step コンポーネント群である。Step2 以降は `ShapeCountrySelectionStep.tsx`、`ShapeProcessingSettingsStep.tsx`、`DownloadConfigSection.tsx`、`ExtractionConfigSection.tsx`、`TileConfigSection.tsx`、`ShapeBuildProgressStep.tsx`、`ShapePreviewStep.tsx` が該当する。Step1 は `ShapeDataSourceStep.tsx` だが、要請により同様のロジック外出しを実施する。補助 UI として `BatchRecoveryDialog.tsx` と `ErrorDisplay.tsx` が存在する。ロジック外出し先は `plugins/shape-plugin/src/ui/hooks` を基本とし、既存の hooks export (`plugins/shape-plugin/src/ui/hooks/index.ts`) を更新する。
+対象は `plugins/shape-plugin/src/ui/components` にある Step コンポーネント群である。Step2 以降は `ShapeCountrySelectionStep.tsx`、`ShapeBuildConfigStep.tsx`、`DownloadConfigSection.tsx`、`ExtractionConfigSection.tsx`、`VTConfigSection.tsx`、`ShapeBuildStep.tsx`、`ShapePreviewStep.tsx` が該当する。Step1 は `ShapeDataSourceStep.tsx` だが、要請により同様のロジック外出しを実施する。補助 UI として `BatchRecoveryDialog.tsx` と `ErrorDisplay.tsx` が存在する。ロジック外出し先は `plugins/shape-plugin/src/ui/hooks` を基本とし、既存の hooks export (`plugins/shape-plugin/src/ui/hooks/index.ts`) を更新する。
 
 この作業では UI の表示と挙動は変えず、コンポーネントは「受け取った props を描画するだけ」になるように設計する。ロジックはフックで完結し、イベントハンドラはフックが返す関数を使う。
 
@@ -68,6 +68,6 @@ Typecheck が成功し、各 Step の UI で表示や操作が従来と同じで
 
 ## Interfaces and Dependencies
 
-フックは React の標準フックのみを使い、既存の `useShapeProgress` や `useShapeBatchTasks` などの hooks を再利用する。新しいフックは `plugins/shape-plugin/src/ui/hooks` に配置し、UI コンポーネントはそれを import する。フックの戻り値は表示に必要な最低限の props とイベントハンドラに限定する。
+フックは React の標準フックのみを使い、既存の `useShapeProgress` や `useShapeBuildTasks` などの hooks を再利用する。新しいフックは `plugins/shape-plugin/src/ui/hooks` に配置し、UI コンポーネントはそれを import する。フックの戻り値は表示に必要な最低限の props とイベントハンドラに限定する。
 
 Plan update note: 新規 ExecPlan を追加し、Step2 以降のコンポーネントロジック抽出手順を定義した。

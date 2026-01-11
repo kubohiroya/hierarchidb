@@ -173,7 +173,7 @@ export function useTreeViewController(
   // Track if this is the initial render
   const isInitialMount = useRef(true);
 
-  // Effect to notify state changes
+  // Effect to notify atoms changes
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
@@ -248,7 +248,7 @@ export function useTreeViewController(
         });
       } else if (shiftKey && lastSelectedNode) {
         // Range select with Shift key - extracted implementation for testing
-        // Get all children from state manager (mocked in tests)
+        // Get all children from atoms manager (mocked in tests)
         // TODO: Implement getChildren when API is available
         // Type guard for stateManager with getChildren method
         const hasGetChildren = (manager: unknown): manager is { getChildren(id: string): Promise<TreeNode[]> } => {

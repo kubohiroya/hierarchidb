@@ -14,7 +14,7 @@ export interface UseMultiStepPersistenceOptions {
 export function useMultiStepPersistence({ key, enabled = true, step, setStep }: UseMultiStepPersistenceOptions) {
   const storageKey = key || 'PluginDialog:activeStep';
 
-  // Restore once on mount (uncontrolled only) — caller passes setStep for internal state
+  // Restore once on mount (uncontrolled only) — caller passes setStep for internal atoms
   useEffect(() => {
     if (!enabled) return;
     try {

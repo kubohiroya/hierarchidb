@@ -449,7 +449,7 @@ describe('ProjectDialog Component', () => {
     await user.type(screen.getByLabelText(/project name/i), 'Test Project');
     await user.click(screen.getByRole('button', { name: /create project/i }));
     
-    // Should show error state
+    // Should show error atoms
     expect(screen.getByText(/error occurred/i)).toBeInTheDocument();
   });
 });

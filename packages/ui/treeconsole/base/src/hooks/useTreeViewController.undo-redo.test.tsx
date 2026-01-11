@@ -125,7 +125,7 @@ describe('useTreeViewController', () => {
         );
       });
 
-      it('should update view state after successful undo', async () => {
+      it('should update view atoms after successful undo', async () => {
         const undoneNode = {
           id: 'node-1',
           name: 'Restored Node',
@@ -215,7 +215,7 @@ describe('useTreeViewController', () => {
       });
     });
 
-    describe('undo/redo state management', () => {
+    describe('undo/redo atoms management', () => {
       it('should provide canUndo status', () => {
         mockStateManager.canUndo = vi.fn().mockReturnValue(true);
 

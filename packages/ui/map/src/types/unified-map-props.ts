@@ -33,7 +33,7 @@ import type {
 } from './maplibre-public.js';
 
 /**
- * Base map view state - shared across all map components
+ * Base map view atoms - shared across all map components
  *
  * UNIFIED REASON: All three components used identical MapViewState
  * No changes needed - already consistent across components
@@ -111,7 +111,7 @@ export interface MapEventHandlers {
   /** Callback when map loads and is ready for interaction */
   onLoad?: (map: MapLibreMapInstance) => void;
 
-  /** Callback when view state changes (pan, zoom, rotate) */
+  /** Callback when view atoms changes (pan, zoom, rotate) */
   onViewStateChange?: (viewState: MapViewState) => void;
 
   /** Callback fired continuously while the map is moving */
@@ -167,10 +167,10 @@ export interface MapIdentifyProps {
  * - Enables consistent API across MapLibreMap and MapWithVectorTiles
  */
 interface BaseMapCommonProps extends MapDimensionsProps, MapEventHandlers, MapIdentifyProps {
-  /** Initial view state for the map */
+  /** Initial view atoms for the map */
   initialViewState: MapViewState;
 
-  /** Controlled view state for the map (when provided, map becomes controlled) */
+  /** Controlled view atoms for the map (when provided, map becomes controlled) */
   viewState?: MapViewState;
 
   /** Map interaction options */
@@ -265,7 +265,7 @@ export interface VectorTileDataSource {
   /** Promote a feature property to be its ID */
   promoteId?: string | Record<string, string>;
 
-  /** Feature-state entries keyed by promoted feature ID */
+  /** Feature-atoms entries keyed by promoted feature ID */
   featureState?: FeatureStateEntry[];
 }
 

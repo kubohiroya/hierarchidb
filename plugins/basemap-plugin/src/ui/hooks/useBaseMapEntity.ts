@@ -86,7 +86,7 @@ export function buildBaseMapEntityFromNode(node?: TreeNode | null): (BaseMapEnti
  * Hook to fetch and manage BaseMap entity
  * @param nodeId - Node ID of the BaseMap entity
  * @param options - Hook options
- * @returns BaseMap entity state and methods
+ * @returns BaseMap entity atoms and methods
  */
 export function useBaseMapEntity(
   nodeId: NodeId | null,

@@ -15,7 +15,7 @@ export interface AccordionState {
   expandAll: () => void;
   /** Collapse all accordions */
   collapseAll: () => void;
-  /** Set multiple accordions expanded state */
+  /** Set multiple accordions expanded atoms */
   setExpanded: (keys: string[]) => void;
   /** Get array of expanded keys */
   getExpandedKeys: () => string[];
@@ -26,14 +26,14 @@ export interface UseAccordionStateOptions {
   defaultExpanded?: string[];
   /** Whether only one accordion can be expanded at a time */
   exclusive?: boolean;
-  /** Callback when expansion state changes */
+  /** Callback when expansion atoms changes */
   onChange?: (expandedKeys: string[]) => void;
   /** All available accordion keys (for expandAll) */
   allKeys?: string[];
 }
 
 /**
- * Hook to manage accordion expansion state
+ * Hook to manage accordion expansion atoms
  */
 export function useAccordionState(options: UseAccordionStateOptions = {}): AccordionState {
   const {

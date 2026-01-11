@@ -7,7 +7,7 @@ import type { CoreDB } from '../CoreDB.js';
 /**
  * Discard a draft by clearing draftMetadata/draftData/dialogUIState on the node.
  * Optionally delete uncommitted drafts when `forceDelete` is set; otherwise
- * only deletes nodes with neither committed nor draft state.
+ * only deletes nodes with neither committed nor draft atoms.
  */
 export async function discardTreeNodeDraft(
   coreDB: CoreDB,

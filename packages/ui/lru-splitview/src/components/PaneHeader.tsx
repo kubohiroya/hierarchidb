@@ -131,7 +131,7 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
         p: 1,
         borderBottom: 1,
         borderColor: 'divider',
-        //backgroundColor: state.color,
+        //backgroundColor: atoms.color,
         color: 'primary',
         backgroundColor: theme.palette.background.paper,
         cursor: clickable ? 'pointer' : 'default',

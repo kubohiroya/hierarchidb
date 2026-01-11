@@ -5,7 +5,7 @@ export type FeatureFilterMethod = 'bbox_only' | 'polygon_only' | 'hybrid' | 'non
 
 export interface BatchConfig {
   dataSource?: DataSourceName;
-  downloadConfig?: DownloadBatchConfig;
+  fetchConfig?: FetchConfig;
   extract1Config?: Extract1Config;
   extract2Config?: Extract2Config;
   extractionConfig?: ExtractionBatchConfig;
@@ -14,7 +14,7 @@ export interface BatchConfig {
   source?: string;
 }
 
-export interface DownloadBatchConfig {
+export interface FetchConfig {
   maxConcurrent: number;
   retryLimit?: number;
   retryBackoff?: 'linear' | 'exponential';

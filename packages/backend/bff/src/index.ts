@@ -173,7 +173,7 @@ app.get('/auth/authorize/:provider', requireTurnstile, async (c) => {
   }
 });
 
-// Optional: POST variant returns computed URL/state to clients that want to handle redirects themselves
+// Optional: POST variant returns computed URL/atoms to clients that want to handle redirects themselves
 app.post('/auth/authorize/:provider', async (c) => {
   try {
     const provider = c.req.param('provider');

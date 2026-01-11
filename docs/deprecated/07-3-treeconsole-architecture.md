@@ -284,14 +284,14 @@ import {
   expandedAtom,
   clearSelectionAtom,
   toggleExpandedAtom
-} from '~/containers/TreeTable/state';
+} from '~/containers/TreeTable/atoms';
 
 // 機能別インポート（部分使用時）
 import {
   rowSelectionAtom,
   selectedNodeIdsAtom,
   clearSelectionAtom
-} from '~/containers/TreeTable/state/features/selection.atoms';
+} from '~/containers/TreeTable/atoms/features/selection.atoms';
 ```
 
 **特徴:**

@@ -82,8 +82,8 @@ export function useTreeTableOrchestrator(
 
       // Common shortcuts
       selectedNodeIds: selection.selectedNodeIds,
-      isLoading: false, // TODO: Implement loading state
-      error: null, // TODO: Implement error state
+      isLoading: false, // TODO: Implement loading atoms
+      error: null, // TODO: Implement error atoms
     }),
     [selection, expansion, editing, dragDrop, search, subscription],
   );

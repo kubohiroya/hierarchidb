@@ -53,7 +53,7 @@ describe('discardTreeNodeDraft', () => {
     CoreDB.resetInstance();
   });
 
-  it('deletes create-only drafts without committed state when forced', async () => {
+  it('deletes create-only drafts without committed atoms when forced', async () => {
     const draftId = await initTreeNode(core, treeId, parentId, 'folder' as NodeType, 'New Folder');
     const before = await core.nodes.get(draftId);
     expect(before).toBeDefined();

@@ -87,7 +87,7 @@ test.describe('TreeTable Basic Display', () => {
 
     // エラーメッセージの表示確認
     await expect(
-      page.locator('[data-testid="error-message"], [data-testid="error-state"]')
+      page.locator('[data-testid="error-message"], [data-testid="error-atoms"]')
     ).toBeVisible({ timeout: 10000 });
 
     // リトライボタンの確認
@@ -111,7 +111,7 @@ test.describe('TreeTable Basic Display', () => {
     await waitForTreeTableLoad(page);
 
     // 空状態メッセージの確認
-    await expect(page.locator('[data-testid="empty-state"]')).toBeVisible();
+    await expect(page.locator('[data-testid="empty-atoms"]')).toBeVisible();
     await expect(page.locator('text=/No items to display|データがありません/')).toBeVisible();
   });
 

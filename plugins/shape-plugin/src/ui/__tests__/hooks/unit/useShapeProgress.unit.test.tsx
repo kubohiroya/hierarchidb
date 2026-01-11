@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { BatchProgressEvent } from '@hierarchidb/runtime-shared-batch-processor';
-import { useShapeProgress } from '../../../hooks/useShapeProgress.js';
+import { useBuildProgress } from '../../../hooks/useBuildProgress.js';
 
 const unsubscribeSpy = vi.fn();
 let progressCallback: ((event: BatchProgressEvent) => void) | undefined;
@@ -58,7 +58,7 @@ const emit = async (event: BatchProgressEvent) => {
 };
 
   it('updates progress and status from runtime-worker worker events', async () => {
-    const { result } = renderHook(() => useShapeProgress('session-1', {
+    const { result } = renderHook(() => useBuildProgress('session-1', {
       autoSubscribe: false,
     }));
 
@@ -98,7 +98,7 @@ const emit = async (event: BatchProgressEvent) => {
   });
 
   it('records errors from progress events', async () => {
-    const { result } = renderHook(() => useShapeProgress('session-err', {
+    const { result } = renderHook(() => useBuildProgress('session-err', {
       autoSubscribe: false,
     }));
 
@@ -130,7 +130,7 @@ const emit = async (event: BatchProgressEvent) => {
   });
 
   it('unsubscribes from runtime-worker updates', async () => {
-    const { result, unmount } = renderHook(() => useShapeProgress('session-unsub', {
+    const { result, unmount } = renderHook(() => useBuildProgress('session-unsub', {
       autoSubscribe: false,
     }));
 

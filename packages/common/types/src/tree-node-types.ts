@@ -43,8 +43,8 @@ export type TreeNodeData = NodePayload;
 
 /**
  * Dexie nodes table record (single source of truth).
- * - Domain data lives in `data` (committed) and `draftData` (draft state).
- * - UI state is scoped to `dialogUIState` and should be cleared on commit/discard.
+ * - Domain data lives in `data` (committed) and `draftData` (draft atoms).
+ * - UI atoms is scoped to `dialogUIState` and should be cleared on commit/discard.
  * - Structural metadata stays at the top level and must not be duplicated under data.
  */
 export type TreeNode<

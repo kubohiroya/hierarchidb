@@ -18,7 +18,7 @@ const BATCH_DELAY_MS = 100;
 /**
   * SubTree
   */
-// SubTreeChanges type is provided by state/features to avoid duplication
+// SubTreeChanges type is provided by atoms/features to avoid duplication
 
 export interface SubscriptionOrchestratorResult {
   // State

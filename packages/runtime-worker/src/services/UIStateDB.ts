@@ -24,7 +24,7 @@ export class UIStateDB extends Dexie {
     });
   }
 
-  constructor(name: string = getDBName('ui-state')) {
+  constructor(name: string = getDBName('ui-atoms')) {
     super(name);
     this.version(4).stores({
       treetableProps: '&pageNodeId',

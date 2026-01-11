@@ -19,11 +19,11 @@ export interface UseUndoRedoOperationsOptions {
    * State manager ()
    */
   stateManager?: unknown;
-  /** Loading state setter */
+  /** Loading atoms setter */
   setIsLoading?: (loading: boolean) => void;
   /** State change callback */
   onStateChange?: (state: unknown) => void;
-  /** Current state for state change notifications */
+  /** Current atoms for atoms change notifications */
   currentState?: {
     selectedNodes: NodeId[];
     expandedNodes: NodeId[];

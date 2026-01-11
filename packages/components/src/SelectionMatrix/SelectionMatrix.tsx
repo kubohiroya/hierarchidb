@@ -81,7 +81,7 @@ export interface SelectionMatrixProps<T = any> {
   onRowMetaHeaderClick?: (metaIndex: number) => void;
   /** Optional sort direction indicator per column (asc/desc/none). */
   getColumnSortDirection?: (colIndex: number) => 'asc' | 'desc' | 'none';
-  /** Optional override for column header checkbox state. */
+  /** Optional override for column header checkbox atoms. */
   getColumnHeaderState?: (colIndex: number) => { checked: boolean; indeterminate: boolean };
   /** Optional sort direction indicator per row meta column. */
   getRowMetaSortDirection?: (metaIndex: number) => 'asc' | 'desc' | 'none';

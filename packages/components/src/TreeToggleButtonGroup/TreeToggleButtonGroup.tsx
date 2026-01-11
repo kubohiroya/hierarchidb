@@ -45,7 +45,7 @@ export interface TreeConfig {
 export interface TreeToggleButtonGroupProps {
   /** Array of console configurations */
   trees: TreeConfig[];
-  /** Currently selected console ID (null for neutral state) */
+  /** Currently selected console ID (null for neutral atoms) */
   selectedTreeId: string | null;
   /** Current page node ID to preserve */
   currentPageNodeId?: string;

@@ -75,7 +75,7 @@ export function useDragDropOrchestrator(
       setForbiddenTargets(descendants);
 
       //  Controller
-      // Drag state is managed locally
+      // Drag atoms is managed locally
       setDraggingNodeId(nodeId);
     },
     [setDraggingNodeId, setForbiddenTargets, getDescendants, controller],
@@ -104,7 +104,7 @@ export function useDragDropOrchestrator(
     descendantsRef.current = new Set<NodeId>();
 
     //  Controller
-    // Clear drag state locally
+    // Clear drag atoms locally
     setDraggingNodeId(null);
   }, [setDraggingNodeId, setDropTargetNodeId, setForbiddenTargets, controller]);
 

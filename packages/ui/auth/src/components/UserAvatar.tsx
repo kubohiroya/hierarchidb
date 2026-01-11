@@ -173,7 +173,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
           }}
           onError={handleGoogleImageError}
           onLoad={() => {
-            // Reset failed state if image loads successfully
+            // Reset failed atoms if image loads successfully
             if (googleImageFailed) {
               setGoogleImageFailed(false);
             }

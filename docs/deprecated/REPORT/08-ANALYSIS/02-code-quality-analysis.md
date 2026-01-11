@@ -65,7 +65,7 @@ const complexityMetrics = {
   high: {  // CC 11-20
     count: 16,
     percentage: '4.7%',
-    examples: ['complex handlers', 'state machines'],
+    examples: ['complex handlers', 'atoms machines'],
     files: [
       'worker/src/handlers/EntityHandler.ts',  // CC: 18
       'worker/src/operations/TreeOperations.ts',  // CC: 15

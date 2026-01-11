@@ -316,7 +316,7 @@ async resumeDraft(nodeId: TreeNodeId): Promise<WorkingCopyTypes> {
   const node = await this.getNode(nodeId);
   
   if (!node.isDraft) {
-    throw new Error('Node is not in draft state');
+    throw new Error('Node is not in draft atoms');
   }
   
   // ドラフトからワーキングコピーを再作成

@@ -33,7 +33,7 @@ export interface UseCopyPasteOperationsOptions {
   stateManager?: unknown;
   /** Worker API adapter */
   workerAdapter?: WorkerAPIAdapter;
-  /** Loading state setter */
+  /** Loading atoms setter */
   setIsLoading?: (loading: boolean) => void;
 }
 
@@ -189,7 +189,7 @@ export function useCopyPasteOperations(
 
         setIsLoading?.(true);
         try {
-          // Pre-clear to make state deterministic in tests
+          // Pre-clear to make atoms deterministic in tests
           setClipboardData(null);
           setCutNodeIds([]);
 

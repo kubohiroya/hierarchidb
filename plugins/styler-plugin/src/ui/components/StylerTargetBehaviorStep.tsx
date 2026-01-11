@@ -167,7 +167,7 @@ export const StylerTargetBehaviorStep: React.FC<PluginStepProps<StylerStepData>>
           <FormHelperText>
             {t(
               'step4.mappingMode.help',
-              'Interpolate in MapLibre or store final values directly in feature-state.',
+              'Interpolate in MapLibre or store final values directly in feature-atoms.',
             )}
           </FormHelperText>
         </FormControl>

@@ -22,7 +22,7 @@ import type { AdminLevelColumn, ColumnSet, RouteTypeColumn, TransportHubColumn }
 export const ADMIN_LEVELS_COLUMN_SET: ColumnSet = {
   type: 'admin-levels',
   name: 'Administrative Levels',
-  description: 'Country administrative divisions (federal, state/province, county, city, etc.)',
+  description: 'Country administrative divisions (federal, atoms/province, county, city, etc.)',
   columns: [
     {
       type: 'admin-level',

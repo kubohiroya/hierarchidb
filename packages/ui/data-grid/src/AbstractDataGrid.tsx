@@ -131,7 +131,7 @@ export interface AbstractDataGridProps<T extends DataItem = DataItem> {
   onError?: (error: Error) => void;
 
   // Customization
-  /** Custom empty state */
+  /** Custom empty atoms */
   emptyMessage?: string;
   /** Custom error component */
   errorComponent?: (error: Error) => React.ReactNode;
@@ -391,10 +391,10 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
   // Visible columns
   const visibleColumns = useMemo(() => columns.filter((col) => col.visible !== false), [columns]);
 
-  // Current sort state
+  // Current sort atoms
   const currentSort = sort[0];
 
-  // Render error state
+  // Render error atoms
   if (error && !loading) {
     if (errorComponent) {
       return <>{errorComponent(error)}</>;
@@ -406,7 +406,7 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
     );
   }
 
-  // Render empty state
+  // Render empty atoms
   if (!loading && data.length === 0) {
     return (
       <Box p={3} textAlign="center">

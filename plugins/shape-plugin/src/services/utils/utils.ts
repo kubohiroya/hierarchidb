@@ -8,9 +8,9 @@ import type {
   DataSourceName,
   ShapeEntity,
   BatchConfig,
-  DownloadBatchConfig,
+  FetchConfig,
   TileBatchConfig,
-  DownloadTaskPayload,
+  FetchTaskPayload,
   ShapeStepValidationResult,
   SelectedArrayByCountries,
 } from '../../common/types/index.js';
@@ -109,7 +109,7 @@ export function validateBatchConfig(config: Partial<BatchConfig>): ShapeStepVali
   const extract1Workers = normalized.extract1Config?.workers;
   const extract2Workers = normalized.extract2Config?.workers;
 
-  const downloadConcurrency = normalized.downloadConfig?.maxConcurrent;
+  const downloadConcurrency = normalized.fetchConfig?.maxConcurrent;
   if (downloadConcurrency !== undefined) {
     if (downloadConcurrency < 1 || downloadConcurrency > 4) {
       errors.push('Concurrent downloads must be between 1 and 4');
@@ -167,8 +167,8 @@ export function generateDownloadTaskPayloads(
   countries: string[],
   adminLevels: number[],
   countryMetadata: CountryMetadata[],
-): DownloadTaskPayload[] {
-  const payloads: DownloadTaskPayload[] = [];
+): FetchTaskPayload[] {
+  const payloads: FetchTaskPayload[] = [];
   const countryMap = new Map<string, CountryMetadata>();
   countryMetadata.forEach((country) => {
     const add = (code?: string) => {
@@ -214,7 +214,7 @@ export function generateDownloadTaskPayloadsFromSelection(
   dataSource: DataSourceName,
   selectedArrayByCountries: SelectedArrayByCountries | undefined,
   countryMetadata: CountryMetadata[],
-): DownloadTaskPayload[] {
+): FetchTaskPayload[] {
   if (!selectedArrayByCountries || !Object.keys(selectedArrayByCountries).length || !countryMetadata.length) {
     return [];
   }
@@ -263,7 +263,7 @@ export function generateDownloadTaskPayloadsFromSelection(
   });
 }
 
-export const buildDownloadTaskId = (nodeId: string, payload: DownloadTaskPayload): string => {
+export const buildFetchTaskId = (nodeId: string, payload: FetchTaskPayload): string => {
   const countryId = payload.countryCode.trim();
   if (!countryId) {
     throw new Error(`[shape-plugin] DownloadTaskPayload.countryCode is required (${nodeId})`);
@@ -334,7 +334,7 @@ export function mergeBatchConfig(config: Partial<BatchConfig>): BatchConfig {
     quantize: legacyExtraction.quantize,
     enablePerFeatureExtraction: legacyExtraction.enablePerFeatureExtraction,
   }) : {};
-  const sanitizedDownloadConfig = stripNil(config.downloadConfig);
+  const sanitizedDownloadConfig = stripNil(config.fetchConfig);
   const sanitizedExtract1Config = stripNil(config.extract1Config);
   const sanitizedExtract2Config = stripNil(config.extract2Config);
   const sanitizedTileConfig = stripNil(config.tileConfig);
@@ -342,10 +342,10 @@ export function mergeBatchConfig(config: Partial<BatchConfig>): BatchConfig {
 
   return {
     dataSource: config.dataSource ?? DEFAULT_PROCESSING_CONFIG.dataSource,
-    downloadConfig: {
-      ...(DEFAULT_PROCESSING_CONFIG.downloadConfig ?? { maxConcurrent: 2 }),
+    fetchConfig: {
+      ...(DEFAULT_PROCESSING_CONFIG.fetchConfig ?? { maxConcurrent: 2 }),
       ...sanitizedDownloadConfig,
-    } as DownloadBatchConfig,
+    } as FetchConfig,
     extract1Config: {
       ...(DEFAULT_PROCESSING_CONFIG.extract1Config ?? {
         workers: 2,
@@ -379,7 +379,7 @@ export function mergeBatchConfig(config: Partial<BatchConfig>): BatchConfig {
 }
 
 /**
- * Summarize checkbox state into simple derived information.
+ * Summarize checkbox atoms into simple derived information.
  */
 export function summarizeCheckboxState(state: SelectedArrayByCountries | undefined): {
   hasSelection: boolean;

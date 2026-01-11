@@ -36,7 +36,7 @@ Preview/build/progress logic and large processing panels were decomposed into fo
 The shape plugin’s Step UI lives under `plugins/shape-plugin/src/ui/components/steps` and uses hooks under `plugins/shape-plugin/src/ui/hooks`. Several files are large and mix multiple responsibilities:
 
 * `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` handles preview metadata loading, search/filtering, selection context, table rows/columns, and MapLibre layer management.
-* `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts` handles progress status, stage definitions, task grouping, and start/resume/pause actions.
+* `plugins/shape-plugin/src/ui/hooks/useShapeBuildStep.ts` handles progress status, stage definitions, task grouping, and start/resume/pause actions.
 * `plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts` mixes subscription wiring, polling, and progress/status mapping.
 * `plugins/shape-plugin/src/ui/components/steps/ExtractionConfigSection.tsx` and `DownloadConfigSection.tsx` render multiple distinct UI panels in a single file.
 
@@ -53,7 +53,7 @@ First, split the preview hook into multiple focused hooks. Create a small set of
 
 Update `useShapePreviewStep.ts` to compose those hooks and keep only high-level wiring. Each new hook should accept plain inputs and return plain outputs to make future extraction straightforward.
 
-Next, split build-progress logic. Extract stage definitions, status mapping, pane progress computation, and session control actions into separate hooks under `plugins/shape-plugin/src/ui/hooks/build/` (or similar). Keep `useShapeBuildProgressStep.ts` as a coordinator hook that composes those pieces.
+Next, split build-progress logic. Extract stage definitions, status mapping, pane progress computation, and session control actions into separate hooks under `plugins/shape-plugin/src/ui/hooks/build/` (or similar). Keep `useShapeBuildStep.ts` as a coordinator hook that composes those pieces.
 
 Then, split UI sections:
 * Move the area filter controls, extraction controls, and precision controls from `ExtractionConfigSection.tsx` into focused subcomponents (e.g., `ProcessingAreaFilterCard`, `ProcessingExtractionCard`, `ProcessingPrecisionCard`).
@@ -66,7 +66,7 @@ Finally, update imports/exports, ensure the step components render the same UI, 
 ## Concrete Steps
 
 1) Create the new hook/component files under `plugins/shape-plugin/src/ui/hooks/...` and `plugins/shape-plugin/src/ui/components/...` as described above.
-2) Refactor `useShapePreviewStep.ts`, `useShapeBuildProgressStep.ts`, `useShapeProgress.ts`, `ExtractionConfigSection.tsx`, and `DownloadConfigSection.tsx` to use the new pieces.
+2) Refactor `useShapePreviewStep.ts`, `useShapeBuildStep.ts`, `useShapeProgress.ts`, `ExtractionConfigSection.tsx`, and `DownloadConfigSection.tsx` to use the new pieces.
 3) Update any exports in `plugins/shape-plugin/src/ui/hooks/index.ts` or new index files as needed.
 4) From repo root, run:
    pnpm --filter @hierarchidb/shape-plugin typecheck

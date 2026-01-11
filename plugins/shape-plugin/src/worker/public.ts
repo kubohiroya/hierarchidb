@@ -13,7 +13,7 @@ import type {
   ProcessingStatus,
   ShapeEntity,
   TileInfo,
-  DownloadTaskPayload,
+  FetchTaskPayload,
   ShapeStepValidationResult,
   SelectedArrayByCountries,
 } from '../common/types/index.js';
@@ -35,12 +35,12 @@ export interface ShapeBatchAPI {
     dataSource: DataSourceName,
     countries: string[],
     adminLevels: number[],
-  ): Promise<DownloadTaskPayload[]>;
+  ): Promise<FetchTaskPayload[]>;
   generateDownloadTaskPayloadsFromSelection(
     nodeId: NodeId,
     dataSource: DataSourceName,
     selectedArrayByCountries: SelectedArrayByCountries,
-  ): Promise<DownloadTaskPayload[]>;
+  ): Promise<FetchTaskPayload[]>;
 
   // Validation / estimation
   validateSelection(
@@ -53,7 +53,7 @@ export interface ShapeBatchAPI {
   startBatchProcess(
     draftId: NodeId,
     config: BatchConfig,
-    downloadTaskPayloads: DownloadTaskPayload[],
+    downloadTaskPayloads: FetchTaskPayload[],
     progressCallback?: (event: BatchProgressEvent) => void,
   ): Promise<NodeId>;
   getBatchSession(nodeId: NodeId): Promise<BatchSession | undefined>;

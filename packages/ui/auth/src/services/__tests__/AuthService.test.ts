@@ -317,7 +317,7 @@ describe('AuthService', () => {
         ...globalThis.window,
         opener: mockOpener,
         location: {
-          search: '?code=test-auth-code&state=test-state',
+          search: '?code=test-auth-code&atoms=test-atoms',
           origin: 'https://app.example.com',
         },
         close: vi.fn(),
@@ -401,7 +401,7 @@ describe('AuthService', () => {
       expect(authUrl).toContain(`redirect_uri=${encodeURIComponent(mockConfig.popupRedirectUri)}`);
       expect(authUrl).toContain(`response_type=${mockConfig.responseType}`);
       expect(authUrl).toContain(`scope=${encodeURIComponent(mockConfig.scope)}`);
-      expect(authUrl).toContain('state=');
+      expect(authUrl).toContain('atoms=');
       expect(authUrl).toContain('prompt=select_account');
 
       // Clean up
@@ -414,8 +414,8 @@ describe('AuthService', () => {
       await expect(authPromise).rejects.toThrow();
     });
 
-    it('should generate unique state values', () => {
-      // Test state generation by checking if crypto.getRandomValues is called
+    it('should generate unique atoms values', () => {
+      // Test atoms generation by checking if crypto.getRandomValues is called
       const service = AuthService.getInstance();
 
       service.authenticate().catch(() => {}); // Ignore promise rejection

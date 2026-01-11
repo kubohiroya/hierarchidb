@@ -50,7 +50,7 @@ export type UseSingleSourceDialogAtomOptions<TEntity extends Record<string, unkn
   UseTreeNodeUpdaterOptions<TEntity>;
 
 /**
- * Single-source dialog state hook backed by TreeNodeUpdater.
+ * Single-source dialog atoms hook backed by TreeNodeUpdater.
  * Exposes jotai atoms for draftData/draftMetadata with equality guards
  * to avoid redundant updates and render loops.
  */
@@ -93,7 +93,7 @@ export function useSingleSourceDialogAtom<TEntity extends Record<string, unknown
     return created;
   }, [treeNodeUpdater?.treeNodeId]);
 
-  // Sync atoms from TreeNodeUpdater when the backend state changes
+  // Sync atoms from TreeNodeUpdater when the backend atoms changes
   useEffect(() => {
     if (!treeNodeUpdater) return;
     if (draftAtomRef.current) {

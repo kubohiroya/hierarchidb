@@ -1,7 +1,7 @@
-import type { VectorTileProgress, VectorTileWorkerAPI } from '../types.js';
+import type { VectorTileProgress, VTWorkerAPI } from '../types.js';
 import { DexieChunkStore } from '@hierarchidb/chunk-store';
 import type { NodeId } from '@hierarchidb/common-types';
-import { getEphemeralShapeDB } from '@hierarchidb/shape-store';
+import { ephemeralShapeDB } from '@hierarchidb/shape-store';
 
 export type VectorTileStageInput = {
   bufferId: string;
@@ -32,8 +32,8 @@ export type VectorTileStageInput = {
 };
 
 export type VectorTileStageResult = {
-  generated: Awaited<ReturnType<VectorTileWorkerAPI['generateTiles']>>;
-  tiles: Awaited<ReturnType<VectorTileWorkerAPI['listTiles']>>;
+  generated: Awaited<ReturnType<VTWorkerAPI['generateTiles']>>;
+  tiles: Awaited<ReturnType<VTWorkerAPI['listTiles']>>;
 };
 
 export type VectorTileStageOptions = {
@@ -97,8 +97,7 @@ export async function writeVectorTileInput(
   const storage = options?.storage ?? 'chunk-store';
   const payload = await compressBuffer(buffer, inputCompression);
   if (storage === 'ephemeral') {
-    const db = getEphemeralShapeDB();
-    await db.vectorTileSourceBuffers.put({
+    await ephemeralShapeDB.vectorTileSourceBuffers.put({
       id: bufferId,
       nodeId,
       tileId,
@@ -127,7 +126,7 @@ export async function writeVectorTileInput(
 
 export async function runVectorTileStage(
   input: VectorTileStageInput,
-  client: VectorTileWorkerAPI,
+  client: VTWorkerAPI,
   options: VectorTileStageOptions = {},
 ): Promise<VectorTileStageResult> {
   const { bufferId, buffer, contentType, config, onProgress } = input;

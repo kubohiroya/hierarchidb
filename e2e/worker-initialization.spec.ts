@@ -31,8 +31,8 @@ test.describe('Worker Initialization System', () => {
     // Check that the loading screen appears first
     // The TitleLogo component should be visible during initialization
 
-    // Initial state: loading should be visible (briefly)
-    // Note: This might be too fast to catch, so we'll check the final state instead
+    // Initial atoms: loading should be visible (briefly)
+    // Note: This might be too fast to catch, so we'll check the final atoms instead
     
     // Wait for the app to be ready (loading screen disappears)
     await expect(page.locator('[data-testid="app-ready"], main, [role="main"]')).toBeVisible({
@@ -83,35 +83,35 @@ test.describe('Worker Initialization System', () => {
   });
 
   test('should show progress during initialization', async () => {
-    // Create a promise to track if we see the loading state
+    // Create a promise to track if we see the loading atoms
     let sawLoadingState = false;
     
     page.on('response', response => {
-      // Track responses to ensure we're not missing the loading state due to caching
+      // Track responses to ensure we're not missing the loading atoms due to caching
       if (response.url().includes('worker')) {
         console.log('Worker file loaded:', response.url());
       }
     });
 
-    // Navigate and immediately start checking for loading state
+    // Navigate and immediately start checking for loading atoms
     const navigationPromise = page.goto('/hierarchidb/', {
       waitUntil: 'commit' // Don't wait for load to complete
     });
 
-    // Try to catch the loading state
+    // Try to catch the loading atoms
     const checkLoading = async () => {
       try {
         const hasLoading = await page.locator('.MuiCircularProgress-root, [role="progressbar"], [data-testid="title-logo"]').isVisible();
         if (hasLoading) {
           sawLoadingState = true;
-          console.log('Detected loading state');
+          console.log('Detected loading atoms');
         }
       } catch {
         // Ignore errors during rapid checking
       }
     };
 
-    // Rapidly check for loading state
+    // Rapidly check for loading atoms
     const checkInterval = setInterval(checkLoading, 50);
     
     await navigationPromise;
@@ -123,8 +123,8 @@ test.describe('Worker Initialization System', () => {
     
     clearInterval(checkInterval);
     
-    // If we didn't see loading state, it might be too fast (cached) which is OK
-    console.log('Saw loading state:', sawLoadingState);
+    // If we didn't see loading atoms, it might be too fast (cached) which is OK
+    console.log('Saw loading atoms:', sawLoadingState);
     
     // The important thing is the app loads successfully
     expect(page.locator('main')).toBeTruthy();

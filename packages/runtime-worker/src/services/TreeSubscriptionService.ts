@@ -60,7 +60,7 @@ export class TreeSubscriptionService {
     (event: UndoStateEvent) => void
   >();
   private latestUndoState: UndoStateEvent = {
-    type: 'undo-state',
+    type: 'undo-atoms',
     canUndo: false,
     canRedo: false,
     timestamp: Date.now() as Timestamp,
@@ -952,7 +952,7 @@ export class TreeSubscriptionService {
     try {
       callback(this.latestUndoState);
     } catch (error) {
-      console.warn('[TreeSubscriptionService] undo-state callback threw', error);
+      console.warn('[TreeSubscriptionService] undo-atoms callback threw', error);
     }
 
     return subscriptionId;
@@ -1086,7 +1086,7 @@ export class TreeSubscriptionService {
       try {
         callback(event);
       } catch (error) {
-        console.warn('[TreeSubscriptionService] undo-state callback threw', error);
+        console.warn('[TreeSubscriptionService] undo-atoms callback threw', error);
       }
       const info = this.registry.get(subscriptionId);
       if (info) {

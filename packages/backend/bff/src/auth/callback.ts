@@ -43,7 +43,7 @@ export async function handleOAuth2Callback(c: BffContext) {
       const stateData = await stateManager.validateState(state);
 
       if (!stateData) {
-        console.warn('State validation failed; continuing without state enforcement');
+        console.warn('State validation failed; continuing without atoms enforcement');
       } else if (stateData.origin) {
         const appBaseUrl = getAppCallbackUrlFromState(c, state);
         if (!appBaseUrl.startsWith(stateData.origin)) {

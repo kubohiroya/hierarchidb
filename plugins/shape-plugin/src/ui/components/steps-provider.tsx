@@ -1,24 +1,24 @@
 import type React from 'react';
 import { useEffect, useRef } from 'react';
 import { type PluginStepProps, PluginStepRegistry } from '@hierarchidb/plugin-base';
-import {
-  summarizeCheckboxState,
+import type {
+  ShapeEntity,
+  SelectedArrayByCountries,
+} from '../../common/types/ShapeEntity.ts';
+import {  summarizeCheckboxState,
   validateBatchConfig,
   DEFAULT_PROCESSING_CONFIG,
   mergeBatchConfig,
-  type ShapeEntity,
-  type SelectedArrayByCountries,
 } from '../../common/types/index.js';
-import { NodeId, toNodeId } from '@hierarchidb/common-types';
-import { getShapeDbApiClient } from '../../services/batch/ShapeBatchApiClient.js';
-import { ShapeDataSourceStep } from './steps/ShapeDataSourceStep.js';
-import { ShapeProcessingSettingsStep } from './steps/ShapeProcessingSettingsStep.js';
-import { ShapeCountrySelectionStep } from './steps/ShapeCountrySelectionStep.js';
-import { ShapePreviewStep } from './steps/ShapePreviewStep.js';
-import { ShapeBuildProgressStep } from './steps/ShapeBuildProgressStep.js';
+import {type NodeId, toNodeId } from '@hierarchidb/common-types';
+import { ShapeDataSourceStep } from './step2/ShapeDataSourceStep.tsx';
+import { ShapePreviewStep } from './step6/ShapePreviewStep.tsx';
 import { useTranslation as getTranslation } from '../../ui/i18n.js';
-import type { ShapeDialogStepProps } from './steps/ShapeDialogStepProps.js';
-
+import type { ShapeDialogStepProps } from './ShapeDialogStepProps.js';
+import { ShapeBuildConfigStep } from './step4/ShapeBuildConfigStep.tsx';
+import { ShapeCountrySelectionStep } from './step3/ShapeCountrySelectionStep.tsx';
+import { ShapeBuildStep } from './step5/ShapeBuildStep.tsx';
+import { shapeQueryAPIImpl } from '../../services/batch/ShapeBuildApiClient.ts';
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -61,10 +61,10 @@ function createStepAdapter(
 }
 
 const ShapeDataSource = createStepAdapter(ShapeDataSourceStep);
-const ShapeProcessing = createStepAdapter(ShapeProcessingSettingsStep);
+const ShapeProcessing = createStepAdapter(ShapeBuildConfigStep);
 const ShapeCountrySelection = createStepAdapter(ShapeCountrySelectionStep);
 const ShapePreview = createStepAdapter(ShapePreviewStep);
-const ShapeBuildProgress = createStepAdapter(ShapeBuildProgressStep);
+const ShapeBuildProgress = createStepAdapter(ShapeBuildStep);
 
 const resolveSelectedArrayByCountries = (data?: Partial<ShapeEntity>): SelectedArrayByCountries | undefined =>
   data?.selectedArrayByCountries;
@@ -97,13 +97,13 @@ const hasTileSummary = (data?: Partial<ShapeEntity>): boolean =>
 
 const hasPersistedVectorTiles = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
   const nodeId = requireShapeNodeId(data);
-  const summary = await getShapeDbApiClient().query.getVectorTileSummary(nodeId);
+  const summary = await shapeQueryAPIImpl.getVectorTileSummary(nodeId);
   return summary.tiles > 0;
 };
 
 const hasPersistedMetadata = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
   const nodeId = requireShapeNodeId(data);
-  const rows = await getShapeDbApiClient().query.listSourceMetadata(nodeId);
+  const rows = await shapeQueryAPIImpl.listSourceMetadata(nodeId);
   return rows.length > 0;
 };
 
@@ -179,5 +179,3 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
     return this.getCreateStepConfigs();
   },
 });
-
-export {}; // ensure module side-effects run on import

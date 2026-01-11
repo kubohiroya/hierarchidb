@@ -1,30 +1,29 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type {
-  ShapeBatchTaskRecord,
-  ShapeExtractSourceBufferRecord,
+  ShapeBuildTaskRecord,
+  ShapeTransformSourceBufferRecord,
   ShapeFeatureMetadataRow,
-  ShapeRawBufferRecord,
+  ShapeFetchBufferRecord,
   ShapeSourceMetadataRow,
-} from './shapeBatchTypes.js';
+} from './shapeBuildTypes.js';
 import type { ShapeBatchSessionRecord, ShapeVectorTileRecord } from './shapeDbTypes.js';
 
 export interface ShapeMutationAPI {
   upsertBatchSession(session: ShapeBatchSessionRecord): Promise<void>;
   updateBatchSession(nodeId: NodeId, updates: Partial<ShapeBatchSessionRecord>): Promise<void>;
   deleteBatchSession(nodeId: NodeId): Promise<void>;
-  deleteBatchTasks(nodeId: NodeId): Promise<void>;
+  deleteBuildTasks(nodeId: NodeId): Promise<void>;
   deleteVectorTile(tileId: string): Promise<void>;
   deleteVectorTiles(nodeId: NodeId): Promise<void>;
   deleteTileBuffers(nodeId: NodeId): Promise<void>;
   deleteFeatureBuffers(nodeId: NodeId): Promise<void>;
   deleteFeatures(nodeId: NodeId): Promise<void>;
-  clearCache(nodeId: NodeId): Promise<number>;
   cleanupProcessingData(nodeId: NodeId): Promise<void>;
   clearShapeArtifacts(nodeId: NodeId): Promise<void>;
-  upsertBatchTasks(tasks: ShapeBatchTaskRecord[]): Promise<void>;
-  updateBatchTask(taskId: string, updates: Partial<ShapeBatchTaskRecord>): Promise<void>;
-  putRawBuffers(buffers: ShapeRawBufferRecord[]): Promise<void>;
-  putExtractedBuffers(buffers: ShapeExtractSourceBufferRecord[]): Promise<void>;
+  upsertBuildTasks(tasks: ShapeBuildTaskRecord[]): Promise<void>;
+  updateBuildTask(taskId: string, updates: Partial<ShapeBuildTaskRecord>): Promise<void>;
+  putFetchBuffers(buffers: ShapeFetchBufferRecord[]): Promise<void>;
+  putTransformSourceBuffers(buffers: ShapeTransformSourceBufferRecord[]): Promise<void>;
   putSourceMetadata(rows: ShapeSourceMetadataRow[]): Promise<void>;
   deleteSourceMetadataByIds(ids: string[]): Promise<void>;
   deleteSourceMetadataByNode(nodeId: string): Promise<void>;
@@ -32,4 +31,5 @@ export interface ShapeMutationAPI {
   deleteFeatureMetadataByNode(nodeId: string): Promise<void>;
   syncVectorTilesFromTilesDb(nodeId: NodeId): Promise<void>;
   storeVectorTile(tile: ShapeVectorTileRecord): Promise<void>;
+
 }

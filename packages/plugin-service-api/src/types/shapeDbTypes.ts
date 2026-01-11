@@ -1,8 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { ShapeBatchProgressSummary, ShapeTileLayerInfo } from './shapeTypes.js';
 
-export type ShapeEphemeralStage = 'download' | 'extract1' | 'extract2' | 'vectorTiles';
-
 export interface ShapeBatchSessionRecord<
   Config = unknown,
   Progress = ShapeBatchProgressSummary,
@@ -86,13 +84,4 @@ export interface ShapeEphemeralSessionRecord {
   status?: string;
   stage?: string;
   startTime?: number;
-}
-
-export interface ShapeProcessingCacheEntry {
-  key: string;
-  data: ArrayBuffer | string;
-  type: 'raw' | 'extracted' | 'tile';
-  size: number;
-  lastAccessed: number;
-  ttl: number;
 }

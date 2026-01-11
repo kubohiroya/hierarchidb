@@ -13,7 +13,7 @@ export type ResourceProjectToggleOrientation = 'horizontal' | 'vertical';
 export type ResourceProjectToggleSize = 'small' | 'medium' | 'large';
 
 interface ResourceProjectToggleProps {
-  /** Currently selected type - 'none' for neutral state (home page) */
+  /** Currently selected type - 'none' for neutral atoms (home page) */
   selected?: ResourceProjectType;
   /** Current pageNodeId to preserve */
   currentPageNodeId?: string;
@@ -49,7 +49,7 @@ export function ResourceProjectToggle({
     // Save current pageNodeId if we're navigating away from a selected page
     // and the current node actually belongs to the current theme
     if (selected !== 'none' && selected !== 'resources' && selected !== 'projects') {
-      // Skip saving for 'none' state
+      // Skip saving for 'none' atoms
     } else if (selected !== 'none' && targetType !== selected && currentPageNodeId) {
       // If getNodeContext is provided, check if the node belongs to the current context
       if (getNodeContext && pageNodeId) {

@@ -192,7 +192,7 @@ try {
 
 /**
  * Clear all IndexedDB databases
- * Use this in tests that need clean database state
+ * Use this in tests that need clean database atoms
  */
 export async function clearAllDatabases(): Promise<void> {
   const databases = await indexedDB.databases?.() || [];

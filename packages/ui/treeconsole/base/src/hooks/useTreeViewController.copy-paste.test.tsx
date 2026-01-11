@@ -341,7 +341,7 @@ describe('useTreeViewController', () => {
         expect(copyResult.copiedNodes).toHaveLength(3); //  :
       });
 
-      it('should validate paste compatibility with target when state manager exposes guard', () => {
+      it('should validate paste compatibility with target when atoms manager exposes guard', () => {
         //  : stateManager
         mockStateManager.canPasteToTarget = vi.fn((targetId: NodeId) => {
           return targetId === 'folder-target';

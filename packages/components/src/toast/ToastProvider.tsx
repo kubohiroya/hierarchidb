@@ -111,7 +111,7 @@ interface ToastContextType {
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 /**
- * Active toast state
+ * Active toast atoms
  */
 interface ActiveToast extends ToastConfig {
   id: string;

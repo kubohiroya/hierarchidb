@@ -201,7 +201,7 @@ test.describe('Router Engine Toggle - Smoke Tests', () => {
  * 
  * 1. Route transitions work correctly
  * 2. Loader functions execute properly
- * 3. Navigation state is maintained
+ * 3. Navigation atoms is maintained
  * 4. Deep links work (e.g., /t/:treeId/:pageNodeId)
  * 5. Browser back/forward buttons work
  * 6. Hash routing mode works (for GitHub Pages)

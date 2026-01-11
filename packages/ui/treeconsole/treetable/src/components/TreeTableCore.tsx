@@ -1,6 +1,6 @@
 /**
  * TreeTableCore
- * Coordinates TreeTable controller state with presentational building blocks.
+ * Coordinates TreeTable controller atoms with presentational building blocks.
  */
 
 import { useCallback, useMemo, useState, type ReactElement } from 'react';

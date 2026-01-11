@@ -61,7 +61,7 @@ export function MemoryUsageMonitor({ className }: DevelopmentTimestampProps) {
       setDisplayMode(savedMode);
     }
 
-    // Load saved visibility state
+    // Load saved visibility atoms
     const savedVisibility = localStorage.getItem('memoryMonitorVisible');
     if (savedVisibility === 'true') {
       setVisible(true);

@@ -13,7 +13,7 @@ import type {
   BatchConfig,
   CountryMetadata,
   DataSourceName,
-  DownloadTaskPayload,
+  FetchTaskPayload,
   SelectedArrayByCountries,
   ShapeEntity,
 } from '../../common/types/index.js';
@@ -45,7 +45,7 @@ export type ShapeFetchStageParams = {
   nodeId: NodeId;
   dataSource: DataSourceName;
   selectedArrayByCountries?: SelectedArrayByCountries;
-  downloadTaskPayloads?: DownloadTaskPayload[];
+  downloadTaskPayloads?: FetchTaskPayload[];
   batchConfig: BatchConfig;
   taskQueue: VtTaskQueueDb;
   shapeStore: VtShapeDb;
@@ -54,7 +54,7 @@ export type ShapeFetchStageParams = {
 };
 
 const buildRetryConfig = (config: BatchConfig): RetryConfig => {
-  const downloadConfig = config.downloadConfig ?? DEFAULT_PROCESSING_CONFIG.downloadConfig;
+  const downloadConfig = config.fetchConfig ?? DEFAULT_PROCESSING_CONFIG.fetchConfig;
   const retryAttempts = downloadConfig?.retryAttempts ?? 0;
   const retryDelay = downloadConfig?.retryDelay ?? 0;
   const retryBackoff = downloadConfig?.retryBackoff ?? 'exponential';
@@ -153,7 +153,7 @@ const summarizeFeatureCollection = (
 
 const buildFetchTasks = (
   nodeId: NodeId,
-  payloads: DownloadTaskPayload[],
+  payloads: FetchTaskPayload[],
   metadata: CountryMetadata[],
 ): Array<TaskQueueRecord<ShapeFetchTaskInput, ShapeFetchTaskOutput>> => {
   const lookup = buildCountryLookup(metadata);

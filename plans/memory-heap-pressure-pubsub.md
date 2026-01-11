@@ -41,7 +41,7 @@ After this change, the app can automatically pause builds when JavaScript heap m
 
 The Worker runtime entry point is `app/src/worker-runtime/worker.ts`, which exposes a Comlink API using `WorkerAPI` from `packages/common/api/src/WorkerAPI.ts`. UI code typically accesses Worker APIs via `packages/ui/worker-client/src/workerBridge.ts` (WorkerBridge), which wraps WorkerAPI methods and provides subscription helpers for progress events.
 
-Shape build UI is in `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx` and uses `useShapeBuildProgressStep` for controlling pause/resume. Location build UI is `plugins/location-plugin/src/ui/components/steps/LocationBuildStep.tsx` (pause/resume via WorkerBridge). Route build UI is `plugins/route-plugin/src/ui/components/steps/RouteBuildStep.tsx` (currently local state only).
+Shape build UI is in `plugins/shape-plugin/src/ui/components/steps/ShapeBuildStep.tsx` and uses `useShapeBuildStep` for controlling pause/resume. Location build UI is `plugins/location-plugin/src/ui/components/steps/LocationBuildStep.tsx` (pause/resume via WorkerBridge). Route build UI is `plugins/route-plugin/src/ui/components/steps/RouteBuildStep.tsx` (currently local state only).
 
 There is an existing UI memory chart package `packages/ui/memory-usage` with a `useMemoryData` hook for visualization. This plan does not reuse it directly; the new packages focus on heap-pressure alerts and Pub/Sub.
 
@@ -69,7 +69,7 @@ Third, add Worker heap pressure monitoring:
 
 Fourth, integrate build steps:
 
-1) Shape build step (`plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`) should remove ad hoc heap dialog logic and replace it with `useHeapPressureGuard` + `HeapPressureDialog`. When a heap event is received and build is running, call `handlePause()` once per session and open the dialog.
+1) Shape build step (`plugins/shape-plugin/src/ui/components/steps/ShapeBuildStep.tsx`) should remove ad hoc heap dialog logic and replace it with `useHeapPressureGuard` + `HeapPressureDialog`. When a heap event is received and build is running, call `handlePause()` once per session and open the dialog.
 2) Location build step (`plugins/location-plugin/src/ui/components/steps/LocationBuildStep.tsx`) should use `useHeapPressureGuard` and call `handlePause()` + show the dialog.
 3) Route build step (`plugins/route-plugin/src/ui/components/steps/RouteBuildStep.tsx`) should use the same hook. Because route build is currently local-state, the guard can set status to `paused` and show the dialog (no Worker call).
 

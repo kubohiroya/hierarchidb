@@ -1,5 +1,6 @@
-import type { SelectedArrayByCountries } from './ShapeEntity.ts';
+
 import type { BatchConfig } from './processing.js';
+import type { SelectedArrayByCountries } from './ShapeEntity.ts';
 
 export interface CreateShapeData {
   batchConfig: BatchConfig;

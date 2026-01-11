@@ -43,7 +43,7 @@ Pending.
 
 ## Context and Orientation
 
-Step6 metadata is rendered in `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` and `plugins/shape-plugin/src/ui/hooks/preview/useVectorTilePreviewTable.ts`. The UI calls `ShapeQueryAPI.listSourceMetadata` and displays columns based on `ShapeSourceMetadataRow` from `packages/plugin-service-api/src/types/shapeBatchTypes.ts`.
+Step6 metadata is rendered in `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` and `plugins/shape-plugin/src/ui/hooks/preview/useVectorTilePreviewTable.ts`. The UI calls `ShapeQueryAPI.listSourceMetadata` and displays columns based on `ShapeSourceMetadataRow` from `packages/plugin-service-api/src/types/shapeBuildTypes.ts`.
 
 The vt pipeline is executed by `plugins/shape-plugin/src/worker/api.ts` through `runShapeVtPipeline` in `plugins/shape-plugin/src/services/vt/shapeVtPipeline.ts`. Fetch outputs are stored in `@hierarchidb/vt-shape-store` (`stage1Buffers`), transform outputs are stored in `transformBandBuffers`, and final vt tiles are stored in `@hierarchidb/vt-store` (`vtTiles`). The metadata tables are defined by `VectorTileDbBase` in `packages/features/vectortile-store/src/tilesDb.ts` and exposed through `@hierarchidb/shape-store`.
 
@@ -51,7 +51,7 @@ The vt pipeline is executed by `plugins/shape-plugin/src/worker/api.ts` through 
 
 ## Plan of Work
 
-First, update the metadata type definitions. In `packages/plugin-service-api/src/types/shapeBatchTypes.ts`, replace the old raw/extract1/extract2/vectorTile fields with fetch/transform/vt fields. Update any dependent imports, and keep the table indexes in `packages/features/vectortile-store/src/tilesDb.ts` unchanged unless new indexed fields are required (they should not be).
+First, update the metadata type definitions. In `packages/plugin-service-api/src/types/shapeBuildTypes.ts`, replace the old raw/extract1/extract2/vectorTile fields with fetch/transform/vt fields. Update any dependent imports, and keep the table indexes in `packages/features/vectortile-store/src/tilesDb.ts` unchanged unless new indexed fields are required (they should not be).
 
 Second, add polygon counts to stage1 and transform buffers. Update `packages/vt-shape-store/src/types.ts` and the `putStage1Buffer` and `putTransformBuffer` helpers to include `polygonCount`. In `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts`, compute both vertex and polygon counts from the fetched FeatureCollection and store them in the stage1 buffer. In `packages/vt-orchestrator/src/transform/transformStage.ts`, compute polygon counts from the transform output features and store them in the transform buffers.
 
@@ -74,7 +74,7 @@ Finally, update the Step6 UI to read and display the new fields. In `plugins/sha
 All commands are run from the repository root.
 
 1) Update type definitions and stage buffer schema changes.
-   - Edit `packages/plugin-service-api/src/types/shapeBatchTypes.ts`.
+   - Edit `packages/plugin-service-api/src/types/shapeBuildTypes.ts`.
    - Edit `packages/vt-shape-store/src/types.ts`, `packages/vt-shape-store/src/mutation/stage1Mutation.ts`, and `packages/vt-shape-store/src/mutation/transformMutation.ts`.
 
 2) Add polygon counts and origin key propagation.
@@ -106,7 +106,7 @@ Not applicable yet. Record any notable diffs or validation output here once impl
 
 ## Interfaces and Dependencies
 
-The key interfaces are `ShapeSourceMetadataRow` in `packages/plugin-service-api/src/types/shapeBatchTypes.ts`, stage buffer types in `packages/vt-shape-store/src/types.ts`, and vector tile decode helpers from `@mapbox/vector-tile` and `pbf`. The aggregation helper should export a function like `updateShapeStageMetadata(params: { nodeId: NodeId; dataSource: DataSourceName; shapeStore: VtShapeDb; vtStore: VtDb; })` and be called from `runShapeVtPipeline`.
+The key interfaces are `ShapeSourceMetadataRow` in `packages/plugin-service-api/src/types/shapeBuildTypes.ts`, stage buffer types in `packages/vt-shape-store/src/types.ts`, and vector tile decode helpers from `@mapbox/vector-tile` and `pbf`. The aggregation helper should export a function like `updateShapeStageMetadata(params: { nodeId: NodeId; dataSource: DataSourceName; shapeStore: VtShapeDb; vtStore: VtDb; })` and be called from `runShapeVtPipeline`.
 
 Plan Update Note (2026-01-14 10:20 JST): Rewrote the ExecPlan to align with the fetch/transform/vt pipeline and the PLANS.md formatting requirements, and to describe the new aggregation, storage, and UI updates.
 

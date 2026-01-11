@@ -30,16 +30,15 @@ export type BatchTaskStageType = (typeof BatchTaskStage)[keyof typeof BatchTaskS
 
 export type TaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'regression';
 
-export type BatchTaskType = 'download' | 'extract1' | 'extract2' | 'vectortile' | 'fetch' | 'transform' | 'vt';
+export type BatchTaskType = 'fetch' | 'transform' | 'vt';
 export type ProcessingStage = BatchTaskType;
 
 export interface BatchTaskBase {
   taskId: string;
-  taskType: BatchTaskType;
+  type: BatchTaskType;
   nodeId: NodeId;
   stage: BatchTaskStageType|undefined;
   status: TaskStatus;
-  type: string;
   index: number;
   progress?: number;
   retryCount?: number;
@@ -72,9 +71,10 @@ export interface DownloadTaskInput {
   retryDelay?: number;
 }
 
-export interface DownloadTask extends BatchTaskBase {
-  taskType: 'download';
+export interface FetchTask extends BatchTaskBase {
   url?: string;
+  type: 'fetch';
+  dataSource?: DataSourceName;
   countryCode?: string;
   adminLevel?: number;
   fileSize?: number;

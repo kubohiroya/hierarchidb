@@ -39,7 +39,7 @@ export function isValidCodeVerifier(codeVerifier: string): boolean {
 }
 
 /**
- * Generates a random state parameter for OAuth2
+ * Generates a random atoms parameter for OAuth2
  */
 export function generateState(): string {
   return generateCodeVerifier(); // Can reuse the same secure random generation

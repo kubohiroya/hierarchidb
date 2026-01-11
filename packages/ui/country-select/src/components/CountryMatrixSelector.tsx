@@ -20,7 +20,7 @@ export interface CountryMatrixSelectorProps {
   countries: Country[];
   /** Matrix configuration with columns */
   matrixConfig: MatrixConfig;
-  /** Current selections state */
+  /** Current selections atoms */
   selections: MatrixSelection[];
   /** Callback when selections change */
   onSelectionsChange: (selections: MatrixSelection[]) => void;

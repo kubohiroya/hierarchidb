@@ -206,7 +206,7 @@ export function TreeTableRows({
               try {
                 e.dataTransfer?.setData('application/hdb-node-descendants', JSON.stringify(Array.from(forb)));
               } catch {
-                // ignore serialization errors but maintain drag state
+                // ignore serialization errors but maintain drag atoms
               }
             }}
             onDragOver={(e) => {

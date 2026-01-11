@@ -17,7 +17,7 @@ describe('evaluateCancelPolicy', () => {
     expect(decision).toBe('discard-force-delete');
   });
 
-  it('keeps draft for edit mode with only draft state (template/imported)', () => {
+  it('keeps draft for edit mode with only draft atoms (template/imported)', () => {
     const decision = evaluateCancelPolicy('edit', makeDraft({ data: null, version: 1 }));
     expect(decision).toBe('keep-draft');
   });

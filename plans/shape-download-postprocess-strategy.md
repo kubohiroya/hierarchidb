@@ -55,7 +55,7 @@ The goal is to let each data source decide its own download task structure and h
 
 ## Plan of Work
 
-Introduce a new `DownloadStageStrategy` interface under `plugins/shape-plugin/src/services/batch/strategies/` that encapsulates:
+Introduce a new `FetchStageStrategy` interface under `plugins/shape-plugin/src/services/batch/strategies/` that encapsulates:
 
 1. Building download tasks from `urlMetadata` and session config.
 2. Postprocessing after download completion, including country/admin-level extraction.
@@ -89,7 +89,7 @@ Update TASKS.md logs with start/progress/done, and add rollback steps referencin
 
 1. Create strategy interfaces and registry.
 
-   Edit `plugins/shape-plugin/src/services/batch/strategies/DownloadStageStrategy.ts` (new file) to define the interface and supporting types. Include a `createDownloadTasks(...)` method and a `postprocessDownloadOutputs(...)` method that returns next-stage tasks and any derived metadata.
+   Edit `plugins/shape-plugin/src/services/batch/strategies/FetchStageStrategy.ts` (new file) to define the interface and supporting types. Include a `createDownloadTasks(...)` method and a `postprocessDownloadOutputs(...)` method that returns next-stage tasks and any derived metadata.
 
 2. Implement data-source strategies.
 

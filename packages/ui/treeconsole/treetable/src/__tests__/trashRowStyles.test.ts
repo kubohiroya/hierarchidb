@@ -9,7 +9,7 @@ describe('getTrashRowSx', () => {
     expect(getTrashRowSx(theme)).toEqual({});
   });
 
-  it('darkens the row background and hover state in dark mode', () => {
+  it('darkens the row background and hover atoms in dark mode', () => {
     const theme = createTheme({ palette: { mode: 'dark' } });
     const styles = getTrashRowSx(theme) as Record<string, unknown>;
     const expectedBase = darken(theme.palette.background.paper, 0.08);

@@ -18,7 +18,7 @@ import {
  * Folder Undo/Redo E2E Test
  *
  * Validates that the undo/redo stack captures create, rename, trash, and restore
- * operations in the expected order and that UI state reflects each transition.
+ * operations in the expected order and that UI atoms reflects each transition.
  */
 
 test.describe.serial('Folder Undo/Redo Flow', () => {
@@ -79,7 +79,7 @@ test.describe.serial('Folder Undo/Redo Flow', () => {
     await expect(treeNode(renamedName)).toHaveCount(0);
     await expectInTrash(renamedName);
 
-    // Undo remove → node returns to console with renamed state
+    // Undo remove → node returns to console with renamed atoms
     await clickUndo(page);
     await expect(treeNode(renamedName)).toBeVisible({ timeout: 5000 });
     await expectNotInTrash(renamedName);
@@ -99,7 +99,7 @@ test.describe.serial('Folder Undo/Redo Flow', () => {
     await clickRedo(page);
     await expect(treeNode(originalName)).toBeVisible({ timeout: 5000 });
 
-    // Redo rename → node reflects renamed state
+    // Redo rename → node reflects renamed atoms
     await clickRedo(page);
     await expect(treeNode(renamedName)).toBeVisible({ timeout: 5000 });
     await expect(treeNode(originalName)).toHaveCount(0);

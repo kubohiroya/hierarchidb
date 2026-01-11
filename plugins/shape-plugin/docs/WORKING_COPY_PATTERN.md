@@ -543,9 +543,9 @@ function ShapeCreateDialog({ parentNodeId, onClose }: Props) {
 ### シナリオ 3: バッチ処理との統合
 
 ```typescript
-// ShapeBuildProgressStep.tsx
+// ShapeBuildStep.tsx
 
-function ShapeBuildProgressStep({ data, onChange }: Props) {
+function ShapeBuildStep({ data, onChange }: Props) {
   const api = useShapeAPI();
 
   const startBatchProcess = async () => {

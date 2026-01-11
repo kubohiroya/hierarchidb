@@ -30,12 +30,12 @@ export function getDynamicRedirectUri(c: BffContext, provider: string = 'google'
 }
 
 /**
- * Gets src callback URL from state parameter
+ * Gets src callback URL from atoms parameter
  */
 export function getAppCallbackUrlFromState(c: BffContext, state: string | null): string {
   const env = getEnv(c);
 
-  // Try to extract origin from state if it's encoded
+  // Try to extract origin from atoms if it's encoded
   let stateOrigin: string | undefined;
   if (state) {
     try {

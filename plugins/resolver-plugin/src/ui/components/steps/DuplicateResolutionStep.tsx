@@ -84,7 +84,7 @@ export const DuplicateResolutionStep: React.FC<DuplicateResolutionStepProps> = (
   const [enableDuplicateDetection, setEnableDuplicateDetection] = useState(true);
   const [customFunctionError, setCustomFunctionError] = useState<string>('');
 
-  // Update parent data when local state changes
+  // Update parent data when local atoms changes
   useEffect(() => {
     const duplicateResolution: DuplicateResolutionStrategy = {
       strategy,

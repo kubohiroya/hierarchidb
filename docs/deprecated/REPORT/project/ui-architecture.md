@@ -517,7 +517,7 @@ interface ProjectFormData {
   exportConfiguration: ExportConfiguration;
   sharingSettings: SharingSettings;
   
-  // UI state
+  // UI atoms
   currentStep: ProjectStep;
   validationErrors: ValidationError[];
   isDirty: boolean;
@@ -527,7 +527,7 @@ interface ProjectFormData {
 ### Component State Synchronization
 
 ```typescript
-// Context for sharing state across components
+// Context for sharing atoms across components
 export const ProjectFormContext = createContext<{
   projectData: ProjectFormData;
   updateProjectData: (updates: Partial<ProjectFormData>) => void;
@@ -535,7 +535,7 @@ export const ProjectFormContext = createContext<{
   isLoading: boolean;
 }>();
 
-// Hook for accessing project form state
+// Hook for accessing project form atoms
 export const useProjectForm = () => {
   const context = useContext(ProjectFormContext);
   if (!context) {

@@ -4,7 +4,7 @@
 
 export interface TreeConsoleFooterController {
   /**
-   * Current row selection state
+   * Current row selection atoms
    */
   rowSelection?: Record<string, boolean>;
 

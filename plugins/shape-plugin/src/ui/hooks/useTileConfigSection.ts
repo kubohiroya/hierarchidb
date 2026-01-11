@@ -15,7 +15,7 @@ export const useTileConfigSection = ({ config, onChange }: Args) => {
   }, [config, onChange]);
 
   if (!baseTileConfig) {
-    throw new Error('TileConfigSection: baseTileConfig is not defined');
+    throw new Error('VTConfigSection: baseTileConfig is not defined');
   }
 
   return {

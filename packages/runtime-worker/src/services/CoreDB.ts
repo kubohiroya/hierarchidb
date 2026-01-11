@@ -179,14 +179,14 @@ export class CoreDB extends Dexie {
     await this.transaction('rw', this.trees, this.nodes, this.rootStates, async () => {
       const now = Date.now();
 
-      // Check database state
+      // Check database atoms
       const treesCount = await this.trees.count();
       const nodesCount = await this.nodes.count();
       const rootStatesCount = await this.rootStates.count();
 
       // If database is partially initialized, clear it and start fresh
       if (treesCount !== 2 || rootStatesCount !== 6) {
-        console.warn('Database is in an inconsistent state. Clearing and reinitializing...');
+        console.warn('Database is in an inconsistent atoms. Clearing and reinitializing...');
         await this.trees.clear();
         await this.nodes.clear();
         await this.rootStates.clear();

@@ -141,7 +141,7 @@ export class StateManager {
     const isValid = await this.verifySignature(stateData, signedState.signature);
 
     if (!isValid) {
-      console.warn('Invalid state signature:', signedState.nonce);
+      console.warn('Invalid atoms signature:', signedState.nonce);
       return null;
     }
 

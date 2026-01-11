@@ -8,7 +8,7 @@ export const SHAPE_PLUGIN_ID = 'shape';
 
 export const DEFAULT_PROCESSING_CONFIG: BatchConfig = {
   dataSource: 'naturalearth',
-  downloadConfig: {
+  fetchConfig: {
     maxConcurrent: 2,
     retryLimit: 3,
     retryBackoff: 'exponential',
@@ -68,15 +68,6 @@ export const DEFAULT_PROCESSING_CONFIG: BatchConfig = {
     deleteStage2Cache: false,
   },
 } as const;
-
-export const SHAPE_LEVELS = [
-  { level: 0, label: 'Country', icon: '🌍' },
-  { level: 1, label: 'State/Province', icon: '🏛️' },
-  { level: 2, label: 'County/District', icon: '🏘️' },
-  { level: 3, label: 'Municipality', icon: '🏢' },
-  { level: 4, label: 'Ward/Borough', icon: '🏠' },
-  { level: 5, label: 'Neighborhood', icon: '📍' },
-] as const;
 
 export const SHAPE_DATA_SOURCES = [
   {

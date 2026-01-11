@@ -31,7 +31,7 @@ from `plugins/shape-plugin/src/index.ts`, verify external usage before removal.
   - Evidence: `rg` hits only within this file
 - `plugins/shape-plugin/src/ui/__tests__/mocks/useWorkerAPIClient.ts`
   - Evidence: `rg` hits only within this file
-- `plugins/shape-plugin/src/ui/hooks/useShapeBatchCommand.ts`
+- `plugins/shape-plugin/src/ui/hooks/useBatchCommand.ts`
   - Evidence: exported from `ui/hooks/index.ts`, but no call sites found
 
 ## Unused function/class candidates (no repo references found)

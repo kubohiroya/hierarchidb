@@ -1,27 +1,27 @@
 import { SingletonMixin } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
 import type {
-  ShapeBatchTaskRecord,
+  ShapeBuildTaskRecord,
   ShapeBatchSessionRecord,
-  ShapeExtractSourceBufferRecord,
+  ShapeTransformSourceBufferRecord,
   ShapeFeatureMetadataRow,
   ShapeMutationAPI,
-  ShapeRawBufferRecord,
+  ShapeFetchBufferRecord,
   ShapeSourceMetadataRow,
   ShapeVectorTileRecord,
 } from '@hierarchidb/plugin-service-api';
 import { storeRawDataDataSourceBufferForNode } from './shapeChunkStore.js';
-import { getEphemeralShapeDB } from '@hierarchidb/shape-store';
-import type {
-  BatchProcessConfig,
-  BatchSessionRecord,
-  LayerInfo,
-  ProcessingStage,
-  ProgressInfo,
-  ResourceUsage,
-  ShapeDB,
-  StageStatus,
-  VectorTileRecord,
+import {
+  ephemeralShapeDB,
+  type BatchProcessConfig,
+  type BatchSessionRecord,
+  type LayerInfo,
+  type ProcessingStage,
+  type ProgressInfo,
+  type ResourceUsage,
+  type ShapeDB,
+  type StageStatus,
+  type VectorTileRecord,
 } from '@hierarchidb/shape-store';
 import type { ShapeBatchProgressSummary } from '@hierarchidb/plugin-service-api';
 
@@ -70,11 +70,7 @@ const toProcessingStage = (
 ): ProgressInfo['taskType'] => {
   if (stage === 'processing') return stage;
   if (
-    stage === 'download'
-    || stage === 'extract1'
-    || stage === 'extract2'
-    || stage === 'vectortile'
-    || stage === 'fetch'
+    stage === 'fetch'
     || stage === 'transform'
     || stage === 'vt'
   ) {
@@ -96,10 +92,6 @@ const toStageMap = (stages: Record<string, unknown>): Record<ProcessingStage, St
     return isStageStatus(candidate) ? candidate : empty;
   };
   return {
-    download: read('download'),
-    extract1: read('extract1'),
-    extract2: read('extract2'),
-    vectortile: read('vectortile'),
     fetch: read('fetch'),
     transform: read('transform'),
     vt: read('vt'),
@@ -222,10 +214,9 @@ export class ShapeMutationService implements ShapeMutationAPI {
     await this.db.batchSessions.delete(nodeId);
   }
 
-  async deleteBatchTasks(nodeId: NodeId): Promise<void> {
+  async deleteBuildTasks(nodeId: NodeId): Promise<void> {
     await this.ensureOpen();
-    const ephemeral = getEphemeralShapeDB();
-    await ephemeral.batchTasks.where('nodeId').equals(nodeId).delete?.();
+    await ephemeralShapeDB.batchTasks.where('nodeId').equals(nodeId).delete?.();
   }
 
   async deleteVectorTile(tileId: string): Promise<void> {
@@ -240,31 +231,17 @@ export class ShapeMutationService implements ShapeMutationAPI {
 
   async deleteTileBuffers(nodeId: NodeId): Promise<void> {
     await this.ensureOpen();
-    const ephemeral = getEphemeralShapeDB();
-    await ephemeral.tileBuffers.where('nodeId').equals(nodeId).delete();
+    await ephemeralShapeDB.tileBuffers.where('nodeId').equals(nodeId).delete();
   }
 
   async deleteFeatureBuffers(nodeId: NodeId): Promise<void> {
     await this.ensureOpen();
-    const ephemeral = getEphemeralShapeDB();
-    await ephemeral.featureBuffers.where('nodeId').equals(nodeId).delete();
+    await ephemeralShapeDB.featureBuffers.where('nodeId').equals(nodeId).delete();
   }
 
   async deleteFeatures(nodeId: NodeId): Promise<void> {
     await this.ensureOpen();
     await this.db.features.where('nodeId').equals(nodeId).delete?.();
-  }
-
-  async clearCache(nodeId: NodeId): Promise<number> {
-    await this.ensureOpen();
-    const ephemeral = getEphemeralShapeDB();
-    const keys = await ephemeral.cache
-      .filter((entry) => entry.key.includes(String(nodeId)))
-      .primaryKeys();
-    if (keys.length > 0) {
-      await ephemeral.cache.bulkDelete(keys);
-    }
-    return keys.length;
   }
 
   async cleanupProcessingData(nodeId: NodeId): Promise<void> {
@@ -274,32 +251,27 @@ export class ShapeMutationService implements ShapeMutationAPI {
     await this.deleteFeatureBuffers(nodeId);
     await this.deleteTileBuffers(nodeId);
     await this.deleteVectorTiles(nodeId);
-    await this.clearCache(nodeId);
     await this.clearTileIndexArtifacts(String(nodeId));
-    const ephemeral = getEphemeralShapeDB();
-    await ephemeral.batchTasks.where('nodeId').equals(nodeId).delete();
+    await ephemeralShapeDB.batchTasks.where('nodeId').equals(nodeId).delete();
   }
 
   async clearShapeArtifacts(nodeId: NodeId): Promise<void> {
     await this.cleanupProcessingData(nodeId);
-    const ephemeral = getEphemeralShapeDB();
-    await ephemeral.clearNodeData(nodeId);
+    await ephemeralShapeDB.clearNodeData(nodeId);
   }
 
-  async upsertBatchTasks(tasks: ShapeBatchTaskRecord[]): Promise<void> {
+  async upsertBuildTasks(tasks: ShapeBuildTaskRecord[]): Promise<void> {
     await this.ensureOpen();
     if (tasks.length === 0) return;
-    const ephemeral = getEphemeralShapeDB();
-    await ephemeral.batchTasks.bulkPut?.(tasks);
+    await ephemeralShapeDB.batchTasks.bulkPut?.(tasks);
   }
 
-  async updateBatchTask(taskId: string, updates: Partial<ShapeBatchTaskRecord>): Promise<void> {
+  async updateBuildTask(taskId: string, updates: Partial<ShapeBuildTaskRecord>): Promise<void> {
     await this.ensureOpen();
-    const ephemeral = getEphemeralShapeDB();
-    await ephemeral.batchTasks.update?.(taskId, updates);
+    await ephemeralShapeDB.batchTasks.update?.(taskId, updates);
   }
 
-  async putRawBuffers(buffers: ShapeRawBufferRecord[]): Promise<void> {
+  async putFetchBuffers(buffers: ShapeFetchBufferRecord[]): Promise<void> {
     if (buffers.length === 0) return;
     await Promise.all(buffers.map((buffer) => (
       storeRawDataDataSourceBufferForNode({
@@ -310,17 +282,9 @@ export class ShapeMutationService implements ShapeMutationAPI {
     )));
   }
 
-  async putExtractedBuffers(buffers: ShapeExtractSourceBufferRecord[]): Promise<void> {
-    const db = getEphemeralShapeDB();
+  async putTransformSourceBuffers(buffers: ShapeTransformSourceBufferRecord[]): Promise<void> {
     if (buffers.length === 0) return;
-    const extract1Buffers = buffers.filter((buffer) => buffer.stage === 'extract1');
-    const extract2Buffers = buffers.filter((buffer) => buffer.stage === 'extract2');
-    if (extract1Buffers.length > 0) {
-      await db.extractedBuffers.bulkPut(extract1Buffers);
-    }
-    if (extract2Buffers.length > 0) {
-      await db.extract2SourceBuffers.bulkPut(extract2Buffers);
-    }
+    await ephemeralShapeDB.transformBuffers.bulkPut(buffers);
   }
 
   async putSourceMetadata(rows: ShapeSourceMetadataRow[]): Promise<void> {

@@ -48,7 +48,7 @@ extract2 の処理は次の2経路がある。
 
 `extractGeoJson` は `packages/features/gis-sdk/src/processing/geometryExtract.ts` にあり、各 Feature を独立に簡略化するため共有境界がずれる可能性がある。
 
-Step4 のデフォルト値は `plugins/shape-plugin/src/common/types/constants.ts` の `DEFAULT_PROCESSING_CONFIG` と、UI の `plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx` で反映される。現在は `tolerance` や `minVertexCountForAreaFilter` が高く、過度な簡略化に寄っている。
+Step4 のデフォルト値は `plugins/shape-plugin/src/common/types/constants.ts` の `DEFAULT_PROCESSING_CONFIG` と、UI の `plugins/shape-plugin/src/ui/components/steps/VTConfigSection.tsx` で反映される。現在は `tolerance` や `minVertexCountForAreaFilter` が高く、過度な簡略化に寄っている。
 
 TopoJSON は「共有境界を一度トポロジーとして統合し、その弧を簡略化してから Feature に戻す」形式で、境界の破綻を抑える。ここでは topojson-server で `Topology` を作成し、topojson-simplify で弧を簡略化し、topojson-client で FeatureCollection に戻す。タイル単位の grouping は bbox の中心点から求めた tile 座標で行い、各 Feature を一つのタイルへ割り当てる。
 
@@ -63,7 +63,7 @@ Step4 のデフォルト値は、geoBoundaries の `simplifiedGeometryGeoJSON` �
 - extract1: tolerance 8.0、minVertexCountForAreaFilter 1500、areaThreshold 10000（据え置き）、enablePerFeatureExtraction は true
 - extract2: tolerance 2.5、quantize 2000、enablePerFeatureExtraction は true
 
-UI 側の `TileConfigSection.tsx` で表示されるデフォルト値も同じ値に揃える。
+UI 側の `VTConfigSection.tsx` で表示されるデフォルト値も同じ値に揃える。
 
 ## Concrete Steps
 
@@ -79,7 +79,7 @@ UI 側の `TileConfigSection.tsx` で表示されるデフォルト値も同じ�
    - 全タイルの結果を結合し、FeatureCollection を返す
 3. `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts` の `processExtract2Task` に TopoJSON 簡略化を挿入し、失敗時は既存の `extractGeoJson` にフォールバックする。
 4. `plugins/shape-plugin/src/services/batch/adapters/LocalExtractAdapters.ts` の `LocalExtract2Adapter` でも同様に TopoJSON 簡略化を使用する。
-5. `plugins/shape-plugin/src/common/types/constants.ts` と `plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx` の Step4 デフォルト値を上記の数値に更新する。
+5. `plugins/shape-plugin/src/common/types/constants.ts` と `plugins/shape-plugin/src/ui/components/steps/VTConfigSection.tsx` の Step4 デフォルト値を上記の数値に更新する。
 6. `TASKS.md` の運用ログに変更内容・理由・検証結果を記載する。
 
 ## Validation and Acceptance
@@ -109,6 +109,6 @@ UI 側の `TileConfigSection.tsx` で表示されるデフォルト値も同じ�
   - `plugins/shape-plugin/src/services/batch/adapters/LocalExtractAdapters.ts`
   - `plugins/shape-plugin/src/services/batch/utils/topojsonExtract.ts`（新規）
   - `plugins/shape-plugin/src/common/types/constants.ts`
-  - `plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx`
+  - `plugins/shape-plugin/src/ui/components/steps/VTConfigSection.tsx`
 
 変更履歴: 2025-12-30 19:30 JST bbox 不明な Feature はそのまま保持する方針を追加し、進捗を反映した。

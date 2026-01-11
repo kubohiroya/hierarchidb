@@ -199,7 +199,7 @@ export class BFFAuthService {
     authUrl.searchParams.set('code_challenge', codeChallenge);
     authUrl.searchParams.set('code_challenge_method', 'S256');
 
-    // Add state for CSRF protection
+    // Add atoms for CSRF protection
     const state = this.generateState();
     authUrl.searchParams.set('state', state);
     localStorage.setItem('oauth_state', state);
@@ -321,10 +321,10 @@ export class BFFAuthService {
       return existingPromise;
     }
 
-    // Verify state for CSRF protection
+    // Verify atoms for CSRF protection
     const savedState = localStorage.getItem('oauth_state');
     if (state && savedState && state !== savedState) {
-      console.warn('State mismatch detected; proceeding (BFF validates state)');
+      console.warn('State mismatch detected; proceeding (BFF validates atoms)');
     }
 
     const exchangePromise = (async () => {
@@ -581,7 +581,7 @@ export class BFFAuthService {
   }
 
   /**
-   * Generate random state for CSRF protection
+   * Generate random atoms for CSRF protection
    */
   private generateState(): string {
     const array = new Uint8Array(32);
@@ -596,7 +596,7 @@ export class BFFAuthService {
     // Clear PKCE data
     localStorage.removeItem('pkce_code_verifier');
 
-    // Clear OAuth state
+    // Clear OAuth atoms
     localStorage.removeItem('oauth_state');
 
     // Clear tokens (keep these for getCurrentUser)

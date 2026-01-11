@@ -19,7 +19,7 @@ export type BasicInfoMeta = {
   hasConflict: boolean;
 };
 
-// Alias for basic info state
+// Alias for basic info atoms
 export type BasicInfoState = TreeNodeMetadata;
 
 export interface StepCompositionResult<T extends Record<string, unknown> = Record<string, unknown>> {

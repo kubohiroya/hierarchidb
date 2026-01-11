@@ -29,7 +29,7 @@ export type StepTransitionHook = (
 ) => boolean | Promise<boolean>;
 
 /**
- * External step state evaluator supplied by plugin-loader/hosts.
+ * External step atoms evaluator supplied by plugin-loader/hosts.
  * Returns boolean arrays (length = steps.length).
  */
 export interface StepStateEvaluator {
@@ -104,7 +104,7 @@ export interface DialogStep {
  * Multi-step dialog props
  */
 export interface PluginDialogProps {
-  /** Dialog open state */
+  /** Dialog open atoms */
   open: boolean;
 
   /** Dialog mode */
@@ -173,7 +173,7 @@ export interface PluginDialogProps {
   /** Step transition hook */
   onStepTransition?: StepTransitionHook;
 
-  /** Loading state */
+  /** Loading atoms */
   loading?: boolean;
 
   /** Submit button text */
@@ -189,7 +189,7 @@ export interface PluginDialogProps {
   nextText?: string;
 
   /**
-   * 表示モード（制御用）。指定時は内部 state をこの値に追従させる。
+   * 表示モード（制御用）。指定時は内部 atoms をこの値に追従させる。
    * - 'normal': 通常サイズ
    * - 'maximize': ウィンドウ内で可能な限り拡大
    * - 'full-screen': ブラウザ Fullscreen API によるモニタ全面表示
@@ -273,7 +273,7 @@ export interface FooterRenderProps {
   /** Cancel the dialog */
   onCancel: () => void;
 
-  /** Loading state */
+  /** Loading atoms */
   loading: boolean;
 }
 

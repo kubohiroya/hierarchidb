@@ -19,7 +19,7 @@ type SanitizedLogResult = {
 };
 
 /**
- * Centralizes undo/redo stacks, event history, and pre-command state snapshots
+ * Centralizes undo/redo stacks, event history, and pre-command atoms snapshots
  * formerly maintained inside CommandProcessor. Responsible for replaying
  * reverse/redo operations against CoreDB while respecting configured limits.
  */
@@ -334,7 +334,7 @@ export class CommandHistoryManager {
         const commandId = command.commandId as CommandId;
         const previous = this.preUpdateState.get(commandId);
         if (!previous) {
-          throw new Error('No previous state recorded for updateNode');
+          throw new Error('No previous atoms recorded for updateNode');
         }
         await this.deps.coreDB.updateNode?.({ ...previous });
         this.preUpdateState.delete(commandId);

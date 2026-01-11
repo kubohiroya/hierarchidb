@@ -470,7 +470,7 @@ class LifecycleErrorHandler {
     // Log error details
     await this.logError('ENTITY_CREATION_FAILED', error, { nodeId, data });
     
-    // Cleanup partial state
+    // Cleanup partial atoms
     await this.cleanupPartialEntity(nodeId);
     
     // Notify user

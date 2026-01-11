@@ -1,5 +1,5 @@
 /**
- * Atoms for Jotai state management
+ * Atoms for Jotai atoms management
  */
 
 import type { NodeId, TreeId } from '@hierarchidb/common-types';
@@ -7,7 +7,7 @@ import type { DialogStep } from '@hierarchidb/ui-dialog';
 import { atom } from 'jotai';
 
 /**
- * Working copy data state
+ * Working copy data atoms
  */
 export interface DraftData<TMetadata = unknown, TData = unknown> {
   nodeId: NodeId;
@@ -51,7 +51,7 @@ export interface StepCapabilities {
 }
 
 /**
- * Step state
+ * Step atoms
  */
 export interface StepState {
   currentStep: number;
@@ -72,7 +72,7 @@ export interface StepState {
 export const draftAtom = atom<DraftData | null>(null);
 
 /**
- * Step navigation state
+ * Step navigation atoms
  */
 export const stepStateAtom = atom<StepState>({
   currentStep: 0,
@@ -95,7 +95,7 @@ export const validationResultsAtom = atom<Map<string, DialogStepValidationResult
 export const stepCapabilitiesAtom = atom<Map<number, StepCapabilities>>(new Map());
 
 /**
- * Worker connection state
+ * Worker connection atoms
  */
 export const workerConnectionAtom = atom<{
   isConnected: boolean;
@@ -112,7 +112,7 @@ export const workerConnectionAtom = atom<{
 // ============================================================================
 
 /**
- * Current step validation state
+ * Current step validation atoms
  */
 export const currentStepValidationAtom = atom((get) => {
   const stepState = get(stepStateAtom);
@@ -228,7 +228,7 @@ export const updateDraftAtom = atom(null, (get, set, update: Partial<DraftData>)
 });
 
 /**
- * Update step state
+ * Update step atoms
  */
 export const updateStepStateAtom = atom(null, (_get, set, update: Partial<StepState>) => {
   set(stepStateAtom, (prev: StepState) => ({
@@ -300,7 +300,7 @@ export const markStepCompletedAtom = atom(null, (get, set, stepIndex: number) =>
 });
 
 /**
- * Reset step state
+ * Reset step atoms
  */
 export const resetStepStateAtom = atom(null, (_get, set) => {
   set(draftAtom, null);

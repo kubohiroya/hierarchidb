@@ -65,7 +65,7 @@ export const listRawDataDataSourceMetadataForNode = async (nodeId: NodeId): Prom
   return store.listMetadataForNode(nodeId);
 };
 
-export const countRawDataDataSourceBuffersForNode = async (nodeId: NodeId): Promise<number> => {
+export const countFetchDataDataSourceBuffersForNode = async (nodeId: NodeId): Promise<number> => {
   const store = createShapeChunkStore();
   return store.countForNode(nodeId);
 };

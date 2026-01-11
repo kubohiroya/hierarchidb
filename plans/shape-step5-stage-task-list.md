@@ -46,11 +46,11 @@ Second, update the worker entry at `app/src/worker-runtime/worker.ts` so the API
 
 Third, implement task retrieval in `plugins/shape-plugin/src/worker/api.ts` so `getBatchTasks(sessionId)` returns actual task data from `ShapeDB`. Add a small mapping helper to convert `BatchTaskRecord` to the shape `BatchTask` type and to the new `BatchTaskSummary`. Export a provider function from `plugins/shape-plugin/src/worker/index.ts` (for example `getBatchTasks`) so the worker entry can register it. Keep the export thin and type-only, and avoid pulling UI dependencies into worker code.
 
-Fourth, add a new UI hook in `plugins/shape-plugin/src/ui/hooks/useShapeBatchTasks.ts` that uses `getWorkerBridge().getBatchTasks('shape', sessionId)` to fetch tasks. Expose a `refresh` function and a `tasks` array. Trigger refresh when progress updates (use the existing `useShapeProgress` timestamp or stage changes) and also on a modest polling interval (e.g. 2000ms) while a session is active.
+Fourth, add a new UI hook in `plugins/shape-plugin/src/ui/hooks/useShapeBuildTasks.ts` that uses `getWorkerBridge().getBatchTasks('shape', sessionId)` to fetch tasks. Expose a `refresh` function and a `tasks` array. Trigger refresh when progress updates (use the existing `useShapeProgress` timestamp or stage changes) and also on a modest polling interval (e.g. 2000ms) while a session is active.
 
 Fifth, update `packages/components/src/BuildStepPanel.tsx` to accept an optional `renderStageContent` callback and optional `paneProgress` overrides. If `renderStageContent` is provided, use it instead of the default stage description + progress bar in the pane body. If `paneProgress` is provided, pass it through to `LRUSplitView`; otherwise keep the existing computed values.
 
-Sixth, update `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx` to group tasks by stage, compute per-stage task counts and a per-stage progress value, and pass both the `renderStageContent` callback and `paneProgress` into `BuildStepPanel`. The stage content should render a vertical list of tasks with a `LinearProgress` bar and a colored status chip per task. Use consistent status colors (e.g. running=primary/info, completed=success, failed=error, cancelled=warning, waiting=default). Provide a small empty-state message when a stage has no tasks yet.
+Sixth, update `plugins/shape-plugin/src/ui/components/steps/ShapeBuildStep.tsx` to group tasks by stage, compute per-stage task counts and a per-stage progress value, and pass both the `renderStageContent` callback and `paneProgress` into `BuildStepPanel`. The stage content should render a vertical list of tasks with a `LinearProgress` bar and a colored status chip per task. Use consistent status colors (e.g. running=primary/info, completed=success, failed=error, cancelled=warning, waiting=default). Provide a small empty-state message when a stage has no tasks yet.
 
 Finally, add i18n keys for the new task list labels and empty-state string in `plugins/shape-plugin/src/ui/locales/en.json` and `plugins/shape-plugin/src/ui/locales/ja.json`. Update `TASKS.md` progress logs and checklists, and record any command outputs from validation.
 
@@ -69,9 +69,9 @@ Finally, add i18n keys for the new task list labels and empty-state string in `p
    - Edit `plugins/shape-plugin/src/worker/index.ts` to export a task summary provider (for example, `getBatchTasks` returning `BatchTaskSummary[]`).
 
 4) Add UI hook and wire Step5.
-   - Add `plugins/shape-plugin/src/ui/hooks/useShapeBatchTasks.ts`.
+   - Add `plugins/shape-plugin/src/ui/hooks/useShapeBuildTasks.ts`.
    - Update `plugins/shape-plugin/src/ui/hooks/index.ts` to export the hook.
-   - Update `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx` to call the hook, compute per-stage task stats, and render task lists per pane.
+   - Update `plugins/shape-plugin/src/ui/components/steps/ShapeBuildStep.tsx` to call the hook, compute per-stage task stats, and render task lists per pane.
 
 5) Extend BuildStepPanel.
    - Edit `packages/components/src/BuildStepPanel.tsx` to accept `renderStageContent` and `paneProgress` props and pass them into `LRUSplitView`.
@@ -102,7 +102,7 @@ New/updated interfaces:
   - `BatchTaskSummary` in `packages/common/api/src/BatchControlAPI.ts` with fields: `taskId`, `stage`, `status`, `progress`, `message?`, `startedAt?`, `completedAt?`.
   - `WorkerAPI.getBatchTasks(nodeType, sessionId)` returning `BatchTaskSummary[]`.
   - `BuildStepPanelProps.renderStageContent?: (stage, progress) => ReactNode` and `BuildStepPanelProps.paneProgress?: PaneProgress[]`.
-  - `useShapeBatchTasks(sessionId)` returning `{ tasks, refresh, error }`.
+  - `useShapeBuildTasks(sessionId)` returning `{ tasks, refresh, error }`.
 
 Dependencies to use:
 

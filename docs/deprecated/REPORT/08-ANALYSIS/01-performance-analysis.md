@@ -262,7 +262,7 @@ const OptimizedTreeConsole: React.FC = () => {
     }));
   }, [virtualizer, flattenedNodes]);
   
-  // Batch state updates
+  // Batch atoms updates
   const [pendingUpdates, setPendingUpdates] = useState<Update[]>([]);
   
   useEffect(() => {

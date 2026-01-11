@@ -1,6 +1,6 @@
 /**
  * usePluginDialogController – headless orchestrator for plugin dialogs.
- * Dialog UI state is persisted on TreeNode.dialogUIState via TreeNodeUpdaterAPI.
+ * Dialog UI atoms is persisted on TreeNode.dialogUIState via TreeNodeUpdaterAPI.
  */
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import { dequal } from 'dequal';
@@ -922,7 +922,7 @@ export function usePluginDialogController(
       };
       await commitTreeNodeUpdater('save-draft', payload);
     } catch (error) {
-      console.warn('[PluginDialogShell] failed to persist dialog UI state on close', error);
+      console.warn('[PluginDialogShell] failed to persist dialog UI atoms on close', error);
     }
   }, [commitTreeNodeUpdater, dialogMode, getPersistableDialogUIState, nodeId, nodeType, treeUpdater?.draftData, treeUpdater?.draftMetadata, treeUpdater?.treeNodeId]);
 

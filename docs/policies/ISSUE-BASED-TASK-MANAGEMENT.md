@@ -71,7 +71,7 @@ Issue コメントに以下を追記することで、従来の `TASKS.md`「運
 ## gh コマンド例
 ```bash
 # 優先度上位の課題一覧
-gh issue list --label priority:P0 --state open
+gh issue list --label priority:P0 --atoms open
 
 # 新規 Issue 作成 (テンプレート使用)
 gh issue create --template ssot-task.yml --label type:feat,priority:P1

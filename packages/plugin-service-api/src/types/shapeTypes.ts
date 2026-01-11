@@ -69,7 +69,7 @@ export interface ShapeBatchSessionSummary {
   progress?: ShapeBatchProgressSummary;
 }
 
-export interface ShapeBatchTaskSummary {
+export interface ShapeBuildTaskSummary {
   taskId: string;
   nodeId: NodeId;
   taskType: string;

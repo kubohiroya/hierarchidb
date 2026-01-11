@@ -3429,9 +3429,6 @@ importers:
       '@mapbox/vector-tile':
         specifier: ^2.0.3
         version: 2.0.4
-      '@maplibre/vt-pbf':
-        specifier: ^4.0.3
-        version: 4.0.3
       '@ngageoint/geopackage':
         specifier: ^4.2.6
         version: 4.2.6
@@ -3574,6 +3571,9 @@ importers:
       '@hierarchidb/ui-worker-provider':
         specifier: workspace:*
         version: link:../../packages/ui/worker-provider
+      '@maplibre/vt-pbf':
+        specifier: ^4.0.3
+        version: 4.0.3
       '@mui/icons-material':
         specifier: ^7.3.6
         version: 7.3.6(@mui/material@7.3.6(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.27)(react@18.3.1)

@@ -29,7 +29,7 @@ export function useUrlDownload({
   const [downloadProgress, setDownloadProgress] = useState();
   const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [isAuthError, setIsAuthError] = useState(false);
-  // Store auth error state in ref to avoid stale closure
+  // Store auth error atoms in ref to avoid stale closure
   const wasAuthErrorRef = useRef(false);
   // Reset auth error when user becomes authenticated
   const shouldResetAuthError = isAuthenticated && wasAuthErrorRef.current;
@@ -176,7 +176,7 @@ export function useUrlDownload({
     },
     [handleDownload]
   );
-  // Reset auth error state when user becomes authenticated
+  // Reset auth error atoms when user becomes authenticated
   // But do NOT auto-retry - user must click download button again
   useEffect(() => {
     if (!shouldResetAuthError) return;

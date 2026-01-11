@@ -13,9 +13,9 @@ const createBatchConfig = (
 ): BatchConfig => ({
   ...DEFAULT_PROCESSING_CONFIG,
   ...overrides,
-  downloadConfig: {
-    ...DEFAULT_PROCESSING_CONFIG.downloadConfig,
-    ...overrides.downloadConfig,
+  fetchConfig: {
+    ...DEFAULT_PROCESSING_CONFIG.fetchConfig,
+    ...overrides.fetchConfig,
   },
   extractionConfig: {
     ...DEFAULT_PROCESSING_CONFIG.extractionConfig,
@@ -117,8 +117,8 @@ describe('Shape Plugin API', () => {
     it('should reject invalid processing config', async () => {
       const draftId = 'node-123' as NodeId;
       const config = createBatchConfig({
-        downloadConfig: {
-          ...DEFAULT_PROCESSING_CONFIG.downloadConfig,
+        fetchConfig: {
+          ...DEFAULT_PROCESSING_CONFIG.fetchConfig,
           maxConcurrent: 20,
         },
       });

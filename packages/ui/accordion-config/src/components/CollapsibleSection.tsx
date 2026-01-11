@@ -15,7 +15,7 @@ export interface CollapsibleSectionProps {
   expandIcon?: React.ReactNode;
   /** Position of the toggle button */
   togglePosition?: 'start' | 'end';
-  /** Callback when collapse state changes */
+  /** Callback when collapse atoms changes */
   onCollapseChange?: (collapsed: boolean) => void;
   /** Content to display */
   children: React.ReactNode;

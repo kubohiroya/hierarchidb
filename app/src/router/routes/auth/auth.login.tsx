@@ -12,7 +12,7 @@ export default function LoginRoute() {
   const { signIn } = useAuth();
   const [error, setError] = useState<string | null>(null);
 
-  // Get the return URL from state or default to home
+  // Get the return URL from atoms or default to home
   const locationState =
     (location?.state as { from?: { pathname?: string } } | undefined) ?? undefined;
   const from = locationState?.from?.pathname ?? '/';

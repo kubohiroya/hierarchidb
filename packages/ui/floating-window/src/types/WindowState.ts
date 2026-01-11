@@ -1,6 +1,6 @@
 /**
  * @file WindowState.ts
- * @description Window state types for floating window
+ * @description Window atoms types for floating window
  */
 
 export interface Position {

@@ -99,7 +99,7 @@ vector tile は metadataReplace を 1 回だけ行う必要があるため、最
 
 - 期待ログ例:
     [Session <id>] Processing download stage
-    [ShapeBuildProgressStep] batchTasks:ok { count: ... }
+    [ShapeBuildStep] batchTasks:ok { count: ... }
     [Session <id>] Extract1 stage completed: X/Y successful
 
 ## Interfaces and Dependencies

@@ -4,31 +4,31 @@ import type {
   ShapeBatchProgressSummary,
   ShapeBatchSessionRecord,
   ShapeBatchSessionSummary,
-  ShapeBatchTaskRecord,
-  ShapeBatchTaskStage,
-  ShapeBatchTaskSummary,
-  ShapeExtractSourceBufferRecord,
+  ShapeBuildTaskRecord,
+  ShapeBuildTaskSummary,
+  ShapeTransformSourceBufferRecord,
   ShapeFeatureRecord,
   ShapeFeatureMetadataRow,
   ShapeProcessingStatus,
   ShapeQueryAPI,
-  ShapeRawBufferRecord,
+  ShapeFetchBufferRecord,
   ShapeSourceMetadataRow,
   ShapeTileInfo,
   ShapeTileRow,
   ShapeTileSummary,
   ShapeTileSummaryEntry,
   ShapeVectorTileRecord,
+  ShapeBuildStage,
 } from '@hierarchidb/plugin-service-api';
 import {
-  getEphemeralShapeDB,
+  ephemeralShapeDB,
   type BatchSessionRecord,
   type BatchTaskRecord,
   type ProgressInfo,
   type ShapeDB,
 } from '@hierarchidb/shape-store';
 import {
-  countRawDataDataSourceBuffersForNode,
+  countFetchDataDataSourceBuffersForNode,
   listRawDataDataSourceMetadataForNode,
   readRawDataDataSourceBuffer,
 } from './shapeChunkStore.js';
@@ -79,7 +79,7 @@ const toSessionSummary = (session: BatchSessionRecord): ShapeBatchSessionSummary
   progress: session.progress,
 });
 
-const toTaskSummary = (task: BatchTaskRecord): ShapeBatchTaskSummary => ({
+const toTaskSummary = (task: BatchTaskRecord): ShapeBuildTaskSummary => ({
   taskId: task.taskId,
   nodeId: task.nodeId,
   taskType: task.taskType,
@@ -133,29 +133,26 @@ export class ShapeQueryService implements ShapeQueryAPI {
     return sessions.map(toShapeBatchSessionRecord);
   }
 
-  async listBatchTasks(nodeId: NodeId): Promise<ShapeBatchTaskSummary[]> {
+  async listBuildTasks(nodeId: NodeId): Promise<ShapeBuildTaskSummary[]> {
     await this.ensureOpen();
-    const ephemeral = getEphemeralShapeDB();
-    const tasks = await ephemeral.batchTasks.where('nodeId').equals(nodeId).toArray();
+    const tasks = await ephemeralShapeDB.batchTasks.where('nodeId').equals(nodeId).toArray();
     return tasks.map(toTaskSummary);
   }
 
-  async listBatchTaskRecords(nodeId: NodeId): Promise<ShapeBatchTaskRecord[]> {
+  async listBuildTaskRecords(nodeId: NodeId): Promise<ShapeBuildTaskRecord[]> {
     await this.ensureOpen();
-    const ephemeral = getEphemeralShapeDB();
-    return ephemeral.batchTasks.where('nodeId').equals(nodeId).toArray() as Promise<ShapeBatchTaskRecord[]>;
+    return ephemeralShapeDB.batchTasks.where('nodeId').equals(nodeId).toArray() as Promise<ShapeBuildTaskRecord[]>;
   }
 
-  async listBatchTaskRecordsByStage(nodeId: NodeId, stage: ShapeBatchTaskStage): Promise<ShapeBatchTaskRecord[]> {
-    const tasks = await this.listBatchTaskRecords(nodeId);
+  async listBuildTaskRecordsByStage(nodeId: NodeId, stage: ShapeBuildStage): Promise<ShapeBuildTaskRecord[]> {
+    const tasks = await this.listBuildTaskRecords(nodeId);
     return tasks.filter((task) => task.taskType === stage);
   }
 
-  async getBatchTaskRecord(taskId: string): Promise<ShapeBatchTaskRecord | null> {
+  async getBuildTaskRecord(taskId: string): Promise<ShapeBuildTaskRecord | null> {
     await this.ensureOpen();
-    const ephemeral = getEphemeralShapeDB();
-    const task = await ephemeral.batchTasks.get?.(taskId);
-    return (task as ShapeBatchTaskRecord | undefined) ?? null;
+    const task = await ephemeralShapeDB.batchTasks.get?.(taskId);
+    return task ?? null;
   }
 
   async getProcessingStatus(nodeId: NodeId): Promise<ShapeProcessingStatus | null> {
@@ -263,7 +260,7 @@ export class ShapeQueryService implements ShapeQueryAPI {
     return this.db.getFeaturesInBbox(nodeId, bbox, adminLevel) as Promise<ShapeFeatureRecord[]>;
   }
 
-  async listRawBuffers(nodeId: NodeId): Promise<ShapeRawBufferRecord[]> {
+  async listFetchBuffers(nodeId: NodeId): Promise<ShapeFetchBufferRecord[]> {
     const metadata = await listRawDataDataSourceMetadataForNode(nodeId);
     const records = await Promise.all(metadata.map(async (entry) => {
       const cacheKey = entry.cacheKey;
@@ -281,10 +278,10 @@ export class ShapeQueryService implements ShapeQueryAPI {
         timestamp: entry.updatedAt ?? entry.createdAt ?? Date.now(),
       };
     }));
-    return records.filter(Boolean) as ShapeRawBufferRecord[];
+    return records.filter(Boolean) as ShapeFetchBufferRecord[];
   }
 
-  async getRawBuffer(nodeId: NodeId, bufferId: string): Promise<ShapeRawBufferRecord | null> {
+  async getFetchBuffer(nodeId: NodeId, bufferId: string): Promise<ShapeFetchBufferRecord | null> {
     const data = await readRawDataDataSourceBuffer(nodeId, bufferId);
     if (!data) return null;
     return {
@@ -299,34 +296,19 @@ export class ShapeQueryService implements ShapeQueryAPI {
     };
   }
 
-  async countRawBuffers(nodeId: NodeId): Promise<number> {
-    return countRawDataDataSourceBuffersForNode(nodeId);
+  async countFetchBuffers(nodeId: NodeId): Promise<number> {
+    return countFetchDataDataSourceBuffersForNode(nodeId);
   }
 
-  async listExtractedBuffers(
-    nodeId: NodeId,
-    stage?: 'extract1' | 'extract2',
-  ): Promise<ShapeExtractSourceBufferRecord[]> {
-    const db = getEphemeralShapeDB();
-    if (!stage) {
-      const [extract1Buffers, extract2Buffers] = await Promise.all([
-        db.extractedBuffers.where('nodeId').equals(nodeId).toArray(),
-        db.extract2SourceBuffers.where('nodeId').equals(nodeId).toArray(),
-      ]);
-      return [...extract1Buffers, ...extract2Buffers] as ShapeExtractSourceBufferRecord[];
-    }
-    if (stage === 'extract1') {
-      return db.extractedBuffers.where('nodeId').equals(nodeId).toArray() as Promise<ShapeExtractSourceBufferRecord[]>;
-    }
-    return db.extract2SourceBuffers.where('nodeId').equals(nodeId).toArray() as Promise<ShapeExtractSourceBufferRecord[]>;
+  async listTransformSourceBuffers(
+    nodeId: NodeId
+  ): Promise<ShapeTransformSourceBufferRecord[]> {
+    return ephemeralShapeDB.transformBuffers.where('nodeId').equals(nodeId).toArray();
   }
 
-  async getExtractedBuffer(bufferId: string): Promise<ShapeExtractSourceBufferRecord | null> {
-    const db = getEphemeralShapeDB();
-    const extract1 = await db.extractedBuffers.get(bufferId);
-    if (extract1) return extract1 as ShapeExtractSourceBufferRecord;
-    const extract2 = await db.extract2SourceBuffers.get(bufferId);
-    return (extract2 as ShapeExtractSourceBufferRecord | undefined) ?? null;
+  async getTransformSourceBuffer(bufferId: string): Promise<ShapeTransformSourceBufferRecord | null> {
+    return await ephemeralShapeDB.transformBuffers.get(bufferId);
+
   }
 
   async listVectorTileRows(nodeId: NodeId): Promise<ShapeTileRow[]> {

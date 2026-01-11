@@ -79,7 +79,7 @@ export interface TreeTableCoreProps {
   viewWidth: number;
   /**
    * Page context: unique identifier for the current view root.
-   * Used as primary key when persisting UI state in Dexie.
+   * Used as primary key when persisting UI atoms in Dexie.
    */
   pageNodeId?: string;
 
@@ -116,7 +116,7 @@ export interface TreeTableCoreProps {
    */
   selectionMode?: 'single' | 'multiple' | 'none';
   /**
-   * select-all state persistence strategy. Defaults to 'page'.
+   * select-all atoms persistence strategy. Defaults to 'page'.
    */
   selectAllPersistence?: 'page' | 'session';
   /**
@@ -168,7 +168,7 @@ export interface TreeTableColumn {
   resizable?: boolean;
 }
 
-// Orchestrator state interfaces
+// Orchestrator atoms interfaces
 export interface SelectionState {
   selectedRowIds: Set<string>;
   lastSelectedId: string | null;

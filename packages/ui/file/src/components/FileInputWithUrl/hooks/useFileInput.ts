@@ -37,7 +37,7 @@ export function useFileInput({ onFileSelect }: UseFileInputProps): UseFileInputR
 
   const setDownloadError = useCallback(() => {
     // This is just to clear download errors when selecting a local file
-    // The actual download error state is managed in useUrlDownload hook
+    // The actual download error atoms is managed in useUrlDownload hook
   }, []);
 
   return {

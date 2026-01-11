@@ -71,7 +71,7 @@ export interface ColumnSet {
   columns: MatrixColumn[];
 }
 
-/** Selection state for matrix columns */
+/** Selection atoms for matrix columns */
 export interface MatrixSelection {
   /** Country code */
   countryCode: string;

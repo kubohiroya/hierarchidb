@@ -2,13 +2,14 @@
   * Shape Plugin Category Types
    */
 
-import React from 'react';
 import {
   AccountBalance as AdministrativeIcon,
   Business as EconomicIcon,
   Map as GeographicIcon,
   Terrain as EnvironmentalIcon,
 } from '@mui/icons-material';
+import React from 'react';
+
 // Local definition to decouple from folder-plugin/ui
 export interface CategoryOption<T = string> {
   value: T;
@@ -60,16 +61,3 @@ export const SHAPE_CATEGORIES: CategoryOption<ShapeCategory>[] = [
     color: '#9c27b0',
   },
 ];
-
-/**
-    */
-export const DEFAULT_SHAPE_CATEGORY: ShapeCategory = 'administrative';
-
-/**
-    */
-export const getCategoryOption = (category: ShapeCategory): CategoryOption<ShapeCategory> | undefined => {
-  return SHAPE_CATEGORIES.find(option => option.value === category);
-};
-
-/**
-    */

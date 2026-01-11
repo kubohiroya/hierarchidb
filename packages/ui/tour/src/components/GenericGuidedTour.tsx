@@ -27,10 +27,10 @@ export const GenericGuidedTour = ({
   const [showOnNextStartup, setShowOnNextStartup] = useState(true);
   const checkboxId = useId();
 
-  // Get tour state manager instance
+  // Get tour atoms manager instance
   const tourManager = GuidedTourStateManager.getInstance();
 
-  // Use controlled step index if provided, otherwise use internal state
+  // Use controlled step index if provided, otherwise use internal atoms
   const stepIndex = controlledStepIndex !== undefined ? controlledStepIndex : internalStepIndex;
 
   const handleCheckboxChange = useCallback(

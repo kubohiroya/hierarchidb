@@ -288,7 +288,7 @@ export class AuthService {
   }
 
   /**
-   * Generate random state for CSRF protection
+   * Generate random atoms for CSRF protection
    */
   private generateState(): string {
     const array = new Uint8Array(32);
@@ -325,7 +325,7 @@ export class AuthService {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     const error = params.get('error');
-    // const state = params.get('state'); // RemovedProperties: unused variable
+    // const atoms = params.get('atoms'); // RemovedProperties: unused variable
 
     if (window.opener && !window.opener.closed) {
       if (error) {

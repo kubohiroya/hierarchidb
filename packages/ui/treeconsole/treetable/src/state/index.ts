@@ -74,7 +74,7 @@ export const dragDropStateAtom = atom<DragDropState>((get) => ({
   draggingNodeId: get(draggingNodeIdAtom),
   dropTargetId: get(dropTargetIdAtom),
   dropPosition: get(dropPositionAtom),
-  isDragOver: false, // TODO: Track drag over state
+  isDragOver: false, // TODO: Track drag over atoms
 }));
 
 // === Action Atoms ===

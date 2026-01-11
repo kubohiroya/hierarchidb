@@ -6,7 +6,7 @@ type Props = {
 };
 
 const buildCompletedLabel = (summary: NonNullable<PaneProgress['summary']>): string => {
-  const { total, success, error, skip } = summary;
+  const { total, success, skip } = summary;
   if (total === 0) return '0 / 0';
   const numerator = Math.min(success + skip, total);
   return `Completed ${numerator}/${total}`;

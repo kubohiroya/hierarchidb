@@ -93,7 +93,7 @@ export interface ShapesEntity extends PeerEntity {
   selectedCountries?: string[];
   adminLevels?: Record<string, boolean>;
   
-  // Download state management
+  // Download atoms management
   checkboxState?: boolean[][] | string;
   
   // Batch processing configuration
@@ -183,7 +183,7 @@ export interface BatchTaskEntity extends GroupEntity {
   priority: number;
   progress: number;          // 0-100 (calculated from children)
   
-  // Processing state
+  // Processing atoms
   errorMessage?: string;
   retryCount: number;
   maxRetries: number;
@@ -402,7 +402,7 @@ export interface TileBufferEntity extends GroupEntity {
   features: string[];        // Feature IDs in this tile
   clipBounds: [number, number, number, number];
   
-  // Processing state
+  // Processing atoms
   status: TileStatus;
   featureCount: number;
   totalSize: number;
@@ -1315,7 +1315,7 @@ class SessionErrorHandler {
         break;
         
       case SessionError.INVALID_SESSION_STATE:
-        // Reset session state
+        // Reset session atoms
         await this.resetSessionState(nodeId);
         break;
     }

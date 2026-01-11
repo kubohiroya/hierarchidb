@@ -2,7 +2,7 @@ import { expose } from 'comlink';
 import { setCorsProxyBaseURL } from '@hierarchidb/download';
 import { fetchCountryAvailability } from '../../services/datasources/CountryAvailabilityResolver.js';
 import type { CountryAvailabilityWorkerAPI, SerializedCountryAvailability, UiStorageBridge } from './countryAvailability.types.js';
-import { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/common-types';
 import { metadataLoader } from '../../services/metadata/MetadataLoader.js';
 import { AuthService } from '@hierarchidb/auth-recovery';
 

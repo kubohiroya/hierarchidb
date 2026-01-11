@@ -23,7 +23,7 @@ export interface WorkerClientRef {
   error: Error | null;
   /** Trigger (re-)initialization of the shared worker */
   initialize: () => Promise<void>;
-  /** Reset the shared worker state and clear cached proxies */
+  /** Reset the shared worker atoms and clear cached proxies */
   reset: () => void;
   /** Convenience accessor that enforces the presence of the WorkerAPI proxy */
   getAPI: () => Remote<WorkerAPI>;

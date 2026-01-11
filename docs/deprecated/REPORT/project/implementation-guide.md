@@ -1119,7 +1119,7 @@ export const ProjectDebugger = {
   },
   
   inspectMapState: (map: MapLibreMap) => {
-    // Inspect current map state
+    // Inspect current map atoms
   }
 };
 ```

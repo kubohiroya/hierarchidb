@@ -370,7 +370,7 @@ export function useInlineEditing({
       );
       await workingCopyService?.commitWorkingCopy(editingState.workingCopyId);
       
-      // Clear editing state
+      // Clear editing atoms
       setEditingState({
         editingNodeId: null,
         editingValue: '',

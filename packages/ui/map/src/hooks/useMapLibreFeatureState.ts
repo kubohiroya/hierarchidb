@@ -25,14 +25,14 @@ export function useMapLibreFeatureState({ datasetId, map, sourceId, throttleMs =
       try {
         CrossViewStyles.applyMapLibreFeatureState(datasetId, map, sourceId);
       } catch (error) {
-        logMapLibreFeatureWarning('Failed to apply MapLibre features state', error);
+        logMapLibreFeatureWarning('Failed to apply MapLibre features atoms', error);
       }
     });
     return () => {
       try {
         unsub();
       } catch (error) {
-        logMapLibreFeatureWarning('Failed to unsubscribe features state watcher', error);
+        logMapLibreFeatureWarning('Failed to unsubscribe features atoms watcher', error);
       }
     };
   }, [datasetId, map, sourceId, throttleMs]);

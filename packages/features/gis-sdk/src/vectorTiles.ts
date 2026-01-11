@@ -316,7 +316,8 @@ export const generateVectorTilesFromFeatureCollection = async (
       throwIfAborted(config.signal);
       const feature = features[index];
       if (!feature) continue;
-      const properties = feature.properties ?? (feature.properties = {});
+      feature.properties = feature.properties ?? {};
+      const properties = feature.properties;
       const tileFeatureId = buildUniqueFeatureId(feature, index, metadataContext);
       properties.id = tileFeatureId;
       const stats = extractGeometryStats(feature.geometry);
@@ -344,7 +345,7 @@ export const generateVectorTilesFromFeatureCollection = async (
       throwIfAborted(config.signal);
       const feature = features[index];
       if (!feature) continue;
-      const properties = feature.properties ?? (feature.properties = {});
+      const properties = feature.properties ?? {};
       properties.id = buildUniqueFeatureId(feature, index, metadataContext);
     }
   }

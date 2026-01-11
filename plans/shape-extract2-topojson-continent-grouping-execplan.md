@@ -40,7 +40,7 @@ extract2 のTopoJSON化は `plugins/shape-plugin/src/services/batch/utils/topojs
 
 extract2 ステージは `plugins/shape-plugin/src/services/batch/SessionController.ts` の `processExtract2Stage` が担当しており、`Extract1Task` を元に `Extract2Task` を生成する。extract2 のWorker/Local 実装は `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts` と `plugins/shape-plugin/src/services/batch/adapters/LocalExtractAdapters.ts` にある。
 
-メタデータの continent は `plugins/shape-plugin/src/services/datasources/GeoBoundariesStrategy.ts` でGeoBoundaries API応答から取得し、download 出力と `ShapeSourceMetadataDB` に保存される。`DownloadStageOutput` は `plugins/shape-plugin/src/services/batch/strategies/DownloadStageStrategy.ts` に定義され、download 出力から extract1/extract2 のタスクへ引き継がれる。
+メタデータの continent は `plugins/shape-plugin/src/services/datasources/GeoBoundariesStrategy.ts` でGeoBoundaries API応答から取得し、download 出力と `ShapeSourceMetadataDB` に保存される。`DownloadStageOutput` は `plugins/shape-plugin/src/services/batch/strategies/FetchStageStrategy.ts` に定義され、download 出力から extract1/extract2 のタスクへ引き継がれる。
 
 ## Plan of Work
 

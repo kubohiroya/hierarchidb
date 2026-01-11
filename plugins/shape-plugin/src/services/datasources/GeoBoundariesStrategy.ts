@@ -226,7 +226,14 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
         return { stream: bufferToStream(encoded), contentType };
       },
       decodeBuffer: async (buffer) => {
-        const geojson = await decodeFlatGeoJson(buffer);
+        const raw = await decodeFlatGeoJson(buffer);
+        const geojson: GeoBoundariesGeoJSON = {
+          type: 'FeatureCollection',
+          features: raw.features.map((feature) => ({
+            ...feature,
+            properties: feature.properties ?? {},
+          })) as GeoBoundariesFeature[],
+        };
         return {
           geojson,
           metadata: {
@@ -238,7 +245,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
             version: typeof metadata.apiData.boundaryYear === 'number' ? metadata.apiData.boundaryYear : 2023,
             format: 'geojson',
             apiResponse: metadata.apiData,
-            continent: metadata.continent,
+            continent: metadata.continent ?? undefined,
           },
         };
       },

@@ -128,7 +128,7 @@ describe('useTreeViewController', () => {
       expect(result.current.selectedNodeIds).toEqual(expect.arrayContaining(['node-1', 'node-2']) as any);
     });
 
-    it('should notify state change when selection changes', async () => {
+    it('should notify atoms change when selection changes', async () => {
       const { result } = renderHook(() => useTreeViewController(mockProps));
 
       act(() => {
