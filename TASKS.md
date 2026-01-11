@@ -1,3 +1,17 @@
+2188) fix/app/typecheck-shapequeryapi-import (P1) — 進行中 (2026-01-14)
+- ブランチ名: fix/app/typecheck-shapequeryapi-import
+- 依存: なし
+- 受け入れ基準: useFolderLayers の ShapeQueryAPI import 解決エラー（TS2305）が解消される／`@hierarchidb/app typecheck` が通る／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/routes/map/useFolderLayers.ts`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、import を修正前に戻す
+- チェックリスト:
+  - ShapeQueryAPI の import 先を修正する
+  - typecheck が通ることを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-14 12:00 JST useFolderLayers の ShapeQueryAPI import エラー修正に着手。
+  - done: 2026-01-14 12:05 JST ShapeQueryAPI の import 先を plugin-service-api に修正。検証: 未実施。
+
 2187) fix/app/typecheck-runtime-worker-shape-imports (P1) — 進行中 (2026-01-14)
 - ブランチ名: fix/app/typecheck-runtime-worker-shape-imports
 - 依存: なし
