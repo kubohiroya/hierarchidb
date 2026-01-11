@@ -3,7 +3,8 @@ import type {
   ShapeBatchSessionRecord,
   ShapeVectorTileRecord,
 } from '@hierarchidb/plugin-service-api';
-import type { BatchProcessConfig, LayerInfo, ProcessingStage, ProgressInfo, ResourceUsage, StageStatus } from '../types.ts';
+import type { LayerInfo, ProcessingStage, ProgressInfo, ResourceUsage, StageStatus } from '../types.ts';
+import type { BatchSessionConfig } from '../../common/types/index.js';
 import type { BatchSessionRecord, VectorTileRecord } from '@hierarchidb/shape-store';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -29,7 +30,7 @@ const isStageStatus = (value: unknown): value is StageStatus => {
     && (value.message === undefined || typeof value.message === 'string');
 };
 
-export const isBatchProcessConfig = (value: unknown): value is BatchProcessConfig => {
+export const isBatchProcessConfig = (value: unknown): value is BatchSessionConfig => {
   if (!isRecord(value)) return false;
   return isRecord(value.download)
     && isRecord(value.extract1)

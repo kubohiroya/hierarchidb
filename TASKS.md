@@ -1,3 +1,31 @@
+2185) fix/runtime-worker/tsconfig-missing-path (P1) — 進行中 (2026-01-14)
+- ブランチ名: fix/runtime-worker/tsconfig-missing-path
+- 依存: なし
+- 受け入れ基準: runtime-worker の tsconfig.json で JSONError（missing field `path`）が解消される／`@hierarchidb/runtime-worker build` が通る／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/runtime-worker/tsconfig.json`
+- ロールバック手順: 該当差分を revert し、tsconfig.json を修正前に戻す
+- チェックリスト:
+  - tsconfig.json の references/path を修正する
+  - build が通ることを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-14 10:55 JST runtime-worker tsconfig.json の JSONError 修正に着手。
+  - done: 2026-01-14 11:00 JST tsconfig.json の空 references を削除し JSONError を解消。検証: 未実施。
+
+2184) fix/shape/typecheck-session-config-mappers (P1) — 進行中 (2026-01-14)
+- ブランチ名: fix/shape/typecheck-session-config-mappers
+- 依存: なし
+- 受け入れ基準: shapeSessionMappers の BatchProcessConfig/BatchSessionConfig 型不整合（TS2739）が解消される／`@hierarchidb/shape-plugin typecheck` が通る／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/batch/shapeSessionMappers.ts`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、shapeSessionMappers の変換ロジックを修正前に戻す
+- チェックリスト:
+  - shapeSessionMappers の config 変換を整理する
+  - typecheck が通ることを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-14 10:35 JST shapeSessionMappers の型エラー修正に着手。
+  - done: 2026-01-14 10:45 JST shapeSessionMappers の config 型ガードを BatchSessionConfig に合わせて修正。検証: 未実施。
+
 2183) fix/shape/typecheck-missing-shape-types (P1) — 進行中 (2026-01-14)
 - ブランチ名: fix/shape/typecheck-missing-shape-types
 - 依存: なし

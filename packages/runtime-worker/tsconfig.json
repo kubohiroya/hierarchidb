@@ -27,8 +27,5 @@
     "src/e2e*.test.ts",
     "src*.spec.ts"
   ],
-  "references": [
-    {
-    }
-  ]
+  "references": []
 }
