@@ -2,7 +2,7 @@ import { ShapeBuildStage } from '@hierarchidb/plugin-service-api';
 import type { BatchConfig, ShapeEntity } from '../../../common/types/index.js';
 import { DEFAULT_PROCESSING_CONFIG, mergeBatchConfig } from '../../../common/types/index.js';
 import { toNodeId, type NodeId } from '@hierarchidb/common-types';
-import { shapeEphemeralAPIImpl } from 'plugins/shape-plugin/src/services/batch/ShapeBuildApiClient.ts';
+import { shapeEphemeralAPIImpl } from '../../../services/batch/ShapeBuildApiClient.ts';
 
 const STAGE_ORDER: ShapeBuildStage[] = ['fetch', 'transform', 'vt'];
 
