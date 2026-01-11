@@ -135,7 +135,7 @@ export function useUndoRedoOperations(
       success: false,
       error: 'Undo functionality not yet connected to CommandProcessor',
     };
-  }, [stateManager, setIsLoading, onStateChange, currentState]);
+  }, [undoRedoManager, setIsLoading, onStateChange, currentState]);
 
   //  Redo
   const redo = useCallback(async (): Promise<UndoRedoResult> => {
@@ -169,7 +169,7 @@ export function useUndoRedoOperations(
       success: false,
       error: 'Redo functionality not yet connected to CommandProcessor',
     };
-  }, [stateManager, setIsLoading, onStateChange, currentState]);
+  }, [undoRedoManager, setIsLoading, onStateChange, currentState]);
 
   const clearHistory = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
     if (undoRedoManager?.clearHistory) {
@@ -190,7 +190,7 @@ export function useUndoRedoOperations(
       success: false,
       error: 'Clear history functionality not implemented yet',
     };
-  }, [stateManager, setIsLoading]);
+  }, [undoRedoManager, setIsLoading]);
 
   return {
     //  Undo/Redo

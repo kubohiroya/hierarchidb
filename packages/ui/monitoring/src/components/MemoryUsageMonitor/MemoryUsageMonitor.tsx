@@ -70,12 +70,8 @@ export function MemoryUsageMonitor({ className }: DevelopmentTimestampProps) {
     // Load saved chart dimensions
     const savedDimensions = localStorage.getItem('memoryUsageChartDimensions');
     if (savedDimensions) {
-      try {
-        const parsed = JSON.parse(savedDimensions);
-        setChartDimensions(parsed);
-      } catch (_error) {
-        // Use default dimensions if parsing fails
-      }
+      const parsed = JSON.parse(savedDimensions);
+      setChartDimensions(parsed);
     }
   }, []);
 

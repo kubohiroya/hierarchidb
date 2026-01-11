@@ -1,7 +1,7 @@
 import { atom } from 'jotai';
 import type { BuildStage, BuildStatus } from '@hierarchidb/components';
 import type { PaneProgress } from '@hierarchidb/ui-lru-splitview';
-import { BatchTaskSummary } from '@hierarchidb/common-api';
+import type { BatchTaskSummary } from '@hierarchidb/common-api';
 
 export type ShapeBuildTaskSummary = BatchTaskSummary & {
   metadata?: Record<string, unknown>;

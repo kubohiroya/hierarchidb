@@ -1,3 +1,4 @@
+import '@testing-library/jest-dom';
 /**
  * @file LinkButton.test.tsx
  * @description Comprehensive tests for LinkButton component and useLinkButton hook
@@ -529,11 +530,7 @@ describe('useLinkButton Hook', () => {
     const { result } = renderHook(() => useLinkButton({ onSave, onError }));
 
     await act(async () => {
-      try {
-        await result.current.executeAction();
-      } catch (_error) {
-        // Expected error
-      }
+      await result.current.executeAction();
     });
 
     expect(onError).toHaveBeenCalledWith(error);

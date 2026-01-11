@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import { Box, Typography, Alert, Tabs, Tab, Snackbar, CircularProgress } from '@mui/material';
 import { ResourceLayerMap } from '@hierarchidb/ui-map';
 import { GenericDataGrid } from '@hierarchidb/ui-grid';
