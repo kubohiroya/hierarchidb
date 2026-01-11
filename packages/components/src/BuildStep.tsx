@@ -1,13 +1,18 @@
 import { type ReactNode, useCallback, useMemo } from 'react';
 import { Box, LinearProgress, Stack, Typography } from '@mui/material';
-import { LRUSplitView, type PaneConfig, type PaneProgress } from '@hierarchidb/ui-lru-splitview';
-import { type BuildStage, BuildStepStagePanel } from './BuildStepStagePanel.js';
-import type { BuildStepStageTaskCount } from './BuildStepStageSummaryPanel.js';
+import { LRUSplitView2, type LRUSplitView2Pane, type LRUSplitView2RenderContext, type PaneProgress } from '@hierarchidb/ui-lru-splitview';
+import { BuildStepStagePanel } from './BuildStepStagePanel.js';
+import type { BuildStepStageTaskCount } from './BuildStepStagePanel.tsx';
 import { BuildControlCard } from './BuildControlCard.tsx';
 
 export type BuildStatus = 'idle' | 'running' | 'paused' | 'completed' | 'failed';
 
-export type { BuildStage } from './BuildStepStagePanel.js';
+export interface BuildStage {
+  id: string;
+  title: string;
+  description?: string;
+  icon?: ReactNode;
+}
 
 export interface BuildStepPanelProps {
   status: BuildStatus;
@@ -32,7 +37,7 @@ export interface BuildStepPanelProps {
   statusContent?: ReactNode;
 }
 
-export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
+export const BuildStep: React.FC<BuildStepPanelProps> = ({
   status,
   overallProgress,
   stages,
@@ -90,22 +95,58 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
     }, {});
   }, [computedPaneProgress, paneProgress, stages]);
 
-  const panes = useMemo<PaneConfig[]>(() =>
+  const panes = useMemo<LRUSplitView2Pane[]>(() =>
     stages.map((stage, index) => ({
       id: stage.id,
-      title: stage.title,
-      icon: stage.icon,
       defaultExpanded: index === 0,
-      content: (
-        <BuildStepStagePanel
-          stage={stage}
-          progress={resolveStageProgress(stage.id)}
-          content={stageContents?.[stage.id]}
-          taskCount={taskCountByStage[stage.id]}
-        />
-      ),
     })),
-  [resolveStageProgress, stageContents, stages, taskCountByStage]);
+  [stages]);
+
+  const stageById = useMemo(() => new Map(stages.map((stage) => [stage.id, stage])), [stages]);
+
+  const renderPane = useCallback(({ id, isExpanded, toggle }: LRUSplitView2RenderContext) => {
+    const stage = stageById.get(id);
+    if (!stage) return null;
+    const progressValue = resolveStageProgress(id);
+    const taskCount = taskCountByStage[id];
+    if (!isExpanded) {
+      return (
+        <Box
+          onClick={toggle}
+          sx={{
+            p: 2,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1,
+            cursor: 'pointer',
+            height: '100%',
+          }}
+        >
+          <Stack direction="row" spacing={1} alignItems="center">
+            {stage.icon ? <Box>{stage.icon}</Box> : null}
+            <Typography variant="subtitle2">{stage.title}</Typography>
+          </Stack>
+          <LinearProgress variant="determinate" value={progressValue} />
+        </Box>
+      );
+    }
+    return (
+      <Box onDoubleClick={toggle} sx={{ height: '100%', minHeight: 0 }}>
+        <BuildStepStagePanel
+          title={stage.title}
+          description={stage.description}
+          progress={progressValue}
+          taskCount={taskCount}
+          failedMode={false}
+          onFailedModeUpdate={() => undefined}
+          completedMode={false}
+          onCompletedModeUpdate={() => undefined}
+        >
+          {stageContents?.[stage.id]}
+        </BuildStepStagePanel>
+      </Box>
+    );
+  }, [resolveStageProgress, stageById, stageContents, taskCountByStage]);
 
   const computedStatusLabel = (() => {
     switch (status) {
@@ -114,7 +155,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
       case 'paused':
         return 'Build paused';
       case 'completed':
-        return 'Build completed';
+        return 'Build completSed';
       case 'failed':
         return 'Build failed';
       default:
@@ -156,8 +197,9 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
       </Stack>
 
       <Box flex={1} minHeight={0}>
-        <LRUSplitView
+        <LRUSplitView2
           panes={panes}
+          renderPane={renderPane}
           progress={paneProgress ?? computedPaneProgress}
           maxExpandedPanes={2}
           responsiveBreakpoints={splitViewBreakpoints}

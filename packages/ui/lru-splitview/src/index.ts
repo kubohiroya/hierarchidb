@@ -1,11 +1,15 @@
 // Main components
 export {
   LRUSplitView,
+  LRUSplitView2,
   PaneHeader,
 } from './components/index.js';
 
 export type {
   LRUSplitViewProps,
+  LRUSplitView2Props,
+  LRUSplitView2Pane,
+  LRUSplitView2RenderContext,
   PaneHeaderComponentProps,
 } from './components/index.js';
 

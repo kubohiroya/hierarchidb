@@ -1,3 +1,47 @@
+2191) fix/components/buildstep-typecheck (P1) — 進行中 (2026-01-14)
+- ブランチ名: fix/components/buildstep-typecheck
+- 依存: なし
+- 受け入れ基準: BuildStep の型エラー（TS2305/TS7031/TS2322）が解消される／`@hierarchidb/components typecheck` が通る／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/components/src/BuildStep.tsx`, `packages/components/src/BuildStepStagePanel.tsx`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、BuildStep の実装を修正前に戻す
+- チェックリスト:
+  - BuildStage の型定義を修正する
+  - renderPane の型注釈を補う
+  - BuildStepStagePanel の props を整合させる
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-14 13:05 JST BuildStep の型エラー修正に着手。
+  - done: 2026-01-14 13:15 JST BuildStage 型を追加し、BuildStep の型注釈と props を整合。検証: 未実施。
+
+2190) fix/components/buildstep-panel-export (P1) — 進行中 (2026-01-14)
+- ブランチ名: fix/components/buildstep-panel-export
+- 依存: なし
+- 受け入れ基準: BuildStepPanel が @hierarchidb/components から export される／app build の MISSING_EXPORT が解消される／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/components/src/index.ts`
+- ロールバック手順: 該当差分を revert し、export を修正前に戻す
+- チェックリスト:
+  - BuildStepPanel の export を追加する
+  - app build が通ることを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-14 12:50 JST BuildStepPanel export 修正に着手。
+  - update: 2026-01-14 13:25 JST BuildStepPanel 再exportを再追加し、BuildStage の export/import を整理。検証: 未実施。
+  - done: 2026-01-14 12:55 JST BuildStep を BuildStepPanel として再export。検証: 未実施。
+
+2189) feat/ui/lru-splitview2 (P1) — 進行中 (2026-01-14)
+- ブランチ名: feat/ui/lru-splitview2
+- 依存: なし
+- 受け入れ基準: LRUSplitView2 が汎用 API で追加される／進捗表示テンプレが内蔵されない／BuildStepPanel が LRUSplitView2 + BuildStepStagePanel を使う構成になる／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/lru-splitview/src/components/LRUSplitView2.tsx`, `packages/components/src/BuildStepPanel.tsx`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、LRUSplitView の利用に戻す
+- チェックリスト:
+  - LRUSplitView2 を新規追加する
+  - BuildStepPanel を LRUSplitView2 + BuildStepStagePanel で構成する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-14 12:20 JST LRUSplitView2 の設計・実装に着手。
+  - done: 2026-01-14 12:45 JST LRUSplitView2 を追加し、BuildStep を LRUSplitView2 + BuildStepStagePanel で構成。検証: 未実施。
+
 2188) fix/app/typecheck-shapequeryapi-import (P1) — 進行中 (2026-01-14)
 - ブランチ名: fix/app/typecheck-shapequeryapi-import
 - 依存: なし
@@ -136,7 +180,7 @@
 - ブランチ名: fix/components/build-stage-content-filtering
 - 依存: なし
 - 受け入れ基準: BuildStepStageDetailsPanel の文法エラーが解消される／failed/completed のフィルタは renderStageContent 側で行われる／failed/completed の ON/OFF に応じて表示内容が切り替わる／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/components/src/BuildStepStageDetailsPanel.tsx`, `packages/components/src/BuildStepStagePanel.tsx`, `packages/components/src/BuildStepPanel.tsx`, `plugins/shape-plugin/src/ui/components/steps/ShapeBuildStep.tsx`
+- 影響範囲: `packages/components/src/BuildStepStageDetailsPanel.tsx`, `packages/components/src/BuildStepStagePanel.tsx`, `packages/components/src/BuildStep.tsx`, `plugins/shape-plugin/src/ui/components/steps/ShapeBuildStep.tsx`
 - ロールバック手順: 該当ファイルの差分を revert し、BuildStepStageDetailsPanel 側のフィルタ処理へ戻す
 - チェックリスト:
   - BuildStepStageDetailsPanel の文法エラーを解消する
@@ -182,17 +226,17 @@
 2130) refactor/shape/build-progress-stage-content-props (P1) — 完了 (2026-01-14)
 - ブランチ名: refactor/shape/build-progress-stage-content-props
 - 依存: なし
-- 受け入れ基準: BuildStepPanel への renderStageContent 渡しが廃止され、stageContents の素直な構成へ移行する／BuildStepStagePanel の filter 状態は context 経由で stage content から参照できる／ShapeBuildProgressPanel はコンポーネントを返す関数を持たず整理される／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/components/src/BuildStepPanel.tsx`, `packages/components/src/BuildStepStagePanel.tsx`, `packages/components/src/BuildStepStageFilterContext.tsx`, `packages/components/src/index.ts`, `plugins/shape-plugin/src/ui/components/step5/ShapeBuildProgressPanel.tsx`, `plugins/shape-plugin/src/ui/components/step5/ShapeBuildProgressStageContent.tsx`
+- 受け入れ基準: BuildStep への renderStageContent 渡しが廃止され、stageContents の素直な構成へ移行する／BuildStepStagePanel の filter 状態は context 経由で stage content から参照できる／ShapeBuildProgressPanel はコンポーネントを返す関数を持たず整理される／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/components/src/BuildStep.tsx`, `packages/components/src/BuildStepStagePanel.tsx`, `packages/components/src/BuildStepStageFilterContext.tsx`, `packages/components/src/index.ts`, `plugins/shape-plugin/src/ui/components/step5/ShapeBuildProgressPanel.tsx`, `plugins/shape-plugin/src/ui/components/step5/ShapeBuildProgressStageContent.tsx`
 - ロールバック手順: 該当差分を revert し、renderStageContent props を利用する構成へ戻す
 - チェックリスト:
-  - BuildStepPanel/BuildStepStagePanel の props とレンダリング経路を整理する
+  - BuildStep/BuildStepStagePanel の props とレンダリング経路を整理する
   - stage content 側で filter を context 参照に変更する
   - ShapeBuildProgressPanel の組み立てを stageContents へ統一する
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-14 10:30 JST renderStageContent props の廃止と stageContents 化に着手。
-  - update: 2026-01-14 10:35 JST BuildStepPanel/BuildStepStagePanel の props を stageContents/context へ整理。検証: 未実施。
+  - update: 2026-01-14 10:35 JST BuildStep/BuildStepStagePanel の props を stageContents/context へ整理。検証: 未実施。
   - done: 2026-01-14 10:40 JST ShapeBuildProgressPanel の stageContents 化と StageContent の filter context 参照を完了。検証: 未実施。
 
 
@@ -414,8 +458,8 @@
 2163) fix/shape/step5-build-progress-and-pause (P1) — 完了 (2026-01-10)
 - ブランチ名: fix/shape/step5-build-progress-and-pause
 - 依存: なし
-- 受け入れ基準: Step5 のビルド中に「停止」ボタンが有効化される／BuildStepPanel に進捗が反映され Skeleton のみにならない／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildStep.tsx`, `plugins/shape-plugin/src/ui/hooks/useShapeBuildStep.ts`, `packages/components/src/BuildStepPanel.tsx`（調査結果に応じて）
+- 受け入れ基準: Step5 のビルド中に「停止」ボタンが有効化される／BuildStep に進捗が反映され Skeleton のみにならない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildStep.tsx`, `plugins/shape-plugin/src/ui/hooks/useShapeBuildStep.ts`, `packages/components/src/BuildStep.tsx`（調査結果に応じて）
 - ロールバック手順: 該当差分を revert し、従来の Step5 表示/操作へ戻す
 - チェックリスト:
   - 停止ボタンの有効条件と i18n 表示を確認する
@@ -1278,7 +1322,7 @@
 - ブランチ名: feat/shape/step5-three-stage-columns
 - 依存: なし
 - 受け入れ基準: Step5 の LRUSplitPane が fetch/transform/vt の3列になっている／旧ステージ名が混在しない／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/**`, `packages/components/src/BuildStepPanel.tsx`, `plugins/shape-plugin/src/ui/locales/**`
+- 影響範囲: `plugins/shape-plugin/src/ui/**`, `packages/components/src/BuildStep.tsx`, `plugins/shape-plugin/src/ui/locales/**`
 - ロールバック手順: Step5 のステージ定義と進捗表示の差分を revert し、4列構成へ戻す
 - チェックリスト:
   - Step5 のステージ定義を fetch/transform/vt の3列に更新する
@@ -3618,22 +3662,22 @@
 2179) refactor/ui/build-step-stage-panel (P2) — 完了 (2026-01-10)
 - ブランチ名: refactor/ui/build-step-stage-panel
 - 依存: なし
-- 受け入れ基準: BuildStepPanel のステージ描画が BuildStepStagePanel に分離され、BuildStepStagePanel 内で要約表示が BuildStepStageSummaryPanel、詳細表示が BuildStepStageDetailsPanel に分離されている／表示内容と挙動が現状と同等である／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/components/src/BuildStepPanel.tsx`, `packages/components/src/BuildStepStagePanel.tsx`, `packages/components/src/BuildStepStageSummaryPanel.tsx`, `packages/components/src/BuildStepStageDetailsPanel.tsx`
-- ロールバック手順: 追加ファイルと差分を revert し、BuildStepPanel 内のインライン描画へ戻す
+- 受け入れ基準: BuildStep のステージ描画が BuildStepStagePanel に分離され、BuildStepStagePanel 内で要約表示が BuildStepStageHeaderPanel、詳細表示が BuildStepStageDetailsPanel に分離されている／表示内容と挙動が現状と同等である／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/components/src/BuildStep.tsx`, `packages/components/src/BuildStepStagePanel.tsx`, `packages/components/src/BuildStepStagePanel.tsx`, `packages/components/src/BuildStepStageDetailsPanel.tsx`
+- ロールバック手順: 追加ファイルと差分を revert し、BuildStep 内のインライン描画へ戻す
 - チェックリスト:
-  - BuildStepStagePanel を追加し、BuildStepPanel から分離する
-  - BuildStepStageSummaryPanel/BuildStepStageDetailsPanel を追加し、役割を分ける
+  - BuildStepStagePanel を追加し、BuildStep から分離する
+  - BuildStepStageHeaderPanel/BuildStepStageDetailsPanel を追加し、役割を分ける
   - 表示/進捗/展開の挙動を維持する
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
-  - start: 2026-01-10 18:40 JST BuildStepPanel のステージ描画分離に着手。
-  - done: 2026-01-10 18:54 JST BuildStepStagePanel/BuildStepStageSummaryPanel/BuildStepStageDetailsPanel を追加し、BuildStepPanel から分離。検証: 未実施。
+  - start: 2026-01-10 18:40 JST BuildStep のステージ描画分離に着手。
+  - done: 2026-01-10 18:54 JST BuildStepStagePanel/BuildStepStageHeaderPanel/BuildStepStageDetailsPanel を追加し、BuildStep から分離。検証: 未実施。
 2180) feat/ui/build-step-stage-mode-toggle (P2) — 完了 (2026-01-10)
 - ブランチ名: feat/ui/build-step-stage-mode-toggle
 - 依存: なし
-- 受け入れ基準: BuildStepStagePanel が taskCount を管理しステージ単位で渡す／BuildStepStageSummaryPanel と BuildStepStageDetailsPanel が memo 化される／Failed/Completed Chip がアイコン付きでクリック時に mode 更新できる／failedMode/completedMode の真偽でタスク表示を制御できる／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/components/src/BuildStepPanel.tsx`, `packages/components/src/BuildStepStagePanel.tsx`, `packages/components/src/BuildStepStageSummaryPanel.tsx`, `packages/components/src/BuildStepStageDetailsPanel.tsx`
+- 受け入れ基準: BuildStepStagePanel が taskCount を管理しステージ単位で渡す／BuildStepStageHeaderPanel と BuildStepStageDetailsPanel が memo 化される／Failed/Completed Chip がアイコン付きでクリック時に mode 更新できる／failedMode/completedMode の真偽でタスク表示を制御できる／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/components/src/BuildStep.tsx`, `packages/components/src/BuildStepStagePanel.tsx`, `packages/components/src/BuildStepStagePanel.tsx`, `packages/components/src/BuildStepStageDetailsPanel.tsx`
 - ロールバック手順: 追加差分を revert し、従来のステージ表示と固定表示へ戻す
 - チェックリスト:
   - taskCount 集計を BuildStepStagePanel に集約する

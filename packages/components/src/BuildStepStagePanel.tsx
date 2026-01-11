@@ -1,75 +1,87 @@
-import { useCallback, useEffect, useState, type FC, type ReactNode } from 'react';
-import { BuildStageFilterProvider } from './BuildStepStageFilterContext.tsx';
-import { BuildStepStageSummaryPanel, type BuildStepStageTaskCount } from './BuildStepStageSummaryPanel.js';
+import { type FC, memo, type ReactNode } from 'react';
+import { Box, Chip, LinearProgress, Stack, Typography } from '@mui/material';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import TaskAltIcon from '@mui/icons-material/TaskAlt';
 
-export type BuildStage = {
-  id: string;
+export type BuildStepStageTaskCount = {
+  Completed: number;
+  Failed: number;
+  Skip: number;
+  Total?: number;
+};
+
+export type BuildStepStageSummaryPanelProps = {
   title: string;
   description?: string;
-  icon?: ReactNode;
-};
-
-export type BuildStepStagePanelProps = {
-  stage: BuildStage;
   progress: number;
-  content?: ReactNode;
   taskCount?: BuildStepStageTaskCount;
+  failedMode: boolean;
+  onFailedModeUpdate: (newMode: boolean) => void;
+  completedMode: boolean;
+  onCompletedModeUpdate: (newMode: boolean) => void;
+  children?: ReactNode;
 };
 
-export const BuildStepStagePanel: FC<BuildStepStagePanelProps> = ({
-  stage,
+const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
+  title,
+  description,
   progress,
-  content,
   taskCount,
+  failedMode,
+  onFailedModeUpdate,
+  completedMode,
+  onCompletedModeUpdate,
+  children,
 }) => {
-  const [failedMode, setFailedMode] = useState(true);
-  const [completedMode, setCompletedMode] = useState(true);
-  const [resolvedTaskCount, setResolvedTaskCount] = useState<BuildStepStageTaskCount>({
-    Completed: 0,
-    Failed: 0,
-    Skip: 0,
-  });
-
-  useEffect(() => {
-    if (taskCount) {
-      setResolvedTaskCount(taskCount);
-      return;
-    }
-    setResolvedTaskCount({
-      Completed: 0,
-      Failed: 0,
-      Skip: 0,
-    });
-  }, [taskCount]);
-
-  const handleFailedModeUpdate = useCallback((newMode: boolean) => {
-    setFailedMode(newMode);
-  }, []);
-
-  const handleCompletedModeUpdate = useCallback((newMode: boolean) => {
-    setCompletedMode(newMode);
-  }, []);
-
-  const stageContent = content
-    ? (
-      <BuildStageFilterProvider value={{ failedMode, completedMode }}>
-        {content}
-      </BuildStageFilterProvider>
-    )
-    : null;
-
+  const completed = taskCount?.Completed ?? 0;
+  const failed = taskCount?.Failed ?? 0;
+  const skipped = taskCount?.Skip ?? 0;
+  const total = taskCount?.Total ?? (completed + failed + skipped);
+  const completedNumerator = total === 0
+    ? 0
+    : Math.min(total, completed + skipped);
+  const completedLabel = `Completed ${completedNumerator}/${total}`;
   return (
-    <BuildStepStageSummaryPanel
-      title={stage.title}
-      description={stage.description}
-      progress={progress}
-      taskCount={resolvedTaskCount}
-      failedMode={failedMode}
-      onFailedModeUpdate={handleFailedModeUpdate}
-      completedMode={completedMode}
-      onCompletedModeUpdate={handleCompletedModeUpdate}
-    >
-      {stageContent}
-    </BuildStepStageSummaryPanel>
+    <Box display="flex" flexDirection="column" height="100%" minHeight={0}>
+      <Stack spacing={1} sx={{ p: 2 }}>
+        <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+          <Typography variant="subtitle2">{title}</Typography>
+          <Stack direction="row" spacing={0.5} alignItems="center">
+            <Chip
+              label={`Failed ${failed}`}
+              size="small"
+              color="error"
+              icon={<ErrorOutlineIcon fontSize="small" />}
+              variant={failedMode ? 'filled' : 'outlined'}
+              onClick={() => onFailedModeUpdate(!failedMode)}
+            />
+            <Chip
+              label={completedLabel}
+              size="small"
+              color="success"
+              icon={<TaskAltIcon fontSize="small" />}
+              variant={completedMode ? 'filled' : 'outlined'}
+              onClick={() => onCompletedModeUpdate(!completedMode)}
+            />
+          </Stack>
+        </Stack>
+        {description ? (
+          <Typography variant="body2" color="text.secondary">
+            {description}
+          </Typography>
+        ) : null}
+        <LinearProgress
+          variant="determinate"
+          value={progress}
+        />
+      </Stack>
+      {children ? (
+        <Box flex={1} minHeight={0}>
+          {children}
+        </Box>
+      ) : null}
+    </Box>
   );
 };
+
+export const BuildStepStagePanel = memo(BuildStepStagePanelCore);

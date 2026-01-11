@@ -101,4 +101,4 @@ Shape バッチ機能の新アーキテクチャ概要と利用メモ。
   - Extract workers: read `rawBuffers`, write `extractedBuffers` (stage1/2) via runtime worker client `extractStage1/2`.
   - Tile worker: read `extractedBuffers`, generate MVT -> write `vectorTiles`.
 - Progress: aggregated in UnifiedShapeBatchManager; mapped to `ProgressInfo` and dispatched via worker API subscription.
-- UI controls: Start -> `startBatchSession`, Pause/Resume -> `pauseSession`/`resumeSession`, Cancel -> `cancelSession`; BuildStepPanel reflects progress stream.
+- UI controls: Start -> `startBatchSession`, Pause/Resume -> `pauseSession`/`resumeSession`, Cancel -> `cancelSession`; BuildStep reflects progress stream.

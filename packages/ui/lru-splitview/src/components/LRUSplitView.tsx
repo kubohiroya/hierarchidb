@@ -114,7 +114,7 @@ export const LRUSplitView: React.FC<LRUSplitViewProps> = ({
     togglePane,
     getSizes,
   } = useLRUPanes({
-    panes: effectivePanes,
+    panes,
     maxExpandedPanes: responsiveMaxExpandedPanes,
     initialSizes: responsiveInitialSizes,
     equalizeOnAllExpanded,

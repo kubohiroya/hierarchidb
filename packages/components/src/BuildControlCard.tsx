@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { LoadingButton } from './LoadingButton.tsx';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import type { BuildStatus } from './BuildStepPanel.tsx';
+import type { BuildStatus } from './BuildStep.tsx';
 
 type BuildControlCardProps = {
   status: BuildStatus;

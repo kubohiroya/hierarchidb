@@ -16,7 +16,6 @@ type Params = {
   warningMessage?: string | null;
   isDev: boolean;
   t: (key: string, fallback: string, options?: Record<string, unknown>) => string;
-  normalizeStageId: (stage?: string) => 'fetch' | 'transform' | 'vt' | undefined;
 };
 
 export const useShapeBuildProgressWarnings = ({
@@ -26,7 +25,6 @@ export const useShapeBuildProgressWarnings = ({
   warningMessage,
   isDev,
   t,
-  normalizeStageId,
 }: Params) => {
   const [warningDialogOpen, setWarningDialogOpen] = useState(false);
   const [crashHintOpen, setCrashHintOpen] = useState(false);
@@ -35,7 +33,7 @@ export const useShapeBuildProgressWarnings = ({
 
   const startWarning = useMemo<StartWarning | null>(() => {
     if (!crashInsight || !crashInsight.memoryPressure) return null;
-    const stageId = normalizeStageId(crashInsight.stage);
+    const stageId = crashInsight.stage;
     if (!stageId) {
       return {
         title: t('stage.warning.title', 'Build warning'),
@@ -78,7 +76,7 @@ export const useShapeBuildProgressWarnings = ({
         },
       ),
     };
-  }, [crashInsight, data?.batchConfig, normalizeStageId, stages, t]);
+  }, [crashInsight, data?.batchConfig, stages, t]);
 
   const crashHint = useMemo(() => {
     if (isDev) return null;
@@ -90,8 +88,7 @@ export const useShapeBuildProgressWarnings = ({
       );
     }
     const stageLabel = crashInsight.stage
-      ? stages.find((candidate) => candidate.id === normalizeStageId(crashInsight.stage))?.title
-        ?? normalizeStageId(crashInsight.stage)
+      ? stages.find((candidate) => candidate.id === crashInsight.stage)?.title
         ?? crashInsight.stage
       : t('stage.warning.unknownStageShort', 'unknown stage');
     const ratioText = crashInsight.peakRatio
@@ -102,7 +99,7 @@ export const useShapeBuildProgressWarnings = ({
       'Previous stage likely hit memory pressure during {{stage}} (peak {{ratio}}). Lower concurrency to reduce memory usage.',
       { stage: stageLabel, ratio: ratioText },
     );
-  }, [crashInsight, isDev, normalizeStageId, stages, t]);
+  }, [crashInsight, isDev, stages, t]);
 
   useEffect(() => {
     if (crashHint) {

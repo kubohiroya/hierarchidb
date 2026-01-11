@@ -34,26 +34,6 @@ import { TaskProgressSummaryCard } from './TaskProgressSummaryCard.tsx';
 import type { ShapeEntity } from '../../../common/types/ShapeEntity.ts';
 import { ShapeBuildProgressStageContent } from './ShapeBuildProgressStageContent.js';
 
-const normalizeStageId = (stage?: string): 'fetch' | 'transform' | 'vt' | undefined => {
-  if (!stage) return undefined;
-  switch (stage) {
-    case 'download':
-    case 'shape-fetch':
-    case 'fetch':
-      return 'fetch';
-    case 'extract1':
-    case 'extract2':
-    case 'transform':
-      return 'transform';
-    case 'vectortile':
-    case 'vectorTiles':
-    case 'vt':
-      return 'vt';
-    default:
-      return undefined;
-  }
-};
-
 export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<ShapeEntity>; nodeId?: NodeId }) => {
   const resolvedNodeId = nodeId as NodeId | undefined;
   const { t } = useTranslation();
@@ -88,8 +68,7 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
     stages: effectiveStages,
     warningMessage,
     isDev,
-    t,
-    normalizeStageId,
+    t
   });
 
   const resolveTaskTitle = useCallback(

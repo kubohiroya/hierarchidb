@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import { Alert, Box, Stack, Typography } from '@mui/material';
-import { BuildStepPanel, type BuildStatus, type BuildStage } from '@hierarchidb/components';
+import { type BuildStatus, type BuildStage, BuildStep } from '@hierarchidb/components';
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import { getWorkerBridge, type WorkerBridge } from '@hierarchidb/ui-worker-client';
 import { HeapPressureDialog, useHeapPressureGuard } from '@hierarchidb/ui-memory';
@@ -80,26 +80,21 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
   const stageLabels = translations.batch?.stages ?? {};
   const stages = useMemo<Array<BuildStage & { description: string }>>(() => ([
     {
-      id: 'download',
+      id: 'fetch',
       title: stageLabels.download ?? t('stage.stages.download', 'Download'),
       description: t('stage.stageDescriptions.download', 'Download points and metadata.'),
     },
     {
-      id: 'extract1',
+      id: 'transform',
       title: stageLabels.filtering ?? t('stage.stages.filter', 'Filter'),
       description: t('stage.stageDescriptions.filter', 'Normalize and filter the source data.'),
     },
     {
-      id: 'extract2',
-      title: stageLabels.clustering ?? t('stage.stages.cluster', 'Cluster'),
-      description: t('stage.stageDescriptions.cluster', 'Prepare point clusters and indexes.'),
-    },
-    {
-      id: 'vectortile',
+      id: 'vt',
       title: stageLabels.indexing ?? t('stage.stages.index', 'Index'),
       description: t('stage.stageDescriptions.index', 'Generate vector tiles for previews.'),
     },
-  ]), [stageLabels.clustering, stageLabels.download, stageLabels.filtering, stageLabels.indexing, t]);
+  ]), [stageLabels.download, stageLabels.filtering, stageLabels.indexing, t]);
   const splitViewInitialSizes = useMemo(
     () => Array.from({ length: SPLITVIEW_BREAKPOINTS.length + 1 }, () =>
       Array.from({ length: stages.length }, () => 300),
@@ -289,7 +284,7 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
         </Alert>
       ) : null}
 
-      <BuildStepPanel
+      <BuildStep
         status={buildStatus}
         overallProgress={ideGsmActive ? ideGsmOverallProgress : overallProgress}
         stages={stages}

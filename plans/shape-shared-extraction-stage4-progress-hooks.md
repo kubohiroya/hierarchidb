@@ -86,7 +86,7 @@ Expected usage example in a plugin:
 
 ## 追加調査メモ（2025-12-26）
 
-- shape: UI から pause/resume の導線が存在（`ShapeBuildStep` → `BuildStepPanel`）。
+- shape: UI から pause/resume の導線が存在（`ShapeBuildStep` → `BuildStep`）。
 - route: UI hook が `pauseBatchSession`/`resumeBatchSession` を直接呼ぶ実装あり（`useRouteBatchProgress`）。
 - location: UI に pause/resume ボタンはあるが、現状はローカル state の切替のみで WorkerBridge へ未接続（`BatchProgressDialog`）。
 - location/route 開発時は pause/resume の UI ⇔ Worker の接続状況を前提条件として明記し、location 側の実配線を優先課題として扱う。

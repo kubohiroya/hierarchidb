@@ -566,7 +566,7 @@ function ShapeBuildStep({ data, onChange }: Props) {
   };
 
   return (
-    <BuildStepPanel onResume={startBatchProcess} />
+    <BuildStep onResume={startBatchProcess} />
   );
 }
 ```
