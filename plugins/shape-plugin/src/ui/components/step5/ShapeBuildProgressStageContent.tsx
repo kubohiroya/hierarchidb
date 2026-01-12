@@ -1,7 +1,9 @@
 import { Stack, Skeleton, Typography } from '@mui/material';
+import { useAtomValue } from 'jotai';
 import type { BatchTaskSummary } from '@hierarchidb/common-api';
 import type { PaneProgress } from '@hierarchidb/ui-lru-splitview';
 import { useBuildStageFilter, type BuildStage } from '@hierarchidb/components';
+import { taskScrollTargetAtom } from '../../atoms/shapeBuildProgressAtoms.ts';
 import {
   TaskListVirtualized,
   sortVectorTileTasks,
@@ -9,6 +11,7 @@ import {
 } from './TaskListVirtualized.tsx';
 
 type ShapeBuildProgressStageContentProps = {
+  showHeader?: boolean;
   stage: BuildStage;
   stageValue: number;
   tasksByStage: Record<string, BatchTaskSummary[]>;
@@ -34,9 +37,13 @@ export const ShapeBuildProgressStageContent = ({
   resolveStatusColor,
   resolveTaskTitle,
   t,
+  showHeader = true,
 }: ShapeBuildProgressStageContentProps) => {
   const filter = useBuildStageFilter();
   const stageTasks = tasksByStage[stage.id] ?? [];
+  const scrollTarget = useAtomValue(taskScrollTargetAtom);
+  const scrollToTaskId = scrollTarget?.stageId === stage.id ? scrollTarget.taskId : undefined;
+  const scrollRequestId = scrollTarget?.requestedAt;
   const filteredTasks = stageTasks.filter((task) => {
     if (task.status === 'failed') return filter.failedMode;
     if (task.status === 'completed') return filter.completedMode;
@@ -62,17 +69,23 @@ export const ShapeBuildProgressStageContent = ({
         </>
       ) : showTaskSkeleton ? (
         <>
-          <Typography variant="subtitle2">{stage.title}</Typography>
+          {showHeader ? (
+            <Typography variant="subtitle2">{stage.title}</Typography>
+          ) : null}
           <Skeleton variant="text" width="60%" />
           <Skeleton variant="rounded" height={160} />
         </>
       ) : !hasTasks ? (
         <>
-          <Typography variant="subtitle2">{stage.title}</Typography>
-          {stage.description ? (
-            <Typography variant="body2" color="text.secondary">
-              {stage.description}
-            </Typography>
+          {showHeader ? (
+            <>
+              <Typography variant="subtitle2">{stage.title}</Typography>
+              {stage.description ? (
+                <Typography variant="body2" color="text.secondary">
+                  {stage.description}
+                </Typography>
+              ) : null}
+            </>
           ) : null}
           <Typography variant="caption" color="text.secondary">
             {hasSummaryTasks
@@ -87,6 +100,8 @@ export const ShapeBuildProgressStageContent = ({
           resolveStatusLabel={resolveStatusLabel}
           resolveStatusColor={resolveStatusColor}
           resolveTaskTitle={resolveTaskTitle}
+          scrollToTaskId={scrollToTaskId}
+          scrollRequestId={scrollRequestId}
         />
       )}
     </Stack>

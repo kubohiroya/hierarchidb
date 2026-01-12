@@ -18,7 +18,7 @@ import type { ShapeDialogStepProps } from './ShapeDialogStepProps.js';
 import { ShapeBuildConfigStep } from './step4/ShapeBuildConfigStep.tsx';
 import { ShapeCountrySelectionStep } from './step3/ShapeCountrySelectionStep.tsx';
 import { ShapeBuildStep } from './step5/ShapeBuildStep.tsx';
-import { shapeQueryAPIImpl } from '../../services/batch/ShapeBuildApiClient.ts';
+import { shapeQueryAPIImpl } from '../../services/batch/ShapeBuildAPIClient.ts';
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -69,7 +69,7 @@ const ShapeBuildProgress = createStepAdapter(ShapeBuildStep);
 const resolveSelectedArrayByCountries = (data?: Partial<ShapeEntity>): SelectedArrayByCountries | undefined =>
   data?.selectedArrayByCountries;
 
-const canStartShapeBatch = (data?: Partial<ShapeEntity>): boolean => {
+const canStartShapeBuild = (data?: Partial<ShapeEntity>): boolean => {
   // data reflects draftData (payload) only
   const hasSelection = summarizeCheckboxState(resolveSelectedArrayByCountries(data)).hasSelection;
   const hasDataSource = Boolean(data?.batchConfig?.dataSource);
@@ -159,7 +159,7 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
         componentFactory: (props: ShapeStepProps) => <ShapeBuildProgress {...props} />,
         validate: (data?: Partial<ShapeEntity>) => isShapeBuildPersisted(data),
         capabilities: {
-          canStartBatch: (data?: Partial<ShapeEntity>) => canStartShapeBatch(data),
+          canStartBatch: (data?: Partial<ShapeEntity>) => canStartShapeBuild(data),
           canProceedToNext: (data?: Partial<ShapeEntity>) => isShapePreviewReady(data),
           canSave: (data?: Partial<ShapeEntity>) => isShapeBuildPersisted(data),
         },

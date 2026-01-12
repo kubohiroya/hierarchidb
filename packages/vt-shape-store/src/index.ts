@@ -1,26 +1,26 @@
 export { VtShapeDb } from './db/shapeDb.js';
 export { vtShapeStoreSchema } from './db/schema.js';
 export {
-  getStage1Buffer,
-  listStage1Buffers,
+  getFetchCache,
+  listFetchCache,
 } from './query/stage1Query.js';
 export {
-  getTransformBuffer,
-  listTransformBuffers,
+  getTransformByBandCache,
+  listTransformByBandCache,
 } from './query/transformQuery.js';
-export { listBufferIdsByTile } from './query/tileIndexQuery.js';
-export { putStage1Buffer } from './mutation/stage1Mutation.js';
+export { listTransformByBandCacheIdsByTile } from './query/tileIndexQuery.js';
+export { putFetchCache } from './mutation/stage1Mutation.js';
 export {
-  putTransformBuffer,
-  putTileIndexBand,
-  reserveBand3Tile,
+  putTransformByBandCache,
+  putTransformByZoomCache,
+  reserveTransformByZoomTile,
 } from './mutation/transformMutation.js';
 export type {
-  Band3Reservation,
-  Stage1Buffer,
-  Stage1BufferPayload,
-  TileIndexRow,
-  TransformBuffer,
-  TransformBufferPayload,
+  TransformByZoomReservation,
+  FetchCacheRecord,
+  FetchCachePayload,
+  TransformByZoomCacheRecord,
+  TransformByBandCacheRecord,
+  TransformByBandCachePayload,
 } from './types.js';
 export { SHAPE_DOMAIN, bandIdToZBase } from './ids.js';

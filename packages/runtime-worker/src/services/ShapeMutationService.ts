@@ -2,28 +2,28 @@ import { SingletonMixin } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
 import type {
   ShapeBuildTaskRecord,
-  ShapeBatchSessionRecord,
-  ShapeTransformSourceBufferRecord,
-  ShapeFeatureMetadataRow,
+  ShapeBuildSessionRecord,
+  ShapeTransformByBandCache,
+  ShapeFeatureMetadata,
   ShapeMutationAPI,
-  ShapeFetchBufferRecord,
-  ShapeSourceMetadataRow,
+  ShapeFetchCache,
+  ShapeSourceMetadata,
   ShapeVectorTileRecord,
 } from '@hierarchidb/plugin-service-api';
 import { storeRawDataDataSourceBufferForNode } from './shapeChunkStore.js';
 import {
   ephemeralShapeDB,
-  type BatchProcessConfig,
-  type BatchSessionRecord,
+  type BuildProcessConfig,
+  type BuildSessionRecord,
   type LayerInfo,
-  type ProcessingStage,
+  type BuildStage,
   type ProgressInfo,
   type ResourceUsage,
   type ShapeDB,
   type StageStatus,
   type VectorTileRecord,
 } from '@hierarchidb/shape-store';
-import type { ShapeBatchProgressSummary } from '@hierarchidb/plugin-service-api';
+import type { ShapeBuildProgressSummary } from '@hierarchidb/plugin-service-api';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -48,7 +48,7 @@ const isStageStatus = (value: unknown): value is StageStatus => {
     && (value.message === undefined || typeof value.message === 'string');
 };
 
-const isBatchProcessConfig = (value: unknown): value is BatchProcessConfig => {
+const isBuildProcessConfig = (value: unknown): value is BuildProcessConfig => {
   if (!isRecord(value)) return false;
   return isRecord(value.download)
     && isRecord(value.extract1)
@@ -56,22 +56,23 @@ const isBatchProcessConfig = (value: unknown): value is BatchProcessConfig => {
     && isRecord(value.vectorTiles);
 };
 
-const toProgressInfo = (progress: ShapeBatchProgressSummary): ProgressInfo => ({
+const toProgressInfo = (progress: ShapeBuildProgressSummary): ProgressInfo => ({
   total: progress.total,
   completed: progress.completed,
   failed: progress.failed,
   skipped: progress.skipped,
   percentage: progress.percentage,
-  taskType: toProcessingStage(progress.taskType),
+  taskType: toBuildStage(progress.taskType),
 });
 
-const toProcessingStage = (
-  stage: ShapeBatchProgressSummary['taskType'],
+const toBuildStage = (
+  stage: ShapeBuildProgressSummary['taskType'],
 ): ProgressInfo['taskType'] => {
   if (stage === 'processing') return stage;
   if (
     stage === 'fetch'
-    || stage === 'transform'
+    || stage === 'transform-by-band'
+    || stage === 'transform-by-zoom'
     || stage === 'vt'
   ) {
     return stage;
@@ -79,7 +80,7 @@ const toProcessingStage = (
   return undefined;
 };
 
-const toStageMap = (stages: Record<string, unknown>): Record<ProcessingStage, StageStatus> => {
+const toStageMap = (stages: Record<string, unknown>): Record<BuildStage, StageStatus> => {
   const empty: StageStatus = {
     status: 'queued',
     progress: 0,
@@ -87,13 +88,14 @@ const toStageMap = (stages: Record<string, unknown>): Record<ProcessingStage, St
     tasksCompleted: 0,
     tasksFailed: 0,
   };
-  const read = (stage: ProcessingStage): StageStatus => {
+  const read = (stage: BuildStage): StageStatus => {
     const candidate = stages[stage];
     return isStageStatus(candidate) ? candidate : empty;
   };
   return {
     fetch: read('fetch'),
-    transform: read('transform'),
+    'transform-by-band': read('transform-by-band'),
+    'transform-by-zoom': read('transform-by-zoom'),
     vt: read('vt'),
   };
 };
@@ -118,8 +120,8 @@ const toResourceUsage = (usage: Record<string, unknown> | undefined): ResourceUs
   };
 };
 
-const toBatchSessionRecord = (session: ShapeBatchSessionRecord): BatchSessionRecord => {
-  if (!isBatchProcessConfig(session.config)) {
+const toBuildSessionRecord = (session: ShapeBuildSessionRecord): BuildSessionRecord => {
+  if (!isBuildProcessConfig(session.config)) {
     throw new Error('Invalid shape batch session config');
   }
   return {
@@ -139,12 +141,12 @@ const toBatchSessionRecord = (session: ShapeBatchSessionRecord): BatchSessionRec
   };
 };
 
-const toBatchSessionUpdates = (updates: Partial<ShapeBatchSessionRecord>): Partial<BatchSessionRecord> => {
-  const next: Partial<BatchSessionRecord> = {};
+const toBuildSessionUpdates = (updates: Partial<ShapeBuildSessionRecord>): Partial<BuildSessionRecord> => {
+  const next: Partial<BuildSessionRecord> = {};
   if (updates.draftId !== undefined) next.draftId = updates.draftId;
   if (updates.status !== undefined) next.status = updates.status;
   if (updates.config !== undefined) {
-    if (!isBatchProcessConfig(updates.config)) {
+    if (!isBuildProcessConfig(updates.config)) {
       throw new Error('Invalid shape batch session config');
     }
     next.config = updates.config;
@@ -199,24 +201,24 @@ export class ShapeMutationService implements ShapeMutationAPI {
     await this.db.open?.();
   }
 
-  async upsertBatchSession(session: ShapeBatchSessionRecord): Promise<void> {
+  async upsertBuildSession(session: ShapeBuildSessionRecord): Promise<void> {
     await this.ensureOpen();
-    await this.db.batchSessions.put(toBatchSessionRecord(session));
+    await this.db.buildSessions.put(toBuildSessionRecord(session));
   }
 
-  async updateBatchSession(nodeId: NodeId, updates: Partial<ShapeBatchSessionRecord>): Promise<void> {
+  async updateBuildSession(nodeId: NodeId, updates: Partial<ShapeBuildSessionRecord>): Promise<void> {
     await this.ensureOpen();
-    await this.db.updateBatchSession(nodeId, toBatchSessionUpdates(updates));
+    await this.db.updateBuildSession(nodeId, toBuildSessionUpdates(updates));
   }
 
-  async deleteBatchSession(nodeId: NodeId): Promise<void> {
+  async deleteBuildSession(nodeId: NodeId): Promise<void> {
     await this.ensureOpen();
-    await this.db.batchSessions.delete(nodeId);
+    await this.db.buildSessions.delete(nodeId);
   }
 
   async deleteBuildTasks(nodeId: NodeId): Promise<void> {
     await this.ensureOpen();
-    await ephemeralShapeDB.batchTasks.where('nodeId').equals(nodeId).delete?.();
+    await ephemeralShapeDB.buildTasks.where('nodeId').equals(nodeId).delete?.();
   }
 
   async deleteVectorTile(tileId: string): Promise<void> {
@@ -246,13 +248,13 @@ export class ShapeMutationService implements ShapeMutationAPI {
 
   async cleanupProcessingData(nodeId: NodeId): Promise<void> {
     await this.ensureOpen();
-    await this.deleteBatchSession(nodeId);
+    await this.deleteBuildSession(nodeId);
     await this.deleteFeatures(nodeId);
     await this.deleteFeatureBuffers(nodeId);
     await this.deleteTileBuffers(nodeId);
     await this.deleteVectorTiles(nodeId);
     await this.clearTileIndexArtifacts(String(nodeId));
-    await ephemeralShapeDB.batchTasks.where('nodeId').equals(nodeId).delete();
+    await ephemeralShapeDB.buildTasks.where('nodeId').equals(nodeId).delete();
   }
 
   async clearShapeArtifacts(nodeId: NodeId): Promise<void> {
@@ -263,15 +265,15 @@ export class ShapeMutationService implements ShapeMutationAPI {
   async upsertBuildTasks(tasks: ShapeBuildTaskRecord[]): Promise<void> {
     await this.ensureOpen();
     if (tasks.length === 0) return;
-    await ephemeralShapeDB.batchTasks.bulkPut?.(tasks);
+    await ephemeralShapeDB.buildTasks.bulkPut?.(tasks);
   }
 
   async updateBuildTask(taskId: string, updates: Partial<ShapeBuildTaskRecord>): Promise<void> {
     await this.ensureOpen();
-    await ephemeralShapeDB.batchTasks.update?.(taskId, updates);
+    await ephemeralShapeDB.buildTasks.update?.(taskId, updates);
   }
 
-  async putFetchBuffers(buffers: ShapeFetchBufferRecord[]): Promise<void> {
+  async putFetchCaches(buffers: ShapeFetchCache[]): Promise<void> {
     if (buffers.length === 0) return;
     await Promise.all(buffers.map((buffer) => (
       storeRawDataDataSourceBufferForNode({
@@ -282,12 +284,12 @@ export class ShapeMutationService implements ShapeMutationAPI {
     )));
   }
 
-  async putTransformSourceBuffers(buffers: ShapeTransformSourceBufferRecord[]): Promise<void> {
+  async putTransformByBandCaches(buffers: ShapeTransformByBandCache[]): Promise<void> {
     if (buffers.length === 0) return;
-    await ephemeralShapeDB.transformBuffers.bulkPut(buffers);
+    await ephemeralShapeDB.transformByBandCache.bulkPut(buffers);
   }
 
-  async putSourceMetadata(rows: ShapeSourceMetadataRow[]): Promise<void> {
+  async putSourceMetadata(rows: ShapeSourceMetadata[]): Promise<void> {
     if (rows.length === 0) return;
     await this.db.sourceMetadata.bulkPut?.(rows);
   }
@@ -301,7 +303,7 @@ export class ShapeMutationService implements ShapeMutationAPI {
     await this.db.sourceMetadata.where('nodeId').equals(nodeId).delete?.();
   }
 
-  async putFeatureMetadata(rows: ShapeFeatureMetadataRow[]): Promise<void> {
+  async putFeatureMetadata(rows: ShapeFeatureMetadata[]): Promise<void> {
     if (rows.length === 0) return;
     await this.db.featureMetadata.bulkPut?.(rows);
   }

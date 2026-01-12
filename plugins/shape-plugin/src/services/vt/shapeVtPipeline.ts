@@ -2,13 +2,19 @@ import type { NodeId } from '@hierarchidb/common-types';
 import {
   VtTaskQueueDb,
   deleteTasksByNode,
+  listTasksByStage,
   putTasks,
   runStageTasks,
-  createTransformHandler,
+  createTransformByBandHandler,
+  createTransformByZoomHandler,
   createVtHandler,
 } from '@hierarchidb/vt-orchestrator';
 import type { TaskQueueRecord, StageHandler } from '@hierarchidb/vt-orchestrator';
-import { VtShapeDb, listStage1Buffers, listBufferIdsByTile } from '@hierarchidb/vt-shape-store';
+import {
+  VtShapeDb,
+  listFetchCache,
+  listTransformByBandCacheIdsByTile,
+} from '@hierarchidb/vt-shape-store';
 import { VtDb } from '@hierarchidb/vt-store';
 import type { BatchConfig, CountryMetadata, DataSourceName, FetchTaskPayload, SelectedArrayByCountries } from '../../common/types/index.js';
 import { DEFAULT_PROCESSING_CONFIG } from '../../common/types/constants.js';
@@ -16,8 +22,8 @@ import { runShapeFetchStage } from './shapeFetchStage.js';
 import { updateShapeStageMetadata } from './shapeStageMetadata.js';
 import { metadataLoader } from '../metadata/MetadataLoader.js';
 
-type ShapeTransformTaskInput = {
-  stage1BufferId: string;
+export type ShapeTransformByBandTaskInput = {
+  fetchCacheId: string;
   bandId: number;
   domainType: 'shape';
   sourceKey: string;
@@ -25,6 +31,11 @@ type ShapeTransformTaskInput = {
   countryCode?: string;
   countryName?: string;
   adminLevel?: number;
+};
+
+export type ShapeTransformByZoomTaskInput = {
+  transformByBandCacheId: string;
+  bandId: number;
 };
 
 type ShapeVtTaskInput = {
@@ -63,15 +74,15 @@ const hasBand3Selection = (
   return Object.values(selection).some((row) => row?.some((selected, index) => selected && index >= 2));
 };
 
-const buildTransformTasks = async (
+const buildTransformByBandTasks = async (
   nodeId: NodeId,
   shapeStore: VtShapeDb,
   bands: Array<{ bandId: number; zMin: number; zMax: number; zBase: number }>,
   enableBand3: boolean,
   countryLookup: Map<string, CountryMetadata>,
-): Promise<Array<TaskQueueRecord<ShapeTransformTaskInput>>> => {
-  const buffers = await listStage1Buffers(shapeStore, nodeId);
-  const tasks: Array<TaskQueueRecord<ShapeTransformTaskInput>> = [];
+): Promise<Array<TaskQueueRecord<ShapeTransformByBandTaskInput>>> => {
+  const buffers = await listFetchCache(shapeStore, nodeId);
+  const tasks: Array<TaskQueueRecord<ShapeTransformByBandTaskInput>> = [];
   let index = 0;
 
   for (const buffer of buffers) {
@@ -85,15 +96,15 @@ const buildTransformTasks = async (
         if (typeof adminLevel !== 'number' || adminLevel < 2) continue;
       }
       tasks.push({
-        taskId: `${String(nodeId)}:transform:${band.bandId}:${buffer.sourceKey}`,
+        taskId: `${String(nodeId)}:transform-by-band:${band.bandId}:${buffer.sourceKey}`,
         nodeId,
-        stage: 'transform',
+        stage: 'transform-by-band',
         status: 'queued',
         index,
         stagePriority,
         progress: 0,
         inputData: {
-          stage1BufferId: buffer.id,
+          fetchCacheId: buffer.id,
           bandId: band.bandId,
           domainType: 'shape',
           sourceKey: buffer.sourceKey,
@@ -105,6 +116,37 @@ const buildTransformTasks = async (
       });
       index += 1;
     }
+  }
+  return tasks;
+};
+
+const buildTransformByZoomTasks = async (
+  nodeId: NodeId,
+  shapeStore: VtShapeDb,
+): Promise<Array<TaskQueueRecord<ShapeTransformByZoomTaskInput>>> => {
+  const buffers = await shapeStore.transformByBandCache
+    .where("nodeId")
+    .equals(nodeId)
+    .filter((row) => row.domainType === "shape")
+    .toArray();
+  const tasks: Array<TaskQueueRecord<ShapeTransformByZoomTaskInput>> = [];
+  let index = 0;
+
+  for (const buffer of buffers) {
+    tasks.push({
+      taskId: `${String(nodeId)}:transform-by-zoom:${buffer.bandId}:${buffer.id}`,
+      nodeId,
+      stage: 'transform-by-zoom',
+      status: 'queued',
+      index,
+      stagePriority: typeof buffer.adminLevel === 'number' ? buffer.adminLevel : 0,
+      progress: 0,
+      inputData: {
+        transformByBandCacheId: buffer.id,
+        bandId: buffer.bandId,
+      },
+    });
+    index += 1;
   }
   return tasks;
 };
@@ -175,13 +217,13 @@ const buildVtTasks = async (
   for (const band of bands) {
     if (band.bandId === 3 && !enableBand3) continue;
     const tileIds = band.bandId === 3
-      ? (await shapeStore.vtBand3Reservations.where('nodeId').equals(nodeId).toArray())
+      ? (await shapeStore.transformByZoomReservations.where('nodeId').equals(nodeId).toArray())
         .map((entry) => entry.tileId)
       : listFixedTiles(band.zBase);
     for (const tileId of tileIds) {
-      const bufferIds = await listBufferIdsByTile(shapeStore, nodeId, band.bandId, tileId);
+      const bufferIds = await listTransformByBandCacheIdsByTile(shapeStore, nodeId, band.bandId, tileId);
       if (bufferIds.length === 0) continue;
-      const buffers = await shapeStore.transformBandBuffers.where('id').anyOf(bufferIds).toArray();
+      const buffers = await shapeStore.transformByBandCache.where('id').anyOf(bufferIds).toArray();
       const vertexById = new Map(buffers.map((buffer) => [buffer.id, buffer.vertexCount] as const));
       const chunks = splitBufferIds(bufferIds, vertexById, maxBuffersPerTask, maxVerticesPerTask);
       for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex += 1) {
@@ -211,11 +253,16 @@ const buildVtTasks = async (
   return tasks;
 };
 
-const resolveTransformConfig = (config: BatchConfig) => {
-  const tileConfig = config.tileConfig ?? DEFAULT_PROCESSING_CONFIG.tileConfig;
+const resolveTransformByBandConfig = (config: BatchConfig) => {
   const extract1Config = config.extract1Config ?? DEFAULT_PROCESSING_CONFIG.extract1Config;
   return {
     toleranceK: extract1Config?.tolerance ?? 1,
+  };
+};
+
+const resolveTransformByZoomConfig = (config: BatchConfig) => {
+  const tileConfig = config.tileConfig ?? DEFAULT_PROCESSING_CONFIG.tileConfig;
+  return {
     tileIndex: {
       buffer: tileConfig?.bufferSize ?? 256,
       extent: 4096,
@@ -245,13 +292,17 @@ export type ShapeVtPipelineParams = {
   selectedArrayByCountries?: SelectedArrayByCountries;
   downloadTaskPayloads?: FetchTaskPayload[];
   waitIfPaused?: () => Promise<void>;
+  resumeExistingTasks?: boolean;
 };
 
 export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise<void> => {
   const taskQueue = new VtTaskQueueDb();
   const shapeStore = new VtShapeDb();
   const vtStore = new VtDb();
-  await deleteTasksByNode(taskQueue, params.nodeId);
+  const resumeExistingTasks = Boolean(params.resumeExistingTasks);
+  if (!resumeExistingTasks) {
+    await deleteTasksByNode(taskQueue, params.nodeId);
+  }
 
   const metadata = await metadataLoader.loadMetadata(params.dataSource, params.nodeId);
   const countryLookup = buildCountryLookup(metadata);
@@ -268,38 +319,78 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
     shapeStore,
     metadata,
     waitIfPaused: params.waitIfPaused,
+    resumeExistingTasks,
   });
 
-  const transformTasks = await buildTransformTasks(params.nodeId, shapeStore, bands, enableBand3, countryLookup);
-  if (transformTasks.length > 0) {
+  const existingTransformByBandTasks = resumeExistingTasks
+    ? await listTasksByStage(taskQueue, params.nodeId, 'transform-by-band')
+    : [];
+  const transformByBandTasks = existingTransformByBandTasks.length > 0
+    ? []
+    : await buildTransformByBandTasks(params.nodeId, shapeStore, bands, enableBand3, countryLookup);
+  if (existingTransformByBandTasks.length > 0 || transformByBandTasks.length > 0) {
     await params.waitIfPaused?.();
-    await putTasks(taskQueue, transformTasks as Array<TaskQueueRecord<ShapeTransformTaskInput>>);
-    const transformHandler = createTransformHandler({
+    if (transformByBandTasks.length > 0) {
+      await putTasks(taskQueue, transformByBandTasks as Array<TaskQueueRecord<ShapeTransformByBandTaskInput>>);
+    }
+    const transformByBandHandler = createTransformByBandHandler({
       shapeStore,
-      transformConfig: resolveTransformConfig(params.batchConfig),
+      transformConfig: resolveTransformByBandConfig(params.batchConfig),
+      bands,
+    });
+    await runStageTasks({
+      db: taskQueue,
+      nodeId: params.nodeId,
+      stage: 'transform-by-band',
+      handler: transformByBandHandler as unknown as StageHandler<ShapeTransformByBandTaskInput>,
+      waitIfPaused: params.waitIfPaused,
+    });
+  }
+
+  const existingTransformByZoomTasks = resumeExistingTasks
+    ? await listTasksByStage(taskQueue, params.nodeId, 'transform-by-zoom')
+    : [];
+  const transformByZoomTasks = existingTransformByZoomTasks.length > 0
+    ? []
+    : await buildTransformByZoomTasks(params.nodeId, shapeStore);
+  if (existingTransformByZoomTasks.length > 0 || transformByZoomTasks.length > 0) {
+    await params.waitIfPaused?.();
+    if (transformByZoomTasks.length > 0) {
+      await putTasks(taskQueue, transformByZoomTasks as Array<TaskQueueRecord<ShapeTransformByZoomTaskInput>>);
+    }
+    const transformByZoomHandler = createTransformByZoomHandler({
+      shapeStore,
+      zoomConfig: resolveTransformByZoomConfig(params.batchConfig),
       bands,
       maxBand3Reservations: DEFAULT_TASK_SPLIT.maxBand3Reservations,
     });
     await runStageTasks({
       db: taskQueue,
       nodeId: params.nodeId,
-      stage: 'transform',
-      handler: transformHandler as unknown as StageHandler<ShapeTransformTaskInput>,
+      stage: 'transform-by-zoom',
+      handler: transformByZoomHandler as unknown as StageHandler<ShapeTransformByZoomTaskInput>,
       waitIfPaused: params.waitIfPaused,
     });
   }
 
-  const vtTasks = await buildVtTasks(
-    params.nodeId,
-    shapeStore,
-    bands,
-    enableBand3,
-    DEFAULT_TASK_SPLIT.maxBuffersPerTask,
-    DEFAULT_TASK_SPLIT.maxVerticesPerTask,
-  );
-  if (vtTasks.length > 0) {
+  const existingVtTasks = resumeExistingTasks
+    ? await listTasksByStage(taskQueue, params.nodeId, 'vt')
+    : [];
+  const vtTasks = existingVtTasks.length > 0
+    ? []
+    : await buildVtTasks(
+      params.nodeId,
+      shapeStore,
+      bands,
+      enableBand3,
+      DEFAULT_TASK_SPLIT.maxBuffersPerTask,
+      DEFAULT_TASK_SPLIT.maxVerticesPerTask,
+    );
+  if (existingVtTasks.length > 0 || vtTasks.length > 0) {
     await params.waitIfPaused?.();
-    await putTasks(taskQueue, vtTasks as Array<TaskQueueRecord<ShapeVtTaskInput>>);
+    if (vtTasks.length > 0) {
+      await putTasks(taskQueue, vtTasks as Array<TaskQueueRecord<ShapeVtTaskInput>>);
+    }
     const vtHandler = createVtHandler({
       shapeStore,
       vtStore,

@@ -14,7 +14,7 @@ import {
   DEFAULT_PROCESSING_CONFIG,
   mergeBatchConfig,
   type BatchConfig,
-  type BatchSessionConfig,
+  type BuildSessionConfig,
   type ProcessingStatus,
   type ProgressInfo,
   type TileInfo,
@@ -40,11 +40,13 @@ import { resolveFetchStageStrategy } from '../services/batch/strategies/resolveF
 import {
   VtTaskQueueDb,
   listTasks,
+  listTasksByStatus,
   onTaskQueueUpdate,
+  updateTask,
   type TaskQueueRecord,
 } from '@hierarchidb/vt-orchestrator';
 import { runShapeVtPipeline } from '../services/vt/shapeVtPipeline.js';
-import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../services/batch/ShapeBuildApiClient.ts';
+import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../services/batch/ShapeBuildAPIClient.ts';
 
 type DraftLike = {
   nodeId?: NodeId;
@@ -57,7 +59,7 @@ const resolveBatchNodeId = (draft: DraftLike | null | undefined): NodeId | undef
   return resolved ? toNodeId(String(resolved)) : undefined;
 };
 
-const buildBatchSessionConfig = (batchConfig: BatchConfig, draft?: DraftLike): BatchSessionConfig => {
+const buildBuildSessionConfig = (batchConfig: BatchConfig, draft?: DraftLike): BuildSessionConfig => {
   const downloadConfig = batchConfig.fetchConfig ?? DEFAULT_PROCESSING_CONFIG.fetchConfig;
   const legacyExtraction = batchConfig.extractionConfig;
   const extract1Config = batchConfig.extract1Config ?? (legacyExtraction ? {
@@ -80,7 +82,7 @@ const buildBatchSessionConfig = (batchConfig: BatchConfig, draft?: DraftLike): B
   const resolvedDataSource = requireDataSourceName(
     batchConfig.dataSource
     ?? draft?.draftData?.batchConfig?.dataSource,
-    'buildBatchSessionConfig',
+    'buildBuildSessionConfig',
   );
 
   return {
@@ -135,6 +137,7 @@ type PauseState = {
 
 const progressCallbacks = new Map<string, ProgressSubscription>();
 const pauseStates = new Map<string, PauseState>();
+const activePipelines = new Set<string>();
 
 const shapeEntityHandlerSingleton = new ShapeEntityHandler();
 const getShapeEntityHandler = (): ShapeEntityHandler => shapeEntityHandlerSingleton;
@@ -166,29 +169,34 @@ const mapTaskQueueStatusToTaskStatus = (status: TaskQueueRecord['status']): Batc
 const buildTaskQueueTitle = (task: TaskQueueRecord): string | undefined => {
   const input = task.inputData as Record<string, unknown> | undefined;
   if (!input) return undefined;
-  if (task.stage === 'fetch') {
-    const country = typeof input.countryName === 'string'
+  if (task.stage === "fetch") {
+    const country = typeof input.countryName === "string"
       ? input.countryName
-      : typeof input.countryCode === 'string'
+      : typeof input.countryCode === "string"
         ? input.countryCode
         : undefined;
-    const adminLevel = typeof input.adminLevel === 'number' ? `ADM${input.adminLevel}` : undefined;
-    return [country, adminLevel].filter(Boolean).join(' ');
+    const adminLevel = typeof input.adminLevel === "number" ? `ADM` : undefined;
+    return [country, adminLevel].filter(Boolean).join(" ");
   }
-  if (task.stage === 'transform') {
-    const country = typeof input.countryName === 'string'
+  if (task.stage === "transform-by-band") {
+    const country = typeof input.countryName === "string"
       ? input.countryName
-      : typeof input.countryCode === 'string'
+      : typeof input.countryCode === "string"
         ? input.countryCode
         : undefined;
-    const adminLevel = typeof input.adminLevel === 'number' ? `ADM${input.adminLevel}` : undefined;
-    const bandId = typeof input.bandId === 'number' ? `band${input.bandId}` : undefined;
-    return [country, adminLevel, bandId].filter(Boolean).join(' ');
+    const adminLevel = typeof input.adminLevel === "number" ? `ADM` : undefined;
+    const bandId = typeof input.bandId === "number" ? `band` : undefined;
+    return [country, adminLevel, bandId].filter(Boolean).join(" ");
   }
-  if (task.stage === 'vt') {
-    const bandId = typeof input.bandId === 'number' ? `band${input.bandId}` : undefined;
-    const tileId = typeof input.tileId === 'number' ? `tile:${input.tileId}` : undefined;
-    return [bandId, tileId].filter(Boolean).join(' ');
+  if (task.stage === "transform-by-zoom") {
+    const bandId = typeof input.bandId === "number" ? `band` : undefined;
+    const cacheId = typeof input.transformByBandCacheId === "string" ? input.transformByBandCacheId : undefined;
+    return [bandId, cacheId].filter(Boolean).join(" ");
+  }
+  if (task.stage === "vt") {
+    const bandId = typeof input.bandId === "number" ? `band` : undefined;
+    const tileId = typeof input.tileId === "number" ? `tile:` : undefined;
+    return [bandId, tileId].filter(Boolean).join(" ");
   }
   return undefined;
 };
@@ -214,7 +222,7 @@ const summarizeTaskQueue = (tasks: TaskQueueRecord[]) => {
   const completed = tasks.filter((task) => task.status === 'completed' && !isSkippedMessage(task.message)).length;
   const failed = tasks.filter((task) => task.status === 'failed').length;
   const skipped = tasks.filter((task) => isSkippedMessage(task.message)).length;
-  const stageOrder: Array<TaskQueueRecord['stage']> = ['fetch', 'transform', 'vt'];
+  const stageOrder: Array<TaskQueueRecord['stage']> = ['fetch', 'transform-by-band', 'transform-by-zoom', 'vt'];
   const taskType = stageOrder.find((stage) => (
     tasks.some((task) => task.stage === stage && task.status !== 'completed' && task.status !== 'failed')
   ));
@@ -275,6 +283,18 @@ const setPaused = (nodeId: NodeId, paused: boolean): void => {
     state.waiters.length = 0;
     pending.forEach((resolve) => {resolve()});
   }
+};
+
+const resetRunningTasks = async (nodeId: NodeId): Promise<void> => {
+  const taskQueue = new VtTaskQueueDb();
+  const runningTasks = await listTasksByStatus(taskQueue, nodeId, 'running');
+  await Promise.all(runningTasks.map((task) => updateTask(taskQueue, task.taskId, {
+    status: 'queued',
+    progress: 0,
+    startedAt: undefined,
+    completedAt: undefined,
+    errorMessage: undefined,
+  })));
 };
 
 const resolveProgressPhase = (nodeId: NodeId, tasks: TaskQueueRecord[]): BatchProgressEvent['phase'] => {
@@ -440,6 +460,8 @@ export const shapeBatchAPI = {
       processingStatus: 'processing',
     });
 
+    const pipelineKey = String(nodeForSession);
+    activePipelines.add(pipelineKey);
     void runShapeVtPipeline({
       nodeId: nodeForSession,
       dataSource: mergedBatchConfig.dataSource as DataSourceName,
@@ -458,6 +480,7 @@ export const shapeBatchAPI = {
         processingStatus: 'failed',
       });
     }).finally(() => {
+      activePipelines.delete(pipelineKey);
       pauseStates.delete(String(nodeForSession));
     });
 
@@ -501,19 +524,63 @@ export const shapeBatchAPI = {
       if (!nodeId) throw new Error('[shapeBatchAPI] session/resume requires nodeId');
       setPaused(nodeId, false);
       await emitProgressSnapshot(nodeId);
+      const pipelineKey = String(nodeId);
+      const taskQueue = new VtTaskQueueDb();
+      const runningTasks = await listTasksByStatus(taskQueue, nodeId, 'running');
+      if (runningTasks.length > 0) {
+        await resetRunningTasks(nodeId);
+        if (activePipelines.has(pipelineKey)) {
+          activePipelines.delete(pipelineKey);
+        }
+      }
+      if (!activePipelines.has(pipelineKey)) {
+        const handler = getShapeEntityHandler();
+        const draftLike = await handler.getEntity(nodeId) as DraftLike | null;
+        if (!draftLike) return;
+        const mergedBatchConfig = mergeBatchConfig({
+          ...(draftLike?.draftData?.batchConfig ?? {}),
+          ...(draftLike as { batchConfig?: BatchConfig }).batchConfig ?? {},
+        });
+        const resolvedDataSource = requireDataSourceName(
+          mergedBatchConfig.dataSource,
+          'resumeBatchSession',
+        );
+        activePipelines.add(pipelineKey);
+        void runShapeVtPipeline({
+          nodeId,
+          dataSource: resolvedDataSource,
+          batchConfig: mergedBatchConfig,
+          selectedArrayByCountries: draftLike?.draftData?.selectedArrayByCountries,
+          waitIfPaused: () => waitIfPaused(nodeId),
+          resumeExistingTasks: true,
+        }).then(async () => {
+          await handler.updateEntity(nodeId, {
+            buildFinishedAt: Date.now(),
+            processingStatus: 'completed',
+          });
+        }).catch(async (error) => {
+          console.error('[shapeBatchAPI] vt pipeline failed', error);
+          await handler.updateEntity(nodeId, {
+            processingStatus: 'failed',
+          });
+        }).finally(() => {
+          activePipelines.delete(pipelineKey);
+          pauseStates.delete(pipelineKey);
+        });
+      }
       return;
     }
     throw new Error(`[shapeBatchAPI] Unknown batch command: ${command}`);
   },
 
-  getBatchSession: async (nodeId: NodeId): Promise<BatchSession | undefined> => {
+  getBuildSession: async (nodeId: NodeId): Promise<BatchSession | undefined> => {
     const taskQueue = new VtTaskQueueDb();
     const vtTasks = await listTasks(taskQueue, nodeId);
     if (vtTasks.length > 0) {
       const handler = getShapeEntityHandler();
       const entity = await handler.getEntity(nodeId);
       const mergedConfig = mergeBatchConfig(entity?.batchConfig ?? DEFAULT_PROCESSING_CONFIG);
-      const config = buildBatchSessionConfig(mergedConfig, { draftData: entity ?? undefined });
+      const config = buildBuildSessionConfig(mergedConfig, { draftData: entity ?? undefined });
       const summary = summarizeTaskQueue(vtTasks);
       const paused = getPauseState(nodeId).paused;
       const startedAt = Math.min(...vtTasks.map((task) => task.createdAt ?? Date.now()));
@@ -610,7 +677,7 @@ export const shapeBatchAPI = {
     return [];
   },
 
-  getBatchSessionStatus: async (
+  getBuildSessionStatus: async (
     nodeId: NodeId,
   ): Promise<{
     exists: boolean;
@@ -647,14 +714,14 @@ export const shapeBatchAPI = {
 
   performCleanup: async (): Promise<{
     workingCopiesRemoved: number;
-    batchSessionsRemoved: number;
+    buildSessionsRemoved: number;
     totalSpaceRecovered: number;
     timestamp: number;
   }> => {
     console.log('Performing draft cleanup (mock)');
     return {
       workingCopiesRemoved: 0,
-      batchSessionsRemoved: 0,
+      buildSessionsRemoved: 0,
       totalSpaceRecovered: 0,
       timestamp: Date.now(),
     };
@@ -663,8 +730,8 @@ export const shapeBatchAPI = {
   getCleanupStats: async (): Promise<{
     totalDrafts: number;
     expiredDrafts: number;
-    totalBatchSessions: number;
-    expiredBatchSessions: number;
+    totalBuildSessions: number;
+    expiredBuildSessions: number;
     estimatedSpaceUsed: number;
     lastCleanupAt?: number;
   }> => {
@@ -672,8 +739,8 @@ export const shapeBatchAPI = {
     return {
       totalDrafts: 0,
       expiredDrafts: 0,
-      totalBatchSessions: 0,
-      expiredBatchSessions: 0,
+      totalBuildSessions: 0,
+      expiredBuildSessions: 0,
       estimatedSpaceUsed: 0,
       lastCleanupAt: Date.now(),
     };
@@ -720,14 +787,14 @@ export const shapeBatchAPI = {
 
   forceCleanup: async (): Promise<{
     workingCopiesRemoved: number;
-    batchSessionsRemoved: number;
+    buildSessionsRemoved: number;
     totalSpaceRecovered: number;
     timestamp: number;
   }> => {
     console.log('Force cleaning all transient data (mock)');
     return {
       workingCopiesRemoved: 0,
-      batchSessionsRemoved: 0,
+      buildSessionsRemoved: 0,
       totalSpaceRecovered: 0,
       timestamp: Date.now(),
     };

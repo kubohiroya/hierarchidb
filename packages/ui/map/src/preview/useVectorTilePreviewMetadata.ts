@@ -12,16 +12,19 @@ export const useVectorTilePreviewMetadata = <Row,>(
   const [metadataRows, setMetadataRows] = useState<Row[]>([]);
   const [metadataLoading, setMetadataLoading] = useState(false);
   const [metadataError, setMetadataError] = useState<string | null>(null);
+  const [metadataLoaded, setMetadataLoaded] = useState(false);
 
   useEffect(() => {
     if (!metadataEnabled || !nodeId) {
       setMetadataRows([]);
       setMetadataLoading(false);
       setMetadataError(null);
+      setMetadataLoaded(false);
       return;
     }
     let cancelled = false;
     let intervalId: ReturnType<typeof setInterval> | null = null;
+    setMetadataLoaded(false);
     const runLoad = () => {
       setMetadataLoading(true);
       setMetadataError(null);
@@ -39,6 +42,7 @@ export const useVectorTilePreviewMetadata = <Row,>(
         .finally(() => {
           if (!cancelled) {
             setMetadataLoading(false);
+            setMetadataLoaded(true);
           }
         });
     };
@@ -58,5 +62,6 @@ export const useVectorTilePreviewMetadata = <Row,>(
     metadataRows,
     metadataLoading,
     metadataError,
+    metadataLoaded,
   };
 };

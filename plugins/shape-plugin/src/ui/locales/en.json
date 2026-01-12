@@ -1,14 +1,32 @@
 {
   "steps": {
-    "tabularUpload": { "label": "Dataset Upload" },
-    "tabularFilter": { "label": "Dataset Filter" },
-    "dataSource": { "label": "Data Source" },
-    "licenseAgreement": { "label": "License Agreement" },
-    "processing": { "label": "Processing Configuration" },
-    "countrySelection": { "label": "Country Selection" },
-    "preview": { "label": "Preview" },
-    "build": { "label": "Build" },
-    "stage": { "label": "Build" }
+    "tabularUpload": {
+      "label": "Dataset Upload"
+    },
+    "tabularFilter": {
+      "label": "Dataset Filter"
+    },
+    "dataSource": {
+      "label": "Data Source"
+    },
+    "licenseAgreement": {
+      "label": "License Agreement"
+    },
+    "processing": {
+      "label": "Processing Configuration"
+    },
+    "countrySelection": {
+      "label": "Country Selection"
+    },
+    "preview": {
+      "label": "Preview"
+    },
+    "build": {
+      "label": "Build"
+    },
+    "stage": {
+      "label": "Build"
+    }
   },
   "auth": {
     "loading": "Checking authentication..."
@@ -52,8 +70,11 @@
     "fetch": {
       "title": "Fetch"
     },
-    "transform": {
-      "title": "Transform"
+    "transformByBand": {
+      "title": "Transform by band"
+    },
+    "transformByZoom": {
+      "title": "Transform by zoom"
     },
     "vt": {
       "title": "VT Generation"
@@ -70,8 +91,9 @@
       "deleteDownloadedFiles": "Delete fetch cache",
       "deleteDownloadedFilesWithCount": "Delete fetch cache ({{count}} items)",
       "deleteLoadingHint": "Loading delete counts...",
-      "deleteStage1Cache": "Delete transform cache (filtering)",
-      "deleteStage2Cache": "Delete transform cache (preprocessing)",
+      "countUnit": "",
+      "deleteStage1Cache": "Delete zoom-band cache",
+      "deleteStage2Cache": "Delete zoom-ratio cache",
       "deleteTiles": "Delete vt cache",
       "deleteMetadata": "Delete Metadata",
       "resetDefaultsAction": "Reset to defaults",
@@ -161,11 +183,14 @@
     "waiting": "Vector tiles are being prepared. The map will appear once tiles are ready.",
     "tabs": {
       "map": "Map Preview",
-      "metadata": "Metadata Table"
+      "metadata": "Metadata Table",
+      "sources": "Sources",
+      "features": "Features"
     },
     "metadata": {
       "missingSession": "No metadata entries have been generated yet.",
       "empty": "No metadata entries have been generated yet.",
+      "loading": "Loading metadata...",
       "searchPlaceholder": "Search metadata",
       "searchAriaLabel": "Search metadata",
       "matches": "Matched",
@@ -247,9 +272,13 @@
         "title": "Fetch",
         "description": "Fetch and normalize source data."
       },
-      "transform": {
-        "title": "Transform",
-        "description": "Simplify and index buffers for tile generation."
+      "transformByBand": {
+        "title": "Transform by band",
+        "description": "Simplify features per zoom band."
+      },
+      "transformByZoom": {
+        "title": "Transform by zoom",
+        "description": "Build tile indexes per zoom band."
       },
       "vt": {
         "title": "VT",

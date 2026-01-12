@@ -37,7 +37,7 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
   }, []);
 
   useEffect(() => {
-    if (preview.tabIndex !== 0) {
+    if (preview.tabIndex !== preview.mapTabIndex) {
       preview.setMapInstance(null);
     }
   }, [preview.setMapInstance, preview.tabIndex]);

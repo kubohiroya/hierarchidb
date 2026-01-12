@@ -5,7 +5,7 @@ import { normalizeDataSourceName } from '../../../common/types/index.js';
 import { isShapePreviewMetadataEnabled } from '../../../common/config/previewFlags.js';
 import { toNodeId, type NodeId } from '@hierarchidb/common-types';
 import { useTranslation } from '../../i18n.js';
-import type { ShapeSourceMetadataRow } from '@hierarchidb/plugin-service-api';
+import type { ShapeFeatureMetadata, ShapeSourceMetadata } from '@hierarchidb/plugin-service-api';
 import { useAtom } from 'jotai';
 import {
   shapePreviewSearchAtom,
@@ -23,10 +23,11 @@ import {
   useVectorTilePreviewMapLayers,
 } from '@hierarchidb/ui-map';
 import { getDBName } from '@hierarchidb/util';
-//import { getShapeDbAPIClient } from '../../../services/batch/ShapeBuildApiClient.ts';
+//import { getShapeDbAPIClient } from '../../../services/batch/ShapeBuildAPIClient.ts';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import { useVectorTilePreviewTable } from './useVectorTilePreviewTable.ts';
-import { shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildApiClient.ts';
+import { useVectorTileFeatureTable } from './useVectorTileFeatureTable.ts';
+import { shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
 
 type ShapePreviewDraft = Partial<ShapeEntity> & {
   tilesUrl?: string;
@@ -67,7 +68,10 @@ const fetchTile = async (
 export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string) => {
   const { t } = useTranslation();
   const theme = useTheme();
-  const [tabIndex, setTabIndex] = useState(0);
+  const sourceTabIndex = 0;
+  const featureTabIndex = 1;
+  const mapTabIndex = 2;
+  const [tabIndex, setTabIndex] = useState(mapTabIndex);
   const metadataEnabled = isShapePreviewMetadataEnabled();
   const [searchKeyword, setSearchKeyword] = useAtom(shapePreviewSearchAtom);
   const [matchedIds, setMatchedIds] = useAtom(shapePreviewMatchedIdsAtom);
@@ -75,6 +79,8 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   const [hoveredId, setHoveredId] = useAtom(shapePreviewHoveredIdAtom);
   const [selectionContext, setSelectionContext] = useAtom(shapePreviewSelectionContextAtom);
   const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
+  const [featureSearchKeyword, setFeatureSearchKeyword] = useState('');
+  const [matchedFeatureIds, setMatchedFeatureIds] = useState<string[]>([]);
 
   const previewDraft = data as ShapePreviewDraft;
   const tilesUrl = previewDraft.tilesUrl ?? previewDraft.tilesEndpoint ?? '';
@@ -218,20 +224,39 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     };
   }, [activeNodeId, selectionDataSource, selectionMatrix, workerClient]);
 
-  const loadMetadataRows = useCallback(
+  const loadSourceMetadataRows = useCallback(
     (targetNodeId: NodeId) =>
-      shapeQueryAPIImpl.listSourceMetadata(targetNodeId) as Promise<ShapeSourceMetadataRow[]>,
+      shapeQueryAPIImpl.listSourceMetadata(targetNodeId) as Promise<ShapeSourceMetadata[]>,
+    [],
+  );
+
+  const loadFeatureMetadataRows = useCallback(
+    (targetNodeId: NodeId) =>
+      shapeQueryAPIImpl.listFeatureMetadata(targetNodeId) as Promise<ShapeFeatureMetadata[]>,
     [],
   );
 
   const {
-    metadataRows: rawMetadataRows,
-    metadataLoading,
-    metadataError,
+    metadataRows: rawSourceMetadataRows,
+    metadataLoading: sourceMetadataLoading,
+    metadataError: sourceMetadataError,
+    metadataLoaded: sourceMetadataLoaded,
   } = useVectorTilePreviewMetadata(
     metadataEnabled,
     activeNodeId,
-    loadMetadataRows,
+    loadSourceMetadataRows,
+    metadataPollIntervalMs,
+  );
+
+  const {
+    metadataRows: rawFeatureMetadataRows,
+    metadataLoading: featureMetadataLoading,
+    metadataError: featureMetadataError,
+    metadataLoaded: featureMetadataLoaded,
+  } = useVectorTilePreviewMetadata(
+    metadataEnabled,
+    activeNodeId,
+    loadFeatureMetadataRows,
     metadataPollIntervalMs,
   );
 
@@ -263,8 +288,8 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   }, [selectionMetadata]);
 
   const filteredMetadataRows = useMemo(() => {
-    if (!selectionFilters) return rawMetadataRows;
-    return rawMetadataRows.filter((row) => {
+    if (!selectionFilters) return rawSourceMetadataRows;
+    return rawSourceMetadataRows.filter((row) => {
       const rowLevel = row.adminLevel;
       const rowCode = row.countryCode?.trim().toUpperCase();
       const rowName = row.countryName?.trim().toLowerCase();
@@ -278,9 +303,10 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       if (matchesFilter(rowCode, selectionFilters.byCode)) return true;
       return matchesFilter(rowName, selectionFilters.byName);
     });
-  }, [rawMetadataRows, selectionFilters]);
+  }, [rawSourceMetadataRows, selectionFilters]);
 
-  const metadataRows = filteredMetadataRows;
+  const sourceMetadataRows = filteredMetadataRows;
+  const featureMetadataRows = rawFeatureMetadataRows;
 
   const selectionBounds = useMemo(() => {
     let minLng = Number.POSITIVE_INFINITY;
@@ -340,8 +366,8 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     });
   }, [mapInstance, selectionBounds]);
 
-  const getRowId = useCallback((row: ShapeSourceMetadataRow) => row.originKey, []);
-  const buildSearchText = useCallback((row: ShapeSourceMetadataRow) => {
+  const getRowId = useCallback((row: ShapeSourceMetadata) => row.originKey, []);
+  const buildSearchText = useCallback((row: ShapeSourceMetadata) => {
     return [
       row.originLabel,
       row.countryName,
@@ -358,7 +384,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
 
   useVectorTilePreviewSearch(
     metadataEnabled,
-    metadataRows,
+    sourceMetadataRows,
     searchKeyword,
     getRowId,
     buildSearchText,
@@ -366,7 +392,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   );
 
   const deriveSelectionContext = useCallback((
-    rows: ShapeSourceMetadataRow[],
+    rows: ShapeSourceMetadata[],
     ids: string[],
   ) => {
     if (!ids.length) return null;
@@ -382,9 +408,9 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   }, []);
 
   const resolveSelection = useCallback((
-    row: ShapeSourceMetadataRow,
+    row: ShapeSourceMetadata,
     current: typeof selectionContext,
-    rows: ShapeSourceMetadataRow[],
+    rows: ShapeSourceMetadata[],
   ) => {
     const adminLevel = row.adminLevel ?? 0;
     const countryCode = row.countryCode ?? '';
@@ -410,7 +436,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     };
   }, []);
 
-  const getHoverLabel = useCallback((row: ShapeSourceMetadataRow) => {
+  const getHoverLabel = useCallback((row: ShapeSourceMetadata) => {
     const parts = [
       row.originLabel,
       row.countryName,
@@ -426,7 +452,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     hoverMessage,
     handleMapIdentify,
   } = useVectorTilePreviewSelection({
-    rows: metadataRows,
+    rows: sourceMetadataRows,
     selectedIds,
     setSelectedIds,
     hoveredId,
@@ -447,10 +473,47 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     sortColumn,
     sortDirection,
     handleSort,
-  } = useVectorTilePreviewTable(metadataRows, matchedIdSet, searchKeyword);
+  } = useVectorTilePreviewTable(sourceMetadataRows, matchedIdSet, searchKeyword);
+
+  const getFeatureRowId = useCallback((row: ShapeFeatureMetadata) => row.id, []);
+  const buildFeatureSearchText = useCallback((row: ShapeFeatureMetadata) => (
+    [
+      row.featureId,
+      row.countryName,
+      row.countryCode,
+      row.adminName,
+      row.adminCode,
+      row.adminLevel != null ? String(row.adminLevel) : undefined,
+      row.dataSource,
+    ]
+      .filter(Boolean)
+      .join(' ')
+  ), []);
+
+  useVectorTilePreviewSearch(
+    metadataEnabled,
+    featureMetadataRows,
+    featureSearchKeyword,
+    getFeatureRowId,
+    buildFeatureSearchText,
+    setMatchedFeatureIds,
+  );
+
+  const matchedFeatureIdSet = useMemo<Set<string>>(
+    () => new Set(matchedFeatureIds),
+    [matchedFeatureIds],
+  );
+
+  const {
+    metadataColumns: featureColumns,
+    metadataTableRows: featureTableRows,
+    sortColumn: featureSortColumn,
+    sortDirection: featureSortDirection,
+    handleSort: handleFeatureSort,
+  } = useVectorTileFeatureTable(featureMetadataRows, matchedFeatureIdSet, featureSearchKeyword);
 
   useVectorTilePreviewMapLayers({
-    mapInstance: tabIndex === 0 ? mapInstance : null,
+    mapInstance: tabIndex === mapTabIndex ? mapInstance : null,
     baseLayerId,
     baseSourceId,
     tilesLayer,
@@ -496,11 +559,21 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     metadataEnabled,
     tabIndex,
     setTabIndex,
-    metadataRows,
-    metadataLoading,
-    metadataError,
+    sourceTabIndex,
+    featureTabIndex,
+    mapTabIndex,
+    sourceMetadataRows,
+    sourceMetadataLoading,
+    sourceMetadataError,
+    sourceMetadataLoaded,
+    featureMetadataRows,
+    featureMetadataLoading,
+    featureMetadataError,
+    featureMetadataLoaded,
     searchKeyword,
     setSearchKeyword,
+    featureSearchKeyword,
+    setFeatureSearchKeyword,
     matchedIds,
     selectedIds,
     setSelectedIds,
@@ -511,9 +584,15 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     sortColumn,
     sortDirection,
     handleSort,
+    featureSortColumn,
+    featureSortDirection,
+    handleFeatureSort,
     metadataColumns,
     metadataTableRows,
+    featureColumns,
+    featureTableRows,
     matchedIdSet,
+    matchedFeatureIdSet,
     selectedIdSet,
     hoveredIdSet,
     hoverMessage,

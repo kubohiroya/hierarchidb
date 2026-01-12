@@ -1,8 +1,8 @@
 import { Dexie, type Table } from 'dexie';
-import type { ShapeFeatureMetadataRow, ShapeSourceMetadataRow } from '@hierarchidb/plugin-service-api';
+import type { ShapeFeatureMetadata, ShapeSourceMetadata } from '@hierarchidb/plugin-service-api';
 
-export type FeatureMetadataRow = ShapeFeatureMetadataRow;
-export type SourceMetadataRow = ShapeSourceMetadataRow;
+export type FeatureMetadataRow = ShapeFeatureMetadata;
+export type SourceMetadataRow = ShapeSourceMetadata;
 
 export type ZoomRange = { zMin: number; zMax: number };
 

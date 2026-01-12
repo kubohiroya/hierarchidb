@@ -20,12 +20,11 @@ export * from './TreeToggleButtonGroup/index.js';
 export * from './landingpage/LandingPage.js';
 export * from './sparkle-animation/index.ts';
 export * from './SelectionMatrix/index.js';
-export * from './BuildStep.tsx';
+export * from './BuildStepPanel.tsx';
 
 export * from './BuildStepStagePanel.js';
-export * from './BuildStepStagePanel.tsx';
 export * from './BuildStepStageFilterContext.tsx';
 export * from './LoadingButton.tsx';
 export type { BuildStage } from './BuildStage.tsx';
 
-export { BuildStep as BuildStepPanel } from './BuildStep.tsx';
+export { BuildStepPanel } from './BuildStepPanel.tsx';

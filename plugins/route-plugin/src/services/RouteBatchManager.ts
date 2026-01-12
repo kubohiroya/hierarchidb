@@ -315,8 +315,9 @@ function mapRouteStageToVtStage(stage: string): TaskStage {
     case 'download':
       return 'fetch';
     case 'extract1':
+      return 'transform-by-band';
     case 'extract2':
-      return 'transform';
+      return 'transform-by-zoom';
     case 'vectortile':
       return 'vt';
     default:

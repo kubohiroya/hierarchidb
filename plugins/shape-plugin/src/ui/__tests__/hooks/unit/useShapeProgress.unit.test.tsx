@@ -9,7 +9,7 @@ let progressCallback: ((event: BatchProgressEvent) => void) | undefined;
 const bridgeMock = {
   initialize: vi.fn(),
   subscribeBatchProgress: vi.fn(),
-  getBatchSessionStatus: vi.fn(),
+  getBuildSessionStatus: vi.fn(),
 };
 
 vi.mock('@hierarchidb/ui-worker-client', () => ({
@@ -27,7 +27,7 @@ describeUiProgress('useShapeProgress', () => {
     unsubscribeSpy.mockImplementation(() => {
     });
     bridgeMock.initialize.mockResolvedValue(undefined);
-    bridgeMock.getBatchSessionStatus.mockImplementation(async (_nodeType: string, session: string) => ({
+    bridgeMock.getBuildSessionStatus.mockImplementation(async (_nodeType: string, session: string) => ({
       sessionId: session,
       nodeId: `${session}-node` as any,
       status: 'running',

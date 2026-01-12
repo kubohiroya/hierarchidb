@@ -1,13 +1,13 @@
 import type { Feature, Geometry } from 'geojson';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { ShapeSourceMetadataRow } from '@hierarchidb/plugin-service-api';
-import { type VtShapeDb, listStage1Buffers } from '@hierarchidb/vt-shape-store';
+import type { ShapeSourceMetadata } from '@hierarchidb/plugin-service-api';
+import { type VtShapeDb, listFetchCache } from '@hierarchidb/vt-shape-store';
 import type { VtDb } from '@hierarchidb/vt-store';
 import { VectorTile } from '@mapbox/vector-tile';
 import Pbf from 'pbf';
 import type { CountryMetadata, DataSourceName } from '../../common/types/index.js';
 import { metadataLoader } from '../metadata/MetadataLoader.js';
-import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../batch/ShapeBuildApiClient.ts';
+import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
 
 const ORIGIN_KEY_PROP = '__hdbOriginKey';
 
@@ -89,7 +89,7 @@ const summarizeGeometry = (geometry?: Geometry | null): { vertexCount: number; p
 
 type StageTotals = { vertexCount: number; polygonCount: number };
 
-type OriginMetadata = {
+type SourceMetadata = {
   originKey: string;
   originLabel: string;
   dataSource: DataSourceName;
@@ -116,7 +116,7 @@ const buildOriginBase = (
     continent?: string;
     createdAt: number;
   },
-): OriginMetadata => ({
+): SourceMetadata => ({
   originKey,
   originLabel: buildOriginLabel(info.countryName, info.countryCode, info.adminLevel),
   dataSource: info.dataSource,
@@ -132,7 +132,7 @@ const buildOriginBase = (
 });
 
 const ensureOrigin = (
-  map: Map<string, OriginMetadata>,
+  map: Map<string, SourceMetadata>,
   originKey: string,
   info: {
     dataSource: DataSourceName;
@@ -142,7 +142,7 @@ const ensureOrigin = (
     continent?: string;
     createdAt: number;
   },
-): OriginMetadata => {
+): SourceMetadata => {
   const existing = map.get(originKey);
   if (existing) return existing;
   const created = buildOriginBase(originKey, info);
@@ -207,10 +207,10 @@ export const updateShapeStageMetadata = async (params: ShapeStageMetadataParams)
   const existingRows = await shapeQueryAPIImpl.listSourceMetadata(params.nodeId);
   const createdAtByOrigin = new Map(existingRows.map((row) => [row.originKey, row.createdAt] as const));
 
-  const origins = new Map<string, OriginMetadata>();
+  const origins = new Map<string, SourceMetadata>();
 
-  const stage1Buffers = await listStage1Buffers(params.shapeStore, params.nodeId);
-  stage1Buffers.forEach((buffer) => {
+  const fetchCaches = await listFetchCache(params.shapeStore, params.nodeId);
+  fetchCaches.forEach((buffer) => {
     const originKey = buildOriginKey(params.dataSource, buffer.sourceKey);
     const info = resolveOriginInfo(originKey, lookup);
     const origin = ensureOrigin(origins, originKey, {
@@ -227,11 +227,11 @@ export const updateShapeStageMetadata = async (params: ShapeStageMetadataParams)
     });
   });
 
-  const transformBuffers = await params.shapeStore.transformBandBuffers
+  const transformByBandCaches = await params.shapeStore.transformByBandCache
     .where('nodeId')
     .equals(params.nodeId)
     .toArray();
-  transformBuffers.forEach((buffer) => {
+  transformByBandCaches.forEach((buffer) => {
     if (buffer.domainType !== 'shape') return;
     const originKey = buildOriginKey(params.dataSource, buffer.sourceKey);
     const info = resolveOriginInfo(originKey, lookup);
@@ -266,7 +266,7 @@ export const updateShapeStageMetadata = async (params: ShapeStageMetadataParams)
     });
   });
 
-  const rows: ShapeSourceMetadataRow[] = Array.from(origins.values()).map((origin) => ({
+  const rows: ShapeSourceMetadata[] = Array.from(origins.values()).map((origin) => ({
     id: `${String(params.nodeId)}:${origin.originKey}`,
     nodeId: String(params.nodeId),
     originKey: origin.originKey,

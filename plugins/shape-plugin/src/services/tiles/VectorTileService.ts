@@ -18,7 +18,7 @@ import type { BoundingBox, TileMetadata, LayerConfig, LayerInfo } from '../../co
 import type { Feature as GeoJSONFeature, Geometry } from 'geojson';
 // NOTE: gis-sdkのdist反映前でも型解決できるように、明示的にパスを固定（後で dist が更新されたら '@hierarchidb/gis-sdk' に戻せます）
 import { getTilesInBounds, tileToBbox, encodeMvtFromGeojsonVt, normalizeVectorTileFormat } from '@hierarchidb/gis-sdk';
-import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../batch/ShapeBuildApiClient.ts';
+import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
 
 type TileLayerFeature = {
   geometry: Geometry;
@@ -216,7 +216,7 @@ export class VectorTileService {
     let count = 0;
 
     if (zoomLevel !== undefined) {
-      const tiles = await shapeQueryAPIImpl.listVectorTileRows(nodeId);
+      const tiles = await shapeQueryAPIImpl.listVTMetadata(nodeId);
       const filtered = tiles.filter((tile) => tile.z === zoomLevel);
 
       for (const tile of filtered) {
@@ -224,7 +224,7 @@ export class VectorTileService {
         count++;
       }
     } else {
-      const tiles = await shapeQueryAPIImpl.listVectorTileRows(nodeId);
+      const tiles = await shapeQueryAPIImpl.listVTMetadata(nodeId);
       await shapeMutationAPIImpl.deleteVectorTiles(nodeId);
       count = tiles.length;
     }
@@ -237,7 +237,7 @@ export class VectorTileService {
     totalSize: number;
     byZoomLevel: Record<number, { count: number; size: number }>;
   }> {
-    const tiles = await shapeQueryAPIImpl.listVectorTileRows(nodeId);
+    const tiles = await shapeQueryAPIImpl.listVTMetadata(nodeId);
 
     const stats = {
       totalTiles: tiles.length,

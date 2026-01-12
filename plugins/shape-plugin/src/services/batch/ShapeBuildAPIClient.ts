@@ -1,23 +1,23 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type {
-  ShapeBatchSessionRecord,
-  ShapeBatchSessionSummary,
+  ShapeBuildSessionRecord,
+  ShapeBuildSessionSummary,
   ShapeBuildTaskRecord,
   ShapeBuildTaskStatus,
-  ShapeEphemeralAPI,
+  EphemeralShapeAPI,
   ShapeEphemeralSessionRecord,
-  ShapeTransformSourceBufferRecord,
+  ShapeTransformByBandCache,
   ShapeFeatureRecord,
-  ShapeFeatureMetadataRow,
+  ShapeFeatureMetadata,
   ShapeMutationAPI,
   ShapeProcessingStatus,
   ShapeQueryAPI,
-  ShapeFetchBufferRecord,
-  ShapeSourceMetadataRow,
+  ShapeFetchCache,
+  ShapeSourceMetadata,
   ShapeGeojsonVtIndexRecord,
   ShapeTileIdToBufferRelation,
   ShapeTileInfo,
-  ShapeTileRow,
+  ShapeVTMetadata,
   ShapeTileSummary,
   ShapeTileSummaryEntry,
   ShapeVectorTileRecord,
@@ -37,18 +37,15 @@ import { geojson as geojsonApi } from 'flatgeobuf';
 import { bbox as turfBbox } from '@turf/turf';
 import type { Feature, FeatureCollection } from 'geojson';
 import {
-  toBatchSessionRecord,
-  toBatchSessionUpdates,
+  toBuildSessionRecord,
+  toBuildSessionUpdates,
   toProgressSummary,
-  toShapeBatchSessionRecord,
+  toShapeBuildSessionRecord,
   toVectorTileRecord,
 } from './shapeSessionMappers.js';
-import type { TransformFeatureBuffer } from '@hierarchidb/gis-sdk';
-
-
 import {shapeDB, ephemeralShapeDB} from '@hierarchidb/shape-store';
 
-const mapStatus = (status: ShapeBatchSessionSummary['status'] | 'running' | 'idle'): ShapeProcessingStatus['status'] => {
+const mapStatus = (status: ShapeBuildSessionSummary['status'] | 'running' | 'idle'): ShapeProcessingStatus['status'] => {
   if (status === 'running') return 'processing';
   if (status === 'idle') return 'idle';
   return status;
@@ -134,8 +131,8 @@ const toTaskSummary = (task: ShapeBuildTaskRecord): ShapeBuildTaskSummary => ({
 });
 
 export class ShapeQueryAPIImpl implements ShapeQueryAPI {
-  async listBatchSessions(nodeId: NodeId): Promise<ShapeBatchSessionSummary[]> {
-    const sessions = await shapeDB.batchSessions.where('nodeId').equals(nodeId).toArray();
+  async listBuildSessions(nodeId: NodeId): Promise<ShapeBuildSessionSummary[]> {
+    const sessions = await shapeDB.buildSessions.where('nodeId').equals(nodeId).toArray();
     return sessions.map((session) => ({
       nodeId: session.nodeId,
       status: mapStatus(session.status),
@@ -146,8 +143,8 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
     }));
   }
 
-  async getBatchSession(nodeId: NodeId): Promise<ShapeBatchSessionSummary | null> {
-    const session = await shapeDB.getBatchSession(nodeId);
+  async getBuildSession(nodeId: NodeId): Promise<ShapeBuildSessionSummary | null> {
+    const session = await shapeDB.getBuildSession(nodeId);
     if (!session) return null;
     return {
       nodeId: session.nodeId,
@@ -159,32 +156,32 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
     };
   }
 
-  async listBatchSessionRecords(nodeId: NodeId): Promise<ShapeBatchSessionRecord[]> {
-    const sessions = await shapeDB.batchSessions.where('nodeId').equals(nodeId).toArray();
-    return sessions.map(toShapeBatchSessionRecord);
+  async listBuildSessionRecords(nodeId: NodeId): Promise<ShapeBuildSessionRecord[]> {
+    const sessions = await shapeDB.buildSessions.where('nodeId').equals(nodeId).toArray();
+    return sessions.map(toShapeBuildSessionRecord);
   }
 
-  async getBatchSessionRecord(nodeId: NodeId): Promise<ShapeBatchSessionRecord | null> {
-    const session = await shapeDB.getBatchSession(nodeId);
-    return session ? toShapeBatchSessionRecord(session) : null;
+  async getBuildSessionRecord(nodeId: NodeId): Promise<ShapeBuildSessionRecord | null> {
+    const session = await shapeDB.getBuildSession(nodeId);
+    return session ? toShapeBuildSessionRecord(session) : null;
   }
 
-  async listBatchSessionRecordsByStatus(
+  async listBuildSessionRecordsByStatus(
     statuses: Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>,
-  ): Promise<ShapeBatchSessionRecord[]> {
-    const sessions = await shapeDB.batchSessions.where('status').anyOf(statuses).toArray();
-    return sessions.map(toShapeBatchSessionRecord);
+  ): Promise<ShapeBuildSessionRecord[]> {
+    const sessions = await shapeDB.buildSessions.where('status').anyOf(statuses).toArray();
+    return sessions.map(toShapeBuildSessionRecord);
   }
 
   async listBuildTasks(nodeId: NodeId): Promise<ShapeBuildTaskSummary[]> {
     const db = ephemeralShapeDB;
-    const tasks = await db.batchTasks.where('nodeId').equals(nodeId).toArray();
+    const tasks = await db.buildTasks.where('nodeId').equals(nodeId).toArray();
     return tasks.map((task) => toTaskSummary(task as ShapeBuildTaskRecord));
   }
 
   async listBuildTaskRecords(nodeId: NodeId): Promise<ShapeBuildTaskRecord[]> {
     const db = ephemeralShapeDB;
-    return db.batchTasks.where('nodeId').equals(nodeId).toArray() as Promise<ShapeBuildTaskRecord[]>;
+    return db.buildTasks.where('nodeId').equals(nodeId).toArray() as Promise<ShapeBuildTaskRecord[]>;
   }
 
   async listBuildTaskRecordsByStage(nodeId: NodeId, stage: ShapeBuildStage): Promise<ShapeBuildTaskRecord[]> {
@@ -194,12 +191,12 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
 
   async getBuildTaskRecord(taskId: string): Promise<ShapeBuildTaskRecord | null> {
     const db = ephemeralShapeDB;
-    const task = await db.batchTasks.get(taskId);
+    const task = await db.buildTasks.get(taskId);
     return task ? (task as ShapeBuildTaskRecord) : null;
   }
 
   async getProcessingStatus(nodeId: NodeId): Promise<ShapeProcessingStatus | null> {
-    const sessions = await shapeDB.batchSessions.where('nodeId').equals(nodeId).toArray();
+    const sessions = await shapeDB.buildSessions.where('nodeId').equals(nodeId).toArray();
     const latest = sessions.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))[0];
     if (!latest) {
       return {
@@ -216,7 +213,7 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
       totalFeatures,
       totalVectorTiles,
       hasErrors: latest.status === 'failed',
-      errorMessages: latest.status === 'failed' ? ['Batch processing failed'] : [],
+      errorMessages: latest.status === 'failed' ? ['Build processing failed'] : [],
       stage: latest.progress?.taskType,
       progress: latest.progress?.percentage,
       lastUpdated: latest.updatedAt,
@@ -291,7 +288,7 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
     return shapeDB.getFeaturesInBbox(nodeId, bbox, adminLevel) as Promise<ShapeFeatureRecord[]>;
   }
 
-  async listFetchBuffers(nodeId: NodeId): Promise<ShapeFetchBufferRecord[]> {
+  async listFetchCaches(nodeId: NodeId): Promise<ShapeFetchCache[]> {
     const metadata = await listRawDataDataSourceMetadataForNode(nodeId);
     const records = await Promise.all(metadata.map(async (entry) => {
       const cacheKey = entry.cacheKey;
@@ -310,10 +307,10 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
         timestamp: entry.updatedAt ?? entry.createdAt ?? Date.now(),
       };
     }));
-    return records.filter(Boolean) as ShapeFetchBufferRecord[];
+    return records.filter(Boolean) as ShapeFetchCache[];
   }
 
-  async getFetchBuffer(nodeId: NodeId, bufferId: string): Promise<ShapeFetchBufferRecord | null> {
+  async getFetchCache(nodeId: NodeId, bufferId: string): Promise<ShapeFetchCache | null> {
     const data = await readRawDataDataSourceBuffer(nodeId, bufferId);
     if (!data) return null;
     const metadata = await listRawDataDataSourceMetadataForNode(nodeId);
@@ -331,23 +328,19 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
     };
   }
 
-  async getTransformSourceBuffer(
+  async getTransformByBandCache(
     bufferId: string
-  ): Promise<ShapeTransformSourceBufferRecord|null> {
-    return await ephemeralShapeDB.transformBuffers.get(bufferId)??null;
+  ): Promise<ShapeTransformByBandCache|null> {
+    return await ephemeralShapeDB.transformByBandCache.get(bufferId)??null;
   }
 
-  async listTransformSourceBuffers(
+  async listTransformByBandCaches(
     nodeId: NodeId
-  ): Promise<ShapeTransformSourceBufferRecord[]> {
-    return await ephemeralShapeDB.transformBuffers.where('nodeId').equals(nodeId).toArray();
+  ): Promise<ShapeTransformByBandCache[]> {
+    return await ephemeralShapeDB.transformByBandCache.where('nodeId').equals(nodeId).toArray();
   }
 
-  async getTransformBuffer(bufferId: string): Promise<TransformFeatureBuffer | null> {
-    return (await ephemeralShapeDB.transformBuffers.get(bufferId)) ?? null;
-  }
-
-  async listVectorTileRows(nodeId: NodeId): Promise<ShapeTileRow[]> {
+  async listVTMetadata(nodeId: NodeId): Promise<ShapeVTMetadata[]> {
     const rows = await shapeDB.vectorTiles.where('nodeId').equals(nodeId).toArray();
     return rows.map((row) => ({
       key: row.tileId,
@@ -355,48 +348,44 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
       z: row.z,
       x: row.x,
       y: row.y,
-      data: row.data_Uint8Array.buffer.slice(
-        row.data_Uint8Array.byteOffset,
-        row.data_Uint8Array.byteOffset + row.data_Uint8Array.byteLength,
-      ),
       size: row.size,
       contentType: 'application/vnd.mapbox-vector-tile',
       timestamp: row.generatedAt,
     }));
   }
 
-  async listSourceMetadata(nodeId: NodeId): Promise<ShapeSourceMetadataRow[]> {
-    return shapeDB.sourceMetadata.where('nodeId').equals(String(nodeId)).toArray() as Promise<ShapeSourceMetadataRow[]>;
+  async listSourceMetadata(nodeId: NodeId): Promise<ShapeSourceMetadata[]> {
+    return shapeDB.sourceMetadata.where('nodeId').equals(String(nodeId)).toArray() as Promise<ShapeSourceMetadata[]>;
   }
 
-  async listFeatureMetadata(nodeId: NodeId): Promise<ShapeFeatureMetadataRow[]> {
-    return shapeDB.featureMetadata.where('nodeId').equals(String(nodeId)).toArray() as Promise<ShapeFeatureMetadataRow[]>;
+  async listFeatureMetadata(nodeId: NodeId): Promise<ShapeFeatureMetadata[]> {
+    return shapeDB.featureMetadata.where('nodeId').equals(String(nodeId)).toArray() as Promise<ShapeFeatureMetadata[]>;
   }
 }
 
 export class ShapeMutationAPIImpl implements ShapeMutationAPI {
-  async upsertBatchSession(session: ShapeBatchSessionRecord): Promise<void> {
-    const record = toBatchSessionRecord(session);
+  async upsertBuildSession(session: ShapeBuildSessionRecord): Promise<void> {
+    const record = toBuildSessionRecord(session);
     if (!record) {
-      throw new Error('Invalid batch session config');
+      throw new Error('Invalid build session config');
     }
-    await shapeDB.batchSessions.put(record);
+    await shapeDB.buildSessions.put(record);
   }
 
-  async updateBatchSession(nodeId: NodeId, updates: Partial<ShapeBatchSessionRecord>): Promise<void> {
-    const patch = toBatchSessionUpdates(updates);
+  async updateBuildSession(nodeId: NodeId, updates: Partial<ShapeBuildSessionRecord>): Promise<void> {
+    const patch = toBuildSessionUpdates(updates);
     if (!patch) {
-      throw new Error('Invalid batch session config update');
+      throw new Error('Invalid build session config update');
     }
-    await shapeDB.updateBatchSession(nodeId, patch);
+    await shapeDB.updateBuildSession(nodeId, patch);
   }
 
-  async deleteBatchSession(nodeId: NodeId): Promise<void> {
-    await shapeDB.batchSessions.delete(nodeId);
+  async deleteBuildSession(nodeId: NodeId): Promise<void> {
+    await shapeDB.buildSessions.delete(nodeId);
   }
 
   async deleteBuildTasks(nodeId: NodeId): Promise<void> {
-    await ephemeralShapeDB.batchTasks.where('nodeId').equals(nodeId).delete();
+    await ephemeralShapeDB.buildTasks.where('nodeId').equals(nodeId).delete();
   }
 
   async deleteVectorTile(tileId: string): Promise<void> {
@@ -421,7 +410,7 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
 
   async cleanupProcessingData(nodeId: NodeId): Promise<void> {
     await this.deleteBuildTasks(nodeId);
-    await this.deleteBatchSession(nodeId);
+    await this.deleteBuildSession(nodeId);
     await this.deleteFeatures(nodeId);
     await this.deleteFeatureBuffers(nodeId);
     await this.deleteTileBuffers(nodeId);
@@ -436,14 +425,14 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
 
   async upsertBuildTasks(tasks: ShapeBuildTaskRecord[]): Promise<void> {
     if (tasks.length === 0) return;
-    await ephemeralShapeDB.batchTasks.bulkPut(tasks);
+    await ephemeralShapeDB.buildTasks.bulkPut(tasks);
   }
 
   async updateBuildTask(taskId: string, updates: Partial<ShapeBuildTaskRecord>): Promise<void> {
-    await ephemeralShapeDB.updateBatchTask(taskId, updates);
+    await ephemeralShapeDB.updateBuildTask(taskId, updates);
   }
 
-  async putFetchBuffers(buffers: ShapeFetchBufferRecord[]): Promise<void> {
+  async putFetchCaches(buffers: ShapeFetchCache[]): Promise<void> {
     if (buffers.length === 0) return;
     await Promise.all(buffers.map((buffer) => (
       storeRawDataDataSourceBufferForNode({
@@ -453,12 +442,12 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
       })
     )));
   }
-  async putTransformSourceBuffers(buffers: ShapeTransformSourceBufferRecord[]): Promise<void>{
+  async putTransformByBandCaches(buffers: ShapeTransformByBandCache[]): Promise<void>{
     if (buffers.length === 0) return;
-    await ephemeralShapeDB.transformBuffers.bulkPut(buffers);
+    await ephemeralShapeDB.transformByBandCache.bulkPut(buffers);
   }
 
-  async putSourceMetadata(rows: ShapeSourceMetadataRow[]): Promise<void> {
+  async putSourceMetadata(rows: ShapeSourceMetadata[]): Promise<void> {
     if (rows.length === 0) return;
     await shapeDB.sourceMetadata.bulkPut(rows);
   }
@@ -472,7 +461,7 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
     await shapeDB.sourceMetadata.where('nodeId').equals(nodeId).delete();
   }
 
-  async putFeatureMetadata(rows: ShapeFeatureMetadataRow[]): Promise<void> {
+  async putFeatureMetadata(rows: ShapeFeatureMetadata[]): Promise<void> {
     if (rows.length === 0) return;
     await shapeDB.featureMetadata.bulkPut(rows);
   }
@@ -495,46 +484,46 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
 
 }
 
-export class ShapeEphemeralApiImpl implements ShapeEphemeralAPI {
+export class EphemeralShapeApiImpl implements EphemeralShapeAPI {
   async listBuildTasks(nodeId: NodeId): Promise<ShapeBuildTaskRecord[]> {
-    return ephemeralShapeDB.batchTasks.where('nodeId').equals(nodeId).toArray() as Promise<ShapeBuildTaskRecord[]>;
+    return ephemeralShapeDB.buildTasks.where('nodeId').equals(nodeId).toArray() as Promise<ShapeBuildTaskRecord[]>;
   }
 
   async listBuildTasksByStatus(nodeId: NodeId, status: ShapeBuildTaskStatus): Promise<ShapeBuildTaskRecord[]> {
-    return ephemeralShapeDB.batchTasks.where('[nodeId+status]').equals([nodeId, status]).toArray() as Promise<ShapeBuildTaskRecord[]>;
+    return ephemeralShapeDB.buildTasks.where('[nodeId+status]').equals([nodeId, status]).toArray() as Promise<ShapeBuildTaskRecord[]>;
   }
 
   async listBuildTasksByType(nodeId: NodeId, taskType: ShapeBuildStage): Promise<ShapeBuildTaskRecord[]> {
-    return ephemeralShapeDB.batchTasks.where('[nodeId+taskType]').equals([nodeId, taskType]).toArray() as Promise<ShapeBuildTaskRecord[]>;
+    return ephemeralShapeDB.buildTasks.where('[nodeId+taskType]').equals([nodeId, taskType]).toArray() as Promise<ShapeBuildTaskRecord[]>;
   }
 
   async getBuildTask(taskId: string): Promise<ShapeBuildTaskRecord | null> {
-    return (await ephemeralShapeDB.batchTasks.get(taskId)) ?? null;
+    return (await ephemeralShapeDB.buildTasks.get(taskId)) ?? null;
   }
 
   async countBuildTasks(nodeId: NodeId): Promise<number> {
-    return ephemeralShapeDB.batchTasks.where('nodeId').equals(nodeId).count();
+    return ephemeralShapeDB.buildTasks.where('nodeId').equals(nodeId).count();
   }
 
   async putBuildTasks(tasks: ShapeBuildTaskRecord[]): Promise<void> {
     if (tasks.length === 0) return;
-    await ephemeralShapeDB.batchTasks.bulkPut(tasks);
+    await ephemeralShapeDB.buildTasks.bulkPut(tasks);
   }
 
   async deleteBuildTasksByNode(nodeId: NodeId): Promise<void> {
-    await ephemeralShapeDB.batchTasks.where('nodeId').equals(nodeId).delete();
+    await ephemeralShapeDB.buildTasks.where('nodeId').equals(nodeId).delete();
   }
 
   async deleteBuildTasksByIds(taskIds: string[]): Promise<void> {
     if (taskIds.length === 0) return;
-    await ephemeralShapeDB.batchTasks.bulkDelete(taskIds);
+    await ephemeralShapeDB.buildTasks.bulkDelete(taskIds);
   }
 
   async updateBuildTask(taskId: string, updates: Partial<ShapeBuildTaskRecord>): Promise<void> {
-    await ephemeralShapeDB.updateBatchTask(taskId, updates);
+    await ephemeralShapeDB.updateBuildTask(taskId, updates);
   }
 
-  async listFetchBuffers(nodeId: NodeId): Promise<ShapeFetchBufferRecord[]> {
+  async listFetchCaches(nodeId: NodeId): Promise<ShapeFetchCache[]> {
     const metadata = await listRawDataDataSourceMetadataForNode(nodeId);
     const records = await Promise.all(metadata.map(async (entry) => {
       const cacheKey = entry.cacheKey;
@@ -553,10 +542,10 @@ export class ShapeEphemeralApiImpl implements ShapeEphemeralAPI {
         timestamp: entry.updatedAt ?? entry.createdAt ?? Date.now(),
       };
     }));
-    return records.filter(Boolean) as ShapeFetchBufferRecord[];
+    return records.filter(Boolean) as ShapeFetchCache[];
   }
 
-  async getFetchBuffer(nodeId: NodeId, bufferId: string): Promise<ShapeFetchBufferRecord | null> {
+  async getFetchCache(nodeId: NodeId, bufferId: string): Promise<ShapeFetchCache | null> {
     const data = await readRawDataDataSourceBuffer(nodeId, bufferId);
     if (!data) return null;
     const metadata = await listRawDataDataSourceMetadataForNode(nodeId);
@@ -574,11 +563,11 @@ export class ShapeEphemeralApiImpl implements ShapeEphemeralAPI {
     };
   }
 
-  async countFetchBuffers(nodeId: NodeId): Promise<number> {
+  async countFetchCaches(nodeId: NodeId): Promise<number> {
     return countRawDataDataSourceBuffersForNode(nodeId);
   }
 
-  async putFetchBuffer(buffer: ShapeFetchBufferRecord): Promise<void> {
+  async putFetchCache(buffer: ShapeFetchCache): Promise<void> {
     await storeRawDataDataSourceBufferForNode({
       nodeId: buffer.nodeId,
       cacheKey: buffer.id,
@@ -586,7 +575,7 @@ export class ShapeEphemeralApiImpl implements ShapeEphemeralAPI {
     });
   }
 
-  async putFetchBuffers(buffers: ShapeFetchBufferRecord[]): Promise<void> {
+  async putFetchCaches(buffers: ShapeFetchCache[]): Promise<void> {
     if (buffers.length === 0) return;
     await Promise.all(buffers.map((buffer) => (
       storeRawDataDataSourceBufferForNode({
@@ -597,31 +586,31 @@ export class ShapeEphemeralApiImpl implements ShapeEphemeralAPI {
     )));
   }
 
-  async listTransformBuffers(
+  async listTransformByBandCaches(
     nodeId: NodeId
-  ): Promise<ShapeTransformSourceBufferRecord[]> {
-    return ephemeralShapeDB.transformBuffers.where('nodeId').equals(nodeId).toArray();
+  ): Promise<ShapeTransformByBandCache[]> {
+    return ephemeralShapeDB.transformByBandCache.where('nodeId').equals(nodeId).toArray();
   }
 
-  async getTransformBuffer(bufferId: string): Promise<TransformFeatureBuffer | null> {
-    return (await ephemeralShapeDB.transformBuffers.get(bufferId)) ?? null;
+  async getTransformByBandCache(bufferId: string): Promise<ShapeTransformByBandCache | null> {
+    return (await ephemeralShapeDB.transformByBandCache.get(bufferId)) ?? null;
   }
 
-  async countTransformBuffers(nodeId: NodeId): Promise<number> {
-    return ephemeralShapeDB.transformBuffers.where('nodeId').equals(nodeId).count();
+  async countTransformByBandCaches(nodeId: NodeId): Promise<number> {
+    return ephemeralShapeDB.transformByBandCache.where('nodeId').equals(nodeId).count();
   }
 
-  async putTransformBuffer(buffer: ShapeTransformSourceBufferRecord): Promise<void> {
-    await ephemeralShapeDB.transformBuffers.put(buffer);
+  async putTransformByBandCache(buffer: ShapeTransformByBandCache): Promise<void> {
+    await ephemeralShapeDB.transformByBandCache.put(buffer);
   }
 
-  async putTransformBuffers(buffers: ShapeTransformSourceBufferRecord[]): Promise<void> {
+  async putTransformByBandCaches(buffers: ShapeTransformByBandCache[]): Promise<void> {
     if (buffers.length === 0) return;
-    await ephemeralShapeDB.transformBuffers.bulkPut(buffers);
+    await ephemeralShapeDB.transformByBandCache.bulkPut(buffers);
   }
 
   async countVectorTiles(nodeId: NodeId): Promise<number> {
-    return ephemeralShapeDB.vectorTileSourceBuffers.where('nodeId').equals(nodeId).count();
+    return ephemeralShapeDB.transformByZoomCache.where('nodeId').equals(nodeId).count();
   }
 
   async listTileIdRelations(nodeId: NodeId): Promise<ShapeTileIdToBufferRelation[]> {
@@ -679,7 +668,7 @@ export class ShapeEphemeralApiImpl implements ShapeEphemeralAPI {
         const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
         await store.deleteAllForNode(nodeId);
       } catch (error) {
-        console.warn('[shapeBatchAPI] failed to clear download chunk-store entries', error);
+        console.warn('[shapeBuildAPI] failed to clear download chunk-store entries', error);
       }
     }
   }
@@ -692,14 +681,14 @@ export class ShapeEphemeralApiImpl implements ShapeEphemeralAPI {
     await ephemeralShapeDB.clearAll();
   }
 
-  async getNumBuffers(): Promise<{
-    numFetchBuffers: number;
-    numTransformBuffers: number;
-    numVTBuffers: number;
+  async getNumCaches(): Promise<{
+    numFetchCaches: number;
+    numTransformCaches: number;
+    numVtCaches: number;
     numSessions: number;
     totalSize: number;
   }> {
-    return ephemeralShapeDB.getNumBuffers();
+    return ephemeralShapeDB.getNumCaches();
   }
 }
 
@@ -718,7 +707,7 @@ export const getShapeDbApiClient = (): ReturnType<typeof createShapeDbApiClient>
   return cachedShapeDbApiClient;
 };
 
-export const createShapeBatchApiClient = (): { query: ShapeQueryAPI; mutation: ShapeMutationAPI } => {
+export const createShapeBuildApiClient = (): { query: ShapeQueryAPI; mutation: ShapeMutationAPI } => {
   const { query, mutation } = getShapeDbApiClient();
   return { query, mutation };
 };
@@ -726,5 +715,5 @@ export const createShapeBatchApiClient = (): { query: ShapeQueryAPI; mutation: S
 
 export const shapeQueryAPIImpl = new ShapeQueryAPIImpl();
 export const shapeMutationAPIImpl = new ShapeMutationAPIImpl();
-export const shapeEphemeralAPIImpl = new ShapeEphemeralApiImpl();
+export const ephemeralShapeAPIImpl = new EphemeralShapeApiImpl();
 

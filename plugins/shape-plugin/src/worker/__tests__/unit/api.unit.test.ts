@@ -49,7 +49,7 @@ describe('Shape Plugin API', () => {
     });
 
     it('should return missing session status for unknown session', async () => {
-      const status = await shapeBatchAPI.getBatchSessionStatus('session-unknown');
+      const status = await shapeBatchAPI.getBuildSessionStatus('session-unknown');
       expect(status.exists).toBe(false);
     });
   });
@@ -135,7 +135,7 @@ describe('Shape Plugin API', () => {
 
       expect(result).toBeDefined();
       expect(result.workingCopiesRemoved).toBeDefined();
-      expect(result.batchSessionsRemoved).toBeDefined();
+      expect(result.buildSessionsRemoved).toBeDefined();
       expect(result.totalSpaceRecovered).toBeDefined();
     });
 
@@ -145,8 +145,8 @@ describe('Shape Plugin API', () => {
       expect(stats).toBeDefined();
       expect(stats.totalDrafts).toBeDefined();
       expect(stats.expiredDrafts).toBeDefined();
-      expect(stats.totalBatchSessions).toBeDefined();
-      expect(stats.expiredBatchSessions).toBeDefined();
+      expect(stats.totalBuildSessions).toBeDefined();
+      expect(stats.expiredBuildSessions).toBeDefined();
     });
 
     it('should force cleanup all data', async () => {
@@ -154,7 +154,7 @@ describe('Shape Plugin API', () => {
 
       expect(result).toBeDefined();
       expect(result.workingCopiesRemoved).toBeDefined();
-      expect(result.batchSessionsRemoved).toBeDefined();
+      expect(result.buildSessionsRemoved).toBeDefined();
     });
   });
 });

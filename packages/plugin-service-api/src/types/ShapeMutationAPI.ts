@@ -1,17 +1,17 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type {
   ShapeBuildTaskRecord,
-  ShapeTransformSourceBufferRecord,
-  ShapeFeatureMetadataRow,
-  ShapeFetchBufferRecord,
-  ShapeSourceMetadataRow,
+  ShapeTransformByBandCache,
+  ShapeFeatureMetadata,
+  ShapeFetchCache,
+  ShapeSourceMetadata,
 } from './shapeBuildTypes.js';
-import type { ShapeBatchSessionRecord, ShapeVectorTileRecord } from './shapeDbTypes.js';
+import type { ShapeBuildSessionRecord, ShapeVectorTileRecord } from './shapeDbTypes.js';
 
 export interface ShapeMutationAPI {
-  upsertBatchSession(session: ShapeBatchSessionRecord): Promise<void>;
-  updateBatchSession(nodeId: NodeId, updates: Partial<ShapeBatchSessionRecord>): Promise<void>;
-  deleteBatchSession(nodeId: NodeId): Promise<void>;
+  upsertBuildSession(session: ShapeBuildSessionRecord): Promise<void>;
+  updateBuildSession(nodeId: NodeId, updates: Partial<ShapeBuildSessionRecord>): Promise<void>;
+  deleteBuildSession(nodeId: NodeId): Promise<void>;
   deleteBuildTasks(nodeId: NodeId): Promise<void>;
   deleteVectorTile(tileId: string): Promise<void>;
   deleteVectorTiles(nodeId: NodeId): Promise<void>;
@@ -22,12 +22,12 @@ export interface ShapeMutationAPI {
   clearShapeArtifacts(nodeId: NodeId): Promise<void>;
   upsertBuildTasks(tasks: ShapeBuildTaskRecord[]): Promise<void>;
   updateBuildTask(taskId: string, updates: Partial<ShapeBuildTaskRecord>): Promise<void>;
-  putFetchBuffers(buffers: ShapeFetchBufferRecord[]): Promise<void>;
-  putTransformSourceBuffers(buffers: ShapeTransformSourceBufferRecord[]): Promise<void>;
-  putSourceMetadata(rows: ShapeSourceMetadataRow[]): Promise<void>;
+  putFetchCaches(buffers: ShapeFetchCache[]): Promise<void>;
+  putTransformByBandCaches(buffers: ShapeTransformByBandCache[]): Promise<void>;
+  putSourceMetadata(rows: ShapeSourceMetadata[]): Promise<void>;
   deleteSourceMetadataByIds(ids: string[]): Promise<void>;
   deleteSourceMetadataByNode(nodeId: string): Promise<void>;
-  putFeatureMetadata(rows: ShapeFeatureMetadataRow[]): Promise<void>;
+  putFeatureMetadata(rows: ShapeFeatureMetadata[]): Promise<void>;
   deleteFeatureMetadataByNode(nodeId: string): Promise<void>;
   syncVectorTilesFromTilesDb(nodeId: NodeId): Promise<void>;
   storeVectorTile(tile: ShapeVectorTileRecord): Promise<void>;

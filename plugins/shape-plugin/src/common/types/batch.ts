@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { HybridFilterConfig } from './BatchConfig.js';
-import type { BatchSessionConfig } from './BatchConfig.js';
+import type { BuildSessionConfig } from './BatchConfig.js';
 import type { DataSourceName } from './data-source.js';
 import type { FeatureFilterMethod, Extract2ExtractionMode } from './processing.js';
 
@@ -30,12 +30,12 @@ export type BatchTaskStageType = (typeof BatchTaskStage)[keyof typeof BatchTaskS
 
 export type TaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'regression';
 
-export type BatchTaskType = 'fetch' | 'transform' | 'vt';
-export type ProcessingStage = BatchTaskType;
+export type BuildTaskType = 'fetch' | 'transform-by-band' | 'transform-by-zoom' | 'vt';
+export type ProcessingStage = BuildTaskType;
 
 export interface BatchTaskBase {
   taskId: string;
-  type: BatchTaskType;
+  type: BuildTaskType;
   nodeId: NodeId;
   stage: BatchTaskStageType|undefined;
   status: TaskStatus;
@@ -162,7 +162,7 @@ export interface BatchSession {
   nodeId: NodeId;
   draftId?: NodeId;
   status: 'idle' | 'running' | 'paused' | 'completed' | 'failed';
-  config: BatchSessionConfig;
+  config: BuildSessionConfig;
   startedAt: number;
   updatedAt: number;
   completedAt?: number;
@@ -190,16 +190,16 @@ export interface ProgressInfo {
   taskType?: ProcessingStage | 'processing';
 }
 
-export type ShapeBatchCommandMap = {
+export type ShapeBuildCommandMap = {
   'session/pause': { nodeId: NodeId };
   'session/resume': { nodeId: NodeId };
   'stage/pause': { nodeId: NodeId; stage: ProcessingStage };
   'stage/resume': { nodeId: NodeId; stage: ProcessingStage };
 };
 
-export type ShapeBatchCommand = keyof ShapeBatchCommandMap;
+export type ShapeBuildCommand = keyof ShapeBuildCommandMap;
 
-export type ShapeBatchCommandPayload<K extends ShapeBatchCommand> = ShapeBatchCommandMap[K];
+export type ShapeBuildCommandPayload<K extends ShapeBuildCommand> = ShapeBuildCommandMap[K];
 
 export interface StageStatus {
   status: TaskStatus;

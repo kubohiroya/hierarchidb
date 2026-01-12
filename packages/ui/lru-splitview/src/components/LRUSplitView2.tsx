@@ -147,44 +147,42 @@ export const LRUSplitView2: React.FC<LRUSplitView2Props> = ({
 
   return (
     <Box ref={containerRef} sx={[{ height, width }, sx] as SxProps<Theme>}>
-      {containerWidth > 0 ? (
-        <Allotment
-          key={layoutKey}
-          vertical={vertical}
-          proportionalLayout={false}
-          defaultSizes={sizes}
-          onDragEnd={() => {
-            if (!onPaneReorder) return;
-            const expandedPanes = paneStates.filter((pane) => pane.isExpanded);
-            onPaneReorder(expandedPanes.map((pane) => pane.id));
-          }}
-        >
-          {paneStates.map((state, index) => (
-            <Allotment.Pane
-              key={state.id}
-              minSize={state.collapsedSize || defaultCollapsedSize}
-              preferredSize={sizes[index]}
+      <Allotment
+        key={layoutKey}
+        vertical={vertical}
+        proportionalLayout={false}
+        defaultSizes={sizes}
+        onDragEnd={() => {
+          if (!onPaneReorder) return;
+          const expandedPanes = paneStates.filter((pane) => pane.isExpanded);
+          onPaneReorder(expandedPanes.map((pane) => pane.id));
+        }}
+      >
+        {paneStates.map((state, index) => (
+          <Allotment.Pane
+            key={state.id}
+            minSize={state.collapsedSize || defaultCollapsedSize}
+            preferredSize={sizes[index]}
+          >
+            <Box
+              sx={{
+                height: '100%',
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
             >
-              <Box
-                sx={{
-                  height: '100%',
-                  width: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                }}
-              >
-                {renderPane({
-                  id: state.id,
-                  isExpanded: state.isExpanded,
-                  collapsedSize: state.collapsedSize ?? defaultCollapsedSize,
-                  toggle: () => togglePane(state.id),
-                  state,
-                })}
-              </Box>
-            </Allotment.Pane>
-          ))}
-        </Allotment>
-      ) : null}
+              {renderPane({
+                id: state.id,
+                isExpanded: state.isExpanded,
+                collapsedSize: state.collapsedSize ?? defaultCollapsedSize,
+                toggle: () => togglePane(state.id),
+                state,
+              })}
+            </Box>
+          </Allotment.Pane>
+        ))}
+      </Allotment>
     </Box>
   );
 };

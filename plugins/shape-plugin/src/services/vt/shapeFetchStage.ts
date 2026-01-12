@@ -4,11 +4,12 @@ import { encodeFlatGeobufFromFeatureCollection } from '@hierarchidb/gis-sdk';
 import {
   type TaskQueueRecord,
   VtTaskQueueDb,
+  listTasksByStage,
   putTasks,
   runStageTasks,
   type StageHandler,
 } from '@hierarchidb/vt-orchestrator';
-import { VtShapeDb, getStage1Buffer, putStage1Buffer } from '@hierarchidb/vt-shape-store';
+import { VtShapeDb, getFetchCache, putFetchCache } from '@hierarchidb/vt-shape-store';
 import type {
   BatchConfig,
   CountryMetadata,
@@ -35,7 +36,7 @@ export type ShapeFetchTaskInput = {
 };
 
 export type ShapeFetchTaskOutput = {
-  stage1BufferId?: string;
+  fetchCacheId?: string;
   featureCount?: number;
   vertexCount?: number;
   polygonCount?: number;
@@ -51,6 +52,7 @@ export type ShapeFetchStageParams = {
   shapeStore: VtShapeDb;
   metadata?: CountryMetadata[];
   waitIfPaused?: () => Promise<void>;
+  resumeExistingTasks?: boolean;
 };
 
 const buildRetryConfig = (config: BatchConfig): RetryConfig => {
@@ -81,7 +83,7 @@ const buildShapeFetchTaskId = (nodeId: NodeId, sourceKey: string): string => (
   `${String(nodeId)}:fetch:${sourceKey}`
 );
 
-const buildStage1FeatureCollection = (
+const buildFetchFeatureCollection = (
   entities: ShapeEntity[],
   originKey: string
 ): FeatureCollection => {
@@ -208,13 +210,13 @@ const createFetchHandler = (params: {
       return { status: 'failed', errorMessage: 'fetch task input is missing' };
     }
 
-    const existing = await getStage1Buffer(params.shapeStore, params.nodeId, input.sourceKey);
+    const existing = await getFetchCache(params.shapeStore, params.nodeId, input.sourceKey);
     if (existing) {
       return {
         status: 'completed',
-        message: 'reused: stage1 buffer exists',
+        message: 'reused: fetch cache exists',
         outputData: {
-          stage1BufferId: existing.id,
+          fetchCacheId: existing.id,
           featureCount: existing.featureCount,
           vertexCount: existing.vertexCount,
         },
@@ -236,7 +238,7 @@ const createFetchHandler = (params: {
     });
 
     const originKey = buildOriginKey(input.dataSource, input.sourceKey);
-    const collection = buildStage1FeatureCollection(processed, originKey);
+    const collection = buildFetchFeatureCollection(processed, originKey);
     if (collection.features.length === 0) {
       return {
         status: 'completed',
@@ -246,7 +248,7 @@ const createFetchHandler = (params: {
 
     const { featureCount, vertexCount, polygonCount } = summarizeFeatureCollection(collection);
     const data = await encodeFlatGeobufFromFeatureCollection(collection);
-    const buffer = await putStage1Buffer(params.shapeStore, params.nodeId, {
+    const buffer = await putFetchCache(params.shapeStore, params.nodeId, {
       sourceKey: input.sourceKey,
       countryCode: input.countryCode,
       adminLevel: input.adminLevel,
@@ -260,7 +262,7 @@ const createFetchHandler = (params: {
       status: 'completed',
       message: `completed: features=${featureCount}`,
       outputData: {
-        stage1BufferId: buffer.id,
+        fetchCacheId: buffer.id,
         featureCount,
         vertexCount,
         polygonCount,
@@ -271,17 +273,25 @@ const createFetchHandler = (params: {
 
 export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise<void> => {
   const metadata = params.metadata ?? await metadataLoader.loadMetadata(params.dataSource, params.nodeId);
-  const payloads = (params.downloadTaskPayloads && params.downloadTaskPayloads.length > 0)
-    ? params.downloadTaskPayloads
-    : generateDownloadTaskPayloadsFromSelection(
-      params.dataSource,
-      params.selectedArrayByCountries,
-      metadata,
-    );
-  if (payloads.length === 0) return;
+  const existingTasks = params.resumeExistingTasks
+    ? await listTasksByStage(params.taskQueue, params.nodeId, 'fetch')
+    : [];
+  const shouldGenerateTasks = existingTasks.length === 0;
+  const payloads = shouldGenerateTasks
+    ? ((params.downloadTaskPayloads && params.downloadTaskPayloads.length > 0)
+      ? params.downloadTaskPayloads
+      : generateDownloadTaskPayloadsFromSelection(
+        params.dataSource,
+        params.selectedArrayByCountries,
+        metadata,
+      ))
+    : [];
+  if (payloads.length === 0 && shouldGenerateTasks) return;
 
-  const tasks = buildFetchTasks(params.nodeId, payloads, metadata);
-  await putTasks(params.taskQueue, tasks);
+  if (shouldGenerateTasks) {
+    const tasks = buildFetchTasks(params.nodeId, payloads, metadata);
+    await putTasks(params.taskQueue, tasks);
+  }
   await runStageTasks({
     db: params.taskQueue,
     nodeId: params.nodeId,

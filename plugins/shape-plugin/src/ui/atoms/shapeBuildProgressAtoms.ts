@@ -27,6 +27,12 @@ export type TaskProgressControls = {
   handlePause?: () => void;
 };
 
+export type TaskScrollTarget = {
+  stageId: string;
+  taskId: string;
+  requestedAt: number;
+};
+
 export type TaskProgressAuthState = {
   authDialogOpen: boolean;
   closeAuthDialog: () => void;
@@ -53,6 +59,7 @@ export const taskProgressSummaryAtom = atom<TaskProgressSummary>({
   buildStatus: 'idle',
   hasProgressData: false,
 });
+export const taskScrollTargetAtom = atom<TaskScrollTarget | null>(null);
 export const taskWarningMessageAtom = atom<string | null>(null);
 export const taskProgressControlsAtom = atom<TaskProgressControls>({
   canStartOrResume: false,

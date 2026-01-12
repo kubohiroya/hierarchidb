@@ -1,4 +1,4 @@
-export type { BatchSessionConfig, HybridFilterConfig } from './BatchConfig.js';
+export type { BuildSessionConfig, HybridFilterConfig } from './BatchConfig.js';
 export * from './BatchTaskLike.js';
 export * from './category-types.js';
 export * from './ShapeError.js';

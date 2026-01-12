@@ -20,12 +20,22 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
     metadataEnabled,
     tabIndex,
     setTabIndex,
-    metadataRows,
-    metadataLoading,
-    metadataError,
+    sourceTabIndex,
+    mapTabIndex,
+    sourceMetadataRows,
+    sourceMetadataLoading,
+    sourceMetadataError,
+    sourceMetadataLoaded,
+    featureMetadataRows,
+    featureMetadataLoading,
+    featureMetadataError,
+    featureMetadataLoaded,
     searchKeyword,
     setSearchKeyword,
+    featureSearchKeyword,
+    setFeatureSearchKeyword,
     matchedIdSet,
+    matchedFeatureIdSet,
     selectedIdSet,
     hoveredIdSet,
     setSelectedIds,
@@ -33,8 +43,13 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
     sortColumn,
     sortDirection,
     handleSort,
+    featureSortColumn,
+    featureSortDirection,
+    handleFeatureSort,
     metadataColumns,
     metadataTableRows,
+    featureColumns,
+    featureTableRows,
     hoverMessage,
     tilesUrl,
     tilesAvailable,
@@ -144,121 +159,216 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
     );
   };
 
+
+  const renderSourceMetadataTable = () => (
+    <Box
+      ref={metadataPanelRef}
+      flex={1}
+      minHeight={0}
+      display="flex"
+      flexDirection="column"
+      borderRadius={1}
+      overflow="hidden"
+      border="1px solid #e0e0e0"
+      sx={{ overscrollBehavior: 'contain' }}
+    >
+      {!nodeId ? (
+        <Alert severity="info" sx={{ m: 2 }}>
+          {t('preview.metadata.missingSession', 'Build the dataset to generate metadata.')}
+        </Alert>
+      ) : sourceMetadataRows.length === 0 ? (
+        <Alert severity="info" icon={!sourceMetadataLoaded ? <CircularProgress size={16} /> : undefined} sx={{ m: 2, alignItems: 'center' }}>
+          {sourceMetadataLoaded
+            ? t('preview.metadata.empty', 'No metadata entries have been generated yet.')
+            : t('preview.metadata.loading', 'Loading metadata...')}
+        </Alert>
+      ) : (
+        <>
+          <Box
+            ref={metadataToolbarRef}
+            sx={{ p: 1.5, display: 'flex', alignItems: 'center', gap: 1.5 }}
+          >
+            <SearchField
+              searchText={searchKeyword}
+              handleSearchTextChange={setSearchKeyword}
+              handleSearchCommit={() => undefined}
+              placeholder={t('preview.metadata.searchPlaceholder', 'Search metadata')}
+              ariaLabel={t('preview.metadata.searchAriaLabel', 'Search metadata')}
+            />
+            <Typography variant="body2" color="text.secondary">
+              {searchKeyword
+                ? `${metadataTableRows.length} ${t('preview.metadata.matches', 'Matched')}`
+                : `${metadataTableRows.length} ${t('preview.metadata.rows', 'Rows')}`}
+            </Typography>
+          </Box>
+          <Box flex={1} minHeight={0}>
+            <GenericDataGrid
+              columns={metadataColumns}
+              rows={metadataTableRows}
+              maxHeight={metadataTableHeight || 360}
+              tableContainerSx={{
+                height: metadataTableHeight || 360,
+                maxHeight: metadataTableHeight || 360,
+                overflowY: 'auto',
+                overflowX: 'auto',
+                overscrollBehavior: 'contain',
+                WebkitOverflowScrolling: 'touch',
+              }}
+              rowHeight={38}
+              stickyHeader
+              dense
+              hover
+              striped
+              enableVirtualization
+              loading={sourceMetadataLoading}
+              error={sourceMetadataError ?? undefined}
+              selectable
+              selectionMode="multiple"
+              selectedRows={selectedIdSet}
+              onSelectionChange={(next) => {
+                setSelectedIds(Array.from(next).map(String));
+              }}
+              matchedRows={matchedIdSet}
+              hoveredRows={hoveredIdSet}
+              onRowHover={(_, rowId) => setHoveredId(String(rowId))}
+              onRowLeave={() => setHoveredId(null)}
+              sortColumn={sortColumn}
+              sortDirection={sortDirection}
+              onSort={handleSort}
+              rowSx={(state) => {
+                if (state.selected) {
+                  const selectedBg = theme.palette.primary.light;
+                  const selectedText = theme.palette.getContrastText(selectedBg);
+                  return {
+                    backgroundColor: selectedBg,
+                    color: selectedText,
+                    '& td, & td *': { color: selectedText },
+                  };
+                }
+                if (state.matched) {
+                  const matchedBg = theme.palette.secondary.light;
+                  const matchedText = theme.palette.getContrastText(matchedBg);
+                  return {
+                    backgroundColor: matchedBg,
+                    boxShadow: `inset 3px 0 0 0 ${theme.palette.secondary.main}`,
+                    color: matchedText,
+                    '& td, & td *': { color: matchedText },
+                  };
+                }
+                if (state.hovered) {
+                  return { backgroundColor: theme.palette.action.hover };
+                }
+                return undefined;
+              }}
+              toolbarComponent={<></>}
+            />
+          </Box>
+        </>
+      )}
+    </Box>
+  );
+
+  const renderFeatureMetadataTable = () => (
+    <Box
+      ref={metadataPanelRef}
+      flex={1}
+      minHeight={0}
+      display="flex"
+      flexDirection="column"
+      borderRadius={1}
+      overflow="hidden"
+      border="1px solid #e0e0e0"
+      sx={{ overscrollBehavior: 'contain' }}
+    >
+      {!nodeId ? (
+        <Alert severity="info" sx={{ m: 2 }}>
+          {t('preview.metadata.missingSession', 'Build the dataset to generate metadata.')}
+        </Alert>
+      ) : featureMetadataRows.length === 0 ? (
+        <Alert severity="info" icon={!featureMetadataLoaded ? <CircularProgress size={16} /> : undefined} sx={{ m: 2, alignItems: 'center' }}>
+          {featureMetadataLoaded
+            ? t('preview.metadata.empty', 'No metadata entries have been generated yet.')
+            : t('preview.metadata.loading', 'Loading metadata...')}
+        </Alert>
+      ) : (
+        <>
+          <Box
+            ref={metadataToolbarRef}
+            sx={{ p: 1.5, display: 'flex', alignItems: 'center', gap: 1.5 }}
+          >
+            <SearchField
+              searchText={featureSearchKeyword}
+              handleSearchTextChange={setFeatureSearchKeyword}
+              handleSearchCommit={() => undefined}
+              placeholder={t('preview.metadata.searchPlaceholder', 'Search metadata')}
+              ariaLabel={t('preview.metadata.searchAriaLabel', 'Search metadata')}
+            />
+            <Typography variant="body2" color="text.secondary">
+              {featureSearchKeyword
+                ? `${featureTableRows.length} ${t('preview.metadata.matches', 'Matched')}`
+                : `${featureTableRows.length} ${t('preview.metadata.rows', 'Rows')}`}
+            </Typography>
+          </Box>
+          <Box flex={1} minHeight={0}>
+            <GenericDataGrid
+              columns={featureColumns}
+              rows={featureTableRows}
+              maxHeight={metadataTableHeight || 360}
+              tableContainerSx={{
+                height: metadataTableHeight || 360,
+                maxHeight: metadataTableHeight || 360,
+                overflowY: 'auto',
+                overflowX: 'auto',
+                overscrollBehavior: 'contain',
+                WebkitOverflowScrolling: 'touch',
+              }}
+              rowHeight={38}
+              stickyHeader
+              dense
+              hover
+              striped
+              enableVirtualization
+              loading={featureMetadataLoading}
+              error={featureMetadataError ?? undefined}
+              matchedRows={matchedFeatureIdSet}
+              sortColumn={featureSortColumn}
+              sortDirection={featureSortDirection}
+              onSort={handleFeatureSort}
+              rowSx={(state) => {
+                if (state.matched) {
+                  const matchedBg = theme.palette.secondary.light;
+                  const matchedText = theme.palette.getContrastText(matchedBg);
+                  return {
+                    backgroundColor: matchedBg,
+                    boxShadow: `inset 3px 0 0 0 ${theme.palette.secondary.main}`,
+                    color: matchedText,
+                    '& td, & td *': { color: matchedText },
+                  };
+                }
+                return undefined;
+              }}
+              toolbarComponent={<></>}
+            />
+          </Box>
+        </>
+      )}
+    </Box>
+  );
+
   return (
     <Box display="flex" flexDirection="column" gap={2} height="100%" minHeight={0} flex={1}>
       {metadataEnabled ? (
         <>
           <Tabs value={tabIndex} onChange={(_, next) => setTabIndex(next)} variant="scrollable">
+            <Tab label={t('preview.tabs.sources', 'Sources')} />
+            <Tab label={t('preview.tabs.features', 'Features')} />
             <Tab label={t('preview.tabs.map', 'Map Preview')} />
-            <Tab label={t('preview.tabs.metadata', 'Metadata Table')} />
           </Tabs>
-          {tabIndex === 0 ? (
-            renderMapPreview()
-          ) : (
-            <Box
-              ref={metadataPanelRef}
-              flex={1}
-              minHeight={0}
-              display="flex"
-              flexDirection="column"
-              borderRadius={1}
-              overflow="hidden"
-              border="1px solid #e0e0e0"
-              sx={{ overscrollBehavior: 'contain' }}
-            >
-              {!nodeId ? (
-                <Alert severity="info" sx={{ m: 2 }}>
-                  {t('preview.metadata.missingSession', 'Build the dataset to generate metadata.')}
-                </Alert>
-              ) : metadataRows.length === 0 && !metadataLoading ? (
-                <Alert severity="info" sx={{ m: 2 }}>
-                  {t('preview.metadata.empty', 'No metadata entries have been generated yet.')}
-                </Alert>
-              ) : (
-                <>
-                  <Box
-                    ref={metadataToolbarRef}
-                    sx={{ p: 1.5, display: 'flex', alignItems: 'center', gap: 1.5 }}
-                  >
-                    <SearchField
-                      searchText={searchKeyword}
-                      handleSearchTextChange={setSearchKeyword}
-                      handleSearchCommit={() => undefined}
-                      placeholder={t('preview.metadata.searchPlaceholder', 'Search metadata')}
-                      ariaLabel={t('preview.metadata.searchAriaLabel', 'Search metadata')}
-                    />
-                    <Typography variant="body2" color="text.secondary">
-                      {searchKeyword
-                        ? `${metadataTableRows.length} ${t('preview.metadata.matches', 'Matched')}`
-                        : `${metadataTableRows.length} ${t('preview.metadata.rows', 'Rows')}`}
-                    </Typography>
-                  </Box>
-                  <Box flex={1} minHeight={0}>
-                    <GenericDataGrid
-                      columns={metadataColumns}
-                      rows={metadataTableRows}
-                      maxHeight={metadataTableHeight || 360}
-                      tableContainerSx={{
-                        height: metadataTableHeight || 360,
-                        maxHeight: metadataTableHeight || 360,
-                        overflowY: 'auto',
-                        overflowX: 'auto',
-                        overscrollBehavior: 'contain',
-                        WebkitOverflowScrolling: 'touch',
-                      }}
-                      rowHeight={38}
-                      stickyHeader
-                      dense
-                      hover
-                      striped
-                      enableVirtualization
-                      loading={metadataLoading}
-                      error={metadataError ?? undefined}
-                      selectable
-                      selectionMode="multiple"
-                      selectedRows={selectedIdSet}
-                      onSelectionChange={(next) => {
-                        setSelectedIds(Array.from(next).map(String));
-                      }}
-                      matchedRows={matchedIdSet}
-                      hoveredRows={hoveredIdSet}
-                      onRowHover={(_, rowId) => setHoveredId(String(rowId))}
-                      onRowLeave={() => setHoveredId(null)}
-                      sortColumn={sortColumn}
-                      sortDirection={sortDirection}
-                      onSort={handleSort}
-                      rowSx={(state) => {
-                        if (state.selected) {
-                          const selectedBg = theme.palette.primary.light;
-                          const selectedText = theme.palette.getContrastText(selectedBg);
-                          return {
-                            backgroundColor: selectedBg,
-                            color: selectedText,
-                            '& td, & td *': { color: selectedText },
-                          };
-                        }
-                        if (state.matched) {
-                          const matchedBg = theme.palette.secondary.light;
-                          const matchedText = theme.palette.getContrastText(matchedBg);
-                          return {
-                            backgroundColor: matchedBg,
-                            boxShadow: `inset 3px 0 0 0 ${theme.palette.secondary.main}`,
-                            color: matchedText,
-                            '& td, & td *': { color: matchedText },
-                          };
-                        }
-                        if (state.hovered) {
-                          return { backgroundColor: theme.palette.action.hover };
-                        }
-                        return undefined;
-                      }}
-                      toolbarComponent={<></>}
-                    />
-                  </Box>
-                </>
-              )}
-            </Box>
-          )}
+          {tabIndex === mapTabIndex
+            ? renderMapPreview()
+            : tabIndex === sourceTabIndex
+              ? renderSourceMetadataTable()
+              : renderFeatureMetadataTable()}
         </>
       ) : (
         renderMapPreview()

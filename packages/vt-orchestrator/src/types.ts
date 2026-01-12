@@ -11,8 +11,11 @@ export type BandConfig = {
   zBase: number;
 };
 
-export type TransformStageConfig = {
+export type TransformByBandStageConfig = {
   toleranceK: number;
+};
+
+export type TransformByZoomStageConfig = {
   tileIndex: {
     buffer: number;
     extent: number;
@@ -30,14 +33,19 @@ export type VtStageConfig = {
   layerSetName: string;
 };
 
-export type TransformTaskInput = {
-  stage1BufferId: string;
+export type TransformByBandTaskInput = {
+  fetchCacheId: string;
   bandId: number;
   domainType: 'shape' | 'route';
   sourceKey: string;
   stagePriority?: number;
   countryCode?: string;
   adminLevel?: number;
+};
+
+export type TransformByZoomTaskInput = {
+  transformByBandCacheId: string;
+  bandId: number;
 };
 
 export type VtTaskInput = {
@@ -49,9 +57,15 @@ export type VtTaskInput = {
   sourceKey: string;
 };
 
-export type TransformStageContext = {
+export type TransformByBandStageContext = {
   shapeStore: VtShapeDb;
-  transformConfig: TransformStageConfig;
+  transformConfig: TransformByBandStageConfig;
+  bands: BandConfig[];
+};
+
+export type TransformByZoomStageContext = {
+  shapeStore: VtShapeDb;
+  zoomConfig: TransformByZoomStageConfig;
   bands: BandConfig[];
   maxBand3Reservations: number;
 };
@@ -63,12 +77,18 @@ export type VtStageContext = {
   bands: BandConfig[];
 };
 
-export type BuildConfig<TTransformInput = TransformTaskInput, TVtInput = VtTaskInput> = {
+export type BuildConfig<
+  TTransformByBandInput = TransformByBandTaskInput,
+  TTransformByZoomInput = TransformByZoomTaskInput,
+  TVtInput = VtTaskInput
+> = {
   nodeId: NodeId;
   taskQueue: VtTaskQueueDb;
-  transformHandler?: StageHandler<TTransformInput>;
+  transformByBandHandler?: StageHandler<TTransformByBandInput>;
+  transformByZoomHandler?: StageHandler<TTransformByZoomInput>;
   vtHandler?: StageHandler<TVtInput>;
-  transformContext?: TransformStageContext;
+  transformByBandContext?: TransformByBandStageContext;
+  transformByZoomContext?: TransformByZoomStageContext;
   vtContext?: VtStageContext;
 };
 

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import { Alert, Box, Stack, Typography } from '@mui/material';
-import { type BuildStatus, type BuildStage, BuildStep } from '@hierarchidb/components';
+import { type BuildStatus, type BuildStage, BuildStepPanel } from '@hierarchidb/components';
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import { getWorkerBridge, type WorkerBridge } from '@hierarchidb/ui-worker-client';
 import { HeapPressureDialog, useHeapPressureGuard } from '@hierarchidb/ui-memory';
@@ -9,6 +9,7 @@ import type { LocationEntity } from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
 import { useLocationProgress } from '../../../common/hooks/useLocationProgress.js';
 import { subscribeIdeGsmProgress } from '../../state/ideGsmProgress.js';
+import { CloudDownload, Layers, Tune } from '@mui/icons-material';
 
 type Props = {
   nodeId: NodeId;
@@ -80,16 +81,19 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
   const stageLabels = translations.batch?.stages ?? {};
   const stages = useMemo<Array<BuildStage & { description: string }>>(() => ([
     {
+      icon: <CloudDownload/>,
       id: 'fetch',
       title: stageLabels.download ?? t('stage.stages.download', 'Download'),
       description: t('stage.stageDescriptions.download', 'Download points and metadata.'),
     },
     {
+      icon: <Tune/>,
       id: 'transform',
       title: stageLabels.filtering ?? t('stage.stages.filter', 'Filter'),
       description: t('stage.stageDescriptions.filter', 'Normalize and filter the source data.'),
     },
     {
+      icon: <Layers/>,
       id: 'vt',
       title: stageLabels.indexing ?? t('stage.stages.index', 'Index'),
       description: t('stage.stageDescriptions.index', 'Generate vector tiles for previews.'),
@@ -284,7 +288,7 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
         </Alert>
       ) : null}
 
-      <BuildStep
+      <BuildStepPanel
         status={buildStatus}
         overallProgress={ideGsmActive ? ideGsmOverallProgress : overallProgress}
         stages={stages}

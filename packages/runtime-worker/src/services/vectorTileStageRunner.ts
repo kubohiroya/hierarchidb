@@ -97,7 +97,7 @@ export async function writeVectorTileInput(
   const storage = options?.storage ?? 'chunk-store';
   const payload = await compressBuffer(buffer, inputCompression);
   if (storage === 'ephemeral') {
-    await ephemeralShapeDB.vectorTileSourceBuffers.put({
+    await ephemeralShapeDB.transformByZoomCache.put({
       id: bufferId,
       nodeId,
       tileId,

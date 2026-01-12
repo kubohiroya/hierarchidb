@@ -29,7 +29,7 @@ export interface ShapesAPIMethods {
   // Batch processing
   startBatchProcess(
     nodeId: NodeId,
-    config: BatchProcessConfig,
+    config: BuildProcessConfig,
     downloadTaskPayloads: FetchTaskPayload[],
   ): Promise<BatchSession>;
 
@@ -92,7 +92,7 @@ export type CacheType =
 
 // === Configuration Types ===
 
-export interface BatchProcessConfig {
+export interface BuildProcessConfig {
   dataSource: DataSourceName;
   countryCode: string;
   adminLevels: number[];
@@ -132,7 +132,7 @@ export interface FilterRule {
 export interface BatchSession {
   nodeId: NodeId;
   status: 'idle' | 'running' | 'paused' | 'completed' | 'failed';
-  config: BatchProcessConfig;
+  config: BuildProcessConfig;
   startedAt: number;
   updatedAt: number;
   completedAt?: number;

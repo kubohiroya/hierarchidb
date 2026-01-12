@@ -72,6 +72,10 @@ export abstract class UnifiedBatchManagerBase<TConfig, TData> implements IBatchS
   }
 
   async getBatchSessionStatus(nodeId: NodeId): Promise<BatchSessionStatus> {
+    return this.getBuildSessionStatus(nodeId);
+  }
+
+  async getBuildSessionStatus(nodeId: NodeId): Promise<BatchSessionStatus> {
     const status = await this.performStatus(nodeId);
     if (!status.nodeId) status.nodeId = nodeId;
     if (this.persistence?.onSessionStatusChange) {

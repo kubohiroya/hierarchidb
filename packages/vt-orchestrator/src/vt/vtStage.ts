@@ -25,7 +25,7 @@ const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureColl
   return null;
 };
 
-const decodeTransformBuffer = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
+const decodeTransformByBandCache = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
   const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
   return normalizeFeatureCollection(decoded as unknown);
 };
@@ -109,9 +109,9 @@ const buildLayerMap = (collection: FeatureCollection): Map<string, Feature[]> =>
 const collectFeatures = async (context: VtStageContext, bufferIds: string[]): Promise<FeatureCollection | null> => {
   const allFeatures: Feature[] = [];
   for (const bufferId of bufferIds) {
-    const record = await context.shapeStore.transformBandBuffers.get(bufferId);
+    const record = await context.shapeStore.transformByBandCache.get(bufferId);
     if (!record) continue;
-    const collection = await decodeTransformBuffer(record.data);
+    const collection = await decodeTransformByBandCache(record.data);
     if (!collection) continue;
     allFeatures.push(...collection.features);
   }

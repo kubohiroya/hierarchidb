@@ -1,10 +1,10 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import type { GridColumn } from '@hierarchidb/ui-grid';
-import { useTranslation } from '../../i18n.js';
-import type { ShapeSourceMetadata } from '@hierarchidb/plugin-service-api';
 import { Typography } from '@mui/material';
+import { useTranslation } from '../../i18n.js';
+import type { ShapeFeatureMetadata } from '@hierarchidb/plugin-service-api';
 
-type PreviewMetadataRow = ShapeSourceMetadata;
+type PreviewFeatureRow = ShapeFeatureMetadata;
 
 const formatLogicalCode = (value: unknown) => {
   const text = String(value ?? '');
@@ -23,37 +23,41 @@ const formatBBox = (bbox?: [number, number, number, number]) => {
   return `${minX.toFixed(4)}, ${minY.toFixed(4)}, ${maxX.toFixed(4)}, ${maxY.toFixed(4)}`;
 };
 
-export const useVectorTilePreviewTable = (
-  metadataRows: PreviewMetadataRow[],
+const formatArea = (value?: number) => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return '';
+  return value.toLocaleString();
+};
+
+export const useVectorTileFeatureTable = (
+  metadataRows: PreviewFeatureRow[],
   matchedIdSet: Set<string>,
   searchKeyword: string,
 ) => {
   const { t } = useTranslation();
-  const [sortColumn, setSortColumn] = useState<string>('originLabel');
+  const [sortColumn, setSortColumn] = useState<string>('featureId');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   const metadataTableRows = useMemo(() => {
     const normalizeCount = (value?: number) => (typeof value === 'number' ? value : '');
     const rows = metadataRows.map((row) => ({
-      id: row.originKey,
-      rawOriginKey: row.originKey,
-      originLabel: row.originLabel ?? '',
+      id: row.id,
+      rawId: row.id,
+      featureId: row.featureId ?? '',
+      countryName: row.countryName ?? '',
       countryCode: row.countryCode ?? '',
+      adminName: row.adminName ?? '',
       adminLevel: row.adminLevel != null ? `ADM${row.adminLevel}` : '',
+      adminCode: row.adminCode ?? '',
       dataSource: row.dataSource ?? '',
       createdAt: row.createdAt ? new Date(row.createdAt).toLocaleString() : '',
-      fetchVertexCount: normalizeCount(row.fetchVertexCount),
-      fetchPolygonCount: normalizeCount(row.fetchPolygonCount),
-      transformVertexCount: normalizeCount(row.transformVertexCount),
-      transformPolygonCount: normalizeCount(row.transformPolygonCount),
-      vtVertexCount: normalizeCount(row.vtVertexCount),
-      vtPolygonCount: normalizeCount(row.vtPolygonCount),
+      vertexCount: normalizeCount(row.vertexCount),
+      polygonCount: normalizeCount(row.polygonCount),
       bbox: formatBBox(row.bbox),
-      originKey: row.originKey,
+      area: formatArea(row.area),
     }));
     const keyword = searchKeyword.trim().toLowerCase();
     const filtered = keyword
-      ? rows.filter((row) => matchedIdSet.has(row.rawOriginKey))
+      ? rows.filter((row) => matchedIdSet.has(row.rawId))
       : rows;
     const sorted = [...filtered].sort((a, b) => {
       const av = a[sortColumn as keyof typeof a];
@@ -74,19 +78,18 @@ export const useVectorTilePreviewTable = (
   }, []);
 
   const metadataColumns = useMemo<GridColumn<(typeof metadataTableRows)[number]>[]>(() => ([
-    { id: 'originLabel', label: t('preview.metadata.columns.originLabel', 'Origin'), width: 220, sortable: true },
+    { id: 'featureId', label: t('preview.metadata.columns.featureId', 'Feature ID'), width: 220, sortable: true },
+    { id: 'countryName', label: t('preview.metadata.columns.countryName', 'Country'), width: 180, sortable: true },
     { id: 'countryCode', label: t('preview.metadata.columns.countryCode', 'Country Code'), width: 120, sortable: true },
+    { id: 'adminName', label: t('preview.metadata.columns.adminName', 'Admin Name'), width: 180, sortable: true },
     { id: 'adminLevel', label: t('preview.metadata.columns.adminLevel', 'Admin Level'), width: 120, align: 'right', sortable: true },
+    { id: 'adminCode', label: t('preview.metadata.columns.adminCode', 'Admin Code'), width: 120, sortable: true },
     { id: 'dataSource', label: t('preview.metadata.columns.dataSource', 'Data Source'), width: 140, sortable: true },
     { id: 'createdAt', label: t('preview.metadata.columns.createdAt', 'Created At'), width: 180, sortable: true },
-    { id: 'fetchVertexCount', label: t('preview.metadata.columns.fetchVertexCount', 'Fetch Vertices'), width: 140, align: 'right', sortable: true },
-    { id: 'fetchPolygonCount', label: t('preview.metadata.columns.fetchPolygonCount', 'Fetch Polygons'), width: 140, align: 'right', sortable: true },
-    { id: 'transformVertexCount', label: t('preview.metadata.columns.transformVertexCount', 'Transform Vertices'), width: 160, align: 'right', sortable: true },
-    { id: 'transformPolygonCount', label: t('preview.metadata.columns.transformPolygonCount', 'Transform Polygons'), width: 160, align: 'right', sortable: true },
-    { id: 'vtVertexCount', label: t('preview.metadata.columns.vtVertexCount', 'VT Vertices'), width: 140, align: 'right', sortable: true },
-    { id: 'vtPolygonCount', label: t('preview.metadata.columns.vtPolygonCount', 'VT Polygons'), width: 140, align: 'right', sortable: true },
+    { id: 'vertexCount', label: t('preview.metadata.columns.vertexCount', 'Vertices'), width: 120, align: 'right', sortable: true },
+    { id: 'polygonCount', label: t('preview.metadata.columns.polygonCount', 'Polygons'), width: 120, align: 'right', sortable: true },
     { id: 'bbox', label: t('preview.metadata.columns.bbox', 'Bounding Box'), width: 220, sortable: true },
-    { id: 'originKey', label: t('preview.metadata.columns.originKey', 'Origin Key'), width: 240, sortable: true, format: formatLogicalCode },
+    { id: 'area', label: t('preview.metadata.columns.area', 'Area'), width: 140, align: 'right', sortable: true, format: formatLogicalCode },
   ]), [t]);
 
   return {

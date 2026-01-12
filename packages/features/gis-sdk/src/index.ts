@@ -57,7 +57,7 @@ export {
   EphemeralGisDB,
   type BatchSessionMetadata,
   type EphemeralStage,
-  type FetchFeatureBuffer,
-  type TransformFeatureBuffer,
-  type VTBuffer,
+  type FetchCacheRecord,
+  type TransformByBandCacheRecord,
+  type VtCacheRecord,
 } from './ephemeral/EphemeralGisDB.js';

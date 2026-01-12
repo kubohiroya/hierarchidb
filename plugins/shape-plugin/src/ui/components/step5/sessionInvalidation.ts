@@ -2,9 +2,9 @@ import { ShapeBuildStage } from '@hierarchidb/plugin-service-api';
 import type { BatchConfig, ShapeEntity } from '../../../common/types/index.js';
 import { DEFAULT_PROCESSING_CONFIG, mergeBatchConfig } from '../../../common/types/index.js';
 import { toNodeId, type NodeId } from '@hierarchidb/common-types';
-import { shapeEphemeralAPIImpl } from '../../../services/batch/ShapeBuildApiClient.ts';
+import { ephemeralShapeAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
 
-const STAGE_ORDER: ShapeBuildStage[] = ['fetch', 'transform', 'vt'];
+const STAGE_ORDER: ShapeBuildStage[] = ['fetch', 'transform-by-band', 'transform-by-zoom', 'vt'];
 
 type SimpleRecord = object;
 
@@ -33,8 +33,8 @@ export async function clearStagesIfPresent(nodeId: NodeId, stages: ShapeBuildSta
   const targetStages = uniqueStages(stages);
   const cleared: ShapeBuildStage[] = [];
   for (const stage of targetStages) {
-    if (await shapeEphemeralAPIImpl.hasStageData(nodeId, stage)) {
-      await shapeEphemeralAPIImpl.clearStage(nodeId, stage);
+    if (await ephemeralShapeAPIImpl.hasStageData(nodeId, stage)) {
+      await ephemeralShapeAPIImpl.clearStage(nodeId, stage);
       cleared.push(stage);
     }
   }
@@ -52,16 +52,23 @@ export function resolveBatchConfigInvalidation(
 
   if (hasDiff(prev.fetchConfig ?? {}, next.fetchConfig ?? {})) {
     stages.add('fetch');
-    stages.add('transform');
+    stages.add('transform-by-band');
+    stages.add('transform-by-zoom');
     stages.add('vt');
   }
 
   if (hasDiff(prev.extract1Config ?? {}, next.extract1Config ?? {})) {
-    stages.add('transform');
+    stages.add('transform-by-band');
+    stages.add('transform-by-zoom');
     stages.add('vt');
   }
 
   if (hasDiff(prev.tileConfig ?? {}, next.tileConfig ?? {})) {
+    stages.add('transform-by-zoom');
+    stages.add('vt');
+  }
+
+  if (hasDiff(prev.extract2Config ?? {}, next.extract2Config ?? {})) {
     stages.add('vt');
   }
 
@@ -70,6 +77,7 @@ export function resolveBatchConfigInvalidation(
 
 export const FULL_INVALIDATION_STAGES: ShapeBuildStage[] = [
   'fetch',
-  'transform',
+  'transform-by-band',
+  'transform-by-zoom',
   'vt'
 ];

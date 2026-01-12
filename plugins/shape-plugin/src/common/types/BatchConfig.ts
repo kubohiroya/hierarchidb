@@ -94,7 +94,7 @@ export interface GenerateVectorTilesConfig {
  * Complete batch processing configuration
  * Combines all session-specific configurations
  */
-export interface BatchSessionConfig extends CommonSessionConfig {
+export interface BuildSessionConfig extends CommonSessionConfig {
   // Session-specific configurations
   download: DownloadSessionConfig;
   extract1: ExtractSession1Config;
@@ -121,4 +121,4 @@ export interface BatchSessionConfig extends CommonSessionConfig {
 }
 
 // Aligned alias for cross-plugin naming consistency.
-export type BatchConfig = BatchSessionConfig;
+export type BatchConfig = BuildSessionConfig;

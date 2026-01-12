@@ -5,7 +5,7 @@
 
 import type { TreeNodeId } from '@hierarchidb/common-types';
 
-export type BatchStage = 'download' | 'extract1' | 'extract2' | 'vectorTiles' | 'fetch' | 'transform' | 'vt';
+export type BatchStage = 'download' | 'extract1' | 'extract2' | 'vectorTiles' | 'fetch' | 'transform-by-band' | 'transform-by-zoom' | 'vt';
 export type BatchTaskStatus = 'pending' | 'running' | 'completed' | 'failed' | 'aborted';
 
 /**

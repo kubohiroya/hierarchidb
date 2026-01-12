@@ -1,14 +1,32 @@
 {
   "steps": {
-    "tabularUpload": { "label": "データセットアップロード" },
-    "tabularFilter": { "label": "データセットフィルター" },
-    "dataSource": { "label": "データソース" },
-    "licenseAgreement": { "label": "ライセンス同意" },
-    "processing": { "label": "処理設定" },
-    "countrySelection": { "label": "国選択" },
-    "preview": { "label": "プレビュー" },
-    "build": { "label": "ビルド" },
-    "stage": { "label": "ビルド" }
+    "tabularUpload": {
+      "label": "データセットアップロード"
+    },
+    "tabularFilter": {
+      "label": "データセットフィルター"
+    },
+    "dataSource": {
+      "label": "データソース"
+    },
+    "licenseAgreement": {
+      "label": "ライセンス同意"
+    },
+    "processing": {
+      "label": "処理設定"
+    },
+    "countrySelection": {
+      "label": "国選択"
+    },
+    "preview": {
+      "label": "プレビュー"
+    },
+    "build": {
+      "label": "ビルド"
+    },
+    "stage": {
+      "label": "ビルド"
+    }
   },
   "auth": {
     "loading": "認証状態を確認中..."
@@ -52,8 +70,11 @@
     "fetch": {
       "title": "Fetch"
     },
-    "transform": {
-      "title": "Transform"
+    "transformByBand": {
+      "title": "Transform by band"
+    },
+    "transformByZoom": {
+      "title": "Transform by zoom"
     },
     "vt": {
       "title": "VT 生成"
@@ -70,8 +91,9 @@
       "deleteDownloadedFiles": "fetch キャッシュを削除",
       "deleteDownloadedFilesWithCount": "fetch キャッシュを削除 ({{count}}件)",
       "deleteLoadingHint": "削除件数を読み込み中...",
-      "deleteStage1Cache": "Transform キャッシュ（フィルタリング）を削除",
-      "deleteStage2Cache": "Transform キャッシュ（前処理）を削除",
+      "countUnit": "件",
+      "deleteStage1Cache": "ズーム帯別キャッシュを削除",
+      "deleteStage2Cache": "ズーム率別キャッシュを削除",
       "deleteTiles": "VT キャッシュを削除",
       "deleteMetadata": "メタデータを削除",
       "resetDefaultsAction": "設定値をデフォルトに戻す",
@@ -161,7 +183,9 @@
     "waiting": "ベクトルタイルを準備中です。準備でき次第、地図を表示します。",
     "tabs": {
       "map": "地図プレビュー",
-      "metadata": "メタデータ一覧"
+      "metadata": "メタデータ一覧",
+      "sources": "ソース",
+      "features": "フィーチャー"
     },
     "metadata": {
       "missingSession": "メタデータがまだありません。",
@@ -247,9 +271,13 @@
         "title": "Fetch",
         "description": "データを取得して正規化します。"
       },
-      "transform": {
-        "title": "Transform",
-        "description": "簡略化とタイル生成用の索引を作成します。"
+      "transformByBand": {
+        "title": "Transform by band",
+        "description": "ズーム帯ごとに簡略化します。"
+      },
+      "transformByZoom": {
+        "title": "Transform by zoom",
+        "description": "ズーム帯ごとにタイル索引を作成します。"
       },
       "vt": {
         "title": "VT",

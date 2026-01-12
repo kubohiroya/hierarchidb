@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type {
-  ShapeBatchSessionSummary,
+  ShapeBuildSessionSummary,
   ShapeBuildTaskSummary,
   ShapeProcessingStatus,
   ShapeTileInfo,
@@ -10,22 +10,22 @@ import type {
 import type {
   ShapeBuildTaskRecord,
   ShapeBuildStage,
-  ShapeTransformSourceBufferRecord,
-  ShapeFeatureMetadataRow,
-  ShapeFetchBufferRecord,
-  ShapeSourceMetadataRow,
-  ShapeTileRow,
+  ShapeTransformByBandCache,
+  ShapeFeatureMetadata,
+  ShapeFetchCache,
+  ShapeSourceMetadata,
+  ShapeVTMetadata,
 } from './shapeBuildTypes.js';
-import type { ShapeBatchSessionRecord, ShapeFeatureRecord, ShapeVectorTileRecord } from './shapeDbTypes.js';
+import type { ShapeBuildSessionRecord, ShapeFeatureRecord, ShapeVectorTileRecord } from './shapeDbTypes.js';
 
 export interface ShapeQueryAPI {
-  listBatchSessions(nodeId: NodeId): Promise<ShapeBatchSessionSummary[]>;
-  getBatchSession(nodeId: NodeId): Promise<ShapeBatchSessionSummary | null>;
-  listBatchSessionRecords(nodeId: NodeId): Promise<ShapeBatchSessionRecord[]>;
-  getBatchSessionRecord(nodeId: NodeId): Promise<ShapeBatchSessionRecord | null>;
-  listBatchSessionRecordsByStatus(
+  listBuildSessions(nodeId: NodeId): Promise<ShapeBuildSessionSummary[]>;
+  getBuildSession(nodeId: NodeId): Promise<ShapeBuildSessionSummary | null>;
+  listBuildSessionRecords(nodeId: NodeId): Promise<ShapeBuildSessionRecord[]>;
+  getBuildSessionRecord(nodeId: NodeId): Promise<ShapeBuildSessionRecord | null>;
+  listBuildSessionRecordsByStatus(
     statuses: Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>,
-  ): Promise<ShapeBatchSessionRecord[]>;
+  ): Promise<ShapeBuildSessionRecord[]>;
   listBuildTasks(nodeId: NodeId): Promise<ShapeBuildTaskSummary[]>;
   listBuildTaskRecords(nodeId: NodeId): Promise<ShapeBuildTaskRecord[]>;
   listBuildTaskRecordsByStage(nodeId: NodeId, stage: ShapeBuildStage): Promise<ShapeBuildTaskRecord[]>;
@@ -43,11 +43,11 @@ export interface ShapeQueryAPI {
     bbox: [number, number, number, number],
     adminLevel?: number,
   ): Promise<ShapeFeatureRecord[]>;
-  listFetchBuffers(nodeId: NodeId): Promise<ShapeFetchBufferRecord[]>;
-  getFetchBuffer(nodeId: NodeId, bufferId: string): Promise<ShapeFetchBufferRecord | null>;
-  listTransformSourceBuffers(nodeId: NodeId): Promise<ShapeTransformSourceBufferRecord[]>;
-  getTransformSourceBuffer(bufferId: string): Promise<ShapeTransformSourceBufferRecord | null>;
-  listVectorTileRows(nodeId: NodeId): Promise<ShapeTileRow[]>;
-  listSourceMetadata(nodeId: NodeId): Promise<ShapeSourceMetadataRow[]>;
-  listFeatureMetadata(nodeId: NodeId): Promise<ShapeFeatureMetadataRow[]>;
+  listFetchCaches(nodeId: NodeId): Promise<ShapeFetchCache[]>;
+  getFetchCache(nodeId: NodeId, bufferId: string): Promise<ShapeFetchCache | null>;
+  listTransformByBandCaches(nodeId: NodeId): Promise<ShapeTransformByBandCache[]>;
+  getTransformByBandCache(bufferId: string): Promise<ShapeTransformByBandCache | null>;
+  listVTMetadata(nodeId: NodeId): Promise<ShapeVTMetadata[]>;
+  listSourceMetadata(nodeId: NodeId): Promise<ShapeSourceMetadata[]>;
+  listFeatureMetadata(nodeId: NodeId): Promise<ShapeFeatureMetadata[]>;
 }

@@ -6,7 +6,9 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  LinearProgress,
   Snackbar,
+  Stack,
   Typography,
   Alert,
 } from '@mui/material';
@@ -16,7 +18,6 @@ import type { NodeId } from '@hierarchidb/common-types';
 import { BuildStepPanel } from '@hierarchidb/components';
 import { useTranslation } from '../../i18n.js';
 import { useBuildCrashInsight } from './useBuildCrashInsight.js';
-import { useBuildStages } from './useBuildStages.js';
 import { useShapeBuildProgressWarnings } from '../../hooks/useShapeBuildProgressWarnings.js';
 import {
   taskPaneProgressAtom,
@@ -31,6 +32,7 @@ import {
 } from '../../atoms/shapeBuildProgressAtoms.js';
 import type { TaskWithMetadata } from './TaskListVirtualized.tsx';
 import { TaskProgressSummaryCard } from './TaskProgressSummaryCard.tsx';
+import { TaskProgressBar } from './TaskProgressBar.tsx';
 import type { ShapeEntity } from '../../../common/types/ShapeEntity.ts';
 import { ShapeBuildProgressStageContent } from './ShapeBuildProgressStageContent.js';
 
@@ -38,8 +40,6 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
   const resolvedNodeId = nodeId as NodeId | undefined;
   const { t } = useTranslation();
   const stages = useAtomValue(buildStagesAtom);
-  const fallbackStages = useBuildStages();
-  const effectiveStages = stages.length > 0 ? stages : fallbackStages;
   const stageProgress = useAtomValue(buildStageProgressAtom);
   const paneProgress = useAtomValue(taskPaneProgressAtom);
   const isTasksLoading = useAtomValue(tasksLoadingAtom);
@@ -65,7 +65,7 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
   } = useShapeBuildProgressWarnings({
     crashInsight,
     data,
-    stages: effectiveStages,
+    stages,
     warningMessage,
     isDev,
     t
@@ -123,8 +123,31 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
     Math.min(100, Math.max(0, stageProgress[stageId] ?? summary.overallProgress))
   ), [stageProgress, summary.overallProgress]);
 
+  const stageProgressContent = useMemo(() => (
+    stages.reduce<Record<string, JSX.Element>>((acc, stage) => {
+      acc[stage.id] = (
+        <Stack gap={1}>
+          <TaskProgressBar
+            stages={[stage]}
+            tasksByStage={{ [stage.id]: tasksByStage[stage.id] ?? [] }}
+            buildStatus={summary.buildStatus}
+          />
+          <LinearProgress
+            variant="indeterminate"
+            sx={{
+              height: 6,
+              borderRadius: 6,
+              visibility: summary.buildStatus === 'running' ? 'visible' : 'hidden',
+            }}
+          />
+        </Stack>
+      );
+      return acc;
+    }, {})
+  ), [stages, tasksByStage, summary.buildStatus]);
+
   const stageContents = useMemo(() => (
-    effectiveStages.reduce<Record<string, JSX.Element>>((acc, stage) => {
+    stages.reduce<Record<string, JSX.Element>>((acc, stage) => {
       acc[stage.id] = (
         <ShapeBuildProgressStageContent
           stage={stage}
@@ -138,12 +161,13 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
           resolveStatusColor={resolveStatusColor}
           resolveTaskTitle={resolveTaskTitle}
           t={t}
+          showHeader={false}
         />
       );
       return acc;
     }, {})
   ), [
-    effectiveStages,
+    stages,
     isTaskSummaryLoading,
     isTasksLoading,
     paneProgress,
@@ -175,27 +199,28 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
         <BuildStepPanel
           status={summary.buildStatus}
           overallProgress={summary.overallProgress}
-          stages={effectiveStages}
+          stages={stages}
           stageProgress={stageProgress}
           paneProgress={paneProgress}
           splitViewBreakpoints={[600, 900, 1200]}
           splitViewInitialSizesByBreakpoint={[
-            Array.from({ length: effectiveStages.length }, () => 250),
-            Array.from({ length: effectiveStages.length }, () => 250),
-            Array.from({ length: effectiveStages.length }, () => 250),
-            Array.from({ length: effectiveStages.length }, () => 250),
+            Array.from({ length: stages.length }, () => 250),
+            Array.from({ length: stages.length }, () => 250),
+            Array.from({ length: stages.length }, () => 250),
+            Array.from({ length: stages.length }, () => 250),
           ]}
           splitViewAutoCloseCountsByBreakpoint={[
-            Math.max(0, effectiveStages.length - 1),
-            Math.max(0, effectiveStages.length - 2),
-            Math.max(0, effectiveStages.length - 3),
+            Math.max(0, stages.length - 1),
+            Math.max(0, stages.length - 2),
+            Math.max(0, stages.length - 3),
             0,
           ]}
           stageContents={stageContents}
+          stageProgressContent={stageProgressContent}
           statusContent={summary.hasProgressData ? (
             <TaskProgressSummaryCard
               summary={summary}
-              stages={effectiveStages}
+              stages={stages}
               tasksByStage={tasksByStage}
             />
           ) : undefined}

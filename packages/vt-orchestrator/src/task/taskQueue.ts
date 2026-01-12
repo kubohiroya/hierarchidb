@@ -2,7 +2,7 @@ import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
 
-export type TaskStage = 'fetch' | 'transform' | 'vt';
+export type TaskStage = 'fetch' | 'transform-by-band' | 'transform-by-zoom' | 'vt';
 export type TaskStatus = 'queued' | 'running' | 'completed' | 'failed';
 
 export type TaskQueueRecord<TInput = unknown, TOutput = unknown> = {

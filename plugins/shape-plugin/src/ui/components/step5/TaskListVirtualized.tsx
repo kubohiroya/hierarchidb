@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Box } from '@mui/material';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { BatchTaskSummary } from '@hierarchidb/common-api';
@@ -18,6 +18,8 @@ type TaskListProps = {
   resolveStatusLabel: (statusValue?: string, skipped?: boolean) => string;
   resolveStatusColor: (statusValue?: string, skipped?: boolean) => 'default' | 'success' | 'error' | 'warning' | 'info';
   resolveTaskTitle: (task: TaskWithMetadata) => string;
+  scrollToTaskId?: string;
+  scrollRequestId?: number;
 };
 
 const getVectorTileCoordsFromTitle = (task: BatchTaskSummary): { z: number; x: number; y: number } | null => {
@@ -56,6 +58,8 @@ export const TaskListVirtualized = ({
   resolveStatusLabel,
   resolveStatusColor,
   resolveTaskTitle,
+  scrollToTaskId,
+  scrollRequestId,
 }: TaskListProps) => {
   const parentRef = useRef<HTMLDivElement | null>(null);
   const virtualizer = useVirtualizer({
@@ -64,6 +68,13 @@ export const TaskListVirtualized = ({
     estimateSize: () => 72,
     overscan: 8,
   });
+
+  useEffect(() => {
+    if (!scrollToTaskId) return;
+    const index = tasks.findIndex((task) => task.taskId === scrollToTaskId);
+    if (index < 0) return;
+    virtualizer.scrollToIndex(index, { align: 'center' });
+  }, [scrollRequestId, scrollToTaskId, tasks, virtualizer]);
 
   return (
     <Box ref={parentRef} sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>

@@ -36,14 +36,20 @@ export const FetchConfigSection: React.FC<Props> = ({ config, draft, nodeId, dis
     t,
     switchId,
     baseDownloadConfig,
-    deleteLabel,
+    deleteFetchLabel,
+    deleteTransformFilterLabel,
+    deleteTransformPreprocessLabel,
+    deleteVTLabel,
+    deleteMetadataLabel,
     countsLoading,
     canDeleteFetchCache,
     canDeleteTransformCache,
+    canDeleteTransformByZoomCache,
     canDeleteVTCache,
     canDeleteMetadata,
     handleDeleteFetchCache,
     handleDeleteTransformCache,
+    handleDeleteTransformByZoomCache,
     handleDeleteVTCache,
     handleDeleteMetadata,
     handleResetDefaults,
@@ -167,15 +173,20 @@ export const FetchConfigSection: React.FC<Props> = ({ config, draft, nodeId, dis
                   {t('processing.download.deleteNowTitle', 'Delete build outputs immediately')}
                 </Typography>
                 <FetchConfigFormControls
-                  deleteLabel={deleteLabel}
+                  deleteFetchLabel={deleteFetchLabel}
+                  deleteTransformFilterLabel={deleteTransformFilterLabel}
+                  deleteTransformPreprocessLabel={deleteTransformPreprocessLabel}
+                  deleteVTLabel={deleteVTLabel}
+                  deleteMetadataLabel={deleteMetadataLabel}
                   countsLoading={countsLoading}
-                  canDeleteFetch={canDeleteFetchCache}
                   canDeleteFetchCache={canDeleteFetchCache}
                   canDeleteTransformCache={canDeleteTransformCache}
+                  canDeleteTransformByZoomCache={canDeleteTransformByZoomCache}
                   canDeleteVTCache={canDeleteVTCache}
                   canDeleteMetadata={canDeleteMetadata}
                   onDeleteFetchCache={handleDeleteFetchCache}
                   onDeleteTransformCache={handleDeleteTransformCache}
+                  onDeleteTransformByZoomCache={handleDeleteTransformByZoomCache}
                   onDeleteVTCache={handleDeleteVTCache}
                   onDeleteMetadata={handleDeleteMetadata}
                   onResetDefaults={handleResetDefaults}

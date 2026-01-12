@@ -2,14 +2,20 @@ import { useMemo } from 'react';
 import type { BuildStage, BuildStatus } from '@hierarchidb/components';
 import type { BatchTaskSummary } from '@hierarchidb/common-api';
 
-const toStageKey = (task: BatchTaskSummary & { taskType?: string }): string => {
-  const candidate = task.taskType ?? task.stage;
+type TaskStageCarrier = BatchTaskSummary & { taskType?: string; type?: string; stage?: string };
+
+const resolveTaskStage = (task: TaskStageCarrier): string | undefined => (
+  task.taskType ?? task.type ?? task.stage
+);
+
+const toStageKey = (task: TaskStageCarrier): string => {
+  const candidate = resolveTaskStage(task);
   if (!candidate) return 'download';
   if (candidate === 'vectortile') return 'vectorTiles';
   if (candidate === 'extract1') return 'extract1';
   if (candidate === 'extract2') return 'extract2';
   if (candidate === 'wait' || candidate === 'process' || candidate === 'success' || candidate === 'error') {
-    return task.taskType ?? 'download';
+    return task.type ?? task.taskType ?? 'download';
   }
   return candidate;
 };

@@ -9,38 +9,48 @@ import {
 import { useTranslation } from '../../i18n.js';
 
 type Props = {
-  deleteLabel: string;
+  deleteFetchLabel: string;
+  deleteTransformFilterLabel: string;
+  deleteTransformPreprocessLabel: string;
+  deleteVTLabel: string;
+  deleteMetadataLabel: string;
   countsLoading?: boolean;
-  canDeleteFetch: boolean;
   canDeleteFetchCache: boolean;
   canDeleteTransformCache: boolean;
+  canDeleteTransformByZoomCache: boolean;
   canDeleteVTCache: boolean;
   canDeleteMetadata: boolean;
   resetDisabled?: boolean;
   onDeleteFetchCache: () => void;
   onDeleteTransformCache: () => void;
+  onDeleteTransformByZoomCache: () => void;
   onDeleteVTCache: () => void;
   onDeleteMetadata: () => void;
   onResetDefaults: () => void;
 };
 
 export const FetchConfigFormControls: React.FC<Props> = ({
-                                                        deleteLabel,
-                                                        countsLoading = false,
-                                                        canDeleteFetch,
-                                                        canDeleteFetchCache,
-                                                        canDeleteTransformCache,
-                                                        canDeleteVTCache,
-                                                        canDeleteMetadata,
-                                                        resetDisabled,
-                                                        onDeleteFetchCache,
-                                                        onDeleteTransformCache,
-                                                        onDeleteVTCache,
-                                                        onDeleteMetadata,
-                                                        onResetDefaults,
-                                                      }) => {
+  deleteFetchLabel,
+  deleteTransformFilterLabel,
+  deleteTransformPreprocessLabel,
+  deleteVTLabel,
+  deleteMetadataLabel,
+  countsLoading = false,
+  canDeleteFetchCache,
+  canDeleteTransformCache,
+  canDeleteTransformByZoomCache,
+  canDeleteVTCache,
+  canDeleteMetadata,
+  resetDisabled,
+  onDeleteFetchCache,
+  onDeleteTransformCache,
+  onDeleteTransformByZoomCache,
+  onDeleteVTCache,
+  onDeleteMetadata,
+  onResetDefaults,
+}) => {
   const { t } = useTranslation();
-  const rawDisabled = countsLoading || !canDeleteFetch;
+  const rawDisabled = countsLoading || !canDeleteFetchCache;
 
   return (
     <>
@@ -58,7 +68,7 @@ export const FetchConfigFormControls: React.FC<Props> = ({
               component="span"
               sx={{ display: 'inline-flex', alignItems: 'center', minHeight: '1.2em' }}
             >
-              {deleteLabel}
+              {deleteFetchLabel}
             </Typography>
           </Button>
         </Grid>
@@ -68,10 +78,10 @@ export const FetchConfigFormControls: React.FC<Props> = ({
             variant="outlined"
             color="error"
             startIcon={<FilterAltIcon />}
-            disabled={!canDeleteFetchCache}
+            disabled={!canDeleteTransformCache}
             onClick={() => onDeleteTransformCache()}
           >
-            {t('processing.download.deleteStage1Cache', 'Delete transform cache (filtering)')}
+            {deleteTransformFilterLabel}
           </Button>
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
@@ -80,10 +90,10 @@ export const FetchConfigFormControls: React.FC<Props> = ({
             variant="outlined"
             color="error"
             startIcon={<FilterIcon />}
-            disabled={!canDeleteTransformCache}
-            onClick={() => onDeleteTransformCache()}
+            disabled={!canDeleteTransformByZoomCache}
+            onClick={() => onDeleteTransformByZoomCache()}
           >
-            {t('processing.download.deleteStage2Cache', 'Delete transform cache (preprocessing)')}
+            {deleteTransformPreprocessLabel}
           </Button>
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
@@ -95,7 +105,7 @@ export const FetchConfigFormControls: React.FC<Props> = ({
             disabled={!canDeleteVTCache}
             onClick={onDeleteVTCache}
           >
-            {t('processing.download.deleteTiles', 'Delete vt cache')}
+            {deleteVTLabel}
           </Button>
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
@@ -107,7 +117,7 @@ export const FetchConfigFormControls: React.FC<Props> = ({
             disabled={!canDeleteMetadata}
             onClick={onDeleteMetadata}
           >
-            {t('processing.download.deleteMetadata', 'Delete Metadata')}
+            {deleteMetadataLabel}
           </Button>
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>

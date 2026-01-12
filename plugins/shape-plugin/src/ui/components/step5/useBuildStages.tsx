@@ -3,6 +3,7 @@ import type { BuildStage } from '@hierarchidb/components';
 import {
   CloudDownload as CloudDownloadIcon,
   Tune as TuneIcon,
+  FilterAlt as FilterAltIcon,
   Layers as LayersIcon,
 } from '@mui/icons-material';
 import { useTranslation } from '../../i18n.js';
@@ -17,10 +18,16 @@ export const useBuildStages = (): BuildStage[] => {
       icon: <CloudDownloadIcon color="primary" />,
     },
     {
-      id: 'transform',
-      title: t('processing.transform.title', 'Transform'),
-      description: t('stage.stages.transform.description', 'Simplify and index buffers for tile generation.'),
+      id: 'transform-by-band',
+      title: t('processing.transformByBand.title', 'Transform by band'),
+      description: t('stage.stages.transformByBand.description', 'Simplify features per zoom band.'),
       icon: <TuneIcon color="primary" />,
+    },
+    {
+      id: 'transform-by-zoom',
+      title: t('processing.transformByZoom.title', 'Transform by zoom'),
+      description: t('stage.stages.transformByZoom.description', 'Build tile indexes per zoom band.'),
+      icon: <FilterAltIcon color="primary" />,
     },
     {
       id: 'vt',

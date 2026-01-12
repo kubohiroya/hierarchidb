@@ -17,10 +17,10 @@ export const bandIdToZBase = (bandId: number): number => {
   }
 };
 
-export const buildStage1BufferId = (nodeId: string, sourceKey: string): string => {
+export const buildFetchCacheRecordId = (nodeId: string, sourceKey: string): string => {
   return `${nodeId}-${SHAPE_DOMAIN}-${sourceKey}`;
 };
 
-export const buildTransformBufferId = (nodeId: string, bandId: number, sourceKey: string): string => {
+export const buildTransformByBandCacheRecordId = (nodeId: string, bandId: number, sourceKey: string): string => {
   return `${nodeId}-b${bandId}-${SHAPE_DOMAIN}-${sourceKey}`;
 };

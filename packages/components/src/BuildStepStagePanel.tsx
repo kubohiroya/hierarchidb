@@ -12,8 +12,10 @@ export type BuildStepStageTaskCount = {
 
 export type BuildStepStageSummaryPanelProps = {
   title: string;
+  icon: ReactNode;
   description?: string;
   progress: number;
+  progressContent?: ReactNode;
   taskCount?: BuildStepStageTaskCount;
   failedMode: boolean;
   onFailedModeUpdate: (newMode: boolean) => void;
@@ -24,8 +26,10 @@ export type BuildStepStageSummaryPanelProps = {
 
 const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
   title,
+  icon,
   description,
   progress,
+  progressContent,
   taskCount,
   failedMode,
   onFailedModeUpdate,
@@ -41,27 +45,38 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
     ? 0
     : Math.min(total, completed + skipped);
   const completedLabel = `Completed ${completedNumerator}/${total}`;
+  const isFailedDisabled = failed === 0;
+  const isCompletedDisabled = completedNumerator === 0;
+  const failedVariant = isFailedDisabled ? 'outlined' : (failedMode ? 'filled' : 'outlined');
+  const completedVariant = isCompletedDisabled ? 'outlined' : (completedMode ? 'filled' : 'outlined');
   return (
     <Box display="flex" flexDirection="column" height="100%" minHeight={0}>
       <Stack spacing={1} sx={{ p: 2 }}>
         <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
-          <Typography variant="subtitle2">{title}</Typography>
+          <Stack direction="row" spacing={1} alignItems="center">
+            {icon ? <Box>{icon}</Box> : null}
+            <Typography variant="subtitle2">{title}</Typography>
+          </Stack>
           <Stack direction="row" spacing={0.5} alignItems="center">
             <Chip
               label={`Failed ${failed}`}
               size="small"
-              color="error"
+              color={isFailedDisabled ? 'default' : 'error'}
               icon={<ErrorOutlineIcon fontSize="small" />}
-              variant={failedMode ? 'filled' : 'outlined'}
-              onClick={() => onFailedModeUpdate(!failedMode)}
+              variant={failedVariant}
+              disabled={isFailedDisabled}
+              onClick={isFailedDisabled ? undefined : () => onFailedModeUpdate(!failedMode)}
+              sx={isFailedDisabled ? { borderColor: 'divider', color: 'text.disabled' } : undefined}
             />
             <Chip
               label={completedLabel}
               size="small"
-              color="success"
+              color={isCompletedDisabled ? 'default' : 'success'}
               icon={<TaskAltIcon fontSize="small" />}
-              variant={completedMode ? 'filled' : 'outlined'}
-              onClick={() => onCompletedModeUpdate(!completedMode)}
+              variant={completedVariant}
+              disabled={isCompletedDisabled}
+              onClick={isCompletedDisabled ? undefined : () => onCompletedModeUpdate(!completedMode)}
+              sx={isCompletedDisabled ? { borderColor: 'divider', color: 'text.disabled' } : undefined}
             />
           </Stack>
         </Stack>
@@ -70,10 +85,12 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
             {description}
           </Typography>
         ) : null}
-        <LinearProgress
-          variant="determinate"
-          value={progress}
-        />
+        {progressContent ?? (
+          <LinearProgress
+            variant="determinate"
+            value={progress}
+          />
+        )}
       </Stack>
       {children ? (
         <Box flex={1} minHeight={0}>

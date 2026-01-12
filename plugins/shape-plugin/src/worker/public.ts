@@ -18,7 +18,7 @@ import type {
   SelectedArrayByCountries,
 } from '../common/types/index.js';
 
-export interface ShapeBatchAPI {
+export interface ShapeBuildAPI {
   // Working copies
   createDraft(nodeId: NodeId): Promise<NodeId>;
   createNewDraftBase(parentId: NodeId): Promise<NodeId>;
@@ -56,7 +56,7 @@ export interface ShapeBatchAPI {
     downloadTaskPayloads: FetchTaskPayload[],
     progressCallback?: (event: BatchProgressEvent) => void,
   ): Promise<NodeId>;
-  getBatchSession(nodeId: NodeId): Promise<BatchSession | undefined>;
+  getBuildSession(nodeId: NodeId): Promise<BatchSession | undefined>;
   listBatchTasks(nodeId: NodeId): Promise<BatchTask[]>;
   getBatchStatus(nodeId: NodeId): Promise<ProcessingStatus>;
   subscribeToProgress(nodeId: NodeId, callback: (event: BatchProgressEvent) => void): () => void;

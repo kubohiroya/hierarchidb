@@ -79,6 +79,11 @@ export function useLRUPanes({
   const [paneStates, setPaneStates] = useState<PaneState[]>(initialPaneStates);
   const paneStatesRef = useRef<PaneState[]>(initialPaneStates);
 
+  const paneKey = useMemo(
+    () => panes.map((pane) => `${pane.id}:${pane.defaultExpanded ? 1 : 0}:${pane.collapsedSize ?? ''}`).join('|'),
+    [panes],
+  );
+
   // Track previous progress for auto-expand detection
   const prevProgressRef = useRef<Record<string, number>>({});
 
@@ -248,6 +253,28 @@ export function useLRUPanes({
   useEffect(() => {
     paneStatesRef.current = paneStates;
   }, [paneStates]);
+
+  useEffect(() => {
+    const prevStates = paneStatesRef.current;
+    const byId = new Map(prevStates.map((pane) => [pane.id, pane]));
+    const nextStates = panes.map((pane, index) => {
+      const existing = byId.get(pane.id);
+      const isExpanded = existing ? existing.isExpanded : (pane.defaultExpanded ?? false);
+      const lastAccessTime = existing ? existing.lastAccessTime : (isExpanded ? Date.now() : 0);
+      const color = existing?.color ?? (pane.color || generateDefaultColor(index));
+      return {
+        id: pane.id,
+        title: pane.title,
+        icon: pane.icon,
+        isExpanded,
+        lastAccessTime,
+        color: color as string,
+        collapsedSize: pane.collapsedSize ?? defaultCollapsedSize,
+      };
+    });
+    const applied = applyMaxExpanded(nextStates, maxExpandedPanes);
+    setPaneStates(applied);
+  }, [paneKey, applyMaxExpanded, defaultCollapsedSize, generateDefaultColor, maxExpandedPanes, panes]);
 
   useEffect(() => {
     setPaneStates((prev) => applyMaxExpanded(prev, maxExpandedPanes));

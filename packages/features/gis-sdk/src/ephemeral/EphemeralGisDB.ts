@@ -1,9 +1,9 @@
 import { Dexie, type Table } from 'dexie';
 import type { NodeId } from '@hierarchidb/common-types';
 
-export type EphemeralStage = 'fetch' | 'transform' | 'vt';
+export type EphemeralStage = 'fetch' | 'transform-by-band' | 'transform-by-zoom' | 'vt';
 
-export interface FetchFeatureBuffer {
+export interface FetchCacheRecord {
   id: string;
   nodeId: NodeId;
   data: ArrayBuffer;
@@ -14,7 +14,7 @@ export interface FetchFeatureBuffer {
   timestamp: number;
 }
 
-export interface TransformFeatureBuffer {
+export interface TransformByBandCacheRecord {
   id: string;
   nodeId: NodeId;
   data: ArrayBuffer;
@@ -24,7 +24,7 @@ export interface TransformFeatureBuffer {
   timestamp: number;
 }
 
-export interface VTBuffer {
+export interface VtCacheRecord {
   id: string;
   nodeId: NodeId;
   z: number;
@@ -53,38 +53,38 @@ export interface BatchSessionMetadata<Config = unknown> {
 }
 
 export class EphemeralGisDB<Config = unknown> extends Dexie {
-  fetchBuffers!: Table<FetchFeatureBuffer>;
-  transformBuffers!: Table<TransformFeatureBuffer>;
-  vtBuffers!: Table<VTBuffer>;
+  fetchCache!: Table<FetchCacheRecord>;
+  transformByBandCache!: Table<TransformByBandCacheRecord>;
+  vtCache!: Table<VtCacheRecord>;
   sessions!: Table<BatchSessionMetadata<Config>>;
 
   constructor(name: string) {
     super(name);
-    this.version(2)
+    this.version(3)
       .stores({
-        fetchBuffers: '&id, nodeId, timestamp',
-        transformBuffers: '&id, nodeId, stage, timestamp, [nodeId+stage]',
-        vtBuffers: '&id, nodeId, [z+x+y], hash, timestamp',
+        fetchCache: '&id, nodeId, timestamp',
+        transformByBandCache: '&id, nodeId, timestamp',
+        vtCache: '&id, nodeId, [z+x+y], hash, timestamp',
         sessions: '&nodeId, status, stage, startTime'
       })
       .upgrade(async () => {
-        await this.fetchBuffers.clear();
-        await this.transformBuffers.clear();
-        await this.vtBuffers.clear();
+        await this.fetchCache.clear();
+        await this.transformByBandCache.clear();
+        await this.vtCache.clear();
         await this.sessions.clear();
       });
   }
 
   async clearNodeData(nodeId: NodeId): Promise<void> {
     await this.transaction('rw', [
-      this.fetchBuffers,
-      this.transformBuffers,
-      this.vtBuffers,
+      this.fetchCache,
+      this.transformByBandCache,
+      this.vtCache,
       this.sessions
     ], async () => {
-      await this.fetchBuffers.where('nodeId').equals(nodeId).delete();
-      await this.transformBuffers.where('nodeId').equals(nodeId).delete();
-      await this.vtBuffers.where('nodeId').equals(nodeId).delete();
+      await this.fetchCache.where('nodeId').equals(nodeId).delete();
+      await this.transformByBandCache.where('nodeId').equals(nodeId).delete();
+      await this.vtCache.where('nodeId').equals(nodeId).delete();
       await this.sessions.where('nodeId').equals(nodeId).delete();
     });
   }
@@ -92,13 +92,13 @@ export class EphemeralGisDB<Config = unknown> extends Dexie {
   async hasStageData(nodeId: NodeId, stage: EphemeralStage): Promise<boolean> {
     switch (stage) {
       case 'fetch':
-        return (await this.fetchBuffers.where('nodeId').equals(nodeId).count()) > 0;
-      case 'transform':
-        return (
-          (await this.transformBuffers.where({ nodeId, stage }).count()) > 0
-        );
+        return (await this.fetchCache.where('nodeId').equals(nodeId).count()) > 0;
+      case 'transform-by-band':
+        return (await this.transformByBandCache.where('nodeId').equals(nodeId).count()) > 0;
+      case 'transform-by-zoom':
+        return false;
       case 'vt':
-        return (await this.vtBuffers.where('nodeId').equals(nodeId).count()) > 0;
+        return (await this.vtCache.where('nodeId').equals(nodeId).count()) > 0;
       default:
         return false;
     }
@@ -106,20 +106,22 @@ export class EphemeralGisDB<Config = unknown> extends Dexie {
 
   async clearStage(nodeId: NodeId, stage: EphemeralStage): Promise<void> {
     await this.transaction('rw', [
-      this.fetchBuffers,
-      this.transformBuffers,
-      this.vtBuffers,
+      this.fetchCache,
+      this.transformByBandCache,
+      this.vtCache,
       this.sessions,
     ], async () => {
       switch (stage) {
         case 'fetch':
-          await this.fetchBuffers.where('nodeId').equals(nodeId).delete();
+          await this.fetchCache.where('nodeId').equals(nodeId).delete();
           break;
-        case 'transform':
-          await this.transformBuffers.where({ nodeId, stage }).delete();
+        case 'transform-by-band':
+          await this.transformByBandCache.where('nodeId').equals(nodeId).delete();
+          break;
+        case 'transform-by-zoom':
           break;
         case 'vt':
-          await this.vtBuffers.where('nodeId').equals(nodeId).delete();
+          await this.vtCache.where('nodeId').equals(nodeId).delete();
           break;
         default:
           break;
@@ -129,32 +131,32 @@ export class EphemeralGisDB<Config = unknown> extends Dexie {
     });
   }
 
-  async getNumBuffers(): Promise<{
-    numFetchBuffers: number;
-    numTransformBuffers: number;
-    numVTBuffers: number;
+  async getNumCaches(): Promise<{
+    numFetchCaches: number;
+    numTransformCaches: number;
+    numVtCaches: number;
     numSessions: number;
     totalSize: number
   }> {
-    const [numFetchBuffers, numTransformBuffers, numVTBuffers, numSessions] = await Promise.all([
-      this.fetchBuffers.count(),
-      this.transformBuffers.count(),
-      this.vtBuffers.count(),
+    const [numFetchCaches, numTransformCaches, numVtCaches, numSessions] = await Promise.all([
+      this.fetchCache.count(),
+      this.transformByBandCache.count(),
+      this.vtCache.count(),
       this.sessions.count()
     ]);
 
     let totalSize = 0;
 
-    const rawBuffers = await this.fetchBuffers.toArray();
+    const rawBuffers = await this.fetchCache.toArray();
     totalSize += rawBuffers.reduce((sum, buffer) => sum + (buffer.size || 0), 0);
 
-    const tiles = await this.vtBuffers.toArray();
+    const tiles = await this.vtCache.toArray();
     totalSize += tiles.reduce((sum, tile) => sum + tile.size, 0);
 
     return {
-      numFetchBuffers,
-      numTransformBuffers,
-      numVTBuffers,
+      numFetchCaches,
+      numTransformCaches,
+      numVtCaches,
       numSessions,
       totalSize,
     };
@@ -162,15 +164,15 @@ export class EphemeralGisDB<Config = unknown> extends Dexie {
 
   async clearAll(): Promise<void> {
     await this.transaction('rw', [
-      this.fetchBuffers,
-      this.transformBuffers,
-      this.vtBuffers,
+      this.fetchCache,
+      this.transformByBandCache,
+      this.vtCache,
       this.sessions,
     ], async () => {
       await Promise.all([
-        this.fetchBuffers.clear(),
-        this.transformBuffers.clear(),
-        this.vtBuffers.clear(),
+        this.fetchCache.clear(),
+        this.transformByBandCache.clear(),
+        this.vtCache.clear(),
         this.sessions.clear()
       ]);
     });

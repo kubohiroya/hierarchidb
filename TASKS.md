@@ -1,3 +1,267 @@
+2204) refactor/shape/stage-cache-naming-and-layout (P1) — 進行中 (2026-01-15)
+- ブランチ名: refactor/shape/stage-cache-naming-and-layout
+- 依存: なし
+- ExecPlan: `plans/shape-stage-cache-naming-execplan.md`
+- 受け入れ基準: ステージが fetch/transform-by-band/transform-by-zoom/vt の4段階になる／中間データはCache命名に統一される／transform-by-band/zoom の中間はephemeralのみで永続側に残らない／UI/ログ/説明がCache命名に一致する／移行/ロールバック手順がExecPlanに記載される／pnpm typecheck が通る／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/vt-orchestrator/src/*`, `packages/vt-shape-store/src/*`, `packages/features/shape-store/src/*`, `plugins/shape-plugin/src/*` ほか（調査後に確定）
+- ロールバック手順: ExecPlan に記載の手順で旧テーブル名/旧ステージ構成へ戻す
+- チェックリスト:
+  - ExecPlan を作成し用語/段階/データ配置を確定する
+  - 中間データのCache命名をコード/DB/型に反映する
+  - vt-shape-store から transform 中間成果を除去する
+  - UI/ログ/説明文を新命名に合わせる
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-15 22:40 JST ステージ4段階化とCache命名への統一、transform中間のephemeral化に着手。
+  - update: 2026-01-15 23:20 JST Buffers名称のCache化と transformByBandOutputs 廃止（ephemeralのみ）方針を反映する対応に着手。
+  - update: 2026-01-15 23:50 JST EphemeralGisDB/EphemeralShapeDB のCache命名を反映し、transformBuffers 参照を削除。StageProcessingService と ShapeBuildAPIClient を更新し、headless test の fetchCache へ合わせた。ExecPlan の進捗を更新。
+  - blocked: 2026-01-16 00:05 JST pnpm typecheck で shape-store build:types が fetchCache/transform-by-band の型不整合により失敗。
+  - update: 2026-01-16 00:10 JST pnpm --filter @hierarchidb/gis-sdk build を実行（成功、tsdown define 警告あり）。
+  - blocked: 2026-01-16 00:15 JST pnpm typecheck で runtime-worker が plugin-service-api の旧型参照（ShapeFetchCache/ShapeTransformByBandCache 未export）により失敗。
+  - update: 2026-01-16 00:20 JST pnpm --filter @hierarchidb/plugin-service-api build を実行（成功、tsdown define 警告あり）。
+  - blocked: 2026-01-16 00:30 JST pnpm typecheck で route-plugin の TaskStage=transform エラーと shape-plugin の未使用変数が発生。
+  - update: 2026-01-16 00:35 JST route-plugin の stage マップを transform-by-band/zoom に更新し、FetchConfigFormControls の enable 判定を整理。
+  - update: 2026-01-16 00:45 JST pnpm typecheck を再実行し成功（exit 0）。警告: tsdown define オプションの警告が出力。
+  - update: 2026-01-16 01:20 JST vt-shape-store から transform-by-band/zoom 中間データを排除し、ephemeral 側へ移行する対応に着手。
+
+2203) fix/shape/step4-5-build-progress-ui (P1) — 進行中 (2026-01-15)
+- ブランチ名: fix/shape/step4-5-build-progress-ui
+- 依存: なし
+- 受け入れ基準: Step4 の削除ボタンが削除可能データの有無に応じて有効化され件数ラベルが実データと一致する／Step5 のステージ別チップは 0 件時に outlined + grey + 無反応になる／Step5 のステージ別進捗表示が固定の LinearProgress ではなくステージごとの SVG+LinearProgress 表示になる／transform invalid polygon のメッセージが extract1/2 の段階と error/total の feature/polygon 数を含む／pnpm typecheck が通る／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/useFetchConfigSection.ts`, `plugins/shape-plugin/src/ui/components/step5/*`, `packages/components/src/BuildStepStagePanel.tsx`, `packages/components/src/BuildStepPanel.tsx`, `packages/vt-orchestrator/src/transform/transformStage.ts`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、Step4/Step5 の削除ボタン・進捗表示・transform メッセージを修正前に戻す
+- チェックリスト:
+  - Step4 の削除ボタン判定と件数ラベルを実データ基準に修正する
+  - Step5 のステージ別チップの 0 件時表示/無効化を反映する
+  - Step5 のステージ別進捗表示を SVG+LinearProgress に差し替える
+  - transform の invalid polygon メッセージに段階と error/total 数を追加する
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-15 20:10 JST Step4 削除ボタンの判定と Step5 進捗表示/チップ、transform エラーメッセージの改善に着手。
+  - update: 2026-01-15 20:40 JST Step4 削除ボタンの件数/有効判定を実データ基準へ修正し、Step5 のステージ別チップ/進捗表示と transform エラーメッセージを更新。検証: 未実施。
+  - update: 2026-01-15 20:45 JST pnpm --filter @hierarchidb/components build を実行し成功。警告: tsdown define オプションの警告あり。
+  - update: 2026-01-15 20:55 JST pnpm typecheck を実行し成功（exit 0）。警告: tsdown define オプションの警告が出力されたが typecheck 自体は通過。
+  - update: 2026-01-15 21:10 JST Step4 Transform削除ボタンの文言/件数表記の変更に着手。
+  - update: 2026-01-15 21:20 JST Transform削除ボタンの文言をズーム帯/ズーム率に変更し、件数表記にcountUnitを追加。検証: 未実施。
+  - update: 2026-01-15 21:30 JST pnpm typecheck を実行し成功（exit 0）。警告: tsdown define オプションの警告が出力されたが typecheck 自体は通過。
+  - update: 2026-01-15 21:50 JST Transform削除ボタンの削除対象/disable条件の説明と無効化不具合の修正に着手。
+  - update: 2026-01-15 22:10 JST transform削除で transformStageBuffers も削除するよう補正し、ボタンの無効化が反映されるよう修正。検証: 未実施。
+  - update: 2026-01-15 22:20 JST pnpm typecheck を実行し成功（exit 0）。警告: tsdown define オプションの警告が出力されたが typecheck 自体は通過。
+
+
+2202) fix/components/buildstep-stage-filter-chips (P1) — 進行中 (2026-01-15)
+- ブランチ名: fix/components/buildstep-stage-filter-chips
+- 依存: なし
+- 受け入れ基準: BuildStepPanel の Failed/Completed チップがステージ単位でトグル動作しタスク一覧の表示を制御する／視覚的に選択状態が反映される／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/components/src/BuildStepPanel.tsx`
+- ロールバック手順: 該当差分を revert し、チップのトグル連携を修正前に戻す
+- チェックリスト:
+  - Stage ごとの filter 状態を保持する
+  - Failed/Completed チップのトグルが filter に反映される
+  - タスク一覧が filter に応じて切り替わる
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-15 19:10 JST BuildStepPanel の Failed/Completed チップがトグルとして機能しないため修正に着手。
+  - update: 2026-01-15 19:20 JST ステージ単位の filter 状態を保持し、チップのトグルで BuildStageFilterProvider に反映。検証: 未実施。
+  - update: 2026-01-15 19:35 JST pnpm typecheck を実行し成功（exit 0）。警告: tsdown define オプションの警告が出力されたが typecheck 自体は通過。
+
+2201) fix/shape/step5-running-on-enter (P1) — 進行中 (2026-01-15)
+- ブランチ名: fix/shape/step5-running-on-enter
+- 依存: なし
+- 受け入れ基準: Step5 に遷移しただけでは「ビルド開始」が loading にならない／「一時停止」が enable にならない／全体進捗の LinearProgress が indeterminate で動作し続けない／通常のビルド開始フローは維持される／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/*`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、Step5 の進捗判定を修正前に戻す
+- チェックリスト:
+  - Step5 進捗の running 判定条件を確認する
+  - Step5 遷移直後に running 判定にならないよう補正する
+  - UI で Step5 の表示を確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-15 16:10 JST Step5 へ遷移しただけで running 判定になるため修正に着手。
+  - update: 2026-01-15 16:30 JST Step5 で稼働マーカーがない場合は running/paused を解除し、初回表示でタスクを再取得するよう補正。検証: 未実施。
+  - update: 2026-01-15 16:40 JST 方針誤りのため Step5 初回のタスク再取得と running/paused 判定補正を差し戻し。検証: 未実施。
+  - start: 2026-01-15 17:00 JST Step5 離脱時に未完了ビルドを一時停止扱いとし、復帰時に再開できるよう修正に着手。
+  - update: 2026-01-15 17:20 JST Step5 離脱/タブ閉じで processing 中のビルドを pauseBatchSession し、processingStatus を paused に更新する処理を追加。検証: 未実施。
+  - blocked: 2026-01-15 17:35 JST pnpm typecheck で shape-plugin の未使用変数と BuildStatus 型エラーが発生。
+  - update: 2026-01-15 17:40 JST 未使用変数削除と BuildStatus の型指定で typecheck エラーを解消。
+  - update: 2026-01-15 17:45 JST pnpm typecheck を実行し成功（exit 0）。警告: tsdown define オプションの警告が出力されたが typecheck 自体は通過。
+  - update: 2026-01-15 18:10 JST Step5 の buildStatus 判定フローと paused 復帰時の running 表示原因をコード調査。
+  - update: 2026-01-15 18:30 JST Step5 の running/paused 判定を processingStatus 単一ソースに統一し、タスク/進捗由来の状態推定を撤廃。検証: 未実施。
+  - update: 2026-01-15 18:50 JST pnpm typecheck を実行し成功（exit 0）。警告: tsdown define オプションの警告が出力されたが typecheck 自体は通過。
+
+2200) fix/shape-store/build-session-metadata-import (P1) — 進行中 (2026-01-15)
+- ブランチ名: fix/shape-store/build-session-metadata-import
+- 依存: なし
+- 受け入れ基準: `@hierarchidb/shape-store` の `build:types` で `BuildSessionMetadata` 未解決エラーが解消される／`@hierarchidb/gis-sdk` 参照の型名が正しいものに置換される／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/shape-store/src/EphemeralShapeDB.ts`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、型名参照を修正前に戻す
+- チェックリスト:
+  - エラーの参照箇所と正しい型名を特定する
+  - `@hierarchidb/gis-sdk` の import を修正する
+  - `@hierarchidb/shape-store` の `build:types` を確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-15 00:00 JST `@hierarchidb/shape-store` build:types で BuildSessionMetadata が未解決のため修正に着手。
+  - update: 2026-01-15 00:10 JST `@hierarchidb/gis-sdk` の参照を BatchSessionMetadata に置換。検証: 未実施。
+
+2199) fix/shape/step5-stage-task-counts (P1) — 進行中 (2026-01-15)
+- ブランチ名: fix/shape/step5-stage-task-counts
+- 依存: なし
+- 受け入れ基準: Step5 の各ステージカードが上部サマリと同じ総タスク数を反映する／タスク未永続化時でも No tasks yet ではなくサマリ件数が表示される／UI確認結果を記録する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/*`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、Step5 のステージ表示を修正前に戻す
+- チェックリスト:
+  - サマリ由来の件数をステージ表示へ反映する
+  - タスク未永続化時の表示を補正する
+  - UI確認結果を記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-15 10:05 JST Step5 のステージ件数表示がサマリと不一致のため修正に着手。
+  - update: 2026-01-15 10:30 JST task.type を優先してステージ集計するよう補正。localhost:4200 の Step5 で Fetch が Completed 0/230 とタスクリストを表示することを確認。
+  - update: 2026-01-15 10:45 JST Step5 でビルド開始後に Fetch が進行しない事象の原因調査を開始。
+  - update: 2026-01-15 11:10 JST 休止状態の再開でパイプラインが不在の場合に既存タスクを再開するよう補正。Step5 のビルド再開後に Fetch が進行し、Completed が増加することを確認。
+  - done: 2026-01-15 11:10 JST Step5 の再開操作で Fetch が進行することを確認。検証: localhost:4200 の Step5 で進行率/Completed が更新されることを確認。
+  - update: 2026-01-15 11:25 JST Step5 のタスクバークリックで該当タスク位置へスクロールする対応に着手。
+  - update: 2026-01-15 11:45 JST TaskProgressBar クリックでスクロール対象を共有し、仮想化リストが該当タスク位置へスクロールするよう補正。
+  - done: 2026-01-15 11:45 JST Step5 の進捗バー rect クリックでタスク一覧が該当位置へスクロールすることを確認。検証: localhost:4200 の Step5 で確認。
+  - update: 2026-01-15 12:10 JST 停止→再開時に running タスクを再キュー化し、必要ならパイプラインを再起動するよう補正。
+  - done: 2026-01-15 12:15 JST Step5 で fetch の running が残るケースに対して再開時に再処理する挙動へ変更。検証: localhost:4200 の Step5 で確認。
+  - update: 2026-01-15 12:25 JST transform ステージの failed 判定条件の調査に着手。
+  - done: 2026-01-15 12:35 JST transform failed 条件と invalid polygon の発生箇所を整理し説明を作成。
+  - update: 2026-01-15 12:45 JST transform failed 条件1〜4のメッセージ明示化に着手。
+  - done: 2026-01-15 13:05 JST transform failed 条件ごとのメッセージを明示化（input/band/buffer/簡略化）し説明を準備。
+  - update: 2026-01-15 13:30 JST Step4 削除カードのラベルに件数表示/0件時disabledを反映。簡略化設定のtoleranceを弱める方向に調整。Discard確認で閉じない問題とTaskProgressBarのa11y警告を修正。
+  - update: 2026-01-15 13:45 JST simplify failed メッセージに extract1/extract2 の段階情報を付与する修正に着手。
+  - update: 2026-01-15 13:45 JST リロード直後にビルド中表示になる不具合の調査に着手。
+  - update: 2026-01-15 14:20 JST リロード直後にビルド中表示になる不具合の修正に着手。
+  - done: 2026-01-15 14:30 JST リロード直後に進捗がない場合は running と見なさず Start を有効化する補正を追加。検証: 未実施。
+  - update: 2026-01-15 14:40 JST 進捗合計が残っていても実行中タスクがない場合は running を解除する補正を追加。検証: 未実施。
+
+2200) fix/route/buildstep-stage-icons (P1) — 進行中 (2026-01-15)
+- ブランチ名: fix/route/buildstep-stage-icons
+- 依存: なし
+- 受け入れ基準: RouteBuildStep の STAGES が icon を持ち BuildStage 要件を満たす／route-plugin typecheck の TS2322 が解消される／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/route-plugin/src/ui/components/steps/RouteBuildStep.tsx`
+- ロールバック手順: icon 追加を revert し STAGES を修正前に戻す
+- チェックリスト:
+  - STAGES に icon を追加する
+  - typecheck を確認する
+  - 運用ログ start/done を追記する
+- 運用ログ：
+  - start: 2026-01-15 15:00 JST RouteBuildStep の STAGES に icon がなく typecheck が失敗するため修正に着手。
+  - done: 2026-01-15 15:05 JST RouteBuildStep の各ステージにアイコンを追加。検証: 未実施。
+
+2198) feat/shape/step6-preview-tabs (P1) — 進行中 (2026-01-14)
+- ブランチ名: feat/shape/step6-preview-tabs
+- 依存: なし
+- 受け入れ基準: Step6 Preview の既存 2 タブ構成が 3 タブ（Sources/Features/Map）に再設計される／Sources は ShapeSourceMetadata、Features は ShapeFeatureMetadata の表を表示する／Map は既存表示を維持する／既存の検索/フィルタ/選択が破綻しない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/*`
+- ロールバック手順: 該当差分を revert し、Step6 タブ構成を変更前に戻す
+- チェックリスト:
+  - Step6 のタブ構成を 3 タブへ再設計する
+  - Sources/Features/Map の表示を割り当てる
+  - 既存の検索/フィルタ/選択を確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-14 17:15 JST Step6 Preview のタブ再構成に着手。
+  - done: 2026-01-14 17:45 JST Step6 を Sources/Features/Map の3タブ構成に再設計。検証: 未実施。
+  - update: 2026-01-14 18:35 JST ShapeOriginMetadata を ShapeSourceMetadata に差し替え。検証: 未実施。
+
+2197) fix/shape/vector-tile-metadata-api (P1) — 進行中 (2026-01-14)
+- ブランチ名: fix/shape/vector-tile-metadata-api
+- 依存: なし
+- 受け入れ基準: vector tile のメタデータ取得 API に data を含めない／Row を含む命名を撤去する／既存参照が新 API に置換される／typecheck が通る／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/plugin-service-api/src/types/ShapeQueryAPI.ts`, `packages/plugin-service-api/src/types/shapeBuildTypes.ts`, `packages/runtime-worker/src/services/ShapeQueryService.ts`, `plugins/shape-plugin/src/services/tiles/VectorTileService.ts`, `plugins/shape-plugin/src/ui/components/step4/useFetchConfigSection.ts`
+- ロールバック手順: 該当差分を revert し、API/型/参照を修正前に戻す
+- チェックリスト:
+  - vector tile のメタデータ型/API を整理する
+  - 参照箇所を新 API に置換する
+  - typecheck を確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-14 16:30 JST vector tile メタデータ API の整理に着手。
+  - update: 2026-01-14 17:10 JST ExecPlan を再編し命名方針（batch→build/ephemeral/vt/Source排除）を反映。
+  - done: 2026-01-14 16:50 JST listVectorTileMetadata へ変更し data を除外。検証: 未実施。
+
+2196) refactor/batch/naming-input-payload (P1) — 進行中 (2026-01-14)
+- ブランチ名: refactor/batch/naming-input-payload
+- 依存: なし
+- 受け入れ基準: batch/builder 周辺の命名で Source→Input, Record→Payload, Row→整理 が適用される／型・API・実装が整合する／typecheck が通る／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/plugin-service-api/src/types/*`, `packages/runtime-worker/src/services/*`, `plugins/shape-plugin/src/services/batch/*`, `plugins/shape-plugin/src/ui/components/step4/*` ほか（スコープ確定後に絞り込み）
+- ロールバック手順: 該当差分を revert し、命名を修正前に戻す
+- チェックリスト:
+  - 対象スコープを確定する
+  - 置換ルール（Source/Record/Row）を適用する
+  - 参照/型/テストを更新する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-14 15:20 JST 命名リファクタのスコープ確認に着手。
+  - blocked: 2026-01-14 15:20 JST 置換対象のスコープ確定待ち。
+  - update: 2026-01-14 18:20 JST build/ephemeral/vt/Origin 命名のリネームを適用中。検証: 未実施。
+  - update: 2026-01-14 18:35 JST ShapeOriginMetadata を ShapeSourceMetadata に再調整。検証: 未実施。
+  - update: 2026-01-14 20:05 JST Step4 UI確認: 変更したタイムアウト/リトライ間隔が再表示で保持されることを確認。ただし入力値が連結された状態（例: 300000310000 / 10002000）で保存される挙動を確認。
+  - blocked: 2026-01-14 18:40 JST shape-plugin typecheck で EphemeralShapeAPI/ShapeStore 参照の差分が残存。
+  - update: 2026-01-14 18:50 JST PluginEphemeralDBAPI を追加し plugin-service-api/shape-store を build。Step6 の feature sort と EphemeralShapeAPI 実装を補正し、`pnpm --filter @hierarchidb/shape-plugin typecheck` が成功。
+
+2195) fix/shape/step4-vt-counts (P1) — 進行中 (2026-01-14)
+- ブランチ名: fix/shape/step4-vt-counts
+- 依存: なし
+- 受け入れ基準: Step4 の VT 件数が vtTasks.length に基づく／削除ボタンの件数表示が実データと一致する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/useFetchConfigSection.ts`
+- ロールバック手順: 該当差分を revert し、件数集計を修正前に戻す
+- チェックリスト:
+  - VT 件数の集計を修正する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-14 15:10 JST Step4 VT 件数表示の修正に着手。
+  - done: 2026-01-14 15:12 JST VT 件数を vtTasks.length で集計するよう修正。検証: 未実施。
+
+2194) fix/ui/buildstep-header-icon (P1) — 進行中 (2026-01-14)
+- ブランチ名: fix/ui/buildstep-header-icon
+- 依存: なし
+- 受け入れ基準: BuildStepStagePanel のヘッダで title 左に icon が表示される／アイコン指定ステージで表示される／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/components/src/BuildStepStagePanel.tsx`, `packages/components/src/BuildStepPanel.tsx`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、ヘッダ表示を修正前に戻す
+- チェックリスト:
+  - BuildStepStagePanel に icon props を追加する
+  - BuildStepPanel から stage.icon を渡す
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-14 14:50 JST BuildStep ヘッダのアイコン表示修正に着手。
+  - done: 2026-01-14 15:00 JST BuildStepStagePanel に icon を追加し、BuildStepPanel から渡すよう修正。検証: 未実施。
+
+2193) fix/ui/lru-splitview2-duplicate-header (P1) — 進行中 (2026-01-14)
+- ブランチ名: fix/ui/lru-splitview2-duplicate-header
+- 依存: なし
+- 受け入れ基準: Step5 の pane ヘッダ重複表示が解消される／BuildStepStagePanel のヘッダが1回だけ表示される／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/components/src/BuildStep.tsx`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、ヘッダ表示を修正前に戻す
+- チェックリスト:
+  - collapsed/expanded 時の表示構成を調整する
+  - ヘッダ重複を解消する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-14 14:10 JST LRUSplitView2 のヘッダ重複表示修正に着手。
+  - done: 2026-01-14 14:35 JST Step5 の stage content 側ヘッダ表示を抑止して重複を解消。検証: 未実施。
+  - done: 2026-01-14 14:20 JST BuildStepPanel の collapsed 時ヘッダ描画を撤去し重複を解消。検証: 未実施。
+
+2192) fix/ui/lru-splitview2-empty-render (P1) — 進行中 (2026-01-14)
+- ブランチ名: fix/ui/lru-splitview2-empty-render
+- 依存: なし
+- 受け入れ基準: Step5 で LRUSplitView2 が表示される／pane が描画される／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/lru-splitview/src/components/LRUSplitView2.tsx`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、LRUSplitView2 を修正前に戻す
+- チェックリスト:
+  - LRUSplitView2 のレンダ条件を見直す
+  - Step5 で表示確認を行う
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-14 13:35 JST Step5 の LRUSplitView2 空表示を調査開始。
+  - done: 2026-01-14 13:45 JST LRUSplitView2 の幅ゼロでも Allotment を描画するよう修正。検証: 未実施。
+  - update: 2026-01-14 13:55 JST panes 変更時に useLRUPanes が状態を再生成するよう補正。検証: 未実施。
+
 2191) fix/components/buildstep-typecheck (P1) — 進行中 (2026-01-14)
 - ブランチ名: fix/components/buildstep-typecheck
 - 依存: なし
@@ -70,6 +334,12 @@
 - 運用ログ：
   - start: 2026-01-14 11:35 JST app typecheck の runtime-worker/shape-plugin エラー修正に着手。
   - done: 2026-01-14 11:50 JST transformSourceBuffers 参照と ShapeDB import を修正し戻り値不足を補正。検証: 未実施。
+  - update: 2026-01-14 19:05 JST ProcessingStage を BuildStage に差し替え、UnifiedBatchManagerBase に getBatchSessionStatus を追加。`pnpm --filter @hierarchidb/app typecheck` が成功。検証: 実施。
+  - update: 2026-01-14 19:15 JST `pnpm --filter @hierarchidb/runtime-worker typecheck` と `pnpm --filter @hierarchidb/shape-plugin build` を実施。検証: 実施。
+  - update: 2026-01-14 19:25 JST `pnpm --filter @hierarchidb/app build` を実行し成功（警告: plugin registry entry path / chunk size）。検証: 実施。
+  - update: 2026-01-14 20:05 JST Step6 UI確認: タブはソース/フィーチャー/地図プレビューの3つに分離され切替可能。ビルド未完了のためメタデータ未生成メッセージを確認。
+  - update: 2026-01-14 20:30 JST Step6 のメタデータ空表示を安定化。Source/Feature ともに「メタデータがまだ生成されていません」表示が安定して切替時のチラつきが出ないことを確認。
+  - blocked: 2026-01-14 19:40 JST UI検証のために preview/dev を起動したが、listen EPERM（0.0.0.0:4173/4200）で起動不可。手元でのUI確認が必要。
 
 2186) fix/app/build-unresolved-shape-preview-import (P1) — 進行中 (2026-01-14)
 - ブランチ名: fix/app/build-unresolved-shape-preview-import
@@ -936,7 +1206,7 @@
 - ブランチ名: fix/shape/batch-task-schema-cleanup
 - 依存: なし
 - 受け入れ基準: batchTasks の未使用インデックスを削除する／BatchTaskRecord/ShapeBatchTaskRecord/ShapeBatchTaskSummary の未使用プロパティを削除する／ShapeBatchTaskStatus と ProgressPhase の関係を整理する／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/shape-store/src/EphemeralShapeDB.ts`, `packages/features/shape-store/src/ShapeDB.ts`, `packages/plugin-service-api/src/types/shapeBuildTypes.ts`, `packages/plugin-service-api/src/types/shapeTypes.ts`, `plugins/shape-plugin/src/services/batch/ShapeBuildApiClient.ts`, `packages/runtime-worker/src/services/ShapeQueryService.ts`, `plugins/shape-plugin/src/worker/getBatchTaskSummaries.ts`
+- 影響範囲: `packages/features/shape-store/src/EphemeralShapeDB.ts`, `packages/features/shape-store/src/ShapeDB.ts`, `packages/plugin-service-api/src/types/shapeBuildTypes.ts`, `packages/plugin-service-api/src/types/shapeTypes.ts`, `plugins/shape-plugin/src/services/batch/ShapeBuildAPIClient.ts`, `packages/runtime-worker/src/services/ShapeQueryService.ts`, `plugins/shape-plugin/src/worker/getBatchTaskSummaries.ts`
 - ロールバック手順: 該当差分を revert し、batchTasks のインデックスとタスク型を元に戻す
 - チェックリスト:
   - batchTasks の未使用インデックスを削除する
@@ -2464,7 +2734,7 @@
 - 依存: なし
 - ExecPlan: plans/shape-ephemeral-stage-buffers-execplan.md
 - 受け入れ基準: extract1入力はchunk-storeのダウンロードキャッシュを利用し、extract2/vectortileの入出力はsourceBuffersへ移行される／extract2SourceBuffersはnodeId+国コード+自治体レベルで検索できる／vectortileSourceBuffersはnodeId+tileIdで検索できる／TreeNode削除で対象バッファが一括削除される／TASKS.mdに運用ログ・影響範囲・ロールバック手順を記載する
-- 影響範囲: `packages/features/gis-sdk/src/ephemeral/EphemeralGisDB.ts`, `packages/features/shape-store/src/EphemeralShapeDB.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/batch/adapters/LocalExtractAdapters.ts`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `packages/runtime-worker/src/services/vectorTileStageRunner.ts`, `packages/runtime-worker/src/services/StageProcessingService.ts`, `plugins/shape-plugin/src/services/batch/ShapeBuildApiClient.ts`（必要に応じて）
+- 影響範囲: `packages/features/gis-sdk/src/ephemeral/EphemeralGisDB.ts`, `packages/features/shape-store/src/EphemeralShapeDB.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/batch/adapters/LocalExtractAdapters.ts`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `packages/runtime-worker/src/services/vectorTileStageRunner.ts`, `packages/runtime-worker/src/services/StageProcessingService.ts`, `plugins/shape-plugin/src/services/batch/ShapeBuildAPIClient.ts`（必要に応じて）
 - ロールバック手順: 上記ファイルとExecPlanの差分をrevertし、chunk-store入力経路と旧bufferスキーマに戻す
 - チェックリスト:
   - ExecPlanを作成し設計と検証手順を明記する
@@ -2513,11 +2783,11 @@
 2080) refactor/shape/extract-buffer-naming-align (P1) — 完了 (2026-01-10)
 - ブランチ名: refactor/shape/extract-buffer-naming-align
 - 依存: なし
-- 受け入れ基準: ShapeBuildApiClient.ts の型不整合を解消する／Extract1SourceBuffer/Extract2SourceBuffer の命名へ統一する／関連型とAPIの参照が揃っている／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
-- 影響範囲: `packages/plugin-service-api/src/types/*`, `packages/features/shape-store/src/EphemeralShapeDB.ts`, `packages/features/shape-store/src/index.ts`, `plugins/shape-plugin/src/services/batch/ShapeBuildApiClient.ts`, `plugins/shape-plugin/src/services/batch/*`, `packages/runtime-worker/src/services/*`（必要に応じて）
+- 受け入れ基準: ShapeBuildAPIClient.ts の型不整合を解消する／Extract1SourceBuffer/Extract2SourceBuffer の命名へ統一する／関連型とAPIの参照が揃っている／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/plugin-service-api/src/types/*`, `packages/features/shape-store/src/EphemeralShapeDB.ts`, `packages/features/shape-store/src/index.ts`, `plugins/shape-plugin/src/services/batch/ShapeBuildAPIClient.ts`, `plugins/shape-plugin/src/services/batch/*`, `packages/runtime-worker/src/services/*`（必要に応じて）
 - ロールバック手順: 上記ファイルの命名/型変更を revert し、従来の ShapeExtractedBufferRecord / ExtractedFeatureBuffer 名称へ戻す
 - チェックリスト:
-  - ShapeBuildApiClient.ts の型不整合箇所を修正する
+  - ShapeBuildAPIClient.ts の型不整合箇所を修正する
   - Extracted 系の命名を SourceBuffer 系へ統一する
   - 参照箇所の型と実体が一致していることを確認する
   - 運用ログ start/done/blocked を追記する
@@ -2544,7 +2814,7 @@
 - ブランチ名: fix/shape/vectortile-input-typing
 - 依存: なし
 - 受け入れ基準: RuntimeWorkerVectorTileAdapter の {} フォールバックを撤去し入力型を明示する／ShapeExtractedBufferRecord の参照を ShapeExtractSourceBufferRecord に統一する／未使用変数の警告を解消する／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
-- 影響範囲: `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `plugins/shape-plugin/src/services/batch/SessionArtifactStore.ts`, `plugins/shape-plugin/src/services/batch/ShapeBuildApiClient.ts`（必要に応じて）
+- 影響範囲: `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `plugins/shape-plugin/src/services/batch/SessionArtifactStore.ts`, `plugins/shape-plugin/src/services/batch/ShapeBuildAPIClient.ts`（必要に応じて）
 - ロールバック手順: 上記ファイルの差分を revert し、入力のフォールバック/旧型参照へ戻す
 - チェックリスト:
   - VectorTileAdapter の入力取得を明示型で強制する
@@ -3278,7 +3548,7 @@
 - ブランチ名: fix/shape-plugin/typecheck-batch-and-tiles
 - 依存: なし
 - 受け入れ基準: shape-plugin の typecheck エラー（BatchTaskBase/zoomRanges/GeoJSON/NodeId/VectorTileDB2Procedure）を解消する／挙動は維持する／抽象化や Record キャストの追加をしない／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
-- 影響範囲: `plugins/shape-plugin/src/services/batch/BatchSessionManager.ts`, `plugins/shape-plugin/src/common/types/batch.ts`, `plugins/shape-plugin/src/services/batch/session/extract2/zoomRanges.ts`, `plugins/shape-plugin/src/services/batch/session/stages/vectortile/buildVectorTileStageInputs.ts`, `plugins/shape-plugin/src/services/batch/session/tiles/assembleTileGeoJSON.ts`, `plugins/shape-plugin/src/services/batch/ShapeBuildApiClient.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/VectorTileDB2Procedure.ts`, `plugins/shape-plugin/src/ui/components/steps/VTConfigSection.tsx`, `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/package.json`
+- 影響範囲: `plugins/shape-plugin/src/services/batch/BatchSessionManager.ts`, `plugins/shape-plugin/src/common/types/batch.ts`, `plugins/shape-plugin/src/services/batch/session/extract2/zoomRanges.ts`, `plugins/shape-plugin/src/services/batch/session/stages/vectortile/buildVectorTileStageInputs.ts`, `plugins/shape-plugin/src/services/batch/session/tiles/assembleTileGeoJSON.ts`, `plugins/shape-plugin/src/services/batch/ShapeBuildAPIClient.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/VectorTileDB2Procedure.ts`, `plugins/shape-plugin/src/ui/components/steps/VTConfigSection.tsx`, `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/package.json`
 - ロールバック手順: 上記ファイルの差分を revert する
 - チェックリスト:
   - BatchTaskBase の stage/type を埋める

@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { BatchProcessConfig } from '../types.js';
+import type { BuildProcessConfig } from '../types.js';
 import type {
   CountryMetadata,
   DataSourceName,
@@ -17,7 +17,7 @@ export interface FetchStageOptions {
 export interface FetchStageBuildContext {
   nodeId: NodeId;
   fetchTaskPayloads: FetchTaskPayload[];
-  config: BatchProcessConfig;
+  config: BuildProcessConfig;
   options: FetchStageOptions;
 }
 

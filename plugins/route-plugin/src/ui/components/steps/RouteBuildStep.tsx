@@ -10,7 +10,8 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { BuildStepPanel, type BuildStatus, notify } from '@hierarchidb/components';
+import { CheckCircle, CloudDownload, Tune, AltRoute } from '@mui/icons-material';
+import { BuildStepPanel, type BuildStage, type BuildStatus, notify } from '@hierarchidb/components';
 import { HeapPressureDialog, useHeapPressureGuard } from '@hierarchidb/ui-memory';
 import { GenericDataGrid, type GridColumn } from '@hierarchidb/ui-grid';
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
@@ -45,11 +46,31 @@ interface RouteBuildStepProps {
   mode: 'create' | 'edit';
 }
 
-const STAGES = [
-  { id: 'prepare', title: 'Prepare', description: 'Validate route parameters.' },
-  { id: 'fetch', title: 'Fetch', description: 'Fetch route graph data.' },
-  { id: 'compute', title: 'Compute', description: 'Calculate routes and metrics.' },
-  { id: 'finalize', title: 'Finalize', description: 'Persist results and indexes.' },
+const STAGES: BuildStage[] = [
+  {
+    icon: <Tune/>,
+    id: 'prepare',
+    title: 'Prepare',
+    description: 'Validate route parameters.',
+  },
+  {
+    icon: <CloudDownload/>,
+    id: 'fetch',
+    title: 'Fetch',
+    description: 'Fetch route graph data.',
+  },
+  {
+    icon: <AltRoute/>,
+    id: 'compute',
+    title: 'Compute',
+    description: 'Calculate routes and metrics.',
+  },
+  {
+    icon: <CheckCircle/>,
+    id: 'finalize',
+    title: 'Finalize',
+    description: 'Persist results and indexes.',
+  },
 ];
 const SPLITVIEW_BREAKPOINTS = [600, 900, 1200];
 const SPLITVIEW_INITIAL_SIZES = [

@@ -135,10 +135,8 @@ class RealVTWorker implements VTWorkerAPI {
     } catch {
       // Ignore and fall back to ephemeral buffers.
     }
-    const tileInput = await ephemeralShapeDB.vectorTileSourceBuffers.get(fileId);
+    const tileInput = await ephemeralShapeDB.transformByZoomCache.get(fileId);
     if (tileInput?.data) return tileInput.data;
-    const transform = await ephemeralShapeDB.transformBuffers.get(fileId);
-    if (transform?.data) return transform.data;
     return null;
   }
 

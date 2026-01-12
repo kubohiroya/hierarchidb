@@ -948,17 +948,19 @@ export function usePluginDialogController(
 
   const handleConfirmDiscard = useCallback(() => {
     setDiscardDialogOpen(false);
+    const close = onCloseRef.current;
+    const discard = discardDraftRef.current;
     void runWithPending({ type: 'cancel' }, async () => {
       if (dialogMode === 'create') {
         if (isTemporary) {
-          await discardDraft({ forceDelete: true });
+          await discard?.({ forceDelete: true });
         }
       } else if (dialogMode !== 'preview') {
         await persistDialogUIStateOnClose();
       }
-      onClose();
+      close?.();
     });
-  }, [dialogMode, discardDraft, isTemporary, onClose, persistDialogUIStateOnClose, runWithPending]);
+  }, [dialogMode, isTemporary, persistDialogUIStateOnClose, runWithPending]);
 
   const handleDismissDiscardDialog = useCallback(() => {
     setDiscardDialogOpen(false);

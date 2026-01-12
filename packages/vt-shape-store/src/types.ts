@@ -2,7 +2,7 @@ import type { NodeId } from '@hierarchidb/common-types';
 
 export type DomainType = 'shape';
 
-export type Stage1Buffer = {
+export type FetchCacheRecord = {
   id: string;
   nodeId: NodeId;
   domainType: DomainType;
@@ -16,7 +16,7 @@ export type Stage1Buffer = {
   timestamp: number;
 };
 
-export type TransformBuffer = {
+export type TransformByBandCacheRecord = {
   id: string;
   nodeId: NodeId;
   bandId: number;
@@ -31,7 +31,7 @@ export type TransformBuffer = {
   timestamp: number;
 };
 
-export type TileIndexRow = {
+export type TransformByZoomCacheRecord = {
   nodeId: NodeId;
   bandId: number;
   zBase: number;
@@ -39,16 +39,16 @@ export type TileIndexRow = {
   bufferId: string;
 };
 
-export type Band3Reservation = {
+export type TransformByZoomReservation = {
   nodeId: NodeId;
   tileId: number;
   createdAt: number;
 };
 
-export type Stage1BufferPayload = Omit<Stage1Buffer, 'id' | 'nodeId' | 'domainType' | 'timestamp'> & {
+export type FetchCachePayload = Omit<FetchCacheRecord, 'id' | 'nodeId' | 'domainType' | 'timestamp'> & {
   timestamp?: number;
 };
 
-export type TransformBufferPayload = Omit<TransformBuffer, 'id' | 'nodeId' | 'domainType' | 'bandId' | 'timestamp'> & {
+export type TransformByBandCachePayload = Omit<TransformByBandCacheRecord, 'id' | 'nodeId' | 'domainType' | 'bandId' | 'timestamp'> & {
   timestamp?: number;
 };

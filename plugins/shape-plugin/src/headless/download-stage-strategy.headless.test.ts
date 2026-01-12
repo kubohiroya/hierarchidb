@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { BatchProcessConfig } from '../services/batch/types.js';
+import type { BuildProcessConfig } from '../services/batch/types.js';
 import type { FetchTaskPayload } from '../common/types/index.js';
 //import { getShapeDbApiClient } from '../services/batch/ShapeBuildApiClient.js';
 import { encodeFlatGeoJson } from '../services/batch/strategies/flatgeobuf.js';
@@ -11,8 +11,8 @@ import { NaturalEarthDownloadStrategy } from '../services/batch/strategies/Natur
 import type { Feature, FeatureCollection } from 'geojson';
 import {ephemeralShapeDB} from '@hierarchidb/shape-store';
 
-const createConfig = (dataSource: string): BatchProcessConfig => ({
-  dataSource: dataSource as BatchProcessConfig['dataSource'],
+const createConfig = (dataSource: string): BuildProcessConfig => ({
+  dataSource: dataSource as BuildProcessConfig['dataSource'],
   download: { concurrentDownloads: 1 },
   extract1: {
     concurrentProcesses: 1,
@@ -107,7 +107,7 @@ describe('Download stage strategies', () => {
     const encoded = await encodeFlatGeoJson(collection);
     const bufferId0 = `${nodeId}-download-0`;
     const bufferId1 = `${nodeId}-download-1`;
-    await ephemeralShapeDB.fetchBuffers.put({
+    await ephemeralShapeDB.fetchCache.put({
       id: bufferId0,
       nodeId,
       data: encoded,
@@ -117,7 +117,7 @@ describe('Download stage strategies', () => {
       size: encoded.byteLength,
       timestamp: Date.now(),
     });
-    ephemeralShapeDB.fetchBuffers.put({
+    ephemeralShapeDB.fetchCache.put({
       id: bufferId1,
       nodeId,
       data: encoded,

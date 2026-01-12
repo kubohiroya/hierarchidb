@@ -1,11 +1,11 @@
 import type {
-  ShapeBatchProgressSummary,
-  ShapeBatchSessionRecord,
+  ShapeBuildProgressSummary,
+  ShapeBuildSessionRecord,
   ShapeVectorTileRecord,
 } from '@hierarchidb/plugin-service-api';
 import type { LayerInfo, ProcessingStage, ProgressInfo, ResourceUsage, StageStatus } from '../types.ts';
-import type { BatchSessionConfig } from '../../common/types/index.js';
-import type { BatchSessionRecord, VectorTileRecord } from '@hierarchidb/shape-store';
+import type { BuildSessionConfig } from '../../common/types/index.js';
+import type { BuildSessionRecord, VectorTileRecord } from '@hierarchidb/shape-store';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -30,7 +30,7 @@ const isStageStatus = (value: unknown): value is StageStatus => {
     && (value.message === undefined || typeof value.message === 'string');
 };
 
-export const isBatchProcessConfig = (value: unknown): value is BatchSessionConfig => {
+export const isBuildProcessConfig = (value: unknown): value is BuildSessionConfig => {
   if (!isRecord(value)) return false;
   return isRecord(value.download)
     && isRecord(value.extract1)
@@ -39,12 +39,13 @@ export const isBatchProcessConfig = (value: unknown): value is BatchSessionConfi
 };
 
 export const toProcessingStage = (
-  stage: ShapeBatchProgressSummary['taskType'],
+  stage: ShapeBuildProgressSummary['taskType'],
 ): ProgressInfo['taskType'] => {
   if (stage === 'processing') return stage;
   if (
     stage === 'fetch'
-    || stage === 'transform'
+    || stage === 'transform-by-band'
+    || stage === 'transform-by-zoom'
     || stage === 'vt'
   ) {
     return stage;
@@ -52,7 +53,7 @@ export const toProcessingStage = (
   return undefined;
 };
 
-export const toProgressInfo = (progress: ShapeBatchProgressSummary): ProgressInfo => ({
+export const toProgressInfo = (progress: ShapeBuildProgressSummary): ProgressInfo => ({
   total: progress.total,
   completed: progress.completed,
   failed: progress.failed,
@@ -61,7 +62,7 @@ export const toProgressInfo = (progress: ShapeBatchProgressSummary): ProgressInf
   taskType: toProcessingStage(progress.taskType),
 });
 
-export const toProgressSummary = (progress: ProgressInfo): ShapeBatchProgressSummary => ({
+export const toProgressSummary = (progress: ProgressInfo): ShapeBuildProgressSummary => ({
   total: progress.total,
   completed: progress.completed,
   failed: progress.failed,
@@ -84,7 +85,8 @@ const toStageMap = (stages: Record<string, unknown> | undefined): Record<Process
   };
   return {
     fetch: read('fetch'),
-    transform: read('transform'),
+    'transform-by-band': read('transform-by-band'),
+    'transform-by-zoom': read('transform-by-zoom'),
     vt: read('vt'),
   };
 };
@@ -112,8 +114,8 @@ const toResourceUsage = (usage: Record<string, unknown> | undefined): ResourceUs
 const toResourceUsageRecord = (usage: ResourceUsage | undefined): Record<string, unknown> | undefined =>
   usage ? { ...usage } : undefined;
 
-export const toBatchSessionRecord = (session: ShapeBatchSessionRecord): BatchSessionRecord | null => {
-  if (!isBatchProcessConfig(session.config)) return null;
+export const toBuildSessionRecord = (session: ShapeBuildSessionRecord): BuildSessionRecord | null => {
+  if (!isBuildProcessConfig(session.config)) return null;
   return {
     nodeId: session.nodeId,
     draftId: session.draftId,
@@ -131,14 +133,14 @@ export const toBatchSessionRecord = (session: ShapeBatchSessionRecord): BatchSes
   };
 };
 
-export const toBatchSessionUpdates = (
-  updates: Partial<ShapeBatchSessionRecord>,
-): Partial<BatchSessionRecord> | null => {
-  const next: Partial<BatchSessionRecord> = {};
+export const toBuildSessionUpdates = (
+  updates: Partial<ShapeBuildSessionRecord>,
+): Partial<BuildSessionRecord> | null => {
+  const next: Partial<BuildSessionRecord> = {};
   if (updates.draftId !== undefined) next.draftId = updates.draftId;
   if (updates.status !== undefined) next.status = updates.status;
   if (updates.config !== undefined) {
-    if (!isBatchProcessConfig(updates.config)) return null;
+    if (!isBuildProcessConfig(updates.config)) return null;
     next.config = updates.config;
   }
   if (updates.startedAt !== undefined) next.startedAt = updates.startedAt;
@@ -153,7 +155,7 @@ export const toBatchSessionUpdates = (
   return next;
 };
 
-export const toShapeBatchSessionRecord = (session: BatchSessionRecord): ShapeBatchSessionRecord => ({
+export const toShapeBuildSessionRecord = (session: BuildSessionRecord): ShapeBuildSessionRecord => ({
   nodeId: session.nodeId,
   draftId: session.draftId,
   status: session.status,
@@ -169,10 +171,10 @@ export const toShapeBatchSessionRecord = (session: BatchSessionRecord): ShapeBat
   expiresAt: session.expiresAt,
 });
 
-export const toShapeBatchSessionUpdates = (
-  updates: Partial<BatchSessionRecord>,
-): Partial<ShapeBatchSessionRecord> => {
-  const next: Partial<ShapeBatchSessionRecord> = {};
+export const toShapeBuildSessionUpdates = (
+  updates: Partial<BuildSessionRecord>,
+): Partial<ShapeBuildSessionRecord> => {
+  const next: Partial<ShapeBuildSessionRecord> = {};
   if (updates.draftId !== undefined) next.draftId = updates.draftId;
   if (updates.status !== undefined) next.status = updates.status;
   if (updates.config !== undefined) next.config = updates.config;

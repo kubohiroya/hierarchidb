@@ -23,7 +23,7 @@ export * from './types/shapeBuildTypes.js';
 export * from './types/shapeDbTypes.js';
 export * from './types/ShapeQueryAPI.js';
 export * from './types/ShapeMutationAPI.js';
-export * from './types/ShapeEphemeralAPI.js';
+export * from './types/EphemeralShapeAPI.js';
 export * from './types/ideGsmTypes.js';
 export * from './types/locationTypes.js';
 export * from './types/LocationQueryAPI.js';

@@ -1,9 +1,9 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { ShapeBatchProgressSummary, ShapeTileLayerInfo } from './shapeTypes.js';
+import type { ShapeBuildProgressSummary, ShapeTileLayerInfo } from './shapeTypes.js';
 
-export interface ShapeBatchSessionRecord<
+export interface ShapeBuildSessionRecord<
   Config = unknown,
-  Progress = ShapeBatchProgressSummary,
+  Progress = ShapeBuildProgressSummary,
   StageMap = Record<string, unknown>,
   ResourceUsage = Record<string, unknown>
 > {

@@ -2,7 +2,8 @@ import type { CrashInsight } from '@hierarchidb/ui-monitoring';
 
 export type ShapeBuildStage =
   | 'fetch'
-  | 'transform'
+  | 'transform-by-band'
+  | 'transform-by-zoom'
   | 'vt';
 
 export type ShapeBuildConfigSnapshot = {
@@ -25,7 +26,8 @@ export const getStageConcurrencyWarning = (
     switch (stage) {
       case 'fetch':
         return snapshot?.downloadConcurrency;
-      case 'transform':
+      case 'transform-by-band':
+      case 'transform-by-zoom':
         return snapshot?.transformWorkers;
       case 'vt':
         return snapshot?.tileWorkers;

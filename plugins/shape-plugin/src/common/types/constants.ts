@@ -18,7 +18,7 @@ export const DEFAULT_PROCESSING_CONFIG: BatchConfig = {
   },
   extract1Config: {
     workers: 2,
-    tolerance: 0.02,
+    tolerance: 0.01,
     featureFilterMethod: 'hybrid',
     areaThreshold: 50,
     minVertexCountForAreaFilter: 10,
@@ -33,7 +33,7 @@ export const DEFAULT_PROCESSING_CONFIG: BatchConfig = {
   },
   extract2Config: {
     workers: 2,
-    tolerance: 0.1,
+    tolerance: 0.05,
     quantize: 200000,
     enablePerFeatureExtraction: true,
     extractionMode: 'geojson',
@@ -52,7 +52,7 @@ export const DEFAULT_PROCESSING_CONFIG: BatchConfig = {
     },
     level1Workers: 2,
     level2Workers: 2,
-    tolerance: 0.02,
+    tolerance: 0.01,
     quantize: 200000,
     enablePerFeatureExtraction: true,
   },

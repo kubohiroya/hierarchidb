@@ -3,6 +3,6 @@ import type { ReactNode } from 'react';
 export type BuildStage = {
   id: string;
   title: string;
-  icon?: ReactNode;
+  icon: ReactNode;
   description?: string;
 };

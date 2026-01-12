@@ -3,7 +3,7 @@
  *
  * Manages all persistent data for the shapes plugin including:
  * - Shape entities and metadata
- * - Batch sessions and tasks
+ * - Build sessions and tasks
  * - Feature indices
  * - Vector tiles
  */
@@ -66,7 +66,7 @@ export interface VTConfig {
   tileExpandMargin?: number;
 }
 
-export interface BatchSessionConfig extends CommonSessionConfig {
+export interface BuildSessionConfig extends CommonSessionConfig {
   download: FetchConfig;
   extract1: Extract1Config;
   extract2: Extract2Config;
@@ -88,9 +88,9 @@ export interface BatchSessionConfig extends CommonSessionConfig {
   deleteExtract2CacheOnComplete?: boolean;
 }
 
-export type BatchProcessConfig = BatchSessionConfig;
-export type BatchTaskType = 'fetch' | 'transform' | 'vt';
-export type ProcessingStage = BatchTaskType;
+export type BuildProcessConfig = BuildSessionConfig;
+export type BuildTaskType = 'fetch' | 'transform-by-band' | 'transform-by-zoom' | 'vt';
+export type BuildStage = BuildTaskType;
 export type TaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'regression';
 
 export interface ProgressInfo {
@@ -99,7 +99,7 @@ export interface ProgressInfo {
   failed: number;
   skipped: number;
   percentage: number;
-  taskType?: ProcessingStage | 'processing';
+  taskType?: BuildStage | 'processing';
 }
 
 export interface StageStatus {
@@ -142,23 +142,23 @@ export interface CacheStatistics {
   newestItem?: number;
 }
 
-export interface BatchSessionRecord {
+export interface BuildSessionRecord {
   nodeId: NodeId;
   draftId?: NodeId;
   status: 'idle' | 'running' | 'paused' | 'completed' | 'failed';
-  config: BatchProcessConfig;
+  config: BuildProcessConfig;
   startedAt: number;
   updatedAt: number;
   completedAt?: number;
   progress: ProgressInfo;
-  stages: Record<ProcessingStage, StageStatus>;
+  stages: Record<BuildStage, StageStatus>;
   resourceUsage?: ResourceUsage;
   canResume?: boolean;
   lastActivity?: number;
   expiresAt?: number;
 }
 
-export type DownloadTaskInputData = {
+export type DownloadTaskPayload = {
   url?: string;
   dataSource?: DataSourceName;
   countryCode?: string;
@@ -180,13 +180,13 @@ export type DownloadTaskInputData = {
   retryDelay?: number;
 };
 
-export type DownloadTaskOutputData = {
+export type DownloadTaskResult = {
   outputBufferId?: string;
   bytesWritten?: number;
   featureCount?: number;
 };
 
-export type Extract1TaskInputData = {
+export type Extract1TaskPayload = {
   inputBufferId?: string;
   sourceUrl?: string;
   featureId?: string;
@@ -203,13 +203,13 @@ export type Extract1TaskInputData = {
   countryName?: string;
 };
 
-export type Extract1TaskOutputData = {
+export type Extract1TaskResult = {
   outputBufferId?: string;
   featureCount?: number;
   extractionRatio?: number;
 };
 
-export type Extract2TaskInputData = {
+export type Extract2TaskPayload = {
   inputBufferId?: string;
   sourceTaskId?: string;
   sourceUrl?: string;
@@ -231,14 +231,14 @@ export type Extract2TaskInputData = {
   tolerance?: number;
 };
 
-export type Extract2TaskOutputData = {
+export type Extract2TaskResult = {
   outputBufferId?: string;
   featureCount?: number;
   extractionRatio?: number;
   retry?: number;
 };
 
-export type VectorTileTaskInputData = {
+export type VectorTileTaskPayload = {
   inputBufferId: string;
   tileZ?: number;
   tileX?: number;
@@ -264,29 +264,29 @@ export type VectorTileTaskInputData = {
   };
 };
 
-export type VectorTileTaskOutputData = {
+export type VectorTileTaskResult = {
   tileId: string;
   tileCount?: number;
   totalBytes?: number;
   retry?: number;
 };
 
-export type ShapeBatchTaskInputData =
-  | DownloadTaskInputData
-  | Extract1TaskInputData
-  | Extract2TaskInputData
-  | VectorTileTaskInputData;
+export type ShapeBuildTaskPayload =
+  | DownloadTaskPayload
+  | Extract1TaskPayload
+  | Extract2TaskPayload
+  | VectorTileTaskPayload;
 
-export type ShapeBatchTaskOutputData =
-  | DownloadTaskOutputData
-  | Extract1TaskOutputData
-  | Extract2TaskOutputData
-  | VectorTileTaskOutputData;
+export type ShapeBuildTaskResult =
+  | DownloadTaskResult
+  | Extract1TaskResult
+  | Extract2TaskResult
+  | VectorTileTaskResult;
 
-export interface BatchTaskRecord<TInput = ShapeBatchTaskInputData, TOutput = ShapeBatchTaskOutputData> {
+export interface BuildTaskRecord<TInput = ShapeBuildTaskPayload, TOutput = ShapeBuildTaskResult> {
   taskId: string;
   nodeId: NodeId;
-  taskType: BatchTaskType;
+  taskType: BuildTaskType;
   status: TaskStatus;
   index: number;
   progress: number;
@@ -338,7 +338,7 @@ export interface ShapeRelationRow {
 export interface FeatureBufferRecord {
   bufferId: string;
   nodeId: NodeId;
-  stage: ProcessingStage;
+  stage: BuildStage;
   data_Uint8Array: Uint8Array;
   format: 'geojson' | 'topojson' | 'geobuf' | 'flatgeobuf';
   featureCount: number;
@@ -371,7 +371,7 @@ export interface TileBufferRecord {
   z: number;
   x: number;
   y: number;
-  stage: ProcessingStage;
+  stage: BuildStage;
   data_Uint8Array: Uint8Array;
   featureCount: number;
   byteSize: number;
@@ -392,8 +392,8 @@ export interface CacheEntryRecord {
 
 export class ShapeDB extends VectorTileDbBase {
 
-  // Batch processing tables
-  batchSessions!: Table<BatchSessionRecord, NodeId>;
+  // Build processing tables
+  buildSessions!: Table<BuildSessionRecord, NodeId>;
 
   // Feature storage tables
   features!: Table<FeatureRecord, number>;
@@ -417,36 +417,37 @@ export class ShapeDB extends VectorTileDbBase {
     }));
 
     this.initVectorTileTables();
+    this.buildSessions = this.table('batchSessions');
   }
 
-  // Batch Session Management
-  async createBatchSession(
-    session: BatchSessionRecord,
-  ): Promise<BatchSessionRecord> {
-    await this.batchSessions.put(session);
+  // Build Session Management
+  async createBuildSession(
+    session: BuildSessionRecord,
+  ): Promise<BuildSessionRecord> {
+    await this.buildSessions.put(session);
     return session;
   }
 
-  async getBatchSession(nodeId: NodeId): Promise<BatchSessionRecord | undefined> {
-    return await this.batchSessions.get(nodeId);
+  async getBuildSession(nodeId: NodeId): Promise<BuildSessionRecord | undefined> {
+    return await this.buildSessions.get(nodeId);
   }
 
-  async updateBatchSession(nodeId: NodeId, updates: Partial<BatchSessionRecord>): Promise<void> {
-    await this.batchSessions.update(nodeId, {
+  async updateBuildSession(nodeId: NodeId, updates: Partial<BuildSessionRecord>): Promise<void> {
+    await this.buildSessions.update(nodeId, {
       ...updates,
       updatedAt: Date.now(),
     });
   }
 
-  async getActiveBatchSessions(nodeId: NodeId): Promise<BatchSessionRecord[]> {
-    return await this.batchSessions
+  async getActiveBuildSessions(nodeId: NodeId): Promise<BuildSessionRecord[]> {
+    return await this.buildSessions
       .where('nodeId')
       .equals(nodeId)
       .and((session) => session.status === 'running' || session.status === 'paused')
       .toArray();
   }
 
-  // Batch Task Management
+  // Build Task Management
   // Feature Management
   async storeFeature(feature: Omit<FeatureRecord, 'id'>): Promise<number> {
     return await this.features.add({
@@ -552,7 +553,7 @@ export class ShapeDB extends VectorTileDbBase {
   async getStorageUsage(): Promise<{ totalSize: number; breakdown: Record<string, number> }> {
     const [sessionsSize, featuresSize, tilesSize] =
       await Promise.all([
-        this.batchSessions.toArray().then((items: BatchSessionRecord[]) => items.length * 2000),
+        this.buildSessions.toArray().then((items: BuildSessionRecord[]) => items.length * 2000),
         this.features
           .toArray()
           .then((items: FeatureRecord[]) =>

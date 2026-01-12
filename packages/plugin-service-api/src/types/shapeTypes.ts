@@ -51,7 +51,7 @@ export interface ShapeTileSummaryEntry {
   timestamp: number;
 }
 
-export interface ShapeBatchProgressSummary {
+export interface ShapeBuildProgressSummary {
   total: number;
   completed: number;
   failed: number;
@@ -60,13 +60,13 @@ export interface ShapeBatchProgressSummary {
   taskType?: string;
 }
 
-export interface ShapeBatchSessionSummary {
+export interface ShapeBuildSessionSummary {
   nodeId: NodeId;
   status: ShapeProcessingState;
   startedAt?: number;
   updatedAt?: number;
   completedAt?: number;
-  progress?: ShapeBatchProgressSummary;
+  progress?: ShapeBuildProgressSummary;
 }
 
 export interface ShapeBuildTaskSummary {

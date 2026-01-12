@@ -1,15 +1,15 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { Stage1Buffer, Stage1BufferPayload } from '../types.js';
-import { SHAPE_DOMAIN, buildStage1BufferId } from '../ids.js';
+import type { FetchCacheRecord, FetchCachePayload } from '../types.js';
+import { SHAPE_DOMAIN, buildFetchCacheRecordId } from '../ids.js';
 import type { VtShapeDb } from '../db/shapeDb.js';
 
-export async function putStage1Buffer(
+export async function putFetchCache(
   db: VtShapeDb,
   nodeId: NodeId,
-  payload: Stage1BufferPayload
-): Promise<Stage1Buffer> {
-  const buffer: Stage1Buffer = {
-    id: buildStage1BufferId(nodeId, payload.sourceKey),
+  payload: FetchCachePayload
+): Promise<FetchCacheRecord> {
+  const buffer: FetchCacheRecord = {
+    id: buildFetchCacheRecordId(nodeId, payload.sourceKey),
     nodeId,
     domainType: SHAPE_DOMAIN,
     sourceKey: payload.sourceKey,
@@ -21,6 +21,6 @@ export async function putStage1Buffer(
     polygonCount: payload.polygonCount,
     timestamp: payload.timestamp ?? Date.now(),
   };
-  await db.stage1Buffers.put(buffer);
+  await db.fetchCache.put(buffer);
   return buffer;
 }

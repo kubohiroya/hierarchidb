@@ -9,7 +9,7 @@ import {
   tasksLoadingAtom,
 } from '../../atoms/shapeBuildProgressAtoms.js';
 
-export interface UseShapeBatchTasksOptions {
+export interface UseShapeBuildTasksOptions {
   autoRefresh?: boolean | (() => boolean);
   pollIntervalMs?: number;
 }
@@ -26,7 +26,7 @@ const SHAPE_NODE_TYPE = 'shape' as NodeType;
 
 export function useShapeBuildTasks(
   nodeId: NodeId | null,
-  options: UseShapeBatchTasksOptions = {},
+  options: UseShapeBuildTasksOptions = {},
 ): UseShapeBuildTasksState {
   const { autoRefresh = true, pollIntervalMs = 2000 } = options;
   const bridgeRef = useRef(getWorkerBridge());
@@ -77,21 +77,21 @@ export function useShapeBuildTasks(
     if (!nodeId) {
       setTasks([]);
       setError(null);
-      console.debug('[ShapeBuildStep] batchTasks:skip', { nodeId });
+      console.debug('[ShapeBuildStep] buildTasks:skip', { nodeId });
       return;
     }
     setIsLoading(true);
     try {
       await bridgeRef.current.initialize();
-      //console.debug('[ShapeBuildStep] batchTasks:fetch', { nodeId });
+      //console.debug('[ShapeBuildStep] buildTasks:fetch', { nodeId });
       const next = await bridgeRef.current.getBatchTasks(SHAPE_NODE_TYPE, nodeId);
       scheduleFlush(next);
       setError(null);
-      //console.debug('[ShapeBuildStep] batchTasks:ok', { nodeId, count: next.length });
+      //console.debug('[ShapeBuildStep] buildTasks:ok', { nodeId, count: next.length });
     } catch (err) {
       const errObj = err instanceof Error ? err : new Error('Failed to fetch batch tasks');
       setError(errObj);
-      console.debug('[ShapeBuildStep] batchTasks:error', {
+      console.debug('[ShapeBuildStep] buildTasks:error', {
         nodeId,
         message: errObj.message,
       });
