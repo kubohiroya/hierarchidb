@@ -3,26 +3,25 @@
  * Exposes batch-oriented operations for runtime worker adapters
  */
 
-import { toNodeId, type NodeId } from '@hierarchidb/common-types';
+import { toNodeId, type NodeId, type TaskQueueRecord } from '@hierarchidb/common-types';
+import type { ShapeBuildConfig } from '../common/types/index.js';
 import {
   type BatchSession,
-  type BatchTask,
+  type BuildTask,
   type CountryMetadata,
   type DataSourceConfig,
   type DataSourceName,
   SHAPE_DATA_SOURCES,
-  DEFAULT_PROCESSING_CONFIG,
-  mergeBatchConfig,
-  type BatchConfig,
-  type BuildSessionConfig,
+  DEFAULT_BUILD_CONFIG,
+  mergeBuildConfig,
   type ProcessingStatus,
   type ProgressInfo,
   type TileInfo,
   type FetchTaskPayload,
   validateBatchConfig,
   type ShapeStepValidationResult,
-  BatchTaskStage,
-  type BatchTaskStageType,
+  BuildTaskResult,
+  type BuildTaskResultType,
   type ShapeEntity,
   type SelectedArrayByCountries,
 } from '../common/types/index.js';
@@ -43,7 +42,6 @@ import {
   listTasksByStatus,
   onTaskQueueUpdate,
   updateTask,
-  type TaskQueueRecord,
 } from '@hierarchidb/vt-orchestrator';
 import { runShapeVtPipeline } from '../services/vt/shapeVtPipeline.js';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../services/batch/ShapeBuildAPIClient.ts';
@@ -59,10 +57,9 @@ const resolveBatchNodeId = (draft: DraftLike | null | undefined): NodeId | undef
   return resolved ? toNodeId(String(resolved)) : undefined;
 };
 
-const buildBuildSessionConfig = (batchConfig: BatchConfig, draft?: DraftLike): BuildSessionConfig => {
-  const downloadConfig = batchConfig.fetchConfig ?? DEFAULT_PROCESSING_CONFIG.fetchConfig;
-  const legacyExtraction = batchConfig.extractionConfig;
-  const extract1Config = batchConfig.extract1Config ?? (legacyExtraction ? {
+const buildBuildSessionConfig = (buildConfig: ShapeBuildConfig, draft?: DraftLike): ShapeBuildConfig => {
+  /*
+  const transformByBandConfig = buildConfig.transformByBandConfig ?? (legacyExtraction ? {
     workers: legacyExtraction.level1Workers,
     tolerance: legacyExtraction.tolerance,
     featureFilterMethod: legacyExtraction.featureFilterMethod,
@@ -70,57 +67,57 @@ const buildBuildSessionConfig = (batchConfig: BatchConfig, draft?: DraftLike): B
     minVertexCountForAreaFilter: legacyExtraction.minVertexCountForAreaFilter,
     aspectRatioThreshold: legacyExtraction.aspectRatioThreshold,
     hybridFilterConfig: legacyExtraction.hybridFilterConfig,
-  } : undefined) ?? DEFAULT_PROCESSING_CONFIG.extract1Config;
-  const extract2Config = batchConfig.extract2Config ?? (legacyExtraction ? {
+  } : undefined) ?? DEFAULT_PROCESSING_CONFIG.transformByBandConfig;
+  const transformByZoomConfig = buildConfig.transformByZoomConfig ?? (legacyExtraction ? {
     workers: legacyExtraction.level2Workers,
     tolerance: legacyExtraction.tolerance,
     quantize: legacyExtraction.quantize,
     enablePerFeatureExtraction: legacyExtraction.enablePerFeatureExtraction,
-  } : undefined) ?? DEFAULT_PROCESSING_CONFIG.extract2Config;
-  const tileConfig = batchConfig.tileConfig ?? DEFAULT_PROCESSING_CONFIG.tileConfig;
-  const cleanupConfig = batchConfig.cleanupConfig ?? DEFAULT_PROCESSING_CONFIG.cleanupConfig;
+  } : undefined) ?? DEFAULT_PROCESSING_CONFIG.transformByZoomConfig;
+   */
+  //const transformByBandConfig = buildConfig.transformByBandConfig ?? DEFAULT_BUILD_CONFIG.tileConfig;
+  //const cleanupConfig = buildConfig.cleanupConfig ?? DEFAULT_BUILD_CONFIG.cleanupConfig;
   const resolvedDataSource = requireDataSourceName(
-    batchConfig.dataSource
-    ?? draft?.draftData?.batchConfig?.dataSource,
+    buildConfig.dataSourceName
+    ?? draft?.draftData?.buildConfig?.dataSourceName,
     'buildBuildSessionConfig',
   );
 
   return {
-    dataSource: resolvedDataSource,
-    download: {
-      concurrentDownloads: downloadConfig?.maxConcurrent ?? 4,
-      deleteOnComplete: cleanupConfig?.deleteDownloadedFiles ?? false,
-      timeoutMs: downloadConfig?.timeoutMs,
-      retryAttempts: downloadConfig?.retryAttempts ?? 3,
-      retryDelay: downloadConfig?.retryDelay,
+    dataSourceName: resolvedDataSource,
+    fetchConfig: {
+      //concurrentDownloads: 4,
+      deleteOnComplete: false,
+      retryAttempts: 3,
+      ...buildConfig.fetchConfig,
     },
-    extract1: {
-      concurrentProcesses: extract1Config?.workers ?? 2,
+    transformByBandConfig: {
+      /*
+      concurrentProcesses: 2,
       enableFeatureFiltering: true,
-      featureAreaThreshold: extract1Config?.areaThreshold ?? 0.5,
-      minVertexCountForAreaFilter: extract1Config?.minVertexCountForAreaFilter ?? 25,
-      aspectRatioThreshold: extract1Config?.aspectRatioThreshold ?? 5,
-      featureFilterMethod: extract1Config?.featureFilterMethod ?? 'hybrid',
-      hybridFilterConfig:
-        extract1Config?.hybridFilterConfig
-        ?? DEFAULT_PROCESSING_CONFIG.extract1Config?.hybridFilterConfig,
+      featureAreaThreshold: 0.5,
+      minVertexCountForAreaFilter: 25,
+      aspectRatioThreshold: 5,
+      featureFilterMethod: 'hybrid',
+       */
+      hybridFilterConfig: DEFAULT_BUILD_CONFIG.transformByBandConfig?.hybridFilterConfig,
       deleteOnComplete: false,
+      ...buildConfig.transformByBandConfig,
     },
-    extract2: {
-      concurrentProcesses: extract2Config?.workers ?? 2,
-      enablePerFeatureExtraction: extract2Config?.enablePerFeatureExtraction ?? true,
-      extractionMode: extract2Config?.extractionMode ?? DEFAULT_PROCESSING_CONFIG.extract2Config?.extractionMode,
+    transformByZoomConfig: {
+      /*
+      concurrentProcesses: 2,
+      enablePerFeatureExtraction: true,
       deleteOnComplete: false,
-      quantize: extract2Config?.quantize ?? 0,
-      extract: extract2Config?.tolerance ?? 0,
-      tolerance: extract2Config?.tolerance ?? 0,
+      quantize: 1.0,
+      extract: 1.0,
+      tolerance: 1.0,
+       */
+      ...buildConfig.transformByZoomConfig,
     },
-    vectorTiles: {
-      concurrentProcesses: tileConfig?.workers ?? 4,
-      bufferSize: tileConfig?.bufferSize,
-      tileSize: tileConfig?.tileSize,
-      tileExpandFactor: tileConfig?.tileExpandFactor,
-      tileExpandMargin: tileConfig?.tileExpandMargin,
+    vtConfig: {
+      //concurrentProcesses: 4,
+      ...buildConfig.vtConfig
     },
   };
 };
@@ -148,22 +145,22 @@ const isSkippedMessage = (message?: string | null): boolean => {
   return normalized === 'skipped' || normalized.startsWith('skipped:');
 };
 
-const mapTaskQueueStatusToStage = (status: TaskQueueRecord['status']): BatchTaskStageType => {
+const mapTaskQueueStatusToStage = (status: TaskQueueRecord['status']): BuildTaskResultType => {
   switch (status) {
     case 'queued':
-      return BatchTaskStage.WAIT;
+      return BuildTaskResult.WAIT;
     case 'running':
-      return BatchTaskStage.PROCESS;
+      return BuildTaskResult.PROCESS;
     case 'completed':
-      return BatchTaskStage.SUCCESS;
+      return BuildTaskResult.SUCCESS;
     case 'failed':
     default:
-      return BatchTaskStage.ERROR;
+      return BuildTaskResult.ERROR;
   }
 };
 
-const mapTaskQueueStatusToTaskStatus = (status: TaskQueueRecord['status']): BatchTask['status'] => {
-  return status as BatchTask['status'];
+const mapTaskQueueStatusToTaskStatus = (status: TaskQueueRecord['status']): BuildTask['status'] => {
+  return status as BuildTask['status'];
 };
 
 const buildTaskQueueTitle = (task: TaskQueueRecord): string | undefined => {
@@ -203,7 +200,7 @@ const buildTaskQueueTitle = (task: TaskQueueRecord): string | undefined => {
 
 const mapTaskQueueRecordToBatchTask = (
   task: TaskQueueRecord,
-): BatchTask & { title?: string; message?: string } => ({
+): BuildTask & { title?: string; message?: string } => ({
   taskId: task.taskId,
   nodeId: task.nodeId,
   stage: mapTaskQueueStatusToStage(task.status),
@@ -228,7 +225,7 @@ const summarizeTaskQueue = (tasks: TaskQueueRecord[]) => {
   ));
   const doneCount = Math.min(total, completed + skipped + failed);
   const percentage = total > 0 ? Math.round((doneCount / total) * 100) : 0;
-  const status: BatchSession['status'] = failed > 0
+  const status: BuildTask['status'] = failed > 0
     ? 'failed'
     : total > 0 && doneCount >= total
       ? 'completed'
@@ -424,19 +421,19 @@ export const shapeBatchAPI = {
 
   startBatchProcess: async (
     draftId: NodeId,
-    batchConfig: BatchConfig,
+    buildConfig: ShapeBuildConfig,
     downloadTaskPayloads: FetchTaskPayload[],
     progressCallback?: (event: BatchProgressEvent) => void,
   ): Promise<NodeId> => {
-    if (!batchConfig?.dataSource) {
+    if (!buildConfig?.dataSourceName) {
       throw new Error('Data source is required to start batch processing');
     }
     // Prefer persisted draft config when provided to avoid stale zoom settings.
     const handler = getShapeEntityHandler();
     const draftLike = await handler.getEntity(draftId) as DraftLike;
-    const mergedBatchConfig = mergeBatchConfig({
-      ...(draftLike?.draftData?.batchConfig ?? {}),
-      ...batchConfig,
+    const mergedBatchConfig = mergeBuildConfig({
+      ...(draftLike?.draftData?.buildConfig ?? {}),
+      ...buildConfig,
     });
     const validation = validateBatchConfig(mergedBatchConfig);
     if (!validation.isValid) {
@@ -464,8 +461,8 @@ export const shapeBatchAPI = {
     activePipelines.add(pipelineKey);
     void runShapeVtPipeline({
       nodeId: nodeForSession,
-      dataSource: mergedBatchConfig.dataSource as DataSourceName,
-      batchConfig: mergedBatchConfig,
+      dataSource: mergedBatchConfig.dataSourceName,
+      buildConfig: mergedBatchConfig,
       selectedArrayByCountries: draftLike?.draftData?.selectedArrayByCountries,
       downloadTaskPayloads,
       waitIfPaused: () => waitIfPaused(nodeForSession),
@@ -537,19 +534,19 @@ export const shapeBatchAPI = {
         const handler = getShapeEntityHandler();
         const draftLike = await handler.getEntity(nodeId) as DraftLike | null;
         if (!draftLike) return;
-        const mergedBatchConfig = mergeBatchConfig({
-          ...(draftLike?.draftData?.batchConfig ?? {}),
-          ...(draftLike as { batchConfig?: BatchConfig }).batchConfig ?? {},
+        const mergedBuildConfig = mergeBuildConfig({
+          ...(draftLike?.draftData?.buildConfig ?? {}),
+          ...(draftLike as { buildConfig?: ShapeBuildConfig }).buildConfig ?? {},
         });
         const resolvedDataSource = requireDataSourceName(
-          mergedBatchConfig.dataSource,
+          mergedBuildConfig.dataSourceName,
           'resumeBatchSession',
         );
         activePipelines.add(pipelineKey);
         void runShapeVtPipeline({
           nodeId,
           dataSource: resolvedDataSource,
-          batchConfig: mergedBatchConfig,
+          buildConfig: mergedBuildConfig,
           selectedArrayByCountries: draftLike?.draftData?.selectedArrayByCountries,
           waitIfPaused: () => waitIfPaused(nodeId),
           resumeExistingTasks: true,
@@ -579,7 +576,7 @@ export const shapeBatchAPI = {
     if (vtTasks.length > 0) {
       const handler = getShapeEntityHandler();
       const entity = await handler.getEntity(nodeId);
-      const mergedConfig = mergeBatchConfig(entity?.batchConfig ?? DEFAULT_PROCESSING_CONFIG);
+      const mergedConfig = mergeBuildConfig(entity?.buildConfig ?? DEFAULT_BUILD_CONFIG);
       const config = buildBuildSessionConfig(mergedConfig, { draftData: entity ?? undefined });
       const summary = summarizeTaskQueue(vtTasks);
       const paused = getPauseState(nodeId).paused;
@@ -603,7 +600,7 @@ export const shapeBatchAPI = {
     return undefined;
   },
 
-  getBatchTasks: async (nodeId: NodeId): Promise<BatchTask[]> => {
+  getBatchTasks: async (nodeId: NodeId): Promise<BuildTask[]> => {
     const taskQueue = new VtTaskQueueDb();
     const vtTasks = await listTasks(taskQueue, nodeId);
     if (vtTasks.length > 0) {

@@ -14,30 +14,30 @@ import {
   FilterAlt,
   InfoOutlined as InfoOutlinedIcon,
 } from '@mui/icons-material';
-import type { BatchConfig } from '../../../common/types/index.js';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { useTranslation } from '../../i18n.js';
-import { useExtract1ConfigSection } from '../../hooks/useExtractionConfigSection.js';
+import { useTransformByBandConfigSection } from './useTransformByBandConfigSection.ts';
 import { AreaFilterPanel } from '../processing/AreaFilterPanel.js';
 import { ExtractionPanel } from '../processing/ExtractionPanel.js';
+import type { ShapeBuildConfig } from '../../../common/types/index.js';
 
 type Props = {
-  config: BatchConfig;
+  config: ShapeBuildConfig;
   disabled?: boolean;
-  onChange: (next: BatchConfig) => void;
+  onChange: (next: ShapeBuildConfig) => void;
 };
 
-export const Extract1ConfigSection: React.FC<Props> = ({ config, disabled, onChange }) => {
+export const TransformByBandConfigSection: React.FC<Props> = ({ config, disabled, onChange }) => {
   const { t } = useTranslation();
   const {
     controlId,
-    baseExtract1Config,
+    baseTransformByBandConfig,
     baseHybridConfig,
     quickRejectLogMin,
     quickRejectLogMax,
     quickRejectLogValue,
     update,
-  } = useExtract1ConfigSection({ config, disabled, onChange });
+  } = useTransformByBandConfigSection({ config, disabled, onChange });
 
   return (
     <Accordion defaultExpanded>
@@ -65,14 +65,14 @@ export const Extract1ConfigSection: React.FC<Props> = ({ config, disabled, onCha
               <WorkerNumberConfigCard
                 icon={<FilterAlt fontSize="small" color="primary" />}
                 title={t('processing.filter.workersStage1', 'Transform Workers (Filtering)')}
-                value={baseExtract1Config.workers ?? 2}
+                value={baseTransformByBandConfig.concurrentProcesses ?? 2}
                 helperText={t('processing.filter.workersStage1Help', 'Parallel workers for transform filtering.')}
                 warningText={undefined}
-                onChange={(workers) =>
+                onChange={(concurrentProcesses) =>
                   update({
-                    extract1Config: {
-                      ...baseExtract1Config,
-                      workers,
+                    transformByBandConfig: {
+                      ...baseTransformByBandConfig,
+                      concurrentProcesses,
                     },
                   })
                 }
@@ -88,7 +88,7 @@ export const Extract1ConfigSection: React.FC<Props> = ({ config, disabled, onCha
               <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
                 <AreaFilterPanel
                   controlId={controlId}
-                  baseExtract1Config={baseExtract1Config}
+                  baseTransformByBandConfig={baseTransformByBandConfig}
                   baseHybridConfig={baseHybridConfig}
                   quickRejectLogMin={quickRejectLogMin}
                   quickRejectLogMax={quickRejectLogMax}
@@ -101,13 +101,13 @@ export const Extract1ConfigSection: React.FC<Props> = ({ config, disabled, onCha
             <Grid size={{ xs: 12, md: 4 }}>
               <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
                 <ExtractionPanel
-                  tolerance={baseExtract1Config.tolerance ?? 0.05}
+                  tolerance={baseTransformByBandConfig.tolerance ?? 0.05}
                   toleranceLabelKey="processing.filter.tolerancePrimary"
-                  onToleranceChange={(tolerance) =>
+                  onToleranceChange={(concurrentProcesses) =>
                     update({
-                      extract1Config: {
-                        ...baseExtract1Config,
-                        tolerance,
+                      transformByBandConfig: {
+                        ...baseTransformByBandConfig,
+                        concurrentProcesses,
                       },
                     })
                   }

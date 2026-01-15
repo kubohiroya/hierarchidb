@@ -1,3 +1,30 @@
+2205) refactor/types/streamline-build-types (P1) — 進行中 (2026-01-16)
+- ブランチ名: refactor/types/streamline-build-types
+- 依存: なし
+- 受け入れ基準: BuildConfig/TaskQueueRecord/StageHandeler の重複定義が上流（packages/common/types）に統合される／上流・下流で不一致の型は合成した新定義で整合する／下流側は上流定義を参照する／pnpm typecheck が通る／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/common/types/src/*`, `packages/features/gis-sdk/src/*`, `packages/vt-orchestrator/src/*`, `plugins/shape-plugin/src/*`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、型定義と参照を修正前に戻す
+- チェックリスト:
+  - BuildConfig/TaskQueueRecord/StageHandeler の重複箇所を特定する
+  - 上流定義を正とし必要なら合成した型を再定義する
+  - 下流側の参照を上流へ切り替える
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-16 08:55 JST BuildConfig/TaskQueueRecord/StageHandeler の重複整理に着手。
+  - update: 2026-01-16 09:10 JST TransformByBandConfig/TransformByZoomConfig の統合対応を追加。
+  - blocked: 2026-01-15 08:22 JST pnpm typecheck が shape-plugin の getNumCaches と TransformByBand/Zoom/VTConfig の型不整合、dataSourceName の未定義で失敗。
+  - blocked: 2026-01-15 08:24 JST pnpm typecheck が shapeVtPipeline の context 名不一致と BuildConfig の必須項目未設定で失敗。
+  - blocked: 2026-01-15 08:25 JST pnpm typecheck が shapeVtPipeline の maxBand3Reservations 未定義で失敗。
+  - blocked: 2026-01-15 08:26 JST pnpm typecheck が app の buildConfig 参照不整合で失敗。
+  - update: 2026-01-15 08:26 JST common-types/gis-sdk/plugin-service-api/vt-orchestrator を build し、pnpm typecheck を再実行して成功。
+  - update: 2026-01-15 08:30 JST common-types へ寄せすぎ懸念のため、型の所属見直し調査に着手。
+  - update: 2026-01-15 08:41 JST BuildConfig は shape-plugin のみで利用、TransformByBand/Zoom/VTConfig は vt-orchestrator と shape-plugin が利用、TaskQueueRecord/StageHandler は route/shape/vt-orchestrator が利用することを確認。
+  - update: 2026-01-15 08:54 JST BaseBuildConfig/ShapeBuildConfig 分離の実装に着手。
+  - start: 2026-01-15 09:00 JST TransformByBand/TransformByZoom/VTConfig とフィルタ系の定義を gis-sdk へ移動する対応に着手。
+  - update: 2026-01-15 09:05 JST TransformByBand/TransformByZoom/VTConfig とフィルタ系を gis-sdk 定義へ移動し、common-types の定義と参照を整理。
+  - update: 2026-01-15 09:05 JST pnpm typecheck を実行し成功（exit 0）。
+
 2204) refactor/shape/stage-cache-naming-and-layout (P1) — 進行中 (2026-01-15)
 - ブランチ名: refactor/shape/stage-cache-naming-and-layout
 - 依存: なし
@@ -24,12 +51,16 @@
   - update: 2026-01-16 00:35 JST route-plugin の stage マップを transform-by-band/zoom に更新し、FetchConfigFormControls の enable 判定を整理。
   - update: 2026-01-16 00:45 JST pnpm typecheck を再実行し成功（exit 0）。警告: tsdown define オプションの警告が出力。
   - update: 2026-01-16 01:20 JST vt-shape-store から transform-by-band/zoom 中間データを排除し、ephemeral 側へ移行する対応に着手。
+  - blocked: 2026-01-16 02:10 JST pnpm typecheck で vt-orchestrator build:types が @hierarchidb/shape-store 未解決と buildTransformByBandCacheRecordId 未export により失敗。
+  - update: 2026-01-16 02:20 JST vt-orchestrator の transform cache id を直書きに切替え、tsconfig の paths/baseUrl を base 設定へ戻す対応を実施。
+  - update: 2026-01-16 02:25 JST pnpm --filter @hierarchidb/plugin-service-api build を実行（成功、tsdown define 警告あり）。
+  - update: 2026-01-16 02:40 JST pnpm typecheck を再実行し成功（exit 0）。警告: tsdown define オプションの警告が出力。
 
 2203) fix/shape/step4-5-build-progress-ui (P1) — 進行中 (2026-01-15)
 - ブランチ名: fix/shape/step4-5-build-progress-ui
 - 依存: なし
 - 受け入れ基準: Step4 の削除ボタンが削除可能データの有無に応じて有効化され件数ラベルが実データと一致する／Step5 のステージ別チップは 0 件時に outlined + grey + 無反応になる／Step5 のステージ別進捗表示が固定の LinearProgress ではなくステージごとの SVG+LinearProgress 表示になる／transform invalid polygon のメッセージが extract1/2 の段階と error/total の feature/polygon 数を含む／pnpm typecheck が通る／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/useFetchConfigSection.ts`, `plugins/shape-plugin/src/ui/components/step5/*`, `packages/components/src/BuildStepStagePanel.tsx`, `packages/components/src/BuildStepPanel.tsx`, `packages/vt-orchestrator/src/transform/transformStage.ts`（調査結果に応じて）
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/useFetchConfigSection.ts`, `plugins/shape-plugin/src/ui/components/step5/*`, `packages/components/src/BuildStepStagePanel.tsx`, `packages/components/src/BuildStepPanel.tsx`, `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`（調査結果に応じて）
 - ロールバック手順: 該当差分を revert し、Step4/Step5 の削除ボタン・進捗表示・transform メッセージを修正前に戻す
 - チェックリスト:
   - Step4 の削除ボタン判定と件数ラベルを実データ基準に修正する
@@ -89,7 +120,29 @@
   - update: 2026-01-15 17:45 JST pnpm typecheck を実行し成功（exit 0）。警告: tsdown define オプションの警告が出力されたが typecheck 自体は通過。
   - update: 2026-01-15 18:10 JST Step5 の buildStatus 判定フローと paused 復帰時の running 表示原因をコード調査。
   - update: 2026-01-15 18:30 JST Step5 の running/paused 判定を processingStatus 単一ソースに統一し、タスク/進捗由来の状態推定を撤廃。検証: 未実施。
+  - update: 2026-01-16 03:20 JST Step5 でビルド開始後に fetch が進捗しない/自動で paused になる事象の調査に着手。
+  - update: 2026-01-16 03:40 JST Step5 の pause 処理が依存変更時の cleanup で発火していたため、unmount 時のみ発火するよう ref 管理へ変更。
+  - update: 2026-01-16 03:45 JST pnpm typecheck を実行し成功（exit 0）。警告: tsdown define オプションの警告が出力。
   - update: 2026-01-15 18:50 JST pnpm typecheck を実行し成功（exit 0）。警告: tsdown define オプションの警告が出力されたが typecheck 自体は通過。
+  - start: 2026-01-16 04:10 JST Step5 の非実行ステージの indeterminate 表示とタスクリストの Skeleton フラッシュ修正に着手。
+  - blocked: 2026-01-16 04:18 JST pnpm typecheck がタイムアウトで失敗（exit 124）。
+  - update: 2026-01-16 04:22 JST pnpm typecheck を再実行し成功（exit 0）。警告: tsdown define オプションの警告が出力。
+
+2201) refactor/gis-sdk/build-types-dedupe (P1) — 進行中 (2026-01-15)
+- ブランチ名: refactor/gis-sdk/build-types-dedupe
+- 依存: なし
+- 受け入れ基準: `packages/features/gis-sdk/src/types/_BuildConfig.ts` と `packages/features/gis-sdk/src/types/types.ts` の重複型が整理される／公開 export が明確になり既存参照が壊れない／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/gis-sdk/src/types/_BuildConfig.ts`, `packages/features/gis-sdk/src/types/types.ts`（調査結果に応じて）
+- ロールバック手順: 該当差分を revert し、型定義を修正前に戻す
+- チェックリスト:
+  - 重複している型を特定する
+  - 片方へ集約し export を整理する
+  - 参照箇所を更新する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-15 00:20 JST gis-sdk の BuildConfig/types 重複整理に着手。
+  - update: 2026-01-15 00:30 JST BuildConfig の FeatureFilter/Hyrbid 型を processing 由来に統一し、types.ts は BuildConfig を再利用。検証: 未実施。
+  - update: 2026-01-15 00:35 JST types/BuildConfig 内の再エクスポートを撤去し、types.ts の再エクスポートも削除。検証: 未実施。
 
 2200) fix/shape-store/build-session-metadata-import (P1) — 進行中 (2026-01-15)
 - ブランチ名: fix/shape-store/build-session-metadata-import
@@ -573,7 +626,7 @@
 - ブランチ名: fix/shape/transform-error-message-compact
 - 依存: なし
 - 受け入れ基準: transform の失敗メッセージが features/polygons/missingGeometry のみになる／余分な識別子が出ない／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/vt-orchestrator/src/transform/transformStage.ts`（調査結果に応じて）
+- 影響範囲: `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`（調査結果に応じて）
 - ロールバック手順: 該当差分を revert し、従来のメッセージへ戻す
 - チェックリスト:
   - 失敗メッセージから band/admin/source を削除する
@@ -627,7 +680,7 @@
 - ブランチ名: fix/shape/step5-error-visibility-and-vt-status
 - 依存: なし
 - 受け入れ基準: 失敗タスクの message が詳細な原因を含む／失敗タスクのタイトルに国名が表示される／ペインヘッダに失敗数が明示され、不要な PlayCircle が表示されない／vt ステージ 0/0 の場合に全体進捗が Ready にならない／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/vt-orchestrator/src/transform/transformStage.ts`, `plugins/shape-plugin/src/services/vt/shapeVtPipeline.ts`, `packages/ui/lru-splitview/src/components/PaneHeader.tsx`, `plugins/shape-plugin/src/ui/hooks/useShapeBuildStep.ts`（調査結果に応じて）
+- 影響範囲: `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`, `plugins/shape-plugin/src/services/vt/shapeVtPipeline.ts`, `packages/ui/lru-splitview/src/components/PaneHeader.tsx`, `plugins/shape-plugin/src/ui/hooks/useShapeBuildStep.ts`（調査結果に応じて）
 - ロールバック手順: 該当差分を revert し、従来の表示/進捗判定へ戻す
 - チェックリスト:
   - transform の失敗メッセージに feature 数/簡易化結果を含める
@@ -1722,7 +1775,7 @@
   - update: 2026-01-12 09:45 JST stage1Buffers の命名をスキーマ/保存単位/識別キー観点で追記する作業に着手。検証: 未実施。
   - update: 2026-01-12 09:55 JST stage1Buffers の共通スキーマと domainType/sourceKey を明記し、shape/route での値の例を追記。検証: 未実施。
   - update: 2026-01-12 10:10 JST vt パイプライン3ドキュメントを通読し、不備・不足の補強に着手。検証: 未実施。
-  - update: 2026-01-12 10:25 JST 用語/責務/タスクpayload/入出力/ストア分担/中間ストア寿命/簡略化/BuildConfig を追記し、shape/route差分へタスク単位と band3 条件を補強。検証: 未実施。
+  - update: 2026-01-12 10:25 JST 用語/責務/タスクpayload/入出力/ストア分担/中間ストア寿命/簡略化/ObsolateBuildConfig を追記し、shape/route差分へタスク単位と band3 条件を補強。検証: 未実施。
   - update: 2026-01-12 10:35 JST extract ステージ名を transform に統一する作業に着手。検証: 未実施。
   - update: 2026-01-12 10:45 JST transform ステージ名の統一を共通/差分ドキュメントへ反映。検証: 未実施。
   - update: 2026-01-12 10:55 JST パッケージ責務と旧実装の移行対応表の補強に着手。検証: 未実施。
@@ -1736,7 +1789,7 @@
   - update: 2026-01-12 12:35 JST fetchDispatcher のI/Fと plugin接続点の明文化に着手。検証: 未実施。
   - update: 2026-01-12 12:45 JST fetchDispatcher のI/F（FetchContext/FetchResult/Dispatcher）を追記し、shape/route 側の接続点を明記。検証: 未実施。
   - update: 2026-01-12 13:00 JST route の band3 判定手順と依存データの具体化に着手。検証: 未実施。
-  - update: 2026-01-12 13:10 JST route の band3 判定手順（入力/手順/出力）を追記し、BuildConfig に保存する方針を明記。検証: 未実施。
+  - update: 2026-01-12 13:10 JST route の band3 判定手順（入力/手順/出力）を追記し、ObsolateBuildConfig に保存する方針を明記。検証: 未実施。
   - update: 2026-01-12 13:20 JST route band3 判定を shape 依存のみに修正する作業に着手。検証: 未実施。
   - update: 2026-01-12 13:25 JST route band3 判定を shape band3 のみに変更し、意図（タイル跨ぎの LineString 抽出一致）を注記。検証: 未実施。
   - update: 2026-01-12 13:40 JST route transform のタイル跨ぎ LineString 仕様を明文化する作業に着手。検証: 未実施。
@@ -3548,7 +3601,7 @@
 - ブランチ名: fix/shape-plugin/typecheck-batch-and-tiles
 - 依存: なし
 - 受け入れ基準: shape-plugin の typecheck エラー（BatchTaskBase/zoomRanges/GeoJSON/NodeId/VectorTileDB2Procedure）を解消する／挙動は維持する／抽象化や Record キャストの追加をしない／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
-- 影響範囲: `plugins/shape-plugin/src/services/batch/BatchSessionManager.ts`, `plugins/shape-plugin/src/common/types/batch.ts`, `plugins/shape-plugin/src/services/batch/session/extract2/zoomRanges.ts`, `plugins/shape-plugin/src/services/batch/session/stages/vectortile/buildVectorTileStageInputs.ts`, `plugins/shape-plugin/src/services/batch/session/tiles/assembleTileGeoJSON.ts`, `plugins/shape-plugin/src/services/batch/ShapeBuildAPIClient.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/VectorTileDB2Procedure.ts`, `plugins/shape-plugin/src/ui/components/steps/VTConfigSection.tsx`, `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/package.json`
+- 影響範囲: `plugins/shape-plugin/src/services/batch/BatchSessionManager.ts`, `plugins/shape-plugin/src/common/types/build.ts`, `plugins/shape-plugin/src/services/batch/session/extract2/zoomRanges.ts`, `plugins/shape-plugin/src/services/batch/session/stages/vectortile/buildVectorTileStageInputs.ts`, `plugins/shape-plugin/src/services/batch/session/tiles/assembleTileGeoJSON.ts`, `plugins/shape-plugin/src/services/batch/ShapeBuildAPIClient.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/VectorTileDB2Procedure.ts`, `plugins/shape-plugin/src/ui/components/steps/VTConfigSection.tsx`, `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/package.json`
 - ロールバック手順: 上記ファイルの差分を revert する
 - チェックリスト:
   - BatchTaskBase の stage/type を埋める
@@ -3763,7 +3816,7 @@
 - ExecPlan: plans/vector-tiles-chunkstore-input-formats-execplan.md
 - 受け入れ基準: shape/location/route のベクトルタイル生成で chunk-store の素材保存形式を geojson/geojson+gzip/flatgeobuf/flatgeobuf+gzip から選べる／保存と読み出しが形式ごとに動作する／既存の geojson 既定動作が維持される／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
 - 要点：runtime-worker の chunk-store 入力に inputFormat/inputCompression を追加し gzip 圧縮/解凍を実装。gis-sdk に FlatGeobuf エンコードを追加し、shape/location/route の入力生成と config 配線を更新。RouteVectorTileService は writeVectorTileInput 経由で chunk-store 書き込みを共通化。
-- 影響範囲：`packages/runtime-worker/src/services/vectorTileStageRunner.ts`, `packages/runtime-worker/src/services/StageProcessingService.ts`, `packages/runtime-worker/src/types.ts`, `packages/features/gis-sdk/src/vectorTiles.ts`, `packages/features/gis-sdk/src/index.ts`, `packages/plugin-service-api/src/types/shapeBuildTypes.ts`, `plugins/shape-plugin/src/common/types/BatchConfig.ts`, `plugins/shape-plugin/src/services/batch/session/tiles/vectorTileTasks.ts`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `packages/features/location-store/src/index.ts`, `plugins/location-plugin/src/services/batch/LocationSessionController.ts`, `plugins/location-plugin/package.json`, `packages/features/route-store/src/index.ts`, `plugins/route-plugin/src/services/RouteBatchSession.ts`, `plugins/route-plugin/src/services/RouteVectorTileService.ts`, `plugins/route-plugin/package.json`, `vitest.setup.base.ts`。
+- 影響範囲：`packages/runtime-worker/src/services/vectorTileStageRunner.ts`, `packages/runtime-worker/src/services/StageProcessingService.ts`, `packages/runtime-worker/src/types.ts`, `packages/features/gis-sdk/src/vectorTiles.ts`, `packages/features/gis-sdk/src/index.ts`, `packages/plugin-service-api/src/types/shapeBuildTypes.ts`, `plugins/shape-plugin/src/common/types/ObsolateBuildConfig.ts`, `plugins/shape-plugin/src/services/batch/session/tiles/vectorTileTasks.ts`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `packages/features/location-store/src/index.ts`, `plugins/location-plugin/src/services/batch/LocationSessionController.ts`, `plugins/location-plugin/package.json`, `packages/features/route-store/src/index.ts`, `plugins/route-plugin/src/services/RouteBatchSession.ts`, `plugins/route-plugin/src/services/RouteVectorTileService.ts`, `plugins/route-plugin/package.json`, `vitest.setup.base.ts`。
 - 検証：未実施（手動/自動テスト未実行）。
 - ロールバック手順：上記ファイルの差分を revert し、chunk-store 入力を JSON のみに戻す。route は DexieChunkStore 直接書き込みへ戻し、inputFormat/inputCompression の追加型定義を削除する。
 - チェックリスト:

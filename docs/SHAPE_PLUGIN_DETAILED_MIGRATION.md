@@ -31,7 +31,7 @@ export interface ShapeEntity extends FolderEntity {
   selectedCountries: string[];      // 選択国家
   selectedAdminLevels: number[];    // 行政区画レベル
   licenseAgreement: boolean;        // ライセンス同意
-  batchConfig?: BatchConfig;        // バッチ処理設定
+  batchConfig?: ObsolateBuildConfig;        // バッチ処理設定
 }
 ```
 

@@ -2,7 +2,7 @@ import type { FetchWorkerAPI, TransformWorkerAPI, VectorTileProgress, VTWorkerAP
 import {
   generateVectorTilesFromFgbBuffer,
   generateVectorTilesFromJsonBuffer,
-  type VectorTileGenerateConfig,
+  type VTGenerateConfig,
   type VectorTileRow,
 } from '@hierarchidb/gis-sdk';
 import { storeRegistry } from '../entity/store-registry.js';
@@ -322,7 +322,7 @@ class RealVTWorker implements VTWorkerAPI {
         ?? (inputBufferId.includes('-extract2-')
           ? inputBufferId.substring(0, inputBufferId.lastIndexOf('-extract2-'))
           : inputBufferId)) as NodeId;
-      const sdkConfig: VectorTileGenerateConfig = {
+      const sdkConfig: VTGenerateConfig = {
         buffer: config.buffer,
         minZoom: config.minZoom,
         maxZoom: config.maxZoom,

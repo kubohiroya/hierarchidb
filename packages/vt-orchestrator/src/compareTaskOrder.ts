@@ -1,25 +1,5 @@
-import type { TaskQueueRecord, TaskStage, TaskStatus, VtTaskQueueDb } from './task/taskQueue.js';
-import { listTasksByStage, updateTask } from './task/taskQueue.js';
-
-export type StageHandlerResult<TOutput = unknown> = {
-  status?: TaskStatus;
-  message?: string;
-  progress?: number;
-  outputData?: TOutput;
-  errorMessage?: string;
-};
-
-export type StageHandler<TInput = unknown, TOutput = unknown> = (
-  task: TaskQueueRecord<TInput, TOutput>
-) => Promise<StageHandlerResult<TOutput>>;
-
-export interface RunStageOptions<TInput = unknown, TOutput = unknown> {
-  db: VtTaskQueueDb;
-  nodeId: TaskQueueRecord['nodeId'];
-  stage: TaskStage;
-  handler: StageHandler<TInput, TOutput>;
-  waitIfPaused?: () => Promise<void>;
-}
+import { listTasksByStage, updateTask, VtTaskQueueDb } from './task/taskQueue.js';
+import type { RunStageOptions, TaskQueueRecord } from './types/types.js';
 
 const compareTaskOrder = (a: TaskQueueRecord, b: TaskQueueRecord): number => {
   const pa = a.stagePriority ?? 0;
@@ -31,7 +11,8 @@ const compareTaskOrder = (a: TaskQueueRecord, b: TaskQueueRecord): number => {
 export async function runStageTasks<TInput = unknown, TOutput = unknown>(
   options: RunStageOptions<TInput, TOutput>
 ): Promise<void> {
-  const { db, nodeId, stage, handler, waitIfPaused } = options;
+  const { nodeId, stage, handler, waitIfPaused } = options;
+  const db = new VtTaskQueueDb();
   const tasks = await listTasksByStage(db, nodeId, stage);
   const pending = tasks.filter((task) => task.status === 'queued').sort(compareTaskOrder);
 

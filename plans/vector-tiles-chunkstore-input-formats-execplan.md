@@ -51,7 +51,7 @@ shape/location/route のベクトルタイル生成において、chunk-store �
 2) gis-sdk の `packages/features/gis-sdk/src/vectorTiles.ts` に FlatGeobuf エンコード関数を追加し、`packages/features/gis-sdk/src/index.ts` で export する。
 
 3) shape/location/route の入力生成を更新する。
-   - shape: `plugins/shape-plugin/src/common/types/BatchConfig.ts` と `plugins/shape-plugin/src/services/batch/session/tiles/vectorTileTasks.ts` に inputFormat/inputCompression を追加し、`RuntimeWorkerVectorTileAdapter` で `inputFormat` に応じて GeoJSON/FlatGeobuf を生成する。
+   - shape: `plugins/shape-plugin/src/common/types/ObsolateBuildConfig.ts` と `plugins/shape-plugin/src/services/batch/session/tiles/vectorTileTasks.ts` に inputFormat/inputCompression を追加し、`RuntimeWorkerVectorTileAdapter` で `inputFormat` に応じて GeoJSON/FlatGeobuf を生成する。
    - location: `packages/features/location-store/src/index.ts` の `LocationTileSettings` に inputFormat/inputCompression を追加し、`plugins/location-plugin/src/services/batch/LocationSessionController.ts` で inputFormat に応じたバッファ生成を行う。
    - route: `packages/features/route-store/src/index.ts` の `RouteProcessingConfig.vectorTiles` と `plugins/route-plugin/src/services/RouteVectorTileService.ts` / `RouteBatchSession.ts` に inputFormat/inputCompression を追加し、chunk-store 書き込みを `writeVectorTileInput` に集約する。
 

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useId } from 'react';
-import type { FetchConfig, BatchConfig, ShapeEntity } from '../../../common/types/index.js';
-import { DEFAULT_PROCESSING_CONFIG, mergeBatchConfig } from '../../../common/types/index.js';
+import type { ShapeEntity } from '../../../common/types/index.js';
+import { DEFAULT_BUILD_CONFIG, mergeBuildConfig } from '../../../common/types/index.js';
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
+import type { ShapeBuildConfig } from '../../../common/types/index.js';
 import { notify } from '@hierarchidb/components';
 import { useTranslation } from '../../i18n.js';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
@@ -14,11 +15,11 @@ import type { BuildTaskType } from '@hierarchidb/shape-store';
 import { ephemeralShapeAPIImpl, shapeMutationAPIImpl, shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
 
 type Args = {
-  config: BatchConfig;
+  config: ShapeBuildConfig;
   nodeId: NodeId;
   draft: Partial<ShapeEntity>;
   disabled?: boolean;
-  onChange: (next: BatchConfig) => void;
+  onChange: (next: ShapeBuildConfig) => void;
   onResetSession?: () => void;
 };
 
@@ -35,8 +36,7 @@ type CacheCounts = {
 export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChange, onResetSession }: Args) => {
   const { t } = useTranslation();
   const switchId = useId();
-  const baseFetchConfig: FetchConfig | undefined =
-    config.fetchConfig ?? DEFAULT_PROCESSING_CONFIG.fetchConfig;
+  const baseFetchConfig = config.fetchConfig ?? DEFAULT_BUILD_CONFIG.fetchConfig;
   const bridgeRef = useMemo(() => getWorkerBridge(), []);
 
   const [countsLoading, setCountsLoading] = useState(false);
@@ -99,8 +99,8 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
         numMetadata,
       ] = await Promise.all([
         shapeStore.fetchCache.where('[nodeId+domainType]').equals([nodeId, SHAPE_DOMAIN]).count(),
-        shapeStore.transformByBandCache.where('nodeId').equals(nodeId).count(),
-        shapeStore.transformByZoomCache.where('nodeId').equals(nodeId).count(),
+        ephemeralShapeAPIImpl.countTransformByBandCaches(nodeId),
+        ephemeralShapeAPIImpl.listTileIdRelations(nodeId).then((rows) => rows.length),
         ephemeralShapeAPIImpl.countVectorTiles(nodeId),
         shapeQueryAPIImpl.listVTMetadata(nodeId).then((rows) => rows.length),
         shapeQueryAPIImpl.listFeatureMetadata(nodeId).then((rows) => rows.length),
@@ -223,12 +223,9 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
 
   const handleDeleteTransformByBandCache = useCallback(async () => {
     await ephemeralShapeAPIImpl.clearStage(nodeId, 'transform-by-band');
+    await ephemeralShapeAPIImpl.clearStage(nodeId, 'transform-by-zoom');
     await clearBatchTasksForType('transform-by-band');
     await clearBatchTasksForType('transform-by-zoom');
-    const vtShapeDb = new VtShapeDb();
-    await vtShapeDb.transformByBandCache.where('nodeId').equals(nodeId).delete();
-    await vtShapeDb.transformByZoomCache.where('nodeId').equals(nodeId).delete();
-    await vtShapeDb.transformByZoomReservations.where('nodeId').equals(nodeId).delete();
     setBuildTasks((prev) => prev.filter((task) => task.stage !== 'transform-by-band' && task.stage !== 'transform-by-zoom'));
     setPersistedTasks((prev) => prev.filter((task) => task.stage !== 'transform-by-band' && task.stage !== 'transform-by-zoom'));
     await loadCounts();
@@ -238,9 +235,6 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
   const handleDeleteTransformByZoomCache = useCallback(async () => {
     await ephemeralShapeAPIImpl.clearStage(nodeId, 'transform-by-zoom');
     await clearBatchTasksForType('transform-by-zoom');
-    const vtShapeDb = new VtShapeDb();
-    await vtShapeDb.transformByZoomCache.where('nodeId').equals(nodeId).delete();
-    await vtShapeDb.transformByZoomReservations.where('nodeId').equals(nodeId).delete();
     setBuildTasks((prev) => prev.filter((task) => task.stage !== 'transform-by-zoom'));
     setPersistedTasks((prev) => prev.filter((task) => task.stage !== 'transform-by-zoom'));
     await loadCounts();
@@ -273,18 +267,18 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
     notify.success('Deleted metadata');
   }, [nodeId, loadCounts]);
 
-  const update = useCallback((partial: Partial<BatchConfig>) => {
-    onChange(mergeBatchConfig({ ...config, ...partial }));
+  const update = useCallback((partial: Partial<ShapeBuildConfig>) => {
+    onChange(mergeBuildConfig({ ...config, ...partial }));
   }, [config, onChange]);
 
   const handleResetDefaults = useCallback(() => {
-    const defaultDownloadConfig: FetchConfig = DEFAULT_PROCESSING_CONFIG.fetchConfig ?? { maxConcurrent: 2 };
-    onChange(mergeBatchConfig({
-      ...DEFAULT_PROCESSING_CONFIG,
-      fetchConfig: defaultDownloadConfig,
-      dataSource: config.dataSource ?? DEFAULT_PROCESSING_CONFIG.dataSource,
+    const defaultFetchConfig = DEFAULT_BUILD_CONFIG.fetchConfig ?? { concurrentProcesses: 2 };
+    onChange(mergeBuildConfig({
+      ...DEFAULT_BUILD_CONFIG,
+      fetchConfig: defaultFetchConfig,
+      dataSourceName: config.dataSourceName ?? DEFAULT_BUILD_CONFIG.dataSourceName,
     }));
-  }, [config.dataSource, onChange]);
+  }, [config.dataSourceName, onChange]);
 
   if (!baseFetchConfig) {
     throw new Error('DownloadConfigSection: baseDownloadConfig is not defined');
@@ -293,7 +287,7 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
   return {
     t,
     switchId,
-    baseDownloadConfig: baseFetchConfig,
+    baseFetchConfig: baseFetchConfig,
     deleteFetchLabel,
     deleteTransformFilterLabel: deleteTransformByBandLabel,
     deleteTransformPreprocessLabel: deleteTransformByZoomLabel,

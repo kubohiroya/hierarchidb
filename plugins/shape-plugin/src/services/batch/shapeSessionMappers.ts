@@ -4,8 +4,7 @@ import type {
   ShapeVectorTileRecord,
 } from '@hierarchidb/plugin-service-api';
 import type { LayerInfo, ProcessingStage, ProgressInfo, ResourceUsage, StageStatus } from '../types.ts';
-import type { BuildSessionConfig } from '../../common/types/index.js';
-import type { BuildSessionRecord, VectorTileRecord } from '@hierarchidb/shape-store';
+import type { BuildSessionConfig, BuildSessionRecord, VectorTileRecord } from '@hierarchidb/shape-store';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;

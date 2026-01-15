@@ -1,24 +1,23 @@
 import type { Feature, FeatureCollection } from 'geojson';
 import type { NodeId, ISO2 } from '@hierarchidb/common-types';
 import { encodeFlatGeobufFromFeatureCollection } from '@hierarchidb/gis-sdk';
+import type { StageHandler, TaskQueueRecord } from '@hierarchidb/common-types';
+import type { ShapeBuildConfig } from '../../common/types/index.js';
 import {
-  type TaskQueueRecord,
-  VtTaskQueueDb,
+  type VtTaskQueueDb,
   listTasksByStage,
   putTasks,
   runStageTasks,
-  type StageHandler,
 } from '@hierarchidb/vt-orchestrator';
-import { VtShapeDb, getFetchCache, putFetchCache } from '@hierarchidb/vt-shape-store';
+import { type VtShapeDb, getFetchCache, putFetchCache } from '@hierarchidb/vt-shape-store';
 import type {
-  BatchConfig,
   CountryMetadata,
   DataSourceName,
   FetchTaskPayload,
   SelectedArrayByCountries,
   ShapeEntity,
 } from '../../common/types/index.js';
-import { DEFAULT_PROCESSING_CONFIG } from '../../common/types/constants.js';
+import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants.js';
 import { generateDownloadTaskPayloadsFromSelection } from '../utils/utils.js';
 import { metadataLoader } from '../metadata/MetadataLoader.js';
 import { DataSourceStrategyFactory } from '../datasources/DataSourceStrategyFactory.js';
@@ -47,7 +46,7 @@ export type ShapeFetchStageParams = {
   dataSource: DataSourceName;
   selectedArrayByCountries?: SelectedArrayByCountries;
   downloadTaskPayloads?: FetchTaskPayload[];
-  batchConfig: BatchConfig;
+  buildConfig: ShapeBuildConfig;
   taskQueue: VtTaskQueueDb;
   shapeStore: VtShapeDb;
   metadata?: CountryMetadata[];
@@ -55,15 +54,13 @@ export type ShapeFetchStageParams = {
   resumeExistingTasks?: boolean;
 };
 
-const buildRetryConfig = (config: BatchConfig): RetryConfig => {
-  const downloadConfig = config.fetchConfig ?? DEFAULT_PROCESSING_CONFIG.fetchConfig;
+const buildRetryConfig = (config: ShapeBuildConfig): RetryConfig => {
+  const downloadConfig = config.fetchConfig ?? DEFAULT_BUILD_CONFIG.fetchConfig;
   const retryAttempts = downloadConfig?.retryAttempts ?? 0;
   const retryDelay = downloadConfig?.retryDelay ?? 0;
-  const retryBackoff = downloadConfig?.retryBackoff ?? 'exponential';
   return {
     count: Math.max(1, retryAttempts + 1),
     delay: retryDelay,
-    backoff: retryBackoff === 'linear' ? 'linear' : 'exponential',
   };
 };
 
@@ -192,7 +189,7 @@ const buildFetchTasks = (
 
 const createFetchHandler = (params: {
   nodeId: NodeId;
-  batchConfig: BatchConfig;
+  buildConfig: ShapeBuildConfig;
   shapeStore: VtShapeDb;
   dataSource: DataSourceName;
 }): StageHandler<ShapeFetchTaskInput, ShapeFetchTaskOutput> => {
@@ -202,7 +199,7 @@ const createFetchHandler = (params: {
     throw new Error(`[shape-fetch] Unsupported data source: ${params.dataSource}`);
   }
   const strategy = factory.create(strategyId);
-  const retryConfig = buildRetryConfig(params.batchConfig);
+  const retryConfig = buildRetryConfig(params.buildConfig);
 
   return async (task) => {
     const input = task.inputData;
@@ -293,12 +290,11 @@ export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise
     await putTasks(params.taskQueue, tasks);
   }
   await runStageTasks({
-    db: params.taskQueue,
     nodeId: params.nodeId,
     stage: 'fetch',
     handler: createFetchHandler({
       nodeId: params.nodeId,
-      batchConfig: params.batchConfig,
+      buildConfig: params.buildConfig,
       shapeStore: params.shapeStore,
       dataSource: params.dataSource,
     }),

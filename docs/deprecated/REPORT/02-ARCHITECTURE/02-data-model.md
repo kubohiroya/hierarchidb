@@ -168,7 +168,7 @@ interface BatchSessionEntity extends EphemeralRelationalEntity {
   id: UUID;
   referencingNodeIds: NodeId[]; // N対N関係
   status: 'running' | 'paused' | 'completed';
-  config: BatchConfig;
+  config: ObsolateBuildConfig;
   createdAt: Timestamp;
   expiresAt: Timestamp;
 }

@@ -4,9 +4,9 @@ export {
   generateVectorTilesFromFgbBuffer,
   generateVectorTilesFromJsonBuffer,
   type FeatureCollectionLike,
-  type VectorTileGenerateConfig,
-  type VectorTileGenerateResult,
-  type VectorTileMetadataContext,
+  type VTGenerateConfig,
+  type VTGenerateResult,
+  type VTMetadataContext,
   type VectorTileProgress,
   type VectorTileRow,
 } from './vectorTiles.js';
@@ -59,5 +59,6 @@ export {
   type EphemeralStage,
   type FetchCacheRecord,
   type TransformByBandCacheRecord,
-  type VtCacheRecord,
+  type VTCacheRecord,
 } from './ephemeral/EphemeralGisDB.js';
+export * from './config.js';

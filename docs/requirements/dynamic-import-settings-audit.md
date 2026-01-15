@@ -15,7 +15,7 @@
 - `scripts/check-shims.mjs`
   - dist 参照など、factory 化後にパスが変わる箇所を検出する必要有り。
   - 要調査: Worker factory への移行後に shim が再生成されるかどうか。
-- `scripts/codemods/runner.ts`
+- `scripts/codemods/compareTaskOrder.ts`
   - 新しい codemod ランナー導入済み。今後 CI での dry-run を組み込みやすいように option を整備。
 
 ## その他設定

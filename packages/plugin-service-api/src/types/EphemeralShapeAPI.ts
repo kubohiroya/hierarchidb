@@ -35,7 +35,8 @@ export interface EphemeralShapeQueryAPI {
 
   getNumCaches(): Promise<{
     numFetchCaches: number;
-    numTransformCaches: number;
+    numTransformByBandCaches: number;
+    numTransformByZoomCaches: number;
     numVtCaches: number;
     numSessions: number;
     totalSize: number;

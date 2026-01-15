@@ -13,63 +13,21 @@ import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { Geometry } from 'geojson';
 import { VectorTileDbBase } from '@hierarchidb/vectortile-store';
+import type {
+  FeatureFilterMethod, FetchConfig,
+  HybridFilterConfig, TransformByBandConfig, TransformByZoomConfig, VTConfig } from '@hierarchidb/gis-sdk';
 type CacheEntryData = Record<string, unknown> | string | number | boolean | null;
 
 export type DataSourceName = 'naturalearth' | 'geoboundaries' | 'gadm' | 'openstreetmap';
-export type FeatureFilterMethod = 'bbox_only' | 'polygon_only' | 'hybrid' | 'none';
-
-export interface HybridFilterConfig {
-  quickRejectThreshold: number;
-  regularShapeMinRatio: number;
-  regularShapeMaxRatio: number;
-  simpleShapeVertexThreshold: number;
-  elongatedShapeCorrectionFactor: number;
-}
 
 export interface CommonSessionConfig {
   dataSource?: DataSourceName;
 }
 
-export interface FetchConfig {
-  concurrentDownloads: number;
-  deleteOnComplete?: boolean;
-  timeoutMs?: number;
-  retryAttempts?: number;
-  retryDelay?: number;
-}
-
-export interface Extract1Config {
-  concurrentProcesses: number;
-  enableFeatureFiltering: boolean;
-  featureAreaThreshold: number;
-  minVertexCountForAreaFilter: number;
-  aspectRatioThreshold: number;
-  featureFilterMethod: FeatureFilterMethod;
-  hybridFilterConfig?: HybridFilterConfig;
-  deleteOnComplete?: boolean;
-}
-
-export interface Extract2Config {
-  concurrentProcesses: number;
-  quantize: number;
-  extract: number;
-  tolerance: number;
-  enablePerFeatureExtraction: boolean;
-  deleteOnComplete?: boolean;
-}
-
-export interface VTConfig {
-  concurrentProcesses: number;
-  bufferSize?: number;
-  tileSize?: number;
-  tileExpandFactor?: number;
-  tileExpandMargin?: number;
-}
-
 export interface BuildSessionConfig extends CommonSessionConfig {
-  download: FetchConfig;
-  extract1: Extract1Config;
-  extract2: Extract2Config;
+  fetchConfig: FetchConfig;
+  transformByBandConfig: TransformByBandConfig;
+  transformByZoomConfig: TransformByZoomConfig;
   vectorTiles: VTConfig;
   concurrentDownloads?: number;
   concurrentProcesses?: number;
@@ -158,7 +116,7 @@ export interface BuildSessionRecord {
   expiresAt?: number;
 }
 
-export type DownloadTaskPayload = {
+export type FetchTaskPayload = {
   url?: string;
   dataSource?: DataSourceName;
   countryCode?: string;
@@ -180,13 +138,13 @@ export type DownloadTaskPayload = {
   retryDelay?: number;
 };
 
-export type DownloadTaskResult = {
+export type FetchTaskResult = {
   outputBufferId?: string;
   bytesWritten?: number;
   featureCount?: number;
 };
 
-export type Extract1TaskPayload = {
+export type TransformByBandTaskPayload = {
   inputBufferId?: string;
   sourceUrl?: string;
   featureId?: string;
@@ -203,13 +161,13 @@ export type Extract1TaskPayload = {
   countryName?: string;
 };
 
-export type Extract1TaskResult = {
+export type TransformByBandTaskResult = {
   outputBufferId?: string;
   featureCount?: number;
   extractionRatio?: number;
 };
 
-export type Extract2TaskPayload = {
+export type TransormByZoomTaskPayload = {
   inputBufferId?: string;
   sourceTaskId?: string;
   sourceUrl?: string;
@@ -231,14 +189,14 @@ export type Extract2TaskPayload = {
   tolerance?: number;
 };
 
-export type Extract2TaskResult = {
+export type TransformByZoomTaskResult = {
   outputBufferId?: string;
   featureCount?: number;
   extractionRatio?: number;
   retry?: number;
 };
 
-export type VectorTileTaskPayload = {
+export type VTTaskPayload = {
   inputBufferId: string;
   tileZ?: number;
   tileX?: number;
@@ -264,7 +222,7 @@ export type VectorTileTaskPayload = {
   };
 };
 
-export type VectorTileTaskResult = {
+export type VTTaskResult = {
   tileId: string;
   tileCount?: number;
   totalBytes?: number;
@@ -272,16 +230,16 @@ export type VectorTileTaskResult = {
 };
 
 export type ShapeBuildTaskPayload =
-  | DownloadTaskPayload
-  | Extract1TaskPayload
-  | Extract2TaskPayload
-  | VectorTileTaskPayload;
+  | FetchTaskPayload
+  | TransformByBandTaskPayload
+  | TransormByZoomTaskPayload
+  | VTTaskPayload;
 
 export type ShapeBuildTaskResult =
-  | DownloadTaskResult
-  | Extract1TaskResult
-  | Extract2TaskResult
-  | VectorTileTaskResult;
+  | FetchTaskResult
+  | TransformByBandTaskResult
+  | TransformByZoomTaskResult
+  | VTTaskResult;
 
 export interface BuildTaskRecord<TInput = ShapeBuildTaskPayload, TOutput = ShapeBuildTaskResult> {
   taskId: string;
@@ -578,7 +536,7 @@ export class ShapeDB extends VectorTileDbBase {
 }
 
 // Aligned alias for cross-plugin naming consistency.
-export { ShapeDB as ShapeDatabase };
+// export { ShapeDB as ShapeDatabase };
 
 // Singleton instance
 export const shapeDB = new ShapeDB();

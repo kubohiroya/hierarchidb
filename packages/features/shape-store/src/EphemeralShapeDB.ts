@@ -11,13 +11,20 @@ import {
 
 export type BuildSessionMetadata = BaseBuildSessionMetadata<BuildProcessConfig>;
 
+type DomainType = 'shape' | 'route';
+
 export type TransformByBandCacheRecord = {
   id: string;
   nodeId: NodeId;
+  bandId: number;
+  domainType: DomainType;
+  sourceKey: string;
   countryCode?: string;
   adminLevel?: number;
   data: ArrayBuffer;
   featureCount: number;
+  vertexCount: number;
+  polygonCount: number;
   extractionRatio: number;
   tolerance: number;
   timestamp: number;
@@ -29,9 +36,17 @@ export type TransformByZoomCacheRecord = {
   tileId: string;
   data: ArrayBuffer;
   size: number;
-  featureCount?: number;
+  featureCount: number;
+  extractionRatio: number;
   timestamp: number;
   contentType?: string;
+};
+
+export type TransformByZoomReservation = {
+  id: string;
+  nodeId: NodeId;
+  tileId: string;
+  createdAt: number;
 };
 
 export type GeojsonVtIndexRecord = {
@@ -62,15 +77,17 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig> {
   tileBuffers!: Table<TileBufferRecord, string>;
   tileIdToBufferRelations!: Table<TileIdToBufferRelation, string>;
   declare transformByBandCache: Table<TransformByBandCacheRecord, string>;
-  transformByZoomCache!: Table<TransformByZoomCacheRecord, string>;
+  declare transformByZoomCache: Table<TransformByZoomCacheRecord, string>;
+  transformByZoomReservations!: Table<TransformByZoomReservation, string>;
   geojsonVtIndexes!: Table<GeojsonVtIndexRecord, string>;
 
   constructor() {
     super(getDBName('shape-ephemeral'));
-    this.version(10).stores({
+    this.version(11).stores({
       fetchCache: '&id, nodeId, timestamp',
-      transformByBandCache: '&id, nodeId, countryCode, adminLevel, [nodeId+countryCode+adminLevel], timestamp',
+      transformByBandCache: '&id, nodeId, bandId, domainType, sourceKey, [nodeId+bandId], [nodeId+bandId+sourceKey], countryCode, adminLevel, [nodeId+countryCode+adminLevel], timestamp',
       transformByZoomCache: '&id, nodeId, tileId, [nodeId+tileId], timestamp',
+      transformByZoomReservations: '&id, nodeId, tileId, [nodeId+tileId], createdAt',
       vtCache: '&id, nodeId, [z+x+y], hash, timestamp',
       sessions: '&nodeId, status, stage, startTime',
       cache: '&key, type, lastAccessed, ttl',
@@ -94,6 +111,7 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig> {
     this.buildTasks = this.table('batchTasks');
     this.transformByBandCache = this.table('transformByBandCache');
     this.transformByZoomCache = this.table('transformByZoomCache');
+    this.transformByZoomReservations = this.table('transformByZoomReservations');
     this.geojsonVtIndexes = this.table('geojsonVtIndexes');
   }
 
@@ -105,6 +123,7 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig> {
     await this.buildTasks.where('nodeId').equals(nodeId).delete();
     await this.transformByBandCache.where('nodeId').equals(nodeId).delete();
     await this.transformByZoomCache.where('nodeId').equals(nodeId).delete();
+    await this.transformByZoomReservations.where('nodeId').equals(nodeId).delete();
     await this.geojsonVtIndexes.where('nodeId').equals(nodeId).delete();
   }
 
@@ -115,7 +134,7 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig> {
       case 'transform-by-band':
         return (await this.transformByBandCache.where('nodeId').equals(nodeId).count()) > 0;
       case 'transform-by-zoom':
-        return (await this.transformByZoomCache.where('nodeId').equals(nodeId).count()) > 0;
+        return (await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).count()) > 0;
       case 'vt':
         return (await this.vtCache.where('nodeId').equals(nodeId).count()) > 0;
       default:
@@ -128,6 +147,7 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig> {
       this.fetchCache,
       this.transformByBandCache,
       this.transformByZoomCache,
+      this.transformByZoomReservations,
       this.vtCache,
       this.sessions,
       this.featureBuffers,
@@ -147,11 +167,13 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig> {
           await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();
           await this.geojsonVtIndexes.where('nodeId').equals(nodeId).delete();
           await this.transformByZoomCache.where('nodeId').equals(nodeId).delete();
+          await this.transformByZoomReservations.where('nodeId').equals(nodeId).delete();
           break;
         case 'vt':
           await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();
           await this.geojsonVtIndexes.where('nodeId').equals(nodeId).delete();
           await this.transformByZoomCache.where('nodeId').equals(nodeId).delete();
+          await this.transformByZoomReservations.where('nodeId').equals(nodeId).delete();
           await this.vtCache.where('nodeId').equals(nodeId).delete();
           break;
         default:
@@ -171,6 +193,7 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig> {
     await this.buildTasks.clear();
     await this.transformByBandCache.clear();
     await this.transformByZoomCache.clear();
+    await this.transformByZoomReservations.clear();
     await this.geojsonVtIndexes.clear();
   }
 

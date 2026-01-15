@@ -1,6 +1,6 @@
 import { Box, Button, Stack, Typography } from '@mui/material';
 import type { ReactNode } from 'react';
-import { LoadingButton } from './LoadingButton.tsx';
+import { LoadingButton } from './LoadingButton.js';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import type { BuildStatus } from './BuildStepPanel.tsx';

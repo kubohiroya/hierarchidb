@@ -146,7 +146,7 @@
 - `packages/vt-orchestrator/src/vt/vtWorker.ts`
   - geojson-vt → vt-pbf → VTMutationAPI 保存
 - `packages/vt-orchestrator/src/types.ts`
-  - BuildConfig / TaskPayload / BandConfig
+  - ObsolateBuildConfig / TaskPayload / BandConfig
 
 ### shape-plugin / route-plugin
 
@@ -155,7 +155,7 @@
 - `plugins/shape-plugin/src/worker/`
   - 旧実装は削除対象（vt-orchestrator に移行）
 - `plugins/shape-plugin/src/services/build/shapeBuildConfig.ts`
-  - Step4 の入力を BuildConfig へ整形
+  - Step4 の入力を ObsolateBuildConfig へ整形
 - `plugins/shape-plugin/src/services/build/shapeBuildRunner.ts`
   - vt-orchestrator への委譲
 
@@ -164,7 +164,7 @@
 - `plugins/route-plugin/src/worker/`
   - 旧実装は削除対象（vt-orchestrator に移行）
 - `plugins/route-plugin/src/services/build/routeBuildConfig.ts`
-  - Step4 の入力を BuildConfig へ整形
+  - Step4 の入力を ObsolateBuildConfig へ整形
 - `plugins/route-plugin/src/services/build/routeBuildRunner.ts`
   - vt-orchestrator への委譲
 ## 旧実装 → 新実装 対応表
@@ -1320,7 +1320,7 @@ const buf = vtpbf.fromGeojsonVt({
   - admin レベルごとに線幅を設定し、ズームが上がるほど細くする
   - 指定色で描画できるようにする
 
-## BuildConfig（最小要件）
+## ObsolateBuildConfig（最小要件）
 
 - `nodeId`
 - `domainType`

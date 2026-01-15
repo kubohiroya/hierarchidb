@@ -52,17 +52,17 @@ export const useBatchSessionActions = ({
       return false;
     }
     const baseBatchConfig = {
-      ...(data?.batchConfig ?? {}),
-      ...(patch?.batchConfig ?? {}),
+      ...(data?.buildConfig ?? {}),
+      ...(patch?.buildConfig ?? {}),
     };
-    const resolvedDataSource = normalizeDataSourceName(baseBatchConfig.dataSource);
+    const resolvedDataSource = normalizeDataSourceName(baseBatchConfig.dataSourceName);
     const resolvedBatchConfig = resolvedDataSource
-      ? { ...baseBatchConfig, dataSource: resolvedDataSource }
+      ? { ...baseBatchConfig, dataSourceName: resolvedDataSource }
       : baseBatchConfig;
     try {
       console.debug(`${debugScope} saveDraftBeforeBatch:updateDraft`, {
         nodeId,
-        dataSource: resolvedDataSource ?? null,
+        dataSourceName: resolvedDataSource ?? null,
       });
       const api = workerClient.getAPI();
       const updater = await api.getTreeNodeUpdaterAPI();
@@ -76,7 +76,7 @@ export const useBatchSessionActions = ({
       });
       console.debug(`${debugScope} saveDraftBeforeBatch:complete`, {
         nodeId,
-        dataSource: resolvedDataSource ?? null,
+        dataSourceName: resolvedDataSource ?? null,
       });
       return true;
     } catch (error) {
@@ -113,7 +113,7 @@ export const useBatchSessionActions = ({
       notify.warning('NodeId is missing.');
       return null;
     }
-    const resolvedDataSource = normalizeDataSourceName(data?.batchConfig?.dataSource);
+    const resolvedDataSource = normalizeDataSourceName(data?.buildConfig?.dataSourceName);
     if (!resolvedDataSource) {
       notify.warning('Data source is missing.');
       return null;
@@ -129,7 +129,7 @@ export const useBatchSessionActions = ({
       resolvedDataSource,
       selectionRecord,
     ) as Promise<FetchTaskPayload[]>;
-  }, [data?.batchConfig?.dataSource, data?.selectedArrayByCountries, nodeId, workerClient]);
+  }, [data?.buildConfig?.dataSourceName, data?.selectedArrayByCountries, nodeId, workerClient]);
 
   const handleStartOrResume = useCallback(async (options?: { forceRestart?: boolean }): Promise<boolean> => {
     console.debug(`${debugScope} startOrResume:click`, {

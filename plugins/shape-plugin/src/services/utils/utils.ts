@@ -6,21 +6,19 @@
 import type {
   CountryMetadata,
   DataSourceName,
-  ShapeEntity,
-  BatchConfig,
-  FetchConfig,
-  TileBatchConfig,
+  // ShapeEntity,
   FetchTaskPayload,
   ShapeStepValidationResult,
-  SelectedArrayByCountries,
+  SelectedArrayByCountries
 } from '../../common/types/index.js';
-import { SHAPE_DATA_SOURCES, DEFAULT_PROCESSING_CONFIG } from '../../common/types/constants.js';
+import { SHAPE_DATA_SOURCES, DEFAULT_BUILD_CONFIG } from '../../common/types/constants.js';
 import { GEOBOUNDARIES_RELEASE_BASE_URL } from './geoboundariesEndpoints.js';
+import type { ShapeBuildConfig } from '../../common/types/index.js';
 
 const KNOWN_DATA_SOURCE_NAMES = new Set<DataSourceName>(
   SHAPE_DATA_SOURCES.map((source) => source.name),
 );
-
+/*
 const stripNil = <T extends object>(value?: T | null): Partial<T> => {
   if (!value) return {};
   return Object.fromEntries(
@@ -28,6 +26,7 @@ const stripNil = <T extends object>(value?: T | null): Partial<T> => {
       .filter(([, entryValue]) => entryValue !== null && entryValue !== undefined),
   ) as Partial<T>;
 };
+ */
 
 export function normalizeDataSourceName(value?: string | null): DataSourceName | undefined {
   if (typeof value !== 'string') return undefined;
@@ -66,19 +65,21 @@ export function resolveCountryCodeForDataSource(
   return candidate;
 }
 
+/*
+
 type ShapeDraft = {
   draftData: ShapeEntity;
 };
 
 export function createDraftFromEntity(entity: ShapeEntity): ShapeDraft {
   const normalizedDataSourceName =
-    normalizeDataSourceName(entity.batchConfig?.dataSource)
-    ?? entity.batchConfig?.dataSource;
+    normalizeDataSourceName(entity.buildConfig?.dataSource)
+    ?? entity.buildConfig?.dataSource;
   return {
     draftData: {
       ...entity,
-      batchConfig: {
-        ...entity.batchConfig,
+      buildConfig: {
+        ...entity.buildConfig,
         dataSource: normalizedDataSourceName,
       },
     },
@@ -88,46 +89,47 @@ export function createDraftFromEntity(entity: ShapeEntity): ShapeDraft {
 export function mapDraftToUpdates(draft: ShapeDraft): Partial<ShapeEntity> {
   const draftData = draft.draftData;
   const normalizedDataSourceName =
-    normalizeDataSourceName(draftData.batchConfig?.dataSource)
-    ?? draftData.batchConfig?.dataSource;
+    normalizeDataSourceName(draftData.buildConfig?.dataSource)
+    ?? draftData.buildConfig?.dataSource;
   return {
     ...draftData,
-    batchConfig: {
-      ...draftData.batchConfig,
+    buildConfig: {
+      ...draftData.buildConfig,
       dataSource: normalizedDataSourceName,
     },
   };
 }
+ */
 
 /**
  * Validate processing configuration
  */
-export function validateBatchConfig(config: Partial<BatchConfig>): ShapeStepValidationResult {
+export function validateBatchConfig(config: Partial<ShapeBuildConfig>): ShapeStepValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
-  const normalized = mergeBatchConfig(config);
-  const extract1Workers = normalized.extract1Config?.workers;
-  const extract2Workers = normalized.extract2Config?.workers;
+  const normalized = mergeBuildConfig(config);
+  const transformByBandConcurrentProcesses = normalized.transformByBandConfig?.concurrentProcesses;
+  const transformByZoomConcurrentProcesses = normalized.transformByZoomConfig?.concurrentProcesses;
 
-  const downloadConcurrency = normalized.fetchConfig?.maxConcurrent;
-  if (downloadConcurrency !== undefined) {
-    if (downloadConcurrency < 1 || downloadConcurrency > 4) {
+  const fetchConcurrency = normalized.fetchConfig?.concurrentDownloads;
+  if (fetchConcurrency !== undefined) {
+    if (fetchConcurrency < 1 || fetchConcurrency > 4) {
       errors.push('Concurrent downloads must be between 1 and 4');
     }
   }
 
-  if (extract1Workers !== undefined) {
-    if (extract1Workers < 1 || extract1Workers > 8) {
-      errors.push('Concurrent processes must be between 1 and 8');
+  if (transformByBandConcurrentProcesses !== undefined) {
+    if (transformByBandConcurrentProcesses < 1 || transformByBandConcurrentProcesses > 8) {
+      errors.push('Concurrent by-band processes must be between 1 and 8');
     }
   }
-  if (extract2Workers !== undefined) {
-    if (extract2Workers < 1 || extract2Workers > 8) {
-      errors.push('Concurrent processes must be between 1 and 8');
+  if (transformByZoomConcurrentProcesses !== undefined) {
+    if (transformByZoomConcurrentProcesses < 1 || transformByZoomConcurrentProcesses > 8) {
+      errors.push('Concurrent by-zoom processes must be between 1 and 8');
     }
   }
 
-  const areaThreshold = normalized.extract1Config?.areaThreshold;
+  const areaThreshold = normalized.transformByBandConfig?.featureAreaThreshold;
   if (areaThreshold !== undefined) {
     if (areaThreshold < 0 || areaThreshold > 10000) {
       errors.push('Feature area threshold must be between 0 and 10000');
@@ -317,64 +319,29 @@ function buildDataSourceUrl(
 /**
  * Merge processing config with defaults
  */
-export function mergeBatchConfig(config: Partial<BatchConfig>): BatchConfig {
-  const legacyExtraction = config.extractionConfig;
-  const migratedExtract1 = legacyExtraction ? stripNil({
-    workers: legacyExtraction.level1Workers,
-    tolerance: legacyExtraction.tolerance,
-    featureFilterMethod: legacyExtraction.featureFilterMethod,
-    areaThreshold: legacyExtraction.areaThreshold,
-    minVertexCountForAreaFilter: legacyExtraction.minVertexCountForAreaFilter,
-    aspectRatioThreshold: legacyExtraction.aspectRatioThreshold,
-    hybridFilterConfig: legacyExtraction.hybridFilterConfig,
-  }) : {};
-  const migratedExtract2 = legacyExtraction ? stripNil({
-    workers: legacyExtraction.level2Workers,
-    tolerance: legacyExtraction.tolerance,
-    quantize: legacyExtraction.quantize,
-    enablePerFeatureExtraction: legacyExtraction.enablePerFeatureExtraction,
-  }) : {};
-  const sanitizedDownloadConfig = stripNil(config.fetchConfig);
-  const sanitizedExtract1Config = stripNil(config.extract1Config);
-  const sanitizedExtract2Config = stripNil(config.extract2Config);
-  const sanitizedTileConfig = stripNil(config.tileConfig);
-  const sanitizedCleanupConfig = stripNil(config.cleanupConfig);
-
+export function mergeBuildConfig(config: Partial<ShapeBuildConfig>): ShapeBuildConfig {
   return {
-    dataSource: config.dataSource ?? DEFAULT_PROCESSING_CONFIG.dataSource,
+    dataSourceName: config.dataSourceName ?? DEFAULT_BUILD_CONFIG.dataSourceName,
     fetchConfig: {
-      ...(DEFAULT_PROCESSING_CONFIG.fetchConfig ?? { maxConcurrent: 2 }),
-      ...sanitizedDownloadConfig,
-    } as FetchConfig,
-    extract1Config: {
-      ...(DEFAULT_PROCESSING_CONFIG.extract1Config ?? {
-        workers: 2,
-        tolerance: 0.01,
-        featureFilterMethod: 'hybrid',
-        areaThreshold: 5,
-      }),
-      ...migratedExtract1,
-      ...sanitizedExtract1Config,
+      ...DEFAULT_BUILD_CONFIG.fetchConfig,
+      ...config.fetchConfig,
     },
-    extract2Config: {
-      ...(DEFAULT_PROCESSING_CONFIG.extract2Config ?? {
-        workers: 2,
-        tolerance: 0.01,
-      }),
-      ...migratedExtract2,
-      ...sanitizedExtract2Config,
+    transformByBandConfig: {
+      ...DEFAULT_BUILD_CONFIG.transformByBandConfig,
+      ...config.transformByBandConfig,
     },
-    tileConfig: {
-      ...(DEFAULT_PROCESSING_CONFIG.tileConfig ?? {
-        workers: 2,
-      }),
-      ...sanitizedTileConfig,
-    } as TileBatchConfig,
+    transformByZoomConfig: {
+      ...DEFAULT_BUILD_CONFIG.transformByZoomConfig,
+      ...config.transformByZoomConfig,
+    },
+    vtConfig: {
+      ...DEFAULT_BUILD_CONFIG.vtConfig,
+      ...config.vtConfig,
+    },
     cleanupConfig: {
-      ...(DEFAULT_PROCESSING_CONFIG.cleanupConfig ?? {}),
-      ...sanitizedCleanupConfig,
+      ...(DEFAULT_BUILD_CONFIG.cleanupConfig ?? {}),
+      ...(config.cleanupConfig ?? {}),
     },
-    source: config.source ?? DEFAULT_PROCESSING_CONFIG.source,
   };
 }
 

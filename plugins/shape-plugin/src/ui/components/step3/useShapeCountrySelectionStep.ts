@@ -118,20 +118,25 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
       ? (anyData as { batchConfig?: unknown }).batchConfig as Record<string, unknown> | undefined
       : undefined;
 
-    const dsFromEntity = typeof batchConfig?.dataSource === 'string' ? batchConfig.dataSource : undefined;
+    const buildConfig = (anyData && typeof anyData === 'object' && 'buildConfig' in anyData)
+      ? (anyData as { buildConfig?: unknown }).buildConfig as Record<string, unknown> | undefined
+      : undefined;
+
+    const dsFromEntity = typeof buildConfig?.dataSourceName === 'string' ? buildConfig.dataSourceName : undefined;
+    const dsFromBatch = typeof batchConfig?.dataSourceName === 'string' ? batchConfig.dataSourceName : undefined;
 
     const dsFromDraft = (() => {
-      const bc = draftData?.batchConfig;
+      const bc = draftData?.buildConfig;
       if (!bc || typeof bc !== 'object') return undefined;
-      const value = (bc as Record<string, unknown>).dataSource;
+      const value = (bc as Record<string, unknown>).dataSourceName;
       return typeof value === 'string' ? value : undefined;
     })();
 
-    const candidate = dsFromDraft ?? dsFromEntity;
+    const candidate = dsFromDraft ?? dsFromEntity ?? dsFromBatch;
     const normalized = normalizeDataSourceName(candidate);
     const hasBatchConfig =
       (batchConfig && typeof batchConfig === 'object')
-      || (draftData?.batchConfig && typeof draftData.batchConfig === 'object');
+      || (draftData?.buildConfig && typeof draftData.buildConfig === 'object');
 
     if (!normalized) {
       // Don't guess a data source (no implicit fallback to GADM).

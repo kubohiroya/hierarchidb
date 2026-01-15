@@ -14,7 +14,7 @@
             "description": "Geographic boundaries for all countries"
           },
           "draftData": {
-            "batchConfig": {
+            "buildConfig": {
               "dataSource": "geoboundaries"
             },
             "licenseAgreement": false,

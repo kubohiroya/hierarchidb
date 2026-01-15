@@ -64,14 +64,14 @@
 **手順**
 1. 同一親配下または子孫に shape ノードが存在し、band3（z9-z11）対応が有効かを判定する
 2. 1 が true の場合に `band3Enabled = true` とする
-3. `band3Enabled` を BuildConfig に保存し、transform/vt の実行条件に利用する
+3. `band3Enabled` を ObsolateBuildConfig に保存し、transform/vt の実行条件に利用する
 
 **注記**
 - LineString がタイル境界を跨ぐ場合でも、関連する shape が band3 を持つ前提で
   line の抽出/描画を一致させるため、shape 側の band3 のみで判定する
 
 **出力**
-- BuildConfig の `band3Enabled` フラグ
+- ObsolateBuildConfig の `band3Enabled` フラグ
 
 ## vt ステージ（route）
 
@@ -93,6 +93,6 @@
 ## route 固有のファイル補足
 
 - `plugins/route-plugin/src/services/build/routeBuildConfig.ts`
-  - Step4 の設定値から `BuildConfig` を組み立てる（入力仕様は `docs/vt-pipeline-design.md` を参照）
+  - Step4 の設定値から `ObsolateBuildConfig` を組み立てる（入力仕様は `docs/vt-pipeline-design.md` を参照）
 - `plugins/route-plugin/src/services/build/routeBuildRunner.ts`
   - vt-orchestrator の `runPipeline` を呼び出す

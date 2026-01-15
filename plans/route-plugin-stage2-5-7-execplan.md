@@ -14,7 +14,7 @@ Note: The broader route reorg direction (RouteEntity/RouteLineString, IDE-GSM in
 
 - [x] (2025-12-26 20:41 JST) ExecPlan created.
 - [ ] Stage 2 partially completed (2025-12-26 20:50 JST): StageProcessingService now uses EphemeralGisDB; remaining: adapter naming alignment and any SDK delegation gaps.
-- [ ] Stage 5 partially completed (2025-12-26 21:05 JST): BatchConfig aliases added for shape/location/route; remaining: finish naming alignment and update any remaining imports.
+- [ ] Stage 5 partially completed (2025-12-26 21:05 JST): ObsolateBuildConfig aliases added for shape/location/route; remaining: finish naming alignment and update any remaining imports.
 - [ ] Stage 7 partially completed (2025-12-26 21:25 JST): BaseBatchSessionManager hooks added and managers refactored; remaining: verify persistence coverage and adjust any remaining manager usage.
 - [ ] Validation completed and results recorded in TASKS.md.
 
@@ -47,7 +47,7 @@ Runtime-worker GIS processing lives in `packages/runtime-worker/src/services/Sta
 
 Shape, location, and route batch managers are implemented under `plugins/*-plugin/src/services/batch`. Each plugin uses `@hierarchidb/batch` (located in `packages/features/batch`) for `AbstractBatchSession`, but the shared base manager lives under `packages/batch-runtime-services`.
 
-Batch config/type naming is inconsistent: shape has `common/types/BatchConfig.ts`, location has `common/types/batch-types.ts`, and route embeds processing config in `RouteEntity` types. The goal is to align filenames and exports while preserving public API compatibility.
+Batch config/type naming is inconsistent: shape has `common/types/ObsolateBuildConfig.ts`, location has `common/types/batch-types.ts`, and route embeds processing config in `RouteEntity` types. The goal is to align filenames and exports while preserving public API compatibility.
 
 ## Plan of Work
 

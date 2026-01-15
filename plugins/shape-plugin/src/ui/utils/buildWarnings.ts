@@ -45,11 +45,11 @@ export const getStageConcurrencyWarning = (
 
 export const getBuildConfigSnapshot = (config?: {
   downloadConfig?: { maxConcurrent?: number };
-  extract1Config?: { workers?: number };
-  extract2Config?: { workers?: number };
+  transformByBandConfig?: { workers?: number };
+  transformByZoomConfig?: { workers?: number };
   tileConfig?: { workers?: number };
 }): ShapeBuildConfigSnapshot => ({
   downloadConcurrency: config?.downloadConfig?.maxConcurrent,
-  transformWorkers: config?.extract2Config?.workers ?? config?.extract1Config?.workers,
+  transformWorkers: config?.transformByZoomConfig?.workers ?? config?.transformByBandConfig?.workers,
   tileWorkers: config?.tileConfig?.workers,
 });

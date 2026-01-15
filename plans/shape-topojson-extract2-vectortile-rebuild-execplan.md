@@ -12,7 +12,7 @@ Rebuild the shape-plugin TopoJSON path so extract2 and vectortile follow a unifi
 
 - [x] (2026-01-04 15:35 JST) Review current TopoJSON/GeoJSON extract2 paths and the vectortile input builder to locate integration points.
 - [x] (2026-01-04 16:10 JST) Define the new zoom grouping rules (z0 world, z1–4 continent, z5–9 country) and map them to zoom range segments.
-- [x] (2026-01-04 16:10 JST) Add Step4 settings for tile expansion factor and margin, persist them in BatchConfig, and pass them into worker config.
+- [x] (2026-01-04 16:10 JST) Add Step4 settings for tile expansion factor and margin, persist them in ObsolateBuildConfig, and pass them into worker config.
 - [x] (2026-01-04 16:10 JST) Implement the new TopoJSON extract2 pipeline: group by region, build TopoJSON, simplify, write flatgeobuf buffers, and record tileId relations.
 - [x] (2026-01-04 16:10 JST) Update vectortile inputs to dedupe featureIds during tile assembly.
 - [ ] Update/extend tests and record verification in TASKS.md.
@@ -41,12 +41,12 @@ Rebuild the shape-plugin TopoJSON path so extract2 and vectortile follow a unifi
 
 ## Plan of Work
 
-Add two Step4 controls for tileBBox expansion factor and margin, storing them in `BatchConfig.tileConfig`. Pass those values into `BatchSessionConfig.vectorTiles` (worker config). Replace the current TopoJSON extract2 logic with a zoom-grouped aggregator that builds TopoJSON buffers per group (world/continent/country) based on zoom ranges and tileBBox intersection using the configured expansion settings. For each extract2 task, produce a flatgeobuf buffer, store it in extractedBuffers, and register tileId relations for the tiles that intersect. Update vectortile stage inputs to consume tileId relations and the corresponding buffers without relying on the previous z0 exception.
+Add two Step4 controls for tileBBox expansion factor and margin, storing them in `ObsolateBuildConfig.tileConfig`. Pass those values into `BatchSessionConfig.vectorTiles` (worker config). Replace the current TopoJSON extract2 logic with a zoom-grouped aggregator that builds TopoJSON buffers per group (world/continent/country) based on zoom ranges and tileBBox intersection using the configured expansion settings. For each extract2 task, produce a flatgeobuf buffer, store it in extractedBuffers, and register tileId relations for the tiles that intersect. Update vectortile stage inputs to consume tileId relations and the corresponding buffers without relying on the previous z0 exception.
 
 ## Concrete Steps
 
 1. Extend `TileBatchConfig` and related processing config with `tileExpandFactor` and `tileExpandMargin` (number values) and default values in `plugins/shape-plugin/src/common/types/constants.ts`.
-2. Update Step4 UI (`plugins/shape-plugin/src/ui/components/steps/VTConfigSection.tsx`) to expose sliders/inputs for expand factor and margin, and persist them to `BatchConfig.tileConfig`.
+2. Update Step4 UI (`plugins/shape-plugin/src/ui/components/steps/VTConfigSection.tsx`) to expose sliders/inputs for expand factor and margin, and persist them to `ObsolateBuildConfig.tileConfig`.
 3. Map these fields into worker config in `plugins/shape-plugin/src/worker/api.ts` so they reach `BatchSessionConfig.vectorTiles`.
 4. Implement a new TopoJSON extract2 path under `plugins/shape-plugin/src/services/batch/session/extract2/` that:
    - Builds zoom grouping rules (z0 / z1–4 / z5–9).
@@ -73,7 +73,7 @@ Add two Step4 controls for tileBBox expansion factor and margin, storing them in
 
 ## Interfaces and Dependencies
 
-- `BatchConfig.tileConfig` gains `tileExpandFactor` and `tileExpandMargin`.
+- `ObsolateBuildConfig.tileConfig` gains `tileExpandFactor` and `tileExpandMargin`.
 - `BatchSessionConfig.vectorTiles` carries these values for worker-side processing.
 - extract2 inputs carry zoom range metadata and per-task tolerance overrides.
 

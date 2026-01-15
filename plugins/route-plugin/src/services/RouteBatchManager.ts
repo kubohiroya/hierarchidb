@@ -10,7 +10,8 @@ import type { RouteGenerationConfig } from '../common/entities/RouteEntity.js';
 import type { RouteBatchConfig } from '../common/types/BatchConfig.js';
 import { RouteBatchSession, type RouteBatchTask } from './RouteBatchSession.js';
 import type { BatchProgressEvent } from '@hierarchidb/common-api';
-import { VtTaskQueueDb, putTasks, type TaskQueueRecord, type TaskStage } from '@hierarchidb/vt-orchestrator';
+import { VtTaskQueueDb, putTasks } from '@hierarchidb/vt-orchestrator';
+import type { TaskQueueRecord, TaskStage } from '@hierarchidb/common-types';
 
 export type ProgressUpdate = { jobId: string; progress: number; phase: string; ts: number };
 export type ProgressEmitter = { emit?: (event: ProgressUpdate) => void };

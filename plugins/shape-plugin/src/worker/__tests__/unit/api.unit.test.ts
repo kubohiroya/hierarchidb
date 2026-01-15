@@ -5,28 +5,28 @@
 import { describe, expect, it } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { BatchConfig } from '../../../common/types/index.js';
-import { DEFAULT_PROCESSING_CONFIG } from '../../../common/types/index.js';
+import { DEFAULT_BUILD_CONFIG } from '../../../common/types/index.js';
 import { shapeBatchAPI } from '../../api.js';
 
 const createBatchConfig = (
   overrides: Partial<BatchConfig> = {},
 ): BatchConfig => ({
-  ...DEFAULT_PROCESSING_CONFIG,
+  ...DEFAULT_BUILD_CONFIG,
   ...overrides,
   fetchConfig: {
-    ...DEFAULT_PROCESSING_CONFIG.fetchConfig,
+    ...DEFAULT_BUILD_CONFIG.fetchConfig,
     ...overrides.fetchConfig,
   },
   extractionConfig: {
-    ...DEFAULT_PROCESSING_CONFIG.extractionConfig,
+    ...DEFAULT_BUILD_CONFIG.extractionConfig,
     ...overrides.extractionConfig,
   },
-  tileConfig: {
-    ...DEFAULT_PROCESSING_CONFIG.tileConfig,
-    ...overrides.tileConfig,
+  vtConfig: {
+    ...DEFAULT_BUILD_CONFIG.tileConfig,
+    ...overrides.vtConfig,
   },
   cleanupConfig: {
-    ...DEFAULT_PROCESSING_CONFIG.cleanupConfig,
+    ...DEFAULT_BUILD_CONFIG.cleanupConfig,
     ...overrides.cleanupConfig,
   },
 });
@@ -118,7 +118,7 @@ describe('Shape Plugin API', () => {
       const draftId = 'node-123' as NodeId;
       const config = createBatchConfig({
         fetchConfig: {
-          ...DEFAULT_PROCESSING_CONFIG.fetchConfig,
+          ...DEFAULT_BUILD_CONFIG.fetchConfig,
           maxConcurrent: 20,
         },
       });

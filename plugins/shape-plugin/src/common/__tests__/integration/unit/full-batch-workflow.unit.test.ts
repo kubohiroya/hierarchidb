@@ -208,7 +208,7 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
       const testEntityWithInvalidConfig = {
         ...testEntity,
         batchConfig: {
-          ...testEntity.batchConfig,
+          ...testEntity.buildConfig,
           // Invalid configuration to trigger errors
           concurrentDownloads: -1,
         },

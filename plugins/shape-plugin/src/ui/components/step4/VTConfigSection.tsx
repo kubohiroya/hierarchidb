@@ -1,20 +1,21 @@
 import { Accordion, AccordionDetails, AccordionSummary, Box, Card, CardContent, Grid, Stack, Typography, Slider, Tooltip } from '@mui/material';
 import { Layers as LayersIcon, ExpandMore as ExpandMoreIcon, InfoOutlined as InfoOutlinedIcon } from '@mui/icons-material';
-import type { BatchConfig, ShapeEntity } from '../../../common/types/index.js';
+import type { ShapeEntity } from '../../../common/types/index.js';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { useTranslation } from '../../i18n.js';
-import { useTileConfigSection } from '../../hooks/useTileConfigSection.js';
+import { useVTConfigSection } from './useVTConfigSection.ts';
+import type { ShapeBuildConfig } from '../../../common/types/index.js';
 
 type Props = {
-  config: BatchConfig;
+  buildConfig: ShapeBuildConfig;
   draft?: Partial<ShapeEntity> | null;
   disabled?: boolean;
-  onChange: (next: BatchConfig) => void;
+  onChange: (next: ShapeBuildConfig) => void;
 };
 
-export const VTConfigSection: React.FC<Props> = ({ config, disabled, onChange }) => {
+export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChange }) => {
   const { t } = useTranslation();
-  const { baseTileConfig, update } = useTileConfigSection({ config, onChange });
+  const { update } = useVTConfigSection({ buildConfig, onChange });
 
   return (
     <Accordion defaultExpanded>
@@ -41,15 +42,15 @@ export const VTConfigSection: React.FC<Props> = ({ config, disabled, onChange })
             <WorkerNumberConfigCard
               icon={<LayersIcon fontSize="small" color="primary" />}
               title={t('processing.tile.workers', 'VT Worker Count')}
-              value={baseTileConfig.workers ?? 2}
+              value={buildConfig.vtConfig.concurrentProcesses ?? 2}
               helperText={t('processing.tile.workersHelp', 'Parallel workers for tile generation.')}
               warningText={undefined}
-              onChange={(workers) =>
+              onChange={(concurrentProcesses) =>
                 update({
-                  tileConfig: {
-                    ...baseTileConfig,
-                    workers,
-                  },
+                    vtConfig: {
+                      ...buildConfig.vtConfig,
+                      concurrentProcesses,
+                    },
                 })
               }
               min={1}
@@ -81,12 +82,12 @@ export const VTConfigSection: React.FC<Props> = ({ config, disabled, onChange })
             </Typography>
             <Box sx={{ px: 2 }}>
               <Slider
-                value={baseTileConfig.bufferSize ?? 256}
+                value={buildConfig.vtConfig.bufferSize ?? 256}
                 onChange={(_, value: number | number[]) => {
                   const bufferSize = value as number;
                   update({
-                    tileConfig: {
-                      ...baseTileConfig,
+                    vtConfig: {
+                      ...buildConfig.vtConfig,
                       bufferSize,
                     },
                   });
@@ -110,12 +111,12 @@ export const VTConfigSection: React.FC<Props> = ({ config, disabled, onChange })
             </Typography>
             <Box sx={{ px: 2 }}>
               <Slider
-                value={baseTileConfig.tileExpandFactor ?? 1}
+                value={buildConfig.vtConfig.tileExpandFactor ?? 1}
                 onChange={(_, value: number | number[]) => {
                   const tileExpandFactor = Number(value);
                   update({
-                    tileConfig: {
-                      ...baseTileConfig,
+                    vtConfig: {
+                      ...buildConfig.vtConfig,
                       tileExpandFactor,
                     },
                   });
@@ -144,12 +145,12 @@ export const VTConfigSection: React.FC<Props> = ({ config, disabled, onChange })
             </Typography>
             <Box sx={{ px: 2 }}>
               <Slider
-                value={baseTileConfig.tileExpandMargin ?? 0}
+                value={buildConfig.vtConfig.tileExpandMargin ?? 0}
                 onChange={(_, value: number | number[]) => {
                   const tileExpandMargin = Number(value);
                   update({
-                    tileConfig: {
-                      ...baseTileConfig,
+                    vtConfig: {
+                      ...buildConfig.vtConfig,
                       tileExpandMargin,
                     },
                   });

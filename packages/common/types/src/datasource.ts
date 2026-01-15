@@ -6,6 +6,8 @@ export type ISO2 = string;
 export type ISO3 = string;
 export type CountryCode = ISO2 | ISO3;
 
+export type DataSourceName = 'naturalearth' | 'geoboundaries' | 'gadm' | 'openstreetmap';
+
 /**
  * Base data source configuration
  * Common properties for all geographic data sources
@@ -42,7 +44,7 @@ export interface BaseDataSourceConfig {
 export interface ShapeDataSourceConfig extends BaseDataSourceConfig {
   type: 'shape';
   maxAdminLevel: number;
-  dataSourceName: 'naturalearth' | 'geoboundaries' | 'gadm' | 'openstreetmap';
+  dataSourceName: DataSourceName;
 }
 
 /**

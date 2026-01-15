@@ -7,8 +7,8 @@ import type {
 } from '../../common/types/ShapeEntity.ts';
 import {  summarizeCheckboxState,
   validateBatchConfig,
-  DEFAULT_PROCESSING_CONFIG,
-  mergeBatchConfig,
+  DEFAULT_BUILD_CONFIG,
+  mergeBuildConfig,
 } from '../../common/types/index.js';
 import {type NodeId, toNodeId } from '@hierarchidb/common-types';
 import { ShapeDataSourceStep } from './step2/ShapeDataSourceStep.tsx';
@@ -72,9 +72,9 @@ const resolveSelectedArrayByCountries = (data?: Partial<ShapeEntity>): SelectedA
 const canStartShapeBuild = (data?: Partial<ShapeEntity>): boolean => {
   // data reflects draftData (payload) only
   const hasSelection = summarizeCheckboxState(resolveSelectedArrayByCountries(data)).hasSelection;
-  const hasDataSource = Boolean(data?.batchConfig?.dataSource);
+  const hasDataSource = Boolean(data?.buildConfig?.dataSourceName);
   const processingValid = validateBatchConfig(
-    mergeBatchConfig(data?.batchConfig ?? DEFAULT_PROCESSING_CONFIG),
+    mergeBuildConfig(data?.buildConfig ?? DEFAULT_BUILD_CONFIG),
   ).isValid;
   return hasSelection && hasDataSource && processingValid;
 };
@@ -135,7 +135,7 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
         label: t('steps.dataSource.label', 'Data Source'),
         componentFactory: (props: ShapeStepProps) => <ShapeDataSource {...props} />,
         validate: (data?: Partial<ShapeEntity>) =>
-          Boolean(data?.batchConfig?.dataSource),
+          Boolean(data?.buildConfig?.dataSourceName),
       },
       {
         id: 'country-selection',
@@ -150,7 +150,7 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
         componentFactory: (props: ShapeStepProps) => <ShapeProcessing {...props} />,
         validate: (data?: Partial<ShapeEntity>) =>
           validateBatchConfig(
-            mergeBatchConfig(data?.batchConfig ?? DEFAULT_PROCESSING_CONFIG),
+            mergeBuildConfig(data?.buildConfig ?? DEFAULT_BUILD_CONFIG),
           ).isValid,
       },
       {

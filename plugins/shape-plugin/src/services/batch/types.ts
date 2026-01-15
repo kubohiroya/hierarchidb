@@ -2,7 +2,7 @@
  * Types specific to batch processing sessions
  */
 
-import type { BuildSessionConfig } from '../../common/types/BatchConfig.js';
+import type { BuildSessionConfig } from '@hierarchidb/shape-store';
 
 /**
  * Extended batch process configuration that includes worker settings
@@ -20,7 +20,7 @@ export interface BuildProcessConfig extends BuildSessionConfig {
   retryDelay?: number;
   maxMemoryPerWorker?: number;
 
-  // Extraction settings (if not already in BatchConfig)
+  // Extraction settings (if not already in ObsolateBuildConfig)
   extractTolerance?: number;
   minArea?: number;
   tileSize?: number;

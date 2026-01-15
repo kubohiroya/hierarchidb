@@ -2,25 +2,24 @@
  * Shape plugin constants
  */
 
-import type { DataSourceConfig, BatchConfig } from '../types/index.js';
+import type { DataSourceConfig } from './data-source.js';
 
-export const SHAPE_PLUGIN_ID = 'shape';
+import type { ShapeBuildConfig } from './build.js';
 
-export const DEFAULT_PROCESSING_CONFIG: BatchConfig = {
-  dataSource: 'naturalearth',
+export const DEFAULT_BUILD_CONFIG: ShapeBuildConfig = {
+  dataSourceName: 'geoboundaries',
   fetchConfig: {
-    maxConcurrent: 2,
-    retryLimit: 3,
-    retryBackoff: 'exponential',
+    concurrentDownloads: 2,
     timeoutMs: 300000,
     retryAttempts: 3,
     retryDelay: 1000,
+    deleteOnComplete: false,
   },
-  extract1Config: {
-    workers: 2,
-    tolerance: 0.01,
+  transformByBandConfig: {
+    concurrentProcesses: 2,
+    enableFeatureFiltering: true,
+    featureAreaThreshold: 1.0,
     featureFilterMethod: 'hybrid',
-    areaThreshold: 50,
     minVertexCountForAreaFilter: 10,
     aspectRatioThreshold: 5,
     hybridFilterConfig: {
@@ -30,48 +29,31 @@ export const DEFAULT_PROCESSING_CONFIG: BatchConfig = {
       simpleShapeVertexThreshold: 10,
       elongatedShapeCorrectionFactor: 1.3,
     },
+    tolerance: 1.0,
   },
-  extract2Config: {
-    workers: 2,
-    tolerance: 0.05,
-    quantize: 200000,
+  transformByZoomConfig: {
+    concurrentProcesses: 2,
+    quantize: 1,
+    tolerance: 1.0,
     enablePerFeatureExtraction: true,
-    extractionMode: 'geojson',
+    extract: 0,
   },
-  extractionConfig: {
-    featureFilterMethod: 'hybrid',
-    areaThreshold: 1,
-    minVertexCountForAreaFilter: 200,
-    aspectRatioThreshold: 5,
-    hybridFilterConfig: {
-      quickRejectThreshold: 0.002,
-      regularShapeMinRatio: 0.5,
-      regularShapeMaxRatio: 2.0,
-      simpleShapeVertexThreshold: 10,
-      elongatedShapeCorrectionFactor: 1.3,
-    },
-    level1Workers: 2,
-    level2Workers: 2,
-    tolerance: 0.01,
-    quantize: 200000,
-    enablePerFeatureExtraction: true,
-  },
-  tileConfig: {
-    workers: 4,
+  vtConfig: {
+    concurrentProcesses: 4,
     bufferSize: 256,
-    tileExpandFactor: 1,
-    tileExpandMargin: 0,
-  },
-  cleanupConfig: {
-    deleteDownloadedFiles: false,
-    deleteStage1Cache: false,
-    deleteStage2Cache: false,
-  },
+    boundaryDedupe: false,
+    tolerance: 1,
+    extent: 0,
+    indexMaxPoints: 0,
+    layerSetName: 'shape',
+    promoteId: 'id',
+  }
+
 } as const;
 
 export const SHAPE_DATA_SOURCES = [
   {
-    name: 'naturalearth',
+    name: 'naturalearth' as DataSourceConfig['name'],
     displayName: 'Natural Earth',
     description: 'Free vector and raster map data at 1:10m, 1:50m, and 1:110m scales',
     license: 'Public Domain',
@@ -80,10 +62,10 @@ export const SHAPE_DATA_SOURCES = [
     color: '#2E8B57',
     icon: '🌍',
     maxAdminLevel: 2,
-    countryCodeFormat: 'iso2',
+    //countryCodeFormat: 'iso2',
   },
   {
-    name: 'geoboundaries',
+    name: 'geoboundaries' as DataSourceConfig['name'],
     displayName: 'geoBoundaries',
     description: 'Open administrative boundaries for all countries',
     license: 'CC BY 4.0',
@@ -95,7 +77,7 @@ export const SHAPE_DATA_SOURCES = [
     countryCodeFormat: 'iso3',
   },
   {
-    name: 'gadm',
+    name: 'gadm' as DataSourceConfig['name'],
     displayName: 'GADM',
     description: 'Global Administrative Areas database',
     license: 'Custom (Academic Use)',
@@ -107,7 +89,7 @@ export const SHAPE_DATA_SOURCES = [
     countryCodeFormat: 'iso3',
   },
   {
-    name: 'openstreetmap',
+    name: 'openstreetmap' as DataSourceConfig['name'],
     displayName: 'OpenStreetMap',
     description: 'Community-driven geographic data',
     license: 'ODbL',
@@ -119,39 +101,3 @@ export const SHAPE_DATA_SOURCES = [
     countryCodeFormat: 'iso2',
   },
 ] as DataSourceConfig[];
-
-// Batch processing constants
-export const BATCH_CONSTANTS = {
-  MAX_CONCURRENT_DOWNLOADS: 10,
-  MAX_CONCURRENT_PROCESSES: 8,
-  DEFAULT_WORKER_POOL_SIZE: 4,
-  MAX_RETRY_ATTEMPTS: 3,
-  TASK_TIMEOUT_MS: 300000, // 5 minutes
-  SESSION_CLEANUP_INTERVAL_MS: 60000, // 1 minute
-  MAX_BATCH_TASKS: 1000,
-} as const;
-
-// File and storage constants
-export const STORAGE_CONSTANTS = {
-  MAX_FEATURE_BUFFER_SIZE: 50 * 1024 * 1024, // 50MB
-  MAX_TILE_CACHE_SIZE: 100 * 1024 * 1024, // 100MB
-  FEATURE_INDEX_CHUNK_SIZE: 10000,
-  VECTOR_TILE_COMPRESSION: 'gzip',
-  DEFAULT_TILE_SIZE: 256,
-} as const;
-
-// UI constants
-export const UI_CONSTANTS = {
-  DIALOG_MAX_WIDTH: 'lg',
-  STEPPER_STEPS: [
-    'Dataset Upload',
-    'Dataset Filter',
-    'Basic Information',
-    'Data Source',
-    'License Agreement',
-    'Processing Configuration',
-    'Country Selection',
-  ],
-  BATCH_MONITOR_REFRESH_INTERVAL: 1000,
-  PROGRESS_UPDATE_THROTTLE: 500,
-} as const;

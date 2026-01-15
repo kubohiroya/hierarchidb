@@ -295,8 +295,8 @@ export const useFolderLayers = ({
           }
 
           if (node.nodeType === 'shape') {
-            const data = node.data as { batchConfig?: { dataSource?: string } } | null;
-            const dataSourceName = data?.batchConfig?.dataSource;
+            const data = node.data as { buildConfig?: { dataSourceName?: string } } | null;
+            const dataSourceName = data?.buildConfig?.dataSourceName;
             const featureState = featureStateByStyleType.choropleth;
             const layerId = `resource-layer-${node.id}`;
             const sourceId = `resource-source-${node.id}`;

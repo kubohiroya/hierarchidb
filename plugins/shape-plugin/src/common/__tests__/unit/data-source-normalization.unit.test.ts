@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_PROCESSING_CONFIG } from '../../../common/types/constants.js';
+import { DEFAULT_BUILD_CONFIG } from '../../../common/types/constants.js';
 import {
   createDraftFromEntity,
   mapDraftToUpdates,
@@ -11,7 +11,7 @@ const baseEntity = (batchDataSource: string): ShapeEntity => ({
   nodeId: 'shape-node' as NodeId,
   licenseAgreement: false,
   batchConfig: {
-    ...DEFAULT_PROCESSING_CONFIG,
+    ...DEFAULT_BUILD_CONFIG,
     dataSource: batchDataSource as ShapeEntity['batchConfig']['dataSource'],
   },
   selectedArrayByCountries: {},
@@ -22,7 +22,7 @@ describe('data source normalization', () => {
   it('normalizes entity data sources when building working copies', () => {
     const entity = baseEntity('naturalearth');
     const draft = createDraftFromEntity(entity);
-    expect(draft.draftData.batchConfig?.dataSource).toBe('naturalearth');
+    expect(draft.draftData.buildConfig?.dataSource).toBe('naturalearth');
   });
 
   it('normalizes draft updates before persisting', () => {
@@ -32,12 +32,12 @@ describe('data source normalization', () => {
       draftData: {
         ...draft.draftData,
         batchConfig: {
-          ...draft.draftData.batchConfig,
+          ...draft.draftData.buildConfig,
           dataSource: 'naturalearth',
         },
       },
     } as typeof draft;
     const updates = mapDraftToUpdates(mutated);
-    expect(updates.batchConfig?.dataSource).toBe('naturalearth');
+    expect(updates.buildConfig?.dataSource).toBe('naturalearth');
   });
 });

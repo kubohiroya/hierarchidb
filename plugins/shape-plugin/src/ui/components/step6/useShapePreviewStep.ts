@@ -107,7 +107,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   }, []);
   const workerClient = workerClientHook ? workerClientHook() : null;
   const selectionMatrix = previewDraft.selectedArrayByCountries;
-  const selectionDataSource = normalizeDataSourceName(previewDraft.batchConfig?.dataSource);
+  const selectionDataSource = normalizeDataSourceName(previewDraft.buildConfig?.dataSourceName);
 
   useEffect(() => {
     let cancelled = false;

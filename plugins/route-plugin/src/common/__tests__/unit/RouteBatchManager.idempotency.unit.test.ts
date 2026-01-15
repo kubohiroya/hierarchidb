@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RouteBatchManager, type RouteBatchRouteInput } from '../../src/services/RouteBatchManager.js';
-import type { RouteBatchConfig } from '../../src/common/types/BatchConfig.js';
+import type { RouteBatchConfig } from '../../src/common/types/ObsolateBuildConfig.js';
 import type { NodeId } from '@hierarchidb/common-types';
 
 describe('RouteBatchManager idempotency', () => {

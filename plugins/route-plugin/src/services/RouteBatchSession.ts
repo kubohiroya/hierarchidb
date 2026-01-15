@@ -4,7 +4,7 @@ import type { NodeId } from '@hierarchidb/common-types';
 import type { RouteGenerationConfig, RouteGenerationMethod } from '../common/entities/RouteEntity.js';
 import type { RouteBatchConfig } from '../common/types/BatchConfig.js';
 import { RouteGenerator } from '@hierarchidb/route-engine';
-import type { TaskQueueRecord } from '@hierarchidb/vt-orchestrator';
+import type { TaskQueueRecord } from '@hierarchidb/common-types';
 import { updateTask, type VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 
 export type RouteBatchTaskStatus = 'pending' | 'processing' | 'completed' | 'failed';

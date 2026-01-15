@@ -1,11 +1,6 @@
-export type { BuildSessionConfig, HybridFilterConfig } from './BatchConfig.js';
-export * from './BatchTaskLike.js';
-export * from './category-types.js';
-export * from './ShapeError.js';
-export * from './ShapeErrorHierarchy.js';
 export * from './data-source.js';
-export * from './processing.js';
-export * from './batch.js';
+export * from './build.ts';
+export type { ShapeBuildConfig } from './build.ts';
 export * from './validation.js';
 export * from './create-update.js';
 export * from './constants.js';
@@ -13,8 +8,20 @@ export type { ShapeEntity, SelectedArrayByCountries } from './ShapeEntity.js';
 export type { ProcessingStatus, TileInfo } from './api.js';
 export type { VectorTileEntity } from './VectorTileEntity.js';
 export type { MetaRow, SourceRow, TileIndexRow } from './tiles.js';
+export type {
+  BaseBuildConfig,
+  BoundingBox,
+  CleanupConfig,
+  ExtractionMode,
+  FeatureFilterMethod,
+  FetchConfig,
+  HybridFilterConfig,
+  TransformByBandConfig,
+  TransformByZoomConfig,
+  VTConfig,
+} from '@hierarchidb/gis-sdk';
 export {
-  mergeBatchConfig,
+  mergeBuildConfig,
   summarizeCheckboxState,
   normalizeDataSourceName,
   validateBatchConfig,

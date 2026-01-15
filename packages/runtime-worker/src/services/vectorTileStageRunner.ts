@@ -103,6 +103,8 @@ export async function writeVectorTileInput(
       tileId,
       data: payload,
       size: payload.byteLength,
+      featureCount: 0,
+      extractionRatio: 1,
       timestamp: Date.now(),
       contentType,
     });

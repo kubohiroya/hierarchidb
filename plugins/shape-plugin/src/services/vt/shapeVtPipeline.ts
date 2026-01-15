@@ -1,4 +1,5 @@
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId, StageHandler, TaskQueueRecord } from '@hierarchidb/common-types';
+import type { ShapeBuildConfig } from '../../common/types/index.js';
 import {
   VtTaskQueueDb,
   deleteTasksByNode,
@@ -9,15 +10,15 @@ import {
   createTransformByZoomHandler,
   createVtHandler,
 } from '@hierarchidb/vt-orchestrator';
-import type { TaskQueueRecord, StageHandler } from '@hierarchidb/vt-orchestrator';
+import { DEFAULT_TASK_SPLIT } from '@hierarchidb/vt-orchestrator';
 import {
   VtShapeDb,
   listFetchCache,
-  listTransformByBandCacheIdsByTile,
 } from '@hierarchidb/vt-shape-store';
+import { ephemeralShapeDB } from '@hierarchidb/shape-store';
 import { VtDb } from '@hierarchidb/vt-store';
-import type { BatchConfig, CountryMetadata, DataSourceName, FetchTaskPayload, SelectedArrayByCountries } from '../../common/types/index.js';
-import { DEFAULT_PROCESSING_CONFIG } from '../../common/types/constants.js';
+import type { CountryMetadata, DataSourceName, FetchTaskPayload, SelectedArrayByCountries } from '../../common/types/index.js';
+import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants.js';
 import { runShapeFetchStage } from './shapeFetchStage.js';
 import { updateShapeStageMetadata } from './shapeStageMetadata.js';
 import { metadataLoader } from '../metadata/MetadataLoader.js';
@@ -47,12 +48,6 @@ type ShapeVtTaskInput = {
   sourceKey: string;
 };
 
-const DEFAULT_TASK_SPLIT = {
-  maxBuffersPerTask: 128,
-  maxVerticesPerTask: 100_000,
-  maxBand3Reservations: 50_000,
-} as const;
-
 const buildBands = (enableBand3: boolean) => {
   const bands = [
     { bandId: 0, zMin: 0, zMax: 3, zBase: 0 },
@@ -69,7 +64,7 @@ const hasBand3Selection = (
   selection?: SelectedArrayByCountries,
   payloads?: FetchTaskPayload[],
 ): boolean => {
-  if (payloads && payloads.some((payload) => payload.adminLevel >= 2)) return true;
+  if (payloads?.some((payload) => payload.adminLevel >= 2)) return true;
   if (!selection) return false;
   return Object.values(selection).some((row) => row?.some((selected, index) => selected && index >= 2));
 };
@@ -122,12 +117,12 @@ const buildTransformByBandTasks = async (
 
 const buildTransformByZoomTasks = async (
   nodeId: NodeId,
-  shapeStore: VtShapeDb,
+  ephemeralStore = ephemeralShapeDB,
 ): Promise<Array<TaskQueueRecord<ShapeTransformByZoomTaskInput>>> => {
-  const buffers = await shapeStore.transformByBandCache
-    .where("nodeId")
+  const buffers = await ephemeralStore.transformByBandCache
+    .where('nodeId')
     .equals(nodeId)
-    .filter((row) => row.domainType === "shape")
+    .filter((row) => row.domainType === 'shape')
     .toArray();
   const tasks: Array<TaskQueueRecord<ShapeTransformByZoomTaskInput>> = [];
   let index = 0;
@@ -192,6 +187,18 @@ const splitBufferIds = (
   return chunks;
 };
 
+const listTransformByBandCacheIdsByTile = async (
+  store: typeof ephemeralShapeDB,
+  nodeId: NodeId,
+  tileId: number,
+): Promise<string[]> => {
+  const rows = await store.tileIdToBufferRelations
+    .where('[nodeId+tileId]')
+    .equals([nodeId, String(tileId)])
+    .toArray();
+  return rows.map((row) => row.bufferId);
+};
+
 const listFixedTiles = (zBase: number): number[] => {
   const tiles: number[] = [];
   const size = 1 << zBase;
@@ -205,7 +212,7 @@ const listFixedTiles = (zBase: number): number[] => {
 
 const buildVtTasks = async (
   nodeId: NodeId,
-  shapeStore: VtShapeDb,
+  ephemeralStore: typeof ephemeralShapeDB,
   bands: Array<{ bandId: number; zMin: number; zMax: number; zBase: number }>,
   enableBand3: boolean,
   maxBuffersPerTask: number,
@@ -217,13 +224,13 @@ const buildVtTasks = async (
   for (const band of bands) {
     if (band.bandId === 3 && !enableBand3) continue;
     const tileIds = band.bandId === 3
-      ? (await shapeStore.transformByZoomReservations.where('nodeId').equals(nodeId).toArray())
-        .map((entry) => entry.tileId)
+      ? (await ephemeralStore.transformByZoomReservations.where('nodeId').equals(nodeId).toArray())
+        .map((entry) => Number(entry.tileId))
       : listFixedTiles(band.zBase);
     for (const tileId of tileIds) {
-      const bufferIds = await listTransformByBandCacheIdsByTile(shapeStore, nodeId, band.bandId, tileId);
+      const bufferIds = await listTransformByBandCacheIdsByTile(ephemeralStore, nodeId, tileId);
       if (bufferIds.length === 0) continue;
-      const buffers = await shapeStore.transformByBandCache.where('id').anyOf(bufferIds).toArray();
+      const buffers = await ephemeralStore.transformByBandCache.where('id').anyOf(bufferIds).toArray();
       const vertexById = new Map(buffers.map((buffer) => [buffer.id, buffer.vertexCount] as const));
       const chunks = splitBufferIds(bufferIds, vertexById, maxBuffersPerTask, maxVerticesPerTask);
       for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex += 1) {
@@ -253,42 +260,25 @@ const buildVtTasks = async (
   return tasks;
 };
 
-const resolveTransformByBandConfig = (config: BatchConfig) => {
-  const extract1Config = config.extract1Config ?? DEFAULT_PROCESSING_CONFIG.extract1Config;
-  return {
-    toleranceK: extract1Config?.tolerance ?? 1,
-  };
-};
+const resolveTransformByBandConfig = (config: ShapeBuildConfig) => ({
+  ...DEFAULT_BUILD_CONFIG.transformByBandConfig,
+  ...config.transformByBandConfig,
+});
 
-const resolveTransformByZoomConfig = (config: BatchConfig) => {
-  const tileConfig = config.tileConfig ?? DEFAULT_PROCESSING_CONFIG.tileConfig;
-  return {
-    tileIndex: {
-      buffer: tileConfig?.bufferSize ?? 256,
-      extent: 4096,
-      promoteId: 'id',
-    },
-  };
-};
+const resolveTransformByZoomConfig = (config: ShapeBuildConfig) => ({
+  ...DEFAULT_BUILD_CONFIG.transformByZoomConfig,
+  ...config.transformByZoomConfig,
+});
 
-const resolveVtConfig = (config: BatchConfig) => {
-  const tileConfig = config.tileConfig ?? DEFAULT_PROCESSING_CONFIG.tileConfig;
-  const extract2Config = config.extract2Config ?? DEFAULT_PROCESSING_CONFIG.extract2Config;
-  return {
-    extent: 4096,
-    buffer: tileConfig?.bufferSize ?? 256,
-    tileSize: 256,
-    vtSimplificationTolerance: extract2Config?.tolerance ?? 1,
-    boundaryDedupe: true,
-    layers: [],
-    layerSetName: 'shape',
-  };
-};
+const resolveVtConfig = (config: ShapeBuildConfig) => ({
+  ...DEFAULT_BUILD_CONFIG.vtConfig,
+  ...config.vtConfig,
+});
 
 export type ShapeVtPipelineParams = {
   nodeId: NodeId;
   dataSource: DataSourceName;
-  batchConfig: BatchConfig;
+  buildConfig: ShapeBuildConfig;
   selectedArrayByCountries?: SelectedArrayByCountries;
   downloadTaskPayloads?: FetchTaskPayload[];
   waitIfPaused?: () => Promise<void>;
@@ -298,6 +288,7 @@ export type ShapeVtPipelineParams = {
 export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise<void> => {
   const taskQueue = new VtTaskQueueDb();
   const shapeStore = new VtShapeDb();
+  const ephemeralStore = ephemeralShapeDB;
   const vtStore = new VtDb();
   const resumeExistingTasks = Boolean(params.resumeExistingTasks);
   if (!resumeExistingTasks) {
@@ -314,7 +305,7 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
     dataSource: params.dataSource,
     selectedArrayByCountries: params.selectedArrayByCountries,
     downloadTaskPayloads: params.downloadTaskPayloads,
-    batchConfig: params.batchConfig,
+    buildConfig: params.buildConfig,
     taskQueue,
     shapeStore,
     metadata,
@@ -334,12 +325,12 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
       await putTasks(taskQueue, transformByBandTasks as Array<TaskQueueRecord<ShapeTransformByBandTaskInput>>);
     }
     const transformByBandHandler = createTransformByBandHandler({
-      shapeStore,
-      transformConfig: resolveTransformByBandConfig(params.batchConfig),
+      shapeDB: shapeStore,
+      ephemeralDB: ephemeralStore,
+      transformByBandConfig: resolveTransformByBandConfig(params.buildConfig),
       bands,
     });
     await runStageTasks({
-      db: taskQueue,
       nodeId: params.nodeId,
       stage: 'transform-by-band',
       handler: transformByBandHandler as unknown as StageHandler<ShapeTransformByBandTaskInput>,
@@ -352,20 +343,18 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
     : [];
   const transformByZoomTasks = existingTransformByZoomTasks.length > 0
     ? []
-    : await buildTransformByZoomTasks(params.nodeId, shapeStore);
+    : await buildTransformByZoomTasks(params.nodeId, ephemeralStore);
   if (existingTransformByZoomTasks.length > 0 || transformByZoomTasks.length > 0) {
     await params.waitIfPaused?.();
     if (transformByZoomTasks.length > 0) {
       await putTasks(taskQueue, transformByZoomTasks as Array<TaskQueueRecord<ShapeTransformByZoomTaskInput>>);
     }
     const transformByZoomHandler = createTransformByZoomHandler({
-      shapeStore,
-      zoomConfig: resolveTransformByZoomConfig(params.batchConfig),
+      ephemeralDB: ephemeralStore,
+      transformByZoomConfig: resolveTransformByZoomConfig(params.buildConfig),
       bands,
-      maxBand3Reservations: DEFAULT_TASK_SPLIT.maxBand3Reservations,
     });
     await runStageTasks({
-      db: taskQueue,
       nodeId: params.nodeId,
       stage: 'transform-by-zoom',
       handler: transformByZoomHandler as unknown as StageHandler<ShapeTransformByZoomTaskInput>,
@@ -380,7 +369,7 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
     ? []
     : await buildVtTasks(
       params.nodeId,
-      shapeStore,
+      ephemeralStore,
       bands,
       enableBand3,
       DEFAULT_TASK_SPLIT.maxBuffersPerTask,
@@ -392,13 +381,12 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
       await putTasks(taskQueue, vtTasks as Array<TaskQueueRecord<ShapeVtTaskInput>>);
     }
     const vtHandler = createVtHandler({
-      shapeStore,
-      vtStore,
-      vtConfig: resolveVtConfig(params.batchConfig),
+      ephemeralDB: ephemeralStore,
+      vtDB: vtStore,
+      vtConfig: resolveVtConfig(params.buildConfig),
       bands,
     });
     await runStageTasks({
-      db: taskQueue,
       nodeId: params.nodeId,
       stage: 'vt',
       handler: vtHandler as unknown as StageHandler<ShapeVtTaskInput>,

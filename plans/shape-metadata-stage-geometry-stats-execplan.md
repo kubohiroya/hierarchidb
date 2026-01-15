@@ -23,7 +23,7 @@ Shape Step6 currently shows per-origin metadata rows with vertex and polygon cou
 - Observation: stage1 and transform buffers store `featureCount` and `vertexCount` only; polygon counts must be computed and added.
   Evidence: `packages/vt-shape-store/src/types.ts` only defines `vertexCount` and `featureCount`.
 - Observation: transform outputs are per-band, and each buffer includes boundary features; transform totals must be defined carefully to avoid ambiguity.
-  Evidence: `packages/vt-orchestrator/src/transform/transformStage.ts` adds boundary features per input.
+  Evidence: `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts` adds boundary features per input.
 
 ## Decision Log
 
@@ -53,7 +53,7 @@ The vt pipeline is executed by `plugins/shape-plugin/src/worker/api.ts` through 
 
 First, update the metadata type definitions. In `packages/plugin-service-api/src/types/shapeBuildTypes.ts`, replace the old raw/extract1/extract2/vectorTile fields with fetch/transform/vt fields. Update any dependent imports, and keep the table indexes in `packages/features/vectortile-store/src/tilesDb.ts` unchanged unless new indexed fields are required (they should not be).
 
-Second, add polygon counts to stage1 and transform buffers. Update `packages/vt-shape-store/src/types.ts` and the `putStage1Buffer` and `putTransformBuffer` helpers to include `polygonCount`. In `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts`, compute both vertex and polygon counts from the fetched FeatureCollection and store them in the stage1 buffer. In `packages/vt-orchestrator/src/transform/transformStage.ts`, compute polygon counts from the transform output features and store them in the transform buffers.
+Second, add polygon counts to stage1 and transform buffers. Update `packages/vt-shape-store/src/types.ts` and the `putStage1Buffer` and `putTransformBuffer` helpers to include `polygonCount`. In `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts`, compute both vertex and polygon counts from the fetched FeatureCollection and store them in the stage1 buffer. In `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`, compute polygon counts from the transform output features and store them in the transform buffers.
 
 Third, preserve origin keys through the pipeline. In `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts`, inject `__hdbOriginKey` into each feature’s properties before encoding stage1 buffers. This value must be the same origin key that will be used in the metadata rows.
 
@@ -79,7 +79,7 @@ All commands are run from the repository root.
 
 2) Add polygon counts and origin key propagation.
    - Edit `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts`.
-   - Edit `packages/vt-orchestrator/src/transform/transformStage.ts`.
+   - Edit `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`.
 
 3) Implement aggregation and persistence.
    - Add `plugins/shape-plugin/src/services/vt/shapeStageMetadata.ts` (or similar) and call it from `plugins/shape-plugin/src/services/vt/shapeVtPipeline.ts`.

@@ -16,7 +16,7 @@ export * from './common/types/index.js';
 //  Backward compatibility -
 export { ShapeMetadata } from './common/types/metadata.js';
 export { PLUGIN_MANIFEST as ShapePluginManifest } from './plugin-manifest.js';
-export type { CreateShapeData, UpdateShapeData, BatchTaskStageType, BatchTaskStage } from './common/types/index.js';
+//export type { CreateShapeData, UpdateShapeData, BuildTaskResultType, BuildTaskResult } from './common/types/index.js';
 
 // Batch processing exports are temporarily internal-only until type contracts are stabilized
 // Export plugin definition for worker fallback loading

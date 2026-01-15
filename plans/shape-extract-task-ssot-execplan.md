@@ -50,7 +50,7 @@ Then, update `plugins/shape-plugin/src/services/batch/adapters/LocalExtractAdapt
 
 Then, update `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts` to remove all task-field fallbacks for those settings and rely solely on execution input values. This keeps the worker consistent with the adapters’ TreeQueryAPI-derived settings.
 
-Finally, remove the redundant fields from `ExtractTask` in `plugins/shape-plugin/src/common/types/batch.ts` and update task builders in `plugins/shape-plugin/src/services/batch/SessionController.ts` to stop setting those fields. Adjust any remaining references accordingly.
+Finally, remove the redundant fields from `ExtractTask` in `plugins/shape-plugin/src/common/types/build.ts` and update task builders in `plugins/shape-plugin/src/services/batch/SessionController.ts` to stop setting those fields. Adjust any remaining references accordingly.
 
 ## Concrete Steps
 
@@ -73,7 +73,7 @@ Finally, remove the redundant fields from `ExtractTask` in `plugins/shape-plugin
    - In `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, replace `task.*` fallbacks with `input.*` for the specified fields.
 
 5) Remove redundant ExtractTask fields and task builder assignments.
-   - Edit `plugins/shape-plugin/src/common/types/batch.ts` to remove those properties from `ExtractTask`.
+   - Edit `plugins/shape-plugin/src/common/types/build.ts` to remove those properties from `ExtractTask`.
    - Remove their assignments in `plugins/shape-plugin/src/services/batch/SessionController.ts` when building Extract1/Extract2 tasks.
 
 6) Update TASKS.md log with outcomes, reasons, rollback, and verification status.
@@ -102,7 +102,7 @@ These steps are safe to repeat. Roll back by reverting changes to:
 - `plugins/shape-plugin/src/services/batch/adapters/LocalExtractAdapters.ts`
 - `plugins/shape-plugin/src/services/batch/adapters/ShapeWorkerExtractAdapters.ts`
 - `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`
-- `plugins/shape-plugin/src/common/types/batch.ts`
+- `plugins/shape-plugin/src/common/types/build.ts`
 - `plugins/shape-plugin/src/services/batch/SessionController.ts`
 
 ## Artifacts and Notes

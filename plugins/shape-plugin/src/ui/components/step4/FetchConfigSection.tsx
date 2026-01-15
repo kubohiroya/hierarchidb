@@ -14,20 +14,20 @@ import {
   CloudDownload as CloudDownloadIcon,
   ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
-import type { BatchConfig} from '../../../common/types/index.js';
 import type { ShapeEntity } from '../../../common/types/ShapeEntity.js';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { useFetchConfigSection } from './useFetchConfigSection.ts';
 import { FetchConfigFormControls } from './FetchConfigFormControls.tsx';
 import { DownloadRetryControls } from './DownloadRetryControls.js';
 import type { NodeId } from '@hierarchidb/common-types';
+import type { ShapeBuildConfig } from '../../../common/types/index.js';
 
 type Props = {
-  config: BatchConfig;
+  config: ShapeBuildConfig;
   draft: Partial<ShapeEntity>;
   nodeId: NodeId;
   disabled?: boolean;
-  onChange: (next: BatchConfig) => void;
+  onChange: (next: ShapeBuildConfig) => void;
   onResetSession?: () => void;
 };
 
@@ -35,7 +35,7 @@ export const FetchConfigSection: React.FC<Props> = ({ config, draft, nodeId, dis
   const {
     t,
     switchId,
-    baseDownloadConfig,
+    baseFetchConfig,
     deleteFetchLabel,
     deleteTransformFilterLabel,
     deleteTransformPreprocessLabel,
@@ -71,15 +71,15 @@ export const FetchConfigSection: React.FC<Props> = ({ config, draft, nodeId, dis
           <Grid size={{ xs: 12, sm: 4 }}>
             <WorkerNumberConfigCard
               title={t('processing.download.workers', 'Concurrent Fetch Workers')}
-              value={baseDownloadConfig.maxConcurrent ?? 2}
+              value={baseFetchConfig.concurrentDownloads ?? 2}
               icon={<CloudDownloadIcon fontSize="small" color="primary" />}
               helperText={t('processing.download.workersHelp', 'Controls how many fetches run in parallel.')}
               warningText={undefined}
-              onChange={(maxConcurrent) =>
+              onChange={(concurrentDownloads) =>
                 update({
                   fetchConfig: {
-                    ...baseDownloadConfig,
-                    maxConcurrent,
+                    ...baseFetchConfig,
+                    concurrentDownloads,
                   },
                 })
               }
@@ -99,13 +99,13 @@ export const FetchConfigSection: React.FC<Props> = ({ config, draft, nodeId, dis
                   <FormControlLabel
                     control={
                       <Switch
-                        checked={!config?.cleanupConfig?.deleteDownloadedFiles}
+                        checked={!config?.cleanupConfig?.deleteFetchCeche}
                         onChange={(event) => {
                           const retainFiles = event.target.checked;
                           update({
                             cleanupConfig: {
                               ...config.cleanupConfig,
-                              deleteDownloadedFiles: !retainFiles,
+                              deleteFetchCeche: !retainFiles,
                             },
                           });
                         }}
@@ -121,13 +121,13 @@ export const FetchConfigSection: React.FC<Props> = ({ config, draft, nodeId, dis
                   <FormControlLabel
                     control={
                       <Switch
-                        checked={!config?.cleanupConfig?.deleteStage1Cache}
+                        checked={!config?.cleanupConfig?.deleteTransformByBandCache}
                         onChange={(event) => {
                           const retainCache = event.target.checked;
                           update({
                             cleanupConfig: {
                               ...config.cleanupConfig,
-                              deleteStage1Cache: !retainCache,
+                              deleteTransformByBandCache: !retainCache,
                             },
                           });
                         }}
@@ -143,13 +143,13 @@ export const FetchConfigSection: React.FC<Props> = ({ config, draft, nodeId, dis
                   <FormControlLabel
                     control={
                       <Switch
-                        checked={!config?.cleanupConfig?.deleteStage2Cache}
+                        checked={!config?.cleanupConfig?.deleteTransformByZoomCache}
                         onChange={(event) => {
                           const retainCache = event.target.checked;
                           update({
                             cleanupConfig: {
                               ...config.cleanupConfig,
-                              deleteStage2Cache: !retainCache,
+                              deleteTransformByZoomCache: !retainCache,
                             },
                           });
                         }}
@@ -196,7 +196,7 @@ export const FetchConfigSection: React.FC<Props> = ({ config, draft, nodeId, dis
             </Paper>
           </Grid>
           <DownloadRetryControls
-            baseDownloadConfig={baseDownloadConfig}
+            baseDownloadConfig={baseFetchConfig}
             disabled={disabled}
             update={update}
           />

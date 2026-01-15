@@ -18,7 +18,7 @@ import type { NodeId } from '@hierarchidb/common-types';
 import { BuildStepPanel } from '@hierarchidb/components';
 import { useTranslation } from '../../i18n.js';
 import { useBuildCrashInsight } from './useBuildCrashInsight.js';
-import { useShapeBuildProgressWarnings } from '../../hooks/useShapeBuildProgressWarnings.js';
+import { useShapeBuildProgressWarnings } from './useShapeBuildProgressWarnings.js';
 import {
   taskPaneProgressAtom,
   taskProgressControlsAtom,
@@ -125,11 +125,14 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
 
   const stageProgressContent = useMemo(() => (
     stages.reduce<Record<string, JSX.Element>>((acc, stage) => {
+      const stageTasks = tasksByStage[stage.id] ?? [];
+      const isStageRunning = summary.buildStatus === 'running'
+        && stageTasks.some((task) => task.status === 'running');
       acc[stage.id] = (
         <Stack gap={1}>
           <TaskProgressBar
             stages={[stage]}
-            tasksByStage={{ [stage.id]: tasksByStage[stage.id] ?? [] }}
+            tasksByStage={{ [stage.id]: stageTasks }}
             buildStatus={summary.buildStatus}
           />
           <LinearProgress
@@ -137,7 +140,7 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
             sx={{
               height: 6,
               borderRadius: 6,
-              visibility: summary.buildStatus === 'running' ? 'visible' : 'hidden',
+              visibility: isStageRunning ? 'visible' : 'hidden',
             }}
           />
         </Stack>

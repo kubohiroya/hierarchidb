@@ -19,14 +19,14 @@ type GeojsonVtModule = typeof import('geojson-vt');
 type GeojsonVtData = Parameters<GeojsonVtModule>[0];
 type TurfInput = Parameters<typeof area>[0];
 
-export type VectorTileMetadataContext = {
+export type VTMetadataContext = {
   dataSource?: string;
   countryCode?: string;
   countryName?: string;
   adminLevel?: number;
 };
 
-export type VectorTileGenerateConfig = {
+export type VTGenerateConfig = {
   format?: 'mvt';
   compression?: 'gzip' | 'none';
   buffer?: number;
@@ -35,11 +35,11 @@ export type VectorTileGenerateConfig = {
   inputFormat?: 'geojson' | 'flatgeobuf';
   metadataEnabled?: boolean;
   metadataReplace?: boolean;
-  metadataContext?: VectorTileMetadataContext;
+  metadataContext?: VTMetadataContext;
   signal?: AbortSignal;
 };
 
-export type VectorTileGenerateResult = {
+export type VTGenerateResult = {
   tilesGenerated: number;
   totalBytes: number;
   metadataCount?: number;
@@ -75,7 +75,7 @@ type FeatureLike = Feature<Geometry, GeoJsonProperties>;
 function buildUniqueFeatureId(
   feature: FeatureLike,
   index: number,
-  metadataContext?: VectorTileMetadataContext,
+  metadataContext?: VTMetadataContext,
 ): string {
   const normalizeFeatureId = (value: unknown): string => {
     if (typeof value === 'string') return value;
@@ -269,9 +269,9 @@ const loadVtPbf = async (): Promise<typeof vtPbfNS> => {
 export const generateVectorTilesFromJsonBuffer = async (
   nodeId: NodeId,
   buffer: ArrayBuffer,
-  config: VectorTileGenerateConfig,
+  config: VTGenerateConfig,
   onProgress?: (progress: VectorTileProgress) => void,
-): Promise<VectorTileGenerateResult> => {
+): Promise<VTGenerateResult> => {
   throwIfAborted(config.signal);
   const geojson = await decodeFeatureCollectionFromJsonBuffer(buffer);
   throwIfAborted(config.signal);
@@ -282,9 +282,9 @@ export const generateVectorTilesFromJsonBuffer = async (
 export const generateVectorTilesFromFgbBuffer = async (
   nodeId: NodeId,
   buffer: ArrayBuffer,
-  config: VectorTileGenerateConfig,
+  config: VTGenerateConfig,
   onProgress?: (progress: VectorTileProgress) => void,
-): Promise<VectorTileGenerateResult> => {
+): Promise<VTGenerateResult> => {
   throwIfAborted(config.signal);
   const geojson = await decodeFeatureCollectionFromFlatGeobufBuffer(buffer);
   throwIfAborted(config.signal);
@@ -295,9 +295,9 @@ export const generateVectorTilesFromFgbBuffer = async (
 export const generateVectorTilesFromFeatureCollection = async (
   nodeId: NodeId,
   geojson: FeatureCollectionLike,
-  config: VectorTileGenerateConfig,
+  config: VTGenerateConfig,
   onProgress?: (progress: VectorTileProgress) => void,
-): Promise<VectorTileGenerateResult> => {
+): Promise<VTGenerateResult> => {
   const startedAt = Date.now();
   throwIfAborted(config.signal);
   const features = geojson.features ?? [];

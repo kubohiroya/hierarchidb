@@ -1,17 +1,13 @@
 import type { NodeId } from './id-types.js';
 
 /**
-
- - Unified progress event types for batch processing
+ * Unified progress event types for batch processing.
  */
 export type BatchStage =
-  | 'import'
-  | 'normalize'
-  | 'download'
-  | 'extract1'
-  | 'extract2'
-  | 'tilegen'
-  | 'vectorTiles'
+  | 'fetch'
+  | 'transform-by-band'
+  | 'transform-by-zoom'
+  | 'vt'
   | 'completed'
   | string;
 

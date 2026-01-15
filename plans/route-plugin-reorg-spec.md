@@ -449,7 +449,7 @@ Reference plan: `plans/shape-shared-extraction-stage3-tabular-api.md`
 
 ### Alignment Notes
 
-- Align batch config file naming (`BatchConfig.ts`, `batch-types.ts`, etc.) across plugins.
+- Align batch config file naming (`ObsolateBuildConfig.ts`, `batch-types.ts`, etc.) across plugins.
 - Prefer matching file names to their primary exported type names.
 
 ### Integration Details
@@ -481,7 +481,7 @@ Reference plan: `plans/shape-shared-extraction-stage3-tabular-api.md`
 ### Implementation Plan (Stage 5)
 
 1) Inventory batch config naming across shape/location/route.
-2) Align filenames to primary exports (e.g., `BatchConfig.ts`, `batch-types.ts`).
+2) Align filenames to primary exports (e.g., `ObsolateBuildConfig.ts`, `batch-types.ts`).
 3) Update imports and re-exports in plugin entry points to preserve public API.
 4) Validate with plugin typechecks and update any doc references.
 5) Rollback by reverting file moves and import adjustments.

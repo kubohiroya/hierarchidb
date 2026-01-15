@@ -1,5 +1,6 @@
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import { simplify as turfSimplify } from '@turf/turf';
+import { geojson as geojsonApi } from 'flatgeobuf';
 
 const EARTH_RADIUS = 6378137;
 const MVT_EXTENT = 4096;
@@ -132,3 +133,32 @@ export const buildBoundaryFeature = (
     properties: { ...feature.properties, layer: layerName, level },
   };
 };
+
+const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureCollection | null> => {
+  if (!decoded || typeof decoded !== 'object') return null;
+  const collection = decoded as FeatureCollection;
+  if (collection.type === 'FeatureCollection') {
+    const features = Array.isArray(collection.features) ? collection.features : [];
+    return { ...collection, features };
+  }
+  if (typeof (decoded as AsyncIterable<unknown>)[Symbol.asyncIterator] === 'function') {
+    const features: Feature[] = [];
+    for await (const feature of decoded as AsyncIterable<Feature>) {
+      features.push(feature);
+    }
+    return { type: 'FeatureCollection', features };
+  }
+  return null;
+};
+
+export const decodeTransformByBandCache = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
+  const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
+  return normalizeFeatureCollection(decoded as unknown);
+};
+
+export const loadGeojsonVt = async () => {
+  const mod = await import('geojson-vt');
+  const candidate = mod as unknown as { default?: typeof import('geojson-vt') } & typeof import('geojson-vt');
+  return candidate.default ?? candidate;
+};
+

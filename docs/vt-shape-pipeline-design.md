@@ -58,6 +58,6 @@
 ## shape 固有のファイル補足
 
 - `plugins/shape-plugin/src/services/build/shapeBuildConfig.ts`
-  - Step4 の設定値から `BuildConfig` を組み立てる（入力仕様は `docs/vt-pipeline-design.md` を参照）
+  - Step4 の設定値から `ObsolateBuildConfig` を組み立てる（入力仕様は `docs/vt-pipeline-design.md` を参照）
 - `plugins/shape-plugin/src/services/build/shapeBuildRunner.ts`
   - vt-orchestrator の `runPipeline` を呼び出す

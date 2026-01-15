@@ -1,6 +1,7 @@
 import type { BatchTaskSummary } from '@hierarchidb/common-api';
 import type { NodeId } from '@hierarchidb/common-types';
-import { VtTaskQueueDb, listTasks, type TaskQueueRecord } from '@hierarchidb/vt-orchestrator';
+import { VtTaskQueueDb, listTasks } from '@hierarchidb/vt-orchestrator';
+import type { TaskQueueRecord } from '@hierarchidb/common-types';
 
 const mapTaskQueueRecord = (task: TaskQueueRecord): BatchTaskSummary => ({
   taskId: task.taskId,

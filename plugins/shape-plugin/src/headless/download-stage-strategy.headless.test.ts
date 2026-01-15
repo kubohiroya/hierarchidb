@@ -13,8 +13,8 @@ import {ephemeralShapeDB} from '@hierarchidb/shape-store';
 
 const createConfig = (dataSource: string): BuildProcessConfig => ({
   dataSource: dataSource as BuildProcessConfig['dataSource'],
-  download: { concurrentDownloads: 1 },
-  extract1: {
+  fetchConfig: { concurrentDownloads: 1 },
+  transformByBandConfig: {
     concurrentProcesses: 1,
     enableFeatureFiltering: true,
     featureAreaThreshold: 0,
@@ -22,14 +22,14 @@ const createConfig = (dataSource: string): BuildProcessConfig => ({
     aspectRatioThreshold: 0,
     featureFilterMethod: 'hybrid',
   },
-  extract2: {
+  transformByZoomConfig: {
     concurrentProcesses: 1,
     quantize: 1,
     extract: 0.1,
     tolerance: 0.1,
     enablePerFeatureExtraction: true,
   },
-  vectorTiles: {
+  vtConfig: {
     concurrentProcesses: 1,
   },
 });

@@ -344,7 +344,7 @@ reporter.reportStepProgress('Load Comlink', 0);
               ?? (fallbackNode as { draftData?: unknown } | undefined)?.draftData
               ?? (fallbackNode as { data?: unknown } | undefined)?.data
           );
-          const batchConfig = (draftData as { batchConfig?: unknown }).batchConfig ?? {};
+          const batchConfig = (draftData as { buildConfig?: unknown }).buildConfig ?? {};
           const payloads = downloadTaskPayloads ?? [];
           await api.startBatchProcess(nodeId, batchConfig, payloads);
           const session = api.getBatchSession ? await api.getBatchSession(nodeId) : undefined;

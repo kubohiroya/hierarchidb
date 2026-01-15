@@ -2,11 +2,11 @@ import type { Feature, FeatureCollection } from 'geojson';
 import { geojson as geojsonApi } from 'flatgeobuf';
 import type { Tile } from 'geojson-vt';
 import type vtPbfNS = require('@maplibre/vt-pbf');
-import type { StageHandler, StageHandlerResult } from '../runner.js';
-import type { VtTaskInput, VtStageContext, BandConfig } from '../types.js';
 import { packTileId, parentToChildRange, unpackTileId } from '../tiles/tileId.js';
 import { buildVtTileKey } from '@hierarchidb/vt-store';
 import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
+import type { VTStageContext } from '../contexts.js';
+import type { BandConfig, StageHandler, StageHandlerResult, VtTaskInput } from '../types/types.js';
 
 const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureCollection | null> => {
   if (!decoded || typeof decoded !== 'object') return null;
@@ -106,10 +106,10 @@ const buildLayerMap = (collection: FeatureCollection): Map<string, Feature[]> =>
   return map;
 };
 
-const collectFeatures = async (context: VtStageContext, bufferIds: string[]): Promise<FeatureCollection | null> => {
+const collectFeatures = async (context: VTStageContext, bufferIds: string[]): Promise<FeatureCollection | null> => {
   const allFeatures: Feature[] = [];
   for (const bufferId of bufferIds) {
-    const record = await context.shapeStore.transformByBandCache.get(bufferId);
+    const record = await context.ephemeralDB.transformByBandCache.get(bufferId);
     if (!record) continue;
     const collection = await decodeTransformByBandCache(record.data);
     if (!collection) continue;
@@ -122,22 +122,24 @@ const collectFeatures = async (context: VtStageContext, bufferIds: string[]): Pr
 type GeojsonVtIndex = { getTile: (z: number, x: number, y: number) => Tile | null };
 
 const buildLayerIndexes = async (
+  context: VTStageContext,
   layers: Map<string, Feature[]>,
-  band: BandConfig,
-  vtConfig: VtStageContext['vtConfig'],
+  band: BandConfig
 ): Promise<Map<string, GeojsonVtIndex>> => {
   const geojsonvt = await loadGeojsonVt();
   const indexes = new Map<string, GeojsonVtIndex>();
   for (const [layerName, features] of layers.entries()) {
     if (features.length === 0) continue;
-    if (vtConfig.layers.length > 0 && !vtConfig.layers.includes(layerName)) continue;
+
+    //if ( > 0 && !vtConfig.layers.includes(layerName)) continue;
+    //if (vtConfig.layers.length > 0 && !vtConfig.layers.includes(layerName)) continue;
     const collection: FeatureCollection = { type: 'FeatureCollection', features };
     const index = geojsonvt(collection, {
       maxZoom: band.zMax,
       indexMaxZoom: band.zMax,
-      extent: vtConfig.extent,
-      buffer: vtConfig.buffer,
-      tolerance: vtConfig.vtSimplificationTolerance,
+      extent: context.vtConfig.extent,
+      buffer: context.vtConfig.bufferSize,
+      tolerance: context.vtConfig.tolerance,
       promoteId: 'id',
     });
     indexes.set(layerName, index as unknown as GeojsonVtIndex);
@@ -145,8 +147,9 @@ const buildLayerIndexes = async (
   return indexes;
 };
 
-export const createVtHandler = (context: VtStageContext): StageHandler<VtTaskInput> => {
-  const { bands, vtConfig, vtStore } = context;
+export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInput> => {
+  const { bands, vtConfig, vtDB } = context;
+  const layerSetName = vtConfig.layerSetName ?? 'default';
   const bandMap = new Map(bands.map((band) => [band.bandId, band] as const));
 
   return async (task): Promise<StageHandlerResult> => {
@@ -168,7 +171,7 @@ export const createVtHandler = (context: VtStageContext): StageHandler<VtTaskInp
     }
 
     const layerMap = buildLayerMap(collection);
-    const indexes = await buildLayerIndexes(layerMap, band, vtConfig);
+    const indexes = await buildLayerIndexes(context, layerMap, band);
     if (indexes.size === 0) {
       return { status: 'completed', message: 'skipped: no layers' };
     }
@@ -196,14 +199,14 @@ export const createVtHandler = (context: VtStageContext): StageHandler<VtTaskInp
           const pbf = vtpbf.fromGeojsonVt(layers as unknown as Tile[], { version: 2 });
           const bytes = pbf as Uint8Array;
           const tileId = packTileId(x, y, z);
-          await vtStore.vtTiles.put({
+          await vtDB.vtTiles.put({
             id: buildVtTileKey(tileId, bufferSetHash),
             nodeId: task.nodeId,
             tileId,
             z,
             x,
             y,
-            layer: vtConfig.layerSetName,
+            layer: layerSetName,
             bufferSetHash,
             data: bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
             size: bytes.byteLength,

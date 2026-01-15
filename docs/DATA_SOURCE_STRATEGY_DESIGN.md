@@ -405,7 +405,7 @@ export class DataSourceBatchProcessor {
   private jobQueue = new Map<string, BatchJob>();
   private statusReporter: BatchStatusReporter;
 
-  async executeBatch(config: BatchConfig): Promise<BatchResult> {
+  async executeBatch(config: ObsolateBuildConfig): Promise<BatchResult> {
     const job = new BatchJob(config);
     this.jobQueue.set(job.id, job);
 
@@ -475,7 +475,7 @@ export class LocationPlugin {
 
   async importLocations(sourceId: string, options: ImportOptions): Promise<ImportResult> {
     // バッチ処理設定
-    const batchConfig: BatchConfig = {
+    const batchConfig: ObsolateBuildConfig = {
       strategyId: sourceId,
       fetchOptions: {
         bbox: options.boundingBox,

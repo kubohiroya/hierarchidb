@@ -1,33 +1,9 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
+import type { TaskQueueEvent, TaskQueueRecord, TaskStage, TaskStatus } from '../types/types.js';
+//import type { TaskQueueEvent, TaskQueueRecord, TaskStage, TaskStatus } from '@hierarchidb/gis-sdk';
 
-export type TaskStage = 'fetch' | 'transform-by-band' | 'transform-by-zoom' | 'vt';
-export type TaskStatus = 'queued' | 'running' | 'completed' | 'failed';
-
-export type TaskQueueRecord<TInput = unknown, TOutput = unknown> = {
-  taskId: string;
-  nodeId: NodeId;
-  stage: TaskStage;
-  status: TaskStatus;
-  index: number;
-  stagePriority?: number;
-  progress: number;
-  message?: string;
-  startedAt?: number;
-  completedAt?: number;
-  createdAt?: number;
-  updatedAt?: number;
-  retryCount?: number;
-  inputData?: TInput;
-  outputData?: TOutput;
-  errorMessage?: string;
-};
-
-export type TaskQueueEvent = {
-  nodeId: NodeId;
-  task: TaskQueueRecord;
-};
 
 export class VtTaskQueueDb extends Dexie {
   tasks!: Table<TaskQueueRecord, string>;
@@ -100,7 +76,7 @@ export async function putTasks(
     updatedAt: now,
   }));
   await db.tasks.bulkPut(payload);
-  payload.forEach((task) => emitTaskEvent(task.nodeId, task));
+  payload.forEach((task) => {emitTaskEvent(task.nodeId, task)});
 }
 
 export async function updateTask(
@@ -152,3 +128,5 @@ export async function deleteTasksByNode(
 ): Promise<void> {
   await db.tasks.where('nodeId').equals(nodeId).delete();
 }
+
+export const vtTaskQueueDB = new VtTaskQueueDb();

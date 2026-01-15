@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { BuildStage } from '@hierarchidb/components';
 import type { CrashInsight } from '@hierarchidb/ui-monitoring';
-import type { ShapeEntity } from '../../common/types/index.js';
-import { getStageConcurrencyWarning, type ShapeBuildConfigSnapshot, type ShapeBuildStage } from '../utils/buildWarnings.js';
+import type { ShapeEntity } from '../../../common/types/index.js';
+import { getStageConcurrencyWarning, type ShapeBuildConfigSnapshot, type ShapeBuildStage } from '../../utils/buildWarnings.js';
 
 type StartWarning = {
   title: string;
@@ -48,14 +48,14 @@ export const useShapeBuildProgressWarnings = ({
     const currentValue = (() => {
       switch (stageId) {
         case 'fetch':
-          return data?.batchConfig?.fetchConfig?.maxConcurrent;
+          return data?.buildConfig?.fetchConfig?.concurrentDownloads;
         case 'transform-by-band':
-          return data?.batchConfig?.extract1Config?.workers;
+          return data?.buildConfig?.transformByBandConfig?.concurrentProcesses;
         case 'transform-by-zoom':
-          return data?.batchConfig?.extract2Config?.workers
-            ?? data?.batchConfig?.extract1Config?.workers;
+          return data?.buildConfig?.transformByZoomConfig?.concurrentProcesses
+            ?? data?.buildConfig?.transformByBandConfig?.concurrentProcesses;
         case 'vt':
-          return data?.batchConfig?.tileConfig?.workers;
+          return data?.buildConfig?.vtConfig?.concurrentProcesses;
         default:
           return undefined;
       }
@@ -78,7 +78,7 @@ export const useShapeBuildProgressWarnings = ({
         },
       ),
     };
-  }, [crashInsight, data?.batchConfig, stages, t]);
+  }, [crashInsight, data?.buildConfig, stages, t]);
 
   const crashHint = useMemo(() => {
     if (isDev) return null;

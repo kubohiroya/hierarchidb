@@ -3,8 +3,8 @@ import { useMemo } from 'react';
 import { Alert, Box, Stack } from '@mui/material';
 import type { AlertColor } from '@mui/material';
 import { FetchConfigSection } from './FetchConfigSection.tsx';
-import { Extract1ConfigSection } from './Extract1ConfigSection.js';
-import { Extract2ConfigSection } from './Extract2ConfigSection.js';
+import { TransformByBandConfigSection } from './TransformByBandConfigSection.js';
+import { TransformByZoomConfigSection } from './TransformByZoomConfigSection.js';
 import { VTConfigSection } from './VTConfigSection.tsx';
 import { useShapeBuildConfigStep } from './useShapeBuildConfigStep.js';
 import { useHeapPressureMonitor } from '@hierarchidb/ui-memory';
@@ -61,9 +61,9 @@ export const ShapeBuildConfigStep: React.FC<ShapeDialogStepProps> = ({ data, nod
           onChange={handleChange}
           onResetSession={resetSession}
         />
-        <Extract1ConfigSection config={config} onChange={handleChange} />
-        <Extract2ConfigSection config={config} onChange={handleChange} />
-        <VTConfigSection config={config} draft={data} onChange={handleChange} />
+        <TransformByBandConfigSection config={config} onChange={handleChange} />
+        <TransformByZoomConfigSection config={config} onChange={handleChange} />
+        <VTConfigSection buildConfig={config} draft={data} onChange={handleChange} />
       </Stack>
     </Box>
   );

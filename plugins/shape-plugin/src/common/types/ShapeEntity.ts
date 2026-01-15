@@ -1,31 +1,28 @@
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId, ISO2 } from '@hierarchidb/common-types';
 import type { Geometry } from 'geojson';
-import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
-import type { TabularDataResult } from '@hierarchidb/ui-tabular';
-import type { BatchConfig } from './index.js';
-import type { ISO2 } from '@hierarchidb/common-types';
+import type { ShapeBuildConfig } from './build.js';
 
 export interface ShapeEntity {
   // Identifiers
-  id?: string;
+  //id?: string;
   nodeId?: NodeId;
 
   // Geometry / properties
   geometry?: Geometry;
   properties?: Record<string, unknown>;
 
-  tabularMetadataId?: string;
-  tabularFilters?: unknown; // kept broad; concrete type in data-source module
-  tabularMetadata?: TabularTableMetadata | null;
+  //tabularMetadataId?: string;
+  //tabularFilters?: unknown; // kept broad; concrete type in data-source module
+  //tabularMetadata?: TabularTableMetadata | null;
 //tabularFile?: TabularFileSummary;
-  tabularLastPreview?: TabularDataResult;
+  //tabularLastPreview?: TabularDataResult;
 
   // License Agreement
   licenseAgreement?: boolean;
   licenseAgreedAt?: string;
 
   // Processing Configuration
-  batchConfig?: BatchConfig;
+  buildConfig?: ShapeBuildConfig;
 
 // Country & Admin Selection
   selectedArrayByCountries?: SelectedArrayByCountries;

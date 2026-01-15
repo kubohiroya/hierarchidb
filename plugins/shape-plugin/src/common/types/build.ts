@@ -1,23 +1,20 @@
-import type { NodeId } from '@hierarchidb/common-types';
-import type { HybridFilterConfig } from './BatchConfig.js';
-import type { BuildSessionConfig } from './BatchConfig.js';
+import type { NodeId, TaskStage } from '@hierarchidb/common-types';
+import type { BaseBuildConfig, VectorTileFormat } from '@hierarchidb/gis-sdk';
+import type { ResourceUsage, StageStatus } from '@hierarchidb/shape-store';
 import type { DataSourceName } from './data-source.js';
-import type { FeatureFilterMethod, Extract2ExtractionMode } from './processing.js';
 
-export interface BatchStatus {
-  session: BatchSession;
-  currentTasks: BatchTask[];
-  queuedTasks: number;
-  errors: ErrorInfo[];
-  warnings: string[];
-  estimatedTimeRemaining?: number;
-  throughput?: {
-    tasksPerSecond: number;
-    bytesPerSecond: number;
-  };
+//import type { ObsolateBuildConfig, HybridFilterConfig } from './ObsolateBuildConfig.ts';
+//import type { ObsolateBuildConfig } from './ObsolateBuildConfig.ts';
+//import type { FeatureFilterMethod, ExtractionMode } from './processing.js';
+
+export interface ShapeBuildConfig extends BaseBuildConfig<DataSourceName> {
+  dataSourceName: DataSourceName;
 }
 
-export const BatchTaskStage = {
+export type BuildTaskType = TaskStage;
+export type BuildTaskStatus = 'idle' | 'queued' | 'running' | 'completed' | 'failed' | 'paused' | 'regression';
+
+export const BuildTaskResult = {
   WAIT: 'wait',
   PROCESS: 'process',
   SUCCESS: 'success',
@@ -26,19 +23,14 @@ export const BatchTaskStage = {
   CANCEL: 'cancel',
 } as const;
 
-export type BatchTaskStageType = (typeof BatchTaskStage)[keyof typeof BatchTaskStage];
+export type BuildTaskResultType = (typeof BuildTaskResult)[keyof typeof BuildTaskResult];
 
-export type TaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'regression';
-
-export type BuildTaskType = 'fetch' | 'transform-by-band' | 'transform-by-zoom' | 'vt';
-export type ProcessingStage = BuildTaskType;
-
-export interface BatchTaskBase {
+export interface BuildTaskBase {
   taskId: string;
   type: BuildTaskType;
   nodeId: NodeId;
-  stage: BatchTaskStageType|undefined;
-  status: TaskStatus;
+  stage: BuildTaskResultType | undefined;
+  status: BuildTaskStatus;
   index: number;
   progress?: number;
   retryCount?: number;
@@ -46,41 +38,19 @@ export interface BatchTaskBase {
   message?: string;
 }
 
-export type BatchTask = BatchTaskBase;
+export type BuildTask = BuildTaskBase;
 
-export interface DownloadTaskInput {
+export interface FetchTask extends BuildTaskBase {
+  type: 'fetch';
   url?: string;
-  dataSource?: DataSourceName;
   countryCode?: string;
   countryName?: string;
-  inputBufferId?: string;
   adminLevel?: number;
-  endpoint?: string;
-  bbox?: BoundingBox;
-  tags?: Array<
-    | string
-    | {
-      key: string;
-      value?: string;
-      operator?: 'eq' | 'ne' | 'exists' | 'not_exists';
-      includeNodes?: boolean;
-    }
-  >;
-  timeoutMs?: number;
-  retryAttempts?: number;
-  retryDelay?: number;
 }
 
-export interface FetchTask extends BatchTaskBase {
-  url?: string;
-  type: 'fetch';
-  dataSource?: DataSourceName;
-  countryCode?: string;
-  adminLevel?: number;
-  fileSize?: number;
-  downloadedBytes?: number;
-}
+export type ZipType = 'gzip' | 'bz' | 'br';
 
+/*
 export interface ExtractTaskInput {
   inputBufferId?: string;
   sourceUrl?: string;
@@ -111,7 +81,7 @@ export interface ExtractTaskInput {
   enableFeatureFiltering?: boolean;
   enablePerFeatureExtraction?: boolean;
   preserveSharedBoundaries?: boolean;
-  extractionMode?: Extract2ExtractionMode;
+  extractionMode?: ExtractionMode;
   retry?: number;
 }
 
@@ -132,8 +102,9 @@ export interface Extract1Task extends ExtractTask {
 export interface Extract2Task extends ExtractTask {
   taskType: 'extract2';
 }
+*/
 
-export interface VectorTileTaskInput {
+export interface VtTaskInput {
   inputBufferId?: string;
   tileZ?: number;
   tileX?: number;
@@ -142,7 +113,7 @@ export interface VectorTileTaskInput {
   tileSize?: number;
   buffer?: number;
   compression?: boolean;
-  format?: 'mvt' | 'pbf';
+  format?: VectorTileFormat;
   layers?: unknown[];
   outputBufferId?: string;
   dataSource?: DataSourceName;
@@ -154,15 +125,25 @@ export interface VectorTileTaskInput {
   retry?: number;
 }
 
-export interface VectorTileTask extends BatchTaskBase {
-  taskType: 'vectortile';
+export interface VtTask extends BuildTaskBase {
+  taskType: 'vt';
 }
+
+export interface ProgressInfo {
+  total: number;
+  completed: number;
+  failed: number;
+  skipped: number;
+  percentage: number;
+  taskType?: BuildTaskType | 'processing';
+}
+
 
 export interface BatchSession {
   nodeId: NodeId;
   draftId?: NodeId;
-  status: 'idle' | 'running' | 'paused' | 'completed' | 'failed';
-  config: BuildSessionConfig;
+  status: BuildTaskStatus;
+  config: ShapeBuildConfig;
   startedAt: number;
   updatedAt: number;
   completedAt?: number;
@@ -172,63 +153,25 @@ export interface BatchSession {
     failed: number;
     skipped: number;
     percentage: number;
-    taskType?: ProcessingStage | 'processing';
+    taskType?: BuildTaskType | 'processing';
   };
   canResume?: boolean;
   lastActivity?: number;
   expiresAt?: number;
-  stages?: Partial<Record<ProcessingStage, StageStatus>>;
+  stages?: Partial<Record<BuildTaskType, StageStatus>>;
   resourceUsage?: ResourceUsage;
-}
-
-export interface ProgressInfo {
-  total: number;
-  completed: number;
-  failed: number;
-  skipped: number;
-  percentage: number;
-  taskType?: ProcessingStage | 'processing';
 }
 
 export type ShapeBuildCommandMap = {
   'session/pause': { nodeId: NodeId };
   'session/resume': { nodeId: NodeId };
-  'stage/pause': { nodeId: NodeId; stage: ProcessingStage };
-  'stage/resume': { nodeId: NodeId; stage: ProcessingStage };
+  'stage/pause': { nodeId: NodeId; stage: BuildTaskType };
+  'stage/resume': { nodeId: NodeId; stage: BuildTaskType };
 };
 
 export type ShapeBuildCommand = keyof ShapeBuildCommandMap;
-
 export type ShapeBuildCommandPayload<K extends ShapeBuildCommand> = ShapeBuildCommandMap[K];
 
-export interface StageStatus {
-  status: TaskStatus;
-  progress: number;
-  tasksTotal: number;
-  tasksCompleted: number;
-  tasksFailed: number;
-  message?: string;
-}
-
-export interface ErrorInfo {
-  taskId: string;
-  nodeId: NodeId;
-  error: string;
-  timestamp: number;
-  stage: ProcessingStage;
-  retryable: boolean;
-}
-
-export interface ResourceUsage {
-  memoryUsed: number;
-  memoryPeak: number;
-  cpuPercent: number;
-  storageUsed: number;
-  networkBytesReceived: number;
-  networkBytesSent: number;
-}
-
-export type BoundingBox = [number, number, number, number];
 
 export interface LayerConfig {
   name: string;
@@ -260,10 +203,11 @@ export interface TileMetadata {
   generatedAt: number;
   lastAccessed?: number;
   contentHash: string;
-  contentEncoding?: 'gzip' | 'br';
+  contentEncoding?: ZipType;
   version: number;
 }
 
+/*
 export interface CacheStatistics {
   hits: number;
   misses: number;
@@ -277,6 +221,7 @@ export interface CacheStatistics {
   oldestItem?: number;
   newestItem?: number;
 }
+ */
 
 // Backward compatibility aliases
-export type TileExtractConfig = ExtractTaskInput;
+//export type TileExtractConfig = ExtractTaskInput;

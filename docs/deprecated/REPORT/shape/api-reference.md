@@ -38,7 +38,7 @@ export class ShapesAPIMethods {
   async getShapeConfig(nodeId: NodeId): Promise<ShapeConfig>;
   
   // Batch processing methods
-  async startBatchProcessing(nodeId: NodeId, config: BatchConfig): Promise<string>;
+  async startBatchProcessing(nodeId: NodeId, config: ObsolateBuildConfig): Promise<string>;
   async pauseBatchProcessing(sessionId: string): Promise<void>;
   async resumeBatchProcessing(sessionId: string): Promise<void>;
   async cancelBatchProcessing(sessionId: string): Promise<void>;
@@ -108,12 +108,12 @@ export interface AdminLevelConfig {
 }
 ```
 
-### BatchConfig
+### ObsolateBuildConfig
 
 Configuration for batch processing operations.
 
 ```typescript
-export interface BatchConfig {
+export interface ObsolateBuildConfig {
   // Processing stages
   stages: ProcessingStages;
   

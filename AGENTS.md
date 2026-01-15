@@ -74,6 +74,7 @@ The workspace relies on `pnpm`. `app/` contains the main UI, with shared documen
 
 ## Coding Style & Naming Conventions
 TypeScript is standard. Keep one primary export per file, match CamelCase filenames to exported symbols, and avoid deep `../src` imports. Use `import.meta.env` instead of `process.env`, keep browser code free of Node globals, and run `pnpm format` plus `pnpm lint` or `pnpm biome:check` before review. Runtime feature flags backed by `FEATURE_FLAGS` have been retired—prefer explicit configuration modules or environment variables documented in `TASKS.md` when conditional behavior is unavoidable.
+- 再エクスポートは禁止。例外は `src/index.ts` と package.json の export エントリに対応するトップレベルの `index.ts` のみ。
 
 ## Testing Guidelines
 Run Vitest globally (`pnpm test`) or per package (`pnpm --filter <pkg> test`) and extend Worker Flow Lab suites under `packages/runtime-worker`. Playwright specs live in `e2e/`; name files `*.spec.ts` and clear skip markers quickly. Log each command and outcome in the TASKS運用ログ, add regression coverage for new logic, and document any remaining gaps with timestamps and next steps.

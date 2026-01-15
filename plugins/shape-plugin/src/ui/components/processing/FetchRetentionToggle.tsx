@@ -8,7 +8,7 @@ type Props = {
   label: string;
 };
 
-export const DownloadRetentionToggle: React.FC<Props> = ({
+export const FetchRetentionToggle: React.FC<Props> = ({
   checked,
   onChange,
   disabled,

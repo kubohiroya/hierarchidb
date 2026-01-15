@@ -126,13 +126,13 @@ export function createTestShapeEntityJapanOnly(): ShapeEntity {
     nodeId: 'test-shape-plugin-node-jpn-only' as NodeId,
     selectedArrayByCountries: { JP: [true] },
     batchConfig: {
-      ...baseEntity.batchConfig!,
+      ...baseEntity.buildConfig!,
       extract2: {
-        ...baseEntity.batchConfig!.extract2,
+        ...baseEntity.buildConfig!.extract2,
         quantize: 1e4, extract: 0.01,
       },
       vectorTiles: {
-        ...baseEntity.batchConfig!.vectorTiles,
+        ...baseEntity.buildConfig!.vectorTiles,
       },
     },
   };

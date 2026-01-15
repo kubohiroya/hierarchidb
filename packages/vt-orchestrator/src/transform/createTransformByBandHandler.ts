@@ -1,10 +1,10 @@
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import { geojson as geojsonApi } from 'flatgeobuf';
 import { encodeFlatGeobufFromFeatureCollection } from '@hierarchidb/gis-sdk';
-import type { StageHandler, StageHandlerResult } from '../runner.js';
-import type { TransformByBandTaskInput, TransformByBandStageContext } from '../types.js';
 import { simplifyFeatureCollection, buildBoundaryFeature } from './geometry.js';
-import { putTransformByBandCache } from '@hierarchidb/vt-shape-store';
+import { SHAPE_DOMAIN } from '@hierarchidb/vt-shape-store';
+import type { TransformByBandStageContext } from '../contexts.js';
+import type { StageHandler, StageHandlerResult, TransformByBandTaskInput } from '../types/types.js';
 
 const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureCollection | null> => {
   if (!decoded || typeof decoded !== 'object') return null;
@@ -62,7 +62,8 @@ const countPolygonsFromGeometry = (geometry?: Geometry | null): number => {
 export const createTransformByBandHandler = (
   context: TransformByBandStageContext
 ): StageHandler<TransformByBandTaskInput> => {
-  const { shapeStore, transformConfig, bands } = context;
+  const { shapeDB, ephemeralDB, transformByBandConfig, bands } = context;
+  const tolerance = transformByBandConfig.tolerance ?? 1;
   const bandMap = new Map(bands.map((band) => [band.bandId, band] as const));
 
   return async (task): Promise<StageHandlerResult> => {
@@ -75,7 +76,7 @@ export const createTransformByBandHandler = (
       return { status: 'failed', errorMessage: `transform-by-band failed: unknown bandId (${input.bandId})` };
     }
 
-    const fetchCache = await shapeStore.fetchCache.get(input.fetchCacheId);
+    const fetchCache = await shapeDB.fetchCache.get(input.fetchCacheId);
     if (!fetchCache) {
       return { status: 'failed', errorMessage: 'transform-by-band failed: fetch cache not found' };
     }
@@ -93,7 +94,7 @@ export const createTransformByBandHandler = (
     );
     let simplified: FeatureCollection;
     try {
-      simplified = simplifyFeatureCollection(collection, band.zMax, transformConfig.toleranceK);
+      simplified = simplifyFeatureCollection(collection, band.zMax, tolerance);
     } catch (error) {
       const err = error instanceof Error ? error.message : String(error);
       let errorFeatureCount = 0;
@@ -101,7 +102,7 @@ export const createTransformByBandHandler = (
       for (const feature of collection.features) {
         if (!feature?.geometry) continue;
         try {
-          simplifyFeatureCollection({ type: 'FeatureCollection', features: [feature] }, band.zMax, transformConfig.toleranceK);
+          simplifyFeatureCollection({ type: 'FeatureCollection', features: [feature] }, band.zMax, tolerance);
         } catch {
           errorFeatureCount += 1;
           errorPolygonCount += countPolygonsFromGeometry(feature.geometry);
@@ -149,8 +150,14 @@ export const createTransformByBandHandler = (
     const vertexCount = features.reduce((sum, feature) => sum + countVerticesFromGeometry(feature.geometry), 0);
     const polygonCount = features.reduce((sum, feature) => sum + countPolygonsFromGeometry(feature.geometry), 0);
     const encoded = await encodeFlatGeobufFromFeatureCollection(outputCollection);
+    const extractionRatio = inputFeatureCount > 0 ? simplified.features.length / inputFeatureCount : 0;
+    const cacheId = `${task.nodeId}-b${input.bandId}-${SHAPE_DOMAIN}-${input.sourceKey}`;
 
-    await putTransformByBandCache(shapeStore, task.nodeId, input.bandId, {
+    await ephemeralDB.transformByBandCache.put({
+      id: cacheId,
+      nodeId: task.nodeId,
+      bandId: input.bandId,
+      domainType: input.domainType,
       sourceKey: input.sourceKey,
       countryCode: input.countryCode,
       adminLevel: input.adminLevel,
@@ -158,6 +165,9 @@ export const createTransformByBandHandler = (
       featureCount: features.length,
       vertexCount,
       polygonCount,
+      extractionRatio,
+      tolerance: tolerance,
+      timestamp: Date.now(),
     });
 
     return { status: 'completed', progress: 100 };

@@ -12,27 +12,27 @@ import {
   Typography,
 } from '@mui/material';
 import type {
-  FeatureFilterMethod,
   HybridFilterConfig,
-  BatchConfig,
-  Extract1Config,
+  ShapeBuildConfig,
+  TransformByBandConfig,
 } from '../../../common/types/index.js';
 import { useTranslation } from '../../i18n.js';
+import { FeatureFilterMethod } from '@hierarchidb/gis-sdk';
 
 type Props = {
   controlId: string;
-  baseExtract1Config: Extract1Config;
+  baseTransformByBandConfig: TransformByBandConfig;
   baseHybridConfig: HybridFilterConfig;
   quickRejectLogMin: number;
   quickRejectLogMax: number;
   quickRejectLogValue: number;
   disabled?: boolean;
-  update: (partial: Partial<BatchConfig>) => void;
+  update: (partial: Partial<ShapeBuildConfig>) => void;
 };
 
 export const AreaFilterPanel: React.FC<Props> = ({
   controlId,
-  baseExtract1Config,
+  baseTransformByBandConfig,
   baseHybridConfig,
   quickRejectLogMin,
   quickRejectLogMax,
@@ -57,12 +57,12 @@ export const AreaFilterPanel: React.FC<Props> = ({
               <RadioGroup
                 aria-labelledby={`${controlId}-filtering-method`}
                 name="filtering-method"
-                value={baseExtract1Config.featureFilterMethod || 'hybrid'}
+                value={baseTransformByBandConfig.featureFilterMethod || 'hybrid'}
                 onChange={(e) => {
                   const method = e.target.value as FeatureFilterMethod;
                   update({
-                    extract1Config: {
-                      ...baseExtract1Config,
+                    transformByBandConfig: {
+                      ...baseTransformByBandConfig,
                       featureFilterMethod: method,
                     },
                   });
@@ -107,12 +107,12 @@ export const AreaFilterPanel: React.FC<Props> = ({
               </Typography>
               <Box sx={{ px: 2 }}>
                 <Slider
-                  value={baseExtract1Config.minVertexCountForAreaFilter ?? 10}
+                  value={baseTransformByBandConfig.minVertexCountForAreaFilter ?? 10}
                   onChange={(_, value) => {
                     const minVertexCountForAreaFilter = value as number;
                     update({
-                      extract1Config: {
-                        ...baseExtract1Config,
+                      transformByBandConfig: {
+                        ...baseTransformByBandConfig,
                         minVertexCountForAreaFilter,
                       },
                     });
@@ -143,13 +143,13 @@ export const AreaFilterPanel: React.FC<Props> = ({
               </Typography>
               <Box sx={{ px: 2 }}>
                 <Slider
-                  value={baseExtract1Config.areaThreshold ?? 100}
+                  value={baseTransformByBandConfig.featureAreaThreshold ?? 100}
                   onChange={(_, value) => {
-                    const areaThreshold = value as number;
+                    const featureAreaThreshold = value as number;
                     update({
-                      extract1Config: {
-                        ...baseExtract1Config,
-                        areaThreshold,
+                      transformByBandConfig: {
+                        ...baseTransformByBandConfig,
+                        featureAreaThreshold,
                       },
                     });
                   }}
@@ -188,8 +188,8 @@ export const AreaFilterPanel: React.FC<Props> = ({
                     const logValue = value as number;
                     const quickRejectThreshold = Number((10 ** logValue).toFixed(3));
                     update({
-                      extract1Config: {
-                        ...baseExtract1Config,
+                      transformByBandConfig: {
+                        ...baseTransformByBandConfig,
                         hybridFilterConfig: {
                           ...baseHybridConfig,
                           quickRejectThreshold,
@@ -226,8 +226,8 @@ export const AreaFilterPanel: React.FC<Props> = ({
                   onChange={(_, value) => {
                     const simpleShapeVertexThreshold = value as number;
                     update({
-                      extract1Config: {
-                        ...baseExtract1Config,
+                      transformByBandConfig: {
+                        ...baseTransformByBandConfig,
                         hybridFilterConfig: {
                           ...baseHybridConfig,
                           simpleShapeVertexThreshold,
@@ -263,8 +263,8 @@ export const AreaFilterPanel: React.FC<Props> = ({
                   onChange={(_, value) => {
                     const elongatedShapeCorrectionFactor = value as number;
                     update({
-                      extract1Config: {
-                        ...baseExtract1Config,
+                      transformByBandConfig: {
+                        ...baseTransformByBandConfig,
                         hybridFilterConfig: {
                           ...baseHybridConfig,
                           elongatedShapeCorrectionFactor,

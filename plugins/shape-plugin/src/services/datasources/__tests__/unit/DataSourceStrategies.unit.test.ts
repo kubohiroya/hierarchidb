@@ -64,7 +64,7 @@ const minimalBatchConfig = {
     retryDelay: 1,
     timeoutMs: 1000,
   },
-  extract1Config: {
+  transformByBandConfig: {
     workers: 1,
     tolerance: 0.01,
     featureFilterMethod: 'hybrid' as const,
@@ -72,7 +72,7 @@ const minimalBatchConfig = {
     minVertexCountForAreaFilter: 1,
     aspectRatioThreshold: 1,
   },
-  extract2Config: {
+  transformByZoomConfig: {
     workers: 1,
     tolerance: 0.01,
     quantize: 1,

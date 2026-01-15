@@ -2,16 +2,9 @@ import area from '@turf/area';
 import bbox from '@turf/bbox';
 import bboxPolygon from '@turf/bbox-polygon';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
+import type { FeatureFilterMethod, HybridFilterConfig } from '../config.js';
 
-export type FeatureFilterMethod = 'bbox_only' | 'polygon_only' | 'hybrid' | 'none';
-
-export type HybridFilterConfig = {
-  quickRejectThreshold?: number;
-  regularShapeMinRatio?: number;
-  regularShapeMaxRatio?: number;
-  simpleShapeVertexThreshold?: number;
-  elongatedShapeCorrectionFactor?: number;
-};
+export type { FeatureFilterMethod, HybridFilterConfig };
 
 export interface FeatureFilterSettings {
   minArea: number;

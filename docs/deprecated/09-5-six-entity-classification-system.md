@@ -247,7 +247,7 @@ export interface VectorTileEntity extends PersistentGroupEntity {
 export interface BatchConfigTemplate extends PersistentRelationalEntity {
   id: UUID;
   name: string;
-  config: BatchConfig;
+  config: ObsolateBuildConfig;
   persistentReferences: {
     referencingNodeIds: TreeNodeId[];
     referenceCount: number;
@@ -335,7 +335,7 @@ export interface TileBufferEntity extends EphemeralGroupEntity {
 // EphemeralRelationalEntity（BatchSession）
 export interface BatchSessionEntity extends EphemeralRelationalEntity {
   id: UUID;
-  config: BatchConfig;
+  config: ObsolateBuildConfig;
   status: 'pending' | 'running' | 'completed' | 'failed';
   stages: Record<string, StageStatus>;
   sessionReferences: {
@@ -525,7 +525,7 @@ export const ShapesCreateDialog: React.FC<Props> = ({ nodeId, onClose, onSave })
   }>({ buffers: [], indexes: [], tiles: [] });
   
   // ステップ1: ダウンロード（EphemeralGroupEntity作成）
-  const handleDownload = async (config: BatchConfig) => {
+  const handleDownload = async (config: ObsolateBuildConfig) => {
     // BatchSessionEntity（EphemeralRelational）を作成
     const session = await createBatchSession(nodeId, config);
     setBatchSession(session);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { RouteBatchConfig } from '../../src/common/types/BatchConfig.js';
+import type { RouteBatchConfig } from '../../src/common/types/ObsolateBuildConfig.js';
 import type { RouteBatchTask } from '../../src/services/RouteBatchSession.js';
 import { RouteBatchSession } from '../../src/services/RouteBatchSession.js';
 import type { NodeId } from '@hierarchidb/common-types';

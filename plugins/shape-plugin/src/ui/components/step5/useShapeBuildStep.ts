@@ -6,8 +6,8 @@ import { useTranslation } from '../../i18n.js';
 import { useAtom } from 'jotai';
 import { persistedTasksAtom } from '../../atoms/shapeBuildProgressAtoms.js';
 import {
-  DEFAULT_PROCESSING_CONFIG,
-  mergeBatchConfig,
+  DEFAULT_BUILD_CONFIG,
+  mergeBuildConfig,
   summarizeCheckboxState,
   validateBatchConfig,
   type ShapeEntity,
@@ -658,11 +658,11 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
 
   const isProcessingValid = useMemo(() => (
     validateBatchConfig(
-      mergeBatchConfig(data?.batchConfig ?? DEFAULT_PROCESSING_CONFIG),
+      mergeBuildConfig(data?.buildConfig ?? DEFAULT_BUILD_CONFIG),
     ).isValid
-  ), [data?.batchConfig]);
+  ), [data?.buildConfig]);
   const hasSelection = summarizeCheckboxState(selectedArrayByCountries).hasSelection;
-  const hasDataSource = Boolean(data?.batchConfig?.dataSource);
+  const hasDataSource = Boolean(data?.buildConfig?.dataSourceName);
   const {
     handleStartOrResume,
     handlePause,
@@ -677,6 +677,8 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     buildStatus,
   });
   const shouldSuspendRef = useRef(false);
+  const activeNodeIdRef = useRef<NodeId | null>(null);
+  const suspendIfRunningRef = useRef<(() => void) | null>(null);
   useEffect(() => {
     const hasActiveProcessing = data?.processingStatus === 'processing';
     const isRunning = buildStatus === 'running';
@@ -688,23 +690,29 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     void handlePause();
   }, [handlePause]);
   useEffect(() => {
-    if (!activeNodeId) return;
+    activeNodeIdRef.current = activeNodeId ?? null;
+    suspendIfRunningRef.current = suspendIfRunning;
+  }, [activeNodeId, suspendIfRunning]);
+  useEffect(() => {
     const handlePageHide = (event: Event) => {
       const maybePageTransition = event as PageTransitionEvent | undefined;
       if (maybePageTransition?.persisted) return;
-      suspendIfRunning();
+      if (!activeNodeIdRef.current) return;
+      suspendIfRunningRef.current?.();
     };
     const handleBeforeUnload = () => {
-      suspendIfRunning();
+      if (!activeNodeIdRef.current) return;
+      suspendIfRunningRef.current?.();
     };
     window.addEventListener('pagehide', handlePageHide);
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => {
       window.removeEventListener('pagehide', handlePageHide);
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      suspendIfRunning();
+      if (!activeNodeIdRef.current) return;
+      suspendIfRunningRef.current?.();
     };
-  }, [activeNodeId, suspendIfRunning]);
+  }, []);
   const startOrResume = useCallback(async () => {
     if (isStartPending) return;
     setIsStartPending(true);

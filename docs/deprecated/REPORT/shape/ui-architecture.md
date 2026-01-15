@@ -862,7 +862,7 @@ interface BatchProcessingMonitorDialogProps {
   open: boolean;
   onClose: () => void;
   nodeId: string;
-  config: BatchConfig;
+  config: ObsolateBuildConfig;
   urlMetadata: Array<{
     url: string;
     countryCode: string;

@@ -17,29 +17,29 @@ import {
   ExpandMore as ExpandMoreIcon,
   InfoOutlined as InfoOutlinedIcon,
 } from '@mui/icons-material';
-import type { BatchConfig } from '../../../common/types/index.js';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { useTranslation } from '../../i18n.js';
-import { useExtract2ConfigSection } from '../../hooks/useExtractionConfigSection.js';
 import { ExtractionPanel } from '../processing/ExtractionPanel.js';
 import { PrecisionPanel } from '../processing/PrecisionPanel.js';
+import { useTransformByZoomConfigSection } from './useTransformByZoomConfigSection.ts';
+import type { ShapeBuildConfig } from '../../../common/types/index.js';
 
 type Props = {
-  config: BatchConfig;
+  config: ShapeBuildConfig;
   disabled?: boolean;
-  onChange: (next: BatchConfig) => void;
+  onChange: (next: ShapeBuildConfig) => void;
 };
 
-export const Extract2ConfigSection: React.FC<Props> = ({ config, disabled, onChange }) => {
+export const TransformByZoomConfigSection: React.FC<Props> = ({ config, disabled, onChange }) => {
   const { t } = useTranslation();
   const {
-    baseExtract2Config,
+    baseTransformByZoomConfig,
     quantizeOptions,
     quantizeRank,
     quantizeLabel,
     update,
-  } = useExtract2ConfigSection({ config, disabled, onChange });
-  const extractionMode = baseExtract2Config.extractionMode ?? 'topojson';
+  } = useTransformByZoomConfigSection({ config, disabled, onChange });
+  const extractionMode = baseTransformByZoomConfig.extractionMode ?? 'topojson';
 
   return (
     <Accordion defaultExpanded>
@@ -67,14 +67,14 @@ export const Extract2ConfigSection: React.FC<Props> = ({ config, disabled, onCha
               <WorkerNumberConfigCard
                 icon={<TuneIcon fontSize="small" color="primary" />}
                 title={t('processing.filter.workersStage2', 'Transform Workers (Preprocessing)')}
-                value={baseExtract2Config.workers ?? 2}
+                value={baseTransformByZoomConfig.concurrentProcesses ?? 2}
                 helperText={t('processing.filter.workersStage2Help', 'Parallel workers for transform preprocessing.')}
                 warningText={undefined}
-                onChange={(workers) =>
+                onChange={(concurrentProcesses) =>
                   update({
-                    extract2Config: {
-                      ...baseExtract2Config,
-                      workers,
+                    transformByZoomConfig: {
+                      ...baseTransformByZoomConfig,
+                      concurrentProcesses,
                     },
                   })
                 }
@@ -104,8 +104,8 @@ export const Extract2ConfigSection: React.FC<Props> = ({ config, disabled, onCha
                       onChange={(event) => {
                         const nextValue = event.target.value;
                         update({
-                          extract2Config: {
-                            ...baseExtract2Config,
+                          transformByZoomConfig: {
+                            ...baseTransformByZoomConfig,
                             extractionMode: nextValue as typeof extractionMode,
                           },
                         });
@@ -134,22 +134,22 @@ export const Extract2ConfigSection: React.FC<Props> = ({ config, disabled, onCha
             <Grid size={{ xs: 12, md: 4 }}>
               <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
                 <ExtractionPanel
-                  tolerance={baseExtract2Config.tolerance ?? 0.1}
+                  tolerance={baseTransformByZoomConfig.tolerance ?? 0.1}
                   toleranceLabelKey="processing.filter.toleranceSecondary"
-                  enablePerFeatureExtraction={baseExtract2Config.enablePerFeatureExtraction ?? true}
+                  enablePerFeatureExtraction={baseTransformByZoomConfig.enablePerFeatureExtraction ?? true}
                   toleranceHelpKey="processing.filter.toleranceHelpStage2"
                   onToleranceChange={(tolerance) =>
                     update({
-                      extract2Config: {
-                        ...baseExtract2Config,
+                      transformByZoomConfig: {
+                        ...baseTransformByZoomConfig,
                         tolerance,
                       },
                     })
                   }
                   onPerFeatureChange={(enablePerFeatureExtraction) =>
                     update({
-                      extract2Config: {
-                        ...baseExtract2Config,
+                      transformByZoomConfig: {
+                        ...baseTransformByZoomConfig,
                         enablePerFeatureExtraction,
                       },
                     })
@@ -171,15 +171,15 @@ export const Extract2ConfigSection: React.FC<Props> = ({ config, disabled, onCha
             <Grid size={{ xs: 12, md: 4 }}>
               <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
                 <PrecisionPanel
-                  quantize={baseExtract2Config.quantize ?? 2000}
+                  quantize={baseTransformByZoomConfig.quantize ?? 2000}
                   quantizeOptions={quantizeOptions}
                   quantizeRank={quantizeRank}
                   quantizeLabel={quantizeLabel}
                   disabled={disabled}
                   onQuantizeChange={(quantize) =>
                     update({
-                      extract2Config: {
-                        ...baseExtract2Config,
+                      transformByZoomConfig: {
+                        ...baseTransformByZoomConfig,
                         quantize,
                       },
                     })

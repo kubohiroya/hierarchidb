@@ -123,7 +123,7 @@ vt は geojson-vt でタイル生成し、境界ラインをデデュープし�
 - `packages/vt-orchestrator/src/transform/tileIndexWriter.ts`: geojson-vt で tileIndexBand を作成。
 - `packages/vt-orchestrator/src/transform/band3Reservation.ts`: band3 予約の永続化。
 - `packages/vt-orchestrator/src/vt/vtWorker.ts`: geojson-vt → boundary dedupe → vt-pbf 保存。
-- `plugins/shape-plugin/src/services/build/shapeBuildConfig.ts`: Step4 の入力から BuildConfig を作る。
+- `plugins/shape-plugin/src/services/build/shapeBuildConfig.ts`: Step4 の入力から ObsolateBuildConfig を作る。
 - `plugins/shape-plugin/src/services/build/shapeBuildRunner.ts`: vt-orchestrator の `runPipeline` を呼び出す。
 - `plugins/shape-plugin/src/services/batch` と `plugins/shape-plugin/src/worker`: 旧実装を削除し、新 API を用意する。
 

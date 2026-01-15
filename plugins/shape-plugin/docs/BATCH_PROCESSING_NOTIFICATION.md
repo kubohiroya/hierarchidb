@@ -67,7 +67,7 @@ export class BatchSessionManager {
 
   async startBatchSession(
     treeNodeId: NodeId,
-    config: BatchConfig,
+    config: ObsolateBuildConfig,
     countries: string[],
     adminLevels: number[],
     progressCallback?: (event: BatchProgressEvent) => void

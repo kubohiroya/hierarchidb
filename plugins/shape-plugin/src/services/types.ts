@@ -13,11 +13,7 @@ import type {
 } from '@hierarchidb/ui-datasource';
 import type {
   FetchTaskPayload,
-  ErrorInfo as SharedErrorInfo,
-  ProcessingStage,
   ProgressInfo as SharedProgressInfo,
-  StageStatus as SharedStageStatus,
-  TaskStatus,
 } from '../common/types/index.js';
 
 // === API Method Signatures ===
@@ -129,6 +125,28 @@ export interface FilterRule {
 
 // === Session & Status Types ===
 
+export type ProcessingStage = 'fetch' | 'transform-by-band' | 'transform-by-zoom' | 'vt';
+export type BuildTaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'regression';
+
+export interface SharedStageStatus {
+  status: BuildTaskStatus;
+  progress: number;
+  tasksTotal: number;
+  tasksCompleted: number;
+  tasksFailed: number;
+  message?: string;
+}
+
+export interface SharedErrorInfo {
+  taskId: string;
+  nodeId: NodeId;
+  error: string;
+  timestamp: number;
+  stage: ProcessingStage;
+  retryable: boolean;
+}
+
+
 export interface BatchSession {
   nodeId: NodeId;
   status: 'idle' | 'running' | 'paused' | 'completed' | 'failed';
@@ -166,7 +184,7 @@ export interface TaskInfo {
   taskId: string;
   nodeId: NodeId;
   type: ProcessingStage;
-  status: TaskStatus;
+  status: BuildTaskStatus;
   index: number;
   progress: number;
   message?: string;
@@ -283,68 +301,6 @@ export interface OptimizationResult {
   suggestions: string[];
 }
 
-// (Legacy Worker Pool types removed)
-
-export type {
-  FetchTask,
-  //DownloadTaskInput,
-  ExtractTask,
-  Extract1Task,
-  Extract2Task,
-  //ExtractTaskInput,
-  TileExtractConfig,
-  VectorTileTask,
-  //VectorTileTaskInput,
-  ProcessingStage,
-  TaskStatus,
-} from '../common/types/index.js';
-
-export interface DownloadResult {
-  taskId: string;
-  status: 'completed' | 'failed';
-  outputBufferId: string;
-  featureCount: number;
-  downloadTime: number;
-  downloadSize: number;
-  compressionRatio: number;
-  spatialIndices: FeatureIndex[];
-  errorMessage?: string;
-}
-
-export interface Extract1Result {
-  taskId: string;
-  status: 'completed' | 'failed';
-  outputBufferId: string;
-  originalFeatureCount: number;
-  extractedFeatureCount: number;
-  reductionRatio: number;
-  qualityMetrics: QualityMetrics;
-  errorMessage?: string;
-}
-
-export interface Extract2Result {
-  taskId: string;
-  status: 'completed' | 'failed';
-  tileBufferIds: string[];
-  tilesGenerated: number;
-  topologyPreserved: boolean;
-  errorMessage?: string;
-}
-
-export interface VectorTileResult {
-  taskId: string;
-  status: 'completed' | 'failed';
-  tileId: string;
-  mvtSize: number;
-  featureCount: number;
-  compressionRatio?: number;
-  qualityScore: number;
-  errorMessage?: string;
-}
-
-// (Legacy Worker API interfaces removed)
-
-// === Supporting Types ===
 
 export interface FeatureIndex {
   indexId: string;

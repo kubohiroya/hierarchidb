@@ -169,8 +169,13 @@ export interface ShapeFetchCache {
 export interface ShapeTransformByBandCache {
   id: string;
   nodeId: NodeId;
+  bandId: number;
+  domainType: 'shape' | 'route';
+  sourceKey: string;
   data: ArrayBuffer;
   featureCount: number;
+  vertexCount: number;
+  polygonCount: number;
   extractionRatio: number;
   tolerance: number;
   timestamp: number;

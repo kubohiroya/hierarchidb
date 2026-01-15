@@ -21,7 +21,7 @@ pnpm --filter <affected package> typecheck
 - 変換の前後で `tsconfig.esm-nodenext.json` 等の共通設定が適用されることを想定し、ESM import/export を崩さないように注意してください。
 
 ## ファイル構成
-- `runner.ts`: 共通 CLI。対象ファイル収集やフォーマッタ呼び出しを司ります。
+- `compareTaskOrder.ts`: 共通 CLI。対象ファイル収集やフォーマッタ呼び出しを司ります。
 - `codemods/xxxx.ts`: 個別の変換ロジック。`runCodemod()` を export し、runner から呼び出される形に統一します。
 
 ## 注意事項

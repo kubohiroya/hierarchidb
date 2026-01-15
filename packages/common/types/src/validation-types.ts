@@ -12,18 +12,8 @@ export interface ValidationRule<TEntity extends PeerEntity = PeerEntity> {
   getMessage?: (entity: TEntity) => string;
 }
 
-
 export type ValidationFunction<T = unknown> = (
   data: T
 ) => Promise<ValidationResult> | ValidationResult;
 
-/**
- */
-export interface StepValidation<T = unknown> {
-  /**
-   */
-  validate: ValidationFunction<T>;
-  /**
-   */
-  skipIf?: (data: T) => boolean;
-}
+export type StepValidation = () => boolean | Promise<boolean>;

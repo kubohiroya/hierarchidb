@@ -6,7 +6,7 @@ import {
   Login as LoginIcon,
   Logout as LogoutIcon,
   SettingsBrightness as SystemThemeIcon,
-  Translate as TranslateIcon,
+  Transform as TransformIcon,
 } from '@mui/icons-material';
 import {
   Box,
@@ -214,7 +214,7 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
           Theme
         </MenuItem>
         <MenuItem onClick={(e) => setLanguageAnchorEl(e.currentTarget)}>
-          <TranslateIcon fontSize="small" sx={{ mr: 1 }} />
+          <TransformIcon fontSize="small" sx={{ mr: 1 }} />
           Language
         </MenuItem>
         <Divider />

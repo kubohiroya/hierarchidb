@@ -97,7 +97,7 @@ export interface ShapesEntity extends PeerEntity {
   checkboxState?: boolean[][] | string;
   
   // Batch processing configuration
-  batchConfig?: BatchConfig;
+  batchConfig?: ObsolateBuildConfig;
   clearCacheBeforeStart?: boolean;
   
   // Relational references
@@ -128,7 +128,7 @@ export interface BatchSessionEntity extends GroupEntity {
   status: SessionStatus;
   
   // Session configuration
-  batchConfig: BatchConfig;
+  batchConfig: ObsolateBuildConfig;
   totalTasks: number;
   completedTasks: number;
   failedTasks: number;
@@ -1033,7 +1033,7 @@ classDiagram
         +boolean licenseAgreement
         +string[] selectedCountries
         +object adminLevels
-        +BatchConfig batchConfig
+        +ObsolateBuildConfig batchConfig
         +string sessionId
     }
     
@@ -1261,7 +1261,7 @@ interface MultiSessionManager {
 // ✅ Simple exclusive session management (sufficient)
 interface ExclusiveSessionManager {
   checkActiveSession: (nodeId: TreeNodeId) => Promise<boolean>;
-  createSession: (nodeId: TreeNodeId, config: BatchConfig) => Promise<string>;
+  createSession: (nodeId: TreeNodeId, config: ObsolateBuildConfig) => Promise<string>;
   endSession: (nodeId: TreeNodeId) => Promise<void>;
 }
 ```

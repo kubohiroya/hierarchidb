@@ -33,10 +33,12 @@ export function useShapeBuildTasks(
   const [tasks, setTasks] = useAtom(tasksAtom);
   const [isLoading, setIsLoading] = useAtom(tasksLoadingAtom);
   const [error, setError] = useAtom(tasksErrorAtom);
+  const tasksLength = tasks.length;
   const reportedFailuresRef = useRef<Set<string>>(new Set());
   const pendingTasksRef = useRef<ShapeBuildTaskSummary[] | null>(null);
   const flushTimerRef = useRef<number | null>(null);
   const lastFlushRef = useRef<number>(0);
+  const hasLoadedRef = useRef(false);
 
   useEffect(() => {
     reportedFailuresRef.current = new Set();
@@ -77,16 +79,21 @@ export function useShapeBuildTasks(
     if (!nodeId) {
       setTasks([]);
       setError(null);
+      setIsLoading(false);
       console.debug('[ShapeBuildStep] buildTasks:skip', { nodeId });
       return;
     }
-    setIsLoading(true);
+    const shouldShowLoading = tasksLength === 0 && !hasLoadedRef.current;
+    if (shouldShowLoading) {
+      setIsLoading(true);
+    }
     try {
       await bridgeRef.current.initialize();
       //console.debug('[ShapeBuildStep] buildTasks:fetch', { nodeId });
       const next = await bridgeRef.current.getBatchTasks(SHAPE_NODE_TYPE, nodeId);
       scheduleFlush(next);
       setError(null);
+      hasLoadedRef.current = true;
       //console.debug('[ShapeBuildStep] buildTasks:ok', { nodeId, count: next.length });
     } catch (err) {
       const errObj = err instanceof Error ? err : new Error('Failed to fetch batch tasks');
@@ -96,9 +103,11 @@ export function useShapeBuildTasks(
         message: errObj.message,
       });
     } finally {
-      setIsLoading(false);
+      if (shouldShowLoading) {
+        setIsLoading(false);
+      }
     }
-  }, [nodeId, scheduleFlush, setError, setIsLoading, setTasks]);
+  }, [nodeId, scheduleFlush, setError, setIsLoading, setTasks, tasksLength]);
 
   useEffect(() => {
     if (!nodeId) return;

@@ -12,11 +12,11 @@ After this change, the shape build pipeline uses four explicit stages (fetch, tr
 
 - [x] (2026-01-15 13:40Z) Write and commit this ExecPlan with the agreed naming, staging, and storage layout.
 - [x] Implement new cache naming and stage vocabulary in shared types and UI labels.
-- [ ] Rewire transform-by-band to write/read ephemeral caches instead of persistent outputs.
-- [ ] Rewire transform-by-zoom to use cache naming consistently and remove redundant stores.
+- [x] Rewire transform-by-band to write/read ephemeral caches instead of persistent outputs.
+- [x] Rewire transform-by-zoom to use cache naming consistently and remove redundant stores.
 - [x] Update deletion paths and counts to align with the new cache layout.
 - [x] Rename ephemeral cache tables (EphemeralGisDB/EphemeralShapeDB) to cache naming and update usages.
-- [ ] Run `pnpm typecheck` and record evidence in `TASKS.md`.
+- [x] Run `pnpm typecheck` and record evidence in `TASKS.md`.
 
 ## Surprises & Discoveries
 
@@ -47,7 +47,7 @@ Terms used in this plan:
 
 ## Plan of Work
 
-Start by codifying the naming and stage vocabulary in shared types and UI strings. Update the shape-ephemeral schema to rename legacy tables to `transformByBandCache` and `transformByZoomCache`, and implement a Dexie migration that copies data from the legacy tables into the new tables on version bump. Next, update transform-by-band handling in `packages/vt-orchestrator/src/transform/transformStage.ts` so it writes to the ephemeral cache rather than the persistent `vt-shape-store`, and update `packages/vt-orchestrator/src/vt/vtStage.ts` so it reads the cache from the ephemeral store. Remove or stop writing to `transformBandBuffers` and `tileIndexBand` in `@hierarchidb/vt-shape-store`, and update any queries or summaries (e.g., `plugins/shape-plugin/src/services/vt/shapeStageMetadata.ts`) to use the ephemeral caches. Update deletion logic and counts in Step4 to remove the new caches and to compute counts from the new cache tables, making sure the buttons disable when counts reach zero. Finally, update docs/log strings and run typecheck.
+Start by codifying the naming and stage vocabulary in shared types and UI strings. Update the shape-ephemeral schema to rename legacy tables to `transformByBandCache` and `transformByZoomCache`, and implement a Dexie migration that copies data from the legacy tables into the new tables on version bump. Next, update transform-by-band handling in `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts` so it writes to the ephemeral cache rather than the persistent `vt-shape-store`, and update `packages/vt-orchestrator/src/vt/vtStage.ts` so it reads the cache from the ephemeral store. Remove or stop writing to `transformBandBuffers` and `tileIndexBand` in `@hierarchidb/vt-shape-store`, and update any queries or summaries (e.g., `plugins/shape-plugin/src/services/vt/shapeStageMetadata.ts`) to use the ephemeral caches. Update deletion logic and counts in Step4 to remove the new caches and to compute counts from the new cache tables, making sure the buttons disable when counts reach zero. Finally, update docs/log strings and run typecheck.
 
 ## Concrete Steps
 
@@ -62,7 +62,7 @@ Run all commands from repository root `/Users/hiroya/WebstormProjects/hierarchid
    - Update `plugins/shape-plugin/src/services/batch/ShapeBuildAPIClient.ts` and `packages/runtime-worker/src/services/ShapeQueryService.ts` to use the new cache names.
 
 3) Rewire transform-by-band output to ephemeral cache.
-   - Replace `shapeStore.transformBandBuffers.put` in `packages/vt-orchestrator/src/transform/transformStage.ts` with writes to the ephemeral cache.
+   - Replace `shapeStore.transformBandBuffers.put` in `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts` with writes to the ephemeral cache.
    - Update `packages/vt-orchestrator/src/vt/vtStage.ts` to read transform-by-band cache data from the ephemeral store rather than `vt-shape-store`.
    - Remove or no-op writes to `tileIndexBand` if no longer needed by vt stage; document rationale in the Decision Log.
 
@@ -94,7 +94,7 @@ Expected `pnpm typecheck` snippet:
 ## Interfaces and Dependencies
 
 - `packages/features/shape-store/src/EphemeralShapeDB.ts` defines the ephemeral cache schema and must include the new table names.
-- `packages/vt-orchestrator/src/transform/transformStage.ts` writes transform-by-band cache entries.
+- `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts` writes transform-by-band cache entries.
 - `packages/vt-orchestrator/src/vt/vtStage.ts` reads transform-by-band cache entries.
 - `plugins/shape-plugin/src/ui/components/step4/useFetchConfigSection.ts` uses cache counts to enable/disable delete buttons.
 

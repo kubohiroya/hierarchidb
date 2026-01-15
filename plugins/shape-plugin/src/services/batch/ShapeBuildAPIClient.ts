@@ -683,7 +683,8 @@ export class EphemeralShapeApiImpl implements EphemeralShapeAPI {
 
   async getNumCaches(): Promise<{
     numFetchCaches: number;
-    numTransformCaches: number;
+    numTransformByBandCaches: number;
+    numTransformByZoomCaches: number;
     numVtCaches: number;
     numSessions: number;
     totalSize: number;
