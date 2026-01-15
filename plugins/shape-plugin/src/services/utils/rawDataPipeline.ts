@@ -19,6 +19,29 @@ const SOURCE_HASH_ALGORITHM: HashAlgorithm = 'sha3-256';
 
 const hashPort = new NobleSha3HashPort();
 
+const isOffline = (): boolean => (
+  typeof navigator !== 'undefined' && navigator.onLine === false
+);
+
+const resolveTimeoutSignal = (signal: AbortSignal | undefined, timeoutMs: number | undefined) => {
+  if (!timeoutMs || timeoutMs <= 0) {
+    return { signal, cleanup: undefined as undefined | (() => void) };
+  }
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, timeoutMs);
+  const cleanup = () => clearTimeout(timeoutId);
+  if (signal) {
+    if (signal.aborted) {
+      controller.abort(signal.reason);
+    } else {
+      signal.addEventListener('abort', () => controller.abort(signal.reason), { once: true });
+    }
+  }
+  return { signal: controller.signal, cleanup };
+};
+
 export const fetchRawDataWithPipeline = async <TRawData>(params: {
   nodeId: NodeId;
   fetchOptions: FetchOptions;
@@ -38,28 +61,36 @@ export const fetchRawDataWithPipeline = async <TRawData>(params: {
     }
   }
 
+  if (isOffline()) {
+    throw new Error('Offline: raw data cache is missing.');
+  }
   const network = createShapeNetworkPort();
-  const response = await fetchWithRetry({
-    network,
-    request,
-    retryConfig,
-    signal: fetchOptions.signal,
-  });
-  const rawBuffer = await response.arrayBuffer();
-  const sourceHash = hashPort.digest(rawBuffer, SOURCE_HASH_ALGORITHM);
-  const rawStream = bufferToStream(rawBuffer);
-  const transformed = await pipeline.transformStream(rawStream, fetchOptions);
-  const storedBuffer = await streamToBuffer(transformed.stream);
+  const { signal, cleanup } = resolveTimeoutSignal(fetchOptions.signal, fetchOptions.timeout);
+  try {
+    const response = await fetchWithRetry({
+      network,
+      request,
+      retryConfig,
+      signal,
+    });
+    const rawBuffer = await response.arrayBuffer();
+    const sourceHash = hashPort.digest(rawBuffer, SOURCE_HASH_ALGORITHM);
+    const rawStream = bufferToStream(rawBuffer);
+    const transformed = await pipeline.transformStream(rawStream, fetchOptions);
+    const storedBuffer = await streamToBuffer(transformed.stream);
 
-  const stored = await store.setForNode(nodeId, request.cacheKey, storedBuffer, {
-    sizeBytes: storedBuffer.byteLength,
-    contentType: transformed.contentType,
-    fetchedAt: Date.now(),
-    sourceHash,
-    sourceHashAlgorithm: SOURCE_HASH_ALGORITHM,
-  });
-  const decoded = await pipeline.decodeBuffer(storedBuffer, stored.metadata);
-  return { decoded, cacheKey: request.cacheKey, metadata: stored.metadata };
+    const stored = await store.setForNode(nodeId, request.cacheKey, storedBuffer, {
+      sizeBytes: storedBuffer.byteLength,
+      contentType: transformed.contentType,
+      fetchedAt: Date.now(),
+      sourceHash,
+      sourceHashAlgorithm: SOURCE_HASH_ALGORITHM,
+    });
+    const decoded = await pipeline.decodeBuffer(storedBuffer, stored.metadata);
+    return { decoded, cacheKey: request.cacheKey, metadata: stored.metadata };
+  } finally {
+    cleanup?.();
+  }
 };
 
 export const bufferToStream = (buffer: ArrayBuffer): ReadableStream<Uint8Array> => (

@@ -36,7 +36,7 @@ type CacheCounts = {
 export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChange, onResetSession }: Args) => {
   const { t } = useTranslation();
   const switchId = useId();
-  const baseFetchConfig = config.fetchConfig ?? DEFAULT_BUILD_CONFIG.fetchConfig;
+  const baseFetchConfig = config.fetchConfig;
   const bridgeRef = useMemo(() => getWorkerBridge(), []);
 
   const [countsLoading, setCountsLoading] = useState(false);
@@ -268,21 +268,15 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
   }, [nodeId, loadCounts]);
 
   const update = useCallback((partial: Partial<ShapeBuildConfig>) => {
-    onChange(mergeBuildConfig({ ...config, ...partial }));
+    onChange(mergeBuildConfig(config, partial));
   }, [config, onChange]);
 
   const handleResetDefaults = useCallback(() => {
-    const defaultFetchConfig = DEFAULT_BUILD_CONFIG.fetchConfig ?? { concurrentProcesses: 2 };
-    onChange(mergeBuildConfig({
+    onChange({
       ...DEFAULT_BUILD_CONFIG,
-      fetchConfig: defaultFetchConfig,
-      dataSourceName: config.dataSourceName ?? DEFAULT_BUILD_CONFIG.dataSourceName,
-    }));
+      dataSourceName: config.dataSourceName,
+    });
   }, [config.dataSourceName, onChange]);
-
-  if (!baseFetchConfig) {
-    throw new Error('DownloadConfigSection: baseDownloadConfig is not defined');
-  }
 
   return {
     t,

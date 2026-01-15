@@ -8,6 +8,7 @@ import {
   tasksErrorAtom,
   tasksLoadingAtom,
 } from '../../atoms/shapeBuildProgressAtoms.js';
+import { parseGeometrySimplifyError } from './geometrySimplifyError.ts';
 
 export interface UseShapeBuildTasksOptions {
   autoRefresh?: boolean | (() => boolean);
@@ -146,11 +147,17 @@ export function useShapeBuildTasks(
       if (reported.has(task.taskId)) return;
       reported.add(task.taskId);
       const message = task.message ?? 'Task failed';
-      console.warn('[ShapeBuildStep] task failed', {
-        taskId: task.taskId,
-        stage: task.stage,
-        message,
-      });
+      const geometryDetails = parseGeometrySimplifyError(message);
+      if (geometryDetails) {
+        console.warn('[ShapeBuildStep] task failed:geometrySimplify', {
+          taskId: task.taskId,
+          stage: task.stage,
+          message,
+          details: geometryDetails,
+        });
+        return;
+      }
+      console.warn('[ShapeBuildStep] task failed', { taskId: task.taskId, stage: task.stage, message });
     });
   }, [tasks]);
 

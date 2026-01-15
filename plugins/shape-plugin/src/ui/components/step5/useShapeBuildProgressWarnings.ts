@@ -45,17 +45,18 @@ export const useShapeBuildProgressWarnings = ({
     }
     const stage = stages.find((candidate) => candidate.id === stageId);
     const stageLabel = stage?.title ?? stageId;
+    const buildConfig = data?.buildConfig;
+    if (!buildConfig) return null;
     const currentValue = (() => {
       switch (stageId) {
         case 'fetch':
-          return data?.buildConfig?.fetchConfig?.concurrentDownloads;
+          return buildConfig.fetchConfig.maxConcurrent;
         case 'transform-by-band':
-          return data?.buildConfig?.transformByBandConfig?.concurrentProcesses;
+          return buildConfig.transformByBandConfig.maxConcurrent;
         case 'transform-by-zoom':
-          return data?.buildConfig?.transformByZoomConfig?.concurrentProcesses
-            ?? data?.buildConfig?.transformByBandConfig?.concurrentProcesses;
+          return buildConfig.transformByZoomConfig.maxConcurrent;
         case 'vt':
-          return data?.buildConfig?.vtConfig?.concurrentProcesses;
+          return buildConfig.vtConfig.maxConcurrent;
         default:
           return undefined;
       }

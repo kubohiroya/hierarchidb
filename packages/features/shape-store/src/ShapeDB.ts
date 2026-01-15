@@ -29,8 +29,6 @@ export interface BuildSessionConfig extends CommonSessionConfig {
   transformByBandConfig: TransformByBandConfig;
   transformByZoomConfig: TransformByZoomConfig;
   vectorTiles: VTConfig;
-  concurrentDownloads?: number;
-  concurrentProcesses?: number;
   quantize?: number;
   extract?: number;
   tolerance?: number;

@@ -10,12 +10,8 @@ type Args = {
 
 export const useVTConfigSection = ({ buildConfig, onChange }: Args) => {
   const update = useCallback((partial: Partial<ShapeBuildConfig>) => {
-    onChange(mergeBuildConfig({ ...buildConfig, ...partial }));
+    onChange(mergeBuildConfig(buildConfig, partial));
   }, [buildConfig, onChange]);
-
-  if (!buildConfig) {
-    throw new Error('VTConfigSection: baseTileConfig is not defined');
-  }
 
   return {
     buildConfig,

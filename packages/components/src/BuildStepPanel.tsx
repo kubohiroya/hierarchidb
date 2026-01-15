@@ -1,5 +1,5 @@
 import { type ReactNode, useCallback, useMemo, useState } from 'react';
-import { Box, LinearProgress, Stack, Typography } from '@mui/material';
+import { Box, Stack, Typography } from '@mui/material';
 import { LRUSplitView2, type LRUSplitView2Pane, type LRUSplitView2RenderContext, type PaneProgress } from '@hierarchidb/ui-lru-splitview';
 import { BuildStepStagePanel } from './BuildStepStagePanel.js';
 import { BuildStageFilterProvider, type BuildStageFilter } from './BuildStepStageFilterContext.tsx';
@@ -15,6 +15,7 @@ export interface BuildStepPanelProps {
   stages: BuildStage[];
   stageProgress?: Record<string, number>;
   paneProgress?: PaneProgress[];
+  stageConcurrencyIndicators?: Record<string, { maxConcurrent: number; isRunning: boolean }>;
   splitViewBreakpoints?: number[];
   splitViewInitialSizesByBreakpoint?: number[][];
   splitViewAutoCloseCountsByBreakpoint?: number[];
@@ -39,6 +40,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   stages,
   stageProgress = {},
   paneProgress,
+  stageConcurrencyIndicators,
   splitViewBreakpoints,
   splitViewInitialSizesByBreakpoint,
   splitViewAutoCloseCountsByBreakpoint,
@@ -125,6 +127,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
     const progressValue = resolveStageProgress(id);
     const taskCount = taskCountByStage[id];
     const filter = resolveStageFilter(id);
+    const indicator = stageConcurrencyIndicators?.[stage.id];
     return (
       <Box onDoubleClick={toggle} sx={{ height: '100%', minHeight: 0 }}>
         <BuildStepStagePanel
@@ -134,6 +137,10 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
           progress={progressValue}
           progressContent={stageProgressContent?.[stage.id]}
           taskCount={taskCount}
+          concurrencyIndicator={indicator ? {
+            count: indicator.maxConcurrent,
+            isRunning: indicator.isRunning,
+          } : undefined}
           failedMode={filter.failedMode}
           onFailedModeUpdate={(next) => updateStageFilter(id, { failedMode: next })}
           completedMode={filter.completedMode}
@@ -145,7 +152,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
         </BuildStepStagePanel>
       </Box>
     );
-  }, [resolveStageProgress, resolveStageFilter, stageById, stageContents, stageProgressContent, taskCountByStage, updateStageFilter]);
+  }, [stageById, resolveStageProgress, taskCountByStage, resolveStageFilter, stageConcurrencyIndicators, stageProgressContent, stageContents, updateStageFilter]);
 
   const computedStatusLabel = (() => {
     switch (status) {
@@ -186,11 +193,6 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
             <Typography variant="body2" color="text.secondary">
               {statusLabel ?? computedStatusLabel}
             </Typography>
-            <LinearProgress
-              variant="determinate"
-              value={overallProgress}
-              sx={{ height: 10, borderRadius: 6, margin: 0, padding: 0, border: 0}}
-            />
           </Stack>
         )}
       </Stack>

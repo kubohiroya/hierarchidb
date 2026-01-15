@@ -1,6 +1,6 @@
 import type { ShapeBuildStage } from '@hierarchidb/plugin-service-api';
 import type { ShapeEntity } from '../../../common/types/index.js';
-import { DEFAULT_BUILD_CONFIG, mergeBuildConfig } from '../../../common/types/index.js';
+import { mergeBuildConfig } from '../../../common/types/index.js';
 import { toNodeId, type NodeId } from '@hierarchidb/common-types';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
 import { ephemeralShapeAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
@@ -46,30 +46,33 @@ export function resolveBatchConfigInvalidation(
   prevConfig: ShapeBuildConfig | undefined,
   nextConfig: ShapeBuildConfig | undefined,
 ): ShapeBuildStage[] {
-  const prev = mergeBuildConfig(prevConfig ?? DEFAULT_BUILD_CONFIG);
-  const next = mergeBuildConfig(nextConfig ?? DEFAULT_BUILD_CONFIG);
+  if (!prevConfig || !nextConfig) {
+    return FULL_INVALIDATION_STAGES;
+  }
+  const prev = mergeBuildConfig(prevConfig);
+  const next = mergeBuildConfig(nextConfig);
 
   const stages = new Set<ShapeBuildStage>();
 
-  if (hasDiff(prev.fetchConfig ?? {}, next.fetchConfig ?? {})) {
+  if (hasDiff(prev.fetchConfig, next.fetchConfig)) {
     stages.add('fetch');
     stages.add('transform-by-band');
     stages.add('transform-by-zoom');
     stages.add('vt');
   }
 
-  if (hasDiff(prev.transformByBandConfig ?? {}, next.transformByBandConfig ?? {})) {
+  if (hasDiff(prev.transformByBandConfig, next.transformByBandConfig)) {
     stages.add('transform-by-band');
     stages.add('transform-by-zoom');
     stages.add('vt');
   }
 
-  if (hasDiff(prev.transformByZoomConfig ?? {}, next.transformByZoomConfig ?? {})) {
+  if (hasDiff(prev.transformByZoomConfig, next.transformByZoomConfig)) {
     stages.add('transform-by-zoom');
     stages.add('vt');
   }
 
-  if (hasDiff(prev.vtConfig ?? {}, next.vtConfig ?? {})) {
+  if (hasDiff(prev.vtConfig, next.vtConfig)) {
     stages.add('vt');
   }
 

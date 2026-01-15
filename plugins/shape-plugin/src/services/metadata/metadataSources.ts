@@ -20,6 +20,10 @@ import { GEOBOUNDARIES_ALL_METADATA_URL } from '../utils/geoboundariesEndpoints.
 
 type GeoBoundariesRecord = Record<string, unknown>;
 
+const isOffline = (): boolean => (
+  typeof navigator !== 'undefined' && navigator.onLine === false
+);
+
 const GADM_MAPS_URL = 'https://gadm.org/maps.html';
 
 const parseAdminLevel = (value: unknown): number | null => {
@@ -76,11 +80,16 @@ export async function fetchGeoBoundariesMetadata(nodeId: NodeId): Promise<Countr
     jsonDeserializer,
     createShapeNetworkPort(),
   );
-  const entry = await store.getOrFetchForNode(nodeId, GEOBOUNDARIES_ALL_METADATA_URL, {
-    accept: 'application/json',
-    cacheKey: buildShapeCacheKey('geoboundaries:metadata:all', GEOBOUNDARIES_ALL_METADATA_URL),
-    allowStale: false,
-  });
+  const cacheKey = buildShapeCacheKey('geoboundaries:metadata:all', GEOBOUNDARIES_ALL_METADATA_URL);
+  const entry = isOffline()
+    ? await store.get(cacheKey)
+    : await store.getOrFetchForNode(nodeId, GEOBOUNDARIES_ALL_METADATA_URL, {
+      accept: 'application/json',
+      cacheKey,
+    });
+  if (!entry) {
+    throw new Error('Offline: geoboundaries metadata cache is missing.');
+  }
 
   if (import.meta.env?.DEV) {
     const payload = entry.value as unknown;
@@ -200,6 +209,7 @@ export async function fetchGeoBoundariesMetadata(nodeId: NodeId): Promise<Countr
   }
   return results;
 }
+
 
 type GadmCountryEntry = {
   iso3: string;

@@ -6,6 +6,7 @@ type Props = {
   statusLabel: string;
   statusColor: 'default' | 'success' | 'error' | 'warning' | 'info';
   message?: string;
+  detailLines?: string[];
   progress?: number;
   fallbackProgress: number;
 };
@@ -15,6 +16,7 @@ export const TaskItem: React.FC<Props> = ({
   statusLabel,
   statusColor,
   message,
+  detailLines,
   progress,
   fallbackProgress,
 }) => (
@@ -35,6 +37,15 @@ export const TaskItem: React.FC<Props> = ({
       <Typography variant="caption" color="text.secondary">
         {message}
       </Typography>
+    ) : null}
+    {detailLines?.length ? (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+        {detailLines.map((line, index) => (
+          <Typography key={`${index.toString()}-${line}`} variant="caption" color="text.secondary">
+            {line}
+          </Typography>
+        ))}
+      </Box>
     ) : null}
     <LinearProgress
       variant="determinate"

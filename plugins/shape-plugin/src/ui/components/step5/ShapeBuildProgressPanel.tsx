@@ -123,6 +123,33 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
     Math.min(100, Math.max(0, stageProgress[stageId] ?? summary.overallProgress))
   ), [stageProgress, summary.overallProgress]);
 
+  const stageConcurrencyIndicators = useMemo(() => {
+    const buildConfig = data?.buildConfig;
+    if (!buildConfig) return undefined;
+    return stages.reduce<Record<string, { maxConcurrent: number; isRunning: boolean }>>((acc, stage) => {
+      const stageTasks = tasksByStage[stage.id] ?? [];
+      const isStageRunning = summary.buildStatus === 'running'
+        && stageTasks.some((task) => task.status === 'running');
+      const maxConcurrent = (() => {
+        switch (stage.id) {
+          case 'fetch':
+            return buildConfig.fetchConfig.maxConcurrent;
+          case 'transform-by-band':
+            return buildConfig.transformByBandConfig.maxConcurrent;
+          case 'transform-by-zoom':
+            return buildConfig.transformByZoomConfig.maxConcurrent;
+          case 'vt':
+            return buildConfig.vtConfig.maxConcurrent;
+          default:
+            return undefined;
+        }
+      })();
+      if (maxConcurrent === undefined) return acc;
+      acc[stage.id] = { maxConcurrent, isRunning: isStageRunning };
+      return acc;
+    }, {});
+  }, [data?.buildConfig, stages, tasksByStage, summary.buildStatus]);
+
   const stageProgressContent = useMemo(() => (
     stages.reduce<Record<string, JSX.Element>>((acc, stage) => {
       const stageTasks = tasksByStage[stage.id] ?? [];
@@ -220,6 +247,7 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
           ]}
           stageContents={stageContents}
           stageProgressContent={stageProgressContent}
+          stageConcurrencyIndicators={stageConcurrencyIndicators}
           statusContent={summary.hasProgressData ? (
             <TaskProgressSummaryCard
               summary={summary}

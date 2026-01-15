@@ -9,12 +9,14 @@ export type TransformByBandStageContext = {
   ephemeralDB: EphemeralShapeDB;
   transformByBandConfig: TransformByBandConfig;
   bands: BandConfig[];
+  abortSignal?: AbortSignal;
 };
 
 export type TransformByZoomStageContext = {
   ephemeralDB: EphemeralShapeDB;
   transformByZoomConfig: TransformByZoomConfig;
   bands: BandConfig[];
+  abortSignal?: AbortSignal;
 };
 
 export type VTStageContext = {
@@ -22,4 +24,5 @@ export type VTStageContext = {
   vtDB: VtDb;
   vtConfig: VTConfig;
   bands: BandConfig[];
+  abortSignal?: AbortSignal;
 };

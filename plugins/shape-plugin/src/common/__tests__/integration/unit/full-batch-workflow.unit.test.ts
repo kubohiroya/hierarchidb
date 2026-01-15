@@ -210,7 +210,7 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
         batchConfig: {
           ...testEntity.buildConfig,
           // Invalid configuration to trigger errors
-          concurrentDownloads: -1,
+          maxConcurrent: -1,
         },
       };
 

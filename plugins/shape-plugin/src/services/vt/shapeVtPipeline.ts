@@ -18,7 +18,6 @@ import {
 import { ephemeralShapeDB } from '@hierarchidb/shape-store';
 import { VtDb } from '@hierarchidb/vt-store';
 import type { CountryMetadata, DataSourceName, FetchTaskPayload, SelectedArrayByCountries } from '../../common/types/index.js';
-import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants.js';
 import { runShapeFetchStage } from './shapeFetchStage.js';
 import { updateShapeStageMetadata } from './shapeStageMetadata.js';
 import { metadataLoader } from '../metadata/MetadataLoader.js';
@@ -260,20 +259,11 @@ const buildVtTasks = async (
   return tasks;
 };
 
-const resolveTransformByBandConfig = (config: ShapeBuildConfig) => ({
-  ...DEFAULT_BUILD_CONFIG.transformByBandConfig,
-  ...config.transformByBandConfig,
-});
+const resolveTransformByBandConfig = (config: ShapeBuildConfig) => config.transformByBandConfig;
 
-const resolveTransformByZoomConfig = (config: ShapeBuildConfig) => ({
-  ...DEFAULT_BUILD_CONFIG.transformByZoomConfig,
-  ...config.transformByZoomConfig,
-});
+const resolveTransformByZoomConfig = (config: ShapeBuildConfig) => config.transformByZoomConfig;
 
-const resolveVtConfig = (config: ShapeBuildConfig) => ({
-  ...DEFAULT_BUILD_CONFIG.vtConfig,
-  ...config.vtConfig,
-});
+const resolveVtConfig = (config: ShapeBuildConfig) => config.vtConfig;
 
 export type ShapeVtPipelineParams = {
   nodeId: NodeId;
@@ -300,6 +290,7 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
   const enableBand3 = hasBand3Selection(params.selectedArrayByCountries, params.downloadTaskPayloads);
   const bands = buildBands(enableBand3);
 
+  const fetchAbortController = new AbortController();
   await runShapeFetchStage({
     nodeId: params.nodeId,
     dataSource: params.dataSource,
@@ -311,6 +302,7 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
     metadata,
     waitIfPaused: params.waitIfPaused,
     resumeExistingTasks,
+    abortController: fetchAbortController,
   });
 
   const existingTransformByBandTasks = resumeExistingTasks
@@ -324,18 +316,26 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
     if (transformByBandTasks.length > 0) {
       await putTasks(taskQueue, transformByBandTasks as Array<TaskQueueRecord<ShapeTransformByBandTaskInput>>);
     }
+    const transformByBandAbortController = new AbortController();
     const transformByBandHandler = createTransformByBandHandler({
       shapeDB: shapeStore,
       ephemeralDB: ephemeralStore,
       transformByBandConfig: resolveTransformByBandConfig(params.buildConfig),
       bands,
+      abortSignal: transformByBandAbortController.signal,
     });
     await runStageTasks({
       nodeId: params.nodeId,
       stage: 'transform-by-band',
       handler: transformByBandHandler as unknown as StageHandler<ShapeTransformByBandTaskInput>,
       waitIfPaused: params.waitIfPaused,
+      maxConcurrent: params.buildConfig.transformByBandConfig.maxConcurrent,
+      failureHandling: 'stop',
+      abortController: transformByBandAbortController,
     });
+    if (params.buildConfig.fetchConfig.deleteOnComplete) {
+      await shapeStore.fetchCache.where('nodeId').equals(params.nodeId).delete();
+    }
   }
 
   const existingTransformByZoomTasks = resumeExistingTasks
@@ -349,16 +349,21 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
     if (transformByZoomTasks.length > 0) {
       await putTasks(taskQueue, transformByZoomTasks as Array<TaskQueueRecord<ShapeTransformByZoomTaskInput>>);
     }
+    const transformByZoomAbortController = new AbortController();
     const transformByZoomHandler = createTransformByZoomHandler({
       ephemeralDB: ephemeralStore,
       transformByZoomConfig: resolveTransformByZoomConfig(params.buildConfig),
       bands,
+      abortSignal: transformByZoomAbortController.signal,
     });
     await runStageTasks({
       nodeId: params.nodeId,
       stage: 'transform-by-zoom',
       handler: transformByZoomHandler as unknown as StageHandler<ShapeTransformByZoomTaskInput>,
       waitIfPaused: params.waitIfPaused,
+      maxConcurrent: params.buildConfig.transformByZoomConfig.maxConcurrent,
+      failureHandling: 'stop',
+      abortController: transformByZoomAbortController,
     });
   }
 
@@ -380,18 +385,32 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
     if (vtTasks.length > 0) {
       await putTasks(taskQueue, vtTasks as Array<TaskQueueRecord<ShapeVtTaskInput>>);
     }
+    const vtAbortController = new AbortController();
     const vtHandler = createVtHandler({
       ephemeralDB: ephemeralStore,
       vtDB: vtStore,
       vtConfig: resolveVtConfig(params.buildConfig),
       bands,
+      abortSignal: vtAbortController.signal,
     });
     await runStageTasks({
       nodeId: params.nodeId,
       stage: 'vt',
       handler: vtHandler as unknown as StageHandler<ShapeVtTaskInput>,
       waitIfPaused: params.waitIfPaused,
+      maxConcurrent: params.buildConfig.vtConfig.maxConcurrent,
+      failureHandling: 'stop',
+      abortController: vtAbortController,
     });
+    if (params.buildConfig.transformByBandConfig.deleteOnComplete) {
+      await ephemeralStore.transformByBandCache.where('nodeId').equals(params.nodeId).delete();
+    }
+    if (params.buildConfig.transformByZoomConfig.deleteOnComplete) {
+      await Promise.all([
+        ephemeralStore.transformByZoomCache.where('nodeId').equals(params.nodeId).delete(),
+        ephemeralStore.transformByZoomReservations.where('nodeId').equals(params.nodeId).delete(),
+      ]);
+    }
   }
 
   await updateShapeStageMetadata({

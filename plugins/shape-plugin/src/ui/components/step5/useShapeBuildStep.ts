@@ -6,8 +6,6 @@ import { useTranslation } from '../../i18n.js';
 import { useAtom } from 'jotai';
 import { persistedTasksAtom } from '../../atoms/shapeBuildProgressAtoms.js';
 import {
-  DEFAULT_BUILD_CONFIG,
-  mergeBuildConfig,
   summarizeCheckboxState,
   validateBatchConfig,
   type ShapeEntity,
@@ -656,11 +654,10 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       ?? t('stage.progress.working', 'Working...');
   })();
 
-  const isProcessingValid = useMemo(() => (
-    validateBatchConfig(
-      mergeBuildConfig(data?.buildConfig ?? DEFAULT_BUILD_CONFIG),
-    ).isValid
-  ), [data?.buildConfig]);
+  const isProcessingValid = useMemo(() => {
+    if (!data?.buildConfig) return false;
+    return validateBatchConfig(data.buildConfig).isValid;
+  }, [data?.buildConfig]);
   const hasSelection = summarizeCheckboxState(selectedArrayByCountries).hasSelection;
   const hasDataSource = Boolean(data?.buildConfig?.dataSourceName);
   const {

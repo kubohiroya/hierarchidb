@@ -71,15 +71,15 @@ export const FetchConfigSection: React.FC<Props> = ({ config, draft, nodeId, dis
           <Grid size={{ xs: 12, sm: 4 }}>
             <WorkerNumberConfigCard
               title={t('processing.download.workers', 'Concurrent Fetch Workers')}
-              value={baseFetchConfig.concurrentDownloads ?? 2}
+              value={baseFetchConfig.maxConcurrent}
               icon={<CloudDownloadIcon fontSize="small" color="primary" />}
               helperText={t('processing.download.workersHelp', 'Controls how many fetches run in parallel.')}
               warningText={undefined}
-              onChange={(concurrentDownloads) =>
+              onChange={(maxConcurrent) =>
                 update({
                   fetchConfig: {
                     ...baseFetchConfig,
-                    concurrentDownloads,
+                    maxConcurrent,
                   },
                 })
               }
@@ -99,7 +99,7 @@ export const FetchConfigSection: React.FC<Props> = ({ config, draft, nodeId, dis
                   <FormControlLabel
                     control={
                       <Switch
-                        checked={!config?.cleanupConfig?.deleteFetchCeche}
+                        checked={!config.cleanupConfig?.deleteFetchCeche}
                         onChange={(event) => {
                           const retainFiles = event.target.checked;
                           update({
@@ -121,7 +121,7 @@ export const FetchConfigSection: React.FC<Props> = ({ config, draft, nodeId, dis
                   <FormControlLabel
                     control={
                       <Switch
-                        checked={!config?.cleanupConfig?.deleteTransformByBandCache}
+                        checked={!config.cleanupConfig?.deleteTransformByBandCache}
                         onChange={(event) => {
                           const retainCache = event.target.checked;
                           update({
@@ -143,7 +143,7 @@ export const FetchConfigSection: React.FC<Props> = ({ config, draft, nodeId, dis
                   <FormControlLabel
                     control={
                       <Switch
-                        checked={!config?.cleanupConfig?.deleteTransformByZoomCache}
+                        checked={!config.cleanupConfig?.deleteTransformByZoomCache}
                         onChange={(event) => {
                           const retainCache = event.target.checked;
                           update({

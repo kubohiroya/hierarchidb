@@ -4,7 +4,6 @@ export type * from './api-types.js';
 export type * from './command-types.js';
 export type * from './commit-types.js';
 export type * from './datasource.js';
-export type * from './build-config-types.js';
 export type * from './task-queue-types.js';
 export type * from './dialog-state.js';
 export type * from './entity-backup-types.js';

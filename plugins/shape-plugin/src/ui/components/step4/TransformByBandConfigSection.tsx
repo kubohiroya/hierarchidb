@@ -65,14 +65,14 @@ export const TransformByBandConfigSection: React.FC<Props> = ({ config, disabled
               <WorkerNumberConfigCard
                 icon={<FilterAlt fontSize="small" color="primary" />}
                 title={t('processing.filter.workersStage1', 'Transform Workers (Filtering)')}
-                value={baseTransformByBandConfig.concurrentProcesses ?? 2}
+                value={baseTransformByBandConfig.maxConcurrent}
                 helperText={t('processing.filter.workersStage1Help', 'Parallel workers for transform filtering.')}
                 warningText={undefined}
-                onChange={(concurrentProcesses) =>
+                onChange={(maxConcurrent) =>
                   update({
                     transformByBandConfig: {
                       ...baseTransformByBandConfig,
-                      concurrentProcesses,
+                      maxConcurrent,
                     },
                   })
                 }
@@ -101,13 +101,13 @@ export const TransformByBandConfigSection: React.FC<Props> = ({ config, disabled
             <Grid size={{ xs: 12, md: 4 }}>
               <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
                 <ExtractionPanel
-                  tolerance={baseTransformByBandConfig.tolerance ?? 0.05}
+                  tolerance={baseTransformByBandConfig.tolerance}
                   toleranceLabelKey="processing.filter.tolerancePrimary"
-                  onToleranceChange={(concurrentProcesses) =>
+                  onToleranceChange={(tolerance) =>
                     update({
                       transformByBandConfig: {
                         ...baseTransformByBandConfig,
-                        concurrentProcesses,
+                        tolerance,
                       },
                     })
                   }

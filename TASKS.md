@@ -1,3 +1,99 @@
+2210) refactor/gis-sdk/require-build-config-properties (P1) — 進行中 (2026-01-16)
+- ブランチ名: refactor/gis-sdk/require-build-config-properties
+- 依存: なし
+- 受け入れ基準: FetchConfig/TransformByBandConfig/TransformByZoomConfig/VTConfig の各プロパティが必須化され、フォールバック/存在チェックが撤去される／ビルドステージ未使用のプロパティ一覧を特定し説明できる／Step4 UI に存在しない表示/更新項目を列挙できる／ラベル/ヘルプの不一致を列挙できる／pnpm typecheck が通る／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/gis-sdk/src/config.ts`, `packages/vt-orchestrator/src/*`, `plugins/shape-plugin/src/ui/components/step4/*`, `plugins/shape-plugin/src/services/batch/session/*`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、型とフォールバック実装を修正前に戻す
+- チェックリスト:
+  - 4型のプロパティ一覧を整理して説明する
+  - 4型を必須化しフォールバック/存在チェックを撤去する
+  - ビルドステージ未使用のプロパティを列挙する
+  - Step4 UI 未対応の表示/更新項目を列挙する
+  - ラベル/ヘルプ不一致を列挙する
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-16 14:25 JST build config の必須化と利用箇所/Step4 UI の棚卸しに着手。
+  - blocked: 2026-01-16 14:45 JST pnpm typecheck が vt-orchestrator build:types の tolerance/layerSetName 型エラーで失敗。
+  - update: 2026-01-16 15:30 JST pnpm --filter @hierarchidb/gis-sdk build を実行し dist 型定義を更新（exit 0）。
+  - update: 2026-01-16 15:31 JST pnpm typecheck を実行し成功（exit 0）。
+  - update: 2026-01-15 11:02 JST concurrentDownload/workers の撤去と未使用プロパティ配線・Step4 UI 修正に着手。
+  - update: 2026-01-15 11:22 JST Fetch/Transform/VT の配線更新と Step4 UI 補正を反映。検証: pnpm --filter @hierarchidb/gis-sdk build（exit 0）/ pnpm typecheck（exit 0）。
+  - update: 2026-01-15 11:29 JST 並列数プロパティ名を maxConcurrent に統一する作業に着手。
+  - update: 2026-01-15 11:35 JST maxConcurrent 統一方針の承認を受け、実作業に着手。
+  - update: 2026-01-15 11:37 JST shape/gis-sdk/vt-orchestrator 範囲では concurrentDownloads/concurrentProcesses が残っていないことを確認。location-plugin など他領域の並列設定名は確認待ち。
+
+2209) refactor/types/move-build-configs-to-gis-sdk (P1) — 進行中 (2026-01-16)
+- ブランチ名: refactor/types/move-build-configs-to-gis-sdk
+- 依存: なし
+- 受け入れ基準: FetchConfig/TransformByBandConfig/TransformByZoomConfig/VTConfig/ CleanupConfig/ CommonSessionConfig が common-types から撤去され、gis-sdk 定義に統一される／参照元が common-types を使っていない／pnpm typecheck が通る／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/common/types/src/*`, `packages/features/gis-sdk/src/config.ts`, `plugins/shape-plugin/src/ui/components/step4/DownloadRetryControls.tsx`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、build-config 型の定義と参照を修正前に戻す
+- チェックリスト:
+  - common-types の build-config 型を撤去する
+  - gis-sdk の型定義へ移動する
+  - 参照箇所を gis-sdk 側へ更新する
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-16 13:20 JST build-config 型の移動に着手。
+  - update: 2026-01-16 13:35 JST common-types から build-config 型を削除し、gis-sdk 側へ定義を移動。参照は gis-sdk に更新。検証: 未実施。
+  - update: 2026-01-16 14:10 JST pnpm typecheck を実行し成功（exit 0）。
+
+2208) feat/shape/step3-offline-metadata-cache (P1) — 進行中 (2026-01-16)
+- ブランチ名: feat/shape/step3-offline-metadata-cache
+- 依存: なし
+- 受け入れ基準: Step3 のメタデータ取得が 304 でローカルキャッシュを使う実装であることを確認できる／navigator.onLine === false の場合は外部アクセスを行わずローカルキャッシュを利用する／API 未到達時は外部アクセス失敗後にローカルキャッシュへフォールバックする／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/metadata/metadataSources.ts`, `packages/features/chunk-store/src/index.ts`（確認のみ）, `plugins/shape-plugin/src/ui/components/step3/useShapeCountrySelectionStep.ts`（確認のみ）
+- ロールバック手順: 該当差分を revert し、オンライン/オフライン判定とキャッシュ利用を変更前へ戻す
+- チェックリスト:
+  - 304 応答時にキャッシュ利用されるコード経路を確認する
+  - navigator.onLine 判定で外部アクセスを回避する処理を追加する
+  - 失敗時のキャッシュフォールバック挙動を確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-16 11:40 JST Step3 のオフライン時キャッシュ利用と 304 経路の確認に着手。
+  - update: 2026-01-16 12:10 JST geoboundaries メタデータ取得で navigator.onLine===false 時はキャッシュのみ使用し、ISO3166 もオフライン時は外部CSVを参照しないよう分岐を追加。検証: 未実施。
+  - update: 2026-01-16 12:40 JST Step5 fetch でオフライン時に raw data キャッシュが無ければ外部アクセスせずエラーにする分岐を追加。検証: 未実施。
+  - update: 2026-01-16 12:55 JST pnpm typecheck を実行し成功（exit 0）。
+  - update: 2026-01-16 12:25 JST pnpm typecheck を実行し成功（exit 0）。
+
+2207) fix/ui/download-retry-controls-render-loop-v2 (P1) — 完了 (2026-01-16)
+- ブランチ名: fix/ui/download-retry-controls-render-loop-v2
+- 依存: なし
+- 受け入れ基準: DownloadRetryControls の Maximum update depth exceeded が解消される／再レンダーが安定し無限ループしない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/DownloadRetryControls.tsx`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、警告が出ていた状態へ戻す
+- チェックリスト:
+  - DownloadRetryControls のレンダーループ原因を特定する
+  - 依存配列/状態更新の安定化を実装する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-16 11:00 JST DownloadRetryControls の Maximum update depth エラー対応に着手。
+  - update: 2026-01-16 11:10 JST useShapeBuildConfigStep の mergeBuildConfig が毎回 onChange を起こすため無限更新になっていたため、同値時は更新しないよう比較を追加。検証: 未実施。
+  - update: 2026-01-16 11:20 JST pnpm typecheck を実行し成功（exit 0）。
+  - done: 2026-01-16 11:30 JST Step4 で警告が出ないことを確認。
+
+2206) fix/shape/step3-data-source-missing (P1) — 進行中 (2026-01-16)
+- ブランチ名: fix/shape/step3-data-source-missing
+- 依存: なし
+- 受け入れ基準: Step3 の ShapeCountrySelection で dataSource missing が発生しない／dataSource の欠落原因が説明できる／同じ手順で再現しないことを確認する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step3/*`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、Step3 の dataSource 取り扱いを修正前に戻す
+- チェックリスト:
+  - dataSource missing の発生条件を特定する
+  - Step3 の dataSource 取得/受け渡しを修正する
+  - UI で再現しないことを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-16 09:30 JST Step3 の dataSource missing 調査と修正に着手。
+  - update: 2026-01-16 09:40 JST Step2/Step3 で legacy dataSource を dataSourceName として解釈する対応を追加。検証: 未実施。
+  - update: 2026-01-16 09:50 JST pnpm typecheck を実行し成功（exit 0）。
+  - update: 2026-01-16 10:05 JST Step2/Step3 の legacy dataSource フォールバックを撤回し dataSourceName のみ参照に戻す。データ側の不整合は削除で対応する方針。
+  - update: 2026-01-16 10:10 JST pnpm typecheck を実行し成功（exit 0）。
+  - update: 2026-01-16 10:20 JST population-2023 テンプレートの buildConfig.dataSource を dataSourceName に更新。ブラウザ永続化データは削除済み。
+  - update: 2026-01-16 10:30 JST pnpm typecheck を実行し成功（exit 0）。
+
 2205) refactor/types/streamline-build-types (P1) — 進行中 (2026-01-16)
 - ブランチ名: refactor/types/streamline-build-types
 - 依存: なし
@@ -80,6 +176,25 @@
   - update: 2026-01-15 21:50 JST Transform削除ボタンの削除対象/disable条件の説明と無効化不具合の修正に着手。
   - update: 2026-01-15 22:10 JST transform削除で transformStageBuffers も削除するよう補正し、ボタンの無効化が反映されるよう修正。検証: 未実施。
   - update: 2026-01-15 22:20 JST pnpm typecheck を実行し成功（exit 0）。警告: tsdown define オプションの警告が出力されたが typecheck 自体は通過。
+  - update: 2026-01-15 11:41 JST Step5 ステージヘッダに maxConcurrent 分の CircularProgress を表示する対応に着手。
+  - update: 2026-01-15 11:44 JST Step5 ステージヘッダに maxConcurrent の CircularProgress を追加。検証: pnpm --filter @hierarchidb/components build（exit 0、tsdown define 警告あり）/ pnpm typecheck（exit 0）。
+  - update: 2026-01-15 12:04 JST Step5 の全体進捗バー撤去に着手。
+  - update: 2026-01-15 12:05 JST Step5 の全体進捗バーを撤去。検証: pnpm --filter @hierarchidb/components build（exit 0、tsdown define 警告あり）/ pnpm typecheck（exit 0）。
+  - update: 2026-01-15 12:09 JST Step5 ステージヘッダの CircularProgress と Chip 表記調整に着手。
+  - update: 2026-01-15 12:10 JST Step5 ステージヘッダの停止時 CircularProgress を grey 表示にし、Failed/Completed テキストを撤去。検証: pnpm --filter @hierarchidb/components build（exit 0、tsdown define 警告あり）/ pnpm typecheck（exit 0）。
+  - update: 2026-01-15 12:20 JST transform-by-band の invalid polygon 調査用に簡略化エラーの詳細サマリ出力を追加する対応に着手。
+  - update: 2026-01-15 12:21 JST invalid polygon のリング/座標サマリとサンプルIDをエラーログに追加。検証: pnpm typecheck（exit 0）。
+  - start: 2026-01-16 15:40 JST transform-by-band の詳細エラー情報を Step5 タスク一覧と console に表示する整備に着手。
+  - update: 2026-01-16 15:50 JST Step5 タスク一覧に geometry simplify エラーの要約行を追加し、console.warn に詳細フィールドを出力。検証: pnpm typecheck（exit 0、tsdown define 警告あり）。
+  - blocked: 2026-01-16 16:10 JST pnpm typecheck が vt-orchestrator の ring area 計算で TS18048（undefined）により失敗。
+  - update: 2026-01-16 16:20 JST invalid polygon 診断に自己交差/退化リング/重複頂点/リング面積統計を追加し、transformByBand の既定 tolerance を 0.1 に調整（DEFAULT_BUILD_CONFIG と population-2023 テンプレート）。検証: pnpm typecheck（exit 0、tsdown define 警告あり）。
+  - start: 2026-01-15 13:30 JST Step5 タスク失敗時の即停止/failed 遷移/後続タスクの skipped 扱い方針の実装に着手。
+  - blocked: 2026-01-15 13:40 JST pnpm typecheck で @hierarchidb/vt-orchestrator の compareTaskOrder.ts:124 が TS2339（failureError.message が never 扱い）で失敗。
+  - update: 2026-01-15 13:41 JST runStageTasks の停止/中断対応と各ステージの abortSignal 伝播を反映。検証: pnpm typecheck（exit 0、tsdown define 警告あり）。
+  - start: 2026-01-15 14:00 JST 未使用プロパティ一覧の更新と有効化/統合/撤去の提案整理に着手。
+  - update: 2026-01-15 14:02 JST Fetch/TransformByBand/TransformByZoom/VTConfig の未使用プロパティを棚卸しし、提案内容を整理。
+  - start: 2026-01-15 16:07 JST 3段階ステージ構成（fetch → transform → vt）への再編プラン整理に着手。
+  - start: 2026-01-15 16:10 JST 3段階再編の実施項目分割と ExecPlan 作成に着手。
 
 
 2202) fix/components/buildstep-stage-filter-chips (P1) — 進行中 (2026-01-15)

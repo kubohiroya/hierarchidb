@@ -5,31 +5,12 @@
 import { describe, expect, it } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { BatchConfig } from '../../../common/types/index.js';
-import { DEFAULT_BUILD_CONFIG } from '../../../common/types/index.js';
+import { DEFAULT_BUILD_CONFIG, mergeBuildConfig } from '../../../common/types/index.js';
 import { shapeBatchAPI } from '../../api.js';
 
 const createBatchConfig = (
   overrides: Partial<BatchConfig> = {},
-): BatchConfig => ({
-  ...DEFAULT_BUILD_CONFIG,
-  ...overrides,
-  fetchConfig: {
-    ...DEFAULT_BUILD_CONFIG.fetchConfig,
-    ...overrides.fetchConfig,
-  },
-  extractionConfig: {
-    ...DEFAULT_BUILD_CONFIG.extractionConfig,
-    ...overrides.extractionConfig,
-  },
-  vtConfig: {
-    ...DEFAULT_BUILD_CONFIG.tileConfig,
-    ...overrides.vtConfig,
-  },
-  cleanupConfig: {
-    ...DEFAULT_BUILD_CONFIG.cleanupConfig,
-    ...overrides.cleanupConfig,
-  },
-});
+): BatchConfig => mergeBuildConfig(DEFAULT_BUILD_CONFIG, overrides);
 
 describe('Shape Plugin API', () => {
   describe('Batch Session Recovery for Direct Link Access', () => {

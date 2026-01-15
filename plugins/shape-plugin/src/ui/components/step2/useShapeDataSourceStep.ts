@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 import type { DataSourceSelectionOption } from '@hierarchidb/ui-datasource';
 import type { DataSourceConfig, DataSourceName, ShapeEntity } from '../../../common/types/index.js';
 import { mergeBuildConfig, normalizeDataSourceName } from '../../../services/utils/utils.js';
+import { DEFAULT_BUILD_CONFIG } from '../../../common/types/index.js';
 import { DATA_SOURCE_CONFIGS } from '../../../common/mock/data.js';
 
 type Args = {
@@ -37,10 +38,9 @@ export const useShapeDataSourceStep = ({ data, onChange }: Args) => {
     const updates: Partial<typeof draftData> = {};
     if (typeof next.dataSourceId !== 'undefined') {
       const nextSource = next.dataSourceId as DataSourceName;
-      updates.buildConfig = mergeBuildConfig({
-        ...(draftData.buildConfig ?? {}),
-        dataSourceName: nextSource,
-      });
+      updates.buildConfig = draftData.buildConfig
+        ? mergeBuildConfig(draftData.buildConfig, { dataSourceName: nextSource })
+        : { ...DEFAULT_BUILD_CONFIG, dataSourceName: nextSource };
     }
     if (typeof next.licenseAgreement !== 'undefined') {
       updates.licenseAgreement = next.licenseAgreement;

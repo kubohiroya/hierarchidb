@@ -1,4 +1,4 @@
-import { Accordion, AccordionDetails, AccordionSummary, Box, Card, CardContent, Grid, Stack, Typography, Slider, Tooltip } from '@mui/material';
+import { Accordion, AccordionDetails, AccordionSummary, Box, Card, CardContent, FormControlLabel, Grid, Stack, Switch, TextField, Typography, Slider, Tooltip } from '@mui/material';
 import { Layers as LayersIcon, ExpandMore as ExpandMoreIcon, InfoOutlined as InfoOutlinedIcon } from '@mui/icons-material';
 import type { ShapeEntity } from '../../../common/types/index.js';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
@@ -42,14 +42,14 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
             <WorkerNumberConfigCard
               icon={<LayersIcon fontSize="small" color="primary" />}
               title={t('processing.tile.workers', 'VT Worker Count')}
-              value={buildConfig.vtConfig.concurrentProcesses ?? 2}
+              value={buildConfig.vtConfig.maxConcurrent}
               helperText={t('processing.tile.workersHelp', 'Parallel workers for tile generation.')}
               warningText={undefined}
-              onChange={(concurrentProcesses) =>
+              onChange={(maxConcurrent) =>
                 update({
                     vtConfig: {
                       ...buildConfig.vtConfig,
-                      concurrentProcesses,
+                      maxConcurrent,
                     },
                 })
               }
@@ -57,6 +57,85 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
               max={8}
               step={1}
               disabled={disabled}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 4 }}>
+            <TextField
+              fullWidth
+              type="number"
+              label={t('processing.tile.extent', 'VT Extent')}
+              value={buildConfig.vtConfig.extent}
+              onChange={(event) => {
+                const extent = Number(event.target.value);
+                update({
+                  vtConfig: {
+                    ...buildConfig.vtConfig,
+                    extent,
+                  },
+                });
+              }}
+              inputProps={{ min: 0 }}
+              disabled={disabled}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 4 }}>
+            <TextField
+              fullWidth
+              type="number"
+              label={t('processing.tile.tolerance', 'VT Tolerance')}
+              value={buildConfig.vtConfig.tolerance}
+              onChange={(event) => {
+                const tolerance = Number(event.target.value);
+                update({
+                  vtConfig: {
+                    ...buildConfig.vtConfig,
+                    tolerance,
+                  },
+                });
+              }}
+              inputProps={{ min: 0 }}
+              disabled={disabled}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 4 }}>
+            <TextField
+              fullWidth
+              label={t('processing.tile.layerSetName', 'Layer Set Name')}
+              value={buildConfig.vtConfig.layerSetName}
+              onChange={(event) => {
+                const layerSetName = event.target.value;
+                update({
+                  vtConfig: {
+                    ...buildConfig.vtConfig,
+                    layerSetName,
+                  },
+                });
+              }}
+              disabled={disabled}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 4 }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={buildConfig.vtConfig.boundaryDedupe}
+                  onChange={(event) => {
+                    const boundaryDedupe = event.target.checked;
+                    update({
+                      vtConfig: {
+                        ...buildConfig.vtConfig,
+                        boundaryDedupe,
+                      },
+                    });
+                  }}
+                  disabled={disabled}
+                />
+              }
+              label={t('processing.tile.boundaryDedupe', 'Boundary Dedupe')}
             />
           </Grid>
 
@@ -82,7 +161,7 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
             </Typography>
             <Box sx={{ px: 2 }}>
               <Slider
-                value={buildConfig.vtConfig.bufferSize ?? 256}
+                value={buildConfig.vtConfig.bufferSize}
                 onChange={(_, value: number | number[]) => {
                   const bufferSize = value as number;
                   update({
@@ -111,7 +190,7 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
             </Typography>
             <Box sx={{ px: 2 }}>
               <Slider
-                value={buildConfig.vtConfig.tileExpandFactor ?? 1}
+                value={buildConfig.vtConfig.tileExpandFactor}
                 onChange={(_, value: number | number[]) => {
                   const tileExpandFactor = Number(value);
                   update({
@@ -145,7 +224,7 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
             </Typography>
             <Box sx={{ px: 2 }}>
               <Slider
-                value={buildConfig.vtConfig.tileExpandMargin ?? 0}
+                value={buildConfig.vtConfig.tileExpandMargin}
                 onChange={(_, value: number | number[]) => {
                   const tileExpandMargin = Number(value);
                   update({

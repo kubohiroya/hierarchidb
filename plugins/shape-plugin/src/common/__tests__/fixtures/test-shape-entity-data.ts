@@ -23,11 +23,11 @@ interface ShapeEntity {
 interface BatchConfig {
   dataSource?: string;
   download: {
-    concurrentDownloads: number;
+    maxConcurrent: number;
     deleteOnComplete?: boolean;
   };
   extract1: {
-    concurrentProcesses: number;
+    maxConcurrent: number;
     enableFeatureFiltering: boolean;
     featureAreaThreshold: number;
     minVertexCountForAreaFilter: number;
@@ -37,7 +37,7 @@ interface BatchConfig {
     deleteOnComplete?: boolean;
   };
   extract2: {
-    concurrentProcesses: number;
+    maxConcurrent: number;
     quantize: number;
     extract: number;
     tolerance: number;
@@ -45,7 +45,7 @@ interface BatchConfig {
     deleteOnComplete?: boolean;
   };
   vectorTiles: {
-    concurrentProcesses: number;
+    maxConcurrent: number;
   };
 }
 
@@ -64,11 +64,11 @@ export function createTestBatchConfig(): BatchConfig {
   return {
     dataSource: 'geoboundaries',
     download: {
-      concurrentDownloads: 2,
+      maxConcurrent: 2,
       deleteOnComplete: false,
     },
     extract1: {
-      concurrentProcesses: 2,
+      maxConcurrent: 2,
       enableFeatureFiltering: true,
       featureAreaThreshold: 0.05,
       minVertexCountForAreaFilter: 100,
@@ -84,7 +84,7 @@ export function createTestBatchConfig(): BatchConfig {
       deleteOnComplete: false,
     },
     extract2: {
-      concurrentProcesses: 2,
+      maxConcurrent: 2,
       quantize: 1e5,
       extract: 0.005,
       tolerance: 0.05,
@@ -92,7 +92,7 @@ export function createTestBatchConfig(): BatchConfig {
       deleteOnComplete: false,
     },
     vectorTiles: {
-      concurrentProcesses: 2,
+      maxConcurrent: 2,
     },
   };
 }

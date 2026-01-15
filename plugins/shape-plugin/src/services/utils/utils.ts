@@ -11,7 +11,7 @@ import type {
   ShapeStepValidationResult,
   SelectedArrayByCountries
 } from '../../common/types/index.js';
-import { SHAPE_DATA_SOURCES, DEFAULT_BUILD_CONFIG } from '../../common/types/constants.js';
+import { SHAPE_DATA_SOURCES } from '../../common/types/constants.js';
 import { GEOBOUNDARIES_RELEASE_BASE_URL } from './geoboundariesEndpoints.js';
 import type { ShapeBuildConfig } from '../../common/types/index.js';
 
@@ -104,36 +104,28 @@ export function mapDraftToUpdates(draft: ShapeDraft): Partial<ShapeEntity> {
 /**
  * Validate processing configuration
  */
-export function validateBatchConfig(config: Partial<ShapeBuildConfig>): ShapeStepValidationResult {
+export function validateBatchConfig(config: ShapeBuildConfig): ShapeStepValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
-  const normalized = mergeBuildConfig(config);
-  const transformByBandConcurrentProcesses = normalized.transformByBandConfig?.concurrentProcesses;
-  const transformByZoomConcurrentProcesses = normalized.transformByZoomConfig?.concurrentProcesses;
 
-  const fetchConcurrency = normalized.fetchConfig?.concurrentDownloads;
-  if (fetchConcurrency !== undefined) {
-    if (fetchConcurrency < 1 || fetchConcurrency > 4) {
-      errors.push('Concurrent downloads must be between 1 and 4');
-    }
+  const fetchConcurrency = config.fetchConfig.maxConcurrent;
+  if (fetchConcurrency < 1 || fetchConcurrency > 4) {
+    errors.push('Concurrent downloads must be between 1 and 4');
   }
 
-  if (transformByBandConcurrentProcesses !== undefined) {
-    if (transformByBandConcurrentProcesses < 1 || transformByBandConcurrentProcesses > 8) {
-      errors.push('Concurrent by-band processes must be between 1 and 8');
-    }
-  }
-  if (transformByZoomConcurrentProcesses !== undefined) {
-    if (transformByZoomConcurrentProcesses < 1 || transformByZoomConcurrentProcesses > 8) {
-      errors.push('Concurrent by-zoom processes must be between 1 and 8');
-    }
+  const transformByBandConcurrentProcesses = config.transformByBandConfig.maxConcurrent;
+  if (transformByBandConcurrentProcesses < 1 || transformByBandConcurrentProcesses > 8) {
+    errors.push('Concurrent by-band processes must be between 1 and 8');
   }
 
-  const areaThreshold = normalized.transformByBandConfig?.featureAreaThreshold;
-  if (areaThreshold !== undefined) {
-    if (areaThreshold < 0 || areaThreshold > 10000) {
-      errors.push('Feature area threshold must be between 0 and 10000');
-    }
+  const transformByZoomConcurrentProcesses = config.transformByZoomConfig.maxConcurrent;
+  if (transformByZoomConcurrentProcesses < 1 || transformByZoomConcurrentProcesses > 8) {
+    errors.push('Concurrent by-zoom processes must be between 1 and 8');
+  }
+
+  const areaThreshold = config.transformByBandConfig.featureAreaThreshold;
+  if (areaThreshold < 0 || areaThreshold > 10000) {
+    errors.push('Feature area threshold must be between 0 and 10000');
   }
 
   return {
@@ -317,31 +309,49 @@ function buildDataSourceUrl(
  * Estimate data size based on country and admin level
  */
 /**
- * Merge processing config with defaults
+ * Merge build config updates
  */
-export function mergeBuildConfig(config: Partial<ShapeBuildConfig>): ShapeBuildConfig {
+export function mergeBuildConfig(
+  base: ShapeBuildConfig,
+  overrides?: Partial<ShapeBuildConfig>,
+): ShapeBuildConfig {
+  if (!overrides) return base;
+
+  const fetchConfig = overrides.fetchConfig
+    ? { ...base.fetchConfig, ...overrides.fetchConfig }
+    : base.fetchConfig;
+
+  const bandOverrides = overrides.transformByBandConfig;
+  const transformByBandConfig = bandOverrides
+    ? {
+      ...base.transformByBandConfig,
+      ...bandOverrides,
+      hybridFilterConfig: bandOverrides.hybridFilterConfig
+        ? { ...base.transformByBandConfig.hybridFilterConfig, ...bandOverrides.hybridFilterConfig }
+        : base.transformByBandConfig.hybridFilterConfig,
+    }
+    : base.transformByBandConfig;
+
+  const transformByZoomConfig = overrides.transformByZoomConfig
+    ? { ...base.transformByZoomConfig, ...overrides.transformByZoomConfig }
+    : base.transformByZoomConfig;
+
+  const vtConfig = overrides.vtConfig
+    ? { ...base.vtConfig, ...overrides.vtConfig }
+    : base.vtConfig;
+
+  const cleanupConfig = overrides.cleanupConfig
+    ? { ...(base.cleanupConfig ?? {}), ...overrides.cleanupConfig }
+    : base.cleanupConfig;
+
   return {
-    dataSourceName: config.dataSourceName ?? DEFAULT_BUILD_CONFIG.dataSourceName,
-    fetchConfig: {
-      ...DEFAULT_BUILD_CONFIG.fetchConfig,
-      ...config.fetchConfig,
-    },
-    transformByBandConfig: {
-      ...DEFAULT_BUILD_CONFIG.transformByBandConfig,
-      ...config.transformByBandConfig,
-    },
-    transformByZoomConfig: {
-      ...DEFAULT_BUILD_CONFIG.transformByZoomConfig,
-      ...config.transformByZoomConfig,
-    },
-    vtConfig: {
-      ...DEFAULT_BUILD_CONFIG.vtConfig,
-      ...config.vtConfig,
-    },
-    cleanupConfig: {
-      ...(DEFAULT_BUILD_CONFIG.cleanupConfig ?? {}),
-      ...(config.cleanupConfig ?? {}),
-    },
+    ...base,
+    ...overrides,
+    fetchConfig,
+    transformByBandConfig,
+    transformByZoomConfig,
+    vtConfig,
+    cleanupConfig,
   };
 }
 

@@ -12,7 +12,6 @@ import {
   type DataSourceConfig,
   type DataSourceName,
   SHAPE_DATA_SOURCES,
-  DEFAULT_BUILD_CONFIG,
   mergeBuildConfig,
   type ProcessingStatus,
   type ProgressInfo,
@@ -57,68 +56,18 @@ const resolveBatchNodeId = (draft: DraftLike | null | undefined): NodeId | undef
   return resolved ? toNodeId(String(resolved)) : undefined;
 };
 
-const buildBuildSessionConfig = (buildConfig: ShapeBuildConfig, draft?: DraftLike): ShapeBuildConfig => {
-  /*
-  const transformByBandConfig = buildConfig.transformByBandConfig ?? (legacyExtraction ? {
-    workers: legacyExtraction.level1Workers,
-    tolerance: legacyExtraction.tolerance,
-    featureFilterMethod: legacyExtraction.featureFilterMethod,
-    areaThreshold: legacyExtraction.areaThreshold,
-    minVertexCountForAreaFilter: legacyExtraction.minVertexCountForAreaFilter,
-    aspectRatioThreshold: legacyExtraction.aspectRatioThreshold,
-    hybridFilterConfig: legacyExtraction.hybridFilterConfig,
-  } : undefined) ?? DEFAULT_PROCESSING_CONFIG.transformByBandConfig;
-  const transformByZoomConfig = buildConfig.transformByZoomConfig ?? (legacyExtraction ? {
-    workers: legacyExtraction.level2Workers,
-    tolerance: legacyExtraction.tolerance,
-    quantize: legacyExtraction.quantize,
-    enablePerFeatureExtraction: legacyExtraction.enablePerFeatureExtraction,
-  } : undefined) ?? DEFAULT_PROCESSING_CONFIG.transformByZoomConfig;
-   */
-  //const transformByBandConfig = buildConfig.transformByBandConfig ?? DEFAULT_BUILD_CONFIG.tileConfig;
-  //const cleanupConfig = buildConfig.cleanupConfig ?? DEFAULT_BUILD_CONFIG.cleanupConfig;
-  const resolvedDataSource = requireDataSourceName(
-    buildConfig.dataSourceName
-    ?? draft?.draftData?.buildConfig?.dataSourceName,
+const buildBuildSessionConfig = (buildConfig: ShapeBuildConfig): ShapeBuildConfig => {
+ const resolvedDataSource = requireDataSourceName(
+    buildConfig.dataSourceName,
     'buildBuildSessionConfig',
   );
 
   return {
     dataSourceName: resolvedDataSource,
-    fetchConfig: {
-      //concurrentDownloads: 4,
-      deleteOnComplete: false,
-      retryAttempts: 3,
-      ...buildConfig.fetchConfig,
-    },
-    transformByBandConfig: {
-      /*
-      concurrentProcesses: 2,
-      enableFeatureFiltering: true,
-      featureAreaThreshold: 0.5,
-      minVertexCountForAreaFilter: 25,
-      aspectRatioThreshold: 5,
-      featureFilterMethod: 'hybrid',
-       */
-      hybridFilterConfig: DEFAULT_BUILD_CONFIG.transformByBandConfig?.hybridFilterConfig,
-      deleteOnComplete: false,
-      ...buildConfig.transformByBandConfig,
-    },
-    transformByZoomConfig: {
-      /*
-      concurrentProcesses: 2,
-      enablePerFeatureExtraction: true,
-      deleteOnComplete: false,
-      quantize: 1.0,
-      extract: 1.0,
-      tolerance: 1.0,
-       */
-      ...buildConfig.transformByZoomConfig,
-    },
-    vtConfig: {
-      //concurrentProcesses: 4,
-      ...buildConfig.vtConfig
-    },
+    fetchConfig: buildConfig.fetchConfig,
+    transformByBandConfig: buildConfig.transformByBandConfig,
+    transformByZoomConfig: buildConfig.transformByZoomConfig,
+    vtConfig: buildConfig.vtConfig,
   };
 };
 
@@ -425,16 +374,16 @@ export const shapeBatchAPI = {
     downloadTaskPayloads: FetchTaskPayload[],
     progressCallback?: (event: BatchProgressEvent) => void,
   ): Promise<NodeId> => {
-    if (!buildConfig?.dataSourceName) {
+    if (!buildConfig.dataSourceName) {
       throw new Error('Data source is required to start batch processing');
     }
     // Prefer persisted draft config when provided to avoid stale zoom settings.
     const handler = getShapeEntityHandler();
     const draftLike = await handler.getEntity(draftId) as DraftLike;
-    const mergedBatchConfig = mergeBuildConfig({
-      ...(draftLike?.draftData?.buildConfig ?? {}),
-      ...buildConfig,
-    });
+    const draftBuildConfig = draftLike?.draftData?.buildConfig;
+    const mergedBatchConfig = draftBuildConfig
+      ? mergeBuildConfig(draftBuildConfig, buildConfig)
+      : buildConfig;
     const validation = validateBatchConfig(mergedBatchConfig);
     if (!validation.isValid) {
       throw new Error(`Invalid processing config: ${validation.errors?.join(', ')}`);
@@ -534,10 +483,15 @@ export const shapeBatchAPI = {
         const handler = getShapeEntityHandler();
         const draftLike = await handler.getEntity(nodeId) as DraftLike | null;
         if (!draftLike) return;
-        const mergedBuildConfig = mergeBuildConfig({
-          ...(draftLike?.draftData?.buildConfig ?? {}),
-          ...(draftLike as { buildConfig?: ShapeBuildConfig }).buildConfig ?? {},
-        });
+        const draftBuildConfig = draftLike?.draftData?.buildConfig;
+        const entityBuildConfig = (draftLike as { buildConfig?: ShapeBuildConfig }).buildConfig;
+        const baseBuildConfig = draftBuildConfig ?? entityBuildConfig;
+        if (!baseBuildConfig) {
+          throw new Error('[shapeBatchAPI] buildConfig is required to resume batch session');
+        }
+        const mergedBuildConfig = entityBuildConfig
+          ? mergeBuildConfig(baseBuildConfig, entityBuildConfig)
+          : baseBuildConfig;
         const resolvedDataSource = requireDataSourceName(
           mergedBuildConfig.dataSourceName,
           'resumeBatchSession',
@@ -576,8 +530,10 @@ export const shapeBatchAPI = {
     if (vtTasks.length > 0) {
       const handler = getShapeEntityHandler();
       const entity = await handler.getEntity(nodeId);
-      const mergedConfig = mergeBuildConfig(entity?.buildConfig ?? DEFAULT_BUILD_CONFIG);
-      const config = buildBuildSessionConfig(mergedConfig, { draftData: entity ?? undefined });
+      if (!entity?.buildConfig) {
+        throw new Error('[shapeBatchAPI] buildConfig is required for build session');
+      }
+      const config = buildBuildSessionConfig(entity.buildConfig);
       const summary = summarizeTaskQueue(vtTasks);
       const paused = getPauseState(nodeId).paused;
       const startedAt = Math.min(...vtTasks.map((task) => task.createdAt ?? Date.now()));

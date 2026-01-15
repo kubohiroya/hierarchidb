@@ -4,33 +4,38 @@ import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { BuildProcessConfig } from '../services/batch/types.js';
 import type { FetchTaskPayload } from '../common/types/index.js';
+import { DEFAULT_BUILD_CONFIG } from '../common/types/index.js';
 //import { getShapeDbApiClient } from '../services/batch/ShapeBuildApiClient.js';
 import { encodeFlatGeoJson } from '../services/batch/strategies/flatgeobuf.js';
 import { GadmFetchStageStrategy } from '../services/batch/strategies/GadmFetchStageStrategy.js';
 import { NaturalEarthDownloadStrategy } from '../services/batch/strategies/NaturalEarthDownloadStrategy.js';
 import type { Feature, FeatureCollection } from 'geojson';
-import {ephemeralShapeDB} from '@hierarchidb/shape-store';
+import { ephemeralShapeDB } from '@hierarchidb/shape-store';;
 
 const createConfig = (dataSource: string): BuildProcessConfig => ({
   dataSource: dataSource as BuildProcessConfig['dataSource'],
-  fetchConfig: { concurrentDownloads: 1 },
+  fetchConfig: {
+    ...DEFAULT_BUILD_CONFIG.fetchConfig,
+    maxConcurrent: 1,
+  },
   transformByBandConfig: {
-    concurrentProcesses: 1,
-    enableFeatureFiltering: true,
+    ...DEFAULT_BUILD_CONFIG.transformByBandConfig,
+    maxConcurrent: 1,
     featureAreaThreshold: 0,
     minVertexCountForAreaFilter: 0,
     aspectRatioThreshold: 0,
-    featureFilterMethod: 'hybrid',
+    areaThreshold: 0,
   },
   transformByZoomConfig: {
-    concurrentProcesses: 1,
+    ...DEFAULT_BUILD_CONFIG.transformByZoomConfig,
+    maxConcurrent: 1,
     quantize: 1,
     extract: 0.1,
     tolerance: 0.1,
-    enablePerFeatureExtraction: true,
   },
-  vtConfig: {
-    concurrentProcesses: 1,
+  vectorTiles: {
+    ...DEFAULT_BUILD_CONFIG.vtConfig,
+    maxConcurrent: 1,
   },
 });
 

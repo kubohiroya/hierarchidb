@@ -17,7 +17,6 @@ import type {
   SelectedArrayByCountries,
   ShapeEntity,
 } from '../../common/types/index.js';
-import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants.js';
 import { generateDownloadTaskPayloadsFromSelection } from '../utils/utils.js';
 import { metadataLoader } from '../metadata/MetadataLoader.js';
 import { DataSourceStrategyFactory } from '../datasources/DataSourceStrategyFactory.js';
@@ -52,15 +51,19 @@ export type ShapeFetchStageParams = {
   metadata?: CountryMetadata[];
   waitIfPaused?: () => Promise<void>;
   resumeExistingTasks?: boolean;
+  abortController?: AbortController;
 };
 
 const buildRetryConfig = (config: ShapeBuildConfig): RetryConfig => {
-  const downloadConfig = config.fetchConfig ?? DEFAULT_BUILD_CONFIG.fetchConfig;
-  const retryAttempts = downloadConfig?.retryAttempts ?? 0;
-  const retryDelay = downloadConfig?.retryDelay ?? 0;
+  const downloadConfig = config.fetchConfig;
+  const retryAttempts = downloadConfig.retryAttempts;
+  const retryDelay = downloadConfig.retryDelay;
+  const retryLimit = downloadConfig.retryLimit;
+  const maxRetries = Math.max(0, Math.min(retryLimit, retryAttempts));
   return {
-    count: Math.max(1, retryAttempts + 1),
+    count: Math.max(1, maxRetries + 1),
     delay: retryDelay,
+    backoff: downloadConfig.retryBackoff,
   };
 };
 
@@ -105,6 +108,12 @@ const buildFetchFeatureCollection = (
 const buildOriginKey = (dataSource: DataSourceName, sourceKey: string): string => (
   `${dataSource}:${sourceKey}`
 );
+
+const assertNotAborted = (signal?: AbortSignal): void => {
+  if (signal?.aborted) {
+    throw new Error('task aborted');
+  }
+};
 
 const countVertices = (coords: unknown): number => {
   if (!Array.isArray(coords)) return 0;
@@ -192,6 +201,7 @@ const createFetchHandler = (params: {
   buildConfig: ShapeBuildConfig;
   shapeStore: VtShapeDb;
   dataSource: DataSourceName;
+  abortSignal?: AbortSignal;
 }): StageHandler<ShapeFetchTaskInput, ShapeFetchTaskOutput> => {
   const factory = new DataSourceStrategyFactory();
   const strategyId = resolveStrategyIdFromDataSource(params.dataSource);
@@ -207,6 +217,7 @@ const createFetchHandler = (params: {
       return { status: 'failed', errorMessage: 'fetch task input is missing' };
     }
 
+    assertNotAborted(params.abortSignal);
     const existing = await getFetchCache(params.shapeStore, params.nodeId, input.sourceKey);
     if (existing) {
       return {
@@ -220,14 +231,17 @@ const createFetchHandler = (params: {
       };
     }
 
+    assertNotAborted(params.abortSignal);
     const raw = await strategy.fetchData({
       nodeId: params.nodeId,
       country: input.urlCountryCode,
       adminLevel: input.adminLevel,
       cacheKeyMode: 'url',
       retryConfig,
+      timeout: params.buildConfig.fetchConfig.timeoutMs,
     });
 
+    assertNotAborted(params.abortSignal);
     const processed = await strategy.processData(raw, {
       filters: strategy.config.processing.filters,
       transformations: strategy.config.processing.transformations,
@@ -243,8 +257,10 @@ const createFetchHandler = (params: {
       };
     }
 
+    assertNotAborted(params.abortSignal);
     const { featureCount, vertexCount, polygonCount } = summarizeFeatureCollection(collection);
     const data = await encodeFlatGeobufFromFeatureCollection(collection);
+    assertNotAborted(params.abortSignal);
     const buffer = await putFetchCache(params.shapeStore, params.nodeId, {
       sourceKey: input.sourceKey,
       countryCode: input.countryCode,
@@ -270,6 +286,7 @@ const createFetchHandler = (params: {
 
 export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise<void> => {
   const metadata = params.metadata ?? await metadataLoader.loadMetadata(params.dataSource, params.nodeId);
+  const abortSignal = params.abortController?.signal;
   const existingTasks = params.resumeExistingTasks
     ? await listTasksByStage(params.taskQueue, params.nodeId, 'fetch')
     : [];
@@ -297,7 +314,11 @@ export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise
       buildConfig: params.buildConfig,
       shapeStore: params.shapeStore,
       dataSource: params.dataSource,
+      abortSignal,
     }),
     waitIfPaused: params.waitIfPaused,
+    maxConcurrent: params.buildConfig.fetchConfig.maxConcurrent,
+    failureHandling: 'stop',
+    abortController: params.abortController,
   });
 };

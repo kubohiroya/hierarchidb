@@ -1,4 +1,3 @@
-import { DEFAULT_BUILD_CONFIG } from '../../../common/types/index.ts';
 import { useCallback, useMemo } from 'react';
 import { mergeBuildConfig } from '../../../services/utils/utils.ts';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
@@ -10,7 +9,7 @@ type Args = {
 };
 
 export const useTransformByZoomConfigSection = ({ config, onChange }: Args) => {
-  const baseTransformByZoomConfig = config.transformByZoomConfig ?? DEFAULT_BUILD_CONFIG.transformByZoomConfig;
+  const baseTransformByZoomConfig = config.transformByZoomConfig;
   if (!baseTransformByZoomConfig) {
     throw new Error('TransformByZoomConfigSection: baseTransformByZoomConfig is not defined');
   }
@@ -24,12 +23,12 @@ export const useTransformByZoomConfigSection = ({ config, onChange }: Args) => {
     }, null as null | { index: number; diff: number });
     return resolved?.index ?? 0;
   };
-  const quantizeValue = baseTransformByZoomConfig.quantize ?? 50000;
+  const quantizeValue = baseTransformByZoomConfig.quantize;
   const quantizeIndex = resolveQuantizeIndex(quantizeValue);
   const quantizeRank = quantizeIndex + 1;
 
   const update = useCallback((partial: Partial<ShapeBuildConfig>) => {
-    onChange(mergeBuildConfig({ ...config, ...partial }));
+    onChange(mergeBuildConfig(config, partial));
   }, [config, onChange]);
 
   const quantizeLabel = useMemo(

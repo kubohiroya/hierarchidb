@@ -1,5 +1,5 @@
 import { type FC, memo, type ReactNode } from 'react';
-import { Box, Chip, LinearProgress, Stack, Typography } from '@mui/material';
+import { Box, Chip, CircularProgress, LinearProgress, Stack, Typography } from '@mui/material';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
 
@@ -17,6 +17,10 @@ export type BuildStepStageSummaryPanelProps = {
   progress: number;
   progressContent?: ReactNode;
   taskCount?: BuildStepStageTaskCount;
+  concurrencyIndicator?: {
+    count: number;
+    isRunning: boolean;
+  };
   failedMode: boolean;
   onFailedModeUpdate: (newMode: boolean) => void;
   completedMode: boolean;
@@ -31,6 +35,7 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
   progress,
   progressContent,
   taskCount,
+  concurrencyIndicator,
   failedMode,
   onFailedModeUpdate,
   completedMode,
@@ -44,11 +49,16 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
   const completedNumerator = total === 0
     ? 0
     : Math.min(total, completed + skipped);
-  const completedLabel = `Completed ${completedNumerator}/${total}`;
+  const completedLabel = `${completedNumerator}/${total}`;
   const isFailedDisabled = failed === 0;
   const isCompletedDisabled = completedNumerator === 0;
   const failedVariant = isFailedDisabled ? 'outlined' : (failedMode ? 'filled' : 'outlined');
   const completedVariant = isCompletedDisabled ? 'outlined' : (completedMode ? 'filled' : 'outlined');
+  const indicatorCount = Math.max(0, Math.floor(concurrencyIndicator?.count ?? 0));
+  const indicatorVariant = concurrencyIndicator?.isRunning ? 'indeterminate' : 'determinate';
+  const indicatorSx = indicatorVariant === 'determinate'
+    ? { color: 'grey.400' }
+    : undefined;
   return (
     <Box display="flex" flexDirection="column" height="100%" minHeight={0}>
       <Stack spacing={1} sx={{ p: 2 }}>
@@ -57,27 +67,42 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
             {icon ? <Box>{icon}</Box> : null}
             <Typography variant="subtitle2">{title}</Typography>
           </Stack>
-          <Stack direction="row" spacing={0.5} alignItems="center">
-            <Chip
-              label={`Failed ${failed}`}
-              size="small"
-              color={isFailedDisabled ? 'default' : 'error'}
-              icon={<ErrorOutlineIcon fontSize="small" />}
-              variant={failedVariant}
-              disabled={isFailedDisabled}
-              onClick={isFailedDisabled ? undefined : () => onFailedModeUpdate(!failedMode)}
-              sx={isFailedDisabled ? { borderColor: 'divider', color: 'text.disabled' } : undefined}
-            />
-            <Chip
-              label={completedLabel}
-              size="small"
-              color={isCompletedDisabled ? 'default' : 'success'}
-              icon={<TaskAltIcon fontSize="small" />}
-              variant={completedVariant}
-              disabled={isCompletedDisabled}
-              onClick={isCompletedDisabled ? undefined : () => onCompletedModeUpdate(!completedMode)}
-              sx={isCompletedDisabled ? { borderColor: 'divider', color: 'text.disabled' } : undefined}
-            />
+          <Stack direction="row" spacing={1} alignItems="center">
+            {indicatorCount > 0 ? (
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                {Array.from({ length: indicatorCount }).map((_, index) => (
+                  <CircularProgress
+                    key={`stage-slot-${index}`}
+                    size={14}
+                    variant={indicatorVariant}
+                    value={indicatorVariant === 'determinate' ? 100 : undefined}
+                    sx={indicatorSx}
+                  />
+                ))}
+              </Stack>
+            ) : null}
+            <Stack direction="row" spacing={0.5} alignItems="center">
+              <Chip
+                label={`${failed}`}
+                size="small"
+                color={isFailedDisabled ? 'default' : 'error'}
+                icon={<ErrorOutlineIcon fontSize="small" />}
+                variant={failedVariant}
+                disabled={isFailedDisabled}
+                onClick={isFailedDisabled ? undefined : () => onFailedModeUpdate(!failedMode)}
+                sx={isFailedDisabled ? { borderColor: 'divider', color: 'text.disabled' } : undefined}
+              />
+              <Chip
+                label={completedLabel}
+                size="small"
+                color={isCompletedDisabled ? 'default' : 'success'}
+                icon={<TaskAltIcon fontSize="small" />}
+                variant={completedVariant}
+                disabled={isCompletedDisabled}
+                onClick={isCompletedDisabled ? undefined : () => onCompletedModeUpdate(!completedMode)}
+                sx={isCompletedDisabled ? { borderColor: 'divider', color: 'text.disabled' } : undefined}
+              />
+            </Stack>
           </Stack>
         </Stack>
         {description ? (

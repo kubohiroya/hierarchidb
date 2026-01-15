@@ -39,7 +39,7 @@ export const TransformByZoomConfigSection: React.FC<Props> = ({ config, disabled
     quantizeLabel,
     update,
   } = useTransformByZoomConfigSection({ config, disabled, onChange });
-  const extractionMode = baseTransformByZoomConfig.extractionMode ?? 'topojson';
+  const extractionMode = baseTransformByZoomConfig.extractionMode;
 
   return (
     <Accordion defaultExpanded>
@@ -67,14 +67,14 @@ export const TransformByZoomConfigSection: React.FC<Props> = ({ config, disabled
               <WorkerNumberConfigCard
                 icon={<TuneIcon fontSize="small" color="primary" />}
                 title={t('processing.filter.workersStage2', 'Transform Workers (Preprocessing)')}
-                value={baseTransformByZoomConfig.concurrentProcesses ?? 2}
+                value={baseTransformByZoomConfig.maxConcurrent}
                 helperText={t('processing.filter.workersStage2Help', 'Parallel workers for transform preprocessing.')}
                 warningText={undefined}
-                onChange={(concurrentProcesses) =>
+                onChange={(maxConcurrent) =>
                   update({
                     transformByZoomConfig: {
                       ...baseTransformByZoomConfig,
-                      concurrentProcesses,
+                      maxConcurrent,
                     },
                   })
                 }
@@ -134,9 +134,9 @@ export const TransformByZoomConfigSection: React.FC<Props> = ({ config, disabled
             <Grid size={{ xs: 12, md: 4 }}>
               <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
                 <ExtractionPanel
-                  tolerance={baseTransformByZoomConfig.tolerance ?? 0.1}
+                  tolerance={baseTransformByZoomConfig.tolerance}
                   toleranceLabelKey="processing.filter.toleranceSecondary"
-                  enablePerFeatureExtraction={baseTransformByZoomConfig.enablePerFeatureExtraction ?? true}
+                  enablePerFeatureExtraction={baseTransformByZoomConfig.enablePerFeatureExtraction}
                   toleranceHelpKey="processing.filter.toleranceHelpStage2"
                   onToleranceChange={(tolerance) =>
                     update({
@@ -171,7 +171,7 @@ export const TransformByZoomConfigSection: React.FC<Props> = ({ config, disabled
             <Grid size={{ xs: 12, md: 4 }}>
               <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
                 <PrecisionPanel
-                  quantize={baseTransformByZoomConfig.quantize ?? 2000}
+                  quantize={baseTransformByZoomConfig.quantize}
                   quantizeOptions={quantizeOptions}
                   quantizeRank={quantizeRank}
                   quantizeLabel={quantizeLabel}

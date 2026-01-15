@@ -58,7 +58,7 @@ export const ExtractionPanel: React.FC<Props> = ({
         </Typography>
         <Box sx={{ px: 2 }}>
           <Slider
-            value={tolerance ?? 0.5}
+            value={tolerance}
             onChange={(_, value) => {
               onToleranceChange(value as number);
             }}

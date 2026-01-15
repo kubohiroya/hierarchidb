@@ -3,6 +3,7 @@ import { Box } from '@mui/material';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { BatchTaskSummary } from '@hierarchidb/common-api';
 import { TaskItem } from './TaskItem.tsx';
+import { formatGeometrySimplifySummary, parseGeometrySimplifyError } from './geometrySimplifyError.ts';
 
 export type TaskWithMetadata = BatchTaskSummary & { title?: string };
 
@@ -87,7 +88,12 @@ export const TaskListVirtualized = ({
           const statusLabelValue = resolveStatusLabel(statusValue, isSkipped);
           const statusColor = resolveStatusColor(statusValue, isSkipped);
           const taskTitle = resolveTaskTitle(task as TaskWithMetadata);
-          const taskMessage = task.message && task.message !== taskTitle ? task.message : undefined;
+          const geometryDetails = parseGeometrySimplifyError(task.message);
+          const baseMessage = task.message?.split(' (')[0];
+          const taskMessage = task.message && task.message !== taskTitle
+            ? (geometryDetails ? baseMessage : task.message)
+            : undefined;
+          const detailLines = geometryDetails ? formatGeometrySimplifySummary(geometryDetails) : undefined;
           return (
             <Box
               key={task.taskId ?? `${virtualRow.index}-${taskTitle}`}
@@ -107,6 +113,7 @@ export const TaskListVirtualized = ({
                 statusLabel={statusLabelValue}
                 statusColor={statusColor}
                 message={taskMessage}
+                detailLines={detailLines}
                 progress={task.progress}
                 fallbackProgress={stageValue}
               />

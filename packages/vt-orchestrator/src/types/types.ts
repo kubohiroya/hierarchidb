@@ -15,6 +15,8 @@ export type TaskQueueEvent = CommonTaskQueueEvent;
 export type TaskStage = CommonTaskStage;
 export type TaskStatus = CommonTaskStatus;
 
+export type FailureHandling = 'continue' | 'stop' | 'skip';
+
 export type BandConfig = {
   bandId: number;
   zMin: number;
@@ -82,6 +84,9 @@ export interface RunStageOptions<TInput = unknown, TOutput = unknown> {
   stage: TaskStage;
   handler: StageHandler<TInput, TOutput>;
   waitIfPaused?: () => Promise<void>;
+  maxConcurrent?: number;
+  failureHandling?: FailureHandling;
+  abortController?: AbortController;
 }
 
 export type PipelineRunConfig<

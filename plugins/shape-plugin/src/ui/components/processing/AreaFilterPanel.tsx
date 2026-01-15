@@ -57,7 +57,7 @@ export const AreaFilterPanel: React.FC<Props> = ({
               <RadioGroup
                 aria-labelledby={`${controlId}-filtering-method`}
                 name="filtering-method"
-                value={baseTransformByBandConfig.featureFilterMethod || 'hybrid'}
+                value={baseTransformByBandConfig.featureFilterMethod}
                 onChange={(e) => {
                   const method = e.target.value as FeatureFilterMethod;
                   update({
@@ -107,7 +107,7 @@ export const AreaFilterPanel: React.FC<Props> = ({
               </Typography>
               <Box sx={{ px: 2 }}>
                 <Slider
-                  value={baseTransformByBandConfig.minVertexCountForAreaFilter ?? 10}
+                  value={baseTransformByBandConfig.minVertexCountForAreaFilter}
                   onChange={(_, value) => {
                     const minVertexCountForAreaFilter = value as number;
                     update({
@@ -143,7 +143,7 @@ export const AreaFilterPanel: React.FC<Props> = ({
               </Typography>
               <Box sx={{ px: 2 }}>
                 <Slider
-                  value={baseTransformByBandConfig.featureAreaThreshold ?? 100}
+                  value={baseTransformByBandConfig.featureAreaThreshold}
                   onChange={(_, value) => {
                     const featureAreaThreshold = value as number;
                     update({
@@ -209,7 +209,7 @@ export const AreaFilterPanel: React.FC<Props> = ({
                     { value: Math.log10(1), label: '1' },
                   ]}
                   track="inverted"
-                  disabled={disabled || !baseHybridConfig}
+                  disabled={disabled}
                 />
               </Box>
               <Typography variant="caption" color="text.secondary">
@@ -222,7 +222,7 @@ export const AreaFilterPanel: React.FC<Props> = ({
               </Typography>
               <Box sx={{ px: 2 }}>
                 <Slider
-                  value={baseHybridConfig?.simpleShapeVertexThreshold ?? 10}
+                  value={baseHybridConfig.simpleShapeVertexThreshold ?? 10}
                   onChange={(_, value) => {
                     const simpleShapeVertexThreshold = value as number;
                     update({
@@ -246,7 +246,7 @@ export const AreaFilterPanel: React.FC<Props> = ({
                     { value: 500, label: '500' },
                   ]}
                   track="inverted"
-                  disabled={disabled || !baseHybridConfig}
+                  disabled={disabled}
                 />
               </Box>
               <Typography variant="caption" color="text.secondary">
@@ -259,7 +259,7 @@ export const AreaFilterPanel: React.FC<Props> = ({
               </Typography>
               <Box sx={{ px: 2 }}>
                 <Slider
-                  value={baseHybridConfig?.elongatedShapeCorrectionFactor ?? 0.8}
+                  value={baseHybridConfig.elongatedShapeCorrectionFactor ?? 0.8}
                   onChange={(_, value) => {
                     const elongatedShapeCorrectionFactor = value as number;
                     update({
@@ -281,7 +281,7 @@ export const AreaFilterPanel: React.FC<Props> = ({
                     { value: 1, label: '1.0' },
                     { value: 1.5, label: '1.5' },
                   ]}
-                  disabled={disabled || !baseHybridConfig}
+                  disabled={disabled}
                 />
               </Box>
               <Typography variant="caption" color="text.secondary">

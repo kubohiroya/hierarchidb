@@ -42,6 +42,12 @@ const loadVtPbf = async (): Promise<typeof vtPbfNS> => {
   return candidate.default ?? candidate;
 };
 
+const assertNotAborted = (signal?: AbortSignal): void => {
+  if (signal?.aborted) {
+    throw new Error('task aborted');
+  }
+};
+
 const canonicalLineKey = (coords: number[][]): string => {
   const toKey = (points: number[][]): string =>
     points
@@ -140,7 +146,8 @@ const buildLayerIndexes = async (
       extent: context.vtConfig.extent,
       buffer: context.vtConfig.bufferSize,
       tolerance: context.vtConfig.tolerance,
-      promoteId: 'id',
+      promoteId: context.vtConfig.promoteId,
+      indexMaxPoints: context.vtConfig.indexMaxPoints > 0 ? context.vtConfig.indexMaxPoints : undefined,
     });
     indexes.set(layerName, index as unknown as GeojsonVtIndex);
   }
@@ -148,8 +155,11 @@ const buildLayerIndexes = async (
 };
 
 export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInput> => {
-  const { bands, vtConfig, vtDB } = context;
-  const layerSetName = vtConfig.layerSetName ?? 'default';
+  const { bands, vtConfig, vtDB, abortSignal } = context;
+  const layerSetName = vtConfig.layerSetName;
+  if (!layerSetName) {
+    throw new Error('vt stage requires layerSetName');
+  }
   const bandMap = new Map(bands.map((band) => [band.bandId, band] as const));
 
   return async (task): Promise<StageHandlerResult> => {
@@ -165,27 +175,34 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
       return { status: 'failed', errorMessage: `Unknown bandId: ${input.bandId}` };
     }
 
+    assertNotAborted(abortSignal);
     const collection = await collectFeatures(context, input.bufferIds);
     if (!collection) {
       return { status: 'completed', message: 'skipped: no features' };
     }
 
     const layerMap = buildLayerMap(collection);
+    assertNotAborted(abortSignal);
     const indexes = await buildLayerIndexes(context, layerMap, band);
     if (indexes.size === 0) {
       return { status: 'completed', message: 'skipped: no layers' };
     }
 
+    assertNotAborted(abortSignal);
     const vtpbf = await loadVtPbf();
     const parent = unpackTileId(input.tileId, band.zBase);
     const bufferSetHash = buildBufferSetHash(input.bufferIds);
 
     for (let z = band.zMin; z <= band.zMax; z++) {
+      assertNotAborted(abortSignal);
       const { xStart, xEnd, yStart, yEnd } = parentToChildRange(parent, z);
       for (let x = xStart; x <= xEnd; x++) {
+        assertNotAborted(abortSignal);
         for (let y = yStart; y <= yEnd; y++) {
+          assertNotAborted(abortSignal);
           const layers: Record<string, Tile> = {};
           for (const [layerName, index] of indexes.entries()) {
+            assertNotAborted(abortSignal);
             const tile = index.getTile(z, x, y) as Tile | null;
             if (!tile || !Array.isArray(tile.features) || tile.features.length === 0) continue;
             const finalTile = vtConfig.boundaryDedupe && layerName.endsWith('-boundary')

@@ -9,6 +9,16 @@ export type ContinentCode = 'AF' | 'AS' | 'EU' | 'NA' | 'SA' | 'OC' | 'AN' | 'XX
 
 export const DEFAULT_ISO3166_CSV_URL = resolveIso3166CsvUrl();
 
+const isOffline = (): boolean => (
+  typeof navigator !== 'undefined' && navigator.onLine === false
+);
+
+const resolveEnsureOptions = (options?: EnsureIsoOptions): EnsureIsoOptions => (
+  isOffline()
+    ? { ...options, csvUrl: undefined }
+    : { csvUrl: DEFAULT_ISO3166_CSV_URL, ...options }
+);
+
 const CONTINENT_NAMES: Record<ContinentCode, string> = {
   AF: 'Africa',
   AS: 'Asia',
@@ -60,7 +70,7 @@ export async function convertIsoCountryCode(
   const trimmed = code.trim();
   if (!trimmed) return null;
 
-  await ensureIso3166Data(options);
+  await ensureIso3166Data(resolveEnsureOptions(options));
   const result = await getCountry(trimmed.toUpperCase());
   if (!result?.country) return null;
 
@@ -88,7 +98,7 @@ export async function resolveCountryContinentName(
 ): Promise<string> {
   const trimmed = code.trim();
   if (!trimmed) return CONTINENT_NAMES.XX;
-  await ensureIso3166Data({ csvUrl: DEFAULT_ISO3166_CSV_URL, ...options });
+  await ensureIso3166Data(resolveEnsureOptions(options));
   const result = await getCountry(trimmed.toUpperCase());
   const location = result?.country?.location;
   const resolved = resolveContinentCodeFromLocation(location);
@@ -101,7 +111,7 @@ export async function resolveCountryContinentCode(
 ): Promise<ContinentCode> {
   const trimmed = code.trim();
   if (!trimmed) return 'XX';
-  await ensureIso3166Data({ csvUrl: DEFAULT_ISO3166_CSV_URL, ...options });
+  await ensureIso3166Data(resolveEnsureOptions(options));
   const result = await getCountry(trimmed.toUpperCase());
   return resolveContinentCodeFromLocation(result?.country?.location);
 }

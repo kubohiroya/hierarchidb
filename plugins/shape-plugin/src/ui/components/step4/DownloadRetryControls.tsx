@@ -3,7 +3,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import { useTranslation } from '../../i18n.js';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
-import type { FetchConfig } from '@hierarchidb/common-types';
+import type { FetchConfig } from '@hierarchidb/gis-sdk';
 
 type Props = {
   baseDownloadConfig: FetchConfig;
@@ -24,13 +24,13 @@ export const DownloadRetryControls: React.FC<Props> = ({
         <TextField
           label={t('processing.download.timeoutMs', 'Timeout (ms)')}
           type="number"
-          value={baseDownloadConfig.timeoutMs ?? ''}
+          value={baseDownloadConfig.timeoutMs}
           onChange={(event) => {
             const timeoutMs = Number(event.target.value);
             update({
               fetchConfig: {
                 ...baseDownloadConfig,
-                timeoutMs: Number.isFinite(timeoutMs) ? timeoutMs : undefined,
+                timeoutMs: Number.isFinite(timeoutMs) ? timeoutMs : baseDownloadConfig.timeoutMs,
               },
             });
           }}
@@ -44,13 +44,13 @@ export const DownloadRetryControls: React.FC<Props> = ({
         <TextField
           label={t('processing.download.retryDelay', 'Retry Delay (ms)')}
           type="number"
-          value={baseDownloadConfig.retryDelay ?? ''}
+          value={baseDownloadConfig.retryDelay}
           onChange={(event) => {
             const retryDelay = Number(event.target.value);
             update({
               fetchConfig: {
                 ...baseDownloadConfig,
-                retryDelay: Number.isFinite(retryDelay) ? retryDelay : undefined,
+                retryDelay: Number.isFinite(retryDelay) ? retryDelay : baseDownloadConfig.retryDelay,
               },
             });
           }}
@@ -66,9 +66,9 @@ export const DownloadRetryControls: React.FC<Props> = ({
             {t('processing.download.retryAttempts', 'Retry Attempts')}
           </Typography>
           <Rating
-            value={baseDownloadConfig.retryAttempts ?? baseDownloadConfig.retryLimit ?? 0}
+            value={baseDownloadConfig.retryAttempts}
             onChange={(_, value) => {
-              const retryAttempts = value ?? 0;
+              const retryAttempts = value === null ? baseDownloadConfig.retryAttempts : value;
               update({
                 fetchConfig: {
                   ...baseDownloadConfig,

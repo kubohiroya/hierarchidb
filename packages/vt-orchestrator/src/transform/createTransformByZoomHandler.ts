@@ -10,6 +10,12 @@ import { DEFAULT_TASK_SPLIT, type StageHandler, type StageHandlerResult, type Tr
 //import { TransformByZoomConfig } from '../types/BuildConfig.js';
 //import { StageHandler, StageHandlerResult, StageHandlerResult } from '../types/types.js';
 
+const assertNotAborted = (signal?: AbortSignal): void => {
+  if (signal?.aborted) {
+    throw new Error('task aborted');
+  }
+};
+
 const buildBand3Reservations = (
   collection: FeatureCollection,
   zBase: number,
@@ -43,7 +49,7 @@ const buildBand3Reservations = (
 export const createTransformByZoomHandler = (
   context: TransformByZoomStageContext
 ): StageHandler<TransformByZoomTaskInput> => {
-  const { ephemeralDB, bands } = context;
+  const { ephemeralDB, bands, abortSignal } = context;
   const bandMap = new Map(bands.map((band) => [band.bandId, band] as const));
 
   return async (task): Promise<StageHandlerResult> => {
@@ -56,17 +62,20 @@ export const createTransformByZoomHandler = (
       return { status: 'failed', errorMessage: `transform-by-zoom failed: unknown bandId (${input.bandId})` };
     }
 
+    assertNotAborted(abortSignal);
     const record = await ephemeralDB.transformByBandCache.get(input.transformByBandCacheId);
     if (!record) {
       return { status: 'failed', errorMessage: 'transform-by-zoom failed: transform-by-band cache not found' };
     }
 
+    assertNotAborted(abortSignal);
     const collection = await decodeTransformByBandCache(record.data);
     if (!collection || collection.features.length === 0) {
       return { status: 'completed', message: 'skipped: transform-by-band cache empty' };
     }
 
     if (input.bandId === 3 && typeof record.adminLevel === 'number' && record.adminLevel >= 2) {
+      assertNotAborted(abortSignal);
       const tiles = buildBand3Reservations(collection, band.zBase);
       const existingCount = await ephemeralDB.transformByZoomReservations.where('nodeId').equals(task.nodeId).count();
       const unique = new Set(tiles);
@@ -74,6 +83,7 @@ export const createTransformByZoomHandler = (
         throw new Error(`band3 reservation limit exceeded: ${existingCount + unique.size} > ${DEFAULT_TASK_SPLIT.maxBand3Reservations}`);
       }
       for (const tileId of unique) {
+        assertNotAborted(abortSignal);
         const tileKey = String(tileId);
         await ephemeralDB.transformByZoomReservations.put({
           id: `${task.nodeId}:${tileKey}`,
