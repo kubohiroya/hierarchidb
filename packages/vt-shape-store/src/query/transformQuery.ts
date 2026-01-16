@@ -1,24 +1,24 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { TransformByBandCacheRecord } from '../types.js';
-import { SHAPE_DOMAIN, buildTransformByBandCacheRecordId } from '../ids.js';
+import type { TransformCacheRecord } from '../types.js';
+import { SHAPE_DOMAIN, buildTransformCacheRecordId } from '../ids.js';
 import type { VtShapeDb } from '../db/shapeDb.js';
 
-export async function getTransformByBandCache(
+export async function getTransformCache(
   db: VtShapeDb,
   nodeId: NodeId,
   bandId: number,
   sourceKey: string
-): Promise<TransformByBandCacheRecord | null> {
-  const id = buildTransformByBandCacheRecordId(nodeId, bandId, sourceKey);
-  return (await db.transformByBandCache.get(id)) ?? null;
+): Promise<TransformCacheRecord | null> {
+  const id = buildTransformCacheRecordId(nodeId, bandId, sourceKey);
+  return (await db.transformCache.get(id)) ?? null;
 }
 
-export async function listTransformByBandCache(
+export async function listTransformCache(
   db: VtShapeDb,
   nodeId: NodeId,
   bandId: number
-): Promise<TransformByBandCacheRecord[]> {
-  return db.transformByBandCache
+): Promise<TransformCacheRecord[]> {
+  return db.transformCache
     .where('[nodeId+bandId]')
     .equals([nodeId, bandId])
     .filter((row) => row.domainType === SHAPE_DOMAIN)

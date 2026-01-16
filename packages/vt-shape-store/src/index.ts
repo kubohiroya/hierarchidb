@@ -5,22 +5,17 @@ export {
   listFetchCache,
 } from './query/stage1Query.js';
 export {
-  getTransformByBandCache,
-  listTransformByBandCache,
+  getTransformCache,
+  listTransformCache,
 } from './query/transformQuery.js';
-export { listTransformByBandCacheIdsByTile } from './query/tileIndexQuery.js';
 export { putFetchCache } from './mutation/stage1Mutation.js';
 export {
-  putTransformByBandCache,
-  putTransformByZoomCache,
-  reserveTransformByZoomTile,
+  putTransformCache,
 } from './mutation/transformMutation.js';
 export type {
-  TransformByZoomReservation,
   FetchCacheRecord,
   FetchCachePayload,
-  TransformByZoomCacheRecord,
-  TransformByBandCacheRecord,
-  TransformByBandCachePayload,
+  TransformCacheRecord,
+  TransformCachePayload,
 } from './types.js';
 export { SHAPE_DOMAIN, bandIdToZBase } from './ids.js';

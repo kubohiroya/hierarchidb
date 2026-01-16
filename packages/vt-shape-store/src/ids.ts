@@ -21,6 +21,6 @@ export const buildFetchCacheRecordId = (nodeId: string, sourceKey: string): stri
   return `${nodeId}-${SHAPE_DOMAIN}-${sourceKey}`;
 };
 
-export const buildTransformByBandCacheRecordId = (nodeId: string, bandId: number, sourceKey: string): string => {
+export const buildTransformCacheRecordId = (nodeId: string, bandId: number, sourceKey: string): string => {
   return `${nodeId}-b${bandId}-${SHAPE_DOMAIN}-${sourceKey}`;
 };
