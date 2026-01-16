@@ -115,7 +115,7 @@ const buildLayerMap = (collection: FeatureCollection): Map<string, Feature[]> =>
 const collectFeatures = async (context: VTStageContext, bufferIds: string[]): Promise<FeatureCollection | null> => {
   const allFeatures: Feature[] = [];
   for (const bufferId of bufferIds) {
-    const record = await context.ephemeralDB.transformByBandCache.get(bufferId);
+    const record = await context.ephemeralDB.transformCache.get(bufferId);
     if (!record) continue;
     const collection = await decodeTransformByBandCache(record.data);
     if (!collection) continue;

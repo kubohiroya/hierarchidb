@@ -57,6 +57,8 @@ export const DEFAULT_TASK_SPLIT = {
 export type TransformByBandTaskInput = {
   fetchCacheId: string;
   bandId: number;
+  bandMinZoom?: number;
+  bandMaxZoom?: number;
   domainType: 'shape' | 'route';
   sourceKey: string;
   stagePriority?: number;

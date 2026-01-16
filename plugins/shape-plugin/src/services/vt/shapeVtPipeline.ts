@@ -29,6 +29,8 @@ import {
 export type ShapeTransformByBandTaskInput = {
   fetchCacheId: string;
   bandId: number;
+  bandMinZoom?: number;
+  bandMaxZoom?: number;
   domainType: 'shape';
   sourceKey: string;
   stagePriority?: number;
@@ -99,6 +101,8 @@ const buildTransformByBandTasks = async (
         inputData: {
           fetchCacheId: buffer.id,
           bandId: band.bandId,
+          bandMinZoom: band.zMin,
+          bandMaxZoom: band.zMax,
           domainType: 'shape',
           sourceKey: buffer.sourceKey,
           stagePriority,
@@ -154,27 +158,17 @@ const splitBufferIds = (
   return chunks;
 };
 
-const listTransformByBandCacheIdsByTile = async (
+const listTransformCacheIdsByTile = async (
   store: typeof ephemeralShapeDB,
   nodeId: NodeId,
+  bandId: number,
   tileId: number,
 ): Promise<string[]> => {
   const rows = await store.tileIdToBufferRelations
-    .where('[nodeId+tileId]')
-    .equals([nodeId, String(tileId)])
+    .where('[nodeId+bandId+tileId]')
+    .equals([nodeId, bandId, String(tileId)])
     .toArray();
   return rows.map((row) => row.bufferId);
-};
-
-const listFixedTiles = (zBase: number): number[] => {
-  const tiles: number[] = [];
-  const size = 1 << zBase;
-  for (let x = 0; x < size; x += 1) {
-    for (let y = 0; y < size; y += 1) {
-      tiles.push(((x << zBase) | y) as number);
-    }
-  }
-  return tiles;
 };
 
 const buildVtTasks = async (
@@ -191,14 +185,27 @@ const buildVtTasks = async (
   for (const band of bands) {
     const isHighDetailBand = band.zMin >= HIGH_DETAIL_ZOOM_MIN;
     if (isHighDetailBand && !enableHighDetailBands) continue;
-    const tileIds = isHighDetailBand
-      ? (await ephemeralStore.transformByZoomReservations.where('nodeId').equals(nodeId).toArray())
-        .map((entry) => Number(entry.tileId))
-      : listFixedTiles(band.zBase);
+    const relationRows = await ephemeralStore.tileIdToBufferRelations
+      .where('[nodeId+bandId]')
+      .equals([nodeId, band.bandId])
+      .toArray();
+    const tileBuffers = new Map<number, string[]>();
+    relationRows.forEach((row) => {
+      const tileId = Number(row.tileId);
+      if (!Number.isFinite(tileId)) return;
+      const bucket = tileBuffers.get(tileId);
+      if (bucket) {
+        bucket.push(row.bufferId);
+      } else {
+        tileBuffers.set(tileId, [row.bufferId]);
+      }
+    });
+    const tileIds = [...tileBuffers.keys()];
     for (const tileId of tileIds) {
-      const bufferIds = await listTransformByBandCacheIdsByTile(ephemeralStore, nodeId, tileId);
+      const bufferIds = tileBuffers.get(tileId)
+        ?? await listTransformCacheIdsByTile(ephemeralStore, nodeId, band.bandId, tileId);
       if (bufferIds.length === 0) continue;
-      const buffers = await ephemeralStore.transformByBandCache.where('id').anyOf(bufferIds).toArray();
+      const buffers = await ephemeralStore.transformCache.where('id').anyOf(bufferIds).toArray();
       const vertexById = new Map(buffers.map((buffer) => [buffer.id, buffer.vertexCount] as const));
       const chunks = splitBufferIds(bufferIds, vertexById, maxBuffersPerTask, maxVerticesPerTask);
       for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex += 1) {
@@ -344,7 +351,7 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
       abortController: vtAbortController,
     });
     if (params.buildConfig.transformConfig.deleteOnComplete) {
-      await ephemeralStore.transformByBandCache.where('nodeId').equals(params.nodeId).delete();
+      await ephemeralStore.transformCache.where('nodeId').equals(params.nodeId).delete();
     }
   }
 

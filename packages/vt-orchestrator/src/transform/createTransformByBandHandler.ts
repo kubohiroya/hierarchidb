@@ -2,13 +2,14 @@ import type { Feature, FeatureCollection, Geometry, LineString, MultiPolygon, Po
 import { area as turfArea, bbox as turfBbox, booleanValid as turfBooleanValid, kinks as turfKinks } from '@turf/turf';
 import { cleanCoords } from '@turf/clean-coords';
 import { geojson as geojsonApi } from 'flatgeobuf';
-import { applyFeatureFiltering, encodeFlatGeobufFromFeatureCollection } from '@hierarchidb/gis-sdk';
+import { applyFeatureFiltering, encodeFlatGeobufFromFeatureCollection, latToTileY, lonToTileX } from '@hierarchidb/gis-sdk';
 import type { ShapeTransformErrorRecord } from '@hierarchidb/plugin-service-api';
 import { simplifyFeatureCollection, buildBoundaryFeature, snapGeometryToGrid } from './geometry.js';
 import { SHAPE_DOMAIN } from '@hierarchidb/vt-shape-store';
 import type { TransformByBandStageContext } from '../contexts.js';
 import type { StageHandler, StageHandlerResult, TransformByBandTaskInput } from '../types/types.js';
 import { VtTaskQueueDb, updateTask } from '../task/taskQueue.js';
+import { packTileId } from '../tiles/tileId.js';
 
 const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureCollection | null> => {
   if (!decoded || typeof decoded !== 'object') return null;
@@ -61,6 +62,31 @@ const countPolygonsFromGeometry = (geometry?: Geometry | null): number => {
     return Array.isArray(geometry.coordinates) ? geometry.coordinates.length : 0;
   }
   return 0;
+};
+
+const clampTileIndex = (value: number, maxIndex: number): number => (
+  Math.min(maxIndex, Math.max(0, value))
+);
+
+const collectTileIdsForCollection = (collection: FeatureCollection, zBase: number): number[] => {
+  if (!Number.isFinite(zBase) || zBase < 0) return [];
+  const maxIndex = (1 << zBase) - 1;
+  const tileIds = new Set<number>();
+  for (const feature of collection.features) {
+    if (!feature?.geometry) continue;
+    const [minLon, minLat, maxLon, maxLat] = turfBbox(feature as Feature<Geometry>);
+    if (![minLon, minLat, maxLon, maxLat].every((value) => Number.isFinite(value))) continue;
+    const x1 = clampTileIndex(lonToTileX(minLon, zBase), maxIndex);
+    const x2 = clampTileIndex(lonToTileX(maxLon, zBase), maxIndex);
+    const y1 = clampTileIndex(latToTileY(maxLat, zBase), maxIndex);
+    const y2 = clampTileIndex(latToTileY(minLat, zBase), maxIndex);
+    for (let x = x1; x <= x2; x += 1) {
+      for (let y = y1; y <= y2; y += 1) {
+        tileIds.add(packTileId(x, y, zBase));
+      }
+    }
+  }
+  return [...tileIds];
 };
 
 type ErrorRingRole = 'outline' | 'hole';
@@ -693,6 +719,14 @@ export const createTransformByBandHandler = (
           } catch (featureError) {
             errorFeatureCount += 1;
             const featureMessage = featureError instanceof Error ? featureError.message : String(featureError);
+            const rawFeatureId = feature.id
+              ?? (feature.properties && 'id' in feature.properties ? String(feature.properties.id) : undefined);
+            const recordFeatureId = rawFeatureId != null
+              ? String(rawFeatureId)
+              : `${input.sourceKey}:${featureIndex}`;
+            const lineFeaturesCandidate = buildErrorLineFeatures(feature.geometry, recordFeatureId);
+            const recordId = `${task.taskId}:${recordFeatureId}`;
+            const fallbackGeometryType = feature.geometry?.type ?? 'unknown';
             try {
               stageLabel = 'counts:error-polygons';
               errorPolygonCount += await runStageWithLabel('counts:error-polygons', () => countPolygonsFromGeometry(feature.geometry));
@@ -761,42 +795,33 @@ export const createTransformByBandHandler = (
                   `${featureId} type=${summary.geometryType} rings=${summary.ringCount} minRingVertices=${summary.minRingVertices ?? '-'} kinks=${summary.selfIntersectionCount} degenerateRings=${summary.degenerateRingCount} minRingArea=${formatArea(summary.minRingArea)} invalidRings=${summary.invalidRingCount} openRings=${summary.openRingCount} nonFinite=${summary.nonFiniteCoordCount} booleanValid=${isValid ? '1' : '0'} validity=orig:${isValid ? '1' : '0'} snap:${snappedValid ? '1' : '0'} clean:${cleanedValid ? '1' : '0'} minRingAreaStage=orig:${formatArea(summary.minRingArea)} snap:${formatArea(snappedSummary.minRingArea)} clean:${formatArea(cleanedSummary.minRingArea)}`,
                 );
               }
-              const rawFeatureId = feature.id
-                ?? (feature.properties && 'id' in feature.properties ? String(feature.properties.id) : undefined);
-              const recordFeatureId = rawFeatureId != null
-                ? String(rawFeatureId)
-                : `${input.sourceKey}:${featureIndex}`;
-              const lineFeatures = buildErrorLineFeatures(feature.geometry, recordFeatureId);
-              if (lineFeatures) {
-                const recordId = `${task.taskId}:${recordFeatureId}`;
-                errorRecords.push({
-                  id: recordId,
-                  nodeId: task.nodeId,
-                  taskId: task.taskId,
-                  stage: 'transform',
-                  bandId: input.bandId,
-                  sourceKey: input.sourceKey,
-                  countryCode: input.countryCode,
-                  adminLevel: input.adminLevel,
-                  featureId: recordFeatureId,
-                  featureIndex,
-                  geometryType: lineFeatures.geometryType,
-                  polygonCount: lineFeatures.polygonCount,
-                  ringCount: lineFeatures.ringCount,
-                  message: featureMessage,
-                  createdAt: Date.now(),
-                  lineFeatures: {
-                    type: 'FeatureCollection',
-                    features: lineFeatures.features,
-                  },
-                });
-              }
             } catch (analysisError) {
               const analysisMessage = analysisError instanceof Error ? analysisError.message : String(analysisError);
               if (analysisErrors.length < 3) {
                 analysisErrors.push(`analysisFailed stage=${stageLabel} ${analysisMessage}`);
               }
             }
+            errorRecords.push({
+              id: recordId,
+              nodeId: task.nodeId,
+              taskId: task.taskId,
+              stage: 'transform',
+              bandId: input.bandId,
+              sourceKey: input.sourceKey,
+              countryCode: input.countryCode,
+              adminLevel: input.adminLevel,
+              featureId: recordFeatureId,
+              featureIndex,
+              geometryType: lineFeaturesCandidate?.geometryType ?? fallbackGeometryType,
+              polygonCount: lineFeaturesCandidate?.polygonCount ?? countPolygonsFromGeometry(feature.geometry),
+              ringCount: lineFeaturesCandidate?.ringCount ?? 0,
+              message: featureMessage,
+              createdAt: Date.now(),
+              lineFeatures: {
+                type: 'FeatureCollection',
+                features: lineFeaturesCandidate?.features ?? [],
+              },
+            });
           }
         }
         if (errorRecords.length > 0) {
@@ -863,7 +888,7 @@ export const createTransformByBandHandler = (
 
       stageLabel = 'cache:put';
       assertNotAborted(abortSignal);
-      await ephemeralDB.transformByBandCache.put({
+      await ephemeralDB.transformCache.put({
         id: cacheId,
         nodeId: task.nodeId,
         bandId: input.bandId,
@@ -880,9 +905,30 @@ export const createTransformByBandHandler = (
         timestamp: Date.now(),
       });
 
+      const tileIds = collectTileIdsForCollection(outputCollectionValue, band.zBase);
+      if (tileIds.length > 0) {
+        const createdAt = Date.now();
+        const relations = tileIds.map((tileId) => ({
+          id: `${task.nodeId}:${input.bandId}:${tileId}:${cacheId}`,
+          nodeId: task.nodeId,
+          bandId: input.bandId,
+          tileId: String(tileId),
+          bufferId: cacheId,
+          createdAt,
+        }));
+        try {
+          await ephemeralDB.tileIdToBufferRelations.where('bufferId').equals(cacheId).delete();
+          await ephemeralDB.tileIdToBufferRelations.bulkPut(relations);
+        } catch (storageError) {
+          console.warn('[ShapeTransform] failed to persist tile index relations', storageError);
+        }
+      }
+
+      const completedMessage = `Features=${inputFeatureCount} Polygons=${polygonCount} Geometries=${vertexCount}`;
       return {
         status: 'completed',
         progress: 100,
+        message: completedMessage,
         outputData: {
           processedPolygons: inputPolygonCount,
           totalPolygons: inputPolygonCount,
