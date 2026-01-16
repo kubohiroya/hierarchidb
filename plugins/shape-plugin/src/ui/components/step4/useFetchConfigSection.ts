@@ -54,16 +54,33 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
   const formatDeleteLabel = useCallback((label: string, count: number, unit = '') => (
     count > 0 ? `${label} (${count}${unit})` : label
   ), []);
+  const formatDeleteLabelI18n = useCallback((key: string, fallback: string, count: number) => (
+    count > 0
+      ? t(key, '{{label}} ({{count}}{{unit}})', {
+        label: fallback,
+        count,
+        unit: countUnit,
+      })
+      : fallback
+  ), [countUnit, t]);
   const fetchDeleteCount = counts.fetch;
   const transformDeleteCount = counts.transform;
   const vtDeleteCount = Math.max(counts.vt, resultCounts.tiles);
   const metadataDeleteCount = resultCounts.metadata;
   const deleteFetchLabel = useMemo(() => (
-    formatDeleteLabel(t('processing.download.deleteFetchedFiles', 'Delete fetch cache'), fetchDeleteCount)
-  ), [fetchDeleteCount, formatDeleteLabel, t]);
+    formatDeleteLabelI18n(
+      'processing.download.deleteDownloadedFilesWithCount',
+      t('processing.download.deleteDownloadedFiles', 'Delete fetch cache'),
+      fetchDeleteCount,
+    )
+  ), [fetchDeleteCount, formatDeleteLabelI18n, t]);
   const deleteTransformLabel = useMemo(() => (
-    formatDeleteLabel(t('processing.download.deleteStage1Cache', 'Delete transform cache'), transformDeleteCount, countUnit)
-  ), [countUnit, formatDeleteLabel, t, transformDeleteCount]);
+    formatDeleteLabelI18n(
+      'processing.download.deleteStage1CacheWithCount',
+      t('processing.download.deleteStage1Cache', 'Delete transform cache'),
+      transformDeleteCount,
+    )
+  ), [formatDeleteLabelI18n, t, transformDeleteCount]);
   const deleteVTLabel = useMemo(() => (
     formatDeleteLabel(t('processing.download.deleteTiles', 'Delete vt cache'), vtDeleteCount)
   ), [formatDeleteLabel, t, vtDeleteCount]);
@@ -84,19 +101,21 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
 
     try {
       const shapeStore = new VtShapeDb();
+      const taskQueue = new VtTaskQueueDb();
       const [
         fetchCount,
-        transformCount,
-        vtCount,
+        transformTaskCount,
+        transformCacheCount,
         numTiles,
         numMetadata,
       ] = await Promise.all([
         shapeStore.fetchCache.where('[nodeId+domainType]').equals([nodeId, SHAPE_DOMAIN]).count(),
-        ephemeralShapeAPIImpl.countTransformByBandCaches(nodeId),
-        ephemeralShapeAPIImpl.countVectorTiles(nodeId),
+        taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'transform']).count(),
+        ephemeralShapeAPIImpl.countTransformCaches(nodeId),
         shapeQueryAPIImpl.listVTMetadata(nodeId).then((rows) => rows.length),
         shapeQueryAPIImpl.listFeatureMetadata(nodeId).then((rows) => rows.length),
       ]);
+      const transformCount = transformTaskCount > 0 ? transformTaskCount : transformCacheCount;
 
       const sessionStatus = await bridgeRef
         .initialize()
@@ -108,7 +127,7 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
       setCounts({
         fetch: fetchCount,
         transform: transformCount,
-        vt: vtCount,
+        vt: numTiles,
       });
       setResultCounts({ tiles: numTiles, metadata: numMetadata });
     } finally {

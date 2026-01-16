@@ -19,8 +19,6 @@ import {
   type FetchTaskPayload,
   validateBatchConfig,
   type ShapeStepValidationResult,
-  BuildTaskResult,
-  type BuildTaskResultType,
   type ShapeEntity,
   type SelectedArrayByCountries,
 } from '../common/types/index.js';
@@ -108,22 +106,18 @@ const resolveTaskProgress = (task: TaskQueueRecord): number => {
   return task.progress ?? 0;
 };
 
-const mapTaskQueueStatusToStage = (status: TaskQueueRecord['status']): BuildTaskResultType => {
-  switch (status) {
-    case 'queued':
-      return BuildTaskResult.WAIT;
-    case 'running':
-      return BuildTaskResult.PROCESS;
-    case 'completed':
-      return BuildTaskResult.SUCCESS;
-    case 'failed':
-    default:
-      return BuildTaskResult.ERROR;
-  }
-};
-
-const mapTaskQueueStatusToTaskStatus = (status: TaskQueueRecord['status']): BuildTask['status'] => {
-  return status as BuildTask['status'];
+const normalizeTaskStatus = (status: TaskQueueRecord['status'] | string): BuildTask['status'] => {
+  const normalized = status.toString().toLowerCase();
+  if (normalized === 'success') return 'completed';
+  if (normalized === 'error') return 'failed';
+  if (normalized === 'process') return 'running';
+  if (normalized === 'queued') return 'queued';
+  if (normalized === 'running') return 'running';
+  if (normalized === 'completed') return 'completed';
+  if (normalized === 'failed') return 'failed';
+  if (normalized === 'paused') return 'paused';
+  if (normalized === 'regression') return 'regression';
+  return 'queued';
 };
 
 const buildTaskQueueTitle = (task: TaskQueueRecord): string | undefined => {
@@ -135,7 +129,7 @@ const buildTaskQueueTitle = (task: TaskQueueRecord): string | undefined => {
       : typeof input.countryCode === "string"
         ? input.countryCode
         : undefined;
-    const adminLevel = typeof input.adminLevel === "number" ? `ADM` : undefined;
+    const adminLevel = typeof input.adminLevel === "number" ? `ADM${input.adminLevel}` : undefined;
     return [country, adminLevel].filter(Boolean).join(" ");
   }
   if (task.stage === "transform") {
@@ -144,9 +138,14 @@ const buildTaskQueueTitle = (task: TaskQueueRecord): string | undefined => {
       : typeof input.countryCode === "string"
         ? input.countryCode
         : undefined;
-    const adminLevel = typeof input.adminLevel === "number" ? `ADM` : undefined;
-    const bandId = typeof input.bandId === "number" ? `band` : undefined;
-    return [country, adminLevel, bandId].filter(Boolean).join(" ");
+    const adminLevel = typeof input.adminLevel === "number" ? `ADM${input.adminLevel}` : undefined;
+    const bandId = typeof input.bandId === "number" ? `band${input.bandId}` : undefined;
+    const bandMinZoom = typeof input.bandMinZoom === "number" ? input.bandMinZoom : undefined;
+    const bandMaxZoom = typeof input.bandMaxZoom === "number" ? input.bandMaxZoom : undefined;
+    const zoomBandLabel = bandMinZoom !== undefined && bandMaxZoom !== undefined
+      ? `z${bandMinZoom}-z${bandMaxZoom}`
+      : undefined;
+    return [country, adminLevel, bandId, zoomBandLabel].filter(Boolean).join(" ");
   }
   if (task.stage === "transform-by-zoom") {
     const bandId = typeof input.bandId === "number" ? `band` : undefined;
@@ -167,8 +166,8 @@ const mapTaskQueueRecordToBatchTask = (
 ): BuildTask & { title?: string; message?: string; metadata?: TaskWeightMetadata } => ({
   taskId: task.taskId,
   nodeId: task.nodeId,
-  stage: mapTaskQueueStatusToStage(task.status),
-  status: mapTaskQueueStatusToTaskStatus(task.status),
+  stage: undefined,
+  status: normalizeTaskStatus(task.status as string),
   type: task.stage,
   index: task.index,
   progress: resolveTaskProgress(task),
@@ -285,7 +284,7 @@ const buildTaskWeightContext = async (
 
   const bufferIds = [...transformBufferIds];
   const transformCaches = bufferIds.length > 0
-    ? await ephemeralShapeDB.transformByBandCache.where('id').anyOf(bufferIds).toArray()
+    ? await ephemeralShapeDB.transformCache.where('id').anyOf(bufferIds).toArray()
     : [];
   const transformCacheById = new Map(transformCaches.map((cache) => [cache.id, cache] as const));
 

@@ -93,6 +93,7 @@
       "deleteLoadingHint": "Loading delete counts...",
       "countUnit": "",
       "deleteStage1Cache": "Delete transform cache",
+      "deleteStage1CacheWithCount": "Delete transform cache ({{count}} items)",
       "deleteStage2Cache": "Delete zoom-ratio cache",
       "deleteTiles": "Delete vt cache",
       "deleteMetadata": "Delete Metadata",

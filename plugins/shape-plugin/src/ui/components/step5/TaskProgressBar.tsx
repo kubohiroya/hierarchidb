@@ -5,7 +5,6 @@ import type {
   TaskWithMetadata,
 } from './TaskListVirtualized.tsx';
 import { isSkippedMessage, sortVectorTileTasks } from './TaskListVirtualized.tsx';
-import { resolveTaskWeight } from './taskProgressWeights.ts';
 import type { TaskProgressSummary } from '../../atoms/shapeBuildProgressAtoms.ts';
 import { taskScrollTargetAtom } from '../../atoms/shapeBuildProgressAtoms.ts';
 import type { BuildStage } from '@hierarchidb/components';
@@ -28,9 +27,15 @@ export const TaskProgressBar = ({
   const failedColor = theme.palette.error.main;
   const skippedColor = theme.palette.warning.main;
   const segments: Array<{ fill: string; stageId: string; taskId?: string; width: number }> = [];
-
   stages.forEach((stage) => {
-    const stageTasks = tasksByStage[stage.id] ?? [];
+    const fallbackStageId = stage.id === 'transform'
+      && stages.length === 1
+      && (tasksByStage.transform?.length ?? 0) === 0
+      && (tasksByStage.fetch?.length ?? 0) > 0
+      ? 'fetch'
+      : stage.id;
+    const sourceStageId = fallbackStageId;
+    const stageTasks = tasksByStage[sourceStageId] ?? [];
     if (stageTasks.length === 0) {
       return;
     }
@@ -38,24 +43,26 @@ export const TaskProgressBar = ({
       ? sortVectorTileTasks(stageTasks)
       : stageTasks;
     orderedTasks.forEach((task) => {
+      const statusValue = (task.status ?? '').toString().toLowerCase();
       let fill = waitingColor;
       const isSkipped = isSkippedMessage(task.message);
       if (isSkipped) {
         fill = skippedColor;
-      } else if (task.status === 'completed') {
+      } else if (statusValue === 'completed') {
         fill = theme.palette.success.main;
-      } else if (task.status === 'failed') {
+      } else if (statusValue === 'failed') {
         fill = failedColor;
-      } else if (task.status === 'running') {
+      } else if (statusValue === 'running') {
         fill = runningColor;
-      } else if (task.status === 'paused') {
+      } else if (statusValue === 'paused') {
         fill = theme.palette.warning.main;
       }
+      const isExternalStage = sourceStageId !== stage.id;
       segments.push({
         fill,
         stageId: stage.id,
-        taskId: task.taskId,
-        width: resolveTaskWeight(task),
+        taskId: isExternalStage ? undefined : task.taskId,
+        width: 1,
       });
     });
   });

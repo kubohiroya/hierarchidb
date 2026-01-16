@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   Box,
   Button,
@@ -53,6 +53,7 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
     nodeId: resolvedNodeId ? String(resolvedNodeId) : undefined,
   });
   const isDev = import.meta.env.DEV;
+  const lastTaskStageSnapshotRef = useRef<string | null>(null);
   const {
     startWarning,
     crashHint,
@@ -70,6 +71,29 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
     isDev,
     t
   });
+
+  useEffect(() => {
+    if (!isDev) return;
+    const snapshot = JSON.stringify({
+      stages: stages.map((stage) => stage.id),
+      keys: Object.keys(tasksByStage),
+      counts: Object.fromEntries(Object.entries(tasksByStage).map(([stageId, tasks]) => ([
+        stageId,
+        {
+          total: tasks.length,
+          completed: tasks.filter((task) => task.status === 'completed').length,
+          failed: tasks.filter((task) => task.status === 'failed').length,
+          running: tasks.filter((task) => task.status === 'running').length,
+          queued: tasks.filter((task) => task.status === 'queued').length,
+          paused: tasks.filter((task) => task.status === 'paused').length,
+          regression: tasks.filter((task) => task.status === 'regression').length,
+        },
+      ]))),
+    });
+    if (snapshot === lastTaskStageSnapshotRef.current) return;
+    lastTaskStageSnapshotRef.current = snapshot;
+    console.debug('[ShapeBuildStep] stageTaskSnapshot', JSON.parse(snapshot));
+  }, [isDev, stages, tasksByStage]);
 
   const resolveTaskTitle = useCallback(
     (task: TaskWithMetadata): string =>

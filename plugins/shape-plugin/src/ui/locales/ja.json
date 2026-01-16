@@ -93,6 +93,7 @@
       "deleteLoadingHint": "削除件数を読み込み中...",
       "countUnit": "件",
       "deleteStage1Cache": "Transform キャッシュを削除",
+      "deleteStage1CacheWithCount": "Transform キャッシュを削除 ({{count}}件)",
       "deleteStage2Cache": "ズーム率別キャッシュを削除",
       "deleteTiles": "VT キャッシュを削除",
       "deleteMetadata": "メタデータを削除",
