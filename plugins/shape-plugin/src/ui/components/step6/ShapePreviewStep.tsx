@@ -91,7 +91,8 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
 
   const renderMapPreview = () => {
     const hasRemoteTiles = Boolean(tilesUrl);
-    if (!hasRemoteTiles && !tilesAvailable) {
+    const hasErrorLines = geoJsonLayers.length > 0;
+    if (!hasRemoteTiles && !tilesAvailable && !hasErrorLines) {
       if (tilesChecking) {
         return (
           <Alert severity="info" icon={<CircularProgress size={16} />} sx={{ alignItems: 'center' }}>

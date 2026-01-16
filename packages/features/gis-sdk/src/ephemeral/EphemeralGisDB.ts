@@ -60,15 +60,11 @@ export class EphemeralGisDB<Config = unknown> extends Dexie {
   async clearNodeData(nodeId: NodeId): Promise<void> {
     await this.transaction('rw', [
       this.fetchCache,
-      this.transformByBandCache,
-      this.transformByZoomCache,
-      this.vtCache,
+      this.transformCache,
       this.sessions
     ], async () => {
       await this.fetchCache.where('nodeId').equals(nodeId).delete();
-      await this.transformByBandCache.where('nodeId').equals(nodeId).delete();
-      await this.transformByZoomCache.where('nodeId').equals(nodeId).delete();
-      await this.vtCache.where('nodeId').equals(nodeId).delete();
+      await this.transformCache.where('nodeId').equals(nodeId).delete();
       await this.sessions.where('nodeId').equals(nodeId).delete();
     });
   }
@@ -78,11 +74,7 @@ export class EphemeralGisDB<Config = unknown> extends Dexie {
       case 'fetch':
         return (await this.fetchCache.where('nodeId').equals(nodeId).count()) > 0;
       case 'transform':
-        return (await this.transformByBandCache.where('nodeId').equals(nodeId).count()) > 0;
-      case 'transform-by-zoom':
-        return (await this.transformByZoomCache.where('nodeId').equals(nodeId).count()) > 0;
-      case 'vt':
-        return (await this.vtCache.where('nodeId').equals(nodeId).count()) > 0;
+        return (await this.transformCache.where('nodeId').equals(nodeId).count()) > 0;
       default:
         return false;
     }
@@ -91,9 +83,7 @@ export class EphemeralGisDB<Config = unknown> extends Dexie {
   async clearStage(nodeId: NodeId, stage: EphemeralStage): Promise<void> {
     await this.transaction('rw', [
       this.fetchCache,
-      this.transformByBandCache,
-      this.transformByZoomCache,
-      this.vtCache,
+      this.transformCache,
       this.sessions,
     ], async () => {
       switch (stage) {
@@ -101,13 +91,7 @@ export class EphemeralGisDB<Config = unknown> extends Dexie {
           await this.fetchCache.where('nodeId').equals(nodeId).delete();
           break;
         case 'transform':
-          await this.transformByBandCache.where('nodeId').equals(nodeId).delete();
-          break;
-        case 'transform-by-zoom':
-          await this.transformByZoomCache.where('nodeId').equals(nodeId).delete();
-          break;
-        case 'vt':
-          await this.vtCache.where('nodeId').equals(nodeId).delete();
+          await this.transformCache.where('nodeId').equals(nodeId).delete();
           break;
         default:
           break;
@@ -119,17 +103,13 @@ export class EphemeralGisDB<Config = unknown> extends Dexie {
 
   async getNumCaches(): Promise<{
     numFetchCaches: number;
-    numTransformByBandCaches: number;
-    numTransformByZoomCaches: number;
-    numVtCaches: number;
+    numTransformCaches: number;
     numSessions: number;
     totalSize: number
   }> {
-    const [numFetchCaches, numTransformByBandCaches, numTransformByZoomCaches, numVtCaches, numSessions] = await Promise.all([
+    const [numFetchCaches, numTransformCaches, numSessions] = await Promise.all([
       this.fetchCache.count(),
-      this.transformByBandCache.count(),
-      this.transformByZoomCache.count(),
-      this.vtCache.count(),
+      this.transformCache.count(),
       this.sessions.count()
     ]);
 
@@ -138,14 +118,9 @@ export class EphemeralGisDB<Config = unknown> extends Dexie {
     const rawBuffers = await this.fetchCache.toArray();
     totalSize += rawBuffers.reduce((sum, buffer) => sum + (buffer.size || 0), 0);
 
-    const tiles = await this.vtCache.toArray();
-    totalSize += tiles.reduce((sum, tile) => sum + tile.size, 0);
-
     return {
       numFetchCaches,
-      numTransformByBandCaches,
-      numTransformByZoomCaches,
-      numVtCaches,
+      numTransformCaches,
       numSessions,
       totalSize,
     };
@@ -154,16 +129,12 @@ export class EphemeralGisDB<Config = unknown> extends Dexie {
   async clearAll(): Promise<void> {
     await this.transaction('rw', [
       this.fetchCache,
-      this.transformByBandCache,
-      this.transformByZoomCache,
-      this.vtCache,
+      this.transformCache,
       this.sessions,
     ], async () => {
       await Promise.all([
         this.fetchCache.clear(),
-        this.transformByBandCache.clear(),
-        this.transformByZoomCache.clear(),
-        this.vtCache.clear(),
+        this.transformCache.clear(),
         this.sessions.clear()
       ]);
     });

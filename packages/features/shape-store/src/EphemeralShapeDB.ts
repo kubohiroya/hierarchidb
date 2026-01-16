@@ -64,27 +64,17 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig> {
           }
         })
     );
-    this.featureBuffers = this.table('featureBuffers');
-    this.tileBuffers = this.table('tileBuffers');
     this.tileIdToBufferRelations = this.table('tileIdToBufferRelations');
     this.buildTasks = this.table('batchTasks');
-    this.transformByBandCache = this.table('transformByBandCache');
-    this.transformByZoomCache = this.table('transformByZoomCache');
-    this.transformByZoomReservations = this.table('transformByZoomReservations');
-    this.geojsonVtIndexes = this.table('geojsonVtIndexes');
+    this.transformCache = this.table('transformCache');
     this.transformErrors = this.table('transformErrors');
   }
 
   async clearNodeData(nodeId: NodeId): Promise<void> {
     await super.clearNodeData(nodeId);
-    await this.featureBuffers.where('nodeId').equals(nodeId).delete();
-    await this.tileBuffers.where('nodeId').equals(nodeId).delete();
     await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();
     await this.buildTasks.where('nodeId').equals(nodeId).delete();
-    await this.transformByBandCache.where('nodeId').equals(nodeId).delete();
-    await this.transformByZoomCache.where('nodeId').equals(nodeId).delete();
-    await this.transformByZoomReservations.where('nodeId').equals(nodeId).delete();
-    await this.geojsonVtIndexes.where('nodeId').equals(nodeId).delete();
+    await this.transformCache.where('nodeId').equals(nodeId).delete();
     await this.transformErrors.where('nodeId').equals(nodeId).delete();
   }
 
@@ -93,11 +83,11 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig> {
       case 'fetch':
         return (await this.fetchCache.where('nodeId').equals(nodeId).count()) > 0;
       case 'transform':
-        return (await this.transformByBandCache.where('nodeId').equals(nodeId).count()) > 0;
+        return (await this.transformCache.where('nodeId').equals(nodeId).count()) > 0;
       case 'transform-by-zoom':
         return (await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).count()) > 0;
       case 'vt':
-        return (await this.vtCache.where('nodeId').equals(nodeId).count()) > 0;
+        return (await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).count()) > 0;
       default:
         return false;
     }
@@ -106,16 +96,10 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig> {
   async clearStage(nodeId: NodeId, stage: BaseEphemeralStage): Promise<void> {
     await this.transaction('rw', [
       this.fetchCache,
-      this.transformByBandCache,
-      this.transformByZoomCache,
-      this.transformByZoomReservations,
-      this.vtCache,
+      this.transformCache,
       this.sessions,
-      this.featureBuffers,
-      this.tileBuffers,
       this.tileIdToBufferRelations,
       this.buildTasks,
-      this.geojsonVtIndexes,
       this.transformErrors,
     ], async () => {
       switch (stage) {
@@ -123,41 +107,28 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig> {
           await this.fetchCache.where('nodeId').equals(nodeId).delete();
           break;
         case 'transform':
-          await this.transformByBandCache.where('nodeId').equals(nodeId).delete();
+          await this.transformCache.where('nodeId').equals(nodeId).delete();
+          await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();
           await this.transformErrors.where('nodeId').equals(nodeId).delete();
           break;
         case 'transform-by-zoom':
           await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();
-          await this.geojsonVtIndexes.where('nodeId').equals(nodeId).delete();
-          await this.transformByZoomCache.where('nodeId').equals(nodeId).delete();
-          await this.transformByZoomReservations.where('nodeId').equals(nodeId).delete();
           break;
         case 'vt':
           await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();
-          await this.geojsonVtIndexes.where('nodeId').equals(nodeId).delete();
-          await this.transformByZoomCache.where('nodeId').equals(nodeId).delete();
-          await this.transformByZoomReservations.where('nodeId').equals(nodeId).delete();
-          await this.vtCache.where('nodeId').equals(nodeId).delete();
           break;
         default:
           break;
       }
       await this.sessions.where('nodeId').equals(nodeId).delete();
-      await this.featureBuffers.where('[nodeId+stage]').equals([nodeId, stage]).delete();
-      await this.tileBuffers.where('nodeId').equals(nodeId).and((entry) => entry.stage === stage).delete();
     });
   }
 
   async clearAll(): Promise<void> {
     await super.clearAll();
-    await this.featureBuffers.clear();
-    await this.tileBuffers.clear();
     await this.tileIdToBufferRelations.clear();
     await this.buildTasks.clear();
-    await this.transformByBandCache.clear();
-    await this.transformByZoomCache.clear();
-    await this.transformByZoomReservations.clear();
-    await this.geojsonVtIndexes.clear();
+    await this.transformCache.clear();
     await this.transformErrors.clear();
   }
 

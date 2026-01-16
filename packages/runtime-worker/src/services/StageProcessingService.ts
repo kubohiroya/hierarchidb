@@ -7,7 +7,7 @@ import {
 } from '@hierarchidb/gis-sdk';
 import { storeRegistry } from '../entity/store-registry.js';
 import type { VectorTileItemBase } from '../entity/store.js';
-import { ephemeralShapeDB, shapeDB, type LayerInfo } from '@hierarchidb/shape-store';
+import { shapeDB, type LayerInfo } from '@hierarchidb/shape-store';
 import { ShapeMutationService } from './ShapeMutationService.js';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { FeatureMetadataRow } from '@hierarchidb/vectortile-store';
@@ -135,8 +135,6 @@ class RealVTWorker implements VTWorkerAPI {
     } catch {
       // Ignore and fall back to ephemeral buffers.
     }
-    const tileInput = await ephemeralShapeDB.transformByZoomCache.get(fileId);
-    if (tileInput?.data) return tileInput.data;
     return null;
   }
 

@@ -1,3 +1,44 @@
+2217) fix/runtime-worker/shape-transform-cache-typecheck (P1) — 完了 (2026-01-18)
+- ブランチ名: fix/runtime-worker/shape-transform-cache-typecheck
+- 依存: なし
+- 受け入れ基準: @hierarchidb/runtime-worker の ShapeMutationService/ShapeQueryService/WorkerService における ShapeTransformCache 不整合の型エラーが解消される／原因・影響範囲・修正内容を説明できる／pnpm typecheck が exit 0 で完走する
+- 影響範囲: `packages/runtime-worker/src/**`, `packages/plugin-service-api/src/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、runtime-worker と plugin-service-api の型定義/実装を修正前に戻す
+- チェックリスト:
+  - runtime-worker の ShapeTransformCache 関連型エラーの原因を特定する
+  - 影響範囲を整理し、必要最小限の修正を行う
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-18 15:20 JST runtime-worker の ShapeTransformCache 系 typecheck エラー修正に着手。
+  - update: 2026-01-18 15:30 JST plugin-service-api の dist 型定義を再生成し、runtime-worker の型参照を最新化。
+  - update: 2026-01-18 16:05 JST shape-plugin の getNumCaches 型不整合の修正に着手。
+  - update: 2026-01-18 16:10 JST pnpm --filter @hierarchidb/shape-plugin typecheck を実行（exit 0）。
+  - update: 2026-01-18 16:12 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - done: 2026-01-18 16:15 JST runtime-worker/shape-plugin の typecheck が通り、ShapeTransformCache 系エラーが解消されたことを確認。
+
+2216) fix/ui/dialog-footer-next-click (P1) — 進行中 (2026-01-18)
+- ブランチ名: fix/ui/dialog-footer-next-click
+- 依存: なし
+- 受け入れ基準: プラグインダイアログを最大化した状態でもフッター右下の「次へ」がクリックできる／SpeedDial などの重なり要因が特定され、対処が反映されている／通常サイズや他ダイアログの操作性が維持される
+- 影響範囲: `packages/plugin-ui-host/src/**`, `app/src/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、ダイアログフッターのレイアウト/重なり制御を修正前に戻す
+- チェックリスト:
+  - 最大化時に「次へ」がクリックできない原因（重なり要素/レイヤー）を特定する
+  - クリック可能になるよう最小差分で修正する
+  - 通常サイズ/他ダイアログの挙動を確認する
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-18 14:10 JST プラグインダイアログ最大化時に「次へ」が押せない問題の調査に着手。
+  - update: 2026-01-18 14:20 JST 最大化時にリサイズハンドルを描画しないよう調整し、フッター右下のクリック阻害を回避する対応を追加。
+  - blocked: 2026-01-18 14:25 JST pnpm typecheck が @hierarchidb/vt-orchestrator build:types の TransformByBandCacheRecord に bandId が無い型エラー（createTransformByBandHandler.ts:868）で失敗。
+  - update: 2026-01-18 14:40 JST ダイアログ表示時に SpeedDial を確実に抑制するため、hash ルーティング時の dialog route 判定を追加。
+  - blocked: 2026-01-18 14:45 JST pnpm typecheck が @hierarchidb/runtime-worker の EphemeralShapeDB/TransformByBandCacheRecord/TransformByZoomCacheRecord 型エラー（ShapeMutationService.ts/ShapeQueryService.ts/vectorTileStageRunner.ts）で失敗。
+  - update: 2026-01-18 15:05 JST ダイアログ表示中は SpeedDial を強制的に非表示にするため、PluginDialogFrame が dialog-open 共有状態を通知し DynamicSpeedDial がそれに追従するよう調整。
+  - blocked: 2026-01-18 15:10 JST pnpm typecheck が @hierarchidb/runtime-worker の ShapeMutationService/ShapeQueryService/WorkerService における ShapeTransformCache 不整合で失敗。
+  - update: 2026-01-18 15:15 JST maximize/full-screen 時のリサイズハンドル非表示は維持する方針を確定。
+
 2214) feat/ui-map/fit-screen-button (P1) — 進行中 (2026-01-18)
 - ブランチ名: feat/ui-map/fit-screen-button
 - 依存: なし
@@ -14,6 +55,54 @@
   - start: 2026-01-18 12:00 JST ui-map FitScreen ボタン表示と選択フィーチャーのフィット表示対応に着手。
   - update: 2026-01-18 12:05 JST FitScreen ボタン表示/disabled 条件と選択フィーチャーの fitBounds 処理を実装。
   - blocked: 2026-01-18 12:10 JST pnpm typecheck が @hierarchidb/shape-store build:types の ShapeTransformErrorRecord 未export で失敗。
+
+2215) chore/shape/ephemeral-table-audit (P1) — 進行中 (2026-01-18)
+2216) chore/shape/shape-db-table-audit (P1) — 進行中 (2026-01-18)
+- ブランチ名: chore/shape/shape-db-table-audit
+- 依存: なし
+- 受け入れ基準: hdb-shape の全テーブルについて読み書き参照箇所を整理する／未使用または重複の疑いがあるテーブルを根拠付きで提示する／削除/統合/保留の方針と影響範囲を提示する／削除/統合を提案する場合はロールバック手順と移行手順を明記する／TASKS.md に調査ログを記載する
+- 影響範囲: `packages/features/shape-store/src/ShapeDB.ts` ほか（調査後に確定）
+- ロールバック手順: 調査のみの場合は不要。実装する場合は該当差分を revert し、hdb-shape のテーブル構成を元に戻す
+- チェックリスト:
+  - hdb-shape の全テーブルと参照箇所（読み書き）を洗い出す
+  - 未使用/重複が疑われるテーブルの削除/統合/保留方針を提示する
+  - ロールバックと移行手順の方針を整理する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-18 16:10 JST hdb-shape のテーブル利用状況調査に着手。
+  - update: 2026-01-18 17:20 JST hdb-shape の featureIndices テーブル撤去対応に着手。
+  - update: 2026-01-18 17:35 JST featureIndices テーブル定義を削除し、ShapeDB のスキーマを v5 に更新。
+  - update: 2026-01-18 17:40 JST pnpm --filter @hierarchidb/shape-store typecheck を実行（exit 0）。
+  - update: 2026-01-18 17:41 JST pnpm --filter @hierarchidb/shape-store build を実行（exit 0、tsdown define 警告あり）。
+
+- ブランチ名: chore/shape/ephemeral-table-audit
+- 依存: なし
+- 受け入れ基準: shape-ephemeral の全テーブルについて読み書き参照箇所を整理する／transformByBandCache/transformByZoomCache/transformByZoomReservations/vtCache の用途・重複・未使用の有無を根拠付きで説明する／未使用または重複の疑いがあるテーブルについて削除/統合/保留の方針と影響範囲を提示する／削除/統合を提案する場合はロールバック手順と移行手順を明記する／TASKS.md に調査ログを記載する
+- 影響範囲: `packages/features/shape-store/src/EphemeralShapeDB.ts` ほか（調査後に確定）
+- ロールバック手順: 調査のみの場合は不要。実装する場合は該当差分を revert し、shape-ephemeral のテーブル構成を元に戻す
+- チェックリスト:
+  - shape-ephemeral の全テーブルと参照箇所（読み書き）を洗い出す
+  - transformByBandCache/transformByZoomCache/transformByZoomReservations/vtCache の用途・重複・未使用の有無を整理する
+  - 未使用/重複が疑われるテーブルの削除/統合/保留方針を提示する
+  - ロールバックと移行手順の方針を整理する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-18 13:30 JST shape-ephemeral のテーブル利用状況調査に着手。
+  - update: 2026-01-18 14:05 JST shape-ephemeral のテーブル参照箇所を洗い出し、未使用/重複の疑いを整理。
+  - update: 2026-01-18 15:20 JST transformByBandCache→transformCache の改名、未使用テーブル削除、tileIdToBufferRelations の転置インデックス実装に着手。
+  - update: 2026-01-18 15:35 JST pnpm --filter @hierarchidb/gis-sdk typecheck を実行（exit 0）。
+  - update: 2026-01-18 15:36 JST pnpm --filter @hierarchidb/shape-store typecheck を実行（exit 0）。
+  - update: 2026-01-18 15:37 JST pnpm --filter @hierarchidb/vt-shape-store typecheck を実行（exit 0）。
+  - blocked: 2026-01-18 15:38 JST pnpm --filter @hierarchidb/plugin-service-api typecheck が ShapeTransformCache 未export で失敗。
+  - update: 2026-01-18 15:40 JST plugin-service-api の型名修正と typecheck を実行（exit 0）。
+  - update: 2026-01-18 15:41 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck を実行（exit 0）。
+  - blocked: 2026-01-18 15:43 JST pnpm --filter @hierarchidb/runtime-worker typecheck が ShapeMutationAPI 差分で失敗。
+  - update: 2026-01-18 15:45 JST pnpm --filter @hierarchidb/plugin-service-api build を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-18 15:47 JST pnpm --filter @hierarchidb/runtime-worker typecheck を実行（exit 0）。
+  - blocked: 2026-01-18 15:50 JST pnpm --filter @hierarchidb/shape-plugin typecheck が getNumCaches 型差分で失敗。
+  - update: 2026-01-18 15:52 JST pnpm --filter @hierarchidb/gis-sdk build を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-18 15:53 JST pnpm --filter @hierarchidb/shape-store build を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-18 15:55 JST pnpm --filter @hierarchidb/shape-plugin typecheck を実行（exit 0）。
 
 2213) feat/shape/step4-zoom-band-accordion-layout (P1) — 進行中 (2026-01-17)
 - ブランチ名: feat/shape/step4-zoom-band-accordion-layout
@@ -89,6 +178,22 @@
   - update: 2026-01-18 09:15 JST Step5 fetch タスク数が実行中に増殖し続ける問題の調査と修正に着手。
   - update: 2026-01-18 09:35 JST fetch ステージの進捗カウントをタスク数ベースに切り替え、表示単位をタスク/ポリゴンで切替。pnpm --filter @hierarchidb/shape-plugin typecheck（exit 0）。
   - update: 2026-01-18 10:05 JST transform タスクの outputData に処理済み/総ポリゴン数を書き込み、タスク進捗をポリゴン比率で算出。サマリーはタスク件数集計へ切替。pnpm --filter @hierarchidb/shape-plugin typecheck（exit 0）。
+  - update: 2026-01-18 10:20 JST transform ステージのサマリー進捗バーを fetch URL 数ベースに変更（ステージ単体表示時のみ）。pnpm --filter @hierarchidb/shape-plugin typecheck（exit 0）。
+  - update: 2026-01-18 10:40 JST Step4 の削除ボタン件数を fetch cache 数へ合わせ、削除ラベルの件数表記を i18n 化。pnpm --filter @hierarchidb/shape-plugin typecheck（exit 0）。
+  - update: 2026-01-18 11:00 JST Step4 の Transform 削除件数を fetch×ズーム帯数で算出し、Transform タスクタイトルに ADM レベルとズーム帯範囲を表示。pnpm --filter @hierarchidb/vt-orchestrator typecheck / pnpm --filter @hierarchidb/shape-plugin typecheck（exit 0）。
+  - update: 2026-01-18 11:10 JST Transform 完了タスクのメッセージに Features/Polygons/Geometries を表示。pnpm --filter @hierarchidb/vt-orchestrator typecheck（exit 0）。
+  - update: 2026-01-18 11:25 JST 進捗バーのセグメント幅をタスク件数ベースに統一し、transform 単体は fetch タスクで描画。pnpm --filter @hierarchidb/shape-plugin typecheck（exit 0）。
+  - update: 2026-01-18 11:40 JST Transform 削除件数を taskQueue の transform タスク件数に合わせ、削除後に 0 へ更新されるよう修正。pnpm --filter @hierarchidb/shape-plugin typecheck（exit 0）。
+  - update: 2026-01-18 11:55 JST 進捗サマリーの SVG が灰色になる問題に対応し、success/error/process の状態も色分け対象に追加。pnpm --filter @hierarchidb/shape-plugin typecheck（exit 0）。
+  - update: 2026-01-18 12:10 JST success/error/process を completed/failed/running に統一し、タスク表記の状態を正規化。pnpm --filter @hierarchidb/shape-plugin typecheck（exit 0）。
+  - start: 2026-01-18 12:20 JST Transform進捗サマリーSVGが灰色のままになる問題の再調査に着手。
+  - update: 2026-01-18 12:35 JST transform-by-zoom のタスクを transform ステージへ集約するマッピングを追加。
+  - update: 2026-01-18 12:40 JST pnpm --filter @hierarchidb/ui-batch-progress typecheck を実行（exit 0）。
+  - update: 2026-01-18 12:42 JST pnpm --filter @hierarchidb/shape-plugin typecheck を実行（exit 0）。
+  - update: 2026-01-18 12:50 JST transform-by-zoom→transform のステージ集約マッピングを撤去。
+  - start: 2026-01-18 13:05 JST Transform進捗サマリーの灰色表示を調査するため tasksByStage のステージキー/状態内訳ログを追加する対応に着手。
+  - update: 2026-01-18 13:10 JST ShapeBuildProgressPanel に tasksByStage のステージキー/状態内訳ログを追加。
+  - update: 2026-01-18 13:12 JST pnpm --filter @hierarchidb/shape-plugin typecheck を実行（exit 0）。
 
 2211) plan/shape/3stage-vt-pipeline-execplan (P1) — 進行中 (2026-01-16)
 - ブランチ名: plan/shape/3stage-vt-pipeline-execplan
@@ -207,6 +312,21 @@
   - blocked: 2026-01-18 13:00 JST pnpm typecheck が shape-plugin の未使用変数（useShapeBuildStep.ts の stageKey、worker/api.ts の nodeId）で失敗。
   - update: 2026-01-18 13:15 JST 未使用変数の修正後、pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
   - done: 2026-01-18 13:20 JST transformErrors が存在する場合も Step5→Step6 遷移を有効化する対応を完了。
+  - start: 2026-01-18 13:30 JST Step5 の Transform 失敗時に Step6 のエラー一覧が空になる問題の調査に着手。
+  - update: 2026-01-18 13:40 JST transform エラー保存を空lineFeaturesでも記録するよう補正。
+  - update: 2026-01-18 13:45 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - done: 2026-01-18 13:50 JST Step5 失敗時の transform エラーが Step6 の一覧に表示されるよう対応を完了。
+  - start: 2026-01-18 14:00 JST ベクトルタイル未生成でもエラーLineStringをStep6地図に表示する対応に着手。
+  - update: 2026-01-18 14:10 JST エラーLineStringがあればタイル無しでも地図を表示する条件に変更。
+  - update: 2026-01-18 14:15 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - done: 2026-01-18 14:20 JST ベクトルタイル未生成でもエラーLineStringを地図表示する対応を完了。
+  - start: 2026-01-18 14:30 JST Step5 Transform 進捗 SVG が灰色固定になる問題の調査に着手。
+  - update: 2026-01-18 14:45 JST Transform 単独表示時は transform のタスクがあればそれを使うよう進捗バーの参照先を補正。
+  - update: 2026-01-18 14:50 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - done: 2026-01-18 14:55 JST Step5 Transform 進捗 SVG が灰色固定になる問題の修正を完了。
+  - start: 2026-01-18 15:05 JST Step6の地図/エラー一覧が空のままなのに遷移ボタンが有効な問題の調査に着手。
+  - update: 2026-01-18 15:20 JST Transform エラー解析失敗時でもレコードを保存するよう補正。
+  - update: 2026-01-18 15:25 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
   - update: 2026-01-18 00:42 JST Step5 rect幅を Math.ceil+2 に更新し、隙間解消対応を完了。
 
 

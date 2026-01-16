@@ -227,8 +227,8 @@ export const updateShapeStageMetadata = async (params: ShapeStageMetadataParams)
     });
   });
 
-  const transformByBandCaches = await shapeQueryAPIImpl.listTransformByBandCaches(params.nodeId);
-  transformByBandCaches.forEach((buffer) => {
+  const transformCaches = await shapeQueryAPIImpl.listTransformCaches(params.nodeId);
+  transformCaches.forEach((buffer) => {
     if (buffer.domainType !== 'shape') return;
     const originKey = buildOriginKey(params.dataSource, buffer.sourceKey);
     const info = resolveOriginInfo(originKey, lookup);

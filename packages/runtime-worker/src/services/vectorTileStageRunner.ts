@@ -1,7 +1,6 @@
 import type { VectorTileProgress, VTWorkerAPI } from '../types.js';
 import { DexieChunkStore } from '@hierarchidb/chunk-store';
 import type { NodeId } from '@hierarchidb/common-types';
-import { ephemeralShapeDB } from '@hierarchidb/shape-store';
 
 export type VectorTileStageInput = {
   bufferId: string;
@@ -40,7 +39,6 @@ export type VectorTileStageOptions = {
   chunkStoreName?: string;
   nodeId?: NodeId;
   tileId?: string;
-  storage?: 'chunk-store' | 'ephemeral';
 };
 
 const DEFAULT_NODE_ID = 'vectortile-shared' as NodeId;
@@ -81,7 +79,6 @@ export async function writeVectorTileInput(
     inputCompression?: VectorTileInputCompression;
     nodeId?: NodeId;
     tileId?: string;
-    storage?: 'chunk-store' | 'ephemeral';
     chunkStoreName?: string;
   } = 'application/json',
 ): Promise<void> {
@@ -93,23 +90,7 @@ export async function writeVectorTileInput(
     : options?.contentType
   ) ?? resolveInputContentType(inputFormat, inputCompression);
   const nodeId = options?.nodeId ?? DEFAULT_NODE_ID;
-  const tileId = options?.tileId ?? bufferId;
-  const storage = options?.storage ?? 'chunk-store';
   const payload = await compressBuffer(buffer, inputCompression);
-  if (storage === 'ephemeral') {
-    await ephemeralShapeDB.transformByZoomCache.put({
-      id: bufferId,
-      nodeId,
-      tileId,
-      data: payload,
-      size: payload.byteLength,
-      featureCount: 0,
-      extractionRatio: 1,
-      timestamp: Date.now(),
-      contentType,
-    });
-    return;
-  }
   const resolvedChunkStoreName = options?.chunkStoreName ?? DEFAULT_CHUNK_STORE;
   const storageAdapter = new DexieChunkStore<ArrayBuffer>({
     dbName: resolvedChunkStoreName,
@@ -146,7 +127,6 @@ export async function runVectorTileStage(
         inputCompression,
         nodeId,
         tileId,
-        storage: options.storage ?? 'chunk-store',
         chunkStoreName: options.chunkStoreName ?? DEFAULT_CHUNK_STORE,
       },
     );
