@@ -2,7 +2,6 @@ import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { Table } from 'dexie';
 import type { BuildProcessConfig, BuildTaskRecord, TaskStatus } from './ShapeDB.js';
-import type { FeatureBufferRecord, TileBufferRecord } from './ShapeDB.js';
 import type { ShapeTransformErrorRecord } from '@hierarchidb/plugin-service-api';
 import {
   EphemeralGisDB,
@@ -14,7 +13,7 @@ export type BuildSessionMetadata = BaseBuildSessionMetadata<BuildProcessConfig>;
 
 type DomainType = 'shape' | 'route';
 
-export type TransformByBandCacheRecord = {
+export type TransformCacheRecord = {
   id: string;
   nodeId: NodeId;
   bandId: number;
@@ -31,42 +30,10 @@ export type TransformByBandCacheRecord = {
   timestamp: number;
 };
 
-export type TransformByZoomCacheRecord = {
-  id: string;
-  nodeId: NodeId;
-  tileId: string;
-  data: ArrayBuffer;
-  size: number;
-  featureCount: number;
-  extractionRatio: number;
-  timestamp: number;
-  contentType?: string;
-};
-
-export type TransformByZoomReservation = {
-  id: string;
-  nodeId: NodeId;
-  tileId: string;
-  createdAt: number;
-};
-
-export type GeojsonVtIndexRecord = {
-  id: string;
-  nodeId: NodeId;
-  bufferId: string;
-  index: Record<string, unknown>;
-  options: {
-    extent: number;
-    buffer: number;
-    indexMaxZoom: number;
-    promoteId: string;
-  };
-  createdAt: number;
-};
-
 export type TileIdToBufferRelation = {
   id: string;
   nodeId: NodeId;
+  bandId: number;
   tileId: string;
   bufferId: string;
   createdAt: number;
@@ -74,30 +41,19 @@ export type TileIdToBufferRelation = {
 
 export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig> {
   buildTasks!: Table<BuildTaskRecord, string>;
-  featureBuffers!: Table<FeatureBufferRecord, string>;
-  tileBuffers!: Table<TileBufferRecord, string>;
   tileIdToBufferRelations!: Table<TileIdToBufferRelation, string>;
-  declare transformByBandCache: Table<TransformByBandCacheRecord, string>;
-  declare transformByZoomCache: Table<TransformByZoomCacheRecord, string>;
-  transformByZoomReservations!: Table<TransformByZoomReservation, string>;
-  geojsonVtIndexes!: Table<GeojsonVtIndexRecord, string>;
+  declare transformCache: Table<TransformCacheRecord, string>;
   transformErrors!: Table<ShapeTransformErrorRecord, string>;
 
   constructor() {
     super(getDBName('shape-ephemeral'));
-    this.version(12).stores({
+    this.version(13).stores({
       fetchCache: '&id, nodeId, timestamp',
-      transformByBandCache: '&id, nodeId, bandId, domainType, sourceKey, [nodeId+bandId], [nodeId+bandId+sourceKey], countryCode, adminLevel, [nodeId+countryCode+adminLevel], timestamp',
-      transformByZoomCache: '&id, nodeId, tileId, [nodeId+tileId], timestamp',
-      transformByZoomReservations: '&id, nodeId, tileId, [nodeId+tileId], createdAt',
-      vtCache: '&id, nodeId, [z+x+y], hash, timestamp',
+      transformCache: '&id, nodeId, bandId, domainType, sourceKey, [nodeId+bandId], [nodeId+bandId+sourceKey], countryCode, adminLevel, [nodeId+countryCode+adminLevel], timestamp',
       sessions: '&nodeId, status, stage, startTime',
       cache: '&key, type, lastAccessed, ttl',
-      featureBuffers: '&bufferId, nodeId, [nodeId+stage], stage, createdAt, byteSize',
-      tileBuffers: '&bufferId, nodeId, [nodeId+z+x+y], [z+x+y], z, stage, createdAt',
-      tileIdToBufferRelations: '&id, nodeId, tileId, bufferId, [nodeId+tileId]',
+      tileIdToBufferRelations: '&id, nodeId, bandId, tileId, bufferId, [nodeId+bandId], [nodeId+bandId+tileId]',
       batchTasks: '&taskId, nodeId, [nodeId+status], [nodeId+taskType]',
-      geojsonVtIndexes: '&id, nodeId, bufferId, [nodeId+bufferId], createdAt',
       transformErrors: '&id, nodeId, taskId, bandId, sourceKey, [nodeId+taskId], [nodeId+bandId], [nodeId+sourceKey], createdAt',
     }).upgrade((tx) =>
       tx.table('batchTasks')

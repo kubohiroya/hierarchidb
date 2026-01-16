@@ -14,36 +14,13 @@ export interface FetchCacheRecord {
   timestamp: number;
 }
 
-export interface TransformByBandCacheRecord {
+export interface TransformCacheRecord {
   id: string;
   nodeId: NodeId;
   data: ArrayBuffer;
   featureCount: number;
   extractionRatio: number;
   timestamp: number;
-}
-
-export interface TransformByZoomCacheRecord {
-  id: string;
-  nodeId: NodeId;
-  data: ArrayBuffer;
-  featureCount: number;
-  extractionRatio: number;
-  timestamp: number;
-}
-
-export interface VTCacheRecord {
-  id: string;
-  nodeId: NodeId;
-  z: number;
-  x: number;
-  y: number;
-  data: ArrayBuffer;
-  hash: string;
-  size: number;
-  featureCount: number;
-  timestamp: number;
-  contentType: string;
 }
 
 export interface BatchSessionMetadata<Config = unknown> {
@@ -62,26 +39,20 @@ export interface BatchSessionMetadata<Config = unknown> {
 
 export class EphemeralGisDB<Config = unknown> extends Dexie {
   fetchCache!: Table<FetchCacheRecord>;
-  transformByBandCache!: Table<TransformByBandCacheRecord>;
-  transformByZoomCache!: Table<TransformByZoomCacheRecord>;
-  vtCache!: Table<VTCacheRecord>;
+  transformCache!: Table<TransformCacheRecord>;
   sessions!: Table<BatchSessionMetadata<Config>>;
 
   constructor(name: string) {
     super(name);
-    this.version(3)
+    this.version(4)
       .stores({
         fetchCache: '&id, nodeId, timestamp',
-        transformByBandCache: '&id, nodeId, timestamp',
-        transformByZoomCache: '&id, nodeId, timestamp',
-        vtCache: '&id, nodeId, [z+x+y], hash, timestamp',
+        transformCache: '&id, nodeId, timestamp',
         sessions: '&nodeId, status, stage, startTime'
       })
       .upgrade(async () => {
         await this.fetchCache.clear();
-        await this.transformByBandCache.clear();
-        await this.transformByZoomCache.clear();
-        await this.vtCache.clear();
+        await this.transformCache.clear();
         await this.sessions.clear();
       });
   }

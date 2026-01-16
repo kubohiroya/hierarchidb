@@ -3,12 +3,11 @@ import type {
   ShapeBuildTaskRecord,
   ShapeBuildStage,
   ShapeBuildTaskStatus,
-  ShapeTransformByBandCache,
+  ShapeTransformCache,
   ShapeFetchCache,
 } from './shapeBuildTypes.js';
 import type {
   ShapeTileIdToBufferRelation,
-  ShapeGeojsonVtIndexRecord,
   //ShapeEphemeralSessionRecord,
 } from './shapeDbTypes.js';
 
@@ -23,21 +22,16 @@ export interface EphemeralShapeQueryAPI {
   getFetchCache(nodeId: NodeId, bufferId: string): Promise<ShapeFetchCache | null>;
   countFetchCaches(nodeId: NodeId): Promise<number>;
 
-  listTransformByBandCaches(nodeId: NodeId): Promise<ShapeTransformByBandCache[]>;
-  getTransformByBandCache(bufferId: string): Promise<ShapeTransformByBandCache | null>;
-  countTransformByBandCaches(nodeId: NodeId): Promise<number>;
+  listTransformCaches(nodeId: NodeId): Promise<ShapeTransformCache[]>;
+  getTransformCache(bufferId: string): Promise<ShapeTransformCache | null>;
+  countTransformCaches(nodeId: NodeId): Promise<number>;
 
   listTileIdRelations(nodeId: NodeId): Promise<ShapeTileIdToBufferRelation[]>;
-  listTileIdRelationsByTileId(nodeId: NodeId, tileId: string): Promise<ShapeTileIdToBufferRelation[]>;
-
-  getGeojsonVtIndex(nodeId: NodeId, bufferId: string): Promise<ShapeGeojsonVtIndexRecord | null>;
-  countVectorTiles(nodeId: NodeId): Promise<number>;
+  listTileIdRelationsByTileId(nodeId: NodeId, bandId: number, tileId: string): Promise<ShapeTileIdToBufferRelation[]>;
 
   getNumCaches(): Promise<{
     numFetchCaches: number;
-    numTransformByBandCaches: number;
-    numTransformByZoomCaches: number;
-    numVtCaches: number;
+    numTransformCaches: number;
     numSessions: number;
     totalSize: number;
   }>;
@@ -52,16 +46,11 @@ export interface EphemeralShapeMutationAPI {
   putFetchCache(buffer: ShapeFetchCache): Promise<void>;
   putFetchCaches(buffers: ShapeFetchCache[]): Promise<void>;
 
-  putTransformByBandCache(buffer: ShapeTransformByBandCache): Promise<void>;
-  putTransformByBandCaches(buffers: ShapeTransformByBandCache[]): Promise<void>;
+  putTransformCache(buffer: ShapeTransformCache): Promise<void>;
+  putTransformCaches(buffers: ShapeTransformCache[]): Promise<void>;
 
   putTileIdRelations(relations: ShapeTileIdToBufferRelation[]): Promise<void>;
   deleteTileIdRelations(nodeId: NodeId): Promise<void>;
-
-  putGeojsonVtIndex(record: ShapeGeojsonVtIndexRecord): Promise<void>;
-
-  deleteFeatureBuffers(nodeId: NodeId): Promise<void>;
-  deleteTileBuffers(nodeId: NodeId): Promise<void>;
 
   clearAll(): Promise<void>;
 

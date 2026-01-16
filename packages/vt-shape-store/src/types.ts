@@ -16,7 +16,7 @@ export type FetchCacheRecord = {
   timestamp: number;
 };
 
-export type TransformByBandCacheRecord = {
+export type TransformCacheRecord = {
   id: string;
   nodeId: NodeId;
   bandId: number;
@@ -31,24 +31,10 @@ export type TransformByBandCacheRecord = {
   timestamp: number;
 };
 
-export type TransformByZoomCacheRecord = {
-  nodeId: NodeId;
-  bandId: number;
-  zBase: number;
-  tileId: number;
-  bufferId: string;
-};
-
-export type TransformByZoomReservation = {
-  nodeId: NodeId;
-  tileId: number;
-  createdAt: number;
-};
-
 export type FetchCachePayload = Omit<FetchCacheRecord, 'id' | 'nodeId' | 'domainType' | 'timestamp'> & {
   timestamp?: number;
 };
 
-export type TransformByBandCachePayload = Omit<TransformByBandCacheRecord, 'id' | 'nodeId' | 'domainType' | 'bandId' | 'timestamp'> & {
+export type TransformCachePayload = Omit<TransformCacheRecord, 'id' | 'nodeId' | 'domainType' | 'bandId' | 'timestamp'> & {
   timestamp?: number;
 };
