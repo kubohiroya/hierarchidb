@@ -4,8 +4,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { describe, expect, it, vi } from 'vitest';
 import {
   TreeConsoleToolbar,
-  type TreeConsoleToolbarProps,
-} from '../../../../../../../packages/ui/treeconsole/toolbar/src/index.ts';
+  type TreeConsoleToolbarProps, } from '@hierarchidb/ui-treeconsole-toolbar';
 
 vi.mock('@hierarchidb/ui-i18n', () => ({
   useTranslation: () => ({

@@ -18,7 +18,6 @@ export {
   type CacheEntryRecord,
   type CacheStatistics,
   type FeatureBufferRecord,
-  type FeatureIndexRecord,
   type FeatureRecord,
   type LayerInfo,
   type BuildStage,
@@ -33,10 +32,7 @@ export {
 export {
   EphemeralShapeDB,
   type BuildSessionMetadata,
-  type TransformByBandCacheRecord,
-  type GeojsonVtIndexRecord,
-  type TransformByZoomCacheRecord,
-  type TransformByZoomReservation,
+  type TransformCacheRecord,
   type TileIdToBufferRelation,
   ephemeralShapeDB
 } from './EphemeralShapeDB.js';

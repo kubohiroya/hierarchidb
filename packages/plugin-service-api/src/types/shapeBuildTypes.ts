@@ -166,7 +166,7 @@ export interface ShapeFetchCache {
   timestamp: number;
 }
 
-export interface ShapeTransformByBandCache {
+export interface ShapeTransformCache {
   id: string;
   nodeId: NodeId;
   bandId: number;

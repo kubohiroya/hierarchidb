@@ -49,6 +49,7 @@
     "@hierarchidb/ui-plugin-shell": "workspace:*",
     "@hierarchidb/ui-search-field": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
+    "@hierarchidb/ui-treeconsole": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/vt-store": "workspace:*",
     "@mui/icons-material": "^7.3.6",

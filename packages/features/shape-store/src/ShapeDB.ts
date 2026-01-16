@@ -270,18 +270,6 @@ export interface FeatureRecord {
   updatedAt: number;
 }
 
-export interface FeatureIndexRecord {
-  indexId: string;
-  featureId: string;
-  mortonCode: number;
-  bbox: [number, number, number, number];
-  centroid: [number, number];
-  area: number;
-  complexity: number;
-  adminLevel?: number;
-  countryCode?: string;
-}
-
 export interface ShapeRelationRow {
   srcNodeId: NodeId;
   dstNodeId: NodeId;
@@ -352,7 +340,6 @@ export class ShapeDB extends VectorTileDbBase {
 
   // Feature storage tables
   features!: Table<FeatureRecord, number>;
-  featureIndices!: Table<FeatureIndexRecord, string>;
   relations!: Table<ShapeRelationRow, [NodeId, string, NodeId]>;
 
   // Tile storage tables
@@ -361,12 +348,10 @@ export class ShapeDB extends VectorTileDbBase {
   constructor() {
     super(getDBName('shape'));
 
-    this.version(4).stores(this.mergeVectorTileStores({
+    this.version(5).stores(this.mergeVectorTileStores({
       batchSessions: '&nodeId, status, startedAt, updatedAt',
       features:
         '++id, nodeId, [nodeId+adminLevel], [nodeId+countryCode], mortonCode, adminLevel, countryCode, name, createdAt',
-      featureIndices:
-        '&indexId, featureId, mortonCode, [mortonCode+adminLevel], adminLevel, countryCode, area, complexity',
       relations: '&[srcNodeId+type+dstNodeId], srcNodeId, dstNodeId, type, updatedAt',
       vectorTiles: '&tileId, nodeId, [nodeId+z+x+y], [z+x+y], z, generatedAt, lastAccessed, size',
     }));

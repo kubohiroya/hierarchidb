@@ -10,7 +10,7 @@ import type {
 import type {
   ShapeBuildTaskRecord,
   ShapeBuildStage,
-  ShapeTransformByBandCache,
+  ShapeTransformCache,
   ShapeTransformErrorRecord,
   ShapeFeatureMetadata,
   ShapeFetchCache,
@@ -46,8 +46,8 @@ export interface ShapeQueryAPI {
   ): Promise<ShapeFeatureRecord[]>;
   listFetchCaches(nodeId: NodeId): Promise<ShapeFetchCache[]>;
   getFetchCache(nodeId: NodeId, bufferId: string): Promise<ShapeFetchCache | null>;
-  listTransformByBandCaches(nodeId: NodeId): Promise<ShapeTransformByBandCache[]>;
-  getTransformByBandCache(bufferId: string): Promise<ShapeTransformByBandCache | null>;
+  listTransformCaches(nodeId: NodeId): Promise<ShapeTransformCache[]>;
+  getTransformCache(bufferId: string): Promise<ShapeTransformCache | null>;
   listVTMetadata(nodeId: NodeId): Promise<ShapeVTMetadata[]>;
   listSourceMetadata(nodeId: NodeId): Promise<ShapeSourceMetadata[]>;
   listFeatureMetadata(nodeId: NodeId): Promise<ShapeFeatureMetadata[]>;

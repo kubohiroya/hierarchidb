@@ -8,6 +8,7 @@ import { SpreadsheetTabularApiDriver as StylerTabularApiDriver } from '@hierarch
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StylerMetadataManager } from '../../../../services/StylerMetadataManager.js';
 import { SPREADSHEET_PLUGIN_ID } from '@hierarchidb/spreadsheet-plugin/common/constants.js';
+import { TabularColumnMapping, TabularFilterRule } from '@hierarchidb/ui-tabular';
 
 // Mock hashUtils
 vi.mock('../../utils/hashUtils', () => ({
@@ -114,7 +115,7 @@ Australia,25690000,51812,Oceania,2021`;
     expect(tableMetadata.columns[4].type).toBe('number'); // year
 
     // Step 2: Apply filters to focus on specific data
-    const filters: CSVFilterRule[] = [
+    const filters: TabularFilterRule[] = [
       {
         id: 'filter-continent',
         column: 'continent',
@@ -359,7 +360,7 @@ West,90000,18000`;
     const validFile = new File(['name,age\nJohn,30'], 'valid.csv', { type: 'text/csv' });
     const validTable = await csvApi.uploadCSVFile(validFile);
 
-    const invalidFilters: CSVFilterRule[] = [
+    const invalidFilters: TabularFilterRule[] = [
       {
         id: '1',
         column: 'non_existent_column',
@@ -436,45 +437,6 @@ West,90000,18000`;
     // Upload Excel file
     await expect(csvApi.uploadCSVFile(file)).rejects.toThrow('No columns found in uploaded file');
     return;
-
-    // Verify Excel processing
-    expect(tableMetadata.filename).toContain('countries.xlsx');
-    expect(tableMetadata.filename).toContain('EXCEL (Excel file processed)');
-    expect(tableMetadata.totalRows).toBe(3); // From mock data
-    expect(tableMetadata.columns).toHaveLength(3);
-
-    const columnNames = tableMetadata.columns.map((c) => c.name);
-    expect(columnNames).toEqual(['country', 'population', 'continent']);
-
-    // Apply filters specific to the Excel data
-    const filters: CSVFilterRule[] = [
-      {
-        id: 'continent-filter',
-        column: 'continent',
-        operator: 'equals',
-        value: 'Asia',
-        enabled: true,
-      },
-    ];
-
-    const filteredData = await csvApi.getFilteredPreview(tableMetadata.id, filters, 10);
-
-    // Verify filtering works on Excel-derived data
-    expect(filteredData.totalRows).toBe(2); // China and Japan
-    expect(filteredData.rows.every((row) => row.continent === 'Asia')).toBe(true);
-
-    // Test final data export for Styler
-    const finalData = await csvApi.getFilteredData(tableMetadata.id, {
-      keyColumn: 'country',
-      valueColumns: ['population'],
-      filterRules: filters,
-    });
-
-    expect(finalData.totalRows).toBe(2);
-    expect(finalData.rows[0]).toHaveProperty('country');
-    expect(finalData.rows[0]).toHaveProperty('population');
-
-    console.log('✓ Excel to Styler workflow test passed');
   });
 
   it('should complete ZIP to Styler workflow', async () => {
@@ -488,41 +450,6 @@ West,90000,18000`;
     await expect(csvApi.uploadCSVFile(file)).rejects.toThrow('No columns found in uploaded file');
     return;
 
-    // Verify ZIP processing
-    expect(tableMetadata.filename).toContain('data.zip');
-    expect(tableMetadata.filename).toContain('ZIP (ZIP file processed)');
-    expect(tableMetadata.filename).toContain('countries.csv'); // From mock
-    expect(tableMetadata.totalRows).toBe(3); // From mock data
-    expect(tableMetadata.columns).toHaveLength(3);
-
-    // Apply continent-based filtering
-    const filters: CSVFilterRule[] = [
-      {
-        id: 'continent-filter',
-        column: 'continent',
-        operator: 'not_equals',
-        value: 'Asia',
-        enabled: true,
-      },
-    ];
-
-    const filteredData = await csvApi.getFilteredPreview(tableMetadata.id, filters, 10);
-
-    // Verify filtering works on ZIP-derived data
-    expect(filteredData.totalRows).toBe(1); // Only United States (North America)
-    expect(filteredData.rows[0].continent).toBe('North America');
-
-    // Test data consistency across operations
-    const allData = await csvApi.getFilteredData(tableMetadata.id, {
-      keyColumn: 'country',
-      valueColumns: ['population', 'continent'],
-      filterRules: [],
-    });
-
-    expect(allData.totalRows).toBe(3);
-    expect(allData.rows.map((r) => r.country).sort()).toEqual(['China', 'Japan', 'United States']);
-
-    console.log('✓ ZIP to Styler workflow test passed');
   });
 
   it('should handle multi-format file processing edge cases', async () => {

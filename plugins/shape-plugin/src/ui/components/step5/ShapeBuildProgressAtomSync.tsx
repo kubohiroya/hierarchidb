@@ -103,6 +103,7 @@ export const ShapeBuildProgressAtomSync = ({
     taskLabel,
     total,
     setSummary,
+    taskUnitLabel,
   ]);
 
   useEffect(() => {

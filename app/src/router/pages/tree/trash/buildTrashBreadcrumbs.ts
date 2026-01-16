@@ -83,9 +83,6 @@ export function buildTrashBreadcrumbs({
     const parentId: string = parentRaw ? String(parentRaw) : rootId;
 
     const displayName = getTrashDisplayName(currentNode) || currentId;
-    const originalParentId = (currentNode as { originalParentId?: NodeId } | undefined)
-      ?.originalParentId;
-    const metaParentId = originalParentId ? String(originalParentId) : parentId;
 
     chain.unshift({
       id: currentId,
