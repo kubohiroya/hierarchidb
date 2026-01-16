@@ -70,8 +70,8 @@
     "fetch": {
       "title": "Fetch"
     },
-    "transformByBand": {
-      "title": "Transform by band"
+    "transform": {
+      "title": "Transform"
     },
     "transformByZoom": {
       "title": "Transform by zoom"
@@ -80,7 +80,7 @@
       "title": "VT 生成"
     },
     "download": {
-      "title": "Fetch 設定 / キャッシュ管理",
+      "title": "Fetch設定",
       "workers": "Fetch の同時ワーカー数",
       "workersHelp": "同時に実行する fetch 数を指定します。",
       "retainTitle": "ビルド終了時の中間生成物の保持",
@@ -92,7 +92,7 @@
       "deleteDownloadedFilesWithCount": "fetch キャッシュを削除 ({{count}}件)",
       "deleteLoadingHint": "削除件数を読み込み中...",
       "countUnit": "件",
-      "deleteStage1Cache": "ズーム帯別キャッシュを削除",
+      "deleteStage1Cache": "Transform キャッシュを削除",
       "deleteStage2Cache": "ズーム率別キャッシュを削除",
       "deleteTiles": "VT キャッシュを削除",
       "deleteMetadata": "メタデータを削除",
@@ -152,7 +152,19 @@
       "quantizeHelp": "Transform 前処理で使用する座標量子化です。データ量を抑え、境界整合を安定化します。",
       "quantizeStarHelp": "★1は最も粗い丸め（低精度）で、★が増えるほど精度が上がります。",
       "enablePerFeatureExtraction": "Transform により国や自治体の省略を許容",
-      "enablePerFeatureExtractionHelp": "形状は省略される場合がありますが、メタデータは残ります。"
+      "enablePerFeatureExtractionHelp": "形状は省略される場合がありますが、メタデータは残ります。",
+      "zoomBandRangesTitle": "ズーム帯の範囲設定",
+      "zoomBandRangesHelp": "ズーム帯の数と境界を設定します。",
+      "zoomBandRangeCount": "範囲の数",
+      "zoomBandRangeCountHelp": "ズーム帯としてまとめる範囲数を指定します。",
+      "zoomBandBoundaries": "範囲の境界",
+      "zoomBandBoundariesHelp": "範囲の境界となるズーム率を調整します。",
+      "zoomBandRangeSummaryTitle": "ズーム帯の一覧",
+      "zoomBandRangeItem": "範囲{{index}}: z{{min}}-{{max}}",
+      "applyCommonZoomBandBoundaries": "共通ズーム帯設定をここに反映させる"
+    },
+    "zoomBandSettings": {
+      "title": "ズーム帯設定 / キャッシュ管理"
     },
     "tile": {
       "title": "VT 生成",
@@ -162,7 +174,7 @@
       "bufferSize": "タイルマージン (px)",
       "bufferSizeHelp": "タイル境界の欠けを防ぐための余白（バッファ）です。",
       "zoomBands": "ズーム帯",
-      "zoomBandsSummary": "band0: z0-3\nband1: z3-6\nband2: z6-9\nband3: z9-11（任意）",
+      "zoomBandsSummary": "ズーム帯は Transform の範囲境界に従います。代表ズームは各帯の最小ズーム率です。",
       "expandFactor": "タイル拡張係数",
       "expandFactorHelp": "TopoJSON 生成時に周辺タイルを追加する係数です。",
       "expandMargin": "タイル拡張マージン",
@@ -185,11 +197,13 @@
       "map": "地図プレビュー",
       "metadata": "メタデータ一覧",
       "sources": "ソース",
-      "features": "フィーチャー"
+      "features": "フィーチャー",
+      "errors": "エラー一覧"
     },
     "metadata": {
       "missingSession": "メタデータがまだありません。",
       "empty": "メタデータがまだ生成されていません。",
+      "loading": "メタデータを読み込み中...",
       "searchPlaceholder": "メタデータを検索",
       "searchAriaLabel": "メタデータを検索",
       "matches": "一致",
@@ -216,6 +230,26 @@
         "area": "面積",
         "featureId": "フィーチャーID"
       }
+    },
+    "errors": {
+      "missingSession": "ビルドを実行してTransformエラーを記録してください。",
+      "empty": "Transformエラーはまだ記録されていません。",
+      "loading": "Transformエラーを読み込み中...",
+      "searchPlaceholder": "エラーを検索",
+      "searchAriaLabel": "エラーを検索",
+      "matches": "一致",
+      "rows": "件",
+      "columns": {
+        "createdAt": "記録日時",
+        "sourceKey": "ソースキー",
+        "countryCode": "国コード",
+        "adminLevel": "自治体レベル",
+        "bandId": "バンド",
+        "featureId": "フィーチャーID",
+        "polygonCount": "ポリゴン数",
+        "ringCount": "リング数",
+        "message": "メッセージ"
+      }
     }
   },
   "stage": {
@@ -227,7 +261,10 @@
     },
     "progress": {
       "stage": "ステージ",
-      "task": "タスク"
+      "task": "ポリゴン",
+      "taskUnitTasks": "タスク",
+      "counts": "{{percentage}}% ・ {{completed}}/{{total}} ポリゴン完了 ・ 失敗 {{failed}} ・ スキップ {{skipped}}",
+      "countsWithUnit": "{{percentage}}% ・ {{completed}}/{{total}} {{unit}}完了 ・ 失敗 {{failed}} ・ スキップ {{skipped}}"
     }
   },
   "build": {
@@ -271,8 +308,8 @@
         "title": "Fetch",
         "description": "データを取得して正規化します。"
       },
-      "transformByBand": {
-        "title": "Transform by band",
+      "transform": {
+        "title": "Transform",
         "description": "ズーム帯ごとに簡略化します。"
       },
       "transformByZoom": {

@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { toNodeId } from '@hierarchidb/common-types';
 import type { LocationEntity } from '../../../../common/types/index.js';
 import en from '../../../../locales/en.json' with { type: 'json' };
@@ -90,11 +90,7 @@ vi.mock('@hierarchidb/location-store', () => ({
   getLocationDB: getLocationDBMock,
 }));
 
-let LocationMapPreviewStep: (typeof import('../../LocationMapPreviewStep'))['LocationMapPreviewStep'];
-
-beforeAll(async () => {
-  ({ LocationMapPreviewStep } = await import('../../LocationMapPreviewStep'));
-});
+const { LocationMapPreviewStep } = await import('../../LocationMapPreviewStep');
 
 const nodeId = toNodeId('node-1');
 const baseDraft: Partial<LocationEntity> = {

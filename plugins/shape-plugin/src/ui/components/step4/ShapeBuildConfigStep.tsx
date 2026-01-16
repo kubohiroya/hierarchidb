@@ -3,19 +3,25 @@ import { useMemo } from 'react';
 import { Alert, Box, Stack } from '@mui/material';
 import type { AlertColor } from '@mui/material';
 import { FetchConfigSection } from './FetchConfigSection.tsx';
-import { TransformByBandConfigSection } from './TransformByBandConfigSection.js';
-import { TransformByZoomConfigSection } from './TransformByZoomConfigSection.js';
+import { TransformConfigSection } from './TransformConfigSection.js';
 import { VTConfigSection } from './VTConfigSection.tsx';
+import { ZoomBandConfigSection } from './ZoomBandConfigSection.js';
 import { useShapeBuildConfigStep } from './useShapeBuildConfigStep.js';
 import { useHeapPressureMonitor } from '@hierarchidb/ui-memory';
 import { useTranslation } from '../../i18n.js';
 import type { ShapeDialogStepProps } from '../ShapeDialogStepProps.tsx';
 import type { NodeId } from '@hierarchidb/common-types';
+import { useFetchConfigSection } from './useFetchConfigSection.ts';
 
 /**
  * Processing configuration step for Shape plugin.
  */
-export const ShapeBuildConfigStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId, onChange }) => {
+export const ShapeBuildConfigStep: React.FC<ShapeDialogStepProps> = ({
+  data,
+  nodeId,
+  onChange,
+  disabled,
+}) => {
   const { t } = useTranslation();
   const { config, handleChange } = useShapeBuildConfigStep({ data, onChange });
   const { event: heapPressure } = useHeapPressureMonitor();
@@ -45,6 +51,14 @@ export const ShapeBuildConfigStep: React.FC<ShapeDialogStepProps> = ({ data, nod
       buildFinishedAt: undefined,
     });
   };
+  const fetchState = useFetchConfigSection({
+    config,
+    draft: data,
+    nodeId: nodeId as NodeId,
+    disabled,
+    onChange: handleChange,
+    onResetSession: resetSession,
+  });
 
   return (
     <Box sx={{ p: 2 }}>
@@ -54,16 +68,18 @@ export const ShapeBuildConfigStep: React.FC<ShapeDialogStepProps> = ({ data, nod
             {heapWarning.message}
           </Alert>
         ) : null}
-        <FetchConfigSection
+        <ZoomBandConfigSection
           config={config}
-          draft={data}
-          nodeId={nodeId as NodeId}
+          fetchState={fetchState}
           onChange={handleChange}
-          onResetSession={resetSession}
+          disabled={disabled}
         />
-        <TransformByBandConfigSection config={config} onChange={handleChange} />
-        <TransformByZoomConfigSection config={config} onChange={handleChange} />
-        <VTConfigSection buildConfig={config} draft={data} onChange={handleChange} />
+        <FetchConfigSection
+          fetchState={fetchState}
+          disabled={disabled}
+        />
+        <TransformConfigSection config={config} onChange={handleChange} disabled={disabled} />
+        <VTConfigSection buildConfig={config} draft={data} onChange={handleChange} disabled={disabled} />
       </Stack>
     </Box>
   );

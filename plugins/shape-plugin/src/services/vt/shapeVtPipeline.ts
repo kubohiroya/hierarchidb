@@ -7,7 +7,6 @@ import {
   putTasks,
   runStageTasks,
   createTransformByBandHandler,
-  createTransformByZoomHandler,
   createVtHandler,
 } from '@hierarchidb/vt-orchestrator';
 import { DEFAULT_TASK_SPLIT } from '@hierarchidb/vt-orchestrator';
@@ -21,6 +20,11 @@ import type { CountryMetadata, DataSourceName, FetchTaskPayload, SelectedArrayBy
 import { runShapeFetchStage } from './shapeFetchStage.js';
 import { updateShapeStageMetadata } from './shapeStageMetadata.js';
 import { metadataLoader } from '../metadata/MetadataLoader.js';
+import {
+  buildZoomBandRanges,
+  ZOOM_BAND_MAX_ZOOM,
+  ZOOM_BAND_MIN_ZOOM,
+} from '../../common/config/zoomBands.js';
 
 export type ShapeTransformByBandTaskInput = {
   fetchCacheId: string;
@@ -33,11 +37,6 @@ export type ShapeTransformByBandTaskInput = {
   adminLevel?: number;
 };
 
-export type ShapeTransformByZoomTaskInput = {
-  transformByBandCacheId: string;
-  bandId: number;
-};
-
 type ShapeVtTaskInput = {
   bandId: number;
   zBase: number;
@@ -47,19 +46,19 @@ type ShapeVtTaskInput = {
   sourceKey: string;
 };
 
-const buildBands = (enableBand3: boolean) => {
-  const bands = [
-    { bandId: 0, zMin: 0, zMax: 3, zBase: 0 },
-    { bandId: 1, zMin: 3, zMax: 6, zBase: 3 },
-    { bandId: 2, zMin: 6, zMax: 9, zBase: 6 },
-  ];
-  if (enableBand3) {
-    bands.push({ bandId: 3, zMin: 9, zMax: 11, zBase: 9 });
-  }
-  return bands;
+const HIGH_DETAIL_ZOOM_MIN = 9;
+
+const buildBands = (zoomBandBoundaries: number[]) => {
+  const ranges = buildZoomBandRanges(zoomBandBoundaries, ZOOM_BAND_MIN_ZOOM, ZOOM_BAND_MAX_ZOOM);
+  return ranges.map((range, index) => ({
+    bandId: index,
+    zMin: range.min,
+    zMax: range.max,
+    zBase: range.min,
+  }));
 };
 
-const hasBand3Selection = (
+const hasHighDetailSelection = (
   selection?: SelectedArrayByCountries,
   payloads?: FetchTaskPayload[],
 ): boolean => {
@@ -72,7 +71,7 @@ const buildTransformByBandTasks = async (
   nodeId: NodeId,
   shapeStore: VtShapeDb,
   bands: Array<{ bandId: number; zMin: number; zMax: number; zBase: number }>,
-  enableBand3: boolean,
+  enableHighDetailBands: boolean,
   countryLookup: Map<string, CountryMetadata>,
 ): Promise<Array<TaskQueueRecord<ShapeTransformByBandTaskInput>>> => {
   const buffers = await listFetchCache(shapeStore, nodeId);
@@ -85,14 +84,14 @@ const buildTransformByBandTasks = async (
     const countryCode = buffer.countryCode?.trim().toUpperCase();
     const countryMeta = countryCode ? countryLookup.get(countryCode) : undefined;
     for (const band of bands) {
-      if (band.bandId === 3) {
-        if (!enableBand3) continue;
+      if (band.zMin >= HIGH_DETAIL_ZOOM_MIN) {
+        if (!enableHighDetailBands) continue;
         if (typeof adminLevel !== 'number' || adminLevel < 2) continue;
       }
       tasks.push({
-        taskId: `${String(nodeId)}:transform-by-band:${band.bandId}:${buffer.sourceKey}`,
+        taskId: `${String(nodeId)}:transform:${band.bandId}:${buffer.sourceKey}`,
         nodeId,
-        stage: 'transform-by-band',
+        stage: 'transform',
         status: 'queued',
         index,
         stagePriority,
@@ -110,37 +109,6 @@ const buildTransformByBandTasks = async (
       });
       index += 1;
     }
-  }
-  return tasks;
-};
-
-const buildTransformByZoomTasks = async (
-  nodeId: NodeId,
-  ephemeralStore = ephemeralShapeDB,
-): Promise<Array<TaskQueueRecord<ShapeTransformByZoomTaskInput>>> => {
-  const buffers = await ephemeralStore.transformByBandCache
-    .where('nodeId')
-    .equals(nodeId)
-    .filter((row) => row.domainType === 'shape')
-    .toArray();
-  const tasks: Array<TaskQueueRecord<ShapeTransformByZoomTaskInput>> = [];
-  let index = 0;
-
-  for (const buffer of buffers) {
-    tasks.push({
-      taskId: `${String(nodeId)}:transform-by-zoom:${buffer.bandId}:${buffer.id}`,
-      nodeId,
-      stage: 'transform-by-zoom',
-      status: 'queued',
-      index,
-      stagePriority: typeof buffer.adminLevel === 'number' ? buffer.adminLevel : 0,
-      progress: 0,
-      inputData: {
-        transformByBandCacheId: buffer.id,
-        bandId: buffer.bandId,
-      },
-    });
-    index += 1;
   }
   return tasks;
 };
@@ -213,7 +181,7 @@ const buildVtTasks = async (
   nodeId: NodeId,
   ephemeralStore: typeof ephemeralShapeDB,
   bands: Array<{ bandId: number; zMin: number; zMax: number; zBase: number }>,
-  enableBand3: boolean,
+  enableHighDetailBands: boolean,
   maxBuffersPerTask: number,
   maxVerticesPerTask: number,
 ): Promise<Array<TaskQueueRecord<ShapeVtTaskInput>>> => {
@@ -221,8 +189,9 @@ const buildVtTasks = async (
   let index = 0;
 
   for (const band of bands) {
-    if (band.bandId === 3 && !enableBand3) continue;
-    const tileIds = band.bandId === 3
+    const isHighDetailBand = band.zMin >= HIGH_DETAIL_ZOOM_MIN;
+    if (isHighDetailBand && !enableHighDetailBands) continue;
+    const tileIds = isHighDetailBand
       ? (await ephemeralStore.transformByZoomReservations.where('nodeId').equals(nodeId).toArray())
         .map((entry) => Number(entry.tileId))
       : listFixedTiles(band.zBase);
@@ -259,9 +228,7 @@ const buildVtTasks = async (
   return tasks;
 };
 
-const resolveTransformByBandConfig = (config: ShapeBuildConfig) => config.transformByBandConfig;
-
-const resolveTransformByZoomConfig = (config: ShapeBuildConfig) => config.transformByZoomConfig;
+const resolveTransformConfig = (config: ShapeBuildConfig) => config.transformConfig;
 
 const resolveVtConfig = (config: ShapeBuildConfig) => config.vtConfig;
 
@@ -287,8 +254,11 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
 
   const metadata = await metadataLoader.loadMetadata(params.dataSource, params.nodeId);
   const countryLookup = buildCountryLookup(metadata);
-  const enableBand3 = hasBand3Selection(params.selectedArrayByCountries, params.downloadTaskPayloads);
-  const bands = buildBands(enableBand3);
+  const enableHighDetailBands = hasHighDetailSelection(
+    params.selectedArrayByCountries,
+    params.downloadTaskPayloads,
+  );
+  const bands = buildBands(params.buildConfig.transformConfig.zoomBandBoundaries);
 
   const fetchAbortController = new AbortController();
   await runShapeFetchStage({
@@ -306,11 +276,11 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
   });
 
   const existingTransformByBandTasks = resumeExistingTasks
-    ? await listTasksByStage(taskQueue, params.nodeId, 'transform-by-band')
+    ? await listTasksByStage(taskQueue, params.nodeId, 'transform')
     : [];
   const transformByBandTasks = existingTransformByBandTasks.length > 0
     ? []
-    : await buildTransformByBandTasks(params.nodeId, shapeStore, bands, enableBand3, countryLookup);
+    : await buildTransformByBandTasks(params.nodeId, shapeStore, bands, enableHighDetailBands, countryLookup);
   if (existingTransformByBandTasks.length > 0 || transformByBandTasks.length > 0) {
     await params.waitIfPaused?.();
     if (transformByBandTasks.length > 0) {
@@ -320,51 +290,22 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
     const transformByBandHandler = createTransformByBandHandler({
       shapeDB: shapeStore,
       ephemeralDB: ephemeralStore,
-      transformByBandConfig: resolveTransformByBandConfig(params.buildConfig),
+      transformConfig: resolveTransformConfig(params.buildConfig),
       bands,
       abortSignal: transformByBandAbortController.signal,
     });
     await runStageTasks({
       nodeId: params.nodeId,
-      stage: 'transform-by-band',
+      stage: 'transform',
       handler: transformByBandHandler as unknown as StageHandler<ShapeTransformByBandTaskInput>,
       waitIfPaused: params.waitIfPaused,
-      maxConcurrent: params.buildConfig.transformByBandConfig.maxConcurrent,
+      maxConcurrent: params.buildConfig.transformConfig.maxConcurrent,
       failureHandling: 'stop',
       abortController: transformByBandAbortController,
     });
     if (params.buildConfig.fetchConfig.deleteOnComplete) {
       await shapeStore.fetchCache.where('nodeId').equals(params.nodeId).delete();
     }
-  }
-
-  const existingTransformByZoomTasks = resumeExistingTasks
-    ? await listTasksByStage(taskQueue, params.nodeId, 'transform-by-zoom')
-    : [];
-  const transformByZoomTasks = existingTransformByZoomTasks.length > 0
-    ? []
-    : await buildTransformByZoomTasks(params.nodeId, ephemeralStore);
-  if (existingTransformByZoomTasks.length > 0 || transformByZoomTasks.length > 0) {
-    await params.waitIfPaused?.();
-    if (transformByZoomTasks.length > 0) {
-      await putTasks(taskQueue, transformByZoomTasks as Array<TaskQueueRecord<ShapeTransformByZoomTaskInput>>);
-    }
-    const transformByZoomAbortController = new AbortController();
-    const transformByZoomHandler = createTransformByZoomHandler({
-      ephemeralDB: ephemeralStore,
-      transformByZoomConfig: resolveTransformByZoomConfig(params.buildConfig),
-      bands,
-      abortSignal: transformByZoomAbortController.signal,
-    });
-    await runStageTasks({
-      nodeId: params.nodeId,
-      stage: 'transform-by-zoom',
-      handler: transformByZoomHandler as unknown as StageHandler<ShapeTransformByZoomTaskInput>,
-      waitIfPaused: params.waitIfPaused,
-      maxConcurrent: params.buildConfig.transformByZoomConfig.maxConcurrent,
-      failureHandling: 'stop',
-      abortController: transformByZoomAbortController,
-    });
   }
 
   const existingVtTasks = resumeExistingTasks
@@ -376,7 +317,7 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
       params.nodeId,
       ephemeralStore,
       bands,
-      enableBand3,
+      enableHighDetailBands,
       DEFAULT_TASK_SPLIT.maxBuffersPerTask,
       DEFAULT_TASK_SPLIT.maxVerticesPerTask,
     );
@@ -402,14 +343,8 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
       failureHandling: 'stop',
       abortController: vtAbortController,
     });
-    if (params.buildConfig.transformByBandConfig.deleteOnComplete) {
+    if (params.buildConfig.transformConfig.deleteOnComplete) {
       await ephemeralStore.transformByBandCache.where('nodeId').equals(params.nodeId).delete();
-    }
-    if (params.buildConfig.transformByZoomConfig.deleteOnComplete) {
-      await Promise.all([
-        ephemeralStore.transformByZoomCache.where('nodeId').equals(params.nodeId).delete(),
-        ephemeralStore.transformByZoomReservations.where('nodeId').equals(params.nodeId).delete(),
-      ]);
     }
   }
 

@@ -287,7 +287,14 @@ const createFetchHandler = (params: {
 export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise<void> => {
   const metadata = params.metadata ?? await metadataLoader.loadMetadata(params.dataSource, params.nodeId);
   const abortSignal = params.abortController?.signal;
-  const existingTasks = params.resumeExistingTasks
+  const resumeExistingTasks = Boolean(params.resumeExistingTasks);
+  if (!resumeExistingTasks) {
+    await params.taskQueue.tasks
+      .where('[nodeId+stage]')
+      .equals([params.nodeId, 'fetch'])
+      .delete();
+  }
+  const existingTasks = resumeExistingTasks
     ? await listTasksByStage(params.taskQueue, params.nodeId, 'fetch')
     : [];
   const shouldGenerateTasks = existingTasks.length === 0;

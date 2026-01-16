@@ -6,9 +6,8 @@ export function evaluateCancelPolicy<TPayload extends import('@hierarchidb/commo
   mode: 'create' | 'edit' | 'preview',
   draft: TreeNodeUpdaterState<TPayload> | null
 ): CancelDecision {
-  const hasCommittedData =
-    draft?.draftMetadata !== null && typeof draft?.draftMetadata !== 'undefined' && Object.keys(draft?.draftMetadata ?? {}).length >= 0
-    draft?.draftData !== null && typeof draft?.draftData !== 'undefined' && Object.keys(draft?.draftData ?? {}).length >= 0;
+  const committedData = (draft as { data?: unknown } | null)?.data ?? null;
+  const hasCommittedData = committedData !== null && typeof committedData !== 'undefined';
   const hasCommittedVersion = typeof draft?.version === 'number' && draft.version > 1;
 
   if (mode === 'create') {

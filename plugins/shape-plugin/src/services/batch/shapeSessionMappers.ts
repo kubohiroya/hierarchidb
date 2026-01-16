@@ -3,8 +3,8 @@ import type {
   ShapeBuildSessionRecord,
   ShapeVectorTileRecord,
 } from '@hierarchidb/plugin-service-api';
-import type { LayerInfo, ProcessingStage, ProgressInfo, ResourceUsage, StageStatus } from '../types.ts';
-import type { BuildSessionConfig, BuildSessionRecord, VectorTileRecord } from '@hierarchidb/shape-store';
+import type { LayerInfo, ProgressInfo, ResourceUsage, StageStatus } from '../types.ts';
+import type { BuildSessionConfig, BuildSessionRecord, BuildTaskType, VectorTileRecord } from '@hierarchidb/shape-store';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -43,8 +43,7 @@ export const toProcessingStage = (
   if (stage === 'processing') return stage;
   if (
     stage === 'fetch'
-    || stage === 'transform-by-band'
-    || stage === 'transform-by-zoom'
+    || stage === 'transform'
     || stage === 'vt'
   ) {
     return stage;
@@ -70,7 +69,7 @@ export const toProgressSummary = (progress: ProgressInfo): ShapeBuildProgressSum
   taskType: progress.taskType,
 });
 
-const toStageMap = (stages: Record<string, unknown> | undefined): Record<ProcessingStage, StageStatus> => {
+const toStageMap = (stages: Record<string, unknown> | undefined): Record<BuildTaskType, StageStatus> => {
   const empty: StageStatus = {
     status: 'queued',
     progress: 0,
@@ -78,13 +77,13 @@ const toStageMap = (stages: Record<string, unknown> | undefined): Record<Process
     tasksCompleted: 0,
     tasksFailed: 0,
   };
-  const read = (stage: ProcessingStage): StageStatus => {
+  const read = (stage: BuildTaskType): StageStatus => {
     const candidate = stages?.[stage];
     return isStageStatus(candidate) ? candidate : empty;
   };
   return {
     fetch: read('fetch'),
-    'transform-by-band': read('transform-by-band'),
+    transform: read('transform'),
     'transform-by-zoom': read('transform-by-zoom'),
     vt: read('vt'),
   };

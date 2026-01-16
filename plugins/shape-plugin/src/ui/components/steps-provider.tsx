@@ -102,20 +102,27 @@ const hasPersistedMetadata = async (data?: Partial<ShapeEntity>): Promise<boolea
   return rows.length > 0;
 };
 
+const hasPersistedTransformErrors = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
+  const nodeId = requireShapeNodeId(data);
+  const rows = await shapeQueryAPIImpl.listTransformErrorRecords(nodeId);
+  return rows.length > 0;
+};
+
 const isShapeBuildPersisted = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
   if (!data) return false;
   if (data.processingStatus === 'processing') return true;
   if (data.processingStatus === 'completed') return true;
-  if (data.processingStatus === 'failed') return false;
+  if (data.processingStatus === 'failed') return hasPersistedTransformErrors(data);
   if (hasTileSummary(data)) return true;
   if (await hasPersistedVectorTiles(data)) return true;
-  return false;
+  return hasPersistedTransformErrors(data);
 };
 
 const isShapePreviewReady = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
   if (!data) return false;
   if (data.processingStatus === 'processing') return true;
   if (await hasPersistedMetadata(data)) return true;
+  if (await hasPersistedTransformErrors(data)) return true;
   if (hasTileSummary(data)) return true;
   return hasPersistedVectorTiles(data);
 };

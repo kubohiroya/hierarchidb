@@ -1,4 +1,4 @@
-import { Button, Divider, Paper, Stack, Tooltip, Typography, Alert, Box, IconButton, Chip } from '@mui/material';
+import { Button, Divider, Paper, Stack, Tooltip, Typography, Alert, Box, IconButton, Chip, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { Edit as EditIcon, PlayArrow as PlayArrowIcon, Close as CloseIcon, Construction as ConstructionIcon } from '@mui/icons-material';
 import { NodeContextMenu, NodeTypeIcon } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import type { TreeId, TreeNode } from '@hierarchidb/common-types';
@@ -25,6 +25,9 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
     handleIconClick,
     handleMenuClose,
     handleBuild,
+    handleTrashConfirm,
+    handleTrashCancel,
+    confirmTrashOpen,
     labels,
     nodeIconColor,
     canMutate,
@@ -185,6 +188,19 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
           </Button>
         </Stack>
       </Paper>
+
+      <Dialog open={confirmTrashOpen} onClose={handleTrashCancel}>
+        <DialogTitle>{labels.confirmTrashTitle}</DialogTitle>
+        <DialogContent>
+          <Typography>{labels.confirmTrashDescription}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleTrashCancel}>{labels.confirmTrashCancel}</Button>
+          <Button onClick={handleTrashConfirm} color="error" variant="contained">
+            {labels.confirmTrashConfirm}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <NodeContextMenu
         anchorEl={menuAnchorEl}

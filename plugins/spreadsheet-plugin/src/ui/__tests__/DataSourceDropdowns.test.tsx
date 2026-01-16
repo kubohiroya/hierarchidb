@@ -4,7 +4,7 @@ import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import {
-  TabularFileImportStep,
+  TabularDataImport,
   TabularProvider,
   type TabularDataApi,
 } from '@hierarchidb/ui-tabular';
@@ -52,10 +52,10 @@ const renderUploadStep = () => {
   render(
     <ThemeProvider theme={createTheme()}>
       <TabularProvider tabularApi={tabularApi}>
-        <TabularFileImportStep
-          intialUploadMethod={'url'}
+        <TabularDataImport
+          initialImportMethod="url"
           pluginId="spreadsheet"
-          onFileUploaded={vi.fn()}
+          onFileImported={vi.fn()}
           onError={vi.fn()}
           menuContainer={modalRoot}
         />

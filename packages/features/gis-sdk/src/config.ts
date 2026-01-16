@@ -20,8 +20,7 @@ export interface FetchConfig {
 
 export interface CleanupConfig {
   deleteFetchCeche?: boolean;
-  deleteTransformByBandCache?: boolean;
-  deleteTransformByZoomCache?: boolean;
+  deleteTransformCache?: boolean;
 }
 
 export type FeatureFilterMethod = 'bbox_only' | 'polygon_only' | 'hybrid' | 'none';
@@ -34,9 +33,27 @@ export type HybridFilterConfig = {
   elongatedShapeCorrectionFactor?: number;
 };
 
+export type RingFixConfig = {
+  minRingVertices: number;
+  minRingAreaMultiplier: number;
+  removeDuplicateConsecutivePoints: boolean;
+  removeCollinearPoints: boolean;
+};
+
+export type SelfIntersectionStrategy = 'keep_largest' | 'keep_all' | 'keep_outer';
+
+export type SelfIntersectionConfig = {
+  strategy: SelfIntersectionStrategy;
+  minPolygonAreaMultiplier: number;
+  maxPolygons: number;
+  retainHoles: boolean;
+  snapToleranceMultiplier: number;
+};
+
 export type ExtractionMode = 'off' | 'topojson' | 'geojson';
 
-export interface TransformByBandConfig {
+export interface TransformConfig {
+  zoomBandBoundaries: number[];
   maxConcurrent: number;
   enableFeatureFiltering: boolean;
   featureAreaThreshold: number;
@@ -45,21 +62,15 @@ export interface TransformByBandConfig {
   featureFilterMethod: FeatureFilterMethod;
   hybridFilterConfig: HybridFilterConfig;
   deleteOnComplete: boolean;
+  quantize?: number;
   tolerance: number;
   areaThreshold: number;
-}
-
-export interface TransformByZoomConfig {
-  maxConcurrent: number;
-  quantize: number;
-  extract: number;
-  tolerance: number;
-  enablePerFeatureExtraction: boolean;
-  extractionMode: ExtractionMode;
-  deleteOnComplete: boolean;
+  ringFixConfig: RingFixConfig;
+  selfIntersectionConfig: SelfIntersectionConfig;
 }
 
 export interface VTConfig {
+  enableTopojsonSimplify: boolean;
   maxConcurrent: number;
   tolerance: number;
   extent: number;
@@ -80,8 +91,7 @@ export interface VTConfig {
 export interface BaseBuildConfig<TDataSourceName = unknown> {
   dataSourceName?: TDataSourceName;
   fetchConfig: FetchConfig;
-  transformByBandConfig: TransformByBandConfig;
-  transformByZoomConfig: TransformByZoomConfig;
+  transformConfig: TransformConfig;
   vtConfig: VTConfig;
   cleanupConfig?: CleanupConfig;
 }

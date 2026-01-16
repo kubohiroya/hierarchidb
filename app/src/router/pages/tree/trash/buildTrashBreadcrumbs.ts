@@ -93,6 +93,8 @@ export function buildTrashBreadcrumbs({
       nodeType: currentNode?.nodeType ?? 'trash-item',
       parentId,
       isClickable: true,
+      holderType: 'trash',
+      holderTargetId: currentId,
     });
 
     if (!parentRaw) {

@@ -11,16 +11,19 @@ type Props = {
   update: (partial: Partial<ShapeBuildConfig>) => void;
 };
 
+const RETRY_ATTEMPTS_MAX = 5;
+
 export const DownloadRetryControls: React.FC<Props> = ({
   baseDownloadConfig,
   disabled,
   update,
 }) => {
   const { t } = useTranslation();
+  const retryAttemptsValue = Math.min(baseDownloadConfig.retryAttempts, RETRY_ATTEMPTS_MAX);
 
   return (
     <>
-      <Grid size={{ xs: 12, sm: 4 }}>
+      <Grid size={{ xs: 12, md: 2 }}>
         <TextField
           label={t('processing.download.timeoutMs', 'Timeout (ms)')}
           type="number"
@@ -40,7 +43,7 @@ export const DownloadRetryControls: React.FC<Props> = ({
           helperText={t('processing.download.timeoutHelp', 'Maximum time to wait for each download before failing.')}
         />
       </Grid>
-      <Grid size={{ xs: 12, sm: 4 }}>
+      <Grid size={{ xs: 12, md: 2 }}>
         <TextField
           label={t('processing.download.retryDelay', 'Retry Delay (ms)')}
           type="number"
@@ -60,15 +63,16 @@ export const DownloadRetryControls: React.FC<Props> = ({
           helperText={t('processing.download.retryDelayHelp', 'Wait time between retry attempts when a download fails.')}
         />
       </Grid>
-      <Grid size={{ xs: 12, sm: 4 }}>
+      <Grid size={{ xs: 12, md: 2 }}>
         <Stack spacing={1}>
           <Typography variant="subtitle2">
             {t('processing.download.retryAttempts', 'Retry Attempts')}
           </Typography>
           <Rating
-            value={baseDownloadConfig.retryAttempts}
+            value={retryAttemptsValue}
             onChange={(_, value) => {
-              const retryAttempts = value === null ? baseDownloadConfig.retryAttempts : value;
+              const nextValue = value === null ? retryAttemptsValue : value;
+              const retryAttempts = Math.min(nextValue, RETRY_ATTEMPTS_MAX);
               update({
                 fetchConfig: {
                   ...baseDownloadConfig,
@@ -77,7 +81,7 @@ export const DownloadRetryControls: React.FC<Props> = ({
                 },
               });
             }}
-            max={10}
+            max={RETRY_ATTEMPTS_MAX}
             disabled={disabled}
             icon={<CheckCircleIcon fontSize="inherit" />}
             emptyIcon={<RadioButtonUncheckedIcon fontSize="inherit" />}

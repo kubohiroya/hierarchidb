@@ -12,8 +12,8 @@ const getOrFetchForNode = vi.fn(async (_nodeId: string, url: string) => {
   return {
     key: url,
     value: [
-      { boundaryISO: 'JPN', boundaryType: 'ADM0', boundaryName: 'Japan' },
-      { boundaryISO: 'JPN', boundaryType: 'ADM1', boundaryName: 'Japan' },
+      { boundaryISO: 'JPN', boundaryType: 'ADM0', boundaryName: 'Japan', Continent: 'AS' },
+      { boundaryISO: 'JPN', boundaryType: 'ADM1', boundaryName: 'Japan', Continent: 'AS' },
     ],
   };
 });
@@ -21,6 +21,10 @@ const getOrFetchForNode = vi.fn(async (_nodeId: string, url: string) => {
 vi.mock('../../../services/utils/chunkStore.js', () => ({
   buildShapeCacheKey: vi.fn((prefix: string, url: string) => `${prefix}:${url}`),
   createShapeChunkStore: vi.fn(() => ({ getOrFetchForNode })),
+  createShapeChunkStoreWithNetworkPort: vi.fn(() => ({ getOrFetchForNode })),
+  createShapeNetworkPort: vi.fn(() => ({
+    fetch: vi.fn(),
+  })),
   jsonSerializer: vi.fn(),
   jsonDeserializer: vi.fn(),
   textSerializer: vi.fn(),
@@ -37,7 +41,7 @@ describe('MetadataLoader', () => {
     const result = await metadataLoader.loadMetadata('geoboundaries', 'node-1');
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBeGreaterThan(0);
-    expect(chunkStore.createShapeChunkStore).toHaveBeenCalled();
+    expect(chunkStore.createShapeChunkStoreWithNetworkPort).toHaveBeenCalled();
     expect(getOrFetchForNode).toHaveBeenCalled();
   });
 

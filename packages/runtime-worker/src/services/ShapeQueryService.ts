@@ -7,6 +7,7 @@ import type {
   ShapeBuildTaskRecord,
   ShapeBuildTaskSummary,
   ShapeTransformByBandCache,
+  ShapeTransformErrorRecord,
   ShapeFeatureRecord,
   ShapeFeatureMetadata,
   ShapeProcessingStatus,
@@ -331,5 +332,9 @@ export class ShapeQueryService implements ShapeQueryAPI {
 
   async listFeatureMetadata(nodeId: NodeId): Promise<ShapeFeatureMetadata[]> {
     return this.db.featureMetadata.where('nodeId').equals(String(nodeId)).toArray() as Promise<ShapeFeatureMetadata[]>;
+  }
+
+  async listTransformErrorRecords(nodeId: NodeId): Promise<ShapeTransformErrorRecord[]> {
+    return ephemeralShapeDB.transformErrors.where('nodeId').equals(nodeId).toArray() as Promise<ShapeTransformErrorRecord[]>;
   }
 }

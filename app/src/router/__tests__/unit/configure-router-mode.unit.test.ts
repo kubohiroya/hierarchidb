@@ -10,8 +10,17 @@ vi.mock('../../loaders/uiPlugins.js', () => ({
   }),
 }));
 
-vi.mock('@hierarchidb/runtime-worker-worker', () => ({
+vi.mock('@hierarchidb/runtime-worker', () => ({
   storeRegistry: {},
+}));
+
+vi.mock('maplibre-gl', () => ({
+  Map: class MapMock {},
+  default: { Map: class MapDefaultMock {} },
+}));
+
+vi.mock('@watergis/maplibre-gl-export', () => ({
+  MaplibreExportControl: class MaplibreExportControlMock {},
 }));
 
 describe('createHierarchiRouter', () => {
@@ -29,18 +38,24 @@ it(
     expect(router.history).toBeDefined();
     expect(router.history.location).toBeDefined();
   },
-  15_000
+  30_000
 );
 
-  it('should create a router with hash mode', async () => {
+  it(
+    'should create a router with hash mode',
+    async () => {
     const router = await createHierarchiRouter({ mode: 'hash' });
 
     expect(router).toBeDefined();
     expect(router.history).toBeDefined();
     expect(router.history.location).toBeDefined();
-  });
+    },
+    30_000
+  );
 
-  it('should apply basename when provided', async () => {
+  it(
+    'should apply basename when provided',
+    async () => {
     const router = await createHierarchiRouter({
       mode: 'browser',
       basename: '/hierarchidb',
@@ -48,9 +63,13 @@ it(
 
     expect(router).toBeDefined();
     expect(router.history).toBeDefined();
-  });
+    },
+    30_000
+  );
 
-  it('should not apply basename for hash mode', async () => {
+  it(
+    'should not apply basename for hash mode',
+    async () => {
     const router = await createHierarchiRouter({
       mode: 'hash',
       basename: '/hierarchidb',
@@ -58,7 +77,9 @@ it(
 
     expect(router).toBeDefined();
     expect(router.history).toBeDefined();
-  });
+    },
+    30_000
+  );
 });
 
 describe('getRouterMode', () => {

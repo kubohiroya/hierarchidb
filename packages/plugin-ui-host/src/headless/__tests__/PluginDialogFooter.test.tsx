@@ -1,9 +1,9 @@
 import '@testing-library/jest-dom/vitest';
 import { PluginDialogProvider } from '@hierarchidb/ui-dialog';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { vi } from 'vitest';
+import { afterEach, vi } from 'vitest';
 import { PluginDialogFooter } from '../components/PluginDialogFooter.js';
 
 type ContextOverrides = Partial<Parameters<typeof PluginDialogProvider>[0]['value']>;
@@ -18,6 +18,10 @@ vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => () => Promise.resolve(),
   useLocation: () => footerLocationRef,
 }));
+
+afterEach(() => {
+  cleanup();
+});
 
 function renderWithContext(ui: ReactNode, overrides: ContextOverrides) {
   const contextValue = {

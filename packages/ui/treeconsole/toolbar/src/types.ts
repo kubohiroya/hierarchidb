@@ -20,7 +20,8 @@ export type TreeConsoleToolbarAction =
   | { action: 'export' }
   | { action: 'setRowClickAction'; params: 'Select/Navigate' | 'Edit' }
   | { action: 'setAutosaveEnabled'; params: boolean }
-  | { action: 'setDialogBackdropDismissEnabled'; params: boolean };
+  | { action: 'setDialogBackdropDismissEnabled'; params: boolean }
+  | { action: 'setZoomBandBoundaries'; params: number[] };
 
 /**
  * Parameters type for TreeConsoleToolbar_Deprecated actions
@@ -31,7 +32,8 @@ export type TreeConsoleToolbarActionParams =
   | { treeId: string }
   | { templateId: string }
   | { trashNodeId: string }
-  | boolean;
+  | boolean
+  | number[];
 
 export interface TreeConsoleToolbarController {
   searchText?: string;
@@ -124,6 +126,18 @@ export interface TreeConsoleToolbarProps {
    * Callback when backdrop dismiss toggle changes.
    */
   onDialogBackdropDismissEnabledChange?: (enabled: boolean) => void;
+
+  /**
+   * Default zoom band boundaries used by build dialogs.
+   */
+  zoomBandBoundaries?: number[];
+
+
+  /**
+   * Callback when zoom band boundaries change.
+   */
+  onZoomBandBoundariesChange?: (boundaries: number[]) => void;
+
 
   /**
    * Undo/Redo availability

@@ -8,8 +8,12 @@ export type MapPreviewSearchPanelProps = {
   onSearch: () => void;
   onClear: () => void;
   onOpenSettings: () => void;
+  onFitScreen?: () => void;
   clearIcon: ReactNode;
   settingsIcon: ReactNode;
+  fitScreenIcon?: ReactNode;
+  fitScreenDisabled?: boolean;
+  showFitScreenButton?: boolean;
   placeholder?: string;
   containerSx?: SxProps;
   panelSx?: SxProps;
@@ -21,8 +25,12 @@ export const MapPreviewSearchPanel = ({
   onSearch,
   onClear,
   onOpenSettings,
+  onFitScreen,
   clearIcon,
   settingsIcon,
+  fitScreenIcon,
+  fitScreenDisabled = false,
+  showFitScreenButton = true,
   placeholder = '検索...',
   containerSx,
   panelSx,
@@ -67,6 +75,16 @@ export const MapPreviewSearchPanel = ({
                 >
                   {clearIcon}
                 </IconButton>
+                {showFitScreenButton && fitScreenIcon ? (
+                  <IconButton
+                    aria-label="Fit to selection"
+                    size="small"
+                    onClick={onFitScreen}
+                    disabled={fitScreenDisabled || !onFitScreen}
+                  >
+                    {fitScreenIcon}
+                  </IconButton>
+                ) : null}
                 <IconButton
                   aria-label="Search settings"
                   size="small"

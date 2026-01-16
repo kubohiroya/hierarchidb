@@ -74,6 +74,13 @@ export default defineConfig({
     ],
     globals: true,
     passWithNoTests: true,
+    pool: 'forks',
+    poolOptions: {
+      forks: {
+        singleFork: true,
+        execArgv: ['--max-old-space-size=8192'],
+      },
+    },
     typecheck: {
       tsconfig: path.resolve(__dirname, './tsconfig.vitest.json'),
     },

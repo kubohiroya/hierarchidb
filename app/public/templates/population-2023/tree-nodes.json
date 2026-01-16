@@ -25,7 +25,12 @@
                 "retryLimit": 3,
                 "retryBackoff": "linear"
               },
-              "transformByBandConfig": {
+              "transformConfig": {
+                "zoomBandBoundaries": [
+                  0,
+                  3,
+                  6
+                ],
                 "maxConcurrent": 2,
                 "enableFeatureFiltering": true,
                 "featureAreaThreshold": 1,
@@ -41,18 +46,23 @@
                 },
                 "deleteOnComplete": false,
                 "tolerance": 0.1,
-                "areaThreshold": 1
-              },
-              "transformByZoomConfig": {
-                "maxConcurrent": 2,
-                "quantize": 1,
-                "extract": 0,
-                "tolerance": 1,
-                "enablePerFeatureExtraction": true,
-                "extractionMode": "topojson",
-                "deleteOnComplete": false
+                "areaThreshold": 1,
+                "ringFixConfig": {
+                  "minRingVertices": 4,
+                  "minRingAreaMultiplier": 1,
+                  "removeDuplicateConsecutivePoints": true,
+                  "removeCollinearPoints": false
+                },
+                "selfIntersectionConfig": {
+                  "strategy": "keep_largest",
+                  "minPolygonAreaMultiplier": 1,
+                  "maxPolygons": 1,
+                  "retainHoles": false,
+                  "snapToleranceMultiplier": 1
+                }
               },
               "vtConfig": {
+                "enableTopojsonSimplify": true,
                 "maxConcurrent": 4,
                 "tolerance": 1,
                 "extent": 0,

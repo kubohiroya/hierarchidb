@@ -51,10 +51,8 @@ export const useShapeBuildProgressWarnings = ({
       switch (stageId) {
         case 'fetch':
           return buildConfig.fetchConfig.maxConcurrent;
-        case 'transform-by-band':
-          return buildConfig.transformByBandConfig.maxConcurrent;
-        case 'transform-by-zoom':
-          return buildConfig.transformByZoomConfig.maxConcurrent;
+        case 'transform':
+          return buildConfig.transformConfig.maxConcurrent;
         case 'vt':
           return buildConfig.vtConfig.maxConcurrent;
         default:

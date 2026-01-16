@@ -125,7 +125,7 @@ export interface FilterRule {
 
 // === Session & Status Types ===
 
-export type ProcessingStage = 'fetch' | 'transform-by-band' | 'transform-by-zoom' | 'vt';
+export type ProcessingStage = 'fetch' | 'transform' | 'vt';
 export type BuildTaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'regression';
 
 export interface SharedStageStatus {

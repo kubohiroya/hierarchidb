@@ -1,6 +1,7 @@
 import { Box } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useTranslation } from '@hierarchidb/ui-i18n';
+import { TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES } from '@hierarchidb/util';
 import { useCallback, useMemo, useState } from 'react';
 import type { TreeConsoleToolbarProps, TreeConsoleToolbarActionParams, TreeConsoleSearchMode } from '../../types.js';
 import { ActionButtons } from './ActionButtons.js';
@@ -29,6 +30,8 @@ interface TreeConsoleToolbarContentProps {
   onAutosaveEnabledChange?: TreeConsoleToolbarProps['onAutosaveEnabledChange'];
   dialogBackdropDismissEnabled?: boolean;
   onDialogBackdropDismissEnabledChange?: TreeConsoleToolbarProps['onDialogBackdropDismissEnabledChange'];
+  zoomBandBoundaries?: TreeConsoleToolbarProps['zoomBandBoundaries'];
+  onZoomBandBoundariesChange?: TreeConsoleToolbarProps['onZoomBandBoundariesChange'];
   canUndo: boolean;
   canRedo: boolean;
   canCopy: boolean;
@@ -53,6 +56,8 @@ export function TreeConsoleToolbarContent({
   onAutosaveEnabledChange,
   dialogBackdropDismissEnabled = false,
   onDialogBackdropDismissEnabledChange,
+  zoomBandBoundaries = TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES,
+  onZoomBandBoundariesChange,
   canUndo,
   canRedo,
   canCopy,
@@ -156,11 +161,21 @@ export function TreeConsoleToolbarContent({
     zoomBandsTitle: t('settings.zoomBands.title', 'Zoom bands'),
     zoomBandsHelper: t(
       'settings.zoomBands.helper',
-      'Shape tiles are generated with fixed zoom bands.',
+      'Default zoom band settings for new Shape/Route builds.',
     ),
     zoomBandsSummary: t(
       'settings.zoomBands.summary',
-      'band0: z0-3\nband1: z3-6\nband2: z6-9\nband3: z9-11 (optional)',
+      'Used as the default Transform zoom bands when creating new Shape/Route nodes.',
+    ),
+    zoomBandsRangeCount: t('settings.zoomBands.rangeCount', 'Number of ranges'),
+    zoomBandsRangeCountHelp: t(
+      'settings.zoomBands.rangeCountHelp',
+      'Set how many zoom ranges to use for transforms.',
+    ),
+    zoomBandsBoundaries: t('settings.zoomBands.boundaries', 'Range boundaries'),
+    zoomBandsBoundariesHelp: t(
+      'settings.zoomBands.boundariesHelp',
+      'Adjust the zoom levels that split each range.',
     ),
   } as const;
 
@@ -214,25 +229,31 @@ export function TreeConsoleToolbarContent({
           portalContainer={portalContainer}
         />
 
-      <SettingsMenu
-        rowClickAction={rowClickAction}
-        onRowClickActionChange={onRowClickActionChange}
-        autosaveEnabled={autosaveEnabled}
-        onAutosaveEnabledChange={onAutosaveEnabledChange}
-        dialogBackdropDismissEnabled={dialogBackdropDismissEnabled}
-        onDialogBackdropDismissEnabledChange={onDialogBackdropDismissEnabledChange}
-        onAction={handleAction}
-        portalContainer={portalContainer}
-        labels={{
-          settingsButton: settingsButtonLabel,
-          rowClickTitle: labels.rowClickTitle,
-          rowClickSelectNavigate: labels.rowClickSelectNavigate,
-          rowClickEdit: labels.rowClickEdit,
-          autosaveTitle: labels.autosaveTitle,
-          dialogBackdropDismissTitle: labels.dialogBackdropDismissTitle,
-          zoomBandsTitle: labels.zoomBandsTitle,
-          zoomBandsHelper: labels.zoomBandsHelper,
-          zoomBandsSummary: labels.zoomBandsSummary,
+        <SettingsMenu
+          rowClickAction={rowClickAction}
+          onRowClickActionChange={onRowClickActionChange}
+          autosaveEnabled={autosaveEnabled}
+          onAutosaveEnabledChange={onAutosaveEnabledChange}
+          dialogBackdropDismissEnabled={dialogBackdropDismissEnabled}
+          onDialogBackdropDismissEnabledChange={onDialogBackdropDismissEnabledChange}
+          zoomBandBoundaries={zoomBandBoundaries}
+          onZoomBandBoundariesChange={onZoomBandBoundariesChange}
+          onAction={handleAction}
+          portalContainer={portalContainer}
+          labels={{
+            settingsButton: settingsButtonLabel,
+            rowClickTitle: labels.rowClickTitle,
+            rowClickSelectNavigate: labels.rowClickSelectNavigate,
+            rowClickEdit: labels.rowClickEdit,
+            autosaveTitle: labels.autosaveTitle,
+            dialogBackdropDismissTitle: labels.dialogBackdropDismissTitle,
+            zoomBandsTitle: labels.zoomBandsTitle,
+            zoomBandsHelper: labels.zoomBandsHelper,
+            zoomBandsSummary: labels.zoomBandsSummary,
+            zoomBandsRangeCount: labels.zoomBandsRangeCount,
+            zoomBandsRangeCountHelp: labels.zoomBandsRangeCountHelp,
+            zoomBandsBoundaries: labels.zoomBandsBoundaries,
+            zoomBandsBoundariesHelp: labels.zoomBandsBoundariesHelp,
           }}
         />
       </Box>

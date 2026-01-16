@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import type { MapAttributionItem, ResourceVectorLayer } from '@hierarchidb/ui-map';
+import type { MapAttributionItem, ResourceGeoJsonLayer, ResourceVectorLayer } from '@hierarchidb/ui-map';
 import { getDataSourceConfig } from '../../../services/utils/utils.js';
 import type { ShapeEntity } from '../../../common/types/index.js';
 import { useShapePreviewStep } from './useShapePreviewStep.js';
@@ -109,6 +109,38 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
     }];
   }, [preview.selectionDataSource]);
 
+  const geoJsonLayers = useMemo<ResourceGeoJsonLayer[]>(() => {
+    if (!preview.errorLineCollection || preview.errorLineCollection.features.length === 0) {
+      return [];
+    }
+    const sourceId = 'shape-transform-errors';
+    return [
+      {
+        layerId: 'shape-transform-errors-outline',
+        sourceId,
+        data: preview.errorLineCollection,
+        layerType: 'line',
+        paint: {
+          'line-color': preview.theme.palette.error.main,
+          'line-width': 2,
+        },
+        filter: ['==', ['get', 'ringRole'], 'outline'],
+      },
+      {
+        layerId: 'shape-transform-errors-hole',
+        sourceId,
+        data: preview.errorLineCollection,
+        layerType: 'line',
+        paint: {
+          'line-color': preview.theme.palette.warning.main,
+          'line-width': 1.5,
+          'line-dasharray': [2, 2],
+        },
+        filter: ['==', ['get', 'ringRole'], 'hole'],
+      },
+    ];
+  }, [preview.errorLineCollection, preview.theme.palette.error.main, preview.theme.palette.warning.main]);
+
   return {
     ...preview,
     minZoom,
@@ -123,6 +155,7 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
     handleViewStateChange,
     handleZoomSnackbarClose,
     vectorLayers,
+    geoJsonLayers,
     attributionItems,
   };
 };

@@ -1,19 +1,89 @@
 export const TREE_CONSOLE_SETTINGS_STORAGE_KEY = 'hdb.treeConsole.settings';
+export const TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM = 0;
+export const TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM = 11;
+export const TREE_CONSOLE_ZOOM_BAND_MIN_RANGES = 0;
+export const TREE_CONSOLE_ZOOM_BAND_MAX_RANGES = 10;
+export const TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES = [0, 3, 6];
 
 export type TreeConsoleSettings = {
   rowClickAction?: 'Select/Navigate' | 'Edit';
   autosaveEnabled?: boolean;
   dialogBackdropDismissEnabled?: boolean;
+  zoomBandBoundaries?: number[];
 };
 
-const defaultSettings: Required<Pick<TreeConsoleSettings, 'autosaveEnabled' | 'dialogBackdropDismissEnabled'>> = {
+const defaultSettings: Required<
+  Pick<TreeConsoleSettings, 'autosaveEnabled' | 'dialogBackdropDismissEnabled' | 'zoomBandBoundaries'>
+> = {
   autosaveEnabled: false,
   dialogBackdropDismissEnabled: false,
+  zoomBandBoundaries: TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES,
 };
 
 const safeGlobal = (): typeof window | null => {
   if (typeof window === 'undefined') return null;
   return window;
+};
+
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+export const normalizeZoomBandBoundaries = (
+  boundaries: number[],
+  minZoom = TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM,
+  maxZoom = TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM,
+  maxRanges = TREE_CONSOLE_ZOOM_BAND_MAX_RANGES,
+): number[] => {
+  const maxHandles = Math.max(1, maxRanges + 1);
+  const raw = boundaries
+    .map((value) => Math.round(value))
+    .filter((value) => Number.isFinite(value))
+    .sort((a, b) => a - b)
+    .slice(0, maxHandles);
+
+  if (raw.length === 0) {
+    return [minZoom];
+  }
+
+  const normalized: number[] = [minZoom];
+  const lastRaw = raw[raw.length - 1];
+  const resolvedLast = clamp(
+    typeof lastRaw === 'number' ? lastRaw : minZoom,
+    minZoom,
+    maxZoom,
+  );
+
+  const middle = raw.filter((value) => value > minZoom && value < resolvedLast);
+  const maxMiddle = Math.max(0, maxHandles - 2);
+  const trimmed = middle.slice(0, maxMiddle);
+
+  for (let i = 0; i < trimmed.length; i += 1) {
+    const remaining = trimmed.length - i - 1;
+    const prev = normalized[normalized.length - 1]!;
+    const minValue = Math.max(prev + 1, minZoom);
+    const maxValue = Math.max(minValue, resolvedLast - remaining - 1);
+    normalized.push(clamp(trimmed[i]!, minValue, maxValue));
+  }
+
+  if (normalized.length < maxHandles && resolvedLast > normalized[normalized.length - 1]!) {
+    normalized.push(Math.max(resolvedLast, normalized[normalized.length - 1]!));
+  }
+
+  return normalized;
+};
+
+export const buildEvenZoomBandBoundaries = (
+  rangeCount: number,
+  minZoom = TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM,
+  maxZoom = TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM,
+): number[] => {
+  if (rangeCount <= 0) return [minZoom];
+  if (rangeCount === 1) return [minZoom, maxZoom];
+  const span = maxZoom - minZoom;
+  const raw = Array.from({ length: rangeCount + 1 }, (_, index) => {
+    const fraction = index / rangeCount;
+    return minZoom + span * fraction;
+  });
+  return normalizeZoomBandBoundaries(raw, minZoom, maxZoom, rangeCount);
 };
 
 export function loadTreeConsoleSettings(): TreeConsoleSettings {
@@ -36,7 +106,20 @@ export function loadTreeConsoleSettings(): TreeConsoleSettings {
       typeof parsed?.dialogBackdropDismissEnabled === 'boolean'
         ? parsed.dialogBackdropDismissEnabled
         : defaultSettings.dialogBackdropDismissEnabled;
-    return { rowClickAction, autosaveEnabled, dialogBackdropDismissEnabled };
+    const zoomBandBoundaries = Array.isArray(parsed?.zoomBandBoundaries)
+      ? normalizeZoomBandBoundaries(
+          parsed.zoomBandBoundaries,
+          TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM,
+          TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM,
+          TREE_CONSOLE_ZOOM_BAND_MAX_RANGES,
+        )
+      : defaultSettings.zoomBandBoundaries;
+    return {
+      rowClickAction,
+      autosaveEnabled,
+      dialogBackdropDismissEnabled,
+      zoomBandBoundaries,
+    };
   } catch (err) {
     if (typeof console !== 'undefined' && typeof console.warn === 'function') {
       console.warn('[treeConsoleSettings] failed to parse settings; using defaults', err);
@@ -56,6 +139,15 @@ export function saveTreeConsoleSettings(patch: Partial<TreeConsoleSettings>): Tr
       patch.dialogBackdropDismissEnabled !== undefined
         ? patch.dialogBackdropDismissEnabled
         : current.dialogBackdropDismissEnabled,
+    zoomBandBoundaries:
+      patch.zoomBandBoundaries !== undefined
+        ? normalizeZoomBandBoundaries(
+            patch.zoomBandBoundaries,
+            TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM,
+            TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM,
+            TREE_CONSOLE_ZOOM_BAND_MAX_RANGES,
+          )
+        : current.zoomBandBoundaries ?? defaultSettings.zoomBandBoundaries,
   };
 
   if (!global?.localStorage) return next;

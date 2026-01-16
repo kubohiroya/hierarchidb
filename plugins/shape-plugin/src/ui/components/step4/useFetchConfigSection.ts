@@ -28,8 +28,7 @@ const SHAPE_NODE_TYPE = 'shape' as NodeType;
 
 type CacheCounts = {
   fetch: number;
-  transformByBand: number;
-  transformByZoom: number;
+  transform: number;
   vt: number;
 };
 
@@ -43,8 +42,7 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
 
   const [counts, setCounts] = useState<CacheCounts>({
     fetch: 0,
-    transformByBand: 0,
-    transformByZoom: 0,
+    transform: 0,
     vt: 0,
   });
   const [resultCounts, setResultCounts] = useState({ tiles: 0, metadata: 0 });
@@ -57,19 +55,15 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
     count > 0 ? `${label} (${count}${unit})` : label
   ), []);
   const fetchDeleteCount = counts.fetch;
-  const transformByBandDeleteCount = counts.transformByBand;
-  const transformByZoomDeleteCount = counts.transformByZoom;
+  const transformDeleteCount = counts.transform;
   const vtDeleteCount = Math.max(counts.vt, resultCounts.tiles);
   const metadataDeleteCount = resultCounts.metadata;
   const deleteFetchLabel = useMemo(() => (
     formatDeleteLabel(t('processing.download.deleteFetchedFiles', 'Delete fetch cache'), fetchDeleteCount)
   ), [fetchDeleteCount, formatDeleteLabel, t]);
-  const deleteTransformByBandLabel = useMemo(() => (
-    formatDeleteLabel(t('processing.download.deleteStage1Cache', 'Delete zoom-band cache'), transformByBandDeleteCount, countUnit)
-  ), [countUnit, formatDeleteLabel, t, transformByBandDeleteCount]);
-  const deleteTransformByZoomLabel = useMemo(() => (
-    formatDeleteLabel(t('processing.download.deleteStage2Cache', 'Delete zoom-ratio cache'), transformByZoomDeleteCount, countUnit)
-  ), [countUnit, formatDeleteLabel, t, transformByZoomDeleteCount]);
+  const deleteTransformLabel = useMemo(() => (
+    formatDeleteLabel(t('processing.download.deleteStage1Cache', 'Delete transform cache'), transformDeleteCount, countUnit)
+  ), [countUnit, formatDeleteLabel, t, transformDeleteCount]);
   const deleteVTLabel = useMemo(() => (
     formatDeleteLabel(t('processing.download.deleteTiles', 'Delete vt cache'), vtDeleteCount)
   ), [formatDeleteLabel, t, vtDeleteCount]);
@@ -79,7 +73,7 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
 
   const loadCounts = useCallback(async () => {
     if (!nodeId) {
-      setCounts({ fetch: 0, transformByBand: 0, transformByZoom: 0, vt: 0 });
+      setCounts({ fetch: 0, transform: 0, vt: 0 });
       setResultCounts({ tiles: 0, metadata: 0 });
       setIsRunning(false);
       setCountsLoading(false);
@@ -92,15 +86,13 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
       const shapeStore = new VtShapeDb();
       const [
         fetchCount,
-        transformByBandCount,
-        transformByZoomCount,
+        transformCount,
         vtCount,
         numTiles,
         numMetadata,
       ] = await Promise.all([
         shapeStore.fetchCache.where('[nodeId+domainType]').equals([nodeId, SHAPE_DOMAIN]).count(),
         ephemeralShapeAPIImpl.countTransformByBandCaches(nodeId),
-        ephemeralShapeAPIImpl.listTileIdRelations(nodeId).then((rows) => rows.length),
         ephemeralShapeAPIImpl.countVectorTiles(nodeId),
         shapeQueryAPIImpl.listVTMetadata(nodeId).then((rows) => rows.length),
         shapeQueryAPIImpl.listFeatureMetadata(nodeId).then((rows) => rows.length),
@@ -115,8 +107,7 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
 
       setCounts({
         fetch: fetchCount,
-        transformByBand: transformByBandCount,
-        transformByZoom: transformByZoomCount,
+        transform: transformCount,
         vt: vtCount,
       });
       setResultCounts({ tiles: numTiles, metadata: numMetadata });
@@ -138,8 +129,7 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
   }, [loadCounts]);
 
   const canDeleteFetchCache = !isRunning && !disabled && fetchDeleteCount > 0;
-  const canDeleteTransformByBandCache = !isRunning && !disabled && transformByBandDeleteCount > 0;
-  const canDeleteTransformByZoomCache = !isRunning && !disabled && transformByZoomDeleteCount > 0;
+  const canDeleteTransformCache = !isRunning && !disabled && transformDeleteCount > 0;
   const canDeleteVTCache = !isRunning && !disabled && vtDeleteCount > 0;
   const canDeleteMetadata = !isRunning && !disabled && metadataDeleteCount > 0;
 
@@ -221,24 +211,13 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
     persistSessionReset,
   ]);
 
-  const handleDeleteTransformByBandCache = useCallback(async () => {
-    await ephemeralShapeAPIImpl.clearStage(nodeId, 'transform-by-band');
-    await ephemeralShapeAPIImpl.clearStage(nodeId, 'transform-by-zoom');
-    await clearBatchTasksForType('transform-by-band');
-    await clearBatchTasksForType('transform-by-zoom');
-    setBuildTasks((prev) => prev.filter((task) => task.stage !== 'transform-by-band' && task.stage !== 'transform-by-zoom'));
-    setPersistedTasks((prev) => prev.filter((task) => task.stage !== 'transform-by-band' && task.stage !== 'transform-by-zoom'));
+  const handleDeleteTransformCache = useCallback(async () => {
+    await ephemeralShapeAPIImpl.clearStage(nodeId, 'transform');
+    await clearBatchTasksForType('transform');
+    setBuildTasks((prev) => prev.filter((task) => task.stage !== 'transform'));
+    setPersistedTasks((prev) => prev.filter((task) => task.stage !== 'transform'));
     await loadCounts();
-    notify.success('Deleted transform-by-band cache');
-  }, [nodeId, clearBatchTasksForType, loadCounts, setBuildTasks, setPersistedTasks]);
-
-  const handleDeleteTransformByZoomCache = useCallback(async () => {
-    await ephemeralShapeAPIImpl.clearStage(nodeId, 'transform-by-zoom');
-    await clearBatchTasksForType('transform-by-zoom');
-    setBuildTasks((prev) => prev.filter((task) => task.stage !== 'transform-by-zoom'));
-    setPersistedTasks((prev) => prev.filter((task) => task.stage !== 'transform-by-zoom'));
-    await loadCounts();
-    notify.success('Deleted transform-by-zoom cache');
+    notify.success('Deleted transform cache');
   }, [nodeId, clearBatchTasksForType, loadCounts, setBuildTasks, setPersistedTasks]);
 
   const handleDeleteVTCache = useCallback(async () => {
@@ -283,22 +262,21 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
     switchId,
     baseFetchConfig: baseFetchConfig,
     deleteFetchLabel,
-    deleteTransformFilterLabel: deleteTransformByBandLabel,
-    deleteTransformPreprocessLabel: deleteTransformByZoomLabel,
+    deleteTransformFilterLabel: deleteTransformLabel,
     deleteVTLabel,
     deleteMetadataLabel,
     countsLoading,
     canDeleteFetchCache,
-    canDeleteTransformCache: canDeleteTransformByBandCache,
-    canDeleteTransformByZoomCache,
+    canDeleteTransformCache,
     canDeleteVTCache,
     canDeleteMetadata,
     handleDeleteFetchCache,
-    handleDeleteTransformCache: handleDeleteTransformByBandCache,
-    handleDeleteTransformByZoomCache,
+    handleDeleteTransformCache,
     handleDeleteVTCache,
     handleDeleteMetadata,
     handleResetDefaults,
     update,
   };
 };
+
+export type FetchConfigSectionState = ReturnType<typeof useFetchConfigSection>;

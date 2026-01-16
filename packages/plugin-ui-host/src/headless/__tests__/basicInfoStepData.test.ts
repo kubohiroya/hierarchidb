@@ -19,8 +19,11 @@ describe('buildStepWorkingData', () => {
 
     const result = buildStepWorkingData(draftData, basicInfo, meta);
 
-    // Basic info fields are no longer merged into step data.
-    expect(result).toEqual(draftData);
+    // Basic info fields are merged into step data.
+    expect(result).toEqual({
+      ...basicInfo,
+      ...draftData,
+    });
     expect(result[BASIC_INFO_META_KEY]).toBeUndefined(); // meta key is reserved but not emitted
   });
 
@@ -34,7 +37,7 @@ describe('buildStepWorkingData', () => {
 
     const result = buildStepWorkingData(undefined, basicInfo, meta);
 
-    expect(result).toEqual({});
+    expect(result).toEqual(basicInfo);
     expect(result[BASIC_INFO_META_KEY]).toBeUndefined(); // meta key is reserved but not emitted
   });
 });

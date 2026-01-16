@@ -3,7 +3,7 @@ import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-typ
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import type { TreeConsoleToolbarActionParams } from '@hierarchidb/ui-treeconsole-toolbar';
 import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
-import { TREE_CONSOLE_SETTINGS_STORAGE_KEY, loadTreeConsoleSettings, saveTreeConsoleSettings } from '@hierarchidb/util';
+import { TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES, TREE_CONSOLE_SETTINGS_STORAGE_KEY, loadTreeConsoleSettings, saveTreeConsoleSettings } from '@hierarchidb/util';
 import { useCallback, useEffect, useState } from 'react';
 import type { Remote } from 'comlink';
 import { canImportFromNode, logIntegrationWarning } from './treeConsoleIntegrationUtils.js';
@@ -73,6 +73,8 @@ export type ToolbarControllerResult = {
   setAutosaveEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   dialogBackdropDismissEnabled: boolean;
   setDialogBackdropDismissEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  zoomBandBoundaries: number[];
+  setZoomBandBoundaries: React.Dispatch<React.SetStateAction<number[]>>;
 };
 
 export function useTreeConsoleToolbarActions({
@@ -120,7 +122,10 @@ export function useTreeConsoleToolbarActions({
     const stored = loadTreeConsoleSettings().dialogBackdropDismissEnabled;
     return typeof stored === 'boolean' ? stored : false;
   });
-
+  const [zoomBandBoundaries, setZoomBandBoundaries] = useState<number[]>(() => {
+    const stored = loadTreeConsoleSettings().zoomBandBoundaries;
+    return Array.isArray(stored) ? stored : TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES;
+  });
   useEffect(() => {
     const global = typeof window !== 'undefined' ? window : null;
     if (!global) return undefined;
@@ -132,6 +137,7 @@ export function useTreeConsoleToolbarActions({
       setDialogBackdropDismissEnabled(
         typeof next.dialogBackdropDismissEnabled === 'boolean' ? next.dialogBackdropDismissEnabled : false,
       );
+      setZoomBandBoundaries(Array.isArray(next.zoomBandBoundaries) ? next.zoomBandBoundaries : TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES);
     };
     global.addEventListener('storage', handleStorage);
     return () => {
@@ -140,14 +146,15 @@ export function useTreeConsoleToolbarActions({
   }, []);
 
   const persistSettings = useCallback(
-    (patch: Partial<{ rowClickAction: 'Select/Navigate' | 'Edit'; autosaveEnabled: boolean; dialogBackdropDismissEnabled: boolean }>) => {
+    (patch: Partial<{ rowClickAction: 'Select/Navigate' | 'Edit'; autosaveEnabled: boolean; dialogBackdropDismissEnabled: boolean; zoomBandBoundaries: number[] }>) => {
       saveTreeConsoleSettings({
         rowClickAction: patch.rowClickAction ?? rowClickAction,
         autosaveEnabled: patch.autosaveEnabled ?? autosaveEnabled,
         dialogBackdropDismissEnabled: patch.dialogBackdropDismissEnabled ?? dialogBackdropDismissEnabled,
+        zoomBandBoundaries: patch.zoomBandBoundaries ?? zoomBandBoundaries,
       });
     },
-    [autosaveEnabled, dialogBackdropDismissEnabled, rowClickAction]
+    [autosaveEnabled, dialogBackdropDismissEnabled, rowClickAction, zoomBandBoundaries]
   );
 
   const handleToolbarAction = useCallback(
@@ -292,6 +299,12 @@ export function useTreeConsoleToolbarActions({
             persistSettings({ dialogBackdropDismissEnabled: params });
           }
           break;
+        case 'setZoomBandBoundaries':
+          if (Array.isArray(params)) {
+            setZoomBandBoundaries(params);
+            persistSettings({ zoomBandBoundaries: params });
+          }
+          break;
         case 'import-template':
           if (
             params &&
@@ -421,6 +434,11 @@ export function useTreeConsoleToolbarActions({
       setRowClickAction(nextAction);
       persistSettings({ rowClickAction: nextAction });
     },
+    zoomBandBoundaries,
+    onZoomBandBoundariesChange: (nextBoundaries: number[]) => {
+      setZoomBandBoundaries(nextBoundaries);
+      persistSettings({ zoomBandBoundaries: nextBoundaries });
+    },
   } as React.ComponentProps<typeof TreeConsoleToolbar>;
 
   return {
@@ -431,5 +449,7 @@ export function useTreeConsoleToolbarActions({
     setAutosaveEnabled,
     dialogBackdropDismissEnabled,
     setDialogBackdropDismissEnabled,
+    zoomBandBoundaries,
+    setZoomBandBoundaries,
   };
 }

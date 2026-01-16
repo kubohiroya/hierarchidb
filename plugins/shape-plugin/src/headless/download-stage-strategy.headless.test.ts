@@ -11,6 +11,7 @@ import { GadmFetchStageStrategy } from '../services/batch/strategies/GadmFetchSt
 import { NaturalEarthDownloadStrategy } from '../services/batch/strategies/NaturalEarthDownloadStrategy.js';
 import type { Feature, FeatureCollection } from 'geojson';
 import { ephemeralShapeDB } from '@hierarchidb/shape-store';;
+import { buildRawDataDataSourceCacheKey } from '../services/utils/chunkStore.js';
 
 const createConfig = (dataSource: string): BuildProcessConfig => ({
   dataSource: dataSource as BuildProcessConfig['dataSource'],
@@ -18,20 +19,13 @@ const createConfig = (dataSource: string): BuildProcessConfig => ({
     ...DEFAULT_BUILD_CONFIG.fetchConfig,
     maxConcurrent: 1,
   },
-  transformByBandConfig: {
-    ...DEFAULT_BUILD_CONFIG.transformByBandConfig,
+  transformConfig: {
+    ...DEFAULT_BUILD_CONFIG.transformConfig,
     maxConcurrent: 1,
     featureAreaThreshold: 0,
     minVertexCountForAreaFilter: 0,
     aspectRatioThreshold: 0,
     areaThreshold: 0,
-  },
-  transformByZoomConfig: {
-    ...DEFAULT_BUILD_CONFIG.transformByZoomConfig,
-    maxConcurrent: 1,
-    quantize: 1,
-    extract: 0.1,
-    tolerance: 0.1,
   },
   vectorTiles: {
     ...DEFAULT_BUILD_CONFIG.vtConfig,
@@ -84,8 +78,22 @@ describe('Download stage strategies', () => {
       fetchTaskInputsById: inputsByTaskId,
     });
     expect(postprocess.outputs).toHaveLength(2);
-    expect(postprocess.outputs[0]?.inputBufferId).toBe(`${nodeId}-download-0`);
-    expect(postprocess.outputs[1]?.inputBufferId).toBe(`${nodeId}-download-1`);
+    expect(postprocess.outputs[0]?.inputBufferId).toBe(
+      buildRawDataDataSourceCacheKey({
+        dataSource: 'gadm',
+        countryCode: 'JP',
+        adminLevel: 0,
+        url: downloadTaskPayloads[0]?.url,
+      }),
+    );
+    expect(postprocess.outputs[1]?.inputBufferId).toBe(
+      buildRawDataDataSourceCacheKey({
+        dataSource: 'gadm',
+        countryCode: 'ID',
+        adminLevel: 1,
+        url: downloadTaskPayloads[1]?.url,
+      }),
+    );
   });
 
   it.skip('NaturalEarth strategy groups download tasks by level and splits outputs by country', async () => {

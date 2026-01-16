@@ -6,7 +6,7 @@
 import type {
   CountryMetadata,
   DataSourceName,
-  // ShapeEntity,
+  ShapeEntity,
   FetchTaskPayload,
   ShapeStepValidationResult,
   SelectedArrayByCountries
@@ -14,6 +14,12 @@ import type {
 import { SHAPE_DATA_SOURCES } from '../../common/types/constants.js';
 import { GEOBOUNDARIES_RELEASE_BASE_URL } from './geoboundariesEndpoints.js';
 import type { ShapeBuildConfig } from '../../common/types/index.js';
+import {
+  ZOOM_BAND_MAX_RANGES,
+  ZOOM_BAND_MAX_ZOOM,
+  ZOOM_BAND_MIN_RANGES,
+  ZOOM_BAND_MIN_ZOOM,
+} from '../../common/config/zoomBands.js';
 
 const KNOWN_DATA_SOURCE_NAMES = new Set<DataSourceName>(
   SHAPE_DATA_SOURCES.map((source) => source.name),
@@ -30,8 +36,9 @@ const stripNil = <T extends object>(value?: T | null): Partial<T> => {
 
 export function normalizeDataSourceName(value?: string | null): DataSourceName | undefined {
   if (typeof value !== 'string') return undefined;
-  return KNOWN_DATA_SOURCE_NAMES.has(value as DataSourceName)
-    ? (value as DataSourceName)
+  const normalized = value.trim().toLowerCase();
+  return KNOWN_DATA_SOURCE_NAMES.has(normalized as DataSourceName)
+    ? (normalized as DataSourceName)
     : undefined;
 }
 
@@ -65,41 +72,40 @@ export function resolveCountryCodeForDataSource(
   return candidate;
 }
 
-/*
-
 type ShapeDraft = {
   draftData: ShapeEntity;
 };
 
 export function createDraftFromEntity(entity: ShapeEntity): ShapeDraft {
-  const normalizedDataSourceName =
-    normalizeDataSourceName(entity.buildConfig?.dataSource)
-    ?? entity.buildConfig?.dataSource;
+  const baseBuildConfig = entity.buildConfig;
   return {
     draftData: {
       ...entity,
-      buildConfig: {
-        ...entity.buildConfig,
-        dataSource: normalizedDataSourceName,
-      },
+      buildConfig: baseBuildConfig
+        ? {
+            ...baseBuildConfig,
+            dataSourceName:
+              normalizeDataSourceName(baseBuildConfig.dataSourceName) ?? baseBuildConfig.dataSourceName,
+          }
+        : baseBuildConfig,
     },
   };
 }
 
 export function mapDraftToUpdates(draft: ShapeDraft): Partial<ShapeEntity> {
   const draftData = draft.draftData;
-  const normalizedDataSourceName =
-    normalizeDataSourceName(draftData.buildConfig?.dataSource)
-    ?? draftData.buildConfig?.dataSource;
+  const baseBuildConfig = draftData.buildConfig;
   return {
     ...draftData,
-    buildConfig: {
-      ...draftData.buildConfig,
-      dataSource: normalizedDataSourceName,
-    },
+    buildConfig: baseBuildConfig
+      ? {
+          ...baseBuildConfig,
+          dataSourceName:
+            normalizeDataSourceName(baseBuildConfig.dataSourceName) ?? baseBuildConfig.dataSourceName,
+        }
+      : baseBuildConfig,
   };
 }
- */
 
 /**
  * Validate processing configuration
@@ -113,17 +119,42 @@ export function validateBatchConfig(config: ShapeBuildConfig): ShapeStepValidati
     errors.push('Concurrent downloads must be between 1 and 4');
   }
 
-  const transformByBandConcurrentProcesses = config.transformByBandConfig.maxConcurrent;
-  if (transformByBandConcurrentProcesses < 1 || transformByBandConcurrentProcesses > 8) {
-    errors.push('Concurrent by-band processes must be between 1 and 8');
+  const transformConcurrentProcesses = config.transformConfig.maxConcurrent;
+  if (transformConcurrentProcesses < 1 || transformConcurrentProcesses > 8) {
+    errors.push('Concurrent transform processes must be between 1 and 8');
   }
 
-  const transformByZoomConcurrentProcesses = config.transformByZoomConfig.maxConcurrent;
-  if (transformByZoomConcurrentProcesses < 1 || transformByZoomConcurrentProcesses > 8) {
-    errors.push('Concurrent by-zoom processes must be between 1 and 8');
+  const zoomBandBoundaries = config.transformConfig.zoomBandBoundaries;
+  const zoomBandCount = Math.max(0, zoomBandBoundaries.length - 1);
+  if (zoomBandCount < ZOOM_BAND_MIN_RANGES || zoomBandCount > ZOOM_BAND_MAX_RANGES) {
+    errors.push(`Zoom band count must be between ${ZOOM_BAND_MIN_RANGES} and ${ZOOM_BAND_MAX_RANGES}`);
+  }
+  if (zoomBandBoundaries.length === 0) {
+    errors.push('Zoom band boundaries must include at least the minimum zoom');
+  } else {
+    const first = zoomBandBoundaries[0];
+    const last = zoomBandBoundaries[zoomBandBoundaries.length - 1];
+    if (first !== ZOOM_BAND_MIN_ZOOM) {
+      errors.push(`Zoom band boundaries must start at ${ZOOM_BAND_MIN_ZOOM}`);
+    }
+    if (last === undefined || last < ZOOM_BAND_MIN_ZOOM || last > ZOOM_BAND_MAX_ZOOM) {
+      errors.push(`Zoom band max boundary must be between ${ZOOM_BAND_MIN_ZOOM} and ${ZOOM_BAND_MAX_ZOOM}`);
+    }
+  }
+  if (zoomBandBoundaries.some((value) => value < ZOOM_BAND_MIN_ZOOM || value > ZOOM_BAND_MAX_ZOOM)) {
+    errors.push(`Zoom band boundaries must be between ${ZOOM_BAND_MIN_ZOOM} and ${ZOOM_BAND_MAX_ZOOM}`);
+  }
+  for (let i = 1; i < zoomBandBoundaries.length; i += 1) {
+    const current = zoomBandBoundaries[i];
+    const previous = zoomBandBoundaries[i - 1];
+    if (current === undefined || previous === undefined) continue;
+    if (current <= previous) {
+      errors.push('Zoom band boundaries must be strictly increasing');
+      break;
+    }
   }
 
-  const areaThreshold = config.transformByBandConfig.featureAreaThreshold;
+  const areaThreshold = config.transformConfig.featureAreaThreshold;
   if (areaThreshold < 0 || areaThreshold > 10000) {
     errors.push('Feature area threshold must be between 0 and 10000');
   }
@@ -321,20 +352,22 @@ export function mergeBuildConfig(
     ? { ...base.fetchConfig, ...overrides.fetchConfig }
     : base.fetchConfig;
 
-  const bandOverrides = overrides.transformByBandConfig;
-  const transformByBandConfig = bandOverrides
+  const bandOverrides = overrides.transformConfig;
+  const transformConfig = bandOverrides
     ? {
-      ...base.transformByBandConfig,
+      ...base.transformConfig,
       ...bandOverrides,
       hybridFilterConfig: bandOverrides.hybridFilterConfig
-        ? { ...base.transformByBandConfig.hybridFilterConfig, ...bandOverrides.hybridFilterConfig }
-        : base.transformByBandConfig.hybridFilterConfig,
+        ? { ...base.transformConfig.hybridFilterConfig, ...bandOverrides.hybridFilterConfig }
+        : base.transformConfig.hybridFilterConfig,
+      ringFixConfig: bandOverrides.ringFixConfig
+        ? { ...base.transformConfig.ringFixConfig, ...bandOverrides.ringFixConfig }
+        : base.transformConfig.ringFixConfig,
+      selfIntersectionConfig: bandOverrides.selfIntersectionConfig
+        ? { ...base.transformConfig.selfIntersectionConfig, ...bandOverrides.selfIntersectionConfig }
+        : base.transformConfig.selfIntersectionConfig,
     }
-    : base.transformByBandConfig;
-
-  const transformByZoomConfig = overrides.transformByZoomConfig
-    ? { ...base.transformByZoomConfig, ...overrides.transformByZoomConfig }
-    : base.transformByZoomConfig;
+    : base.transformConfig;
 
   const vtConfig = overrides.vtConfig
     ? { ...base.vtConfig, ...overrides.vtConfig }
@@ -348,8 +381,7 @@ export function mergeBuildConfig(
     ...base,
     ...overrides,
     fetchConfig,
-    transformByBandConfig,
-    transformByZoomConfig,
+    transformConfig,
     vtConfig,
     cleanupConfig,
   };

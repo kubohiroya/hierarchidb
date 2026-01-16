@@ -37,15 +37,26 @@ describe('useTreeViewController', () => {
   describe('worker integration', () => {
     it('loads initial subtree and applies updates from subscription events', async () => {
       const rootNodeId = 'root-node' as NodeId;
+      const baseMetadata = {
+        name: 'Root Node',
+        description: '',
+        tags: [],
+      };
       const rootNode: Partial<TreeNode> = {
         id: rootNodeId,
         nodeType: toNodeType('folder'),
         parentId: null,
+        metadata: baseMetadata,
       };
       const childNode: Partial<TreeNode> = {
         id: toNodeId('child-1'),
         nodeType: toNodeType('folder'),
         parentId: rootNodeId,
+        metadata: {
+          name: 'Child Node',
+          description: '',
+          tags: [],
+        },
       };
 
       let subscriptionCallback: ((event: TreeNodeEvent) => void) | null = null;
@@ -122,6 +133,11 @@ describe('useTreeViewController', () => {
           nodeId: childNode.id as NodeId,
           node: {
             ...(childNode as TreeNode),
+            metadata: {
+              name: 'Updated Child Node',
+              description: '',
+              tags: [],
+            },
           },
           parentId: rootNodeId,
           timestamp: Date.now(),
@@ -131,7 +147,10 @@ describe('useTreeViewController', () => {
       await waitFor(() => {
         expect(result.current.data).toEqual(
           expect.arrayContaining([
-            expect.objectContaining({ id: childNode.id, name: 'Updated Child Node' }),
+            expect.objectContaining({
+              id: childNode.id,
+              metadata: expect.objectContaining({ name: 'Updated Child Node' }),
+            }),
           ]),
         );
       });

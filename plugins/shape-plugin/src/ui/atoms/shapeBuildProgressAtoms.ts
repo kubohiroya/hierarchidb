@@ -11,6 +11,7 @@ export type ShapeBuildTaskSummary = BatchTaskSummary & {
 export type TaskProgressSummary = {
   stageLabel: string;
   taskLabel: string;
+  taskUnitLabel: string;
   overallProgress: number;
   completed: number;
   total: number;
@@ -51,6 +52,7 @@ export const taskStatusAtom = atom<BuildStatus>('idle');
 export const taskProgressSummaryAtom = atom<TaskProgressSummary>({
   stageLabel: '',
   taskLabel: '',
+  taskUnitLabel: '',
   overallProgress: 0,
   completed: 0,
   total: 0,

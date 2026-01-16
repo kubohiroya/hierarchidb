@@ -351,12 +351,14 @@ export const createContextMenuAction = (deps: TreeConsoleActionDeps, helpers: Co
           if (!client) return;
           try {
             const scopeParent = parentId ?? pageNodeId;
-            if (selectedIds.length === 0) {
-              showCommandError('INVALID_OPERATION', 'No items selected');
-              return;
+            const hasSelection = selectedIds.length > 0;
+            const includesTarget = selectedIds.includes(targetNodeId);
+            const resolvedIds = !hasSelection || !includesTarget ? [targetNodeId] : selectedIds;
+            if (!hasSelection || !includesTarget) {
+              setSSOT({ selectedIds: [targetNodeId] });
             }
             const mutationAPI = await client.getMutationAPI();
-            const res = await mutationAPI.moveNodesToTrash(selectedIds);
+            const res = await mutationAPI.moveNodesToTrash(resolvedIds);
             if (!res.success) {
               showCommandError('INVALID_OPERATION', res.error || 'Delete failed');
               return;
@@ -364,6 +366,9 @@ export const createContextMenuAction = (deps: TreeConsoleActionDeps, helpers: Co
             await refreshParent(scopeParent as NodeId);
             await refreshUndoRedo();
             fireCmdEvent();
+            if (options?.navigateToParent) {
+              navigation.navigateTo(parentId ?? null);
+            }
           } catch (error) {
             console.error('Delete failed:', error);
             showCommandError('UNKNOWN_ERROR');

@@ -1,6 +1,6 @@
 import React from 'react';
-import { describe, expect, it, vi, afterEach, beforeEach } from 'vitest';
-import { render } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
 import type { MapStyle } from '../../../../common/types/BaseMapEntity.js';
 import { ViewportStep } from '../ViewportStep.js';
 
@@ -18,87 +18,45 @@ const renderViewportStep = (options: {
     />
   );
 
-const originalGeolocation = global.navigator.geolocation;
-
-afterEach(() => {
-  Object.defineProperty(global.navigator, 'geolocation', {
-    configurable: true,
-    value: originalGeolocation,
-  });
-});
-
-beforeEach(() => {
-  if (typeof window !== 'undefined') {
-    window.localStorage?.clear();
-  }
-});
-
-describe('ViewportStep geolocation', () => {
-  it('applies geolocation coordinates when available and persists them', () => {
+describe('ViewportStep', () => {
+  it('renders fallback values when no viewport is provided', () => {
     const onChange = vi.fn();
-    const getCurrentPosition = vi.fn().mockImplementation((success: (position: GeolocationPosition) => void) => {
-      success({
-        coords: {
-          latitude: 33,
-          longitude: 122,
-          accuracy: 20,
-          altitude: null,
-          altitudeAccuracy: null,
-          heading: null,
-          speed: null,
-        },
-        timestamp: Date.now(),
-      });
-    });
-    Object.defineProperty(global.navigator, 'geolocation', {
-      configurable: true,
-      value: { getCurrentPosition },
-    });
-
     renderViewportStep({ onChange });
 
-    expect(getCurrentPosition).toHaveBeenCalled();
+    expect((screen.getByLabelText(/Longitude/i) as HTMLInputElement).value).toBe('0');
+    expect((screen.getByLabelText(/Latitude/i) as HTMLInputElement).value).toBe('0');
+    expect((screen.getByLabelText(/Zoom/i) as HTMLInputElement).value).toBe('1');
+    expect((screen.getByLabelText(/Bearing/i) as HTMLInputElement).value).toBe('0');
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('renders provided viewport values', () => {
+    const onChange = vi.fn();
+    renderViewportStep({
+      onChange,
+      value: { center: [120, 30], zoom: 5, bearing: 45, pitch: 0 },
+    });
+
+    expect((screen.getByLabelText(/Longitude/i) as HTMLInputElement).value).toBe('120');
+    expect((screen.getByLabelText(/Latitude/i) as HTMLInputElement).value).toBe('30');
+    expect((screen.getByLabelText(/Zoom/i) as HTMLInputElement).value).toBe('5');
+    expect((screen.getByLabelText(/Bearing/i) as HTMLInputElement).value).toBe('45');
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('emits onChange when inputs change', () => {
+    const onChange = vi.fn();
+    renderViewportStep({
+      onChange,
+      value: { center: [10, 20], zoom: 3, bearing: 0, pitch: 0 },
+    });
+
+    fireEvent.change(screen.getByLabelText(/Zoom/i), { target: { value: '4' } });
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({
-        center: [122, 33],
-        pitch: 0,
+        center: [10, 20],
+        zoom: 4,
         bearing: 0,
-      })
-    );
-    expect(window.localStorage.getItem('zxy')).toBeTruthy();
-  });
-
-  it('uses persisted localStorage viewport when available', () => {
-    window.localStorage.setItem('zxy', JSON.stringify({ longitude: 50, latitude: -10, zoom: 5 }));
-    const onChange = vi.fn();
-    const getCurrentPosition = vi.fn();
-    Object.defineProperty(global.navigator, 'geolocation', {
-      configurable: true,
-      value: { getCurrentPosition },
-    });
-
-    renderViewportStep({ onChange });
-    expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({
-        center: [50, -10],
-        zoom: 5,
-      })
-    );
-    expect(getCurrentPosition).not.toHaveBeenCalled();
-  });
-
-  it('falls back to default viewport when geolocation is unavailable', () => {
-    const onChange = vi.fn();
-    Object.defineProperty(global.navigator, 'geolocation', {
-      configurable: true,
-      value: undefined,
-    });
-
-    renderViewportStep({ onChange });
-    expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({
-        center: [0, 0],
-        zoom: 2,
       })
     );
   });

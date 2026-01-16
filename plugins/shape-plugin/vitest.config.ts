@@ -39,42 +39,81 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: {
+    alias: [
       // Map legacy core imports to public dist builds for tests
-      '@hierarchidb/core': path.resolve(__dirname, '../../packages/common/types/src/index.ts'),
-      '@hierarchidb/common-types': path.resolve(__dirname, '../../packages/common/types/src/index.ts'),
-      '@hierarchidb/common-api': path.resolve(__dirname, '../../packages/common/api/src/index.ts'),
-      '@hierarchidb/ui-worker-client': path.resolve(__dirname, '../../packages/ui/worker-client/src/index.ts'),
-      '@hierarchidb/runtime-worker': path.resolve(__dirname, '../../packages/runtime-worker/src/index.ts'),
-      '@hierarchidb/plugin-ui-host': path.resolve(__dirname, '../../packages/plugin-ui-host/src/index.ts'),
-      '@hierarchidb/runtime-ui-datasource': path.resolve(__dirname, '../../packages/runtime-worker-ui/datasource/src/index.ts'),
-      '@hierarchidb/ui-lru-splitview': path.resolve(__dirname, '../../packages/ui/lru-splitview/src/index.ts'),
-      '@hierarchidb/auth-recovery': path.resolve(
-        __dirname,
-        './src/headless/mocks/auth-recovery.ts',
-      ),
-      '@hierarchidb/resolver-plugin/database': path.resolve(
-        __dirname,
-        '../../plugins/resolver-plugin/src/worker/database/index.ts',
-      ),
-      '@hierarchidb/location-plugin/database': path.resolve(
-        __dirname,
-        '../../plugins/location-plugin/src/database/index.ts',
-      ),
-      '@hierarchidb/download': path.resolve(
-        __dirname,
-        '../../packages/features/download/src/index.ts',
-      ),
-      '@hierarchidb/gen-iso3166-2': path.resolve(
-        __dirname,
-        '../../packages/tools/gen-iso3166-2/src/index.ts',
-      ),
-      '@hierarchidb/gen-iso3166-2/browser': path.resolve(
-        __dirname,
-        '../../packages/tools/gen-iso3166-2/src/browser.ts',
-      ),
-      '~': path.resolve(__dirname, './src'),
+      {
+        find: '@hierarchidb/core',
+        replacement: path.resolve(__dirname, '../../packages/common/types/src/index.ts'),
+      },
+      {
+        find: '@hierarchidb/common-types',
+        replacement: path.resolve(__dirname, '../../packages/common/types/src/index.ts'),
+      },
+      {
+        find: '@hierarchidb/common-api',
+        replacement: path.resolve(__dirname, '../../packages/common/api/src/index.ts'),
+      },
+      {
+        find: '@hierarchidb/ui-worker-client',
+        replacement: path.resolve(__dirname, '../../packages/ui/worker-client/src/index.ts'),
+      },
+      {
+        find: '@hierarchidb/runtime-worker',
+        replacement: path.resolve(__dirname, '../../packages/runtime-worker/src/index.ts'),
+      },
+      {
+        find: '@hierarchidb/plugin-ui-host',
+        replacement: path.resolve(__dirname, '../../packages/plugin-ui-host/src/index.ts'),
+      },
+      {
+        find: '@hierarchidb/runtime-ui-datasource',
+        replacement: path.resolve(
+          __dirname,
+          '../../packages/runtime-worker-ui/datasource/src/index.ts',
+        ),
+      },
+      {
+        find: '@hierarchidb/ui-lru-splitview',
+        replacement: path.resolve(__dirname, '../../packages/ui/lru-splitview/src/index.ts'),
+      },
+      {
+        find: '@hierarchidb/auth-recovery',
+        replacement: path.resolve(__dirname, './src/headless/mocks/auth-recovery.ts'),
+      },
+      {
+        find: '@hierarchidb/resolver-plugin/database',
+        replacement: path.resolve(
+          __dirname,
+          '../../plugins/resolver-plugin/src/worker/database/index.ts',
+        ),
+      },
+      {
+        find: '@hierarchidb/location-plugin/database',
+        replacement: path.resolve(__dirname, '../../plugins/location-plugin/src/database/index.ts'),
+      },
+      {
+        find: '@hierarchidb/download',
+        replacement: path.resolve(__dirname, '../../packages/features/download/src/index.ts'),
+      },
+      {
+        find: /^@hierarchidb\/gen-iso3166-2\/browser$/,
+        replacement: path.resolve(
+          __dirname,
+          '../../packages/tools/gen-iso3166-2/src/browser.ts',
+        ),
+      },
+      {
+        find: /^@hierarchidb\/gen-iso3166-2$/,
+        replacement: path.resolve(
+          __dirname,
+          '../../packages/tools/gen-iso3166-2/src/index.ts',
+        ),
+      },
+      {
+        find: '~',
+        replacement: path.resolve(__dirname, './src'),
+      },
       // App client hook is now injected via registerWorkerClientHook in tests
-    },
+    ],
   },
 });

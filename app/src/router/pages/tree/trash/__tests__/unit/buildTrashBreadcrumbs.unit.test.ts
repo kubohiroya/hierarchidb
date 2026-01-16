@@ -18,11 +18,13 @@ function createNode(
     id: nodeId,
     parentId,
     nodeType: (overrides.nodeType ?? 'folder') as TreeNode['nodeType'],
-    metadata: {
-      name: overrides.name ?? `Node ${id}`,
-      description: overrides.description ?? '',
-      tags: [],
-    },
+    metadata:
+      overrides.metadata ??
+      {
+        name: overrides.name ?? `Node ${id}`,
+        description: overrides.description ?? '',
+        tags: [],
+      },
     draftMetadata: null,
     data: overrides.data ?? {},
     draftData: overrides.draftData ?? null,

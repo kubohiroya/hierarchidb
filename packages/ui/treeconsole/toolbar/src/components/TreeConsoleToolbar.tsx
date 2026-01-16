@@ -19,6 +19,8 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
     onAutosaveEnabledChange,
     dialogBackdropDismissEnabled = false,
     onDialogBackdropDismissEnabledChange,
+    zoomBandBoundaries,
+    onZoomBandBoundariesChange,
     canUndo = false,
     canRedo = false,
     canCopy = false,
@@ -65,6 +67,8 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
         onAutosaveEnabledChange={onAutosaveEnabledChange}
         dialogBackdropDismissEnabled={dialogBackdropDismissEnabled}
         onDialogBackdropDismissEnabledChange={onDialogBackdropDismissEnabledChange}
+        zoomBandBoundaries={zoomBandBoundaries}
+        onZoomBandBoundariesChange={onZoomBandBoundariesChange}
         canUndo={canUndo}
         canRedo={canRedo}
         canCopy={canCopy}

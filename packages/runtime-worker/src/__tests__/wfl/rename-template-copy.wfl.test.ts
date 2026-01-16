@@ -195,7 +195,7 @@ describe('WFL paste rename behavior for imported template', () => {
       nodeId: pastedRootId,
       name: populationFolder.metadata.name,
     });
-    expect(renameConflict.success).toBe(true);
+    expect(renameConflict.success).toBe(false);
 
     const finalRootChildren = await queryAPI.listChildren(rootId);
     const originalNameCount = finalRootChildren.filter(

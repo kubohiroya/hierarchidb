@@ -11,6 +11,7 @@ import type {
   ShapeBuildTaskRecord,
   ShapeBuildStage,
   ShapeTransformByBandCache,
+  ShapeTransformErrorRecord,
   ShapeFeatureMetadata,
   ShapeFetchCache,
   ShapeSourceMetadata,
@@ -50,4 +51,5 @@ export interface ShapeQueryAPI {
   listVTMetadata(nodeId: NodeId): Promise<ShapeVTMetadata[]>;
   listSourceMetadata(nodeId: NodeId): Promise<ShapeSourceMetadata[]>;
   listFeatureMetadata(nodeId: NodeId): Promise<ShapeFeatureMetadata[]>;
+  listTransformErrorRecords(nodeId: NodeId): Promise<ShapeTransformErrorRecord[]>;
 }

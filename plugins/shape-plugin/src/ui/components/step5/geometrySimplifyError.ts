@@ -1,9 +1,10 @@
 export type GeometrySimplifyErrorDetails = {
   stage?: string;
   reason?: string;
-  features?: string;
-  polygons?: string;
+  invalidFeatures?: string;
+  invalidPolygons?: string;
   missingGeometry?: string;
+  invalidGeometries?: string;
   invalidRings?: string;
   openRings?: string;
   emptyRings?: string;
@@ -47,11 +48,12 @@ export const parseGeometrySimplifyError = (message?: string | null): GeometrySim
       details.reason = content;
       return;
     }
-    if (content.startsWith('features=')) {
+    if (content.startsWith('invalidFeatures=')) {
       const values = parseKeyValueBlock(content);
-      details.features = values.features;
-      details.polygons = values.polygons;
+      details.invalidFeatures = values.invalidFeatures;
+      details.invalidPolygons = values.invalidPolygons;
       details.missingGeometry = values.missingGeometry;
+      details.invalidGeometries = values.invalidGeometries;
       return;
     }
     if (content.startsWith('invalidRings=')) {
@@ -88,9 +90,10 @@ export const formatGeometrySimplifySummary = (details: GeometrySimplifyErrorDeta
     lines.push(summaryParts.join(' | '));
   }
   const geometryParts = [
-    details.features ? `features=${details.features}` : null,
-    details.polygons ? `polygons=${details.polygons}` : null,
+    details.invalidFeatures ? `invalidFeatures=${details.invalidFeatures}` : null,
+    details.invalidPolygons ? `invalidPolygons=${details.invalidPolygons}` : null,
     details.missingGeometry ? `missingGeometry=${details.missingGeometry}` : null,
+    details.invalidGeometries ? `invalidGeometries=${details.invalidGeometries}` : null,
   ].filter(Boolean);
   if (geometryParts.length > 0) {
     lines.push(geometryParts.join(' '));

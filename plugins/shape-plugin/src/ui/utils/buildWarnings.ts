@@ -2,8 +2,7 @@ import type { CrashInsight } from '@hierarchidb/ui-monitoring';
 
 export type ShapeBuildStage =
   | 'fetch'
-  | 'transform-by-band'
-  | 'transform-by-zoom'
+  | 'transform'
   | 'vt';
 
 export type ShapeBuildConfigSnapshot = {
@@ -26,8 +25,7 @@ export const getStageConcurrencyWarning = (
     switch (stage) {
       case 'fetch':
         return snapshot?.downloadConcurrency;
-      case 'transform-by-band':
-      case 'transform-by-zoom':
+      case 'transform':
         return snapshot?.transformWorkers;
       case 'vt':
         return snapshot?.tileWorkers;
@@ -44,12 +42,11 @@ export const getStageConcurrencyWarning = (
 };
 
 export const getBuildConfigSnapshot = (config?: {
-  downloadConfig?: { maxConcurrent?: number };
-  transformByBandConfig?: { workers?: number };
-  transformByZoomConfig?: { workers?: number };
-  tileConfig?: { workers?: number };
+  fetchConfig?: { maxConcurrent?: number };
+  transformConfig?: { maxConcurrent?: number };
+  vtConfig?: { maxConcurrent?: number };
 }): ShapeBuildConfigSnapshot => ({
-  downloadConcurrency: config?.downloadConfig?.maxConcurrent,
-  transformWorkers: config?.transformByZoomConfig?.workers ?? config?.transformByBandConfig?.workers,
-  tileWorkers: config?.tileConfig?.workers,
+  downloadConcurrency: config?.fetchConfig?.maxConcurrent,
+  transformWorkers: config?.transformConfig?.maxConcurrent,
+  tileWorkers: config?.vtConfig?.maxConcurrent,
 });

@@ -10,9 +10,9 @@ const baseEntity = (batchDataSource: string): ShapeEntity => ({
   id: 'shape-node' as NodeId,
   nodeId: 'shape-node' as NodeId,
   licenseAgreement: false,
-  batchConfig: {
+  buildConfig: {
     ...DEFAULT_BUILD_CONFIG,
-    dataSource: batchDataSource as ShapeEntity['batchConfig']['dataSource'],
+    dataSourceName: batchDataSource as ShapeEntity['buildConfig']['dataSourceName'],
   },
   selectedArrayByCountries: {},
   processingStatus: 'idle',
@@ -22,7 +22,7 @@ describe('data source normalization', () => {
   it('normalizes entity data sources when building working copies', () => {
     const entity = baseEntity('naturalearth');
     const draft = createDraftFromEntity(entity);
-    expect(draft.draftData.buildConfig?.dataSource).toBe('naturalearth');
+    expect(draft.draftData.buildConfig?.dataSourceName).toBe('naturalearth');
   });
 
   it('normalizes draft updates before persisting', () => {
@@ -31,13 +31,13 @@ describe('data source normalization', () => {
       ...draft,
       draftData: {
         ...draft.draftData,
-        batchConfig: {
+        buildConfig: {
           ...draft.draftData.buildConfig,
-          dataSource: 'naturalearth',
+          dataSourceName: 'naturalearth',
         },
       },
     } as typeof draft;
     const updates = mapDraftToUpdates(mutated);
-    expect(updates.buildConfig?.dataSource).toBe('naturalearth');
+    expect(updates.buildConfig?.dataSourceName).toBe('naturalearth');
   });
 });

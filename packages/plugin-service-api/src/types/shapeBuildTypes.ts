@@ -3,7 +3,7 @@ import type { NodeId } from '@hierarchidb/common-types';
 export type ShapeDataSourceName = 'naturalearth' | 'geoboundaries' | 'gadm' | 'openstreetmap';
 export type ShapeBuildStage =
   | 'fetch'
-  | 'transform-by-band'
+  | 'transform'
   | 'transform-by-zoom'
   | 'vt';
 export type ShapeBuildTaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'regression';
@@ -232,4 +232,40 @@ export interface ShapeSourceMetadata {
   vtVertexCount?: number;
   vtPolygonCount?: number;
   bbox?: [number, number, number, number];
+}
+
+export type ShapeErrorLineString = {
+  type: 'LineString';
+  coordinates: number[][];
+};
+
+export type ShapeErrorLineFeature = {
+  type: 'Feature';
+  id?: string | number;
+  geometry: ShapeErrorLineString;
+  properties?: Record<string, unknown>;
+};
+
+export type ShapeErrorLineFeatureCollection = {
+  type: 'FeatureCollection';
+  features: ShapeErrorLineFeature[];
+};
+
+export interface ShapeTransformErrorRecord {
+  id: string;
+  nodeId: NodeId;
+  taskId: string;
+  stage: ShapeBuildStage;
+  bandId?: number;
+  sourceKey?: string;
+  countryCode?: string;
+  adminLevel?: number;
+  featureId?: string;
+  featureIndex?: number;
+  geometryType?: string;
+  polygonCount: number;
+  ringCount: number;
+  message?: string;
+  createdAt: number;
+  lineFeatures: ShapeErrorLineFeatureCollection;
 }

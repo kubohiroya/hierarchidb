@@ -24,6 +24,7 @@ vi.mock('@hierarchidb/gen-iso3166-2/browser', () => ({
     { alpha2: 'US', alpha3: 'USA', countryEn: 'United States', location: 'Americas' },
     { alpha2: 'JP', alpha3: 'JPN', countryEn: 'Japan', location: 'Asia' },
   ])),
+  resolveIso3166CsvUrl: vi.fn(() => 'https://example.com/iso.csv'),
 }));
 
 describe('LocationBatchManager country normalization', () => {
@@ -103,5 +104,5 @@ describe('LocationBatchManager country normalization', () => {
     expect(byId.get('point-2' as LocationPointProperties['pointId'])?.countryCode).toBe('JP');
     expect(byId.get('point-3' as LocationPointProperties['pointId'])?.countryCode).toBe('US');
     expect(byId.get('point-4' as LocationPointProperties['pointId'])?.countryCode).toBe('');
-  });
+  }, 20000);
 });

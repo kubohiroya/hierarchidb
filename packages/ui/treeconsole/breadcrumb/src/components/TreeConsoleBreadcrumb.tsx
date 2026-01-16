@@ -179,6 +179,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
 
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [pendingDeleteNodeId, setPendingDeleteNodeId] = useState<string | null>(null);
+  const [pendingDeleteNode, setPendingDeleteNode] = useState<BreadcrumbNode | null>(null);
 
   const [isNavigating, _setIsNavigating] = useState(false);
   const [hoverId, setHoverId] = useState<string | null>(null);
@@ -212,12 +213,13 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
   );
 
   const handleConfirmTrash = useCallback(async () => {
-    if (pendingDeleteNodeId && contextMenuNode && onContextAction) {
-      onContextAction('trash', contextMenuNode, { navigateToParent: true });
+    if (pendingDeleteNodeId && pendingDeleteNode && onContextAction) {
+      onContextAction('trash', pendingDeleteNode, { navigateToParent: true, source: 'breadcrumb' });
     }
     setConfirmDialogOpen(false);
     setPendingDeleteNodeId(null);
-  }, [contextMenuNode, onContextAction, pendingDeleteNodeId]);
+    setPendingDeleteNode(null);
+  }, [onContextAction, pendingDeleteNode, pendingDeleteNodeId]);
 
   const openContextMenu = (node: BreadcrumbNode, anchorEl: HTMLElement | null) => {
     if (!anchorEl) return;
@@ -283,6 +285,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
   const handleTrash = () => {
     if (contextMenuNode) {
       setPendingDeleteNodeId(contextMenuNode.id || contextMenuNode.id || '');
+      setPendingDeleteNode(contextMenuNode);
       setConfirmDialogOpen(true);
     }
   };

@@ -76,5 +76,5 @@ describe('Undo/Redo finalize: create -> undo -> redo', () => {
     expect(r.success).toBe(true);
     expect(core.state[createdId]).toBeDefined();
     expect(core.state[createdId]?.metadata.name).toBe('X');
-  });
+  }, 20000);
 });

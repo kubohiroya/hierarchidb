@@ -5,7 +5,7 @@ import type { NodeId } from './id-types.js';
  */
 export type BatchStage =
   | 'fetch'
-  | 'transform-by-band'
+  | 'transform'
   | 'transform-by-zoom'
   | 'vt'
   | 'completed'

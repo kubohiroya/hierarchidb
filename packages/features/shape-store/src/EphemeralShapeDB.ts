@@ -3,6 +3,7 @@ import type { NodeId } from '@hierarchidb/common-types';
 import type { Table } from 'dexie';
 import type { BuildProcessConfig, BuildTaskRecord, TaskStatus } from './ShapeDB.js';
 import type { FeatureBufferRecord, TileBufferRecord } from './ShapeDB.js';
+import type { ShapeTransformErrorRecord } from '@hierarchidb/plugin-service-api';
 import {
   EphemeralGisDB,
   type BatchSessionMetadata as BaseBuildSessionMetadata,
@@ -80,10 +81,11 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig> {
   declare transformByZoomCache: Table<TransformByZoomCacheRecord, string>;
   transformByZoomReservations!: Table<TransformByZoomReservation, string>;
   geojsonVtIndexes!: Table<GeojsonVtIndexRecord, string>;
+  transformErrors!: Table<ShapeTransformErrorRecord, string>;
 
   constructor() {
     super(getDBName('shape-ephemeral'));
-    this.version(11).stores({
+    this.version(12).stores({
       fetchCache: '&id, nodeId, timestamp',
       transformByBandCache: '&id, nodeId, bandId, domainType, sourceKey, [nodeId+bandId], [nodeId+bandId+sourceKey], countryCode, adminLevel, [nodeId+countryCode+adminLevel], timestamp',
       transformByZoomCache: '&id, nodeId, tileId, [nodeId+tileId], timestamp',
@@ -96,6 +98,7 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig> {
       tileIdToBufferRelations: '&id, nodeId, tileId, bufferId, [nodeId+tileId]',
       batchTasks: '&taskId, nodeId, [nodeId+status], [nodeId+taskType]',
       geojsonVtIndexes: '&id, nodeId, bufferId, [nodeId+bufferId], createdAt',
+      transformErrors: '&id, nodeId, taskId, bandId, sourceKey, [nodeId+taskId], [nodeId+bandId], [nodeId+sourceKey], createdAt',
     }).upgrade((tx) =>
       tx.table('batchTasks')
         .toCollection()
@@ -113,6 +116,7 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig> {
     this.transformByZoomCache = this.table('transformByZoomCache');
     this.transformByZoomReservations = this.table('transformByZoomReservations');
     this.geojsonVtIndexes = this.table('geojsonVtIndexes');
+    this.transformErrors = this.table('transformErrors');
   }
 
   async clearNodeData(nodeId: NodeId): Promise<void> {
@@ -125,13 +129,14 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig> {
     await this.transformByZoomCache.where('nodeId').equals(nodeId).delete();
     await this.transformByZoomReservations.where('nodeId').equals(nodeId).delete();
     await this.geojsonVtIndexes.where('nodeId').equals(nodeId).delete();
+    await this.transformErrors.where('nodeId').equals(nodeId).delete();
   }
 
   async hasStageData(nodeId: NodeId, stage: BaseEphemeralStage): Promise<boolean> {
     switch (stage) {
       case 'fetch':
         return (await this.fetchCache.where('nodeId').equals(nodeId).count()) > 0;
-      case 'transform-by-band':
+      case 'transform':
         return (await this.transformByBandCache.where('nodeId').equals(nodeId).count()) > 0;
       case 'transform-by-zoom':
         return (await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).count()) > 0;
@@ -155,13 +160,15 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig> {
       this.tileIdToBufferRelations,
       this.buildTasks,
       this.geojsonVtIndexes,
+      this.transformErrors,
     ], async () => {
       switch (stage) {
         case 'fetch':
           await this.fetchCache.where('nodeId').equals(nodeId).delete();
           break;
-        case 'transform-by-band':
+        case 'transform':
           await this.transformByBandCache.where('nodeId').equals(nodeId).delete();
+          await this.transformErrors.where('nodeId').equals(nodeId).delete();
           break;
         case 'transform-by-zoom':
           await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();
@@ -195,6 +202,7 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig> {
     await this.transformByZoomCache.clear();
     await this.transformByZoomReservations.clear();
     await this.geojsonVtIndexes.clear();
+    await this.transformErrors.clear();
   }
 
   async createBuildTask(

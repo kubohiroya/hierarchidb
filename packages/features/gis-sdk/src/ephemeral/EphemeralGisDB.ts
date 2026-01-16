@@ -1,7 +1,7 @@
 import { Dexie, type Table } from 'dexie';
 import type { NodeId } from '@hierarchidb/common-types';
 
-export type EphemeralStage = 'fetch' | 'transform-by-band' | 'transform-by-zoom' | 'vt';
+export type EphemeralStage = 'fetch' | 'transform' | 'transform-by-zoom' | 'vt';
 
 export interface FetchCacheRecord {
   id: string;
@@ -106,7 +106,7 @@ export class EphemeralGisDB<Config = unknown> extends Dexie {
     switch (stage) {
       case 'fetch':
         return (await this.fetchCache.where('nodeId').equals(nodeId).count()) > 0;
-      case 'transform-by-band':
+      case 'transform':
         return (await this.transformByBandCache.where('nodeId').equals(nodeId).count()) > 0;
       case 'transform-by-zoom':
         return (await this.transformByZoomCache.where('nodeId').equals(nodeId).count()) > 0;
@@ -129,7 +129,7 @@ export class EphemeralGisDB<Config = unknown> extends Dexie {
         case 'fetch':
           await this.fetchCache.where('nodeId').equals(nodeId).delete();
           break;
-        case 'transform-by-band':
+        case 'transform':
           await this.transformByBandCache.where('nodeId').equals(nodeId).delete();
           break;
         case 'transform-by-zoom':

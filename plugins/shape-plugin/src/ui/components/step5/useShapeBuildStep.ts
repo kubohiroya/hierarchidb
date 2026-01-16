@@ -239,17 +239,18 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         rows.forEach((task) => {
           const stageKey = task.taskType;
           const slot = ensure(stageKey);
-          slot.total += 1;
+          const weight = 1;
+          slot.total += weight;
           if (isSkippedMessage(task.message)) {
-            slot.skip += 1;
+            slot.skip += weight;
             return;
           }
           if (task.status === 'failed' || task.status === 'regression') {
-            slot.error += 1;
+            slot.error += weight;
             return;
           }
           if (task.status === 'completed') {
-            slot.success += 1;
+            slot.success += weight;
           }
         });
         setStageTaskSummary(summary);
@@ -311,7 +312,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     const interval = window.setInterval(() => {
       appendBuildSample(buildMonitorConfig, monitorKey, {
         timestamp: Date.now(),
-        stage: taskType as 'fetch' | 'transform-by-band' | 'transform-by-zoom' | 'vt' | undefined,
+        stage: taskType as 'fetch' | 'transform' | 'vt' | undefined,
         ...getMemorySnapshot(),
       });
     }, BUILD_MONITOR_SAMPLE_INTERVAL_MS);
@@ -370,17 +371,18 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         summary[stageKey] = { total: 0, completed: 0, failed: 0, skipped: 0 };
       }
       const bucket = summary[stageKey];
-      bucket.total += 1;
+      const weight = 1;
+      bucket.total += weight;
       if (isSkippedMessage(task.message)) {
-        bucket.skipped += 1;
+        bucket.skipped += weight;
         continue;
       }
       if (task.status === 'failed' || task.status === 'regression') {
-        bucket.failed += 1;
+        bucket.failed += weight;
         continue;
       }
       if (task.status === 'completed') {
-        bucket.completed += 1;
+        bucket.completed += weight;
       }
     }
     return summary;
@@ -388,17 +390,18 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const aggregatedCounts = useMemo(() => {
     const counts = { total: 0, completed: 0, failed: 0, skipped: 0 };
     displayTasks.forEach((task) => {
-      counts.total += 1;
+      const weight = 1;
+      counts.total += weight;
       if (isSkippedMessage(task.message)) {
-        counts.skipped += 1;
+        counts.skipped += weight;
         return;
       }
       if (task.status === 'failed' || task.status === 'regression') {
-        counts.failed += 1;
+        counts.failed += weight;
         return;
       }
       if (task.status === 'completed') {
-        counts.completed += 1;
+        counts.completed += weight;
       }
     });
     return counts;
@@ -561,59 +564,52 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     if (!lastUnfinishedStageId) return null;
     const stageTasks = tasksByStage[lastUnfinishedStageId] ?? [];
     if (!stageTasks.length) return null;
-    const completedCount = stageTasks.filter((task) => task.status === 'completed' && !isSkippedMessage(task.message)).length;
-    const failedCount = stageTasks.filter((task) => task.status === 'failed' || task.status === 'regression').length;
-    const skippedCount = stageTasks.filter((task) => isSkippedMessage(task.message)).length;
-    return {
-      total: Math.max(0, stageTasks.length - skippedCount),
-      completed: completedCount,
-      failed: failedCount,
-      skipped: skippedCount,
-    };
+    const counts = { total: 0, completed: 0, failed: 0, skipped: 0 };
+    stageTasks.forEach((task) => {
+      const weight = 1;
+      counts.total += weight;
+      if (isSkippedMessage(task.message)) {
+        counts.skipped += weight;
+        return;
+      }
+      if (task.status === 'failed' || task.status === 'regression') {
+        counts.failed += weight;
+        return;
+      }
+      if (task.status === 'completed') {
+        counts.completed += weight;
+      }
+    });
+    return counts;
   }, [lastUnfinishedStageId, tasksByStage]);
   const rawDisplayCounts = useMemo(() => {
-    const applySkippedAdjustment = (next: { total: number; completed: number; failed: number; skipped: number; percentage: number }) => {
-      if (next.skipped === 0) return next;
-      if (next.completed + next.failed + next.skipped < next.total) return next;
-      const effectiveTotal = Math.max(0, next.total - next.skipped);
-      const effectiveCompleted = Math.min(next.completed, effectiveTotal);
-      const effectiveFailed = Math.min(next.failed, Math.max(0, effectiveTotal - effectiveCompleted));
-      const percentage = effectiveTotal > 0
-        ? Math.round(((effectiveCompleted + effectiveFailed) / effectiveTotal) * 100)
-        : 100;
-      return {
-        ...next,
-        total: effectiveTotal,
-        completed: effectiveCompleted,
-        failed: effectiveFailed,
-        percentage,
-      };
+    const computePercentage = (counts: { total: number; completed: number; failed: number; skipped: number }) => {
+      const done = counts.completed + counts.failed + counts.skipped;
+      return counts.total > 0 ? Math.round((done / counts.total) * 100) : 0;
     };
     if (total === 0 && completed === 0 && failed === 0 && skipped === 0 && aggregatedCounts.total > 0) {
-      return applySkippedAdjustment({
+      return {
         ...aggregatedCounts,
-        percentage: Math.round(((aggregatedCounts.completed + aggregatedCounts.failed) / aggregatedCounts.total) * 100),
-      });
+        percentage: computePercentage(aggregatedCounts),
+      };
     }
     if (total === 0 && completed === 0 && failed === 0 && skipped === 0 && summaryCounts.total > 0) {
-      return applySkippedAdjustment({
+      return {
         ...summaryCounts,
-        percentage: Math.round(((summaryCounts.completed + summaryCounts.failed) / summaryCounts.total) * 100),
-      });
+        percentage: computePercentage(summaryCounts),
+      };
     }
     if (buildStatus === 'running' && total === 0 && completed === 0 && failed === 0 && skipped === 0 && derivedCounts?.total) {
-      return applySkippedAdjustment({
+      return {
         ...derivedCounts,
-        percentage: Math.round((derivedCounts.completed / derivedCounts.total) * 100),
-      });
+        percentage: computePercentage(derivedCounts),
+      };
     }
-    return applySkippedAdjustment({
-      total,
-      completed,
-      failed,
-      skipped,
-      percentage: Math.round(overallProgress),
-    });
+    const baseCounts = { total, completed, failed, skipped };
+    return {
+      ...baseCounts,
+      percentage: total > 0 ? computePercentage(baseCounts) : Math.round(overallProgress),
+    };
   }, [aggregatedCounts, summaryCounts, buildStatus, completed, derivedCounts, failed, overallProgress, skipped, total]);
   useEffect(() => {
     if (rawDisplayCounts.total > 0) {
@@ -653,6 +649,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       ?? effectiveStatus?.error
       ?? t('stage.progress.working', 'Working...');
   })();
+  const taskUnitLabel = t('stage.progress.taskUnitTasks', 'Tasks');
 
   const isProcessingValid = useMemo(() => {
     if (!data?.buildConfig) return false;
@@ -741,6 +738,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     overallProgress: displayCounts.percentage,
     stageLabel: displayStageLabel,
     taskLabel,
+    taskUnitLabel,
     statusLabel: effectiveStatusLabel,
     completed: displayCounts.completed,
     total: displayCounts.total,

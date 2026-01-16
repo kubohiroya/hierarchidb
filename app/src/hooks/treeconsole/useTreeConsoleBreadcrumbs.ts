@@ -71,13 +71,26 @@ export function useTreeConsoleBreadcrumbs({
         }
 
         const queryAPI = await client.getQueryAPI();
-        const subscriptionAPI = await client.getSubscriptionAPI();
+        const subscriptionAPI =
+          typeof client.getSubscriptionAPI === 'function'
+            ? await client.getSubscriptionAPI()
+            : null;
         const ancestors = await queryAPI.listAncestors(pageTreeNode.id as NodeId);
+        const parentMap = new Map<string, string | null>();
+        for (let i = 0; i < ancestors.length; i += 1) {
+          const node = ancestors[i];
+          if (!node) {
+            continue;
+          }
+          const parent = i > 0 ? ancestors[i - 1]?.id ?? null : null;
+          parentMap.set(String(node.id), parent ? String(parent) : null);
+        }
         let nodes: BreadcrumbNode[] = ancestors.map((n) => ({
           id: n.id,
           name: n.metadata?.name ?? '',
           nodeType: n.nodeType,
           visible: n.visible,
+          parentId: parentMap.get(String(n.id)) ?? null,
         }));
 
         if (nodes.length + 1 > resolvedMaxBreadcrumbItems) {
@@ -98,40 +111,43 @@ export function useTreeConsoleBreadcrumbs({
           name: pageTreeNode.metadata?.name ?? '',
           nodeType: pageTreeNode.nodeType,
           visible: pageTreeNode.visible,
+          parentId: pageTreeNode.parentId ? String(pageTreeNode.parentId) : null,
         };
 
         if (!disposed) {
           setBreadcrumbItems([...nodes, currentBreadcrumb]);
         }
 
-        const targetIds = [...ancestors.map((a) => a.id as NodeId), pageTreeNode.id as NodeId];
-        const cb = comlinkProxy((event: unknown) => {
-          const ev = event as { nodeId?: string; node?: TreeNode };
-          const changedId = ev?.nodeId || ev?.node?.id;
-          if (!changedId) return;
-          setBreadcrumbItems((prev) =>
-            prev.map((item) => {
-              if (String(item.id) !== String(changedId)) return item;
-              const nextName = ev.node?.metadata?.name ?? item.name;
-              const nextNodeType = ev.node?.nodeType ?? item.nodeType;
-              const nextVisible =
-                typeof ev.node?.visible === 'boolean' ? ev.node?.visible : item.visible;
-              return {
-                ...item,
-                name: nextName,
-                nodeType: nextNodeType,
-                visible: nextVisible,
-              };
-            }),
-          );
-        });
+        if (subscriptionAPI) {
+          const targetIds = [...ancestors.map((a) => a.id as NodeId), pageTreeNode.id as NodeId];
+          const cb = comlinkProxy((event: unknown) => {
+            const ev = event as { nodeId?: string; node?: TreeNode };
+            const changedId = ev?.nodeId || ev?.node?.id;
+            if (!changedId) return;
+            setBreadcrumbItems((prev) =>
+              prev.map((item) => {
+                if (String(item.id) !== String(changedId)) return item;
+                const nextName = ev.node?.metadata?.name ?? item.name;
+                const nextNodeType = ev.node?.nodeType ?? item.nodeType;
+                const nextVisible =
+                  typeof ev.node?.visible === 'boolean' ? ev.node?.visible : item.visible;
+                return {
+                  ...item,
+                  name: nextName,
+                  nodeType: nextNodeType,
+                  visible: nextVisible,
+                };
+              }),
+            );
+          });
 
-        for (const id of targetIds) {
-          try {
-            const subId = await subscriptionAPI.subscribeNode(id as NodeId, cb);
-            activeSubs.push(subId);
-          } catch {
-            // best-effort; skip failures
+          for (const id of targetIds) {
+            try {
+              const subId = await subscriptionAPI.subscribeNode(id as NodeId, cb);
+              activeSubs.push(subId);
+            } catch {
+              // best-effort; skip failures
+            }
           }
         }
       } catch {
@@ -152,6 +168,9 @@ export function useTreeConsoleBreadcrumbs({
       const cleanup = async () => {
         if (!client) return;
         try {
+          if (typeof client.getSubscriptionAPI !== 'function') {
+            return;
+          }
           const subscriptionAPI = await client.getSubscriptionAPI();
           await Promise.all(
             subscriptionsRef.current.map(async (subId) => {

@@ -56,7 +56,11 @@ describe('folder commit clears draft and keeps metadata (empty payload)', () => 
     expect(stored).toBeDefined();
     expect((stored as { data?: unknown }).data).toBeNull();
     expect((stored as { draftData?: unknown }).draftData).toBeNull();
-    expect((stored as { draftMetadata?: unknown }).draftMetadata).toBeNull();
+    expect((stored as { draftMetadata?: unknown }).draftMetadata).toEqual({
+      name: 'Final Name',
+      description: 'desc',
+      tags: ['a'],
+    });
     expect((stored as { metadata?: unknown }).metadata).toEqual({
       name: 'Final Name',
       description: 'desc',

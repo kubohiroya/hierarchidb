@@ -1,3 +1,215 @@
+2214) feat/ui-map/fit-screen-button (P1) — 進行中 (2026-01-18)
+- ブランチ名: feat/ui-map/fit-screen-button
+- 依存: なし
+- 受け入れ基準: ui-map に FitScreen アイコンボタンが表示される（デフォルトON）／選択フィーチャーが0件のときはボタンが disabled になる／ボタン押下で選択フィーチャー全体のバウンディングボックスを算出し、最小フィットの視野へ遷移する／既存の地図操作に副作用がない
+- 影響範囲: `app/src/**` `packages/**`（調査後に確定）
+- ロールバック手順: 追加したボタン表示とフィット処理の差分を revert し、ui-map のツールバーとカメラ制御を修正前に戻す
+- チェックリスト:
+  - FitScreen ボタンの表示条件と disabled 条件を追加する
+  - 選択フィーチャーのバウンディングボックス算出処理を実装する
+  - BBox から最小フィット視野へ遷移する処理を実装する
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-18 12:00 JST ui-map FitScreen ボタン表示と選択フィーチャーのフィット表示対応に着手。
+  - update: 2026-01-18 12:05 JST FitScreen ボタン表示/disabled 条件と選択フィーチャーの fitBounds 処理を実装。
+  - blocked: 2026-01-18 12:10 JST pnpm typecheck が @hierarchidb/shape-store build:types の ShapeTransformErrorRecord 未export で失敗。
+
+2213) feat/shape/step4-zoom-band-accordion-layout (P1) — 進行中 (2026-01-17)
+- ブランチ名: feat/shape/step4-zoom-band-accordion-layout
+- 依存: なし
+- 受け入れ基準: Step4 のズーム帯範囲カードが horizontal/vertical をプロパティで切替できる／ズーム帯範囲カードと共通ズーム帯反映ボタンが Transform アコーディオンから 0 番目の新規アコーディオンへ移設される／0 番目アコーディオンのサマリーにルーペアイコンと「ズーム帯の設定」見出しが表示される／0 番目アコーディオンのディティールでズーム帯範囲カードが horizontal で表示される／既存挙動が壊れない
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/*`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、Step4 のアコーディオン構成とズーム帯カード配置を修正前に戻す
+- チェックリスト:
+  - Step4 のズーム帯範囲カードに並び方向プロパティを追加する
+  - ズーム帯範囲カード/共通ズーム帯反映ボタンを新規アコーディオンへ移設する
+  - 新規アコーディオンのサマリーにルーペアイコンと見出しを表示する
+  - ディティールでズーム帯範囲カードを horizontal 表示にする
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-17 22:10 JST Step4 ズーム帯範囲カードの配置変更と並び方向切替対応に着手。
+  - update: 2026-01-17 22:30 JST ズーム帯設定アコーディオンの追加とカード/ボタン移設、カードの並び方向切替を実装。
+  - update: 2026-01-17 22:35 JST pnpm typecheck を実行（初回 timeout のため再実行、exit 0）。
+  - update: 2026-01-17 22:45 JST ズーム帯の範囲設定カード内スライダー水平配置の gap 調整に着手。
+  - update: 2026-01-17 22:50 JST ズーム帯の範囲設定カード内の水平スライダー間隔を 16px に調整。
+  - update: 2026-01-17 23:20 JST ズーム帯設定/キャッシュ管理の見出し更新、即時削除カードの移設、ズーム帯説明をツールチップ化。
+  - blocked: 2026-01-17 23:25 JST pnpm typecheck が plugins/shape-plugin/src/worker/api.ts の既存エラーで失敗。
+  - update: 2026-01-17 23:35 JST ズーム帯スライダー間隔を margin 指定で 16px 相当に調整。
+  - update: 2026-01-17 23:45 JST pnpm typecheck を実行（exit 0）。
+  - update: 2026-01-17 23:55 JST Fetch設定のアコーディオン見出しからキャッシュ管理表記を削除。
+  - update: 2026-01-18 00:05 JST ズーム帯設定/キャッシュ管理の表記にスペースを追加し、設定アイコンに変更。
+  - update: 2026-01-18 00:20 JST 中間生成物の保持カードをズーム帯設定へ移設し、Fetch設定の見出しを更新。
+  - update: 2026-01-18 00:25 JST pnpm typecheck を実行（exit 0）。
+  - update: 2026-01-18 00:40 JST ズーム帯スライダー間隔を Grid の columnSpacing=2 で確実に確保。
+  - update: 2026-01-18 00:45 JST pnpm typecheck を実行（exit 0）。
+  - update: 2026-01-18 00:55 JST ズーム帯スライダー間に 16px のスペーサー Grid を追加。
+  - update: 2026-01-18 01:00 JST pnpm typecheck を実行（exit 0）。
+  - update: 2026-01-18 01:10 JST ズーム帯スライダー間を Grid アイテムの左右 padding で 16px 確保。
+  - update: 2026-01-18 01:15 JST pnpm typecheck を実行（exit 0）。
+  - update: 2026-01-18 01:30 JST ズーム帯スライダー間の左右 padding を 16px に調整。
+  - update: 2026-01-18 01:35 JST Fetch設定のレイアウトを 1/3+1/6*4 に変更し、リトライ最大5回に制限。
+  - update: 2026-01-18 02:10 JST ズーム帯スライダー間隔を Grid の columnSpacing で 16px に調整する対応に着手。
+  - update: 2026-01-18 02:12 JST ズーム帯スライダー間を columnSpacing=2（16px）で確保。
+  - update: 2026-01-18 02:20 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-18 02:45 JST Step4 Transform の面積フィルター設定が Transform ステージ処理で利用されているかを調査。
+  - update: 2026-01-18 02:55 JST Transform アコーディオンからズーム帯の一覧カードを削除。
+  - update: 2026-01-18 03:10 JST Transform ステージの面積フィルター適用を無効化。
+  - update: 2026-01-18 03:25 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-18 03:45 JST geometry simplify error の features/polygons 表記を invalidFeatures/invalidPolygons に改名。
+  - update: 2026-01-18 04:00 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-18 04:25 JST TransformConfig を ringFix/selfIntersection の階層化と係数設定に合わせて更新。
+  - update: 2026-01-18 05:15 JST Transform の簡略化前に ringFix/selfIntersection を適用する処理を追加。
+  - blocked: 2026-01-18 05:30 JST pnpm typecheck が vt-orchestrator の Geometry 修正に伴う型エラーで失敗。
+  - update: 2026-01-18 05:40 JST vt-orchestrator の Geometry 修正を反映し、pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - blocked: 2026-01-18 06:05 JST pnpm install --frozen-lockfile が pnpm store への symlink で EPERM により失敗（sandbox 制限）。
+  - blocked: 2026-01-18 06:10 JST CI=true pnpm install --frozen-lockfile --store-dir .pnpm-store が registry ENOTFOUND と store 内容不一致（@turf/simplify）で失敗。
+  - blocked: 2026-01-18 06:15 JST pnpm build が dep-fence 未解決（node_modules 未整備）で失敗。
+  - blocked: 2026-01-18 06:20 JST pnpm typecheck が turbo 未導入（node_modules 未整備）で失敗。
+  - update: 2026-01-18 06:55 JST pnpm build を実行（exit 0、eslint-plugin-storybook 無効化の警告あり）。
+  - update: 2026-01-18 07:00 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - blocked: 2026-01-18 07:05 JST pnpm test が resolver-plugin の import 失敗（~/worker/ResolverEntityService.ts）、runtime-worker の util dist 参照不一致（format.js 不在）、styler-plugin の setup.ts 不在で失敗。
+  - start: 2026-01-18 07:15 JST pnpm test の resolver-plugin/util/styler-plugin 失敗を修正する作業に着手。
+  - update: 2026-01-18 07:35 JST pnpm test の残存失敗（basemap/styler の ui-i18n / ui-worker-client 解決）に対応する作業に着手。
+  - blocked: 2026-01-18 11:25 JST pnpm test が runtime-worker（import-export/auth-recovery の dist 解決で Class extends undefined）、shape-plugin（gen-iso3166-2/browser 未解決、useBuildProgress パス不整合）で失敗。
+  - blocked: 2026-01-18 04:40 JST pnpm typecheck が gis-sdk の dist 型未更新で失敗。
+  - update: 2026-01-18 04:45 JST pnpm --filter @hierarchidb/gis-sdk build を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-18 04:50 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-18 01:40 JST pnpm typecheck を実行（exit 0）。
+  - update: 2026-01-16 08:16 JST Fetch設定アコーディオンのサマリー文言を「Fetch設定」へ変更。
+  - update: 2026-01-16 08:16 JST pnpm build を実行（exit 0）。
+  - blocked: 2026-01-16 08:16 JST pnpm typecheck が @hierarchidb/vt-orchestrator の BuildTaskType あエラーで失敗（packages/vt-orchestrator/src/types/_BuildConfig.ts）。
+  - update: 2026-01-16 11:37 JST pnpm test の残存失敗が location-plugin のテストであることを確認し、修正に着手。
+  - update: 2026-01-16 11:56 JST pnpm test の app テスト失敗（worker preload/maplibre）対応に着手。
+  - update: 2026-01-18 08:40 JST ズーム帯スライダー間隔の 16px padding 適用と Fetch 設定レイアウト/リトライ上限調整に着手。
+  - blocked: 2026-01-18 08:45 JST pnpm --filter @hierarchidb/shape-plugin typecheck が utils.ts の DataSourceName 型エラー（TS2322）で失敗。
+  - update: 2026-01-18 08:50 JST utils.ts の buildConfig 正規化を修正し、pnpm --filter @hierarchidb/shape-plugin typecheck を再実行（exit 0）。
+  - update: 2026-01-18 09:05 JST 再ビルド時に fetch タスクを再利用しないよう fetch ステージの旧タスク削除を追加し、pnpm --filter @hierarchidb/shape-plugin typecheck を実行（exit 0）。
+  - update: 2026-01-18 09:15 JST Step5 fetch タスク数が実行中に増殖し続ける問題の調査と修正に着手。
+  - update: 2026-01-18 09:35 JST fetch ステージの進捗カウントをタスク数ベースに切り替え、表示単位をタスク/ポリゴンで切替。pnpm --filter @hierarchidb/shape-plugin typecheck（exit 0）。
+  - update: 2026-01-18 10:05 JST transform タスクの outputData に処理済み/総ポリゴン数を書き込み、タスク進捗をポリゴン比率で算出。サマリーはタスク件数集計へ切替。pnpm --filter @hierarchidb/shape-plugin typecheck（exit 0）。
+
+2211) plan/shape/3stage-vt-pipeline-execplan (P1) — 進行中 (2026-01-16)
+- ブランチ名: plan/shape/3stage-vt-pipeline-execplan
+- 依存: なし
+- ExecPlan: `plans/shape-3stage-vt-pipeline-execplan.md`
+- 受け入れ基準: 3段階（fetch→transform→vt）の再編に向けた ExecPlan が PLANS.md 準拠で作成されている／実施項目が分割され依存関係・DoD・ロールバックが明記されている／TASKS.md の運用ログに記録されている
+- 影響範囲: `plans/shape-3stage-vt-pipeline-execplan.md`, `TASKS.md`
+- ロールバック手順: ExecPlan 作成差分を revert する
+- チェックリスト:
+  - ExecPlan を作成する
+  - 実施項目を小分割して依存関係を明記する
+  - 受け入れ基準とロールバックを明記する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-16 16:07 JST 3段階再編のための ExecPlan 作成に着手。
+  - update: 2026-01-16 16:10 JST 実施項目の分割と ExecPlan 作成の下準備に着手。
+  - update: 2026-01-16 16:15 JST ExecPlan 初版を作成（plans/shape-3stage-vt-pipeline-execplan.md）。
+  - update: 2026-01-16 16:25 JST 設計方針レビューでプロパティ名とステージ表記を確定し、ExecPlan を更新。
+  - update: 2026-01-16 16:35 JST ExecPlan に Milestone 詳細を追記し、Progress を更新。
+  - update: 2026-01-16 17:05 JST transform-by-band/TransformByBandConfig の名称統一（transform/TransformConfig）に対応する作業に着手。
+  - update: 2026-01-16 18:10 JST transform ステージ/TransformConfig への名称統一と UI/テンプレート/型の更新を実施。検証: pnpm --filter @hierarchidb/gis-sdk build（exit 0、tsdown define 警告あり）/ pnpm typecheck（exit 0）。
+  - update: 2026-01-16 18:40 JST ツールバーメニューの Zoom bands 文言を新仕様に合わせて更新する作業に着手。
+  - update: 2026-01-16 18:45 JST ツールバーメニューの Zoom bands 文言を Transform 設定に合わせた説明へ更新。検証: 未実施。
+  - update: 2026-01-16 19:10 JST Step4 のズーム帯範囲 UI（境界スライダー/一覧表示）を追加する対応に着手。
+  - blocked: 2026-01-16 19:25 JST pnpm typecheck が zoomBands.ts/TransformConfigSection 由来の型エラーで失敗。
+  - update: 2026-01-16 19:35 JST ズーム帯範囲 UI と transformConfig を更新し、pnpm --filter @hierarchidb/gis-sdk build（exit 0、tsdown define 警告あり）/ pnpm typecheck（exit 0）を確認。
+
+2212) fix/shape/geometry-simplify-invalid-polygon (P1) — 進行中 (2026-01-17)
+- ブランチ名: fix/shape/geometry-simplify-invalid-polygon
+- 依存: なし
+- 受け入れ基準: geometrySimplify の invalid polygon エラーの原因・発生範囲・修正方法と適用範囲を説明できる／失敗時の挙動が仕様として明確（停止 or 継続）が明記されている／同じ入力で失敗しない（もしくは意図した失敗として明確なログが出る）／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/*`, `packages/features/gis-sdk/src/*`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、geometrySimplify のエラーハンドリングを修正前に戻す
+- チェックリスト:
+  - invalid polygon の再現条件と発生箇所を特定する
+  - エラーハンドリング方針（停止 or 継続）を明文化する
+  - 修正を実装し、同一入力での挙動を確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - update: 2026-01-16 12:46 JST transform の quantize/clean/simplify の呼び出し順と後処理の確認に着手。
+  - start: 2026-01-16 13:00 JST quantize の UI 設定値を transform のスナップ解像度に反映する対応に着手。
+  - blocked: 2026-01-16 13:02 JST pnpm typecheck が vt-orchestrator build:types の TransformConfig.quantize 未定義で失敗。
+  - update: 2026-01-16 13:02 JST pnpm --filter @hierarchidb/gis-sdk build を実行し d.ts を更新。
+  - done: 2026-01-16 13:02 JST quantize のスナップ解像度反映を実装し、pnpm typecheck（exit 0）を確認。
+  - start: 2026-01-16 13:09 JST transform の簡略化エラーポリゴン保存と Step5/6 表示拡張に着手。
+  - update: 2026-01-17 16:20 JST 進捗表示の算出/色分けをタスク単位で再設計する調査と実装に着手。
+  - start: 2026-01-17 09:00 JST geometrySimplify の invalid polygon エラー調査と修正に着手。
+  - update: 2026-01-17 12:10 JST simplify 以外で投げられる invalid polygon 例外を捕捉し、詳細診断を errorMessage に含める対応に着手。
+  - update: 2026-01-17 12:25 JST transform 全体を try/catch で包み、input/simplified/output の診断を errorMessage に付与。
+  - update: 2026-01-17 12:35 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 12:50 JST decode/simplify/encode の失敗箇所を stage ラベルで包む診断を追加。
+  - blocked: 2026-01-17 12:55 JST pnpm typecheck が vt-orchestrator の null 型エラーで失敗。
+  - update: 2026-01-17 13:00 JST inputCollection の null ガードを追加し、catch 内参照を修正。
+  - update: 2026-01-17 13:10 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 13:20 JST filter/boundary も stage ラベルで包む診断を追加。
+  - blocked: 2026-01-17 13:25 JST pnpm typecheck が vt-orchestrator の括弧不足で失敗。
+  - update: 2026-01-17 13:30 JST filter ラップの括弧を修正。
+  - blocked: 2026-01-17 13:35 JST pnpm typecheck が workingCollection null 判定で失敗。
+  - update: 2026-01-17 13:40 JST filterTarget の null ガードを追加。
+  - update: 2026-01-17 13:50 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 14:05 JST counts 系の集計も stage ラベルで包む診断を追加。
+  - update: 2026-01-17 14:10 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 14:30 JST stageLabel を追加し、未ラップ例外でも stage を付与。
+  - update: 2026-01-17 14:35 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 09:35 JST quantize 後に連続同一点を統合する対応に着手。
+  - update: 2026-01-17 10:10 JST quantize 後に cleanCoords を適用する対応に着手。
+  - blocked: 2026-01-17 10:15 JST pnpm typecheck が @turf/clean-coords 未導入で失敗。
+  - update: 2026-01-17 10:20 JST gis-sdk に @turf/clean-coords を追加。
+  - blocked: 2026-01-17 10:25 JST pnpm install が pnpm store の symlink で EPERM。
+  - update: 2026-01-17 10:30 JST pnpm install を再実行（昇格あり）で依存追加を反映。
+  - update: 2026-01-17 10:40 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 10:50 JST cleanCoords の import を @turf/turf へ変更し Vite 解決エラーを回避。
+  - blocked: 2026-01-17 10:55 JST pnpm typecheck が @turf/turf に cleanCoords が無い旨で失敗。
+  - update: 2026-01-17 11:00 JST cleanCoords を @turf/clean-coords へ戻し、app に依存を追加。
+  - update: 2026-01-17 11:05 JST pnpm install を再実行（exit 0）。
+  - update: 2026-01-17 11:10 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 11:20 JST transform 側に cleanCoords を追加する対応に着手。
+  - update: 2026-01-17 11:25 JST transform の snap 後に cleanCoords を適用するよう更新。
+  - update: 2026-01-17 11:30 JST vt-orchestrator に @turf/clean-coords を追加。
+  - update: 2026-01-17 11:35 JST pnpm install を再実行（exit 0、peer 警告あり）。
+  - update: 2026-01-17 11:40 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 11:50 JST transform の snap/clean 前後で booleanValid/minRingArea をログ出力する診断を追加。
+  - update: 2026-01-17 11:55 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - blocked: 2026-01-17 09:45 JST pnpm typecheck が gis-sdk/geometryExtract の undefined 指摘で失敗。
+  - update: 2026-01-17 09:50 JST 連続点統合のガードを修正し再実装。
+  - update: 2026-01-17 09:55 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 09:05 JST invalid polygon 時は停止（継続しない）方針で合意。
+  - update: 2026-01-17 09:15 JST geometry simplify 失敗時に booleanValid 判定と invalidFeatures をログへ追加。
+  - update: 2026-01-17 09:25 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 15:10 JST quantize 後に頂点数が 2 以下になるポリゴン/穴の除去有無を確認し、未実装なら追加する対応に着手。
+  - update: 2026-01-17 15:20 JST geometryExtract の quantize 後に頂点数が 2 以下のポリゴン/穴を持つポリゴンを除去する処理を追加。
+  - blocked: 2026-01-17 15:30 JST pnpm typecheck が gis-sdk の geometryExtract で null 型不整合のため失敗。
+  - update: 2026-01-17 15:35 JST quantizeGeometry を null 戻りとし FeatureCollection から除外するよう補正。
+  - blocked: 2026-01-17 15:45 JST pnpm typecheck が vt-orchestrator の createTransformByBandHandler.ts 構文エラーで失敗。
+  - update: 2026-01-17 15:55 JST createTransformByBandHandler の try/catch 構文を修正。
+  - update: 2026-01-17 16:05 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 23:10 JST 進捗表示をポリゴン数ベースに切り替える実装に着手。
+  - blocked: 2026-01-17 23:20 JST pnpm typecheck が shape-plugin の taskProgressWeights 型不整合で失敗。
+  - update: 2026-01-17 23:25 JST taskProgressWeights の型を補正し、pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 23:30 JST 進捗表示をポリゴン数ベースで集計する変更を完了。
+  - update: 2026-01-17 23:40 JST Step5 進捗バーrect幅の隙間解消対応に着手。
+  - update: 2026-01-17 23:45 JST rect幅を Math.ceil+1 で補正し、pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-18 00:05 JST Step5 進捗バーrect幅の隙間解消のため Math.ceil+2 に変更する対応に着手。
+  - blocked: 2026-01-18 00:10 JST pnpm typecheck が resolver-plugin の型エラーで失敗。
+  - update: 2026-01-18 00:12 JST resolver-plugin の型エラー修正に着手。
+  - blocked: 2026-01-18 00:20 JST pnpm typecheck が basemap-plugin の未使用変数で失敗。
+  - update: 2026-01-18 00:22 JST basemap-plugin の未使用変数修正に着手。
+  - blocked: 2026-01-18 00:30 JST pnpm typecheck が app のユニットテスト型エラーで失敗。
+  - update: 2026-01-18 00:32 JST app テストの型エラー修正に着手。
+  - update: 2026-01-18 00:40 JST basemap/resolver/app の型エラーを解消し、pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - blocked: 2026-01-18 12:30 JST pnpm typecheck が app/src/router/routes/map/MapPage.tsx の bounds 型エラーで失敗。
+  - update: 2026-01-18 12:35 JST MapPage の bounds 算出を reduce で整理し、型エラーの解消に着手。
+  - update: 2026-01-18 12:40 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - done: 2026-01-18 12:42 JST transform エラーポリゴンの保存/Step6 エラー一覧/プレビュー表示の対応を完了。
+  - start: 2026-01-18 12:50 JST transformErrors が存在する場合も Step5→Step6 遷移を有効化する対応に着手。
+  - blocked: 2026-01-18 13:00 JST pnpm typecheck が shape-plugin の未使用変数（useShapeBuildStep.ts の stageKey、worker/api.ts の nodeId）で失敗。
+  - update: 2026-01-18 13:15 JST 未使用変数の修正後、pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - done: 2026-01-18 13:20 JST transformErrors が存在する場合も Step5→Step6 遷移を有効化する対応を完了。
+  - update: 2026-01-18 00:42 JST Step5 rect幅を Math.ceil+2 に更新し、隙間解消対応を完了。
+
+
 2210) refactor/gis-sdk/require-build-config-properties (P1) — 進行中 (2026-01-16)
 - ブランチ名: refactor/gis-sdk/require-build-config-properties
 - 依存: なし
@@ -57,6 +269,63 @@
   - update: 2026-01-16 12:40 JST Step5 fetch でオフライン時に raw data キャッシュが無ければ外部アクセスせずエラーにする分岐を追加。検証: 未実施。
   - update: 2026-01-16 12:55 JST pnpm typecheck を実行し成功（exit 0）。
   - update: 2026-01-16 12:25 JST pnpm typecheck を実行し成功（exit 0）。
+
+2209) feat/ui/toolbar-zoom-bands-settings (P1) — 進行中 (2026-01-15)
+- ブランチ名: feat/ui/toolbar-zoom-bands-settings
+- 依存: なし
+- 受け入れ基準: ツールバーの設定メニューから Zoom bands の共通設定を編集できる／変更が shape Step4 の初期値に反映される／保存先が明確で再読込できる／pnpm typecheck が通る／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/util/src/treeConsoleSettings.ts`, `packages/ui/treeconsole/toolbar/src/components/toolbar/SettingsMenu.tsx`, `packages/ui/treeconsole/toolbar/src/components/toolbar/TreeConsoleToolbarContent.tsx`, `app/src/router/pages/tree/console/useTreeConsoleToolbarActions.ts`, `plugins/shape-plugin/src/ui/components/step4/useShapeBuildConfigStep.ts`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、ツールバーからの共通設定と初期値反映を修正前に戻す
+- チェックリスト:
+  - Zoom bands 共通設定の保存先と読み取りを決める
+  - 設定メニューに編集UIを追加する
+  - shape Step4 の初期値へ設定を反映する
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-01-15 21:05 JST Zoom bands の共通設定をツールバーから編集する対応に着手。
+  - update: 2026-01-16 21:20 JST DoD 合意の上で実装作業を開始。
+  - update: 2026-01-16 21:40 JST ツールバー設定に Zoom bands の共通設定UIを追加し、shape Step4 初期値へ反映。検証: pnpm typecheck（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-16 21:55 JST 共通ズーム帯設定が新規 Shape/Route ビルドのデフォルトに使われる旨の文言を更新。検証: 未実施。
+  - update: 2026-01-16 22:10 JST DoD 合意の上で共通ズーム帯反映ボタン追加に着手。
+  - update: 2026-01-16 22:25 JST Step4 に共通ズーム帯反映ボタンを追加し、押下で共通設定を適用。検証: pnpm typecheck（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-16 22:40 JST ズーム帯スライダーを n+1 ハンドル表示に変更し、範囲数1でも境界スライダーを表示。検証: pnpm typecheck（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-16 23:05 JST 共通ズーム帯スライダーを n+1 ハンドル化し、最大ズームを可変にする対応に着手。
+  - update: 2026-01-16 23:35 JST 共通ズーム帯スライダーも n+1 ハンドル化し、右端を最大ズームとして可変化。検証: pnpm --filter @hierarchidb/gis-sdk build（exit 0、tsdown define 警告あり）/ pnpm typecheck（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-16 23:55 JST ズーム帯の最大ズームを TransformConfig に追加し、Step4/共通設定/テンプレートへ反映。検証: pnpm --filter @hierarchidb/gis-sdk build（exit 0、tsdown define 警告あり）/ pnpm typecheck（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 00:10 JST スライダーのラベル常時表示に合わせて上部パディングを追加。検証: pnpm typecheck（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 00:25 JST ズーム帯の境界範囲 0-11・範囲数 0-10・右端可変化と margin 32px 反映に着手。
+  - blocked: 2026-01-17 00:40 JST pnpm typecheck が shape-plugin の TransformConfig に maxZoom 必須の型不整合で失敗。
+  - update: 2026-01-17 00:45 JST pnpm --filter @hierarchidb/gis-sdk build（exit 0、tsdown define 警告あり）→ pnpm typecheck（exit 0）で解消。
+  - update: 2026-01-17 01:10 JST ズーム帯スライダーの margin 32px の強制適用と左端固定（範囲数増殖防止）に着手。
+  - update: 2026-01-17 01:20 JST スライダー margin 32px を !important で適用し、左端固定で範囲数が増えないよう補正。検証: pnpm typecheck（exit 0）。
+  - update: 2026-01-17 01:30 JST ズーム帯スライダーの margin を 36px へ更新。
+  - update: 2026-01-17 01:40 JST margin 36px を !important で適用。検証: pnpm typecheck（exit 0）。
+
+2208) fix/app/tree-trash-actions (P1) — 進行中 (2026-01-15)
+- ブランチ名: fix/app/tree-trash-actions
+- 依存: なし
+- 受け入れ基準: パンクズの Move to Trash ダイアログで削除が成功し画面が更新される／TreeNodeInfoPanel のコンテキストメニュー「削除」で INVALID_OPERATION No items selected が発生しない／削除対象ノードが選択状態として渡される／pnpm typecheck が通る／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx`, `app/src/hooks/treeconsole/actions/contextMenu.ts`, `packages/ui/treeconsole/breadcrumb/src/components/NodeContextMenu.tsx`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、削除操作の挙動を修正前に戻す
+- チェックリスト:
+  - パンクズ/コンテキストメニューの削除フローを再現する
+  - 選択ノードの扱いとコマンド引数の不整合を修正する
+  - UI で削除が成功しゴミ箱に移動することを確認する
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-01-15 18:32 JST パンクズ/TreeNodeInfoPanel の削除が失敗する問題の調査に着手。
+  - update: 2026-01-15 18:35 JST 削除時の選択ノードが空の場合は対象ノードを選択してゴミ箱移動に渡すよう補正。
+  - update: 2026-01-15 18:35 JST pnpm typecheck を実行し成功（exit 0）。
+  - update: 2026-01-15 20:05 JST パンクズ削除の confirm で対象ノードを保持し、削除後は親ノードへ遷移するよう補正。
+  - update: 2026-01-15 20:05 JST pnpm typecheck を実行し成功（exit 0）。
+  - update: 2026-01-15 20:13 JST パンクズの ancestor に parentId を補完し、削除後に正しく親へ遷移できるよう修正。
+  - blocked: 2026-01-15 20:14 JST pnpm typecheck が app の useTreeConsoleBreadcrumbs.ts の undefined 指摘で失敗。
+  - update: 2026-01-15 20:15 JST useTreeConsoleBreadcrumbs の ancestor parentId 補完で undefined ガードを追加。
+  - update: 2026-01-15 20:15 JST pnpm typecheck を実行し成功（exit 0）。
+  - update: 2026-01-15 20:23 JST TreeNodeInfoPanel の削除に確認ダイアログを追加し、文言を i18n へ追加。
+  - update: 2026-01-15 20:24 JST pnpm typecheck を実行し成功（exit 0）。
 
 2207) fix/ui/download-retry-controls-render-loop-v2 (P1) — 完了 (2026-01-16)
 - ブランチ名: fix/ui/download-retry-controls-render-loop-v2
@@ -4125,3 +4394,21 @@
 - 運用ログ：
   - start: 2026-01-10 19:28 JST BuildStepStagePanel のモード切替と taskCount 集計に着手。
   - done: 2026-01-10 19:38 JST summary/details の memo 化、Chip トグルとモード制御、taskCount 集計とフィルタを追加。検証: 未実施。
+
+2212) feat/ui/dialog-display-mode-persist (P1) — 進行中 (2026-01-15)
+- ブランチ名: feat/ui/dialog-display-mode-persist
+- 依存: なし
+- 受け入れ基準: プラグイン編集ダイアログの表示モード切り替え時に対象ノードの dialogUIState.dialogWindow.mode が即時更新される／永続化され再オープン時に復元される／create/preview では永続化しない／既存の保存・クローズ動作に副作用がない／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/plugin-ui-host/src/headless/usePluginDialogController.tsx` ほか（調査後に確定）
+- ロールバック手順: 該当差分を revert し、表示モード永続化を切り戻す
+- チェックリスト:
+  - 表示モード切り替え時に dialogUIState を更新する
+  - 永続化のタイミングを追加する
+  - create/preview で永続化しないことを確認する
+  - 既存の保存/クローズ動作に影響がないことを確認する
+  - 必要ならテストを追加する
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-15 23:11 JST 表示モード切り替え時の永続化対応に着手。
+  - update: 2026-01-15 23:14 JST 表示モード切り替え時に dialogUIState を保存する処理を追加。

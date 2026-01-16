@@ -24,9 +24,12 @@ function createAliasMap(): Record<string, string> {
     '~': path.resolve(rootDir, 'src'),
     '#app': path.resolve(rootDir, 'src'),
     'node-fetch': path.resolve(rootDir, 'src/virtual/node-fetch.ts'),
-    '@hierarchidb/runtime-worker': path.resolve(rootDir, '../packages/runtime-worker/worker/src/index.ts'),
+    '@hierarchidb/runtime-worker': path.resolve(rootDir, '../packages/runtime-worker/src/index.ts'),
     '@hierarchidb/util': path.resolve(rootDir, '../packages/util/src/index.ts'),
     '@hierarchidb/plugin-base': path.resolve(rootDir, '../packages/plugin-base/src/index.ts'),
+    '@hierarchidb/ui-icon': path.resolve(rootDir, '../packages/ui/icon/src/index.ts'),
+    '@hierarchidb/components': path.resolve(rootDir, '../packages/components/src/index.ts'),
+    '@hierarchidb/ui-dialog': path.resolve(rootDir, '../packages/ui/dialog/src/index.ts'),
     '@hierarchidb/ui-treeconsole-toolbar': path.resolve(
       rootDir,
       '../packages/ui/treeconsole/toolbar/src/index.ts'

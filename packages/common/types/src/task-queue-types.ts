@@ -1,6 +1,6 @@
 import type { NodeId } from './id-types.js';
 
-export type TaskStage = 'fetch' | 'transform-by-band' | 'transform-by-zoom' | 'vt';
+export type TaskStage = 'fetch' | 'transform' | 'transform-by-zoom' | 'vt';
 export type TaskStatus = 'queued' | 'running' | 'completed' | 'failed';
 
 export type TaskQueueRecord<TInput = unknown, TOutput = unknown> = {

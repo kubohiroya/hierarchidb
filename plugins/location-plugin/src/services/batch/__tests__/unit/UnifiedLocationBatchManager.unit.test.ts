@@ -196,8 +196,8 @@ describe('UnifiedLocationBatchManager persistence contract', () => {
 
     await mgr.prepareSession(sampleNode, { concurrency: 2 }, { points: samplePoints, settings: sampleSettings });
 
-    const sessionNodeId = await mgr.startBatchSession(sampleNode);
-    expect(sessionNodeId).toBe(sampleNode);
+    const sessionStatus = await mgr.startBatchSession(sampleNode);
+    expect(sessionStatus.nodeId).toBe(sampleNode);
     expect(mockDb.pendingSessions.delete).toHaveBeenCalledWith(sampleNode);
     expect(stub.createSpy).toHaveBeenCalledWith(sampleNode, samplePoints, sampleSettings, { concurrency: 2 });
     expect(mockDb.clearVectorTilesForNode).toHaveBeenCalledWith(sampleNode);
@@ -217,13 +217,13 @@ describe('UnifiedLocationBatchManager persistence contract', () => {
 
     await mgr.prepareSession(sampleNode, {}, { points: samplePoints, settings: sampleSettings });
 
-    const sessionNodeId = await mgr.startBatchSession(sampleNode);
+    const sessionStatus = await mgr.startBatchSession(sampleNode);
 
     const progressSpy = vi.fn();
-    mgr.onBatchProgress(sessionNodeId, progressSpy);
+    mgr.onBatchProgress(sessionStatus.nodeId, progressSpy);
 
     stub.emit({
-      nodeId: sessionNodeId,
+      nodeId: sessionStatus.nodeId,
       taskType: 'normalize',
       total: 10,
       completed: 4,
@@ -233,7 +233,7 @@ describe('UnifiedLocationBatchManager persistence contract', () => {
     });
 
     await waitFor(() => {
-      expect(mockDb.sessions.update).toHaveBeenCalledWith(sessionNodeId, expect.objectContaining({
+      expect(mockDb.sessions.update).toHaveBeenCalledWith(sessionStatus.nodeId, expect.objectContaining({
         status: 'running',
         updatedAt: expect.any(Number),
         progress: expect.objectContaining({
@@ -247,7 +247,7 @@ describe('UnifiedLocationBatchManager persistence contract', () => {
     });
 
     stub.emit({
-      nodeId: sessionNodeId,
+      nodeId: sessionStatus.nodeId,
       taskType: 'completed',
       total: 10,
       completed: 10,
@@ -257,7 +257,7 @@ describe('UnifiedLocationBatchManager persistence contract', () => {
     });
 
     await waitFor(() => {
-      expect(mockDb.sessions.update).toHaveBeenCalledWith(sessionNodeId, expect.objectContaining({
+      expect(mockDb.sessions.update).toHaveBeenCalledWith(sessionStatus.nodeId, expect.objectContaining({
         status: 'completed',
       }));
     });

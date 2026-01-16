@@ -70,8 +70,8 @@
     "fetch": {
       "title": "Fetch"
     },
-    "transformByBand": {
-      "title": "Transform by band"
+    "transform": {
+      "title": "Transform"
     },
     "transformByZoom": {
       "title": "Transform by zoom"
@@ -92,7 +92,7 @@
       "deleteDownloadedFilesWithCount": "Delete fetch cache ({{count}} items)",
       "deleteLoadingHint": "Loading delete counts...",
       "countUnit": "",
-      "deleteStage1Cache": "Delete zoom-band cache",
+      "deleteStage1Cache": "Delete transform cache",
       "deleteStage2Cache": "Delete zoom-ratio cache",
       "deleteTiles": "Delete vt cache",
       "deleteMetadata": "Delete Metadata",
@@ -150,9 +150,21 @@
       "quantize": "Coordinate Quantization",
       "quantizeSelected": "Selected: {value}",
       "quantizeHelp": "Coordinate quantization used in transform preprocessing to reduce size and stabilize boundaries.",
-      "quantizeStarHelp": "★1 is the coarsest rounding (lowest precision); higher stars increase precision.",
+      "quantizeStarHelp": "\u26051 is the coarsest rounding (lowest precision); higher stars increase precision.",
       "enablePerFeatureExtraction": "Allow transform to omit countries or municipalities",
-      "enablePerFeatureExtractionHelp": "Geometries may be omitted, but metadata is retained."
+      "enablePerFeatureExtractionHelp": "Geometries may be omitted, but metadata is retained.",
+      "zoomBandRangesTitle": "Zoom band ranges",
+      "zoomBandRangesHelp": "Configure the number of zoom ranges and their boundaries.",
+      "zoomBandRangeCount": "Range count",
+      "zoomBandRangeCountHelp": "Controls how many zoom ranges are grouped into bands.",
+      "zoomBandBoundaries": "Range boundaries",
+      "zoomBandBoundariesHelp": "Adjust the zoom boundaries between ranges.",
+      "zoomBandRangeSummaryTitle": "Zoom band summary",
+      "zoomBandRangeItem": "Range {{index}}: z{{min}}-{{max}}",
+      "applyCommonZoomBandBoundaries": "Apply common zoom band settings"
+    },
+    "zoomBandSettings": {
+      "title": "Zoom band settings / cache management"
     },
     "tile": {
       "title": "VT Generation",
@@ -162,7 +174,7 @@
       "bufferSize": "Tile Margin (px)",
       "bufferSizeHelp": "Extra margin to avoid visible seams at tile edges.",
       "zoomBands": "Zoom bands",
-      "zoomBandsSummary": "band0: z0-3\nband1: z3-6\nband2: z6-9\nband3: z9-11 (optional)",
+      "zoomBandsSummary": "Zoom bands follow the Transform range boundaries. The representative zoom is the smallest in each band.",
       "expandFactor": "Tile Expansion Factor",
       "expandFactorHelp": "Extra tiles to include around each group when building TopoJSON.",
       "expandMargin": "Tile Expansion Margin",
@@ -185,7 +197,8 @@
       "map": "Map Preview",
       "metadata": "Metadata Table",
       "sources": "Sources",
-      "features": "Features"
+      "features": "Features",
+      "errors": "Error List"
     },
     "metadata": {
       "missingSession": "No metadata entries have been generated yet.",
@@ -217,6 +230,26 @@
         "area": "Area",
         "featureId": "Feature ID"
       }
+    },
+    "errors": {
+      "missingSession": "Build the dataset to capture transform errors.",
+      "empty": "No transform errors have been recorded yet.",
+      "loading": "Loading transform errors...",
+      "searchPlaceholder": "Search errors",
+      "searchAriaLabel": "Search errors",
+      "matches": "Matched",
+      "rows": "Rows",
+      "columns": {
+        "createdAt": "Recorded At",
+        "sourceKey": "Source Key",
+        "countryCode": "Country Code",
+        "adminLevel": "Admin Level",
+        "bandId": "Band",
+        "featureId": "Feature Id",
+        "polygonCount": "Polygons",
+        "ringCount": "Rings",
+        "message": "Message"
+      }
     }
   },
   "stage": {
@@ -228,7 +261,10 @@
     },
     "progress": {
       "stage": "Stage",
-      "task": "Task"
+      "task": "Polygons",
+      "taskUnitTasks": "Tasks",
+      "counts": "{{percentage}}% \u30fb {{completed}}/{{total}} polygons completed \u30fb failed {{failed}} \u30fb skipped {{skipped}}",
+      "countsWithUnit": "{{percentage}}% \u30fb {{completed}}/{{total}} {{unit}} completed \u30fb failed {{failed}} \u30fb skipped {{skipped}}"
     }
   },
   "build": {
@@ -245,7 +281,7 @@
       "task": "Task",
       "working": "Working...",
       "unknownStage": "processing",
-      "counts": "{{percentage}}% ・ {{completed}}/{{total}} completed ・ failed {{failed}} ・ skipped {{skipped}}"
+      "counts": "{{percentage}}% \u30fb {{completed}}/{{total}} completed \u30fb failed {{failed}} \u30fb skipped {{skipped}}"
     },
     "tasks": {
       "empty": "No tasks yet.",
@@ -272,8 +308,8 @@
         "title": "Fetch",
         "description": "Fetch and normalize source data."
       },
-      "transformByBand": {
-        "title": "Transform by band",
+      "transform": {
+        "title": "Transform",
         "description": "Simplify features per zoom band."
       },
       "transformByZoom": {

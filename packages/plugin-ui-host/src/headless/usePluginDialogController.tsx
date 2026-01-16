@@ -909,7 +909,7 @@ export function usePluginDialogController(
     autoBuild?.onComplete?.();
   }, [activeStartBatch, autoBuild, autoBuildEnabled, dialogData, isAutoBuildComplete, open]);
 
-  const persistDialogUIStateOnClose = useCallback(async () => {
+  const persistDialogUIState = useCallback(async () => {
     if (dialogMode === 'create' || dialogMode === 'preview') return;
     const treeNodeId = (treeUpdater?.treeNodeId ?? nodeId) as NodeId | undefined;
     if (!treeNodeId) return;
@@ -922,9 +922,13 @@ export function usePluginDialogController(
       };
       await commitTreeNodeUpdater('save-draft', payload);
     } catch (error) {
-      console.warn('[PluginDialogShell] failed to persist dialog UI atoms on close', error);
+      console.warn('[PluginDialogShell] failed to persist dialog UI state', error);
     }
   }, [commitTreeNodeUpdater, dialogMode, getPersistableDialogUIState, nodeId, nodeType, treeUpdater?.draftData, treeUpdater?.draftMetadata, treeUpdater?.treeNodeId]);
+
+  const persistDialogUIStateOnClose = useCallback(async () => {
+    await persistDialogUIState();
+  }, [persistDialogUIState]);
 
   const handleCloseRequest = useCallback(() => {
     if (dialogDirtyRef.current) {
@@ -1019,13 +1023,14 @@ export function usePluginDialogController(
           : currentWindow?.restoreSize ?? null;
         void transitionDisplayMode(mode, { restorePosition, restoreSize }).then(() => {
           persistDialogWindow({ mode, restorePosition, restoreSize });
+          void persistDialogUIState();
         });
       },
       HeaderComponent,
       ContentComponent,
       FooterComponent,
     }),
-    [open, isDialogReady, safeStepDescriptors, stableStepData, handleStepDataChange, activeStepIndex, handleNavigation, stableEnabledStepIndices, stableValidatedStepIndices, stableCommittableStepIndices, invalidMessageMap, handleCloseRequest, handleRequestCommit, dialogDirty, dialogPosition, handlePositionChangeWithPersist, dialogSize, handleSizeChangeWithPersist, displayMode, HeaderComponent, ContentComponent, FooterComponent, transitionDisplayMode, persistDialogWindow, dialogUIStateRef],
+    [open, isDialogReady, safeStepDescriptors, stableStepData, handleStepDataChange, activeStepIndex, handleNavigation, stableEnabledStepIndices, stableValidatedStepIndices, stableCommittableStepIndices, invalidMessageMap, handleCloseRequest, handleRequestCommit, dialogDirty, dialogPosition, handlePositionChangeWithPersist, dialogSize, handleSizeChangeWithPersist, displayMode, HeaderComponent, ContentComponent, FooterComponent, transitionDisplayMode, persistDialogWindow, persistDialogUIState, dialogUIStateRef],
   );
 
   return {

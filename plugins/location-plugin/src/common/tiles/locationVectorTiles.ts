@@ -43,6 +43,7 @@ export async function startLocationVectorTileSession(
   const data: LocationBatchData = { points, settings };
   await manager.prepareSession(nodeId, config, data);
   await bridge.initialize();
+  await bridge.startBatchSession(LOCATION_NODE_TYPE, nodeId);
   return {
     nodeId,
     zoomMin: settings.zoomMinGenerate,

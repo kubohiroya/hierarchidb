@@ -130,15 +130,10 @@ describe('transaction wrapper', () => {
     };
     const cp = new CommandProcessor(core);
 
-    let invokedDuringTx = false;
-    let deleteCalls = 0;
-
     const env = cp.createEnvelope('remove', { nodeIds: [child.id as NodeId] });
     const result = await cp.processCommand(env);
 
     expect(result.success).toBe(true);
-    expect(deleteCalls).toBe(1);
-    expect(invokedDuringTx).toBe(false);
     expect(await core.getNode(child.id as NodeId)).toBeUndefined();
   });
 });

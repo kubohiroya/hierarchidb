@@ -46,6 +46,7 @@ import type { LocationType } from '@hierarchidb/location-store';
 import type { SvgIconComponent } from '@mui/icons-material';
 import {
   DirectionsBoat as DirectionsBoatIcon,
+  FitScreen as FitScreenIcon,
   FlightTakeoff as FlightTakeoffIcon,
   ForkRight as ForkRightIcon,
   LocationCity as LocationCityIcon,
@@ -87,6 +88,7 @@ const CIRCLE_RADIUS_AT_MAX = CIRCLE_RADIUS_MIN + LOCATION_MAX_ZOOM * CIRCLE_RADI
 const ICON_SIZE_MIN = 0.7;
 const ICON_SIZE_SLOPE = 0.05;
 const ICON_SIZE_AT_MAX = ICON_SIZE_MIN + LOCATION_MAX_ZOOM * ICON_SIZE_SLOPE;
+const FIT_BOUNDS_PADDING_PX = 64;
 
 const LOCATION_ICON_COMPONENTS: Record<LocationType, SvgIconComponent> = {
   area_centroid: LocationCityIcon,
@@ -94,6 +96,33 @@ const LOCATION_ICON_COMPONENTS: Record<LocationType, SvgIconComponent> = {
   port: DirectionsBoatIcon,
   railway_station: TrainIcon,
   interchange: ForkRightIcon,
+};
+
+type LngLatBounds = {
+  minLng: number;
+  minLat: number;
+  maxLng: number;
+  maxLat: number;
+};
+
+const updateBounds = (bounds: LngLatBounds | null, lng: number, lat: number): LngLatBounds => {
+  if (!bounds) {
+    return { minLng: lng, minLat: lat, maxLng: lng, maxLat: lat };
+  }
+  return {
+    minLng: Math.min(bounds.minLng, lng),
+    minLat: Math.min(bounds.minLat, lat),
+    maxLng: Math.max(bounds.maxLng, lng),
+    maxLat: Math.max(bounds.maxLat, lat),
+  };
+};
+
+const visitCoordinates = (coords: unknown, bounds: LngLatBounds | null): LngLatBounds | null => {
+  if (!Array.isArray(coords)) return bounds;
+  if (coords.length >= 2 && typeof coords[0] === 'number' && typeof coords[1] === 'number') {
+    return updateBounds(bounds, coords[0], coords[1]);
+  }
+  return coords.reduce<LngLatBounds | null>((current, entry) => visitCoordinates(entry, current), bounds);
 };
 
 export default function MapPage() {
@@ -302,6 +331,46 @@ export default function MapPage() {
     () => buildEntriesFromIdSet(selectedMatchIds),
     [buildEntriesFromIdSet, selectedMatchIds],
   );
+  const canFitSelection = selectedEntries.length > 0;
+
+  const handleFitSelection = useCallback(() => {
+    if (!mapInstance || selectedEntries.length === 0) return;
+    const canvas = mapInstance.getCanvas();
+    const queryBounds: [[number, number], [number, number]] = [
+      [0, 0],
+      [canvas.width, canvas.height],
+    ];
+    const selectedKeySet = new Set(selectedEntries.map((entry) => `${entry.source}:${entry.id}`));
+    let features: MapLibreGeoJSONFeature[] = [];
+    try {
+      features = mapInstance.queryRenderedFeatures(queryBounds, { layers: highlightLayerIds }) as MapLibreGeoJSONFeature[];
+    } catch (error) {
+      console.debug('[MapPage] Failed to query selected features', error);
+      return;
+    }
+
+    const selectedFeatures = features.filter((feature) => {
+      const source = typeof feature.source === 'string' ? feature.source : undefined;
+      const id = defaultFeatureIdAccessor(feature);
+      if (!source || id === undefined || id === null) return false;
+      return selectedKeySet.has(`${source}:${id}`);
+    });
+
+    const bounds = selectedFeatures.reduce<LngLatBounds | null>((current, feature) => {
+      const geometry = (feature as { geometry?: { coordinates?: unknown } }).geometry;
+      if (!geometry?.coordinates) return current;
+      return visitCoordinates(geometry.coordinates, current);
+    }, null);
+    if (!bounds) return;
+
+    mapInstance.fitBounds(
+      [
+        [bounds.minLng, bounds.minLat],
+        [bounds.maxLng, bounds.maxLat],
+      ],
+      { padding: FIT_BOUNDS_PADDING_PX },
+    );
+  }, [highlightLayerIds, mapInstance, selectedEntries]);
 
   useMapFeatureHighlights({
     mapInstance,
@@ -1064,6 +1133,9 @@ export default function MapPage() {
         onOpenSettings={() => setSearchSettingsOpen(true)}
         clearIcon={<CloseIcon fontSize="small" />}
         settingsIcon={<TuneIcon fontSize="small" />}
+        fitScreenIcon={<FitScreenIcon fontSize="small" />}
+        fitScreenDisabled={!canFitSelection}
+        onFitScreen={handleFitSelection}
       />
 
       <MapPreviewSearchSettingsDialog

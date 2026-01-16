@@ -21,6 +21,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
     tabIndex,
     setTabIndex,
     sourceTabIndex,
+    errorTabIndex,
     mapTabIndex,
     sourceMetadataRows,
     sourceMetadataLoading,
@@ -30,26 +31,40 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
     featureMetadataLoading,
     featureMetadataError,
     featureMetadataLoaded,
+    transformErrorRows,
+    transformErrorLoading,
+    transformErrorError,
+    transformErrorLoaded,
     searchKeyword,
     setSearchKeyword,
     featureSearchKeyword,
     setFeatureSearchKeyword,
+    errorSearchKeyword,
+    setErrorSearchKeyword,
     matchedIdSet,
     matchedFeatureIdSet,
+    matchedErrorIdSet,
     selectedIdSet,
     hoveredIdSet,
     setSelectedIds,
     setHoveredId,
+    selectedErrorIds,
+    setSelectedErrorIds,
     sortColumn,
     sortDirection,
     handleSort,
     featureSortColumn,
     featureSortDirection,
     handleFeatureSort,
+    errorSortColumn,
+    errorSortDirection,
+    handleErrorSort,
     metadataColumns,
     metadataTableRows,
     featureColumns,
     featureTableRows,
+    errorColumns,
+    errorTableRows,
     hoverMessage,
     tilesUrl,
     tilesAvailable,
@@ -70,6 +85,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
     handleViewStateChange,
     handleZoomSnackbarClose,
     vectorLayers,
+    geoJsonLayers,
     attributionItems,
   } = useShapePreviewStepView(data ?? {}, nodeId);
 
@@ -108,7 +124,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
           mapStyleUrl={baseMapStyleUrl}
           basemapStyles={[]}
           vectorLayers={vectorLayers}
-          geoJsonLayers={[]}
+          geoJsonLayers={geoJsonLayers}
           attributionItems={attributionItems}
           showTileBoundaries
           showTileCoordinates
@@ -355,6 +371,108 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
     </Box>
   );
 
+  const renderTransformErrorTable = () => (
+    <Box
+      ref={metadataPanelRef}
+      flex={1}
+      minHeight={0}
+      display="flex"
+      flexDirection="column"
+      borderRadius={1}
+      overflow="hidden"
+      border="1px solid #e0e0e0"
+      sx={{ overscrollBehavior: 'contain' }}
+    >
+      {!nodeId ? (
+        <Alert severity="info" sx={{ m: 2 }}>
+          {t('preview.errors.missingSession', 'Build the dataset to capture transform errors.')}
+        </Alert>
+      ) : transformErrorRows.length === 0 ? (
+        <Alert severity="info" icon={!transformErrorLoaded ? <CircularProgress size={16} /> : undefined} sx={{ m: 2, alignItems: 'center' }}>
+          {transformErrorLoaded
+            ? t('preview.errors.empty', 'No transform errors have been recorded yet.')
+            : t('preview.errors.loading', 'Loading transform errors...')}
+        </Alert>
+      ) : (
+        <>
+          <Box
+            ref={metadataToolbarRef}
+            sx={{ p: 1.5, display: 'flex', alignItems: 'center', gap: 1.5 }}
+          >
+            <SearchField
+              searchText={errorSearchKeyword}
+              handleSearchTextChange={setErrorSearchKeyword}
+              handleSearchCommit={() => undefined}
+              placeholder={t('preview.errors.searchPlaceholder', 'Search errors')}
+              ariaLabel={t('preview.errors.searchAriaLabel', 'Search errors')}
+            />
+            <Typography variant="body2" color="text.secondary">
+              {errorSearchKeyword
+                ? `${errorTableRows.length} ${t('preview.errors.matches', 'Matched')}`
+                : `${errorTableRows.length} ${t('preview.errors.rows', 'Rows')}`}
+            </Typography>
+          </Box>
+          <Box flex={1} minHeight={0}>
+            <GenericDataGrid
+              columns={errorColumns}
+              rows={errorTableRows}
+              maxHeight={metadataTableHeight || 360}
+              tableContainerSx={{
+                height: metadataTableHeight || 360,
+                maxHeight: metadataTableHeight || 360,
+                overflowY: 'auto',
+                overflowX: 'auto',
+                overscrollBehavior: 'contain',
+                WebkitOverflowScrolling: 'touch',
+              }}
+              rowHeight={38}
+              stickyHeader
+              dense
+              hover
+              striped
+              enableVirtualization
+              loading={transformErrorLoading}
+              error={transformErrorError ?? undefined}
+              selectable
+              selectionMode="multiple"
+              selectedRows={new Set(selectedErrorIds)}
+              onSelectionChange={(next) => {
+                setSelectedErrorIds(Array.from(next).map(String));
+              }}
+              matchedRows={matchedErrorIdSet}
+              sortColumn={errorSortColumn}
+              sortDirection={errorSortDirection}
+              onSort={handleErrorSort}
+              rowSx={(state) => {
+                if (state.selected) {
+                  const selectedBg = theme.palette.error.light;
+                  const selectedText = theme.palette.getContrastText(selectedBg);
+                  return {
+                    backgroundColor: selectedBg,
+                    color: selectedText,
+                    '& td, & td *': { color: selectedText },
+                  };
+                }
+                if (state.matched) {
+                  const matchedBg = theme.palette.warning.light;
+                  const matchedText = theme.palette.getContrastText(matchedBg);
+                  return {
+                    backgroundColor: matchedBg,
+                    boxShadow: `inset 3px 0 0 0 ${theme.palette.warning.main}`,
+                    color: matchedText,
+                    '& td, & td *': { color: matchedText },
+                  };
+                }
+                return undefined;
+              }}
+              toolbarComponent={<></>}
+            />
+          </Box>
+        </>
+      )}
+    </Box>
+  );
+
   return (
     <Box display="flex" flexDirection="column" gap={2} height="100%" minHeight={0} flex={1}>
       {metadataEnabled ? (
@@ -363,12 +481,15 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
             <Tab label={t('preview.tabs.sources', 'Sources')} />
             <Tab label={t('preview.tabs.features', 'Features')} />
             <Tab label={t('preview.tabs.map', 'Map Preview')} />
+            <Tab label={t('preview.tabs.errors', 'Error List')} />
           </Tabs>
           {tabIndex === mapTabIndex
             ? renderMapPreview()
             : tabIndex === sourceTabIndex
               ? renderSourceMetadataTable()
-              : renderFeatureMetadataTable()}
+              : tabIndex === errorTabIndex
+                ? renderTransformErrorTable()
+                : renderFeatureMetadataTable()}
         </>
       ) : (
         renderMapPreview()

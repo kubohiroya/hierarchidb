@@ -54,16 +54,23 @@ export class WorkerAPIMock {
         }
         const id = genId();
         const payload: TreeNodeUpdaterPayload = {
-          id,
+          treeNodeId: id,
           draftMetadata: { name: '', description: '', tags: [] },
           draftData: {},
         };
-        const wc: TreeNodeUpdater = {
+        const wc: TreeNodeUpdater & {
+          nodeType?: string;
+          data?: Record<string, unknown>;
+          metadata?: Record<string, unknown>;
+        } = {
           payload,
           parentNodeId: parentNodeId ?? ('root' as NodeId),
           dialogUIState: undefined,
           version: 0,
         };
+        wc.nodeType = normalized;
+        wc.data = payload.draftData ?? {};
+        wc.metadata = payload.draftMetadata ?? {};
         self.store.set(id, wc);
         return id;
       },
@@ -74,21 +81,36 @@ export class WorkerAPIMock {
 
       async updateDraft(draftId: NodeId, updates: Partial<TreeNodeUpdater>): Promise<TreeNodeUpdater> {
         const wc = await requireDraft(draftId);
+        const patch = updates as Partial<TreeNodeUpdater> & {
+          data?: Record<string, unknown>;
+          metadata?: Record<string, unknown>;
+        };
         const nextPayload: TreeNodeUpdaterPayload = {
           ...wc.payload,
           draftMetadata: updates.payload?.draftMetadata
             ? { ...(wc.payload.draftMetadata ?? {}), ...updates.payload.draftMetadata }
+            : patch.metadata
+              ? { ...(wc.payload.draftMetadata ?? {}), ...patch.metadata }
             : wc.payload.draftMetadata ?? null,
           draftData: updates.payload?.draftData
             ? { ...(wc.payload.draftData ?? {}), ...updates.payload.draftData }
+            : patch.data
+              ? { ...(wc.payload.draftData ?? {}), ...patch.data }
             : wc.payload.draftData ?? {},
         };
-        const next: TreeNodeUpdater = {
+        const next: TreeNodeUpdater & {
+          nodeType?: string;
+          data?: Record<string, unknown>;
+          metadata?: Record<string, unknown>;
+        } = {
           payload: nextPayload,
           parentNodeId: updates.parentNodeId ?? wc.parentNodeId,
           dialogUIState: updates.dialogUIState ?? wc.dialogUIState,
           version: updates.version ?? wc.version,
         };
+        next.nodeType = (wc as { nodeType?: string }).nodeType;
+        next.data = nextPayload.draftData ?? {};
+        next.metadata = nextPayload.draftMetadata ?? {};
         self.store.set(draftId, next);
         return next;
       },

@@ -64,19 +64,27 @@ const minimalBatchConfig = {
     retryDelay: 1,
     timeoutMs: 1000,
   },
-  transformByBandConfig: {
+  transformConfig: {
     workers: 1,
+    zoomBandBoundaries: [0, 3, 6],
     tolerance: 0.01,
     featureFilterMethod: 'hybrid' as const,
     areaThreshold: 1,
     minVertexCountForAreaFilter: 1,
     aspectRatioThreshold: 1,
-  },
-  transformByZoomConfig: {
-    workers: 1,
-    tolerance: 0.01,
-    quantize: 1,
-    enablePerFeatureExtraction: true,
+    ringFixConfig: {
+      minRingVertices: 4,
+      minRingAreaMultiplier: 1,
+      removeDuplicateConsecutivePoints: true,
+      removeCollinearPoints: false,
+    },
+    selfIntersectionConfig: {
+      strategy: 'keep_largest',
+      minPolygonAreaMultiplier: 1,
+      maxPolygons: 1,
+      retainHoles: false,
+      snapToleranceMultiplier: 1,
+    },
   },
   tileConfig: {
     workers: 1,

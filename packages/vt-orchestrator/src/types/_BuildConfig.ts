@@ -4,13 +4,12 @@ import type {
   FetchConfig as CommonFetchConfig,
   FeatureFilterMethod as CommonFeatureFilterMethod,
   HybridFilterConfig as CommonHybridFilterConfig,
-  TransformByBandConfig as CommonTransformByBandConfig,
-  TransformByZoomConfig as CommonTransformByZoomConfig,
+  TransformConfig as CommonTransformConfig,
   VTConfig as CommonVTConfig,
 } from '@hierarchidb/gis-sdk';
 export type ZIP_TYPE = 'gzip' | 'bz';
 export type VECTOR_TILE_FORMAT = 'mvt' | 'pbf';
-export type BuildTaskType = 'fetch' | 'transform-by-band' | 'transform-by-zoom' | 'vt';
+export type BuildTaskType = 'fetch' | 'transform' | 'transform-by-zoom' | 'vt';
 export type FILTER_OPERATOR = 'eq' | 'ne' | 'exists' | 'not_exists';
 export const BuildTaskResult = {
   WAIT: 'wait',
@@ -24,7 +23,7 @@ export type BuildTaskResultType = (typeof BuildTaskResult)[keyof typeof BuildTas
 export type BuildTaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'regression';
 export interface BuildTaskBase {
   taskId: string;
-  type: BuildTaskType;
+  type: BuildTaskType,
   nodeId: NodeId;
   stage: BuildTaskResultType|undefined;
   status: BuildTaskStatus;
@@ -99,8 +98,7 @@ export type BoundingBox = [number, number, number, number];
 export interface BatchConfig<DataSourceName> {
   dataSource?: DataSourceName;
   fetchConfig?: FetchConfig;
-  transformByBandConfig?: TransformByBandConfig;
-  transformByZoomConfig?: TransformByZoomConfig;
+  transformConfig?: TransformConfig;
   vtConfig?: VTConfig;
   cleanupConfig?: CleanupBatchConfig;
   // source?: string;
@@ -110,12 +108,10 @@ export type FetchConfig = CommonFetchConfig;
 export type FeatureFilterMethod = CommonFeatureFilterMethod;
 export type HybridFilterConfig = CommonHybridFilterConfig;
 export type ExtractionMode = CommonExtractionMode;
-export type TransformByBandConfig = CommonTransformByBandConfig;
-export type TransformByZoomConfig = CommonTransformByZoomConfig;
+export type TransformConfig = CommonTransformConfig;
 export type VTConfig = CommonVTConfig;
 
 export interface CleanupBatchConfig {
   deleteFetchCeche?: boolean;
-  deleteTransformByBandCache?: boolean;
-  deleteTransformByZoomCache?: boolean;
+  deleteTransformCache?: boolean;
 }

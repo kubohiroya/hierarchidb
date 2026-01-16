@@ -5,7 +5,7 @@ import { normalizeDataSourceName } from '../../../common/types/index.js';
 import { isShapePreviewMetadataEnabled } from '../../../common/config/previewFlags.js';
 import { toNodeId, type NodeId } from '@hierarchidb/common-types';
 import { useTranslation } from '../../i18n.js';
-import type { ShapeFeatureMetadata, ShapeSourceMetadata } from '@hierarchidb/plugin-service-api';
+import type { ShapeFeatureMetadata, ShapeSourceMetadata, ShapeTransformErrorRecord } from '@hierarchidb/plugin-service-api';
 import { useAtom } from 'jotai';
 import {
   shapePreviewSearchAtom,
@@ -27,6 +27,7 @@ import { getDBName } from '@hierarchidb/util';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import { useVectorTilePreviewTable } from './useVectorTilePreviewTable.ts';
 import { useVectorTileFeatureTable } from './useVectorTileFeatureTable.ts';
+import { useTransformErrorTable } from './useTransformErrorTable.ts';
 import { shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
 
 type ShapePreviewDraft = Partial<ShapeEntity> & {
@@ -71,6 +72,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   const sourceTabIndex = 0;
   const featureTabIndex = 1;
   const mapTabIndex = 2;
+  const errorTabIndex = 3;
   const [tabIndex, setTabIndex] = useState(mapTabIndex);
   const metadataEnabled = isShapePreviewMetadataEnabled();
   const [searchKeyword, setSearchKeyword] = useAtom(shapePreviewSearchAtom);
@@ -81,6 +83,9 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
   const [featureSearchKeyword, setFeatureSearchKeyword] = useState('');
   const [matchedFeatureIds, setMatchedFeatureIds] = useState<string[]>([]);
+  const [errorSearchKeyword, setErrorSearchKeyword] = useState('');
+  const [matchedErrorIds, setMatchedErrorIds] = useState<string[]>([]);
+  const [selectedErrorIds, setSelectedErrorIds] = useState<string[]>([]);
 
   const previewDraft = data as ShapePreviewDraft;
   const tilesUrl = previewDraft.tilesUrl ?? previewDraft.tilesEndpoint ?? '';
@@ -236,6 +241,12 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     [],
   );
 
+  const loadTransformErrorRows = useCallback(
+    (targetNodeId: NodeId) =>
+      shapeQueryAPIImpl.listTransformErrorRecords(targetNodeId) as Promise<ShapeTransformErrorRecord[]>,
+    [],
+  );
+
   const {
     metadataRows: rawSourceMetadataRows,
     metadataLoading: sourceMetadataLoading,
@@ -257,6 +268,18 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     metadataEnabled,
     activeNodeId,
     loadFeatureMetadataRows,
+    metadataPollIntervalMs,
+  );
+
+  const {
+    metadataRows: rawTransformErrorRows,
+    metadataLoading: transformErrorLoading,
+    metadataError: transformErrorError,
+    metadataLoaded: transformErrorLoaded,
+  } = useVectorTilePreviewMetadata(
+    metadataEnabled,
+    activeNodeId,
+    loadTransformErrorRows,
     metadataPollIntervalMs,
   );
 
@@ -307,6 +330,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
 
   const sourceMetadataRows = filteredMetadataRows;
   const featureMetadataRows = rawFeatureMetadataRows;
+  const transformErrorRows = rawTransformErrorRows;
 
   const selectionBounds = useMemo(() => {
     let minLng = Number.POSITIVE_INFINITY;
@@ -512,6 +536,53 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     handleSort: handleFeatureSort,
   } = useVectorTileFeatureTable(featureMetadataRows, matchedFeatureIdSet, featureSearchKeyword);
 
+  const getErrorRowId = useCallback((row: ShapeTransformErrorRecord) => row.id, []);
+  const buildErrorSearchText = useCallback((row: ShapeTransformErrorRecord) => (
+    [
+      row.sourceKey,
+      row.countryCode,
+      row.adminLevel != null ? String(row.adminLevel) : undefined,
+      row.featureId,
+      row.taskId,
+      row.bandId != null ? String(row.bandId) : undefined,
+      row.message,
+    ]
+      .filter(Boolean)
+      .join(' ')
+  ), []);
+
+  useVectorTilePreviewSearch(
+    metadataEnabled,
+    transformErrorRows,
+    errorSearchKeyword,
+    getErrorRowId,
+    buildErrorSearchText,
+    setMatchedErrorIds,
+  );
+
+  const matchedErrorIdSet = useMemo<Set<string>>(
+    () => new Set(matchedErrorIds),
+    [matchedErrorIds],
+  );
+
+  const {
+    errorColumns,
+    errorTableRows,
+    sortColumn: errorSortColumn,
+    sortDirection: errorSortDirection,
+    handleSort: handleErrorSort,
+  } = useTransformErrorTable(transformErrorRows, matchedErrorIdSet, errorSearchKeyword);
+
+  const errorLineCollection = useMemo<ShapeTransformErrorRecord['lineFeatures'] | null>(() => {
+    if (transformErrorRows.length === 0) return null;
+    const selected = selectedErrorIds.length ? new Set(selectedErrorIds) : null;
+    const features = transformErrorRows.flatMap((row) => {
+      if (selected && !selected.has(row.id)) return [];
+      return row.lineFeatures?.features ?? [];
+    });
+    return features.length ? { type: 'FeatureCollection', features } : null;
+  }, [selectedErrorIds, transformErrorRows]);
+
   useVectorTilePreviewMapLayers({
     mapInstance: tabIndex === mapTabIndex ? mapInstance : null,
     baseLayerId,
@@ -562,6 +633,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     sourceTabIndex,
     featureTabIndex,
     mapTabIndex,
+    errorTabIndex,
     sourceMetadataRows,
     sourceMetadataLoading,
     sourceMetadataError,
@@ -570,13 +642,21 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     featureMetadataLoading,
     featureMetadataError,
     featureMetadataLoaded,
+    transformErrorRows,
+    transformErrorLoading,
+    transformErrorError,
+    transformErrorLoaded,
     searchKeyword,
     setSearchKeyword,
     featureSearchKeyword,
     setFeatureSearchKeyword,
+    errorSearchKeyword,
+    setErrorSearchKeyword,
     matchedIds,
     selectedIds,
     setSelectedIds,
+    selectedErrorIds,
+    setSelectedErrorIds,
     hoveredId,
     setHoveredId,
     selectionContext,
@@ -593,6 +673,12 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     featureTableRows,
     matchedIdSet,
     matchedFeatureIdSet,
+    matchedErrorIdSet,
+    errorColumns,
+    errorTableRows,
+    errorSortColumn,
+    errorSortDirection,
+    handleErrorSort,
     selectedIdSet,
     hoveredIdSet,
     hoverMessage,
@@ -611,5 +697,6 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     handleMapIdentify,
     defaultView: initialViewState,
     selectionDataSource,
+    errorLineCollection,
   };
 };

@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { StylerConfigDefault } from '../../types/stylerTypes.js';
+import { StylerConfigDefault } from '../../types/StylerEntity.js';
 import {
   adjustBrightness,
   calculateLinearColor,

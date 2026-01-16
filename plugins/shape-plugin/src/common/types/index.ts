@@ -16,8 +16,7 @@ export type {
   FeatureFilterMethod,
   FetchConfig,
   HybridFilterConfig,
-  TransformByBandConfig,
-  TransformByZoomConfig,
+  TransformConfig,
   VTConfig,
 } from '@hierarchidb/gis-sdk';
 export {

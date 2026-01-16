@@ -112,6 +112,6 @@ describe('WFL import template: Total Population by Country', () => {
     const byType = new Map(templateChildren.map((child) => [child.nodeType, child.metadata.name]));
     expect(byType.get(toNodeType('shape'))).toBe('Country Boundaries');
     expect(byType.get(toNodeType('styler'))).toBe('Population Color Map');
-    expect(byType.get(toNodeType('spreadsheet'))).toBe('Population Data Table');
+    expect(byType.get(toNodeType('spreadsheet'))).toBeUndefined();
   }, 25_000);
 });

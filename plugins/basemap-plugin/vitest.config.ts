@@ -36,9 +36,14 @@ export default defineConfig({
       '@hierarchidb/util': path.resolve(workspaceRoot, 'packages/util/src/index.ts'),
       '@hierarchidb/plugin-ui-sdk': pluginSdkEntry,
       '@hierarchidb/folder-plugin': path.resolve(__dirname, '../folder-plugin/src/index.ts'),
+      '@hierarchidb/ui-i18n': path.resolve(workspaceRoot, 'packages/ui/i18n/src/index.ts'),
       '@hierarchidb/ui-worker-client': path.resolve(
         workspaceRoot,
-        'packages/runtime-worker/client/src/index.ts'
+        'packages/ui/worker-client/src/index.ts'
+      ),
+      '@hierarchidb/ui-worker-provider': path.resolve(
+        workspaceRoot,
+        'packages/ui/worker-provider/src/index.ts'
       ),
     },
   },

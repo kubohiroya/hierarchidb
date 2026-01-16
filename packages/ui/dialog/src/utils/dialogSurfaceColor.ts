@@ -1,8 +1,8 @@
 import { darken, lighten } from '@mui/material/styles';
 import type { Theme } from '@mui/material/styles';
 
-const LIGHT_MODE_DARKEN = 0.02;
-const DARK_MODE_LIGHTEN = 0.02;
+const LIGHT_MODE_DARKEN = 0.04;
+const DARK_MODE_LIGHTEN = 0.08;
 
 /**
  * Returns a gently contrasted surface color for plugin/trash console that

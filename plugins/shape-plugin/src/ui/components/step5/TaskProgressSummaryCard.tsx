@@ -37,7 +37,7 @@ export const TaskProgressSummaryCard = ({
           </Stack>
           <Stack spacing={0.25} flex={1}>
             <Typography variant="caption" color="text.secondary">
-              {t('stage.progress.task', 'Task')}
+              {summary.taskUnitLabel || t('stage.progress.task', 'Polygons')}
             </Typography>
             <Typography variant="body2">{summary.taskLabel}</Typography>
           </Stack>
@@ -57,12 +57,13 @@ export const TaskProgressSummaryCard = ({
             }}
           />
           <Typography variant="caption" color="text.secondary">
-            {t('stage.progress.counts', '{{percentage}}% ・ {{completed}}/{{total}} completed ・ failed {{failed}} ・ skipped {{skipped}}', {
+            {t('stage.progress.countsWithUnit', '{{percentage}}% ・ {{completed}}/{{total}} {{unit}} completed ・ failed {{failed}} ・ skipped {{skipped}}', {
               percentage: Math.round(summary.overallProgress),
               completed: summary.completed,
               total: summary.total,
               failed: summary.failed,
               skipped: summary.skipped,
+              unit: summary.taskUnitLabel || t('stage.progress.task', 'Polygons'),
             })}
           </Typography>
         </Stack>

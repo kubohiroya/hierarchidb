@@ -14,10 +14,21 @@ import {
   Paper,
   Radio,
   RadioGroup,
+  Slider,
+  Stack,
   Switch,
   Typography,
 } from '@mui/material';
-import { useCallback, useState, type ReactNode } from 'react';
+import {
+  TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES,
+  TREE_CONSOLE_ZOOM_BAND_MAX_RANGES,
+  TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM,
+  TREE_CONSOLE_ZOOM_BAND_MIN_RANGES,
+  TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM,
+  buildEvenZoomBandBoundaries,
+  normalizeZoomBandBoundaries,
+} from '@hierarchidb/util';
+import { useCallback, useMemo, useState, type MouseEvent, type ReactNode } from 'react';
 import type { TreeConsoleToolbarActionParams } from '../../types.js';
 
 interface SettingsMenuProps {
@@ -27,6 +38,8 @@ interface SettingsMenuProps {
   onAutosaveEnabledChange?: (enabled: boolean) => void;
   dialogBackdropDismissEnabled: boolean;
   onDialogBackdropDismissEnabledChange?: (enabled: boolean) => void;
+  zoomBandBoundaries?: number[];
+  onZoomBandBoundariesChange?: (boundaries: number[]) => void;
   onAction: (action: string, params?: TreeConsoleToolbarActionParams) => void;
   portalContainer?: HTMLElement;
   labels: {
@@ -39,6 +52,10 @@ interface SettingsMenuProps {
     zoomBandsTitle: string;
     zoomBandsHelper: string;
     zoomBandsSummary: string;
+    zoomBandsRangeCount: string;
+    zoomBandsRangeCountHelp: string;
+    zoomBandsBoundaries: string;
+    zoomBandsBoundariesHelp: string;
   };
 }
 
@@ -49,6 +66,8 @@ export function SettingsMenu({
   onAutosaveEnabledChange,
   dialogBackdropDismissEnabled,
   onDialogBackdropDismissEnabledChange,
+  zoomBandBoundaries,
+  onZoomBandBoundariesChange,
   onAction,
   portalContainer,
   labels,
@@ -56,6 +75,25 @@ export function SettingsMenu({
   const [settingsAnchorEl, setSettingsAnchorEl] = useState<HTMLElement | null>(null);
 
   const settingsOpen = Boolean(settingsAnchorEl);
+  const resolvedBoundaries = Array.isArray(zoomBandBoundaries)
+    ? zoomBandBoundaries
+    : TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES;
+  const normalizedBoundaries = useMemo(
+    () =>
+      normalizeZoomBandBoundaries(
+        resolvedBoundaries,
+        TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM,
+        TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM,
+        TREE_CONSOLE_ZOOM_BAND_MAX_RANGES,
+      ),
+    [resolvedBoundaries],
+  );
+
+  const rangeCount = Math.min(
+    Math.max(normalizedBoundaries.length - 1, TREE_CONSOLE_ZOOM_BAND_MIN_RANGES),
+    TREE_CONSOLE_ZOOM_BAND_MAX_RANGES,
+  );
+  const sliderValues = normalizedBoundaries;
 
   const scheduleCloseSettingsMenu = useCallback(() => {
     if (typeof window !== 'undefined') {
@@ -67,7 +105,7 @@ export function SettingsMenu({
     }
   }, []);
 
-  const handleSettingsClick = (event: React.MouseEvent<HTMLElement>) => {
+  const handleSettingsClick = (event: MouseEvent<HTMLElement>) => {
     setSettingsAnchorEl(event.currentTarget);
   };
 
@@ -98,6 +136,41 @@ export function SettingsMenu({
     scheduleCloseSettingsMenu();
   };
 
+  const handleZoomBandBoundariesChange = (nextBoundaries: number[]) => {
+    if (onZoomBandBoundariesChange) {
+      onZoomBandBoundariesChange(nextBoundaries);
+    } else {
+      onAction('setZoomBandBoundaries', nextBoundaries);
+    }
+  };
+
+  const handleRangeCountChange = (_event: Event, value: number | number[]) => {
+    const raw = Array.isArray(value) ? value[0] : value;
+    if (typeof raw !== 'number') return;
+    const currentMax = normalizedBoundaries[normalizedBoundaries.length - 1] ?? TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM;
+    const nextBoundaries = buildEvenZoomBandBoundaries(
+      raw,
+      TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM,
+      currentMax,
+    );
+    handleZoomBandBoundariesChange(nextBoundaries);
+  };
+
+  const handleBoundariesChange = (_event: Event, value: number | number[]) => {
+    if (!Array.isArray(value)) return;
+    const nextValues = [...value];
+    if (nextValues.length > 0) {
+      nextValues[0] = TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM;
+    }
+    const nextBoundaries = normalizeZoomBandBoundaries(
+      nextValues,
+      TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM,
+      TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM,
+      TREE_CONSOLE_ZOOM_BAND_MAX_RANGES,
+    );
+    handleZoomBandBoundariesChange(nextBoundaries);
+  };
+
   return (
     <>
       <IconButton
@@ -118,14 +191,17 @@ export function SettingsMenu({
           <Paper
             sx={{
               p: 2,
-              minWidth: 250,
+              minWidth: 280,
               zIndex: (theme) => Math.max(theme.zIndex.modal + 2, 2001),
             }}
           >
             <Typography variant="subtitle2" gutterBottom>
               {labels.rowClickTitle}
             </Typography>
-            <RadioGroup value={rowClickAction} onChange={(e) => handleRowClickChange(e.target.value as 'Select/Navigate' | 'Edit')}>
+            <RadioGroup
+              value={rowClickAction}
+              onChange={(e) => handleRowClickChange(e.target.value as 'Select/Navigate' | 'Edit')}
+            >
               <FormControlLabel
                 value="Select/Navigate"
                 control={<Radio size="small" />}
@@ -161,7 +237,12 @@ export function SettingsMenu({
                   onChange={(e) => handleDialogBackdropDismissChange(e.target.checked)}
                 />
               }
-              label={<LabelWithIcon icon={<DisabledByDefault fontSize="small" />} text={labels.dialogBackdropDismissTitle} />}
+              label={
+                <LabelWithIcon
+                  icon={<DisabledByDefault fontSize="small" />}
+                  text={labels.dialogBackdropDismissTitle}
+                />
+              }
             />
 
             <Divider sx={{ my: 1.5 }} />
@@ -175,6 +256,48 @@ export function SettingsMenu({
             <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>
               {labels.zoomBandsSummary}
             </Typography>
+
+            <Stack spacing={1.5} sx={{ mt: 1.5 }}>
+              <Stack spacing={0.5}>
+                <Typography variant="body2" fontWeight={600}>
+                  {labels.zoomBandsRangeCount}
+                </Typography>
+                <Slider
+                  sx={{ mt: '36px !important' }}
+                  value={rangeCount}
+                  min={TREE_CONSOLE_ZOOM_BAND_MIN_RANGES}
+                  max={TREE_CONSOLE_ZOOM_BAND_MAX_RANGES}
+                  step={1}
+                  marks
+                  valueLabelDisplay="on"
+                  onChange={handleRangeCountChange}
+                  getAriaLabel={() => labels.zoomBandsRangeCount}
+                />
+                <Typography variant="caption" color="text.secondary">
+                  {labels.zoomBandsRangeCountHelp}
+                </Typography>
+              </Stack>
+              <Stack spacing={0.5}>
+                <Typography variant="body2" fontWeight={600}>
+                  {labels.zoomBandsBoundaries}
+                </Typography>
+                <Slider
+                  sx={{ mt: '36px !important' }}
+                  value={sliderValues}
+                  min={TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM}
+                  max={TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM}
+                  step={1}
+                  marks
+                  disableSwap
+                  valueLabelDisplay="on"
+                  onChange={handleBoundariesChange}
+                  getAriaLabel={() => labels.zoomBandsBoundaries}
+                />
+                <Typography variant="caption" color="text.secondary">
+                  {labels.zoomBandsBoundariesHelp}
+                </Typography>
+              </Stack>
+            </Stack>
           </Paper>
         </MenuItem>
 

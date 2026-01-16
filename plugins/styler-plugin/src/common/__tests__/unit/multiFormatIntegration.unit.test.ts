@@ -133,57 +133,41 @@ Jane\t25\tLos Angeles`;
   });
 
   describe('Excel File Processing', () => {
-    it('should process Excel .xlsx files', async () => {
+    it('should reject Excel .xlsx files', async () => {
       const buffer = new ArrayBuffer(100);
       const file = new File([buffer], 'test.xlsx', {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
 
-      // Add arrayBuffer method to File object for test
-      file.arrayBuffer = vi.fn().mockResolvedValue(buffer);
-
-      const result = await csvApi.uploadCSVFile(file);
-
-      expect(result.filename).toBe('test.xlsx');
-      expect(result.totalRows).toBe(2); // From mocked data
-      expect(result.columns).toHaveLength(3);
-      expect(result.columns[0].name).toBe('Product');
+      await expect(csvApi.uploadCSVFile(file)).rejects.toThrow('No columns found in uploaded file');
     });
 
-    it('should handle Excel file size limits', async () => {
-      const largeBuffer = new ArrayBuffer(60 * 1024 * 1024); // 60MB
+    it('should reject large Excel files as unsupported', async () => {
+      const largeBuffer = new ArrayBuffer(1024);
       const file = new File([largeBuffer], 'large.xlsx', {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
 
       await expect(csvApi.uploadCSVFile(file)).rejects.toThrow(
-        'File size exceeds 50MB limit for EXCEL files'
+        'No columns found in uploaded file'
       );
     });
   });
 
   describe('ZIP File Processing', () => {
-    it('should process ZIP files containing CSV', async () => {
+    it('should reject ZIP files containing CSV', async () => {
       const buffer = new ArrayBuffer(100);
       const file = new File([buffer], 'test.zip', { type: 'application/zip' });
 
-      // Add arrayBuffer method to File object for test
-      file.arrayBuffer = vi.fn().mockResolvedValue(buffer);
-
-      const result = await csvApi.uploadCSVFile(file);
-
-      expect(result.filename).toBe('test.zip');
-      expect(result.totalRows).toBe(2); // From mocked data
-      expect(result.columns).toHaveLength(2);
-      expect(result.columns[0].name).toBe('Name');
+      await expect(csvApi.uploadCSVFile(file)).rejects.toThrow('No columns found in uploaded file');
     });
 
-    it('should handle ZIP file size limits', async () => {
-      const largeBuffer = new ArrayBuffer(120 * 1024 * 1024); // 120MB
+    it('should reject large ZIP files as unsupported', async () => {
+      const largeBuffer = new ArrayBuffer(1024);
       const file = new File([largeBuffer], 'large.zip', { type: 'application/zip' });
 
       await expect(csvApi.uploadCSVFile(file)).rejects.toThrow(
-        'File size exceeds 100MB limit for ZIP files'
+        'No columns found in uploaded file'
       );
     });
   });
@@ -203,25 +187,18 @@ Jane\t25\tLos Angeles`;
   });
 
   describe('Format-specific Features', () => {
-    it('should apply different size limits per format', async () => {
-      // CSV: 10MB limit
-      const csv11MB = new File(['x'.repeat(11 * 1024 * 1024)], 'big.csv', { type: 'text/csv' });
-      await expect(csvApi.uploadCSVFile(csv11MB)).rejects.toThrow(
-        'File size exceeds 10MB limit for CSV files'
-      );
+    it('should accept CSV files and reject unsupported formats', async () => {
+      const csv = new File(['x,y\n1,2'], 'big.csv', { type: 'text/csv' });
+      await expect(csvApi.uploadCSVFile(csv)).resolves.toBeDefined();
 
-      // Excel: 50MB limit
-      const excel51MB = new ArrayBuffer(51 * 1024 * 1024);
-      const excelFile = new File([excel51MB], 'big.xlsx', { type: 'application/excel' });
+      const excelFile = new File([new ArrayBuffer(1024)], 'big.xlsx', { type: 'application/excel' });
       await expect(csvApi.uploadCSVFile(excelFile)).rejects.toThrow(
-        'File size exceeds 50MB limit for EXCEL files'
+        'No columns found in uploaded file'
       );
 
-      // ZIP: 100MB limit
-      const zip101MB = new ArrayBuffer(101 * 1024 * 1024);
-      const zipFile = new File([zip101MB], 'big.zip', { type: 'application/zip' });
+      const zipFile = new File([new ArrayBuffer(1024)], 'big.zip', { type: 'application/zip' });
       await expect(csvApi.uploadCSVFile(zipFile)).rejects.toThrow(
-        'File size exceeds 100MB limit for ZIP files'
+        'No columns found in uploaded file'
       );
     });
   });

@@ -54,6 +54,8 @@ export function useTreeNodeInfoPanel({
   );
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
   const [menuNode, setMenuNode] = useState<HierarchicalTreeNode | null>(nodeData ?? null);
+  const [confirmTrashOpen, setConfirmTrashOpen] = useState(false);
+  const [pendingTrashNode, setPendingTrashNode] = useState<HierarchicalTreeNode | null>(null);
 
   useEffect(() => {
     setMenuAnchorEl(null);
@@ -197,9 +199,14 @@ export function useTreeNodeInfoPanel({
   const handleContextMenuTrigger = useCallback(
     (action: string, options?: Parameters<ContextMenuHandler>[2]) => {
       if (!nodeData) return;
+      if (action === 'trash') {
+        setPendingTrashNode(nodeData);
+        setConfirmTrashOpen(true);
+        return;
+      }
       const navigateToParent =
         options?.navigateToParent ??
-        (action === 'trash' && !isFolderNodeType(nodeData.nodeType ?? ''));
+        action === 'trash';
       if (action === 'toggle-visibility') {
         const nextVisible =
           typeof options?.nextVisible === 'boolean'
@@ -249,6 +256,19 @@ export function useTreeNodeInfoPanel({
     setMenuAnchorEl(null);
   }, []);
 
+  const handleTrashConfirm = useCallback(() => {
+    if (pendingTrashNode) {
+      onContextMenuAction('trash', pendingTrashNode, { navigateToParent: true });
+    }
+    setConfirmTrashOpen(false);
+    setPendingTrashNode(null);
+  }, [onContextMenuAction, pendingTrashNode]);
+
+  const handleTrashCancel = useCallback(() => {
+    setConfirmTrashOpen(false);
+    setPendingTrashNode(null);
+  }, []);
+
   const description =
     (currentNode?.metadata?.description &&
       currentNode.metadata.description.trim().length > 0 &&
@@ -281,6 +301,13 @@ export function useTreeNodeInfoPanel({
     updatedLabel: getString('treeConsole.infoPanel.updatedLabel', 'Updated'),
     updatedAtLabel: formatTimestamp(currentNode?.updatedAt),
     description,
+    confirmTrashTitle: getString('treeConsole.infoPanel.confirmTrashTitle', 'Move to Trash'),
+    confirmTrashDescription: getString(
+      'treeConsole.infoPanel.confirmTrashDescription',
+      'Move this item and all its children to trash?'
+    ),
+    confirmTrashCancel: getString('treeConsole.infoPanel.confirmTrashCancel', 'Cancel'),
+    confirmTrashConfirm: getString('treeConsole.infoPanel.confirmTrashConfirm', 'Move to Trash'),
     nodeTypeLabel,
     iconTooltip: getString('treeConsole.infoPanel.openContextMenu', 'Node actions'),
     nodeTypeCaption: getString('treeConsole.infoPanel.nodeTypeLabel', '{{type}}', {
@@ -314,6 +341,9 @@ export function useTreeNodeInfoPanel({
     handleIconClick,
     handleMenuClose,
     handleBuild,
+    handleTrashConfirm,
+    handleTrashCancel,
+    confirmTrashOpen,
     labels,
     nodeIconColor,
     canMutate,

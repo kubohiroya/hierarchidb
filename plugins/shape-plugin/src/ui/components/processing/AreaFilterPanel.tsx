@@ -14,14 +14,14 @@ import {
 import type {
   HybridFilterConfig,
   ShapeBuildConfig,
-  TransformByBandConfig,
+  TransformConfig,
 } from '../../../common/types/index.js';
 import { useTranslation } from '../../i18n.js';
 import { FeatureFilterMethod } from '@hierarchidb/gis-sdk';
 
 type Props = {
   controlId: string;
-  baseTransformByBandConfig: TransformByBandConfig;
+  baseTransformConfig: TransformConfig;
   baseHybridConfig: HybridFilterConfig;
   quickRejectLogMin: number;
   quickRejectLogMax: number;
@@ -32,7 +32,7 @@ type Props = {
 
 export const AreaFilterPanel: React.FC<Props> = ({
   controlId,
-  baseTransformByBandConfig,
+  baseTransformConfig,
   baseHybridConfig,
   quickRejectLogMin,
   quickRejectLogMax,
@@ -57,12 +57,12 @@ export const AreaFilterPanel: React.FC<Props> = ({
               <RadioGroup
                 aria-labelledby={`${controlId}-filtering-method`}
                 name="filtering-method"
-                value={baseTransformByBandConfig.featureFilterMethod}
+                value={baseTransformConfig.featureFilterMethod}
                 onChange={(e) => {
                   const method = e.target.value as FeatureFilterMethod;
                   update({
-                    transformByBandConfig: {
-                      ...baseTransformByBandConfig,
+                    transformConfig: {
+                      ...baseTransformConfig,
                       featureFilterMethod: method,
                     },
                   });
@@ -107,12 +107,12 @@ export const AreaFilterPanel: React.FC<Props> = ({
               </Typography>
               <Box sx={{ px: 2 }}>
                 <Slider
-                  value={baseTransformByBandConfig.minVertexCountForAreaFilter}
+                  value={baseTransformConfig.minVertexCountForAreaFilter}
                   onChange={(_, value) => {
                     const minVertexCountForAreaFilter = value as number;
                     update({
-                      transformByBandConfig: {
-                        ...baseTransformByBandConfig,
+                      transformConfig: {
+                        ...baseTransformConfig,
                         minVertexCountForAreaFilter,
                       },
                     });
@@ -143,12 +143,12 @@ export const AreaFilterPanel: React.FC<Props> = ({
               </Typography>
               <Box sx={{ px: 2 }}>
                 <Slider
-                  value={baseTransformByBandConfig.featureAreaThreshold}
+                  value={baseTransformConfig.featureAreaThreshold}
                   onChange={(_, value) => {
                     const featureAreaThreshold = value as number;
                     update({
-                      transformByBandConfig: {
-                        ...baseTransformByBandConfig,
+                      transformConfig: {
+                        ...baseTransformConfig,
                         featureAreaThreshold,
                       },
                     });
@@ -188,8 +188,8 @@ export const AreaFilterPanel: React.FC<Props> = ({
                     const logValue = value as number;
                     const quickRejectThreshold = Number((10 ** logValue).toFixed(3));
                     update({
-                      transformByBandConfig: {
-                        ...baseTransformByBandConfig,
+                      transformConfig: {
+                        ...baseTransformConfig,
                         hybridFilterConfig: {
                           ...baseHybridConfig,
                           quickRejectThreshold,
@@ -226,8 +226,8 @@ export const AreaFilterPanel: React.FC<Props> = ({
                   onChange={(_, value) => {
                     const simpleShapeVertexThreshold = value as number;
                     update({
-                      transformByBandConfig: {
-                        ...baseTransformByBandConfig,
+                      transformConfig: {
+                        ...baseTransformConfig,
                         hybridFilterConfig: {
                           ...baseHybridConfig,
                           simpleShapeVertexThreshold,
@@ -263,8 +263,8 @@ export const AreaFilterPanel: React.FC<Props> = ({
                   onChange={(_, value) => {
                     const elongatedShapeCorrectionFactor = value as number;
                     update({
-                      transformByBandConfig: {
-                        ...baseTransformByBandConfig,
+                      transformConfig: {
+                        ...baseTransformConfig,
                         hybridFilterConfig: {
                           ...baseHybridConfig,
                           elongatedShapeCorrectionFactor,

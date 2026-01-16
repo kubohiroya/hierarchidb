@@ -9,8 +9,7 @@ import type {
   FeatureFilterMethod as CommonFeatureFilterMethod,
   FetchConfig as CommonFetchConfig,
   HybridFilterConfig as CommonHybridFilterConfig,
-  TransformByBandConfig as CommonTransformByBandConfig,
-  TransformByZoomConfig as CommonTransformByZoomConfig,
+  TransformConfig as CommonTransformConfig,
   VTConfig as CommonVTConfig,
 } from '@hierarchidb/gis-sdk';
 import type { DataSourceName } from './data-source.js';
@@ -38,12 +37,7 @@ export type ExtractionMode = CommonExtractionMode;
 /**
  * Configuration specific to ExtractSession1 (Feature Processing)
  */
-export type TransformByBandConfig = CommonTransformByBandConfig;
-
-/**
- * Configuration specific to ExtractSession2 (Tile Processing)
- */
-export type TransformByZoomConfig = CommonTransformByZoomConfig;
+export type TransformConfig = CommonTransformConfig;
 
 /**
  * Configuration specific to GenerateVectorTilesSession
@@ -57,12 +51,10 @@ export type VTConfig = CommonVTConfig;
 export interface ObsolateBuildConfig extends CommonSessionConfig {
   // Session-specific configurations
   fetchConfig: ShapeFetchConfig;
-  transformByBandConfig: TransformByBandConfig;
-  transformByZoomConfig: TransformByZoomConfig;
+  transformConfig: TransformConfig;
   vtConfig: VTConfig;
 
   deleteDownloadCacheOnComplete?: boolean;
   deleteExtract1CacheOnComplete?: boolean;
   deleteExtract2CacheOnComplete?: boolean;
 }
-

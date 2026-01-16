@@ -31,6 +31,7 @@ export const ShapeBuildProgressAtomSync = ({
     overallProgress,
     stageLabel,
     taskLabel,
+    taskUnitLabel,
     statusLabel,
     completed,
     total,
@@ -82,6 +83,7 @@ export const ShapeBuildProgressAtomSync = ({
     setSummary({
       stageLabel,
       taskLabel,
+      taskUnitLabel,
       overallProgress,
       completed,
       total,

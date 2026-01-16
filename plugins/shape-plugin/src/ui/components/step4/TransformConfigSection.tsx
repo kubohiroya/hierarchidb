@@ -16,7 +16,7 @@ import {
 } from '@mui/icons-material';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { useTranslation } from '../../i18n.js';
-import { useTransformByBandConfigSection } from './useTransformByBandConfigSection.ts';
+import { useTransformConfigSection } from './useTransformConfigSection.ts';
 import { AreaFilterPanel } from '../processing/AreaFilterPanel.js';
 import { ExtractionPanel } from '../processing/ExtractionPanel.js';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
@@ -27,17 +27,17 @@ type Props = {
   onChange: (next: ShapeBuildConfig) => void;
 };
 
-export const TransformByBandConfigSection: React.FC<Props> = ({ config, disabled, onChange }) => {
+export const TransformConfigSection: React.FC<Props> = ({ config, disabled, onChange }) => {
   const { t } = useTranslation();
   const {
     controlId,
-    baseTransformByBandConfig,
+    baseTransformConfig,
     baseHybridConfig,
     quickRejectLogMin,
     quickRejectLogMax,
     quickRejectLogValue,
     update,
-  } = useTransformByBandConfigSection({ config, disabled, onChange });
+  } = useTransformConfigSection({ config, disabled, onChange });
 
   return (
     <Accordion defaultExpanded>
@@ -61,17 +61,17 @@ export const TransformByBandConfigSection: React.FC<Props> = ({ config, disabled
       <AccordionDetails sx={{ p: 3 }}>
         <Stack spacing={3}>
           <Grid container spacing={3}>
-            <Grid size={{ xs: 12, sm: 4 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <WorkerNumberConfigCard
                 icon={<FilterAlt fontSize="small" color="primary" />}
                 title={t('processing.filter.workersStage1', 'Transform Workers (Filtering)')}
-                value={baseTransformByBandConfig.maxConcurrent}
+                value={baseTransformConfig.maxConcurrent}
                 helperText={t('processing.filter.workersStage1Help', 'Parallel workers for transform filtering.')}
                 warningText={undefined}
                 onChange={(maxConcurrent) =>
                   update({
-                    transformByBandConfig: {
-                      ...baseTransformByBandConfig,
+                    transformConfig: {
+                      ...baseTransformConfig,
                       maxConcurrent,
                     },
                   })
@@ -88,7 +88,7 @@ export const TransformByBandConfigSection: React.FC<Props> = ({ config, disabled
               <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
                 <AreaFilterPanel
                   controlId={controlId}
-                  baseTransformByBandConfig={baseTransformByBandConfig}
+                  baseTransformConfig={baseTransformConfig}
                   baseHybridConfig={baseHybridConfig}
                   quickRejectLogMin={quickRejectLogMin}
                   quickRejectLogMax={quickRejectLogMax}
@@ -101,12 +101,12 @@ export const TransformByBandConfigSection: React.FC<Props> = ({ config, disabled
             <Grid size={{ xs: 12, md: 4 }}>
               <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
                 <ExtractionPanel
-                  tolerance={baseTransformByBandConfig.tolerance}
+                  tolerance={baseTransformConfig.tolerance}
                   toleranceLabelKey="processing.filter.tolerancePrimary"
                   onToleranceChange={(tolerance) =>
                     update({
-                      transformByBandConfig: {
-                        ...baseTransformByBandConfig,
+                      transformConfig: {
+                        ...baseTransformConfig,
                         tolerance,
                       },
                     })

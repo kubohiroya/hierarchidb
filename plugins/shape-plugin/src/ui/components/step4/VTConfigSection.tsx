@@ -1,4 +1,4 @@
-import { Accordion, AccordionDetails, AccordionSummary, Box, Card, CardContent, FormControlLabel, Grid, Stack, Switch, TextField, Typography, Slider, Tooltip } from '@mui/material';
+import { Accordion, AccordionDetails, AccordionSummary, Box, FormControlLabel, Grid, Stack, Switch, TextField, Typography, Slider, Tooltip } from '@mui/material';
 import { Layers as LayersIcon, ExpandMore as ExpandMoreIcon, InfoOutlined as InfoOutlinedIcon } from '@mui/icons-material';
 import type { ShapeEntity } from '../../../common/types/index.js';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
@@ -138,21 +138,25 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
               label={t('processing.tile.boundaryDedupe', 'Boundary Dedupe')}
             />
           </Grid>
-
-          <Grid size={{ xs: 12, sm: 12 }}>
-            <Card variant="outlined">
-              <CardContent>
-                <Typography variant="subtitle2" gutterBottom>
-                  {t('processing.tile.zoomBands', 'Zoom bands')}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
-                  {t(
-                    'processing.tile.zoomBandsSummary',
-                    'band0: z0-3\nband1: z3-6\nband2: z6-9\nband3: z9-11 (optional)',
-                  )}
-                </Typography>
-              </CardContent>
-            </Card>
+          <Grid size={{ xs: 12, sm: 4 }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={buildConfig.vtConfig.enableTopojsonSimplify}
+                  onChange={(event) => {
+                    const enableTopojsonSimplify = event.target.checked;
+                    update({
+                      vtConfig: {
+                        ...buildConfig.vtConfig,
+                        enableTopojsonSimplify,
+                      },
+                    });
+                  }}
+                  disabled={disabled}
+                />
+              }
+              label={t('processing.tile.topojsonSimplify', 'Enable TopoJSON simplify')}
+            />
           </Grid>
 
           <Grid size={{ xs: 12, sm: 4 }} style={{ paddingRight: '20px' }}>

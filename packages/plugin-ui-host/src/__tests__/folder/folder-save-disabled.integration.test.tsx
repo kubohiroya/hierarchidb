@@ -1,8 +1,8 @@
 /// <reference types="vitest/globals" />
 /// <reference types="@testing-library/jest-dom/vitest" />
 import '@testing-library/jest-dom/vitest';
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, it, expect } from 'vitest';
 import { PluginDialogFooter } from '../../headless/components/PluginDialogFooter.js';
 import { PluginDialogProvider } from '@hierarchidb/ui-dialog';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
@@ -12,6 +12,10 @@ vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => () => Promise.resolve(),
   useLocation: () => ({ pathname: '/t/demo/root', searchStr: '', hash: '' }),
 }));
+
+afterEach(() => {
+  cleanup();
+});
 
 function renderFooter({
   isDirty,

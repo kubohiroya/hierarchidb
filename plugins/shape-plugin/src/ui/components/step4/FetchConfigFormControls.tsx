@@ -2,7 +2,6 @@ import { Button, Grid, Stack, Typography } from '@mui/material';
 import {
   CloudDownload as CloudDownloadIcon,
   Description as DescriptionIcon,
-  Filter as FilterIcon,
   FilterAlt as FilterAltIcon,
   Layers as LayersIcon,
 } from '@mui/icons-material';
@@ -11,19 +10,16 @@ import { useTranslation } from '../../i18n.js';
 type Props = {
   deleteFetchLabel: string;
   deleteTransformFilterLabel: string;
-  deleteTransformPreprocessLabel: string;
   deleteVTLabel: string;
   deleteMetadataLabel: string;
   countsLoading?: boolean;
   canDeleteFetchCache: boolean;
   canDeleteTransformCache: boolean;
-  canDeleteTransformByZoomCache: boolean;
   canDeleteVTCache: boolean;
   canDeleteMetadata: boolean;
   resetDisabled?: boolean;
   onDeleteFetchCache: () => void;
   onDeleteTransformCache: () => void;
-  onDeleteTransformByZoomCache: () => void;
   onDeleteVTCache: () => void;
   onDeleteMetadata: () => void;
   onResetDefaults: () => void;
@@ -32,19 +28,16 @@ type Props = {
 export const FetchConfigFormControls: React.FC<Props> = ({
   deleteFetchLabel,
   deleteTransformFilterLabel,
-  deleteTransformPreprocessLabel,
   deleteVTLabel,
   deleteMetadataLabel,
   countsLoading = false,
   canDeleteFetchCache,
   canDeleteTransformCache,
-  canDeleteTransformByZoomCache,
   canDeleteVTCache,
   canDeleteMetadata,
   resetDisabled,
   onDeleteFetchCache,
   onDeleteTransformCache,
-  onDeleteTransformByZoomCache,
   onDeleteVTCache,
   onDeleteMetadata,
   onResetDefaults,
@@ -82,18 +75,6 @@ export const FetchConfigFormControls: React.FC<Props> = ({
             onClick={() => onDeleteTransformCache()}
           >
             {deleteTransformFilterLabel}
-          </Button>
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <Button
-            fullWidth
-            variant="outlined"
-            color="error"
-            startIcon={<FilterIcon />}
-            disabled={!canDeleteTransformByZoomCache}
-            onClick={() => onDeleteTransformByZoomCache()}
-          >
-            {deleteTransformPreprocessLabel}
           </Button>
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>

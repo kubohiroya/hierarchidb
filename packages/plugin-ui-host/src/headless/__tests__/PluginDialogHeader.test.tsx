@@ -2,9 +2,9 @@
 /// <reference types="@testing-library/jest-dom/vitest" />
 import { PluginDialogProvider } from '@hierarchidb/ui-dialog';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { ComponentProps } from 'react';
-import { vi } from 'vitest';
+import { afterEach, vi } from 'vitest';
 import { PluginDialogHeader } from '../components/PluginDialogHeader.js';
 import '@testing-library/jest-dom/vitest';
 
@@ -28,6 +28,10 @@ vi.mock('@tanstack/react-router', () => {
       return React.createElement('a', { ref, href, ...rest }, children);
     }),
   };
+});
+
+afterEach(() => {
+  cleanup();
 });
 
 describe('PluginDialogHeader', () => {
@@ -68,7 +72,7 @@ describe('PluginDialogHeader', () => {
       </ThemeProvider>
     );
 
-    const detailsStepButton = screen.getByRole('link', { name: /Details/i });
+    const detailsStepButton = screen.getByRole('button', { name: /Details/i });
     fireEvent.click(detailsStepButton);
     expect(onStepNavigate).toHaveBeenCalledWith({ type: 'direct', targetIndex: 1 });
 
@@ -163,7 +167,7 @@ describe('PluginDialogHeader', () => {
     const inactiveLabel = screen.getByText('Step One');
     expect(inactiveLabel.getAttribute('data-active-label')).toBe('false');
 
-    const activeStepButton = screen.getByRole('link', { name: /Step Two/i });
+    const activeStepButton = screen.getByRole('button', { name: /Step Two/i });
     expect(activeStepButton.getAttribute('aria-current')).toBe('step');
   });
 
@@ -201,10 +205,9 @@ describe('PluginDialogHeader', () => {
 
     const validatedDisabledIcon = screen.getByTestId('plugin-dialog-step-icon-2');
     expect(validatedDisabledIcon.getAttribute('data-validated')).toBe('true');
-    expect(validatedDisabledIcon.getAttribute('data-valid-disabled')).toBe('true');
     expect(validatedDisabledIcon.getAttribute('data-active')).toBe('false');
 
-    const disabledStep = screen.getByRole('link', { name: /Step Two/i });
-    expect(disabledStep.getAttribute('aria-disabled')).toBe('true');
+    const disabledStep = screen.getByRole('button', { name: /Step Two/i });
+    expect(disabledStep).toBeDisabled();
   });
 });

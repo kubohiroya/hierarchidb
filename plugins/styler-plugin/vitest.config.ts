@@ -9,7 +9,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['./src/_obsolate_common/__tests__/setup.ts'],
+    setupFiles: ['./src/common/__tests__/setup.ts'],
     pool: 'threads',
   },
   resolve: {
@@ -18,13 +18,17 @@ export default defineConfig({
       '../../spreadsheet/src/services/SpreadsheetTabularApiDriver': path.resolve(__dirname, '../spreadsheet-plugin/src/services/SpreadsheetTabularApiDriver'),
       '@hierarchidb/spreadsheet-plugin': path.resolve(
         __dirname,
-        './src/_obsolate_common/__tests__/mocks/spreadsheet-plugin.ts'
+        '../spreadsheet-plugin/src/index.ts'
       ),
       '@hierarchidb/plugin-sdk': basePluginEntry,
       '~': path.resolve(__dirname, 'src'),
       '@hierarchidb/ui-tabular': path.resolve(
         workspaceRoot,
         'packages/ui/tabular-extract/src/index.ts'
+      ),
+      '@hierarchidb/ui-i18n': path.resolve(
+        workspaceRoot,
+        'packages/ui/i18n/src/index.ts'
       ),
       '@hierarchidb/util': path.resolve(workspaceRoot, 'packages/util/src/index.ts'),
     },

@@ -15,7 +15,7 @@ import type { Geometry } from 'geojson';
 import { VectorTileDbBase } from '@hierarchidb/vectortile-store';
 import type {
   FeatureFilterMethod, FetchConfig,
-  HybridFilterConfig, TransformByBandConfig, TransformByZoomConfig, VTConfig } from '@hierarchidb/gis-sdk';
+  HybridFilterConfig, TransformConfig, VTConfig } from '@hierarchidb/gis-sdk';
 type CacheEntryData = Record<string, unknown> | string | number | boolean | null;
 
 export type DataSourceName = 'naturalearth' | 'geoboundaries' | 'gadm' | 'openstreetmap';
@@ -26,8 +26,7 @@ export interface CommonSessionConfig {
 
 export interface BuildSessionConfig extends CommonSessionConfig {
   fetchConfig: FetchConfig;
-  transformByBandConfig: TransformByBandConfig;
-  transformByZoomConfig: TransformByZoomConfig;
+  transformConfig: TransformConfig;
   vectorTiles: VTConfig;
   quantize?: number;
   extract?: number;
@@ -45,7 +44,7 @@ export interface BuildSessionConfig extends CommonSessionConfig {
 }
 
 export type BuildProcessConfig = BuildSessionConfig;
-export type BuildTaskType = 'fetch' | 'transform-by-band' | 'transform-by-zoom' | 'vt';
+export type BuildTaskType = 'fetch' | 'transform' | 'transform-by-zoom' | 'vt';
 export type BuildStage = BuildTaskType;
 export type TaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'regression';
 

@@ -70,7 +70,8 @@ function createLocalBridge(manager: UnifiedLocationBatchManager): BridgeLike {
       // no-op
     },
     async startBatchSession(_nodeType, nodeId) {
-      const sessionNodeId = await manager.startBatchSession(nodeId);
+      const sessionStatus = await manager.startBatchSession(nodeId);
+      const sessionNodeId = sessionStatus.nodeId;
       const db = getLocationDB();
       await db.vectorTiles.put({
         id: `loc-mvt-${sessionNodeId}-5-28-12`,

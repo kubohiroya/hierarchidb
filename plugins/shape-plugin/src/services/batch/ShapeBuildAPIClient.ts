@@ -7,6 +7,7 @@ import type {
   EphemeralShapeAPI,
   ShapeEphemeralSessionRecord,
   ShapeTransformByBandCache,
+  ShapeTransformErrorRecord,
   ShapeFeatureRecord,
   ShapeFeatureMetadata,
   ShapeMutationAPI,
@@ -360,6 +361,10 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
 
   async listFeatureMetadata(nodeId: NodeId): Promise<ShapeFeatureMetadata[]> {
     return shapeDB.featureMetadata.where('nodeId').equals(String(nodeId)).toArray() as Promise<ShapeFeatureMetadata[]>;
+  }
+
+  async listTransformErrorRecords(nodeId: NodeId): Promise<ShapeTransformErrorRecord[]> {
+    return ephemeralShapeDB.transformErrors.where('nodeId').equals(nodeId).toArray() as Promise<ShapeTransformErrorRecord[]>;
   }
 }
 
@@ -717,4 +722,3 @@ export const createShapeBuildApiClient = (): { query: ShapeQueryAPI; mutation: S
 export const shapeQueryAPIImpl = new ShapeQueryAPIImpl();
 export const shapeMutationAPIImpl = new ShapeMutationAPIImpl();
 export const ephemeralShapeAPIImpl = new EphemeralShapeApiImpl();
-

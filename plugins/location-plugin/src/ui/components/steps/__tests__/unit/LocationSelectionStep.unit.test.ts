@@ -18,11 +18,10 @@ describe('buildSelectionRecord', () => {
       { countryCode: 'AAA', selections: { airport: true } },
     ];
     const normalized = buildSelectionRecord(
-      mockCountries,
+      mockCountries.map((country) => country.code),
       mockTypes,
       selections,
       new Set(mockTypes.map((type) => type.id)),
-      mockTypes.map((type) => type.id),
     );
     expect(normalized).toEqual({
       AAA: [true, false],
@@ -36,7 +35,7 @@ describe('buildSelectionRecord', () => {
       { countryCode: 'BBB', selections: { airport: false } },
     ];
     const normalized = buildSelectionRecord(
-      mockCountries,
+      mockCountries.map((country) => country.code),
       [{ id: 'airport' as LocationType }],
       selections,
       new Set<LocationType>(['airport']),

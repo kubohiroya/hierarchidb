@@ -42,6 +42,8 @@ import {
   onTaskQueueUpdate,
   updateTask,
 } from '@hierarchidb/vt-orchestrator';
+import { VtShapeDb, listFetchCache } from '@hierarchidb/vt-shape-store';
+import { ephemeralShapeDB } from '@hierarchidb/shape-store';
 import { runShapeVtPipeline } from '../services/vt/shapeVtPipeline.js';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../services/batch/ShapeBuildAPIClient.ts';
 
@@ -65,8 +67,7 @@ const buildBuildSessionConfig = (buildConfig: ShapeBuildConfig): ShapeBuildConfi
   return {
     dataSourceName: resolvedDataSource,
     fetchConfig: buildConfig.fetchConfig,
-    transformByBandConfig: buildConfig.transformByBandConfig,
-    transformByZoomConfig: buildConfig.transformByZoomConfig,
+    transformConfig: buildConfig.transformConfig,
     vtConfig: buildConfig.vtConfig,
   };
 };
@@ -92,6 +93,19 @@ const isSkippedMessage = (message?: string | null): boolean => {
   if (!message) return false;
   const normalized = message.trim().toLowerCase();
   return normalized === 'skipped' || normalized.startsWith('skipped:');
+};
+
+const resolveTaskProgress = (task: TaskQueueRecord): number => {
+  if (task.stage !== 'transform') {
+    return task.progress ?? 0;
+  }
+  const output = task.outputData as Record<string, unknown> | undefined;
+  const processed = typeof output?.processedPolygons === 'number' ? output.processedPolygons : null;
+  const total = typeof output?.totalPolygons === 'number' ? output.totalPolygons : null;
+  if (processed !== null && total !== null && total > 0) {
+    return Math.min(100, Math.max(0, Math.round((processed / total) * 100)));
+  }
+  return task.progress ?? 0;
 };
 
 const mapTaskQueueStatusToStage = (status: TaskQueueRecord['status']): BuildTaskResultType => {
@@ -124,7 +138,7 @@ const buildTaskQueueTitle = (task: TaskQueueRecord): string | undefined => {
     const adminLevel = typeof input.adminLevel === "number" ? `ADM` : undefined;
     return [country, adminLevel].filter(Boolean).join(" ");
   }
-  if (task.stage === "transform-by-band") {
+  if (task.stage === "transform") {
     const country = typeof input.countryName === "string"
       ? input.countryName
       : typeof input.countryCode === "string"
@@ -149,31 +163,81 @@ const buildTaskQueueTitle = (task: TaskQueueRecord): string | undefined => {
 
 const mapTaskQueueRecordToBatchTask = (
   task: TaskQueueRecord,
-): BuildTask & { title?: string; message?: string } => ({
+  meta?: TaskWeightMeta,
+): BuildTask & { title?: string; message?: string; metadata?: TaskWeightMetadata } => ({
   taskId: task.taskId,
   nodeId: task.nodeId,
   stage: mapTaskQueueStatusToStage(task.status),
   status: mapTaskQueueStatusToTaskStatus(task.status),
   type: task.stage,
   index: task.index,
-  progress: task.progress,
+  progress: resolveTaskProgress(task),
   retryCount: task.retryCount,
   error: task.errorMessage,
   message: task.message ?? task.errorMessage,
   title: buildTaskQueueTitle(task),
+  metadata: meta
+    ? {
+      polygonCount: meta.polygonCount ?? undefined,
+      weight: meta.weight,
+      weightSource: meta.source,
+    }
+    : undefined,
 });
 
-const summarizeTaskQueue = (tasks: TaskQueueRecord[]) => {
+type TaskWeightSource = 'output' | 'fetch-cache' | 'transform-cache' | 'fallback';
+
+type TaskWeightMetadata = {
+  polygonCount?: number;
+  weight: number;
+  weightSource: TaskWeightSource;
+};
+
+type TaskWeightMeta = {
+  polygonCount?: number | null;
+  weight: number;
+  source: TaskWeightSource;
+};
+
+type TaskWeightContext = {
+  fetchCacheById: Map<string, { polygonCount: number }>;
+  fetchCacheBySourceKey: Map<string, { polygonCount: number }>;
+  transformCacheById: Map<string, { polygonCount: number }>;
+};
+
+const asRecord = (value: unknown): Record<string, unknown> | null => {
+  if (!value || typeof value !== 'object') return null;
+  return value as Record<string, unknown>;
+};
+
+const readNumber = (value: unknown): number | null => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  return value;
+};
+
+const readString = (value: unknown): string | null => {
+  if (typeof value !== 'string') return null;
+  return value;
+};
+
+const readStringArray = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === 'string');
+};
+
+const resolveTaskType = (tasks: TaskQueueRecord[]): TaskQueueRecord['stage'] | undefined => {
+  const stageOrder: Array<TaskQueueRecord['stage']> = ['fetch', 'transform', 'transform-by-zoom', 'vt'];
+  return stageOrder.find((stage) => (
+    tasks.some((task) => task.stage === stage && task.status !== 'completed' && task.status !== 'failed')
+  ));
+};
+
+const summarizeTaskQueueStatus = (tasks: TaskQueueRecord[]) => {
   const total = tasks.length;
   const completed = tasks.filter((task) => task.status === 'completed' && !isSkippedMessage(task.message)).length;
   const failed = tasks.filter((task) => task.status === 'failed').length;
   const skipped = tasks.filter((task) => isSkippedMessage(task.message)).length;
-  const stageOrder: Array<TaskQueueRecord['stage']> = ['fetch', 'transform-by-band', 'transform-by-zoom', 'vt'];
-  const taskType = stageOrder.find((stage) => (
-    tasks.some((task) => task.stage === stage && task.status !== 'completed' && task.status !== 'failed')
-  ));
   const doneCount = Math.min(total, completed + skipped + failed);
-  const percentage = total > 0 ? Math.round((doneCount / total) * 100) : 0;
   const status: BuildTask['status'] = failed > 0
     ? 'failed'
     : total > 0 && doneCount >= total
@@ -183,19 +247,168 @@ const summarizeTaskQueue = (tasks: TaskQueueRecord[]) => {
         : 'idle';
   return {
     status,
-    progress: {
-      total,
-      completed,
-      failed,
-      skipped,
-      percentage,
-      taskType,
-    },
+    taskType: resolveTaskType(tasks),
   };
 };
 
-const buildProgressPayloadFromTasks = (tasks: TaskQueueRecord[]): BatchProgressPayload => {
-  const summary = summarizeTaskQueue(tasks).progress;
+const buildTaskWeightContext = async (
+  nodeId: NodeId,
+  tasks: TaskQueueRecord[],
+): Promise<TaskWeightContext> => {
+  const fetchCacheIds = new Set<string>();
+  const fetchSourceKeys = new Set<string>();
+  const transformBufferIds = new Set<string>();
+
+  tasks.forEach((task) => {
+    const input = asRecord(task.inputData);
+    if (!input) return;
+    if (task.stage === 'fetch') {
+      const sourceKey = readString(input.sourceKey);
+      if (sourceKey) fetchSourceKeys.add(sourceKey);
+    }
+    if (task.stage === 'transform') {
+      const fetchCacheId = readString(input.fetchCacheId);
+      if (fetchCacheId) fetchCacheIds.add(fetchCacheId);
+      const sourceKey = readString(input.sourceKey);
+      if (sourceKey) fetchSourceKeys.add(sourceKey);
+    }
+    if (task.stage === 'vt') {
+      const bufferIds = readStringArray(input.bufferIds);
+      bufferIds.forEach((id) => transformBufferIds.add(id));
+    }
+  });
+
+  const shapeStore = new VtShapeDb();
+  const fetchCaches = await listFetchCache(shapeStore, nodeId);
+  const fetchCacheById = new Map(fetchCaches.map((cache) => [cache.id, cache] as const));
+  const fetchCacheBySourceKey = new Map(fetchCaches.map((cache) => [cache.sourceKey, cache] as const));
+
+  const bufferIds = [...transformBufferIds];
+  const transformCaches = bufferIds.length > 0
+    ? await ephemeralShapeDB.transformByBandCache.where('id').anyOf(bufferIds).toArray()
+    : [];
+  const transformCacheById = new Map(transformCaches.map((cache) => [cache.id, cache] as const));
+
+  return {
+    fetchCacheById,
+    fetchCacheBySourceKey,
+    transformCacheById,
+  };
+};
+
+const resolveTaskWeightMeta = (
+  task: TaskQueueRecord,
+  context: TaskWeightContext,
+): TaskWeightMeta => {
+  const output = asRecord(task.outputData);
+  const outputPolygonCount = readNumber(output?.polygonCount);
+  if (outputPolygonCount !== null) {
+    return { polygonCount: outputPolygonCount, weight: Math.max(0, Math.round(outputPolygonCount)), source: 'output' };
+  }
+
+  const input = asRecord(task.inputData) ?? {};
+  if (task.stage === 'fetch') {
+    const sourceKey = readString(input.sourceKey);
+    const cache = sourceKey ? context.fetchCacheBySourceKey.get(sourceKey) : undefined;
+    if (cache) {
+      return { polygonCount: cache.polygonCount, weight: Math.max(0, Math.round(cache.polygonCount)), source: 'fetch-cache' };
+    }
+  }
+
+  if (task.stage === 'transform') {
+    const fetchCacheId = readString(input.fetchCacheId);
+    const directCache = fetchCacheId ? context.fetchCacheById.get(fetchCacheId) : undefined;
+    const sourceKey = readString(input.sourceKey);
+    const sourceCache = sourceKey ? context.fetchCacheBySourceKey.get(sourceKey) : undefined;
+    const cache = directCache ?? sourceCache;
+    if (cache) {
+      return { polygonCount: cache.polygonCount, weight: Math.max(0, Math.round(cache.polygonCount)), source: 'fetch-cache' };
+    }
+  }
+
+  if (task.stage === 'vt') {
+    const bufferIds = readStringArray(input.bufferIds);
+    if (bufferIds.length > 0) {
+      let polygonTotal = 0;
+      let fallbackCount = 0;
+      bufferIds.forEach((bufferId) => {
+        const cache = context.transformCacheById.get(bufferId);
+        const polygonCount = cache ? readNumber(cache.polygonCount) : null;
+        if (polygonCount !== null) {
+          polygonTotal += polygonCount;
+        } else {
+          fallbackCount += 1;
+        }
+      });
+      const weight = Math.max(0, Math.round(polygonTotal + fallbackCount));
+      const polygonCount = polygonTotal > 0 ? polygonTotal : null;
+      const source: TaskWeightSource = polygonTotal > 0 ? 'transform-cache' : 'fallback';
+      return { polygonCount, weight, source };
+    }
+  }
+
+  return { polygonCount: null, weight: 1, source: 'fallback' };
+};
+
+const buildTaskWeightMap = async (
+  nodeId: NodeId,
+  tasks: TaskQueueRecord[],
+): Promise<Map<string, TaskWeightMeta>> => {
+  const context = await buildTaskWeightContext(nodeId, tasks);
+  const map = new Map<string, TaskWeightMeta>();
+  tasks.forEach((task) => {
+    map.set(task.taskId, resolveTaskWeightMeta(task, context));
+  });
+  return map;
+};
+
+const summarizeTaskQueueProgress = async (
+  tasks: TaskQueueRecord[],
+  taskType?: TaskQueueRecord['stage'],
+): Promise<ProgressInfo> => {
+  let total = 0;
+  let completed = 0;
+  let failed = 0;
+  let skipped = 0;
+  tasks.forEach((task) => {
+    total += 1;
+    if (isSkippedMessage(task.message)) {
+      skipped += 1;
+      return;
+    }
+    if (task.status === 'failed') {
+      failed += 1;
+      return;
+    }
+    if (task.status === 'completed') {
+      completed += 1;
+    }
+  });
+  const doneCount = Math.min(total, completed + skipped + failed);
+  const percentage = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+  return {
+    total,
+    completed,
+    failed,
+    skipped,
+    percentage,
+    taskType,
+  };
+};
+
+const buildTaskQueueSummary = async (tasks: TaskQueueRecord[]) => {
+  const statusSummary = summarizeTaskQueueStatus(tasks);
+  const progress = await summarizeTaskQueueProgress(tasks, statusSummary.taskType);
+  return {
+    status: statusSummary.status,
+    progress,
+  };
+};
+
+const buildProgressPayloadFromTasks = async (
+  tasks: TaskQueueRecord[],
+): Promise<BatchProgressPayload> => {
+  const summary = await summarizeTaskQueueProgress(tasks, resolveTaskType(tasks));
   return {
     total: summary.total,
     completed: summary.completed,
@@ -245,7 +458,7 @@ const resetRunningTasks = async (nodeId: NodeId): Promise<void> => {
 
 const resolveProgressPhase = (nodeId: NodeId, tasks: TaskQueueRecord[]): BatchProgressEvent['phase'] => {
   if (getPauseState(nodeId).paused) return 'paused';
-  const status = summarizeTaskQueue(tasks).status;
+  const status = summarizeTaskQueueStatus(tasks).status;
   switch (status) {
     case 'running':
       return 'running';
@@ -268,13 +481,15 @@ const emitProgressSnapshot = async (
     const taskQueue = new VtTaskQueueDb();
     const vtTasks = await listTasks(taskQueue, nodeId);
     const phase = resolveProgressPhase(nodeId, vtTasks);
+    const statusSummary = summarizeTaskQueueStatus(vtTasks);
+    const payload = await buildProgressPayloadFromTasks(vtTasks);
     sub.callback({
       nodeId,
-      stage: summarizeTaskQueue(vtTasks).progress.taskType ?? 'fetch',
+      stage: statusSummary.taskType ?? 'fetch',
       phase,
       timestamp: Date.now(),
       message,
-      payload: buildProgressPayloadFromTasks(vtTasks),
+      payload,
     });
   } catch (error) {
     console.error('[shapeBatchAPI] progress snapshot build failed', error);
@@ -444,7 +659,7 @@ export const shapeBatchAPI = {
               phase: resolveProgressPhase(event.nodeId, vtTasks),
               timestamp: Date.now(),
               message: event.task.message,
-              payload: buildProgressPayloadFromTasks(vtTasks),
+              payload: await buildProgressPayloadFromTasks(vtTasks),
             });
           } catch (error) {
             console.error('[shapeBatchAPI] progress payload build failed', error);
@@ -534,7 +749,7 @@ export const shapeBatchAPI = {
         throw new Error('[shapeBatchAPI] buildConfig is required for build session');
       }
       const config = buildBuildSessionConfig(entity.buildConfig);
-      const summary = summarizeTaskQueue(vtTasks);
+      const summary = await buildTaskQueueSummary(vtTasks);
       const paused = getPauseState(nodeId).paused;
       const startedAt = Math.min(...vtTasks.map((task) => task.createdAt ?? Date.now()));
       return {
@@ -560,7 +775,8 @@ export const shapeBatchAPI = {
     const taskQueue = new VtTaskQueueDb();
     const vtTasks = await listTasks(taskQueue, nodeId);
     if (vtTasks.length > 0) {
-      return vtTasks.map(mapTaskQueueRecordToBatchTask);
+      const weightMap = await buildTaskWeightMap(nodeId, vtTasks);
+      return vtTasks.map((task) => mapTaskQueueRecordToBatchTask(task, weightMap.get(task.taskId)));
     }
     return [];
   },
@@ -581,7 +797,8 @@ export const shapeBatchAPI = {
     const taskQueue = new VtTaskQueueDb();
     const vtTasks = await listTasks(taskQueue, nodeId);
     if (vtTasks.length > 0) {
-      return summarizeTaskQueue(vtTasks).progress;
+      const summary = await buildTaskQueueSummary(vtTasks);
+      return summary.progress;
     }
     return {
       total: 0,
@@ -605,7 +822,7 @@ export const shapeBatchAPI = {
     const taskQueue = new VtTaskQueueDb();
     const vtTasks = await listTasks(taskQueue, nodeId);
     if (vtTasks.length > 0) {
-      const summary = summarizeTaskQueue(vtTasks);
+      const summary = await buildTaskQueueSummary(vtTasks);
       const paused = getPauseState(nodeId).paused;
       return {
         nodeId,
@@ -717,7 +934,7 @@ export const shapeBatchAPI = {
             phase: resolveProgressPhase(event.nodeId, vtTasks),
             timestamp: Date.now(),
             message: event.task.message,
-            payload: buildProgressPayloadFromTasks(vtTasks),
+            payload: await buildProgressPayloadFromTasks(vtTasks),
           });
         } catch (error) {
           console.error('[shapeBatchAPI] progress payload build failed', error);
@@ -791,7 +1008,7 @@ export const shapeBatchAPI = {
     const taskQueue = new VtTaskQueueDb();
     const vtTasks = await listTasks(taskQueue, nodeId);
     if (vtTasks.length > 0) {
-      const summary = summarizeTaskQueue(vtTasks);
+      const summary = await buildTaskQueueSummary(vtTasks);
       const paused = getPauseState(nodeId).paused;
       const lastProcessed = vtTasks.reduce((latest, task) => {
         const candidate = task.completedAt ?? task.updatedAt ?? task.startedAt ?? task.createdAt ?? 0;

@@ -318,8 +318,12 @@
         },
         "zoomBands": {
           "title": "Zoom bands",
-          "helper": "Shape tiles are generated with fixed zoom bands.",
-          "summary": "band0: z0-3\nband1: z3-6\nband2: z6-9\nband3: z9-11 (optional)"
+          "helper": "Default zoom band settings for new Shape/Route builds.",
+          "summary": "Used as the default Transform zoom bands when creating new Shape/Route nodes.",
+          "rangeCount": "Number of ranges",
+          "rangeCountHelp": "Set how many zoom ranges to use for transforms.",
+          "boundaries": "Range boundaries",
+          "boundariesHelp": "Adjust the zoom levels that split each range."
         }
       }
     },
@@ -354,7 +358,11 @@
       "closeButton": "Close and navigate to parent",
       "noNode": "Node information is not available for this page.",
       "createdLabel": "Created",
-      "updatedLabel": "Updated"
+      "updatedLabel": "Updated",
+      "confirmTrashTitle": "Move to Trash",
+      "confirmTrashDescription": "Move this item and all its children to trash?",
+      "confirmTrashCancel": "Cancel",
+      "confirmTrashConfirm": "Move to Trash"
     },
     "developerMenu": {
       "clearIndexedDb": "Delete all IndexedDB created by this app",

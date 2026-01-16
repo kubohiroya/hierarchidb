@@ -12,6 +12,7 @@ import type {
   MapStyle,
   MapViewport,
 } from '../../common/types/BaseMapEntity.js';
+import { DEFAULT_VIEWPORT as BASEMAP_DEFAULT_VIEWPORT } from '../../common/constants/constants.js';
 
 export interface UseBaseMapEntityResult {
   entity: BaseMapEntity | null;
@@ -26,22 +27,12 @@ export const DEFAULT_MAP_STYLE: MapStyle = {
 };
 
 export const DEFAULT_VIEWPORT: MapViewport = {
-  center: [0, 0],
-  zoom: 1,
-  bearing: 0,
-  pitch: 0,
+  ...BASEMAP_DEFAULT_VIEWPORT,
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
-
-const coerceMapStyle = (value: unknown): MapStyle => {
-  if (isRecord(value) && typeof (value as { style?: unknown }).style === 'string') {
-    return { ...(value as unknown as MapStyle) };
-  }
-  return { ...DEFAULT_MAP_STYLE };
-};
 
 const coerceViewport = (value: unknown): MapViewport | undefined => {
   if (!isRecord(value)) return undefined;
@@ -59,6 +50,29 @@ const coerceViewport = (value: unknown): MapViewport | undefined => {
   return undefined;
 };
 
+const normalizeMapStyle = (value: Partial<MapStyle> | undefined): MapStyle => {
+  if (isRecord(value) && typeof value.style === 'string') {
+    return { ...DEFAULT_MAP_STYLE, ...(value as MapStyle) };
+  }
+  return { ...DEFAULT_MAP_STYLE };
+};
+
+const normalizeViewport = (value: Partial<MapViewport> | undefined): MapViewport => {
+  if (!isRecord(value)) return { ...DEFAULT_VIEWPORT };
+  const center = (value as { center?: unknown }).center;
+  const zoom = (value as { zoom?: unknown }).zoom;
+  const bearing = (value as { bearing?: unknown }).bearing;
+  const pitch = (value as { pitch?: unknown }).pitch;
+  return {
+    center: Array.isArray(center) && center.length === 2 && typeof center[0] === 'number' && typeof center[1] === 'number'
+      ? [center[0], center[1]]
+      : [...DEFAULT_VIEWPORT.center],
+    zoom: typeof zoom === 'number' ? zoom : DEFAULT_VIEWPORT.zoom,
+    bearing: typeof bearing === 'number' ? bearing : DEFAULT_VIEWPORT.bearing,
+    pitch: typeof pitch === 'number' ? pitch : DEFAULT_VIEWPORT.pitch,
+  };
+};
+
 const readNodeData = (
   node: TreeNode | Record<string, unknown> | null | undefined
 ): Record<string, unknown> => {
@@ -71,14 +85,17 @@ const readNodeData = (
 export function buildBaseMapEntityFromNode(node?: TreeNode | null): (BaseMapEntity & { draftMetadata?: TreeNodeMetadata }) | null{
   if (!node) return null;
   const data = readNodeData(node);
-  const mapStyle = coerceMapStyle(data.mapStyle);
-  const viewport = coerceViewport(data.viewport);
+  const mapStyle = normalizeMapStyle(data.mapStyle as Partial<MapStyle> | undefined);
+  const viewport = coerceViewport(data.viewport) ?? { ...DEFAULT_VIEWPORT };
   const draftMetadata = (node as { draftMetadata?: unknown }).draftMetadata;
   const committedMetadata = (node as { metadata?: unknown }).metadata;
   return {
     mapStyle,
     viewport,
     draftMetadata: (draftMetadata || committedMetadata || { name: '', description: '', tags: [] }) as TreeNodeMetadata,
+    createdAt: (node as { createdAt?: number }).createdAt,
+    updatedAt: (node as { updatedAt?: number }).updatedAt,
+    version: (node as { version?: number }).version,
   };
 }
 
@@ -431,4 +448,6 @@ export function useBaseMapValidation(config: Partial<BaseMapEntity>) {
 
 export const __testUtils = {
   buildBaseMapEntityFromNode,
+  normalizeMapStyle,
+  normalizeViewport,
 };

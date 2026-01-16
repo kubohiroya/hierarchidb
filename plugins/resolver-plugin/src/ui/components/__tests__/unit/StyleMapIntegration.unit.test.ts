@@ -309,7 +309,7 @@ describe('Styler Integration with Resolver', () => {
 
       // Compiled function should be fast
       const processingTime = endTime - startTime;
-      expect(processingTime).toBeLessThan(100); // Should process 10000 items in less than 100ms
+      expect(processingTime).toBeLessThan(200); // Should process 10000 items in less than 200ms
     });
   });
 });

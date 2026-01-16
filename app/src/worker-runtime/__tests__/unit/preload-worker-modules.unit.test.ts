@@ -19,7 +19,40 @@ const importPluginWorkerMock = vi.hoisted(() =>
 
 const mockStoreRegistry = {};
 
-vi.mock('@hierarchidb/runtime-worker-worker', () => ({
+const pluginWorkerPreloadsMock: Record<string, string[]> = {
+  basemap: ['loadBasemapEntitiesDbModule'],
+  folder: ['loadFolderEntitiesDbModule'],
+  resolver: ['loadResolverEntitiesDbModule'],
+  route: ['loadRouteEntitiesDbModule'],
+  spreadsheet: ['loadSpreadsheetEntitiesDbModule'],
+  styler: ['loadStylerEntitiesDbModule'],
+  shape: ['loadShapeEntitiesDbModule'],
+  location: ['loadLocationEntitiesDbModule'],
+  linker: ['loadLinkerEntitiesDbModule'],
+  timeline: ['loadTimelineEntitiesDbModule'],
+};
+
+vi.mock('~/plugin-loaders/worker-loaders.ts', () => ({
+  pluginWorkerLoaders: {},
+  pluginWorkerPreloads: pluginWorkerPreloadsMock,
+}));
+
+vi.mock('~/plugin-loaders/index.ts', () => ({
+  pluginRegistry: Object.keys(pluginWorkerPreloadsMock).map((nodeType) => ({
+    nodeType,
+    modules: { worker: `./${nodeType}/worker` },
+  })),
+}));
+
+vi.mock('@hierarchidb/runtime-worker', () => ({
+  configureWorkerContainer: (configure: (container: { rebind: () => { toConstantValue: (value: unknown) => void } }) => void) => {
+    configure({
+      rebind: () => ({
+        toConstantValue: () => {},
+      }),
+    });
+  },
+  WorkerDiTokens: { PluginWorkerLoaderMap: Symbol('PluginWorkerLoaderMap') },
   importPluginWorker: importPluginWorkerMock,
   storeRegistry: mockStoreRegistry,
 }));
@@ -57,8 +90,8 @@ describe('WorkerModuleLoader', () => {
     importPluginWorkerMock.mockImplementation(async (id: string) => {
       const loader = loaderMap[id];
       if (!loader) return {};
-      const exportName = `load${id.charAt(0).toUpperCase()}${id.slice(1)}EntitiesDbModule` as const;
-      return { [exportName]: loader } as Record<string, unknown>;
+      const exportNames = pluginWorkerPreloadsMock[id] ?? [];
+      return Object.fromEntries(exportNames.map((name) => [name, loader]));
     });
 
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});

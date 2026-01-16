@@ -64,11 +64,6 @@ export type TransformByBandTaskInput = {
   adminLevel?: number;
 };
 
-export type TransformByZoomTaskInput = {
-  transformByBandCacheId: string;
-  bandId: number;
-};
-
 export type VtTaskInput = {
   bandId: number;
   zBase: number;
@@ -91,15 +86,12 @@ export interface RunStageOptions<TInput = unknown, TOutput = unknown> {
 
 export type PipelineRunConfig<
   TTransformByBandInput = TransformByBandTaskInput,
-  TTransformByZoomInput = TransformByZoomTaskInput,
   TVtInput = VtTaskInput
 > = {
   nodeId: NodeId;
   // taskQueue: VtTaskQueueDb;
   transformByBandHandler?: StageHandler<TTransformByBandInput>;
-  transformByZoomHandler?: StageHandler<TTransformByZoomInput>;
   vtHandler?: StageHandler<TVtInput>;
   //transformByBandContext?: TransformByBandStageContext;
-  //transformByZoomContext?: TransformByZoomStageContext;
   //vtContext?: VTStageContext;
 };

@@ -9,17 +9,17 @@ type Args = {
   onChange: (next: ShapeBuildConfig) => void;
 };
 
-export const useTransformByBandConfigSection = ({ config, onChange }: Args) => {
+export const useTransformConfigSection = ({ config, onChange }: Args) => {
   const controlId = useId();
-  const baseTransformByBandConfig = config.transformByBandConfig;
-  if (!baseTransformByBandConfig) {
-    throw new Error('TransformByBandConfigSection: baseTransformByBandConfig is not defined');
+  const baseTransformConfig = config.transformConfig;
+  if (!baseTransformConfig) {
+    throw new Error('TransformConfigSection: baseTransformConfig is not defined');
   }
-  if (!baseTransformByBandConfig.hybridFilterConfig) {
-    throw new Error('TransformByBandConfigSection: hybridFilterConfig is not defined');
+  if (!baseTransformConfig.hybridFilterConfig) {
+    throw new Error('TransformConfigSection: hybridFilterConfig is not defined');
   }
 
-  const baseHybridConfig: HybridFilterConfig = baseTransformByBandConfig.hybridFilterConfig;
+  const baseHybridConfig: HybridFilterConfig = baseTransformConfig.hybridFilterConfig;
   const quickRejectMin = 0.001;
   const quickRejectMax = 1;
   const quickRejectValue = Math.min(
@@ -36,7 +36,7 @@ export const useTransformByBandConfigSection = ({ config, onChange }: Args) => {
 
   return {
     controlId,
-    baseTransformByBandConfig,
+    baseTransformConfig,
     baseHybridConfig,
     quickRejectLogMin,
     quickRejectLogMax,

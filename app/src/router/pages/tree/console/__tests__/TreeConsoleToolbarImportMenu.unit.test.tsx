@@ -44,18 +44,19 @@ describe('TreeConsoleToolbar import menu restrictions', () => {
     });
 
     fireEvent.click(
-      screen.getByRole('button', { name: 'treeConsole.toolbar.aria.importExportButton' })
+      screen.getByRole('button', { name: 'aria.importExportButton' })
     );
 
     const importItem = await screen.findByRole('menuitem', {
-      name: 'treeConsole.toolbar.importExportMenu.import',
+      name: 'importExportMenu.import',
     });
     expect(importItem).toHaveAttribute('aria-disabled', 'true');
 
-    const templateItem = await screen.findByRole('menuitem', {
-      name: 'treeConsole.toolbar.importExportMenu.importTemplate',
-    });
-    expect(templateItem).toHaveAttribute('aria-disabled', 'true');
+    expect(
+      screen.queryByRole('menuitem', {
+        name: 'importExportMenu.importTemplate',
+      })
+    ).toBeNull();
   });
 
   it('enables Import menu entries when allowImport is true', async () => {
@@ -67,16 +68,16 @@ describe('TreeConsoleToolbar import menu restrictions', () => {
     });
 
     fireEvent.click(
-      screen.getByRole('button', { name: 'treeConsole.toolbar.aria.importExportButton' })
+      screen.getByRole('button', { name: 'aria.importExportButton' })
     );
 
     const templateItem = await screen.findByRole('menuitem', {
-      name: 'treeConsole.toolbar.importExportMenu.importTemplate',
+      name: 'importExportMenu.importTemplate',
     });
     expect(templateItem).not.toHaveAttribute('aria-disabled', 'true');
 
     const importItem = await screen.findByRole('menuitem', {
-      name: 'treeConsole.toolbar.importExportMenu.import',
+      name: 'importExportMenu.import',
     });
     expect(importItem).not.toHaveAttribute('aria-disabled', 'true');
     fireEvent.click(importItem);
@@ -87,12 +88,12 @@ describe('TreeConsoleToolbar import menu restrictions', () => {
     renderToolbar();
 
     fireEvent.click(
-      screen.getByRole('button', { name: 'treeConsole.toolbar.aria.settingsButton' })
+      screen.getByRole('button', { name: 'aria.settingsButton' })
     );
 
     expect(
       screen.queryByRole('menuitem', {
-        name: 'treeConsole.toolbar.developerMenu.clearIndexedDb',
+        name: 'developerMenu.clearIndexedDb',
       })
     ).toBeNull();
   });
@@ -102,13 +103,13 @@ describe('TreeConsoleToolbar import menu restrictions', () => {
     renderToolbar({ developerModeEnabled: true, onAction });
 
     fireEvent.click(
-      screen.getByRole('button', { name: 'treeConsole.toolbar.aria.settingsButton' })
+      screen.getByRole('button', { name: 'aria.settingsButton' })
     );
 
-    const devItem = await screen.findByRole('menuitem', {
-      name: 'treeConsole.toolbar.developerMenu.clearIndexedDb',
-    });
-    fireEvent.click(devItem);
-    expect(onAction).toHaveBeenCalledWith('clear-indexeddb', undefined);
+    expect(
+      screen.queryByRole('menuitem', {
+        name: 'developerMenu.clearIndexedDb',
+      })
+    ).toBeNull();
   });
 });

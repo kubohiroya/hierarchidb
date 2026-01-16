@@ -5,7 +5,7 @@ import { toNodeId, type NodeId } from '@hierarchidb/common-types';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
 import { ephemeralShapeAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
 
-const STAGE_ORDER: ShapeBuildStage[] = ['fetch', 'transform-by-band', 'transform-by-zoom', 'vt'];
+const STAGE_ORDER: ShapeBuildStage[] = ['fetch', 'transform', 'vt'];
 
 type SimpleRecord = object;
 
@@ -56,19 +56,12 @@ export function resolveBatchConfigInvalidation(
 
   if (hasDiff(prev.fetchConfig, next.fetchConfig)) {
     stages.add('fetch');
-    stages.add('transform-by-band');
-    stages.add('transform-by-zoom');
+    stages.add('transform');
     stages.add('vt');
   }
 
-  if (hasDiff(prev.transformByBandConfig, next.transformByBandConfig)) {
-    stages.add('transform-by-band');
-    stages.add('transform-by-zoom');
-    stages.add('vt');
-  }
-
-  if (hasDiff(prev.transformByZoomConfig, next.transformByZoomConfig)) {
-    stages.add('transform-by-zoom');
+  if (hasDiff(prev.transformConfig, next.transformConfig)) {
+    stages.add('transform');
     stages.add('vt');
   }
 
@@ -81,7 +74,6 @@ export function resolveBatchConfigInvalidation(
 
 export const FULL_INVALIDATION_STAGES: ShapeBuildStage[] = [
   'fetch',
-  'transform-by-band',
-  'transform-by-zoom',
+  'transform',
   'vt'
 ];
