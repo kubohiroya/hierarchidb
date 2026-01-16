@@ -36,6 +36,7 @@ export const DEFAULT_BUILD_CONFIG: ShapeBuildConfig = {
     quantize: 1,
     tolerance: 0.1,
     areaThreshold: 1.0,
+    excludePolygonAreaCoefficient: 1,
     ringFixConfig: {
       minRingVertices: 4,
       minRingAreaMultiplier: 1.0,

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES, loadTreeConsoleSettings } from '@hierarchidb/util';
-import { DEFAULT_BUILD_CONFIG } from '../../../common/types/index.js';
+import { DEFAULT_BUILD_CONFIG, mergeBuildConfig } from '../../../common/types/index.js';
 import type { ShapeEntity } from '../../../common/types/index.js';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
 
@@ -25,14 +25,21 @@ const resolveInitialBuildConfig = (): ShapeBuildConfig => {
 };
 
 export const useShapeBuildConfigStep = ({ data, onChange }: Args) => {
-  const config = useMemo(
-    () => data?.buildConfig ?? resolveInitialBuildConfig(),
-    [data?.buildConfig],
-  );
+  const config = useMemo(() => {
+    const baseConfig = resolveInitialBuildConfig();
+    return data?.buildConfig ? mergeBuildConfig(baseConfig, data.buildConfig) : baseConfig;
+  }, [data?.buildConfig]);
 
   useEffect(() => {
-    if (data?.buildConfig) return;
-    onChange({ buildConfig: resolveInitialBuildConfig() });
+    const baseConfig = resolveInitialBuildConfig();
+    if (!data?.buildConfig) {
+      onChange({ buildConfig: baseConfig });
+      return;
+    }
+    const coefficient = data.buildConfig.transformConfig?.excludePolygonAreaCoefficient;
+    if (!Number.isFinite(coefficient)) {
+      onChange({ buildConfig: mergeBuildConfig(baseConfig, data.buildConfig) });
+    }
   }, [data?.buildConfig, onChange]);
 
   const handleChange = useCallback((nextConfig: ShapeBuildConfig) => {

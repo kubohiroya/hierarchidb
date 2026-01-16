@@ -1,3 +1,133 @@
+2220) feat/shape/transform-exclusion-ui (P1) — 進行中 (2026-01-18)
+- ブランチ名: feat/shape/transform-exclusion-ui
+- 依存: なし
+- 受け入れ基準: Step4 Transform の「面積フィルター」カードがUIから撤去される／「除外ポリゴン面積係数」の入力UIがStep4 Transformに配置され、保存・再読込される／既存のTransform設定レイアウトが破綻しない／pnpm typecheck が exit 0 で完走する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/TransformConfigSection.tsx`, `plugins/shape-plugin/src/ui/locales/*`（必要に応じて）
+- ロールバック手順: 該当差分を revert し、Transform 設定のカード構成を修正前に戻す
+- チェックリスト:
+  - 面積フィルターカードをTransform設定から撤去する
+  - 除外ポリゴン面積係数のUIを配置する
+  - 保存/再読込が維持されることを確認する
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-18 18:40 JST Step4 Transform の面積フィルター撤去と係数UI追加に着手。
+  - update: 2026-01-18 18:45 JST 面積フィルターカードを撤去し、係数スライダーを Transform 設定へ移設。
+  - update: 2026-01-18 18:46 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - done: 2026-01-18 18:47 JST 面積フィルター撤去と係数UIの再配置を完了。
+
+2221) fix/shape/step6-error-list-count-format (P1) — 完了 (2026-01-18)
+- ブランチ名: fix/shape/step6-error-list-count-format
+- 依存: なし
+- 受け入れ基準: Step6 エラー一覧からソースキー列を削除する／ポリゴン/リングの表示が「エラー数/総数」形式になる／既存のソート/検索/選択が破綻しない／pnpm typecheck が exit 0 で完走する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/**`, `packages/vt-orchestrator/src/transform/**`, `packages/plugin-service-api/src/types/**`, `plugins/shape-plugin/src/ui/locales/*`（必要に応じて）
+- ロールバック手順: 該当差分を revert し、Step6 エラー一覧の列構成と数値表示を修正前に戻す
+- チェックリスト:
+  - エラー一覧からソースキー列を削除する
+  - ポリゴン/リングの表示をエラー数/総数に更新する
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-18 17:35 JST Step6 エラー一覧の列削除とエラー数/総数表示に着手。
+  - blocked: 2026-01-18 17:45 JST pnpm typecheck が vt-orchestrator build:types の ShapeTransformErrorRecord に polygonErrorCount/ringErrorCount が未反映で失敗。
+  - update: 2026-01-18 17:50 JST pnpm --filter @hierarchidb/plugin-service-api build を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-18 17:55 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - done: 2026-01-18 18:00 JST エラー一覧の列削除とエラー数/総数表示を完了。
+
+2222) fix/shape/exclude-area-default (P1) — 完了 (2026-01-18)
+- ブランチ名: fix/shape/exclude-area-default
+- 依存: なし
+- 受け入れ基準: excludePolygonAreaCoefficient のデフォルトが常に 1.0 になる（テンプレート由来でも 0 にならない）／既存の設定値を壊さない／pnpm typecheck が exit 0 で完走する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/**`, `plugins/shape-plugin/src/worker/api.ts`, `app/public/templates/population-2023/tree-nodes.json`（必要に応じて）
+- ロールバック手順: 該当差分を revert し、係数デフォルトとテンプレートの設定を修正前に戻す
+- チェックリスト:
+  - テンプレートの buildConfig に係数デフォルトを反映する
+  - 既存 buildConfig の不足値にデフォルトを補完する
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-18 18:20 JST excludePolygonAreaCoefficient のデフォルト補正に着手。
+  - update: 2026-01-18 18:30 JST テンプレートと buildConfig 初期化で係数デフォルトを 1.0 に補正。
+  - update: 2026-01-18 18:35 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - done: 2026-01-18 18:40 JST テンプレート由来でも係数が 1.0 で初期化されることを確認。
+
+2219) feat/shape/transform-area-exclusion (P1) — 完了 (2026-01-18)
+- ブランチ名: feat/shape/transform-area-exclusion
+- 依存: なし
+- 受け入れ基準: Transform の簡易化前処理でポリゴンごとにアウトライン総延長と面積を算出し、`area < coefficient * gridSize * outlineLength / 2` の場合に除外される／係数はデフォルト1で「除外ポリゴン面積係数」として Step4 UI に追加される／設定値が保存・再読込され、transform 処理へ反映される／除外対象はエラー扱いにならず通常のフィルタとして処理される／pnpm typecheck が exit 0 で完走する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/**`, `packages/vt-orchestrator/src/transform/**`, `packages/features/gis-sdk/src/types/**`（必要に応じて）
+- ロールバック手順: 該当差分を revert し、Transform 設定の係数追加と面積除外の前処理を修正前に戻す
+- チェックリスト:
+  - Transform 設定に「除外ポリゴン面積係数」を追加する
+  - 係数の保存/再読込が既存設定と同様に機能することを確認する
+  - transform の簡易化前処理で面積/アウトライン総延長の除外判定を実装する
+  - 除外はエラー扱いにならないことを確認する
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-18 18:05 JST Transform 簡易化前の面積除外係数追加対応に着手。
+  - blocked: 2026-01-18 18:12 JST pnpm typecheck が vt-orchestrator build:types の TransformConfig に excludePolygonAreaCoefficient が未反映で失敗。
+  - update: 2026-01-18 18:13 JST pnpm --filter @hierarchidb/gis-sdk build を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-18 18:14 JST pnpm typecheck を実行（exit 0）。
+  - blocked: 2026-01-18 18:18 JST pnpm typecheck が vt-orchestrator の simplifyFeatureCollection 引数順で失敗。
+  - update: 2026-01-18 18:20 JST simplifyFeatureCollection の引数を required 型に整理し、pnpm typecheck を再実行（exit 0）。
+  - done: 2026-01-18 18:22 JST 係数設定の追加と transform 前処理の面積除外を実装し、typecheck が通ることを確認。
+
+2219) fix/shape/step6-error-list-admin-names (P1) — 進行中 (2026-01-18)
+- ブランチ名: fix/shape/step6-error-list-admin-names
+- 依存: なし
+- 受け入れ基準: Step6 エラー一覧に Admin0 名（国名）と Admin1/2 名（地域名）を表示する／列追加に伴うソート・検索・表示崩れがない／pnpm typecheck が exit 0 で完走する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/**`, `plugins/shape-plugin/src/ui/locales/*`（必要に応じて）
+- ロールバック手順: 該当差分を revert し、エラー一覧の列構成を修正前に戻す
+- チェックリスト:
+  - エラー一覧へ Admin 名の列を追加する
+  - 表示ラベル（日本語/英語）を更新する
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-18 17:05 JST Step6 エラー一覧の Admin 名表示対応に着手。
+  - update: 2026-01-18 17:15 JST Admin0/1/2 名の列を追加し、ラベルを更新。
+  - update: 2026-01-18 17:20 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - done: 2026-01-18 17:25 JST Step6 エラー一覧に Admin 名を表示できることを確認。
+
+2223) chore/shape/template-buildconfig-default-audit (P1) — 進行中 (2026-01-18)
+- ブランチ名: chore/shape/template-buildconfig-default-audit
+- 依存: なし
+- 受け入れ基準: app/public/templates 配下の buildConfig を棚卸しし、excludePolygonAreaCoefficient が欠落/非数のテンプレートを特定する／必要なテンプレートに excludePolygonAreaCoefficient: 1.0 を追記する／差分が最小である／pnpm typecheck が exit 0 で完走する
+- 影響範囲: `app/public/templates/**`（必要に応じて）
+- ロールバック手順: 該当差分を revert し、テンプレートの buildConfig を修正前に戻す
+- チェックリスト:
+  - テンプレートの buildConfig を棚卸しして不足/非数の箇所を記録する
+  - 必要なテンプレートに excludePolygonAreaCoefficient: 1.0 を追加する
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-18 19:05 JST テンプレートの buildConfig 棚卸しに着手。
+  - update: 2026-01-18 19:06 JST app/public/templates を棚卸しし、buildConfig は population-2023 のみ、excludePolygonAreaCoefficient=1 を確認。
+  - update: 2026-01-18 19:10 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - done: 2026-01-18 19:11 JST テンプレートの係数デフォルト棚卸しを完了。
+
+2218) fix/shape/step6-error-list-visuals-fit-screen (P1) — 完了 (2026-01-18)
+- ブランチ名: fix/shape/step6-error-list-visuals-fit-screen
+- 依存: なし
+- 受け入れ基準: Step6 エラー一覧の1行がフィーチャー単位であることを確認し記録する／エラー一覧から記録日時カラムを削除し、ポリゴン/リングのエラー数が表示される／エラー一覧の行選択状態で地図プレビューのエラーLineStringが primary 色＋光彩で強調され、未選択は従来の error 色で表示される／選択行のフォント色が primary になる／Step6 地図プレビューに FitScreen ボタンを追加し、選択中地物の最小BBoxへ移動する／pnpm typecheck が exit 0 で完走する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/**`, `plugins/shape-plugin/src/ui/locales/*`（必要に応じて）
+- ロールバック手順: 該当差分を revert し、Step6 エラー一覧の列構成/選択表示/地図プレビューの強調表示/FitScreen 表示を修正前に戻す
+- チェックリスト:
+  - エラー一覧の1行がフィーチャー単位である根拠を確認する
+  - エラー一覧の列構成を更新し、記録日時を削除する
+  - 行選択状態でのエラーLineStringの表示色を切り替える
+  - 行選択時のフォント色を primary に更新する
+  - Step6 地図プレビューに FitScreen を追加し選択BBoxへ移動できるようにする
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-18 16:20 JST Step6 エラー一覧/地図プレビュー/FitScreen 対応に着手。
+  - update: 2026-01-18 16:30 JST createTransformByBandHandler で errorRecords を feature 単位に生成していることを確認。
+  - update: 2026-01-18 16:40 JST エラー一覧の列構成/選択色/地図プレビューの選択強調/FitScreen を実装。
+  - update: 2026-01-18 16:45 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - done: 2026-01-18 16:50 JST Step6 エラー一覧/地図プレビュー/FitScreen の要件を満たしたことを確認。
+
 2217) fix/runtime-worker/shape-transform-cache-typecheck (P1) — 完了 (2026-01-18)
 - ブランチ名: fix/runtime-worker/shape-transform-cache-typecheck
 - 依存: なし
@@ -55,6 +185,32 @@
   - start: 2026-01-18 12:00 JST ui-map FitScreen ボタン表示と選択フィーチャーのフィット表示対応に着手。
   - update: 2026-01-18 12:05 JST FitScreen ボタン表示/disabled 条件と選択フィーチャーの fitBounds 処理を実装。
   - blocked: 2026-01-18 12:10 JST pnpm typecheck が @hierarchidb/shape-store build:types の ShapeTransformErrorRecord 未export で失敗。
+  - update: 2026-01-18 12:20 JST FitScreen ボタン位置を map 右上コントロール直下へ移動し、outline アイコンボタンで表示する対応に着手。
+  - update: 2026-01-18 12:30 JST FitScreen ボタン位置変更と outline 表示を反映。pnpm typecheck を実行（exit 0）。
+  - update: 2026-01-18 13:10 JST Shape Step6 の FitScreen ボタンを map 右上コントロール直下に移動し、outline 表示へ統一。
+  - blocked: 2026-01-18 13:15 JST pnpm typecheck が vt-orchestrator の polygonErrorCount 型エラーで失敗。
+  - update: 2026-01-18 13:30 JST Shape Step6 FitScreen の位置を top-right コントロール下端 +16px で再計算。pnpm typecheck を実行（exit 0）。
+  - update: 2026-01-18 13:50 JST エラー一覧選択でも FitScreen を有効化し、ボタンを size=large/variant=outlined に変更。
+  - update: 2026-01-18 14:10 JST エラー選択の境界算出を追加し、FitScreen を有効化。pnpm typecheck を実行（exit 0）。
+  - update: 2026-01-18 14:25 JST FitScreen ボタンの margin 4px と高さ 32px を反映。pnpm typecheck を実行（exit 0）。
+  - update: 2026-01-18 14:20 JST FitScreen ボタンの margin 4px と高さ 32px を反映。
+  - update: 2026-01-18 12:55 JST shape Step6 プレビューの FitScreen ボタン位置修正に着手。
+
+2217) fix/app/ui-treeconsole-workspace-dep (P1) — 進行中 (2026-01-18)
+- ブランチ名: fix/app/ui-treeconsole-workspace-dep
+- 依存: なし
+- 受け入れ基準: app の依存から存在しない `@hierarchidb/ui-treeconsole` を解消し、pnpm install が成功する／必要なら import 参照を実在パッケージへ修正する／TASKS.md に運用ログを記載する
+- 影響範囲: `app/package.json` ほか（調査後に確定）
+- ロールバック手順: 依存の差分を revert し、元の依存定義に戻す
+- チェックリスト:
+  - app/package.json の `@hierarchidb/ui-treeconsole` 依存を削除/置換する
+  - 必要なら import を実在パッケージに修正する
+  - pnpm install を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-18 12:40 JST app 依存の @hierarchidb/ui-treeconsole 解消対応に着手。
+  - blocked: 2026-01-18 12:45 JST pnpm install が pnpm store への symlink で EPERM により失敗。
+  - update: 2026-01-18 12:46 JST pnpm install を昇格実行し成功（lockfile 変更なし）。
 
 2215) chore/shape/ephemeral-table-audit (P1) — 進行中 (2026-01-18)
 2216) chore/shape/shape-db-table-audit (P1) — 進行中 (2026-01-18)

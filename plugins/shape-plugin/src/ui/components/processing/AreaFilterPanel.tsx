@@ -173,6 +173,43 @@ export const AreaFilterPanel: React.FC<Props> = ({
                 {t('processing.filter.minimumAreaHelp', 'Smaller features than this threshold are filtered out early.')}
               </Typography>
             </div>
+            <div>
+              <Typography gutterBottom>
+                {t('processing.filter.excludePolygonAreaCoefficient', 'Polygon Area Exclusion Coefficient')}
+              </Typography>
+              <Box sx={{ px: 2 }}>
+                <Slider
+                  value={baseTransformConfig.excludePolygonAreaCoefficient}
+                  onChange={(_, value) => {
+                    const excludePolygonAreaCoefficient = value as number;
+                    update({
+                      transformConfig: {
+                        ...baseTransformConfig,
+                        excludePolygonAreaCoefficient,
+                      },
+                    });
+                  }}
+                  min={0}
+                  max={5}
+                  step={0.1}
+                  valueLabelDisplay="auto"
+                  marks={[
+                    { value: 0, label: '0' },
+                    { value: 0.5, label: '0.5' },
+                    { value: 1, label: '1.0' },
+                    { value: 2, label: '2.0' },
+                    { value: 5, label: '5.0' },
+                  ]}
+                  disabled={disabled}
+                />
+              </Box>
+              <Typography variant="caption" color="text.secondary">
+                {t(
+                  'processing.filter.excludePolygonAreaCoefficientHelp',
+                  'Excludes polygons smaller than coefficient × grid size × outline length / 2 after quantization.',
+                )}
+              </Typography>
+            </div>
           </Stack>
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>

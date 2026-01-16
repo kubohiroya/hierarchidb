@@ -27,6 +27,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  IconButton,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { Close as CloseIcon, Tune as TuneIcon } from '@mui/icons-material';
@@ -35,6 +36,7 @@ import { useAtom, useSetAtom } from 'jotai';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useGeolocationImport from 'react-hook-geolocation';
 import { MaplibreExportControl } from '@watergis/maplibre-gl-export';
+import { createPortal } from 'react-dom';
 import type { NodeId } from '@hierarchidb/common-types';
 import { SHAPE_DATA_SOURCES } from '@hierarchidb/shape-plugin';
 import { resolveLocationAttribution } from '@hierarchidb/location-plugin';
@@ -146,6 +148,7 @@ export default function MapPage() {
   const [hoverMatchIds, setHoverMatchIds] = useAtom(mapHoverMatchAtom);
   const [selectedMatchIds, setSelectedMatchIds] = useAtom(mapSelectedMatchAtom);
   const setViewportFeatureIds = useSetAtom(mapViewportFeatureIdsAtom);
+  const [mapControlContainer, setMapControlContainer] = useState<HTMLElement | null>(null);
   const [locationTypeSelection, setLocationTypeSelection] = useState<MapToggleSelection>(() =>
     Object.fromEntries(LOCATION_TYPE_OPTIONS.map((option) => [option.id, true])) as MapToggleSelection
   );
@@ -227,6 +230,15 @@ export default function MapPage() {
   useEffect(() => {
     setMapLayerInfo(layerInfoList);
   }, [layerInfoList, setMapLayerInfo]);
+
+  useEffect(() => {
+    if (!mapInstance) {
+      setMapControlContainer(null);
+      return;
+    }
+    const container = mapInstance.getContainer().querySelector('.maplibregl-ctrl-top-right');
+    setMapControlContainer(container instanceof HTMLElement ? container : null);
+  }, [mapInstance]);
 
   useEffect(() => {
     if (stylerSummaries.length === 0) return;
@@ -1133,9 +1145,6 @@ export default function MapPage() {
         onOpenSettings={() => setSearchSettingsOpen(true)}
         clearIcon={<CloseIcon fontSize="small" />}
         settingsIcon={<TuneIcon fontSize="small" />}
-        fitScreenIcon={<FitScreenIcon fontSize="small" />}
-        fitScreenDisabled={!canFitSelection}
-        onFitScreen={handleFitSelection}
       />
 
       <MapPreviewSearchSettingsDialog
@@ -1209,6 +1218,28 @@ export default function MapPage() {
           touchZoomRotate: true,
         }}
       />
+      {mapControlContainer
+        ? createPortal(
+          <Box className="maplibregl-ctrl" sx={{ mt: 2 }}>
+            <IconButton
+              aria-label="Fit to selection"
+              size="small"
+              onClick={handleFitSelection}
+              disabled={!canFitSelection}
+              sx={{
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 1,
+                bgcolor: 'background.paper',
+                '&:hover': { bgcolor: 'action.hover' },
+              }}
+            >
+              <FitScreenIcon fontSize="small" />
+            </IconButton>
+          </Box>,
+          mapControlContainer,
+        )
+        : null}
     </Box>
   );
 }

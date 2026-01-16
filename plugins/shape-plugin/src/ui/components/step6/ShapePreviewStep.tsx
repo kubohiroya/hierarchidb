@@ -1,5 +1,7 @@
 import type React from 'react';
-import { Box, Typography, Alert, Tabs, Tab, Snackbar, CircularProgress } from '@mui/material';
+import { useLayoutEffect, useState } from 'react';
+import { Box, Typography, Alert, Tabs, Tab, Snackbar, CircularProgress, Button } from '@mui/material';
+import { FitScreen as FitScreenIcon } from '@mui/icons-material';
 import { ResourceLayerMap } from '@hierarchidb/ui-map';
 import { GenericDataGrid } from '@hierarchidb/ui-grid';
 import { SearchField } from '@hierarchidb/ui-search-field';
@@ -87,11 +89,48 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
     vectorLayers,
     geoJsonLayers,
     attributionItems,
+    canFitSelection,
+    handleFitSelection,
+    mapInstance,
   } = useShapePreviewStepView(data ?? {}, nodeId);
+  const [fitControlPosition, setFitControlPosition] = useState<{ top: number; left: number } | null>(null);
+
+  useLayoutEffect(() => {
+    if (!mapInstance) {
+      setFitControlPosition(null);
+      return;
+    }
+    const container = mapInstance.getContainer();
+    const controls = container.querySelector('.maplibregl-ctrl-top-right');
+    if (!(controls instanceof HTMLElement)) {
+      setFitControlPosition(null);
+      return;
+    }
+
+    const updatePosition = () => {
+      const containerRect = container.getBoundingClientRect();
+      const controlsRect = controls.getBoundingClientRect();
+      setFitControlPosition({
+        top: controlsRect.bottom - containerRect.top + 16,
+        left: controlsRect.right - containerRect.left,
+      });
+    };
+
+    updatePosition();
+    const observer = new ResizeObserver(updatePosition);
+    observer.observe(container);
+    observer.observe(controls);
+    window.addEventListener('resize', updatePosition);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [mapInstance]);
 
   const renderMapPreview = () => {
     const hasRemoteTiles = Boolean(tilesUrl);
     const hasErrorLines = geoJsonLayers.length > 0;
+    const mapControlContainer = mapInstance?.getContainer().querySelector('.maplibregl-ctrl-top-right');
     if (!hasRemoteTiles && !tilesAvailable && !hasErrorLines) {
       if (tilesChecking) {
         return (
@@ -162,16 +201,59 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
           zIndex={1}
           sx={{ pointerEvents: 'none' }}
         >
-          <Box sx={{ pointerEvents: 'auto', width: 220 }}>
-            <SearchField
-              searchText={searchKeyword}
-              handleSearchTextChange={setSearchKeyword}
-              handleSearchCommit={() => undefined}
-              placeholder={t('preview.metadata.searchPlaceholder', 'Search metadata')}
-              ariaLabel={t('preview.metadata.searchAriaLabel', 'Search metadata')}
-            />
+          <Box
+            sx={{
+              pointerEvents: 'auto',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              maxWidth: 320,
+            }}
+          >
+            <Box sx={{ width: 220 }}>
+              <SearchField
+                searchText={searchKeyword}
+                handleSearchTextChange={setSearchKeyword}
+                handleSearchCommit={() => undefined}
+                placeholder={t('preview.metadata.searchPlaceholder', 'Search metadata')}
+                ariaLabel={t('preview.metadata.searchAriaLabel', 'Search metadata')}
+              />
+            </Box>
           </Box>
         </Box>
+        {mapControlContainer instanceof HTMLElement && fitControlPosition
+          ? (
+            <Box
+              sx={{
+                position: 'absolute',
+                top: fitControlPosition.top,
+                left: fitControlPosition.left,
+                transform: 'translateX(-100%)',
+                zIndex: 1,
+                pointerEvents: 'auto',
+              }}
+            >
+              <Button
+                aria-label={t('preview.fitSelection', 'Fit selection')}
+                size="large"
+                variant="outlined"
+                onClick={handleFitSelection}
+                disabled={!canFitSelection}
+                sx={{
+                  minWidth: 0,
+                  height: 32,
+                  minHeight: 32,
+                  padding: 0.5,
+                  m: 0.5,
+                  bgcolor: 'background.paper',
+                  '&:hover': { bgcolor: 'action.hover' },
+                }}
+              >
+                <FitScreenIcon fontSize="small" />
+              </Button>
+            </Box>
+          )
+          : null}
       </Box>
     );
   };
@@ -446,8 +528,8 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
               onSort={handleErrorSort}
               rowSx={(state) => {
                 if (state.selected) {
-                  const selectedBg = theme.palette.error.light;
-                  const selectedText = theme.palette.getContrastText(selectedBg);
+                  const selectedBg = theme.palette.primary.light;
+                  const selectedText = theme.palette.primary.main;
                   return {
                     backgroundColor: selectedBg,
                     color: selectedText,

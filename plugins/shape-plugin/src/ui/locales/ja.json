@@ -135,6 +135,8 @@
       "methodHelp": "Transform 前に小さな地物を除外する方法を選びます。",
       "minimumArea": "最小面積(平方km)",
       "minimumAreaHelp": "Transform で、この面積より小さい特徴を除外します。",
+      "excludePolygonAreaCoefficient": "除外ポリゴン面積係数",
+      "excludePolygonAreaCoefficientHelp": "量子化後に、面積 < 係数 × グリッド長 × 外周長 / 2 のポリゴンを除外します。",
       "tolerance": "簡略化の強さ",
       "tolerancePrimary": "簡略化の強さ（フィルタリング）",
       "toleranceSecondary": "簡略化の強さ（前処理）",
@@ -232,6 +234,7 @@
         "featureId": "フィーチャーID"
       }
     },
+    "fitSelection": "選択範囲へフィット",
     "errors": {
       "missingSession": "ビルドを実行してTransformエラーを記録してください。",
       "empty": "Transformエラーはまだ記録されていません。",
@@ -241,14 +244,15 @@
       "matches": "一致",
       "rows": "件",
       "columns": {
-        "createdAt": "記録日時",
         "sourceKey": "ソースキー",
         "countryCode": "国コード",
+        "admin0Name": "Admin0名",
+        "adminAreaName": "Admin1/2名",
         "adminLevel": "自治体レベル",
         "bandId": "バンド",
         "featureId": "フィーチャーID",
-        "polygonCount": "ポリゴン数",
-        "ringCount": "リング数",
+        "polygonCount": "ポリゴン(エラー/総数)",
+        "ringCount": "リング(エラー/総数)",
         "message": "メッセージ"
       }
     }

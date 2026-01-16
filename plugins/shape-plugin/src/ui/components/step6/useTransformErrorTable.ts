@@ -9,25 +9,36 @@ export const useTransformErrorTable = (
   errorRows: TransformErrorRow[],
   matchedIdSet: Set<string>,
   searchKeyword: string,
+  featureAdminNameMap: Map<string, { countryName?: string; adminName?: string; adminLevel?: number }>,
 ) => {
   const { t } = useTranslation();
-  const [sortColumn, setSortColumn] = useState<string>('createdAt');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [sortColumn, setSortColumn] = useState<string>('featureId');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   const errorTableRows = useMemo(() => {
-    const rows = errorRows.map((row) => ({
-      id: row.id,
-      rawId: row.id,
-      createdAt: row.createdAt ? new Date(row.createdAt).toLocaleString() : '',
-      sourceKey: row.sourceKey ?? '',
-      countryCode: row.countryCode ?? '',
-      adminLevel: row.adminLevel != null ? `ADM${row.adminLevel}` : '',
-      bandId: row.bandId ?? '',
-      featureId: row.featureId ?? '',
-      polygonCount: row.polygonCount ?? '',
-      ringCount: row.ringCount ?? '',
-      message: row.message ?? '',
-    }));
+    const rows = errorRows.map((row) => {
+      const featureId = row.featureId ?? '';
+      const adminInfo = featureId ? featureAdminNameMap.get(featureId) : undefined;
+      const adminLevel = row.adminLevel ?? adminInfo?.adminLevel ?? null;
+      const adminAreaName = adminLevel === 0 ? '' : adminInfo?.adminName ?? '';
+      const totalPolygonCount = row.polygonCount ?? 0;
+      const errorPolygonCount = row.polygonErrorCount ?? totalPolygonCount;
+      const totalRingCount = row.ringCount ?? 0;
+      const errorRingCount = row.ringErrorCount ?? totalRingCount;
+      return ({
+        id: row.id,
+        rawId: row.id,
+        countryCode: row.countryCode ?? '',
+        admin0Name: adminInfo?.countryName ?? '',
+        adminAreaName,
+        adminLevel: row.adminLevel != null ? `ADM${row.adminLevel}` : '',
+        bandId: row.bandId ?? '',
+        featureId: row.featureId ?? '',
+        polygonCount: `${errorPolygonCount}/${totalPolygonCount}`,
+        ringCount: `${errorRingCount}/${totalRingCount}`,
+        message: row.message ?? '',
+      });
+    });
     const keyword = searchKeyword.trim().toLowerCase();
     const filtered = keyword
       ? rows.filter((row) => matchedIdSet.has(row.rawId))
@@ -51,14 +62,14 @@ export const useTransformErrorTable = (
   }, []);
 
   const errorColumns = useMemo<GridColumn<(typeof errorTableRows)[number]>[]>(() => ([
-    { id: 'createdAt', label: t('preview.errors.columns.createdAt', 'Recorded At'), width: 180, sortable: true },
-    { id: 'sourceKey', label: t('preview.errors.columns.sourceKey', 'Source Key'), width: 200, sortable: true },
     { id: 'countryCode', label: t('preview.errors.columns.countryCode', 'Country Code'), width: 120, sortable: true },
+    { id: 'admin0Name', label: t('preview.errors.columns.admin0Name', 'Admin0 Name'), width: 160, sortable: true },
+    { id: 'adminAreaName', label: t('preview.errors.columns.adminAreaName', 'Admin1/2 Name'), width: 180, sortable: true },
     { id: 'adminLevel', label: t('preview.errors.columns.adminLevel', 'Admin Level'), width: 120, align: 'right', sortable: true },
     { id: 'bandId', label: t('preview.errors.columns.bandId', 'Band'), width: 80, align: 'right', sortable: true },
     { id: 'featureId', label: t('preview.errors.columns.featureId', 'Feature Id'), width: 160, sortable: true },
-    { id: 'polygonCount', label: t('preview.errors.columns.polygonCount', 'Polygons'), width: 120, align: 'right', sortable: true },
-    { id: 'ringCount', label: t('preview.errors.columns.ringCount', 'Rings'), width: 120, align: 'right', sortable: true },
+    { id: 'polygonCount', label: t('preview.errors.columns.polygonCount', 'Polygons (Error/Total)'), width: 150, align: 'right', sortable: true },
+    { id: 'ringCount', label: t('preview.errors.columns.ringCount', 'Rings (Error/Total)'), width: 150, align: 'right', sortable: true },
     { id: 'message', label: t('preview.errors.columns.message', 'Message'), width: 320, sortable: true },
   ]), [t]);
 

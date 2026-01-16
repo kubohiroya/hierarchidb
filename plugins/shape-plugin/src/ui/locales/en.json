@@ -135,6 +135,8 @@
       "methodHelp": "Selects how small features are filtered before transform.",
       "minimumArea": "Minimum Area (sq km)",
       "minimumAreaHelp": "Filters out features smaller than this area during transform.",
+      "excludePolygonAreaCoefficient": "Polygon Area Exclusion Coefficient",
+      "excludePolygonAreaCoefficientHelp": "Excludes polygons smaller than coefficient × grid size × outline length / 2 after quantization.",
       "tolerance": "Simplification Strength",
       "tolerancePrimary": "Simplification strength (filtering)",
       "toleranceSecondary": "Simplification strength (preprocessing)",
@@ -232,6 +234,7 @@
         "featureId": "Feature ID"
       }
     },
+    "fitSelection": "Fit selection",
     "errors": {
       "missingSession": "Build the dataset to capture transform errors.",
       "empty": "No transform errors have been recorded yet.",
@@ -241,14 +244,15 @@
       "matches": "Matched",
       "rows": "Rows",
       "columns": {
-        "createdAt": "Recorded At",
         "sourceKey": "Source Key",
         "countryCode": "Country Code",
+        "admin0Name": "Admin0 Name",
+        "adminAreaName": "Admin1/2 Name",
         "adminLevel": "Admin Level",
         "bandId": "Band",
         "featureId": "Feature Id",
-        "polygonCount": "Polygons",
-        "ringCount": "Rings",
+        "polygonCount": "Polygons (Error/Total)",
+        "ringCount": "Rings (Error/Total)",
         "message": "Message"
       }
     }

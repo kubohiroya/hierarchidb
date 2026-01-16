@@ -265,6 +265,8 @@ export interface ShapeTransformErrorRecord {
   geometryType?: string;
   polygonCount: number;
   ringCount: number;
+  polygonErrorCount: number;
+  ringErrorCount: number;
   message?: string;
   createdAt: number;
   lineFeatures: ShapeErrorLineFeatureCollection;

@@ -65,6 +65,7 @@ export interface TransformConfig {
   quantize?: number;
   tolerance: number;
   areaThreshold: number;
+  excludePolygonAreaCoefficient: number;
   ringFixConfig: RingFixConfig;
   selfIntersectionConfig: SelfIntersectionConfig;
 }

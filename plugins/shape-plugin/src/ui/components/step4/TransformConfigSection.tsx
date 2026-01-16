@@ -2,10 +2,12 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  Box,
   Grid,
   Stack,
   Typography,
   Paper,
+  Slider,
   Tooltip,
 } from '@mui/material';
 import {
@@ -17,7 +19,6 @@ import {
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { useTranslation } from '../../i18n.js';
 import { useTransformConfigSection } from './useTransformConfigSection.ts';
-import { AreaFilterPanel } from '../processing/AreaFilterPanel.js';
 import { ExtractionPanel } from '../processing/ExtractionPanel.js';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
 
@@ -30,12 +31,7 @@ type Props = {
 export const TransformConfigSection: React.FC<Props> = ({ config, disabled, onChange }) => {
   const { t } = useTranslation();
   const {
-    controlId,
     baseTransformConfig,
-    baseHybridConfig,
-    quickRejectLogMin,
-    quickRejectLogMax,
-    quickRejectLogValue,
     update,
   } = useTransformConfigSection({ config, disabled, onChange });
 
@@ -86,16 +82,48 @@ export const TransformConfigSection: React.FC<Props> = ({ config, disabled, onCh
           <Grid container spacing={3}>
             <Grid size={{ xs: 12, md: 8 }}>
               <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
-                <AreaFilterPanel
-                  controlId={controlId}
-                  baseTransformConfig={baseTransformConfig}
-                  baseHybridConfig={baseHybridConfig}
-                  quickRejectLogMin={quickRejectLogMin}
-                  quickRejectLogMax={quickRejectLogMax}
-                  quickRejectLogValue={quickRejectLogValue}
-                  disabled={disabled}
-                  update={update}
-                />
+                <Stack spacing={2}>
+                  <Typography variant="subtitle2">
+                    {t('processing.filter.excludePolygonAreaCoefficient', 'Polygon Area Exclusion Coefficient')}
+                  </Typography>
+                  <div>
+                    <Typography gutterBottom>
+                      {t('processing.filter.excludePolygonAreaCoefficient', 'Polygon Area Exclusion Coefficient')}
+                    </Typography>
+                    <Box sx={{ px: 2 }}>
+                      <Slider
+                        value={baseTransformConfig.excludePolygonAreaCoefficient}
+                        onChange={(_, value) => {
+                          const excludePolygonAreaCoefficient = value as number;
+                          update({
+                            transformConfig: {
+                              ...baseTransformConfig,
+                              excludePolygonAreaCoefficient,
+                            },
+                          });
+                        }}
+                        min={0}
+                        max={5}
+                        step={0.1}
+                        valueLabelDisplay="auto"
+                        marks={[
+                          { value: 0, label: '0' },
+                          { value: 0.5, label: '0.5' },
+                          { value: 1, label: '1.0' },
+                          { value: 2, label: '2.0' },
+                          { value: 5, label: '5.0' },
+                        ]}
+                        disabled={disabled}
+                      />
+                    </Box>
+                    <Typography variant="caption" color="text.secondary">
+                      {t(
+                        'processing.filter.excludePolygonAreaCoefficientHelp',
+                        'Excludes polygons smaller than coefficient × grid size × outline length / 2 after quantization.',
+                      )}
+                    </Typography>
+                  </div>
+                </Stack>
               </Paper>
             </Grid>
             <Grid size={{ xs: 12, md: 4 }}>

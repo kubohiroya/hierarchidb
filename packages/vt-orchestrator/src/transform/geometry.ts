@@ -38,6 +38,44 @@ const mercatorToLonLat = ([x, y]: Mercator): LonLat => {
   return [lon, lat];
 };
 
+const computeRingLengthMeters = (ring: number[][]): number => {
+  if (ring.length < 2) return 0;
+  let length = 0;
+  for (let index = 1; index < ring.length; index += 1) {
+    const prev = ring[index - 1];
+    const curr = ring[index];
+    if (!prev || !curr) continue;
+    const [prevX, prevY] = lonLatToMercator([prev[0] ?? 0, prev[1] ?? 0]);
+    const [currX, currY] = lonLatToMercator([curr[0] ?? 0, curr[1] ?? 0]);
+    const dx = currX - prevX;
+    const dy = currY - prevY;
+    length += Math.sqrt(dx * dx + dy * dy);
+  }
+  const first = ring[0];
+  const last = ring[ring.length - 1];
+  if (first && last && (first[0] !== last[0] || first[1] !== last[1])) {
+    const [firstX, firstY] = lonLatToMercator([first[0] ?? 0, first[1] ?? 0]);
+    const [lastX, lastY] = lonLatToMercator([last[0] ?? 0, last[1] ?? 0]);
+    const dx = lastX - firstX;
+    const dy = lastY - firstY;
+    length += Math.sqrt(dx * dx + dy * dy);
+  }
+  return length;
+};
+
+const computePolygonArea = (coords: number[][][]): number => {
+  try {
+    return Math.abs(turfArea({ type: 'Polygon', coordinates: coords } as Polygon));
+  } catch {
+    return 0;
+  }
+};
+
+const computePolygonOutlineLength = (coords: number[][][]): number => {
+  const outer = coords[0] ?? [];
+  return computeRingLengthMeters(outer);
+};
+
 const mapCoords = (coords: unknown, map: (coord: LonLat) => LonLat): unknown => {
   if (!Array.isArray(coords)) return coords;
   if (coords.length === 0) return coords;
@@ -284,13 +322,45 @@ const applySelfIntersectionFix = (
   return { type: 'MultiPolygon', coordinates: coords } as MultiPolygon;
 };
 
+const applyPolygonAreaExclusion = (
+  geometry: Geometry,
+  coefficient: number,
+  zTarget: number,
+  quantize?: number,
+): Geometry | null => {
+  if (!Number.isFinite(coefficient)) {
+    throw new Error('excludePolygonAreaCoefficient must be a finite number');
+  }
+  if (coefficient <= 0) return geometry;
+  const gridSizeMeters = metersPerPixel(zTarget) * resolveQuantizeFactor(quantize);
+  const shouldExclude = (coords: number[][][]): boolean => {
+    const outlineLength = computePolygonOutlineLength(coords);
+    if (outlineLength <= 0) return false;
+    const area = computePolygonArea(coords);
+    // Exclude tiny polygons relative to grid size and outline length.
+    const threshold = (coefficient * gridSizeMeters * outlineLength) / 2;
+    return area < threshold;
+  };
+  if (geometry.type === 'Polygon') {
+    const coords = geometry.coordinates as number[][][];
+    return shouldExclude(coords) ? null : geometry;
+  }
+  if (geometry.type === 'MultiPolygon') {
+    const polygons = geometry.coordinates as number[][][][];
+    const filtered = polygons.filter((coords) => !shouldExclude(coords));
+    return filtered.length > 0 ? { ...geometry, coordinates: filtered } : null;
+  }
+  return geometry;
+};
+
 export const simplifyFeatureCollection = (
   collection: FeatureCollection,
   zTarget: number,
   toleranceK: number,
-  ringFixConfig?: RingFixConfig,
-  selfIntersectionConfig?: SelfIntersectionConfig,
-  quantize?: number,
+  ringFixConfig: RingFixConfig | undefined,
+  selfIntersectionConfig: SelfIntersectionConfig | undefined,
+  quantize: number | undefined,
+  excludePolygonAreaCoefficient: number,
 ): FeatureCollection => {
   const tolerance = toleranceK * metersPerPixel(zTarget);
   const ringFix = ringFixConfig ?? {
@@ -309,15 +379,21 @@ export const simplifyFeatureCollection = (
   const baseArea = Math.pow(metersPerPixel(zTarget) * 2, 2);
   const minRingArea = baseArea * ringFix.minRingAreaMultiplier;
   const minPolygonArea = baseArea * selfIntersection.minPolygonAreaMultiplier;
-  const features = collection.features.map((feature: Feature) => {
-    if (!feature.geometry) return feature;
+  const features: Feature[] = [];
+  for (const feature of collection.features) {
+    if (!feature.geometry) {
+      features.push(feature);
+      continue;
+    }
     const snapped = snapGeometryToGrid(feature.geometry, zTarget, quantize);
     const cleaned = cleanGeometry(snapped);
-    const ringFixed = applyRingFix(cleaned, ringFix, minRingArea);
+    const areaFiltered = applyPolygonAreaExclusion(cleaned, excludePolygonAreaCoefficient, zTarget, quantize);
+    if (!areaFiltered) continue;
+    const ringFixed = applyRingFix(areaFiltered, ringFix, minRingArea);
     const intersectionFixed = applySelfIntersectionFix(ringFixed, selfIntersection, minPolygonArea, zTarget, quantize);
     const simplified = simplifyGeometryInMercator(intersectionFixed, tolerance);
-    return { ...feature, geometry: simplified };
-  });
+    features.push({ ...feature, geometry: simplified });
+  }
   return { ...collection, features };
 };
 

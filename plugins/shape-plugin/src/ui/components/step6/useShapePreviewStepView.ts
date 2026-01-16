@@ -114,7 +114,59 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
       return [];
     }
     const sourceId = 'shape-transform-errors';
+    const selectedFilter = ['==', ['get', 'selected'], true] as const;
+    const unselectedFilter = ['!=', ['get', 'selected'], true] as const;
     return [
+      {
+        layerId: 'shape-transform-errors-selected-outline-glow',
+        sourceId,
+        data: preview.errorLineCollection,
+        layerType: 'line',
+        paint: {
+          'line-color': preview.theme.palette.primary.light,
+          'line-width': 6,
+          'line-blur': 2,
+          'line-opacity': 0.6,
+        },
+        filter: ['all', ['==', ['get', 'ringRole'], 'outline'], selectedFilter],
+      },
+      {
+        layerId: 'shape-transform-errors-selected-outline',
+        sourceId,
+        data: preview.errorLineCollection,
+        layerType: 'line',
+        paint: {
+          'line-color': preview.theme.palette.primary.main,
+          'line-width': 3,
+        },
+        filter: ['all', ['==', ['get', 'ringRole'], 'outline'], selectedFilter],
+      },
+      {
+        layerId: 'shape-transform-errors-selected-hole-glow',
+        sourceId,
+        data: preview.errorLineCollection,
+        layerType: 'line',
+        paint: {
+          'line-color': preview.theme.palette.primary.light,
+          'line-width': 4,
+          'line-blur': 2,
+          'line-opacity': 0.5,
+          'line-dasharray': [2, 2],
+        },
+        filter: ['all', ['==', ['get', 'ringRole'], 'hole'], selectedFilter],
+      },
+      {
+        layerId: 'shape-transform-errors-selected-hole',
+        sourceId,
+        data: preview.errorLineCollection,
+        layerType: 'line',
+        paint: {
+          'line-color': preview.theme.palette.primary.main,
+          'line-width': 2,
+          'line-dasharray': [2, 2],
+        },
+        filter: ['all', ['==', ['get', 'ringRole'], 'hole'], selectedFilter],
+      },
       {
         layerId: 'shape-transform-errors-outline',
         sourceId,
@@ -124,7 +176,7 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
           'line-color': preview.theme.palette.error.main,
           'line-width': 2,
         },
-        filter: ['==', ['get', 'ringRole'], 'outline'],
+        filter: ['all', ['==', ['get', 'ringRole'], 'outline'], unselectedFilter],
       },
       {
         layerId: 'shape-transform-errors-hole',
@@ -136,10 +188,16 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
           'line-width': 1.5,
           'line-dasharray': [2, 2],
         },
-        filter: ['==', ['get', 'ringRole'], 'hole'],
+        filter: ['all', ['==', ['get', 'ringRole'], 'hole'], unselectedFilter],
       },
     ];
-  }, [preview.errorLineCollection, preview.theme.palette.error.main, preview.theme.palette.warning.main]);
+  }, [
+    preview.errorLineCollection,
+    preview.theme.palette.error.main,
+    preview.theme.palette.primary.light,
+    preview.theme.palette.primary.main,
+    preview.theme.palette.warning.main,
+  ]);
 
   return {
     ...preview,

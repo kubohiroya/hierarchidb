@@ -70,6 +70,7 @@ const minimalBatchConfig = {
     tolerance: 0.01,
     featureFilterMethod: 'hybrid' as const,
     areaThreshold: 1,
+    excludePolygonAreaCoefficient: 1,
     minVertexCountForAreaFilter: 1,
     aspectRatioThreshold: 1,
     ringFixConfig: {

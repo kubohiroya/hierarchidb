@@ -139,6 +139,8 @@ type GeometryIssueSummary = {
   geometryType: string;
   polygonCount: number;
   ringCount: number;
+  errorPolygonCount: number;
+  errorRingCount: number;
   emptyRingCount: number;
   invalidRingCount: number;
   openRingCount: number;
@@ -162,6 +164,7 @@ type PolygonRingSummary = {
   ringArea: number | null;
   degenerateRingCount: number;
   duplicateVertexCount: number;
+  hasIssue: boolean;
 };
 
 const isSameCoord = (a?: number[], b?: number[]): boolean => {
@@ -239,6 +242,12 @@ const analyzePolygonRing = (ring: number[][]): PolygonRingSummary => {
   const ringArea = computeRingArea(ring);
   const degenerateRingCount = ringArea !== null && Math.abs(ringArea) < 1e-12 ? 1 : 0;
   const duplicateVertexCount = countDuplicateVertices(ring);
+  const hasIssue = emptyRingCount > 0
+    || invalidRingCount > 0
+    || openRingCount > 0
+    || nonFiniteCoordCount > 0
+    || degenerateRingCount > 0
+    || duplicateVertexCount > 0;
   return {
     emptyRingCount,
     invalidRingCount,
@@ -248,6 +257,7 @@ const analyzePolygonRing = (ring: number[][]): PolygonRingSummary => {
     ringArea,
     degenerateRingCount,
     duplicateVertexCount,
+    hasIssue,
   };
 };
 
@@ -260,6 +270,9 @@ const analyzePolygon = (rings: number[][][]): Omit<GeometryIssueSummary, 'geomet
   let maxRingVertices: number | null = null;
   let ringVertexTotal = 0;
   let ringCount = 0;
+  let errorRingCount = 0;
+  let errorPolygonCount = 0;
+  let polygonHasIssue = false;
   let degenerateRingCount = 0;
   let duplicateVertexCount = 0;
   let minRingArea: number | null = null;
@@ -284,10 +297,17 @@ const analyzePolygon = (rings: number[][][]): Omit<GeometryIssueSummary, 'geomet
       minRingArea = minRingArea === null ? result.ringArea : Math.min(minRingArea, result.ringArea);
       maxRingArea = maxRingArea === null ? result.ringArea : Math.max(maxRingArea, result.ringArea);
     }
+    if (result.hasIssue) {
+      errorRingCount += 1;
+      polygonHasIssue = true;
+    }
   }
+  errorPolygonCount = polygonHasIssue ? 1 : 0;
   return {
     polygonCount: 1,
     ringCount,
+    errorPolygonCount,
+    errorRingCount,
     emptyRingCount,
     invalidRingCount,
     openRingCount,
@@ -307,6 +327,8 @@ const buildEmptyGeometrySummary = (geometryType: string): GeometryIssueSummary =
   geometryType,
   polygonCount: 0,
   ringCount: 0,
+  errorPolygonCount: 0,
+  errorRingCount: 0,
   emptyRingCount: 0,
   invalidRingCount: 0,
   openRingCount: 0,
@@ -332,6 +354,8 @@ const analyzeGeometryIssues = (geometry?: Geometry | null): GeometryIssueSummary
       const childSummary = analyzeGeometryIssues(child);
       acc.polygonCount += childSummary.polygonCount;
       acc.ringCount += childSummary.ringCount;
+      acc.errorPolygonCount += childSummary.errorPolygonCount;
+      acc.errorRingCount += childSummary.errorRingCount;
       acc.emptyRingCount += childSummary.emptyRingCount;
       acc.invalidRingCount += childSummary.invalidRingCount;
       acc.openRingCount += childSummary.openRingCount;
@@ -374,11 +398,15 @@ const analyzeGeometryIssues = (geometry?: Geometry | null): GeometryIssueSummary
     const rings = Array.isArray(geometry.coordinates)
       ? (geometry.coordinates as number[][][])
       : [];
-    return {
+    const summary = {
       geometryType: 'Polygon',
       ...analyzePolygon(rings),
       selfIntersectionCount: countSelfIntersections(geometry),
     };
+    if (summary.selfIntersectionCount > 0 && summary.errorPolygonCount === 0 && summary.polygonCount > 0) {
+      summary.errorPolygonCount = summary.polygonCount;
+    }
+    return summary;
   }
 
   if (geometry.type === 'MultiPolygon') {
@@ -391,6 +419,8 @@ const analyzeGeometryIssues = (geometry?: Geometry | null): GeometryIssueSummary
       const child = analyzePolygon(polygon ?? []);
       acc.polygonCount += child.polygonCount;
       acc.ringCount += child.ringCount;
+      acc.errorPolygonCount += child.errorPolygonCount;
+      acc.errorRingCount += child.errorRingCount;
       acc.emptyRingCount += child.emptyRingCount;
       acc.invalidRingCount += child.invalidRingCount;
       acc.openRingCount += child.openRingCount;
@@ -424,6 +454,9 @@ const analyzeGeometryIssues = (geometry?: Geometry | null): GeometryIssueSummary
       return acc;
     }, buildEmptyGeometrySummary('MultiPolygon'));
     summary.selfIntersectionCount = countSelfIntersections(geometry);
+    if (summary.selfIntersectionCount > 0 && summary.errorPolygonCount === 0 && summary.polygonCount > 0) {
+      summary.errorPolygonCount = summary.polygonCount;
+    }
     summary.avgRingVertices = ringCount > 0 ? ringVertexTotal / ringCount : null;
     return summary;
   }
@@ -677,6 +710,7 @@ export const createTransformByBandHandler = (
           transformConfig.ringFixConfig,
           transformConfig.selfIntersectionConfig,
           transformConfig.quantize,
+          transformConfig.excludePolygonAreaCoefficient,
         ));
       } catch (error) {
         if (abortSignal?.aborted) {
@@ -715,6 +749,7 @@ export const createTransformByBandHandler = (
               transformConfig.ringFixConfig,
               transformConfig.selfIntersectionConfig,
               transformConfig.quantize,
+              transformConfig.excludePolygonAreaCoefficient,
             );
           } catch (featureError) {
             errorFeatureCount += 1;
@@ -727,11 +762,11 @@ export const createTransformByBandHandler = (
             const lineFeaturesCandidate = buildErrorLineFeatures(feature.geometry, recordFeatureId);
             const recordId = `${task.taskId}:${recordFeatureId}`;
             const fallbackGeometryType = feature.geometry?.type ?? 'unknown';
+            const summary = analyzeGeometryIssues(feature.geometry);
             try {
               stageLabel = 'counts:error-polygons';
               errorPolygonCount += await runStageWithLabel('counts:error-polygons', () => countPolygonsFromGeometry(feature.geometry));
               stageLabel = 'analysis:geometry-issues';
-              const summary = analyzeGeometryIssues(feature.geometry);
               invalidRingCount += summary.invalidRingCount;
               openRingCount += summary.openRingCount;
               emptyRingCount += summary.emptyRingCount;
@@ -813,8 +848,10 @@ export const createTransformByBandHandler = (
               featureId: recordFeatureId,
               featureIndex,
               geometryType: lineFeaturesCandidate?.geometryType ?? fallbackGeometryType,
-              polygonCount: lineFeaturesCandidate?.polygonCount ?? countPolygonsFromGeometry(feature.geometry),
-              ringCount: lineFeaturesCandidate?.ringCount ?? 0,
+              polygonCount: summary.polygonCount,
+              ringCount: summary.ringCount,
+              polygonErrorCount: summary.errorPolygonCount,
+              ringErrorCount: summary.errorRingCount,
               message: featureMessage,
               createdAt: Date.now(),
               lineFeatures: {

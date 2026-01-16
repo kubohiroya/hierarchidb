@@ -331,6 +331,51 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   const sourceMetadataRows = filteredMetadataRows;
   const featureMetadataRows = rawFeatureMetadataRows;
   const transformErrorRows = rawTransformErrorRows;
+  const updateBounds = useCallback(
+    (bounds: { minLng: number; minLat: number; maxLng: number; maxLat: number } | null, lng: number, lat: number) => {
+      if (!bounds) {
+        return { minLng: lng, minLat: lat, maxLng: lng, maxLat: lat };
+      }
+      return {
+        minLng: Math.min(bounds.minLng, lng),
+        minLat: Math.min(bounds.minLat, lat),
+        maxLng: Math.max(bounds.maxLng, lng),
+        maxLat: Math.max(bounds.maxLat, lat),
+      };
+    },
+    [],
+  );
+
+  const visitCoordinates = useCallback(
+    (coords: unknown, bounds: { minLng: number; minLat: number; maxLng: number; maxLat: number } | null) => {
+      if (!Array.isArray(coords)) return bounds;
+      if (coords.length >= 2 && typeof coords[0] === 'number' && typeof coords[1] === 'number') {
+        return updateBounds(bounds, coords[0], coords[1]);
+      }
+      return coords.reduce(
+        (current, entry) => visitCoordinates(entry, current),
+        bounds,
+      );
+    },
+    [updateBounds],
+  );
+
+  const finalizeBounds = useCallback(
+    (bounds: { minLng: number; minLat: number; maxLng: number; maxLat: number } | null) => {
+      if (!bounds) return null;
+      const lngPadding = Math.max((bounds.maxLng - bounds.minLng) * DEFAULT_BOUNDS_MARGIN, MIN_BOUNDS_MARGIN);
+      const latPadding = Math.max((bounds.maxLat - bounds.minLat) * DEFAULT_BOUNDS_MARGIN, MIN_BOUNDS_MARGIN);
+      const clampLng = (value: number) => Math.max(-180, Math.min(180, value));
+      const clampLat = (value: number) => Math.max(-90, Math.min(90, value));
+      return {
+        minLng: clampLng(bounds.minLng - lngPadding),
+        minLat: clampLat(bounds.minLat - latPadding),
+        maxLng: clampLng(bounds.maxLng + lngPadding),
+        maxLat: clampLat(bounds.maxLat + latPadding),
+      };
+    },
+    [],
+  );
 
   const selectionBounds = useMemo(() => {
     let minLng = Number.POSITIVE_INFINITY;
@@ -364,6 +409,60 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     };
   }, [filteredMetadataRows]);
 
+  const selectedBounds = useMemo(() => {
+    if (selectedIds.length === 0) return null;
+    const selectedSet = new Set(selectedIds.map(String));
+    let minLng = Number.POSITIVE_INFINITY;
+    let minLat = Number.POSITIVE_INFINITY;
+    let maxLng = Number.NEGATIVE_INFINITY;
+    let maxLat = Number.NEGATIVE_INFINITY;
+    let hasBounds = false;
+    filteredMetadataRows.forEach((row) => {
+      if (!selectedSet.has(String(row.originKey))) return;
+      const bbox = row.bbox;
+      if (!bbox || bbox.length !== 4) return;
+      const [minX, minY, maxX, maxY] = bbox;
+      if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY)) {
+        return;
+      }
+      hasBounds = true;
+      minLng = Math.min(minLng, minX);
+      minLat = Math.min(minLat, minY);
+      maxLng = Math.max(maxLng, maxX);
+      maxLat = Math.max(maxLat, maxY);
+    });
+    return finalizeBounds(
+      hasBounds ? { minLng, minLat, maxLng, maxLat } : null,
+    );
+  }, [filteredMetadataRows, finalizeBounds, selectedIds]);
+
+  const selectedErrorBounds = useMemo(() => {
+    if (selectedErrorIds.length === 0) return null;
+    const selectedSet = new Set(selectedErrorIds);
+    let bounds: { minLng: number; minLat: number; maxLng: number; maxLat: number } | null = null;
+    transformErrorRows.forEach((row) => {
+      if (!selectedSet.has(row.id)) return;
+      row.lineFeatures?.features?.forEach((feature) => {
+        const geometry = (feature as { geometry?: { coordinates?: unknown } }).geometry;
+        if (!geometry?.coordinates) return;
+        bounds = visitCoordinates(geometry.coordinates, bounds);
+      });
+    });
+    return finalizeBounds(bounds);
+  }, [finalizeBounds, selectedErrorIds, transformErrorRows, visitCoordinates]);
+
+  const fitSelectionBounds = useMemo(() => {
+    if (!selectedBounds && !selectedErrorBounds) return null;
+    if (!selectedBounds) return selectedErrorBounds;
+    if (!selectedErrorBounds) return selectedBounds;
+    return {
+      minLng: Math.min(selectedBounds.minLng, selectedErrorBounds.minLng),
+      minLat: Math.min(selectedBounds.minLat, selectedErrorBounds.minLat),
+      maxLng: Math.max(selectedBounds.maxLng, selectedErrorBounds.maxLng),
+      maxLat: Math.max(selectedBounds.maxLat, selectedErrorBounds.maxLat),
+    };
+  }, [selectedBounds, selectedErrorBounds]);
+
   const initialViewState = useMemo<MapWithVectorTilesProps['initialViewState']>(() => {
     if (!selectionBounds) {
       return DEFAULT_VIEW;
@@ -389,6 +488,18 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       padding: 24,
     });
   }, [mapInstance, selectionBounds]);
+
+  const canFitSelection = Boolean(mapInstance && fitSelectionBounds);
+  const handleFitSelection = useCallback(() => {
+    if (!mapInstance || !fitSelectionBounds) return;
+    const bounds: [[number, number], [number, number]] = [
+      [fitSelectionBounds.minLng, fitSelectionBounds.minLat],
+      [fitSelectionBounds.maxLng, fitSelectionBounds.maxLat],
+    ];
+    mapInstance.fitBounds(bounds, {
+      padding: 24,
+    });
+  }, [fitSelectionBounds, mapInstance]);
 
   const getRowId = useCallback((row: ShapeSourceMetadata) => row.originKey, []);
   const buildSearchText = useCallback((row: ShapeSourceMetadata) => {
@@ -565,20 +676,39 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     [matchedErrorIds],
   );
 
+  const featureAdminNameMap = useMemo(() => {
+    const map = new Map<string, { countryName?: string; adminName?: string; adminLevel?: number }>();
+    featureMetadataRows.forEach((row) => {
+      if (!row.featureId || map.has(row.featureId)) return;
+      map.set(row.featureId, {
+        countryName: row.countryName,
+        adminName: row.adminName,
+        adminLevel: row.adminLevel,
+      });
+    });
+    return map;
+  }, [featureMetadataRows]);
+
   const {
     errorColumns,
     errorTableRows,
     sortColumn: errorSortColumn,
     sortDirection: errorSortDirection,
     handleSort: handleErrorSort,
-  } = useTransformErrorTable(transformErrorRows, matchedErrorIdSet, errorSearchKeyword);
+  } = useTransformErrorTable(transformErrorRows, matchedErrorIdSet, errorSearchKeyword, featureAdminNameMap);
 
   const errorLineCollection = useMemo<ShapeTransformErrorRecord['lineFeatures'] | null>(() => {
     if (transformErrorRows.length === 0) return null;
     const selected = selectedErrorIds.length ? new Set(selectedErrorIds) : null;
     const features = transformErrorRows.flatMap((row) => {
-      if (selected && !selected.has(row.id)) return [];
-      return row.lineFeatures?.features ?? [];
+      const isSelected = selected ? selected.has(row.id) : false;
+      return (row.lineFeatures?.features ?? []).map((feature) => ({
+        ...feature,
+        properties: {
+          ...(feature.properties ?? {}),
+          selected: isSelected,
+        },
+      }));
     });
     return features.length ? { type: 'FeatureCollection', features } : null;
   }, [selectedErrorIds, transformErrorRows]);
@@ -698,5 +828,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     defaultView: initialViewState,
     selectionDataSource,
     errorLineCollection,
+    canFitSelection,
+    handleFitSelection,
   };
 };

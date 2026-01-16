@@ -12,6 +12,7 @@ import {
   type DataSourceConfig,
   type DataSourceName,
   SHAPE_DATA_SOURCES,
+  DEFAULT_BUILD_CONFIG,
   mergeBuildConfig,
   type ProcessingStatus,
   type ProgressInfo,
@@ -595,9 +596,13 @@ export const shapeBatchAPI = {
     const handler = getShapeEntityHandler();
     const draftLike = await handler.getEntity(draftId) as DraftLike;
     const draftBuildConfig = draftLike?.draftData?.buildConfig;
-    const mergedBatchConfig = draftBuildConfig
-      ? mergeBuildConfig(draftBuildConfig, buildConfig)
-      : buildConfig;
+    const normalizedDraftConfig = draftBuildConfig
+      ? mergeBuildConfig(DEFAULT_BUILD_CONFIG, draftBuildConfig)
+      : null;
+    const normalizedBuildConfig = mergeBuildConfig(DEFAULT_BUILD_CONFIG, buildConfig);
+    const mergedBatchConfig = normalizedDraftConfig
+      ? mergeBuildConfig(normalizedDraftConfig, normalizedBuildConfig)
+      : normalizedBuildConfig;
     const validation = validateBatchConfig(mergedBatchConfig);
     if (!validation.isValid) {
       throw new Error(`Invalid processing config: ${validation.errors?.join(', ')}`);
@@ -703,9 +708,10 @@ export const shapeBatchAPI = {
         if (!baseBuildConfig) {
           throw new Error('[shapeBatchAPI] buildConfig is required to resume batch session');
         }
+        const normalizedBaseConfig = mergeBuildConfig(DEFAULT_BUILD_CONFIG, baseBuildConfig);
         const mergedBuildConfig = entityBuildConfig
-          ? mergeBuildConfig(baseBuildConfig, entityBuildConfig)
-          : baseBuildConfig;
+          ? mergeBuildConfig(normalizedBaseConfig, entityBuildConfig)
+          : normalizedBaseConfig;
         const resolvedDataSource = requireDataSourceName(
           mergedBuildConfig.dataSourceName,
           'resumeBatchSession',

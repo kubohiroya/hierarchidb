@@ -45,6 +45,7 @@
                   "elongatedShapeCorrectionFactor": 1.3
                 },
                 "deleteOnComplete": false,
+                "excludePolygonAreaCoefficient": 1,
                 "tolerance": 0.1,
                 "areaThreshold": 1,
                 "ringFixConfig": {
