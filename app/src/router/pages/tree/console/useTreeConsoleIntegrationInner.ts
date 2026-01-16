@@ -98,7 +98,15 @@ export function useTreeConsoleIntegrationInner({
 
   const [speedDialSuppressed, setSpeedDialSuppressed] = useState(false);
   const isDialogRoute = useMemo(() => {
-    const segments = location.pathname.replace(/^\/+|\/+$/g, '').split('/');
+    const pathname = location.pathname;
+    if (typeof window === 'undefined') {
+      const segments = pathname.replace(/^\/+|\/+$/g, '').split('/');
+      return segments.length >= 6 && segments[0] === 't';
+    }
+    const hash = window.location.hash ?? '';
+    const hashPath = hash.startsWith('#/') ? hash.slice(1).split('?')[0] : '';
+    const path = hashPath || pathname;
+    const segments = path.replace(/^\/+|\/+$/g, '').split('/');
     return segments.length >= 6 && segments[0] === 't';
   }, [location.pathname]);
 

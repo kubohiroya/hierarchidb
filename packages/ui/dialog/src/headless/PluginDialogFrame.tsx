@@ -51,6 +51,10 @@ interface ResizeDirection {
   vertical: ResizeVertical;
 }
 
+type DialogCountWindow = Window & {
+  __HDB_DIALOG_OPEN_COUNT__?: number;
+};
+
 export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<TData>) {
   const {
     headlessProps,
@@ -82,6 +86,7 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
   const backdropTimeout = shouldAnimateBackdrop ? fadeDuration : 0;
 
   const [isInteracting, setIsInteracting] = useState(false);
+  const dialogOpenRegisteredRef = useRef(false);
 
   const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
     if (!open) return;
@@ -114,8 +119,46 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
     };
   }, [isBrowser, open]);
 
+  useEffect(() => {
+    if (!isBrowser) return;
+    const win = window as DialogCountWindow;
+    const updateBodyState = () => {
+      const count = Math.max(0, win.__HDB_DIALOG_OPEN_COUNT__ ?? 0);
+      if (count > 0) {
+        document.body.dataset.hdbDialogOpen = '1';
+      } else {
+        delete document.body.dataset.hdbDialogOpen;
+      }
+      window.dispatchEvent(
+        new CustomEvent('hdb:dialog-visibility', {
+          detail: { open: count > 0, count },
+        })
+      );
+    };
+
+    if (open && !dialogOpenRegisteredRef.current) {
+      win.__HDB_DIALOG_OPEN_COUNT__ = (win.__HDB_DIALOG_OPEN_COUNT__ ?? 0) + 1;
+      dialogOpenRegisteredRef.current = true;
+      updateBodyState();
+    }
+
+    if (!open && dialogOpenRegisteredRef.current) {
+      win.__HDB_DIALOG_OPEN_COUNT__ = Math.max(0, (win.__HDB_DIALOG_OPEN_COUNT__ ?? 1) - 1);
+      dialogOpenRegisteredRef.current = false;
+      updateBodyState();
+    }
+
+    return () => {
+      if (!dialogOpenRegisteredRef.current) return;
+      win.__HDB_DIALOG_OPEN_COUNT__ = Math.max(0, (win.__HDB_DIALOG_OPEN_COUNT__ ?? 1) - 1);
+      dialogOpenRegisteredRef.current = false;
+      updateBodyState();
+    };
+  }, [isBrowser, open]);
+
   const displayMode = headlessProps.displayMode ?? 'normal';
   const fullScreen = displayMode === 'full-screen';
+  const allowResizeHandles = displayMode === 'normal';
   const position = headlessProps.position ?? { x: 0, y: 0 };
   const size = headlessProps.size ?? DEFAULT_DIALOG_SIZE;
 
@@ -356,7 +399,7 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
       }}
     >
       <HeadlessPluginDialog {...augmentedHeadlessProps} />
-      {!fullScreen && (
+      {allowResizeHandles && (
         <>
           {[
             {

@@ -35,6 +35,7 @@ export function DynamicSpeedDial({
     vmItems,
     language,
     actionsPointerEvents,
+    dialogOpen,
     containerRef,
     resolveIcon,
     translateWithFallback,
@@ -44,9 +45,10 @@ export function DynamicSpeedDial({
     transitionDuration,
   } = useDynamicSpeedDial({ treeId, hidden, onCreateAction, onSuppress });
   const createLabel = translateWithFallback('treeConsole.contextMenu.create', 'Create');
+  const effectiveHidden = hidden || dialogOpen;
 
   // Don't render if hidden
-  if (hidden) {
+  if (effectiveHidden) {
     return null;
   }
 

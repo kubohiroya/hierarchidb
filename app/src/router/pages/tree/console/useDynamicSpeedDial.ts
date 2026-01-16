@@ -10,6 +10,8 @@ type DynamicSpeedDialWindow = Window & {
   __HDB_SD_HITBOX__?: boolean;
 };
 
+type DialogVisibilityEvent = CustomEvent<{ open: boolean; count: number }>;
+
 const SPEED_DIAL_TRANSITION_MS = 220;
 
 export interface DynamicSpeedDialState {
@@ -25,6 +27,7 @@ export interface DynamicSpeedDialState {
   vmItems: PluginMenuItem[];
   language: string;
   actionsPointerEvents: 'auto' | 'none';
+  dialogOpen: boolean;
 }
 
 export interface UseDynamicSpeedDialResult extends DynamicSpeedDialState {
@@ -63,6 +66,10 @@ export function useDynamicSpeedDial(params: {
   });
 
   const [hitboxes, setHitboxes] = useState<DynamicSpeedDialState['hitboxes']>({ actions: [] });
+  const [dialogOpen, setDialogOpen] = useState<boolean>(() => {
+    if (typeof document === 'undefined') return false;
+    return document.body?.dataset?.hdbDialogOpen === '1';
+  });
 
   const vmItems = usePluginMenuItems(treeId);
   const useVM = vmItems.length > 0;
@@ -99,10 +106,23 @@ export function useDynamicSpeedDial(params: {
   }, [open]);
 
   useEffect(() => {
-    if (hidden) {
+    if (hidden || dialogOpen) {
       setOpen(false);
     }
-  }, [hidden]);
+  }, [dialogOpen, hidden]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handler = (event: Event) => {
+      const detail = (event as DialogVisibilityEvent).detail;
+      if (!detail) return;
+      setDialogOpen(detail.open);
+    };
+    window.addEventListener('hdb:dialog-visibility', handler as EventListener);
+    return () => {
+      window.removeEventListener('hdb:dialog-visibility', handler as EventListener);
+    };
+  }, []);
 
   const handleVMActionClick = useCallback(
     (nodeType: string) => {
@@ -181,6 +201,7 @@ export function useDynamicSpeedDial(params: {
     vmItems,
     language,
     actionsPointerEvents,
+    dialogOpen,
     containerRef,
     resolveIcon,
     translateWithFallback,
