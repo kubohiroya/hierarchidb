@@ -8,7 +8,7 @@ import { SpreadsheetTabularApiDriver as StylerTabularApiDriver } from '@hierarch
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StylerMetadataManager } from '../../../../services/StylerMetadataManager.js';
 import { SPREADSHEET_PLUGIN_ID } from '@hierarchidb/spreadsheet-plugin/common/constants.js';
-import { TabularColumnMapping, TabularFilterRule } from '@hierarchidb/ui-tabular';
+import type { TabularColumnMapping, TabularFilterRule } from '@hierarchidb/ui-tabular';
 
 // Mock hashUtils
 vi.mock('../../utils/hashUtils', () => ({
