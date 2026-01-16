@@ -3,7 +3,7 @@ import type { NodeId } from '@hierarchidb/common-types';
 import type {
   ShapeBuildTaskRecord,
   ShapeBuildSessionRecord,
-  ShapeTransformByBandCache,
+  ShapeTransformCache,
   ShapeFeatureMetadata,
   ShapeMutationAPI,
   ShapeFetchCache,
@@ -231,15 +231,6 @@ export class ShapeMutationService implements ShapeMutationAPI {
     await this.db.vectorTiles.where('nodeId').equals(nodeId).delete?.();
   }
 
-  async deleteTileBuffers(nodeId: NodeId): Promise<void> {
-    await this.ensureOpen();
-    await ephemeralShapeDB.tileBuffers.where('nodeId').equals(nodeId).delete();
-  }
-
-  async deleteFeatureBuffers(nodeId: NodeId): Promise<void> {
-    await this.ensureOpen();
-    await ephemeralShapeDB.featureBuffers.where('nodeId').equals(nodeId).delete();
-  }
 
   async deleteFeatures(nodeId: NodeId): Promise<void> {
     await this.ensureOpen();
@@ -250,8 +241,6 @@ export class ShapeMutationService implements ShapeMutationAPI {
     await this.ensureOpen();
     await this.deleteBuildSession(nodeId);
     await this.deleteFeatures(nodeId);
-    await this.deleteFeatureBuffers(nodeId);
-    await this.deleteTileBuffers(nodeId);
     await this.deleteVectorTiles(nodeId);
     await this.clearTileIndexArtifacts(String(nodeId));
     await ephemeralShapeDB.buildTasks.where('nodeId').equals(nodeId).delete();
@@ -284,9 +273,9 @@ export class ShapeMutationService implements ShapeMutationAPI {
     )));
   }
 
-  async putTransformByBandCaches(buffers: ShapeTransformByBandCache[]): Promise<void> {
+  async putTransformCaches(buffers: ShapeTransformCache[]): Promise<void> {
     if (buffers.length === 0) return;
-    await ephemeralShapeDB.transformByBandCache.bulkPut(buffers);
+    await ephemeralShapeDB.transformCache.bulkPut(buffers);
   }
 
   async putSourceMetadata(rows: ShapeSourceMetadata[]): Promise<void> {

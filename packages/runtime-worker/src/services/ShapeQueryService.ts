@@ -6,7 +6,7 @@ import type {
   ShapeBuildSessionSummary,
   ShapeBuildTaskRecord,
   ShapeBuildTaskSummary,
-  ShapeTransformByBandCache,
+  ShapeTransformCache,
   ShapeTransformErrorRecord,
   ShapeFeatureRecord,
   ShapeFeatureMetadata,
@@ -301,14 +301,14 @@ export class ShapeQueryService implements ShapeQueryAPI {
     return countFetchDataDataSourceBuffersForNode(nodeId);
   }
 
-  async listTransformByBandCaches(
+  async listTransformCaches(
     nodeId: NodeId
-  ): Promise<ShapeTransformByBandCache[]> {
-    return ephemeralShapeDB.transformByBandCache.where('nodeId').equals(nodeId).toArray();
+  ): Promise<ShapeTransformCache[]> {
+    return ephemeralShapeDB.transformCache.where('nodeId').equals(nodeId).toArray();
   }
 
-  async getTransformByBandCache(bufferId: string): Promise<ShapeTransformByBandCache | null> {
-    const record = await ephemeralShapeDB.transformByBandCache.get(bufferId);
+  async getTransformCache(bufferId: string): Promise<ShapeTransformCache | null> {
+    const record = await ephemeralShapeDB.transformCache.get(bufferId);
     return record ?? null;
   }
 

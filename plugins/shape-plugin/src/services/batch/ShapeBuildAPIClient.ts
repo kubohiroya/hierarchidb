@@ -6,7 +6,7 @@ import type {
   ShapeBuildTaskStatus,
   EphemeralShapeAPI,
   ShapeEphemeralSessionRecord,
-  ShapeTransformByBandCache,
+  ShapeTransformCache,
   ShapeTransformErrorRecord,
   ShapeFeatureRecord,
   ShapeFeatureMetadata,
@@ -15,7 +15,6 @@ import type {
   ShapeQueryAPI,
   ShapeFetchCache,
   ShapeSourceMetadata,
-  ShapeGeojsonVtIndexRecord,
   ShapeTileIdToBufferRelation,
   ShapeTileInfo,
   ShapeVTMetadata,
@@ -329,16 +328,16 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
     };
   }
 
-  async getTransformByBandCache(
+  async getTransformCache(
     bufferId: string
-  ): Promise<ShapeTransformByBandCache|null> {
-    return await ephemeralShapeDB.transformByBandCache.get(bufferId)??null;
+  ): Promise<ShapeTransformCache|null> {
+    return await ephemeralShapeDB.transformCache.get(bufferId)??null;
   }
 
-  async listTransformByBandCaches(
+  async listTransformCaches(
     nodeId: NodeId
-  ): Promise<ShapeTransformByBandCache[]> {
-    return await ephemeralShapeDB.transformByBandCache.where('nodeId').equals(nodeId).toArray();
+  ): Promise<ShapeTransformCache[]> {
+    return await ephemeralShapeDB.transformCache.where('nodeId').equals(nodeId).toArray();
   }
 
   async listVTMetadata(nodeId: NodeId): Promise<ShapeVTMetadata[]> {
@@ -401,14 +400,6 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
     await shapeDB.vectorTiles.where('nodeId').equals(nodeId).delete();
   }
 
-  async deleteTileBuffers(nodeId: NodeId): Promise<void> {
-    await ephemeralShapeDB.tileBuffers.where('nodeId').equals(nodeId).delete();
-  }
-
-  async deleteFeatureBuffers(nodeId: NodeId): Promise<void> {
-    await ephemeralShapeDB.featureBuffers.where('nodeId').equals(nodeId).delete();
-  }
-
   async deleteFeatures(nodeId: NodeId): Promise<void> {
     await shapeDB.features.where('nodeId').equals(nodeId).delete();
   }
@@ -417,8 +408,6 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
     await this.deleteBuildTasks(nodeId);
     await this.deleteBuildSession(nodeId);
     await this.deleteFeatures(nodeId);
-    await this.deleteFeatureBuffers(nodeId);
-    await this.deleteTileBuffers(nodeId);
     await this.deleteVectorTiles(nodeId);
     await this.clearTileIndexArtifacts(nodeId);
   }
@@ -447,9 +436,9 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
       })
     )));
   }
-  async putTransformByBandCaches(buffers: ShapeTransformByBandCache[]): Promise<void>{
+  async putTransformCaches(buffers: ShapeTransformCache[]): Promise<void>{
     if (buffers.length === 0) return;
-    await ephemeralShapeDB.transformByBandCache.bulkPut(buffers);
+    await ephemeralShapeDB.transformCache.bulkPut(buffers);
   }
 
   async putSourceMetadata(rows: ShapeSourceMetadata[]): Promise<void> {
@@ -591,41 +580,37 @@ export class EphemeralShapeApiImpl implements EphemeralShapeAPI {
     )));
   }
 
-  async listTransformByBandCaches(
+  async listTransformCaches(
     nodeId: NodeId
-  ): Promise<ShapeTransformByBandCache[]> {
-    return ephemeralShapeDB.transformByBandCache.where('nodeId').equals(nodeId).toArray();
+  ): Promise<ShapeTransformCache[]> {
+    return ephemeralShapeDB.transformCache.where('nodeId').equals(nodeId).toArray();
   }
 
-  async getTransformByBandCache(bufferId: string): Promise<ShapeTransformByBandCache | null> {
-    return (await ephemeralShapeDB.transformByBandCache.get(bufferId)) ?? null;
+  async getTransformCache(bufferId: string): Promise<ShapeTransformCache | null> {
+    return (await ephemeralShapeDB.transformCache.get(bufferId)) ?? null;
   }
 
-  async countTransformByBandCaches(nodeId: NodeId): Promise<number> {
-    return ephemeralShapeDB.transformByBandCache.where('nodeId').equals(nodeId).count();
+  async countTransformCaches(nodeId: NodeId): Promise<number> {
+    return ephemeralShapeDB.transformCache.where('nodeId').equals(nodeId).count();
   }
 
-  async putTransformByBandCache(buffer: ShapeTransformByBandCache): Promise<void> {
-    await ephemeralShapeDB.transformByBandCache.put(buffer);
+  async putTransformCache(buffer: ShapeTransformCache): Promise<void> {
+    await ephemeralShapeDB.transformCache.put(buffer);
   }
 
-  async putTransformByBandCaches(buffers: ShapeTransformByBandCache[]): Promise<void> {
+  async putTransformCaches(buffers: ShapeTransformCache[]): Promise<void> {
     if (buffers.length === 0) return;
-    await ephemeralShapeDB.transformByBandCache.bulkPut(buffers);
-  }
-
-  async countVectorTiles(nodeId: NodeId): Promise<number> {
-    return ephemeralShapeDB.transformByZoomCache.where('nodeId').equals(nodeId).count();
+    await ephemeralShapeDB.transformCache.bulkPut(buffers);
   }
 
   async listTileIdRelations(nodeId: NodeId): Promise<ShapeTileIdToBufferRelation[]> {
     return ephemeralShapeDB.tileIdToBufferRelations.where('nodeId').equals(nodeId).toArray() as Promise<ShapeTileIdToBufferRelation[]>;
   }
 
-  async listTileIdRelationsByTileId(nodeId: NodeId, tileId: string): Promise<ShapeTileIdToBufferRelation[]> {
+  async listTileIdRelationsByTileId(nodeId: NodeId, bandId: number, tileId: string): Promise<ShapeTileIdToBufferRelation[]> {
     return ephemeralShapeDB.tileIdToBufferRelations
-      .where('[nodeId+tileId]')
-      .equals([nodeId, tileId])
+      .where('[nodeId+bandId+tileId]')
+      .equals([nodeId, bandId, tileId])
       .toArray() as Promise<ShapeTileIdToBufferRelation[]>;
   }
 
@@ -638,28 +623,8 @@ export class EphemeralShapeApiImpl implements EphemeralShapeAPI {
     await ephemeralShapeDB.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();
   }
 
-  async getGeojsonVtIndex(nodeId: NodeId, bufferId: string): Promise<ShapeGeojsonVtIndexRecord | null> {
-    const record = await ephemeralShapeDB.geojsonVtIndexes
-      .where('[nodeId+bufferId]')
-      .equals([nodeId, bufferId])
-      .first();
-    return (record as ShapeGeojsonVtIndexRecord | undefined) ?? null;
-  }
-
-  async putGeojsonVtIndex(record: ShapeGeojsonVtIndexRecord): Promise<void> {
-    await ephemeralShapeDB.geojsonVtIndexes.put(record);
-  }
-
   async getSessionRecord(nodeId: NodeId): Promise<ShapeEphemeralSessionRecord | null> {
     return (await ephemeralShapeDB.sessions.get(nodeId)) ?? null;
-  }
-
-  async deleteFeatureBuffers(nodeId: NodeId): Promise<void> {
-    await ephemeralShapeDB.featureBuffers.where('nodeId').equals(nodeId).delete();
-  }
-
-  async deleteTileBuffers(nodeId: NodeId): Promise<void> {
-    await ephemeralShapeDB.tileBuffers.where('nodeId').equals(nodeId).delete();
   }
 
   async hasStageData(nodeId: NodeId, stage: ShapeBuildStage): Promise<boolean> {
@@ -688,9 +653,7 @@ export class EphemeralShapeApiImpl implements EphemeralShapeAPI {
 
   async getNumCaches(): Promise<{
     numFetchCaches: number;
-    numTransformByBandCaches: number;
-    numTransformByZoomCaches: number;
-    numVtCaches: number;
+    numTransformCaches: number;
     numSessions: number;
     totalSize: number;
   }> {
