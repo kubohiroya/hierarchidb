@@ -196,6 +196,28 @@ export const ZoomBandConfigSection: React.FC<Props> = ({
                     }
                     label={t('processing.download.retainStage1Cache', 'Transform cache')}
                   />
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={!config.cleanupConfig?.deleteVTCache}
+                        onChange={(event) => {
+                          const retainCache = event.target.checked;
+                          update({
+                            cleanupConfig: {
+                              ...config.cleanupConfig,
+                              deleteVTCache: !retainCache,
+                            },
+                          });
+                        }}
+                        disabled={disabled}
+                        inputProps={{
+                          id: `${switchId}-retain-vt-cache`,
+                          name: 'retain-vt-cache',
+                        }}
+                      />
+                    }
+                    label={t('processing.download.retainVtCache', 'VT cache')}
+                  />
                 </FormGroup>
               </Stack>
             </Paper>

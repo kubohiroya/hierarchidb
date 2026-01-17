@@ -5,7 +5,7 @@
 
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Box, Button, Snackbar } from '@mui/material';
+import { IconButton, Snackbar } from '@mui/material';
 import { Close as CloseIcon, FitScreen as FitScreenIcon, Tune as TuneIcon } from '@mui/icons-material';
 import { createPortal } from 'react-dom';
 import type { MapLibreGeoJSONFeature, MapLibreMapInstance, MapLibreStyle } from '../types/maplibre-public.js';
@@ -196,6 +196,7 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
 
   const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
   const [mapControlContainer, setMapControlContainer] = useState<HTMLElement | null>(null);
+  const [fitControlContainer, setFitControlContainer] = useState<HTMLElement | null>(null);
   const [searchSettingsOpen, setSearchSettingsOpen] = useState(false);
 
   const orderedBasemaps = useMemo(() => (basemapStyles ? sortByPath(basemapStyles) : []), [basemapStyles]);
@@ -298,6 +299,35 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
   const selectionEnabled = interactionEnabled && (selectionConfig?.enabled ?? true);
   const fitSelectionEnabled = interactionEnabled && (fitSelectionConfig?.enabled ?? true);
   const snackbarEnabled = interactionEnabled ? (interactionSnackbar?.enabled ?? true) : Boolean(snackbar);
+
+  useEffect(() => {
+    if (!fitSelectionEnabled || !mapControlContainer) {
+      if (fitControlContainer?.parentNode) {
+        fitControlContainer.parentNode.removeChild(fitControlContainer);
+      }
+      setFitControlContainer(null);
+      return;
+    }
+    if (!fitControlContainer) {
+      const container = document.createElement('div');
+      container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+      setFitControlContainer(container);
+      return;
+    }
+    const insertContainer = () => {
+      const navControl = mapControlContainer.querySelector('.maplibregl-ctrl-group');
+      if (navControl && navControl.nextSibling !== fitControlContainer) {
+        mapControlContainer.insertBefore(fitControlContainer, navControl.nextSibling);
+        return;
+      }
+      if (!navControl && mapControlContainer.lastChild !== fitControlContainer) {
+        mapControlContainer.appendChild(fitControlContainer);
+      }
+    };
+    insertContainer();
+    const frame = window.requestAnimationFrame(insertContainer);
+    return () => window.cancelAnimationFrame(frame);
+  }, [fitSelectionEnabled, mapControlContainer, fitControlContainer]);
 
   const highlightLayerIds = useMemo(() => {
     if (interaction?.highlightLayerIds?.length) return interaction.highlightLayerIds;
@@ -614,29 +644,36 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
           ) : null}
         </>
       ) : null}
-      {fitSelectionEnabled && mapControlContainer ? (
+      {fitSelectionEnabled && fitControlContainer ? (
         createPortal(
-          <Box className="maplibregl-ctrl" sx={{ mt: 2 }}>
-            <Button
-              aria-label="Fit selection"
-              size="large"
-              variant="outlined"
-              onClick={handleFitSelection}
-              disabled={selectedMatches.length === 0}
-              sx={{
-                minWidth: 0,
-                height: 32,
-                minHeight: 32,
-                padding: 0.5,
-                m: 0.5,
-                bgcolor: 'background.paper',
-                '&:hover': { bgcolor: 'action.hover' },
-              }}
-            >
-              <FitScreenIcon fontSize="small" />
-            </Button>
-          </Box>,
-          mapControlContainer,
+          <IconButton
+            aria-label="Fit selection"
+            onClick={handleFitSelection}
+            disabled={selectedMatches.length === 0}
+            sx={{
+              width: 29,
+              height: 29,
+              minWidth: 29,
+              minHeight: 29,
+              p: 0,
+              m: 0,
+              borderRadius: 0,
+              bgcolor: 'background.paper',
+              color: (theme) =>
+                theme.palette.mode === 'dark' ? theme.palette.grey[300] : theme.palette.text.primary,
+              '& .MuiSvgIcon-root': { color: 'inherit' },
+              '&.Mui-disabled': {
+                color: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? theme.palette.grey[600]
+                    : theme.palette.action.disabled,
+              },
+              '&:hover': { bgcolor: 'action.hover' },
+            }}
+          >
+            <FitScreenIcon fontSize="small" />
+          </IconButton>,
+          fitControlContainer,
         )
       ) : null}
       {effectiveSnackbar && (

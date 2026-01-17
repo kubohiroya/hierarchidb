@@ -81,7 +81,21 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
     treeId && effectiveTargetNodeId && effectivePageNodeId && effectiveNodeType && effectiveAction
   );
 
-  const stepParam = params.step ?? null;
+  const stepParam = React.useMemo(() => {
+    if (params.step) return params.step;
+    const hash = location.hash ?? '';
+    const usesHashRouting = hash.startsWith('#/');
+    const pathWithQuery = usesHashRouting ? hash.slice(1) : (location.pathname ?? '');
+    const pathOnly = pathWithQuery.split('?')[0] ?? '';
+    const normalizedPath = pathOnly.startsWith('/') ? pathOnly : `/${pathOnly}`;
+    const segments = normalizedPath.split('/').filter(Boolean);
+    const tIndex = segments.indexOf('t');
+    if (tIndex < 0) return null;
+    const stepSegment = segments[tIndex + 7];
+    if (!stepSegment) return null;
+    const parsed = parseInt(stepSegment, 10);
+    return Number.isFinite(parsed) && parsed >= 1 ? String(parsed) : null;
+  }, [location.hash, location.pathname, params.step]);
   const dialogKey = React.useMemo(
     () =>
       [
@@ -105,6 +119,34 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
     }
     return 1;
   }, [stepParam]);
+
+
+  const resolvedTreeId = treeId as TreeId;
+  const resolvedTargetNodeId = effectiveTargetNodeId as NodeId;
+  const resolvedPageNodeId = effectivePageNodeId as NodeId;
+  const resolvedNodeType = effectiveNodeType as string;
+
+  const handleAutoBuildComplete = React.useCallback(() => {
+    if (!autoBuildEnabled) return;
+    if (buildQueueKey) {
+      const next = shiftBuildQueue(buildQueueKey);
+      if (next?.nextUrl) {
+        void navigate({ to: next.nextUrl });
+        return;
+      }
+      const fallback = next?.returnTo ?? returnToParam;
+      if (fallback) {
+        void navigate({ to: fallback });
+        return;
+      }
+    }
+    if (returnToParam) {
+      void navigate({ to: returnToParam });
+      return;
+    }
+    void navigate({ to: `/t/${resolvedTreeId}/${resolvedPageNodeId}` });
+  }, [autoBuildEnabled, buildQueueKey, navigate, resolvedPageNodeId, resolvedTreeId, returnToParam]);
+
   if (initialStepRef.current === null) {
     initialStepRef.current = parsedStep;
   }
@@ -135,33 +177,6 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
     });
     return null;
   }
-
-  const resolvedTreeId = treeId as TreeId;
-  const resolvedTargetNodeId = effectiveTargetNodeId as NodeId;
-  const resolvedPageNodeId = effectivePageNodeId as NodeId;
-  const resolvedNodeType = effectiveNodeType as string;
-
-  const handleAutoBuildComplete = React.useCallback(() => {
-    if (!autoBuildEnabled) return;
-    if (buildQueueKey) {
-      const next = shiftBuildQueue(buildQueueKey);
-      if (next?.nextUrl) {
-        void navigate({ to: next.nextUrl });
-        return;
-      }
-      const fallback = next?.returnTo ?? returnToParam;
-      if (fallback) {
-        void navigate({ to: fallback });
-        return;
-      }
-    }
-    if (returnToParam) {
-      void navigate({ to: returnToParam });
-      return;
-    }
-    void navigate({ to: `/t/${resolvedTreeId}/${resolvedPageNodeId}` });
-  }, [autoBuildEnabled, buildQueueKey, navigate, resolvedPageNodeId, resolvedTreeId, returnToParam]);
-
   // Handle close
   const handleClose = () => {
     setIsOpen(false);

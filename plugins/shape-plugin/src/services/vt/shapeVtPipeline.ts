@@ -13,6 +13,7 @@ import { DEFAULT_TASK_SPLIT } from '@hierarchidb/vt-orchestrator';
 import {
   VtShapeDb,
   listFetchCache,
+  SHAPE_DOMAIN,
 } from '@hierarchidb/vt-shape-store';
 import { ephemeralShapeDB } from '@hierarchidb/shape-store';
 import { VtDb } from '@hierarchidb/vt-store';
@@ -20,6 +21,7 @@ import type { CountryMetadata, DataSourceName, FetchTaskPayload, SelectedArrayBy
 import { runShapeFetchStage } from './shapeFetchStage.js';
 import { updateShapeStageMetadata } from './shapeStageMetadata.js';
 import { metadataLoader } from '../metadata/MetadataLoader.js';
+import { shapeMutationAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
 import {
   buildZoomBandRanges,
   ZOOM_BAND_MAX_ZOOM,
@@ -361,4 +363,19 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
     shapeStore,
     vtStore,
   });
+
+  const cleanupConfig = params.buildConfig.cleanupConfig;
+  if (cleanupConfig?.deleteFetchCeche) {
+    await shapeStore.fetchCache
+      .where('[nodeId+domainType]')
+      .equals([params.nodeId, SHAPE_DOMAIN])
+      .delete();
+  }
+  if (cleanupConfig?.deleteTransformCache) {
+    await ephemeralStore.transformCache.where('nodeId').equals(params.nodeId).delete();
+  }
+  if (cleanupConfig?.deleteVTCache) {
+    await vtStore.vtTiles.where('nodeId').equals(params.nodeId).delete();
+    await shapeMutationAPIImpl.deleteVectorTiles(params.nodeId);
+  }
 };

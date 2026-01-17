@@ -14,7 +14,12 @@ import {
   shapePreviewHoveredIdAtom,
   shapePreviewSelectionContextAtom,
 } from '../../atoms/shapePreviewAtoms.ts';
-import type { MapHighlightEntry, MapPreviewErrorSummaryById, MapWithVectorTilesProps } from '@hierarchidb/ui-map';
+import type {
+  MapHighlightEntry,
+  MapPreviewErrorSummaryById,
+  MapWithVectorTilesProps,
+  ShapePreviewFeatureRow,
+} from '@hierarchidb/ui-map';
 import type { MapLibreMapInstance } from '@hierarchidb/ui-map';
 import {
   buildErrorSummaryById,
@@ -564,8 +569,47 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       String(feature.properties?.__hdbOriginKey ?? feature.properties?.id ?? feature.id ?? ''),
   });
 
-  const getFeatureRowId = useCallback((row: ShapeFeatureMetadata) => row.id, []);
-  const buildFeatureSearchText = useCallback((row: ShapeFeatureMetadata) => (
+  const toFeatureListRow = useCallback(
+    (row: ShapeFeatureMetadata): ShapePreviewFeatureRow => ({
+      id: row.id,
+      featureId: row.featureId,
+      countryName: row.countryName,
+      countryCode: row.countryCode,
+      adminName: row.adminName,
+      adminLevel: row.adminLevel,
+      adminCode: row.adminCode,
+      dataSource: row.dataSource,
+      createdAt: row.createdAt,
+      vertexCount: row.vertexCount,
+      polygonCount: row.polygonCount,
+      bbox: row.bbox,
+      area: row.area,
+    }),
+    [],
+  );
+
+  const featureListRows = useMemo<ShapePreviewFeatureRow[]>(() => {
+    const rows = featureMetadataRows.map((row) => toFeatureListRow(row));
+    const existing = new Set(rows.map((row) => row.featureId ?? row.id));
+    transformErrorRows.forEach((errorRow) => {
+      const featureId = errorRow.featureId;
+      if (!featureId) return;
+      if (existing.has(featureId)) return;
+      rows.push({
+        id: featureId,
+        featureId,
+        countryName: errorRow.countryName,
+        countryCode: errorRow.countryCode,
+        adminLevel: errorRow.adminLevel,
+        createdAt: errorRow.createdAt,
+      });
+      existing.add(featureId);
+    });
+    return rows;
+  }, [featureMetadataRows, toFeatureListRow, transformErrorRows]);
+
+  const getFeatureRowId = useCallback((row: ShapePreviewFeatureRow) => String(row.id), []);
+  const buildFeatureSearchText = useCallback((row: ShapePreviewFeatureRow) => (
     [
       row.featureId,
       row.countryName,
@@ -581,7 +625,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
 
   useVectorTilePreviewSearch(
     metadataEnabled,
-    featureMetadataRows,
+    featureListRows,
     featureSearchKeyword,
     getFeatureRowId,
     buildFeatureSearchText,
@@ -671,6 +715,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     sourceMetadataError,
     sourceMetadataLoaded,
     featureMetadataRows,
+    featureListRows,
     featureMetadataLoading,
     featureMetadataError,
     featureMetadataLoaded,

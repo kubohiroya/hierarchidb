@@ -21,6 +21,7 @@ export interface FetchConfig {
 export interface CleanupConfig {
   deleteFetchCeche?: boolean;
   deleteTransformCache?: boolean;
+  deleteVTCache?: boolean;
 }
 
 export type FeatureFilterMethod = 'bbox_only' | 'polygon_only' | 'hybrid' | 'none';

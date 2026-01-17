@@ -114,4 +114,5 @@ export type VTConfig = CommonVTConfig;
 export interface CleanupBatchConfig {
   deleteFetchCeche?: boolean;
   deleteTransformCache?: boolean;
+  deleteVTCache?: boolean;
 }

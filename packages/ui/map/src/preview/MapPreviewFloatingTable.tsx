@@ -1,6 +1,23 @@
 import type React from 'react';
-import { useMemo } from 'react';
-import { Box, Chip, Paper, TextField, Typography } from '@mui/material';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Box,
+  Button,
+  Checkbox,
+  Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControlLabel,
+  FormGroup,
+  IconButton,
+  InputAdornment,
+  Paper,
+  TextField,
+  Typography,
+} from '@mui/material';
+import { Close as CloseIcon, MoreVert as MoreVertIcon, Search as SearchIcon } from '@mui/icons-material';
 import { GenericDataGrid, type GridColumn } from '@hierarchidb/ui-grid';
 
 export type MapPreviewErrorSummary = {
@@ -31,6 +48,8 @@ export type MapPreviewStatusLabels = {
 
 export type MapPreviewFloatingTableProps<Row extends { id: string | number }> = {
   title: string;
+  showTitle?: boolean;
+  enableColumnSelector?: boolean;
   rows: Row[];
   columns: GridColumn<Row>[];
   search?: MapPreviewSearchConfig;
@@ -85,6 +104,8 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
 ) => {
   const {
     title,
+    showTitle = true,
+    enableColumnSelector = true,
     rows,
     columns,
     search,
@@ -110,6 +131,8 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
     formatErrorMessage,
     containerSx,
   } = props;
+  const [columnSelectorOpen, setColumnSelectorOpen] = useState(false);
+  const [visibleColumnIds, setVisibleColumnIds] = useState<Set<string> | null>(null);
   const resolvedStatusLabels: MapPreviewStatusLabels = statusLabels ?? {
     completed: 'Completed',
     failed: 'Failed',
@@ -164,6 +187,26 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
     resolvedStatusLabels.completed,
     resolvedStatusLabels.failed,
   ]);
+  const resolvedColumnIds = useMemo(
+    () => resolvedColumns.map((column) => String(column.id)),
+    [resolvedColumns],
+  );
+  useEffect(() => {
+    setVisibleColumnIds((prev) => {
+      const next = new Set(prev ?? resolvedColumnIds);
+      resolvedColumnIds.map((id) => next.add(id));
+      Array.from(next).forEach((id) => {
+        if (!resolvedColumnIds.includes(id)) {
+          next.delete(id);
+        }
+      });
+      return next;
+    });
+  }, [resolvedColumnIds]);
+  const filteredColumns = useMemo(() => {
+    if (!visibleColumnIds) return resolvedColumns;
+    return resolvedColumns.filter((column) => visibleColumnIds.has(String(column.id)));
+  }, [resolvedColumns, visibleColumnIds]);
 
   return (
     <Paper
@@ -183,21 +226,60 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
       }}
     >
       <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <Typography variant="subtitle2">{title}</Typography>
+        {showTitle ? <Typography variant="subtitle2">{title}</Typography> : null}
         {search ? (
-          <TextField
-            size="small"
-            value={search.value}
-            onChange={(event) => search.onChange(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                search.onCommit?.();
-              }
-            }}
-            placeholder={search.placeholder}
-            inputProps={{ 'aria-label': search.ariaLabel }}
-            fullWidth
-          />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <TextField
+              size="small"
+              value={search.value}
+              onChange={(event) => search.onChange(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  search.onCommit?.();
+                }
+              }}
+              placeholder={search.placeholder}
+              inputProps={{ 'aria-label': search.ariaLabel }}
+              fullWidth
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 999,
+                  paddingLeft: 0,
+                },
+                '& .MuiOutlinedInput-input': {
+                  paddingLeft: 0,
+                },
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" color="action" sx={{ ml: 2 }} />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="Clear search"
+                      size="small"
+                      onClick={() => search.onChange('')}
+                      disabled={!search.value.trim()}
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+            {enableColumnSelector ? (
+              <IconButton
+                aria-label="Select columns"
+                size="small"
+                onClick={() => setColumnSelectorOpen(true)}
+              >
+                <MoreVertIcon fontSize="small" />
+              </IconButton>
+            ) : null}
+          </Box>
         ) : null}
         {countText ? (
           <Typography variant="body2" color="text.secondary">
@@ -210,7 +292,7 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
           emptyContent
         ) : (
           <GenericDataGrid
-            columns={resolvedColumns}
+            columns={filteredColumns}
             rows={rows}
             maxHeight={maxHeight}
             tableContainerSx={{
@@ -240,9 +322,51 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
             onSort={onSort}
             rowSx={rowSx}
             toolbarComponent={toolbarComponent}
+            showSearch={false}
           />
         )}
       </Box>
+      <Dialog
+        open={columnSelectorOpen}
+        onClose={() => setColumnSelectorOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Columns</DialogTitle>
+        <DialogContent dividers>
+          <FormGroup>
+            {resolvedColumns.map((column) => {
+              const id = String(column.id);
+              return (
+                <FormControlLabel
+                  key={id}
+                  control={(
+                    <Checkbox
+                      checked={visibleColumnIds?.has(id) ?? true}
+                      onChange={(event) => {
+                        const checked = event.target.checked;
+                        setVisibleColumnIds((prev) => {
+                          const next = new Set(prev ?? resolvedColumnIds);
+                          if (checked) {
+                            next.add(id);
+                          } else {
+                            next.delete(id);
+                          }
+                          return next;
+                        });
+                      }}
+                    />
+                  )}
+                  label={column.label}
+                />
+              );
+            })}
+          </FormGroup>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setColumnSelectorOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   );
 };

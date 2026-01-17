@@ -1,5 +1,6 @@
-import type React from 'react';
-import { Box, Alert, Snackbar, CircularProgress } from '@mui/material';
+import React from 'react';
+import { Box, Alert, Button, Snackbar, CircularProgress } from '@mui/material';
+import { TableRows as TableRowsIcon } from '@mui/icons-material';
 import { ResourceLayerMap, ShapePreviewList } from '@hierarchidb/ui-map';
 import { useShapePreviewStepView } from './useShapePreviewStepView.js';
 import type { ShapeEntity } from '../../../common/types/index.js';
@@ -12,12 +13,13 @@ export type ShapeDialogStepProps = {
 };
 
 export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId }) => {
+  const [featureWindowOpen, setFeatureWindowOpen] = React.useState(true);
   const {
     t,
     featureMetadataLoading,
     featureMetadataError,
     featureMetadataLoaded,
-    featureMetadataRows,
+    featureListRows,
     featureSearchKeyword,
     setFeatureSearchKeyword,
     errorSummaryById,
@@ -46,6 +48,9 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
     geoJsonLayers,
     attributionItems,
   } = useShapePreviewStepView(data ?? {}, nodeId);
+  React.useEffect(() => {
+    setFeatureWindowOpen(true);
+  }, [nodeId]);
   const renderMapPreview = () => {
     const hasRemoteTiles = Boolean(tilesUrl);
     const hasErrorLines = geoJsonLayers.length > 0;
@@ -122,69 +127,86 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
             onIdentify: handleMapIdentify,
           }}
         />
+        {!featureWindowOpen && (
+          <Box position="absolute" top={8} left={8} zIndex={3}>
+            <Button
+              variant="contained"
+              color="primary"
+              size="large"
+              aria-label={t('preview.metadata.reopenList', 'Show list')}
+              onClick={() => setFeatureWindowOpen(true)}
+            >
+              <TableRowsIcon />
+            </Button>
+          </Box>
+        )}
       </Box>
     );
   };
 
 
-  const renderFeatureDialog = () => (
-    <ShapePreviewList
-      title={t('preview.tabs.features', 'Features')}
-      rows={featureMetadataRows}
-      columnLabels={{
-        featureId: t('preview.metadata.columns.featureId', 'Feature ID'),
-        countryName: t('preview.metadata.columns.countryName', 'Country'),
-        countryCode: t('preview.metadata.columns.countryCode', 'Country Code'),
-        adminName: t('preview.metadata.columns.adminName', 'Admin Name'),
-        adminLevel: t('preview.metadata.columns.adminLevel', 'Admin Level'),
-        adminCode: t('preview.metadata.columns.adminCode', 'Admin Code'),
-        dataSource: t('preview.metadata.columns.dataSource', 'Data Source'),
-        createdAt: t('preview.metadata.columns.createdAt', 'Created At'),
-        vertexCount: t('preview.metadata.columns.vertexCount', 'Vertices'),
-        polygonCount: t('preview.metadata.columns.polygonCount', 'Polygons'),
-        bbox: t('preview.metadata.columns.bbox', 'Bounding Box'),
-        area: t('preview.metadata.columns.area', 'Area'),
-      }}
-      search={{
-        value: featureSearchKeyword,
-        onChange: setFeatureSearchKeyword,
-        placeholder: t('preview.metadata.searchPlaceholder', 'Search metadata'),
-        ariaLabel: t('preview.metadata.searchAriaLabel', 'Search metadata'),
-      }}
-      countLabels={{
-        matched: t('preview.metadata.matches', 'Matched'),
-        rows: t('preview.metadata.rows', 'Rows'),
-      }}
-      loading={featureMetadataLoading}
-      error={featureMetadataError ?? undefined}
-      matchedRows={matchedFeatureIdSet}
-      selectedRows={new Set(selectedFeatureIds)}
-      onSelectionChange={(next) => {
-        setSelectedFeatureIds(Array.from(next).map(String));
-      }}
-      emptyContent={!nodeId ? (
-        <Alert severity="info" sx={{ m: 2 }}>
-          {t('preview.metadata.missingSession', 'Build the dataset to generate metadata.')}
-        </Alert>
-      ) : (
-        <Alert severity="info" icon={!featureMetadataLoaded ? <CircularProgress size={16} /> : undefined} sx={{ m: 2, alignItems: 'center' }}>
-          {featureMetadataLoaded
-            ? t('preview.metadata.empty', 'No metadata entries have been generated yet.')
-            : t('preview.metadata.loading', 'Loading metadata...')}
-        </Alert>
-      )}
-      errorSummaryById={errorSummaryById}
-      errorColumnLabels={{
-        status: t('preview.metadata.columns.status', 'Status'),
-        errorCount: t('preview.metadata.columns.errorCount', 'Errors'),
-        errorMessage: t('preview.metadata.columns.errorMessage', 'Error Message'),
-      }}
-      statusLabels={{
-        failed: t('build.taskStatus.failed', 'Failed'),
-        completed: t('build.taskStatus.completed', 'Completed'),
-      }}
-    />
-  );
+  const renderFeatureDialog = () => {
+    if (!featureWindowOpen) return null;
+    return (
+      <ShapePreviewList
+        title={t('preview.tabs.features', 'Features')}
+        rows={featureListRows}
+        columnLabels={{
+          featureId: t('preview.metadata.columns.featureId', 'Feature ID'),
+          countryName: t('preview.metadata.columns.countryName', 'Country'),
+          countryCode: t('preview.metadata.columns.countryCode', 'Country Code'),
+          adminName: t('preview.metadata.columns.adminName', 'Admin Name'),
+          adminLevel: t('preview.metadata.columns.adminLevel', 'Admin Level'),
+          adminCode: t('preview.metadata.columns.adminCode', 'Admin Code'),
+          dataSource: t('preview.metadata.columns.dataSource', 'Data Source'),
+          createdAt: t('preview.metadata.columns.createdAt', 'Created At'),
+          vertexCount: t('preview.metadata.columns.vertexCount', 'Vertices'),
+          polygonCount: t('preview.metadata.columns.polygonCount', 'Polygons'),
+          bbox: t('preview.metadata.columns.bbox', 'Bounding Box'),
+          area: t('preview.metadata.columns.area', 'Area'),
+        }}
+        search={{
+          value: featureSearchKeyword,
+          onChange: setFeatureSearchKeyword,
+          placeholder: t('preview.metadata.searchPlaceholder', 'Search metadata'),
+          ariaLabel: t('preview.metadata.searchAriaLabel', 'Search metadata'),
+        }}
+        countLabels={{
+          matched: t('preview.metadata.matches', 'Matched'),
+          rows: t('preview.metadata.rows', 'Rows'),
+        }}
+        loading={featureMetadataLoading}
+        error={featureMetadataError ?? undefined}
+        matchedRows={matchedFeatureIdSet}
+        selectedRows={new Set(selectedFeatureIds)}
+        onSelectionChange={(next) => {
+          setSelectedFeatureIds(Array.from(next).map(String));
+        }}
+        emptyContent={!nodeId ? (
+          <Alert severity="info" sx={{ m: 2 }}>
+            {t('preview.metadata.missingSession', 'Build the dataset to generate metadata.')}
+          </Alert>
+        ) : (
+          <Alert severity="info" icon={!featureMetadataLoaded ? <CircularProgress size={16} /> : undefined} sx={{ m: 2, alignItems: 'center' }}>
+            {featureMetadataLoaded
+              ? t('preview.metadata.empty', 'No metadata entries have been generated yet.')
+              : t('preview.metadata.loading', 'Loading metadata...')}
+          </Alert>
+        )}
+        errorSummaryById={errorSummaryById}
+        errorColumnLabels={{
+          status: t('preview.metadata.columns.status', 'Status'),
+          errorCount: t('preview.metadata.columns.errorCount', 'Errors'),
+          errorMessage: t('preview.metadata.columns.errorMessage', 'Error Message'),
+        }}
+        statusLabels={{
+          failed: t('build.taskStatus.failed', 'Failed'),
+          completed: t('build.taskStatus.completed', 'Completed'),
+        }}
+        onClose={() => setFeatureWindowOpen(false)}
+      />
+    );
+  };
 
   return (
     <Box display="flex" flexDirection="column" gap={2} height="100%" minHeight={0} flex={1}>

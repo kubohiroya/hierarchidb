@@ -134,6 +134,8 @@ export interface GenericDataGridProps<T extends RowRecord = RowRecord> {
   searchValue?: string;
   /** Search change handler */
   onSearchChange?: (value: string) => void;
+  /** Whether to show the built-in search field */
+  showSearch?: boolean;
 
   // Selection
   /** Enable row selection */
@@ -267,6 +269,7 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
                                            onFilterChange,
                                            searchValue = '',
                                            onSearchChange,
+                                           showSearch = true,
                                            selectable = false,
                                            selectionMode = 'multiple',
                                            selectedRows = new Set(),
@@ -469,29 +472,31 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
       {/* Toolbar */}
       {toolbarComponent || (
         <Box display="flex" alignItems="center" gap={2} mb={2}>
-          <TextField
-            size="small"
-            placeholder="Search..."
-            id={`${controlId}-search`}
-            name="search"
-            value={onSearchChange ? searchValue : localSearchValue}
-            onChange={(e) => {
-              if (onSearchChange) {
-                onSearchChange(e.target.value);
-              } else {
-                setLocalSearchValue(e.target.value);
-              }
-            }}
-            InputProps={{
-              inputProps: { 'aria-label': 'Search', id: `${controlId}-search`, name: 'search' },
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search />
-                </InputAdornment>
-              ),
-            }}
-            sx={{ flexGrow: 1, maxWidth: 400 }}
-          />
+          {showSearch ? (
+            <TextField
+              size="small"
+              placeholder="Search..."
+              id={`${controlId}-search`}
+              name="search"
+              value={onSearchChange ? searchValue : localSearchValue}
+              onChange={(e) => {
+                if (onSearchChange) {
+                  onSearchChange(e.target.value);
+                } else {
+                  setLocalSearchValue(e.target.value);
+                }
+              }}
+              InputProps={{
+                inputProps: { 'aria-label': 'Search', id: `${controlId}-search`, name: 'search' },
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ flexGrow: 1, maxWidth: 400 }}
+            />
+          ) : null}
 
           <Tooltip title="Toggle Filters">
             <IconButton onClick={() => setShowFilters(!showFilters)}>

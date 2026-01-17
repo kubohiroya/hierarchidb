@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import type { GridColumn } from '@hierarchidb/ui-grid';
+import { FloatingWindow } from '@hierarchidb/ui-floating-window';
 import {
   MapPreviewFloatingTable,
   type MapPreviewErrorSummaryById,
@@ -65,6 +66,7 @@ export type ShapePreviewListProps = {
   errorColumnLabels?: MapPreviewErrorColumnLabels;
   statusLabels?: MapPreviewStatusLabels;
   maxHeight?: number;
+  onClose?: () => void;
 };
 
 const formatLogicalCode = (value: unknown) => {
@@ -106,6 +108,7 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
   errorColumnLabels,
   statusLabels,
   maxHeight,
+  onClose,
 }) => {
   const theme = useTheme();
   const [sortColumn, setSortColumn] = useState<string>('featureId');
@@ -184,54 +187,79 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
     const count = tableRows.length;
     return keyword ? `${count} ${countLabels.matched}` : `${count} ${countLabels.rows}`;
   }, [countLabels, countText, search?.value, tableRows.length]);
+  const resolvedTitle = useMemo(() => {
+    if (!resolvedCountText) return title;
+    return `${title}(${resolvedCountText})`;
+  }, [resolvedCountText, title]);
 
   return (
-    <MapPreviewFloatingTable
-      title={title}
-      rows={tableRows}
-      columns={columns}
-      search={search}
-      countText={resolvedCountText}
-      loading={loading}
-      error={error}
-      matchedRows={resolvedMatchedRows}
-      selectable={Boolean(onSelectionChange)}
-      selectionMode="multiple"
-      selectedRows={selectedRows}
-      onSelectionChange={onSelectionChange}
-      sortColumn={sortColumn}
-      sortDirection={sortDirection}
-      onSort={handleSort}
-      rowSx={(state) => {
-        if (state.selected) {
-          const selectedBg = theme.palette.primary.light;
-          const selectedText = theme.palette.getContrastText(selectedBg);
-          return {
-            backgroundColor: selectedBg,
-            color: selectedText,
-            '& td, & td *': { color: selectedText },
-          };
-        }
-        if (state.matched) {
-          const matchedBg = theme.palette.secondary.light;
-          const matchedText = theme.palette.getContrastText(matchedBg);
-          return {
-            backgroundColor: matchedBg,
-            boxShadow: `inset 3px 0 0 0 ${theme.palette.secondary.main}`,
-            color: matchedText,
-            '& td, & td *': { color: matchedText },
-          };
-        }
-        if (state.hovered) {
-          return { backgroundColor: theme.palette.action.hover };
-        }
-        return undefined;
+    <FloatingWindow
+      title={resolvedTitle}
+      initialState={{
+        position: { x: 80, y: 140 },
+        size: { width: 560, height: 420 },
+        isVisible: true,
+        isMinimized: false,
       }}
-      emptyContent={emptyContent}
-      errorSummaryById={errorSummaryById}
-      errorColumnLabels={errorColumnLabels}
-      statusLabels={statusLabels}
-      maxHeight={maxHeight}
-    />
+      onClose={onClose}
+    >
+      <MapPreviewFloatingTable
+        title={resolvedTitle}
+        showTitle={false}
+        rows={tableRows}
+        columns={columns}
+        search={search}
+        loading={loading}
+        error={error}
+        matchedRows={resolvedMatchedRows}
+        selectable={Boolean(onSelectionChange)}
+        selectionMode="multiple"
+        selectedRows={selectedRows}
+        onSelectionChange={onSelectionChange}
+        sortColumn={sortColumn}
+        sortDirection={sortDirection}
+        onSort={handleSort}
+        rowSx={(state) => {
+          if (state.selected) {
+            const selectedBg = theme.palette.primary.light;
+            const selectedText = theme.palette.getContrastText(selectedBg);
+            return {
+              backgroundColor: selectedBg,
+              color: selectedText,
+              '& td, & td *': { color: selectedText },
+            };
+          }
+          if (state.matched) {
+            const matchedBg = theme.palette.secondary.light;
+            const matchedText = theme.palette.getContrastText(matchedBg);
+            return {
+              backgroundColor: matchedBg,
+              boxShadow: `inset 3px 0 0 0 ${theme.palette.secondary.main}`,
+              color: matchedText,
+              '& td, & td *': { color: matchedText },
+            };
+          }
+          if (state.hovered) {
+            return { backgroundColor: theme.palette.action.hover };
+          }
+          return undefined;
+        }}
+        emptyContent={emptyContent}
+        errorSummaryById={errorSummaryById}
+        errorColumnLabels={errorColumnLabels}
+        statusLabels={statusLabels}
+        maxHeight={maxHeight}
+        containerSx={{
+          position: 'static',
+          width: '100%',
+          maxWidth: '100%',
+          height: '100%',
+          maxHeight: '100%',
+          top: 'auto',
+          right: 'auto',
+          boxShadow: 'none',
+        }}
+      />
+    </FloatingWindow>
   );
 };

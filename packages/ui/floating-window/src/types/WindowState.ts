@@ -17,6 +17,7 @@ export interface WindowState {
   position: Position;
   size: Size;
   isMinimized: boolean;
+  isFullscreen?: boolean;
   isVisible: boolean;
   zIndex?: number;
 }
@@ -33,6 +34,7 @@ import type React from 'react';
 
 export interface FloatingWindowProps {
   title: string;
+  titleIcon?: React.ReactNode;
   children: React.ReactNode;
   initialState?: Partial<WindowState>;
   onStateChange?: (state: WindowState) => void;

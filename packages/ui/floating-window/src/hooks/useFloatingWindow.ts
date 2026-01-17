@@ -58,6 +58,7 @@ export function useFloatingWindow(options: UseFloatingWindowOptions = {}): UseFl
       position: persisted?.position || initialPosition,
       size: persisted?.size || initialSize,
       isMinimized: persisted?.isMinimized || false,
+      isFullscreen: persisted?.isFullscreen || false,
       isVisible: persisted?.isVisible !== false,
       zIndex: persisted?.zIndex || 1000,
     };

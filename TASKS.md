@@ -1,3 +1,199 @@
+2238) fix/ui-floating-window/resize-start-jump (P1) — 進行中 (2026-01-17)
+- ブランチ名: fix/ui-floating-window/resize-start-jump
+- 依存: なし
+- 受け入れ基準: リサイズ開始時にウィンドウ位置がジャンプしない／全方向のリサイズ開始が安定する／既存のドラッグ移動・クランプ・最小化/最大化に回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/floating-window/src/components/FloatingWindow.tsx`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、リサイズ開始時の挙動を修正前へ戻す
+- チェックリスト:
+  - リサイズ開始時に旧位置が参照される箇所を特定する
+  - 位置が最新状態で開始されるよう修正する
+  - 既存のドラッグ移動/リサイズ動作の回帰がないことを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-17 15:20 JST リサイズ開始時の位置ジャンプ問題の修正に着手。
+  - update: 2026-01-17 15:22 JST リサイズ開始ハンドラに最新位置を反映するよう依存配列を修正。
+  - update: 2026-01-17 15:23 JST pnpm --filter @hierarchidb/ui-floating-window build を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 15:23 JST pnpm typecheck を実行（exit 0）。
+  - done: 2026-01-17 15:23 JST リサイズ開始時の位置ジャンプを解消。
+
+2237) fix/ui-floating-window/resize-left-top (P1) — 進行中 (2026-01-17)
+- ブランチ名: fix/ui-floating-window/resize-left-top
+- 依存: なし
+- 受け入れ基準: フローティングウィンドウの上端・左端リサイズドラッグでドラッグ量とサイズ/位置変化が一致する／右端・下端の既存挙動に回帰がない／最小サイズやクランプの挙動が不整合を起こさない／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/floating-window/src/components/FloatingWindow.tsx`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、上端・左端リサイズ挙動を修正前へ戻す
+- チェックリスト:
+  - 上端・左端リサイズの計算ロジックを特定する
+  - ドラッグ量と一致する位置/サイズ更新に修正する
+  - 右端・下端のリサイズとドラッグ移動に回帰がないことを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-17 15:10 JST 上端・左端リサイズドラッグの挙動不整合の修正に着手。
+  - update: 2026-01-17 15:12 JST 左端/上端リサイズ時に開始位置を基準にサイズと位置を再計算するよう修正。
+  - update: 2026-01-17 15:13 JST pnpm --filter @hierarchidb/ui-floating-window build を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 15:13 JST pnpm typecheck を実行（exit 0）。
+  - done: 2026-01-17 15:13 JST 上端・左端リサイズドラッグの挙動を修正。
+
+2236) fix/shape/step6-floating-window-icons-columns (P1) — 進行中 (2026-01-17)
+- ブランチ名: fix/shape/step6-floating-window-icons-columns
+- 依存: なし
+- 受け入れ基準: Step6 フローティングウィンドウのタイトルバー左端アイコンがHexagonになる／再表示ボタンのアイコンもHexagonになる／カラム表示設定の初期値はlocalStorageまたは全表示デフォルトから取得される／変更時にlocalStorageへ永続化される／既存のStep6表示/操作に副作用がない／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/**`, `packages/ui/map/src/preview/ShapePreviewList.tsx`, `packages/ui/map/src/preview/MapPreviewFloatingTable.tsx`, `packages/ui/floating-window/src/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、アイコン/カラム永続化を修正前へ戻す
+- チェックリスト:
+  - Hexagon アイコンの適用箇所を特定し置換する
+  - カラム表示の初期化/永続化を追加する
+  - localStorage が無い環境でも安全に動作することを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-17 13:47 JST Step6 フローティングウィンドウのHexagon化とカラム永続化に着手。
+
+2235) fix/shape/step6-floating-window-reopen (P1) — 完了 (2026-01-17)
+- ブランチ名: fix/shape/step6-floating-window-reopen
+- 依存: なし
+- 受け入れ基準: shape Step6 のフローティングウィンドウを閉じた後に再表示用のアイコンボタン（color="primary" size="large" variant="contained"）が地図左上に表示される／ボタン押下でフローティングウィンドウが再表示される／darkモードでもFitボタン内アイコンが表示され空白にならない／既存のStep6の表示/操作に副作用がない／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/**`, `packages/ui/map/src/components/ResourceLayerMap.tsx`, `packages/ui/map/src/preview/ShapePreviewList.tsx`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、フローティングウィンドウの再表示ボタンとFitアイコン表示を修正前へ戻す
+- チェックリスト:
+  - Step6のフローティングウィンドウ閉じ/再表示の状態管理を追加する
+  - 地図左上に再表示ボタンを配置する
+  - darkモードのFitボタン内アイコンの表示を修正する
+  - 既存のStep6表示/操作が維持されることを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-17 13:42 JST Step6のフローティングウィンドウ再表示ボタン追加とFitアイコンのdark表示修正に着手。
+  - update: 2026-01-17 13:44 JST ShapePreviewStep に再表示ボタンを追加し、ShapePreviewList の onClose で閉じ状態を管理。
+  - update: 2026-01-17 13:44 JST Fitボタンのアイコン色とdisabled色をdarkモード向けに補正。
+  - blocked: 2026-01-17 13:45 JST pnpm typecheck が ui-map の dist 型未更新で ShapePreviewList onClose 追加に失敗。
+  - update: 2026-01-17 13:45 JST pnpm --filter @hierarchidb/ui-map build を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 13:45 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - done: 2026-01-17 13:45 JST Step6 の再表示ボタン追加とFitアイコンのdark表示補正を完了。
+
+2234) fix/ui-map/fit-button-icon-dark-grey (P1) — 完了 (2026-01-17)
+- ブランチ名: fix/ui-map/fit-button-icon-dark-grey
+- 依存: なし
+- 受け入れ基準: Fitボタン内アイコンがdarkモード時にgrey表示になる／lightモードの色は維持される／既存のdisabled/hover/クリック挙動に影響がない／TASKS.mdに運用ログを記載する
+- 影響範囲: `packages/ui/map/src/components/ResourceLayerMap.tsx`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、Fitボタンのアイコン色を修正前へ戻す
+- チェックリスト:
+  - Fitボタンのアイコン色制御箇所を特定する
+  - darkモード時にgreyになるようスタイルを調整する
+  - lightモードでの表示と動作を確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-17 13:38 JST Fitボタン内アイコンのdarkモード色をgrey化する対応に着手。
+  - update: 2026-01-17 13:39 JST FitボタンのIconButton colorをdarkモード時のみgreyに切替。
+  - update: 2026-01-17 13:39 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - done: 2026-01-17 13:39 JST Fitボタン内アイコンのdarkモード色をgrey化。
+
+2233) fix/ui-floating-window/drag-clamp (P1) — 完了 (2026-01-17)
+- ブランチ名: fix/ui-floating-window/drag-clamp
+- 依存: なし
+- 受け入れ基準: フローティングウィンドウの移動クランプが「全体が画面内」から「左端64px・上端24pxが画面内」に変わる／既存のドラッグ・リサイズ・最小化・最大化の挙動に副作用がない／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/floating-window/src/components/FloatingWindow.tsx`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、クランプ範囲を修正前の全画面内制約へ戻す
+- チェックリスト:
+  - 既存のクランプ処理箇所を特定する
+  - 左端64px・上端24pxが画面内になるようクランプ条件を変更する
+  - 既存のドラッグ/リサイズ動作が維持されることを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-17 13:36 JST フローティングウィンドウのドラッグクランプを左端64px・上端24px保持に変更する対応に着手。
+  - update: 2026-01-17 13:37 JST FloatingWindow のクランプ範囲を左端64px・上端24pxの可視条件に変更。
+  - update: 2026-01-17 13:37 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - done: 2026-01-17 13:37 JST フローティングウィンドウのクランプ条件を指定の可視範囲に更新。
+
+2232) fix/shape/step5-6-direct-url (P1) — 進行中 (2026-01-17)
+- ブランチ名: fix/shape/step5-6-direct-url
+- 依存: なし
+- 受け入れ基準: shape の step5/step6 を直URL指定した場合に step4 へ戻されず指定ステップが表示される／Stepper の valid 表示と表示中ステップが一致する／step4 経由の遷移挙動は維持される／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`, `packages/plugin-ui-host/src/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、直URLアクセス時のステップ遷移挙動を修正前に戻す
+- チェックリスト:
+  - 直URLアクセス時に step4 へ戻される経路を特定する
+  - step5/step6 を指定した場合に該当ステップを表示するよう修正する
+  - Stepper の valid 表示と表示ステップの整合性を確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-17 12:25 JST shape の step5/6 直URLアクセス時に step4 へ戻される問題の修正に着手。
+  - update: 2026-01-17 12:31 JST PluginDialogRoute で params.step が無い場合もURLから step を解釈して初期ステップを維持するよう対応。
+  - blocked: 2026-01-17 12:33 JST pnpm typecheck が PluginDialogRoute の pathOnly/normalizedPath nullability で失敗。
+  - update: 2026-01-17 12:33 JST pathOnly/normalizedPath の default を補正し、pnpm typecheck を再実行（exit 0）。
+
+2232) feat/build/continuation-policy (P1) — 進行中 (2026-01-17)
+- ブランチ名: feat/build/continuation-policy
+- 依存: なし
+- 受け入れ基準: TreeConsole のツールバーメニューにビルド継続ポリシー（3択）が追加される／shape/location/route のビルド設定に保存・再読込される／ビルド処理がポリシーに従って継続/停止する／文言が i18n 化される／pnpm typecheck が exit 0 で完走する
+- 影響範囲: `app/src/**`, `packages/ui/**`, `plugins/shape-plugin/src/**`, `plugins/location-plugin/src/**`, `plugins/route-plugin/src/**`, `packages/vt-orchestrator/src/**`, `packages/features/gis-sdk/src/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、ビルド継続ポリシー UI と停止条件を修正前に戻す
+- チェックリスト:
+  - ビルド継続ポリシーの型/保存スキーマを追加する
+  - TreeConsole ツールバーのメニュー UI を追加する
+  - shape/location/route のビルド実行でポリシーを反映する
+  - i18n を追加する
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-17 14:00 JST build 継続ポリシーの UI と処理反映に着手。
+
+2231) feat/shape/step4-vt-config-refine (P1) — 完了 (2026-01-17)
+- ブランチ名: feat/shape/step4-vt-config-refine
+- 依存: なし
+- 受け入れ基準: Step4 の「ビルド終了時の中間生成物の保持」に VT キャッシュ保持スイッチが追加され、CleanupConfig に設定が保存/再読込される／VT キャッシュの自動削除条件が新規フラグで制御される／VT 生成アコーディオンの項目が整理され、詳細設定セクションが適用される／VT 設定のヘルプテキストが充実し i18n 化される／pnpm typecheck が exit 0 で完走する
+- 影響範囲: `packages/features/gis-sdk/src/config.ts`, `plugins/shape-plugin/src/ui/components/step4/**`, `plugins/shape-plugin/src/ui/locales/*`, `plugins/shape-plugin/src/services/batch/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、Step4 の VT 設定 UI と CleanupConfig を修正前へ戻す
+- チェックリスト:
+  - CleanupConfig に VT キャッシュ保持用フラグを追加する
+  - Step4 の「中間生成物の保持」に VT キャッシュ保持スイッチを追加する
+  - VT 生成アコーディオンの項目を整理し詳細設定セクションへ分離する
+  - VT 設定のヘルプテキストを拡充し i18n へ移行する
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-17 11:16 JST Step4 VT 設定の保持スイッチ追加とアコーディオン整理に着手。
+  - blocked: 2026-01-17 11:20 JST pnpm typecheck が CleanupConfig の deleteVTCache 未反映で失敗。
+  - update: 2026-01-17 11:22 JST pnpm --filter @hierarchidb/gis-sdk build を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 11:23 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - done: 2026-01-17 11:23 JST VT キャッシュ保持スイッチ追加、VT 設定アコーディオン整理とヘルプ/i18n を反映。
+
+2232) fix/shape/step6-fit-button-align (P1) — 完了 (2026-01-19)
+- ブランチ名: fix/shape/step6-fit-button-align
+- 依存: なし
+- 受け入れ基準: Step6 プレビューでFitボタンがズームコントロール直下に揃う／Fitボタン背景色がズームコントロールと一致する／既存のクリック挙動・disabled 条件・表示モードに影響がない／pnpm typecheck が exit 0 で完走する
+- 影響範囲: `packages/ui/map/src/components/ResourceLayerMap.tsx`
+- ロールバック手順: 該当差分を revert し、Fitボタンの配置/スタイルを修正前へ戻す
+- チェックリスト:
+  - Fitボタンの配置・サイズをズームコントロールと揃える
+  - Fitボタン背景色をズームコントロールと一致させる
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-19 04:10 JST Step6 プレビューのFitボタン位置/背景色調整に着手。
+  - update: 2026-01-19 04:20 JST FitボタンをMapLibreのコントロールグループに合わせ、サイズと背景色を調整。
+  - blocked: 2026-01-19 04:25 JST pnpm typecheck が app の PluginDialogRoute の未定義パス判定で失敗。
+  - update: 2026-01-19 04:30 JST PluginDialogRoute のステップ抽出で空パスを早期returnするよう修正。
+  - update: 2026-01-19 04:35 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - done: 2026-01-19 04:35 JST Fitボタンの整列と背景色調整を完了。
+
+2231) fix/shape/step6-preview-control-order (P1) — 完了 (2026-01-19)
+- ブランチ名: fix/shape/step6-preview-control-order
+- 依存: なし
+- 受け入れ基準: Step6 プレビューでズームコントロールが上、Fit ボタンが下に配置される／クリック挙動・disabled 条件・表示モードに影響がない／pnpm typecheck が exit 0 で完走する
+- 影響範囲: `packages/ui/map/src/components/ResourceLayerMap.tsx`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、Fit ボタン配置を修正前へ戻す
+- チェックリスト:
+  - Fit ボタンの配置順がズームコントロールの下になるよう調整する
+  - 既存の挙動を維持する
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-19 03:25 JST Step6 プレビューのズーム/フィット配置順調整に着手。
+  - update: 2026-01-19 03:35 JST Fit ボタン用のコントロールコンテナを追加し、ズームコントロールの直下へ配置する処理を実装。
+  - blocked: 2026-01-19 03:40 JST pnpm typecheck が ui-map の fitSelectionEnabled 参照順と MapPreviewFloatingTable の showSearch 型で失敗。
+  - update: 2026-01-19 03:45 JST effect 順序を調整し showSearch を削除。
+  - update: 2026-01-19 03:55 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - done: 2026-01-19 03:55 JST Step6 プレビューのズーム上/フィット下の配置順を反映。
+
 2230) feat/shape/transform-pre-simplify-filters (P1) — 完了 (2026-01-19)
 - ブランチ名: feat/shape/transform-pre-simplify-filters
 - 依存: なし
@@ -380,6 +576,26 @@
   - update: 2026-01-18 14:20 JST FitScreen ボタンの margin 4px と高さ 32px を反映。
   - update: 2026-01-18 12:55 JST shape Step6 プレビューの FitScreen ボタン位置修正に着手。
   - update: 2026-01-18 18:40 JST ui-map を FitScreen/検索/選択/hover/ハイライト/矩形選択/検索fit の基本機能として統合し、Step6 プレビューも ui-map 基本機能へ移行する方針を反映。
+  - update: 2026-01-17 12:31 JST フローティングウィンドウのタイトルバー/ボディの詰め調整とボタン構成の整理、Grid検索欄の重複整理に着手。
+  - update: 2026-01-17 12:32 JST pnpm --filter @hierarchidb/ui-grid build を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 12:33 JST pnpm --filter @hierarchidb/ui-floating-window build を実行（exit 0、tsdown define 警告あり）。
+  - blocked: 2026-01-17 12:34 JST pnpm typecheck が app の PluginDialogRoute.tsx で pathOnly/normalizedPath 未確定の型エラーで失敗。
+  - update: 2026-01-17 12:35 JST PluginDialogRoute.tsx の pathOnly 取得を空文字フォールバックに整理。
+  - update: 2026-01-17 12:36 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 12:35 JST フローティングウィンドウのドラッグ開始時に z-index を引き上げる処理を追加。
+  - update: 2026-01-17 12:36 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 12:37 JST Fit ボタンのアイコンが消える問題に対応し、maplibre のクラス付与を外して表示を優先。
+  - update: 2026-01-17 12:38 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 12:38 JST MapPreviewFloatingTable の GenericDataGrid に showSearch=false を明示し検索欄の重複を解消。
+  - update: 2026-01-17 12:39 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 12:44 JST 件数のテキスト表示をやめ、タイトルに件数を含める表示へ変更。
+  - update: 2026-01-17 12:45 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 12:51 JST メタデータ検索欄にルーペ/クリアアイコンと丸み最大の形状を適用。
+  - update: 2026-01-17 12:52 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 13:20 JST 検索欄のルーペアイコン左側に 16px の余白を追加。
+  - update: 2026-01-17 13:21 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 13:31 JST 検索欄右側にカラム選択メニューを追加し、表示カラムの切替に対応。
+  - update: 2026-01-17 13:32 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
 
 2217) fix/app/ui-treeconsole-workspace-dep (P1) — 進行中 (2026-01-18)
 - ブランチ名: fix/app/ui-treeconsole-workspace-dep
@@ -4891,3 +5107,8 @@
   - start: 2026-01-19 00:00 JST ui-map の共通一覧/interaction 実装と plugin 側切替に着手。
   - update: 2026-01-19 00:35 JST ui-map に Shape/Route の一覧コンポーネントを追加し、shape/route preview の一覧表示を共通化へ切替。
   - blocked: 2026-01-19 00:40 JST pnpm typecheck が vt-orchestrator の既存型エラーで失敗（preSimplifyFilterConfig, geometry.ts 型不整合）。
+  - blocked: 2026-01-19 00:55 JST git fetch origin ERIA-Cartograph が sandbox 制限で失敗（.git/FETCH_HEAD へアクセス不可）。
+  - update: 2026-01-19 01:05 JST 権限付与後に git fetch origin ERIA-Cartograph が成功。
+  - update: 2026-01-19 01:10 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-19 01:25 JST pnpm install を実行（peer dependency 警告あり）。
+  - update: 2026-01-19 01:26 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。

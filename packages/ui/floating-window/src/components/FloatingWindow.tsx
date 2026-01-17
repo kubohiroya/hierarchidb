@@ -6,8 +6,17 @@
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, IconButton, Paper, styled, Typography } from '@mui/material';
-import { Close as CloseIcon, CropSquare as RestoreIcon, Minimize as MinimizeIcon } from '@mui/icons-material';
+import {
+  Close as CloseIcon,
+  FilterNone as RestoreIcon,
+  Fullscreen as FullscreenIcon,
+  FullscreenExit as FullscreenExitIcon,
+  Minimize as MinimizeIcon,
+  Window as WindowIcon,
+} from '@mui/icons-material';
 import type { FloatingWindowProps, WindowState } from '../types/WindowState.js';
+
+let floatingWindowZIndex = 2000;
 
 const StyledWindow = styled(Paper)(({ theme }) => ({
   position: 'fixed',
@@ -29,16 +38,16 @@ const TitleBar = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  padding: theme.spacing(1, 2),
+  padding: 2,
   backgroundColor: theme.palette.primary.main,
   color: theme.palette.primary.contrastText,
   cursor: 'move',
-  minHeight: 40,
+  minHeight: 24,
 }));
 
 const WindowContent = styled(Box)(({ theme }) => ({
   flex: 1,
-  padding: theme.spacing(2),
+  padding: 2,
   overflowY: 'auto',
   backgroundColor: theme.palette.background.paper,
 }));
@@ -104,39 +113,52 @@ const ResizeHandle = styled(Box)({
 });
 
 export const FloatingWindow: React.FC<FloatingWindowProps> = ({
-                                                                title,
-                                                                children,
-                                                                initialState,
-                                                                onStateChange,
-                                                                onClose,
-                                                                minWidth = 200,
-                                                                minHeight = 100,
-                                                                maxWidth,
-                                                                maxHeight,
-                                                                resizable = true,
-                                                                draggable = true,
-                                                                className,
-                                                                style,
-                                                              }) => {
+  title,
+  children,
+  initialState,
+  onStateChange,
+  onClose,
+  minWidth = 200,
+  minHeight = 100,
+  maxWidth,
+  maxHeight,
+  resizable = true,
+  draggable = true,
+  className,
+  style,
+}) => {
 
   const windowRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const isResizing = useRef(false);
   const dragStart = useRef({ x: 0, y: 0 });
-  const resizeStart = useRef({ width: 0, height: 0, x: 0, y: 0 });
+  const resizeStart = useRef({ width: 0, height: 0, x: 0, y: 0, positionX: 0, positionY: 0 });
   const resizeDirection = useRef<string>('');
 
   const [state, setState] = useState<WindowState>({
     position: initialState?.position || { x: 100, y: 100 },
     size: initialState?.size || { width: 400, height: 300 },
     isMinimized: initialState?.isMinimized || false,
+    isFullscreen: initialState?.isFullscreen || false,
     isVisible: initialState?.isVisible !== false,
     zIndex: initialState?.zIndex || 1000,
   });
+  const normalStateRef = useRef<{ position: { x: number; y: number }; size: { width: number; height: number } } | null>(null);
 
   // Calculate constraints
   const effectiveMaxWidth = maxWidth || window.innerWidth - 50;
   const effectiveMaxHeight = maxHeight || window.innerHeight - 50;
+  const clamp = useCallback((value: number, min: number, max: number) => Math.min(max, Math.max(min, value)), []);
+  const resolveBounds = useCallback(() => {
+    const minVisibleLeft = 64;
+    const minVisibleTop = 24;
+    return {
+      minX: 0,
+      minY: 0,
+      maxX: Math.max(0, window.innerWidth - minVisibleLeft),
+      maxY: Math.max(0, window.innerHeight - minVisibleTop),
+    };
+  }, []);
 
   // Update external atoms
   useEffect(() => {
@@ -146,6 +168,7 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
   // Handle dragging
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (!draggable || e.button !== 0) return;
+    if (state.isFullscreen) return;
 
     // Check if clicking on title bar
     const target = e.target as HTMLElement;
@@ -156,13 +179,16 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
       x: e.clientX - state.position.x,
       y: e.clientY - state.position.y,
     };
+    floatingWindowZIndex += 1;
+    setState(prev => ({ ...prev, zIndex: Math.max(prev.zIndex ?? 1000, floatingWindowZIndex) }));
 
     e.preventDefault();
-  }, [draggable, state.position]);
+  }, [draggable, state.isFullscreen, state.position]);
 
   // Handle resizing
   const handleResizeMouseDown = useCallback((direction: string) => (e: React.MouseEvent) => {
     if (!resizable || e.button !== 0) return;
+    if (state.isMinimized || state.isFullscreen) return;
 
     isResizing.current = true;
     resizeDirection.current = direction;
@@ -171,18 +197,21 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
       height: state.size.height,
       x: e.clientX,
       y: e.clientY,
+      positionX: state.position.x,
+      positionY: state.position.y,
     };
 
     e.preventDefault();
     e.stopPropagation();
-  }, [resizable, state.size]);
+  }, [resizable, state.isFullscreen, state.isMinimized, state.position, state.size]);
 
   // Global mouse move handler
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isDragging.current) {
-        const newX = Math.max(0, Math.min(e.clientX - dragStart.current.x, window.innerWidth - state.size.width));
-        const newY = Math.max(0, Math.min(e.clientY - dragStart.current.y, window.innerHeight - 40));
+        const { minX, minY, maxX, maxY } = resolveBounds();
+        const newX = clamp(e.clientX - dragStart.current.x, minX, maxX);
+        const newY = clamp(e.clientY - dragStart.current.y, minY, maxY);
 
         setState(prev => ({
           ...prev,
@@ -197,34 +226,33 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
 
         let newWidth = resizeStart.current.width;
         let newHeight = resizeStart.current.height;
-        let newX = state.position.x;
-        let newY = state.position.y;
+        let newX = resizeStart.current.positionX;
+        let newY = resizeStart.current.positionY;
 
         // Handle horizontal resizing
         if (dir.includes('e')) {
           newWidth = Math.max(minWidth, Math.min(resizeStart.current.width + deltaX, effectiveMaxWidth));
         } else if (dir.includes('w')) {
-          const potentialWidth = resizeStart.current.width - deltaX;
-          if (potentialWidth >= minWidth && potentialWidth <= effectiveMaxWidth) {
-            newWidth = potentialWidth;
-            newX = state.position.x + deltaX;
-          }
+          const clampedWidth = Math.max(minWidth, Math.min(resizeStart.current.width - deltaX, effectiveMaxWidth));
+          newWidth = clampedWidth;
+          newX = resizeStart.current.positionX + (resizeStart.current.width - clampedWidth);
         }
 
         // Handle vertical resizing
         if (dir.includes('s')) {
           newHeight = Math.max(minHeight, Math.min(resizeStart.current.height + deltaY, effectiveMaxHeight));
         } else if (dir.includes('n')) {
-          const potentialHeight = resizeStart.current.height - deltaY;
-          if (potentialHeight >= minHeight && potentialHeight <= effectiveMaxHeight) {
-            newHeight = potentialHeight;
-            newY = state.position.y + deltaY;
-          }
+          const clampedHeight = Math.max(minHeight, Math.min(resizeStart.current.height - deltaY, effectiveMaxHeight));
+          newHeight = clampedHeight;
+          newY = resizeStart.current.positionY + (resizeStart.current.height - clampedHeight);
         }
 
+        const bounds = resolveBounds();
+        const clampedX = clamp(newX, bounds.minX, bounds.maxX);
+        const clampedY = clamp(newY, bounds.minY, bounds.maxY);
         setState(prev => ({
           ...prev,
-          position: { x: newX, y: newY },
+          position: { x: clampedX, y: clampedY },
           size: { width: newWidth, height: newHeight },
         }));
       }
@@ -245,18 +273,70 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [state, minWidth, minHeight, effectiveMaxWidth, effectiveMaxHeight]);
+  }, [clamp, effectiveMaxHeight, effectiveMaxWidth, minHeight, minWidth, resolveBounds, state]);
 
   // Handle minimize/restore
   const handleMinimize = useCallback(() => {
-    setState(prev => ({ ...prev, isMinimized: !prev.isMinimized }));
+    setState(prev => {
+      if (prev.isMinimized) {
+        return { ...prev, isMinimized: false };
+      }
+      const normal = prev.isFullscreen ? normalStateRef.current : null;
+      return {
+        ...prev,
+        isMinimized: true,
+        isFullscreen: false,
+        position: normal?.position ?? prev.position,
+        size: normal?.size ?? prev.size,
+      };
+    });
   }, []);
+
+  const handleFullscreen = useCallback(() => {
+    setState(prev => {
+      if (prev.isFullscreen) {
+        const normal = normalStateRef.current;
+        return {
+          ...prev,
+          isFullscreen: false,
+          position: normal?.position ?? prev.position,
+          size: normal?.size ?? prev.size,
+        };
+      }
+      normalStateRef.current = { position: prev.position, size: prev.size };
+      return {
+        ...prev,
+        isFullscreen: true,
+        isMinimized: false,
+        position: { x: 0, y: 0 },
+        size: { width: Math.max(minWidth, window.innerWidth), height: Math.max(minHeight, window.innerHeight) },
+      };
+    });
+  }, [minHeight, minWidth]);
 
   // Handle close
   const handleClose = useCallback(() => {
     setState(prev => ({ ...prev, isVisible: false }));
     onClose?.();
   }, [onClose]);
+
+  useEffect(() => {
+    if (!state.isFullscreen) return;
+    const handleResize = () => {
+      setState(prev => {
+        if (prev.isFullscreen) {
+          return {
+            ...prev,
+            position: { x: 0, y: 0 },
+            size: { width: Math.max(minWidth, window.innerWidth), height: Math.max(minHeight, window.innerHeight) },
+          };
+        }
+        return prev;
+      });
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [minHeight, minWidth, state.isFullscreen]);
 
   // Calculate window styles
   const windowStyle = useMemo(() => ({
@@ -284,21 +364,31 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
         className="title-bar"
         onMouseDown={handleMouseDown}
       >
-        <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-          {title}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.5rem' }}>
+          <WindowIcon sx={{ fontSize: '0.6rem' }} />
+          <Typography sx={{ fontWeight: 600, fontSize: '0.5rem', lineHeight: 1.2 }}>
+            {title}
+          </Typography>
+        </Box>
         <Box sx={{ display: 'flex', gap: 0.5 }}>
           <IconButton
             size="small"
             onClick={handleMinimize}
-            sx={{ color: 'inherit', padding: 0.5 }}
+            sx={{ color: 'inherit', padding: '2px' }}
           >
             {state.isMinimized ? <RestoreIcon fontSize="small" /> : <MinimizeIcon fontSize="small" />}
           </IconButton>
           <IconButton
             size="small"
+            onClick={handleFullscreen}
+            sx={{ color: 'inherit', padding: '2px' }}
+          >
+            {state.isFullscreen ? <FullscreenExitIcon fontSize="small" /> : <FullscreenIcon fontSize="small" />}
+          </IconButton>
+          <IconButton
+            size="small"
             onClick={handleClose}
-            sx={{ color: 'inherit', padding: 0.5 }}
+            sx={{ color: 'inherit', padding: '2px' }}
           >
             <CloseIcon fontSize="small" />
           </IconButton>

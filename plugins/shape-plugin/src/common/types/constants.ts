@@ -74,8 +74,12 @@ export const DEFAULT_BUILD_CONFIG: ShapeBuildConfig = {
     tileExpandMargin: 0,
     format: 'mvt',
     compression: 'gzip',
-  }
-
+  },
+  cleanupConfig: {
+    deleteFetchCeche: false,
+    deleteTransformCache: false,
+    deleteVTCache: false,
+  },
 } as const;
 
 export const SHAPE_DATA_SOURCES = [
