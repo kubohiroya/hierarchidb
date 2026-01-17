@@ -79,7 +79,7 @@ export interface MapLibreMapInstance {
     target: { source: string; id?: MapLibreFeatureIdentifier; sourceLayer?: string },
     state: Record<string, unknown>
   ): void;
-  removeFeatureState(target: { source: string; id?: MapLibreFeatureIdentifier; key?: string }): void;
+  removeFeatureState(target: { source: string; id?: MapLibreFeatureIdentifier; key?: string; sourceLayer?: string }): void;
 
   // Commonly used convenience methods (subset of MapLibre Map API)
   getCenter(): { lng: number; lat: number };

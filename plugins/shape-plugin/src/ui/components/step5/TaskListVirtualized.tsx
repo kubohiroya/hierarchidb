@@ -1,11 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { Box } from '@mui/material';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import type { BatchTaskSummary } from '@hierarchidb/common-api';
+import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.js';
 import { TaskItem } from './TaskItem.tsx';
 import { formatGeometrySimplifySummary, parseGeometrySimplifyError } from './geometrySimplifyError.ts';
 
-export type TaskWithMetadata = BatchTaskSummary & { title?: string };
+export type TaskWithMetadata = ShapeBuildTaskSummary & { title?: string };
 
 export const isSkippedMessage = (message?: string | null): boolean => {
   if (!message) return false;
@@ -14,7 +14,7 @@ export const isSkippedMessage = (message?: string | null): boolean => {
 };
 
 type TaskListProps = {
-  tasks: BatchTaskSummary[];
+  tasks: ShapeBuildTaskSummary[];
   stageValue: number;
   resolveStatusLabel: (statusValue?: string, skipped?: boolean) => string;
   resolveStatusColor: (statusValue?: string, skipped?: boolean) => 'default' | 'success' | 'error' | 'warning' | 'info';
@@ -23,7 +23,7 @@ type TaskListProps = {
   scrollRequestId?: number;
 };
 
-const getVectorTileCoordsFromTitle = (task: BatchTaskSummary): { z: number; x: number; y: number } | null => {
+const getVectorTileCoordsFromTitle = (task: ShapeBuildTaskSummary): { z: number; x: number; y: number } | null => {
   const title = (task as TaskWithMetadata).title;
   if (!title) return null;
   const match = title.match(/z\s*(\d+)\s*\/\s*x\s*(\d+)\s*y\s*(\d+)/i);
@@ -35,7 +35,7 @@ const getVectorTileCoordsFromTitle = (task: BatchTaskSummary): { z: number; x: n
   return { z, x, y };
 };
 
-export const sortVectorTileTasks = (tasks: BatchTaskSummary[]): BatchTaskSummary[] => {
+export const sortVectorTileTasks = (tasks: ShapeBuildTaskSummary[]): ShapeBuildTaskSummary[] => {
   const sorted = [...tasks];
   sorted.sort((a, b) => {
     const aCoord = getVectorTileCoordsFromTitle(a);

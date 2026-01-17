@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import type { MapLibreGeoJSONFeature, MapLibreMapInstance } from '../types/maplibre-public.js';
 import { defaultFeatureIdAccessor } from '../lib/feature-identification.js';
 
-export type UseMapFeatureHighlightsParams<HighlightEntry extends { source: string; id: string | number }> = {
+export type UseMapFeatureHighlightsParams<HighlightEntry extends { source: string; id: string | number; sourceLayer?: string }> = {
   mapInstance: MapLibreMapInstance | null;
   highlightLayerIds: string[];
   searchMatches: HighlightEntry[];
@@ -12,7 +12,7 @@ export type UseMapFeatureHighlightsParams<HighlightEntry extends { source: strin
   onMissingLayers?: (layerIds: string[]) => void;
 };
 
-export const useMapFeatureHighlights = <HighlightEntry extends { source: string; id: string | number }>({
+export const useMapFeatureHighlights = <HighlightEntry extends { source: string; id: string | number; sourceLayer?: string }>({
   mapInstance,
   highlightLayerIds,
   searchMatches,
@@ -71,7 +71,7 @@ export const useMapFeatureHighlights = <HighlightEntry extends { source: string;
     (entry: HighlightEntry | null, key: 'hdbSearch' | 'hdbHover' | 'hdbSelected') => {
       if (!mapInstance || !entry) return;
       try {
-        mapInstance.removeFeatureState({ source: entry.source, id: entry.id, key });
+        mapInstance.removeFeatureState({ source: entry.source, id: entry.id, key, sourceLayer: entry.sourceLayer });
       } catch (error) {
         console.debug('[MapPreview] Failed to clear feature-atoms', error);
       }
@@ -83,7 +83,7 @@ export const useMapFeatureHighlights = <HighlightEntry extends { source: string;
     (entry: HighlightEntry | null, key: 'hdbSearch' | 'hdbHover' | 'hdbSelected') => {
       if (!mapInstance || !entry) return;
       try {
-        mapInstance.setFeatureState({ source: entry.source, id: entry.id }, { [key]: true });
+        mapInstance.setFeatureState({ source: entry.source, id: entry.id, sourceLayer: entry.sourceLayer }, { [key]: true });
       } catch (error) {
         console.debug('[MapPreview] Failed to set feature-atoms', error);
       }

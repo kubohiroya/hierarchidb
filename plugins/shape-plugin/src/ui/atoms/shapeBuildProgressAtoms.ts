@@ -2,8 +2,10 @@ import { atom } from 'jotai';
 import type { BuildStage, BuildStatus } from '@hierarchidb/components';
 import type { PaneProgress } from '@hierarchidb/ui-lru-splitview';
 import type { BatchTaskSummary } from '@hierarchidb/common-api';
+import type { TaskStage } from '@hierarchidb/common-types';
 
-export type ShapeBuildTaskSummary = BatchTaskSummary & {
+export type ShapeBuildTaskSummary = Omit<BatchTaskSummary, 'stage'> & {
+  stage: TaskStage;
   metadata?: Record<string, unknown>;
   title?: string;
 };
@@ -39,15 +41,15 @@ export type TaskProgressAuthState = {
   closeAuthDialog: () => void;
   handleProviderSelect: (provider: import('@hierarchidb/ui-auth').AuthProviderType) => void;
 };
-export const persistedTasksAtom = atom<BatchTaskSummary[]>([]);
-export const tasksAtom = atom<BatchTaskSummary[]>([]);
+export const persistedTasksAtom = atom<ShapeBuildTaskSummary[]>([]);
+export const tasksAtom = atom<ShapeBuildTaskSummary[]>([]);
 export const tasksLoadingAtom = atom(false);
 export const taskSummaryLoadingAtom = atom(false);
 export const tasksErrorAtom = atom<Error | null>(null);
 export const buildStagesAtom = atom<BuildStage[]>([]);
 export const buildStageProgressAtom = atom<Record<string, number>>({});
 export const taskPaneProgressAtom = atom<PaneProgress[]>([]);
-export const tasksByStageAtom = atom<Record<string, BatchTaskSummary[]>>({});
+export const tasksByStageAtom = atom<Record<string, ShapeBuildTaskSummary[]>>({});
 export const taskStatusAtom = atom<BuildStatus>('idle');
 export const taskProgressSummaryAtom = atom<TaskProgressSummary>({
   stageLabel: '',

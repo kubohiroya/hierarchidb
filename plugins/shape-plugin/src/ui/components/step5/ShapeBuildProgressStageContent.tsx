@@ -1,6 +1,6 @@
 import { Stack, Skeleton, Typography } from '@mui/material';
 import { useAtomValue } from 'jotai';
-import type { BatchTaskSummary } from '@hierarchidb/common-api';
+import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.js';
 import type { PaneProgress } from '@hierarchidb/ui-lru-splitview';
 import { useBuildStageFilter, type BuildStage } from '@hierarchidb/components';
 import { taskScrollTargetAtom } from '../../atoms/shapeBuildProgressAtoms.ts';
@@ -14,7 +14,7 @@ type ShapeBuildProgressStageContentProps = {
   showHeader?: boolean;
   stage: BuildStage;
   stageValue: number;
-  tasksByStage: Record<string, BatchTaskSummary[]>;
+  tasksByStage: Record<string, ShapeBuildTaskSummary[]>;
   paneProgress?: PaneProgress[];
   isTaskSummaryLoading: boolean;
   isTasksLoading: boolean;

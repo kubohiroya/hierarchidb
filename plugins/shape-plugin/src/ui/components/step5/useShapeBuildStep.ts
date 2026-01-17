@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { toNodeId, type NodeId, type NodeType } from '@hierarchidb/common-types';
+import { toNodeId, type NodeId, type NodeType, type TaskStage } from '@hierarchidb/common-types';
 import { useShapeBuildTasks } from './useShapeBuildTasks.ts';
 import { useBuildProgress } from './useBuildProgress.js';
 import { useTranslation } from '../../i18n.js';
@@ -45,20 +45,12 @@ const isSkippedMessage = (message?: string | null): boolean => {
 };
 
 type StageLikeTask = {
-  taskType?: string;
-  type?: string;
-  stage?: string;
+  taskType?: TaskStage;
+  type?: TaskStage;
+  stage: TaskStage;
 };
 
-const normalizeStageKey = (task: StageLikeTask): string => {
-  const candidate = task.taskType ?? task.type ?? task.stage;
-  if (!candidate) return 'fetch';
-  if (candidate === 'vectortile') return 'vt';
-  if (candidate === 'wait' || candidate === 'process' || candidate === 'success' || candidate === 'error') {
-    return task.type ?? task.taskType ?? 'fetch';
-  }
-  return candidate;
-};
+const normalizeStageKey = (task: StageLikeTask): TaskStage => task.taskType ?? task.type ?? task.stage;
 
 const toBuildStatus = (status?: string | null): BuildStatus => {
   switch (status) {
@@ -436,7 +428,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       warned.add(task.taskId);
       console.warn('[ShapeBuildStep] Task skipped', {
         taskId: task.taskId,
-        stage: task.stage ?? 'fetch',
+        stage: normalizeStageKey(task),
         message: task.message,
       });
     }

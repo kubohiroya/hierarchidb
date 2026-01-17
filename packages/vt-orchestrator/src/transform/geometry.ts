@@ -520,12 +520,19 @@ export const simplifyFeatureCollection = async (
     dropSmallPolygons: true,
     maxVerticesPerFeature: 0,
   };
+  const enforcePreSimplifyValidity = preSimplify.excludeInvalidGeometry && zTarget > 3;
   const maxVerticesPerFeature = preSimplify.maxVerticesPerFeature ?? 0;
   const yieldEvery = Math.max(1, Math.floor(options?.yieldEvery ?? 25));
   const baseArea = Math.pow(metersPerPixel(zTarget) * 2, 2);
   const minRingArea = baseArea * ringFix.minRingAreaMultiplier;
   const minPolygonArea = baseArea * selfIntersection.minPolygonAreaMultiplier;
   const features: Feature[] = [];
+  let droppedNonFinite = 0;
+  let droppedRingFix = 0;
+  let droppedInvalidAfterRingFix = 0;
+  let droppedArea = 0;
+  let droppedIntersection = 0;
+  let droppedInvalidAfterIntersection = 0;
   let oversizedCount = 0;
   const oversizedSamples: string[] = [];
   const total = collection.features.length;
@@ -547,10 +554,10 @@ export const simplifyFeatureCollection = async (
             const sampleId = rawId != null ? String(rawId) : `featureIndex:${index}`;
             oversizedSamples.push(sampleId);
           }
-          continue;
         }
       }
       if (hasNonFiniteGeometry(feature.geometry)) {
+        droppedNonFinite += 1;
         continue;
       }
       let snapped: Geometry;
@@ -562,13 +569,16 @@ export const simplifyFeatureCollection = async (
       const cleaned = cleanGeometry(snapped);
       const ringFixed = applyRingFix(cleaned, ringFix, minRingArea, preSimplify.dropInvalidHoles);
       if (!ringFixed) {
+        droppedRingFix += 1;
         continue;
       }
-      if (preSimplify.excludeInvalidGeometry && !isGeometryValid(ringFixed)) {
+      if (enforcePreSimplifyValidity && !isGeometryValid(ringFixed)) {
+        droppedInvalidAfterRingFix += 1;
         continue;
       }
       const areaFiltered = applyPolygonAreaExclusion(ringFixed, excludePolygonAreaCoefficient, zTarget, quantize);
       if (!areaFiltered) {
+        droppedArea += 1;
         continue;
       }
       const intersectionFixed = applySelfIntersectionFix(
@@ -584,6 +594,11 @@ export const simplifyFeatureCollection = async (
         },
       );
       if (!intersectionFixed) {
+        droppedIntersection += 1;
+        continue;
+      }
+      if (preSimplify.excludeInvalidGeometry && !isGeometryValid(intersectionFixed)) {
+        droppedInvalidAfterIntersection += 1;
         continue;
       }
       const simplified = simplifyGeometryInMercator(intersectionFixed, tolerance);
@@ -599,10 +614,23 @@ export const simplifyFeatureCollection = async (
     }
   }
   if (oversizedCount > 0) {
-    console.warn('[transform] dropped oversized features during simplify', {
-      droppedCount: oversizedCount,
+    console.warn('[transform] oversized features observed during simplify', {
+      oversizedCount,
       maxVerticesPerFeature,
       samples: oversizedSamples,
+    });
+  }
+  if (features.length === 0 && total > 0) {
+    console.warn('[transform] simplify removed all features', {
+      zTarget,
+      total,
+      droppedNonFinite,
+      droppedRingFix,
+      droppedInvalidAfterRingFix,
+      droppedArea,
+      droppedIntersection,
+      droppedInvalidAfterIntersection,
+      oversizedCount,
     });
   }
   return { ...collection, features };

@@ -24,6 +24,33 @@
   - blocked: 2026-01-19 03:10 JST pnpm typecheck が exit 2（MapPreviewFloatingTable の未使用 maxHeight）で失敗。
   - done: 2026-01-19 03:12 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
   - update: 2026-01-19 03:25 JST フィーチャー一覧テーブルのスクロール不具合を再調査。
+  - update: 2026-01-19 03:36 JST フローティング一覧のテーブル領域を高さ固定し、スクロール領域の高さを明示。
+  - done: 2026-01-19 03:37 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-19 03:45 JST Transform で z0-z3 がゼロ化する原因の調査に着手。
+  - update: 2026-01-19 03:57 JST pre-simplify の無効判定と oversized 処理を調整し、ゼロ化時のログを追加。
+  - done: 2026-01-19 03:58 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-19 04:05 JST Step4 の VT キャッシュ削除ボタン件数/有効化の不一致を調査。
+  - update: 2026-01-19 04:09 JST Step4 のカウント取得順を修正し VT 件数が正しく反映されるよう調整。
+  - done: 2026-01-19 04:10 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-19 04:13 JST Transform の skipped メッセージに features/polygons の比率を含める修正に着手。
+  - done: 2026-01-19 04:14 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+
+2247) feat/shape/transform-preprocess-diagnostics (P1) — 進行中 (2026-01-18)
+- ブランチ名: feat/shape/transform-preprocess-diagnostics
+- 依存: なし
+- ExecPlan: plans/shape-transform-preprocess-diagnostics-execplan.md
+- 受け入れ基準: simplify 前処理のログが feature/polygon 単位で問題箇所と理由を示す／問題ジオメトリをプレビューで視覚確認できる／過剰な前処理で地物が欠落しないよう処理方針が見直される／pnpm typecheck が exit 0 で完走する／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/vt-orchestrator/src/transform/**`, `packages/features/shape-store/src/**`, `packages/plugin-service-api/src/**`, `plugins/shape-plugin/src/ui/components/step6/**`（調査後に確定）
+- ロールバック手順: 追加した診断/プレビュー/前処理変更を revert し、transform のログ・前処理を修正前へ戻す
+- チェックリスト:
+  - simplify 前処理とログ出力の現状を整理する
+  - 問題ジオメトリを feature/polygon 単位で記録する仕組みを追加する
+  - Step6 のプレビューで問題ジオメトリを可視化する
+  - 前処理の省略ロジックを見直し、必要な地物が欠落しないよう調整する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-18 00:30 JST simplify 前処理の診断ログ/可視化と前処理見直しの ExecPlan 作成に着手。
 
 2246) fix/shape/step6-preview-feature-atoms-expression (P1) — 進行中 (2026-01-17)
 - ブランチ名: fix/shape/step6-preview-feature-atoms-expression
@@ -41,6 +68,47 @@
   - start: 2026-01-17 23:50 JST Step6 プレビューで Unknown expression "feature-atoms" が発生する問題の調査に着手。
   - update: 2026-01-17 23:55 JST Step6 の MapLibre 式を feature-state へ置換し、MapLibre の式仕様に合わせて修正。
   - done: 2026-01-17 23:58 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-18 00:05 JST setFeatureState で sourceLayer が必須になるエラーの調査に着手。
+  - update: 2026-01-18 00:15 JST highlight 用の feature entry に sourceLayer を追加し、set/removeFeatureState へ渡すよう修正。
+  - done: 2026-01-18 00:18 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+
+2247) refactor/shape/strict-task-stage-type (P1) — 完了 (2026-01-17)
+- ブランチ名: refactor/shape/strict-task-stage-type
+- 依存: なし
+- 受け入れ基準: shape ビルドのタスク stage が TaskStage（'fetch'|'transform'|'vt'）として型制約される／フォールバックなしで stage が決定され、無効な値は明示的にエラーになる／UI のタスク表示と進捗が維持される／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`, `packages/ui/batch/src/hooks/useBuildTaskProgress.ts`（必要に応じて関連ファイルを追記）
+- 要点: stage の型を TaskStage に統一し、不正値はエラーとして扱うように変更。
+- ロールバック手順: 該当差分を revert し、stage を string 扱いに戻す
+- チェックリスト:
+  - shape ビルドのタスク型に TaskStage を適用する
+  - stage が不正な場合はエラー扱いにし、暗黙フォールバックを排除する
+  - 進捗/ログ表示の回帰がないことを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-17 23:50 JST shape ビルドのタスク stage 型を TaskStage に厳格化する対応に着手。
+  - update: 2026-01-17 23:56 JST @hierarchidb/ui-batch-progress の型変更に合わせて build を実行（tsdown define 警告あり、exit 0）。
+  - done: 2026-01-17 23:57 JST pnpm --filter @hierarchidb/shape-plugin typecheck を実行（exit 0）。
+  - done: 2026-01-17 23:58 JST shape ビルドの task stage を TaskStage に厳格化し、フォールバックを排除。
+
+2246) fix/shape/skipped-task-stage-label (P1) — 完了 (2026-01-17)
+- ブランチ名: fix/shape/skipped-task-stage-label
+- 依存: なし
+- 受け入れ基準: skipped: simplify のタスクが stage=transform でログ出力される／警告ログのステージ表示が実際のタスク種別と一致する／既存のタスク表示や進捗に回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/useShapeBuildStep.ts`（必要に応じて関連ファイルを追記）
+- 要点: ステージ不明時の fetch/download フォールバックを撤廃し、unknown で明示化。
+- ロールバック手順: 該当差分を revert し、従来のステージ表示に戻す
+- チェックリスト:
+  - skipped 判定時のログ出力が task.type に基づくことを確認する
+  - 表示・進捗に回帰がないことを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-17 23:22 JST skipped: simplify の stage 表示が fetch になる問題の修正に着手。
+  - done: 2026-01-17 23:25 JST pnpm --filter @hierarchidb/shape-plugin typecheck を実行（exit 0）。
+  - done: 2026-01-17 23:26 JST skipped タスクのログ出力を task.type ベースに修正。
+  - update: 2026-01-17 23:33 JST normalizeStageKey の fetch フォールバックを撤廃し unknown に変更。
+  - done: 2026-01-17 23:34 JST pnpm --filter @hierarchidb/shape-plugin typecheck を実行（exit 0）。
+  - update: 2026-01-17 23:41 JST useBuildTaskProgress の download フォールバックを unknown に変更し、ステージ誤分類を排除。
+  - done: 2026-01-17 23:42 JST pnpm --filter @hierarchidb/ui-batch-progress typecheck を実行（exit 0）。
 
 2245) feat/ui-auth/unauthenticated-avatar-menu (P1) — 完了 (2026-01-17)
 - ブランチ名: feat/ui-auth/unauthenticated-avatar-menu

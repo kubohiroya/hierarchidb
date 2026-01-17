@@ -347,7 +347,8 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
       const source = typeof feature.source === 'string' ? feature.source : undefined;
       if (id === undefined || id === null || !source) return null;
       const layerId = typeof feature.layer?.id === 'string' ? feature.layer.id : undefined;
-      return { source, id, layerId };
+      const sourceLayer = typeof feature.sourceLayer === 'string' ? feature.sourceLayer : undefined;
+      return { source, id, layerId, sourceLayer };
     },
     [interaction],
   );

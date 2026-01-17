@@ -899,7 +899,7 @@ export const createTransformByBandHandler = (
           return {
             status: 'completed',
             progress: 100,
-            message: `skipped: simplify produced empty collection (features=0) inputFeatures=${inputFeatureCount}`,
+            message: `skipped: simplify produced empty collection (features=0/${inputFeatureCount}, polygons=0/${inputPolygonCount})`,
             outputData: {
               processedPolygons: inputPolygonCount,
               totalPolygons: inputPolygonCount,

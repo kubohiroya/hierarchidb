@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useId } from 'react';
 import type { ShapeEntity } from '../../../common/types/index.js';
 import { DEFAULT_BUILD_CONFIG, mergeBuildConfig } from '../../../common/types/index.js';
-import type { NodeId, NodeType } from '@hierarchidb/common-types';
+import type { NodeId, NodeType, TaskStage } from '@hierarchidb/common-types';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
 import { notify } from '@hierarchidb/components';
 import { useTranslation } from '../../i18n.js';
@@ -23,7 +23,7 @@ type Args = {
   onResetSession?: () => void;
 };
 
-const isVectorTileStage = (stage?: string): boolean => stage === 'vt';
+const isVectorTileStage = (stage: TaskStage): boolean => stage === 'vt';
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
 
 type CacheCounts = {
@@ -33,12 +33,12 @@ type CacheCounts = {
 };
 
 type StageLikeTask = {
-  stage?: string;
-  type?: string;
-  taskType?: string;
+  stage: TaskStage;
+  type?: TaskStage;
+  taskType?: TaskStage;
 };
 
-const resolveTaskStage = (task: StageLikeTask): string | undefined =>
+const resolveTaskStage = (task: StageLikeTask): TaskStage =>
   task.stage ?? task.type ?? task.taskType;
 
 const isTransformTask = (task: StageLikeTask): boolean => resolveTaskStage(task) === 'transform';
@@ -116,8 +116,8 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
       const [
         fetchCount,
         transformTaskCount,
-        transformCacheCount,
         vtTaskCount,
+        transformCacheCount,
         numMetadata,
       ] = await Promise.all([
         shapeStore.fetchCache.where('[nodeId+domainType]').equals([nodeId, SHAPE_DOMAIN]).count(),

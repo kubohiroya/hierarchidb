@@ -10,12 +10,12 @@ const resolveTaskStage = (task: TaskStageCarrier): string | undefined => (
 
 const toStageKey = (task: TaskStageCarrier): string => {
   const candidate = resolveTaskStage(task);
-  if (!candidate) return 'download';
+  if (!candidate) return 'unknown';
   if (candidate === 'vectortile') return 'vectorTiles';
   if (candidate === 'extract1') return 'extract1';
   if (candidate === 'extract2') return 'extract2';
   if (candidate === 'wait' || candidate === 'process' || candidate === 'success' || candidate === 'error') {
-    return task.type ?? task.taskType ?? 'download';
+    return task.type ?? task.taskType ?? 'unknown';
   }
   return candidate;
 };
@@ -27,12 +27,12 @@ const isSkippedTask = (task: BatchTaskSummary): boolean => {
   return normalized === 'skipped' || normalized.startsWith('skipped:');
 };
 
-export const useBuildTaskProgress = (
+export const useBuildTaskProgress = <T extends BatchTaskSummary>(
   stages: BuildStage[],
   taskType: string | undefined,
   overallProgress: number,
   buildStatus: BuildStatus,
-  tasks: BatchTaskSummary[],
+  tasks: T[],
 ) => {
   const stageProgress = useMemo(() => {
     const map: Record<string, number> = {};
@@ -58,7 +58,7 @@ export const useBuildTaskProgress = (
   }, [buildStatus, taskType, overallProgress, stages]);
 
   const tasksByStage = useMemo(() => {
-    const grouped: Record<string, BatchTaskSummary[]> = {};
+    const grouped: Record<string, T[]> = {};
     tasks.forEach((task) => {
       const key = toStageKey(task);
       if (!grouped[key]) grouped[key] = [];

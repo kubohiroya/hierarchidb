@@ -6,6 +6,7 @@ import type { MapLibreGeoJSONFeature } from '../types/maplibre-public.js';
 export type MapHighlightEntry = {
   source: string;
   id: string | number;
+  sourceLayer?: string;
   layerId?: string;
   nodeId?: string;
   nodeType?: string;

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import type { NodeId, NodeType } from '@hierarchidb/common-types';
+import type { NodeId, NodeType, TaskStage } from '@hierarchidb/common-types';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useAtom } from 'jotai';
 import {
@@ -8,6 +8,7 @@ import {
   tasksErrorAtom,
   tasksLoadingAtom,
 } from '../../atoms/shapeBuildProgressAtoms.js';
+import type { BatchTaskSummary } from '@hierarchidb/common-api';
 import { parseGeometrySimplifyError } from './geometrySimplifyError.ts';
 
 export interface UseShapeBuildTasksOptions {
@@ -24,6 +25,25 @@ export interface UseShapeBuildTasksState {
 
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
 
+type RawTaskSummary = BatchTaskSummary & {
+  taskType?: string;
+  type?: string;
+  stage?: string;
+  title?: string;
+  metadata?: Record<string, unknown>;
+};
+
+const isTaskStage = (value: unknown): value is TaskStage => (
+  value === 'fetch' || value === 'transform' || value === 'vt'
+);
+
+const resolveTaskStage = (task: RawTaskSummary): TaskStage => {
+  const candidate = task.taskType ?? task.type ?? task.stage;
+  if (isTaskStage(candidate)) {
+    return candidate;
+  }
+  throw new Error(`[ShapeBuildStep] Invalid task stage: ${String(candidate ?? 'undefined')}`);
+};
 
 export function useShapeBuildTasks(
   nodeId: NodeId | null,
@@ -92,7 +112,11 @@ export function useShapeBuildTasks(
       await bridgeRef.current.initialize();
       //console.debug('[ShapeBuildStep] buildTasks:fetch', { nodeId });
       const next = await bridgeRef.current.getBatchTasks(SHAPE_NODE_TYPE, nodeId);
-      scheduleFlush(next);
+      const resolved = (next as RawTaskSummary[]).map((task) => ({
+        ...task,
+        stage: resolveTaskStage(task),
+      }) as ShapeBuildTaskSummary);
+      scheduleFlush(resolved);
       setError(null);
       hasLoadedRef.current = true;
       //console.debug('[ShapeBuildStep] buildTasks:ok', { nodeId, count: next.length });
