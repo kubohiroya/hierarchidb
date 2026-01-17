@@ -31,6 +31,8 @@ const buildLanguageOptions = (
 
 export const UserLoginButton: React.FC = () => {
   const { t } = useTranslation('common');
+  const [pendingAuthDialogOpen, setPendingAuthDialogOpen] = useState(false);
+
   const menu = useUserMenu();
 
   const languageOptions = useMemo(
@@ -67,8 +69,6 @@ export const UserLoginButton: React.FC = () => {
       alert(t('userMenu.clear.error', 'Failed to clear some cache data. Please try again.'));
     }
   };
-
-  const [pendingAuthDialogOpen, setPendingAuthDialogOpen] = useState(false);
 
   const handleOpenMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.currentTarget.blur();
