@@ -1,3 +1,24 @@
+2230) feat/shape/transform-pre-simplify-filters (P1) — 完了 (2026-01-19)
+- ブランチ名: feat/shape/transform-pre-simplify-filters
+- 依存: なし
+- 受け入れ基準: TransformConfig 型に簡易化/事前フィルタ用の階層プロパティが追加される／テンプレートの buildConfig に新プロパティとデフォルトが反映される／Shape Step4 の Transform アコーディオンに新カードが追加され値が保存・再読込される／Transform ステージで新プロパティを参照して事前フィルタ/簡易化が動作する／pnpm typecheck が exit 0 で完走する
+- 影響範囲: `packages/vt-orchestrator/src/transform/**`, `plugins/shape-plugin/src/ui/components/step4/**`, `plugins/shape-plugin/src/worker/**`, `packages/features/gis-sdk/src/types/**`, `app/public/templates/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、Transform 設定/テンプレート/事前フィルタ処理を修正前に戻す
+- チェックリスト:
+  - TransformConfig 型へ簡易化/事前フィルタ用の階層プロパティを追加する
+  - テンプレートの buildConfig に新プロパティとデフォルトを反映する
+  - Step4 Transform の新カードを追加し、保存/再読込を配線する
+  - Transform ステージで新プロパティを使った事前フィルタ/簡易化処理を適用する
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-19 02:05 JST Transform 事前フィルタ/簡易化設定の型・テンプレート・UI・配線対応に着手。
+  - update: 2026-01-19 02:45 JST TransformConfig の preSimplifyFilterConfig 追加、Step4 UI カードとテンプレート更新、事前フィルタ/簡易化処理を反映。
+  - blocked: 2026-01-19 02:55 JST pnpm typecheck が vt-orchestrator の PreSimplifyFilterConfig 型未反映と ui-map/route-plugin の型エラーで失敗。
+  - update: 2026-01-19 03:05 JST pnpm --filter @hierarchidb/gis-sdk build と pnpm --filter @hierarchidb/ui-map build を実行し、route-plugin の型注釈を修正。
+  - update: 2026-01-19 03:15 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - done: 2026-01-19 03:15 JST 事前フィルタ/簡易化の設定追加と配線、UI/テンプレート反映を完了。
+
 2224) fix/shape/step5-stage-progress-inactive-grey (P1) — 完了 (2026-01-17)
 - ブランチ名: fix/shape/step5-stage-progress-inactive-grey
 - 依存: なし
@@ -4868,3 +4889,5 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-19 00:00 JST ui-map の共通一覧/interaction 実装と plugin 側切替に着手。
+  - update: 2026-01-19 00:35 JST ui-map に Shape/Route の一覧コンポーネントを追加し、shape/route preview の一覧表示を共通化へ切替。
+  - blocked: 2026-01-19 00:40 JST pnpm typecheck が vt-orchestrator の既存型エラーで失敗（preSimplifyFilterConfig, geometry.ts 型不整合）。

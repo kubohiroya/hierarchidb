@@ -11,15 +11,16 @@ Users should get the same map interaction capabilities (FitScreen, search, hover
 ## Progress
 
 - [x] (2026-01-19 00:30 JST) Reviewed current shape Step6 preview and route preview implementations to confirm where list UI and interaction wiring live.
-- [ ] Define the shared list screen APIs in ui-map for Shape (Polygon/MultiPolygon) and Route (LineString/MultiLineString) previews, including error column integration.
-- [ ] Move shape Step6 list-table logic into ui-map list screens and reduce shape-plugin to minimal data wiring.
-- [ ] Add route preview list screen wiring using the ui-map shared list component with error columns.
+- [x] (2026-01-19 00:35 JST) Defined shared list screen APIs in ui-map for Shape (Polygon/MultiPolygon) and Route (LineString/MultiLineString) previews, including error column integration.
+- [x] (2026-01-19 00:35 JST) Moved shape Step6 list-table logic into ui-map list screens and reduced shape-plugin to minimal data wiring.
+- [x] (2026-01-19 00:35 JST) Added route preview list screen wiring using the ui-map shared list component with error columns.
 - [ ] Ensure interaction toggles (search/hover/selection/fit/snackbar/box select/Enter-fit) are wired and configurable from ui-map props for preview screens.
 - [ ] Run `pnpm typecheck` and record results in TASKS.md.
 
 ## Surprises & Discoveries
 
-None yet.
+- Observation: `pnpm typecheck` failed in `@hierarchidb/vt-orchestrator` with existing type errors unrelated to ui-map changes.
+  Evidence: `src/transform/createTransformByBandHandler.ts` missing `preSimplifyFilterConfig` and multiple `geometry.ts` type mismatches during `build:types`.
 
 ## Decision Log
 
@@ -97,3 +98,4 @@ Record any short command output relevant to validation, including the `pnpm type
 - Translation should remain in the plugin layer, so the shared list components should accept label strings or a `t` callback instead of hardcoding UI strings.
 
 Revision note: This ExecPlan was updated to focus on ui-map-owned list screens for Shape and Route previews and to remove the previous Step6 tab-specific assumptions.
+Revision note: Progress and typecheck failure were recorded after implementing shared list screens.

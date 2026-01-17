@@ -169,7 +169,31 @@
     "metadataEmpty": "No metadata available yet.",
     "metadataTiles": "Generated tiles: {count}",
     "metadataZoom": "Zoom range: {min} - {max}",
-    "metadataSize": "Total size: {size}"
+    "metadataSize": "Total size: {size}",
+    "list": {
+      "title": "Routes",
+      "searchPlaceholder": "Search routes",
+      "searchAriaLabel": "Search routes",
+      "matched": "Matched",
+      "rows": "Rows",
+      "empty": "No route lines are available yet.",
+      "status": {
+        "failed": "Failed",
+        "completed": "Completed"
+      },
+      "columns": {
+        "lineId": "Line Id",
+        "startLon": "Start Lon",
+        "startLat": "Start Lat",
+        "endLon": "End Lon",
+        "endLat": "End Lat",
+        "distanceMeters": "Distance (m)",
+        "vertexCount": "Vertices",
+        "status": "Status",
+        "errorCount": "Errors",
+        "errorMessage": "Error Message"
+      }
+    }
   },
   "batch": {
     "pause": "Pause",

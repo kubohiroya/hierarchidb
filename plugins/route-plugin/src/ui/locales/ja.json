@@ -169,7 +169,31 @@
     "metadataEmpty": "表示できるメタデータがまだありません。",
     "metadataTiles": "生成タイル数: {count}",
     "metadataZoom": "ズーム範囲: {min} - {max}",
-    "metadataSize": "合計サイズ: {size}"
+    "metadataSize": "合計サイズ: {size}",
+    "list": {
+      "title": "ルート一覧",
+      "searchPlaceholder": "ルートを検索",
+      "searchAriaLabel": "ルートを検索",
+      "matched": "一致",
+      "rows": "件",
+      "empty": "利用可能なルートがまだありません。",
+      "status": {
+        "failed": "失敗",
+        "completed": "完了"
+      },
+      "columns": {
+        "lineId": "ラインID",
+        "startLon": "開始経度",
+        "startLat": "開始緯度",
+        "endLon": "終了経度",
+        "endLat": "終了緯度",
+        "distanceMeters": "距離(m)",
+        "vertexCount": "頂点数",
+        "status": "状態",
+        "errorCount": "エラー数",
+        "errorMessage": "エラーメッセージ"
+      }
+    }
   },
   "batch": {
     "pause": "一時停止",
