@@ -122,7 +122,6 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
     onSort,
     rowSx,
     tableContainerSx,
-    maxHeight = 420,
     toolbarComponent,
     emptyContent,
     errorSummaryById,
@@ -133,6 +132,7 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
   } = props;
   const [columnSelectorOpen, setColumnSelectorOpen] = useState(false);
   const [visibleColumnIds, setVisibleColumnIds] = useState<Set<string> | null>(null);
+  const [hasUserColumnSelection, setHasUserColumnSelection] = useState(false);
   const resolvedStatusLabels: MapPreviewStatusLabels = statusLabels ?? {
     completed: 'Completed',
     failed: 'Failed',
@@ -193,16 +193,19 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
   );
   useEffect(() => {
     setVisibleColumnIds((prev) => {
-      const next = new Set(prev ?? resolvedColumnIds);
-      resolvedColumnIds.map((id) => next.add(id));
+      if (!hasUserColumnSelection || !prev) {
+        return new Set(resolvedColumnIds);
+      }
+      const next = new Set(prev);
+      const resolvedSet = new Set(resolvedColumnIds);
       Array.from(next).forEach((id) => {
-        if (!resolvedColumnIds.includes(id)) {
+        if (!resolvedSet.has(id)) {
           next.delete(id);
         }
       });
       return next;
     });
-  }, [resolvedColumnIds]);
+  }, [hasUserColumnSelection, resolvedColumnIds]);
   const filteredColumns = useMemo(() => {
     if (!visibleColumnIds) return resolvedColumns;
     return resolvedColumns.filter((column) => visibleColumnIds.has(String(column.id)));
@@ -218,6 +221,7 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
         width: { xs: 'calc(100% - 24px)', md: 560 },
         maxWidth: 'calc(100% - 24px)',
         maxHeight: { xs: '55%', md: '70%' },
+        height: { xs: '55%', md: '70%' },
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
@@ -287,21 +291,22 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
           </Typography>
         ) : null}
       </Box>
-      <Box flex={1} minHeight={0}>
+      <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
         {rows.length === 0 && emptyContent ? (
           emptyContent
         ) : (
           <GenericDataGrid
             columns={filteredColumns}
             rows={rows}
-            maxHeight={maxHeight}
+            maxHeight="100%"
             tableContainerSx={{
               height: '100%',
-              maxHeight: '100%',
               overflowY: 'auto',
               overflowX: 'auto',
               overscrollBehavior: 'contain',
               WebkitOverflowScrolling: 'touch',
+              minHeight: 0,
+              flex: 1,
               ...(tableContainerSx ?? {}),
             }}
             rowHeight={38}
@@ -323,6 +328,7 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
             rowSx={rowSx}
             toolbarComponent={toolbarComponent}
             showSearch={false}
+            stopWheelPropagation
           />
         )}
       </Box>
@@ -345,6 +351,7 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
                       checked={visibleColumnIds?.has(id) ?? true}
                       onChange={(event) => {
                         const checked = event.target.checked;
+                        setHasUserColumnSelection(true);
                         setVisibleColumnIds((prev) => {
                           const next = new Set(prev ?? resolvedColumnIds);
                           if (checked) {

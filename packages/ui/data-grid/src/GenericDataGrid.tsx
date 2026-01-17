@@ -316,24 +316,20 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
     const container = parentRef.current;
     if (!container) return;
     const handleWheel = (event: WheelEvent) => {
-      event.stopPropagation();
       const scrollHeight = container.scrollHeight;
       const clientHeight = container.clientHeight;
       const scrollable = scrollHeight > clientHeight + 1;
-      if (!scrollable) {
-        event.preventDefault();
-        return;
-      }
+      if (!scrollable) return;
       const scrollTop = container.scrollTop;
       const atTop = scrollTop <= 0;
       const atBottom = scrollTop + clientHeight >= scrollHeight - 1;
-      if ((event.deltaY < 0 && atTop) || (event.deltaY > 0 && atBottom)) {
-        event.preventDefault();
-      }
+      const isEdgeScroll = (event.deltaY < 0 && atTop) || (event.deltaY > 0 && atBottom);
+      if (isEdgeScroll) return;
+      event.stopPropagation();
     };
-    container.addEventListener('wheel', handleWheel, { passive: false });
+    container.addEventListener('wheel', handleWheel, { passive: false, capture: true });
     return () => {
-      container.removeEventListener('wheel', handleWheel);
+      container.removeEventListener('wheel', handleWheel, { capture: true });
     };
   }, [stopWheelPropagation]);
   /*
@@ -467,8 +463,10 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
     );
   }
 
+  const loadingIndicator = loadingComponent ?? <LinearProgress />;
+
   return (
-    <Box>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, height: '100%' }}>
       {/* Toolbar */}
       {toolbarComponent || (
         <Box display="flex" alignItems="center" gap={2} mb={2}>
@@ -525,12 +523,18 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
       )}
 
       {/* Loading indicator */}
-      {loading && (loadingComponent || <LinearProgress />)}
+      <Box sx={{ minHeight: 4 }}>
+        <Box sx={{ visibility: loading ? 'visible' : 'hidden' }}>
+          {loadingIndicator}
+        </Box>
+      </Box>
 
       {/* Table */}
       <TableContainer
         component={Paper}
         sx={{
+          flex: 1,
+          minHeight: 0,
           maxHeight: enableVirtualization ? maxHeight : undefined,
           '& .MuiTableCell-root': showGridLines
             ? { border: '1px solid rgba(224, 224, 224, 1)' }
