@@ -36,6 +36,8 @@ import { TaskProgressBar } from './TaskProgressBar.tsx';
 import type { ShapeEntity } from '../../../common/types/ShapeEntity.ts';
 import { ShapeBuildProgressStageContent } from './ShapeBuildProgressStageContent.js';
 
+const isDev = import.meta.env.DEV;
+
 export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<ShapeEntity>; nodeId?: NodeId }) => {
   const resolvedNodeId = nodeId as NodeId | undefined;
   const { t } = useTranslation();
@@ -52,7 +54,6 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
     draft: data,
     nodeId: resolvedNodeId ? String(resolvedNodeId) : undefined,
   });
-  const isDev = import.meta.env.DEV;
   const lastTaskStageSnapshotRef = useRef<string | null>(null);
   const {
     startWarning,
@@ -73,7 +74,7 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
   });
 
   useEffect(() => {
-    if (!import.meta.env.DEV) return;
+    if (!isDev) return;
     const snapshot = JSON.stringify({
       stages: stages.map((stage) => stage.id),
       keys: Object.keys(tasksByStage),
