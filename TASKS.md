@@ -34,6 +34,9 @@
   - done: 2026-01-19 04:10 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
   - update: 2026-01-19 04:13 JST Transform の skipped メッセージに features/polygons の比率を含める修正に着手。
   - done: 2026-01-19 04:14 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-19 04:18 JST Step6 フィーチャーテーブルの状態ソート不具合と ADM0/ADM1 表示差分の由来を調査。
+  - update: 2026-01-19 04:26 JST 状態カラムのソート用フィールドを追加し、ADM0/ADM1 の表示由来を整理。
+  - done: 2026-01-19 04:27 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
 
 2247) feat/shape/transform-preprocess-diagnostics (P1) — 進行中 (2026-01-18)
 - ブランチ名: feat/shape/transform-preprocess-diagnostics
@@ -51,6 +54,11 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-18 00:30 JST simplify 前処理の診断ログ/可視化と前処理見直しの ExecPlan 作成に着手。
+  - update: 2026-01-19 09:40 JST simplify 前処理で issueKind/issueStage を収集し、エラー記録とプレビュー用ライン生成へ反映する実装に着手。
+  - update: 2026-01-19 10:05 JST Step6 プレビューで issueKind に応じてエラーラインの色分けを行う調整に着手。
+  - blocked: 2026-01-19 10:14 JST pnpm typecheck が exit 2（vt-orchestrator build:types で ShapeTransformErrorRecord に issueStage が無い）で失敗。
+  - update: 2026-01-19 10:15 JST pnpm --filter @hierarchidb/plugin-service-api build を実行（exit 0、tsdown define 警告あり）。
+  - done: 2026-01-19 10:16 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
 
 2246) fix/shape/step6-preview-feature-atoms-expression (P1) — 進行中 (2026-01-17)
 - ブランチ名: fix/shape/step6-preview-feature-atoms-expression

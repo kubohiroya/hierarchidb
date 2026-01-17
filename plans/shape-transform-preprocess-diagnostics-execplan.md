@@ -13,16 +13,17 @@ Users need to understand why simplify preprocessing is dropping valid geometry d
 - [x] (2026-01-18 00:30 JST) Created the task entry in TASKS.md and started the ExecPlan draft.
 - [x] (2026-01-18 00:35 JST) Identified transform preprocessing and error-record paths in `packages/vt-orchestrator/src/transform/geometry.ts` and `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`.
 - [x] (2026-01-18 00:40 JST) Confirmed preview overlay is driven by `ShapeTransformErrorRecord.lineFeatures` in Step6 (`plugins/shape-plugin/src/ui/components/step6/useShapePreviewStep.ts`).
-- [ ] Expand console logging into structured, stage-specific diagnostics with per-feature summaries.
-- [ ] Add per-feature/per-polygon issue capture that includes issue category and ring/vertex details and persists to `transformErrors`.
-- [ ] Update Step6 preview to visualize issue categories (line overlay colors and optional legend/toggles).
-- [ ] Relax overly aggressive preprocessing so valid large polygons are retained for geoboundaries Japan ADM0/ADM1.
-- [ ] Run `pnpm typecheck` and record results in TASKS.md.
+- [x] (2026-01-19 09:20 JST) Added simplify issue tracking hooks and relaxed ring/self-intersection area filtering to retain major polygons.
+- [x] (2026-01-19 09:35 JST) Extended transform error records and line features with issue stage/kind and added structured simplify-drop logging.
+- [x] (2026-01-19 10:05 JST) Updated Step6 preview overlay to color error lines by issueKind.
+- [x] (2026-01-19 10:16 JST) Ran `pnpm typecheck` after rebuilding plugin-service-api (exit 0, tsdown define warning).
 
 ## Surprises & Discoveries
 
 - Observation: The transform stage already captures `ShapeTransformErrorRecord` and line features for rings when simplify fails.
   Evidence: `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts` builds `lineFeatures` and writes to `ephemeralDB.transformErrors`, which Step6 converts into `errorLineCollection`.
+- Observation: `ShapeTransformErrorRecord` is already used as the UI overlay source, so adding issue metadata there avoids extra storage or UI plumbing.
+  Evidence: Step6 reads `transformErrors` and maps `lineFeatures` into the preview layers.
 
 ## Decision Log
 

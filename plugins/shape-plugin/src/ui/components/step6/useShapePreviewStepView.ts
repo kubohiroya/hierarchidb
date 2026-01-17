@@ -120,6 +120,32 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
     const sourceId = 'shape-transform-errors';
     const selectedFilter = ['==', ['get', 'selected'], true] as const;
     const unselectedFilter = ['!=', ['get', 'selected'], true] as const;
+    const issueKindColor = [
+      'case',
+      ['has', 'issueKind'],
+      [
+        'match',
+        ['get', 'issueKind'],
+        'nonFinite',
+        preview.theme.palette.error.dark,
+        'invalidGeometry',
+        preview.theme.palette.error.main,
+        'invalidRing',
+        preview.theme.palette.error.main,
+        'openRing',
+        preview.theme.palette.warning.main,
+        'degenerateRing',
+        preview.theme.palette.warning.dark,
+        'duplicateVertex',
+        preview.theme.palette.info.main,
+        'smallPolygon',
+        preview.theme.palette.secondary.main,
+        'droppedPolygon',
+        preview.theme.palette.secondary.dark,
+        preview.theme.palette.error.main,
+      ],
+      preview.theme.palette.error.main,
+    ] as const;
     return [
       {
         layerId: 'shape-transform-errors-selected-outline-glow',
@@ -177,7 +203,7 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
         data: preview.errorLineCollection,
         layerType: 'line',
         paint: {
-          'line-color': preview.theme.palette.error.main,
+          'line-color': issueKindColor,
           'line-width': 2,
         },
         filter: ['all', ['==', ['get', 'ringRole'], 'outline'], unselectedFilter],
@@ -188,7 +214,7 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
         data: preview.errorLineCollection,
         layerType: 'line',
         paint: {
-          'line-color': preview.theme.palette.warning.main,
+          'line-color': issueKindColor,
           'line-width': 1.5,
           'line-dasharray': [2, 2],
         },
@@ -198,9 +224,14 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
   }, [
     preview.errorLineCollection,
     preview.theme.palette.error.main,
+    preview.theme.palette.error.dark,
+    preview.theme.palette.info.main,
     preview.theme.palette.primary.light,
     preview.theme.palette.primary.main,
+    preview.theme.palette.secondary.dark,
+    preview.theme.palette.secondary.main,
     preview.theme.palette.warning.main,
+    preview.theme.palette.warning.dark,
   ]);
 
   return {

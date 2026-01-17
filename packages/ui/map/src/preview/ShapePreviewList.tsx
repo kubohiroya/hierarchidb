@@ -113,6 +113,10 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
   const theme = useTheme();
   const [sortColumn, setSortColumn] = useState<string>('featureId');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const resolvedStatusLabels: MapPreviewStatusLabels = statusLabels ?? {
+    completed: 'Completed',
+    failed: 'Failed',
+  };
 
   const tableRows = useMemo(() => {
     const normalizeCount = (value?: number) => (typeof value === 'number' ? value : '');
@@ -122,6 +126,11 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
       : rows;
     const mapped = filtered.map((row) => ({
       id: row.featureId ?? row.id,
+      status: (() => {
+        const summary = errorSummaryById?.get(String(row.id));
+        const hasErrors = Boolean(summary && summary.count > 0);
+        return hasErrors ? resolvedStatusLabels.failed : resolvedStatusLabels.completed;
+      })(),
       rawId: row.id,
       featureId: row.featureId ?? '',
       countryName: row.countryName ?? '',
@@ -147,7 +156,16 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
       return sortDirection === 'asc' ? astr.localeCompare(bstr) : bstr.localeCompare(astr);
     });
     return sorted;
-  }, [matchedRows, rows, search?.value, sortColumn, sortDirection]);
+  }, [
+    errorSummaryById,
+    matchedRows,
+    resolvedStatusLabels.completed,
+    resolvedStatusLabels.failed,
+    rows,
+    search?.value,
+    sortColumn,
+    sortDirection,
+  ]);
 
   const resolvedMatchedRows = useMemo(() => {
     if (!matchedRows) return undefined;

@@ -4,7 +4,14 @@ import { cleanCoords } from '@turf/clean-coords';
 import { geojson as geojsonApi } from 'flatgeobuf';
 import { applyFeatureFiltering, encodeFlatGeobufFromFeatureCollection, latToTileY, lonToTileX } from '@hierarchidb/gis-sdk';
 import type { ShapeTransformErrorRecord } from '@hierarchidb/plugin-service-api';
-import { simplifyFeatureCollection, buildBoundaryFeature, snapGeometryToGrid } from './geometry.js';
+import {
+  buildBoundaryFeature,
+  simplifyFeatureCollection,
+  snapGeometryToGrid,
+  type SimplifyIssue,
+  type SimplifyIssueKind,
+  type SimplifyIssueStage,
+} from './geometry.js';
 import { SHAPE_DOMAIN } from '@hierarchidb/vt-shape-store';
 import type { TransformByBandStageContext } from '../contexts.js';
 import type { StageHandler, StageHandlerResult, TransformByBandTaskInput } from '../types/types.js';
@@ -140,6 +147,8 @@ type ErrorLineProperties = {
   polygonIndex: number;
   ringIndex: number;
   featureId?: string;
+  issueStage?: SimplifyIssueStage;
+  issueKind?: SimplifyIssueKind;
 };
 
 const buildErrorLineFeatures = (
@@ -179,6 +188,21 @@ const buildErrorLineFeatures = (
   }
   return features.length ? { features, polygonCount, ringCount, geometryType: geometry.type } : null;
 };
+
+const decorateIssueLineFeatures = (
+  lineFeatures: Array<Feature<LineString, ErrorLineProperties>>,
+  issueStage?: SimplifyIssueStage,
+  issueKind?: SimplifyIssueKind,
+): Array<Feature<LineString, ErrorLineProperties>> => (
+  lineFeatures.map((feature) => ({
+    ...feature,
+    properties: {
+      ...(feature.properties ?? {}),
+      issueStage,
+      issueKind,
+    },
+  }))
+);
 
 type GeometryIssueSummary = {
   geometryType: string;
@@ -304,6 +328,66 @@ const analyzePolygonRing = (ring: number[][]): PolygonRingSummary => {
     duplicateVertexCount,
     hasIssue,
   };
+};
+
+const resolveRingIssueKind = (summary: PolygonRingSummary): SimplifyIssueKind | null => {
+  if (summary.nonFiniteCoordCount > 0) return 'nonFinite';
+  if (summary.openRingCount > 0) return 'openRing';
+  if (summary.invalidRingCount > 0 || summary.emptyRingCount > 0) return 'invalidRing';
+  if (summary.degenerateRingCount > 0) return 'degenerateRing';
+  if (summary.duplicateVertexCount > 0) return 'duplicateVertex';
+  return null;
+};
+
+const buildIssueLineFeatures = (
+  geometry: Geometry,
+  issueStage: SimplifyIssueStage,
+  featureId?: string,
+): { features: Array<Feature<LineString, ErrorLineProperties>>; polygonCount: number; ringCount: number; geometryType: string } | null => {
+  const features: Array<Feature<LineString, ErrorLineProperties>> = [];
+  let polygonCount = 0;
+  let ringCount = 0;
+  const pushRing = (
+    ring: number[][],
+    ringRole: ErrorRingRole,
+    polygonIndex: number,
+    ringIndex: number,
+    issueKind: SimplifyIssueKind,
+  ) => {
+    if (!Array.isArray(ring) || ring.length < 2) return;
+    features.push({
+      type: 'Feature',
+      geometry: { type: 'LineString', coordinates: ring },
+      properties: { ringRole, polygonIndex, ringIndex, featureId, issueStage, issueKind },
+    });
+    ringCount += 1;
+  };
+  if (geometry.type === 'Polygon') {
+    const rings = Array.isArray(geometry.coordinates) ? geometry.coordinates : [];
+    polygonCount = rings.length > 0 ? 1 : 0;
+    rings.forEach((ring, index) => {
+      const ringRole: ErrorRingRole = index === 0 ? 'outline' : 'hole';
+      const summary = analyzePolygonRing(ring as number[][]);
+      const issueKind = resolveRingIssueKind(summary);
+      if (!issueKind || summary.nonFiniteCoordCount > 0) return;
+      pushRing(ring as number[][], ringRole, 0, index, issueKind);
+    });
+  } else if (geometry.type === 'MultiPolygon') {
+    const polygons = Array.isArray(geometry.coordinates) ? geometry.coordinates : [];
+    polygonCount = polygons.length;
+    polygons.forEach((rings, polygonIndex) => {
+      (rings ?? []).forEach((ring, ringIndex) => {
+        const ringRole: ErrorRingRole = ringIndex === 0 ? 'outline' : 'hole';
+        const summary = analyzePolygonRing(ring as number[][]);
+        const issueKind = resolveRingIssueKind(summary);
+        if (!issueKind || summary.nonFiniteCoordCount > 0) return;
+        pushRing(ring as number[][], ringRole, polygonIndex, ringIndex, issueKind);
+      });
+    });
+  } else {
+    return null;
+  }
+  return features.length ? { features, polygonCount, ringCount, geometryType: geometry.type } : null;
 };
 
 const analyzePolygon = (rings: number[][][]): Omit<GeometryIssueSummary, 'geometryType'> => {
@@ -794,6 +878,7 @@ export const createTransformByBandHandler = (
       ));
       inputPolygonCount = inputPolygonCounts.reduce((sum, value) => sum + value, 0);
       await reportPolygonProgress(task.taskId, 0, inputPolygonCount);
+      const simplifyIssues: SimplifyIssue[] = [];
       try {
         assertNotAborted(abortSignal);
         stageLabel = 'simplify';
@@ -832,6 +917,11 @@ export const createTransformByBandHandler = (
             abortSignal,
             yieldEvery: 25,
             onProgress: onSimplifyProgress,
+            onIssue: (issue) => {
+              if (simplifyIssues.length < 200) {
+                simplifyIssues.push(issue);
+              }
+            },
           },
         ));
         simplified = await runWithStallTimeout({
@@ -905,6 +995,92 @@ export const createTransformByBandHandler = (
               totalPolygons: inputPolygonCount,
             },
           };
+        }
+
+        if (simplifyIssues.length > 0) {
+          const recordLimit = 200;
+          const issueByFeature = new Map<number, SimplifyIssue>();
+          simplifyIssues.forEach((issue) => {
+            if (!issueByFeature.has(issue.featureIndex)) {
+              issueByFeature.set(issue.featureIndex, issue);
+            }
+          });
+          const errorRecords: ShapeTransformErrorRecord[] = [];
+          const sampleIssues: string[] = [];
+          const stageCounts = new Map<string, number>();
+          const kindCounts = new Map<string, number>();
+          issueByFeature.forEach((issue) => {
+            stageCounts.set(issue.stage, (stageCounts.get(issue.stage) ?? 0) + 1);
+            kindCounts.set(issue.kind, (kindCounts.get(issue.kind) ?? 0) + 1);
+            if (sampleIssues.length < 5) {
+              sampleIssues.push(`${issue.featureId}:${issue.stage}:${issue.kind}`);
+            }
+            if (errorRecords.length >= recordLimit) return;
+            const feature = inputCollection.features[issue.featureIndex];
+            if (!feature?.geometry) return;
+            const lineFeaturesCandidate = buildIssueLineFeatures(feature.geometry, issue.stage, issue.featureId)
+              ?? buildErrorLineFeatures(feature.geometry, issue.featureId);
+            const summary = analyzeGeometryIssues(feature.geometry);
+            const recordPolygonCount = summary.polygonCount;
+            const recordRingCount = summary.ringCount;
+            const recordPolygonErrorCount = summary.errorPolygonCount > 0
+              ? summary.errorPolygonCount
+              : recordPolygonCount;
+            const recordRingErrorCount = summary.errorRingCount > 0
+              ? summary.errorRingCount
+              : recordRingCount;
+            const lineFeatures = decorateIssueLineFeatures(lineFeaturesCandidate?.features ?? [], issue.stage, issue.kind);
+            errorRecords.push({
+              id: `${task.taskId}:issue:${issue.featureIndex}`,
+              nodeId: task.nodeId,
+              taskId: task.taskId,
+              stage: 'transform',
+              issueStage: issue.stage,
+              issueKind: issue.kind,
+              bandId: input.bandId,
+              sourceKey: input.sourceKey,
+              countryCode: input.countryCode,
+              adminLevel: input.adminLevel,
+              featureId: issue.featureId,
+              featureIndex: issue.featureIndex,
+              geometryType: summary.geometryType,
+              polygonCount: recordPolygonCount,
+              ringCount: recordRingCount,
+              polygonErrorCount: recordPolygonErrorCount,
+              ringErrorCount: recordRingErrorCount,
+              message: issue.message,
+              createdAt: Date.now(),
+              lineFeatures: {
+                type: 'FeatureCollection',
+                features: lineFeatures,
+              },
+            });
+          });
+          if (errorRecords.length > 0) {
+            try {
+              await ephemeralDB.transformErrors.bulkPut(errorRecords);
+              if (issueByFeature.size > errorRecords.length) {
+                console.warn('[ShapeTransform] simplify issue records truncated', {
+                  nodeId: task.nodeId,
+                  taskId: task.taskId,
+                  limit: recordLimit,
+                  totalIssues: issueByFeature.size,
+                });
+              }
+            } catch (storageError) {
+              console.warn('[ShapeTransform] failed to persist simplify issue records', storageError);
+            }
+          }
+          console.warn('[ShapeTransform] simplify preprocessing dropped features', {
+            nodeId: task.nodeId,
+            taskId: task.taskId,
+            bandId: input.bandId,
+            sourceKey: input.sourceKey,
+            issueCount: issueByFeature.size,
+            stageCounts: Object.fromEntries(stageCounts),
+            kindCounts: Object.fromEntries(kindCounts),
+            samples: sampleIssues,
+          });
         }
       } catch (error) {
         if (abortSignal?.aborted) {

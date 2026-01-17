@@ -255,6 +255,8 @@ export interface ShapeTransformErrorRecord {
   nodeId: NodeId;
   taskId: string;
   stage: ShapeBuildStage;
+  issueStage?: string;
+  issueKind?: string;
   bandId?: number;
   sourceKey?: string;
   countryCode?: string;

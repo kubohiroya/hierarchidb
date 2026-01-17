@@ -17,8 +17,37 @@ type SimplifyProgress = {
   featureIndex: number;
 };
 
+export type SimplifyIssueStage =
+  | 'input'
+  | 'snap'
+  | 'clean'
+  | 'ringFix'
+  | 'areaExclusion'
+  | 'selfIntersection'
+  | 'validate';
+
+export type SimplifyIssueKind =
+  | 'nonFinite'
+  | 'invalidGeometry'
+  | 'invalidRing'
+  | 'openRing'
+  | 'degenerateRing'
+  | 'duplicateVertex'
+  | 'smallPolygon'
+  | 'droppedPolygon'
+  | 'unknown';
+
+export type SimplifyIssue = {
+  featureId: string;
+  featureIndex: number;
+  stage: SimplifyIssueStage;
+  kind: SimplifyIssueKind;
+  message: string;
+};
+
 type SimplifyOptions = {
   onProgress?: (progress: SimplifyProgress) => void | Promise<void>;
+  onIssue?: (issue: SimplifyIssue) => void | Promise<void>;
   abortSignal?: AbortSignal;
   yieldEvery?: number;
 };
@@ -348,9 +377,14 @@ const fixPolygonRings = (
       && entry.vertexCount >= config.minRingVertices
       && entry.area >= minRingArea,
   );
-  if (valid.length === 0) return null;
-  const sorted = [...valid].sort((a, b) => b.area - a.area);
-  const outer = sorted[0]?.ring ?? valid[0]?.ring;
+  const fallback = assessed.filter(
+    (entry) => !entry.hasNonFinite
+      && entry.isClosed
+      && entry.vertexCount >= config.minRingVertices,
+  );
+  if (valid.length === 0 && fallback.length === 0) return null;
+  const sorted = [...(valid.length > 0 ? valid : fallback)].sort((a, b) => b.area - a.area);
+  const outer = sorted[0]?.ring ?? valid[0]?.ring ?? fallback[0]?.ring;
   if (!outer) return null;
   const holes = (dropInvalidHoles ? valid : assessed)
     .filter((entry) => entry.ring !== outer)
@@ -443,9 +477,15 @@ const applySelfIntersectionFix = (
   const filtered = options.dropSmallPolygons
     ? candidates.filter((entry) => entry.area >= minPolygonArea && entry.vertexCount >= options.minRingVertices)
     : candidates;
-  if (filtered.length === 0) return null;
+  const fallbackCandidates = candidates.filter((entry) => entry.vertexCount >= options.minRingVertices);
+  const effective = filtered.length > 0
+    ? filtered
+    : fallbackCandidates.length > 0
+      ? [fallbackCandidates.reduce((best, current) => (current.area > best.area ? current : best))]
+      : [];
+  if (effective.length === 0) return null;
 
-  const sorted = [...filtered].sort((a, b) => b.area - a.area);
+  const sorted = [...effective].sort((a, b) => b.area - a.area);
   const limit = config.maxPolygons > 0 ? config.maxPolygons : sorted.length;
   const selected = config.strategy === 'keep_all'
     ? sorted.slice(0, limit)
@@ -483,9 +523,30 @@ const applyPolygonAreaExclusion = (
   if (geometry.type === 'MultiPolygon') {
     const polygons = geometry.coordinates as number[][][][];
     const filtered = polygons.filter((coords) => !shouldExclude(coords));
-    return filtered.length > 0 ? { ...geometry, coordinates: filtered } : null;
+    if (filtered.length > 0) {
+      return { ...geometry, coordinates: filtered };
+    }
+    if (polygons.length === 0) return null;
+    const largest = polygons.reduce((best, current) => (
+      computePolygonArea(current) > computePolygonArea(best) ? current : best
+    ));
+    return { ...geometry, coordinates: [largest] };
   }
   return geometry;
+};
+
+const resolveFeatureId = (feature: Feature, featureIndex: number): string => {
+  const rawId = feature.id ?? (feature.properties && 'id' in feature.properties ? feature.properties.id : undefined);
+  if (rawId !== undefined && rawId !== null) return String(rawId);
+  return `featureIndex:${featureIndex}`;
+};
+
+const recordIssue = async (
+  options: SimplifyOptions | undefined,
+  issue: SimplifyIssue,
+): Promise<void> => {
+  if (!options?.onIssue) return;
+  await options.onIssue(issue);
 };
 
 export const simplifyFeatureCollection = async (
@@ -543,6 +604,7 @@ export const simplifyFeatureCollection = async (
     if (!feature.geometry) {
       features.push(feature);
     } else {
+      const featureId = resolveFeatureId(feature, index);
       if (maxVerticesPerFeature > 0) {
         const vertexCount = countVerticesFromGeometry(feature.geometry);
         if (vertexCount > maxVerticesPerFeature) {
@@ -558,27 +620,62 @@ export const simplifyFeatureCollection = async (
       }
       if (hasNonFiniteGeometry(feature.geometry)) {
         droppedNonFinite += 1;
+        await recordIssue(options, {
+          featureId,
+          featureIndex: index,
+          stage: 'input',
+          kind: 'nonFinite',
+          message: 'non-finite coordinates detected',
+        });
         continue;
       }
       let snapped: Geometry;
       try {
         snapped = snapGeometryToGrid(feature.geometry, zTarget, quantize);
       } catch {
+        await recordIssue(options, {
+          featureId,
+          featureIndex: index,
+          stage: 'snap',
+          kind: 'invalidGeometry',
+          message: 'snap to grid failed',
+        });
         continue;
       }
       const cleaned = cleanGeometry(snapped);
       const ringFixed = applyRingFix(cleaned, ringFix, minRingArea, preSimplify.dropInvalidHoles);
       if (!ringFixed) {
         droppedRingFix += 1;
+        await recordIssue(options, {
+          featureId,
+          featureIndex: index,
+          stage: 'ringFix',
+          kind: 'invalidRing',
+          message: 'ring fix removed all rings',
+        });
         continue;
       }
       if (enforcePreSimplifyValidity && !isGeometryValid(ringFixed)) {
         droppedInvalidAfterRingFix += 1;
+        await recordIssue(options, {
+          featureId,
+          featureIndex: index,
+          stage: 'ringFix',
+          kind: 'invalidGeometry',
+          message: 'geometry invalid after ring fix',
+        });
         continue;
       }
       const areaFiltered = applyPolygonAreaExclusion(ringFixed, excludePolygonAreaCoefficient, zTarget, quantize);
       if (!areaFiltered) {
         droppedArea += 1;
+        await recordIssue(options, {
+          featureId,
+          featureIndex: index,
+          stage: 'areaExclusion',
+          kind: 'smallPolygon',
+          message: 'polygon excluded by area filter',
+        });
         continue;
       }
       const intersectionFixed = applySelfIntersectionFix(
@@ -595,10 +692,24 @@ export const simplifyFeatureCollection = async (
       );
       if (!intersectionFixed) {
         droppedIntersection += 1;
+        await recordIssue(options, {
+          featureId,
+          featureIndex: index,
+          stage: 'selfIntersection',
+          kind: 'droppedPolygon',
+          message: 'self-intersection fix removed polygons',
+        });
         continue;
       }
       if (preSimplify.excludeInvalidGeometry && !isGeometryValid(intersectionFixed)) {
         droppedInvalidAfterIntersection += 1;
+        await recordIssue(options, {
+          featureId,
+          featureIndex: index,
+          stage: 'validate',
+          kind: 'invalidGeometry',
+          message: 'geometry invalid after self-intersection fix',
+        });
         continue;
       }
       const simplified = simplifyGeometryInMercator(intersectionFixed, tolerance);
