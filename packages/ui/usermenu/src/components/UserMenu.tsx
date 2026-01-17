@@ -3,11 +3,13 @@ import {
   DeleteForever as DeleteForeverIcon,
   Language as LanguageIcon,
   LightMode as LightModeIcon,
+  Login as LoginIcon,
   Logout as LogoutIcon,
   SettingsBrightness as SystemThemeIcon,
 } from '@mui/icons-material';
 import {
   Box,
+  Button,
   Divider,
   ListItemIcon,
   ListItemText,
@@ -25,7 +27,10 @@ interface UserMenuProps {
   onOpenThemeMenu: (anchor: HTMLElement) => void;
   onOpenLanguageMenu: (anchor: HTMLElement) => void;
   onOpenClearDialog: () => void;
+  onLogin: () => void;
+  onMenuExited?: () => void;
   onLogout: () => void;
+  isAuthenticated: boolean;
   userName: string;
   userEmail: string;
   themeMode: ThemeMode;
@@ -49,7 +54,10 @@ export const UserMenu: React.FC<UserMenuProps> = ({
   onOpenThemeMenu,
   onOpenLanguageMenu,
   onOpenClearDialog,
+  onLogin,
+  onMenuExited,
   onLogout,
+  isAuthenticated,
   userName,
   userEmail,
   themeMode,
@@ -67,18 +75,33 @@ export const UserMenu: React.FC<UserMenuProps> = ({
       anchorEl={anchorEl}
       open={Boolean(anchorEl)}
       onClose={onClose}
+      TransitionProps={onMenuExited ? { onExited: onMenuExited } : undefined}
       anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       transformOrigin={{ vertical: 'top', horizontal: 'right' }}
     >
       <Box sx={{ px: 2, py: 1 }}>
-        <Typography variant="subtitle1" fontWeight={600} noWrap>
-          {userName}
-        </Typography>
-        {userEmail ? (
-          <Typography variant="body2" color="text.secondary" noWrap>
-            {userEmail}
-          </Typography>
-        ) : null}
+        {isAuthenticated ? (
+          <>
+            <Typography variant="subtitle1" fontWeight={600} noWrap>
+              {userName}
+            </Typography>
+            {userEmail ? (
+              <Typography variant="body2" color="text.secondary" noWrap>
+                {userEmail}
+              </Typography>
+            ) : null}
+          </>
+        ) : (
+          <Button
+            variant="contained"
+            size="large"
+            fullWidth
+            startIcon={<LoginIcon fontSize="small" />}
+            onClick={onLogin}
+          >
+            {t('auth.login', 'Login')}
+          </Button>
+        )}
       </Box>
       <Divider />
 
@@ -122,7 +145,11 @@ export const UserMenu: React.FC<UserMenuProps> = ({
 
       <Divider />
 
-      <MenuItem onClick={onLogout} aria-label={String(t('auth.logout', 'Logout'))}>
+      <MenuItem
+        onClick={onLogout}
+        aria-label={String(t('auth.logout', 'Logout'))}
+        disabled={!isAuthenticated}
+      >
         <ListItemIcon>
           <LogoutIcon fontSize="small" />
         </ListItemIcon>

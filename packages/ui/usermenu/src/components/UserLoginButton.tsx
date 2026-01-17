@@ -1,7 +1,7 @@
 import { AuthProviderDialog, UserAvatar } from '@hierarchidb/ui-auth';
 import LoginIcon from '@mui/icons-material/Login';
 import { IconButton } from '@mui/material';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ClearDatabaseDialog } from './ClearDatabaseDialog.js';
 import { LanguageMenu, type LanguageOption } from './LanguageMenu.js';
@@ -60,33 +60,6 @@ export const UserLoginButton: React.FC = () => {
     );
   }
 
-  if (!menu.isAuthenticated) {
-    return (
-      <>
-        <IconButton
-          onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-            e.currentTarget.blur();
-            setTimeout(() => menu.openAuthDialog(), 0);
-          }}
-          sx={{
-            bgcolor: 'primary.main',
-            color: 'white',
-            '&:hover': { bgcolor: 'primary.dark' },
-            borderRadius: '50%',
-          }}
-          aria-label={String(t('auth.login', 'Login'))}
-        >
-          <LoginIcon />
-        </IconButton>
-        <AuthProviderDialog
-          open={menu.authProviderDialogOpen}
-          onClose={menu.closeAuthDialog}
-          onSelectProvider={menu.signInWithProvider}
-        />
-      </>
-    );
-  }
-
   const handleClearDatabase = async () => {
     try {
       await menu.handleClearDatabase();
@@ -95,25 +68,73 @@ export const UserLoginButton: React.FC = () => {
     }
   };
 
+  const [pendingAuthDialogOpen, setPendingAuthDialogOpen] = useState(false);
+
+  const handleOpenMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.currentTarget.blur();
+    menu.openUserMenu(event.currentTarget as HTMLElement);
+  };
+
+  const handleMenuClose = () => {
+    if (menu.userMenuAnchorEl) {
+      menu.userMenuAnchorEl.blur();
+    }
+    menu.closeUserMenu();
+  };
+
+  const handleLogin = () => {
+    setPendingAuthDialogOpen(true);
+    handleMenuClose();
+  };
+
+  const handleMenuExited = () => {
+    if (!pendingAuthDialogOpen) return;
+    setPendingAuthDialogOpen(false);
+    menu.openAuthDialog();
+  };
+
   return (
     <>
       <IconButton
-        onClick={(e: React.MouseEvent<HTMLButtonElement>) =>
-          menu.openUserMenu(e.currentTarget as HTMLElement)
+        onClick={handleOpenMenu}
+        sx={
+          menu.isAuthenticated
+            ? { p: 0 }
+            : {
+                bgcolor: 'primary.main',
+                color: 'white',
+                '&:hover': { bgcolor: 'primary.dark' },
+                borderRadius: '50%',
+              }
         }
-        sx={{ p: 0 }}
-        aria-label={String(t('userMenu.aria.userMenu', 'User menu'))}
+        aria-label={
+          menu.isAuthenticated
+            ? String(t('userMenu.aria.userMenu', 'User menu'))
+            : String(t('auth.login', 'Login'))
+        }
       >
-        <UserAvatar pictureUrl={menu.avatarUrl} email={menu.userEmail} name={menu.userName} size={40} />
+        {menu.isAuthenticated ? (
+          <UserAvatar
+            pictureUrl={menu.avatarUrl}
+            email={menu.userEmail}
+            name={menu.userName}
+            size={40}
+          />
+        ) : (
+          <LoginIcon />
+        )}
       </IconButton>
 
       <UserMenu
         anchorEl={menu.userMenuAnchorEl}
-        onClose={menu.closeUserMenu}
+        onClose={handleMenuClose}
         onOpenThemeMenu={menu.openThemeMenu}
         onOpenLanguageMenu={menu.openLanguageMenu}
         onOpenClearDialog={menu.openClearDatabaseDialog}
+        onLogin={handleLogin}
+        onMenuExited={handleMenuExited}
         onLogout={menu.handleLogout}
+        isAuthenticated={menu.isAuthenticated}
         userName={menu.userName}
         userEmail={menu.userEmail}
         themeMode={menu.themeMode}
@@ -141,6 +162,12 @@ export const UserLoginButton: React.FC = () => {
         descriptionId={menu.clearDatabaseDialogDescriptionId}
         onClose={menu.closeClearDatabaseDialog}
         onConfirm={handleClearDatabase}
+      />
+
+      <AuthProviderDialog
+        open={menu.authProviderDialogOpen}
+        onClose={menu.closeAuthDialog}
+        onSelectProvider={menu.signInWithProvider}
       />
     </>
   );

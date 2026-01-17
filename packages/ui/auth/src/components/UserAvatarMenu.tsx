@@ -59,6 +59,7 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
   const [themeAnchorEl, setThemeAnchorEl] = useState<null | HTMLElement>(null);
   const [languageAnchorEl, setLanguageAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
+  const isAuthenticated = Boolean(auth.user);
   const handleClick = useCallback((event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   }, []);
@@ -185,25 +186,21 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
 
   const userMenu: MenuEntry[] = useMemo(
     () => [
-      { kind: 'item', id: 'logout', label: 'Logout', icon: <LogoutIcon />, onClick: () => signOut() },
+      {
+        kind: 'item',
+        id: 'logout',
+        label: 'Logout',
+        icon: <LogoutIcon sx={{ mr: 1 }} />,
+        onClick: () => signOut(),
+        disabled: !isAuthenticated,
+      },
     ],
-    [signOut]
+    [isAuthenticated, signOut]
   );
 
-  // Working copy cleanup removed - functionality was deprecated
-  if (!auth.user) {
-    return (
-      <Button
-        variant={'contained'}
-        onClick={signIn}
-        style={{ borderRadius: '15px', margin: '3px' }}
-        size="large"
-        startIcon={<LoginIcon />}
-      >
-        LOGIN
-      </Button>
-    );
-  }
+  const menuButtonTitle = isAuthenticated
+    ? `${auth.user?.profile.name ?? ''} ${auth.user?.profile.email ?? ''}`.trim()
+    : 'Login';
   return (
     <Box
       style={{
@@ -214,7 +211,7 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
       }}
     >
       <Button
-        title={`${auth.user?.profile.name} ${auth.user?.profile.email}`}
+        title={menuButtonTitle}
         style={{ borderRadius: '5px', width: '100%', margin: '3px' }}
         disableElevation
         endIcon={<KeyboardArrowDownIcon />}
@@ -229,9 +226,23 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
             size={32}
           />
         </Box>
-        <Typography>{auth.user?.profile.name}</Typography>
+        <Typography>{auth.user?.profile.name ?? 'Login'}</Typography>
       </Button>
       <Menu id={menuId} anchorEl={anchorEl} open={open} onClose={handleCloseAll}>
+        {!isAuthenticated && (
+          <>
+            <MenuItem
+              onClick={() => {
+                handleCloseAll();
+                signIn();
+              }}
+            >
+              <LoginIcon fontSize="small" sx={{ mr: 1 }} />
+              Login
+            </MenuItem>
+            <Divider />
+          </>
+        )}
         <MenuItem onClick={(e) => setThemeAnchorEl(e.currentTarget)}>
           <SystemThemeIcon fontSize="small" sx={{ mr: 1 }} />
           Theme
