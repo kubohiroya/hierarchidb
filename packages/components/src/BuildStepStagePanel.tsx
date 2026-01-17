@@ -1,5 +1,5 @@
 import { type FC, memo, type ReactNode } from 'react';
-import { Box, Chip, CircularProgress, LinearProgress, Stack, Typography } from '@mui/material';
+import { Box, Chip, CircularProgress, LinearProgress, Stack, Typography, useTheme } from '@mui/material';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
 
@@ -42,6 +42,7 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
   onCompletedModeUpdate,
   children,
 }) => {
+  const theme = useTheme();
   const completed = taskCount?.Completed ?? 0;
   const failed = taskCount?.Failed ?? 0;
   const skipped = taskCount?.Skip ?? 0;
@@ -57,7 +58,10 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
   const indicatorCount = Math.max(0, Math.floor(concurrencyIndicator?.count ?? 0));
   const isIndicatorRunning = concurrencyIndicator?.isRunning ?? false;
   const indicatorVariant = isIndicatorRunning ? 'indeterminate' : 'determinate';
-  const indicatorSx = isIndicatorRunning ? undefined : { color: 'grey.400' };
+  const indicatorIdleColor = theme.palette.mode === 'dark'
+    ? theme.palette.grey[800]
+    : theme.palette.grey[400];
+  const indicatorSx = isIndicatorRunning ? undefined : { color: indicatorIdleColor };
   return (
     <Box display="flex" flexDirection="column" height="100%" minHeight={0}>
       <Stack spacing={1} sx={{ p: 2 }}>

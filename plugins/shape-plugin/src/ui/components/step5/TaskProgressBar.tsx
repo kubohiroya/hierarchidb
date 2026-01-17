@@ -13,11 +13,13 @@ type TaskProgressBarProps = {
   stages: BuildStage[];
   tasksByStage: Record<string, TaskWithMetadata[]>;
   buildStatus: TaskProgressSummary['buildStatus'];
+  resolveTaskTitle: (task: TaskWithMetadata) => string;
 };
 export const TaskProgressBar = ({
   stages,
   tasksByStage,
   buildStatus,
+  resolveTaskTitle,
 }: TaskProgressBarProps) => {
   const theme = useTheme();
   const setScrollTarget = useSetAtom(taskScrollTargetAtom);
@@ -26,7 +28,7 @@ export const TaskProgressBar = ({
   const runningColor = theme.palette.info.main;
   const failedColor = theme.palette.error.main;
   const skippedColor = theme.palette.warning.main;
-  const segments: Array<{ fill: string; stageId: string; taskId?: string; width: number }> = [];
+  const segments: Array<{ fill: string; stageId: string; taskId?: string; title: string; width: number }> = [];
   stages.forEach((stage) => {
     const fallbackStageId = stage.id === 'transform'
       && stages.length === 1
@@ -62,6 +64,7 @@ export const TaskProgressBar = ({
         fill,
         stageId: stage.id,
         taskId: isExternalStage ? undefined : task.taskId,
+        title: resolveTaskTitle(task),
         width: 1,
       });
     });
@@ -73,7 +76,6 @@ export const TaskProgressBar = ({
   return (
     <Box sx={{ width: '100%', height: rectHeight }}>
       <svg width="100%" height={rectHeight} viewBox={`0 0 ${viewWidth} 1`} preserveAspectRatio="none">
-        <title>---progress---</title>
         {segments.length > 0 ? (() => {
           let offset = 0;
           return segments.map((segment, index) => {
@@ -106,7 +108,9 @@ export const TaskProgressBar = ({
                 tabIndex={segment.taskId ? 0 : undefined}
                 aria-label={segment.taskId ? `Scroll to ${segment.stageId} task` : undefined}
                 style={segment.taskId ? { cursor: 'pointer' } : undefined}
-              />
+              >
+                <title>{segment.title}</title>
+              </rect>
             );
           });
         })() : (

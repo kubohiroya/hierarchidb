@@ -93,6 +93,28 @@ export { useMapFeatureHoverCandidates } from './preview/useMapFeatureHoverCandid
 export { useMapFeatureSelectionGestures } from './preview/useMapFeatureSelectionGestures.js';
 export { MapPreviewSearchPanel } from './preview/MapPreviewSearchPanel.js';
 export { MapPreviewSearchSettingsDialog } from './preview/MapPreviewSearchSettingsDialog.js';
+export {
+  MapInteractionProvider,
+  type MapInteractionProviderProps,
+} from './interaction/MapInteractionProvider.js';
+export {
+  type MapHighlightEntry,
+  type MapHoverCandidate,
+  type MapInteractionInitialState,
+  buildHighlightKey,
+  createMapInteractionStore,
+  mapSearchTextAtom,
+  mapSearchTargetsAtom,
+  mapSearchMatchesAtom,
+  mapSearchMatchKeysAtom,
+  mapHoverCandidatesAtom,
+  mapHoverMatchesAtom,
+  mapHoverMatchKeysAtom,
+  mapHoveredFeaturesAtom,
+  mapSelectedMatchesAtom,
+  mapSelectedMatchKeysAtom,
+  mapViewportFeatureIdsAtom,
+} from './interaction/mapInteractionStore.js';
 export type { MapSearchTargetDefinition, MapSearchTargetGroup } from './preview/mapPreviewSearchTypes.js';
 export type { VectorTileMetadataLoader } from './preview/useVectorTilePreviewMetadata.js';
 export type {

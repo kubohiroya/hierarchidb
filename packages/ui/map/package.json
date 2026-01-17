@@ -20,6 +20,7 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/material": "^7.3.6",
+    "@mui/icons-material": "^7.3.6",
     "react": ">=18.0.0",
     "@vis.gl/react-maplibre": "^8.0.4",
     "maplibre-gl": "^5.7.3",
@@ -34,6 +35,7 @@
   "devDependencies": {
     "react": ">=18.0.0",
     "@mui/material": "^7.3.6",
+    "@mui/icons-material": "^7.3.6",
     "@types/geojson": "^7946.0.8",
     "@deck.gl/core": "^9.1.14",
     "@hierarchidb/common-types": "workspace:*",

@@ -59,6 +59,8 @@ export type UseMapFeatureSearchParams<TargetId extends string, HighlightEntry ex
   targetDefinitions: Record<TargetId, MapSearchTargetDefinition>;
   buildHighlightEntry: (feature?: MapLibreGeoJSONFeature | null) => HighlightEntry | null;
   onMatchesChange: (entries: HighlightEntry[]) => void;
+  onFeaturesChange?: (features: MapLibreGeoJSONFeature[]) => void;
+  onSearchComplete?: (result: { entries: HighlightEntry[]; features: MapLibreGeoJSONFeature[] }) => void;
   setSearchText?: (value: string) => void;
   setSearchTargets?: (updater: (prev: Record<TargetId, boolean>) => Record<TargetId, boolean>) => void;
   onMissingLayers?: (layerIds: string[]) => void;
@@ -78,13 +80,16 @@ export const useMapFeatureSearch = <TargetId extends string, HighlightEntry exte
   targetDefinitions,
   buildHighlightEntry,
   onMatchesChange,
+  onFeaturesChange,
+  onSearchComplete,
   setSearchText,
   setSearchTargets,
   onMissingLayers,
 }: UseMapFeatureSearchParams<TargetId, HighlightEntry>): UseMapFeatureSearchResult<TargetId> => {
   const clearSearchHighlights = useCallback(() => {
     onMatchesChange([]);
-  }, [onMatchesChange]);
+    onFeaturesChange?.([]);
+  }, [onFeaturesChange, onMatchesChange]);
 
   const handleSearchClear = useCallback(() => {
     if (setSearchText) {
@@ -133,6 +138,7 @@ export const useMapFeatureSearch = <TargetId extends string, HighlightEntry exte
     }
 
     const matchedEntries = new Map<string, HighlightEntry>();
+    const matchedFeatures: MapLibreGeoJSONFeature[] = [];
     for (const feature of features) {
       const properties = (feature?.properties ?? {}) as Record<string, unknown>;
       const layerType = feature.layer?.type;
@@ -151,15 +157,21 @@ export const useMapFeatureSearch = <TargetId extends string, HighlightEntry exte
       const entry = buildHighlightEntry(feature);
       if (!entry) continue;
       matchedEntries.set(`${entry.source}:${entry.id}`, entry);
+      matchedFeatures.push(feature);
     }
 
-    onMatchesChange(Array.from(matchedEntries.values()));
+    const entryList = Array.from(matchedEntries.values());
+    onMatchesChange(entryList);
+    onFeaturesChange?.(matchedFeatures);
+    onSearchComplete?.({ entries: entryList, features: matchedFeatures });
   }, [
     buildHighlightEntry,
     clearSearchHighlights,
     highlightLayerIds,
     mapInstance,
     onMatchesChange,
+    onFeaturesChange,
+    onSearchComplete,
     onMissingLayers,
     searchText,
     searchTargets,

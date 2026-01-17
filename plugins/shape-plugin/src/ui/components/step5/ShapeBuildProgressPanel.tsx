@@ -183,6 +183,7 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
             stages={[stage]}
             tasksByStage={{ [stage.id]: stageTasks }}
             buildStatus={summary.buildStatus}
+            resolveTaskTitle={resolveTaskTitle}
           />
           <LinearProgress
             variant="indeterminate"
@@ -275,6 +276,7 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
               summary={summary}
               stages={stages}
               tasksByStage={tasksByStage}
+              resolveTaskTitle={resolveTaskTitle}
             />
           ) : undefined}
           startIcon={<ConstructionIcon fontSize="small" />}

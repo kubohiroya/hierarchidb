@@ -14,6 +14,7 @@ export type MapPreviewSearchPanelProps = {
   fitScreenIcon?: ReactNode;
   fitScreenDisabled?: boolean;
   showFitScreenButton?: boolean;
+  showSettingsButton?: boolean;
   placeholder?: string;
   containerSx?: SxProps;
   panelSx?: SxProps;
@@ -31,6 +32,7 @@ export const MapPreviewSearchPanel = ({
   fitScreenIcon,
   fitScreenDisabled = false,
   showFitScreenButton = true,
+  showSettingsButton = true,
   placeholder = '検索...',
   containerSx,
   panelSx,
@@ -85,13 +87,15 @@ export const MapPreviewSearchPanel = ({
                     {fitScreenIcon}
                   </IconButton>
                 ) : null}
-                <IconButton
-                  aria-label="Search settings"
-                  size="small"
-                  onClick={onOpenSettings}
-                >
-                  {settingsIcon}
-                </IconButton>
+                {showSettingsButton ? (
+                  <IconButton
+                    aria-label="Search settings"
+                    size="small"
+                    onClick={onOpenSettings}
+                  >
+                    {settingsIcon}
+                  </IconButton>
+                ) : null}
               </InputAdornment>
             ),
           }}

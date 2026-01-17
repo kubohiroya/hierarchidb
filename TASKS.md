@@ -33,6 +33,38 @@
   - update: 2026-01-17 09:00 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
   - done: 2026-01-17 09:00 JST Step5 進捗バーのホバー表示をタスクタイトルへ切り替え完了。
 
+2226) fix/ui-map/fitscreen-button-spacing (P1) — 進行中 (2026-01-17)
+- ブランチ名: fix/ui-map/fitscreen-button-spacing
+- 依存: なし
+- 受け入れ基準: FitScreen ボタンに paddingRight: 4px が適用される／variant が "compound" になる／height が 48px になる／既存の位置・disabled 条件・クリック挙動に影響がない／pnpm typecheck が exit 0 で完走する
+- 影響範囲: `packages/ui/map/src/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、FitScreen ボタンの表示設定を修正前に戻す
+- チェックリスト:
+  - FitScreen ボタンに paddingRight: 4px を設定する
+  - FitScreen ボタンの variant を "compound" に設定する
+  - FitScreen ボタンの高さを 48px に設定する
+  - 既存挙動が維持されることを確認する
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-17 09:09 JST FitScreen ボタンの paddingRight/variant/height 調整に着手。
+
+2227) fix/shape/step5-stage-progress-dark-grey (P1) — 進行中 (2026-01-17)
+- ブランチ名: fix/shape/step5-stage-progress-dark-grey
+- 依存: なし
+- 受け入れ基準: Step5 のステージ稼働なし時のCircularProgressが dark テーマでより黒に近い暗い灰色になる／light テーマの表示は維持される／稼働中の表示ロジックは既存のまま／pnpm typecheck が exit 0 で完走する
+- 影響範囲: `packages/components/src/BuildStepStagePanel.tsx`
+- ロールバック手順: 該当差分を revert し、dark テーマの色を修正前に戻す
+- チェックリスト:
+  - dark テーマ時の稼働なし色を調整する
+  - light テーマが維持されることを確認する
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-17 09:11 JST Step5 稼働なしの dark テーマ灰色調整に着手。
+  - update: 2026-01-17 09:12 JST BuildStepStagePanel の dark テーマ用 grey を暗めに調整。
+  - blocked: 2026-01-17 09:12 JST pnpm typecheck が @hierarchidb/ui-map の既存型エラーで失敗（ResourceLayerMap.tsx の minLng/minLat/maxLng/maxLat, MapHoverCandidate 型, MapPreviewSearchPanelProps, jotai Store）。
+
 2220) feat/shape/transform-exclusion-ui (P1) — 進行中 (2026-01-18)
 - ブランチ名: feat/shape/transform-exclusion-ui
 - 依存: なし

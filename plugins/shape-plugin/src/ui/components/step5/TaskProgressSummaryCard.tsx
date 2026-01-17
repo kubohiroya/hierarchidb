@@ -9,12 +9,14 @@ type TaskProgressSummaryCardProps = {
   summary: TaskProgressSummary;
   stages: BuildStage[];
   tasksByStage: Record<string, TaskWithMetadata[]>;
+  resolveTaskTitle: (task: TaskWithMetadata) => string;
 };
 
 export const TaskProgressSummaryCard = ({
                                     summary,
                                     stages,
-                                    tasksByStage
+                                    tasksByStage,
+                                    resolveTaskTitle,
                                   }: TaskProgressSummaryCardProps) => {
   const { t } = useTranslation();
   return (
@@ -47,6 +49,7 @@ export const TaskProgressSummaryCard = ({
             stages={stages}
             tasksByStage={tasksByStage}
             buildStatus={summary.buildStatus}
+            resolveTaskTitle={resolveTaskTitle}
           />
           <LinearProgress
             variant="indeterminate"
