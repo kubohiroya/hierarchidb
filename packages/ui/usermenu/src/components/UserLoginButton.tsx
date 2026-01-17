@@ -1,7 +1,8 @@
 import { AuthProviderDialog, UserAvatar } from '@hierarchidb/ui-auth';
 import LoginIcon from '@mui/icons-material/Login';
 import { IconButton } from '@mui/material';
-import React, { useMemo, useState } from 'react';
+import type React from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ClearDatabaseDialog } from './ClearDatabaseDialog.js';
 import { LanguageMenu, type LanguageOption } from './LanguageMenu.js';
