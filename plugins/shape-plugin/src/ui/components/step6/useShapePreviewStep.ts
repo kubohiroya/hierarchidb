@@ -27,7 +27,7 @@ import {
 import { getDBName } from '@hierarchidb/util';
 //import { getShapeDbAPIClient } from '../../../services/batch/ShapeBuildAPIClient.ts';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
-import { useVectorTileFeatureTable } from './useVectorTileFeatureTable.ts';
+import { useVectorTileFeatureTable } from './useVectorTileFeatureTable.tsx';
 import { shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
 
 type ShapePreviewDraft = Partial<ShapeEntity> & {
@@ -600,6 +600,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     sortDirection: featureSortDirection,
     handleSort: handleFeatureSort,
   } = useVectorTileFeatureTable(featureMetadataRows, matchedFeatureIdSet, featureSearchKeyword, transformErrorRows);
+
   const selectedFeatureIdSet = useMemo(() => new Set(selectedFeatureIds), [selectedFeatureIds]);
 
   useEffect(() => {
@@ -696,7 +697,6 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     handleFeatureSort,
     featureColumns,
     featureTableRows,
-    matchedIdSet,
     matchedFeatureIdSet,
     selectedIdSet,
     hoveredIdSet,

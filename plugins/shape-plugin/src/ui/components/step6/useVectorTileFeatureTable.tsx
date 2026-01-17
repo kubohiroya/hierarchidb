@@ -52,25 +52,25 @@ export const useVectorTileFeatureTable = (
     });
     const rows = metadataRows.map((row) => {
       const errorCount = errorByFeatureId.get(row.featureId ?? '')?.count ?? 0;
-      return ({
-      id: row.featureId ?? row.id,
-      rawId: row.id,
-      featureId: row.featureId ?? '',
-      countryName: row.countryName ?? '',
-      countryCode: row.countryCode ?? '',
-      adminName: row.adminName ?? '',
-      adminLevel: row.adminLevel != null ? `ADM${row.adminLevel}` : '',
-      adminCode: row.adminCode ?? '',
-      dataSource: row.dataSource ?? '',
-      createdAt: row.createdAt ? new Date(row.createdAt).toLocaleString() : '',
-      vertexCount: normalizeCount(row.vertexCount),
-      polygonCount: normalizeCount(row.polygonCount),
-      bbox: formatBBox(row.bbox),
-      area: formatArea(row.area),
-      status: errorCount > 0 ? 'failed' : 'completed',
-      errorCount,
-      errorMessage: (errorByFeatureId.get(row.featureId ?? '')?.messages ?? []).slice(0, 2).join(' / '),
-    });
+      return {
+        id: row.featureId ?? row.id,
+        rawId: row.id,
+        featureId: row.featureId ?? '',
+        countryName: row.countryName ?? '',
+        countryCode: row.countryCode ?? '',
+        adminName: row.adminName ?? '',
+        adminLevel: row.adminLevel != null ? `ADM${row.adminLevel}` : '',
+        adminCode: row.adminCode ?? '',
+        dataSource: row.dataSource ?? '',
+        createdAt: row.createdAt ? new Date(row.createdAt).toLocaleString() : '',
+        vertexCount: normalizeCount(row.vertexCount),
+        polygonCount: normalizeCount(row.polygonCount),
+        bbox: formatBBox(row.bbox),
+        area: formatArea(row.area),
+        status: errorCount > 0 ? 'failed' : 'completed',
+        errorCount,
+        errorMessage: (errorByFeatureId.get(row.featureId ?? '')?.messages ?? []).slice(0, 2).join(' / '),
+      };
     });
     const keyword = searchKeyword.trim().toLowerCase();
     const filtered = keyword

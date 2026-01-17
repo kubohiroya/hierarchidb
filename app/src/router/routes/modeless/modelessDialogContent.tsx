@@ -31,7 +31,6 @@ import { getDBName } from '@hierarchidb/util';
 import { useAtomValue, useSetAtom } from 'jotai';
 import {
   mapHoverMatchesAtom,
-  mapLayerInfoAtom,
   mapSearchMatchesAtom,
   mapSelectedMatchesAtom,
   mapViewportFeatureIdsAtom,
@@ -42,6 +41,7 @@ import type {
   MapLayerInfo,
   MapNodeType,
 } from '../../../state/mapSearch.atoms.js';
+import { mapLayerInfoAtom } from '../../../state/mapSearch.atoms.js';
 import type { MapStylerSummary } from '../map/types.js';
 
 export type MapInfoSummary = {
@@ -85,6 +85,9 @@ type DataGridPagination = {
   onPageChange: (next: number) => void;
   onRowsPerPageChange: (next: number) => void;
 };
+
+const isMapNodeType = (value?: string): value is MapNodeType =>
+  value === 'shape' || value === 'location' || value === 'route';
 
 const buildColumns = (names: string[]): GridColumn[] =>
   names.map((name) => ({
@@ -657,7 +660,9 @@ export const MapGeneratedDataContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }
   }, [mapLayerInfo]);
 
   const resolveEntryLayerInfo = useCallback((entry: MapHighlightEntry) => {
-    if (entry.nodeId && entry.nodeType) return { nodeId: entry.nodeId, nodeType: entry.nodeType };
+    if (entry.nodeId && isMapNodeType(entry.nodeType)) {
+      return { nodeId: entry.nodeId, nodeType: entry.nodeType };
+    }
     if (entry.layerId && layerInfoById.has(entry.layerId)) {
       const info = layerInfoById.get(entry.layerId);
       if (info) return { nodeId: info.nodeId, nodeType: info.nodeType };

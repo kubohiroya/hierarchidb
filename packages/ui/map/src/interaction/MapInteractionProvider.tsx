@@ -1,6 +1,7 @@
 import type React from 'react';
 import { useEffect, useMemo, useRef } from 'react';
-import { Provider, type Store, useStore } from 'jotai';
+import { Provider, useStore } from 'jotai';
+import type { Store } from 'jotai/vanilla/store';
 import {
   type MapInteractionInitialState,
   createMapInteractionStore,

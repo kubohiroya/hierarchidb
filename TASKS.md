@@ -80,6 +80,11 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-18 19:00 JST Step6 のタブ撤去とプレビュー/一覧統合表示に着手。
+  - update: 2026-01-18 19:25 JST Step6 プレビューのタブ撤去と地図常時表示、フローティング一覧統合の実装に着手。
+  - blocked: 2026-01-18 19:30 JST pnpm typecheck が packages/ui/map の ResourceLayerMap bounds 型推論と jotai Store import で失敗。
+  - update: 2026-01-18 19:40 JST ui-map/plugin-service-api の dist を再ビルドし、Step6 プレビューのフローティング一覧を一本化。
+  - update: 2026-01-18 19:41 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - done: 2026-01-18 19:41 JST Step6 のタブ廃止とフローティング一覧統合、地図常時表示を完了。
 
 2220) feat/shape/transform-exclusion-ui (P1) — 進行中 (2026-01-18)
 - ブランチ名: feat/shape/transform-exclusion-ui
@@ -202,6 +207,11 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-18 19:40 JST ゼロポリゴン時の成功扱いとビルド失敗判定の修正に着手。
+  - update: 2026-01-18 20:05 JST transform の simplified features empty を失敗扱いから除外。
+  - update: 2026-01-18 20:20 JST ui-map/plugin-service-api の dist を更新（pnpm --filter @hierarchidb/ui-map build / pnpm --filter @hierarchidb/plugin-service-api build）。
+  - update: 2026-01-18 20:25 JST app の modeless dialog で mapLayerInfoAtom の参照先を修正し MapNodeType ガードを追加。
+  - update: 2026-01-18 20:30 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - done: 2026-01-18 20:31 JST ゼロポリゴン時の成功扱いとビルド失敗判定の前提を反映。
 
 2223) chore/shape/template-buildconfig-default-audit (P1) — 進行中 (2026-01-18)
 - ブランチ名: chore/shape/template-buildconfig-default-audit

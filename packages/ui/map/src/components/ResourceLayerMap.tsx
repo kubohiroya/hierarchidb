@@ -50,6 +50,7 @@ type BasemapStyleEntry = {
 
 type MapLayerType = NonNullable<VectorTileLayerConfig['layerType']>;
 type LayerStyleOverrides = Partial<Record<MapLayerType, Record<string, unknown>>>;
+type Bounds = { minLng: number; minLat: number; maxLng: number; maxLat: number };
 
 export type ResourceVectorLayer = VectorTileDataSource & {
   nodeId: string;
@@ -394,7 +395,7 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
   const fitSearchPadding = searchConfig?.fitPadding ?? 64;
 
   const visitCoordinates = useCallback(
-    (coords: unknown, bounds: { minLng: number; minLat: number; maxLng: number; maxLat: number } | null) => {
+    (coords: unknown, bounds: Bounds | null): Bounds | null => {
       if (!Array.isArray(coords)) return bounds;
       if (coords.length >= 2 && typeof coords[0] === 'number' && typeof coords[1] === 'number') {
         const [lng, lat] = coords;
@@ -419,17 +420,18 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
   const fitToFeatures = useCallback(
     (features: MapLibreGeoJSONFeature[], padding: number) => {
       if (!mapInstance || features.length === 0) return;
-      let bounds: { minLng: number; minLat: number; maxLng: number; maxLat: number } | null = null;
+      let bounds: Bounds | null = null;
       features.forEach((feature) => {
         const geometry = (feature as { geometry?: { coordinates?: unknown } }).geometry;
         if (!geometry?.coordinates) return;
         bounds = visitCoordinates(geometry.coordinates, bounds);
       });
       if (!bounds) return;
+      const resolvedBounds: Bounds = bounds;
       mapInstance.fitBounds(
         [
-          [bounds.minLng, bounds.minLat],
-          [bounds.maxLng, bounds.maxLat],
+          [resolvedBounds.minLng, resolvedBounds.minLat],
+          [resolvedBounds.maxLng, resolvedBounds.maxLat],
         ],
         { padding },
       );

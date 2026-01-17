@@ -1,5 +1,4 @@
 import type React from 'react';
-import { useState } from 'react';
 import { Box, Typography, Alert, Snackbar, CircularProgress, Paper } from '@mui/material';
 import { ResourceLayerMap } from '@hierarchidb/ui-map';
 import { GenericDataGrid } from '@hierarchidb/ui-grid';
@@ -27,6 +26,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
     matchedFeatureIdSet,
     selectedFeatureIds,
     setSelectedFeatureIds,
+    setHoveredId,
     featureSortColumn,
     featureSortDirection,
     handleFeatureSort,
@@ -52,7 +52,6 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
     highlightOverridesByType,
     geoJsonLayers,
     attributionItems,
-    mapInstance,
   } = useShapePreviewStepView(data ?? {}, nodeId);
   const renderMapPreview = () => {
     const hasRemoteTiles = Boolean(tilesUrl);

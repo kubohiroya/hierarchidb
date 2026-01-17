@@ -884,13 +884,6 @@ export const createTransformByBandHandler = (
           errorMessage: `transform failed: geometry simplify error (extract1/${band.zMax}) (${err}) (invalidFeatures=${errorFeatureCount}/${inputFeatureCount}, invalidPolygons=${errorPolygonCount}/${inputPolygonCount}, missingGeometry=${inputMissingGeometry}, invalidGeometries=${invalidFeatureCount}, invalidAfterSnap=${invalidAfterSnapCount}, invalidAfterClean=${invalidAfterCleanCount}) (invalidRings=${invalidRingCount}, openRings=${openRingCount}, emptyRings=${emptyRingCount}, nonFiniteCoords=${nonFiniteCoordCount}, minRingVertices=${minRingVertices ?? '-'}) (selfIntersections=${selfIntersectionCount}, degenerateRings=${degenerateRingCount}, duplicateVertices=${duplicateVertexCount}, minRingArea=${formatArea(minRingArea)}, maxRingArea=${formatArea(maxRingArea)}, maxRingVertices=${maxRingVertices ?? '-'}, avgRingVertices=${formatAverage(avgRingVertices)})${sampleDetails.length ? ` (samples=${sampleDetails.join(' | ')})` : ''}${analysisNote}`,
         };
       }
-      if (simplified.features.length === 0) {
-        return {
-          status: 'failed',
-          errorMessage: `transform failed: simplified features empty (features=${inputFeatureCount}, polygons=${inputPolygonCount}, missingGeometry=${inputMissingGeometry})`,
-        };
-      }
-
       const adminLevel = input.adminLevel;
       const layerName = typeof adminLevel === 'number' ? `admin${adminLevel}` : 'admin0';
       const boundaryLayerName = typeof adminLevel === 'number'
