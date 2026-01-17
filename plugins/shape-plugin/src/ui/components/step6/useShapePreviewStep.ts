@@ -50,6 +50,42 @@ const DEFAULT_VIEW: MapWithVectorTilesProps['initialViewState'] = {
 const DEFAULT_BOUNDS_MARGIN = 0.1;
 const MIN_BOUNDS_MARGIN = 0.25;
 
+const normalizeText = (value?: string): string | undefined => {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+};
+
+const normalizeCountryCodeValue = (value?: string): string | undefined => {
+  const trimmed = normalizeText(value);
+  if (!trimmed) return undefined;
+  const upper = trimmed.toUpperCase();
+  const dashIndex = upper.indexOf('-');
+  if (dashIndex > 0) return upper.slice(0, dashIndex);
+  return upper;
+};
+
+const parseSourceKey = (sourceKey?: string): { countryCode?: string; adminLevel?: number } => {
+  const trimmed = normalizeText(sourceKey);
+  if (!trimmed) return {};
+  const [countryCodeRaw, adminLevelRaw] = trimmed.split(':');
+  const adminLevel = adminLevelRaw != null ? Number(adminLevelRaw) : undefined;
+  return {
+    countryCode: normalizeCountryCodeValue(countryCodeRaw),
+    adminLevel: Number.isFinite(adminLevel) ? adminLevel : undefined,
+  };
+};
+
+const buildLookupKey = (countryCode?: string, adminLevel?: number): string | null => {
+  if (!countryCode || adminLevel == null) return null;
+  return `${countryCode}:${adminLevel}`;
+};
+
+const isNumericId = (value?: string): boolean => {
+  if (!value) return false;
+  return /^[0-9]+$/.test(value);
+};
+
 const fetchTileSummary = async (nodeId: string) => {
   const summary = await shapeQueryAPIImpl.getVectorTileSummary(toNodeId(nodeId));
   return { tiles: summary.tiles, totalBytes: summary.totalBytes };
@@ -318,6 +354,18 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     return { byCode, byName };
   }, [selectionMetadata]);
 
+  const selectionLookup = useMemo(() => {
+    const byCode = new Map<string, FetchTaskPayload>();
+    const byName = new Map<string, FetchTaskPayload>();
+    selectionMetadata.forEach((entry) => {
+      const code = normalizeCountryCodeValue(entry.countryCode);
+      const name = normalizeText(entry.countryName)?.toLowerCase();
+      if (code) byCode.set(code, entry);
+      if (name) byName.set(name, entry);
+    });
+    return { byCode, byName };
+  }, [selectionMetadata]);
+
   const filteredMetadataRows = useMemo(() => {
     if (!selectionFilters) return rawSourceMetadataRows;
     return rawSourceMetadataRows.filter((row) => {
@@ -339,6 +387,71 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   const sourceMetadataRows = filteredMetadataRows;
   const featureMetadataRows = rawFeatureMetadataRows;
   const transformErrorRows = rawTransformErrorRows;
+
+  const sourceMetadataLookup = useMemo(() => {
+    const bySourceKey = new Map<string, ShapeSourceMetadata>();
+    const byCountryName = new Map<string, ShapeSourceMetadata>();
+    const byCountryCode = new Map<string, ShapeSourceMetadata>();
+    sourceMetadataRows.forEach((row) => {
+      const code = normalizeCountryCodeValue(row.countryCode);
+      const level = row.adminLevel;
+      const name = normalizeText(row.countryName)?.toLowerCase();
+      if (code && level != null) {
+        bySourceKey.set(`${code}:${level}`, row);
+      }
+      if (name && level != null) {
+        byCountryName.set(`${name}:${level}`, row);
+      }
+      if (code && level === 0) {
+        byCountryCode.set(code, row);
+      }
+    });
+    return { bySourceKey, byCountryName, byCountryCode };
+  }, [sourceMetadataRows]);
+
+  const resolveSourceContext = useCallback((input: {
+    countryCode?: string;
+    countryName?: string;
+    adminLevel?: number;
+    sourceKey?: string;
+    dataSource?: string;
+  }) => {
+    const parsedSourceKey = parseSourceKey(input.sourceKey);
+    const candidateAdminLevel = input.adminLevel ?? parsedSourceKey.adminLevel;
+    const candidateCode = normalizeCountryCodeValue(input.countryCode) ?? parsedSourceKey.countryCode;
+    const candidateNameInput = normalizeText(input.countryName);
+    const selectionByCode = candidateCode ? selectionLookup.byCode.get(candidateCode) : undefined;
+    const selectionByName = candidateNameInput
+      ? selectionLookup.byName.get(candidateNameInput.toLowerCase())
+      : undefined;
+    const candidateName = candidateNameInput
+      ?? normalizeText(selectionByCode?.countryName)
+      ?? normalizeText(selectionByName?.countryName);
+    const lookupKey = buildLookupKey(candidateCode, candidateAdminLevel);
+    const sourceByKey = lookupKey ? sourceMetadataLookup.bySourceKey.get(lookupKey) : undefined;
+    const sourceByName = candidateName && candidateAdminLevel != null
+      ? sourceMetadataLookup.byCountryName.get(`${candidateName.toLowerCase()}:${candidateAdminLevel}`)
+      : undefined;
+    const sourceByCode = candidateCode ? sourceMetadataLookup.byCountryCode.get(candidateCode) : undefined;
+    const sourceRow = sourceByKey ?? sourceByName ?? sourceByCode;
+    const countryCode = normalizeCountryCodeValue(sourceRow?.countryCode)
+      ?? candidateCode
+      ?? normalizeCountryCodeValue(selectionByCode?.countryCode)
+      ?? normalizeCountryCodeValue(selectionByName?.countryCode);
+    const countryName = normalizeText(sourceRow?.countryName) ?? candidateName ?? candidateNameInput;
+    const adminLevel = sourceRow?.adminLevel ?? candidateAdminLevel;
+    const dataSource = sourceRow?.dataSource ?? input.dataSource ?? selectionDataSource;
+    return {
+      countryCode,
+      countryName,
+      adminLevel,
+      dataSource,
+      sourceKey: parsedSourceKey.countryCode && parsedSourceKey.adminLevel != null
+        ? `${parsedSourceKey.countryCode}:${parsedSourceKey.adminLevel}`
+        : input.sourceKey,
+    };
+  }, [selectionDataSource, selectionLookup.byCode, selectionLookup.byName, sourceMetadataLookup]);
+
   const updateBounds = useCallback(
     (bounds: { minLng: number; minLat: number; maxLng: number; maxLat: number } | null, lng: number, lat: number) => {
       if (!bounds) {
@@ -417,11 +530,37 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     };
   }, [filteredMetadataRows]);
 
+  const normalizedTransformErrorRows = useMemo(() => transformErrorRows.map((row) => {
+    const context = resolveSourceContext({
+      countryCode: row.countryCode,
+      countryName: row.countryName,
+      adminLevel: row.adminLevel,
+      sourceKey: row.sourceKey,
+    });
+    const rawFeatureId = normalizeText(row.featureId);
+    const fallbackId = normalizeText(row.id);
+    const normalizedFeatureId = !rawFeatureId || isNumericId(rawFeatureId)
+      ? [
+        context.countryCode ?? 'XX',
+        context.adminLevel != null ? `ADM${context.adminLevel}` : 'ADM?',
+        context.sourceKey,
+        row.featureIndex != null ? String(row.featureIndex) : fallbackId ?? rawFeatureId ?? '0',
+      ].filter(Boolean).join(':')
+      : rawFeatureId;
+    return {
+      ...row,
+      featureId: normalizedFeatureId,
+      countryName: context.countryName ?? row.countryName,
+      countryCode: context.countryCode ?? row.countryCode,
+      adminLevel: context.adminLevel ?? row.adminLevel,
+    };
+  }), [resolveSourceContext, transformErrorRows]);
+
   const selectedErrorBounds = useMemo(() => {
     if (selectedFeatureIds.length === 0) return null;
     const selectedSet = new Set(selectedFeatureIds);
     let bounds: { minLng: number; minLat: number; maxLng: number; maxLat: number } | null = null;
-    transformErrorRows.forEach((row) => {
+    normalizedTransformErrorRows.forEach((row) => {
       if (!row.featureId || !selectedSet.has(row.featureId)) return;
       row.lineFeatures?.features?.forEach((feature) => {
         const geometry = (feature as { geometry?: { coordinates?: unknown } }).geometry;
@@ -430,7 +569,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       });
     });
     return finalizeBounds(bounds);
-  }, [finalizeBounds, selectedFeatureIds, transformErrorRows, visitCoordinates]);
+  }, [finalizeBounds, normalizedTransformErrorRows, selectedFeatureIds, visitCoordinates]);
 
   const initialViewState = useMemo<MapWithVectorTilesProps['initialViewState']>(() => {
     if (!selectionBounds) {
@@ -570,43 +709,68 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   });
 
   const toFeatureListRow = useCallback(
-    (row: ShapeFeatureMetadata): ShapePreviewFeatureRow => ({
-      id: row.id,
-      featureId: row.featureId,
-      countryName: row.countryName,
-      countryCode: row.countryCode,
-      adminName: row.adminName,
-      adminLevel: row.adminLevel,
-      adminCode: row.adminCode,
-      dataSource: row.dataSource,
-      createdAt: row.createdAt,
-      vertexCount: row.vertexCount,
-      polygonCount: row.polygonCount,
-      bbox: row.bbox,
-      area: row.area,
-    }),
-    [],
+    (row: ShapeFeatureMetadata): ShapePreviewFeatureRow => {
+      const context = resolveSourceContext({
+        countryCode: row.countryCode,
+        countryName: row.countryName,
+        adminLevel: row.adminLevel,
+        dataSource: row.dataSource,
+      });
+      const adminLevel = context.adminLevel ?? row.adminLevel;
+      const adminName = normalizeText(row.adminName)
+        ?? (adminLevel === 0 ? context.countryName : undefined);
+      const adminCode = normalizeText(row.adminCode)
+        ?? (adminLevel === 0 ? context.countryCode : undefined);
+      return {
+        id: row.id,
+        featureId: row.featureId,
+        countryName: context.countryName ?? row.countryName,
+        countryCode: context.countryCode ?? row.countryCode,
+        adminName,
+        adminLevel,
+        adminCode,
+        dataSource: context.dataSource ?? row.dataSource,
+        createdAt: row.createdAt,
+        vertexCount: row.vertexCount,
+        polygonCount: row.polygonCount,
+        bbox: row.bbox,
+        area: row.area,
+      };
+    },
+    [resolveSourceContext],
   );
 
   const featureListRows = useMemo<ShapePreviewFeatureRow[]>(() => {
     const rows = featureMetadataRows.map((row) => toFeatureListRow(row));
     const existing = new Set(rows.map((row) => row.featureId ?? row.id));
-    transformErrorRows.forEach((errorRow) => {
+    normalizedTransformErrorRows.forEach((errorRow) => {
       const featureId = errorRow.featureId;
       if (!featureId) return;
       if (existing.has(featureId)) return;
+      const context = resolveSourceContext({
+        countryCode: errorRow.countryCode,
+        countryName: errorRow.countryName,
+        adminLevel: errorRow.adminLevel,
+        sourceKey: errorRow.sourceKey,
+      });
+      const adminLevel = context.adminLevel ?? errorRow.adminLevel;
+      const adminName = adminLevel === 0 ? context.countryName : undefined;
+      const adminCode = adminLevel === 0 ? context.countryCode : undefined;
       rows.push({
         id: featureId,
         featureId,
-        countryName: errorRow.countryName,
-        countryCode: errorRow.countryCode,
-        adminLevel: errorRow.adminLevel,
+        countryName: context.countryName ?? errorRow.countryName,
+        countryCode: context.countryCode ?? errorRow.countryCode,
+        adminName,
+        adminLevel,
+        adminCode,
+        dataSource: context.dataSource,
         createdAt: errorRow.createdAt,
       });
       existing.add(featureId);
     });
     return rows;
-  }, [featureMetadataRows, toFeatureListRow, transformErrorRows]);
+  }, [featureMetadataRows, normalizedTransformErrorRows, resolveSourceContext, toFeatureListRow]);
 
   const getFeatureRowId = useCallback((row: ShapePreviewFeatureRow) => String(row.id), []);
   const buildFeatureSearchText = useCallback((row: ShapePreviewFeatureRow) => (
@@ -638,11 +802,11 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   );
 
   const errorSummaryById = useMemo<MapPreviewErrorSummaryById>(() => (
-    buildErrorSummaryById(transformErrorRows, {
+    buildErrorSummaryById(normalizedTransformErrorRows, {
       getId: (row) => row.featureId ?? undefined,
       getMessage: (row) => row.message ?? undefined,
     })
-  ), [transformErrorRows]);
+  ), [normalizedTransformErrorRows]);
 
   const selectedFeatureIdSet = useMemo(() => new Set(selectedFeatureIds), [selectedFeatureIds]);
 
@@ -665,8 +829,8 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   }, [buildMapEntry, hoveredId, setMapHoverMatches]);
 
   const errorLineCollection = useMemo<ShapeTransformErrorRecord['lineFeatures'] | null>(() => {
-    if (transformErrorRows.length === 0) return null;
-    const features = transformErrorRows.flatMap((row) => {
+    if (normalizedTransformErrorRows.length === 0) return null;
+    const features = normalizedTransformErrorRows.flatMap((row) => {
       const isSelected = row.featureId ? selectedFeatureIdSet.has(row.featureId) : false;
       return (row.lineFeatures?.features ?? []).map((feature) => ({
         ...feature,
@@ -677,7 +841,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       }));
     });
     return features.length ? { type: 'FeatureCollection', features } : null;
-  }, [selectedFeatureIdSet, transformErrorRows]);
+  }, [normalizedTransformErrorRows, selectedFeatureIdSet]);
 
   useEffect(() => {
     if (!mapInstance) return;
@@ -719,7 +883,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     featureMetadataLoading,
     featureMetadataError,
     featureMetadataLoaded,
-    transformErrorRows,
+    transformErrorRows: normalizedTransformErrorRows,
     transformErrorLoading,
     transformErrorError,
     transformErrorLoaded,

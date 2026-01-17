@@ -37,6 +37,9 @@
   - update: 2026-01-19 04:18 JST Step6 フィーチャーテーブルの状態ソート不具合と ADM0/ADM1 表示差分の由来を調査。
   - update: 2026-01-19 04:26 JST 状態カラムのソート用フィールドを追加し、ADM0/ADM1 の表示由来を整理。
   - done: 2026-01-19 04:27 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-19 04:40 JST Step6 フィーチャー一覧の Country/Admin/DataSource 正規化と FeatureID 一意化の対応に着手。
+  - update: 2026-01-19 05:02 JST Step6 フィーチャー一覧の Country/Admin/DataSource 正規化と Transform エラー行の FeatureID 一意化を実装。
+  - done: 2026-01-19 05:03 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
 
 2247) feat/shape/transform-preprocess-diagnostics (P1) — 進行中 (2026-01-18)
 - ブランチ名: feat/shape/transform-preprocess-diagnostics
