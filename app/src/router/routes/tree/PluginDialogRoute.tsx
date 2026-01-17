@@ -3,13 +3,10 @@
  * Integrates plugin console with React Router
  */
 
-import { NodeAction, type NodeId, type TreeId } from '@hierarchidb/common-types';
 import { PluginDialogHost } from '@hierarchidb/ui-plugin-shell/plugin-ui-host';
-import { useLoaderData, useLocation, useNavigate } from '@tanstack/react-router';
-import React from 'react';
+import { useLoaderData } from '@tanstack/react-router';
 import type { LoadNodeActionReturn } from '../../loaders/treeLoaders.js';
-import { TREE_CONSOLE_SETTINGS_STORAGE_KEY, loadTreeConsoleSettings } from '@hierarchidb/util';
-import { shiftBuildQueue } from '../../pages/tree/console/buildQueue.ts';
+import { usePluginDialogRoute } from './usePluginDialogRoute.js';
 
 type TreeDialogRouteParams = {
   treeId: string;
@@ -35,154 +32,31 @@ export interface PluginDialogRouteProps {
 }
 
 const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ data }) => {
-  const { tree, pageNodeId, targetNodeId, nodeType, action, params } = data;
-
-  const navigate = useNavigate();
-  const location = useLocation();
-  const searchParams = React.useMemo(
-    () => new URLSearchParams(location.searchStr ?? ''),
-    [location.searchStr],
-  );
-  const autoBuildEnabled = searchParams.get('build') === '1';
-  const buildQueueKey = searchParams.get('buildQueue') ?? undefined;
-  const returnToParam = searchParams.get('returnTo') ?? undefined;
-  // State
-  const [isOpen, setIsOpen] = React.useState(true);
-  const [backdropDismissEnabled, setBackdropDismissEnabled] = React.useState<boolean>(() => {
-    const stored = loadTreeConsoleSettings().dialogBackdropDismissEnabled;
-    return typeof stored === 'boolean' ? stored : false;
-  });
-
-  React.useEffect(() => {
-    const global = typeof window !== 'undefined' ? window : null;
-    if (!global) return undefined;
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key && event.key !== TREE_CONSOLE_SETTINGS_STORAGE_KEY) return;
-      const stored = loadTreeConsoleSettings().dialogBackdropDismissEnabled;
-      setBackdropDismissEnabled(typeof stored === 'boolean' ? stored : false);
-    };
-    global.addEventListener('storage', handleStorage);
-    return () => {
-      global.removeEventListener('storage', handleStorage);
-    };
-  }, []);
-
-  const treeId: TreeId | undefined = tree?.id ?? (params.treeId as TreeId | undefined);
-  const effectiveTargetNodeId: NodeId | undefined =
-    targetNodeId ?? (params.targetNodeId as NodeId | undefined);
-  const effectivePageNodeId: NodeId | undefined =
-    pageNodeId ??
-    (params.pageNodeId as NodeId | undefined) ??
-    (treeId ? (`${treeId}:root` as NodeId) : undefined);
-  const effectiveNodeType: string | undefined = nodeType ?? params.nodeType;
-  const effectiveAction: NodeAction | undefined = action ?? toNodeAction(params.action);
-
-  const isReady = Boolean(
-    treeId && effectiveTargetNodeId && effectivePageNodeId && effectiveNodeType && effectiveAction
-  );
-
-  const stepParam = React.useMemo(() => {
-    if (params.step) return params.step;
-    const hash = location.hash ?? '';
-    const usesHashRouting = hash.startsWith('#/');
-    const pathWithQuery = usesHashRouting ? hash.slice(1) : (location.pathname ?? '');
-    const pathOnly = pathWithQuery.split('?')[0] ?? '';
-    const normalizedPath = pathOnly.startsWith('/') ? pathOnly : `/${pathOnly}`;
-    const segments = normalizedPath.split('/').filter(Boolean);
-    const tIndex = segments.indexOf('t');
-    if (tIndex < 0) return null;
-    const stepSegment = segments[tIndex + 7];
-    if (!stepSegment) return null;
-    const parsed = parseInt(stepSegment, 10);
-    return Number.isFinite(parsed) && parsed >= 1 ? String(parsed) : null;
-  }, [location.hash, location.pathname, params.step]);
-
-  const initialStepRef = React.useRef<number | null>(null);
-  const forceInitialStepRef = React.useRef<boolean | null>(null);
-
-  React.useEffect(() => {
-    initialStepRef.current = null;
-    forceInitialStepRef.current = null;
-  }, []);
-
-  const parsedStep = React.useMemo(() => {
-    if (stepParam !== null && stepParam !== undefined) {
-      const n = parseInt(stepParam, 10);
-      return Number.isFinite(n) && n >= 1 ? n : 1;
-    }
-    return 1;
-  }, [stepParam]);
-
-  const resolvedTreeId = treeId as TreeId;
-  const resolvedTargetNodeId = effectiveTargetNodeId as NodeId;
-  const resolvedPageNodeId = effectivePageNodeId as NodeId;
-  const resolvedNodeType = effectiveNodeType as string;
-
-  const handleAutoBuildComplete = React.useCallback(() => {
-    if (!autoBuildEnabled) return;
-    if (buildQueueKey) {
-      const next = shiftBuildQueue(buildQueueKey);
-      if (next?.nextUrl) {
-        void navigate({ to: next.nextUrl });
-        return;
-      }
-      const fallback = next?.returnTo ?? returnToParam;
-      if (fallback) {
-        void navigate({ to: fallback });
-        return;
-      }
-    }
-    if (returnToParam) {
-      void navigate({ to: returnToParam });
-      return;
-    }
-    void navigate({ to: `/t/${resolvedTreeId}/${resolvedPageNodeId}` });
-  }, [autoBuildEnabled, buildQueueKey, navigate, resolvedPageNodeId, resolvedTreeId, returnToParam]);
-
-  if (initialStepRef.current === null) {
-    initialStepRef.current = parsedStep;
-  }
-  if (forceInitialStepRef.current === null) {
-    forceInitialStepRef.current = stepParam !== null && parsedStep > 1;
-  }
-  const currentStep = initialStepRef.current ?? parsedStep;
-  const requestedAction = params.action?.toLowerCase() ?? '';
-  const forceInitialStep =
-    (forceInitialStepRef.current ?? false) || requestedAction === 'preview';
-
-  // Determine mode based on action with guard:
-  // If action=create but target node already exists (canonical), treat as edit.
-  const mode: 'create' | 'edit' | 'preview' =
-    requestedAction === 'preview'
-      ? 'preview'
-      : requestedAction === 'edit' || effectiveAction === NodeAction.UPDATE
-        ? 'edit'
-        : 'create';
+  const {
+    autoBuild,
+    backdropDismissEnabled,
+    currentStep,
+    forceInitialStep,
+    handleClose,
+    handleSuccess,
+    isOpen,
+    isReady,
+    mode,
+    resolvedNodeType,
+    resolvedPageNodeId,
+    resolvedTargetNodeId,
+    resolvedTreeId,
+  } = usePluginDialogRoute(data);
 
   if (!isReady) {
     console.warn('[PluginDialogRoute] Missing required data to render plugin dialog', {
-      treeId,
-      effectiveTargetNodeId,
-      effectivePageNodeId,
-      effectiveNodeType,
-      effectiveAction,
+      treeId: resolvedTreeId,
+      effectiveTargetNodeId: resolvedTargetNodeId,
+      effectivePageNodeId: resolvedPageNodeId,
+      effectiveNodeType: resolvedNodeType,
     });
     return null;
   }
-  // Handle close
-  const handleClose = () => {
-    setIsOpen(false);
-    const destination = resolvedPageNodeId
-      ? `/t/${resolvedTreeId}/${resolvedPageNodeId}`
-      : `/t/${resolvedTreeId}`;
-    void navigate({ to: destination });
-  };
-
-  // Handle success
-  const handleSuccess = (savedNodeId: NodeId) => {
-    // Navigate to the saved node
-    void navigate({ to: `/t/${resolvedTreeId}/${resolvedPageNodeId}/${savedNodeId}` });
-  };
 
   // Unified host: headless plugin dialog shell
   return (
@@ -198,7 +72,7 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
       initialStep={currentStep}
       forceInitialStep={forceInitialStep}
       backdropDismissEnabled={backdropDismissEnabled}
-      autoBuild={autoBuildEnabled ? { enabled: true, onComplete: handleAutoBuildComplete } : undefined}
+      autoBuild={autoBuild}
     />
   );
 };
@@ -238,24 +112,4 @@ export function createPluginDialogRoutes() {
       element: <PluginDialogRoute />,
     },
   ];
-}
-
-function toNodeAction(value: string | undefined): NodeAction | undefined {
-  switch (value) {
-    case NodeAction.CREATE:
-    case NodeAction.UPDATE:
-    case NodeAction.DELETE:
-    case NodeAction.MOVE:
-    case NodeAction.DUPLICATE:
-    case NodeAction.IMPORT:
-    case NodeAction.EXPORT:
-    case NodeAction.RESTORE:
-    case NodeAction.DISCARD:
-      return value;
-    case 'edit':
-    case 'preview':
-      return NodeAction.UPDATE;
-    default:
-      return undefined;
-  }
 }

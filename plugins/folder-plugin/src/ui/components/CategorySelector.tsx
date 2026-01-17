@@ -17,6 +17,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Category as CategoryIcon } from '@mui/icons-material';
+import { useCategorySelector } from './useCategorySelector.js';
 
 export interface CategoryOption<T extends string> {
   value: T;
@@ -54,6 +55,12 @@ export const CategorySelector = <T extends string>({
                                                      variant = 'select',
                                                      fullWidth = true,
                                                    }: CategorySelectorProps<T>) => {
+  const { handleSelect, selectedOption } = useCategorySelector({
+    value,
+    options,
+    onChange,
+    disabled,
+  });
 
   if (variant === 'chips') {
     return (
@@ -73,7 +80,7 @@ export const CategorySelector = <T extends string>({
                   {option.icon}
                 </Box>
               ) : undefined}
-              onClick={() => !disabled && !option.disabled && onChange(option.value)}
+              onClick={() => !option.disabled && handleSelect(option.value)}
               variant={value === option.value ? 'filled' : 'outlined'}
               color={value === option.value ? 'primary' : 'default'}
               disabled={disabled || option.disabled}
@@ -114,7 +121,7 @@ export const CategorySelector = <T extends string>({
       <Select
         labelId={`category-select-label-${label}`}
         value={value || ''}
-        onChange={(e) => onChange(e.target.value as T)}
+        onChange={(e) => handleSelect(e.target.value as T)}
         label={label}
         displayEmpty
         renderValue={(selected) => {
@@ -126,7 +133,7 @@ export const CategorySelector = <T extends string>({
             );
           }
 
-          const option = options.find(opt => opt.value === selected);
+          const option = selectedOption ?? options.find(opt => opt.value === selected);
           if (!option) return selected;
 
           return (

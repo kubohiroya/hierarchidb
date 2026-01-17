@@ -1,5 +1,4 @@
 import type React from 'react';
-import { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -26,6 +25,7 @@ import {
   Update as UpdateIcon,
 } from '@mui/icons-material';
 import type { DuplicateResolutionStrategy, ResolverUpdaterPayload, PropertyMappingRule } from '../../../common/types/index.js';
+import { useDuplicateResolutionStep } from './useDuplicateResolutionStep.js';
 
 interface DuplicateResolutionStepProps {
   data: Partial<ResolverUpdaterPayload>;
@@ -71,52 +71,17 @@ export const DuplicateResolutionStep: React.FC<DuplicateResolutionStepProps> = (
                                                                                   onUpdate,
                                                                                   onValidationChange,
                                                                                 }) => {
-  const draftData = data.draftData ?? {};
-  const [strategy, setStrategy] = useState<DuplicateResolutionStrategy['strategy']>(
-    draftData.duplicateResolution?.strategy || 'ignore',
-  );
-  const [customFunction, setCustomFunction] = useState<string>(
-    draftData.duplicateResolution?.customFunction || '',
-  );
-  const [mergeProperties, setMergeProperties] = useState<string>(
-    draftData.duplicateResolution?.mergeProperties?.join(', ') || '',
-  );
-  const [enableDuplicateDetection, setEnableDuplicateDetection] = useState(true);
-  const [customFunctionError, setCustomFunctionError] = useState<string>('');
-
-  // Update parent data when local atoms changes
-  useEffect(() => {
-    const duplicateResolution: DuplicateResolutionStrategy = {
-      strategy,
-      customFunction: strategy === 'custom' ? customFunction : undefined,
-      mergeProperties: strategy === 'merge' && mergeProperties
-        ? mergeProperties.split(',').map((p: string) => p.trim()).filter((p: string) => p.length > 0)
-        : undefined,
-    };
-
-    onUpdate({ draftData: { duplicateResolution } });
-  }, [strategy, customFunction, mergeProperties, onUpdate]);
-
-  // Validation
-  useEffect(() => {
-    let isValid = true;
-
-    if (strategy === 'custom') {
-      if (!customFunction.trim()) {
-        isValid = false;
-        setCustomFunctionError('Custom function is required');
-      } else {
-        // Basic validation of JavaScript function syntax
-        // Try to check if it's valid JavaScript (basic check)
-        new Function(customFunction);
-        setCustomFunctionError('');
-      }
-    } else {
-      setCustomFunctionError('');
-    }
-
-    onValidationChange(isValid);
-  }, [strategy, customFunction, onValidationChange]);
+  const {
+    customFunction,
+    customFunctionError,
+    enableDuplicateDetection,
+    mergeProperties,
+    setCustomFunction,
+    setEnableDuplicateDetection,
+    setMergeProperties,
+    setStrategy,
+    strategy,
+  } = useDuplicateResolutionStep({ data, onUpdate, onValidationChange });
 
   const handleStrategyChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setStrategy(event.target.value as DuplicateResolutionStrategy['strategy']);

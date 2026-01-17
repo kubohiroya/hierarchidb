@@ -1,15 +1,23 @@
-2240) chore/analysis/list-large-react-components (P3) — 進行中 (2026-01-17)
+2240) chore/analysis/list-large-react-components (P3) — 完了 (2026-01-17)
 - ブランチ名: chore/analysis/list-large-react-components
 - 依存: なし
-- 受け入れ基準: packages 配下の *.tsx から 200行以上の React コンポーネントを抽出し列挙する／各コンポーネントについて「カスタムフックへのロジック切り出しが無い」ことを判断できる根拠を簡潔に示す／要確認は明記する／TASKS.md に運用ログを記載する
+- ExecPlan: `plans/react-components-hook-extraction-execplan.md`
+- 受け入れ基準: packages/app/plugins 配下の *.tsx から 200行以上の React コンポーネントを抽出し列挙する／各コンポーネントについて「カスタムフックへのロジック切り出しが無い」ことを判断できる根拠を簡潔に示す／要確認は明記する／列挙対象のコンポーネントでロジックをカスタムフックとして外部ファイルへ抽出する／挙動が維持される／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/**`, `plugins/*-plugin/src/ui/**`
 - チェックリスト:
   - packages/**/src 配下の .tsx を対象に行数を集計する
   - 200行以上の React コンポーネントを抽出して列挙する
   - カスタムフック切り出しの有無を簡潔にメモする
+  - app/src と plugins/*/src も同条件で抽出する
+  - 対象コンポーネントでロジックをカスタムフックへ外部化する
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-17 17:05 JST 200行以上の React コンポーネントとカスタムフック未抽出の一覧化に着手。
   - done: 2026-01-17 17:12 JST packages/**/src の .tsx を行数集計し、200行以上のコンポーネントからローカルカスタムフック未抽出の一覧を作成。
+  - done: 2026-01-17 17:16 JST app/src と plugins/*/src も同条件で抽出し、200行以上かつローカルフック未抽出の一覧を追記。
+  - blocked: 2026-01-17 18:20 JST pnpm typecheck が exit 1（未使用 import/型、正規表現エスケープ、戻り値の不整合）で失敗。
+  - update: 2026-01-17 18:35 JST 未使用 import/型の削除、正規表現のエスケープ修正、戻り値の補正を反映。
+  - done: 2026-01-17 18:45 JST pnpm typecheck を再実行（exit 0）し、app/src/router/** と plugins/*-plugin/src/ui/** の対象コンポーネントをカスタムフック外部化。
 
 2239) feat/shape/step4-area-filter-coefficient (P1) — 完了 (2026-01-17)
 - ブランチ名: feat/shape/step4-area-filter-coefficient

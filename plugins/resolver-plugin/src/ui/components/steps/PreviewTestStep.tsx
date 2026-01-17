@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React from 'react';
 import {
   Alert,
   Box,
@@ -35,7 +35,8 @@ import {
   Storage as StorageIcon,
   Warning as WarningIcon,
 } from '@mui/icons-material';
-import type { MappingPreviewResult, MappingValidationResult, ResolverUpdaterPayload, SchemaInfo, PropertyInfo, PropertyMappingRule, ValidationWarning } from '../../../common/types/index.js';
+import type { MappingValidationResult, ResolverUpdaterPayload, SchemaInfo, PropertyInfo, ValidationWarning } from '../../../common/types/index.js';
+import { usePreviewTestStep } from './usePreviewTestStep.js';
 
 interface PreviewTestStepProps {
   data: Partial<ResolverUpdaterPayload>;
@@ -68,139 +69,26 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                                                                   targetSchema,
                                                                   onValidationResult,
                                                                 }) => {
-  const draftData = data.draftData ?? {};
-  const [isRunning, setIsRunning] = useState(false);
-  const [previewResult, setPreviewResult] = useState<MappingPreviewResult | null>(null);
-  const [validationResult, setValidationResult] = useState<MappingValidationResult | null>(null);
-  const [selectedTab, setSelectedTab] = useState(0);
-  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
-  const [executionTime, setExecutionTime] = useState<number>(0);
-  const [memoryUsage, setMemoryUsage] = useState<number>(0);
-
-  // Always valid for this step (preview is optional)
-  useEffect(() => {
-    onValidationChange(true);
-  }, [onValidationChange]);
-
-  const runPreview = useCallback(async () => {
-    if (!sourceSchema || !targetSchema || !draftData.mappingRules) {
-      return;
-    }
-
-    setIsRunning(true);
-    const startTime = performance.now();
-    const startMemory = readHeapUsage();
-
-    try {
-      // Simulate mapping execution
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Generate mock preview result
-      const mockResult: MappingPreviewResult = {
-        success: true,
-        mappedData: sourceSchema.sampleData?.slice(0, 5).map((sample: Record<string, unknown>, index: number) => {
-          const mapped: Record<string, unknown> = {};
-          draftData.mappingRules!.forEach((rule: PropertyMappingRule) => {
-            if (sample && typeof sample === 'object' && rule.sourceProperty in sample) {
-              let value = (sample as Record<string, unknown>)[rule.sourceProperty];
-
-              // Apply simple transformations if specified
-              if (rule.transformFunction) {
-                if (rule.transformFunction === 'lowercase' && typeof value === 'string') {
-                  value = value.toLowerCase();
-                } else if (rule.transformFunction === 'uppercase' && typeof value === 'string') {
-                  value = value.toUpperCase();
-                }
-              }
-
-              mapped[rule.targetProperty] = value;
-            }
-          });
-
-          // Add mock ID for display
-          mapped._id = index + 1;
-          return mapped;
-        }) || [],
-        unmappedProperties: sourceSchema.properties
-          .filter((prop: PropertyInfo) => !draftData.mappingRules!.some((rule: PropertyMappingRule) => rule.sourceProperty === prop.name))
-          .map((prop: PropertyInfo) => prop.name),
-        errors: [],
-        statistics: {
-          totalRecords: sourceSchema.sampleData?.length || 0,
-          successfulMappings: draftData.mappingRules!.length,
-          failedMappings: 0,
-          duplicatesFound: Math.floor(Math.random() * 5),
-          duplicatesResolved: Math.floor(Math.random() * 3),
-        },
-      };
-
-      setPreviewResult(mockResult);
-
-      // Generate validation result
-      const mockValidation: MappingValidationResult = {
-        isValid: (mockResult.errors ?? []).length === 0,
-        errors: (mockResult.errors ?? []).map((err) => ({
-          property: err.property ?? 'mapping',
-          message: err.message,
-          suggestion: err.suggestion,
-        })),
-        warnings: mockResult.unmappedProperties && mockResult.unmappedProperties.length > 0 ? [{
-          property: 'unmapped',
-          message: `${mockResult.unmappedProperties.length} source properties are not mapped`,
-          suggestion: 'Consider mapping all source properties for complete data transformation',
-        }] : [],
-        coverage: (draftData.mappingRules!.length / sourceSchema.properties.length) * 100,
-      };
-
-      setValidationResult(mockValidation);
-      onValidationResult(mockValidation);
-
-      const endTime = performance.now();
-      const endMemory = readHeapUsage();
-
-      setExecutionTime(endTime - startTime);
-      setMemoryUsage(Math.max(0, endMemory - startMemory));
-
-    } catch (error) {
-      console.error('Preview failed:', error);
-
-      const errorResult: MappingPreviewResult = {
-        success: false,
-        mappedData: [],
-        unmappedProperties: [],
-        errors: [{ property: 'mapping', message: 'Failed to execute mapping preview' }],
-        statistics: {
-          totalRecords: 0,
-          successfulMappings: 0,
-          failedMappings: 0,
-          duplicatesFound: 0,
-          duplicatesResolved: 0,
-        },
-      };
-
-      setPreviewResult(errorResult);
-    } finally {
-      setIsRunning(false);
-    }
-  }, [sourceSchema, targetSchema, draftData.mappingRules, onValidationResult]);
-
-  const toggleRowExpansion = (rowIndex: number) => {
-    const newExpanded = new Set(expandedRows);
-    if (newExpanded.has(rowIndex)) {
-      newExpanded.delete(rowIndex);
-    } else {
-      newExpanded.add(rowIndex);
-    }
-    setExpandedRows(newExpanded);
-  };
-
-  const formatBytes = (bytes: number): string => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
-  };
+  const {
+    draftData,
+    executionTime,
+    expandedRows,
+    formatBytes,
+    isRunning,
+    memoryUsage,
+    previewResult,
+    runPreview,
+    selectedTab,
+    setSelectedTab,
+    toggleRowExpansion,
+    validationResult,
+  } = usePreviewTestStep({
+    data,
+    onValidationChange,
+    onValidationResult,
+    sourceSchema,
+    targetSchema,
+  });
 
   if (!sourceSchema || !targetSchema) {
     return (
@@ -533,15 +421,4 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
       )}
     </Box>
   );
-};
-
-const hasMemory = (perf: Performance): perf is Performance & { memory: { usedJSHeapSize?: number }} => {
-  return typeof (perf as { memory?: unknown }).memory !== 'undefined';
-};
-
-const readHeapUsage = (): number => {
-  if (typeof performance === 'undefined') return 0;
-  if (!hasMemory(performance)) return 0;
-  const memory = performance.memory;
-  return typeof memory?.usedJSHeapSize === 'number' ? memory.usedJSHeapSize : 0;
 };

@@ -10,12 +10,11 @@ import {
   LocalOffer as LocalOfferIcon,
 } from '@mui/icons-material';
 import { Box, Button, IconButton, Tooltip } from '@mui/material';
-import { useNavigate } from '@tanstack/react-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { TopPageGuidedTour } from './tour/TopPageGuidedTour.js';
-import { useAppConfig } from '~/contexts/AppConfigContext.js';
 import { loadAppConfig, resolveAssetHref } from '~/loadAppConfig.js';
 import { TitleLogo } from './TitleLogo.js';
+import { useHomePage } from './useHomePage.js';
 
 export function meta() {
   const { appPrefix, appFavicon, appTitle, appDescription } = loadAppConfig();
@@ -44,58 +43,27 @@ const treeButtonConfigs: TreeConfig[] = [
 ];
 
 export default function HomePage() {
-  const navigate = useNavigate();
-  const { appTitle, appDescription, appHomepage } = useAppConfig();
-  const [isUserMenuReady, setUserMenuReady] = useState(false);
-  const [isClient, setIsClient] = useState(false);
-  const [isTourOpen, setIsTourOpen] = useState(false);
-
-  useEffect(() => {
-    setUserMenuReady(true);
-    setIsClient(true);
-  }, []);
-
-  const getStorageKey = useCallback((treeId: string) => `lastPageNodeId_${treeId}`, []);
-
-  const getSavedPageNodeId = useCallback(
-    (treeId: string): string | null => {
-      if (!isClient) return null;
-      try {
-        return localStorage.getItem(getStorageKey(treeId));
-      } catch {
-        return null;
-      }
-    },
-    [isClient, getStorageKey]
-  );
-
-  const savePageNodeId = useCallback(
-    (treeId: string, pageNodeId: string) => {
-      if (!isClient) return;
-      try {
-        localStorage.setItem(getStorageKey(treeId), pageNodeId);
-      } catch {
-        /* ignore */
-      }
-    },
-    [isClient, getStorageKey]
-  );
-
-  const handleTreeSelect = useCallback(
-    (treeId: string) => {
-      const savedPageNodeId = getSavedPageNodeId(treeId) || '';
-      const path = savedPageNodeId ? `/t/${treeId}/${savedPageNodeId}` : `/t/${treeId}`;
-      navigate({ to: path });
-    },
-    [getSavedPageNodeId, navigate]
-  );
+  const {
+    appDescription,
+    appTitle,
+    githubHref,
+    handleNavigateToInfo,
+    handleNavigateToPluginLoaders,
+    handleNavigateToTags,
+    handleTreeSelect,
+    isTourOpen,
+    isUserMenuReady,
+    setIsTourOpen,
+    getSavedPageNodeId,
+    savePageNodeId,
+  } = useHomePage();
 
   const githubButton = useMemo(() => {
-    if (!appHomepage) return null;
+    if (!githubHref) return null;
     return (
       <Tooltip title="View Source on GitHub">
         <IconButton
-          href={appHomepage}
+          href={githubHref}
           target="_blank"
           rel="noopener noreferrer"
           size="small"
@@ -105,7 +73,7 @@ export default function HomePage() {
         </IconButton>
       </Tooltip>
     );
-  }, [appHomepage]);
+  }, [githubHref]);
 
   return (
     <>
@@ -187,7 +155,7 @@ export default function HomePage() {
             variant="outlined"
             size="large"
             startIcon={<LocalOfferIcon />}
-            onClick={() => navigate({ to: '/tags' })}
+            onClick={handleNavigateToTags}
             sx={{
               height: '84px',
               px: 4.5,
@@ -230,7 +198,7 @@ export default function HomePage() {
 
           <Tooltip title="License Information">
             <IconButton
-              onClick={() => navigate({ to: '/info' })}
+              onClick={handleNavigateToInfo}
               size="small"
               sx={{ color: 'text.secondary', '&:hover': { backgroundColor: 'action.hover' } }}
             >
@@ -240,7 +208,7 @@ export default function HomePage() {
 
           <Tooltip title="Plugin Registry">
             <IconButton
-              onClick={() => navigate({ to: '/plugin-loaders' })}
+              onClick={handleNavigateToPluginLoaders}
               size="small"
               sx={{ color: 'text.secondary', '&:hover': { backgroundColor: 'action.hover' } }}
             >

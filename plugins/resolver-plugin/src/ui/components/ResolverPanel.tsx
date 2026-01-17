@@ -1,5 +1,4 @@
 import type React from 'react';
-import { useEffect, useState } from 'react';
 import {
   Box,
   Button,
@@ -31,15 +30,7 @@ import {
 } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { ResolverEntity, PropertyMappingRule } from '../../common/types/index.js';
-
-interface MappingStatistics {
-  totalSourceProperties: number;
-  totalTargetProperties: number;
-  mappedProperties: number;
-  unmappedProperties: string[];
-  coverage: number;
-  conflicts: string[];
-}
+import { useResolverPanel } from './useResolverPanel.js';
 
 interface ResolverPanelProps {
   nodeId: NodeId;
@@ -60,49 +51,14 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
                                                               onCompile,
                                                               onViewChain,
                                                             }) => {
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [compilationStatus, setCompilationStatus] = useState<'idle' | 'compiling' | 'compiled' | 'error'>('idle');
-  const [statistics, setStatistics] = useState<MappingStatistics | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  // Mock statistics calculation
-  useEffect(() => {
-    if (entity) {
-      const totalMappings = entity.mappingRules.length;
-      // const _totalValidations = entity.validationRules.length;
-      // const _totalTransformations = entity.dataTransformations.length;
-
-      setStatistics({
-        totalSourceProperties: 0, // Would be calculated from actual schema
-        totalTargetProperties: 0, // Would be calculated from actual schema
-        mappedProperties: totalMappings,
-        unmappedProperties: [],
-        coverage: totalMappings > 0 ? 100 : 0,
-        conflicts: [],
-      });
-
-      // Check if compiled version exists (mock)
-      if (totalMappings > 5) {
-        setCompilationStatus('compiled');
-      }
-    }
-  }, [entity]);
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
-
-  const handleCompile = async () => {
-    setIsProcessing(true);
-    setCompilationStatus('compiling');
-
-    // Simulate compilation
-    setTimeout(() => {
-      setCompilationStatus('compiled');
-      setIsProcessing(false);
-      if (onCompile) onCompile();
-    }, 2000);
-  };
+  const {
+    anchorEl,
+    compilationStatus,
+    handleCompile,
+    handleMenuClose,
+    isProcessing,
+    statistics,
+  } = useResolverPanel(entity, onCompile);
 
   if (!entity) {
     return (

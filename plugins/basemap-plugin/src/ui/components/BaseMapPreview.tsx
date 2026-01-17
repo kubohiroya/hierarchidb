@@ -6,14 +6,13 @@
 
 // CrossViewSnackbar pulls tabular-store (node:module) into the browser bundle; omit to keep client-safe
 // import { CrossViewSnackbar } from '@hierarchidb/ui-grid';
-import { loadMapLibreMap, type MapViewState } from '@hierarchidb/ui-map';
+import { loadMapLibreMap } from '@hierarchidb/ui-map';
 import { DarkMode, LightMode, Map as MapIcon, Satellite, Terrain, Tune } from '@mui/icons-material';
 import { Box, Chip, Paper, Stack, Typography } from '@mui/material';
 import type React from 'react';
-import { lazy, Suspense, useMemo } from 'react';
-import { getStyleAttribution } from '../../common/constants/builtInStyles.js';
+import { lazy, Suspense } from 'react';
 import type { MapStyle, MapViewport } from '../../common/types/BaseMapEntity.js';
-import { resolvePreviewMapStyle } from '../utils/mapStyle.js';
+import { useBaseMapPreview } from './useBaseMapPreview.js';
 
 export interface BaseMapPreviewProps {
   /** Map style configuration */
@@ -64,51 +63,18 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
   interactive = false,
   title = 'BaseMap Preview',
 }) => {
-  // Convert to MapLibre view atoms
-  const initialViewState = useMemo<MapViewState>(
-    () => ({
-      longitude: viewport.center[0],
-      latitude: viewport.center[1],
-      zoom: viewport.zoom,
-      bearing: viewport.bearing || 0,
-      pitch: viewport.pitch || 0,
-    }),
-    [viewport]
-  );
-
-  // Generate zxy string from viewport if not provided
-  const zxyString = useMemo(() => {
-    if (zxy) return zxy;
-    return `${viewport.zoom},${viewport.center[0]},${viewport.center[1]}`;
-  }, [zxy, viewport]);
-
-  // Handle map click to open preview
-  const handleMapClick = () => {
-    if (!interactive) {
-      const baseUrl = window.location.origin;
-      const prefix =
-        typeof import.meta !== 'undefined' ? import.meta.env?.VITE_APP_PREFIX : undefined;
-      const sanitized = prefix?.replace(/^\/+|\/+$/g, '');
-      const basePath = sanitized ? `/${sanitized}/` : '/';
-      const mapUrl = `${baseUrl}${basePath}map?zxy=${zxyString}`;
-      window.open(mapUrl, '_blank');
-    }
-  };
-
-  // Get map style URL
-  const mapStyleSource = useMemo(() => resolvePreviewMapStyle(mapStyle), [mapStyle]);
-
-  // Get attribution
-  const attribution = useMemo(() => {
-    if (mapStyle.style !== 'custom') {
-      return getStyleAttribution(mapStyle.style);
-    }
-    return '© Map contributors';
-  }, [mapStyle]);
-
-  const mapStyleProps = typeof mapStyleSource === 'string'
-    ? { mapStyleUrl: mapStyleSource }
-    : { mapStyleObject: mapStyleSource };
+  const {
+    attribution,
+    handleMapClick,
+    initialViewState,
+    mapStyleProps,
+    zxyString,
+  } = useBaseMapPreview({
+    mapStyle,
+    viewport,
+    zxy,
+    interactive,
+  });
 
   return (
     <Paper
