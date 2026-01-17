@@ -24,7 +24,7 @@ import {
 import { useTheme } from '@mui/material/styles';
 import { useLoaderData, useParams, useSearch } from '@tanstack/react-router';
 import { useAtom, useSetAtom } from 'jotai';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import useGeolocationImport from 'react-hook-geolocation';
 import { MaplibreExportControl } from '@watergis/maplibre-gl-export';
 import type { NodeId } from '@hierarchidb/common-types';
@@ -133,9 +133,11 @@ export default function MapPage() {
   });
 
   const getLocationQueryAPI = useCallback(async (): Promise<LocationQueryAPI> => {
-    const promise = locationQueryPromiseRef.current
-      ?? (locationQueryPromiseRef.current = ensureWorkerAPI().then((api) => api.getLocationQueryAPI()));
-    return promise;
+    if(locationQueryPromiseRef.current){
+      return locationQueryPromiseRef.current;
+    }
+    locationQueryPromiseRef.current = ensureWorkerAPI().then((api) => api.getLocationQueryAPI());
+    return locationQueryPromiseRef.current;
   }, []);
 
   const setMapLayerInfo = useSetAtom(mapLayerInfoAtom);
@@ -817,7 +819,7 @@ export default function MapPage() {
         locationQueryTimerRef.current = null;
       }
     };
-  }, [buildLocationLayersForNode, enabledLocationKinds, locationLayers, scheduleLocationQuery]);
+  }, [buildLocationLayersForNode, locationLayers, scheduleLocationQuery]);
 
   const handleLocationTypeToggle = useCallback((id: string) => {
     setLocationTypeSelection((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -860,7 +862,7 @@ export default function MapPage() {
         onClose={() => setMissingLayerDialogOpen(false)}
         aria-labelledby="map-missing-layer-title"
       >
-        <DialogTitle id="map-missing-layer-title">まだビルドされていないノードがあります</DialogTitle>
+        <DialogTitle id={useId()}>まだビルドされていないノードがあります</DialogTitle>
         <DialogContent>
           <DialogContentText>
             対象ノードのビルドが完了していないため、プレビューに表示できません。ビルド完了後に再度お試しください。

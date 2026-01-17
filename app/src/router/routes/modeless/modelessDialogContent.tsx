@@ -680,9 +680,15 @@ export const MapGeneratedDataContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }
       const info = resolveEntryLayerInfo(entry);
       if (!info) return;
       if (!next[info.nodeId]) next[info.nodeId] = {};
-      const current = next[info.nodeId]![info.nodeType] ?? new Set<string | number>();
+      const current = next[info.nodeId]?.[info.nodeType] ?? new Set<string | number>();
       current.add(entry.id);
-      next[info.nodeId]![info.nodeType] = current;
+      if(next[info.nodeId]){
+        next[info.nodeId] = {};
+      }
+      next[info.nodeId] = {
+        ...next[info.nodeId],
+        [info.nodeType]: current
+      };
     });
     return next;
   }, [resolveEntryLayerInfo]);
@@ -697,8 +703,13 @@ export const MapGeneratedDataContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }
     viewportFeatureIds.forEach((ids, layerId) => {
       const info = layerInfoById.get(layerId);
       if (!info) return;
-      if (!next[info.nodeId]) next[info.nodeId] = {};
-      next[info.nodeId]![info.nodeType] = new Set(ids);
+      if (!next[info.nodeId]) {
+        next[info.nodeId] = {}
+      }
+      next[info.nodeId] = {
+        ...next[info.nodeId],
+        [info.nodeType]: new Set(ids)
+      };
     });
     return next;
   }, [layerInfoById, viewportFeatureIds]);
@@ -817,7 +828,7 @@ export const MapGeneratedDataContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }
   useEffect(() => {
     setShapePage(0);
     setRoutePage(0);
-  }, [nodeId, shapeVisibleIds, routeVisibleIds]);
+  }, []);
 
   return (
     <Stack spacing={2}>
@@ -836,7 +847,7 @@ export const MapGeneratedDataContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }
             const entry = buildEntryForRow('shape', rowId);
             setHoverMatches(entry ? [entry] : []);
           }}
-          onRowLeave={(_, rowId) => {
+          onRowLeave={(_, _rowId) => {
             setHoverMatches([]);
           }}
           onRowClick={(_, rowId) => {
@@ -867,7 +878,7 @@ export const MapGeneratedDataContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }
             const entry = buildEntryForRow('location', rowId);
             setHoverMatches(entry ? [entry] : []);
           }}
-          onRowLeave={(_, rowId) => {
+          onRowLeave={(_, _rowId) => {
             setHoverMatches([]);
           }}
           onRowClick={(_, rowId) => {
@@ -887,7 +898,7 @@ export const MapGeneratedDataContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }
             const entry = buildEntryForRow('route', rowId);
             setHoverMatches(entry ? [entry] : []);
           }}
-          onRowLeave={(_, rowId) => {
+          onRowLeave={(_, _rowId) => {
             setHoverMatches([]);
           }}
           onRowClick={(_, rowId) => {

@@ -115,7 +115,8 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
     failed: 'Failed',
   };
   const resolvedErrorLabels: MapPreviewErrorColumnLabels | null = errorColumnLabels ?? null;
-  const resolvedFormatMessage = formatErrorMessage ?? ((summary) => summary.messages.slice(0, 2).join(' / '));
+  const resolvedFormatMessage = useMemo(()=>formatErrorMessage ?? ((summary:{messages:string[]}) => summary.messages.slice(0, 2).join(' / ')),
+    [formatErrorMessage]);
   const resolvedColumns = useMemo(() => {
     if (!resolvedErrorLabels || !errorSummaryById) return columns;
     const statusColumn: GridColumn<Row> = {
