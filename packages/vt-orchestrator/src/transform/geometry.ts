@@ -134,8 +134,12 @@ const isGeometryValid = (geometry: Geometry): boolean => {
 
 
 const cleanGeometry = (geometry: Geometry): Geometry => {
-  const cleaned = cleanCoords({ type: 'Feature', geometry, properties: {} });
-  return cleaned.geometry ?? geometry;
+  try {
+    const cleaned = cleanCoords({ type: 'Feature', geometry, properties: {} });
+    return cleaned.geometry ?? geometry;
+  } catch {
+    return geometry;
+  }
 };
 
 const mapGeometry = (geometry: Geometry, map: (coord: LonLat) => LonLat): Geometry => {

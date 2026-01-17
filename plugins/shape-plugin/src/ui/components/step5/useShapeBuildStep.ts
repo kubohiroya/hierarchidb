@@ -60,6 +60,21 @@ const normalizeStageKey = (task: StageLikeTask): string => {
   return candidate;
 };
 
+const toBuildStatus = (status?: string | null): BuildStatus => {
+  switch (status) {
+    case 'processing':
+      return 'running';
+    case 'paused':
+      return 'paused';
+    case 'completed':
+      return 'completed';
+    case 'failed':
+      return 'failed';
+    default:
+      return 'idle';
+  }
+};
+
 type Args = {
   data?: Partial<ShapeEntity>;
   onChange: (patch: Partial<ShapeEntity>) => void;
@@ -80,22 +95,13 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const effectiveStatus = hasNodeId ? status : null;
   const stages = useBuildStages();
   const processingStatus = data?.processingStatus ?? 'idle';
-  const buildStatus = useMemo<BuildStatus>(() => {
-    switch (processingStatus) {
-      case 'processing':
-        return 'running';
-      case 'paused':
-        return 'paused';
-      case 'completed':
-        return 'completed';
-      case 'failed':
-        return 'failed';
-      default:
-        return 'idle';
-    }
-  }, [processingStatus]);
+  const runtimeStatus = effectiveStatus?.status ?? null;
+  const statusSource = runtimeStatus ?? processingStatus;
+  const buildStatus = useMemo<BuildStatus>(() => (
+    toBuildStatus(statusSource)
+  ), [statusSource]);
   const statusLabel = useMemo(() => {
-    switch (processingStatus) {
+    switch (statusSource) {
       case 'processing':
         return t('stage.status.running', 'Build in progress');
       case 'paused':
@@ -107,12 +113,12 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       default:
         return t('stage.status.ready', 'Ready to start stage');
     }
-  }, [processingStatus, t]);
+  }, [statusSource, t]);
   const shouldPollTasks = Boolean(activeNodeId)
     && (
       isStartPending
-      || processingStatus === 'processing'
-      || processingStatus === 'paused'
+      || runtimeStatus === 'processing'
+      || runtimeStatus === 'paused'
     );
   const shouldPollTasksRef = useCallback(() => shouldPollTasks, [shouldPollTasks]);
   const { tasks, isLoading: isTasksLoading, refresh: refreshTasks } = useShapeBuildTasks(activeNodeId, {
@@ -669,16 +675,17 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     data,
     onChange,
     buildStatus,
+    canResume: runtimeStatus === 'paused',
   });
   const shouldSuspendRef = useRef(false);
   const activeNodeIdRef = useRef<NodeId | null>(null);
   const suspendIfRunningRef = useRef<(() => void) | null>(null);
   useEffect(() => {
-    const hasActiveProcessing = data?.processingStatus === 'processing';
+    const hasActiveProcessing = runtimeStatus === 'processing';
     const isRunning = buildStatus === 'running';
-    const isFinished = data?.processingStatus === 'completed' || data?.processingStatus === 'failed';
+    const isFinished = runtimeStatus === 'completed' || runtimeStatus === 'failed';
     shouldSuspendRef.current = !isFinished && (hasActiveProcessing || isRunning);
-  }, [buildStatus, data?.processingStatus]);
+  }, [buildStatus, runtimeStatus]);
   const suspendIfRunning = useCallback(() => {
     if (!shouldSuspendRef.current) return;
     void handlePause();

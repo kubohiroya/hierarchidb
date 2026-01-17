@@ -5,6 +5,7 @@ import { notify } from '@hierarchidb/components';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type { BuildStatus } from '@hierarchidb/components';
 import { normalizeDataSourceName, type FetchTaskPayload, type ShapeEntity } from '../../../common/types/index.js';
+import { loadTreeConsoleSettings } from '@hierarchidb/util';
 
 type Args = {
   nodeType: NodeType;
@@ -12,6 +13,7 @@ type Args = {
   data?: Partial<ShapeEntity>;
   onChange: (patch: Partial<ShapeEntity>) => void;
   buildStatus: BuildStatus;
+  canResume: boolean;
 };
 
 export const useBatchSessionActions = ({
@@ -20,6 +22,7 @@ export const useBatchSessionActions = ({
   data,
   onChange,
   buildStatus,
+  canResume,
 }: Args) => {
   const debugScope = '[ShapeBuildStep]';
   const bridgeRef = useRef(getWorkerBridge());
@@ -141,10 +144,11 @@ export const useBatchSessionActions = ({
       notify.warning('NodeId is missing.');
       return false;
     }
-    if (buildStatus === 'paused' && !options?.forceRestart) {
+    if (canResume && !options?.forceRestart) {
       try {
         await bridgeRef.current.initialize();
-        await bridgeRef.current.resumeBatchSession(nodeType, nodeId);
+        const policy = loadTreeConsoleSettings().buildContinuationPolicy ?? 'finish_all_stages';
+        await bridgeRef.current.resumeBatchSession(nodeType, nodeId, policy);
         await persistDraftPatch({ processingStatus: 'processing' });
         return true;
       } catch (error) {
@@ -171,7 +175,8 @@ export const useBatchSessionActions = ({
         nodeType,
         payloadCount: payloads.length,
       });
-      const statusResult = await bridgeRef.current.startBatchSession(nodeType, nodeId, payloads);
+      const policy = loadTreeConsoleSettings().buildContinuationPolicy ?? 'finish_all_stages';
+      const statusResult = await bridgeRef.current.startBatchSession(nodeType, nodeId, payloads, policy);
       console.debug(`${debugScope} startOrResume:startBatchResult`, statusResult ?? null);
       const nextStatus = statusResult.status === 'completed'
         ? 'completed'

@@ -72,7 +72,6 @@ const toBuildStage = (
   if (
     stage === 'fetch'
     || stage === 'transform'
-    || stage === 'transform-by-zoom'
     || stage === 'vt'
   ) {
     return stage;
@@ -94,8 +93,7 @@ const toStageMap = (stages: Record<string, unknown>): Record<BuildStage, StageSt
   };
   return {
     fetch: read('fetch'),
-    'transform': read('transform'),
-    'transform-by-zoom': read('transform-by-zoom'),
+    transform: read('transform'),
     vt: read('vt'),
   };
 };

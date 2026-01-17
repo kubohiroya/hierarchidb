@@ -84,8 +84,6 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig> {
         return (await this.fetchCache.where('nodeId').equals(nodeId).count()) > 0;
       case 'transform':
         return (await this.transformCache.where('nodeId').equals(nodeId).count()) > 0;
-      case 'transform-by-zoom':
-        return (await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).count()) > 0;
       case 'vt':
         return (await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).count()) > 0;
       default:
@@ -110,9 +108,6 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig> {
           await this.transformCache.where('nodeId').equals(nodeId).delete();
           await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();
           await this.transformErrors.where('nodeId').equals(nodeId).delete();
-          break;
-        case 'transform-by-zoom':
-          await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();
           break;
         case 'vt':
           await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();

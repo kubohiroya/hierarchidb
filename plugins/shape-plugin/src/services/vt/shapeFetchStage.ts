@@ -52,6 +52,7 @@ export type ShapeFetchStageParams = {
   waitIfPaused?: () => Promise<void>;
   resumeExistingTasks?: boolean;
   abortController?: AbortController;
+  failureHandling?: 'continue' | 'stop' | 'skip';
 };
 
 const buildRetryConfig = (config: ShapeBuildConfig): RetryConfig => {
@@ -325,7 +326,7 @@ export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise
     }),
     waitIfPaused: params.waitIfPaused,
     maxConcurrent: params.buildConfig.fetchConfig.maxConcurrent,
-    failureHandling: 'stop',
+    failureHandling: params.failureHandling,
     abortController: params.abortController,
   });
 };

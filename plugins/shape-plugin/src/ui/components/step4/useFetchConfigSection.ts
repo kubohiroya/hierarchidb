@@ -32,6 +32,17 @@ type CacheCounts = {
   vt: number;
 };
 
+type StageLikeTask = {
+  stage?: string;
+  type?: string;
+  taskType?: string;
+};
+
+const resolveTaskStage = (task: StageLikeTask): string | undefined =>
+  task.stage ?? task.type ?? task.taskType;
+
+const isTransformTask = (task: StageLikeTask): boolean => resolveTaskStage(task) === 'transform';
+
 export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChange, onResetSession }: Args) => {
   const { t } = useTranslation();
   const switchId = useId();
@@ -162,6 +173,13 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
         .where('[nodeId+stage]')
         .equals([nodeId, vtStage])
         .delete();
+      if (vtStage === 'transform') {
+        await taskQueue.tasks
+          .where('nodeId')
+          .equals(nodeId)
+          .and((task) => !['fetch', 'transform', 'vt'].includes(task.stage))
+          .delete();
+      }
     }
   }, [nodeId]);
 
@@ -233,8 +251,8 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
   const handleDeleteTransformCache = useCallback(async () => {
     await ephemeralShapeAPIImpl.clearStage(nodeId, 'transform');
     await clearBatchTasksForType('transform');
-    setBuildTasks((prev) => prev.filter((task) => task.stage !== 'transform'));
-    setPersistedTasks((prev) => prev.filter((task) => task.stage !== 'transform'));
+    setBuildTasks((prev) => prev.filter((task) => !isTransformTask(task)));
+    setPersistedTasks((prev) => prev.filter((task) => !isTransformTask(task)));
     await loadCounts();
     notify.success('Deleted transform cache');
   }, [nodeId, clearBatchTasksForType, loadCounts, setBuildTasks, setPersistedTasks]);

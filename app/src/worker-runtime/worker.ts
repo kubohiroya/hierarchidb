@@ -5,7 +5,7 @@
 
 import './worker-react-refresh-shim.js';
 import type { PluginDefinition } from '@hierarchidb/plugin-registry/types';
-import type { NodeId, NodeType } from '@hierarchidb/common-types';
+import type { BuildContinuationPolicy, NodeId, NodeType } from '@hierarchidb/common-types';
 import type {
   BatchProgressEvent,
   BatchSessionStatus,
@@ -55,7 +55,12 @@ type BatchTaskProvider = (nodeId: NodeId) => Promise<BatchTaskSummary[]>;
 type BatchProgressSubscriber = (nodeId: NodeId, callback: (event: BatchProgressEvent) => void) => () => void;
 
 type ShapeBatchAPI = {
-  startBatchProcess: (draftId: NodeId, batchConfig: unknown, downloadTaskPayloads: unknown[]) => Promise<NodeId>;
+  startBatchProcess: (
+    draftId: NodeId,
+    batchConfig: unknown,
+    downloadTaskPayloads: unknown[],
+    buildContinuationPolicy?: BuildContinuationPolicy,
+  ) => Promise<NodeId>;
   generateDownloadTaskPayloadsFromSelection?: (
     nodeId: NodeId,
     dataSource: ShapeDataSourceName,
@@ -334,6 +339,7 @@ reporter.reportStepProgress('Load Comlink', 0);
           nodeType: NodeType,
           nodeId: NodeId,
           downloadTaskPayloads?: unknown[],
+          buildContinuationPolicy?: BuildContinuationPolicy,
         ): Promise<BatchSessionStatus> => {
           const api = resolveShapeBatchApiOrThrow(nodeType);
           const draft = api.getDraft ? await api.getDraft(nodeId) : undefined;
@@ -346,7 +352,7 @@ reporter.reportStepProgress('Load Comlink', 0);
           );
           const batchConfig = (draftData as { buildConfig?: unknown }).buildConfig ?? {};
           const payloads = downloadTaskPayloads ?? [];
-          await api.startBatchProcess(nodeId, batchConfig, payloads);
+          await api.startBatchProcess(nodeId, batchConfig, payloads, buildContinuationPolicy);
           const session = api.getBatchSession ? await api.getBatchSession(nodeId) : undefined;
           const status = toBatchSessionStatus(
             session as Record<string, unknown> | undefined,
@@ -388,10 +394,14 @@ reporter.reportStepProgress('Load Comlink', 0);
             await api.pauseBatchProcessing(draftId);
           }
         },
-        resumeBatchSession: async (nodeType: NodeType, nodeId: NodeId): Promise<void> => {
+        resumeBatchSession: async (
+          nodeType: NodeType,
+          nodeId: NodeId,
+          buildContinuationPolicy?: BuildContinuationPolicy,
+        ): Promise<void> => {
           const api = resolveShapeBatchApiOrThrow(nodeType);
           if (api.invokeBatchCommand) {
-            await api.invokeBatchCommand('session/resume', { nodeId });
+            await api.invokeBatchCommand('session/resume', { nodeId, buildContinuationPolicy });
             setHeapContext({ nodeType, nodeId });
             return;
           }

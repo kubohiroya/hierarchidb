@@ -1,9 +1,10 @@
-import type { NodeId, StageHandler, TaskQueueRecord } from '@hierarchidb/common-types';
+import type { BuildContinuationPolicy, NodeId, StageHandler, TaskQueueRecord } from '@hierarchidb/common-types';
 import type { ShapeBuildConfig } from '../../common/types/index.js';
 import {
   VtTaskQueueDb,
   deleteTasksByNode,
   listTasksByStage,
+  listTasksByStageAndStatus,
   putTasks,
   runStageTasks,
   createTransformByBandHandler,
@@ -249,6 +250,24 @@ export type ShapeVtPipelineParams = {
   downloadTaskPayloads?: FetchTaskPayload[];
   waitIfPaused?: () => Promise<void>;
   resumeExistingTasks?: boolean;
+  buildContinuationPolicy?: BuildContinuationPolicy;
+};
+
+const resolveFailureHandling = (policy: BuildContinuationPolicy): 'continue' | 'stop' => (
+  policy === 'stop_on_first_error' ? 'stop' : 'continue'
+);
+
+const shouldStopAfterStage = (policy: BuildContinuationPolicy, failedCount: number): boolean => (
+  failedCount > 0 && policy !== 'finish_all_stages'
+);
+
+const getFailedTaskCount = async (
+  taskQueue: VtTaskQueueDb,
+  nodeId: NodeId,
+  stage: TaskQueueRecord['stage'],
+): Promise<number> => {
+  const failed = await listTasksByStageAndStatus(taskQueue, nodeId, stage, 'failed');
+  return failed.length;
 };
 
 export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise<void> => {
@@ -257,6 +276,9 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
   const ephemeralStore = ephemeralShapeDB;
   const vtStore = new VtDb();
   const resumeExistingTasks = Boolean(params.resumeExistingTasks);
+  const buildContinuationPolicy = params.buildContinuationPolicy ?? 'finish_all_stages';
+  const failureHandling = resolveFailureHandling(buildContinuationPolicy);
+  let stopAfterStage = false;
   if (!resumeExistingTasks) {
     await deleteTasksByNode(taskQueue, params.nodeId);
   }
@@ -282,78 +304,89 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
     waitIfPaused: params.waitIfPaused,
     resumeExistingTasks,
     abortController: fetchAbortController,
+    failureHandling,
   });
+  if (shouldStopAfterStage(buildContinuationPolicy, await getFailedTaskCount(taskQueue, params.nodeId, 'fetch'))) {
+    stopAfterStage = true;
+  }
 
-  const existingTransformByBandTasks = resumeExistingTasks
-    ? await listTasksByStage(taskQueue, params.nodeId, 'transform')
-    : [];
-  const transformByBandTasks = existingTransformByBandTasks.length > 0
-    ? []
-    : await buildTransformByBandTasks(params.nodeId, shapeStore, bands, enableHighDetailBands, countryLookup);
-  if (existingTransformByBandTasks.length > 0 || transformByBandTasks.length > 0) {
-    await params.waitIfPaused?.();
-    if (transformByBandTasks.length > 0) {
-      await putTasks(taskQueue, transformByBandTasks as Array<TaskQueueRecord<ShapeTransformByBandTaskInput>>);
-    }
-    const transformByBandAbortController = new AbortController();
-    const transformByBandHandler = createTransformByBandHandler({
-      shapeDB: shapeStore,
-      ephemeralDB: ephemeralStore,
-      transformConfig: resolveTransformConfig(params.buildConfig),
-      bands,
-      abortSignal: transformByBandAbortController.signal,
-    });
-    await runStageTasks({
-      nodeId: params.nodeId,
-      stage: 'transform',
-      handler: transformByBandHandler as unknown as StageHandler<ShapeTransformByBandTaskInput>,
-      waitIfPaused: params.waitIfPaused,
-      maxConcurrent: params.buildConfig.transformConfig.maxConcurrent,
-      failureHandling: 'stop',
-      abortController: transformByBandAbortController,
-    });
-    if (params.buildConfig.fetchConfig.deleteOnComplete) {
-      await shapeStore.fetchCache.where('nodeId').equals(params.nodeId).delete();
+  if (!stopAfterStage) {
+    const existingTransformByBandTasks = resumeExistingTasks
+      ? await listTasksByStage(taskQueue, params.nodeId, 'transform')
+      : [];
+    const transformByBandTasks = existingTransformByBandTasks.length > 0
+      ? []
+      : await buildTransformByBandTasks(params.nodeId, shapeStore, bands, enableHighDetailBands, countryLookup);
+    if (existingTransformByBandTasks.length > 0 || transformByBandTasks.length > 0) {
+      await params.waitIfPaused?.();
+      if (transformByBandTasks.length > 0) {
+        await putTasks(taskQueue, transformByBandTasks as Array<TaskQueueRecord<ShapeTransformByBandTaskInput>>);
+      }
+      const transformByBandAbortController = new AbortController();
+      const transformByBandHandler = createTransformByBandHandler({
+        shapeDB: shapeStore,
+        ephemeralDB: ephemeralStore,
+        transformConfig: resolveTransformConfig(params.buildConfig),
+        bands,
+        abortSignal: transformByBandAbortController.signal,
+      });
+      await runStageTasks({
+        nodeId: params.nodeId,
+        stage: 'transform',
+        handler: transformByBandHandler as unknown as StageHandler<ShapeTransformByBandTaskInput>,
+        waitIfPaused: params.waitIfPaused,
+        maxConcurrent: params.buildConfig.transformConfig.maxConcurrent,
+        failureHandling,
+        abortController: transformByBandAbortController,
+      });
+      if (shouldStopAfterStage(buildContinuationPolicy, await getFailedTaskCount(taskQueue, params.nodeId, 'transform'))) {
+        stopAfterStage = true;
+      }
+      if (params.buildConfig.fetchConfig.deleteOnComplete) {
+        await shapeStore.fetchCache.where('nodeId').equals(params.nodeId).delete();
+      }
     }
   }
 
-  const existingVtTasks = resumeExistingTasks
-    ? await listTasksByStage(taskQueue, params.nodeId, 'vt')
-    : [];
-  const vtTasks = existingVtTasks.length > 0
-    ? []
-    : await buildVtTasks(
-      params.nodeId,
-      ephemeralStore,
-      bands,
-      enableHighDetailBands,
-      DEFAULT_TASK_SPLIT.maxBuffersPerTask,
-      DEFAULT_TASK_SPLIT.maxVerticesPerTask,
-    );
-  if (existingVtTasks.length > 0 || vtTasks.length > 0) {
-    await params.waitIfPaused?.();
-    if (vtTasks.length > 0) {
-      await putTasks(taskQueue, vtTasks as Array<TaskQueueRecord<ShapeVtTaskInput>>);
-    }
-    const vtAbortController = new AbortController();
-    const vtHandler = createVtHandler({
-      ephemeralDB: ephemeralStore,
-      vtDB: vtStore,
-      vtConfig: resolveVtConfig(params.buildConfig),
-      bands,
-      abortSignal: vtAbortController.signal,
-    });
-    await runStageTasks({
-      nodeId: params.nodeId,
-      stage: 'vt',
-      handler: vtHandler as unknown as StageHandler<ShapeVtTaskInput>,
-      waitIfPaused: params.waitIfPaused,
-      maxConcurrent: params.buildConfig.vtConfig.maxConcurrent,
-      failureHandling: 'stop',
-      abortController: vtAbortController,
-    });
-    if (params.buildConfig.transformConfig.deleteOnComplete) {
-      await ephemeralStore.transformCache.where('nodeId').equals(params.nodeId).delete();
+  if (!stopAfterStage) {
+    const existingVtTasks = resumeExistingTasks
+      ? await listTasksByStage(taskQueue, params.nodeId, 'vt')
+      : [];
+    const vtTasks = existingVtTasks.length > 0
+      ? []
+      : await buildVtTasks(
+        params.nodeId,
+        ephemeralStore,
+        bands,
+        enableHighDetailBands,
+        DEFAULT_TASK_SPLIT.maxBuffersPerTask,
+        DEFAULT_TASK_SPLIT.maxVerticesPerTask,
+      );
+    if (existingVtTasks.length > 0 || vtTasks.length > 0) {
+      await params.waitIfPaused?.();
+      if (vtTasks.length > 0) {
+        await putTasks(taskQueue, vtTasks as Array<TaskQueueRecord<ShapeVtTaskInput>>);
+      }
+      const vtAbortController = new AbortController();
+      const vtHandler = createVtHandler({
+        ephemeralDB: ephemeralStore,
+        vtDB: vtStore,
+        vtConfig: resolveVtConfig(params.buildConfig),
+        bands,
+        abortSignal: vtAbortController.signal,
+      });
+      await runStageTasks({
+        nodeId: params.nodeId,
+        stage: 'vt',
+        handler: vtHandler as unknown as StageHandler<ShapeVtTaskInput>,
+        waitIfPaused: params.waitIfPaused,
+        maxConcurrent: params.buildConfig.vtConfig.maxConcurrent,
+        failureHandling,
+        abortController: vtAbortController,
+      });
+      if (params.buildConfig.transformConfig.deleteOnComplete) {
+        await ephemeralStore.transformCache.where('nodeId').equals(params.nodeId).delete();
+      }
     }
   }
 

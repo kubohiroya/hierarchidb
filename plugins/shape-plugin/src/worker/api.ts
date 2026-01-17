@@ -3,7 +3,7 @@
  * Exposes batch-oriented operations for runtime worker adapters
  */
 
-import { toNodeId, type NodeId, type TaskQueueRecord } from '@hierarchidb/common-types';
+import { toNodeId, type BuildContinuationPolicy, type NodeId, type TaskQueueRecord } from '@hierarchidb/common-types';
 import type { ShapeBuildConfig } from '../common/types/index.js';
 import {
   type BatchSession,
@@ -148,11 +148,6 @@ const buildTaskQueueTitle = (task: TaskQueueRecord): string | undefined => {
       : undefined;
     return [country, adminLevel, bandId, zoomBandLabel].filter(Boolean).join(" ");
   }
-  if (task.stage === "transform-by-zoom") {
-    const bandId = typeof input.bandId === "number" ? `band` : undefined;
-    const cacheId = typeof input.transformByBandCacheId === "string" ? input.transformByBandCacheId : undefined;
-    return [bandId, cacheId].filter(Boolean).join(" ");
-  }
   if (task.stage === "vt") {
     const bandId = typeof input.bandId === "number" ? `band` : undefined;
     const tileId = typeof input.tileId === "number" ? `tile:` : undefined;
@@ -226,7 +221,7 @@ const readStringArray = (value: unknown): string[] => {
 };
 
 const resolveTaskType = (tasks: TaskQueueRecord[]): TaskQueueRecord['stage'] | undefined => {
-  const stageOrder: Array<TaskQueueRecord['stage']> = ['fetch', 'transform', 'transform-by-zoom', 'vt'];
+  const stageOrder: Array<TaskQueueRecord['stage']> = ['fetch', 'transform', 'vt'];
   return stageOrder.find((stage) => (
     tasks.some((task) => task.stage === stage && task.status !== 'completed' && task.status !== 'failed')
   ));
@@ -587,6 +582,7 @@ export const shapeBatchAPI = {
     draftId: NodeId,
     buildConfig: ShapeBuildConfig,
     downloadTaskPayloads: FetchTaskPayload[],
+    buildContinuationPolicy?: BuildContinuationPolicy,
     progressCallback?: (event: BatchProgressEvent) => void,
   ): Promise<NodeId> => {
     if (!buildConfig.dataSourceName) {
@@ -625,6 +621,7 @@ export const shapeBatchAPI = {
       processingStatus: 'processing',
     });
 
+    setPaused(nodeForSession, false);
     const pipelineKey = String(nodeForSession);
     activePipelines.add(pipelineKey);
     void runShapeVtPipeline({
@@ -634,6 +631,7 @@ export const shapeBatchAPI = {
       selectedArrayByCountries: draftLike?.draftData?.selectedArrayByCountries,
       downloadTaskPayloads,
       waitIfPaused: () => waitIfPaused(nodeForSession),
+      buildContinuationPolicy,
     }).then(async () => {
       await handler.updateEntity(nodeForSession, {
         buildFinishedAt: Date.now(),
@@ -687,6 +685,7 @@ export const shapeBatchAPI = {
     if (command === 'session/resume') {
       const nodeId = payload.nodeId as NodeId;
       if (!nodeId) throw new Error('[shapeBatchAPI] session/resume requires nodeId');
+      const buildContinuationPolicy = payload.buildContinuationPolicy as BuildContinuationPolicy | undefined;
       setPaused(nodeId, false);
       await emitProgressSnapshot(nodeId);
       const pipelineKey = String(nodeId);
@@ -724,6 +723,7 @@ export const shapeBatchAPI = {
           selectedArrayByCountries: draftLike?.draftData?.selectedArrayByCountries,
           waitIfPaused: () => waitIfPaused(nodeId),
           resumeExistingTasks: true,
+          buildContinuationPolicy,
         }).then(async () => {
           await handler.updateEntity(nodeId, {
             buildFinishedAt: Date.now(),

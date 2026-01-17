@@ -6,7 +6,6 @@ import type { NodeId } from './id-types.js';
 export type BatchStage =
   | 'fetch'
   | 'transform'
-  | 'transform-by-zoom'
   | 'vt'
   | 'completed'
   | string;

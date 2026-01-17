@@ -1,120 +1,94 @@
-# Add build continuation policy for shape/location/route
+# Wire build continuation policy into Shape batch execution
 
 This ExecPlan is a living document. The sections `Progress`, `Surprises & Discoveries`, `Decision Log`, and `Outcomes & Retrospective` must be kept up to date as work proceeds.
 
-PLANS.md is checked into the repository at `PLANS.md`. This plan must be maintained in accordance with it.
+This plan follows `PLANS.md` in the repository root and must be maintained in accordance with it.
 
 ## Purpose / Big Picture
 
-Users need to control how batch builds behave when errors occur. After this change, the TreeConsole toolbar exposes a “Build continuation policy” selector with three choices: always finish all stages, finish the current stage then stop, or stop immediately on the first error. The choice is persisted in TreeConsole settings and is applied to shape, location, and route build execution so users can see the effect by starting a build and observing whether it continues or stops after an error.
+Users can choose a build continuation policy in the TreeConsole settings (finish all stages, finish stage then stop, or stop on first error). After this change, that policy affects the Shape build pipeline so failures no longer always stop the run immediately. Success is observable by running a Shape build with each policy and seeing the stage behavior match the selection.
 
 ## Progress
 
-- [x] (2026-01-17 14:00 JST) Created task entry in `TASKS.md` and acknowledged scope.
-- [x] (2026-01-17 14:02 JST) Create and publish this ExecPlan in `plans/build-continuation-policy-execplan.md`.
-- [ ] Add build continuation policy type to shared types and TreeConsole settings.
-- [ ] Add TreeConsole toolbar UI controls and i18n strings.
-- [ ] Apply policy to shape pipeline, location session, and route batch execution.
-- [ ] Run `pnpm typecheck` and record results in `TASKS.md` and here.
-- [ ] Update `Progress`, `Decision Log`, and `Outcomes & Retrospective` with results.
+- [x] (2026-01-17 20:00 JST) Confirm where buildContinuationPolicy is stored and where batch execution is triggered.
+- [x] Extend Worker API start/resume calls to carry buildContinuationPolicy.
+- [x] Update Shape batch worker to accept the policy and apply it to pipeline execution.
+- [x] Apply policy to stage failure handling and stage-to-stage continuation logic.
+- [x] Run pnpm typecheck and capture results in TASKS.md.
 
 ## Surprises & Discoveries
 
-- Observation: Shape build uses `runStageTasks` from `@hierarchidb/vt-orchestrator` with `failureHandling: 'stop'`, so policy mapping must happen at pipeline call sites.
-  Evidence: `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts`, `plugins/shape-plugin/src/services/vt/shapeVtPipeline.ts`.
-- Observation: Route build uses `RouteBatchSession` and currently throws if any failures occur after all tasks complete.
-  Evidence: `plugins/route-plugin/src/services/RouteBatchSession.ts`.
-- Observation: Location build uses `LocationSessionController` and catches/logs errors without surfacing them as failures.
-  Evidence: `plugins/location-plugin/src/services/batch/LocationSessionController.ts`.
+- Observation: None yet.
+  Evidence: N/A.
 
 ## Decision Log
 
-- Decision: Use a single string union policy with three values shared across shape/location/route and stored in TreeConsole settings.
-  Rationale: Keeps the UI and build configs aligned without forcing a plugin-specific enum.
-  Date/Author: 2026-01-17 / Codex
+- Decision: Map finish_all_stages to failureHandling=continue and allow progression even with failed tasks.
+  Rationale: The policy name implies all stages should run regardless of errors.
+  Date/Author: 2026-01-17 / Codex.
+
+- Decision: Map finish_stage_then_stop to failureHandling=continue, but halt before the next stage if any failures occurred.
+  Rationale: Allows a full stage run while preventing later stages from running on bad inputs.
+  Date/Author: 2026-01-17 / Codex.
+
+- Decision: Map stop_on_first_error to failureHandling=stop and halt the pipeline when a failure is recorded.
+  Rationale: Matches the existing "stop" failure handling semantics.
+  Date/Author: 2026-01-17 / Codex.
 
 ## Outcomes & Retrospective
 
-- Pending. Will be filled after implementation.
+- Completed policy wiring from TreeConsole settings through Worker API into Shape pipeline.
+- `pnpm typecheck` exit 0 (tsdown define warnings noted in TASKS.md).
 
 ## Context and Orientation
 
-TreeConsole toolbar UI lives in `packages/ui/treeconsole/toolbar/src/components/toolbar/SettingsMenu.tsx` and `TreeConsoleToolbarContent.tsx`, with translations in `app/public/locales/en/common.json` and `app/public/locales/ja/common.json` under `treeConsole.toolbar.*`. Settings persistence is in `packages/util/src/treeConsoleSettings.ts` and is consumed in `app/src/router/pages/tree/console/useTreeConsoleToolbarActions.ts` and in shape build defaults at `plugins/shape-plugin/src/ui/components/step4/useShapeBuildConfigStep.ts`.
+TreeConsole settings persist buildContinuationPolicy in localStorage and the toolbar exposes a selector. Shape build sessions are started through the Worker API and executed in the Shape worker pipeline (`runShapeVtPipeline`). The pipeline uses `runStageTasks` with a `failureHandling` flag but currently always passes `stop` and always continues to the next stage. This plan wires the policy from UI to Worker and uses it to decide `failureHandling` and whether to proceed to the next stage.
 
-Shape builds run through `plugins/shape-plugin/src/services/vt/shapeVtPipeline.ts` and `shapeFetchStage.ts` which call `runStageTasks` from `@hierarchidb/vt-orchestrator`. Location builds use `LocationSessionController` and `LocationBatchSession` (`plugins/location-plugin/src/services/batch/*.ts`). Route builds use `RouteBatchSession` for batch tasks and IDE-GSM import via `RouteMutationService` (`packages/runtime-worker/src/services/RouteMutationService.ts`). Build configuration types are in `packages/features/gis-sdk/src/config.ts` (shape), `packages/features/location-store/src/index.ts` (location), and `packages/features/route-store/src/index.ts` (route). Shared types are exported from `packages/common/types/src/index.ts`.
+Key files to modify:
+
+- `packages/common/api/src/WorkerAPI.ts` for start/resume signatures.
+- `packages/ui/worker-client/src/workerBridge.ts` for forwarding the policy.
+- `app/src/worker-runtime/worker.ts` for passing policy into shape batch API.
+- `plugins/shape-plugin/src/ui/components/step5/useBatchSessionActions.ts` for retrieving the policy and calling Worker API.
+- `plugins/shape-plugin/src/worker/api.ts` for accepting the policy and passing it to `runShapeVtPipeline`.
+- `plugins/shape-plugin/src/services/vt/shapeVtPipeline.ts` and `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts` for applying failure handling and stage continuation.
 
 ## Plan of Work
 
-First, define a shared `BuildContinuationPolicy` type in `packages/common/types/src/progress-types.ts` (or a new common-types file) and export it from `packages/common/types/src/index.ts`. Update `packages/util/src/treeConsoleSettings.ts` to store the policy, with a default value that maps to “finish all stages.” Update `loadTreeConsoleSettings` and `saveTreeConsoleSettings` to validate and persist it.
-
-Next, extend TreeConsole toolbar props to accept `buildContinuationPolicy` and `onBuildContinuationPolicyChange`, pass them through `TreeConsoleToolbar` and `TreeConsoleToolbarContent`, and add UI to `SettingsMenu` (a new radio group section under settings). Add i18n strings to `app/public/locales/en/common.json` and `app/public/locales/ja/common.json` for the new labels and options. Update `app/src/router/pages/tree/console/useTreeConsoleToolbarActions.ts` to load/store the policy and wire handlers. Ensure the new setting does not touch unrelated files (specifically exclude `pnpm-lock.yaml` and `plans/ui-map-interaction-core-execplan.md`).
-
-Then apply the policy to build execution:
-
-- Shape: add `buildContinuationPolicy?: BuildContinuationPolicy` to `BaseBuildConfig` in `packages/features/gis-sdk/src/config.ts`. In `shapeFetchStage.ts` and `shapeVtPipeline.ts`, map the policy to `failureHandling` values (`finish_all_stages` -> `continue`, `finish_stage_then_stop` -> `continue` + post-stage failure check, `stop_on_first_error` -> `stop`). After each stage, check for failed tasks via `listTasksByStageAndStatus` and throw to stop if the policy is `finish_stage_then_stop` and failures exist. Maintain existing cleanup behavior.
-
-- Location: add `buildContinuationPolicy?: BuildContinuationPolicy` to `UnifiedLocationBatchConfig` in `packages/features/location-store/src/index.ts` and to `LocationBatchConfig` in `plugins/location-plugin/src/services/batch/LocationBatchSession.ts`. Pass the policy from `UnifiedLocationBatchManager.performStart` to `LocationBatchSession` (and/or `LocationSessionController`) and implement logic so errors are tracked. For `stop_on_first_error`, throw immediately on failure; for `finish_stage_then_stop`, complete the current stage and throw afterward if any failure occurred; for `finish_all_stages`, allow completion without throwing.
-
-- Route: add `buildContinuationPolicy?: BuildContinuationPolicy` to `RouteBatchConfig` in `packages/features/route-store/src/index.ts`. In `RouteBatchSession.processBatch`, track failures per stage and apply the policy. For `stop_on_first_error`, abort further tasks after the first failure (skip scheduling new tasks where possible). For `finish_stage_then_stop`, complete the current stage, then throw before the next stage if any failures occurred. For `finish_all_stages`, complete all stages and do not throw on failure, but still mark failed tasks in the task queue.
-
-Finally, run `pnpm typecheck` and record output in `TASKS.md` and this plan. Update the plan’s `Progress`, `Decision Log`, and `Outcomes & Retrospective` with results and any follow-ups.
+First, extend the Worker API and worker bridge functions to accept an optional BuildContinuationPolicy parameter. Then, when the Shape build UI starts or resumes a batch session, load the current TreeConsole setting and include it in the Worker API call. Next, adjust the Shape worker’s startBatchProcess and resume pipeline to pass the policy into `runShapeVtPipeline`. Finally, in the pipeline, map the policy to `failureHandling` and add explicit logic to stop before the next stage when failures are present and the policy demands it.
 
 ## Concrete Steps
 
-1) Add the shared policy type and TreeConsole settings.
-   - Edit `packages/common/types/src/progress-types.ts` and export from `packages/common/types/src/index.ts`.
-   - Edit `packages/util/src/treeConsoleSettings.ts` to add `buildContinuationPolicy` with validation and default.
+Run these commands from the repository root:
 
-2) Add TreeConsole toolbar UI.
-   - Edit `packages/ui/treeconsole/toolbar/src/types.ts` to add new props.
-   - Edit `packages/ui/treeconsole/toolbar/src/components/TreeConsoleToolbar.tsx` and `TreeConsoleToolbarContent.tsx` to pass policy props.
-   - Edit `packages/ui/treeconsole/toolbar/src/components/toolbar/SettingsMenu.tsx` to add the radio group and labels.
-   - Edit `app/src/router/pages/tree/console/useTreeConsoleToolbarActions.ts` to load/store policy.
-   - Edit `app/public/locales/en/common.json` and `app/public/locales/ja/common.json` to add strings.
+  rg -n "buildContinuationPolicy" app packages plugins
 
-3) Apply policy in shape, location, and route builds.
-   - Edit `packages/features/gis-sdk/src/config.ts` for shape build config.
-   - Edit `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts` and `plugins/shape-plugin/src/services/vt/shapeVtPipeline.ts` for policy mapping.
-   - Edit `packages/features/location-store/src/index.ts`, `plugins/location-plugin/src/services/batch/LocationBatchSession.ts`, and `plugins/location-plugin/src/services/batch/LocationSessionController.ts` to use policy.
-   - Edit `packages/features/route-store/src/index.ts` and `plugins/route-plugin/src/services/RouteBatchSession.ts` to use policy.
+Edit the files listed in Context and Orientation to pass policy end-to-end. After code changes, run:
 
-4) Run validation.
-   - From repo root: `pnpm typecheck`.
-   - Capture success output and update logs.
+  pnpm typecheck
 
-Expected transcript snippet (success):
-  > pnpm typecheck
-  ...
-  Tasks:    <N> successful, <N> total
-  ...
+Record exit code and warnings in TASKS.md under task 2242.
 
 ## Validation and Acceptance
 
-Start the app and open the TreeConsole toolbar settings. Verify the new “Build continuation policy” radio group appears and persists between reloads. Start a shape/location/route build and intentionally introduce a failure (e.g., data source mismatch or invalid input) to confirm behavior:
-
-- “Finish all stages” continues to the final stage without stopping.
-- “Finish current stage then stop” completes the current stage’s remaining tasks and stops before the next stage.
-- “Stop on first error” halts quickly after the first failure.
-
-Run `pnpm typecheck` and expect exit code 0.
+- With finish_all_stages, a Transform failure should still allow the VT stage to be scheduled if tasks exist.
+- With finish_stage_then_stop, a Transform failure stops before VT, but Transform tasks complete to the end of the queue.
+- With stop_on_first_error, a Transform failure stops the stage early and halts the pipeline.
+- `pnpm typecheck` exits 0.
 
 ## Idempotence and Recovery
 
-These changes are additive. Re-running the steps is safe. Rollback is a clean revert of the modified files, which restores the prior toolbar menu and default build behavior.
+Edits are source-only and safe to repeat. If compilation fails, revert the impacted file and re-apply the change in smaller steps. Rollback is a single revert of the change set.
 
 ## Artifacts and Notes
 
-None yet. Add key command output and any diff excerpts here as implementation proceeds.
+- Capture a short log snippet for each policy showing the stage progression.
+- Capture the `pnpm typecheck` exit 0 summary line.
 
 ## Interfaces and Dependencies
 
-- `BuildContinuationPolicy`: string union shared across shape/location/route.
-- `TreeConsoleSettings.buildContinuationPolicy`: persisted to localStorage under `TREE_CONSOLE_SETTINGS_STORAGE_KEY`.
-- `TreeConsoleToolbarProps.buildContinuationPolicy` and `onBuildContinuationPolicyChange` for UI wiring.
-- Shape build config: `BaseBuildConfig.buildContinuationPolicy?: BuildContinuationPolicy`.
-- Location config: `UnifiedLocationBatchConfig.buildContinuationPolicy?: BuildContinuationPolicy` and `LocationBatchConfig.buildContinuationPolicy?: BuildContinuationPolicy`.
-- Route config: `RouteBatchConfig.buildContinuationPolicy?: BuildContinuationPolicy`.
+Use existing BuildContinuationPolicy from `@hierarchidb/common-types` and FailureHandling from `@hierarchidb/vt-orchestrator`. Do not introduce new dependencies or new settings storage.
 
-Plan update note: Initial version created to satisfy ExecPlan requirement and to cover shared UI + build pipeline changes. Future updates will record progress and decisions.
+---
 
-Plan update note (2026-01-17 14:02 JST): Marked ExecPlan creation as complete.
+Plan change log: 2026-01-17 created initial ExecPlan for wiring build continuation policy into Shape execution.

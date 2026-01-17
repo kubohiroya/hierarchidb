@@ -318,7 +318,7 @@ function mapRouteStageToVtStage(stage: string): TaskStage {
     case 'extract1':
       return 'transform';
     case 'extract2':
-      return 'transform-by-zoom';
+      return 'transform';
     case 'vectortile':
       return 'vt';
     default:

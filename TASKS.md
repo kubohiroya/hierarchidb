@@ -1,3 +1,45 @@
+2241) refactor/shape/remove-transform-by-zoom (P2) — 完了 (2026-01-17)
+- ブランチ名: refactor/shape/remove-transform-by-zoom
+- 依存: なし
+- ExecPlan: `plans/remove-transform-by-zoom-execplan.md`
+- 受け入れ基準: transform-by-zoom が型定義/実装/表示経路から除去され transform に一本化される／Step4 の Transform キャッシュ削除が transform 関連のタスク・キャッシュを漏れなく削除する／processingStatus と tileSummary が transform タスク実行抑止の判断材料として使われない／pnpm typecheck が exit 0 で通る／TASKS.md に運用ログを記載する
+- 要点: transform-by-zoom を廃止し、Transform キャッシュ削除時のタスク整理と runtime 状態優先の再開判定を反映。
+- 影響範囲: `plugins/shape-plugin/src/**`, `packages/features/shape-store/src/**`, `packages/features/gis-sdk/src/**`, `packages/plugin-service-api/src/**`, `packages/common/types/src/**`, `packages/runtime-worker/src/**`, `packages/vt-orchestrator/src/**`
+- ロールバック手順: 該当差分を revert し、transform-by-zoom を含む従来のタスク/型経路に戻す
+- チェックリスト:
+  - transform-by-zoom の型定義を削除し、transform に一本化する
+  - 参照箇所（worker/api, task queue, session mappers, EphemeralDB など）を更新する
+  - Step4 の Transform キャッシュ削除でタスク/エラー/関連キャッシュを漏れなく削除する
+  - processingStatus/tileSummary が transform タスク実行抑止条件になっていないことを確認する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-17 19:20 JST transform-by-zoom 廃止と transform 一本化の調査・実装に着手。
+  - blocked: 2026-01-17 19:35 JST pnpm typecheck が exit 2（ShapeBuildStage と BuildTaskType の不一致）で失敗。
+  - update: 2026-01-17 19:38 JST pnpm --filter @hierarchidb/plugin-service-api build を実行（exit 0、tsdown define 警告あり）。
+  - done: 2026-01-17 19:45 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+
+2242) feat/shape/build-continuation-policy (P2) — 完了 (2026-01-17)
+- ブランチ名: feat/shape/build-continuation-policy
+- 依存: なし
+- ExecPlan: `plans/build-continuation-policy-execplan.md`
+- 受け入れ基準: TreeConsole の buildContinuationPolicy が Shape ビルド実行に渡される／finish_all_stages でエラー後も次ステージへ進む／finish_stage_then_stop でそのステージは完走するが次ステージへ進まない／stop_on_first_error でステージ内の最初の失敗で停止する／pnpm typecheck が exit 0 で通る／TASKS.md に運用ログを記載する
+- 要点: TreeConsole の buildContinuationPolicy を Shape ビルド実行に反映し、ステージ継続/停止ポリシーを実装。
+- 影響範囲: `app/src/worker-runtime/worker.ts`, `packages/common/api/src/WorkerAPI.ts`, `packages/ui/worker-client/src/workerBridge.ts`, `plugins/shape-plugin/src/ui/components/step5/**`, `plugins/shape-plugin/src/services/vt/**`, `plugins/shape-plugin/src/worker/api.ts`
+- ロールバック手順: 該当差分を revert し、buildContinuationPolicy を UI 設定のみの状態へ戻す
+- チェックリスト:
+  - buildContinuationPolicy を start/resume 経路で Worker API に渡す
+  - Shape ビルドパイプラインで failureHandling とステージ継続条件を適用する
+  - finish_all_stages / finish_stage_then_stop / stop_on_first_error の挙動を反映する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-17 20:00 JST buildContinuationPolicy の実行反映に着手。
+  - blocked: 2026-01-17 20:25 JST pnpm typecheck が exit 2（shape-plugin/app の startBatchSession 引数数不一致）で失敗。
+  - update: 2026-01-17 20:28 JST pnpm --filter @hierarchidb/common-api build / pnpm --filter @hierarchidb/ui-worker-client build を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 20:31 JST app の ShapeBatchAPI 型を buildContinuationPolicy 対応に更新。
+  - done: 2026-01-17 20:33 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+
 2240) chore/analysis/list-large-react-components (P3) — 完了 (2026-01-17)
 - ブランチ名: chore/analysis/list-large-react-components
 - 依存: なし
@@ -18,6 +60,7 @@
   - blocked: 2026-01-17 18:20 JST pnpm typecheck が exit 1（未使用 import/型、正規表現エスケープ、戻り値の不整合）で失敗。
   - update: 2026-01-17 18:35 JST 未使用 import/型の削除、正規表現のエスケープ修正、戻り値の補正を反映。
   - done: 2026-01-17 18:45 JST pnpm typecheck を再実行（exit 0）し、app/src/router/** と plugins/*-plugin/src/ui/** の対象コンポーネントをカスタムフック外部化。
+  - update: 2026-01-17 19:05 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
 
 2239) feat/shape/step4-area-filter-coefficient (P1) — 完了 (2026-01-17)
 - ブランチ名: feat/shape/step4-area-filter-coefficient
@@ -885,6 +928,9 @@
   - update: 2026-01-17 10:50 JST cleanCoords の import を @turf/turf へ変更し Vite 解決エラーを回避。
   - blocked: 2026-01-17 10:55 JST pnpm typecheck が @turf/turf に cleanCoords が無い旨で失敗。
   - update: 2026-01-17 11:00 JST cleanCoords を @turf/clean-coords へ戻し、app に依存を追加。
+  - start: 2026-01-17 16:20 JST fetch ステージが正常に動作しない問題と invalid polygon 以前の失敗要因の調査に着手。
+  - update: 2026-01-17 16:27 JST startBatchProcess 開始時に pause 状態を解除し、transform の cleanCoords 例外で停止しないようガードを追加。
+  - update: 2026-01-17 16:45 JST VT 生成が開始しない事象の調査と tileId リレーション欠落時のフォールバック検討に着手。
   - update: 2026-01-17 11:05 JST pnpm install を再実行（exit 0）。
   - update: 2026-01-17 11:10 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
   - update: 2026-01-17 11:20 JST transform 側に cleanCoords を追加する対応に着手。

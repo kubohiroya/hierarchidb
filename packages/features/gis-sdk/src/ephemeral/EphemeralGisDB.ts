@@ -1,7 +1,7 @@
 import { Dexie, type Table } from 'dexie';
 import type { NodeId } from '@hierarchidb/common-types';
 
-export type EphemeralStage = 'fetch' | 'transform' | 'transform-by-zoom' | 'vt';
+export type EphemeralStage = 'fetch' | 'transform' | 'vt';
 
 export interface FetchCacheRecord {
   id: string;

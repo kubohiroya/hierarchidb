@@ -1,5 +1,5 @@
 import { proxy, type Remote } from 'comlink';
-import type { NodeId, NodeType } from '@hierarchidb/common-types';
+import type { BuildContinuationPolicy, NodeId, NodeType } from '@hierarchidb/common-types';
 import type {
   BatchProgressEvent,
   BatchSessionStatus,
@@ -13,11 +13,16 @@ export interface WorkerBridge {
   startBatchSession(
     nodeType: NodeType,
     nodeId: NodeId,
-    downloadTaskPayloads?: Parameters<WorkerAPI['startBatchSession']>[2]
+    downloadTaskPayloads?: Parameters<WorkerAPI['startBatchSession']>[2],
+    buildContinuationPolicy?: BuildContinuationPolicy,
   ): Promise<BatchSessionStatus>;
   getBatchSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus>;
   pauseBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<void>;
-  resumeBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<void>;
+  resumeBatchSession(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    buildContinuationPolicy?: BuildContinuationPolicy,
+  ): Promise<void>;
   getBatchTasks(nodeType: NodeType, nodeId: NodeId): Promise<BatchTaskSummary[]>;
   getStyleQueryAPI(): ReturnType<WorkerAPI['getStyleQueryAPI']>;
   getStyleMutationAPI(): ReturnType<WorkerAPI['getStyleMutationAPI']>;
@@ -85,9 +90,10 @@ class WorkerBridgeImpl implements WorkerBridge {
     nodeType: NodeType,
     nodeId: NodeId,
     downloadTaskPayloads?: Parameters<WorkerAPI['startBatchSession']>[2],
+    buildContinuationPolicy?: BuildContinuationPolicy,
   ): Promise<BatchSessionStatus> {
     const api = await ensureWorkerAPI();
-    return api.startBatchSession(nodeType, nodeId, downloadTaskPayloads);
+    return api.startBatchSession(nodeType, nodeId, downloadTaskPayloads, buildContinuationPolicy);
   }
 
   async getBatchSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus> {
@@ -100,9 +106,13 @@ class WorkerBridgeImpl implements WorkerBridge {
     await api.pauseBatchSession(nodeType, nodeId);
   }
 
-  async resumeBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<void> {
+  async resumeBatchSession(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    buildContinuationPolicy?: BuildContinuationPolicy,
+  ): Promise<void> {
     const api = await ensureWorkerAPI();
-    await api.resumeBatchSession(nodeType, nodeId);
+    await api.resumeBatchSession(nodeType, nodeId, buildContinuationPolicy);
   }
 
   async getBatchTasks(nodeType: NodeType, nodeId: NodeId): Promise<BatchTaskSummary[]> {

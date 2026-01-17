@@ -1,7 +1,7 @@
 // Public worker API types for @hierarchidb/shape-plugin/worker
 // Keep this file type-only and decoupled from internal Dexie types
 
-import type { NodeId } from '@hierarchidb/common-types';
+import type { BuildContinuationPolicy, NodeId } from '@hierarchidb/common-types';
 import type { BatchProgressEvent } from '@hierarchidb/common-api';
 import type {
   BatchSession,
@@ -54,6 +54,7 @@ export interface ShapeBuildAPI {
     draftId: NodeId,
     config: BatchConfig,
     downloadTaskPayloads: FetchTaskPayload[],
+    buildContinuationPolicy?: BuildContinuationPolicy,
     progressCallback?: (event: BatchProgressEvent) => void,
   ): Promise<NodeId>;
   getBuildSession(nodeId: NodeId): Promise<BatchSession | undefined>;

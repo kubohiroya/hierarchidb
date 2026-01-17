@@ -20,7 +20,7 @@ import type {
   BatchSessionStatus,
   BatchTaskSummary,
 } from './BatchControlAPI.js';
-import type { NodeId, NodeType } from '@hierarchidb/common-types';
+import type { BuildContinuationPolicy, NodeId, NodeType } from '@hierarchidb/common-types';
 import type { HeapPressureEvent } from '@hierarchidb/memory';
 
 type ShapeDownloadTaskPayload = {
@@ -82,10 +82,15 @@ export interface WorkerAPI {
     nodeType: NodeType,
     nodeId: NodeId,
     downloadTaskPayloads?: ShapeDownloadTaskPayload[],
+    buildContinuationPolicy?: BuildContinuationPolicy,
   ): Promise<BatchSessionStatus>;
   getBatchSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus>;
   pauseBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<void>;
-  resumeBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<void>;
+  resumeBatchSession(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    buildContinuationPolicy?: BuildContinuationPolicy,
+  ): Promise<void>;
   getBatchTasks(nodeType: NodeType, nodeId: NodeId): Promise<BatchTaskSummary[]>;
   generateShapeDownloadTaskPayloadsFromSelection(
     nodeId: NodeId,

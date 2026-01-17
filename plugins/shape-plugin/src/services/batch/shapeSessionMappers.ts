@@ -84,7 +84,6 @@ const toStageMap = (stages: Record<string, unknown> | undefined): Record<BuildTa
   return {
     fetch: read('fetch'),
     transform: read('transform'),
-    'transform-by-zoom': read('transform-by-zoom'),
     vt: read('vt'),
   };
 };

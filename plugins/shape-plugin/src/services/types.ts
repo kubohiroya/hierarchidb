@@ -2,7 +2,7 @@
  * Type definitions for Shape plugin services
  */
 
-import type { NodeId } from '@hierarchidb/common-types';
+import type { BuildContinuationPolicy, NodeId } from '@hierarchidb/common-types';
 import type { Feature as GeoJSONFeature } from 'geojson';
 import type {
   BoundingBox,
@@ -27,6 +27,7 @@ export interface ShapesAPIMethods {
     nodeId: NodeId,
     config: BuildProcessConfig,
     downloadTaskPayloads: FetchTaskPayload[],
+    buildContinuationPolicy?: BuildContinuationPolicy,
   ): Promise<BatchSession>;
 
   pauseBatchProcess(nodeId: NodeId): Promise<void>;

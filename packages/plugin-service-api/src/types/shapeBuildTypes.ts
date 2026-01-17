@@ -4,7 +4,6 @@ export type ShapeDataSourceName = 'naturalearth' | 'geoboundaries' | 'gadm' | 'o
 export type ShapeBuildStage =
   | 'fetch'
   | 'transform'
-  | 'transform-by-zoom'
   | 'vt';
 export type ShapeBuildTaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'regression';
 
