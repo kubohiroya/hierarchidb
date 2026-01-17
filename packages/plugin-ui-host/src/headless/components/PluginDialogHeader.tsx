@@ -4,7 +4,7 @@ import { InfoOutlined as InfoOutlinedIcon } from '@mui/icons-material';
 import { Box, IconButton, Stack, Tooltip, Typography } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import type React from 'react';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { DialogActionInFlight } from '../types.js';
 import { PluginDialogStepper } from './PluginDialogStepper.js';
 import {
@@ -50,6 +50,22 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
     handleStepClick,
   } = usePluginDialogHeaderLogic({ dialogState, pendingAction });
   const theme = useTheme();
+  const isFullScreen = ctx.displayMode === 'full-screen';
+  const [headerVisible, setHeaderVisible] = useState(!isFullScreen);
+
+  useEffect(() => {
+    setHeaderVisible(!isFullScreen);
+  }, [isFullScreen]);
+
+  const handleSensorEnter = useCallback(() => {
+    if (!isFullScreen) return;
+    setHeaderVisible(true);
+  }, [isFullScreen]);
+
+  const handleHeaderMouseLeave = useCallback(() => {
+    if (!isFullScreen) return;
+    setHeaderVisible(false);
+  }, [isFullScreen]);
 
   const dragHandlePointerDown = ctx.onDragHandlePointerDown;
   const canMinimize = Boolean(ctx.onMinimizeChange);
@@ -71,34 +87,51 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
   );
 
   return (
-    <Box
-      data-dialog-drag-handle="true"
-      onPointerDown={dragHandlePointerDown}
-      onDoubleClick={handleHeaderDoubleClick}
-      sx={(theme) => ({
-        display: 'flex',
-        alignItems: 'flex-start',
-        justifyContent: 'space-between',
-        padding: theme.spacing(1.5, 2, 0.1, 2),
-        borderBottom: `1px solid ${theme.palette.divider}`,
-        userSelect: 'none',
-        gap: theme.spacing(1.5),
-        cursor: ctx.displayMode === 'full-screen' ? 'default' : 'move',
-        backgroundColor:
-          theme.palette.mode === 'dark'
-            ? alpha(theme.palette.common.white, 0.04)
-            : getDialogSurfaceColor(theme),
-        transition: theme.transitions.create('background-color', {
-          duration: theme.transitions.duration.shorter,
-        }),
-        '&:hover': {
+    <>
+      {isFullScreen && (
+        <Box
+          onMouseEnter={handleSensorEnter}
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 16,
+            zIndex: (theme.zIndex?.modal ?? 1300) + 2,
+            backgroundColor: 'transparent',
+            pointerEvents: 'auto',
+          }}
+        />
+      )}
+      <Box
+        data-dialog-drag-handle="true"
+        onPointerDown={dragHandlePointerDown}
+        onDoubleClick={handleHeaderDoubleClick}
+        onMouseLeave={handleHeaderMouseLeave}
+        sx={(theme) => ({
+          display: headerVisible ? 'flex' : 'none',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          padding: theme.spacing(1.5, 2, 0.1, 2),
+          borderBottom: `1px solid ${theme.palette.divider}`,
+          userSelect: 'none',
+          gap: theme.spacing(1.5),
+          cursor: ctx.displayMode === 'full-screen' ? 'default' : 'move',
           backgroundColor:
             theme.palette.mode === 'dark'
-              ? alpha(theme.palette.common.white, 0.1)
-              : theme.palette.action.hover,
-        },
-      })}
-    >
+              ? alpha(theme.palette.common.white, 0.04)
+              : getDialogSurfaceColor(theme),
+          transition: theme.transitions.create('background-color', {
+            duration: theme.transitions.duration.shorter,
+          }),
+          '&:hover': {
+            backgroundColor:
+              theme.palette.mode === 'dark'
+                ? alpha(theme.palette.common.white, 0.1)
+                : theme.palette.action.hover,
+          },
+        })}
+      >
       <Stack direction="column" spacing={1} sx={{ minWidth: 0, flex: 1, pr: 2 }}>
         <Stack
           direction="row"
@@ -206,7 +239,8 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
           </Stack>
         </Stack>
       )}
-    </Box>
+      </Box>
+    </>
   );
 };
 

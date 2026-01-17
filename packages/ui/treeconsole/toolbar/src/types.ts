@@ -2,6 +2,8 @@
  * Types for TreeConsoleToolbar_Deprecated package
  */
 
+import type { BuildContinuationPolicy } from '@hierarchidb/common-types';
+
 export type TreeConsoleSearchMode = 'local';
 
 /**
@@ -21,7 +23,8 @@ export type TreeConsoleToolbarAction =
   | { action: 'setRowClickAction'; params: 'Select/Navigate' | 'Edit' }
   | { action: 'setAutosaveEnabled'; params: boolean }
   | { action: 'setDialogBackdropDismissEnabled'; params: boolean }
-  | { action: 'setZoomBandBoundaries'; params: number[] };
+  | { action: 'setZoomBandBoundaries'; params: number[] }
+  | { action: 'setBuildContinuationPolicy'; params: BuildContinuationPolicy };
 
 /**
  * Parameters type for TreeConsoleToolbar_Deprecated actions
@@ -33,7 +36,8 @@ export type TreeConsoleToolbarActionParams =
   | { templateId: string }
   | { trashNodeId: string }
   | boolean
-  | number[];
+  | number[]
+  | BuildContinuationPolicy;
 
 export interface TreeConsoleToolbarController {
   searchText?: string;
@@ -137,6 +141,16 @@ export interface TreeConsoleToolbarProps {
    * Callback when zoom band boundaries change.
    */
   onZoomBandBoundariesChange?: (boundaries: number[]) => void;
+
+  /**
+   * Build continuation policy for batch processing.
+   */
+  buildContinuationPolicy?: BuildContinuationPolicy;
+
+  /**
+   * Callback when build continuation policy changes.
+   */
+  onBuildContinuationPolicyChange?: (policy: BuildContinuationPolicy) => void;
 
 
   /**

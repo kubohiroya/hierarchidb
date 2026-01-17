@@ -1,3 +1,5 @@
+import type { BuildContinuationPolicy } from '@hierarchidb/common-types';
+
 export const TREE_CONSOLE_SETTINGS_STORAGE_KEY = 'hdb.treeConsole.settings';
 export const TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM = 0;
 export const TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM = 11;
@@ -10,14 +12,19 @@ export type TreeConsoleSettings = {
   autosaveEnabled?: boolean;
   dialogBackdropDismissEnabled?: boolean;
   zoomBandBoundaries?: number[];
+  buildContinuationPolicy?: BuildContinuationPolicy;
 };
 
 const defaultSettings: Required<
-  Pick<TreeConsoleSettings, 'autosaveEnabled' | 'dialogBackdropDismissEnabled' | 'zoomBandBoundaries'>
+  Pick<
+    TreeConsoleSettings,
+    'autosaveEnabled' | 'dialogBackdropDismissEnabled' | 'zoomBandBoundaries' | 'buildContinuationPolicy'
+  >
 > = {
   autosaveEnabled: false,
   dialogBackdropDismissEnabled: false,
   zoomBandBoundaries: TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES,
+  buildContinuationPolicy: 'finish_all_stages',
 };
 
 const safeGlobal = (): typeof window | null => {
@@ -26,6 +33,12 @@ const safeGlobal = (): typeof window | null => {
 };
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+const isBuildContinuationPolicy = (value?: string): value is BuildContinuationPolicy => (
+  value === 'finish_all_stages'
+  || value === 'finish_stage_then_stop'
+  || value === 'stop_on_first_error'
+);
 
 export const normalizeZoomBandBoundaries = (
   boundaries: number[],
@@ -106,19 +119,25 @@ export function loadTreeConsoleSettings(): TreeConsoleSettings {
       typeof parsed?.dialogBackdropDismissEnabled === 'boolean'
         ? parsed.dialogBackdropDismissEnabled
         : defaultSettings.dialogBackdropDismissEnabled;
-    const zoomBandBoundaries = Array.isArray(parsed?.zoomBandBoundaries)
+    const parsedZoomBandBoundaries = parsed?.zoomBandBoundaries;
+    const zoomBandBoundaries = Array.isArray(parsedZoomBandBoundaries)
       ? normalizeZoomBandBoundaries(
-          parsed.zoomBandBoundaries,
+          parsedZoomBandBoundaries,
           TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM,
           TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM,
           TREE_CONSOLE_ZOOM_BAND_MAX_RANGES,
         )
       : defaultSettings.zoomBandBoundaries;
+    const parsedBuildContinuationPolicy = parsed?.buildContinuationPolicy;
+    const buildContinuationPolicy = isBuildContinuationPolicy(parsedBuildContinuationPolicy)
+      ? parsedBuildContinuationPolicy
+      : defaultSettings.buildContinuationPolicy;
     return {
       rowClickAction,
       autosaveEnabled,
       dialogBackdropDismissEnabled,
       zoomBandBoundaries,
+      buildContinuationPolicy,
     };
   } catch (err) {
     if (typeof console !== 'undefined' && typeof console.warn === 'function') {
@@ -148,6 +167,7 @@ export function saveTreeConsoleSettings(patch: Partial<TreeConsoleSettings>): Tr
             TREE_CONSOLE_ZOOM_BAND_MAX_RANGES,
           )
         : current.zoomBandBoundaries ?? defaultSettings.zoomBandBoundaries,
+    buildContinuationPolicy: patch.buildContinuationPolicy ?? current.buildContinuationPolicy,
   };
 
   if (!global?.localStorage) return next;

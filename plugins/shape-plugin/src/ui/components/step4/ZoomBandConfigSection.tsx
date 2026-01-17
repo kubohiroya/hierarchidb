@@ -44,7 +44,7 @@ export const ZoomBandConfigSection: React.FC<Props> = ({
   onChange,
 }) => {
   const { t } = useTranslation();
-  const { baseTransformConfig, update } = useTransformConfigSection({ config, disabled, onChange });
+  const { baseTransformConfig, update } = useTransformConfigSection({ config, onChange });
   const {
     switchId,
     deleteFetchLabel,

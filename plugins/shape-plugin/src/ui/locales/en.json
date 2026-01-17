@@ -108,7 +108,7 @@
     },
     "extract1": {
       "title": "Transform (Filtering)",
-      "omissionHelp": "When enabled, small features may be removed based on area threshold, minimum vertex count, or hybrid filtering."
+      "omissionHelp": "Small polygons may be excluded based on the polygon area coefficient and pre-simplify filters."
     },
     "extract2": {
       "title": "Transform (Tile Preprocessing)",

@@ -324,6 +324,15 @@
           "rangeCountHelp": "Set how many zoom ranges to use for transforms.",
           "boundaries": "Range boundaries",
           "boundariesHelp": "Adjust the zoom levels that split each range."
+        },
+        "buildPolicy": {
+          "title": "Build continuation policy",
+          "helper": "Controls how builds behave after errors.",
+          "options": {
+            "finishAll": "Finish all stages",
+            "finishStage": "Finish stage then stop",
+            "stop": "Stop on first error"
+          }
         }
       }
     },

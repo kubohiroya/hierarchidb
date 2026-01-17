@@ -35,7 +35,7 @@ export const TransformConfigSection: React.FC<Props> = ({ config, disabled, onCh
   const {
     baseTransformConfig,
     update,
-  } = useTransformConfigSection({ config, disabled, onChange });
+  } = useTransformConfigSection({ config, onChange });
 
   return (
     <Accordion defaultExpanded>

@@ -1,3 +1,50 @@
+2240) chore/analysis/list-large-react-components (P3) — 進行中 (2026-01-17)
+- ブランチ名: chore/analysis/list-large-react-components
+- 依存: なし
+- 受け入れ基準: packages 配下の *.tsx から 200行以上の React コンポーネントを抽出し列挙する／各コンポーネントについて「カスタムフックへのロジック切り出しが無い」ことを判断できる根拠を簡潔に示す／要確認は明記する／TASKS.md に運用ログを記載する
+- チェックリスト:
+  - packages/**/src 配下の .tsx を対象に行数を集計する
+  - 200行以上の React コンポーネントを抽出して列挙する
+  - カスタムフック切り出しの有無を簡潔にメモする
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-17 17:05 JST 200行以上の React コンポーネントとカスタムフック未抽出の一覧化に着手。
+  - done: 2026-01-17 17:12 JST packages/**/src の .tsx を行数集計し、200行以上のコンポーネントからローカルカスタムフック未抽出の一覧を作成。
+
+2239) feat/shape/step4-area-filter-coefficient (P1) — 完了 (2026-01-17)
+- ブランチ名: feat/shape/step4-area-filter-coefficient
+- 依存: なし
+- 受け入れ基準: Step4 Transform の「面積フィルター」カードが撤去される／除外ポリゴン面積係数の UI が Step4 Transform に追加される／設定値がビルド設定に保存・再読込される／既存の Step4 UI に副作用がない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/**`, `packages/features/gis-sdk/src/config.ts`, `plugins/shape-plugin/src/services/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、面積フィルター UI と係数 UI を修正前へ戻す
+- チェックリスト:
+  - Step4 Transform の面積フィルター UI を撤去する
+  - 除外ポリゴン面積係数のフォームを追加する
+  - 設定の保存・再読込が維持されることを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-17 16:40 JST Step4 Transform の面積フィルター撤去と係数 UI 追加に着手。
+  - update: 2026-01-17 16:45 JST 面積フィルター UI を削除し、Transform のヘルプ文言と係数 UI を整理。
+  - update: 2026-01-17 17:10 JST pnpm typecheck を実行（exit 0）。
+  - done: 2026-01-17 17:10 JST 面積フィルター撤去と除外ポリゴン面積係数 UI を反映。
+
+2239) fix/plugin-dialog/fullscreen-header-footer-auto-hide (P1) — 進行中 (2026-01-17)
+- ブランチ名: fix/plugin-dialog/fullscreen-header-footer-auto-hide
+- 依存: なし
+- 受け入れ基準: 全画面化中のみヘッダが上端16pxセンサー領域への侵入で表示され、ヘッダ領域からマウスが出たら非表示になる／フッタも下端16pxセンサー領域で同様に表示/非表示となる／非全画面時のヘッダ/フッタ表示に回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/plugin-ui-host/src/headless/components/PluginDialogHeader.tsx`, `packages/plugin-ui-host/src/headless/components/PluginDialogFooter.tsx`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、全画面時のヘッダ/フッタ自動表示を修正前へ戻す
+- チェックリスト:
+  - 全画面時のヘッダ/フッタ表示制御の実装箇所を特定する
+  - 上端/下端16pxのセンサー領域で表示し、ヘッダ/フッタから出たら非表示にする
+  - 非全画面時の表示に回帰がないことを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-17 15:35 JST 全画面プラグインダイアログのヘッダ/フッタ自動表示対応に着手。
+  - update: 2026-01-17 15:38 JST PluginDialogHeader/Footer に全画面センサー領域と表示/非表示の制御を追加。
+  - update: 2026-01-17 15:39 JST pnpm typecheck を実行（exit 0）。
+  - done: 2026-01-17 15:39 JST 全画面プラグインダイアログのヘッダ/フッタ自動表示を反映。
+
 2238) fix/ui-floating-window/resize-start-jump (P1) — 進行中 (2026-01-17)
 - ブランチ名: fix/ui-floating-window/resize-start-jump
 - 依存: なし
@@ -123,6 +170,7 @@
 2232) feat/build/continuation-policy (P1) — 進行中 (2026-01-17)
 - ブランチ名: feat/build/continuation-policy
 - 依存: なし
+- ExecPlan: `plans/build-continuation-policy-execplan.md`
 - 受け入れ基準: TreeConsole のツールバーメニューにビルド継続ポリシー（3択）が追加される／shape/location/route のビルド設定に保存・再読込される／ビルド処理がポリシーに従って継続/停止する／文言が i18n 化される／pnpm typecheck が exit 0 で完走する
 - 影響範囲: `app/src/**`, `packages/ui/**`, `plugins/shape-plugin/src/**`, `plugins/location-plugin/src/**`, `plugins/route-plugin/src/**`, `packages/vt-orchestrator/src/**`, `packages/features/gis-sdk/src/**`（調査後に確定）
 - ロールバック手順: 該当差分を revert し、ビルド継続ポリシー UI と停止条件を修正前に戻す
@@ -135,6 +183,10 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-17 14:00 JST build 継続ポリシーの UI と処理反映に着手。
+  - update: 2026-01-17 16:47 JST treeConsoleSettings の null 判定を整理して typecheck エラーを解消。
+  - update: 2026-01-17 16:49 JST util の tsconfig paths を整理し common-types の解決を復旧。
+  - update: 2026-01-17 16:52 JST treeconsole-toolbar の tsconfig paths を整理し common-types の解決を復旧。
+  - update: 2026-01-17 17:10 JST pnpm typecheck を実行（exit 0）。
 
 2231) feat/shape/step4-vt-config-refine (P1) — 完了 (2026-01-17)
 - ブランチ名: feat/shape/step4-vt-config-refine

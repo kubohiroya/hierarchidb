@@ -4,12 +4,7 @@
     "target": "es2020",
     "types": [
       "node"
-    ],
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ]
-    }
+    ]
   },
   "include": [
     "src/**/*.ts"

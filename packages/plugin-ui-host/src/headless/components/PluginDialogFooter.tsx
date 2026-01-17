@@ -13,7 +13,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloseIcon from '@mui/icons-material/Close';
 import ConstructionIcon from '@mui/icons-material/Construction';
 import { Box, Button, CircularProgress, Stack, Tooltip } from '@mui/material';
-import React, { forwardRef, useCallback, useEffect, useRef } from 'react';
+import React, { forwardRef, useCallback, useEffect, useRef, useState } from 'react';
 import type { Theme } from '@mui/material/styles';
 import type { ButtonProps } from '@mui/material';
 import type { DialogActionInFlight } from '../types.js';
@@ -98,6 +98,22 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
     handleNextOrSave,
     canNavigateNext,
   } = usePluginDialogFooterLogic();
+  const isFullScreen = ctx.displayMode === 'full-screen';
+  const [footerVisible, setFooterVisible] = useState(!isFullScreen);
+
+  useEffect(() => {
+    setFooterVisible(!isFullScreen);
+  }, [isFullScreen]);
+
+  const handleSensorEnter = useCallback(() => {
+    if (!isFullScreen) return;
+    setFooterVisible(true);
+  }, [isFullScreen]);
+
+  const handleFooterMouseLeave = useCallback(() => {
+    if (!isFullScreen) return;
+    setFooterVisible(false);
+  }, [isFullScreen]);
 
   const leftPrimaryLabel =
     primaryButtonOptions?.leftLabelOverride ??
@@ -133,6 +149,7 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
   }, [ctx]);
 
   const sx = useCallback((theme: Theme) => ({
+    display: footerVisible ? 'block' : 'none',
     borderTop: `1px solid ${theme.palette.divider}`,
     padding: theme.spacing(1.5, 2),
     backgroundColor: getDialogSurfaceColor(theme),
@@ -140,7 +157,7 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
     // Keep footer at the dialog surface z-index (modal) so popper menus can overlay it.
     zIndex: theme.zIndex?.modal ?? 1300,
     pointerEvents: 'auto',
-  }), []);
+  }), [footerVisible]);
 
   const debugRef = useRef<Record<string, unknown>>({});
   useEffect(() => {
@@ -173,9 +190,26 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
   ]);
 
   return (
-    <Box
-      sx={sx}
-    >
+    <>
+      {isFullScreen && (
+        <Box
+          onMouseEnter={handleSensorEnter}
+          sx={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 16,
+            zIndex: (theme: Theme) => (theme.zIndex?.modal ?? 1300) + 2,
+            backgroundColor: 'transparent',
+            pointerEvents: 'auto',
+          }}
+        />
+      )}
+      <Box
+        sx={sx}
+        onMouseLeave={handleFooterMouseLeave}
+      >
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
         spacing={{ xs: 1.5, sm: 2 }}
@@ -307,7 +341,8 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
           )}
         </Stack>
       </Stack>
-    </Box>
+      </Box>
+    </>
   );
 };
 
