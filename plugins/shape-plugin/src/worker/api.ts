@@ -282,7 +282,11 @@ const buildTaskWeightContext = async (
   const transformCaches = bufferIds.length > 0
     ? await ephemeralShapeDB.transformCache.where('id').anyOf(bufferIds).toArray()
     : [];
-  const transformCacheById = new Map(transformCaches.map((cache) => [cache.id, cache] as const));
+  const transformCacheById = new Map(
+    transformCaches
+      .filter((cache) => cache.timestamp > 0)
+      .map((cache) => [cache.id, cache] as const),
+  );
 
   return {
     fetchCacheById,

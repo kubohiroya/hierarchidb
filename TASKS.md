@@ -1,3 +1,20 @@
+2244) fix/ui-auth/clear-all-data-indexeddb (P1) — 進行中 (2026-01-17)
+- ブランチ名: fix/ui-auth/clear-all-data-indexeddb
+- 依存: なし
+- 受け入れ基準: UserAvatarMenu の "clear all data" 実行後に IndexedDB の関連 DB が削除される／削除対象の一覧と理由が説明できる／削除できない DB がある場合は理由と回避策が明記される／pnpm typecheck が exit 0 で通る／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/auth/src/components/UserAvatarMenu.tsx`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、clear all data の削除挙動を修正前に戻す
+- チェックリスト:
+  - clear all data の実装箇所と削除対象の DB を洗い出す
+  - IndexedDB の削除が残る原因を特定する
+  - 必要な修正を実装する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-17 18:17 JST UserAvatarMenu の clear all data 実行後に IndexedDB が残る問題の調査に着手。
+  - update: 2026-01-17 18:20 JST IndexedDB 削除の onblocked/onerror を検知し、失敗時は警告表示するように修正。
+  - update: 2026-01-17 18:21 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+
 2243) fix/shape/step3-virtualized-checkbox-scroll (P1) — 進行中 (2026-01-17)
 - ブランチ名: fix/shape/step3-virtualized-checkbox-scroll
 - 依存: なし
@@ -117,6 +134,13 @@
 - 運用ログ：
   - start: 2026-01-17 17:20 JST VT 生成ステージが開始しない事象の調査に着手。
   - update: 2026-01-17 17:25 JST shapeVtPipeline の backfill で transformCache の decode 失敗時に vt タスクが生成されずスキップされる経路を確認。
+  - update: 2026-01-17 21:15 JST ユーザー報告: vt ステージで transform cache decode failed が発生し、buildStatus が failed になるが error/message が null。原因調査を開始。
+  - update: 2026-01-17 21:42 JST transformCache の timestamp=0 を「書き込み未完了」として扱い、読取側で除外する対応を実装。
+  - done: 2026-01-17 21:45 JST pnpm typecheck を実行（exit 0）。
+  - update: 2026-01-17 22:05 JST 新規報告: vt タスクで "start offset of Float64Array should be a multiple of 8" が発生。FlatGeobuf decode 失敗の追加原因を調査。
+  - update: 2026-01-17 22:20 JST decode 失敗時に bufferId/length/先頭バイト/JSON判定をログ出力する診断を追加。
+  - blocked: 2026-01-17 22:22 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck が TS2322 で失敗（decode 診断の型）。
+  - done: 2026-01-17 22:23 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck を再実行（exit 0）。
 
 2239) fix/plugin-dialog/fullscreen-header-footer-auto-hide (P1) — 進行中 (2026-01-17)
 - ブランチ名: fix/plugin-dialog/fullscreen-header-footer-auto-hide

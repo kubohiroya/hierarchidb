@@ -117,6 +117,36 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
     setAnchorEl(null);
   };
 
+  const deleteIndexedDbDatabases = async (): Promise<{ blocked: string[]; failed: string[] }> => {
+    if (!('indexedDB' in window) || typeof indexedDB.databases !== 'function') {
+      return { blocked: [], failed: [] };
+    }
+    const databases = await indexedDB.databases();
+    const names = databases
+      .map((db) => db.name)
+      .filter((name): name is string => typeof name === 'string' && name.length > 0);
+    const results = await Promise.all(
+      names.map((name) =>
+        new Promise<{ name: string; status: 'deleted' | 'blocked' | 'failed' }>((resolve) => {
+          const req = indexedDB.deleteDatabase(name);
+          let settled = false;
+          const finish = (status: 'deleted' | 'blocked' | 'failed') => {
+            if (settled) return;
+            settled = true;
+            resolve({ name, status });
+          };
+          req.onsuccess = () => finish('deleted');
+          req.onerror = () => finish('failed');
+          req.onblocked = () => finish('blocked');
+        })
+      )
+    );
+    return {
+      blocked: results.filter((r) => r.status === 'blocked').map((r) => r.name),
+      failed: results.filter((r) => r.status === 'failed').map((r) => r.name),
+    };
+  };
+
   const handleClearCache = async () => {
     try {
       // Clear Cache API
@@ -126,24 +156,17 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
       }
 
       // Clear IndexedDB
-      if ('indexedDB' in window) {
-        const databases = await indexedDB.databases();
-        await Promise.all(
-          databases.map((db) => {
-            if (db.name) {
-              return new Promise<void>((resolve, reject) => {
-                const deleteReq = indexedDB.deleteDatabase(db.name || '');
-                deleteReq.onsuccess = () => resolve();
-                deleteReq.onerror = () => reject(deleteReq.error);
-              });
-            }
-            return Promise.resolve();
-          })
-        );
-      }
+      const indexedDbResult = await deleteIndexedDbDatabases();
 
       // Clear localStorage
       localStorage.clear();
+
+      if (indexedDbResult.blocked.length > 0 || indexedDbResult.failed.length > 0) {
+        if (import.meta.env.DEV) {
+          console.warn('IndexedDB delete blocked/failed:', indexedDbResult);
+        }
+        alert('Some IndexedDB data could not be cleared. Close other tabs and try again.');
+      }
 
       // Close base-dialog and reload page to apply changes
       setClearCacheDialogOpen(false);

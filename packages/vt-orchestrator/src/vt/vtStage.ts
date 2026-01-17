@@ -112,13 +112,58 @@ const buildLayerMap = (collection: FeatureCollection): Map<string, Feature[]> =>
   return map;
 };
 
-const collectFeatures = async (context: VTStageContext, bufferIds: string[]): Promise<FeatureCollection | null> => {
+const describeBuffer = (buffer: ArrayBuffer): {
+  byteLength: number;
+  headHex: string;
+  headAscii: string;
+  isJsonLike: boolean;
+} => {
+  const bytes = new Uint8Array(buffer);
+  const head = bytes.slice(0, 16);
+  const headHex = Array.from(head).map((value) => value.toString(16).padStart(2, '0')).join('');
+  const headAscii = Array.from(head).map((value) => (
+    value >= 0x20 && value <= 0x7e ? String.fromCharCode(value) : '.'
+  )).join('');
+  let firstNonWhitespace: number | null = null;
+  for (let i = 0; i < bytes.length; i += 1) {
+    const value = bytes[i];
+    if (value === undefined) continue;
+    if (value === 0x20 || value === 0x0a || value === 0x0d || value === 0x09) continue;
+    firstNonWhitespace = value;
+    break;
+  }
+  const isJsonLike = firstNonWhitespace === 0x7b || firstNonWhitespace === 0x5b;
+  return {
+    byteLength: bytes.byteLength,
+    headHex,
+    headAscii,
+    isJsonLike,
+  };
+};
+
+const collectFeatures = async (
+  context: VTStageContext,
+  bufferIds: string[],
+  nodeId: string,
+): Promise<FeatureCollection | null> => {
   const allFeatures: Feature[] = [];
   for (const bufferId of bufferIds) {
     const record = await context.ephemeralDB.transformCache.get(bufferId);
-    if (!record) continue;
+    if (!record || record.timestamp <= 0) continue;
     const collection = await decodeTransformByBandCache(record.data);
-    if (!collection) continue;
+    if (!collection) {
+      const debug = describeBuffer(record.data);
+      console.warn('[shape-vt] failed to decode transform cache for vt stage', {
+        nodeId,
+        bufferId,
+        timestamp: record.timestamp,
+        byteLength: debug.byteLength,
+        headHex: debug.headHex,
+        headAscii: debug.headAscii,
+        jsonLike: debug.isJsonLike,
+      });
+      continue;
+    }
     allFeatures.push(...collection.features);
   }
   if (allFeatures.length === 0) return null;
@@ -176,7 +221,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
     }
 
     assertNotAborted(abortSignal);
-    const collection = await collectFeatures(context, input.bufferIds);
+    const collection = await collectFeatures(context, input.bufferIds, String(task.nodeId));
     if (!collection) {
       return { status: 'completed', message: 'skipped: no features' };
     }

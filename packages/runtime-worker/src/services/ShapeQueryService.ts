@@ -304,12 +304,14 @@ export class ShapeQueryService implements ShapeQueryAPI {
   async listTransformCaches(
     nodeId: NodeId
   ): Promise<ShapeTransformCache[]> {
-    return ephemeralShapeDB.transformCache.where('nodeId').equals(nodeId).toArray();
+    const records = await ephemeralShapeDB.transformCache.where('nodeId').equals(nodeId).toArray();
+    return records.filter((record) => record.timestamp > 0);
   }
 
   async getTransformCache(bufferId: string): Promise<ShapeTransformCache | null> {
     const record = await ephemeralShapeDB.transformCache.get(bufferId);
-    return record ?? null;
+    if (!record || record.timestamp <= 0) return null;
+    return record;
   }
 
   async listVTMetadata(nodeId: NodeId): Promise<ShapeVTMetadata[]> {

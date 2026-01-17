@@ -942,8 +942,9 @@ export const createTransformByBandHandler = (
         polygonCount,
         extractionRatio,
         tolerance: tolerance,
-        timestamp: Date.now(),
+        timestamp: 0,
       });
+      await ephemeralDB.transformCache.update(cacheId, { timestamp: Date.now() });
 
       const tileIds = collectTileIdsForCollection(outputCollectionValue, band.zBase);
       if (tileIds.length > 0) {

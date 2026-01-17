@@ -97,6 +97,39 @@ const decodeTransformCache = async (buffer: ArrayBuffer): Promise<FeatureCollect
   }
 };
 
+const describeBuffer = (buffer: ArrayBuffer): {
+  byteLength: number;
+  headHex: string;
+  headAscii: string;
+  isJsonLike: boolean;
+} => {
+  const bytes = new Uint8Array(buffer);
+  const head = bytes.slice(0, 16);
+  const headHex = Array.from(head).map((value) => value.toString(16).padStart(2, '0')).join('');
+  const headAscii = Array.from(head).map((value) => (
+    value >= 0x20 && value <= 0x7e ? String.fromCharCode(value) : '.'
+  )).join('');
+  let firstNonWhitespace: number | null = null;
+  for (let i = 0; i < bytes.length; i += 1) {
+    const value = bytes[i];
+    if (value === undefined) continue;
+    if (value === 0x20 || value === 0x0a || value === 0x0d || value === 0x09) continue;
+    firstNonWhitespace = value;
+    break;
+  }
+  const isJsonLike = firstNonWhitespace === 0x7b || firstNonWhitespace === 0x5b;
+  return {
+    byteLength: bytes.byteLength,
+    headHex,
+    headAscii,
+    isJsonLike,
+  };
+};
+
+const isTransformCacheComplete = (record: { timestamp: number } | null | undefined): record is { timestamp: number } => (
+  Boolean(record && record.timestamp > 0)
+);
+
 const packTileId = (x: number, y: number, z: number): number => (x << z) | y;
 
 const clampTileIndex = (value: number, maxIndex: number): number => (
@@ -135,7 +168,8 @@ const backfillTileRelationsFromTransformCache = async (params: {
     .where('[nodeId+bandId]')
     .equals([nodeId, bandId])
     .toArray();
-  if (buffers.length === 0) return 0;
+  const completedBuffers = buffers.filter((buffer) => isTransformCacheComplete(buffer));
+  if (completedBuffers.length === 0) return 0;
   const relations: Array<{
     id: string;
     nodeId: NodeId;
@@ -145,13 +179,19 @@ const backfillTileRelationsFromTransformCache = async (params: {
     createdAt: number;
   }> = [];
   const createdAt = Date.now();
-  for (const buffer of buffers) {
+  for (const buffer of completedBuffers) {
     const collection = await decodeTransformCache(buffer.data);
     if (!collection) {
+      const debug = describeBuffer(buffer.data);
       console.warn('[shape-vt] failed to decode transform cache', {
         nodeId,
         bandId,
         bufferId: buffer.id,
+        timestamp: buffer.timestamp,
+        byteLength: debug.byteLength,
+        headHex: debug.headHex,
+        headAscii: debug.headAscii,
+        jsonLike: debug.isJsonLike,
       });
       continue;
     }
@@ -340,8 +380,13 @@ const buildVtTasks = async (
         ?? await listTransformCacheIdsByTile(ephemeralStore, nodeId, band.bandId, tileId);
       if (bufferIds.length === 0) continue;
       const buffers = await ephemeralStore.transformCache.where('id').anyOf(bufferIds).toArray();
-      const vertexById = new Map(buffers.map((buffer) => [buffer.id, buffer.vertexCount] as const));
-      const chunks = splitBufferIds(bufferIds, vertexById, maxBuffersPerTask, maxVerticesPerTask);
+      const completedBuffers = buffers.filter((buffer) => isTransformCacheComplete(buffer));
+      if (completedBuffers.length === 0) continue;
+      const completedBufferIds = new Set(completedBuffers.map((buffer) => buffer.id));
+      const usableBufferIds = bufferIds.filter((bufferId) => completedBufferIds.has(bufferId));
+      if (usableBufferIds.length === 0) continue;
+      const vertexById = new Map(completedBuffers.map((buffer) => [buffer.id, buffer.vertexCount] as const));
+      const chunks = splitBufferIds(usableBufferIds, vertexById, maxBuffersPerTask, maxVerticesPerTask);
       for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex += 1) {
         const chunk = chunks[chunkIndex];
         if (!chunk) continue;

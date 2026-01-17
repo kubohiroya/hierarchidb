@@ -83,7 +83,11 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig> {
       case 'fetch':
         return (await this.fetchCache.where('nodeId').equals(nodeId).count()) > 0;
       case 'transform':
-        return (await this.transformCache.where('nodeId').equals(nodeId).count()) > 0;
+        return (await this.transformCache
+          .where('nodeId')
+          .equals(nodeId)
+          .filter((record) => record.timestamp > 0)
+          .count()) > 0;
       case 'vt':
         return (await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).count()) > 0;
       default:

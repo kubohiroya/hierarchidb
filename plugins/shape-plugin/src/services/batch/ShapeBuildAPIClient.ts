@@ -52,6 +52,18 @@ const mapStatus = (status: ShapeBuildSessionSummary['status'] | 'running' | 'idl
   return status;
 };
 
+const isTransformCacheComplete = (record: ShapeTransformCache | null | undefined): record is ShapeTransformCache => (
+  Boolean(record && record.timestamp > 0)
+);
+
+const markTransformCacheWriteComplete = async (buffers: Array<{ id: string }>): Promise<void> => {
+  if (buffers.length === 0) return;
+  const completedAt = Date.now();
+  await Promise.all(buffers.map((buffer) => (
+    ephemeralShapeDB.transformCache.update(buffer.id, { timestamp: completedAt })
+  )));
+};
+
 const isFeatureCollection = (value: unknown): value is FeatureCollection => (
   !!value
   && typeof value === 'object'
@@ -332,13 +344,15 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
   async getTransformCache(
     bufferId: string
   ): Promise<ShapeTransformCache|null> {
-    return await ephemeralShapeDB.transformCache.get(bufferId)??null;
+    const record = await ephemeralShapeDB.transformCache.get(bufferId);
+    return isTransformCacheComplete(record) ? record : null;
   }
 
   async listTransformCaches(
     nodeId: NodeId
   ): Promise<ShapeTransformCache[]> {
-    return await ephemeralShapeDB.transformCache.where('nodeId').equals(nodeId).toArray();
+    const records = await ephemeralShapeDB.transformCache.where('nodeId').equals(nodeId).toArray();
+    return records.filter((record) => isTransformCacheComplete(record));
   }
 
   async listVTMetadata(nodeId: NodeId): Promise<ShapeVTMetadata[]> {
@@ -491,7 +505,9 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
   }
   async putTransformCaches(buffers: ShapeTransformCache[]): Promise<void>{
     if (buffers.length === 0) return;
-    await ephemeralShapeDB.transformCache.bulkPut(buffers);
+    const pending = buffers.map((buffer) => ({ ...buffer, timestamp: 0 }));
+    await ephemeralShapeDB.transformCache.bulkPut(pending);
+    await markTransformCacheWriteComplete(pending);
   }
 
   async putSourceMetadata(rows: ShapeSourceMetadata[]): Promise<void> {
@@ -636,24 +652,34 @@ export class EphemeralShapeApiImpl implements EphemeralShapeAPI {
   async listTransformCaches(
     nodeId: NodeId
   ): Promise<ShapeTransformCache[]> {
-    return ephemeralShapeDB.transformCache.where('nodeId').equals(nodeId).toArray();
+    const records = await ephemeralShapeDB.transformCache.where('nodeId').equals(nodeId).toArray();
+    return records.filter((record) => isTransformCacheComplete(record));
   }
 
   async getTransformCache(bufferId: string): Promise<ShapeTransformCache | null> {
-    return (await ephemeralShapeDB.transformCache.get(bufferId)) ?? null;
+    const record = await ephemeralShapeDB.transformCache.get(bufferId);
+    return isTransformCacheComplete(record) ? record : null;
   }
 
   async countTransformCaches(nodeId: NodeId): Promise<number> {
-    return ephemeralShapeDB.transformCache.where('nodeId').equals(nodeId).count();
+    return ephemeralShapeDB.transformCache
+      .where('nodeId')
+      .equals(nodeId)
+      .filter((record) => isTransformCacheComplete(record))
+      .count();
   }
 
   async putTransformCache(buffer: ShapeTransformCache): Promise<void> {
-    await ephemeralShapeDB.transformCache.put(buffer);
+    const pending = { ...buffer, timestamp: 0 };
+    await ephemeralShapeDB.transformCache.put(pending);
+    await markTransformCacheWriteComplete([pending]);
   }
 
   async putTransformCaches(buffers: ShapeTransformCache[]): Promise<void> {
     if (buffers.length === 0) return;
-    await ephemeralShapeDB.transformCache.bulkPut(buffers);
+    const pending = buffers.map((buffer) => ({ ...buffer, timestamp: 0 }));
+    await ephemeralShapeDB.transformCache.bulkPut(pending);
+    await markTransformCacheWriteComplete(pending);
   }
 
   async listTileIdRelations(nodeId: NodeId): Promise<ShapeTileIdToBufferRelation[]> {
