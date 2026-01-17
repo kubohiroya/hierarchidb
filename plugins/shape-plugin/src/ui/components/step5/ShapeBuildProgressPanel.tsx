@@ -73,7 +73,7 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
   });
 
   useEffect(() => {
-    if (!isDev) return;
+    if (!import.meta.env.DEV) return;
     const snapshot = JSON.stringify({
       stages: stages.map((stage) => stage.id),
       keys: Object.keys(tasksByStage),
@@ -93,7 +93,7 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
     if (snapshot === lastTaskStageSnapshotRef.current) return;
     lastTaskStageSnapshotRef.current = snapshot;
     console.debug('[ShapeBuildStep] stageTaskSnapshot', JSON.parse(snapshot));
-  }, [isDev, stages, tasksByStage]);
+  }, [stages, tasksByStage]);
 
   const resolveTaskTitle = useCallback(
     (task: TaskWithMetadata): string =>
