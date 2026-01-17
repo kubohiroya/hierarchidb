@@ -1,4 +1,5 @@
-import React, {
+import type React from 'react';
+import {
   useCallback,
   useEffect,
   useMemo,
@@ -326,7 +327,7 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
     onResizeHandlePointerDown: (event: React.PointerEvent<HTMLElement>) => {
       headlessProps.onResizeHandlePointerDown?.(event);
     },
-  }), [headlessProps, handleDragPointerDown]);
+  }), [headlessProps, frameless, transparent, handleDragPointerDown]);
 
   const defaultFrameSx = useMemo(() => (
     (theme: Theme) => ({
@@ -400,8 +401,7 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
     >
       <HeadlessPluginDialog {...augmentedHeadlessProps} />
       {allowResizeHandles && (
-        <>
-          {[
+          [
             {
               key: 'top',
               direction: { horizontal: null, vertical: 'top' as ResizeVertical },
@@ -455,7 +455,7 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
                 width: CORNER_HANDLE_SIZE,
                 height: CORNER_HANDLE_SIZE,
                 cursor: 'nwse-resize',
-                zIndex: (theme: any) => (theme?.zIndex?.modal ?? 1300) + 6,
+                zIndex: (theme: {zIndex:{modal:number}}) => (theme?.zIndex?.modal ?? 1300) + 6,
               },
             },
             {
@@ -467,7 +467,7 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
                 width: CORNER_HANDLE_SIZE,
                 height: CORNER_HANDLE_SIZE,
                 cursor: 'nesw-resize',
-                zIndex: (theme: any) => (theme?.zIndex?.modal ?? 1300) + 6,
+                zIndex: (theme: {zIndex:{modal:number}}) => (theme?.zIndex?.modal ?? 1300) + 6,
               },
             },
             {
@@ -479,7 +479,7 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
                 width: CORNER_HANDLE_SIZE,
                 height: CORNER_HANDLE_SIZE,
                 cursor: 'nesw-resize',
-                zIndex: (theme: any) => (theme?.zIndex?.modal ?? 1300) + 6,
+                zIndex: (theme: {zIndex:{modal:number}}) => (theme?.zIndex?.modal ?? 1300) + 6,
               },
             },
             {
@@ -491,7 +491,7 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
                 width: CORNER_HANDLE_SIZE,
                 height: CORNER_HANDLE_SIZE,
                 cursor: 'nwse-resize',
-                zIndex: (theme: any) => (theme?.zIndex?.modal ?? 1300) + 6,
+                zIndex: (theme: {zIndex:{modal:number}}) => (theme?.zIndex?.modal ?? 1300) + 6,
               },
             },
           ].map((handle) => (
@@ -507,8 +507,7 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
                 headlessProps.onResizeHandlePointerDown?.(event);
               }}
             />
-          ))}
-        </>
+          ))
       )}
     </Box>
   );

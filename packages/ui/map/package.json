@@ -28,7 +28,8 @@
     "@deck.gl/layers": "^9.1.14",
     "@deck.gl/mapbox": "^9.1.14",
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/ui-grid": "workspace:*"
+    "@hierarchidb/ui-grid": "workspace:*",
+    "jotai": "^2.16.0"
   },
   "devDependencies": {
     "react": ">=18.0.0",
@@ -37,6 +38,7 @@
     "@deck.gl/core": "^9.1.14",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/ui-grid": "workspace:*",
+    "jotai": "^2.16.0",
     "@storybook/react-vite": "7.6.20"
   },
   "license": "MIT",

@@ -1,3 +1,38 @@
+2224) fix/shape/step5-stage-progress-inactive-grey (P1) — 完了 (2026-01-17)
+- ブランチ名: fix/shape/step5-stage-progress-inactive-grey
+- 依存: なし
+- 受け入れ基準: Shape Step5 のステージ稼働状況が「稼働なし」の場合に CircularProgress が grey 表示になる／稼働中の表示ロジックは既存挙動を維持する／pnpm typecheck が exit 0 で完走する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、ステージ稼働状況の表示色を修正前に戻す
+- チェックリスト:
+  - Step5 のステージ稼働状況に「稼働なし」の色分け条件を追加する
+  - 稼働中の表示ロジックが維持されることを確認する
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-17 08:56 JST Shape Step5 のステージ稼働なし時に grey 表示へ切り替える対応に着手。
+  - update: 2026-01-17 09:03 JST BuildStepStagePanel の稼働なし時 CircularProgress を grey 表示に調整。
+  - update: 2026-01-17 09:05 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - done: 2026-01-17 09:05 JST Step5 の稼働なし時に grey 表示となるよう反映。
+
+2225) fix/shape/step5-progressbar-hover-title (P1) — 完了 (2026-01-17)
+- ブランチ名: fix/shape/step5-progressbar-hover-title
+- 依存: なし
+- 受け入れ基準: Step5 のタスク進捗SVGでホバー時の表示が固定文言ではなく該当タスクのタイトルになる／既存の進捗表示・クリック/スクロール挙動に影響がない／タイトル不明時のフォールバックが明確である／pnpm typecheck が exit 0 で完走する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、ホバー時表示を固定文言へ戻す
+- チェックリスト:
+  - TaskProgressBar のホバー時表示をタスクタイトルへ置換する
+  - タイトル不明時のフォールバック表示を整理する
+  - 既存の進捗/クリック/スクロール挙動が維持されることを確認する
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-17 08:58 JST Step5 タスク進捗バーのホバー表示をタスクタイトルに変更する対応に着手。
+  - update: 2026-01-17 09:00 JST TaskProgressBar のSVGホバー表示をタスクタイトルへ変更。
+  - update: 2026-01-17 09:00 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - done: 2026-01-17 09:00 JST Step5 進捗バーのホバー表示をタスクタイトルへ切り替え完了。
+
 2220) feat/shape/transform-exclusion-ui (P1) — 進行中 (2026-01-18)
 - ブランチ名: feat/shape/transform-exclusion-ui
 - 依存: なし
@@ -193,8 +228,28 @@
   - update: 2026-01-18 13:50 JST エラー一覧選択でも FitScreen を有効化し、ボタンを size=large/variant=outlined に変更。
   - update: 2026-01-18 14:10 JST エラー選択の境界算出を追加し、FitScreen を有効化。pnpm typecheck を実行（exit 0）。
   - update: 2026-01-18 14:25 JST FitScreen ボタンの margin 4px と高さ 32px を反映。pnpm typecheck を実行（exit 0）。
+
+2218) feat/ui-map/interaction-core-unify (P1) — 進行中 (2026-01-18)
+- ブランチ名: feat/ui-map/interaction-core-unify
+- 依存: なし
+- ExecPlan: `plans/ui-map-interaction-core-execplan.md`
+- 受け入れ基準: ui-map の基本機能として FitScreen/検索フィールド/hover/selection/search/ハイライト/スナックバー/矩形選択/Enter検索fit が統合され、props で有効/無効を切替できる／Step6 プレビューが ui-map の基本機能へ移行する／Transform エラーの永続化内容がエラー一覧表示に必要な情報を漏れなく含む／エラー一覧の国名・大陸名が ISO-3166-2 から補完される／ポリゴン・リングのエラー/総数が正確に表示される／エラー一覧の行選択で地図が自動フィットする／pnpm typecheck が成功する
+- 影響範囲: `packages/ui/map/src/**`, `plugins/shape-plugin/src/ui/components/step6/**`, `packages/vt-orchestrator/src/transform/**`, `packages/plugin-service-api/src/types/**`（調査後に確定）
+- ロールバック手順: ui-map 統合機能と Step6 変更、Transform エラー永続化の差分を revert し、従来の個別実装へ戻す
+- チェックリスト:
+  - ui-map の基本機能として 1〜6 を統合し、props で有効/無効を切替可能にする
+  - Step6 プレビューを ui-map の統合機能へ移行する
+  - Transform エラーの永続化項目を拡充し Step6 で表示する
+  - ISO-3166-2 で国名/大陸名を補完する
+  - エラー/総数の表示を正確化する
+  - エラー一覧選択時に地図を自動フィットする
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-18 14:45 JST ui-map 基本機能の統合と Step6 エラー表示拡充に着手。
   - update: 2026-01-18 14:20 JST FitScreen ボタンの margin 4px と高さ 32px を反映。
   - update: 2026-01-18 12:55 JST shape Step6 プレビューの FitScreen ボタン位置修正に着手。
+  - update: 2026-01-18 18:40 JST ui-map を FitScreen/検索/選択/hover/ハイライト/矩形選択/検索fit の基本機能として統合し、Step6 プレビューも ui-map 基本機能へ移行する方針を反映。
 
 2217) fix/app/ui-treeconsole-workspace-dep (P1) — 進行中 (2026-01-18)
 - ブランチ名: fix/app/ui-treeconsole-workspace-dep

@@ -55,10 +55,9 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
   const failedVariant = isFailedDisabled ? 'outlined' : (failedMode ? 'filled' : 'outlined');
   const completedVariant = isCompletedDisabled ? 'outlined' : (completedMode ? 'filled' : 'outlined');
   const indicatorCount = Math.max(0, Math.floor(concurrencyIndicator?.count ?? 0));
-  const indicatorVariant = concurrencyIndicator?.isRunning ? 'indeterminate' : 'determinate';
-  const indicatorSx = indicatorVariant === 'determinate'
-    ? { color: 'grey.400' }
-    : undefined;
+  const isIndicatorRunning = concurrencyIndicator?.isRunning ?? false;
+  const indicatorVariant = isIndicatorRunning ? 'indeterminate' : 'determinate';
+  const indicatorSx = isIndicatorRunning ? undefined : { color: 'grey.400' };
   return (
     <Box display="flex" flexDirection="column" height="100%" minHeight={0}>
       <Stack spacing={1} sx={{ p: 2 }}>
