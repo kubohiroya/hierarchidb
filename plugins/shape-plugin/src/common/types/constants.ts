@@ -50,6 +50,12 @@ export const DEFAULT_BUILD_CONFIG: ShapeBuildConfig = {
       retainHoles: false,
       snapToleranceMultiplier: 1.0,
     },
+    preSimplifyFilterConfig: {
+      excludeInvalidGeometry: true,
+      dropInvalidHoles: true,
+      splitSelfIntersections: true,
+      dropSmallPolygons: true,
+    },
   },
   vtConfig: {
     enableTopojsonSimplify: true,

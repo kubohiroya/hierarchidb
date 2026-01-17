@@ -86,6 +86,12 @@ const minimalBatchConfig = {
       retainHoles: false,
       snapToleranceMultiplier: 1,
     },
+    preSimplifyFilterConfig: {
+      excludeInvalidGeometry: true,
+      dropInvalidHoles: true,
+      splitSelfIntersections: true,
+      dropSmallPolygons: true,
+    },
   },
   tileConfig: {
     workers: 1,
