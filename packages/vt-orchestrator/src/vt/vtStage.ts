@@ -7,6 +7,7 @@ import { buildVtTileKey } from '@hierarchidb/vt-store';
 import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
 import type { VTStageContext } from '../contexts.js';
 import type { BandConfig, StageHandler, StageHandlerResult, VtTaskInput } from '../types/types.js';
+import { updateTask, VtTaskQueueDb } from '../task/taskQueue.js';
 
 const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureCollection | null> => {
   if (!decoded || typeof decoded !== 'object') return null;
@@ -208,6 +209,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
     throw new Error('vt stage requires layerSetName');
   }
   const bandMap = new Map(bands.map((band) => [band.bandId, band] as const));
+  const taskQueue = new VtTaskQueueDb();
 
   return async (task): Promise<StageHandlerResult> => {
     const input = task.inputData;
@@ -239,6 +241,65 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
     const vtpbf = await loadVtPbf();
     const parent = unpackTileId(input.tileId, band.zBase);
     const bufferSetHash = buildBufferSetHash(input.bufferIds);
+    const collectLayersForTile = (z: number, x: number, y: number): Record<string, Tile> | null => {
+      const layers: Record<string, Tile> = {};
+      for (const [layerName, index] of indexes.entries()) {
+        const tile = index.getTile(z, x, y) as Tile | null;
+        if (!tile || !Array.isArray(tile.features) || tile.features.length === 0) continue;
+        const finalTile = vtConfig.boundaryDedupe && layerName.endsWith('-boundary')
+          ? dedupeTileLines(tile)
+          : tile;
+        if (!Array.isArray(finalTile.features) || finalTile.features.length === 0) continue;
+        layers[layerName] = finalTile;
+      }
+      return Object.keys(layers).length > 0 ? layers : null;
+    };
+    const countTilesForTask = (): number => {
+      let total = 0;
+      for (let z = band.zMin; z <= band.zMax; z++) {
+        assertNotAborted(abortSignal);
+        const { xStart, xEnd, yStart, yEnd } = parentToChildRange(parent, z);
+        for (let x = xStart; x <= xEnd; x++) {
+          assertNotAborted(abortSignal);
+          for (let y = yStart; y <= yEnd; y++) {
+            assertNotAborted(abortSignal);
+            if (collectLayersForTile(z, x, y)) {
+              total += 1;
+            }
+          }
+        }
+      }
+      return total;
+    };
+    const totalTiles = countTilesForTask();
+    if (totalTiles === 0) {
+      return { status: 'completed', message: 'skipped: no tiles' };
+    }
+    let generatedTiles = 0;
+    let lastReportAt = 0;
+    let lastReported = -1;
+    const reportTileProgress = async (force: boolean): Promise<void> => {
+      if (!force && generatedTiles === lastReported) return;
+      const now = Date.now();
+      if (!force && (now - lastReportAt < 500) && (generatedTiles - lastReported < 25)) return;
+      lastReportAt = now;
+      lastReported = generatedTiles;
+      const progress = totalTiles > 0
+        ? Math.min(100, Math.max(0, Math.round((generatedTiles / totalTiles) * 100)))
+        : 0;
+      try {
+        await updateTask(taskQueue, task.taskId, {
+          progress,
+          outputData: {
+            tilesGenerated: generatedTiles,
+            totalTiles,
+          },
+        });
+      } catch (error) {
+        console.warn('[vt] failed to report tile progress', error);
+      }
+    };
+    await reportTileProgress(true);
 
     for (let z = band.zMin; z <= band.zMax; z++) {
       assertNotAborted(abortSignal);
@@ -247,17 +308,8 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
         assertNotAborted(abortSignal);
         for (let y = yStart; y <= yEnd; y++) {
           assertNotAborted(abortSignal);
-          const layers: Record<string, Tile> = {};
-          for (const [layerName, index] of indexes.entries()) {
-            assertNotAborted(abortSignal);
-            const tile = index.getTile(z, x, y) as Tile | null;
-            if (!tile || !Array.isArray(tile.features) || tile.features.length === 0) continue;
-            const finalTile = vtConfig.boundaryDedupe && layerName.endsWith('-boundary')
-              ? dedupeTileLines(tile)
-              : tile;
-            layers[layerName] = finalTile;
-          }
-          if (Object.keys(layers).length === 0) {
+          const layers = collectLayersForTile(z, x, y);
+          if (!layers) {
             continue;
           }
           const pbf = vtpbf.fromGeojsonVt(layers as unknown as Tile[], { version: 2 });
@@ -277,10 +329,20 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
             contentType: 'application/vnd.mapbox-vector-tile',
             timestamp: Date.now(),
           });
+          generatedTiles += 1;
+          await reportTileProgress(false);
         }
       }
     }
 
-    return { status: 'completed', progress: 100 };
+    await reportTileProgress(true);
+    return {
+      status: 'completed',
+      progress: 100,
+      outputData: {
+        tilesGenerated: generatedTiles,
+        totalTiles,
+      },
+    };
   };
 };

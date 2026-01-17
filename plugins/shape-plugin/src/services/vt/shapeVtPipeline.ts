@@ -1,8 +1,16 @@
 import type { BuildContinuationPolicy, NodeId, StageHandler, TaskQueueRecord } from '@hierarchidb/common-types';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
-import { bbox as turfBbox } from '@turf/turf';
+import * as turf from '@turf/turf';
 import { geojson as geojsonApi } from 'flatgeobuf';
-import { latToTileY, lonToTileX } from '@hierarchidb/gis-sdk';
+import {
+  latToTileY,
+  lonToTileX,
+  pickAdminCode,
+  pickAdminLevel,
+  pickAdminName,
+  pickCountryCode,
+  pickCountryName,
+} from '@hierarchidb/gis-sdk';
 import type { ShapeBuildConfig } from '../../common/types/index.js';
 import {
   VtTaskQueueDb,
@@ -32,6 +40,41 @@ import {
   ZOOM_BAND_MAX_ZOOM,
   ZOOM_BAND_MIN_ZOOM,
 } from '../../common/config/zoomBands.js';
+import type { ShapeFeatureMetadata } from '@hierarchidb/plugin-service-api';
+
+const turfBbox = (turf as { bbox?: (input: unknown) => number[] }).bbox;
+const turfArea = (turf as { area?: (input: unknown) => number }).area;
+
+const safeBbox = (feature: Feature<Geometry>): [number, number, number, number] | null => {
+  if (!turfBbox) return null;
+  try {
+    const result = turfBbox(feature);
+    if (!Array.isArray(result) || result.length !== 4) return null;
+    const [minLon, minLat, maxLon, maxLat] = result;
+    if (
+      minLon === undefined
+      || minLat === undefined
+      || maxLon === undefined
+      || maxLat === undefined
+    ) {
+      return null;
+    }
+    if (![minLon, minLat, maxLon, maxLat].every((value) => Number.isFinite(value))) return null;
+    return [minLon, minLat, maxLon, maxLat];
+  } catch {
+    return null;
+  }
+};
+
+const safeArea = (feature: Feature<Geometry>): number => {
+  if (!turfArea) return 0;
+  try {
+    const value = turfArea(feature);
+    return Number.isFinite(value) ? value : 0;
+  } catch {
+    return 0;
+  }
+};
 
 export type ShapeTransformByBandTaskInput = {
   fetchCacheId: string;
@@ -48,9 +91,12 @@ export type ShapeTransformByBandTaskInput = {
 
 type ShapeVtTaskInput = {
   bandId: number;
+  bandMinZoom: number;
+  bandMaxZoom: number;
   zBase: number;
   tileId: number;
   bufferIds: string[];
+  featureCount: number;
   domainType: 'shape';
   sourceKey: string;
 };
@@ -97,6 +143,41 @@ const decodeTransformCache = async (buffer: ArrayBuffer): Promise<FeatureCollect
   }
 };
 
+const countVertices = (coords: unknown): number => {
+  if (!Array.isArray(coords)) return 0;
+  if (coords.length === 0) return 0;
+  if (typeof coords[0] === 'number') return 1;
+  return coords.reduce((sum: number, child: unknown) => sum + countVertices(child), 0);
+};
+
+const countVerticesFromGeometry = (geometry?: Geometry | null): number => {
+  if (!geometry) return 0;
+  if (geometry.type === 'GeometryCollection') {
+    const geometries = Array.isArray(geometry.geometries) ? geometry.geometries : [];
+    return geometries.reduce((sum: number, child: Geometry) => sum + countVerticesFromGeometry(child), 0);
+  }
+  return countVertices(geometry.coordinates);
+};
+
+const countPolygonsFromGeometry = (geometry?: Geometry | null): number => {
+  if (!geometry) return 0;
+  if (geometry.type === 'GeometryCollection') {
+    const geometries = Array.isArray(geometry.geometries) ? geometry.geometries : [];
+    return geometries.reduce((sum: number, child: Geometry) => sum + countPolygonsFromGeometry(child), 0);
+  }
+  if (geometry.type === 'Polygon') {
+    return 1;
+  }
+  if (geometry.type === 'MultiPolygon') {
+    return Array.isArray(geometry.coordinates) ? geometry.coordinates.length : 0;
+  }
+  return 0;
+};
+
+const buildFeatureId = (
+  feature: Feature,
+  index: number,
+  metadata: { countryCode?: string; adminLevel?: number; adminCode?: string },
 ): string => {
   const normalizeFeatureId = (value: unknown): string => {
     if (typeof value === 'string') return value;
@@ -107,6 +188,77 @@ const decodeTransformCache = async (buffer: ArrayBuffer): Promise<FeatureCollect
   const rawBaseId = properties.id ?? feature.id ?? index;
   const baseId = normalizeFeatureId(rawBaseId).trim();
   const fallbackBaseId = baseId.length > 0 ? baseId : metadata.adminCode ?? `feature-${index}`;
+  const prefixParts = [
+    metadata.countryCode,
+    metadata.adminLevel != null ? `ADM${metadata.adminLevel}` : undefined,
+    metadata.adminCode,
+  ].filter(Boolean);
+  const prefix = prefixParts.join('-');
+  const composed = prefix ? `${prefix}:${fallbackBaseId}` : fallbackBaseId;
+  return `${composed}:${index}`;
+};
+
+const extractGeometryStats = (feature: Feature): {
+  vertexCount: number;
+  polygonCount: number;
+  bbox?: [number, number, number, number];
+  area: number;
+} => {
+  const geometry = feature.geometry ?? null;
+  const vertexCount = countVerticesFromGeometry(geometry);
+  const polygonCount = countPolygonsFromGeometry(geometry);
+  let bbox: [number, number, number, number] | undefined;
+  const resolvedBbox = safeBbox(feature as Feature<Geometry>);
+  if (resolvedBbox) {
+    bbox = resolvedBbox;
+  }
+  const area = safeArea(feature as Feature<Geometry>);
+  return { vertexCount, polygonCount, bbox, area };
+};
+
+const buildFeatureMetadataFromTransformCaches = async (
+  nodeId: NodeId,
+  dataSource: DataSourceName,
+  ephemeralStore: typeof ephemeralShapeDB,
+): Promise<ShapeFeatureMetadata[]> => {
+  const records: ShapeFeatureMetadata[] = [];
+  const createdAt = Date.now();
+  const buffers = await ephemeralStore.transformCache.where('nodeId').equals(nodeId).toArray();
+  for (const buffer of buffers) {
+    if (!isTransformCacheComplete(buffer)) continue;
+    const collection = await decodeTransformCache(buffer.data);
+    if (!collection) continue;
+    for (let index = 0; index < collection.features.length; index += 1) {
+      const feature = collection.features[index];
+      if (!feature) continue;
+      feature.properties = feature.properties ?? {};
+      const properties = feature.properties as Record<string, unknown>;
+      const countryCode = pickCountryCode(properties);
+      const adminLevel = pickAdminLevel(properties);
+      const adminCode = pickAdminCode(properties);
+      const featureId = buildFeatureId(feature, index, { countryCode, adminLevel, adminCode });
+      const stats = extractGeometryStats(feature);
+      records.push({
+        id: `${String(nodeId)}-${featureId}`,
+        nodeId: String(nodeId),
+        featureId,
+        countryName: pickCountryName(properties),
+        countryCode,
+        adminName: pickAdminName(properties),
+        adminLevel,
+        adminCode,
+        dataSource,
+        createdAt,
+        vertexCount: stats.vertexCount,
+        polygonCount: stats.polygonCount,
+        bbox: stats.bbox,
+        area: stats.area,
+      });
+    }
+  }
+  return records;
+};
+
 const describeBuffer = (buffer: ArrayBuffer): {
   byteLength: number;
   headHex: string;
@@ -152,8 +304,9 @@ const collectTileIdsForCollection = (collection: FeatureCollection, zBase: numbe
   const tileIds = new Set<number>();
   for (const feature of collection.features) {
     if (!feature?.geometry) continue;
-    const [minLon, minLat, maxLon, maxLat] = turfBbox(feature as Feature<Geometry>);
-    if (![minLon, minLat, maxLon, maxLat].every((value) => Number.isFinite(value))) continue;
+    const bbox = safeBbox(feature as Feature<Geometry>);
+    if (!bbox) continue;
+    const [minLon, minLat, maxLon, maxLat] = bbox;
     const x1 = clampTileIndex(lonToTileX(minLon, zBase), maxIndex);
     const x2 = clampTileIndex(lonToTileX(maxLon, zBase), maxIndex);
     const y1 = clampTileIndex(latToTileY(maxLat, zBase), maxIndex);
@@ -400,10 +553,12 @@ const buildVtTasks = async (
       const usableBufferIds = bufferIds.filter((bufferId) => completedBufferIds.has(bufferId));
       if (usableBufferIds.length === 0) continue;
       const vertexById = new Map(completedBuffers.map((buffer) => [buffer.id, buffer.vertexCount] as const));
+      const featureById = new Map(completedBuffers.map((buffer) => [buffer.id, buffer.featureCount] as const));
       const chunks = splitBufferIds(usableBufferIds, vertexById, maxBuffersPerTask, maxVerticesPerTask);
       for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex += 1) {
         const chunk = chunks[chunkIndex];
         if (!chunk) continue;
+        const featureCount = chunk.reduce((sum, bufferId) => sum + (featureById.get(bufferId) ?? 0), 0);
         tasks.push({
           taskId: `${String(nodeId)}:vt:${band.bandId}:${band.zBase}:${tileId}:${chunkIndex}`,
           nodeId,
@@ -413,9 +568,12 @@ const buildVtTasks = async (
           progress: 0,
           inputData: {
             bandId: band.bandId,
+            bandMinZoom: band.zMin,
+            bandMaxZoom: band.zMax,
             zBase: band.zBase,
             tileId,
             bufferIds: chunk,
+            featureCount,
             domainType: 'shape',
             sourceKey: 'mixed',
           },
@@ -580,6 +738,16 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
         });
       }
     }
+  }
+
+  const featureMetadataRows = await buildFeatureMetadataFromTransformCaches(
+    params.nodeId,
+    params.dataSource,
+    ephemeralStore,
+  );
+  if (featureMetadataRows.length > 0) {
+    await shapeMutationAPIImpl.deleteFeatureMetadataByNode(params.nodeId);
+    await shapeMutationAPIImpl.putFeatureMetadata(featureMetadataRows);
   }
 
   await updateShapeStageMetadata({

@@ -149,9 +149,23 @@ const buildTaskQueueTitle = (task: TaskQueueRecord): string | undefined => {
     return [country, adminLevel, bandId, zoomBandLabel].filter(Boolean).join(" ");
   }
   if (task.stage === "vt") {
-    const bandId = typeof input.bandId === "number" ? `band` : undefined;
-    const tileId = typeof input.tileId === "number" ? `tile:` : undefined;
-    return [bandId, tileId].filter(Boolean).join(" ");
+    const bandId = typeof input.bandId === "number" && Number.isFinite(input.bandId)
+      ? `band${input.bandId}`
+      : undefined;
+    const bandMinZoom = typeof input.bandMinZoom === "number" && Number.isFinite(input.bandMinZoom)
+      ? input.bandMinZoom
+      : undefined;
+    const bandMaxZoom = typeof input.bandMaxZoom === "number" && Number.isFinite(input.bandMaxZoom)
+      ? input.bandMaxZoom
+      : undefined;
+    const zoomLabel = bandMinZoom !== undefined && bandMaxZoom !== undefined
+      ? `z${bandMinZoom}-z${bandMaxZoom}`
+      : undefined;
+    const featureCount = typeof input.featureCount === "number" && Number.isFinite(input.featureCount)
+      ? input.featureCount
+      : undefined;
+    const featureLabel = featureCount !== undefined ? `(features=${featureCount})` : undefined;
+    return [bandId, zoomLabel, featureLabel].filter(Boolean).join(" ");
   }
   return undefined;
 };
@@ -280,7 +294,9 @@ const buildTaskWeightContext = async (
 
   const bufferIds = [...transformBufferIds];
   const transformCaches = bufferIds.length > 0
-    ? await ephemeralShapeDB.transformCache.where('id').anyOf(bufferIds).toArray()
+    ? await ephemeralShapeDB.transaction('r', ephemeralShapeDB.transformCache, async () => (
+      ephemeralShapeDB.transformCache.where('id').anyOf(bufferIds).toArray()
+    ))
     : [];
   const transformCacheById = new Map(
     transformCaches

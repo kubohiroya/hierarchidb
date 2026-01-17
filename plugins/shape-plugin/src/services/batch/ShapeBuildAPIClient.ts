@@ -45,12 +45,47 @@ import {
   toVectorTileRecord,
 } from './shapeSessionMappers.js';
 import {shapeDB, ephemeralShapeDB} from '@hierarchidb/shape-store';
+import { VtDb } from '@hierarchidb/vt-store';
+import type { VtTileRecord } from '@hierarchidb/vt-store';
 
 const mapStatus = (status: ShapeBuildSessionSummary['status'] | 'running' | 'idle'): ShapeProcessingStatus['status'] => {
   if (status === 'running') return 'processing';
   if (status === 'idle') return 'idle';
   return status;
 };
+
+const vtDb = new VtDb();
+
+const listVtTilesByNode = async (nodeId: NodeId): Promise<VtTileRecord[]> => (
+  vtDb.vtTiles.where('nodeId').equals(nodeId).toArray()
+);
+
+const pickLatestTile = (tiles: VtTileRecord[]): VtTileRecord | null => {
+  if (tiles.length === 0) return null;
+  return tiles.reduce((latest, tile) => (tile.timestamp > latest.timestamp ? tile : latest));
+};
+
+const getVtTileByXYZ = async (nodeId: NodeId, z: number, x: number, y: number): Promise<VtTileRecord | null> => {
+  const tiles = await vtDb.vtTiles
+    .where('nodeId')
+    .equals(nodeId)
+    .and((tile) => tile.z === z && tile.x === x && tile.y === y)
+    .toArray();
+  return pickLatestTile(tiles);
+};
+
+const toShapeVectorTileRecord = (tile: VtTileRecord): ShapeVectorTileRecord => ({
+  tileId: String(tile.tileId),
+  nodeId: tile.nodeId,
+  z: tile.z,
+  x: tile.x,
+  y: tile.y,
+  data_Uint8Array: new Uint8Array(tile.data),
+  size: tile.size,
+  features: 0,
+  layers: [{ name: tile.layer }],
+  generatedAt: tile.timestamp,
+});
 
 const isTransformCacheComplete = (record: ShapeTransformCache | null | undefined): record is ShapeTransformCache => (
   Boolean(record && record.timestamp > 0)
@@ -219,7 +254,7 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
       };
     }
     const totalFeatures = await this.getProcessedFeatureCount(nodeId);
-    const totalVectorTiles = await shapeDB.vectorTiles.where('nodeId').equals(nodeId).count();
+    const totalVectorTiles = await vtDb.vtTiles.where('nodeId').equals(nodeId).count();
     return {
       status: mapStatus(latest.status),
       lastProcessed: latest.completedAt ?? latest.updatedAt,
@@ -238,44 +273,42 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
   }
 
   async getVectorTileInfo(nodeId: NodeId, z: number, x: number, y: number): Promise<ShapeTileInfo | null> {
-    const tile = await shapeDB.getVectorTile(nodeId, z, x, y);
+    const tile = await getVtTileByXYZ(nodeId, z, x, y);
     if (!tile) return null;
     return {
       exists: true,
       size: tile.size,
-      features: tile.features,
-      layers: tile.layers ?? [],
-      generatedAt: tile.generatedAt,
-      lastAccessed: tile.lastAccessed,
+      features: 0,
+      layers: [{ name: tile.layer }],
+      generatedAt: tile.timestamp,
+      lastAccessed: undefined,
     };
   }
 
   async getVectorTileRecord(nodeId: NodeId, z: number, x: number, y: number): Promise<ShapeVectorTileRecord | null> {
-    const tile = await shapeDB.getVectorTile(nodeId, z, x, y);
-    return (tile as ShapeVectorTileRecord | undefined) ?? null;
+    const tile = await getVtTileByXYZ(nodeId, z, x, y);
+    return tile ? toShapeVectorTileRecord(tile) : null;
   }
 
   async getVectorTile(nodeId: NodeId, z: number, x: number, y: number): Promise<Uint8Array | null> {
-    const tile = await shapeDB.getVectorTile(nodeId, z, x, y);
+    const tile = await getVtTileByXYZ(nodeId, z, x, y);
     if (!tile) return null;
-    const data = tile.data_Uint8Array;
-    if (data instanceof Uint8Array) return data;
-    return new Uint8Array(data);
+    return new Uint8Array(tile.data);
   }
 
   async listVectorTiles(nodeId: NodeId): Promise<ShapeTileSummaryEntry[]> {
-    const tiles = await shapeDB.vectorTiles.where('nodeId').equals(nodeId).toArray();
+    const tiles = await listVtTilesByNode(nodeId);
     return tiles.map((tile) => ({
       z: tile.z,
       x: tile.x,
       y: tile.y,
       size: tile.size,
-      timestamp: tile.generatedAt,
+      timestamp: tile.timestamp,
     }));
   }
 
   async getVectorTileSummary(nodeId: NodeId): Promise<ShapeTileSummary> {
-    const tiles = await shapeDB.vectorTiles.where('nodeId').equals(nodeId).toArray();
+    const tiles = await listVtTilesByNode(nodeId);
     if (tiles.length === 0) {
       return { tiles: 0, totalBytes: 0 };
     }
@@ -360,16 +393,16 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
   }
 
   async listVTMetadata(nodeId: NodeId): Promise<ShapeVTMetadata[]> {
-    const rows = await shapeDB.vectorTiles.where('nodeId').equals(nodeId).toArray();
+    const rows = await listVtTilesByNode(nodeId);
     return rows.map((row) => ({
-      key: row.tileId,
+      key: row.id,
       nodeId: String(nodeId),
       z: row.z,
       x: row.x,
       y: row.y,
       size: row.size,
       contentType: 'application/vnd.mapbox-vector-tile',
-      timestamp: row.generatedAt,
+      timestamp: row.timestamp,
     }));
   }
 
@@ -464,11 +497,11 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
   }
 
   async deleteVectorTile(tileId: string): Promise<void> {
-    await shapeDB.vectorTiles.delete(tileId);
+    await vtDb.vtTiles.delete(tileId);
   }
 
   async deleteVectorTiles(nodeId: NodeId): Promise<void> {
-    await shapeDB.vectorTiles.where('nodeId').equals(nodeId).delete();
+    await vtDb.vtTiles.where('nodeId').equals(nodeId).delete();
   }
 
   async deleteFeatures(nodeId: NodeId): Promise<void> {

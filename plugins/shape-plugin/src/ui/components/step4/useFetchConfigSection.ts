@@ -76,7 +76,7 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
   ), [countUnit, t]);
   const fetchDeleteCount = counts.fetch;
   const transformDeleteCount = counts.transform;
-  const vtDeleteCount = Math.max(counts.vt, resultCounts.tiles);
+  const vtDeleteCount = counts.vt;
   const metadataDeleteCount = resultCounts.metadata;
   const deleteFetchLabel = useMemo(() => (
     formatDeleteLabelI18n(
@@ -117,13 +117,13 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
         fetchCount,
         transformTaskCount,
         transformCacheCount,
-        numTiles,
+        vtTaskCount,
         numMetadata,
       ] = await Promise.all([
         shapeStore.fetchCache.where('[nodeId+domainType]').equals([nodeId, SHAPE_DOMAIN]).count(),
         taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'transform']).count(),
+        taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'vt']).count(),
         ephemeralShapeAPIImpl.countTransformCaches(nodeId),
-        shapeQueryAPIImpl.listVTMetadata(nodeId).then((rows) => rows.length),
         shapeQueryAPIImpl.listFeatureMetadata(nodeId).then((rows) => rows.length),
       ]);
       const transformCount = transformTaskCount > 0 ? transformTaskCount : transformCacheCount;
@@ -138,9 +138,9 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
       setCounts({
         fetch: fetchCount,
         transform: transformCount,
-        vt: numTiles,
+        vt: vtTaskCount,
       });
-      setResultCounts({ tiles: numTiles, metadata: numMetadata });
+      setResultCounts({ tiles: vtTaskCount, metadata: numMetadata });
     } finally {
       setCountsLoading(false);
     }

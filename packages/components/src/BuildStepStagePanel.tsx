@@ -1,6 +1,7 @@
 import { type FC, memo, type ReactNode } from 'react';
 import { Box, Chip, CircularProgress, LinearProgress, Stack, Typography, useTheme } from '@mui/material';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import SkipNextIcon from '@mui/icons-material/SkipNext';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
 
 export type BuildStepStageTaskCount = {
@@ -47,12 +48,11 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
   const failed = taskCount?.Failed ?? 0;
   const skipped = taskCount?.Skip ?? 0;
   const total = taskCount?.Total ?? (completed + failed + skipped);
-  const completedNumerator = total === 0
-    ? 0
-    : Math.min(total, completed + skipped);
-  const completedLabel = `${completedNumerator}/${total}`;
+  const completedLabel = `${Math.min(total, completed)}/${total}`;
+  const completedVisibleCount = Math.min(total, completed + skipped);
   const isFailedDisabled = failed === 0;
-  const isCompletedDisabled = completedNumerator === 0;
+  const isCompletedDisabled = completedVisibleCount === 0;
+  const isSkippedVisible = skipped > 0;
   const failedVariant = isFailedDisabled ? 'outlined' : (failedMode ? 'filled' : 'outlined');
   const completedVariant = isCompletedDisabled ? 'outlined' : (completedMode ? 'filled' : 'outlined');
   const indicatorCount = Math.max(0, Math.floor(concurrencyIndicator?.count ?? 0));
@@ -95,6 +95,16 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
                 onClick={isFailedDisabled ? undefined : () => onFailedModeUpdate(!failedMode)}
                 sx={isFailedDisabled ? { borderColor: 'divider', color: 'text.disabled' } : undefined}
               />
+              {isSkippedVisible ? (
+                <Chip
+                  label={`Skipped ${skipped}`}
+                  size="small"
+                  color="warning"
+                  icon={<SkipNextIcon fontSize="small" />}
+                  variant="outlined"
+                  sx={{ borderColor: 'divider' }}
+                />
+              ) : null}
               <Chip
                 label={completedLabel}
                 size="small"
