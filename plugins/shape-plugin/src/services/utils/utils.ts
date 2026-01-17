@@ -366,6 +366,9 @@ export function mergeBuildConfig(
       selfIntersectionConfig: bandOverrides.selfIntersectionConfig
         ? { ...base.transformConfig.selfIntersectionConfig, ...bandOverrides.selfIntersectionConfig }
         : base.transformConfig.selfIntersectionConfig,
+      preSimplifyFilterConfig: bandOverrides.preSimplifyFilterConfig
+        ? { ...base.transformConfig.preSimplifyFilterConfig, ...bandOverrides.preSimplifyFilterConfig }
+        : base.transformConfig.preSimplifyFilterConfig,
     }
     : base.transformConfig;
 

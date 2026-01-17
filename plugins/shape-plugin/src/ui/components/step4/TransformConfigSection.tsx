@@ -9,6 +9,8 @@ import {
   Paper,
   Slider,
   Tooltip,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
 import {
   FilterAlt as FilterAltIcon,
@@ -154,6 +156,129 @@ export const TransformConfigSection: React.FC<Props> = ({ config, disabled, onCh
                   showPerFeatureToggle={false}
                   disabled={disabled}
                 />
+              </Paper>
+            </Grid>
+          </Grid>
+          <Grid container spacing={3}>
+            <Grid size={{ xs: 12, md: 8 }}>
+              <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
+                <Stack spacing={2}>
+                  <Typography variant="subtitle2">
+                    {t('processing.filter.preSimplifyTitle', 'Pre-simplify Filters')}
+                  </Typography>
+                  <Stack spacing={1}>
+                    <FormControlLabel
+                      control={(
+                        <Switch
+                          checked={baseTransformConfig.preSimplifyFilterConfig.excludeInvalidGeometry}
+                          onChange={(event) => {
+                            update({
+                              transformConfig: {
+                                ...baseTransformConfig,
+                                preSimplifyFilterConfig: {
+                                  ...baseTransformConfig.preSimplifyFilterConfig,
+                                  excludeInvalidGeometry: event.target.checked,
+                                },
+                              },
+                            });
+                          }}
+                        />
+                      )}
+                      label={t('processing.filter.excludeInvalidGeometry', 'Exclude invalid geometry')}
+                      disabled={disabled}
+                    />
+                    <Typography variant="caption" color="text.secondary">
+                      {t(
+                        'processing.filter.excludeInvalidGeometryHelp',
+                        'Drops features with non-finite coordinates, open rings, or invalid polygons before simplify.',
+                      )}
+                    </Typography>
+                  </Stack>
+                  <Stack spacing={1}>
+                    <FormControlLabel
+                      control={(
+                        <Switch
+                          checked={baseTransformConfig.preSimplifyFilterConfig.dropInvalidHoles}
+                          onChange={(event) => {
+                            update({
+                              transformConfig: {
+                                ...baseTransformConfig,
+                                preSimplifyFilterConfig: {
+                                  ...baseTransformConfig.preSimplifyFilterConfig,
+                                  dropInvalidHoles: event.target.checked,
+                                },
+                              },
+                            });
+                          }}
+                        />
+                      )}
+                      label={t('processing.filter.dropInvalidHoles', 'Drop invalid holes')}
+                      disabled={disabled}
+                    />
+                    <Typography variant="caption" color="text.secondary">
+                      {t(
+                        'processing.filter.dropInvalidHolesHelp',
+                        'When a hole ring is invalid, only the hole is removed instead of dropping the polygon.',
+                      )}
+                    </Typography>
+                  </Stack>
+                  <Stack spacing={1}>
+                    <FormControlLabel
+                      control={(
+                        <Switch
+                          checked={baseTransformConfig.preSimplifyFilterConfig.splitSelfIntersections}
+                          onChange={(event) => {
+                            update({
+                              transformConfig: {
+                                ...baseTransformConfig,
+                                preSimplifyFilterConfig: {
+                                  ...baseTransformConfig.preSimplifyFilterConfig,
+                                  splitSelfIntersections: event.target.checked,
+                                },
+                              },
+                            });
+                          }}
+                        />
+                      )}
+                      label={t('processing.filter.splitSelfIntersections', 'Split self-intersections')}
+                      disabled={disabled}
+                    />
+                    <Typography variant="caption" color="text.secondary">
+                      {t(
+                        'processing.filter.splitSelfIntersectionsHelp',
+                        'Splits self-intersecting polygons before simplify to avoid geometry errors.',
+                      )}
+                    </Typography>
+                  </Stack>
+                  <Stack spacing={1}>
+                    <FormControlLabel
+                      control={(
+                        <Switch
+                          checked={baseTransformConfig.preSimplifyFilterConfig.dropSmallPolygons}
+                          onChange={(event) => {
+                            update({
+                              transformConfig: {
+                                ...baseTransformConfig,
+                                preSimplifyFilterConfig: {
+                                  ...baseTransformConfig.preSimplifyFilterConfig,
+                                  dropSmallPolygons: event.target.checked,
+                                },
+                              },
+                            });
+                          }}
+                        />
+                      )}
+                      label={t('processing.filter.dropSmallPolygons', 'Drop tiny polygons')}
+                      disabled={disabled}
+                    />
+                    <Typography variant="caption" color="text.secondary">
+                      {t(
+                        'processing.filter.dropSmallPolygonsHelp',
+                        'Removes polygons below the minimum area or vertex thresholds instead of simplifying them.',
+                      )}
+                    </Typography>
+                  </Stack>
+                </Stack>
               </Paper>
             </Grid>
           </Grid>

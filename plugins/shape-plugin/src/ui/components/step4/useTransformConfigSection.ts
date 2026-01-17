@@ -18,6 +18,9 @@ export const useTransformConfigSection = ({ config, onChange }: Args) => {
   if (!baseTransformConfig.hybridFilterConfig) {
     throw new Error('TransformConfigSection: hybridFilterConfig is not defined');
   }
+  if (!baseTransformConfig.preSimplifyFilterConfig) {
+    throw new Error('TransformConfigSection: preSimplifyFilterConfig is not defined');
+  }
 
   const baseHybridConfig: HybridFilterConfig = baseTransformConfig.hybridFilterConfig;
   const quickRejectMin = 0.001;
@@ -44,4 +47,3 @@ export const useTransformConfigSection = ({ config, onChange }: Args) => {
     update,
   };
 };
-
