@@ -28,7 +28,6 @@ import {
 import { getDBName } from '@hierarchidb/util';
 //import { getShapeDbAPIClient } from '../../../services/batch/ShapeBuildAPIClient.ts';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
-import { useVectorTileFeatureTable } from './useVectorTileFeatureTable.tsx';
 import { shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
 
 type ShapePreviewDraft = Partial<ShapeEntity> & {
@@ -594,14 +593,6 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     [matchedFeatureIds],
   );
 
-  const {
-    metadataColumns: featureColumns,
-    metadataTableRows: featureTableRows,
-    sortColumn: featureSortColumn,
-    sortDirection: featureSortDirection,
-    handleSort: handleFeatureSort,
-  } = useVectorTileFeatureTable(featureMetadataRows, matchedFeatureIdSet, featureSearchKeyword);
-
   const errorSummaryById = useMemo<MapPreviewErrorSummaryById>(() => (
     buildErrorSummaryById(transformErrorRows, {
       getId: (row) => row.featureId ?? undefined,
@@ -700,11 +691,6 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     setHoveredId,
     selectionContext,
     setSelectionContext,
-    featureSortColumn,
-    featureSortDirection,
-    handleFeatureSort,
-    featureColumns,
-    featureTableRows,
     errorSummaryById,
     matchedFeatureIdSet,
     selectedIdSet,

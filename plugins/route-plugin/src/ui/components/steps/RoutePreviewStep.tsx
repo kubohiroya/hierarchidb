@@ -7,10 +7,13 @@ import type React from 'react';
 import { Alert, Box, Paper, Snackbar, Stack, Typography } from '@mui/material';
 import {
   buildCategoryFilter,
+  buildRoutePreviewRows,
   DEFAULT_MAP_CONFIG,
   MapToggleCard,
   mergeFilters,
+  RoutePreviewList,
   ResourceLayerMap,
+  useVectorTilePreviewSearch,
   type MapAttributionItem,
   type MapLibreMapInstance,
   type MapToggleSelection,
@@ -106,6 +109,9 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
   const [routeModeSelection, setRouteModeSelection] = useState<MapToggleSelection>(() =>
     Object.fromEntries(ROUTE_MODE_OPTIONS.map((option) => [option.id, true])) as MapToggleSelection
   );
+  const [listSearch, setListSearch] = useState('');
+  const [matchedIds, setMatchedIds] = useState<string[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [hoverInfo, setHoverInfo] = useState<RouteNearestLineResponse | null>(null);
   const [hoverOpen, setHoverOpen] = useState(false);
   const hoverTimerRef = useRef<number | null>(null);
@@ -295,6 +301,31 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
   const handleRouteModeToggle = useCallback((id: string) => {
     setRouteModeSelection((prev) => ({ ...prev, [id]: !prev[id] }));
   }, []);
+  const listRows = useMemo(
+    () => (hasGeometry ? buildRoutePreviewRows([geometry]) : []),
+    [geometry, hasGeometry],
+  );
+  const getRowId = useCallback((row: (typeof listRows)[number]) => String(row.id), []);
+  const buildSearchText = useCallback((row: (typeof listRows)[number]) => ([
+    row.id,
+    row.startLon,
+    row.startLat,
+    row.endLon,
+    row.endLat,
+    row.distanceMeters,
+    row.vertexCount,
+  ].filter((value) => value != null).join(' ')), []);
+
+  useVectorTilePreviewSearch(
+    hasGeometry,
+    listRows,
+    listSearch,
+    getRowId,
+    buildSearchText,
+    setMatchedIds,
+  );
+  const matchedIdSet = useMemo(() => new Set(matchedIds), [matchedIds]);
+  const emptyErrorSummary = useMemo(() => new Map(), []);
 
   return (
     <Box display="flex" flexDirection="column" gap={2}>
@@ -349,6 +380,47 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
                   attributionItems={attributionItems}
                   mapOptions={DEFAULT_MAP_CONFIG.interactionOptions}
                   onLoad={setMapInstance}
+                />
+                <RoutePreviewList
+                  title={t('preview.list.title', 'Routes')}
+                  rows={listRows}
+                  columnLabels={{
+                    lineId: t('preview.list.columns.lineId', 'Line Id'),
+                    startLon: t('preview.list.columns.startLon', 'Start Lon'),
+                    startLat: t('preview.list.columns.startLat', 'Start Lat'),
+                    endLon: t('preview.list.columns.endLon', 'End Lon'),
+                    endLat: t('preview.list.columns.endLat', 'End Lat'),
+                    distanceMeters: t('preview.list.columns.distanceMeters', 'Distance (m)'),
+                    vertexCount: t('preview.list.columns.vertexCount', 'Vertices'),
+                  }}
+                  search={{
+                    value: listSearch,
+                    onChange: setListSearch,
+                    placeholder: t('preview.list.searchPlaceholder', 'Search routes'),
+                    ariaLabel: t('preview.list.searchAriaLabel', 'Search routes'),
+                  }}
+                  countLabels={{
+                    matched: t('preview.list.matched', 'Matched'),
+                    rows: t('preview.list.rows', 'Rows'),
+                  }}
+                  matchedRows={matchedIdSet}
+                  selectedRows={new Set(selectedIds)}
+                  onSelectionChange={(next: Set<string | number>) => setSelectedIds(Array.from(next).map(String))}
+                  errorSummaryById={emptyErrorSummary}
+                  errorColumnLabels={{
+                    status: t('preview.list.columns.status', 'Status'),
+                    errorCount: t('preview.list.columns.errorCount', 'Errors'),
+                    errorMessage: t('preview.list.columns.errorMessage', 'Error Message'),
+                  }}
+                  statusLabels={{
+                    failed: t('preview.list.status.failed', 'Failed'),
+                    completed: t('preview.list.status.completed', 'Completed'),
+                  }}
+                  emptyContent={listRows.length === 0 ? (
+                    <Alert severity="info" sx={{ m: 2 }}>
+                      {t('preview.list.empty', 'No route lines are available yet.')}
+                    </Alert>
+                  ) : undefined}
                 />
               </Box>
             </Stack>

@@ -1,6 +1,6 @@
 import type React from 'react';
 import { Box, Alert, Snackbar, CircularProgress } from '@mui/material';
-import { MapPreviewFloatingTable, ResourceLayerMap } from '@hierarchidb/ui-map';
+import { ResourceLayerMap, ShapePreviewList } from '@hierarchidb/ui-map';
 import { useShapePreviewStepView } from './useShapePreviewStepView.js';
 import type { ShapeEntity } from '../../../common/types/index.js';
 
@@ -14,10 +14,10 @@ export type ShapeDialogStepProps = {
 export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId }) => {
   const {
     t,
-    theme,
     featureMetadataLoading,
     featureMetadataError,
     featureMetadataLoaded,
+    featureMetadataRows,
     featureSearchKeyword,
     setFeatureSearchKeyword,
     errorSummaryById,
@@ -25,11 +25,6 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
     selectedFeatureIds,
     setSelectedFeatureIds,
     setHoveredId,
-    featureSortColumn,
-    featureSortDirection,
-    handleFeatureSort,
-    featureColumns,
-    featureTableRows,
     hoverMessage,
     tilesUrl,
     tilesAvailable,
@@ -133,59 +128,40 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
 
 
   const renderFeatureDialog = () => (
-    <MapPreviewFloatingTable
+    <ShapePreviewList
       title={t('preview.tabs.features', 'Features')}
-      rows={featureTableRows}
-      columns={featureColumns}
+      rows={featureMetadataRows}
+      columnLabels={{
+        featureId: t('preview.metadata.columns.featureId', 'Feature ID'),
+        countryName: t('preview.metadata.columns.countryName', 'Country'),
+        countryCode: t('preview.metadata.columns.countryCode', 'Country Code'),
+        adminName: t('preview.metadata.columns.adminName', 'Admin Name'),
+        adminLevel: t('preview.metadata.columns.adminLevel', 'Admin Level'),
+        adminCode: t('preview.metadata.columns.adminCode', 'Admin Code'),
+        dataSource: t('preview.metadata.columns.dataSource', 'Data Source'),
+        createdAt: t('preview.metadata.columns.createdAt', 'Created At'),
+        vertexCount: t('preview.metadata.columns.vertexCount', 'Vertices'),
+        polygonCount: t('preview.metadata.columns.polygonCount', 'Polygons'),
+        bbox: t('preview.metadata.columns.bbox', 'Bounding Box'),
+        area: t('preview.metadata.columns.area', 'Area'),
+      }}
       search={{
         value: featureSearchKeyword,
         onChange: setFeatureSearchKeyword,
         placeholder: t('preview.metadata.searchPlaceholder', 'Search metadata'),
         ariaLabel: t('preview.metadata.searchAriaLabel', 'Search metadata'),
       }}
-      countText={
-        featureSearchKeyword
-          ? `${featureTableRows.length} ${t('preview.metadata.matches', 'Matched')}`
-          : `${featureTableRows.length} ${t('preview.metadata.rows', 'Rows')}`
-      }
+      countLabels={{
+        matched: t('preview.metadata.matches', 'Matched'),
+        rows: t('preview.metadata.rows', 'Rows'),
+      }}
       loading={featureMetadataLoading}
       error={featureMetadataError ?? undefined}
       matchedRows={matchedFeatureIdSet}
-      selectable
-      selectionMode="multiple"
       selectedRows={new Set(selectedFeatureIds)}
       onSelectionChange={(next) => {
         setSelectedFeatureIds(Array.from(next).map(String));
       }}
-      sortColumn={featureSortColumn}
-      sortDirection={featureSortDirection}
-      onSort={handleFeatureSort}
-      rowSx={(state) => {
-        if (state.selected) {
-          const selectedBg = theme.palette.primary.light;
-          const selectedText = theme.palette.getContrastText(selectedBg);
-          return {
-            backgroundColor: selectedBg,
-            color: selectedText,
-            '& td, & td *': { color: selectedText },
-          };
-        }
-        if (state.matched) {
-          const matchedBg = theme.palette.secondary.light;
-          const matchedText = theme.palette.getContrastText(matchedBg);
-          return {
-            backgroundColor: matchedBg,
-            boxShadow: `inset 3px 0 0 0 ${theme.palette.secondary.main}`,
-            color: matchedText,
-            '& td, & td *': { color: matchedText },
-          };
-        }
-        if (state.hovered) {
-          return { backgroundColor: theme.palette.action.hover };
-        }
-        return undefined;
-      }}
-      toolbarComponent={<></>}
       emptyContent={!nodeId ? (
         <Alert severity="info" sx={{ m: 2 }}>
           {t('preview.metadata.missingSession', 'Build the dataset to generate metadata.')}

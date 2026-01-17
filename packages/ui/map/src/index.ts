@@ -94,6 +94,21 @@ export { useMapFeatureSelectionGestures } from './preview/useMapFeatureSelection
 export { MapPreviewSearchPanel } from './preview/MapPreviewSearchPanel.js';
 export { MapPreviewSearchSettingsDialog } from './preview/MapPreviewSearchSettingsDialog.js';
 export {
+  ShapePreviewList,
+  type ShapePreviewFeatureRow,
+  type ShapePreviewColumnLabels,
+  type ShapePreviewListCountLabels,
+  type ShapePreviewListProps,
+} from './preview/ShapePreviewList.js';
+export {
+  RoutePreviewList,
+  buildRoutePreviewRows,
+  type RoutePreviewLineRow,
+  type RoutePreviewColumnLabels,
+  type RoutePreviewListCountLabels,
+  type RoutePreviewListProps,
+} from './preview/RoutePreviewList.js';
+export {
   MapPreviewFloatingTable,
   buildErrorSummaryById,
   type MapPreviewErrorSummary,
