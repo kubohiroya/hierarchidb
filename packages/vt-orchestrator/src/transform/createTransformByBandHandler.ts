@@ -28,6 +28,11 @@ const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureColl
   return null;
 };
 
+const describeBuffer = (buffer: ArrayBuffer): {
+  byteLength: number;
+  headHex: string;
+  headAscii: string;
+  isJsonLike: boolean;
 const decodeFetchCache = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
   const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
   return normalizeFeatureCollection(decoded as unknown);
@@ -522,6 +527,55 @@ const runStageWithLabel = async <T>(label: string, fn: () => T | Promise<T>): Pr
   }
 };
 
+const runWithStallTimeout = async <T>(params: {
+  promise: Promise<T>;
+  stage: string;
+  nodeId: string;
+  taskId: string;
+  timeoutMs: number;
+  getLastProgressAt: () => number;
+  heartbeatMs?: number;
+}): Promise<T> => {
+  const {
+    promise,
+    stage,
+    nodeId,
+    taskId,
+    timeoutMs,
+    getLastProgressAt,
+    heartbeatMs = 30000,
+  } = params;
+  let intervalId: ReturnType<typeof setInterval> | null = null;
+  let lastHeartbeatAt = Date.now();
+  const stallPromise = new Promise<never>((_resolve, reject) => {
+    intervalId = setInterval(() => {
+      const now = Date.now();
+      const lastProgressAt = getLastProgressAt();
+      const idleMs = now - lastProgressAt;
+      if (idleMs >= timeoutMs) {
+        reject(new Error(`transform failed: ${stage} stalled (${idleMs}ms without progress)`));
+        return;
+      }
+      if (now - lastHeartbeatAt >= heartbeatMs) {
+        lastHeartbeatAt = now;
+        console.warn('[transform] stage heartbeat', {
+          nodeId,
+          taskId,
+          stage,
+          idleMs,
+        });
+      }
+    }, Math.min(heartbeatMs, 10000));
+  });
+  try {
+    return await Promise.race([promise, stallPromise]);
+  } finally {
+    if (intervalId) {
+      clearInterval(intervalId);
+    }
+  }
+};
+
 const buildCollectionDiagnostics = (collection: FeatureCollection | null, label: string): string | null => {
   if (!collection) return null;
   const featureCount = collection.features.length;
@@ -695,15 +749,37 @@ export const createTransformByBandHandler = (
       const inputFeatureCount = inputCollection.features.length;
       const inputMissingGeometry = inputCollection.features.filter((feature) => !feature?.geometry).length;
       stageLabel = 'counts:input-polygons';
-      inputPolygonCount = await runStageWithLabel('counts:input-polygons', () => inputCollection.features.reduce(
-        (sum, feature) => sum + countPolygonsFromGeometry(feature?.geometry),
-        0,
+      const inputPolygonCounts = await runStageWithLabel('counts:input-polygons', () => (
+        inputCollection.features.map((feature) => countPolygonsFromGeometry(feature?.geometry))
       ));
+      inputPolygonCount = inputPolygonCounts.reduce((sum, value) => sum + value, 0);
       await reportPolygonProgress(task.taskId, 0, inputPolygonCount);
       try {
         assertNotAborted(abortSignal);
         stageLabel = 'simplify';
-        simplified = await runStageWithLabel('simplify', () => simplifyFeatureCollection(
+        let processedPolygonCount = 0;
+        let lastProgressIndex = -1;
+        let lastProgressAt = Date.now();
+        let lastReportAt = 0;
+        const reportProgressMaybe = async (force: boolean) => {
+          const now = Date.now();
+          if (!force && now - lastReportAt < 2000) return;
+          lastReportAt = now;
+          await reportPolygonProgress(task.taskId, processedPolygonCount, inputPolygonCount);
+        };
+        const onSimplifyProgress = async (progress: {
+          featureIndex: number;
+          processed: number;
+          total: number;
+        }) => {
+          for (let index = lastProgressIndex + 1; index <= progress.featureIndex; index += 1) {
+            processedPolygonCount += inputPolygonCounts[index] ?? 0;
+          }
+          lastProgressIndex = progress.featureIndex;
+          lastProgressAt = Date.now();
+          await reportProgressMaybe(false);
+        };
+        const simplifyPromise = runStageWithLabel('simplify', () => simplifyFeatureCollection(
           inputCollection,
           band.zMax,
           tolerance,
@@ -712,7 +788,84 @@ export const createTransformByBandHandler = (
           transformConfig.preSimplifyFilterConfig,
           transformConfig.quantize,
           transformConfig.excludePolygonAreaCoefficient,
+          {
+            abortSignal,
+            yieldEvery: 25,
+            onProgress: onSimplifyProgress,
+          },
         ));
+        simplified = await runWithStallTimeout({
+          promise: simplifyPromise,
+          stage: 'simplify',
+          nodeId: String(task.nodeId),
+          taskId: task.taskId,
+          timeoutMs: 300000,
+          getLastProgressAt: () => lastProgressAt,
+        });
+        await reportProgressMaybe(true);
+        if (!simplified || simplified.features.length === 0) {
+          const errorRecords: ShapeTransformErrorRecord[] = [];
+          const recordLimit = 200;
+          for (const [featureIndex, feature] of inputCollection.features.entries()) {
+            if (errorRecords.length >= recordLimit) break;
+            if (!feature?.geometry) continue;
+            const rawFeatureId = feature.id
+              ?? (feature.properties && 'id' in feature.properties ? String(feature.properties.id) : undefined);
+            const featureId = rawFeatureId ? String(rawFeatureId) : `${input.sourceKey}:${featureIndex}`;
+            const lineFeaturesCandidate = buildErrorLineFeatures(feature.geometry, featureId);
+            const recordPolygonCount = lineFeaturesCandidate?.polygonCount
+              ?? countPolygonsFromGeometry(feature.geometry);
+            const recordRingCount = lineFeaturesCandidate?.ringCount ?? 0;
+            errorRecords.push({
+              id: `${task.taskId}:empty:${featureIndex}`,
+              nodeId: task.nodeId,
+              taskId: task.taskId,
+              stage: 'transform',
+              bandId: input.bandId,
+              sourceKey: input.sourceKey,
+              countryCode: input.countryCode,
+              adminLevel: input.adminLevel,
+              featureId,
+              featureIndex,
+              geometryType: lineFeaturesCandidate?.geometryType ?? feature.geometry.type,
+              polygonCount: recordPolygonCount,
+              ringCount: recordRingCount,
+              polygonErrorCount: recordPolygonCount,
+              ringErrorCount: recordRingCount,
+              message: 'simplify produced empty collection',
+              createdAt: Date.now(),
+              lineFeatures: {
+                type: 'FeatureCollection',
+                features: lineFeaturesCandidate?.features ?? [],
+              },
+            });
+          }
+          if (errorRecords.length > 0) {
+            try {
+              await ephemeralDB.transformErrors.bulkPut(errorRecords);
+              if (inputCollection.features.length > errorRecords.length) {
+                console.warn('[ShapeTransform] empty simplify error records truncated', {
+                  nodeId: task.nodeId,
+                  taskId: task.taskId,
+                  limit: recordLimit,
+                  totalFeatures: inputCollection.features.length,
+                });
+              }
+            } catch (storageError) {
+              console.warn('[ShapeTransform] failed to persist empty simplify error records', storageError);
+            }
+          }
+          await reportPolygonProgress(task.taskId, inputPolygonCount, inputPolygonCount);
+          return {
+            status: 'completed',
+            progress: 100,
+            message: `skipped: simplify produced empty collection (features=0) inputFeatures=${inputFeatureCount}`,
+            outputData: {
+              processedPolygons: inputPolygonCount,
+              totalPolygons: inputPolygonCount,
+            },
+          };
+        }
       } catch (error) {
         if (abortSignal?.aborted) {
           throw error;
@@ -743,7 +896,7 @@ export const createTransformByBandHandler = (
           assertNotAborted(abortSignal);
           if (!feature?.geometry) continue;
           try {
-            simplifyFeatureCollection(
+            await simplifyFeatureCollection(
               { type: 'FeatureCollection', features: [feature] },
               band.zMax,
               tolerance,
@@ -752,6 +905,10 @@ export const createTransformByBandHandler = (
               transformConfig.preSimplifyFilterConfig,
               transformConfig.quantize,
               transformConfig.excludePolygonAreaCoefficient,
+              {
+                abortSignal,
+                yieldEvery: 1,
+              },
             );
           } catch (featureError) {
             errorFeatureCount += 1;
@@ -914,6 +1071,18 @@ export const createTransformByBandHandler = (
         type: 'FeatureCollection',
         features,
       };
+      if (outputCollectionValue.features.length === 0) {
+        await reportPolygonProgress(task.taskId, inputPolygonCount, inputPolygonCount);
+        return {
+          status: 'completed',
+          progress: 100,
+          message: `skipped: empty output collection after simplify (features=0) inputFeatures=${inputFeatureCount}`,
+          outputData: {
+            processedPolygons: inputPolygonCount,
+            totalPolygons: inputPolygonCount,
+          },
+        };
+      }
 
       stageLabel = 'counts:output-vertices';
       const vertexCount = await runStageWithLabel('counts:output-vertices', () => features.reduce((sum, feature) => sum + countVerticesFromGeometry(feature.geometry), 0));
@@ -923,27 +1092,16 @@ export const createTransformByBandHandler = (
       stageLabel = 'encode';
       outputCollection = outputCollectionValue;
       const encoded = await runStageWithLabel('encode', () => encodeFlatGeobufFromFeatureCollection(outputCollectionValue));
+      if (encoded.byteLength === 0) {
+        throw new Error('transform failed: empty transform cache buffer');
+      }
+      stageLabel = 'encode:validate';
+      await runStageWithLabel('encode:validate', () => validateEncodedFlatGeobuf(encoded));
       const extractionRatio = inputFeatureCount > 0 ? simplified.features.length / inputFeatureCount : 0;
       const cacheId = `${task.nodeId}-b${input.bandId}-${SHAPE_DOMAIN}-${input.sourceKey}`;
 
       stageLabel = 'cache:put';
       assertNotAborted(abortSignal);
-      await ephemeralDB.transformCache.put({
-        id: cacheId,
-        nodeId: task.nodeId,
-        bandId: input.bandId,
-        domainType: input.domainType,
-        sourceKey: input.sourceKey,
-        countryCode: input.countryCode,
-        adminLevel: input.adminLevel,
-        data: encoded,
-        featureCount: features.length,
-        vertexCount,
-        polygonCount,
-        extractionRatio,
-        tolerance: tolerance,
-        timestamp: 0,
-      });
       await ephemeralDB.transformCache.update(cacheId, { timestamp: Date.now() });
       await ephemeralDB.transaction('rw', ephemeralDB.transformCache, async () => {
         await ephemeralDB.transformCache.put({

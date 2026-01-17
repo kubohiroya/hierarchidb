@@ -11,7 +11,17 @@ type LonLat = [number, number];
 type Mercator = [number, number];
 type GeometryWithCoords = Exclude<Geometry, { type: 'GeometryCollection' }>;
 
-const EMPTY_POLYGON_GEOMETRY: Geometry = { type: 'MultiPolygon', coordinates: [] };
+type SimplifyProgress = {
+  processed: number;
+  total: number;
+  featureIndex: number;
+};
+
+type SimplifyOptions = {
+  onProgress?: (progress: SimplifyProgress) => void | Promise<void>;
+  abortSignal?: AbortSignal;
+  yieldEvery?: number;
+};
 
 const metersPerPixel = (z: number): number => {
   return (2 * Math.PI * EARTH_RADIUS) / (MVT_EXTENT * Math.pow(2, z));
@@ -28,9 +38,15 @@ const resolveQuantizeFactor = (quantize?: number): number => {
   return Math.pow(2, rank - 1);
 };
 
+const MAX_MERCATOR_LAT = 85.05112878;
+
 const lonLatToMercator = ([lon, lat]: LonLat): Mercator => {
+  if (!Number.isFinite(lon) || !Number.isFinite(lat)) {
+    throw new Error('lon/lat must be finite');
+  }
+  const clampedLat = Math.min(MAX_MERCATOR_LAT, Math.max(-MAX_MERCATOR_LAT, lat));
   const x = (lon * Math.PI * EARTH_RADIUS) / 180;
-  const y = EARTH_RADIUS * Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360));
+  const y = EARTH_RADIUS * Math.log(Math.tan(Math.PI / 4 + (clampedLat * Math.PI) / 360));
   return [x, y];
 };
 
@@ -98,6 +114,29 @@ const hasNonFiniteCoords = (coords: unknown): boolean => {
   return (coords as unknown[]).some((child: unknown) => hasNonFiniteCoords(child));
 };
 
+const hasNonFiniteGeometry = (geometry: Geometry): boolean => {
+  if (geometry.type === 'GeometryCollection') {
+    const geometries = Array.isArray(geometry.geometries) ? geometry.geometries : [];
+    return geometries.some((child) => hasNonFiniteGeometry(child));
+  }
+  return hasNonFiniteCoords((geometry as GeometryWithCoords).coordinates);
+};
+
+const countVertices = (coords: unknown): number => {
+  if (!Array.isArray(coords)) return 0;
+  if (coords.length === 0) return 0;
+  if (typeof coords[0] === 'number') return 1;
+  return coords.reduce((sum: number, child: unknown) => sum + countVertices(child), 0);
+};
+
+const countVerticesFromGeometry = (geometry: Geometry): number => {
+  if (geometry.type === 'GeometryCollection') {
+    const geometries = Array.isArray(geometry.geometries) ? geometry.geometries : [];
+    return geometries.reduce((sum, child) => sum + countVerticesFromGeometry(child), 0);
+  }
+  return countVertices((geometry as GeometryWithCoords).coordinates);
+};
+
 const isRingClosed = (ring: number[][]): boolean => {
   if (ring.length < 4) return false;
   const first = ring[0];
@@ -140,6 +179,23 @@ const cleanGeometry = (geometry: Geometry): Geometry => {
   } catch {
     return geometry;
   }
+};
+
+const validateSimplifiedGeometry = (
+  geometry: Geometry,
+  ringFix: RingFixConfig,
+  minRingArea: number,
+  dropInvalidHoles: boolean,
+): Geometry => {
+  const cleaned = cleanGeometry(geometry);
+  const ringFixed = applyRingFix(cleaned, ringFix, minRingArea, dropInvalidHoles);
+  if (!ringFixed) {
+    throw new Error('simplify produced empty geometry');
+  }
+  if (!isGeometryValid(ringFixed)) {
+    throw new Error('simplify produced invalid geometry');
+  }
+  return ringFixed;
 };
 
 const mapGeometry = (geometry: Geometry, map: (coord: LonLat) => LonLat): Geometry => {
@@ -432,7 +488,7 @@ const applyPolygonAreaExclusion = (
   return geometry;
 };
 
-export const simplifyFeatureCollection = (
+export const simplifyFeatureCollection = async (
   collection: FeatureCollection,
   zTarget: number,
   toleranceK: number,
@@ -441,7 +497,8 @@ export const simplifyFeatureCollection = (
   preSimplifyFilterConfig: PreSimplifyFilterConfig | undefined,
   quantize: number | undefined,
   excludePolygonAreaCoefficient: number,
-): FeatureCollection => {
+  options?: SimplifyOptions,
+): Promise<FeatureCollection> => {
   const tolerance = toleranceK * metersPerPixel(zTarget);
   const ringFix = ringFixConfig ?? {
     minRingVertices: 4,
@@ -461,50 +518,92 @@ export const simplifyFeatureCollection = (
     dropInvalidHoles: true,
     splitSelfIntersections: true,
     dropSmallPolygons: true,
+    maxVerticesPerFeature: 0,
   };
+  const maxVerticesPerFeature = preSimplify.maxVerticesPerFeature ?? 0;
+  const yieldEvery = Math.max(1, Math.floor(options?.yieldEvery ?? 25));
   const baseArea = Math.pow(metersPerPixel(zTarget) * 2, 2);
   const minRingArea = baseArea * ringFix.minRingAreaMultiplier;
   const minPolygonArea = baseArea * selfIntersection.minPolygonAreaMultiplier;
   const features: Feature[] = [];
-  for (const feature of collection.features) {
+  let oversizedCount = 0;
+  const oversizedSamples: string[] = [];
+  const total = collection.features.length;
+  for (const [index, feature] of collection.features.entries()) {
+    if (options?.abortSignal?.aborted) {
+      throw new Error('task aborted');
+    }
     if (!feature.geometry) {
       features.push(feature);
-      continue;
+    } else {
+      if (maxVerticesPerFeature > 0) {
+        const vertexCount = countVerticesFromGeometry(feature.geometry);
+        if (vertexCount > maxVerticesPerFeature) {
+          oversizedCount += 1;
+          if (oversizedSamples.length < 3) {
+            const rawId = feature.id ?? (feature.properties && 'id' in feature.properties
+              ? feature.properties.id
+              : undefined);
+            const sampleId = rawId != null ? String(rawId) : `featureIndex:${index}`;
+            oversizedSamples.push(sampleId);
+          }
+          continue;
+        }
+      }
+      if (hasNonFiniteGeometry(feature.geometry)) {
+        continue;
+      }
+      let snapped: Geometry;
+      try {
+        snapped = snapGeometryToGrid(feature.geometry, zTarget, quantize);
+      } catch {
+        continue;
+      }
+      const cleaned = cleanGeometry(snapped);
+      const ringFixed = applyRingFix(cleaned, ringFix, minRingArea, preSimplify.dropInvalidHoles);
+      if (!ringFixed) {
+        continue;
+      }
+      if (preSimplify.excludeInvalidGeometry && !isGeometryValid(ringFixed)) {
+        continue;
+      }
+      const areaFiltered = applyPolygonAreaExclusion(ringFixed, excludePolygonAreaCoefficient, zTarget, quantize);
+      if (!areaFiltered) {
+        continue;
+      }
+      const intersectionFixed = applySelfIntersectionFix(
+        areaFiltered,
+        selfIntersection,
+        minPolygonArea,
+        zTarget,
+        quantize,
+        {
+          splitSelfIntersections: preSimplify.splitSelfIntersections,
+          dropSmallPolygons: preSimplify.dropSmallPolygons,
+          minRingVertices: ringFix.minRingVertices,
+        },
+      );
+      if (!intersectionFixed) {
+        continue;
+      }
+      const simplified = simplifyGeometryInMercator(intersectionFixed, tolerance);
+      const validated = validateSimplifiedGeometry(simplified, ringFix, minRingArea, preSimplify.dropInvalidHoles);
+      features.push({ ...feature, geometry: validated });
     }
-    const snapped = snapGeometryToGrid(feature.geometry, zTarget, quantize);
-    const cleaned = cleanGeometry(snapped);
-    const ringFixed = applyRingFix(cleaned, ringFix, minRingArea, preSimplify.dropInvalidHoles);
-    if (!ringFixed) {
-      features.push({ ...feature, geometry: EMPTY_POLYGON_GEOMETRY });
-      continue;
+    const processed = index + 1;
+    if (options?.onProgress && (processed % yieldEvery === 0 || processed === total)) {
+      await options.onProgress({ processed, total, featureIndex: index });
     }
-    if (preSimplify.excludeInvalidGeometry && !isGeometryValid(ringFixed)) {
-      features.push({ ...feature, geometry: EMPTY_POLYGON_GEOMETRY });
-      continue;
+    if (processed % yieldEvery === 0) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
     }
-    const areaFiltered = applyPolygonAreaExclusion(ringFixed, excludePolygonAreaCoefficient, zTarget, quantize);
-    if (!areaFiltered) {
-      features.push({ ...feature, geometry: EMPTY_POLYGON_GEOMETRY });
-      continue;
-    }
-    const intersectionFixed = applySelfIntersectionFix(
-      areaFiltered,
-      selfIntersection,
-      minPolygonArea,
-      zTarget,
-      quantize,
-      {
-        splitSelfIntersections: preSimplify.splitSelfIntersections,
-        dropSmallPolygons: preSimplify.dropSmallPolygons,
-        minRingVertices: ringFix.minRingVertices,
-      },
-    );
-    if (!intersectionFixed) {
-      features.push({ ...feature, geometry: EMPTY_POLYGON_GEOMETRY });
-      continue;
-    }
-    const simplified = simplifyGeometryInMercator(intersectionFixed, tolerance);
-    features.push({ ...feature, geometry: simplified });
+  }
+  if (oversizedCount > 0) {
+    console.warn('[transform] dropped oversized features during simplify', {
+      droppedCount: oversizedCount,
+      maxVerticesPerFeature,
+      samples: oversizedSamples,
+    });
   }
   return { ...collection, features };
 };

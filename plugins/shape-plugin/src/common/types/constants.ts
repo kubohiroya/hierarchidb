@@ -55,6 +55,7 @@ export const DEFAULT_BUILD_CONFIG: ShapeBuildConfig = {
       dropInvalidHoles: true,
       splitSelfIntersections: true,
       dropSmallPolygons: true,
+      maxVerticesPerFeature: 200000,
     },
   },
   vtConfig: {

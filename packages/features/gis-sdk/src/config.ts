@@ -56,6 +56,7 @@ export type PreSimplifyFilterConfig = {
   dropInvalidHoles: boolean;
   splitSelfIntersections: boolean;
   dropSmallPolygons: boolean;
+  maxVerticesPerFeature?: number;
 };
 
 export type ExtractionMode = 'off' | 'topojson' | 'geojson';
