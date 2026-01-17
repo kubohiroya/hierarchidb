@@ -304,14 +304,18 @@ export class ShapeQueryService implements ShapeQueryAPI {
   async listTransformCaches(
     nodeId: NodeId
   ): Promise<ShapeTransformCache[]> {
-    const records = await ephemeralShapeDB.transformCache.where('nodeId').equals(nodeId).toArray();
-    return records.filter((record) => record.timestamp > 0);
+    return await ephemeralShapeDB.transaction('r', ephemeralShapeDB.transformCache, async () => {
+      const records = await ephemeralShapeDB.transformCache.where('nodeId').equals(nodeId).toArray();
+      return records.filter((record) => record.timestamp > 0);
+    });
   }
 
   async getTransformCache(bufferId: string): Promise<ShapeTransformCache | null> {
-    const record = await ephemeralShapeDB.transformCache.get(bufferId);
-    if (!record || record.timestamp <= 0) return null;
-    return record;
+    return await ephemeralShapeDB.transaction('r', ephemeralShapeDB.transformCache, async () => {
+      const record = await ephemeralShapeDB.transformCache.get(bufferId);
+      if (!record || record.timestamp <= 0) return null;
+      return record;
+    });
   }
 
   async listVTMetadata(nodeId: NodeId): Promise<ShapeVTMetadata[]> {

@@ -10,7 +10,9 @@ export async function getTransformCache(
   sourceKey: string
 ): Promise<TransformCacheRecord | null> {
   const id = buildTransformCacheRecordId(nodeId, bandId, sourceKey);
-  return (await db.transformCache.get(id)) ?? null;
+  return db.transaction('r', db.transformCache, async () => (
+    (await db.transformCache.get(id)) ?? null
+  ));
 }
 
 export async function listTransformCache(
@@ -18,9 +20,11 @@ export async function listTransformCache(
   nodeId: NodeId,
   bandId: number
 ): Promise<TransformCacheRecord[]> {
-  return db.transformCache
-    .where('[nodeId+bandId]')
-    .equals([nodeId, bandId])
-    .filter((row) => row.domainType === SHAPE_DOMAIN)
-    .toArray();
+  return db.transaction('r', db.transformCache, async () => (
+    db.transformCache
+      .where('[nodeId+bandId]')
+      .equals([nodeId, bandId])
+      .filter((row) => row.domainType === SHAPE_DOMAIN)
+      .toArray()
+  ));
 }

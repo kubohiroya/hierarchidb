@@ -74,25 +74,26 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig> {
     await super.clearNodeData(nodeId);
     await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();
     await this.buildTasks.where('nodeId').equals(nodeId).delete();
-    await this.transformCache.where('nodeId').equals(nodeId).delete();
     await this.transformErrors.where('nodeId').equals(nodeId).delete();
   }
 
   async hasStageData(nodeId: NodeId, stage: BaseEphemeralStage): Promise<boolean> {
-    switch (stage) {
-      case 'fetch':
-        return (await this.fetchCache.where('nodeId').equals(nodeId).count()) > 0;
-      case 'transform':
-        return (await this.transformCache
-          .where('nodeId')
-          .equals(nodeId)
-          .filter((record) => record.timestamp > 0)
-          .count()) > 0;
-      case 'vt':
-        return (await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).count()) > 0;
-      default:
-        return false;
-    }
+    return this.transaction('r', [this.fetchCache, this.transformCache, this.tileIdToBufferRelations], async () => {
+      switch (stage) {
+        case 'fetch':
+          return (await this.fetchCache.where('nodeId').equals(nodeId).count()) > 0;
+        case 'transform':
+          return (await this.transformCache
+            .where('nodeId')
+            .equals(nodeId)
+            .filter((record) => record.timestamp > 0)
+            .count()) > 0;
+        case 'vt':
+          return (await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).count()) > 0;
+        default:
+          return false;
+      }
+    });
   }
 
   async clearStage(nodeId: NodeId, stage: BaseEphemeralStage): Promise<void> {
@@ -127,7 +128,6 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig> {
     await super.clearAll();
     await this.tileIdToBufferRelations.clear();
     await this.buildTasks.clear();
-    await this.transformCache.clear();
     await this.transformErrors.clear();
   }
 

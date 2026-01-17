@@ -70,18 +70,20 @@ export class EphemeralGisDB<Config = unknown> extends Dexie {
   }
 
   async hasStageData(nodeId: NodeId, stage: EphemeralStage): Promise<boolean> {
-    switch (stage) {
-      case 'fetch':
-        return (await this.fetchCache.where('nodeId').equals(nodeId).count()) > 0;
-      case 'transform':
-        return (await this.transformCache
-          .where('nodeId')
-          .equals(nodeId)
-          .filter((record) => record.timestamp > 0)
-          .count()) > 0;
-      default:
-        return false;
-    }
+    return this.transaction('r', [this.fetchCache, this.transformCache], async () => {
+      switch (stage) {
+        case 'fetch':
+          return (await this.fetchCache.where('nodeId').equals(nodeId).count()) > 0;
+        case 'transform':
+          return (await this.transformCache
+            .where('nodeId')
+            .equals(nodeId)
+            .filter((record) => record.timestamp > 0)
+            .count()) > 0;
+        default:
+          return false;
+      }
+    });
   }
 
   async clearStage(nodeId: NodeId, stage: EphemeralStage): Promise<void> {
@@ -111,23 +113,25 @@ export class EphemeralGisDB<Config = unknown> extends Dexie {
     numSessions: number;
     totalSize: number
   }> {
-    const [numFetchCaches, numTransformCaches, numSessions] = await Promise.all([
-      this.fetchCache.count(),
-      this.transformCache.count(),
-      this.sessions.count()
-    ]);
+    return this.transaction('r', [this.fetchCache, this.transformCache, this.sessions], async () => {
+      const [numFetchCaches, numTransformCaches, numSessions] = await Promise.all([
+        this.fetchCache.count(),
+        this.transformCache.count(),
+        this.sessions.count()
+      ]);
 
-    let totalSize = 0;
+      let totalSize = 0;
 
-    const rawBuffers = await this.fetchCache.toArray();
-    totalSize += rawBuffers.reduce((sum, buffer) => sum + (buffer.size || 0), 0);
+      const rawBuffers = await this.fetchCache.toArray();
+      totalSize += rawBuffers.reduce((sum, buffer) => sum + (buffer.size || 0), 0);
 
-    return {
-      numFetchCaches,
-      numTransformCaches,
-      numSessions,
-      totalSize,
-    };
+      return {
+        numFetchCaches,
+        numTransformCaches,
+        numSessions,
+        totalSize,
+      };
+    });
   }
 
   async clearAll(): Promise<void> {
