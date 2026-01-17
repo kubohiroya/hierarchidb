@@ -96,22 +96,15 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
     const parsed = parseInt(stepSegment, 10);
     return Number.isFinite(parsed) && parsed >= 1 ? String(parsed) : null;
   }, [location.hash, location.pathname, params.step]);
-  const dialogKey = React.useMemo(
-    () =>
-      [
-        treeId ?? '',
-        effectiveTargetNodeId ?? '',
-        effectiveNodeType ?? '',
-        params.action ?? '',
-      ].join('|'),
-    [effectiveNodeType, effectiveTargetNodeId, params.action, treeId]
-  );
+
   const initialStepRef = React.useRef<number | null>(null);
   const forceInitialStepRef = React.useRef<boolean | null>(null);
+
   React.useEffect(() => {
     initialStepRef.current = null;
     forceInitialStepRef.current = null;
-  }, [dialogKey]);
+  }, []);
+
   const parsedStep = React.useMemo(() => {
     if (stepParam !== null && stepParam !== undefined) {
       const n = parseInt(stepParam, 10);
@@ -119,7 +112,6 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
     }
     return 1;
   }, [stepParam]);
-
 
   const resolvedTreeId = treeId as TreeId;
   const resolvedTargetNodeId = effectiveTargetNodeId as NodeId;
