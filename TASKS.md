@@ -1,3 +1,72 @@
+2247) fix/ui-map/feature-list-column-toggle (P1) — 進行中 (2026-01-19)
+- ブランチ名: fix/ui-map/feature-list-column-toggle
+- 依存: なし
+- 受け入れ基準: フィーチャー一覧の列表示/非表示トグルが保持される（チェックが即座に戻らない）／MapLibre の Unknown expression "feature-atoms" が発生しない／影響範囲とロールバック手順が明記される／pnpm typecheck が exit 0 で完走する／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/**`, `plugins/shape-plugin/src/ui/**`, `packages/components/src/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、列表示トグルと MapLibre 式を修正前に戻す
+- チェックリスト:
+  - フィーチャー一覧のカラム表示状態が即座に戻る原因を特定する
+  - カラム表示の保存/復元を正しく動作させる
+  - MapLibre の feature-atoms を含む式を特定し修正する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-19 02:10 JST フィーチャー一覧のカラム表示トグル不具合と MapLibre feature-atoms エラーの修正に着手。
+  - done: 2026-01-19 02:18 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-19 02:32 JST フィーチャー一覧のローディング表示の高さ揺れ対策とスクロールの wheel 伝播抑止に着手。
+  - done: 2026-01-19 02:33 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-19 02:40 JST フローティング一覧の TableContainer 高さ指定を見直し、スクロール可能な overflow 設定を調整。
+  - done: 2026-01-19 02:41 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-19 02:50 JST フローティング一覧の余白解消と高さ一致のため、コンテナの高さ設定を再調整。
+  - done: 2026-01-19 02:52 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-19 03:00 JST テーブルの wheel イベントを capture で抑止し、Map 側のズーム干渉を回避。
+  - done: 2026-01-19 03:02 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - blocked: 2026-01-19 03:10 JST pnpm typecheck が exit 2（MapPreviewFloatingTable の未使用 maxHeight）で失敗。
+  - done: 2026-01-19 03:12 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-19 03:25 JST フィーチャー一覧テーブルのスクロール不具合を再調査。
+
+2246) fix/shape/step6-preview-feature-atoms-expression (P1) — 進行中 (2026-01-17)
+- ブランチ名: fix/shape/step6-preview-feature-atoms-expression
+- 依存: なし
+- 受け入れ基準: Step6 プレビューで MapLibre の Unknown expression "feature-atoms" が発生しない／fill-outline-color の式が MapLibre 仕様に沿って評価される／影響範囲とロールバック手順が明記される／pnpm typecheck が exit 0 で完走する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/useShapePreviewStepView.ts`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、Step6 プレビューのレイヤ設定を修正前へ戻す
+- チェックリスト:
+  - feature-atoms を使っている式の定義箇所を特定する
+  - MapLibre の式仕様に合わせて修正する
+  - Step6 プレビューでレイヤ追加が失敗しないことを確認する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-17 23:50 JST Step6 プレビューで Unknown expression "feature-atoms" が発生する問題の調査に着手。
+  - update: 2026-01-17 23:55 JST Step6 の MapLibre 式を feature-state へ置換し、MapLibre の式仕様に合わせて修正。
+  - done: 2026-01-17 23:58 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+
+2245) feat/ui-auth/unauthenticated-avatar-menu (P1) — 完了 (2026-01-17)
+- ブランチ名: feat/ui-auth/unauthenticated-avatar-menu
+- 依存: なし
+- 受け入れ基準: 未ログイン時でも UserAvatarMenu が表示される／未ログイン時はユーザ名・メール表示の代わりに Login ボタンが表示され認証フローが開始できる／テーマ・言語・全データ削除は未ログインでも実行可能／Logout は未ログイン時 disabled 表示／TASKS.md に運用ログを記載する
+- 要点: 未ログイン時もメニューを表示し、Login 導線と Logout disabled を追加。
+- 影響範囲: `packages/ui/auth/src/components/UserAvatarMenu.tsx`（必要に応じて関連ファイルを追記）
+- ロールバック手順: 該当差分を revert し、未ログイン時は認証フロー開始ダイアログのみを表示する挙動に戻す
+- チェックリスト:
+  - 未ログイン時に UserAvatarMenu を表示する条件分岐を整理する
+  - Login ボタンの表示と認証フロー開始の導線を実装する
+  - 未ログイン時の Logout を disabled 表示にする
+  - テーマ・言語・全データ削除が未ログイン時も利用可能であることを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-17 22:40 JST 未ログイン時に UserAvatarMenu を表示し Login ボタンを追加する対応に着手。
+  - done: 2026-01-17 22:43 JST pnpm --filter @hierarchidb/ui-auth typecheck を実行（exit 0）。
+  - update: 2026-01-17 22:44 JST 未ログイン時も UserAvatarMenu を表示し Login/Logout 表示を更新。
+  - update: 2026-01-17 22:48 JST 右上ログインボタンでメニューが表示されない報告を受け、UserLoginButton 側の挙動を調整する。
+  - done: 2026-01-17 22:58 JST pnpm --filter @hierarchidb/ui-usermenu typecheck を実行（exit 0）。
+  - done: 2026-01-17 22:59 JST 未ログイン時もユーザーメニューを表示し Login ボタン/Logout disabled を反映。
+  - done: 2026-01-17 23:06 JST Login ボタンを large にし、メニュー閉じる前にフォーカスを外すよう調整。
+  - done: 2026-01-17 23:07 JST pnpm --filter @hierarchidb/ui-usermenu typecheck を実行（exit 0）。
+  - update: 2026-01-17 23:15 JST Login 押下時の aria-hidden 警告が残るため、メニュー終了後に認証ダイアログを開くよう変更。
+  - done: 2026-01-17 23:16 JST pnpm --filter @hierarchidb/ui-usermenu typecheck を実行（exit 0）。
+
 2244) fix/ui-auth/clear-all-data-indexeddb (P1) — 進行中 (2026-01-17)
 - ブランチ名: fix/ui-auth/clear-all-data-indexeddb
 - 依存: なし
@@ -139,8 +208,36 @@
   - done: 2026-01-17 21:45 JST pnpm typecheck を実行（exit 0）。
   - update: 2026-01-17 22:05 JST 新規報告: vt タスクで "start offset of Float64Array should be a multiple of 8" が発生。FlatGeobuf decode 失敗の追加原因を調査。
   - update: 2026-01-17 22:20 JST decode 失敗時に bufferId/length/先頭バイト/JSON判定をログ出力する診断を追加。
+  - update: 2026-01-17 22:40 JST transformCache の書き込みがトランザクションかどうかを確認する調査に着手。
+  - update: 2026-01-17 23:15 JST transformCache の読み書きを全経路で Dexie transaction に統一（put/bulkPut と timestamp 更新を同一トランザクション化）。
+  - done: 2026-01-17 23:20 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 23:30 JST transformCache の空バッファ検出で例外を投げる対応に着手。
+  - done: 2026-01-17 23:40 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
   - blocked: 2026-01-17 22:22 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck が TS2322 で失敗（decode 診断の型）。
   - done: 2026-01-17 22:23 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck を再実行（exit 0）。
+  - update: 2026-01-17 23:55 JST simplify 前処理の実装順と不正ジオメトリ対策の現状を整理し、改善案を検討。
+  - update: 2026-01-18 00:10 JST simplify 後に再検証を追加し、不正ジオメトリで transform を失敗させる（A）と lat clamp（B）を実装。
+  - done: 2026-01-18 00:15 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-18 00:30 JST simplify 前処理で非有限座標を除去し、encode後のFlatGeobuf自己検証で不正バッファを検出して停止する対応を追加。
+  - done: 2026-01-18 00:40 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-18 00:55 JST simplify 前処理で非有限/不正/空ジオメトリを feature から除外するように調整。
+  - done: 2026-01-18 01:15 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 19:45 JST transform ハング調査のため簡易化進捗ログと停止条件の追加に着手。
+  - blocked: 2026-01-17 19:45 JST pnpm typecheck が exit 2（vt-orchestrator build:types で PreSimplifyFilterConfig の型更新が未反映）で失敗。
+  - update: 2026-01-17 19:50 JST pnpm --filter @hierarchidb/gis-sdk build を実行（exit 0、tsdown define 警告あり）。
+  - done: 2026-01-17 19:50 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 19:52 JST simplify 空出力時に encode をスキップして失敗させるチェックを追加。
+  - done: 2026-01-17 19:52 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 20:05 JST simplify/出力が空の場合は transform を skipped 扱いで完了させるよう修正。
+  - done: 2026-01-17 20:05 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-18 02:20 JST Step4 の VT メタデータ件数/削除ボタンが 0 件のままになるため、vt-store 側の vtTiles を参照するよう取得/削除経路を更新。
+  - done: 2026-01-18 02:21 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-18 02:40 JST Step5 の transform skipped 表示と VT タスク進捗（総タイル数ベース）の表示差分を修正する対応に着手。
+  - done: 2026-01-18 02:55 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-18 03:15 JST Step4 の VT 件数をタスク件数へ統一し、VT タスクタイトルを band/zoom/featureCount 形式に変更。
+  - done: 2026-01-18 03:16 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-19 01:40 JST simplify 空結果時のエラー項目生成と transform 後の feature metadata 生成の追加に着手。
+  - done: 2026-01-19 01:46 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
 
 2239) fix/plugin-dialog/fullscreen-header-footer-auto-hide (P1) — 進行中 (2026-01-17)
 - ブランチ名: fix/plugin-dialog/fullscreen-header-footer-auto-hide
