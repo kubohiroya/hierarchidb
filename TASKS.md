@@ -19,6 +19,8 @@
   - done: 2026-01-17 17:18 JST pnpm --filter @hierarchidb/ui-country-select typecheck を実行（exit 0）。
   - update: 2026-01-17 17:23 JST SelectionMatrix の Virtuoso components/スタイルをメモ化し、レンダリング時のスクロールリセットを抑制。
   - done: 2026-01-17 17:23 JST pnpm --filter @hierarchidb/components typecheck を実行（exit 0）。
+  - update: 2026-01-17 17:40 JST CountryMatrixSelector の Virtuoso ハンドル型を整理し、null許容のref型に修正。
+  - done: 2026-01-17 17:40 JST pnpm --filter @hierarchidb/ui-country-select typecheck を実行（exit 0）。
 
 2241) refactor/shape/remove-transform-by-zoom (P2) — 完了 (2026-01-17)
 - ブランチ名: refactor/shape/remove-transform-by-zoom

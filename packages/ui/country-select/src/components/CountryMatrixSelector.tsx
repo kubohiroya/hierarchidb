@@ -46,6 +46,16 @@ export interface CountryMatrixSelectorProps {
   errorMessage?: string | null;
 }
 
+type ScrollToIndexOptions = {
+  index: number;
+  align: 'start' | 'center' | 'end';
+  behavior: ScrollBehavior;
+};
+
+type VirtuosoHandle = {
+  scrollToIndex: (options: ScrollToIndexOptions) => void;
+};
+
 export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
   countries,
   matrixConfig,
@@ -62,7 +72,7 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
   loading = false,
   errorMessage = null,
 }) => {
-  const virtuosoRef = useRef<any>(null);
+  const virtuosoRef = useRef<VirtuosoHandle | null>(null);
   const [search, setSearch] = useState('');
   const [sortState, setSortState] = useState<{ kind: 'country' | 'region' | 'column'; columnId?: string; direction: 'asc' | 'desc' }>({
     kind: 'country',
@@ -71,7 +81,7 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
 
   const selectionMap = useMemo(() => {
     const map = new Map<string, Record<string, boolean>>();
-    selections.forEach((sel) => map.set(sel.countryCode, sel.selections));
+    selections.map((sel) => map.set(sel.countryCode, sel.selections));
     return map;
   }, [selections]);
 
@@ -183,7 +193,7 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
       return compare(a.country.name, b.country.name, sortState.direction);
     });
     return filtered;
-  }, [countries, flagFromCode, search, selectionMapForSort, sortState.columnId, sortState.direction, sortState.kind, toRegionLabel]);
+  }, [countries, flagFromCode, search, selectionMap, selectionMapForSort, sortState.columnId, sortState.direction, sortState.kind, toRegionLabel]);
 
   const rows: SelectionMatrixRow<{ country: Country; sourceIndex: number }>[] = useMemo(
     () =>
@@ -348,7 +358,7 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
     [sortState],
   );
 
-  if (loading) {
+  if (loading || !virtuosoRef) {
     return (
       <Alert severity="info">Loading countries...</Alert>
     );
@@ -469,7 +479,7 @@ type CountryMatrixTableProps = {
   getColumnSortDirection: (colIndex: number) => 'asc' | 'desc' | 'none';
   getRowMetaSortDirection: (metaIndex: number) => 'asc' | 'desc' | 'none';
   flagFromCode: (code?: string) => string;
-  virtuosoRef: React.MutableRefObject<any>;
+  virtuosoRef: React.MutableRefObject<VirtuosoHandle | null>;
   height: number | string;
   maxHeight?: number | string;
 };
