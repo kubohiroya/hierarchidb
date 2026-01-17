@@ -197,7 +197,7 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
       );
       return acc;
     }, {})
-  ), [stages, tasksByStage, summary.buildStatus]);
+  ), [stages, tasksByStage, summary.buildStatus, resolveTaskTitle]);
 
   const stageContents = useMemo(() => (
     stages.reduce<Record<string, JSX.Element>>((acc, stage) => {

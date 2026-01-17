@@ -318,7 +318,7 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
       const layerId = typeof feature.layer?.id === 'string' ? feature.layer.id : undefined;
       return { source, id, layerId };
     },
-    [interaction?.buildHighlightEntry],
+    [interaction],
   );
 
   const [searchText, setSearchText] = useAtom(mapSearchTextAtom);
