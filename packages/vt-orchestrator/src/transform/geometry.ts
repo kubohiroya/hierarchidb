@@ -1,8 +1,8 @@
 import type { Feature, FeatureCollection, Geometry, Polygon, MultiPolygon } from 'geojson';
-import { area as turfArea, kinks as turfKinks, simplify as turfSimplify } from '@turf/turf';
+import { area as turfArea, booleanValid, kinks as turfKinks, simplify as turfSimplify, unkinkPolygon } from '@turf/turf';
 import { cleanCoords } from '@turf/clean-coords';
 import { geojson as geojsonApi } from 'flatgeobuf';
-import type { RingFixConfig, SelfIntersectionConfig } from '@hierarchidb/gis-sdk';
+import type { PreSimplifyFilterConfig, RingFixConfig, SelfIntersectionConfig } from '@hierarchidb/gis-sdk';
 
 const EARTH_RADIUS = 6378137;
 const MVT_EXTENT = 4096;
@@ -10,6 +10,8 @@ const MVT_EXTENT = 4096;
 type LonLat = [number, number];
 type Mercator = [number, number];
 type GeometryWithCoords = Exclude<Geometry, { type: 'GeometryCollection' }>;
+
+const EMPTY_POLYGON_GEOMETRY: Geometry = { type: 'MultiPolygon', coordinates: [] };
 
 const metersPerPixel = (z: number): number => {
   return (2 * Math.PI * EARTH_RADIUS) / (MVT_EXTENT * Math.pow(2, z));
@@ -84,6 +86,50 @@ const mapCoords = (coords: unknown, map: (coord: LonLat) => LonLat): unknown => 
     return map([lon, lat]);
   }
   return (coords as unknown[]).map((child: unknown) => mapCoords(child, map));
+};
+
+const hasNonFiniteCoords = (coords: unknown): boolean => {
+  if (!Array.isArray(coords)) return false;
+  if (coords.length === 0) return false;
+  if (typeof coords[0] === 'number') {
+    const [lon, lat] = coords as number[];
+    return !Number.isFinite(lon) || !Number.isFinite(lat);
+  }
+  return (coords as unknown[]).some((child: unknown) => hasNonFiniteCoords(child));
+};
+
+const isRingClosed = (ring: number[][]): boolean => {
+  if (ring.length < 4) return false;
+  const first = ring[0];
+  const last = ring[ring.length - 1];
+  if (!first || !last) return false;
+  return first[0] === last[0] && first[1] === last[1];
+};
+
+const hasOpenRings = (geometry: Geometry): boolean => {
+  if (geometry.type === 'Polygon') {
+    const rings = Array.isArray(geometry.coordinates) ? geometry.coordinates : [];
+    return rings.some((ring) => !isRingClosed(ring));
+  }
+  if (geometry.type === 'MultiPolygon') {
+    const polygons = Array.isArray(geometry.coordinates) ? geometry.coordinates : [];
+    return polygons.some((rings) => rings.some((ring) => !isRingClosed(ring)));
+  }
+  return false;
+};
+
+const isGeometryValid = (geometry: Geometry): boolean => {
+  if (geometry.type !== 'GeometryCollection') {
+    const coords = (geometry as GeometryWithCoords).coordinates;
+    if (hasNonFiniteCoords(coords)) return false;
+    if (hasOpenRings(geometry)) return false;
+  }
+  try {
+    const feature = { type: 'Feature', geometry, properties: {} } as Feature;
+    return booleanValid(feature);
+  } catch {
+    return false;
+  }
 };
 
 
@@ -226,17 +272,34 @@ const fixPolygonRings = (
   rings: number[][][],
   config: RingFixConfig,
   minRingArea: number,
+  dropInvalidHoles: boolean,
 ): number[][][] | null => {
   const normalized = rings.map((ring) => normalizeRing(ring, config));
-  const candidates = normalized
-    .map((ring) => ({ ring, area: computeRingArea(ring), vertexCount: ring.length }))
-    .filter((entry) => entry.vertexCount >= config.minRingVertices && entry.area >= minRingArea);
-  if (candidates.length === 0) return null;
-  const sorted = [...candidates].sort((a, b) => b.area - a.area);
-  const outer = sorted[0]?.ring ?? candidates[0]?.ring;
+  const assessed = normalized.map((ring) => ({
+    ring,
+    area: computeRingArea(ring),
+    vertexCount: ring.length,
+    isClosed: isRingClosed(ring),
+    hasNonFinite: hasNonFiniteCoords(ring),
+  }));
+  const valid = assessed.filter(
+    (entry) => !entry.hasNonFinite
+      && entry.isClosed
+      && entry.vertexCount >= config.minRingVertices
+      && entry.area >= minRingArea,
+  );
+  if (valid.length === 0) return null;
+  const sorted = [...valid].sort((a, b) => b.area - a.area);
+  const outer = sorted[0]?.ring ?? valid[0]?.ring;
   if (!outer) return null;
-  const holes = candidates
+  const holes = (dropInvalidHoles ? valid : assessed)
     .filter((entry) => entry.ring !== outer)
+    .filter((entry) => !dropInvalidHoles || (
+      !entry.hasNonFinite
+      && entry.isClosed
+      && entry.vertexCount >= config.minRingVertices
+      && entry.area >= minRingArea
+    ))
     .map((entry) => entry.ring);
   return [outer, ...holes].filter(
     (ring): ring is number[][] => Array.isArray(ring) && ring.length >= config.minRingVertices,
@@ -247,19 +310,20 @@ const applyRingFix = (
   geometry: Geometry,
   config: RingFixConfig,
   minRingArea: number,
-): Geometry => {
+  dropInvalidHoles: boolean,
+): Geometry | null => {
   if (geometry.type === 'Polygon') {
     const rings = Array.isArray(geometry.coordinates) ? geometry.coordinates : [];
-    const fixed = fixPolygonRings(rings as number[][][], config, minRingArea);
-    return fixed ? { ...geometry, coordinates: fixed } : geometry;
+    const fixed = fixPolygonRings(rings as number[][][], config, minRingArea, dropInvalidHoles);
+    return fixed ? { ...geometry, coordinates: fixed } : null;
   }
   if (geometry.type === 'MultiPolygon') {
     const polygons = Array.isArray(geometry.coordinates) ? geometry.coordinates : [];
     const fixedPolygons = polygons
-      .map((rings) => fixPolygonRings(rings as number[][][], config, minRingArea))
+      .map((rings) => fixPolygonRings(rings as number[][][], config, minRingArea, dropInvalidHoles))
       .filter((rings): rings is number[][][] => Boolean(rings));
     if (fixedPolygons.length === 0) {
-      return geometry;
+      return null;
     }
     return { ...geometry, coordinates: fixedPolygons };
   }
@@ -271,17 +335,25 @@ const applySelfIntersectionFix = (
   config: SelfIntersectionConfig,
   minPolygonArea: number,
   zTarget: number,
-  quantize?: number,
-): Geometry => {
+  quantize: number | undefined,
+  options: { splitSelfIntersections: boolean; dropSmallPolygons: boolean; minRingVertices: number },
+): Geometry | null => {
   const sanitizePolygon = (coords: number[][][]): number[][][] => (
     config.retainHoles ? coords : [coords[0] ?? []]
   );
-  const applyToPolygon = (coords: number[][][]): { coords: number[][][]; area: number; hasKinks: boolean } => {
-    const sanitized = sanitizePolygon(coords);
-    const polygon = { type: 'Feature', geometry: { type: 'Polygon', coordinates: sanitized }, properties: {} } as const;
+  const splitPolygon = (coords: number[][][]): number[][][][] => {
+    const polygon = { type: 'Feature', geometry: { type: 'Polygon', coordinates: coords }, properties: {} } as const;
     const kinkPoints = turfKinks(polygon).features;
-    const area = Math.abs(turfArea({ type: 'Polygon', coordinates: sanitized } as Polygon));
-    return { coords: sanitized, area, hasKinks: kinkPoints.length > 0 };
+    if (kinkPoints.length === 0) return [coords];
+    try {
+      const unkinked = unkinkPolygon(polygon);
+      const pieces = unkinked.features
+        .map((feature) => feature.geometry?.coordinates)
+        .filter((piece): piece is number[][][] => Array.isArray(piece));
+      return pieces.length > 0 ? pieces : [coords];
+    } catch {
+      return [coords];
+    }
   };
 
   const baseSnapTolerance = (metersPerPixel(zTarget) * resolveQuantizeFactor(quantize)) / 2;
@@ -297,20 +369,23 @@ const applySelfIntersectionFix = (
       : [];
   if (polygons.length === 0) return geometryForFix;
 
-  const candidates = polygons
-    .map((coords) => applyToPolygon(coords))
-    .filter((entry) => entry.area >= minPolygonArea);
-  if (candidates.length === 0) return geometryForFix;
+  const shouldSplit = options.splitSelfIntersections && !config.retainHoles;
+  const candidates = polygons.flatMap((coords) => {
+    const sanitized = sanitizePolygon(coords);
+    const pieces = shouldSplit ? splitPolygon(sanitized) : [sanitized];
+    return pieces.map((piece) => ({
+      coords: piece,
+      area: Math.abs(turfArea({ type: 'Polygon', coordinates: piece } as Polygon)),
+      vertexCount: (piece[0] ?? []).length,
+    }));
+  });
 
-  const hasKinks = candidates.some((entry) => entry.hasKinks);
-  const shouldReduce = hasKinks
-    || !config.retainHoles
-    || (config.maxPolygons > 0 && candidates.length > config.maxPolygons);
-  if (!shouldReduce && geometryForFix.type === 'MultiPolygon') {
-    return geometryForFix;
-  }
+  const filtered = options.dropSmallPolygons
+    ? candidates.filter((entry) => entry.area >= minPolygonArea && entry.vertexCount >= options.minRingVertices)
+    : candidates;
+  if (filtered.length === 0) return null;
 
-  const sorted = [...candidates].sort((a, b) => b.area - a.area);
+  const sorted = [...filtered].sort((a, b) => b.area - a.area);
   const limit = config.maxPolygons > 0 ? config.maxPolygons : sorted.length;
   const selected = config.strategy === 'keep_all'
     ? sorted.slice(0, limit)
@@ -359,6 +434,7 @@ export const simplifyFeatureCollection = (
   toleranceK: number,
   ringFixConfig: RingFixConfig | undefined,
   selfIntersectionConfig: SelfIntersectionConfig | undefined,
+  preSimplifyFilterConfig: PreSimplifyFilterConfig | undefined,
   quantize: number | undefined,
   excludePolygonAreaCoefficient: number,
 ): FeatureCollection => {
@@ -376,6 +452,12 @@ export const simplifyFeatureCollection = (
     retainHoles: false,
     snapToleranceMultiplier: 1,
   };
+  const preSimplify = preSimplifyFilterConfig ?? {
+    excludeInvalidGeometry: true,
+    dropInvalidHoles: true,
+    splitSelfIntersections: true,
+    dropSmallPolygons: true,
+  };
   const baseArea = Math.pow(metersPerPixel(zTarget) * 2, 2);
   const minRingArea = baseArea * ringFix.minRingAreaMultiplier;
   const minPolygonArea = baseArea * selfIntersection.minPolygonAreaMultiplier;
@@ -387,10 +469,36 @@ export const simplifyFeatureCollection = (
     }
     const snapped = snapGeometryToGrid(feature.geometry, zTarget, quantize);
     const cleaned = cleanGeometry(snapped);
-    const areaFiltered = applyPolygonAreaExclusion(cleaned, excludePolygonAreaCoefficient, zTarget, quantize);
-    if (!areaFiltered) continue;
-    const ringFixed = applyRingFix(areaFiltered, ringFix, minRingArea);
-    const intersectionFixed = applySelfIntersectionFix(ringFixed, selfIntersection, minPolygonArea, zTarget, quantize);
+    const ringFixed = applyRingFix(cleaned, ringFix, minRingArea, preSimplify.dropInvalidHoles);
+    if (!ringFixed) {
+      features.push({ ...feature, geometry: EMPTY_POLYGON_GEOMETRY });
+      continue;
+    }
+    if (preSimplify.excludeInvalidGeometry && !isGeometryValid(ringFixed)) {
+      features.push({ ...feature, geometry: EMPTY_POLYGON_GEOMETRY });
+      continue;
+    }
+    const areaFiltered = applyPolygonAreaExclusion(ringFixed, excludePolygonAreaCoefficient, zTarget, quantize);
+    if (!areaFiltered) {
+      features.push({ ...feature, geometry: EMPTY_POLYGON_GEOMETRY });
+      continue;
+    }
+    const intersectionFixed = applySelfIntersectionFix(
+      areaFiltered,
+      selfIntersection,
+      minPolygonArea,
+      zTarget,
+      quantize,
+      {
+        splitSelfIntersections: preSimplify.splitSelfIntersections,
+        dropSmallPolygons: preSimplify.dropSmallPolygons,
+        minRingVertices: ringFix.minRingVertices,
+      },
+    );
+    if (!intersectionFixed) {
+      features.push({ ...feature, geometry: EMPTY_POLYGON_GEOMETRY });
+      continue;
+    }
     const simplified = simplifyGeometryInMercator(intersectionFixed, tolerance);
     features.push({ ...feature, geometry: simplified });
   }

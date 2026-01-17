@@ -709,6 +709,7 @@ export const createTransformByBandHandler = (
           tolerance,
           transformConfig.ringFixConfig,
           transformConfig.selfIntersectionConfig,
+          transformConfig.preSimplifyFilterConfig,
           transformConfig.quantize,
           transformConfig.excludePolygonAreaCoefficient,
         ));
@@ -748,6 +749,7 @@ export const createTransformByBandHandler = (
               tolerance,
               transformConfig.ringFixConfig,
               transformConfig.selfIntersectionConfig,
+              transformConfig.preSimplifyFilterConfig,
               transformConfig.quantize,
               transformConfig.excludePolygonAreaCoefficient,
             );
