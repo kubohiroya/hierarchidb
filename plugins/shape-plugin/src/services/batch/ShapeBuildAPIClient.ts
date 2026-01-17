@@ -99,6 +99,16 @@ const markTransformCacheWriteComplete = async (buffers: Array<{ id: string }>): 
   )));
 };
 
+const assertNonEmptyTransformCacheBuffer = (buffer: Pick<ShapeTransformCache, 'id' | 'data'>): void => {
+  if (buffer.data.byteLength === 0) {
+    throw new Error(`[shape-build] empty transform cache buffer: ${buffer.id}`);
+  }
+};
+
+const assertNonEmptyTransformCacheBuffers = (buffers: Array<Pick<ShapeTransformCache, 'id' | 'data'>>): void => {
+  buffers.forEach(assertNonEmptyTransformCacheBuffer);
+};
+
 const isFeatureCollection = (value: unknown): value is FeatureCollection => (
   !!value
   && typeof value === 'object'
@@ -542,9 +552,12 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
   }
   async putTransformCaches(buffers: ShapeTransformCache[]): Promise<void>{
     if (buffers.length === 0) return;
+    assertNonEmptyTransformCacheBuffers(buffers);
     const pending = buffers.map((buffer) => ({ ...buffer, timestamp: 0 }));
-    await ephemeralShapeDB.transformCache.bulkPut(pending);
-    await markTransformCacheWriteComplete(pending);
+    await ephemeralShapeDB.transaction('rw', ephemeralShapeDB.transformCache, async () => {
+      await ephemeralShapeDB.transformCache.bulkPut(pending);
+      await markTransformCacheWriteComplete(pending);
+    });
   }
 
   async putSourceMetadata(rows: ShapeSourceMetadata[]): Promise<void> {
@@ -713,6 +726,7 @@ export class EphemeralShapeApiImpl implements EphemeralShapeAPI {
   }
 
   async putTransformCache(buffer: ShapeTransformCache): Promise<void> {
+    assertNonEmptyTransformCacheBuffer(buffer);
     const pending = { ...buffer, timestamp: 0 };
     await ephemeralShapeDB.transaction('rw', ephemeralShapeDB.transformCache, async () => {
       await ephemeralShapeDB.transformCache.put(pending);

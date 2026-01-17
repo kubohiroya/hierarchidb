@@ -9,6 +9,9 @@ export async function putTransformCache(
   bandId: number,
   payload: TransformCachePayload
 ): Promise<TransformCacheRecord> {
+  if (payload.data.byteLength === 0) {
+    throw new Error(`[vt-shape-store] empty transform cache buffer: ${nodeId}:${bandId}:${payload.sourceKey}`);
+  }
   const buffer: TransformCacheRecord = {
     id: buildTransformCacheRecordId(nodeId, bandId, payload.sourceKey),
     nodeId,

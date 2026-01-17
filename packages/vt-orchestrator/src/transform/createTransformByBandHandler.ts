@@ -33,6 +33,46 @@ const describeBuffer = (buffer: ArrayBuffer): {
   headHex: string;
   headAscii: string;
   isJsonLike: boolean;
+} => {
+  const bytes = new Uint8Array(buffer);
+  const head = bytes.slice(0, 16);
+  const headHex = Array.from(head).map((value) => value.toString(16).padStart(2, '0')).join('');
+  const headAscii = Array.from(head).map((value) => (
+    value >= 0x20 && value <= 0x7e ? String.fromCharCode(value) : '.'
+  )).join('');
+  let firstNonWhitespace: number | null = null;
+  for (let i = 0; i < bytes.length; i += 1) {
+    const value = bytes[i];
+    if (value === undefined) continue;
+    if (value === 0x20 || value === 0x0a || value === 0x0d || value === 0x09) continue;
+    firstNonWhitespace = value;
+    break;
+  }
+  const isJsonLike = firstNonWhitespace === 0x7b || firstNonWhitespace === 0x5b;
+  return {
+    byteLength: bytes.byteLength,
+    headHex,
+    headAscii,
+    isJsonLike,
+  };
+};
+
+const validateEncodedFlatGeobuf = async (buffer: ArrayBuffer): Promise<void> => {
+  try {
+    const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
+    const normalized = await normalizeFeatureCollection(decoded as unknown);
+    if (!normalized) {
+      throw new Error('normalize returned null');
+    }
+  } catch (error) {
+    const err = error instanceof Error ? error.message : String(error);
+    const debug = describeBuffer(buffer);
+    throw new Error(
+      `invalid flatgeobuf: ${err} (byteLength=${debug.byteLength} headHex=${debug.headHex} headAscii=${debug.headAscii} jsonLike=${debug.isJsonLike ? '1' : '0'})`,
+    );
+  }
+};
+
 const decodeFetchCache = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
   const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
   return normalizeFeatureCollection(decoded as unknown);
@@ -1102,7 +1142,6 @@ export const createTransformByBandHandler = (
 
       stageLabel = 'cache:put';
       assertNotAborted(abortSignal);
-      await ephemeralDB.transformCache.update(cacheId, { timestamp: Date.now() });
       await ephemeralDB.transaction('rw', ephemeralDB.transformCache, async () => {
         await ephemeralDB.transformCache.put({
           id: cacheId,

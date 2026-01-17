@@ -273,6 +273,10 @@ export class ShapeMutationService implements ShapeMutationAPI {
 
   async putTransformCaches(buffers: ShapeTransformCache[]): Promise<void> {
     if (buffers.length === 0) return;
+    const emptyBuffer = buffers.find((buffer) => buffer.data.byteLength === 0);
+    if (emptyBuffer) {
+      throw new Error(`[shape-mutation] empty transform cache buffer: ${emptyBuffer.id}`);
+    }
     const pending = buffers.map((buffer) => ({ ...buffer, timestamp: 0 }));
     await ephemeralShapeDB.transaction('rw', ephemeralShapeDB.transformCache, async () => {
       await ephemeralShapeDB.transformCache.bulkPut(pending);
