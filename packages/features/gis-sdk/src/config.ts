@@ -50,6 +50,13 @@ export type SelfIntersectionConfig = {
   snapToleranceMultiplier: number;
 };
 
+export type PreSimplifyFilterConfig = {
+  excludeInvalidGeometry: boolean;
+  dropInvalidHoles: boolean;
+  splitSelfIntersections: boolean;
+  dropSmallPolygons: boolean;
+};
+
 export type ExtractionMode = 'off' | 'topojson' | 'geojson';
 
 export interface TransformConfig {
@@ -68,6 +75,7 @@ export interface TransformConfig {
   excludePolygonAreaCoefficient: number;
   ringFixConfig: RingFixConfig;
   selfIntersectionConfig: SelfIntersectionConfig;
+  preSimplifyFilterConfig: PreSimplifyFilterConfig;
 }
 
 export interface VTConfig {
