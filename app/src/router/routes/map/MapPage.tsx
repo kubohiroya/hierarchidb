@@ -379,9 +379,9 @@ export default function MapPage() {
     const baseLineWidth = styleOverridesByType.line?.['line-width'] ?? 2;
     const baseCircleRadius = styleOverridesByType.circle?.['circle-radius'] ?? 4;
 
-    const hasSearch = ['boolean', ['feature-atoms', 'hdbSearch'], false];
-    const hasHover = ['boolean', ['feature-atoms', 'hdbHover'], false];
-    const hasSelected = ['boolean', ['feature-atoms', 'hdbSelected'], false];
+    const hasSearch = ['boolean', ['feature-state', 'hdbSearch'], false];
+    const hasHover = ['boolean', ['feature-state', 'hdbHover'], false];
+    const hasSelected = ['boolean', ['feature-state', 'hdbSelected'], false];
 
     const colorExpression = (base: unknown) => [
       'case',
@@ -505,9 +505,9 @@ export default function MapPage() {
 
   const locationCirclePaint = useMemo<Record<string, unknown>>(() => {
     const { searchColor, hoverColor, selectedColor } = highlightColors;
-    const hasSearch = ['boolean', ['feature-atoms', 'hdbSearch'], false];
-    const hasHover = ['boolean', ['feature-atoms', 'hdbHover'], false];
-    const hasSelected = ['boolean', ['feature-atoms', 'hdbSelected'], false];
+    const hasSearch = ['boolean', ['feature-state', 'hdbSearch'], false];
+    const hasHover = ['boolean', ['feature-state', 'hdbHover'], false];
+    const hasSelected = ['boolean', ['feature-state', 'hdbSelected'], false];
     const colorExpression = [
       'case',
       hasSelected,

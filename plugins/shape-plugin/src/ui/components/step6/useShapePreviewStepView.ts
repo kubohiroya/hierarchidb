@@ -71,9 +71,9 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
   ]);
 
   const highlightOverridesByType = useMemo(() => {
-    const hasSearch = ['boolean', ['feature-atoms', 'hdbSearch'], false];
-    const hasHover = ['boolean', ['feature-atoms', 'hdbHover'], false];
-    const hasSelected = ['boolean', ['feature-atoms', 'hdbSelected'], false];
+    const hasSearch = ['boolean', ['feature-state', 'hdbSearch'], false];
+    const hasHover = ['boolean', ['feature-state', 'hdbHover'], false];
+    const hasSelected = ['boolean', ['feature-state', 'hdbSelected'], false];
     const baseFill = preview.theme.palette.primary.main;
     const baseOutline = preview.theme.palette.primary.dark;
     return {
