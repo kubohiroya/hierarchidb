@@ -147,25 +147,27 @@ const collectFeatures = async (
   nodeId: string,
 ): Promise<FeatureCollection | null> => {
   const allFeatures: Feature[] = [];
-  for (const bufferId of bufferIds) {
-    const record = await context.ephemeralDB.transformCache.get(bufferId);
-    if (!record || record.timestamp <= 0) continue;
-    const collection = await decodeTransformByBandCache(record.data);
-    if (!collection) {
-      const debug = describeBuffer(record.data);
-      console.warn('[shape-vt] failed to decode transform cache for vt stage', {
-        nodeId,
-        bufferId,
-        timestamp: record.timestamp,
-        byteLength: debug.byteLength,
-        headHex: debug.headHex,
-        headAscii: debug.headAscii,
-        jsonLike: debug.isJsonLike,
-      });
-      continue;
+  await context.ephemeralDB.transaction('r', context.ephemeralDB.transformCache, async () => {
+    for (const bufferId of bufferIds) {
+      const record = await context.ephemeralDB.transformCache.get(bufferId);
+      if (!record || record.timestamp <= 0) continue;
+      const collection = await decodeTransformByBandCache(record.data);
+      if (!collection) {
+        const debug = describeBuffer(record.data);
+        console.warn('[shape-vt] failed to decode transform cache for vt stage', {
+          nodeId,
+          bufferId,
+          timestamp: record.timestamp,
+          byteLength: debug.byteLength,
+          headHex: debug.headHex,
+          headAscii: debug.headAscii,
+          jsonLike: debug.isJsonLike,
+        });
+        continue;
+      }
+      allFeatures.push(...collection.features);
     }
-    allFeatures.push(...collection.features);
-  }
+  });
   if (allFeatures.length === 0) return null;
   return { type: 'FeatureCollection', features: allFeatures };
 };

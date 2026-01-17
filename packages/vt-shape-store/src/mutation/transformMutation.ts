@@ -23,6 +23,8 @@ export async function putTransformCache(
     polygonCount: payload.polygonCount,
     timestamp: payload.timestamp ?? Date.now(),
   };
-  await db.transformCache.put(buffer);
+  await db.transaction('rw', db.transformCache, async () => {
+    await db.transformCache.put(buffer);
+  });
   return buffer;
 }

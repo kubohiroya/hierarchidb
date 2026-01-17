@@ -274,11 +274,13 @@ export class ShapeMutationService implements ShapeMutationAPI {
   async putTransformCaches(buffers: ShapeTransformCache[]): Promise<void> {
     if (buffers.length === 0) return;
     const pending = buffers.map((buffer) => ({ ...buffer, timestamp: 0 }));
-    await ephemeralShapeDB.transformCache.bulkPut(pending);
-    const completedAt = Date.now();
-    await Promise.all(pending.map((buffer) => (
-      ephemeralShapeDB.transformCache.update(buffer.id, { timestamp: completedAt })
-    )));
+    await ephemeralShapeDB.transaction('rw', ephemeralShapeDB.transformCache, async () => {
+      await ephemeralShapeDB.transformCache.bulkPut(pending);
+      const completedAt = Date.now();
+      await Promise.all(pending.map((buffer) => (
+        ephemeralShapeDB.transformCache.update(buffer.id, { timestamp: completedAt })
+      )));
+    });
   }
 
   async putSourceMetadata(rows: ShapeSourceMetadata[]): Promise<void> {

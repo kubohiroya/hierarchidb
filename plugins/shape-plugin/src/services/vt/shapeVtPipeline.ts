@@ -97,6 +97,16 @@ const decodeTransformCache = async (buffer: ArrayBuffer): Promise<FeatureCollect
   }
 };
 
+): string => {
+  const normalizeFeatureId = (value: unknown): string => {
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number') return String(value);
+    return String(value ?? '');
+  };
+  const properties = (feature.properties ?? {}) as Record<string, unknown>;
+  const rawBaseId = properties.id ?? feature.id ?? index;
+  const baseId = normalizeFeatureId(rawBaseId).trim();
+  const fallbackBaseId = baseId.length > 0 ? baseId : metadata.adminCode ?? `feature-${index}`;
 const describeBuffer = (buffer: ArrayBuffer): {
   byteLength: number;
   headHex: string;
@@ -164,10 +174,12 @@ const backfillTileRelationsFromTransformCache = async (params: {
   ephemeralStore: typeof ephemeralShapeDB;
 }): Promise<number> => {
   const { nodeId, bandId, zBase, ephemeralStore } = params;
-  const buffers = await ephemeralStore.transformCache
-    .where('[nodeId+bandId]')
-    .equals([nodeId, bandId])
-    .toArray();
+  const buffers = await ephemeralStore.transaction('r', ephemeralStore.transformCache, async () => (
+    ephemeralStore.transformCache
+      .where('[nodeId+bandId]')
+      .equals([nodeId, bandId])
+      .toArray()
+  ));
   const completedBuffers = buffers.filter((buffer) => isTransformCacheComplete(buffer));
   if (completedBuffers.length === 0) return 0;
   const relations: Array<{
@@ -379,7 +391,9 @@ const buildVtTasks = async (
       const bufferIds = tileBuffers.get(tileId)
         ?? await listTransformCacheIdsByTile(ephemeralStore, nodeId, band.bandId, tileId);
       if (bufferIds.length === 0) continue;
-      const buffers = await ephemeralStore.transformCache.where('id').anyOf(bufferIds).toArray();
+      const buffers = await ephemeralStore.transaction('r', ephemeralStore.transformCache, async () => (
+        ephemeralStore.transformCache.where('id').anyOf(bufferIds).toArray()
+      ));
       const completedBuffers = buffers.filter((buffer) => isTransformCacheComplete(buffer));
       if (completedBuffers.length === 0) continue;
       const completedBufferIds = new Set(completedBuffers.map((buffer) => buffer.id));
@@ -561,7 +575,9 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
         abortController: vtAbortController,
       });
       if (params.buildConfig.transformConfig.deleteOnComplete) {
-        await ephemeralStore.transformCache.where('nodeId').equals(params.nodeId).delete();
+        await ephemeralStore.transaction('rw', ephemeralStore.transformCache, async () => {
+          await ephemeralStore.transformCache.where('nodeId').equals(params.nodeId).delete();
+        });
       }
     }
   }
@@ -581,7 +597,9 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
       .delete();
   }
   if (cleanupConfig?.deleteTransformCache) {
-    await ephemeralStore.transformCache.where('nodeId').equals(params.nodeId).delete();
+    await ephemeralStore.transaction('rw', ephemeralStore.transformCache, async () => {
+      await ephemeralStore.transformCache.where('nodeId').equals(params.nodeId).delete();
+    });
   }
   if (cleanupConfig?.deleteVTCache) {
     await vtStore.vtTiles.where('nodeId').equals(params.nodeId).delete();

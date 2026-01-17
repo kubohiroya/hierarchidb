@@ -945,6 +945,25 @@ export const createTransformByBandHandler = (
         timestamp: 0,
       });
       await ephemeralDB.transformCache.update(cacheId, { timestamp: Date.now() });
+      await ephemeralDB.transaction('rw', ephemeralDB.transformCache, async () => {
+        await ephemeralDB.transformCache.put({
+          id: cacheId,
+          nodeId: task.nodeId,
+          bandId: input.bandId,
+          domainType: input.domainType,
+          sourceKey: input.sourceKey,
+          countryCode: input.countryCode,
+          adminLevel: input.adminLevel,
+          data: encoded,
+          featureCount: features.length,
+          vertexCount,
+          polygonCount,
+          extractionRatio,
+          tolerance: tolerance,
+          timestamp: 0,
+        });
+        await ephemeralDB.transformCache.update(cacheId, { timestamp: Date.now() });
+      });
 
       const tileIds = collectTileIdsForCollection(outputCollectionValue, band.zBase);
       if (tileIds.length > 0) {
