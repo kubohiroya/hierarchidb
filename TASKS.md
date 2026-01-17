@@ -86,6 +86,27 @@
   - update: 2026-01-18 19:41 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
   - done: 2026-01-18 19:41 JST Step6 のタブ廃止とフローティング一覧統合、地図常時表示を完了。
 
+2228) refactor/ui-map/shape-preview-floating-table (P1) — 進行中 (2026-01-18)
+- ブランチ名: refactor/ui-map/shape-preview-floating-table
+- 依存: なし
+- 受け入れ基準: ui-map にフローティングの一覧コンポーネントが追加される／Step6 が ui-map の共通コンポーネントを利用してフィーチャー一覧を描画し、エラー統合列の生成は ui-map 側へ寄せられる／検索/選択/ハイライトが維持される／pnpm typecheck が exit 0 で完走する
+- 影響範囲: `packages/ui/map/src/preview/**`, `packages/ui/map/src/index.ts`, `packages/ui/map/package.json`, `plugins/shape-plugin/src/ui/components/step6/**`（必要に応じて）
+- ロールバック手順: ui-map のフローティング一覧コンポーネントと Step6 側の差分を revert し、shape-plugin 側の個別実装へ戻す
+- チェックリスト:
+  - ui-map にフローティングの一覧コンポーネントを追加する
+  - エラー統合列の生成ロジックを ui-map 側へ移す
+  - Step6 を ui-map の共通コンポーネントへ切り替える
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-18 20:00 JST ui-map のフローティング一覧共通化と Step6 切り替えに着手。
+  - blocked: 2026-01-18 20:05 JST pnpm install が registry 参照/EPERM symlink で失敗（getaddrinfo ENOTFOUND registry.npmjs.org）。
+  - update: 2026-01-18 20:10 JST ui-map のフローティング一覧コンポーネントを追加し、Step6 の一覧表示を共通化へ切替。
+  - update: 2026-01-18 20:16 JST pnpm --filter @hierarchidb/ui-map build を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-18 20:17 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-18 20:25 JST ステータス列を Chip 表示へ戻し、ui-map build/typecheck を再実行。
+  - done: 2026-01-18 20:26 JST ui-map 側へ一覧/エラー列統合を寄せ、Step6 の共通化を完了。
+
 2220) feat/shape/transform-exclusion-ui (P1) — 進行中 (2026-01-18)
 - ブランチ名: feat/shape/transform-exclusion-ui
 - 依存: なし
@@ -4831,3 +4852,19 @@
 - 運用ログ：
   - start: 2026-01-15 23:11 JST 表示モード切り替え時の永続化対応に着手。
   - update: 2026-01-15 23:14 JST 表示モード切り替え時に dialogUIState を保存する処理を追加。
+2229) feat/ui-map/interaction-core (P1) — 進行中 (2026-01-19)
+- ブランチ名: feat/ui-map/interaction-core
+- 依存: なし
+- 受け入れ基準: ui-map に Shape/Route 一覧画面の共通コードが追加され、shape-plugin/route-plugin は最小限の設定で利用できる／一覧画面に「エラー関連カラム群（Completed/Failed 等）」が統合される／FitScreen/検索/ホバー/選択/検索一致/ハイライト/Snackbar/矩形選択/検索Enter-fit が ui-map 共通機能として実装され、プロパティで有効/無効を切替可能／shape-plugin Step6 ではタブ内のエラー一覧は復活せず、ui-map 共通コードへ移管する／pnpm typecheck が exit 0 で完走する
+- 影響範囲: `packages/ui/map/src/**`, `plugins/shape-plugin/src/ui/components/step6/**`, `plugins/route-plugin/src/ui/**`（調査後に確定）
+- ロールバック手順: ui-map 共通一覧/interaction の追加差分と plugin 側の切り替え差分を revert し、従来の個別実装へ戻す
+- チェックリスト:
+  - ExecPlan を作成し、設計/移行/検証手順を明文化する
+  - ui-map に Shape/Route 一覧画面の共通コンポーネントを追加する
+  - エラー関連カラム群を共通化し、一覧表示へ統合する
+  - FitScreen/検索/ホバー/選択/検索一致/ハイライト/Snackbar/矩形選択/検索Enter-fit を ui-map 側で実装し、プロパティで切替可能にする
+  - shape-plugin/route-plugin を ui-map 共通コードの利用へ切り替える（最小限の実装）
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-19 00:00 JST ui-map の共通一覧/interaction 実装と plugin 側切替に着手。

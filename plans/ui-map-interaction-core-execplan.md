@@ -1,4 +1,4 @@
-# Unify ui-map interaction core for previews and map pages
+# Unify ui-map interaction core and shared preview lists for shape/route
 
 This ExecPlan is a living document. The sections `Progress`, `Surprises & Discoveries`, `Decision Log`, and `Outcomes & Retrospective` must be kept up to date as work proceeds.
 
@@ -6,15 +6,16 @@ PLANS.md is checked into the repo at `PLANS.md`. This ExecPlan must be maintaine
 
 ## Purpose / Big Picture
 
-Users will be able to use the same map interactions in preview screens that they already expect on the /map page: searching, hover proximity lists, selection and box-selection, highlight styling, snackbar hover info, and FitScreen behavior. The goal is that these are first-class ui-map capabilities, not bespoke per-screen logic. After this change, any preview that uses `@hierarchidb/ui-map` can enable or disable each interaction through props, and the Step6 Shape preview will inherit those behaviors without custom wiring. Error rows from Step5 Transform processing will be persisted with the information needed for the Step6 error list, including country/continent names and accurate polygon/ring error counts, and selecting error rows will auto-fit the map view.
+Users should get the same map interaction capabilities (FitScreen, search, hover/nearby, selection, highlighting, snackbars, box selection, and Enter-to-fit) everywhere that uses ui-map, not just the /map page. Shape and Route previews should both use ui-map-provided list screens with built-in error columns (Completed/Failed, error counts, messages) rather than bespoke tables. After this change, shape-plugin and route-plugin supply data and configuration only; ui-map owns the layout, interaction state, and list UI, with feature flags on props to enable or disable each behavior.
 
 ## Progress
 
-- [ ] (2026-01-18 14:45 JST) Create interaction-core types, atoms, and hooks in `packages/ui/map/src/preview` that manage hover/search/selection state via Jotai.
-- [ ] (2026-01-18 14:45 JST) Add configurable FitScreen/search UI overlays in `ResourceLayerMap` and wire them to the interaction state.
-- [ ] (2026-01-18 14:45 JST) Migrate /map route to use the ui-map interaction core and remove the ad-hoc map search atoms.
-- [ ] (2026-01-18 14:45 JST) Persist transform error details needed by Step6 and correct error counts and country/continent display using ISO-3166-2.
-- [ ] (2026-01-18 14:45 JST) Auto-fit map view on Step6 error selection, then run `pnpm typecheck` and record results.
+- [x] (2026-01-19 00:30 JST) Reviewed current shape Step6 preview and route preview implementations to confirm where list UI and interaction wiring live.
+- [ ] Define the shared list screen APIs in ui-map for Shape (Polygon/MultiPolygon) and Route (LineString/MultiLineString) previews, including error column integration.
+- [ ] Move shape Step6 list-table logic into ui-map list screens and reduce shape-plugin to minimal data wiring.
+- [ ] Add route preview list screen wiring using the ui-map shared list component with error columns.
+- [ ] Ensure interaction toggles (search/hover/selection/fit/snackbar/box select/Enter-fit) are wired and configurable from ui-map props for preview screens.
+- [ ] Run `pnpm typecheck` and record results in TASKS.md.
 
 ## Surprises & Discoveries
 
@@ -22,9 +23,9 @@ None yet.
 
 ## Decision Log
 
-- Decision: Place the interaction state and atoms inside `@hierarchidb/ui-map`, and expose props to opt in/out of each interaction.
-  Rationale: The user wants ui-map to provide these behaviors as a basic feature, with preview screens toggling them on and off.
-  Date/Author: 2026-01-18 (assistant)
+- Decision: Keep list UI and interaction logic in ui-map, with shape/route providing only data and configuration.
+  Rationale: The user explicitly wants ui-map to be the single implementation for FitScreen/search/hover/selection and for shared preview list screens.
+  Date/Author: 2026-01-19 (assistant)
 
 ## Outcomes & Retrospective
 
@@ -32,82 +33,67 @@ Not completed yet.
 
 ## Context and Orientation
 
-The /map page currently wires interactions manually in `app/src/router/routes/map/MapPage.tsx`. It uses ui-map hooks like `useMapFeatureSearch`, `useMapFeatureHoverCandidates`, `useMapFeatureSelectionGestures`, and `useMapFeatureHighlights`, plus app-owned Jotai atoms in `app/src/state/mapSearch.atoms.ts`. The Shape Step6 preview uses `ResourceLayerMap` directly but contains its own FitScreen/search UI and error list logic in `plugins/shape-plugin/src/ui/components/step6/ShapePreviewStep.tsx` and `plugins/shape-plugin/src/ui/components/step6/useShapePreviewStep.ts`.
+The ui-map package lives in `packages/ui/map/src`. It already provides `ResourceLayerMap` for map rendering and `MapPreviewFloatingTable` for floating table UI with optional error/status columns. The shape preview Step6 currently lives in `plugins/shape-plugin/src/ui/components/step6/ShapePreviewStep.tsx` and uses ui-map’s floating table but constructs columns and selection logic locally in `useVectorTilePreviewTable` and `useShapePreviewStep`. The route preview is implemented in `plugins/route-plugin/src/ui/components/steps/RoutePreviewStep.tsx` with a map and custom hover behavior, and it does not use shared list UI today.
 
-The ui-map package lives in `packages/ui/map/src`. `ResourceLayerMap` is the main component for vector/geojson rendering and already accepts `hoveredFeatures` and a snackbar configuration but does not own the interaction state. The preview hooks in `packages/ui/map/src/preview` implement the low-level interaction behaviors. The error list rows come from `ShapeTransformErrorRecord`, defined in `packages/plugin-service-api/src/types/shapeBuildTypes.ts` and persisted in `packages/features/shape-store/src/EphemeralShapeDB.ts`. Transform errors are collected and stored in `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`.
+The task is to move list screens and interaction wiring into ui-map so that both shape and route previews consume them with minimal configuration. “List screen” here means the floating preview table with search, selection, sorting, and error columns (Completed/Failed status, error count, error message). The error information should be passed in as summary data keyed by feature ID, and the list UI should render the error columns as a built-in option.
 
 ## Plan of Work
 
-First, introduce a ui-map interaction core that owns Jotai state for hover candidates (ordered by proximity), search matches, and selection sets. Add a small set of helper utilities that translate MapLibre features into stable keys (source + id) so sets can be stored consistently. Implement a new hook in `packages/ui/map/src/preview` that wires the existing `useMapFeatureSearch`, `useMapFeatureHoverCandidates`, `useMapFeatureSelectionGestures`, and `useMapFeatureHighlights` hooks together, and populates Jotai atoms for hover candidates, hover matches, search matches, and selected matches. Ensure the hook can be enabled or disabled by flags so preview screens can opt in to each interaction.
+First, define new ui-map preview list components for shape and route. These components should wrap `MapPreviewFloatingTable` and expose props tailored to each domain: rows, loading/error states, search state, selection state, and error summaries. The goal is to keep the list layout and column definitions inside ui-map rather than duplicating them in each plugin.
 
-Next, update `ResourceLayerMap` to optionally render the search field and FitScreen button as ui-map built-ins. The search field should render in the top-left of the map container and execute a search on Enter. The FitScreen button should render below the MapLibre top-right controls, with a vertical offset of 16px from the control group bottom. Both should be configurable through props and work across /map and preview screens. The FitScreen action should fit the map to the bounding box of the currently selected or search-matched features. The search operation should compute the bounding box of matched features and fit the map automatically when Enter is pressed.
+Second, move the shape Step6 list-table logic from `plugins/shape-plugin/src/ui/components/step6/useVectorTilePreviewTable.ts` (and any related table formatting) into the new ui-map component. Update shape Step6 to use the ui-map list component and pass only the data and selection/search state. Ensure the error columns are still rendered using the ui-map error summary API.
 
-Then, migrate `app/src/router/routes/map/MapPage.tsx` to use the new ui-map interaction core and remove dependence on `app/src/state/mapSearch.atoms.ts`. The /map page should rely on ui-map-provided atoms and callbacks for hover/selection/search, and continue to render search settings as needed. Ensure the /map page still highlights hovered/selected/search-matched features and shows its snackbar content.
+Third, introduce a route preview list screen in ui-map that can render LineString/MultiLineString metadata and error columns. Update the route preview step to use this ui-map component. Keep any route-specific map toggle UI in route-plugin, but the list should be the shared ui-map component.
 
-Finally, improve the Shape Step6 error list and error persistence. Expand `ShapeTransformErrorRecord` in `packages/plugin-service-api/src/types/shapeBuildTypes.ts` to include the data needed to render the error list without loss (country name, continent name, admin name if needed, and accurate error/total counts). Update the transform error persistence in `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts` so that if error counts are missing or zero during failure, they fall back to total counts. On the UI side, use `@hierarchidb/gen-iso3166-2` to resolve country and continent names from `countryCode` and display them in the error list. Update Step6 preview so that when one or more error rows are selected, the map auto-fits the bounding box of the selected error geometries; this should occur immediately on selection change.
+Finally, validate that interaction toggles are available through ui-map props for preview screens. The preview list should integrate with the ui-map interaction state so that selection/searching in the list can drive map highlighting and FitScreen when enabled.
 
 ## Concrete Steps
 
-1) Add a new interaction state module under `packages/ui/map/src/preview/`, for example `mapInteractionStore.ts`, that defines:
-   - A `MapFeatureKey` string format such as `${source}:${id}`.
-   - Jotai atoms for hover candidates, hover match keys, search match keys, selected match keys, and optionally raw features.
-   - Helper functions to convert MapLibre features into keys and highlight entries.
+1) Add new ui-map preview list components under `packages/ui/map/src/preview/`, for example:
+   - `ShapePreviewList.tsx` (Polygon/MultiPolygon list) and
+   - `RoutePreviewList.tsx` (LineString/MultiLineString list).
 
-2) Implement `useMapInteractionCore` in `packages/ui/map/src/preview` that:
-   - Accepts a MapLibre instance, highlight layer IDs, and enable/disable flags.
-   - Wires the existing hooks to maintain the atoms.
-   - Exposes callbacks and derived values (e.g., fitBounds for matched/selected features).
+   Each component should wrap `MapPreviewFloatingTable`, define its own columns, and accept a minimal configuration object that includes rows, loading/error flags, search config, selection config, and `errorSummaryById`.
 
-3) Extend `packages/ui/map/src/components/ResourceLayerMap.tsx` props with an `interaction` section. When enabled, it should:
-   - Render a search field overlay in the top-left.
-   - Render a FitScreen button below the top-right control group using container-relative positioning.
-   - Use `useMapInteractionCore` to manage hover/search/selection and highlight states.
-   - Provide a default snackbar renderer that uses feature properties (`name`, `NAME`, `label`, `id`) unless overridden.
+2) Move the shape preview table formatting into `ShapePreviewList`:
+   - Port the column definitions and formatting from `plugins/shape-plugin/src/ui/components/step6/useVectorTilePreviewTable.ts`.
+   - Keep internationalized labels by accepting a `t` function or by passing labels as props so the plugin can provide translation strings.
 
-4) Update `app/src/router/routes/map/MapPage.tsx` to:
-   - Remove direct use of the map search atoms in `app/src/state/mapSearch.atoms.ts`.
-   - Adopt the ui-map interaction core and read state from the ui-map atoms or exposed hooks.
-   - Keep the search settings dialog in /map but connect it to the ui-map search state.
+3) Update shape Step6 to use `ShapePreviewList` from ui-map:
+   - Replace the local `MapPreviewFloatingTable` usage with the new ui-map component.
+   - Remove or simplify `useVectorTilePreviewTable.ts` so that shape-plugin no longer owns the column definitions.
 
-5) Update transform error persistence:
-   - Extend `ShapeTransformErrorRecord` with new optional fields for `countryName`, `continentName`, and admin info if required.
-   - Update `createTransformByBandHandler.ts` to populate these fields from available inputs (countryCode, adminLevel, sourceKey) and fix error counts (fallback to totals when errors are present).
+4) Create a route preview list screen:
+   - Define route list columns that match the line metadata available in route preview (or introduce metadata loader if needed).
+   - Ensure it can display the error/status columns using the same `errorSummaryById` API.
+   - Update `plugins/route-plugin/src/ui/components/steps/RoutePreviewStep.tsx` to render the list component and connect selection/search state.
 
-6) Update Step6 error table and preview map:
-   - Resolve country/continent names using `@hierarchidb/gen-iso3166-2` browser API.
-   - Ensure the error counts displayed are consistent with the persisted values.
-   - Add a selection effect that auto-fits the map to the selected error geometries.
+5) Ensure the ui-map interaction core can be toggled via props in preview screens:
+   - FitScreen, search, hover/nearby list, selection, box selection, snackbar, and Enter-to-fit should remain ui-map responsibilities.
+   - Shape/route preview components should pass config flags, not custom event wiring.
 
-7) Run `pnpm typecheck` from the repo root and record the exit code in TASKS.
+6) Run `pnpm typecheck` from the repo root and record the results in `TASKS.md`.
 
 ## Validation and Acceptance
 
 Run `pnpm typecheck` in the repository root and confirm exit 0. Manually verify in the UI that:
 
-- /map shows the search field in the top-left and the FitScreen button below the top-right controls with 16px vertical offset.
-- Hovering features updates highlights and snackbar content.
-- Box selection (modifier + drag) selects features.
-- Pressing Enter in the search field fits the map to the matched features.
-- Step6 error list displays country/continent names and accurate polygon/ring error counts.
-- Selecting error rows auto-fits the Step6 preview map to those geometries.
+- Shape Step6 shows the shared ui-map list screen with error columns (Completed/Failed, error count, error message) and continues to reflect selection/search correctly.
+- Route preview now shows the shared ui-map list screen for LineString/MultiLineString with the same error column group.
+- FitScreen/search/hover/selection/highlight/box selection/snackbar/Enter-to-fit are controlled by ui-map props on preview screens and work without bespoke plugin wiring.
 
 ## Idempotence and Recovery
 
-The changes are additive and can be safely re-run. If issues are found, revert the ui-map interaction core and Step6 changes to return to the previous behavior. No destructive migrations are required.
+The changes are additive and safe to re-run. If issues are found, revert the ui-map list components and the plugin wiring changes to return to the previous per-plugin list UI and interaction wiring.
 
 ## Artifacts and Notes
 
-Record in this section any short command output relevant to validation, such as the `pnpm typecheck` success line and any warnings.
+Record any short command output relevant to validation, including the `pnpm typecheck` success line and any warnings.
 
 ## Interfaces and Dependencies
 
-The ui-map package must add Jotai as a peer and dev dependency. The new interaction core should consume:
+- ui-map will continue to use `MapPreviewFloatingTable` and `GenericDataGrid` for list UI.
+- Shape/route previews should pass `errorSummaryById` maps keyed by feature ID to allow error columns in the shared list screens.
+- Translation should remain in the plugin layer, so the shared list components should accept label strings or a `t` callback instead of hardcoding UI strings.
 
-- `useMapFeatureHoverCandidates`
-- `useMapFeatureSearch`
-- `useMapFeatureHighlights`
-- `useMapFeatureSelectionGestures`
-
-The Shape error persistence must extend `ShapeTransformErrorRecord` and the EphemeralShapeDB stored record. The ISO-3166-2 data must be loaded through `@hierarchidb/gen-iso3166-2` browser helpers so the UI can resolve names without server calls.
-
-Revision note: This initial ExecPlan was created after the user requested ui-map to own FitScreen/search/interaction features and to propagate the behaviors across preview screens.
+Revision note: This ExecPlan was updated to focus on ui-map-owned list screens for Shape and Route previews and to remove the previous Step6 tab-specific assumptions.

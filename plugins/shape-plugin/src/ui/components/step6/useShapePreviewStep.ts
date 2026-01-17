@@ -14,9 +14,10 @@ import {
   shapePreviewHoveredIdAtom,
   shapePreviewSelectionContextAtom,
 } from '../../atoms/shapePreviewAtoms.ts';
-import type { MapHighlightEntry, MapWithVectorTilesProps } from '@hierarchidb/ui-map';
+import type { MapHighlightEntry, MapPreviewErrorSummaryById, MapWithVectorTilesProps } from '@hierarchidb/ui-map';
 import type { MapLibreMapInstance } from '@hierarchidb/ui-map';
 import {
+  buildErrorSummaryById,
   mapHoverMatchesAtom,
   mapSearchMatchesAtom,
   mapSelectedMatchesAtom,
@@ -599,7 +600,14 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     sortColumn: featureSortColumn,
     sortDirection: featureSortDirection,
     handleSort: handleFeatureSort,
-  } = useVectorTileFeatureTable(featureMetadataRows, matchedFeatureIdSet, featureSearchKeyword, transformErrorRows);
+  } = useVectorTileFeatureTable(featureMetadataRows, matchedFeatureIdSet, featureSearchKeyword);
+
+  const errorSummaryById = useMemo<MapPreviewErrorSummaryById>(() => (
+    buildErrorSummaryById(transformErrorRows, {
+      getId: (row) => row.featureId ?? undefined,
+      getMessage: (row) => row.message ?? undefined,
+    })
+  ), [transformErrorRows]);
 
   const selectedFeatureIdSet = useMemo(() => new Set(selectedFeatureIds), [selectedFeatureIds]);
 
@@ -697,6 +705,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     handleFeatureSort,
     featureColumns,
     featureTableRows,
+    errorSummaryById,
     matchedFeatureIdSet,
     selectedIdSet,
     hoveredIdSet,

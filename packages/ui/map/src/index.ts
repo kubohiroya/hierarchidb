@@ -94,6 +94,16 @@ export { useMapFeatureSelectionGestures } from './preview/useMapFeatureSelection
 export { MapPreviewSearchPanel } from './preview/MapPreviewSearchPanel.js';
 export { MapPreviewSearchSettingsDialog } from './preview/MapPreviewSearchSettingsDialog.js';
 export {
+  MapPreviewFloatingTable,
+  buildErrorSummaryById,
+  type MapPreviewErrorSummary,
+  type MapPreviewErrorSummaryById,
+  type MapPreviewSearchConfig,
+  type MapPreviewErrorColumnLabels,
+  type MapPreviewStatusLabels,
+  type MapPreviewFloatingTableProps,
+} from './preview/MapPreviewFloatingTable.js';
+export {
   MapInteractionProvider,
   type MapInteractionProviderProps,
 } from './interaction/MapInteractionProvider.js';
