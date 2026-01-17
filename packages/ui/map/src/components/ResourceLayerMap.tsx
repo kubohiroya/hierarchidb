@@ -325,6 +325,7 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
   const [searchTargets, setSearchTargets] = useAtom(mapSearchTargetsAtom);
   const setSearchMatches = useSetAtom(mapSearchMatchesAtom);
   const setHoverCandidates = useSetAtom(mapHoverCandidatesAtom);
+  const setHoverMatches = useSetAtom(mapHoverMatchesAtom);
   const searchMatches = useAtomValue(mapSearchMatchesAtom);
   const hoverMatches = useAtomValue(mapHoverMatchesAtom);
   const hoveredInteractionFeatures = useAtomValue(mapHoveredFeaturesAtom);
@@ -498,6 +499,7 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
         })
         .filter((candidate): candidate is { entry: MapHighlightEntry; feature: MapLibreGeoJSONFeature } => Boolean(candidate));
       setHoverCandidates(candidates);
+      setHoverMatches(entries);
     },
   });
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { MapAttributionItem, ResourceGeoJsonLayer, ResourceVectorLayer } from '@hierarchidb/ui-map';
 import { getDataSourceConfig } from '../../../services/utils/utils.js';
 import type { ShapeEntity } from '../../../common/types/index.js';
@@ -15,9 +15,6 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
     ? DARK_BASEMAP_STYLE_URL
     : LIGHT_BASEMAP_STYLE_URL;
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
-  const metadataPanelRef = useRef<HTMLDivElement | null>(null);
-  const metadataToolbarRef = useRef<HTMLDivElement | null>(null);
-  const [metadataTableHeight, setMetadataTableHeight] = useState(0);
   const lastZoomRef = useRef<number | null>(null);
   const [zoomSnackbarMessage, setZoomSnackbarMessage] = useState<string>('');
   const [zoomSnackbarOpen, setZoomSnackbarOpen] = useState(false);
@@ -36,30 +33,6 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
     setZoomSnackbarOpen(false);
   }, []);
 
-  useEffect(() => {
-    if (preview.tabIndex !== preview.mapTabIndex) {
-      preview.setMapInstance(null);
-    }
-  }, [preview.setMapInstance, preview.tabIndex]);
-
-  useLayoutEffect(() => {
-    const panel = metadataPanelRef.current;
-    if (!panel) return;
-    const updateHeight = () => {
-      const panelHeight = panel.getBoundingClientRect().height;
-      const toolbarHeight = metadataToolbarRef.current?.getBoundingClientRect().height ?? 0;
-      const available = Math.max(panelHeight - toolbarHeight, 0);
-      setMetadataTableHeight(available);
-    };
-    updateHeight();
-    const observer = new ResizeObserver(updateHeight);
-    observer.observe(panel);
-    if (metadataToolbarRef.current) {
-      observer.observe(metadataToolbarRef.current);
-    }
-    return () => observer.disconnect();
-  }, []);
-
   const vectorLayers = useMemo<ResourceVectorLayer[]>(() => {
     if (!preview.nodeId) return [];
     const hasRemoteTiles = Boolean(preview.tilesUrl);
@@ -71,6 +44,7 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
         tiles,
         dbName: !hasRemoteTiles ? preview.tileDbName : undefined,
         tileDataProvider: !hasRemoteTiles ? preview.tileDataProvider : undefined,
+        promoteId: 'id',
         layerConfig: {
           layerId: preview.baseLayerId,
           sourceId: preview.baseSourceId,
@@ -94,6 +68,36 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
     preview.tileDbName,
     preview.tilesLayer,
     preview.tilesUrl,
+  ]);
+
+  const highlightOverridesByType = useMemo(() => {
+    const hasSearch = ['boolean', ['feature-atoms', 'hdbSearch'], false];
+    const hasHover = ['boolean', ['feature-atoms', 'hdbHover'], false];
+    const hasSelected = ['boolean', ['feature-atoms', 'hdbSelected'], false];
+    const baseFill = preview.theme.palette.primary.main;
+    const baseOutline = preview.theme.palette.primary.dark;
+    return {
+      fill: {
+        'fill-color': ['case', hasSelected, preview.theme.palette.primary.main, hasHover, preview.theme.palette.primary.light, hasSearch, preview.theme.palette.secondary.light, baseFill],
+        'fill-outline-color': ['case', hasSelected, preview.theme.palette.primary.dark, hasHover, preview.theme.palette.primary.main, hasSearch, preview.theme.palette.secondary.main, baseOutline],
+        'fill-opacity': [
+          'case',
+          hasSelected,
+          0.6,
+          hasHover,
+          0.5,
+          hasSearch,
+          0.45,
+          0.35,
+        ],
+      },
+    };
+  }, [
+    preview.theme.palette.primary.dark,
+    preview.theme.palette.primary.light,
+    preview.theme.palette.primary.main,
+    preview.theme.palette.secondary.light,
+    preview.theme.palette.secondary.main,
   ]);
 
   const attributionItems = useMemo<MapAttributionItem[]>(() => {
@@ -205,14 +209,12 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
     maxZoom,
     baseMapStyleUrl,
     mapContainerRef,
-    metadataPanelRef,
-    metadataToolbarRef,
-    metadataTableHeight,
     zoomSnackbarMessage,
     zoomSnackbarOpen,
     handleViewStateChange,
     handleZoomSnackbarClose,
     vectorLayers,
+    highlightOverridesByType,
     geoJsonLayers,
     attributionItems,
   };

@@ -229,6 +229,9 @@
         "vtPolygonCount": "VT ポリゴン数",
         "vertexCount": "頂点数",
         "polygonCount": "ポリゴン数",
+        "status": "状態",
+        "errorCount": "エラー数",
+        "errorMessage": "エラーメッセージ",
         "bbox": "バウンディングボックス",
         "area": "面積",
         "featureId": "フィーチャーID"

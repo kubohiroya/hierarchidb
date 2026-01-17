@@ -1,8 +1,8 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import type { GridColumn } from '@hierarchidb/ui-grid';
-import { Typography } from '@mui/material';
+import { Chip, Typography } from '@mui/material';
 import { useTranslation } from '../../i18n.js';
-import type { ShapeFeatureMetadata } from '@hierarchidb/plugin-service-api';
+import type { ShapeFeatureMetadata, ShapeTransformErrorRecord } from '@hierarchidb/plugin-service-api';
 
 type PreviewFeatureRow = ShapeFeatureMetadata;
 
@@ -32,6 +32,7 @@ export const useVectorTileFeatureTable = (
   metadataRows: PreviewFeatureRow[],
   matchedIdSet: Set<string>,
   searchKeyword: string,
+  errorRows: ShapeTransformErrorRecord[],
 ) => {
   const { t } = useTranslation();
   const [sortColumn, setSortColumn] = useState<string>('featureId');
@@ -39,8 +40,20 @@ export const useVectorTileFeatureTable = (
 
   const metadataTableRows = useMemo(() => {
     const normalizeCount = (value?: number) => (typeof value === 'number' ? value : '');
-    const rows = metadataRows.map((row) => ({
-      id: row.id,
+    const errorByFeatureId = new Map<string, { count: number; messages: string[] }>();
+    errorRows.forEach((row) => {
+      if (!row.featureId) return;
+      const entry = errorByFeatureId.get(row.featureId) ?? { count: 0, messages: [] };
+      entry.count += 1;
+      if (row.message) {
+        entry.messages.push(row.message);
+      }
+      errorByFeatureId.set(row.featureId, entry);
+    });
+    const rows = metadataRows.map((row) => {
+      const errorCount = errorByFeatureId.get(row.featureId ?? '')?.count ?? 0;
+      return ({
+      id: row.featureId ?? row.id,
       rawId: row.id,
       featureId: row.featureId ?? '',
       countryName: row.countryName ?? '',
@@ -54,7 +67,11 @@ export const useVectorTileFeatureTable = (
       polygonCount: normalizeCount(row.polygonCount),
       bbox: formatBBox(row.bbox),
       area: formatArea(row.area),
-    }));
+      status: errorCount > 0 ? 'failed' : 'completed',
+      errorCount,
+      errorMessage: (errorByFeatureId.get(row.featureId ?? '')?.messages ?? []).slice(0, 2).join(' / '),
+    });
+    });
     const keyword = searchKeyword.trim().toLowerCase();
     const filtered = keyword
       ? rows.filter((row) => matchedIdSet.has(row.rawId))
@@ -70,7 +87,7 @@ export const useVectorTileFeatureTable = (
       return sortDirection === 'asc' ? astr.localeCompare(bstr) : bstr.localeCompare(astr);
     });
     return sorted;
-  }, [matchedIdSet, metadataRows, searchKeyword, sortColumn, sortDirection]);
+  }, [errorRows, matchedIdSet, metadataRows, searchKeyword, sortColumn, sortDirection]);
 
   const handleSort = useCallback((column: string, direction: 'asc' | 'desc') => {
     setSortColumn(column);
@@ -78,6 +95,22 @@ export const useVectorTileFeatureTable = (
   }, []);
 
   const metadataColumns = useMemo<GridColumn<(typeof metadataTableRows)[number]>[]>(() => ([
+    {
+      id: 'status',
+      label: t('preview.metadata.columns.status', 'Status'),
+      width: 140,
+      sortable: true,
+      format: (_value, row) => {
+        const hasErrors = row.errorCount > 0;
+        return (
+          <Chip
+            size="small"
+            color={hasErrors ? 'error' : 'success'}
+            label={t(hasErrors ? 'build.taskStatus.failed' : 'build.taskStatus.completed', hasErrors ? 'Failed' : 'Completed')}
+          />
+        );
+      },
+    },
     { id: 'featureId', label: t('preview.metadata.columns.featureId', 'Feature ID'), width: 220, sortable: true },
     { id: 'countryName', label: t('preview.metadata.columns.countryName', 'Country'), width: 180, sortable: true },
     { id: 'countryCode', label: t('preview.metadata.columns.countryCode', 'Country Code'), width: 120, sortable: true },
@@ -88,6 +121,8 @@ export const useVectorTileFeatureTable = (
     { id: 'createdAt', label: t('preview.metadata.columns.createdAt', 'Created At'), width: 180, sortable: true },
     { id: 'vertexCount', label: t('preview.metadata.columns.vertexCount', 'Vertices'), width: 120, align: 'right', sortable: true },
     { id: 'polygonCount', label: t('preview.metadata.columns.polygonCount', 'Polygons'), width: 120, align: 'right', sortable: true },
+    { id: 'errorCount', label: t('preview.metadata.columns.errorCount', 'Errors'), width: 120, align: 'right', sortable: true },
+    { id: 'errorMessage', label: t('preview.metadata.columns.errorMessage', 'Error Message'), width: 240, sortable: true },
     { id: 'bbox', label: t('preview.metadata.columns.bbox', 'Bounding Box'), width: 220, sortable: true },
     { id: 'area', label: t('preview.metadata.columns.area', 'Area'), width: 140, align: 'right', sortable: true, format: formatLogicalCode },
   ]), [t]);

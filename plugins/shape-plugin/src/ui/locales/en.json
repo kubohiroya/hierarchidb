@@ -229,6 +229,9 @@
         "vtPolygonCount": "VT Polygons",
         "vertexCount": "Vertices",
         "polygonCount": "Polygons",
+        "status": "Status",
+        "errorCount": "Errors",
+        "errorMessage": "Error Message",
         "bbox": "Bounding Box",
         "area": "Area",
         "featureId": "Feature ID"

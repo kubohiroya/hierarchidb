@@ -259,6 +259,8 @@ export interface ShapeTransformErrorRecord {
   bandId?: number;
   sourceKey?: string;
   countryCode?: string;
+  countryName?: string;
+  continentName?: string;
   adminLevel?: number;
   featureId?: string;
   featureIndex?: number;

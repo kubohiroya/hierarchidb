@@ -105,6 +105,17 @@ export async function resolveCountryContinentName(
   return CONTINENT_NAMES[resolved] ?? CONTINENT_NAMES.XX;
 }
 
+export async function resolveCountryName(
+  code: string,
+  options?: EnsureIsoOptions,
+): Promise<string> {
+  const trimmed = code.trim();
+  if (!trimmed) return '';
+  await ensureIso3166Data(resolveEnsureOptions(options));
+  const result = await getCountry(trimmed.toUpperCase());
+  return result?.country?.countryEn ?? '';
+}
+
 export async function resolveCountryContinentCode(
   code: string,
   options?: EnsureIsoOptions,

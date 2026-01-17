@@ -33,6 +33,7 @@ import {
   readRawDataDataSourceBuffer,
   storeRawDataDataSourceBufferForNode,
 } from '../utils/chunkStore.js';
+import { resolveCountryContinentName, resolveCountryName } from '../utils/iso3166.js';
 import { geojson as geojsonApi } from 'flatgeobuf';
 import { bbox as turfBbox } from '@turf/turf';
 import type { Feature, FeatureCollection } from 'geojson';
@@ -363,7 +364,59 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
   }
 
   async listTransformErrorRecords(nodeId: NodeId): Promise<ShapeTransformErrorRecord[]> {
-    return ephemeralShapeDB.transformErrors.where('nodeId').equals(nodeId).toArray() as Promise<ShapeTransformErrorRecord[]>;
+    const rows = await ephemeralShapeDB.transformErrors
+      .where('nodeId')
+      .equals(nodeId)
+      .toArray() as ShapeTransformErrorRecord[];
+    const missing = rows.filter((row) => {
+      if (!row.countryCode) return false;
+      return !row.countryName || !row.continentName;
+    });
+    if (missing.length === 0) return rows;
+    const codes = Array.from(
+      new Set(
+        missing
+          .map((row) => row.countryCode?.trim().toUpperCase())
+          .filter((code): code is string => Boolean(code)),
+      ),
+    );
+    const lookup = new Map<string, { countryName: string; continentName: string }>();
+    await Promise.all(
+      codes.map(async (code) => {
+        try {
+          const [countryName, continentName] = await Promise.all([
+            resolveCountryName(code),
+            resolveCountryContinentName(code),
+          ]);
+          lookup.set(code, { countryName, continentName });
+        } catch {
+          lookup.set(code, { countryName: '', continentName: '' });
+        }
+      }),
+    );
+    const updates: ShapeTransformErrorRecord[] = [];
+    const merged = rows.map((row) => {
+      const code = row.countryCode?.trim().toUpperCase();
+      if (!code) return row;
+      const info = lookup.get(code);
+      if (!info) return row;
+      const countryName = row.countryName ?? info.countryName;
+      const continentName = row.continentName ?? info.continentName;
+      if (countryName === row.countryName && continentName === row.continentName) {
+        return row;
+      }
+      const next = { ...row, countryName, continentName };
+      updates.push(next);
+      return next;
+    });
+    if (updates.length > 0) {
+      try {
+        await ephemeralShapeDB.transformErrors.bulkPut(updates);
+      } catch (error) {
+        console.warn('[ShapeBuildAPIClient] Failed to update transform error names', error);
+      }
+    }
+    return merged;
   }
 }
 

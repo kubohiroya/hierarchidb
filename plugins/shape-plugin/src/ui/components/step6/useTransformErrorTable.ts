@@ -22,14 +22,19 @@ export const useTransformErrorTable = (
       const adminLevel = row.adminLevel ?? adminInfo?.adminLevel ?? null;
       const adminAreaName = adminLevel === 0 ? '' : adminInfo?.adminName ?? '';
       const totalPolygonCount = row.polygonCount ?? 0;
-      const errorPolygonCount = row.polygonErrorCount ?? totalPolygonCount;
+      const errorPolygonCount = row.polygonErrorCount && row.polygonErrorCount > 0
+        ? row.polygonErrorCount
+        : totalPolygonCount;
       const totalRingCount = row.ringCount ?? 0;
-      const errorRingCount = row.ringErrorCount ?? totalRingCount;
+      const errorRingCount = row.ringErrorCount && row.ringErrorCount > 0
+        ? row.ringErrorCount
+        : totalRingCount;
       return ({
         id: row.id,
         rawId: row.id,
         countryCode: row.countryCode ?? '',
-        admin0Name: adminInfo?.countryName ?? '',
+        continentName: row.continentName ?? '',
+        admin0Name: row.countryName ?? adminInfo?.countryName ?? '',
         adminAreaName,
         adminLevel: row.adminLevel != null ? `ADM${row.adminLevel}` : '',
         bandId: row.bandId ?? '',
@@ -63,6 +68,7 @@ export const useTransformErrorTable = (
 
   const errorColumns = useMemo<GridColumn<(typeof errorTableRows)[number]>[]>(() => ([
     { id: 'countryCode', label: t('preview.errors.columns.countryCode', 'Country Code'), width: 120, sortable: true },
+    { id: 'continentName', label: t('preview.errors.columns.continentName', 'Continent'), width: 140, sortable: true },
     { id: 'admin0Name', label: t('preview.errors.columns.admin0Name', 'Admin0 Name'), width: 160, sortable: true },
     { id: 'adminAreaName', label: t('preview.errors.columns.adminAreaName', 'Admin1/2 Name'), width: 180, sortable: true },
     { id: 'adminLevel', label: t('preview.errors.columns.adminLevel', 'Admin Level'), width: 120, align: 'right', sortable: true },

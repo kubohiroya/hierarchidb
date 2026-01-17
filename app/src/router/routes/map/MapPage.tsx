@@ -1,5 +1,6 @@
 import type {
   MapAttributionItem,
+  MapLibreGeoJSONFeature,
   MapLibreMapInstance,
   MapViewState,
   MapToggleSelection,
@@ -21,7 +22,6 @@ import {
   DialogTitle,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { } from '@mui/icons-material';
 import { useLoaderData, useParams, useSearch } from '@tanstack/react-router';
 import { useAtom, useSetAtom } from 'jotai';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -38,7 +38,6 @@ import type { LocationType } from '@hierarchidb/location-store';
 import type { SvgIconComponent } from '@mui/icons-material';
 import {
   DirectionsBoat as DirectionsBoatIcon,
-  FitScreen as FitScreenIcon,
   FlightTakeoff as FlightTakeoffIcon,
   ForkRight as ForkRightIcon,
   LocationCity as LocationCityIcon,
@@ -206,7 +205,8 @@ export default function MapPage() {
   const buildHighlightEntry = useCallback(
     (feature?: MapLibreGeoJSONFeature | null) => {
       if (!feature) return null;
-      const id = feature.id ?? feature.properties?.id;
+      const candidate = feature.id ?? feature.properties?.id ?? feature.properties?.__hdbOriginKey;
+      const id = typeof candidate === 'string' || typeof candidate === 'number' ? candidate : undefined;
       const source = typeof feature.source === 'string' ? feature.source : undefined;
       if (id === undefined || id === null || !source) return null;
       const layerId = typeof feature.layer?.id === 'string' ? feature.layer.id : undefined;
@@ -855,24 +855,6 @@ export default function MapPage() {
         />
       ) : null}
 
-      <MapPreviewSearchPanel
-        searchText={searchText}
-        onSearchTextChange={setSearchText}
-        onSearch={runSearch}
-        onClear={handleSearchClear}
-        onOpenSettings={() => setSearchSettingsOpen(true)}
-        clearIcon={<CloseIcon fontSize="small" />}
-        settingsIcon={<TuneIcon fontSize="small" />}
-      />
-
-      <MapPreviewSearchSettingsDialog
-        open={searchSettingsOpen}
-        searchTargets={searchTargets}
-        targetGroups={SEARCH_TARGET_GROUPS}
-        targetDefinitions={SEARCH_TARGET_DEFINITIONS}
-        onClose={() => setSearchSettingsOpen(false)}
-        onToggleTarget={handleSearchTargetToggle}
-      />
       <Dialog
         open={missingLayerDialogOpen}
         onClose={() => setMissingLayerDialogOpen(false)}
@@ -905,21 +887,39 @@ export default function MapPage() {
         attributionItems={attributionItems}
         styleOverridesByType={styleOverridesByType}
         highlightOverridesByType={highlightPaintByType}
-        hoveredFeatures={hoveredFeatures}
-        snackbar={{
-          position: 'bottom',
-          renderContent: (features) => {
-            if (features.length === 0) return null;
-            const labels = features.slice(0, 3).map((feature) => {
-              const props = (feature.properties ?? {}) as Record<string, unknown>;
-              const label =
-                (props.name as string | undefined) ??
-                (props.NAME as string | undefined) ??
-                (props.label as string | undefined) ??
-                (props.id as string | number | undefined);
-              return label ? String(label) : 'Feature';
-            });
-            return labels.join(' / ');
+        interaction={{
+          enabled: true,
+          highlightLayerIds,
+          buildHighlightEntry,
+          onMissingLayers: (layerIds) => {
+            setMissingLayerIds(layerIds);
+            setMissingLayerDialogOpen(true);
+          },
+          search: {
+            enabled: true,
+            targetDefinitions: SEARCH_TARGET_DEFINITIONS,
+            targetGroups: SEARCH_TARGET_GROUPS,
+            fitOnSearch: true,
+            fitPadding: FIT_BOUNDS_PADDING_PX,
+          },
+          hover: { enabled: true, radius: LOCATION_INTERACTION_RADIUS_PX },
+          selection: { enabled: true, radius: LOCATION_INTERACTION_RADIUS_PX },
+          fitSelection: { enabled: true, padding: FIT_BOUNDS_PADDING_PX },
+          snackbar: {
+            position: 'bottom',
+            renderContent: (features) => {
+              if (features.length === 0) return null;
+              const labels = features.slice(0, 3).map((feature) => {
+                const props = (feature.properties ?? {}) as Record<string, unknown>;
+                const label =
+                  (props.name as string | undefined) ??
+                  (props.NAME as string | undefined) ??
+                  (props.label as string | undefined) ??
+                  (props.id as string | number | undefined);
+                return label ? String(label) : 'Feature';
+              });
+              return labels.join(' / ');
+            },
           },
         }}
         onLoad={handleMapLoad}
@@ -936,28 +936,6 @@ export default function MapPage() {
           touchZoomRotate: true,
         }}
       />
-      {mapControlContainer
-        ? createPortal(
-          <Box className="maplibregl-ctrl" sx={{ mt: 2 }}>
-            <IconButton
-              aria-label="Fit to selection"
-              size="small"
-              onClick={handleFitSelection}
-              disabled={!canFitSelection}
-              sx={{
-                border: '1px solid',
-                borderColor: 'divider',
-                borderRadius: 1,
-                bgcolor: 'background.paper',
-                '&:hover': { bgcolor: 'action.hover' },
-              }}
-            >
-              <FitScreenIcon fontSize="small" />
-            </IconButton>
-          </Box>,
-          mapControlContainer,
-        )
-        : null}
     </Box>
   );
 }

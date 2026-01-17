@@ -763,6 +763,14 @@ export const createTransformByBandHandler = (
             const recordId = `${task.taskId}:${recordFeatureId}`;
             const fallbackGeometryType = feature.geometry?.type ?? 'unknown';
             const summary = analyzeGeometryIssues(feature.geometry);
+            const recordPolygonCount = summary.polygonCount;
+            const recordRingCount = summary.ringCount;
+            const recordPolygonErrorCount = summary.errorPolygonCount > 0
+              ? summary.errorPolygonCount
+              : recordPolygonCount;
+            const recordRingErrorCount = summary.errorRingCount > 0
+              ? summary.errorRingCount
+              : recordRingCount;
             try {
               stageLabel = 'counts:error-polygons';
               errorPolygonCount += await runStageWithLabel('counts:error-polygons', () => countPolygonsFromGeometry(feature.geometry));
@@ -848,10 +856,10 @@ export const createTransformByBandHandler = (
               featureId: recordFeatureId,
               featureIndex,
               geometryType: lineFeaturesCandidate?.geometryType ?? fallbackGeometryType,
-              polygonCount: summary.polygonCount,
-              ringCount: summary.ringCount,
-              polygonErrorCount: summary.errorPolygonCount,
-              ringErrorCount: summary.errorRingCount,
+              polygonCount: recordPolygonCount,
+              ringCount: recordRingCount,
+              polygonErrorCount: recordPolygonErrorCount,
+              ringErrorCount: recordRingErrorCount,
               message: featureMessage,
               createdAt: Date.now(),
               lineFeatures: {

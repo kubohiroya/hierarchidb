@@ -65,6 +65,22 @@
   - update: 2026-01-17 09:12 JST BuildStepStagePanel の dark テーマ用 grey を暗めに調整。
   - blocked: 2026-01-17 09:12 JST pnpm typecheck が @hierarchidb/ui-map の既存型エラーで失敗（ResourceLayerMap.tsx の minLng/minLat/maxLng/maxLat, MapHoverCandidate 型, MapPreviewSearchPanelProps, jotai Store）。
 
+2221) feat/shape/step6-preview-layout (P1) — 進行中 (2026-01-18)
+- ブランチ名: feat/shape/step6-preview-layout
+- 依存: なし
+- 受け入れ基準: Step6 のタブUIが廃止され、DialogContent直下で地図プレビューが常時表示される／フィーチャー一覧とエラー内容が統合されたフローティングダイアログが地図上に表示され、エラー有無で Failed/Completed のChipが出る／選択/検索/エラーLineStringのハイライトが破綻しない／モバイル/デスクトップでレイアウトが崩れない／pnpm typecheck が exit 0 で完走する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/**`, `plugins/shape-plugin/src/ui/locales/*`（必要に応じて）
+- ロールバック手順: 該当差分を revert し、Step6 のタブ構成と一覧表示を修正前へ戻す
+- チェックリスト:
+  - Step6 のタブUIを撤去する
+  - 地図プレビューをDialogContent直下で常時表示する
+  - フローティングダイアログでフィーチャー一覧とエラー内容を統合表示する
+  - エラー有無でFailed/CompletedのChipを表示する
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-18 19:00 JST Step6 のタブ撤去とプレビュー/一覧統合表示に着手。
+
 2220) feat/shape/transform-exclusion-ui (P1) — 進行中 (2026-01-18)
 - ブランチ名: feat/shape/transform-exclusion-ui
 - 依存: なし
@@ -156,6 +172,36 @@
   - update: 2026-01-18 17:15 JST Admin0/1/2 名の列を追加し、ラベルを更新。
   - update: 2026-01-18 17:20 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
   - done: 2026-01-18 17:25 JST Step6 エラー一覧に Admin 名を表示できることを確認。
+
+2224) analysis/shape/step5-transform-simplify-errors (P1) — 進行中 (2026-01-18)
+- ブランチ名: analysis/shape/step5-transform-simplify-errors
+- 依存: なし
+- 受け入れ基準: Step5 Transform の処理順（自己交差分割→面積フィルタ→簡易化）の有無を実装で確認する／transform failed: geometry simplify error の主因候補を根拠付きで整理する／事前フィルタで抑制できる条件を提案し、エラーゼロ化への方針を示す
+- 影響範囲: `packages/vt-orchestrator/src/transform/**`, `plugins/shape-plugin/src/worker/**`（調査後に確定）
+- ロールバック手順: 調査のみのため不要（変更が発生した場合は差分を revert）
+- チェックリスト:
+  - Step5 Transform の処理順と実装箇所を特定する
+  - geometry simplify error の主因候補を列挙し根拠を示す
+  - 事前フィルタで抑制する方針を整理する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-18 19:15 JST Step5 Transform の処理順と簡易化エラー原因の調査に着手。
+  - update: 2026-01-18 19:25 JST vt-orchestrator の createTransformByBandHandler/simplifyFeatureCollection で処理順と簡易化例外の出力内容を確認。
+  - done: 2026-01-18 19:30 JST Step5 Transform の現状整理と事前フィルタ方針の提案をまとめた。
+
+2225) fix/shape/transform-zero-polygons-success (P1) — 進行中 (2026-01-18)
+- ブランチ名: fix/shape/transform-zero-polygons-success
+- 依存: なし
+- 受け入れ基準: Transform ステージで simplified.features.length===0 を失敗扱いにしない／ビルド全体の失敗判定を「失敗タスク数 > 0」で行う／ゼロポリゴンの地物は地図に出ないが一覧に 0/0 で残る挙動が維持される／pnpm typecheck が exit 0 で完走する
+- 影響範囲: `packages/vt-orchestrator/src/transform/**`, `packages/runtime-worker/src/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、Transform の失敗判定とビルド失敗判定を修正前に戻す
+- チェックリスト:
+  - simplified.features.length===0 の失敗判定を撤廃する
+  - 失敗タスク数 > 0 をビルド失敗判定に用いるよう修正する
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-18 19:40 JST ゼロポリゴン時の成功扱いとビルド失敗判定の修正に着手。
 
 2223) chore/shape/template-buildconfig-default-audit (P1) — 進行中 (2026-01-18)
 - ブランチ名: chore/shape/template-buildconfig-default-audit

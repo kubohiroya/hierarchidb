@@ -6,7 +6,7 @@ import { isShapePreviewMetadataEnabled } from '../../../common/config/previewFla
 import { toNodeId, type NodeId } from '@hierarchidb/common-types';
 import { useTranslation } from '../../i18n.js';
 import type { ShapeFeatureMetadata, ShapeSourceMetadata, ShapeTransformErrorRecord } from '@hierarchidb/plugin-service-api';
-import { useAtom } from 'jotai';
+import { useAtom, useSetAtom } from 'jotai';
 import {
   shapePreviewSearchAtom,
   shapePreviewMatchedIdsAtom,
@@ -14,20 +14,20 @@ import {
   shapePreviewHoveredIdAtom,
   shapePreviewSelectionContextAtom,
 } from '../../atoms/shapePreviewAtoms.ts';
-import type { MapWithVectorTilesProps } from '@hierarchidb/ui-map';
+import type { MapHighlightEntry, MapWithVectorTilesProps } from '@hierarchidb/ui-map';
 import type { MapLibreMapInstance } from '@hierarchidb/ui-map';
 import {
+  mapHoverMatchesAtom,
+  mapSearchMatchesAtom,
+  mapSelectedMatchesAtom,
   useVectorTilePreviewMetadata,
   useVectorTilePreviewSearch,
   useVectorTilePreviewSelection,
-  useVectorTilePreviewMapLayers,
 } from '@hierarchidb/ui-map';
 import { getDBName } from '@hierarchidb/util';
 //import { getShapeDbAPIClient } from '../../../services/batch/ShapeBuildAPIClient.ts';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
-import { useVectorTilePreviewTable } from './useVectorTilePreviewTable.ts';
 import { useVectorTileFeatureTable } from './useVectorTileFeatureTable.ts';
-import { useTransformErrorTable } from './useTransformErrorTable.ts';
 import { shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
 
 type ShapePreviewDraft = Partial<ShapeEntity> & {
@@ -69,11 +69,6 @@ const fetchTile = async (
 export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string) => {
   const { t } = useTranslation();
   const theme = useTheme();
-  const sourceTabIndex = 0;
-  const featureTabIndex = 1;
-  const mapTabIndex = 2;
-  const errorTabIndex = 3;
-  const [tabIndex, setTabIndex] = useState(mapTabIndex);
   const metadataEnabled = isShapePreviewMetadataEnabled();
   const [searchKeyword, setSearchKeyword] = useAtom(shapePreviewSearchAtom);
   const [matchedIds, setMatchedIds] = useAtom(shapePreviewMatchedIdsAtom);
@@ -83,9 +78,10 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
   const [featureSearchKeyword, setFeatureSearchKeyword] = useState('');
   const [matchedFeatureIds, setMatchedFeatureIds] = useState<string[]>([]);
-  const [errorSearchKeyword, setErrorSearchKeyword] = useState('');
-  const [matchedErrorIds, setMatchedErrorIds] = useState<string[]>([]);
-  const [selectedErrorIds, setSelectedErrorIds] = useState<string[]>([]);
+  const [selectedFeatureIds, setSelectedFeatureIds] = useState<string[]>([]);
+  const setMapSearchMatches = useSetAtom(mapSearchMatchesAtom);
+  const setMapSelectedMatches = useSetAtom(mapSelectedMatchesAtom);
+  const setMapHoverMatches = useSetAtom(mapHoverMatchesAtom);
 
   const previewDraft = data as ShapePreviewDraft;
   const tilesUrl = previewDraft.tilesUrl ?? previewDraft.tilesEndpoint ?? '';
@@ -103,6 +99,13 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   const baseSourceId = 'shape-preview-source';
   const tileDbName = getDBName('shape');
   const [selectionMetadata, setSelectionMetadata] = useState<FetchTaskPayload[]>([]);
+  const buildMapEntry = useCallback((id: string): MapHighlightEntry => ({
+    source: baseSourceId,
+    id,
+    layerId: baseLayerId,
+    nodeId: nodeKey ? String(nodeKey) : undefined,
+    nodeType: 'shape',
+  }), [baseLayerId, baseSourceId, nodeKey]);
   const workerClientHook = useMemo(() => {
     try {
       return getWorkerClientHook<WorkerClientRef | null>();
@@ -409,39 +412,12 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     };
   }, [filteredMetadataRows]);
 
-  const selectedBounds = useMemo(() => {
-    if (selectedIds.length === 0) return null;
-    const selectedSet = new Set(selectedIds.map(String));
-    let minLng = Number.POSITIVE_INFINITY;
-    let minLat = Number.POSITIVE_INFINITY;
-    let maxLng = Number.NEGATIVE_INFINITY;
-    let maxLat = Number.NEGATIVE_INFINITY;
-    let hasBounds = false;
-    filteredMetadataRows.forEach((row) => {
-      if (!selectedSet.has(String(row.originKey))) return;
-      const bbox = row.bbox;
-      if (!bbox || bbox.length !== 4) return;
-      const [minX, minY, maxX, maxY] = bbox;
-      if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY)) {
-        return;
-      }
-      hasBounds = true;
-      minLng = Math.min(minLng, minX);
-      minLat = Math.min(minLat, minY);
-      maxLng = Math.max(maxLng, maxX);
-      maxLat = Math.max(maxLat, maxY);
-    });
-    return finalizeBounds(
-      hasBounds ? { minLng, minLat, maxLng, maxLat } : null,
-    );
-  }, [filteredMetadataRows, finalizeBounds, selectedIds]);
-
   const selectedErrorBounds = useMemo(() => {
-    if (selectedErrorIds.length === 0) return null;
-    const selectedSet = new Set(selectedErrorIds);
+    if (selectedFeatureIds.length === 0) return null;
+    const selectedSet = new Set(selectedFeatureIds);
     let bounds: { minLng: number; minLat: number; maxLng: number; maxLat: number } | null = null;
     transformErrorRows.forEach((row) => {
-      if (!selectedSet.has(row.id)) return;
+      if (!row.featureId || !selectedSet.has(row.featureId)) return;
       row.lineFeatures?.features?.forEach((feature) => {
         const geometry = (feature as { geometry?: { coordinates?: unknown } }).geometry;
         if (!geometry?.coordinates) return;
@@ -449,19 +425,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       });
     });
     return finalizeBounds(bounds);
-  }, [finalizeBounds, selectedErrorIds, transformErrorRows, visitCoordinates]);
-
-  const fitSelectionBounds = useMemo(() => {
-    if (!selectedBounds && !selectedErrorBounds) return null;
-    if (!selectedBounds) return selectedErrorBounds;
-    if (!selectedErrorBounds) return selectedBounds;
-    return {
-      minLng: Math.min(selectedBounds.minLng, selectedErrorBounds.minLng),
-      minLat: Math.min(selectedBounds.minLat, selectedErrorBounds.minLat),
-      maxLng: Math.max(selectedBounds.maxLng, selectedErrorBounds.maxLng),
-      maxLat: Math.max(selectedBounds.maxLat, selectedErrorBounds.maxLat),
-    };
-  }, [selectedBounds, selectedErrorBounds]);
+  }, [finalizeBounds, selectedFeatureIds, transformErrorRows, visitCoordinates]);
 
   const initialViewState = useMemo<MapWithVectorTilesProps['initialViewState']>(() => {
     if (!selectionBounds) {
@@ -489,17 +453,16 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     });
   }, [mapInstance, selectionBounds]);
 
-  const canFitSelection = Boolean(mapInstance && fitSelectionBounds);
-  const handleFitSelection = useCallback(() => {
-    if (!mapInstance || !fitSelectionBounds) return;
+  useEffect(() => {
+    if (!mapInstance || !selectedErrorBounds) return;
     const bounds: [[number, number], [number, number]] = [
-      [fitSelectionBounds.minLng, fitSelectionBounds.minLat],
-      [fitSelectionBounds.maxLng, fitSelectionBounds.maxLat],
+      [selectedErrorBounds.minLng, selectedErrorBounds.minLat],
+      [selectedErrorBounds.maxLng, selectedErrorBounds.maxLat],
     ];
     mapInstance.fitBounds(bounds, {
       padding: 24,
     });
-  }, [fitSelectionBounds, mapInstance]);
+  }, [mapInstance, selectedErrorBounds]);
 
   const getRowId = useCallback((row: ShapeSourceMetadata) => row.originKey, []);
   const buildSearchText = useCallback((row: ShapeSourceMetadata) => {
@@ -601,15 +564,6 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       String(feature.properties?.__hdbOriginKey ?? feature.properties?.id ?? feature.id ?? ''),
   });
 
-  const matchedIdSet = useMemo<Set<string>>(() => new Set(matchedIds), [matchedIds]);
-  const {
-    metadataColumns,
-    metadataTableRows,
-    sortColumn,
-    sortDirection,
-    handleSort,
-  } = useVectorTilePreviewTable(sourceMetadataRows, matchedIdSet, searchKeyword);
-
   const getFeatureRowId = useCallback((row: ShapeFeatureMetadata) => row.id, []);
   const buildFeatureSearchText = useCallback((row: ShapeFeatureMetadata) => (
     [
@@ -645,63 +599,31 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     sortColumn: featureSortColumn,
     sortDirection: featureSortDirection,
     handleSort: handleFeatureSort,
-  } = useVectorTileFeatureTable(featureMetadataRows, matchedFeatureIdSet, featureSearchKeyword);
+  } = useVectorTileFeatureTable(featureMetadataRows, matchedFeatureIdSet, featureSearchKeyword, transformErrorRows);
+  const selectedFeatureIdSet = useMemo(() => new Set(selectedFeatureIds), [selectedFeatureIds]);
 
-  const getErrorRowId = useCallback((row: ShapeTransformErrorRecord) => row.id, []);
-  const buildErrorSearchText = useCallback((row: ShapeTransformErrorRecord) => (
-    [
-      row.sourceKey,
-      row.countryCode,
-      row.adminLevel != null ? String(row.adminLevel) : undefined,
-      row.featureId,
-      row.taskId,
-      row.bandId != null ? String(row.bandId) : undefined,
-      row.message,
-    ]
-      .filter(Boolean)
-      .join(' ')
-  ), []);
+  useEffect(() => {
+    const entries = matchedFeatureIds.map((id) => buildMapEntry(String(id)));
+    setMapSearchMatches(entries);
+  }, [buildMapEntry, matchedFeatureIds, setMapSearchMatches]);
 
-  useVectorTilePreviewSearch(
-    metadataEnabled,
-    transformErrorRows,
-    errorSearchKeyword,
-    getErrorRowId,
-    buildErrorSearchText,
-    setMatchedErrorIds,
-  );
+  useEffect(() => {
+    const entries = selectedFeatureIds.map((id) => buildMapEntry(String(id)));
+    setMapSelectedMatches(entries);
+  }, [buildMapEntry, selectedFeatureIds, setMapSelectedMatches]);
 
-  const matchedErrorIdSet = useMemo<Set<string>>(
-    () => new Set(matchedErrorIds),
-    [matchedErrorIds],
-  );
-
-  const featureAdminNameMap = useMemo(() => {
-    const map = new Map<string, { countryName?: string; adminName?: string; adminLevel?: number }>();
-    featureMetadataRows.forEach((row) => {
-      if (!row.featureId || map.has(row.featureId)) return;
-      map.set(row.featureId, {
-        countryName: row.countryName,
-        adminName: row.adminName,
-        adminLevel: row.adminLevel,
-      });
-    });
-    return map;
-  }, [featureMetadataRows]);
-
-  const {
-    errorColumns,
-    errorTableRows,
-    sortColumn: errorSortColumn,
-    sortDirection: errorSortDirection,
-    handleSort: handleErrorSort,
-  } = useTransformErrorTable(transformErrorRows, matchedErrorIdSet, errorSearchKeyword, featureAdminNameMap);
+  useEffect(() => {
+    if (!hoveredId) {
+      setMapHoverMatches([]);
+      return;
+    }
+    setMapHoverMatches([buildMapEntry(String(hoveredId))]);
+  }, [buildMapEntry, hoveredId, setMapHoverMatches]);
 
   const errorLineCollection = useMemo<ShapeTransformErrorRecord['lineFeatures'] | null>(() => {
     if (transformErrorRows.length === 0) return null;
-    const selected = selectedErrorIds.length ? new Set(selectedErrorIds) : null;
     const features = transformErrorRows.flatMap((row) => {
-      const isSelected = selected ? selected.has(row.id) : false;
+      const isSelected = row.featureId ? selectedFeatureIdSet.has(row.featureId) : false;
       return (row.lineFeatures?.features ?? []).map((feature) => ({
         ...feature,
         properties: {
@@ -711,21 +633,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       }));
     });
     return features.length ? { type: 'FeatureCollection', features } : null;
-  }, [selectedErrorIds, transformErrorRows]);
-
-  useVectorTilePreviewMapLayers({
-    mapInstance: tabIndex === mapTabIndex ? mapInstance : null,
-    baseLayerId,
-    baseSourceId,
-    tilesLayer,
-    matchedIds,
-    selectedIds,
-    hoveredId,
-    setHoveredId,
-    theme,
-    featureIdProperty: '__hdbOriginKey',
-    invalidFeatureIds: [],
-  });
+  }, [selectedFeatureIdSet, transformErrorRows]);
 
   useEffect(() => {
     if (!mapInstance) return;
@@ -758,12 +666,6 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     t,
     theme,
     metadataEnabled,
-    tabIndex,
-    setTabIndex,
-    sourceTabIndex,
-    featureTabIndex,
-    mapTabIndex,
-    errorTabIndex,
     sourceMetadataRows,
     sourceMetadataLoading,
     sourceMetadataError,
@@ -780,35 +682,22 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     setSearchKeyword,
     featureSearchKeyword,
     setFeatureSearchKeyword,
-    errorSearchKeyword,
-    setErrorSearchKeyword,
     matchedIds,
     selectedIds,
     setSelectedIds,
-    selectedErrorIds,
-    setSelectedErrorIds,
+    selectedFeatureIds,
+    setSelectedFeatureIds,
     hoveredId,
     setHoveredId,
     selectionContext,
     setSelectionContext,
-    sortColumn,
-    sortDirection,
-    handleSort,
     featureSortColumn,
     featureSortDirection,
     handleFeatureSort,
-    metadataColumns,
-    metadataTableRows,
     featureColumns,
     featureTableRows,
     matchedIdSet,
     matchedFeatureIdSet,
-    matchedErrorIdSet,
-    errorColumns,
-    errorTableRows,
-    errorSortColumn,
-    errorSortDirection,
-    handleErrorSort,
     selectedIdSet,
     hoveredIdSet,
     hoverMessage,
@@ -828,7 +717,5 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     defaultView: initialViewState,
     selectionDataSource,
     errorLineCollection,
-    canFitSelection,
-    handleFitSelection,
   };
 };

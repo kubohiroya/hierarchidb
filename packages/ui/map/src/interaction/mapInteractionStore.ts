@@ -30,7 +30,7 @@ export const mapSearchMatchesAtom = atom<MapHighlightEntry[]>([]);
 export const mapSearchMatchKeysAtom = atom((get) => new Set(get(mapSearchMatchesAtom).map(buildHighlightKey)));
 
 export const mapHoverCandidatesAtom = atom<MapHoverCandidate[]>([]);
-export const mapHoverMatchesAtom = atom((get) => get(mapHoverCandidatesAtom).map((candidate) => candidate.entry));
+export const mapHoverMatchesAtom = atom<MapHighlightEntry[]>([]);
 export const mapHoverMatchKeysAtom = atom((get) => new Set(get(mapHoverMatchesAtom).map(buildHighlightKey)));
 export const mapHoveredFeaturesAtom = atom((get) => get(mapHoverCandidatesAtom).map((candidate) => candidate.feature));
 
