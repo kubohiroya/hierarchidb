@@ -468,6 +468,8 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
     });
   }, [baseCountries, checkboxMatrix, columns]);
 
+  const countryList = useMemo(() => baseCountries.map((entry) => entry.country), [baseCountries]);
+
   const applySelections = useCallback(
     (nextSelections: MatrixSelection[]) => {
       const nextSelection = baseCountries.reduce<Record<string, boolean[]>>((acc, entry) => {
@@ -559,7 +561,7 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
       }
       : null,
     matrixConfig,
-    countries: baseCountries.map((entry) => entry.country),
+    countries: countryList,
     selections: currentSelections,
     applySelections,
     isCellEnabled,

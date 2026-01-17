@@ -1,3 +1,25 @@
+2243) fix/shape/step3-virtualized-checkbox-scroll (P1) — 進行中 (2026-01-17)
+- ブランチ名: fix/shape/step3-virtualized-checkbox-scroll
+- 依存: なし
+- 受け入れ基準: Step3 の仮想化リストで途中スクロール位置のチェックボックスをクリックしてもスクロール位置が先頭に戻らない／チェック状態の更新で全体再レンダリングが発生しない（またはスクロール位置への影響がない）／ステップ遷移と Save/Save as Draft の挙動が維持される／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、Step3 のチェックボックス操作とスクロール挙動を修正前へ戻す
+- チェックリスト:
+  - Step3 仮想化リストの再レンダリング原因を特定する
+  - チェック状態の保存タイミングを見直し、スクロール位置が維持されることを確認する
+  - ステップ遷移と Save/Save as Draft の挙動を確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-17 16:51 JST Step3 仮想化リストのチェック操作でスクロール位置が戻る問題の修正に着手。
+  - update: 2026-01-17 16:55 JST CountryMatrixSelector の行配列が選択変更で再生成されないように依存関係を調整。
+  - done: 2026-01-17 16:55 JST pnpm --filter @hierarchidb/ui-country-select typecheck を実行（exit 0）。
+  - update: 2026-01-17 17:14 JST Step3 の countries 配列参照をメモ化し、選択変更時の仮想化データ再生成を抑制。
+  - done: 2026-01-17 17:14 JST pnpm --filter @hierarchidb/shape-plugin typecheck を実行（exit 0）。
+  - update: 2026-01-17 17:18 JST SelectionMatrix へ渡す rows 配列をメモ化し、選択変更時のデータ参照揺れを抑制。
+  - done: 2026-01-17 17:18 JST pnpm --filter @hierarchidb/ui-country-select typecheck を実行（exit 0）。
+  - update: 2026-01-17 17:23 JST SelectionMatrix の Virtuoso components/スタイルをメモ化し、レンダリング時のスクロールリセットを抑制。
+  - done: 2026-01-17 17:23 JST pnpm --filter @hierarchidb/components typecheck を実行（exit 0）。
+
 2241) refactor/shape/remove-transform-by-zoom (P2) — 完了 (2026-01-17)
 - ブランチ名: refactor/shape/remove-transform-by-zoom
 - 依存: なし
@@ -78,6 +100,21 @@
   - update: 2026-01-17 16:45 JST 面積フィルター UI を削除し、Transform のヘルプ文言と係数 UI を整理。
   - update: 2026-01-17 17:10 JST pnpm typecheck を実行（exit 0）。
   - done: 2026-01-17 17:10 JST 面積フィルター撤去と除外ポリゴン面積係数 UI を反映。
+
+2240) fix/shape/vt-stage-not-starting (P1) — 進行中 (2026-01-17)
+- ブランチ名: fix/shape/vt-stage-not-starting
+- 依存: なし
+- 受け入れ基準: VT 生成ステージが transform 完了後に開始される／原因がログで説明できる／必要に応じて失敗理由がUI/ログに残る／pnpm typecheck が exit 0 で完走する
+- 影響範囲: `plugins/shape-plugin/src/services/vt/**`, `packages/vt-orchestrator/src/**`, `plugins/shape-plugin/src/ui/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、VT 開始条件の挙動を修正前に戻す
+- チェックリスト:
+  - VT ステージが開始されない原因を特定する
+  - 必要な修正を反映し VT ステージ開始を復旧する
+  - pnpm typecheck を実行しログに記録する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-17 17:20 JST VT 生成ステージが開始しない事象の調査に着手。
+  - update: 2026-01-17 17:25 JST shapeVtPipeline の backfill で transformCache の decode 失敗時に vt タスクが生成されずスキップされる経路を確認。
 
 2239) fix/plugin-dialog/fullscreen-header-footer-auto-hide (P1) — 進行中 (2026-01-17)
 - ブランチ名: fix/plugin-dialog/fullscreen-header-footer-auto-hide
@@ -931,6 +968,10 @@
   - start: 2026-01-17 16:20 JST fetch ステージが正常に動作しない問題と invalid polygon 以前の失敗要因の調査に着手。
   - update: 2026-01-17 16:27 JST startBatchProcess 開始時に pause 状態を解除し、transform の cleanCoords 例外で停止しないようガードを追加。
   - update: 2026-01-17 16:45 JST VT 生成が開始しない事象の調査と tileId リレーション欠落時のフォールバック検討に着手。
+  - update: 2026-01-17 16:46 JST tileId リレーション欠落時に transformCache から再構築するフォールバックを追加。
+  - update: 2026-01-17 16:47 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-17 16:53 JST transformCache の FlatGeobuf デコード失敗を捕捉し、失敗バッファをスキップしてログ出力するよう調整。
+  - update: 2026-01-17 16:54 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
   - update: 2026-01-17 11:05 JST pnpm install を再実行（exit 0）。
   - update: 2026-01-17 11:10 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
   - update: 2026-01-17 11:20 JST transform 側に cleanCoords を追加する対応に着手。

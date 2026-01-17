@@ -1,4 +1,8 @@
 import type { BuildContinuationPolicy, NodeId, StageHandler, TaskQueueRecord } from '@hierarchidb/common-types';
+import type { Feature, FeatureCollection, Geometry } from 'geojson';
+import { bbox as turfBbox } from '@turf/turf';
+import { geojson as geojsonApi } from 'flatgeobuf';
+import { latToTileY, lonToTileX } from '@hierarchidb/gis-sdk';
 import type { ShapeBuildConfig } from '../../common/types/index.js';
 import {
   VtTaskQueueDb,
@@ -61,6 +65,114 @@ const buildBands = (zoomBandBoundaries: number[]) => {
     zMax: range.max,
     zBase: range.min,
   }));
+};
+
+const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureCollection | null> => {
+  if (!decoded || typeof decoded !== 'object') return null;
+  const collection = decoded as FeatureCollection;
+  if (collection.type === 'FeatureCollection') {
+    const features = Array.isArray(collection.features) ? collection.features : [];
+    return { ...collection, features };
+  }
+  if (typeof (decoded as AsyncIterable<unknown>)[Symbol.asyncIterator] === 'function') {
+    const features: Feature[] = [];
+    try {
+      for await (const feature of decoded as AsyncIterable<Feature>) {
+        features.push(feature);
+      }
+    } catch {
+      return null;
+    }
+    return { type: 'FeatureCollection', features };
+  }
+  return null;
+};
+
+const decodeTransformCache = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
+  try {
+    const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
+    return await normalizeFeatureCollection(decoded as unknown);
+  } catch {
+    return null;
+  }
+};
+
+const packTileId = (x: number, y: number, z: number): number => (x << z) | y;
+
+const clampTileIndex = (value: number, maxIndex: number): number => (
+  Math.min(maxIndex, Math.max(0, value))
+);
+
+const collectTileIdsForCollection = (collection: FeatureCollection, zBase: number): number[] => {
+  if (!Number.isFinite(zBase) || zBase < 0) return [];
+  const maxIndex = (1 << zBase) - 1;
+  const tileIds = new Set<number>();
+  for (const feature of collection.features) {
+    if (!feature?.geometry) continue;
+    const [minLon, minLat, maxLon, maxLat] = turfBbox(feature as Feature<Geometry>);
+    if (![minLon, minLat, maxLon, maxLat].every((value) => Number.isFinite(value))) continue;
+    const x1 = clampTileIndex(lonToTileX(minLon, zBase), maxIndex);
+    const x2 = clampTileIndex(lonToTileX(maxLon, zBase), maxIndex);
+    const y1 = clampTileIndex(latToTileY(maxLat, zBase), maxIndex);
+    const y2 = clampTileIndex(latToTileY(minLat, zBase), maxIndex);
+    for (let x = x1; x <= x2; x += 1) {
+      for (let y = y1; y <= y2; y += 1) {
+        tileIds.add(packTileId(x, y, zBase));
+      }
+    }
+  }
+  return [...tileIds];
+};
+
+const backfillTileRelationsFromTransformCache = async (params: {
+  nodeId: NodeId;
+  bandId: number;
+  zBase: number;
+  ephemeralStore: typeof ephemeralShapeDB;
+}): Promise<number> => {
+  const { nodeId, bandId, zBase, ephemeralStore } = params;
+  const buffers = await ephemeralStore.transformCache
+    .where('[nodeId+bandId]')
+    .equals([nodeId, bandId])
+    .toArray();
+  if (buffers.length === 0) return 0;
+  const relations: Array<{
+    id: string;
+    nodeId: NodeId;
+    bandId: number;
+    tileId: string;
+    bufferId: string;
+    createdAt: number;
+  }> = [];
+  const createdAt = Date.now();
+  for (const buffer of buffers) {
+    const collection = await decodeTransformCache(buffer.data);
+    if (!collection) {
+      console.warn('[shape-vt] failed to decode transform cache', {
+        nodeId,
+        bandId,
+        bufferId: buffer.id,
+      });
+      continue;
+    }
+    const tileIds = collectTileIdsForCollection(collection, zBase);
+    if (tileIds.length === 0) continue;
+    tileIds.forEach((tileId) => {
+      relations.push({
+        id: `${String(nodeId)}:${bandId}:${tileId}:${buffer.id}`,
+        nodeId,
+        bandId,
+        tileId: String(tileId),
+        bufferId: buffer.id,
+        createdAt,
+      });
+    });
+  }
+  if (relations.length === 0) return 0;
+  const bufferIds = Array.from(new Set(relations.map((row) => row.bufferId)));
+  await ephemeralStore.tileIdToBufferRelations.where('bufferId').anyOf(bufferIds).delete();
+  await ephemeralStore.tileIdToBufferRelations.bulkPut(relations);
+  return relations.length;
 };
 
 const hasHighDetailSelection = (
@@ -188,10 +300,29 @@ const buildVtTasks = async (
   for (const band of bands) {
     const isHighDetailBand = band.zMin >= HIGH_DETAIL_ZOOM_MIN;
     if (isHighDetailBand && !enableHighDetailBands) continue;
-    const relationRows = await ephemeralStore.tileIdToBufferRelations
+    let relationRows = await ephemeralStore.tileIdToBufferRelations
       .where('[nodeId+bandId]')
       .equals([nodeId, band.bandId])
       .toArray();
+    if (relationRows.length === 0) {
+      const backfilled = await backfillTileRelationsFromTransformCache({
+        nodeId,
+        bandId: band.bandId,
+        zBase: band.zBase,
+        ephemeralStore,
+      });
+      if (backfilled > 0) {
+        relationRows = await ephemeralStore.tileIdToBufferRelations
+          .where('[nodeId+bandId]')
+          .equals([nodeId, band.bandId])
+          .toArray();
+        console.warn('[shape-vt] rebuilt missing tile relations', {
+          nodeId,
+          bandId: band.bandId,
+          relationCount: relationRows.length,
+        });
+      }
+    }
     const tileBuffers = new Map<number, string[]>();
     relationRows.forEach((row) => {
       const tileId = Number(row.tileId);

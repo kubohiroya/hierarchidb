@@ -120,20 +120,24 @@ export function SelectionMatrix<T = any>({
                                            getRowMetaSortDirection,
                                            virtuosoRef,
                                          }: SelectionMatrixProps<T>): React.ReactElement {
-  const containerStyle: React.CSSProperties = {};
-  const resolvedHeight = height ?? (maxHeight ?? '100%');
-  const resolvedRowHeight = dense
-    ? Math.min(rowHeight ?? 40, 40)
-    : rowHeight ?? 48;
-  if (resolvedHeight !== undefined) {
-    containerStyle.height = resolvedHeight;
-    if (typeof resolvedHeight === 'string') {
-      containerStyle.minHeight = 400;
+  const resolvedHeight = useMemo(() => height ?? (maxHeight ?? '100%'), [height, maxHeight]);
+  const resolvedRowHeight = useMemo(
+    () => (dense ? Math.min(rowHeight ?? 40, 40) : rowHeight ?? 48),
+    [dense, rowHeight],
+  );
+  const containerStyle = useMemo<React.CSSProperties>(() => {
+    const style: React.CSSProperties = {};
+    if (resolvedHeight !== undefined) {
+      style.height = resolvedHeight;
+      if (typeof resolvedHeight === 'string') {
+        style.minHeight = 400;
+      }
     }
-  }
-  if (maxHeight !== undefined) {
-    containerStyle.maxHeight = maxHeight;
-  }
+    if (maxHeight !== undefined) {
+      style.maxHeight = maxHeight;
+    }
+    return style;
+  }, [maxHeight, resolvedHeight]);
 
   // Calculate selection counts
   const columnCounts = columns.map((column, colIndex) =>
@@ -487,58 +491,65 @@ export function SelectionMatrix<T = any>({
     );
   };
 
-  const TableRowComponent = forwardRef<HTMLTableRowElement, ItemProps<SelectionMatrixRow<T>>>(
-    (rowProps, rowRef) => {
-      const { item, style, ...rest } = rowProps;
-      const extraProps = getRowProps?.(item, rowProps['data-index']) ?? {};
-      return (
-        <TableRow
-          {...rest}
-          {...extraProps}
-          ref={rowRef}
-          hover
-          style={{
-            ...style,
-            ...(extraProps as { style?: React.CSSProperties }).style,
-            opacity: item?.disabled ? 0.5 : 1,
-          }}
-          sx={{
-            '&:hover': { bgcolor: 'action.hover' },
-          }}
-        />
-      );
-    },
+  const TableRowComponent = useMemo(
+    () =>
+      forwardRef<HTMLTableRowElement, ItemProps<SelectionMatrixRow<T>>>(
+        (rowProps, rowRef) => {
+          const { item, style, ...rest } = rowProps;
+          const extraProps = getRowProps?.(item, rowProps['data-index']) ?? {};
+          return (
+            <TableRow
+              {...rest}
+              {...extraProps}
+              ref={rowRef}
+              hover
+              style={{
+                ...style,
+                ...(extraProps as { style?: React.CSSProperties }).style,
+                opacity: item?.disabled ? 0.5 : 1,
+              }}
+              sx={{
+                '&:hover': { bgcolor: 'action.hover' },
+              }}
+            />
+          );
+        },
+      ),
+    [getRowProps],
   );
 
-  const VirtuosoTableComponents: TableComponents<SelectionMatrixRow<T>> = {
-    Scroller: forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-      ({ style, ...scrollerProps }, scrollerRef) => (
-        <TableContainer
-          component={Paper}
-          {...scrollerProps}
-          ref={scrollerRef}
-          sx={{ ...containerStyle, ...style }}
-        />
+  const VirtuosoTableComponents = useMemo<TableComponents<SelectionMatrixRow<T>>>(
+    () => ({
+      Scroller: forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+        ({ style, ...scrollerProps }, scrollerRef) => (
+          <TableContainer
+            component={Paper}
+            {...scrollerProps}
+            ref={scrollerRef}
+            sx={{ ...containerStyle, ...style }}
+          />
+        ),
       ),
-    ),
-    Table: forwardRef<HTMLTableElement, React.TableHTMLAttributes<HTMLTableElement>>(
-      (tableProps, tableRef) => (
-        <Table
-          {...tableProps}
-          ref={tableRef}
-          stickyHeader={stickyHeader}
-          size={dense ? 'small' : 'medium'}
-        />
+      Table: forwardRef<HTMLTableElement, React.TableHTMLAttributes<HTMLTableElement>>(
+        (tableProps, tableRef) => (
+          <Table
+            {...tableProps}
+            ref={tableRef}
+            stickyHeader={stickyHeader}
+            size={dense ? 'small' : 'medium'}
+          />
+        ),
       ),
-    ),
-    TableHead: forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(
-      (headProps, headRef) => <TableHead {...headProps} ref={headRef} />,
-    ),
-    TableBody: forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(
-      (bodyProps, bodyRef) => <TableBody {...bodyProps} ref={bodyRef} />,
-    ),
-    TableRow: TableRowComponent,
-  };
+      TableHead: forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(
+        (headProps, headRef) => <TableHead {...headProps} ref={headRef} />,
+      ),
+      TableBody: forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(
+        (bodyProps, bodyRef) => <TableBody {...bodyProps} ref={bodyRef} />,
+      ),
+      TableRow: TableRowComponent,
+    }),
+    [TableRowComponent, containerStyle, dense, stickyHeader],
+  );
 
   return (
     <TableVirtuoso

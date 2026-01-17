@@ -142,6 +142,8 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
     return chars.join('');
   }, []);
 
+  const selectionMapForSort = sortState.kind === 'column' ? selectionMap : null;
+
   const filteredRows = useMemo(() => {
     const keyword = search.trim().toLowerCase();
     const enriched = countries.map((country, index) => {
@@ -172,15 +174,16 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
         return compare(a.regionLabel ?? '', b.regionLabel ?? '', sortState.direction);
       }
       if (sortState.kind === 'column' && sortState.columnId) {
-        const aSelected = selectionMap.get(a.country.code)?.[sortState.columnId] ?? false;
-        const bSelected = selectionMap.get(b.country.code)?.[sortState.columnId] ?? false;
+        const activeSelectionMap = selectionMapForSort ?? selectionMap;
+        const aSelected = activeSelectionMap.get(a.country.code)?.[sortState.columnId] ?? false;
+        const bSelected = activeSelectionMap.get(b.country.code)?.[sortState.columnId] ?? false;
         if (aSelected === bSelected) return compare(a.country.name, b.country.name, 'asc');
         return sortState.direction === 'desc' ? Number(bSelected) - Number(aSelected) : Number(aSelected) - Number(bSelected);
       }
       return compare(a.country.name, b.country.name, sortState.direction);
     });
     return filtered;
-  }, [countries, flagFromCode, search, selectionMap, sortState.columnId, sortState.direction, sortState.kind, toRegionLabel]);
+  }, [countries, flagFromCode, search, selectionMapForSort, sortState.columnId, sortState.direction, sortState.kind, toRegionLabel]);
 
   const rows: SelectionMatrixRow<{ country: Country; sourceIndex: number }>[] = useMemo(
     () =>
@@ -488,6 +491,14 @@ const CountryMatrixTable: React.FC<CountryMatrixTableProps> = ({
   maxHeight,
 }) => {
   const matrixState = useAtomValue(matrixStateAtom);
+  const rowsWithTooltip = useMemo(
+    () =>
+      rows.map((row) => ({
+        ...row,
+        tooltip: row.data.country.name,
+      })),
+    [rows],
+  );
 
   const columnHeaderState = useMemo(() => {
     return selectionColumns.map((column, colIndex) => {
@@ -509,10 +520,7 @@ const CountryMatrixTable: React.FC<CountryMatrixTableProps> = ({
 
   return (
     <SelectionMatrix
-      rows={rows.map((row) => ({
-        ...row,
-        tooltip: row.data.country.name,
-      }))}
+      rows={rowsWithTooltip}
       columns={selectionColumns}
       state={matrixState}
       onChange={handleSelectionChange}
