@@ -144,6 +144,42 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
     }
   }, []);
 
+  const formatDuration = useCallback((durationMs?: number | null) => {
+    if (durationMs == null || durationMs < 0 || !Number.isFinite(durationMs)) {
+      return t('stage.timing.unknown', '-');
+    }
+    const totalSeconds = Math.max(0, Math.floor(durationMs / 1000));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return t('stage.timing.duration', '{{hours}}h {{minutes}}m {{seconds}}s', {
+      hours,
+      minutes: String(minutes).padStart(2, '0'),
+      seconds: String(seconds).padStart(2, '0'),
+    });
+  }, [t]);
+
+  const controlDetails = useMemo(() => ([
+    {
+      label: t('stage.timing.totalElapsed', 'Total elapsed'),
+      value: formatDuration(summary.totalElapsedMs),
+    },
+    {
+      label: t('stage.timing.stageElapsed', 'Stage elapsed'),
+      value: formatDuration(summary.stageElapsedMs),
+    },
+    {
+      label: t('stage.timing.stageRemaining', 'Stage remaining (estimate)'),
+      value: formatDuration(summary.stageRemainingMs ?? null),
+    },
+  ]), [
+    formatDuration,
+    summary.stageElapsedMs,
+    summary.stageRemainingMs,
+    summary.totalElapsedMs,
+    t,
+  ]);
+
   const resolveStageValue = useCallback((stageId: string): number => (
     Math.min(100, Math.max(0, stageProgress[stageId] ?? summary.overallProgress))
   ), [stageProgress, summary.overallProgress]);
@@ -288,6 +324,7 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
           startLabel={t('stage.controls.start', 'Start Build')}
           resumeLabel={t('stage.controls.resume', 'Resume Build')}
           statusLabel={controls.statusLabel}
+          controlDetails={controlDetails}
         />
       </Box>
       <Snackbar

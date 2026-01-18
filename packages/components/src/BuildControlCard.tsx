@@ -15,6 +15,7 @@ type BuildControlCardProps = {
   resumeLabel?: string;
   startIcon?: ReactNode;
   resumeIcon?: ReactNode;
+  details?: Array<{ label: string; value: string }>;
 };
 
 export const BuildControlCard: React.FC<BuildControlCardProps> = ({
@@ -27,6 +28,7 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
                                                              resumeLabel,
                                                              startIcon,
                                                              resumeIcon,
+                                                             details,
                                                            }) => {
   const computedLabel = status === 'paused'
     ? (resumeLabel ?? 'Resume Build')
@@ -79,6 +81,20 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
           {computedLabel}
         </LoadingButton>
       </Stack>
+      {details && details.length > 0 ? (
+        <Stack spacing={0.5}>
+          {details.map((detail) => (
+            <Stack key={detail.label} direction="row" spacing={1} justifyContent="space-between">
+              <Typography variant="caption" color="text.secondary">
+                {detail.label}
+              </Typography>
+              <Typography variant="caption">
+                {detail.value}
+              </Typography>
+            </Stack>
+          ))}
+        </Stack>
+      ) : null}
     </Box>
   );
 };

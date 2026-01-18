@@ -18,6 +18,9 @@ export const useTransformConfigSection = ({ config, onChange }: Args) => {
   if (!baseTransformConfig.preSimplifyFilterConfig) {
     throw new Error('TransformConfigSection: preSimplifyFilterConfig is not defined');
   }
+  if (!baseTransformConfig.omitDetailsConfig) {
+    throw new Error('TransformConfigSection: omitDetailsConfig is not defined');
+  }
 
   const update = useCallback((partial: Partial<ShapeBuildConfig>) => {
     onChange(mergeBuildConfig(config, partial));

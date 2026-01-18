@@ -128,6 +128,11 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     ));
   }, [stageTaskSummary]);
   const lastBuildStartedAtRef = useRef<number | undefined>(data?.buildStartedAt);
+  const totalElapsedMsRef = useRef(0);
+  const stageElapsedMsRef = useRef(0);
+  const lastTickAtRef = useRef<number | null>(null);
+  const lastStageIdRef = useRef<string | undefined>(undefined);
+  const [timingSnapshot, setTimingSnapshot] = useState({ totalMs: 0, stageMs: 0 });
   const selectedArrayByCountries = data?.selectedArrayByCountries;
 
   const taskType = effectiveProgress?.taskType;
@@ -205,10 +210,69 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   useEffect(() => {
     if (lastBuildStartedAtRef.current !== data?.buildStartedAt) {
       lastBuildStartedAtRef.current = data?.buildStartedAt;
+      totalElapsedMsRef.current = 0;
+      stageElapsedMsRef.current = 0;
+      lastTickAtRef.current = null;
+      lastStageIdRef.current = resolvedTaskType;
+      setTimingSnapshot({ totalMs: 0, stageMs: 0 });
       setStageTaskSummary({});
       setIsTaskSummaryLoading(false);
     }
-  }, [data?.buildStartedAt]);
+  }, [data?.buildStartedAt, resolvedTaskType]);
+
+  useEffect(() => {
+    if (lastStageIdRef.current !== resolvedTaskType) {
+      stageElapsedMsRef.current = 0;
+      lastStageIdRef.current = resolvedTaskType;
+      if (buildStatus === 'running') {
+        lastTickAtRef.current = Date.now();
+      }
+      setTimingSnapshot((prev) => ({ ...prev, stageMs: 0 }));
+    }
+  }, [buildStatus, resolvedTaskType]);
+
+  useEffect(() => {
+    if (buildStatus !== 'running') {
+      if (lastTickAtRef.current !== null) {
+        const now = Date.now();
+        const delta = Math.max(0, now - lastTickAtRef.current);
+        totalElapsedMsRef.current += delta;
+        stageElapsedMsRef.current += delta;
+        lastTickAtRef.current = null;
+        setTimingSnapshot({
+          totalMs: totalElapsedMsRef.current,
+          stageMs: stageElapsedMsRef.current,
+        });
+      }
+      return;
+    }
+    lastTickAtRef.current = Date.now();
+    const id = window.setInterval(() => {
+      const now = Date.now();
+      const lastTick = lastTickAtRef.current ?? now;
+      const delta = Math.max(0, now - lastTick);
+      totalElapsedMsRef.current += delta;
+      stageElapsedMsRef.current += delta;
+      lastTickAtRef.current = now;
+      setTimingSnapshot({
+        totalMs: totalElapsedMsRef.current,
+        stageMs: stageElapsedMsRef.current,
+      });
+    }, 1000);
+    return () => {
+      const now = Date.now();
+      const lastTick = lastTickAtRef.current ?? now;
+      const delta = Math.max(0, now - lastTick);
+      totalElapsedMsRef.current += delta;
+      stageElapsedMsRef.current += delta;
+      lastTickAtRef.current = null;
+      setTimingSnapshot({
+        totalMs: totalElapsedMsRef.current,
+        stageMs: stageElapsedMsRef.current,
+      });
+      window.clearInterval(id);
+    };
+  }, [buildStatus]);
 
   useEffect(() => {
     if (!activeNodeId) {
@@ -724,6 +788,28 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     && hasSelection
     && isProcessingValid;
 
+  const stageRemainingMs = useMemo(() => {
+    if (!resolvedTaskType) return null;
+    const stageTasks = tasksByStage[resolvedTaskType] ?? [];
+    if (!stageTasks.length) return null;
+    const counts = { total: 0, done: 0 };
+    stageTasks.forEach((task) => {
+      counts.total += 1;
+      if (isSkippedMessage(task.message)) {
+        counts.done += 1;
+        return;
+      }
+      if (task.status === 'completed' || task.status === 'failed' || task.status === 'regression') {
+        counts.done += 1;
+      }
+    });
+    const remaining = counts.total - counts.done;
+    if (remaining <= 0 || counts.done <= 0) return null;
+    const avgPerTaskMs = timingSnapshot.stageMs / counts.done;
+    if (!Number.isFinite(avgPerTaskMs) || avgPerTaskMs <= 0) return null;
+    return Math.max(0, Math.round(avgPerTaskMs * remaining));
+  }, [resolvedTaskType, tasksByStage, timingSnapshot.stageMs]);
+
   return {
     t,
     stages,
@@ -751,5 +837,8 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     authDialogOpen,
     closeAuthDialog,
     handleProviderSelect,
+    totalElapsedMs: timingSnapshot.totalMs,
+    stageElapsedMs: timingSnapshot.stageMs,
+    stageRemainingMs,
   };
 };

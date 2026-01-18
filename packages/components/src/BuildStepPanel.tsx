@@ -32,6 +32,7 @@ export interface BuildStepPanelProps {
   resumeIcon?: ReactNode;
   statusLabel?: string;
   statusContent?: ReactNode;
+  controlDetails?: Array<{ label: string; value: string }>;
 }
 
 export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
@@ -57,6 +58,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   resumeIcon,
   statusLabel,
   statusContent,
+  controlDetails,
 }) => {
   void onComplete;
 
@@ -183,6 +185,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
           resumeLabel={resumeLabel}
           startIcon={startIcon}
           resumeIcon={resumeIcon}
+          details={controlDetails}
         />
         {statusContent ? (
           <Box flex={1} minWidth={0}>

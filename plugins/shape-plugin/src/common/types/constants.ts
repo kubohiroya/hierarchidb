@@ -37,6 +37,14 @@ export const DEFAULT_BUILD_CONFIG: ShapeBuildConfig = {
     tolerance: 0.1,
     areaThreshold: 1.0,
     excludePolygonAreaCoefficient: 1,
+    omitDetailsConfig: {
+      level: 'strong',
+    },
+    selfIntersectionTuningConfig: {
+      disableAtZoomOrBelow: 3,
+      maxVerticesForFix: 50000,
+      maxVerticesForSplit: 15000,
+    },
     ringFixConfig: {
       minRingVertices: 4,
       minRingAreaMultiplier: 1.0,

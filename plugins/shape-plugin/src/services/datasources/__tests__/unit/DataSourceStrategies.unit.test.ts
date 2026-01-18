@@ -71,6 +71,14 @@ const minimalBatchConfig = {
     featureFilterMethod: 'hybrid' as const,
     areaThreshold: 1,
     excludePolygonAreaCoefficient: 1,
+    omitDetailsConfig: {
+      level: 'strong',
+    },
+    selfIntersectionTuningConfig: {
+      disableAtZoomOrBelow: 3,
+      maxVerticesForFix: 50000,
+      maxVerticesForSplit: 15000,
+    },
     minVertexCountForAreaFilter: 1,
     aspectRatioThreshold: 1,
     ringFixConfig: {

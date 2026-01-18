@@ -618,6 +618,25 @@ const getFailedTaskCount = async (
   return failed.length;
 };
 
+const summarizeStageCounts = async (
+  taskQueue: VtTaskQueueDb,
+  nodeId: NodeId,
+  stage: TaskQueueRecord['stage'],
+): Promise<Record<string, number>> => {
+  const [queued, running, completed, failed] = await Promise.all([
+    listTasksByStageAndStatus(taskQueue, nodeId, stage, 'queued'),
+    listTasksByStageAndStatus(taskQueue, nodeId, stage, 'running'),
+    listTasksByStageAndStatus(taskQueue, nodeId, stage, 'completed'),
+    listTasksByStageAndStatus(taskQueue, nodeId, stage, 'failed'),
+  ]);
+  return {
+    queued: queued.length,
+    running: running.length,
+    completed: completed.length,
+    failed: failed.length,
+  };
+};
+
 export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise<void> => {
   const taskQueue = new VtTaskQueueDb();
   const shapeStore = new VtShapeDb();
@@ -654,6 +673,10 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
     abortController: fetchAbortController,
     failureHandling,
   });
+  console.warn('[ShapeTransform][PipelineDiagnostics] stage fetch completed', {
+    nodeId: params.nodeId,
+    counts: await summarizeStageCounts(taskQueue, params.nodeId, 'fetch'),
+  });
   if (shouldStopAfterStage(buildContinuationPolicy, await getFailedTaskCount(taskQueue, params.nodeId, 'fetch'))) {
     stopAfterStage = true;
   }
@@ -686,6 +709,10 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
         maxConcurrent: params.buildConfig.transformConfig.maxConcurrent,
         failureHandling,
         abortController: transformByBandAbortController,
+      });
+      console.warn('[ShapeTransform][PipelineDiagnostics] stage transform completed', {
+        nodeId: params.nodeId,
+        counts: await summarizeStageCounts(taskQueue, params.nodeId, 'transform'),
       });
       if (shouldStopAfterStage(buildContinuationPolicy, await getFailedTaskCount(taskQueue, params.nodeId, 'transform'))) {
         stopAfterStage = true;
@@ -731,6 +758,10 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
         maxConcurrent: params.buildConfig.vtConfig.maxConcurrent,
         failureHandling,
         abortController: vtAbortController,
+      });
+      console.warn('[ShapeTransform][PipelineDiagnostics] stage vt completed', {
+        nodeId: params.nodeId,
+        counts: await summarizeStageCounts(taskQueue, params.nodeId, 'vt'),
       });
       if (params.buildConfig.transformConfig.deleteOnComplete) {
         await ephemeralStore.transaction('rw', ephemeralStore.transformCache, async () => {

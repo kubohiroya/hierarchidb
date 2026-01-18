@@ -38,6 +38,9 @@ export const ShapeBuildProgressAtomSync = ({
     failed,
     skipped,
     hasProgressData,
+    totalElapsedMs,
+    stageElapsedMs,
+    stageRemainingMs,
     isTaskSummaryLoading,
     warningMessage,
     canStartOrResume,
@@ -91,6 +94,9 @@ export const ShapeBuildProgressAtomSync = ({
       skipped,
       buildStatus,
       hasProgressData,
+      totalElapsedMs,
+      stageElapsedMs,
+      stageRemainingMs,
     });
   }, [
     buildStatus,
@@ -104,6 +110,9 @@ export const ShapeBuildProgressAtomSync = ({
     total,
     setSummary,
     taskUnitLabel,
+    totalElapsedMs,
+    stageElapsedMs,
+    stageRemainingMs,
   ]);
 
   useEffect(() => {

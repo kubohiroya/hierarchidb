@@ -61,6 +61,18 @@ export type PreSimplifyFilterConfig = {
 
 export type ExtractionMode = 'off' | 'topojson' | 'geojson';
 
+export type OmitDetailsLevel = 'weak' | 'medium' | 'strong';
+
+export type OmitDetailsConfig = {
+  level: OmitDetailsLevel;
+};
+
+export type SelfIntersectionTuningConfig = {
+  disableAtZoomOrBelow: number;
+  maxVerticesForFix: number;
+  maxVerticesForSplit: number;
+};
+
 export interface TransformConfig {
   zoomBandBoundaries: number[];
   maxConcurrent: number;
@@ -75,6 +87,8 @@ export interface TransformConfig {
   tolerance: number;
   areaThreshold: number;
   excludePolygonAreaCoefficient: number;
+  omitDetailsConfig: OmitDetailsConfig;
+  selfIntersectionTuningConfig: SelfIntersectionTuningConfig;
   ringFixConfig: RingFixConfig;
   selfIntersectionConfig: SelfIntersectionConfig;
   preSimplifyFilterConfig: PreSimplifyFilterConfig;

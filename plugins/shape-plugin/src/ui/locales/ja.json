@@ -138,6 +138,11 @@
       "minimumAreaHelp": "Transform で、この面積より小さい特徴を除外します。",
       "excludePolygonAreaCoefficient": "除外ポリゴン面積係数",
       "excludePolygonAreaCoefficientHelp": "量子化後に、面積 < 係数 × グリッド長 × 外周長 / 2 のポリゴンを除外します。",
+      "omitDetailsTitle": "省略度",
+      "omitDetailsHelp": "ズームごとの可視サイズに応じて、BBox と外形リング面積が小さいポリゴンを除外します。",
+      "omitDetailsLevelWeak": "弱",
+      "omitDetailsLevelMedium": "中",
+      "omitDetailsLevelStrong": "強",
       "preSimplifyTitle": "簡易化前フィルタ",
       "excludeInvalidGeometry": "無効ジオメトリを除外",
       "excludeInvalidGeometryHelp": "非有限座標、開いたリング、無効ポリゴンを簡易化前に除外します。",
@@ -289,12 +294,44 @@
       "start": "ビルド開始",
       "resume": "ビルド再開"
     },
+    "timing": {
+      "totalElapsed": "総経過時間",
+      "stageElapsed": "このステージの経過時間",
+      "stageRemaining": "このステージの残り時間(概算)",
+      "duration": "{{hours}}時間{{minutes}}分{{seconds}}秒",
+      "unknown": "-"
+    },
     "progress": {
       "stage": "ステージ",
       "task": "ポリゴン",
       "taskUnitTasks": "タスク",
       "counts": "{{percentage}}% ・ {{completed}}/{{total}} ポリゴン完了 ・ 失敗 {{failed}} ・ スキップ {{skipped}}",
       "countsWithUnit": "{{percentage}}% ・ {{completed}}/{{total}} {{unit}}完了 ・ 失敗 {{failed}} ・ スキップ {{skipped}}"
+    },
+    "taskPhase": {
+      "fetchCacheStart": "キャッシュ取得を開始",
+      "fetchCacheDone": "キャッシュ取得完了",
+      "decodeStart": "デコード開始",
+      "decodeDone": "デコード完了",
+      "filteringStart": "フィルタ開始",
+      "filteringDone": "フィルタ完了",
+      "prepareCountsStart": "入力集計開始",
+      "prepareCountsDone": "入力集計完了",
+      "simplifyStart": "簡略化開始",
+      "simplifyDone": "簡略化完了",
+      "simplifyPreprocessStart": "前処理開始",
+      "simplifyPreprocessDone": "前処理完了",
+      "simplifySelfIntersectionStart": "自己交差修正開始",
+      "simplifySelfIntersectionDone": "自己交差修正完了",
+      "simplifyGeometryStart": "形状簡略化開始",
+      "simplifyGeometryDone": "形状簡略化完了",
+      "outputBuildStart": "出力構築開始",
+      "outputBuildDone": "出力構築完了",
+      "outputCountsStart": "出力集計開始",
+      "encodeStart": "エンコード開始",
+      "encodeDone": "エンコード完了",
+      "cachePutStart": "キャッシュ保存開始",
+      "cachePutDone": "キャッシュ保存完了"
     }
   },
   "build": {

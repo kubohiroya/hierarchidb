@@ -138,6 +138,11 @@
       "minimumAreaHelp": "Filters out features smaller than this area during transform.",
       "excludePolygonAreaCoefficient": "Polygon Area Exclusion Coefficient",
       "excludePolygonAreaCoefficientHelp": "Excludes polygons smaller than coefficient × grid size × outline length / 2 after quantization.",
+      "omitDetailsTitle": "Detail omission",
+      "omitDetailsHelp": "Drops polygons that are too small to be visible at each zoom level using bbox and outer-ring area thresholds.",
+      "omitDetailsLevelWeak": "Low",
+      "omitDetailsLevelMedium": "Medium",
+      "omitDetailsLevelStrong": "High",
       "preSimplifyTitle": "Pre-simplify Filters",
       "excludeInvalidGeometry": "Exclude invalid geometry",
       "excludeInvalidGeometryHelp": "Drops features with non-finite coordinates, open rings, or invalid polygons before simplify.",
@@ -289,12 +294,44 @@
       "start": "Start Build",
       "resume": "Resume Build"
     },
+    "timing": {
+      "totalElapsed": "Total elapsed",
+      "stageElapsed": "Stage elapsed",
+      "stageRemaining": "Stage remaining (estimate)",
+      "duration": "{{hours}}h {{minutes}}m {{seconds}}s",
+      "unknown": "-"
+    },
     "progress": {
       "stage": "Stage",
       "task": "Polygons",
       "taskUnitTasks": "Tasks",
       "counts": "{{percentage}}% \u30fb {{completed}}/{{total}} polygons completed \u30fb failed {{failed}} \u30fb skipped {{skipped}}",
       "countsWithUnit": "{{percentage}}% \u30fb {{completed}}/{{total}} {{unit}} completed \u30fb failed {{failed}} \u30fb skipped {{skipped}}"
+    },
+    "taskPhase": {
+      "fetchCacheStart": "Fetch cache start",
+      "fetchCacheDone": "Fetch cache done",
+      "decodeStart": "Decode start",
+      "decodeDone": "Decode done",
+      "filteringStart": "Filtering start",
+      "filteringDone": "Filtering done",
+      "prepareCountsStart": "Prepare counts start",
+      "prepareCountsDone": "Prepare counts done",
+      "simplifyStart": "Simplify start",
+      "simplifyDone": "Simplify done",
+      "simplifyPreprocessStart": "Preprocess start",
+      "simplifyPreprocessDone": "Preprocess done",
+      "simplifySelfIntersectionStart": "Self-intersection fix start",
+      "simplifySelfIntersectionDone": "Self-intersection fix done",
+      "simplifyGeometryStart": "Geometry simplify start",
+      "simplifyGeometryDone": "Geometry simplify done",
+      "outputBuildStart": "Output build start",
+      "outputBuildDone": "Output build done",
+      "outputCountsStart": "Output counts start",
+      "encodeStart": "Encode start",
+      "encodeDone": "Encode done",
+      "cachePutStart": "Cache write start",
+      "cachePutDone": "Cache write done"
     }
   },
   "build": {

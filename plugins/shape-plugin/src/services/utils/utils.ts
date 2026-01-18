@@ -159,6 +159,22 @@ export function validateBatchConfig(config: ShapeBuildConfig): ShapeStepValidati
     errors.push('Feature area threshold must be between 0 and 10000');
   }
 
+  const selfIntersectionTuning = config.transformConfig.selfIntersectionTuningConfig;
+  if (selfIntersectionTuning.disableAtZoomOrBelow < ZOOM_BAND_MIN_ZOOM
+    || selfIntersectionTuning.disableAtZoomOrBelow > ZOOM_BAND_MAX_ZOOM) {
+    errors.push(`Self-intersection disable zoom must be between ${ZOOM_BAND_MIN_ZOOM} and ${ZOOM_BAND_MAX_ZOOM}`);
+  }
+  if (selfIntersectionTuning.maxVerticesForFix < 0) {
+    errors.push('Self-intersection max vertices for fix must be >= 0');
+  }
+  if (selfIntersectionTuning.maxVerticesForSplit < 0) {
+    errors.push('Self-intersection max vertices for split must be >= 0');
+  }
+  if (selfIntersectionTuning.maxVerticesForFix > 0
+    && selfIntersectionTuning.maxVerticesForSplit > selfIntersectionTuning.maxVerticesForFix) {
+    errors.push('Self-intersection split threshold must be <= fix threshold');
+  }
+
   return {
     isValid: errors.length === 0,
     errors: errors.length > 0 ? errors : undefined,

@@ -26,6 +26,11 @@ const createConfig = (dataSource: string): BuildProcessConfig => ({
     minVertexCountForAreaFilter: 0,
     aspectRatioThreshold: 0,
     areaThreshold: 0,
+    selfIntersectionTuningConfig: {
+      disableAtZoomOrBelow: 0,
+      maxVerticesForFix: 0,
+      maxVerticesForSplit: 0,
+    },
   },
   vectorTiles: {
     ...DEFAULT_BUILD_CONFIG.vtConfig,

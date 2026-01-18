@@ -11,6 +11,8 @@ import {
   Tooltip,
   Switch,
   FormControlLabel,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import {
   FilterAlt as FilterAltIcon,
@@ -36,6 +38,7 @@ export const TransformConfigSection: React.FC<Props> = ({ config, disabled, onCh
     baseTransformConfig,
     update,
   } = useTransformConfigSection({ config, onChange });
+  const omitDetailsLevel = baseTransformConfig.omitDetailsConfig.level;
 
   return (
     <Accordion defaultExpanded>
@@ -79,6 +82,51 @@ export const TransformConfigSection: React.FC<Props> = ({ config, disabled, onCh
                 step={1}
                 disabled={disabled}
               />
+            </Grid>
+          </Grid>
+          <Grid container spacing={3}>
+            <Grid size={{ xs: 12, md: 8 }}>
+              <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
+                <Stack spacing={2}>
+                  <Typography variant="subtitle2">
+                    {t('processing.filter.omitDetailsTitle', 'Detail omission')}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {t(
+                      'processing.filter.omitDetailsHelp',
+                      'Drops polygons that are too small to be visible at each zoom level using bbox and outer-ring area thresholds.',
+                    )}
+                  </Typography>
+                  <ToggleButtonGroup
+                    exclusive
+                    size="small"
+                    value={omitDetailsLevel}
+                    onChange={(_, value) => {
+                      if (!value) return;
+                      const nextLevel = value as typeof omitDetailsLevel;
+                      update({
+                        transformConfig: {
+                          ...baseTransformConfig,
+                          omitDetailsConfig: {
+                            level: nextLevel,
+                          },
+                        },
+                      });
+                    }}
+                    disabled={disabled}
+                  >
+                    <ToggleButton value="weak">
+                      {t('processing.filter.omitDetailsLevelWeak', 'Low')}
+                    </ToggleButton>
+                    <ToggleButton value="medium">
+                      {t('processing.filter.omitDetailsLevelMedium', 'Medium')}
+                    </ToggleButton>
+                    <ToggleButton value="strong">
+                      {t('processing.filter.omitDetailsLevelStrong', 'High')}
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+                </Stack>
+              </Paper>
             </Grid>
           </Grid>
           <Grid container spacing={3}>

@@ -46,6 +46,14 @@
                 },
                 "deleteOnComplete": false,
                 "excludePolygonAreaCoefficient": 1,
+                "omitDetailsConfig": {
+                  "level": "strong"
+                },
+                "selfIntersectionTuningConfig": {
+                  "disableAtZoomOrBelow": 3,
+                  "maxVerticesForFix": 50000,
+                  "maxVerticesForSplit": 15000
+                },
                 "tolerance": 0.1,
                 "areaThreshold": 1,
                 "ringFixConfig": {

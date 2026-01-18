@@ -1,3 +1,104 @@
+2252) doc/shape/build-stage-compare (P1) — 進行中 (2026-01-19)
+- ブランチ名: doc/shape/build-stage-compare
+- 依存: なし
+- 受け入れ基準: 現行パイプラインと新パイプラインの差分が stage ごとに表形式で整理されている／入力・処理・出力・永続化・メリット/リスクが比較できる／保存先が docs 配下で明記されている／TASKS.md の運用ログに start/done/blocked が記載されている
+- 影響範囲: `docs/**`
+- ロールバック手順: 追加した比較ドキュメントを削除し、TASKS.md の該当項目を revert する
+- チェックリスト:
+  - 現行と新フローの差分を stage ごとに整理する
+  - 入力/処理/出力/永続化/メリット・リスクの比較表を作成する
+  - TASKS.md の運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-19 15:30 JST 現行 vs 新パイプラインの比較ドキュメント作成に着手。
+  - done: 2026-01-19 15:40 JST 比較ドキュメントを docs に追加。
+
+2251) doc/shape/build-stage-uml (P1) — 完了 (2026-01-19)
+- ブランチ名: doc/shape/build-stage-uml
+- 依存: なし
+- 受け入れ基準: 完成像の fetch/transform/vt データフローが UML で図式化されている／入出力・永続化先・ズーム帯/インデックスの関係が図で判別できる／UML の形式（Mermaid/PlantUML など）と保存先が明記されている／TASKS.md の運用ログに start/done/blocked が記載されている
+- 影響範囲: `docs/**` または `plans/**`（保存先決定後に確定）
+- ロールバック手順: 追加した UML ドキュメントを削除し、TASKS.md の該当項目を revert する
+- チェックリスト:
+  - UML の形式と保存先を確定する
+  - fetch/transform/vt の入力・出力・永続化・ズーム帯/インデックスの流れを図式化する
+  - TASKS.md の運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-19 15:00 JST 完成像のデータフロー UML 作成に着手。
+  - update: 2026-01-19 15:05 JST UML 形式=Mermaid、保存先=docs の指定を受領。
+  - done: 2026-01-19 15:10 JST Mermaid 図を docs に作成し完了。
+  - update: 2026-01-19 15:15 JST Mermaid のノード名からカッコ表記を除去。
+  - update: 2026-01-19 15:20 JST Mermaid ノード内の括弧を追加で除去。
+  - update: 2026-01-19 15:25 JST Mermaid ノード内の矢印表記を "to" に置換。
+
+2250) plan/shape/build-stage-restructure (P1) — 完了 (2026-01-19)
+- ブランチ名: plan/shape/build-stage-restructure
+- 依存: なし
+- ExecPlan: plans/shape-build-stage-restructure-execplan.md
+- 受け入れ基準: fetch/transform/vt の新ステージ構成と入出力・永続化・ズーム帯の流れが ExecPlan に明文化されている／既存処理の置換範囲と非互換点が整理されている／既定OFFのフラグ導入方針とロールバック手順が明記されている／検証手順が `pnpm lint && pnpm format && pnpm typecheck && pnpm test` を含めて記載されている／TASKS.md の運用ログに start/done/blocked が記載されている
+- 要点: shape ビルドの fetch/transform/vt 再編に向けた ExecPlan を作成し、フラグ既定OFFの移行計画を整理した。
+- 影響範囲: `packages/vt-orchestrator/src/**`, `packages/features/shape-store/src/**`, `plugins/shape-plugin/src/services/**`, `plugins/shape-plugin/src/ui/components/step5/**`（計画で確定）
+- ロールバック手順: フラグを既定OFFのまま維持し、該当差分を revert して従来のビルドフローへ戻す
+- チェックリスト:
+  - 既存の fetch/transform/vt の責務と入出力を整理する
+  - 新ステージ構成（fetch=フィルタ+ズーム帯別FG保存、transform=simplify+転置インデックス、vt=タイル化+子孫タイル生成）を ExecPlan に記述する
+  - 既定OFFのフラグと適用箇所を提案し、段階導入手順を明記する
+  - 受け入れ基準・検証手順・ロールバックを ExecPlan に明文化する
+  - TASKS.md の運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-19 14:20 JST shape ビルドのステージ再編計画（ExecPlan）作成に着手。
+  - done: 2026-01-19 14:40 JST ExecPlan を作成し、ステージ再編の計画を整理。
+
+2249) feat/shape/omit-details-config (P1) — 進行中 (2026-01-19)
+- ブランチ名: feat/shape/omit-details-config
+- 依存: なし
+- 受け入れ基準: Transform でズームに応じた小BBox/小面積ポリゴン除外が行われる（外形リング面積を使用）／OmitDetailsConfig が BuildConfig に追加され弱/中/強を選べる／デフォルトは強設定／`app/public/templates/population-2023/tree-nodes.json` に設定値が反映される／Step4 Transform のアコーディオンにカードUIが追加される／pnpm typecheck が exit 0 で完走する／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/gis-sdk/src/config.ts`, `packages/vt-orchestrator/src/transform/**`, `plugins/shape-plugin/src/ui/components/step4/**`, `plugins/shape-plugin/src/common/types/**`, `app/public/templates/population-2023/tree-nodes.json`（必要に応じて関連ファイルを追記）
+- ロールバック手順: 該当差分を revert し、omit-details の設定/UI/フィルタを撤去する
+- チェックリスト:
+  - OmitDetailsConfig を追加し weak/medium/strong を選べるようにする
+  - Transform の簡略化前に bbox/面積でポリゴン省略を適用する
+  - デフォルトを strong として適用する
+  - Step4 Transform にカードUIを追加する
+  - templates に設定値を追加する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-19 12:10 JST omit-details 設定と Transform 省略フィルタ追加に着手。
+  - update: 2026-01-19 12:28 JST omit-details preset(弱/中/強)・Transform フィルタ・Step4 UI・テンプレート更新を実装。
+  - blocked: 2026-01-19 12:35 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck が omitDetailsConfig 未解決で失敗。
+  - done: 2026-01-19 12:37 JST pnpm --filter @hierarchidb/gis-sdk build を実行（tsdown define 警告あり、exit 0）。
+  - done: 2026-01-19 12:38 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck を実行（exit 0）。
+  - done: 2026-01-19 12:39 JST pnpm --filter @hierarchidb/shape-plugin typecheck を実行（exit 0）。
+  - update: 2026-01-19 12:55 JST self-intersection tuning（ズーム/頂点数でスキップ）設定を追加し Transform に適用。
+  - done: 2026-01-19 13:05 JST pnpm --filter @hierarchidb/gis-sdk build を実行（tsdown define 警告あり、exit 0）。
+  - done: 2026-01-19 13:06 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck を実行（exit 0）。
+  - done: 2026-01-19 13:07 JST pnpm --filter @hierarchidb/shape-plugin typecheck を実行（exit 0）。
+  - update: 2026-01-19 13:30 JST Transform タスクの各処理フェーズ開始/終了を task.message に反映し、タスク内進捗の段階化を追加。
+  - done: 2026-01-19 13:33 JST pnpm --filter @hierarchidb/gis-sdk build を実行（tsdown define 警告あり、exit 0）。
+  - done: 2026-01-19 13:34 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck を実行（exit 0）。
+  - done: 2026-01-19 13:35 JST pnpm --filter @hierarchidb/shape-plugin typecheck を実行（exit 0）。
+  - update: 2026-01-19 13:45 JST task.message の phase 表示を i18n 化。
+  - done: 2026-01-19 13:50 JST pnpm --filter @hierarchidb/shape-plugin typecheck を実行（exit 0）。
+
+2248) feat/ui-shape/build-timing-display (P1) — 進行中 (2026-01-19)
+- ブランチ名: feat/ui-shape/build-timing-display
+- 依存: なし
+- 受け入れ基準: 「ビルド操作」カードに総経過時間/ステージ経過時間を表示する（pause 時間は除外）／ステージ残り時間の概算をタスク進捗から算出して表示する／1時間23分45秒形式で表示される／i18n 対応される／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/**`, `packages/components/src/BuildStepPanel.tsx`, `packages/components/src/BuildControlCard.tsx`（必要に応じて関連ファイルを追記）
+- ロールバック手順: 該当差分を revert し、ビルド操作カードから経過時間/残り時間表示を除去する
+- チェックリスト:
+  - ビルド総経過時間/ステージ経過時間を pause 除外で算出する
+  - ステージ残り時間の概算を進捗と残タスクから算出する
+  - BuildControlCard に表示枠を追加する
+  - i18n キーとフォールバックを追加する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-19 11:30 JST ビルド操作カードへ経過時間/残り時間を表示する対応に着手。
+  - update: 2026-01-19 11:45 JST BuildControlCard/BuildStepPanel に詳細表示枠を追加し、Step5 で経過時間/残り時間の算出・表示を実装。
+  - done: 2026-01-19 11:52 JST pnpm --filter @hierarchidb/components build を実行（tsdown define 警告あり、exit 0）。
+  - done: 2026-01-19 11:53 JST pnpm --filter @hierarchidb/shape-plugin typecheck を実行（exit 0）。
+
 2247) fix/ui-map/feature-list-column-toggle (P1) — 進行中 (2026-01-19)
 - ブランチ名: fix/ui-map/feature-list-column-toggle
 - 依存: なし
@@ -62,6 +163,22 @@
   - blocked: 2026-01-19 10:14 JST pnpm typecheck が exit 2（vt-orchestrator build:types で ShapeTransformErrorRecord に issueStage が無い）で失敗。
   - update: 2026-01-19 10:15 JST pnpm --filter @hierarchidb/plugin-service-api build を実行（exit 0、tsdown define 警告あり）。
   - done: 2026-01-19 10:16 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - update: 2026-01-19 10:20 JST ringFix/selfIntersection の invalid 発生箇所を特定するため、simplify の診断ログを拡充する対応に着手。
+  - done: 2026-01-19 10:28 JST ringFix/selfIntersection の invalid 診断ログを詳細化。
+  - done: 2026-01-19 10:29 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck を実行（exit 0）。
+  - update: 2026-01-19 10:35 JST simplify 診断ログにフィルタ用 prefix を付与。
+  - update: 2026-01-19 10:41 JST simplify が空でも preprocessing issue 集計ログを出力するよう順序を調整。
+  - done: 2026-01-19 10:42 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck を実行（exit 0）。
+  - update: 2026-01-19 10:48 JST ringFix/selfIntersection の invalid 時に詳細診断ログを出すよう追加。
+  - done: 2026-01-19 10:49 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck を実行（exit 0）。
+  - update: 2026-01-19 10:56 JST ringFix invalid を即 drop せず selfIntersection まで通し、交差後に ringFix を再適用する修正を追加。
+  - done: 2026-01-19 10:57 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck を実行（exit 0）。
+  - update: 2026-01-19 11:04 JST selfIntersection 後に unkink+ringFix で valid 回復を試みる経路を追加。
+  - done: 2026-01-19 11:05 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck を実行（exit 0）。
+  - update: 2026-01-19 11:12 JST ringFix/selfIntersection の invalid を unkink 経由で回復し、成功時に採用する経路を拡張。
+  - done: 2026-01-19 11:13 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck を実行（exit 0）。
+  - update: 2026-01-19 11:21 JST pipeline の各ステージ完了時にタスク件数を出す診断ログを追加。
+  - done: 2026-01-19 11:22 JST pnpm --filter @hierarchidb/shape-plugin typecheck を実行（exit 0）。
 
 2246) fix/shape/step6-preview-feature-atoms-expression (P1) — 進行中 (2026-01-17)
 - ブランチ名: fix/shape/step6-preview-feature-atoms-expression

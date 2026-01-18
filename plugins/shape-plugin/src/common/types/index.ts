@@ -16,7 +16,10 @@ export type {
   FeatureFilterMethod,
   FetchConfig,
   HybridFilterConfig,
+  OmitDetailsConfig,
+  OmitDetailsLevel,
   PreSimplifyFilterConfig,
+  SelfIntersectionTuningConfig,
   TransformConfig,
   VTConfig,
 } from '@hierarchidb/gis-sdk';

@@ -21,6 +21,9 @@ export type TaskProgressSummary = {
   skipped: number;
   buildStatus: BuildStatus;
   hasProgressData: boolean;
+  totalElapsedMs: number;
+  stageElapsedMs: number;
+  stageRemainingMs: number | null;
 };
 
 export type TaskProgressControls = {
@@ -62,6 +65,9 @@ export const taskProgressSummaryAtom = atom<TaskProgressSummary>({
   skipped: 0,
   buildStatus: 'idle',
   hasProgressData: false,
+  totalElapsedMs: 0,
+  stageElapsedMs: 0,
+  stageRemainingMs: null,
 });
 export const taskScrollTargetAtom = atom<TaskScrollTarget | null>(null);
 export const taskWarningMessageAtom = atom<string | null>(null);
