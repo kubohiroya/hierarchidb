@@ -18,10 +18,18 @@ Users need a single, predictable storage model for build artifacts across node t
 - [ ] Milestone 3: Move vector tile storage to ShapeDB/RouteDB/LocationDB.
 - [ ] Milestone 4: Update deletion flows (Step4 manual/auto delete + CoreDB delete hooks).
 - [ ] Milestone 5: Remove legacy packages and verify end-to-end behavior.
+- [ ] 2026-01-19 10:55 JST: pnpm test failed due to geoboundaries network ENOTFOUND in shape-plugin full-flow test; validation still blocked.
+- [ ] 2026-01-19 11:00 JST: pnpm test retry still failed with ENOTFOUND in shape-plugin full-flow test.
+- [ ] 2026-01-19 11:05 JST: pnpm test retry with NODE_OPTIONS=--dns-result-order=ipv4first still failed with ENOTFOUND in shape-plugin full-flow test.
+- [ ] 2026-01-19 11:12 JST: Attempted dns.setServers override for Node; dns.lookup still returned ENOTFOUND.
+- [ ] 2026-01-19 11:18 JST: pnpm test retry still failed with ENOTFOUND in shape-plugin full-flow test.
 
 ## Surprises & Discoveries
 
-- None yet.
+- Test validation depends on external geoboundaries connectivity; shape-plugin full-flow test fails when network/DNS is unavailable.
+  Evidence: `shape-vt-pipeline.full-flow.headless.test.ts` failed with ENOTFOUND for `www.geoboundaries.org` during pnpm test.
+- Node's `dns.setServers` does not affect `dns.lookup`, so overriding DNS servers in-process did not change the failure.
+  Evidence: `node -e "dns.setServers(...); dns.lookup(...)"` still returned ENOTFOUND.
 
 ## Decision Log
 

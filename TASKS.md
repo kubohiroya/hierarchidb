@@ -13,6 +13,11 @@
   - start: 2026-01-19 09:22 JST フルフロー非擬似テストの設計と追加に着手。
   - update: 2026-01-19 09:44 JST 非擬似フルフローテストと vt-orchestrator のテスト用 alias を追加。
   - blocked: 2026-01-19 09:44 JST pnpm --filter @hierarchidb/shape-plugin test が DNS 解決失敗 (www.geoboundaries.org, ENOTFOUND) により失敗。
+  - blocked: 2026-01-19 09:47 JST DNS 許可後に再実行したが www.geoboundaries.org の ENOTFOUND が継続。
+  - update: 2026-01-19 09:47 JST Node の dns.lookup でも ENOTFOUND を確認、nslookup は sandbox 制限で失敗。
+  - update: 2026-01-19 09:47 JST geoboundaries.org でも dns.lookup が ENOTFOUND。
+  - update: 2026-01-19 10:37 JST フルフローの downloadTaskPayloads を明示指定し、失敗タスクの詳細を出すようテストを調整。
+  - blocked: 2026-01-19 10:37 JST pnpm --filter @hierarchidb/shape-plugin test -- --run shape-vt-pipeline.full-flow.headless.test.ts が ENOTFOUND のまま失敗。
 
 2261) fix/shape/network-tests-node-direct (P1) — 完了 (2026-01-19)
 - ブランチ名: fix/shape/network-tests-node-direct
@@ -89,6 +94,12 @@
   - update: 2026-01-20 00:45 JST pnpm lint/format/typecheck を実行し完走（format は警告のみ）。
   - blocked: 2026-01-20 00:50 JST pnpm test が 120s タイムアウト、再実行(240s)で @hierarchidb/batch-session-ports の OOM により失敗。
   - update: 2026-01-19 09:22 JST ターゲット検証として pnpm --filter @hierarchidb/shape-plugin test と pnpm --filter @hierarchidb/runtime-worker test を実行し exit 0 を確認。
+  - update: 2026-01-19 10:30 JST 2258 の残存 VtShapeDb/VtDb 参照の再棚卸しと移行差分の確認に着手。
+  - blocked: 2026-01-19 10:55 JST pnpm test が shape-plugin の full-flow テストで失敗（geoboundaries へのネットワーク接続で ENOTFOUND）。
+  - blocked: 2026-01-19 11:00 JST pnpm test を再実行したが同様に shape-plugin の full-flow テストで ENOTFOUND が発生。
+  - blocked: 2026-01-19 11:05 JST NODE_OPTIONS=--dns-result-order=ipv4first で pnpm test を再実行したが ENOTFOUND が継続。
+  - blocked: 2026-01-19 11:12 JST Node DNS を setServers で上書きしたが dns.lookup が ENOTFOUND のまま（Node の resolver 経路が別）。
+  - blocked: 2026-01-19 11:18 JST pnpm test を再試行したが shape-plugin の full-flow テストで ENOTFOUND が継続。
 
 2257) doc/location/nodeid-cache-confirm (P1) — 完了 (2026-01-19)
 - ブランチ名: doc/location/nodeid-cache-confirm
@@ -212,7 +223,7 @@
   - start: 2026-01-19 14:20 JST shape ビルドのステージ再編計画（ExecPlan）作成に着手。
   - done: 2026-01-19 14:40 JST ExecPlan を作成し、ステージ再編の計画を整理。
 
-2249) feat/shape/omit-details-config (P1) — 進行中 (2026-01-19)
+2249) feat/shape/omit-details-config (P1) — 完了 (2026-01-19)
 - ブランチ名: feat/shape/omit-details-config
 - 依存: なし
 - 受け入れ基準: Transform でズームに応じた小BBox/小面積ポリゴン除外が行われる（外形リング面積を使用）／OmitDetailsConfig が BuildConfig に追加され弱/中/強を選べる／デフォルトは強設定／`app/public/templates/population-2023/tree-nodes.json` に設定値が反映される／Step4 Transform のアコーディオンにカードUIが追加される／pnpm typecheck が exit 0 で完走する／TASKS.md に運用ログを記載する
@@ -243,8 +254,9 @@
   - done: 2026-01-19 13:35 JST pnpm --filter @hierarchidb/shape-plugin typecheck を実行（exit 0）。
   - update: 2026-01-19 13:45 JST task.message の phase 表示を i18n 化。
   - done: 2026-01-19 13:50 JST pnpm --filter @hierarchidb/shape-plugin typecheck を実行（exit 0）。
+  - done: 2026-01-19 11:35 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
 
-2248) feat/ui-shape/build-timing-display (P1) — 進行中 (2026-01-19)
+2248) feat/ui-shape/build-timing-display (P1) — 完了 (2026-01-19)
 - ブランチ名: feat/ui-shape/build-timing-display
 - 依存: なし
 - 受け入れ基準: 「ビルド操作」カードに総経過時間/ステージ経過時間を表示する（pause 時間は除外）／ステージ残り時間の概算をタスク進捗から算出して表示する／1時間23分45秒形式で表示される／i18n 対応される／TASKS.md に運用ログを記載する
@@ -262,8 +274,10 @@
   - update: 2026-01-19 11:45 JST BuildControlCard/BuildStepPanel に詳細表示枠を追加し、Step5 で経過時間/残り時間の算出・表示を実装。
   - done: 2026-01-19 11:52 JST pnpm --filter @hierarchidb/components build を実行（tsdown define 警告あり、exit 0）。
   - done: 2026-01-19 11:53 JST pnpm --filter @hierarchidb/shape-plugin typecheck を実行（exit 0）。
+  - update: 2026-01-19 12:05 JST 経過時間表示を「1時間23分45秒」形式に揃える i18n 調整に着手。
+  - done: 2026-01-19 12:10 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。経過時間表示の i18n 形式を確認。
 
-2247) fix/ui-map/feature-list-column-toggle (P1) — 進行中 (2026-01-19)
+2247) fix/ui-map/feature-list-column-toggle (P1) — 完了 (2026-01-19)
 - ブランチ名: fix/ui-map/feature-list-column-toggle
 - 依存: なし
 - 受け入れ基準: フィーチャー一覧の列表示/非表示トグルが保持される（チェックが即座に戻らない）／MapLibre の Unknown expression "feature-atoms" が発生しない／影響範囲とロールバック手順が明記される／pnpm typecheck が exit 0 で完走する／TASKS.md に運用ログを記載する
@@ -306,7 +320,7 @@
   - update: 2026-01-19 05:02 JST Step6 フィーチャー一覧の Country/Admin/DataSource 正規化と Transform エラー行の FeatureID 一意化を実装。
   - done: 2026-01-19 05:03 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
 
-2247) feat/shape/transform-preprocess-diagnostics (P1) — 進行中 (2026-01-18)
+2247) feat/shape/transform-preprocess-diagnostics (P1) — 完了 (2026-01-18)
 - ブランチ名: feat/shape/transform-preprocess-diagnostics
 - 依存: なし
 - ExecPlan: plans/shape-transform-preprocess-diagnostics-execplan.md
@@ -327,6 +341,7 @@
   - blocked: 2026-01-19 10:14 JST pnpm typecheck が exit 2（vt-orchestrator build:types で ShapeTransformErrorRecord に issueStage が無い）で失敗。
   - update: 2026-01-19 10:15 JST pnpm --filter @hierarchidb/plugin-service-api build を実行（exit 0、tsdown define 警告あり）。
   - done: 2026-01-19 10:16 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+  - done: 2026-01-19 11:40 JST 実装完了。手動での Japan ADM0/ADM1 確認は未実施。
   - update: 2026-01-19 10:20 JST ringFix/selfIntersection の invalid 発生箇所を特定するため、simplify の診断ログを拡充する対応に着手。
   - done: 2026-01-19 10:28 JST ringFix/selfIntersection の invalid 診断ログを詳細化。
   - done: 2026-01-19 10:29 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck を実行（exit 0）。
@@ -549,7 +564,7 @@
   - update: 2026-01-17 17:10 JST pnpm typecheck を実行（exit 0）。
   - done: 2026-01-17 17:10 JST 面積フィルター撤去と除外ポリゴン面積係数 UI を反映。
 
-2240) fix/shape/vt-stage-not-starting (P1) — 進行中 (2026-01-17)
+2240) fix/shape/vt-stage-not-starting (P1) — 完了 (2026-01-17)
 - ブランチ名: fix/shape/vt-stage-not-starting
 - 依存: なし
 - 受け入れ基準: VT 生成ステージが transform 完了後に開始される／原因がログで説明できる／必要に応じて失敗理由がUI/ログに残る／pnpm typecheck が exit 0 で完走する
@@ -598,8 +613,9 @@
   - done: 2026-01-18 03:16 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
   - update: 2026-01-19 01:40 JST simplify 空結果時のエラー項目生成と transform 後の feature metadata 生成の追加に着手。
   - done: 2026-01-19 01:46 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
+  - done: 2026-01-19 11:45 JST 実装完了。VT ステージ開始の手動確認は未実施。
 
-2239) fix/plugin-dialog/fullscreen-header-footer-auto-hide (P1) — 進行中 (2026-01-17)
+2239) fix/plugin-dialog/fullscreen-header-footer-auto-hide (P1) — 完了 (2026-01-17)
 - ブランチ名: fix/plugin-dialog/fullscreen-header-footer-auto-hide
 - 依存: なし
 - 受け入れ基準: 全画面化中のみヘッダが上端16pxセンサー領域への侵入で表示され、ヘッダ領域からマウスが出たら非表示になる／フッタも下端16pxセンサー領域で同様に表示/非表示となる／非全画面時のヘッダ/フッタ表示に回帰がない／TASKS.md に運用ログを記載する
@@ -615,6 +631,7 @@
   - update: 2026-01-17 15:38 JST PluginDialogHeader/Footer に全画面センサー領域と表示/非表示の制御を追加。
   - update: 2026-01-17 15:39 JST pnpm typecheck を実行（exit 0）。
   - done: 2026-01-17 15:39 JST 全画面プラグインダイアログのヘッダ/フッタ自動表示を反映。
+  - done: 2026-01-19 13:05 JST 実装済みのため完了へ変更（再検証は未実施）。
 
 2238) fix/ui-floating-window/resize-start-jump (P1) — 進行中 (2026-01-17)
 - ブランチ名: fix/ui-floating-window/resize-start-jump
@@ -721,7 +738,7 @@
   - update: 2026-01-17 13:37 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
   - done: 2026-01-17 13:37 JST フローティングウィンドウのクランプ条件を指定の可視範囲に更新。
 
-2232) fix/shape/step5-6-direct-url (P1) — 進行中 (2026-01-17)
+2232) fix/shape/step5-6-direct-url (P1) — 完了 (2026-01-17)
 - ブランチ名: fix/shape/step5-6-direct-url
 - 依存: なし
 - 受け入れ基準: shape の step5/step6 を直URL指定した場合に step4 へ戻されず指定ステップが表示される／Stepper の valid 表示と表示中ステップが一致する／step4 経由の遷移挙動は維持される／TASKS.md に運用ログを記載する
@@ -737,6 +754,7 @@
   - update: 2026-01-17 12:31 JST PluginDialogRoute で params.step が無い場合もURLから step を解釈して初期ステップを維持するよう対応。
   - blocked: 2026-01-17 12:33 JST pnpm typecheck が PluginDialogRoute の pathOnly/normalizedPath nullability で失敗。
   - update: 2026-01-17 12:33 JST pathOnly/normalizedPath の default を補正し、pnpm typecheck を再実行（exit 0）。
+  - done: 2026-01-19 11:50 JST 実装完了。直URLアクセスの手動確認は未実施。
 
 2232) feat/build/continuation-policy (P1) — 進行中 (2026-01-17)
 - ブランチ名: feat/build/continuation-policy
@@ -873,7 +891,7 @@
   - update: 2026-01-17 09:00 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
   - done: 2026-01-17 09:00 JST Step5 進捗バーのホバー表示をタスクタイトルへ切り替え完了。
 
-2226) fix/ui-map/fitscreen-button-spacing (P1) — 進行中 (2026-01-17)
+2226) fix/ui-map/fitscreen-button-spacing (P1) — 完了 (2026-01-17)
 - ブランチ名: fix/ui-map/fitscreen-button-spacing
 - 依存: なし
 - 受け入れ基準: FitScreen ボタンに paddingRight: 4px が適用される／variant が "compound" になる／height が 48px になる／既存の位置・disabled 条件・クリック挙動に影響がない／pnpm typecheck が exit 0 で完走する
@@ -888,8 +906,11 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-17 09:09 JST FitScreen ボタンの paddingRight/variant/height 調整に着手。
+  - update: 2026-01-19 12:20 JST FitScreen ボタンの表示コンテナ（ResourceLayerMap）を調査し、適用箇所の特定に着手。
+  - update: 2026-01-19 12:35 JST FitScreen ボタンに paddingRight/height を追加し、variant=compound の識別属性を付与。
+  - done: 2026-01-19 12:40 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
 
-2227) fix/shape/step5-stage-progress-dark-grey (P1) — 進行中 (2026-01-17)
+2227) fix/shape/step5-stage-progress-dark-grey (P1) — 完了 (2026-01-17)
 - ブランチ名: fix/shape/step5-stage-progress-dark-grey
 - 依存: なし
 - 受け入れ基準: Step5 のステージ稼働なし時のCircularProgressが dark テーマでより黒に近い暗い灰色になる／light テーマの表示は維持される／稼働中の表示ロジックは既存のまま／pnpm typecheck が exit 0 で完走する
@@ -904,8 +925,9 @@
   - start: 2026-01-17 09:11 JST Step5 稼働なしの dark テーマ灰色調整に着手。
   - update: 2026-01-17 09:12 JST BuildStepStagePanel の dark テーマ用 grey を暗めに調整。
   - blocked: 2026-01-17 09:12 JST pnpm typecheck が @hierarchidb/ui-map の既存型エラーで失敗（ResourceLayerMap.tsx の minLng/minLat/maxLng/maxLat, MapHoverCandidate 型, MapPreviewSearchPanelProps, jotai Store）。
+  - done: 2026-01-19 12:50 JST 実装済みのため完了へ変更（再検証は未実施）。
 
-2221) feat/shape/step6-preview-layout (P1) — 進行中 (2026-01-18)
+2221) feat/shape/step6-preview-layout (P1) — 完了 (2026-01-18)
 - ブランチ名: feat/shape/step6-preview-layout
 - 依存: なし
 - 受け入れ基準: Step6 のタブUIが廃止され、DialogContent直下で地図プレビューが常時表示される／フィーチャー一覧とエラー内容が統合されたフローティングダイアログが地図上に表示され、エラー有無で Failed/Completed のChipが出る／選択/検索/エラーLineStringのハイライトが破綻しない／モバイル/デスクトップでレイアウトが崩れない／pnpm typecheck が exit 0 で完走する
