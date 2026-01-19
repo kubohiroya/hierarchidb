@@ -651,12 +651,14 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
             aria-label="Fit selection"
             onClick={handleFitSelection}
             disabled={selectedMatches.length === 0}
+            data-variant="compound"
             sx={{
               width: 29,
-              height: 29,
+              height: 48,
               minWidth: 29,
-              minHeight: 29,
+              minHeight: 48,
               p: 0,
+              pr: 0.5,
               m: 0,
               borderRadius: 0,
               bgcolor: 'background.paper',
