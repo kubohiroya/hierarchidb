@@ -295,6 +295,7 @@ const createFetchHandler = (params: {
       nodeId: params.nodeId,
       country: input.urlCountryCode,
       adminLevel: input.adminLevel,
+      endpoint: input.url,
       cacheKeyMode: 'url',
       retryConfig,
       timeout: params.buildConfig.fetchConfig.timeoutMs,

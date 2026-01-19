@@ -1,11 +1,12 @@
 2262) test/shape/full-flow-worker-pipeline (P1) — 進行中 (2026-01-19)
 - ブランチ名: test/shape/full-flow-worker-pipeline
 - 依存: なし
-- 受け入れ基準: shape の fetch/transform/vt を実処理で通す「擬似ではない」フルフローテストが追加されている／実データ取得と永続化を伴うことがテストから判別できる／実行コマンドと実行条件が明記されている／pnpm --filter @hierarchidb/shape-plugin test が exit 0／TASKS.md の運用ログに start/done/blocked が記載されている
-- 影響範囲: `plugins/shape-plugin/src/**`, `plugins/shape-plugin/vitest.config.ts`
+- 受け入れ基準: shape の fetch/transform/vt を実処理で通す「擬似ではない」フルフローテストが追加されている／Comlink/WorkerProvider 経路を通るフルフローテストが追加され、UI描画なしで JPN ADM0/ADM1 を選択して VT とフィーチャーメタデータ生成を検証できる／実データ取得と永続化を伴うことがテストから判別できる／実行コマンドと実行条件が明記されている／pnpm --filter @hierarchidb/shape-plugin test が exit 0／TASKS.md の運用ログに start/done/blocked が記載されている
+- 影響範囲: `plugins/shape-plugin/src/**`, `plugins/shape-plugin/vitest.config.ts`, `app/src/**`（必要に応じて追加）
 - ロールバック手順: 追加したフルフローテストを削除する
 - チェックリスト:
   - 実Worker/実データ/永続化を通すフルフローテストを追加する
+  - Comlink/WorkerProvider 経路のフルフローテストを追加する（UI描画なし、JPN ADM0/ADM1）
   - テストの実行条件（環境変数/時間目安）を明記する
   - pnpm --filter @hierarchidb/shape-plugin test を実行する
   - 運用ログ start/done/blocked を追記する
@@ -18,6 +19,17 @@
   - update: 2026-01-19 09:47 JST geoboundaries.org でも dns.lookup が ENOTFOUND。
   - update: 2026-01-19 10:37 JST フルフローの downloadTaskPayloads を明示指定し、失敗タスクの詳細を出すようテストを調整。
   - blocked: 2026-01-19 10:37 JST pnpm --filter @hierarchidb/shape-plugin test -- --run shape-vt-pipeline.full-flow.headless.test.ts が ENOTFOUND のまま失敗。
+  - update: 2026-01-19 10:43 JST テストの DB を削除してスキーマ差異を避ける調整と shape-store の test alias を追加。
+  - blocked: 2026-01-19 10:43 JST pnpm --filter @hierarchidb/shape-plugin test -- --run shape-vt-pipeline.full-flow.headless.test.ts が ENOTFOUND (www.geoboundaries.org) のまま失敗。
+  - update: 2026-01-19 10:45 JST DB削除タイミングを調整し DatabaseClosedError を回避する修正を実施。
+  - blocked: 2026-01-19 10:45 JST pnpm --filter @hierarchidb/shape-plugin test -- --run shape-vt-pipeline.full-flow.headless.test.ts が ENOTFOUND (www.geoboundaries.org) のまま失敗。
+  - update: 2026-01-19 10:51 JST NaturalEarth の download URL を endpoint として渡せるようにし、エラー原因の詳細を出力する修正を追加。
+  - blocked: 2026-01-19 10:51 JST pnpm --filter @hierarchidb/shape-plugin test -- --run shape-vt-pipeline.full-flow.headless.test.ts が ENOTFOUND (github.com) のまま失敗。
+  - start: 2026-01-20 11:05 JST Comlink/WorkerProvider 経路のフルフローテスト追加に着手。
+  - update: 2026-01-20 11:35 JST WorkerProvider 経路のフルフローテストを app 側に追加（JPN ADM0/ADM1、Comlink 経由）。
+  - update: 2026-01-20 11:55 JST app の vitest alias に @hierarchidb/vt-orchestrator の src を追加。
+  - blocked: 2026-01-20 11:56 JST pnpm --filter @hierarchidb/app test -- --run src/contexts/__tests__/shape-workerprovider.full-flow.test.tsx が RequestInit AbortSignal 型不一致で失敗。
+  - blocked: 2026-01-20 11:59 JST pnpm --filter @hierarchidb/app test -- --run src/contexts/__tests__/shape-workerprovider.full-flow.test.tsx が fetch failed で失敗（ネットワーク到達性）。
 
 2261) fix/shape/network-tests-node-direct (P1) — 完了 (2026-01-19)
 - ブランチ名: fix/shape/network-tests-node-direct

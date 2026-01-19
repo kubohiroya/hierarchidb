@@ -117,12 +117,20 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
     const cacheKeyMode = options?.cacheKeyMode ?? 'legacy';
     const retries = options?.retryConfig ?? { count: 1, delay: 0, backoff: 'exponential' } satisfies RetryConfig;
 
-    const selectedEndpoint = this.selectEndpoint(endpoint, adminLevel);
-    if (!selectedEndpoint || !this.config.access.endpoints?.[selectedEndpoint]) {
+    const isDirectUrl = typeof endpoint === 'string' && endpoint.startsWith('http');
+    const selectedEndpoint = isDirectUrl
+      ? endpoint
+      : this.selectEndpoint(endpoint, adminLevel);
+    if (!selectedEndpoint) {
+      throw new Error(`Unknown endpoint: ${selectedEndpoint}`);
+    }
+    if (!isDirectUrl && !this.config.access.endpoints?.[selectedEndpoint]) {
       throw new Error(`Unknown endpoint: ${selectedEndpoint}`);
     }
 
-    const downloadUrl = `${this.config.access.baseUrl}${this.config.access.endpoints[selectedEndpoint]}`;
+    const downloadUrl = isDirectUrl
+      ? selectedEndpoint
+      : `${this.config.access.baseUrl}${this.config.access.endpoints[selectedEndpoint]}`;
 
     console.log(`[NaturalEarth] Downloading from: ${downloadUrl}`);
 
@@ -170,7 +178,12 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
       };
 
     } catch (error) {
-      throw new Error(`Failed to download Natural Earth data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const baseMessage = error instanceof Error ? error.message : String(error);
+      const cause = error instanceof Error && error.cause
+        ? (error.cause instanceof Error ? error.cause.message : String(error.cause))
+        : '';
+      const suffix = cause ? ` (${cause})` : '';
+      throw new Error(`Failed to download Natural Earth data: ${baseMessage}${suffix}`);
     }
   }
 

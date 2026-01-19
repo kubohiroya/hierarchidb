@@ -2,19 +2,23 @@
 import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-types';
-import { VtTaskQueueDb, deleteTasksByNode, listTasksByStageAndStatus } from '@hierarchidb/vt-orchestrator';
-import { ephemeralShapeDB, shapeDB } from '@hierarchidb/shape-store';
 import { DEFAULT_BUILD_CONFIG } from '../../common/types/constants.js';
-import { runShapeVtPipeline } from '../../services/vt/shapeVtPipeline.js';
-import { shapeMutationAPIImpl } from '../../services/batch/ShapeBuildAPIClient.ts';
-import { metadataLoader } from '../../services/metadata/MetadataLoader.js';
-import { resolveCountryCodeForDataSource } from '../../services/utils/utils.js';
 import type { FetchTaskPayload } from '../../common/types/index.js';
 
 const nodeId = 'shape-full-flow-test-node' as NodeId;
+const APP_PREFIX = `hidb-test-shape-full-flow-${Math.random().toString(36).slice(2)}`;
+
+let VtTaskQueueDb: typeof import('@hierarchidb/vt-orchestrator').VtTaskQueueDb;
+let listTasksByStageAndStatus: typeof import('@hierarchidb/vt-orchestrator').listTasksByStageAndStatus;
+let ephemeralShapeDB: typeof import('@hierarchidb/shape-store').ephemeralShapeDB;
+let shapeDB: typeof import('@hierarchidb/shape-store').shapeDB;
+let runShapeVtPipeline: typeof import('../../services/vt/shapeVtPipeline.js').runShapeVtPipeline;
+let metadataLoader: typeof import('../../services/metadata/MetadataLoader.js').metadataLoader;
+let resolveCountryCodeForDataSource: typeof import('../../services/utils/utils.js').resolveCountryCodeForDataSource;
 
 const buildConfig = {
   ...DEFAULT_BUILD_CONFIG,
+  dataSourceName: 'geoboundaries',
   fetchConfig: {
     ...DEFAULT_BUILD_CONFIG.fetchConfig,
     maxConcurrent: 1,
@@ -59,17 +63,23 @@ const selectGeoBoundariesPayload = async (): Promise<FetchTaskPayload> => {
 };
 
 const clearNodeArtifacts = async (): Promise<void> => {
-  await shapeMutationAPIImpl.clearShapeArtifacts(nodeId);
-  await shapeDB.featureMetadata.where('nodeId').equals(nodeId).delete();
-  await shapeDB.sourceMetadata.where('nodeId').equals(nodeId).delete();
-  await shapeDB.vectorTiles.where('nodeId').equals(nodeId).delete();
-  await ephemeralShapeDB.clearNodeData(nodeId);
   const taskQueue = new VtTaskQueueDb();
-  await deleteTasksByNode(taskQueue, nodeId);
+  await taskQueue.delete();
   taskQueue.close();
 };
 
 describe('Shape full-flow pipeline', () => {
+  beforeEach(async () => {
+    (globalThis as { APP_PREFIX?: string }).APP_PREFIX = APP_PREFIX;
+    if (!VtTaskQueueDb) {
+      ({ VtTaskQueueDb, listTasksByStageAndStatus } = await import('@hierarchidb/vt-orchestrator'));
+      ({ ephemeralShapeDB, shapeDB } = await import('@hierarchidb/shape-store'));
+      ({ runShapeVtPipeline } = await import('../../services/vt/shapeVtPipeline.js'));
+      ({ metadataLoader } = await import('../../services/metadata/MetadataLoader.js'));
+      ({ resolveCountryCodeForDataSource } = await import('../../services/utils/utils.js'));
+    }
+  });
+
   beforeEach(async () => {
     await clearNodeArtifacts();
   });
