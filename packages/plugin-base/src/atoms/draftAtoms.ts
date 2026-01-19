@@ -242,12 +242,7 @@ export const updateStepStateAtom = atom(null, (_get, set, update: Partial<StepSt
  */
 export const setValidationResultAtom = atom(
   null,
-  (
-    get,
-    set,
-    stepId: string,
-    result: Omit<DialogStepValidationResult, 'stepId' | 'timestamp'>,
-  ) => {
+  (get, set, stepId: string, result: Omit<DialogStepValidationResult, 'stepId' | 'timestamp'>) => {
     const results = new Map(get(validationResultsAtom));
     results.set(stepId, {
       stepId,

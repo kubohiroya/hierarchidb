@@ -3,7 +3,7 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-types';
-import type { TreeConsoleActionDeps, MaybeCP } from '../types.js';
+import type { MaybeCP, TreeConsoleActionDeps } from '../types.js';
 import { fireCmdEvent, isCommandResult, showCommandError } from './helpers.ts';
 
 export const createHistoryActions = (deps: TreeConsoleActionDeps) => {

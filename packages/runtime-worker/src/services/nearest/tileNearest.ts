@@ -120,7 +120,7 @@ export function toTileCoord(lon: number, lat: number, z: number): TileCoord {
   const x = Math.floor(((lon + 180) / 360) * scale);
   const latRad = (lat * Math.PI) / 180;
   const y = Math.floor(
-    ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * scale,
+    ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * scale
   );
   return {
     x: Math.min(Math.max(x, 0), scale - 1),
@@ -146,8 +146,8 @@ export function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: 
   const rad = Math.PI / 180;
   const dLat = (lat2 - lat1) * rad;
   const dLon = (lon2 - lon1) * rad;
-  const a = Math.sin(dLat / 2) ** 2
-    + Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLon / 2) ** 2;
+  const a =
+    Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLon / 2) ** 2;
   return 2 * 6371000 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
@@ -162,7 +162,7 @@ export function findNearestInTree<T>(
   tree: BTree<T>,
   longitude: number,
   latitude: number,
-  distanceFn: DistanceFn<T>,
+  distanceFn: DistanceFn<T>
 ): NearestResult<T> {
   const seed = tree.findNearestKey(longitude);
   if (!seed) return { item: null, distanceMeters: null };
@@ -194,7 +194,7 @@ export function findWithinDistanceInTree<T>(
   longitude: number,
   latitude: number,
   maxDistanceMeters: number,
-  distanceFn: DistanceFn<T>,
+  distanceFn: DistanceFn<T>
 ): MatchResult<T>[] {
   if (!Number.isFinite(maxDistanceMeters) || maxDistanceMeters <= 0) {
     return [];

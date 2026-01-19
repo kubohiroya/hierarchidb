@@ -1,5 +1,4 @@
 import type { CountryMetadata, DataSourceName } from '../../common/types/index.js';
-import { normalizeDataSourceName } from '../utils/utils.js';
 import type { NodeId } from '@hierarchidb/common-types';
 import {
   assertDataSourceSupported,
@@ -39,22 +38,15 @@ export class MetadataLoader {
   /**
    * Load metadata for a specific data source
    */
-  async loadMetadata(dataSource: string, nodeId: NodeId): Promise<CountryMetadata[]> {
-    const normalized = normalizeDataSourceName(dataSource);
-    if (!normalized) {
-      console.warn(`No metadata file mapping for data source: ${dataSource}`);
-      return [];
-    }
-
-    const cacheKey = `${normalized}:${nodeId}`;
+  async loadMetadata(dataSource: DataSourceName, nodeId: NodeId): Promise<CountryMetadata[]> {
+    const cacheKey = `${dataSource}:${nodeId}`;
     if (this.metadataCache.has(cacheKey)) {
       return this.metadataCache.get(cacheKey)!;
     }
 
-    const loader = this.loaders[normalized];
+    const loader = this.loaders[dataSource];
     if (!loader) {
-      console.warn(`Unknown data source: ${normalized}`);
-      return [];
+      throw new Error(`Unknown data source: ${dataSource}`);
     }
     try {
       const metadata = await loader(nodeId);
@@ -64,7 +56,7 @@ export class MetadataLoader {
 
       return metadata;
     } catch (error) {
-      console.error(`Error loading metadata for ${normalized}:`, error);
+      console.error(`Error loading metadata for ${dataSource}:`, error);
       throw error instanceof Error ? error : new Error(String(error));
     }
   }
@@ -73,7 +65,7 @@ export class MetadataLoader {
    * Get metadata for a specific country
    */
   async getCountryMetadata(
-    dataSource: string,
+    dataSource: DataSourceName,
     countryCode: string,
     nodeId: NodeId,
   ): Promise<CountryMetadata | undefined> {
@@ -89,7 +81,7 @@ export class MetadataLoader {
    * Get metadata for multiple countries
    */
   async getCountriesMetadata(
-    dataSource: string,
+    dataSource: DataSourceName,
     countryCodes: string[],
     nodeId: NodeId,
   ): Promise<CountryMetadata[]> {
@@ -102,12 +94,10 @@ export class MetadataLoader {
   /**
    * Clear cache for a specific data source or all
    */
-  clearCache(dataSource?: string): void {
+  clearCache(dataSource?: DataSourceName): void {
     if (dataSource) {
-      const normalized = normalizeDataSourceName(dataSource);
-      if (!normalized) return;
       for (const key of this.metadataCache.keys()) {
-        if (key.startsWith(`${normalized}:`)) {
+        if (key.startsWith(`${dataSource}:`)) {
           this.metadataCache.delete(key);
         }
       }
@@ -119,8 +109,8 @@ export class MetadataLoader {
   /**
    * Get all available data sources
    */
-  getAvailableDataSources(): string[] {
-    return Object.keys(this.loaders);
+  getAvailableDataSources(): DataSourceName[] {
+    return Object.keys(this.loaders) as DataSourceName[];
   }
 }
 

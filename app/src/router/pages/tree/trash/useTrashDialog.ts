@@ -1,21 +1,27 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { NodeId, TreeNode, DialogDisplayMode, DialogPosition, DialogSize } from '@hierarchidb/common-types';
+import type {
+  DialogDisplayMode,
+  DialogPosition,
+  DialogSize,
+  NodeId,
+  TreeNode,
+} from '@hierarchidb/common-types';
 import {
   FRAME_CONSTANTS,
   getViewportSize,
   initialPosition,
   normalizeDialogState,
 } from '@hierarchidb/ui-plugin-shell/ui-dialog';
+import type { HierarchicalTreeNode, TreeTableColumn } from '@hierarchidb/ui-treeconsole-base';
 import { DualKeyMap } from '@hierarchidb/util';
 import { useNavigate } from '@tanstack/react-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { TreeTableColumn, HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
-import type { TrashDialogData, TrashDialogRouteParams } from './TrashDialog.js';
+import { WorkerAPIClient } from '~/worker-runtime/WorkerAPIClient.ts';
 import { buildTrashBreadcrumbs } from './buildTrashBreadcrumbs.js';
 import { buildTrashTreeData } from './buildTrashTreeData.js';
-import { getTrashDisplayName } from './getTrashDisplayName.js';
 import { emptyTrashBranch } from './emptyTrashBranch.js';
-import { WorkerAPIClient } from '~/worker-runtime/WorkerAPIClient.ts';
+import { getTrashDisplayName } from './getTrashDisplayName.js';
+import type { TrashDialogData, TrashDialogRouteParams } from './TrashDialog.js';
 
 const DEFAULT_SIZE: DialogSize = { width: 960, height: 640 };
 
@@ -104,16 +110,11 @@ export function useTrashFrameState(initialMode: DialogDisplayMode = 'normal') {
           ),
         };
         const centered = initialPosition(preset, viewport);
-        const normalized = normalizeDialogState(
-          preset,
-          centered,
-          viewport,
-          {
-            enforceTopLeftMargin: false,
-            minPosition: 0,
-            clampSizeToViewport: true,
-          }
-        );
+        const normalized = normalizeDialogState(preset, centered, viewport, {
+          enforceTopLeftMargin: false,
+          minPosition: 0,
+          clampSizeToViewport: true,
+        });
         applyNormalizedState(normalized.size, normalized.position);
       } else {
         const preset = normalizeDialogState(
@@ -251,16 +252,21 @@ export function useTrashDialog(data: TrashDialogData, params: TrashDialogRoutePa
           ...(source as { metadata?: TreeNode['metadata'] }).metadata,
           name: getTrashDisplayName(node),
           description:
-            ((source as { metadata?: TreeNode['metadata'] }).metadata as
-              | TreeNode['metadata']
-              | undefined)?.description ?? '',
+            (
+              (source as { metadata?: TreeNode['metadata'] }).metadata as
+                | TreeNode['metadata']
+                | undefined
+            )?.description ?? '',
           tags:
-            ((source as { metadata?: TreeNode['metadata'] }).metadata as
-              | TreeNode['metadata']
-              | undefined)?.tags ?? [],
+            (
+              (source as { metadata?: TreeNode['metadata'] }).metadata as
+                | TreeNode['metadata']
+                | undefined
+            )?.tags ?? [],
         },
         originalName:
-          fromTreeData.originalName ?? (source as { originalName?: string | undefined }).originalName,
+          fromTreeData.originalName ??
+          (source as { originalName?: string | undefined }).originalName,
         originalParentId:
           fromTreeData.originalParentId ??
           (source as { originalParentId?: NodeId | undefined }).originalParentId,

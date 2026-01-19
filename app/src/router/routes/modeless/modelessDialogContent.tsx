@@ -3,11 +3,29 @@
  * @description Content blocks for modeless map dialog windows.
  */
 
-import type { ResourceGeoJsonLayer, ResourceVectorLayer } from '@hierarchidb/ui-plugin-shell/ui-map';
+import type { NodeId } from '@hierarchidb/common-types';
+import { getLocationDB } from '@hierarchidb/location-store';
+import type { ShapeFeatureRecord } from '@hierarchidb/plugin-service-api';
+import { RouteDB, type RouteLineString } from '@hierarchidb/route-store';
+import { TabularDatabaseManager, TabularQueryService } from '@hierarchidb/tabular-store';
+import { GenericDataGrid, type GenericDataGridProps, type GridColumn } from '@hierarchidb/ui-grid';
+import type {
+  ResourceGeoJsonLayer,
+  ResourceVectorLayer,
+} from '@hierarchidb/ui-plugin-shell/ui-map';
+import {
+  type MapHighlightEntry,
+  mapHoverMatchesAtom,
+  mapSearchMatchesAtom,
+  mapSelectedMatchesAtom,
+  mapViewportFeatureIdsAtom,
+} from '@hierarchidb/ui-plugin-shell/ui-map';
+import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
+import { getDBName } from '@hierarchidb/util';
 import {
   Box,
-  CircularProgress,
   Checkbox,
+  CircularProgress,
   Divider,
   List,
   ListItem,
@@ -18,29 +36,10 @@ import {
   Typography,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type React from 'react';
-import { GenericDataGrid, type GenericDataGridProps, type GridColumn } from '@hierarchidb/ui-grid';
-import type { NodeId } from '@hierarchidb/common-types';
-import type { ShapeFeatureRecord } from '@hierarchidb/plugin-service-api';
-import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
-import { RouteDB, type RouteLineString } from '@hierarchidb/route-store';
-import { getLocationDB } from '@hierarchidb/location-store';
-import { TabularDatabaseManager, TabularQueryService } from '@hierarchidb/tabular-store';
-import { getDBName } from '@hierarchidb/util';
 import { useAtomValue, useSetAtom } from 'jotai';
-import {
-  mapHoverMatchesAtom,
-  mapSearchMatchesAtom,
-  mapSelectedMatchesAtom,
-  mapViewportFeatureIdsAtom,
-  type MapHighlightEntry,
-} from '@hierarchidb/ui-plugin-shell/ui-map';
-import type {
-  MapFeatureIdSet,
-  MapLayerInfo,
-  MapNodeType,
-} from '../../../state/mapSearch.atoms.js';
+import type React from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { MapFeatureIdSet, MapLayerInfo, MapNodeType } from '../../../state/mapSearch.atoms.js';
 import { mapLayerInfoAtom } from '../../../state/mapSearch.atoms.js';
 import type { MapStylerSummary } from '../map/types.js';
 
@@ -130,11 +129,19 @@ const useShapeTableData = (
   nodeId: NodeId | null,
   page: number,
   rowsPerPage: number,
-  visibleIds?: Set<string | number> | null,
+  visibleIds?: Set<string | number> | null
 ): DataGridState => {
   const [state, setState] = useState<DataGridState>({
     rows: [],
-    columns: buildColumns(['id', 'name', 'countryCode', 'adminLevel', 'area', 'population', 'geometryType']),
+    columns: buildColumns([
+      'id',
+      'name',
+      'countryCode',
+      'adminLevel',
+      'area',
+      'population',
+      'geometryType',
+    ]),
     loading: false,
   });
 
@@ -180,7 +187,9 @@ const useShapeTableData = (
             rows,
             loading: false,
             totalRows,
-            emptyMessage: filterByViewport ? 'No visible features in the current map view.' : undefined,
+            emptyMessage: filterByViewport
+              ? 'No visible features in the current map view.'
+              : undefined,
           }));
         }
       } catch (error) {
@@ -207,12 +216,21 @@ const useRouteTableData = (
   nodeId: NodeId | null,
   page: number,
   rowsPerPage: number,
-  visibleIds?: Set<string | number> | null,
+  visibleIds?: Set<string | number> | null
 ): DataGridState => {
   const routeDb = useMemo(() => new RouteDB(), []);
   const [state, setState] = useState<DataGridState>({
     rows: [],
-    columns: buildColumns(['id', 'name', 'routeMode', 'startName', 'endName', 'distance', 'speed', 'featureId']),
+    columns: buildColumns([
+      'id',
+      'name',
+      'routeMode',
+      'startName',
+      'endName',
+      'distance',
+      'speed',
+      'featureId',
+    ]),
     loading: false,
   });
 
@@ -231,9 +249,7 @@ const useRouteTableData = (
             totalRows = 0;
             items = [];
           } else {
-            const filtered = await collection
-              .and((line) => visibleIds.has(line.id))
-              .toArray();
+            const filtered = await collection.and((line) => visibleIds.has(line.id)).toArray();
             totalRows = filtered.length;
             items = filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
           }
@@ -260,7 +276,9 @@ const useRouteTableData = (
             rows,
             loading: false,
             totalRows,
-            emptyMessage: filterByViewport ? 'No visible features in the current map view.' : undefined,
+            emptyMessage: filterByViewport
+              ? 'No visible features in the current map view.'
+              : undefined,
           }));
         }
       } catch (error) {
@@ -285,7 +303,7 @@ const useRouteTableData = (
 
 const useLocationTableData = (
   nodeId: NodeId | null,
-  visibleIds?: Set<string | number> | null,
+  visibleIds?: Set<string | number> | null
 ): DataGridState => {
   const [state, setState] = useState<DataGridState>({
     rows: [],
@@ -327,9 +345,8 @@ const useLocationTableData = (
           : rows;
         const truncated = filteredRows.length > MAX_ROWS;
         const trimmedRows = filteredRows.slice(0, MAX_ROWS) as DataGridRow[];
-        const derivedColumns = columnNames.length > 0
-          ? columnNames
-          : Object.keys(trimmedRows[0] ?? {});
+        const derivedColumns =
+          columnNames.length > 0 ? columnNames : Object.keys(trimmedRows[0] ?? {});
         if (!cancelled) {
           setState({
             rows: trimmedRows,
@@ -337,7 +354,9 @@ const useLocationTableData = (
             loading: false,
             truncated,
             totalRows: filterByViewport ? filteredRows.length : metadata?.totalRows,
-            emptyMessage: filterByViewport ? 'No visible features in the current map view.' : undefined,
+            emptyMessage: filterByViewport
+              ? 'No visible features in the current map view.'
+              : undefined,
           });
         }
       } catch (error) {
@@ -361,38 +380,57 @@ const useLocationTableData = (
   return state;
 };
 
-export const MapInfoContent: React.FC<{ formattedZxy: string; info: MapInfoSummary }> = ({ formattedZxy, info }) => (
+export const MapInfoContent: React.FC<{ formattedZxy: string; info: MapInfoSummary }> = ({
+  formattedZxy,
+  info,
+}) => (
   <Stack spacing={1}>
     <Box>
-      <Typography variant="overline" color="text.secondary">Name</Typography>
+      <Typography variant="overline" color="text.secondary">
+        Name
+      </Typography>
       <Typography variant="body2">{formatText(info.name)}</Typography>
     </Box>
     <Box>
-      <Typography variant="overline" color="text.secondary">Description</Typography>
+      <Typography variant="overline" color="text.secondary">
+        Description
+      </Typography>
       <Typography variant="body2">{formatText(info.description)}</Typography>
     </Box>
     <Box>
-      <Typography variant="overline" color="text.secondary">Created At</Typography>
+      <Typography variant="overline" color="text.secondary">
+        Created At
+      </Typography>
       <Typography variant="body2">{formatTimestamp(info.createdAt)}</Typography>
     </Box>
     <Box>
-      <Typography variant="overline" color="text.secondary">Updated At</Typography>
+      <Typography variant="overline" color="text.secondary">
+        Updated At
+      </Typography>
       <Typography variant="body2">{formatTimestamp(info.updatedAt)}</Typography>
     </Box>
     <Box>
-      <Typography variant="overline" color="text.secondary">Tags</Typography>
+      <Typography variant="overline" color="text.secondary">
+        Tags
+      </Typography>
       <Typography variant="body2">
-        {(info.tags && info.tags.length > 0) ? info.tags.join(', ') : '—'}
+        {info.tags && info.tags.length > 0 ? info.tags.join(', ') : '—'}
       </Typography>
     </Box>
     <Box>
-      <Typography variant="overline" color="text.secondary">Path</Typography>
+      <Typography variant="overline" color="text.secondary">
+        Path
+      </Typography>
       <Typography variant="body2">{formatText(info.path)}</Typography>
     </Box>
     <Divider />
     <Stack spacing={0.5}>
-      <Typography variant="body2">URL Format: <code>?zxy=zoom,lng,lat</code></Typography>
-      <Typography variant="body2">Current: <code>?zxy={formattedZxy}</code></Typography>
+      <Typography variant="body2">
+        URL Format: <code>?zxy=zoom,lng,lat</code>
+      </Typography>
+      <Typography variant="body2">
+        Current: <code>?zxy={formattedZxy}</code>
+      </Typography>
     </Stack>
   </Stack>
 );
@@ -406,7 +444,9 @@ export const MapLayerContent: React.FC<{
     <Box>
       <Typography variant="subtitle2">Basemaps</Typography>
       {basemapStyles.length === 0 ? (
-        <Typography variant="body2" color="text.secondary">No basemap styles.</Typography>
+        <Typography variant="body2" color="text.secondary">
+          No basemap styles.
+        </Typography>
       ) : (
         <List dense>
           {basemapStyles.map((style) => (
@@ -421,7 +461,9 @@ export const MapLayerContent: React.FC<{
     <Box>
       <Typography variant="subtitle2">Vector Layers</Typography>
       {vectorLayers.length === 0 ? (
-        <Typography variant="body2" color="text.secondary">No vector layers.</Typography>
+        <Typography variant="body2" color="text.secondary">
+          No vector layers.
+        </Typography>
       ) : (
         <List dense>
           {vectorLayers.map((layer) => (
@@ -436,7 +478,9 @@ export const MapLayerContent: React.FC<{
     <Box>
       <Typography variant="subtitle2">GeoJSON Layers</Typography>
       {geoJsonLayers.length === 0 ? (
-        <Typography variant="body2" color="text.secondary">No GeoJSON layers.</Typography>
+        <Typography variant="body2" color="text.secondary">
+          No GeoJSON layers.
+        </Typography>
       ) : (
         <List dense>
           {geoJsonLayers.map((layer) => (
@@ -484,10 +528,10 @@ export const MapStylerContent: React.FC<{
   const rows: StylerRow[] = stylerSummaries.map((entry) => {
     const enabled = stylerToggles[entry.nodeId] ?? entry.enabled;
     const colorChart = formatStops(
-      (entry.colorStops ?? []).map((item) => ({ key: item.key, value: item.color })),
+      (entry.colorStops ?? []).map((item) => ({ key: item.key, value: item.color }))
     );
     const scalarChart = formatStops(
-      (entry.scalarStops ?? []).map((item) => ({ key: item.key, value: String(item.scalarValue) })),
+      (entry.scalarStops ?? []).map((item) => ({ key: item.key, value: String(item.scalarValue) }))
     );
     return {
       id: entry.nodeId,
@@ -531,7 +575,9 @@ export const MapStylerContent: React.FC<{
   if (rows.length === 0) {
     return (
       <Box p={2}>
-        <Typography variant="body2" color="text.secondary">No styler entries.</Typography>
+        <Typography variant="body2" color="text.secondary">
+          No styler entries.
+        </Typography>
       </Box>
     );
   }
@@ -574,9 +620,7 @@ const DataGridPanel: React.FC<{
   rowSx,
 }) => {
   const totalCount = state.totalRows ?? state.rows.length;
-  const shouldPaginate = Boolean(
-    pagination?.enabled && totalCount > pagination.rowsPerPage,
-  );
+  const shouldPaginate = Boolean(pagination?.enabled && totalCount > pagination.rowsPerPage);
   if (state.loading) {
     return (
       <Box p={3} display="flex" justifyContent="center">
@@ -600,7 +644,7 @@ const DataGridPanel: React.FC<{
         maxHeight={360}
         error={state.error}
         emptyComponent={renderEmptyState(state.emptyMessage)}
-        page={shouldPaginate ? pagination?.page ?? 0 : 0}
+        page={shouldPaginate ? (pagination?.page ?? 0) : 0}
         rowsPerPage={pagination?.rowsPerPage ?? 100}
         rowsPerPageOptions={pagination?.rowsPerPageOptions ?? [100]}
         onPageChange={shouldPaginate ? pagination?.onPageChange : undefined}
@@ -610,7 +654,11 @@ const DataGridPanel: React.FC<{
         hoveredRows={hoveredRows}
         onRowHover={onRowHover}
         onRowLeave={onRowLeave}
-        onRowClick={onRowClick ? (row) => onRowClick(row, (row as { id?: string | number }).id ?? '') : undefined}
+        onRowClick={
+          onRowClick
+            ? (row) => onRowClick(row, (row as { id?: string | number }).id ?? '')
+            : undefined
+        }
         rowSx={rowSx}
       />
     </Stack>
@@ -659,43 +707,58 @@ export const MapGeneratedDataContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }
     return map;
   }, [mapLayerInfo]);
 
-  const resolveEntryLayerInfo = useCallback((entry: MapHighlightEntry) => {
-    if (entry.nodeId && isMapNodeType(entry.nodeType)) {
-      return { nodeId: entry.nodeId, nodeType: entry.nodeType };
-    }
-    if (entry.layerId && layerInfoById.has(entry.layerId)) {
-      const info = layerInfoById.get(entry.layerId);
-      if (info) return { nodeId: info.nodeId, nodeType: info.nodeType };
-    }
-    if (layerInfoBySource.has(entry.source)) {
-      const info = layerInfoBySource.get(entry.source);
-      if (info) return { nodeId: info.nodeId, nodeType: info.nodeType };
-    }
-    return null;
-  }, [layerInfoById, layerInfoBySource]);
-
-  const entriesToIdSet = useCallback((entries: MapHighlightEntry[]): MapFeatureIdSet => {
-    const next: MapFeatureIdSet = {};
-    entries.forEach((entry) => {
-      const info = resolveEntryLayerInfo(entry);
-      if (!info) return;
-      if (!next[info.nodeId]) next[info.nodeId] = {};
-      const current = next[info.nodeId]?.[info.nodeType] ?? new Set<string | number>();
-      current.add(entry.id);
-      if(next[info.nodeId]){
-        next[info.nodeId] = {};
+  const resolveEntryLayerInfo = useCallback(
+    (entry: MapHighlightEntry) => {
+      if (entry.nodeId && isMapNodeType(entry.nodeType)) {
+        return { nodeId: entry.nodeId, nodeType: entry.nodeType };
       }
-      next[info.nodeId] = {
-        ...next[info.nodeId],
-        [info.nodeType]: current
-      };
-    });
-    return next;
-  }, [resolveEntryLayerInfo]);
+      if (entry.layerId && layerInfoById.has(entry.layerId)) {
+        const info = layerInfoById.get(entry.layerId);
+        if (info) return { nodeId: info.nodeId, nodeType: info.nodeType };
+      }
+      if (layerInfoBySource.has(entry.source)) {
+        const info = layerInfoBySource.get(entry.source);
+        if (info) return { nodeId: info.nodeId, nodeType: info.nodeType };
+      }
+      return null;
+    },
+    [layerInfoById, layerInfoBySource]
+  );
 
-  const searchMatchIdSet = useMemo(() => entriesToIdSet(searchMatches), [entriesToIdSet, searchMatches]);
-  const hoverMatchIdSet = useMemo(() => entriesToIdSet(hoverMatches), [entriesToIdSet, hoverMatches]);
-  const selectedMatchIdSet = useMemo(() => entriesToIdSet(selectedMatches), [entriesToIdSet, selectedMatches]);
+  const entriesToIdSet = useCallback(
+    (entries: MapHighlightEntry[]): MapFeatureIdSet => {
+      const next: MapFeatureIdSet = {};
+      entries.forEach((entry) => {
+        const info = resolveEntryLayerInfo(entry);
+        if (!info) return;
+        if (!next[info.nodeId]) next[info.nodeId] = {};
+        const current = next[info.nodeId]?.[info.nodeType] ?? new Set<string | number>();
+        current.add(entry.id);
+        if (next[info.nodeId]) {
+          next[info.nodeId] = {};
+        }
+        next[info.nodeId] = {
+          ...next[info.nodeId],
+          [info.nodeType]: current,
+        };
+      });
+      return next;
+    },
+    [resolveEntryLayerInfo]
+  );
+
+  const searchMatchIdSet = useMemo(
+    () => entriesToIdSet(searchMatches),
+    [entriesToIdSet, searchMatches]
+  );
+  const hoverMatchIdSet = useMemo(
+    () => entriesToIdSet(hoverMatches),
+    [entriesToIdSet, hoverMatches]
+  );
+  const selectedMatchIdSet = useMemo(
+    () => entriesToIdSet(selectedMatches),
+    [entriesToIdSet, selectedMatches]
+  );
 
   const viewportIdSet = useMemo<MapFeatureIdSet | null>(() => {
     if (!viewportFeatureIds) return null;
@@ -704,11 +767,11 @@ export const MapGeneratedDataContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }
       const info = layerInfoById.get(layerId);
       if (!info) return;
       if (!next[info.nodeId]) {
-        next[info.nodeId] = {}
+        next[info.nodeId] = {};
       }
       next[info.nodeId] = {
         ...next[info.nodeId],
-        [info.nodeType]: new Set(ids)
+        [info.nodeType]: new Set(ids),
       };
     });
     return next;
@@ -723,7 +786,7 @@ export const MapGeneratedDataContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }
       const ids = entry[nodeType];
       return ids ? new Set(ids) : new Set<string | number>();
     },
-    [layerInfoByType, nodeKey, viewportIdSet],
+    [layerInfoByType, nodeKey, viewportIdSet]
   );
 
   const shapeVisibleIds = useMemo(() => getViewportIds('shape'), [getViewportIds]);
@@ -737,7 +800,7 @@ export const MapGeneratedDataContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }
       const ids = entry[nodeType];
       return ids ? new Set(ids) : new Set<string | number>();
     },
-    [nodeKey, searchMatchIdSet],
+    [nodeKey, searchMatchIdSet]
   );
 
   const getHoveredRows = useCallback(
@@ -747,7 +810,7 @@ export const MapGeneratedDataContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }
       const ids = entry[nodeType];
       return ids ? new Set(ids) : new Set<string | number>();
     },
-    [hoverMatchIdSet, nodeKey],
+    [hoverMatchIdSet, nodeKey]
   );
 
   const getSelectedRows = useCallback(
@@ -757,7 +820,7 @@ export const MapGeneratedDataContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }
       const ids = entry[nodeType];
       return ids ? new Set(ids) : new Set<string | number>();
     },
-    [nodeKey, selectedMatchIdSet],
+    [nodeKey, selectedMatchIdSet]
   );
 
   const buildEntryForRow = useCallback(
@@ -773,14 +836,14 @@ export const MapGeneratedDataContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }
         nodeType: info.nodeType,
       };
     },
-    [layerInfoByType],
+    [layerInfoByType]
   );
 
   const updateEntrySelection = useCallback(
     (
       prev: MapHighlightEntry[],
       mode: 'replace' | 'toggle' | 'clear',
-      entry: MapHighlightEntry | null,
+      entry: MapHighlightEntry | null
     ): MapHighlightEntry[] => {
       if (mode === 'clear') return [];
       if (!entry) return prev;
@@ -796,7 +859,7 @@ export const MapGeneratedDataContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }
       }
       return Array.from(next.values());
     },
-    [],
+    []
   );
 
   const rowSx = useCallback<DataGridRowSx>(
@@ -818,7 +881,7 @@ export const MapGeneratedDataContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }
       }
       return Object.keys(sx).length > 0 ? sx : undefined;
     },
-    [theme.palette.primary.main],
+    [theme.palette.primary.main]
   );
 
   const shapeState = useShapeTableData(nodeId, shapePage, shapeRowsPerPage, shapeVisibleIds);

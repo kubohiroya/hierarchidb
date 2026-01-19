@@ -54,7 +54,10 @@ export async function executeCoreCommand(
     case 'commitDraft':
       return handleCommitDraft(envelope, deps);
     case 'invalidCommand':
-      return deps.createErrorResult('Command not supported', WorkerErrorCodeValue.INVALID_OPERATION);
+      return deps.createErrorResult(
+        'Command not supported',
+        WorkerErrorCodeValue.INVALID_OPERATION
+      );
     default:
       return null;
   }
@@ -146,7 +149,8 @@ async function handleUpdateNode(
       ...(meta && {
         metadata: {
           name: meta.name ?? node.metadata.name,
-          description: meta.description !== undefined ? meta.description : node.metadata.description,
+          description:
+            meta.description !== undefined ? meta.description : node.metadata.description,
           tags: meta.tags ?? node.metadata.tags ?? [],
         },
       }),
@@ -169,7 +173,7 @@ async function handleMoveNodes(
   deps: CoreCommandDeps
 ): Promise<CommandResult> {
   try {
-      // no-op: cleaner removed in draftData model
+    // no-op: cleaner removed in draftData model
     const payload = envelope.payload as {
       nodeIds: NodeId[];
       toParentId: NodeId;
@@ -192,7 +196,8 @@ async function handleMoveNodes(
       let originalNamePatch: string | undefined;
       if (payload.onNameConflict === 'auto-rename') {
         if (siblingNames.has(nextName)) {
-          originalNamePatch = (node as { originalName?: string }).originalName ?? node.metadata.name;
+          originalNamePatch =
+            (node as { originalName?: string }).originalName ?? node.metadata.name;
           nextName = createNewName(Array.from(siblingNames), nextName);
         }
         siblingNames.add(nextName);
@@ -611,7 +616,10 @@ async function handleCommitDraft(
 
     const wcNode = await deps.coreDB.nodes.get(payload.draftId);
     if (!wcNode) {
-      return deps.createErrorResult('Working copy not found', WorkerErrorCodeValue.INVALID_OPERATION);
+      return deps.createErrorResult(
+        'Working copy not found',
+        WorkerErrorCodeValue.INVALID_OPERATION
+      );
     }
     const wcSnapshot: TreeNode = { ...wcNode };
     const result = await commitDraft(

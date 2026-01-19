@@ -1,9 +1,8 @@
-import { PluginDialogFrame } from '@hierarchidb/ui-dialog';
+import { PluginDialogFrame, UnsavedChangesDialog } from '@hierarchidb/ui-dialog';
+import type { Theme } from '@mui/material';
 import type React from 'react';
-import { UnsavedChangesDialog } from '@hierarchidb/ui-dialog';
 import type { PluginDialogControllerOptions } from './usePluginDialogController.js';
 import { usePluginDialogController } from './usePluginDialogController.js';
-import type { Theme } from '@mui/material';
 
 export interface PluginDialogShellProps extends PluginDialogControllerOptions {
   backdropDismissEnabled?: boolean;
@@ -11,11 +10,10 @@ export interface PluginDialogShellProps extends PluginDialogControllerOptions {
 
 export const PluginDialogShell: React.FC<PluginDialogShellProps> = (props) => {
   const { backdropDismissEnabled, ...controllerOptions } = props;
-  const { headlessProps, unsavedChangeDialog, conflictDialog } = usePluginDialogController(controllerOptions);
+  const { headlessProps, unsavedChangeDialog, conflictDialog } =
+    usePluginDialogController(controllerOptions);
 
-  const backdropSx = unsavedChangeDialog?.open
-    ? { pointerEvents: 'none' as const }
-    : undefined;
+  const backdropSx = unsavedChangeDialog?.open ? { pointerEvents: 'none' as const } : undefined;
 
   const unsavedDialogSlotProps = {
     backdrop: {

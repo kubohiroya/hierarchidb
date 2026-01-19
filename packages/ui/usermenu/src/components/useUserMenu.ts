@@ -1,8 +1,8 @@
 import { type AuthProviderType, useAuth } from '@hierarchidb/ui-auth';
-import { useLanguage, detectUserLanguage } from '@hierarchidb/ui-i18n';
-import { ThemeContext } from '@hierarchidb/ui-theme';
-import { useContext, useEffect, useId, useState, useCallback } from 'react';
+import { detectUserLanguage, useLanguage } from '@hierarchidb/ui-i18n';
 import type { ThemeMode } from '@hierarchidb/ui-theme';
+import { ThemeContext } from '@hierarchidb/ui-theme';
+import { useCallback, useContext, useEffect, useId, useState } from 'react';
 
 export type LanguageSelection = 'system' | string;
 
@@ -49,7 +49,8 @@ export interface UserMenuState {
 }
 
 export const useUserMenu = (): UserMenuState => {
-  const hasDom = typeof document !== 'undefined' && typeof window !== 'undefined' && !!document.body;
+  const hasDom =
+    typeof document !== 'undefined' && typeof window !== 'undefined' && !!document.body;
   const { user, signIn, signOut, auth } = useAuth();
   const themeContext = useContext(ThemeContext);
   const { currentLanguage, changeLanguage, supportedLanguages } = useLanguage();
@@ -90,7 +91,9 @@ export const useUserMenu = (): UserMenuState => {
         setAvatarUrl(undefined);
         return;
       }
-      const storageAny = (navigator as unknown as { storage?: { getDirectory?: () => Promise<unknown> } }).storage;
+      const storageAny = (
+        navigator as unknown as { storage?: { getDirectory?: () => Promise<unknown> } }
+      ).storage;
       if (!storageAny?.getDirectory) {
         setAvatarUrl(pictureUrl);
         return;
@@ -163,7 +166,9 @@ export const useUserMenu = (): UserMenuState => {
       if (typeof window !== 'undefined') {
         localStorage.setItem('app.lang', code);
         localStorage.setItem('preferred-language', targetCode);
-        window.dispatchEvent(new CustomEvent('hierarchidb-language-change', { detail: { lang: code } }));
+        window.dispatchEvent(
+          new CustomEvent('hierarchidb-language-change', { detail: { lang: code } })
+        );
       }
       setLanguageMenuAnchorEl(null);
       setUserMenuAnchorEl(null);

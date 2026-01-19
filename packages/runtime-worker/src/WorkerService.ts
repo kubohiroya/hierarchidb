@@ -1,24 +1,3 @@
-import { SingletonMixin } from '@hierarchidb/util';
-import { CoreDB } from './services/CoreDB.js';
-import { bootstrapFeatures } from './services/FeatureBootstrap.js';
-import { enableAllExporters, enableAllImporters } from '@hierarchidb/import-export';
-import { TagDBPortCoreDBAdapter } from './services/adapters/TagDBPortCoreDBAdapter.js';
-import { TagService } from '@hierarchidb/tag';
-import { CommandProcessor } from './services/CommandProcessor.js';
-import { TreeQueryService } from './services/TreeQueryService.js';
-import { TreeMutationService } from './services/TreeMutationService.js';
-import { TreeSubscriptionService } from './services/TreeSubscriptionService.js';
-import { NodeLifecycleManager } from './services/NodeLifecycleManager.js';
-import { TreeTableExpandedService } from './services/TreeTableExpandedService.js';
-import { ImportExportDBPortCoreDBAdapter } from './services/adapters/ImportExportDBPortCoreDBAdapter.js';
-import { TreeNodeUpdaterService } from './services/TreeNodeUpdaterService.js';
-import type {
-  PluginLifecycleAPI,
-  ShapeMutationAPI,
-  ShapeQueryAPI,
-  StyleMutationAPI,
-  StyleQueryAPI,
-} from '@hierarchidb/plugin-service-api';
 import type {
   ImportExportAPI,
   TagAPI,
@@ -28,36 +7,59 @@ import type {
   TreeSubscriptionAPI,
   TreeTableExpandedAPI,
 } from '@hierarchidb/common-api';
-import type { NodeId, NodeType} from '@hierarchidb/common-types';
-import { UIStateDB } from './services/UIStateDB.js';
-
+import type { NodeId, NodeType } from '@hierarchidb/common-types';
+import { enableAllExporters, enableAllImporters } from '@hierarchidb/import-export';
 import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/location-store';
-import type { RouteDatabaseHandle, RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/route-store';
+import type {
+  PluginLifecycleAPI,
+  ShapeMutationAPI,
+  ShapeQueryAPI,
+  StyleMutationAPI,
+  StyleQueryAPI,
+} from '@hierarchidb/plugin-service-api';
+import type {
+  RouteDatabaseHandle,
+  RouteMutationAPI,
+  RouteQueryAPI,
+} from '@hierarchidb/route-store';
 import { RouteDB } from '@hierarchidb/route-store';
 import { ShapeDB } from '@hierarchidb/shape-store';
-import { StyleService } from './services/StyleService.js';
-import { ShapeQueryService } from './services/ShapeQueryService.js';
-import { ShapeMutationService } from './services/ShapeMutationService.js';
-import { LocationQueryService } from './services/LocationQueryService.js';
-import { LocationMutationService } from './services/LocationMutationService.js';
-import { RouteQueryService } from './services/RouteQueryService.js';
-import { RouteMutationService } from './services/RouteMutationService.js';
-import { EntityLifecycleManager } from './entity/EntityLifecycleManager.js';
-import type { RuntimePluginDefinition } from './types/RuntimePluginDefinition.js';
-import { ImportExportLifecycleService } from './services/ImportExportLifecycleService.js';
 import { StylerDB } from '@hierarchidb/styler-store';
+import { TagService } from '@hierarchidb/tag';
+import { SingletonMixin } from '@hierarchidb/util';
+import { EntityLifecycleManager } from './entity/EntityLifecycleManager.js';
+import { ImportExportDBPortCoreDBAdapter } from './services/adapters/ImportExportDBPortCoreDBAdapter.js';
+import { TagDBPortCoreDBAdapter } from './services/adapters/TagDBPortCoreDBAdapter.js';
+import { CommandProcessor } from './services/CommandProcessor.js';
+import { CoreDB } from './services/CoreDB.js';
+import { bootstrapFeatures } from './services/FeatureBootstrap.js';
+import { ImportExportLifecycleService } from './services/ImportExportLifecycleService.js';
+import { LocationMutationService } from './services/LocationMutationService.js';
+import { LocationQueryService } from './services/LocationQueryService.js';
+import { NodeLifecycleManager } from './services/NodeLifecycleManager.js';
+import { RouteMutationService } from './services/RouteMutationService.js';
+import { RouteQueryService } from './services/RouteQueryService.js';
+import { ShapeMutationService } from './services/ShapeMutationService.js';
+import { ShapeQueryService } from './services/ShapeQueryService.js';
+import { StyleService } from './services/StyleService.js';
+import { TreeMutationService } from './services/TreeMutationService.js';
+import { TreeNodeUpdaterService } from './services/TreeNodeUpdaterService.js';
+import { TreeQueryService } from './services/TreeQueryService.js';
+import { TreeSubscriptionService } from './services/TreeSubscriptionService.js';
+import { TreeTableExpandedService } from './services/TreeTableExpandedService.js';
+import { UIStateDB } from './services/UIStateDB.js';
+import type { RuntimePluginDefinition } from './types/RuntimePluginDefinition.js';
 
 interface PerformanceMemoryStats {
   usedJSHeapSize?: number;
   jsHeapSizeLimit?: number;
 }
 
-
 const readHeapStats = (): { used: number; limit: number } => {
   const perf =
     typeof globalThis !== 'undefined'
       ? (globalThis as { performance?: Performance & { memory?: PerformanceMemoryStats } })
-        .performance
+          .performance
       : undefined;
   const memory = perf?.memory;
   return {
@@ -90,9 +92,9 @@ export class WorkerService {
               | undefined
               | null
               | {
-              installTabularXlsx?: () => void;
-              markTabularXlsxInstalled?: () => void;
-            },
+                  installTabularXlsx?: () => void;
+                  markTabularXlsxInstalled?: () => void;
+                }
           ) => {
             if (mod && typeof mod.installTabularXlsx === 'function') {
               mod.installTabularXlsx();
@@ -100,7 +102,7 @@ export class WorkerService {
                 mod.markTabularXlsxInstalled();
               }
             }
-          },
+          }
         )
         .catch(() => {
           // XLSX support not installed; proceed without it
@@ -115,51 +117,51 @@ export class WorkerService {
       const treeQueryService: TreeQueryAPI = await TreeQueryService.getSingleton(coreDB);
       const treeMutationService: TreeMutationAPI = await TreeMutationService.getSingleton(
         coreDB,
-        commandProcessor,
+        commandProcessor
       );
       const treeSubscriptionService: TreeSubscriptionAPI =
         await TreeSubscriptionService.getSingleton(coreDB, treeQueryService);
 
       const pluginMap: { [key: string]: RuntimePluginDefinition } = Object.fromEntries(
-        plugins.map((plugin) => [plugin.name, plugin]),
+        plugins.map((plugin) => [plugin.name, plugin])
       );
 
       const nodeLifecycleManager: NodeLifecycleManager = await NodeLifecycleManager.getSingleton(
         coreDB,
-        pluginMap,
+        pluginMap
       );
 
       // Import/Export services
       const iePort = new ImportExportDBPortCoreDBAdapter(coreDB);
-      const importExportService: ImportExportAPI = await ImportExportLifecycleService.getSingleton(
-        iePort,
-      );
+      const importExportService: ImportExportAPI =
+        await ImportExportLifecycleService.getSingleton(iePort);
 
       const treeNodeUpdaterService: TreeNodeUpdaterAPI = new TreeNodeUpdaterService(
         coreDB,
-        commandProcessor,
+        commandProcessor
       );
 
       const uiStateDB = await UIStateDB.getSingleton();
       const treeTableExpandedService: TreeTableExpandedAPI = new TreeTableExpandedService(
         uiStateDB,
-        treeQueryService,
+        treeQueryService
       );
 
       const styleDB = await StylerDB.getSingleton();
-      const styleService: StyleQueryAPI & StyleMutationAPI = await StyleService.getSingleton(
-        styleDB,
-      );
+      const styleService: StyleQueryAPI & StyleMutationAPI =
+        await StyleService.getSingleton(styleDB);
       const shapeDB = new ShapeDB();
       const shapeQueryService: ShapeQueryAPI = await ShapeQueryService.getSingleton(shapeDB);
-      const shapeMutationService: ShapeMutationAPI = await ShapeMutationService.getSingleton(shapeDB);
+      const shapeMutationService: ShapeMutationAPI =
+        await ShapeMutationService.getSingleton(shapeDB);
       const locationQueryService: LocationQueryAPI = await LocationQueryService.getSingleton();
-      const locationMutationService: LocationMutationAPI = await LocationMutationService.getSingleton();
+      const locationMutationService: LocationMutationAPI =
+        await LocationMutationService.getSingleton();
       const routeDB = new RouteDB() as RouteDatabaseHandle;
       const routeQueryService: RouteQueryAPI = await RouteQueryService.getSingleton(routeDB);
       const routeMutationService: RouteMutationAPI = await RouteMutationService.getSingleton(
         routeDB,
-        locationQueryService,
+        locationQueryService
       );
       EntityLifecycleManager.getSingleton(coreDB, {
         shapeMutation: shapeMutationService,
@@ -187,7 +189,7 @@ export class WorkerService {
         locationMutationService,
         routeDB,
         routeQueryService,
-        routeMutationService,
+        routeMutationService
       );
     });
   }
@@ -212,9 +214,8 @@ export class WorkerService {
     private locationMutationService: LocationMutationAPI,
     private routeDB: RouteDatabaseHandle,
     private routeQueryService: RouteQueryAPI,
-    private routeMutationService: RouteMutationAPI,
-  ) {
-  }
+    private routeMutationService: RouteMutationAPI
+  ) {}
 
   ping(): { response: 'pong'; timestamp: number } {
     console.log('[WorkerAPIImpl] ping() called');
@@ -235,8 +236,7 @@ export class WorkerService {
     this.routeDB.close?.();
   }
 
-  async initialize(): Promise<void> {
-    }
+  async initialize(): Promise<void> {}
 
   getQueryAPI(): TreeQueryAPI {
     return this.queryService;

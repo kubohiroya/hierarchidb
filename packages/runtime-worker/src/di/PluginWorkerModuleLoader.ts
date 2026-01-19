@@ -8,7 +8,11 @@ const createPluginWorkerSpecifier = (nodeType: string) => `@hierarchidb/${nodeTy
 
 type PluginModuleExports = { worker: boolean; database: boolean };
 
-type RegistryEntry = { nodeType: string; exports?: string[]; modules?: { worker?: unknown; database?: unknown } };
+type RegistryEntry = {
+  nodeType: string;
+  exports?: string[];
+  modules?: { worker?: unknown; database?: unknown };
+};
 
 const defaultPluginModuleExports: Record<string, PluginModuleExports> = {
   basemap: { worker: false, database: true },
@@ -26,16 +30,16 @@ const defaultPluginModuleExports: Record<string, PluginModuleExports> = {
 const deriveExports = (nodeType: string, entry?: RegistryEntry): PluginModuleExports => {
   if (entry && Array.isArray(entry.exports)) {
     const normalized = entry.exports.map((value) => value.replace(/^\.?\//, ''));
-    const hasWorkerExport =
-      normalized.some((value) => value === 'worker' || value.startsWith('worker/'));
-    const hasDatabaseExport =
-      normalized.some(
-        (value) =>
-          value === 'database' ||
-          value.startsWith('database/') ||
-          value === 'worker/database' ||
-          value.startsWith('worker/database/')
-      );
+    const hasWorkerExport = normalized.some(
+      (value) => value === 'worker' || value.startsWith('worker/')
+    );
+    const hasDatabaseExport = normalized.some(
+      (value) =>
+        value === 'database' ||
+        value.startsWith('database/') ||
+        value === 'worker/database' ||
+        value.startsWith('worker/database/')
+    );
     return { worker: hasWorkerExport, database: hasDatabaseExport };
   }
   return defaultPluginModuleExports[nodeType] ?? { worker: true, database: true };
@@ -83,7 +87,10 @@ export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContrac
       }
     }
     return Array.from(nodes).filter((nodeType) =>
-      hasWorkerExport(nodeType, this.registry?.find((entry) => entry.nodeType === nodeType))
+      hasWorkerExport(
+        nodeType,
+        this.registry?.find((entry) => entry.nodeType === nodeType)
+      )
     );
   }
 

@@ -5,8 +5,8 @@
  */
 
 import { createRoute } from '@tanstack/react-router';
-import { loadAppConfig } from '../../loadAppConfig.js';
 import { InfoPage } from '~/router/pages/info/InfoPage.js';
+import { loadAppConfig } from '../../loadAppConfig.js';
 import { rootRoute } from './rootRoute.js';
 
 interface InfoLoaderResult {

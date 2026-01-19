@@ -110,7 +110,6 @@ export interface CountryMetadata {
   dataQuality?: 'high' | 'medium' | 'low';
 }
 
-
 /**
  * Selection matrix for UI
  * Generic type that can be specialized for each plugin

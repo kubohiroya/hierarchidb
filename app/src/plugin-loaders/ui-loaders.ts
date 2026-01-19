@@ -1,6 +1,3 @@
-import {
-  pluginUiLoaders,
-  pluginUiModuleMap,
-} from '@hierarchidb/plugin-registry/ui-loaders';
+import { pluginUiLoaders, pluginUiModuleMap } from '@hierarchidb/plugin-registry/ui-loaders';
 
 export { pluginUiLoaders, pluginUiModuleMap };

@@ -73,13 +73,10 @@ describe('Shape plugin flow', () => {
     const id = await dialogAPI.createDraft('shape');
     await driveToSavable(id, 5, async (step) => {
       if (step === 0) await dialogAPI.updateDraft(id, { data: { name: 'Shapes' } });
-      if (step === 1)
-        await dialogAPI.updateDraft(id, { data: { dataSourceName: 'geofabrik' } });
+      if (step === 1) await dialogAPI.updateDraft(id, { data: { dataSourceName: 'geofabrik' } });
       if (step === 2) await dialogAPI.updateDraft(id, { data: { licenseAgreement: true } });
-      if (step === 3)
-        await dialogAPI.updateDraft(id, { data: { selectedAdminLevels: [0, 1] } });
-      if (step === 4)
-        await dialogAPI.updateDraft(id, { data: { selectedCountries: ['JPN'] } });
+      if (step === 3) await dialogAPI.updateDraft(id, { data: { selectedAdminLevels: [0, 1] } });
+      if (step === 4) await dialogAPI.updateDraft(id, { data: { selectedCountries: ['JPN'] } });
     });
   });
 });
@@ -95,8 +92,7 @@ describe('Styler plugin flow', () => {
             /* styleType omitted => optional ok */
           },
         });
-      if (step === 2)
-        await dialogAPI.updateDraft(id, { data: { categories: ['A', 'B', 'C'] } });
+      if (step === 2) await dialogAPI.updateDraft(id, { data: { categories: ['A', 'B', 'C'] } });
     });
   });
 });

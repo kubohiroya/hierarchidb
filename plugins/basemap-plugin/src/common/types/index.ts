@@ -4,10 +4,10 @@
  */
 
 export type {
+  BaseMapDraft,
   BaseMapDraftPayload,
   BaseMapEntity,
   BaseMapSearchCriteria,
-  BaseMapDraft,
   BasemapPeerData,
   MapStyle,
   MapViewport,

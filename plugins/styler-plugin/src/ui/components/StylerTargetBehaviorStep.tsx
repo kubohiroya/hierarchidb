@@ -1,19 +1,28 @@
-import type React from 'react';
-import { useEffect, useMemo, useRef } from 'react';
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import {
+  Box,
+  FormControl,
+  FormHelperText,
+  Stack,
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
+} from '@mui/material';
+import type React from 'react';
+import { useEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
   MAPLIBRE_PROPERTY_METADATA,
-  StylerConfigDefault,
+  STYLE_TYPE_OPTIONS,
   type StylerConfig,
+  StylerConfigDefault,
+  type StylerMappingMode,
   type StylerStepData,
   type StylerValueType,
-  type StylerMappingMode,
 } from '../../common/types/StylerEntity.js';
 import { StyleMappingTargetPanel } from './StyleMappingTargetPanel.tsx';
-import { Box, FormControl, FormHelperText, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
-import { useTranslation } from 'react-i18next';
 import { useStylerMappingState } from './useStylerMappingState.ts';
-import { STYLE_TYPE_OPTIONS } from '../../common/types/StylerEntity.js';
 
 export const StylerTargetBehaviorStep: React.FC<PluginStepProps<StylerStepData>> = ({
   data,
@@ -35,7 +44,11 @@ export const StylerTargetBehaviorStep: React.FC<PluginStepProps<StylerStepData>>
     if (!targetProperty) return 'color';
     const normalized = targetProperty.toLowerCase();
     if (normalized.endsWith('color')) return 'color';
-    if (normalized.endsWith('opacity') || normalized.endsWith('radius') || normalized.endsWith('width')) {
+    if (
+      normalized.endsWith('opacity') ||
+      normalized.endsWith('radius') ||
+      normalized.endsWith('width')
+    ) {
       return 'number';
     }
     return MAPLIBRE_PROPERTY_METADATA[targetProperty]?.type ?? 'color';
@@ -113,8 +126,8 @@ export const StylerTargetBehaviorStep: React.FC<PluginStepProps<StylerStepData>>
     const safePatch = patch ?? {};
     const nextTargetProperty =
       'targetProperty' in safePatch
-        ? safePatch.targetProperty ?? null
-        : pluginData.mapping?.targetProperty ?? null;
+        ? (safePatch.targetProperty ?? null)
+        : (pluginData.mapping?.targetProperty ?? null);
     onChange({
       ...(pluginData as StylerStepData),
       mapping: {
@@ -167,7 +180,7 @@ export const StylerTargetBehaviorStep: React.FC<PluginStepProps<StylerStepData>>
           <FormHelperText>
             {t(
               'step4.mappingMode.help',
-              'Interpolate in MapLibre or store final values directly in feature-atoms.',
+              'Interpolate in MapLibre or store final values directly in feature-atoms.'
             )}
           </FormHelperText>
         </FormControl>
@@ -198,7 +211,7 @@ export const StylerTargetBehaviorStep: React.FC<PluginStepProps<StylerStepData>>
         <FormHelperText>
           {t(
             'step4.numericRange.help',
-            'Set the output range for numeric targets. Defaults are 0.0 to 10.0.',
+            'Set the output range for numeric targets. Defaults are 0.0 to 10.0.'
           )}
         </FormHelperText>
       </FormControl>

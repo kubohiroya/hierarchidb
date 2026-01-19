@@ -16,7 +16,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Link as RouterLink } from '@tanstack/react-router';
-import { useTagsPage, type TaggedNode } from './useTagsPage.js';
+import { type TaggedNode, useTagsPage } from './useTagsPage.js';
 
 export default function TagsPage({ uuid }: { uuid?: string }) {
   const {

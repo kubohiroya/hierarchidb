@@ -47,9 +47,7 @@ export type TreeNodeData = NodePayload;
  * - UI atoms is scoped to `dialogUIState` and should be cleared on commit/discard.
  * - Structural metadata stays at the top level and must not be duplicated under data.
  */
-export type TreeNode<
-  TData extends NodePayload | null = NodePayload | null
-> = NodeBase & {
+export type TreeNode<TData extends NodePayload | null = NodePayload | null> = NodeBase & {
   /**
    * Committed metadata (name/description/tags) — authoritative
    */

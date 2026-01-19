@@ -12,8 +12,7 @@ export type ProgressPhase =
   | 'completed'
   | 'failed'
   | 'regression'
-  | 'warning'
-  ;
+  | 'warning';
 
 export interface BatchProgressPayload {
   total?: number;

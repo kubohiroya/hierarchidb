@@ -9,7 +9,9 @@ type TrashLikeNode = Pick<TreeNode, 'metadata' | 'originalName'> & {
  * Resolve the user-facing label for a trashed node, preferring the
  * preserved original name when available.
  */
-export function getTrashDisplayName(node: TrashLikeNode | HierarchicalTreeNode | undefined | null): string {
+export function getTrashDisplayName(
+  node: TrashLikeNode | HierarchicalTreeNode | undefined | null
+): string {
   if (!node) return '';
   const value = (node as { originalName?: string | null }).originalName;
   if (typeof value === 'string' && value.trim().length > 0) {

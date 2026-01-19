@@ -5,6 +5,7 @@ import type { CountryAvailabilityWorkerAPI, SerializedCountryAvailability, UiSto
 import type { NodeId } from '@hierarchidb/common-types';
 import { metadataLoader } from '../../services/metadata/MetadataLoader.js';
 import { AuthService } from '@hierarchidb/auth-recovery';
+import type { DataSourceName } from '../../common/types/index.js';
 
 const corsProxyBaseURL = typeof import.meta.env?.VITE_CORS_PROXY_BASE_URL === 'string'
   ? import.meta.env.VITE_CORS_PROXY_BASE_URL
@@ -18,7 +19,7 @@ const api: CountryAvailabilityWorkerAPI = {
     const auth = await AuthService.getSingleton();
     await auth.setUiStorageBridge(bridge);
   },
-  async loadAvailability(dataSource: string, nodeId: NodeId): Promise<SerializedCountryAvailability> {
+  async loadAvailability(dataSource: DataSourceName, nodeId: NodeId): Promise<SerializedCountryAvailability> {
     const availability = await fetchCountryAvailability(dataSource, nodeId);
     return {
       dataSource: availability.dataSource,
@@ -31,10 +32,10 @@ const api: CountryAvailabilityWorkerAPI = {
       fetchedAt: Date.now(),
     };
   },
-  async loadMetadata(dataSource: string, nodeId: NodeId) {
+  async loadMetadata(dataSource: DataSourceName, nodeId: NodeId) {
     return metadataLoader.loadMetadata(dataSource, nodeId);
   },
-  async clearMetadataCache(dataSource?: string) {
+  async clearMetadataCache(dataSource?: DataSourceName) {
     metadataLoader.clearCache(dataSource);
   },
 };

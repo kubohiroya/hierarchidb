@@ -1,8 +1,7 @@
 import type { Feature, Geometry } from 'geojson';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { ShapeSourceMetadata } from '@hierarchidb/plugin-service-api';
-import { type VtShapeDb, listFetchCache } from '@hierarchidb/vt-shape-store';
-import type { VtDb } from '@hierarchidb/vt-store';
+import type { EphemeralShapeDB, ShapeDB } from '@hierarchidb/shape-store';
 import { VectorTile } from '@mapbox/vector-tile';
 import Pbf from 'pbf';
 import type { CountryMetadata, DataSourceName } from '../../common/types/index.js';
@@ -196,8 +195,8 @@ const readTileFeatureStats = (
 export type ShapeStageMetadataParams = {
   nodeId: NodeId;
   dataSource: DataSourceName;
-  shapeStore: VtShapeDb;
-  vtStore: VtDb;
+  shapeStore: EphemeralShapeDB;
+  shapeDb: ShapeDB;
 };
 
 export const updateShapeStageMetadata = async (params: ShapeStageMetadataParams): Promise<void> => {
@@ -209,7 +208,7 @@ export const updateShapeStageMetadata = async (params: ShapeStageMetadataParams)
 
   const origins = new Map<string, SourceMetadata>();
 
-  const fetchCaches = await listFetchCache(params.shapeStore, params.nodeId);
+  const fetchCaches = await params.shapeStore.fetchCache.where('nodeId').equals(params.nodeId).toArray();
   fetchCaches.forEach((buffer) => {
     const originKey = buildOriginKey(params.dataSource, buffer.sourceKey);
     const info = resolveOriginInfo(originKey, lookup);
@@ -246,9 +245,13 @@ export const updateShapeStageMetadata = async (params: ShapeStageMetadataParams)
     });
   });
 
-  const tiles = await params.vtStore.vtTiles.where('nodeId').equals(params.nodeId).toArray();
+  const tiles = await params.shapeDb.vectorTiles.where('nodeId').equals(params.nodeId).toArray();
   tiles.forEach((tile) => {
-    const stats = readTileFeatureStats(tile.data, tile.x, tile.y, tile.z);
+    const buffer = tile.data_Uint8Array.buffer.slice(
+      tile.data_Uint8Array.byteOffset,
+      tile.data_Uint8Array.byteOffset + tile.data_Uint8Array.byteLength,
+    );
+    const stats = readTileFeatureStats(buffer, tile.x, tile.y, tile.z);
     stats.forEach(({ originKey, stats }) => {
       const info = resolveOriginInfo(originKey, lookup);
       const origin = ensureOrigin(origins, originKey, {

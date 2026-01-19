@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
-import { beforeEach, afterEach, describe, expect, it } from 'vitest';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-types';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CoreDB } from '../../services/CoreDB.js';
 import { TreeNodeUpdaterService } from '../../services/TreeNodeUpdaterService.js';
 
@@ -41,7 +41,9 @@ describe('Edit dialog cancel behavior by node origin', () => {
   async function cancelDialog(mode: Mode, nodeId: NodeId) {
     const node = await core.nodes.get(nodeId);
     if (!node) return;
-    const hasCommittedData = (node as { data?: unknown }).data !== null && typeof (node as { data?: unknown }).data !== 'undefined';
+    const hasCommittedData =
+      (node as { data?: unknown }).data !== null &&
+      typeof (node as { data?: unknown }).data !== 'undefined';
     if (mode === 'create') {
       await draftService.discardDraft(nodeId, { forceDelete: true });
       return;

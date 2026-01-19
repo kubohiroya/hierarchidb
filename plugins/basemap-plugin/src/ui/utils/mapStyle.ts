@@ -1,6 +1,6 @@
 import type { MapLibreStyle } from '@hierarchidb/ui-map';
-import type { MapStyle } from '../../common/types/BaseMapEntity.js';
 import { BUILT_IN_STYLES, getBuiltInStyleUrl } from '../../common/constants/builtInStyles.js';
+import type { MapStyle } from '../../common/types/BaseMapEntity.js';
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;

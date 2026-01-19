@@ -1,9 +1,9 @@
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import { SingletonMixin } from '@hierarchidb/util';
+import type { RuntimePluginDefinition } from '../types/RuntimePluginDefinition.js';
 import { workerError } from '../utils/workerLogger.js';
 import type { CoreDB } from './CoreDB.js';
 import type { LifecycleContext, LifecycleEvent, NodeLifecycleHooks } from './lifecycle-types.js';
-import type { RuntimePluginDefinition } from '../types/RuntimePluginDefinition.js';
 
 /**
  * Manages lifecycle hooks for node operations

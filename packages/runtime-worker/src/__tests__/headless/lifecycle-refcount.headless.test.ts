@@ -1,15 +1,18 @@
 import 'fake-indexeddb/auto';
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import { toNodeId, toNodeType } from '@hierarchidb/common-types';
-import type { RuntimePluginDefinition } from '../../types/RuntimePluginDefinition.js';
 import { describe, expect, it } from 'vitest';
 import { CoreDB } from '../../services/CoreDB.js';
 import { NodeLifecycleManager } from '../../services/NodeLifecycleManager.js';
+import type { RuntimePluginDefinition } from '../../types/RuntimePluginDefinition.js';
 
 describe('NodeLifecycleManager reference counting port', () => {
   it('invokes increment/decrement when registry provided', async () => {
     const core = await CoreDB.getSingleton(`refcount-${Date.now()}`);
-    const plugins: Record<string, RuntimePluginDefinition> = {} as Record<string, RuntimePluginDefinition>;
+    const plugins: Record<string, RuntimePluginDefinition> = {} as Record<
+      string,
+      RuntimePluginDefinition
+    >;
     const nlm = await NodeLifecycleManager.getSingleton(core, plugins);
     let inc = 0;
     let dec = 0;

@@ -2,6 +2,7 @@ import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommandProcessor } from '../../CommandProcessor.js';
 import type { CoreDB } from '../../CoreDB.js';
+
 // fulltext tables removed; stub without fulltext support
 
 describe('Undo/Redo for restoreFromTrash', () => {

@@ -1,6 +1,6 @@
-import { renderHook } from '@testing-library/react';
 import type { NodeId, TreeNodeMetadata } from '@hierarchidb/common-types';
 import type { composeStepConfigs } from '@hierarchidb/plugin-base';
+import { renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { useDialogSteps } from '../usePluginDialogController/steps.js';
 
@@ -15,7 +15,9 @@ describe('useDialogSteps BasicInfo focus', () => {
   it('keeps the BasicInfo component stable and propagates updated metadata', () => {
     const dialogRef = { current: null } as React.RefObject<HTMLDivElement>;
     const noopSetBasicInfo = (() => {}) as React.Dispatch<React.SetStateAction<TreeNodeMetadata>>;
-    const noopSetDraftData = (() => {}) as React.Dispatch<React.SetStateAction<Record<string, unknown>>>;
+    const noopSetDraftData = (() => {}) as React.Dispatch<
+      React.SetStateAction<Record<string, unknown>>
+    >;
 
     const { result, rerender } = renderHook(
       ({ basicInfo }) =>

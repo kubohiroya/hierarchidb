@@ -1,7 +1,7 @@
-import { SingletonMixin } from '@hierarchidb/util';
-import type { NodeId } from '@hierarchidb/common-types';
 import { DexieChunkStore } from '@hierarchidb/chunk-store';
+import type { NodeId } from '@hierarchidb/common-types';
 import { FetchNetworkPort, getCorsProxyBaseURL } from '@hierarchidb/download';
+import type { LocationQueryAPI } from '@hierarchidb/location-store';
 import {
   IDE_GSM_BULK_CHUNK_SIZE,
   type IdeGsmImportCallback,
@@ -11,23 +11,26 @@ import {
   type RouteWaypointInput,
   type RouteWaypointResult,
 } from '@hierarchidb/plugin-service-api';
-import type { LocationQueryAPI } from '@hierarchidb/location-store';
-import type { RouteDatabaseHandle, RouteMutationAPI } from '@hierarchidb/route-store';
 import { RouteGenerator, SearouteEngine } from '@hierarchidb/route-engine';
+import type { RouteDatabaseHandle, RouteMutationAPI } from '@hierarchidb/route-store';
+import { SingletonMixin } from '@hierarchidb/util';
 import { buildIdeGsmLocationIndex, parseIdeGsmCsv } from './route/ideGsmCsv.js';
 
 export class RouteMutationService implements RouteMutationAPI {
   static async getSingleton(
     db: RouteDatabaseHandle,
-    locationQueryService: LocationQueryAPI,
+    locationQueryService: LocationQueryAPI
   ): Promise<RouteMutationService> {
     return SingletonMixin.getSingleton(
       'RouteMutationService',
-      async () => new RouteMutationService(db, locationQueryService),
+      async () => new RouteMutationService(db, locationQueryService)
     );
   }
 
-  constructor(private db: RouteDatabaseHandle, private locationQueryService: LocationQueryAPI) {}
+  constructor(
+    private db: RouteDatabaseHandle,
+    private locationQueryService: LocationQueryAPI
+  ) {}
 
   private async ensureOpen(): Promise<void> {
     await this.db.open?.();
@@ -55,7 +58,7 @@ export class RouteMutationService implements RouteMutationAPI {
 
   async importIdeGsmRoutes(
     request: IdeGsmRouteImportRequest,
-    progress?: IdeGsmImportCallback,
+    progress?: IdeGsmImportCallback
   ): Promise<IdeGsmRouteImportResult> {
     const emit = (payload: Omit<IdeGsmImportProgress, 'timestamp'>): void => {
       progress?.({ ...payload, timestamp: Date.now() });
@@ -75,7 +78,10 @@ export class RouteMutationService implements RouteMutationAPI {
       });
       const csvText = entry.value;
 
-      const locationIndex = await buildIdeGsmLocationIndex(this.locationQueryService, request.locationNodeIds);
+      const locationIndex = await buildIdeGsmLocationIndex(
+        this.locationQueryService,
+        request.locationNodeIds
+      );
       const { lineStrings, errors } = parseIdeGsmCsv(csvText, locationIndex, request.nodeId);
       emit({ phase: 'parse', total: lineStrings.length, processed: lineStrings.length });
 
@@ -93,7 +99,7 @@ export class RouteMutationService implements RouteMutationAPI {
             distance: line.distance,
             speed: line.speed,
           },
-          generator,
+          generator
         );
         waypointResults.push(result);
         emit({ phase: 'waypoints', total: lineStrings.length, processed: i + 1 });
@@ -154,7 +160,7 @@ async function getIdeGsmRouteGenerator(): Promise<RouteGenerator> {
 
 async function buildWaypoints(
   line: RouteWaypointInput,
-  generator: RouteGenerator,
+  generator: RouteGenerator
 ): Promise<RouteWaypointResult> {
   const method = resolveIdeGsmMethod(line.routeMode);
   const start = line.startPoint?.coordinates;
@@ -179,7 +185,6 @@ async function buildWaypoints(
   };
 }
 
-
 function resolveIdeGsmMethod(routeMode?: string): 'great_circle' | 'searoute' | null {
   if (routeMode === 'airway') return 'great_circle';
   if (routeMode === 'waterway') return 'searoute';
@@ -189,9 +194,7 @@ function resolveIdeGsmMethod(routeMode?: string): 'great_circle' | 'searoute' | 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
-const buildCacheKey = (prefix: string, url: string): string => (
-  `${prefix}:${hashString(url)}`
-);
+const buildCacheKey = (prefix: string, url: string): string => `${prefix}:${hashString(url)}`;
 
 const hashString = (input: string): string => {
   let hash = 0;

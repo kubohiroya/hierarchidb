@@ -1,20 +1,20 @@
-import { useTranslation } from 'react-i18next';
+import { tabularRowsAtom } from '@hierarchidb/spreadsheet-plugin';
 import { i18n } from '@hierarchidb/ui-i18n';
+import type { TabularFilterRule } from '@hierarchidb/ui-tabular';
 import { useAtomValue } from 'jotai';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { TabularFilterRule } from '@hierarchidb/ui-tabular';
-import { tabularRowsAtom } from '@hierarchidb/spreadsheet-plugin';
+import { useTranslation } from 'react-i18next';
 import {
   MAPLIBRE_PROPERTY_METADATA,
-  StylerConfigDefault,
-  StylerMappingDefault,
   type StylerConfig,
+  StylerConfigDefault,
   type StylerMapping,
+  StylerMappingDefault,
   type StylerTableRow,
 } from '../../../common/types/StylerEntity.js';
 import { normalizeStylerConfig } from '../../../common/utils/colorUtils.js';
-import type { StylerStepProps } from '../StylerStepProps.js';
 import { useTabularFilterWorker } from '../../hooks/useTabularFilterWorker.js';
+import type { StylerStepProps } from '../StylerStepProps.js';
 
 const useValueColorScale = ({
   baseConfig,
@@ -50,17 +50,13 @@ const useValueColorScale = ({
 
 type UseStylerPreviewProps = Pick<StylerStepProps, 'data' | 'tabularData' | 'onValidate'>;
 
-export const useStylerPreview = ({
-  data,
-  tabularData = [],
-  onValidate,
-}: UseStylerPreviewProps) => {
+export const useStylerPreview = ({ data, tabularData = [], onValidate }: UseStylerPreviewProps) => {
   const { t } = useTranslation('styler-plugin');
   const atomRows = useAtomValue(tabularRowsAtom);
   const previewRowsSource =
     tabularData.length > 0
       ? tabularData
-      : (data?.previewRows as StylerTableRow[] | undefined) ?? atomRows;
+      : ((data?.previewRows as StylerTableRow[] | undefined) ?? atomRows);
   const mapping: StylerMapping = {
     ...StylerMappingDefault,
     ...(data?.mapping ?? {}),
@@ -84,7 +80,7 @@ export const useStylerPreview = ({
 
   const filters = useMemo<TabularFilterRule[]>(
     () => (Array.isArray(data?.filters) ? (data.filters as TabularFilterRule[]) : []),
-    [data?.filters],
+    [data?.filters]
   );
 
   const { filteredRows: previewData, isFiltering: isPreviewDeferred } = useTabularFilterWorker({
@@ -108,7 +104,10 @@ export const useStylerPreview = ({
       const bothNumeric = Number.isFinite(aNum) && Number.isFinite(bNum);
       const cmp = bothNumeric
         ? aNum - bNum
-        : String(av ?? '').localeCompare(String(bv ?? ''), undefined, { numeric: true, sensitivity: 'base' });
+        : String(av ?? '').localeCompare(String(bv ?? ''), undefined, {
+            numeric: true,
+            sensitivity: 'base',
+          });
       return direction === 'asc' ? cmp : -cmp;
     });
     return sorted;
@@ -137,10 +136,7 @@ export const useStylerPreview = ({
     valueColumn: valueColumn ?? '',
   });
 
-  const numberFormatter = useMemo(
-    () => new Intl.NumberFormat(i18n.language || undefined),
-    []
-  );
+  const numberFormatter = useMemo(() => new Intl.NumberFormat(i18n.language || undefined), []);
 
   const handleToggleSort = useCallback((column: string) => {
     setSortState((prev) => {
@@ -158,7 +154,16 @@ export const useStylerPreview = ({
         (valueType === 'number' ? Boolean(mappingMode) : Boolean(valueType));
       onValidate(ok);
     }
-  }, [featureIdProperty, keyColumn, mappingMode, onValidate, targetProperty, styleType, valueColumn, valueType]);
+  }, [
+    featureIdProperty,
+    keyColumn,
+    mappingMode,
+    onValidate,
+    targetProperty,
+    styleType,
+    valueColumn,
+    valueType,
+  ]);
 
   return {
     t,

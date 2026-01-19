@@ -15,13 +15,13 @@ import type {
 } from '@hierarchidb/common-types';
 import { SingletonMixin } from '@hierarchidb/util';
 import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';
-import { PERFORMANCE_CONFIG } from '../utils/performance-config.js';
 import { resolveDefaultNodeName } from '../utils/default-node-name.js';
+import { PERFORMANCE_CONFIG } from '../utils/performance-config.js';
 import type { CommandProcessor } from './CommandProcessor.js';
 import type { CoreDB } from './CoreDB.js';
-import { sanitizeMessageText } from './utils/error-adapter.js';
 import { createNewName } from './DraftTreeNodeOperations.js';
 import { generateNodeId } from './nodeId.js';
+import { sanitizeMessageText } from './utils/error-adapter.js';
 
 const getCommandError = (result: CoreCommandResult, fallback = 'Unknown error'): string => {
   if (result.success) return fallback;
@@ -520,7 +520,9 @@ export class TreeMutationService implements TreeMutationAPI {
 
       //  :
       const siblings = (await this.coreDB.listChildren?.(parentId)) || [];
-      const existingNames = new Set<string>(siblings.map((sibling: TreeNode) => sibling.metadata.name));
+      const existingNames = new Set<string>(
+        siblings.map((sibling: TreeNode) => sibling.metadata.name)
+      );
 
       //  :
       const timestamp = Date.now() as Timestamp;
@@ -565,10 +567,10 @@ export class TreeMutationService implements TreeMutationAPI {
           rel = 2;
         }
 
-       const newNode: TreeNode = {
-         ...(sourceNode as TreeNode),
-         id: newNodeId,
-         parentId: parentId,
+        const newNode: TreeNode = {
+          ...(sourceNode as TreeNode),
+          id: newNodeId,
+          parentId: parentId,
           metadata: { ...sourceNode.metadata, name: newName },
           depth: baseDepth + rel,
           createdAt: timestamp,
@@ -593,7 +595,6 @@ export class TreeMutationService implements TreeMutationAPI {
         }
       }
 
-
       const idMap = new Map<NodeId, NodeId>();
       for (let i = 0; i < nodeIds.length; i++) {
         const src = nodeIds[i];
@@ -603,7 +604,6 @@ export class TreeMutationService implements TreeMutationAPI {
       EntityLifecycleManager.setIdMapping(cmd.commandId, idMap);
       const lifecycle = EntityLifecycleManager.getSingleton(this.coreDB);
       await lifecycle.handleCommand(cmd);
-
 
       // Recompute destination ancestors hasChildren
       await this.recomputeAncestorsHasChildrenFromParent(parentId);
@@ -686,9 +686,9 @@ export class TreeMutationService implements TreeMutationAPI {
         }
         if (!trashRootId) continue;
         const now = Date.now() as Timestamp;
-      if ((node as { removedAt?: Timestamp }).removedAt && node.parentId === trashRootId) {
-        continue;
-      }
+        if ((node as { removedAt?: Timestamp }).removedAt && node.parentId === trashRootId) {
+          continue;
+        }
 
         const preservedOriginalName =
           (node as { originalName?: string }).originalName ?? node.metadata.name;

@@ -6,14 +6,14 @@
  */
 
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';
-import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
 import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
+import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
 import { Alert, Box, CircularProgress } from '@mui/material';
 import { useWorker } from '~/contexts/WorkerProvider.tsx';
 import { TreeConsolePanelWithDynamicSpeedDial } from './TreeConsolePanelWithDynamicSpeedDial.js';
 import { TreeNodeInfoPanel } from './TreeNodeInfoPanel.js';
-import { useTreeConsoleIntegrationInner } from './useTreeConsoleIntegrationInner.js';
 import { canImportFromNode } from './treeConsoleIntegrationUtils.js';
+import { useTreeConsoleIntegrationInner } from './useTreeConsoleIntegrationInner.js';
 
 export interface TreeConsoleIntegrationProps {
   readonly treeId?: string;

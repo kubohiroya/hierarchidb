@@ -1,9 +1,12 @@
 import 'fake-indexeddb/auto';
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { NodeId, TreeId } from '@hierarchidb/common-types';
-import { renderHook, act } from '@testing-library/react';
 import { useTreeNodeDialog } from '@hierarchidb/plugin-ui-sdk';
-import { workerClientRef, teardownWorkerClientRef } from '../plugin-dialog-mocks/setupPluginWorkerMock.js';
+import { act, renderHook } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import {
+  teardownWorkerClientRef,
+  workerClientRef,
+} from '../plugin-dialog-mocks/setupPluginWorkerMock.js';
 
 function useFolderDialogForTest(parentId: NodeId) {
   return useTreeNodeDialog<Record<string, unknown>>({
@@ -71,8 +74,13 @@ describe.skip('Folder dialog commit integration (headless)', () => {
 
     const api = workerClientRef.getAPI();
     const query = await api.getQueryAPI();
-    const nodes = await query.listNodes?.();
-    const created = nodes.find((n: any) => n.metadata?.name === 'Folder Name');
+    const nodes = (await query.listNodes?.()) as Array<{
+      metadata?: { name?: string; description?: string; tags?: string[] };
+      data?: unknown;
+      draftData?: unknown;
+      draftMetadata?: unknown;
+    }>;
+    const created = nodes.find((node) => node.metadata?.name === 'Folder Name');
     expect(created).toBeDefined();
     expect(created?.metadata).toEqual({ name: 'Folder Name', description: 'desc', tags: ['x'] });
     expect(created?.data).toBeNull();

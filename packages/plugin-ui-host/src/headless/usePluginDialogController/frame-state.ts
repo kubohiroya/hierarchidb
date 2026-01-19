@@ -1,22 +1,22 @@
-import {
-  normalizeDialogState,
-  getViewportSize,
-  getPresetSize,
-  initialPosition,
-  FRAME_CONSTANTS,
-  sizesEqual,
-  positionsEqual,
-  getDialogLayoutViewport,
-} from '@hierarchidb/ui-dialog';
-import {
-  type DialogDisplayMode,
-  type DialogPosition,
-  type DialogSize,
-  type NodeId,
-  type DialogUIState,
+import type {
+  DialogDisplayMode,
+  DialogPosition,
+  DialogSize,
+  DialogUIState,
+  NodeId,
 } from '@hierarchidb/common-types';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  FRAME_CONSTANTS,
+  getDialogLayoutViewport,
+  getPresetSize,
+  getViewportSize,
+  initialPosition,
+  normalizeDialogState,
+  positionsEqual,
+  sizesEqual,
+} from '@hierarchidb/ui-dialog';
 import type React from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface Params {
   nodeType: string;
@@ -51,7 +51,7 @@ const toUrlMode = (mode: DialogDisplayMode): string => {
   }
 };
 
-export function clampIndex(index:number, length: number): number {
+export function clampIndex(index: number, length: number): number {
   return Math.max(0, Math.min(index, length - 1));
 }
 
@@ -182,23 +182,17 @@ export function useDialogFrameState({
     }
   }, [urlStep]);
 
-  const setUrlStepInternal = useCallback(
-    (nextIndex: number) => {
-      const nextStep = toStepNumber(nextIndex);
-      setUrlState((prev) => (prev.step === nextStep ? prev : { ...prev, step: nextStep }));
-    },
-    []
-  );
+  const setUrlStepInternal = useCallback((nextIndex: number) => {
+    const nextStep = toStepNumber(nextIndex);
+    setUrlState((prev) => (prev.step === nextStep ? prev : { ...prev, step: nextStep }));
+  }, []);
 
   const initialFrame = (() => {
     const viewport = getViewportSize();
     const size = getPresetSize('normal', viewport);
-    return normalizeDialogState(
-      size,
-      initialPosition(size, viewport),
-      viewport,
-      { enforceTopLeftMargin: true },
-    );
+    return normalizeDialogState(size, initialPosition(size, viewport), viewport, {
+      enforceTopLeftMargin: true,
+    });
   })();
 
   const defaultFrameRef = useRef<typeof initialFrame | null>(initialFrame);
@@ -224,29 +218,20 @@ export function useDialogFrameState({
     setUrlState((prev) => (prev.mode === displayMode ? prev : { ...prev, mode: displayMode }));
   }, [displayMode]);
 
-  const persistDisplayMode = useCallback(
-    (value: DialogDisplayMode) => {
-      setDisplayModeState(value);
-      setUrlState((prev) => (prev.mode === value ? prev : { ...prev, mode: value }));
-    },
-    []
-  );
+  const persistDisplayMode = useCallback((value: DialogDisplayMode) => {
+    setDisplayModeState(value);
+    setUrlState((prev) => (prev.mode === value ? prev : { ...prev, mode: value }));
+  }, []);
 
-  const persistPosition = useCallback(
-    (next: DialogPosition) => {
-      setDialogPosition(next);
-      dialogPositionRef.current = next;
-    },
-    []
-  );
+  const persistPosition = useCallback((next: DialogPosition) => {
+    setDialogPosition(next);
+    dialogPositionRef.current = next;
+  }, []);
 
-  const persistSize = useCallback(
-    (next: DialogSize) => {
-      setDialogSize(next);
-      dialogSizeRef.current = next;
-    },
-    []
-  );
+  const persistSize = useCallback((next: DialogSize) => {
+    setDialogSize(next);
+    dialogSizeRef.current = next;
+  }, []);
 
   useEffect(() => {
     const key = String(_nodeId ?? 'unknown');
@@ -390,16 +375,17 @@ export function useDialogFrameState({
         };
       }
 
-      const shouldRecenter = defaultFrameRef.current
-        && sizesEqual(dialogSizeRef.current, defaultFrameRef.current.size)
-        && positionsEqual(dialogPositionRef.current, defaultFrameRef.current.position);
+      const shouldRecenter =
+        defaultFrameRef.current &&
+        sizesEqual(dialogSizeRef.current, defaultFrameRef.current.size) &&
+        positionsEqual(dialogPositionRef.current, defaultFrameRef.current.position);
 
       if (shouldRecenter) {
         const recentered = normalizeDialogState(
           targetSize,
           initialPosition(targetSize, viewport),
           viewport,
-          options,
+          options
         );
         defaultFrameRef.current = recentered;
         targetSize = recentered.size;

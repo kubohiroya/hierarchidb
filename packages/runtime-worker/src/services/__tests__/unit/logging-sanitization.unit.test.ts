@@ -6,8 +6,7 @@ import type { CommandEnvelope } from '../../command-types.js';
 let coreDBStub: CoreDB;
 
 beforeAll(async () => {
-  coreDBStub = {
-  } as Partial<CoreDB> as CoreDB;
+  coreDBStub = {} as Partial<CoreDB> as CoreDB;
 });
 
 afterAll(async () => {

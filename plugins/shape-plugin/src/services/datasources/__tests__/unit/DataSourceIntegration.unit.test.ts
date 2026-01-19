@@ -4,66 +4,12 @@
  * CI/CD skip
   */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { DataSourceStrategyFactory } from '../DataSourceStrategyFactory.js';
 import type { FetchOptions } from '../DataSourceStrategy.js';
 import { OpenStreetMapStrategy } from '../OpenStreetMapStrategy.js';
 import { GeoBoundariesStrategy } from '../GeoBoundariesStrategy.js';
 import { metadataLoader } from '../../metadata/MetadataLoader.js';
-
-// Mock AuthRecoveryService used by authFetch so strategies avoid real network
-vi.mock('@hierarchidb/auth-recovery', () => {
-  const fetchWithAuth = async (input: string | URL, _init?: RequestInit): Promise<Response> => {
-    const url = String(input);
-    // Natural Earth ZIP
-    if (url.includes('naturalearthdata.com')) {
-      const JSZip = (await import('jszip'));
-      const zip = new JSZip();
-      zip.file('dummy.txt', 'hello');
-      const buf = await zip.generateAsync({ type: 'arraybuffer' });
-      return new Response(buf, { status: 200 });
-    }
-
-    // GADM JSON (admin0) or JSON ZIP (admin1+)
-    if (url.includes('geodata.ucdavis.edu/gadm/gadm4.1/json/')) {
-      if (url.endsWith('.json.zip')) {
-        const JSZip = (await import('jszip'));
-        const zip = new JSZip();
-        zip.file('gadm41_JPN_1.json', JSON.stringify({ type: 'FeatureCollection', features: [] }));
-        const buf = await zip.generateAsync({ type: 'arraybuffer' });
-        return new Response(buf, { status: 200 });
-      }
-      return new Response(JSON.stringify({ type: 'FeatureCollection', features: [] }), { status: 200 });
-    }
-
-    // GeoBoundaries metadata and download
-    if (url.includes('geoboundaries.org/api/current/gbOpen/available')) {
-      return new Response(JSON.stringify({ USA: ['ADM0', 'ADM1'], JPN: ['ADM0', 'ADM1'] }), { status: 200 });
-    }
-    if (url.includes('/gbOpen/')) {
-      return new Response(JSON.stringify({ simplifiedGeometryGeoJSON: 'https://mock.local/gb.geojson', boundaryYear: '2023', licenseDetail: 'Open' }), { status: 200 });
-    }
-    if (url.includes('mock.local/gb.geojson')) {
-      return new Response(JSON.stringify({ type: 'FeatureCollection', features: [{ type: 'Feature', geometry: { type: 'Polygon', coordinates: [[[0,0],[1,0],[1,1],[0,1],[0,0]]] }, properties: { shapeName: 'Mock' } }] }), { status: 200 });
-    }
-
-    // OSM
-    if (url.includes('overpass-api.de')) {
-      return new Response(JSON.stringify({ elements: [{ type: 'node', id: 1, lat: 0, lon: 0, tags: { name: 'Mock' } }], generator: 'mock' }), { status: 200 });
-    }
-
-    // Default OK for health checks
-    return new Response('OK', { status: 200 });
-  };
-  return {
-    AuthRecoveryService: {
-      getSingleton: () => Promise.resolve({ fetchWithAuth }),
-    },
-  };
-});
-
-const ENABLE_INTEGRATION_TESTS = process.env.ENABLE_INTEGRATION_TESTS === 'true';
-const skipIf = (condition: boolean) => condition ? it.skip : it;
 
 describe('Data Source Integration Tests', () => {
   let factory: DataSourceStrategyFactory;
@@ -79,7 +25,7 @@ describe('Data Source Integration Tests', () => {
       strategy = new OpenStreetMapStrategy();
     });
 
-    skipIf(!ENABLE_INTEGRATION_TESTS)('should fetch real data from Overpass API', async () => {
+    it('should fetch real data from Overpass API', async () => {
       const options: FetchOptions = {
         bbox: {
           minLat: 35.6,
@@ -120,7 +66,7 @@ describe('Data Source Integration Tests', () => {
       }
     }, 30000); //  30
 
-    skipIf(!ENABLE_INTEGRATION_TESTS)('should stage and execute administrative query', async () => {
+    it('should stage and execute administrative query', async () => {
       const query = strategy.buildPresetQuery('administrative', {
         minLat: 35.0,
         maxLat: 36.0,
@@ -153,7 +99,7 @@ describe('Data Source Integration Tests', () => {
       strategy = new GeoBoundariesStrategy();
     });
 
-    skipIf(!ENABLE_INTEGRATION_TESTS)('should fetch metadata from GeoBoundaries API', async () => {
+    it('should fetch metadata from GeoBoundaries API', async () => {
       try {
         const countries = await metadataLoader.loadMetadata('geoboundaries', 'node-1');
         expect(Array.isArray(countries)).toBe(true);
@@ -169,7 +115,7 @@ describe('Data Source Integration Tests', () => {
       }
     }, 15000);
 
-    skipIf(!ENABLE_INTEGRATION_TESTS)('should fetch boundary data for Japan', async () => {
+    it('should fetch boundary data for Japan', async () => {
       const options: FetchOptions = {
         country: 'JPN',
         adminLevel: 1,
@@ -322,23 +268,11 @@ describe('Data Source Integration Tests', () => {
 });
 
 describe('Test Environment', () => {
-  it('should provide guidance for integration tests', () => {
-    if (!ENABLE_INTEGRATION_TESTS) {
-      console.log('\n=== Integration Test Information ===');
-      console.log('Integration tests are currently disabled.');
-      console.log('To enable them, run:');
-      console.log('  ENABLE_INTEGRATION_TESTS=true npm test');
-      console.log('');
-      console.log('Note: Integration tests require internet connection');
-      console.log('and may be subject to API rate limits.');
-      console.log('=====================================\n');
-    } else {
-      console.log('\n=== Integration Tests Enabled ===');
-      console.log('Running with real API endpoints.');
-      console.log('Tests may be slower and subject to rate limits.');
-      console.log('==================================\n');
-    }
-
+  it('runs network integration tests directly against data source URLs', () => {
+    console.log('\n=== Integration Tests Enabled ===');
+    console.log('Node test runtime uses direct data source URLs without CORS proxy.');
+    console.log('Tests may be slower and subject to API rate limits.');
+    console.log('==================================\n');
     expect(true).toBe(true);
   });
 });

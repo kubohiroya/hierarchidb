@@ -934,9 +934,7 @@ export class TreeSubscriptionService {
   /**
    * Subscribe to undo/redo availability updates (TreeSubscriptionAPI)
    */
-  async subscribeUndoState(
-    callback: (event: UndoStateEvent) => void
-  ): Promise<SubscriptionId> {
+  async subscribeUndoState(callback: (event: UndoStateEvent) => void): Promise<SubscriptionId> {
     const subscriptionId = this.generateSubscriptionId() as SubscriptionId;
 
     this.undoStateSubscriptions.set(subscriptionId, callback);
@@ -1044,8 +1042,7 @@ export class TreeSubscriptionService {
     const nodeSubscriptions = active.filter((info) => info.type === 'node').length;
     const subtreeSubscriptions = active.filter((info) => info.type === 'subtree').length;
     const treeSubscriptions = active.filter((info) => info.type === 'tree').length;
-    const averageEventLatency =
-      this.eventCount > 0 ? this.totalLatency / this.eventCount : 0;
+    const averageEventLatency = this.eventCount > 0 ? this.totalLatency / this.eventCount : 0;
 
     return {
       totalActive: active.length,
@@ -1169,5 +1166,4 @@ export class TreeSubscriptionService {
       this.eventHistory = this.eventHistory.slice(-this.maxEventHistory);
     }
   }
-
 }

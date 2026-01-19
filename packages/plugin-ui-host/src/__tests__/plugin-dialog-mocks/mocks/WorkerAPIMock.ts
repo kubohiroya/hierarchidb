@@ -1,9 +1,15 @@
+import type { PluginDialogAPI, StepCapabilities } from '@hierarchidb/common-api';
 import type {
-  PluginDialogAPI,
-  StepCapabilities,
-} from '@hierarchidb/common-api';
-import type { TreeNodeUpdater, TreeNodeUpdaterPayload } from '@hierarchidb/common-types';
-import type { NodeId, ValidationResult } from '@hierarchidb/common-types';
+  NodeId,
+  TreeNodeUpdater,
+  TreeNodeUpdaterPayload,
+  ValidationResult,
+} from '@hierarchidb/common-types';
+
+type ValidationResultDetail = ValidationResult & {
+  errors?: string[];
+  warnings?: string[];
+};
 
 function genId(prefix: string = 'wc'): NodeId {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}` as NodeId;
@@ -79,7 +85,10 @@ export class WorkerAPIMock {
         return self.store.get(draftId);
       },
 
-      async updateDraft(draftId: NodeId, updates: Partial<TreeNodeUpdater>): Promise<TreeNodeUpdater> {
+      async updateDraft(
+        draftId: NodeId,
+        updates: Partial<TreeNodeUpdater>
+      ): Promise<TreeNodeUpdater> {
         const wc = await requireDraft(draftId);
         const patch = updates as Partial<TreeNodeUpdater> & {
           data?: Record<string, unknown>;
@@ -91,12 +100,12 @@ export class WorkerAPIMock {
             ? { ...(wc.payload.draftMetadata ?? {}), ...updates.payload.draftMetadata }
             : patch.metadata
               ? { ...(wc.payload.draftMetadata ?? {}), ...patch.metadata }
-            : wc.payload.draftMetadata ?? null,
+              : (wc.payload.draftMetadata ?? null),
           draftData: updates.payload?.draftData
             ? { ...(wc.payload.draftData ?? {}), ...updates.payload.draftData }
             : patch.data
               ? { ...(wc.payload.draftData ?? {}), ...patch.data }
-            : wc.payload.draftData ?? {},
+              : (wc.payload.draftData ?? {}),
         };
         const next: TreeNodeUpdater & {
           nodeType?: string;
@@ -123,6 +132,7 @@ export class WorkerAPIMock {
         const wc = await requireDraft(draftId);
         const data = wc.payload.draftData ?? {};
         const nodeType = (wc as { nodeType?: string }).nodeType ?? 'folder';
+        const dataRecord = data as Record<string, unknown>;
 
         if (nodeType === 'project') {
           return {
@@ -160,13 +170,19 @@ export class WorkerAPIMock {
 
         if (nodeType.startsWith('location')) {
           if (step === 0) {
-            result.canProceedToNext = Boolean((data as any).locationType && namePresent);
+            result.canProceedToNext = Boolean(dataRecord.locationType && namePresent);
           } else if (step === 1) {
-            const { latitude, longitude } = data as any;
-            const coordsOk = typeof latitude === 'number'
-              && typeof longitude === 'number'
-              && latitude >= -90 && latitude <= 90
-              && longitude >= -180 && longitude <= 180;
+            const { latitude, longitude } = dataRecord as {
+              latitude?: number;
+              longitude?: number;
+            };
+            const coordsOk =
+              typeof latitude === 'number' &&
+              typeof longitude === 'number' &&
+              latitude >= -90 &&
+              latitude <= 90 &&
+              longitude >= -180 &&
+              longitude <= 180;
             result.canProceedToNext = coordsOk;
             result.canSave = coordsOk;
             result.canStartBatch = coordsOk;
@@ -185,8 +201,13 @@ export class WorkerAPIMock {
             return result;
           }
           if (step === 1) {
-            const style = (data as any).mapStyle;
-            const styleOk = !!style?.style && (style.style !== 'custom' || Boolean(style?.customStyleUrl));
+            const style = (
+              dataRecord as {
+                mapStyle?: { style?: string; customStyleUrl?: string };
+              }
+            ).mapStyle;
+            const styleOk =
+              !!style?.style && (style.style !== 'custom' || Boolean(style?.customStyleUrl));
             result.canNavigateTo = true;
             result.canProceedToNext = namePresent && styleOk;
             result.canSave = namePresent && styleOk;
@@ -194,11 +215,17 @@ export class WorkerAPIMock {
             return result;
           }
           if (step === 2) {
-            const viewport = (data as any).viewport;
-            const coordsOk = Array.isArray(viewport?.center)
-              && typeof viewport.center[0] === 'number'
-              && typeof viewport.center[1] === 'number';
-            const zoomOk = typeof viewport?.zoom === 'number' && viewport.zoom >= 0 && viewport.zoom <= 24;
+            const viewport = (
+              dataRecord as {
+                viewport?: { center?: [number, number]; zoom?: number };
+              }
+            ).viewport;
+            const coordsOk =
+              Array.isArray(viewport?.center) &&
+              typeof viewport.center[0] === 'number' &&
+              typeof viewport.center[1] === 'number';
+            const zoomOk =
+              typeof viewport?.zoom === 'number' && viewport.zoom >= 0 && viewport.zoom <= 24;
             result.canNavigateTo = true;
             result.canProceedToNext = namePresent && coordsOk && zoomOk;
             result.canSave = namePresent && coordsOk && zoomOk;
@@ -221,20 +248,20 @@ export class WorkerAPIMock {
       async batchValidate(ids: NodeId[]): Promise<Record<NodeId, ValidationResult>> {
         const out = Object.create(null) as Record<NodeId, ValidationResult>;
         for (const id of ids) {
-          const validation: ValidationResult = { valid: true } as ValidationResult;
+          const validation: ValidationResultDetail = { valid: true } as ValidationResultDetail;
           try {
             const wc = await requireDraft(id);
             const nodeType = wc.nodeType;
-            const data = (wc.data ?? {}) as Record<string, any>;
+            const data = (wc.data ?? {}) as Record<string, unknown>;
 
             const pushError = (message: string) => {
               validation.valid = false;
-              (validation as any).errors ??= [];
-              (validation as any).errors.push(message);
+              validation.errors ??= [];
+              validation.errors.push(message);
             };
             const pushWarning = (message: string) => {
-              (validation as any).warnings ??= [];
-              (validation as any).warnings.push(message);
+              validation.warnings ??= [];
+              validation.warnings.push(message);
             };
 
             if (nodeType === 'folder' || nodeType === 'folder-plugin') {
@@ -256,14 +283,15 @@ export class WorkerAPIMock {
               if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
                 pushError('経度は-180から180の数値である必要があります');
               }
-              const email = typeof data?.contact?.email === 'string' ? data.contact.email.trim() : '';
+              const email =
+                typeof data?.contact?.email === 'string' ? data.contact.email.trim() : '';
               if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
                 pushWarning('メールアドレスの形式が正しくない可能性があります');
               }
             }
           } catch (error) {
-            (validation as any).errors ??= [];
-            (validation as any).errors.push(error instanceof Error ? error.message : String(error));
+            validation.errors ??= [];
+            validation.errors.push(error instanceof Error ? error.message : String(error));
             validation.valid = false;
           }
           out[id] = validation;

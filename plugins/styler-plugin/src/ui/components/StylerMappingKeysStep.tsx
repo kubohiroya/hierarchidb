@@ -1,15 +1,15 @@
-import type React from 'react';
-import { useEffect, useMemo, useRef } from 'react';
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import { KeyValueSourcePanel } from '@hierarchidb/spreadsheet-plugin';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { Box, FormControl, FormHelperText, TextField, Typography } from '@mui/material';
-import type { StylerStepData } from '../../common/types/StylerEntity.js';
+import type React from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { StylerStepData } from '../../common/types/StylerEntity.js';
 
 const coerceColumns = (
   metadata?: TabularTableMetadata | null,
-  previewColumns?: unknown[] | null,
+  previewColumns?: unknown[] | null
 ): string[] => {
   const fromMetadata = (metadata?.columns ?? [])
     .map((col) => (typeof col === 'string' ? col : col?.name))
@@ -41,8 +41,12 @@ export const StylerMappingKeysStep: React.FC<PluginStepProps<StylerStepData>> = 
 }) => {
   const { t } = useTranslation('styler-plugin');
   const columns = useMemo(
-    () => coerceColumns(data?.tabularTableMetadata as TabularTableMetadata | undefined, data?.lastPreview?.columns ?? null),
-    [data?.lastPreview?.columns, data?.tabularTableMetadata],
+    () =>
+      coerceColumns(
+        data?.tabularTableMetadata as TabularTableMetadata | undefined,
+        data?.lastPreview?.columns ?? null
+      ),
+    [data?.lastPreview?.columns, data?.tabularTableMetadata]
   );
   const keyColumn = data?.keyColumn ?? '';
   const valueColumn = data?.valueColumn ?? '';
@@ -64,7 +68,10 @@ export const StylerMappingKeysStep: React.FC<PluginStepProps<StylerStepData>> = 
     }
     const errorMessage = valid
       ? null
-      : t('step3.validation.required', 'Select key/value columns and enter the feature ID property.');
+      : t(
+          'step3.validation.required',
+          'Select key/value columns and enter the feature ID property.'
+        );
     if (lastError.current !== errorMessage) {
       lastError.current = errorMessage;
       setError(errorMessage);
@@ -74,7 +81,10 @@ export const StylerMappingKeysStep: React.FC<PluginStepProps<StylerStepData>> = 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Typography variant="subtitle1">
-        {t('step3.description', 'Choose the table columns and the tile feature ID to link styling values.')}
+        {t(
+          'step3.description',
+          'Choose the table columns and the tile feature ID to link styling values.'
+        )}
       </Typography>
       <KeyValueSourcePanel
         keyColumn={keyColumn}
@@ -112,7 +122,7 @@ export const StylerMappingKeysStep: React.FC<PluginStepProps<StylerStepData>> = 
         <FormHelperText>
           {t(
             'step3.featureIdProperty.help',
-            'The property name on the vector tile feature used for promoteId and feature-atoms lookup.',
+            'The property name on the vector tile feature used for promoteId and feature-atoms lookup.'
           )}
         </FormHelperText>
       </FormControl>

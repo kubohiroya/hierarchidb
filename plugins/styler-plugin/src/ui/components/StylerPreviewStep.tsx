@@ -1,3 +1,6 @@
+import type { NodeId } from '@hierarchidb/common-types';
+import { wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
+import { i18n } from '@hierarchidb/ui-i18n';
 import {
   Alert,
   AlertTitle,
@@ -15,22 +18,19 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { FixedSizeList } from 'react-window';
 import type React from 'react';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { i18n } from '@hierarchidb/ui-i18n';
-import {
-  type StylerStepData,
-  type ColorStyleKeyValue,
-  type ScalarStyleKeyValue,
-  MAPLIBRE_PROPERTY_METADATA,
-} from '../../common/types/StylerEntity.js';
-import type { NodeId } from '@hierarchidb/common-types';
-import { wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
-import type { StylerStepProps } from './StylerStepProps.tsx';
-import { valueToColor } from '../../common/utils/colorUtils.js';
+import { FixedSizeList } from 'react-window';
 import type { ColorCalculationResult } from '../../common/types/StylerEntity.js';
+import {
+  type ColorStyleKeyValue,
+  MAPLIBRE_PROPERTY_METADATA,
+  type ScalarStyleKeyValue,
+  type StylerStepData,
+} from '../../common/types/StylerEntity.js';
+import { valueToColor } from '../../common/utils/colorUtils.js';
 import { useStylerPreview } from './hooks/useStylerPreview.js';
+import type { StylerStepProps } from './StylerStepProps.tsx';
 
 const getStylerT = () =>
   typeof i18n.getFixedT === 'function'
@@ -138,7 +138,11 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
       if (valueType === 'color') {
         const rawValue = row[valueColumn];
         if (rawValue === null || rawValue === undefined || rawValue === '') return;
-        const isNumeric = typeof rawValue === 'number' || (typeof rawValue === 'string' && rawValue.trim() !== '' && !Number.isNaN(Number(rawValue)));
+        const isNumeric =
+          typeof rawValue === 'number' ||
+          (typeof rawValue === 'string' &&
+            rawValue.trim() !== '' &&
+            !Number.isNaN(Number(rawValue)));
         const colorResult = isNumeric
           ? valueToColor(Number(rawValue), mapping, derivedConfig, numericAllValues)
           : { color: String(rawValue) };
@@ -159,21 +163,29 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
       }
     });
 
-    const nextStyleKeyValues = valueType === 'color'
-      ? { colors: colorPairs, scalars: [] as ScalarStyleKeyValue[] }
-      : { colors: [] as ColorStyleKeyValue[], scalars: scalarPairs };
+    const nextStyleKeyValues =
+      valueType === 'color'
+        ? { colors: colorPairs, scalars: [] as ScalarStyleKeyValue[] }
+        : { colors: [] as ColorStyleKeyValue[], scalars: scalarPairs };
     const prev = data?.styleKeyValues ?? {};
     const colorsEqual =
       (prev.colors?.length ?? 0) === nextStyleKeyValues.colors.length &&
       (prev.colors ?? []).every((item, idx) => {
         const next = nextStyleKeyValues.colors[idx];
-        return next && item.key === next.key && item.color === next.color && item.nodeId === next.nodeId;
+        return (
+          next && item.key === next.key && item.color === next.color && item.nodeId === next.nodeId
+        );
       });
     const scalarsEqual =
       (prev.scalars?.length ?? 0) === nextStyleKeyValues.scalars.length &&
       (prev.scalars ?? []).every((item, idx) => {
         const next = nextStyleKeyValues.scalars[idx];
-        return next && item.key === next.key && item.scalarValue === next.scalarValue && item.nodeId === next.nodeId;
+        return (
+          next &&
+          item.key === next.key &&
+          item.scalarValue === next.scalarValue &&
+          item.nodeId === next.nodeId
+        );
       });
     if (colorsEqual && scalarsEqual) {
       return;
@@ -199,7 +211,14 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
     featureIdProperty,
   ]);
 
-  if (!keyColumn || !valueColumn || !targetProperty || !styleType || !featureIdProperty || (valueType === 'number' && !mappingMode)) {
+  if (
+    !keyColumn ||
+    !valueColumn ||
+    !targetProperty ||
+    !styleType ||
+    !featureIdProperty ||
+    (valueType === 'number' && !mappingMode)
+  ) {
     return (
       <Box sx={{ p: 3 }}>
         <Alert severity="info">
@@ -221,9 +240,7 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
             {!targetProperty && (
               <li>{t('stylePreview.required.targetProperty', 'Select a target property')}</li>
             )}
-            {!styleType && (
-              <li>{t('stylePreview.required.styleType', 'Select a style type')}</li>
-            )}
+            {!styleType && <li>{t('stylePreview.required.styleType', 'Select a style type')}</li>}
             {valueType === 'number' && !mappingMode && (
               <li>{t('stylePreview.required.mappingMode', 'Select a mapping mode')}</li>
             )}
@@ -364,7 +381,9 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
                     const isNumeric = numericColumns[col];
                     let chip: React.ReactNode = null;
                     if (isValue && typeof cellValue !== 'undefined' && cellValue !== null) {
-                      const meta = targetProperty ? MAPLIBRE_PROPERTY_METADATA[targetProperty] : null;
+                      const meta = targetProperty
+                        ? MAPLIBRE_PROPERTY_METADATA[targetProperty]
+                        : null;
                       if (!meta || meta.type === 'color') {
                         const num = typeof cellValue === 'number' ? cellValue : Number(cellValue);
                         const safeValue = Number.isFinite(num) ? num : 0;
@@ -379,7 +398,13 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
                             ? colorResult.color.toUpperCase()
                             : colorResult.color;
                           chip = (
-                            <Tooltip title={colorLabel} arrow describeChild enterDelay={100} placement="right">
+                            <Tooltip
+                              title={colorLabel}
+                              arrow
+                              describeChild
+                              enterDelay={100}
+                              placement="right"
+                            >
                               <Box sx={{ display: 'inline-flex', pointerEvents: 'auto' }}>
                                 <Chip
                                   size="small"

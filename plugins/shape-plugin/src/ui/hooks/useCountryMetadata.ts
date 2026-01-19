@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { CountryMetadata } from '../../common/types/index.js';
+import type { CountryMetadata, DataSourceName } from '../../common/types/index.js';
 import type { NodeId } from '@hierarchidb/common-types';
-import { normalizeDataSourceName } from '../../services/utils/utils.js';
 import { metadataLoader } from '../../services/metadata/MetadataLoader.js';
 
 export interface UseCountryMetadataOptions {
-  dataSource: string|undefined;
+  dataSource: DataSourceName | undefined;
   countryCodes?: string[];
   nodeId: NodeId;
 }
@@ -23,17 +22,16 @@ export interface UseCountryMetadataResult {
  * Hook to load and use country metadata via download-backed MetadataLoader
  */
 export function useCountryMetadata({
-                                     dataSource,
-                                     countryCodes,
-                                     nodeId,
-                                   }: UseCountryMetadataOptions): UseCountryMetadataResult {
-  const normalizedDataSource = normalizeDataSourceName(dataSource ?? '') ?? '';
+  dataSource,
+  countryCodes,
+  nodeId,
+}: UseCountryMetadataOptions): UseCountryMetadataResult {
   const [metadata, setMetadata] = useState<CountryMetadata[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
   const loadMetadata = useCallback(async (options?: { force?: boolean }) => {
-    if (!normalizedDataSource) {
+    if (!dataSource) {
       const err = new Error('Data source is not set. Please go back to Step2 and select a data source.');
       setError(err);
       setMetadata([]);
@@ -41,7 +39,7 @@ export function useCountryMetadata({
       return;
     }
 
-    if (normalizedDataSource === 'openstreetmap') {
+    if (dataSource === 'openstreetmap') {
       const err = new Error('OpenStreetMap is not supported in Step3 country selection.');
       setError(err);
       setMetadata([]);
@@ -51,7 +49,7 @@ export function useCountryMetadata({
 
     if (options?.force) {
       // Clear in-memory cache so we can re-fetch from the underlying chunk-store/network.
-      metadataLoader.clearCache(normalizedDataSource);
+      metadataLoader.clearCache(dataSource);
     }
 
     setLoading(true);
@@ -61,15 +59,15 @@ export function useCountryMetadata({
       let data: CountryMetadata[];
 
       if (countryCodes && countryCodes.length > 0) {
-        data = await metadataLoader.getCountriesMetadata(normalizedDataSource, countryCodes, nodeId);
+        data = await metadataLoader.getCountriesMetadata(dataSource, countryCodes, nodeId);
       } else {
-        data = await metadataLoader.loadMetadata(normalizedDataSource, nodeId);
+        data = await metadataLoader.loadMetadata(dataSource, nodeId);
       }
 
       setMetadata(Array.isArray(data) ? data : []);
 
       if (!data?.length) {
-        throw new Error(`No country metadata returned for data source: ${normalizedDataSource}`);
+        throw new Error(`No country metadata returned for data source: ${dataSource}`);
       }
     } catch (err) {
       const e = err instanceof Error ? err : new Error('Failed to load metadata');
@@ -78,7 +76,7 @@ export function useCountryMetadata({
     } finally {
       setLoading(false);
     }
-  }, [normalizedDataSource, countryCodes, nodeId]);
+  }, [dataSource, countryCodes, nodeId]);
 
   useEffect(() => {
     loadMetadata();

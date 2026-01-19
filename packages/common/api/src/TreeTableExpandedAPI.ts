@@ -7,6 +7,3 @@ export interface TreeTableExpandedAPI {
   clearExpandedForPage(pageNodeId: NodeId): Promise<number>;
   clearExpandedForSubtree(nodeIds: NodeId[]): Promise<void>;
 }
-
-// Ensure module resolution in NodeNext
-export {};

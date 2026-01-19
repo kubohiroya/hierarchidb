@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { TreeNode } from '@hierarchidb/common-types';
+import { describe, expect, it } from 'vitest';
 import { __testUtils } from '../../useBaseMapEntity.js';
 
 const { buildBaseMapEntityFromNode, normalizeMapStyle, normalizeViewport } = __testUtils;

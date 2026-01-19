@@ -93,7 +93,7 @@ const ICON_BOX_SIZE = 48;
 function resolveIconPosition(
   index: number,
   viewport: { width: number; height: number },
-  placement?: ModelessIconPlacement,
+  placement?: ModelessIconPlacement
 ): DialogPosition {
   const resolved = { ...DEFAULT_ICON_PLACEMENT, ...placement };
   const offset = resolved.offset ?? DEFAULT_ICON_PLACEMENT.offset;
@@ -120,7 +120,7 @@ function resolveIconPosition(
 
 function toStoredPosition(
   position: DialogPosition,
-  viewport: { width: number; height: number },
+  viewport: { width: number; height: number }
 ): StoredPosition {
   const right = Math.max(viewport.width - position.x - ICON_BOX_SIZE, 0);
   const bottom = Math.max(viewport.height - position.y - ICON_BOX_SIZE, 0);
@@ -129,14 +129,14 @@ function toStoredPosition(
 
 function fromStoredPosition(
   position: StoredPosition,
-  viewport: { width: number; height: number },
+  viewport: { width: number; height: number }
 ): DialogPosition {
-  const left = position.left ?? (position.right != null
-    ? Math.max(viewport.width - position.right - ICON_BOX_SIZE, 0)
-    : 0);
-  const top = position.top ?? (position.bottom != null
-    ? Math.max(viewport.height - position.bottom - ICON_BOX_SIZE, 0)
-    : 0);
+  const left =
+    position.left ??
+    (position.right != null ? Math.max(viewport.width - position.right - ICON_BOX_SIZE, 0) : 0);
+  const top =
+    position.top ??
+    (position.bottom != null ? Math.max(viewport.height - position.bottom - ICON_BOX_SIZE, 0) : 0);
   return { x: left, y: top };
 }
 
@@ -159,19 +159,27 @@ function fromStoredRect(rect: StoredDialogRect): { position: DialogPosition; siz
 function isStoredDialogLayout(value: unknown): value is StoredDialogLayout {
   if (!value || typeof value !== 'object') return false;
   const candidate = value as StoredDialogLayout;
-  return candidate.version === 2 && typeof candidate.windows === 'object' && Array.isArray(candidate.order);
+  return (
+    candidate.version === 2 &&
+    typeof candidate.windows === 'object' &&
+    Array.isArray(candidate.order)
+  );
 }
 
 function isLegacyDialogLayout(value: unknown): value is LegacyDialogLayout {
   if (!value || typeof value !== 'object') return false;
   const candidate = value as LegacyDialogLayout;
-  return candidate.version === 1 && typeof candidate.windows === 'object' && Array.isArray(candidate.order);
+  return (
+    candidate.version === 1 &&
+    typeof candidate.windows === 'object' &&
+    Array.isArray(candidate.order)
+  );
 }
 
 function toWindowState(
   id: string,
   stored: StoredDialogWindow,
-  viewport: { width: number; height: number },
+  viewport: { width: number; height: number }
 ): MapDialogWindowState {
   const { position, size } = fromStoredRect(stored.dialog);
   const lastNormal = stored.lastNormal ? fromStoredRect(stored.lastNormal) : undefined;
@@ -183,7 +191,9 @@ function toWindowState(
     displayMode,
     isVisible: stored.mode !== 'closed',
     isMinimized: stored.isMinimized ?? false,
-    iconPosition: stored.iconPosition ? fromStoredPosition(stored.iconPosition, viewport) : undefined,
+    iconPosition: stored.iconPosition
+      ? fromStoredPosition(stored.iconPosition, viewport)
+      : undefined,
     lastNormalPosition: lastNormal?.position,
     lastNormalSize: lastNormal?.size,
   };
@@ -191,17 +201,20 @@ function toWindowState(
 
 function toStoredWindow(
   windowState: MapDialogWindowState,
-  viewport: { width: number; height: number },
+  viewport: { width: number; height: number }
 ): StoredDialogWindow {
   const dialog = toStoredRect(windowState.position, windowState.size);
-  const lastNormal = windowState.lastNormalPosition && windowState.lastNormalSize
-    ? toStoredRect(windowState.lastNormalPosition, windowState.lastNormalSize)
-    : undefined;
+  const lastNormal =
+    windowState.lastNormalPosition && windowState.lastNormalSize
+      ? toStoredRect(windowState.lastNormalPosition, windowState.lastNormalSize)
+      : undefined;
   const mode: StoredDialogMode = windowState.isVisible ? windowState.displayMode : 'closed';
   return {
     mode,
     dialog,
-    iconPosition: windowState.iconPosition ? toStoredPosition(windowState.iconPosition, viewport) : undefined,
+    iconPosition: windowState.iconPosition
+      ? toStoredPosition(windowState.iconPosition, viewport)
+      : undefined,
     lastNormal,
     isMinimized: windowState.isMinimized,
   };
@@ -210,7 +223,7 @@ function toStoredWindow(
 export function buildDefaultLayout(
   definitions: MapDialogDefinitionBase[],
   viewport: { width: number; height: number },
-  iconPlacement?: ModelessIconPlacement,
+  iconPlacement?: ModelessIconPlacement
 ): MapDialogLayout {
   const windows: Record<string, MapDialogWindowState> = {};
   const order: string[] = [];
@@ -243,7 +256,7 @@ export function buildDefaultLayout(
 export function applyDisplayMode(
   windowState: MapDialogWindowState,
   mode: DialogDisplayMode,
-  viewport: { width: number; height: number } = getViewportSize(),
+  viewport: { width: number; height: number } = getViewportSize()
 ): MapDialogWindowState {
   const next: MapDialogWindowState = { ...windowState, displayMode: mode, isMinimized: false };
   let nextSize = next.size;
@@ -285,7 +298,7 @@ export function applyDisplayMode(
 export function mergeLayout(
   prev: MapDialogLayout,
   definitions: MapDialogDefinitionBase[],
-  iconPlacement?: ModelessIconPlacement,
+  iconPlacement?: ModelessIconPlacement
 ): MapDialogLayout {
   const viewport = getViewportSize();
   const defaults = buildDefaultLayout(definitions, viewport, iconPlacement);
@@ -309,10 +322,10 @@ export function mergeLayout(
       clampSizeToViewport: existing.displayMode !== 'full-screen',
     });
     if (
-      normalized.position.x !== existing.position.x
-      || normalized.position.y !== existing.position.y
-      || normalized.size.width !== existing.size.width
-      || normalized.size.height !== existing.size.height
+      normalized.position.x !== existing.position.x ||
+      normalized.position.y !== existing.position.y ||
+      normalized.size.width !== existing.size.width ||
+      normalized.size.height !== existing.size.height
     ) {
       changed = true;
     }
@@ -364,8 +377,9 @@ export function resolveRestorePosition({
     .map((entry) => entry.position);
 
   const isNear = (candidate: DialogPosition) =>
-    others.some((entry) =>
-      Math.hypot(entry.x - candidate.x, entry.y - candidate.y) <= distanceThreshold);
+    others.some(
+      (entry) => Math.hypot(entry.x - candidate.x, entry.y - candidate.y) <= distanceThreshold
+    );
 
   const isRightOrBottom = (candidate: DialogPosition) =>
     candidate.x >= viewport.width * (2 / 3) || candidate.y >= viewport.height * (2 / 3);
@@ -412,7 +426,7 @@ export function resolveRestorePosition({
 export function loadLayout(
   storageKey: string,
   definitions: MapDialogDefinitionBase[],
-  iconPlacement?: ModelessIconPlacement,
+  iconPlacement?: ModelessIconPlacement
 ): MapDialogLayout {
   const viewport = getViewportSize();
   const fallback = buildDefaultLayout(definitions, viewport, iconPlacement);
@@ -429,7 +443,11 @@ export function loadLayout(
       Object.entries(parsed.windows).forEach(([id, windowState]) => {
         windows[id] = toWindowState(id, windowState, viewport);
       });
-      return mergeLayout({ version: STORAGE_VERSION, windows, order: parsed.order }, definitions, iconPlacement);
+      return mergeLayout(
+        { version: STORAGE_VERSION, windows, order: parsed.order },
+        definitions,
+        iconPlacement
+      );
     }
     if (isLegacyDialogLayout(parsed)) {
       return mergeLayout({ ...parsed, version: STORAGE_VERSION }, definitions, iconPlacement);

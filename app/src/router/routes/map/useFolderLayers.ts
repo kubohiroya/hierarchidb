@@ -1,4 +1,7 @@
-import { useEffect, useState } from 'react';
+import type { NodeId, TreeNode } from '@hierarchidb/common-types';
+import type { ShapeQueryAPI } from '@hierarchidb/plugin-service-api';
+import type { RouteQueryAPI } from '@hierarchidb/route-store';
+import { MAPLIBRE_PROPERTY_METADATA } from '@hierarchidb/styler-store';
 import type {
   FeatureStateEntry,
   FeatureStateRecord,
@@ -6,14 +9,12 @@ import type {
   ResourceGeoJsonLayer,
   ResourceVectorLayer,
 } from '@hierarchidb/ui-plugin-shell/ui-map';
-import { getDBName } from '@hierarchidb/util';
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
-import type { ShapeQueryAPI } from '@hierarchidb/plugin-service-api';
-import type { RouteQueryAPI } from '@hierarchidb/route-store';
-import { MAPLIBRE_PROPERTY_METADATA } from '@hierarchidb/styler-store';
 import { ensureWorkerAPI } from '@hierarchidb/ui-worker-client';
-import type { MapInfoSummary } from '../modeless/modelessDialogContent.js';
+import { getDBName } from '@hierarchidb/util';
+import { useEffect, useState } from 'react';
 import { parseZxyParam } from '../../loaders/mapLoader.js';
+import type { MapInfoSummary } from '../modeless/modelessDialogContent.js';
+import { resolveMapStyleSource, sortByLayerPath, sortByPath } from './styleUtils.js';
 import type {
   BasemapStyleEntry,
   FeatureStateBundle,
@@ -22,7 +23,6 @@ import type {
   MapStylerSummary,
   PersistedZxyHandler,
 } from './types.js';
-import { resolveMapStyleSource, sortByLayerPath, sortByPath } from './styleUtils.js';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -67,7 +67,7 @@ const buildAbsolutePath = (nodeId: string, nodeById: Map<string, TreeNode>): str
 const withLayerOrder = (
   kind: 'shape' | 'route' | 'location',
   absolutePath: string | undefined,
-  fallbackId: string,
+  fallbackId: string
 ): string => {
   const prefix = kind === 'shape' ? '1' : kind === 'route' ? '2' : '3';
   const key = absolutePath ?? fallbackId;
@@ -81,7 +81,6 @@ const getShapeQueryAPI = async (): Promise<ShapeQueryAPI> => {
   }
   return shapeQueryPromise;
 };
-
 
 let routeQueryPromise: Promise<RouteQueryAPI> | null = null;
 const getRouteQueryAPI = async (): Promise<RouteQueryAPI> => {
@@ -184,7 +183,9 @@ export const useFolderLayers = ({
         if (!searchZxy) {
           const persisted =
             rootNode.map?.zxy ??
-            (isRecord(rootNode.data) ? (rootNode.data as { map?: { zxy?: string } }).map?.zxy : undefined);
+            (isRecord(rootNode.data)
+              ? (rootNode.data as { map?: { zxy?: string } }).map?.zxy
+              : undefined);
           const parsed = persisted ? parseZxyParam(persisted) : null;
           if (parsed) {
             onPersistedZxy(parsed);
@@ -197,7 +198,9 @@ export const useFolderLayers = ({
         const geoJsonEntries: ResourceGeoJsonLayer[] = [];
         const locationEntries: LocationLayerEntry[] = [];
         const styleOverrides: LayerStyleOverrides = {};
-        const featureStateByStyleType: Partial<Record<'choropleth' | 'points' | 'lines', FeatureStateBundle>> = {};
+        const featureStateByStyleType: Partial<
+          Record<'choropleth' | 'points' | 'lines', FeatureStateBundle>
+        > = {};
         const stylerSummaries: MapStylerSummary[] = [];
 
         const stylerNodes = nodesForLayers.filter((node) => node.nodeType === 'styler');
@@ -339,7 +342,6 @@ export const useFolderLayers = ({
             });
           }
 
-
           if (node.nodeType === 'route') {
             const data = node.data as { processingStatus?: string; dataSourceName?: string } | null;
             const dataSourceName = data?.dataSourceName;
@@ -378,10 +380,7 @@ export const useFolderLayers = ({
 
         if (!cancelled) {
           setBasemapStyles(sortByPath(basemapEntries));
-          setVectorLayers([
-            ...sortByPath(shapeEntries),
-            ...sortByPath(routeEntries),
-          ]);
+          setVectorLayers([...sortByPath(shapeEntries), ...sortByPath(routeEntries)]);
           setGeoJsonLayers(sortByLayerPath(geoJsonEntries));
           setLocationLayers(sortByPath(locationEntries));
           setStyleOverridesByType(styleOverrides);

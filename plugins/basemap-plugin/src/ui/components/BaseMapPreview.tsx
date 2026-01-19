@@ -63,18 +63,13 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
   interactive = false,
   title = 'BaseMap Preview',
 }) => {
-  const {
-    attribution,
-    handleMapClick,
-    initialViewState,
-    mapStyleProps,
-    zxyString,
-  } = useBaseMapPreview({
-    mapStyle,
-    viewport,
-    zxy,
-    interactive,
-  });
+  const { attribution, handleMapClick, initialViewState, mapStyleProps, zxyString } =
+    useBaseMapPreview({
+      mapStyle,
+      viewport,
+      zxy,
+      interactive,
+    });
 
   return (
     <Paper

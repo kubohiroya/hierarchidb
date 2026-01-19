@@ -3,7 +3,7 @@ import type { NodeId, TreeId } from '@hierarchidb/common-types';
 import type { Remote } from 'comlink';
 import { proxy as comlinkProxy } from 'comlink';
 import { useEffect, useRef, useState } from 'react';
-import { SubscriptionCallback, Subscriptions } from '~/hooks/SubscriptionServices.ts';
+import { type SubscriptionCallback, Subscriptions } from '~/hooks/SubscriptionServices.ts';
 import { isSubscriptionDebug, logIntegrationWarning } from './treeConsoleIntegrationUtils.js';
 
 export type TrashWatcherState = {
@@ -100,7 +100,10 @@ export function useTreeConsoleTrashWatcher({
           cb
         );
         if (created && isSubscriptionDebug()) {
-          console.log('[Subscription][trash] subscribed', { trashRootId: nextTrashRootId, subId: sid });
+          console.log('[Subscription][trash] subscribed', {
+            trashRootId: nextTrashRootId,
+            subId: sid,
+          });
         }
         if (disposed) {
           await Subscriptions.release('trash', client, nextTrashRootId);

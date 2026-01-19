@@ -1,5 +1,5 @@
-import type { DialogStep } from '@hierarchidb/ui-dialog';
 import type { PluginStepConfig, StepData } from '@hierarchidb/plugin-base';
+import type { DialogStep } from '@hierarchidb/ui-dialog';
 
 export type BasicInfoState = { name: string; description: string; tags: string[] };
 

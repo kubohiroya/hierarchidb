@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import type { TreeNodeUpdaterState } from '@hierarchidb/plugin-ui-sdk';
 import type { NodeId, TreeNodeData, TreeNodeMetadata } from '@hierarchidb/common-types';
+import type { TreeNodeUpdaterState } from '@hierarchidb/plugin-ui-sdk';
 import type { Remote } from 'comlink';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export function useConflictGuard(params: {
   mode: 'create' | 'edit';
@@ -12,7 +12,10 @@ export function useConflictGuard(params: {
   discardDraft: (opts?: { forceDelete?: boolean }) => Promise<void>;
   onClose: () => void;
   updateTreeNodeUpdater: (patch: Partial<TreeNodeUpdaterState<TreeNodeData>>) => void;
-  getLocalDraftSnapshot?: () => { draftMetadata?: TreeNodeMetadata | null; draftData?: TreeNodeData | null } | null;
+  getLocalDraftSnapshot?: () => {
+    draftMetadata?: TreeNodeMetadata | null;
+    draftData?: TreeNodeData | null;
+  } | null;
 }) {
   const {
     mode,
@@ -80,10 +83,10 @@ export function useConflictGuard(params: {
         (latest.latest as { draftData?: TreeNodeData | null }).draftData ?? null;
       const latestDraftMetadata =
         (latest.latest as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata ?? null;
-      const isSameContent = compareDraftSnapshots(
-        localSnapshot,
-        { draftData: latestDraftData, draftMetadata: latestDraftMetadata },
-      );
+      const isSameContent = compareDraftSnapshots(localSnapshot, {
+        draftData: latestDraftData,
+        draftMetadata: latestDraftMetadata,
+      });
       if (isSameContent) {
         acknowledgedVersionRef.current = latest.version;
         updateTreeNodeUpdater({
@@ -106,7 +109,14 @@ export function useConflictGuard(params: {
       });
     }
     return true;
-  }, [discardDraft, fetchLatestVersion, onClose, requestConflictResolution, resolveConflict, updateTreeNodeUpdater]);
+  }, [
+    discardDraft,
+    fetchLatestVersion,
+    onClose,
+    requestConflictResolution,
+    resolveConflict,
+    updateTreeNodeUpdater,
+  ]);
 
   return {
     conflictDialog,
@@ -134,13 +144,18 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T | nul
 }
 
 function compareDraftSnapshots(
-  localSnapshot: { draftMetadata?: TreeNodeMetadata | null; draftData?: TreeNodeData | null } | null,
-  remoteSnapshot: { draftMetadata?: TreeNodeMetadata | null; draftData?: TreeNodeData | null },
+  localSnapshot: {
+    draftMetadata?: TreeNodeMetadata | null;
+    draftData?: TreeNodeData | null;
+  } | null,
+  remoteSnapshot: { draftMetadata?: TreeNodeMetadata | null; draftData?: TreeNodeData | null }
 ): boolean {
   const localMeta = localSnapshot?.draftMetadata ?? null;
   const localData = localSnapshot?.draftData ?? null;
   const remoteMeta = remoteSnapshot.draftMetadata ?? null;
   const remoteData = remoteSnapshot.draftData ?? null;
-  return JSON.stringify(localMeta) === JSON.stringify(remoteMeta)
-    && JSON.stringify(localData) === JSON.stringify(remoteData);
+  return (
+    JSON.stringify(localMeta) === JSON.stringify(remoteMeta) &&
+    JSON.stringify(localData) === JSON.stringify(remoteData)
+  );
 }

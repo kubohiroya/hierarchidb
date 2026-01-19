@@ -55,7 +55,9 @@ export const createBuildQueue = (
   return queueKey;
 };
 
-export const shiftBuildQueue = (key: string): { nextUrl?: string; returnTo?: string; remaining: number } | null => {
+export const shiftBuildQueue = (
+  key: string
+): { nextUrl?: string; returnTo?: string; remaining: number } | null => {
   if (!hasLocalStorage()) return null;
   const storageKey = buildStorageKey(key);
   const state = safeParse(window.localStorage.getItem(storageKey));
@@ -72,10 +74,7 @@ export const shiftBuildQueue = (key: string): { nextUrl?: string; returnTo?: str
   if (remaining === 0) {
     window.localStorage.removeItem(storageKey);
   } else {
-    window.localStorage.setItem(
-      storageKey,
-      JSON.stringify({ ...state, urls: rest })
-    );
+    window.localStorage.setItem(storageKey, JSON.stringify({ ...state, urls: rest }));
   }
   return { nextUrl, returnTo: state.returnTo, remaining };
 };

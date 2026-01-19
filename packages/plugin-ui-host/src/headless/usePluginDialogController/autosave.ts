@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
 import type { TreeNodeData } from '@hierarchidb/common-types';
 import type { TreeNodeUpdaterState } from '@hierarchidb/plugin-ui-sdk';
+import { useEffect, useRef } from 'react';
 
 type Params<TPayload extends TreeNodeData> = {
   open: boolean;

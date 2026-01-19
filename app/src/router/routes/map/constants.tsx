@@ -1,8 +1,6 @@
-import type { MapToggleOption } from '@hierarchidb/ui-plugin-shell/ui-map';
 import type { LocationType } from '@hierarchidb/location-store';
 import { ROUTE_MODES, type RouteMode } from '@hierarchidb/route-store';
-import type { MapSearchTargetId } from '../../../state/mapSearch.atoms.js';
-import type { MapStyle } from './types.js';
+import type { MapToggleOption } from '@hierarchidb/ui-plugin-shell/ui-map';
 import {
   DirectionsBoat as DirectionsBoatIcon,
   DirectionsCar as DirectionsCarIcon,
@@ -13,15 +11,25 @@ import {
   Speed as SpeedIcon,
   Train as TrainIcon,
 } from '@mui/icons-material';
+import type { MapSearchTargetId } from '../../../state/mapSearch.atoms.js';
+import type { MapStyle } from './types.js';
 
 export type RouteModeOption = MapToggleOption & { modes: RouteMode[] };
 
 export const LOCATION_TYPE_OPTIONS = [
-  { id: 'area_centroid' as LocationType, label: 'Admin Center', icon: <LocationCityIcon fontSize="small" /> },
+  {
+    id: 'area_centroid' as LocationType,
+    label: 'Admin Center',
+    icon: <LocationCityIcon fontSize="small" />,
+  },
   { id: 'airport' as LocationType, label: 'Airport', icon: <FlightTakeoffIcon fontSize="small" /> },
   { id: 'port' as LocationType, label: 'Port', icon: <DirectionsBoatIcon fontSize="small" /> },
   { id: 'railway_station' as LocationType, label: 'Station', icon: <TrainIcon fontSize="small" /> },
-  { id: 'interchange' as LocationType, label: 'Interchange', icon: <ForkRightIcon fontSize="small" /> },
+  {
+    id: 'interchange' as LocationType,
+    label: 'Interchange',
+    icon: <ForkRightIcon fontSize="small" />,
+  },
 ] satisfies MapToggleOption[];
 
 export const LOCATION_TYPE_COLORS: Record<LocationType, string> = {
@@ -33,9 +41,24 @@ export const LOCATION_TYPE_COLORS: Record<LocationType, string> = {
 };
 
 export const ROUTE_MODE_OPTIONS = [
-  { id: ROUTE_MODES.AIRWAY, label: 'Air', icon: <FlightIcon fontSize="small" />, modes: [ROUTE_MODES.AIRWAY] },
-  { id: ROUTE_MODES.WATERWAY, label: 'Sea', icon: <DirectionsBoatIcon fontSize="small" />, modes: [ROUTE_MODES.WATERWAY] },
-  { id: ROUTE_MODES.RAILWAY, label: 'Rail', icon: <TrainIcon fontSize="small" />, modes: [ROUTE_MODES.RAILWAY] },
+  {
+    id: ROUTE_MODES.AIRWAY,
+    label: 'Air',
+    icon: <FlightIcon fontSize="small" />,
+    modes: [ROUTE_MODES.AIRWAY],
+  },
+  {
+    id: ROUTE_MODES.WATERWAY,
+    label: 'Sea',
+    icon: <DirectionsBoatIcon fontSize="small" />,
+    modes: [ROUTE_MODES.WATERWAY],
+  },
+  {
+    id: ROUTE_MODES.RAILWAY,
+    label: 'Rail',
+    icon: <TrainIcon fontSize="small" />,
+    modes: [ROUTE_MODES.RAILWAY],
+  },
   {
     id: ROUTE_MODES.H_RAILWAY,
     label: 'High-speed Rail',
@@ -66,7 +89,17 @@ export const SEARCH_TARGET_DEFINITIONS: Record<
   pointAirportCode: {
     label: '空港コード',
     group: 'point',
-    keys: ['airportCode', 'iataCode', 'icaoCode', 'iata', 'icao', 'ident', 'metadata.airportCode', 'metadata.iataCode', 'metadata.icaoCode'],
+    keys: [
+      'airportCode',
+      'iataCode',
+      'icaoCode',
+      'iata',
+      'icao',
+      'ident',
+      'metadata.airportCode',
+      'metadata.iataCode',
+      'metadata.icaoCode',
+    ],
   },
   pointPortCode: {
     label: '港コード',
@@ -82,7 +115,19 @@ export const SEARCH_TARGET_DEFINITIONS: Record<
   shapeRegionName: {
     label: '地域名',
     group: 'shape',
-    keys: ['adminName', 'name', 'NAME', 'name_en', 'NAME_EN', 'shapeName', 'NAME_1', 'NAME_2', 'NAME_3', 'NAME_4', 'NAME_5'],
+    keys: [
+      'adminName',
+      'name',
+      'NAME',
+      'name_en',
+      'NAME_EN',
+      'shapeName',
+      'NAME_1',
+      'NAME_2',
+      'NAME_3',
+      'NAME_4',
+      'NAME_5',
+    ],
   },
   shapeCountryName: {
     label: '国名',

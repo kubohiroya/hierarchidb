@@ -1,10 +1,11 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { describe, expect, it, vi } from 'vitest';
 import {
   TreeConsoleToolbar,
-  type TreeConsoleToolbarProps, } from '@hierarchidb/ui-treeconsole-toolbar';
+  type TreeConsoleToolbarProps,
+} from '@hierarchidb/ui-treeconsole-toolbar';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@hierarchidb/ui-i18n', () => ({
   useTranslation: () => ({
@@ -42,9 +43,7 @@ describe('TreeConsoleToolbar import menu restrictions', () => {
       availableTemplates: [{ id: 'template-1', label: 'Folder Template' }],
     });
 
-    fireEvent.click(
-      screen.getByRole('button', { name: 'aria.importExportButton' })
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'aria.importExportButton' }));
 
     const importItem = await screen.findByRole('menuitem', {
       name: 'importExportMenu.import',
@@ -66,9 +65,7 @@ describe('TreeConsoleToolbar import menu restrictions', () => {
       availableTemplates: [{ id: 'template-1', label: 'Folder Template' }],
     });
 
-    fireEvent.click(
-      screen.getByRole('button', { name: 'aria.importExportButton' })
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'aria.importExportButton' }));
 
     const templateItem = await screen.findByRole('menuitem', {
       name: 'importExportMenu.importTemplate',
@@ -86,9 +83,7 @@ describe('TreeConsoleToolbar import menu restrictions', () => {
   it('hides developer IndexedDB reset option when developer mode is disabled', async () => {
     renderToolbar();
 
-    fireEvent.click(
-      screen.getByRole('button', { name: 'aria.settingsButton' })
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'aria.settingsButton' }));
 
     expect(
       screen.queryByRole('menuitem', {
@@ -101,9 +96,7 @@ describe('TreeConsoleToolbar import menu restrictions', () => {
     const onAction = vi.fn();
     renderToolbar({ developerModeEnabled: true, onAction });
 
-    fireEvent.click(
-      screen.getByRole('button', { name: 'aria.settingsButton' })
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'aria.settingsButton' }));
 
     expect(
       screen.queryByRole('menuitem', {

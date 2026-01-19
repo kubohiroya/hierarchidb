@@ -4,37 +4,35 @@
  */
 
 import './worker-react-refresh-shim.js';
-import type { PluginDefinition } from '@hierarchidb/plugin-registry/types';
-import type { BuildContinuationPolicy, NodeId, NodeType } from '@hierarchidb/common-types';
+import { AuthService } from '@hierarchidb/auth-recovery';
 import type {
   BatchProgressEvent,
   BatchSessionStatus,
   BatchTaskSummary,
   UiStorageBridge,
 } from '@hierarchidb/common-api';
-import type { ShapeDataSourceName } from '@hierarchidb/plugin-service-api';
-import {
-  getAllRuntimeExports,
-  WorkerInitializationReporter,
-  wirePluginsFromModules,
-} from '@hierarchidb/ui-worker-client';
-import {
-  getWorkerContainer,
-  configureWorkerContainer,
-  type PluginWorkerModuleLoaderContract,
-  WorkerDiTokens,
-  WorkerService,
-} from '@hierarchidb/runtime-worker';
+import type { BuildContinuationPolicy, NodeId, NodeType } from '@hierarchidb/common-types';
 import { setCorsProxyBaseURL } from '@hierarchidb/download';
-import { AuthService } from '@hierarchidb/auth-recovery';
 import {
   createHeapPressureMonitor,
   type HeapPressureContext,
   type HeapPressureEvent,
 } from '@hierarchidb/memory';
+import type { PluginDefinition } from '@hierarchidb/plugin-registry/types';
+import type { ShapeDataSourceName } from '@hierarchidb/plugin-service-api';
 import {
-  pluginDefinitions as staticPluginDefinitions,
-} from '~/plugin-loaders/index.ts';
+  configureWorkerContainer,
+  getWorkerContainer,
+  type PluginWorkerModuleLoaderContract,
+  WorkerDiTokens,
+  WorkerService,
+} from '@hierarchidb/runtime-worker';
+import {
+  getAllRuntimeExports,
+  WorkerInitializationReporter,
+  wirePluginsFromModules,
+} from '@hierarchidb/ui-worker-client';
+import { pluginDefinitions as staticPluginDefinitions } from '~/plugin-loaders/index.ts';
 import { pluginWorkerLoaders } from '~/plugin-loaders/worker-loaders.ts';
 
 /** Runtime export metadata (subset consumed during bootstrap). */
@@ -52,19 +50,22 @@ type WorkerMessagePort = typeof self & {
 };
 
 type BatchTaskProvider = (nodeId: NodeId) => Promise<BatchTaskSummary[]>;
-type BatchProgressSubscriber = (nodeId: NodeId, callback: (event: BatchProgressEvent) => void) => () => void;
+type BatchProgressSubscriber = (
+  nodeId: NodeId,
+  callback: (event: BatchProgressEvent) => void
+) => () => void;
 
 type ShapeBatchAPI = {
   startBatchProcess: (
     draftId: NodeId,
     batchConfig: unknown,
     downloadTaskPayloads: unknown[],
-    buildContinuationPolicy?: BuildContinuationPolicy,
+    buildContinuationPolicy?: BuildContinuationPolicy
   ) => Promise<NodeId>;
   generateDownloadTaskPayloadsFromSelection?: (
     nodeId: NodeId,
     dataSource: ShapeDataSourceName,
-    selectedArrayByCountries: Record<string, boolean[]>,
+    selectedArrayByCountries: Record<string, boolean[]>
   ) => Promise<unknown[]>;
   getDraft?: (draftId: NodeId) => Promise<unknown>;
   getBatchSession?: (nodeId: NodeId) => Promise<unknown>;
@@ -77,7 +78,9 @@ type ShapeBatchAPI = {
 const heapMonitor = createHeapPressureMonitor({ source: 'worker' });
 const heapListeners = new Set<(event: HeapPressureEvent) => void>();
 heapMonitor.subscribe((event) => {
-  heapListeners.forEach((listener) => listener(event));
+  heapListeners.forEach((listener) => {
+    listener(event);
+  });
 });
 heapMonitor.start();
 
@@ -92,7 +95,9 @@ const resolveBatchTaskProvider = (mod: unknown): BatchTaskProvider | null => {
   if (typeof direct === 'function') {
     return direct as BatchTaskProvider;
   }
-  const shapePlugin = record.ShapeWorkerPlugin as { api?: Record<string, unknown>; batch?: Record<string, unknown> } | undefined;
+  const shapePlugin = record.ShapeWorkerPlugin as
+    | { api?: Record<string, unknown>; batch?: Record<string, unknown> }
+    | undefined;
   const api = shapePlugin?.batch ?? shapePlugin?.api;
   const apiFn = api?.getBatchTasks;
   if (typeof apiFn === 'function') {
@@ -108,7 +113,9 @@ const resolveShapeBatchAPI = (mod: unknown): ShapeBatchAPI | null => {
   if (direct?.startBatchProcess) {
     return direct;
   }
-  const shapePlugin = record.ShapeWorkerPlugin as { api?: ShapeBatchAPI; batch?: ShapeBatchAPI } | undefined;
+  const shapePlugin = record.ShapeWorkerPlugin as
+    | { api?: ShapeBatchAPI; batch?: ShapeBatchAPI }
+    | undefined;
   const api = shapePlugin?.batch ?? shapePlugin?.api;
   if (api?.startBatchProcess) {
     return api;
@@ -118,11 +125,14 @@ const resolveShapeBatchAPI = (mod: unknown): ShapeBatchAPI | null => {
 
 const toBatchSessionStatus = (
   session: Record<string, unknown> | undefined,
-  fallbackNodeId: NodeId,
+  fallbackNodeId: NodeId
 ): BatchSessionStatus => {
   const progress = (session?.progress as Record<string, unknown> | undefined) ?? {};
   return {
-    nodeId: (session?.nodeId as NodeId | undefined) ?? (session?.draftId as NodeId | undefined) ?? fallbackNodeId,
+    nodeId:
+      (session?.nodeId as NodeId | undefined) ??
+      (session?.draftId as NodeId | undefined) ??
+      fallbackNodeId,
     status: (session?.status as BatchSessionStatus['status'] | undefined) ?? 'idle',
     progress: {
       total: (progress.total as number | undefined) ?? 0,
@@ -339,16 +349,16 @@ reporter.reportStepProgress('Load Comlink', 0);
           nodeType: NodeType,
           nodeId: NodeId,
           downloadTaskPayloads?: unknown[],
-          buildContinuationPolicy?: BuildContinuationPolicy,
+          buildContinuationPolicy?: BuildContinuationPolicy
         ): Promise<BatchSessionStatus> => {
           const api = resolveShapeBatchApiOrThrow(nodeType);
           const draft = api.getDraft ? await api.getDraft(nodeId) : undefined;
           const fallbackNode = await services.getTreeNodeUpdaterAPI().getTreeNode(nodeId);
           const draftData = coerceRecord(
-            (draft as { draftData?: unknown } | undefined)?.draftData
-              ?? (draft as { data?: unknown } | undefined)?.data
-              ?? (fallbackNode as { draftData?: unknown } | undefined)?.draftData
-              ?? (fallbackNode as { data?: unknown } | undefined)?.data
+            (draft as { draftData?: unknown } | undefined)?.draftData ??
+              (draft as { data?: unknown } | undefined)?.data ??
+              (fallbackNode as { draftData?: unknown } | undefined)?.draftData ??
+              (fallbackNode as { data?: unknown } | undefined)?.data
           );
           const batchConfig = (draftData as { buildConfig?: unknown }).buildConfig ?? {};
           const payloads = downloadTaskPayloads ?? [];
@@ -364,21 +374,27 @@ reporter.reportStepProgress('Load Comlink', 0);
         generateShapeDownloadTaskPayloadsFromSelection: async (
           nodeId: NodeId,
           dataSource: ShapeDataSourceName,
-          selectedArrayByCountries: Record<string, boolean[]>,
+          selectedArrayByCountries: Record<string, boolean[]>
         ): Promise<unknown[]> => {
           const api = resolveShapeBatchApiOrThrow(SHAPE_NODE_TYPE);
           if (!api.generateDownloadTaskPayloadsFromSelection) {
-            throw new Error('[worker bootstrap] generateDownloadTaskPayloadsFromSelection is not available');
+            throw new Error(
+              '[worker bootstrap] generateDownloadTaskPayloadsFromSelection is not available'
+            );
           }
-          return api.generateDownloadTaskPayloadsFromSelection(nodeId, dataSource, selectedArrayByCountries);
+          return api.generateDownloadTaskPayloadsFromSelection(
+            nodeId,
+            dataSource,
+            selectedArrayByCountries
+          );
         },
-        getBatchSessionStatus: async (nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus> => {
+        getBatchSessionStatus: async (
+          nodeType: NodeType,
+          nodeId: NodeId
+        ): Promise<BatchSessionStatus> => {
           const api = resolveShapeBatchApiOrThrow(nodeType);
           const session = api.getBatchSession ? await api.getBatchSession(nodeId) : undefined;
-          return toBatchSessionStatus(
-            session as Record<string, unknown> | undefined,
-            nodeId
-          );
+          return toBatchSessionStatus(session as Record<string, unknown> | undefined, nodeId);
         },
         pauseBatchSession: async (nodeType: NodeType, nodeId: NodeId): Promise<void> => {
           const api = resolveShapeBatchApiOrThrow(nodeType);
@@ -387,9 +403,10 @@ reporter.reportStepProgress('Load Comlink', 0);
             return;
           }
           const session = api.getBatchSession ? await api.getBatchSession(nodeId) : undefined;
-          const draftId = (session as { nodeId?: NodeId; draftId?: NodeId } | undefined)?.nodeId
-            ?? (session as { draftId?: NodeId } | undefined)?.draftId
-            ?? nodeId;
+          const draftId =
+            (session as { nodeId?: NodeId; draftId?: NodeId } | undefined)?.nodeId ??
+            (session as { draftId?: NodeId } | undefined)?.draftId ??
+            nodeId;
           if (api.pauseBatchProcessing) {
             await api.pauseBatchProcessing(draftId);
           }
@@ -397,7 +414,7 @@ reporter.reportStepProgress('Load Comlink', 0);
         resumeBatchSession: async (
           nodeType: NodeType,
           nodeId: NodeId,
-          buildContinuationPolicy?: BuildContinuationPolicy,
+          buildContinuationPolicy?: BuildContinuationPolicy
         ): Promise<void> => {
           const api = resolveShapeBatchApiOrThrow(nodeType);
           if (api.invokeBatchCommand) {
@@ -406,9 +423,10 @@ reporter.reportStepProgress('Load Comlink', 0);
             return;
           }
           const session = api.getBatchSession ? await api.getBatchSession(nodeId) : undefined;
-          const draftId = (session as { nodeId?: NodeId; draftId?: NodeId } | undefined)?.nodeId
-            ?? (session as { draftId?: NodeId } | undefined)?.draftId
-            ?? nodeId;
+          const draftId =
+            (session as { nodeId?: NodeId; draftId?: NodeId } | undefined)?.nodeId ??
+            (session as { draftId?: NodeId } | undefined)?.draftId ??
+            nodeId;
           if (api.resumeBatchProcessing) {
             await api.resumeBatchProcessing(draftId);
           }
@@ -417,7 +435,7 @@ reporter.reportStepProgress('Load Comlink', 0);
         subscribeBatchProgress: async (
           nodeType: NodeType,
           nodeId: NodeId,
-          callback: (event: BatchProgressEvent) => void,
+          callback: (event: BatchProgressEvent) => void
         ): Promise<() => void> => {
           const api = resolveShapeBatchApiOrThrow(nodeType);
           if (!api.subscribeToProgress) {
@@ -427,7 +445,7 @@ reporter.reportStepProgress('Load Comlink', 0);
           return Comlink.proxy(unsubscribe);
         },
         subscribeHeapPressure: async (
-          callback: (event: HeapPressureEvent) => void,
+          callback: (event: HeapPressureEvent) => void
         ): Promise<() => void> => {
           heapListeners.add(callback);
           return Comlink.proxy(() => {
@@ -452,7 +470,7 @@ reporter.reportStepProgress('Load Comlink', 0);
         setAuthToken: async (
           token: string,
           type: 'Bearer' | 'Basic' = 'Bearer',
-          expiresAt?: number,
+          expiresAt?: number
         ): Promise<void> => {
           const auth = await AuthService.getSingleton();
           auth.setToken(token, type, expiresAt);

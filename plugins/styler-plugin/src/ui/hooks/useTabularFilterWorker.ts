@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
 import type { TabularFilterRule } from '@hierarchidb/ui-tabular';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { StylerTableRow } from '../../common/types/StylerEntity.js';
 import { applyFilters } from '../utils/tabularFilters.js';
 
@@ -58,10 +58,9 @@ export const useTabularFilterWorker = ({
   useEffect(() => {
     if (!supportsWorker) return undefined;
     try {
-      const worker = new Worker(
-        new URL('../workers/tabularFilter.worker.ts', import.meta.url),
-        { type: 'module' },
-      );
+      const worker = new Worker(new URL('../workers/tabularFilter.worker.ts', import.meta.url), {
+        type: 'module',
+      });
       workerRef.current = worker;
       const handleMessage = (event: MessageEvent<WorkerResponse>) => {
         const { id, rows: nextRows, error } = event.data ?? {};

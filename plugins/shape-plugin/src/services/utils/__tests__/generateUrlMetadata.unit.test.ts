@@ -79,10 +79,7 @@ describe('generateDownloadTaskPayloads', () => {
 });
 
 describe('generateDownloadTaskPayloads (network)', () => {
-  const shouldRun = process.env.ENABLE_INTEGRATION_TESTS === '1';
-  const testFn = shouldRun ? it : it.skip;
-
-  testFn('fetches URLs successfully for each data source', async () => {
+  it('fetches URLs successfully for each data source', async () => {
     const sources: DataSourceName[] = ['naturalearth', 'geoboundaries', 'gadm', 'openstreetmap'];
     const urlLists = sources.flatMap((source) => buildUrls(source));
     for (const url of urlLists) {

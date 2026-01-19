@@ -1,8 +1,8 @@
 import { RouterProvider } from '@tanstack/react-router';
 import { startTransition } from 'react';
 import { createRoot } from 'react-dom/client';
-import { createHierarchiRouter, getBasePath, getRouterMode } from './router/index.js';
 import AppRoot from './root.js';
+import { createHierarchiRouter, getBasePath, getRouterMode } from './router/index.js';
 import { initializeBrowserGlobals } from './router/init/initializeBrowserGlobals.ts';
 import { preloadPluginWorkerStores } from './worker-runtime/WorkerModuleLoader.js';
 

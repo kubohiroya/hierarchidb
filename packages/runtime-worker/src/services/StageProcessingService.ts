@@ -1,19 +1,23 @@
-import type { FetchWorkerAPI, TransformWorkerAPI, VectorTileProgress, VTWorkerAPI } from '../types.js';
+import type { NodeId } from '@hierarchidb/common-types';
 import {
   generateVectorTilesFromFgbBuffer,
   generateVectorTilesFromJsonBuffer,
-  type VTGenerateConfig,
   type VectorTileRow,
+  type VTGenerateConfig,
 } from '@hierarchidb/gis-sdk';
-import { storeRegistry } from '../entity/store-registry.js';
-import type { VectorTileItemBase } from '../entity/store.js';
-import { shapeDB, type LayerInfo } from '@hierarchidb/shape-store';
-import { ShapeMutationService } from './ShapeMutationService.js';
-import type { NodeId } from '@hierarchidb/common-types';
+import { type LayerInfo, shapeDB } from '@hierarchidb/shape-store';
 import type { FeatureMetadataRow } from '@hierarchidb/vectortile-store';
-
+import type { VectorTileItemBase } from '../entity/store.js';
+import { storeRegistry } from '../entity/store-registry.js';
+import type {
+  FetchWorkerAPI,
+  TransformWorkerAPI,
+  VectorTileProgress,
+  VTWorkerAPI,
+} from '../types.js';
 import type { SharedFetchService } from './downloadAdapter.js';
 import { createSharedDownloadService } from './downloadAdapter.js';
+import { ShapeMutationService } from './ShapeMutationService.js';
 
 const buildShapeTileId = (nodeId: NodeId, z: number, x: number, y: number): string =>
   `${nodeId}-${z}-${x}-${y}`;
@@ -25,14 +29,20 @@ const ensureShapeVectorTileStore = (): void => {
       const rows = await shapeDB.vectorTiles.where('nodeId').equals(nodeId).toArray();
       return rows.map((row) => ({ ...row, id: row.tileId }));
     },
-    async bulkUpsert(nodeId: NodeId, items: Array<VectorTileStoreItem & { id?: string }>): Promise<void> {
+    async bulkUpsert(
+      nodeId: NodeId,
+      items: Array<VectorTileStoreItem & { id?: string }>
+    ): Promise<void> {
       if (!items.length) return;
       const now = Date.now();
       const rows = items.map((item) => {
-        const bytes = item.data_Uint8Array
-          ?? (item.data instanceof Uint8Array
+        const bytes =
+          item.data_Uint8Array ??
+          (item.data instanceof Uint8Array
             ? item.data
-            : (item.data ? new Uint8Array(item.data) : null));
+            : item.data
+              ? new Uint8Array(item.data)
+              : null);
         const size = typeof item.size === 'number' ? item.size : (bytes?.byteLength ?? 0);
         return {
           ...item,
@@ -85,7 +95,11 @@ class RealFetchWorker implements FetchWorkerAPI {
 
   private async getShared(): Promise<SharedFetchService> {
     if (!this.sharedPromise) {
-      this.sharedPromise = createSharedDownloadService({ dbPrefix: 'hidb', perHostConcurrency: 4, scope: 'shape' });
+      this.sharedPromise = createSharedDownloadService({
+        dbPrefix: 'hidb',
+        perHostConcurrency: 4,
+        scope: 'shape',
+      });
     }
     return this.sharedPromise;
   }
@@ -107,7 +121,10 @@ class RealTransformWorker implements TransformWorkerAPI {
     bufferRegistry.set(out, { parent: inputBufferId, stage: 's1', ts: Date.now() });
     return { outputBufferId: out };
   }
-  async transformStage2(inputBufferId: string, _config: { zoomLevels: number[]; tileSize: number }) {
+  async transformStage2(
+    inputBufferId: string,
+    _config: { zoomLevels: number[]; tileSize: number }
+  ) {
     const out = `${inputBufferId}-s2`;
     bufferRegistry.set(out, { parent: inputBufferId, stage: 's2', ts: Date.now() });
     return { outputBufferId: out };
@@ -120,7 +137,11 @@ class RealVTWorker implements VTWorkerAPI {
 
   private async getShared(): Promise<SharedFetchService> {
     if (!this.sharedPromise) {
-      this.sharedPromise = createSharedDownloadService({ dbPrefix: 'hidb', perHostConcurrency: 2, scope: 'shape' });
+      this.sharedPromise = createSharedDownloadService({
+        dbPrefix: 'hidb',
+        perHostConcurrency: 2,
+        scope: 'shape',
+      });
     }
     return this.sharedPromise;
   }
@@ -140,7 +161,7 @@ class RealVTWorker implements VTWorkerAPI {
 
   private async decodeInputBuffer(
     buffer: ArrayBuffer,
-    inputCompression?: 'gzip' | 'none',
+    inputCompression?: 'gzip' | 'none'
   ): Promise<ArrayBuffer> {
     if (inputCompression !== 'gzip') return buffer;
     if (typeof DecompressionStream !== 'function') {
@@ -166,7 +187,7 @@ class RealVTWorker implements VTWorkerAPI {
   private async storeVectorTiles(
     nodeType: string,
     nodeId: NodeId,
-    tiles: VectorTileRow[],
+    tiles: VectorTileRow[]
   ): Promise<void> {
     if (!tiles.length) return;
     const store = storeRegistry.getVectorTiles(nodeType);
@@ -176,46 +197,54 @@ class RealVTWorker implements VTWorkerAPI {
     }
     const resolvedNodeId = nodeId;
     const now = Date.now();
-    const items = await Promise.all(tiles.map(async (tile) => {
-      const base = {
-        id: `${nodeId}-${tile.z}-${tile.x}-${tile.y}`,
-        z: tile.z,
-        x: tile.x,
-        y: tile.y,
-      };
-      if (nodeType === 'shape') {
-        const contentHash = await this.hashBytes(tile.data);
-        return {
-          ...base,
-          data_Uint8Array: tile.data,
-          size: tile.size,
-          features: 0,
-          layers: [],
-          generatedAt: now,
-          contentHash,
-          version: 1,
+    const items = await Promise.all(
+      tiles.map(async (tile) => {
+        const base = {
+          id: `${nodeId}-${tile.z}-${tile.x}-${tile.y}`,
+          z: tile.z,
+          x: tile.x,
+          y: tile.y,
         };
-      }
-      if (nodeType === 'location') {
-        const hash = await this.hashBytes(tile.data);
+        if (nodeType === 'shape') {
+          const contentHash = await this.hashBytes(tile.data);
+          return {
+            ...base,
+            data_Uint8Array: tile.data,
+            size: tile.size,
+            features: 0,
+            layers: [],
+            generatedAt: now,
+            contentHash,
+            version: 1,
+          };
+        }
+        if (nodeType === 'location') {
+          const hash = await this.hashBytes(tile.data);
+          return {
+            ...base,
+            data: tile.data.buffer.slice(
+              tile.data.byteOffset,
+              tile.data.byteOffset + tile.data.byteLength
+            ),
+            size: tile.size,
+            hash,
+            featureCount: 0,
+            timestamp: now,
+            contentType: tile.contentType,
+          };
+        }
         return {
           ...base,
-          data: tile.data.buffer.slice(tile.data.byteOffset, tile.data.byteOffset + tile.data.byteLength),
+          data: tile.data.buffer.slice(
+            tile.data.byteOffset,
+            tile.data.byteOffset + tile.data.byteLength
+          ),
           size: tile.size,
-          hash,
-          featureCount: 0,
-          timestamp: now,
           contentType: tile.contentType,
+          timestamp: now,
         };
-      }
-      return {
-        ...base,
-        data: tile.data.buffer.slice(tile.data.byteOffset, tile.data.byteOffset + tile.data.byteLength),
-        size: tile.size,
-        contentType: tile.contentType,
-        timestamp: now,
-      };
-    }));
+      })
+    );
     await store.bulkUpsert(resolvedNodeId, items);
   }
 
@@ -223,7 +252,7 @@ class RealVTWorker implements VTWorkerAPI {
     nodeType: string,
     nodeId: NodeId,
     featureMetadata?: FeatureMetadataRow[],
-    replace?: boolean,
+    replace?: boolean
   ): Promise<void> {
     if (nodeType !== 'shape' || !featureMetadata || featureMetadata.length === 0) return;
     const mutation = await ShapeMutationService.getSingleton(shapeDB);
@@ -248,7 +277,7 @@ class RealVTWorker implements VTWorkerAPI {
     metadata?: {
       featureMetadata?: FeatureMetadataRow[];
       metadataReplace?: boolean;
-    },
+    }
   ): Promise<{ tilesStored: number }> {
     if (!tiles.length) return { tilesStored: 0 };
     const resolvedNodeType = this.resolveNodeType(nodeType);
@@ -260,7 +289,12 @@ class RealVTWorker implements VTWorkerAPI {
     }));
     await this.storeVectorTiles(resolvedNodeType, nodeId, normalizedTiles);
     if (metadata?.featureMetadata?.length) {
-      await this.storeFeatureMetadata(resolvedNodeType, nodeId, metadata.featureMetadata, metadata.metadataReplace);
+      await this.storeFeatureMetadata(
+        resolvedNodeType,
+        nodeId,
+        metadata.featureMetadata,
+        metadata.metadataReplace
+      );
     }
     return { tilesStored: normalizedTiles.length };
   }
@@ -297,8 +331,8 @@ class RealVTWorker implements VTWorkerAPI {
       targetNodeType?: string;
       abortKey?: string;
     },
-    onProgress?: (progress: VectorTileProgress) => void,
-    ) {
+    onProgress?: (progress: VectorTileProgress) => void
+  ) {
     const startedAt = Date.now();
     const abortKey = config.abortKey;
     const controller = abortKey ? new AbortController() : null;
@@ -316,8 +350,8 @@ class RealVTWorker implements VTWorkerAPI {
       const decodeStart = Date.now();
       const inputBuffer = await this.decodeInputBuffer(buf, config.inputCompression);
       console.debug('[VectorTiles] decodeInputBuffer', { ms: Date.now() - decodeStart });
-      const nodeId = (config.targetNodeId
-        ?? (inputBufferId.includes('-extract2-')
+      const nodeId = (config.targetNodeId ??
+        (inputBufferId.includes('-extract2-')
           ? inputBufferId.substring(0, inputBufferId.lastIndexOf('-extract2-'))
           : inputBufferId)) as NodeId;
       const sdkConfig: VTGenerateConfig = {
@@ -333,7 +367,12 @@ class RealVTWorker implements VTWorkerAPI {
       const nodeType = this.resolveNodeType(config.targetNodeType);
       if (inputFormat === 'flatgeobuf') {
         const genStart = Date.now();
-        const result = await generateVectorTilesFromFgbBuffer(nodeId, inputBuffer, sdkConfig, onProgress);
+        const result = await generateVectorTilesFromFgbBuffer(
+          nodeId,
+          inputBuffer,
+          sdkConfig,
+          onProgress
+        );
         console.debug('[VectorTiles] generateFromFgb', {
           tilesGenerated: result.tilesGenerated,
           totalBytes: result.totalBytes,
@@ -343,12 +382,26 @@ class RealVTWorker implements VTWorkerAPI {
         await this.storeVectorTiles(nodeType, nodeId, result.tiles);
         console.debug('[VectorTiles] storeTiles', { ms: Date.now() - storeStart });
         const metaStart = Date.now();
-        await this.storeFeatureMetadata(nodeType, nodeId, result.featureMetadata, config.metadataReplace);
+        await this.storeFeatureMetadata(
+          nodeType,
+          nodeId,
+          result.featureMetadata,
+          config.metadataReplace
+        );
         console.debug('[VectorTiles] storeMetadata', { ms: Date.now() - metaStart });
-        return { tilesGenerated: result.tilesGenerated, totalBytes: result.totalBytes, metadataCount: result.metadataCount };
+        return {
+          tilesGenerated: result.tilesGenerated,
+          totalBytes: result.totalBytes,
+          metadataCount: result.metadataCount,
+        };
       }
       const genStart = Date.now();
-      const result = await generateVectorTilesFromJsonBuffer(nodeId, inputBuffer, sdkConfig, onProgress);
+      const result = await generateVectorTilesFromJsonBuffer(
+        nodeId,
+        inputBuffer,
+        sdkConfig,
+        onProgress
+      );
       console.debug('[VectorTiles] generateFromJson', {
         tilesGenerated: result.tilesGenerated,
         totalBytes: result.totalBytes,
@@ -358,10 +411,19 @@ class RealVTWorker implements VTWorkerAPI {
       await this.storeVectorTiles(nodeType, nodeId, result.tiles);
       console.debug('[VectorTiles] storeTiles', { ms: Date.now() - storeStart });
       const metaStart = Date.now();
-      await this.storeFeatureMetadata(nodeType, nodeId, result.featureMetadata, config.metadataReplace);
+      await this.storeFeatureMetadata(
+        nodeType,
+        nodeId,
+        result.featureMetadata,
+        config.metadataReplace
+      );
       console.debug('[VectorTiles] storeMetadata', { ms: Date.now() - metaStart });
       console.debug('[VectorTiles] generateTiles total', { ms: Date.now() - startedAt });
-      return { tilesGenerated: result.tilesGenerated, totalBytes: result.totalBytes, metadataCount: result.metadataCount };
+      return {
+        tilesGenerated: result.tilesGenerated,
+        totalBytes: result.totalBytes,
+        metadataCount: result.metadataCount,
+      };
     } finally {
       if (abortKey) {
         this.abortControllers.delete(abortKey);
@@ -393,9 +455,12 @@ class RealVTWorker implements VTWorkerAPI {
       .map((entry) => {
         const bytes = this.resolveItemBytes(entry);
         const size = typeof entry.size === 'number' ? entry.size : (bytes?.byteLength ?? 0);
-        const timestamp = typeof entry.timestamp === 'number'
-          ? entry.timestamp
-          : (typeof entry.generatedAt === 'number' ? entry.generatedAt : Date.now());
+        const timestamp =
+          typeof entry.timestamp === 'number'
+            ? entry.timestamp
+            : typeof entry.generatedAt === 'number'
+              ? entry.generatedAt
+              : Date.now();
         return {
           z: Number(entry.z),
           x: Number(entry.x),
@@ -404,7 +469,9 @@ class RealVTWorker implements VTWorkerAPI {
           timestamp,
         };
       })
-      .filter((entry) => Number.isFinite(entry.z) && Number.isFinite(entry.x) && Number.isFinite(entry.y));
+      .filter(
+        (entry) => Number.isFinite(entry.z) && Number.isFinite(entry.x) && Number.isFinite(entry.y)
+      );
   }
 
   async getSummary(nodeId: NodeId, nodeType?: string) {
@@ -457,7 +524,7 @@ const getComlinkModule = async (): Promise<typeof import('comlink')> => {
 };
 
 export async function getStageWorkerProxy<T extends (...args: never[]) => unknown>(
-  handler: T,
+  handler: T
 ): Promise<T> {
   const mod = await getComlinkModule();
   return mod.proxy(handler) as T;

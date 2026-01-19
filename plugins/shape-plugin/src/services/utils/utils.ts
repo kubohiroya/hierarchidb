@@ -9,7 +9,7 @@ import type {
   ShapeEntity,
   FetchTaskPayload,
   ShapeStepValidationResult,
-  SelectedArrayByCountries
+  SelectedArrayByCountries,
 } from '../../common/types/index.js';
 import { SHAPE_DATA_SOURCES } from '../../common/types/constants.js';
 import { GEOBOUNDARIES_RELEASE_BASE_URL } from './geoboundariesEndpoints.js';
@@ -21,34 +21,12 @@ import {
   ZOOM_BAND_MIN_ZOOM,
 } from '../../common/config/zoomBands.js';
 
-const KNOWN_DATA_SOURCE_NAMES = new Set<DataSourceName>(
-  SHAPE_DATA_SOURCES.map((source) => source.name),
-);
-/*
-const stripNil = <T extends object>(value?: T | null): Partial<T> => {
-  if (!value) return {};
-  return Object.fromEntries(
-    Object.entries(value as Record<string, unknown>)
-      .filter(([, entryValue]) => entryValue !== null && entryValue !== undefined),
-  ) as Partial<T>;
-};
- */
-
-export function normalizeDataSourceName(value?: string | null): DataSourceName | undefined {
-  if (typeof value !== 'string') return undefined;
-  const normalized = value.trim().toLowerCase();
-  return KNOWN_DATA_SOURCE_NAMES.has(normalized as DataSourceName)
-    ? (normalized as DataSourceName)
-    : undefined;
+export function getDataSourceConfig(dataSource?: DataSourceName | null) {
+  if (!dataSource) return undefined;
+  return SHAPE_DATA_SOURCES.find((source) => source.name === dataSource);
 }
 
-export function getDataSourceConfig(dataSource?: string | null) {
-  const normalized = normalizeDataSourceName(dataSource);
-  if (!normalized) return undefined;
-  return SHAPE_DATA_SOURCES.find((source) => source.name === normalized);
-}
-
-export function getPreferredCountryCodeFormat(dataSource?: string | null): 'iso2' | 'iso3' {
+export function getPreferredCountryCodeFormat(dataSource?: DataSourceName | null): 'iso2' | 'iso3' {
   return getDataSourceConfig(dataSource)?.countryCodeFormat ?? 'iso2';
 }
 
@@ -81,13 +59,7 @@ export function createDraftFromEntity(entity: ShapeEntity): ShapeDraft {
   return {
     draftData: {
       ...entity,
-      buildConfig: baseBuildConfig
-        ? {
-            ...baseBuildConfig,
-            dataSourceName:
-              normalizeDataSourceName(baseBuildConfig.dataSourceName) ?? baseBuildConfig.dataSourceName,
-          }
-        : baseBuildConfig,
+      buildConfig: baseBuildConfig,
     },
   };
 }
@@ -97,13 +69,7 @@ export function mapDraftToUpdates(draft: ShapeDraft): Partial<ShapeEntity> {
   const baseBuildConfig = draftData.buildConfig;
   return {
     ...draftData,
-    buildConfig: baseBuildConfig
-      ? {
-          ...baseBuildConfig,
-          dataSourceName:
-            normalizeDataSourceName(baseBuildConfig.dataSourceName) ?? baseBuildConfig.dataSourceName,
-        }
-      : baseBuildConfig,
+    buildConfig: baseBuildConfig,
   };
 }
 

@@ -3,7 +3,7 @@
  * Example implementation of a plugin step provider
  */
 
-import type { PluginStepProvider, PluginStepProps } from '@hierarchidb/plugin-base';
+import type { PluginStepProps, PluginStepProvider } from '@hierarchidb/plugin-base';
 import type { DialogStep } from '@hierarchidb/ui-dialog';
 import { Folder as FolderIcon } from '@mui/icons-material';
 import { Box, TextField, Typography } from '@mui/material';

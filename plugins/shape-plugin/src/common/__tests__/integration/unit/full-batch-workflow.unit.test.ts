@@ -90,30 +90,24 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
       const startTime = Date.now();
 
       try {
-        // Stage 1: Download
-        console.log('🔄 Starting download stage...');
-        const downloadResult = await simulateDownloadStage(japanEntity);
-        expect(downloadResult.success).toBe(true);
-        expect(downloadResult.filesDownloaded).toBe(EXPECTED_BATCH_RESULTS.japanOnly.downloadStage.expectedFiles);
+        // Stage 1: Fetch
+        console.log('🔄 Starting fetch stage...');
+        const fetchResult = await simulateFetchStage(japanEntity);
+        expect(fetchResult.success).toBe(true);
+        expect(fetchResult.filesDownloaded).toBe(EXPECTED_BATCH_RESULTS.japanOnly.fetchStage.expectedFiles);
 
-        // Stage 2: Extract1 (Feature Processing)
-        console.log('🔄 Starting extract1 stage...');
-        const extract1Result = await simulateExtract1Stage(downloadResult.data);
-        expect(extract1Result.success).toBe(true);
-        expect(extract1Result.processedFeatures).toBe(EXPECTED_BATCH_RESULTS.japanOnly.extract1Stage.expectedProcessedFeatures);
+        // Stage 2: Transform
+        console.log('🔄 Starting transform stage...');
+        const transformResult = await simulateTransformStage(fetchResult.data);
+        expect(transformResult.success).toBe(true);
+        expect(transformResult.transformedFeatures).toBe(EXPECTED_BATCH_RESULTS.japanOnly.transformStage.expectedTransformedFeatures);
 
-        // Stage 3: Extract2 (Geometry Processing)  
-        console.log('🔄 Starting extract2 stage...');
-        const extract2Result = await simulateExtract2Stage(extract1Result.data);
-        expect(extract2Result.success).toBe(true);
-        expect(extract2Result.extractedFeatures).toBe(EXPECTED_BATCH_RESULTS.japanOnly.extract2Stage.expectedExtractedFeatures);
-
-        // Stage 4: Vector Tiles Generation
-        console.log('🔄 Starting vector tiles stage...');
-        const vectorTilesResult = await simulateVectorTilesStage(extract2Result.data);
+        // Stage 3: Vector Tiles Generation
+        console.log('🔄 Starting vt stage...');
+        const vectorTilesResult = await simulateVtStage(transformResult.data);
         expect(vectorTilesResult.success).toBe(true);
-        expect(vectorTilesResult.tilesGenerated).toBeGreaterThanOrEqual(EXPECTED_BATCH_RESULTS.japanOnly.vectorTilesStage.expectedMinTiles);
-        expect(vectorTilesResult.tilesGenerated).toBeLessThanOrEqual(EXPECTED_BATCH_RESULTS.japanOnly.vectorTilesStage.expectedMaxTiles);
+        expect(vectorTilesResult.tilesGenerated).toBeGreaterThanOrEqual(EXPECTED_BATCH_RESULTS.japanOnly.vtStage.expectedMinTiles);
+        expect(vectorTilesResult.tilesGenerated).toBeLessThanOrEqual(EXPECTED_BATCH_RESULTS.japanOnly.vtStage.expectedMaxTiles);
 
         const totalTime = Date.now() - startTime;
         console.log(`✅ Full workflow completed in ${totalTime}ms`);
@@ -138,32 +132,26 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
       const startTime = Date.now();
 
       try {
-        // Stage 1: Download (multiple countries)
-        console.log('🔄 Starting download stage for 3 countries...');
-        const downloadResult = await simulateDownloadStage(testEntity);
-        expect(downloadResult.success).toBe(true);
-        expect(downloadResult.filesDownloaded).toBe(EXPECTED_BATCH_RESULTS.threeCountries.downloadStage.expectedFiles);
-        expect(downloadResult.countriesProcessed).toEqual(['JPN', 'DEU', 'USA']);
+        // Stage 1: Fetch (multiple countries)
+        console.log('🔄 Starting fetch stage for 3 countries...');
+        const fetchResult = await simulateFetchStage(testEntity);
+        expect(fetchResult.success).toBe(true);
+        expect(fetchResult.filesDownloaded).toBe(EXPECTED_BATCH_RESULTS.threeCountries.fetchStage.expectedFiles);
+        expect(fetchResult.countriesProcessed).toEqual(['JPN', 'DEU', 'USA']);
 
-        // Stage 2: Extract1 (bulk processing)
-        console.log('🔄 Starting extract1 stage for 3 countries...');
-        const extract1Result = await simulateExtract1Stage(downloadResult.data);
-        expect(extract1Result.success).toBe(true);
-        expect(extract1Result.processedFeatures).toBe(EXPECTED_BATCH_RESULTS.threeCountries.extract1Stage.expectedProcessedFeatures);
+        // Stage 2: Transform (bulk processing)
+        console.log('🔄 Starting transform stage for 3 countries...');
+        const transformResult = await simulateTransformStage(fetchResult.data);
+        expect(transformResult.success).toBe(true);
+        expect(transformResult.transformedFeatures).toBe(EXPECTED_BATCH_RESULTS.threeCountries.transformStage.expectedTransformedFeatures);
 
-        // Stage 3: Extract2 (geometry optimization)
-        console.log('🔄 Starting extract2 stage for 3 countries...');
-        const extract2Result = await simulateExtract2Stage(extract1Result.data);
-        expect(extract2Result.success).toBe(true);
-        expect(extract2Result.extractedFeatures).toBe(EXPECTED_BATCH_RESULTS.threeCountries.extract2Stage.expectedExtractedFeatures);
-
-        // Stage 4: Vector Tiles (multi-country coverage)
-        console.log('🔄 Starting vector tiles stage for 3 countries...');
-        const vectorTilesResult = await simulateVectorTilesStage(extract2Result.data);
+        // Stage 3: Vector Tiles (multi-country coverage)
+        console.log('🔄 Starting vt stage for 3 countries...');
+        const vectorTilesResult = await simulateVtStage(transformResult.data);
         expect(vectorTilesResult.success).toBe(true);
-        expect(vectorTilesResult.tilesGenerated).toBeGreaterThanOrEqual(EXPECTED_BATCH_RESULTS.threeCountries.vectorTilesStage.expectedMinTiles);
-        expect(vectorTilesResult.tilesGenerated).toBeLessThanOrEqual(EXPECTED_BATCH_RESULTS.threeCountries.vectorTilesStage.expectedMaxTiles);
-        expect(vectorTilesResult.zoomLevels).toEqual(EXPECTED_BATCH_RESULTS.threeCountries.vectorTilesStage.expectedZoomLevels);
+        expect(vectorTilesResult.tilesGenerated).toBeGreaterThanOrEqual(EXPECTED_BATCH_RESULTS.threeCountries.vtStage.expectedMinTiles);
+        expect(vectorTilesResult.tilesGenerated).toBeLessThanOrEqual(EXPECTED_BATCH_RESULTS.threeCountries.vtStage.expectedMaxTiles);
+        expect(vectorTilesResult.zoomLevels).toEqual(EXPECTED_BATCH_RESULTS.threeCountries.vtStage.expectedZoomLevels);
 
         const totalTime = Date.now() - startTime;
         console.log(`✅ Full workflow for 3 countries completed in ${totalTime}ms`);
@@ -177,45 +165,48 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
   });
 
   describe('Error Handling Integration', () => {
-    it('should handle network errors gracefully during download', async () => {
+    it('should handle network errors gracefully during fetch', async () => {
       // Given: Network error scenario
       (global.fetch).mockRejectedValueOnce(new Error('Network request failed'));
 
-      // When: Execute download with network failure
-      const downloadResult = await simulateDownloadStage(testEntity);
+      // When: Execute fetch with network failure
+      const fetchResult = await simulateFetchStage(testEntity);
 
       // Then: Error should be handled gracefully
-      expect(downloadResult.success).toBe(false);
-      expect(downloadResult.error).toBeDefined();
-      expect(downloadResult.error?.type).toBe('NETWORK_ERROR');
+      expect(fetchResult.success).toBe(false);
+      expect(fetchResult.error).toBeDefined();
+      expect(fetchResult.error?.type).toBe('NETWORK_ERROR');
     });
 
     it('should handle data corruption during processing stages', async () => {
       // Given: Corrupt data scenario
       const corruptData = { invalid: 'data', missing: 'geometry' };
 
-      // When: Execute extract1 with corrupt data
-      const extract1Result = await simulateExtract1Stage(corruptData);
+      // When: Execute transform with corrupt data
+      const transformResult = await simulateTransformStage(corruptData);
 
       // Then: Data error should be handled  
-      expect(extract1Result.success).toBe(false);
-      expect(extract1Result.error).toBeDefined();
-      expect(extract1Result.error?.type).toBe('INVALID_DATA_FORMAT');
+      expect(transformResult.success).toBe(false);
+      expect(transformResult.error).toBeDefined();
+      expect(transformResult.error?.type).toBe('INVALID_DATA_FORMAT');
     });
 
     it('should provide detailed error context for debugging', async () => {
       // Given: Error-prone scenario
       const testEntityWithInvalidConfig = {
         ...testEntity,
-        batchConfig: {
+        buildConfig: {
           ...testEntity.buildConfig,
-          // Invalid configuration to trigger errors
-          maxConcurrent: -1,
+          fetchConfig: {
+            ...testEntity.buildConfig?.fetchConfig,
+            // Invalid configuration to trigger errors
+            maxConcurrent: -1,
+          },
         },
       };
 
       // When: Execute workflow with invalid config
-      const result = await simulateDownloadStage(testEntityWithInvalidConfig);
+      const result = await simulateFetchStage(testEntityWithInvalidConfig);
 
       // Then: Error context should be detailed
       if (!result.success && result.error) {
@@ -229,9 +220,9 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
 
   // Helper functions for simulating each stage
 
-  async function simulateDownloadStage(entity: ShapeEntity): Promise<unknown> {
+  async function simulateFetchStage(entity: ShapeEntity): Promise<unknown> {
     try {
-      // Simulate download stage logic
+      // Simulate fetch stage logic
       const allCountries = Object.keys(GEOBOUNDARIES_TEST_ENDPOINTS.download);
       const selectionCount = Object.keys(entity.selectedArrayByCountries ?? {}).length;
       const countries = selectionCount > 0 ? allCountries.slice(0, selectionCount) : allCountries;
@@ -265,51 +256,22 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
     }
   }
 
-  async function simulateExtract1Stage(data: unknown): Promise<unknown> {
+  async function simulateTransformStage(data: unknown): Promise<unknown> {
     try {
       if (!data || !data.features) {
         throw new Error('Invalid data format');
       }
 
-      // Simulate features processing
-      const processedFeatures = data.features.length;
+      // Simulate transform processing
+      const transformedFeatures = data.features.length;
 
       return {
         success: true,
-        processedFeatures,
-        data: {
-          features: data.features.map((f: Feature) => ({
-            ...f,
-            processed: true,
-            filtered: true,
-          })),
-        },
-      };
-    } catch (error) {
-      const processedError = await errorHandler.handleDataFormatError(error as Error);
-      return {
-        success: false,
-        error: processedError,
-      };
-    }
-  }
-
-  async function simulateExtract2Stage(data: unknown): Promise<unknown> {
-    try {
-      if (!data || !data.features) {
-        throw new Error('Invalid data format');
-      }
-
-      // Simulate geometry extraction
-      const extractedFeatures = data.features.length;
-
-      return {
-        success: true,
-        extractedFeatures,
+        transformedFeatures,
         data: {
           features: data.features.map((f: unknown) => ({
             ...f,
-            extracted: true,
+            transformed: true,
             tolerance: 0.005,
           })),
         },
@@ -323,7 +285,7 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
     }
   }
 
-  async function simulateVectorTilesStage(data: unknown): Promise<unknown> {
+  async function simulateVtStage(data: unknown): Promise<unknown> {
     try {
       if (!data || !data.features) {
         throw new Error('Invalid data format');

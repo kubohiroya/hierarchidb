@@ -48,7 +48,7 @@ const isBooleanLike = (value: string): boolean => {
   return lower === 'true' || lower === 'false';
 };
 
-const isNumberLike = (value: string): boolean => /^-?\d+(\.\d+)?$/.test(value);
+const isNumberLike = (value: string): boolean => /^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(value);
 
 const isDateLike = (value: string): boolean => {
   const timestamp = Date.parse(value);

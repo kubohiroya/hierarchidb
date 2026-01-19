@@ -102,9 +102,7 @@ export function DynamicSpeedDial({
               pointerEvents: 'none',
             },
           }}
-          icon={
-            <SpeedDialIcon />
-          }
+          icon={<SpeedDialIcon />}
           direction="up"
           open={open}
           transitionDuration={transitionDuration}
@@ -121,59 +119,59 @@ export function DynamicSpeedDial({
             'aria-label': createLabel,
           }}
         >
-            {useVM
-              ? vmItems.map((item: PluginMenuItem) => {
-                  const localizedLabel = translateWithFallback(
-                    `plugins.${item.nodeType}.name`,
-                    item.label
-                  );
-                  const localizedDescription = translateWithFallback(
-                    `plugins.${item.nodeType}.description`,
-                    (item.description ?? '').trim()
-                  ).trim();
-                  const tooltipTemplate = translateWithFallback(
-                    'treeConsole.contextMenu.createTooltip',
-                    '{{label}}: {{description}}'
-                  );
-                  const tooltipLabel =
-                    localizedDescription.length > 0
-                      ? tooltipTemplate
-                          .replace('{{label}}', localizedLabel)
-                          .replace('{{description}}', localizedDescription)
-                      : localizedLabel;
+          {useVM
+            ? vmItems.map((item: PluginMenuItem) => {
+                const localizedLabel = translateWithFallback(
+                  `plugins.${item.nodeType}.name`,
+                  item.label
+                );
+                const localizedDescription = translateWithFallback(
+                  `plugins.${item.nodeType}.description`,
+                  (item.description ?? '').trim()
+                ).trim();
+                const tooltipTemplate = translateWithFallback(
+                  'treeConsole.contextMenu.createTooltip',
+                  '{{label}}: {{description}}'
+                );
+                const tooltipLabel =
+                  localizedDescription.length > 0
+                    ? tooltipTemplate
+                        .replace('{{label}}', localizedLabel)
+                        .replace('{{description}}', localizedDescription)
+                    : localizedLabel;
 
-                  return (
-                    <SpeedDialAction
-                      key={`${item.key}-${language}`}
-                      icon={resolveIcon({ nodeType: item.nodeType, icon: item.icon })}
-                      tooltipTitle={tooltipLabel}
-                      onClick={() => handleVMActionClick(item.nodeType)}
-                      sx={{
-                        '& .MuiTooltip-tooltip': {
-                          maxWidth: 300,
-                          fontSize: '0.875rem',
+                return (
+                  <SpeedDialAction
+                    key={`${item.key}-${language}`}
+                    icon={resolveIcon({ nodeType: item.nodeType, icon: item.icon })}
+                    tooltipTitle={tooltipLabel}
+                    onClick={() => handleVMActionClick(item.nodeType)}
+                    sx={{
+                      '& .MuiTooltip-tooltip': {
+                        maxWidth: 300,
+                        fontSize: '0.875rem',
+                      },
+                    }}
+                    FabProps={{
+                      size: 'medium',
+                      color: 'default',
+                      sx: {
+                        pointerEvents: 'auto',
+                        touchAction: 'manipulation',
+                        transform: 'translate3d(0,0,0)',
+                        bgcolor: item.backgroundColor,
+                        '&:hover': {
+                          bgcolor: item.icon?.color ? `${item.icon.color}33` : item.backgroundColor,
                         },
-                      }}
-                      FabProps={{
-                        size: 'medium',
-                        color: 'default',
-                        sx: {
-                          pointerEvents: 'auto',
-                          touchAction: 'manipulation',
-                          transform: 'translate3d(0,0,0)',
-                          bgcolor: item.backgroundColor,
-                          '&:hover': {
-                            bgcolor: item.icon?.color ? `${item.icon.color}33` : item.backgroundColor,
-                          },
-                        },
-                      }}
-                      tooltipPlacement="left"
-                      data-testid={`create-${item.nodeType}-action`}
-                    />
-                  );
-                })
-              : null}
-          </SpeedDial>
+                      },
+                    }}
+                    tooltipPlacement="left"
+                    data-testid={`create-${item.nodeType}-action`}
+                  />
+                );
+              })
+            : null}
+        </SpeedDial>
 
         {/* Debug overlays: fixed boxes showing current hitboxes and top element at FAB center */}
         {debugHitbox && (

@@ -29,7 +29,12 @@ export const ClearDatabaseDialog: React.FC<ClearDatabaseDialogProps> = ({
   const { t } = useTranslation('common');
 
   return (
-    <Dialog open={open} onClose={onClose} aria-labelledby={titleId} aria-describedby={descriptionId}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      aria-labelledby={titleId}
+      aria-describedby={descriptionId}
+    >
       <DialogTitle id={titleId}>{t('userMenu.clear.title', 'Clear all data?')}</DialogTitle>
       <DialogContent>
         <DialogContentText id={descriptionId} component="div">

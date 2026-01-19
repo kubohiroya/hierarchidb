@@ -1,18 +1,14 @@
+import { setCorsProxyBaseURL } from '@hierarchidb/download';
 import { NotificationSystem } from '@hierarchidb/ui-plugin-shell/components';
 import { SimpleBFFAuthProvider } from '@hierarchidb/ui-plugin-shell/ui-auth';
 import { LanguageProvider } from '@hierarchidb/ui-plugin-shell/ui-i18n';
 import { ThemeProvider as CustomThemeProvider } from '@hierarchidb/ui-plugin-shell/ui-theme';
-import { setCorsProxyBaseURL } from '@hierarchidb/download';
 import { Box, CircularProgress, CssBaseline } from '@mui/material';
 import { StyledEngineProvider } from '@mui/material/styles';
 import type { ReactNode } from 'react';
-import { AppThemeProvider } from './AppThemeProvider.js';
-import { LanguageEventsBridge } from './LanguageEventsBridge.js';
 import { AppConfigProvider } from '../contexts/AppConfigContext.js';
 import { BootProgressProvider } from '../contexts/BootProgressProvider.js';
 import { WorkerProvider } from '../contexts/WorkerProvider.js';
-import { AppIconRegistryProvider } from './IconRegistryProvider.js';
-import { AuthRequiredDialogHost } from './AuthRequiredDialogHost.js';
 import {
   AuthReadyReporter,
   ConfigReadyReporter,
@@ -21,6 +17,10 @@ import {
   UIReadyReporter,
   WorkerProgressReporter,
 } from './AppReporters.js';
+import { AppThemeProvider } from './AppThemeProvider.js';
+import { AuthRequiredDialogHost } from './AuthRequiredDialogHost.js';
+import { AppIconRegistryProvider } from './IconRegistryProvider.js';
+import { LanguageEventsBridge } from './LanguageEventsBridge.js';
 
 // UI-thread default CORS proxy (worker側と同等に初期化しておく)
 if (typeof import.meta.env?.VITE_CORS_PROXY_BASE_URL === 'string') {

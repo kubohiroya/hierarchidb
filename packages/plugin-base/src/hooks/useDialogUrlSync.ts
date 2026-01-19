@@ -82,9 +82,8 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
     const modeCandidate = segments[tIndex + 6];
     const nextModeCandidate = segments[tIndex + 7];
     const nextStepCandidate = segments[tIndex + 8];
-    const parseMode = (value?: string) => (
-      value === 'full' || value === 'maximize' || value === 'normal' ? value : undefined
-    );
+    const parseMode = (value?: string) =>
+      value === 'full' || value === 'maximize' || value === 'normal' ? value : undefined;
     let modeIndex = tIndex + 6;
     let stepIndex = tIndex + 7;
     let parsedMode = parseMode(modeCandidate);
@@ -190,7 +189,7 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
       })();
 
       if (dialogPath && !namespace) {
-        const currentMode = dialogPath.mode ?? (fields.mode ?? 'normal');
+        const currentMode = dialogPath.mode ?? fields.mode ?? 'normal';
         const currentStep = dialogPath.step ?? fields.step ?? defaults?.step ?? 1;
         const modeValue = fields.mode ?? currentMode ?? 'normal';
         const stepValue = Math.max(fields.step ?? currentStep ?? 1, 1);
@@ -220,26 +219,26 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
           url.search = q.toString();
         }
       } else {
-      if (fields.step != null) q.set(ns('step'), String(fields.step));
-      if (fields.mode) q.set(ns('mode'), fields.mode);
-      if (fields.map) {
-        const { lng, lat, zoom } = fields.map;
-        q.set(ns('map'), `${lng.toFixed(6)},${lat.toFixed(6)},${zoom.toFixed(2)}`);
-      }
+        if (fields.step != null) q.set(ns('step'), String(fields.step));
+        if (fields.mode) q.set(ns('mode'), fields.mode);
+        if (fields.map) {
+          const { lng, lat, zoom } = fields.map;
+          q.set(ns('map'), `${lng.toFixed(6)},${lat.toFixed(6)},${zoom.toFixed(2)}`);
+        }
 
-      if (readFrom === 'hash') {
-        const [head] = (url.hash ?? '').split('?');
-        const base = head && head.length > 0 ? head : '#';
-        const queryString = q.toString();
-        url.hash = queryString.length > 0 ? `${base}?${queryString}` : base;
-        const search = new URLSearchParams(url.search);
-        search.delete(ns('step'));
-        search.delete(ns('mode'));
-        search.delete(ns('map'));
-        url.search = search.toString();
-      } else {
-        url.search = q.toString();
-      }
+        if (readFrom === 'hash') {
+          const [head] = (url.hash ?? '').split('?');
+          const base = head && head.length > 0 ? head : '#';
+          const queryString = q.toString();
+          url.hash = queryString.length > 0 ? `${base}?${queryString}` : base;
+          const search = new URLSearchParams(url.search);
+          search.delete(ns('step'));
+          search.delete(ns('mode'));
+          search.delete(ns('map'));
+          url.search = search.toString();
+        } else {
+          url.search = q.toString();
+        }
       }
 
       writingRef.current = true;
@@ -291,7 +290,7 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
   const clearParams = useCallback(() => {
     if (!isBrowser) return;
     const url = new URL(window.location.href);
-      const ns = namespace ? `${namespace}_` : '';
+    const ns = namespace ? `${namespace}_` : '';
     if (readFrom === 'hash') {
       const [head] = (url.hash ?? '').split('?');
       const base = head && head.length > 0 ? head : '#';

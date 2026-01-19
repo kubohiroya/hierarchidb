@@ -1,17 +1,17 @@
-import { Box, Stack, TextField, Typography } from '@mui/material';
-import type React from 'react';
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, useId } from 'react';
-import { atom, type PrimitiveAtom } from 'jotai';
-import { createStore } from 'jotai/vanilla';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   loadMapLibreMap,
   type MapLibreMapInstance,
-  type MapViewState,
   type MapLibreStyle,
+  type MapViewState,
 } from '@hierarchidb/ui-map';
+import { Box, Stack, TextField, Typography } from '@mui/material';
+import { atom, type PrimitiveAtom } from 'jotai';
+import { createStore } from 'jotai/vanilla';
+import type React from 'react';
+import { lazy, Suspense, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { MapStyle, MapViewport } from '../../../common/types/BaseMapEntity.js';
 import { resolveMapStyleSource } from '../../utils/mapStyle.js';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 
 export interface ViewportStepProps {
   value: MapViewport | undefined;
@@ -129,10 +129,11 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
   }, [mapStyle]);
 
   const mapStyleProps = useMemo(
-    () => (typeof mapStyleSource === 'string'
-      ? { mapStyleUrl: mapStyleSource }
-      : { mapStyleObject: mapStyleSource }),
-    [mapStyleSource],
+    () =>
+      typeof mapStyleSource === 'string'
+        ? { mapStyleUrl: mapStyleSource }
+        : { mapStyleObject: mapStyleSource },
+    [mapStyleSource]
   );
 
   const mapInteractionOptions = useMemo(
@@ -243,7 +244,13 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
           type="number"
           id={`${controlId}-longitude`}
           name="longitude"
-          inputProps={{ step: 0.01, min: -180, max: 180, id: `${controlId}-longitude`, name: 'longitude' }}
+          inputProps={{
+            step: 0.01,
+            min: -180,
+            max: 180,
+            id: `${controlId}-longitude`,
+            name: 'longitude',
+          }}
           value={viewState.longitude}
           onChange={(e) =>
             setViewportFromInput({
@@ -257,7 +264,13 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
           type="number"
           id={`${controlId}-latitude`}
           name="latitude"
-          inputProps={{ step: 0.01, min: -90, max: 90, id: `${controlId}-latitude`, name: 'latitude' }}
+          inputProps={{
+            step: 0.01,
+            min: -90,
+            max: 90,
+            id: `${controlId}-latitude`,
+            name: 'latitude',
+          }}
           value={viewState.latitude}
           onChange={(e) =>
             setViewportFromInput({
@@ -379,12 +392,16 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
 
       <Box sx={{ textAlign: 'center', color: 'text.secondary' }}>
         <Typography variant="caption">
-          {t('viewport.summary', 'Center: {{lng}}, {{lat}} / Zoom: {{zoom}} / Bearing: {{bearing}}', {
-            lng: formatCoord(viewState.longitude),
-            lat: formatCoord(viewState.latitude),
-            zoom: viewState.zoom,
-            bearing: viewState.bearing ?? 0,
-          })}
+          {t(
+            'viewport.summary',
+            'Center: {{lng}}, {{lat}} / Zoom: {{zoom}} / Bearing: {{bearing}}',
+            {
+              lng: formatCoord(viewState.longitude),
+              lat: formatCoord(viewState.latitude),
+              zoom: viewState.zoom,
+              bearing: viewState.bearing ?? 0,
+            }
+          )}
         </Typography>
       </Box>
     </Box>

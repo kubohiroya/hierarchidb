@@ -26,7 +26,15 @@ export const GradientSwatch: React.FC<GradientSwatchProps> = ({
           ))}
         </linearGradient>
       </defs>
-      <rect x={0} y={0} width={width} height={height} rx={3} fill={`url(#${gradientId})`} stroke="#ccc" />
+      <rect
+        x={0}
+        y={0}
+        width={width}
+        height={height}
+        rx={3}
+        fill={`url(#${gradientId})`}
+        stroke="#ccc"
+      />
     </svg>
   );
 };

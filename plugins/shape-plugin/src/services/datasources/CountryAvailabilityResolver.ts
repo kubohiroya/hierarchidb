@@ -1,6 +1,6 @@
 import { metadataLoader } from '../metadata/MetadataLoader.js';
 import type { NodeId } from '@hierarchidb/common-types';
-import { normalizeDataSourceName } from '../utils/utils.js';
+import type { DataSourceName } from '../../common/types/index.js';
 import { defaultDataSourceFactory } from './DataSourceStrategyFactory.js';
 import { resolveStrategyIdFromDataSource } from './strategyIds.js';
 import { DATA_SOURCE_CONFIGS } from '../../common/mock/data.js';
@@ -8,7 +8,7 @@ import { DATA_SOURCE_CONFIGS } from '../../common/mock/data.js';
 type AvailabilitySource = 'strategy' | 'metadata' | 'none';
 
 export type CountryAvailabilityMatrix = {
-  dataSource: string;
+  dataSource: DataSourceName;
   availableAdminLevels: Map<string, number[]>;
   maxAdminLevel: number;
   source: AvailabilitySource;
@@ -43,7 +43,10 @@ const toMaxAdminLevel = (levels: Iterable<number>): number => {
   return max;
 };
 
-const buildAvailabilityFromMetadata = async (dataSource: string, nodeId: NodeId): Promise<CountryAvailabilityMatrix> => {
+const buildAvailabilityFromMetadata = async (
+  dataSource: DataSourceName,
+  nodeId: NodeId,
+): Promise<CountryAvailabilityMatrix> => {
   const metadata = await metadataLoader.loadMetadata(dataSource, nodeId);
   const entries = new Map<string, number[]>();
   metadata.forEach((country) => {
@@ -66,7 +69,7 @@ const buildAvailabilityFromMetadata = async (dataSource: string, nodeId: NodeId)
   };
 };
 
-const fetchAvailabilityFromStrategy = async (dataSource: string): Promise<CountryAvailabilityMatrix | null> => {
+const fetchAvailabilityFromStrategy = async (dataSource: DataSourceName): Promise<CountryAvailabilityMatrix | null> => {
   const strategyId = resolveStrategyIdFromDataSource(dataSource);
   if (!strategyId) return null;
   const strategy = defaultDataSourceFactory.create(strategyId) as StrategyAvailabilityProvider;
@@ -107,21 +110,20 @@ const fetchAvailabilityFromStrategy = async (dataSource: string): Promise<Countr
   };
 };
 
-export const fetchCountryAvailability = async (dataSource: string, nodeId: NodeId): Promise<CountryAvailabilityMatrix> => {
-  const normalized = normalizeDataSourceName(dataSource ?? '');
-  if (!normalized) {
-    throw new Error('Data source is not set. Please go back to Step2 and select a data source.');
-  }
-  if (normalized === 'openstreetmap') {
+export const fetchCountryAvailability = async (
+  dataSource: DataSourceName,
+  nodeId: NodeId,
+): Promise<CountryAvailabilityMatrix> => {
+  if (dataSource === 'openstreetmap') {
     throw new Error('OpenStreetMap is not supported in Step3 country selection.');
   }
 
-  const strategyAvailability = await fetchAvailabilityFromStrategy(normalized).catch((error) => {
-    console.warn('[CountryAvailabilityResolver] strategy availability failed', { normalized, error });
+  const strategyAvailability = await fetchAvailabilityFromStrategy(dataSource).catch((error) => {
+    console.warn('[CountryAvailabilityResolver] strategy availability failed', { dataSource, error });
     return null;
   });
   if (strategyAvailability) {
     return strategyAvailability;
   }
-  return buildAvailabilityFromMetadata(normalized, nodeId);
+  return buildAvailabilityFromMetadata(dataSource, nodeId);
 };

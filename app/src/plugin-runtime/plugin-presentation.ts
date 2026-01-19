@@ -8,11 +8,8 @@ import {
   type PluginPresentationManifest,
   setPluginPresentationDefinitions,
 } from '@hierarchidb/plugin-presentation';
+import type { PluginIconConfig, PluginManifest } from '@hierarchidb/plugin-registry/types';
 import { i18n } from '@hierarchidb/ui-i18n';
-import type {
-  PluginIconConfig,
-  PluginManifest,
-} from '@hierarchidb/plugin-registry/types';
 import { getInstalledPlugins, type InstalledPlugin } from './plugin-registry.js';
 
 let currentSignature: string | null = null;
@@ -20,10 +17,7 @@ let languageListenerAttached = false;
 
 const PLUGIN_TRANSLATION_NAMESPACE = 'common';
 
-const getLocalizedPluginDescription = (
-  nodeType: string,
-  fallback?: string
-): string | undefined => {
+const getLocalizedPluginDescription = (nodeType: string, fallback?: string): string | undefined => {
   const key = `plugins.${nodeType}.description`;
   try {
     const translator =

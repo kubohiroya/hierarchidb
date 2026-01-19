@@ -9,11 +9,11 @@ import type {
   TreeNode,
 } from '@hierarchidb/common-types';
 import type { LocationMutationAPI } from '@hierarchidb/location-store';
+import type { ShapeMutationAPI } from '@hierarchidb/plugin-service-api';
 import type { RouteMutationAPI } from '@hierarchidb/route-store';
 import type { CoreDB } from '../services/CoreDB.js';
 import type { CommandEnvelope } from '../services/command-types.js';
 import { storeRegistry } from './store-registry.js';
-import type { ShapeMutationAPI } from '@hierarchidb/plugin-service-api';
 
 type DiscardDraftEnvelope = CommandEnvelope<'discardDraft', DiscardDraftPayload>;
 type CommitDraftEnvelope = CommandEnvelope<'commitDraft', CommitDraftPayload>;
@@ -125,11 +125,9 @@ export class EntityLifecycleManager {
     }
   }
 
-  async onDiscardDraft(_env: DiscardDraftEnvelope): Promise<void> {
-  }
+  async onDiscardDraft(_env: DiscardDraftEnvelope): Promise<void> {}
 
-  async onCommitDraft(_env: CommitDraftEnvelope): Promise<void> {
-  }
+  async onCommitDraft(_env: CommitDraftEnvelope): Promise<void> {}
 
   async onDuplicateNodes(env: DuplicateNodesEnvelope): Promise<void> {
     const mapping = EntityLifecycleManager.takeIdMapping(env.commandId);
@@ -184,55 +182,55 @@ export class EntityLifecycleManager {
     mapping: NodeMapping,
     sourceNodes?: SourceNodeMap
   ): Promise<void> {
-      for (const [src, dst] of mapping.entries()) {
-        const snapshot = await resolveNode(this.coreDB, src, sourceNodes);
-        const nodeType = snapshot?.nodeType;
-        if (!nodeType) continue;
-        const store = storeRegistry.getFeatures(nodeType);
-        if (!store) continue;
-        const items = await store.list(src);
-        if (!items || items.length === 0) continue;
-        await store.bulkUpsert(dst, items);
-      }
+    for (const [src, dst] of mapping.entries()) {
+      const snapshot = await resolveNode(this.coreDB, src, sourceNodes);
+      const nodeType = snapshot?.nodeType;
+      if (!nodeType) continue;
+      const store = storeRegistry.getFeatures(nodeType);
+      if (!store) continue;
+      const items = await store.list(src);
+      if (!items || items.length === 0) continue;
+      await store.bulkUpsert(dst, items);
+    }
   }
 
   private async copyRelationsByMapping(
     mapping: NodeMapping,
     sourceNodes?: SourceNodeMap
   ): Promise<void> {
-      for (const [src] of mapping.entries()) {
-        const snapshot = await resolveNode(this.coreDB, src, sourceNodes);
-        const nodeType = snapshot?.nodeType;
-        if (!nodeType) continue;
-        const relStore = storeRegistry.getRelations(nodeType);
-        if (!relStore) continue;
-        const relations = await relStore.listByNode(src);
-        if (!relations || relations.length === 0) continue;
-        const transformed: typeof relations = [];
-        for (const rel of relations) {
-          const newSrc = mapping.get(rel.srcNodeId);
-          const newDst = mapping.get(rel.dstNodeId);
-          if (!newSrc || !newDst) continue;
-          transformed.push({ ...rel, srcNodeId: newSrc, dstNodeId: newDst, updatedAt: Date.now() });
-        }
-        if (transformed.length > 0) await relStore.bulkUpsert(transformed);
+    for (const [src] of mapping.entries()) {
+      const snapshot = await resolveNode(this.coreDB, src, sourceNodes);
+      const nodeType = snapshot?.nodeType;
+      if (!nodeType) continue;
+      const relStore = storeRegistry.getRelations(nodeType);
+      if (!relStore) continue;
+      const relations = await relStore.listByNode(src);
+      if (!relations || relations.length === 0) continue;
+      const transformed: typeof relations = [];
+      for (const rel of relations) {
+        const newSrc = mapping.get(rel.srcNodeId);
+        const newDst = mapping.get(rel.dstNodeId);
+        if (!newSrc || !newDst) continue;
+        transformed.push({ ...rel, srcNodeId: newSrc, dstNodeId: newDst, updatedAt: Date.now() });
       }
+      if (transformed.length > 0) await relStore.bulkUpsert(transformed);
+    }
   }
 
   private async copyVectorTilesByMapping(
     mapping: NodeMapping,
     sourceNodes?: SourceNodeMap
   ): Promise<void> {
-      for (const [src, dst] of mapping.entries()) {
-        const snapshot = await resolveNode(this.coreDB, src, sourceNodes);
-        const nodeType = snapshot?.nodeType;
-        if (!nodeType) continue;
-        const store = storeRegistry.getVectorTiles(nodeType);
-        if (!store) continue;
-        const items = await store.list(src);
-        if (!items || items.length === 0) continue;
-        await store.bulkUpsert(dst, items);
-      }
+    for (const [src, dst] of mapping.entries()) {
+      const snapshot = await resolveNode(this.coreDB, src, sourceNodes);
+      const nodeType = snapshot?.nodeType;
+      if (!nodeType) continue;
+      const store = storeRegistry.getVectorTiles(nodeType);
+      if (!store) continue;
+      const items = await store.list(src);
+      if (!items || items.length === 0) continue;
+      await store.bulkUpsert(dst, items);
+    }
   }
 
   private async deleteFeatures(nodeType: NodeType, nodeIds: NodeId[]): Promise<void> {

@@ -4,7 +4,12 @@ import { buildTrashTreeData } from '../../buildTrashTreeData.js';
 
 function createNode(
   id: string,
-  overrides: Partial<TreeNode> & { parentId?: NodeId; depth?: number; name?: string; description?: string } = {}
+  overrides: Partial<TreeNode> & {
+    parentId?: NodeId;
+    depth?: number;
+    name?: string;
+    description?: string;
+  } = {}
 ): TreeNode {
   const nodeId = id as NodeId;
   const parentId = overrides.parentId ?? (`parent-${id}` as NodeId);
@@ -67,8 +72,8 @@ describe('buildTrashTreeData', () => {
     expect(rootId).toBe(String(root.id));
     expect(nodes).toHaveLength(2);
 
-  const parentEntry = nodes.find((node) => node.id === trashedParent.id);
-  expect(parentEntry?.metadata?.name).toBe('Original Leaf 1');
+    const parentEntry = nodes.find((node) => node.id === trashedParent.id);
+    expect(parentEntry?.metadata?.name).toBe('Original Leaf 1');
   });
 
   it('falls back to current metadata when original fields are absent', () => {

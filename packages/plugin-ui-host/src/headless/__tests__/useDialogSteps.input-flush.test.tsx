@@ -1,5 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
-import { renderHook} from '@testing-library/react';
+import type { NodeId } from '@hierarchidb/common-types';
+import type { composeStepConfigs } from '@hierarchidb/plugin-base';
+import { renderHook } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import { useDialogSteps } from '../usePluginDialogController/steps.js';
 
 vi.mock('@hierarchidb/ui-worker-provider', () => ({
@@ -8,7 +10,10 @@ vi.mock('@hierarchidb/ui-worker-provider', () => ({
 
 describe('useDialogSteps input flush', () => {
   it('does not call updateDraft on input change, but flushes on navigation', () => {
-    const composedConfigs = { hasHostBase: false, configs: [] as any } as any;
+    const composedConfigs: ReturnType<typeof composeStepConfigs> = {
+      hasHostBase: false,
+      configs: [],
+    };
     const updateDraft = vi.fn();
     const { result } = renderHook(() =>
       useDialogSteps({
@@ -20,8 +25,8 @@ describe('useDialogSteps input flush', () => {
         isBasicInfoValid: true,
         tagSuggestions: [],
         mode: 'create',
-        nodeId: 'n1' as any,
-        pageNodeId: 'p1' as any,
+        nodeId: 'n1' as NodeId,
+        pageNodeId: 'p1' as NodeId,
         draftData: {},
         setDraftData: vi.fn(),
         handleBasicInfoBridge: vi.fn(),

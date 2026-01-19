@@ -103,7 +103,7 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
       return;
     }
     setLoading(remoteLoading);
-    setError(remoteError ? remoteError.message ?? 'Failed to load map configuration' : null);
+    setError(remoteError ? (remoteError.message ?? 'Failed to load map configuration') : null);
   }, [providedEntity, remoteLoading, remoteError]);
 
   // Convert entity viewport to MapLibre view atoms
@@ -216,11 +216,7 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
       // Call parent callback
       onLoad?.(map);
     },
-    [
-      enableDemoOverlay,
-      entity?.viewport?.center,
-      onLoad,
-    ]
+    [enableDemoOverlay, entity?.viewport?.center, onLoad]
   );
 
   useEffect(() => {
@@ -280,9 +276,10 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
     );
   }
 
-  const mapStyleProps = typeof mapStyleSource === 'string'
-    ? { mapStyleUrl: mapStyleSource }
-    : { mapStyleObject: mapStyleSource };
+  const mapStyleProps =
+    typeof mapStyleSource === 'string'
+      ? { mapStyleUrl: mapStyleSource }
+      : { mapStyleObject: mapStyleSource };
 
   // Render map
   return (

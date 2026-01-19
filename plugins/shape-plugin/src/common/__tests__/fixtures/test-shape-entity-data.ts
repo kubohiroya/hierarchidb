@@ -16,17 +16,17 @@ interface ShapeEntity {
   id: EntityId;
   nodeId: NodeId;
   licenseAgreement: boolean;
-  batchConfig?: BatchConfig;
+  buildConfig?: BatchConfig;
   selectedArrayByCountries?: Record<string, boolean[]>;
 }
 
 interface BatchConfig {
-  dataSource?: string;
-  download: {
+  dataSourceName?: string;
+  fetchConfig: {
     maxConcurrent: number;
     deleteOnComplete?: boolean;
   };
-  extract1: {
+  transformConfig: {
     maxConcurrent: number;
     enableFeatureFiltering: boolean;
     featureAreaThreshold: number;
@@ -35,16 +35,10 @@ interface BatchConfig {
     featureFilterMethod: string;
     hybridFilterConfig?: any;
     deleteOnComplete?: boolean;
-  };
-  extract2: {
-    maxConcurrent: number;
     quantize: number;
-    extract: number;
     tolerance: number;
-    enablePerFeatureExtraction: boolean;
-    deleteOnComplete?: boolean;
   };
-  vectorTiles: {
+  vtConfig: {
     maxConcurrent: number;
   };
 }
@@ -62,12 +56,12 @@ export function createTestBatchConfig(): BatchConfig {
   // Default configuration without external dependencies
 
   return {
-    dataSource: 'geoboundaries',
-    download: {
+    dataSourceName: 'geoboundaries',
+    fetchConfig: {
       maxConcurrent: 2,
       deleteOnComplete: false,
     },
-    extract1: {
+    transformConfig: {
       maxConcurrent: 2,
       enableFeatureFiltering: true,
       featureAreaThreshold: 0.05,
@@ -82,16 +76,10 @@ export function createTestBatchConfig(): BatchConfig {
         elongatedShapeCorrectionFactor: 0.7,
       },
       deleteOnComplete: false,
-    },
-    extract2: {
-      maxConcurrent: 2,
       quantize: 1e5,
-      extract: 0.005,
       tolerance: 0.05,
-      enablePerFeatureExtraction: true,
-      deleteOnComplete: false,
     },
-    vectorTiles: {
+    vtConfig: {
       maxConcurrent: 2,
     },
   };
@@ -105,7 +93,7 @@ export function createTestShapeEntity(): ShapeEntity {
     id: TEST_ENTITY_ID,
     nodeId: TEST_NODE_ID,
     licenseAgreement: true,
-    batchConfig: createTestBatchConfig(),
+    buildConfig: createTestBatchConfig(),
     selectedArrayByCountries: {
       JP: [true],
       DE: [true],
@@ -125,14 +113,14 @@ export function createTestShapeEntityJapanOnly(): ShapeEntity {
     id: 'test-shape-plugin-entity-jpn-only' as EntityId,
     nodeId: 'test-shape-plugin-node-jpn-only' as NodeId,
     selectedArrayByCountries: { JP: [true] },
-    batchConfig: {
+    buildConfig: {
       ...baseEntity.buildConfig!,
-      extract2: {
-        ...baseEntity.buildConfig!.extract2,
-        quantize: 1e4, extract: 0.01,
+      transformConfig: {
+        ...baseEntity.buildConfig!.transformConfig,
+        quantize: 1e4,
       },
-      vectorTiles: {
-        ...baseEntity.buildConfig!.vectorTiles,
+      vtConfig: {
+        ...baseEntity.buildConfig!.vtConfig,
       },
     },
   };
@@ -143,20 +131,15 @@ export function createTestShapeEntityJapanOnly(): ShapeEntity {
 export const EXPECTED_BATCH_RESULTS = {
   //  3 Level 0
   threeCountries: {
-    downloadStage: {
+    fetchStage: {
       expectedFiles: 3, //  JPN, DEU, USA1
       expectedTotalFeatures: 3, //  1
       expectedDataSources: ['geoboundaries'],
     },
-    extract1Stage: {
-      expectedProcessedFeatures: 3,
-      expectedFilteredFeatures: 3,
+    transformStage: {
+      expectedTransformedFeatures: 3,
     },
-    extract2Stage: {
-      expectedExtractedFeatures: 3,
-      maxToleranceDeviation: 0.1,
-    },
-    vectorTilesStage: {
+    vtStage: {
       expectedMinTiles: 1, //  1
       expectedMaxTiles: 100, //  100zoom level 11
       expectedZoomLevels: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
@@ -164,20 +147,15 @@ export const EXPECTED_BATCH_RESULTS = {
   },
 
   japanOnly: {
-    downloadStage: {
+    fetchStage: {
       expectedFiles: 1,
       expectedTotalFeatures: 1,
       expectedDataSources: ['geoboundaries'],
     },
-    extract1Stage: {
-      expectedProcessedFeatures: 1,
-      expectedFilteredFeatures: 1,
+    transformStage: {
+      expectedTransformedFeatures: 1,
     },
-    extract2Stage: {
-      expectedExtractedFeatures: 1,
-      maxToleranceDeviation: 0.1,
-    },
-    vectorTilesStage: {
+    vtStage: {
       expectedMinTiles: 1,
       expectedMaxTiles: 50,
       expectedZoomLevels: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
@@ -201,9 +179,8 @@ export const GEOBOUNDARIES_TEST_ENDPOINTS = {
 /**
     */
 export const TEST_TIMEOUTS = {
-  download: 30000,    //  30 -
-  extract1: 60000,   //  60 -
-  extract2: 60000,   //  60 -
-  vectorTiles: 90000, //  90 -
+  fetch: 30000,    //  30 -
+  transform: 60000,   //  60 -
+  vt: 90000, //  90 -
   fullWorkflow: 300000, //  5 -
 };

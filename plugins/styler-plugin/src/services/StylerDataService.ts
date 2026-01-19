@@ -13,14 +13,19 @@ import type {
 } from '@hierarchidb/tabular-store';
 import type { MapLibreStyle } from '@hierarchidb/ui-map';
 import type {
+  TabularDataApi,
   TabularDataResult,
   TabularFilterRule,
   TabularProcessingConfig,
-  TabularDataApi,
 } from '@hierarchidb/ui-tabular';
-import type { StylerEntity, StylerMapping } from '../common/types/StylerEntity.js';
+import type {
+  ColorCalculationResult,
+  StylerConfig,
+  StylerEntity,
+  StylerMapping,
+  StylerTableRow,
+} from '../common/types/StylerEntity.js';
 import { MAPLIBRE_PROPERTY_METADATA } from '../common/types/StylerEntity.js';
-import type { ColorCalculationResult, StylerConfig, StylerTableRow } from '../common/types/StylerEntity.js';
 import { valueToColor } from '../common/utils/colorUtils.js';
 
 type StyledCellStyle = {
@@ -53,7 +58,7 @@ export class StylerDataService {
     const tableMetadata = await this.tabularApiDriver.uploadTabularFile(file, defaultConfig);
 
     //  Styler
-    const {config, mapping} = this.generateInitialStylerConfig(tableMetadata);
+    const { config, mapping } = this.generateInitialStylerConfig(tableMetadata);
 
     return {
       tableMetadata,
@@ -71,12 +76,12 @@ export class StylerDataService {
     mapping: StylerMapping;
   }> {
     const tableMetadata = await this.tabularApiDriver.downloadTabularFromUrl(url, defaultConfig);
-    const {config, mapping} = this.generateInitialStylerConfig(tableMetadata);
+    const { config, mapping } = this.generateInitialStylerConfig(tableMetadata);
 
     return {
       tableMetadata,
       config,
-      mapping
+      mapping,
     };
   }
 
@@ -86,7 +91,7 @@ export class StylerDataService {
     config: StylerConfig,
     filters: TabularFilterRule[] = [],
     rowCount: number = 100,
-    valueColumn?: string,
+    valueColumn?: string
   ): Promise<{ data: TabularDataResult; styledRows: StyledRow[] }> {
     //  Spreadsheet
     const data = await this.tabularApiDriver.getFilteredPreview(tableId, filters, rowCount);
@@ -135,9 +140,7 @@ export class StylerDataService {
 
     const colorMapping: Record<string, string> = {};
     const needsNumericValues =
-      valueType === 'number' &&
-      mappingMode === 'map-interpolate' &&
-      targetMeta?.type === 'color';
+      valueType === 'number' && mappingMode === 'map-interpolate' && targetMeta?.type === 'color';
     const values: number[] = [];
     if (needsNumericValues) {
       if (!valueColumn) {
@@ -154,11 +157,7 @@ export class StylerDataService {
       }
     }
     const layerType =
-      mapping.styleType === 'lines'
-        ? 'line'
-        : mapping.styleType === 'points'
-          ? 'circle'
-          : 'fill';
+      mapping.styleType === 'lines' ? 'line' : mapping.styleType === 'points' ? 'circle' : 'fill';
     const styleSpec: MapLibreStyle = {
       version: 8,
       sources: {},
@@ -175,7 +174,6 @@ export class StylerDataService {
       throw new Error('Failed to initialize MapLibre layer for styler configuration');
     }
 
-
     if (needsNumericValues) {
       values.forEach((value) => {
         const colorResult = valueToColor(value, mapping, config, values);
@@ -183,7 +181,11 @@ export class StylerDataService {
       });
     }
 
-    const paint = (targetLayer.paint ??= {});
+    let paint = targetLayer.paint;
+    if (!paint) {
+      paint = {};
+      targetLayer.paint = paint;
+    }
     if (valueType === 'color') {
       paint[targetProperty] = featureStateExpr;
     } else if (mappingMode === 'precomputed') {
@@ -193,12 +195,7 @@ export class StylerDataService {
         parseFloat(value),
         color,
       ]);
-      paint[targetProperty] = [
-        'interpolate',
-        ['linear'],
-        featureStateExpr,
-        ...colorStops.flat(),
-      ];
+      paint[targetProperty] = ['interpolate', ['linear'], featureStateExpr, ...colorStops.flat()];
     } else {
       paint[targetProperty] = [
         'interpolate',
@@ -230,7 +227,10 @@ export class StylerDataService {
     return filtered.map((table) => this.ensureFullMetadata(table));
   }
 
-  private generateInitialStylerConfig(tableMetadata: TabularTableMetadata): {config: StylerConfig, mapping: StylerMapping} {
+  private generateInitialStylerConfig(tableMetadata: TabularTableMetadata): {
+    config: StylerConfig;
+    mapping: StylerMapping;
+  } {
     const numericColumns = tableMetadata.columns.filter(
       (col: TabularColumnInfo) => col.type === 'number'
     );
@@ -243,11 +243,13 @@ export class StylerDataService {
       valueColumn: initialValueColumn,
       keyColumn:
         tableMetadata.columns.find((col: TabularColumnInfo) => col.name === 'id')?.name ??
-        tableMetadata.columns[0]?.name ?? "",
+        tableMetadata.columns[0]?.name ??
+        '',
       targetProperty: 'fill-color' as const,
       featureIdProperty:
         tableMetadata.columns.find((col: TabularColumnInfo) => col.name === 'id')?.name ??
-        tableMetadata.columns[0]?.name ?? "",
+        tableMetadata.columns[0]?.name ??
+        '',
       valueType: 'color' as const,
       mappingMode: 'map-interpolate' as const,
     } satisfies StylerMapping;
@@ -267,7 +269,7 @@ export class StylerDataService {
       brightness: 0.9,
     };
 
-    return {mapping, config};
+    return { mapping, config };
   }
 
   private ensureFullMetadata(table: TabularTableMetadataLike): TabularTableMetadata {

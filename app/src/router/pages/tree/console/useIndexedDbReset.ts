@@ -1,5 +1,5 @@
-import { useCallback } from 'react';
 import { notify } from '@hierarchidb/components';
+import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { clearAppIndexedDBsViaPlugins } from '~/plugin-runtime/clearIndexedDb.ts';
 import { logIntegrationWarning } from './treeConsoleIntegrationUtils.js';

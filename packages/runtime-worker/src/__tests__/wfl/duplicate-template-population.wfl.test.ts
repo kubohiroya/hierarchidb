@@ -41,17 +41,25 @@ async function loadTemplate(): Promise<TemplateFile> {
 function buildImportNodes(data: TemplateFile): ImportData['nodes'] {
   const toImportNode = (node: TemplateNode): ImportData['nodes'][number] => {
     const metadata =
-      node.metadata && typeof node.metadata === 'object' ? (node.metadata as Record<string, unknown>) : undefined;
+      node.metadata && typeof node.metadata === 'object'
+        ? (node.metadata as Record<string, unknown>)
+        : undefined;
     const draftData =
-      node.draftData && typeof node.draftData === 'object' ? (node.draftData as Record<string, unknown>) : undefined;
+      node.draftData && typeof node.draftData === 'object'
+        ? (node.draftData as Record<string, unknown>)
+        : undefined;
     const draftMetadata =
       node.draftMetadata && typeof node.draftMetadata === 'object'
         ? (node.draftMetadata as Record<string, unknown>)
         : undefined;
-    const dataPayload = node.data && typeof node.data === 'object' ? (node.data as Record<string, unknown>) : undefined;
+    const dataPayload =
+      node.data && typeof node.data === 'object'
+        ? (node.data as Record<string, unknown>)
+        : undefined;
     const children =
-      node.children?.map((child) => toImportNode(child)).filter((child): child is ImportData['nodes'][number] => !!child) ??
-      [];
+      node.children
+        ?.map((child) => toImportNode(child))
+        .filter((child): child is ImportData['nodes'][number] => !!child) ?? [];
 
     return {
       name: (metadata as { name?: string })?.name ?? 'Untitled',

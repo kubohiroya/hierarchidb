@@ -1,9 +1,9 @@
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import { TabularDataFilterStep } from '@hierarchidb/spreadsheet-plugin';
+import { AuthReadyGate } from '@hierarchidb/ui-auth';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AuthReadyGate } from '@hierarchidb/ui-auth';
 import type { StylerStepData } from '../../common/types/StylerEntity.js';
 
 export const StylerFilterStep: React.FC<PluginStepProps<StylerStepData>> = (props) => {
@@ -11,11 +11,11 @@ export const StylerFilterStep: React.FC<PluginStepProps<StylerStepData>> = (prop
   return (
     <Suspense
       fallback={
-        <Box sx={{ height: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box
+          sx={{ height: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
           <CircularProgress />
-          <Typography sx={{ ml: 2 }}>
-            {t('auth.loading', 'Checking authentication...')}
-          </Typography>
+          <Typography sx={{ ml: 2 }}>{t('auth.loading', 'Checking authentication...')}</Typography>
         </Box>
       }
     >

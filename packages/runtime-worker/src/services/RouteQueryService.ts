@@ -1,18 +1,18 @@
-import { SingletonMixin } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
 import type {
+  RouteNearestEndpoint,
+  RouteNearestLine,
   RouteNearestLineQuery,
   RouteNearestLineResponse,
-  RouteNearestLine,
-  RouteNearestEndpoint,
 } from '@hierarchidb/plugin-service-api';
 import type { RouteDatabaseHandle, RouteQueryAPI } from '@hierarchidb/route-store';
+import { SingletonMixin } from '@hierarchidb/util';
 import {
   BTree,
-  LRUMap,
   clampZoom,
   findWithinDistanceInTree,
   haversineMeters,
+  LRUMap,
   tileToBbox,
   toTileCoord,
 } from './nearest/tileNearest.js';
@@ -41,7 +41,6 @@ type RouteNearestSegment = {
   segmentEnd: [number, number];
   keyLongitude: number;
 };
-
 
 export const DEFAULT_TILE_CACHE_SIZE = 256;
 export const LINESTRING_CACHE_TTL_MS = 5_000;
@@ -74,12 +73,13 @@ export class RouteQueryService implements RouteQueryAPI {
           cursor.longitude,
           cursor.latitude,
           maxDistanceMeters,
-          (longitude, latitude, segment) => distancePointToSegmentMeters(
-            longitude,
-            latitude,
-            segment.segmentStart,
-            segment.segmentEnd,
-          ),
+          (longitude, latitude, segment) =>
+            distancePointToSegmentMeters(
+              longitude,
+              latitude,
+              segment.segmentStart,
+              segment.segmentEnd
+            )
         );
         for (const match of matches) {
           const key = match.item.line.id;
@@ -101,7 +101,12 @@ export class RouteQueryService implements RouteQueryAPI {
     return { cursor, matches };
   }
 
-  async getVectorTile(nodeId: NodeId, z: number, x: number, y: number): Promise<ArrayBuffer | null> {
+  async getVectorTile(
+    nodeId: NodeId,
+    z: number,
+    x: number,
+    y: number
+  ): Promise<ArrayBuffer | null> {
     await this.db.open?.();
     const record = await this.db.vectorTiles
       .where('[nodeId+z+x+y]')
@@ -111,14 +116,19 @@ export class RouteQueryService implements RouteQueryAPI {
     return record?.data ?? null;
   }
 
-  private readonly tileCache = new LRUMap<string, BTree<RouteNearestSegment>>(DEFAULT_TILE_CACHE_SIZE);
-  private readonly lineStringCache = new Map<NodeId, { checkedAt: number; items: RouteLineStringRecord[] }>();
+  private readonly tileCache = new LRUMap<string, BTree<RouteNearestSegment>>(
+    DEFAULT_TILE_CACHE_SIZE
+  );
+  private readonly lineStringCache = new Map<
+    NodeId,
+    { checkedAt: number; items: RouteLineStringRecord[] }
+  >();
 
   private async getTileTree(
     nodeId: NodeId,
     z: number,
     x: number,
-    y: number,
+    y: number
   ): Promise<BTree<RouteNearestSegment> | null> {
     const cacheKey = `${nodeId}:${z}:${x}:${y}`;
     const cached = this.tileCache.get(cacheKey);
@@ -168,7 +178,7 @@ type TileBBox = { west: number; south: number; east: number; north: number };
 
 const buildSegmentsForTile = (
   lines: RouteLineStringRecord[],
-  bbox: TileBBox,
+  bbox: TileBBox
 ): RouteNearestSegment[] => {
   const segments: RouteNearestSegment[] = [];
   for (const line of lines) {
@@ -192,7 +202,7 @@ const buildSegmentsForTile = (
 const segmentIntersectsBbox = (
   start: [number, number],
   end: [number, number],
-  bbox: TileBBox,
+  bbox: TileBBox
 ): boolean => {
   const minLon = Math.min(start[0], end[0]);
   const maxLon = Math.max(start[0], end[0]);
@@ -207,7 +217,7 @@ const distancePointToSegmentMeters = (
   longitude: number,
   latitude: number,
   start: [number, number],
-  end: [number, number],
+  end: [number, number]
 ): number => {
   const refLat = (latitude + start[1] + end[1]) / 3;
   const metersPerDegLat = 110_574;

@@ -1,11 +1,11 @@
 import type {
-  TabularColumnInfo,
   CSVDataResult,
   CSVFilterRule,
   CSVProcessingConfig,
   CSVSelectionConfig,
   CSVTableListResult,
   CSVTableMetadata,
+  TabularColumnInfo,
 } from '@hierarchidb/ui-tabular';
 import * as JSZipNS from 'jszip';
 import * as XLSX from 'xlsx';

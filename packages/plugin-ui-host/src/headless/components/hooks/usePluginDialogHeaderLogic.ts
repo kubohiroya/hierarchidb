@@ -1,8 +1,13 @@
-import { useCallback, useMemo } from 'react';
 import { useDialogContext } from '@hierarchidb/ui-dialog';
+import { useCallback, useMemo } from 'react';
 import type { DialogActionInFlight } from '../../types.js';
 
-type WorkerStepState = { id: string; enabled?: boolean; completed?: boolean; error?: string | null };
+type WorkerStepState = {
+  id: string;
+  enabled?: boolean;
+  completed?: boolean;
+  error?: string | null;
+};
 type WorkerDialogState = { steps?: WorkerStepState[] };
 
 export function usePluginDialogHeaderLogic(params: {

@@ -2,10 +2,10 @@
 // import type { Remote } from 'comlink';
 // import type { WorkerAPI } from '@hierarchidb/_obsolate_common-api';
 import type { NodeType } from '@hierarchidb/common-types';
+import { useIconRegistry } from '@hierarchidb/ui-icon';
 // UIPluginRegistry is legacy; this page now reads vite-generated metadata
 // import { getUIPluginRegistry } from '@hierarchidb/ui-plugin-shell/ui-core';
 import { AutoHideFullScreenDialog as FullScreenDialog } from '@hierarchidb/ui-plugin-shell/ui-dialog';
-import { useIconRegistry } from '@hierarchidb/ui-icon';
 import {
   AccountTree as AccountTreeIcon,
   CheckCircle as CheckCircleIcon,
@@ -399,8 +399,8 @@ function ResetPluginDialog({
               </Typography>
               <Typography variant="body2">
                 This action will permanently delete ALL data including TreeNodes, all plugin
-                entities (TreeNode data/draftData, GroupEntity, RelationalEntity), and cannot be undone. The
-                system will be reset to its initial state with new trees and root nodes.
+                entities (TreeNode data/draftData, GroupEntity, RelationalEntity), and cannot be
+                undone. The system will be reset to its initial state with new trees and root nodes.
               </Typography>
             </Alert>
           )}

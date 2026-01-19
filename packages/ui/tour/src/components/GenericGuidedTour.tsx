@@ -293,7 +293,20 @@ export const GenericGuidedTour = ({
         </Box>
       );
     },
-    [theme.palette.mode, theme.palette.grey, theme.palette.divider, theme.palette.text.disabled, theme.palette.text.secondary, theme.palette.primary.main, theme.palette.primary.contrastText, showOnNextStartup, checkboxId, handleFooterPrimaryEnter, handleFooterPrimaryLeave, handleCheckboxChange]
+    [
+      theme.palette.mode,
+      theme.palette.grey,
+      theme.palette.divider,
+      theme.palette.text.disabled,
+      theme.palette.text.secondary,
+      theme.palette.primary.main,
+      theme.palette.primary.contrastText,
+      showOnNextStartup,
+      checkboxId,
+      handleFooterPrimaryEnter,
+      handleFooterPrimaryLeave,
+      handleCheckboxChange,
+    ]
   );
 
   // Tooltip render function

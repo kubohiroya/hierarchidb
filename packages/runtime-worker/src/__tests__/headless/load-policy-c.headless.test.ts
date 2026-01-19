@@ -3,8 +3,8 @@ import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CommandProcessor } from '../../services/CommandProcessor.js';
 import { CoreDB } from '../../services/CoreDB.js';
-const encodeDraftHolderName = (parentId: NodeId, nodeId: NodeId) =>
-  `${parentId}::${nodeId}`;
+
+const encodeDraftHolderName = (parentId: NodeId, nodeId: NodeId) => `${parentId}::${nodeId}`;
 
 describe('Headless: Policy C load (moderate subtree)', () => {
   beforeEach(async () => {

@@ -3,8 +3,8 @@ import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CommandProcessor } from '../../services/CommandProcessor.js';
 import { CoreDB } from '../../services/CoreDB.js';
-const encodeDraftHolderName = (parentId: NodeId, nodeId: NodeId) =>
-  `${parentId}::${nodeId}`;
+
+const encodeDraftHolderName = (parentId: NodeId, nodeId: NodeId) => `${parentId}::${nodeId}`;
 
 describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
   beforeEach(async () => {
@@ -23,10 +23,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
   }
 
   const withPayload = (
-    node: Omit<
-      TreeNode,
-      'data' | 'draftData' | 'metadata' | 'draftMetadata' | 'visible'
-    > &
+    node: Omit<TreeNode, 'data' | 'draftData' | 'metadata' | 'draftMetadata' | 'visible'> &
       Partial<TreeNode> & {
         name?: string;
       }

@@ -1,12 +1,12 @@
-import { proxy, type Remote } from 'comlink';
-import type { BuildContinuationPolicy, NodeId, NodeType } from '@hierarchidb/common-types';
 import type {
   BatchProgressEvent,
   BatchSessionStatus,
   BatchTaskSummary,
   WorkerAPI,
 } from '@hierarchidb/common-api';
+import type { BuildContinuationPolicy, NodeId, NodeType } from '@hierarchidb/common-types';
 import type { HeapPressureEvent } from '@hierarchidb/memory';
+import { proxy, type Remote } from 'comlink';
 
 export interface WorkerBridge {
   initialize(): Promise<void>;
@@ -14,14 +14,14 @@ export interface WorkerBridge {
     nodeType: NodeType,
     nodeId: NodeId,
     downloadTaskPayloads?: Parameters<WorkerAPI['startBatchSession']>[2],
-    buildContinuationPolicy?: BuildContinuationPolicy,
+    buildContinuationPolicy?: BuildContinuationPolicy
   ): Promise<BatchSessionStatus>;
   getBatchSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus>;
   pauseBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<void>;
   resumeBatchSession(
     nodeType: NodeType,
     nodeId: NodeId,
-    buildContinuationPolicy?: BuildContinuationPolicy,
+    buildContinuationPolicy?: BuildContinuationPolicy
   ): Promise<void>;
   getBatchTasks(nodeType: NodeType, nodeId: NodeId): Promise<BatchTaskSummary[]>;
   getStyleQueryAPI(): ReturnType<WorkerAPI['getStyleQueryAPI']>;
@@ -36,11 +36,9 @@ export interface WorkerBridge {
   subscribeBatchProgress(
     nodeType: NodeType,
     nodeId: NodeId,
-    cb: (event: BatchProgressEvent) => void,
+    cb: (event: BatchProgressEvent) => void
   ): Promise<() => void>;
-  subscribeHeapPressure(
-    cb: (event: HeapPressureEvent) => void,
-  ): Promise<() => void>;
+  subscribeHeapPressure(cb: (event: HeapPressureEvent) => void): Promise<() => void>;
 }
 
 type WorkerClientRefLike = {
@@ -90,7 +88,7 @@ class WorkerBridgeImpl implements WorkerBridge {
     nodeType: NodeType,
     nodeId: NodeId,
     downloadTaskPayloads?: Parameters<WorkerAPI['startBatchSession']>[2],
-    buildContinuationPolicy?: BuildContinuationPolicy,
+    buildContinuationPolicy?: BuildContinuationPolicy
   ): Promise<BatchSessionStatus> {
     const api = await ensureWorkerAPI();
     return api.startBatchSession(nodeType, nodeId, downloadTaskPayloads, buildContinuationPolicy);
@@ -109,7 +107,7 @@ class WorkerBridgeImpl implements WorkerBridge {
   async resumeBatchSession(
     nodeType: NodeType,
     nodeId: NodeId,
-    buildContinuationPolicy?: BuildContinuationPolicy,
+    buildContinuationPolicy?: BuildContinuationPolicy
   ): Promise<void> {
     const api = await ensureWorkerAPI();
     await api.resumeBatchSession(nodeType, nodeId, buildContinuationPolicy);
@@ -145,7 +143,9 @@ class WorkerBridgeImpl implements WorkerBridge {
     return api.getLocationQueryAPI();
   }
 
-  async getLocationMutationAPI(): Promise<Awaited<ReturnType<WorkerAPI['getLocationMutationAPI']>>> {
+  async getLocationMutationAPI(): Promise<
+    Awaited<ReturnType<WorkerAPI['getLocationMutationAPI']>>
+  > {
     const api = await ensureWorkerAPI();
     return api.getLocationMutationAPI();
   }
@@ -168,7 +168,7 @@ class WorkerBridgeImpl implements WorkerBridge {
   async subscribeBatchProgress(
     nodeType: NodeType,
     nodeId: NodeId,
-    cb: (event: BatchProgressEvent) => void,
+    cb: (event: BatchProgressEvent) => void
   ): Promise<() => void> {
     const api = await ensureWorkerAPI();
     const unsubscribe = await api.subscribeBatchProgress(nodeType, nodeId, proxy(cb));
@@ -181,9 +181,7 @@ class WorkerBridgeImpl implements WorkerBridge {
     };
   }
 
-  async subscribeHeapPressure(
-    cb: (event: HeapPressureEvent) => void,
-  ): Promise<() => void> {
+  async subscribeHeapPressure(cb: (event: HeapPressureEvent) => void): Promise<() => void> {
     const api = await ensureWorkerAPI();
     const unsubscribe = await api.subscribeHeapPressure(proxy(cb));
     return () => {

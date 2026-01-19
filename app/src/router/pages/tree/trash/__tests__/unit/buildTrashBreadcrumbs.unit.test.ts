@@ -8,7 +8,12 @@ import { buildTrashBreadcrumbs } from '../../buildTrashBreadcrumbs.js';
 
 function createNode(
   id: string,
-  overrides: Partial<TreeNode> & { parentId?: NodeId; depth?: number; name?: string; description?: string } = {}
+  overrides: Partial<TreeNode> & {
+    parentId?: NodeId;
+    depth?: number;
+    name?: string;
+    description?: string;
+  } = {}
 ): TreeNode {
   const nodeId = id as NodeId;
   const parentId = overrides.parentId ?? (`parent-${id}` as NodeId);
@@ -18,13 +23,11 @@ function createNode(
     id: nodeId,
     parentId,
     nodeType: (overrides.nodeType ?? 'folder') as TreeNode['nodeType'],
-    metadata:
-      overrides.metadata ??
-      {
-        name: overrides.name ?? `Node ${id}`,
-        description: overrides.description ?? '',
-        tags: [],
-      },
+    metadata: overrides.metadata ?? {
+      name: overrides.name ?? `Node ${id}`,
+      description: overrides.description ?? '',
+      tags: [],
+    },
     draftMetadata: null,
     data: overrides.data ?? {},
     draftData: overrides.draftData ?? null,

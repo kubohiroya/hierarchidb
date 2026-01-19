@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type {
   MapLibreStyleProperty,
-  StyleType,
   StylerStepData,
+  StyleType,
 } from '../../common/types/StylerEntity.js';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -104,10 +104,7 @@ export const useStylerMappingState = ({
   const lastValidity = useRef<boolean | null>(null);
   const lastError = useRef<string | null>(null);
 
-  const validity = useMemo(
-    () => hasKeyValueSelected(pluginData),
-    [pluginData]
-  );
+  const validity = useMemo(() => hasKeyValueSelected(pluginData), [pluginData]);
 
   useEffect(() => {
     if (lastValidity.current !== validity) {

@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import type { DataSourceSelectionOption } from '@hierarchidb/ui-datasource';
 import type { DataSourceConfig, DataSourceName, ShapeEntity } from '../../../common/types/index.js';
-import { mergeBuildConfig, normalizeDataSourceName } from '../../../services/utils/utils.js';
+import { mergeBuildConfig } from '../../../services/utils/utils.js';
 import { DEFAULT_BUILD_CONFIG } from '../../../common/types/index.js';
 import { DATA_SOURCE_CONFIGS } from '../../../common/mock/data.js';
 
@@ -27,8 +27,7 @@ export const useShapeDataSourceStep = ({ data, onChange }: Args) => {
     [sources],
   );
 
-  const normalizedValue = normalizeDataSourceName(draftData.buildConfig?.dataSourceName);
-  const dataSourceId = normalizedValue;
+  const dataSourceId = draftData.buildConfig?.dataSourceName;
 
   const handleChange = useCallback((next: {
     dataSourceId?: string;

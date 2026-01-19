@@ -261,7 +261,6 @@ export const normalizeStylerConfig = (base: StylerConfig): StylerConfig => {
     case 'magma':
       applyStops('#000004', '#fbfcbf');
       break;
-    case 'custom':
     default:
       if (invert) {
         effective = {
@@ -424,7 +423,8 @@ const normalizeJenks = (value: number, allValues: number[], classCount: number):
   const breaks = calculateJenksBreaks(allValues, classes);
   let classIndex = 0;
   for (let i = 1; i < breaks.length; i += 1) {
-    if (breaks[i] !== undefined && value <= breaks[i]!) {
+    const threshold = breaks[i];
+    if (threshold !== undefined && value <= threshold) {
       classIndex = i - 1;
       break;
     }
@@ -435,7 +435,10 @@ const normalizeJenks = (value: number, allValues: number[], classCount: number):
   return classes <= 1 ? 0 : classIndex / (classes - 1);
 };
 
-const resolveClassCount = (config: StylerConfig, fallback: number = DEFAULT_CLASS_COUNT): number => {
+const resolveClassCount = (
+  config: StylerConfig,
+  fallback: number = DEFAULT_CLASS_COUNT
+): number => {
   const candidate = config.binCount;
   if (typeof candidate === 'number' && Number.isFinite(candidate) && candidate > 0) {
     return Math.round(candidate);
@@ -464,7 +467,6 @@ const normalizeByAlgorithm = (
         : normalizeEqual(normalizeLinear(value, min, max), resolvedClassCount);
     case 'equal':
       return normalizeEqual(normalizeLinear(value, min, max), resolvedClassCount);
-    case 'linear':
     default:
       return normalizeLinear(value, min, max);
   }

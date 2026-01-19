@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import {
   MAPLIBRE_PROPERTY_METADATA,
-  StylerConfigDefault,
   type MapLibreStyleProperty,
   type StylerConfig,
-  type StyleType,
+  StylerConfigDefault,
   type StylerStepData,
   type StylerValueType,
+  type StyleType,
 } from '../../common/types/StylerEntity.ts';
 
 interface UseStylerTargetStepProps {
@@ -79,7 +79,14 @@ export function useStylerTargetStep({
   );
 
   const handleTargetSelect = useCallback(
-    (option: { id: string; property: MapLibreStyleProperty; defaultRange?: { min: number; max: number } }, sectionId: string) => {
+    (
+      option: {
+        id: string;
+        property: MapLibreStyleProperty;
+        defaultRange?: { min: number; max: number };
+      },
+      sectionId: string
+    ) => {
       const currentOptionId = pluginData.mapping?.targetOptionId ?? null;
       const property = option.property;
       const valueType = getValueTypeForProperty(property);
@@ -126,8 +133,14 @@ export function useStylerTargetStep({
   );
 
   const isNumericTarget = selectedValueType === 'number';
-  const currentMin = typeof currentConfig.outputMin === 'number' ? currentConfig.outputMin : numericRangeDefaults.min ?? 0;
-  const currentMax = typeof currentConfig.outputMax === 'number' ? currentConfig.outputMax : numericRangeDefaults.max ?? 10;
+  const currentMin =
+    typeof currentConfig.outputMin === 'number'
+      ? currentConfig.outputMin
+      : (numericRangeDefaults.min ?? 0);
+  const currentMax =
+    typeof currentConfig.outputMax === 'number'
+      ? currentConfig.outputMax
+      : (numericRangeDefaults.max ?? 10);
 
   return {
     currentMax,
@@ -144,7 +157,11 @@ export function useStylerTargetStep({
 const getValueTypeForProperty = (property: MapLibreStyleProperty): StylerValueType => {
   const normalized = property.toLowerCase();
   if (normalized.endsWith('color')) return 'color';
-  if (normalized.endsWith('opacity') || normalized.endsWith('radius') || normalized.endsWith('width')) {
+  if (
+    normalized.endsWith('opacity') ||
+    normalized.endsWith('radius') ||
+    normalized.endsWith('width')
+  ) {
     return 'number';
   }
   return MAPLIBRE_PROPERTY_METADATA[property]?.type ?? 'color';

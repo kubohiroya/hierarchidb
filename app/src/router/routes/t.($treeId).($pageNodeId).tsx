@@ -16,13 +16,16 @@ import {
 import { createTheme, ThemeProvider, useTheme } from '@mui/material/styles';
 import { Outlet, useLoaderData, useNavigate, useRouterState } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import AppLogoIcon from '~/components/AppLogoIcon.js';
 import { useOptionalBootProgress } from '~/contexts/BootProgressProvider.js';
 import { useWorker } from '~/contexts/WorkerProvider.js';
-import { memo } from 'react';
-import type { LoadNodeActionReturn, LoadPageNodeReturn, LoadTargetNodeReturn } from '../loaders/treeLoaders.js';
 import type { TreeConsoleIntegrationProps } from '~/router/pages/tree/console/TreeConsoleIntegration.js';
+import type {
+  LoadNodeActionReturn,
+  LoadPageNodeReturn,
+  LoadTargetNodeReturn,
+} from '../loaders/treeLoaders.js';
 import { treeRouteIds } from './tree/shared.js';
 
 const LazyTreeConsoleIntegration = lazy(async () => {
@@ -140,12 +143,9 @@ export function TreeLayoutBody({ data }: TreeLayoutBodyProps) {
     })();
   }, [workerClient]);
 
-  const pageName =
-    data.pageNode?.metadata?.name || data.tree?.name || 'TreeTypes Console';
+  const pageName = data.pageNode?.metadata?.name || data.tree?.name || 'TreeTypes Console';
 
-  const dialogStableKeyRef = useRef(
-    `${data.tree?.id ?? ''}:${data.pageNodeId ?? ''}`
-  );
+  const dialogStableKeyRef = useRef(`${data.tree?.id ?? ''}:${data.pageNodeId ?? ''}`);
 
   return (
     <TreeConsoleThemeBoundary treeId={data.tree?.id}>

@@ -69,7 +69,9 @@ describe('WorkerStateStore', () => {
     });
     ensureWorkerRuntimeMock.mockRejectedValue(loaderError);
 
-    const { ensureWorkerInitialized, getWorkerSnapshot } = await import('../../WorkerStateStore.js');
+    const { ensureWorkerInitialized, getWorkerSnapshot } = await import(
+      '../../WorkerStateStore.js'
+    );
 
     await expect(ensureWorkerInitialized()).rejects.toThrow('boom');
     const snapshot = getWorkerSnapshot();

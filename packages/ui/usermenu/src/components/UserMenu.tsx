@@ -1,3 +1,4 @@
+import type { ThemeMode } from '@hierarchidb/ui-theme';
 import {
   DarkMode as DarkModeIcon,
   DeleteForever as DeleteForeverIcon,
@@ -17,9 +18,8 @@ import {
   MenuItem,
   Typography,
 } from '@mui/material';
-import { useTranslation } from 'react-i18next';
-import type { ThemeMode } from '@hierarchidb/ui-theme';
 import type React from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface UserMenuProps {
   anchorEl: HTMLElement | null;
@@ -128,7 +128,10 @@ export const UserMenu: React.FC<UserMenuProps> = ({
         <ListItemIcon>
           <LanguageIcon fontSize="small" />
         </ListItemIcon>
-        <ListItemText primary={t('userMenu.language.label', 'Language')} secondary={languageLabel} />
+        <ListItemText
+          primary={t('userMenu.language.label', 'Language')}
+          secondary={languageLabel}
+        />
       </MenuItem>
 
       <Divider />

@@ -12,7 +12,6 @@ import {
   type SimplifyIssueKind,
   type SimplifyIssueStage,
 } from './geometry.js';
-import { SHAPE_DOMAIN } from '@hierarchidb/vt-shape-store';
 import type { TransformByBandStageContext } from '../contexts.js';
 import type { StageHandler, StageHandlerResult, TransformByBandTaskInput } from '../types/types.js';
 import { VtTaskQueueDb, updateTask } from '../task/taskQueue.js';
@@ -778,7 +777,7 @@ const buildCollectionDiagnostics = (collection: FeatureCollection | null, label:
 export const createTransformByBandHandler = (
   context: TransformByBandStageContext
 ): StageHandler<TransformByBandTaskInput> => {
-  const { shapeDB, ephemeralDB, transformConfig, bands, abortSignal } = context;
+  const { ephemeralDB, transformConfig, bands, abortSignal } = context;
   const taskQueue = new VtTaskQueueDb();
   const taskProgressRange = {
     decodeEnd: 10,
@@ -853,7 +852,7 @@ export const createTransformByBandHandler = (
       stageLabel = 'fetch:cache';
       await updateTaskPhase(taskId, 'fetch-cache:start', 0);
       assertNotAborted(abortSignal);
-      const fetchCache = await shapeDB.fetchCache.get(input.fetchCacheId);
+      const fetchCache = await ephemeralDB.fetchCache.get(input.fetchCacheId);
       if (!fetchCache) {
         return { status: 'failed', errorMessage: 'transform failed: fetch cache not found' };
       }
@@ -1365,7 +1364,7 @@ export const createTransformByBandHandler = (
       await runStageWithLabel('encode:validate', () => validateEncodedFlatGeobuf(encoded));
       await updateTaskPhase(taskId, 'encode:done', taskProgressRange.encodeEnd);
       const extractionRatio = inputFeatureCount > 0 ? simplified.features.length / inputFeatureCount : 0;
-      const cacheId = `${task.nodeId}-b${input.bandId}-${SHAPE_DOMAIN}-${input.sourceKey}`;
+      const cacheId = `${task.nodeId}-b${input.bandId}-${input.domainType}-${input.sourceKey}`;
 
       stageLabel = 'cache:put';
       assertNotAborted(abortSignal);

@@ -158,6 +158,7 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
       retries: 0,
       baseDelayMs: 0,
       maxDelayMs: 0,
+      auth: { enabled: false },
     });
     return this.networkPort;
   }

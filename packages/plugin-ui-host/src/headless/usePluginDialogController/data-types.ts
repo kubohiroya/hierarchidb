@@ -3,7 +3,9 @@ import type { NodeId, TreeNodeMetadata } from '@hierarchidb/common-types';
 export type DialogUiState = unknown;
 
 // Draft container: basic info goes to draftMetadata, plugin data goes to draftData (Partial of plugin entity).
-export interface TreeNodeUpdaterPayload<T extends Record<string, unknown> = Record<string, unknown>> {
+export interface TreeNodeUpdaterPayload<
+  T extends Record<string, unknown> = Record<string, unknown>,
+> {
   treeNodeId: NodeId;
   draftMetadata: TreeNodeMetadata | null;
   draftData: Partial<T> | null;
@@ -22,9 +24,13 @@ export type BasicInfoMeta = {
 // Alias for basic info atoms
 export type BasicInfoState = TreeNodeMetadata;
 
-export interface StepCompositionResult<T extends Record<string, unknown> = Record<string, unknown>> {
+export interface StepCompositionResult<
+  T extends Record<string, unknown> = Record<string, unknown>,
+> {
   steps: import('@hierarchidb/ui-dialog').DialogStep[];
-  stepDescriptors: ReadonlyArray<import('@hierarchidb/ui-dialog').StepComponentDescriptor<Partial<T>>>;
+  stepDescriptors: ReadonlyArray<
+    import('@hierarchidb/ui-dialog').StepComponentDescriptor<Partial<T>>
+  >;
   currentStepData: Partial<T>;
   basicInfoValidationPayload: TreeNodeMetadata;
   dialogData: Partial<T>;

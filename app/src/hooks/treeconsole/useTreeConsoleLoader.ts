@@ -133,7 +133,6 @@ export function useTreeConsoleLoader({
         nodeIndexRef.current = index;
         setSSOTRef.current({ nodeIndex: index });
         builtIndex = index;
-
       } catch (err) {
         console.error('Failed to load children:', err);
         setState((prev) => ({ ...prev, error: err instanceof Error ? err.message : String(err) }));

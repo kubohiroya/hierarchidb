@@ -7,9 +7,9 @@
  */
 
 import type { WorkerAPI } from '@hierarchidb/common-api';
+import { WorkerInitializationChannel } from '@hierarchidb/ui-worker-client';
 import type React from 'react';
 import { createContext, useContext, useEffect, useState } from 'react';
-import { WorkerInitializationChannel } from '@hierarchidb/ui-worker-client';
 
 type WorkerClient = WorkerAPI;
 

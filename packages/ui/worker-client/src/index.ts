@@ -27,6 +27,7 @@ export type {
   WorkerInitState,
 } from './types.js';
 export * from './types.js';
+export * from './utils.js';
 export { WorkerInitializationChannel } from './WorkerInitializationChannel.js';
 export { WorkerInitializationReporter } from './WorkerInitializationReporter.js';
 export {
@@ -35,11 +36,10 @@ export {
   registerRuntimeExports,
 } from './wiring/runtime-export-registry.js';
 export { wirePluginsFromModules } from './wiring/wirePlugins.js';
-export * from './utils.js';
+export type { WorkerBridge } from './workerBridge.js';
 export {
-  getWorkerBridge,
-  ensureWorkerAPI,
   __getWorkerBridgeClientRef,
   __setWorkerBridgeClientRef,
+  ensureWorkerAPI,
+  getWorkerBridge,
 } from './workerBridge.js';
-export type { WorkerBridge } from './workerBridge.js';

@@ -7,13 +7,15 @@
  */
 
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';
+import { useTranslation } from '@hierarchidb/ui-plugin-shell/ui-i18n';
 import type { WorkerInitializationChannel } from '@hierarchidb/ui-worker-client';
+import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type { Remote } from 'comlink';
 import * as Comlink from 'comlink';
-import React, { type CSSProperties, type ReactNode } from 'react';
-import {
+import React, {
+  type CSSProperties,
   createContext,
+  type ReactNode,
   Suspense,
   useCallback,
   useContext,
@@ -22,7 +24,6 @@ import {
   useRef,
   useState,
 } from 'react';
-import { useTranslation } from '@hierarchidb/ui-plugin-shell/ui-i18n';
 
 type BootWindow = Window & {
   __HDB_INIT_COMPLETE__?: boolean;
@@ -38,20 +39,23 @@ function normalizeError(error: unknown): Error {
   return new Error(String(error));
 }
 
-import { bootLog } from '../utils/bootLog.ts';
-import { useWorkerRuntimeProxy } from '../hooks/useWorkerRuntimeProxy.js';
-import {
-  getWorkerAPIClientModule,
-  loadWorkerAPIClientModule,
-} from '../worker-runtime/workerApiClientLoader.js';
-import { resetWorkerState } from '../worker-runtime/WorkerStateStore.js';
-import { useOptionalBootProgress } from './BootProgressProvider.js';
-import { WorkerClientProxy, WorkerInitializationProgress } from '~/worker-runtime/WorkerClientProxy.ts';
 import {
   getWorkerInitCompleteMessage,
   getWorkerInitFallbackMessage,
   getWorkerInitStartMessage,
 } from '~/i18n/workerInitMessages.js';
+import type {
+  WorkerClientProxy,
+  WorkerInitializationProgress,
+} from '~/worker-runtime/WorkerClientProxy.ts';
+import { useWorkerRuntimeProxy } from '../hooks/useWorkerRuntimeProxy.js';
+import { bootLog } from '../utils/bootLog.ts';
+import { resetWorkerState } from '../worker-runtime/WorkerStateStore.js';
+import {
+  getWorkerAPIClientModule,
+  loadWorkerAPIClientModule,
+} from '../worker-runtime/workerApiClientLoader.js';
+import { useOptionalBootProgress } from './BootProgressProvider.js';
 
 const logWorkerProviderWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -291,18 +295,10 @@ function WorkerClientGate({
   return <>{children}</>;
 }
 
-function InitializingOverlay({
-  progress,
-  message,
-}: {
-  progress: number;
-  message?: string | null;
-}) {
+function InitializingOverlay({ progress, message }: { progress: number; message?: string | null }) {
   const { t } = useTranslation();
   const clamped = Math.max(0, Math.min(100, Math.round(progress)));
-  const resolvedMessage = message?.trim().length
-    ? message
-    : t('workerInit.progressFallback');
+  const resolvedMessage = message?.trim().length ? message : t('workerInit.progressFallback');
   return (
     <div style={overlayContainerStyle}>
       <div style={overlayCardStyle}>
@@ -437,7 +433,8 @@ export const WorkerProvider = ({
       if (!token || token === lastAuthTokenRef.current) return;
       const rawExpires = localStorage.getItem('token_expires_at');
       const expiresAt = rawExpires ? Number(rawExpires) : undefined;
-      status.client.setAuthToken(token, 'Bearer', Number.isFinite(expiresAt) ? expiresAt : undefined)
+      status.client
+        .setAuthToken(token, 'Bearer', Number.isFinite(expiresAt) ? expiresAt : undefined)
         .catch((error) => {
           logWorkerProviderWarning('Failed to sync worker auth token', error);
         });

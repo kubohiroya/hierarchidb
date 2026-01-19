@@ -45,14 +45,11 @@ describe('MetadataLoader', () => {
     expect(getOrFetchForNode).toHaveBeenCalled();
   });
 
-  it('normalizes casing and reuses cache without warnings', async () => {
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  it('reuses cache for the same data source', async () => {
     await metadataLoader.loadMetadata('geoboundaries', 'node-1');
-    const second = await metadataLoader.loadMetadata('GeoBoundaries', 'node-1');
+    const second = await metadataLoader.loadMetadata('geoboundaries', 'node-1');
     expect(second.length).toBeGreaterThan(0);
-    expect(warnSpy).not.toHaveBeenCalled();
-    expect(getOrFetchForNode).toHaveBeenCalled();
-    warnSpy.mockRestore();
+    expect(getOrFetchForNode).toHaveBeenCalledTimes(1);
   });
 
   it('throws on openstreetmap', async () => {

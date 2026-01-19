@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
-import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { Remote } from 'comlink';
+import { useMemo } from 'react';
 import { getWorkerClientHook, type WorkerClientRef } from '../ui/workerClientHook.js';
 
 export interface UseWorkerAPIResult {

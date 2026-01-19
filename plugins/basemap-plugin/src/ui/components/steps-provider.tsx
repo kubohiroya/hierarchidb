@@ -1,6 +1,6 @@
 import { PluginStepRegistry } from '@hierarchidb/plugin-base';
-import { getBasemapStepConfigs } from './basemapStepConfigs.js';
 import type { BaseMapEntity } from '../../common/types/BaseMapEntity.js';
+import { getBasemapStepConfigs } from './basemapStepConfigs.js';
 
 const registry = PluginStepRegistry.getInstance();
 

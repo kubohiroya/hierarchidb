@@ -7,8 +7,8 @@ import type { TreeConsoleActionDeps } from '../types.js';
 import {
   ensureClipboard,
   fireCmdEvent,
-  showCommandError,
   type GlobalWithClipboard,
+  showCommandError,
 } from './helpers.ts';
 
 export const createClipboardActions = (deps: TreeConsoleActionDeps) => {

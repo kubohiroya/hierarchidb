@@ -19,7 +19,9 @@ export async function updateTreeNodeDraftMetadata(
   nodeId: NodeId,
   updater: Partial<TreeNodeMetadata> | null
 ): Promise<void> {
-  await coreDB.nodes.update(nodeId, { draftMetadata: (updater ?? null) as TreeNodeMetadata | null });
+  await coreDB.nodes.update(nodeId, {
+    draftMetadata: (updater ?? null) as TreeNodeMetadata | null,
+  });
 }
 
 export async function updateTreeNodeDraftData(

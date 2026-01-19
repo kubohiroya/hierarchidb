@@ -1,11 +1,24 @@
 import type { ImportData, WorkerAPI } from '@hierarchidb/common-api';
-import type { BuildContinuationPolicy, NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-types';
+import type {
+  BuildContinuationPolicy,
+  NodeId,
+  NodeType,
+  TreeId,
+  TreeNode,
+} from '@hierarchidb/common-types';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
-import type { TreeConsoleToolbarActionParams } from '@hierarchidb/ui-treeconsole-toolbar';
-import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
-import { TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES, TREE_CONSOLE_SETTINGS_STORAGE_KEY, loadTreeConsoleSettings, saveTreeConsoleSettings } from '@hierarchidb/util';
-import { useCallback, useEffect, useState } from 'react';
+import type {
+  TreeConsoleToolbar,
+  TreeConsoleToolbarActionParams,
+} from '@hierarchidb/ui-treeconsole-toolbar';
+import {
+  loadTreeConsoleSettings,
+  saveTreeConsoleSettings,
+  TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES,
+  TREE_CONSOLE_SETTINGS_STORAGE_KEY,
+} from '@hierarchidb/util';
 import type { Remote } from 'comlink';
+import { useCallback, useEffect, useState } from 'react';
 import { canImportFromNode, logIntegrationWarning } from './treeConsoleIntegrationUtils.js';
 
 type TemplateData = {
@@ -128,10 +141,12 @@ export function useTreeConsoleToolbarActions({
     const stored = loadTreeConsoleSettings().zoomBandBoundaries;
     return Array.isArray(stored) ? stored : TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES;
   });
-  const [buildContinuationPolicy, setBuildContinuationPolicy] = useState<BuildContinuationPolicy>(() => {
-    const stored = loadTreeConsoleSettings().buildContinuationPolicy;
-    return stored ?? 'finish_all_stages';
-  });
+  const [buildContinuationPolicy, setBuildContinuationPolicy] = useState<BuildContinuationPolicy>(
+    () => {
+      const stored = loadTreeConsoleSettings().buildContinuationPolicy;
+      return stored ?? 'finish_all_stages';
+    }
+  );
   useEffect(() => {
     const global = typeof window !== 'undefined' ? window : null;
     if (!global) return undefined;
@@ -141,9 +156,15 @@ export function useTreeConsoleToolbarActions({
       setRowClickAction(next.rowClickAction === 'Edit' ? 'Edit' : 'Select/Navigate');
       setAutosaveEnabled(typeof next.autosaveEnabled === 'boolean' ? next.autosaveEnabled : false);
       setDialogBackdropDismissEnabled(
-        typeof next.dialogBackdropDismissEnabled === 'boolean' ? next.dialogBackdropDismissEnabled : false,
+        typeof next.dialogBackdropDismissEnabled === 'boolean'
+          ? next.dialogBackdropDismissEnabled
+          : false
       );
-      setZoomBandBoundaries(Array.isArray(next.zoomBandBoundaries) ? next.zoomBandBoundaries : TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES);
+      setZoomBandBoundaries(
+        Array.isArray(next.zoomBandBoundaries)
+          ? next.zoomBandBoundaries
+          : TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES
+      );
       setBuildContinuationPolicy(next.buildContinuationPolicy ?? 'finish_all_stages');
     };
     global.addEventListener('storage', handleStorage);
@@ -153,22 +174,31 @@ export function useTreeConsoleToolbarActions({
   }, []);
 
   const persistSettings = useCallback(
-    (patch: Partial<{
-      rowClickAction: 'Select/Navigate' | 'Edit';
-      autosaveEnabled: boolean;
-      dialogBackdropDismissEnabled: boolean;
-      zoomBandBoundaries: number[];
-      buildContinuationPolicy: BuildContinuationPolicy;
-    }>) => {
+    (
+      patch: Partial<{
+        rowClickAction: 'Select/Navigate' | 'Edit';
+        autosaveEnabled: boolean;
+        dialogBackdropDismissEnabled: boolean;
+        zoomBandBoundaries: number[];
+        buildContinuationPolicy: BuildContinuationPolicy;
+      }>
+    ) => {
       saveTreeConsoleSettings({
         rowClickAction: patch.rowClickAction ?? rowClickAction,
         autosaveEnabled: patch.autosaveEnabled ?? autosaveEnabled,
-        dialogBackdropDismissEnabled: patch.dialogBackdropDismissEnabled ?? dialogBackdropDismissEnabled,
+        dialogBackdropDismissEnabled:
+          patch.dialogBackdropDismissEnabled ?? dialogBackdropDismissEnabled,
         zoomBandBoundaries: patch.zoomBandBoundaries ?? zoomBandBoundaries,
         buildContinuationPolicy: patch.buildContinuationPolicy ?? buildContinuationPolicy,
       });
     },
-    [autosaveEnabled, buildContinuationPolicy, dialogBackdropDismissEnabled, rowClickAction, zoomBandBoundaries]
+    [
+      autosaveEnabled,
+      buildContinuationPolicy,
+      dialogBackdropDismissEnabled,
+      rowClickAction,
+      zoomBandBoundaries,
+    ]
   );
 
   const handleToolbarAction = useCallback(
@@ -243,11 +273,12 @@ export function useTreeConsoleToolbarActions({
             const children = Array.isArray(node.children)
               ? node.children.map((child) => toImportNode(child))
               : undefined;
-            const resolvedNodeType = typeof node.nodeType === 'string'
-              ? toNodeType(node.nodeType)
-              : typeof node.treeNodeType === 'string'
-                ? toNodeType(node.treeNodeType)
-                : toNodeType('folder');
+            const resolvedNodeType =
+              typeof node.nodeType === 'string'
+                ? toNodeType(node.nodeType)
+                : typeof node.treeNodeType === 'string'
+                  ? toNodeType(node.treeNodeType)
+                  : toNodeType('folder');
             return {
               name,
               nodeType: resolvedNodeType,
@@ -266,7 +297,7 @@ export function useTreeConsoleToolbarActions({
 
           const importNodes: ImportData['nodes'] = templateData.nodes.map((n) => toImportNode(n));
 
-          if(!client){
+          if (!client) {
             throw new Error('WorkerClient not available');
           }
 
@@ -352,10 +383,7 @@ export function useTreeConsoleToolbarActions({
           break;
         }
         case 'edit': {
-          const targetId =
-            hasNodeIdParam(params)
-              ? params.nodeId
-              : currentPageNodeId;
+          const targetId = hasNodeIdParam(params) ? params.nodeId : currentPageNodeId;
           const hint = isTreeNodeLike(params) ? params : undefined;
           void requestEdit(targetId as NodeId, hint);
           break;

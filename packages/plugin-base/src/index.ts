@@ -8,8 +8,8 @@ export { useDialogUrlSync } from './hooks/useDialogUrlSync.js';
 export { HostProfileRegistry } from './registry/HostProfileRegistry.js';
 export type {
   PluginStepConfig,
-  PluginStepProvider,
   PluginStepProps,
+  PluginStepProvider,
   StartBatchContext,
   StepData,
 } from './registry/PluginStepRegistry.js';

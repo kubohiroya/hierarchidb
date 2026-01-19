@@ -13,7 +13,7 @@ export class ImportExportLifecycleService extends BaseImportExportService {
   static async getSingleton(db: ImportExportDBPort): Promise<ImportExportLifecycleService> {
     return SingletonMixin.getSingleton(
       'ImportExportLifecycleService',
-      () => new ImportExportLifecycleService(db),
+      () => new ImportExportLifecycleService(db)
     );
   }
 

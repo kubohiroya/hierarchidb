@@ -3,7 +3,7 @@
  */
 
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-types';
-import type { TreeConsoleActionDeps, MaybeCP } from '../types.js';
+import type { MaybeCP, TreeConsoleActionDeps } from '../types.js';
 import {
   createUniqueName,
   fireCmdEvent,

@@ -1,17 +1,11 @@
-import type React from 'react';
-import { useCallback } from 'react';
-import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
-import {
-  STYLE_TYPE_OPTIONS,
-  type StylerStepData,
-  type StylerMapping,
-  type StylerConfig,
-  StylerConfigDefault,
-  MAPLIBRE_PROPERTY_METADATA, type ColorAlgorithm,
-} from '../../common/types/StylerEntity.ts';
-import { useTranslation } from 'react-i18next';
-import { useStylerMappingState } from './useStylerMappingState.ts';
+import { ValueHistogram } from '@hierarchidb/spreadsheet-plugin/ui';
+import { Insights as InsightsIcon, ShowChart as ShowChartIcon } from '@mui/icons-material';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import ContrastIcon from '@mui/icons-material/Contrast';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import PaletteIcon from '@mui/icons-material/Palette';
 import {
   Accordion,
   AccordionDetails,
@@ -30,31 +24,31 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import PaletteIcon from '@mui/icons-material/Palette';
-import ContrastIcon from '@mui/icons-material/Contrast';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
-import { generateColorGradient } from '../../common/utils/colorUtils.ts';
-import { ValueHistogram } from '@hierarchidb/spreadsheet-plugin/ui';
-import { valueToColor } from '../../common/utils/colorUtils.ts';
+import { useTheme } from '@mui/material/styles';
+import type React from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  type ColorAlgorithm,
+  MAPLIBRE_PROPERTY_METADATA,
+  STYLE_TYPE_OPTIONS,
+  type StylerConfig,
+  StylerConfigDefault,
+  type StylerMapping,
+  type StylerStepData,
+} from '../../common/types/StylerEntity.ts';
+import { generateColorGradient, valueToColor } from '../../common/utils/colorUtils.ts';
 import { calculateStatistics } from '../../common/utils/dataAnalysis.ts';
 import { GradientSwatch } from './GradientSwatch.tsx';
-import { Insights as InsightsIcon, ShowChart as ShowChartIcon } from '@mui/icons-material';
-import { useTheme } from '@mui/material/styles';
+import { useStylerMappingState } from './useStylerMappingState.ts';
 
 export const StylerAlgorithmStep2: React.FC<
   PluginStepProps<StylerStepData> & { showTargetPanel?: boolean }
-> = ({
-       data,
-       onChange,
-       setValid,
-       setError,
-     }) => {
+> = ({ data, onChange, setValid, setError }) => {
   const { t } = useTranslation('styler-plugin');
   const theme = useTheme();
   const {
-//menuContainer,
+    //menuContainer,
     pluginData,
   } = useStylerMappingState({
     data,
@@ -65,8 +59,7 @@ export const StylerAlgorithmStep2: React.FC<
     styleTypeOptions: STYLE_TYPE_OPTIONS,
   });
 
-  const valueColumn =
-    pluginData.valueColumn ?? '';
+  const valueColumn = pluginData.valueColumn ?? '';
 
   const targetProperty = pluginData.mapping?.targetProperty ?? null;
   const targetMeta = targetProperty ? MAPLIBRE_PROPERTY_METADATA[targetProperty] : null;
@@ -131,8 +124,7 @@ export const StylerAlgorithmStep2: React.FC<
     const mapping = {
       keyColumn: pluginData.keyColumn ?? '',
       valueColumn,
-      styleType:
-        pluginData.mapping?.styleType ?? 'choropleth',
+      styleType: pluginData.mapping?.styleType ?? 'choropleth',
       targetProperty: pluginData.mapping?.targetProperty ?? null,
     } as StylerMapping;
     // preview用は実データ範囲に合わせてmin/maxを補正する
@@ -141,11 +133,8 @@ export const StylerAlgorithmStep2: React.FC<
       min: histogramStats?.min ?? localConfig.min,
       max: histogramStats?.max ?? localConfig.max,
     };
-    return ({
-              midpoint,
-            }: {
-      midpoint: number;
-    }) => valueToColor(midpoint, mapping, previewConfig, numericValues).color;
+    return ({ midpoint }: { midpoint: number }) =>
+      valueToColor(midpoint, mapping, previewConfig, numericValues).color;
   }, [
     histogramStats?.max,
     histogramStats?.min,
@@ -188,11 +177,31 @@ export const StylerAlgorithmStep2: React.FC<
 
   const presetScales: Array<{ id: string; label: string; stops: string[] }> = useMemo(
     () => [
-      { id: 'grayscale', label: t('styleSettings.algorithm.scale.grayscale', 'Grayscale'), stops: ['#000000', '#ffffff'] },
-      { id: 'redgreen', label: t('styleSettings.algorithm.scale.redGreen', 'Red → Green'), stops: ['#ff0000', '#00ff00'] },
-      { id: 'blueorange', label: t('styleSettings.algorithm.scale.blueOrange', 'Blue → Orange'), stops: ['#1a1c7c', '#ffa500'] },
-      { id: 'viridis', label: t('styleSettings.algorithm.scale.viridis', 'Viridis'), stops: ['#440154', '#21908d', '#fde725'] },
-      { id: 'magma', label: t('styleSettings.algorithm.scale.magma', 'Magma'), stops: ['#000004', '#b5367a', '#fbfcbf'] },
+      {
+        id: 'grayscale',
+        label: t('styleSettings.algorithm.scale.grayscale', 'Grayscale'),
+        stops: ['#000000', '#ffffff'],
+      },
+      {
+        id: 'redgreen',
+        label: t('styleSettings.algorithm.scale.redGreen', 'Red → Green'),
+        stops: ['#ff0000', '#00ff00'],
+      },
+      {
+        id: 'blueorange',
+        label: t('styleSettings.algorithm.scale.blueOrange', 'Blue → Orange'),
+        stops: ['#1a1c7c', '#ffa500'],
+      },
+      {
+        id: 'viridis',
+        label: t('styleSettings.algorithm.scale.viridis', 'Viridis'),
+        stops: ['#440154', '#21908d', '#fde725'],
+      },
+      {
+        id: 'magma',
+        label: t('styleSettings.algorithm.scale.magma', 'Magma'),
+        stops: ['#000004', '#b5367a', '#fbfcbf'],
+      },
       { id: 'custom', label: t('styleSettings.algorithm.scale.custom', 'Custom (HSB)'), stops: [] },
     ],
     [t]
@@ -224,7 +233,7 @@ export const StylerAlgorithmStep2: React.FC<
     const mid = (outputMin + outputMax) / 2;
     return [outputMin, mid, outputMax];
   }, [outputMax, outputMin]);
-/*
+  /*
   const _numericRangeControls = !isColorTarget ? (
     <Stack spacing={1.5}>
       <Typography variant="subtitle2">{t('styleSettings.algorithm.numericRange', 'Numeric range')}</Typography>
@@ -272,7 +281,9 @@ export const StylerAlgorithmStep2: React.FC<
   const customHSBControls =
     isColorTarget && (localConfig.colorScheme ?? 'grayscale') === 'custom' ? (
       <Stack spacing={1.5} sx={{ mt: 1 }}>
-        <Typography variant="subtitle2">{t('styleSettings.algorithm.customTitle', 'Custom HSB')}</Typography>
+        <Typography variant="subtitle2">
+          {t('styleSettings.algorithm.customTitle', 'Custom HSB')}
+        </Typography>
         <Stack direction="row" spacing={1}>
           <TextField
             label={t('styleSettings.colorRange.start', 'Start Color (hex)')}
@@ -289,13 +300,39 @@ export const StylerAlgorithmStep2: React.FC<
         </Stack>
         <Stack spacing={1}>
           <Typography variant="caption">{t('styleSettings.hsv.hueStart', 'Hue Start')}</Typography>
-          <Slider value={localConfig.hueStart} onChange={(_e, v) => applyConfigPatch({ hueStart: v as number })} min={0} max={360} />
+          <Slider
+            value={localConfig.hueStart}
+            onChange={(_e, v) => applyConfigPatch({ hueStart: v as number })}
+            min={0}
+            max={360}
+          />
           <Typography variant="caption">{t('styleSettings.hsv.hueEnd', 'Hue End')}</Typography>
-          <Slider value={localConfig.hueEnd} onChange={(_e, v) => applyConfigPatch({ hueEnd: v as number })} min={0} max={360} />
-          <Typography variant="caption">{t('styleSettings.hsv.saturation', 'Saturation')}</Typography>
-          <Slider value={localConfig.saturation} step={0.05} min={0} max={1} onChange={(_e, v) => applyConfigPatch({ saturation: v as number })} />
-          <Typography variant="caption">{t('styleSettings.hsv.brightness', 'Brightness')}</Typography>
-          <Slider value={localConfig.brightness} step={0.05} min={0} max={1} onChange={(_e, v) => applyConfigPatch({ brightness: v as number })} />
+          <Slider
+            value={localConfig.hueEnd}
+            onChange={(_e, v) => applyConfigPatch({ hueEnd: v as number })}
+            min={0}
+            max={360}
+          />
+          <Typography variant="caption">
+            {t('styleSettings.hsv.saturation', 'Saturation')}
+          </Typography>
+          <Slider
+            value={localConfig.saturation}
+            step={0.05}
+            min={0}
+            max={1}
+            onChange={(_e, v) => applyConfigPatch({ saturation: v as number })}
+          />
+          <Typography variant="caption">
+            {t('styleSettings.hsv.brightness', 'Brightness')}
+          </Typography>
+          <Slider
+            value={localConfig.brightness}
+            step={0.05}
+            min={0}
+            max={1}
+            onChange={(_e, v) => applyConfigPatch({ brightness: v as number })}
+          />
         </Stack>
       </Stack>
     ) : null;
@@ -329,16 +366,24 @@ export const StylerAlgorithmStep2: React.FC<
               <RadioGroup
                 row
                 value={localConfig.nullHandling ?? 'exclude'}
-                onChange={(e) => applyConfigPatch({ nullHandling: e.target.value as 'exclude' | 'zero' })}
+                onChange={(e) =>
+                  applyConfigPatch({ nullHandling: e.target.value as 'exclude' | 'zero' })
+                }
               >
-                <FormControlLabel value="exclude" control={<Radio />} label={t('styleSettings.algorithm.null.exclude', 'Exclude rows')} />
-                <FormControlLabel value="zero" control={<Radio />} label={t('styleSettings.algorithm.null.zero', 'Treat as 0')} />
+                <FormControlLabel
+                  value="exclude"
+                  control={<Radio />}
+                  label={t('styleSettings.algorithm.null.exclude', 'Exclude rows')}
+                />
+                <FormControlLabel
+                  value="zero"
+                  control={<Radio />}
+                  label={t('styleSettings.algorithm.null.zero', 'Treat as 0')}
+                />
               </RadioGroup>
             </FormControl>
 
-            <InputLabel>
-              {t('styleSettings.algorithm.rule', 'Mapping rule')}
-            </InputLabel>
+            <InputLabel>{t('styleSettings.algorithm.rule', 'Mapping rule')}</InputLabel>
             <ToggleButtonGroup
               exclusive
               value={localConfig.algorithm}
@@ -349,13 +394,16 @@ export const StylerAlgorithmStep2: React.FC<
             >
               <ToggleButton value="linear">
                 <ShowChartIcon fontSize="small" sx={{ mr: 1 }} />
-                {t('styleSettings.algorithms.linear', 'Linear')}</ToggleButton>
+                {t('styleSettings.algorithms.linear', 'Linear')}
+              </ToggleButton>
               <ToggleButton value="log">
                 <BarChartIcon fontSize="small" sx={{ mr: 1 }} />
-                {t('styleSettings.algorithms.log', 'Logarithmic')}</ToggleButton>
+                {t('styleSettings.algorithms.log', 'Logarithmic')}
+              </ToggleButton>
               <ToggleButton value="quantile">
                 <InsightsIcon fontSize="small" sx={{ mr: 1 }} />
-                {t('styleSettings.algorithms.quantile', 'Quantile')}</ToggleButton>
+                {t('styleSettings.algorithms.quantile', 'Quantile')}
+              </ToggleButton>
             </ToggleButtonGroup>
 
             <Typography variant="body2" sx={{ mt: 1 }}>
@@ -363,8 +411,6 @@ export const StylerAlgorithmStep2: React.FC<
             </Typography>
 
             {isColorTarget ? (
-
-
               <Stack spacing={1.5}>
                 <Typography variant="subtitle2">
                   {t('styleSettings.algorithm.colorScale', 'Color scale')}
@@ -375,8 +421,16 @@ export const StylerAlgorithmStep2: React.FC<
                   value={localConfig.invertColors ? 'inverted' : 'normal'}
                   onChange={handleInvertColorsChange}
                 >
-                  <FormControlLabel control={<Radio />} value="normal" label={t('step5.colorRange.normal', 'normal')} />
-                  <FormControlLabel control={<Radio />} value="inverted" label={t('step5.colorRange.invert', 'inverted')} />
+                  <FormControlLabel
+                    control={<Radio />}
+                    value="normal"
+                    label={t('step5.colorRange.normal', 'normal')}
+                  />
+                  <FormControlLabel
+                    control={<Radio />}
+                    value="inverted"
+                    label={t('step5.colorRange.invert', 'inverted')}
+                  />
                 </RadioGroup>
 
                 <ToggleButtonGroup
@@ -398,8 +452,17 @@ export const StylerAlgorithmStep2: React.FC<
                         minWidth: 220,
                       }}
                     >
-                      <Stack direction="row" spacing={1} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
-                        {preset.id === 'custom' ? <ContrastIcon fontSize="small" /> : <PaletteIcon fontSize="small" />}
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        alignItems="center"
+                        sx={{ flex: 1, minWidth: 0 }}
+                      >
+                        {preset.id === 'custom' ? (
+                          <ContrastIcon fontSize="small" />
+                        ) : (
+                          <PaletteIcon fontSize="small" />
+                        )}
                         <Typography variant="body2" noWrap>
                           {preset.label}
                         </Typography>
@@ -410,7 +473,15 @@ export const StylerAlgorithmStep2: React.FC<
                 </ToggleButtonGroup>
                 {customHSBControls}
 
-                <Box sx={{ paddingLeft: 6, paddingRight: 2, height: 32, borderRadius: 25, border: (theme) => `1px solid ${theme.palette.divider}` }}>
+                <Box
+                  sx={{
+                    paddingLeft: 6,
+                    paddingRight: 2,
+                    height: 32,
+                    borderRadius: 25,
+                    border: (theme) => `1px solid ${theme.palette.divider}`,
+                  }}
+                >
                   <Box
                     sx={{
                       height: '100%',
@@ -419,7 +490,6 @@ export const StylerAlgorithmStep2: React.FC<
                     }}
                   />
                 </Box>
-
               </Stack>
             ) : (
               <Stack spacing={1.5}>
@@ -447,12 +517,12 @@ export const StylerAlgorithmStep2: React.FC<
                   />
                 </Stack>
                 <Stack direction="row" spacing={1} alignItems="center">
-                  {previewSteps.map((value, idx) => {
+                  {previewSteps.map((value) => {
                     if (isOpacityTarget) {
                       const clamped = Math.max(0, Math.min(1, value));
                       return (
                         <Box
-                          key={`opacity-${idx}`}
+                          key={`opacity-${value}`}
                           sx={{
                             width: 64,
                             height: 28,
@@ -473,7 +543,7 @@ export const StylerAlgorithmStep2: React.FC<
                     const lineWidth = Math.max(0.5, value);
                     return (
                       <Box
-                        key={`width-${idx}`}
+                        key={`width-${value}`}
                         sx={{
                           width: 64,
                           height: 28,
@@ -506,7 +576,7 @@ export const StylerAlgorithmStep2: React.FC<
             )}
           </Stack>
           <Stack spacing={2}>
-            <Box sx={{paddingLeft: 6, paddingRight: 2}} >
+            <Box sx={{ paddingLeft: 6, paddingRight: 2 }}>
               <Typography variant="caption" color="text.secondary">
                 {t('styleSettings.histogram.binCount', 'Number of bins')}
               </Typography>

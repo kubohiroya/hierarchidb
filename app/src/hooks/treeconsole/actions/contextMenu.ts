@@ -3,10 +3,13 @@
  */
 
 import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-types';
-import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
-import { isFolderNodeType } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import { notify } from '@hierarchidb/components';
+import { isFolderNodeType } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
+import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
+import { loadUIPlugin } from '../../../plugin-loaders/ui-plugin-loader.js';
+import { startBuildFlow } from '../../../router/pages/tree/console/buildFlow.ts';
 import type { ContextAction, TreeConsoleActionDeps } from '../types.js';
+import { PREVIEW_GUARD_MESSAGE, PREVIEW_GUARD_NODE_TYPES } from './dialog.js';
 import {
   createUniqueName,
   fireCmdEvent,
@@ -15,9 +18,6 @@ import {
   showCommandError,
 } from './helpers.ts';
 import type { NavigationHelpers } from './navigation.js';
-import { PREVIEW_GUARD_MESSAGE, PREVIEW_GUARD_NODE_TYPES } from './dialog.js';
-import { loadUIPlugin } from '../../../plugin-loaders/ui-plugin-loader.js';
-import { startBuildFlow } from '../../../router/pages/tree/console/buildFlow.ts';
 
 type OpenEditDialog = (
   targetNodeId: NodeId,
@@ -44,7 +44,10 @@ type ContextMenuHelpers = {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-export const createContextMenuAction = (deps: TreeConsoleActionDeps, helpers: ContextMenuHelpers) => {
+export const createContextMenuAction = (
+  deps: TreeConsoleActionDeps,
+  helpers: ContextMenuHelpers
+) => {
   const {
     client,
     treeId,
@@ -68,14 +71,15 @@ export const createContextMenuAction = (deps: TreeConsoleActionDeps, helpers: Co
         expandTarget?: boolean;
         source?: 'breadcrumb' | 'treetable' | 'speedDial';
         nextVisible?: boolean;
-      },
+      }
     ): void => {
       void (async () => {
         const normalizedAction = (action === 'remove' ? 'trash' : action) as ContextAction;
         console.log('Context menu action:', normalizedAction, 'for node:', node);
 
         const targetNodeId = node.id as NodeId;
-        const parentId = (node.parentId as NodeId | undefined) ?? (pageNodeId as NodeId | undefined);
+        const parentId =
+          (node.parentId as NodeId | undefined) ?? (pageNodeId as NodeId | undefined);
 
         const refreshParent = async (id: NodeId | undefined) => {
           if (!id) return;
@@ -158,7 +162,9 @@ export const createContextMenuAction = (deps: TreeConsoleActionDeps, helpers: Co
         }
 
         if (normalizedAction === 'preview') {
-          const resolvedNodeType = String(node?.nodeType ?? (node as { type?: string })?.type ?? '');
+          const resolvedNodeType = String(
+            node?.nodeType ?? (node as { type?: string })?.type ?? ''
+          );
           const normalizedNodeType = resolvedNodeType.toLowerCase();
           if (isFolderNodeType(resolvedNodeType) || normalizedNodeType === 'folder') {
             const mapZxy = (() => {
@@ -213,7 +219,11 @@ export const createContextMenuAction = (deps: TreeConsoleActionDeps, helpers: Co
           return;
         }
 
-        if (normalizedAction === 'rename-inline' && node?.id && typeof node.metadata?.name === 'string') {
+        if (
+          normalizedAction === 'rename-inline' &&
+          node?.id &&
+          typeof node.metadata?.name === 'string'
+        ) {
           try {
             const mutationAPI = await client?.getMutationAPI();
             const next = node.metadata.name.trim();

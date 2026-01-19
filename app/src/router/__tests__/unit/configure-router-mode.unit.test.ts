@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createHierarchiRouter, getBasePath, getRouterMode } from '../../index.js';
 
+function createMockRoute() {
+  return {
+    addChildren: () => createMockRoute(),
+  };
+}
+
 // Mock UI plugin setup to avoid loading actual plugin-loaders
 vi.mock('../../loaders/uiPlugins.js', () => ({
   setupUIPlugins: vi.fn().mockResolvedValue({
@@ -12,6 +18,71 @@ vi.mock('../../loaders/uiPlugins.js', () => ({
 
 vi.mock('@hierarchidb/runtime-worker', () => ({
   storeRegistry: {},
+}));
+
+vi.mock('@tanstack/react-router', () => ({
+  createRouter: vi.fn(({ history }) => ({ history })),
+  createBrowserHistory: vi.fn(() => ({ location: {} })),
+  createHashHistory: vi.fn(() => ({ location: {} })),
+  createMemoryHistory: vi.fn(() => ({ location: {} })),
+}));
+
+vi.mock('../../routes/rootRoute.js', () => ({
+  rootRoute: createMockRoute(),
+}));
+
+vi.mock('../../routes/indexRoute.js', () => ({
+  indexRoute: createMockRoute(),
+}));
+
+vi.mock('../../routes/infoRoute.js', () => ({
+  infoRoute: createMockRoute(),
+}));
+
+vi.mock('../../routes/mapRoute.js', () => ({
+  mapRoute: createMockRoute(),
+}));
+
+vi.mock('../../routes/auth/index.js', () => ({
+  authLoginRoute: createMockRoute(),
+  authCallbackRoute: createMockRoute(),
+  authSilentRenewRoute: createMockRoute(),
+}));
+
+vi.mock('../../routes/utilityRoutes.js', () => ({
+  tagsRoute: createMockRoute(),
+  tagDetailRoute: createMockRoute(),
+  pluginsRoute: createMockRoute(),
+}));
+
+vi.mock('../../routes/tree/baseRoute.js', () => ({
+  treeBaseRoute: createMockRoute(),
+}));
+
+vi.mock('../../routes/tree/layoutRoute.js', () => ({
+  treeLayoutRoute: createMockRoute(),
+}));
+
+vi.mock('../../routes/tree/indexRoute.js', () => ({
+  treeLayoutIndexRoute: createMockRoute(),
+}));
+
+vi.mock('../../routes/tree/pageRoute.js', () => ({
+  treePageRoute: createMockRoute(),
+}));
+
+vi.mock('../../routes/tree/targetRoute.js', () => ({
+  treeTargetRoute: createMockRoute(),
+}));
+
+vi.mock('../../routes/tree/nodeTypeRoute.js', () => ({
+  treeNodeTypeRoute: createMockRoute(),
+}));
+
+vi.mock('../../routes/tree/dialogRoute.js', () => ({
+  treeDialogRoute: createMockRoute(),
+  treeDialogModeRoute: createMockRoute(),
+  treeDialogModeStepRoute: createMockRoute(),
 }));
 
 vi.mock('maplibre-gl', () => ({
@@ -29,33 +100,23 @@ describe('createHierarchiRouter', () => {
     vi.unstubAllEnvs();
   });
 
-it(
-  'should create a router with browser mode',
-  async () => {
+  it('should create a router with browser mode', async () => {
     const router = await createHierarchiRouter({ mode: 'browser' });
 
     expect(router).toBeDefined();
     expect(router.history).toBeDefined();
     expect(router.history.location).toBeDefined();
-  },
-  30_000
-);
+  }, 30_000);
 
-  it(
-    'should create a router with hash mode',
-    async () => {
+  it('should create a router with hash mode', async () => {
     const router = await createHierarchiRouter({ mode: 'hash' });
 
     expect(router).toBeDefined();
     expect(router.history).toBeDefined();
     expect(router.history.location).toBeDefined();
-    },
-    30_000
-  );
+  }, 30_000);
 
-  it(
-    'should apply basename when provided',
-    async () => {
+  it('should apply basename when provided', async () => {
     const router = await createHierarchiRouter({
       mode: 'browser',
       basename: '/hierarchidb',
@@ -63,13 +124,9 @@ it(
 
     expect(router).toBeDefined();
     expect(router.history).toBeDefined();
-    },
-    30_000
-  );
+  }, 30_000);
 
-  it(
-    'should not apply basename for hash mode',
-    async () => {
+  it('should not apply basename for hash mode', async () => {
     const router = await createHierarchiRouter({
       mode: 'hash',
       basename: '/hierarchidb',
@@ -77,9 +134,7 @@ it(
 
     expect(router).toBeDefined();
     expect(router.history).toBeDefined();
-    },
-    30_000
-  );
+  }, 30_000);
 });
 
 describe('getRouterMode', () => {

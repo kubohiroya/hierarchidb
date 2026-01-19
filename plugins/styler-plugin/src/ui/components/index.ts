@@ -38,8 +38,8 @@ export type { StylerMappingProps } from './StylerAlgorithmPanel.tsx';
 
 // Re-export components for direct use
 export { StylerAlgorithmPanel } from './StylerAlgorithmPanel.tsx';
-export type { StylerStepProps } from './StylerStepProps.tsx';
 // Step 5: Style Mapping Configuration
 export { StylerAlgorithmStep, StylerConfigStepDefinition } from './StylerAlgorithmStep.tsx';
 // Step 6: Preview with Style Mapping
-export { StylerPreviewStep, StylerPreviewDefinition } from './StylerPreviewStep.tsx';
+export { StylerPreviewDefinition, StylerPreviewStep } from './StylerPreviewStep.tsx';
+export type { StylerStepProps } from './StylerStepProps.tsx';

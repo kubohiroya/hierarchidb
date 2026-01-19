@@ -1,6 +1,6 @@
 import type {
-  ImportData,
   ImportProgress as APIImportProgress,
+  ImportData,
   ImportValidationResult,
   WorkerAPI,
 } from '@hierarchidb/common-api';
@@ -420,7 +420,10 @@ function normalizeImportData(data: unknown): ImportNodesPayload {
   const mapEntries = (entries: unknown[], parentName: string) =>
     entries.map((entry, index) => {
       if (entry && typeof entry === 'object') {
-        return coerceImportNode(entry as Record<string, unknown>, `${parentName} Child ${index + 1}`);
+        return coerceImportNode(
+          entry as Record<string, unknown>,
+          `${parentName} Child ${index + 1}`
+        );
       }
       return coerceImportNode({}, `${parentName} Child ${index + 1}`);
     });

@@ -36,7 +36,7 @@ describeUiProgress('useShapeProgress', () => {
         completed: 3,
         failed: 0,
         percentage: 30,
-        taskType: 'download',
+        taskType: 'fetch',
       },
       startedAt: Date.now(),
       lastActivity: Date.now(),
@@ -69,7 +69,7 @@ const emit = async (event: BatchProgressEvent) => {
     await emit({
       sessionId: 'session-1',
       nodeId: 'console-1' as any,
-      stage: 'download',
+      stage: 'fetch',
       phase: 'running',
       timestamp: Date.now(),
       payload: {
@@ -86,11 +86,11 @@ const emit = async (event: BatchProgressEvent) => {
       failed: 0,
       skipped: 0,
       percentage: 30,
-      taskType: 'download',
+      taskType: 'fetch',
     });
     expect(result.current.status).toMatchObject({
       status: 'processing',
-      stage: 'download',
+      stage: 'fetch',
       progress: 30,
       hasErrors: false,
     });
@@ -109,7 +109,7 @@ const emit = async (event: BatchProgressEvent) => {
     await emit({
       sessionId: 'session-err',
       nodeId: 'console-err' as any,
-      stage: 'extract1',
+      stage: 'transform',
       phase: 'failed',
       timestamp: Date.now(),
       payload: {
@@ -117,14 +117,14 @@ const emit = async (event: BatchProgressEvent) => {
         completed: 4,
         failed: 1,
       },
-      error: { detail: 'download failed' },
+      error: { detail: 'fetch failed' },
     });
 
     await waitFor(() => expect(result.current.status?.status).toBe('failed'));
     expect(result.current.status).toMatchObject({
       status: 'failed',
       hasErrors: true,
-      error: 'download failed',
+      error: 'fetch failed',
     });
     expect(result.current.progress?.failed).toBeGreaterThan(0);
   });

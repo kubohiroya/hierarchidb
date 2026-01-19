@@ -7,7 +7,11 @@ import type { NodeId } from '@hierarchidb/common-types';
 import type { StylerDataService } from '../../services/StylerDataService.js';
 // Note: Do not implement the shared EntityHandler interface here because this handler returns
 // operation-result shapes used by tests. Build-time typing is kept local to avoid signature clashes.
-import { type StylerEntity, StylerConfigDefault, StylerMappingDefault } from '../types/StylerEntity.js';
+import {
+  StylerConfigDefault,
+  type StylerEntity,
+  StylerMappingDefault,
+} from '../types/StylerEntity.js';
 
 // Type for base handler (since SpreadsheetEntityHandler is not exported)
 type HandlerPayload<T> =
@@ -85,7 +89,7 @@ export class StylerEntityHandler {
       config: data?.config || StylerConfigDefault,
       mapping: {
         ...StylerMappingDefault,
-        ...data?.mapping
+        ...data?.mapping,
       },
       styleKeyValues: data?.styleKeyValues ?? baseEntity.styleKeyValues,
       generatedStyle: data?.generatedStyle,
@@ -106,7 +110,7 @@ export class StylerEntityHandler {
       config: baseEntity.config || StylerConfigDefault,
       mapping: {
         ...StylerMappingDefault,
-        ...baseEntity.mapping
+        ...baseEntity.mapping,
       },
       styleKeyValues: baseEntity.styleKeyValues,
       generatedStyle: baseEntity.generatedStyle,
@@ -133,7 +137,7 @@ export class StylerEntityHandler {
         config: baseEntity.config || StylerConfigDefault,
         mapping: {
           ...StylerMappingDefault,
-          ...baseEntity.mapping
+          ...baseEntity.mapping,
         },
         styleKeyValues: data.styleKeyValues ?? baseEntity.styleKeyValues,
         generatedStyle: baseEntity.generatedStyle,
@@ -149,14 +153,11 @@ export class StylerEntityHandler {
 
     if (shouldRegenerate && entity && tableId) {
       try {
-        const { styleSpec, colorMapping } = await this.dataService.generateMapLibreStyle(
-          tableId,
-          {
-            ...entity,
-            keyColumn: nextKey,
-            valueColumn: nextValue,
-          }
-        );
+        const { styleSpec, colorMapping } = await this.dataService.generateMapLibreStyle(tableId, {
+          ...entity,
+          keyColumn: nextKey,
+          valueColumn: nextValue,
+        });
         entity.generatedStyle = {
           maplibreStyleSpec: styleSpec,
           colorMapping,
@@ -185,5 +186,4 @@ export class StylerEntityHandler {
     await this.spreadsheetHandler.deleteEntity(nodeId);
     return { success: true };
   }
-
 }

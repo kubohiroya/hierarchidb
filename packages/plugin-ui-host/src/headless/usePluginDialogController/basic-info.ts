@@ -1,13 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { NodeId, TreeNodeMetadata } from '@hierarchidb/common-types';
-import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { NodeId, TagEntity, TreeNodeMetadata } from '@hierarchidb/common-types';
 import { resolveDefaultNodeName } from '@hierarchidb/runtime-worker';
-import { toRecord } from '../controller/step-guards.js';
-import type { BasicInfoMeta } from './data-types.js';
-import type { TreeNodeUpdaterPayload } from './data-types.js';
-import type { TagEntity } from '@hierarchidb/common-types';
+import type { Remote } from 'comlink';
 import type React from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { toRecord } from '../controller/step-guards.js';
+import type { BasicInfoMeta, TreeNodeUpdaterPayload } from './data-types.js';
 
 interface Params {
   mode: 'create' | 'edit';
@@ -156,7 +154,9 @@ export function useBasicInfoState({
       const rawDescription = (info as { description?: unknown }).description;
       const description: string = typeof rawDescription === 'string' ? rawDescription : '';
       const tags: string[] = Array.isArray((info as { tags?: unknown }).tags)
-        ? ((info as { tags?: unknown }).tags as unknown[]).filter((v): v is string => typeof v === 'string')
+        ? ((info as { tags?: unknown }).tags as unknown[]).filter(
+            (v): v is string => typeof v === 'string'
+          )
         : [];
       const next: TreeNodeMetadata = { name, description, tags };
       setBasicInfo(next);
@@ -175,7 +175,8 @@ export function useBasicInfoState({
           ? draft.draftMetadata.name
           : prev.name;
       const nextDescription =
-        typeof draft.draftMetadata?.description === 'string' && draft.draftMetadata.description.length
+        typeof draft.draftMetadata?.description === 'string' &&
+        draft.draftMetadata.description.length
           ? draft.draftMetadata.description
           : prev.description;
       const nextTags = Array.isArray(draft.draftMetadata?.tags)

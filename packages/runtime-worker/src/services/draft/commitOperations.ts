@@ -1,9 +1,15 @@
-import type { NodeId, Timestamp, TreeNode, OnNameConflict, DialogUIState } from '@hierarchidb/common-types';
+import type {
+  DialogUIState,
+  NodeId,
+  OnNameConflict,
+  Timestamp,
+  TreeNode,
+} from '@hierarchidb/common-types';
 import type { CoreDB } from '../CoreDB.js';
 import type { CommandResult } from '../command-types.js';
 import { WorkerErrorCodeValue } from '../command-types.js';
-import { createNewName, getChildNames } from './nameUtilities.js';
 import { checkDraftConflict } from './lookupOperations.js';
+import { createNewName, getChildNames } from './nameUtilities.js';
 
 export type CommitOk = { status: 'ok'; nodeId: NodeId; node: TreeNode; autoRenameTo?: string };
 export type CommitConflict = {
@@ -32,7 +38,9 @@ export async function commitTreeNodeDraft(
     | undefined;
   const siblingNames = await getChildNames(coreDB, draft.parentId);
   let finalName =
-    (pendingMeta?.name && pendingMeta.name.trim().length ? pendingMeta.name : draft.metadata?.name) ?? '';
+    (pendingMeta?.name && pendingMeta.name.trim().length
+      ? pendingMeta.name
+      : draft.metadata?.name) ?? '';
   const sameNameCount = siblingNames.filter((name) => name === finalName).length;
   const nameConflicts = sameNameCount > 1;
 
@@ -55,7 +63,11 @@ export async function commitTreeNodeDraft(
 
   const finalizedData = (() => {
     const candidate = (draft as { draftData?: unknown }).draftData ?? null;
-    if (candidate && typeof candidate === 'object' && Object.keys(candidate as Record<string, unknown>).length === 0) {
+    if (
+      candidate &&
+      typeof candidate === 'object' &&
+      Object.keys(candidate as Record<string, unknown>).length === 0
+    ) {
       return null;
     }
     return candidate;
@@ -79,7 +91,8 @@ export async function commitTreeNodeDraft(
     data: finalizedData as TreeNode['data'],
     draftData: null,
     draftMetadata: null,
-    dialogUIState: (draft as { dialogUIState?: DialogUIState | null }).dialogUIState ?? ({} as DialogUIState),
+    dialogUIState:
+      (draft as { dialogUIState?: DialogUIState | null }).dialogUIState ?? ({} as DialogUIState),
     updatedAt: now,
     version: originalVersion + 1,
   };

@@ -1,10 +1,23 @@
+import {
+  CircularProgress,
+  Stack,
+  Step,
+  StepButton,
+  StepLabel,
+  Stepper,
+  Typography,
+} from '@mui/material';
+import type { Theme } from '@mui/material/styles';
 import type React from 'react';
-import { Step, StepButton, StepLabel, Stepper, CircularProgress, Stack, Typography } from '@mui/material';
 import type { DialogActionInFlight } from '../types.js';
 import { StepStatusIcon } from './StepStatusIcon.js';
-import type { Theme } from '@mui/material/styles';
 
-type WorkerStepState = { id: string; enabled?: boolean; completed?: boolean; error?: string | null };
+type WorkerStepState = {
+  id: string;
+  enabled?: boolean;
+  completed?: boolean;
+  error?: string | null;
+};
 type WorkerDialogState = { steps?: WorkerStepState[] };
 type StepDataSnapshot = Record<string, unknown>;
 
@@ -61,14 +74,17 @@ export const PluginDialogStepper: React.FC<PluginDialogStepperProps> = ({
         const completed = workerStep?.completed ?? validatedStepIndices.includes(index);
         const label = workerStep?.id ?? step.label ?? step.id;
         const isActive = index === activeStepIndex;
-        const previousWorkerStep = index > 0
-          ? workerStepMap?.get(steps[index - 1]?.id ?? '') ?? dialogState?.steps?.[index - 1]
-          : null;
-        const previousCompleted = index === 0
-          ? true
-          : previousWorkerStep?.completed ?? validatedStepIndices.includes(index - 1);
+        const previousWorkerStep =
+          index > 0
+            ? (workerStepMap?.get(steps[index - 1]?.id ?? '') ?? dialogState?.steps?.[index - 1])
+            : null;
+        const previousCompleted =
+          index === 0
+            ? true
+            : (previousWorkerStep?.completed ?? validatedStepIndices.includes(index - 1));
         const isValidatedButDisabled = completed && !canNavigate && index > 0 && !previousCompleted;
-        const showBuildProgress = step.id === 'build' && isActive && isBuildRunning(stepData) && !completed;
+        const showBuildProgress =
+          step.id === 'build' && isActive && isBuildRunning(stepData) && !completed;
 
         return (
           <Step key={step.id} completed={completed}>

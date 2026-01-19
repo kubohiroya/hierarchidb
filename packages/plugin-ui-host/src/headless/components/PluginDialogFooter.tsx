@@ -12,12 +12,12 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloseIcon from '@mui/icons-material/Close';
 import ConstructionIcon from '@mui/icons-material/Construction';
-import { Box, Button, CircularProgress, Stack, Tooltip } from '@mui/material';
-import React, { forwardRef, useCallback, useEffect, useRef, useState } from 'react';
-import type { Theme } from '@mui/material/styles';
 import type { ButtonProps } from '@mui/material';
-import type { DialogActionInFlight } from '../types.js';
+import { Box, Button, CircularProgress, Stack, Tooltip } from '@mui/material';
+import type { Theme } from '@mui/material/styles';
+import React, { forwardRef, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { DialogActionInFlight } from '../types.js';
 import { usePluginDialogFooterLogic } from './hooks/usePluginDialogFooterLogic.js';
 
 export interface PluginDialogFooterPrimaryButtonOptions {
@@ -50,13 +50,7 @@ const LoadingButton = forwardRef<HTMLButtonElement, LoadingButtonProps>(function
   { loading = false, disabled, startIcon, endIcon, children, ...rest },
   ref
 ) {
-  const spinner = (
-    <CircularProgress
-      size={16}
-      thickness={5}
-      color="inherit"
-    />
-  );
+  const spinner = <CircularProgress size={16} thickness={5} color="inherit" />;
   const computedEndIcon = loading ? spinner : endIcon;
   return (
     <Button
@@ -148,16 +142,19 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
     ctx.onRequestCommit?.();
   }, [ctx]);
 
-  const sx = useCallback((theme: Theme) => ({
-    display: footerVisible ? 'block' : 'none',
-    borderTop: `1px solid ${theme.palette.divider}`,
-    padding: theme.spacing(1.5, 2),
-    backgroundColor: getDialogSurfaceColor(theme),
-    position: 'relative',
-    // Keep footer at the dialog surface z-index (modal) so popper menus can overlay it.
-    zIndex: theme.zIndex?.modal ?? 1300,
-    pointerEvents: 'auto',
-  }), [footerVisible]);
+  const sx = useCallback(
+    (theme: Theme) => ({
+      display: footerVisible ? 'block' : 'none',
+      borderTop: `1px solid ${theme.palette.divider}`,
+      padding: theme.spacing(1.5, 2),
+      backgroundColor: getDialogSurfaceColor(theme),
+      position: 'relative',
+      // Keep footer at the dialog surface z-index (modal) so popper menus can overlay it.
+      zIndex: theme.zIndex?.modal ?? 1300,
+      pointerEvents: 'auto',
+    }),
+    [footerVisible]
+  );
 
   const debugRef = useRef<Record<string, unknown>>({});
   useEffect(() => {
@@ -206,141 +203,138 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
           }}
         />
       )}
-      <Box
-        sx={sx}
-        onMouseLeave={handleFooterMouseLeave}
-      >
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        spacing={{ xs: 1.5, sm: 2 }}
-        justifyContent="space-between"
-        alignItems={{ xs: 'stretch', sm: 'center' }}
-      >
+      <Box sx={sx} onMouseLeave={handleFooterMouseLeave}>
         <Stack
-          data-testid="plugin-dialog-footer-left"
-          direction="row"
-          spacing={1.5}
-          alignItems="center"
-          flexWrap="wrap"
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={{ xs: 1.5, sm: 2 }}
+          justifyContent="space-between"
+          alignItems={{ xs: 'stretch', sm: 'center' }}
         >
-          {showLeftPrimary && (
-            <LoadingButton
-              variant="contained"
-              size="large"
-              color={isFirstStep ? 'inherit' : isResourcesTree ? 'primary' : 'secondary'}
-              onClick={handleBackOrCancel}
-              onPointerDown={stopPointerPropagation}
-              disabled={disableLeftPrimary}
-              loading={pendingAction?.type === leftActionType}
-              startIcon={leftPrimaryIcon}
-            >
-              {leftPrimaryLabel}
-            </LoadingButton>
-          )}
-          {showSaveDraft && (
-            <Tooltip
-              title={
-                disableDraftButton
-                  ? t('dialogs.pluginDialog.tooltips.saveDraftDisabled', 'No changes to save')
-                  : ''
-              }
-              disableHoverListener={!disableDraftButton}
-            >
-              <span>
-                <LoadingButton
-                  variant="outlined"
-                  size="large"
-                  onClick={onSaveDraft}
-                  onPointerDown={stopPointerPropagation}
-                  disabled={disableDraftButton}
-                  loading={pendingAction?.type === 'save-draft'}
-                  endIcon={<CheckIcon fontSize="small" />}
-                >
-                  {saveDraftLabel ?? t('dialogs.pluginDialog.buttons.saveDraft', 'Save Draft')}
-                </LoadingButton>
-              </span>
-            </Tooltip>
-          )}
-        </Stack>
+          <Stack
+            data-testid="plugin-dialog-footer-left"
+            direction="row"
+            spacing={1.5}
+            alignItems="center"
+            flexWrap="wrap"
+          >
+            {showLeftPrimary && (
+              <LoadingButton
+                variant="contained"
+                size="large"
+                color={isFirstStep ? 'inherit' : isResourcesTree ? 'primary' : 'secondary'}
+                onClick={handleBackOrCancel}
+                onPointerDown={stopPointerPropagation}
+                disabled={disableLeftPrimary}
+                loading={pendingAction?.type === leftActionType}
+                startIcon={leftPrimaryIcon}
+              >
+                {leftPrimaryLabel}
+              </LoadingButton>
+            )}
+            {showSaveDraft && (
+              <Tooltip
+                title={
+                  disableDraftButton
+                    ? t('dialogs.pluginDialog.tooltips.saveDraftDisabled', 'No changes to save')
+                    : ''
+                }
+                disableHoverListener={!disableDraftButton}
+              >
+                <span>
+                  <LoadingButton
+                    variant="outlined"
+                    size="large"
+                    onClick={onSaveDraft}
+                    onPointerDown={stopPointerPropagation}
+                    disabled={disableDraftButton}
+                    loading={pendingAction?.type === 'save-draft'}
+                    endIcon={<CheckIcon fontSize="small" />}
+                  >
+                    {saveDraftLabel ?? t('dialogs.pluginDialog.buttons.saveDraft', 'Save Draft')}
+                  </LoadingButton>
+                </span>
+              </Tooltip>
+            )}
+          </Stack>
 
-        <Box
-          data-testid="plugin-dialog-footer-center"
-          sx={{
-            flex: { xs: '0 0 auto', sm: '1 1 0%' },
-            display: 'flex',
-            justifyContent: { xs: 'flex-start', sm: 'center' },
-            alignItems: 'center',
-            minHeight: 40,
-          }}
-        >
-          {showStartBatch && (
-            <LoadingButton
-              variant="outlined"
-              size="large"
-              color="secondary"
-              onClick={onStartBatch}
-              onPointerDown={stopPointerPropagation}
-              disabled={!canStartBatch || isStartingBatch || hasPendingAction}
-              loading={isStartingBatch}
-              endIcon={<ConstructionIcon fontSize="small" />}
-            >
-              {isStartingBatch ? 'Building…' : 'Build'}
-            </LoadingButton>
-          )}
-        </Box>
+          <Box
+            data-testid="plugin-dialog-footer-center"
+            sx={{
+              flex: { xs: '0 0 auto', sm: '1 1 0%' },
+              display: 'flex',
+              justifyContent: { xs: 'flex-start', sm: 'center' },
+              alignItems: 'center',
+              minHeight: 40,
+            }}
+          >
+            {showStartBatch && (
+              <LoadingButton
+                variant="outlined"
+                size="large"
+                color="secondary"
+                onClick={onStartBatch}
+                onPointerDown={stopPointerPropagation}
+                disabled={!canStartBatch || isStartingBatch || hasPendingAction}
+                loading={isStartingBatch}
+                endIcon={<ConstructionIcon fontSize="small" />}
+              >
+                {isStartingBatch ? 'Building…' : 'Build'}
+              </LoadingButton>
+            )}
+          </Box>
 
-        <Stack
-          data-testid="plugin-dialog-footer-right"
-          direction="row"
-          spacing={1.5}
-          alignItems="center"
-          justifyContent="flex-end"
-          flexWrap="wrap"
-        >
-          {showInlineSaveButton && (
-            <LoadingButton
-              variant="outlined"
-              size="large"
-              color="primary"
-              onClick={handleInlineSave}
-              onPointerDown={stopPointerPropagation}
-              disabled={inlineSaveDisabled}
-              loading={pendingAction?.type === 'commit'}
-              endIcon={<CheckIcon fontSize="small" />}
-            >
-              {commitLabel}
-            </LoadingButton>
-          )}
-          {shouldRenderNextButton && (
-            <LoadingButton
-              variant="contained"
-              size="large"
-              color="primary"
-              onClick={handleNextOrSave}
-              onPointerDown={stopPointerPropagation}
-              disabled={disableRightPrimary}
-              loading={pendingAction?.type === rightActionType}
-              endIcon={<ChevronRightIcon fontSize="small" />}
-            >
-              {rightPrimaryLabel}
-            </LoadingButton>
-          )}
-          {shouldRenderFinalCommitButton && (
-            <LoadingButton
-              variant="contained"
-              size="large"
-              color="primary"
-              onClick={handleNextOrSave}
-              onPointerDown={stopPointerPropagation}
-              disabled={disableRightPrimary || !canCommit || !allStepsValidated || !isDirty}
-              loading={pendingAction?.type === rightActionType}
-              endIcon={<CheckIcon fontSize="small" />}
-            >
-              {rightPrimaryLabel}
-            </LoadingButton>
-          )}
+          <Stack
+            data-testid="plugin-dialog-footer-right"
+            direction="row"
+            spacing={1.5}
+            alignItems="center"
+            justifyContent="flex-end"
+            flexWrap="wrap"
+          >
+            {showInlineSaveButton && (
+              <LoadingButton
+                variant="outlined"
+                size="large"
+                color="primary"
+                onClick={handleInlineSave}
+                onPointerDown={stopPointerPropagation}
+                disabled={inlineSaveDisabled}
+                loading={pendingAction?.type === 'commit'}
+                endIcon={<CheckIcon fontSize="small" />}
+              >
+                {commitLabel}
+              </LoadingButton>
+            )}
+            {shouldRenderNextButton && (
+              <LoadingButton
+                variant="contained"
+                size="large"
+                color="primary"
+                onClick={handleNextOrSave}
+                onPointerDown={stopPointerPropagation}
+                disabled={disableRightPrimary}
+                loading={pendingAction?.type === rightActionType}
+                endIcon={<ChevronRightIcon fontSize="small" />}
+              >
+                {rightPrimaryLabel}
+              </LoadingButton>
+            )}
+            {shouldRenderFinalCommitButton && (
+              <LoadingButton
+                variant="contained"
+                size="large"
+                color="primary"
+                onClick={handleNextOrSave}
+                onPointerDown={stopPointerPropagation}
+                disabled={disableRightPrimary || !canCommit || !allStepsValidated || !isDirty}
+                loading={pendingAction?.type === rightActionType}
+                endIcon={<CheckIcon fontSize="small" />}
+              >
+                {rightPrimaryLabel}
+              </LoadingButton>
+            )}
+          </Stack>
         </Stack>
-      </Stack>
       </Box>
     </>
   );
@@ -359,5 +353,5 @@ export const PluginDialogFooter = React.memo(
     prev.canStartBatch === next.canStartBatch &&
     prev.isStartingBatch === next.isStartingBatch &&
     prev.primaryButtonOptions === next.primaryButtonOptions &&
-    prev.pendingAction === next.pendingAction,
+    prev.pendingAction === next.pendingAction
 );

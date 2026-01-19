@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTheme } from '@mui/material/styles';
-import type { FetchTaskPayload, ShapeEntity } from '../../../common/types/index.js';
-import { normalizeDataSourceName } from '../../../common/types/index.js';
+import type { DataSourceName, FetchTaskPayload, ShapeEntity } from '../../../common/types/index.js';
 import { isShapePreviewMetadataEnabled } from '../../../common/config/previewFlags.js';
 import { toNodeId, type NodeId } from '@hierarchidb/common-types';
 import { useTranslation } from '../../i18n.js';
@@ -156,7 +155,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   }, []);
   const workerClient = workerClientHook ? workerClientHook() : null;
   const selectionMatrix = previewDraft.selectedArrayByCountries;
-  const selectionDataSource = normalizeDataSourceName(previewDraft.buildConfig?.dataSourceName);
+  const selectionDataSource = previewDraft.buildConfig?.dataSourceName as DataSourceName | undefined;
 
   useEffect(() => {
     let cancelled = false;

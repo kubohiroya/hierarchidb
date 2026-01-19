@@ -1,5 +1,11 @@
-import { SingletonMixin } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
+import { authFetch } from '@hierarchidb/download';
+import type { LocationMutationAPI, LocationPointProperties } from '@hierarchidb/location-store';
+import {
+  filterIdeGsmPointsBySelection,
+  getLocationDB,
+  parseIdeGsmCsv,
+} from '@hierarchidb/location-store';
 import {
   IDE_GSM_BULK_CHUNK_SIZE,
   type IdeGsmImportCallback,
@@ -9,10 +15,7 @@ import {
   type LocationGroupItem,
   type LocationRelation,
 } from '@hierarchidb/plugin-service-api';
-import type { LocationMutationAPI, LocationPointProperties } from '@hierarchidb/location-store';
-import { filterIdeGsmPointsBySelection, parseIdeGsmCsv } from '@hierarchidb/location-store';
-import { authFetch } from '@hierarchidb/download';
-import { getLocationDB } from '@hierarchidb/location-store';
+import { SingletonMixin } from '@hierarchidb/util';
 import { storeRegistry } from '../entity/store-registry.js';
 
 type LocationPointWriteProgress = {
@@ -24,7 +27,10 @@ type LocationPointWriteProgress = {
 
 export class LocationMutationService implements LocationMutationAPI {
   static async getSingleton(): Promise<LocationMutationService> {
-    return SingletonMixin.getSingleton('LocationMutationService', async () => new LocationMutationService());
+    return SingletonMixin.getSingleton(
+      'LocationMutationService',
+      async () => new LocationMutationService()
+    );
   }
 
   async upsertLocationGroups(nodeId: NodeId, items: LocationGroupItem[]): Promise<void> {
@@ -56,7 +62,10 @@ export class LocationMutationService implements LocationMutationAPI {
     if (groupStore) {
       const items = await groupStore.list(nodeId);
       if (items.length > 0) {
-        await groupStore.bulkDelete(nodeId, items.map((item) => item.id));
+        await groupStore.bulkDelete(
+          nodeId,
+          items.map((item) => item.id)
+        );
       }
     }
     const relStore = storeRegistry.getRelations<LocationRelation>('location');
@@ -76,7 +85,7 @@ export class LocationMutationService implements LocationMutationAPI {
 
   async importIdeGsmLocations(
     request: IdeGsmLocationImportRequest,
-    progress?: IdeGsmImportCallback,
+    progress?: IdeGsmImportCallback
   ): Promise<IdeGsmLocationImportResult> {
     const emit = (payload: Omit<IdeGsmImportProgress, 'timestamp'>): void => {
       progress?.({ ...payload, timestamp: Date.now() });
@@ -139,7 +148,7 @@ export class LocationMutationService implements LocationMutationAPI {
     options?: {
       chunkSize?: number;
       onProgress?: (progress: LocationPointWriteProgress) => void;
-    },
+    }
   ): Promise<void> {
     const store = storeRegistry.getFeatures<LocationGroupItem>('location');
     const chunkSize = Math.max(1, options?.chunkSize ?? 1000);
@@ -149,7 +158,10 @@ export class LocationMutationService implements LocationMutationAPI {
     }
     const existing = await store.list(nodeId);
     if (existing.length > 0) {
-      await store.bulkDelete(nodeId, existing.map((item) => item.id));
+      await store.bulkDelete(
+        nodeId,
+        existing.map((item) => item.id)
+      );
     }
     if (!points.length) {
       options?.onProgress?.({ total: 0, saved: 0, chunkIndex: 0, chunkSize });

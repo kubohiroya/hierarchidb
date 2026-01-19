@@ -98,9 +98,7 @@ export const TopPageGuidedTour: React.FC<TopPageGuidedTourProps> = ({ run, onFin
       content: (
         <div>
           <h3>Tags 🔖</h3>
-          <p>
-            Open the Tags page to explore and manage labels across your data.
-          </p>
+          <p>Open the Tags page to explore and manage labels across your data.</p>
         </div>
       ),
       placement: 'bottom',
@@ -110,9 +108,7 @@ export const TopPageGuidedTour: React.FC<TopPageGuidedTourProps> = ({ run, onFin
       content: (
         <div>
           <h3>Need Help? 🤝</h3>
-          <p>
-            You can reopen this guided tour anytime from the help icon.
-          </p>
+          <p>You can reopen this guided tour anytime from the help icon.</p>
         </div>
       ),
       placement: 'left',

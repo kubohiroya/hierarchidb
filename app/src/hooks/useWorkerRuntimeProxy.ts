@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { createWorkerClientProxy } from '~/worker-runtime/WorkerClientProxy.js';
 import type { WorkerRuntimeHook } from '~/hooks/WorkerRuntimeHook.ts';
+import { createWorkerClientProxy } from '~/worker-runtime/WorkerClientProxy.js';
 
 import {
-  getWorkerSnapshot, subscribeWorkerState, type WorkerStateSnapshot } from '~/worker-runtime/WorkerStateStore.ts';
+  getWorkerSnapshot,
+  subscribeWorkerState,
+  type WorkerStateSnapshot,
+} from '~/worker-runtime/WorkerStateStore.ts';
 
 export function useWorkerRuntimeProxy(): WorkerRuntimeHook {
   const proxy = useMemo(() => createWorkerClientProxy(), []);

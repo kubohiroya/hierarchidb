@@ -3,12 +3,12 @@
  */
 
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';
-import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import { composeStepConfigs } from '@hierarchidb/plugin-base';
+import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import { DualKeyMap } from '@hierarchidb/util';
+import { loadUIPlugin } from '../../../plugin-loaders/ui-plugin-loader.js';
 import type { TreeConsoleActionDeps } from '../types.js';
 import { showCommandError } from './helpers.ts';
-import { loadUIPlugin } from '../../../plugin-loaders/ui-plugin-loader.js';
 
 export const PREVIEW_GUARD_NODE_TYPES = new Set([
   'basemap',
@@ -132,9 +132,7 @@ export const createDialogHelpers = (deps: TreeConsoleActionDeps) => {
         );
     const requiredBeforeFinalValid =
       basicInfoValid &&
-      configs
-        .slice(0, finalConfigIndex)
-        .every((cfg, idx) => cfg.optional || results[idx]);
+      configs.slice(0, finalConfigIndex).every((cfg, idx) => cfg.optional || results[idx]);
     const finalStepValid = results[finalConfigIndex] ?? true;
     const finalStepIndex = composed.hasHostBase ? finalConfigIndex + 1 : finalConfigIndex + 2;
     return {

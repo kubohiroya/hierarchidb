@@ -279,11 +279,7 @@ export function AuthRequiredDialog({
         color="secondary"
         size="large"
         startIcon={
-          isSelected && isAuthenticating ? (
-            <CircularProgress size={20} color="inherit" />
-          ) : (
-            <Icon />
-          )
+          isSelected && isAuthenticating ? <CircularProgress size={20} color="inherit" /> : <Icon />
         }
         onClick={() => handleSignIn(provider)}
         disabled={isDisabled}
@@ -381,8 +377,7 @@ export function AuthRequiredDialog({
         {isAuthenticated && user && (
           <Alert severity="success" sx={{ mb: 3 }}>
             <Typography variant="body2">
-              You are currently signed in as{' '}
-              <strong>{user.name || user.email}</strong>
+              You are currently signed in as <strong>{user.name || user.email}</strong>
             </Typography>
           </Alert>
         )}
@@ -445,7 +440,6 @@ export function AuthRequiredDialog({
             >
               {cancelButtonLabel}
             </Button>
-
           </Box>
         </Box>
       </DialogActions>

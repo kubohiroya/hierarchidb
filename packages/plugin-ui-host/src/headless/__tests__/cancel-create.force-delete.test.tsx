@@ -1,5 +1,6 @@
-import { renderHook, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { NodeId, TreeId } from '@hierarchidb/common-types';
+import { act, renderHook } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePluginDialogController } from '../usePluginDialogController.js';
 
 const discardDraft = vi.fn();
@@ -9,7 +10,12 @@ vi.mock('@hierarchidb/plugin-ui-sdk', async () => {
   return {
     ...actual,
     useTreeNodeUpdater: vi.fn(() => ({
-      treeNodeUpdater: { treeNodeId: 'draft-1', draftMetadata: null, draftData: {}, isTemporary: true },
+      treeNodeUpdater: {
+        treeNodeId: 'draft-1',
+        draftMetadata: null,
+        draftData: {},
+        isTemporary: true,
+      },
       hasUnsavedChanges: true,
       updateTreeNodeUpdater: vi.fn(),
       commitTreeNodeUpdater: vi.fn(),
@@ -46,9 +52,9 @@ describe('usePluginDialogController cancel (create mode)', () => {
       usePluginDialogController({
         mode: 'create',
         nodeType: 'folder',
-        nodeId: 'n:1' as any,
-        pageNodeId: 'p:1' as any,
-        treeId: 't:1' as any,
+        nodeId: 'n:1' as NodeId,
+        pageNodeId: 'p:1' as NodeId,
+        treeId: 't:1' as TreeId,
         open: true,
         onClose,
       })

@@ -41,7 +41,6 @@ import {
   onTaskQueueUpdate,
   updateTask,
 } from '@hierarchidb/vt-orchestrator';
-import { VtShapeDb, listFetchCache } from '@hierarchidb/vt-shape-store';
 import { ephemeralShapeDB } from '@hierarchidb/shape-store';
 import { runShapeVtPipeline } from '../services/vt/shapeVtPipeline.js';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../services/batch/ShapeBuildAPIClient.ts';
@@ -287,10 +286,13 @@ const buildTaskWeightContext = async (
     }
   });
 
-  const shapeStore = new VtShapeDb();
-  const fetchCaches = await listFetchCache(shapeStore, nodeId);
-  const fetchCacheById = new Map(fetchCaches.map((cache) => [cache.id, cache] as const));
-  const fetchCacheBySourceKey = new Map(fetchCaches.map((cache) => [cache.sourceKey, cache] as const));
+  const fetchCaches = await ephemeralShapeDB.fetchCache.where('nodeId').equals(nodeId).toArray();
+  const fetchCacheById = new Map(
+    fetchCaches.map((cache) => [cache.id, { polygonCount: cache.polygonCount ?? 0 }] as const),
+  );
+  const fetchCacheBySourceKey = new Map(
+    fetchCaches.map((cache) => [cache.sourceKey, { polygonCount: cache.polygonCount ?? 0 }] as const),
+  );
 
   const bufferIds = [...transformBufferIds];
   const transformCaches = bufferIds.length > 0
@@ -301,7 +303,7 @@ const buildTaskWeightContext = async (
   const transformCacheById = new Map(
     transformCaches
       .filter((cache) => cache.timestamp > 0)
-      .map((cache) => [cache.id, cache] as const),
+      .map((cache) => [cache.id, { polygonCount: cache.polygonCount }] as const),
   );
 
   return {

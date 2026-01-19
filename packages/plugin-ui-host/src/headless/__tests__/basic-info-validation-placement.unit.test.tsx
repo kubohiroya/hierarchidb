@@ -1,7 +1,7 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
-import * as React from 'react';
 import { BasicInfoStep } from '@hierarchidb/ui-plugin-basic-info';
+import { render, screen } from '@testing-library/react';
+import * as React from 'react';
+import { describe, expect, it } from 'vitest';
 
 describe('BasicInfoStep validation placement', () => {
   it('shows name conflict helper directly under the Name field', () => {
@@ -17,11 +17,10 @@ describe('BasicInfoStep validation placement', () => {
     );
 
     const nameField = screen.getByLabelText(/Name/i);
-    const helper =
-      nameField.closest('.MuiFormControl-root')?.querySelector('.MuiFormHelperText-root');
+    const helper = nameField
+      .closest('.MuiFormControl-root')
+      ?.querySelector('.MuiFormHelperText-root');
 
-    expect(helper?.textContent).toContain(
-      'A node with this name already exists in this folder'
-    );
+    expect(helper?.textContent).toContain('A node with this name already exists in this folder');
   });
 });

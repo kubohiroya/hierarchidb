@@ -88,7 +88,8 @@ export function useUrlDownload({
       const validatedUrl = validationResult.url || trimmedUrl;
       const needsCorsProxy = !validatedUrl.startsWith(window.location.origin || '');
       let corsProxyBaseURL = '';
-      corsProxyBaseURL = (import.meta && import.meta.env && import.meta.env.VITE_CORS_PROXY_BASE_URL) || '';
+      corsProxyBaseURL =
+        (import.meta && import.meta.env && import.meta.env.VITE_CORS_PROXY_BASE_URL) || '';
       if (needsCorsProxy && corsProxyBaseURL && !hasValidToken) {
         setIsAuthError(true);
         throw new Error(

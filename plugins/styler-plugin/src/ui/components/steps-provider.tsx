@@ -1,14 +1,17 @@
-import React from 'react';
-import { PluginStepRegistry, type PluginStepConfig, type PluginStepProps } from '@hierarchidb/plugin-base';
+import {
+  type PluginStepConfig,
+  type PluginStepProps,
+  PluginStepRegistry,
+} from '@hierarchidb/plugin-base';
 import { TabularDataSourceStep } from '@hierarchidb/spreadsheet-plugin';
-import { StylerPreviewStep } from './StylerPreviewStep.tsx';
-import type { StylerMapping, StylerStepData } from '../../common/types/StylerEntity.js';
 import { i18n } from '@hierarchidb/ui-i18n';
+import React from 'react';
+import type { StylerMapping, StylerStepData } from '../../common/types/StylerEntity.js';
+import { StylerAlgorithmStep2 } from './StylerAlgorithmStep2.tsx';
 import { StylerFilterStep } from './StylerFilterStep.tsx';
 import { StylerMappingKeysStep } from './StylerMappingKeysStep.tsx';
+import { StylerPreviewStep } from './StylerPreviewStep.tsx';
 import { StylerTargetStep } from './StylerTargetStep.tsx';
-import { StylerAlgorithmStep2 } from './StylerAlgorithmStep2.tsx';
-
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -16,7 +19,6 @@ const getStylerT = () =>
   typeof i18n.getFixedT === 'function'
     ? i18n.getFixedT(i18n.language ?? 'en', 'styler-plugin')
     : (i18n.t.bind(i18n) as typeof i18n.t);
-
 
 const hasMappingBasics = (dialogData?: StylerStepData): boolean => {
   const data = dialogData ?? ({} as StylerStepData);
@@ -29,7 +31,9 @@ const hasMappingBasics = (dialogData?: StylerStepData): boolean => {
   const valueType = mapping.valueType;
   const mappingMode = mapping.mappingMode;
   const hasBehavior = valueType === 'number' ? Boolean(mappingMode) : Boolean(valueType);
-  return Boolean(keyColumn && valueColumn && styleType && targetProperty && featureIdProperty && hasBehavior);
+  return Boolean(
+    keyColumn && valueColumn && styleType && targetProperty && featureIdProperty && hasBehavior
+  );
 };
 
 const hasMappingKeys = (dialogData?: StylerStepData): boolean => {
@@ -51,8 +55,7 @@ const hasTargetBehavior = (dialogData?: StylerStepData): boolean => {
 const hasLoadedDataSource = (dialogData?: StylerStepData): boolean => {
   const data = dialogData as StylerStepData;
   const dataSource = data.dataSource;
-  const size =
-    typeof dataSource?.sizeBytes === 'number' ? dataSource.sizeBytes : 0;
+  const size = typeof dataSource?.sizeBytes === 'number' ? dataSource.sizeBytes : 0;
   return (size ?? 0) > 0;
 };
 
@@ -115,7 +118,9 @@ registry.registerConfigProvider<StylerStepData>({
       {
         id: 'target-behavior',
         label: t('steps.target', 'Apply Target'),
-        componentFactory: (p: PluginStepProps<StylerStepData>) => <StylerTargetStep {...p} showTargetPanel={false} />,
+        componentFactory: (p: PluginStepProps<StylerStepData>) => (
+          <StylerTargetStep {...p} showTargetPanel={false} />
+        ),
         validate: (dialogData?: StylerStepData) => hasTargetBehavior(dialogData),
         capabilities: {
           canProceedToNext: (dialogData?: StylerStepData) => hasTargetBehavior(dialogData),
@@ -124,9 +129,7 @@ registry.registerConfigProvider<StylerStepData>({
       {
         id: 'style-scaling',
         label: t('steps.styleAlgorithm', 'Algorithm'),
-        componentFactory: (p: PluginStepProps<StylerStepData>) => (
-          <StylerAlgorithmStep2 {...p} />
-        ),
+        componentFactory: (p: PluginStepProps<StylerStepData>) => <StylerAlgorithmStep2 {...p} />,
         validate: (dialogData?: StylerStepData) => hasTargetBehavior(dialogData),
         capabilities: {
           canProceedToNext: (dialogData?: StylerStepData) => hasTargetBehavior(dialogData),

@@ -96,6 +96,10 @@ export default defineConfig({
         replacement: path.resolve(__dirname, '../../packages/features/download/src/index.ts'),
       },
       {
+        find: '@hierarchidb/vt-orchestrator',
+        replacement: path.resolve(__dirname, '../../packages/vt-orchestrator/src/index.ts'),
+      },
+      {
         find: /^@hierarchidb\/gen-iso3166-2\/browser$/,
         replacement: path.resolve(
           __dirname,

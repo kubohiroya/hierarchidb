@@ -1,9 +1,9 @@
 import type {
   CommitResult,
+  DialogUIState,
   NodeId,
   NodeType,
   OnNameConflict,
-  DialogUIState,
   TreeNode,
   TreeNodeMetadata,
   ValidationResult,
@@ -24,26 +24,20 @@ export interface TreeNodeUpdaterAPI {
 
   getTreeNode(nodeId: NodeId): Promise<TreeNode | undefined>;
 
-  updateTreeNodeDraftMetadata(
-    nodeId: NodeId,
-    updater: Partial<TreeNodeMetadata>
-  ): Promise<void>;
+  updateTreeNodeDraftMetadata(nodeId: NodeId, updater: Partial<TreeNodeMetadata>): Promise<void>;
 
-  updateTreeNodeDraftData(
-    nodeId: NodeId,
-    updater: Record<string, unknown>
-  ): Promise<void>;
+  updateTreeNodeDraftData(nodeId: NodeId, updater: Record<string, unknown>): Promise<void>;
 
   listDrafts(): Promise<TreeNode[]>;
 
   hasDraft(nodeId: NodeId): Promise<boolean>;
 
   /**
- * Persist draft changes and optionally commit them in a single call.
- * - `mode: 'save-draft'` stores draft payloads/UI atoms without committing.
- * - `mode: 'save'` (default) optionally applies provided draft payloads/UI atoms
- *   and commits the draft.
- */
+   * Persist draft changes and optionally commit them in a single call.
+   * - `mode: 'save-draft'` stores draft payloads/UI atoms without committing.
+   * - `mode: 'save'` (default) optionally applies provided draft payloads/UI atoms
+   *   and commits the draft.
+   */
   updateTreeNode(nodeId: NodeId, request?: CommitDraftRequest): Promise<CommitResult>;
 
   /** @deprecated use updateTreeNode */
@@ -83,6 +77,3 @@ export interface DiscardDraftOptions {
    */
   forceDelete?: boolean;
 }
-
-// Ensure a runtime-worker module is emitted for NodeNext resolution
-export {};

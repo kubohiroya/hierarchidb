@@ -1,9 +1,32 @@
-import { Button, Divider, Paper, Stack, Tooltip, Typography, Alert, Box, IconButton, Chip, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
-import { Edit as EditIcon, PlayArrow as PlayArrowIcon, Close as CloseIcon, Construction as ConstructionIcon } from '@mui/icons-material';
-import { NodeContextMenu, NodeTypeIcon } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import type { TreeId, TreeNode } from '@hierarchidb/common-types';
-import type { TreeConsolePanelProps } from '@hierarchidb/ui-treeconsole-base';
+import {
+  NodeContextMenu,
+  NodeTypeIcon,
+} from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import { SEARCH_FIELD_MIN_WIDTH_PX, SEARCH_FIELD_WIDTH_PX } from '@hierarchidb/ui-search-field';
+import type { TreeConsolePanelProps } from '@hierarchidb/ui-treeconsole-base';
+import {
+  Close as CloseIcon,
+  Construction as ConstructionIcon,
+  Edit as EditIcon,
+  PlayArrow as PlayArrowIcon,
+} from '@mui/icons-material';
+import {
+  Alert,
+  Box,
+  Button,
+  Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  IconButton,
+  Paper,
+  Stack,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import { useTreeNodeInfoPanel } from './useTreeNodeInfoPanel.js';
 
@@ -46,9 +69,7 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
   if (!currentNode) {
     return (
       <Box sx={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-        <Alert severity="info">
-          {labels.noNode}
-        </Alert>
+        <Alert severity="info">{labels.noNode}</Alert>
       </Box>
     );
   }

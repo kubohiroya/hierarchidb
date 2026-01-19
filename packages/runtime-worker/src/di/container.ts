@@ -6,8 +6,8 @@ import {
   pluginWorkerModuleMap,
   pluginWorkerSourceMap,
 } from '../plugin-registry/index.js';
-import type { PluginWorkerModuleLoaderContract } from './PluginWorkerModuleLoaderContract.js';
 import { PluginWorkerModuleLoader } from './PluginWorkerModuleLoader.js';
+import type { PluginWorkerModuleLoaderContract } from './PluginWorkerModuleLoaderContract.js';
 import { WorkerDiTokens } from './tokens.js';
 
 let containerInstance: Container | null = null;

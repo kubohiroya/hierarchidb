@@ -1,6 +1,6 @@
-import { useMemo, useCallback } from 'react';
 import { useDialogContext } from '@hierarchidb/ui-dialog';
 import { useLocation } from '@tanstack/react-router';
+import { useCallback, useMemo } from 'react';
 
 export function usePluginDialogFooterLogic() {
   const ctx = useDialogContext<Record<string, unknown>>();
@@ -17,8 +17,12 @@ export function usePluginDialogFooterLogic() {
   const isLastStep = ctx.activeStepIndex >= ctx.stepComponents.length - 1;
   const totalSteps = ctx.stepComponents.length;
   const isDirty = ctx.isDirty;
-  const validatedStepSet = useMemo(() => new Set(ctx.validatedStepIndices), [ctx.validatedStepIndices]);
-  const allStepsValidated = totalSteps === 0 || validatedStepSet.size >= totalSteps || (isDirty && totalSteps > 0);
+  const validatedStepSet = useMemo(
+    () => new Set(ctx.validatedStepIndices),
+    [ctx.validatedStepIndices]
+  );
+  const allStepsValidated =
+    totalSteps === 0 || validatedStepSet.size >= totalSteps || (isDirty && totalSteps > 0);
 
   const handleBackOrCancel = useCallback(() => {
     if (isFirstStep) {

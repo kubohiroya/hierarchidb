@@ -1,29 +1,29 @@
-import { SingletonMixin } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
 import type {
-  ShapeBuildTaskRecord,
+  ShapeBuildProgressSummary,
   ShapeBuildSessionRecord,
-  ShapeTransformCache,
+  ShapeBuildTaskRecord,
   ShapeFeatureMetadata,
-  ShapeMutationAPI,
   ShapeFetchCache,
+  ShapeMutationAPI,
   ShapeSourceMetadata,
+  ShapeTransformCache,
   ShapeVectorTileRecord,
 } from '@hierarchidb/plugin-service-api';
-import { storeRawDataDataSourceBufferForNode } from './shapeChunkStore.js';
 import {
-  ephemeralShapeDB,
   type BuildProcessConfig,
   type BuildSessionRecord,
-  type LayerInfo,
   type BuildStage,
+  ephemeralShapeDB,
+  type LayerInfo,
   type ProgressInfo,
   type ResourceUsage,
   type ShapeDB,
   type StageStatus,
   type VectorTileRecord,
 } from '@hierarchidb/shape-store';
-import type { ShapeBuildProgressSummary } from '@hierarchidb/plugin-service-api';
+import { SingletonMixin } from '@hierarchidb/util';
+import { storeRawDataDataSourceBufferForNode } from './shapeChunkStore.js';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -32,28 +32,32 @@ const isNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
 
 const isTaskStatus = (value: unknown): value is StageStatus['status'] =>
-  value === 'queued'
-  || value === 'running'
-  || value === 'completed'
-  || value === 'failed'
-  || value === 'regression';
+  value === 'queued' ||
+  value === 'running' ||
+  value === 'completed' ||
+  value === 'failed' ||
+  value === 'regression';
 
 const isStageStatus = (value: unknown): value is StageStatus => {
   if (!isRecord(value)) return false;
-  return isTaskStatus(value.status)
-    && isNumber(value.progress)
-    && isNumber(value.tasksTotal)
-    && isNumber(value.tasksCompleted)
-    && isNumber(value.tasksFailed)
-    && (value.message === undefined || typeof value.message === 'string');
+  return (
+    isTaskStatus(value.status) &&
+    isNumber(value.progress) &&
+    isNumber(value.tasksTotal) &&
+    isNumber(value.tasksCompleted) &&
+    isNumber(value.tasksFailed) &&
+    (value.message === undefined || typeof value.message === 'string')
+  );
 };
 
 const isBuildProcessConfig = (value: unknown): value is BuildProcessConfig => {
   if (!isRecord(value)) return false;
-  return isRecord(value.download)
-    && isRecord(value.extract1)
-    && isRecord(value.extract2)
-    && isRecord(value.vectorTiles);
+  return (
+    isRecord(value.download) &&
+    isRecord(value.extract1) &&
+    isRecord(value.extract2) &&
+    isRecord(value.vectorTiles)
+  );
 };
 
 const toProgressInfo = (progress: ShapeBuildProgressSummary): ProgressInfo => ({
@@ -65,15 +69,9 @@ const toProgressInfo = (progress: ShapeBuildProgressSummary): ProgressInfo => ({
   taskType: toBuildStage(progress.taskType),
 });
 
-const toBuildStage = (
-  stage: ShapeBuildProgressSummary['taskType'],
-): ProgressInfo['taskType'] => {
+const toBuildStage = (stage: ShapeBuildProgressSummary['taskType']): ProgressInfo['taskType'] => {
   if (stage === 'processing') return stage;
-  if (
-    stage === 'fetch'
-    || stage === 'transform'
-    || stage === 'vt'
-  ) {
+  if (stage === 'fetch' || stage === 'transform' || stage === 'vt') {
     return stage;
   }
   return undefined;
@@ -100,12 +98,14 @@ const toStageMap = (stages: Record<string, unknown>): Record<BuildStage, StageSt
 
 const toResourceUsage = (usage: Record<string, unknown> | undefined): ResourceUsage | undefined => {
   if (!usage) return undefined;
-  if (!isNumber(usage.memoryUsed)
-    || !isNumber(usage.memoryPeak)
-    || !isNumber(usage.cpuPercent)
-    || !isNumber(usage.storageUsed)
-    || !isNumber(usage.networkBytesReceived)
-    || !isNumber(usage.networkBytesSent)) {
+  if (
+    !isNumber(usage.memoryUsed) ||
+    !isNumber(usage.memoryPeak) ||
+    !isNumber(usage.cpuPercent) ||
+    !isNumber(usage.storageUsed) ||
+    !isNumber(usage.networkBytesReceived) ||
+    !isNumber(usage.networkBytesSent)
+  ) {
     return undefined;
   }
   return {
@@ -139,7 +139,9 @@ const toBuildSessionRecord = (session: ShapeBuildSessionRecord): BuildSessionRec
   };
 };
 
-const toBuildSessionUpdates = (updates: Partial<ShapeBuildSessionRecord>): Partial<BuildSessionRecord> => {
+const toBuildSessionUpdates = (
+  updates: Partial<ShapeBuildSessionRecord>
+): Partial<BuildSessionRecord> => {
   const next: Partial<BuildSessionRecord> = {};
   if (updates.draftId !== undefined) next.draftId = updates.draftId;
   if (updates.status !== undefined) next.status = updates.status;
@@ -154,7 +156,8 @@ const toBuildSessionUpdates = (updates: Partial<ShapeBuildSessionRecord>): Parti
   if (updates.completedAt !== undefined) next.completedAt = updates.completedAt;
   if (updates.progress !== undefined) next.progress = toProgressInfo(updates.progress);
   if (updates.stages !== undefined) next.stages = toStageMap(updates.stages);
-  if (updates.resourceUsage !== undefined) next.resourceUsage = toResourceUsage(updates.resourceUsage);
+  if (updates.resourceUsage !== undefined)
+    next.resourceUsage = toResourceUsage(updates.resourceUsage);
   if (updates.canResume !== undefined) next.canResume = updates.canResume;
   if (updates.lastActivity !== undefined) next.lastActivity = updates.lastActivity;
   if (updates.expiresAt !== undefined) next.expiresAt = updates.expiresAt;
@@ -190,7 +193,10 @@ const toVectorTileRecord = (tile: ShapeVectorTileRecord): VectorTileRecord => {
 
 export class ShapeMutationService implements ShapeMutationAPI {
   static async getSingleton(db: ShapeDB): Promise<ShapeMutationService> {
-    return SingletonMixin.getSingleton('ShapeMutationService', async () => new ShapeMutationService(db));
+    return SingletonMixin.getSingleton(
+      'ShapeMutationService',
+      async () => new ShapeMutationService(db)
+    );
   }
 
   constructor(private db: ShapeDB) {}
@@ -204,7 +210,10 @@ export class ShapeMutationService implements ShapeMutationAPI {
     await this.db.buildSessions.put(toBuildSessionRecord(session));
   }
 
-  async updateBuildSession(nodeId: NodeId, updates: Partial<ShapeBuildSessionRecord>): Promise<void> {
+  async updateBuildSession(
+    nodeId: NodeId,
+    updates: Partial<ShapeBuildSessionRecord>
+  ): Promise<void> {
     await this.ensureOpen();
     await this.db.updateBuildSession(nodeId, toBuildSessionUpdates(updates));
   }
@@ -228,7 +237,6 @@ export class ShapeMutationService implements ShapeMutationAPI {
     await this.ensureOpen();
     await this.db.vectorTiles.where('nodeId').equals(nodeId).delete?.();
   }
-
 
   async deleteFeatures(nodeId: NodeId): Promise<void> {
     await this.ensureOpen();
@@ -262,13 +270,15 @@ export class ShapeMutationService implements ShapeMutationAPI {
 
   async putFetchCaches(buffers: ShapeFetchCache[]): Promise<void> {
     if (buffers.length === 0) return;
-    await Promise.all(buffers.map((buffer) => (
-      storeRawDataDataSourceBufferForNode({
-        nodeId: buffer.nodeId,
-        cacheKey: buffer.id,
-        buffer: buffer.data,
-      })
-    )));
+    await Promise.all(
+      buffers.map((buffer) =>
+        storeRawDataDataSourceBufferForNode({
+          nodeId: buffer.nodeId,
+          cacheKey: buffer.id,
+          buffer: buffer.data,
+        })
+      )
+    );
   }
 
   async putTransformCaches(buffers: ShapeTransformCache[]): Promise<void> {
@@ -281,9 +291,11 @@ export class ShapeMutationService implements ShapeMutationAPI {
     await ephemeralShapeDB.transaction('rw', ephemeralShapeDB.transformCache, async () => {
       await ephemeralShapeDB.transformCache.bulkPut(pending);
       const completedAt = Date.now();
-      await Promise.all(pending.map((buffer) => (
-        ephemeralShapeDB.transformCache.update(buffer.id, { timestamp: completedAt })
-      )));
+      await Promise.all(
+        pending.map((buffer) =>
+          ephemeralShapeDB.transformCache.update(buffer.id, { timestamp: completedAt })
+        )
+      );
     });
   }
 

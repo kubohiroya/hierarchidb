@@ -1,6 +1,7 @@
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import { describe, expect, it } from 'vitest';
 import type { CoreDB } from '../../CoreDB.js';
+
 // fulltext tables removed; core stub only
 
 type TreeNodeState = Partial<Record<NodeId, TreeNode>>;
@@ -43,7 +44,6 @@ function makeCore(): CoreStubBase {
 }
 
 describe('Undo/Redo finalize: create -> undo -> redo', () => {
-
   it('removes created node on undo and restores on redo with same id', async () => {
     const core = makeCore();
     const { CommandProcessor } = await import('../../CommandProcessor.js');

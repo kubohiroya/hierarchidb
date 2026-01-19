@@ -1,5 +1,5 @@
 import { NodeAction, type NodeId, type TreeId } from '@hierarchidb/common-types';
-import { TREE_CONSOLE_SETTINGS_STORAGE_KEY, loadTreeConsoleSettings } from '@hierarchidb/util';
+import { loadTreeConsoleSettings, TREE_CONSOLE_SETTINGS_STORAGE_KEY } from '@hierarchidb/util';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { shiftBuildQueue } from '../../pages/tree/console/buildQueue.ts';
@@ -107,7 +107,14 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
       return;
     }
     void navigate({ to: `/t/${resolvedTreeId}/${resolvedPageNodeId}` });
-  }, [autoBuildEnabled, buildQueueKey, navigate, resolvedPageNodeId, resolvedTreeId, returnToParam]);
+  }, [
+    autoBuildEnabled,
+    buildQueueKey,
+    navigate,
+    resolvedPageNodeId,
+    resolvedTreeId,
+    returnToParam,
+  ]);
 
   if (initialStepRef.current === null) {
     initialStepRef.current = parsedStep;
@@ -117,8 +124,7 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
   }
   const currentStep = initialStepRef.current ?? parsedStep;
   const requestedAction = params.action?.toLowerCase() ?? '';
-  const forceInitialStep =
-    (forceInitialStepRef.current ?? false) || requestedAction === 'preview';
+  const forceInitialStep = (forceInitialStepRef.current ?? false) || requestedAction === 'preview';
 
   const mode: 'create' | 'edit' | 'preview' =
     requestedAction === 'preview'
@@ -142,7 +148,9 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
     [navigate, resolvedPageNodeId, resolvedTreeId]
   );
 
-  const autoBuild = autoBuildEnabled ? { enabled: true, onComplete: handleAutoBuildComplete } : undefined;
+  const autoBuild = autoBuildEnabled
+    ? { enabled: true, onComplete: handleAutoBuildComplete }
+    : undefined;
 
   return {
     autoBuild,

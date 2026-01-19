@@ -2,8 +2,8 @@ import { AutoHideFullScreenDialog as FullScreenDialog } from '@hierarchidb/ui-pl
 import { Info as InfoIcon } from '@mui/icons-material';
 import { Box, Divider, Link, Typography } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
-import { LicenseInfo } from './LicenseInfo.js';
 import type { LoadAppConfigReturn } from '../../../loader.ts';
+import { LicenseInfo } from './LicenseInfo.js';
 
 // LicenseInfo temporarily commented out until component is available
 // const LazyLicenseInfo = lazy(() =>

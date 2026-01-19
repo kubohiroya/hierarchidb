@@ -3,6 +3,14 @@
  * @description Modeless dialog manager with stacking and restore icons for the map page.
  */
 
+import type { NodeId } from '@hierarchidb/common-types';
+import { PluginDialogHeader } from '@hierarchidb/plugin-ui-host';
+import type {
+  HeadlessDialogHeaderProps,
+  HeadlessDialogProps,
+  StepComponentDescriptor,
+} from '@hierarchidb/ui-dialog';
+import { ModelessDialogFrame } from '@hierarchidb/ui-dialog';
 import type {
   MapToggleOption,
   MapToggleSelection,
@@ -10,18 +18,6 @@ import type {
   ResourceVectorLayer,
 } from '@hierarchidb/ui-plugin-shell/ui-map';
 import { MapToggleCard } from '@hierarchidb/ui-plugin-shell/ui-map';
-import type {
-  HeadlessDialogProps,
-  HeadlessDialogHeaderProps,
-  StepComponentDescriptor,
-} from '@hierarchidb/ui-dialog';
-import { ModelessDialogFrame } from '@hierarchidb/ui-dialog';
-import { PluginDialogHeader } from '@hierarchidb/plugin-ui-host';
-import { Box, IconButton, Tooltip } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
-import type { NodeId } from '@hierarchidb/common-types';
-import type React from 'react';
-import { useCallback, useMemo, useRef } from 'react';
 import {
   AltRoute as AltRouteIcon,
   Brush as BrushIcon,
@@ -30,17 +26,21 @@ import {
   PlaceOutlined as PlaceOutlinedIcon,
   TableView as TableViewIcon,
 } from '@mui/icons-material';
+import { Box, IconButton, Tooltip } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import type React from 'react';
+import { useCallback, useMemo, useRef } from 'react';
+import type { MapStylerSummary } from '../map/types.js';
+import type { ModelessIconAppearance, ModelessIconPlacement } from './ModelessDialogProvider.js';
+import { ModelessDialogProvider, useModelessDialogContext } from './ModelessDialogProvider.js';
 import {
   MapGeneratedDataContent,
   MapInfoContent,
+  type MapInfoSummary,
   MapLayerContent,
   MapStylerContent,
-  type MapInfoSummary,
 } from './modelessDialogContent.js';
-import type { MapStylerSummary } from '../map/types.js';
 import type { MapDialogDefinitionBase, MapDialogWindowState } from './modelessDialogLayout.js';
-import type { ModelessIconAppearance, ModelessIconPlacement } from './ModelessDialogProvider.js';
-import { ModelessDialogProvider, useModelessDialogContext } from './ModelessDialogProvider.js';
 
 const BASE_Z_INDEX_OFFSET = 100;
 const MINIMIZED_HEIGHT = 56;
@@ -91,7 +91,10 @@ function createContentComponent(content: React.ReactNode, padding = 2) {
   return Content;
 }
 
-function createStepComponents(id: string, title: string): StepComponentDescriptor<Record<string, unknown>>[] {
+function createStepComponents(
+  id: string,
+  title: string
+): StepComponentDescriptor<Record<string, unknown>>[] {
   const StepComponent: React.FC = () => null;
   StepComponent.displayName = `MapDialogStep(${id})`;
   return [
@@ -122,15 +125,15 @@ const MapDialogWindow: React.FC<MapDialogWindowProps> = ({
 }) => {
   const headerComponent = useMemo(
     () => createHeaderComponent(definition.title, definition.subtitle, definition.icon),
-    [definition.icon, definition.subtitle, definition.title],
+    [definition.icon, definition.subtitle, definition.title]
   );
   const contentComponent = useMemo(
     () => createContentComponent(definition.content, definition.contentPadding),
-    [definition.content, definition.contentPadding],
+    [definition.content, definition.contentPadding]
   );
   const stepComponents = useMemo(
     () => createStepComponents(definition.id, definition.title),
-    [definition.id, definition.title],
+    [definition.id, definition.title]
   );
 
   const headlessProps: HeadlessDialogProps<Record<string, unknown>> = {
@@ -200,46 +203,49 @@ const ClosedDialogIcon: React.FC<ClosedDialogIconProps> = ({
   } | null>(null);
   const movedRef = useRef(false);
 
-  const handlePointerDown = useCallback((event: React.PointerEvent<HTMLButtonElement>) => {
-    if (event.button !== 0) return;
-    event.preventDefault();
-    event.stopPropagation();
-    movedRef.current = false;
-    dragStateRef.current = {
-      pointerId: event.pointerId,
-      originX: event.clientX,
-      originY: event.clientY,
-      start: windowState.iconPosition ?? windowState.position,
-    };
-
-    const handlePointerMove = (moveEvent: PointerEvent) => {
-      const state = dragStateRef.current;
-      if (!state || moveEvent.pointerId !== state.pointerId) return;
-      if (
-        Math.abs(moveEvent.clientX - state.originX) > 2
-        || Math.abs(moveEvent.clientY - state.originY) > 2
-      ) {
-        movedRef.current = true;
-      }
-      const next = {
-        x: state.start.x + (moveEvent.clientX - state.originX),
-        y: state.start.y + (moveEvent.clientY - state.originY),
+  const handlePointerDown = useCallback(
+    (event: React.PointerEvent<HTMLButtonElement>) => {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+      movedRef.current = false;
+      dragStateRef.current = {
+        pointerId: event.pointerId,
+        originX: event.clientX,
+        originY: event.clientY,
+        start: windowState.iconPosition ?? windowState.position,
       };
-      onPositionChange(next);
-    };
 
-    const handlePointerEnd = (endEvent: PointerEvent) => {
-      if (dragStateRef.current?.pointerId !== endEvent.pointerId) return;
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerEnd);
-      window.removeEventListener('pointercancel', handlePointerEnd);
-      dragStateRef.current = null;
-    };
+      const handlePointerMove = (moveEvent: PointerEvent) => {
+        const state = dragStateRef.current;
+        if (!state || moveEvent.pointerId !== state.pointerId) return;
+        if (
+          Math.abs(moveEvent.clientX - state.originX) > 2 ||
+          Math.abs(moveEvent.clientY - state.originY) > 2
+        ) {
+          movedRef.current = true;
+        }
+        const next = {
+          x: state.start.x + (moveEvent.clientX - state.originX),
+          y: state.start.y + (moveEvent.clientY - state.originY),
+        };
+        onPositionChange(next);
+      };
 
-    window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerup', handlePointerEnd);
-    window.addEventListener('pointercancel', handlePointerEnd);
-  }, [onPositionChange, windowState.iconPosition, windowState.position]);
+      const handlePointerEnd = (endEvent: PointerEvent) => {
+        if (dragStateRef.current?.pointerId !== endEvent.pointerId) return;
+        window.removeEventListener('pointermove', handlePointerMove);
+        window.removeEventListener('pointerup', handlePointerEnd);
+        window.removeEventListener('pointercancel', handlePointerEnd);
+        dragStateRef.current = null;
+      };
+
+      window.addEventListener('pointermove', handlePointerMove);
+      window.addEventListener('pointerup', handlePointerEnd);
+      window.addEventListener('pointercancel', handlePointerEnd);
+    },
+    [onPositionChange, windowState.iconPosition, windowState.position]
+  );
 
   const position = windowState.iconPosition ?? windowState.position;
 
@@ -357,84 +363,98 @@ export const ModelessDialogManager: React.FC<ModelessDialogManagerProps> = ({
   iconPlacement,
   iconAppearance,
 }) => {
-  const definitions = useMemo<MapDialogDefinition[]>(() => [
-    {
-      id: 'map-info',
-      title: 'Map Info',
-      icon: <InfoOutlinedIcon fontSize="small" />,
-      defaultSize: { width: 320, height: 180 },
-      content: <MapInfoContent formattedZxy={formattedZxy} info={mapInfo} />,
-    },
-    {
-      id: 'map-layers',
-      title: 'Layers',
-      icon: <LayersIcon fontSize="small" />,
-      defaultSize: { width: 360, height: 360 },
-      content: (
-        <MapLayerContent
-          basemapStyles={basemapStyles}
-          vectorLayers={vectorLayers}
-          geoJsonLayers={geoJsonLayers}
-        />
-      ),
-    },
-    {
-      id: 'map-data-table',
-      title: 'Data Table',
-      icon: <TableViewIcon fontSize="small" />,
-      defaultSize: { width: 720, height: 420 },
-      content: (
-        <MapGeneratedDataContent nodeId={nodeId as NodeId} />
-      ),
-    },
-    {
-      id: 'map-style-table',
-      title: 'Styles',
-      icon: <BrushIcon fontSize="small" />,
-      defaultSize: { width: 860, height: 420 },
-      content: (
-        <MapStylerContent
-          stylerSummaries={stylerSummaries}
-          stylerToggles={stylerToggles}
-          onToggleStyler={onToggleStyler}
-        />
-      ),
-    },
-    {
-      id: 'map-location-types',
-      title: 'Terrain Types',
-      icon: <PlaceOutlinedIcon fontSize="small" />,
-      defaultSize: { width: 360, height: 220 },
-      contentPadding: 0,
-      frameless: true,
-      transparent: true,
-      content: (
-        <MapToggleCard
-          title="Terrain Types"
-          options={locationTypeOptions}
-          selection={locationTypeSelection}
-          onToggle={onToggleLocationType}
-        />
-      ),
-    },
-    {
-      id: 'map-route-modes',
-      title: 'Route Modes',
-      icon: <AltRouteIcon fontSize="small" />,
-      defaultSize: { width: 360, height: 220 },
-      contentPadding: 0,
-      frameless: true,
-      transparent: true,
-      content: (
-        <MapToggleCard
-          title="Route Modes"
-          options={routeModeOptions}
-          selection={routeModeSelection}
-          onToggle={onToggleRouteMode}
-        />
-      ),
-    },
-  ], [basemapStyles, formattedZxy, geoJsonLayers, locationTypeOptions, locationTypeSelection, mapInfo, nodeId, onToggleLocationType, onToggleRouteMode, routeModeOptions, routeModeSelection, vectorLayers]);
+  const definitions = useMemo<MapDialogDefinition[]>(
+    () => [
+      {
+        id: 'map-info',
+        title: 'Map Info',
+        icon: <InfoOutlinedIcon fontSize="small" />,
+        defaultSize: { width: 320, height: 180 },
+        content: <MapInfoContent formattedZxy={formattedZxy} info={mapInfo} />,
+      },
+      {
+        id: 'map-layers',
+        title: 'Layers',
+        icon: <LayersIcon fontSize="small" />,
+        defaultSize: { width: 360, height: 360 },
+        content: (
+          <MapLayerContent
+            basemapStyles={basemapStyles}
+            vectorLayers={vectorLayers}
+            geoJsonLayers={geoJsonLayers}
+          />
+        ),
+      },
+      {
+        id: 'map-data-table',
+        title: 'Data Table',
+        icon: <TableViewIcon fontSize="small" />,
+        defaultSize: { width: 720, height: 420 },
+        content: <MapGeneratedDataContent nodeId={nodeId as NodeId} />,
+      },
+      {
+        id: 'map-style-table',
+        title: 'Styles',
+        icon: <BrushIcon fontSize="small" />,
+        defaultSize: { width: 860, height: 420 },
+        content: (
+          <MapStylerContent
+            stylerSummaries={stylerSummaries}
+            stylerToggles={stylerToggles}
+            onToggleStyler={onToggleStyler}
+          />
+        ),
+      },
+      {
+        id: 'map-location-types',
+        title: 'Terrain Types',
+        icon: <PlaceOutlinedIcon fontSize="small" />,
+        defaultSize: { width: 360, height: 220 },
+        contentPadding: 0,
+        frameless: true,
+        transparent: true,
+        content: (
+          <MapToggleCard
+            title="Terrain Types"
+            options={locationTypeOptions}
+            selection={locationTypeSelection}
+            onToggle={onToggleLocationType}
+          />
+        ),
+      },
+      {
+        id: 'map-route-modes',
+        title: 'Route Modes',
+        icon: <AltRouteIcon fontSize="small" />,
+        defaultSize: { width: 360, height: 220 },
+        contentPadding: 0,
+        frameless: true,
+        transparent: true,
+        content: (
+          <MapToggleCard
+            title="Route Modes"
+            options={routeModeOptions}
+            selection={routeModeSelection}
+            onToggle={onToggleRouteMode}
+          />
+        ),
+      },
+    ],
+    [
+      basemapStyles,
+      formattedZxy,
+      geoJsonLayers,
+      locationTypeOptions,
+      locationTypeSelection,
+      mapInfo,
+      nodeId,
+      onToggleLocationType,
+      onToggleRouteMode,
+      routeModeOptions,
+      routeModeSelection,
+      vectorLayers,
+    ]
+  );
 
   const storageKey = useMemo(() => `hdb.map.dialogs.${nodeId}`, [nodeId]);
 

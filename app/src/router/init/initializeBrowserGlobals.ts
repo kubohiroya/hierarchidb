@@ -4,8 +4,7 @@ import { useWorker } from '../../contexts/WorkerProvider.js';
 import { bootLog } from '../../utils/bootLog.ts';
 import { APP_VERSION, BUILD_TIME } from '../../version.ts';
 
-type TreeConsolePanelGlobal =
-  typeof import('@hierarchidb/ui-treeconsole-base')['TreeConsolePanel'];
+type TreeConsolePanelGlobal = typeof import('@hierarchidb/ui-treeconsole-base')['TreeConsolePanel'];
 
 type BrowserGlobals = Window & {
   __uiPluginsRegistered?: boolean;

@@ -21,15 +21,24 @@ class StoreRegistry {
   private vectorTiles = new Map<string, VectorTileStore<VectorTileItemBase>>();
   private rel = new Map<string, RelationStore<RelationBase<unknown>>>();
 
-  registerFeatures<TItem extends FeatureItemBase<unknown>>(nodeType: string, store: FeatureStore<TItem>) {
+  registerFeatures<TItem extends FeatureItemBase<unknown>>(
+    nodeType: string,
+    store: FeatureStore<TItem>
+  ) {
     this.features.set(nodeType, store as FeatureStore<FeatureItemBase<unknown>>);
   }
 
-  registerVectorTiles<TItem extends VectorTileItemBase>(nodeType: string, store: VectorTileStore<TItem>) {
+  registerVectorTiles<TItem extends VectorTileItemBase>(
+    nodeType: string,
+    store: VectorTileStore<TItem>
+  ) {
     this.vectorTiles.set(nodeType, store as VectorTileStore<VectorTileItemBase>);
   }
 
-  registerRelations<TRel extends RelationBase<unknown>>(nodeType: string, store: RelationStore<TRel>) {
+  registerRelations<TRel extends RelationBase<unknown>>(
+    nodeType: string,
+    store: RelationStore<TRel>
+  ) {
     this.rel.set(nodeType, store as RelationStore<RelationBase<unknown>>);
   }
 

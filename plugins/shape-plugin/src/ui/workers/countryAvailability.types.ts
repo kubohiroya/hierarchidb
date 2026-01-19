@@ -4,7 +4,7 @@ export type SerializedCountryAvailabilityEntry = {
 };
 
 export type SerializedCountryAvailability = {
-  dataSource: string;
+  dataSource: DataSourceName;
   entries: SerializedCountryAvailabilityEntry[];
   maxAdminLevel: number;
   source: 'strategy' | 'metadata' | 'none';
@@ -19,8 +19,8 @@ export type UiStorageBridge = {
 
 export interface CountryAvailabilityWorkerAPI {
   setUiStorageBridge(bridge: UiStorageBridge): Promise<void>;
-  loadAvailability(dataSource: string, nodeId: string): Promise<SerializedCountryAvailability>;
-  loadMetadata(dataSource: string, nodeId: string): Promise<CountryMetadata[]>;
-  clearMetadataCache(dataSource?: string): Promise<void>;
+  loadAvailability(dataSource: DataSourceName, nodeId: string): Promise<SerializedCountryAvailability>;
+  loadMetadata(dataSource: DataSourceName, nodeId: string): Promise<CountryMetadata[]>;
+  clearMetadataCache(dataSource?: DataSourceName): Promise<void>;
 }
-import type { CountryMetadata } from '../../common/types/index.js';
+import type { CountryMetadata, DataSourceName } from '../../common/types/index.js';

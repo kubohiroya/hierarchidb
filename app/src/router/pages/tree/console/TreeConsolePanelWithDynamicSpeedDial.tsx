@@ -8,17 +8,17 @@
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-types';
 import {
+  type HierarchicalTreeNode,
   TreeConsolePanel,
   type TreeConsolePanelProps,
-  type HierarchicalTreeNode,
 } from '@hierarchidb/ui-treeconsole-base';
 import { Box } from '@mui/material';
 import type { Remote } from 'comlink';
-import { DynamicSpeedDial } from './DynamicSpeedDial.js';
-import { useCallback, useMemo, useState, useEffect } from 'react';
-
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ProjectsGuidedTour } from '../tour/ProjectsGuidedTour.tsx';
 import { ResourcesGuidedTour } from '../tour/ResourcesGuidedTour.tsx';
+import { DynamicSpeedDial } from './DynamicSpeedDial.js';
+
 //import { TopPageGuidedTour } from '../tour/TopPageGuidedTour.tsx';
 
 // Select the appropriate tour based on the current path
@@ -80,7 +80,11 @@ export function TreeConsolePanelWithDynamicSpeedDial({
     [panelProps.onContextMenuAction]
   );
   const onContextMenuAction = useCallback(
-    (action: string, node: HierarchicalTreeNode, options?: Parameters<typeof rawContextAction>[2]) => {
+    (
+      action: string,
+      node: HierarchicalTreeNode,
+      options?: Parameters<typeof rawContextAction>[2]
+    ) => {
       if (action?.startsWith('create:')) {
         setSpeedDialSuppressed(true);
       }
@@ -95,7 +99,11 @@ export function TreeConsolePanelWithDynamicSpeedDial({
   const speedDialContextNode: HierarchicalTreeNode = {
     id: (pageNodeId ?? (treeId ? `${treeId}:root` : 'root')) as NodeId,
     nodeType: (pageTreeNode?.nodeType ?? 'folder') as NodeType,
-    metadata: { name: pageTreeNode?.metadata?.name ?? '', description: pageTreeNode?.metadata?.description, tags: pageTreeNode?.metadata?.tags },
+    metadata: {
+      name: pageTreeNode?.metadata?.name ?? '',
+      description: pageTreeNode?.metadata?.description,
+      tags: pageTreeNode?.metadata?.tags,
+    },
     draftMetadata: null,
     data: null,
     draftData: null,

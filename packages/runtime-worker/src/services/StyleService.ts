@@ -1,4 +1,3 @@
-import { SingletonMixin } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
 import type {
   StyleDescriptor,
@@ -8,6 +7,7 @@ import type {
   StyleRecord,
 } from '@hierarchidb/plugin-service-api';
 import type { StylerDB } from '@hierarchidb/styler-store';
+import { SingletonMixin } from '@hierarchidb/util';
 
 export class StyleService implements StyleQueryAPI, StyleMutationAPI {
   static async getSingleton(db: StylerDB): Promise<StyleService> {

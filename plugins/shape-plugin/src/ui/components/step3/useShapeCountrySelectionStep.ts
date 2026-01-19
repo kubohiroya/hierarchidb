@@ -9,7 +9,7 @@ import {
   formatBytes,
   formatNumber,
 } from '../../../common/mock/data.js';
-import { normalizeDataSourceName } from '../../../services/utils/utils.js';
+import type { DataSourceName } from '../../../common/types/index.js';
 import type { CountryAvailabilityWorkerAPI, SerializedCountryAvailability } from '../../workers/countryAvailability.types.js';
 import { wrap, releaseProxy, proxy } from 'comlink';
 import type { NodeId } from '@hierarchidb/common-types';
@@ -86,6 +86,11 @@ const isSelectionEqual = (
   });
 };
 
+const isDataSourceName = (value: unknown): value is DataSourceName => (
+  typeof value === 'string'
+  && Object.prototype.hasOwnProperty.call(DATA_SOURCE_CONFIGS, value)
+);
+
 // Availability is resolved in a worker (and AuthRequired notifications are bridged to UI).
 
 type Args = {
@@ -122,23 +127,22 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
       ? (anyData as { buildConfig?: unknown }).buildConfig as Record<string, unknown> | undefined
       : undefined;
 
-    const dsFromEntity = typeof buildConfig?.dataSourceName === 'string' ? buildConfig.dataSourceName : undefined;
-    const dsFromBatch = typeof batchConfig?.dataSourceName === 'string' ? batchConfig.dataSourceName : undefined;
+    const dsFromEntity = isDataSourceName(buildConfig?.dataSourceName) ? buildConfig.dataSourceName : undefined;
+    const dsFromBatch = isDataSourceName(batchConfig?.dataSourceName) ? batchConfig.dataSourceName : undefined;
 
     const dsFromDraft = (() => {
       const bc = draftData?.buildConfig;
       if (!bc || typeof bc !== 'object') return undefined;
       const value = (bc as Record<string, unknown>).dataSourceName;
-      return typeof value === 'string' ? value : undefined;
+      return isDataSourceName(value) ? value : undefined;
     })();
 
     const candidate = dsFromDraft ?? dsFromEntity ?? dsFromBatch;
-    const normalized = normalizeDataSourceName(candidate);
     const hasBatchConfig =
       (batchConfig && typeof batchConfig === 'object')
       || (draftData?.buildConfig && typeof draftData.buildConfig === 'object');
 
-    if (!normalized) {
+    if (!candidate) {
       // Don't guess a data source (no implicit fallback to GADM).
       // Surface an error only after data is available.
       if (hasData && hasBatchConfig) {
@@ -154,13 +158,12 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
       return { dataSourceKey: undefined, dataSourceError: null as Error | null };
     }
 
-    return { dataSourceKey: normalized, dataSourceError: null as Error | null };
+    return { dataSourceKey: candidate, dataSourceError: null as Error | null };
   }, [data]);
 
   const resolvedMaxAdminLevel = useMemo(() => {
     if (!dataSourceKey) return 0;
-    const normalized = normalizeDataSourceName(dataSourceKey) ?? dataSourceKey.toLowerCase();
-    return DATA_SOURCE_CONFIGS[normalized]?.maxAdminLevel ?? 0;
+    return DATA_SOURCE_CONFIGS[dataSourceKey]?.maxAdminLevel ?? 0;
   }, [dataSourceKey]);
   useEffect(() => {
     if (dataSourceError) {

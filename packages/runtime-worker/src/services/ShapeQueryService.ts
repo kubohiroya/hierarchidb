@@ -1,33 +1,33 @@
-import { SingletonMixin } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
 import type {
   ShapeBuildProgressSummary,
   ShapeBuildSessionRecord,
   ShapeBuildSessionSummary,
+  ShapeBuildStage,
   ShapeBuildTaskRecord,
   ShapeBuildTaskSummary,
-  ShapeTransformCache,
-  ShapeTransformErrorRecord,
-  ShapeFeatureRecord,
   ShapeFeatureMetadata,
+  ShapeFeatureRecord,
+  ShapeFetchCache,
   ShapeProcessingStatus,
   ShapeQueryAPI,
-  ShapeFetchCache,
   ShapeSourceMetadata,
   ShapeTileInfo,
-  ShapeVTMetadata,
   ShapeTileSummary,
   ShapeTileSummaryEntry,
+  ShapeTransformCache,
+  ShapeTransformErrorRecord,
   ShapeVectorTileRecord,
-  ShapeBuildStage,
+  ShapeVTMetadata,
 } from '@hierarchidb/plugin-service-api';
 import {
-  ephemeralShapeDB,
   type BuildSessionRecord,
   type BuildTaskRecord,
+  ephemeralShapeDB,
   type ProgressInfo,
   type ShapeDB,
 } from '@hierarchidb/shape-store';
+import { SingletonMixin } from '@hierarchidb/util';
 import {
   countFetchDataDataSourceBuffersForNode,
   listRawDataDataSourceMetadataForNode,
@@ -127,7 +127,7 @@ export class ShapeQueryService implements ShapeQueryAPI {
   }
 
   async listBuildSessionRecordsByStatus(
-    statuses: Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>,
+    statuses: Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>
   ): Promise<ShapeBuildSessionRecord[]> {
     await this.ensureOpen();
     const sessions = await this.db.buildSessions.where('status').anyOf(statuses).toArray();
@@ -142,10 +142,15 @@ export class ShapeQueryService implements ShapeQueryAPI {
 
   async listBuildTaskRecords(nodeId: NodeId): Promise<ShapeBuildTaskRecord[]> {
     await this.ensureOpen();
-    return ephemeralShapeDB.buildTasks.where('nodeId').equals(nodeId).toArray() as Promise<ShapeBuildTaskRecord[]>;
+    return ephemeralShapeDB.buildTasks.where('nodeId').equals(nodeId).toArray() as Promise<
+      ShapeBuildTaskRecord[]
+    >;
   }
 
-  async listBuildTaskRecordsByStage(nodeId: NodeId, stage: ShapeBuildStage): Promise<ShapeBuildTaskRecord[]> {
+  async listBuildTaskRecordsByStage(
+    nodeId: NodeId,
+    stage: ShapeBuildStage
+  ): Promise<ShapeBuildTaskRecord[]> {
     const tasks = await this.listBuildTaskRecords(nodeId);
     return tasks.filter((task) => task.taskType === stage);
   }
@@ -187,10 +192,16 @@ export class ShapeQueryService implements ShapeQueryAPI {
     return this.db.features.where('nodeId').equals(nodeId).count();
   }
 
-  async getVectorTileInfo(nodeId: NodeId, z: number, x: number, y: number): Promise<ShapeTileInfo | null> {
+  async getVectorTileInfo(
+    nodeId: NodeId,
+    z: number,
+    x: number,
+    y: number
+  ): Promise<ShapeTileInfo | null> {
     await this.ensureOpen();
-    const tile = await this.db.getVectorTile?.(nodeId, z, x, y)
-      ?? (await this.db.vectorTiles.where('[nodeId+z+x+y]').equals([nodeId, z, x, y]).toArray())[0];
+    const tile =
+      (await this.db.getVectorTile?.(nodeId, z, x, y)) ??
+      (await this.db.vectorTiles.where('[nodeId+z+x+y]').equals([nodeId, z, x, y]).toArray())[0];
     if (!tile) return null;
     return {
       exists: true,
@@ -202,17 +213,24 @@ export class ShapeQueryService implements ShapeQueryAPI {
     };
   }
 
-  async getVectorTileRecord(nodeId: NodeId, z: number, x: number, y: number): Promise<ShapeVectorTileRecord | null> {
+  async getVectorTileRecord(
+    nodeId: NodeId,
+    z: number,
+    x: number,
+    y: number
+  ): Promise<ShapeVectorTileRecord | null> {
     await this.ensureOpen();
-    const tile = await this.db.getVectorTile?.(nodeId, z, x, y)
-      ?? (await this.db.vectorTiles.where('[nodeId+z+x+y]').equals([nodeId, z, x, y]).toArray())[0];
+    const tile =
+      (await this.db.getVectorTile?.(nodeId, z, x, y)) ??
+      (await this.db.vectorTiles.where('[nodeId+z+x+y]').equals([nodeId, z, x, y]).toArray())[0];
     return (tile as ShapeVectorTileRecord | undefined) ?? null;
   }
 
   async getVectorTile(nodeId: NodeId, z: number, x: number, y: number): Promise<Uint8Array | null> {
     await this.ensureOpen();
-    const tile = await this.db.getVectorTile?.(nodeId, z, x, y)
-      ?? (await this.db.vectorTiles.where('[nodeId+z+x+y]').equals([nodeId, z, x, y]).toArray())[0];
+    const tile =
+      (await this.db.getVectorTile?.(nodeId, z, x, y)) ??
+      (await this.db.vectorTiles.where('[nodeId+z+x+y]').equals([nodeId, z, x, y]).toArray())[0];
     if (!tile) return null;
     const data = tile.data_Uint8Array;
     if (data instanceof Uint8Array) return data;
@@ -249,13 +267,15 @@ export class ShapeQueryService implements ShapeQueryAPI {
 
   async listFeatures(nodeId: NodeId): Promise<ShapeFeatureRecord[]> {
     await this.ensureOpen();
-    return this.db.features.where('nodeId').equals(nodeId).toArray() as Promise<ShapeFeatureRecord[]>;
+    return this.db.features.where('nodeId').equals(nodeId).toArray() as Promise<
+      ShapeFeatureRecord[]
+    >;
   }
 
   async listFeaturesInBbox(
     nodeId: NodeId,
     bbox: [number, number, number, number],
-    adminLevel?: number,
+    adminLevel?: number
   ): Promise<ShapeFeatureRecord[]> {
     await this.ensureOpen();
     return this.db.getFeaturesInBbox(nodeId, bbox, adminLevel) as Promise<ShapeFeatureRecord[]>;
@@ -263,22 +283,24 @@ export class ShapeQueryService implements ShapeQueryAPI {
 
   async listFetchCaches(nodeId: NodeId): Promise<ShapeFetchCache[]> {
     const metadata = await listRawDataDataSourceMetadataForNode(nodeId);
-    const records = await Promise.all(metadata.map(async (entry) => {
-      const cacheKey = entry.cacheKey;
-      if (!cacheKey) return null;
-      const data = await readRawDataDataSourceBuffer(nodeId, cacheKey);
-      if (!data) return null;
-      return {
-        id: cacheKey,
-        nodeId,
-        data,
-        featureCount: 0,
-        bbox: [0, 0, 0, 0],
-        downloadTime: entry.fetchedAt ?? entry.createdAt ?? Date.now(),
-        size: entry.sizeBytes ?? data.byteLength,
-        timestamp: entry.updatedAt ?? entry.createdAt ?? Date.now(),
-      };
-    }));
+    const records = await Promise.all(
+      metadata.map(async (entry) => {
+        const cacheKey = entry.cacheKey;
+        if (!cacheKey) return null;
+        const data = await readRawDataDataSourceBuffer(nodeId, cacheKey);
+        if (!data) return null;
+        return {
+          id: cacheKey,
+          nodeId,
+          data,
+          featureCount: 0,
+          bbox: [0, 0, 0, 0],
+          downloadTime: entry.fetchedAt ?? entry.createdAt ?? Date.now(),
+          size: entry.sizeBytes ?? data.byteLength,
+          timestamp: entry.updatedAt ?? entry.createdAt ?? Date.now(),
+        };
+      })
+    );
     return records.filter(Boolean) as ShapeFetchCache[];
   }
 
@@ -301,11 +323,12 @@ export class ShapeQueryService implements ShapeQueryAPI {
     return countFetchDataDataSourceBuffersForNode(nodeId);
   }
 
-  async listTransformCaches(
-    nodeId: NodeId
-  ): Promise<ShapeTransformCache[]> {
+  async listTransformCaches(nodeId: NodeId): Promise<ShapeTransformCache[]> {
     return await ephemeralShapeDB.transaction('r', ephemeralShapeDB.transformCache, async () => {
-      const records = await ephemeralShapeDB.transformCache.where('nodeId').equals(nodeId).toArray();
+      const records = await ephemeralShapeDB.transformCache
+        .where('nodeId')
+        .equals(nodeId)
+        .toArray();
       return records.filter((record) => record.timestamp > 0);
     });
   }
@@ -333,14 +356,20 @@ export class ShapeQueryService implements ShapeQueryAPI {
   }
 
   async listSourceMetadata(nodeId: NodeId): Promise<ShapeSourceMetadata[]> {
-    return this.db.sourceMetadata.where('nodeId').equals(String(nodeId)).toArray() as Promise<ShapeSourceMetadata[]>;
+    return this.db.sourceMetadata.where('nodeId').equals(String(nodeId)).toArray() as Promise<
+      ShapeSourceMetadata[]
+    >;
   }
 
   async listFeatureMetadata(nodeId: NodeId): Promise<ShapeFeatureMetadata[]> {
-    return this.db.featureMetadata.where('nodeId').equals(String(nodeId)).toArray() as Promise<ShapeFeatureMetadata[]>;
+    return this.db.featureMetadata.where('nodeId').equals(String(nodeId)).toArray() as Promise<
+      ShapeFeatureMetadata[]
+    >;
   }
 
   async listTransformErrorRecords(nodeId: NodeId): Promise<ShapeTransformErrorRecord[]> {
-    return ephemeralShapeDB.transformErrors.where('nodeId').equals(nodeId).toArray() as Promise<ShapeTransformErrorRecord[]>;
+    return ephemeralShapeDB.transformErrors.where('nodeId').equals(nodeId).toArray() as Promise<
+      ShapeTransformErrorRecord[]
+    >;
   }
 }

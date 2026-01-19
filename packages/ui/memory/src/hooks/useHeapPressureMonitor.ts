@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
 import {
   createHeapPressureMonitor,
   type HeapPressureEvent,
   type HeapPressureMonitorOptions,
 } from '@hierarchidb/memory';
+import { useEffect, useMemo, useState } from 'react';
 
 export type UseHeapPressureMonitorOptions = {
   enabled?: boolean;

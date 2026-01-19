@@ -1,5 +1,8 @@
 import { readRuntimeEnvValue } from '@hierarchidb/util';
-import type { RuntimeWorkerStageClient, RuntimeWorkerClientProvider } from './RuntimeWorkerService.js';
+import type {
+  RuntimeWorkerClientProvider,
+  RuntimeWorkerStageClient,
+} from './RuntimeWorkerService.js';
 import { registerRuntimeWorkerClient } from './RuntimeWorkerService.js';
 import { createStageWorkerClient } from './StageProcessingService.js';
 
@@ -45,7 +48,7 @@ const isFlagEnabled = (name: string, fallback: boolean): boolean => {
 };
 
 async function createRuntimeWorkerClient(
-  allowLocalWorker: boolean,
+  allowLocalWorker: boolean
 ): Promise<RuntimeWorkerStageClient | null> {
   if (!allowLocalWorker) return null;
   try {

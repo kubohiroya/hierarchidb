@@ -2,7 +2,7 @@
  * API for managing multi-step dialog workflows with working copies.
  */
 
-import type { NodeId, ValidationResult, TreeNodeUpdater } from '@hierarchidb/common-types';
+import type { NodeId, TreeNodeUpdater, ValidationResult } from '@hierarchidb/common-types';
 import type { ProxyMarked } from 'comlink';
 
 /**
@@ -47,10 +47,7 @@ export interface PluginDialogAPI {
    * @param updates - Partial updates to apply
    * @returns The updated draft data
    */
-  updateDraft(
-    draftId: NodeId,
-    updates: Partial<TreeNodeUpdater>
-  ): Promise<TreeNodeUpdater>;
+  updateDraft(draftId: NodeId, updates: Partial<TreeNodeUpdater>): Promise<TreeNodeUpdater>;
 
   /**
    * Delete a draft

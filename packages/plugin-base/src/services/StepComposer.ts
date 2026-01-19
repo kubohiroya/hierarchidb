@@ -1,8 +1,8 @@
 import { HostProfileRegistry } from '../registry/HostProfileRegistry.js';
 import {
   type PluginStepConfig,
-  type StepData,
   PluginStepRegistry,
+  type StepData,
 } from '../registry/PluginStepRegistry.js';
 
 export interface ComposeResult {

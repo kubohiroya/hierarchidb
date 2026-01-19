@@ -6,7 +6,6 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-types';
-import type { TreeConsoleActionDeps, TreeConsoleActions } from './types.js';
 import { createClipboardActions } from './actions/clipboard.ts';
 import { createContextMenuAction } from './actions/contextMenu.ts';
 import { createDialogHelpers } from './actions/dialog.ts';
@@ -16,6 +15,7 @@ import { createMutationActions } from './actions/mutations.ts';
 import { createNavigationActions, createNavigationHelpers } from './actions/navigation.ts';
 import { createSearchActions } from './actions/search.ts';
 import { createSelectionActions } from './actions/selection.ts';
+import type { TreeConsoleActionDeps, TreeConsoleActions } from './types.js';
 
 export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConsoleActions {
   const { client, pageNodeId, selectedIds, setState, setSSOT, loadChildrenOf } = deps;

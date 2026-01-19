@@ -3,16 +3,18 @@
  * @description React hook for fetching and managing BaseMap entity data
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { NodeId, TreeId, TreeNode, TreeNodeUpdater, TreeNodeMetadata } from '@hierarchidb/common-types';
-import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
-import { useTreeNodeUpdater, createTreeNodeUpdaterActions } from '@hierarchidb/plugin-ui-sdk';
 import type {
-  BaseMapEntity,
-  MapStyle,
-  MapViewport,
-} from '../../common/types/BaseMapEntity.js';
+  NodeId,
+  TreeId,
+  TreeNode,
+  TreeNodeMetadata,
+  TreeNodeUpdater,
+} from '@hierarchidb/common-types';
+import { createTreeNodeUpdaterActions, useTreeNodeUpdater } from '@hierarchidb/plugin-ui-sdk';
+import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DEFAULT_VIEWPORT as BASEMAP_DEFAULT_VIEWPORT } from '../../common/constants/constants.js';
+import type { BaseMapEntity, MapStyle, MapViewport } from '../../common/types/BaseMapEntity.js';
 
 export interface UseBaseMapEntityResult {
   entity: BaseMapEntity | null;
@@ -64,9 +66,13 @@ const normalizeViewport = (value: Partial<MapViewport> | undefined): MapViewport
   const bearing = (value as { bearing?: unknown }).bearing;
   const pitch = (value as { pitch?: unknown }).pitch;
   return {
-    center: Array.isArray(center) && center.length === 2 && typeof center[0] === 'number' && typeof center[1] === 'number'
-      ? [center[0], center[1]]
-      : [...DEFAULT_VIEWPORT.center],
+    center:
+      Array.isArray(center) &&
+      center.length === 2 &&
+      typeof center[0] === 'number' &&
+      typeof center[1] === 'number'
+        ? [center[0], center[1]]
+        : [...DEFAULT_VIEWPORT.center],
     zoom: typeof zoom === 'number' ? zoom : DEFAULT_VIEWPORT.zoom,
     bearing: typeof bearing === 'number' ? bearing : DEFAULT_VIEWPORT.bearing,
     pitch: typeof pitch === 'number' ? pitch : DEFAULT_VIEWPORT.pitch,
@@ -82,7 +88,9 @@ const readNodeData = (
   return isRecord(rawData) ? (rawData as Record<string, unknown>) : {};
 };
 
-export function buildBaseMapEntityFromNode(node?: TreeNode | null): (BaseMapEntity & { draftMetadata?: TreeNodeMetadata }) | null{
+export function buildBaseMapEntityFromNode(
+  node?: TreeNode | null
+): (BaseMapEntity & { draftMetadata?: TreeNodeMetadata }) | null {
   if (!node) return null;
   const data = readNodeData(node);
   const mapStyle = normalizeMapStyle(data.mapStyle as Partial<MapStyle> | undefined);
@@ -92,7 +100,8 @@ export function buildBaseMapEntityFromNode(node?: TreeNode | null): (BaseMapEnti
   return {
     mapStyle,
     viewport,
-    draftMetadata: (draftMetadata || committedMetadata || { name: '', description: '', tags: [] }) as TreeNodeMetadata,
+    draftMetadata: (draftMetadata ||
+      committedMetadata || { name: '', description: '', tags: [] }) as TreeNodeMetadata,
     createdAt: (node as { createdAt?: number }).createdAt,
     updatedAt: (node as { updatedAt?: number }).updatedAt,
     version: (node as { version?: number }).version,
@@ -132,28 +141,22 @@ export function useBaseMapEntity(
   }, []);
   const workerClient = workerClientHook ? workerClientHook() : null;
 
-  const {
-    treeNodeUpdater: treeNodeUpdater,
-    updateTreeNodeUpdater,
-    commitTreeNodeUpdater,
-    discardDraft,
-  } = useTreeNodeUpdater<BaseMapEntity>({
-    mode: nodeId ? 'edit' : 'create',
-    nodeType: 'basemap',
-    parentId: nodeId ?? undefined,
-    treeId: (nodeId ?? '') as TreeId,
-    workerClient,
-    initialDraftData: {
-      mapStyle: { ...DEFAULT_MAP_STYLE },
-      viewport: undefined,
-    },
-    initialDraftMetadata: nodeId
-      ? { name: '', description: '', tags: [] }
-      : undefined,
-  });
+  const { treeNodeUpdater, updateTreeNodeUpdater, commitTreeNodeUpdater, discardDraft } =
+    useTreeNodeUpdater<BaseMapEntity>({
+      mode: nodeId ? 'edit' : 'create',
+      nodeType: 'basemap',
+      parentId: nodeId ?? undefined,
+      treeId: (nodeId ?? '') as TreeId,
+      workerClient,
+      initialDraftData: {
+        mapStyle: { ...DEFAULT_MAP_STYLE },
+        viewport: undefined,
+      },
+      initialDraftMetadata: nodeId ? { name: '', description: '', tags: [] } : undefined,
+    });
   const { updatePayload, updatePayloadAndMetadata } = useMemo(
     () => createTreeNodeUpdaterActions<BaseMapEntity>(updateTreeNodeUpdater),
-    [updateTreeNodeUpdater],
+    [updateTreeNodeUpdater]
   );
 
   // Fetch entity
@@ -252,7 +255,7 @@ export function useBaseMapEntity(
             name: updater.payload.draftMetadata?.name ?? '',
             description: updater.payload.draftMetadata?.description ?? '',
             tags: updater.payload.draftMetadata?.tags ?? [],
-          },
+          }
         );
         await commitTreeNodeUpdater('save', treeNodeUpdater);
         await fetchEntity();
@@ -264,7 +267,14 @@ export function useBaseMapEntity(
         setLoading(false);
       }
     },
-    [fetchEntity, nodeId, treeNodeUpdater, updatePayloadAndMetadata, updateTreeNodeUpdater, commitTreeNodeUpdater]
+    [
+      fetchEntity,
+      nodeId,
+      treeNodeUpdater,
+      updatePayloadAndMetadata,
+      updateTreeNodeUpdater,
+      commitTreeNodeUpdater,
+    ]
   );
 
   // Initial fetch and viewport hydration (defer to Geolocation when allowed)

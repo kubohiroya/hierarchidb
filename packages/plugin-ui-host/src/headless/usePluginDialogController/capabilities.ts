@@ -1,11 +1,11 @@
+import type { composeStepConfigs, PluginStepConfig } from '@hierarchidb/plugin-base';
+import type { DialogStep } from '@hierarchidb/ui-dialog';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  emptyGuards,
   evaluateStepGuards,
   evaluateValidationState,
-  emptyGuards,
 } from '../controller/step-guards.js';
-import type { PluginStepConfig, composeStepConfigs } from '@hierarchidb/plugin-base';
-import type { DialogStep } from '@hierarchidb/ui-dialog';
 
 interface Params<T extends Record<string, unknown> = Record<string, unknown>> {
   steps: DialogStep[];
@@ -60,10 +60,7 @@ export function useStepCapabilities<T extends Record<string, unknown> = Record<s
             prevGuardsRef.canProceedNext === guards.canProceedNext &&
             prevGuardsRef.canGoBack === guards.canGoBack &&
             prevGuardsRef.canStartBatch === guards.canStartBatch &&
-            arraysEqual(
-              prevGuardsRef.enabledSteps,
-              guards.enabledSteps
-            );
+            arraysEqual(prevGuardsRef.enabledSteps, guards.enabledSteps);
           if (sameFilled && sameGuards) return;
           prevFilledRef.length = filled.length;
           filled.forEach((v, i) => {
@@ -87,13 +84,7 @@ export function useStepCapabilities<T extends Record<string, unknown> = Record<s
     return () => {
       cancelled = true;
     };
-  }, [
-    steps,
-    composedConfigs.configs,
-    composedConfigs.hostCanSubmit,
-    activeStepIndex,
-    dialogData,
-  ]);
+  }, [steps, composedConfigs.configs, composedConfigs.hostCanSubmit, activeStepIndex, dialogData]);
 
   const prevEnabledRef = useRef<number[] | null>(null);
   const enabledStepIndices = useMemo(() => {

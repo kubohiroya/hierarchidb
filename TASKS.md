@@ -1,4 +1,167 @@
-2252) doc/shape/build-stage-compare (P1) — 進行中 (2026-01-19)
+2262) test/shape/full-flow-worker-pipeline (P1) — 進行中 (2026-01-19)
+- ブランチ名: test/shape/full-flow-worker-pipeline
+- 依存: なし
+- 受け入れ基準: shape の fetch/transform/vt を実処理で通す「擬似ではない」フルフローテストが追加されている／実データ取得と永続化を伴うことがテストから判別できる／実行コマンドと実行条件が明記されている／pnpm --filter @hierarchidb/shape-plugin test が exit 0／TASKS.md の運用ログに start/done/blocked が記載されている
+- 影響範囲: `plugins/shape-plugin/src/**`, `plugins/shape-plugin/vitest.config.ts`
+- ロールバック手順: 追加したフルフローテストを削除する
+- チェックリスト:
+  - 実Worker/実データ/永続化を通すフルフローテストを追加する
+  - テストの実行条件（環境変数/時間目安）を明記する
+  - pnpm --filter @hierarchidb/shape-plugin test を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-19 09:22 JST フルフロー非擬似テストの設計と追加に着手。
+  - update: 2026-01-19 09:44 JST 非擬似フルフローテストと vt-orchestrator のテスト用 alias を追加。
+  - blocked: 2026-01-19 09:44 JST pnpm --filter @hierarchidb/shape-plugin test が DNS 解決失敗 (www.geoboundaries.org, ENOTFOUND) により失敗。
+
+2261) fix/shape/network-tests-node-direct (P1) — 完了 (2026-01-19)
+- ブランチ名: fix/shape/network-tests-node-direct
+- 依存: なし
+- 受け入れ基準: shape のネットワーク系テストが ENABLE_INTEGRATION_TESTS なしで実行される／Node 環境のテストではCORS-Proxyを使わずデータソースURLへ直接アクセスする／テストの実行条件や説明が実態に合う／pnpm typecheck が通る／TASKS.md の運用ログに start/done/blocked が記載されている
+- 影響範囲: `plugins/shape-plugin/src/services/utils/__tests__/generateUrlMetadata.unit.test.ts`, `plugins/shape-plugin/src/services/datasources/__tests__/unit/DataSourceIntegration.unit.test.ts`, `plugins/shape-plugin/vitest.setup.ts`（必要に応じて関連ファイルを追記）
+- ロールバック手順: テストの実行条件とセットアップ差分を revert する
+- チェックリスト:
+  - ENABLE_INTEGRATION_TESTS に依存するスキップ条件を撤去する
+  - Node テストで CORS-Proxy を使わないことを明示する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-19 23:50 JST shape のネットワーク系テスト実行条件と Node 直アクセスの修正に着手。
+  - done: 2026-01-20 00:10 JST ネットワーク系テストのスキップ撤去と Node 直アクセス設定を反映。検証: pnpm typecheck（exit 0）。
+
+2260) refactor/shape/tests-structure-and-datasource (P1) — 完了 (2026-01-19)
+- ブランチ名: refactor/shape/tests-structure-and-datasource
+- 依存: なし
+- 受け入れ基準: shape テストが `__tests__` 配下に揃えられている／fetch段のテストに geoBoundaries が追加されている／dataSourceName がリテラルunionで制約され正規化/フォールバックが撤去されている／pnpm typecheck が通る／TASKS.md の運用ログに start/done/blocked が記載されている
+- 影響範囲: `plugins/shape-plugin/**`, `packages/**`
+- ロールバック手順: テスト配置と型修正を revert する
+- チェックリスト:
+  - shape のテスト配置を `__tests__` 配下へ移動する
+  - Fetch段テストに geoBoundaries を追加する
+  - dataSourceName の正規化/フォールバックを撤去しリテラルunionで制約する
+  - 旧ステージ名（download/extract1/extract2/vectortile）のテストを fetch/transform/vt に更新する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-19 22:10 JST shape テスト配置整理と dataSourceName 型制約の改修に着手。
+  - update: 2026-01-19 23:10 JST 旧ステージ名のテストを fetch/transform/vt に合わせる修正に着手。
+  - done: 2026-01-19 23:35 JST shape テスト配置と dataSourceName 型制約の改修、fetch/transform/vt へのテスト更新を完了。検証: pnpm typecheck（exit 0）。
+
+2259) doc/shape/build-tests-audit (P1) — 完了 (2026-01-19)
+- ブランチ名: doc/shape/build-tests-audit
+- 依存: なし
+- 受け入れ基準: shape ビルド工程のテスト対象と内容が整理されている／実行・未実行の範囲が明記されている／TASKS.md の運用ログに start/done/blocked が記載されている
+- 影響範囲: `plugins/shape-plugin/**`, `packages/**`
+- ロールバック手順: 追記した調査記録を削除する
+- チェックリスト:
+  - shape ビルド関連のテストファイルを特定する
+  - 各テストの対象ステージ/検証内容を整理する
+  - 実行・未実行の状況を明記する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-19 21:50 JST shape ビルド工程のテスト調査に着手。
+  - done: 2026-01-19 22:05 JST shape ビルド工程のテスト一覧と検証状況を整理。
+
+2258) feat/storage/unify-vt-shape-route-location (P1) — 進行中 (2026-01-19)
+- ブランチ名: feat/storage/unify-vt-shape-route-location
+- 依存: plan/storage/unify-vt-shape-route-location
+- 受け入れ基準: VtShapeDb/VtDb 参照がすべて削除され、Ephemeral*DB と各ドメインDBへ移行されている／Step4 の中間生成物削除が各ノード種別で機能する／CoreDB のノード削除で関連データが nodeId で削除される／`pnpm lint && pnpm format && pnpm typecheck && pnpm test` が exit 0／TASKS.md の運用ログに start/done/blocked が記載されている
+- 影響範囲: `packages/vt-shape-store/**`, `packages/vt-store/**`, `packages/features/*-store/**`, `packages/vt-orchestrator/**`, `packages/runtime-worker/**`, `plugins/**`, `config/**`
+- ロールバック手順: 旧ストアの参照を復元し、移行差分を revert する
+- チェックリスト:
+  - VtShapeDb/VtDb 参照箇所を洗い出す
+  - Ephemeral*DB/DomainDB への参照置換を実施する
+  - Step4 手動削除/自動削除の挙動を確認する
+  - CoreDB ノード削除時のアーティファクト削除を確認する
+  - pnpm lint && pnpm format && pnpm typecheck && pnpm test を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-19 16:50 JST VtShapeDb/VtDb 廃止の実装作業に着手。
+  - blocked: 2026-01-19 17:30 JST RouteDB/LocationDB へのタイル保存フォーマットと contentHash/featureCount の扱い方針が未確定。
+  - update: 2026-01-19 17:45 JST タイル保存フォーマット方針が確定し、shape の移行実装に着手。
+  - update: 2026-01-19 18:20 JST VtShapeDb/VtDb 参照削除の続きとして、残りの参照箇所とドキュメント更新を進める。
+  - blocked: 2026-01-19 18:35 JST pnpm format が plugin-ui-host/styler-plugin/cors-proxy の既存 lint 指摘で失敗。format 実行により広範囲の未意図差分が発生したため、扱い方針の確認が必要。
+  - update: 2026-01-19 19:05 JST pnpm format の差分保持を選択し、pnpm lint/typecheck を再実行してテスト失敗の修正に着手。
+  - update: 2026-01-19 21:10 JST pnpm format/lint/typecheck を再実行し成功を確認。
+  - blocked: 2026-01-19 21:15 JST pnpm test が 360s でタイムアウト（turbo run test --parallel の完走前に終了）。
+  - blocked: 2026-01-19 21:40 JST pnpm test を 120s/240s/360s で再実行したが完走前にタイムアウト。
+  - update: 2026-01-20 00:20 JST vt-store/vt-shape-store の残存参照と削除対象の棚卸しを再開。
+  - update: 2026-01-20 00:45 JST pnpm lint/format/typecheck を実行し完走（format は警告のみ）。
+  - blocked: 2026-01-20 00:50 JST pnpm test が 120s タイムアウト、再実行(240s)で @hierarchidb/batch-session-ports の OOM により失敗。
+  - update: 2026-01-19 09:22 JST ターゲット検証として pnpm --filter @hierarchidb/shape-plugin test と pnpm --filter @hierarchidb/runtime-worker test を実行し exit 0 を確認。
+
+2257) doc/location/nodeid-cache-confirm (P1) — 完了 (2026-01-19)
+- ブランチ名: doc/location/nodeid-cache-confirm
+- 依存: なし
+- 受け入れ基準: Location の nodeId 単位キャッシュ実装の有無がコード参照で整理されている／未実装の場合は追加方針が明記されている／TASKS.md の運用ログに start/done/blocked が記載されている
+- 影響範囲: `docs/build-artifacts-by-node-type.md`
+- ロールバック手順: ドキュメント差分を revert する
+- チェックリスト:
+  - Location プラグイン/ストアの nodeId キャッシュ利用有無を確認する
+  - 結果と方針をドキュメントへ反映する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-19 16:45 JST Location の nodeId キャッシュ調査に着手。
+  - done: 2026-01-19 17:10 JST Location の nodeId キャッシュ未導入を確認しドキュメントに反映。
+
+2256) doc/vt-pipeline-design-update (P1) — 完了 (2026-01-19)
+- ブランチ名: doc/vt-pipeline-design-update
+- 依存: なし
+- 受け入れ基準: `docs/vt-pipeline-design.md` が新しい保存先方針（Ephemeral*DB/DomainDB）に一致する／VtShapeDb/VtDb 記載が削除されている／中間生成物/ビルド結果の削除条件が明記されている／TASKS.md の運用ログに start/done/blocked が記載されている
+- 影響範囲: `docs/vt-pipeline-design.md`
+- ロールバック手順: ドキュメント差分を revert する
+- チェックリスト:
+  - 保存先の分担とストア構成を更新する
+  - 中間生成物とビルド結果の削除条件を追記する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-19 16:45 JST vt パイプライン設計ドキュメントの更新に着手。
+  - done: 2026-01-19 17:10 JST vt パイプライン設計ドキュメントを保存先方針に合わせて更新。
+
+2255) plan/storage/unify-vt-shape-route-location (P1) — 完了 (2026-01-19)
+- ブランチ名: plan/storage/unify-vt-shape-route-location
+- 依存: なし
+- ExecPlan: plans/storage-unify-vt-shape-route-location-execplan.md
+- 受け入れ基準: VtShapeDb/VtDb 廃止と保存先統合の ExecPlan が作成され、影響範囲・移行手順・検証・ロールバックが明記されている／TASKS.md の運用ログに start/done/blocked が記載されている
+- 影響範囲: `plans/**`, `packages/vt-shape-store/**`, `packages/vt-store/**`, `packages/features/shape-store/**`, `packages/runtime-worker/**`, `plugins/**`
+- ロールバック手順: ExecPlan の差分を revert する
+- チェックリスト:
+  - 旧ストアの削除範囲と移行先を明記する
+  - ExecPlan に移行手順と検証計画を記述する
+  - TASKS.md の運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-19 16:10 JST VtShapeDb/VtDb 廃止と保存先統合の ExecPlan 作成に着手。
+  - done: 2026-01-19 16:40 JST ExecPlan を作成し移行方針を整理。
+
+2254) doc/build/fetchwithauth-cache-confirm (P1) — 完了 (2026-01-19)
+- ブランチ名: doc/build/fetchwithauth-cache-confirm
+- 依存: なし
+- 受け入れ基準: fetchWithAuth のキャッシュが nodeId 単位で稼働している根拠をコード参照で整理する／未実装の場合はその旨と要件を明記する／TASKS.md の運用ログに start/done/blocked が記載されている
+- 影響範囲: `docs/build-artifacts-by-node-type.md`
+- ロールバック手順: ドキュメント差分を revert する
+- チェックリスト:
+  - fetchWithAuth/smartFetch のキャッシュ経路を確認する
+  - nodeId 単位キャッシュの有無を整理する
+  - TASKS.md の運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-19 16:05 JST fetchWithAuth キャッシュ稼働確認の調査に着手。
+  - done: 2026-01-19 16:20 JST nodeId 単位キャッシュの実装箇所を整理しドキュメントに反映。
+
+2253) doc/build/artifacts-impact-priority (P1) — 完了 (2026-01-19)
+- ブランチ名: doc/build/artifacts-impact-priority
+- 依存: なし
+- 受け入れ基準: 影響ドキュメントの更新方針（軽微/書き直し/削除）と優先順が明記されている／TASKS.md の運用ログに start/done/blocked が記載されている
+- 影響範囲: `docs/build-artifacts-by-node-type.md`
+- ロールバック手順: ドキュメント差分を revert する
+- チェックリスト:
+  - 影響ドキュメント一覧と方針を整理する
+  - 優先順を明記する
+  - TASKS.md の運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-19 16:00 JST 影響ドキュメント更新方針の整理に着手。
+  - done: 2026-01-19 16:20 JST 影響ドキュメントの更新優先順を追記。
+
+2252) doc/shape/build-stage-compare (P1) — 完了 (2026-01-19)
 - ブランチ名: doc/shape/build-stage-compare
 - 依存: なし
 - 受け入れ基準: 現行パイプラインと新パイプラインの差分が stage ごとに表形式で整理されている／入力・処理・出力・永続化・メリット/リスクが比較できる／保存先が docs 配下で明記されている／TASKS.md の運用ログに start/done/blocked が記載されている
@@ -11,6 +174,7 @@
 - 運用ログ：
   - start: 2026-01-19 15:30 JST 現行 vs 新パイプラインの比較ドキュメント作成に着手。
   - done: 2026-01-19 15:40 JST 比較ドキュメントを docs に追加。
+  - update: 2026-01-19 15:55 JST ノード種別ごとの成果物/保存先仕様ドキュメントを追加。
 
 2251) doc/shape/build-stage-uml (P1) — 完了 (2026-01-19)
 - ブランチ名: doc/shape/build-stage-uml

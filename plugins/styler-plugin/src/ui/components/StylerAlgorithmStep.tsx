@@ -1,7 +1,7 @@
 import { wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
+import { i18n } from '@hierarchidb/ui-i18n';
 import { Box } from '@mui/material';
 import React, { useCallback } from 'react';
-import { i18n } from '@hierarchidb/ui-i18n';
 import type { StylerConfig, StylerStepData } from '../../common/types/StylerEntity.js';
 import { StylerConfigDefault } from '../../common/types/StylerEntity.js';
 import { StylerAlgorithmPanel } from './StylerAlgorithmPanel.tsx';
@@ -75,10 +75,7 @@ export const StylerConfigStepDefinition = {
         return {
           isValid: false,
           errors: [
-            getStylerT()(
-              'step5.errors.range',
-              'Maximum value must be greater than minimum value'
-            ),
+            getStylerT()('step5.errors.range', 'Maximum value must be greater than minimum value'),
           ],
         };
       }

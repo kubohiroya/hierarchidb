@@ -6,12 +6,16 @@ import { recordCommandLatency } from '../utils/metrics.js';
 import { PERFORMANCE_CONFIG } from '../utils/performance-config.js';
 import type { CoreDB } from './CoreDB.js';
 import { executeCoreCommand } from './command/core-handlers/index.js';
-import {
-  CommandExecutionRunner,
-} from './command/execution/CommandExecutionRunner.js';
+import { CommandExecutionRunner } from './command/execution/CommandExecutionRunner.js';
 import { CommandHistoryManager } from './command/history/CommandHistoryManager.js';
 import { type CommandHandlerContext, commandRegistry } from './command/registry.js';
-import type { CommandEnvelope, CommandEvent, CommandMeta, CommandResult, WorkerErrorCode } from './command-types.js';
+import type {
+  CommandEnvelope,
+  CommandEvent,
+  CommandMeta,
+  CommandResult,
+  WorkerErrorCode,
+} from './command-types.js';
 import { WorkerErrorCodeValue } from './command-types.js';
 import { TreeSubscriptionService } from './TreeSubscriptionService.js';
 import { classifyWorkerError, sanitizeMessageText } from './utils/error-adapter.js';
@@ -147,7 +151,7 @@ export class CommandProcessor {
    * Used internally and by the TX wrapper.
    */
   private async executeCommandNoTx<TType extends string, TPayload>(
-    envelope: CommandEnvelope<TType, TPayload>,
+    envelope: CommandEnvelope<TType, TPayload>
   ): Promise<CommandResult> {
     // Delegate to handler if present
     const handler = commandRegistry.get(envelope.kind);
@@ -156,7 +160,10 @@ export class CommandProcessor {
         if (handler.validate) {
           const valid = await handler.validate(envelope.payload);
           if (!valid) {
-            return this.createErrorResult('Validation failed', WorkerErrorCodeValue.VALIDATION_ERROR);
+            return this.createErrorResult(
+              'Validation failed',
+              WorkerErrorCodeValue.VALIDATION_ERROR
+            );
           }
         }
         const contextForHandler: CommandHandlerContext<TType, TPayload> = {
@@ -170,21 +177,18 @@ export class CommandProcessor {
       }
     }
 
-    const coreResult = await executeCoreCommand(
-      envelope as CommandEnvelope<string, unknown>,
-      {
-        coreDB: this.coreDB,
-        history: this.history,
-        batchOperationSize: PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE,
-        onNodesRemoved: async (_commandId, nodes) => {
-          if (!nodes || nodes.length === 0) return;
-          const lifecycle = EntityLifecycleManager.getSingleton(this.coreDB);
-          await lifecycle.handleRemovedNodes(nodes);
-        },
-        createErrorResult: (message, code, extra) => this.createErrorResult(message, code, extra),
-        getNextSeq: () => this.getNextSeq(),
-      }
-    );
+    const coreResult = await executeCoreCommand(envelope as CommandEnvelope<string, unknown>, {
+      coreDB: this.coreDB,
+      history: this.history,
+      batchOperationSize: PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE,
+      onNodesRemoved: async (_commandId, nodes) => {
+        if (!nodes || nodes.length === 0) return;
+        const lifecycle = EntityLifecycleManager.getSingleton(this.coreDB);
+        await lifecycle.handleRemovedNodes(nodes);
+      },
+      createErrorResult: (message, code, extra) => this.createErrorResult(message, code, extra),
+      getNextSeq: () => this.getNextSeq(),
+    });
 
     if (coreResult) {
       return coreResult;
@@ -208,7 +212,7 @@ export class CommandProcessor {
       'remove',
       'restoreFromTrash',
       'removeSubtree',
-  'commitDraft',
+      'commitDraft',
     ]);
     return LEGACY_SUPPORTED.has(type);
   }

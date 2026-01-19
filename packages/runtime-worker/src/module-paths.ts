@@ -86,6 +86,8 @@ export function getPluginWorkerModuleId(id: PluginWorkerId): string {
 
 export function importPluginWorker<T extends PluginWorkerId>(id: T) {
   const container = getWorkerContainer();
-  const loader = container.get<PluginWorkerModuleLoaderContract>(WorkerDiTokens.PluginWorkerModuleLoader);
+  const loader = container.get<PluginWorkerModuleLoaderContract>(
+    WorkerDiTokens.PluginWorkerModuleLoader
+  );
   return loader.importModule<PluginWorkerModule>(id as string);
 }

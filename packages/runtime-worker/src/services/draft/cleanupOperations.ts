@@ -1,8 +1,8 @@
-import { generateUUID } from '@hierarchidb/util';
 import type { DiscardDraftOptions } from '@hierarchidb/common-api';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { CommandEnvelope } from '../command-types.js';
+import { generateUUID } from '@hierarchidb/util';
 import type { CoreDB } from '../CoreDB.js';
+import type { CommandEnvelope } from '../command-types.js';
 
 /**
  * Discard a draft by clearing draftMetadata/draftData/dialogUIState on the node.
@@ -58,5 +58,4 @@ export async function discardTreeNodeDraft(
     type: 'discardDraft',
   };
   await lifecycle.handleCommand(envelope);
-
 }

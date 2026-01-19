@@ -1,13 +1,13 @@
-import type React from 'react';
-import { IconButton, Tooltip } from '@mui/material';
 import {
+  Close as CloseIcon,
   FullscreenExit as FullscreenExitIcon,
   Fullscreen as FullscreenIcon,
-  OpenInFull as OpenInFullIcon,
   Minimize as MinimizeIcon,
+  OpenInFull as OpenInFullIcon,
   CropSquare as RestoreIcon,
-  Close as CloseIcon,
 } from '@mui/icons-material';
+import { IconButton, Tooltip } from '@mui/material';
+import type React from 'react';
 import { useTranslation } from 'react-i18next';
 
 type CommonProps = {
@@ -34,9 +34,7 @@ export const PluginDialogMaximizeButton: React.FC<
   const isMaximized = displayMode === 'maximize';
   const tooltips = useDialogTooltips();
   return (
-    <Tooltip
-      title={isMaximized ? tooltips.restoreSize : tooltips.maximize}
-    >
+    <Tooltip title={isMaximized ? tooltips.restoreSize : tooltips.maximize}>
       <span>
         <IconButton
           size="small"
@@ -63,9 +61,7 @@ export const PluginDialogFullScreenButton: React.FC<
   const isFullScreen = displayMode === 'full-screen';
   const tooltips = useDialogTooltips();
   return (
-    <Tooltip
-      title={isFullScreen ? tooltips.exitFullscreen : tooltips.fullscreen}
-    >
+    <Tooltip title={isFullScreen ? tooltips.exitFullscreen : tooltips.fullscreen}>
       <span>
         <IconButton
           size="small"
@@ -102,20 +98,18 @@ export const PluginDialogMinimizeButton: React.FC<
           disabled={disabled}
           aria-label={label}
         >
-          {isMinimized ? (
-            <RestoreIcon fontSize="small" />
-          ) : (
-            <MinimizeIcon fontSize="small" />
-          )}
+          {isMinimized ? <RestoreIcon fontSize="small" /> : <MinimizeIcon fontSize="small" />}
         </IconButton>
       </span>
     </Tooltip>
   );
 };
 
-export const PluginDialogCloseButton: React.FC<
-  CommonProps & { onClick: () => void }
-> = ({ onClick, onPointerDown, disabled }) => {
+export const PluginDialogCloseButton: React.FC<CommonProps & { onClick: () => void }> = ({
+  onClick,
+  onPointerDown,
+  disabled,
+}) => {
   const tooltips = useDialogTooltips();
   return (
     <Tooltip title={tooltips.close}>

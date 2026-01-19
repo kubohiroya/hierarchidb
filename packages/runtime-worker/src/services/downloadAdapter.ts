@@ -1,5 +1,5 @@
-import { AuthService } from '@hierarchidb/auth-recovery';
 import type { AuthScope } from '@hierarchidb/auth-recovery';
+import { AuthService } from '@hierarchidb/auth-recovery';
 import { DexieChunkStore } from '@hierarchidb/chunk-store';
 import { DownloadService, FetchNetworkPort } from '@hierarchidb/download';
 

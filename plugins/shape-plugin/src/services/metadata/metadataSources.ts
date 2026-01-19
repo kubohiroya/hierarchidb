@@ -7,7 +7,7 @@ import {
   textDeserializer,
   textSerializer,
 } from '../utils/chunkStore.js';
-import type { CountryMetadata } from '../../common/types/index.js';
+import type { CountryMetadata, DataSourceName } from '../../common/types/index.js';
 import {
   DEFAULT_ISO3166_CSV_URL,
   normalizeContinentCode,
@@ -374,7 +374,7 @@ export async function fetchNaturalEarthMetadata(_nodeId: NodeId): Promise<Countr
   }];
 }
 
-export function assertDataSourceSupported(dataSource: string): void {
+export function assertDataSourceSupported(dataSource: DataSourceName): void {
   if (dataSource === 'openstreetmap') {
     throw new Error('OpenStreetMap is not supported in Step3 country selection.');
   }

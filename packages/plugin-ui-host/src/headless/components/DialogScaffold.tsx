@@ -1,54 +1,60 @@
-import React, { memo } from 'react';
+import { useDialogContext } from '@hierarchidb/ui-dialog';
 import {
   Box,
+  Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   Typography,
-  Button,
 } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
-import { useDialogContext } from '@hierarchidb/ui-dialog';
-import { PluginDialogHeader } from './PluginDialogHeader.js';
-import { PluginDialogFooter, type PluginDialogFooterProps } from './PluginDialogFooter.js';
+import type React from 'react';
+import { memo } from 'react';
 import type { DialogActionInFlight } from '../types.js';
+import { PluginDialogFooter, type PluginDialogFooterProps } from './PluginDialogFooter.js';
+import { PluginDialogHeader } from './PluginDialogHeader.js';
 
 export const createHeaderComponent = (
   title: string,
   subtitle: string | undefined,
   icon: React.ReactNode | undefined,
-  pendingAction: DialogActionInFlight | null,
+  pendingAction: DialogActionInFlight | null
 ) =>
   memo(() => (
-    <PluginDialogHeader title={title} subtitle={subtitle} icon={icon || undefined} pendingAction={pendingAction} />
+    <PluginDialogHeader
+      title={title}
+      subtitle={subtitle}
+      icon={icon || undefined}
+      pendingAction={pendingAction}
+    />
   ));
 
 export const createContentComponent = (dialogRef: React.RefObject<HTMLElement | null>) =>
-  memo(
-    function DialogContentWrapper(props: React.PropsWithChildren) {
-      const ctx = useDialogContext<Record<string, unknown>>();
-      const disablePadding = Boolean(ctx.frameless && ctx.transparent);
-      return (
-        <Box
-          sx={(theme: Theme) => ({
-            flex: 1,
-            height: '100%',
-            minHeight: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'auto',
-            padding: disablePadding ? 0 : theme.spacing(2),
-          })}
-          ref={dialogRef}
-        >
-          {props.children}
-        </Box>
-      );
-    },
-  );
+  memo(function DialogContentWrapper(props: React.PropsWithChildren) {
+    const ctx = useDialogContext<Record<string, unknown>>();
+    const disablePadding = Boolean(ctx.frameless && ctx.transparent);
+    return (
+      <Box
+        sx={(theme: Theme) => ({
+          flex: 1,
+          height: '100%',
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'auto',
+          padding: disablePadding ? 0 : theme.spacing(2),
+        })}
+        ref={dialogRef}
+      >
+        {props.children}
+      </Box>
+    );
+  });
 
-export const createFooterComponent = (footerPropsRef: React.MutableRefObject<PluginDialogFooterProps>) =>
+export const createFooterComponent = (
+  footerPropsRef: React.MutableRefObject<PluginDialogFooterProps>
+) =>
   memo(function DialogFooterWrapper() {
     return <PluginDialogFooter {...footerPropsRef.current} />;
   });

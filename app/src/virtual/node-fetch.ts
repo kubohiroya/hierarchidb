@@ -1,4 +1,4 @@
-import nodeFetch, { Headers, Request, Response, FormData } from 'node-fetch';
+import nodeFetch, { FormData, Headers, Request, Response } from 'node-fetch';
 
 const fetchImpl: typeof globalThis.fetch = ((input, init) => {
   if (typeof globalThis.fetch === 'function') {
@@ -13,4 +13,9 @@ const FetchRequest = Request ?? globalThis.Request;
 const FetchResponse = Response ?? globalThis.Response;
 const FetchFormData = FormData ?? globalThis.FormData;
 
-export { FetchHeaders as Headers, FetchRequest as Request, FetchResponse as Response, FetchFormData as FormData };
+export {
+  FetchHeaders as Headers,
+  FetchRequest as Request,
+  FetchResponse as Response,
+  FetchFormData as FormData,
+};

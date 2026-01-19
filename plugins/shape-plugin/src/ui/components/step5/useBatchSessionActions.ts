@@ -4,7 +4,7 @@ import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { notify } from '@hierarchidb/components';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type { BuildStatus } from '@hierarchidb/components';
-import { normalizeDataSourceName, type FetchTaskPayload, type ShapeEntity } from '../../../common/types/index.js';
+import type { FetchTaskPayload, ShapeEntity } from '../../../common/types/index.js';
 import { loadTreeConsoleSettings } from '@hierarchidb/util';
 
 type Args = {
@@ -58,14 +58,10 @@ export const useBatchSessionActions = ({
       ...(data?.buildConfig ?? {}),
       ...(patch?.buildConfig ?? {}),
     };
-    const resolvedDataSource = normalizeDataSourceName(baseBatchConfig.dataSourceName);
-    const resolvedBatchConfig = resolvedDataSource
-      ? { ...baseBatchConfig, dataSourceName: resolvedDataSource }
-      : baseBatchConfig;
     try {
       console.debug(`${debugScope} saveDraftBeforeBatch:updateDraft`, {
         nodeId,
-        dataSourceName: resolvedDataSource ?? null,
+        dataSourceName: baseBatchConfig.dataSourceName ?? null,
       });
       const api = workerClient.getAPI();
       const updater = await api.getTreeNodeUpdaterAPI();
@@ -74,12 +70,12 @@ export const useBatchSessionActions = ({
         draftData: {
           ...(data ?? {}),
           ...(patch ?? {}),
-          batchConfig: resolvedBatchConfig,
+          batchConfig: baseBatchConfig,
         } as Record<string, unknown>,
       });
       console.debug(`${debugScope} saveDraftBeforeBatch:complete`, {
         nodeId,
-        dataSourceName: resolvedDataSource ?? null,
+        dataSourceName: baseBatchConfig.dataSourceName ?? null,
       });
       return true;
     } catch (error) {
@@ -116,7 +112,7 @@ export const useBatchSessionActions = ({
       notify.warning('NodeId is missing.');
       return null;
     }
-    const resolvedDataSource = normalizeDataSourceName(data?.buildConfig?.dataSourceName);
+    const resolvedDataSource = data?.buildConfig?.dataSourceName;
     if (!resolvedDataSource) {
       notify.warning('Data source is missing.');
       return null;

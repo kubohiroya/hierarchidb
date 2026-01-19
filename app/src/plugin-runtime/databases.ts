@@ -15,7 +15,9 @@ const prewarmNodeTypesCache: string[] = computePrewarmNodeTypes();
 
 type PluginModuleExports = { worker: boolean; database: boolean };
 
-const resolveExports = (entry: (typeof pluginRegistry)[number] | undefined): PluginModuleExports => {
+const resolveExports = (
+  entry: (typeof pluginRegistry)[number] | undefined
+): PluginModuleExports => {
   const exportsList = Array.isArray(entry?.exports)
     ? entry.exports.map((value) => value.replace(/^\.?\//, ''))
     : [];
@@ -51,9 +53,7 @@ function computePrewarmNodeTypes(): string[] {
       const registryEntry = pluginRegistry.find((item) => item.nodeType === nodeType);
       const exportsMap = resolveExports(registryEntry);
       return (
-        hasDatabaseExport(exportsMap) &&
-        Array.isArray(entry?.prewarm) &&
-        entry.prewarm.length > 0
+        hasDatabaseExport(exportsMap) && Array.isArray(entry?.prewarm) && entry.prewarm.length > 0
       );
     })
     .map(([nodeType]) => nodeType)
@@ -151,11 +151,12 @@ async function loadModuleForDescriptor(
   entry: DatabaseLoaderEntry | undefined,
   cache: Map<string, Promise<unknown>>
 ): Promise<unknown | null> {
-  const loadFn = typeof descriptor.load === 'function'
-    ? descriptor.load
-    : typeof entry?.loader === 'function'
-      ? entry.loader
-      : null;
+  const loadFn =
+    typeof descriptor.load === 'function'
+      ? descriptor.load
+      : typeof entry?.loader === 'function'
+        ? entry.loader
+        : null;
   if (!loadFn) return null;
 
   const cacheKey = descriptor.specifier ?? entry?.moduleSpecifier;

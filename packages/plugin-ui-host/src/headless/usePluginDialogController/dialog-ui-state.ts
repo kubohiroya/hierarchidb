@@ -1,4 +1,3 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type {
   DialogDisplayMode,
   DialogPosition,
@@ -8,6 +7,7 @@ import type {
   DialogUIState,
   DialogWindowState,
 } from '@hierarchidb/common-types';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 type RestoreDeps = {
   setActiveStepIndex: (next: number) => void;
@@ -98,8 +98,7 @@ export function useDialogUIStateSync(params: {
 
   const updateDialogUIState = useCallback((patch: Partial<DialogUIState>) => {
     const prev = dialogUIStateRef.current ?? null;
-    const nextWindow =
-      patch.dialogWindow !== undefined ? patch.dialogWindow : prev?.dialogWindow;
+    const nextWindow = patch.dialogWindow !== undefined ? patch.dialogWindow : prev?.dialogWindow;
     const nextProgress =
       patch.dialogProgress !== undefined ? patch.dialogProgress : prev?.dialogProgress;
     const next: DialogUIState | null =
@@ -119,7 +118,8 @@ export function useDialogUIStateSync(params: {
 
   const getPersistableDialogUIState = useCallback((): DialogUIState => {
     const currentWindow: Partial<DialogWindowState> = dialogUIStateRef.current?.dialogWindow ?? {};
-    const currentProgress: Partial<DialogProgressState> = dialogUIStateRef.current?.dialogProgress ?? {};
+    const currentProgress: Partial<DialogProgressState> =
+      dialogUIStateRef.current?.dialogProgress ?? {};
     const persistedIndex =
       typeof currentProgress.activeStepIndex === 'number' && currentProgress.activeStepIndex >= 1
         ? currentProgress.activeStepIndex
@@ -165,7 +165,7 @@ export function useDialogUIStateSync(params: {
       const nextProgress: DialogProgressState | null =
         patch.activeStepIndex !== undefined
           ? { activeStepIndex: toPersistedStepIndex(patch.activeStepIndex) }
-          : dialogUIStateRef.current?.dialogProgress ?? null;
+          : (dialogUIStateRef.current?.dialogProgress ?? null);
       updateDialogUIState({
         dialogWindow: nextWindow,
         dialogProgress: nextProgress,

@@ -6,9 +6,9 @@
  * lazy singleton initialization support.
  */
 
+import type { InitializationResult } from '@hierarchidb/ui-worker-client';
 import type { Remote } from 'comlink';
 import React, { type ReactNode } from 'react';
-import type { InitializationResult } from '@hierarchidb/ui-worker-client';
 import { createWorkerClientProvider } from './WorkerClientProvider.js';
 
 export interface WorkerProviderProps<T> {

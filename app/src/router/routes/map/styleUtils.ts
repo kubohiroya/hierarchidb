@@ -1,7 +1,7 @@
 import type { MapLibreStyle } from '@hierarchidb/ui-plugin-shell/ui-map';
 import { DEFAULT_MAP_CONFIG } from '@hierarchidb/ui-plugin-shell/ui-map';
-import type { MapStyle } from './types.js';
 import { BUILT_IN_STYLE_URLS } from './constants.js';
+import type { MapStyle } from './types.js';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -11,7 +11,9 @@ const isMapLibreStyle = (value: unknown): value is MapLibreStyle => {
   return Array.isArray(value.layers) && isRecord(value.sources);
 };
 
-export const resolveMapStyleSource = (mapStyle?: MapStyle | null): string | MapLibreStyle | null => {
+export const resolveMapStyleSource = (
+  mapStyle?: MapStyle | null
+): string | MapLibreStyle | null => {
   if (!mapStyle?.style) return null;
   if (mapStyle.style === 'custom') {
     if (mapStyle.customStyleConfig) {
@@ -30,7 +32,9 @@ export const sortByPath = <T extends { absolutePath?: string; nodeId: string }>(
     return aKey.localeCompare(bKey);
   });
 
-export const sortByLayerPath = <T extends { absolutePath?: string; layerId: string }>(items: T[]): T[] =>
+export const sortByLayerPath = <T extends { absolutePath?: string; layerId: string }>(
+  items: T[]
+): T[] =>
   [...items].sort((a, b) => {
     const aKey = a.absolutePath ?? a.layerId;
     const bKey = b.absolutePath ?? b.layerId;

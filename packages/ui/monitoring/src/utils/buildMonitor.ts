@@ -10,7 +10,7 @@ export type BuildMonitorSample<TStage extends BuildMonitorStage = BuildMonitorSt
 
 export type BuildMonitorRecord<
   TStage extends BuildMonitorStage = BuildMonitorStage,
-  TConfig = unknown
+  TConfig = unknown,
 > = {
   version: 1;
   nodeId?: string;
@@ -22,7 +22,7 @@ export type BuildMonitorRecord<
 
 export type CrashInsight<
   TStage extends BuildMonitorStage = BuildMonitorStage,
-  TConfig = unknown
+  TConfig = unknown,
 > = {
   stage?: TStage;
   peakRatio?: number;
@@ -73,7 +73,7 @@ const getLocalStorage = (): Storage | null => {
 
 export const getBuildMonitorKey = (
   config: BuildMonitorConfig,
-  nodeId?: string | null,
+  nodeId?: string | null
 ): string | null => {
   if (!nodeId) return null;
   return `${config.storagePrefix}:${nodeId}`;
@@ -81,10 +81,10 @@ export const getBuildMonitorKey = (
 
 export const loadBuildMonitor = <
   TStage extends BuildMonitorStage = BuildMonitorStage,
-  TConfig = unknown
+  TConfig = unknown,
 >(
   config: BuildMonitorConfig,
-  key: string,
+  key: string
 ): BuildMonitorRecord<TStage, TConfig> | null => {
   if (!key.startsWith(`${config.storagePrefix}:`)) return null;
   const storage = getLocalStorage();
@@ -102,11 +102,11 @@ export const loadBuildMonitor = <
 
 export const saveBuildMonitor = <
   TStage extends BuildMonitorStage = BuildMonitorStage,
-  TConfig = unknown
+  TConfig = unknown,
 >(
   config: BuildMonitorConfig,
   key: string,
-  record: BuildMonitorRecord<TStage, TConfig>,
+  record: BuildMonitorRecord<TStage, TConfig>
 ): void => {
   if (!key.startsWith(`${config.storagePrefix}:`)) return;
   const storage = getLocalStorage();
@@ -131,7 +131,7 @@ export const clearBuildMonitor = (config: BuildMonitorConfig, key: string): void
 
 export const recordBuildStart = <
   TStage extends BuildMonitorStage = BuildMonitorStage,
-  TConfig = unknown
+  TConfig = unknown,
 >(
   config: BuildMonitorConfig,
   key: string,
@@ -139,7 +139,7 @@ export const recordBuildStart = <
     nodeId?: string;
     startedAt: number;
     configSnapshot?: TConfig;
-  },
+  }
 ): BuildMonitorRecord<TStage, TConfig> | null => {
   const existing = loadBuildMonitor<TStage, TConfig>(config, key);
   const record: BuildMonitorRecord<TStage, TConfig> = {
@@ -156,11 +156,11 @@ export const recordBuildStart = <
 
 export const recordBuildFinish = <
   TStage extends BuildMonitorStage = BuildMonitorStage,
-  TConfig = unknown
+  TConfig = unknown,
 >(
   config: BuildMonitorConfig,
   key: string,
-  finishedAt: number,
+  finishedAt: number
 ): BuildMonitorRecord<TStage, TConfig> | null => {
   const existing = loadBuildMonitor<TStage, TConfig>(config, key);
   if (!existing) return null;
@@ -174,12 +174,12 @@ export const recordBuildFinish = <
 
 export const appendBuildSample = <
   TStage extends BuildMonitorStage = BuildMonitorStage,
-  TConfig = unknown
+  TConfig = unknown,
 >(
   config: BuildMonitorConfig,
   key: string,
   sample: BuildMonitorSample<TStage>,
-  maxSamples: number = config.maxSamples ?? DEFAULT_MAX_SAMPLES,
+  maxSamples: number = config.maxSamples ?? DEFAULT_MAX_SAMPLES
 ): BuildMonitorRecord<TStage, TConfig> | null => {
   const existing = loadBuildMonitor<TStage, TConfig>(config, key);
   const record: BuildMonitorRecord<TStage, TConfig> = existing ?? {
@@ -187,9 +187,10 @@ export const appendBuildSample = <
     samples: [],
   };
   const nextSamples = [...record.samples, sample];
-  const trimmed = nextSamples.length > maxSamples
-    ? nextSamples.slice(nextSamples.length - maxSamples)
-    : nextSamples;
+  const trimmed =
+    nextSamples.length > maxSamples
+      ? nextSamples.slice(nextSamples.length - maxSamples)
+      : nextSamples;
   const nextRecord = { ...record, samples: trimmed };
   saveBuildMonitor(config, key, nextRecord);
   return nextRecord;
@@ -207,7 +208,7 @@ export const getMemorySnapshot = (): Partial<BuildMonitorSample> => {
 };
 
 export const getHeapPressureSnapshot = (
-  config: BuildMonitorConfig,
+  config: BuildMonitorConfig
 ): HeapPressureSnapshot | null => {
   if (typeof performance === 'undefined') return null;
   const memory = (performance as Performance & { memory?: MemoryInfo }).memory;
@@ -225,7 +226,7 @@ export const getHeapPressureSnapshot = (
 };
 
 const resolvePeakMemory = <TStage extends BuildMonitorStage>(
-  samples: BuildMonitorSample<TStage>[],
+  samples: BuildMonitorSample<TStage>[]
 ): { stage?: TStage; peakRatio?: number; lastSampleAt?: number } => {
   let peakRatio = 0;
   let stage: TStage | undefined;
@@ -248,11 +249,11 @@ const resolvePeakMemory = <TStage extends BuildMonitorStage>(
 
 export const getCrashInsight = <
   TStage extends BuildMonitorStage = BuildMonitorStage,
-  TConfig = unknown
+  TConfig = unknown,
 >(
   config: BuildMonitorConfig,
   record: BuildMonitorRecord<TStage, TConfig> | null,
-  processingStatus?: string | null,
+  processingStatus?: string | null
 ): CrashInsight<TStage, TConfig> | null => {
   if (!record?.buildStartedAt || record.buildFinishedAt) return null;
   if (processingStatus === 'processing' || processingStatus === 'paused') return null;

@@ -9,7 +9,7 @@ import {
   putTasks,
   runStageTasks,
 } from '@hierarchidb/vt-orchestrator';
-import { type VtShapeDb, getFetchCache, putFetchCache } from '@hierarchidb/vt-shape-store';
+import { ephemeralShapeDB } from '@hierarchidb/shape-store';
 import type {
   CountryMetadata,
   DataSourceName,
@@ -22,6 +22,7 @@ import { metadataLoader } from '../metadata/MetadataLoader.js';
 import { DataSourceStrategyFactory } from '../datasources/DataSourceStrategyFactory.js';
 import { resolveStrategyIdFromDataSource } from '../datasources/strategyIds.js';
 import type { RetryConfig } from '../datasources/DataSourceStrategy.js';
+import * as turf from '@turf/turf';
 
 export type ShapeFetchTaskInput = {
   url: string;
@@ -40,6 +41,8 @@ export type ShapeFetchTaskOutput = {
   polygonCount?: number;
 };
 
+const turfBbox = (turf as { bbox?: (input: unknown) => number[] }).bbox;
+
 export type ShapeFetchStageParams = {
   nodeId: NodeId;
   dataSource: DataSourceName;
@@ -47,7 +50,6 @@ export type ShapeFetchStageParams = {
   downloadTaskPayloads?: FetchTaskPayload[];
   buildConfig: ShapeBuildConfig;
   taskQueue: VtTaskQueueDb;
-  shapeStore: VtShapeDb;
   metadata?: CountryMetadata[];
   waitIfPaused?: () => Promise<void>;
   resumeExistingTasks?: boolean;
@@ -83,6 +85,49 @@ const buildCountryLookup = (metadata: CountryMetadata[]): Map<string, CountryMet
 const buildShapeFetchTaskId = (nodeId: NodeId, sourceKey: string): string => (
   `${String(nodeId)}:fetch:${sourceKey}`
 );
+
+const buildFetchCacheId = (nodeId: NodeId, sourceKey: string): string => (
+  `${String(nodeId)}-shape-${sourceKey}`
+);
+
+const getFetchCache = async (nodeId: NodeId, sourceKey: string) => (
+  await ephemeralShapeDB.fetchCache
+    .where('[nodeId+sourceKey]')
+    .equals([nodeId, sourceKey])
+    .first()
+);
+
+const putFetchCache = async (params: {
+  nodeId: NodeId;
+  sourceKey: string;
+  countryCode: ISO2;
+  adminLevel: number;
+  data: ArrayBuffer;
+  featureCount: number;
+  bbox: [number, number, number, number];
+  downloadTime: number;
+  vertexCount: number;
+  polygonCount: number;
+}): Promise<string> => {
+  const recordId = buildFetchCacheId(params.nodeId, params.sourceKey);
+  await ephemeralShapeDB.fetchCache.put({
+    id: recordId,
+    nodeId: params.nodeId,
+    domainType: 'shape',
+    sourceKey: params.sourceKey,
+    countryCode: params.countryCode,
+    adminLevel: params.adminLevel,
+    data: params.data,
+    featureCount: params.featureCount,
+    bbox: params.bbox,
+    downloadTime: params.downloadTime,
+    size: params.data.byteLength,
+    vertexCount: params.vertexCount,
+    polygonCount: params.polygonCount,
+    timestamp: Date.now(),
+  });
+  return recordId;
+};
 
 const buildFetchFeatureCollection = (
   entities: ShapeEntity[],
@@ -149,7 +194,12 @@ const countPolygonsFromGeometry = (geometry: Feature['geometry']): number => {
 
 const summarizeFeatureCollection = (
   collection: FeatureCollection
-): { featureCount: number; vertexCount: number; polygonCount: number } => {
+): {
+  featureCount: number;
+  vertexCount: number;
+  polygonCount: number;
+  bbox: [number, number, number, number];
+} => {
   const featureCount = collection.features.length;
   let vertexCount = 0;
   let polygonCount = 0;
@@ -157,7 +207,15 @@ const summarizeFeatureCollection = (
     vertexCount += countVerticesFromGeometry(feature.geometry);
     polygonCount += countPolygonsFromGeometry(feature.geometry);
   }
-  return { featureCount, vertexCount, polygonCount };
+  let bbox: [number, number, number, number] = [0, 0, 0, 0];
+  if (turfBbox) {
+    const bounds = turfBbox(collection);
+    if (Array.isArray(bounds) && bounds.length === 4 && bounds.every((value) => Number.isFinite(value))) {
+      const [minX, minY, maxX, maxY] = bounds as [number, number, number, number];
+      bbox = [minX, minY, maxX, maxY];
+    }
+  }
+  return { featureCount, vertexCount, polygonCount, bbox };
 };
 
 const buildFetchTasks = (
@@ -200,7 +258,6 @@ const buildFetchTasks = (
 const createFetchHandler = (params: {
   nodeId: NodeId;
   buildConfig: ShapeBuildConfig;
-  shapeStore: VtShapeDb;
   dataSource: DataSourceName;
   abortSignal?: AbortSignal;
 }): StageHandler<ShapeFetchTaskInput, ShapeFetchTaskOutput> => {
@@ -219,7 +276,7 @@ const createFetchHandler = (params: {
     }
 
     assertNotAborted(params.abortSignal);
-    const existing = await getFetchCache(params.shapeStore, params.nodeId, input.sourceKey);
+    const existing = await getFetchCache(params.nodeId, input.sourceKey);
     if (existing) {
       return {
         status: 'completed',
@@ -227,12 +284,13 @@ const createFetchHandler = (params: {
         outputData: {
           fetchCacheId: existing.id,
           featureCount: existing.featureCount,
-          vertexCount: existing.vertexCount,
+          vertexCount: existing.vertexCount ?? 0,
         },
       };
     }
 
     assertNotAborted(params.abortSignal);
+    const downloadStart = Date.now();
     const raw = await strategy.fetchData({
       nodeId: params.nodeId,
       country: input.urlCountryCode,
@@ -241,6 +299,7 @@ const createFetchHandler = (params: {
       retryConfig,
       timeout: params.buildConfig.fetchConfig.timeoutMs,
     });
+    const downloadTime = Date.now() - downloadStart;
 
     assertNotAborted(params.abortSignal);
     const processed = await strategy.processData(raw, {
@@ -259,15 +318,18 @@ const createFetchHandler = (params: {
     }
 
     assertNotAborted(params.abortSignal);
-    const { featureCount, vertexCount, polygonCount } = summarizeFeatureCollection(collection);
+    const { featureCount, vertexCount, polygonCount, bbox } = summarizeFeatureCollection(collection);
     const data = await encodeFlatGeobufFromFeatureCollection(collection);
     assertNotAborted(params.abortSignal);
-    const buffer = await putFetchCache(params.shapeStore, params.nodeId, {
+    const bufferId = await putFetchCache({
+      nodeId: params.nodeId,
       sourceKey: input.sourceKey,
       countryCode: input.countryCode,
       adminLevel: input.adminLevel,
       data,
       featureCount,
+      bbox,
+      downloadTime,
       vertexCount,
       polygonCount,
     });
@@ -276,7 +338,7 @@ const createFetchHandler = (params: {
       status: 'completed',
       message: `completed: features=${featureCount}`,
       outputData: {
-        fetchCacheId: buffer.id,
+        fetchCacheId: bufferId,
         featureCount,
         vertexCount,
         polygonCount,
@@ -320,7 +382,6 @@ export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise
     handler: createFetchHandler({
       nodeId: params.nodeId,
       buildConfig: params.buildConfig,
-      shapeStore: params.shapeStore,
       dataSource: params.dataSource,
       abortSignal,
     }),

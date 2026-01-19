@@ -4,9 +4,9 @@
  */
 
 import type { TreeId } from '@hierarchidb/common-types';
-import { getMenuSpec, type MenuGroup } from './menu-spec.ts';
 import { getPresentation, prefetchAllIcons } from '../plugin-runtime/plugin-presentation.ts';
 import { getInstalledPlugins, type InstalledPlugin } from '../plugin-runtime/plugin-registry.ts';
+import { getMenuSpec, type MenuGroup } from './menu-spec.ts';
 
 export type TreeContext = 'resources' | 'projects';
 
@@ -35,7 +35,10 @@ function createMenuItem(plugin: InstalledPlugin, group: string, priority: number
     icon: presentation?.icon ?? plugin.icon,
     group,
     priority,
-    description: localizedDescription && localizedDescription.length > 0 ? localizedDescription : plugin.description,
+    description:
+      localizedDescription && localizedDescription.length > 0
+        ? localizedDescription
+        : plugin.description,
     backgroundColor: plugin.backgroundColor,
   };
 }

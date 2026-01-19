@@ -62,11 +62,7 @@ describe('useTreeConsoleBreadcrumbs', () => {
       expect(result.current.length).toBe(3);
     });
 
-    expect(result.current.map((node) => node.id)).toEqual([
-      'r:root',
-      'r:folder-a',
-      'r:folder-b',
-    ]);
+    expect(result.current.map((node) => node.id)).toEqual(['r:root', 'r:folder-a', 'r:folder-b']);
   });
 
   it('shows an ellipsis when the breadcrumb chain exceeds the maximum but keeps the root first', async () => {

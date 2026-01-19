@@ -1,20 +1,14 @@
-import type {
-  NodeId,
-  NodeType,
-  TreeId,
-  TreeNode,
-  Timestamp,
-} from '@hierarchidb/common-types';
+import type { NodeId, NodeType, Timestamp, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { CoreDB } from '../CoreDB.js';
-import { createNewName, getChildNames } from './nameUtilities.js';
 import { generateNodeId } from '../nodeId.js';
+import { createNewName, getChildNames } from './nameUtilities.js';
 
 /**
-  * Initialize a draft TreeNode (TreeNodeUpdater) for creation.
-  * - Ensures sibling name uniqueness.
-  * - Seeds metadata/draftMetadata with name/description/tags defaults.
-  * - Seeds draftData with provided payload or an empty object.
-  */
+ * Initialize a draft TreeNode (TreeNodeUpdater) for creation.
+ * - Ensures sibling name uniqueness.
+ * - Seeds metadata/draftMetadata with name/description/tags defaults.
+ * - Seeds draftData with provided payload or an empty object.
+ */
 export async function initTreeNode(
   coreDB: CoreDB,
   _treeId: TreeId,
@@ -48,25 +42,24 @@ export async function initTreeNode(
 
         if (!hasDraftMeta || !hasDraftData) {
           const nextDraftMetadata = hasDraftMeta
-            ? (existing as { draftMetadata?: TreeNode['metadata'] }).draftMetadata ?? null
+            ? ((existing as { draftMetadata?: TreeNode['metadata'] }).draftMetadata ?? null)
             : ((existing as { metadata?: TreeNode['metadata'] }).metadata ?? null);
 
           await coreDB.nodes.update(fixedId, {
             metadata: {
-              ...(existing as { metadata?: TreeNode['metadata'] }).metadata ?? {
+              ...((existing as { metadata?: TreeNode['metadata'] }).metadata ?? {
                 name: resolvedBaseName,
                 description: '',
                 tags: [],
-              },
+              }),
               name: resolvedBaseName,
             },
-            draftMetadata:
-              nextDraftMetadata ?? {
-                name: resolvedBaseName,
-                description: '',
-                tags: [],
-                ...(initial?.draftMetadata ?? initial?.metadata ?? {}),
-              },
+            draftMetadata: nextDraftMetadata ?? {
+              name: resolvedBaseName,
+              description: '',
+              tags: [],
+              ...(initial?.draftMetadata ?? initial?.metadata ?? {}),
+            },
             draftData: {
               ...(hasDraftData
                 ? ((existing as { draftData?: Record<string, unknown> | null }).draftData ?? {})

@@ -11,9 +11,9 @@ import {
 } from '@mui/icons-material';
 import { Box, Button, IconButton, Tooltip } from '@mui/material';
 import { useMemo } from 'react';
-import { TopPageGuidedTour } from './tour/TopPageGuidedTour.js';
 import { loadAppConfig, resolveAssetHref } from '~/loadAppConfig.js';
 import { TitleLogo } from './TitleLogo.js';
+import { TopPageGuidedTour } from './tour/TopPageGuidedTour.js';
 import { useHomePage } from './useHomePage.js';
 
 export function meta() {

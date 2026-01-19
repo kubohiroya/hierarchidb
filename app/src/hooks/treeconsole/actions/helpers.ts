@@ -125,9 +125,8 @@ async function buildAncestryChain(params: {
   }
   try {
     const queryAPI = await client.getQueryAPI();
-    const ancestors = ((await queryAPI.listAncestors(pageNodeId as NodeId)) ?? []) as Array<
-      TreeNode | null
-    >;
+    const ancestors = ((await queryAPI.listAncestors(pageNodeId as NodeId)) ??
+      []) as Array<TreeNode | null>;
     const ancestorIdsDesc: NodeId[] = ancestors
       .map((node) => normalizeNodeId(node?.id))
       .filter((id): id is NodeId => Boolean(id))
@@ -187,7 +186,7 @@ export async function resolveTrashNavigationTarget(params: {
 export function attachChildrenToIndex(
   index: DualKeyMap<NodeId, NodeId, TreeNode>,
   parentKey: NodeId,
-  nodes: TreeNode[],
+  nodes: TreeNode[]
 ): DualKeyMap<NodeId, NodeId, TreeNode> {
   syncNodeIndex(index, parentKey, nodes);
   return index;

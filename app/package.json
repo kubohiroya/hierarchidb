@@ -50,7 +50,6 @@
     "@hierarchidb/ui-search-field": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/vt-store": "workspace:*",
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
     "@tanstack/react-router": "^1.132.33",

@@ -1,12 +1,3 @@
-import type { ElementType } from 'react';
-import {
-  STYLE_TYPE_OPTIONS,
-  type StylerDialogData,
-  type StylerStepData,
-  type StyleType,
-} from '../../common/types/StylerEntity.ts';
-import { useTranslation } from 'react-i18next';
-import { Box, FormHelperText, Paper, Stack, Typography } from '@mui/material';
 import {
   MAPLIBRE_PROPERTY_GROUPS,
   MAPLIBRE_PROPERTY_METADATA,
@@ -14,7 +5,6 @@ import {
   type PropertyGroup,
 } from '@hierarchidb/styler-plugin';
 import { useIconRegistry } from '@hierarchidb/ui-icon';
-import Grid from '@mui/material/Grid';
 import {
   BorderColor as BorderColorIcon,
   FormatColorFill as FormatColorFillIcon,
@@ -26,6 +16,16 @@ import {
   RadioButtonUnchecked as RadioButtonUncheckedIcon,
   TextFields as TextFieldsIcon,
 } from '@mui/icons-material';
+import { Box, FormHelperText, Paper, Stack, Typography } from '@mui/material';
+import Grid from '@mui/material/Grid';
+import type { ElementType } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  STYLE_TYPE_OPTIONS,
+  type StylerDialogData,
+  type StylerStepData,
+  type StyleType,
+} from '../../common/types/StylerEntity.ts';
 
 const TARGET_PROPERTY_CARDS: Record<
   MapLibreStyleProperty,
@@ -219,8 +219,14 @@ export const StyleMappingTargetPanel = ({
           <Stack spacing={2}>
             {MAPLIBRE_PROPERTY_GROUPS.map((group: PropertyGroup) => (
               <Box key={group.name}>
-                <Typography variant="overline" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                  {String(t(`styleSettings.targetProperty.groups.${group.name}`, group.displayName))}
+                <Typography
+                  variant="overline"
+                  color="text.secondary"
+                  sx={{ display: 'block', mb: 1 }}
+                >
+                  {String(
+                    t(`styleSettings.targetProperty.groups.${group.name}`, group.displayName)
+                  )}
                 </Typography>
                 <Grid container spacing={2}>
                   {group.properties.map((property: MapLibreStyleProperty) => {
@@ -281,8 +287,9 @@ export const StyleMappingTargetPanel = ({
                                 {String(
                                   t(
                                     card?.descriptionKey ?? '',
-                                    card?.defaultDescription ?? 'Choose this property to map your data onto the style.',
-                                  ),
+                                    card?.defaultDescription ??
+                                      'Choose this property to map your data onto the style.'
+                                  )
                                 )}
                               </Typography>
                             </Box>
@@ -296,7 +303,10 @@ export const StyleMappingTargetPanel = ({
             ))}
           </Stack>
           <FormHelperText sx={{ mt: 1 }}>
-            {t('styleSettings.targetProperty.help', 'Select the MapLibre paint property to map this value to.')}
+            {t(
+              'styleSettings.targetProperty.help',
+              'Select the MapLibre paint property to map this value to.'
+            )}
           </FormHelperText>
         </Box>
       )}

@@ -1,6 +1,6 @@
-import type { VectorTileProgress, VTWorkerAPI } from '../types.js';
 import { DexieChunkStore } from '@hierarchidb/chunk-store';
 import type { NodeId } from '@hierarchidb/common-types';
+import type { VectorTileProgress, VTWorkerAPI } from '../types.js';
 
 export type VectorTileStageInput = {
   bufferId: string;
@@ -49,7 +49,7 @@ type VectorTileInputCompression = 'gzip' | 'none';
 
 const resolveInputContentType = (
   inputFormat: VectorTileInputFormat,
-  inputCompression: VectorTileInputCompression,
+  inputCompression: VectorTileInputCompression
 ): string => {
   const base = inputFormat === 'flatgeobuf' ? 'application/flatgeobuf' : 'application/geo+json';
   return inputCompression === 'gzip' ? `${base}+gzip` : base;
@@ -57,7 +57,7 @@ const resolveInputContentType = (
 
 const compressBuffer = async (
   buffer: ArrayBuffer,
-  inputCompression: VectorTileInputCompression,
+  inputCompression: VectorTileInputCompression
 ): Promise<ArrayBuffer> => {
   if (inputCompression !== 'gzip') return buffer;
   if (typeof CompressionStream !== 'function') {
@@ -73,22 +73,23 @@ const compressBuffer = async (
 export async function writeVectorTileInput(
   bufferId: string,
   buffer: ArrayBuffer,
-  contentTypeOrOptions: string | {
-    contentType?: string;
-    inputFormat?: VectorTileInputFormat;
-    inputCompression?: VectorTileInputCompression;
-    nodeId?: NodeId;
-    tileId?: string;
-    chunkStoreName?: string;
-  } = 'application/json',
+  contentTypeOrOptions:
+    | string
+    | {
+        contentType?: string;
+        inputFormat?: VectorTileInputFormat;
+        inputCompression?: VectorTileInputCompression;
+        nodeId?: NodeId;
+        tileId?: string;
+        chunkStoreName?: string;
+      } = 'application/json'
 ): Promise<void> {
   const options = typeof contentTypeOrOptions === 'string' ? null : contentTypeOrOptions;
   const inputFormat = options?.inputFormat ?? 'geojson';
   const inputCompression = options?.inputCompression ?? 'none';
-  const contentType = (typeof contentTypeOrOptions === 'string'
-    ? contentTypeOrOptions
-    : options?.contentType
-  ) ?? resolveInputContentType(inputFormat, inputCompression);
+  const contentType =
+    (typeof contentTypeOrOptions === 'string' ? contentTypeOrOptions : options?.contentType) ??
+    resolveInputContentType(inputFormat, inputCompression);
   const nodeId = options?.nodeId ?? DEFAULT_NODE_ID;
   const payload = await compressBuffer(buffer, inputCompression);
   const resolvedChunkStoreName = options?.chunkStoreName ?? DEFAULT_CHUNK_STORE;
@@ -110,7 +111,7 @@ export async function writeVectorTileInput(
 export async function runVectorTileStage(
   input: VectorTileStageInput,
   client: VTWorkerAPI,
-  options: VectorTileStageOptions = {},
+  options: VectorTileStageOptions = {}
 ): Promise<VectorTileStageResult> {
   const { bufferId, buffer, contentType, config, onProgress } = input;
   if (buffer) {
@@ -118,18 +119,14 @@ export async function runVectorTileStage(
     const inputCompression = config.inputCompression ?? 'none';
     const nodeId = options.nodeId ?? config.targetNodeId ?? DEFAULT_NODE_ID;
     const tileId = options.tileId ?? bufferId;
-    await writeVectorTileInput(
-      bufferId,
-      buffer,
-      {
-        contentType,
-        inputFormat,
-        inputCompression,
-        nodeId,
-        tileId,
-        chunkStoreName: options.chunkStoreName ?? DEFAULT_CHUNK_STORE,
-      },
-    );
+    await writeVectorTileInput(bufferId, buffer, {
+      contentType,
+      inputFormat,
+      inputCompression,
+      nodeId,
+      tileId,
+      chunkStoreName: options.chunkStoreName ?? DEFAULT_CHUNK_STORE,
+    });
   }
   const generated = await client.generateTiles(bufferId, config, onProgress);
   const resolvedNodeId = config.targetNodeId ?? (bufferId as NodeId);

@@ -8,16 +8,8 @@ import type { TreeConsoleActionDeps } from '../types.js';
 import { buildIndexFromNodes } from './helpers.ts';
 
 export const createSearchActions = (deps: TreeConsoleActionDeps) => {
-  const {
-    client,
-    pageNodeId,
-    loadChildrenOf,
-    setSSOT,
-    locale,
-    pushPath,
-    searchMode,
-    searchTerm,
-  } = deps;
+  const { client, pageNodeId, loadChildrenOf, setSSOT, locale, pushPath, searchMode, searchTerm } =
+    deps;
 
   const runLocalSearch = async (term: string) => {
     if (!client) return;

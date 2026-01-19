@@ -1,22 +1,19 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { MouseEvent } from 'react';
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
-import { useTranslation } from 'react-i18next';
-import { convertTreeNodeToTreeNodeData } from '~/utils/treeNodeConverter.js';
-import { rainbowColors } from '@hierarchidb/ui-theme';
 import {
   getPluginIconColor,
   isFolderNodeType,
 } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
+import { rainbowColors } from '@hierarchidb/ui-theme';
+import type { HierarchicalTreeNode, TreeConsolePanelProps } from '@hierarchidb/ui-treeconsole-base';
+import { useLocation, useNavigate } from '@tanstack/react-router';
+import { proxy as comlinkProxy } from 'comlink';
+import type { MouseEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useWorker } from '~/contexts/WorkerProvider.tsx';
 import { Subscriptions } from '~/hooks/SubscriptionServices.ts';
-import { proxy as comlinkProxy } from 'comlink';
-import type {
-  TreeConsolePanelProps,
-  HierarchicalTreeNode,
-} from '@hierarchidb/ui-treeconsole-base';
 import { useTreeConsoleSSOT } from '~/state/treeconsole.atoms.ts';
-import { useLocation, useNavigate } from '@tanstack/react-router';
+import { convertTreeNodeToTreeNodeData } from '~/utils/treeNodeConverter.js';
 import { resolveBuildTargetForNode, startBuildFlow } from './buildFlow.ts';
 
 type ContextMenuHandler = NonNullable<TreeConsolePanelProps['onContextMenuAction']>;
@@ -204,14 +201,12 @@ export function useTreeNodeInfoPanel({
         setConfirmTrashOpen(true);
         return;
       }
-      const navigateToParent =
-        options?.navigateToParent ??
-        action === 'trash';
+      const navigateToParent = options?.navigateToParent ?? action === 'trash';
       if (action === 'toggle-visibility') {
         const nextVisible =
           typeof options?.nextVisible === 'boolean'
             ? options.nextVisible
-            : !((currentNode?.visible ?? true));
+            : !(currentNode?.visible ?? true);
         setCurrentNode((prev) => (prev ? { ...prev, visible: nextVisible } : prev));
       }
       onContextMenuAction(action, nodeData, {
@@ -285,7 +280,7 @@ export function useTreeNodeInfoPanel({
   const manifestIconColor = getPluginIconColor(nodeTypeLabel);
   const nodeIconColor = isFolderNodeType(nodeTypeLabel)
     ? baseIconColor
-    : manifestIconColor ?? baseIconColor;
+    : (manifestIconColor ?? baseIconColor);
   const isRootLike =
     !currentNode?.parentId ||
     !nodeData ||
@@ -329,8 +324,7 @@ export function useTreeNodeInfoPanel({
   };
 
   const isBuildable =
-    Boolean(nodeTypeLabel && isFolderNodeType(nodeTypeLabel)) ||
-    Boolean(buildTarget?.stepNumber);
+    Boolean(nodeTypeLabel && isFolderNodeType(nodeTypeLabel)) || Boolean(buildTarget?.stepNumber);
 
   return {
     currentNode,

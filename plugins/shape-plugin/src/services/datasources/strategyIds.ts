@@ -1,10 +1,17 @@
 import type { DataSourceStrategyId } from './DataSourceStrategyFactory.js';
+import type { DataSourceName } from '../../common/types/index.js';
 
-export const resolveStrategyIdFromDataSource = (source?: string): DataSourceStrategyId | null => {
-  const key = (source ?? '').toLowerCase();
-  if (key.includes('gadm')) return 'gadm-administrative-areas';
-  if (key.includes('natural')) return 'natural-earth-shapes';
-  if (key.includes('geo')) return 'geoboundaries-admin-areas';
-  if (key.includes('osm') || key.includes('openstreet')) return 'openstreetmap-overpass';
-  return null;
+export const resolveStrategyIdFromDataSource = (source?: DataSourceName): DataSourceStrategyId | null => {
+  switch (source) {
+    case 'gadm':
+      return 'gadm-administrative-areas';
+    case 'naturalearth':
+      return 'natural-earth-shapes';
+    case 'geoboundaries':
+      return 'geoboundaries-admin-areas';
+    case 'openstreetmap':
+      return 'openstreetmap-overpass';
+    default:
+      return null;
+  }
 };

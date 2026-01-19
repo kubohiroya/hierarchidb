@@ -1,3 +1,4 @@
+import type { ThemeMode } from '@hierarchidb/ui-theme';
 import {
   DarkMode as DarkModeIcon,
   LightMode as LightModeIcon,
@@ -5,7 +6,6 @@ import {
 } from '@mui/icons-material';
 import { ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import type { ThemeMode } from '@hierarchidb/ui-theme';
 
 interface ThemeMenuProps {
   anchorEl: HTMLElement | null;

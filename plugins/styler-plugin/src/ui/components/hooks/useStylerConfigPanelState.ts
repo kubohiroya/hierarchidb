@@ -106,10 +106,9 @@ export const useStylerConfigPanelState = ({
         String(Math.round(recommendation.confidence * 100))
       )
     : '';
-  const currentSuitability =
-    recommendation?.suitability
-      ? recommendation?.suitability[localConfig.algorithm] ?? null
-      : null;
+  const currentSuitability = recommendation?.suitability
+    ? (recommendation?.suitability[localConfig.algorithm] ?? null)
+    : null;
 
   useEffect(() => {
     if (valueColumn && tabularData.length > 0) {

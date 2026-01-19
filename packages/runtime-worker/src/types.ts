@@ -110,7 +110,7 @@ export interface VTWorkerAPI {
     metadata?: {
       featureMetadata?: FeatureMetadataRow[];
       metadataReplace?: boolean;
-    },
+    }
   ): Promise<{ tilesStored: number }>;
   generateTiles(
     inputBufferId: string,
@@ -135,10 +135,16 @@ export interface VTWorkerAPI {
       targetNodeType?: string;
       abortKey?: string;
     },
-    onProgress?: (progress: VectorTileProgress) => void,
+    onProgress?: (progress: VectorTileProgress) => void
   ): Promise<{ tilesGenerated: number; totalBytes?: number; metadataCount?: number }>;
   abortGenerateTiles?(abortKey: string): Promise<void>;
-  getTile(nodeId: NodeId, z: number, x: number, y: number, nodeType?: string): Promise<Uint8Array | null>;
+  getTile(
+    nodeId: NodeId,
+    z: number,
+    x: number,
+    y: number,
+    nodeType?: string
+  ): Promise<Uint8Array | null>;
   listTiles(
     nodeId: NodeId,
     nodeType?: string

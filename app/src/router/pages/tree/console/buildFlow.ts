@@ -60,7 +60,12 @@ export const collectBuildUrlsForFolder = async (params: {
   pageNodeId: NodeId;
   folderNode: TreeNode;
   returnTo: string;
-  workerClient: { getQueryAPI: () => Promise<{ listAncestors: (nodeId: NodeId) => Promise<TreeNode[]>; listDescendants: (nodeId: NodeId) => Promise<TreeNode[]> }> };
+  workerClient: {
+    getQueryAPI: () => Promise<{
+      listAncestors: (nodeId: NodeId) => Promise<TreeNode[]>;
+      listDescendants: (nodeId: NodeId) => Promise<TreeNode[]>;
+    }>;
+  };
 }): Promise<{ urls: string[]; queueKey: string }> => {
   const { treeId, pageNodeId, folderNode, returnTo, workerClient } = params;
   const queryAPI = await workerClient.getQueryAPI();
@@ -98,7 +103,9 @@ export const collectBuildUrlsForFolder = async (params: {
 
 export const resolveBuildTargetForNode = async (params: {
   node: TreeNode;
-  workerClient: { getQueryAPI: () => Promise<{ getNode: (nodeId: NodeId) => Promise<TreeNode | undefined> }> } | null;
+  workerClient: {
+    getQueryAPI: () => Promise<{ getNode: (nodeId: NodeId) => Promise<TreeNode | undefined> }>;
+  } | null;
 }): Promise<BuildStepTarget | null> => {
   const { node, workerClient } = params;
   const nodeType = String(node?.nodeType ?? '');
@@ -116,7 +123,13 @@ export const startBuildFlow = async (params: {
   pageNodeId: NodeId;
   node: TreeNode;
   returnTo: string;
-  workerClient: { getQueryAPI: () => Promise<{ getNode: (nodeId: NodeId) => Promise<TreeNode | undefined>; listAncestors: (nodeId: NodeId) => Promise<TreeNode[]>; listDescendants: (nodeId: NodeId) => Promise<TreeNode[]> }> } | null;
+  workerClient: {
+    getQueryAPI: () => Promise<{
+      getNode: (nodeId: NodeId) => Promise<TreeNode | undefined>;
+      listAncestors: (nodeId: NodeId) => Promise<TreeNode[]>;
+      listDescendants: (nodeId: NodeId) => Promise<TreeNode[]>;
+    }>;
+  } | null;
   navigate: (to: string) => void;
 }): Promise<void> => {
   const { treeId, pageNodeId, node, returnTo, workerClient, navigate } = params;

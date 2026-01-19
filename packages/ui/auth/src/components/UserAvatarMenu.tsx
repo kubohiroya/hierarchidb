@@ -1,6 +1,6 @@
 import {
-  DeleteForever,
   DarkMode as DarkModeIcon,
+  DeleteForever,
   KeyboardArrowDown as KeyboardArrowDownIcon,
   LightMode as LightModeIcon,
   Login as LoginIcon,
@@ -83,7 +83,10 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
     // Sync with external changes (e.g., TreeConsole dispatch)
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail as { mode?: string; lang?: string };
-      if (detail?.mode && (detail.mode === 'system' || detail.mode === 'light' || detail.mode === 'dark')) {
+      if (
+        detail?.mode &&
+        (detail.mode === 'system' || detail.mode === 'light' || detail.mode === 'dark')
+      ) {
         setThemeMode(detail.mode);
       }
       if (detail?.lang) {
@@ -127,19 +130,20 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
       .map((db) => db.name)
       .filter((name): name is string => typeof name === 'string' && name.length > 0);
     const results = await Promise.all(
-      names.map((name) =>
-        new Promise<{ name: string; status: 'deleted' | 'blocked' | 'failed' }>((resolve) => {
-          const req = indexedDB.deleteDatabase(name);
-          let settled = false;
-          const finish = (status: 'deleted' | 'blocked' | 'failed') => {
-            if (settled) return;
-            settled = true;
-            resolve({ name, status });
-          };
-          req.onsuccess = () => finish('deleted');
-          req.onerror = () => finish('failed');
-          req.onblocked = () => finish('blocked');
-        })
+      names.map(
+        (name) =>
+          new Promise<{ name: string; status: 'deleted' | 'blocked' | 'failed' }>((resolve) => {
+            const req = indexedDB.deleteDatabase(name);
+            let settled = false;
+            const finish = (status: 'deleted' | 'blocked' | 'failed') => {
+              if (settled) return;
+              settled = true;
+              resolve({ name, status });
+            };
+            req.onsuccess = () => finish('deleted');
+            req.onerror = () => finish('failed');
+            req.onblocked = () => finish('blocked');
+          })
       )
     );
     return {
@@ -269,7 +273,11 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
         )}
       </Menu>
 
-      <Menu anchorEl={themeAnchorEl} open={Boolean(themeAnchorEl)} onClose={() => setThemeAnchorEl(null)}>
+      <Menu
+        anchorEl={themeAnchorEl}
+        open={Boolean(themeAnchorEl)}
+        onClose={() => setThemeAnchorEl(null)}
+      >
         <MenuItem selected={themeMode === 'system'} onClick={() => selectTheme('system')}>
           <SystemThemeIcon fontSize="small" sx={{ mr: 1 }} />
           System

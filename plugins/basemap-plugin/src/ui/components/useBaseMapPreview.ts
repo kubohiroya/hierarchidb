@@ -1,5 +1,5 @@
-import { useCallback, useMemo } from 'react';
 import type { MapViewState } from '@hierarchidb/ui-map';
+import { useCallback, useMemo } from 'react';
 import { getStyleAttribution } from '../../common/constants/builtInStyles.js';
 import type { MapStyle, MapViewport } from '../../common/types/BaseMapEntity.js';
 import { resolvePreviewMapStyle } from '../utils/mapStyle.js';
@@ -54,9 +54,10 @@ export function useBaseMapPreview({
     return '© Map contributors';
   }, [mapStyle]);
 
-  const mapStyleProps = typeof mapStyleSource === 'string'
-    ? { mapStyleUrl: mapStyleSource }
-    : { mapStyleObject: mapStyleSource };
+  const mapStyleProps =
+    typeof mapStyleSource === 'string'
+      ? { mapStyleUrl: mapStyleSource }
+      : { mapStyleObject: mapStyleSource };
 
   return {
     attribution,

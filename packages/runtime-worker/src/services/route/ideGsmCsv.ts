@@ -1,15 +1,12 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type {
-  IdeGsmRouteError,
-  LocationGroupItemData,
-} from '@hierarchidb/plugin-service-api';
+import type { LocationPointId, LocationQueryAPI } from '@hierarchidb/location-store';
+import type { IdeGsmRouteError, LocationGroupItemData } from '@hierarchidb/plugin-service-api';
 import {
   ROUTE_MODES,
   type RouteLineString,
   type RouteMode,
   type RoutePoint,
 } from '@hierarchidb/route-store';
-import type { LocationPointId, LocationQueryAPI } from '@hierarchidb/location-store';
 
 const IDE_GSM_HEADERS = [
   'Start',
@@ -48,7 +45,7 @@ type LocationLookup = Map<string, LocationGroupItemData & { id: NodeId }>;
 
 export async function buildIdeGsmLocationIndex(
   api: LocationQueryAPI,
-  nodeIds: NodeId[],
+  nodeIds: NodeId[]
 ): Promise<LocationLookup> {
   const index = new Map<string, LocationGroupItemData & { id: NodeId }>();
   for (const nodeId of nodeIds) {
@@ -67,7 +64,7 @@ export async function buildIdeGsmLocationIndex(
 export function parseIdeGsmCsv(
   csvText: string,
   locationIndex: LocationLookup,
-  nodeId: NodeId,
+  nodeId: NodeId
 ): { lineStrings: RouteLineString[]; errors: IdeGsmRouteError[] } {
   const rows = csvText.split(/\r?\n/).filter((line) => line.trim().length > 0);
   if (rows.length === 0) {
@@ -94,11 +91,12 @@ export function parseIdeGsmCsv(
           rowNumber,
           start: parsed.start,
           end: parsed.end,
-          reason: !startLocation && !endLocation
-            ? 'Start/End location not found'
-            : !startLocation
-              ? 'Start location not found'
-              : 'End location not found',
+          reason:
+            !startLocation && !endLocation
+              ? 'Start/End location not found'
+              : !startLocation
+                ? 'Start location not found'
+                : 'End location not found',
         });
         continue;
       }
@@ -187,11 +185,11 @@ function parseIdeGsmRow(cols: string[], index: Record<string, number>): IdeGsmRo
 function buildRoutePoint(
   location: LocationGroupItemData & { id: NodeId },
   admin0Name?: string,
-  admin1Name?: string,
+  admin1Name?: string
 ): RoutePoint {
-  const pointId = ((location as { pointId?: LocationPointId }).pointId
-    ?? (location as { pid?: string }).pid
-    ?? crypto.randomUUID()) as LocationPointId;
+  const pointId = ((location as { pointId?: LocationPointId }).pointId ??
+    (location as { pid?: string }).pid ??
+    crypto.randomUUID()) as LocationPointId;
   return {
     coordinates: [location.longitude, location.latitude],
     admin0Name: admin0Name ?? location.countryName ?? location.countryCode ?? '',
@@ -251,7 +249,7 @@ function readNumber(cols: string[], index?: number): number | undefined {
 }
 
 function normalizeMetadata(
-  input: Record<string, string | number | boolean | undefined>,
+  input: Record<string, string | number | boolean | undefined>
 ): Record<string, string | number | boolean> {
   const out: Record<string, string | number | boolean> = {};
   for (const [key, value] of Object.entries(input)) {
@@ -270,7 +268,7 @@ function normalizeMetadata(
 function setMetadata(
   target: Record<string, string | number | boolean>,
   key: string,
-  value: string | number | boolean | undefined,
+  value: string | number | boolean | undefined
 ): void {
   if (value === undefined || value === '') return;
   target[key] = value as string | number | boolean;

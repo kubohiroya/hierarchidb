@@ -2,14 +2,14 @@ import type { ListChildrenOptions } from '@hierarchidb/common-api';
 import type {
   DialogUIState,
   NodeId,
-  NodeTagAssociation,
   NodePayload,
+  NodeTagAssociation,
   NodeType,
-  TreeNode,
   TagEntity,
   Tree,
   TreeChangeEvent,
   TreeId,
+  TreeNode,
   TreeRootState,
 } from '@hierarchidb/common-types';
 import { getDBName, SingletonMixin } from '@hierarchidb/util';
@@ -46,9 +46,7 @@ const normalizeTreeNodeForPersist = (node: TreeNode): TreeNode => {
   const metadata = rawMetadata as TreeNode['metadata'];
   const rawDraftMetadata = (node as { draftMetadata?: unknown }).draftMetadata;
   const draftMetadata =
-    rawDraftMetadata !== undefined
-      ? (rawDraftMetadata as TreeNode['draftMetadata'])
-      : null;
+    rawDraftMetadata !== undefined ? (rawDraftMetadata as TreeNode['draftMetadata']) : null;
 
   const rawData = (node as { data?: unknown }).data;
   const rawDraftData = (node as { draftData?: unknown }).draftData;
@@ -106,13 +104,7 @@ export class CoreDB extends Dexie {
    */
   async runInTx<T>(
     mode: 'r' | 'rw',
-    tableNames: Array<
-      | 'trees'
-      | 'nodes'
-      | 'rootStates'
-      | 'tags'
-      | 'tagAssociations'
-    >,
+    tableNames: Array<'trees' | 'nodes' | 'rootStates' | 'tags' | 'tagAssociations'>,
     fn: () => Promise<T>
   ): Promise<T> {
     const tableMap = {
@@ -147,9 +139,14 @@ export class CoreDB extends Dexie {
     this.version(4)
       .stores({
         trees: '&id, rootId, trashRootId, superRootId',
-        nodes: ['&id', 'parentId', '&[parentId+metadata.name]', '[parentId+updatedAt]', 'depth', '*references'].join(
-          ', '
-        ),
+        nodes: [
+          '&id',
+          'parentId',
+          '&[parentId+metadata.name]',
+          '[parentId+updatedAt]',
+          'depth',
+          '*references',
+        ].join(', '),
         rootStates: '&rootNodeId',
         tags: '&id, name, category, usageCount, createdAt',
         tagAssociations: 'nodeId, tagId, createdAt, &[nodeId+tagId]',
@@ -163,7 +160,10 @@ export class CoreDB extends Dexie {
             (node as { holderTargetId?: string }).holderTargetId = undefined;
             (node as { holderMetaParentId?: string }).holderMetaParentId = undefined;
           }
-          if ((node as { draftData?: unknown }).draftData !== null && (node as { draftData?: unknown }).draftData !== undefined) {
+          if (
+            (node as { draftData?: unknown }).draftData !== null &&
+            (node as { draftData?: unknown }).draftData !== undefined
+          ) {
             // keep draftData if present; no special handling needed
           }
         });
@@ -272,7 +272,6 @@ export class CoreDB extends Dexie {
           throw error;
         }
       }
-
     });
   }
 
@@ -582,7 +581,7 @@ export class CoreDB extends Dexie {
   async bulkUpdateNodes(nodes: TreeNode[]): Promise<void> {
     const oldNodes = await Promise.all(nodes.map((node) => this.nodes.get(node.id)));
 
-      await this.nodes.bulkPut(nodes);
+    await this.nodes.bulkPut(nodes);
 
     nodes.forEach((node, index) => {
       const oldNode = oldNodes[index];

@@ -5,10 +5,10 @@
  * Avoids Orchestrated APIs and uses direct Worker API calls.
  */
 
-import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
-import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-toolbar';
-import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import type { TreeTableExpandedAPI } from '@hierarchidb/common-api';
+import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
+import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
+import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-toolbar';
 import { DualKeyMap } from '@hierarchidb/util';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -173,9 +173,10 @@ export function useTreeConsoleIntegration({
   useEffect(() => {
     let cancelled = false;
     expandedApiRef.current = null;
-    if (!client) return () => {
-      cancelled = true;
-    };
+    if (!client)
+      return () => {
+        cancelled = true;
+      };
     (async () => {
       try {
         const api = await client.getTreeTableExpandedAPI();
@@ -218,8 +219,7 @@ export function useTreeConsoleIntegration({
       let initialExpanded: NodeId[] = [];
       try {
         const api =
-          expandedApiRef.current ??
-          (await client.getTreeTableExpandedAPI().catch(() => null));
+          expandedApiRef.current ?? (await client.getTreeTableExpandedAPI().catch(() => null));
         if (!cancelled) {
           expandedApiRef.current = api;
         }

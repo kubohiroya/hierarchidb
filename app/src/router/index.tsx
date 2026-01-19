@@ -1,4 +1,9 @@
-import { createRouter, createBrowserHistory, createHashHistory, createMemoryHistory } from '@tanstack/react-router';
+import {
+  createBrowserHistory,
+  createHashHistory,
+  createMemoryHistory,
+  createRouter,
+} from '@tanstack/react-router';
 import type { RouterMode } from './config.js';
 
 export type { RouterMode } from './config.js';
@@ -45,7 +50,9 @@ export async function createHierarchiRouter(config: RouterConfig) {
   const { treePageRoute } = await import('./routes/tree/pageRoute.js');
   const { treeTargetRoute } = await import('./routes/tree/targetRoute.js');
   const { treeNodeTypeRoute } = await import('./routes/tree/nodeTypeRoute.js');
-  const { treeDialogRoute, treeDialogModeRoute, treeDialogModeStepRoute } = await import('./routes/tree/dialogRoute.js');
+  const { treeDialogRoute, treeDialogModeRoute, treeDialogModeStepRoute } = await import(
+    './routes/tree/dialogRoute.js'
+  );
 
   // Build the console route hierarchy
   // The hierarchy is: base -> layout -> page -> target -> nodeType -> dialog
@@ -54,7 +61,11 @@ export async function createHierarchiRouter(config: RouterConfig) {
       treeLayoutIndexRoute,
       treePageRoute.addChildren([
         treeTargetRoute.addChildren([
-          treeNodeTypeRoute.addChildren([treeDialogRoute, treeDialogModeRoute, treeDialogModeStepRoute]),
+          treeNodeTypeRoute.addChildren([
+            treeDialogRoute,
+            treeDialogModeRoute,
+            treeDialogModeStepRoute,
+          ]),
         ]),
       ]),
     ]),

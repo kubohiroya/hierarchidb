@@ -45,7 +45,9 @@ vi.mock('~/plugin-loaders/index.ts', () => ({
 }));
 
 vi.mock('@hierarchidb/runtime-worker', () => ({
-  configureWorkerContainer: (configure: (container: { rebind: () => { toConstantValue: (value: unknown) => void } }) => void) => {
+  configureWorkerContainer: (
+    configure: (container: { rebind: () => { toConstantValue: (value: unknown) => void } }) => void
+  ) => {
     configure({
       rebind: () => ({
         toConstantValue: () => {},

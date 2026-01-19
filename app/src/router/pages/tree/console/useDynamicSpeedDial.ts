@@ -1,6 +1,6 @@
 import type { TreeId } from '@hierarchidb/common-types';
-import { useGlobalI18nTranslator } from '@hierarchidb/ui-plugin-shell/ui-i18n';
 import { useIconRegistry } from '@hierarchidb/ui-icon';
+import { useGlobalI18nTranslator } from '@hierarchidb/ui-plugin-shell/ui-i18n';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePluginMenuItems } from '~/hooks/usePluginMenuItems.js';

@@ -2,16 +2,17 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { BuildProcessConfig } from '../services/batch/types.js';
-import type { FetchTaskPayload } from '../common/types/index.js';
-import { DEFAULT_BUILD_CONFIG } from '../common/types/index.js';
+import type { BuildProcessConfig } from '../../services/batch/types.js';
+import type { FetchTaskPayload } from '../../common/types/index.js';
+import { DEFAULT_BUILD_CONFIG } from '../../common/types/index.js';
 //import { getShapeDbApiClient } from '../services/batch/ShapeBuildApiClient.js';
-import { encodeFlatGeoJson } from '../services/batch/strategies/flatgeobuf.js';
-import { GadmFetchStageStrategy } from '../services/batch/strategies/GadmFetchStageStrategy.js';
-import { NaturalEarthDownloadStrategy } from '../services/batch/strategies/NaturalEarthDownloadStrategy.js';
+import { encodeFlatGeoJson } from '../../services/batch/strategies/flatgeobuf.js';
+import { GadmFetchStageStrategy } from '../../services/batch/strategies/GadmFetchStageStrategy.js';
+import { GeoBoundariesFetchStageStrategy } from '../../services/batch/strategies/GeoBoundariesFetchStageStrategy.js';
+import { NaturalEarthDownloadStrategy } from '../../services/batch/strategies/NaturalEarthDownloadStrategy.js';
 import type { Feature, FeatureCollection } from 'geojson';
-import { ephemeralShapeDB } from '@hierarchidb/shape-store';;
-import { buildRawDataDataSourceCacheKey } from '../services/utils/chunkStore.js';
+import { ephemeralShapeDB } from '@hierarchidb/shape-store';
+import { buildRawDataDataSourceCacheKey } from '../../services/utils/chunkStore.js';
 
 const createConfig = (dataSource: string): BuildProcessConfig => ({
   dataSource: dataSource as BuildProcessConfig['dataSource'],
@@ -38,7 +39,7 @@ const createConfig = (dataSource: string): BuildProcessConfig => ({
   },
 });
 
-const createDownloadTaskPayload = (overrides: Partial<FetchTaskPayload>[]): FetchTaskPayload[] => (
+const createFetchTaskPayload = (overrides: Partial<FetchTaskPayload>[]): FetchTaskPayload[] => (
   overrides.map((item, index) => ({
     url: `https://example.com/${index}`,
     countryCode: 'JP',
@@ -49,7 +50,7 @@ const createDownloadTaskPayload = (overrides: Partial<FetchTaskPayload>[]): Fetc
   }))
 );
 
-describe('Download stage strategies', () => {
+describe('Fetch stage strategies', () => {
   const nodeId = 'node-1' as NodeId;
 
   beforeEach(async () => {
@@ -60,15 +61,15 @@ describe('Download stage strategies', () => {
     await ephemeralShapeDB.clearAll();
   });
 
-  it('GADM strategy keeps 1:1 mapping between download tasks and outputs', async () => {
+  it('GADM strategy keeps 1:1 mapping between fetch tasks and outputs', async () => {
     const strategy = new GadmFetchStageStrategy();
-    const downloadTaskPayloads = createDownloadTaskPayload([
+    const fetchTaskPayloads = createFetchTaskPayload([
       { countryCode: 'JP', adminLevel: 0, dataSource: 'gadm' },
       { countryCode: 'ID', adminLevel: 1, dataSource: 'gadm' },
     ]);
     const { tasks, inputsByTaskId } = await strategy.buildFetchTasks({
       nodeId,
-      fetchTaskPayloads: downloadTaskPayloads,
+      fetchTaskPayloads,
       config: createConfig('gadm'),
       options: {},
     });
@@ -76,7 +77,7 @@ describe('Download stage strategies', () => {
     expect(tasks).toHaveLength(2);
     const postprocess = await strategy.buildPostprocessOutputs({
       nodeId,
-      fetchTaskPayloads: downloadTaskPayloads,
+      fetchTaskPayloads,
       config: createConfig('gadm'),
       options: {},
       fetchTask: tasks,
@@ -88,7 +89,7 @@ describe('Download stage strategies', () => {
         dataSource: 'gadm',
         countryCode: 'JP',
         adminLevel: 0,
-        url: downloadTaskPayloads[0]?.url,
+        url: fetchTaskPayloads[0]?.url,
       }),
     );
     expect(postprocess.outputs[1]?.inputBufferId).toBe(
@@ -96,14 +97,55 @@ describe('Download stage strategies', () => {
         dataSource: 'gadm',
         countryCode: 'ID',
         adminLevel: 1,
-        url: downloadTaskPayloads[1]?.url,
+        url: fetchTaskPayloads[1]?.url,
       }),
     );
   });
 
-  it.skip('NaturalEarth strategy groups download tasks by level and splits outputs by country', async () => {
+  it('GeoBoundaries strategy keeps 1:1 mapping between fetch tasks and outputs', async () => {
+    const strategy = new GeoBoundariesFetchStageStrategy();
+    const fetchTaskPayloads = createFetchTaskPayload([
+      { countryCode: 'JP', adminLevel: 0, dataSource: 'geoboundaries' },
+      { countryCode: 'ID', adminLevel: 1, dataSource: 'geoboundaries' },
+    ]);
+    const { tasks, inputsByTaskId } = await strategy.buildFetchTasks({
+      nodeId,
+      fetchTaskPayloads,
+      config: createConfig('geoboundaries'),
+      options: {},
+    });
+
+    expect(tasks).toHaveLength(2);
+    const postprocess = await strategy.buildPostprocessOutputs({
+      nodeId,
+      fetchTaskPayloads,
+      config: createConfig('geoboundaries'),
+      options: {},
+      fetchTask: tasks,
+      fetchTaskInputsById: inputsByTaskId,
+    });
+    expect(postprocess.outputs).toHaveLength(2);
+    expect(postprocess.outputs[0]?.inputBufferId).toBe(
+      buildRawDataDataSourceCacheKey({
+        dataSource: 'geoboundaries',
+        countryCode: 'JP',
+        adminLevel: 0,
+        url: fetchTaskPayloads[0]?.url,
+      }),
+    );
+    expect(postprocess.outputs[1]?.inputBufferId).toBe(
+      buildRawDataDataSourceCacheKey({
+        dataSource: 'geoboundaries',
+        countryCode: 'ID',
+        adminLevel: 1,
+        url: fetchTaskPayloads[1]?.url,
+      }),
+    );
+  });
+
+  it.skip('NaturalEarth strategy groups fetch tasks by level and splits outputs by country', async () => {
     const strategy = new NaturalEarthDownloadStrategy();
-    const downloadTaskPayloads = createDownloadTaskPayload([
+    const fetchTaskPayloads = createFetchTaskPayload([
       { countryCode: 'JP', countryName: 'Japan', adminLevel: 0, dataSource: 'naturalearth' },
       { countryCode: 'ID', countryName: 'Indonesia', adminLevel: 0, dataSource: 'naturalearth' },
       { countryCode: 'JP', countryName: 'Japan', adminLevel: 1, dataSource: 'naturalearth' },
@@ -111,7 +153,7 @@ describe('Download stage strategies', () => {
     ]);
     const { tasks, inputsByTaskId } = await strategy.buildFetchTasks({
       nodeId,
-      fetchTaskPayloads: downloadTaskPayloads,
+      fetchTaskPayloads,
       config: createConfig('naturalearth'),
       options: {},
     });
@@ -148,7 +190,7 @@ describe('Download stage strategies', () => {
 
     const postprocess = await strategy.buildPostprocessOutputs({
       nodeId,
-      fetchTaskPayloads: downloadTaskPayloads,
+      fetchTaskPayloads,
       config: createConfig('naturalearth'),
       options: {},
       fetchTask: tasks,

@@ -6,12 +6,11 @@
  */
 
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, SubscriptionId, TreeNode } from '@hierarchidb/common-types';
 import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import type { Remote } from 'comlink';
 import { proxy as comlinkProxy } from 'comlink';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { SubscriptionId } from '@hierarchidb/common-types';
 
 interface Params {
   client: Remote<WorkerAPI> | undefined;
@@ -82,7 +81,7 @@ export function useTreeConsoleBreadcrumbs({
           if (!node) {
             continue;
           }
-          const parent = i > 0 ? ancestors[i - 1]?.id ?? null : null;
+          const parent = i > 0 ? (ancestors[i - 1]?.id ?? null) : null;
           parentMap.set(String(node.id), parent ? String(parent) : null);
         }
         let nodes: BreadcrumbNode[] = ancestors.map((n) => ({
@@ -137,7 +136,7 @@ export function useTreeConsoleBreadcrumbs({
                   nodeType: nextNodeType,
                   visible: nextVisible,
                 };
-              }),
+              })
             );
           });
 
@@ -179,7 +178,7 @@ export function useTreeConsoleBreadcrumbs({
               } catch {
                 // ignore
               }
-            }),
+            })
           );
         } catch {
           // ignore

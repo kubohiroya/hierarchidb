@@ -1,5 +1,5 @@
-import { Dexie } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
+import { Dexie } from 'dexie';
 import { pluginDatabaseLoaders } from '~/plugin-loaders/database-loaders.ts';
 
 type ClearFn = () => Promise<void> | void;

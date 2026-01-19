@@ -50,7 +50,7 @@ export const StylerAlgorithmPanel = ({
   values = [],
   valueColumn,
   tabularData = [],
-}: StylerMappingProps ) => {
+}: StylerMappingProps) => {
   const controlId = useId();
   const { t } = useTranslation('styler-plugin');
   const tStr = useCallback(
@@ -100,12 +100,12 @@ export const StylerAlgorithmPanel = ({
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
         <Stack flex={1} spacing={2}>
           <Paper sx={{ p: 2 }}>
-              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-                <GradientIcon fontSize="small" />
-                <Typography variant="subtitle2">
-                  {t('step5.mappingRange.title', 'Mapping Range')}
-                </Typography>
-              </Stack>
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+              <GradientIcon fontSize="small" />
+              <Typography variant="subtitle2">
+                {t('step5.mappingRange.title', 'Mapping Range')}
+              </Typography>
+            </Stack>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <TextField
                 label={t('step5.mappingRange.min', 'Minimum')}
@@ -141,31 +141,34 @@ export const StylerAlgorithmPanel = ({
             </Box>
           </Paper>
 
-        {stats && (
-          <Paper sx={{ p: 2 }}>
-            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-              <ShowChartIcon fontSize="small" />
-              <Typography variant="subtitle2">
-                {t('step5.stats.title', 'Value Statistics')}
-              </Typography>
-            </Stack>
-            <Stack direction="row" spacing={2} flexWrap="wrap">
-              <Chip size="small" label={`${t('step5.stats.count', 'Count')}: ${stats?.count ?? 0}`} />
-              <Chip size="small" label={`${t('step5.stats.min', 'Min')}: ${stats?.min ?? '-'}`} />
-              <Chip size="small" label={`${t('step5.stats.max', 'Max')}: ${stats?.max ?? '-'}`} />
-              <Chip
-                size="small"
-                label={`${t('step5.stats.mean', 'Mean')}: ${stats?.mean !== undefined ? stats.mean.toFixed(2) : '-'}`}
-              />
-              <Chip
-                size="small"
-                label={`${t('step5.stats.std', 'Std Dev')}: ${
-                  stats?.stdDev !== undefined ? stats.stdDev.toFixed(2) : '-'
-                }`}
-              />
-            </Stack>
-          </Paper>
-        )}
+          {stats && (
+            <Paper sx={{ p: 2 }}>
+              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                <ShowChartIcon fontSize="small" />
+                <Typography variant="subtitle2">
+                  {t('step5.stats.title', 'Value Statistics')}
+                </Typography>
+              </Stack>
+              <Stack direction="row" spacing={2} flexWrap="wrap">
+                <Chip
+                  size="small"
+                  label={`${t('step5.stats.count', 'Count')}: ${stats?.count ?? 0}`}
+                />
+                <Chip size="small" label={`${t('step5.stats.min', 'Min')}: ${stats?.min ?? '-'}`} />
+                <Chip size="small" label={`${t('step5.stats.max', 'Max')}: ${stats?.max ?? '-'}`} />
+                <Chip
+                  size="small"
+                  label={`${t('step5.stats.mean', 'Mean')}: ${stats?.mean !== undefined ? stats.mean.toFixed(2) : '-'}`}
+                />
+                <Chip
+                  size="small"
+                  label={`${t('step5.stats.std', 'Std Dev')}: ${
+                    stats?.stdDev !== undefined ? stats.stdDev.toFixed(2) : '-'
+                  }`}
+                />
+              </Stack>
+            </Paper>
+          )}
         </Stack>
 
         <Stack flex={1} spacing={2}>
@@ -207,7 +210,7 @@ export const StylerAlgorithmPanel = ({
               <Typography variant="subtitle2">
                 {t('step5.advanced.title', 'Advanced color controls')}
               </Typography>
-              <Button size="small" onClick={() => setShowAdvanced((prev:boolean) => !prev)}>
+              <Button size="small" onClick={() => setShowAdvanced((prev: boolean) => !prev)}>
                 {showAdvanced ? t('step5.advanced.hide', 'Hide') : t('step5.advanced.show', 'Show')}
               </Button>
             </Box>
@@ -244,7 +247,10 @@ export const StylerAlgorithmPanel = ({
                     </ToggleButton>
                   </ToggleButtonGroup>
                   <Typography variant="caption" color="text.secondary">
-                    {t('step5.colorSpace.help', 'Choose how colors are interpolated across the range.')}
+                    {t(
+                      'step5.colorSpace.help',
+                      'Choose how colors are interpolated across the range.'
+                    )}
                   </Typography>
                 </Paper>
 
@@ -282,8 +288,12 @@ export const StylerAlgorithmPanel = ({
                       onChange={handleInvertColorsChange}
                       size="small"
                     >
-                      <ToggleButton value="normal">{t('step5.colorRange.normal', 'Normal')}</ToggleButton>
-                      <ToggleButton value="inverted">{t('step5.colorRange.invert', 'Invert')}</ToggleButton>
+                      <ToggleButton value="normal">
+                        {t('step5.colorRange.normal', 'Normal')}
+                      </ToggleButton>
+                      <ToggleButton value="inverted">
+                        {t('step5.colorRange.invert', 'Invert')}
+                      </ToggleButton>
                     </ToggleButtonGroup>
                   </Box>
                 </Paper>
@@ -316,7 +326,9 @@ export const StylerAlgorithmPanel = ({
                       />
                     </Box>
                     <Box>
-                      <Typography gutterBottom>{t('step5.hsv.saturation', 'Saturation')}</Typography>
+                      <Typography gutterBottom>
+                        {t('step5.hsv.saturation', 'Saturation')}
+                      </Typography>
                       <Slider
                         value={localConfig.saturation}
                         onChange={handleMappingChange('saturation')}
@@ -327,7 +339,9 @@ export const StylerAlgorithmPanel = ({
                       />
                     </Box>
                     <Box>
-                      <Typography gutterBottom>{t('step5.hsv.brightness', 'Brightness')}</Typography>
+                      <Typography gutterBottom>
+                        {t('step5.hsv.brightness', 'Brightness')}
+                      </Typography>
                       <Slider
                         value={localConfig.brightness}
                         onChange={handleMappingChange('brightness')}
@@ -358,7 +372,10 @@ export const StylerAlgorithmPanel = ({
           }}
         />
         <Typography variant="caption" color="text.secondary">
-          {t('step5.gradient.description', 'Preview of the gradient based on current mapping and algorithm.')}
+          {t(
+            'step5.gradient.description',
+            'Preview of the gradient based on current mapping and algorithm.'
+          )}
         </Typography>
       </Paper>
 

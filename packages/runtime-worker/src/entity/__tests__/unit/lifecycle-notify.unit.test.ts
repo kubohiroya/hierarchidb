@@ -166,7 +166,9 @@ describe('Entity lifecycle notifications from services', () => {
         lifecycleMock as unknown as ReturnType<typeof EntityLifecycleManager.getSingleton>
       );
 
-    const { ImportExportLifecycleService } = await import('../../../services/ImportExportLifecycleService.js');
+    const { ImportExportLifecycleService } = await import(
+      '../../../services/ImportExportLifecycleService.js'
+    );
     const svc = await ImportExportLifecycleService.getSingleton(core as unknown as CoreDB);
     const importPayload: ImportNodesPayload = {
       nodes: {},

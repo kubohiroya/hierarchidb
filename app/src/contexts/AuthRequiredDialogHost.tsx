@@ -1,13 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
 import {
+  type AuthCancelledNotification,
   AuthNotificationFactory,
   AuthNotificationRegistry,
-  type AuthCancelledNotification,
   type AuthRequiredNotification,
   type AuthSuccessNotification,
 } from '@hierarchidb/common-auth';
-import { AuthRequiredDialog } from '@hierarchidb/ui-plugin-shell/ui-auth';
 import { useDialogUrlSync } from '@hierarchidb/plugin-base';
+import { AuthRequiredDialog } from '@hierarchidb/ui-plugin-shell/ui-auth';
+import { useEffect, useRef, useState } from 'react';
 
 const HANDLER_ID = 'app-auth-required-dialog';
 
@@ -41,7 +41,9 @@ export function AuthRequiredDialogHost(): JSX.Element | null {
       onAuthSuccess: async (next: AuthSuccessNotification) => {
         if (activeRequestIdRef.current === next.context.requestId) {
           if (isAuthDebugEnabled()) {
-            console.debug('[auth][ui] AUTH_SUCCESS received', { requestId: next.context.requestId });
+            console.debug('[auth][ui] AUTH_SUCCESS received', {
+              requestId: next.context.requestId,
+            });
           }
           activeRequestIdRef.current = null;
           setNotification(null);
@@ -50,7 +52,10 @@ export function AuthRequiredDialogHost(): JSX.Element | null {
       onAuthCancelled: async (next: AuthCancelledNotification) => {
         if (activeRequestIdRef.current === next.context.requestId) {
           if (isAuthDebugEnabled()) {
-            console.debug('[auth][ui] AUTH_CANCELLED received', { requestId: next.context.requestId, reason: next.context.reason });
+            console.debug('[auth][ui] AUTH_CANCELLED received', {
+              requestId: next.context.requestId,
+              reason: next.context.reason,
+            });
           }
           activeRequestIdRef.current = null;
           setNotification(null);

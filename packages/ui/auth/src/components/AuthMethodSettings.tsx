@@ -61,7 +61,9 @@ export function AuthMethodSettings() {
         >
           <FormControlLabel
             value="popup"
-            control={<Radio inputProps={{ id: `${controlId}-auth-method-popup`, name: 'auth-method' }} />}
+            control={
+              <Radio inputProps={{ id: `${controlId}-auth-method-popup`, name: 'auth-method' }} />
+            }
             label={
               <Box>
                 <Typography>Popup Window (Recommended)</Typography>
@@ -74,7 +76,11 @@ export function AuthMethodSettings() {
           />
           <FormControlLabel
             value="redirect"
-            control={<Radio inputProps={{ id: `${controlId}-auth-method-redirect`, name: 'auth-method' }} />}
+            control={
+              <Radio
+                inputProps={{ id: `${controlId}-auth-method-redirect`, name: 'auth-method' }}
+              />
+            }
             label={
               <Box>
                 <Typography>Page Redirect</Typography>

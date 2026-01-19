@@ -91,7 +91,11 @@ export interface PluginStepConfig<TData extends StepData = StepData, TUiState = 
 
   /** Step capabilities */
   capabilities?: {
-    canNavigateTo?: (fromStep: number, data: TData, uiState?: TUiState) => boolean | Promise<boolean>;
+    canNavigateTo?: (
+      fromStep: number,
+      data: TData,
+      uiState?: TUiState
+    ) => boolean | Promise<boolean>;
     canStartBatch?: (data: TData, uiState?: TUiState) => boolean | Promise<boolean>;
     canSave?: (data: TData, uiState?: TUiState) => boolean | Promise<boolean>;
     canProceedToNext?: (data: TData, uiState?: TUiState) => boolean | Promise<boolean>;
@@ -104,7 +108,6 @@ export interface PluginStepConfig<TData extends StepData = StepData, TUiState = 
 
   /** Step icon */
   icon?: ReactNode;
-
 }
 
 /**
@@ -190,17 +193,12 @@ export class PluginStepRegistry {
     if (this.providers.has(provider.nodeType)) {
       return;
     }
-    this.providers.set(
-      provider.nodeType,
-      provider as unknown as PluginStepProvider<StepData>
-    );
+    this.providers.set(provider.nodeType, provider as unknown as PluginStepProvider<StepData>);
     this.emitChange();
   }
 
   /** Register a config-based provider (typed componentFactory) */
-  registerConfigProvider<TData extends StepData>(
-    provider: PluginStepConfigProvider<TData>
-  ): void {
+  registerConfigProvider<TData extends StepData>(provider: PluginStepConfigProvider<TData>): void {
     if (this.configProviders.has(provider.nodeType)) {
       return;
     }

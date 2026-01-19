@@ -10,7 +10,6 @@ import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useSetAtom } from 'jotai';
 import { persistedTasksAtom, tasksAtom } from '../../atoms/shapeBuildProgressAtoms.js';
 import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
-import { VtShapeDb, SHAPE_DOMAIN } from '@hierarchidb/vt-shape-store';
 import type { BuildTaskType } from '@hierarchidb/shape-store';
 import { ephemeralShapeAPIImpl, shapeMutationAPIImpl, shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
 
@@ -111,16 +110,15 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
     setCountsLoading(true);
 
     try {
-      const shapeStore = new VtShapeDb();
       const taskQueue = new VtTaskQueueDb();
       const [
-        fetchCount,
+        cacheStats,
         transformTaskCount,
         vtTaskCount,
         transformCacheCount,
         numMetadata,
       ] = await Promise.all([
-        shapeStore.fetchCache.where('[nodeId+domainType]').equals([nodeId, SHAPE_DOMAIN]).count(),
+        ephemeralShapeAPIImpl.getNumCaches(),
         taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'transform']).count(),
         taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'vt']).count(),
         ephemeralShapeAPIImpl.countTransformCaches(nodeId),
@@ -136,7 +134,7 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
       setIsRunning(sessionStatus?.status === 'running');
 
       setCounts({
-        fetch: fetchCount,
+        fetch: cacheStats.numFetchCaches,
         transform: transformCount,
         vt: vtTaskCount,
       });
@@ -229,11 +227,6 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
   const handleDeleteFetchCache = useCallback(async () => {
     await ephemeralShapeAPIImpl.clearStage(nodeId, 'fetch');
     await clearBatchTasksForType('fetch');
-    const vtShapeDb = new VtShapeDb();
-    await vtShapeDb.fetchCache
-      .where('[nodeId+domainType]')
-      .equals([nodeId, SHAPE_DOMAIN])
-      .delete();
     await clearFinalOutputs();
     await loadCounts();
     onResetSession?.();

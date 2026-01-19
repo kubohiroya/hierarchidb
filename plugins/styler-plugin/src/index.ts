@@ -15,20 +15,18 @@ export type {
 } from './common/types/category-types.js';
 // Types exports
 export type {
-  StylerColorRule,
-  StylerEntity,
-  StylerStyle,
-} from './common/types/StylerEntity.js';
-export type {
   ColorAlgorithm,
   ColorCalculationResult,
   ColorSpace,
   MapLibrePropertyMetadata,
   MapLibreStyleProperty,
   PropertyGroup,
+  StylerColorRule,
   StylerConfig,
+  StylerEntity,
   StylerMapping,
   StylerMappingMode,
+  StylerStyle,
   StylerValueType,
   TablePreviewProps,
 } from './common/types/StylerEntity.js';

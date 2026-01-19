@@ -63,7 +63,7 @@ const endsWith = (source: unknown, target: string): boolean => {
 const compareNumber = (
   rowValue: unknown,
   filter: PreparedFilter,
-  comparator: (row: number, target: number) => boolean,
+  comparator: (row: number, target: number) => boolean
 ): boolean => {
   if (typeof filter.value === 'number') {
     const rowNumber = toComparableNumber(rowValue);
@@ -125,7 +125,7 @@ export const matchesFilters = (row: StylerTableRow, filters: PreparedFilter[]): 
 export const applyFilters = (
   rows: StylerTableRow[],
   rules: TabularFilterRule[],
-  limit = 1000,
+  limit = 1000
 ): StylerTableRow[] => {
   if (!Array.isArray(rows) || rows.length === 0) {
     return [];

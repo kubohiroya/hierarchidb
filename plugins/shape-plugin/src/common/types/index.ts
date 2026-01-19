@@ -26,6 +26,5 @@ export type {
 export {
   mergeBuildConfig,
   summarizeCheckboxState,
-  normalizeDataSourceName,
   validateBatchConfig,
 } from '../../services/utils/utils.js';

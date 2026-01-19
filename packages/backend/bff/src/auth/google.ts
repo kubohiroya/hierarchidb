@@ -70,7 +70,9 @@ export async function exchangeCodeForTokens(
 
   if (!response.ok) {
     const detail = await response.text().catch(() => '');
-    throw new Error(`Failed to exchange code for tokens: ${response.status} ${response.statusText} ${detail}`);
+    throw new Error(
+      `Failed to exchange code for tokens: ${response.status} ${response.statusText} ${detail}`
+    );
   }
 
   return await response.json();

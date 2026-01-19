@@ -11,13 +11,13 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import {
   applyDisplayMode,
   loadLayout,
+  type MapDialogDefinitionBase,
+  type MapDialogLayout,
+  type MapDialogWindowState,
+  type ModelessIconPlacement,
   mergeLayout,
   persistLayout,
   resolveRestorePosition,
-  type MapDialogLayout,
-  type MapDialogDefinitionBase,
-  type MapDialogWindowState,
-  type ModelessIconPlacement,
 } from './modelessDialogLayout.js';
 
 export type { ModelessIconPlacement } from './modelessDialogLayout.js';
@@ -67,10 +67,13 @@ export const ModelessDialogProvider: React.FC<ModelessDialogProviderProps> = ({
   children,
 }) => {
   const resolvedPlacement = iconPlacement ?? defaultIconPlacement;
-  const config = useMemo<ModelessDialogConfig>(() => ({
-    iconPlacement: resolvedPlacement,
-    iconAppearance,
-  }), [iconAppearance, resolvedPlacement]);
+  const config = useMemo<ModelessDialogConfig>(
+    () => ({
+      iconPlacement: resolvedPlacement,
+      iconAppearance,
+    }),
+    [iconAppearance, resolvedPlacement]
+  );
 
   const [layout, setLayout] = useState<MapDialogLayout>(() =>
     loadLayout(storageKey, definitions, resolvedPlacement)
@@ -163,21 +166,28 @@ export const ModelessDialogProvider: React.FC<ModelessDialogProviderProps> = ({
     });
   }, []);
 
-  const value = useMemo<ModelessDialogContextValue>(() => ({
-    config,
-    layout,
-    definitions,
-    updateWindow,
-    bringToFront,
-    changeDisplayMode,
-    toggleWindowVisibility,
-  }), [bringToFront, changeDisplayMode, config, definitions, layout, toggleWindowVisibility, updateWindow]);
-
-  return (
-    <ModelessDialogContext.Provider value={value}>
-      {children}
-    </ModelessDialogContext.Provider>
+  const value = useMemo<ModelessDialogContextValue>(
+    () => ({
+      config,
+      layout,
+      definitions,
+      updateWindow,
+      bringToFront,
+      changeDisplayMode,
+      toggleWindowVisibility,
+    }),
+    [
+      bringToFront,
+      changeDisplayMode,
+      config,
+      definitions,
+      layout,
+      toggleWindowVisibility,
+      updateWindow,
+    ]
   );
+
+  return <ModelessDialogContext.Provider value={value}>{children}</ModelessDialogContext.Provider>;
 };
 
 export const useModelessDialogContext = () => {

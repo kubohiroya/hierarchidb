@@ -5,8 +5,6 @@ export {
 } from './di/container.js';
 export type { PluginWorkerModuleLoaderContract } from './di/PluginWorkerModuleLoaderContract.js';
 export { WorkerDiTokens } from './di/tokens.js';
-export { resolveDefaultNodeName } from './utils/default-node-name.js';
-
 // Public re-exports for plugin-side stores and registry
 export type {
   FeatureItemBase,
@@ -18,7 +16,20 @@ export type {
 } from './entity/store.js';
 export { storeRegistry } from './entity/store-registry.js';
 export * from './module-paths.js';
+// CoreDB and draft utilities (for plugin-side usage)
+export { CoreDB } from './services/CoreDB.js';
 export * from './services/downloadAdapter.js';
+export { discardTreeNodeDraft } from './services/draft/cleanupOperations.js';
+export { commitTreeNodeDraft } from './services/draft/commitOperations.js';
+export {
+  getTreeNode,
+  updateTreeNodeDraftData,
+  updateTreeNodeDraftMetadata,
+} from './services/draft/lookupOperations.js';
+export {
+  type RuntimeWorkerAdapterOptions,
+  registerPluginRuntimeWorkerAdapters,
+} from './services/pluginRuntimeWorkerAdapters.js';
 export {
   getRuntimeWorkerClient,
   hasRuntimeWorkerClient,
@@ -29,29 +40,17 @@ export {
 } from './services/RuntimeWorkerService.js';
 export {
   createStageWorkerClient,
-  getStageWorkerProxy,
   getStageProcessingClient,
+  getStageWorkerProxy,
 } from './services/StageProcessingService.js';
+export { TreeQueryService } from './services/TreeQueryService.js';
 export {
   runVectorTileStage,
-  writeVectorTileInput,
   type VectorTileStageInput,
   type VectorTileStageOptions,
   type VectorTileStageResult,
+  writeVectorTileInput,
 } from './services/vectorTileStageRunner.js';
-export {
-  registerPluginRuntimeWorkerAdapters,
-  type RuntimeWorkerAdapterOptions,
-} from './services/pluginRuntimeWorkerAdapters.js';
+export { resolveDefaultNodeName } from './utils/default-node-name.js';
 // Worker service (public API for worker bootstrap)
 export { WorkerService } from './WorkerService.js';
-// CoreDB and draft utilities (for plugin-side usage)
-export { CoreDB } from './services/CoreDB.js';
-export { TreeQueryService } from './services/TreeQueryService.js';
-export { commitTreeNodeDraft } from './services/draft/commitOperations.js';
-export { discardTreeNodeDraft } from './services/draft/cleanupOperations.js';
-export {
-  getTreeNode,
-  updateTreeNodeDraftData,
-  updateTreeNodeDraftMetadata,
-} from './services/draft/lookupOperations.js';

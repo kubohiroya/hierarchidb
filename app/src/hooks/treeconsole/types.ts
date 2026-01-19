@@ -6,15 +6,10 @@
  */
 
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-toolbar';
-import type {
-  CommandResult,
-  NodeId,
-  TreeId,
-  TreeNode,
-} from '@hierarchidb/common-types';
-import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
+import type { CommandResult, NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
+import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
+import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-toolbar';
 import type { Remote } from 'comlink';
 import type { Dispatch, SetStateAction } from 'react';
 import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms.js';

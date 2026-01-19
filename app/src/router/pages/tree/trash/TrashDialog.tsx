@@ -1,4 +1,10 @@
-import type { NodeId, TreeNode, DialogDisplayMode, DialogPosition, DialogSize } from '@hierarchidb/common-types';
+import type {
+  DialogDisplayMode,
+  DialogPosition,
+  DialogSize,
+  NodeId,
+  TreeNode,
+} from '@hierarchidb/common-types';
 import {
   type HeadlessFooterRenderProps,
   type HeadlessHeaderRenderProps,
@@ -6,15 +12,16 @@ import {
   PluginDialogFrame,
   useDialogContext,
 } from '@hierarchidb/ui-dialog';
+import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import {
+  type HierarchicalTreeNode,
   TreeConsolePanel,
   type TreeConsolePanelBreadcrumbRendererProps,
   type TreeConsolePanelProps,
-  type HierarchicalTreeNode,
   type TreeTableColumn,
   TreeTableSearchInput,
 } from '@hierarchidb/ui-treeconsole-base';
-import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
+import type { DualKeyMap } from '@hierarchidb/util';
 import {
   Close as CloseIcon,
   DeleteForever as EmptyTrashIcon,
@@ -44,7 +51,6 @@ import { loadTree } from '~/loader.js';
 import { getTrashDisplayName } from '../trash/getTrashDisplayName.js';
 import { TrashBreadcrumb } from '../trash/TrashBreadcrumb.js';
 import { useTrashDialog } from './useTrashDialog.js';
-import { DualKeyMap } from '@hierarchidb/util';
 
 const TRASH_DIALOG_FOOTER_HEIGHT = 72;
 
@@ -475,25 +481,25 @@ function TrashDialogContent({
       >
         <TreeConsolePanel
           title={t('dialogs.trash.panelTitle') ?? ''}
-        treeId={treeId}
-        pageNodeId={pageNodeId ? String(pageNodeId) : undefined}
-        subtreeRootId={trashViewRootId ? String(trashViewRootId) : undefined}
-        data={filteredTreeData}
-        nodeIndex={nodeIndex}
+          treeId={treeId}
+          pageNodeId={pageNodeId ? String(pageNodeId) : undefined}
+          subtreeRootId={trashViewRootId ? String(trashViewRootId) : undefined}
+          data={filteredTreeData}
+          nodeIndex={nodeIndex}
           columnsDeprecated={columns}
           breadcrumbItems={breadcrumbItems}
           loading={false}
           selectedIds={selectedIds.map(String)}
           expandedIds={expandedIds}
-        viewMode="list"
-        canCreate={false}
-        canEdit={false}
-        canTrash={mode === 'empty'}
-        useTrashColumns
-        selectAllIdPrefix="trash-row-selection"
-        selectAllPersistence="session"
-        trashAction={mode}
-        hideDragHandler
+          viewMode="list"
+          canCreate={false}
+          canEdit={false}
+          canTrash={mode === 'empty'}
+          useTrashColumns
+          selectAllIdPrefix="trash-row-selection"
+          selectAllPersistence="session"
+          trashAction={mode}
+          hideDragHandler
           breadcrumbRenderer={({
             defaultRendererProps,
           }: TreeConsolePanelBreadcrumbRendererProps) => (
@@ -615,7 +621,26 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
           ),
         },
       ] as const,
-    [breadcrumbItems, columns, expandedIds, handleRestore, hasDraftsInView, loading, mode, nodeIndex, onToggleExpand, pageNodeId, searchTerm, selectedIds, setSearchTerm, setSelectedIds, t, trashViewRootId, treeData, treeId]
+    [
+      breadcrumbItems,
+      columns,
+      expandedIds,
+      handleRestore,
+      hasDraftsInView,
+      loading,
+      mode,
+      nodeIndex,
+      onToggleExpand,
+      pageNodeId,
+      searchTerm,
+      selectedIds,
+      setSearchTerm,
+      setSelectedIds,
+      t,
+      trashViewRootId,
+      treeData,
+      treeId,
+    ]
   );
 
   const headlessProps: HeadlessPluginDialogProps<TrashStepData> = useMemo(
@@ -638,9 +663,7 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
         <TrashDialogHeader
           {...props}
           title={
-            mode === 'restore'
-              ? t('dialogs.trash.title.restore')
-              : t('dialogs.trash.title.empty')
+            mode === 'restore' ? t('dialogs.trash.title.restore') : t('dialogs.trash.title.empty')
           }
         />
       ),
@@ -657,7 +680,19 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
         />
       ),
     }),
-    [frameState, handleClose, handleEmptyAll, handleRestore, loading, mode, removalTargetCount, selectedIds, stepComponents, t, hasDraftsInView]
+    [
+      frameState,
+      handleClose,
+      handleEmptyAll,
+      handleRestore,
+      loading,
+      mode,
+      removalTargetCount,
+      selectedIds,
+      stepComponents,
+      t,
+      hasDraftsInView,
+    ]
   );
 
   return <PluginDialogFrame headlessProps={headlessProps} frameSx={frameSx} />;

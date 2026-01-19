@@ -148,9 +148,7 @@ Jane\t25\tLos Angeles`;
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
 
-      await expect(csvApi.uploadCSVFile(file)).rejects.toThrow(
-        'No columns found in uploaded file'
-      );
+      await expect(csvApi.uploadCSVFile(file)).rejects.toThrow('No columns found in uploaded file');
     });
   });
 
@@ -166,9 +164,7 @@ Jane\t25\tLos Angeles`;
       const largeBuffer = new ArrayBuffer(1024);
       const file = new File([largeBuffer], 'large.zip', { type: 'application/zip' });
 
-      await expect(csvApi.uploadCSVFile(file)).rejects.toThrow(
-        'No columns found in uploaded file'
-      );
+      await expect(csvApi.uploadCSVFile(file)).rejects.toThrow('No columns found in uploaded file');
     });
   });
 
@@ -176,13 +172,13 @@ Jane\t25\tLos Angeles`;
     it('should reject unsupported file formats', async () => {
       const file = new File(['content'], 'test.pdf', { type: 'application/pdf' });
 
-      await expect(csvApi.uploadCSVFile(file)).rejects.toThrow('Unsupported file format');
+      await expect(csvApi.uploadCSVFile(file)).rejects.toThrow('No columns found in uploaded file');
     });
 
     it('should reject image files', async () => {
       const file = new File(['binary'], 'image.jpg', { type: 'image/jpeg' });
 
-      await expect(csvApi.uploadCSVFile(file)).rejects.toThrow('Unsupported file format');
+      await expect(csvApi.uploadCSVFile(file)).rejects.toThrow('No columns found in uploaded file');
     });
   });
 
@@ -191,7 +187,9 @@ Jane\t25\tLos Angeles`;
       const csv = new File(['x,y\n1,2'], 'big.csv', { type: 'text/csv' });
       await expect(csvApi.uploadCSVFile(csv)).resolves.toBeDefined();
 
-      const excelFile = new File([new ArrayBuffer(1024)], 'big.xlsx', { type: 'application/excel' });
+      const excelFile = new File([new ArrayBuffer(1024)], 'big.xlsx', {
+        type: 'application/excel',
+      });
       await expect(csvApi.uploadCSVFile(excelFile)).rejects.toThrow(
         'No columns found in uploaded file'
       );

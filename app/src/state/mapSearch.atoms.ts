@@ -32,10 +32,7 @@ export type MapLayerInfo = {
   sourceId: string;
 };
 
-export type MapFeatureIdSet = Record<
-  string,
-  Partial<Record<MapNodeType, Set<string | number>>>
->;
+export type MapFeatureIdSet = Record<string, Partial<Record<MapNodeType, Set<string | number>>>>;
 
 export const mapSearchMatchesAtom = atom<MapFeatureIdSet>({});
 

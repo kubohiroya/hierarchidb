@@ -34,7 +34,7 @@ export interface DialogStepState {
   /** Whether the step satisfies validation requirements */
   completed: boolean;
   /** Optional validation error message to surface to the UI */
-  errors?: Map<string,unknown> | null;
+  errors?: Map<string, unknown> | null;
 }
 
 export interface DialogWindowState {

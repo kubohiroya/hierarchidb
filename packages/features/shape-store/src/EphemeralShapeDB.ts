@@ -30,6 +30,23 @@ export type TransformCacheRecord = {
   timestamp: number;
 };
 
+export type FetchCacheRecord = {
+  id: string;
+  nodeId: NodeId;
+  domainType: DomainType;
+  sourceKey: string;
+  countryCode?: string;
+  adminLevel?: number;
+  data: ArrayBuffer;
+  featureCount: number;
+  bbox: [number, number, number, number];
+  downloadTime: number;
+  size: number;
+  vertexCount?: number;
+  polygonCount?: number;
+  timestamp: number;
+};
+
 export type TileIdToBufferRelation = {
   id: string;
   nodeId: NodeId;
@@ -42,13 +59,14 @@ export type TileIdToBufferRelation = {
 export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig> {
   buildTasks!: Table<BuildTaskRecord, string>;
   tileIdToBufferRelations!: Table<TileIdToBufferRelation, string>;
+  declare fetchCache: Table<FetchCacheRecord, string>;
   declare transformCache: Table<TransformCacheRecord, string>;
   transformErrors!: Table<ShapeTransformErrorRecord, string>;
 
   constructor() {
     super(getDBName('shape-ephemeral'));
-    this.version(13).stores({
-      fetchCache: '&id, nodeId, timestamp',
+    this.version(14).stores({
+      fetchCache: '&id, nodeId, domainType, sourceKey, [nodeId+sourceKey], countryCode, adminLevel, [nodeId+countryCode+adminLevel], timestamp',
       transformCache: '&id, nodeId, bandId, domainType, sourceKey, [nodeId+bandId], [nodeId+bandId+sourceKey], countryCode, adminLevel, [nodeId+countryCode+adminLevel], timestamp',
       sessions: '&nodeId, status, stage, startTime',
       cache: '&key, type, lastAccessed, ttl',
@@ -66,6 +84,7 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig> {
     );
     this.tileIdToBufferRelations = this.table('tileIdToBufferRelations');
     this.buildTasks = this.table('batchTasks');
+    this.fetchCache = this.table('fetchCache');
     this.transformCache = this.table('transformCache');
     this.transformErrors = this.table('transformErrors');
   }

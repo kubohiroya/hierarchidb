@@ -1,11 +1,5 @@
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import type {
-  NodeAction,
-  NodeId,
-  NodeType,
-  Tree,
-  TreeNode,
-} from '@hierarchidb/common-types';
+import type { NodeAction, NodeId, NodeType, Tree, TreeNode } from '@hierarchidb/common-types';
 import type { Remote } from 'comlink';
 
 // Re-export types from loader.ts for compatibility

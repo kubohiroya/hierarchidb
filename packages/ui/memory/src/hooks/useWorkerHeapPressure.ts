@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import type { HeapPressureEvent } from '@hierarchidb/memory';
 import type { WorkerBridge } from '@hierarchidb/ui-worker-client';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
-import type { HeapPressureEvent } from '@hierarchidb/memory';
+import { useEffect, useState } from 'react';
 
 export type UseWorkerHeapPressureOptions = {
   enabled?: boolean;

@@ -39,7 +39,7 @@ const pushUnique = (target: TreeNode[], seen: Set<NodeId>, nodes: TreeNode[]) =>
 
 export const findRelatedNodesByPriority = async (
   query: TreeQueryAPI,
-  options: RelatedNodeSearchOptions,
+  options: RelatedNodeSearchOptions
 ): Promise<TreeNode[]> => {
   const targetTypes = new Set(options.nodeTypes);
   let resolvedParentId = options.parentId ?? null;
@@ -76,7 +76,7 @@ export const findRelatedNodesByPriority = async (
       descendantIndex.set(node.id, node);
     }
     const invisibleDescendantFolders = new Set<NodeId>(
-      descendants.filter((node) => isInvisibleFolder(node)).map((node) => node.id),
+      descendants.filter((node) => isInvisibleFolder(node)).map((node) => node.id)
     );
     const filteredDescendants = descendants.filter((node) => {
       if (isInvisibleFolder(node)) return false;
@@ -92,7 +92,7 @@ export const findRelatedNodesByPriority = async (
     const matches = filteredDescendants
       .filter((node) => targetTypes.has(node.nodeType))
       .sort((a, b) => {
-        const depthDelta = (a.depth - sibling.depth) - (b.depth - sibling.depth);
+        const depthDelta = a.depth - sibling.depth - (b.depth - sibling.depth);
         return depthDelta !== 0 ? depthDelta : compareByName(a, b);
       });
     pushUnique(results, seen, matches);

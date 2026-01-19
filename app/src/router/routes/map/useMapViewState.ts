@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from '@tanstack/react-router';
 import type { MapViewState } from '@hierarchidb/ui-plugin-shell/ui-map';
+import { useNavigate } from '@tanstack/react-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   formatZxyParam,
   type MapViewState as LoaderMapViewState,
@@ -63,7 +63,13 @@ export const useMapViewState = ({
   );
 
   useEffect(() => {
-    if (!searchZxy && !persistedZxyApplied.current && geolocation.latitude && geolocation.longitude && !geolocation.error) {
+    if (
+      !searchZxy &&
+      !persistedZxyApplied.current &&
+      geolocation.latitude &&
+      geolocation.longitude &&
+      !geolocation.error
+    ) {
       setInitialViewState({
         longitude: geolocation.longitude,
         latitude: geolocation.latitude,

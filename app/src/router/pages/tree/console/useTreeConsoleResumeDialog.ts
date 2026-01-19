@@ -8,7 +8,11 @@ import { logIntegrationWarning } from './treeConsoleIntegrationUtils.js';
 
 type IntegrationActions = {
   handleEdit?: (() => void) | null;
-  handleContextMenuAction: (action: string, node: HierarchicalTreeNode, options?: { navigateToParent?: boolean }) => void;
+  handleContextMenuAction: (
+    action: string,
+    node: HierarchicalTreeNode,
+    options?: { navigateToParent?: boolean }
+  ) => void;
 };
 
 export function useTreeConsoleResumeDialog({
@@ -17,7 +21,9 @@ export function useTreeConsoleResumeDialog({
 }: {
   client?: Remote<WorkerAPI>;
   actions: IntegrationActions;
-}): { requestEdit: (targetNodeId?: NodeId, nodeHint?: HierarchicalTreeNode | TreeNode) => Promise<void> } {
+}): {
+  requestEdit: (targetNodeId?: NodeId, nodeHint?: HierarchicalTreeNode | TreeNode) => Promise<void>;
+} {
   const requestEdit = useCallback(
     async (targetNodeId?: NodeId, nodeHint?: HierarchicalTreeNode | TreeNode) => {
       if (!client || !targetNodeId) {

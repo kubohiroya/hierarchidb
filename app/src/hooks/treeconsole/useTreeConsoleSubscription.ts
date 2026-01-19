@@ -11,9 +11,9 @@ import { DualKeyMap } from '@hierarchidb/util';
 import type { Remote } from 'comlink';
 import { proxy as comlinkProxy } from 'comlink';
 import { useCallback, useEffect, useRef } from 'react';
+import { Subscriptions } from '~/hooks/SubscriptionServices.ts';
 import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms.js';
 import { buildVisibleRows, removeNodeAndDescendants } from '~/state/treeconsole.derive.js';
-import { Subscriptions } from '~/hooks/SubscriptionServices.ts';
 import type { LoadChildrenOf } from './types.js';
 
 interface Params {

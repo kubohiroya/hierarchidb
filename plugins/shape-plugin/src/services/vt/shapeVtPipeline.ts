@@ -1,5 +1,6 @@
 import type { BuildContinuationPolicy, NodeId, StageHandler, TaskQueueRecord } from '@hierarchidb/common-types';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
+import type { Tile } from 'geojson-vt';
 import * as turf from '@turf/turf';
 import { geojson as geojsonApi } from 'flatgeobuf';
 import {
@@ -23,13 +24,7 @@ import {
   createVtHandler,
 } from '@hierarchidb/vt-orchestrator';
 import { DEFAULT_TASK_SPLIT } from '@hierarchidb/vt-orchestrator';
-import {
-  VtShapeDb,
-  listFetchCache,
-  SHAPE_DOMAIN,
-} from '@hierarchidb/vt-shape-store';
-import { ephemeralShapeDB } from '@hierarchidb/shape-store';
-import { VtDb } from '@hierarchidb/vt-store';
+import { ephemeralShapeDB, shapeDB } from '@hierarchidb/shape-store';
 import type { CountryMetadata, DataSourceName, FetchTaskPayload, SelectedArrayByCountries } from '../../common/types/index.js';
 import { runShapeFetchStage } from './shapeFetchStage.js';
 import { updateShapeStageMetadata } from './shapeStageMetadata.js';
@@ -40,7 +35,7 @@ import {
   ZOOM_BAND_MAX_ZOOM,
   ZOOM_BAND_MIN_ZOOM,
 } from '../../common/config/zoomBands.js';
-import type { ShapeFeatureMetadata } from '@hierarchidb/plugin-service-api';
+import type { ShapeFeatureMetadata, ShapeVectorTileRecord, ShapeTileLayerInfo } from '@hierarchidb/plugin-service-api';
 
 const turfBbox = (turf as { bbox?: (input: unknown) => number[] }).bbox;
 const turfArea = (turf as { area?: (input: unknown) => number }).area;
@@ -391,12 +386,11 @@ const hasHighDetailSelection = (
 
 const buildTransformByBandTasks = async (
   nodeId: NodeId,
-  shapeStore: VtShapeDb,
   bands: Array<{ bandId: number; zMin: number; zMax: number; zBase: number }>,
   enableHighDetailBands: boolean,
   countryLookup: Map<string, CountryMetadata>,
 ): Promise<Array<TaskQueueRecord<ShapeTransformByBandTaskInput>>> => {
-  const buffers = await listFetchCache(shapeStore, nodeId);
+  const buffers = await ephemeralShapeDB.fetchCache.where('nodeId').equals(nodeId).toArray();
   const tasks: Array<TaskQueueRecord<ShapeTransformByBandTaskInput>> = [];
   let index = 0;
 
@@ -590,6 +584,46 @@ const resolveTransformConfig = (config: ShapeBuildConfig) => config.transformCon
 
 const resolveVtConfig = (config: ShapeBuildConfig) => config.vtConfig;
 
+const buildTileLayerInfo = (layers: Record<string, Tile>, z: number): ShapeTileLayerInfo[] => (
+  Object.entries(layers).map(([name, tile]) => ({
+    name,
+    featureCount: Array.isArray(tile.features) ? tile.features.length : 0,
+    minZoom: typeof tile.z === 'number' ? tile.z : z,
+    maxZoom: typeof tile.z === 'number' ? tile.z : z,
+    fields: [],
+  }))
+);
+
+const buildShapeVectorTileRecord = (params: {
+  nodeId: NodeId;
+  tileId: number;
+  z: number;
+  x: number;
+  y: number;
+  bufferSetHash: string;
+  data: ArrayBuffer;
+  layers: Record<string, Tile>;
+}): ShapeVectorTileRecord => {
+  const bytes = new Uint8Array(params.data);
+  const features = Object.values(params.layers).reduce((sum, tile) => (
+    sum + (Array.isArray(tile.features) ? tile.features.length : 0)
+  ), 0);
+  return {
+    tileId: `${params.tileId}|${params.bufferSetHash}`,
+    nodeId: params.nodeId,
+    z: params.z,
+    x: params.x,
+    y: params.y,
+    data_Uint8Array: bytes,
+    size: bytes.byteLength,
+    features,
+    layers: buildTileLayerInfo(params.layers, params.z),
+    generatedAt: Date.now(),
+    contentHash: params.bufferSetHash,
+    version: 1,
+  };
+};
+
 export type ShapeVtPipelineParams = {
   nodeId: NodeId;
   dataSource: DataSourceName;
@@ -639,9 +673,7 @@ const summarizeStageCounts = async (
 
 export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise<void> => {
   const taskQueue = new VtTaskQueueDb();
-  const shapeStore = new VtShapeDb();
   const ephemeralStore = ephemeralShapeDB;
-  const vtStore = new VtDb();
   const resumeExistingTasks = Boolean(params.resumeExistingTasks);
   const buildContinuationPolicy = params.buildContinuationPolicy ?? 'finish_all_stages';
   const failureHandling = resolveFailureHandling(buildContinuationPolicy);
@@ -666,7 +698,6 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
     downloadTaskPayloads: params.downloadTaskPayloads,
     buildConfig: params.buildConfig,
     taskQueue,
-    shapeStore,
     metadata,
     waitIfPaused: params.waitIfPaused,
     resumeExistingTasks,
@@ -687,7 +718,7 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
       : [];
     const transformByBandTasks = existingTransformByBandTasks.length > 0
       ? []
-      : await buildTransformByBandTasks(params.nodeId, shapeStore, bands, enableHighDetailBands, countryLookup);
+      : await buildTransformByBandTasks(params.nodeId, bands, enableHighDetailBands, countryLookup);
     if (existingTransformByBandTasks.length > 0 || transformByBandTasks.length > 0) {
       await params.waitIfPaused?.();
       if (transformByBandTasks.length > 0) {
@@ -695,7 +726,6 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
       }
       const transformByBandAbortController = new AbortController();
       const transformByBandHandler = createTransformByBandHandler({
-        shapeDB: shapeStore,
         ephemeralDB: ephemeralStore,
         transformConfig: resolveTransformConfig(params.buildConfig),
         bands,
@@ -718,7 +748,7 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
         stopAfterStage = true;
       }
       if (params.buildConfig.fetchConfig.deleteOnComplete) {
-        await shapeStore.fetchCache.where('nodeId').equals(params.nodeId).delete();
+        await ephemeralStore.fetchCache.where('nodeId').equals(params.nodeId).delete();
       }
     }
   }
@@ -745,10 +775,21 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
       const vtAbortController = new AbortController();
       const vtHandler = createVtHandler({
         ephemeralDB: ephemeralStore,
-        vtDB: vtStore,
         vtConfig: resolveVtConfig(params.buildConfig),
         bands,
         abortSignal: vtAbortController.signal,
+        tileWriter: async ({ tileId, z, x, y, data, layers, bufferSetHash }) => {
+          await shapeMutationAPIImpl.storeVectorTile(buildShapeVectorTileRecord({
+            nodeId: params.nodeId,
+            tileId,
+            z,
+            x,
+            y,
+            bufferSetHash,
+            data,
+            layers,
+          }));
+        },
       });
       await runStageTasks({
         nodeId: params.nodeId,
@@ -784,15 +825,15 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
   await updateShapeStageMetadata({
     nodeId: params.nodeId,
     dataSource: params.dataSource,
-    shapeStore,
-    vtStore,
+    shapeStore: ephemeralStore,
+    shapeDb: shapeDB,
   });
 
   const cleanupConfig = params.buildConfig.cleanupConfig;
   if (cleanupConfig?.deleteFetchCeche) {
-    await shapeStore.fetchCache
-      .where('[nodeId+domainType]')
-      .equals([params.nodeId, SHAPE_DOMAIN])
+    await ephemeralStore.fetchCache
+      .where('nodeId')
+      .equals(params.nodeId)
       .delete();
   }
   if (cleanupConfig?.deleteTransformCache) {
@@ -801,7 +842,6 @@ export const runShapeVtPipeline = async (params: ShapeVtPipelineParams): Promise
     });
   }
   if (cleanupConfig?.deleteVTCache) {
-    await vtStore.vtTiles.where('nodeId').equals(params.nodeId).delete();
     await shapeMutationAPIImpl.deleteVectorTiles(params.nodeId);
   }
 };

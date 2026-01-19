@@ -8,8 +8,8 @@ export const logIntegrationWarning = (message: string, error: unknown): void => 
 export const isSubscriptionDebug = (): boolean => {
   try {
     return (
-      (import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_SUBSCRIPTION_DEBUG ===
-      '1'
+      (import.meta as ImportMeta & { env?: Record<string, string> }).env
+        ?.VITE_SUBSCRIPTION_DEBUG === '1'
     );
   } catch (error) {
     logIntegrationWarning('Failed to read VITE_SUBSCRIPTION_DEBUG flag', error);

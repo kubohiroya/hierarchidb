@@ -2,9 +2,9 @@ import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommandProcessor } from '../../CommandProcessor.js';
 import type { CoreDB } from '../../CoreDB.js';
+
 // fulltext tables removed; stub without fulltext support
-const encodeDraftHolderName = (parentId: NodeId, nodeId: NodeId) =>
-  `${parentId}::${nodeId}`;
+const encodeDraftHolderName = (parentId: NodeId, nodeId: NodeId) => `${parentId}::${nodeId}`;
 
 describe('Policy C: block move/remove when WC exists', () => {
   const makeNode = (
@@ -42,10 +42,7 @@ describe('Policy C: block move/remove when WC exists', () => {
     state = new Map<NodeId, TreeNode>();
     state.set('root' as NodeId, makeNode('root', 'super', 'root'));
     state.set('a' as NodeId, makeNode('a', 'root', 'A'));
-    state.set(
-      'r:draft' as NodeId,
-      makeNode('r:draft', 'super', 'draft', 'draft' as NodeType)
-    );
+    state.set('r:draft' as NodeId, makeNode('r:draft', 'super', 'draft', 'draft' as NodeType));
     state.set('wcHolder' as NodeId, {
       id: 'wcHolder' as NodeId,
       parentId: 'r:draft' as NodeId,

@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
 import type { HeapPressureEvent } from '@hierarchidb/memory';
 import type { WorkerBridge } from '@hierarchidb/ui-worker-client';
+import { useCallback, useMemo, useState } from 'react';
 import { useHeapPressureMonitor } from './useHeapPressureMonitor.js';
 import { useWorkerHeapPressure } from './useWorkerHeapPressure.js';
 
@@ -30,20 +30,15 @@ const pickLatestEvent = (
 export const useHeapPressureGuard = (
   options: UseHeapPressureGuardOptions = {}
 ): UseHeapPressureGuardResult => {
-  const {
-    enabled = true,
-    uiEnabled = true,
-    workerEnabled = true,
-    workerBridge,
-  } = options;
-  const { event: uiEvent, isSupported } = useHeapPressureMonitor({ enabled: enabled && uiEnabled, source: 'ui' });
+  const { enabled = true, uiEnabled = true, workerEnabled = true, workerBridge } = options;
+  const { event: uiEvent, isSupported } = useHeapPressureMonitor({
+    enabled: enabled && uiEnabled,
+    source: 'ui',
+  });
   const workerEvent = useWorkerHeapPressure({ enabled: enabled && workerEnabled, workerBridge });
   const [dismissedAt, setDismissedAt] = useState<number | null>(null);
 
-  const latestEvent = useMemo(
-    () => pickLatestEvent(uiEvent, workerEvent),
-    [uiEvent, workerEvent]
-  );
+  const latestEvent = useMemo(() => pickLatestEvent(uiEvent, workerEvent), [uiEvent, workerEvent]);
 
   const event = useMemo(() => {
     if (!latestEvent) return null;

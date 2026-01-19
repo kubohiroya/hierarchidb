@@ -1,5 +1,13 @@
-import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material';
 import type { HeapPressureEvent } from '@hierarchidb/memory';
+import {
+  Alert,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Typography,
+} from '@mui/material';
 
 type Props = {
   open: boolean;

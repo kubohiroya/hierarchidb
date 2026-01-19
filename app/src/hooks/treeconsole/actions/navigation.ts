@@ -3,8 +3,8 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-types';
-import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
+import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import type { TreeConsoleActionDeps } from '../types.js';
 
 export type NavigationHelpers = {
@@ -35,7 +35,10 @@ export const createNavigationHelpers = (deps: TreeConsoleActionDeps): Navigation
   return { pushToNode, navigateTo };
 };
 
-export const createNavigationActions = (deps: TreeConsoleActionDeps, helpers?: NavigationHelpers) => {
+export const createNavigationActions = (
+  deps: TreeConsoleActionDeps,
+  helpers?: NavigationHelpers
+) => {
   const { pushPath, treeId, searchTerm, pageTreeNode } = deps;
   const { pushToNode, navigateTo } = helpers ?? createNavigationHelpers(deps);
 

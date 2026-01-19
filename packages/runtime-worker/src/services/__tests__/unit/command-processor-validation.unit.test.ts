@@ -3,6 +3,7 @@ import { assertCommandFailure } from '../../../test-utils/assertions.js';
 import { CommandProcessor } from '../../CommandProcessor.js';
 import type { CoreDB } from '../../CoreDB.js';
 import type { CommandEnvelope } from '../../command-types.js';
+
 let coreDBStub: CoreDB;
 
 beforeAll(async () => {

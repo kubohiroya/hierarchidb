@@ -50,10 +50,7 @@ export class TreeTableExpandedService {
 
   async clearExpandedForPage(pageNodeId: NodeId | undefined | null): Promise<number> {
     if (!pageNodeId) return 0;
-    return this.uiStateDB.treetableExpanded
-      .where('pageNodeId')
-      .equals(String(pageNodeId))
-      .delete();
+    return this.uiStateDB.treetableExpanded.where('pageNodeId').equals(String(pageNodeId)).delete();
   }
 
   async clearExpandedForSubtree(nodeIds: ReadonlyArray<NodeId | string>): Promise<void> {

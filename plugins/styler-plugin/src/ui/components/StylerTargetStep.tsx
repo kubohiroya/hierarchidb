@@ -1,11 +1,4 @@
-import type React from 'react';
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
-import {
-  type MapLibreStyleProperty,
-  type StylerStepData,
-  type StylerValueType,
-} from '../../common/types/StylerEntity.ts';
-import { useTranslation } from 'react-i18next';
 import {
   Box,
   FormControl,
@@ -16,6 +9,13 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import type React from 'react';
+import { useTranslation } from 'react-i18next';
+import type {
+  MapLibreStyleProperty,
+  StylerStepData,
+  StylerValueType,
+} from '../../common/types/StylerEntity.ts';
 import { useStylerTargetStep } from './useStylerTargetStep.js';
 
 type TargetOption = {
@@ -143,12 +143,7 @@ const TARGET_SECTIONS: TargetSection[] = [
 
 export const StylerTargetStep: React.FC<
   PluginStepProps<StylerStepData> & { showTargetPanel?: boolean }
-> = ({
-  data,
-  onChange,
-  setValid,
-  setError,
-}) => {
+> = ({ data, onChange, setValid, setError }) => {
   const { t } = useTranslation('styler-plugin');
   const {
     currentMax,
@@ -183,8 +178,9 @@ export const StylerTargetStep: React.FC<
             </Typography>
             <Stack spacing={1}>
               {section.options.map((option) => {
-                const selected =
-                  targetOptionId ? targetOptionId === option.id : targetProperty === option.property;
+                const selected = targetOptionId
+                  ? targetOptionId === option.id
+                  : targetProperty === option.property;
                 const rangeDisabled = !isNumericTarget || !selected;
                 return (
                   <Stack
@@ -248,7 +244,7 @@ export const StylerTargetStep: React.FC<
         <FormHelperText>
           {t(
             'step5.target.help',
-            'Select one target to map your data. Numeric targets enable a range.',
+            'Select one target to map your data. Numeric targets enable a range.'
           )}
         </FormHelperText>
       </FormControl>

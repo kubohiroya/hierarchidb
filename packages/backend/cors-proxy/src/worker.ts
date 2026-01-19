@@ -42,7 +42,11 @@ export default {
     const url = new URL(request.url);
     const origin = request.headers.get('Origin');
     const allowedOrigins = parseList(env.ALLOWED_ORIGINS ?? env.CORS_PROXY_ALLOWED_ORIGINS ?? '*');
-    const cors = resolveCors(origin, allowedOrigins, request.headers.get('Access-Control-Request-Headers'));
+    const cors = resolveCors(
+      origin,
+      allowedOrigins,
+      request.headers.get('Access-Control-Request-Headers')
+    );
 
     if (request.method.toUpperCase() === 'OPTIONS') {
       if (!cors.allowOrigin) {
@@ -127,7 +131,11 @@ function parseList(value: unknown): string[] {
     .filter((entry) => entry.length > 0);
 }
 
-function resolveCors(origin: string | null, allowedOrigins: string[], requestHeaders: string | null): CorsConfig {
+function resolveCors(
+  origin: string | null,
+  allowedOrigins: string[],
+  requestHeaders: string | null
+): CorsConfig {
   if (!origin) {
     return {
       allowOrigin: '*',
@@ -194,7 +202,10 @@ function filterOutboundHeaders(headers: Headers): Headers {
   return filtered;
 }
 
-function buildValidators(mapped: ReturnType<typeof mapEnvironmentVariables>, env: RawEnv): Validator[] {
+function buildValidators(
+  mapped: ReturnType<typeof mapEnvironmentVariables>,
+  env: RawEnv
+): Validator[] {
   const validators: Validator[] = [];
   const bffSecret = mapped.BFF_JWT_SECRET;
   const bffIssuer = mapped.BFF_JWT_ISSUER;
@@ -202,10 +213,12 @@ function buildValidators(mapped: ReturnType<typeof mapEnvironmentVariables>, env
     validators.push((token) => validateHs256(token, bffSecret, bffIssuer));
   }
   if (mapped.JWKS_URL && mapped.TOKEN_ISSUER && mapped.TOKEN_AUD) {
-    validators.push((token) => validateJwks(token, mapped.JWKS_URL!, mapped.TOKEN_ISSUER!, mapped.TOKEN_AUD!));
+    const { JWKS_URL, TOKEN_ISSUER, TOKEN_AUD } = mapped;
+    validators.push((token) => validateJwks(token, JWKS_URL, TOKEN_ISSUER, TOKEN_AUD));
   }
   if (mapped.CLIENT_ID) {
-    validators.push((token) => validateGoogleAccessToken(token, mapped.CLIENT_ID!));
+    const { CLIENT_ID } = mapped;
+    validators.push((token) => validateGoogleAccessToken(token, CLIENT_ID));
   }
   if (mapped.GITHUB_CLIENT_ID || env.GITHUB_CLIENT_ID) {
     validators.push((token) => validateGitHubToken(token));
@@ -237,17 +250,17 @@ async function validateHs256(token: string, secret: string, issuer?: string): Pr
     new TextEncoder().encode(secret),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
-    ['verify'],
+    ['verify']
   );
-  return await crypto.subtle.verify(
-    'HMAC',
-    key,
-    signature,
-    new TextEncoder().encode(signingInput),
-  );
+  return await crypto.subtle.verify('HMAC', key, signature, new TextEncoder().encode(signingInput));
 }
 
-async function validateJwks(token: string, jwksUrl: string, issuer: string, audience: string): Promise<boolean> {
+async function validateJwks(
+  token: string,
+  jwksUrl: string,
+  issuer: string,
+  audience: string
+): Promise<boolean> {
   const { header, payload, signature, signingInput } = parseJwt(token);
   if (header.alg !== 'RS256') return false;
   if (payload.iss !== issuer) return false;
@@ -261,7 +274,7 @@ async function validateJwks(token: string, jwksUrl: string, issuer: string, audi
       { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
       key,
       signature,
-      data,
+      data
     );
     if (ok) return true;
   }
@@ -278,7 +291,7 @@ async function getJwksKeys(jwksUrl: string, kid?: string): Promise<CryptoKey[]> 
   if (!response.ok) {
     throw new Error(`JWKS fetch failed: ${response.status}`);
   }
-  const data = await response.json() as { keys?: Array<Record<string, string>> };
+  const data = (await response.json()) as { keys?: Array<Record<string, string>> };
   const keys = data.keys ?? [];
   const cryptoKeys: CryptoKey[] = [];
   for (const key of keys) {
@@ -305,14 +318,16 @@ async function importRsaKey(jwk: Record<string, string>): Promise<CryptoKey | nu
     keyData,
     { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
     false,
-    ['verify'],
+    ['verify']
   );
 }
 
 async function validateGoogleAccessToken(token: string, clientId: string): Promise<boolean> {
-  const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(token)}`);
+  const response = await fetch(
+    `https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(token)}`
+  );
   if (!response.ok) return false;
-  const data = await response.json() as { aud?: string };
+  const data = (await response.json()) as { aud?: string };
   return data.aud === clientId;
 }
 
@@ -365,7 +380,10 @@ function decodeBase64Url(input: string): string {
 }
 
 function decodeBase64UrlToArrayBuffer(input: string): ArrayBuffer {
-  const padded = input.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(input.length / 4) * 4, '=');
+  const padded = input
+    .replace(/-/g, '+')
+    .replace(/_/g, '/')
+    .padEnd(Math.ceil(input.length / 4) * 4, '=');
   const binary = atob(padded);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i += 1) {

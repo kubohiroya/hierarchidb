@@ -1,11 +1,11 @@
-import { beforeAll, afterAll } from 'vitest';
+import { afterAll, beforeAll } from 'vitest';
 import { WorkerAPIMock } from './mocks/WorkerAPIMock.js';
 
 export type WorkerClientRefLike = {
-  client: any;
+  client: WorkerAPIMock | null;
   isInitialized: boolean;
   initialize: () => Promise<void>;
-  getAPI: () => any;
+  getAPI: () => WorkerAPIMock;
 };
 
 declare global {

@@ -3,7 +3,6 @@ import { geojson as geojsonApi } from 'flatgeobuf';
 import type { Tile } from 'geojson-vt';
 import type vtPbfNS = require('@maplibre/vt-pbf');
 import { packTileId, parentToChildRange, unpackTileId } from '../tiles/tileId.js';
-import { buildVtTileKey } from '@hierarchidb/vt-store';
 import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
 import type { VTStageContext } from '../contexts.js';
 import type { BandConfig, StageHandler, StageHandlerResult, VtTaskInput } from '../types/types.js';
@@ -203,7 +202,7 @@ const buildLayerIndexes = async (
 };
 
 export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInput> => {
-  const { bands, vtConfig, vtDB, abortSignal } = context;
+  const { bands, vtConfig, tileWriter, abortSignal } = context;
   const layerSetName = vtConfig.layerSetName;
   if (!layerSetName) {
     throw new Error('vt stage requires layerSetName');
@@ -315,19 +314,14 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
           const pbf = vtpbf.fromGeojsonVt(layers as unknown as Tile[], { version: 2 });
           const bytes = pbf as Uint8Array;
           const tileId = packTileId(x, y, z);
-          await vtDB.vtTiles.put({
-            id: buildVtTileKey(tileId, bufferSetHash),
-            nodeId: task.nodeId,
+          await tileWriter({
             tileId,
             z,
             x,
             y,
-            layer: layerSetName,
             bufferSetHash,
             data: bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
-            size: bytes.byteLength,
-            contentType: 'application/vnd.mapbox-vector-tile',
-            timestamp: Date.now(),
+            layers,
           });
           generatedTiles += 1;
           await reportTileProgress(false);

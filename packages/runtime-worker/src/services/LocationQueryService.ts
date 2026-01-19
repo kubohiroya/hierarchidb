@@ -1,11 +1,10 @@
-import { SingletonMixin } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
 import {
   clampMortonZoom,
   getLocationDB,
   lonLatToTileXY,
-  mortonRangeForTile,
   MORTON_KEY_HEX_LENGTH,
+  mortonRangeForTile,
 } from '@hierarchidb/location-store';
 import type {
   LocationGroupItem,
@@ -17,11 +16,9 @@ import type {
   LocationViewportBbox,
   LocationViewportQueryOptions,
 } from '@hierarchidb/plugin-service-api';
-import {
-  haversineMeters,
-  metersToLongitudeDelta,
-} from './nearest/tileNearest.js';
+import { SingletonMixin } from '@hierarchidb/util';
 import { storeRegistry } from '../entity/store-registry.js';
+import { haversineMeters, metersToLongitudeDelta } from './nearest/tileNearest.js';
 
 const MAX_LATITUDE = 85.05112878;
 
@@ -49,7 +46,10 @@ const normalizeBbox = (bbox: LocationViewportBbox): LocationViewportBbox => {
   return clampBbox(normalized);
 };
 
-const expandBbox = (bbox: LocationViewportBbox, options?: LocationViewportQueryOptions): LocationViewportBbox => {
+const expandBbox = (
+  bbox: LocationViewportBbox,
+  options?: LocationViewportQueryOptions
+): LocationViewportBbox => {
   const [minLon, minLat, maxLon, maxLat] = normalizeBbox(bbox);
   const width = Math.max(0, maxLon - minLon);
   const height = Math.max(0, maxLat - minLat);
@@ -84,7 +84,11 @@ const isWithinBbox = (longitude: number, latitude: number, bbox: LocationViewpor
   return longitude >= minLon && longitude <= maxLon && latitude >= minLat && latitude <= maxLat;
 };
 
-const toGroupItem = (row: { id: string; data?: LocationGroupItem['data']; updatedAt?: number }): LocationGroupItem => ({
+const toGroupItem = (row: {
+  id: string;
+  data?: LocationGroupItem['data'];
+  updatedAt?: number;
+}): LocationGroupItem => ({
   id: row.id,
   data: row.data,
   updatedAt: row.updatedAt,
@@ -92,7 +96,10 @@ const toGroupItem = (row: { id: string; data?: LocationGroupItem['data']; update
 
 export class LocationQueryService implements LocationQueryAPI {
   static async getSingleton(): Promise<LocationQueryService> {
-    return SingletonMixin.getSingleton('LocationQueryService', async () => new LocationQueryService());
+    return SingletonMixin.getSingleton(
+      'LocationQueryService',
+      async () => new LocationQueryService()
+    );
   }
 
   async listLocationGroups(nodeId: NodeId): Promise<LocationGroupItem[]> {
@@ -112,26 +119,29 @@ export class LocationQueryService implements LocationQueryAPI {
   async queryByMortonPrefixes(
     nodeId: NodeId,
     prefixes: string[],
-    kinds?: string[],
+    kinds?: string[]
   ): Promise<LocationGroupItem[]> {
     const db = getLocationDB();
     const results = new Map<string, LocationGroupItem>();
-    const normalizedPrefixes = prefixes.filter((prefix) => typeof prefix === 'string' && prefix.length > 0);
+    const normalizedPrefixes = prefixes.filter(
+      (prefix) => typeof prefix === 'string' && prefix.length > 0
+    );
     if (normalizedPrefixes.length === 0) return [];
 
     const collect = async (prefix: string, kind?: string) => {
-      const normalizedPrefix = prefix.length > MORTON_KEY_HEX_LENGTH
-        ? prefix.slice(0, MORTON_KEY_HEX_LENGTH)
-        : prefix;
+      const normalizedPrefix =
+        prefix.length > MORTON_KEY_HEX_LENGTH ? prefix.slice(0, MORTON_KEY_HEX_LENGTH) : prefix;
       const start = normalizedPrefix.padEnd(MORTON_KEY_HEX_LENGTH, '0');
       const end = normalizedPrefix.padEnd(MORTON_KEY_HEX_LENGTH, 'f');
       const rows = kind
-        ? await db.features.where('[nodeId+kind+mortonKey]')
-          .between([nodeId, kind, start], [nodeId, kind, end], true, true)
-          .toArray()
-        : await db.features.where('[nodeId+mortonKey]')
-          .between([nodeId, start], [nodeId, end], true, true)
-          .toArray();
+        ? await db.features
+            .where('[nodeId+kind+mortonKey]')
+            .between([nodeId, kind, start], [nodeId, kind, end], true, true)
+            .toArray()
+        : await db.features
+            .where('[nodeId+mortonKey]')
+            .between([nodeId, start], [nodeId, end], true, true)
+            .toArray();
       for (const row of rows) {
         if (!row.data) continue;
         results.set(row.id, toGroupItem(row));
@@ -158,7 +168,7 @@ export class LocationQueryService implements LocationQueryAPI {
     bbox: LocationViewportBbox,
     zoom: number,
     kinds?: string[],
-    options?: LocationViewportQueryOptions,
+    options?: LocationViewportQueryOptions
   ): Promise<LocationGroupItem[]> {
     const expanded = expandBbox(bbox, options);
     const targetBbox = normalizeBbox(bbox);
@@ -175,21 +185,25 @@ export class LocationQueryService implements LocationQueryAPI {
 
     const collectRange = async (start: string, end: string, kind?: string) => {
       const rows = kind
-        ? await db.features.where('[nodeId+kind+mortonKey]')
-          .between([nodeId, kind, start], [nodeId, kind, end], true, true)
-          .toArray()
-        : await db.features.where('[nodeId+mortonKey]')
-          .between([nodeId, start], [nodeId, end], true, true)
-          .toArray();
+        ? await db.features
+            .where('[nodeId+kind+mortonKey]')
+            .between([nodeId, kind, start], [nodeId, kind, end], true, true)
+            .toArray()
+        : await db.features
+            .where('[nodeId+mortonKey]')
+            .between([nodeId, start], [nodeId, end], true, true)
+            .toArray();
       for (const row of rows) {
-        const data = row.data as { latitude?: number; longitude?: number; kind?: string } | undefined;
+        const data = row.data as
+          | { latitude?: number; longitude?: number; kind?: string }
+          | undefined;
         const longitude = data?.longitude;
         const latitude = data?.latitude;
         if (
-          typeof longitude !== 'number'
-          || !Number.isFinite(longitude)
-          || typeof latitude !== 'number'
-          || !Number.isFinite(latitude)
+          typeof longitude !== 'number' ||
+          !Number.isFinite(longitude) ||
+          typeof latitude !== 'number' ||
+          !Number.isFinite(latitude)
         ) {
           continue;
         }
@@ -221,7 +235,9 @@ export class LocationQueryService implements LocationQueryAPI {
     return Array.from(results.values());
   }
 
-  async findNearestLocationPoint(query: LocationNearestPointQuery): Promise<LocationNearestPointResponse> {
+  async findNearestLocationPoint(
+    query: LocationNearestPointQuery
+  ): Promise<LocationNearestPointResponse> {
     const cursor = { longitude: query.longitude, latitude: query.latitude };
     const maxDistanceMeters = query.maxDistanceMeters;
     const latDelta = maxDistanceMeters / 111_320;
@@ -233,21 +249,28 @@ export class LocationQueryService implements LocationQueryAPI {
       query.latitude + latDelta,
     ];
 
-    const items = await this.queryByViewport(query.nodeId, bbox, query.zoom, undefined, { maxPoints: 5000 });
+    const items = await this.queryByViewport(query.nodeId, bbox, query.zoom, undefined, {
+      maxPoints: 5000,
+    });
     const matches = items
       .map((item) => {
         const data = item.data as { latitude?: number; longitude?: number } | undefined;
         const longitude = data?.longitude;
         const latitude = data?.latitude;
         if (
-          typeof longitude !== 'number'
-          || !Number.isFinite(longitude)
-          || typeof latitude !== 'number'
-          || !Number.isFinite(latitude)
+          typeof longitude !== 'number' ||
+          !Number.isFinite(longitude) ||
+          typeof latitude !== 'number' ||
+          !Number.isFinite(latitude)
         ) {
           return null;
         }
-        const distanceMeters = haversineMeters(query.latitude, query.longitude, latitude, longitude);
+        const distanceMeters = haversineMeters(
+          query.latitude,
+          query.longitude,
+          latitude,
+          longitude
+        );
         if (!Number.isFinite(distanceMeters) || distanceMeters > maxDistanceMeters) return null;
         const point: LocationNearestPoint = {
           id: item.id,
@@ -261,7 +284,9 @@ export class LocationQueryService implements LocationQueryAPI {
         };
         return { point, distanceMeters };
       })
-      .filter((item): item is { point: LocationNearestPoint; distanceMeters: number } => Boolean(item))
+      .filter((item): item is { point: LocationNearestPoint; distanceMeters: number } =>
+        Boolean(item)
+      )
       .sort((a, b) => a.distanceMeters - b.distanceMeters)
       .map((candidate) => ({
         point: candidate.point,

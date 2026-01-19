@@ -109,7 +109,7 @@ describe('CommandProcessor bulk operations', () => {
       originalName: 'n2',
       originalParentId: parent.id as NodeId,
       removedAt: Date.now(),
-                      });
+    });
 
     const bulkUpdateSpy = vi.spyOn(core, 'bulkUpdateNodes');
     const bulkDeleteSpy = vi.spyOn(core, 'bulkDeleteNodes');

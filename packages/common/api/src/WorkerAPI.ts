@@ -1,27 +1,27 @@
-import type { TreeNodeUpdaterAPI } from './TreeNodeUpdaterAPI.js';
-import type { ImportExportAPI } from './ImportExportAPI.js';
+import type { BuildContinuationPolicy, NodeId, NodeType } from '@hierarchidb/common-types';
+import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/location-store';
+import type { HeapPressureEvent } from '@hierarchidb/memory';
 import type {
   PluginLifecycleAPI,
+  ShapeDataSourceName,
   ShapeMutationAPI,
   ShapeQueryAPI,
   StyleMutationAPI,
   StyleQueryAPI,
 } from '@hierarchidb/plugin-service-api';
-import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/location-store';
 import type { RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/route-store';
-import type { ShapeDataSourceName } from '@hierarchidb/plugin-service-api';
-import type { TagAPI } from './TagAPI.js';
-import type { TreeMutationAPI } from './TreeMutationAPI.js';
-import type { TreeQueryAPI } from './TreeQueryAPI.js';
-import type { TreeSubscriptionAPI } from './TreeSubscriptionAPI.js';
-import type { TreeTableExpandedAPI } from './TreeTableExpandedAPI.js';
 import type {
   BatchProgressEvent,
   BatchSessionStatus,
   BatchTaskSummary,
 } from './BatchControlAPI.js';
-import type { BuildContinuationPolicy, NodeId, NodeType } from '@hierarchidb/common-types';
-import type { HeapPressureEvent } from '@hierarchidb/memory';
+import type { ImportExportAPI } from './ImportExportAPI.js';
+import type { TagAPI } from './TagAPI.js';
+import type { TreeMutationAPI } from './TreeMutationAPI.js';
+import type { TreeNodeUpdaterAPI } from './TreeNodeUpdaterAPI.js';
+import type { TreeQueryAPI } from './TreeQueryAPI.js';
+import type { TreeSubscriptionAPI } from './TreeSubscriptionAPI.js';
+import type { TreeTableExpandedAPI } from './TreeTableExpandedAPI.js';
 
 type ShapeDownloadTaskPayload = {
   url: string;
@@ -82,29 +82,27 @@ export interface WorkerAPI {
     nodeType: NodeType,
     nodeId: NodeId,
     downloadTaskPayloads?: ShapeDownloadTaskPayload[],
-    buildContinuationPolicy?: BuildContinuationPolicy,
+    buildContinuationPolicy?: BuildContinuationPolicy
   ): Promise<BatchSessionStatus>;
   getBatchSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus>;
   pauseBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<void>;
   resumeBatchSession(
     nodeType: NodeType,
     nodeId: NodeId,
-    buildContinuationPolicy?: BuildContinuationPolicy,
+    buildContinuationPolicy?: BuildContinuationPolicy
   ): Promise<void>;
   getBatchTasks(nodeType: NodeType, nodeId: NodeId): Promise<BatchTaskSummary[]>;
   generateShapeDownloadTaskPayloadsFromSelection(
     nodeId: NodeId,
     dataSource: ShapeDataSourceName,
-    selectedArrayByCountries: Record<string, boolean[]>,
+    selectedArrayByCountries: Record<string, boolean[]>
   ): Promise<ShapeDownloadTaskPayload[]>;
   subscribeBatchProgress(
     nodeType: NodeType,
     nodeId: NodeId,
     callback: (event: BatchProgressEvent) => void
   ): Promise<() => void>;
-  subscribeHeapPressure(
-    callback: (event: HeapPressureEvent) => void
-  ): Promise<() => void>;
+  subscribeHeapPressure(callback: (event: HeapPressureEvent) => void): Promise<() => void>;
   setUiStorageBridge(bridge: UiStorageBridge): Promise<void>;
   setAuthToken(token: string, type?: 'Bearer' | 'Basic', expiresAt?: number): Promise<void>;
   setCorsProxyBaseURL(url: string): Promise<void>;

@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { MessageChannel } from 'worker_threads';
 import { createEndpointFromMessagePort } from '../../e2e/test-utils/messagePortEndpoint.js';
 import { exposeTestAPI } from '../../e2e/test-worker.entry.js';
+
 const decodeDraftHolderName = (name: string) => ({ targetNodeId: name as NodeId });
 
 type TestWorkerAPI = {

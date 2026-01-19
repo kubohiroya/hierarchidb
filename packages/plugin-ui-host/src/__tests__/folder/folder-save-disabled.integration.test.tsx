@@ -1,12 +1,11 @@
 /// <reference types="vitest/globals" />
 /// <reference types="@testing-library/jest-dom/vitest" />
 import '@testing-library/jest-dom/vitest';
-import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, describe, it, expect } from 'vitest';
-import { PluginDialogFooter } from '../../headless/components/PluginDialogFooter.js';
 import { PluginDialogProvider } from '@hierarchidb/ui-dialog';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { vi } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { PluginDialogFooter } from '../../headless/components/PluginDialogFooter.js';
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => () => Promise.resolve(),
@@ -17,18 +16,10 @@ afterEach(() => {
   cleanup();
 });
 
-function renderFooter({
-  isDirty,
-  validated = true,
-}: {
-  isDirty: boolean;
-  validated?: boolean;
-}) {
+function renderFooter({ isDirty, validated = true }: { isDirty: boolean; validated?: boolean }) {
   const contextValue = {
     open: true,
-    stepComponents: [
-      { id: 'basic', label: 'Basic', component: () => null },
-    ],
+    stepComponents: [{ id: 'basic', label: 'Basic', component: () => null }],
     stepData: {},
     onStepDataChange: () => {},
     activeStepIndex: 0,

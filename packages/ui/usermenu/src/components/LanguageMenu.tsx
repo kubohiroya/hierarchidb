@@ -48,7 +48,9 @@ export const LanguageMenu: React.FC<LanguageMenuProps> = ({
           selected={languageSelection === lang.code}
           onClick={() => onSelect(lang.code as LanguageSelection)}
         >
-          <ListItemIcon sx={{ minWidth: 32 }}>{lang.flag ? <span>{lang.flag}</span> : null}</ListItemIcon>
+          <ListItemIcon sx={{ minWidth: 32 }}>
+            {lang.flag ? <span>{lang.flag}</span> : null}
+          </ListItemIcon>
           <ListItemText
             primary={renderLabel(lang)}
             secondary={!lang.isSystem && lang.name !== lang.nativeName ? lang.name : undefined}

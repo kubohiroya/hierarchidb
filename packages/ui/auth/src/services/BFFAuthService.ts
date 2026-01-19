@@ -78,14 +78,12 @@ export class BFFAuthService {
   private baseUrl: string;
   private popupWindow: Window | null = null;
 
-  private static readonly DEFAULT_BFF_BASE_URL =
-    'https://hierarchidb-bff.kubohiroya.workers.dev';
+  private static readonly DEFAULT_BFF_BASE_URL = 'https://hierarchidb-bff.kubohiroya.workers.dev';
 
   private constructor() {
     // Always respect explicit URL (use prod BFF even in dev)
     const envUrl = import.meta.env.VITE_BFF_BASE_URL || BFFAuthService.DEFAULT_BFF_BASE_URL;
     this.baseUrl = envUrl || '/auth';
-
   }
 
   static getInstance(): BFFAuthService {
@@ -475,8 +473,7 @@ export class BFFAuthService {
   async getCurrentUser(): Promise<BFFUser | null> {
     // Prefer persisted user info if available
     try {
-      const persisted =
-        localStorage.getItem(this.USERINFO_STORAGE_KEYS.userinfo);
+      const persisted = localStorage.getItem(this.USERINFO_STORAGE_KEYS.userinfo);
       if (persisted) {
         const parsed = JSON.parse(persisted) as Partial<BFFUser> & { expires_at?: number };
         const token = localStorage.getItem('access_token') || '';

@@ -7,7 +7,12 @@ import type {
   TreeNode,
 } from '@hierarchidb/common-types';
 import type { CoreDB } from '../../CoreDB.js';
-import type { CommandEnvelope, CommandEvent, CommandResult, WorkerErrorCode } from '../../command-types.js';
+import type {
+  CommandEnvelope,
+  CommandEvent,
+  CommandResult,
+  WorkerErrorCode,
+} from '../../command-types.js';
 import { WorkerErrorCodeValue } from '../../command-types.js';
 import { createNewName } from '../../DraftTreeNodeOperations.js';
 
@@ -157,7 +162,10 @@ export class CommandHistoryManager {
   async undo(): Promise<CommandResult> {
     const command = this.undoStack.pop();
     if (!command) {
-      return this.deps.createErrorResult('No command to undo', WorkerErrorCodeValue.INVALID_OPERATION);
+      return this.deps.createErrorResult(
+        'No command to undo',
+        WorkerErrorCodeValue.INVALID_OPERATION
+      );
     }
 
     try {
@@ -174,7 +182,10 @@ export class CommandHistoryManager {
   async redo(): Promise<CommandResult> {
     const command = this.redoStack.pop();
     if (!command) {
-      return this.deps.createErrorResult('No command to redo', WorkerErrorCodeValue.INVALID_OPERATION);
+      return this.deps.createErrorResult(
+        'No command to redo',
+        WorkerErrorCodeValue.INVALID_OPERATION
+      );
     }
 
     try {
@@ -376,27 +387,27 @@ export class CommandHistoryManager {
 
       case 'moveToTrash': {
         const commandId = command.commandId as CommandId;
-      const entries = this.preMoveToTrashState.get(commandId) || [];
-      for (const entry of entries) {
-        const node = await this.deps.coreDB.getNode?.(entry.nodeId);
-        if (!node) {
-          continue;
+        const entries = this.preMoveToTrashState.get(commandId) || [];
+        for (const entry of entries) {
+          const node = await this.deps.coreDB.getNode?.(entry.nodeId);
+          if (!node) {
+            continue;
+          }
+          await this.deps.coreDB.updateNode?.({
+            ...node,
+            parentId: entry.previousParentId,
+            metadata: {
+              ...node.metadata,
+              name: entry.previousName ?? node.metadata.name,
+            },
+            originalName: entry.previousOriginalName,
+            originalParentId: entry.previousOriginalParentId,
+            removedAt: entry.previousRemovedAt,
+            updatedAt: Date.now() as Timestamp,
+            version: (node.version || 1) + 1,
+          });
         }
-        await this.deps.coreDB.updateNode?.({
-          ...node,
-          parentId: entry.previousParentId,
-          metadata: {
-            ...node.metadata,
-            name: entry.previousName ?? node.metadata.name,
-          },
-          originalName: entry.previousOriginalName,
-          originalParentId: entry.previousOriginalParentId,
-          removedAt: entry.previousRemovedAt,
-          updatedAt: Date.now() as Timestamp,
-          version: (node.version || 1) + 1,
-        });
-      }
-      break;
+        break;
       }
 
       case 'commitDraft': {
@@ -405,11 +416,11 @@ export class CommandHistoryManager {
         if (!snapshot) {
           throw new Error('No draft snapshot recorded for undo');
         }
-      if (snapshot.committedNode) {
-        await this.deps.coreDB.deleteNode?.(snapshot.committedNode.id as NodeId);
-      }
-      await this.restoreNode(snapshot.draft);
-      break;
+        if (snapshot.committedNode) {
+          await this.deps.coreDB.deleteNode?.(snapshot.committedNode.id as NodeId);
+        }
+        await this.restoreNode(snapshot.draft);
+        break;
       }
 
       default:
@@ -542,7 +553,9 @@ export class CommandHistoryManager {
           }
 
           const nextName =
-            storedNext?.nextName ?? (node as { originalName?: string }).originalName ?? node.metadata.name;
+            storedNext?.nextName ??
+            (node as { originalName?: string }).originalName ??
+            node.metadata.name;
           await this.deps.coreDB.updateNode?.({
             ...node,
             parentId: targetParentId,

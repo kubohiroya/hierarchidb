@@ -116,7 +116,9 @@ export class AuthNotificationRegistry {
     if (typeof BroadcastChannel === 'function') {
       this.bc = new BroadcastChannel(this.broadcastChannelName);
       this.bc.onmessage = (event: MessageEvent) => {
-        const data = event.data as { sourceId?: string; notification?: AuthNotification } | undefined;
+        const data = event.data as
+          | { sourceId?: string; notification?: AuthNotification }
+          | undefined;
         if (!data?.notification) return;
         if (data.sourceId && data.sourceId === this.selfId) return; // ignore echo
         // Re-dispatch locally without re-broadcasting.
@@ -148,7 +150,10 @@ export class AuthNotificationRegistry {
   /**
    * Dispatch an authentication notification to all registered handlers
    */
-  async dispatch(notification: AuthNotification, opts: { broadcast?: boolean } = {}): Promise<void> {
+  async dispatch(
+    notification: AuthNotification,
+    opts: { broadcast?: boolean } = {}
+  ): Promise<void> {
     const broadcast = opts.broadcast ?? true;
 
     if (isAuthDebugEnabled()) {
@@ -156,11 +161,17 @@ export class AuthNotificationRegistry {
       // Keep logs compact but actionable.
       console.debug('[auth][registry] dispatch', {
         type: notification.type,
-        requestId: (notification as AuthRequiredNotification | AuthSuccessNotification | AuthCancelledNotification).context.requestId,
+        requestId: (
+          notification as
+            | AuthRequiredNotification
+            | AuthSuccessNotification
+            | AuthCancelledNotification
+        ).context.requestId,
         broadcast,
         handlerCount: handlerIds.length,
         handlers: handlerIds,
-        pluginType: notification.type === 'AUTH_REQUIRED' ? notification.context.pluginType : undefined,
+        pluginType:
+          notification.type === 'AUTH_REQUIRED' ? notification.context.pluginType : undefined,
         url: notification.type === 'AUTH_REQUIRED' ? notification.context.url : undefined,
       });
     }
@@ -197,7 +208,6 @@ export class AuthNotificationRegistry {
 
     await Promise.allSettled(promises);
   }
-
 }
 
 /**

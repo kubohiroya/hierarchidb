@@ -111,7 +111,10 @@ export class StateManager {
       const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
       return JSON.parse(atob(padded)) as SignedState;
     } catch (error) {
-      console.warn('State decode failed; skipping validation', error instanceof Error ? error.message : error);
+      console.warn(
+        'State decode failed; skipping validation',
+        error instanceof Error ? error.message : error
+      );
       return null;
     }
   }

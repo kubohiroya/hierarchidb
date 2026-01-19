@@ -1,31 +1,31 @@
 import type {
-  CommitDraftRequest,
   CommitDraftMode,
+  CommitDraftRequest,
   DiscardDraftOptions,
   TreeNodeUpdaterAPI,
 } from '@hierarchidb/common-api';
 import type {
   CommitResult,
+  DialogUIState,
   NodeId,
   NodeType,
   OnNameConflict,
   TreeId,
   TreeNode,
+  TreeNodeData,
   TreeNodeMetadata,
   ValidationResult,
-  DialogUIState,
-  TreeNodeData,
 } from '@hierarchidb/common-types';
 import { resolveDefaultNodeName } from '../utils/default-node-name.js';
 import type { CommandProcessor } from './CommandProcessor.js';
 import type { CoreDB } from './CoreDB.js';
 import {
-  initTreeNode,
-  discardDraft as discardWc,
-  updateTreeNodeDraftMetadata,
-  updateTreeNodeDraftData,
   commitDraft as commitDraftOp,
+  discardDraft as discardWc,
   getTreeNode,
+  initTreeNode,
+  updateTreeNodeDraftData,
+  updateTreeNodeDraftMetadata,
 } from './DraftTreeNodeOperations.js';
 
 /**
@@ -64,8 +64,9 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
       description: '',
       tags: [],
     };
-    const draftMetadata =
-      (node as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata ?? { ...metadata };
+    const draftMetadata = (node as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata ?? {
+      ...metadata,
+    };
     const dataVal = (node as { data?: unknown }).data;
     const draftDataVal = (node as { draftData?: unknown }).draftData;
     let draftData: Record<string, unknown>;
@@ -101,13 +102,11 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
     if (draftMeta !== null) {
       return node;
     }
-    const base =
-      (node as { metadata?: TreeNodeMetadata | null }).metadata ??
-      {
-        name: fallbackName ?? resolveDefaultNodeName(node.nodeType as NodeType),
-        description: '',
-        tags: [],
-      };
+    const base = (node as { metadata?: TreeNodeMetadata | null }).metadata ?? {
+      name: fallbackName ?? resolveDefaultNodeName(node.nodeType as NodeType),
+      description: '',
+      tags: [],
+    };
     if (persist) {
       await this.coreDB.nodes.update(node.id as NodeId, {
         draftMetadata: base,
@@ -121,7 +120,10 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
     } as TreeNode;
   }
 
-  private async ensureDialogUIState(node?: TreeNode, persist: boolean = false): Promise<TreeNode | undefined> {
+  private async ensureDialogUIState(
+    node?: TreeNode,
+    persist: boolean = false
+  ): Promise<TreeNode | undefined> {
     if (!node) return undefined;
     const current = (node as { dialogUIState?: DialogUIState | null }).dialogUIState ?? null;
     if (current && current.dialogWindow && current.dialogProgress) {
@@ -194,7 +196,7 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
     if (!node) return undefined;
     const withMeta = await this.ensureDraftMetadata(node ?? undefined, undefined, true);
     const withUi = await this.ensureDialogUIState(withMeta ?? node ?? undefined, false);
-    return this.normalizeForUpdater((withUi ?? withMeta ?? node) ?? undefined);
+    return this.normalizeForUpdater(withUi ?? withMeta ?? node ?? undefined);
   }
 
   // createDraftFromNode / getDraft / updateDraft are removed in favor of QueryAPI + updater calls.
@@ -224,10 +226,7 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
     return !!wc;
   }
 
-  async updateTreeNode(
-    draftId: NodeId,
-    request?: CommitDraftRequest
-  ): Promise<CommitResult> {
+  async updateTreeNode(draftId: NodeId, request?: CommitDraftRequest): Promise<CommitResult> {
     const conflictPolicy: OnNameConflict = request?.onNameConflict ?? 'auto-rename';
     const mode: CommitDraftMode = request?.mode ?? 'save';
 
@@ -273,7 +272,8 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
         (await this.ensureDraftMetadata(nodeMaybe ?? undefined, requestedName, true)) ??
         nodeMaybe ??
         undefined;
-      nodeMaybe = (await this.ensureDialogUIState(nodeMaybe ?? undefined, false)) ?? nodeMaybe ?? undefined;
+      nodeMaybe =
+        (await this.ensureDialogUIState(nodeMaybe ?? undefined, false)) ?? nodeMaybe ?? undefined;
       const node = this.normalizeForUpdater(nodeMaybe ?? undefined, requestedName);
       if (typeof console !== 'undefined' && typeof console.debug === 'function') {
         const draftMeta = (node as { draftMetadata?: TreeNodeMetadata | null })?.draftMetadata;
@@ -300,12 +300,15 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
     if (typeof console !== 'undefined' && typeof console.debug === 'function') {
       const requestedName = request?.draftMetadata?.name;
       let nodeMaybe: TreeNode | undefined =
-        result.status === 'ok' ? (await getTreeNode(this.coreDB, result.nodeId as NodeId)) ?? undefined : undefined;
+        result.status === 'ok'
+          ? ((await getTreeNode(this.coreDB, result.nodeId as NodeId)) ?? undefined)
+          : undefined;
       nodeMaybe =
         (await this.ensureDraftMetadata(nodeMaybe ?? undefined, requestedName, true)) ??
         nodeMaybe ??
         undefined;
-      nodeMaybe = (await this.ensureDialogUIState(nodeMaybe ?? undefined, false)) ?? nodeMaybe ?? undefined;
+      nodeMaybe =
+        (await this.ensureDialogUIState(nodeMaybe ?? undefined, false)) ?? nodeMaybe ?? undefined;
       const node = this.normalizeForUpdater(nodeMaybe ?? undefined, requestedName);
       const draftMeta = (node as { draftMetadata?: TreeNodeMetadata | null })?.draftMetadata;
       const draftData = (node as { draftData?: Record<string, unknown> | null })?.draftData;
@@ -336,9 +339,15 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
           requestedName,
           true
         )) ?? (result.node as TreeNode | undefined);
-      const withUi = (await this.ensureDialogUIState(normalizedNode ?? undefined, false)) ?? normalizedNode;
+      const withUi =
+        (await this.ensureDialogUIState(normalizedNode ?? undefined, false)) ?? normalizedNode;
       const forUpdater = this.normalizeForUpdater(withUi ?? undefined, requestedName);
-      return { status: 'ok', nodeId: result.nodeId, autoRenameTo: result.autoRenameTo, node: forUpdater ?? undefined };
+      return {
+        status: 'ok',
+        nodeId: result.nodeId,
+        autoRenameTo: result.autoRenameTo,
+        node: forUpdater ?? undefined,
+      };
     }
     if (result.status === 'NAME_CONFLICT') {
       return {

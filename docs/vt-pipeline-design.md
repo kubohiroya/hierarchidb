@@ -46,25 +46,25 @@
   - plugin が fetch タスクを **taskQueue に記録**し、自身で fetch を実行する
   - plugin が transform/vt タスクを生成し、vt-orchestrator に投入する
   - vt-orchestrator は transform/vt の実行とリソース制御を担う
-- **vt-shape-store / vt-route-store**
+- **EphemeralShapeDB / EphemeralRouteDB / EphemeralLocationDB**
   - stage1/transform の中間ストア（スキーマ + Query/Mutation）
-- **vt-store**
-  - 生成済みベクトルタイルの永続化と Query/Mutation
+- **ShapeDB / RouteDB / LocationDB**
+  - 生成済みベクトルタイルや成果物の永続化と Query/Mutation
 - **vt-orchestrator**
   - ステージ間のタスク生成と実行を統括
   - taskQueue を通じたタスクメタデータ/進捗/エラー通知を担う（Dexie 永続化）
 
 ## パッケージ構成（責務の明文化）
 
-- `packages/vt-store`
-  - VTQueryAPI / VTMutationAPI
-  - vt-pbf の保存・取得
-- `packages/vt-shape-store`
-  - shape の中間ストア（stage1/transform）
-  - stage1Buffers / transformBandBuffers / tileIndexBand / vtBand3Reservations
-- `packages/vt-route-store`
-  - route の中間ストア（stage1/transform）
-  - stage1Buffers / transformBandBuffers / tileIndexBand / vtBand3Reservations
+- `packages/features/shape-store`
+  - ShapeDB（成果物の永続化）
+  - EphemeralShapeDB（中間生成物）
+- `packages/features/route-store`
+  - RouteDB（成果物の永続化）
+  - EphemeralRouteDB（中間生成物、未実装の場合は追加）
+- `packages/features/location-store`
+  - LocationDB（成果物の永続化）
+  - EphemeralLocationDB（中間生成物、未実装の場合は追加）
 - `packages/vt-orchestrator`
   - buildConfig を受け取り、transform/vt のタスクを実行
   - maxBuffersPerTask / maxVerticesPerTask / band3 予約上限を適用
@@ -81,49 +81,16 @@
 
 > ここでは新規作成・更新を想定するファイルを列挙する。実際の配置は既存構成に合わせて調整する。
 
-### vt-store
+### shape-store / route-store / location-store
 
-- `packages/vt-store/src/index.ts`
-  - VTQueryAPI / VTMutationAPI を export
-- `packages/vt-store/src/db/schema.ts`
-  - タイル保存用スキーマ（`nodeId+z+x+y+layer`）
-- `packages/vt-store/src/db/vtDb.ts`
-  - Dexie 初期化 / open / migration
-- `packages/vt-store/src/query/vtQuery.ts`
-  - `getTile(nodeId, z, x, y, layer)`
-  - `getTilesByBBox(nodeId, z, bbox, layer)`
-- `packages/vt-store/src/mutation/vtMutation.ts`
-  - `putTile(nodeId, z, x, y, layer, data)`
-  - `bulkPutTiles(nodeId, tiles[])`
-- `packages/vt-store/src/types.ts`
-  - TileKey / VTQueryOptions / VTMutationOptions
-
-### vt-shape-store / vt-route-store
-
-- `packages/vt-shape-store/src/index.ts`
-  - Stage1/Transform API を export
-- `packages/vt-shape-store/src/db/schema.ts`
-  - `stage1Buffers` / `transformBandBuffers` / `tileIndexBand` / `vtBand3Reservations`
-- `packages/vt-shape-store/src/db/shapeDb.ts`
-  - Dexie 初期化 / open / migration
-- `packages/vt-shape-store/src/query/stage1Query.ts`
-  - `getStage1Buffer(nodeId, sourceKey)`
-  - `listStage1Buffers(nodeId)`
-- `packages/vt-shape-store/src/query/transformQuery.ts`
-  - `getTransformBuffer(nodeId, bandId, sourceKey)`
-  - `listTransformBuffers(nodeId, bandId)`
-- `packages/vt-shape-store/src/query/tileIndexQuery.ts`
-  - `listBufferIdsByTile(nodeId, bandId, tileId)`
-- `packages/vt-shape-store/src/mutation/stage1Mutation.ts`
-  - `putStage1Buffer(nodeId, payload)`
-- `packages/vt-shape-store/src/mutation/transformMutation.ts`
-  - `putTransformBuffer(nodeId, bandId, payload)`
-  - `putTileIndexBand(nodeId, bandId, tileId, bufferId)`
-  - `reserveBand3Tile(nodeId, tileId)`
-- `packages/vt-shape-store/src/types.ts`
-  - Stage1Buffer / TransformBuffer / TileIndexRow
-
-> vt-route-store は `shape` を `route` に置換した構成に揃える（同名ファイル構成）
+- `packages/features/shape-store/src/ShapeDB.ts`
+  - ShapeDB（成果物の永続化）
+- `packages/features/shape-store/src/EphemeralShapeDB.ts`
+  - EphemeralShapeDB（stage1/transform の中間生成物）
+- `packages/features/route-store/src/RouteDatabase.ts`
+  - RouteDB（成果物の永続化）
+- `packages/features/location-store/src/EphemeralLocationDB.ts`
+  - LocationDB（成果物の永続化）と EphemeralLocationDB
 
 ### vt-orchestrator
 
@@ -172,8 +139,8 @@
 | 旧名称 | 新名称 | 備考 |
 | --- | --- | --- |
 | `vectortile` ステージ | `vt` ステージ | 旧ステージは廃止 |
-| `shape-store` | `vt-shape-store` | 中間ストアを置換 |
-| `vectortile-store` | `vt-store` | UI 参照は VTQueryAPI へ |
+| `shape-store` | `EphemeralShapeDB` / `ShapeDB` | 中間生成物と成果物を分離 |
+| `vectortile-store` | 各ドメインDB（ShapeDB/RouteDB/LocationDB） | ノード種別DBへ統合 |
 | `vectortile-orchestrator` | `vt-orchestrator` | 内部実装を全面刷新 |
 | `shape-plugin/src/services/batch` | `shape-fetch/transform/vt` へ再編 | 旧バッチは削除 |
 | `shape-plugin/src/worker` | 新 vt パイプライン用に再実装 | 旧実装を削除 |
@@ -224,7 +191,7 @@ flowchart LR
 - 複雑なロジックは各 plugin（shape/route）に寄せる
 - `vt-{shape,route}-store` は **Query/Mutation とスキーマ定義**までを責務範囲とする
 - `shape-fetch` / `route-fetch` は **smartFetch を通して入出力を行う**
-  - HTTP GET の認証・リトライ・nodeId をまたぐキャッシュ
+  - HTTP GET の認証・リトライ・chunk-store による nodeId 関連キャッシュ
   - `route-fetch` は外部 API の HTTP POST を含む場合も smartFetch を使用
 
 ## 共通データモデル（DBスキーマ）
@@ -288,11 +255,11 @@ flowchart LR
 ## 保存先の分担（ストア）
 
 - `stage1Buffers` / `transformBandBuffers` / `tileIndexBand` / `vtBand3Reservations`
-  - `vt-shape-store` / `vt-route-store` に保持する（ドメイン別の中間ストア）
+  - EphemeralShapeDB / EphemeralRouteDB / EphemeralLocationDB に保持する
 - 生成済みタイル（vt-pbf）
-  - `vt-store` に保存する（UI 参照は VTQueryAPI から取得）
+  - ShapeDB / RouteDB / LocationDB に保存する
 
-## vt-store 保存キー（連結方式）
+## タイル保存キー（連結方式）
 
 - 保存キーは `tileId` と `bufferSetHash` を **区切り文字で連結**する
   - 区切り文字は `tileId` / `bufferSetHash` に使われない文字を選ぶ
@@ -525,14 +492,14 @@ vt-orchestrator は fetch の実行は行わない。
     - `boundaryDedupe`（on/off + 実装バージョン）
     - `layers`（出力対象レイヤーの固定順リスト）
 - **reused 条件**:
-  - vt-store で同一キーのタイルが存在し、contentHash が一致する場合
+  - 各ドメインDBで同一キーのタイルが存在し、contentHash が一致する場合
 - **skipped 条件**:
   - tileIndex に該当地物が無い（空タイル）
   - `bufferIds` が空、または対応バッファが欠損している場合
 - **再実行トリガ**:
   - transformBandBuffers / tileIndexBand の更新
   - vt 設定（tolerance / buffer / extent / dedupe）の変更
-  - vt-store の該当タイル削除
+  - 各ドメインDBの該当タイル削除
 
 ### ハッシュ生成のルール（共通）
 

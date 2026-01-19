@@ -1,7 +1,7 @@
-import type { DialogStep } from '@hierarchidb/ui-dialog';
 import type { PluginStepConfig, StepData } from '@hierarchidb/plugin-base';
-import type { StepGuardState } from './types.js';
+import type { DialogStep } from '@hierarchidb/ui-dialog';
 import type { BasicInfoMeta } from '../usePluginDialogController/data-types.js';
+import type { StepGuardState } from './types.js';
 
 export const emptyGuards: StepGuardState = {
   enabledSteps: [],
@@ -48,8 +48,11 @@ const shallowEqualStepData = (a?: StepData, b?: StepData): boolean => {
       const bKeys = Object.keys(right);
       if (aKeys.length !== bKeys.length) return false;
       for (const key of aKeys) {
-        if (!Object.prototype.hasOwnProperty.call(right, key)) return false;
-        stack.push({ left: (left as Record<string, unknown>)[key], right: (right as Record<string, unknown>)[key] });
+        if (!Object.hasOwn(right, key)) return false;
+        stack.push({
+          left: (left as Record<string, unknown>)[key],
+          right: (right as Record<string, unknown>)[key],
+        });
       }
       continue;
     }
@@ -232,23 +235,21 @@ export const mergeDialogData = (
 
 export const isShallowEqualStepData = shallowEqualStepData;
 
-export const extractBasicInfoFields = (data?: Record<string, unknown>): {
+export const extractBasicInfoFields = (
+  data?: Record<string, unknown>
+): {
   name: string;
   description: string;
   tags: string[];
 } => {
-  const nameSource =
-    typeof data?.name === 'string'
-      ? data.name
-      : '';
-  const descriptionSource =
-    typeof data?.description === 'string'
-      ? data.description
-      : '';
+  const nameSource = typeof data?.name === 'string' ? data.name : '';
+  const descriptionSource = typeof data?.description === 'string' ? data.description : '';
   return {
     name: nameSource,
     description: descriptionSource,
-    tags: Array.isArray(data?.tags) ? data.tags.filter((t): t is string => typeof t === 'string') : [],
+    tags: Array.isArray(data?.tags)
+      ? data.tags.filter((t): t is string => typeof t === 'string')
+      : [],
   };
 };
 

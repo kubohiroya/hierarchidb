@@ -5,12 +5,10 @@
 
 // Import base setup (includes _obsolate_common mocks and utilities)
 import '../../vitest.setup.base';
+import { setCorsProxyBaseURL } from '@hierarchidb/download';
 
-// Default: disable network-heavy and deep worker tests unless explicitly enabled
-if (!('ENABLE_INTEGRATION_TESTS' in process.env)) {
-  console.log('[shape-plugin tests] ENABLE_INTEGRATION_TESTS not set: network integration specs will be skipped');
-  process.env.ENABLE_INTEGRATION_TESTS = '';
-}
+// Default: run network integration tests directly in Node (no CORS proxy).
+setCorsProxyBaseURL('');
 if (!('ENABLE_SHAPE_DEEP_TESTS' in process.env)) {
   console.log('[shape-plugin tests] ENABLE_SHAPE_DEEP_TESTS not set: heavy worker specs will be skipped');
   process.env.ENABLE_SHAPE_DEEP_TESTS = '';
