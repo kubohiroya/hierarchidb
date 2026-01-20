@@ -346,44 +346,31 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
   }
 
   async listFetchCaches(nodeId: NodeId): Promise<ShapeFetchCache[]> {
-    const metadata = await listRawDataDataSourceMetadataForNode(nodeId);
-    const records = await Promise.all(metadata
-      .filter((entry) => isRawDataDataSourceCacheKey(entry.cacheKey))
-      .map(async (entry) => {
-      const cacheKey = entry.cacheKey;
-      if (!cacheKey) return null;
-      const data = await readRawDataDataSourceBuffer(nodeId, cacheKey);
-      if (!data) return null;
-      const summary = await summarizeDownloadBuffer(data, entry.contentType);
-      return {
-        id: cacheKey,
-        nodeId,
-        data,
-        featureCount: summary.featureCount,
-        bbox: summary.bbox,
-        downloadTime: entry.fetchedAt ?? entry.createdAt ?? Date.now(),
-        size: entry.sizeBytes ?? data.byteLength,
-        timestamp: entry.updatedAt ?? entry.createdAt ?? Date.now(),
-      };
+    const records = await ephemeralShapeDB.fetchCache.where('nodeId').equals(nodeId).toArray();
+    return records.map((record) => ({
+      id: record.id,
+      nodeId: record.nodeId,
+      data: record.data,
+      featureCount: record.featureCount,
+      bbox: record.bbox,
+      downloadTime: record.downloadTime,
+      size: record.size,
+      timestamp: record.timestamp,
     }));
-    return records.filter(Boolean) as ShapeFetchCache[];
   }
 
   async getFetchCache(nodeId: NodeId, bufferId: string): Promise<ShapeFetchCache | null> {
-    const data = await readRawDataDataSourceBuffer(nodeId, bufferId);
-    if (!data) return null;
-    const metadata = await listRawDataDataSourceMetadataForNode(nodeId);
-    const entry = metadata.find((item) => item.cacheKey === bufferId);
-    const summary = await summarizeDownloadBuffer(data, entry?.contentType);
+    const record = await ephemeralShapeDB.fetchCache.get(bufferId);
+    if (!record || record.nodeId !== nodeId) return null;
     return {
-      id: bufferId,
-      nodeId,
-      data,
-      featureCount: summary.featureCount,
-      bbox: summary.bbox,
-      downloadTime: Date.now(),
-      size: data.byteLength,
-      timestamp: Date.now(),
+      id: record.id,
+      nodeId: record.nodeId,
+      data: record.data,
+      featureCount: record.featureCount,
+      bbox: record.bbox,
+      downloadTime: record.downloadTime,
+      size: record.size,
+      timestamp: record.timestamp,
     };
   }
 
@@ -640,47 +627,36 @@ export class EphemeralShapeApiImpl implements EphemeralShapeAPI {
   }
 
   async listFetchCaches(nodeId: NodeId): Promise<ShapeFetchCache[]> {
-    const metadata = await listRawDataDataSourceMetadataForNode(nodeId);
-    const records = await Promise.all(metadata.map(async (entry) => {
-      const cacheKey = entry.cacheKey;
-      if (!cacheKey) return null;
-      const data = await readRawDataDataSourceBuffer(nodeId, cacheKey);
-      if (!data) return null;
-      const summary = await summarizeDownloadBuffer(data, entry.contentType);
-      return {
-        id: cacheKey,
-        nodeId,
-        data,
-        featureCount: summary.featureCount,
-        bbox: summary.bbox,
-        downloadTime: entry.fetchedAt ?? entry.createdAt ?? Date.now(),
-        size: entry.sizeBytes ?? data.byteLength,
-        timestamp: entry.updatedAt ?? entry.createdAt ?? Date.now(),
-      };
+    const records = await ephemeralShapeDB.fetchCache.where('nodeId').equals(nodeId).toArray();
+    return records.map((record) => ({
+      id: record.id,
+      nodeId: record.nodeId,
+      data: record.data,
+      featureCount: record.featureCount,
+      bbox: record.bbox,
+      downloadTime: record.downloadTime,
+      size: record.size,
+      timestamp: record.timestamp,
     }));
-    return records.filter(Boolean) as ShapeFetchCache[];
   }
 
   async getFetchCache(nodeId: NodeId, bufferId: string): Promise<ShapeFetchCache | null> {
-    const data = await readRawDataDataSourceBuffer(nodeId, bufferId);
-    if (!data) return null;
-    const metadata = await listRawDataDataSourceMetadataForNode(nodeId);
-    const entry = metadata.find((item) => item.cacheKey === bufferId);
-    const summary = await summarizeDownloadBuffer(data, entry?.contentType);
+    const record = await ephemeralShapeDB.fetchCache.get(bufferId);
+    if (!record || record.nodeId !== nodeId) return null;
     return {
-      id: bufferId,
-      nodeId,
-      data,
-      featureCount: summary.featureCount,
-      bbox: summary.bbox,
-      downloadTime: Date.now(),
-      size: data.byteLength,
-      timestamp: Date.now(),
+      id: record.id,
+      nodeId: record.nodeId,
+      data: record.data,
+      featureCount: record.featureCount,
+      bbox: record.bbox,
+      downloadTime: record.downloadTime,
+      size: record.size,
+      timestamp: record.timestamp,
     };
   }
 
   async countFetchCaches(nodeId: NodeId): Promise<number> {
-    return countRawDataDataSourceBuffersForNode(nodeId);
+    return ephemeralShapeDB.fetchCache.where('nodeId').equals(nodeId).count();
   }
 
   async putFetchCache(buffer: ShapeFetchCache): Promise<void> {
