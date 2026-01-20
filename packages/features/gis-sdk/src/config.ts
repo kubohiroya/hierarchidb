@@ -73,6 +73,8 @@ export type SelfIntersectionTuningConfig = {
   maxVerticesForSplit: number;
 };
 
+export type TransformMode = 'full' | 'simplify-only';
+
 export interface TransformConfig {
   zoomBandBoundaries: number[];
   maxConcurrent: number;
@@ -92,6 +94,7 @@ export interface TransformConfig {
   ringFixConfig: RingFixConfig;
   selfIntersectionConfig: SelfIntersectionConfig;
   preSimplifyFilterConfig: PreSimplifyFilterConfig;
+  transformMode?: TransformMode;
 }
 
 export interface VTConfig {

@@ -1,0 +1,771 @@
+import type { BuildContinuationPolicy, NodeId, StageHandler, TaskQueueRecord } from '@hierarchidb/common-types';
+import type { Feature, FeatureCollection } from 'geojson';
+import type { Tile } from 'geojson-vt';
+import { buildFeatureId, extractGeometryStats } from './featureMetadataUtils.ts';
+import { geojson as geojsonApi } from 'flatgeobuf';
+import type { ShapeFeatureMetadata, ShapeVectorTileRecord, ShapeTileLayerInfo } from '@hierarchidb/plugin-service-api';
+import {
+  latToTileY,
+  lonToTileX,
+  pickAdminCode,
+  pickAdminLevel,
+  pickAdminName,
+  pickCountryCode,
+  pickCountryName,
+} from '@hierarchidb/gis-sdk';
+import type { ShapeBuildConfig } from '../../common/types/index.js';
+import {
+  VtTaskQueueDb,
+  deleteTasksByNode,
+  listTasksByStage,
+  listTasksByStageAndStatus,
+  putTasks,
+  runStageTasks,
+  createTransformByBandHandler,
+  createVtHandler,
+} from '@hierarchidb/vt-orchestrator';
+import { ephemeralShapeDB, shapeDB } from '@hierarchidb/shape-store';
+import type { CountryMetadata, DataSourceName, FetchTaskPayload, SelectedArrayByCountries } from '../../common/types/index.js';
+import { runShapeFetchStage } from './shapeFetchStage.js';
+import { updateShapeStageMetadata } from './shapeStageMetadata.js';
+import { metadataLoader } from '../metadata/MetadataLoader.js';
+import { shapeMutationAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
+import {
+  buildZoomBandRanges,
+  ZOOM_BAND_MAX_ZOOM,
+  ZOOM_BAND_MIN_ZOOM,
+} from '../../common/config/zoomBands.js';
+
+export type ShapeTransformByBandTaskInput = {
+  fetchCacheId: string;
+  bandId: number;
+  bandMinZoom?: number;
+  bandMaxZoom?: number;
+  domainType: 'shape';
+  sourceKey: string;
+  stagePriority?: number;
+  countryCode?: string;
+  countryName?: string;
+  adminLevel?: number;
+};
+
+type ShapeVtTaskInput = {
+  bandId: number;
+  bandMinZoom: number;
+  bandMaxZoom: number;
+  zBase: number;
+  tileId: number;
+  bufferIds: string[];
+  featureCount: number;
+  domainType: 'shape';
+  sourceKey: string;
+};
+
+const HIGH_DETAIL_ZOOM_MIN = 9;
+
+const buildBands = (zoomBandBoundaries: number[]) => {
+  const ranges = buildZoomBandRanges(zoomBandBoundaries, ZOOM_BAND_MIN_ZOOM, ZOOM_BAND_MAX_ZOOM);
+  return ranges.map((range, index) => {
+    const isLastRange = index === ranges.length - 1;
+    const cappedMax = isLastRange ? range.max : Math.max(range.min, range.max - 1);
+    return {
+      bandId: index,
+      zMin: range.min,
+      zMax: cappedMax,
+      zBase: range.min,
+    };
+  });
+};
+
+const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureCollection | null> => {
+  if (!decoded || typeof decoded !== 'object') return null;
+  const collection = decoded as FeatureCollection;
+  if (collection.type === 'FeatureCollection') {
+    const features = Array.isArray(collection.features) ? collection.features : [];
+    return { ...collection, features };
+  }
+  if (typeof (decoded as AsyncIterable<unknown>)[Symbol.asyncIterator] === 'function') {
+    const features: Feature[] = [];
+    try {
+      for await (const feature of decoded as AsyncIterable<Feature>) {
+        features.push(feature);
+      }
+    } catch {
+      return null;
+    }
+    return { type: 'FeatureCollection', features };
+  }
+  return null;
+};
+
+const decodeTransformCache = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
+  try {
+    const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
+    return await normalizeFeatureCollection(decoded as unknown);
+  } catch {
+    return null;
+  }
+};
+
+
+const readNumericProperty = (properties: Record<string, unknown>, key: string): number | undefined => {
+  const value = properties[key];
+  if (typeof value !== 'number') return undefined;
+  return Number.isFinite(value) ? value : undefined;
+};
+
+const buildFeatureMetadataFromTransformCaches = async (
+  nodeId: NodeId,
+  dataSource: DataSourceName,
+  ephemeralStore: typeof ephemeralShapeDB,
+): Promise<ShapeFeatureMetadata[]> => {
+  const records: ShapeFeatureMetadata[] = [];
+  const createdAt = Date.now();
+  const buffers = await ephemeralStore.transformCache.where('nodeId').equals(nodeId).toArray();
+  for (const buffer of buffers) {
+    if (!isTransformCacheComplete(buffer)) continue;
+    const collection = await decodeTransformCache(buffer.data);
+    if (!collection) continue;
+    for (let index = 0; index < collection.features.length; index += 1) {
+      const feature = collection.features[index];
+      if (!feature) continue;
+      feature.properties = feature.properties ?? {};
+      const properties = feature.properties as Record<string, unknown>;
+      const countryCode = pickCountryCode(properties);
+      const adminLevel = pickAdminLevel(properties);
+      const adminCode = pickAdminCode(properties);
+      const featureId = buildFeatureId(feature, index, { countryCode, adminLevel, adminCode });
+      const stats = extractGeometryStats(feature);
+      const fetchVertexCount = readNumericProperty(properties, '__hdbFetchVertexCount');
+      const fetchPolygonCount = readNumericProperty(properties, '__hdbFetchPolygonCount');
+      records.push({
+        id: `${String(nodeId)}-${featureId}`,
+        nodeId: String(nodeId),
+        featureId,
+        countryName: pickCountryName(properties),
+        countryCode,
+        adminName: pickAdminName(properties),
+        adminLevel,
+        adminCode,
+        dataSource,
+        createdAt,
+        vertexCount: stats.vertexCount,
+        polygonCount: stats.polygonCount,
+        fetchVertexCount,
+        fetchPolygonCount,
+        transformVertexCount: stats.vertexCount,
+        transformPolygonCount: stats.polygonCount,
+        bbox: stats.bbox,
+        area: stats.area,
+      });
+    }
+  }
+  return records;
+};
+
+const describeBuffer = (buffer: ArrayBuffer): {
+  byteLength: number;
+  headHex: string;
+  headAscii: string;
+  isJsonLike: boolean;
+} => {
+  const bytes = new Uint8Array(buffer);
+  const head = bytes.slice(0, 16);
+  const headHex = Array.from(head).map((value) => value.toString(16).padStart(2, '0')).join('');
+  const headAscii = Array.from(head).map((value) => (
+    value >= 0x20 && value <= 0x7e ? String.fromCharCode(value) : '.'
+  )).join('');
+  let firstNonWhitespace: number | null = null;
+  for (let i = 0; i < bytes.length; i += 1) {
+    const value = bytes[i];
+    if (value === undefined) continue;
+    if (value === 0x20 || value === 0x0a || value === 0x0d || value === 0x09) continue;
+    firstNonWhitespace = value;
+    break;
+  }
+  const isJsonLike = firstNonWhitespace === 0x7b || firstNonWhitespace === 0x5b;
+  return {
+    byteLength: bytes.byteLength,
+    headHex,
+    headAscii,
+    isJsonLike,
+  };
+};
+
+const isTransformCacheComplete = (record: { timestamp: number } | null | undefined): record is { timestamp: number } => (
+  Boolean(record && record.timestamp > 0)
+);
+
+const packTileId = (x: number, y: number, z: number): number => (x << z) | y;
+
+const clampTileIndex = (value: number, maxIndex: number): number => (
+  Math.min(maxIndex, Math.max(0, value))
+);
+
+const collectTileIdsForCollection = (collection: FeatureCollection, zBase: number): number[] => {
+  if (!Number.isFinite(zBase) || zBase < 0) return [];
+  const maxIndex = (1 << zBase) - 1;
+  const tileIds = new Set<number>();
+  for (const feature of collection.features) {
+    if (!feature?.geometry) continue;
+    const bbox = extractGeometryStats(feature).bbox;
+    if (!bbox) continue;
+    const [minLon, minLat, maxLon, maxLat] = bbox;
+    const x1 = clampTileIndex(lonToTileX(minLon, zBase), maxIndex);
+    const x2 = clampTileIndex(lonToTileX(maxLon, zBase), maxIndex);
+    const y1 = clampTileIndex(latToTileY(maxLat, zBase), maxIndex);
+    const y2 = clampTileIndex(latToTileY(minLat, zBase), maxIndex);
+    for (let x = x1; x <= x2; x += 1) {
+      for (let y = y1; y <= y2; y += 1) {
+        tileIds.add(packTileId(x, y, zBase));
+      }
+    }
+  }
+  return [...tileIds];
+};
+
+const backfillTileRelationsFromTransformCache = async (params: {
+  nodeId: NodeId;
+  bandId: number;
+  zBase: number;
+  ephemeralStore: typeof ephemeralShapeDB;
+}): Promise<number> => {
+  const { nodeId, bandId, zBase, ephemeralStore } = params;
+  const buffers = await ephemeralStore.transaction('r', ephemeralStore.transformCache, async () => (
+    ephemeralStore.transformCache
+      .where('[nodeId+bandId]')
+      .equals([nodeId, bandId])
+      .toArray()
+  ));
+  const completedBuffers = buffers.filter((buffer) => isTransformCacheComplete(buffer));
+  if (completedBuffers.length === 0) return 0;
+  const relations: Array<{
+    id: string;
+    nodeId: NodeId;
+    bandId: number;
+    tileId: string;
+    bufferId: string;
+    createdAt: number;
+  }> = [];
+  const createdAt = Date.now();
+  for (const buffer of completedBuffers) {
+    const collection = await decodeTransformCache(buffer.data);
+    if (!collection) {
+      const debug = describeBuffer(buffer.data);
+      console.warn('[shape-vt] failed to decode transform cache', {
+        nodeId,
+        bandId,
+        bufferId: buffer.id,
+        timestamp: buffer.timestamp,
+        byteLength: debug.byteLength,
+        headHex: debug.headHex,
+        headAscii: debug.headAscii,
+        jsonLike: debug.isJsonLike,
+      });
+      continue;
+    }
+    const tileIds = collectTileIdsForCollection(collection, zBase);
+    if (tileIds.length === 0) continue;
+    tileIds.forEach((tileId) => {
+      relations.push({
+        id: `${String(nodeId)}:${bandId}:${tileId}:${buffer.id}`,
+        nodeId,
+        bandId,
+        tileId: String(tileId),
+        bufferId: buffer.id,
+        createdAt,
+      });
+    });
+  }
+  if (relations.length === 0) return 0;
+  const bufferIds = Array.from(new Set(relations.map((row) => row.bufferId)));
+  await ephemeralStore.tileIdToBufferRelations.where('bufferId').anyOf(bufferIds).delete();
+  await ephemeralStore.tileIdToBufferRelations.bulkPut(relations);
+  return relations.length;
+};
+
+const hasHighDetailSelection = (
+  selection?: SelectedArrayByCountries,
+  payloads?: FetchTaskPayload[],
+): boolean => {
+  if (payloads?.some((payload) => payload.adminLevel >= 2)) return true;
+  if (!selection) return false;
+  return Object.values(selection).some((row) => row?.some((selected, index) => selected && index >= 2));
+};
+
+const buildTransformByBandTasks = async (
+  nodeId: NodeId,
+  bands: Array<{ bandId: number; zMin: number; zMax: number; zBase: number }>,
+  enableHighDetailBands: boolean,
+  countryLookup: Map<string, CountryMetadata>,
+): Promise<Array<TaskQueueRecord<ShapeTransformByBandTaskInput>>> => {
+  const buffers = await ephemeralShapeDB.fetchCache.where('nodeId').equals(nodeId).toArray();
+  const tasks: Array<TaskQueueRecord<ShapeTransformByBandTaskInput>> = [];
+  let index = 0;
+
+  for (const buffer of buffers) {
+    if (buffer.featureCount === 0) {
+      continue;
+    }
+    const adminLevel = buffer.adminLevel;
+    const stagePriority = typeof adminLevel === 'number' ? adminLevel : 0;
+    const countryCode = buffer.countryCode?.trim().toUpperCase();
+    const countryMeta = countryCode ? countryLookup.get(countryCode) : undefined;
+    for (const band of bands) {
+      if (band.zMin >= HIGH_DETAIL_ZOOM_MIN) {
+        if (!enableHighDetailBands) continue;
+        if (typeof adminLevel !== 'number' || adminLevel < 2) continue;
+      }
+      tasks.push({
+        taskId: `${String(nodeId)}:transform:${band.bandId}:${buffer.sourceKey}`,
+        nodeId,
+        stage: 'transform',
+        status: 'queued',
+        index,
+        stagePriority,
+        progress: 0,
+        inputData: {
+          fetchCacheId: buffer.id,
+          bandId: band.bandId,
+          bandMinZoom: band.zMin,
+          bandMaxZoom: band.zMax,
+          domainType: 'shape',
+          sourceKey: buffer.sourceKey,
+          stagePriority,
+          countryCode,
+          countryName: countryMeta?.countryName,
+          adminLevel: buffer.adminLevel,
+        },
+      });
+      index += 1;
+    }
+  }
+  return tasks;
+};
+
+const buildCountryLookup = (metadata: CountryMetadata[]): Map<string, CountryMetadata> => {
+  const map = new Map<string, CountryMetadata>();
+  metadata.forEach((entry) => {
+    const iso2 = entry.iso2?.trim().toUpperCase() ?? entry.countryCode?.trim().toUpperCase();
+    const iso3 = entry.iso3?.trim().toUpperCase();
+    if (iso2) map.set(iso2, entry);
+    if (iso3) map.set(iso3, entry);
+    if (entry.countryCode) map.set(entry.countryCode.trim().toUpperCase(), entry);
+  });
+  return map;
+};
+
+const listTransformCacheIdsByTile = async (
+  store: typeof ephemeralShapeDB,
+  nodeId: NodeId,
+  bandId: number,
+  tileId: number,
+): Promise<string[]> => {
+  const rows = await store.tileIdToBufferRelations
+    .where('[nodeId+bandId+tileId]')
+    .equals([nodeId, bandId, String(tileId)])
+    .toArray();
+  return rows.map((row) => row.bufferId);
+};
+
+const buildVtTasks = async (
+  nodeId: NodeId,
+  ephemeralStore: typeof ephemeralShapeDB,
+  bands: Array<{ bandId: number; zMin: number; zMax: number; zBase: number }>,
+  enableHighDetailBands: boolean,
+): Promise<Array<TaskQueueRecord<ShapeVtTaskInput>>> => {
+  const tasks: Array<TaskQueueRecord<ShapeVtTaskInput>> = [];
+  let index = 0;
+
+  for (const band of bands) {
+    const isHighDetailBand = band.zMin >= HIGH_DETAIL_ZOOM_MIN;
+    if (isHighDetailBand && !enableHighDetailBands) continue;
+    let relationRows = await ephemeralStore.tileIdToBufferRelations
+      .where('[nodeId+bandId]')
+      .equals([nodeId, band.bandId])
+      .toArray();
+    if (relationRows.length === 0) {
+      const backfilled = await backfillTileRelationsFromTransformCache({
+        nodeId,
+        bandId: band.bandId,
+        zBase: band.zBase,
+        ephemeralStore,
+      });
+      if (backfilled > 0) {
+        relationRows = await ephemeralStore.tileIdToBufferRelations
+          .where('[nodeId+bandId]')
+          .equals([nodeId, band.bandId])
+          .toArray();
+        console.warn('[shape-vt] rebuilt missing tile relations', {
+          nodeId,
+          bandId: band.bandId,
+          relationCount: relationRows.length,
+        });
+      }
+    }
+    const tileBuffers = new Map<number, string[]>();
+    relationRows.forEach((row) => {
+      const tileId = Number(row.tileId);
+      if (!Number.isFinite(tileId)) return;
+      const bucket = tileBuffers.get(tileId);
+      if (bucket) {
+        bucket.push(row.bufferId);
+      } else {
+        tileBuffers.set(tileId, [row.bufferId]);
+      }
+    });
+    const tileIds = [...tileBuffers.keys()];
+    for (const tileId of tileIds) {
+      const bufferIds = tileBuffers.get(tileId)
+        ?? await listTransformCacheIdsByTile(ephemeralStore, nodeId, band.bandId, tileId);
+      if (bufferIds.length === 0) continue;
+      const buffers = await ephemeralStore.transaction('r', ephemeralStore.transformCache, async () => (
+        ephemeralStore.transformCache.where('id').anyOf(bufferIds).toArray()
+      ));
+      const completedBuffers = buffers.filter((buffer) => isTransformCacheComplete(buffer));
+      if (completedBuffers.length === 0) continue;
+      const completedBufferIds = new Set(completedBuffers.map((buffer) => buffer.id));
+      const usableBufferIds = bufferIds.filter((bufferId) => completedBufferIds.has(bufferId));
+      if (usableBufferIds.length === 0) continue;
+      const featureById = new Map(completedBuffers.map((buffer) => [buffer.id, buffer.featureCount] as const));
+      const featureCount = usableBufferIds.reduce((sum, bufferId) => sum + (featureById.get(bufferId) ?? 0), 0);
+      tasks.push({
+        taskId: `${String(nodeId)}:vt:${band.bandId}:${band.zBase}:${tileId}`,
+        nodeId,
+        stage: 'vt',
+        status: 'queued',
+        index,
+        progress: 0,
+        inputData: {
+          bandId: band.bandId,
+          bandMinZoom: band.zMin,
+          bandMaxZoom: band.zMax,
+          zBase: band.zBase,
+          tileId,
+          bufferIds: usableBufferIds,
+          featureCount,
+          domainType: 'shape',
+          sourceKey: 'mixed',
+        },
+      });
+      index += 1;
+    }
+  }
+
+  return tasks;
+};
+
+const resolveTransformConfig = (config: ShapeBuildConfig) => config.transformConfig;
+
+const resolveVtConfig = (config: ShapeBuildConfig) => config.vtConfig;
+
+const buildTileLayerInfo = (layers: Record<string, Tile>, z: number): ShapeTileLayerInfo[] => (
+  Object.entries(layers).map(([name, tile]) => ({
+    name,
+    featureCount: Array.isArray(tile.features) ? tile.features.length : 0,
+    minZoom: typeof tile.z === 'number' ? tile.z : z,
+    maxZoom: typeof tile.z === 'number' ? tile.z : z,
+    fields: [],
+  }))
+);
+
+const buildShapeVectorTileRecord = (params: {
+  nodeId: NodeId;
+  tileId: number;
+  z: number;
+  x: number;
+  y: number;
+  bufferSetHash: string;
+  data: ArrayBuffer;
+  layers: Record<string, Tile>;
+}): ShapeVectorTileRecord => {
+  const bytes = new Uint8Array(params.data);
+  const features = Object.values(params.layers).reduce((sum, tile) => (
+    sum + (Array.isArray(tile.features) ? tile.features.length : 0)
+  ), 0);
+  return {
+    tileId: `${params.tileId}|${params.bufferSetHash}`,
+    nodeId: params.nodeId,
+    z: params.z,
+    x: params.x,
+    y: params.y,
+    data_Uint8Array: bytes,
+    size: bytes.byteLength,
+    features,
+    layers: buildTileLayerInfo(params.layers, params.z),
+    generatedAt: Date.now(),
+    contentHash: params.bufferSetHash,
+    version: 1,
+  };
+};
+
+export type ShapePipelineParams = {
+  nodeId: NodeId;
+  dataSource: DataSourceName;
+  buildConfig: ShapeBuildConfig;
+  selectedArrayByCountries?: SelectedArrayByCountries;
+  downloadTaskPayloads?: FetchTaskPayload[];
+  waitIfPaused?: () => Promise<void>;
+  resumeExistingTasks?: boolean;
+  buildContinuationPolicy?: BuildContinuationPolicy;
+  pipelineRunId?: string;
+};
+
+const resolveFailureHandling = (policy: BuildContinuationPolicy): 'continue' | 'stop' => (
+  policy === 'stop_on_first_error' ? 'stop' : 'continue'
+);
+
+const shouldStopAfterStage = (policy: BuildContinuationPolicy, failedCount: number): boolean => (
+  failedCount > 0 && policy !== 'finish_all_stages'
+);
+
+const getFailedTaskCount = async (
+  taskQueue: VtTaskQueueDb,
+  nodeId: NodeId,
+  stage: TaskQueueRecord['stage'],
+): Promise<number> => {
+  const failed = await listTasksByStageAndStatus(taskQueue, nodeId, stage, 'failed');
+  return failed.length;
+};
+
+const summarizeStageCounts = async (
+  taskQueue: VtTaskQueueDb,
+  nodeId: NodeId,
+  stage: TaskQueueRecord['stage'],
+): Promise<Record<string, number>> => {
+  const [queued, running, completed, failed] = await Promise.all([
+    listTasksByStageAndStatus(taskQueue, nodeId, stage, 'queued'),
+    listTasksByStageAndStatus(taskQueue, nodeId, stage, 'running'),
+    listTasksByStageAndStatus(taskQueue, nodeId, stage, 'completed'),
+    listTasksByStageAndStatus(taskQueue, nodeId, stage, 'failed'),
+  ]);
+  return {
+    queued: queued.length,
+    running: running.length,
+    completed: completed.length,
+    failed: failed.length,
+  };
+};
+
+const readHeapSnapshot = () => {
+  const performance = (globalThis as {
+    performance?: {
+      memory?: {
+        usedJSHeapSize?: number;
+        totalJSHeapSize?: number;
+        jsHeapSizeLimit?: number;
+      };
+    };
+  }).performance;
+  const memory = performance?.memory;
+  if (!memory) return null;
+  return {
+    used: memory.usedJSHeapSize ?? null,
+    total: memory.totalJSHeapSize ?? null,
+    limit: memory.jsHeapSizeLimit ?? null,
+  };
+};
+
+export const runShapePipeline = async (params: ShapePipelineParams): Promise<void> => {
+  const taskQueue = new VtTaskQueueDb();
+  const ephemeralStore = ephemeralShapeDB;
+  const resumeExistingTasks = Boolean(params.resumeExistingTasks);
+  const buildContinuationPolicy = params.buildContinuationPolicy ?? 'finish_all_stages';
+  const failureHandling = resolveFailureHandling(buildContinuationPolicy);
+  let stopAfterStage = false;
+  console.warn('[ShapePipeline] run start', JSON.stringify({
+    nodeId: params.nodeId,
+    runId: params.pipelineRunId ?? null,
+    resumeExistingTasks,
+    buildContinuationPolicy,
+  }));
+  if (!resumeExistingTasks) {
+    await deleteTasksByNode(taskQueue, params.nodeId);
+    await shapeMutationAPIImpl.deleteFeatureMetadataByNode(params.nodeId);
+  }
+
+  const metadata = await metadataLoader.loadMetadata(params.dataSource, params.nodeId);
+  const countryLookup = buildCountryLookup(metadata);
+  const enableHighDetailBands = hasHighDetailSelection(
+    params.selectedArrayByCountries,
+    params.downloadTaskPayloads,
+  );
+  const bands = buildBands(params.buildConfig.transformConfig.zoomBandBoundaries);
+
+  const fetchAbortController = new AbortController();
+  await runShapeFetchStage({
+    nodeId: params.nodeId,
+    dataSource: params.dataSource,
+    selectedArrayByCountries: params.selectedArrayByCountries,
+    downloadTaskPayloads: params.downloadTaskPayloads,
+    buildConfig: params.buildConfig,
+    taskQueue,
+    metadata,
+    waitIfPaused: params.waitIfPaused,
+    resumeExistingTasks,
+    abortController: fetchAbortController,
+    failureHandling,
+  });
+  console.warn('[ShapeTransform][PipelineDiagnostics] stage fetch completed', JSON.stringify({
+    nodeId: params.nodeId,
+    runId: params.pipelineRunId ?? null,
+    counts: await summarizeStageCounts(taskQueue, params.nodeId, 'fetch'),
+  }));
+  if (shouldStopAfterStage(buildContinuationPolicy, await getFailedTaskCount(taskQueue, params.nodeId, 'fetch'))) {
+    stopAfterStage = true;
+  }
+
+  if (!stopAfterStage) {
+    const existingTransformByBandTasks = resumeExistingTasks
+      ? await listTasksByStage(taskQueue, params.nodeId, 'transform')
+      : [];
+    const transformByBandTasks = existingTransformByBandTasks.length > 0
+      ? []
+      : await buildTransformByBandTasks(params.nodeId, bands, enableHighDetailBands, countryLookup);
+    if (existingTransformByBandTasks.length > 0 || transformByBandTasks.length > 0) {
+      await params.waitIfPaused?.();
+      if (transformByBandTasks.length > 0) {
+        await putTasks(taskQueue, transformByBandTasks as Array<TaskQueueRecord<ShapeTransformByBandTaskInput>>);
+      }
+      const transformByBandAbortController = new AbortController();
+      const transformByBandHandler = createTransformByBandHandler({
+        ephemeralDB: ephemeralStore,
+        transformConfig: resolveTransformConfig(params.buildConfig),
+        bands,
+        abortSignal: transformByBandAbortController.signal,
+      });
+      await runStageTasks({
+        nodeId: params.nodeId,
+        stage: 'transform',
+        handler: transformByBandHandler as unknown as StageHandler<ShapeTransformByBandTaskInput>,
+        waitIfPaused: params.waitIfPaused,
+        maxConcurrent: params.buildConfig.transformConfig.maxConcurrent,
+        failureHandling,
+        abortController: transformByBandAbortController,
+      });
+      console.warn('[ShapeTransform][PipelineDiagnostics] stage transform completed', JSON.stringify({
+        nodeId: params.nodeId,
+        runId: params.pipelineRunId ?? null,
+        counts: await summarizeStageCounts(taskQueue, params.nodeId, 'transform'),
+      }));
+      if (shouldStopAfterStage(buildContinuationPolicy, await getFailedTaskCount(taskQueue, params.nodeId, 'transform'))) {
+        stopAfterStage = true;
+      }
+      if (params.buildConfig.fetchConfig.deleteOnComplete) {
+        await ephemeralStore.fetchCache.where('nodeId').equals(params.nodeId).delete();
+      }
+    }
+  }
+
+  if (!stopAfterStage) {
+    const existingVtTasks = resumeExistingTasks
+      ? await listTasksByStage(taskQueue, params.nodeId, 'vt')
+      : [];
+    const vtTasks = existingVtTasks.length > 0
+      ? []
+      : await buildVtTasks(
+        params.nodeId,
+        ephemeralStore,
+        bands,
+        enableHighDetailBands,
+      );
+    console.warn('[ShapeVt][PipelineMetrics] vt task prep', JSON.stringify({
+      nodeId: params.nodeId,
+      runId: params.pipelineRunId ?? null,
+      existingTaskCount: existingVtTasks.length,
+      newTaskCount: vtTasks.length,
+    }));
+    if (existingVtTasks.length > 0 || vtTasks.length > 0) {
+      await params.waitIfPaused?.();
+      if (vtTasks.length > 0) {
+        await putTasks(taskQueue, vtTasks as Array<TaskQueueRecord<ShapeVtTaskInput>>);
+      }
+      console.warn('[ShapeVt][PipelineMetrics] vt queue snapshot', JSON.stringify({
+        nodeId: params.nodeId,
+        runId: params.pipelineRunId ?? null,
+        counts: await summarizeStageCounts(taskQueue, params.nodeId, 'vt'),
+      }));
+      console.warn('[ShapeVt][PipelineMetrics] stage vt start', JSON.stringify({
+        nodeId: params.nodeId,
+        runId: params.pipelineRunId ?? null,
+        bands: bands.length,
+        heap: readHeapSnapshot(),
+      }));
+      const vtAbortController = new AbortController();
+      const vtHandler = createVtHandler({
+        ephemeralDB: ephemeralStore,
+        vtConfig: resolveVtConfig(params.buildConfig),
+        bands,
+        abortSignal: vtAbortController.signal,
+        tileWriter: async ({ tileId, z, x, y, data, layers, bufferSetHash }) => {
+          await shapeMutationAPIImpl.storeVectorTile(buildShapeVectorTileRecord({
+            nodeId: params.nodeId,
+            tileId,
+            z,
+            x,
+            y,
+            bufferSetHash,
+            data,
+            layers,
+          }));
+        },
+      });
+      await runStageTasks({
+        nodeId: params.nodeId,
+        stage: 'vt',
+        handler: vtHandler as unknown as StageHandler<ShapeVtTaskInput>,
+        waitIfPaused: params.waitIfPaused,
+        maxConcurrent: params.buildConfig.vtConfig.maxConcurrent,
+        failureHandling,
+        abortController: vtAbortController,
+      });
+      console.warn('[ShapeVt][PipelineMetrics] stage vt done', JSON.stringify({
+        nodeId: params.nodeId,
+        runId: params.pipelineRunId ?? null,
+        heap: readHeapSnapshot(),
+      }));
+      console.warn('[ShapeTransform][PipelineDiagnostics] stage vt completed', JSON.stringify({
+        nodeId: params.nodeId,
+        runId: params.pipelineRunId ?? null,
+        counts: await summarizeStageCounts(taskQueue, params.nodeId, 'vt'),
+      }));
+      if (params.buildConfig.transformConfig.deleteOnComplete) {
+        await ephemeralStore.transaction('rw', ephemeralStore.transformCache, async () => {
+          await ephemeralStore.transformCache.where('nodeId').equals(params.nodeId).delete();
+        });
+      }
+    }
+  }
+
+  const featureMetadataRows = await buildFeatureMetadataFromTransformCaches(
+    params.nodeId,
+    params.dataSource,
+    ephemeralStore,
+  );
+  if (featureMetadataRows.length > 0) {
+    await shapeMutationAPIImpl.putFeatureMetadata(featureMetadataRows);
+  }
+
+  await updateShapeStageMetadata({
+    nodeId: params.nodeId,
+    dataSource: params.dataSource,
+    shapeStore: ephemeralStore,
+    shapeDb: shapeDB,
+  });
+
+  const cleanupConfig = params.buildConfig.cleanupConfig;
+  if (cleanupConfig?.deleteFetchCeche) {
+    await ephemeralStore.fetchCache
+      .where('nodeId')
+      .equals(params.nodeId)
+      .delete();
+  }
+  if (cleanupConfig?.deleteTransformCache) {
+    await ephemeralStore.transaction('rw', ephemeralStore.transformCache, async () => {
+      await ephemeralStore.transformCache.where('nodeId').equals(params.nodeId).delete();
+    });
+  }
+  if (cleanupConfig?.deleteVTCache) {
+    await shapeMutationAPIImpl.deleteVectorTiles(params.nodeId);
+  }
+};

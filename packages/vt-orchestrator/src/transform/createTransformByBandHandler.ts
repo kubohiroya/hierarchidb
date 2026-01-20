@@ -1,5 +1,11 @@
 import type { Feature, FeatureCollection, Geometry, LineString, MultiPolygon, Polygon } from 'geojson';
-import { area as turfArea, bbox as turfBbox, booleanValid as turfBooleanValid, kinks as turfKinks } from '@turf/turf';
+import {
+  area as turfArea,
+  bbox as turfBbox,
+  booleanValid as turfBooleanValid,
+  kinks as turfKinks,
+  simplify as turfSimplify,
+} from '@turf/turf';
 import { cleanCoords } from '@turf/clean-coords';
 import { geojson as geojsonApi } from 'flatgeobuf';
 import { applyFeatureFiltering, encodeFlatGeobufFromFeatureCollection, latToTileY, lonToTileX } from '@hierarchidb/gis-sdk';
@@ -82,6 +88,35 @@ const validateEncodedFlatGeobuf = async (buffer: ArrayBuffer): Promise<void> => 
 const decodeFetchCache = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
   const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
   return normalizeFeatureCollection(decoded as unknown);
+};
+
+const EARTH_RADIUS_METERS = 6378137;
+const MVT_EXTENT = 4096;
+
+const metersPerPixel = (z: number): number => {
+  return (2 * Math.PI * EARTH_RADIUS_METERS) / (MVT_EXTENT * Math.pow(2, z));
+};
+
+const resolveSimplifyToleranceDegrees = (zTarget: number, toleranceK: number): number => {
+  if (!Number.isFinite(zTarget) || !Number.isFinite(toleranceK)) return 0;
+  const toleranceMeters = toleranceK * metersPerPixel(zTarget);
+  if (!Number.isFinite(toleranceMeters) || toleranceMeters <= 0) return 0;
+  return (toleranceMeters / (2 * Math.PI * EARTH_RADIUS_METERS)) * 360;
+};
+
+const simplifyOnlyCollection = (
+  collection: FeatureCollection,
+  zTarget: number,
+  toleranceK: number,
+): FeatureCollection => {
+  if (typeof turfSimplify !== 'function') return collection;
+  const tolerance = resolveSimplifyToleranceDegrees(zTarget, toleranceK);
+  if (!Number.isFinite(tolerance) || tolerance <= 0) return collection;
+  return turfSimplify(collection, {
+    tolerance,
+    highQuality: false,
+    mutate: false,
+  }) as FeatureCollection;
 };
 
 const countVertices = (coords: unknown): number => {
@@ -826,6 +861,7 @@ export const createTransformByBandHandler = (
   // Feature filtering is intentionally disabled during transform stage while investigating geometry distortion.
   const enableFeatureFiltering = false;
   const tolerance = transformConfig.tolerance;
+  const transformMode = transformConfig.transformMode ?? 'full';
   if (typeof tolerance !== 'number') {
     throw new Error('transform requires tolerance');
   }
@@ -847,6 +883,7 @@ export const createTransformByBandHandler = (
     let outputCollection: FeatureCollection | null = null;
     let stageLabel = 'start';
     let inputPolygonCount = 0;
+    let inputVertexCount = 0;
 
     try {
       stageLabel = 'fetch:cache';
@@ -902,19 +939,68 @@ export const createTransformByBandHandler = (
       }
       const inputFeatureCount = inputCollection.features.length;
       const inputMissingGeometry = inputCollection.features.filter((feature) => !feature?.geometry).length;
-      stageLabel = 'counts:input-polygons';
+      stageLabel = 'counts:input';
       await updateTaskPhase(taskId, 'prepare:counts:start', taskProgressRange.decodeEnd);
-      const inputPolygonCounts = await runStageWithLabel('counts:input-polygons', () => (
-        inputCollection.features.map((feature) => countPolygonsFromGeometry(feature?.geometry))
-      ));
+      const inputStats = await runStageWithLabel('counts:input', () => {
+        const polygonCounts = inputCollection.features.map((feature) => countPolygonsFromGeometry(feature?.geometry));
+        const vertexCount = inputCollection.features.reduce(
+          (sum, feature) => sum + countVerticesFromGeometry(feature?.geometry ?? null),
+          0,
+        );
+        return { polygonCounts, vertexCount };
+      });
+      const inputPolygonCounts = inputStats.polygonCounts;
       inputPolygonCount = inputPolygonCounts.reduce((sum, value) => sum + value, 0);
+      inputVertexCount = inputStats.vertexCount;
       await updateTaskPhase(taskId, 'prepare:counts:done', taskProgressRange.prepareEnd);
       await reportPolygonProgress(taskId, 0, inputPolygonCount);
       const simplifyIssues: SimplifyIssue[] = [];
+      const readHeapSnapshot = () => {
+        const performance = (globalThis as {
+          performance?: {
+            memory?: {
+              usedJSHeapSize?: number;
+              totalJSHeapSize?: number;
+              jsHeapSizeLimit?: number;
+            };
+          };
+        }).performance;
+        const memory = performance?.memory;
+        if (!memory) return null;
+        return {
+          used: memory.usedJSHeapSize ?? null,
+          total: memory.totalJSHeapSize ?? null,
+          limit: memory.jsHeapSizeLimit ?? null,
+        };
+      };
       try {
         assertNotAborted(abortSignal);
-        stageLabel = 'simplify';
-        await updateTaskPhase(taskId, 'simplify:start', taskProgressRange.simplifyStart);
+        const simplifyStartAt = Date.now();
+        if (transformMode === 'simplify-only') {
+          stageLabel = 'simplify-only';
+          console.log('[ShapeTransform][SimplifyOnlyMetrics] start', {
+            nodeId: task.nodeId,
+            taskId,
+            bandId: input.bandId,
+            zTarget: band.zMax,
+            featureCount: inputFeatureCount,
+            polygonCount: inputPolygonCount,
+            missingGeometry: inputMissingGeometry,
+            heap: readHeapSnapshot(),
+          });
+        } else {
+          stageLabel = 'simplify';
+          console.log('[ShapeTransform][SimplifyMetrics] start', {
+            nodeId: task.nodeId,
+            taskId,
+            bandId: input.bandId,
+            zTarget: band.zMax,
+            featureCount: inputFeatureCount,
+            polygonCount: inputPolygonCount,
+            missingGeometry: inputMissingGeometry,
+            heap: readHeapSnapshot(),
+          });
+        }
         let processedPolygonCount = 0;
         let lastProgressIndex = -1;
         let lastProgressAt = Date.now();
@@ -942,42 +1028,84 @@ export const createTransformByBandHandler = (
           lastProgressAt = Date.now();
           await reportProgressMaybe(false);
         };
-        const simplifyPromise = runStageWithLabel('simplify', () => simplifyFeatureCollection(
-          inputCollection,
-          band.zMax,
-          tolerance,
-          transformConfig.ringFixConfig,
-          transformConfig.selfIntersectionConfig,
-          transformConfig.selfIntersectionTuningConfig,
-          transformConfig.preSimplifyFilterConfig,
-          transformConfig.quantize,
-          transformConfig.excludePolygonAreaCoefficient,
-          transformConfig.omitDetailsConfig,
-          {
-            abortSignal,
-            yieldEvery: 25,
-            onProgress: onSimplifyProgress,
-            onPhase: async (phase) => {
-              await updateTaskPhase(taskId, `simplify:${phase}`);
+        if (transformMode === 'simplify-only') {
+          stageLabel = 'simplify-only';
+          await updateTaskPhase(taskId, 'simplify-only:start', taskProgressRange.simplifyStart);
+          const simplifyPromise = runStageWithLabel('simplify-only', () => (
+            simplifyOnlyCollection(inputCollection, band.zMax, tolerance)
+          ));
+          simplified = await runWithStallTimeout({
+            promise: simplifyPromise,
+            stage: 'simplify-only',
+            nodeId: String(task.nodeId),
+            taskId,
+            timeoutMs: 300000,
+            getLastProgressAt: () => lastProgressAt,
+          });
+          processedPolygonCount = inputPolygonCount;
+          lastProgressIndex = inputPolygonCounts.length - 1;
+          lastProgressAt = Date.now();
+          console.log('[ShapeTransform][SimplifyOnlyMetrics] done', {
+            nodeId: task.nodeId,
+            taskId,
+            bandId: input.bandId,
+            zTarget: band.zMax,
+            durationMs: Date.now() - simplifyStartAt,
+            processedPolygons: processedPolygonCount,
+            totalPolygons: inputPolygonCount,
+            heap: readHeapSnapshot(),
+          });
+          await reportProgressMaybe(true);
+          await updateTaskPhase(taskId, 'simplify-only:done', taskProgressRange.simplifyEnd);
+        } else {
+          const simplifyPromise = runStageWithLabel('simplify', () => simplifyFeatureCollection(
+            inputCollection,
+            band.zMax,
+            tolerance,
+            transformConfig.ringFixConfig,
+            transformConfig.selfIntersectionConfig,
+            transformConfig.selfIntersectionTuningConfig,
+            transformConfig.preSimplifyFilterConfig,
+            transformConfig.quantize,
+            transformConfig.excludePolygonAreaCoefficient,
+            transformConfig.omitDetailsConfig,
+            {
+              abortSignal,
+              yieldEvery: 25,
+              onProgress: onSimplifyProgress,
+              onPhase: async (phase) => {
+                await updateTaskPhase(taskId, `simplify:${phase}`);
+              },
+              onIssue: (issue) => {
+                if (simplifyIssues.length < 200) {
+                  simplifyIssues.push(issue);
+                }
+              },
             },
-            onIssue: (issue) => {
-              if (simplifyIssues.length < 200) {
-                simplifyIssues.push(issue);
-              }
-            },
-          },
-        ));
-        simplified = await runWithStallTimeout({
-          promise: simplifyPromise,
-          stage: 'simplify',
-          nodeId: String(task.nodeId),
-          taskId,
-          timeoutMs: 300000,
-          getLastProgressAt: () => lastProgressAt,
-        });
-        await reportProgressMaybe(true);
-        await updateTaskPhase(taskId, 'simplify:done', taskProgressRange.simplifyEnd);
-        if (simplifyIssues.length > 0) {
+          ));
+          simplified = await runWithStallTimeout({
+            promise: simplifyPromise,
+            stage: 'simplify',
+            nodeId: String(task.nodeId),
+            taskId,
+            timeoutMs: 300000,
+            getLastProgressAt: () => lastProgressAt,
+          });
+          console.log('[ShapeTransform][SimplifyMetrics] done', {
+            nodeId: task.nodeId,
+            taskId,
+            bandId: input.bandId,
+            zTarget: band.zMax,
+            durationMs: Date.now() - simplifyStartAt,
+            processedPolygons: processedPolygonCount,
+            totalPolygons: inputPolygonCount,
+            issues: simplifyIssues.length,
+            heap: readHeapSnapshot(),
+          });
+          await reportProgressMaybe(true);
+          await updateTaskPhase(taskId, 'simplify:done', taskProgressRange.simplifyEnd);
+        }
+        if (transformMode === 'full' && simplifyIssues.length > 0) {
           const recordLimit = 200;
           const issueByFeature = new Map<number, SimplifyIssue>();
           simplifyIssues.forEach((issue) => {
@@ -1063,55 +1191,57 @@ export const createTransformByBandHandler = (
           });
         }
         if (!simplified || simplified.features.length === 0) {
-          const errorRecords: ShapeTransformErrorRecord[] = [];
-          const recordLimit = 200;
-          for (const [featureIndex, feature] of inputCollection.features.entries()) {
-            if (errorRecords.length >= recordLimit) break;
-            if (!feature?.geometry) continue;
-            const rawFeatureId = feature.id
-              ?? (feature.properties && 'id' in feature.properties ? String(feature.properties.id) : undefined);
-            const featureId = rawFeatureId ? String(rawFeatureId) : `${input.sourceKey}:${featureIndex}`;
-            const lineFeaturesCandidate = buildErrorLineFeatures(feature.geometry, featureId);
-            const recordPolygonCount = lineFeaturesCandidate?.polygonCount
-              ?? countPolygonsFromGeometry(feature.geometry);
-            const recordRingCount = lineFeaturesCandidate?.ringCount ?? 0;
-            errorRecords.push({
-              id: `${task.taskId}:empty:${featureIndex}`,
-              nodeId: task.nodeId,
-              taskId: task.taskId,
-              stage: 'transform',
-              bandId: input.bandId,
-              sourceKey: input.sourceKey,
-              countryCode: input.countryCode,
-              adminLevel: input.adminLevel,
-              featureId,
-              featureIndex,
-              geometryType: lineFeaturesCandidate?.geometryType ?? feature.geometry.type,
-              polygonCount: recordPolygonCount,
-              ringCount: recordRingCount,
-              polygonErrorCount: recordPolygonCount,
-              ringErrorCount: recordRingCount,
-              message: 'simplify produced empty collection',
-              createdAt: Date.now(),
-              lineFeatures: {
-                type: 'FeatureCollection',
-                features: lineFeaturesCandidate?.features ?? [],
-              },
-            });
-          }
-          if (errorRecords.length > 0) {
-            try {
-              await ephemeralDB.transformErrors.bulkPut(errorRecords);
-              if (inputCollection.features.length > errorRecords.length) {
-                console.warn('[ShapeTransform] empty simplify error records truncated', {
-                  nodeId: task.nodeId,
-                  taskId: task.taskId,
-                  limit: recordLimit,
-                  totalFeatures: inputCollection.features.length,
-                });
+          if (transformMode === 'full') {
+            const errorRecords: ShapeTransformErrorRecord[] = [];
+            const recordLimit = 200;
+            for (const [featureIndex, feature] of inputCollection.features.entries()) {
+              if (errorRecords.length >= recordLimit) break;
+              if (!feature?.geometry) continue;
+              const rawFeatureId = feature.id
+                ?? (feature.properties && 'id' in feature.properties ? String(feature.properties.id) : undefined);
+              const featureId = rawFeatureId ? String(rawFeatureId) : `${input.sourceKey}:${featureIndex}`;
+              const lineFeaturesCandidate = buildErrorLineFeatures(feature.geometry, featureId);
+              const recordPolygonCount = lineFeaturesCandidate?.polygonCount
+                ?? countPolygonsFromGeometry(feature.geometry);
+              const recordRingCount = lineFeaturesCandidate?.ringCount ?? 0;
+              errorRecords.push({
+                id: `${task.taskId}:empty:${featureIndex}`,
+                nodeId: task.nodeId,
+                taskId: task.taskId,
+                stage: 'transform',
+                bandId: input.bandId,
+                sourceKey: input.sourceKey,
+                countryCode: input.countryCode,
+                adminLevel: input.adminLevel,
+                featureId,
+                featureIndex,
+                geometryType: lineFeaturesCandidate?.geometryType ?? feature.geometry.type,
+                polygonCount: recordPolygonCount,
+                ringCount: recordRingCount,
+                polygonErrorCount: recordPolygonCount,
+                ringErrorCount: recordRingCount,
+                message: 'simplify produced empty collection',
+                createdAt: Date.now(),
+                lineFeatures: {
+                  type: 'FeatureCollection',
+                  features: lineFeaturesCandidate?.features ?? [],
+                },
+              });
+            }
+            if (errorRecords.length > 0) {
+              try {
+                await ephemeralDB.transformErrors.bulkPut(errorRecords);
+                if (inputCollection.features.length > errorRecords.length) {
+                  console.warn('[ShapeTransform] empty simplify error records truncated', {
+                    nodeId: task.nodeId,
+                    taskId: task.taskId,
+                    limit: recordLimit,
+                    totalFeatures: inputCollection.features.length,
+                  });
+                }
+              } catch (storageError) {
+                console.warn('[ShapeTransform] failed to persist empty simplify error records', storageError);
               }
-            } catch (storageError) {
-              console.warn('[ShapeTransform] failed to persist empty simplify error records', storageError);
             }
           }
           await reportPolygonProgress(task.taskId, inputPolygonCount, inputPolygonCount);
@@ -1151,26 +1281,35 @@ export const createTransformByBandHandler = (
         const sampleDetails: string[] = [];
         const analysisErrors: string[] = [];
         const errorRecords: ShapeTransformErrorRecord[] = [];
+        const analyzeSnap = transformMode === 'full';
         for (const [featureIndex, feature] of inputCollection.features.entries()) {
           assertNotAborted(abortSignal);
           if (!feature?.geometry) continue;
           try {
-            await simplifyFeatureCollection(
-              { type: 'FeatureCollection', features: [feature] },
-              band.zMax,
-              tolerance,
-              transformConfig.ringFixConfig,
-              transformConfig.selfIntersectionConfig,
-              transformConfig.selfIntersectionTuningConfig,
-              transformConfig.preSimplifyFilterConfig,
-              transformConfig.quantize,
-              transformConfig.excludePolygonAreaCoefficient,
-              transformConfig.omitDetailsConfig,
-              {
-                abortSignal,
-                yieldEvery: 1,
-              },
-            );
+            if (transformMode === 'simplify-only') {
+              simplifyOnlyCollection(
+                { type: 'FeatureCollection', features: [feature] },
+                band.zMax,
+                tolerance,
+              );
+            } else {
+              await simplifyFeatureCollection(
+                { type: 'FeatureCollection', features: [feature] },
+                band.zMax,
+                tolerance,
+                transformConfig.ringFixConfig,
+                transformConfig.selfIntersectionConfig,
+                transformConfig.selfIntersectionTuningConfig,
+                transformConfig.preSimplifyFilterConfig,
+                transformConfig.quantize,
+                transformConfig.excludePolygonAreaCoefficient,
+                transformConfig.omitDetailsConfig,
+                {
+                  abortSignal,
+                  yieldEvery: 1,
+                },
+              );
+            }
           } catch (featureError) {
             errorFeatureCount += 1;
             const featureMessage = featureError instanceof Error ? featureError.message : String(featureError);
@@ -1206,25 +1345,42 @@ export const createTransformByBandHandler = (
               if (!isValid) {
                 invalidFeatureCount += 1;
               }
-              stageLabel = 'analysis:snap';
-              const snappedGeometry = snapGeometryToGrid(feature.geometry, band.zMax, transformConfig.quantize);
-              stageLabel = 'analysis:snap-summary';
-              const snappedSummary = analyzeGeometryIssues(snappedGeometry);
-              const snappedValid = isGeometryBooleanValid(snappedGeometry);
-              if (!snappedValid) {
-                invalidAfterSnapCount += 1;
-              }
-              stageLabel = 'analysis:clean';
-              const cleanedGeometry = cleanCoords({
-                type: 'Feature',
-                geometry: snappedGeometry,
-                properties: {},
-              }).geometry ?? snappedGeometry;
-              stageLabel = 'analysis:clean-summary';
-              const cleanedSummary = analyzeGeometryIssues(cleanedGeometry);
-              const cleanedValid = isGeometryBooleanValid(cleanedGeometry);
-              if (!cleanedValid) {
-                invalidAfterCleanCount += 1;
+              if (analyzeSnap) {
+                stageLabel = 'analysis:snap';
+                const snappedGeometry = snapGeometryToGrid(feature.geometry, band.zMax, transformConfig.quantize);
+                stageLabel = 'analysis:snap-summary';
+                const snappedSummary = analyzeGeometryIssues(snappedGeometry);
+                const snappedValid = isGeometryBooleanValid(snappedGeometry);
+                if (!snappedValid) {
+                  invalidAfterSnapCount += 1;
+                }
+                stageLabel = 'analysis:clean';
+                const cleanedGeometry = cleanCoords({
+                  type: 'Feature',
+                  geometry: snappedGeometry,
+                  properties: {},
+                }).geometry ?? snappedGeometry;
+                stageLabel = 'analysis:clean-summary';
+                const cleanedSummary = analyzeGeometryIssues(cleanedGeometry);
+                const cleanedValid = isGeometryBooleanValid(cleanedGeometry);
+                if (!cleanedValid) {
+                  invalidAfterCleanCount += 1;
+                }
+                if (sampleDetails.length < 3) {
+                  const featureId = feature.id
+                    ?? (feature.properties && 'id' in feature.properties ? String(feature.properties.id) : undefined)
+                    ?? `${input.sourceKey}:${sampleDetails.length}`;
+                  sampleDetails.push(
+                    `${featureId} type=${summary.geometryType} rings=${summary.ringCount} minRingVertices=${summary.minRingVertices ?? '-'} kinks=${summary.selfIntersectionCount} degenerateRings=${summary.degenerateRingCount} minRingArea=${formatArea(summary.minRingArea)} invalidRings=${summary.invalidRingCount} openRings=${summary.openRingCount} nonFinite=${summary.nonFiniteCoordCount} booleanValid=${isValid ? '1' : '0'} validity=orig:${isValid ? '1' : '0'} snap:${snappedValid ? '1' : '0'} clean:${cleanedValid ? '1' : '0'} minRingAreaStage=orig:${formatArea(summary.minRingArea)} snap:${formatArea(snappedSummary.minRingArea)} clean:${formatArea(cleanedSummary.minRingArea)}`,
+                  );
+                }
+              } else if (sampleDetails.length < 3) {
+                const featureId = feature.id
+                  ?? (feature.properties && 'id' in feature.properties ? String(feature.properties.id) : undefined)
+                  ?? `${input.sourceKey}:${sampleDetails.length}`;
+                sampleDetails.push(
+                  `${featureId} type=${summary.geometryType} rings=${summary.ringCount} minRingVertices=${summary.minRingVertices ?? '-'} kinks=${summary.selfIntersectionCount} degenerateRings=${summary.degenerateRingCount} minRingArea=${formatArea(summary.minRingArea)} invalidRings=${summary.invalidRingCount} openRings=${summary.openRingCount} nonFinite=${summary.nonFiniteCoordCount} booleanValid=${isValid ? '1' : '0'}`,
+                );
               }
               if (summary.minRingVertices !== null) {
                 minRingVertices = minRingVertices === null
@@ -1249,14 +1405,6 @@ export const createTransformByBandHandler = (
               if (summary.avgRingVertices !== null && summary.ringCount > 0) {
                 ringVertexTotal += summary.avgRingVertices * summary.ringCount;
                 ringCount += summary.ringCount;
-              }
-              if (sampleDetails.length < 3) {
-                const featureId = feature.id
-                  ?? (feature.properties && 'id' in feature.properties ? String(feature.properties.id) : undefined)
-                  ?? `${input.sourceKey}:${sampleDetails.length}`;
-                sampleDetails.push(
-                  `${featureId} type=${summary.geometryType} rings=${summary.ringCount} minRingVertices=${summary.minRingVertices ?? '-'} kinks=${summary.selfIntersectionCount} degenerateRings=${summary.degenerateRingCount} minRingArea=${formatArea(summary.minRingArea)} invalidRings=${summary.invalidRingCount} openRings=${summary.openRingCount} nonFinite=${summary.nonFiniteCoordCount} booleanValid=${isValid ? '1' : '0'} validity=orig:${isValid ? '1' : '0'} snap:${snappedValid ? '1' : '0'} clean:${cleanedValid ? '1' : '0'} minRingAreaStage=orig:${formatArea(summary.minRingArea)} snap:${formatArea(snappedSummary.minRingArea)} clean:${formatArea(cleanedSummary.minRingArea)}`,
-                );
               }
             } catch (analysisError) {
               const analysisMessage = analysisError instanceof Error ? analysisError.message : String(analysisError);
@@ -1309,6 +1457,16 @@ export const createTransformByBandHandler = (
       const boundaryLayerName = typeof adminLevel === 'number'
         ? `admin${adminLevel}-boundary`
         : 'admin0-boundary';
+
+      const simplifiedFeatureCount = simplified.features.length;
+      const simplifiedVertexCount = simplified.features.reduce(
+        (sum, feature) => sum + countVerticesFromGeometry(feature.geometry),
+        0,
+      );
+      const simplifiedPolygonCount = simplified.features.reduce(
+        (sum, feature) => sum + countPolygonsFromGeometry(feature.geometry),
+        0,
+      );
 
       await updateTaskPhase(taskId, 'output:build:start', taskProgressRange.simplifyEnd);
       const features: Feature[] = [];
@@ -1409,7 +1567,16 @@ export const createTransformByBandHandler = (
         }
       }
 
-      const completedMessage = `Features=${inputFeatureCount} Polygons=${polygonCount} Geometries=${vertexCount}`;
+      const formatReducedPercent = (output: number, input: number): string => {
+        if (!Number.isFinite(input) || input <= 0) return '-';
+        const reducedRatio = Math.max(0, Math.min(1, (input - output) / input));
+        return `${(reducedRatio * 100).toFixed(1)}%`;
+      };
+      const completedMessage = [
+        `Features=${simplifiedFeatureCount}/${inputFeatureCount} (reduced=${formatReducedPercent(simplifiedFeatureCount, inputFeatureCount)})`,
+        `Polygons=${simplifiedPolygonCount}/${inputPolygonCount} (reduced=${formatReducedPercent(simplifiedPolygonCount, inputPolygonCount)})`,
+        `Vertices=${simplifiedVertexCount}/${inputVertexCount} (reduced=${formatReducedPercent(simplifiedVertexCount, inputVertexCount)})`,
+      ].join(' ');
       return {
         status: 'completed',
         progress: 100,
