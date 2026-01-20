@@ -342,8 +342,24 @@ export function usePluginDialogController(
     [draft?.draftData]
   );
 
-  const [localDraftData, setLocalDraftData] = useState<Partial<PluginDefinedEntity>>(
+  const [localDraftData, setLocalDraftDataState] = useState<Partial<PluginDefinedEntity>>(
     () => draftDataWithoutMeta
+  );
+  const localDraftDataRef = useRef<Partial<PluginDefinedEntity>>(draftDataWithoutMeta);
+  const setLocalDraftData = useCallback(
+    (next: React.SetStateAction<Partial<PluginDefinedEntity>>) => {
+      setLocalDraftDataState((prev) => {
+        const resolved =
+          typeof next === 'function'
+            ? (next as (prevState: Partial<PluginDefinedEntity>) => Partial<PluginDefinedEntity>)(
+                prev
+              )
+            : next;
+        localDraftDataRef.current = resolved ?? {};
+        return resolved ?? {};
+      });
+    },
+    []
   );
   useEffect(() => {
     setLocalDraftData(draftDataWithoutMeta);
@@ -575,14 +591,15 @@ export function usePluginDialogController(
         description: basicInfo.description,
         tags: basicInfo.tags,
       },
-      draftData: nodeType === 'folder' ? null : { ...(localDraftData ?? {}) },
+      draftData: nodeType === 'folder' ? null : { ...(localDraftDataRef.current ?? {}) },
+      dialogUIState: getPersistableDialogUIState(),
     };
     updateTreeNodeUpdater(nextPatch);
   }, [
     basicInfo.description,
     basicInfo.name,
     basicInfo.tags,
-    localDraftData,
+    getPersistableDialogUIState,
     nodeId,
     treeUpdater,
     updateTreeNodeUpdater,
@@ -673,7 +690,9 @@ export function usePluginDialogController(
         const waitForTransition = new Promise<void>((resolve) => {
           pendingStepTransitionRef.current = { target: nextIndex, resolve };
         });
-        await Promise.resolve(updateLocalDraftRef.current?.()).finally(() => {
+        try {
+          await Promise.resolve(updateLocalDraftRef.current?.());
+        } finally {
           setActiveStepIndexRef.current(nextIndex);
           setUrlStepRef.current(nextIndex);
           updateDialogUIState({
@@ -681,7 +700,25 @@ export function usePluginDialogController(
               activeStepIndex: toPersistedStepIndex(nextIndex),
             } as DialogProgressState,
           });
-        });
+        }
+        if (commitTreeNodeUpdater) {
+          const persistState = {
+            ...getPersistableDialogUIState(),
+            dialogProgress: { activeStepIndex: toPersistedStepIndex(nextIndex) },
+          };
+          const targetId = (treeUpdater?.treeNodeId ?? nodeId) as NodeId;
+          const payload: TreeNodeUpdaterState<Partial<PluginDefinedEntity>> = {
+            treeNodeId: targetId,
+            draftMetadata: treeUpdater?.draftMetadata ?? null,
+            draftData: nodeType === 'folder' ? null : { ...(localDraftDataRef.current ?? {}) },
+            dialogUIState: persistState,
+          };
+          try {
+            await commitTreeNodeUpdater('save-draft', payload);
+          } catch (err) {
+            console.warn('[PluginDialogShell] step persistence failed', err);
+          }
+        }
         await Promise.race([
           waitForTransition,
           new Promise<void>((resolve) => {
@@ -693,7 +730,7 @@ export function usePluginDialogController(
         }
       });
     },
-    [runWithPending, updateDialogUIState, toPersistedStepIndex]
+    [commitTreeNodeUpdater, getPersistableDialogUIState, nodeId, nodeType, runWithPending, toPersistedStepIndex, treeUpdater?.draftMetadata, treeUpdater?.treeNodeId, updateDialogUIState]
   );
 
   const navigateToNode = useCallback(

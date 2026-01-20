@@ -168,7 +168,7 @@ export const EXPECTED_BATCH_RESULTS = {
  * API
   */
 export const GEOBOUNDARIES_TEST_ENDPOINTS = {
-  metadata: 'https://www.geoboundaries.org/api/current/gbOpen/',
+  metadata: 'https://geoboundaries.org/api/current/gbOpen/',
   download: {
     JPN: 'https://github.com/wmgeolab/geoBoundaries/raw/main/releaseData/gbOpen/JPN/ADM0/geoBoundaries-JPN-ADM0.geojson',
     DEU: 'https://github.com/wmgeolab/geoBoundaries/raw/main/releaseData/gbOpen/DEU/ADM0/geoBoundaries-DEU-ADM0.geojson',

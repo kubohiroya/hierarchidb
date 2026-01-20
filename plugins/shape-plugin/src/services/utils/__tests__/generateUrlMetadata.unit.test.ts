@@ -52,10 +52,10 @@ describe('generateDownloadTaskPayloads', () => {
 
   it('creates geoboundaries URLs for JP/ID levels 0/1', () => {
     assertUrls('geoboundaries', [
-      'https://www.geoboundaries.org/api/gbOpen/JPN/ADM0',
-      'https://www.geoboundaries.org/api/gbOpen/JPN/ADM1',
-      'https://www.geoboundaries.org/api/gbOpen/IDN/ADM0',
-      'https://www.geoboundaries.org/api/gbOpen/IDN/ADM1',
+      'https://geoboundaries.org/api/gbOpen/JPN/ADM0',
+      'https://geoboundaries.org/api/gbOpen/JPN/ADM1',
+      'https://geoboundaries.org/api/gbOpen/IDN/ADM0',
+      'https://geoboundaries.org/api/gbOpen/IDN/ADM1',
     ]);
   });
 

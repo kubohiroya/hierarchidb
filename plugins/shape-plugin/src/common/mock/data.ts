@@ -25,7 +25,7 @@ export const DATA_SOURCE_CONFIGS: Record<string, DataSourceConfig> = {
     displayName: 'geoBoundaries',
     description: 'Open-source administrative boundaries for every country in the world',
     license: 'Creative Commons BY 4.0',
-    licenseUrl: 'https://www.geoboundaries.org/index.html#getdata',
+    licenseUrl: 'https://geoboundaries.org/index.html#getdata',
     attribution: 'Data from geoBoundaries.org',
     color: '#2196F3',
     icon: '🗺️',
