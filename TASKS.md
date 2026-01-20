@@ -175,6 +175,20 @@
     - update: 2026-01-22 19:15 JST index/tiling開始終了ログとstage情報をJSON出力に追加。
     - done: 2026-01-22 19:20 JST pnpm typecheck exit 0 を確認。
 
+2287) fix/shape/step4-cache-delete-explanations (P1) — 進行中 (2026-01-22)
+- ブランチ名: fix/shape/step4-cache-delete-explanations
+- 依存: なし
+- 受け入れ基準: Step4の各削除ボタンが削除対象を説明する／buildFetchキャッシュ削除の件数表示と削除が動作する／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/**`, `plugins/shape-plugin/src/services/utils/**`（必要に応じて追加）
+- ロールバック手順: Step4の説明文と削除判定の差分を revert する
+- チェックリスト:
+  - Step4のボタンラベル/説明/件数表示を確認する
+  - buildFetchキャッシュ削除の件数算出/削除処理を確認し修正する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-22 19:40 JST Step4の削除ボタン説明とbuildFetchキャッシュ削除の不具合修正に着手。
+
 2272) fix/shape/step3-index-scroll-not-moving (P1) — 進行中 (2026-01-22)
 - ブランチ名: fix/shape/step3-index-scroll-not-moving
 - 依存: なし
