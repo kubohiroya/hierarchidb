@@ -121,7 +121,7 @@ vi.mock('~/worker-runtime/client.ts', async () => {
             status === 'failed' ||
             status === 'paused' ||
             status === 'regression'
-          ? (status as ProgressPhase)
+          ? status
           : 'queued';
     return {
       taskId: task.taskId,
@@ -386,10 +386,10 @@ describe('Shape WorkerProvider full flow', () => {
       let payloads = null;
       try {
         payloads = await api.generateShapeDownloadTaskPayloadsFromSelection(
-          nodeId,
-          'geoboundaries',
-          selectedArrayByCountries
-        );
+        nodeId,
+        'geoboundaries',
+        selectedArrayByCountries
+      );
       } catch (error) {
         console.log('[shape-workerprovider] generate payloads failed', {
           error,
