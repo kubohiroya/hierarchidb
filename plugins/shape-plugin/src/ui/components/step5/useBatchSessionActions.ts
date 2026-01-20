@@ -130,16 +130,18 @@ export const useBatchSessionActions = ({
     ) as Promise<FetchTaskPayload[]>;
   }, [data?.buildConfig?.dataSourceName, data?.selectedArrayByCountries, nodeId, workerClient]);
 
-  const handleStartOrResume = useCallback(async (options?: { forceRestart?: boolean }): Promise<boolean> => {
+  const handleStartOrResume = useCallback(async (options?: { forceRestart?: boolean; autoResume?: boolean }): Promise<boolean> => {
     console.debug(`${debugScope} startOrResume:click`, {
       nodeId,
       buildStatus,
       forceRestart: options?.forceRestart ?? false,
+      autoResume: options?.autoResume ?? false,
     });
     if (!nodeId) {
       notify.warning('NodeId is missing.');
       return false;
     }
+    // autoResumeBuild is only set by route transitions (build=1). Avoid writing on manual clicks.
     if (canResume && !options?.forceRestart) {
       try {
         await bridgeRef.current.initialize();

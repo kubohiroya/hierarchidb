@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toNodeId, type NodeId, type NodeType, type TaskStage } from '@hierarchidb/common-types';
+import type { ProgressPhase } from '@hierarchidb/common-api';
 import { useShapeBuildTasks } from './useShapeBuildTasks.ts';
 import { useBuildProgress } from './useBuildProgress.js';
 import { useTranslation } from '../../i18n.js';
 import { useAtom } from 'jotai';
-import { persistedTasksAtom } from '../../atoms/shapeBuildProgressAtoms.js';
+import { persistedTasksAtom, type ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.js';
 import {
   summarizeCheckboxState,
   validateBatchConfig,
@@ -67,6 +68,42 @@ const toBuildStatus = (status?: string | null): BuildStatus => {
   }
 };
 
+const resolveCachedTaskStage = (taskType?: string | null): TaskStage => {
+  if (taskType === 'fetch' || taskType === 'transform' || taskType === 'vt') {
+    return taskType;
+  }
+  throw new Error(`[ShapeBuildStep] Invalid cached task stage: ${String(taskType ?? 'undefined')}`);
+};
+
+const resolveCachedTaskStatus = (status?: string | null): ProgressPhase => {
+  if (
+    status === 'queued'
+    || status === 'running'
+    || status === 'paused'
+    || status === 'completed'
+    || status === 'failed'
+    || status === 'regression'
+    || status === 'warning'
+  ) {
+    return status;
+  }
+  throw new Error(`[ShapeBuildStep] Invalid cached task status: ${String(status ?? 'undefined')}`);
+};
+
+const buildCachedTaskSummaries = (
+  stage: TaskStage,
+  count: number,
+  seed: string,
+): ShapeBuildTaskSummary[] => (
+  Array.from({ length: count }).map((_, index) => ({
+    taskId: `cache:${stage}:${seed}:${index}`,
+    status: 'completed',
+    progress: 100,
+    message: 'cached',
+    stage,
+  }))
+);
+
 type Args = {
   data?: Partial<ShapeEntity>;
   onChange: (patch: Partial<ShapeEntity>) => void;
@@ -128,6 +165,8 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     ));
   }, [stageTaskSummary]);
   const lastBuildStartedAtRef = useRef<number | undefined>(data?.buildStartedAt);
+  const buildTaskHistoryLoadedRef = useRef(false);
+  const cacheTasksLoadedRef = useRef(false);
   const totalElapsedMsRef = useRef(0);
   const stageElapsedMsRef = useRef(0);
   const lastTickAtRef = useRef<number | null>(null);
@@ -198,6 +237,77 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       setPersistedTasks(tasks);
     }
   }, [activeNodeId, tasks, setPersistedTasks]);
+
+  useEffect(() => {
+    buildTaskHistoryLoadedRef.current = false;
+    cacheTasksLoadedRef.current = false;
+  }, [activeNodeId]);
+
+  useEffect(() => {
+    if (!activeNodeId) return;
+    if (buildTaskHistoryLoadedRef.current) return;
+    if (tasks.length > 0 || persistedTasks.length > 0) return;
+    if (isTasksLoading || buildStatus === 'running') return;
+    let cancelled = false;
+    const nodeKey = toNodeId(String(activeNodeId));
+    const run = async () => {
+      try {
+        const cachedTasks = await shapeQueryAPIImpl.listBuildTasks(nodeKey as NodeId);
+        if (cancelled) return;
+        if (cachedTasks.length > 0) {
+          const resolved: ShapeBuildTaskSummary[] = cachedTasks.map((task) => ({
+            ...task,
+            status: resolveCachedTaskStatus(task.status),
+            stage: resolveCachedTaskStage(task.taskType),
+          }));
+          setPersistedTasks(resolved);
+        }
+      } catch (error) {
+        console.debug('[ShapeBuildStep] cachedTasks:loadFailed', error);
+      } finally {
+        buildTaskHistoryLoadedRef.current = true;
+      }
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeNodeId, buildStatus, isTasksLoading, persistedTasks.length, setPersistedTasks, tasks.length]);
+
+  useEffect(() => {
+    if (!activeNodeId) return;
+    if (!buildTaskHistoryLoadedRef.current) return;
+    if (cacheTasksLoadedRef.current) return;
+    if (tasks.length > 0 || persistedTasks.length > 0) return;
+    if (isTasksLoading || buildStatus === 'running') return;
+    let cancelled = false;
+    const nodeKey = toNodeId(String(activeNodeId));
+    const run = async () => {
+      try {
+        const [fetchCaches, transformCaches, vtMetadata] = await Promise.all([
+          shapeQueryAPIImpl.listFetchCaches(nodeKey as NodeId),
+          shapeQueryAPIImpl.listTransformCaches(nodeKey as NodeId),
+          shapeQueryAPIImpl.listVTMetadata(nodeKey as NodeId),
+        ]);
+        if (cancelled) return;
+        const cachedTasks: ShapeBuildTaskSummary[] = [
+          ...buildCachedTaskSummaries('fetch', fetchCaches.length, String(nodeKey)),
+          ...buildCachedTaskSummaries('transform', transformCaches.length, String(nodeKey)),
+          ...buildCachedTaskSummaries('vt', vtMetadata.length, String(nodeKey)),
+        ];
+        if (cachedTasks.length === 0) return;
+        setPersistedTasks(cachedTasks);
+      } catch (error) {
+        console.debug('[ShapeBuildStep] cachedTasks:cacheLoadFailed', error);
+      } finally {
+        cacheTasksLoadedRef.current = true;
+      }
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeNodeId, buildStatus, isTasksLoading, persistedTasks.length, setPersistedTasks, tasks.length]);
 
   useEffect(() => {
     if (!activeNodeId) return;
@@ -770,10 +880,13 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       suspendIfRunningRef.current?.();
     };
   }, []);
-  const startOrResume = useCallback(async () => {
+  const startOrResume = useCallback(async (options?: { autoResume?: boolean }) => {
     if (isStartPending) return;
     setIsStartPending(true);
-    const ok = await handleStartOrResume({ forceRestart: hasFailedFetchTasks });
+    const ok = await handleStartOrResume({
+      forceRestart: hasFailedFetchTasks,
+      autoResume: options?.autoResume,
+    });
     if (!ok) {
       setIsStartPending(false);
     }
@@ -787,6 +900,19 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     && hasDataSource
     && hasSelection
     && isProcessingValid;
+
+  useEffect(() => {
+    if (!activeNodeId || !canStartOrResume || isStartPending) return;
+    if (typeof window === 'undefined') return;
+    try {
+      const stored = window.localStorage.getItem('autoResumeBuild');
+      if (!stored || stored !== String(activeNodeId)) return;
+      window.localStorage.removeItem('autoResumeBuild');
+      void startOrResume({ autoResume: true });
+    } catch (error) {
+      console.warn('[ShapeBuildStep] auto-resume build failed', error);
+    }
+  }, [activeNodeId, canStartOrResume, isStartPending, startOrResume]);
 
   const stageRemainingMs = useMemo(() => {
     if (!resolvedTaskType) return null;

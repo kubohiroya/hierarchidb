@@ -27,7 +27,7 @@ type TaskListProps = {
 const getVectorTileCoordsFromTitle = (task: ShapeBuildTaskSummary): { z: number; x: number; y: number } | null => {
   const title = (task as TaskWithMetadata).title;
   if (!title) return null;
-  const match = title.match(/z\s*(\d+)\s*\/\s*x\s*(\d+)\s*y\s*(\d+)/i);
+  const match = title.match(/z\s*(\d+)\s*\/\s*(\d+)\s*\/\s*(\d+)/i);
   if (!match) return null;
   const z = Number.parseInt(match[1] ?? '', 10);
   const x = Number.parseInt(match[2] ?? '', 10);
