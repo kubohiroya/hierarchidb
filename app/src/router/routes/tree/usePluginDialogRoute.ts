@@ -88,6 +88,17 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
   const resolvedPageNodeId = effectivePageNodeId as NodeId;
   const resolvedNodeType = effectiveNodeType as string;
 
+  useEffect(() => {
+    if (!autoBuildEnabled || !effectiveTargetNodeId) return;
+    if (effectiveNodeType !== 'shape') return;
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem('autoResumeBuild', String(effectiveTargetNodeId));
+    } catch (error) {
+      console.warn('[PluginDialogRoute] failed to persist autoResumeBuild', error);
+    }
+  }, [autoBuildEnabled, effectiveNodeType, effectiveTargetNodeId]);
+
   const handleAutoBuildComplete = useCallback(() => {
     if (!autoBuildEnabled) return;
     if (buildQueueKey) {

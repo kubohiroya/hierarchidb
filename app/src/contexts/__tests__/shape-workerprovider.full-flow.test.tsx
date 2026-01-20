@@ -383,7 +383,7 @@ describe('Shape WorkerProvider full flow', () => {
         url: 'https://geoboundaries.org/api/current/gbOpen/ALL/ALL/',
       });
 
-      let payloads;
+      let payloads = null;
       try {
         payloads = await api.generateShapeDownloadTaskPayloadsFromSelection(
           nodeId,
@@ -556,7 +556,7 @@ describe('Shape WorkerProvider full flow', () => {
         await sleep(pollIntervalMs);
       }
 
-      const [finalStatus, finalSession, finalTasks] = await Promise.all([
+      const [_finalStatus, finalSession, finalTasks] = await Promise.all([
         shapeQuery.getProcessingStatus(nodeId),
         api.getBatchSessionStatus('shape' as NodeType, nodeId),
         api.getBatchTasks('shape' as NodeType, nodeId),

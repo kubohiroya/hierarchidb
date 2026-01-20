@@ -7,7 +7,7 @@ import type {
   TreeSubscriptionAPI,
   TreeTableExpandedAPI,
 } from '@hierarchidb/common-api';
-import type { NodeId, NodeType } from '@hierarchidb/common-types';
+import type { NodeType } from '@hierarchidb/common-types';
 import { enableAllExporters, enableAllImporters } from '@hierarchidb/import-export';
 import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/location-store';
 import type {

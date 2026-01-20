@@ -158,6 +158,23 @@
     - update: 2026-01-22 18:30 JST vt/pipelineの主要ログをJSON.stringify形式へ置換。
     - done: 2026-01-22 18:35 JST pnpm typecheck exit 0 を確認。
 
+2286) fix/shape/vt-index-tiling-diagnostics (P1) — 進行中 (2026-01-22)
+- ブランチ名: fix/shape/vt-index-tiling-diagnostics
+- 依存: なし
+- 受け入れ基準: buildLayerIndexes/タイル生成の前後ログがJSONで出る／例外時にstageが特定できる／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/vt-orchestrator/src/vt/**`
+- ロールバック手順: 追加ログ差分を revert する
+- チェックリスト:
+  - buildLayerIndexesの開始/終了ログを追加する
+  - タイル生成ループ開始ログを追加する
+  - 例外時のstageログを追加する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+  - 運用ログ：
+    - start: 2026-01-22 18:55 JST vt index/tiling診断ログ追加に着手。
+    - update: 2026-01-22 19:15 JST index/tiling開始終了ログとstage情報をJSON出力に追加。
+    - done: 2026-01-22 19:20 JST pnpm typecheck exit 0 を確認。
+
 2272) fix/shape/step3-index-scroll-not-moving (P1) — 進行中 (2026-01-22)
 - ブランチ名: fix/shape/step3-index-scroll-not-moving
 - 依存: なし

@@ -29,6 +29,7 @@ import {
   bufferSerializer,
   countRawDataDataSourceBuffersForNode,
   createShapeChunkStore,
+  isRawDataDataSourceCacheKey,
   listRawDataDataSourceMetadataForNode,
   readRawDataDataSourceBuffer,
   storeRawDataDataSourceBufferForNode,
@@ -346,7 +347,9 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
 
   async listFetchCaches(nodeId: NodeId): Promise<ShapeFetchCache[]> {
     const metadata = await listRawDataDataSourceMetadataForNode(nodeId);
-    const records = await Promise.all(metadata.map(async (entry) => {
+    const records = await Promise.all(metadata
+      .filter((entry) => isRawDataDataSourceCacheKey(entry.cacheKey))
+      .map(async (entry) => {
       const cacheKey = entry.cacheKey;
       if (!cacheKey) return null;
       const data = await readRawDataDataSourceBuffer(nodeId, cacheKey);

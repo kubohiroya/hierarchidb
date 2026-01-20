@@ -104,7 +104,10 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
         void name;
         void description;
         void tags;
-        setDraftData(rest as Partial<PluginDefinedEntity>);
+        setDraftData((prev) => ({
+          ...(toRecord(prev) ?? {}),
+          ...(rest as Partial<PluginDefinedEntity>),
+        }));
       }
     },
     [cfg.id, onDataChange, stepData, setDraftData, setSlice]

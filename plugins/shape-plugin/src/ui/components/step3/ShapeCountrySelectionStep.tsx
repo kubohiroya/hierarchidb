@@ -95,6 +95,8 @@ const ShapeCountrySelectionContent: React.FC<ShapeDialogStepProps> = ({ data, on
           maxHeight={undefined}
           showRegionIndex
           showAlphabetIndex
+          scrollBehavior="smooth"
+          indexScrollDurationMs={120}
           loading={loading}
           errorMessage={null}
         />

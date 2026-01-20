@@ -363,7 +363,7 @@ export function usePluginDialogController(
   );
   useEffect(() => {
     setLocalDraftData(draftDataWithoutMeta);
-  }, [draftDataWithoutMeta]);
+  }, [draftDataWithoutMeta, setLocalDraftData]);
 
   const applyUpdateDraft = useCallback(
     (patch: TreeNodeUpdaterPatch<PluginDefinedEntity>) => {
@@ -1080,7 +1080,7 @@ export function usePluginDialogController(
       }
       setLocalDraftData((prev) => ({ ...(toRecord(prev) ?? {}), ...patch }));
     },
-    [nodeType]
+    [nodeType, setLocalDraftData]
   );
 
   const handleRequestCommit = useCallback(() => {

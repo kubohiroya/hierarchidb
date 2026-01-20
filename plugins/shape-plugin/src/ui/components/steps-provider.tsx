@@ -27,6 +27,7 @@ function createStepAdapter(
     const latestDataRef = useRef<ShapeEntity | null>(null);
     useEffect(() => {
       latestDataRef.current = {
+        ...(latestDataRef.current ?? {}),
         nodeId: props.nodeId as NodeId,
         ...(props.data ?? {}),
       };
@@ -102,6 +103,12 @@ const hasPersistedMetadata = async (data?: Partial<ShapeEntity>): Promise<boolea
   return rows.length > 0;
 };
 
+const hasPersistedFeatureMetadata = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
+  const nodeId = requireShapeNodeId(data);
+  const rows = await shapeQueryAPIImpl.listFeatureMetadata(nodeId);
+  return rows.length > 0;
+};
+
 const hasPersistedTransformErrors = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
   const nodeId = requireShapeNodeId(data);
   const rows = await shapeQueryAPIImpl.listTransformErrorRecords(nodeId);
@@ -122,6 +129,7 @@ const isShapePreviewReady = async (data?: Partial<ShapeEntity>): Promise<boolean
   if (!data) return false;
   if (data.processingStatus === 'processing') return true;
   if (await hasPersistedMetadata(data)) return true;
+  if (await hasPersistedFeatureMetadata(data)) return true;
   if (await hasPersistedTransformErrors(data)) return true;
   if (hasTileSummary(data)) return true;
   return hasPersistedVectorTiles(data);

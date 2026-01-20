@@ -84,6 +84,7 @@ export const buildShapeCacheKey = (prefix: string, url: string): string => (
 );
 
 const RAW_DATA_DEFAULT_CONTENT_TYPE = 'application/octet-stream';
+const RAW_DATA_CACHE_PREFIX = 'download:';
 
 export type RawDataDataSourceCacheKeyParams = {
   dataSource?: string;
@@ -101,6 +102,10 @@ export const buildRawDataDataSourceCacheKey = (params: RawDataDataSourceCacheKey
   const prefix = `download:${dataSource}:${countryCode}:${adminLevel}${variant}`;
   return buildShapeCacheKey(prefix, params.url ?? '');
 };
+
+export const isRawDataDataSourceCacheKey = (cacheKey?: string | null): boolean => (
+  Boolean(cacheKey && cacheKey.startsWith(RAW_DATA_CACHE_PREFIX))
+);
 
 const compressGzip = async (buffer: ArrayBuffer): Promise<{ buffer: ArrayBuffer; contentType: string }> => (
   { buffer, contentType: RAW_DATA_DEFAULT_CONTENT_TYPE }
@@ -166,8 +171,8 @@ export const listRawDataDataSourceMetadataForNode = async (nodeId: NodeId): Prom
 };
 
 export const countRawDataDataSourceBuffersForNode = async (nodeId: NodeId): Promise<number> => {
-  const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
-  return store.countForNode(nodeId);
+  const metadata = await listRawDataDataSourceMetadataForNode(nodeId);
+  return metadata.filter((entry) => isRawDataDataSourceCacheKey(entry.cacheKey)).length;
 };
 
 export const hasRawDataDataSourceBuffer = async (nodeId: NodeId, cacheKey: string): Promise<boolean> => {
@@ -191,6 +196,27 @@ export const deleteRawDataDataSourceBuffersForDataSource = async (
     await store.deleteForNode(nodeId, key);
   }
   return keys.length;
+};
+
+export const deleteRawDataDataSourceBuffersForNodeKeys = async (
+  nodeId: NodeId,
+  cacheKeys: string[],
+): Promise<number> => {
+  if (!cacheKeys.length) return 0;
+  const store = createShapeChunkStore(bufferSerializer, bufferDeserializer);
+  const uniqueKeys = Array.from(new Set(cacheKeys)).filter((key) => key.length > 0);
+  for (const key of uniqueKeys) {
+    await store.deleteForNode(nodeId, key);
+  }
+  return uniqueKeys.length;
+};
+
+export const deleteRawDataDataSourceBuffersForNode = async (nodeId: NodeId): Promise<number> => {
+  const metadata = await listRawDataDataSourceMetadataForNode(nodeId);
+  const cacheKeys = metadata
+    .map((entry) => entry.cacheKey)
+    .filter((key): key is string => isRawDataDataSourceCacheKey(key));
+  return deleteRawDataDataSourceBuffersForNodeKeys(nodeId, cacheKeys);
 };
 
 export const ensureRawDataDataSourceBufferForNode = async (

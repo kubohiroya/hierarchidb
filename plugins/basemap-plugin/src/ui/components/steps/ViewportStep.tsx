@@ -121,7 +121,7 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
         });
       }
     }
-  }, [value]);
+  }, [setDragViewState, value]);
 
   const mapStyleSource = useMemo(() => {
     if (mapStyle) return resolveMapStyleSource(mapStyle);

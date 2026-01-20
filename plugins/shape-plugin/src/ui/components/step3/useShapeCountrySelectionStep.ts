@@ -14,6 +14,12 @@ import type { CountryAvailabilityWorkerAPI, SerializedCountryAvailability } from
 import { wrap, releaseProxy, proxy } from 'comlink';
 import type { NodeId } from '@hierarchidb/common-types';
 import { useDialogUrlSync } from '@hierarchidb/plugin-base';
+import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
+import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
+import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
+import { ephemeralShapeDB } from '@hierarchidb/shape-store';
+import { deleteRawDataDataSourceBuffersForNodeKeys } from '../../../services/utils/chunkStore.ts';
+import { shapeMutationAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
 
 // (availability is loaded in a dedicated worker thread)
 
@@ -103,6 +109,8 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
   const { enqueueSnackbar } = useSnackbar();
   const nodeId = _nodeId;
   const { setStep: setDialogStep } = useDialogUrlSync();
+  const bridgeRef = useMemo(() => getWorkerBridge(), []);
+  const prevSelectionRef = useRef<Record<string, boolean[]> | null>(null);
 
   // Current selection value must be available before any derived useMemo.
   const selectedArrayByCountries = data.selectedArrayByCountries;
@@ -409,6 +417,132 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
     );
   }, [baseCountries, iso3ToIso2, resolvedMaxAdminLevel, selectedArrayByCountries]);
 
+  const buildSelectionSet = useCallback((selection: Record<string, boolean[]>): Set<string> => {
+    const set = new Set<string>();
+    Object.entries(selection).forEach(([code, row]) => {
+      row.forEach((selected, index) => {
+        if (selected) {
+          set.add(`${code}:${index}`);
+        }
+      });
+    });
+    return set;
+  }, []);
+
+  const invalidateBuildForSelectionChange = useCallback(async (
+    prevSelection: Record<string, boolean[]>,
+    nextSelection: Record<string, boolean[]>,
+  ) => {
+    if (!nodeId) return;
+    const prevSet = buildSelectionSet(prevSelection);
+    const nextSet = buildSelectionSet(nextSelection);
+    const removed = Array.from(prevSet).filter((entry) => !nextSet.has(entry));
+    if (removed.length === 0) return;
+    const removedPairs = removed.map((entry) => {
+      const [countryCode, adminLevelText] = entry.split(':');
+      return {
+        countryCode: countryCode ?? '',
+        adminLevel: Number.parseInt(adminLevelText ?? '', 10),
+      };
+    }).filter((entry) => entry.countryCode && Number.isFinite(entry.adminLevel));
+    if (removedPairs.length === 0) return;
+    const taskQueue = new VtTaskQueueDb();
+    const removedKeyTuples = removedPairs.map((entry) => (
+      [nodeId, entry.countryCode, entry.adminLevel] as const
+    ));
+    const [fetchCaches, transformCaches, vtTasks] = await Promise.all([
+      ephemeralShapeDB.fetchCache
+        .where('[nodeId+countryCode+adminLevel]')
+        .anyOf(removedKeyTuples)
+        .toArray(),
+      ephemeralShapeDB.transformCache
+        .where('[nodeId+countryCode+adminLevel]')
+        .anyOf(removedKeyTuples)
+        .toArray(),
+      taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'vt']).toArray(),
+    ]);
+    const fetchCacheIds = fetchCaches.map((cache) => cache.id);
+    const transformCacheIds = transformCaches.map((cache) => cache.id);
+    if (fetchCacheIds.length > 0) {
+      await ephemeralShapeDB.fetchCache
+        .where('[nodeId+countryCode+adminLevel]')
+        .anyOf(removedKeyTuples)
+        .delete();
+      await deleteRawDataDataSourceBuffersForNodeKeys(nodeId, fetchCacheIds);
+    }
+    const removedBufferSet = new Set(transformCacheIds);
+    if (transformCacheIds.length > 0) {
+      await ephemeralShapeDB.transformCache
+        .where('[nodeId+countryCode+adminLevel]')
+        .anyOf(removedKeyTuples)
+        .delete();
+      const relations = await ephemeralShapeDB.tileIdToBufferRelations
+        .where('bufferId')
+        .anyOf(transformCacheIds)
+        .toArray();
+      const affectedTileIds = new Set(relations.map((row) => row.tileId));
+      await ephemeralShapeDB.tileIdToBufferRelations
+        .where('bufferId')
+        .anyOf(transformCacheIds)
+        .delete();
+      const encoder = new TextEncoder();
+      const hasher = new NobleSha3HashPort();
+      const tileIdsToDelete = vtTasks
+        .map((task) => {
+          const input = task.inputData as { bufferIds?: string[]; tileId?: number } | undefined;
+          if (!input?.bufferIds?.length || typeof input.tileId !== 'number') return null;
+          if (!input.bufferIds.some((bufferId) => removedBufferSet.has(bufferId))) return null;
+          const sorted = [...input.bufferIds].sort();
+          const hash = hasher.digest(encoder.encode(JSON.stringify(sorted)).buffer, 'sha3-256');
+          return `${input.tileId}|${hash}`;
+        })
+        .filter((entry): entry is string => Boolean(entry));
+      for (const tileId of tileIdsToDelete) {
+        await shapeMutationAPIImpl.deleteVectorTile(tileId);
+      }
+      if (affectedTileIds.size > 0 && tileIdsToDelete.length === 0) {
+        await shapeMutationAPIImpl.deleteVectorTiles(nodeId);
+      }
+    }
+    const tasks = await taskQueue.tasks.where('nodeId').equals(nodeId).toArray();
+    const removedSet = new Set(removed.map((entry) => entry.toUpperCase()));
+    const removedTaskIds = tasks
+      .filter((task) => {
+        if (task.stage === 'fetch' || task.stage === 'transform') {
+          const input = task.inputData as { countryCode?: string; adminLevel?: number } | undefined;
+          if (!input?.countryCode || typeof input.adminLevel !== 'number') return false;
+          return removedSet.has(`${input.countryCode.toUpperCase()}:${input.adminLevel}`);
+        }
+        if (task.stage === 'vt') {
+          const input = task.inputData as { bufferIds?: string[] } | undefined;
+          if (!input?.bufferIds?.length) return false;
+          return input.bufferIds.some((bufferId) => removedBufferSet.has(bufferId));
+        }
+        return false;
+      })
+      .map((task) => task.taskId);
+    if (removedTaskIds.length > 0) {
+      await taskQueue.tasks.bulkDelete(removedTaskIds);
+    }
+    try {
+      await bridgeRef.initialize();
+      const updater = await bridgeRef.getTreeNodeUpdaterAPI();
+      await updater.updateTreeNode(nodeId, {
+        mode: 'save-draft',
+        draftData: {
+          ...(data ?? {}),
+          selectedArrayByCountries: nextSelection,
+          processingStatus: 'idle',
+          tileSummary: undefined,
+          buildStartedAt: undefined,
+          buildFinishedAt: undefined,
+        } as Record<string, unknown>,
+      });
+    } catch (error) {
+      console.warn('[ShapeCountrySelectionStep] failed to invalidate build after selection change', error);
+    }
+  }, [bridgeRef, buildSelectionSet, data, nodeId]);
+
   const checkboxMatrix = useMemo<boolean[][]>(() => {
     return baseCountries.map((entry) => {
       const row = normalizedSelection[entry.country.code] ?? [];
@@ -421,6 +555,19 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
     if (Object.keys(normalizedSelection).length === 0) return;
     onChange({ selectedArrayByCountries: normalizedSelection });
   }, [normalizedSelection, onChange, selectedArrayByCountries]);
+
+  useEffect(() => {
+    if (!nodeId) return;
+    if (Object.keys(normalizedSelection).length === 0) return;
+    const prev = prevSelectionRef.current;
+    if (!prev) {
+      prevSelectionRef.current = normalizedSelection;
+      return;
+    }
+    if (isSelectionEqual(prev, normalizedSelection)) return;
+    prevSelectionRef.current = normalizedSelection;
+    void invalidateBuildForSelectionChange(prev, normalizedSelection);
+  }, [invalidateBuildForSelectionChange, nodeId, normalizedSelection]);
 
   useEffect(() => {
     if (baseCountries.length === 0) return;

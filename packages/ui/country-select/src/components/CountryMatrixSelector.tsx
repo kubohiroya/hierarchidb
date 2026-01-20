@@ -30,6 +30,8 @@ export interface CountryMatrixSelectorProps {
   showRegionIndex?: boolean;
   /** Scroll behavior for index chips */
   scrollBehavior?: ScrollBehavior;
+  /** Optional scroll duration for index chips (ms). Overrides scrollBehavior when set. */
+  indexScrollDurationMs?: number;
   /** Jump instead of scroll */
   jumpInsteadOfScroll?: boolean;
   /** Component height */
@@ -54,6 +56,8 @@ type ScrollToIndexOptions = {
 
 type VirtuosoHandle = {
   scrollToIndex: (options: ScrollToIndexOptions) => void;
+  scrollTo: (options: ScrollToOptions) => void;
+  getState: (stateCb: (state: { scrollTop: number }) => void) => void;
 };
 
 export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
@@ -64,6 +68,7 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
   showAlphabetIndex = true,
   showRegionIndex = true,
   scrollBehavior = 'smooth',
+  indexScrollDurationMs,
   jumpInsteadOfScroll = false,
   height = 600,
   maxHeight,
@@ -85,6 +90,16 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
     return map;
   }, [selections]);
 
+  const selectedCountryCodes = useMemo(() => {
+    const set = new Set<string>();
+    selections.forEach((sel) => {
+      if (Object.values(sel.selections ?? {}).some(Boolean)) {
+        set.add(sel.countryCode);
+      }
+    });
+    return set;
+  }, [selections]);
+
   const disabledColumnIdSet = useMemo(
     () => new Set(matrixConfig.disabledColumnIds ?? []),
     [matrixConfig.disabledColumnIds],
@@ -100,6 +115,61 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
         disabled: disabledColumnIdSet.has(col.id),
       })),
     [disabledColumnIdSet, matrixConfig.columns],
+  );
+
+  const scrollToRowIndex = useCallback(
+    (targetIndex: number) => {
+      const handle = virtuosoRef.current;
+      if (!handle) return;
+
+      if (jumpInsteadOfScroll || !indexScrollDurationMs || indexScrollDurationMs <= 0) {
+        handle.scrollToIndex({
+          index: targetIndex,
+          align: 'start',
+          behavior: jumpInsteadOfScroll ? 'auto' : scrollBehavior,
+        });
+        return;
+      }
+
+      if (typeof requestAnimationFrame === 'undefined') {
+        handle.scrollToIndex({ index: targetIndex, align: 'start', behavior: 'auto' });
+        return;
+      }
+
+      handle.getState((state) => {
+        const startTop = state.scrollTop ?? 0;
+        handle.scrollToIndex({ index: targetIndex, align: 'start', behavior: 'auto' });
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            handle.getState((afterState) => {
+              const targetTop = afterState.scrollTop ?? startTop;
+              const delta = targetTop - startTop;
+              if (Math.abs(delta) < 2) {
+                handle.scrollToIndex({ index: targetIndex, align: 'start', behavior: scrollBehavior });
+                return;
+              }
+
+              handle.scrollTo({ top: startTop, behavior: 'auto' });
+              const durationMs = Math.max(16, indexScrollDurationMs);
+              const startTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
+              const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+              const step = (now: number) => {
+                const currentTime = typeof performance !== 'undefined' ? now : Date.now();
+                const elapsed = currentTime - startTime;
+                const t = Math.min(1, elapsed / durationMs);
+                const eased = easeOutCubic(t);
+                handle.scrollTo({ top: startTop + delta * eased, behavior: 'auto' });
+                if (t < 1) {
+                  requestAnimationFrame(step);
+                }
+              };
+              requestAnimationFrame(step);
+            });
+          });
+        });
+      });
+    },
+    [indexScrollDurationMs, jumpInsteadOfScroll, scrollBehavior],
   );
 
   const continentAliases: Record<string, keyof typeof CONTINENTS> = useMemo(() => ({
@@ -322,6 +392,23 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
       .map(([letter, value]) => ({ label: letter, count: value.count, firstRowId: value.firstRowId }));
   }, [rows]);
 
+  const alphabetIndexSelections = useMemo(() => {
+    const selectedByLetter = new Map<string, boolean>();
+    rows.forEach((row) => {
+      const letter = (row.data.country.name?.[0] ?? '#').toUpperCase();
+      const selectionsByColumn = selectionMap.get(row.data.country.code);
+      const hasSelection = Boolean(selectionsByColumn && Object.values(selectionsByColumn).some(Boolean));
+      if (hasSelection) {
+        selectedByLetter.set(letter, true);
+        return;
+      }
+      if (!selectedByLetter.has(letter)) {
+        selectedByLetter.set(letter, false);
+      }
+    });
+    return selectedByLetter;
+  }, [rows, selectionMap]);
+
   const regionIndex = useMemo(() => {
     const groups: Record<string, { count: number; firstRowId: string }> = {};
     rows.forEach((row) => {
@@ -399,14 +486,11 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
               key={entry.label}
               label={`${entry.label} (${entry.count})`}
               size="small"
+              color={alphabetIndexSelections.get(entry.label) ? 'primary' : 'default'}
               onClick={() => {
                 const targetIndex = rows.findIndex((row) => row.id === entry.firstRowId);
                 if (targetIndex >= 0) {
-                  virtuosoRef.current?.scrollToIndex({
-                    index: targetIndex,
-                    align: 'start',
-                    behavior: jumpInsteadOfScroll ? 'auto' : scrollBehavior,
-                  });
+                  scrollToRowIndex(targetIndex);
                 }
               }}
             />
@@ -426,11 +510,7 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
               onClick={() => {
                 const targetIndex = rows.findIndex((row) => row.id === entry.firstRowId);
                 if (targetIndex >= 0) {
-                  virtuosoRef.current?.scrollToIndex({
-                    index: targetIndex,
-                    align: 'start',
-                    behavior: jumpInsteadOfScroll ? 'auto' : scrollBehavior,
-                  });
+                  scrollToRowIndex(targetIndex);
                 }
               }}
             />
@@ -457,6 +537,7 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
             virtuosoRef={virtuosoRef}
             height={height}
             maxHeight={maxHeight}
+            selectedCountryCodes={selectedCountryCodes}
           />
         </Provider>
       </Box>
@@ -482,6 +563,7 @@ type CountryMatrixTableProps = {
   virtuosoRef: React.MutableRefObject<VirtuosoHandle | null>;
   height: number | string;
   maxHeight?: number | string;
+  selectedCountryCodes: ReadonlySet<string>;
 };
 
 const CountryMatrixTable: React.FC<CountryMatrixTableProps> = ({
@@ -499,6 +581,7 @@ const CountryMatrixTable: React.FC<CountryMatrixTableProps> = ({
   virtuosoRef,
   height,
   maxHeight,
+  selectedCountryCodes,
 }) => {
   const matrixState = useAtomValue(matrixStateAtom);
   const rowsWithTooltip = useMemo(
@@ -549,7 +632,11 @@ const CountryMatrixTable: React.FC<CountryMatrixTableProps> = ({
           header: 'Country',
           render: (row: SelectionMatrixRow<{ country: Country }>) => (
             <Box display="flex" alignItems="center" gap={1.25}>
-              <Typography variant="body2" component="span">
+              <Typography
+                variant="body2"
+                component="span"
+                color={selectedCountryCodes.has(row.data.country.code) ? 'primary' : 'text.primary'}
+              >
                 {row.data.country.flag || flagFromCode(row.data.country.code) || '⬜️'}{' '}
                 {row.data.country.name} ({row.data.country.code})
                 {row.data.country.nativeName && row.data.country.nativeName !== row.data.country.name && (

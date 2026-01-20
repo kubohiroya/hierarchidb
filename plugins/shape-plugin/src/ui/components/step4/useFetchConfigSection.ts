@@ -12,6 +12,7 @@ import { persistedTasksAtom, tasksAtom } from '../../atoms/shapeBuildProgressAto
 import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import type { BuildTaskType } from '@hierarchidb/shape-store';
 import { ephemeralShapeAPIImpl, shapeMutationAPIImpl, shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
+import { deleteRawDataDataSourceBuffersForNode } from '../../../services/utils/chunkStore.js';
 
 type Args = {
   config: ShapeBuildConfig;
@@ -40,6 +41,7 @@ type StageLikeTask = {
 const resolveTaskStage = (task: StageLikeTask): TaskStage =>
   task.stage ?? task.type ?? task.taskType;
 
+const isFetchTask = (task: StageLikeTask): boolean => resolveTaskStage(task) === 'fetch';
 const isTransformTask = (task: StageLikeTask): boolean => resolveTaskStage(task) === 'transform';
 
 export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChange, onResetSession }: Args) => {
@@ -77,6 +79,7 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
   const transformDeleteCount = counts.transform;
   const vtDeleteCount = counts.vt;
   const metadataDeleteCount = resultCounts.metadata;
+  const hasTileSummary = Boolean(draft?.tileSummary && (draft.tileSummary.tiles ?? 0) > 0);
   const deleteFetchLabel = useMemo(() => (
     formatDeleteLabelI18n(
       'processing.download.deleteDownloadedFilesWithCount',
@@ -112,13 +115,13 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
     try {
       const taskQueue = new VtTaskQueueDb();
       const [
-        cacheStats,
+        fetchCacheCount,
         transformTaskCount,
         vtTaskCount,
         transformCacheCount,
         numMetadata,
       ] = await Promise.all([
-        ephemeralShapeAPIImpl.getNumCaches(),
+        ephemeralShapeAPIImpl.countFetchCaches(nodeId),
         taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'transform']).count(),
         taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'vt']).count(),
         ephemeralShapeAPIImpl.countTransformCaches(nodeId),
@@ -134,7 +137,7 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
       setIsRunning(sessionStatus?.status === 'running');
 
       setCounts({
-        fetch: cacheStats.numFetchCaches,
+        fetch: fetchCacheCount,
         transform: transformCount,
         vt: vtTaskCount,
       });
@@ -207,6 +210,16 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
     }
   }, [bridgeRef, draft, nodeId]);
 
+  const hasPersistedOutputs = useCallback(async (): Promise<boolean> => {
+    if (!nodeId) return false;
+    const [summary, sourceMetadata, transformErrors] = await Promise.all([
+      shapeQueryAPIImpl.getVectorTileSummary(nodeId),
+      shapeQueryAPIImpl.listSourceMetadata(nodeId),
+      shapeQueryAPIImpl.listTransformErrorRecords(nodeId),
+    ]);
+    return summary.tiles > 0 || sourceMetadata.length > 0 || transformErrors.length > 0;
+  }, [nodeId]);
+
   const persistTileSummaryReset = useCallback(async () => {
     if (!nodeId) return;
     try {
@@ -225,20 +238,30 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
   }, [bridgeRef, draft, nodeId]);
 
   const handleDeleteFetchCache = useCallback(async () => {
+    await deleteRawDataDataSourceBuffersForNode(nodeId);
     await ephemeralShapeAPIImpl.clearStage(nodeId, 'fetch');
     await clearBatchTasksForType('fetch');
-    await clearFinalOutputs();
+    setBuildTasks((prev) => prev.filter((task) => !isFetchTask(task)));
+    setPersistedTasks((prev) => prev.filter((task) => !isFetchTask(task)));
     await loadCounts();
-    onResetSession?.();
-    await persistSessionReset();
+    const shouldPreserveSession = draft?.processingStatus === 'completed' || hasTileSummary || await hasPersistedOutputs();
+    if (!shouldPreserveSession) {
+      onResetSession?.();
+      await persistSessionReset();
+    }
     notify.success('Deleted fetch cache');
   }, [
     nodeId,
     clearBatchTasksForType,
-    clearFinalOutputs,
+    deleteRawDataDataSourceBuffersForNode,
+    draft?.processingStatus,
+    hasPersistedOutputs,
+    hasTileSummary,
     loadCounts,
     onResetSession,
     persistSessionReset,
+    setBuildTasks,
+    setPersistedTasks,
   ]);
 
   const handleDeleteTransformCache = useCallback(async () => {

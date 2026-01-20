@@ -10,6 +10,7 @@ const bufferSerializer: ChunkStoreSerializer<ArrayBuffer> = (value) => value;
 const bufferDeserializer: ChunkStoreDeserializer<ArrayBuffer> = (value) => value;
 
 const RAW_DATA_DEFAULT_CONTENT_TYPE = 'application/octet-stream';
+const RAW_DATA_CACHE_PREFIX = 'download:';
 
 const createShapeChunkStore = (): DexieChunkStore<ArrayBuffer> =>
   new DexieChunkStore<ArrayBuffer>({
@@ -70,8 +71,8 @@ export const listRawDataDataSourceMetadataForNode = async (
 };
 
 export const countFetchDataDataSourceBuffersForNode = async (nodeId: NodeId): Promise<number> => {
-  const store = createShapeChunkStore();
-  return store.countForNode(nodeId);
+  const metadata = await listRawDataDataSourceMetadataForNode(nodeId);
+  return metadata.filter((entry) => entry.cacheKey?.startsWith(RAW_DATA_CACHE_PREFIX)).length;
 };
 
 export const hasRawDataDataSourceBuffer = async (

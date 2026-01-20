@@ -440,20 +440,7 @@ export const ModelessDialogManager: React.FC<ModelessDialogManagerProps> = ({
         ),
       },
     ],
-    [
-      basemapStyles,
-      formattedZxy,
-      geoJsonLayers,
-      locationTypeOptions,
-      locationTypeSelection,
-      mapInfo,
-      nodeId,
-      onToggleLocationType,
-      onToggleRouteMode,
-      routeModeOptions,
-      routeModeSelection,
-      vectorLayers,
-    ]
+    [basemapStyles, formattedZxy, geoJsonLayers, locationTypeOptions, locationTypeSelection, mapInfo, nodeId, onToggleLocationType, onToggleRouteMode, onToggleStyler, routeModeOptions, routeModeSelection, stylerSummaries, stylerToggles, vectorLayers]
   );
 
   const storageKey = useMemo(() => `hdb.map.dialogs.${nodeId}`, [nodeId]);

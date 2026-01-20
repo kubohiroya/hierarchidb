@@ -159,21 +159,26 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
     });
   }, [t]);
 
-  const controlDetails = useMemo(() => ([
-    {
-      label: t('stage.timing.totalElapsed', 'Total elapsed'),
-      value: formatDuration(summary.totalElapsedMs),
-    },
-    {
-      label: t('stage.timing.stageElapsed', 'Stage elapsed'),
-      value: formatDuration(summary.stageElapsedMs),
-    },
-    {
-      label: t('stage.timing.stageRemaining', 'Stage remaining (estimate)'),
-      value: formatDuration(summary.stageRemainingMs ?? null),
-    },
-  ]), [
+  const controlDetails = useMemo(() => {
+    const isBuildStarted = summary.buildStatus !== 'idle';
+    const emptyValue = t('stage.timing.unknown', '-');
+    return [
+      {
+        label: t('stage.timing.totalElapsed', 'Total elapsed'),
+        value: isBuildStarted ? formatDuration(summary.totalElapsedMs) : emptyValue,
+      },
+      {
+        label: t('stage.timing.stageElapsed', 'Stage elapsed'),
+        value: isBuildStarted ? formatDuration(summary.stageElapsedMs) : emptyValue,
+      },
+      {
+        label: t('stage.timing.stageRemaining', 'Stage remaining (estimate)'),
+        value: formatDuration(summary.stageRemainingMs ?? null),
+      },
+    ];
+  }, [
     formatDuration,
+    summary.buildStatus,
     summary.stageElapsedMs,
     summary.stageRemainingMs,
     summary.totalElapsedMs,
