@@ -42,7 +42,7 @@ import {
   updateTask,
 } from '@hierarchidb/vt-orchestrator';
 import { ephemeralShapeDB } from '@hierarchidb/shape-store';
-import { runShapeVtPipeline } from '../services/vt/shapeVtPipeline.js';
+import { runShapePipeline } from '../services/vt/shapePipeline.js';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../services/batch/ShapeBuildAPIClient.ts';
 
 type DraftLike = {
@@ -83,6 +83,7 @@ type PauseState = {
 const progressCallbacks = new Map<string, ProgressSubscription>();
 const pauseStates = new Map<string, PauseState>();
 const activePipelines = new Set<string>();
+const activePipelineRuns = new Map<string, string>();
 
 const shapeEntityHandlerSingleton = new ShapeEntityHandler();
 const getShapeEntityHandler = (): ShapeEntityHandler => shapeEntityHandlerSingleton;
@@ -148,17 +149,29 @@ const buildTaskQueueTitle = (task: TaskQueueRecord): string | undefined => {
     return [country, adminLevel, bandId, zoomBandLabel].filter(Boolean).join(" ");
   }
   if (task.stage === "vt") {
+    const unpackTileId = (tileId: number, zBase: number): { x: number; y: number } | null => {
+      if (!Number.isFinite(tileId) || !Number.isFinite(zBase)) return null;
+      const divisor = 2 ** zBase;
+      if (!Number.isFinite(divisor) || divisor <= 0) return null;
+      const x = Math.floor(tileId / divisor);
+      const y = tileId - (x * divisor);
+      if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || y < 0) return null;
+      return { x, y };
+    };
     const bandId = typeof input.bandId === "number" && Number.isFinite(input.bandId)
       ? `band${input.bandId}`
       : undefined;
-    const bandMinZoom = typeof input.bandMinZoom === "number" && Number.isFinite(input.bandMinZoom)
-      ? input.bandMinZoom
+    const zBase = typeof input.zBase === "number" && Number.isFinite(input.zBase)
+      ? input.zBase
       : undefined;
-    const bandMaxZoom = typeof input.bandMaxZoom === "number" && Number.isFinite(input.bandMaxZoom)
-      ? input.bandMaxZoom
+    const tileId = typeof input.tileId === "number" && Number.isFinite(input.tileId)
+      ? input.tileId
       : undefined;
-    const zoomLabel = bandMinZoom !== undefined && bandMaxZoom !== undefined
-      ? `z${bandMinZoom}-z${bandMaxZoom}`
+    const coords = zBase !== undefined && tileId !== undefined
+      ? unpackTileId(tileId, zBase)
+      : null;
+    const zoomLabel = zBase !== undefined && coords
+      ? `z${zBase}/${coords.x}/${coords.y}`
       : undefined;
     const featureCount = typeof input.featureCount === "number" && Number.isFinite(input.featureCount)
       ? input.featureCount
@@ -636,7 +649,18 @@ export const shapeBatchAPI = {
     }
 
     const nodeForSession = draftLike.nodeId ?? draftLike.treeNodeId ?? draftId;
+    const pipelineKey = String(nodeForSession);
+    if (activePipelines.has(pipelineKey)) {
+      const existingRunId = activePipelineRuns.get(pipelineKey) ?? 'unknown';
+      console.warn('[shapeBatchAPI] startBatchProcess ignored: pipeline already active', {
+        nodeId: nodeForSession,
+        runId: existingRunId,
+      });
+      await emitProgressSnapshot(nodeForSession, 'startBatchProcess ignored: pipeline already active');
+      return nodeForSession;
+    }
     const buildStartedAt = Date.now();
+    const pipelineRunId = `${nodeForSession}:${buildStartedAt}`;
     await handler.updateEntity(nodeForSession, {
       buildStartedAt,
       buildFinishedAt: undefined,
@@ -644,9 +668,14 @@ export const shapeBatchAPI = {
     });
 
     setPaused(nodeForSession, false);
-    const pipelineKey = String(nodeForSession);
     activePipelines.add(pipelineKey);
-    void runShapeVtPipeline({
+    activePipelineRuns.set(pipelineKey, pipelineRunId);
+    console.warn('[shapeBatchAPI] startBatchProcess pipeline start', {
+      nodeId: nodeForSession,
+      runId: pipelineRunId,
+      payloadCount: downloadTaskPayloads.length,
+    });
+    void runShapePipeline({
       nodeId: nodeForSession,
       dataSource: mergedBatchConfig.dataSourceName,
       buildConfig: mergedBatchConfig,
@@ -654,6 +683,7 @@ export const shapeBatchAPI = {
       downloadTaskPayloads,
       waitIfPaused: () => waitIfPaused(nodeForSession),
       buildContinuationPolicy,
+      pipelineRunId,
     }).then(async () => {
       await handler.updateEntity(nodeForSession, {
         buildFinishedAt: Date.now(),
@@ -666,6 +696,7 @@ export const shapeBatchAPI = {
       });
     }).finally(() => {
       activePipelines.delete(pipelineKey);
+      activePipelineRuns.delete(pipelineKey);
       pauseStates.delete(String(nodeForSession));
     });
 
@@ -719,6 +750,14 @@ export const shapeBatchAPI = {
           activePipelines.delete(pipelineKey);
         }
       }
+      if (activePipelines.has(pipelineKey)) {
+        console.warn('[shapeBatchAPI] resumeBatchSession ignored: pipeline already active', {
+          nodeId,
+          runId: activePipelineRuns.get(pipelineKey) ?? 'unknown',
+        });
+        await emitProgressSnapshot(nodeId, 'resumeBatchSession ignored: pipeline already active');
+        return;
+      }
       if (!activePipelines.has(pipelineKey)) {
         const handler = getShapeEntityHandler();
         const draftLike = await handler.getEntity(nodeId) as DraftLike | null;
@@ -737,8 +776,14 @@ export const shapeBatchAPI = {
           mergedBuildConfig.dataSourceName,
           'resumeBatchSession',
         );
+        const pipelineRunId = `${nodeId}:${Date.now()}`;
         activePipelines.add(pipelineKey);
-        void runShapeVtPipeline({
+        activePipelineRuns.set(pipelineKey, pipelineRunId);
+        console.warn('[shapeBatchAPI] resumeBatchSession pipeline start', {
+          nodeId,
+          runId: pipelineRunId,
+        });
+        void runShapePipeline({
           nodeId,
           dataSource: resolvedDataSource,
           buildConfig: mergedBuildConfig,
@@ -746,6 +791,7 @@ export const shapeBatchAPI = {
           waitIfPaused: () => waitIfPaused(nodeId),
           resumeExistingTasks: true,
           buildContinuationPolicy,
+          pipelineRunId,
         }).then(async () => {
           await handler.updateEntity(nodeId, {
             buildFinishedAt: Date.now(),
@@ -758,6 +804,7 @@ export const shapeBatchAPI = {
           });
         }).finally(() => {
           activePipelines.delete(pipelineKey);
+          activePipelineRuns.delete(pipelineKey);
           pauseStates.delete(pipelineKey);
         });
       }

@@ -12,7 +12,7 @@ let VtTaskQueueDb: typeof import('@hierarchidb/vt-orchestrator').VtTaskQueueDb;
 let listTasksByStageAndStatus: typeof import('@hierarchidb/vt-orchestrator').listTasksByStageAndStatus;
 let ephemeralShapeDB: typeof import('@hierarchidb/shape-store').ephemeralShapeDB;
 let shapeDB: typeof import('@hierarchidb/shape-store').shapeDB;
-let runShapeVtPipeline: typeof import('../../services/vt/shapeVtPipeline.js').runShapeVtPipeline;
+let runShapePipeline: typeof import('../../services/vt/shapePipeline.js').runShapePipeline;
 let metadataLoader: typeof import('../../services/metadata/MetadataLoader.js').metadataLoader;
 let resolveCountryCodeForDataSource: typeof import('../../services/utils/utils.js').resolveCountryCodeForDataSource;
 
@@ -54,7 +54,7 @@ const selectGeoBoundariesPayload = async (): Promise<FetchTaskPayload> => {
   const fallback = candidate.iso3 ?? candidate.countryCode ?? candidate.iso2 ?? '';
   const countryCode = resolveCountryCodeForDataSource('geoboundaries', candidate, fallback);
   return {
-    url: `https://www.geoboundaries.org/api/current/gbOpen/${countryCode}/ADM0/`,
+    url: `https://geoboundaries.org/api/current/gbOpen/${countryCode}/ADM0/`,
     countryCode,
     countryName: candidate.countryName,
     adminLevel: 0,
@@ -74,7 +74,7 @@ describe('Shape full-flow pipeline', () => {
     if (!VtTaskQueueDb) {
       ({ VtTaskQueueDb, listTasksByStageAndStatus } = await import('@hierarchidb/vt-orchestrator'));
       ({ ephemeralShapeDB, shapeDB } = await import('@hierarchidb/shape-store'));
-      ({ runShapeVtPipeline } = await import('../../services/vt/shapeVtPipeline.js'));
+      ({ runShapePipeline } = await import('../../services/vt/shapePipeline.js'));
       ({ metadataLoader } = await import('../../services/metadata/MetadataLoader.js'));
       ({ resolveCountryCodeForDataSource } = await import('../../services/utils/utils.js'));
     }
@@ -90,7 +90,7 @@ describe('Shape full-flow pipeline', () => {
 
   it('runs fetch/transform/vt with real data and persists outputs', async () => {
     const downloadTaskPayloads = [await selectGeoBoundariesPayload()];
-    await runShapeVtPipeline({
+    await runShapePipeline({
       nodeId,
       dataSource: 'geoboundaries',
       buildConfig,

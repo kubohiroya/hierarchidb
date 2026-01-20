@@ -42,7 +42,7 @@ Users can choose a build continuation policy in the TreeConsole settings (finish
 
 ## Context and Orientation
 
-TreeConsole settings persist buildContinuationPolicy in localStorage and the toolbar exposes a selector. Shape build sessions are started through the Worker API and executed in the Shape worker pipeline (`runShapeVtPipeline`). The pipeline uses `runStageTasks` with a `failureHandling` flag but currently always passes `stop` and always continues to the next stage. This plan wires the policy from UI to Worker and uses it to decide `failureHandling` and whether to proceed to the next stage.
+TreeConsole settings persist buildContinuationPolicy in localStorage and the toolbar exposes a selector. Shape build sessions are started through the Worker API and executed in the Shape worker pipeline (`runShapePipeline`). The pipeline uses `runStageTasks` with a `failureHandling` flag but currently always passes `stop` and always continues to the next stage. This plan wires the policy from UI to Worker and uses it to decide `failureHandling` and whether to proceed to the next stage.
 
 Key files to modify:
 
@@ -50,12 +50,12 @@ Key files to modify:
 - `packages/ui/worker-client/src/workerBridge.ts` for forwarding the policy.
 - `app/src/worker-runtime/worker.ts` for passing policy into shape batch API.
 - `plugins/shape-plugin/src/ui/components/step5/useBatchSessionActions.ts` for retrieving the policy and calling Worker API.
-- `plugins/shape-plugin/src/worker/api.ts` for accepting the policy and passing it to `runShapeVtPipeline`.
-- `plugins/shape-plugin/src/services/vt/shapeVtPipeline.ts` and `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts` for applying failure handling and stage continuation.
+- `plugins/shape-plugin/src/worker/api.ts` for accepting the policy and passing it to `runShapePipeline`.
+- `plugins/shape-plugin/src/services/vt/shapePipeline.ts` and `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts` for applying failure handling and stage continuation.
 
 ## Plan of Work
 
-First, extend the Worker API and worker bridge functions to accept an optional BuildContinuationPolicy parameter. Then, when the Shape build UI starts or resumes a batch session, load the current TreeConsole setting and include it in the Worker API call. Next, adjust the Shape worker’s startBatchProcess and resume pipeline to pass the policy into `runShapeVtPipeline`. Finally, in the pipeline, map the policy to `failureHandling` and add explicit logic to stop before the next stage when failures are present and the policy demands it.
+First, extend the Worker API and worker bridge functions to accept an optional BuildContinuationPolicy parameter. Then, when the Shape build UI starts or resumes a batch session, load the current TreeConsole setting and include it in the Worker API call. Next, adjust the Shape worker’s startBatchProcess and resume pipeline to pass the policy into `runShapePipeline`. Finally, in the pipeline, map the policy to `failureHandling` and add explicit logic to stop before the next stage when failures are present and the policy demands it.
 
 ## Concrete Steps
 

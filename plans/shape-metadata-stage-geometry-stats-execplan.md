@@ -19,7 +19,7 @@ Shape Step6 currently shows per-origin metadata rows with vertex and polygon cou
 ## Surprises & Discoveries
 
 - Observation: the source metadata table exists in `packages/features/vectortile-store/src/tilesDb.ts`, but there is no current writer path in the shape vt pipeline.
-  Evidence: `ShapeMutationService.putSourceMetadata` exists, yet no code calls it during `runShapeVtPipeline`.
+  Evidence: `ShapeMutationService.putSourceMetadata` exists, yet no code calls it during `runShapePipeline`.
 - Observation: stage1 and transform buffers store `featureCount` and `vertexCount` only; polygon counts must be computed and added.
   Evidence: `packages/vt-shape-store/src/types.ts` only defines `vertexCount` and `featureCount`.
 - Observation: transform outputs are per-band, and each buffer includes boundary features; transform totals must be defined carefully to avoid ambiguity.
@@ -45,7 +45,7 @@ Pending.
 
 Step6 metadata is rendered in `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` and `plugins/shape-plugin/src/ui/hooks/preview/useVectorTilePreviewTable.ts`. The UI calls `ShapeQueryAPI.listSourceMetadata` and displays columns based on `ShapeSourceMetadataRow` from `packages/plugin-service-api/src/types/shapeBuildTypes.ts`.
 
-The vt pipeline is executed by `plugins/shape-plugin/src/worker/api.ts` through `runShapeVtPipeline` in `plugins/shape-plugin/src/services/vt/shapeVtPipeline.ts`. Fetch outputs are stored in `@hierarchidb/vt-shape-store` (`stage1Buffers`), transform outputs are stored in `transformBandBuffers`, and final vt tiles are stored in `@hierarchidb/vt-store` (`vtTiles`). The metadata tables are defined by `VectorTileDbBase` in `packages/features/vectortile-store/src/tilesDb.ts` and exposed through `@hierarchidb/shape-store`.
+The vt pipeline is executed by `plugins/shape-plugin/src/worker/api.ts` through `runShapePipeline` in `plugins/shape-plugin/src/services/vt/shapePipeline.ts`. Fetch outputs are stored in `@hierarchidb/vt-shape-store` (`stage1Buffers`), transform outputs are stored in `transformBandBuffers`, and final vt tiles are stored in `@hierarchidb/vt-store` (`vtTiles`). The metadata tables are defined by `VectorTileDbBase` in `packages/features/vectortile-store/src/tilesDb.ts` and exposed through `@hierarchidb/shape-store`.
 
 “Origin” means one fetched dataset unit keyed by the fetch task’s `sourceKey`. For shape, `sourceKey` is `ISO2:adminLevel`. The origin key used in metadata will be `${dataSource}:${sourceKey}` and will be embedded into feature properties as `__hdbOriginKey` so that vt tiles can be attributed back to the origin.
 
@@ -65,7 +65,7 @@ Fourth, implement metadata aggregation and persistence in the shape vt pipeline.
 - Aggregates vt counts by decoding `VtDb.vtTiles` and summing geometry stats per `__hdbOriginKey` in each tile feature’s properties.
 - Writes `ShapeSourceMetadataRow` entries through `ShapeMutationAPI.putSourceMetadata` (or `shapeDB.sourceMetadata.bulkPut`) with updated timestamps.
 
-Call this aggregation helper in `runShapeVtPipeline` after each stage completes, or at least once after the vt stage completes. If the data is written only once, ensure that rows include all three stages’ totals at that time.
+Call this aggregation helper in `runShapePipeline` after each stage completes, or at least once after the vt stage completes. If the data is written only once, ensure that rows include all three stages’ totals at that time.
 
 Finally, update the Step6 UI to read and display the new fields. In `plugins/shape-plugin/src/ui/hooks/preview/useVectorTilePreviewTable.ts`, replace `raw/extract1/extract2/vectorTile` columns with fetch/transform/vt columns, update field mapping, and adjust column labels in `plugins/shape-plugin/src/ui/locales/en.json` and `plugins/shape-plugin/src/ui/locales/ja.json`.
 
@@ -82,7 +82,7 @@ All commands are run from the repository root.
    - Edit `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`.
 
 3) Implement aggregation and persistence.
-   - Add `plugins/shape-plugin/src/services/vt/shapeStageMetadata.ts` (or similar) and call it from `plugins/shape-plugin/src/services/vt/shapeVtPipeline.ts`.
+   - Add `plugins/shape-plugin/src/services/vt/shapeStageMetadata.ts` (or similar) and call it from `plugins/shape-plugin/src/services/vt/shapePipeline.ts`.
 
 4) Update UI columns and labels.
    - Edit `plugins/shape-plugin/src/ui/hooks/preview/useVectorTilePreviewTable.ts`.
@@ -106,7 +106,7 @@ Not applicable yet. Record any notable diffs or validation output here once impl
 
 ## Interfaces and Dependencies
 
-The key interfaces are `ShapeSourceMetadataRow` in `packages/plugin-service-api/src/types/shapeBuildTypes.ts`, stage buffer types in `packages/vt-shape-store/src/types.ts`, and vector tile decode helpers from `@mapbox/vector-tile` and `pbf`. The aggregation helper should export a function like `updateShapeStageMetadata(params: { nodeId: NodeId; dataSource: DataSourceName; shapeStore: VtShapeDb; vtStore: VtDb; })` and be called from `runShapeVtPipeline`.
+The key interfaces are `ShapeSourceMetadataRow` in `packages/plugin-service-api/src/types/shapeBuildTypes.ts`, stage buffer types in `packages/vt-shape-store/src/types.ts`, and vector tile decode helpers from `@mapbox/vector-tile` and `pbf`. The aggregation helper should export a function like `updateShapeStageMetadata(params: { nodeId: NodeId; dataSource: DataSourceName; shapeStore: VtShapeDb; vtStore: VtDb; })` and be called from `runShapePipeline`.
 
 Plan Update Note (2026-01-14 10:20 JST): Rewrote the ExecPlan to align with the fetch/transform/vt pipeline and the PLANS.md formatting requirements, and to describe the new aggregation, storage, and UI updates.
 
