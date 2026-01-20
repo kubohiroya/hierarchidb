@@ -39,11 +39,14 @@ export type FetchCacheRecord = {
   adminLevel?: number;
   data: ArrayBuffer;
   featureCount: number;
+  inputFeatureCount?: number;
   bbox: [number, number, number, number];
   downloadTime: number;
   size: number;
   vertexCount?: number;
   polygonCount?: number;
+  inputVertexCount?: number;
+  inputPolygonCount?: number;
   timestamp: number;
 };
 

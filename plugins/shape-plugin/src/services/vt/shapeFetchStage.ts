@@ -10,6 +10,15 @@ import {
   runStageTasks,
 } from '@hierarchidb/vt-orchestrator';
 import { ephemeralShapeDB } from '@hierarchidb/shape-store';
+import type { ShapeFeatureMetadata } from '@hierarchidb/plugin-service-api';
+import {
+  pickAdminCode,
+  pickAdminLevel,
+  pickAdminName,
+  pickCountryCode,
+  pickCountryName,
+} from '@hierarchidb/gis-sdk';
+import { geojson as geojsonApi } from 'flatgeobuf';
 import type {
   CountryMetadata,
   DataSourceName,
@@ -23,6 +32,10 @@ import { DataSourceStrategyFactory } from '../datasources/DataSourceStrategyFact
 import { resolveStrategyIdFromDataSource } from '../datasources/strategyIds.js';
 import type { RetryConfig } from '../datasources/DataSourceStrategy.js';
 import * as turf from '@turf/turf';
+import { shapeMutationAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
+import { buildFeatureId, extractGeometryStats } from './featureMetadataUtils.ts';
+import { filterFetchCollectionByZoom } from './fetchGeometryFilters.ts';
+import { buildZoomBandRanges } from '../../common/config/zoomBands.ts';
 
 export type ShapeFetchTaskInput = {
   url: string;
@@ -90,6 +103,47 @@ const buildFetchCacheId = (nodeId: NodeId, sourceKey: string): string => (
   `${String(nodeId)}-shape-${sourceKey}`
 );
 
+const formatReduction = (label: string, output: number, input?: number): string => {
+  if (input === undefined || !Number.isFinite(input) || input <= 0) {
+    return `${label}=${output}`;
+  }
+  const reducedRatio = Math.max(0, Math.min(1, (input - output) / input));
+  const reducedPercent = (reducedRatio * 100).toFixed(1);
+  return `${label}=${output}/${input} (reduced=${reducedPercent}%)`;
+};
+
+const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureCollection | null> => {
+  if (!decoded || typeof decoded !== 'object') return null;
+  const collection = decoded as FeatureCollection;
+  if (collection.type === 'FeatureCollection') {
+    const features = Array.isArray(collection.features) ? collection.features : [];
+    return { ...collection, features };
+  }
+  if (typeof (decoded as AsyncIterable<unknown>)[Symbol.asyncIterator] === 'function') {
+    const features: Feature[] = [];
+    for await (const feature of decoded as AsyncIterable<Feature>) {
+      features.push(feature);
+    }
+    return { type: 'FeatureCollection', features };
+  }
+  return null;
+};
+
+const readNumericProperty = (properties: Record<string, unknown>, key: string): number | undefined => {
+  const value = properties[key];
+  if (typeof value !== 'number') return undefined;
+  return Number.isFinite(value) ? value : undefined;
+};
+
+const decodeFetchCacheData = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
+  try {
+    const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
+    return await normalizeFeatureCollection(decoded as unknown);
+  } catch {
+    return null;
+  }
+};
+
 const getFetchCache = async (nodeId: NodeId, sourceKey: string) => (
   await ephemeralShapeDB.fetchCache
     .where('[nodeId+sourceKey]')
@@ -104,10 +158,13 @@ const putFetchCache = async (params: {
   adminLevel: number;
   data: ArrayBuffer;
   featureCount: number;
+  inputFeatureCount?: number;
   bbox: [number, number, number, number];
   downloadTime: number;
   vertexCount: number;
   polygonCount: number;
+  inputVertexCount?: number;
+  inputPolygonCount?: number;
 }): Promise<string> => {
   const recordId = buildFetchCacheId(params.nodeId, params.sourceKey);
   await ephemeralShapeDB.fetchCache.put({
@@ -119,11 +176,14 @@ const putFetchCache = async (params: {
     adminLevel: params.adminLevel,
     data: params.data,
     featureCount: params.featureCount,
+    inputFeatureCount: params.inputFeatureCount,
     bbox: params.bbox,
     downloadTime: params.downloadTime,
     size: params.data.byteLength,
     vertexCount: params.vertexCount,
     polygonCount: params.polygonCount,
+    inputVertexCount: params.inputVertexCount,
+    inputPolygonCount: params.inputPolygonCount,
     timestamp: Date.now(),
   });
   return recordId;
@@ -142,6 +202,10 @@ const buildFetchFeatureCollection = (
     if (!properties.__hdbOriginKey) {
       properties.__hdbOriginKey = originKey;
     }
+    const vertexCount = countVerticesFromGeometry(entity.geometry);
+    const polygonCount = countPolygonsFromGeometry(entity.geometry);
+    properties.__hdbFetchVertexCount = vertexCount;
+    properties.__hdbFetchPolygonCount = polygonCount;
     features.push({
       type: 'Feature',
       geometry: entity.geometry,
@@ -149,6 +213,72 @@ const buildFetchFeatureCollection = (
     });
   }
   return { type: 'FeatureCollection', features };
+};
+
+const buildEmptyFeatureMetadata = (params: {
+  nodeId: NodeId;
+  originKey: string;
+  dataSource: DataSourceName;
+  countryCode?: ISO2;
+  adminLevel?: number;
+  createdAt: number;
+}): ShapeFeatureMetadata => {
+  const featureId = `empty:${params.originKey}`;
+  return {
+    id: `${String(params.nodeId)}-${featureId}`,
+    nodeId: String(params.nodeId),
+    featureId,
+    countryCode: params.countryCode,
+    adminLevel: params.adminLevel,
+    dataSource: params.dataSource,
+    createdAt: params.createdAt,
+    vertexCount: 0,
+    polygonCount: 0,
+    fetchVertexCount: 0,
+    fetchPolygonCount: 0,
+    area: 0,
+  };
+};
+
+const buildFetchFeatureMetadata = (params: {
+  nodeId: NodeId;
+  dataSource: DataSourceName;
+  collection: FeatureCollection;
+  createdAt: number;
+}): ShapeFeatureMetadata[] => {
+  const records: ShapeFeatureMetadata[] = [];
+  for (let index = 0; index < params.collection.features.length; index += 1) {
+    const feature = params.collection.features[index];
+    if (!feature) continue;
+    feature.properties = feature.properties ?? {};
+    const properties = feature.properties as Record<string, unknown>;
+    const countryCode = pickCountryCode(properties);
+    const adminLevel = pickAdminLevel(properties);
+    const adminCode = pickAdminCode(properties);
+    const featureId = buildFeatureId(feature, index, { countryCode, adminLevel, adminCode });
+    const stats = extractGeometryStats(feature);
+    const fetchVertexCount = readNumericProperty(properties, '__hdbFetchVertexCount') ?? stats.vertexCount;
+    const fetchPolygonCount = readNumericProperty(properties, '__hdbFetchPolygonCount') ?? stats.polygonCount;
+    records.push({
+      id: `${String(params.nodeId)}-${featureId}`,
+      nodeId: String(params.nodeId),
+      featureId,
+      countryName: pickCountryName(properties),
+      countryCode,
+      adminName: pickAdminName(properties),
+      adminLevel,
+      adminCode,
+      dataSource: params.dataSource,
+      createdAt: params.createdAt,
+      vertexCount: stats.vertexCount,
+      polygonCount: stats.polygonCount,
+      fetchVertexCount,
+      fetchPolygonCount,
+      bbox: stats.bbox,
+      area: stats.area,
+    });
+  }
+  return records;
 };
 
 const buildOriginKey = (dataSource: DataSourceName, sourceKey: string): string => (
@@ -278,13 +408,42 @@ const createFetchHandler = (params: {
     assertNotAborted(params.abortSignal);
     const existing = await getFetchCache(params.nodeId, input.sourceKey);
     if (existing) {
+      const createdAt = Date.now();
+      const cachedCollection = await decodeFetchCacheData(existing.data);
+      if (cachedCollection && cachedCollection.features.length > 0) {
+        const cachedMetadata = buildFetchFeatureMetadata({
+          nodeId: params.nodeId,
+          dataSource: input.dataSource,
+          collection: cachedCollection,
+          createdAt,
+        });
+        if (cachedMetadata.length > 0) {
+          await shapeMutationAPIImpl.putFeatureMetadata(cachedMetadata);
+        }
+      } else if (existing.featureCount === 0) {
+        const emptyMetadata = buildEmptyFeatureMetadata({
+          nodeId: params.nodeId,
+          originKey: buildOriginKey(input.dataSource, input.sourceKey),
+          dataSource: input.dataSource,
+          countryCode: input.countryCode,
+          adminLevel: input.adminLevel,
+          createdAt,
+        });
+        await shapeMutationAPIImpl.putFeatureMetadata([emptyMetadata]);
+      }
+      const cachedVertexCount = existing.vertexCount ?? 0;
+      const cachedPolygonCount = existing.polygonCount ?? 0;
+      const cachedSummary = [
+        formatReduction('polygons', cachedPolygonCount, existing.inputPolygonCount),
+        formatReduction('vertices', cachedVertexCount, existing.inputVertexCount),
+      ].join(', ');
       return {
         status: 'completed',
-        message: 'reused: fetch cache exists',
+        message: `reused: fetch cache exists (${cachedSummary})`,
         outputData: {
           fetchCacheId: existing.id,
           featureCount: existing.featureCount,
-          vertexCount: existing.vertexCount ?? 0,
+          vertexCount: cachedVertexCount,
         },
       };
     }
@@ -308,19 +467,51 @@ const createFetchHandler = (params: {
       transformations: strategy.config.processing.transformations,
       validation: true,
     });
-
     const originKey = buildOriginKey(input.dataSource, input.sourceKey);
     const collection = buildFetchFeatureCollection(processed, originKey);
-    if (collection.features.length === 0) {
+    const inputSummary = summarizeFeatureCollection(collection);
+    const zoomRanges = buildZoomBandRanges(params.buildConfig.transformConfig.zoomBandBoundaries);
+    const filterZoom = zoomRanges[0]?.max;
+    const filteredCollection = Number.isFinite(filterZoom)
+      ? filterFetchCollectionByZoom(collection, {
+        zTarget: filterZoom!,
+        omitDetailsConfig: params.buildConfig.transformConfig.omitDetailsConfig,
+        excludePolygonAreaCoefficient: params.buildConfig.transformConfig.excludePolygonAreaCoefficient,
+        quantize: params.buildConfig.transformConfig.quantize,
+        minRingVertices: params.buildConfig.transformConfig.ringFixConfig?.minRingVertices,
+      })
+      : collection;
+    if (filteredCollection.features.length === 0) {
+      const createdAt = Date.now();
+      const emptyMetadata = buildEmptyFeatureMetadata({
+        nodeId: params.nodeId,
+        originKey,
+        dataSource: input.dataSource,
+        countryCode: input.countryCode,
+        adminLevel: input.adminLevel,
+        createdAt,
+      });
+      await shapeMutationAPIImpl.putFeatureMetadata([emptyMetadata]);
       return {
         status: 'completed',
-        message: 'skipped: no features',
+        message: 'skipped: no features after fetch filter',
       };
     }
 
+    const createdAt = Date.now();
+    const featureMetadata = buildFetchFeatureMetadata({
+      nodeId: params.nodeId,
+      dataSource: input.dataSource,
+      collection: filteredCollection,
+      createdAt,
+    });
+    if (featureMetadata.length > 0) {
+      await shapeMutationAPIImpl.putFeatureMetadata(featureMetadata);
+    }
+
     assertNotAborted(params.abortSignal);
-    const { featureCount, vertexCount, polygonCount, bbox } = summarizeFeatureCollection(collection);
-    const data = await encodeFlatGeobufFromFeatureCollection(collection);
+    const { featureCount, vertexCount, polygonCount, bbox } = summarizeFeatureCollection(filteredCollection);
+    const data = await encodeFlatGeobufFromFeatureCollection(filteredCollection);
     assertNotAborted(params.abortSignal);
     const bufferId = await putFetchCache({
       nodeId: params.nodeId,
@@ -329,15 +520,22 @@ const createFetchHandler = (params: {
       adminLevel: input.adminLevel,
       data,
       featureCount,
+      inputFeatureCount: inputSummary.featureCount,
       bbox,
       downloadTime,
       vertexCount,
       polygonCount,
+      inputVertexCount: inputSummary.vertexCount,
+      inputPolygonCount: inputSummary.polygonCount,
     });
+    const reductionSummary = [
+      formatReduction('polygons', polygonCount, inputSummary.polygonCount),
+      formatReduction('vertices', vertexCount, inputSummary.vertexCount),
+    ].join(', ');
 
     return {
       status: 'completed',
-      message: `completed: features=${featureCount}`,
+      message: `completed: features=${featureCount} (${reductionSummary})`,
       outputData: {
         fetchCacheId: bufferId,
         featureCount,

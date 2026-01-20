@@ -206,6 +206,10 @@ export interface ShapeFeatureMetadata {
   createdAt: number;
   vertexCount: number;
   polygonCount: number;
+  fetchVertexCount?: number;
+  fetchPolygonCount?: number;
+  transformVertexCount?: number;
+  transformPolygonCount?: number;
   bbox?: [number, number, number, number];
   area: number;
 }

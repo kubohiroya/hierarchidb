@@ -30,6 +30,7 @@ import {
 } from '../utils/geoboundariesEndpoints.js';
 import { decodeFlatGeoJson, encodeFlatGeoJson } from '../batch/strategies/flatgeobuf.js';
 import { bufferToStream, fetchRawDataWithPipeline, streamToBuffer } from '../utils/rawDataPipeline.js';
+import { summarizeGeojsonFeatures } from './geojsonStats.js';
 
 type GeoBoundariesProperties = Record<string, unknown>;
 type GeoBoundariesGeoJSON = FeatureCollection<Geometry, GeoBoundariesProperties>;
@@ -66,6 +67,9 @@ export type GeoBoundariesProcessedData = Array<ShapeEntity> & {
     source: 'geoboundaries';
     processedAt: string;
     count: number;
+    inputFeatureCount?: number;
+    inputPolygonCount?: number;
+    inputVertexCount?: number;
     country?: string;
     adminLevel?: string;
     continent?: string;
@@ -263,6 +267,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
       let features: GeoBoundariesFeature[] = rawData.geojson.features.filter(
         (feature): feature is GeoBoundariesFeature => Boolean(feature),
       );
+      const inputStats = summarizeGeojsonFeatures(features);
 
       if (filters && filters.length > 0) {
         features = await this.applyFilters(features, filters);
@@ -310,6 +315,9 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
         source: 'geoboundaries',
         processedAt: new Date().toISOString(),
         count: entities.length,
+        inputFeatureCount: inputStats.featureCount,
+        inputPolygonCount: inputStats.polygonCount,
+        inputVertexCount: inputStats.vertexCount,
         country: rawData.metadata?.country,
         adminLevel: rawData.metadata?.adminLevel,
         continent: rawData.metadata?.continent,

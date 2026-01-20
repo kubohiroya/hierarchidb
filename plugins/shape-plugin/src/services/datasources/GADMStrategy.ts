@@ -18,6 +18,7 @@ import {
   type RetryConfig,
 } from '../utils/chunkStore.js';
 import { bufferToStream, fetchRawDataWithPipeline, streamToBuffer } from '../utils/rawDataPipeline.js';
+import { summarizeGeojsonFeatures } from './geojsonStats.js';
 
 //  GADM
 export interface GADMRawData {
@@ -38,6 +39,9 @@ export interface GADMProcessedData extends Array<ShapeEntity> {
     source: 'gadm';
     processedAt: string;
     count: number;
+    inputFeatureCount?: number;
+    inputPolygonCount?: number;
+    inputVertexCount?: number;
     country: string;
     adminLevel: number;
     version: string;
@@ -225,13 +229,14 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
           return level === adminLevel;
         });
       }
+      const inputStats = summarizeGeojsonFeatures(features);
 
       if (filters && filters.length > 0) {
         features = await this.applyFilters(features, filters);
       }
 
       //  ShapeEntity
-      return features.map((feature: GADMFeature, index: number) => {
+      const entities = features.map((feature: GADMFeature, index: number) => {
         const properties = feature.properties ?? {};
         const processedAt = new Date().toISOString();
 
@@ -253,6 +258,20 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
           },
         };
       });
+      const result = entities as GADMProcessedData;
+      const resolvedAdminLevel = typeof adminLevel === 'number' ? adminLevel : rawData.metadata.level;
+      result.metadata = {
+        source: 'gadm',
+        processedAt: new Date().toISOString(),
+        count: entities.length,
+        inputFeatureCount: inputStats.featureCount,
+        inputPolygonCount: inputStats.polygonCount,
+        inputVertexCount: inputStats.vertexCount,
+        country: rawData.metadata.country,
+        adminLevel: resolvedAdminLevel,
+        version: rawData.metadata.version,
+      };
+      return result;
 
     } catch (error) {
       throw new Error(`Failed to process GADM data: ${error instanceof Error ? error.message : 'Unknown error'}`);

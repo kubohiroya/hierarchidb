@@ -14,6 +14,7 @@ import {
 import type { Feature, Geometry } from 'geojson';
 import type { ShapeEntity } from '../../common/types/index.js';
 import type { NodeId } from '@hierarchidb/common-types';
+import { summarizeGeojsonFeatures } from './geojsonStats.js';
 //  OSM
 export interface OSMRawData {
   elements: OSMElement[];
@@ -55,6 +56,9 @@ export interface OSMProcessedData extends Array<ShapeEntity> {
     source: 'osm-overpass';
     processedAt: string;
     count: number;
+    inputFeatureCount?: number;
+    inputPolygonCount?: number;
+    inputVertexCount?: number;
     originalElementCount: number;
     query: string;
     bbox?: BoundingBox;
@@ -212,6 +216,7 @@ export class OpenStreetMapStrategy extends BaseDataSourceStrategy<OSMRawData, OS
       //  OSMGeoJSON
       const features = await this.convertOSMElementsToFeatures(rawData.elements);
 
+      const inputStats = summarizeGeojsonFeatures(features);
       let filteredFeatures = features;
       if (filters && filters.length > 0) {
         filteredFeatures = await this.applyFilters(features, filters);
@@ -256,6 +261,9 @@ export class OpenStreetMapStrategy extends BaseDataSourceStrategy<OSMRawData, OS
         source: 'osm-overpass',
         processedAt: new Date().toISOString(),
         count: entities.length,
+        inputFeatureCount: inputStats.featureCount,
+        inputPolygonCount: inputStats.polygonCount,
+        inputVertexCount: inputStats.vertexCount,
         originalElementCount: rawData.elements.length,
         query: rawData.metadata.query,
         bbox: rawData.metadata.bbox,

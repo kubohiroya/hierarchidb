@@ -16,6 +16,7 @@ import {
   getOrFetchWithRetry,
   type RetryConfig,
 } from '../utils/chunkStore.js';
+import { summarizeGeojsonFeatures } from './geojsonStats.js';
 
 //  Natural Earth
 export interface NaturalEarthRawData {
@@ -34,6 +35,9 @@ export interface NaturalEarthProcessedData extends Array<ShapeEntity> {
     source: 'natural-earth';
     processedAt: string;
     count: number;
+    inputFeatureCount?: number;
+    inputPolygonCount?: number;
+    inputVertexCount?: number;
     adminLevel?: number;
     resolution?: string;
   };
@@ -124,13 +128,15 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
     if (!selectedEndpoint) {
       throw new Error(`Unknown endpoint: ${selectedEndpoint}`);
     }
-    if (!isDirectUrl && !this.config.access.endpoints?.[selectedEndpoint]) {
+    const endpoints = this.config.access.endpoints;
+    const endpointPath = !isDirectUrl ? endpoints?.[selectedEndpoint] : undefined;
+    if (!isDirectUrl && !endpointPath) {
       throw new Error(`Unknown endpoint: ${selectedEndpoint}`);
     }
 
     const downloadUrl = isDirectUrl
       ? selectedEndpoint
-      : `${this.config.access.baseUrl}${this.config.access.endpoints[selectedEndpoint]}`;
+      : `${this.config.access.baseUrl}${endpointPath}`;
 
     console.log(`[NaturalEarth] Downloading from: ${downloadUrl}`);
 
@@ -195,6 +201,7 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
       const geojson = await this.convertShapefilesToGeoJSON(rawData.files);
 
       let features: NaturalEarthFeature[] = geojson.features as NaturalEarthFeature[];
+      const inputStats = summarizeGeojsonFeatures(features);
       if (filters && filters.length > 0) {
         features = await this.applyFilters(features, filters);
       }
@@ -230,6 +237,9 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
         source: 'natural-earth',
         processedAt: new Date().toISOString(),
         count: entities.length,
+        inputFeatureCount: inputStats.featureCount,
+        inputPolygonCount: inputStats.polygonCount,
+        inputVertexCount: inputStats.vertexCount,
         adminLevel: this.extractAdminLevel(rawData.metadata.endpoint),
       };
 
