@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/common-types';
 
 export type VectorTileMetadataLoader<Row> = (nodeId: NodeId) => Promise<Row[]>;
@@ -13,6 +13,11 @@ export const useVectorTilePreviewMetadata = <Row,>(
   const [metadataLoading, setMetadataLoading] = useState(false);
   const [metadataError, setMetadataError] = useState<string | null>(null);
   const [metadataLoaded, setMetadataLoaded] = useState(false);
+  const loadRowsRef = useRef(loadRows);
+
+  useEffect(() => {
+    loadRowsRef.current = loadRows;
+  }, [loadRows]);
 
   useEffect(() => {
     if (!metadataEnabled || !nodeId) {
@@ -24,11 +29,11 @@ export const useVectorTilePreviewMetadata = <Row,>(
     }
     let cancelled = false;
     let intervalId: ReturnType<typeof setInterval> | null = null;
-    setMetadataLoaded(false);
+    setMetadataLoaded((prev) => (prev ? false : prev));
     const runLoad = () => {
-      setMetadataLoading(true);
-      setMetadataError(null);
-      void loadRows(nodeId)
+      setMetadataLoading((prev) => (prev ? prev : true));
+      setMetadataError((prev) => (prev ? null : prev));
+      void loadRowsRef.current(nodeId)
         .then((rows) => {
           if (!cancelled) {
             setMetadataRows(rows);
@@ -41,8 +46,8 @@ export const useVectorTilePreviewMetadata = <Row,>(
         })
         .finally(() => {
           if (!cancelled) {
-            setMetadataLoading(false);
-            setMetadataLoaded(true);
+            setMetadataLoading((prev) => (prev ? false : prev));
+            setMetadataLoaded((prev) => (prev ? prev : true));
           }
         });
     };
@@ -56,7 +61,7 @@ export const useVectorTilePreviewMetadata = <Row,>(
         clearInterval(intervalId);
       }
     };
-  }, [loadRows, metadataEnabled, nodeId, pollIntervalMs]);
+  }, [metadataEnabled, nodeId, pollIntervalMs]);
 
   return {
     metadataRows,

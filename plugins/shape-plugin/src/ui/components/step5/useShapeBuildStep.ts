@@ -90,6 +90,13 @@ const resolveCachedTaskStatus = (status?: string | null): ProgressPhase => {
   throw new Error(`[ShapeBuildStep] Invalid cached task status: ${String(status ?? 'undefined')}`);
 };
 
+const isTerminalTaskStatus = (status: ProgressPhase): boolean => (
+  status === 'completed'
+  || status === 'failed'
+  || status === 'regression'
+  || status === 'warning'
+);
+
 const buildCachedTaskSummaries = (
   stage: TaskStage,
   count: number,
@@ -143,19 +150,26 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         return t('stage.status.ready', 'Ready to start stage');
     }
   }, [statusSource, t]);
+  const shouldPollTasksRef = useRef(false);
+  const { tasks, isLoading: isTasksLoading, refresh: refreshTasks } = useShapeBuildTasks(activeNodeId, {
+    autoRefresh: () => shouldPollTasksRef.current,
+    pollIntervalMs: 2000,
+  });
+  const [isTaskSummaryLoading, setIsTaskSummaryLoading] = useState(false);
+  const displayTasks = tasks.length > 0 ? tasks : persistedTasks;
+  const hasIncompleteTasks = useMemo(() => (
+    displayTasks.some((task) => !isTerminalTaskStatus(task.status))
+  ), [displayTasks]);
   const shouldPollTasks = Boolean(activeNodeId)
     && (
       isStartPending
       || runtimeStatus === 'processing'
       || runtimeStatus === 'paused'
+      || ((statusSource === 'completed' || statusSource === 'failed') && hasIncompleteTasks)
     );
-  const shouldPollTasksRef = useCallback(() => shouldPollTasks, [shouldPollTasks]);
-  const { tasks, isLoading: isTasksLoading, refresh: refreshTasks } = useShapeBuildTasks(activeNodeId, {
-    autoRefresh: shouldPollTasksRef,
-    pollIntervalMs: 2000,
-  });
-  const [isTaskSummaryLoading, setIsTaskSummaryLoading] = useState(false);
-  const displayTasks = tasks.length > 0 ? tasks : persistedTasks;
+  useEffect(() => {
+    shouldPollTasksRef.current = shouldPollTasks;
+  }, [shouldPollTasks]);
   const hasTaskSummary = useMemo(() => {
     return Object.values(stageTaskSummary).some((summary) => (
       (summary?.total ?? 0) > 0
@@ -224,9 +238,20 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   ]);
 
   useEffect(() => {
-    if (!shouldPollTasksRef()) return;
+    if (!shouldPollTasks) return;
     void refreshTasks();
-  }, [refreshTasks, shouldPollTasksRef]);
+  }, [refreshTasks, shouldPollTasks]);
+
+  const lastStatusSourceRef = useRef<string | null>(null);
+  useEffect(() => {
+    const prev = lastStatusSourceRef.current;
+    lastStatusSourceRef.current = statusSource ?? null;
+    if (!activeNodeId) return;
+    const justFinished = (statusSource === 'completed' || statusSource === 'failed')
+      && prev !== statusSource;
+    if (!justFinished) return;
+    void refreshTasks();
+  }, [activeNodeId, refreshTasks, statusSource]);
 
   useEffect(() => {
     if (!activeNodeId) {
@@ -600,11 +625,9 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       if (!task.taskId || !isSkippedMessage(task.message)) continue;
       if (warned.has(task.taskId)) continue;
       warned.add(task.taskId);
-      console.warn('[ShapeBuildStep] Task skipped', {
-        taskId: task.taskId,
-        stage: normalizeStageKey(task),
-        message: task.message,
-      });
+      console.info(
+        `[ShapeBuildStep] skipped taskId=${task.taskId} stage=${normalizeStageKey(task)} message=${task.message}`
+      );
     }
   }, [displayTasks]);
   const lastTaskSummaryRef = useRef<string | null>(null);

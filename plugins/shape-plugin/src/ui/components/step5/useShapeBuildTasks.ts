@@ -60,6 +60,7 @@ export function useShapeBuildTasks(
   const flushTimerRef = useRef<number | null>(null);
   const lastFlushRef = useRef<number>(0);
   const hasLoadedRef = useRef(false);
+  const requestIdRef = useRef(0);
 
   useEffect(() => {
     reportedFailuresRef.current = new Set();
@@ -104,6 +105,8 @@ export function useShapeBuildTasks(
       console.debug('[ShapeBuildStep] buildTasks:skip', { nodeId });
       return;
     }
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
     const shouldShowLoading = tasksLength === 0 && !hasLoadedRef.current;
     if (shouldShowLoading) {
       setIsLoading(true);
@@ -112,6 +115,7 @@ export function useShapeBuildTasks(
       await bridgeRef.current.initialize();
       //console.debug('[ShapeBuildStep] buildTasks:fetch', { nodeId });
       const next = await bridgeRef.current.getBatchTasks(SHAPE_NODE_TYPE, nodeId);
+      if (requestId !== requestIdRef.current) return;
       const resolved = (next as RawTaskSummary[]).map((task) => ({
         ...task,
         stage: resolveTaskStage(task),
@@ -121,6 +125,7 @@ export function useShapeBuildTasks(
       hasLoadedRef.current = true;
       //console.debug('[ShapeBuildStep] buildTasks:ok', { nodeId, count: next.length });
     } catch (err) {
+      if (requestId !== requestIdRef.current) return;
       const errObj = err instanceof Error ? err : new Error('Failed to fetch batch tasks');
       setError(errObj);
       console.debug('[ShapeBuildStep] buildTasks:error', {
@@ -128,7 +133,7 @@ export function useShapeBuildTasks(
         message: errObj.message,
       });
     } finally {
-      if (shouldShowLoading) {
+      if (shouldShowLoading && requestId === requestIdRef.current) {
         setIsLoading(false);
       }
     }
