@@ -159,17 +159,24 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
     });
   }, [t]);
 
+  const formatElapsedDuration = useCallback((durationMs?: number | null) => {
+    if (durationMs == null || durationMs <= 0 || !Number.isFinite(durationMs)) {
+      return t('stage.timing.unknown', '-');
+    }
+    return formatDuration(durationMs);
+  }, [formatDuration, t]);
+
   const controlDetails = useMemo(() => {
     const isBuildStarted = summary.buildStatus !== 'idle';
     const emptyValue = t('stage.timing.unknown', '-');
     return [
       {
         label: t('stage.timing.totalElapsed', 'Total elapsed'),
-        value: isBuildStarted ? formatDuration(summary.totalElapsedMs) : emptyValue,
+        value: isBuildStarted ? formatElapsedDuration(summary.totalElapsedMs) : emptyValue,
       },
       {
         label: t('stage.timing.stageElapsed', 'Stage elapsed'),
-        value: isBuildStarted ? formatDuration(summary.stageElapsedMs) : emptyValue,
+        value: isBuildStarted ? formatElapsedDuration(summary.stageElapsedMs) : emptyValue,
       },
       {
         label: t('stage.timing.stageRemaining', 'Stage remaining (estimate)'),
