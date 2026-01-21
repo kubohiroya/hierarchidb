@@ -275,7 +275,7 @@ export const buildFetchTaskId = (nodeId: string, payload: FetchTaskPayload): str
   if (!countryId) {
     throw new Error(`[shape-plugin] DownloadTaskPayload.countryCode is required (${nodeId})`);
   }
-  return `${nodeId}+${countryId}+${payload.adminLevel}`;
+  return `${nodeId}:download:${countryId}:${payload.adminLevel}`;
 };
 
 /**
