@@ -1,3 +1,20 @@
+2295) feat/shape/styler-code-coloring (P1) — 進行中 (2026-01-23)
+- ブランチ名: feat/shape/styler-code-coloring
+- 依存: なし
+- 受け入れ基準: ShapeのベクタータイルにcountryCode/adminCode/adminLevelが補完され、Stylerの生成結果（コード→色）をfeatureIdPropertyで適用できる／ADM0/1/2の塗り分けが可能／既存のタイル生成とメタデータ集計に影響しない／pnpm install・pnpm build・pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/gis-sdk/src/vectorTiles.ts`
+- ロールバック手順: vectorTiles のプロパティ補完差分を revert する
+- チェックリスト:
+  - タイル生成時にcountryCode/adminCode/adminLevelを補完する
+  - StylerのfeatureIdPropertyで参照できることを確認する
+  - pnpm install・pnpm build・pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 09:00 JST Stylerのコード→色対応をShapeタイルで使うため、プロパティ補完の対応に着手。
+  - update: 2026-01-23 09:10 JST vectorTiles 生成時にcountryCode/adminCode/adminLevelを補完する処理を追加。
+  - update: 2026-01-23 09:15 JST pnpm install/build/typecheck が corepack の pnpm 取得失敗（Proxy 403）で停止。
+  - done: 2026-01-23 09:20 JST 仕様どおりにプロパティ補完を実装。検証は pnpm install/build/typecheck が corepack の pnpm 取得失敗（Proxy 403）で未完了。
+
 2292) fix/shape/step6-preview-hover-snackbar (P1) — 進行中 (2026-01-22)
 - ブランチ名: fix/shape/step6-preview-hover-snackbar
 - 依存: なし
