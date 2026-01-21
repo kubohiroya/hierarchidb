@@ -80,6 +80,39 @@ const buildLookupKey = (countryCode?: string, adminLevel?: number): string | nul
   return `${countryCode}:${adminLevel}`;
 };
 
+const buildAdminGroupKey = (row: ShapePreviewFeatureRow): string | null => {
+  if (row.dataSource !== 'geoboundaries') return null;
+  if (row.adminLevel !== 1) return null;
+  const countryCode = normalizeCountryCodeValue(row.countryCode);
+  const adminKey = normalizeText(row.adminCode) ?? normalizeText(row.adminName);
+  if (!countryCode || !adminKey) return null;
+  return `adm1:${countryCode}:${adminKey.toLowerCase()}`;
+};
+
+const buildCountryGroupKey = (countryCode?: string): string | null => {
+  const normalized = normalizeCountryCodeValue(countryCode);
+  if (!normalized) return null;
+  return `country:${normalized}`;
+};
+
+const mergeBounds = (
+  current: [number, number, number, number] | undefined,
+  next: [number, number, number, number] | undefined,
+): [number, number, number, number] | undefined => {
+  if (!next || next.length !== 4) return current;
+  const [minX, minY, maxX, maxY] = next;
+  if ([minX, minY, maxX, maxY].some((value) => typeof value !== 'number' || !Number.isFinite(value))) {
+    return current;
+  }
+  if (!current) return [minX, minY, maxX, maxY];
+  return [
+    Math.min(current[0], minX),
+    Math.min(current[1], minY),
+    Math.max(current[2], maxX),
+    Math.max(current[3], maxY),
+  ];
+};
+
 const isNumericId = (value?: string): boolean => {
   if (!value) return false;
   return /^[0-9]+$/.test(value);
@@ -125,7 +158,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
 
   const previewDraft = data as ShapePreviewDraft;
   const tilesUrl = previewDraft.tilesUrl ?? previewDraft.tilesEndpoint ?? '';
-  const tilesLayer = previewDraft.tilesLayer ?? 'layer0';
+  const tilesLayer = previewDraft.tilesLayer ?? 'admin0';
   const activeNodeId = previewDraft.nodeId
     ? toNodeId(String(previewDraft.nodeId))
     : nodeId
@@ -555,21 +588,6 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     };
   }), [resolveSourceContext, transformErrorRows]);
 
-  const selectedErrorBounds = useMemo(() => {
-    if (selectedFeatureIds.length === 0) return null;
-    const selectedSet = new Set(selectedFeatureIds);
-    let bounds: { minLng: number; minLat: number; maxLng: number; maxLat: number } | null = null;
-    normalizedTransformErrorRows.forEach((row) => {
-      if (!row.featureId || !selectedSet.has(row.featureId)) return;
-      row.lineFeatures?.features?.forEach((feature) => {
-        const geometry = (feature as { geometry?: { coordinates?: unknown } }).geometry;
-        if (!geometry?.coordinates) return;
-        bounds = visitCoordinates(geometry.coordinates, bounds);
-      });
-    });
-    return finalizeBounds(bounds);
-  }, [finalizeBounds, normalizedTransformErrorRows, selectedFeatureIds, visitCoordinates]);
-
   const initialViewState = useMemo<MapWithVectorTilesProps['initialViewState']>(() => {
     if (!selectionBounds) {
       return DEFAULT_VIEW;
@@ -595,17 +613,6 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       padding: 24,
     });
   }, [mapInstance, selectionBounds]);
-
-  useEffect(() => {
-    if (!mapInstance || !selectedErrorBounds) return;
-    const bounds: [[number, number], [number, number]] = [
-      [selectedErrorBounds.minLng, selectedErrorBounds.minLat],
-      [selectedErrorBounds.maxLng, selectedErrorBounds.maxLat],
-    ];
-    mapInstance.fitBounds(bounds, {
-      padding: 24,
-    });
-  }, [mapInstance, selectedErrorBounds]);
 
   const getRowId = useCallback((row: ShapeSourceMetadata) => row.originKey, []);
   const buildSearchText = useCallback((row: ShapeSourceMetadata) => {
@@ -739,9 +746,36 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     [resolveSourceContext],
   );
 
-  const featureListRows = useMemo<ShapePreviewFeatureRow[]>(() => {
+  const {
+    featureListRows,
+    rowIdToMembers,
+    featureToAdminKey,
+    featureToCountryKey,
+    adminGroupMembers,
+    countryGroupMembers,
+  } = useMemo(() => {
     const rows = featureMetadataRows.map((row) => toFeatureListRow(row));
-    const existing = new Set(rows.map((row) => row.featureId ?? row.id));
+    const collapsed = new Map<string, ShapePreviewFeatureRow>();
+    const pickPreferredRow = (current: ShapePreviewFeatureRow, next: ShapePreviewFeatureRow) => {
+      const currentVertices = current.vertexCount ?? 0;
+      const nextVertices = next.vertexCount ?? 0;
+      const currentPolygons = current.polygonCount ?? 0;
+      const nextPolygons = next.polygonCount ?? 0;
+      if (nextVertices + nextPolygons > currentVertices + currentPolygons) {
+        return next;
+      }
+      if (!current.dataSource && next.dataSource) return next;
+      if (!current.adminName && next.adminName) return next;
+      if (!current.adminCode && next.adminCode) return next;
+      return current;
+    };
+    rows.forEach((row) => {
+      const key = row.featureId ?? row.id;
+      if (!key) return;
+      const existingRow = collapsed.get(key);
+      collapsed.set(key, existingRow ? pickPreferredRow(existingRow, row) : row);
+    });
+    const existing = new Set(collapsed.keys());
     normalizedTransformErrorRows.forEach((errorRow) => {
       const featureId = errorRow.featureId;
       if (!featureId) return;
@@ -755,7 +789,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       const adminLevel = context.adminLevel ?? errorRow.adminLevel;
       const adminName = adminLevel === 0 ? context.countryName : undefined;
       const adminCode = adminLevel === 0 ? context.countryCode : undefined;
-      rows.push({
+      collapsed.set(featureId, {
         id: featureId,
         featureId,
         countryName: context.countryName ?? errorRow.countryName,
@@ -768,10 +802,84 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       });
       existing.add(featureId);
     });
-    return rows;
+
+    const baseRows = Array.from(collapsed.values());
+    const adminGroups = new Map<string, ShapePreviewFeatureRow[]>();
+    const listRows: ShapePreviewFeatureRow[] = [];
+    const rowIdToMembers = new Map<string, string[]>();
+    const featureToAdminKey = new Map<string, string>();
+    const featureToCountryKey = new Map<string, string>();
+    const adminGroupMembers = new Map<string, string[]>();
+    const countryGroupMembers = new Map<string, string[]>();
+
+    baseRows.forEach((row) => {
+      const memberId = String(row.featureId ?? row.id ?? '');
+      if (!memberId) return;
+      const rowKey = String(row.featureId ?? row.id ?? '');
+      const countryKey = buildCountryGroupKey(row.countryCode);
+      if (countryKey) {
+        featureToCountryKey.set(memberId, countryKey);
+        const members = countryGroupMembers.get(countryKey) ?? [];
+        members.push(memberId);
+        countryGroupMembers.set(countryKey, members);
+      }
+      const adminKey = buildAdminGroupKey(row);
+      if (adminKey) {
+        featureToAdminKey.set(memberId, adminKey);
+        const group = adminGroups.get(adminKey) ?? [];
+        group.push(row);
+        adminGroups.set(adminKey, group);
+        return;
+      }
+      listRows.push({ ...row, aggregationLevel: 'feature' });
+      rowIdToMembers.set(rowKey, [memberId]);
+    });
+
+    const aggregatedRows: ShapePreviewFeatureRow[] = [];
+    adminGroups.forEach((groupRows, adminKey) => {
+      const memberIds = groupRows
+        .map((row) => String(row.featureId ?? row.id ?? ''))
+        .filter(Boolean);
+      if (memberIds.length === 0) return;
+      adminGroupMembers.set(adminKey, memberIds);
+      const countryCode = normalizeCountryCodeValue(groupRows[0]?.countryCode);
+      const adminName = groupRows.find((row) => normalizeText(row.adminName))?.adminName;
+      const adminCode = groupRows.find((row) => normalizeText(row.adminCode))?.adminCode;
+      const adminLabel = normalizeText(adminCode) ?? normalizeText(adminName) ?? 'unknown';
+      const groupId = `ADM1:${countryCode ?? 'UNKNOWN'}:${adminLabel}`;
+      const aggregated: ShapePreviewFeatureRow = {
+        id: groupId,
+        featureId: groupId,
+        memberFeatureIds: memberIds,
+        aggregationLevel: 'admin',
+        countryName: groupRows.find((row) => normalizeText(row.countryName))?.countryName,
+        countryCode,
+        adminName,
+        adminCode,
+        adminLevel: 1,
+        dataSource: groupRows.find((row) => row.dataSource)?.dataSource,
+        createdAt: Math.min(...groupRows.map((row) => row.createdAt ?? Date.now())),
+        vertexCount: groupRows.reduce((sum, row) => sum + (row.vertexCount ?? 0), 0),
+        polygonCount: groupRows.reduce((sum, row) => sum + (row.polygonCount ?? 0), 0),
+        area: groupRows.reduce((sum, row) => sum + (row.area ?? 0), 0),
+        bbox: groupRows.reduce((current, row) => mergeBounds(current, row.bbox), undefined as [number, number, number, number] | undefined),
+      };
+      aggregatedRows.push(aggregated);
+      rowIdToMembers.set(groupId, memberIds);
+    });
+
+    const featureListRows = [...aggregatedRows, ...listRows];
+    return {
+      featureListRows,
+      rowIdToMembers,
+      featureToAdminKey,
+      featureToCountryKey,
+      adminGroupMembers,
+      countryGroupMembers,
+    };
   }, [featureMetadataRows, normalizedTransformErrorRows, resolveSourceContext, toFeatureListRow]);
 
-  const getFeatureRowId = useCallback((row: ShapePreviewFeatureRow) => String(row.id), []);
+  const getFeatureRowId = useCallback((row: ShapePreviewFeatureRow) => String(row.featureId ?? row.id ?? ''), []);
   const buildFeatureSearchText = useCallback((row: ShapePreviewFeatureRow) => (
     [
       row.featureId,
@@ -800,32 +908,112 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     [matchedFeatureIds],
   );
 
-  const errorSummaryById = useMemo<MapPreviewErrorSummaryById>(() => (
+  const baseErrorSummaryById = useMemo<MapPreviewErrorSummaryById>(() => (
     buildErrorSummaryById(normalizedTransformErrorRows, {
       getId: (row) => row.featureId ?? undefined,
       getMessage: (row) => row.message ?? undefined,
     })
   ), [normalizedTransformErrorRows]);
 
-  const selectedFeatureIdSet = useMemo(() => new Set(selectedFeatureIds), [selectedFeatureIds]);
+  const errorSummaryById = useMemo<MapPreviewErrorSummaryById>(() => {
+    if (featureListRows.length === 0) return baseErrorSummaryById;
+    const aggregated = new Map(baseErrorSummaryById);
+    featureListRows.forEach((row) => {
+      if (!row.memberFeatureIds || row.memberFeatureIds.length === 0) return;
+      const groupId = String(row.featureId ?? row.id ?? '');
+      if (!groupId) return;
+      let count = 0;
+      const messages: string[] = [];
+      row.memberFeatureIds.forEach((memberId) => {
+        const summary = baseErrorSummaryById.get(String(memberId));
+        if (!summary) return;
+        count += summary.count;
+        if (summary.messages.length > 0) {
+          messages.push(...summary.messages);
+        }
+      });
+      if (count > 0) {
+        aggregated.set(groupId, { count, messages });
+      }
+    });
+    return aggregated;
+  }, [baseErrorSummaryById, featureListRows]);
+
+  const expandMapIds = useCallback((ids: string[]) => {
+    const result = new Set<string>();
+    const addMembers = (members?: string[]) => {
+      members?.forEach((memberId) => result.add(memberId));
+    };
+    ids.forEach((id) => {
+      const members = rowIdToMembers.get(id) ?? [id];
+      members.forEach((memberId) => {
+        result.add(memberId);
+        const adminKey = featureToAdminKey.get(memberId);
+        if (adminKey) addMembers(adminGroupMembers.get(adminKey));
+        const countryKey = featureToCountryKey.get(memberId);
+        if (countryKey) addMembers(countryGroupMembers.get(countryKey));
+      });
+    });
+    return Array.from(result);
+  }, [adminGroupMembers, countryGroupMembers, featureToAdminKey, featureToCountryKey, rowIdToMembers]);
+
+  const expandedMatchedIds = useMemo(
+    () => expandMapIds(matchedFeatureIds),
+    [expandMapIds, matchedFeatureIds],
+  );
+  const expandedSelectedIds = useMemo(
+    () => expandMapIds(selectedFeatureIds),
+    [expandMapIds, selectedFeatureIds],
+  );
+  const expandedHoverIds = useMemo(
+    () => (hoveredId ? expandMapIds([hoveredId]) : []),
+    [expandMapIds, hoveredId],
+  );
+
+  const selectedFeatureIdSet = useMemo(() => new Set(expandedSelectedIds), [expandedSelectedIds]);
+
+  const selectedErrorBounds = useMemo(() => {
+    if (selectedFeatureIdSet.size === 0) return null;
+    let bounds: { minLng: number; minLat: number; maxLng: number; maxLat: number } | null = null;
+    normalizedTransformErrorRows.forEach((row) => {
+      if (!row.featureId || !selectedFeatureIdSet.has(row.featureId)) return;
+      row.lineFeatures?.features?.forEach((feature) => {
+        const geometry = (feature as { geometry?: { coordinates?: unknown } }).geometry;
+        if (!geometry?.coordinates) return;
+        bounds = visitCoordinates(geometry.coordinates, bounds);
+      });
+    });
+    return finalizeBounds(bounds);
+  }, [finalizeBounds, normalizedTransformErrorRows, selectedFeatureIdSet, visitCoordinates]);
 
   useEffect(() => {
-    const entries = matchedFeatureIds.map((id) => buildMapEntry(String(id)));
+    if (!mapInstance || !selectedErrorBounds) return;
+    const bounds: [[number, number], [number, number]] = [
+      [selectedErrorBounds.minLng, selectedErrorBounds.minLat],
+      [selectedErrorBounds.maxLng, selectedErrorBounds.maxLat],
+    ];
+    mapInstance.fitBounds(bounds, {
+      padding: 24,
+    });
+  }, [mapInstance, selectedErrorBounds]);
+
+  useEffect(() => {
+    const entries = expandedMatchedIds.map((id) => buildMapEntry(String(id)));
     setMapSearchMatches(entries);
-  }, [buildMapEntry, matchedFeatureIds, setMapSearchMatches]);
+  }, [buildMapEntry, expandedMatchedIds, setMapSearchMatches]);
 
   useEffect(() => {
-    const entries = selectedFeatureIds.map((id) => buildMapEntry(String(id)));
+    const entries = expandedSelectedIds.map((id) => buildMapEntry(String(id)));
     setMapSelectedMatches(entries);
-  }, [buildMapEntry, selectedFeatureIds, setMapSelectedMatches]);
+  }, [buildMapEntry, expandedSelectedIds, setMapSelectedMatches]);
 
   useEffect(() => {
-    if (!hoveredId) {
+    if (expandedHoverIds.length === 0) {
       setMapHoverMatches([]);
       return;
     }
-    setMapHoverMatches([buildMapEntry(String(hoveredId))]);
-  }, [buildMapEntry, hoveredId, setMapHoverMatches]);
+    setMapHoverMatches(expandedHoverIds.map((id) => buildMapEntry(String(id))));
+  }, [buildMapEntry, expandedHoverIds, setMapHoverMatches]);
 
   const errorLineCollection = useMemo<ShapeTransformErrorRecord['lineFeatures'] | null>(() => {
     if (normalizedTransformErrorRows.length === 0) return null;

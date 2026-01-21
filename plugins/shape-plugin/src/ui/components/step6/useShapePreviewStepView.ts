@@ -37,24 +37,38 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
     if (!preview.nodeId) return [];
     const hasRemoteTiles = Boolean(preview.tilesUrl);
     const tiles = hasRemoteTiles ? [preview.tilesUrl] : undefined;
+    const baseLayer = {
+      nodeId: String(preview.nodeId),
+      nodeType: 'shape' as const,
+      tiles,
+      dbName: !hasRemoteTiles ? preview.tileDbName : undefined,
+      tileDataProvider: !hasRemoteTiles ? preview.tileDataProvider : undefined,
+      promoteId: 'id',
+    };
+    const fillPaint = {
+      'fill-color': preview.theme.palette.primary.main,
+      'fill-opacity': 0.35,
+      'fill-outline-color': preview.theme.palette.primary.dark,
+    };
     return [
       {
-        nodeId: String(preview.nodeId),
-        nodeType: 'shape' as const,
-        tiles,
-        dbName: !hasRemoteTiles ? preview.tileDbName : undefined,
-        tileDataProvider: !hasRemoteTiles ? preview.tileDataProvider : undefined,
-        promoteId: 'id',
+        ...baseLayer,
         layerConfig: {
           layerId: preview.baseLayerId,
           sourceId: preview.baseSourceId,
-          sourceLayer: preview.tilesLayer,
+          sourceLayer: 'admin0',
           layerType: 'fill' as const,
-          paint: {
-            'fill-color': preview.theme.palette.primary.main,
-            'fill-opacity': 0.35,
-            'fill-outline-color': preview.theme.palette.primary.dark,
-          },
+          paint: fillPaint,
+        },
+      },
+      {
+        ...baseLayer,
+        layerConfig: {
+          layerId: `${preview.baseLayerId}-admin1`,
+          sourceId: `${preview.baseSourceId}-admin1`,
+          sourceLayer: 'admin1',
+          layerType: 'fill' as const,
+          paint: fillPaint,
         },
       },
     ];
@@ -66,9 +80,13 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
     preview.theme.palette.primary.main,
     preview.tileDataProvider,
     preview.tileDbName,
-    preview.tilesLayer,
     preview.tilesUrl,
   ]);
+
+  const vectorLayerIds = useMemo(
+    () => [preview.baseLayerId, `${preview.baseLayerId}-admin1`],
+    [preview.baseLayerId],
+  );
 
   const highlightOverridesByType = useMemo(() => {
     const hasSearch = ['boolean', ['feature-state', 'hdbSearch'], false];
@@ -245,6 +263,7 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
     handleViewStateChange,
     handleZoomSnackbarClose,
     vectorLayers,
+    vectorLayerIds,
     highlightOverridesByType,
     geoJsonLayers,
     attributionItems,

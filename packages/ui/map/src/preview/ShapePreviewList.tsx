@@ -14,6 +14,8 @@ import {
 type ShapePreviewRowBase = {
   id: string;
   featureId?: string;
+  memberFeatureIds?: string[];
+  aggregationLevel?: 'feature' | 'admin' | 'country';
   countryName?: string;
   countryCode?: string;
   adminName?: string;
@@ -122,12 +124,12 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
     const normalizeCount = (value?: number) => (typeof value === 'number' ? value : '');
     const keyword = search?.value.trim().toLowerCase();
     const filtered = keyword
-      ? rows.filter((row) => matchedRows?.has(String(row.id)))
+      ? rows.filter((row) => matchedRows?.has(String(row.featureId ?? row.id)))
       : rows;
     const mapped = filtered.map((row) => ({
       id: row.featureId ?? row.id,
       status: (() => {
-        const summary = errorSummaryById?.get(String(row.id));
+        const summary = errorSummaryById?.get(String(row.featureId ?? row.id));
         const hasErrors = Boolean(summary && summary.count > 0);
         return hasErrors ? resolvedStatusLabels.failed : resolvedStatusLabels.completed;
       })(),
@@ -171,8 +173,9 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
     if (!matchedRows) return undefined;
     const mapped = new Set<string>();
     rows.forEach((row) => {
-      if (matchedRows.has(String(row.id))) {
-        mapped.add(String(row.featureId ?? row.id));
+      const rowKey = String(row.featureId ?? row.id);
+      if (matchedRows.has(rowKey)) {
+        mapped.add(rowKey);
       }
     });
     return mapped;

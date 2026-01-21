@@ -31,7 +31,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
     tilesUrl,
     tilesAvailable,
     tilesChecking,
-    baseLayerId,
+    vectorLayerIds,
     setMapInstance,
     handleMapIdentify,
     defaultView,
@@ -94,7 +94,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
           showTileCoordinates
           interaction={{
             enabled: true,
-            highlightLayerIds: [baseLayerId],
+            highlightLayerIds: vectorLayerIds,
             search: { enabled: false },
             hover: { enabled: false },
             selection: { enabled: false },
@@ -118,7 +118,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
           onLoad={setMapInstance}
           onViewStateChange={handleViewStateChange}
           identifyFeatureOnClick={{
-            layerIds: [baseLayerId],
+            layerIds: vectorLayerIds,
             disableDefaultSnackbar: true,
             getFeatureId: (feature) => {
               const candidate = feature.id ?? feature.properties?.id;
@@ -175,7 +175,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
           matched: t('preview.metadata.matches', 'Matched'),
           rows: t('preview.metadata.rows', 'Rows'),
         }}
-        loading={featureMetadataLoading}
+        loading={featureMetadataLoading && !featureMetadataLoaded}
         error={featureMetadataError ?? undefined}
         matchedRows={matchedFeatureIdSet}
         selectedRows={new Set(selectedFeatureIds)}
