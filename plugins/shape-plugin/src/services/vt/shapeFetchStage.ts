@@ -103,13 +103,6 @@ const buildFetchCacheId = (nodeId: NodeId, sourceKey: string): string => (
   `${String(nodeId)}-shape-${sourceKey}`
 );
 
-const formatReduction = (label: string, output: number, input?: number): string => {
-  if (input === undefined || !Number.isFinite(input) || input <= 0) {
-    return `${label}=${output}`;
-  }
-  const reducedRatio = Math.max(0, Math.min(1, (input - output) / input));
-  const reducedPercent = (reducedRatio * 100).toFixed(1);
-  return `${label}=${output}/${input} (reduced=${reducedPercent}%)`;
 const formatCount = (value: number): string => (
   Number.isFinite(value) ? new Intl.NumberFormat('en-US').format(value) : '-'
 );
@@ -493,8 +486,9 @@ const createFetchHandler = (params: {
       const cachedVertexCount = existing.vertexCount ?? 0;
       const cachedPolygonCount = existing.polygonCount ?? 0;
       const cachedSummary = [
-        formatReduction('polygons', cachedPolygonCount, existing.inputPolygonCount),
-        formatReduction('vertices', cachedVertexCount, existing.inputVertexCount),
+        formatChangeSummary('features', existing.inputFeatureCount ?? existing.featureCount, existing.featureCount),
+        formatChangeSummary('polygons', existing.inputPolygonCount ?? cachedPolygonCount, cachedPolygonCount),
+        formatChangeSummary('vertices', existing.inputVertexCount ?? cachedVertexCount, cachedVertexCount),
       ].join(', ');
       return {
         status: 'completed',
@@ -590,13 +584,14 @@ const createFetchHandler = (params: {
       inputPolygonCount: inputSummary.polygonCount,
     });
     const reductionSummary = [
-      formatReduction('polygons', polygonCount, inputSummary.polygonCount),
-      formatReduction('vertices', vertexCount, inputSummary.vertexCount),
+      formatChangeSummary('features', inputSummary.featureCount, featureCount),
+      formatChangeSummary('polygons', inputSummary.polygonCount, polygonCount),
+      formatChangeSummary('vertices', inputSummary.vertexCount, vertexCount),
     ].join(', ');
 
     return {
       status: 'completed',
-      message: `completed: features=${featureCount} (${reductionSummary})`,
+      message: reductionSummary,
       outputData: {
         fetchCacheId: bufferId,
         featureCount,
