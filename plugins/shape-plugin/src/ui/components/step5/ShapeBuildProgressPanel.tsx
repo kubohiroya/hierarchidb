@@ -183,14 +183,7 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
         value: formatDuration(summary.stageRemainingMs ?? null),
       },
     ];
-  }, [
-    formatDuration,
-    summary.buildStatus,
-    summary.stageElapsedMs,
-    summary.stageRemainingMs,
-    summary.totalElapsedMs,
-    t,
-  ]);
+  }, [formatDuration, formatElapsedDuration, summary.buildStatus, summary.stageElapsedMs, summary.stageRemainingMs, summary.totalElapsedMs, t]);
 
   const resolveStageValue = useCallback((stageId: string): number => (
     Math.min(100, Math.max(0, stageProgress[stageId] ?? summary.overallProgress))
