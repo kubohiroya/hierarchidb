@@ -15,6 +15,38 @@
   - update: 2026-01-23 09:15 JST pnpm install/build/typecheck が corepack の pnpm 取得失敗（Proxy 403）で停止。
   - done: 2026-01-23 09:20 JST 仕様どおりにプロパティ補完を実装。検証は pnpm install/build/typecheck が corepack の pnpm 取得失敗（Proxy 403）で未完了。
 
+2295) test/vt/tile-output-stats (P1) — 進行中 (2026-01-22)
+- ブランチ名: test/vt/tile-output-stats
+- 依存: なし
+- 受け入れ基準: vt生成済みタイルのポリゴン数/頂点数合計が0ではないことをテストで検証する／既存のタイル生成ロジックに影響しない／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/vt-orchestrator/src/vt/**`
+- ロールバック手順: 追加テスト差分を revert する
+- チェックリスト:
+  - 出力タイルの統計を集計するテストを追加する
+  - 合計が0ではないことを検証する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-22 20:30 JST vt生成タイルのポリゴン/頂点合計を検証するテスト追加に着手。
+  - update: 2026-01-22 20:40 JST vt生成タイルのポリゴン/頂点合計テストと出力集計ログを追加。
+  - blocked: 2026-01-22 20:42 JST `pnpm --filter @hierarchidb/vt-orchestrator typecheck` が EPERM (mkdir /Users/hiroya/Library/pnpm/.tools/...) で失敗。
+
+2294) fix/shape/step6-hover-missing-layer (P1) — 進行中 (2026-01-22)
+- ブランチ名: fix/shape/step6-hover-missing-layer
+- 依存: なし
+- 受け入れ基準: Step6のホバーで存在しないレイヤーを参照しても例外が出ない／hover候補が空の場合は正常に無視される／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/preview/useMapFeatureHoverCandidates.ts`
+- ロールバック手順: hoverレイヤーの存在チェック差分を revert する
+- チェックリスト:
+  - hover時に存在しないレイヤーを事前に除外する
+  - 候補が空の場合にhoverをクリアする
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-22 20:10 JST Step6のhoverで存在しないレイヤー参照エラーを抑止する対応に着手。
+  - update: 2026-01-22 20:16 JST hover対象レイヤーの存在チェックと空候補時のクリア処理を追加。
+  - done: 2026-01-22 20:19 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
+
 2292) fix/shape/step6-preview-hover-snackbar (P1) — 進行中 (2026-01-22)
 - ブランチ名: fix/shape/step6-preview-hover-snackbar
 - 依存: なし
@@ -6595,6 +6627,7 @@
 - update: 2026-01-23 05:05 JST Step6で地物が表示されないため、MVTレイヤ名とStep6の参照レイヤの整合性を再調査中。
 - update: 2026-01-23 06:10 JST Step6のタイル供給/描画/インタラクション経路の再検証と修正に着手。
 - update: 2026-01-23 06:25 JST Step6のhover/snackbar無効設定とタイル取得経路の不整合を修正する方針で調査・修正に着手。
+  - update: 2026-01-23 19:15 JST Step6プレビューで layer 未登録のまま hover クエリが走る件の調査を開始。
   - done: 2026-01-23 04:42 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
 
   - update: 2026-01-21 17:51 JST Step6の地物未表示/ホバー無反応の原因調査と修正方針を開始。
