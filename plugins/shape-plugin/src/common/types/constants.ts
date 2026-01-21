@@ -70,8 +70,16 @@ export const DEFAULT_BUILD_CONFIG: ShapeBuildConfig = {
   vtConfig: {
     enableTopojsonSimplify: true,
     maxConcurrent: 1,
-    tolerance: 1,
-    extent: 0,
+    dynamicConcurrency: {
+      enabled: true,
+      minConcurrent: 1,
+      highWatermark: 0.85,
+      lowWatermark: 0.6,
+      adjustStep: 1,
+      sampleMs: 2000,
+    },
+    tolerance: 0,
+    extent: 4096,
     bufferSize: 256,
     boundaryDedupe: false,
     indexMaxPoints: 0,

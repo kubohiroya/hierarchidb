@@ -17,6 +17,16 @@ export type TaskStatus = CommonTaskStatus;
 
 export type FailureHandling = 'continue' | 'stop' | 'skip';
 
+export type DynamicConcurrencyConfig = {
+  enabled: boolean;
+  minConcurrent: number;
+  maxConcurrent?: number;
+  highWatermark: number;
+  lowWatermark: number;
+  adjustStep: number;
+  sampleMs: number;
+};
+
 export type BandConfig = {
   bandId: number;
   zMin: number;
@@ -82,6 +92,7 @@ export interface RunStageOptions<TInput = unknown, TOutput = unknown> {
   handler: StageHandler<TInput, TOutput>;
   waitIfPaused?: () => Promise<void>;
   maxConcurrent?: number;
+  dynamicConcurrency?: DynamicConcurrencyConfig;
   failureHandling?: FailureHandling;
   abortController?: AbortController;
 }

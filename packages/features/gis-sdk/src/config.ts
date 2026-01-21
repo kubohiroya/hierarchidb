@@ -97,9 +97,20 @@ export interface TransformConfig {
   transformMode?: TransformMode;
 }
 
+export type DynamicConcurrencyConfig = {
+  enabled: boolean;
+  minConcurrent: number;
+  maxConcurrent?: number;
+  highWatermark: number;
+  lowWatermark: number;
+  adjustStep: number;
+  sampleMs: number;
+};
+
 export interface VTConfig {
   enableTopojsonSimplify: boolean;
   maxConcurrent: number;
+  dynamicConcurrency?: DynamicConcurrencyConfig;
   tolerance: number;
   extent: number;
   bufferSize: number;

@@ -20,11 +20,24 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
   const db = new VtTaskQueueDb();
   const tasks = await listTasksByStage(db, nodeId, stage);
   const pending = tasks.filter((task) => task.status === 'queued').sort(compareTaskOrder);
-  const concurrency = Math.max(1, Math.floor(maxConcurrent ?? 1));
+  const baseMaxConcurrent = Math.max(1, Math.floor(maxConcurrent ?? 1));
+  const dynamicConfig = options.dynamicConcurrency?.enabled ? options.dynamicConcurrency : null;
+  const minConcurrent = dynamicConfig
+    ? Math.max(1, Math.floor(dynamicConfig.minConcurrent))
+    : baseMaxConcurrent;
+  const maxConcurrentLimit = dynamicConfig
+    ? Math.max(minConcurrent, Math.floor(dynamicConfig.maxConcurrent ?? baseMaxConcurrent))
+    : baseMaxConcurrent;
+  let desiredConcurrent = dynamicConfig
+    ? Math.min(maxConcurrentLimit, baseMaxConcurrent)
+    : baseMaxConcurrent;
+  desiredConcurrent = Math.max(minConcurrent, desiredConcurrent);
   let cursor = 0;
   let aborted = false;
   let failureError: Error | null = null;
   let failureTaskId: string | null = null;
+  let activeWorkers = 0;
+  const workerPromises: Promise<void>[] = [];
 
   const normalizeErrorMessage = (error: unknown): string => (
     error instanceof Error ? error.message : String(error)
@@ -57,9 +70,35 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
     });
   };
 
+  const hasPendingTasks = () => cursor < pending.length;
+
+  const readHeapUsageRatio = (): number | null => {
+    const memory = (globalThis as { performance?: { memory?: { usedJSHeapSize?: number; jsHeapSizeLimit?: number } } })
+      .performance?.memory;
+    if (!memory) return null;
+    const used = memory.usedJSHeapSize ?? 0;
+    const limit = memory.jsHeapSizeLimit ?? 0;
+    if (!Number.isFinite(used) || !Number.isFinite(limit) || limit <= 0) return null;
+    return used / limit;
+  };
+
+  const adjustConcurrency = (): void => {
+    if (!dynamicConfig) return;
+    const usageRatio = readHeapUsageRatio();
+    if (usageRatio === null) return;
+    if (usageRatio >= dynamicConfig.highWatermark) {
+      desiredConcurrent = Math.max(minConcurrent, desiredConcurrent - Math.max(1, dynamicConfig.adjustStep));
+      return;
+    }
+    if (usageRatio <= dynamicConfig.lowWatermark) {
+      desiredConcurrent = Math.min(maxConcurrentLimit, desiredConcurrent + Math.max(1, dynamicConfig.adjustStep));
+    }
+  };
+
   const runNext = async () => {
     while (true) {
       if (aborted || abortSignal?.aborted) return;
+      if (activeWorkers > desiredConcurrent) return;
       const index = cursor;
       cursor += 1;
       const task = pending[index];
@@ -118,7 +157,43 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
     }
   };
 
-  await Promise.all(Array.from({ length: concurrency }, () => runNext()));
+  const startWorker = () => {
+    activeWorkers += 1;
+    const promise = runNext()
+      .catch((error) => {
+        throw error;
+      })
+      .finally(() => {
+        activeWorkers -= 1;
+        if (dynamicConfig) {
+          syncWorkers();
+        }
+      });
+    workerPromises.push(promise);
+  };
+
+  const syncWorkers = (): void => {
+    if (!hasPendingTasks()) return;
+    while (activeWorkers < desiredConcurrent) {
+      startWorker();
+    }
+  };
+
+  if (dynamicConfig) {
+    const sampleMs = Math.max(200, Math.floor(dynamicConfig.sampleMs));
+    const intervalId = setInterval(() => {
+      adjustConcurrency();
+      syncWorkers();
+    }, sampleMs);
+    syncWorkers();
+    await Promise.all(workerPromises);
+    clearInterval(intervalId);
+  } else {
+    while (activeWorkers < desiredConcurrent) {
+      startWorker();
+    }
+    await Promise.all(workerPromises);
+  }
 
   if (stopOnFailure && failureError) {
     const reason = normalizeErrorMessage(failureError ?? 'aborted');
