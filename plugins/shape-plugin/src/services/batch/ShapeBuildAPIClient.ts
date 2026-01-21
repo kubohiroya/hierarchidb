@@ -27,17 +27,10 @@ import type {
 import {
   bufferDeserializer,
   bufferSerializer,
-  countRawDataDataSourceBuffersForNode,
   createShapeChunkStore,
-  isRawDataDataSourceCacheKey,
-  listRawDataDataSourceMetadataForNode,
-  readRawDataDataSourceBuffer,
   storeRawDataDataSourceBufferForNode,
 } from '../utils/chunkStore.js';
 import { resolveCountryContinentName, resolveCountryName } from '../utils/iso3166.js';
-import { geojson as geojsonApi } from 'flatgeobuf';
-import { bbox as turfBbox } from '@turf/turf';
-import type { Feature, FeatureCollection } from 'geojson';
 import {
   toBuildSessionRecord,
   toBuildSessionUpdates,
@@ -110,73 +103,6 @@ const assertNonEmptyTransformCacheBuffers = (buffers: Array<Pick<ShapeTransformC
   buffers.forEach(assertNonEmptyTransformCacheBuffer);
 };
 
-const isFeatureCollection = (value: unknown): value is FeatureCollection => (
-  !!value
-  && typeof value === 'object'
-  && (value as FeatureCollection).type === 'FeatureCollection'
-  && Array.isArray((value as FeatureCollection).features)
-);
-
-const decodeDownloadGeoJson = async (buffer: ArrayBuffer): Promise<unknown> => {
-  const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
-  if (decoded && typeof (decoded as AsyncIterable<unknown>)[Symbol.asyncIterator] === 'function') {
-    const features: Feature[] = [];
-    for await (const feature of decoded as AsyncIterable<Feature>) {
-      if (feature) features.push(feature);
-    }
-    return { type: 'FeatureCollection', features };
-  }
-  return decoded;
-};
-
-const summarizeDownloadBuffer = async (buffer: ArrayBuffer, contentType?: string): Promise<{
-  featureCount: number;
-  bbox: [number, number, number, number];
-}> => {
-  const decoded = await decodeRawDataBuffer(buffer, contentType);
-  if (!isFeatureCollection(decoded)) {
-    return { featureCount: 0, bbox: [0, 0, 0, 0] };
-  }
-  const bounds = turfBbox(decoded);
-  return {
-    featureCount: decoded.features.filter(Boolean).length,
-    bbox: [bounds[0], bounds[1], bounds[2], bounds[3]],
-  };
-};
-
-const decodeRawDataBuffer = async (buffer: ArrayBuffer, contentType?: string): Promise<unknown> => {
-  try {
-    const normalized = (contentType ?? '').toLowerCase();
-    if (normalized.includes('zip') || isZipBuffer(buffer)) {
-      const jsonBuffer = await unzipJsonBuffer(buffer);
-      return JSON.parse(new TextDecoder('utf-8').decode(jsonBuffer));
-    }
-    if (normalized.includes('json')) {
-      return JSON.parse(new TextDecoder('utf-8').decode(buffer));
-    }
-    return await decodeDownloadGeoJson(buffer);
-  } catch {
-    return null;
-  }
-};
-
-const isZipBuffer = (buffer: ArrayBuffer): boolean => {
-  const bytes = new Uint8Array(buffer);
-  return bytes.length >= 2 && bytes[0] === 0x50 && bytes[1] === 0x4b;
-};
-
-const unzipJsonBuffer = async (buffer: ArrayBuffer): Promise<ArrayBuffer> => {
-  const JSZip = (await import('jszip')).default;
-  const zip = new JSZip();
-  const zipData = await zip.loadAsync(buffer);
-  for (const [fileName, fileData] of Object.entries(zipData.files)) {
-    if (fileName.endsWith('.json') && !fileData.dir) {
-      const text = await fileData.async('string');
-      return new TextEncoder().encode(text).buffer;
-    }
-  }
-  throw new Error('No JSON file found in archive');
-};
 
 const toTaskSummary = (task: ShapeBuildTaskRecord): ShapeBuildTaskSummary => ({
   taskId: task.taskId,
