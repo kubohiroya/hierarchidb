@@ -173,11 +173,7 @@ const buildTaskQueueTitle = (task: TaskQueueRecord): string | undefined => {
     const zoomLabel = zBase !== undefined && coords
       ? `z${zBase}/${coords.x}/${coords.y}`
       : undefined;
-    const featureCount = typeof input.featureCount === "number" && Number.isFinite(input.featureCount)
-      ? input.featureCount
-      : undefined;
-    const featureLabel = featureCount !== undefined ? `(features=${featureCount})` : undefined;
-    return [bandId, zoomLabel, featureLabel].filter(Boolean).join(" ");
+    return [bandId, zoomLabel].filter(Boolean).join(" ");
   }
   return undefined;
 };
