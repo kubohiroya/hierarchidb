@@ -570,6 +570,12 @@ const buildTileSummary = (tilesByZoom: Map<number, { total: number; generated: n
 const buildSkippedMessage = (featureSummary: string, tileSummary: string, reason: string): string => (
   `${featureSummary}, ${tileSummary} (skipped: ${reason})`
 );
+
+export const vtStageTestUtils = {
+  buildAdminFeatureSummary,
+  buildTileSummary,
+  buildSkippedMessage,
+};
 type FeatureWithBBox = { feature: Feature; bbox: TileBBox };
 
 const buildFeaturesWithBBox = (features: Feature[]): FeatureWithBBox[] => (

@@ -96,7 +96,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
             enabled: true,
             highlightLayerIds: vectorLayerIds,
             search: { enabled: false },
-            hover: { enabled: false },
+            hover: { enabled: true },
             selection: { enabled: false },
             fitSelection: { enabled: true, padding: 24 },
             snackbar: { enabled: false },

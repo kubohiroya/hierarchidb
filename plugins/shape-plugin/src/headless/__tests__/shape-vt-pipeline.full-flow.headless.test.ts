@@ -121,11 +121,14 @@ describe('Shape full-flow pipeline', () => {
     const tileCount = await shapeDB.vectorTiles.where('nodeId').equals(nodeId).count();
     const featureMetaCount = await shapeDB.featureMetadata.where('nodeId').equals(nodeId).count();
     const sourceMetaCount = await shapeDB.sourceMetadata.where('nodeId').equals(nodeId).count();
+    const tileSample = await shapeDB.vectorTiles.where('nodeId').equals(nodeId).first();
 
     expect(fetchCount).toBeGreaterThan(0);
     expect(transformCount).toBeGreaterThan(0);
     expect(tileCount).toBeGreaterThan(0);
     expect(featureMetaCount).toBeGreaterThan(0);
     expect(sourceMetaCount).toBeGreaterThan(0);
+    expect(tileSample?.layers?.length ?? 0).toBeGreaterThan(0);
+    expect(tileSample?.data_Uint8Array?.length ?? 0).toBeGreaterThan(0);
   }, { timeout: 300000 });
 });

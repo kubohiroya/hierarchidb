@@ -5,7 +5,7 @@ import { isShapePreviewMetadataEnabled } from '../../../common/config/previewFla
 import { toNodeId, type NodeId } from '@hierarchidb/common-types';
 import { useTranslation } from '../../i18n.js';
 import type { ShapeFeatureMetadata, ShapeSourceMetadata, ShapeTransformErrorRecord } from '@hierarchidb/plugin-service-api';
-import { useAtom, useSetAtom } from 'jotai';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import {
   shapePreviewSearchAtom,
   shapePreviewMatchedIdsAtom,
@@ -22,6 +22,7 @@ import type {
 import type { MapLibreMapInstance } from '@hierarchidb/ui-map';
 import {
   buildErrorSummaryById,
+  mapHoverCandidatesAtom,
   mapHoverMatchesAtom,
   mapSearchMatchesAtom,
   mapSelectedMatchesAtom,
@@ -148,6 +149,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   const [selectedIds, setSelectedIds] = useAtom(shapePreviewSelectedIdsAtom);
   const [hoveredId, setHoveredId] = useAtom(shapePreviewHoveredIdAtom);
   const [selectionContext, setSelectionContext] = useAtom(shapePreviewSelectionContextAtom);
+  const hoverCandidates = useAtomValue(mapHoverCandidatesAtom);
   const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
   const [featureSearchKeyword, setFeatureSearchKeyword] = useState('');
   const [matchedFeatureIds, setMatchedFeatureIds] = useState<string[]>([]);
@@ -713,6 +715,29 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     resolveFeatureId: (feature) =>
       String(feature.properties?.__hdbOriginKey ?? feature.properties?.id ?? feature.id ?? ''),
   });
+
+  useEffect(() => {
+    const candidate = hoverCandidates[0];
+    if (!candidate) {
+      if (hoveredId !== null) {
+        setHoveredId(null);
+      }
+      return;
+    }
+    const feature = candidate.feature;
+    const resolved = String(
+      feature.properties?.__hdbOriginKey ?? feature.properties?.id ?? feature.id ?? '',
+    );
+    if (!resolved) {
+      if (hoveredId !== null) {
+        setHoveredId(null);
+      }
+      return;
+    }
+    if (resolved !== hoveredId) {
+      setHoveredId(resolved);
+    }
+  }, [hoverCandidates, hoveredId, setHoveredId]);
 
   const toFeatureListRow = useCallback(
     (row: ShapeFeatureMetadata): ShapePreviewFeatureRow => {

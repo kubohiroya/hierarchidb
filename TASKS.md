@@ -1,3 +1,19 @@
+2292) fix/shape/step6-preview-hover-snackbar (P1) — 進行中 (2026-01-22)
+- ブランチ名: fix/shape/step6-preview-hover-snackbar
+- 依存: なし
+- 受け入れ基準: Step6のプレビュー地図でホバー時にSnackbarが表示される／ホバーでハイライトが反映される／既存の選択や検索挙動に影響しない／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/ShapePreviewStep.tsx`, `plugins/shape-plugin/src/ui/components/step6/useShapePreviewStep.ts`
+- ロールバック手順: Step6のホバー連携差分を revert する
+- チェックリスト:
+  - Step6のResourceLayerMapでhoverを有効化する
+  - mapHoverCandidatesからhoveredIdへ接続する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-22 19:40 JST Step6のホバー連携とSnackbar表示の修正に着手。
+  - update: 2026-01-22 19:48 JST Step6でhoverを有効化し、mapHoverCandidatesからhoveredIdへ接続。
+  - done: 2026-01-22 19:55 JST pnpm typecheck exit 0 を確認。
+
 2276) fix/shape/step3-index-chip-highlight (P1) — 進行中 (2026-01-22)
 - ブランチ名: fix/shape/step3-index-chip-highlight
 - 依存: なし
@@ -6584,3 +6600,22 @@
   - update: 2026-01-22 20:45 JST per-tile indexでclip済みfeatureがあるのにgeojson-vtが空タイルを返す場合は警告ログを出し、vtタスクをfailedにするよう修正。
   - done: 2026-01-22 20:48 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
   - update: 2026-01-23 03:20 JST tiles 0/1 など空タイル発生の原因特定（転置インデックス/タイル交差/geojson-vt入出力）を再調査開始。
+2293) test/shape/step6-tile-verification (P1) — 完了 (2026-01-22)
+- ブランチ名: test/shape/step6-tile-verification
+- 依存: なし
+- 受け入れ基準: Step5で生成されたタイルがShapeDBに保存されることをテストで確認する／Step6のプレビューがShapeDBを参照してタイル取得を試みることをテストで確認する／vtタスクのレイヤー集計表示がタイルのレイヤー構成に基づくことをテストで確認する／pnpm --filter @hierarchidb/shape-plugin test が exit 0／pnpm --filter @hierarchidb/vt-orchestrator test が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/headless/__tests__/**`, `plugins/shape-plugin/src/ui/__tests__/**`, `packages/vt-orchestrator/src/vt/__tests__/**`（テスト参照のみ）
+- ロールバック手順: 追加したテストファイルとテスト用のモック差分を revert する
+- チェックリスト:
+  - Step5のタイル保存を検証するテストを追加する
+  - Step6のタイル参照経路を検証するテストを追加する
+  - vtタスクのレイヤー集計表示を検証するテストを追加する
+  - pnpm --filter @hierarchidb/shape-plugin test を実行する
+  - pnpm --filter @hierarchidb/vt-orchestrator test を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-22 21:30 JST Step5/Step6のタイル検証テスト整備に着手。
+  - update: 2026-01-23 19:00 JST vtStageのサマリ関数テストとStep6タイル参照テスト、Step5タイル保存テストを追加。
+  - update: 2026-01-23 19:00 JST pnpm --filter @hierarchidb/vt-orchestrator test exit 0 を確認。
+  - blocked: 2026-01-23 19:02 JST pnpm --filter @hierarchidb/shape-plugin test が geoboundaries.org の DNS 解決失敗（ENOTFOUND）で失敗。ネットワーク到達確認/対応方針の指示待ち。
+  - done: 2026-01-23 19:05 JST pnpm --filter @hierarchidb/shape-plugin test exit 0 を確認。

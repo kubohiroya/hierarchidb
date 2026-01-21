@@ -51,6 +51,7 @@ async function ensureShapeStores(registry: StoreRegistry): Promise<void> {
     await maybeOpen.call(db);
   }
 
+  /*
   if (!registry.getFeatures('shape')) {
     const { createShapeFeatureStoreDexie } = (await import('../shapeGroupStore.dexie.js')) as ShapeGroupStoreModule;
     registry.registerFeatures('shape', createShapeFeatureStoreDexie(db));
@@ -64,6 +65,7 @@ async function ensureShapeStores(registry: StoreRegistry): Promise<void> {
     const { createShapeRelationStoreDexie } = (await import('../shapeRelationStore.dexie.js')) as ShapeRelationStoreModule;
     registry.registerRelations('shape', createShapeRelationStoreDexie(db));
   }
+   */
 }
 
 export async function registerShapeWorkerStores(options: RegisterShapeWorkerStoresOptions = {}): Promise<void> {
@@ -79,8 +81,10 @@ export async function registerShapeWorkerStores(options: RegisterShapeWorkerStor
   await ensureShapeStores(registry);
 }
 
+/*
 export async function loadShapeEntitiesDbModule() {
   return import('../shapeEntitiesDB.js');
 }
+ */
 
 registerShapeWorkerStores().catch(() => {});
