@@ -30,6 +30,7 @@
   - start: 2026-01-22 20:30 JST vt生成タイルのポリゴン/頂点合計を検証するテスト追加に着手。
   - update: 2026-01-22 20:40 JST vt生成タイルのポリゴン/頂点合計テストと出力集計ログを追加。
   - blocked: 2026-01-22 20:42 JST `pnpm --filter @hierarchidb/vt-orchestrator typecheck` が EPERM (mkdir /Users/hiroya/Library/pnpm/.tools/...) で失敗。
+  - done: 2026-01-22 20:48 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck が通過。
 
 2294) fix/shape/step6-hover-missing-layer (P1) — 進行中 (2026-01-22)
 - ブランチ名: fix/shape/step6-hover-missing-layer
@@ -48,6 +49,25 @@
   - done: 2026-01-22 20:19 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
 
 2292) fix/shape/step6-preview-hover-snackbar (P1) — 進行中 (2026-01-22)
+
+2296) audit/shape/vt-indexeddb-usage (P1) — 進行中 (2026-01-22)
+- ブランチ名: audit/shape/vt-indexeddb-usage
+- 依存: なし
+- 受け入れ基準: 指定DBの読み書き実態をコード参照で一覧化する／未使用・片方向利用の可能性を分類して報告する／修正候補と影響範囲を提案する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/**`, `packages/**`, `app/**`（調査のみ）
+- ロールバック手順: なし（調査のみ）
+- チェックリスト:
+  - DB名ごとの参照箇所を抽出する
+  - 読み/書きの有無を分類する
+  - 調査結果と提案を整理する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-22 20:55 JST shape/vt関連IndexedDBの読み書き実態の調査に着手。
+  - update: 2026-01-23 10:10 JST DexieShapePortの参照元とhidb-vt/hidb-vt-shapeの残存参照を洗い出し、整理方針の実装に着手。
+  - update: 2026-01-23 10:20 JST DexieShapePortのエクスポート/README記述を削除し、アダプタ自体を撤去。hidb-vt/hidb-vt-shapeの参照はコード上0件を確認。
+  - done: 2026-01-23 10:25 JST 調査結果に基づきDexieShapePortを除去。hidb-vt/hidb-vt-shapeの残存参照なしを確認。
+  - update: 2026-01-23 10:40 JST DexieShapePort廃止の注記をドキュメントへ追記。
+  - done: 2026-01-23 10:42 JST map-source README にDexieShapePort廃止の注記を追加。
 - ブランチ名: fix/shape/step6-preview-hover-snackbar
 - 依存: なし
 - 受け入れ基準: Step6のプレビュー地図でホバー時にSnackbarが表示される／ホバーでハイライトが反映される／既存の選択や検索挙動に影響しない／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
