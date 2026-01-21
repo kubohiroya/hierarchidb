@@ -100,6 +100,36 @@ function buildUniqueFeatureId(
   return `${composed}:${index}`;
 }
 
+const normalizePropertyValue = (value: unknown): string | undefined => {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? String(value) : undefined;
+  }
+  return undefined;
+};
+
+const ensureMetadataProperties = (
+  properties: Record<string, unknown>,
+  metadataContext?: VTMetadataContext,
+): void => {
+  const rawCountryCode = metadataContext?.countryCode ?? pickCountryCode(properties);
+  const normalizedCountryCode = normalizePropertyValue(rawCountryCode)?.toUpperCase();
+  if (normalizedCountryCode && properties.countryCode === undefined) {
+    properties.countryCode = normalizedCountryCode;
+  }
+  const adminCode = normalizePropertyValue(pickAdminCode(properties));
+  if (adminCode && properties.adminCode === undefined) {
+    properties.adminCode = adminCode;
+  }
+  const adminLevel = metadataContext?.adminLevel ?? pickAdminLevel(properties);
+  if (adminLevel != null && properties.adminLevel === undefined) {
+    properties.adminLevel = adminLevel;
+  }
+};
+
 const long2tile = (lon: number, z: number) => lonToTileX(lon, z);
 
 const lat2tile = (lat: number, z: number) => latToTileY(lat, z);
@@ -320,6 +350,7 @@ export const generateVectorTilesFromFeatureCollection = async (
       const properties = feature.properties;
       const tileFeatureId = buildUniqueFeatureId(feature, index, metadataContext);
       properties.id = tileFeatureId;
+      ensureMetadataProperties(properties, metadataContext);
       const stats = extractGeometryStats(feature.geometry);
       records.push({
         id: `${nodeId}-${tileFeatureId}`,
@@ -347,6 +378,7 @@ export const generateVectorTilesFromFeatureCollection = async (
       if (!feature) continue;
       const properties = feature.properties ?? {};
       properties.id = buildUniqueFeatureId(feature, index, metadataContext);
+      ensureMetadataProperties(properties, metadataContext);
     }
   }
   console.debug('[VectorTiles] metadata pass', {
