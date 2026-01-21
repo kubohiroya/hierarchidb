@@ -571,10 +571,43 @@ const buildSkippedMessage = (featureSummary: string, tileSummary: string, reason
   `${featureSummary}, ${tileSummary} (skipped: ${reason})`
 );
 
+type OutputTileTotals = {
+  featureCount: number;
+  vertexCount: number;
+  polygonCount: number;
+  lineStringCount: number;
+};
+
+const computeOutputTileTotals = (tiles: Tile[]): OutputTileTotals => {
+  const totals: OutputTileTotals = {
+    featureCount: 0,
+    vertexCount: 0,
+    polygonCount: 0,
+    lineStringCount: 0,
+  };
+  tiles.forEach((tile) => {
+    const features = Array.isArray(tile.features) ? tile.features : [];
+    totals.featureCount += features.length;
+    features.forEach((feature) => {
+      if (feature.type === 3) {
+        totals.polygonCount += countTilePolygons(feature.geometry);
+        totals.vertexCount += countTileVertices(feature.geometry);
+      } else if (feature.type === 2) {
+        totals.lineStringCount += countTileLineStrings(feature.geometry);
+        totals.vertexCount += countTileVertices(feature.geometry);
+      } else {
+        totals.vertexCount += countTileVertices(feature.geometry);
+      }
+    });
+  });
+  return totals;
+};
+
 export const vtStageTestUtils = {
   buildAdminFeatureSummary,
   buildTileSummary,
   buildSkippedMessage,
+  computeOutputTileTotals,
 };
 type FeatureWithBBox = { feature: Feature; bbox: TileBBox };
 
@@ -1387,11 +1420,17 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
         const summaryMessage = `${adminFeatureSummary}, ${finalTileSummary}`;
         await reportTileProgress(true, summaryMessage);
       }
+      console.info('[vt] output tile totals', JSON.stringify({
+        ...taskContext,
+        generatedTiles,
+        outputTotals: totalOutputStats,
+      }));
       console.info('[vt] task completed', JSON.stringify({
         ...taskContext,
         processedTiles,
         generatedTiles,
         totalTiles,
+        outputTotals: totalOutputStats,
         tilingDurationMs: Date.now() - tilingStartedAt,
         heap: getHeapSnapshot(),
       }));

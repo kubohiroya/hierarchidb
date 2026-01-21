@@ -352,9 +352,6 @@ importers:
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../packages/util
-      '@hierarchidb/vt-store':
-        specifier: workspace:*
-        version: link:../packages/vt-store
       '@mui/icons-material':
         specifier: ^7.3.6
         version: 7.3.6(@mui/material@7.3.6(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.27)(react@18.3.1)
@@ -2782,12 +2779,6 @@ importers:
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../util
-      '@hierarchidb/vt-shape-store':
-        specifier: workspace:*
-        version: link:../vt-shape-store
-      '@hierarchidb/vt-store':
-        specifier: workspace:*
-        version: link:../vt-store
       '@maplibre/vt-pbf':
         specifier: ^4.0.3
         version: 4.0.3
@@ -2803,42 +2794,6 @@ importers:
       geojson-vt:
         specifier: ^3.2.1
         version: 3.2.1
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
-  packages/vt-shape-store:
-    devDependencies:
-      '@hierarchidb/common-types':
-        specifier: workspace:*
-        version: link:../common/types
-      '@hierarchidb/plugin-service-api':
-        specifier: workspace:*
-        version: link:../plugin-service-api
-      '@hierarchidb/util':
-        specifier: workspace:*
-        version: link:../util
-      dexie:
-        specifier: 4.2.0
-        version: 4.2.0
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
-  packages/vt-store:
-    devDependencies:
-      '@hierarchidb/common-types':
-        specifier: workspace:*
-        version: link:../common/types
-      '@hierarchidb/plugin-service-api':
-        specifier: workspace:*
-        version: link:../plugin-service-api
-      '@hierarchidb/util':
-        specifier: workspace:*
-        version: link:../util
-      dexie:
-        specifier: 4.2.0
-        version: 4.2.0
       typescript:
         specifier: 5.8.2
         version: 5.8.2
@@ -3442,12 +3397,6 @@ importers:
       '@hierarchidb/vt-orchestrator':
         specifier: workspace:*
         version: link:../../packages/vt-orchestrator
-      '@hierarchidb/vt-shape-store':
-        specifier: workspace:*
-        version: link:../../packages/vt-shape-store
-      '@hierarchidb/vt-store':
-        specifier: workspace:*
-        version: link:../../packages/vt-store
       '@mapbox/vector-tile':
         specifier: ^2.0.3
         version: 2.0.4

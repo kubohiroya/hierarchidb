@@ -61,11 +61,16 @@ export const useMapFeatureHoverCandidates = <HighlightEntry extends { source: st
   useEffect(() => {
     if (!mapInstance) return undefined;
     const handleMouseMove = (event: MapLibreMapMouseEvent) => {
-    const result = resolveIdentifyCandidates(mapInstance, event, {
-      layerIds: highlightLayerIds,
-      radius,
-      getFeatureId: defaultFeatureIdAccessor,
-    });
+      const activeLayerIds = highlightLayerIds.filter((layerId) => Boolean(mapInstance.getLayer(layerId)));
+      if (activeLayerIds.length === 0) {
+        onHoverChange([], []);
+        return;
+      }
+      const result = resolveIdentifyCandidates(mapInstance, event, {
+        layerIds: activeLayerIds,
+        radius,
+        getFeatureId: defaultFeatureIdAccessor,
+      });
       const orderedFeatures = sortByDistance(mapInstance, event, result.features);
       const entries = orderedFeatures
         .map((feature) => buildHighlightEntry(feature))
