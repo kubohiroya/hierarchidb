@@ -25,4 +25,5 @@ export type VTStageContext = {
   bands: BandConfig[];
   abortSignal?: AbortSignal;
   tileWriter: VtTileWriter;
+  continentByCountry?: Map<string, string>;
 };

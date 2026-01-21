@@ -155,8 +155,8 @@ export async function fetchGeoBoundariesMetadata(nodeId: NodeId): Promise<Countr
   const results: CountryMetadata[] = [];
   let missingContinentCount = 0;
   let mismatchContinentCount = 0;
-  const missingSamples: Array<{ iso3: string; metadata: string | null }> = [];
-  const mismatchSamples: Array<{ iso3: string; metadata: string | null; iso3166: string }> = [];
+  const missingSamples: Array<{ iso2?: string; iso3: string; metadata: string | null }> = [];
+  const mismatchSamples: Array<{ iso2?: string; iso3: string; metadata: string | null; iso3166: string }> = [];
   for (const entry of entries.values()) {
     const iso2 = await normalizeCountryCodeFormat(entry.iso3, 'iso2', {
       csvUrl: DEFAULT_ISO3166_CSV_URL,
@@ -175,12 +175,13 @@ export async function fetchGeoBoundariesMetadata(nodeId: NodeId): Promise<Countr
     if (!rawContinent) {
       missingContinentCount += 1;
       if (missingSamples.length < 5) {
-        missingSamples.push({ iso3: entry.iso3, metadata: rawContinent || null });
+        missingSamples.push({ iso2: normalizedIso2, iso3: entry.iso3, metadata: rawContinent || null });
       }
     } else if (!rawContinentCode || (resolvedContinentCode !== 'XX' && rawContinentCode !== resolvedContinentCode)) {
       mismatchContinentCount += 1;
       if (mismatchSamples.length < 5) {
         mismatchSamples.push({
+          iso2: normalizedIso2,
           iso3: entry.iso3,
           metadata: rawContinent || null,
           iso3166: fallbackContinent,
@@ -188,7 +189,7 @@ export async function fetchGeoBoundariesMetadata(nodeId: NodeId): Promise<Countr
       }
     }
 
-    const resolvedContinent = rawContinent || fallbackContinent || 'N/A';
+    const resolvedContinent = fallbackContinent || rawContinent || 'N/A';
     results.push({
       countryCode: normalizedIso2 ?? entry.iso3,
       countryName: entry.name ?? entry.iso3,
@@ -200,7 +201,7 @@ export async function fetchGeoBoundariesMetadata(nodeId: NodeId): Promise<Countr
     });
   }
   if (missingContinentCount > 0 || mismatchContinentCount > 0) {
-    console.warn('[shape-plugin][geoboundaries] continent metadata mismatch detected', {
+    console.info('[shape-plugin][geoboundaries] continent metadata mismatch detected', {
       missing: missingContinentCount,
       mismatch: mismatchContinentCount,
       missingSamples,

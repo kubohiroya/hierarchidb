@@ -110,6 +110,21 @@ const formatReduction = (label: string, output: number, input?: number): string 
   const reducedRatio = Math.max(0, Math.min(1, (input - output) / input));
   const reducedPercent = (reducedRatio * 100).toFixed(1);
   return `${label}=${output}/${input} (reduced=${reducedPercent}%)`;
+const formatCount = (value: number): string => (
+  Number.isFinite(value) ? new Intl.NumberFormat('en-US').format(value) : '-'
+);
+
+const formatSignedPercent = (output: number, input: number): string => {
+  if (!Number.isFinite(input) || input <= 0) return '-0.0%';
+  const percent = ((output - input) / input) * 100;
+  const prefix = percent <= 0 ? '-' : '+';
+  return `${prefix}${Math.abs(percent).toFixed(1)}%`;
+};
+
+const formatChangeSummary = (label: string, input: number, output: number): string => {
+  const safeInput = Number.isFinite(input) ? input : output;
+  const safeOutput = Number.isFinite(output) ? output : 0;
+  return `${label}: ${formatCount(safeInput)} -> ${formatCount(safeOutput)} (${formatSignedPercent(safeOutput, safeInput)})`;
 };
 
 const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureCollection | null> => {
@@ -215,6 +230,37 @@ const buildFetchFeatureCollection = (
   return { type: 'FeatureCollection', features };
 };
 
+const ORIGIN_KEY_PROP = '__hdbOriginKey';
+
+const parseOriginKey = (originKey: string): { countryCode?: string; adminLevel?: number } => {
+  const index = originKey.indexOf(':');
+  const sourceKey = index > 0 ? originKey.slice(index + 1) : originKey;
+  const [countryCode, adminLevelRaw] = sourceKey.split(':');
+  const adminLevel = adminLevelRaw != null ? Number(adminLevelRaw) : undefined;
+  return {
+    countryCode: countryCode?.trim().toUpperCase() || undefined,
+    adminLevel: Number.isFinite(adminLevel) ? adminLevel : undefined,
+  };
+};
+
+const resolveFeatureOriginInfo = (
+  properties: Record<string, unknown>,
+  lookup?: Map<string, CountryMetadata>,
+): { countryCode?: ISO2; countryName?: string; adminLevel?: number } => {
+  const originKey = typeof properties[ORIGIN_KEY_PROP] === 'string' ? properties[ORIGIN_KEY_PROP] as string : undefined;
+  const originInfo = originKey ? parseOriginKey(originKey) : {};
+  const rawCountryCode = originInfo.countryCode ?? pickCountryCode(properties);
+  const rawAdminLevel = originInfo.adminLevel ?? pickAdminLevel(properties);
+  const meta = rawCountryCode ? lookup?.get(rawCountryCode.trim().toUpperCase()) : undefined;
+  const normalizedCode = (meta?.countryCode ?? meta?.iso2 ?? rawCountryCode)?.trim().toUpperCase();
+  const normalizedName = meta?.countryName ?? pickCountryName(properties) ?? rawCountryCode;
+  return {
+    countryCode: normalizedCode as ISO2 | undefined,
+    countryName: normalizedName,
+    adminLevel: typeof rawAdminLevel === 'number' ? rawAdminLevel : undefined,
+  };
+};
+
 const buildEmptyFeatureMetadata = (params: {
   nodeId: NodeId;
   originKey: string;
@@ -245,6 +291,7 @@ const buildFetchFeatureMetadata = (params: {
   dataSource: DataSourceName;
   collection: FeatureCollection;
   createdAt: number;
+  countryLookup?: Map<string, CountryMetadata>;
 }): ShapeFeatureMetadata[] => {
   const records: ShapeFeatureMetadata[] = [];
   for (let index = 0; index < params.collection.features.length; index += 1) {
@@ -252,8 +299,9 @@ const buildFetchFeatureMetadata = (params: {
     if (!feature) continue;
     feature.properties = feature.properties ?? {};
     const properties = feature.properties as Record<string, unknown>;
-    const countryCode = pickCountryCode(properties);
-    const adminLevel = pickAdminLevel(properties);
+    const originInfo = resolveFeatureOriginInfo(properties, params.countryLookup);
+    const countryCode = originInfo.countryCode;
+    const adminLevel = originInfo.adminLevel;
     const adminCode = pickAdminCode(properties);
     const featureId = buildFeatureId(feature, index, { countryCode, adminLevel, adminCode });
     const stats = extractGeometryStats(feature);
@@ -263,7 +311,7 @@ const buildFetchFeatureMetadata = (params: {
       id: `${String(params.nodeId)}-${featureId}`,
       nodeId: String(params.nodeId),
       featureId,
-      countryName: pickCountryName(properties),
+      countryName: originInfo.countryName,
       countryCode,
       adminName: pickAdminName(properties),
       adminLevel,
@@ -398,6 +446,15 @@ const createFetchHandler = (params: {
   }
   const strategy = factory.create(strategyId);
   const retryConfig = buildRetryConfig(params.buildConfig);
+  let metadataLookupPromise: Promise<Map<string, CountryMetadata>> | null = null;
+  const getMetadataLookup = async (): Promise<Map<string, CountryMetadata>> => {
+    if (!metadataLookupPromise) {
+      metadataLookupPromise = metadataLoader
+        .loadMetadata(params.dataSource, params.nodeId)
+        .then((metadata) => buildCountryLookup(metadata));
+    }
+    return metadataLookupPromise;
+  };
 
   return async (task) => {
     const input = task.inputData;
@@ -411,11 +468,13 @@ const createFetchHandler = (params: {
       const createdAt = Date.now();
       const cachedCollection = await decodeFetchCacheData(existing.data);
       if (cachedCollection && cachedCollection.features.length > 0) {
+        const countryLookup = await getMetadataLookup();
         const cachedMetadata = buildFetchFeatureMetadata({
           nodeId: params.nodeId,
           dataSource: input.dataSource,
           collection: cachedCollection,
           createdAt,
+          countryLookup,
         });
         if (cachedMetadata.length > 0) {
           await shapeMutationAPIImpl.putFeatureMetadata(cachedMetadata);
@@ -499,11 +558,13 @@ const createFetchHandler = (params: {
     }
 
     const createdAt = Date.now();
+    const countryLookup = await getMetadataLookup();
     const featureMetadata = buildFetchFeatureMetadata({
       nodeId: params.nodeId,
       dataSource: input.dataSource,
       collection: filteredCollection,
       createdAt,
+      countryLookup,
     });
     if (featureMetadata.length > 0) {
       await shapeMutationAPIImpl.putFeatureMetadata(featureMetadata);
@@ -547,7 +608,6 @@ const createFetchHandler = (params: {
 };
 
 export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise<void> => {
-  const metadata = params.metadata ?? await metadataLoader.loadMetadata(params.dataSource, params.nodeId);
   const abortSignal = params.abortController?.signal;
   const resumeExistingTasks = Boolean(params.resumeExistingTasks);
   if (!resumeExistingTasks) {
@@ -560,18 +620,16 @@ export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise
     ? await listTasksByStage(params.taskQueue, params.nodeId, 'fetch')
     : [];
   const shouldGenerateTasks = existingTasks.length === 0;
-  const payloads = shouldGenerateTasks
-    ? ((params.downloadTaskPayloads && params.downloadTaskPayloads.length > 0)
+  if (shouldGenerateTasks) {
+    const metadata = params.metadata ?? await metadataLoader.loadMetadata(params.dataSource, params.nodeId);
+    const payloads = (params.downloadTaskPayloads && params.downloadTaskPayloads.length > 0)
       ? params.downloadTaskPayloads
       : generateDownloadTaskPayloadsFromSelection(
         params.dataSource,
         params.selectedArrayByCountries,
         metadata,
-      ))
-    : [];
-  if (payloads.length === 0 && shouldGenerateTasks) return;
-
-  if (shouldGenerateTasks) {
+      );
+    if (payloads.length === 0) return;
     const tasks = buildFetchTasks(params.nodeId, payloads, metadata);
     await putTasks(params.taskQueue, tasks);
   }
