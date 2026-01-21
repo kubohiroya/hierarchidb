@@ -121,6 +121,30 @@ export const FetchConfigFormControls: React.FC<Props> = ({
         >
           {t('processing.download.deleteLoadingHint', 'Loading delete counts...')}
         </Typography>
+        <Typography variant="caption" color="text.secondary">
+          {t(
+            'processing.download.deleteFetchHelp',
+            'Fetch cache: filtered feature collections from the fetch stage (and downloaded raw data for this node).',
+          )}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          {t(
+            'processing.download.deleteTransformHelp',
+            'Transform cache: simplified geometries by zoom band plus transform error records.',
+          )}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          {t(
+            'processing.download.deleteVtHelp',
+            'VT cache: generated vector tiles and tile relations (also clears feature/source metadata).',
+          )}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          {t(
+            'processing.download.deleteMetadataHelp',
+            'Metadata: feature and source metadata for search/preview (does not remove tiles).',
+          )}
+        </Typography>
 
       </Stack>
     </>
