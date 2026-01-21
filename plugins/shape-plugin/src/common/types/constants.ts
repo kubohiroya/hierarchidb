@@ -66,6 +66,7 @@ export const DEFAULT_BUILD_CONFIG: ShapeBuildConfig = {
       maxVerticesPerFeature: 200000,
     },
     transformMode: 'simplify-only',
+    boundaryDisableAtZoomOrAbove: 3,
   },
   vtConfig: {
     enableTopojsonSimplify: true,

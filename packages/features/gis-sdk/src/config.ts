@@ -95,6 +95,7 @@ export interface TransformConfig {
   selfIntersectionConfig: SelfIntersectionConfig;
   preSimplifyFilterConfig: PreSimplifyFilterConfig;
   transformMode?: TransformMode;
+  boundaryDisableAtZoomOrAbove?: number;
 }
 
 export type DynamicConcurrencyConfig = {
