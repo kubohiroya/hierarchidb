@@ -2,7 +2,10 @@ import { useCallback, useEffect, useRef } from 'react';
 import type { MapLibreGeoJSONFeature, MapLibreMapInstance } from '../types/maplibre-public.js';
 import { defaultFeatureIdAccessor } from '../lib/feature-identification.js';
 
-export type UseMapFeatureHighlightsParams<HighlightEntry extends { source: string; id: string | number; sourceLayer?: string }> = {
+type MapLibreSourceWithType = { type?: string };
+type MapLibreLayerWithSource = { source?: string; sourceLayer?: string; 'source-layer'?: string };
+
+export type UseMapFeatureHighlightsParams<HighlightEntry extends { source: string; id: string | number; sourceLayer?: string; layerId?: string }> = {
   mapInstance: MapLibreMapInstance | null;
   highlightLayerIds: string[];
   searchMatches: HighlightEntry[];
@@ -12,7 +15,7 @@ export type UseMapFeatureHighlightsParams<HighlightEntry extends { source: strin
   onMissingLayers?: (layerIds: string[]) => void;
 };
 
-export const useMapFeatureHighlights = <HighlightEntry extends { source: string; id: string | number; sourceLayer?: string }>({
+export const useMapFeatureHighlights = <HighlightEntry extends { source: string; id: string | number; sourceLayer?: string; layerId?: string }>({
   mapInstance,
   highlightLayerIds,
   searchMatches,
@@ -24,6 +27,23 @@ export const useMapFeatureHighlights = <HighlightEntry extends { source: string;
   const appliedSearchMatchesRef = useRef<HighlightEntry[]>([]);
   const appliedHoverRef = useRef<HighlightEntry[]>([]);
   const appliedSelectedRef = useRef<HighlightEntry[]>([]);
+
+  const resolveSourceLayer = useCallback((entry: HighlightEntry): string | undefined => {
+    if (entry.sourceLayer) return entry.sourceLayer;
+    if (!mapInstance || !entry.layerId || typeof mapInstance.getLayer !== 'function') return undefined;
+    const layer = mapInstance.getLayer(entry.layerId) as MapLibreLayerWithSource | undefined;
+    if (!layer) return undefined;
+    if (layer.source && layer.source !== entry.source) return undefined;
+    if (typeof layer.sourceLayer === 'string') return layer.sourceLayer;
+    if (typeof layer['source-layer'] === 'string') return layer['source-layer'];
+    return undefined;
+  }, [mapInstance]);
+
+  const isVectorSource = useCallback((sourceId: string): boolean => {
+    if (!mapInstance || typeof mapInstance.getSource !== 'function') return false;
+    const source = mapInstance.getSource(sourceId) as MapLibreSourceWithType | undefined;
+    return source?.type === 'vector';
+  }, [mapInstance]);
 
   const updateViewportFeatures = useCallback(() => {
     if (!mapInstance) return;
@@ -71,24 +91,40 @@ export const useMapFeatureHighlights = <HighlightEntry extends { source: string;
     (entry: HighlightEntry | null, key: 'hdbSearch' | 'hdbHover' | 'hdbSelected') => {
       if (!mapInstance || !entry) return;
       try {
-        mapInstance.removeFeatureState({ source: entry.source, id: entry.id, key, sourceLayer: entry.sourceLayer });
+        const sourceLayer = resolveSourceLayer(entry);
+        if (!sourceLayer && isVectorSource(entry.source)) {
+          console.debug('[MapPreview] Missing sourceLayer for vector source', { source: entry.source, id: entry.id, layerId: entry.layerId });
+          return;
+        }
+        const target = sourceLayer
+          ? { source: entry.source, id: entry.id, key, sourceLayer }
+          : { source: entry.source, id: entry.id, key };
+        mapInstance.removeFeatureState(target);
       } catch (error) {
         console.debug('[MapPreview] Failed to clear feature-atoms', error);
       }
     },
-    [mapInstance],
+    [isVectorSource, mapInstance, resolveSourceLayer],
   );
 
   const applyHighlightKey = useCallback(
     (entry: HighlightEntry | null, key: 'hdbSearch' | 'hdbHover' | 'hdbSelected') => {
       if (!mapInstance || !entry) return;
       try {
-        mapInstance.setFeatureState({ source: entry.source, id: entry.id, sourceLayer: entry.sourceLayer }, { [key]: true });
+        const sourceLayer = resolveSourceLayer(entry);
+        if (!sourceLayer && isVectorSource(entry.source)) {
+          console.debug('[MapPreview] Missing sourceLayer for vector source', { source: entry.source, id: entry.id, layerId: entry.layerId });
+          return;
+        }
+        const target = sourceLayer
+          ? { source: entry.source, id: entry.id, sourceLayer }
+          : { source: entry.source, id: entry.id };
+        mapInstance.setFeatureState(target, { [key]: true });
       } catch (error) {
         console.debug('[MapPreview] Failed to set feature-atoms', error);
       }
     },
-    [mapInstance],
+    [isVectorSource, mapInstance, resolveSourceLayer],
   );
 
   useEffect(() => {
