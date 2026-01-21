@@ -36,14 +36,7 @@ async function resolveStoreRegistry(options: RegisterShapeWorkerStoresOptions = 
   return storeRegistry ?? null;
 }
 
-async function ensureShapeStores(registry: StoreRegistry): Promise<void> {
-  type ShapeGroupStoreModule = {
-    createShapeFeatureStoreDexie: (db: ShapeDB) => FeatureStore<FeatureItemBase<{ value?: unknown }>>;
-  };
-  type ShapeRelationStoreModule = {
-    createShapeRelationStoreDexie: (db: ShapeDB) => RelationStore<RelationBase<{ weight?: number }>>;
-  };
-
+async function ensureShapeStores(_registry: StoreRegistry): Promise<void> {
   const { ShapeDB } = await import('@hierarchidb/shape-store');
   const db = new ShapeDB();
   const maybeOpen = db.open;
