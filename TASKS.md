@@ -45,6 +45,9 @@
   - start: 2026-01-22 12:55 JST Step5の未開始時に経過時間を「-」表示へ切替する対応に着手。
   - update: 2026-01-22 13:10 JST buildStatus が idle の場合は総/ステージ経過時間を「-」表示に変更。
   - done: 2026-01-22 13:15 JST pnpm typecheck exit 0 を確認。
+  - update: 2026-01-20 17:53 JST 未開始時に0時間00分00秒が残るため再修正に着手。
+  - update: 2026-01-20 17:55 JST 経過時間が0の場合も「-」表示に切替。
+  - done: 2026-01-20 17:55 JST pnpm typecheck exit 0 を確認。
 
 2279) fix/shape/vt-stage-crash-logging (P1) — 進行中 (2026-01-22)
 - ブランチ名: fix/shape/vt-stage-crash-logging
@@ -188,6 +191,210 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-22 19:40 JST Step4の削除ボタン説明とbuildFetchキャッシュ削除の不具合修正に着手。
+
+2288) fix/shape/step5-task-summary-format (P1) — 進行中 (2026-01-22)
+- ブランチ名: fix/shape/step5-task-summary-format
+- 依存: なし
+- 受け入れ基準: fetch/transform/vt のタスク表示が統一形式に更新される／vt は ADM レベル別 feature 数とタイル枚数が表示される／表示のみ変更で処理結果は変えない／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts`, `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`, `packages/vt-orchestrator/src/vt/vtStage.ts`, `plugins/shape-plugin/src/ui/components/step5/**`（必要に応じて追加）
+- ロールバック手順: 表示フォーマット変更差分を revert する
+- チェックリスト:
+  - fetch/transform の表示を「features/polygons/vertices: input -> output (rate)」形式に揃える
+  - vt の表示を ADM レベル別 feature 数 + tiles 生成数表示に変更する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-22 20:15 JST Step5のタスク表示書式統一とvt集計表示の対応に着手。
+  - update: 2026-01-22 20:35 JST fetch/transformの表示書式を統一し、vtのADM別features/tiles集計表示へ変更。
+  - update: 2026-01-22 20:40 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck / pnpm --filter @hierarchidb/shape-plugin typecheck ともに exit 0 を確認。
+  - update: 2026-01-22 22:15 JST vt完了時のメッセージをADM別features+tiles集計に統一し、タスク一覧に残るよう修正。
+  - update: 2026-01-22 22:16 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck が exit 0。
+  - update: 2026-01-22 22:30 JST vtタスクで親タイルと交差しない場合の診断ログとメッセージ表記を追加。
+  - update: 2026-01-22 22:31 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck が exit 0。
+  - update: 2026-01-23 01:10 JST vtのskipped:no layers発生時に理由/集計の表示と診断ログ強化の対応に着手。
+  - update: 2026-01-23 01:40 JST vtのskipped:no layers時に理由/集計を出す表示と診断ログを追加。
+  - update: 2026-01-23 01:41 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck が exit 0。
+  - update: 2026-01-23 02:10 JST vt extent/tolerance見直し（extent=4096, tolerance=0/1）対応に着手。
+  - update: 2026-01-23 02:15 JST vt extent=4096/tolerance=0 を反映。pnpm --filter @hierarchidb/vt-orchestrator typecheck が exit 0。
+  - update: 2026-01-23 02:30 JST transformの転置インデックスとvtの交差タイル検証ログ追加に着手。
+  - update: 2026-01-23 02:40 JST transformのtileId列挙/関係テーブルのログとvtの生成0タイル警告を追加。pnpm --filter @hierarchidb/vt-orchestrator typecheck が exit 0。
+  - update: 2026-01-23 03:30 JST vt完了時のタイルサマリが初期値のままになるため、完了時に最新タイル数を再計算して表示する修正に着手。
+  - update: 2026-01-23 03:35 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+
+2289) refactor/shape/download-taskid-format (P1) — 進行中 (2026-01-22)
+- ブランチ名: refactor/shape/download-taskid-format
+- 依存: なし
+- 受け入れ基準: downloadタスクのtaskIdが `nodeId:download:ISO2:adminLevel` 形式になる／参照・更新・削除が新形式で動作する／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/utils/utils.ts`, `plugins/shape-plugin/src/services/batch/strategies/**`, `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts`（必要に応じて追加）
+- ロールバック手順: taskId生成差分を revert する
+- チェックリスト:
+  - downloadタスクのtaskId生成を新形式へ変更する
+  - 参照・更新・削除が新形式に一致するよう調整する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-22 20:20 JST downloadタスクID形式の統一対応に着手。
+  - update: 2026-01-22 20:35 JST downloadタスクIDを nodeId:download:ISO2:adminLevel 形式へ変更。
+  - update: 2026-01-22 20:40 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2290) fix/shape/vt-index-memory-aggregation (P1) — 進行中 (2026-01-22)
+- ブランチ名: fix/shape/vt-index-memory-aggregation
+- 依存: なし
+- 受け入れ基準: vtステージでindex構築中のメモリ使用を抑えるためにレイヤー単位で集約し、クラッシュせずに完走する／ログはJSON.stringifyで省略されない／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/vt-orchestrator/src/vt/vtStage.ts`
+- ロールバック手順: vt集約処理の差分を revert する
+- チェックリスト:
+  - vt indexをレイヤー単位で集約する
+  - JSON.stringifyログで詳細を確認できるようにする
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-22 19:45 JST vt index構築のメモリ集約方式でクラッシュを抑止する対応に着手。
+  - update: 2026-01-22 20:05 JST vt layer indexをレイヤー単位で集約し、ログをJSON.stringify化。
+  - update: 2026-01-22 20:20 JST pnpm typecheck exit 0 を確認。
+  - update: 2026-01-22 20:40 JST 高頂点数レイヤーでper-feature indexへ切替し、メモリピークを抑制。
+  - blocked: 2026-01-22 20:45 JST pnpm typecheck が vtStage.ts の型エラーで失敗。
+  - update: 2026-01-22 20:50 JST 型エラーを修正し、pnpm typecheck exit 0 を確認。
+  - update: 2026-01-22 21:00 JST per-feature index をズームごとに分割して構築し、ピークメモリを抑える。
+  - update: 2026-01-22 21:05 JST pnpm typecheck exit 0 を確認。
+  - update: 2026-01-22 21:20 JST タイルbboxでfeatureをclipしてgeojson-vtを1タイル単位に限定。
+  - blocked: 2026-01-22 21:25 JST pnpm typecheck が turf bboxClip の型制約で失敗。
+  - update: 2026-01-22 21:30 JST Point/MultiPoint のbbox判定を型安全に修正。
+  - update: 2026-01-22 21:35 JST pnpm typecheck exit 0 を確認。
+  - update: 2026-01-22 21:45 JST band zMin>=3 のタスクを強制per-tile indexへ切替。
+  - update: 2026-01-22 21:50 JST pnpm typecheck exit 0 を確認。
+  - update: 2026-01-22 22:05 JST vtタスクのクラッシュ継続のためログ解析と追加対策の検討を開始。
+  - update: 2026-01-22 22:25 JST band zMin>=3 を複数レイヤーでもper-tile index化し、pnpm typecheck exit 0 を確認。
+  - update: 2026-01-22 22:40 JST vt完走後の最大更新深度警告を再現し、metadataポーリングの依存関係を安定化。
+  - update: 2026-01-22 22:55 JST useVectorTilePreviewMetadata の loadRows 依存をref化し、pnpm typecheck exit 0 を確認。
+  - update: 2026-01-22 23:05 JST metadata state更新を差分時のみ行うようガードを追加。
+  - update: 2026-01-22 23:15 JST feature一覧のloading表示を初回のみとし、featureIdでの重複行を抑止。
+  - update: 2026-01-22 23:25 JST skippedタスクのログをinfoに切り替え、スタック出力を抑制。
+
+2290) fix/shape/vt-resume-mark-running-aborted (P1) — 進行中 (2026-01-22)
+- ブランチ名: fix/shape/vt-resume-mark-running-aborted
+- 依存: なし
+- 受け入れ基準: vtのresume時にrunningタスクが failed（aborted）へ遷移する／vt以外のステージは影響しない／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/vt-orchestrator/src/compareTaskOrder.ts`, `plugins/shape-plugin/src/services/vt/shapePipeline.ts`（必要に応じて追加）
+- ロールバック手順: vt resume時のrunning→failed差分を revert する
+- チェックリスト:
+  - vt resume時にrunningタスクをfailedへ更新する
+  - vt以外のステージに影響しないことを確認する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-22 20:55 JST vt resume時にrunningタスクをaborted扱いへ移行する対応に着手。
+  - update: 2026-01-22 21:20 JST vtのみresume時にrunningタスクをfailed(aborted)へ移行する方針で実装準備。
+  - update: 2026-01-22 21:30 JST vt resume時にrunningタスクをfailed(aborted)へ移行する処理を追加。
+  - update: 2026-01-22 21:32 JST pnpm --filter @hierarchidb/vt-orchestrator build/typecheck、@hierarchidb/shape-plugin typecheck が exit 0（tsdownのdefine警告あり）。
+  - update: 2026-01-22 22:05 JST vt完了後にqueued/runningが残る場合、failed(aborted)へまとめて遷移する処理を追加。
+  - update: 2026-01-22 22:06 JST pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0。
+
+2291) fix/shape/vt-outline-diagnostics (P1) — 進行中 (2026-01-22)
+- ブランチ名: fix/shape/vt-outline-diagnostics
+- 依存: なし
+- 受け入れ基準: LineString境界の診断ログが追加される／geojson-vt入力前に不正形状が検知されればvtを失敗させる／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/vt-orchestrator/src/transform/**`, `packages/vt-orchestrator/src/vt/**`（必要に応じて追加）
+- ロールバック手順: 境界診断/検証の差分を revert する
+- チェックリスト:
+  - boundary LineString生成元の検証を追加する
+  - vt直前のgeojson検証で不正形状を失敗扱いにする
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-22 20:55 JST アウトライン復帰に向けた境界診断とvt入力検証の対応に着手。
+  - update: 2026-01-22 21:20 JST 段階復帰プランの第1段としてvt実行前検証/診断追加で進行。
+  - update: 2026-01-22 21:40 JST boundary診断ログとgeojson検証の強化対応に着手。
+  - update: 2026-01-22 21:45 JST boundary診断ログを追加し、geojson検証ログにgeometryType/vertexCountを付与。
+  - update: 2026-01-22 21:46 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck / @hierarchidb/shape-plugin typecheck が exit 0。
+  - update: 2026-01-22 21:55 JST geoboundariesの大陸判定はISO3166を正とし、ログのサンプルはiso2優先で出力するよう修正。
+  - update: 2026-01-22 21:56 JST pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0。
+
+2292) feat/shape/vt-dynamic-concurrency (P1) — 進行中 (2026-01-22)
+- ブランチ名: feat/shape/vt-dynamic-concurrency
+- 依存: なし
+- 受け入れ基準: vt並列度がJSヒープ残量に応じて増減する／最小/最大と閾値が設定できる／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/vt-orchestrator/src/compareTaskOrder.ts`, `packages/vt-orchestrator/src/vt/**`, `plugins/shape-plugin/src/common/types/**`（必要に応じて追加）
+- ロールバック手順: 動的並列度制御の差分を revert する
+- チェックリスト:
+  - ヒープ使用率に応じた並列度調整を追加する
+  - 設定値（min/max/閾値）を設定可能にする
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-22 20:55 JST vtの動的並列度制御の対応に着手。
+  - update: 2026-01-22 21:20 JST min=1/max=Step4設定/閾値0.85-0.60/1ずつ増減の仕様で実装準備。
+  - update: 2026-01-22 21:30 JST vtの動的並列度制御を追加し、vtConfigへdynamicConcurrencyを追加。
+  - update: 2026-01-22 21:32 JST pnpm --filter @hierarchidb/gis-sdk build/typecheck が exit 0（tsdownのdefine警告あり）。
+
+2293) fix/map/feature-highlight-source-layer (P1) — 進行中 (2026-01-20)
+- ブランチ名: fix/map/feature-highlight-source-layer
+- 依存: なし
+- 受け入れ基準: MapLibreのsetFeatureStateでvector sourceにsourceLayerが必ず指定される／useMapFeatureHighlightsでsourceLayer欠落があってもエラーが出ない／既存のハイライト挙動が変わらない／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/preview/useMapFeatureHighlights.ts`, `packages/ui/map/src/components/ResourceLayerMap.tsx`（調査後に確定）
+- ロールバック手順: sourceLayer補完/ガード差分を revert する
+- チェックリスト:
+  - sourceLayerの取得/補完経路を特定する
+  - set/removeFeatureStateにsourceLayerを渡す
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-20 22:02 JST MapLibre setFeatureState の sourceLayer 必須エラー対応に着手。
+  - update: 2026-01-20 22:05 JST useMapFeatureHighlights で vector source 判定と sourceLayer 補完/ガードを追加。
+  - update: 2026-01-20 22:06 JST pnpm typecheck exit 0（tsdownのdefine警告あり）。手動検証は未実施。
+
+2294) fix/shape/vt-running-stuck-ui (P1) — 進行中 (2026-01-21)
+- ブランチ名: fix/shape/vt-running-stuck-ui
+- 依存: なし
+- 受け入れ基準: vtタスク完了後にUIへ完了状態が反映されRunningが残らない／skipped/completeの最終タスク状態がUIに反映される／進捗通知の仕様を崩さない／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/vt-orchestrator/src/vt/**`, `packages/features/batch/src/**`, `plugins/shape-plugin/src/ui/hooks/progress/**`（調査後に確定）
+- ロールバック手順: vt完了通知/進捗更新の差分を revert する
+- チェックリスト:
+  - vt完了時のタスク状態更新がUIへ伝播しているか確認する
+  - Runningが残る条件を特定し修正する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-21 08:05 JST vt完了後もUIにRunningが残る問題の調査に着手。
+  - update: 2026-01-21 08:12 JST useShapeBuildTasks にリクエスト世代管理を追加し、古い取得結果でRunningが上書きされるのを防止。
+  - update: 2026-01-21 08:14 JST pnpm typecheck exit 0（tsdownのdefine警告あり）。
+
+2295) fix/shape/geoboundaries-metadata-normalize (P1) — 進行中 (2026-01-21)
+- ブランチ名: fix/shape/geoboundaries-metadata-normalize
+- 依存: なし
+- 受け入れ基準: geoBoundaries の国メタデータ生成で countryName/countryCode/adminLevel が正規化される／JPN/ADM0 が Japan/JP/ADM0 として保存される／他データソースの国メタデータ生成に副作用がない／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/**`（調査後に確定）
+- ロールバック手順: 正規化ロジックの差分を revert する
+- チェックリスト:
+  - geoBoundaries の国メタデータ生成箇所を特定する
+  - countryName/countryCode/adminLevel の正規化を追加する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-21 08:18 JST geoBoundaries の国メタデータ正規化不備の修正に着手。
+  - update: 2026-01-21 08:22 JST __hdbOriginKey と国メタデータで countryCode/countryName/adminLevel を正規化する処理を追加。
+  - update: 2026-01-21 08:23 JST pnpm typecheck exit 0（tsdownのdefine警告あり）。手動検証は未実施。
+
+2296) feat/shape/metadata-aggregate-hover (P1) — 進行中 (2026-01-21)
+- ブランチ名: feat/shape/metadata-aggregate-hover
+- 依存: なし
+- ExecPlan: plans/shape-metadata-aggregate-hover-execplan.md
+- 受け入れ基準: geoBoundaries ADM1 のメタデータ一覧が同一自治体で1行に集約表示される（島・飛地も同一自治体で集約）／集約は表示のみでID統合はしない／ホバー/選択でフィーチャー単体だけでなく同一自治体/同一国の単位で強調できる／影響範囲とロールバック手順を明記する／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/**`, `packages/ui/map/**`, `plugins/shape-plugin/src/services/**`（調査後に確定）
+- ロールバック手順: 集約表示/ホバー拡張の差分を revert する
+- チェックリスト:
+  - メタデータ一覧の集約対象キー（ADM1単位）を確定する
+  - 集約表示ロジックを実装する
+  - 同一自治体/同一国のホバー強調経路を実装する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-21 08:28 JST ADM1集約表示と自治体/国単位のホバー強調対応に着手。
+  - update: 2026-01-21 08:28 JST ExecPlan を作成（plans/shape-metadata-aggregate-hover-execplan.md）。
+  - update: 2026-01-21 09:12 JST DoD 承認済み。集約表示とホバー強調の実装・検証を再開。
+  - update: 2026-01-21 09:36 JST ADM1集約行の作成、一覧IDの統一、自治体/国の階層展開、エラー集約を実装。
+  - update: 2026-01-21 09:37 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define 警告あり、dist 型更新）。
+  - update: 2026-01-21 09:39 JST pnpm typecheck exit 0（tsdown define 警告あり）。手動検証は未実施。
 
 2272) fix/shape/step3-index-scroll-not-moving (P1) — 進行中 (2026-01-22)
 - ブランチ名: fix/shape/step3-index-scroll-not-moving
@@ -354,6 +561,19 @@
 - update: 2026-01-22 07:55 JST 国選択変更時の無効化対応後にpnpm typecheckを再実行（exit 0、tsdown define 警告あり）。
 - start: 2026-01-22 08:25 JST 国選択差分削除の前提として transform cache の国/ADMメタデータ格納経路を確認する調査に着手。
 - update: 2026-01-22 08:40 JST transform cache の country/admin は fetch→transform の正規経路では必ず設定されることを確認（詳細は回答）。追加のコード変更なし。
+- start: 2026-01-22 09:00 JST vt再開ログの原因確認とresume時の挙動整理に着手。
+- update: 2026-01-22 09:15 JST resume時はmetadata取得とfetch/transform/vtのstage起動を行うが、runStageTasksはqueuedのみ処理するため再実行は発生しない挙動を確認。resume時にmetadataロードを省略する最適化は未対応。
+- update: 2026-01-22 09:30 JST resume時のmetadata読み込みをfetch/transformのタスク生成が必要な場合のみ行うよう修正。
+- update: 2026-01-22 09:40 JST resume時のmetadata読み込み最適化を反映。検証: pnpm typecheck（exit 0、tsdown define 警告あり）。
+- start: 2026-01-22 10:10 JST vtステージでのDexie Transaction committed too earlyの原因調査に着手。
+- update: 2026-01-22 10:25 JST vtのcollectFeaturesでDexieトランザクション内の長時間処理を避けるため一括取得へ変更。
+- update: 2026-01-22 10:35 JST vtのcollectFeatures修正を反映。検証: pnpm typecheck（exit 0、tsdown define 警告あり）。
+- update: 2026-01-22 11:05 JST vtクラッシュはglobalタイル(0/0/0)で222バッファを一括デコードしgeojson-vtの全量インデックス化を行うことが原因候補と判断。回避策の検討に移行。
+- start: 2026-01-22 11:20 JST vt 0/0/0タイルをcontinent単位に分割してインデックス化・結合する対応に着手。
+- update: 2026-01-22 11:55 JST 0/0/0タイルでcontinent単位の分割インデックス化とタイル結合を実装。
+- update: 2026-01-22 12:10 JST continent分割のvt対応を反映。検証: pnpm typecheck（exit 0、tsdown define 警告あり）。
+- update: 2026-01-22 12:35 JST 0/0/0でcontinentごとにインデックスを逐次作成しタイル単位で集約する方式へ変更。
+- update: 2026-01-22 12:45 JST continent逐次集約方式を反映。検証: pnpm typecheck（exit 0、tsdown define 警告あり）。
   - blocked: 2026-01-21 23:05 JST pnpm typecheck が vt-orchestrator build:types の TransformConfig で transformMode 未定義エラーにより失敗。
   - update: 2026-01-21 23:07 JST pnpm --filter @hierarchidb/gis-sdk build を実行して dist 型定義を更新。
   - update: 2026-01-21 23:12 JST shapePipeline の未使用 import 修正と simplify-only の診断処理を整理。
@@ -486,6 +706,28 @@
   - update: 2026-01-20 22:05 JST WorkerProvider テストで transform の tolerance と maxVerticesPerFeature を調整し処理時間を短縮。
   - update: 2026-01-20 22:30 JST transform の自己交差修正に metrics ログを追加し、vt ステージ開始/終了時の heap スナップショットを出力するよう調整。
   - update: 2026-01-20 22:55 JST vtConfig.maxConcurrent のデフォルトを 1 に下げてブラウザ VT 生成の負荷を抑制。
+  - start: 2026-01-20 23:40 JST vtステージのクラッシュ区間を特定するための詳細計測追加に着手。
+  - update: 2026-01-20 23:50 JST vtステージの collect/index/tiling/vtpbf 各区間に heap/duration を出す計測ログを追加。
+  - update: 2026-01-20 23:55 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+  - update: 2026-01-21 00:10 JST buildLayerIndexes のレイヤー単位 start/done と feature/vertex/polygon 統計ログを追加。
+  - update: 2026-01-21 00:15 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+  - update: 2026-01-21 00:35 JST admin0 band>=6 の feature サンプル出力と transform tolerance を増やす調整を追加。
+  - update: 2026-01-21 00:40 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+  - update: 2026-01-21 01:10 JST transform の永続化前に GeoJSON 検証を追加し、不正形状をログしてタスク失敗とする処理へ変更。
+  - update: 2026-01-21 01:15 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+  - update: 2026-01-21 01:35 JST admin0 の z<=2 を tolerance=5.0、z>=3 を tolerance=3.0 に切替。
+  - update: 2026-01-21 01:40 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+  - update: 2026-01-21 02:00 JST admin0 の z<=2 を tolerance=8.0、z>=3 を tolerance=5.0 に切替。
+  - update: 2026-01-21 02:05 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+  - update: 2026-01-21 02:30 JST admin0 の z<=2/z>=3 を tolerance=10.0 に切替。
+  - update: 2026-01-21 02:35 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+  - update: 2026-01-21 03:10 JST admin レベル全体で z<=2/z>=3 の tolerance=10.0 を適用。
+  - blocked: 2026-01-21 03:15 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck が未使用引数で失敗。
+  - update: 2026-01-21 03:20 JST resolveTransformTolerance の引数整理で typecheck 修正。
+  - update: 2026-01-21 03:25 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+  - update: 2026-01-21 03:45 JST boundaryDisableAtZoomOrAbove を追加し z>=3 の境界生成を抑止できるようにした。
+  - update: 2026-01-21 03:55 JST pnpm --filter @hierarchidb/gis-sdk build で d.ts を更新。
+  - update: 2026-01-21 04:00 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
 
 2261) fix/shape/network-tests-node-direct (P1) — 完了 (2026-01-19)
 - ブランチ名: fix/shape/network-tests-node-direct
@@ -6250,3 +6492,95 @@
   - update: 2026-01-19 01:10 JST pnpm typecheck を実行（exit 0、tsdown define 警告あり）。
   - update: 2026-01-19 01:25 JST pnpm install を実行（peer dependency 警告あり）。
   - update: 2026-01-19 01:26 JST pnpm typecheck を再実行（exit 0、tsdown define 警告あり）。
+2291) fix/shape/step5-skipped-toggle (P1) — 進行中 (2026-01-22)
+- ブランチ名: fix/shape/step5-skipped-toggle
+- 依存: なし
+- 受け入れ基準: Step5ヘッダーにSkippedのChipトグルが追加される／Skippedの抽出表示がCompleted/Failedと同様に切替できる／TaskProgressBar の a11y lint が解消される／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/components/src/BuildStepStagePanel.tsx`, `packages/components/src/BuildStepStageFilterContext.tsx`, `packages/components/src/BuildStepPanel.tsx`, `plugins/shape-plugin/src/ui/components/step5/ShapeBuildProgressStageContent.tsx`, `plugins/shape-plugin/src/ui/components/step5/TaskProgressBar.tsx`
+- ロールバック手順: 上記ファイルの差分を revert する
+- チェックリスト:
+  - Skippedフィルタ状態を追加し、Stageヘッダーで切替できるようにする
+  - タスク一覧でSkipped抽出が有効になることを確認する
+  - TaskProgressBarのa11y lintを解消する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-22 23:40 JST Step5のSkippedトグルとTaskProgressBarのa11y修正に着手。
+  - update: 2026-01-22 23:50 JST components の dist 型が未更新で typecheck 失敗したため、pnpm --filter @hierarchidb/components build を実行。
+  - done: 2026-01-22 23:55 JST pnpm typecheck exit 0 を確認（tsdown define 警告あり）。
+
+2292) fix/shape/vt-summary-message-format (P1) — 進行中 (2026-01-23)
+- ブランチ名: fix/shape/vt-summary-message-format
+- 依存: なし
+- 受け入れ基準: vt完了時のメッセージが `tiles {processed}/{total} | input(...) output(...)` 形式になる／進捗メッセージの形式は維持される／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/vt-orchestrator/src/vt/vtStage.ts`
+- ロールバック手順: メッセージ生成差分を revert する
+- チェックリスト:
+  - vt完了時メッセージのフォーマットを変更する
+  - input/output 集計を完了時に出力できるようにする
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 00:10 JST vt完了時メッセージを進捗形式に合わせる対応に着手。
+  - done: 2026-01-23 00:20 JST pnpm typecheck exit 0 を確認（tsdown define 警告あり）。
+
+2293) fix/shape/vt-task-status-sync (P1) — 進行中 (2026-01-23)
+- ブランチ名: fix/shape/vt-task-status-sync
+- 依存: なし
+- 受け入れ基準: Step5のタスク一覧とサマリーがビルド完了時に必ず完了状態へ遷移する／Running/Queuedの孤児が残らない／vt完了時のmessageが一覧とサマリーで一致する／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/ShapeBuildProgressPanel.tsx`, `plugins/shape-plugin/src/ui/components/step5/ShapeBuildProgressStageContent.tsx`, `plugins/shape-plugin/src/ui/components/step5/useShapeBuildStep.ts`, `plugins/shape-plugin/src/ui/components/step5/useBuildProgress.ts`（必要に応じて追加）
+- ロールバック手順: 上記ファイルの差分を revert する
+- チェックリスト:
+  - vt完了時にtaskSummary/一覧が完了状態へ更新されることを確認する
+  - Running/Queuedの孤児が残らないことを確認する
+  - message出力の整合性をタスク一覧とサマリーで統一する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 01:10 JST vtステージ完了時のtaskSummary/一覧同期不整合の修正に着手。
+  - update: 2026-01-23 01:20 JST 完了後のRunning/Queued孤児検知時にタスク再取得を行う同期処理を追加。
+  - update: 2026-01-23 01:22 JST shapePipeline のタイル交差判定に型ガードを追加し typecheck を復旧。
+  - done: 2026-01-23 01:23 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-01-23 01:30 JST 完了イベントで必ず最終タスク一覧を確定する根本修正の検討に着手。
+ - update: 2026-01-23 01:40 JST 完了イベントで最終タスク一覧を取得し、未完タスクがある間は自動更新を継続するよう修正。
+ - done: 2026-01-23 01:41 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2294) fix/shape/step6-map-no-render (P1) — 進行中 (2026-01-23)
+- ブランチ名: fix/shape/step6-map-no-render
+- 依存: なし
+- 受け入れ基準: Step6でタイル/レイヤーが描画される（ADM0/ADM1が表示される）／原因・発生範囲・修正方法と適用範囲を説明する／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/**`, `packages/ui/map/src/**`, `plugins/shape-plugin/src/services/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert し、Step6の表示挙動を元に戻す
+- チェックリスト:
+  - Step6のタイル取得/描画経路を確認し、欠落点を特定する
+  - 修正後にADM0/ADM1が描画されることを確認する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+- start: 2026-01-23 04:20 JST Step6でタイルが表示されない件の原因調査に着手。
+- update: 2026-01-23 04:40 JST Step6のプレビューで admin0/admin1 レイヤーを明示指定し、layer0 既定を廃止する修正に着手。
+- update: 2026-01-23 05:05 JST Step6で地物が表示されないため、MVTレイヤ名とStep6の参照レイヤの整合性を再調査中。
+- update: 2026-01-23 06:10 JST Step6のタイル供給/描画/インタラクション経路の再検証と修正に着手。
+- update: 2026-01-23 06:25 JST Step6のhover/snackbar無効設定とタイル取得経路の不整合を修正する方針で調査・修正に着手。
+  - done: 2026-01-23 04:42 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+  - update: 2026-01-21 17:51 JST Step6の地物未表示/ホバー無反応の原因調査と修正方針を開始。
+2291) fix/shape/tile-bbox-coordinate-system (P1) — 進行中 (2026-01-22)
+- ブランチ名: fix/shape/tile-bbox-coordinate-system
+- 依存: なし
+- 受け入れ基準: タイルbboxとGeoJSON座標系の整合が取れるように修正する／transformのタイルインデックスが実ジオメトリ交差に基づくことを確認できる／vtの「featuresあり・tiles 0」が再発しない／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`, `plugins/shape-plugin/src/services/vt/shapePipeline.ts`（必要に応じて追加）
+- ロールバック手順: タイルbbox整合・交差判定の差分を revert する
+- チェックリスト:
+  - タイルbboxの座標系を確認し、GeoJSON座標系と合わせる
+  - transformのtile index作成で実ジオメトリ交差に基づく判定を追加する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-22 20:10 JST タイルbboxの座標系不整合と交差判定の確認・修正に着手。
+  - update: 2026-01-22 20:25 JST タイルbboxはlon/lat前提であることを確認し、transformのtile index作成をbboxクリップによる実ジオメトリ交差判定に変更。
+  - update: 2026-01-22 20:30 JST shapePipeline側のタイルID収集も同様にクリップ判定へ変更。
+  - done: 2026-01-22 20:33 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+  - update: 2026-01-22 20:45 JST per-tile indexでclip済みfeatureがあるのにgeojson-vtが空タイルを返す場合は警告ログを出し、vtタスクをfailedにするよう修正。
+  - done: 2026-01-22 20:48 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+  - update: 2026-01-23 03:20 JST tiles 0/1 など空タイル発生の原因特定（転置インデックス/タイル交差/geojson-vt入出力）を再調査開始。
