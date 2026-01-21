@@ -1,7 +1,18 @@
-import type { Feature, FeatureCollection } from 'geojson';
+import type {
+  Feature,
+  FeatureCollection,
+  Geometry,
+  LineString,
+  MultiLineString,
+  MultiPoint,
+  MultiPolygon,
+  Point,
+  Polygon,
+} from 'geojson';
 import { geojson as geojsonApi } from 'flatgeobuf';
 import type { Tile } from 'geojson-vt';
 import type vtPbfNS = require('@maplibre/vt-pbf');
+import { bboxClip as turfBboxClip } from '@turf/turf';
 import { packTileId, parentToChildRange, unpackTileId } from '../tiles/tileId.js';
 import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
 import type { VTStageContext } from '../contexts.js';
@@ -46,6 +57,33 @@ const assertNotAborted = (signal?: AbortSignal): void => {
   if (signal?.aborted) {
     throw new Error('task aborted');
   }
+};
+
+const formatCount = (value: number): string => value.toLocaleString('en-US');
+
+const resolveAdminLevel = (feature: Feature): number | null => {
+  const props = feature.properties as Record<string, unknown> | undefined;
+  const layer = typeof props?.layer === 'string' ? props.layer : '';
+  if (layer.endsWith('-boundary')) return null;
+  const level = typeof props?.level === 'number' ? props.level : null;
+  if (typeof level === 'number' && Number.isFinite(level)) return level;
+  const match = layer.match(/^admin(\d+)/);
+  return match ? Number(match[1]) : null;
+};
+
+const buildAdminFeatureSummary = (collection: FeatureCollection): string => {
+  const counts = new Map<number, number>();
+  collection.features.forEach((feature) => {
+    if (!feature) return;
+    const level = resolveAdminLevel(feature);
+    if (level === null || Number.isNaN(level)) return;
+    counts.set(level, (counts.get(level) ?? 0) + 1);
+  });
+  if (counts.size === 0) return 'features: none';
+  const parts = Array.from(counts.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([level, count]) => `ADM${level}:${formatCount(count)}`);
+  return `features: ${parts.join(' / ')}`;
 };
 
 type TileBBox = { minX: number; minY: number; maxX: number; maxY: number };
@@ -131,6 +169,51 @@ const expandTileBBox = (bbox: TileBBox, buffer: number, extent: number): TileBBo
     maxX: bbox.maxX + lonMargin,
     maxY: bbox.maxY + latMargin,
   };
+};
+
+const hasCoordinates = (coords: unknown): boolean => {
+  if (!Array.isArray(coords)) return false;
+  if (coords.length === 0) return false;
+  if (typeof coords[0] === 'number') return true;
+  return coords.some((entry) => hasCoordinates(entry));
+};
+
+const isEmptyGeometry = (geometry: Geometry | null | undefined): boolean => {
+  if (!geometry) return true;
+  if (geometry.type === 'GeometryCollection') {
+    return !geometry.geometries.some((child) => !isEmptyGeometry(child));
+  }
+  return !hasCoordinates((geometry as Geometry & { coordinates?: unknown }).coordinates);
+};
+
+const isClipGeometry = (
+  geometry: Geometry,
+): geometry is LineString | MultiLineString | Polygon | MultiPolygon => (
+  geometry.type === 'LineString'
+  || geometry.type === 'MultiLineString'
+  || geometry.type === 'Polygon'
+  || geometry.type === 'MultiPolygon'
+);
+
+const isPointGeometry = (geometry: Geometry): geometry is Point | MultiPoint => (
+  geometry.type === 'Point' || geometry.type === 'MultiPoint'
+);
+
+const isPointInBBox = (x: number, y: number, bbox: TileBBox): boolean => (
+  x >= bbox.minX && x <= bbox.maxX && y >= bbox.minY && y <= bbox.maxY
+);
+
+const isAnyPointInBBox = (geometry: Point | MultiPoint, bbox: TileBBox): boolean => {
+  if (geometry.type === 'Point') {
+    const x = geometry.coordinates[0] ?? NaN;
+    const y = geometry.coordinates[1] ?? NaN;
+    return Number.isFinite(x) && Number.isFinite(y) && isPointInBBox(x, y, bbox);
+  }
+  return geometry.coordinates.some((point) => {
+    const x = point[0] ?? NaN;
+    const y = point[1] ?? NaN;
+    return Number.isFinite(x) && Number.isFinite(y) && isPointInBBox(x, y, bbox);
+  });
 };
 
 const isNumberArrayLike = (value: unknown): value is ArrayLike<number> => (
@@ -343,6 +426,21 @@ const buildLayerMap = (collection: FeatureCollection): Map<string, Feature[]> =>
   return map;
 };
 
+const getHeapSnapshot = (): {
+  usedJSHeapSize: number;
+  totalJSHeapSize: number;
+  jsHeapSizeLimit: number;
+} | null => {
+  if (typeof performance === 'undefined') return null;
+  const memory = (performance as { memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } })
+    .memory;
+  return memory ? {
+    usedJSHeapSize: memory.usedJSHeapSize,
+    totalJSHeapSize: memory.totalJSHeapSize,
+    jsHeapSizeLimit: memory.jsHeapSizeLimit,
+  } : null;
+};
+
 const describeBuffer = (buffer: ArrayBuffer): {
   byteLength: number;
   headHex: string;
@@ -376,58 +474,147 @@ const collectFeatures = async (
   context: VTStageContext,
   bufferIds: string[],
   nodeId: string,
+  options?: { groupByContinent?: boolean; continentByCountry?: Map<string, string> },
 ): Promise<{
   collection: FeatureCollection;
   featureStats: InputFeatureStats[];
   bufferSizes: Map<string, number>;
+  featuresByContinent?: Map<string, Feature[]>;
 } | null> => {
   const allFeatures: Feature[] = [];
   const featureStats: InputFeatureStats[] = [];
   const bufferSizes = new Map<string, number>();
-  await context.ephemeralDB.transaction('r', context.ephemeralDB.transformCache, async () => {
-    for (const bufferId of bufferIds) {
-      const record = await context.ephemeralDB.transformCache.get(bufferId);
-      if (!record || record.timestamp <= 0) continue;
-      bufferSizes.set(bufferId, record.data.byteLength);
-      const collection = await decodeTransformByBandCache(record.data);
-      if (!collection) {
-        const debug = describeBuffer(record.data);
-        console.warn('[shape-vt] failed to decode transform cache for vt stage', {
-          nodeId,
-          bufferId,
-          timestamp: record.timestamp,
-          byteLength: debug.byteLength,
-          headHex: debug.headHex,
-          headAscii: debug.headAscii,
-          jsonLike: debug.isJsonLike,
-        });
-        continue;
-      }
-      collection.features.forEach((feature) => {
-        allFeatures.push(feature);
-        const bbox = featureBBox(feature);
-        if (!bbox) return;
-        featureStats.push({
-          bbox,
-          vertexCount: countVerticesFromGeometry(feature.geometry),
-          polygonCount: countPolygonsFromGeometry(feature.geometry),
-          lineStringCount: countLineStringsFromGeometry(feature.geometry),
-          bufferId,
-        });
-      });
+  const featuresByContinent = options?.groupByContinent ? new Map<string, Feature[]>() : undefined;
+  const records = await context.ephemeralDB.transformCache
+    .where('id')
+    .anyOf(bufferIds)
+    .toArray();
+  for (const record of records) {
+    if (!record || record.timestamp <= 0) continue;
+    bufferSizes.set(record.id, record.data.byteLength);
+    const collection = await decodeTransformByBandCache(record.data);
+    if (!collection) {
+      const debug = describeBuffer(record.data);
+      console.warn('[shape-vt] failed to decode transform cache for vt stage', JSON.stringify({
+        nodeId,
+        bufferId: record.id,
+        timestamp: record.timestamp,
+        byteLength: debug.byteLength,
+        headHex: debug.headHex,
+        headAscii: debug.headAscii,
+        jsonLike: debug.isJsonLike,
+      }));
+      continue;
     }
-  });
+    const continentKey = featuresByContinent
+      ? (() => {
+        const rawCountry = record.countryCode ?? record.sourceKey?.split(':')[0] ?? '';
+        const code = rawCountry.trim().toUpperCase();
+        const continent = code ? options?.continentByCountry?.get(code) : undefined;
+        return continent ?? 'Unknown';
+      })()
+      : null;
+    collection.features.forEach((feature) => {
+      allFeatures.push(feature);
+      if (featuresByContinent && continentKey) {
+        const bucket = featuresByContinent.get(continentKey);
+        if (bucket) {
+          bucket.push(feature);
+        } else {
+          featuresByContinent.set(continentKey, [feature]);
+        }
+      }
+      const bbox = featureBBox(feature);
+      if (!bbox) return;
+      featureStats.push({
+        bbox,
+        vertexCount: countVerticesFromGeometry(feature.geometry),
+        polygonCount: countPolygonsFromGeometry(feature.geometry),
+        lineStringCount: countLineStringsFromGeometry(feature.geometry),
+        bufferId: record.id,
+      });
+    });
+  }
   if (allFeatures.length === 0) return null;
-  return { collection: { type: 'FeatureCollection', features: allFeatures }, featureStats, bufferSizes };
+  return {
+    collection: { type: 'FeatureCollection', features: allFeatures },
+    featureStats,
+    bufferSizes,
+    ...(featuresByContinent ? { featuresByContinent } : {}),
+  };
 };
 
 type GeojsonVtIndex = { getTile: (z: number, x: number, y: number) => Tile | null };
+
+const buildTilesByZoom = (
+  band: BandConfig,
+  parent: { z: number; x: number; y: number }
+): Map<number, { total: number; generated: number }> => {
+  const tilesByZoom = new Map<number, { total: number; generated: number }>();
+  for (let z = band.zMin; z <= band.zMax; z++) {
+    const { xStart, xEnd, yStart, yEnd } = parentToChildRange(parent, z);
+    const total = Math.max(0, xEnd - xStart + 1) * Math.max(0, yEnd - yStart + 1);
+    tilesByZoom.set(z, { total, generated: 0 });
+  }
+  return tilesByZoom;
+};
+
+const buildTileSummary = (tilesByZoom: Map<number, { total: number; generated: number }>): string => {
+  if (tilesByZoom.size === 0) return 'tiles -> 0/0';
+  const parts = Array.from(tilesByZoom.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([, counts]) => `${formatCount(counts.generated)}/${formatCount(counts.total)}`);
+  return `tiles -> ${parts.join(', ')}`;
+};
+
+const buildSkippedMessage = (featureSummary: string, tileSummary: string, reason: string): string => (
+  `${featureSummary}, ${tileSummary} (skipped: ${reason})`
+);
+type FeatureWithBBox = { feature: Feature; bbox: TileBBox };
+
+const buildFeaturesWithBBox = (features: Feature[]): FeatureWithBBox[] => (
+  features
+    .map((feature) => ({ feature, bbox: featureBBox(feature) }))
+    .filter((entry): entry is FeatureWithBBox => Boolean(entry.bbox))
+);
+
+const clipFeaturesForTile = (
+  featuresWithBBox: FeatureWithBBox[],
+  tileBBox: TileBBox,
+): Feature<Geometry>[] => {
+  const clippedFeatures: Feature<Geometry>[] = [];
+  for (const entry of featuresWithBBox) {
+    if (!bboxIntersects(entry.bbox, tileBBox)) continue;
+    const sourceFeature = entry.feature;
+    const geometry = sourceFeature.geometry;
+    let clipped: Feature<Geometry> | null = null;
+    if (geometry && isClipGeometry(geometry)) {
+      clipped = turfBboxClip(
+        sourceFeature as Feature<LineString | MultiLineString | Polygon | MultiPolygon>,
+        [tileBBox.minX, tileBBox.minY, tileBBox.maxX, tileBBox.maxY],
+      ) as Feature<Geometry>;
+    } else if (geometry && isPointGeometry(geometry)) {
+      if (isAnyPointInBBox(geometry, tileBBox)) {
+        clipped = sourceFeature as Feature<Geometry>;
+      }
+    }
+    if (!clipped || isEmptyGeometry(clipped.geometry)) continue;
+    clippedFeatures.push(clipped);
+  }
+  return clippedFeatures;
+};
 
 const buildLayerIndexes = async (
   context: VTStageContext,
   layers: Map<string, Feature[]>,
   band: BandConfig,
-  debugContext?: { taskId: string; nodeId: string; bandId?: number | null; tileId?: number | null }
+  debugContext?: {
+    taskId: string;
+    nodeId: string;
+    bandId?: number | null;
+    tileId?: number | null;
+    continent?: string;
+  }
 ): Promise<Map<string, GeojsonVtIndex>> => {
   const geojsonvt = await loadGeojsonVt();
   const indexes = new Map<string, GeojsonVtIndex>();
@@ -445,6 +632,22 @@ const buildLayerIndexes = async (
 
     //if ( > 0 && !vtConfig.layers.includes(layerName)) continue;
     //if (vtConfig.layers.length > 0 && !vtConfig.layers.includes(layerName)) continue;
+    const layerStats = debugContext ? features.reduce((stats, feature) => {
+      stats.featureCount += 1;
+      stats.vertexCount += countVerticesFromGeometry(feature.geometry);
+      stats.polygonCount += countPolygonsFromGeometry(feature.geometry);
+      stats.lineStringCount += countLineStringsFromGeometry(feature.geometry);
+      return stats;
+    }, { featureCount: 0, vertexCount: 0, polygonCount: 0, lineStringCount: 0 }) : null;
+    const layerStartedAt = Date.now();
+    if (debugContext && layerStats) {
+      console.info('[vt] layer index start', JSON.stringify({
+        ...debugContext,
+        layerName,
+        ...layerStats,
+        heap: getHeapSnapshot(),
+      }));
+    }
     const collection: FeatureCollection = { type: 'FeatureCollection', features };
     const index = geojsonvt(collection, {
       maxZoom: band.zMax,
@@ -456,6 +659,15 @@ const buildLayerIndexes = async (
       indexMaxPoints: context.vtConfig.indexMaxPoints > 0 ? context.vtConfig.indexMaxPoints : undefined,
     });
     indexes.set(layerName, index as unknown as GeojsonVtIndex);
+    if (debugContext && layerStats) {
+      console.info('[vt] layer index done', JSON.stringify({
+        ...debugContext,
+        layerName,
+        ...layerStats,
+        durationMs: Date.now() - layerStartedAt,
+        heap: getHeapSnapshot(),
+      }));
+    }
   }
   if (debugContext) {
     console.info('[vt] index build done', JSON.stringify({
@@ -501,6 +713,19 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
       if (!band) {
         return { status: 'failed', errorMessage: `Unknown bandId: ${input.bandId}` };
       }
+      const parent = unpackTileId(input.tileId, band.zBase);
+      const groupByContinent = Boolean(
+        context.continentByCountry
+        && parent.z === 0
+        && parent.x === 0
+        && parent.y === 0
+      );
+      if (groupByContinent) {
+        console.info('[vt] continent grouping enabled', JSON.stringify({
+          ...taskContext,
+          zRange: [band.zMin, band.zMax],
+        }));
+      }
 
       console.info('[vt] task start', JSON.stringify({
         ...taskContext,
@@ -510,12 +735,50 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
       }));
 
       assertNotAborted(abortSignal);
-      const collected = await collectFeatures(context, input.bufferIds, String(task.nodeId));
+      const collectStartedAt = Date.now();
+      console.info('[vt] collect start', JSON.stringify({
+        ...taskContext,
+        bufferCount: input.bufferIds.length,
+        heap: getHeapSnapshot(),
+      }));
+      const collected = await collectFeatures(
+        context,
+        input.bufferIds,
+        String(task.nodeId),
+        { groupByContinent, continentByCountry: context.continentByCountry }
+      );
       if (!collected) {
         return { status: 'completed', message: 'skipped: no features' };
       }
 
-      const { collection, featureStats, bufferSizes } = collected;
+      const { collection, featureStats, bufferSizes, featuresByContinent } = collected;
+      const adminFeatureSummary = buildAdminFeatureSummary(collection);
+      const tilesByZoom = buildTilesByZoom(band, parent);
+      const totalTiles = Array.from(tilesByZoom.values()).reduce((sum, counts) => sum + counts.total, 0);
+      const tileSummary = buildTileSummary(tilesByZoom);
+      const parentBBox = tileToBBox(parent.z, parent.x, parent.y);
+      const intersectingFeatureCount = featureStats.filter((stats) => bboxIntersects(stats.bbox, parentBBox)).length;
+      if (intersectingFeatureCount === 0) {
+        const sample = featureStats.slice(0, 3).map((stats) => ({
+          bbox: stats.bbox,
+          vertexCount: stats.vertexCount,
+          polygonCount: stats.polygonCount,
+          lineStringCount: stats.lineStringCount,
+          bufferId: stats.bufferId,
+        }));
+        console.warn('[vt] no intersecting features for parent tile', JSON.stringify({
+          ...taskContext,
+          parentTile: parent,
+          parentBBox,
+          totalFeatures: collection.features.length,
+          featureStatsCount: featureStats.length,
+          sample,
+        }));
+        return {
+          status: 'completed',
+          message: buildSkippedMessage(adminFeatureSummary, tileSummary, 'no intersecting features for parent tile'),
+        };
+      }
       let totalBufferBytes = 0;
       let maxBufferBytes = 0;
       bufferSizes.forEach((size) => {
@@ -527,50 +790,401 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
         features: collection.features.length,
         bufferBytes: totalBufferBytes,
         maxBufferBytes,
+        durationMs: Date.now() - collectStartedAt,
+        heap: getHeapSnapshot(),
       }));
 
-      const layerMap = buildLayerMap(collection);
       assertNotAborted(abortSignal);
-      const indexes = await buildLayerIndexes(context, layerMap, band, taskContext);
-      if (indexes.size === 0) {
-        return { status: 'completed', message: 'skipped: no layers' };
-      }
+      const collectLayerForTile = (
+        index: GeojsonVtIndex,
+        layerName: string,
+        z: number,
+        x: number,
+        y: number,
+      ): Tile | null => {
+        const tile = index.getTile(z, x, y) as Tile | null;
+        if (!tile || !Array.isArray(tile.features) || tile.features.length === 0) return null;
+        const finalTile = vtConfig.boundaryDedupe && layerName.endsWith('-boundary')
+          ? dedupeTileLines(tile)
+          : tile;
+        if (!Array.isArray(finalTile.features) || finalTile.features.length === 0) return null;
+        return finalTile;
+      };
 
-      assertNotAborted(abortSignal);
-      const vtpbf = await loadVtPbf();
-      const parent = unpackTileId(input.tileId, band.zBase);
-      const bufferSetHash = buildBufferSetHash(input.bufferIds);
-      const collectLayersForTile = (z: number, x: number, y: number): Record<string, Tile> | null => {
+      const collectLayersForTileFromIndexes = (
+        indexes: Map<string, GeojsonVtIndex>,
+        z: number,
+        x: number,
+        y: number,
+      ): Record<string, Tile> | null => {
         const layers: Record<string, Tile> = {};
         for (const [layerName, index] of indexes.entries()) {
-          const tile = index.getTile(z, x, y) as Tile | null;
-          if (!tile || !Array.isArray(tile.features) || tile.features.length === 0) continue;
-          const finalTile = vtConfig.boundaryDedupe && layerName.endsWith('-boundary')
-            ? dedupeTileLines(tile)
-            : tile;
-          if (!Array.isArray(finalTile.features) || finalTile.features.length === 0) continue;
-          layers[layerName] = finalTile;
+          const tile = collectLayerForTile(index, layerName, z, x, y);
+          if (!tile) continue;
+          layers[layerName] = tile;
         }
         return Object.keys(layers).length > 0 ? layers : null;
       };
-      const countTilesForTask = (): number => {
-        let total = 0;
-        for (let z = band.zMin; z <= band.zMax; z++) {
-          assertNotAborted(abortSignal);
-          const { xStart, xEnd, yStart, yEnd } = parentToChildRange(parent, z);
-          total += Math.max(0, xEnd - xStart + 1) * Math.max(0, yEnd - yStart + 1);
-        }
-        return total;
+
+      const mergeLayerTiles = (
+        target: Record<string, Tile>,
+        addition: Record<string, Tile>,
+      ): void => {
+        Object.entries(addition).forEach(([layerName, tile]) => {
+          const existing = target[layerName];
+          if (!existing) {
+            target[layerName] = tile;
+            return;
+          }
+          const existingFeatures = Array.isArray(existing.features) ? existing.features : [];
+          const nextFeatures = Array.isArray(tile.features) ? tile.features : [];
+          target[layerName] = {
+            ...existing,
+            features: [...existingFeatures, ...nextFeatures],
+          };
+        });
       };
-      const totalTiles = countTilesForTask();
+
+      assertNotAborted(abortSignal);
+      const vtpbfStartedAt = Date.now();
+      console.info('[vt] vtpbf load start', JSON.stringify({
+        ...taskContext,
+        heap: getHeapSnapshot(),
+      }));
+      const vtpbf = await loadVtPbf();
+      console.info('[vt] vtpbf load done', JSON.stringify({
+        ...taskContext,
+        durationMs: Date.now() - vtpbfStartedAt,
+        heap: getHeapSnapshot(),
+      }));
       console.info('[vt] tiling start', JSON.stringify({
         ...taskContext,
         zRange: [band.zMin, band.zMax],
         totalTiles,
+        parentTile: parent,
+        heap: getHeapSnapshot(),
       }));
       if (totalTiles === 0) {
-        return { status: 'completed', message: 'skipped: no tiles' };
+        return { status: 'completed', message: buildSkippedMessage(adminFeatureSummary, tileSummary, 'no tiles') };
       }
+      const bufferSetHash = buildBufferSetHash(input.bufferIds);
+      let indexes: Map<string, GeojsonVtIndex> | null = null;
+      let aggregatedLayersByTileId: Map<number, Record<string, Tile>> | null = null;
+      if (groupByContinent && featuresByContinent && featuresByContinent.size > 1) {
+        aggregatedLayersByTileId = new Map();
+        for (const [continent, features] of featuresByContinent.entries()) {
+          if (features.length === 0) continue;
+          const continentMap = buildLayerMap({ type: 'FeatureCollection', features });
+          if (continentMap.size === 0) continue;
+          const continentIndexes = await buildLayerIndexes(context, continentMap, band, {
+            ...taskContext,
+            continent,
+          });
+          if (continentIndexes.size === 0) continue;
+          for (let z = band.zMin; z <= band.zMax; z++) {
+            assertNotAborted(abortSignal);
+            const { xStart, xEnd, yStart, yEnd } = parentToChildRange(parent, z);
+            for (let x = xStart; x <= xEnd; x++) {
+              assertNotAborted(abortSignal);
+              for (let y = yStart; y <= yEnd; y++) {
+                assertNotAborted(abortSignal);
+                const layers = collectLayersForTileFromIndexes(continentIndexes, z, x, y);
+                if (!layers) continue;
+                const tileId = packTileId(x, y, z);
+                const existing = aggregatedLayersByTileId.get(tileId);
+                if (existing) {
+                  mergeLayerTiles(existing, layers);
+                } else {
+                  aggregatedLayersByTileId.set(tileId, layers);
+                }
+              }
+            }
+          }
+        }
+        if (aggregatedLayersByTileId.size === 0) {
+          console.warn('[vt] no layers after continent grouping', JSON.stringify({
+            ...taskContext,
+            parentTile: parent,
+            zRange: [band.zMin, band.zMax],
+            totalTiles,
+            continentCount: featuresByContinent?.size ?? 0,
+          }));
+          return { status: 'completed', message: buildSkippedMessage(adminFeatureSummary, tileSummary, 'no layers') };
+        }
+      } else {
+        const layerMap = buildLayerMap(collection);
+        const forcePerTileIndex = band.zMin >= 3;
+        console.info('[vt] layer map ready', JSON.stringify({
+          ...taskContext,
+          layerCount: layerMap.size,
+          heap: getHeapSnapshot(),
+        }));
+        if (layerMap.size === 0) {
+          return { status: 'completed', message: buildSkippedMessage(adminFeatureSummary, tileSummary, 'no layers') };
+        }
+        if (forcePerTileIndex) {
+          const perTileStats = Array.from(layerMap.values()).reduce(
+            (stats, features) => {
+              stats.featureCount += features.length;
+              features.forEach((feature) => {
+                const vertices = countVerticesFromGeometry(feature.geometry);
+                stats.layerVertexCount += vertices;
+                stats.maxFeatureVertices = Math.max(stats.maxFeatureVertices, vertices);
+              });
+              return stats;
+            },
+            { featureCount: 0, layerVertexCount: 0, maxFeatureVertices: 0 },
+          );
+          console.info('[vt] per-tile index enabled', JSON.stringify({
+            ...taskContext,
+            layerCount: layerMap.size,
+            ...perTileStats,
+            zRange: [band.zMin, band.zMax],
+          }));
+          aggregatedLayersByTileId = new Map();
+          let emptyTileWithFeatures: {
+            z: number;
+            x: number;
+            y: number;
+            layerName: string;
+            clippedFeatureCount: number;
+            featureCount: number;
+          } | null = null;
+          const geojsonvt = await loadGeojsonVt();
+          const featuresWithBBoxByLayer = new Map<string, FeatureWithBBox[]>();
+          layerMap.forEach((features, layerName) => {
+            const featuresWithBBox = buildFeaturesWithBBox(features);
+            if (features.length > 0 && featuresWithBBox.length === 0) {
+              console.warn('[vt] layer has features but no bbox', JSON.stringify({
+                ...taskContext,
+                layerName,
+                featureCount: features.length,
+              }));
+            }
+            featuresWithBBoxByLayer.set(layerName, featuresWithBBox);
+          });
+          for (let z = band.zMin; z <= band.zMax; z++) {
+            assertNotAborted(abortSignal);
+            const { xStart, xEnd, yStart, yEnd } = parentToChildRange(parent, z);
+            for (let x = xStart; x <= xEnd; x++) {
+              assertNotAborted(abortSignal);
+              for (let y = yStart; y <= yEnd; y++) {
+                assertNotAborted(abortSignal);
+                const tileBBox = expandTileBBox(
+                  tileToBBox(z, x, y),
+                  vtConfig.bufferSize,
+                  vtConfig.extent,
+                );
+                const layersForTile: Record<string, Tile> = {};
+                for (const [layerName, featuresWithBBox] of featuresWithBBoxByLayer.entries()) {
+                  if (featuresWithBBox.length === 0) continue;
+                  const clippedFeatures = clipFeaturesForTile(featuresWithBBox, tileBBox);
+                  if (clippedFeatures.length === 0) continue;
+                  const collection: FeatureCollection = { type: 'FeatureCollection', features: clippedFeatures };
+                  const index = geojsonvt(collection, {
+                    maxZoom: z,
+                    indexMaxZoom: z,
+                    extent: context.vtConfig.extent,
+                    buffer: context.vtConfig.bufferSize,
+                    tolerance: context.vtConfig.tolerance,
+                    promoteId: context.vtConfig.promoteId,
+                    indexMaxPoints: context.vtConfig.indexMaxPoints > 0 ? context.vtConfig.indexMaxPoints : undefined,
+                  }) as GeojsonVtIndex;
+                  const tile = collectLayerForTile(index, layerName, z, x, y);
+                  if (!tile) {
+                    if (!emptyTileWithFeatures) {
+                      emptyTileWithFeatures = {
+                        z,
+                        x,
+                        y,
+                        layerName,
+                        clippedFeatureCount: clippedFeatures.length,
+                        featureCount: featuresWithBBox.length,
+                      };
+                    }
+                    continue;
+                  }
+                  layersForTile[layerName] = tile;
+                }
+                if (Object.keys(layersForTile).length === 0) continue;
+                const tileId = packTileId(x, y, z);
+                aggregatedLayersByTileId.set(tileId, layersForTile);
+              }
+            }
+          }
+          if (emptyTileWithFeatures) {
+            console.warn('[vt] geojson-vt produced empty tile for clipped features', JSON.stringify({
+              ...taskContext,
+              parentTile: parent,
+              zRange: [band.zMin, band.zMax],
+              totalTiles,
+              ...emptyTileWithFeatures,
+            }));
+            return {
+              status: 'failed',
+              errorMessage: 'geojson-vt produced empty tile for clipped features',
+            };
+          }
+          if (aggregatedLayersByTileId.size === 0) {
+            const layerStats = Array.from(layerMap.entries()).map(([layerName, features]) => ({
+              layerName,
+              featureCount: features.length,
+              featuresWithBBox: featuresWithBBoxByLayer.get(layerName)?.length ?? 0,
+            }));
+            console.warn('[vt] per-tile index produced no layers', JSON.stringify({
+              ...taskContext,
+              parentTile: parent,
+              zRange: [band.zMin, band.zMax],
+              totalTiles,
+              layerCount: layerMap.size,
+              intersectingFeatureCount,
+              layerStats,
+            }));
+            return { status: 'completed', message: buildSkippedMessage(adminFeatureSummary, tileSummary, 'no layers') };
+          }
+        } else if (layerMap.size === 1) {
+          const [entry] = layerMap.entries();
+          if (!entry) {
+            return { status: 'completed', message: buildSkippedMessage(adminFeatureSummary, tileSummary, 'no layers') };
+          }
+          const [layerName, features] = entry;
+          const perFeatureVertexThreshold = 20000;
+          const perFeatureMaxVertices = 10000;
+          const layerVertexCount = features
+            ? features.reduce((sum, feature) => sum + countVerticesFromGeometry(feature.geometry), 0)
+            : 0;
+          const maxFeatureVertices = features
+            ? features.reduce(
+              (max, feature) => Math.max(max, countVerticesFromGeometry(feature.geometry)),
+              0,
+            )
+            : 0;
+          const usePerFeatureIndex = layerVertexCount >= perFeatureVertexThreshold
+            || maxFeatureVertices >= perFeatureMaxVertices;
+          if (usePerFeatureIndex && features) {
+            console.info('[vt] per-feature index enabled', JSON.stringify({
+              ...taskContext,
+              layerName,
+              featureCount: features.length,
+              layerVertexCount,
+              maxFeatureVertices,
+              perFeatureVertexThreshold,
+              perFeatureMaxVertices,
+            }));
+            aggregatedLayersByTileId = new Map();
+            const geojsonvt = await loadGeojsonVt();
+            for (const feature of features) {
+              assertNotAborted(abortSignal);
+              const featureBox = featureBBox(feature);
+              if (!featureBox) continue;
+              for (let z = band.zMin; z <= band.zMax; z++) {
+                assertNotAborted(abortSignal);
+                const { xStart, xEnd, yStart, yEnd } = parentToChildRange(parent, z);
+                for (let x = xStart; x <= xEnd; x++) {
+                  assertNotAborted(abortSignal);
+                  for (let y = yStart; y <= yEnd; y++) {
+                    assertNotAborted(abortSignal);
+                    const tileBBox = expandTileBBox(
+                      tileToBBox(z, x, y),
+                      vtConfig.bufferSize,
+                      vtConfig.extent,
+                    );
+                    if (!bboxIntersects(featureBox, tileBBox)) continue;
+                    const geometry = feature.geometry;
+                    let clipped: Feature<Geometry> | null = null;
+                    if (geometry && isClipGeometry(geometry)) {
+                      clipped = turfBboxClip(
+                        feature as Feature<LineString | MultiLineString | Polygon | MultiPolygon>,
+                        [tileBBox.minX, tileBBox.minY, tileBBox.maxX, tileBBox.maxY],
+                      ) as Feature<Geometry>;
+                    } else if (geometry && isPointGeometry(geometry)) {
+                      if (isAnyPointInBBox(geometry, tileBBox)) {
+                        clipped = feature as Feature<Geometry>;
+                      }
+                    }
+                    if (!clipped || isEmptyGeometry(clipped.geometry)) continue;
+                    const collection: FeatureCollection = { type: 'FeatureCollection', features: [clipped] };
+                    const index = geojsonvt(collection, {
+                      maxZoom: z,
+                      indexMaxZoom: z,
+                      extent: context.vtConfig.extent,
+                      buffer: context.vtConfig.bufferSize,
+                      tolerance: context.vtConfig.tolerance,
+                      promoteId: context.vtConfig.promoteId,
+                      indexMaxPoints: context.vtConfig.indexMaxPoints > 0 ? context.vtConfig.indexMaxPoints : undefined,
+                    }) as GeojsonVtIndex;
+                    const tile = collectLayerForTile(index, layerName, z, x, y);
+                    if (!tile) continue;
+                    const tileId = packTileId(x, y, z);
+                    const existing = aggregatedLayersByTileId.get(tileId);
+                    if (existing) {
+                      mergeLayerTiles(existing, { [layerName]: tile });
+                    } else {
+                      aggregatedLayersByTileId.set(tileId, { [layerName]: tile });
+                    }
+                  }
+                }
+              }
+            }
+            if (aggregatedLayersByTileId.size === 0) {
+              console.warn('[vt] per-feature index produced no layers', JSON.stringify({
+                ...taskContext,
+                parentTile: parent,
+                zRange: [band.zMin, band.zMax],
+                layerName,
+                featureCount: features.length,
+                layerVertexCount,
+                maxFeatureVertices,
+              }));
+              return { status: 'completed', message: buildSkippedMessage(adminFeatureSummary, tileSummary, 'no layers') };
+            }
+          } else {
+            indexes = await buildLayerIndexes(context, layerMap, band, taskContext);
+            if (indexes.size === 0) {
+              return { status: 'completed', message: buildSkippedMessage(adminFeatureSummary, tileSummary, 'no layers') };
+            }
+          }
+        } else {
+          aggregatedLayersByTileId = new Map();
+          for (const [layerName, features] of layerMap.entries()) {
+            if (features.length === 0) continue;
+            assertNotAborted(abortSignal);
+            const singleLayerMap = new Map<string, Feature[]>([[layerName, features]]);
+            const layerIndexes = await buildLayerIndexes(context, singleLayerMap, band, taskContext);
+            const layerIndex = layerIndexes.get(layerName);
+            if (!layerIndex) continue;
+            for (let z = band.zMin; z <= band.zMax; z++) {
+              assertNotAborted(abortSignal);
+              const { xStart, xEnd, yStart, yEnd } = parentToChildRange(parent, z);
+              for (let x = xStart; x <= xEnd; x++) {
+                assertNotAborted(abortSignal);
+                for (let y = yStart; y <= yEnd; y++) {
+                  assertNotAborted(abortSignal);
+                  const tile = collectLayerForTile(layerIndex, layerName, z, x, y);
+                  if (!tile) continue;
+                  const tileId = packTileId(x, y, z);
+                  const existing = aggregatedLayersByTileId.get(tileId);
+                  if (existing) {
+                    mergeLayerTiles(existing, { [layerName]: tile });
+                  } else {
+                    aggregatedLayersByTileId.set(tileId, { [layerName]: tile });
+                  }
+                }
+              }
+            }
+          }
+          if (aggregatedLayersByTileId.size === 0) {
+            console.warn('[vt] multi-layer index produced no layers', JSON.stringify({
+              ...taskContext,
+              parentTile: parent,
+              zRange: [band.zMin, band.zMax],
+              layerCount: layerMap.size,
+            }));
+            return { status: 'completed', message: buildSkippedMessage(adminFeatureSummary, tileSummary, 'no layers') };
+          }
+        }
+      }
+
       let processedTiles = 0;
       let generatedTiles = 0;
       let lastReportAt = 0;
@@ -652,6 +1266,20 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
         return { featureCount, vertexCount, polygonCount, lineStringCount };
       };
 
+      const tilingStartedAt = Date.now();
+      const totalInputStats = {
+        inputBytes: 0,
+        featureCount: 0,
+        polygonCount: 0,
+        lineStringCount: 0,
+        vertexCount: 0,
+      };
+      const totalOutputStats = {
+        featureCount: 0,
+        polygonCount: 0,
+        lineStringCount: 0,
+        vertexCount: 0,
+      };
       for (let z = band.zMin; z <= band.zMax; z++) {
         assertNotAborted(abortSignal);
         const { xStart, xEnd, yStart, yEnd } = parentToChildRange(parent, z);
@@ -659,7 +1287,10 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
           assertNotAborted(abortSignal);
           for (let y = yStart; y <= yEnd; y++) {
             assertNotAborted(abortSignal);
-            const layers = collectLayersForTile(z, x, y);
+            const tileId = packTileId(x, y, z);
+            const layers = aggregatedLayersByTileId
+              ? (aggregatedLayersByTileId.get(tileId) ?? null)
+              : (indexes ? collectLayersForTileFromIndexes(indexes, z, x, y) : null);
             processedTiles += 1;
             if (!layers) {
               await reportTileProgress(false);
@@ -670,6 +1301,15 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
               expandTileBBox(tileBBox, vtConfig.bufferSize, vtConfig.extent),
             );
             const outputStats = computeOutputTileStats(layers);
+            totalInputStats.inputBytes += inputStats.inputBytes;
+            totalInputStats.featureCount += inputStats.featureCount;
+            totalInputStats.polygonCount += inputStats.polygonCount;
+            totalInputStats.lineStringCount += inputStats.lineStringCount;
+            totalInputStats.vertexCount += inputStats.vertexCount;
+            totalOutputStats.featureCount += outputStats.featureCount;
+            totalOutputStats.polygonCount += outputStats.polygonCount;
+            totalOutputStats.lineStringCount += outputStats.lineStringCount;
+            totalOutputStats.vertexCount += outputStats.vertexCount;
             let bytes: Uint8Array;
             try {
               bytes = vtpbf.fromGeojsonVt(layers as unknown as Tile[], { version: 2 }) as Uint8Array;
@@ -687,7 +1327,6 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
               }));
               throw error;
             }
-            const tileId = packTileId(x, y, z);
             try {
               await tileWriter({
                 tileId,
@@ -715,26 +1354,47 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
               throw error;
             }
             generatedTiles += 1;
+            const zoomCounts = tilesByZoom.get(z);
+            if (zoomCounts) {
+              zoomCounts.generated += 1;
+            }
             const message = `tiles ${processedTiles}/${totalTiles} | tile z=${z} x=${x} y=${y} input(bytes=${inputStats.inputBytes}, features=${inputStats.featureCount}, polygons=${inputStats.polygonCount}, lines=${inputStats.lineStringCount}, vertices=${inputStats.vertexCount}) output(features=${outputStats.featureCount}, polygons=${outputStats.polygonCount}, lines=${outputStats.lineStringCount}, vertices=${outputStats.vertexCount})`;
             await reportTileProgress(false, message);
           }
         }
       }
 
+      const finalTileSummary = buildTileSummary(tilesByZoom);
       if (generatedTiles === 0) {
-        await reportTileProgress(true, 'skipped: no tiles');
+        console.warn('[vt] generated zero tiles', JSON.stringify({
+          ...taskContext,
+          parentTile: parent,
+          zRange: [band.zMin, band.zMax],
+          totalTiles,
+          processedTiles,
+          bufferCount: input.bufferIds.length,
+          adminFeatureSummary,
+          tileSummary: finalTileSummary,
+        }));
+        await reportTileProgress(true, buildSkippedMessage(adminFeatureSummary, finalTileSummary, 'no tiles'));
       } else {
-        await reportTileProgress(true);
+        const summaryMessage = `${adminFeatureSummary}, ${finalTileSummary}`;
+        await reportTileProgress(true, summaryMessage);
       }
       console.info('[vt] task completed', JSON.stringify({
         ...taskContext,
         processedTiles,
         generatedTiles,
         totalTiles,
+        tilingDurationMs: Date.now() - tilingStartedAt,
+        heap: getHeapSnapshot(),
       }));
       return {
         status: 'completed',
         progress: 100,
+        message: generatedTiles === 0
+          ? buildSkippedMessage(adminFeatureSummary, finalTileSummary, 'no tiles')
+          : `${adminFeatureSummary}, ${finalTileSummary}`,
         outputData: {
           tilesGenerated: generatedTiles,
           totalTiles,

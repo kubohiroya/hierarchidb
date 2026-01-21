@@ -65,7 +65,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   const [stageFilters, setStageFilters] = useState<Record<string, BuildStageFilter>>({});
 
   const resolveStageFilter = useCallback((stageId: string): BuildStageFilter => (
-    stageFilters[stageId] ?? { failedMode: true, completedMode: true }
+    stageFilters[stageId] ?? { failedMode: true, completedMode: true, skippedMode: true }
   ), [stageFilters]);
 
   const updateStageFilter = useCallback((stageId: string, patch: Partial<BuildStageFilter>) => {
@@ -74,6 +74,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
       [stageId]: {
         failedMode: true,
         completedMode: true,
+        skippedMode: true,
         ...prev[stageId],
         ...patch,
       },
@@ -147,6 +148,8 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
           onFailedModeUpdate={(next) => updateStageFilter(id, { failedMode: next })}
           completedMode={filter.completedMode}
           onCompletedModeUpdate={(next) => updateStageFilter(id, { completedMode: next })}
+          skippedMode={filter.skippedMode}
+          onSkippedModeUpdate={(next) => updateStageFilter(id, { skippedMode: next })}
         >
           <BuildStageFilterProvider value={filter}>
             {stageContents?.[stage.id]}

@@ -1,7 +1,8 @@
-import type { Feature, FeatureCollection, Geometry, LineString, MultiPolygon, Polygon } from 'geojson';
+import type { Feature, FeatureCollection, Geometry, LineString, MultiLineString, MultiPolygon, Polygon } from 'geojson';
 import {
   area as turfArea,
   bbox as turfBbox,
+  bboxClip as turfBboxClip,
   booleanValid as turfBooleanValid,
   kinks as turfKinks,
   simplify as turfSimplify,
@@ -104,6 +105,15 @@ const resolveSimplifyToleranceDegrees = (zTarget: number, toleranceK: number): n
   return (toleranceMeters / (2 * Math.PI * EARTH_RADIUS_METERS)) * 360;
 };
 
+const resolveTransformTolerance = (
+  baseTolerance: number,
+  zTarget: number,
+): number => {
+  if (!Number.isFinite(baseTolerance)) return baseTolerance;
+  if (zTarget <= 2) return 10.0;
+  return 10.0;
+};
+
 const simplifyOnlyCollection = (
   collection: FeatureCollection,
   zTarget: number,
@@ -117,6 +127,86 @@ const simplifyOnlyCollection = (
     highQuality: false,
     mutate: false,
   }) as FeatureCollection;
+};
+
+type GeojsonValidationIssue = {
+  layer: string;
+  featureId: string;
+  geometryType: string;
+  vertexCount: number;
+  reason: string;
+  sampleCoords?: number[][];
+};
+
+const isFiniteNumber = (value: unknown): value is number => (
+  typeof value === 'number' && Number.isFinite(value)
+);
+
+const isValidPosition = (value: unknown): value is number[] => (
+  Array.isArray(value)
+  && value.length >= 2
+  && isFiniteNumber(value[0])
+  && isFiniteNumber(value[1])
+);
+
+const isClosedRing = (ring: number[][]): boolean => {
+  if (ring.length < 4) return false;
+  const first = ring[0];
+  const last = ring[ring.length - 1];
+  return Boolean(first && last && first[0] === last[0] && first[1] === last[1]);
+};
+
+const validateLineStringCoords = (coords: unknown): number[][] | null => {
+  if (!Array.isArray(coords) || coords.length < 2) return null;
+  const points = coords.filter((p) => isValidPosition(p)) as number[][];
+  return points.length === coords.length ? points : null;
+};
+
+const validatePolygonCoords = (coords: unknown): number[][][] | null => {
+  if (!Array.isArray(coords) || coords.length === 0) return null;
+  const rings = coords as unknown[];
+  const out: number[][][] = [];
+  for (const ring of rings) {
+    if (!Array.isArray(ring) || ring.length < 4) return null;
+    const points = ring.filter((p) => isValidPosition(p)) as number[][];
+    if (points.length !== ring.length) return null;
+    if (!isClosedRing(points)) return null;
+    out.push(points);
+  }
+  return out;
+};
+
+const validateGeometryForVt = (geometry: Geometry | null | undefined): string | null => {
+  if (!geometry) return 'missing geometry';
+  switch (geometry.type) {
+    case 'Point':
+      return isValidPosition(geometry.coordinates) ? null : 'invalid point coordinates';
+    case 'MultiPoint':
+      return Array.isArray(geometry.coordinates)
+        && geometry.coordinates.every((coord) => isValidPosition(coord))
+        ? null
+        : 'invalid multipoint coordinates';
+    case 'LineString':
+      return validateLineStringCoords(geometry.coordinates) ? null : 'invalid linestring coordinates';
+    case 'MultiLineString':
+      return Array.isArray(geometry.coordinates)
+        && geometry.coordinates.every((line) => validateLineStringCoords(line))
+        ? null
+        : 'invalid multilinestring coordinates';
+    case 'Polygon':
+      return validatePolygonCoords(geometry.coordinates) ? null : 'invalid polygon coordinates';
+    case 'MultiPolygon':
+      return Array.isArray(geometry.coordinates)
+        && geometry.coordinates.every((poly) => validatePolygonCoords(poly))
+        ? null
+        : 'invalid multipolygon coordinates';
+    case 'GeometryCollection':
+      return geometry.geometries.every((geom) => !validateGeometryForVt(geom))
+        ? null
+        : 'invalid geometry collection';
+    default:
+      return 'unknown geometry type';
+  }
 };
 
 const countVertices = (coords: unknown): number => {
@@ -150,9 +240,151 @@ const countPolygonsFromGeometry = (geometry?: Geometry | null): number => {
   return 0;
 };
 
+type BoundaryLayerSummary = {
+  featureCount: number;
+  vertexCount: number;
+  maxVertexCount: number;
+  geometryTypes: Record<string, number>;
+};
+
+type BoundaryDiagnostics = {
+  totalFeatures: number;
+  totalVertices: number;
+  maxVertices: number;
+  layers: Record<string, BoundaryLayerSummary>;
+};
+
+const buildBoundaryDiagnostics = (collection: FeatureCollection): BoundaryDiagnostics | null => {
+  const layers: Record<string, BoundaryLayerSummary> = {};
+  let totalFeatures = 0;
+  let totalVertices = 0;
+  let maxVertices = 0;
+  for (const feature of collection.features) {
+    if (!feature) continue;
+    const props = feature.properties as Record<string, unknown> | undefined;
+    const layer = typeof props?.layer === 'string' ? props.layer : 'unknown';
+    if (!layer.endsWith('-boundary')) continue;
+    const geometryType = feature.geometry?.type ?? 'unknown';
+    const vertexCount = countVerticesFromGeometry(feature.geometry);
+    totalFeatures += 1;
+    totalVertices += vertexCount;
+    maxVertices = Math.max(maxVertices, vertexCount);
+    const summary = layers[layer] ?? {
+      featureCount: 0,
+      vertexCount: 0,
+      maxVertexCount: 0,
+      geometryTypes: {},
+    };
+    summary.featureCount += 1;
+    summary.vertexCount += vertexCount;
+    summary.maxVertexCount = Math.max(summary.maxVertexCount, vertexCount);
+    summary.geometryTypes[geometryType] = (summary.geometryTypes[geometryType] ?? 0) + 1;
+    layers[layer] = summary;
+  }
+  if (totalFeatures === 0) return null;
+  return {
+    totalFeatures,
+    totalVertices,
+    maxVertices,
+    layers,
+  };
+};
+
+const validateOutputForVt = (collection: FeatureCollection): GeojsonValidationIssue[] => {
+  const issues: GeojsonValidationIssue[] = [];
+  for (let index = 0; index < collection.features.length; index += 1) {
+    const feature = collection.features[index];
+    if (!feature) continue;
+    const props = feature.properties as Record<string, unknown> | undefined;
+    const layer = typeof props?.layer === 'string' ? props.layer : 'unknown';
+    const featureId = String(feature.id ?? props?.id ?? props?.boundaryID ?? props?.boundaryISO ?? `${layer}:${index}`);
+    const reason = validateGeometryForVt(feature.geometry ?? null);
+    if (!reason) continue;
+    const geometryType = feature.geometry?.type ?? 'unknown';
+    const vertexCount = countVerticesFromGeometry(feature.geometry);
+    let sampleCoords: number[][] | undefined;
+    if (feature.geometry?.type === 'LineString') {
+      sampleCoords = (feature.geometry.coordinates ?? []).slice(0, 3) as number[][];
+    } else if (feature.geometry?.type === 'Polygon') {
+      sampleCoords = (feature.geometry.coordinates?.[0] ?? []).slice(0, 3) as number[][];
+    } else if (feature.geometry?.type === 'MultiPolygon') {
+      sampleCoords = (feature.geometry.coordinates?.[0]?.[0] ?? []).slice(0, 3) as number[][];
+    }
+    issues.push({
+      layer,
+      featureId,
+      geometryType,
+      vertexCount,
+      reason,
+      ...(sampleCoords ? { sampleCoords } : {}),
+    });
+  }
+  return issues;
+};
+
 const clampTileIndex = (value: number, maxIndex: number): number => (
   Math.min(maxIndex, Math.max(0, value))
 );
+
+const toDeg = (radians: number): number => radians * 180 / Math.PI;
+
+const tileToBBox = (z: number, x: number, y: number): { minX: number; minY: number; maxX: number; maxY: number } => {
+  const n = 2 ** z;
+  const lon1 = x / n * 360 - 180;
+  const lon2 = (x + 1) / n * 360 - 180;
+  const lat1 = toDeg(Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n))));
+  const lat2 = toDeg(Math.atan(Math.sinh(Math.PI * (1 - 2 * (y + 1) / n))));
+  return { minX: lon1, minY: lat2, maxX: lon2, maxY: lat1 };
+};
+
+const isPointInBBox = (x: number, y: number, bbox: { minX: number; minY: number; maxX: number; maxY: number }): boolean => (
+  x >= bbox.minX && x <= bbox.maxX && y >= bbox.minY && y <= bbox.maxY
+);
+
+const isAnyPointInBBox = (geometry: Feature['geometry'], bbox: { minX: number; minY: number; maxX: number; maxY: number }): boolean => {
+  if (!geometry) return false;
+  if (geometry.type === 'Point') {
+    const [x, y] = geometry.coordinates ?? [];
+    if (typeof x !== 'number' || typeof y !== 'number') return false;
+    return isPointInBBox(x, y, bbox);
+  }
+  if (geometry.type === 'MultiPoint') {
+    for (const point of geometry.coordinates) {
+      const [x, y] = point ?? [];
+      if (typeof x !== 'number' || typeof y !== 'number') continue;
+      if (isPointInBBox(x, y, bbox)) return true;
+    }
+    return false;
+  }
+  return false;
+};
+
+const hasCoordinates = (coords: unknown): boolean => {
+  if (!Array.isArray(coords)) return false;
+  if (coords.length === 0) return false;
+  if (typeof coords[0] === 'number') return true;
+  return coords.some((entry) => hasCoordinates(entry));
+};
+
+const isLineOrPolygonFeature = (
+  feature: Feature<Geometry>,
+): feature is Feature<LineString | MultiLineString | Polygon | MultiPolygon> => {
+  const type = feature.geometry?.type;
+  return type === 'LineString'
+    || type === 'MultiLineString'
+    || type === 'Polygon'
+    || type === 'MultiPolygon';
+};
+
+const featureIntersectsTileBBox = (feature: Feature<Geometry>, bbox: { minX: number; minY: number; maxX: number; maxY: number }): boolean => {
+  if (isAnyPointInBBox(feature.geometry ?? null, bbox)) return true;
+  if (!isLineOrPolygonFeature(feature)) return false;
+  const clipped = turfBboxClip(
+    feature as Feature<LineString | MultiLineString | Polygon | MultiPolygon>,
+    [bbox.minX, bbox.minY, bbox.maxX, bbox.maxY],
+  );
+  return Boolean(clipped?.geometry && hasCoordinates(clipped.geometry.coordinates));
+};
 
 const collectTileIdsForCollection = (collection: FeatureCollection, zBase: number): number[] => {
   if (!Number.isFinite(zBase) || zBase < 0) return [];
@@ -162,12 +394,19 @@ const collectTileIdsForCollection = (collection: FeatureCollection, zBase: numbe
     if (!feature?.geometry) continue;
     const [minLon, minLat, maxLon, maxLat] = turfBbox(feature as Feature<Geometry>);
     if (![minLon, minLat, maxLon, maxLat].every((value) => Number.isFinite(value))) continue;
-    const x1 = clampTileIndex(lonToTileX(minLon, zBase), maxIndex);
-    const x2 = clampTileIndex(lonToTileX(maxLon, zBase), maxIndex);
-    const y1 = clampTileIndex(latToTileY(maxLat, zBase), maxIndex);
-    const y2 = clampTileIndex(latToTileY(minLat, zBase), maxIndex);
+    const x1Raw = lonToTileX(minLon, zBase);
+    const x2Raw = lonToTileX(maxLon, zBase);
+    const y1Raw = latToTileY(maxLat, zBase);
+    const y2Raw = latToTileY(minLat, zBase);
+    if (![x1Raw, x2Raw, y1Raw, y2Raw].every((value) => Number.isFinite(value))) continue;
+    const x1 = clampTileIndex(x1Raw as number, maxIndex);
+    const x2 = clampTileIndex(x2Raw as number, maxIndex);
+    const y1 = clampTileIndex(y1Raw as number, maxIndex);
+    const y2 = clampTileIndex(y2Raw as number, maxIndex);
     for (let x = x1; x <= x2; x += 1) {
       for (let y = y1; y <= y2; y += 1) {
+        const tileBBox = tileToBBox(zBase, x, y);
+        if (!featureIntersectsTileBBox(feature as Feature<Geometry>, tileBBox)) continue;
         tileIds.add(packTileId(x, y, zBase));
       }
     }
@@ -860,9 +1099,9 @@ export const createTransformByBandHandler = (
   };
   // Feature filtering is intentionally disabled during transform stage while investigating geometry distortion.
   const enableFeatureFiltering = false;
-  const tolerance = transformConfig.tolerance;
+  const baseTolerance = transformConfig.tolerance;
   const transformMode = transformConfig.transformMode ?? 'full';
-  if (typeof tolerance !== 'number') {
+  if (typeof baseTolerance !== 'number') {
     throw new Error('transform requires tolerance');
   }
   const bandMap = new Map(bands.map((band) => [band.bandId, band] as const));
@@ -876,6 +1115,19 @@ export const createTransformByBandHandler = (
     const band = bandMap.get(input.bandId);
     if (!band) {
       return { status: 'failed', errorMessage: `transform failed: unknown bandId (${input.bandId})` };
+    }
+    const tolerance = resolveTransformTolerance(baseTolerance, band.zMax);
+    if (tolerance !== baseTolerance) {
+      console.info('[ShapeTransform][Tolerance]', JSON.stringify({
+        nodeId: task.nodeId,
+        taskId,
+        sourceKey: input.sourceKey,
+        adminLevel: input.adminLevel,
+        bandId: input.bandId,
+        zTarget: band.zMax,
+        baseTolerance,
+        appliedTolerance: tolerance,
+      }));
     }
 
     let workingCollection: FeatureCollection | null = null;
@@ -954,6 +1206,35 @@ export const createTransformByBandHandler = (
       inputVertexCount = inputStats.vertexCount;
       await updateTaskPhase(taskId, 'prepare:counts:done', taskProgressRange.prepareEnd);
       await reportPolygonProgress(taskId, 0, inputPolygonCount);
+      if (input.adminLevel === 0 && band.zMax >= 6) {
+        const samples = inputCollection.features.slice(0, 5).map((feature, index) => {
+          const props = feature?.properties as Record<string, unknown> | undefined;
+          const id = feature?.id
+            ?? props?.id
+            ?? props?.boundaryID
+            ?? props?.boundaryISO
+            ?? props?.ISO
+            ?? props?.code
+            ?? `${input.sourceKey}:${index}`;
+          return {
+            index,
+            id,
+            name: props?.boundaryName ?? props?.name ?? null,
+            vertices: countVerticesFromGeometry(feature?.geometry ?? null),
+            polygons: countPolygonsFromGeometry(feature?.geometry ?? null),
+          };
+        });
+        console.info('[ShapeTransform][Admin0FeatureSample]', JSON.stringify({
+          nodeId: task.nodeId,
+          taskId,
+          sourceKey: input.sourceKey,
+          adminLevel: input.adminLevel,
+          bandId: input.bandId,
+          zTarget: band.zMax,
+          featureCount: inputFeatureCount,
+          samples,
+        }));
+      }
       const simplifyIssues: SimplifyIssue[] = [];
       const readHeapSnapshot = () => {
         const performance = (globalThis as {
@@ -1457,6 +1738,10 @@ export const createTransformByBandHandler = (
       const boundaryLayerName = typeof adminLevel === 'number'
         ? `admin${adminLevel}-boundary`
         : 'admin0-boundary';
+      const boundaryDisableAtZoomOrAbove = transformConfig.boundaryDisableAtZoomOrAbove;
+      const shouldBuildBoundary = typeof boundaryDisableAtZoomOrAbove === 'number'
+        ? band.zMax < boundaryDisableAtZoomOrAbove
+        : true;
 
       const simplifiedFeatureCount = simplified.features.length;
       const simplifiedVertexCount = simplified.features.reduce(
@@ -1483,8 +1768,10 @@ export const createTransformByBandHandler = (
         properties.id = id;
         const featureWithId = { ...feature, id, properties };
         features.push(featureWithId);
-        stageLabel = 'boundary';
-        features.push(await runStageWithLabel('boundary', () => buildBoundaryFeature(featureWithId, boundaryLayerName, adminLevel)));
+        if (shouldBuildBoundary) {
+          stageLabel = 'boundary';
+          features.push(await runStageWithLabel('boundary', () => buildBoundaryFeature(featureWithId, boundaryLayerName, adminLevel)));
+        }
       }
 
       const outputCollectionValue: FeatureCollection = {
@@ -1502,6 +1789,36 @@ export const createTransformByBandHandler = (
             totalPolygons: inputPolygonCount,
           },
         };
+      }
+
+      const boundaryDiagnostics = buildBoundaryDiagnostics(outputCollectionValue);
+      if (boundaryDiagnostics) {
+        console.warn('[ShapeTransform][BoundaryDiagnostics]', JSON.stringify({
+          nodeId: task.nodeId,
+          taskId,
+          sourceKey: input.sourceKey,
+          adminLevel: input.adminLevel,
+          bandId: input.bandId,
+          zTarget: band.zMax,
+          boundary: boundaryDiagnostics,
+        }));
+      }
+
+      stageLabel = 'validate:geojson';
+      const issues = validateOutputForVt(outputCollectionValue);
+      if (issues.length > 0) {
+        const sample = issues.slice(0, 5);
+        console.error('[ShapeTransform][GeojsonValidation]', JSON.stringify({
+          nodeId: task.nodeId,
+          taskId,
+          sourceKey: input.sourceKey,
+          adminLevel: input.adminLevel,
+          bandId: input.bandId,
+          zTarget: band.zMax,
+          issueCount: issues.length,
+          sample,
+        }));
+        throw new Error(`transform failed: invalid geojson for vt (issues=${issues.length})`);
       }
 
       stageLabel = 'counts:output-vertices';
@@ -1549,6 +1866,15 @@ export const createTransformByBandHandler = (
       await updateTaskPhase(taskId, 'cache:put:done', taskProgressRange.encodeEnd);
 
       const tileIds = collectTileIdsForCollection(outputCollectionValue, band.zBase);
+      console.info('[ShapeTransform][TileIndex]', JSON.stringify({
+        nodeId: String(task.nodeId),
+        bandId: input.bandId,
+        zBase: band.zBase,
+        sourceKey: input.sourceKey,
+        adminLevel: input.adminLevel,
+        tileIdCount: tileIds.length,
+        tileIdSample: tileIds.slice(0, 5),
+      }));
       if (tileIds.length > 0) {
         const createdAt = Date.now();
         const relations = tileIds.map((tileId) => ({
@@ -1567,16 +1893,25 @@ export const createTransformByBandHandler = (
         }
       }
 
-      const formatReducedPercent = (output: number, input: number): string => {
-        if (!Number.isFinite(input) || input <= 0) return '-';
-        const reducedRatio = Math.max(0, Math.min(1, (input - output) / input));
-        return `${(reducedRatio * 100).toFixed(1)}%`;
+      const formatCount = (value: number): string => (
+        Number.isFinite(value) ? new Intl.NumberFormat('en-US').format(value) : '-'
+      );
+      const formatSignedPercent = (output: number, input: number): string => {
+        if (!Number.isFinite(input) || input <= 0) return '-0.0%';
+        const percent = ((output - input) / input) * 100;
+        const prefix = percent <= 0 ? '-' : '+';
+        return `${prefix}${Math.abs(percent).toFixed(1)}%`;
+      };
+      const formatChangeSummary = (label: string, input: number, output: number): string => {
+        const safeInput = Number.isFinite(input) ? input : output;
+        const safeOutput = Number.isFinite(output) ? output : 0;
+        return `${label}: ${formatCount(safeInput)} -> ${formatCount(safeOutput)} (${formatSignedPercent(safeOutput, safeInput)})`;
       };
       const completedMessage = [
-        `Features=${simplifiedFeatureCount}/${inputFeatureCount} (reduced=${formatReducedPercent(simplifiedFeatureCount, inputFeatureCount)})`,
-        `Polygons=${simplifiedPolygonCount}/${inputPolygonCount} (reduced=${formatReducedPercent(simplifiedPolygonCount, inputPolygonCount)})`,
-        `Vertices=${simplifiedVertexCount}/${inputVertexCount} (reduced=${formatReducedPercent(simplifiedVertexCount, inputVertexCount)})`,
-      ].join(' ');
+        formatChangeSummary('features', inputFeatureCount, simplifiedFeatureCount),
+        formatChangeSummary('polygons', inputPolygonCount, simplifiedPolygonCount),
+        formatChangeSummary('vertices', inputVertexCount, simplifiedVertexCount),
+      ].join(', ');
       return {
         status: 'completed',
         progress: 100,

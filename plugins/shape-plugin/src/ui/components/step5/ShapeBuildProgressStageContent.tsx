@@ -6,6 +6,7 @@ import { useBuildStageFilter, type BuildStage } from '@hierarchidb/components';
 import { taskScrollTargetAtom } from '../../atoms/shapeBuildProgressAtoms.ts';
 import {
   TaskListVirtualized,
+  isSkippedMessage,
   sortVectorTileTasks,
   type TaskWithMetadata,
 } from './TaskListVirtualized.tsx';
@@ -45,6 +46,7 @@ export const ShapeBuildProgressStageContent = ({
   const scrollToTaskId = scrollTarget?.stageId === stage.id ? scrollTarget.taskId : undefined;
   const scrollRequestId = scrollTarget?.requestedAt;
   const filteredTasks = stageTasks.filter((task) => {
+    if (isSkippedMessage(task.message)) return filter.skippedMode;
     if (task.status === 'failed') return filter.failedMode;
     if (task.status === 'completed') return filter.completedMode;
     return true;

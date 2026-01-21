@@ -1,3 +1,4 @@
+import type { KeyboardEvent, MouseEvent } from 'react';
 import { Box, useTheme } from '@mui/material';
 import { useSetAtom } from 'jotai';
 
@@ -81,7 +82,8 @@ export const TaskProgressBar = ({
           return segments.map((segment, index) => {
             const x = offset;
             offset += segment.width;
-            const handleActivate = () => {
+            const handleActivate = (event?: MouseEvent | KeyboardEvent) => {
+              event?.preventDefault();
               if (!segment.taskId) return;
               setScrollTarget({
                 stageId: segment.stageId,
@@ -89,28 +91,39 @@ export const TaskProgressBar = ({
                 requestedAt: Date.now(),
               });
             };
-            return (
+            const rect = (
               <rect
-                key={`task-${index.toString()}`}
                 x={x}
                 y={0}
                 width={Math.ceil(segment.width) + 2}
                 height={1}
                 fill={segment.fill}
-                onClick={segment.taskId ? handleActivate : undefined}
-                onKeyDown={segment.taskId ? (event) => {
+              />
+            );
+            if (!segment.taskId) {
+              return (
+                <g key={`task-${index.toString()}`}>
+                  {rect}
+                  <title>{segment.title}</title>
+                </g>
+              );
+            }
+            return (
+              <a
+                key={`task-${index.toString()}`}
+                href="#"
+                onClick={handleActivate}
+                onKeyDown={(event) => {
                   if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    handleActivate();
+                    handleActivate(event);
                   }
-                } : undefined}
-                role={segment.taskId ? 'button' : undefined}
-                tabIndex={segment.taskId ? 0 : undefined}
-                aria-label={segment.taskId ? `Scroll to ${segment.stageId} task` : undefined}
-                style={segment.taskId ? { cursor: 'pointer' } : undefined}
+                }}
+                aria-label={`Scroll to ${segment.stageId} task`}
+                style={{ cursor: 'pointer' }}
               >
+                {rect}
                 <title>{segment.title}</title>
-              </rect>
+              </a>
             );
           });
         })() : (

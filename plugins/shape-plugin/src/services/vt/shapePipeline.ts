@@ -1,9 +1,10 @@
 import type { BuildContinuationPolicy, NodeId, StageHandler, TaskQueueRecord } from '@hierarchidb/common-types';
-import type { Feature, FeatureCollection } from 'geojson';
+import type { Feature, FeatureCollection, Geometry, LineString, MultiLineString, Point, MultiPoint, Polygon, MultiPolygon } from 'geojson';
 import type { Tile } from 'geojson-vt';
 import { buildFeatureId, extractGeometryStats } from './featureMetadataUtils.ts';
 import { geojson as geojsonApi } from 'flatgeobuf';
 import type { ShapeFeatureMetadata, ShapeVectorTileRecord, ShapeTileLayerInfo } from '@hierarchidb/plugin-service-api';
+import { bboxClip as turfBboxClip } from '@turf/turf';
 import {
   latToTileY,
   lonToTileX,
@@ -21,6 +22,7 @@ import {
   listTasksByStageAndStatus,
   putTasks,
   runStageTasks,
+  updateTask,
   createTransformByBandHandler,
   createVtHandler,
 } from '@hierarchidb/vt-orchestrator';
@@ -114,6 +116,37 @@ const readNumericProperty = (properties: Record<string, unknown>, key: string): 
   return Number.isFinite(value) ? value : undefined;
 };
 
+const ORIGIN_KEY_PROP = '__hdbOriginKey';
+
+const parseOriginKey = (originKey: string): { countryCode?: string; adminLevel?: number } => {
+  const index = originKey.indexOf(':');
+  const sourceKey = index > 0 ? originKey.slice(index + 1) : originKey;
+  const [countryCode, adminLevelRaw] = sourceKey.split(':');
+  const adminLevel = adminLevelRaw != null ? Number(adminLevelRaw) : undefined;
+  return {
+    countryCode: countryCode?.trim().toUpperCase() || undefined,
+    adminLevel: Number.isFinite(adminLevel) ? adminLevel : undefined,
+  };
+};
+
+const resolveFeatureOriginInfo = (
+  properties: Record<string, unknown>,
+  lookup?: Map<string, CountryMetadata>,
+): { countryCode?: string; countryName?: string; adminLevel?: number } => {
+  const originKey = typeof properties[ORIGIN_KEY_PROP] === 'string' ? properties[ORIGIN_KEY_PROP] as string : undefined;
+  const originInfo = originKey ? parseOriginKey(originKey) : {};
+  const rawCountryCode = originInfo.countryCode ?? pickCountryCode(properties);
+  const rawAdminLevel = originInfo.adminLevel ?? pickAdminLevel(properties);
+  const meta = rawCountryCode ? lookup?.get(rawCountryCode.trim().toUpperCase()) : undefined;
+  const normalizedCode = (meta?.countryCode ?? meta?.iso2 ?? rawCountryCode)?.trim().toUpperCase();
+  const normalizedName = meta?.countryName ?? pickCountryName(properties) ?? rawCountryCode;
+  return {
+    countryCode: normalizedCode,
+    countryName: normalizedName,
+    adminLevel: typeof rawAdminLevel === 'number' ? rawAdminLevel : undefined,
+  };
+};
+
 const buildFeatureMetadataFromTransformCaches = async (
   nodeId: NodeId,
   dataSource: DataSourceName,
@@ -121,6 +154,8 @@ const buildFeatureMetadataFromTransformCaches = async (
 ): Promise<ShapeFeatureMetadata[]> => {
   const records: ShapeFeatureMetadata[] = [];
   const createdAt = Date.now();
+  const metadata = await metadataLoader.loadMetadata(dataSource, nodeId);
+  const countryLookup = buildCountryLookup(metadata);
   const buffers = await ephemeralStore.transformCache.where('nodeId').equals(nodeId).toArray();
   for (const buffer of buffers) {
     if (!isTransformCacheComplete(buffer)) continue;
@@ -131,8 +166,9 @@ const buildFeatureMetadataFromTransformCaches = async (
       if (!feature) continue;
       feature.properties = feature.properties ?? {};
       const properties = feature.properties as Record<string, unknown>;
-      const countryCode = pickCountryCode(properties);
-      const adminLevel = pickAdminLevel(properties);
+      const originInfo = resolveFeatureOriginInfo(properties, countryLookup);
+      const countryCode = originInfo.countryCode;
+      const adminLevel = originInfo.adminLevel;
       const adminCode = pickAdminCode(properties);
       const featureId = buildFeatureId(feature, index, { countryCode, adminLevel, adminCode });
       const stats = extractGeometryStats(feature);
@@ -142,7 +178,7 @@ const buildFeatureMetadataFromTransformCaches = async (
         id: `${String(nodeId)}-${featureId}`,
         nodeId: String(nodeId),
         featureId,
-        countryName: pickCountryName(properties),
+        countryName: originInfo.countryName,
         countryCode,
         adminName: pickAdminName(properties),
         adminLevel,
@@ -202,6 +238,70 @@ const clampTileIndex = (value: number, maxIndex: number): number => (
   Math.min(maxIndex, Math.max(0, value))
 );
 
+const toDeg = (radians: number): number => radians * 180 / Math.PI;
+
+const tileToBBox = (z: number, x: number, y: number): { minX: number; minY: number; maxX: number; maxY: number } => {
+  const n = 2 ** z;
+  const lon1 = x / n * 360 - 180;
+  const lon2 = (x + 1) / n * 360 - 180;
+  const lat1 = toDeg(Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n))));
+  const lat2 = toDeg(Math.atan(Math.sinh(Math.PI * (1 - 2 * (y + 1) / n))));
+  return { minX: lon1, minY: lat2, maxX: lon2, maxY: lat1 };
+};
+
+const isPointInBBox = (x: number, y: number, bbox: { minX: number; minY: number; maxX: number; maxY: number }): boolean => (
+  x >= bbox.minX && x <= bbox.maxX && y >= bbox.minY && y <= bbox.maxY
+);
+
+const isPointGeometry = (geometry: Geometry): geometry is Point => geometry.type === 'Point';
+
+const isMultiPointGeometry = (geometry: Geometry): geometry is MultiPoint => geometry.type === 'MultiPoint';
+
+const isAnyPointInBBox = (geometry: Geometry | null | undefined, bbox: { minX: number; minY: number; maxX: number; maxY: number }): boolean => {
+  if (!geometry) return false;
+  if (isPointGeometry(geometry)) {
+    const [x, y] = geometry.coordinates ?? [];
+    if (typeof x !== 'number' || typeof y !== 'number') return false;
+    return isPointInBBox(x, y, bbox);
+  }
+  if (isMultiPointGeometry(geometry)) {
+    for (const point of geometry.coordinates) {
+      const [x, y] = point ?? [];
+      if (typeof x !== 'number' || typeof y !== 'number') continue;
+      if (isPointInBBox(x, y, bbox)) return true;
+    }
+    return false;
+  }
+  return false;
+};
+
+const hasCoordinates = (coords: unknown): boolean => {
+  if (!Array.isArray(coords)) return false;
+  if (coords.length === 0) return false;
+  if (typeof coords[0] === 'number') return true;
+  return coords.some((entry) => hasCoordinates(entry));
+};
+
+const isLineOrPolygonFeature = (
+  feature: Feature,
+): feature is Feature<LineString | MultiLineString | Polygon | MultiPolygon> => {
+  const type = feature.geometry?.type;
+  return type === 'LineString'
+    || type === 'MultiLineString'
+    || type === 'Polygon'
+    || type === 'MultiPolygon';
+};
+
+const featureIntersectsTileBBox = (feature: Feature, bbox: { minX: number; minY: number; maxX: number; maxY: number }): boolean => {
+  if (isAnyPointInBBox(feature.geometry ?? null, bbox)) return true;
+  if (!isLineOrPolygonFeature(feature)) return false;
+  const clipped = turfBboxClip(
+    feature as Feature<LineString | MultiLineString | Polygon | MultiPolygon>,
+    [bbox.minX, bbox.minY, bbox.maxX, bbox.maxY],
+  ) as Feature<LineString | MultiLineString | Polygon | MultiPolygon> | null;
+  return Boolean(clipped?.geometry && hasCoordinates(clipped.geometry.coordinates));
+};
+
 const collectTileIdsForCollection = (collection: FeatureCollection, zBase: number): number[] => {
   if (!Number.isFinite(zBase) || zBase < 0) return [];
   const maxIndex = (1 << zBase) - 1;
@@ -211,12 +311,19 @@ const collectTileIdsForCollection = (collection: FeatureCollection, zBase: numbe
     const bbox = extractGeometryStats(feature).bbox;
     if (!bbox) continue;
     const [minLon, minLat, maxLon, maxLat] = bbox;
-    const x1 = clampTileIndex(lonToTileX(minLon, zBase), maxIndex);
-    const x2 = clampTileIndex(lonToTileX(maxLon, zBase), maxIndex);
-    const y1 = clampTileIndex(latToTileY(maxLat, zBase), maxIndex);
-    const y2 = clampTileIndex(latToTileY(minLat, zBase), maxIndex);
+    const x1Raw = lonToTileX(minLon, zBase);
+    const x2Raw = lonToTileX(maxLon, zBase);
+    const y1Raw = latToTileY(maxLat, zBase);
+    const y2Raw = latToTileY(minLat, zBase);
+    if (![x1Raw, x2Raw, y1Raw, y2Raw].every((value) => Number.isFinite(value))) continue;
+    const x1 = clampTileIndex(x1Raw as number, maxIndex);
+    const x2 = clampTileIndex(x2Raw as number, maxIndex);
+    const y1 = clampTileIndex(y1Raw as number, maxIndex);
+    const y2 = clampTileIndex(y2Raw as number, maxIndex);
     for (let x = x1; x <= x2; x += 1) {
       for (let y = y1; y <= y2; y += 1) {
+        const tileBBox = tileToBBox(zBase, x, y);
+        if (!featureIntersectsTileBBox(feature, tileBBox)) continue;
         tileIds.add(packTileId(x, y, zBase));
       }
     }
@@ -355,6 +462,20 @@ const buildCountryLookup = (metadata: CountryMetadata[]): Map<string, CountryMet
   return map;
 };
 
+const buildContinentLookup = (metadata: CountryMetadata[]): Map<string, string> => {
+  const map = new Map<string, string>();
+  metadata.forEach((entry) => {
+    const continent = entry.continent?.trim();
+    if (!continent) return;
+    const iso2 = entry.iso2?.trim().toUpperCase() ?? entry.countryCode?.trim().toUpperCase();
+    const iso3 = entry.iso3?.trim().toUpperCase();
+    if (iso2) map.set(iso2, continent);
+    if (iso3) map.set(iso3, continent);
+    if (entry.countryCode) map.set(entry.countryCode.trim().toUpperCase(), continent);
+  });
+  return map;
+};
+
 const listTransformCacheIdsByTile = async (
   store: typeof ephemeralShapeDB,
   nodeId: NodeId,
@@ -413,6 +534,14 @@ const buildVtTasks = async (
       } else {
         tileBuffers.set(tileId, [row.bufferId]);
       }
+    });
+    console.info('[shape-vt] tile relation snapshot', {
+      nodeId,
+      bandId: band.bandId,
+      zBase: band.zBase,
+      relationCount: relationRows.length,
+      tileCount: tileBuffers.size,
+      tileSample: [...tileBuffers.keys()].slice(0, 5),
     });
     const tileIds = [...tileBuffers.keys()];
     for (const tileId of tileIds) {
@@ -573,6 +702,9 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
   const buildContinuationPolicy = params.buildContinuationPolicy ?? 'finish_all_stages';
   const failureHandling = resolveFailureHandling(buildContinuationPolicy);
   let stopAfterStage = false;
+  let metadataCache: CountryMetadata[] | null = null;
+  let countryLookup: Map<string, CountryMetadata> | null = null;
+  let continentLookup: Map<string, string> | null = null;
   console.warn('[ShapePipeline] run start', JSON.stringify({
     nodeId: params.nodeId,
     runId: params.pipelineRunId ?? null,
@@ -584,13 +716,26 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
     await shapeMutationAPIImpl.deleteFeatureMetadataByNode(params.nodeId);
   }
 
-  const metadata = await metadataLoader.loadMetadata(params.dataSource, params.nodeId);
-  const countryLookup = buildCountryLookup(metadata);
   const enableHighDetailBands = hasHighDetailSelection(
     params.selectedArrayByCountries,
     params.downloadTaskPayloads,
   );
   const bands = buildBands(params.buildConfig.transformConfig.zoomBandBoundaries);
+  const loadMetadata = async (): Promise<CountryMetadata[]> => {
+    if (metadataCache) return metadataCache;
+    metadataCache = await metadataLoader.loadMetadata(params.dataSource, params.nodeId);
+    return metadataCache;
+  };
+  const loadCountryLookup = async (): Promise<Map<string, CountryMetadata>> => {
+    if (countryLookup) return countryLookup;
+    countryLookup = buildCountryLookup(await loadMetadata());
+    return countryLookup;
+  };
+  const loadContinentLookup = async (): Promise<Map<string, string>> => {
+    if (continentLookup) return continentLookup;
+    continentLookup = buildContinentLookup(await loadMetadata());
+    return continentLookup;
+  };
 
   const fetchAbortController = new AbortController();
   await runShapeFetchStage({
@@ -600,7 +745,6 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
     downloadTaskPayloads: params.downloadTaskPayloads,
     buildConfig: params.buildConfig,
     taskQueue,
-    metadata,
     waitIfPaused: params.waitIfPaused,
     resumeExistingTasks,
     abortController: fetchAbortController,
@@ -621,7 +765,12 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
       : [];
     const transformByBandTasks = existingTransformByBandTasks.length > 0
       ? []
-      : await buildTransformByBandTasks(params.nodeId, bands, enableHighDetailBands, countryLookup);
+      : await buildTransformByBandTasks(
+        params.nodeId,
+        bands,
+        enableHighDetailBands,
+        await loadCountryLookup(),
+      );
     if (existingTransformByBandTasks.length > 0 || transformByBandTasks.length > 0) {
       await params.waitIfPaused?.();
       if (transformByBandTasks.length > 0) {
@@ -658,9 +807,22 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
   }
 
   if (!stopAfterStage) {
+    const vtConfig = resolveVtConfig(params.buildConfig);
     const existingVtTasks = resumeExistingTasks
       ? await listTasksByStage(taskQueue, params.nodeId, 'vt')
       : [];
+    if (resumeExistingTasks && existingVtTasks.length > 0) {
+      const runningVtTasks = await listTasksByStageAndStatus(taskQueue, params.nodeId, 'vt', 'running');
+      if (runningVtTasks.length > 0) {
+        await Promise.all(runningVtTasks.map((task) => (
+          updateTask(taskQueue, task.taskId, {
+            status: 'failed',
+            errorMessage: 'aborted: resume cleared running vt task',
+            completedAt: Date.now(),
+          })
+        )));
+      }
+    }
     const vtTasks = existingVtTasks.length > 0
       ? []
       : await buildVtTasks(
@@ -692,11 +854,15 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
         heap: readHeapSnapshot(),
       }));
       const vtAbortController = new AbortController();
+      const continentByCountry = bands.some((band) => band.zMin === 0)
+        ? await loadContinentLookup()
+        : undefined;
       const vtHandler = createVtHandler({
         ephemeralDB: ephemeralStore,
-        vtConfig: resolveVtConfig(params.buildConfig),
+        vtConfig,
         bands,
         abortSignal: vtAbortController.signal,
+        continentByCountry,
         tileWriter: async ({ tileId, z, x, y, data, layers, bufferSetHash }) => {
           await shapeMutationAPIImpl.storeVectorTile(buildShapeVectorTileRecord({
             nodeId: params.nodeId,
@@ -715,10 +881,38 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
         stage: 'vt',
         handler: vtHandler as unknown as StageHandler<ShapeVtTaskInput>,
         waitIfPaused: params.waitIfPaused,
-        maxConcurrent: params.buildConfig.vtConfig.maxConcurrent,
+        maxConcurrent: vtConfig.maxConcurrent,
+        dynamicConcurrency: vtConfig.dynamicConcurrency?.enabled
+          ? {
+            ...vtConfig.dynamicConcurrency,
+            maxConcurrent: vtConfig.dynamicConcurrency.maxConcurrent ?? vtConfig.maxConcurrent,
+          }
+          : undefined,
         failureHandling,
         abortController: vtAbortController,
       });
+      const [queuedVtTasks, runningVtTasks] = await Promise.all([
+        listTasksByStageAndStatus(taskQueue, params.nodeId, 'vt', 'queued'),
+        listTasksByStageAndStatus(taskQueue, params.nodeId, 'vt', 'running'),
+      ]);
+      if (queuedVtTasks.length > 0 || runningVtTasks.length > 0) {
+        const now = Date.now();
+        await Promise.all(
+          [...queuedVtTasks, ...runningVtTasks].map((task) => (
+            updateTask(taskQueue, task.taskId, {
+              status: 'failed',
+              errorMessage: 'aborted: vt stage completed with pending tasks',
+              completedAt: now,
+            })
+          )),
+        );
+        console.warn('[ShapeVt][PipelineDiagnostics] vt stage finalized pending tasks', JSON.stringify({
+          nodeId: params.nodeId,
+          runId: params.pipelineRunId ?? null,
+          queued: queuedVtTasks.length,
+          running: runningVtTasks.length,
+        }));
+      }
       console.warn('[ShapeVt][PipelineMetrics] stage vt done', JSON.stringify({
         nodeId: params.nodeId,
         runId: params.pipelineRunId ?? null,

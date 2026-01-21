@@ -26,6 +26,8 @@ export type BuildStepStageSummaryPanelProps = {
   onFailedModeUpdate: (newMode: boolean) => void;
   completedMode: boolean;
   onCompletedModeUpdate: (newMode: boolean) => void;
+  skippedMode: boolean;
+  onSkippedModeUpdate: (newMode: boolean) => void;
   children?: ReactNode;
 };
 
@@ -41,6 +43,8 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
   onFailedModeUpdate,
   completedMode,
   onCompletedModeUpdate,
+  skippedMode,
+  onSkippedModeUpdate,
   children,
 }) => {
   const theme = useTheme();
@@ -55,6 +59,8 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
   const isSkippedVisible = skipped > 0;
   const failedVariant = isFailedDisabled ? 'outlined' : (failedMode ? 'filled' : 'outlined');
   const completedVariant = isCompletedDisabled ? 'outlined' : (completedMode ? 'filled' : 'outlined');
+  const isSkippedDisabled = skipped === 0;
+  const skippedVariant = isSkippedDisabled ? 'outlined' : (skippedMode ? 'filled' : 'outlined');
   const indicatorCount = Math.max(0, Math.floor(concurrencyIndicator?.count ?? 0));
   const isIndicatorRunning = concurrencyIndicator?.isRunning ?? false;
   const indicatorVariant = isIndicatorRunning ? 'indeterminate' : 'determinate';
@@ -101,8 +107,10 @@ const BuildStepStagePanelCore: FC<BuildStepStageSummaryPanelProps> = ({
                   size="small"
                   color="warning"
                   icon={<SkipNextIcon fontSize="small" />}
-                  variant="outlined"
-                  sx={{ borderColor: 'divider' }}
+                  variant={skippedVariant}
+                  disabled={isSkippedDisabled}
+                  onClick={isSkippedDisabled ? undefined : () => onSkippedModeUpdate(!skippedMode)}
+                  sx={isSkippedDisabled ? { borderColor: 'divider', color: 'text.disabled' } : undefined}
                 />
               ) : null}
               <Chip
