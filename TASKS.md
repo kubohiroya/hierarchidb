@@ -1,3 +1,70 @@
+2313) fix/ui-map/hover-snackbar-bottom-center (P1) — 進行中 (2026-01-24)
+- ブランチ名: fix/ui-map/hover-snackbar-bottom-center
+- 依存: なし
+- 受け入れ基準: ui-map のホバー名 snackbar が画面中央下に表示される／ADM0+ADM1 が重なる場合は ADM1 が優先して表示される（現行挙動の確認を含む）／ADM1 ホバー時の表示が「自治体名 / ADM1 / 国名 / 国コード / 1」になる／pnpm --filter @hierarchidb/ui-map typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/**`（調査後に確定）
+- ロールバック手順: snackbar 位置と表示フォーマットの差分を revert し、現行挙動へ戻す
+- チェックリスト:
+  - ui-map のホバー snackbar 実装箇所を特定する
+  - snackbar の表示位置を中央下に調整する
+  - ADM0+ADM1 のホバー優先順位を確認し、必要なら修正する
+  - ADM1 の表示フォーマットを「自治体名 / ADM1 / 国名 / 国コード / 1」に更新する
+  - pnpm --filter @hierarchidb/ui-map typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 02:10 JST ui-map のホバー snackbar 表示位置とフォーマット調整に着手。
+
+2312) feat/ui-map/screen-center-snackbar (P2) — 完了 (2026-01-23)
+- ブランチ名: feat/ui-map/screen-center-snackbar
+- 依存: なし
+- 受け入れ基準: ui-map に汎用コンポーネント ScreenCenterSnackbar を追加する／中央表示・半透明テキスト・出現/消去アニメーションを実装する／ズーム率変更時の表示が既存の右下 MUI Snackbar から ScreenCenterSnackbar に移行される／表示は他UIの操作を阻害せず一定時間で自動消去される／pnpm --filter @hierarchidb/ui-map typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/**`（調査後に確定）
+- ロールバック手順: ScreenCenterSnackbar 追加とズーム表示の差分を revert し、既存の Snackbar 表示へ戻す
+- チェックリスト:
+  - ScreenCenterSnackbar の API と表示仕様（表示時間・表記形式・アニメーション）を確定する
+  - 中央表示 + 半透明 + アニメーションのコンポーネントを実装する
+  - ズーム率変更時の表示を ScreenCenterSnackbar に移行する
+  - 既存の右下 Snackbar を無効化または置き換える
+  - pnpm --filter @hierarchidb/ui-map typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 06:35 JST ScreenCenterSnackbar の追加とズーム率表示移行に着手。
+  - update: 2026-01-23 06:39 JST ScreenCenterSnackbar を ui-map に追加し、Shape preview のズーム表示を中央オーバーレイへ移行。
+  - done: 2026-01-23 06:40 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0。
+
+2311) fix/ui-map/feature-state-expression-error (P1) — 進行中 (2026-01-24)
+- ブランチ名: fix/ui-map/feature-state-expression-error
+- 依存: なし
+- 受け入れ基準: setFeatureState による expression evaluate エラーが発生しない／shape preview のタイル読み込み中も例外が出ない／pnpm --filter @hierarchidb/app typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/**`（調査後に確定）
+- ロールバック手順: feature-state の適用/ガード差分を revert する
+- チェックリスト:
+  - エラー原因となる feature-state の式/対象を特定する
+  - setFeatureState の適用条件を調整する
+  - pnpm --filter @hierarchidb/app typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 01:35 JST feature-state expression エラー対応に着手。
+  - update: 2026-01-23 06:45 JST line-dasharray の式エラー調査と修正に着手。
+  - update: 2026-01-23 06:46 JST line-dasharray を literal 配列に置換し、pnpm --filter @hierarchidb/app typecheck を実行（tsdown define 警告あり）。
+  - update: 2026-01-23 06:48 JST expression.evaluate エラー継続のため追加調査に着手。
+
+2310) fix/ui/shape-preview-source-missing (P1) — 進行中 (2026-01-24)
+- ブランチ名: fix/ui/shape-preview-source-missing
+- 依存: なし
+- 受け入れ基準: shape-preview-source/shape-preview レイヤーが未登録でも例外が出ない／setFeatureState を未登録ソースに対して呼ばない／pnpm --filter @hierarchidb/app typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/contexts/map/useMapFeatureHighlights.ts`
+- ロールバック手順: 例外回避のガード差分を revert する
+- チェックリスト:
+  - source/layer 存在チェックを追加する
+  - 未登録時は setFeatureState を抑止する
+  - pnpm --filter @hierarchidb/app typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 01:10 JST shape-preview-source 未登録時の例外対応に着手。
+  - update: 2026-01-24 01:20 JST source未登録時にsetFeatureState/removeFeatureStateを抑止するガードを追加。
+  - done: 2026-01-24 01:24 JST pnpm --filter @hierarchidb/app typecheck exit 0（plugin-base build: tsdown define警告あり）。
+
 2309) feat/ui-map/layer-set-hierarchy (P1) — 進行中 (2026-01-22)
 - ブランチ名: feat/ui-map/layer-set-hierarchy
 - 依存: なし
@@ -137,6 +204,23 @@
   - update: 2026-01-23 22:15 JST MapStatsPanel の snapshot を安定参照化し、tile/feature の更新通知を同一参照で管理するよう修正。
   - done: 2026-01-23 22:18 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define 警告あり）。pnpm typecheck exit 0。
 
+2302) fix/ui/floating-window-footer-zindex (P1) — 進行中 (2026-01-23)
+- ブランチ名: fix/ui/floating-window-footer-zindex
+- 依存: なし
+- 受け入れ基準: Step6 初期表示直後のフローティングダイアログのリサイズ時に、プラグインダイアログのフッターが前面に出て重なる不具合の原因を説明できる／解決策の候補を整理できる／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/floating-window/src/**`, `packages/ui/map/src/preview/**`, `packages/plugin-ui-host/src/**`, `app/src/**`（調査後に確定）
+- ロールバック手順: なし（調査のみ）
+- チェックリスト:
+  - フローティングダイアログのリサイズ/移動で DOM/CSS の stacking context がどう変わるかを確認する
+  - プラグインダイアログのフッター領域の z-index/position/transform を確認する
+  - 不具合が発生/解消する条件を整理し解決策を検討する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 20:40 JST フローティングダイアログとフッターの前後関係異常の原因調査に着手。
+  - update: 2026-01-23 20:50 JST FloatingWindow はドラッグ時のみ zIndex を更新し、リサイズ時は初期 zIndex(1000)のまま。PluginDialogFooter は zIndex=modal(1300) のため、リサイズ直後はフッターが前面に出る原因と判断。
+  - update: 2026-01-23 21:00 JST クリック/ドラッグ/リサイズのすべてで前面化されるよう、FloatingWindow の mouse down capture で zIndex を繰り上げるよう修正。
+  - done: 2026-01-23 21:02 JST pnpm --filter @hierarchidb/ui-floating-window typecheck exit 0 を確認。
+
 2301) fix/shape/step6-useShapePreviewStepView-typecheck (P1) — 進行中 (2026-01-23)
 - ブランチ名: fix/shape/step6-useShapePreviewStepView-typecheck
 - 依存: なし
@@ -201,6 +285,21 @@
   - update: 2026-01-23 21:28 JST Step2 でプレビューアコーディオンを無効化するフラグを追加。
   - update: 2026-01-23 21:29 JST pnpm --filter @hierarchidb/spreadsheet-plugin build で型定義を更新。
   - done: 2026-01-23 21:30 JST pnpm --filter @hierarchidb/styler-plugin typecheck exit 0 を確認。
+
+
+2302) fix/shape/feature-list-titlebar-icon-margin (P1) — 進行中 (2026-01-23)
+- ブランチ名: fix/shape/feature-list-titlebar-icon-margin
+- 依存: なし
+- 受け入れ基準: フィーチャー一覧フローティングダイアログのタイトルバーで左端アイコンの左に8pxの余白が入る／他のタイトルバー要素の配置が崩れない／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記録する
+- 影響範囲: `packages/ui/floating-window/src/components/FloatingWindow.tsx`
+- ロールバック手順: タイトルバー余白追加差分を revert する
+- チェックリスト:
+  - 対象コンポーネントを特定する
+  - 左端アイコンの左余白を8px追加する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 21:40 JST フィーチャー一覧タイトルバーの左余白調整に着手。
 
 2299) fix/styler/auth-dialog-loop (P1) — 進行中 (2026-01-23)
 - ブランチ名: fix/styler/auth-dialog-loop
