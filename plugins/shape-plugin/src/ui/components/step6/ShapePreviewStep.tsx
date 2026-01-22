@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Alert, Button, Snackbar, CircularProgress, Typography, Paper } from '@mui/material';
 import { TableRows as TableRowsIcon } from '@mui/icons-material';
-import { LayerSetVisibilityPanel, ResourceLayerMap, ShapePreviewList } from '@hierarchidb/ui-map';
+import { LayerSetVisibilityPanel, ResourceLayerMap, ScreenCenterSnackbar, ShapePreviewList } from '@hierarchidb/ui-map';
 import { useShapePreviewStepView } from './useShapePreviewStepView.js';
 import type { ShapeEntity } from '../../../common/types/index.js';
 
@@ -157,6 +157,12 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
             onIdentify: handleMapIdentify,
           }}
         />
+        <ScreenCenterSnackbar
+          open={zoomSnackbarOpen}
+          message={zoomSnackbarMessage}
+          onClose={handleZoomSnackbarClose}
+          containerSx={{ zIndex: 4 }}
+        />
         {!featureWindowOpen && (
           <Box position="absolute" top={8} left={8} zIndex={3}>
             <Button
@@ -250,13 +256,6 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
         autoHideDuration={3600}
         onClose={() => setHoveredId(null)}
-      />
-      <Snackbar
-        open={zoomSnackbarOpen}
-        message={zoomSnackbarMessage}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        autoHideDuration={800}
-        onClose={handleZoomSnackbarClose}
       />
     </Box>
   );

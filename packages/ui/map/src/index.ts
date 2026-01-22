@@ -7,6 +7,7 @@ export { VectorTileLayer } from './components/VectorTileLayer.js';
 export { ResourceLayerMap } from './components/ResourceLayerMap.js';
 export { SimpleMapDisplay } from './components/SimpleMapDisplay.js';
 export { FullMapDisplay } from './components/FullMapDisplay.js';
+export { ScreenCenterSnackbar } from './components/ScreenCenterSnackbar.js';
 export const loadMapWithDeckGL = () =>
   import('./components/MapWithDeckGL.js') as Promise<typeof import('./components/MapWithDeckGL.js')>;
 export const loadMapLibreMap = () =>

@@ -280,7 +280,7 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
           'line-width': 4,
           'line-blur': 2,
           'line-opacity': 0.5,
-          'line-dasharray': [2, 2],
+          'line-dasharray': ['literal', [2, 2]],
         },
         filter: ['all', ['==', ['get', 'ringRole'], 'hole'], selectedFilter],
       },
@@ -292,7 +292,7 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
         paint: {
           'line-color': preview.theme.palette.primary.main,
           'line-width': 2,
-          'line-dasharray': [2, 2],
+          'line-dasharray': ['literal', [2, 2]],
         },
         filter: ['all', ['==', ['get', 'ringRole'], 'hole'], selectedFilter],
       },
@@ -315,7 +315,7 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
         paint: {
           'line-color': issueKindColor,
           'line-width': 1.5,
-          'line-dasharray': [2, 2],
+          'line-dasharray': ['literal', [2, 2]],
         },
         filter: ['all', ['==', ['get', 'ringRole'], 'hole'], unselectedFilter],
       },
