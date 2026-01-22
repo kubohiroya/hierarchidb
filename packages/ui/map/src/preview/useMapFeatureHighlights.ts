@@ -45,6 +45,11 @@ export const useMapFeatureHighlights = <HighlightEntry extends { source: string;
     return source?.type === 'vector';
   }, [mapInstance]);
 
+  const hasSource = useCallback((sourceId: string): boolean => {
+    if (!mapInstance || typeof mapInstance.getSource !== 'function') return false;
+    return Boolean(mapInstance.getSource(sourceId));
+  }, [mapInstance]);
+
   const updateViewportFeatures = useCallback(() => {
     if (!mapInstance) return;
     if (typeof mapInstance.getLayer === 'function') {
@@ -91,6 +96,10 @@ export const useMapFeatureHighlights = <HighlightEntry extends { source: string;
     (entry: HighlightEntry | null, key: 'hdbSearch' | 'hdbHover' | 'hdbSelected') => {
       if (!mapInstance || !entry) return;
       try {
+        if (!hasSource(entry.source)) {
+          console.debug('[MapPreview] Missing source for feature state', { source: entry.source, id: entry.id, layerId: entry.layerId });
+          return;
+        }
         const sourceLayer = resolveSourceLayer(entry);
         if (!sourceLayer && isVectorSource(entry.source)) {
           console.debug('[MapPreview] Missing sourceLayer for vector source', { source: entry.source, id: entry.id, layerId: entry.layerId });
@@ -104,13 +113,17 @@ export const useMapFeatureHighlights = <HighlightEntry extends { source: string;
         console.debug('[MapPreview] Failed to clear feature-atoms', error);
       }
     },
-    [isVectorSource, mapInstance, resolveSourceLayer],
+    [hasSource, isVectorSource, mapInstance, resolveSourceLayer],
   );
 
   const applyHighlightKey = useCallback(
     (entry: HighlightEntry | null, key: 'hdbSearch' | 'hdbHover' | 'hdbSelected') => {
       if (!mapInstance || !entry) return;
       try {
+        if (!hasSource(entry.source)) {
+          console.debug('[MapPreview] Missing source for feature state', { source: entry.source, id: entry.id, layerId: entry.layerId });
+          return;
+        }
         const sourceLayer = resolveSourceLayer(entry);
         if (!sourceLayer && isVectorSource(entry.source)) {
           console.debug('[MapPreview] Missing sourceLayer for vector source', { source: entry.source, id: entry.id, layerId: entry.layerId });
@@ -124,7 +137,7 @@ export const useMapFeatureHighlights = <HighlightEntry extends { source: string;
         console.debug('[MapPreview] Failed to set feature-atoms', error);
       }
     },
-    [isVectorSource, mapInstance, resolveSourceLayer],
+    [hasSource, isVectorSource, mapInstance, resolveSourceLayer],
   );
 
   useEffect(() => {
