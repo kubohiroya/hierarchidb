@@ -192,18 +192,21 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
     [resolvedColumns],
   );
   useEffect(() => {
+    if (!hasUserColumnSelection) return;
     setVisibleColumnIds((prev) => {
-      if (!hasUserColumnSelection || !prev) {
+      if (!prev) {
         return new Set(resolvedColumnIds);
       }
       const next = new Set(prev);
       const resolvedSet = new Set(resolvedColumnIds);
+      let changed = false;
       Array.from(next).forEach((id) => {
         if (!resolvedSet.has(id)) {
           next.delete(id);
+          changed = true;
         }
       });
-      return next;
+      return changed ? next : prev;
     });
   }, [hasUserColumnSelection, resolvedColumnIds]);
   const filteredColumns = useMemo(() => {

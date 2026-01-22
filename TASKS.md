@@ -1,3 +1,199 @@
+2307) fix/ui/vector-tile-layer-syntax (P1) — 進行中 (2026-01-23)
+- ブランチ名: fix/ui/vector-tile-layer-syntax
+- 依存: なし
+- 受け入れ基準: VectorTileLayer.tsx の文法エラーが解消され、型を緩めない修正となる／pnpm --filter @hierarchidb/ui-map build と pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/components/VectorTileLayer.tsx`
+- ロールバック手順: VectorTileLayer の差分を revert する
+- チェックリスト:
+  - 文法エラーの原因を特定し修正する
+  - 型の厳格性を維持する
+  - pnpm --filter @hierarchidb/ui-map build を実行する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 23:30 JST VectorTileLayer の文法エラー修正に着手。
+  - blocked: 2026-01-23 23:35 JST pnpm typecheck で VectorTileLayer removeFeatureState の引数エラー（TS2554）を検出。
+  - update: 2026-01-23 23:40 JST removeFeatureState の target 生成を key 内包型に統一し、Map の forEach を使用。
+  - done: 2026-01-23 23:43 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define 警告あり）。pnpm typecheck exit 0。
+
+2306) fix/ui/preview-virtualization-and-loop (P1) — 進行中 (2026-01-23)
+- ブランチ名: fix/ui/preview-virtualization-and-loop
+- 依存: なし
+- 受け入れ基準: GenericDataGrid の仮想スクロールが復活し、1000行規模で重さが軽減される／ShapePreviewStep 由来の Maximum update depth exceeded が解消される／pnpm --filter @hierarchidb/ui-map build と pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/data-grid/src/GenericDataGrid.tsx`, `plugins/shape-plugin/src/ui/components/step6/useShapePreviewStep.tsx` など該当箇所
+- ロールバック手順: 仮想化・ループ修正差分を revert する
+- チェックリスト:
+  - GenericDataGrid の仮想スクロールを復活する
+  - ShapePreviewStep の更新ループ原因を特定し抑止する
+  - pnpm --filter @hierarchidb/ui-map build を実行する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 23:05 JST 仮想スクロール復活と更新ループ修正に着手。
+  - update: 2026-01-23 23:20 JST GenericDataGrid の仮想スクロールを復活し、検索/選択の更新ループを抑止。
+  - done: 2026-01-23 23:25 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define 警告あり）。pnpm typecheck exit 0。
+
+2305) audit/ui/preview-metadata-virtualization (P2) — 進行中 (2026-01-23)
+- ブランチ名: audit/ui/preview-metadata-virtualization
+- 依存: なし
+- 受け入れ基準: メタデータ一覧の仮想化実装有無を確認し、パフォーマンス改善案を整理して共有する／必要に応じて修正方針を提示する
+- 影響範囲: `packages/ui/map/src/preview/ShapePreviewList.tsx`, `packages/ui/map/src/preview/MapPreviewFloatingTable.tsx`, `packages/ui/data-grid/src/GenericDataGrid.tsx`
+- ロールバック手順: なし（調査のみ）
+- チェックリスト:
+  - 表示コンポーネントの仮想化実装を確認する
+  - 既存依存に合った改善案を整理する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 22:55 JST メタデータ一覧の仮想化有無と改善案の調査に着手。
+
+2304) fix/shape/preview-metadata-loading-stuck (P1) — 進行中 (2026-01-23)
+- ブランチ名: fix/shape/preview-metadata-loading-stuck
+- 依存: なし
+- 受け入れ基準: フィーチャー一覧テーブルが Loading 状態で止まらず、メタデータが表示される／metadataLoaded が適切に更新される／pnpm --filter @hierarchidb/ui-map build と pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/preview/useVectorTilePreviewMetadata.ts`, `plugins/shape-plugin/src/ui/components/step6/useShapePreviewStep.ts`
+- ロールバック手順: preview metadata の差分を revert する
+- チェックリスト:
+  - Loading が継続する原因を特定する
+  - metadataLoaded/metadataLoading の更新が正しく伝播するよう修正する
+  - pnpm --filter @hierarchidb/ui-map build を実行する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 22:38 JST preview metadata の Loading 固定問題の修正に着手。
+  - update: 2026-01-23 22:45 JST StrictMode の二重実行で metadataKeyRef が残って読み込みが抑止されるため、cleanup で key を解除。
+  - done: 2026-01-23 22:48 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define 警告あり）。pnpm typecheck exit 0。
+
+2303) fix/ui/map-preview-metadata-loop (P1) — 進行中 (2026-01-23)
+- ブランチ名: fix/ui/map-preview-metadata-loop
+- 依存: なし
+- 受け入れ基準: useVectorTilePreviewMetadata の Maximum update depth exceeded が解消される／メタデータ取得が同一条件で再実行されない／pnpm --filter @hierarchidb/ui-map build と pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/preview/useVectorTilePreviewMetadata.ts`
+- ロールバック手順: useVectorTilePreviewMetadata の差分を revert する
+- チェックリスト:
+  - 依存配列/状態更新の見直しで再実行ループを止める
+  - pnpm --filter @hierarchidb/ui-map build を実行する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 22:22 JST useVectorTilePreviewMetadata の更新ループ修正に着手。
+  - update: 2026-01-23 22:32 JST metadataKey を ref で安定化し、依存変化時のみローディング初期化するよう修正。
+  - done: 2026-01-23 22:35 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define 警告あり）。pnpm typecheck exit 0。
+
+2302) fix/ui/map-stats-panel-loop (P1) — 進行中 (2026-01-23)
+- ブランチ名: fix/ui/map-stats-panel-loop
+- 依存: なし
+- 受け入れ基準: MapStatsPanel の useSyncExternalStore 警告（getSnapshot cache）と Maximum update depth exceeded が解消される／統計値の更新が Map 本体の再描画トリガーにならない／pnpm --filter @hierarchidb/ui-map build と pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/components/ResourceLayerMap.tsx`
+- ロールバック手順: MapStatsPanel まわりの差分を revert する
+- チェックリスト:
+  - useSyncExternalStore の getSnapshot が安定参照を返すよう修正する
+  - stats 更新を ref/jotai で維持し再描画を最小化する
+  - pnpm --filter @hierarchidb/ui-map build を実行する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 22:05 JST MapStatsPanel の警告/更新ループ修正に着手。
+  - update: 2026-01-23 22:15 JST MapStatsPanel の snapshot を安定参照化し、tile/feature の更新通知を同一参照で管理するよう修正。
+  - done: 2026-01-23 22:18 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define 警告あり）。pnpm typecheck exit 0。
+
+2301) fix/shape/step6-useShapePreviewStepView-typecheck (P1) — 進行中 (2026-01-23)
+- ブランチ名: fix/shape/step6-useShapePreviewStepView-typecheck
+- 依存: なし
+- 受け入れ基準: useShapePreviewStepView の TS1128 が再現しない／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/useShapePreviewStepView.ts`（調査のみ）
+- ロールバック手順: なし（変更が発生した場合は該当差分を revert する）
+- チェックリスト:
+  - TS1128 の再現有無を確認する
+  - 必要なら構文エラーを修正する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 20:30 JST useShapePreviewStepView の TS1128 調査に着手。
+  - done: 2026-01-23 20:31 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。TS1128 は再現せず。
+
+2300) fix/shape/map-preview-floating-table-loop (P1) — 進行中 (2026-01-23)
+- ブランチ名: fix/shape/map-preview-floating-table-loop
+- 依存: なし
+- 受け入れ基準: MapPreviewFloatingTable の Maximum update depth exceeded が解消される／プレビュー地図の一覧表示と選択/ホバーが従来どおり機能する／pnpm --filter @hierarchidb/ui-map typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/tabular-extract/src/components/TabularDataFilter.tsx`
+- ロールバック手順: MapPreviewFloatingTable 周辺の変更差分を revert する
+- チェックリスト:
+  - MapPreviewFloatingTable の再レンダーループ原因を特定する
+  - 依存配列/メモ化/状態更新の見直しでループを解消する
+  - pnpm --filter @hierarchidb/ui-map typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 20:10 JST MapPreviewFloatingTable の更新ループ修正に着手。
+  - update: 2026-01-23 20:20 JST hasUserColumnSelection が false の間は visibleColumnIds を更新しないよう調整し、列変更時の差分のみ同期するよう修正。
+  - done: 2026-01-23 20:22 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
+
+2300) fix/styler/step3-filter-initial-apply (P1) — 完了 (2026-01-23)
+- ブランチ名: fix/styler/step3-filter-initial-apply
+- 依存: なし
+- 受け入れ基準: Styler Step3 の初回フィルタで先頭の Year equals 2023 が無視されない（初回から正しく反映される）／文字追加・削除のような UI 操作をしなくてもフィルタが適用される／既存のフィルタ編集・保存フローに副作用がない／pnpm --filter @hierarchidb/styler-plugin typecheck が exit 0／TASKS.md に運用ログを記録する
+- 影響範囲: `packages/ui/tabular-extract/src/components/TabularDataFilter.tsx`
+- ロールバック手順: Styler Step3 フィルタ初回適用の差分を revert する
+- チェックリスト:
+  - 初回レンダリング時にフィルタが適用されない原因を特定する
+  - 初回からフィルタが正しく適用されるよう修正する
+  - pnpm --filter @hierarchidb/styler-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 12:40 JST Styler Step3 フィルタ初回適用の不具合調査に着手。
+  - update: 2026-01-23 21:05 JST 初回フィルタの enabled を正規化して初期適用を安定化。
+  - done: 2026-01-23 21:10 JST pnpm --filter @hierarchidb/styler-plugin typecheck exit 0 を確認。
+
+
+2301) fix/styler/step2-remove-preview-accordion (P1) — 完了 (2026-01-23)
+- ブランチ名: fix/styler/step2-remove-preview-accordion
+- 依存: なし
+- 受け入れ基準: Styler Step2 のアコーディオンにプレビューが表示されない（非同期追加も含め撤去）／Step2 の他の入力・検証・保存フローが維持される／pnpm --filter @hierarchidb/styler-plugin typecheck が exit 0／TASKS.md に運用ログを記録する
+- 影響範囲: `plugins/styler-plugin/src/ui/components/StylerFilterStep.tsx`, `plugins/spreadsheet-plugin/src/ui/components/TabularKeyValuePanels.tsx`, `plugins/spreadsheet-plugin/src/ui/components/TabularFilterSections.tsx`, `plugins/spreadsheet-plugin/src/ui/components/steps/TabularDataFilterStep.tsx`
+- ロールバック手順: Step2 のプレビュー撤去差分を revert する
+- チェックリスト:
+  - Step2 のプレビュー表示経路を特定する
+  - プレビューのアコーディオン表示を撤去する
+  - pnpm --filter @hierarchidb/styler-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 21:20 JST Styler Step2 のプレビュー撤去に着手。
+  - update: 2026-01-23 21:28 JST Step2 でプレビューアコーディオンを無効化するフラグを追加。
+  - update: 2026-01-23 21:29 JST pnpm --filter @hierarchidb/spreadsheet-plugin build で型定義を更新。
+  - done: 2026-01-23 21:30 JST pnpm --filter @hierarchidb/styler-plugin typecheck exit 0 を確認。
+
+2299) fix/styler/auth-dialog-loop (P1) — 進行中 (2026-01-23)
+- ブランチ名: fix/styler/auth-dialog-loop
+- 依存: なし
+- 受け入れ基準: 認証フロー完了後に同ダイアログが再表示されない（再試行や再読み込みでも再発しない）／401時のダイアログ表示は維持される（無条件に抑制しない）／pnpm --filter @hierarchidb/app typecheck が exit 0／TASKS.md に運用ログを記録する
+- 影響範囲: `packages/features/auth-recovery/src/AuthService.ts`, `packages/ui/auth/src/contexts/SimpleBFFAuthContext.tsx`, `plugins/styler-plugin/src/ui/components/steps/**`
+- ロールバック手順: auth-recovery/UI auth の差分を revert する
+- チェックリスト:
+  - 認証成功時に再発する 401 ダイアログの原因を特定する
+  - 再発しないように抑制／リトライの制御を追加する
+  - pnpm --filter @hierarchidb/app typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 12:05 JST 認証成功後もダイアログが再表示される問題の調査に着手。
+  - update: 2026-01-23 12:12 JST Missing Bearer token のケースで認証済みなら自動解決する制御を追加。
+  - update: 2026-01-23 12:25 JST AuthService が localStorage も参照するようにし、UI経由の Authorization 付与を有効化。
+  - done: 2026-01-23 12:27 JST pnpm --filter @hierarchidb/app typecheck exit 0 を確認。
+
+2298) fix/styler/step2-cors-auth (P1) — 進行中 (2026-01-23)
+- ブランチ名: fix/styler/step2-cors-auth
+- 依存: なし
+- 受け入れ基準: Styler Step2 の CSV ダウンロードで Authorization が付与され、CORS proxy の 401（Missing Bearer token）が解消される／Spreadsheet のダウンロード経路で auth が有効化され、scope はプラグインIDから安全に解決される（不明な場合は spreadsheet にフォールバック）／pnpm --filter @hierarchidb/spreadsheet-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/spreadsheet-plugin/src/services/SpreadsheetTabularApiDriver.ts`
+- ロールバック手順: SpreadsheetTabularApiDriver の auth 有効化差分を revert する
+- チェックリスト:
+  - FetchNetworkPort の auth を有効化し scope を適切に解決する
+  - Styler Step2 の CORS proxy ダウンロードで Authorization が付与されることを確認する
+  - pnpm --filter @hierarchidb/spreadsheet-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 11:45 JST Styler Step2 の CORS proxy 認証ヘッダー付与に着手。
+  - update: 2026-01-23 11:50 JST SpreadsheetTabularApiDriver の FetchNetworkPort で auth を有効化し scope 解決を追加。
+  - done: 2026-01-23 11:52 JST pnpm --filter @hierarchidb/spreadsheet-plugin typecheck exit 0 を確認。
+
 2295) feat/shape/styler-code-coloring (P1) — 進行中 (2026-01-23)
 - ブランチ名: feat/shape/styler-code-coloring
 - 依存: なし
@@ -49,6 +245,42 @@
   - done: 2026-01-22 20:19 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
 
 2292) fix/shape/step6-preview-hover-snackbar (P1) — 進行中 (2026-01-22)
+
+2298) refactor/worker/shared-dexie-stores (P1) — 進行中 (2026-01-23)
+- ブランチ名: refactor/worker/shared-dexie-stores
+- 依存: なし
+- 受け入れ基準: VectorTileStore/FeatureStore の Dexie アダプタを共通化し、shape/route が新実装を参照する／既存の書き込み・削除挙動が維持される／pnpm --filter @hierarchidb/runtime-worker typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/runtime-worker/src/**`, `plugins/shape-plugin/src/worker/**`, `plugins/route-plugin/src/worker/**`
+- ロールバック手順: 共通化ファイル追加と差し替えを revert する
+- チェックリスト:
+  - 共通 Dexie アダプタを runtime-worker に追加する
+  - shape/route のストア実装を共通化へ差し替える
+  - pnpm --filter @hierarchidb/runtime-worker typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 12:10 JST 共通 Dexie アダプタの実装に着手。
+  - update: 2026-01-23 12:40 JST runtime-workerにDexie共通アダプタ追加、shape/routeのストア実装を差し替え、shapeGroupStoreを追加。
+  - update: 2026-01-23 12:45 JST pnpm --filter @hierarchidb/runtime-worker typecheck exit 0。pnpm --filter @hierarchidb/runtime-worker build exit 0（tsdown: define警告）。
+  - done: 2026-01-23 12:50 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 / pnpm --filter @hierarchidb/route-plugin typecheck exit 0。
+
+2297) audit/shape-route/shared-code-opportunities (P1) — 進行中 (2026-01-23)
+- ブランチ名: audit/shape-route/shared-code-opportunities
+- 依存: なし
+- 受け入れ基準: shape-plugin/route-pluginの現行実装を確認し、共通化候補を具体的に列挙する／影響範囲とリスクを整理する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/**`, `plugins/route-plugin/**`, `packages/**`, `app/**`（調査のみ）
+- ロールバック手順: なし（調査のみ）
+- チェックリスト:
+  - 両プラグインのコード構成と責務を確認する
+  - 共通化候補の具体例を整理する
+  - 影響範囲とリスクを整理する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 10:50 JST shape/routeの共通化候補の調査に着手。
+  - update: 2026-01-23 11:20 JST データストア/バッチ進行/ステップUI/タイル保存の共通化候補を整理。
+  - done: 2026-01-23 11:25 JST shape/routeの共通化余地を列挙して報告。
+  - update: 2026-01-23 11:40 JST shape基準での共通化整理を再評価。
+  - update: 2026-01-23 11:55 JST 共通化設計（置き場所/API形状）を整理。
+  - done: 2026-01-23 12:00 JST 共通化設計案を提示。
 
 2296) audit/shape/vt-indexeddb-usage (P1) — 進行中 (2026-01-22)
 - ブランチ名: audit/shape/vt-indexeddb-usage
@@ -480,6 +712,11 @@
   - update: 2026-01-21 09:36 JST ADM1集約行の作成、一覧IDの統一、自治体/国の階層展開、エラー集約を実装。
   - update: 2026-01-21 09:37 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define 警告あり、dist 型更新）。
   - update: 2026-01-21 09:39 JST pnpm typecheck exit 0（tsdown define 警告あり）。手動検証は未実施。
+  - start: 2026-01-21 10:02 JST Step6「ベクトルタイル準備中」表示の実態調査に着手。
+  - update: 2026-01-21 10:05 JST ShapePreviewStep の tilesChecking 判定と useShapePreviewStep の getVectorTileSummary 呼び出しを確認。
+  - update: 2026-01-21 10:10 JST 非同期地図表示の実装が別経路にあるとの指摘を受け、認識を修正して再調査へ。
+  - update: 2026-01-21 10:18 JST Step6 のタイルサマリポーリングと準備中ゲートを削除し、地図を常時表示するよう変更。
+  - update: 2026-01-21 10:24 JST pnpm typecheck exit 0（tsdown define 警告あり）。手動検証は未実施。
 
 2272) fix/shape/step3-index-scroll-not-moving (P1) — 進行中 (2026-01-22)
 - ブランチ名: fix/shape/step3-index-scroll-not-moving
@@ -6689,3 +6926,49 @@
   - update: 2026-01-23 19:00 JST pnpm --filter @hierarchidb/vt-orchestrator test exit 0 を確認。
   - blocked: 2026-01-23 19:02 JST pnpm --filter @hierarchidb/shape-plugin test が geoboundaries.org の DNS 解決失敗（ENOTFOUND）で失敗。ネットワーク到達確認/対応方針の指示待ち。
   - done: 2026-01-23 19:05 JST pnpm --filter @hierarchidb/shape-plugin test exit 0 を確認。
+2297) feat/ui/map-dexie-tile-stats (P1) — 進行中 (2026-01-23)
+- ブランチ名: feat/ui/map-dexie-tile-stats
+- 依存: なし
+- 受け入れ基準: Dexieタイルのviewport内レイヤー別地物数／タイルリクエスト数／データサイズをUI表示する／リモートURLタイルには適用しない／既存の地図表示に影響しない／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/components/**`, `plugins/shape-plugin/src/ui/components/step6/**`（調査後に確定）
+- ロールバック手順: 統計UIとタイル計測の差分を revert する
+- チェックリスト:
+  - VectorTileLayer で Dexie タイルのリクエスト数/サイズを計測する
+  - ResourceLayerMap で viewport のレイヤー別地物数を集計する
+  - 統計UIを表示する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 10:30 JST Dexieタイル統計UI（レイヤー別地物数/タイル数/サイズ）の実装に着手。
+  - update: 2026-01-23 10:55 JST ResourceLayerMap に統計UIとviewport集計、VectorTileLayer にDexieタイルのリクエスト計測を追加。
+  - update: 2026-01-23 11:05 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define 警告あり）。
+  - update: 2026-01-23 11:07 JST pnpm typecheck exit 0（tsdown define 警告あり）。手動検証は未実施。
+  - update: 2026-01-23 11:20 JST Step6地図コンテナのボーダーとパディングを撤去。
+  - update: 2026-01-23 11:26 JST pnpm typecheck exit 0（tsdown define 警告あり）。手動検証は未実施。
+  - update: 2026-01-23 11:35 JST Dexie統計の地物数更新をrender/sourcedataでもトリガーするよう調整。
+  - update: 2026-01-23 12:05 JST Dexie統計UIでRequest以外が0表示の原因調査と修正に着手。
+  - update: 2026-01-23 12:25 JST VectorTileLayerのタイル統計コールバックをref化し、viewport地物数はqueryRenderedFeaturesの全件集計へ変更。
+  - done: 2026-01-23 12:28 JST pnpm typecheck exit 0（tsdown define 警告あり）を確認。
+  - update: 2026-01-23 12:45 JST Step6の地図コンテナpadding撤去とDexie統計のviewport地物数集計をquerySourceFeatures基準に変更。
+  - blocked: 2026-01-23 12:50 JST pnpm typecheck が ui-map の querySourceFeatures 型未定義で失敗（TS2339）。
+  - done: 2026-01-23 12:55 JST pnpm typecheck exit 0（tsdown define 警告あり）を確認。
+  - update: 2026-01-23 13:40 JST Step6の全画面時padding無効化フラグとVTレイヤー名表示・sourceLayer解決を追加。
+  - update: 2026-01-23 13:45 JST pnpm --filter @hierarchidb/ui-dialog build exit 0（tsdown define 警告あり）。
+  - blocked: 2026-01-23 13:46 JST pnpm typecheck が app の PluginDialogHost props で removePaddingWithFullScreenMode 不一致エラー。
+  - update: 2026-01-23 13:46 JST pnpm --filter @hierarchidb/plugin-ui-host build exit 0（tsdown define 警告あり）。
+  - done: 2026-01-23 13:48 JST pnpm typecheck exit 0（tsdown define 警告あり）を確認。
+  - update: 2026-01-23 14:00 JST タイルレイヤー名リセット処理を追加。
+  - done: 2026-01-23 14:02 JST pnpm typecheck exit 0（tsdown define 警告あり）を確認。
+  - update: 2026-01-22 11:54 JST Vector Tile Layers パネルを Dexie Tile Stats と同一配色で右隣に配置するよう統合。
+  - update: 2026-01-22 11:55 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define 警告あり）。
+  - done: 2026-01-22 12:34 JST pnpm typecheck exit 0（tsdown define 警告あり）を確認。
+  - update: 2026-01-22 12:00 JST admin1 レイヤー解決で不一致時のフォールバックを無効化し、admin0のみフォールバック許可に変更。
+  - update: 2026-01-22 12:43 JST Viewport Features 集計の連続更新でMaximum update depthが出ないよう差分更新に変更。
+  - update: 2026-01-22 12:54 JST ui-map の統計値更新を ref ストア + useSyncExternalStore に移行し、Map本体の再描画を抑制。useVectorTilePreviewMetadata の依存キーを安定化。
+  - update: 2026-01-22 12:54 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define 警告あり）。
+  - done: 2026-01-22 12:54 JST pnpm typecheck exit 0（tsdown define 警告あり）を確認。
+  - done: 2026-01-22 12:43 JST pnpm typecheck exit 0（tsdown define 警告あり）を確認。
+  - blocked: 2026-01-22 12:00 JST pnpm typecheck が styler-plugin の StylerFilterStep.tsx (showPreview props) で失敗。対応方針の指示待ち。
+  - update: 2026-01-22 11:39 JST Step6 のベクタタイルレイヤー解決を境界レイヤー判定つきに更新し、境界のみの場合はライン描画を使うよう調整。VectorTileLayer の feature state に sourceLayer を付与。
+  - update: 2026-01-22 11:40 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define 警告あり）。
+  - blocked: 2026-01-22 11:41 JST pnpm typecheck が runtime-worker の dexie-stores.ts で TS2352。既存エラーのため対応方針の指示待ち。

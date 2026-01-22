@@ -27,6 +27,7 @@ type FilterInnerProps<T extends SpreadsheetEntity> = ReturnType<typeof useTabula
   dialogRef?: PluginStepProps<T>['dialogRef'];
   translationNamespace?: string;
   filtersFromAtom: TabularFilterRule[];
+  showPreview?: boolean;
 };
 
 const TabularDataFilterInner = <T extends SpreadsheetEntity>({
@@ -46,6 +47,7 @@ const TabularDataFilterInner = <T extends SpreadsheetEntity>({
   setValid,
   setError,
   dialogRef,
+  showPreview = true,
 }: FilterInnerProps<T>) => {
   const {
     t,
@@ -133,6 +135,7 @@ const TabularDataFilterInner = <T extends SpreadsheetEntity>({
             onValueColumnChange={renderSectionsProps.onValueColumnChange}
             dialogRef={renderSectionsProps.dialogRef}
             menuContainer={renderSectionsProps.menuContainer}
+            showPreview={showPreview}
           />
         ))
       }
@@ -145,6 +148,7 @@ export interface TabularDataFilterStepProps<T extends SpreadsheetEntity> extends
   onFiltersChanged?: (filters: TabularFilterRule[]) => void;
   onPreviewReady?: (preview: TabularDataResult) => void;
   translationNamespace?: string;
+  showPreview?: boolean;
 }
 
 export const TabularDataFilterStep = <T extends SpreadsheetEntity>({
@@ -157,6 +161,7 @@ export const TabularDataFilterStep = <T extends SpreadsheetEntity>({
   onFiltersChanged,
   onPreviewReady,
   translationNamespace,
+  showPreview = true,
 }: TabularDataFilterStepProps<T>) => {
   const [keyValueValid, setKeyValueValid] = useState(false);
   const keyValueState = useTabularKeyValueState<T>({
@@ -198,6 +203,7 @@ export const TabularDataFilterStep = <T extends SpreadsheetEntity>({
         dialogRef={dialogRef}
         translationNamespace={translationNamespace}
         filtersFromAtom={filtersFromAtom}
+        showPreview={showPreview}
       />
     </TabularProvider>
   );

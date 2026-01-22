@@ -79,6 +79,7 @@ export interface PluginDialogControllerOptions {
   onSuccess?: (nodeId: NodeId) => void;
   footerOptions?: PluginDialogFooterOptions;
   autosaveEnabled?: boolean;
+  removePaddingWithFullScreenMode?: boolean;
   autoBuild?: {
     enabled?: boolean;
     onComplete?: () => void;
@@ -1113,6 +1114,7 @@ export function usePluginDialogController(
       size: dialogSize,
       onSizeChange: handleSizeChangeWithPersist as (next?: DialogSize) => void,
       displayMode,
+      removePaddingWithFullScreenMode: Boolean(options.removePaddingWithFullScreenMode),
       onDisplayModeChange: (mode: DialogDisplayMode) => {
         const currentWindow = dialogUIStateRef.current?.dialogWindow ?? null;
         const shouldCaptureRestore =
@@ -1152,6 +1154,7 @@ export function usePluginDialogController(
       dialogSize,
       handleSizeChangeWithPersist,
       displayMode,
+      options.removePaddingWithFullScreenMode,
       HeaderComponent,
       ContentComponent,
       FooterComponent,

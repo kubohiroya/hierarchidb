@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import { useTheme } from '@mui/material/styles';
 import type { DataSourceName, FetchTaskPayload, ShapeEntity } from '../../../common/types/index.js';
 import { isShapePreviewMetadataEnabled } from '../../../common/config/previewFlags.js';
@@ -22,6 +22,7 @@ import type {
 import type { MapLibreMapInstance } from '@hierarchidb/ui-map';
 import {
   buildErrorSummaryById,
+  buildHighlightKey,
   mapHoverCandidatesAtom,
   mapHoverMatchesAtom,
   mapSearchMatchesAtom,
@@ -31,6 +32,8 @@ import {
   useVectorTilePreviewSelection,
 } from '@hierarchidb/ui-map';
 import { getDBName } from '@hierarchidb/util';
+import { VectorTile } from '@mapbox/vector-tile';
+import Pbf from 'pbf';
 //import { getShapeDbAPIClient } from '../../../services/batch/ShapeBuildAPIClient.ts';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import { shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
@@ -119,14 +122,14 @@ const isNumericId = (value?: string): boolean => {
   return /^[0-9]+$/.test(value);
 };
 
-const fetchTileSummary = async (nodeId: string) => {
-  const summary = await shapeQueryAPIImpl.getVectorTileSummary(toNodeId(nodeId));
-  return { tiles: summary.tiles, totalBytes: summary.totalBytes };
-};
-
-const resolveTilesAvailable = async (nodeId: string): Promise<boolean> => {
-  const summary = await fetchTileSummary(nodeId);
-  return summary.tiles > 0;
+const parseVectorTileLayerNames = (data: ArrayBuffer): string[] => {
+  if (!data || data.byteLength === 0) return [];
+  try {
+    const tile = new VectorTile(new Pbf(new Uint8Array(data)));
+    return Object.keys(tile.layers ?? {});
+  } catch {
+    return [];
+  }
 };
 
 const fetchTile = async (
@@ -151,6 +154,8 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   const [selectionContext, setSelectionContext] = useAtom(shapePreviewSelectionContextAtom);
   const hoverCandidates = useAtomValue(mapHoverCandidatesAtom);
   const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
+  const [tileLayerNames, setTileLayerNames] = useState<string[]>([]);
+  const tileLayerNamesRef = useRef<Set<string> | null>(null);
   const [featureSearchKeyword, setFeatureSearchKeyword] = useState('');
   const [matchedFeatureIds, setMatchedFeatureIds] = useState<string[]>([]);
   const [selectedFeatureIds, setSelectedFeatureIds] = useState<string[]>([]);
@@ -168,8 +173,6 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       : null;
   const nodeKey = activeNodeId;
   const processingStatus = data?.processingStatus ?? null;
-  const [tilesAvailable, setTilesAvailable] = useState(false);
-  const [tilesChecking, setTilesChecking] = useState(false);
   const baseLayerId = 'shape-preview';
   const baseSourceId = 'shape-preview-source';
   const tileDbName = getDBName('shape');
@@ -192,90 +195,11 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   const selectionMatrix = previewDraft.selectedArrayByCountries;
   const selectionDataSource = previewDraft.buildConfig?.dataSourceName as DataSourceName | undefined;
 
-  useEffect(() => {
-    let cancelled = false;
-    const key = nodeKey ? String(nodeKey) : null;
-    if (!key) {
-      setTilesAvailable(false);
-      setTilesChecking(false);
-      return () => {
-        cancelled = true;
-      };
-    }
-    setTilesChecking(true);
-    resolveTilesAvailable(key).then((available) => {
-      if (cancelled) return;
-      setTilesAvailable(available);
-      setTilesChecking(false);
-    }).catch(() => {
-      if (cancelled) return;
-      setTilesAvailable(false);
-      setTilesChecking(false);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [nodeKey]);
-
-  useEffect(() => {
-    if (!nodeKey || tilesAvailable) return;
-    if (!processingStatus || processingStatus === 'processing') return;
-    let cancelled = false;
-    setTilesChecking(true);
-    resolveTilesAvailable(String(nodeKey)).then((available) => {
-      if (cancelled) return;
-      setTilesAvailable(available);
-      setTilesChecking(false);
-    }).catch(() => {
-      if (cancelled) return;
-      setTilesChecking(false);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [nodeKey, processingStatus, tilesAvailable]);
-
   const statusForPolling = processingStatus ?? 'processing';
-  const shouldPollTiles = Boolean(activeNodeId)
-    && !tilesAvailable
-    && statusForPolling === 'processing';
   const shouldPollMetadata = Boolean(activeNodeId)
     && metadataEnabled
     && statusForPolling === 'processing';
   const metadataPollIntervalMs = shouldPollMetadata ? 2000 : undefined;
-
-  useEffect(() => {
-    if (!shouldPollTiles) {
-      setTilesChecking(false);
-      return;
-    }
-    let cancelled = false;
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-    const pollSummary = async () => {
-      setTilesChecking(true);
-      try {
-        const available = await resolveTilesAvailable(String(activeNodeId));
-        if (cancelled) return;
-        if (available) {
-          setTilesAvailable(true);
-          setTilesChecking(false);
-          return;
-        }
-      } catch (error) {
-        console.debug('[ShapePreviewStep] tile summary load failed', error);
-      }
-      if (!cancelled) {
-        timeoutId = setTimeout(pollSummary, 2000);
-      }
-    };
-    void pollSummary();
-    return () => {
-      cancelled = true;
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
-  }, [activeNodeId, shouldPollTiles]);
 
   useEffect(() => {
     let cancelled = false;
@@ -997,6 +921,23 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
 
   const selectedFeatureIdSet = useMemo(() => new Set(expandedSelectedIds), [expandedSelectedIds]);
 
+  const searchMatchKeysRef = useRef<string[]>([]);
+  const selectedMatchKeysRef = useRef<string[]>([]);
+  const hoverMatchKeysRef = useRef<string[]>([]);
+  const setMatchesIfChanged = useCallback((
+    next: MapHighlightEntry[],
+    keyRef: MutableRefObject<string[]>,
+    setter: (entries: MapHighlightEntry[]) => void,
+  ) => {
+    const nextKeys = next.map(buildHighlightKey);
+    const prevKeys = keyRef.current;
+    if (prevKeys.length === nextKeys.length && prevKeys.every((value, index) => value === nextKeys[index])) {
+      return;
+    }
+    keyRef.current = nextKeys;
+    setter(next);
+  }, [buildHighlightKey]);
+
   const selectedErrorBounds = useMemo(() => {
     if (selectedFeatureIdSet.size === 0) return null;
     let bounds: { minLng: number; minLat: number; maxLng: number; maxLat: number } | null = null;
@@ -1024,21 +965,21 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
 
   useEffect(() => {
     const entries = expandedMatchedIds.map((id) => buildMapEntry(String(id)));
-    setMapSearchMatches(entries);
-  }, [buildMapEntry, expandedMatchedIds, setMapSearchMatches]);
+    setMatchesIfChanged(entries, searchMatchKeysRef, setMapSearchMatches);
+  }, [buildMapEntry, expandedMatchedIds, setMapSearchMatches, setMatchesIfChanged]);
 
   useEffect(() => {
     const entries = expandedSelectedIds.map((id) => buildMapEntry(String(id)));
-    setMapSelectedMatches(entries);
-  }, [buildMapEntry, expandedSelectedIds, setMapSelectedMatches]);
+    setMatchesIfChanged(entries, selectedMatchKeysRef, setMapSelectedMatches);
+  }, [buildMapEntry, expandedSelectedIds, setMapSelectedMatches, setMatchesIfChanged]);
 
   useEffect(() => {
     if (expandedHoverIds.length === 0) {
-      setMapHoverMatches([]);
+      setMatchesIfChanged([], hoverMatchKeysRef, setMapHoverMatches);
       return;
     }
-    setMapHoverMatches(expandedHoverIds.map((id) => buildMapEntry(String(id))));
-  }, [buildMapEntry, expandedHoverIds, setMapHoverMatches]);
+    setMatchesIfChanged(expandedHoverIds.map((id) => buildMapEntry(String(id))), hoverMatchKeysRef, setMapHoverMatches);
+  }, [buildMapEntry, expandedHoverIds, setMapHoverMatches, setMatchesIfChanged]);
 
   const errorLineCollection = useMemo<ShapeTransformErrorRecord['lineFeatures'] | null>(() => {
     if (normalizedTransformErrorRows.length === 0) return null;
@@ -1071,12 +1012,24 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     interactiveMap.touchZoomRotate?.enable?.();
   }, [mapInstance]);
 
+  useEffect(() => {
+    tileLayerNamesRef.current = null;
+    setTileLayerNames([]);
+  }, [activeNodeId, tilesUrl]);
+
   const tileDataProvider = useCallback<NonNullable<MapWithVectorTilesProps['tileDataProvider']>>(
     async (z: number, x: number, y: number, nodeId?: string) => {
       const resolvedNodeId = nodeId ?? (activeNodeId ? String(activeNodeId) : undefined);
       if (!resolvedNodeId) return null;
       const data = await fetchTile(resolvedNodeId, z, x, y);
       if (!data) return null;
+      if (!tileLayerNamesRef.current) {
+        const names = parseVectorTileLayerNames(data);
+        if (names.length > 0) {
+          tileLayerNamesRef.current = new Set(names);
+          setTileLayerNames(names);
+        }
+      }
       return data;
     },
     [activeNodeId],
@@ -1120,11 +1073,10 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     tilesUrl,
     tilesLayer,
     nodeId: activeNodeId,
-    tilesAvailable,
-    tilesChecking,
     processingStatus,
     tileDbName,
     tileDataProvider,
+    tileLayerNames,
     baseLayerId,
     baseSourceId,
     mapInstance,

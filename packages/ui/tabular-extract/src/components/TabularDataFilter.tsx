@@ -67,6 +67,19 @@ const FILTER_OPERATORS: FilterOperatorOption[] = [
   { value: 'regex', label: 'Regular Expression', types: ['string'] },
 ];
 
+const operatorRequiresValue = (operator: TabularFilterOperator): boolean =>
+  operator !== 'is_null' && operator !== 'is_not_null';
+
+const normalizeInitialFilter = (rule: TabularFilterRule): TabularFilterRule => {
+  if (typeof rule.enabled === 'boolean') {
+    return rule;
+  }
+  const hasValue = rule.value !== '' && rule.value !== null && rule.value !== undefined;
+  const enabled = operatorRequiresValue(rule.operator) ? hasValue : true;
+  return { ...rule, enabled };
+};
+
+
 export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
   tableMetadata,
   onFiltersChanged,
@@ -79,7 +92,11 @@ export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
   renderSections,
 }) => {
   void menuContainer;
-  const [filters, setFilters] = useState<TabularFilterRule[]>(initialFilters);
+  const normalizedInitialFilters = useMemo(
+    () => initialFilters.map(normalizeInitialFilter),
+    [initialFilters]
+  );
+  const [filters, setFilters] = useState<TabularFilterRule[]>(normalizedInitialFilters);
   const [previewDirty, setPreviewDirty] = useState(false);
   const filtersRef = useRef(filters);
 
@@ -93,7 +110,7 @@ export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
     tableId: tableMetadata.id,
     pluginId,
     maxPreviewRows: MAX_PREVIEW_ROWS,
-    initialRules: initialFilters,
+    initialRules: normalizedInitialFilters,
   });
   const previewBusy = previewDirty || isLoading;
 
@@ -325,8 +342,8 @@ export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
 
   // 外部（初期値/atom）から filters が更新された場合に内部状態へ同期する
   useEffect(() => {
-    setFilters((prev) => (filtersEqual(prev, initialFilters) ? prev : initialFilters));
-  }, [filtersEqual, initialFilters]);
+    setFilters((prev) => (filtersEqual(prev, normalizedInitialFilters) ? prev : normalizedInitialFilters));
+  }, [filtersEqual, normalizedInitialFilters]);
 
   const previewNode = previewData ? (
     <Paper variant="outlined" sx={{ height: previewHeight, overflowY: 'auto' }}>

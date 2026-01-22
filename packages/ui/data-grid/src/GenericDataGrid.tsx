@@ -5,7 +5,7 @@
  * This component is purely UI-focused and knows nothing about HierarchiDB's data structures.
  */
 
-import React, { useEffect, useMemo, useState, type CSSProperties, type ReactElement, type ReactNode } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactElement, type ReactNode } from 'react';
 import {
   Box,
   Checkbox,
@@ -27,6 +27,7 @@ import {
 } from '@mui/material';
 import { Download, FilterList, KeyboardArrowDown, KeyboardArrowUp, Refresh, Search } from '@mui/icons-material';
 import type { SxProps, Theme } from '@mui/material/styles';
+import { useVirtualizer } from '@tanstack/react-virtual';
 
 /**
  * Generic column definition
@@ -283,6 +284,7 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
                                            onCellContextMenu,
                                            onCellClick,
                                            enableVirtualization = false,
+                                           rowHeight = 38,
                                            maxHeight = 600,
                                            tableContainerSx,
                                            stopWheelPropagation = false,
@@ -332,15 +334,6 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
       container.removeEventListener('wheel', handleWheel, { capture: true });
     };
   }, [stopWheelPropagation]);
-  /*
-  const _virtualizer = useVirtualizer({
-    count: rows.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: useCallback(() => rowHeight, [rowHeight]),
-    overscan: 5,
-  });
-   */
-
   // Filter rows based on search and filters
   const filteredRows = useMemo(() => {
     let result = [...rows];
@@ -386,6 +379,19 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
     const start = page * rowsPerPage;
     return filteredRows.slice(start, start + rowsPerPage);
   }, [filteredRows, page, rowsPerPage, enableVirtualization]);
+
+  const virtualizer = useVirtualizer({
+    count: enableVirtualization ? displayRows.length : 0,
+    getScrollElement: () => parentRef.current,
+    estimateSize: useCallback(() => rowHeight, [rowHeight]),
+    overscan: 6,
+  });
+  const virtualRows = enableVirtualization ? virtualizer.getVirtualItems() : [];
+  const totalVirtualSize = enableVirtualization ? virtualizer.getTotalSize() : 0;
+  const paddingTop = virtualRows.length > 0 ? virtualRows[0]?.start ?? 0 : 0;
+  const paddingBottom = virtualRows.length > 0
+    ? totalVirtualSize - (virtualRows[virtualRows.length - 1]?.end ?? 0)
+    : 0;
 
   const handleChangePage = (_event: unknown, newPage: number) => {
     onPageChange?.(newPage);
@@ -438,6 +444,7 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
   };
 
   const visibleColumns = useMemo(() => columns.filter((col) => !col.hidden), [columns]);
+  const padColSpan = visibleColumns.length + (selectable ? 1 : 0);
 
   // Render error atoms
   if (error) {
@@ -621,13 +628,20 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
             )}
           </TableHead>
           <TableBody>
-            {displayRows.map((row, index) => {
-              const globalRowIndex = page * rowsPerPage + index;
+            {enableVirtualization && paddingTop > 0 && (
+              <TableRow>
+                <TableCell colSpan={padColSpan} sx={{ height: paddingTop, padding: 0, border: 0 }} />
+              </TableRow>
+            )}
+            {(enableVirtualization ? virtualRows : displayRows.map((_, index) => ({ index }))).map((virtualRow, index) => {
+              const row = displayRows[virtualRow.index];
+              if (!row) return null;
+              const globalRowIndex = enableVirtualization ? virtualRow.index : page * rowsPerPage + index;
               const rowId = getRowId(row, globalRowIndex);
               const state: RowState<T> = {
                 row,
                 rowId,
-                index,
+                index: virtualRow.index,
                 selected: selectedRows.has(rowId),
                 disabled: !!disabledRows?.has(rowId),
                 matched: !!matchedRows?.has(rowId),
@@ -637,7 +651,7 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
               };
 
               const layeredSx: SxProps<Theme>[] = [];
-              if (striped && index % 2 === 0) layeredSx.push({ backgroundColor: 'action.hover' });
+              if (striped && state.index % 2 === 0) layeredSx.push({ backgroundColor: 'action.hover' });
               if (state.matched) layeredSx.push({ boxShadow: 'inset 3px 0 0 0 rgba(25, 118, 210, 0.9)' });
               if (state.selected) layeredSx.push({ backgroundColor: 'primary.light', '&:hover': { backgroundColor: 'primary.light' } });
               if (state.hovered) layeredSx.push({ outline: '1px solid rgba(0,0,0,0.15)' });
@@ -655,7 +669,6 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
                 }
               }
 
-              const rowInlineStyle = rowStyle?.(state);
               const sxParts: SxProps<Theme>[] = [];
               if (onRowClick || onRowDoubleClick) {
                 sxParts.push({ cursor: 'pointer' });
@@ -666,6 +679,11 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
               const sxValue: SxProps<Theme> | undefined = sxParts.length > 0
                 ? (sxParts as unknown as SxProps<Theme>)
                 : undefined;
+
+              const rowInlineStyle = rowStyle?.(state);
+              const resolvedRowStyle = enableVirtualization
+                ? { ...rowInlineStyle, height: rowInlineStyle?.height ?? rowHeight }
+                : rowInlineStyle;
 
               return (
                 <TableRow
@@ -678,7 +696,7 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
                   onMouseLeave={() => !state.disabled && onRowLeave?.(row, rowId)}
                   className={rowClassName?.(state)}
                   sx={sxValue}
-                  style={rowInlineStyle}
+                  style={resolvedRowStyle}
                 >
                   {selectable && (
                     <TableCell padding="checkbox">
@@ -726,6 +744,11 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
                 </TableRow>
               );
             })}
+            {enableVirtualization && paddingBottom > 0 && (
+              <TableRow>
+                <TableCell colSpan={padColSpan} sx={{ height: paddingBottom, padding: 0, border: 0 }} />
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </TableContainer>

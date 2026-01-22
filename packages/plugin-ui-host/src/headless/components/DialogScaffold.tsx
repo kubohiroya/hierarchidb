@@ -33,7 +33,8 @@ export const createHeaderComponent = (
 export const createContentComponent = (dialogRef: React.RefObject<HTMLElement | null>) =>
   memo(function DialogContentWrapper(props: React.PropsWithChildren) {
     const ctx = useDialogContext<Record<string, unknown>>();
-    const disablePadding = Boolean(ctx.frameless && ctx.transparent);
+    const disablePadding = Boolean(ctx.frameless && ctx.transparent)
+      || Boolean(ctx.removePaddingWithFullScreenMode && ctx.displayMode === 'full-screen');
     return (
       <Box
         sx={(theme: Theme) => ({

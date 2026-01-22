@@ -166,6 +166,13 @@ export function AuthRequiredDialog({
   const currentUserPayload = useMemo(() => createUserPayload(user), [user]);
   const tokenExpiresAt = currentUserPayload?.expiresAt;
   const isTokenExpired = typeof tokenExpiresAt === 'number' && tokenExpiresAt <= Date.now();
+  const shouldAutoResolve = useMemo(() => {
+    if (!isAuthenticated || !user) return false;
+    if (isTokenExpired) return false;
+    if (!errorMessage) return false;
+    return /missing bearer token/i.test(errorMessage);
+  }, [errorMessage, isAuthenticated, isTokenExpired, user]);
+
   const authStatusMessage = useMemo(() => {
     if (!isAuthenticated || !user) return null;
     if (isTokenExpired) {
@@ -196,6 +203,13 @@ export function AuthRequiredDialog({
       }
     }
   }, [context.requestId, errorCode, errorMessage, open, pluginType, retryCount, sessionId, url]);
+
+  useEffect(() => {
+    if (!open || !shouldAutoResolve) return;
+    const payload = createUserPayload(user) ?? currentUserPayload;
+    if (!payload) return;
+    onSuccess(payload.token, payload.expiresAt, payload.info);
+  }, [currentUserPayload, onSuccess, open, shouldAutoResolve, user]);
 
   // Keep the dialog visible even when a session exists; user chooses how to proceed.
 

@@ -79,6 +79,7 @@ export interface DialogFrameProps {
   onMinimizeChange?: (next: boolean) => void;
   frameless?: boolean;
   transparent?: boolean;
+  removePaddingWithFullScreenMode?: boolean;
   headerDisplayMode?: SectionVisibilityMode;
   footerDisplayMode?: SectionVisibilityMode;
   headerHoverZoneHeight?: number;

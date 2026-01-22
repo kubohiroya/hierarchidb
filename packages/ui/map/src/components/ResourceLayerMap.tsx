@@ -4,8 +4,8 @@
  */
 
 import type React from 'react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { IconButton, Snackbar } from '@mui/material';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { Box, IconButton, Paper, Snackbar, Typography } from '@mui/material';
 import { Close as CloseIcon, FitScreen as FitScreenIcon, Tune as TuneIcon } from '@mui/icons-material';
 import { createPortal } from 'react-dom';
 import type { MapLibreGeoJSONFeature, MapLibreMapInstance, MapLibreStyle } from '../types/maplibre-public.js';
@@ -51,6 +51,17 @@ type BasemapStyleEntry = {
 type MapLayerType = NonNullable<VectorTileLayerConfig['layerType']>;
 type LayerStyleOverrides = Partial<Record<MapLayerType, Record<string, unknown>>>;
 type Bounds = { minLng: number; minLat: number; maxLng: number; maxLat: number };
+
+
+type MapStatsSnapshot = {
+  tileStats: { requests: number; bytes: number };
+  featureCounts: Record<string, number>;
+};
+
+type MapStatsStore = {
+  subscribe: (listener: () => void) => () => void;
+  getSnapshot: () => MapStatsSnapshot;
+};
 
 export type ResourceVectorLayer = VectorTileDataSource & {
   nodeId: string;
@@ -120,6 +131,11 @@ export type ResourceLayerMapProps = BaseMapProps & {
       autoHideDuration?: number | null;
     };
   };
+  stats?: {
+    enabled?: boolean;
+    position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+    renderExtra?: () => React.ReactNode;
+  };
 };
 
 const LAYER_PAINT_KEYS: Record<MapLayerType, Set<string>> = {
@@ -159,6 +175,85 @@ const sortByPath = <T extends SortableLayer>(items: T[]): T[] =>
     return aKey.localeCompare(bKey);
   });
 
+const formatBytes = (value: number): string => {
+  if (!Number.isFinite(value) || value <= 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let size = value;
+  let index = 0;
+  while (size >= 1024 && index < units.length - 1) {
+    size /= 1024;
+    index += 1;
+  }
+  return `${size.toFixed(size >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
+};
+
+const MapStatsPanel: React.FC<{
+  store: MapStatsStore;
+  vectorLayerEntries: Array<{ id: string; label?: string }>;
+  renderExtra?: () => React.ReactNode;
+}> = ({ store, vectorLayerEntries, renderExtra }) => {
+  const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
+  return (
+    <Box display="flex" gap={1} alignItems="flex-start">
+      <Paper
+        elevation={3}
+        sx={{
+          px: 1.5,
+          py: 1,
+          minWidth: 220,
+          bgcolor: 'background.paper',
+          color: 'text.primary',
+          opacity: 0.92,
+        }}
+      >
+        <Typography variant="caption" fontWeight={700} display="block">
+          Dexie Tile Stats
+        </Typography>
+        <Box mt={0.5}>
+          <Typography variant="caption" display="block">
+            Requests: {snapshot.tileStats.requests.toLocaleString()}
+          </Typography>
+          <Typography variant="caption" display="block">
+            Data: {formatBytes(snapshot.tileStats.bytes)}
+          </Typography>
+        </Box>
+        <Box mt={0.75}>
+          <Typography variant="caption" fontWeight={600} display="block">
+            Viewport Features
+          </Typography>
+          {vectorLayerEntries.length === 0 ? (
+            <Typography variant="caption" display="block">
+              No layers
+            </Typography>
+          ) : (
+            vectorLayerEntries.map((entry) => (
+              <Typography key={entry.id} variant="caption" display="block">
+                {entry.label}: {snapshot.featureCounts[entry.id]?.toLocaleString() ?? '0'}
+              </Typography>
+            ))
+          )}
+        </Box>
+      </Paper>
+      {renderExtra ? (
+        <Paper
+          elevation={3}
+          sx={{
+            px: 1.5,
+            py: 1,
+            minWidth: 220,
+            bgcolor: 'background.paper',
+            color: 'text.primary',
+            opacity: 0.92,
+          }}
+        >
+          {renderExtra()}
+        </Paper>
+      ) : null}
+    </Box>
+  );
+};
+
+
 export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
   const {
     basemapStyles,
@@ -175,6 +270,7 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
     onLoad,
     attributionItems,
     controls,
+    stats,
     ...baseMapProps
   } = props as ResourceLayerMapProps & {
     mapStyleUrl?: string;
@@ -197,6 +293,7 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
   const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
   const [mapControlContainer, setMapControlContainer] = useState<HTMLElement | null>(null);
   const [fitControlContainer, setFitControlContainer] = useState<HTMLElement | null>(null);
+  const [statsContainer, setStatsContainer] = useState<HTMLElement | null>(null);
   const [searchSettingsOpen, setSearchSettingsOpen] = useState(false);
 
   const orderedBasemaps = useMemo(() => (basemapStyles ? sortByPath(basemapStyles) : []), [basemapStyles]);
@@ -205,6 +302,35 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
     () => (geoJsonLayers ? sortByPath(geoJsonLayers) : []),
     [geoJsonLayers]
   );
+
+  const statsEnabled = Boolean(stats?.enabled);
+  const statsPosition = stats?.position ?? 'top-left';
+  const tileStatsRef = useRef({ requests: 0, bytes: 0 });
+  const tileStatsTimerRef = useRef<number | null>(null);
+  const statsStoreRef = useRef({
+    snapshot: {
+      tileStats: { requests: 0, bytes: 0 },
+      featureCounts: {} as Record<string, number>,
+    },
+    listeners: new Set<() => void>(),
+  });
+  const hasDexieLayers = useMemo(
+    () => orderedLayers.some((layer) => Boolean(layer.dbName && layer.tileDataProvider)),
+    [orderedLayers],
+  );
+  const statsActive = statsEnabled && hasDexieLayers;
+  const statsPositionStyle = useMemo(() => {
+    switch (statsPosition) {
+      case 'top-right':
+        return { top: 12, right: 12 };
+      case 'bottom-left':
+        return { bottom: 12, left: 12 };
+      case 'bottom-right':
+        return { bottom: 12, right: 12 };
+      default:
+        return { top: 12, left: 12 };
+    }
+  }, [statsPosition]);
 
   const resolvedBaseStyle = useMemo(() => {
     if (orderedBasemaps.length) return orderedBasemaps[0]?.style;
@@ -233,6 +359,15 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
     const container = mapInstance.getContainer().querySelector('.maplibregl-ctrl-top-right');
     setMapControlContainer(container instanceof HTMLElement ? container : null);
   }, [mapInstance]);
+
+  useEffect(() => {
+    if (!mapInstance || !statsActive) {
+      setStatsContainer(null);
+      return;
+    }
+    const container = mapInstance.getContainer();
+    setStatsContainer(container instanceof HTMLElement ? container : null);
+  }, [mapInstance, statsActive]);
 
   useEffect(() => {
     if (!mapInstance || !orderedGeoJsonLayers.length) return;
@@ -299,6 +434,144 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
   const selectionEnabled = interactionEnabled && (selectionConfig?.enabled ?? true);
   const fitSelectionEnabled = interactionEnabled && (fitSelectionConfig?.enabled ?? true);
   const snackbarEnabled = interactionEnabled ? (interactionSnackbar?.enabled ?? true) : Boolean(snackbar);
+
+  const vectorLayerEntries = useMemo(() => (
+    orderedLayers.map((layer) => {
+      const layerId = layer.layerConfig?.layerId ?? `resource-layer-${layer.nodeId}`;
+      const sourceId = layer.layerConfig?.sourceId ?? `resource-source-${layer.nodeId}`;
+      return {
+        id: layerId,
+        label: layer.layerConfig?.layerId ?? layer.nodeId,
+        sourceId,
+        sourceLayer: layer.layerConfig?.sourceLayer,
+      };
+    })
+  ), [orderedLayers]);
+
+  const subscribeToStats = useCallback<MapStatsStore['subscribe']>((listener) => {
+    statsStoreRef.current.listeners.add(listener);
+    return () => {
+      statsStoreRef.current.listeners.delete(listener);
+    };
+  }, []);
+
+  const getStatsSnapshot = useCallback<MapStatsStore['getSnapshot']>(() => statsStoreRef.current.snapshot, []);
+
+  const notifyStats = useCallback(() => {
+    statsStoreRef.current.listeners.forEach((listener) => listener());
+  }, []);
+
+  const setStatsSnapshot = useCallback((next: MapStatsSnapshot) => {
+    const current = statsStoreRef.current.snapshot;
+    if (current.tileStats === next.tileStats && current.featureCounts === next.featureCounts) return;
+    statsStoreRef.current.snapshot = next;
+  }, []);
+
+  const resetTileStats = useCallback(() => {
+    const next = { requests: 0, bytes: 0 };
+    tileStatsRef.current = next;
+    setStatsSnapshot({ tileStats: next, featureCounts: statsStoreRef.current.snapshot.featureCounts });
+    notifyStats();
+  }, [notifyStats, setStatsSnapshot]);
+
+  const setFeatureCountsIfChanged = useCallback((nextCounts: Record<string, number>) => {
+    const prev = statsStoreRef.current.snapshot.featureCounts;
+    const nextKeys = Object.keys(nextCounts);
+    const prevKeys = Object.keys(prev);
+    if (nextKeys.length === prevKeys.length) {
+      let same = true;
+      for (const key of nextKeys) {
+        if (prev[key] !== nextCounts[key]) {
+          same = false;
+          break;
+        }
+      }
+      if (same) return;
+    }
+    setStatsSnapshot({ tileStats: statsStoreRef.current.snapshot.tileStats, featureCounts: nextCounts });
+    notifyStats();
+  }, [notifyStats, setStatsSnapshot]);
+
+  const handleTileRequest = useCallback((statsEntry: { bytes: number }) => {
+    if (!statsActive) return;
+    tileStatsRef.current.requests += 1;
+    tileStatsRef.current.bytes += Math.max(0, statsEntry.bytes);
+    if (tileStatsTimerRef.current !== null) return;
+    tileStatsTimerRef.current = window.setTimeout(() => {
+      tileStatsTimerRef.current = null;
+      const nextStats = { ...tileStatsRef.current };
+      setStatsSnapshot({ tileStats: nextStats, featureCounts: statsStoreRef.current.snapshot.featureCounts });
+      notifyStats();
+    }, 250);
+  }, [notifyStats, setStatsSnapshot, statsActive]);
+
+  useEffect(() => {
+    if (!statsActive) {
+      resetTileStats();
+      setStatsSnapshot({ tileStats: statsStoreRef.current.snapshot.tileStats, featureCounts: {} });
+      notifyStats();
+      return;
+    }
+    resetTileStats();
+  }, [resetTileStats, setStatsSnapshot, statsActive, vectorLayerEntries.length, notifyStats]);
+
+  useEffect(() => {
+    if (!mapInstance || !statsActive) return;
+    let frameId: number | null = null;
+    const mapWithSource = mapInstance as MapLibreMapInstance & {
+      querySourceFeatures?: (sourceId: string, params: { sourceLayer?: string }) => MapLibreGeoJSONFeature[];
+    };
+    const updateCounts = () => {
+      frameId = null;
+      const nextCounts: Record<string, number> = {};
+      vectorLayerEntries.forEach((entry) => {
+        nextCounts[entry.id] = 0;
+      });
+      vectorLayerEntries.forEach((entry) => {
+        if (!entry.sourceId || !entry.sourceLayer) return;
+        if (!mapInstance.getSource(entry.sourceId)) return;
+        if (!mapWithSource.querySourceFeatures) return;
+        try {
+          const features = mapWithSource.querySourceFeatures(entry.sourceId, { sourceLayer: entry.sourceLayer });
+          nextCounts[entry.id] = features.length;
+        } catch {
+          nextCounts[entry.id] = 0;
+        }
+      });
+      const hasMissing = vectorLayerEntries.some((entry) => !entry.sourceLayer);
+      if (hasMissing) {
+        try {
+          const features = mapInstance.queryRenderedFeatures();
+          features.forEach((feature) => {
+            const layerId = feature.layer?.id;
+            if (!layerId || !(layerId in nextCounts)) return;
+            nextCounts[layerId] = (nextCounts[layerId] ?? 0) + 1;
+          });
+        } catch {
+          // Keep zeroed counts if queryRenderedFeatures fails.
+        }
+      }
+      setFeatureCountsIfChanged(nextCounts);
+    };
+    const scheduleUpdate = () => {
+      if (frameId !== null) return;
+      frameId = window.requestAnimationFrame(updateCounts);
+    };
+    mapInstance.on('idle', scheduleUpdate);
+    mapInstance.on('moveend', scheduleUpdate);
+    mapInstance.on('zoomend', scheduleUpdate);
+    mapInstance.on('render', scheduleUpdate);
+    mapInstance.on('sourcedata', scheduleUpdate);
+    scheduleUpdate();
+    return () => {
+      if (frameId !== null) window.cancelAnimationFrame(frameId);
+      mapInstance.off('idle', scheduleUpdate);
+      mapInstance.off('moveend', scheduleUpdate);
+      mapInstance.off('zoomend', scheduleUpdate);
+      mapInstance.off('render', scheduleUpdate);
+      mapInstance.off('sourcedata', scheduleUpdate);
+    };
+  }, [mapInstance, setFeatureCountsIfChanged, statsActive, vectorLayerEntries]);
 
   useEffect(() => {
     if (!fitSelectionEnabled || !mapControlContainer) {
@@ -603,6 +876,7 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
                 nodeId={layer.nodeId}
                 tiles={layer.tiles}
                 tileDataProvider={layer.tileDataProvider}
+                onTileRequest={statsActive ? handleTileRequest : undefined}
                 layerId={layerId}
                 sourceId={sourceId}
                 promoteId={layer.promoteId}
@@ -619,6 +893,25 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
             );
           })}
       </MapLibreMap>
+      {statsActive && statsContainer ? (
+        createPortal(
+          <Box
+            sx={{
+              position: 'absolute',
+              zIndex: 2,
+              pointerEvents: 'none',
+              ...statsPositionStyle,
+            }}
+          >
+            <MapStatsPanel
+              store={{ subscribe: subscribeToStats, getSnapshot: getStatsSnapshot }}
+              vectorLayerEntries={vectorLayerEntries}
+              renderExtra={stats?.renderExtra}
+            />
+          </Box>,
+          statsContainer,
+        )
+      ) : null}
       {searchEnabled && searchConfig?.targetDefinitions ? (
         <>
           <MapPreviewSearchPanel

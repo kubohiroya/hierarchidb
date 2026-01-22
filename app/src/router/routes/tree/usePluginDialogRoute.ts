@@ -152,6 +152,8 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
     void navigate({ to: destination });
   }, [navigate, resolvedPageNodeId, resolvedTreeId]);
 
+  const removePaddingWithFullScreenMode = resolvedNodeType === 'shape' && currentStep === 6;
+
   const handleSuccess = useCallback(
     (savedNodeId: NodeId) => {
       void navigate({ to: `/t/${resolvedTreeId}/${resolvedPageNodeId}/${savedNodeId}` });
@@ -177,6 +179,7 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
     isOpen,
     isReady,
     mode,
+    removePaddingWithFullScreenMode,
     resolvedNodeType,
     resolvedPageNodeId,
     resolvedTargetNodeId,

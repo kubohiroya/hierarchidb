@@ -262,12 +262,23 @@ export interface VectorTileDataSource {
   /** Custom tile data provider function */
   tileDataProvider?: (z: number, x: number, y: number, nodeId?: string) => Promise<ArrayBuffer | null>;
 
+  /** Optional hook for tile request stats (Dexie or custom providers) */
+  onTileRequest?: (stats: VectorTileRequestStats) => void;
+
   /** Promote a feature property to be its ID */
   promoteId?: string | Record<string, string>;
 
   /** Feature-atoms entries keyed by promoted feature ID */
   featureState?: FeatureStateEntry[];
 }
+
+export type VectorTileRequestStats = {
+  bytes: number;
+  dbName?: string;
+  nodeId?: string;
+  sourceId?: string;
+  url?: string;
+};
 
 // Complete vector tile props combining all configurations
 export interface VectorTileProps extends VectorTileDataSource, VectorTileLayerConfig {

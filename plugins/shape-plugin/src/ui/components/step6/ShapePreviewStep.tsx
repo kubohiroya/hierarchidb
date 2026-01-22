@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Alert, Button, Snackbar, CircularProgress } from '@mui/material';
+import { Box, Alert, Button, Snackbar, CircularProgress, Typography } from '@mui/material';
 import { TableRows as TableRowsIcon } from '@mui/icons-material';
 import { ResourceLayerMap, ShapePreviewList } from '@hierarchidb/ui-map';
 import { useShapePreviewStepView } from './useShapePreviewStepView.js';
@@ -28,9 +28,6 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
     setSelectedFeatureIds,
     setHoveredId,
     hoverMessage,
-    tilesUrl,
-    tilesAvailable,
-    tilesChecking,
     vectorLayerIds,
     setMapInstance,
     handleMapIdentify,
@@ -47,27 +44,13 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
     highlightOverridesByType,
     geoJsonLayers,
     attributionItems,
+    tileLayerNames,
+    resolvedLayerNames,
   } = useShapePreviewStepView(data ?? {}, nodeId);
   React.useEffect(() => {
     setFeatureWindowOpen(true);
   }, [nodeId]);
   const renderMapPreview = () => {
-    const hasRemoteTiles = Boolean(tilesUrl);
-    const hasErrorLines = geoJsonLayers.length > 0;
-    if (!hasRemoteTiles && !tilesAvailable && !hasErrorLines) {
-      if (tilesChecking) {
-        return (
-          <Alert severity="info" icon={<CircularProgress size={16} />} sx={{ alignItems: 'center' }}>
-            {t('preview.waiting', 'Vector tiles are being prepared. The map will appear once tiles are ready.')}
-          </Alert>
-        );
-      }
-      return (
-        <Alert severity="info">
-          {t('preview.noTiles', 'No vector tiles are available yet. Run the stage to generate tiles.')}
-        </Alert>
-      );
-    }
     return (
       <Box
         ref={mapContainerRef}
@@ -76,9 +59,8 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
         height="100%"
         borderRadius={1}
         overflow="hidden"
-        border="1px solid #e0e0e0"
         position="relative"
-        sx={{ overscrollBehavior: 'contain' }}
+        sx={{ overscrollBehavior: 'contain', p: 0 }}
       >
         <ResourceLayerMap
           initialViewState={defaultView}
@@ -86,10 +68,33 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
           height="100%"
           mapStyleUrl={baseMapStyleUrl}
           basemapStyles={[]}
+          style={{ padding: 0 }}
           vectorLayers={vectorLayers}
           geoJsonLayers={geoJsonLayers}
           attributionItems={attributionItems}
           highlightOverridesByType={highlightOverridesByType}
+          stats={{
+            enabled: true,
+            position: 'top-left',
+            renderExtra: () => (
+              <>
+                <Typography variant="caption" fontWeight={700} display="block">
+                  Vector Tile Layers
+                </Typography>
+                <Typography variant="caption" display="block">
+                  Available: {tileLayerNames.length ? tileLayerNames.join(', ') : '(none detected)'}
+                </Typography>
+                <Typography variant="caption" display="block">
+                  admin0: {resolvedLayerNames.admin0 ? `${resolvedLayerNames.admin0}${resolvedLayerNames.admin0IsBoundary ? ' (boundary)' : ''}` : 'n/a'}
+                </Typography>
+                {resolvedLayerNames.admin1 && (
+                  <Typography variant="caption" display="block">
+                    admin1: {`${resolvedLayerNames.admin1}${resolvedLayerNames.admin1IsBoundary ? ' (boundary)' : ''}`}
+                  </Typography>
+                )}
+              </>
+            ),
+          }}
           showTileBoundaries
           showTileCoordinates
           interaction={{

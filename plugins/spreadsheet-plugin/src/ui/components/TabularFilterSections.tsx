@@ -12,6 +12,7 @@ export interface TabularFilterSectionsProps {
   onValueColumnChange: (column: string) => void;
   dialogRef?: React.RefObject<HTMLElement | null>;
   menuContainer?: Element | null;
+  showPreview?: boolean;
 }
 
 export const TabularFilterSections: React.FC<TabularFilterSectionsProps> = ({
@@ -24,6 +25,7 @@ export const TabularFilterSections: React.FC<TabularFilterSectionsProps> = ({
   onValueColumnChange,
   dialogRef,
   menuContainer,
+  showPreview = true,
 }) => {
   const effectiveDialogRef =
     dialogRef ??
@@ -42,6 +44,7 @@ export const TabularFilterSections: React.FC<TabularFilterSectionsProps> = ({
       previewSlot={sections.preview}
       errorSlot={sections.error}
       previewDirty={sections.previewDirty}
+      showPreview={showPreview}
     />
   );
 };

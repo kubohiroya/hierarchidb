@@ -14,17 +14,21 @@ export const useVectorTilePreviewMetadata = <Row,>(
   const [metadataError, setMetadataError] = useState<string | null>(null);
   const [metadataLoaded, setMetadataLoaded] = useState(false);
   const loadRowsRef = useRef(loadRows);
+  const metadataKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     loadRowsRef.current = loadRows;
   }, [loadRows]);
 
   useEffect(() => {
+    const nextKey = metadataEnabled && nodeId ? `${nodeId}:${pollIntervalMs ?? 'off'}` : 'disabled';
+    if (metadataKeyRef.current === nextKey) return;
+    metadataKeyRef.current = nextKey;
     if (!metadataEnabled || !nodeId) {
-      setMetadataRows([]);
-      setMetadataLoading(false);
-      setMetadataError(null);
-      setMetadataLoaded(false);
+      setMetadataRows((prev) => (prev.length ? [] : prev));
+      setMetadataLoading((prev) => (prev ? false : prev));
+      setMetadataError((prev) => (prev ? null : prev));
+      setMetadataLoaded((prev) => (prev ? false : prev));
       return;
     }
     let cancelled = false;
@@ -59,6 +63,9 @@ export const useVectorTilePreviewMetadata = <Row,>(
       cancelled = true;
       if (intervalId) {
         clearInterval(intervalId);
+      }
+      if (metadataKeyRef.current === nextKey) {
+        metadataKeyRef.current = null;
       }
     };
   }, [metadataEnabled, nodeId, pollIntervalMs]);

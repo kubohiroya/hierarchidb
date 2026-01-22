@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 type SearchTextBuilder<Row> = (row: Row) => string;
 type RowIdGetter<Row> = (row: Row) => string;
@@ -11,14 +11,25 @@ export const useVectorTilePreviewSearch = <Row,>(
   buildSearchText: SearchTextBuilder<Row>,
   setMatchedIds: (ids: string[]) => void,
 ) => {
+  const lastMatchedRef = useRef<string[]>([]);
+
   useEffect(() => {
+    const setIfChanged = (next: string[]) => {
+      const prev = lastMatchedRef.current;
+      if (prev.length === next.length && prev.every((value, index) => value === next[index])) {
+        return;
+      }
+      lastMatchedRef.current = next;
+      setMatchedIds(next);
+    };
+
     if (!metadataEnabled) {
-      setMatchedIds([]);
+      setIfChanged([]);
       return;
     }
     const keyword = searchKeyword.trim().toLowerCase();
     if (!keyword) {
-      setMatchedIds([]);
+      setIfChanged([]);
       return;
     }
     const matches = rows
@@ -29,6 +40,6 @@ export const useVectorTilePreviewSearch = <Row,>(
           .some((token) => token.startsWith(keyword));
       })
       .map((row) => getRowId(row));
-    setMatchedIds(matches);
+    setIfChanged(matches);
   }, [buildSearchText, getRowId, metadataEnabled, rows, searchKeyword, setMatchedIds]);
 };

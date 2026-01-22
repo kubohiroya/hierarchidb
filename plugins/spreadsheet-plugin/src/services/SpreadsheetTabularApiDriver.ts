@@ -16,6 +16,7 @@ import {
 import { TabularService } from '@hierarchidb/tabular-source';
 import { DexieChunkStore } from '@hierarchidb/chunk-store';
 import { FetchNetworkPort } from '@hierarchidb/download';
+import type { AuthScope } from '@hierarchidb/auth-recovery';
 import type { NodeId } from '@hierarchidb/common-types';
 import { toNodeId } from '@hierarchidb/common-types';
 import { getDBName } from '@hierarchidb/util';
@@ -30,6 +31,11 @@ type RowChunkLike = {
 };
 
 const chunkDecoder = new TextDecoder();
+
+const resolveAuthScope = (pluginId: string): AuthScope => {
+  const knownScopes = new Set<AuthScope>(['shape', 'location', 'route', 'spreadsheet', 'styler', 'generic']);
+  return knownScopes.has(pluginId as AuthScope) ? (pluginId as AuthScope) : 'spreadsheet';
+};
 
 const decodeChunkRows = (chunk: RowChunkLike): TabularRow[] => {
   try {
@@ -158,7 +164,7 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
       retries: 0,
       baseDelayMs: 0,
       maxDelayMs: 0,
-      auth: { enabled: false },
+      auth: { enabled: true, scope: resolveAuthScope(this.pluginId) },
     });
     return this.networkPort;
   }

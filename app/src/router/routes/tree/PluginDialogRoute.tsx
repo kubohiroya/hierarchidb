@@ -42,6 +42,7 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
     isOpen,
     isReady,
     mode,
+    removePaddingWithFullScreenMode,
     resolvedNodeType,
     resolvedPageNodeId,
     resolvedTargetNodeId,
@@ -73,6 +74,7 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
       forceInitialStep={forceInitialStep}
       backdropDismissEnabled={backdropDismissEnabled}
       autoBuild={autoBuild}
+      removePaddingWithFullScreenMode={removePaddingWithFullScreenMode}
     />
   );
 };

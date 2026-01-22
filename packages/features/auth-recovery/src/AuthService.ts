@@ -213,12 +213,28 @@ export class AuthService implements AuthHeadersProvider {
         // fall through
       }
     }
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('token_expires_at');
+        localStorage.removeItem('refresh_token_id');
+      } catch {
+        // ignore storage failures
+      }
+    }
   }
 
   private async resolveStoredToken(): Promise<string | null> {
     if (this.uiStorage) {
       try {
         return await this.uiStorage.getItem('access_token');
+      } catch {
+        return null;
+      }
+    }
+    if (typeof localStorage !== 'undefined') {
+      try {
+        return localStorage.getItem('access_token');
       } catch {
         return null;
       }

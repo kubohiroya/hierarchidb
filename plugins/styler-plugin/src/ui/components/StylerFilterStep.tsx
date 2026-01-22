@@ -20,7 +20,7 @@ export const StylerFilterStep: React.FC<PluginStepProps<StylerStepData>> = (prop
       }
     >
       <AuthReadyGate>
-        <TabularDataFilterStep {...props} translationNamespace="styler-plugin" />
+        <TabularDataFilterStep {...props} translationNamespace="styler-plugin" showPreview={false} />
       </AuthReadyGate>
     </Suspense>
   );

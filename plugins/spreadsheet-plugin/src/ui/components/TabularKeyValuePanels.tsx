@@ -37,6 +37,7 @@ type Props = {
   previewSlot: React.ReactNode | null;
   errorSlot: React.ReactNode | null;
   previewDirty: boolean;
+  showPreview?: boolean;
 };
 
 export const TabularKeyValuePanels: React.FC<Props> = ({
@@ -51,6 +52,7 @@ export const TabularKeyValuePanels: React.FC<Props> = ({
   previewSlot,
   errorSlot,
   previewDirty,
+  showPreview = true,
 }) => {
   const { t } = useTranslation(translationNamespace);
   const binCount = useAtomValue(binCountAtom);
@@ -234,24 +236,26 @@ export const TabularKeyValuePanels: React.FC<Props> = ({
         </AccordionDetails>
       </Accordion>
 
-      <Accordion defaultExpanded disableGutters square>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ width: '100%' }}>
-            <PreviewIcon fontSize="small" />
-            <Typography variant="subtitle1">
-              {t('styleSettings.previewTabular.title', 'Preview Tabular')}
-            </Typography>
-            {previewDirty && <LinearProgress variant="indeterminate" sx={{ flexGrow: 1, ml: 1 }} />}
-          </Stack>
-        </AccordionSummary>
-        <AccordionDetails>
-          {previewSlot ?? (
-            <Typography variant="body2" color="text.secondary">
-              {t('styleSettings.previewTabular.empty', 'Preview data will appear after filters are applied.')}
-            </Typography>
-          )}
-        </AccordionDetails>
-      </Accordion>
+      {showPreview && (
+        <Accordion defaultExpanded disableGutters square>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ width: '100%' }}>
+              <PreviewIcon fontSize="small" />
+              <Typography variant="subtitle1">
+                {t('styleSettings.previewTabular.title', 'Preview Tabular')}
+              </Typography>
+              {previewDirty && <LinearProgress variant="indeterminate" sx={{ flexGrow: 1, ml: 1 }} />}
+            </Stack>
+          </AccordionSummary>
+          <AccordionDetails>
+            {previewSlot ?? (
+              <Typography variant="body2" color="text.secondary">
+                {t('styleSettings.previewTabular.empty', 'Preview data will appear after filters are applied.')}
+              </Typography>
+            )}
+          </AccordionDetails>
+        </Accordion>
+      )}
 
       <Accordion defaultExpanded disableGutters square>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>

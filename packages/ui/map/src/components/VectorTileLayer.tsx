@@ -43,6 +43,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
                                                                   layerType = DEFAULT_MAP_CONFIG.vectorTileLayer.layerType,
                                                                   sourceLayer,
                                                                   tileDataProvider,
+                                                                  onTileRequest,
                                                                   promoteId,
                                                                   featureState,
                                                                 }) => {
@@ -50,6 +51,11 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
   const [computedTiles, setComputedTiles] = useState<string[] | undefined>(tiles);
   const tilesLoadedRef = useRef(false);
   const prevFeatureStateRef = useRef<Map<string | number, FeatureStateRecord>>(new Map());
+  const onTileRequestRef = useRef<VectorTileLayerProps['onTileRequest']>(onTileRequest);
+
+  useEffect(() => {
+    onTileRequestRef.current = onTileRequest;
+  }, [onTileRequest]);
 
   // Setup custom protocol for Dexie if needed
   useEffect(() => {
@@ -81,6 +87,13 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
 
               try {
                 const tileData = await tileDataProvider(zInt, xInt, yInt, nodeIdFromUrl);
+                onTileRequestRef.current?.({
+                  bytes: tileData?.byteLength ?? 0,
+                  dbName: dbNameFromUrl,
+                  nodeId: nodeIdFromUrl,
+                  sourceId,
+                  url: params.url,
+                });
 
                 if (tileData) {
                   return {
@@ -100,6 +113,13 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
                   `[VectorTileLayer] Tile not found: z=${zInt}, x=${xInt}, y=${yInt}, nodeId=${nodeIdFromUrl}`,
                   error,
                 );
+                onTileRequestRef.current?.({
+                  bytes: 0,
+                  dbName: dbNameFromUrl,
+                  nodeId: nodeIdFromUrl,
+                  sourceId,
+                  url: params.url,
+                });
                 return {
                   data: new ArrayBuffer(0),
                   cacheControl: null,
@@ -126,7 +146,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [dbName, nodeId, tileDataProvider]);
+  }, [dbName, nodeId, sourceId, tileDataProvider]);
 
   // Add vector tile source
   useEffect(() => {
@@ -135,9 +155,9 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
     const mapRef = map;
 
     // Remove existing source and layer if they exist
-    if (mapRef.getSource && mapRef.getSource(sourceId!)) {
-      if (mapRef.getLayer && mapRef.getLayer(layerId!)) {
-        mapRef.removeLayer(layerId!);
+    if (sourceId && mapRef.getSource(sourceId)) {
+      if (layerId && mapRef.getLayer(layerId)) {
+        mapRef.removeLayer(layerId);
       }
       mapRef.removeSource(sourceId!);
     }
@@ -169,10 +189,10 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
         if (mapRef && typeof mapRef.getStyle === 'function') {
           const style = mapRef.getStyle();
           if (style && style.layers) {
-            if (mapRef.getLayer && mapRef.getLayer(layerId!)) {
+            if (mapRef.getLayer(layerId!)) {
               mapRef.removeLayer(layerId!);
             }
-            if (mapRef.getSource && mapRef.getSource(sourceId!)) {
+            if (mapRef.getSource(sourceId!)) {
               mapRef.removeSource(sourceId!);
             }
           }
@@ -189,10 +209,17 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
     const mapRef = map;
     if (!mapRef.getSource || !mapRef.getSource(sourceId!)) return;
 
+    type FeatureStateTarget = { source: string; id: string | number; sourceLayer?: string; key?: string };
+    const buildFeatureStateTarget = (id: string | number, key?: string): FeatureStateTarget => (
+      sourceLayer
+        ? { source: sourceId!, sourceLayer, id, ...(key ? { key } : {}) }
+        : { source: sourceId!, id, ...(key ? { key } : {}) }
+    );
+
     const removeStateKeys = (id: string | number, state: FeatureStateRecord) => {
       Object.keys(state).forEach((key) => {
         try {
-          mapRef.removeFeatureState({ source: sourceId!, id, key });
+          mapRef.removeFeatureState(buildFeatureStateTarget(id, key));
         } catch (error) {
           console.debug('VectorTileLayer feature-atoms cleanup skipped:', error);
         }
@@ -200,7 +227,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
     };
 
     if (featureState.length === 0) {
-      prevFeatureStateRef.current.forEach((state, id) => removeStateKeys(id, state));
+      prevFeatureStateRef.current.forEach((state, id) => { removeStateKeys(id, state); });
       prevFeatureStateRef.current = new Map();
       return;
     }
@@ -213,7 +240,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
         Object.keys(prevState).forEach((key) => {
           if (!(key in entry.state)) {
             try {
-              mapRef.removeFeatureState({ source: sourceId!, id: entry.id, key });
+              mapRef.removeFeatureState(buildFeatureStateTarget(entry.id, key));
             } catch (error) {
               console.debug('VectorTileLayer feature-atoms cleanup skipped:', error);
             }
@@ -221,7 +248,8 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
         });
       }
       try {
-        mapRef.setFeatureState({ source: sourceId!, id: entry.id }, entry.state);
+        const target = buildFeatureStateTarget(entry.id);
+        mapRef.setFeatureState(target, entry.state);
       } catch (error) {
         console.debug('VectorTileLayer setFeatureState error:', error);
       }
@@ -235,7 +263,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
     });
 
     prevFeatureStateRef.current = nextStateMap;
-  }, [featureState, map, sourceAdded, sourceId]);
+  }, [featureState, map, sourceAdded, sourceId, sourceLayer]);
 
   // Add layer
   useEffect(() => {
@@ -244,15 +272,15 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
     const mapRef = map;
 
     // Remove existing layer if it exists
-    if (mapRef.getLayer && mapRef.getLayer(layerId!)) {
-      mapRef.removeLayer(layerId!);
+    if (layerId && mapRef.getLayer(layerId)) {
+      mapRef.removeLayer(layerId);
     }
 
     try {
       const layerConfig: Record<string, unknown> = {
-        id: layerId!,
+        id: layerId,
         type: layerType,
-        source: sourceId!,
+        source: sourceId,
         paint,
         layout: {
           visibility: visible ? 'visible' : 'none',

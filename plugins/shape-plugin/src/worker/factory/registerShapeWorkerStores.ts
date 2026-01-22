@@ -8,7 +8,6 @@ import type {
   VectorTileItemBase,
   VectorTileStore,
 } from '@hierarchidb/runtime-worker';
-import type { ShapeDB } from '@hierarchidb/shape-store';
 
 type StoreRegistry = {
   getFeatures<T extends FeatureItemBase<unknown> = FeatureItemBase<unknown>>(nodeType: string): FeatureStore<T> | undefined;
