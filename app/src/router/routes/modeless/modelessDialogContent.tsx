@@ -10,10 +10,15 @@ import { RouteDB, type RouteLineString } from '@hierarchidb/route-store';
 import { TabularDatabaseManager, TabularQueryService } from '@hierarchidb/tabular-store';
 import { GenericDataGrid, type GenericDataGridProps, type GridColumn } from '@hierarchidb/ui-grid';
 import type {
+  LayerSetDefinition,
+  LayerSetId,
+  LayerSetListItem,
+  LayerSetVisibility,
   ResourceGeoJsonLayer,
   ResourceVectorLayer,
 } from '@hierarchidb/ui-plugin-shell/ui-map';
 import {
+  LayerSetVisibilityPanel,
   type MapHighlightEntry,
   mapHoverMatchesAtom,
   mapSearchMatchesAtom,
@@ -439,8 +444,21 @@ export const MapLayerContent: React.FC<{
   basemapStyles: Array<{ nodeId: string; absolutePath?: string }>;
   vectorLayers: ResourceVectorLayer[];
   geoJsonLayers: ResourceGeoJsonLayer[];
-}> = ({ basemapStyles, vectorLayers, geoJsonLayers }) => (
+  layerSets: LayerSetDefinition[];
+  layerSetVisibility: LayerSetVisibility;
+  onToggleLayerSet: (id: LayerSetId) => void;
+}> = ({ basemapStyles, vectorLayers, geoJsonLayers, layerSets, layerSetVisibility, onToggleLayerSet }) => (
   <Stack spacing={2}>
+    <Box>
+      <LayerSetVisibilityPanel
+        title="Layer Sets"
+        layerSets={layerSets}
+        visibility={layerSetVisibility}
+        onToggle={onToggleLayerSet}
+        items={buildLayerSetItemsFromLayers(vectorLayers, geoJsonLayers)}
+      />
+    </Box>
+    <Divider />
     <Box>
       <Typography variant="subtitle2">Basemaps</Typography>
       {basemapStyles.length === 0 ? (
@@ -511,6 +529,42 @@ const formatStops = (items: Array<{ key: string; value: string }>, max = 4) => {
   if (items.length === 0) return '—';
   const trimmed = items.slice(0, max).map((item) => `${item.key}:${item.value}`);
   return items.length > max ? `${trimmed.join(', ')} ...` : trimmed.join(', ');
+};
+
+const formatHierarchyLabel = (value?: number): string | undefined => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;
+  return `ADM${value}`;
+};
+
+const buildLayerSetItemsFromLayers = (
+  vectorLayers: ResourceVectorLayer[],
+  geoJsonLayers: ResourceGeoJsonLayer[],
+): LayerSetListItem[] => {
+  const items: LayerSetListItem[] = [];
+  vectorLayers.forEach((layer) => {
+    if (!layer.layerSetId) return;
+    const label = layer.layerLabel ?? layer.absolutePath ?? layer.nodeId;
+    const detail = layer.layerConfig?.sourceLayer ?? layer.layerConfig?.layerType ?? layer.nodeType;
+    items.push({
+      id: `vector-${layer.nodeId}-${layer.layerConfig?.layerId ?? ''}`,
+      label,
+      layerSetId: layer.layerSetId as LayerSetId,
+      hierarchyLabel: formatHierarchyLabel(layer.hierarchyLevel),
+      detail: typeof detail === 'string' ? detail : undefined,
+    });
+  });
+  geoJsonLayers.forEach((layer) => {
+    if (!layer.layerSetId) return;
+    const label = layer.layerLabel ?? layer.absolutePath ?? layer.layerId;
+    items.push({
+      id: `geojson-${layer.layerId}`,
+      label,
+      layerSetId: layer.layerSetId as LayerSetId,
+      hierarchyLabel: formatHierarchyLabel(layer.hierarchyLevel),
+      detail: layer.layerType,
+    });
+  });
+  return items;
 };
 
 const styleTypeToDataSource = (styleType?: MapStylerSummary['styleType']) => {

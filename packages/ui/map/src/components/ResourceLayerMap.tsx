@@ -10,6 +10,7 @@ import { Close as CloseIcon, FitScreen as FitScreenIcon, Tune as TuneIcon } from
 import { createPortal } from 'react-dom';
 import type { MapLibreGeoJSONFeature, MapLibreMapInstance, MapLibreStyle } from '../types/maplibre-public.js';
 import type { MapAttributionItem } from '../types/attribution.js';
+import type { LayerSetId } from '../preview/layerSetDefinitions.js';
 import type { FeatureCollection } from 'geojson';
 import { VectorTileLayer } from './VectorTileLayer.js';
 import {
@@ -69,6 +70,10 @@ export type ResourceVectorLayer = VectorTileDataSource & {
   dataSourceName?: string;
   absolutePath?: string;
   layerConfig?: VectorTileLayerConfig;
+  layerSetId?: LayerSetId;
+  layerPriority?: number;
+  hierarchyLevel?: number;
+  layerLabel?: string;
 };
 
 export type ResourceGeoJsonLayer = {
@@ -81,6 +86,10 @@ export type ResourceGeoJsonLayer = {
   filter?: MapLibreFilter;
   beforeId?: string;
   absolutePath?: string;
+  layerSetId?: LayerSetId;
+  layerPriority?: number;
+  hierarchyLevel?: number;
+  layerLabel?: string;
 };
 
 export type ResourceLayerMapProps = BaseMapProps & {
@@ -166,10 +175,21 @@ type SortableLayer = {
   nodeId?: string;
   layerId?: string;
   sourceId?: string;
+  layerPriority?: number;
 };
 
 const sortByPath = <T extends SortableLayer>(items: T[]): T[] =>
   [...items].sort((a, b) => {
+    const aKey = a.absolutePath ?? a.nodeId ?? a.layerId ?? a.sourceId ?? '';
+    const bKey = b.absolutePath ?? b.nodeId ?? b.layerId ?? b.sourceId ?? '';
+    return aKey.localeCompare(bKey);
+  });
+
+const sortByLayerPriority = <T extends SortableLayer>(items: T[]): T[] =>
+  [...items].sort((a, b) => {
+    const aPriority = a.layerPriority ?? 0;
+    const bPriority = b.layerPriority ?? 0;
+    if (aPriority !== bPriority) return aPriority - bPriority;
     const aKey = a.absolutePath ?? a.nodeId ?? a.layerId ?? a.sourceId ?? '';
     const bKey = b.absolutePath ?? b.nodeId ?? b.layerId ?? b.sourceId ?? '';
     return aKey.localeCompare(bKey);
@@ -297,9 +317,9 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
   const [searchSettingsOpen, setSearchSettingsOpen] = useState(false);
 
   const orderedBasemaps = useMemo(() => (basemapStyles ? sortByPath(basemapStyles) : []), [basemapStyles]);
-  const orderedLayers = useMemo(() => sortByPath(vectorLayers), [vectorLayers]);
+  const orderedLayers = useMemo(() => sortByLayerPriority(vectorLayers), [vectorLayers]);
   const orderedGeoJsonLayers = useMemo(
-    () => (geoJsonLayers ? sortByPath(geoJsonLayers) : []),
+    () => (geoJsonLayers ? sortByLayerPriority(geoJsonLayers) : []),
     [geoJsonLayers]
   );
 
@@ -610,6 +630,18 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
     ];
   }, [interaction?.highlightLayerIds, orderedGeoJsonLayers, orderedLayers]);
 
+  const highlightLayerPriorityById = useMemo(() => {
+    const map = new Map<string, number>();
+    orderedLayers.forEach((layer) => {
+      const layerId = layer.layerConfig?.layerId ?? `resource-layer-${layer.nodeId}`;
+      map.set(layerId, layer.layerPriority ?? 0);
+    });
+    orderedGeoJsonLayers.forEach((layer) => {
+      map.set(layer.layerId, layer.layerPriority ?? 0);
+    });
+    return map;
+  }, [orderedGeoJsonLayers, orderedLayers]);
+
   const buildHighlightEntry = useCallback(
     (feature?: MapLibreGeoJSONFeature | null) => {
       if (interaction?.buildHighlightEntry) {
@@ -794,6 +826,7 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
   useMapFeatureHoverCandidates({
     mapInstance: hoverEnabled ? mapInstance : null,
     highlightLayerIds,
+    layerPriorityById: highlightLayerPriorityById,
     buildHighlightEntry,
     radius: hoverConfig?.radius,
     onHoverChange: (entries, features) => {
@@ -812,6 +845,7 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
   useMapFeatureSelectionGestures({
     mapInstance: selectionEnabled ? mapInstance : null,
     highlightLayerIds,
+    layerPriorityById: highlightLayerPriorityById,
     buildHighlightEntry,
     radius: selectionConfig?.radius,
     onSelectionChange: applySelectionChange,

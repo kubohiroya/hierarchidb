@@ -12,6 +12,9 @@ import type {
 } from '@hierarchidb/ui-dialog';
 import { ModelessDialogFrame } from '@hierarchidb/ui-dialog';
 import type {
+  LayerSetDefinition,
+  LayerSetId,
+  LayerSetVisibility,
   MapToggleOption,
   MapToggleSelection,
   ResourceGeoJsonLayer,
@@ -61,6 +64,9 @@ export type MapDialogLayerInput = {
   routeModeSelection: MapToggleSelection;
   onToggleLocationType: (id: string) => void;
   onToggleRouteMode: (id: string) => void;
+  layerSets: LayerSetDefinition[];
+  layerSetVisibility: LayerSetVisibility;
+  onToggleLayerSet: (id: LayerSetId) => void;
 };
 
 type MapDialogDefinition = MapDialogDefinitionBase & {
@@ -360,6 +366,9 @@ export const ModelessDialogManager: React.FC<ModelessDialogManagerProps> = ({
   routeModeSelection,
   onToggleLocationType,
   onToggleRouteMode,
+  layerSets,
+  layerSetVisibility,
+  onToggleLayerSet,
   iconPlacement,
   iconAppearance,
 }) => {
@@ -382,6 +391,9 @@ export const ModelessDialogManager: React.FC<ModelessDialogManagerProps> = ({
             basemapStyles={basemapStyles}
             vectorLayers={vectorLayers}
             geoJsonLayers={geoJsonLayers}
+            layerSets={layerSets}
+            layerSetVisibility={layerSetVisibility}
+            onToggleLayerSet={onToggleLayerSet}
           />
         ),
       },
@@ -440,7 +452,7 @@ export const ModelessDialogManager: React.FC<ModelessDialogManagerProps> = ({
         ),
       },
     ],
-    [basemapStyles, formattedZxy, geoJsonLayers, locationTypeOptions, locationTypeSelection, mapInfo, nodeId, onToggleLocationType, onToggleRouteMode, onToggleStyler, routeModeOptions, routeModeSelection, stylerSummaries, stylerToggles, vectorLayers]
+    [basemapStyles, formattedZxy, geoJsonLayers, layerSetVisibility, layerSets, locationTypeOptions, locationTypeSelection, mapInfo, nodeId, onToggleLayerSet, onToggleLocationType, onToggleRouteMode, onToggleStyler, routeModeOptions, routeModeSelection, stylerSummaries, stylerToggles, vectorLayers]
   );
 
   const storageKey = useMemo(() => `hdb.map.dialogs.${nodeId}`, [nodeId]);

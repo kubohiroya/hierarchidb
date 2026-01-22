@@ -1,43 +1,12 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import type { MapAttributionItem, ResourceGeoJsonLayer, ResourceVectorLayer } from '@hierarchidb/ui-map';
+import type { MapAttributionItem, ResourceGeoJsonLayer, ResourceVectorLayer, LayerSetId, LayerSetVisibility } from '@hierarchidb/ui-map';
+import { DEFAULT_LAYER_SETS, buildLayerSetListItems, getLayerSetDefinition, resolveLayerSetEntries } from '@hierarchidb/ui-map';
 import { getDataSourceConfig } from '../../../services/utils/utils.js';
 import type { ShapeEntity } from '../../../common/types/index.js';
 import { useShapePreviewStep } from './useShapePreviewStep.js';
 
 const LIGHT_BASEMAP_STYLE_URL = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
 const DARK_BASEMAP_STYLE_URL = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
-
-type ResolvedVectorTileLayer = { name: string | null; isBoundary: boolean };
-
-const isBoundaryLayer = (name: string): boolean => name.toLowerCase().endsWith('-boundary');
-
-const resolveVectorTileLayer = (
-  layerNames: string[],
-  target: string,
-  options?: { allowFallback?: boolean },
-): ResolvedVectorTileLayer => {
-  if (!layerNames.length) return { name: null, isBoundary: false };
-  const targetLower = target.toLowerCase();
-  const matchesTarget = (name: string) => {
-    const lower = name.toLowerCase();
-    if (lower === targetLower) return true;
-    if (lower.endsWith(targetLower)) return true;
-    if (lower.includes(targetLower)) return true;
-    return false;
-  };
-  const nonBoundary = layerNames.filter((name) => !isBoundaryLayer(name));
-  const boundary = layerNames.filter((name) => isBoundaryLayer(name));
-  const pickMatch = (names: string[]) => names.find(matchesTarget) ?? null;
-  const nonBoundaryMatch = pickMatch(nonBoundary);
-  if (nonBoundaryMatch) return { name: nonBoundaryMatch, isBoundary: false };
-  const boundaryMatch = pickMatch(boundary);
-  if (boundaryMatch) return { name: boundaryMatch, isBoundary: true };
-  if (!options?.allowFallback) return { name: null, isBoundary: false };
-  if (nonBoundary.length) return { name: nonBoundary[0] ?? null, isBoundary: false };
-  if (boundary.length) return { name: boundary[0] ?? null, isBoundary: true };
-  return { name: null, isBoundary: false };
-};
-
 
 
 export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: string) => {
@@ -51,6 +20,19 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
   const lastZoomRef = useRef<number | null>(null);
   const [zoomSnackbarMessage, setZoomSnackbarMessage] = useState<string>('');
   const [zoomSnackbarOpen, setZoomSnackbarOpen] = useState(false);
+
+  const [layerSetVisibility, setLayerSetVisibility] = useState<LayerSetVisibility>({
+    location: false,
+    route: false,
+    shape: true,
+  });
+
+  const toggleLayerSetVisibility = useCallback((id: LayerSetId) => {
+    setLayerSetVisibility((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  }, []);
 
   const handleViewStateChange = useCallback((viewState: { zoom: number }) => {
     const zoom = Number(viewState.zoom);
@@ -66,18 +48,27 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
     setZoomSnackbarOpen(false);
   }, []);
 
+  const layerSetName = preview.buildConfig?.vtConfig?.layerSetName ?? 'shape';
+  const layerSetDefinition = useMemo(
+    () => getLayerSetDefinition(layerSetName),
+    [layerSetName],
+  );
+
+  const resolvedLayerSetEntries = useMemo(() => {
+    if (!layerSetDefinition) return [];
+    return resolveLayerSetEntries(preview.tileLayerNames ?? [], layerSetDefinition);
+  }, [layerSetDefinition, preview.tileLayerNames]);
+
+  const layerSetItems = useMemo(
+    () => buildLayerSetListItems(resolvedLayerSetEntries),
+    [resolvedLayerSetEntries],
+  );
+
   const vectorLayers = useMemo<ResourceVectorLayer[]>(() => {
-    if (!preview.nodeId) return [];
+    if (!preview.nodeId || !layerSetDefinition) return [];
+    if (!layerSetVisibility[layerSetDefinition.id]) return [];
     const hasRemoteTiles = Boolean(preview.tilesUrl);
     const tiles = hasRemoteTiles ? [preview.tilesUrl] : undefined;
-    const tileLayerNames = preview.tileLayerNames ?? [];
-    const fallbackLayerName = preview.tilesLayer ?? 'admin0';
-    const resolvedAdmin0 = tileLayerNames.length
-      ? resolveVectorTileLayer(tileLayerNames, 'admin0', { allowFallback: true })
-      : { name: fallbackLayerName, isBoundary: false };
-    const resolvedAdmin1 = tileLayerNames.length
-      ? resolveVectorTileLayer(tileLayerNames, 'admin1', { allowFallback: false })
-      : { name: 'admin1', isBoundary: false };
     const baseLayer = {
       nodeId: String(preview.nodeId),
       nodeType: 'shape' as const,
@@ -85,6 +76,7 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
       dbName: !hasRemoteTiles ? preview.tileDbName : undefined,
       tileDataProvider: !hasRemoteTiles ? preview.tileDataProvider : undefined,
       promoteId: 'id',
+      layerSetId: layerSetDefinition.id,
     };
     const fillPaint = {
       'fill-color': preview.theme.palette.primary.main,
@@ -96,33 +88,24 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
       'line-opacity': 0.7,
       'line-width': 1.5,
     };
-    const layers: ResourceVectorLayer[] = [];
-    if (resolvedAdmin0.name) {
-      layers.push({
+    return resolvedLayerSetEntries
+      .filter((entry) => Boolean(entry.sourceLayer))
+      .map((entry) => ({
         ...baseLayer,
+        layerPriority: entry.priority,
+        hierarchyLevel: entry.hierarchyLevel,
+        layerLabel: entry.label,
         layerConfig: {
-          layerId: preview.baseLayerId,
-          sourceId: preview.baseSourceId,
-          sourceLayer: resolvedAdmin0.name,
-          layerType: resolvedAdmin0.isBoundary ? 'line' : 'fill',
-          paint: resolvedAdmin0.isBoundary ? linePaint : fillPaint,
+          layerId: `${preview.baseLayerId}-${entry.id}`,
+          sourceId: `${preview.baseSourceId}-${entry.id}`,
+          sourceLayer: entry.sourceLayer,
+          layerType: entry.layerType,
+          paint: entry.layerType === 'line' ? linePaint : fillPaint,
         },
-      });
-    }
-    if (resolvedAdmin1.name && resolvedAdmin1.name !== resolvedAdmin0.name) {
-      layers.push({
-        ...baseLayer,
-        layerConfig: {
-          layerId: `${preview.baseLayerId}-admin1`,
-          sourceId: `${preview.baseSourceId}-admin1`,
-          sourceLayer: resolvedAdmin1.name,
-          layerType: resolvedAdmin1.isBoundary ? 'line' : 'fill',
-          paint: resolvedAdmin1.isBoundary ? linePaint : fillPaint,
-        },
-      });
-    }
-    return layers;
+      }));
   }, [
+    layerSetDefinition,
+    layerSetVisibility,
     preview.baseLayerId,
     preview.baseSourceId,
     preview.nodeId,
@@ -130,9 +113,8 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
     preview.theme.palette.primary.main,
     preview.tileDataProvider,
     preview.tileDbName,
-    preview.tilesLayer,
-    preview.tileLayerNames,
     preview.tilesUrl,
+    resolvedLayerSetEntries,
   ]);
 
   const vectorLayerIds = useMemo(
@@ -142,21 +124,19 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
 
   const resolvedLayerNames = useMemo(() => {
     const tileLayerNames = preview.tileLayerNames ?? [];
-    const fallbackLayerName = preview.tilesLayer ?? 'admin0';
-    const resolvedAdmin0 = tileLayerNames.length
-      ? resolveVectorTileLayer(tileLayerNames, 'admin0', { allowFallback: true })
-      : { name: fallbackLayerName, isBoundary: false };
-    const resolvedAdmin1 = tileLayerNames.length
-      ? resolveVectorTileLayer(tileLayerNames, 'admin1', { allowFallback: false })
-      : { name: 'admin1', isBoundary: false };
+    const lookup = new Map(resolvedLayerSetEntries.map((entry) => [entry.id, entry]));
+    const admin0Boundary = lookup.get('shape-adm0-boundary');
+    const admin0Fill = lookup.get('shape-adm0-fill');
+    const admin1Boundary = lookup.get('shape-adm1-boundary');
+    const admin1Fill = lookup.get('shape-adm1-fill');
     return {
       available: tileLayerNames,
-      admin0: resolvedAdmin0.name,
-      admin1: resolvedAdmin1.name,
-      admin0IsBoundary: resolvedAdmin0.isBoundary,
-      admin1IsBoundary: resolvedAdmin1.isBoundary,
+      admin0: admin0Fill?.sourceLayer ?? admin0Boundary?.sourceLayer ?? null,
+      admin1: admin1Fill?.sourceLayer ?? admin1Boundary?.sourceLayer ?? null,
+      admin0IsBoundary: Boolean(admin0Boundary?.sourceLayer) && admin0Boundary?.sourceLayer !== admin0Fill?.sourceLayer,
+      admin1IsBoundary: Boolean(admin1Boundary?.sourceLayer) && admin1Boundary?.sourceLayer !== admin1Fill?.sourceLayer,
     };
-  }, [preview.tileLayerNames, preview.tilesLayer]);
+  }, [preview.tileLayerNames, resolvedLayerSetEntries]);
 
   const highlightOverridesByType = useMemo(() => {
     const hasSearch = ['boolean', ['feature-state', 'hdbSearch'], false];
@@ -362,5 +342,10 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
     highlightOverridesByType,
     geoJsonLayers,
     attributionItems,
+    layerSetVisibility,
+    toggleLayerSetVisibility,
+    layerSetItems,
+    layerSetDefinition,
+    availableLayerSets: DEFAULT_LAYER_SETS,
   };
 };

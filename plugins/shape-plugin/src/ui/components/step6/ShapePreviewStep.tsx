@@ -1,7 +1,7 @@
 import React from 'react';
-import { Box, Alert, Button, Snackbar, CircularProgress, Typography } from '@mui/material';
+import { Box, Alert, Button, Snackbar, CircularProgress, Typography, Paper } from '@mui/material';
 import { TableRows as TableRowsIcon } from '@mui/icons-material';
-import { ResourceLayerMap, ShapePreviewList } from '@hierarchidb/ui-map';
+import { LayerSetVisibilityPanel, ResourceLayerMap, ShapePreviewList } from '@hierarchidb/ui-map';
 import { useShapePreviewStepView } from './useShapePreviewStepView.js';
 import type { ShapeEntity } from '../../../common/types/index.js';
 
@@ -46,6 +46,10 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
     attributionItems,
     tileLayerNames,
     resolvedLayerNames,
+    layerSetVisibility,
+    toggleLayerSetVisibility,
+    layerSetItems,
+    availableLayerSets,
   } = useShapePreviewStepView(data ?? {}, nodeId);
   React.useEffect(() => {
     setFeatureWindowOpen(true);
@@ -62,6 +66,27 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
         position="relative"
         sx={{ overscrollBehavior: 'contain', p: 0 }}
       >
+        <Box position="absolute" top={12} right={12} zIndex={3} sx={{ pointerEvents: 'auto' }}>
+          <Paper
+            elevation={3}
+            sx={{
+              px: 1.5,
+              py: 1,
+              minWidth: 220,
+              bgcolor: 'background.paper',
+              color: 'text.primary',
+              opacity: 0.92,
+            }}
+          >
+            <LayerSetVisibilityPanel
+              title={t('preview.layerSets.title', 'Layer Sets')}
+              layerSets={availableLayerSets}
+              visibility={layerSetVisibility}
+              onToggle={toggleLayerSetVisibility}
+              items={layerSetItems}
+            />
+          </Paper>
+        </Box>
         <ResourceLayerMap
           initialViewState={defaultView}
           width="100%"

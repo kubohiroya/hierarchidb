@@ -168,7 +168,7 @@
       "quantize": "Coordinate Quantization",
       "quantizeSelected": "Selected: {value}",
       "quantizeHelp": "Coordinate quantization used in transform preprocessing to reduce size and stabilize boundaries.",
-      "quantizeStarHelp": "\u26051 is the coarsest rounding (lowest precision); higher stars increase precision.",
+      "quantizeStarHelp": "★1 is the coarsest rounding (lowest precision); higher stars increase precision.",
       "enablePerFeatureExtraction": "Allow transform to omit countries or municipalities",
       "enablePerFeatureExtractionHelp": "Geometries may be omitted, but metadata is retained.",
       "zoomBandRangesTitle": "Zoom band ranges",
@@ -285,6 +285,9 @@
         "ringCount": "Rings (Error/Total)",
         "message": "Message"
       }
+    },
+    "layerSets": {
+      "title": "Layer Sets"
     }
   },
   "stage": {
@@ -305,8 +308,8 @@
       "stage": "Stage",
       "task": "Polygons",
       "taskUnitTasks": "Tasks",
-      "counts": "{{percentage}}% \u30fb {{completed}}/{{total}} polygons completed \u30fb failed {{failed}} \u30fb skipped {{skipped}}",
-      "countsWithUnit": "{{percentage}}% \u30fb {{completed}}/{{total}} {{unit}} completed \u30fb failed {{failed}} \u30fb skipped {{skipped}}"
+      "counts": "{{percentage}}% ・ {{completed}}/{{total}} polygons completed ・ failed {{failed}} ・ skipped {{skipped}}",
+      "countsWithUnit": "{{percentage}}% ・ {{completed}}/{{total}} {{unit}} completed ・ failed {{failed}} ・ skipped {{skipped}}"
     },
     "taskPhase": {
       "fetchCacheStart": "Fetch cache start",
@@ -348,7 +351,7 @@
       "task": "Task",
       "working": "Working...",
       "unknownStage": "processing",
-      "counts": "{{percentage}}% \u30fb {{completed}}/{{total}} completed \u30fb failed {{failed}} \u30fb skipped {{skipped}}"
+      "counts": "{{percentage}}% ・ {{completed}}/{{total}} completed ・ failed {{failed}} ・ skipped {{skipped}}"
     },
     "tasks": {
       "empty": "No tasks yet.",

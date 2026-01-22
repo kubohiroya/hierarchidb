@@ -5,6 +5,8 @@ import type { LocationQueryAPI } from '@hierarchidb/plugin-service-api';
 import { ROUTE_DATA_SOURCES } from '@hierarchidb/route-plugin';
 import { SHAPE_DATA_SOURCES } from '@hierarchidb/shape-plugin';
 import type {
+  LayerSetId,
+  LayerSetVisibility,
   MapAttributionItem,
   MapLibreGeoJSONFeature,
   MapLibreMapInstance,
@@ -14,6 +16,7 @@ import type {
 } from '@hierarchidb/ui-plugin-shell/ui-map';
 import {
   buildCategoryFilter,
+  DEFAULT_LAYER_SETS,
   DEFAULT_MAP_CONFIG,
   mergeFilters,
   ResourceLayerMap,
@@ -72,6 +75,15 @@ const ICON_SIZE_SLOPE = 0.05;
 const ICON_SIZE_AT_MAX = ICON_SIZE_MIN + LOCATION_MAX_ZOOM * ICON_SIZE_SLOPE;
 const FIT_BOUNDS_PADDING_PX = 64;
 
+const resolveLayerSetEntryPriority = (layerSetId: LayerSetId, entryId?: string): number => {
+  const layerSet = DEFAULT_LAYER_SETS.find((set) => set.id === layerSetId);
+  if (!layerSet) return 0;
+  if (!entryId) return layerSet.priority * 100;
+  const index = layerSet.entries.findIndex((entry) => entry.id === entryId);
+  if (index < 0) return layerSet.priority * 100;
+  return layerSet.priority * 100 + (layerSet.entries.length - index);
+};
+
 const LOCATION_ICON_COMPONENTS: Record<LocationType, SvgIconComponent> = {
   area_centroid: LocationCityIcon,
   airport: FlightTakeoffIcon,
@@ -105,6 +117,12 @@ export default function MapPage() {
         ROUTE_MODE_OPTIONS.map((option) => [option.id, true])
       ) as MapToggleSelection
   );
+
+  const [layerSetVisibility, setLayerSetVisibility] = useState<LayerSetVisibility>({
+    location: true,
+    route: true,
+    shape: true,
+  });
   const mapInstanceRef = useRef<MapLibreMapInstance | null>(null);
   const exportControlRef = useRef<MaplibreExportControl | null>(null);
   const locationQueryPromiseRef = useRef<Promise<LocationQueryAPI> | null>(null);
@@ -205,12 +223,12 @@ export default function MapPage() {
 
   const highlightLayerIds = useMemo(
     () => [
-      ...vectorLayers.map(
+      ...filteredVectorLayers.map(
         (layer) => layer.layerConfig?.layerId ?? `resource-layer-${layer.nodeId}`
       ),
-      ...locationGeoJsonLayers.map((layer) => layer.layerId),
+      ...combinedGeoJsonLayers.map((layer) => layer.layerId),
     ],
-    [locationGeoJsonLayers, vectorLayers]
+    [combinedGeoJsonLayers, filteredVectorLayers]
   );
 
   const buildHighlightEntry = useCallback(
@@ -276,7 +294,11 @@ export default function MapPage() {
       'mode',
       'route_mode',
     ]);
-    return vectorLayers.map((layer) => {
+    const activeVectorLayers = vectorLayers.filter((layer) => {
+      if (!layer.layerSetId) return true;
+      return layerSetVisibility[layer.layerSetId] ?? false;
+    });
+    return activeVectorLayers.map((layer) => {
       if (layer.nodeType === 'location') {
         const baseConfig = layer.layerConfig ?? {};
         const nextVisible = enabledLocationKinds.length === 0 ? false : baseConfig.visible;
@@ -303,11 +325,14 @@ export default function MapPage() {
       }
       return layer;
     });
-  }, [enabledLocationKinds, enabledRouteModes, locationTypeFilter, routeModeValues, vectorLayers]);
+  }, [enabledLocationKinds, enabledRouteModes, locationTypeFilter, routeModeValues, vectorLayers, layerSetVisibility]);
 
   const combinedGeoJsonLayers = useMemo(
-    () => [...geoJsonLayers, ...locationGeoJsonLayers],
-    [geoJsonLayers, locationGeoJsonLayers]
+    () => [
+      ...geoJsonLayers,
+      ...(layerSetVisibility.location ? locationGeoJsonLayers : []),
+    ],
+    [geoJsonLayers, layerSetVisibility.location, locationGeoJsonLayers]
   );
 
   const attributionItems = useMemo<MapAttributionItem[]>(() => {
@@ -628,6 +653,9 @@ export default function MapPage() {
           sourceId,
           layerType: 'circle',
           paint: locationCirclePaint,
+          layerSetId: 'location',
+          layerPriority: resolveLayerSetEntryPriority('location', 'location-points'),
+          layerLabel: layer.absolutePath ?? layer.layerId,
           ...base,
         },
       ];
@@ -642,6 +670,9 @@ export default function MapPage() {
             'icon-allow-overlap': true,
             'icon-ignore-placement': true,
           },
+          layerSetId: 'location',
+          layerPriority: resolveLayerSetEntryPriority('location', 'location-symbols'),
+          layerLabel: layer.absolutePath ?? layer.layerId,
           ...base,
         });
       }
@@ -660,6 +691,10 @@ export default function MapPage() {
     async (viewState?: MapViewState) => {
       if (!mapInstanceRef.current) return;
       if (locationLayers.length === 0) {
+        setLocationGeoJsonLayers([]);
+        return;
+      }
+      if (!layerSetVisibility.location) {
         setLocationGeoJsonLayers([]);
         return;
       }
@@ -764,7 +799,7 @@ export default function MapPage() {
         console.warn('[MapPage] Failed to query location viewport', error);
       }
     },
-    [buildLocationLayersForNode, enabledLocationKinds, getLocationQueryAPI, locationLayers]
+    [buildLocationLayersForNode, enabledLocationKinds, getLocationQueryAPI, layerSetVisibility.location, locationLayers]
   );
 
   const scheduleLocationQuery = useCallback(
@@ -820,6 +855,15 @@ export default function MapPage() {
   }, [ensureLocationIcons, mapInstance]);
 
   useEffect(() => {
+    if (!layerSetVisibility.location) {
+      setLocationGeoJsonLayers([]);
+      return () => {
+        if (locationQueryTimerRef.current) {
+          window.clearTimeout(locationQueryTimerRef.current);
+          locationQueryTimerRef.current = null;
+        }
+      };
+    }
     if (locationLayers.length > 0) {
       setLocationGeoJsonLayers(
         locationLayers.flatMap((layer) => buildLocationLayersForNode(layer, []))
@@ -834,7 +878,7 @@ export default function MapPage() {
         locationQueryTimerRef.current = null;
       }
     };
-  }, [buildLocationLayersForNode, locationLayers, scheduleLocationQuery]);
+  }, [buildLocationLayersForNode, layerSetVisibility.location, locationLayers, scheduleLocationQuery]);
 
   const handleLocationTypeToggle = useCallback((id: string) => {
     setLocationTypeSelection((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -842,6 +886,10 @@ export default function MapPage() {
 
   const handleRouteModeToggle = useCallback((id: string) => {
     setRouteModeSelection((prev) => ({ ...prev, [id]: !prev[id] }));
+  }, []);
+
+  const handleLayerSetToggle = useCallback((id: LayerSetId) => {
+    setLayerSetVisibility((prev) => ({ ...prev, [id]: !prev[id] }));
   }, []);
 
   const handleLocationMoveEnd = useCallback(
@@ -860,7 +908,7 @@ export default function MapPage() {
           nodeId={nodeId}
           formattedZxy={formattedZxy}
           basemapStyles={basemapStyles}
-          vectorLayers={vectorLayers}
+          vectorLayers={filteredVectorLayers}
           geoJsonLayers={combinedGeoJsonLayers}
           mapInfo={mapInfo}
           stylerSummaries={stylerSummaries}
@@ -874,6 +922,9 @@ export default function MapPage() {
           routeModeSelection={routeModeSelection}
           onToggleLocationType={handleLocationTypeToggle}
           onToggleRouteMode={handleRouteModeToggle}
+          layerSets={DEFAULT_LAYER_SETS}
+          layerSetVisibility={layerSetVisibility}
+          onToggleLayerSet={handleLayerSetToggle}
         />
       ) : null}
 

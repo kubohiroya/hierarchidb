@@ -43,9 +43,45 @@ const sortByDistance = (
   return scored.map((entry) => entry.feature);
 };
 
+const sortByPriorityAndDistance = (
+  map: MapLibreMapInstance,
+  event: MapLibreMapMouseEvent,
+  features: MapLibreGeoJSONFeature[],
+  layerPriorityById?: Map<string, number>,
+): MapLibreGeoJSONFeature[] => {
+  if (!layerPriorityById || layerPriorityById.size === 0) {
+    return sortByDistance(map, event, features);
+  }
+  const canSortDistance = canSortByDistance(features);
+  const mapWithProject = canSortDistance
+    ? (map as MapLibreMapInstance & {
+        project: (lngLat: { lng: number; lat: number }) => { x: number; y: number };
+      })
+    : null;
+  const { x, y } = event.point ?? { x: 0, y: 0 };
+  const scored = features.map((feature, index) => {
+    const layerId = typeof feature.layer?.id === 'string' ? feature.layer.id : '';
+    const priority = layerPriorityById.get(layerId) ?? 0;
+    let distance = 0;
+    if (canSortDistance && mapWithProject && event.point) {
+      const [lng, lat] = (feature as { geometry: { coordinates: [number, number] } }).geometry.coordinates;
+      const projected = mapWithProject.project({ lng, lat });
+      distance = Math.hypot(projected.x - x, projected.y - y);
+    }
+    return { feature, priority, distance, index };
+  });
+  scored.sort((a, b) => {
+    if (a.priority !== b.priority) return b.priority - a.priority;
+    if (canSortDistance && a.distance !== b.distance) return a.distance - b.distance;
+    return a.index - b.index;
+  });
+  return scored.map((entry) => entry.feature);
+};
+
 export type UseMapFeatureHoverCandidatesParams<HighlightEntry extends { source: string; id: string | number }> = {
   mapInstance: MapLibreMapInstance | null;
   highlightLayerIds: string[];
+  layerPriorityById?: Map<string, number>;
   buildHighlightEntry: (feature?: MapLibreGeoJSONFeature | null) => HighlightEntry | null;
   radius?: number;
   onHoverChange: (entries: HighlightEntry[], features: MapLibreGeoJSONFeature[]) => void;
@@ -54,6 +90,7 @@ export type UseMapFeatureHoverCandidatesParams<HighlightEntry extends { source: 
 export const useMapFeatureHoverCandidates = <HighlightEntry extends { source: string; id: string | number }>({
   mapInstance,
   highlightLayerIds,
+  layerPriorityById,
   buildHighlightEntry,
   radius = 6,
   onHoverChange,
@@ -71,7 +108,7 @@ export const useMapFeatureHoverCandidates = <HighlightEntry extends { source: st
         radius,
         getFeatureId: defaultFeatureIdAccessor,
       });
-      const orderedFeatures = sortByDistance(mapInstance, event, result.features);
+      const orderedFeatures = sortByPriorityAndDistance(mapInstance, event, result.features, layerPriorityById);
       const entries = orderedFeatures
         .map((feature) => buildHighlightEntry(feature))
         .filter((entry): entry is HighlightEntry => Boolean(entry));
@@ -89,5 +126,5 @@ export const useMapFeatureHoverCandidates = <HighlightEntry extends { source: st
       mapInstance.off('mousemove', handleMouseMove as (...args: unknown[]) => void);
       canvas.removeEventListener('mouseleave', handleMouseLeave);
     };
-  }, [buildHighlightEntry, highlightLayerIds, mapInstance, onHoverChange, radius]);
+  }, [buildHighlightEntry, highlightLayerIds, layerPriorityById, mapInstance, onHoverChange, radius]);
 };

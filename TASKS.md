@@ -1,3 +1,41 @@
+2309) feat/ui-map/layer-set-hierarchy (P1) — 進行中 (2026-01-22)
+- ブランチ名: feat/ui-map/layer-set-hierarchy
+- 依存: なし
+- 受け入れ基準: レイヤーセットが論理セット（位置/経路/シェイプ）として定義でき、階層順で上書き表示される／レイヤーセット名が自治体レベル名（admin0 など）に依存しない／既存タイル内部レイヤー名（admin{N}, admin{N}-boundary）に対する解決ルールで描画される／レイヤーセットのUI切替が /map と shape preview で可能になる／描画順だけでなくホバー・選択の優先順位にも反映される／任意オブジェクトの一覧を種類別・階層別に整理して表示できる／shape preview の既存表示が維持される／ExecPlan を PLANS.md に作成する／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/**`, `plugins/shape-plugin/src/ui/components/step6/**`（調査後に確定）
+- ロールバック手順: レイヤーセット定義/解決ロジックの差分を revert し、従来の単一レイヤー解決へ戻す
+- チェックリスト:
+  - ExecPlan を作成し、設計/移行/検証手順を明文化する
+  - レイヤーセットの論理定義と表示優先順位を実装する
+  - レイヤーセットのUI切替（/map と shape preview）を実装する
+  - ホバー/選択の優先順位にレイヤーセット順を反映する
+  - 種類別・階層別に整理された一覧UIを追加する
+  - 既存のタイル内部レイヤー名に対する解決ルールを実装する
+  - shape preview の表示・選択・ホバーが既存どおり動作することを確認する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-22 19:59 JST レイヤーセットの階層化と解決ルール実装に着手。
+  - update: 2026-01-22 20:05 JST ExecPlan を plans/ui-map-layer-set-hierarchy-execplan.md に作成。
+  - update: 2026-01-22 20:23 JST UI切替・ホバー/選択優先順位・種類別/階層別一覧の要件をDoDに反映。
+
+2308) fix/shape/vt-layer-resolution (P1) — 進行中 (2026-01-23)
+- ブランチ名: fix/shape/vt-layer-resolution
+- 依存: なし
+- 受け入れ基準: ui-map の sourceLayer 解決が admin{N}/admin{N}-boundary に一致し、ベクトルタイルが表示される／tileLayerNames が空のケースでも実レイヤー名に追従できる／pnpm --filter @hierarchidb/ui-map build と pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/useShapePreviewStepView.ts`, `plugins/shape-plugin/src/ui/components/step6/useShapePreviewStep.ts`
+- ロールバック手順: レイヤー解決まわりの差分を revert する
+- チェックリスト:
+  - tileLayerNames の取得経路と空判定を確認する
+  - admin{N}/admin{N}-boundary への一致ロジックを調整する
+  - pnpm --filter @hierarchidb/ui-map build を実行する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 23:55 JST ベクトルタイルのレイヤー解決修正に着手。
+  - update: 2026-01-24 00:05 JST tilesLayer が admin 形式以外の場合は admin0 にフォールバックする解決ロジックを追加。
+  - done: 2026-01-24 00:10 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define 警告あり）。pnpm typecheck exit 0。
+
 2307) fix/ui/vector-tile-layer-syntax (P1) — 進行中 (2026-01-23)
 - ブランチ名: fix/ui/vector-tile-layer-syntax
 - 依存: なし

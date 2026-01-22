@@ -159,7 +159,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
       if (layerId && mapRef.getLayer(layerId)) {
         mapRef.removeLayer(layerId);
       }
-      mapRef.removeSource(sourceId!);
+      mapRef.removeSource(sourceId);
     }
 
     // Create vector tile source
@@ -172,9 +172,9 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
     if (promoteId) {
       vectorTileSource.promoteId = promoteId as VectorSourceSpecification['promoteId'];
     }
-
+    if (!sourceId) return;
     try {
-      mapRef.addSource(sourceId!, vectorTileSource as SourceSpecification);
+      mapRef.addSource(sourceId, vectorTileSource as SourceSpecification);
       setSourceAdded(true);
     } catch (error) {
       if (error instanceof Error && error.message.includes('already exists')) {
@@ -188,12 +188,15 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
       try {
         if (mapRef && typeof mapRef.getStyle === 'function') {
           const style = mapRef.getStyle();
-          if (style.layers) {
-            if (mapRef.getLayer(layerId!)) {
-              mapRef.removeLayer(layerId!);
+          if (layerId && style.layers) {
+            if (mapRef.getLayer(layerId)) {
+              mapRef.removeLayer(layerId);
             }
-            if (mapRef.getSource(sourceId!)) {
-              mapRef.removeSource(sourceId!);
+            if (!sourceId) {
+              return;
+            }
+            if (mapRef.getSource(sourceId)) {
+              mapRef.removeSource(sourceId);
             }
           }
         }
@@ -207,13 +210,13 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
   useEffect(() => {
     if (!map || !sourceAdded || !featureState) return;
     const mapRef = map;
-    if (!mapRef.getSource || !mapRef.getSource(sourceId!)) return;
+    if (!sourceId || !mapRef.getSource || !mapRef.getSource(sourceId!)) return;
 
     type FeatureStateTarget = { source: string; id: string | number; sourceLayer?: string; key?: string };
     const buildFeatureStateTarget = (id: string | number, key?: string): FeatureStateTarget => (
       sourceLayer
-        ? { source: sourceId!, sourceLayer, id, ...(key ? { key } : {}) }
-        : { source: sourceId!, id, ...(key ? { key } : {}) }
+        ? { source: sourceId, sourceLayer, id, ...(key ? { key } : {}) }
+        : { source: sourceId, id, ...(key ? { key } : {}) }
     );
 
     const removeStateKeys = (id: string | number, state: FeatureStateRecord) => {
@@ -309,10 +312,10 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
 
     return () => {
       try {
-        if (mapRef && typeof mapRef.getStyle === 'function') {
+        if (layerId && mapRef && typeof mapRef.getStyle === 'function') {
           const style = mapRef.getStyle();
-          if (style.layers && mapRef.getLayer && mapRef.getLayer(layerId!)) {
-            mapRef.removeLayer(layerId!);
+          if (style.layers && mapRef.getLayer && mapRef.getLayer(layerId)) {
+            mapRef.removeLayer(layerId);
           }
         }
       } catch (error) {
@@ -323,10 +326,10 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
 
   // Update visibility
   useEffect(() => {
-    if (!map || !map.getLayer || !map.getLayer(layerId!)) return;
+    if (!layerId || !map || !map.getLayer || !map.getLayer(layerId)) return;
 
     try {
-      map.setLayoutProperty(layerId!, 'visibility', visible ? 'visible' : 'none');
+      map.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none');
     } catch (error) {
       console.warn('VectorTileLayer visibility update error:', error);
     }

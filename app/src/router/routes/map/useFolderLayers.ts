@@ -5,10 +5,12 @@ import { MAPLIBRE_PROPERTY_METADATA } from '@hierarchidb/styler-store';
 import type {
   FeatureStateEntry,
   FeatureStateRecord,
+  LayerSetId,
   MapLibreStyle,
   ResourceGeoJsonLayer,
   ResourceVectorLayer,
 } from '@hierarchidb/ui-plugin-shell/ui-map';
+import { DEFAULT_LAYER_SETS } from '@hierarchidb/ui-plugin-shell/ui-map';
 import { ensureWorkerAPI } from '@hierarchidb/ui-worker-client';
 import { getDBName } from '@hierarchidb/util';
 import { useEffect, useState } from 'react';
@@ -73,6 +75,13 @@ const withLayerOrder = (
   const key = absolutePath ?? fallbackId;
   return `${prefix}/${key}`;
 };
+
+const layerSetPriorityById = new Map<LayerSetId, number>(
+  DEFAULT_LAYER_SETS.map((set) => [set.id, set.priority])
+);
+
+const resolveLayerSetPriority = (id: LayerSetId): number =>
+  (layerSetPriorityById.get(id) ?? 0) * 100;
 
 let shapeQueryPromise: Promise<ShapeQueryAPI> | null = null;
 const getShapeQueryAPI = async (): Promise<ShapeQueryAPI> => {
@@ -308,6 +317,9 @@ export const useFolderLayers = ({
               nodeType: 'shape',
               dataSourceName,
               absolutePath: withLayerOrder('shape', absolutePath, String(node.id)),
+              layerSetId: 'shape',
+              layerPriority: resolveLayerSetPriority('shape'),
+              layerLabel: absolutePath ?? String(node.id),
               dbName: getDBName('shape'),
               tileDataProvider: async (z, x, y, tileNodeId) => {
                 if (!tileNodeId) return null;
@@ -354,6 +366,9 @@ export const useFolderLayers = ({
                 nodeType: 'route',
                 dataSourceName,
                 absolutePath: withLayerOrder('route', absolutePath, String(node.id)),
+                layerSetId: 'route',
+                layerPriority: resolveLayerSetPriority('route'),
+                layerLabel: absolutePath ?? String(node.id),
                 dbName: getDBName('route'),
                 tileDataProvider: async (z, x, y) => {
                   const api = await getRouteQueryAPI();

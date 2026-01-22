@@ -83,6 +83,23 @@ export {
 export type { MapFeatureIdentifyCandidates } from './lib/feature-identification.js';
 
 // Vector tile preview helpers
+export {
+  DEFAULT_LAYER_SETS,
+  getLayerSetDefinition,
+  resolveLayerSetEntries,
+  type LayerSetDefinition,
+  type LayerSetEntry,
+  type LayerSetId,
+  type ResolvedLayerSetEntry,
+} from './preview/layerSetDefinitions.js';
+export {
+  LayerSetVisibilityPanel,
+  buildLayerSetListItems,
+  type LayerSetVisibility,
+  type LayerSetListItem,
+  type LayerSetVisibilityPanelProps,
+} from './preview/LayerSetVisibilityPanel.js';
+
 export { useVectorTilePreviewMetadata } from './preview/useVectorTilePreviewMetadata.js';
 export { useVectorTilePreviewSearch } from './preview/useVectorTilePreviewSearch.js';
 export { useVectorTilePreviewSelection } from './preview/useVectorTilePreviewSelection.js';
