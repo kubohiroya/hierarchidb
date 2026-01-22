@@ -1,0 +1,1 @@
+import{s as e}from"./rolldown-runtime-CbIIB0ob.js";import{i as t}from"./vendor-react-7Qv6hoHe.js";import{Yi as n}from"./index.js";var r=n((0,e(t()).jsx)(`path`,{d:`M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z`}),`ChevronRight`);export{r as t};

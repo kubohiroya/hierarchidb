@@ -1,0 +1,1 @@
+import{s as e}from"../worker.js";const t=(e,t,n,r)=>`${e}-${t}-${n}-${r}`;function n(n){return e(n,{buildTileId:t,timestampField:`timestamp`})}export{n as createRouteVectorTileStoreDexie};

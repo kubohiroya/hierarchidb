@@ -287,8 +287,12 @@
         },
         "zoomBands": {
           "title": "ズーム帯",
-          "helper": "shape のタイルは固定のズーム帯で生成されます。",
-          "summary": "band0: z0-3\nband1: z3-6\nband2: z6-9\nband3: z9-11（任意）"
+          "helper": "共通ズーム帯設定は、新規の Shape/Route ビルドのデフォルト値として使われます。",
+          "summary": "新規作成時の Transform のズーム帯設定に反映されます。",
+          "rangeCount": "範囲数",
+          "rangeCountHelp": "変換に使うズーム範囲の数を設定します。",
+          "boundaries": "境界ズーム",
+          "boundariesHelp": "範囲を分割するズーム値を調整します。"
         }
       },
       "developerMenu": {
@@ -332,7 +336,11 @@
       "closeButton": "閉じて親へ移動",
       "noNode": "このページではノード情報を表示できません。",
       "createdLabel": "作成",
-      "updatedLabel": "更新"
+      "updatedLabel": "更新",
+      "confirmTrashTitle": "ゴミ箱に移動",
+      "confirmTrashDescription": "この項目と子要素をゴミ箱に移動しますか？",
+      "confirmTrashCancel": "キャンセル",
+      "confirmTrashConfirm": "ゴミ箱に移動"
     }
   },
   "treeTable": {
