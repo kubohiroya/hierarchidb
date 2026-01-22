@@ -210,7 +210,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
   useEffect(() => {
     if (!map || !sourceAdded || !featureState) return;
     const mapRef = map;
-    if (!sourceId || !mapRef.getSource || !mapRef.getSource(sourceId!)) return;
+    if (!sourceId || !mapRef.getSource || !mapRef.getSource(sourceId)) return;
 
     type FeatureStateTarget = { source: string; id: string | number; sourceLayer?: string; key?: string };
     const buildFeatureStateTarget = (id: string | number, key?: string): FeatureStateTarget => (

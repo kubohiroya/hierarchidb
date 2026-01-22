@@ -221,16 +221,6 @@ export default function MapPage() {
     });
   }, [setStylerToggles, stylerSummaries]);
 
-  const highlightLayerIds = useMemo(
-    () => [
-      ...filteredVectorLayers.map(
-        (layer) => layer.layerConfig?.layerId ?? `resource-layer-${layer.nodeId}`
-      ),
-      ...combinedGeoJsonLayers.map((layer) => layer.layerId),
-    ],
-    [combinedGeoJsonLayers, filteredVectorLayers]
-  );
-
   const buildHighlightEntry = useCallback(
     (feature?: MapLibreGeoJSONFeature | null) => {
       if (!feature) return null;
@@ -333,6 +323,16 @@ export default function MapPage() {
       ...(layerSetVisibility.location ? locationGeoJsonLayers : []),
     ],
     [geoJsonLayers, layerSetVisibility.location, locationGeoJsonLayers]
+  );
+
+  const highlightLayerIds = useMemo(
+    () => [
+      ...filteredVectorLayers.map(
+        (layer) => layer.layerConfig?.layerId ?? `resource-layer-${layer.nodeId}`
+      ),
+      ...combinedGeoJsonLayers.map((layer) => layer.layerId),
+    ],
+    [combinedGeoJsonLayers, filteredVectorLayers]
   );
 
   const attributionItems = useMemo<MapAttributionItem[]>(() => {

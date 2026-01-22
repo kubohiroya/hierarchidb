@@ -1,5 +1,13 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import type { MapAttributionItem, ResourceGeoJsonLayer, ResourceVectorLayer, LayerSetId, LayerSetVisibility } from '@hierarchidb/ui-map';
+import type {
+  MapAttributionItem,
+  ResourceGeoJsonLayer,
+  ResourceVectorLayer,
+  LayerSetId,
+  LayerSetVisibility,
+  ResolvedLayerSetEntry,
+  LayerSetListItem,
+} from '@hierarchidb/ui-map';
 import { DEFAULT_LAYER_SETS, buildLayerSetListItems, getLayerSetDefinition, resolveLayerSetEntries } from '@hierarchidb/ui-map';
 import { getDataSourceConfig } from '../../../services/utils/utils.js';
 import type { ShapeEntity } from '../../../common/types/index.js';
@@ -28,7 +36,7 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
   });
 
   const toggleLayerSetVisibility = useCallback((id: LayerSetId) => {
-    setLayerSetVisibility((prev) => ({
+    setLayerSetVisibility((prev: LayerSetVisibility) => ({
       ...prev,
       [id]: !prev[id],
     }));
@@ -48,18 +56,18 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
     setZoomSnackbarOpen(false);
   }, []);
 
-  const layerSetName = preview.buildConfig?.vtConfig?.layerSetName ?? 'shape';
+  const layerSetName = data.buildConfig?.vtConfig?.layerSetName ?? 'shape';
   const layerSetDefinition = useMemo(
     () => getLayerSetDefinition(layerSetName),
     [layerSetName],
   );
 
-  const resolvedLayerSetEntries = useMemo(() => {
+  const resolvedLayerSetEntries = useMemo<ResolvedLayerSetEntry[]>(() => {
     if (!layerSetDefinition) return [];
     return resolveLayerSetEntries(preview.tileLayerNames ?? [], layerSetDefinition);
   }, [layerSetDefinition, preview.tileLayerNames]);
 
-  const layerSetItems = useMemo(
+  const layerSetItems = useMemo<LayerSetListItem[]>(
     () => buildLayerSetListItems(resolvedLayerSetEntries),
     [resolvedLayerSetEntries],
   );

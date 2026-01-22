@@ -18,6 +18,9 @@
   - start: 2026-01-22 19:59 JST レイヤーセットの階層化と解決ルール実装に着手。
   - update: 2026-01-22 20:05 JST ExecPlan を plans/ui-map-layer-set-hierarchy-execplan.md に作成。
   - update: 2026-01-22 20:23 JST UI切替・ホバー/選択優先順位・種類別/階層別一覧の要件をDoDに反映。
+  - update: 2026-01-24 00:32 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define 警告あり）。
+  - blocked: 2026-01-24 00:33 JST pnpm typecheck で app/src/router/routes/map/MapPage.tsx の順序エラー（TS2448/TS2454: filteredVectorLayers/combinedGeoJsonLayers が未定義参照）。
+  - update: 2026-01-24 00:36 JST pnpm typecheck exit 0 を確認。
 
 2308) fix/shape/vt-layer-resolution (P1) — 進行中 (2026-01-23)
 - ブランチ名: fix/shape/vt-layer-resolution
