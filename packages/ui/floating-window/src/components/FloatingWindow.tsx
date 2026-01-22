@@ -209,7 +209,7 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
 
     e.preventDefault();
     e.stopPropagation();
-  }, [bringToFront, resizable, state.isFullscreen, state.isMinimized, state.position, state.size]);
+  }, [resizable, state.isFullscreen, state.isMinimized, state.position, state.size]);
 
   // Global mouse move handler
   useEffect(() => {
