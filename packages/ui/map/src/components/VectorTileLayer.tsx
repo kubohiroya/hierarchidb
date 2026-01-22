@@ -188,7 +188,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
       try {
         if (mapRef && typeof mapRef.getStyle === 'function') {
           const style = mapRef.getStyle();
-          if (style && style.layers) {
+          if (style.layers) {
             if (mapRef.getLayer(layerId!)) {
               mapRef.removeLayer(layerId!);
             }
@@ -311,7 +311,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
       try {
         if (mapRef && typeof mapRef.getStyle === 'function') {
           const style = mapRef.getStyle();
-          if (style && style.layers && mapRef.getLayer && mapRef.getLayer(layerId!)) {
+          if (style.layers && mapRef.getLayer && mapRef.getLayer(layerId!)) {
             mapRef.removeLayer(layerId!);
           }
         }
