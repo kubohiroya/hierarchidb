@@ -1,1 +1,0 @@
-function e(e){return{async list(t){return(await e.features.where(`nodeId`).equals(t).toArray()).map(e=>({...e}))},async bulkUpsert(t,n){if(!n.length)return;let r=n.map(e=>({...e,nodeId:t}));await e.features.bulkPut(r)},async bulkDelete(t,n){await e.features.bulkDelete(n)}}}export{e as createRouteFeatureStoreDexie};
