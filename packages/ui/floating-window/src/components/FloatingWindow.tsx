@@ -179,11 +179,17 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
       x: e.clientX - state.position.x,
       y: e.clientY - state.position.y,
     };
-    floatingWindowZIndex += 1;
-    setState(prev => ({ ...prev, zIndex: Math.max(prev.zIndex ?? 1000, floatingWindowZIndex) }));
-
     e.preventDefault();
   }, [draggable, state.isFullscreen, state.position]);
+
+  const bringToFront = useCallback(() => {
+    floatingWindowZIndex += 1;
+    setState(prev => {
+      const nextZIndex = Math.max(prev.zIndex ?? 1000, floatingWindowZIndex);
+      if (nextZIndex === prev.zIndex) return prev;
+      return { ...prev, zIndex: nextZIndex };
+    });
+  }, []);
 
   // Handle resizing
   const handleResizeMouseDown = useCallback((direction: string) => (e: React.MouseEvent) => {
@@ -203,7 +209,7 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
 
     e.preventDefault();
     e.stopPropagation();
-  }, [resizable, state.isFullscreen, state.isMinimized, state.position, state.size]);
+  }, [bringToFront, resizable, state.isFullscreen, state.isMinimized, state.position, state.size]);
 
   // Global mouse move handler
   useEffect(() => {
@@ -359,13 +365,17 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
       className={`floating-window ${className || ''}`}
       style={windowStyle}
       elevation={8}
+      onMouseDownCapture={(event) => {
+        if (event.button !== 0) return;
+        bringToFront();
+      }}
     >
       <TitleBar
         className="title-bar"
         onMouseDown={handleMouseDown}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.5rem' }}>
-          <WindowIcon sx={{ fontSize: '0.6rem' }} />
+          <WindowIcon sx={{ fontSize: '0.6rem', ml: 1 }} />
           <Typography sx={{ fontWeight: 600, fontSize: '0.5rem', lineHeight: 1.2 }}>
             {title}
           </Typography>
