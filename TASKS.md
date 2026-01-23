@@ -1,4 +1,21 @@
-2313) fix/ui-map/hover-snackbar-bottom-center (P1) — 進行中 (2026-01-24)
+2315) feat/ui-map/map-preview-floating-lists (P1) — 進行中 (2026-01-24)
+- ブランチ名: feat/ui-map/map-preview-floating-lists
+- 依存: なし
+- 受け入れ基準: /map の Data Table フローティングダイアログが撤去され点滅が発生しない／/map に shape一覧・location一覧・route一覧のフローティングダイアログが表示される／shape一覧は shape-plugin step6 の「フィーチャー一覧」と同等の内容/挙動で名称が「shape一覧」になる／/map のマウスホイール操作時に画面中央へズーム率が表示される／pnpm --filter @hierarchidb/app typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/routes/map/**`, `packages/ui/map/src/**`, `plugins/shape-plugin/src/ui/components/step6/**`（調査後に確定）
+- ロールバック手順: /map のフローティングダイアログ差分とズーム率表示の差分を revert し、従来の Data Table を復帰する
+- チェックリスト:
+  - /map の Data Table フローティングダイアログの実装箇所を特定して撤去する
+  - shape-plugin step6 の「フィーチャー一覧」の構成/状態管理/データ取得を調査する
+  - /map に shape一覧・location一覧・route一覧のフローティングダイアログを実装する
+  - shape一覧の表示内容/挙動を step6 の「フィーチャー一覧」と同等にする（名称は「shape一覧」）
+  - /map のマウスホイール操作時のズーム率表示を画面中央に実装する
+  - pnpm --filter @hierarchidb/app typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 21:05 JST /map の Data Table 撤去と一覧/ズーム表示移植に着手。
+
+2313) fix/ui-map/hover-snackbar-bottom-center (P1) — 完了 (2026-01-24)
 - ブランチ名: fix/ui-map/hover-snackbar-bottom-center
 - 依存: なし
 - 受け入れ基準: ui-map のホバー名 snackbar が画面中央下に表示される／ADM0+ADM1 が重なる場合は ADM1 が優先して表示される（現行挙動の確認を含む）／ADM1 ホバー時の表示が「自治体名 / ADM1 / 国名 / 国コード / 1」になる／pnpm --filter @hierarchidb/ui-map typecheck が exit 0／TASKS.md に運用ログを記載する
@@ -13,6 +30,75 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-24 02:10 JST ui-map のホバー snackbar 表示位置とフォーマット調整に着手。
+  - update: 2026-01-24 02:27 JST ホバー snackbar の中央下配置と ADM ラベル整形ロジックを実装。
+  - done: 2026-01-24 02:31 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0。pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
+
+2314) fix/shape-step6/hover-snackbar-bottom-center (P1) — 完了 (2026-01-24)
+- ブランチ名: fix/shape-step6/hover-snackbar-bottom-center
+- 依存: なし
+- 受け入れ基準: shape-plugin step6 の地物ホバー表示が画面中央下に表示される／表示経路（ResourceLayerMap/snackbar か独自オーバーレイか）を明確化し、中央下へ統一する／ADM0+ADM1 が重なる場合は ADM1 が優先して表示される／ADM1 ホバー時の表示が「自治体名 / ADM1 / 国名 / 国コード / 1」になる／pnpm --filter @hierarchidb/ui-map typecheck と pnpm --filter @hierarchidb/app typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/**`, `packages/ui/map/src/**`（調査後に確定）
+- ロールバック手順: step6 ホバー表示変更の差分を revert し、従来の表示経路へ戻す
+- チェックリスト:
+  - step6 のホバー表示経路（snackbar/独自オーバーレイ）を特定する
+  - 中央下表示に統一する
+  - ADM0+ADM1 優先順位と ADM1 表示フォーマットを step6 で確認・修正する
+  - pnpm --filter @hierarchidb/ui-map typecheck を実行する
+  - pnpm --filter @hierarchidb/app typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 02:40 JST shape-plugin step6 のホバー表示が中央下にならない件の調査に着手。
+  - update: 2026-01-24 02:48 JST step6 のホバー表示を中央下に移動し、ADM ラベル整形と優先順位選択を追加。
+  - done: 2026-01-24 02:53 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0。pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
+
+2315) fix/ui-map/shape-preview-missing-source (P1) — 進行中 (2026-01-23)
+- ブランチ名: fix/ui-map/shape-preview-missing-source
+- 依存: なし
+- 受け入れ基準: `shape-preview-source` の Missing source ログ原因が特定される／ロシア・中国など特定ズーム帯でベクトルタイルが表示されない問題が解消される／影響範囲とロールバック手順を記載する／pnpm --filter @hierarchidb/ui-map typecheck が exit 0／必要な関連パッケージの typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/**`, `plugins/shape-plugin/src/ui/**`（調査後に確定）
+- ロールバック手順: Missing source 対応/レイヤー追加の差分を revert し、既存挙動へ戻す
+- チェックリスト:
+  - Missing source ログの発生箇所・条件を特定する
+  - shape-preview の source/layer 生成と feature state の適用タイミングを確認する
+  - ズーム帯でタイルが出ない原因を特定し修正する
+  - pnpm --filter @hierarchidb/ui-map typecheck を実行する
+  - 必要な関連パッケージの typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 09:09 JST shape-preview Missing source と表示欠落の調査に着手。
+
+2314) fix/shape/geoboundaries-continent-mismatch (P1) — 完了 (2026-01-23)
+- ブランチ名: fix/shape/geoboundaries-continent-mismatch
+- 依存: なし
+- 受け入れ基準: geoboundaries の continent mismatch ログが繰り返し出力されない／特殊ケースの補正ストラテジが適用される／影響範囲とロールバック手順が記載される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/**`（調査後に確定）
+- ロールバック手順: 補正ストラテジ／ログ抑制の差分を revert する
+- チェックリスト:
+  - mismatch ログの発生箇所と頻度を特定する
+  - 特殊ケース補正ストラテジが適用されているか確認する
+  - 必要な修正（補正適用/ログ抑制）を行う
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 09:03 JST geoboundaries continent mismatch ログの原因調査に着手。
+  - update: 2026-01-23 09:05 JST geoboundaries の大陸名（Latin America/Asia など）を特殊ケースで補正し、ISO3166 との不一致ログを抑制。
+  - done: 2026-01-23 09:06 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+
+2313) feat/ui-map/selected-primary-highlight (P2) — 完了 (2026-01-23)
+- ブランチ名: feat/ui-map/selected-primary-highlight
+- 依存: なし
+- 受け入れ基準: ui-map の選択状態（マウス選択＋フィーチャー一覧選択）の地物が primary 色で明確に表示される／ホバーは従来どおり軽い明るさ変化として維持される／検索・選択・ホバーの優先順位が明確で既存挙動を崩さない／pnpm --filter @hierarchidb/ui-map typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/**`（調査後に確定）
+- ロールバック手順: ハイライト色/優先順位の差分を revert し、既存配色へ戻す
+- チェックリスト:
+  - 選択/ホバー/検索の色指定箇所を特定する
+  - 選択状態の primary 色強調と優先順位を反映する
+  - pnpm --filter @hierarchidb/ui-map typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 07:20 JST 選択状態の primary 強調に着手。
+  - update: 2026-01-23 07:23 JST ResourceLayerMap の既定ハイライトで選択/ホバー色を primary 系に調整。
+  - done: 2026-01-23 07:24 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0。
 
 2312) feat/ui-map/screen-center-snackbar (P2) — 完了 (2026-01-23)
 - ブランチ名: feat/ui-map/screen-center-snackbar
@@ -48,6 +134,11 @@
   - update: 2026-01-23 06:45 JST line-dasharray の式エラー調査と修正に着手。
   - update: 2026-01-23 06:46 JST line-dasharray を literal 配列に置換し、pnpm --filter @hierarchidb/app typecheck を実行（tsdown define 警告あり）。
   - update: 2026-01-23 06:48 JST expression.evaluate エラー継続のため追加調査に着手。
+  - update: 2026-01-23 06:55 JST paint 配列の literal 正規化を追加し、pnpm --filter @hierarchidb/app typecheck を実行（tsdown define 警告あり）。
+  - update: 2026-01-24 19:45 JST エラー原因特定のためのデバッグログ追加に着手。
+  - update: 2026-01-24 20:05 JST MapLibreMap で paint 配列のデバッグ/正規化を追加し、maplibre-public に setPaintProperty を追記。pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-24 20:20 JST styledata でも paint 配列のデバッグ/正規化を実行するように追加。pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-24 20:35 JST expression 配列も setPaintProperty で再適用するように変更。pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
 
 2310) fix/ui/shape-preview-source-missing (P1) — 進行中 (2026-01-24)
 - ブランチ名: fix/ui/shape-preview-source-missing
@@ -203,6 +294,36 @@
   - start: 2026-01-23 22:05 JST MapStatsPanel の警告/更新ループ修正に着手。
   - update: 2026-01-23 22:15 JST MapStatsPanel の snapshot を安定参照化し、tile/feature の更新通知を同一参照で管理するよう修正。
   - done: 2026-01-23 22:18 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define 警告あり）。pnpm typecheck exit 0。
+
+2304) analysis/map-folder-preview-missing-tiles (P1) — 進行中 (2026-01-23)
+- ブランチ名: analysis/map-folder-preview-missing-tiles
+- 依存: なし
+- 受け入れ基準: /map のフォルダプレビューで「未ビルド」ダイアログが出る条件とタイル非表示の原因を説明できる／解決策の候補を整理できる／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/routes/map/**`, `packages/ui/map/src/**`（調査後に確定）
+- ロールバック手順: なし（調査のみ）
+- チェックリスト:
+  - missing layer ダイアログの発火条件を確認する
+  - フォルダプレビューのベクタレイヤー生成条件を確認する
+  - 原因と解決策候補を整理する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 21:40 JST /map フォルダプレビューのタイル非表示と未ビルドダイアログの原因調査に着手。
+  - update: 2026-01-23 21:45 JST missingLayer ダイアログは useMapFeatureHighlights/useMapFeatureSearch が mapInstance.getLayer 未検出時に即発火。初期描画時に VectorTileLayer の addLayer が未完了でも開くため、偽陽性の可能性が高いと判断。
+
+2303) fix/ui/feature-list-striped-contrast (P1) — 進行中 (2026-01-23)
+- ブランチ名: fix/ui/feature-list-striped-contrast
+- 依存: なし
+- 受け入れ基準: フィーチャー一覧の奇数行背景がホバー背景と区別できる色になる／ホバー強調の視認性は維持される／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/data-grid/src/**`
+- ロールバック手順: 変更差分を revert する
+- チェックリスト:
+  - 奇数行ストライプの背景色を hover と区別できる色に変更する
+  - 既存の hover 強調が維持されることを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 21:10 JST フィーチャー一覧の奇数行背景色が hover と同色になる問題の修正に着手。
+  - update: 2026-01-23 21:20 JST ストライプ背景を hover より薄い alpha 色へ変更（text.primary, 0.03）し視認性を調整。
+  - done: 2026-01-23 21:22 JST ストライプ背景の色差調整を反映（検証は未実施）。
 
 2302) fix/ui/floating-window-footer-zindex (P1) — 進行中 (2026-01-23)
 - ブランチ名: fix/ui/floating-window-footer-zindex

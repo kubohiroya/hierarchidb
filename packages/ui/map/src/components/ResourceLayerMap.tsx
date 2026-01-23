@@ -6,6 +6,8 @@
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Box, IconButton, Paper, Snackbar, Typography } from '@mui/material';
+import type { Theme } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
 import { Close as CloseIcon, FitScreen as FitScreenIcon, Tune as TuneIcon } from '@mui/icons-material';
 import { createPortal } from 'react-dom';
 import type { MapLibreGeoJSONFeature, MapLibreMapInstance, MapLibreStyle } from '../types/maplibre-public.js';
@@ -171,6 +173,125 @@ const pickStyleOverrides = (
   );
 };
 
+const toFiniteNumber = (value: unknown, fallback: number): number =>
+  typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+
+const buildDefaultHighlightOverrides = (
+  layerType: VectorTileLayerConfig['layerType'] | undefined,
+  basePaint: Record<string, unknown>,
+  theme: Theme,
+): Record<string, unknown> => {
+  const hasSearch = ['boolean', ['feature-state', 'hdbSearch'], false];
+  const hasHover = ['boolean', ['feature-state', 'hdbHover'], false];
+  const hasSelected = ['boolean', ['feature-state', 'hdbSelected'], false];
+  const selectedColor = theme.palette.primary.main;
+  const hoverColor = theme.palette.primary.light;
+  const searchColor = theme.palette.secondary.light;
+
+  const colorExpression = (base: unknown) => [
+    'case',
+    hasSelected,
+    selectedColor,
+    hasHover,
+    hoverColor,
+    hasSearch,
+    searchColor,
+    base,
+  ];
+
+  switch (layerType ?? 'fill') {
+    case 'line': {
+      const baseColor = basePaint['line-color'] ?? theme.palette.primary.main;
+      const baseWidth = toFiniteNumber(basePaint['line-width'], 2);
+      const baseOpacity = toFiniteNumber(basePaint['line-opacity'], 0.8);
+      return {
+        'line-color': colorExpression(baseColor),
+        'line-width': [
+          'case',
+          hasSelected,
+          baseWidth + 1.6,
+          hasHover,
+          baseWidth + 0.8,
+          hasSearch,
+          baseWidth + 0.4,
+          baseWidth,
+        ],
+        'line-opacity': [
+          'case',
+          hasSelected,
+          Math.min(1, baseOpacity + 0.2),
+          hasHover,
+          Math.min(1, baseOpacity + 0.1),
+          hasSearch,
+          Math.min(1, baseOpacity + 0.05),
+          baseOpacity,
+        ],
+      };
+    }
+    case 'circle': {
+      const baseColor = basePaint['circle-color'] ?? theme.palette.primary.main;
+      const baseRadius = toFiniteNumber(basePaint['circle-radius'], 4);
+      const baseOpacity = toFiniteNumber(basePaint['circle-opacity'], 0.8);
+      const baseStroke = basePaint['circle-stroke-color'] ?? baseColor;
+      const baseStrokeWidth = toFiniteNumber(basePaint['circle-stroke-width'], 0);
+      return {
+        'circle-color': colorExpression(baseColor),
+        'circle-radius': [
+          'case',
+          hasSelected,
+          baseRadius + 2,
+          hasHover,
+          baseRadius + 1,
+          hasSearch,
+          baseRadius + 0.5,
+          baseRadius,
+        ],
+        'circle-opacity': [
+          'case',
+          hasSelected,
+          Math.min(1, baseOpacity + 0.15),
+          hasHover,
+          Math.min(1, baseOpacity + 0.08),
+          hasSearch,
+          Math.min(1, baseOpacity + 0.05),
+          baseOpacity,
+        ],
+        'circle-stroke-color': colorExpression(baseStroke),
+        'circle-stroke-width': [
+          'case',
+          hasSelected,
+          baseStrokeWidth + 1.5,
+          hasHover,
+          baseStrokeWidth + 0.8,
+          hasSearch,
+          baseStrokeWidth + 0.4,
+          baseStrokeWidth,
+        ],
+      };
+    }
+    case 'fill':
+    default: {
+      const baseColor = basePaint['fill-color'] ?? theme.palette.primary.light;
+      const baseOutline = basePaint['fill-outline-color'] ?? baseColor;
+      const baseOpacity = toFiniteNumber(basePaint['fill-opacity'], 0.3);
+      return {
+        'fill-color': colorExpression(baseColor),
+        'fill-outline-color': colorExpression(baseOutline),
+        'fill-opacity': [
+          'case',
+          hasSelected,
+          Math.min(1, baseOpacity + 0.35),
+          hasHover,
+          Math.min(1, baseOpacity + 0.2),
+          hasSearch,
+          Math.min(1, baseOpacity + 0.12),
+          baseOpacity,
+        ],
+      };
+    }
+  }
+};
+
 type SortableLayer = {
   absolutePath?: string;
   nodeId?: string;
@@ -276,6 +397,7 @@ const MapStatsPanel: React.FC<{
 
 
 export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
+  const theme = useTheme();
   const {
     basemapStyles,
     vectorLayers,
@@ -900,8 +1022,11 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
             const layerConfig = { ...DEFAULT_MAP_CONFIG.vectorTileLayer, ...layer.layerConfig };
             const layerType = layerConfig.layerType ?? 'fill';
             const paintOverrides = pickStyleOverrides(layerType, styleOverrides, styleOverridesByType);
-            const highlightOverrides = highlightOverridesByType?.[layerType] ?? {};
-            const layerPaint = { ...(layerConfig.paint ?? {}), ...paintOverrides, ...highlightOverrides };
+            const baseLayerPaint = { ...(layerConfig.paint ?? {}), ...paintOverrides };
+            const highlightOverrides =
+              highlightOverridesByType?.[layerType]
+              ?? buildDefaultHighlightOverrides(layerType, baseLayerPaint, theme);
+            const layerPaint = { ...baseLayerPaint, ...highlightOverrides };
             const layerId = layerConfig.layerId ?? `resource-layer-${layer.nodeId}`;
             const sourceId = layerConfig.sourceId ?? `resource-source-${layer.nodeId}`;
 
