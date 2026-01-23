@@ -3,11 +3,7 @@ import {
   AccordionDetails,
   AccordionSummary,
   Button,
-  FormControlLabel,
-  FormGroup,
-  Paper,
   Stack,
-  Switch,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -27,54 +23,35 @@ import {
 } from '../../../common/config/zoomBands.js';
 import { TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES, loadTreeConsoleSettings } from '@hierarchidb/util';
 import { ZoomBandRangeCard } from './ZoomBandRangeCard.js';
-import { DeleteBuildOutputsCard } from './DeleteBuildOutputsCard.tsx';
-import type { FetchConfigSectionState } from './useFetchConfigSection.ts';
 
 type Props = {
   config: ShapeBuildConfig;
-  fetchState: FetchConfigSectionState;
   disabled?: boolean;
   onChange: (next: ShapeBuildConfig) => void;
 };
 
 export const ZoomBandConfigSection: React.FC<Props> = ({
   config,
-  fetchState,
   disabled,
   onChange,
 }) => {
   const { t } = useTranslation();
   const { baseTransformConfig, update } = useTransformConfigSection({ config, onChange });
-  const {
-    switchId,
-    deleteFetchApiLabel,
-    deleteFetchFilteredLabel,
-    deleteTransformFilterLabel,
-    deleteVTLabel,
-    deleteMetadataLabel,
-    countsLoading,
-    canDeleteFetchApiCache,
-    canDeleteFetchFilteredCache,
-    canDeleteTransformCache,
-    canDeleteVTCache,
-    canDeleteMetadata,
-    handleDeleteFetchApiCache,
-    handleDeleteFetchFilteredCache,
-    handleDeleteTransformCache,
-    handleDeleteVTCache,
-    handleDeleteMetadata,
-    handleResetDefaults,
-  } = fetchState;
+  const settings = loadTreeConsoleSettings();
+  const commonZoomBandBoundaries: number[] = Array.isArray(settings.zoomBandBoundaries)
+    ? settings.zoomBandBoundaries
+    : TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES;
+  const showApplyCommon =
+    commonZoomBandBoundaries.length !== baseTransformConfig.zoomBandBoundaries.length
+    || commonZoomBandBoundaries.some(
+      (value, index) => value !== baseTransformConfig.zoomBandBoundaries[index],
+    );
 
   const applyCommonZoomBandBoundaries = () => {
-    const settings = loadTreeConsoleSettings();
-    const zoomBandBoundaries = Array.isArray(settings.zoomBandBoundaries)
-      ? settings.zoomBandBoundaries
-      : TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES;
     update({
       transformConfig: {
         ...baseTransformConfig,
-        zoomBandBoundaries,
+        zoomBandBoundaries: commonZoomBandBoundaries,
       },
     });
   };
@@ -86,7 +63,7 @@ export const ZoomBandConfigSection: React.FC<Props> = ({
           <SettingsIcon color="primary" />
           <Stack direction="row" spacing={1} alignItems="center">
             <Typography variant="subtitle1">
-              {t('processing.zoomBandSettings.title', 'Zoom band settings / cache management')}
+              {t('processing.zoomBandSettings.title', 'Zoom band settings')}
             </Typography>
             <Tooltip
               title={t(
@@ -102,43 +79,44 @@ export const ZoomBandConfigSection: React.FC<Props> = ({
       </AccordionSummary>
       <AccordionDetails sx={{ p: 3 }}>
         <Stack spacing={2}>
-          <Stack direction={{ xs: 'column', lg: 'row' }} spacing={2} alignItems="stretch">
-            <Stack spacing={2} sx={{ flex: 1, minWidth: 0 }}>
-              <ZoomBandRangeCard
-                title={t('processing.filter.zoomBandRangesTitle', 'Zoom band ranges')}
-                helperText={t(
-                  'processing.filter.zoomBandRangesHelp',
-                  'Configure the number of zoom ranges and their boundaries.',
-                )}
-                rangeCountLabel={t('processing.filter.zoomBandRangeCount', 'Range count')}
-                rangeCountHelperText={t(
-                  'processing.filter.zoomBandRangeCountHelp',
-                  'Controls how many zoom ranges are grouped into bands.',
-                )}
-                boundariesLabel={t('processing.filter.zoomBandBoundaries', 'Range boundaries')}
-                boundariesHelperText={t(
-                  'processing.filter.zoomBandBoundariesHelp',
-                  'Adjust the zoom boundaries between ranges.',
-                )}
-                minZoom={ZOOM_BAND_MIN_ZOOM}
-                maxZoomLimit={ZOOM_BAND_MAX_ZOOM}
-                minRanges={ZOOM_BAND_MIN_RANGES}
-                maxRanges={ZOOM_BAND_MAX_RANGES}
-                boundaries={baseTransformConfig.zoomBandBoundaries}
-                onChange={(zoomBandBoundaries) =>
-                  update({
-                    transformConfig: {
-                      ...baseTransformConfig,
-                      zoomBandBoundaries,
-                    },
-                  })
-                }
-                sliderLayout="horizontal"
-                disabled={disabled}
-              />
+          <Stack spacing={2} sx={{ flex: 1, minWidth: 0 }}>
+            <ZoomBandRangeCard
+              title={t('processing.filter.zoomBandRangesTitle', 'Zoom band settings')}
+              helperText={t(
+                'processing.filter.zoomBandRangesHelp',
+                'Configure the number of zoom ranges and their boundaries.',
+              )}
+              rangeCountLabel={t('processing.filter.zoomBandRangeCount', 'Range count')}
+              rangeCountHelperText={t(
+                'processing.filter.zoomBandRangeCountHelp',
+                'Controls how many zoom ranges are grouped into bands.',
+              )}
+              boundariesLabel={t('processing.filter.zoomBandBoundaries', 'Range boundaries')}
+              boundariesHelperText={t(
+                'processing.filter.zoomBandBoundariesHelp',
+                'Adjust the zoom boundaries between ranges.',
+              )}
+              minZoom={ZOOM_BAND_MIN_ZOOM}
+              maxZoomLimit={ZOOM_BAND_MAX_ZOOM}
+              minRanges={ZOOM_BAND_MIN_RANGES}
+              maxRanges={ZOOM_BAND_MAX_RANGES}
+              boundaries={baseTransformConfig.zoomBandBoundaries}
+              onChange={(zoomBandBoundaries) =>
+                update({
+                  transformConfig: {
+                    ...baseTransformConfig,
+                    zoomBandBoundaries,
+                  },
+                })
+              }
+              sliderLayout="horizontal"
+              disabled={disabled}
+            />
+            {showApplyCommon ? (
               <Button
                 variant="outlined"
                 size="small"
+                color="secondary"
                 onClick={applyCommonZoomBandBoundaries}
                 disabled={disabled}
                 sx={{ alignSelf: { xs: 'stretch', md: 'flex-start' }, whiteSpace: 'nowrap' }}
@@ -148,127 +126,7 @@ export const ZoomBandConfigSection: React.FC<Props> = ({
                   'Apply common zoom band settings',
                 )}
               </Button>
-            </Stack>
-            <Paper variant="outlined" sx={{ p: 2, width: '100%', flex: 1, minWidth: 0 }}>
-              <Stack spacing={1.5}>
-                <Typography variant="subtitle2">
-                  {t('processing.download.retainTitle', 'Retain intermediate outputs after build')}
-                </Typography>
-                <FormGroup>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={!config.cleanupConfig?.deleteFetchApiCache}
-                        onChange={(event) => {
-                          const retainFiles = event.target.checked;
-                          update({
-                            cleanupConfig: {
-                              ...config.cleanupConfig,
-                              deleteFetchApiCache: !retainFiles,
-                            },
-                          });
-                        }}
-                        disabled={disabled}
-                        inputProps={{
-                          id: `${switchId}-retain-fetch-api-cache`,
-                          name: 'retain-fetch-api-cache',
-                        }}
-                      />
-                    }
-                    label={t('processing.download.retainApiCache', 'API cache')}
-                  />
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={!config.cleanupConfig?.deleteFetchFilteredCache}
-                        onChange={(event) => {
-                          const retainCache = event.target.checked;
-                          update({
-                            cleanupConfig: {
-                              ...config.cleanupConfig,
-                              deleteFetchFilteredCache: !retainCache,
-                            },
-                          });
-                        }}
-                        disabled={disabled}
-                        inputProps={{
-                          id: `${switchId}-retain-fetch-filtered-cache`,
-                          name: 'retain-fetch-filtered-cache',
-                        }}
-                      />
-                    }
-                    label={t('processing.download.retainFilteredCache', 'Filtered cache')}
-                  />
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={!config.cleanupConfig?.deleteTransformCache}
-                        onChange={(event) => {
-                          const retainCache = event.target.checked;
-                          update({
-                            cleanupConfig: {
-                              ...config.cleanupConfig,
-                              deleteTransformCache: !retainCache,
-                            },
-                          });
-                        }}
-                        disabled={disabled}
-                        inputProps={{
-                          id: `${switchId}-retain-stage1-cache`,
-                          name: 'retain-stage1-cache',
-                        }}
-                      />
-                    }
-                    label={t('processing.download.retainStage1Cache', 'Simplified cache')}
-                  />
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={!config.cleanupConfig?.deleteVTCache}
-                        onChange={(event) => {
-                          const retainCache = event.target.checked;
-                          update({
-                            cleanupConfig: {
-                              ...config.cleanupConfig,
-                              deleteVTCache: !retainCache,
-                            },
-                          });
-                        }}
-                        disabled={disabled}
-                        inputProps={{
-                          id: `${switchId}-retain-vt-cache`,
-                          name: 'retain-vt-cache',
-                        }}
-                      />
-                    }
-                    label={t('processing.download.retainVtCache', 'Tile index + tile data cache')}
-                  />
-                </FormGroup>
-              </Stack>
-            </Paper>
-            <Stack sx={{ flex: 1, minWidth: 0 }}>
-              <DeleteBuildOutputsCard
-                title={t('processing.download.deleteNowTitle', 'Delete build outputs immediately')}
-                deleteFetchApiLabel={deleteFetchApiLabel}
-                deleteFetchFilteredLabel={deleteFetchFilteredLabel}
-                deleteTransformFilterLabel={deleteTransformFilterLabel}
-                deleteVTLabel={deleteVTLabel}
-                deleteMetadataLabel={deleteMetadataLabel}
-                countsLoading={countsLoading}
-                canDeleteFetchApiCache={canDeleteFetchApiCache}
-                canDeleteFetchFilteredCache={canDeleteFetchFilteredCache}
-                canDeleteTransformCache={canDeleteTransformCache}
-                canDeleteVTCache={canDeleteVTCache}
-                canDeleteMetadata={canDeleteMetadata}
-                onDeleteFetchApiCache={handleDeleteFetchApiCache}
-                onDeleteFetchFilteredCache={handleDeleteFetchFilteredCache}
-                onDeleteTransformCache={handleDeleteTransformCache}
-                onDeleteVTCache={handleDeleteVTCache}
-                onDeleteMetadata={handleDeleteMetadata}
-                onResetDefaults={handleResetDefaults}
-                resetDisabled={disabled}
-              />
-            </Stack>
+            ) : null}
           </Stack>
         </Stack>
       </AccordionDetails>
