@@ -10,6 +10,7 @@ import {
 import type { CountryMetadata, DataSourceName } from '../../common/types/index.js';
 import {
   DEFAULT_ISO3166_CSV_URL,
+  type ContinentCode,
   normalizeContinentCode,
   normalizeCountryCodeFormat,
   resolveCountryContinentCode,
@@ -72,6 +73,36 @@ const parseGeoBoundariesItems = (payload: unknown): GeoBoundariesRecord[] => {
     if (Array.isArray(data)) return data as GeoBoundariesRecord[];
   }
   return [];
+};
+
+const GEOBOUNDARIES_LATAM_REGEX = /latin america|caribbean/i;
+const GEOBOUNDARIES_TRANSCONTINENTAL_EU = new Set(['AM', 'AZ', 'GE', 'KZ', 'RU', 'TR', 'ARM', 'AZE', 'GEO', 'KAZ', 'RUS', 'TUR']);
+
+const resolveGeoBoundariesContinentOverride = (
+  rawContinent: string,
+  resolvedContinentCode: ContinentCode,
+  iso2?: string,
+  iso3?: string,
+): ContinentCode | null => {
+  if (!rawContinent) return null;
+  const trimmed = rawContinent.trim();
+  if (!trimmed) return null;
+  const normalizedIso2 = iso2?.toUpperCase();
+  const normalizedIso3 = iso3?.toUpperCase();
+
+  if (GEOBOUNDARIES_LATAM_REGEX.test(trimmed)) {
+    return resolvedContinentCode === 'XX' ? null : resolvedContinentCode;
+  }
+
+  const rawCode = normalizeContinentCode(trimmed);
+  const isTranscontinental = (normalizedIso2 && GEOBOUNDARIES_TRANSCONTINENTAL_EU.has(normalizedIso2))
+    || (normalizedIso3 && GEOBOUNDARIES_TRANSCONTINENTAL_EU.has(normalizedIso3));
+
+  if (isTranscontinental && rawCode === 'AS' && resolvedContinentCode === 'EU') {
+    return resolvedContinentCode;
+  }
+
+  return null;
 };
 
 export async function fetchGeoBoundariesMetadata(nodeId: NodeId): Promise<CountryMetadata[]> {
@@ -171,13 +202,20 @@ export async function fetchGeoBoundariesMetadata(nodeId: NodeId): Promise<Countr
     });
     const rawContinent = (entry.continent ?? '').trim();
     const rawContinentCode = normalizeContinentCode(rawContinent);
+    const overrideCode = resolveGeoBoundariesContinentOverride(
+      rawContinent,
+      resolvedContinentCode,
+      normalizedIso2,
+      entry.iso3,
+    );
+    const effectiveRawCode = overrideCode ?? rawContinentCode;
 
     if (!rawContinent) {
       missingContinentCount += 1;
       if (missingSamples.length < 5) {
         missingSamples.push({ iso2: normalizedIso2, iso3: entry.iso3, metadata: rawContinent || null });
       }
-    } else if (!rawContinentCode || (resolvedContinentCode !== 'XX' && rawContinentCode !== resolvedContinentCode)) {
+    } else if (!effectiveRawCode || (resolvedContinentCode !== 'XX' && effectiveRawCode !== resolvedContinentCode)) {
       mismatchContinentCount += 1;
       if (mismatchSamples.length < 5) {
         mismatchSamples.push({
