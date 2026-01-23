@@ -6,6 +6,7 @@ import { FetchConfigSection } from './FetchConfigSection.tsx';
 import { TransformConfigSection } from './TransformConfigSection.js';
 import { VTConfigSection } from './VTConfigSection.tsx';
 import { ZoomBandConfigSection } from './ZoomBandConfigSection.js';
+import { CacheManagementSection } from './CacheManagementSection.tsx';
 import { useShapeBuildConfigStep } from './useShapeBuildConfigStep.js';
 import { useHeapPressureMonitor } from '@hierarchidb/ui-memory';
 import { useTranslation } from '../../i18n.js';
@@ -70,7 +71,6 @@ export const ShapeBuildConfigStep: React.FC<ShapeDialogStepProps> = ({
         ) : null}
         <ZoomBandConfigSection
           config={config}
-          fetchState={fetchState}
           onChange={handleChange}
           disabled={disabled}
         />
@@ -80,6 +80,7 @@ export const ShapeBuildConfigStep: React.FC<ShapeDialogStepProps> = ({
         />
         <TransformConfigSection config={config} onChange={handleChange} disabled={disabled} />
         <VTConfigSection buildConfig={config} draft={data} onChange={handleChange} disabled={disabled} />
+        <CacheManagementSection config={config} fetchState={fetchState} disabled={disabled} />
       </Stack>
     </Box>
   );

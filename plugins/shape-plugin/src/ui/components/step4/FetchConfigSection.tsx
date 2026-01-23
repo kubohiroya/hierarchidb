@@ -2,8 +2,11 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  FormControlLabel,
   Grid,
+  Paper,
   Stack,
+  Switch,
   Typography,
 } from '@mui/material';
 import {
@@ -28,7 +31,7 @@ export const FetchConfigSection: React.FC<Props> = ({ fetchState, disabled }) =>
         <Stack direction="row" spacing={2} alignItems="center">
           <CloudDownloadIcon color="primary" />
           <Typography variant="subtitle1">
-            {t('processing.download.title', 'Fetch Settings / Cache Management')}
+            {t('processing.download.title', 'Fetch stage settings')}
           </Typography>
         </Stack>
       </AccordionSummary>
@@ -54,6 +57,41 @@ export const FetchConfigSection: React.FC<Props> = ({ fetchState, disabled }) =>
               step={1}
               disabled={disabled}
             />
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Paper variant="outlined" sx={{ p: 2 }}>
+              <Stack spacing={1}>
+                <Typography variant="subtitle2">
+                  {t('processing.download.stageBehaviorTitle', 'Stage behavior')}
+                </Typography>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={baseFetchConfig.deleteOnComplete}
+                      onChange={(event) => {
+                        update({
+                          fetchConfig: {
+                            ...baseFetchConfig,
+                            deleteOnComplete: event.target.checked,
+                          },
+                        });
+                      }}
+                      disabled={disabled}
+                    />
+                  }
+                  label={t(
+                    'processing.download.deleteOnComplete',
+                    'Delete filtered cache after stage completion',
+                  )}
+                />
+                <Typography variant="caption" color="text.secondary">
+                  {t(
+                    'processing.download.deleteOnCompleteHelp',
+                    'Removes fetch-stage filtered cache automatically once transform begins.',
+                  )}
+                </Typography>
+              </Stack>
+            </Paper>
           </Grid>
           <DownloadRetryControls
             baseDownloadConfig={baseFetchConfig}
