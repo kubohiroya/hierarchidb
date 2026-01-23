@@ -292,7 +292,45 @@ export const useFolderLayers = ({
           }
         });
 
-        nodesForLayers.forEach((node) => {
+        const resolvedShapeLayerById = new Map<string, string | undefined>();
+        const pickPreferredShapeLayer = (names: string[]): string | undefined => {
+          if (names.length === 0) return undefined;
+          const admin0 = names.find((name) => name.toLowerCase() === 'admin0');
+          if (admin0) return admin0;
+          const nonBoundary = names.find((name) => !name.toLowerCase().endsWith('-boundary'));
+          return nonBoundary ?? names[0];
+        };
+        const resolveShapeSourceLayer = async (shapeNodeId: string): Promise<string | undefined> => {
+          if (resolvedShapeLayerById.has(shapeNodeId)) {
+            return resolvedShapeLayerById.get(shapeNodeId);
+          }
+          try {
+            const query = await getShapeQueryAPI();
+            const tiles = await query.listVectorTiles(shapeNodeId as NodeId);
+            if (tiles.length === 0) {
+              resolvedShapeLayerById.set(shapeNodeId, undefined);
+              return undefined;
+            }
+            const firstTile = tiles[0];
+            if (!firstTile) {
+              resolvedShapeLayerById.set(shapeNodeId, undefined);
+              return undefined;
+            }
+            const info = await query.getVectorTileInfo(shapeNodeId as NodeId, firstTile.z, firstTile.x, firstTile.y);
+            const infoNames = (info?.layers ?? [])
+              .map((layer) => layer.name)
+              .filter((name): name is string => Boolean(name));
+            const resolved = pickPreferredShapeLayer(infoNames);
+            resolvedShapeLayerById.set(shapeNodeId, resolved);
+            return resolved;
+          } catch (error) {
+            console.debug('[MapPage] Failed to resolve shape sourceLayer', { nodeId: shapeNodeId, error });
+            resolvedShapeLayerById.set(shapeNodeId, undefined);
+            return undefined;
+          }
+        };
+
+        for (const node of nodesForLayers) {
           const absolutePath = buildAbsolutePath(String(node.id), nodeById);
           if (node.nodeType === 'basemap') {
             const data = node.data as { mapStyle?: MapStyle } | null;
@@ -312,6 +350,7 @@ export const useFolderLayers = ({
             const featureState = featureStateByStyleType.choropleth;
             const layerId = `resource-layer-${node.id}`;
             const sourceId = `resource-source-${node.id}`;
+            const resolvedSourceLayer = await resolveShapeSourceLayer(String(node.id));
             shapeEntries.push({
               nodeId: String(node.id),
               nodeType: 'shape',
@@ -330,7 +369,7 @@ export const useFolderLayers = ({
               },
               layerConfig: {
                 layerType: 'fill',
-                sourceLayer: 'default',
+                sourceLayer: resolvedSourceLayer ?? 'admin0',
                 layerId,
                 sourceId,
               },
@@ -391,7 +430,7 @@ export const useFolderLayers = ({
               });
             }
           }
-        });
+        }
 
         if (!cancelled) {
           setBasemapStyles(sortByPath(basemapEntries));

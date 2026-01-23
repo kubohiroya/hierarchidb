@@ -1,10 +1,4 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import {
-  pickAdminLevel,
-  pickAdminName,
-  pickCountryCode,
-  pickCountryName,
-} from '@hierarchidb/gis-sdk';
 import { resolveLocationAttribution } from '@hierarchidb/location-plugin';
 import type { LocationType } from '@hierarchidb/location-store';
 import type { LocationQueryAPI } from '@hierarchidb/plugin-service-api';
@@ -81,61 +75,6 @@ const ICON_SIZE_MIN = 0.7;
 const ICON_SIZE_SLOPE = 0.05;
 const ICON_SIZE_AT_MAX = ICON_SIZE_MIN + LOCATION_MAX_ZOOM * ICON_SIZE_SLOPE;
 const FIT_BOUNDS_PADDING_PX = 64;
-
-const ADMIN_LABEL_PATTERN = /(?:adm|admin)\s*(\d+)/i;
-
-const parseAdminLevelLabel = (value: string): { level?: number; label?: string } => {
-  const match = value.match(ADMIN_LABEL_PATTERN);
-  if (!match) return { label: value };
-  const level = Number(match[1]);
-  if (!Number.isFinite(level)) return { label: value };
-  return { level, label: `ADM${level}` };
-};
-
-const resolveAdminLabel = (
-  properties: Record<string, unknown>
-): { level?: number; label?: string } => {
-  const level = pickAdminLevel(properties);
-  if (typeof level === 'number') {
-    return { level, label: `ADM${level}` };
-  }
-  const candidates = [
-    properties.shapeType,
-    properties.boundaryType,
-    properties.adminType,
-    properties.ADMIN_TYPE,
-    properties.layer,
-    properties.LAYER,
-  ];
-  for (const candidate of candidates) {
-    if (typeof candidate !== 'string') continue;
-    const parsed = parseAdminLevelLabel(candidate);
-    if (parsed.level !== undefined || parsed.label) return parsed;
-  }
-  return {};
-};
-
-const buildAdminLabelParts = (properties: Record<string, unknown>): { level: number; parts: string[] } | null => {
-  const { level, label } = resolveAdminLabel(properties);
-  if (level === undefined && !label) return null;
-  const adminName = pickAdminName(properties);
-  const countryName = pickCountryName(properties);
-  const countryCode = pickCountryCode(properties);
-  const adminLevelValue = level !== undefined ? String(level) : undefined;
-  const parts = [adminName, label, countryName, countryCode, adminLevelValue].filter(
-    (value): value is string => Boolean(value)
-  );
-  return parts.length ? { level: level ?? -1, parts } : null;
-};
-
-const buildDefaultHoverLabel = (properties: Record<string, unknown>): string | null => {
-  const label =
-    (properties.name as string | undefined) ??
-    (properties.NAME as string | undefined) ??
-    (properties.label as string | undefined) ??
-    (properties.id as string | number | undefined);
-  return label ? String(label) : null;
-};
 
 const resolveLayerSetEntryPriority = (layerSetId: LayerSetId, entryId?: string): number => {
   const layerSet = DEFAULT_LAYER_SETS.find((set) => set.id === layerSetId);
@@ -1049,7 +988,7 @@ export default function MapPage() {
           buildHighlightEntry,
           onMissingLayers: (layerIds) => {
             setMissingLayerIds(layerIds);
-            setMissingLayerDialogOpen(true);
+            setMissingLayerDialogOpen(layerIds.length > 0);
           },
           search: {
             enabled: true,
@@ -1063,34 +1002,6 @@ export default function MapPage() {
           fitSelection: { enabled: true, padding: FIT_BOUNDS_PADDING_PX },
           snackbar: {
             position: 'bottom-center',
-            renderContent: (features) => {
-              if (features.length === 0) return null;
-              const adminCandidates = features
-                .map((feature, index) => {
-                  const props = (feature.properties ?? {}) as Record<string, unknown>;
-                  const adminParts = buildAdminLabelParts(props);
-                  if (!adminParts) return null;
-                  return { index, ...adminParts };
-                })
-                .filter(
-                  (candidate): candidate is { index: number; level: number; parts: string[] } =>
-                    Boolean(candidate)
-                );
-              if (adminCandidates.length > 0) {
-                adminCandidates.sort((a, b) => (b.level - a.level) || (a.index - b.index));
-                const bestCandidate = adminCandidates[0];
-                if (bestCandidate) {
-                  return bestCandidate.parts.join(' / ');
-                }
-              }
-              const labels = features
-                .slice(0, 3)
-                .map((feature) => {
-                  const props = (feature.properties ?? {}) as Record<string, unknown>;
-                  return buildDefaultHoverLabel(props) ?? 'Feature';
-                });
-              return labels.join(' / ');
-            },
           },
         }}
         onLoad={handleMapLoad}

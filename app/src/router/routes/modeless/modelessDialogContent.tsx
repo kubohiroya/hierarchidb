@@ -1258,22 +1258,38 @@ type ShapeListState = {
 };
 
 const useShapeListState = (nodeId: NodeId | null): ShapeListState => {
+  const mapLayerInfo = useAtomValue(mapLayerInfoAtom);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [matchedFeatureIds, setMatchedFeatureIds] = useState<string[]>([]);
   const bridgeRef = useRef(getWorkerBridge());
-  const metadataEnabled = Boolean(nodeId);
+  const shapeNodeIds = useMemo(
+    () => Array.from(new Set(
+      mapLayerInfo
+        .filter((info) => info.nodeType === 'shape')
+        .map((info) => String(info.nodeId))
+    )),
+    [mapLayerInfo],
+  );
+  const metadataEnabled = shapeNodeIds.length > 0;
+  const metadataKey = metadataEnabled ? shapeNodeIds.join('|') : null;
 
-  const loadFeatureMetadataRows = useCallback(async (targetNodeId: NodeId) => {
+  const loadFeatureMetadataRows = useCallback(async (_targetNodeId: NodeId) => {
     await bridgeRef.current.initialize();
     const query = await bridgeRef.current.getShapeQueryAPI();
-    return query.listFeatureMetadata(targetNodeId) as Promise<ShapeFeatureMetadata[]>;
-  }, []);
+    const entries = await Promise.all(
+      shapeNodeIds.map((shapeNodeId) => query.listFeatureMetadata(shapeNodeId as NodeId))
+    );
+    return entries.flat() as ShapeFeatureMetadata[];
+  }, [shapeNodeIds]);
 
-  const loadTransformErrorRows = useCallback(async (targetNodeId: NodeId) => {
+  const loadTransformErrorRows = useCallback(async (_targetNodeId: NodeId) => {
     await bridgeRef.current.initialize();
     const query = await bridgeRef.current.getShapeQueryAPI();
-    return query.listTransformErrorRecords(targetNodeId) as Promise<ShapeTransformErrorRecord[]>;
-  }, []);
+    const entries = await Promise.all(
+      shapeNodeIds.map((shapeNodeId) => query.listTransformErrorRecords(shapeNodeId as NodeId))
+    );
+    return entries.flat() as ShapeTransformErrorRecord[];
+  }, [shapeNodeIds]);
 
   const {
     metadataRows: featureMetadataRows,
@@ -1282,7 +1298,7 @@ const useShapeListState = (nodeId: NodeId | null): ShapeListState => {
     metadataLoaded: featureMetadataLoaded,
   } = useVectorTilePreviewMetadata(
     metadataEnabled,
-    nodeId,
+    metadataKey ? (metadataKey as NodeId) : null,
     loadFeatureMetadataRows,
   );
 
@@ -1293,7 +1309,7 @@ const useShapeListState = (nodeId: NodeId | null): ShapeListState => {
     metadataLoaded: transformErrorLoaded,
   } = useVectorTilePreviewMetadata(
     metadataEnabled,
-    nodeId,
+    metadataKey ? (metadataKey as NodeId) : null,
     loadTransformErrorRows,
   );
 
