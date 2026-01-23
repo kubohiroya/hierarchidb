@@ -17,16 +17,19 @@ import type {
   MapHighlightEntry,
   MapPreviewErrorSummaryById,
   MapWithVectorTilesProps,
+  ResolvedLayerSetEntry,
   ShapePreviewFeatureRow,
 } from '@hierarchidb/ui-map';
 import type { MapLibreMapInstance } from '@hierarchidb/ui-map';
 import {
   buildErrorSummaryById,
   buildHighlightKey,
+  getLayerSetDefinition,
   mapHoverCandidatesAtom,
   mapHoverMatchesAtom,
   mapSearchMatchesAtom,
   mapSelectedMatchesAtom,
+  resolveLayerSetEntries,
   useVectorTilePreviewMetadata,
   useVectorTilePreviewSearch,
   useVectorTilePreviewSelection,
@@ -66,6 +69,98 @@ const normalizeCountryCodeValue = (value?: string): string | undefined => {
   const dashIndex = upper.indexOf('-');
   if (dashIndex > 0) return upper.slice(0, dashIndex);
   return upper;
+};
+
+const toPropString = (value: unknown): string | undefined => {
+  if (typeof value === 'string') return normalizeText(value);
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  return undefined;
+};
+
+const pickFromProps = (properties: Record<string, unknown> | undefined, keys: string[]): string | undefined => {
+  if (!properties) return undefined;
+  for (const key of keys) {
+    const value = toPropString(properties[key]);
+    if (value) return value;
+  }
+  return undefined;
+};
+
+const resolveAdminLevelFromProps = (
+  properties: Record<string, unknown> | undefined,
+  fallback?: number,
+): number | undefined => {
+  if (properties) {
+    const candidates = [
+      properties.adminLevel,
+      properties.admin_level,
+      properties.ADM_LEVEL,
+      properties.level,
+      properties.admin_lvl,
+    ];
+    for (const value of candidates) {
+      if (typeof value === 'number' && Number.isFinite(value)) return value;
+      if (typeof value === 'string') {
+        const parsed = Number(value);
+        if (Number.isFinite(parsed)) return parsed;
+      }
+    }
+  }
+  return fallback;
+};
+
+const pickCountryNameFromProps = (properties: Record<string, unknown> | undefined): string | undefined =>
+  pickFromProps(properties, ['countryName', 'country', 'COUNTRY', 'COUNTRY_NAME', 'NAME_0', 'ADMIN', 'SOVEREIGNT']);
+
+const pickCountryCodeFromProps = (properties: Record<string, unknown> | undefined): string | undefined =>
+  pickFromProps(properties, ['countryCode', 'ISO_A2', 'ISO2', 'ISO_2', 'ISO_A3', 'ADM0_A3', 'ISO3', 'shapeISO']);
+
+const pickAdminNameByLevel = (
+  properties: Record<string, unknown> | undefined,
+  level: number,
+): string | undefined => {
+  if (level === 2) {
+    return pickFromProps(properties, ['admin2Name', 'NAME_2', 'name_2', 'ADM2_NAME', 'admin2', 'name', 'NAME']);
+  }
+  if (level === 1) {
+    return pickFromProps(properties, ['admin1Name', 'NAME_1', 'name_1', 'ADM1_NAME', 'admin1', 'name', 'NAME']);
+  }
+  return pickFromProps(properties, ['adminName', 'name', 'NAME', 'shapeName']);
+};
+
+const buildHoverLabel = (
+  row: ShapeSourceMetadata,
+  properties?: Record<string, unknown>,
+): string => {
+  const resolvedLevel = resolveAdminLevelFromProps(properties, row.adminLevel);
+  const adminLevel = typeof resolvedLevel === 'number' ? resolvedLevel : 0;
+  const countryName =
+    pickCountryNameFromProps(properties)
+    ?? row.countryName
+    ?? row.countryCode
+    ?? 'Unknown';
+  const countryCode = normalizeCountryCodeValue(
+    pickCountryCodeFromProps(properties) ?? row.countryCode,
+  );
+  const countrySuffix = countryCode ? ` (${countryCode})` : '';
+  if (adminLevel <= 0) {
+    return `ADM0: ${countryName}${countrySuffix}`;
+  }
+  if (adminLevel === 1) {
+    const admin1 = pickAdminNameByLevel(properties, 1) ?? countryName;
+    return `ADM1: ${admin1} / ${countryName}${countrySuffix}`;
+  }
+  if (adminLevel === 2) {
+    const admin2 = pickAdminNameByLevel(properties, 2) ?? pickAdminNameByLevel(properties, 1);
+    const admin1 = pickAdminNameByLevel(properties, 1);
+    const parts = [admin2, admin1, countryName].filter((part, index, arr) => {
+      if (!part) return false;
+      return arr.indexOf(part) === index;
+    });
+    return `ADM2: ${parts.join(' / ')}${countrySuffix}`;
+  }
+  const adminName = pickAdminNameByLevel(properties, adminLevel) ?? countryName;
+  return `ADM${adminLevel}: ${adminName} / ${countryName}${countrySuffix}`;
 };
 
 const parseSourceKey = (sourceKey?: string): { countryCode?: string; adminLevel?: number } => {
@@ -175,15 +270,9 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   const processingStatus = data?.processingStatus ?? null;
   const baseLayerId = 'shape-preview';
   const baseSourceId = 'shape-preview-source';
+  const layerSetName = data.buildConfig?.vtConfig?.layerSetName ?? 'shape';
   const tileDbName = getDBName('shape');
   const [selectionMetadata, setSelectionMetadata] = useState<FetchTaskPayload[]>([]);
-  const buildMapEntry = useCallback((id: string): MapHighlightEntry => ({
-    source: baseSourceId,
-    id,
-    layerId: baseLayerId,
-    nodeId: nodeKey ? String(nodeKey) : undefined,
-    nodeType: 'shape',
-  }), [baseLayerId, baseSourceId, nodeKey]);
   const workerClientHook = useMemo(() => {
     try {
       return getWorkerClientHook<WorkerClientRef | null>();
@@ -598,7 +687,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
         ? currentLevel - 1
         : null
       : adminLevel;
-    if (nextLevel == null) {
+    if (nextLevel === null) {
       return { nextContext: null, selectedIds: [] as string[] };
     }
     const selectedIds = rows
@@ -610,18 +699,32 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     };
   }, []);
 
-  const getHoverLabel = useCallback((row: ShapeSourceMetadata) => {
-    const level = row.adminLevel;
-    const adminLabel = typeof level === 'number' && Number.isFinite(level) ? `ADM${level}` : undefined;
-    const parts = [
-      row.originLabel,
-      adminLabel,
-      row.countryName,
-      row.countryCode,
-      level != null ? String(level) : undefined,
-    ].filter((part) => part && String(part).trim().length > 0);
-    return parts.join(' / ');
+
+  const resolveHoverOriginKey = useCallback((feature: { id?: unknown; properties?: Record<string, unknown> | null }) => {
+    const candidate = feature?.properties?.__hdbOriginKey ?? feature?.properties?.id ?? feature?.id;
+    if (candidate === null || candidate === undefined) return '';
+    return normalizeText(String(candidate)) ?? '';
   }, []);
+
+  const hoverFeatureByOriginKey = useMemo(() => {
+    const map = new Map<string, { props: Record<string, unknown>; adminLevel: number }>();
+    hoverCandidates.forEach(({ feature }) => {
+      const originKey = resolveHoverOriginKey(feature);
+      if (!originKey) return;
+      const props = (feature.properties ?? {}) as Record<string, unknown>;
+      const level = resolveAdminLevelFromProps(props, -1) ?? -1;
+      const existing = map.get(originKey);
+      if (!existing || level > existing.adminLevel) {
+        map.set(originKey, { props, adminLevel: level });
+      }
+    });
+    return map;
+  }, [hoverCandidates, resolveHoverOriginKey]);
+
+  const getHoverLabel = useCallback((row: ShapeSourceMetadata) => {
+    const hoverProps = hoverFeatureByOriginKey.get(row.originKey)?.props;
+    return buildHoverLabel(row, hoverProps);
+  }, [hoverFeatureByOriginKey]);
 
   const {
     selectedIdSet,
@@ -932,6 +1035,63 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     return Array.from(result);
   }, [adminGroupMembers, countryGroupMembers, featureToAdminKey, featureToCountryKey, rowIdToMembers]);
 
+  const resolvedLayerSetEntries = useMemo<ResolvedLayerSetEntry[]>(() => {
+    const definition = getLayerSetDefinition(layerSetName);
+    if (!definition) return [];
+    return resolveLayerSetEntries(tileLayerNames, definition);
+  }, [layerSetName, tileLayerNames]);
+
+  const layerEntriesByAdminLevel = useMemo(() => {
+    const map = new Map<number, ResolvedLayerSetEntry[]>();
+    resolvedLayerSetEntries.forEach((entry) => {
+      const adminLevel = entry.adminLevel;
+      if (adminLevel == null) return;
+      const list = map.get(adminLevel) ?? [];
+      list.push(entry);
+      map.set(adminLevel, list);
+    });
+    return map;
+  }, [resolvedLayerSetEntries]);
+
+  const featureAdminLevelById = useMemo(() => {
+    const map = new Map<string, number>();
+    featureMetadataRows.forEach((row) => {
+      const adminLevel = row.adminLevel;
+      if (!row.featureId || adminLevel == null) return;
+      map.set(String(row.featureId), adminLevel);
+    });
+    normalizedTransformErrorRows.forEach((row) => {
+      const adminLevel = row.adminLevel;
+      if (!row.featureId || adminLevel == null) return;
+      map.set(String(row.featureId), adminLevel);
+    });
+    return map;
+  }, [featureMetadataRows, normalizedTransformErrorRows]);
+
+  const buildMapEntries = useCallback((id: string): MapHighlightEntry[] => {
+    const adminLevel = featureAdminLevelById.get(id);
+    const entries = typeof adminLevel === 'number' ? layerEntriesByAdminLevel.get(adminLevel) : undefined;
+    const effectiveEntries = entries && entries.length > 0 ? entries : resolvedLayerSetEntries.slice(0, 1);
+    if (effectiveEntries.length > 0) {
+      return effectiveEntries.map((entry) => ({
+        source: `${baseSourceId}-${entry.id}`,
+        id,
+        layerId: `${baseLayerId}-${entry.id}`,
+        sourceLayer: entry.sourceLayer,
+        nodeId: nodeKey ? String(nodeKey) : undefined,
+        nodeType: 'shape',
+      }));
+    }
+    return [];
+  }, [
+    baseLayerId,
+    baseSourceId,
+    featureAdminLevelById,
+    layerEntriesByAdminLevel,
+    nodeKey,
+    resolvedLayerSetEntries,
+  ]);
+
   const expandedMatchedIds = useMemo(
     () => expandMapIds(matchedFeatureIds),
     [expandMapIds, matchedFeatureIds],
@@ -989,24 +1149,6 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     });
   }, [mapInstance, selectedErrorBounds]);
 
-  useEffect(() => {
-    const entries = expandedMatchedIds.map((id) => buildMapEntry(String(id)));
-    setMatchesIfChanged(entries, searchMatchKeysRef, setMapSearchMatches);
-  }, [buildMapEntry, expandedMatchedIds, setMapSearchMatches, setMatchesIfChanged]);
-
-  useEffect(() => {
-    const entries = expandedSelectedIds.map((id) => buildMapEntry(String(id)));
-    setMatchesIfChanged(entries, selectedMatchKeysRef, setMapSelectedMatches);
-  }, [buildMapEntry, expandedSelectedIds, setMapSelectedMatches, setMatchesIfChanged]);
-
-  useEffect(() => {
-    if (expandedHoverIds.length === 0) {
-      setMatchesIfChanged([], hoverMatchKeysRef, setMapHoverMatches);
-      return;
-    }
-    setMatchesIfChanged(expandedHoverIds.map((id) => buildMapEntry(String(id))), hoverMatchKeysRef, setMapHoverMatches);
-  }, [buildMapEntry, expandedHoverIds, setMapHoverMatches, setMatchesIfChanged]);
-
   const errorLineCollection = useMemo<ShapeTransformErrorRecord['lineFeatures'] | null>(() => {
     if (normalizedTransformErrorRows.length === 0) return null;
     const features = normalizedTransformErrorRows.flatMap((row) => {
@@ -1060,6 +1202,24 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     },
     [activeNodeId],
   );
+
+  useEffect(() => {
+    const entries = expandedMatchedIds.flatMap((id) => buildMapEntries(String(id)));
+    setMatchesIfChanged(entries, searchMatchKeysRef, setMapSearchMatches);
+  }, [buildMapEntries, expandedMatchedIds, setMapSearchMatches, setMatchesIfChanged]);
+
+  useEffect(() => {
+    const entries = expandedSelectedIds.flatMap((id) => buildMapEntries(String(id)));
+    setMatchesIfChanged(entries, selectedMatchKeysRef, setMapSelectedMatches);
+  }, [buildMapEntries, expandedSelectedIds, setMapSelectedMatches, setMatchesIfChanged]);
+
+  useEffect(() => {
+    if (expandedHoverIds.length === 0) {
+      setMatchesIfChanged([], hoverMatchKeysRef, setMapHoverMatches);
+      return;
+    }
+    setMatchesIfChanged(expandedHoverIds.flatMap((id) => buildMapEntries(String(id))), hoverMatchKeysRef, setMapHoverMatches);
+  }, [buildMapEntries, expandedHoverIds, setMapHoverMatches, setMatchesIfChanged]);
 
   return {
     t,

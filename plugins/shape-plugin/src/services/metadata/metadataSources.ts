@@ -11,7 +11,6 @@ import type { CountryMetadata, DataSourceName } from '../../common/types/index.j
 import {
   DEFAULT_ISO3166_CSV_URL,
   type ContinentCode,
-  normalizeContinentCode,
   normalizeCountryCodeFormat,
   resolveCountryContinentCode,
   resolveCountryContinentName,
@@ -75,34 +74,15 @@ const parseGeoBoundariesItems = (payload: unknown): GeoBoundariesRecord[] => {
   return [];
 };
 
-const GEOBOUNDARIES_LATAM_REGEX = /latin america|caribbean/i;
-const GEOBOUNDARIES_TRANSCONTINENTAL_EU = new Set(['AM', 'AZ', 'GE', 'KZ', 'RU', 'TR', 'ARM', 'AZE', 'GEO', 'KAZ', 'RUS', 'TUR']);
-
-const resolveGeoBoundariesContinentOverride = (
+const resolveGeoBoundariesContinent = (
   rawContinent: string,
   resolvedContinentCode: ContinentCode,
-  iso2?: string,
-  iso3?: string,
-): ContinentCode | null => {
-  if (!rawContinent) return null;
+  resolvedContinentName: string,
+): string => {
+  if (resolvedContinentCode !== 'XX') return resolvedContinentName;
   const trimmed = rawContinent.trim();
-  if (!trimmed) return null;
-  const normalizedIso2 = iso2?.toUpperCase();
-  const normalizedIso3 = iso3?.toUpperCase();
-
-  if (GEOBOUNDARIES_LATAM_REGEX.test(trimmed)) {
-    return resolvedContinentCode === 'XX' ? null : resolvedContinentCode;
-  }
-
-  const rawCode = normalizeContinentCode(trimmed);
-  const isTranscontinental = (normalizedIso2 && GEOBOUNDARIES_TRANSCONTINENTAL_EU.has(normalizedIso2))
-    || (normalizedIso3 && GEOBOUNDARIES_TRANSCONTINENTAL_EU.has(normalizedIso3));
-
-  if (isTranscontinental && rawCode === 'AS' && resolvedContinentCode === 'EU') {
-    return resolvedContinentCode;
-  }
-
-  return null;
+  if (trimmed) return trimmed;
+  return 'N/A';
 };
 
 export async function fetchGeoBoundariesMetadata(nodeId: NodeId): Promise<CountryMetadata[]> {
@@ -120,27 +100,6 @@ export async function fetchGeoBoundariesMetadata(nodeId: NodeId): Promise<Countr
     });
   if (!entry) {
     throw new Error('Offline: geoboundaries metadata cache is missing.');
-  }
-
-  if (import.meta.env?.DEV) {
-    const payload = entry.value as unknown;
-    const isArray = Array.isArray(payload);
-    const hasDataArray = Boolean(
-      payload && typeof payload === 'object' && Array.isArray((payload as { data?: unknown }).data),
-    );
-    const keys = payload && typeof payload === 'object'
-      ? Object.keys(payload as Record<string, unknown>).slice(0, 20)
-      : [];
-    console.debug('[shape-plugin][geoboundaries] metadata payload probe', {
-      url: GEOBOUNDARIES_ALL_METADATA_URL,
-      nodeId,
-      isArray,
-      hasDataArray,
-      topLevelKeys: keys,
-      sample: isArray
-        ? (payload as unknown[]).slice(0, 1)
-        : (hasDataArray ? (payload as { data: unknown[] }).data.slice(0, 1) : payload),
-    });
   }
 
   const items = parseGeoBoundariesItems(entry.value);
@@ -185,9 +144,7 @@ export async function fetchGeoBoundariesMetadata(nodeId: NodeId): Promise<Countr
 
   const results: CountryMetadata[] = [];
   let missingContinentCount = 0;
-  let mismatchContinentCount = 0;
   const missingSamples: Array<{ iso2?: string; iso3: string; metadata: string | null }> = [];
-  const mismatchSamples: Array<{ iso2?: string; iso3: string; metadata: string | null; iso3166: string }> = [];
   for (const entry of entries.values()) {
     const iso2 = await normalizeCountryCodeFormat(entry.iso3, 'iso2', {
       csvUrl: DEFAULT_ISO3166_CSV_URL,
@@ -201,33 +158,13 @@ export async function fetchGeoBoundariesMetadata(nodeId: NodeId): Promise<Countr
       csvUrl: DEFAULT_ISO3166_CSV_URL,
     });
     const rawContinent = (entry.continent ?? '').trim();
-    const rawContinentCode = normalizeContinentCode(rawContinent);
-    const overrideCode = resolveGeoBoundariesContinentOverride(
-      rawContinent,
-      resolvedContinentCode,
-      normalizedIso2,
-      entry.iso3,
-    );
-    const effectiveRawCode = overrideCode ?? rawContinentCode;
-
-    if (!rawContinent) {
+    const resolvedContinent = resolveGeoBoundariesContinent(rawContinent, resolvedContinentCode, fallbackContinent);
+    if (!rawContinent && resolvedContinentCode === 'XX') {
       missingContinentCount += 1;
       if (missingSamples.length < 5) {
         missingSamples.push({ iso2: normalizedIso2, iso3: entry.iso3, metadata: rawContinent || null });
       }
-    } else if (!effectiveRawCode || (resolvedContinentCode !== 'XX' && effectiveRawCode !== resolvedContinentCode)) {
-      mismatchContinentCount += 1;
-      if (mismatchSamples.length < 5) {
-        mismatchSamples.push({
-          iso2: normalizedIso2,
-          iso3: entry.iso3,
-          metadata: rawContinent || null,
-          iso3166: fallbackContinent,
-        });
-      }
     }
-
-    const resolvedContinent = fallbackContinent || rawContinent || 'N/A';
     results.push({
       countryCode: normalizedIso2 ?? entry.iso3,
       countryName: entry.name ?? entry.iso3,
@@ -236,14 +173,6 @@ export async function fetchGeoBoundariesMetadata(nodeId: NodeId): Promise<Countr
       iso2: normalizedIso2,
       iso3: entry.iso3,
       dataQuality: determineDataQuality(levels),
-    });
-  }
-  if (missingContinentCount > 0 || mismatchContinentCount > 0) {
-    console.info('[shape-plugin][geoboundaries] continent metadata mismatch detected', {
-      missing: missingContinentCount,
-      mismatch: mismatchContinentCount,
-      missingSamples,
-      mismatchSamples,
     });
   }
   return results;

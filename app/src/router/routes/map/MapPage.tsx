@@ -26,6 +26,7 @@ import {
   DEFAULT_MAP_CONFIG,
   mergeFilters,
   ResourceLayerMap,
+  ScreenCenterSnackbar,
 } from '@hierarchidb/ui-plugin-shell/ui-map';
 import { ensureWorkerAPI } from '@hierarchidb/ui-worker-client';
 import type { SvgIconComponent } from '@mui/icons-material';
@@ -189,8 +190,11 @@ export default function MapPage() {
   const locationQueryPromiseRef = useRef<Promise<LocationQueryAPI> | null>(null);
   const locationQueryTimerRef = useRef<number | null>(null);
   const locationQueryRequestRef = useRef(0);
+  const lastZoomRef = useRef<number | null>(null);
   const [locationGeoJsonLayers, setLocationGeoJsonLayers] = useState<ResourceGeoJsonLayer[]>([]);
   const [locationIconsReady, setLocationIconsReady] = useState(false);
+  const [zoomSnackbarMessage, setZoomSnackbarMessage] = useState('');
+  const [zoomSnackbarOpen, setZoomSnackbarOpen] = useState(false);
 
   const { initialViewState, formattedZxy, handleViewStateChange, applyPersistedZxy } =
     useMapViewState({
@@ -960,6 +964,24 @@ export default function MapPage() {
     [scheduleLocationQuery]
   );
 
+  const handleZoomSnackbarClose = useCallback(() => {
+    setZoomSnackbarOpen(false);
+  }, []);
+
+  const handleMapViewStateChange = useCallback(
+    (viewState: MapViewState) => {
+      handleViewStateChange(viewState);
+      const zoom = Number(viewState.zoom);
+      if (!Number.isFinite(zoom)) return;
+      const lastZoom = lastZoomRef.current;
+      if (lastZoom !== null && Math.abs(lastZoom - zoom) < 0.01) return;
+      lastZoomRef.current = zoom;
+      setZoomSnackbarMessage(`Zoom: ${zoom.toFixed(2)}`);
+      setZoomSnackbarOpen(true);
+    },
+    [handleViewStateChange]
+  );
+
   return (
     <Box
       sx={{ width: '100vw', height: '100vh', position: 'relative', overscrollBehavior: 'contain' }}
@@ -1072,7 +1094,7 @@ export default function MapPage() {
           },
         }}
         onLoad={handleMapLoad}
-        onViewStateChange={handleViewStateChange}
+        onViewStateChange={handleMapViewStateChange}
         onMoveEnd={handleLocationMoveEnd}
         identifyFeatureOnClick={{
           layerIds: highlightLayerIds,
@@ -1088,6 +1110,12 @@ export default function MapPage() {
           doubleClickZoom: true,
           touchZoomRotate: true,
         }}
+      />
+      <ScreenCenterSnackbar
+        open={zoomSnackbarOpen}
+        message={zoomSnackbarMessage}
+        onClose={handleZoomSnackbarClose}
+        containerSx={{ zIndex: 4 }}
       />
     </Box>
   );

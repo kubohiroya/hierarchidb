@@ -49,6 +49,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
                                                                   featureState,
                                                                 }) => {
   const [sourceAdded, setSourceAdded] = useState(false);
+  const [layerAdded, setLayerAdded] = useState(false);
   const [computedTiles, setComputedTiles] = useState<string[] | undefined>(tiles);
   const tilesLoadedRef = useRef(false);
   const prevFeatureStateRef = useRef<Map<string | number, FeatureStateRecord>>(new Map());
@@ -209,9 +210,11 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
 
   // Apply feature-atoms values
   useEffect(() => {
-    if (!map || !sourceAdded || !featureState) return;
+    if (!map || !sourceAdded || !layerAdded || !featureState) return;
     const mapRef = map;
+    if (!mapRef.isStyleLoaded || !mapRef.isStyleLoaded()) return;
     if (!sourceId || !mapRef.getSource || !mapRef.getSource(sourceId)) return;
+    if (layerId && mapRef.getLayer && !mapRef.getLayer(layerId)) return;
 
     type FeatureStateTarget = { source: string; id: string | number; sourceLayer?: string; key?: string };
     const buildFeatureStateTarget = (id: string | number, key?: string): FeatureStateTarget => (
@@ -267,13 +270,15 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
     });
 
     prevFeatureStateRef.current = nextStateMap;
-  }, [featureState, map, sourceAdded, sourceId, sourceLayer]);
+  }, [featureState, map, sourceAdded, layerAdded, sourceId, sourceLayer, layerId]);
 
   // Add layer
   useEffect(() => {
     if (!map || !sourceAdded) return;
 
     const mapRef = map;
+
+    setLayerAdded(false);
 
     // Remove existing layer if it exists
     if (layerId && mapRef.getLayer(layerId)) {
@@ -305,7 +310,11 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
       }
 
       mapRef.addLayer(layerConfig);
+      setLayerAdded(true);
     } catch (error) {
+      if (layerId && mapRef.getLayer && mapRef.getLayer(layerId)) {
+        setLayerAdded(true);
+      }
       if (!(error instanceof Error && error.message.includes('already exists'))) {
         console.error('Failed to add layer:', error);
       }
@@ -313,6 +322,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
 
     return () => {
       try {
+        setLayerAdded(false);
         if (layerId && mapRef && typeof mapRef.getStyle === 'function') {
           const style = mapRef.getStyle();
           if (style.layers && mapRef.getLayer && mapRef.getLayer(layerId)) {

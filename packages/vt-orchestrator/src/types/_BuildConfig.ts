@@ -112,7 +112,8 @@ export type TransformConfig = CommonTransformConfig;
 export type VTConfig = CommonVTConfig;
 
 export interface CleanupBatchConfig {
-  deleteFetchCeche?: boolean;
+  deleteFetchApiCache?: boolean;
+  deleteFetchFilteredCache?: boolean;
   deleteTransformCache?: boolean;
   deleteVTCache?: boolean;
 }

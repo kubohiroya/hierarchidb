@@ -12,7 +12,10 @@ import { persistedTasksAtom, tasksAtom } from '../../atoms/shapeBuildProgressAto
 import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import type { BuildTaskType } from '@hierarchidb/shape-store';
 import { ephemeralShapeAPIImpl, shapeMutationAPIImpl, shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
-import { deleteRawDataDataSourceBuffersForNode } from '../../../services/utils/chunkStore.js';
+import {
+  countRawDataDataSourceBuffersForNode,
+  deleteRawDataDataSourceBuffersForNode,
+} from '../../../services/utils/chunkStore.js';
 
 type Args = {
   config: ShapeBuildConfig;
@@ -27,7 +30,8 @@ const isVectorTileStage = (stage: TaskStage): boolean => stage === 'vt';
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
 
 type CacheCounts = {
-  fetch: number;
+  fetchApi: number;
+  fetchFiltered: number;
   transform: number;
   vt: number;
 };
@@ -53,7 +57,8 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
   const [countsLoading, setCountsLoading] = useState(false);
 
   const [counts, setCounts] = useState<CacheCounts>({
-    fetch: 0,
+    fetchApi: 0,
+    fetchFiltered: 0,
     transform: 0,
     vt: 0,
   });
@@ -75,27 +80,38 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
       })
       : fallback
   ), [countUnit, t]);
-  const fetchDeleteCount = counts.fetch;
+  const fetchApiDeleteCount = counts.fetchApi;
+  const fetchFilteredDeleteCount = counts.fetchFiltered;
   const transformDeleteCount = counts.transform;
   const vtDeleteCount = counts.vt;
   const metadataDeleteCount = resultCounts.metadata;
   const hasTileSummary = Boolean(draft?.tileSummary && (draft.tileSummary.tiles ?? 0) > 0);
-  const deleteFetchLabel = useMemo(() => (
+  const deleteFetchApiLabel = useMemo(() => (
     formatDeleteLabelI18n(
-      'processing.download.deleteDownloadedFilesWithCount',
-      t('processing.download.deleteDownloadedFiles', 'Delete fetch cache'),
-      fetchDeleteCount,
+      'processing.download.deleteApiCacheWithCount',
+      t('processing.download.deleteApiCache', 'Delete API cache'),
+      fetchApiDeleteCount,
     )
-  ), [fetchDeleteCount, formatDeleteLabelI18n, t]);
+  ), [fetchApiDeleteCount, formatDeleteLabelI18n, t]);
+  const deleteFetchFilteredLabel = useMemo(() => (
+    formatDeleteLabelI18n(
+      'processing.download.deleteFilteredCacheWithCount',
+      t('processing.download.deleteFilteredCache', 'Delete filtered cache'),
+      fetchFilteredDeleteCount,
+    )
+  ), [fetchFilteredDeleteCount, formatDeleteLabelI18n, t]);
   const deleteTransformLabel = useMemo(() => (
     formatDeleteLabelI18n(
       'processing.download.deleteStage1CacheWithCount',
-      t('processing.download.deleteStage1Cache', 'Delete transform cache'),
+      t('processing.download.deleteStage1Cache', 'Delete simplified cache'),
       transformDeleteCount,
     )
   ), [formatDeleteLabelI18n, t, transformDeleteCount]);
   const deleteVTLabel = useMemo(() => (
-    formatDeleteLabel(t('processing.download.deleteTiles', 'Delete vt cache'), vtDeleteCount)
+    formatDeleteLabel(
+      t('processing.download.deleteTiles', 'Delete tile index + tile data cache'),
+      vtDeleteCount,
+    )
   ), [formatDeleteLabel, t, vtDeleteCount]);
   const deleteMetadataLabel = useMemo(() => (
     formatDeleteLabel(t('processing.download.deleteMetadata', 'Delete Metadata'), metadataDeleteCount)
@@ -103,7 +119,7 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
 
   const loadCounts = useCallback(async () => {
     if (!nodeId) {
-      setCounts({ fetch: 0, transform: 0, vt: 0 });
+      setCounts({ fetchApi: 0, fetchFiltered: 0, transform: 0, vt: 0 });
       setResultCounts({ tiles: 0, metadata: 0 });
       setIsRunning(false);
       setCountsLoading(false);
@@ -116,12 +132,14 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
       const taskQueue = new VtTaskQueueDb();
       const [
         fetchCacheCount,
+        rawCacheCount,
         transformTaskCount,
         vtTaskCount,
         transformCacheCount,
         numMetadata,
       ] = await Promise.all([
         ephemeralShapeAPIImpl.countFetchCaches(nodeId),
+        countRawDataDataSourceBuffersForNode(nodeId),
         taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'transform']).count(),
         taskQueue.tasks.where('[nodeId+stage]').equals([nodeId, 'vt']).count(),
         ephemeralShapeAPIImpl.countTransformCaches(nodeId),
@@ -137,7 +155,8 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
       setIsRunning(sessionStatus?.status === 'running');
 
       setCounts({
-        fetch: fetchCacheCount,
+        fetchApi: rawCacheCount,
+        fetchFiltered: fetchCacheCount,
         transform: transformCount,
         vt: vtTaskCount,
       });
@@ -159,7 +178,8 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
     };
   }, [loadCounts]);
 
-  const canDeleteFetchCache = !isRunning && !disabled && fetchDeleteCount > 0;
+  const canDeleteFetchApiCache = !isRunning && !disabled && fetchApiDeleteCount > 0;
+  const canDeleteFetchFilteredCache = !isRunning && !disabled && fetchFilteredDeleteCount > 0;
   const canDeleteTransformCache = !isRunning && !disabled && transformDeleteCount > 0;
   const canDeleteVTCache = !isRunning && !disabled && vtDeleteCount > 0;
   const canDeleteMetadata = !isRunning && !disabled && metadataDeleteCount > 0;
@@ -237,8 +257,13 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
     }
   }, [bridgeRef, draft, nodeId]);
 
-  const handleDeleteFetchCache = useCallback(async () => {
+  const handleDeleteFetchApiCache = useCallback(async () => {
     await deleteRawDataDataSourceBuffersForNode(nodeId);
+    await loadCounts();
+    notify.success('Deleted API cache');
+  }, [nodeId, loadCounts]);
+
+  const handleDeleteFetchFilteredCache = useCallback(async () => {
     await ephemeralShapeAPIImpl.clearStage(nodeId, 'fetch');
     await clearBatchTasksForType('fetch');
     setBuildTasks((prev) => prev.filter((task) => !isFetchTask(task)));
@@ -249,11 +274,10 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
       onResetSession?.();
       await persistSessionReset();
     }
-    notify.success('Deleted fetch cache');
+    notify.success('Deleted filtered cache');
   }, [
     nodeId,
     clearBatchTasksForType,
-    deleteRawDataDataSourceBuffersForNode,
     draft?.processingStatus,
     hasPersistedOutputs,
     hasTileSummary,
@@ -314,16 +338,19 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
     t,
     switchId,
     baseFetchConfig: baseFetchConfig,
-    deleteFetchLabel,
+    deleteFetchApiLabel,
+    deleteFetchFilteredLabel,
     deleteTransformFilterLabel: deleteTransformLabel,
     deleteVTLabel,
     deleteMetadataLabel,
     countsLoading,
-    canDeleteFetchCache,
+    canDeleteFetchApiCache,
+    canDeleteFetchFilteredCache,
     canDeleteTransformCache,
     canDeleteVTCache,
     canDeleteMetadata,
-    handleDeleteFetchCache,
+    handleDeleteFetchApiCache,
+    handleDeleteFetchFilteredCache,
     handleDeleteTransformCache,
     handleDeleteVTCache,
     handleDeleteMetadata,

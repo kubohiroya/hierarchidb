@@ -47,16 +47,19 @@ export const ZoomBandConfigSection: React.FC<Props> = ({
   const { baseTransformConfig, update } = useTransformConfigSection({ config, onChange });
   const {
     switchId,
-    deleteFetchLabel,
+    deleteFetchApiLabel,
+    deleteFetchFilteredLabel,
     deleteTransformFilterLabel,
     deleteVTLabel,
     deleteMetadataLabel,
     countsLoading,
-    canDeleteFetchCache,
+    canDeleteFetchApiCache,
+    canDeleteFetchFilteredCache,
     canDeleteTransformCache,
     canDeleteVTCache,
     canDeleteMetadata,
-    handleDeleteFetchCache,
+    handleDeleteFetchApiCache,
+    handleDeleteFetchFilteredCache,
     handleDeleteTransformCache,
     handleDeleteVTCache,
     handleDeleteMetadata,
@@ -155,24 +158,46 @@ export const ZoomBandConfigSection: React.FC<Props> = ({
                   <FormControlLabel
                     control={
                       <Switch
-                        checked={!config.cleanupConfig?.deleteFetchCeche}
+                        checked={!config.cleanupConfig?.deleteFetchApiCache}
                         onChange={(event) => {
                           const retainFiles = event.target.checked;
                           update({
                             cleanupConfig: {
                               ...config.cleanupConfig,
-                              deleteFetchCeche: !retainFiles,
+                              deleteFetchApiCache: !retainFiles,
                             },
                           });
                         }}
                         disabled={disabled}
                         inputProps={{
-                          id: `${switchId}-retain-downloaded-files`,
-                          name: 'retain-downloaded-files',
+                          id: `${switchId}-retain-fetch-api-cache`,
+                          name: 'retain-fetch-api-cache',
                         }}
                       />
                     }
-                    label={t('processing.download.retainDownloadedFiles', 'Fetch cache')}
+                    label={t('processing.download.retainApiCache', 'API cache')}
+                  />
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={!config.cleanupConfig?.deleteFetchFilteredCache}
+                        onChange={(event) => {
+                          const retainCache = event.target.checked;
+                          update({
+                            cleanupConfig: {
+                              ...config.cleanupConfig,
+                              deleteFetchFilteredCache: !retainCache,
+                            },
+                          });
+                        }}
+                        disabled={disabled}
+                        inputProps={{
+                          id: `${switchId}-retain-fetch-filtered-cache`,
+                          name: 'retain-fetch-filtered-cache',
+                        }}
+                      />
+                    }
+                    label={t('processing.download.retainFilteredCache', 'Filtered cache')}
                   />
                   <FormControlLabel
                     control={
@@ -194,7 +219,7 @@ export const ZoomBandConfigSection: React.FC<Props> = ({
                         }}
                       />
                     }
-                    label={t('processing.download.retainStage1Cache', 'Transform cache')}
+                    label={t('processing.download.retainStage1Cache', 'Simplified cache')}
                   />
                   <FormControlLabel
                     control={
@@ -216,7 +241,7 @@ export const ZoomBandConfigSection: React.FC<Props> = ({
                         }}
                       />
                     }
-                    label={t('processing.download.retainVtCache', 'VT cache')}
+                    label={t('processing.download.retainVtCache', 'Tile index + tile data cache')}
                   />
                 </FormGroup>
               </Stack>
@@ -224,16 +249,19 @@ export const ZoomBandConfigSection: React.FC<Props> = ({
             <Stack sx={{ flex: 1, minWidth: 0 }}>
               <DeleteBuildOutputsCard
                 title={t('processing.download.deleteNowTitle', 'Delete build outputs immediately')}
-                deleteFetchLabel={deleteFetchLabel}
+                deleteFetchApiLabel={deleteFetchApiLabel}
+                deleteFetchFilteredLabel={deleteFetchFilteredLabel}
                 deleteTransformFilterLabel={deleteTransformFilterLabel}
                 deleteVTLabel={deleteVTLabel}
                 deleteMetadataLabel={deleteMetadataLabel}
                 countsLoading={countsLoading}
-                canDeleteFetchCache={canDeleteFetchCache}
+                canDeleteFetchApiCache={canDeleteFetchApiCache}
+                canDeleteFetchFilteredCache={canDeleteFetchFilteredCache}
                 canDeleteTransformCache={canDeleteTransformCache}
                 canDeleteVTCache={canDeleteVTCache}
                 canDeleteMetadata={canDeleteMetadata}
-                onDeleteFetchCache={handleDeleteFetchCache}
+                onDeleteFetchApiCache={handleDeleteFetchApiCache}
+                onDeleteFetchFilteredCache={handleDeleteFetchFilteredCache}
                 onDeleteTransformCache={handleDeleteTransformCache}
                 onDeleteVTCache={handleDeleteVTCache}
                 onDeleteMetadata={handleDeleteMetadata}

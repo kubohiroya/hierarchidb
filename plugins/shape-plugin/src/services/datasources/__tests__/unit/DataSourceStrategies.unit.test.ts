@@ -105,9 +105,10 @@ const minimalBatchConfig = {
     workers: 1,
   },
   cleanupConfig: {
-    deleteDownloadedFiles: false,
-    deleteStage1Cache: false,
-    deleteStage2Cache: false,
+    deleteFetchApiCache: false,
+    deleteFetchFilteredCache: false,
+    deleteTransformCache: false,
+    deleteVTCache: false,
   },
 };
 

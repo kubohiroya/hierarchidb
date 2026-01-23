@@ -19,7 +19,8 @@ export interface FetchConfig {
 }
 
 export interface CleanupConfig {
-  deleteFetchCeche?: boolean;
+  deleteFetchApiCache?: boolean;
+  deleteFetchFilteredCache?: boolean;
   deleteTransformCache?: boolean;
   deleteVTCache?: boolean;
 }

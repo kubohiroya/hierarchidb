@@ -966,11 +966,12 @@ vt-orchestrator は fetch の実行は行わない。
     - Card/Paper: WorkerNumberConfigCard
       - Form: Rating（downloadConfig.maxConcurrent）
     - Card/Paper: Retain intermediate outputs
-      - Form: Switch（cleanupConfig.deleteDownloadedFiles）
-      - Form: Switch（cleanupConfig.deleteStage1Cache）
-      - Form: Switch（cleanupConfig.deleteStage2Cache）
+      - Form: Switch（cleanupConfig.deleteFetchApiCache）
+      - Form: Switch（cleanupConfig.deleteFetchFilteredCache）
+      - Form: Switch（cleanupConfig.deleteTransformCache）
+      - Form: Switch（cleanupConfig.deleteVTCache）
     - Card/Paper: Delete stage outputs immediately
-      - Form: Button（Delete Downloaded Files / Stage1 / Stage2 / Tiles / Metadata / Reset）
+      - Form: Button（API cache / Filtered cache / Simplified cache / Tile index + tile data cache / Metadata / Reset）
     - Card/Paper: DownloadRetryControls
       - Form: TextField（timeoutMs）
       - Form: TextField（retryDelay）

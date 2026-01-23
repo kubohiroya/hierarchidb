@@ -95,7 +95,8 @@ export const DEFAULT_BUILD_CONFIG: ShapeBuildConfig = {
     compression: 'gzip',
   },
   cleanupConfig: {
-    deleteFetchCeche: false,
+    deleteFetchApiCache: false,
+    deleteFetchFilteredCache: false,
     deleteTransformCache: false,
     deleteVTCache: false,
   },

@@ -32,6 +32,7 @@ import { runShapeFetchStage } from './shapeFetchStage.js';
 import { updateShapeStageMetadata } from './shapeStageMetadata.js';
 import { metadataLoader } from '../metadata/MetadataLoader.js';
 import { shapeMutationAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
+import { deleteRawDataDataSourceBuffersForNode } from '../utils/chunkStore.js';
 import {
   buildZoomBandRanges,
   ZOOM_BAND_MAX_ZOOM,
@@ -948,11 +949,14 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
   });
 
   const cleanupConfig = params.buildConfig.cleanupConfig;
-  if (cleanupConfig?.deleteFetchCeche) {
+  if (cleanupConfig?.deleteFetchFilteredCache) {
     await ephemeralStore.fetchCache
       .where('nodeId')
       .equals(params.nodeId)
       .delete();
+  }
+  if (cleanupConfig?.deleteFetchApiCache) {
+    await deleteRawDataDataSourceBuffersForNode(params.nodeId);
   }
   if (cleanupConfig?.deleteTransformCache) {
     await ephemeralStore.transaction('rw', ephemeralStore.transformCache, async () => {

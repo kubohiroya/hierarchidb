@@ -8,17 +8,20 @@ import {
 import { useTranslation } from '../../i18n.js';
 
 type Props = {
-  deleteFetchLabel: string;
+  deleteFetchApiLabel: string;
+  deleteFetchFilteredLabel: string;
   deleteTransformFilterLabel: string;
   deleteVTLabel: string;
   deleteMetadataLabel: string;
   countsLoading?: boolean;
-  canDeleteFetchCache: boolean;
+  canDeleteFetchApiCache: boolean;
+  canDeleteFetchFilteredCache: boolean;
   canDeleteTransformCache: boolean;
   canDeleteVTCache: boolean;
   canDeleteMetadata: boolean;
   resetDisabled?: boolean;
-  onDeleteFetchCache: () => void;
+  onDeleteFetchApiCache: () => void;
+  onDeleteFetchFilteredCache: () => void;
   onDeleteTransformCache: () => void;
   onDeleteVTCache: () => void;
   onDeleteMetadata: () => void;
@@ -26,24 +29,28 @@ type Props = {
 };
 
 export const FetchConfigFormControls: React.FC<Props> = ({
-  deleteFetchLabel,
+  deleteFetchApiLabel,
+  deleteFetchFilteredLabel,
   deleteTransformFilterLabel,
   deleteVTLabel,
   deleteMetadataLabel,
   countsLoading = false,
-  canDeleteFetchCache,
+  canDeleteFetchApiCache,
+  canDeleteFetchFilteredCache,
   canDeleteTransformCache,
   canDeleteVTCache,
   canDeleteMetadata,
   resetDisabled,
-  onDeleteFetchCache,
+  onDeleteFetchApiCache,
+  onDeleteFetchFilteredCache,
   onDeleteTransformCache,
   onDeleteVTCache,
   onDeleteMetadata,
   onResetDefaults,
 }) => {
   const { t } = useTranslation();
-  const rawDisabled = countsLoading || !canDeleteFetchCache;
+  const apiDisabled = countsLoading || !canDeleteFetchApiCache;
+  const filteredDisabled = countsLoading || !canDeleteFetchFilteredCache;
 
   return (
     <>
@@ -54,14 +61,14 @@ export const FetchConfigFormControls: React.FC<Props> = ({
             variant="outlined"
             color="error"
             startIcon={<CloudDownloadIcon />}
-            disabled={rawDisabled}
-            onClick={onDeleteFetchCache}
+            disabled={apiDisabled}
+            onClick={onDeleteFetchApiCache}
           >
             <Typography
               component="span"
               sx={{ display: 'inline-flex', alignItems: 'center', minHeight: '1.2em' }}
             >
-              {deleteFetchLabel}
+              {deleteFetchApiLabel}
             </Typography>
           </Button>
         </Grid>
@@ -71,8 +78,20 @@ export const FetchConfigFormControls: React.FC<Props> = ({
             variant="outlined"
             color="error"
             startIcon={<FilterAltIcon />}
+            disabled={filteredDisabled}
+            onClick={onDeleteFetchFilteredCache}
+          >
+            {deleteFetchFilteredLabel}
+          </Button>
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6 }}>
+          <Button
+            fullWidth
+            variant="outlined"
+            color="error"
+            startIcon={<FilterAltIcon />}
             disabled={!canDeleteTransformCache}
-            onClick={() => onDeleteTransformCache()}
+            onClick={onDeleteTransformCache}
           >
             {deleteTransformFilterLabel}
           </Button>
@@ -123,20 +142,26 @@ export const FetchConfigFormControls: React.FC<Props> = ({
         </Typography>
         <Typography variant="caption" color="text.secondary">
           {t(
-            'processing.download.deleteFetchHelp',
-            'Fetch cache: filtered feature collections from the fetch stage (and downloaded raw data for this node).',
+            'processing.download.deleteApiCacheHelp',
+            'API cache: downloaded raw data for this node (before filtering).',
+          )}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          {t(
+            'processing.download.deleteFilteredCacheHelp',
+            'Filtered cache: fetch-stage filtered feature collections per zoom band.',
           )}
         </Typography>
         <Typography variant="caption" color="text.secondary">
           {t(
             'processing.download.deleteTransformHelp',
-            'Transform cache: simplified geometries by zoom band plus transform error records.',
+            'Simplified cache: simplified geometries by zoom band plus transform error records.',
           )}
         </Typography>
         <Typography variant="caption" color="text.secondary">
           {t(
             'processing.download.deleteVtHelp',
-            'VT cache: generated vector tiles and tile relations (also clears feature/source metadata).',
+            'Tile index + tile data cache: generated vector tiles and tile relations (also clears feature/source metadata).',
           )}
         </Typography>
         <Typography variant="caption" color="text.secondary">

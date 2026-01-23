@@ -417,6 +417,7 @@ export const ModelessDialogManager: React.FC<ModelessDialogManagerProps> = ({
         title: 'shape一覧',
         icon: <TableViewIcon fontSize="small" />,
         defaultSize: { width: 760, height: 520 },
+        contentPadding: 0,
         content: <MapShapeListContent nodeId={nodeId as NodeId} />,
       },
       {
@@ -424,6 +425,7 @@ export const ModelessDialogManager: React.FC<ModelessDialogManagerProps> = ({
         title: 'location一覧',
         icon: <PlaceOutlinedIcon fontSize="small" />,
         defaultSize: { width: 720, height: 520 },
+        contentPadding: 0,
         content: <MapLocationListContent nodeId={nodeId as NodeId} />,
       },
       {
@@ -431,6 +433,7 @@ export const ModelessDialogManager: React.FC<ModelessDialogManagerProps> = ({
         title: 'route一覧',
         icon: <AltRouteIcon fontSize="small" />,
         defaultSize: { width: 720, height: 520 },
+        contentPadding: 0,
         content: <MapRouteListContent nodeId={nodeId as NodeId} />,
       },
       {

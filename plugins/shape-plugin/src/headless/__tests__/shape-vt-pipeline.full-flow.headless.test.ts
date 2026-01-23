@@ -36,7 +36,8 @@ const buildConfig = {
   },
   cleanupConfig: {
     ...DEFAULT_BUILD_CONFIG.cleanupConfig,
-    deleteFetchCeche: false,
+    deleteFetchApiCache: false,
+    deleteFetchFilteredCache: false,
     deleteTransformCache: false,
     deleteVTCache: false,
   },

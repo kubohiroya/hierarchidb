@@ -49,6 +49,8 @@ export interface MapLibreMapInstance {
 
   getLayer(id: string): MapLibreLayer | undefined;
 
+  isStyleLoaded(): boolean;
+
   setLayoutProperty(layerId: string, name: string, value: unknown): void;
 
   setPaintProperty(layerId: string, name: string, value: unknown): void;

@@ -14,6 +14,44 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-24 21:05 JST /map の Data Table 撤去と一覧/ズーム表示移植に着手。
+  - update: 2026-01-24 21:40 JST /map の ModelessDialog を shape/location/route 一覧へ差し替え、ズーム率の中央表示を追加。
+  - update: 2026-01-24 21:48 JST pnpm typecheck が shape-plugin の buildMapEntries 宣言順エラーで失敗したため修正を実施。
+  - done: 2026-01-24 21:55 JST pnpm typecheck exit 0（tsdown define 警告あり）。
+
+2316) feat/shape/step4-cache-terms-split (P1) — 完了 (2026-01-24)
+- ブランチ名: feat/shape/step4-cache-terms-split
+- 依存: なし
+- 受け入れ基準: step4 の「ビルド終了時の中間生成物の保持」と削除ボタンの文言が新しい用語に統一される（APIキャッシュ/フィルター処理キャッシュ/簡略化キャッシュ/タイルインデックス+タイルデータキャッシュ）／fetch の raw と filtered が UI 上で分離され、それぞれ保持/削除が可能／削除対象が UI 表記と一致する／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/**`, `plugins/shape-plugin/src/ui/locales/**`, `plugins/shape-plugin/src/services/vt/shapePipeline.ts`, `packages/features/gis-sdk/src/config.ts`, `packages/vt-orchestrator/src/types/_BuildConfig.ts`, `plugins/shape-plugin/src/common/types/constants.ts`（調査後に確定）
+- ロールバック手順: 文言と UI 分割、および cleanupConfig の変更差分を revert して元の 1 ボタン構成へ戻す
+- チェックリスト:
+  - fetch の raw / filtered キャッシュ削除の実体と分離方法を確認する
+  - step4 の保持/削除 UI を raw / filtered に分割する
+  - 用語を ja/en で統一する
+  - cleanupConfig の項目を新しい区分へ更新する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 22:20 JST step4 の用語整理と fetch キャッシュ分割に着手。
+  - update: 2026-01-24 23:05 JST pnpm typecheck が CleanupConfig 定義の不整合で失敗したため、pnpm --filter @hierarchidb/gis-sdk build を実行して型定義を更新。
+  - done: 2026-01-24 23:10 JST pnpm typecheck exit 0（tsdown define 警告あり）。
+
+2317) chore/shape/step4-ui-audit (P1) — 進行中 (2026-01-24)
+- ブランチ名: chore/shape/step4-ui-audit
+- 依存: なし
+- 受け入れ基準: step4 UI の用語揺れ/ステージ移動反映漏れ/撤去済みパラメータUIの孤児/新規処理の未UI化を網羅的に列挙し、各項目に「場所・問題点・整理方針」を1行で記載した一覧を作成する／影響範囲（UI/設定/パイプライン/型/翻訳/ドキュメント）を明示する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/**`, `plugins/shape-plugin/src/ui/locales/**`, `docs/vt-pipeline-design.md`（調査後に確定）
+- ロールバック手順: 一覧化のみのため不要
+- チェックリスト:
+  - step4 UI の用語と実処理の齟齬を洗い出す
+  - ステージ移動の反映漏れ UI を洗い出す
+  - 撤去済みパラメータの孤児 UI を洗い出す
+  - 新規処理で UI 未対応の項目を洗い出す
+  - 一覧を整理して共有する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 23:25 JST step4 UI の整理対象洗い出しに着手。
+  - done: 2026-01-24 23:40 JST step4 UI の用語揺れ/反映漏れ/孤児/未UI化を洗い出し、一覧を整理。
 
 2313) fix/ui-map/hover-snackbar-bottom-center (P1) — 完了 (2026-01-24)
 - ブランチ名: fix/ui-map/hover-snackbar-bottom-center
@@ -37,7 +75,7 @@
 - ブランチ名: fix/shape-step6/hover-snackbar-bottom-center
 - 依存: なし
 - 受け入れ基準: shape-plugin step6 の地物ホバー表示が画面中央下に表示される／表示経路（ResourceLayerMap/snackbar か独自オーバーレイか）を明確化し、中央下へ統一する／ADM0+ADM1 が重なる場合は ADM1 が優先して表示される／ADM1 ホバー時の表示が「自治体名 / ADM1 / 国名 / 国コード / 1」になる／pnpm --filter @hierarchidb/ui-map typecheck と pnpm --filter @hierarchidb/app typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/**`, `packages/ui/map/src/**`（調査後に確定）
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/useShapePreviewStep.ts`, `packages/ui/map/src/**`（調査後に確定）
 - ロールバック手順: step6 ホバー表示変更の差分を revert し、従来の表示経路へ戻す
 - チェックリスト:
   - step6 のホバー表示経路（snackbar/独自オーバーレイ）を特定する
@@ -51,7 +89,50 @@
   - update: 2026-01-24 02:48 JST step6 のホバー表示を中央下に移動し、ADM ラベル整形と優先順位選択を追加。
   - done: 2026-01-24 02:53 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0。pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
 
-2315) fix/ui-map/shape-preview-missing-source (P1) — 進行中 (2026-01-23)
+2316) chore/shape/disable-geoboundaries-probe-log (P3) — 完了 (2026-01-23)
+- ブランチ名: chore/shape/disable-geoboundaries-probe-log
+- 依存: なし
+- 受け入れ基準: geoboundaries metadata payload probe のログがDEVでも出力されない／メタデータ取得ロジックは変わらない／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/metadata/metadataSources.ts`
+- ロールバック手順: probe ログ削除の差分を revert する
+- チェックリスト:
+  - metadata payload probe ログを削除する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 10:47 JST geoboundaries の probe ログ削除に着手。
+  - done: 2026-01-23 10:48 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+
+2317) fix/shape/geoboundaries-continent-overrides (P2) — 完了 (2026-01-23)
+- ブランチ名: fix/shape/geoboundaries-continent-overrides
+- 依存: なし
+- 受け入れ基準: geoboundaries の continent mismatch が指定国で減る／補正ルールが明確で既存ロジックを壊さない／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/metadata/metadataSources.ts`
+- ロールバック手順: allowlist 補正の差分を revert する
+- チェックリスト:
+  - mismatch 対象国の補正ルールを追加する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 10:48 JST continent mismatch の追加補正に着手。
+  - done: 2026-01-23 10:49 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+
+2318) fix/shape/geoboundaries-continent-normalize-on-load (P1) — 完了 (2026-01-23)
+- ブランチ名: fix/shape/geoboundaries-continent-normalize-on-load
+- 依存: なし
+- 受け入れ基準: geoboundaries メタデータをロード直後に補正し整合済み値のみを扱う／continent metadata mismatch detected が出力されない／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/metadata/metadataSources.ts`
+- ロールバック手順: 補正ロジックの差分を revert する
+- チェックリスト:
+  - ロード直後の補正ロジックを適用する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 11:03 JST geoboundaries の continent 補正をロード直後に適用する対応に着手。
+  - update: 2026-01-23 11:05 JST ISO3166 に従いロード直後に continent を正規化し、mismatch ログを出さないよう修正。
+  - done: 2026-01-23 11:06 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+
+2315) fix/ui-map/shape-preview-missing-source (P1) — 完了 (2026-01-23)
 - ブランチ名: fix/ui-map/shape-preview-missing-source
 - 依存: なし
 - 受け入れ基準: `shape-preview-source` の Missing source ログ原因が特定される／ロシア・中国など特定ズーム帯でベクトルタイルが表示されない問題が解消される／影響範囲とロールバック手順を記載する／pnpm --filter @hierarchidb/ui-map typecheck が exit 0／必要な関連パッケージの typecheck が exit 0／TASKS.md に運用ログを記載する
@@ -66,6 +147,8 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-23 09:09 JST shape-preview Missing source と表示欠落の調査に着手。
+  - update: 2026-01-23 09:14 JST 選択/検索/ホバーの MapHighlightEntry を layerSet の sourceId/layerId に対応させた。
+  - done: 2026-01-23 09:16 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
 
 2314) fix/shape/geoboundaries-continent-mismatch (P1) — 完了 (2026-01-23)
 - ブランチ名: fix/shape/geoboundaries-continent-mismatch
@@ -139,6 +222,12 @@
   - update: 2026-01-24 20:05 JST MapLibreMap で paint 配列のデバッグ/正規化を追加し、maplibre-public に setPaintProperty を追記。pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
   - update: 2026-01-24 20:20 JST styledata でも paint 配列のデバッグ/正規化を実行するように追加。pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
   - update: 2026-01-24 20:35 JST expression 配列も setPaintProperty で再適用するように変更。pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-23 10:55 JST feature-state の paint 式と ResourceLayerMap の適用経路を重点的に調査開始。
+  - update: 2026-01-23 11:02 JST VectorTileLayer の feature-state 適用を layer/style ロード後に限定。pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-23 11:14 JST useMapFeatureHighlights の feature-state 適用を style/layer 準備完了後に限定して再検証。
+  - update: 2026-01-23 11:16 JST useMapFeatureHighlights に style/layer ガードを追加。pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-23 11:24 JST ResourceLayerMap/VectorTileLayer の再レンダリングと layer 再追加がタイル再読込に与える影響を調査中。
+  - update: 2026-01-23 11:30 JST paint 差分更新・memoize・再読込ログ計測の実装に着手。
 
 2310) fix/ui/shape-preview-source-missing (P1) — 進行中 (2026-01-24)
 - ブランチ名: fix/ui/shape-preview-source-missing
@@ -421,6 +510,24 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-23 21:40 JST フィーチャー一覧タイトルバーの左余白調整に着手。
+
+
+2303) fix/shape/preview-snackbar-admin-labels (P1) — 完了 (2026-01-23)
+- ブランチ名: fix/shape/preview-snackbar-admin-labels
+- 依存: なし
+- 受け入れ基準: Snackbar の表示が ADM0/ADM1/ADM2 で指定形式になる／hover/クリックの既存挙動が維持される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記録する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/useShapePreviewStep.ts`
+- ロールバック手順: Snackbar の文言変更差分を revert する
+- チェックリスト:
+  - Snackbar 表示ロジックを特定する
+  - ADM レベル別の文言切り替えを実装する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 21:55 JST Snackbar 表示の ADM 別文言修正に着手。
+  - update: 2026-01-23 22:05 JST hover の feature properties を参照して ADM 表示を組み立てるよう変更。
+  - update: 2026-01-23 22:10 JST pnpm --filter @hierarchidb/ui-map build で型定義を更新。
+  - done: 2026-01-23 22:15 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
 
 2299) fix/styler/auth-dialog-loop (P1) — 進行中 (2026-01-23)
 - ブランチ名: fix/styler/auth-dialog-loop
@@ -958,7 +1065,7 @@
 - 依存: なし
 - ExecPlan: plans/shape-metadata-aggregate-hover-execplan.md
 - 受け入れ基準: geoBoundaries ADM1 のメタデータ一覧が同一自治体で1行に集約表示される（島・飛地も同一自治体で集約）／集約は表示のみでID統合はしない／ホバー/選択でフィーチャー単体だけでなく同一自治体/同一国の単位で強調できる／影響範囲とロールバック手順を明記する／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/**`, `packages/ui/map/**`, `plugins/shape-plugin/src/services/**`（調査後に確定）
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/useShapePreviewStep.ts`, `packages/ui/map/**`, `plugins/shape-plugin/src/services/**`（調査後に確定）
 - ロールバック手順: 集約表示/ホバー拡張の差分を revert する
 - チェックリスト:
   - メタデータ一覧の集約対象キー（ADM1単位）を確定する
@@ -1984,7 +2091,7 @@
 - ブランチ名: fix/shape/step6-floating-window-icons-columns
 - 依存: なし
 - 受け入れ基準: Step6 フローティングウィンドウのタイトルバー左端アイコンがHexagonになる／再表示ボタンのアイコンもHexagonになる／カラム表示設定の初期値はlocalStorageまたは全表示デフォルトから取得される／変更時にlocalStorageへ永続化される／既存のStep6表示/操作に副作用がない／TASKS.mdに運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/**`, `packages/ui/map/src/preview/ShapePreviewList.tsx`, `packages/ui/map/src/preview/MapPreviewFloatingTable.tsx`, `packages/ui/floating-window/src/**`（調査後に確定）
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/useShapePreviewStep.ts`, `packages/ui/map/src/preview/ShapePreviewList.tsx`, `packages/ui/map/src/preview/MapPreviewFloatingTable.tsx`, `packages/ui/floating-window/src/**`（調査後に確定）
 - ロールバック手順: 該当差分を revert し、アイコン/カラム永続化を修正前へ戻す
 - チェックリスト:
   - Hexagon アイコンの適用箇所を特定し置換する
@@ -1998,7 +2105,7 @@
 - ブランチ名: fix/shape/step6-floating-window-reopen
 - 依存: なし
 - 受け入れ基準: shape Step6 のフローティングウィンドウを閉じた後に再表示用のアイコンボタン（color="primary" size="large" variant="contained"）が地図左上に表示される／ボタン押下でフローティングウィンドウが再表示される／darkモードでもFitボタン内アイコンが表示され空白にならない／既存のStep6の表示/操作に副作用がない／TASKS.mdに運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/**`, `packages/ui/map/src/components/ResourceLayerMap.tsx`, `packages/ui/map/src/preview/ShapePreviewList.tsx`（調査後に確定）
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/useShapePreviewStep.ts`, `packages/ui/map/src/components/ResourceLayerMap.tsx`, `packages/ui/map/src/preview/ShapePreviewList.tsx`（調査後に確定）
 - ロールバック手順: 該当差分を revert し、フローティングウィンドウの再表示ボタンとFitアイコン表示を修正前へ戻す
 - チェックリスト:
   - Step6のフローティングウィンドウ閉じ/再表示の状態管理を追加する
@@ -2242,7 +2349,7 @@
 - ブランチ名: feat/shape/step6-preview-layout
 - 依存: なし
 - 受け入れ基準: Step6 のタブUIが廃止され、DialogContent直下で地図プレビューが常時表示される／フィーチャー一覧とエラー内容が統合されたフローティングダイアログが地図上に表示され、エラー有無で Failed/Completed のChipが出る／選択/検索/エラーLineStringのハイライトが破綻しない／モバイル/デスクトップでレイアウトが崩れない／pnpm typecheck が exit 0 で完走する
-- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/**`, `plugins/shape-plugin/src/ui/locales/*`（必要に応じて）
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/useShapePreviewStep.ts`, `plugins/shape-plugin/src/ui/locales/*`（必要に応じて）
 - ロールバック手順: 該当差分を revert し、Step6 のタブ構成と一覧表示を修正前へ戻す
 - チェックリスト:
   - Step6 のタブUIを撤去する
@@ -2302,7 +2409,7 @@
 - ブランチ名: fix/shape/step6-error-list-count-format
 - 依存: なし
 - 受け入れ基準: Step6 エラー一覧からソースキー列を削除する／ポリゴン/リングの表示が「エラー数/総数」形式になる／既存のソート/検索/選択が破綻しない／pnpm typecheck が exit 0 で完走する
-- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/**`, `packages/vt-orchestrator/src/transform/**`, `packages/plugin-service-api/src/types/**`, `plugins/shape-plugin/src/ui/locales/*`（必要に応じて）
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/useShapePreviewStep.ts`, `packages/vt-orchestrator/src/transform/**`, `packages/plugin-service-api/src/types/**`, `plugins/shape-plugin/src/ui/locales/*`（必要に応じて）
 - ロールバック手順: 該当差分を revert し、Step6 エラー一覧の列構成と数値表示を修正前に戻す
 - チェックリスト:
   - エラー一覧からソースキー列を削除する
@@ -2359,7 +2466,7 @@
 - ブランチ名: fix/shape/step6-error-list-admin-names
 - 依存: なし
 - 受け入れ基準: Step6 エラー一覧に Admin0 名（国名）と Admin1/2 名（地域名）を表示する／列追加に伴うソート・検索・表示崩れがない／pnpm typecheck が exit 0 で完走する
-- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/**`, `plugins/shape-plugin/src/ui/locales/*`（必要に応じて）
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/useShapePreviewStep.ts`, `plugins/shape-plugin/src/ui/locales/*`（必要に応じて）
 - ロールバック手順: 該当差分を revert し、エラー一覧の列構成を修正前に戻す
 - チェックリスト:
   - エラー一覧へ Admin 名の列を追加する
@@ -2428,7 +2535,7 @@
 - ブランチ名: fix/shape/step6-error-list-visuals-fit-screen
 - 依存: なし
 - 受け入れ基準: Step6 エラー一覧の1行がフィーチャー単位であることを確認し記録する／エラー一覧から記録日時カラムを削除し、ポリゴン/リングのエラー数が表示される／エラー一覧の行選択状態で地図プレビューのエラーLineStringが primary 色＋光彩で強調され、未選択は従来の error 色で表示される／選択行のフォント色が primary になる／Step6 地図プレビューに FitScreen ボタンを追加し、選択中地物の最小BBoxへ移動する／pnpm typecheck が exit 0 で完走する
-- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/**`, `plugins/shape-plugin/src/ui/locales/*`（必要に応じて）
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/useShapePreviewStep.ts`, `plugins/shape-plugin/src/ui/locales/*`（必要に応じて）
 - ロールバック手順: 該当差分を revert し、Step6 エラー一覧の列構成/選択表示/地図プレビューの強調表示/FitScreen 表示を修正前に戻す
 - チェックリスト:
   - エラー一覧の1行がフィーチャー単位である根拠を確認する
@@ -7132,7 +7239,7 @@
 - ブランチ名: fix/shape/step6-map-no-render
 - 依存: なし
 - 受け入れ基準: Step6でタイル/レイヤーが描画される（ADM0/ADM1が表示される）／原因・発生範囲・修正方法と適用範囲を説明する／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/**`, `packages/ui/map/src/**`, `plugins/shape-plugin/src/services/**`（調査後に確定）
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/useShapePreviewStep.ts`, `packages/ui/map/src/**`, `plugins/shape-plugin/src/services/**`（調査後に確定）
 - ロールバック手順: 該当差分を revert し、Step6の表示挙動を元に戻す
 - チェックリスト:
   - Step6のタイル取得/描画経路を確認し、欠落点を特定する
