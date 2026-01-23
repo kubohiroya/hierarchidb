@@ -104,7 +104,6 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
           loggedPaintArraysRef.current.add(logKey);
           if (import.meta.env.DEV) {
             // Debug which layer/paint has array values during style load.
-            // eslint-disable-next-line no-console
             console.warn('[ui-map][paint-array]', {
               layerId: layer.id,
               property: key,

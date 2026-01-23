@@ -37,8 +37,10 @@ import type { MapStylerSummary } from '../map/types.js';
 import type { ModelessIconAppearance, ModelessIconPlacement } from './ModelessDialogProvider.js';
 import { ModelessDialogProvider, useModelessDialogContext } from './ModelessDialogProvider.js';
 import {
-  MapGeneratedDataContent,
   MapInfoContent,
+  MapLocationListContent,
+  MapRouteListContent,
+  MapShapeListContent,
   type MapInfoSummary,
   MapLayerContent,
   MapStylerContent,
@@ -398,13 +400,6 @@ export const ModelessDialogManager: React.FC<ModelessDialogManagerProps> = ({
         ),
       },
       {
-        id: 'map-data-table',
-        title: 'Data Table',
-        icon: <TableViewIcon fontSize="small" />,
-        defaultSize: { width: 720, height: 420 },
-        content: <MapGeneratedDataContent nodeId={nodeId as NodeId} />,
-      },
-      {
         id: 'map-style-table',
         title: 'Styles',
         icon: <BrushIcon fontSize="small" />,
@@ -416,6 +411,27 @@ export const ModelessDialogManager: React.FC<ModelessDialogManagerProps> = ({
             onToggleStyler={onToggleStyler}
           />
         ),
+      },
+      {
+        id: 'map-shape-list',
+        title: 'shape一覧',
+        icon: <TableViewIcon fontSize="small" />,
+        defaultSize: { width: 760, height: 520 },
+        content: <MapShapeListContent nodeId={nodeId as NodeId} />,
+      },
+      {
+        id: 'map-location-list',
+        title: 'location一覧',
+        icon: <PlaceOutlinedIcon fontSize="small" />,
+        defaultSize: { width: 720, height: 520 },
+        content: <MapLocationListContent nodeId={nodeId as NodeId} />,
+      },
+      {
+        id: 'map-route-list',
+        title: 'route一覧',
+        icon: <AltRouteIcon fontSize="small" />,
+        defaultSize: { width: 720, height: 520 },
+        content: <MapRouteListContent nodeId={nodeId as NodeId} />,
       },
       {
         id: 'map-location-types',

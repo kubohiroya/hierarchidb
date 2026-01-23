@@ -5,7 +5,11 @@
 
 import type { NodeId } from '@hierarchidb/common-types';
 import { getLocationDB } from '@hierarchidb/location-store';
-import type { ShapeFeatureRecord } from '@hierarchidb/plugin-service-api';
+import type {
+  ShapeFeatureMetadata,
+  ShapeFeatureRecord,
+  ShapeTransformErrorRecord,
+} from '@hierarchidb/plugin-service-api';
 import { RouteDB, type RouteLineString } from '@hierarchidb/route-store';
 import { TabularDatabaseManager, TabularQueryService } from '@hierarchidb/tabular-store';
 import { GenericDataGrid, type GenericDataGridProps, type GridColumn } from '@hierarchidb/ui-grid';
@@ -19,7 +23,13 @@ import type {
 } from '@hierarchidb/ui-plugin-shell/ui-map';
 import {
   LayerSetVisibilityPanel,
+  MapPreviewFloatingTable,
+  buildErrorSummaryById,
+  useVectorTilePreviewMetadata,
+  useVectorTilePreviewSearch,
   type MapHighlightEntry,
+  type MapPreviewErrorSummaryById,
+  type ShapePreviewFeatureRow,
   mapHoverMatchesAtom,
   mapSearchMatchesAtom,
   mapSelectedMatchesAtom,
@@ -28,6 +38,7 @@ import {
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { getDBName } from '@hierarchidb/util';
 import {
+  Alert,
   Box,
   Checkbox,
   CircularProgress,
@@ -129,6 +140,39 @@ const renderEmptyState = (message?: string) => (
     <Typography color="text.secondary">{message ?? 'No data available'}</Typography>
   </Box>
 );
+
+const FLOATING_TABLE_CONTAINER_SX: Record<string, unknown> = {
+  position: 'static',
+  width: '100%',
+  maxWidth: '100%',
+  height: '100%',
+  maxHeight: '100%',
+  top: 'auto',
+  right: 'auto',
+  boxShadow: 'none',
+};
+
+const formatLogicalCode = (value: unknown) => {
+  const text = String(value ?? '');
+  if (text === 'N/A') {
+    return <Typography color="error.main">N/A</Typography>;
+  }
+  return text;
+};
+
+const formatBBox = (bbox?: [number, number, number, number]) => {
+  if (!bbox || bbox.length !== 4) return '';
+  const [minX, minY, maxX, maxY] = bbox;
+  if ([minX, minY, maxX, maxY].some((value) => typeof value !== 'number' || !Number.isFinite(value))) {
+    return '';
+  }
+  return `${minX.toFixed(4)}, ${minY.toFixed(4)}, ${maxX.toFixed(4)}, ${maxY.toFixed(4)}`;
+};
+
+const formatArea = (value?: number) => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return '';
+  return value.toLocaleString();
+};
 
 const useShapeTableData = (
   nodeId: NodeId | null,
@@ -383,6 +427,168 @@ const useLocationTableData = (
   }, [nodeId, visibleIds]);
 
   return state;
+};
+
+const useMapHighlightSelection = (nodeId: NodeId | null) => {
+  const mapLayerInfo = useAtomValue(mapLayerInfoAtom);
+  const selectedMatches = useAtomValue(mapSelectedMatchesAtom);
+  const setSelectedMatches = useSetAtom(mapSelectedMatchesAtom);
+  const nodeKey = nodeId ? String(nodeId) : null;
+
+  const layerInfoByType = useMemo(() => {
+    const infoByType: Partial<Record<MapNodeType, MapLayerInfo>> = {};
+    if (!nodeKey) return infoByType;
+    mapLayerInfo.forEach((info) => {
+      if (info.nodeId === nodeKey) {
+        infoByType[info.nodeType] = info;
+      }
+    });
+    return infoByType;
+  }, [mapLayerInfo, nodeKey]);
+
+  const layerInfoById = useMemo(() => {
+    const map = new Map<string, MapLayerInfo>();
+    mapLayerInfo.forEach((info) => {
+      map.set(info.layerId, info);
+    });
+    return map;
+  }, [mapLayerInfo]);
+
+  const layerInfoBySource = useMemo(() => {
+    const map = new Map<string, MapLayerInfo>();
+    mapLayerInfo.forEach((info) => {
+      map.set(info.sourceId, info);
+    });
+    return map;
+  }, [mapLayerInfo]);
+
+  const resolveEntryLayerInfo = useCallback(
+    (entry: MapHighlightEntry) => {
+      if (entry.nodeId && isMapNodeType(entry.nodeType)) {
+        return { nodeId: entry.nodeId, nodeType: entry.nodeType };
+      }
+      if (entry.layerId && layerInfoById.has(entry.layerId)) {
+        const info = layerInfoById.get(entry.layerId);
+        if (info) return { nodeId: info.nodeId, nodeType: info.nodeType };
+      }
+      if (layerInfoBySource.has(entry.source)) {
+        const info = layerInfoBySource.get(entry.source);
+        if (info) return { nodeId: info.nodeId, nodeType: info.nodeType };
+      }
+      return null;
+    },
+    [layerInfoById, layerInfoBySource]
+  );
+
+  const entriesToIdSet = useCallback(
+    (entries: MapHighlightEntry[]): MapFeatureIdSet => {
+      const next: MapFeatureIdSet = {};
+      entries.forEach((entry) => {
+        const info = resolveEntryLayerInfo(entry);
+        if (!info) return;
+        if (!next[info.nodeId]) next[info.nodeId] = {};
+        const current = next[info.nodeId]?.[info.nodeType] ?? new Set<string | number>();
+        current.add(entry.id);
+        if (next[info.nodeId]) {
+          next[info.nodeId] = {};
+        }
+        next[info.nodeId] = {
+          ...next[info.nodeId],
+          [info.nodeType]: current,
+        };
+      });
+      return next;
+    },
+    [resolveEntryLayerInfo]
+  );
+
+  const selectedMatchIdSet = useMemo(
+    () => entriesToIdSet(selectedMatches),
+    [entriesToIdSet, selectedMatches]
+  );
+
+  const getSelectedRows = useCallback(
+    (nodeType: MapNodeType) => {
+      if (!nodeKey) return new Set<string | number>();
+      const entry = selectedMatchIdSet[nodeKey];
+      if (!entry) return new Set<string | number>();
+      const ids = entry[nodeType];
+      return ids ? new Set(ids) : new Set<string | number>();
+    },
+    [nodeKey, selectedMatchIdSet]
+  );
+
+  const buildEntryForRow = useCallback(
+    (nodeType: MapNodeType, rowId?: string | number): MapHighlightEntry | null => {
+      if (!rowId) return null;
+      const info = layerInfoByType[nodeType];
+      if (!info) return null;
+      return {
+        source: info.sourceId,
+        id: rowId,
+        layerId: info.layerId,
+        nodeId: info.nodeId,
+        nodeType: info.nodeType,
+      };
+    },
+    [layerInfoByType]
+  );
+
+  const setSelectedRows = useCallback(
+    (nodeType: MapNodeType, next: Set<string | number>) => {
+      const entries = Array.from(next)
+        .map((rowId) => buildEntryForRow(nodeType, rowId))
+        .filter((entry): entry is MapHighlightEntry => Boolean(entry));
+      setSelectedMatches(entries);
+    },
+    [buildEntryForRow, setSelectedMatches]
+  );
+
+  return { getSelectedRows, setSelectedRows };
+};
+
+const useViewportIdSet = (nodeId: NodeId | null) => {
+  const mapLayerInfo = useAtomValue(mapLayerInfoAtom);
+  const viewportFeatureIds = useAtomValue(mapViewportFeatureIdsAtom);
+  const nodeKey = nodeId ? String(nodeId) : null;
+
+  const layerInfoById = useMemo(() => {
+    const map = new Map<string, MapLayerInfo>();
+    mapLayerInfo.forEach((info) => {
+      map.set(info.layerId, info);
+    });
+    return map;
+  }, [mapLayerInfo]);
+
+  const viewportIdSet = useMemo<MapFeatureIdSet | null>(() => {
+    if (!viewportFeatureIds || !nodeKey) return null;
+    const next: MapFeatureIdSet = {};
+    viewportFeatureIds.forEach((ids, layerId) => {
+      const info = layerInfoById.get(layerId);
+      if (!info || info.nodeId !== nodeKey) return;
+      if (!next[info.nodeId]) {
+        next[info.nodeId] = {};
+      }
+      next[info.nodeId] = {
+        ...next[info.nodeId],
+        [info.nodeType]: new Set(ids),
+      };
+    });
+    return next;
+  }, [layerInfoById, nodeKey, viewportFeatureIds]);
+
+  const getViewportIds = useCallback(
+    (nodeType: MapNodeType) => {
+      if (!viewportIdSet || !nodeKey) return null;
+      const entry = viewportIdSet[nodeKey];
+      if (!entry) return new Set<string | number>();
+      const ids = entry[nodeType];
+      return ids ? new Set(ids) : new Set<string | number>();
+    },
+    [nodeKey, viewportIdSet]
+  );
+
+  return { getViewportIds };
 };
 
 export const MapInfoContent: React.FC<{ formattedZxy: string; info: MapInfoSummary }> = ({
@@ -1037,5 +1243,426 @@ export const MapGeneratedDataContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }
         />
       )}
     </Stack>
+  );
+};
+
+type ShapeListState = {
+  rows: ShapePreviewFeatureRow[];
+  loading: boolean;
+  loaded: boolean;
+  error?: string;
+  searchKeyword: string;
+  setSearchKeyword: (value: string) => void;
+  matchedIds: Set<string>;
+  errorSummaryById: MapPreviewErrorSummaryById;
+};
+
+const useShapeListState = (nodeId: NodeId | null): ShapeListState => {
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [matchedFeatureIds, setMatchedFeatureIds] = useState<string[]>([]);
+  const bridgeRef = useRef(getWorkerBridge());
+  const metadataEnabled = Boolean(nodeId);
+
+  const loadFeatureMetadataRows = useCallback(async (targetNodeId: NodeId) => {
+    await bridgeRef.current.initialize();
+    const query = await bridgeRef.current.getShapeQueryAPI();
+    return query.listFeatureMetadata(targetNodeId) as Promise<ShapeFeatureMetadata[]>;
+  }, []);
+
+  const loadTransformErrorRows = useCallback(async (targetNodeId: NodeId) => {
+    await bridgeRef.current.initialize();
+    const query = await bridgeRef.current.getShapeQueryAPI();
+    return query.listTransformErrorRecords(targetNodeId) as Promise<ShapeTransformErrorRecord[]>;
+  }, []);
+
+  const {
+    metadataRows: featureMetadataRows,
+    metadataLoading: featureMetadataLoading,
+    metadataError: featureMetadataError,
+    metadataLoaded: featureMetadataLoaded,
+  } = useVectorTilePreviewMetadata(
+    metadataEnabled,
+    nodeId,
+    loadFeatureMetadataRows,
+  );
+
+  const {
+    metadataRows: transformErrorRows,
+    metadataLoading: transformErrorLoading,
+    metadataError: transformErrorError,
+    metadataLoaded: transformErrorLoaded,
+  } = useVectorTilePreviewMetadata(
+    metadataEnabled,
+    nodeId,
+    loadTransformErrorRows,
+  );
+
+  const featureListRows = useMemo<ShapePreviewFeatureRow[]>(() => (
+    featureMetadataRows.map((row) => ({
+      id: row.id,
+      featureId: row.featureId,
+      countryName: row.countryName,
+      countryCode: row.countryCode,
+      adminName: row.adminName,
+      adminLevel: row.adminLevel,
+      adminCode: row.adminCode,
+      dataSource: row.dataSource,
+      createdAt: row.createdAt,
+      vertexCount: row.vertexCount,
+      polygonCount: row.polygonCount,
+      bbox: row.bbox,
+      area: row.area,
+    }))
+  ), [featureMetadataRows]);
+
+  const getFeatureRowId = useCallback(
+    (row: ShapePreviewFeatureRow) => String(row.featureId ?? row.id ?? ''),
+    []
+  );
+
+  const buildFeatureSearchText = useCallback(
+    (row: ShapePreviewFeatureRow) => (
+      [
+        row.featureId,
+        row.countryName,
+        row.countryCode,
+        row.adminName,
+        row.adminCode,
+        row.adminLevel != null ? String(row.adminLevel) : undefined,
+        row.dataSource,
+      ]
+        .filter(Boolean)
+        .join(' ')
+    ),
+    []
+  );
+
+  useVectorTilePreviewSearch(
+    metadataEnabled,
+    featureListRows,
+    searchKeyword,
+    getFeatureRowId,
+    buildFeatureSearchText,
+    setMatchedFeatureIds
+  );
+
+  const matchedIds = useMemo(
+    () => new Set(matchedFeatureIds),
+    [matchedFeatureIds]
+  );
+
+  const errorSummaryById = useMemo<MapPreviewErrorSummaryById>(() => (
+    buildErrorSummaryById(transformErrorRows, {
+      getId: (row) => row.featureId ?? undefined,
+      getMessage: (row) => row.message ?? undefined,
+    })
+  ), [transformErrorRows]);
+
+  return {
+    rows: featureListRows,
+    loading: featureMetadataLoading || transformErrorLoading,
+    loaded: featureMetadataLoaded && transformErrorLoaded,
+    error: featureMetadataError ?? transformErrorError ?? undefined,
+    searchKeyword,
+    setSearchKeyword,
+    matchedIds,
+    errorSummaryById,
+  };
+};
+
+const normalizeRowId = (row: DataGridRow, index: number): string | number => {
+  const existing = (row as { id?: string | number }).id;
+  if (existing !== undefined && existing !== null && String(existing).trim().length > 0) {
+    return existing;
+  }
+  return `row-${index}`;
+};
+
+const buildSearchTextFromRow = (row: DataGridRow): string => (
+  Object.values(row)
+    .map((value) => String(value ?? ''))
+    .join(' ')
+);
+
+export const MapShapeListContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }) => {
+  const theme = useTheme();
+  const {
+    rows,
+    loading,
+    loaded,
+    error,
+    searchKeyword,
+    setSearchKeyword,
+    matchedIds,
+    errorSummaryById,
+  } = useShapeListState(nodeId);
+  const { getSelectedRows, setSelectedRows } = useMapHighlightSelection(nodeId);
+  const [sortColumn, setSortColumn] = useState<string>('featureId');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  const tableRows = useMemo(() => {
+    const normalizeCount = (value?: number) => (typeof value === 'number' ? value : '');
+    const keyword = searchKeyword.trim().toLowerCase();
+    const filtered = keyword
+      ? rows.filter((row) => matchedIds.has(String(row.featureId ?? row.id)))
+      : rows;
+    const mapped = filtered.map((row) => ({
+      id: row.featureId ?? row.id,
+      featureId: row.featureId ?? '',
+      countryName: row.countryName ?? '',
+      countryCode: row.countryCode ?? '',
+      adminName: row.adminName ?? '',
+      adminLevel: row.adminLevel != null ? `ADM${row.adminLevel}` : '',
+      adminCode: row.adminCode ?? '',
+      dataSource: row.dataSource ?? '',
+      createdAt: row.createdAt ? new Date(row.createdAt).toLocaleString() : '',
+      vertexCount: normalizeCount(row.vertexCount),
+      polygonCount: normalizeCount(row.polygonCount),
+      bbox: formatBBox(row.bbox),
+      area: formatArea(row.area),
+    }));
+    const sorted = [...mapped].sort((a, b) => {
+      const av = a[sortColumn as keyof typeof a];
+      const bv = b[sortColumn as keyof typeof b];
+      if (typeof av === 'number' && typeof bv === 'number') {
+        return sortDirection === 'asc' ? av - bv : bv - av;
+      }
+      const astr = String(av ?? '');
+      const bstr = String(bv ?? '');
+      return sortDirection === 'asc' ? astr.localeCompare(bstr) : bstr.localeCompare(astr);
+    });
+    return sorted;
+  }, [matchedIds, rows, searchKeyword, sortColumn, sortDirection]);
+
+  const columns = useMemo<GridColumn<(typeof tableRows)[number]>[]>(() => ([
+    { id: 'featureId', label: 'Feature ID', width: 220, sortable: true },
+    { id: 'countryName', label: 'Country', width: 180, sortable: true },
+    { id: 'countryCode', label: 'Country Code', width: 120, sortable: true },
+    { id: 'adminName', label: 'Admin Name', width: 180, sortable: true },
+    { id: 'adminLevel', label: 'Admin Level', width: 120, align: 'right', sortable: true },
+    { id: 'adminCode', label: 'Admin Code', width: 120, sortable: true },
+    { id: 'dataSource', label: 'Data Source', width: 140, sortable: true },
+    { id: 'createdAt', label: 'Created At', width: 180, sortable: true },
+    { id: 'vertexCount', label: 'Vertices', width: 120, align: 'right', sortable: true },
+    { id: 'polygonCount', label: 'Polygons', width: 120, align: 'right', sortable: true },
+    { id: 'bbox', label: 'Bounding Box', width: 220, sortable: true },
+    { id: 'area', label: 'Area', width: 140, align: 'right', sortable: true, format: formatLogicalCode },
+  ]), []);
+
+  const resolvedCountText = useMemo(() => {
+    const keyword = searchKeyword.trim();
+    const count = tableRows.length;
+    return keyword ? `${count} matched` : `${count} rows`;
+  }, [searchKeyword, tableRows.length]);
+
+  const emptyContent = !nodeId ? (
+    <Alert severity="info" sx={{ m: 2 }}>
+      Build the dataset to generate metadata.
+    </Alert>
+  ) : (
+    <Alert
+      severity="info"
+      icon={!loaded ? <CircularProgress size={16} /> : undefined}
+      sx={{ m: 2, alignItems: 'center' }}
+    >
+      {loaded ? 'No metadata entries have been generated yet.' : 'Loading metadata...'}
+    </Alert>
+  );
+
+  return (
+    <MapPreviewFloatingTable
+      title={`shape一覧 (${resolvedCountText})`}
+      showTitle
+      rows={tableRows}
+      columns={columns}
+      search={{
+        value: searchKeyword,
+        onChange: setSearchKeyword,
+        placeholder: 'Search metadata',
+        ariaLabel: 'Search metadata',
+      }}
+      loading={loading}
+      error={error}
+      matchedRows={matchedIds}
+      selectable
+      selectionMode="multiple"
+      selectedRows={new Set(Array.from(getSelectedRows('shape')).map(String))}
+      onSelectionChange={(next) => setSelectedRows('shape', next)}
+      sortColumn={sortColumn}
+      sortDirection={sortDirection}
+      onSort={(column, direction) => {
+        setSortColumn(column);
+        setSortDirection(direction);
+      }}
+      rowSx={(state) => {
+        if (state.selected) {
+          const selectedBg = theme.palette.primary.light;
+          const selectedText = theme.palette.getContrastText(selectedBg);
+          return {
+            backgroundColor: selectedBg,
+            color: selectedText,
+            '& td, & td *': { color: selectedText },
+          };
+        }
+        if (state.matched) {
+          const matchedBg = theme.palette.secondary.light;
+          const matchedText = theme.palette.getContrastText(matchedBg);
+          return {
+            backgroundColor: matchedBg,
+            boxShadow: `inset 3px 0 0 0 ${theme.palette.secondary.main}`,
+            color: matchedText,
+            '& td, & td *': { color: matchedText },
+          };
+        }
+        if (state.hovered) {
+          return { backgroundColor: theme.palette.action.hover };
+        }
+        return undefined;
+      }}
+      emptyContent={emptyContent}
+      errorSummaryById={errorSummaryById}
+      errorColumnLabels={{
+        status: 'Status',
+        errorCount: 'Errors',
+        errorMessage: 'Error Message',
+      }}
+      statusLabels={{
+        failed: 'Failed',
+        completed: 'Completed',
+      }}
+      containerSx={FLOATING_TABLE_CONTAINER_SX}
+    />
+  );
+};
+
+export const MapLocationListContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }) => {
+  const { getSelectedRows, setSelectedRows } = useMapHighlightSelection(nodeId);
+  const { getViewportIds } = useViewportIdSet(nodeId);
+  const locationVisibleIds = useMemo(() => getViewportIds('location'), [getViewportIds]);
+  const locationState = useLocationTableData(nodeId, locationVisibleIds);
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [matchedRowIds, setMatchedRowIds] = useState<string[]>([]);
+
+  const rowsWithId = useMemo(() => (
+    locationState.rows.map((row, index) => ({
+      id: normalizeRowId(row, index),
+      ...row,
+    }))
+  ), [locationState.rows]);
+
+  const getRowId = useCallback(
+    (row: DataGridRow & { id: string | number }) => String(row.id),
+    []
+  );
+
+  useVectorTilePreviewSearch(
+    Boolean(nodeId),
+    rowsWithId,
+    searchKeyword,
+    getRowId,
+    buildSearchTextFromRow,
+    setMatchedRowIds
+  );
+
+  const matchedIds = useMemo(
+    () => new Set(matchedRowIds),
+    [matchedRowIds]
+  );
+
+  const selectedRows = useMemo(
+    () => new Set(Array.from(getSelectedRows('location')).map(String)),
+    [getSelectedRows]
+  );
+
+  return (
+    <MapPreviewFloatingTable
+      title="location一覧"
+      showTitle
+      rows={rowsWithId}
+      columns={locationState.columns as GridColumn<DataGridRow & { id: string | number }>[]}
+      search={{
+        value: searchKeyword,
+        onChange: setSearchKeyword,
+        placeholder: 'Search locations',
+        ariaLabel: 'Search locations',
+      }}
+      countText={rowsWithId.length > 0 ? `${rowsWithId.length} rows` : undefined}
+      loading={locationState.loading}
+      error={locationState.error}
+      matchedRows={matchedIds}
+      selectable
+      selectionMode="multiple"
+      selectedRows={selectedRows}
+      onSelectionChange={(next) => setSelectedRows('location', next)}
+      emptyContent={renderEmptyState(locationState.emptyMessage)}
+      containerSx={FLOATING_TABLE_CONTAINER_SX}
+    />
+  );
+};
+
+export const MapRouteListContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }) => {
+  const { getSelectedRows, setSelectedRows } = useMapHighlightSelection(nodeId);
+  const { getViewportIds } = useViewportIdSet(nodeId);
+  const routeVisibleIds = useMemo(() => getViewportIds('route'), [getViewportIds]);
+  const [page] = useState(0);
+  const [rowsPerPage] = useState(1000);
+  const routeState = useRouteTableData(nodeId, page, rowsPerPage, routeVisibleIds);
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [matchedRowIds, setMatchedRowIds] = useState<string[]>([]);
+
+  const rowsWithId = useMemo(() => (
+    routeState.rows.map((row, index) => ({
+      id: normalizeRowId(row, index),
+      ...row,
+    }))
+  ), [routeState.rows]);
+
+  const getRowId = useCallback(
+    (row: DataGridRow & { id: string | number }) => String(row.id),
+    []
+  );
+
+  useVectorTilePreviewSearch(
+    Boolean(nodeId),
+    rowsWithId,
+    searchKeyword,
+    getRowId,
+    buildSearchTextFromRow,
+    setMatchedRowIds
+  );
+
+  const matchedIds = useMemo(
+    () => new Set(matchedRowIds),
+    [matchedRowIds]
+  );
+
+  const selectedRows = useMemo(
+    () => new Set(Array.from(getSelectedRows('route')).map(String)),
+    [getSelectedRows]
+  );
+
+  return (
+    <MapPreviewFloatingTable
+      title="route一覧"
+      showTitle
+      rows={rowsWithId}
+      columns={routeState.columns as GridColumn<DataGridRow & { id: string | number }>[]}
+      search={{
+        value: searchKeyword,
+        onChange: setSearchKeyword,
+        placeholder: 'Search routes',
+        ariaLabel: 'Search routes',
+      }}
+      countText={rowsWithId.length > 0 ? `${rowsWithId.length} rows` : undefined}
+      loading={routeState.loading}
+      error={routeState.error}
+      matchedRows={matchedIds}
+      selectable
+      selectionMode="multiple"
+      selectedRows={selectedRows}
+      onSelectionChange={(next) => setSelectedRows('route', next)}
+      emptyContent={renderEmptyState(routeState.emptyMessage)}
+      containerSx={FLOATING_TABLE_CONTAINER_SX}
+    />
   );
 };
