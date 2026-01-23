@@ -1,4 +1,14 @@
-import { Grid, Rating, Stack, TextField, Typography } from '@mui/material';
+import {
+  FormControl,
+  Grid,
+  InputLabel,
+  MenuItem,
+  Rating,
+  Select,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import { useTranslation } from '../../i18n.js';
@@ -20,6 +30,7 @@ export const DownloadRetryControls: React.FC<Props> = ({
 }) => {
   const { t } = useTranslation();
   const retryAttemptsValue = Math.min(baseDownloadConfig.retryAttempts, RETRY_ATTEMPTS_MAX);
+  const retryLimitValue = Math.min(baseDownloadConfig.retryLimit, retryAttemptsValue);
 
   return (
     <>
@@ -64,6 +75,30 @@ export const DownloadRetryControls: React.FC<Props> = ({
         />
       </Grid>
       <Grid size={{ xs: 12, md: 2 }}>
+        <TextField
+          label={t('processing.download.retryLimit', 'Retry Limit')}
+          type="number"
+          value={retryLimitValue}
+          onChange={(event) => {
+            const retryLimit = Number(event.target.value);
+            const nextValue = Number.isFinite(retryLimit) ? retryLimit : retryLimitValue;
+            update({
+              fetchConfig: {
+                ...baseDownloadConfig,
+                retryLimit: Math.min(Math.max(0, nextValue), retryAttemptsValue),
+              },
+            });
+          }}
+          fullWidth
+          disabled={disabled}
+          inputProps={{ min: 0, max: retryAttemptsValue }}
+          helperText={t(
+            'processing.download.retryLimitHelp',
+            'Upper limit applied to retry attempts per request.',
+          )}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 2 }}>
         <Stack spacing={1}>
           <Typography variant="subtitle2">
             {t('processing.download.retryAttempts', 'Retry Attempts')}
@@ -73,11 +108,12 @@ export const DownloadRetryControls: React.FC<Props> = ({
             onChange={(_, value) => {
               const nextValue = value === null ? retryAttemptsValue : value;
               const retryAttempts = Math.min(nextValue, RETRY_ATTEMPTS_MAX);
+              const retryLimit = Math.min(baseDownloadConfig.retryLimit, retryAttempts);
               update({
                 fetchConfig: {
                   ...baseDownloadConfig,
                   retryAttempts,
-                  retryLimit: retryAttempts,
+                  retryLimit,
                 },
               });
             }}
@@ -90,6 +126,41 @@ export const DownloadRetryControls: React.FC<Props> = ({
             {t('processing.download.retryAttemptsHelp', 'Number of retries per failed download request.')}
           </Typography>
         </Stack>
+      </Grid>
+      <Grid size={{ xs: 12, md: 2 }}>
+        <FormControl fullWidth>
+          <InputLabel id="fetch-retry-backoff-label">
+            {t('processing.download.retryBackoff', 'Retry Backoff')}
+          </InputLabel>
+          <Select
+            labelId="fetch-retry-backoff-label"
+            value={baseDownloadConfig.retryBackoff}
+            label={t('processing.download.retryBackoff', 'Retry Backoff')}
+            onChange={(event) => {
+              const retryBackoff = event.target.value as typeof baseDownloadConfig.retryBackoff;
+              update({
+                fetchConfig: {
+                  ...baseDownloadConfig,
+                  retryBackoff,
+                },
+              });
+            }}
+            disabled={disabled}
+          >
+            <MenuItem value="linear">
+              {t('processing.download.retryBackoffLinear', 'Linear')}
+            </MenuItem>
+            <MenuItem value="exponential">
+              {t('processing.download.retryBackoffExponential', 'Exponential')}
+            </MenuItem>
+          </Select>
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+            {t(
+              'processing.download.retryBackoffHelp',
+              'Spacing pattern used between retries.',
+            )}
+          </Typography>
+        </FormControl>
       </Grid>
     </>
   );
