@@ -746,51 +746,28 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       String(feature.properties?.__hdbOriginKey ?? feature.properties?.id ?? feature.id ?? ''),
   });
 
-  const hoverAdminLevelById = useMemo(() => {
-    const map = new Map<string, number>();
-    sourceMetadataRows.forEach((row) => {
-      if (!row.originKey) return;
-      if (typeof row.adminLevel === 'number' && Number.isFinite(row.adminLevel)) {
-        map.set(row.originKey, row.adminLevel);
-      }
-    });
-    return map;
-  }, [sourceMetadataRows]);
-
   useEffect(() => {
-    if (hoverCandidates.length === 0) {
+    const candidate = hoverCandidates[0];
+    if (!candidate) {
       if (hoveredId !== null) {
         setHoveredId(null);
       }
       return;
     }
-    const scored = hoverCandidates
-      .map((candidate, index) => {
-        const feature = candidate.feature;
-        const resolved = String(
-          feature.properties?.__hdbOriginKey ?? feature.properties?.id ?? feature.id ?? '',
-        );
-        if (!resolved) return null;
-        const adminLevel = hoverAdminLevelById.get(resolved);
-        const priority = typeof adminLevel === 'number' ? adminLevel : -1;
-        return { resolved, priority, index };
-      })
-      .filter(
-        (candidate): candidate is { resolved: string; priority: number; index: number } =>
-          Boolean(candidate),
-      );
-    if (scored.length === 0) {
+    const feature = candidate.feature;
+    const resolved = String(
+      feature.properties?.__hdbOriginKey ?? feature.properties?.id ?? feature.id ?? '',
+    );
+    if (!resolved) {
       if (hoveredId !== null) {
         setHoveredId(null);
       }
       return;
     }
-    scored.sort((a, b) => (b.priority - a.priority) || (a.index - b.index));
-    const best = scored[0];
-    if (best && best.resolved !== hoveredId) {
-      setHoveredId(best.resolved);
+    if (resolved !== hoveredId) {
+      setHoveredId(resolved);
     }
-  }, [hoverAdminLevelById, hoverCandidates, hoveredId, setHoveredId]);
+  }, [hoverCandidates, hoveredId, setHoveredId]);
 
   const toFeatureListRow = useCallback(
     (row: ShapeFeatureMetadata): ShapePreviewFeatureRow => {

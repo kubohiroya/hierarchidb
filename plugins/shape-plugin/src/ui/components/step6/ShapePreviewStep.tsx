@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Alert, Button, Snackbar, CircularProgress, Typography, Paper } from '@mui/material';
+import { Box, Alert, Button, CircularProgress, Typography, Paper } from '@mui/material';
 import { TableRows as TableRowsIcon } from '@mui/icons-material';
 import { LayerSetVisibilityPanel, ResourceLayerMap, ScreenCenterSnackbar, ShapePreviewList } from '@hierarchidb/ui-map';
 import { useShapePreviewStepView } from './useShapePreviewStepView.js';
@@ -26,8 +26,6 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
     matchedFeatureIdSet,
     selectedFeatureIds,
     setSelectedFeatureIds,
-    setHoveredId,
-    hoverMessage,
     vectorLayerIds,
     setMapInstance,
     handleMapIdentify,
@@ -129,7 +127,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
             hover: { enabled: true },
             selection: { enabled: false },
             fitSelection: { enabled: true, padding: 24 },
-            snackbar: { enabled: false },
+            snackbar: { enabled: true, position: 'bottom-center' },
           }}
           mapOptions={{
             interactive: true,
@@ -250,14 +248,6 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
         {renderMapPreview()}
         {renderFeatureDialog()}
       </Box>
-      <Snackbar
-        open={Boolean(hoverMessage)}
-        message={hoverMessage}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        autoHideDuration={3600}
-        sx={{ left: '50%', transform: 'translateX(-50%)' }}
-        onClose={() => setHoveredId(null)}
-      />
     </Box>
   );
 };
