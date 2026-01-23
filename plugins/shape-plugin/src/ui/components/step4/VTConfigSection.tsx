@@ -1,10 +1,29 @@
-import { Accordion, AccordionDetails, AccordionSummary, Box, FormControlLabel, Grid, Stack, Switch, TextField, Typography, Slider, Tooltip } from '@mui/material';
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Box,
+  FormControl,
+  FormControlLabel,
+  Grid,
+  InputLabel,
+  MenuItem,
+  Stack,
+  Switch,
+  TextField,
+  Typography,
+  Slider,
+  Tooltip,
+  Paper,
+  Select,
+} from '@mui/material';
 import { Layers as LayersIcon, ExpandMore as ExpandMoreIcon, InfoOutlined as InfoOutlinedIcon } from '@mui/icons-material';
 import type { ShapeEntity } from '../../../common/types/index.js';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { useTranslation } from '../../i18n.js';
 import { useVTConfigSection } from './useVTConfigSection.ts';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
+import { DEFAULT_BUILD_CONFIG } from '../../../common/types/constants.js';
 
 type Props = {
   buildConfig: ShapeBuildConfig;
@@ -16,6 +35,17 @@ type Props = {
 export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChange }) => {
   const { t } = useTranslation();
   const { update } = useVTConfigSection({ buildConfig, onChange });
+  const dynamicConcurrency = buildConfig.vtConfig.dynamicConcurrency
+    ?? DEFAULT_BUILD_CONFIG.vtConfig.dynamicConcurrency
+    ?? {
+      enabled: false,
+      minConcurrent: buildConfig.vtConfig.maxConcurrent,
+      maxConcurrent: buildConfig.vtConfig.maxConcurrent,
+      highWatermark: 0.85,
+      lowWatermark: 0.6,
+      adjustStep: 1,
+      sampleMs: 2000,
+    };
 
   return (
     <Accordion defaultExpanded>
@@ -64,7 +94,6 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
                   disabled={disabled}
                 />
               </Grid>
-
               <Grid size={{ xs: 12, sm: 4 }}>
                 <TextField
                   fullWidth
@@ -88,7 +117,29 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
                   disabled={disabled}
                 />
               </Grid>
-
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label={t('processing.tile.tileSize', 'Tile Size')}
+                  value={buildConfig.vtConfig.tileSize}
+                  onChange={(event) => {
+                    const tileSize = Number(event.target.value);
+                    update({
+                      vtConfig: {
+                        ...buildConfig.vtConfig,
+                        tileSize,
+                      },
+                    });
+                  }}
+                  helperText={t(
+                    'processing.tile.tileSizeHelp',
+                    'Base tile size used for extent calculations.',
+                  )}
+                  inputProps={{ min: 0 }}
+                  disabled={disabled}
+                />
+              </Grid>
               <Grid size={{ xs: 12, sm: 4 }}>
                 <TextField
                   fullWidth
@@ -112,7 +163,6 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
                   disabled={disabled}
                 />
               </Grid>
-
               <Grid size={{ xs: 12, sm: 4 }}>
                 <TextField
                   fullWidth
@@ -134,7 +184,178 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
                   disabled={disabled}
                 />
               </Grid>
-
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField
+                  fullWidth
+                  label={t('processing.tile.promoteId', 'Promote ID')}
+                  value={buildConfig.vtConfig.promoteId}
+                  onChange={(event) => {
+                    const promoteId = event.target.value;
+                    update({
+                      vtConfig: {
+                        ...buildConfig.vtConfig,
+                        promoteId,
+                      },
+                    });
+                  }}
+                  helperText={t(
+                    'processing.tile.promoteIdHelp',
+                    'Property name used to promote feature IDs.',
+                  )}
+                  disabled={disabled}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label={t('processing.tile.indexMaxPoints', 'Index Max Points')}
+                  value={buildConfig.vtConfig.indexMaxPoints}
+                  onChange={(event) => {
+                    const indexMaxPoints = Number(event.target.value);
+                    update({
+                      vtConfig: {
+                        ...buildConfig.vtConfig,
+                        indexMaxPoints,
+                      },
+                    });
+                  }}
+                  helperText={t(
+                    'processing.tile.indexMaxPointsHelp',
+                    'Upper limit for points stored per tile index entry.',
+                  )}
+                  inputProps={{ min: 0 }}
+                  disabled={disabled}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <FormControl fullWidth>
+                  <InputLabel id="vt-input-format-label">
+                    {t('processing.tile.inputFormat', 'Input format')}
+                  </InputLabel>
+                  <Select
+                    labelId="vt-input-format-label"
+                    value={buildConfig.vtConfig.inputFormat}
+                    label={t('processing.tile.inputFormat', 'Input format')}
+                    onChange={(event) => {
+                      const inputFormat = event.target.value as typeof buildConfig.vtConfig.inputFormat;
+                      update({
+                        vtConfig: {
+                          ...buildConfig.vtConfig,
+                          inputFormat,
+                        },
+                      });
+                    }}
+                    disabled={disabled}
+                  >
+                    <MenuItem value="geojson">
+                      {t('processing.tile.inputFormatGeojson', 'GeoJSON')}
+                    </MenuItem>
+                    <MenuItem value="flatgeobuf">
+                      {t('processing.tile.inputFormatFlatgeobuf', 'FlatGeobuf')}
+                    </MenuItem>
+                  </Select>
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                    {t('processing.tile.inputFormatHelp', 'Input data format for tile generation.')}
+                  </Typography>
+                </FormControl>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <FormControl fullWidth>
+                  <InputLabel id="vt-input-compression-label">
+                    {t('processing.tile.inputCompression', 'Input compression')}
+                  </InputLabel>
+                  <Select
+                    labelId="vt-input-compression-label"
+                    value={buildConfig.vtConfig.inputCompression}
+                    label={t('processing.tile.inputCompression', 'Input compression')}
+                    onChange={(event) => {
+                      const inputCompression = event.target.value as typeof buildConfig.vtConfig.inputCompression;
+                      update({
+                        vtConfig: {
+                          ...buildConfig.vtConfig,
+                          inputCompression,
+                        },
+                      });
+                    }}
+                    disabled={disabled}
+                  >
+                    <MenuItem value="none">
+                      {t('processing.tile.inputCompressionNone', 'None')}
+                    </MenuItem>
+                    <MenuItem value="gzip">
+                      {t('processing.tile.inputCompressionGzip', 'Gzip')}
+                    </MenuItem>
+                  </Select>
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                    {t('processing.tile.inputCompressionHelp', 'Compression of source buffers.')}
+                  </Typography>
+                </FormControl>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <FormControl fullWidth>
+                  <InputLabel id="vt-output-format-label">
+                    {t('processing.tile.outputFormat', 'Output format')}
+                  </InputLabel>
+                  <Select
+                    labelId="vt-output-format-label"
+                    value={buildConfig.vtConfig.format}
+                    label={t('processing.tile.outputFormat', 'Output format')}
+                    onChange={(event) => {
+                      const format = event.target.value as typeof buildConfig.vtConfig.format;
+                      update({
+                        vtConfig: {
+                          ...buildConfig.vtConfig,
+                          format,
+                        },
+                      });
+                    }}
+                    disabled={disabled}
+                  >
+                    <MenuItem value="mvt">
+                      {t('processing.tile.outputFormatMvt', 'MVT')}
+                    </MenuItem>
+                    <MenuItem value="pbf">
+                      {t('processing.tile.outputFormatPbf', 'PBF')}
+                    </MenuItem>
+                  </Select>
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                    {t('processing.tile.outputFormatHelp', 'Vector tile output format.')}
+                  </Typography>
+                </FormControl>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <FormControl fullWidth>
+                  <InputLabel id="vt-output-compression-label">
+                    {t('processing.tile.outputCompression', 'Output compression')}
+                  </InputLabel>
+                  <Select
+                    labelId="vt-output-compression-label"
+                    value={buildConfig.vtConfig.compression}
+                    label={t('processing.tile.outputCompression', 'Output compression')}
+                    onChange={(event) => {
+                      const compression = event.target.value as typeof buildConfig.vtConfig.compression;
+                      update({
+                        vtConfig: {
+                          ...buildConfig.vtConfig,
+                          compression,
+                        },
+                      });
+                    }}
+                    disabled={disabled}
+                  >
+                    <MenuItem value="gzip">
+                      {t('processing.tile.outputCompressionGzip', 'Gzip')}
+                    </MenuItem>
+                    <MenuItem value="bz">
+                      {t('processing.tile.outputCompressionBz', 'Bzip2')}
+                    </MenuItem>
+                  </Select>
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                    {t('processing.tile.outputCompressionHelp', 'Compression applied to vector tile output.')}
+                  </Typography>
+                </FormControl>
+              </Grid>
               <Grid size={{ xs: 12, sm: 4 }} style={{ paddingRight: '20px' }}>
                 <Typography gutterBottom>
                   {t('processing.tile.bufferSize', 'Tile Margin (px)')}
@@ -306,6 +527,182 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
                 </Typography>
               </Grid>
             </Grid>
+          </Box>
+
+          <Box>
+            <Paper variant="outlined" sx={{ p: 2 }}>
+              <Stack spacing={2}>
+                <Typography variant="subtitle2">
+                  {t('processing.tile.dynamicConcurrencyTitle', 'Dynamic concurrency')}
+                </Typography>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={dynamicConcurrency.enabled}
+                      onChange={(event) => {
+                        update({
+                          vtConfig: {
+                            ...buildConfig.vtConfig,
+                            dynamicConcurrency: {
+                              ...dynamicConcurrency,
+                              enabled: event.target.checked,
+                            },
+                          },
+                        });
+                      }}
+                      disabled={disabled}
+                    />
+                  }
+                  label={t('processing.tile.dynamicConcurrencyEnabled', 'Enable dynamic concurrency')}
+                />
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label={t('processing.tile.dynamicConcurrencyMinConcurrent', 'Min concurrent')}
+                      value={dynamicConcurrency.minConcurrent}
+                      onChange={(event) => {
+                        const minConcurrent = Number(event.target.value);
+                        update({
+                          vtConfig: {
+                            ...buildConfig.vtConfig,
+                            dynamicConcurrency: {
+                              ...dynamicConcurrency,
+                              minConcurrent: Number.isFinite(minConcurrent)
+                                ? minConcurrent
+                                : dynamicConcurrency.minConcurrent,
+                            },
+                          },
+                        });
+                      }}
+                      disabled={disabled || !dynamicConcurrency.enabled}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label={t('processing.tile.dynamicConcurrencyMaxConcurrent', 'Max concurrent')}
+                      value={dynamicConcurrency.maxConcurrent ?? buildConfig.vtConfig.maxConcurrent}
+                      onChange={(event) => {
+                        const maxConcurrent = Number(event.target.value);
+                        update({
+                          vtConfig: {
+                            ...buildConfig.vtConfig,
+                            dynamicConcurrency: {
+                              ...dynamicConcurrency,
+                              maxConcurrent: Number.isFinite(maxConcurrent)
+                                ? maxConcurrent
+                                : dynamicConcurrency.maxConcurrent ?? buildConfig.vtConfig.maxConcurrent,
+                            },
+                          },
+                        });
+                      }}
+                      disabled={disabled || !dynamicConcurrency.enabled}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label={t('processing.tile.dynamicConcurrencyHighWatermark', 'High watermark')}
+                      value={dynamicConcurrency.highWatermark}
+                      onChange={(event) => {
+                        const highWatermark = Number(event.target.value);
+                        update({
+                          vtConfig: {
+                            ...buildConfig.vtConfig,
+                            dynamicConcurrency: {
+                              ...dynamicConcurrency,
+                              highWatermark: Number.isFinite(highWatermark)
+                                ? highWatermark
+                                : dynamicConcurrency.highWatermark,
+                            },
+                          },
+                        });
+                      }}
+                      disabled={disabled || !dynamicConcurrency.enabled}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label={t('processing.tile.dynamicConcurrencyLowWatermark', 'Low watermark')}
+                      value={dynamicConcurrency.lowWatermark}
+                      onChange={(event) => {
+                        const lowWatermark = Number(event.target.value);
+                        update({
+                          vtConfig: {
+                            ...buildConfig.vtConfig,
+                            dynamicConcurrency: {
+                              ...dynamicConcurrency,
+                              lowWatermark: Number.isFinite(lowWatermark)
+                                ? lowWatermark
+                                : dynamicConcurrency.lowWatermark,
+                            },
+                          },
+                        });
+                      }}
+                      disabled={disabled || !dynamicConcurrency.enabled}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label={t('processing.tile.dynamicConcurrencyAdjustStep', 'Adjust step')}
+                      value={dynamicConcurrency.adjustStep}
+                      onChange={(event) => {
+                        const adjustStep = Number(event.target.value);
+                        update({
+                          vtConfig: {
+                            ...buildConfig.vtConfig,
+                            dynamicConcurrency: {
+                              ...dynamicConcurrency,
+                              adjustStep: Number.isFinite(adjustStep)
+                                ? adjustStep
+                                : dynamicConcurrency.adjustStep,
+                            },
+                          },
+                        });
+                      }}
+                      disabled={disabled || !dynamicConcurrency.enabled}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label={t('processing.tile.dynamicConcurrencySampleMs', 'Sample interval (ms)')}
+                      value={dynamicConcurrency.sampleMs}
+                      onChange={(event) => {
+                        const sampleMs = Number(event.target.value);
+                        update({
+                          vtConfig: {
+                            ...buildConfig.vtConfig,
+                            dynamicConcurrency: {
+                              ...dynamicConcurrency,
+                              sampleMs: Number.isFinite(sampleMs)
+                                ? sampleMs
+                                : dynamicConcurrency.sampleMs,
+                            },
+                          },
+                        });
+                      }}
+                      disabled={disabled || !dynamicConcurrency.enabled}
+                    />
+                  </Grid>
+                </Grid>
+                <Typography variant="caption" color="text.secondary">
+                  {t(
+                    'processing.tile.dynamicConcurrencyHelp',
+                    'Adjusts worker counts based on runtime load.',
+                  )}
+                </Typography>
+              </Stack>
+            </Paper>
           </Box>
         </Stack>
       </AccordionDetails>
