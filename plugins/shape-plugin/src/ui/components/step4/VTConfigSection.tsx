@@ -17,7 +17,15 @@ import {
   Paper,
   Select,
 } from '@mui/material';
-import { Layers as LayersIcon, ExpandMore as ExpandMoreIcon, InfoOutlined as InfoOutlinedIcon } from '@mui/icons-material';
+import {
+  ExpandMore as ExpandMoreIcon,
+  InfoOutlined as InfoOutlinedIcon,
+  Layers as LayersIcon,
+  Settings as SettingsIcon,
+  Speed as SpeedIcon,
+  Tune as TuneIcon,
+} from '@mui/icons-material';
+import type { ReactNode } from 'react';
 import type { ShapeEntity } from '../../../common/types/index.js';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { useTranslation } from '../../i18n.js';
@@ -31,6 +39,13 @@ type Props = {
   disabled?: boolean;
   onChange: (next: ShapeBuildConfig) => void;
 };
+
+const SectionTitle: React.FC<{ icon: ReactNode; title: string }> = ({ icon, title }) => (
+  <Stack direction="row" spacing={1} alignItems="center">
+    {icon}
+    <Typography variant="subtitle2">{title}</Typography>
+  </Stack>
+);
 
 export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChange }) => {
   const { t } = useTranslation();
@@ -53,7 +68,7 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
         <Stack direction="row" spacing={2} alignItems="center">
           <LayersIcon color="primary" />
           <Typography variant="subtitle1">
-            {t('processing.tile.title', 'VT Generation')}
+            {t('processing.vt.title', 'VT')}
           </Typography>
           <Tooltip
             title={t(
@@ -68,12 +83,14 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
       </AccordionSummary>
       <AccordionDetails sx={{ p: 3 }}>
         <Stack spacing={3}>
-          <Box>
-            <Typography variant="subtitle2">
-              {t('processing.tile.basicSettings', 'Basic settings')}
-            </Typography>
-            <Grid container spacing={3} sx={{ mt: 0.5 }}>
-              <Grid size={{ xs: 12, sm: 4 }}>
+          <Paper variant="outlined" sx={{ p: 2 }}>
+            <Stack spacing={2}>
+              <SectionTitle
+                icon={<SettingsIcon fontSize="small" color="primary" />}
+                title={t('processing.tile.basicSettings', 'Basic settings')}
+              />
+              <Grid container spacing={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                 <WorkerNumberConfigCard
                   icon={<LayersIcon fontSize="small" color="primary" />}
                   title={t('processing.tile.workers', 'VT Worker Count')}
@@ -94,7 +111,7 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
                   disabled={disabled}
                 />
               </Grid>
-              <Grid size={{ xs: 12, sm: 4 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                 <TextField
                   fullWidth
                   type="number"
@@ -117,7 +134,7 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
                   disabled={disabled}
                 />
               </Grid>
-              <Grid size={{ xs: 12, sm: 4 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                 <TextField
                   fullWidth
                   type="number"
@@ -140,7 +157,7 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
                   disabled={disabled}
                 />
               </Grid>
-              <Grid size={{ xs: 12, sm: 4 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                 <TextField
                   fullWidth
                   type="number"
@@ -163,7 +180,7 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
                   disabled={disabled}
                 />
               </Grid>
-              <Grid size={{ xs: 12, sm: 4 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                 <TextField
                   fullWidth
                   label={t('processing.tile.layerSetName', 'Layer Set Name')}
@@ -184,7 +201,7 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
                   disabled={disabled}
                 />
               </Grid>
-              <Grid size={{ xs: 12, sm: 4 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                 <TextField
                   fullWidth
                   label={t('processing.tile.promoteId', 'Promote ID')}
@@ -205,7 +222,7 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
                   disabled={disabled}
                 />
               </Grid>
-              <Grid size={{ xs: 12, sm: 4 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                 <TextField
                   fullWidth
                   type="number"
@@ -228,7 +245,7 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
                   disabled={disabled}
                 />
               </Grid>
-              <Grid size={{ xs: 12, sm: 4 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                 <FormControl fullWidth>
                   <InputLabel id="vt-input-format-label">
                     {t('processing.tile.inputFormat', 'Input format')}
@@ -260,7 +277,7 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
                   </Typography>
                 </FormControl>
               </Grid>
-              <Grid size={{ xs: 12, sm: 4 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                 <FormControl fullWidth>
                   <InputLabel id="vt-input-compression-label">
                     {t('processing.tile.inputCompression', 'Input compression')}
@@ -292,7 +309,7 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
                   </Typography>
                 </FormControl>
               </Grid>
-              <Grid size={{ xs: 12, sm: 4 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                 <FormControl fullWidth>
                   <InputLabel id="vt-output-format-label">
                     {t('processing.tile.outputFormat', 'Output format')}
@@ -324,7 +341,7 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
                   </Typography>
                 </FormControl>
               </Grid>
-              <Grid size={{ xs: 12, sm: 4 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                 <FormControl fullWidth>
                   <InputLabel id="vt-output-compression-label">
                     {t('processing.tile.outputCompression', 'Output compression')}
@@ -356,7 +373,7 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
                   </Typography>
                 </FormControl>
               </Grid>
-              <Grid size={{ xs: 12, sm: 4 }} style={{ paddingRight: '20px' }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} style={{ paddingRight: '20px' }}>
                 <Typography gutterBottom>
                   {t('processing.tile.bufferSize', 'Tile Margin (px)')}
                 </Typography>
@@ -388,15 +405,18 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
                   {t('processing.tile.bufferSizeHelp', 'Extra margin to reduce seams at tile edges.')}
                 </Typography>
               </Grid>
-            </Grid>
-          </Box>
+              </Grid>
+            </Stack>
+          </Paper>
 
-          <Box>
-            <Typography variant="subtitle2">
-              {t('processing.tile.advancedSettings', 'Advanced settings')}
-            </Typography>
-            <Grid container spacing={3} sx={{ mt: 0.5 }}>
-              <Grid size={{ xs: 12, sm: 4 }}>
+          <Paper variant="outlined" sx={{ p: 2 }}>
+            <Stack spacing={2}>
+              <SectionTitle
+                icon={<TuneIcon fontSize="small" color="primary" />}
+                title={t('processing.tile.advancedSettings', 'Advanced settings')}
+              />
+              <Grid container spacing={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                 <Stack spacing={0.5}>
                   <FormControlLabel
                     control={
@@ -424,7 +444,7 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
                   </Typography>
                 </Stack>
               </Grid>
-              <Grid size={{ xs: 12, sm: 4 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                 <Stack spacing={0.5}>
                   <FormControlLabel
                     control={
@@ -453,7 +473,7 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
                 </Stack>
               </Grid>
 
-              <Grid size={{ xs: 12, sm: 4 }} style={{ paddingRight: '20px' }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} style={{ paddingRight: '20px' }}>
                 <Typography gutterBottom>
                   {t('processing.tile.expandFactor', 'Tile Expansion Factor')}
                 </Typography>
@@ -490,7 +510,7 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
                 </Typography>
               </Grid>
 
-              <Grid size={{ xs: 12, sm: 4 }} style={{ paddingRight: '20px' }}>
+              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} style={{ paddingRight: '20px' }}>
                 <Typography gutterBottom>
                   {t('processing.tile.expandMargin', 'Tile Expansion Margin')}
                 </Typography>
@@ -526,15 +546,17 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
                   )}
                 </Typography>
               </Grid>
-            </Grid>
-          </Box>
+              </Grid>
+            </Stack>
+          </Paper>
 
           <Box>
             <Paper variant="outlined" sx={{ p: 2 }}>
               <Stack spacing={2}>
-                <Typography variant="subtitle2">
-                  {t('processing.tile.dynamicConcurrencyTitle', 'Dynamic concurrency')}
-                </Typography>
+                <SectionTitle
+                  icon={<SpeedIcon fontSize="small" color="primary" />}
+                  title={t('processing.tile.dynamicConcurrencyTitle', 'Dynamic concurrency')}
+                />
                 <FormControlLabel
                   control={
                     <Switch
@@ -556,7 +578,7 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
                   label={t('processing.tile.dynamicConcurrencyEnabled', 'Enable dynamic concurrency')}
                 />
                 <Grid container spacing={2}>
-                  <Grid size={{ xs: 12, sm: 4 }}>
+                  <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                     <TextField
                       fullWidth
                       type="number"
@@ -579,7 +601,7 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
                       disabled={disabled || !dynamicConcurrency.enabled}
                     />
                   </Grid>
-                  <Grid size={{ xs: 12, sm: 4 }}>
+                  <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                     <TextField
                       fullWidth
                       type="number"
@@ -602,7 +624,7 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
                       disabled={disabled || !dynamicConcurrency.enabled}
                     />
                   </Grid>
-                  <Grid size={{ xs: 12, sm: 4 }}>
+                  <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                     <TextField
                       fullWidth
                       type="number"
@@ -625,7 +647,7 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
                       disabled={disabled || !dynamicConcurrency.enabled}
                     />
                   </Grid>
-                  <Grid size={{ xs: 12, sm: 4 }}>
+                  <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                     <TextField
                       fullWidth
                       type="number"
@@ -648,7 +670,7 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
                       disabled={disabled || !dynamicConcurrency.enabled}
                     />
                   </Grid>
-                  <Grid size={{ xs: 12, sm: 4 }}>
+                  <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                     <TextField
                       fullWidth
                       type="number"
@@ -671,7 +693,7 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
                       disabled={disabled || !dynamicConcurrency.enabled}
                     />
                   </Grid>
-                  <Grid size={{ xs: 12, sm: 4 }}>
+                  <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                     <TextField
                       fullWidth
                       type="number"
