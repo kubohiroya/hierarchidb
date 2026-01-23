@@ -40,6 +40,11 @@ export const DEFAULT_BUILD_CONFIG: ShapeBuildConfig = {
     omitDetailsConfig: {
       level: 'strong',
     },
+    areaBasedTolerance: {
+      enabled: false,
+      referenceAreaPx2: 4096 * 4096,
+      minScale: 0.2,
+    },
     selfIntersectionTuningConfig: {
       disableAtZoomOrBelow: 6,
       maxVerticesForFix: 20000,

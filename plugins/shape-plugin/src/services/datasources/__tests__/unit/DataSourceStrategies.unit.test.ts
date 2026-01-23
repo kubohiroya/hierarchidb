@@ -74,6 +74,11 @@ const minimalBatchConfig = {
     omitDetailsConfig: {
       level: 'strong',
     },
+    areaBasedTolerance: {
+      enabled: false,
+      referenceAreaPx2: 4096 * 4096,
+      minScale: 0.2,
+    },
     selfIntersectionTuningConfig: {
       disableAtZoomOrBelow: 3,
       maxVerticesForFix: 50000,

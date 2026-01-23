@@ -37,6 +37,11 @@ interface BatchConfig {
     deleteOnComplete?: boolean;
     quantize: number;
     tolerance: number;
+    areaBasedTolerance: {
+      enabled: boolean;
+      referenceAreaPx2: number;
+      minScale: number;
+    };
   };
   vtConfig: {
     maxConcurrent: number;
@@ -78,6 +83,11 @@ export function createTestBatchConfig(): BatchConfig {
       deleteOnComplete: false,
       quantize: 1e5,
       tolerance: 0.05,
+      areaBasedTolerance: {
+        enabled: false,
+        referenceAreaPx2: 4096 * 4096,
+        minScale: 0.2,
+      },
     },
     vtConfig: {
       maxConcurrent: 2,
