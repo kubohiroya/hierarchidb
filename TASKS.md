@@ -1,3 +1,38 @@
+2319) fix/ui-map/hover-snackbar-generic (P1) — 完了 (2026-01-24)
+- ブランチ名: fix/ui-map/hover-snackbar-generic
+- 依存: なし
+- 受け入れ基準: ui-map のホバー表示ロジックが汎用化され、shape-plugin step6 の専用 Snackbar 実装を撤去する／ホバー表示は中央下に統一される／ADM0+ADM1 が重なる場合は ADM1 が優先して表示される／ADM1 ホバー時の表示が「自治体名 / ADM1 / 国名 / 国コード / 1」になる／pnpm --filter @hierarchidb/ui-map typecheck と pnpm --filter @hierarchidb/app typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/**`, `plugins/shape-plugin/src/ui/components/step6/**`, `app/src/router/routes/map/MapPage.tsx`（調査後に確定）
+- ロールバック手順: ui-map の汎用 hover 表示差分と step6 の専用 Snackbar 撤去差分を revert し、従来の個別実装へ戻す
+- チェックリスト:
+  - ui-map のホバー表示を汎用化する
+  - step6 の専用 Snackbar を撤去する
+  - ADM0+ADM1 優先順位と ADM1 表示フォーマットを ui-map 側で担保する
+  - pnpm --filter @hierarchidb/ui-map typecheck を実行する
+  - pnpm --filter @hierarchidb/app typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 03:05 JST ui-map 側の汎用ホバー表示へ移設する作業に着手。
+  - update: 2026-01-24 03:15 JST ui-map に汎用ホバー表示ロジックを移設し、step6 の専用 Snackbar を撤去。
+  - done: 2026-01-24 03:25 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0。pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
+
+2320) fix/ui-map/hover-snackbar-admin-format (P1) — 完了 (2026-01-24)
+- ブランチ名: fix/ui-map/hover-snackbar-admin-format
+- 依存: なし
+- 受け入れ基準: Snackbar の表示が ADM0/ADM1/ADM2 で指定フォーマットに切り替わる（ADM0: Country (CC)／ADM1: Admin1 / Country (CC)／ADM2: Admin2 / Admin1 / Country (CC)）／pnpm --filter @hierarchidb/ui-map typecheck と pnpm --filter @hierarchidb/app typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/components/ResourceLayerMap.tsx`（調査後に確定）
+- ロールバック手順: hover snackbar のフォーマット変更差分を revert し、従来表示へ戻す
+- チェックリスト:
+  - ADM0/ADM1/ADM2 のラベル生成を実装する
+  - ui-map 側の hover snackbar を新フォーマットへ切り替える
+  - pnpm --filter @hierarchidb/ui-map typecheck を実行する
+  - pnpm --filter @hierarchidb/app typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 03:40 JST Snackbar の ADM 表示フォーマット変更に着手。
+  - update: 2026-01-24 03:45 JST ADM0/ADM1/ADM2 の表示フォーマットを ui-map のホバー表示に反映。
+  - done: 2026-01-24 03:50 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0。pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
+
 2315) feat/ui-map/map-preview-floating-lists (P1) — 進行中 (2026-01-24)
 - ブランチ名: feat/ui-map/map-preview-floating-lists
 - 依存: なし
@@ -36,7 +71,7 @@
   - update: 2026-01-24 23:05 JST pnpm typecheck が CleanupConfig 定義の不整合で失敗したため、pnpm --filter @hierarchidb/gis-sdk build を実行して型定義を更新。
   - done: 2026-01-24 23:10 JST pnpm typecheck exit 0（tsdown define 警告あり）。
 
-2317) chore/shape/step4-ui-audit (P1) — 進行中 (2026-01-24)
+2317) chore/shape/step4-ui-audit (P1) — 完了 (2026-01-25)
 - ブランチ名: chore/shape/step4-ui-audit
 - 依存: なし
 - 受け入れ基準: step4 UI の用語揺れ/ステージ移動反映漏れ/撤去済みパラメータUIの孤児/新規処理の未UI化を網羅的に列挙し、各項目に「場所・問題点・整理方針」を1行で記載した一覧を作成する／影響範囲（UI/設定/パイプライン/型/翻訳/ドキュメント）を明示する／TASKS.md に運用ログを記載する
@@ -52,6 +87,8 @@
 - 運用ログ：
   - start: 2026-01-24 23:25 JST step4 UI の整理対象洗い出しに着手。
   - done: 2026-01-24 23:40 JST step4 UI の用語揺れ/反映漏れ/孤児/未UI化を洗い出し、一覧を整理。
+  - update: 2026-01-25 00:20 JST step4 用語統一・キャッシュ管理分離・未UIパラメータ追加に着手。
+  - done: 2026-01-25 00:45 JST pnpm typecheck exit 0（tsdown define 警告あり）。
 
 2313) fix/ui-map/hover-snackbar-bottom-center (P1) — 完了 (2026-01-24)
 - ブランチ名: fix/ui-map/hover-snackbar-bottom-center
@@ -384,6 +421,23 @@
   - update: 2026-01-23 22:15 JST MapStatsPanel の snapshot を安定参照化し、tile/feature の更新通知を同一参照で管理するよう修正。
   - done: 2026-01-23 22:18 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define 警告あり）。pnpm typecheck exit 0。
 
+2305) fix/map-folder-preview-loading-metadata (P1) — 進行中 (2026-01-23)
+- ブランチ名: fix/map-folder-preview-loading-metadata
+- 依存: なし
+- 受け入れ基準: /map の shape/route 一覧でメタデータ表示が停止/点滅しない／shape タイルが表示される／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/routes/map/**`, `packages/ui/map/src/**`（調査後に確定）
+- ロールバック手順: 変更差分を revert する
+- チェックリスト:
+  - /map の一覧表示とタイル取得の不具合原因を特定する
+  - メタデータ表示/タイル描画の修正を実施する
+  - pnpm --filter @hierarchidb/app typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 22:30 JST /map の一覧メタデータ停止/点滅とタイル非表示の調査に着手。
+  - update: 2026-01-23 22:45 JST /map の shape 一覧は mapLayerInfo から shape nodeId 群を取得し、複数ノードのメタデータを集約するように修正。
+  - update: 2026-01-23 22:50 JST フォルダプレビューの shape layer は tile info の layer 名を優先し、未取得時は admin0 をフォールバックにするよう調整。
+  - done: 2026-01-23 22:52 JST pnpm --filter @hierarchidb/app typecheck exit 0 を確認（tsdown define 警告あり）。
+
 2304) analysis/map-folder-preview-missing-tiles (P1) — 進行中 (2026-01-23)
 - ブランチ名: analysis/map-folder-preview-missing-tiles
 - 依存: なし
@@ -398,6 +452,9 @@
 - 運用ログ：
   - start: 2026-01-23 21:40 JST /map フォルダプレビューのタイル非表示と未ビルドダイアログの原因調査に着手。
   - update: 2026-01-23 21:45 JST missingLayer ダイアログは useMapFeatureHighlights/useMapFeatureSearch が mapInstance.getLayer 未検出時に即発火。初期描画時に VectorTileLayer の addLayer が未完了でも開くため、偽陽性の可能性が高いと判断。
+  - update: 2026-01-23 22:05 JST missing layer 検出を遅延再確認し、解消時にダイアログを閉じるよう MapPage/onMissingLayers を調整。
+  - update: 2026-01-23 22:10 JST フォルダプレビューの shape layer で vector tile summary から sourceLayer を解決し、admin0 などの実レイヤ名を優先するよう修正。
+  - done: 2026-01-23 22:12 JST pnpm --filter @hierarchidb/ui-map typecheck / pnpm --filter @hierarchidb/app typecheck exit 0 を確認（tsdown define 警告あり）。
 
 2303) fix/ui/feature-list-striped-contrast (P1) — 進行中 (2026-01-23)
 - ブランチ名: fix/ui/feature-list-striped-contrast
