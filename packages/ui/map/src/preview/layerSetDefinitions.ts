@@ -84,7 +84,10 @@ export const resolveLayerSetEntries = (
     const sourceLayer = expectedLayerName
       ? findMatchingLayerName(tileLayerNames, expectedLayerName) ?? expectedLayerName
       : undefined;
-    const priority = layerSet.priority * 100 + (totalEntries - index);
+    const priorityBase = layerSet.priority * 100;
+    const priority = typeof entry.adminLevel === 'number'
+      ? priorityBase + entry.adminLevel * 10 + (entry.boundary ? 1 : 0)
+      : priorityBase + (totalEntries - index);
     return {
       ...entry,
       layerSetId: layerSet.id,
