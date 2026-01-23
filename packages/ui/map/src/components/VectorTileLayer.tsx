@@ -15,6 +15,7 @@ import type { MapLibreMapInstance } from '../types/maplibre-public.js';
 import type { FeatureStateRecord, VectorTileProps } from '../types/unified-map-props.js';
 import { DEFAULT_MAP_CONFIG } from '../types/unified-map-props.js';
 import { loadMapLibreModule } from '../utils/maplibre-loader.js';
+import { normalizePaintLiteralArrays } from '../utils/maplibre-style-utils.js';
 
 // Global flag to ensure protocol is only registered once
 let protocolRegistered = false;
@@ -284,7 +285,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
         id: layerId,
         type: layerType,
         source: sourceId,
-        paint,
+        paint: normalizePaintLiteralArrays(paint ?? {}),
         layout: {
           visibility: visible ? 'visible' : 'none',
           ...layout,

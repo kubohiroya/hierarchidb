@@ -51,6 +51,8 @@ export interface MapLibreMapInstance {
 
   setLayoutProperty(layerId: string, name: string, value: unknown): void;
 
+  setPaintProperty(layerId: string, name: string, value: unknown): void;
+
   getTerrain(): unknown | null;
 
   setTerrain(options: { source: string; exaggeration?: number } | null): void;

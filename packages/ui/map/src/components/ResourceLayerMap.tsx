@@ -13,6 +13,7 @@ import type { MapAttributionItem } from '../types/attribution.js';
 import type { LayerSetId } from '../preview/layerSetDefinitions.js';
 import type { FeatureCollection } from 'geojson';
 import { VectorTileLayer } from './VectorTileLayer.js';
+import { normalizePaintLiteralArrays } from '../utils/maplibre-style-utils.js';
 import {
   DEFAULT_MAP_CONFIG,
   type BaseMapProps,
@@ -424,7 +425,7 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
           id: layer.layerId,
           type: layer.layerType,
           source: layer.sourceId,
-          paint: layer.paint ?? {},
+          paint: normalizePaintLiteralArrays(layer.paint ?? {}),
           layout: layer.layout ?? {},
           ...(layer.filter ? { filter: layer.filter } : {}),
         },

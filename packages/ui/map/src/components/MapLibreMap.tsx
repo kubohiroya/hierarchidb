@@ -78,6 +78,7 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
                                                           showTileCoordinates,
                                                         }) => {
   const mapRef = useRef<MapLibreMapInstance | null>(null);
+  const loggedPaintArraysRef = useRef(new Set<string>());
   const [mapLoaded, setMapLoaded] = useState(false);
   const [identifySnackbarState, setIdentifySnackbarState] = useState<{ open: boolean; message: string }>({
     open: false,
@@ -88,9 +89,44 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
     radius: DEFAULT_IDENTIFY_RADIUS,
   }), []);
 
+  const normalizePaintArrays = useCallback((map: MapLibreMapInstance) => {
+    const style = map.getStyle?.();
+    if (!style || !style.layers) return;
+    style.layers.forEach((layer) => {
+      const paint = layer.paint;
+      if (!paint) return;
+      Object.entries(paint).forEach(([key, value]) => {
+        if (!Array.isArray(value) || value.length === 0) return;
+        const first = value[0];
+        const isExpressionArray = typeof first === 'string';
+        const logKey = `${layer.id}:${key}`;
+        if (!loggedPaintArraysRef.current.has(logKey)) {
+          loggedPaintArraysRef.current.add(logKey);
+          if (import.meta.env.DEV) {
+            // Debug which layer/paint has array values during style load.
+            // eslint-disable-next-line no-console
+            console.warn('[ui-map][paint-array]', {
+              layerId: layer.id,
+              property: key,
+              isExpressionArray,
+              value,
+            });
+          }
+        }
+        if (isExpressionArray) {
+          map.setPaintProperty(layer.id, key, value);
+          return;
+        }
+        map.setPaintProperty(layer.id, key, ['literal', value]);
+      });
+    });
+  }, []);
+
   const handleMapLoad = useCallback((e: {target: MapLibreMapInstance}) => {
     const map = e.target;
     mapRef.current = map;
+    normalizePaintArrays(map);
+    map.on('styledata', () => normalizePaintArrays(map));
     if (controls) {
       void loadMapLibreModule().then((mlib) => {
         if (!mlib) return;
@@ -124,7 +160,7 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
     }
     setMapLoaded(true);
     onLoad?.(map);
-  }, [onLoad, controls]);
+  }, [onLoad, controls, normalizePaintArrays]);
 
   const handleMove = useCallback(
     (event: { viewState: MapViewState}) => {
