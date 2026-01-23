@@ -253,8 +253,9 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
       <Snackbar
         open={Boolean(hoverMessage)}
         message={hoverMessage}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         autoHideDuration={3600}
+        sx={{ left: '50%', transform: 'translateX(-50%)' }}
         onClose={() => setHoveredId(null)}
       />
     </Box>

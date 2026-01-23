@@ -103,7 +103,7 @@ export type ResourceLayerMapProps = BaseMapProps & {
   controls?: MapLibreMapProps['controls'];
   hoveredFeatures?: MapLibreGeoJSONFeature[];
   snackbar?: {
-    position?: 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+    position?: 'top' | 'bottom' | 'bottom-center' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
     renderContent?: (features: MapLibreGeoJSONFeature[]) => React.ReactNode;
     autoHideDuration?: number | null;
   };
@@ -135,7 +135,7 @@ export type ResourceLayerMapProps = BaseMapProps & {
     };
     snackbar?: {
       enabled?: boolean;
-      position?: 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+      position?: 'top' | 'bottom' | 'bottom-center' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
       renderContent?: (features: MapLibreGeoJSONFeature[]) => React.ReactNode;
       autoHideDuration?: number | null;
     };
@@ -868,6 +868,8 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
     switch (snackbarPosition) {
       case 'top':
         return { vertical: 'top', horizontal: 'center' } as const;
+      case 'bottom-center':
+        return { vertical: 'bottom', horizontal: 'center' } as const;
       case 'top-left':
         return { vertical: 'top', horizontal: 'left' } as const;
       case 'top-right':
@@ -1012,6 +1014,11 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
           autoHideDuration={effectiveSnackbar.autoHideDuration ?? null}
           message={snackbarContent}
           anchorOrigin={anchorOrigin}
+          sx={
+            anchorOrigin.vertical === 'bottom' && anchorOrigin.horizontal === 'center'
+              ? { left: '50%', transform: 'translateX(-50%)' }
+              : undefined
+          }
         />
       )}
     </>
