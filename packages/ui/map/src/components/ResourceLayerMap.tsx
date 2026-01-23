@@ -317,6 +317,151 @@ const sortByLayerPriority = <T extends SortableLayer>(items: T[]): T[] =>
     return aKey.localeCompare(bKey);
   });
 
+const ADMIN_LABEL_PATTERN = /(?:adm|admin)\s*(\d+)/i;
+
+const toPropertyString = (value: unknown): string | undefined => {
+  if (typeof value === 'string') return value.trim() || undefined;
+  if (typeof value === 'number') return Number.isFinite(value) ? String(value) : undefined;
+  return undefined;
+};
+
+const pickFirstString = (properties: Record<string, unknown>, keys: string[]): string | undefined => {
+  for (const key of keys) {
+    const value = toPropertyString(properties[key]);
+    if (value) return value;
+  }
+  return undefined;
+};
+
+const resolveAdminLevel = (properties: Record<string, unknown>): number | undefined => {
+  const candidates = [
+    properties.adminLevel,
+    properties.admin_level,
+    properties.ADM_LEVEL,
+    properties.level,
+    properties.admin_lvl,
+  ];
+  for (const value of candidates) {
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value === 'string') {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+  }
+  const labelCandidates = [
+    properties.shapeType,
+    properties.boundaryType,
+    properties.adminType,
+    properties.ADMIN_TYPE,
+    properties.layer,
+    properties.LAYER,
+  ];
+  for (const candidate of labelCandidates) {
+    if (typeof candidate !== 'string') continue;
+    const match = candidate.match(ADMIN_LABEL_PATTERN);
+    if (!match) continue;
+    const parsed = Number(match[1]);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return undefined;
+};
+
+const buildAdminHoverCandidate = (
+  properties: Record<string, unknown>,
+): { level: number; label: string } | null => {
+  const level = resolveAdminLevel(properties);
+  if (level == null) return null;
+  const adminLabel = `ADM${level}`;
+  const adminName = pickFirstString(properties, [
+    'name',
+    'NAME',
+    'name_en',
+    'NAME_EN',
+    'shapeName',
+    'NAME_1',
+    'NAME_2',
+    'NAME_3',
+    'NAME_4',
+    'NAME_5',
+    'adminName',
+  ]);
+  const countryName = pickFirstString(properties, [
+    'countryName',
+    'country',
+    'COUNTRY',
+    'COUNTRY_NAME',
+    'NAME_0',
+    'ADMIN',
+    'SOVEREIGNT',
+  ]);
+  const countryCode = pickFirstString(properties, [
+    'countryCode',
+    'ISO_A2',
+    'ISO2',
+    'ISO_2',
+    'ISO_A3',
+    'ADM0_A3',
+    'ISO3',
+    'shapeISO',
+  ]);
+  const countrySuffix = countryCode ? ` (${countryCode})` : '';
+  if (level <= 0) {
+    const label = countryName ? `${adminLabel}: ${countryName}${countrySuffix}` : `${adminLabel}: Unknown`;
+    return { level, label };
+  }
+  if (level === 1) {
+    const admin1 = adminName ?? countryName ?? 'Unknown';
+    const country = countryName ?? 'Unknown';
+    return { level, label: `${adminLabel}: ${admin1} / ${country}${countrySuffix}` };
+  }
+  const admin2 = adminName ?? 'Unknown';
+  const admin1 = pickFirstString(properties, [
+    'admin1Name',
+    'NAME_1',
+    'name_1',
+    'ADM1_NAME',
+    'admin1',
+  ]);
+  const country = countryName ?? 'Unknown';
+  const parts = [admin2, admin1, country].filter((part): part is string => Boolean(part && part.trim().length > 0));
+  return { level, label: `${adminLabel}: ${parts.join(' / ')}${countrySuffix}` };
+};
+
+const buildDefaultHoverLabel = (properties: Record<string, unknown>): string | null => {
+  const label =
+    (properties.name as string | undefined) ??
+    (properties.NAME as string | undefined) ??
+    (properties.label as string | undefined) ??
+    (properties.id as string | number | undefined);
+  return label ? String(label) : null;
+};
+
+const buildHoverSnackbarContent = (features: MapLibreGeoJSONFeature[]): React.ReactNode => {
+  if (features.length === 0) return '';
+  const adminCandidates = features
+    .map((feature, index) => {
+      const props = (feature.properties ?? {}) as Record<string, unknown>;
+      const adminParts = buildAdminHoverCandidate(props);
+      if (!adminParts) return null;
+      return { index, ...adminParts };
+    })
+    .filter(
+      (candidate): candidate is { index: number; level: number; label: string } =>
+        Boolean(candidate),
+    );
+  if (adminCandidates.length > 0) {
+    adminCandidates.sort((a, b) => (b.level - a.level) || (a.index - b.index));
+    return adminCandidates[0]?.label ?? '';
+  }
+  const labels = features
+    .slice(0, 3)
+    .map((feature) => {
+      const props = (feature.properties ?? {}) as Record<string, unknown>;
+      return buildDefaultHoverLabel(props) ?? 'Feature';
+    });
+  return labels.join(' / ');
+};
+
 const formatBytes = (value: number): string => {
   if (!Number.isFinite(value) || value <= 0) return '0 B';
   const units = ['B', 'KB', 'MB', 'GB'];
@@ -445,6 +590,30 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
     () => (geoJsonLayers ? sortByLayerPriority(geoJsonLayers) : []),
     [geoJsonLayers]
   );
+
+  const renderLayerEntries = useMemo(() => (
+    orderedLayers.map((layer) => {
+      const layerConfig = { ...DEFAULT_MAP_CONFIG.vectorTileLayer, ...layer.layerConfig };
+      const layerType = layerConfig.layerType ?? 'fill';
+      const paintOverrides = pickStyleOverrides(layerType, styleOverrides, styleOverridesByType);
+      const baseLayerPaint = { ...(layerConfig.paint ?? {}), ...paintOverrides };
+      const highlightOverrides =
+        highlightOverridesByType?.[layerType]
+        ?? buildDefaultHighlightOverrides(layerType, baseLayerPaint, theme);
+      const layerPaint = { ...baseLayerPaint, ...highlightOverrides };
+      const layerId = layerConfig.layerId ?? `resource-layer-${layer.nodeId}`;
+      const sourceId = layerConfig.sourceId ?? `resource-source-${layer.nodeId}`;
+
+      return {
+        layer,
+        layerConfig,
+        layerType,
+        layerPaint,
+        layerId,
+        sourceId,
+      };
+    })
+  ), [orderedLayers, styleOverrides, styleOverridesByType, highlightOverridesByType, theme]);
 
   const statsEnabled = Boolean(stats?.enabled);
   const statsPosition = stats?.position ?? 'top-left';
@@ -1007,7 +1176,7 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
   })();
   const snackbarContent =
     effectiveSnackbar?.renderContent?.(snackbarFeatures)
-    ?? (snackbarFeatures.length ? `(${snackbarFeatures.length} features)` : '');
+    ?? buildHoverSnackbarContent(snackbarFeatures);
 
   return (
     <>
@@ -1018,42 +1187,29 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
         controls={resolvedControls}
       >
         {mapInstance &&
-          orderedLayers.map((layer) => {
-            const layerConfig = { ...DEFAULT_MAP_CONFIG.vectorTileLayer, ...layer.layerConfig };
-            const layerType = layerConfig.layerType ?? 'fill';
-            const paintOverrides = pickStyleOverrides(layerType, styleOverrides, styleOverridesByType);
-            const baseLayerPaint = { ...(layerConfig.paint ?? {}), ...paintOverrides };
-            const highlightOverrides =
-              highlightOverridesByType?.[layerType]
-              ?? buildDefaultHighlightOverrides(layerType, baseLayerPaint, theme);
-            const layerPaint = { ...baseLayerPaint, ...highlightOverrides };
-            const layerId = layerConfig.layerId ?? `resource-layer-${layer.nodeId}`;
-            const sourceId = layerConfig.sourceId ?? `resource-source-${layer.nodeId}`;
-
-            return (
-              <VectorTileLayer
-                key={layerId}
-                map={mapInstance}
-                dbName={layer.dbName}
-                nodeId={layer.nodeId}
-                tiles={layer.tiles}
-                tileDataProvider={layer.tileDataProvider}
-                onTileRequest={statsActive ? handleTileRequest : undefined}
-                layerId={layerId}
-                sourceId={sourceId}
-                promoteId={layer.promoteId}
-                featureState={layer.featureState}
-                paint={layerPaint}
-                layout={layerConfig.layout}
-                filter={layerConfig.filter}
-                minzoom={layerConfig.minzoom}
-                maxzoom={layerConfig.maxzoom}
-                layerType={layerType}
-                sourceLayer={layerConfig.sourceLayer}
-                visible={layerConfig.visible}
-              />
-            );
-          })}
+          renderLayerEntries.map((entry) => (
+            <VectorTileLayer
+              key={entry.layerId}
+              map={mapInstance}
+              dbName={entry.layer.dbName}
+              nodeId={entry.layer.nodeId}
+              tiles={entry.layer.tiles}
+              tileDataProvider={entry.layer.tileDataProvider}
+              onTileRequest={statsActive ? handleTileRequest : undefined}
+              layerId={entry.layerId}
+              sourceId={entry.sourceId}
+              promoteId={entry.layer.promoteId}
+              featureState={entry.layer.featureState}
+              paint={entry.layerPaint}
+              layout={entry.layerConfig.layout}
+              filter={entry.layerConfig.filter}
+              minzoom={entry.layerConfig.minzoom}
+              maxzoom={entry.layerConfig.maxzoom}
+              layerType={entry.layerType}
+              sourceLayer={entry.layerConfig.sourceLayer}
+              visible={entry.layerConfig.visible}
+            />
+          ))}
       </MapLibreMap>
       {statsActive && statsContainer ? (
         createPortal(
