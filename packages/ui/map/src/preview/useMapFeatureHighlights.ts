@@ -27,6 +27,8 @@ export const useMapFeatureHighlights = <HighlightEntry extends { source: string;
   const appliedSearchMatchesRef = useRef<HighlightEntry[]>([]);
   const appliedHoverRef = useRef<HighlightEntry[]>([]);
   const appliedSelectedRef = useRef<HighlightEntry[]>([]);
+  const missingLayerTimerRef = useRef<number | null>(null);
+  const lastMissingLayerIdsRef = useRef<string[]>([]);
 
   const resolveSourceLayer = useCallback((entry: HighlightEntry): string | undefined => {
     if (entry.sourceLayer) return entry.sourceLayer;
@@ -61,9 +63,26 @@ export const useMapFeatureHighlights = <HighlightEntry extends { source: string;
     if (typeof mapInstance.getLayer === 'function') {
       const missingLayerIds = highlightLayerIds.filter((layerId) => !mapInstance.getLayer(layerId));
       if (missingLayerIds.length > 0) {
-        onMissingLayers?.(missingLayerIds);
+        if (missingLayerTimerRef.current) {
+          window.clearTimeout(missingLayerTimerRef.current);
+        }
+        missingLayerTimerRef.current = window.setTimeout(() => {
+          if (!mapInstance) return;
+          const stillMissing = highlightLayerIds.filter((layerId) => !mapInstance.getLayer(layerId));
+          if (stillMissing.length === 0) return;
+          lastMissingLayerIdsRef.current = stillMissing;
+          onMissingLayers?.(stillMissing);
+        }, 250);
         return;
       }
+    }
+    if (missingLayerTimerRef.current) {
+      window.clearTimeout(missingLayerTimerRef.current);
+      missingLayerTimerRef.current = null;
+    }
+    if (lastMissingLayerIdsRef.current.length > 0) {
+      lastMissingLayerIdsRef.current = [];
+      onMissingLayers?.([]);
     }
     if (!onViewportLayerIdsChange) return;
     const canvas = mapInstance.getCanvas();
@@ -159,6 +178,10 @@ export const useMapFeatureHighlights = <HighlightEntry extends { source: string;
     return () => {
       mapInstance.off('moveend', handleViewportChange);
       mapInstance.off('zoomend', handleViewportChange);
+      if (missingLayerTimerRef.current) {
+        window.clearTimeout(missingLayerTimerRef.current);
+        missingLayerTimerRef.current = null;
+      }
     };
   }, [mapInstance, onViewportLayerIdsChange, updateViewportFeatures]);
 
