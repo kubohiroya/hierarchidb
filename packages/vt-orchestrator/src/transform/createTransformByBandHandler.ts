@@ -10,9 +10,11 @@ import {
 import { cleanCoords } from '@turf/clean-coords';
 import { geojson as geojsonApi } from 'flatgeobuf';
 import { applyFeatureFiltering, encodeFlatGeobufFromFeatureCollection, latToTileY, lonToTileX } from '@hierarchidb/gis-sdk';
+import type { AreaBasedToleranceConfig } from '@hierarchidb/gis-sdk';
 import type { ShapeTransformErrorRecord } from '@hierarchidb/plugin-service-api';
 import {
   buildBoundaryFeature,
+  resolveAreaToleranceScaleForCollection,
   simplifyFeatureCollection,
   snapGeometryToGrid,
   type SimplifyIssue,
@@ -118,12 +120,16 @@ const simplifyOnlyCollection = (
   collection: FeatureCollection,
   zTarget: number,
   toleranceK: number,
+  areaBasedToleranceConfig: AreaBasedToleranceConfig,
 ): FeatureCollection => {
   if (typeof turfSimplify !== 'function') return collection;
   const tolerance = resolveSimplifyToleranceDegrees(zTarget, toleranceK);
   if (!Number.isFinite(tolerance) || tolerance <= 0) return collection;
+  const toleranceScale = resolveAreaToleranceScaleForCollection(collection, zTarget, areaBasedToleranceConfig);
+  const effectiveTolerance = tolerance * toleranceScale;
+  if (!Number.isFinite(effectiveTolerance) || effectiveTolerance <= 0) return collection;
   return turfSimplify(collection, {
-    tolerance,
+    tolerance: effectiveTolerance,
     highQuality: false,
     mutate: false,
   }) as FeatureCollection;
@@ -1313,7 +1319,7 @@ export const createTransformByBandHandler = (
           stageLabel = 'simplify-only';
           await updateTaskPhase(taskId, 'simplify-only:start', taskProgressRange.simplifyStart);
           const simplifyPromise = runStageWithLabel('simplify-only', () => (
-            simplifyOnlyCollection(inputCollection, band.zMax, tolerance)
+            simplifyOnlyCollection(inputCollection, band.zMax, tolerance, transformConfig.areaBasedTolerance)
           ));
           simplified = await runWithStallTimeout({
             promise: simplifyPromise,
@@ -1350,6 +1356,7 @@ export const createTransformByBandHandler = (
             transformConfig.quantize,
             transformConfig.excludePolygonAreaCoefficient,
             transformConfig.omitDetailsConfig,
+            transformConfig.areaBasedTolerance,
             {
               abortSignal,
               yieldEvery: 25,
@@ -1572,6 +1579,7 @@ export const createTransformByBandHandler = (
                 { type: 'FeatureCollection', features: [feature] },
                 band.zMax,
                 tolerance,
+                transformConfig.areaBasedTolerance,
               );
             } else {
               await simplifyFeatureCollection(
@@ -1585,6 +1593,7 @@ export const createTransformByBandHandler = (
                 transformConfig.quantize,
                 transformConfig.excludePolygonAreaCoefficient,
                 transformConfig.omitDetailsConfig,
+                transformConfig.areaBasedTolerance,
                 {
                   abortSignal,
                   yieldEvery: 1,

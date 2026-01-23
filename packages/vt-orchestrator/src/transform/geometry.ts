@@ -2,7 +2,14 @@ import type { Feature, FeatureCollection, Geometry, Polygon, MultiPolygon } from
 import { area as turfArea, booleanValid, kinks as turfKinks, simplify as turfSimplify, unkinkPolygon } from '@turf/turf';
 import { cleanCoords } from '@turf/clean-coords';
 import { geojson as geojsonApi } from 'flatgeobuf';
-import type { OmitDetailsConfig, PreSimplifyFilterConfig, RingFixConfig, SelfIntersectionConfig, SelfIntersectionTuningConfig } from '@hierarchidb/gis-sdk';
+import type {
+  AreaBasedToleranceConfig,
+  OmitDetailsConfig,
+  PreSimplifyFilterConfig,
+  RingFixConfig,
+  SelfIntersectionConfig,
+  SelfIntersectionTuningConfig,
+} from '@hierarchidb/gis-sdk';
 
 const EARTH_RADIUS = 6378137;
 const MVT_EXTENT = 4096;
@@ -10,6 +17,7 @@ const MVT_EXTENT = 4096;
 type LonLat = [number, number];
 type Mercator = [number, number];
 type GeometryWithCoords = Exclude<Geometry, { type: 'GeometryCollection' }>;
+type BoundsMeters = { minX: number; minY: number; maxX: number; maxY: number };
 
 type SimplifyProgress = {
   processed: number;
@@ -119,6 +127,119 @@ const mercatorToLonLat = ([x, y]: Mercator): LonLat => {
   const lon = (x / EARTH_RADIUS) * (180 / Math.PI);
   const lat = (2 * Math.atan(Math.exp(y / EARTH_RADIUS)) - Math.PI / 2) * (180 / Math.PI);
   return [lon, lat];
+};
+
+const createEmptyBounds = (): BoundsMeters => ({
+  minX: Number.POSITIVE_INFINITY,
+  minY: Number.POSITIVE_INFINITY,
+  maxX: Number.NEGATIVE_INFINITY,
+  maxY: Number.NEGATIVE_INFINITY,
+});
+
+const updateBounds = (bounds: BoundsMeters, coord: LonLat): void => {
+  const [lon, lat] = coord;
+  if (!Number.isFinite(lon) || !Number.isFinite(lat)) return;
+  const [x, y] = lonLatToMercator([lon, lat]);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+  bounds.minX = Math.min(bounds.minX, x);
+  bounds.minY = Math.min(bounds.minY, y);
+  bounds.maxX = Math.max(bounds.maxX, x);
+  bounds.maxY = Math.max(bounds.maxY, y);
+};
+
+const updateBoundsFromCoords = (coords: unknown, bounds: BoundsMeters): void => {
+  if (!Array.isArray(coords) || coords.length === 0) return;
+  if (typeof coords[0] === 'number') {
+    const [lon, lat] = coords as LonLat;
+    updateBounds(bounds, [lon, lat]);
+    return;
+  }
+  for (const child of coords) {
+    updateBoundsFromCoords(child, bounds);
+  }
+};
+
+const finalizeBounds = (bounds: BoundsMeters): BoundsMeters | null => {
+  if (!Number.isFinite(bounds.minX) || !Number.isFinite(bounds.minY)) return null;
+  if (!Number.isFinite(bounds.maxX) || !Number.isFinite(bounds.maxY)) return null;
+  if (bounds.maxX < bounds.minX || bounds.maxY < bounds.minY) return null;
+  return bounds;
+};
+
+const mergeBounds = (target: BoundsMeters, source: BoundsMeters): void => {
+  target.minX = Math.min(target.minX, source.minX);
+  target.minY = Math.min(target.minY, source.minY);
+  target.maxX = Math.max(target.maxX, source.maxX);
+  target.maxY = Math.max(target.maxY, source.maxY);
+};
+
+const computeGeometryBoundsMeters = (geometry: Geometry): BoundsMeters | null => {
+  if (geometry.type === 'GeometryCollection') {
+    const geometries = Array.isArray(geometry.geometries) ? geometry.geometries : [];
+    const bounds = createEmptyBounds();
+    let hasGeometry = false;
+    for (const child of geometries) {
+      const childBounds = computeGeometryBoundsMeters(child);
+      if (!childBounds) continue;
+      mergeBounds(bounds, childBounds);
+      hasGeometry = true;
+    }
+    return hasGeometry ? finalizeBounds(bounds) : null;
+  }
+  const coordsGeometry = geometry as GeometryWithCoords;
+  const bounds = createEmptyBounds();
+  updateBoundsFromCoords(coordsGeometry.coordinates, bounds);
+  return finalizeBounds(bounds);
+};
+
+export const resolveAreaToleranceScale = (
+  geometry: Geometry,
+  zTarget: number,
+  config: AreaBasedToleranceConfig,
+): number => {
+  if (!config.enabled) return 1;
+  const bounds = computeGeometryBoundsMeters(geometry);
+  if (!bounds) return 1;
+  const metersPerPixelValue = metersPerPixel(zTarget);
+  if (!Number.isFinite(metersPerPixelValue) || metersPerPixelValue <= 0) return 1;
+  const width = Math.max(0, bounds.maxX - bounds.minX);
+  const height = Math.max(0, bounds.maxY - bounds.minY);
+  const areaMeters2 = width * height;
+  if (!Number.isFinite(areaMeters2) || areaMeters2 <= 0) return 1;
+  const areaPx2 = areaMeters2 / (metersPerPixelValue * metersPerPixelValue);
+  if (!Number.isFinite(areaPx2) || areaPx2 <= 0) return 1;
+  const scale = Math.sqrt(config.referenceAreaPx2 / areaPx2);
+  return Math.min(1, Math.max(config.minScale, scale));
+};
+
+export const resolveAreaToleranceScaleForCollection = (
+  collection: FeatureCollection,
+  zTarget: number,
+  config: AreaBasedToleranceConfig,
+): number => {
+  if (!config.enabled) return 1;
+  const bounds = createEmptyBounds();
+  let hasGeometry = false;
+  for (const feature of collection.features) {
+    if (!feature?.geometry) continue;
+    const featureBounds = computeGeometryBoundsMeters(feature.geometry);
+    if (!featureBounds) continue;
+    mergeBounds(bounds, featureBounds);
+    hasGeometry = true;
+  }
+  if (!hasGeometry) return 1;
+  const finalized = finalizeBounds(bounds);
+  if (!finalized) return 1;
+  const metersPerPixelValue = metersPerPixel(zTarget);
+  if (!Number.isFinite(metersPerPixelValue) || metersPerPixelValue <= 0) return 1;
+  const width = Math.max(0, finalized.maxX - finalized.minX);
+  const height = Math.max(0, finalized.maxY - finalized.minY);
+  const areaMeters2 = width * height;
+  if (!Number.isFinite(areaMeters2) || areaMeters2 <= 0) return 1;
+  const areaPx2 = areaMeters2 / (metersPerPixelValue * metersPerPixelValue);
+  if (!Number.isFinite(areaPx2) || areaPx2 <= 0) return 1;
+  const scale = Math.sqrt(config.referenceAreaPx2 / areaPx2);
+  return Math.min(1, Math.max(config.minScale, scale));
 };
 
 const computeRingLengthMeters = (ring: number[][]): number => {
@@ -777,9 +898,10 @@ export const simplifyFeatureCollection = async (
   quantize: number | undefined,
   excludePolygonAreaCoefficient: number,
   omitDetailsConfig: OmitDetailsConfig,
+  areaBasedToleranceConfig: AreaBasedToleranceConfig,
   options?: SimplifyOptions,
 ): Promise<FeatureCollection> => {
-  const tolerance = toleranceK * metersPerPixel(zTarget);
+  const baseTolerance = toleranceK * metersPerPixel(zTarget);
   const ringFix = ringFixConfig ?? {
     minRingVertices: 4,
     minRingAreaMultiplier: 1,
@@ -1057,7 +1179,8 @@ export const simplifyFeatureCollection = async (
         simplifyStarted = true;
         await options.onPhase('simplify:start');
       }
-      const simplified = simplifyGeometryInMercator(intersectionCandidate, tolerance);
+      const toleranceScale = resolveAreaToleranceScale(intersectionCandidate, zTarget, areaBasedToleranceConfig);
+      const simplified = simplifyGeometryInMercator(intersectionCandidate, baseTolerance * toleranceScale);
       const validated = validateSimplifiedGeometry(simplified, ringFix, minRingArea, preSimplify.dropInvalidHoles);
       features.push({ ...feature, geometry: validated });
     }

@@ -125,6 +125,14 @@ export function validateBatchConfig(config: ShapeBuildConfig): ShapeStepValidati
     errors.push('Feature area threshold must be between 0 and 10000');
   }
 
+  const areaBasedTolerance = config.transformConfig.areaBasedTolerance;
+  if (areaBasedTolerance.referenceAreaPx2 <= 0 || !Number.isFinite(areaBasedTolerance.referenceAreaPx2)) {
+    errors.push('Area-based tolerance reference area must be > 0');
+  }
+  if (areaBasedTolerance.minScale <= 0 || areaBasedTolerance.minScale > 1) {
+    errors.push('Area-based tolerance min scale must be between 0 and 1');
+  }
+
   const selfIntersectionTuning = config.transformConfig.selfIntersectionTuningConfig;
   if (selfIntersectionTuning.disableAtZoomOrBelow < ZOOM_BAND_MIN_ZOOM
     || selfIntersectionTuning.disableAtZoomOrBelow > ZOOM_BAND_MAX_ZOOM) {
@@ -351,6 +359,9 @@ export function mergeBuildConfig(
       preSimplifyFilterConfig: bandOverrides.preSimplifyFilterConfig
         ? { ...base.transformConfig.preSimplifyFilterConfig, ...bandOverrides.preSimplifyFilterConfig }
         : base.transformConfig.preSimplifyFilterConfig,
+      areaBasedTolerance: bandOverrides.areaBasedTolerance
+        ? { ...base.transformConfig.areaBasedTolerance, ...bandOverrides.areaBasedTolerance }
+        : base.transformConfig.areaBasedTolerance,
     }
     : base.transformConfig;
 
