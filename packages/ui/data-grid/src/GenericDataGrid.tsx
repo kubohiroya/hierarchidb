@@ -26,7 +26,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Download, FilterList, KeyboardArrowDown, KeyboardArrowUp, Refresh, Search } from '@mui/icons-material';
-import type { SxProps, Theme } from '@mui/material/styles';
+import { alpha, type SxProps, type Theme } from '@mui/material/styles';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
 /**
@@ -651,7 +651,9 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
               };
 
               const layeredSx: SxProps<Theme>[] = [];
-              if (striped && state.index % 2 === 0) layeredSx.push({ backgroundColor: 'action.hover' });
+              if (striped && state.index % 2 === 0) {
+                layeredSx.push({ backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.03) });
+              }
               if (state.matched) layeredSx.push({ boxShadow: 'inset 3px 0 0 0 rgba(25, 118, 210, 0.9)' });
               if (state.selected) layeredSx.push({ backgroundColor: 'primary.light', '&:hover': { backgroundColor: 'primary.light' } });
               if (state.hovered) layeredSx.push({ outline: '1px solid rgba(0,0,0,0.15)' });

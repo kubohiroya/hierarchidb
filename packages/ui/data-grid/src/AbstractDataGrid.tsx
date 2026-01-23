@@ -35,6 +35,7 @@ import {
   Search,
   ViewColumn,
 } from '@mui/icons-material';
+import { alpha } from '@mui/material/styles';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type {
   ColumnDefinition,
@@ -600,7 +601,9 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
                   sx={{
                     cursor: onRowClick || onRowDoubleClick ? 'pointer' : undefined,
                     backgroundColor:
-                      striped && virtualRow.index % 2 === 0 ? 'action.hover' : undefined,
+                      striped && virtualRow.index % 2 === 0
+                        ? (theme) => alpha(theme.palette.text.primary, 0.03)
+                        : undefined,
                     ...(virtual && {
                       height: rowHeight,
                       transform: `translateY(${virtualRow.index}px)`,
