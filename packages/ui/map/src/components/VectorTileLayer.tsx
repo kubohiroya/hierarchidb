@@ -28,6 +28,13 @@ export interface VectorTileLayerProps extends VectorTileProps {
 
 const defaultPaint = DEFAULT_MAP_CONFIG.vectorTileLayer.paint;
 
+const logLayerEvent = (message: string, details: Record<string, unknown>) => {
+  if (import.meta.env.DEV) {
+    console.debug(`[VectorTileLayer] ${message}`, details);
+  }
+};
+
+
 export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
                                                                   map,
                                                                   dbName,
@@ -54,10 +61,38 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
   const tilesLoadedRef = useRef(false);
   const prevFeatureStateRef = useRef<Map<string | number, FeatureStateRecord>>(new Map());
   const onTileRequestRef = useRef<VectorTileLayerProps['onTileRequest']>(onTileRequest);
+  const paintRef = useRef<Record<string, unknown>>(normalizePaintLiteralArrays(paint ?? {}));
 
   useEffect(() => {
     onTileRequestRef.current = onTileRequest;
   }, [onTileRequest]);
+
+  useEffect(() => {
+    const nextPaint = normalizePaintLiteralArrays(paint ?? {});
+    const prevPaint = paintRef.current;
+    paintRef.current = nextPaint;
+
+    if (!map || !layerAdded || !layerId || !map.getLayer || !map.getLayer(layerId)) return;
+
+    const changedKeys: string[] = [];
+    const allKeys = new Set([...Object.keys(prevPaint), ...Object.keys(nextPaint)]);
+    allKeys.forEach((key) => {
+      const prev = prevPaint[key];
+      const next = nextPaint[key];
+      if (JSON.stringify(prev) === JSON.stringify(next)) return;
+      try {
+        map.setPaintProperty(layerId, key, next as never);
+        changedKeys.push(key);
+      } catch (error) {
+        console.debug('VectorTileLayer paint update skipped:', error);
+      }
+    });
+
+    if (changedKeys.length) {
+      logLayerEvent('paint updated', { layerId, keys: changedKeys });
+    }
+  }, [layerAdded, layerId, map, paint]);
+
 
   // Setup custom protocol for Dexie if needed
   useEffect(() => {
@@ -159,8 +194,10 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
     // Remove existing source and layer if they exist
     if (sourceId && mapRef.getSource(sourceId)) {
       if (layerId && mapRef.getLayer(layerId)) {
+        logLayerEvent('layer removed (pre-source)', { layerId, sourceId });
         mapRef.removeLayer(layerId);
       }
+      logLayerEvent('source removed (pre-add)', { sourceId });
       mapRef.removeSource(sourceId);
     }
 
@@ -177,6 +214,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
     if (!sourceId) return;
     try {
       mapRef.addSource(sourceId, vectorTileSource as SourceSpecification);
+      logLayerEvent('source added', { sourceId, minzoom, maxzoom });
       setSourceAdded(true);
     } catch (error) {
       if (error instanceof Error && error.message.includes('already exists')) {
@@ -192,12 +230,14 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
           const style = mapRef.getStyle();
           if (layerId && style.layers) {
             if (mapRef.getLayer(layerId)) {
+              logLayerEvent('layer removed (cleanup)', { layerId });
               mapRef.removeLayer(layerId);
             }
             if (!sourceId) {
               return;
             }
             if (mapRef.getSource(sourceId)) {
+              logLayerEvent('source removed (cleanup)', { sourceId });
               mapRef.removeSource(sourceId);
             }
           }
@@ -282,6 +322,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
 
     // Remove existing layer if it exists
     if (layerId && mapRef.getLayer(layerId)) {
+      logLayerEvent('layer removed (pre-add)', { layerId });
       mapRef.removeLayer(layerId);
     }
 
@@ -290,7 +331,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
         id: layerId,
         type: layerType,
         source: sourceId,
-        paint: normalizePaintLiteralArrays(paint ?? {}),
+        paint: paintRef.current,
         layout: {
           visibility: visible ? 'visible' : 'none',
           ...layout,
@@ -310,6 +351,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
       }
 
       mapRef.addLayer(layerConfig);
+      logLayerEvent('layer added', { layerId, sourceId, layerType });
       setLayerAdded(true);
     } catch (error) {
       if (layerId && mapRef.getLayer && mapRef.getLayer(layerId)) {
@@ -326,6 +368,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
         if (layerId && mapRef && typeof mapRef.getStyle === 'function') {
           const style = mapRef.getStyle();
           if (style.layers && mapRef.getLayer && mapRef.getLayer(layerId)) {
+            logLayerEvent('layer removed (cleanup)', { layerId });
             mapRef.removeLayer(layerId);
           }
         }
@@ -333,7 +376,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
         console.debug('VectorTileLayer layer cleanup skipped due to map atoms:', error);
       }
     };
-  }, [map, sourceAdded, layerId, layerType, sourceId, paint, layout, filter, visible, minzoom, maxzoom, sourceLayer]);
+  }, [map, sourceAdded, layerId, layerType, sourceId, layout, filter, visible, minzoom, maxzoom, sourceLayer]);
 
   // Update visibility
   useEffect(() => {
