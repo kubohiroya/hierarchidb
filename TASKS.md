@@ -1,3 +1,461 @@
+2336) fix/shape/transform-retry-tolerance-search (P1) — 完了 (2026-01-24)
+- ブランチ名: fix/shape/transform-retry-tolerance-search
+- 依存: なし
+- 受け入れ基準: transform の vertex 上限超過時に tolerance 再試行が指数→二分探索で実行される／上限内に収まる最小近傍の tolerance が選択される／retry 上限や failed 判定など既存挙動が維持される／pnpm --filter @hierarchidb/vt-orchestrator typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`
+- ロールバック手順: retry 探索ロジックの差分を revert して +0.5 の線形リトライへ戻す
+- チェックリスト:
+  - vertex limit 超過時の retry を指数→二分探索へ置き換える
+  - retry 回数上限と failed 判定が維持されることを確認する
+  - pnpm --filter @hierarchidb/vt-orchestrator typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 22:23 JST tolerance retry の探索方法を指数→二分探索へ変更する対応に着手。
+  - update: 2026-01-24 22:24 JST retry を指数探索→二分探索に置き換え。
+  - done: 2026-01-24 22:26 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+
+2335) investigation/shape/transform-max-vertices (P1) — 完了 (2026-01-24)
+- ブランチ名: investigation/shape/transform-max-vertices
+- 依存: なし
+- 受け入れ基準: transform failed: max vertices per feature exceeded の発生箇所と条件が特定できる／再試行で解消する条件と解消しない条件を整理する／影響範囲（UI/Worker/設定）を説明する／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/vt-orchestrator/src/transform/**`, `plugins/shape-plugin/src/ui/components/step5/**`（調査後に確定）
+- ロールバック手順: 調査のみ（コード変更なし）
+- チェックリスト:
+  - 例外メッセージの発生箇所と条件を特定する
+  - 再試行で解消する/しない条件を整理する
+  - 影響範囲を説明できるようにまとめる
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - update: 2026-01-24 22:26 JST tolerance +0.5 の retry が最大20回まで実行される実装を確認。
+  - update: 2026-01-24 22:27 JST retry 後も上限超過が残ると failed になることを確認。
+  - start: 2026-01-24 22:15 JST transform max vertices エラーの原因調査に着手。
+  - done: 2026-01-24 22:24 JST retry 実装と failed 判定条件を整理し、原因を確定。
+  - update: 2026-01-24 22:18 JST createTransformByBandHandler.ts の vertex limit 判定で failed が返ることを確認。
+  - done: 2026-01-24 22:19 JST 再試行で解消しない条件（入力ジオメトリの頂点数が上限超過）を整理。
+
+2355) fix/shape/step5-task-updates-no-polling (P1) — 進行中 (2026-01-26)
+- ブランチ名: fix/shape/step5-task-updates-no-polling
+- 依存: なし
+- 受け入れ基準: Worker初期化時にタスクスナップショットをUIへ通知し、その後はタスク更新イベントのみでUIを更新する（UI側の再取得・ポーリングなし）／Step5のタスク一覧・サマリーが実行中/失敗時も更新される／失敗を再現するテストを追加しグリーン化する／pnpm --filter @hierarchidb/shape-plugin test が exit 0／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/common/api/src/WorkerAPI.ts`, `packages/common/api/src/BatchControlAPI.ts`, `packages/ui/worker-client/src/workerBridge.ts`, `app/src/worker-runtime/worker.ts`, `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/ui/components/step5/useShapeBuildTasks.ts`, `plugins/shape-plugin/src/ui/components/step5/useShapeBuildStep.ts`, `plugins/shape-plugin/src/ui/__tests__/**`
+- ロールバック手順: 上記ファイルのスナップショット通知/購読差分を revert する
+- チェックリスト:
+  - Workerがsubscribe時にタスクスナップショットを送信する
+  - タスク更新はイベント通知のみで反映される
+  - UI側のポーリング/再取得処理が残らない
+  - pnpm --filter @hierarchidb/shape-plugin test を実行する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 10:12 JST step5タスク通知のスナップショット化とポーリング撤去に着手。
+  - update: 2026-01-26 10:40 JST BatchTaskUpdateEvent/subscribeBatchTasks追加、Workerスナップショット通知とUIポーリング撤去、関連テストを追加。
+  - update: 2026-01-26 10:42 JST pnpm --filter @hierarchidb/common-api build / pnpm --filter @hierarchidb/ui-worker-client build を実行（tsdown define warningあり）。
+  - done: 2026-01-26 10:44 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - blocked: 2026-01-26 10:45 JST pnpm --filter @hierarchidb/shape-plugin test が geoboundaries.org DNS失敗（ENOTFOUND）で失敗。
+
+2354) fix/shape/rebuild-queue-missing-only (P1) — 進行中 (2026-01-24)
+- ブランチ名: fix/shape/rebuild-queue-missing-only
+- 依存: なし
+- 受け入れ基準: 再ビルド時にCompleted/Skippedが再キューされず、Failedのみqueuedへ戻り不足タスクのみ追加される／startBatchProcessでも既存タスクを再利用する／pnpm --filter @hierarchidb/shape-plugin typecheck と pnpm --filter @hierarchidb/vt-orchestrator typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/services/vt/shapePipeline.ts`, `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts`
+- ロールバック手順: resumeExistingTasksの自動判定とmissingタスク追加の差分を revert する
+- チェックリスト:
+  - startBatchProcessで既存タスクを検出し再利用する
+  - failedのみqueuedへ戻し、completed/skippedは保持する
+  - missingタスクのみを追加する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - pnpm --filter @hierarchidb/vt-orchestrator typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 21:36 JST 再ビルド時のタスク再投入ルール修正に着手。
+  - blocked: 2026-01-24 21:59 JST pnpm --filter @hierarchidb/shape-plugin typecheck が TS1434 (shapePipeline.ts) で失敗。
+  - done: 2026-01-24 21:59 JST pnpm --filter @hierarchidb/shape-plugin typecheck と pnpm --filter @hierarchidb/vt-orchestrator typecheck が exit 0。
+
+2354) fix/shape/step5-running-tasks-and-error-dialog (P1) — 進行中 (2026-01-24)
+- ブランチ名: fix/shape/step5-running-tasks-and-error-dialog
+- 依存: なし
+- 受け入れ基準: processingStatusがprocessingでruntime statusが未取得でもタスクがポーリングされサマリー/一覧が表示される／failedダイアログにerrorMessageが表示される／失敗テストを追加しグリーン化する／pnpm --filter @hierarchidb/shape-plugin test が exit 0／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/useShapeBuildStep.ts`, `plugins/shape-plugin/src/ui/components/step5/ShapeBuildProgressPanel.tsx`, `plugins/shape-plugin/src/ui/atoms/shapeBuildProgressAtoms.ts`, `plugins/shape-plugin/src/ui/__tests__/hooks/unit/useShapeBuildStep.unit.test.tsx`, `plugins/shape-plugin/src/ui/__tests__/components/step5/ShapeBuildProgressPanel.unit.test.tsx`
+- ロールバック手順: 上記ファイルの差分を revert する
+- チェックリスト:
+  - processingStatus=processingでrefreshTasksが実行される
+  - errorMessageがダイアログに表示される
+  - pnpm --filter @hierarchidb/shape-plugin test を実行する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 22:02 JST step5実行中タスク表示と失敗ダイアログの修正に着手。
+  - update: 2026-01-24 22:35 JST processingStatus=processingでポーリング継続、失敗メッセージにerrorMessageを優先、UIテストとフックテストを追加。
+  - update: 2026-01-24 22:44 JST vitest aliasに@hierarchidb/ui-i18nを追加、ResizeObserver/monitoringをテストでモック。
+  - blocked: 2026-01-24 22:45 JST pnpm --filter @hierarchidb/shape-plugin test が geoboundaries.org DNS失敗（ENOTFOUND）で失敗。
+  - done: 2026-01-24 22:45 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2353) fix/shape/step5-cached-tasks-initial-refresh (P1) — 進行中 (2026-01-24)
+- ブランチ名: fix/shape/step5-cached-tasks-initial-refresh
+- 依存: なし
+- 受け入れ基準: Step5 遷移時に buildStatus が idle でも初回の tasks refresh が実行され cached task が表示される／回数は1回に限定される／失敗を再現するテストを追加しグリーンにする／pnpm --filter @hierarchidb/shape-plugin test が exit 0（該当テスト含む）／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/useShapeBuildStep.ts`, `plugins/shape-plugin/src/ui/__tests__/hooks/unit/useShapeBuildStep.unit.test.tsx`
+- ロールバック手順: useShapeBuildStep の初回 refresh 制御とテスト追加分を revert する
+- チェックリスト:
+  - 初回表示で refreshTasks が一度だけ呼ばれる
+  - キャッシュが無い場合は追加の refresh を繰り返さない
+  - pnpm --filter @hierarchidb/shape-plugin test を実行する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 20:36 JST step5キャッシュタスクの初回refresh問題に着手。
+  - update: 2026-01-24 21:24 JST 初回idle状態でもrefreshTasksを1回だけ実行するガードとテストを追加。
+  - blocked: 2026-01-24 21:21 JST pnpm --filter @hierarchidb/shape-plugin test が geoboundaries.org の DNS 失敗（ENOTFOUND）で失敗。
+  - done: 2026-01-24 21:24 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2353) fix/vt/transform-retry-effective-tolerance (P1) — 進行中 (2026-01-24)
+- ブランチ名: fix/vt/transform-retry-effective-tolerance
+- 依存: なし
+- 受け入れ基準: simplify再試行で適用側のtoleranceを+0.5ずつ上げる／65535以下になったら終了する／pnpm --filter @hierarchidb/vt-orchestrator typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`
+- ロールバック手順: retry時のtolerance決定差分を revert する
+- チェックリスト:
+  - retryのeffective toleranceが+0.5ずつ増えるようにする
+  - 65535以下で終了することを維持する
+  - pnpm --filter @hierarchidb/vt-orchestrator typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 21:13 JST transform retryのeffective tolerance増分に着手。
+  - blocked: 2026-01-24 21:13 JST typecheck失敗: lastProgressAt未使用。
+  - update: 2026-01-24 21:13 JST retry時にlarge-area判定後のtoleranceを+0.5ずつ増加するよう修正。
+  - done: 2026-01-24 21:13 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+  - update: 2026-01-24 21:27 JST retry時は適用toleranceを+0.5し、large-areaキャップを迂回して簡略化。
+  - done: 2026-01-24 21:27 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+
+2352) fix/shape/step5-tasklist-debounce-10ms (P1) — 進行中 (2026-01-24)
+- ブランチ名: fix/shape/step5-tasklist-debounce-10ms
+- 依存: なし
+- 受け入れ基準: タスク一覧の更新デバウンスが10msになる／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/useShapeBuildTasks.ts`
+- ロールバック手順: debounce値の差分を revert する
+- チェックリスト:
+  - scheduleFlushの遅延を10msに変更する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 21:06 JST タスク一覧更新のデバウンスを10msへ変更する対応に着手。
+  - done: 2026-01-24 21:06 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2352) fix/shape/step5-cached-task-display-2 (P1) — 進行中 (2026-01-24)
+- ブランチ名: fix/shape/step5-cached-task-display-2
+- 依存: なし
+- 受け入れ基準: Step5 遷移時にキャッシュ済みタスクがあれば no tasks yet を出さずに進捗/サマリー/一覧へ表示される／キャッシュ未取得中はスケルトン表示になる／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/useShapeBuildStep.ts`
+- ロールバック手順: useShapeBuildStep のキャッシュ表示差分を revert する
+- チェックリスト:
+  - listBuildTasks で取得した永続化タスクを表示へ反映する
+  - 空タスク時はキャッシュ取得中にスケルトン表示となる
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 20:18 JST step5キャッシュタスク表示の再修正に着手。
+  - update: 2026-01-24 20:21 JST listBuildTasks の永続化タスクを cachedTasks に退避し、空タスク時の表示に反映。
+  - done: 2026-01-24 20:22 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2351) fix/shape/step5-atom-sync-loop-2 (P1) — 進行中 (2026-01-24)
+- ブランチ名: fix/shape/step5-atom-sync-loop-2
+- 依存: なし
+- 受け入れ基準: step5遷移直後のMaximum update depth exceededが解消される／storedTasks読み込みの再入を抑止する／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/useShapeBuildStep.ts`, `plugins/shape-plugin/src/ui/components/step5/ShapeBuildProgressAtomSync.tsx`
+- ロールバック手順: storedTasksLoadedRefの追加とAtomSync安定ハンドラの差分を revert する
+- チェックリスト:
+  - storedTasks読み込みが一度だけ走るよう制御する
+  - AtomSyncの安定ハンドラで同値更新を抑制する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 20:03 JST step5遷移直後の更新ループ修正に着手。
+  - update: 2026-01-24 20:03 JST storedTasks読み込みを1回に限定し、AtomSyncの安定ハンドラを整理。
+  - done: 2026-01-24 20:03 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2350) fix/shape/step5-atom-sync-loop (P1) — 進行中 (2026-01-24)
+- ブランチ名: fix/shape/step5-atom-sync-loop
+- 依存: なし
+- 受け入れ基準: ShapeBuildProgressAtomSync由来のMaximum update depth exceededが解消される／同値更新のsetAtomを抑制する／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/ShapeBuildProgressAtomSync.tsx`
+- ロールバック手順: 同値抑制の差分を revert する
+- チェックリスト:
+  - Atom同期で同値更新を抑制する
+  - errorログが出ないことを確認する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 19:41 JST ShapeBuildProgressAtomSyncの更新ループ修正に着手。
+  - blocked: 2026-01-24 19:42 JST typecheck失敗: ShapeBuildProgressAtomSyncのジェネリクス記法がTSXでJSX解釈された。
+  - update: 2026-01-24 19:44 JST 同値更新の抑制と関数宣言でのジェネリクスに修正。
+  - done: 2026-01-24 19:44 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - blocked: 2026-01-24 19:47 JST typecheck失敗: AtomSyncの安定ハンドラ型不一致。
+  - update: 2026-01-24 19:49 JST 安定ハンドラの型をTaskProgressControls/AuthStateに合わせて修正。
+  - done: 2026-01-24 19:49 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2349) fix/shape/step4-delete-api-resume-tasks (P1) — 進行中 (2026-01-24)
+- ブランチ名: fix/shape/step4-delete-api-resume-tasks
+- 依存: なし
+- 受け入れ基準: Delete API cache がタスク削除とキャッシュ削除の両方を行う／Resume Build時に completed/skipped を保持し failed を queued へ戻す／永続化タスクがある場合に step5 で no tasks yet が出ない／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/useFetchConfigSection.ts`, `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/ui/components/step5/useShapeBuildStep.ts`
+- ロールバック手順: 対象ファイルの差分を revert する
+- チェックリスト:
+  - Delete API cache で fetch タスクも削除する
+  - Resume Build で failed を queued に戻し completed/skipped を保持する
+  - 永続化タスクの読み込み中は no tasks yet を出さない
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 19:39 JST Delete API cache/Resume Build/step5表示の修正に着手。
+  - update: 2026-01-24 19:39 JST Delete API cacheでfetchタスク削除、Resume Buildでfailedをqueuedへ復帰、永続化タスク読み込み中はno tasks yetを抑制。
+  - done: 2026-01-24 19:39 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2348) analysis/shape/cache-delete-resume-behavior (P1) — 進行中 (2026-01-24)
+- ブランチ名: analysis/shape/cache-delete-resume-behavior
+- 依存: なし
+- 受け入れ基準: step4のDelete系ボタンがタスク削除と関連キャッシュ削除の両方を満たしているかをコード参照付きで説明する／step5 Resume Build時にcompleted/skipped再利用とfailedのqueued化が現状どうなっているかを確認する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/useFetchConfigSection.ts`, `plugins/shape-plugin/src/ui/components/step5/useBatchSessionActions.ts`, `packages/runtime-worker/src/services/**`
+- ロールバック手順: なし（調査のみ）
+- チェックリスト:
+  - step4 Delete系のタスク削除とキャッシュ削除の実装を確認する
+  - Resume Build時のタスク再利用/リセット挙動を確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 19:27 JST Delete cacheの意味とResume Build挙動の調査に着手。
+  - done: 2026-01-24 19:28 JST step4削除ボタンのタスク/キャッシュ削除の実態とResume Build挙動を整理。
+
+2347) fix/shape/step5-resume-show-persisted (P1) — 進行中 (2026-01-24)
+- ブランチ名: fix/shape/step5-resume-show-persisted
+- 依存: なし
+- 受け入れ基準: Resume Build が表示される状態で永続化済みタスクがあればステージ別に表示される／擬似タスク（cache件数からの生成）は復活させない／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/useShapeBuildStep.ts`
+- ロールバック手順: 永続化タスクの読み込み差分を revert する
+- チェックリスト:
+  - listBuildTasks の実データ読み込みを復活する
+  - list*Caches 由来の擬似タスク生成は復活させない
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 19:19 JST Resume Build時に永続化タスクが表示されない問題の修正に着手。
+  - update: 2026-01-24 19:20 JST listBuildTasksの永続化タスクをUIの実タスク一覧へ復帰。
+  - done: 2026-01-24 19:20 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2346) fix/shape/step5-remove-task-fallback (P1) — 進行中 (2026-01-24)
+- ブランチ名: fix/shape/step5-remove-task-fallback
+- 依存: なし
+- 受け入れ基準: step5の擬似タスク生成フォールバックを撤去し、実タスクが無い場合は空表示のみになる／list*Cachesからの擬似タスク生成を削除する／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/useShapeBuildStep.ts`
+- ロールバック手順: useShapeBuildStep のフォールバック読み込み差分を revert する
+- チェックリスト:
+  - listBuildTasks/list*Cachesの擬似タスク生成を削除する
+  - step5表示が実タスクのみになることを確認する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 19:10 JST step5の擬似タスクフォールバック撤去に着手。
+  - update: 2026-01-24 19:16 JST listBuildTasks/list*Cachesの擬似タスク生成を撤去し、実タスクのみ表示へ変更。
+  - done: 2026-01-24 19:17 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2345) analysis/shape/step5-task-lifecycle (P1) — 進行中 (2026-01-24)
+- ブランチ名: analysis/shape/step5-task-lifecycle
+- 依存: なし
+- 受け入れ基準: step5のタスク生成/実行/保存/表示のライフサイクルをコード参照付きで説明する／キャッシュ表示の差分ポイントを特定する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/**`, `packages/vt-orchestrator/src/**`, `packages/plugin-service-sdk/src/**`
+- ロールバック手順: なし（調査のみ）
+- チェックリスト:
+  - タスク生成〜実行〜永続化〜表示までの流れを整理する
+  - step5でのキャッシュ表示の差分ポイントを特定する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 19:04 JST step5タスクライフサイクルの調査に着手。
+  - update: 2026-01-24 19:07 JST step5のタスク取得/キャッシュ読み込み/表示フローをコードで確認。
+  - done: 2026-01-24 19:07 JST タスクライフサイクルの説明と差分ポイントを整理。
+  - update: 2026-01-24 19:10 JST 生成/更新/消去のタイミングを追加で整理。
+
+2344) fix/shape/step5-cached-task-display (P1) — 完了 (2026-01-24)
+- ブランチ名: fix/shape/step5-cached-task-display
+- 依存: なし
+- 受け入れ基準: Step5 遷移時にキャッシュ済みタスクがあれば no tasks yet を出さずに進捗/サマリー/一覧へ表示される／キャッシュ未取得中はスケルトン表示になる／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/ShapeBuildProgressStageContent.tsx`
+- ロールバック手順: スケルトン/空表示条件の差分を revert する
+- チェックリスト:
+  - cache ロード中はスケルトンを表示する
+  - キャッシュ済みタスクがある場合は no tasks yet を表示しない
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 18:52 JST キャッシュ済みタスクの表示改善に着手。
+  - update: 2026-01-24 18:53 JST キャッシュ読み込み中はスケルトンを表示し、no tasks yet を抑制。
+  - update: 2026-01-24 19:53 JST tasksByStage の内容変化がない場合は同期を抑制して無限更新を回避。検証: pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+  - update: 2026-01-24 19:57 JST stages/stageProgress/paneProgress の署名比較で冗長更新を抑制。検証: pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+  - done: 2026-01-24 18:53 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2343) fix/ui/build-failed-dialog-reason (P1) — 完了 (2026-01-24)
+- ブランチ名: fix/ui/build-failed-dialog-reason
+- 依存: なし
+- 受け入れ基準: Build failed ダイアログの Task/Message に具体的な失敗理由が表示される／タスク一覧の失敗メッセージと一致する／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/ShapeBuildProgressPanel.tsx`
+- ロールバック手順: ダイアログ表示条件の差分を revert する
+- チェックリスト:
+  - failed ダイアログの表示条件を詳細メッセージ準拠にする
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 18:33 JST Build failed ダイアログの詳細メッセージ反映に着手。
+  - update: 2026-01-24 18:33 JST failed ダイアログを詳細メッセージが取得できてから表示するよう調整。
+  - done: 2026-01-24 18:33 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-01-24 18:38 JST failed タスクの message が空ならダイアログ表示を保留する条件を強化。
+  - update: 2026-01-24 18:44 JST failed ダイアログを failedTaskInfo.message がある場合のみ表示するよう変更。
+
+2342) fix/ui/build-failed-task-message (P1) — 完了 (2026-01-24)
+- ブランチ名: fix/ui/build-failed-task-message
+- 依存: なし
+- 受け入れ基準: Worker側のタスク失敗時に message へ具体的なエラー内容が保存されUIに表示される／Transform/VT など全ステージの失敗で同様に反映される／pnpm --filter @hierarchidb/vt-orchestrator typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/vt-orchestrator/src/compareTaskOrder.ts`
+- ロールバック手順: failed タスクの message 付与差分を revert する
+- チェックリスト:
+  - failed タスク更新時に message を errorMessage へ反映する
+  - pnpm --filter @hierarchidb/vt-orchestrator typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 18:25 JST 失敗タスクの message へ詳細エラーを反映する対応に着手。
+  - update: 2026-01-24 18:26 JST failed タスクの message に errorMessage を反映。
+  - done: 2026-01-24 18:26 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+
+2341) fix/shape/step4-simplification-slider-order (P1) — 完了 (2026-01-24)
+- ブランチ名: fix/shape/step4-simplification-slider-order
+- 依存: なし
+- 受け入れ基準: Simplification のスライダー順が threshold → tolerance #1 → tolerance #2 になる／threshold は inverted ではない／i18n が更新される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/TransformConfigSection.tsx`, `plugins/shape-plugin/src/ui/locales/*.json`
+- ロールバック手順: スライダー順序と文言変更差分を revert する
+- チェックリスト:
+  - threshold/耐性スライダーの順序を並べ替える
+  - threshold スライダーを非 inverted にする
+  - tolerance #1/#2 ラベルを更新する
+  - i18n を更新する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 15:42 JST Simplification スライダー順序と文言変更に着手。
+  - update: 2026-01-24 18:12 JST threshold → tolerance #1 → tolerance #2 の順に並べ替え、ラベルを更新。
+  - done: 2026-01-24 18:14 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+
+2340) fix/ui/build-failed-dialog-snapshot (P1) — 進行中 (2026-01-25)
+- ブランチ名: fix/ui/build-failed-dialog-snapshot
+- 依存: なし
+- 受け入れ基準: Build Failed ダイアログの内容が開いた時点の task title/message を保持し、状態更新で「Build ended」等へ劣化しない／失敗時は必ず具体的な task title/message を表示する／shape/location/route で一貫した挙動になる／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／pnpm --filter @hierarchidb/route-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`, `plugins/location-plugin/src/ui/**`, `plugins/route-plugin/src/ui/**`
+- ロールバック手順: ダイアログのスナップショット保持差分を revert する
+- チェックリスト:
+  - ダイアログ表示時に title/message を固定する
+  - 失敗時の task title/message を必ず表示する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - pnpm --filter @hierarchidb/route-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-25 22:10 JST Build Failed ダイアログの表示内容が劣化する問題の修正に着手。
+  - done: 2026-01-25 22:22 JST ダイアログ表示時の内容をスナップショット化し、Failed時は task title/message を固定表示。pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 / pnpm --filter @hierarchidb/location-plugin typecheck exit 0 / pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+
+2339) fix/ui/build-failed-dialog-details (P1) — 進行中 (2026-01-25)
+- ブランチ名: fix/ui/build-failed-dialog-details
+- 依存: なし
+- 受け入れ基準: Build Failed ダイアログに具体的な task title と task message が表示される／表示内容は既存のタスク一覧と一致し、未表示のエラーがダイアログだけに出ない／shape/location/route で表示方針が一貫する／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／pnpm --filter @hierarchidb/route-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`, `plugins/location-plugin/src/ui/**`, `plugins/route-plugin/src/ui/**`
+- ロールバック手順: ダイアログ詳細表示の差分を revert する
+- チェックリスト:
+  - 失敗時の task title / task message をダイアログに表示する
+  - タスク一覧に存在するタスク情報から取得する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - pnpm --filter @hierarchidb/route-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-25 21:30 JST Build Failed ダイアログに task title/message を表示する対応に着手。
+  - done: 2026-01-25 21:44 JST shape/location/route の失敗ダイアログに task title と task message を表示するよう統一。pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 / pnpm --filter @hierarchidb/location-plugin typecheck exit 0 / pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+
+2338) analysis/ui/build-failed-false-positive (P1) — 進行中 (2026-01-25)
+- ブランチ名: analysis/ui/build-failed-false-positive
+- 依存: なし
+- 受け入れ基準: Build Failed ダイアログの判定条件と判定タイミングをコード上で説明できる／偽陽性の原因候補を整理できる／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`, `plugins/location-plugin/src/ui/**`, `plugins/route-plugin/src/ui/**`
+- ロールバック手順: なし（調査のみ）
+- チェックリスト:
+  - Build Failed の判定条件を列挙する
+  - 判定タイミング（どの状態遷移で表示するか）を確認する
+  - 偽陽性の候補を整理する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-25 21:12 JST Build Failed 偽陽性の判定条件/タイミングの調査に着手。
+  - done: 2026-01-25 21:20 JST Build Failed の判定条件と判定タイミングをコードで確認し、偽陽性の主因候補（shapeのtaskQueueに残るfailed）を整理。
+
+2337) fix/ui/build-completion-dialog (P1) — 進行中 (2026-01-25)
+- ブランチ名: fix/ui/build-completion-dialog
+- 依存: なし
+- 受け入れ基準: すべてのビルドで完了/失敗時にメッセージダイアログが表示される／ダイアログに「どのステージで」「なぜ終了したか」が表示される／ユーザ操作の一時停止/再開では表示されない／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／pnpm --filter @hierarchidb/route-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`, `plugins/location-plugin/src/ui/**`, `plugins/route-plugin/src/ui/**`
+- ロールバック手順: ビルド完了/失敗のダイアログ表示差分を revert する
+- チェックリスト:
+  - 完了/失敗時にダイアログを表示する
+  - ステージ名と理由が表示される
+  - 一時停止/再開では表示しない
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - pnpm --filter @hierarchidb/route-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - update: 2026-01-24 18:18 JST 完了ダイアログがFetch完了で出る問題の修正に着手。
+  - update: 2026-01-24 18:22 JST 完了ダイアログを最終ステージ(VT)完了時のみ出すよう調整。検証: pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+  - start: 2026-01-25 20:40 JST ビルド完了/失敗時に理由とステージを示すダイアログを表示する対応に着手。
+  - done: 2026-01-25 20:58 JST shape/location/route のビルド完了/失敗でダイアログを表示するよう統一。pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 / pnpm --filter @hierarchidb/location-plugin typecheck exit 0 / pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+
+2336) fix/ui/batch-progress-final-sync (P1) — 進行中 (2026-01-25)
+- ブランチ名: fix/ui/batch-progress-final-sync
+- 依存: なし
+- 受け入れ基準: ビルド完了/エラー中止時に全体進捗・ステージサマリー・タスク一覧の数値が最終的に一致する／更新の一時的な遅延は許容されるが終了時点で stale のまま停止しない／進捗購読のフラッシュ条件が整理される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`（調査後に確定）
+- ロールバック手順: 進捗フラッシュ/購読差分を revert する
+- チェックリスト:
+  - 終了時に進捗の最終フラッシュが必ず走るよう修正する
+  - サマリー/タスク一覧の更新順序とソースが一致することを確認する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-25 20:05 JST 進捗の最終同期が遅延し、サマリーとタスク一覧で不一致が残る問題の修正に着手。
+  - done: 2026-01-25 20:24 JST ビルド完了/失敗時にタスク一覧を即時フラッシュし、進捗との不一致時は再取得するよう調整。pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2335) fix/shape/transform-vertex-limit-fail (P1) — 進行中 (2026-01-25)
+- ブランチ名: fix/shape/transform-vertex-limit-fail
+- 依存: なし
+- 受け入れ基準: transform の簡略化後に各featureの頂点数を検査し、65535超過時はタスクを failed にする／失敗理由が判別できるようエラーレコードが記録される／pnpm --filter @hierarchidb/vt-orchestrator typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/vt-orchestrator/src/transform/**`
+- ロールバック手順: transform の頂点数検査差分を revert する
+- チェックリスト:
+  - 簡略化後の頂点数を検査し、65535超過で failed を返す
+  - 失敗理由をエラーレコードへ記録する
+  - pnpm --filter @hierarchidb/vt-orchestrator typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-25 19:30 JST transform 簡略化後の頂点数検査で 65535 超過時に failed とする対応に着手。
+  - done: 2026-01-25 19:36 JST 65535 超過時に failed を返すチェックとエラーレコード記録を追加。pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+
+2334) fix/shape/step5-vt-empty-tile-skip (P1) — 進行中 (2026-01-24)
+- ブランチ名: fix/shape/step5-vt-empty-tile-skip
+- 依存: なし
+- 受け入れ基準: vtステージで geojson-vt produced empty tile for clipped features が Failed ではなく Skipped になる／タスクメッセージが skipped:... として集計される／本来の失敗は Failed のまま／pnpm --filter @hierarchidb/vt-orchestrator typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/vt-orchestrator/src/vt/vtStage.ts`
+- ロールバック手順: vtStage の empty tile 判定差分を revert して failed 扱いへ戻す
+- チェックリスト:
+  - empty tile 判定で failed ではなく skipped メッセージを返す
+  - 既存の error/exception の failed 扱いが維持されることを確認する
+  - pnpm --filter @hierarchidb/vt-orchestrator typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 16:40 JST vtステージの empty tile 判定を skipped 扱いへ変更する対応に着手。
+  - update: 2026-01-24 16:42 JST empty tile 判定を skipped メッセージへ変更。
+  - done: 2026-01-24 16:43 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+
 2333) fix/shape/step4-large-area-tolerance-valid (P1) — 完了 (2026-01-24)
 - ブランチ名: fix/shape/step4-large-area-tolerance-valid
 - 依存: なし
@@ -46,6 +504,172 @@
   - start: 2026-01-24 14:50 JST threshold area slider と国名 marks の対応に着手。
   - update: 2026-01-24 14:57 JST threshold area を Slider 化し、国名 marks と説明文を追加。
   - done: 2026-01-24 14:58 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2340) fix/shape/step5-vt-progress-flap (P1) — 完了 (2026-01-24)
+- ブランチ名: fix/shape/step5-vt-progress-flap
+- 依存: なし
+- 受け入れ基準: VTステージの進捗がCompleted→Runningと揺れる原因が特定される／原因・発生範囲・修正方法と適用範囲が明記される／必要なら最小差分で修正する／pnpm typecheck が exit 0（既存エラーがあればblocked記録）／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`, `plugins/shape-plugin/src/services/**`, `plugins/shape-plugin/src/worker/**`（調査後に確定）
+- ロールバック手順: 進捗判定の差分を revert する
+- チェックリスト:
+  - VT進捗の更新経路とステータス判定を確認する
+  - Completed→Runningの揺れの原因を特定する
+  - 必要なら最小差分で修正する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 22:48 JST VTステージ進捗の揺れ（Completed→Running）の調査に着手。
+  - update: 2026-01-24 22:51 JST パイプライン稼働中はcompletedを返さず、終了時に進捗スナップショットを送るよう修正。
+  - done: 2026-01-24 22:51 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2339) fix/shape/step5-resume-not-starting (P1) — 完了 (2026-01-24)
+- ブランチ名: fix/shape/step5-resume-not-starting
+- 依存: なし
+- 受け入れ基準: 再開クリック後に開始されない原因が特定される／原因・発生範囲・修正方法と適用範囲が明記される／修正が必要なら最小差分で対応される／pnpm typecheck が exit 0（既存エラーがあればblocked記録）／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/**`, `plugins/shape-plugin/src/ui/hooks/**`, `plugins/shape-plugin/src/services/**`（調査後に確定）
+- ロールバック手順: 再開処理の差分を revert する
+- チェックリスト:
+  - 再開処理の呼び出し経路と戻り値を確認する
+  - 再開後に開始されない原因を特定する
+  - 必要なら最小差分で修正する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 22:41 JST 再開クリック後に開始されない問題の調査に着手。
+  - update: 2026-01-24 22:45 JST paused判定をruntimeStatus依存からbuildStatus依存に変更し、resume経路が確実に選択されるよう修正。
+  - done: 2026-01-24 22:45 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2338) fix/shape/step5-active-stage-flow-band (P1) — 完了 (2026-01-24)
+- ブランチ名: fix/shape/step5-active-stage-flow-band
+- 依存: なし
+- 受け入れ基準: 進捗帯はビルド中のアクティブなステージのみ表示される／VTステージのサマリーにあるLinearProgress（indeterminate）が撤去される／既存のクリック/キーボード操作や色分けが維持される／pnpm typecheck が exit 0（既存エラーがあればblocked記録）／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/**`（調査後に確定）
+- ロールバック手順: 進捗帯の表示条件とLinearProgress撤去差分を revert する
+- チェックリスト:
+  - アクティブステージ判定に基づいて進捗帯を表示する
+  - VTステージサマリーのLinearProgressを撤去する
+  - 既存操作と表示が維持されることを確認する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 22:34 JST アクティブステージのみ進捗帯表示とVTサマリーLinearProgress撤去に着手。
+  - update: 2026-01-24 22:36 JST アクティブステージのみ進捗帯を表示し、VTステージのindeterminate LinearProgressを撤去。
+  - done: 2026-01-24 22:36 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2337) fix/shape/step5-progress-viewport-padding-ratio (P1) — 完了 (2026-01-24)
+- ブランチ名: fix/shape/step5-progress-viewport-padding-ratio
+- 依存: なし
+- 受け入れ基準: 非表示範囲の上下パディングがSVG高さの20%になる／進捗帯が左側の20%でリセットされず右端まで到達する／既存のクリック/キーボード操作や色分けが維持される／pnpm typecheck が exit 0（既存エラーがあればblocked記録）／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/TaskProgressBar.tsx`
+- ロールバック手順: 非表示範囲のパディング・進捗帯アニメーション変更差分を revert する
+- チェックリスト:
+  - 非表示範囲のパディングをSVG高さの20%に変更する
+  - 進捗帯が右端まで到達するようアニメーションを修正する
+  - 既存操作と表示が維持されることを確認する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 22:29 JST 非表示範囲のパディング比率と進捗帯アニメーション修正に着手。
+  - update: 2026-01-24 22:30 JST 非表示範囲の上下パディングを高さの20%に変更し、進捗帯が右端まで到達するよう移動距離を調整。
+  - done: 2026-01-24 22:30 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2336) fix/shape/step5-progress-flow-reach-right (P1) — 進行中 (2026-01-24)
+- ブランチ名: fix/shape/step5-progress-flow-reach-right
+- 依存: なし
+- 受け入れ基準: 進捗バー上の半透明10%帯が右端まで到達してから左へ戻る／既存のタスク表示/クリック/キーボード操作が維持される／pnpm typecheck が exit 0（既存エラーがあればblocked記録）／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/TaskProgressBar.tsx`
+- ロールバック手順: 流れる帯のアニメーション変更差分を revert する
+- チェックリスト:
+  - 流れる帯が右端まで到達するようアニメーションを調整する
+  - 既存操作と表示が維持されることを確認する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 22:24 JST 進捗帯が右端まで到達しない問題の修正に着手。
+  - update: 2026-01-24 22:25 JST 進捗帯の移動開始位置を-100%に変更して右端到達まで移動するよう調整。
+  - blocked: 2026-01-24 22:25 JST pnpm --filter @hierarchidb/shape-plugin typecheck が既存エラー（shapeQueryAPIImpl未定義）で失敗。
+
+2335) fix/shape/step5-progress-bar-height (P1) — 進行中 (2026-01-24)
+- ブランチ名: fix/shape/step5-progress-bar-height
+- 依存: なし
+- 受け入れ基準: TaskProgressBarの高さが現行の2倍になる／ビューポート段差と流れる帯の表示が崩れない／既存のクリック/キーボード操作や色分けが維持される／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/TaskProgressBar.tsx`
+- ロールバック手順: 進捗バー高さの変更差分を revert する
+- チェックリスト:
+  - 進捗バーの高さを現行の2倍に変更する
+  - ビューポート段差と流れる帯の表示が崩れないことを確認する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 22:20 JST TaskProgressBarの高さ変更に着手。
+  - blocked: 2026-01-24 22:21 JST pnpm --filter @hierarchidb/shape-plugin typecheck が既存エラー（shapeQueryAPIImpl未定義など）で失敗。
+
+2334) feat/shape/step5-progress-flow-band (P1) — 完了 (2026-01-24)
+- ブランチ名: feat/shape/step5-progress-flow-band
+- 依存: なし
+- 受け入れ基準: Step5の進捗バー上で横幅10%の#ffffff80帯が左→右へ流れるアニメーションが表示される／既存のタスク表示やクリック/キーボード操作が維持される／LinearProgressのindeterminate表示が撤去される／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/**`（調査後に確定）
+- ロールバック手順: 流れる帯のアニメーションとLinearProgress撤去差分を revert する
+- チェックリスト:
+  - 進捗バー上の流れる帯アニメーションを追加する
+  - LinearProgress（indeterminate）を撤去する
+  - 既存操作と表示が維持されることを確認する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 22:12 JST Step5進捗バーの流れる帯アニメーション追加に着手。
+  - update: 2026-01-24 22:12 JST 進捗バー上に#ffffff80の10%帯を追加し、LinearProgressを撤去。
+  - done: 2026-01-24 22:12 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2333) fix/shape/step5-progress-viewport-band (P1) — 完了 (2026-01-24)
+- ブランチ名: fix/shape/step5-progress-viewport-band
+- 依存: なし
+- 受け入れ基準: Step5のタスク進捗バーで表示中範囲はy=0/height=height、非表示範囲はy=2/height=height-4で描画される／スクロールに追随する／既存のクリック/キーボード操作や色分けが維持される／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/**`（調査後に確定）
+- ロールバック手順: 進捗バーの表示範囲描画差分を revert する
+- チェックリスト:
+  - ビューポート範囲の描画ルールをy=0/height=heightに変更する
+  - 非表示範囲の描画ルールをy=2/height=height-4に変更する
+  - スクロール追随と既存操作が維持されることを確認する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 21:43 JST 進捗バーの表示範囲描画ルール変更に着手。
+  - update: 2026-01-24 21:44 JST 表示中範囲はy=0/height=height、非表示範囲はy=2/height=height-4で描画するよう変更。
+  - done: 2026-01-24 21:44 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2332) fix/shape/shapePipeline-semicolon-error (P1) — 完了 (2026-01-24)
+- ブランチ名: fix/shape/shapePipeline-semicolon-error
+- 依存: なし
+- 受け入れ基準: shapePipeline.ts の構文エラーが解消される／Step5 の表示確認が可能になる／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/vt/shapePipeline.ts`（調査後に確定）
+- ロールバック手順: セミコロン/型アサーション修正差分を revert する
+- チェックリスト:
+  - shapePipeline.ts の構文エラー箇所を特定する
+  - セミコロン/型アサーションの誤りを修正する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 21:36 JST shapePipeline.ts の構文エラー修正に着手。
+  - update: 2026-01-24 21:37 JST filter の型アサーションを同一行にまとめて構文エラーを解消。
+  - done: 2026-01-24 21:37 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2331) feat/shape/step5-progress-viewport-outline (P1) — 完了 (2026-01-24)
+- ブランチ名: feat/shape/step5-progress-viewport-outline
+- 依存: なし
+- 受け入れ基準: Step5のタスク一覧のスクロールによる表示範囲がタスク進捗バーに青色枠で反映される／スクロールに追随して枠が更新される／既存のクリック/キーボード操作や色分けが維持される／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/**`（調査後に確定）
+- ロールバック手順: 進捗バーの表示範囲強調差分を revert する
+- チェックリスト:
+  - タスク一覧のビューポート範囲を取得する
+  - 進捗バーに青色枠の強調表示を追加する
+  - 既存のクリック/キーボード操作や色分けが維持されることを確認する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 21:30 JST Step5のタスク進捗バーに表示範囲の青色枠を追加する対応に着手。
+  - update: 2026-01-24 21:34 JST タスク一覧のビューポート範囲を取得し、進捗バーに青色枠で反映。
+  - done: 2026-01-24 21:34 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
 
 2330) fix/ui/plugin-dialog-hover-zone-height (P1) — 完了 (2026-01-24)
 - ブランチ名: fix/ui/plugin-dialog-hover-zone-height
@@ -132,6 +756,7 @@
   - pnpm typecheck を実行する
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
+  - update: 2026-01-24 19:00 JST transformの頂点数超過時にtoleranceを段階的に上げるリトライ対応に着手。
   - update: 2026-01-24 15:15 JST large-area tolerance の初期値を tolerance と同値に変更。検証: pnpm typecheck exit 0。
   - update: 2026-01-24 15:14 JST large-area tolerance の既定値を tolerance と一致させる対応に着手。
   - update: 2026-01-24 15:01 JST VT GenerationのBasic settings撤去とTile geometry & marginの直下配置/2カラム化を反映。検証: pnpm typecheck exit 0。
@@ -760,6 +1385,20 @@
   - start: 2026-01-23 22:05 JST MapStatsPanel の警告/更新ループ修正に着手。
   - update: 2026-01-23 22:15 JST MapStatsPanel の snapshot を安定参照化し、tile/feature の更新通知を同一参照で管理するよう修正。
   - done: 2026-01-23 22:18 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define 警告あり）。pnpm typecheck exit 0。
+
+2306) analysis/shape-step6-max-vertices-warning (P1) — 進行中 (2026-01-23)
+- ブランチ名: analysis/shape-step6-max-vertices-warning
+- 依存: なし
+- 受け入れ基準: Step6 の 65,535 頂点超過警告の原因を説明できる／対処方針（簡略化・分割・表示制御）を整理できる／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/**`, `plugins/shape-plugin/src/**`, `packages/vt-orchestrator/src/**`（調査後に確定）
+- ロールバック手順: なし（調査のみ）
+- チェックリスト:
+  - 警告の発生箇所と原因（描画経路/データ条件）を整理する
+  - 対処案の影響範囲と副作用を整理する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 23:05 JST Step6 の Max vertices warning 調査に着手。
+  - update: 2026-01-23 23:10 JST MapLibre の fill バケットが 65,535 頂点上限を超える大きなポリゴンを描画する際の警告で、タイル内の頂点数が過多なことが原因と判断。
 
 2305) fix/map-folder-preview-loading-metadata (P1) — 進行中 (2026-01-23)
 - ブランチ名: fix/map-folder-preview-loading-metadata
