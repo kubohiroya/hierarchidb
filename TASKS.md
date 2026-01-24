@@ -1,3 +1,322 @@
+2333) fix/shape/step4-large-area-tolerance-valid (P1) — 完了 (2026-01-24)
+- ブランチ名: fix/shape/step4-large-area-tolerance-valid
+- 依存: なし
+- 受け入れ基準: largeAreaTolerance <= tolerance のときに Processing Configuration が valid になる／largeAreaTolerance の許容範囲が <= 比較で妥当化される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/utils/utils.ts`
+- ロールバック手順: バリデーション条件の差分を revert する
+- チェックリスト:
+  - largeAreaTolerance のバリデーション条件を見直す
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 15:10 JST largeAreaTolerance の valid 判定修正に着手。
+  - update: 2026-01-24 15:40 JST largeAreaTolerance のバリデーションを 0 以上に緩和。
+  - done: 2026-01-24 15:42 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2332) fix/shape/step4-area-tolerance-labels (P1) — 完了 (2026-01-24)
+- ブランチ名: fix/shape/step4-area-tolerance-labels
+- 依存: なし
+- 受け入れ基準: threshold area スライダーが inverted 表示になる／名称が relaxed tolerance 表記へ変更される／i18n を更新する／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/TransformConfigSection.tsx`, `plugins/shape-plugin/src/ui/locales/*.json`
+- ロールバック手順: inverted/名称変更の差分を revert する
+- チェックリスト:
+  - threshold area Slider を inverted にする
+  - threshold/large-area ラベルを relaxed tolerance へ更新する
+  - i18n を更新する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 14:58 JST threshold area inverted とラベル更新に着手。
+  - update: 2026-01-24 15:08 JST threshold area を inverted にし、relaxed tolerance 表記へ更新。
+  - done: 2026-01-24 15:10 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2331) fix/shape/step4-area-threshold-slider (P1) — 完了 (2026-01-24)
+- ブランチ名: fix/shape/step4-area-threshold-slider
+- 依存: なし
+- 受け入れ基準: Transform の threshold area が Slider 化され、最初のズームバンド max に基づく国名 marks が表示される／値は px^2 として保存される／i18n 文言が更新される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/TransformConfigSection.tsx`, `plugins/shape-plugin/src/ui/locales/*.json`
+- ロールバック手順: Slider 化と i18n 追加の差分を revert してテキスト入力に戻す
+- チェックリスト:
+  - threshold area 入力を Slider 化する
+  - 国名 marks を最初のズームバンド max で算出する
+  - i18n 文言を更新する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 14:50 JST threshold area slider と国名 marks の対応に着手。
+  - update: 2026-01-24 14:57 JST threshold area を Slider 化し、国名 marks と説明文を追加。
+  - done: 2026-01-24 14:58 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2330) fix/ui/plugin-dialog-hover-zone-height (P1) — 完了 (2026-01-24)
+- ブランチ名: fix/ui/plugin-dialog-hover-zone-height
+- 依存: なし
+- 受け入れ基準: PluginDialogフルスクリーン時のヘッダ/フッタ表示用ホバー領域の高さを拡大しても操作性が損なわれない／表示用のディレイが0になる／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/plugin-ui-host/src/**`（調査後に確定）
+- ロールバック手順: ホバー領域サイズ/ディレイ変更差分を revert する
+- チェックリスト:
+  - ヘッダ/フッタのホバー領域の高さを拡大する
+  - アニメーションのディレイを0にする
+  - 操作性が損なわれないことを確認する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 10:29 JST ホバー領域の高さとディレイ変更の対応に着手。
+  - update: 2026-01-24 10:30 JST ヘッダ/フッタのホバー領域を24pxに拡大し、アニメーションのディレイを0に変更。
+  - done: 2026-01-24 10:30 JST pnpm --filter @hierarchidb/plugin-ui-host typecheck exit 0 を確認。
+
+2329) fix/ui/plugin-dialog-fullscreen-header-autohide (P1) — 完了 (2026-01-24)
+- ブランチ名: fix/ui/plugin-dialog-fullscreen-header-autohide
+- 依存: なし
+- 受け入れ基準: PluginDialogフルスクリーン時にヘッダが確実に自動非表示になる／フッタの既存挙動は維持される／既存のクリック/ドラッグ挙動に影響しない／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/plugin-ui-host/src/**`（調査後に確定）
+- ロールバック手順: ヘッダ自動非表示のイベント処理差分を revert する
+- チェックリスト:
+  - ヘッダ自動非表示が発火しない条件を確認する
+  - ヘッダの自動非表示が確実に発火するよう修正する
+  - フッタの既存挙動が維持されることを確認する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 10:20 JST フルスクリーン時にヘッダの自動非表示が発火しない問題の調査に着手。
+  - update: 2026-01-24 10:22 JST ヘッダ/フッタの非表示トリガーをpointerleaveに変更して発火漏れを抑制。
+  - done: 2026-01-24 10:22 JST pnpm --filter @hierarchidb/plugin-ui-host typecheck exit 0 を確認。
+
+2328) fix/ui/plugin-dialog-fullscreen-hover-animation (P1) — 完了 (2026-01-24)
+- ブランチ名: fix/ui/plugin-dialog-fullscreen-hover-animation
+- 依存: なし
+- 受け入れ基準: PluginDialogのフルスクリーン時にヘッダ/フッタの自動表示・非表示がアニメーションで切り替わる／ホバーによる自動表示・非表示の挙動は維持される／アニメーションは0.1秒ディレイ、0.2秒で0%→100%に進行する／レイアウト崩れやクリック不能が発生しない／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/**`, `packages/plugin-ui-host/src/**`（調査後に確定）
+- ロールバック手順: フルスクリーン時のヘッダ/フッタ表示アニメーション差分を revert する
+- チェックリスト:
+  - フルスクリーン時のヘッダ/フッタの表示制御箇所を特定する
+  - 0.1秒ディレイ/0.2秒のアニメーションを追加する
+  - 既存のホバー表示/非表示の挙動が維持されることを確認する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 10:09 JST PluginDialogフルスクリーンのヘッダ/フッタ自動表示をアニメーション化する対応に着手。
+  - update: 2026-01-24 10:13 JST ヘッダ/フッタの表示切り替えに0.1sディレイ/0.2sアニメーションを追加。
+  - done: 2026-01-24 10:13 JST pnpm --filter @hierarchidb/plugin-ui-host typecheck exit 0 を確認。
+
+2327) fix/styler/step5-fillcolor-next (P1) — 完了 (2026-01-24)
+- ブランチ名: fix/styler/step5-fillcolor-next
+- 依存: なし
+- 受け入れ基準: Styler Step5 の初期状態で Fill Color が選択済みなら Step6 への遷移可能条件が true になる／条件判定のタイミングと依存値が適切に更新される／pnpm --filter @hierarchidb/styler-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/styler-plugin/src/ui/**`（調査後に確定）
+- ロールバック手順: Step5/Step6 遷移条件の差分を revert する
+- チェックリスト:
+  - Step5/Step6 の有効化判定の経路と依存値を特定する
+  - Fill Color の初期選択状態が条件判定に反映されるよう修正する
+  - pnpm --filter @hierarchidb/styler-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 09:45 JST Styler Step5 の Fill Color 初期選択で Step6 遷移が有効化されない問題の調査に着手。
+  - update: 2026-01-24 10:08 JST Step5 初期状態の不足値（styleType/valueType/targetOptionId）を補完する処理を追加。
+  - done: 2026-01-24 10:08 JST pnpm --filter @hierarchidb/styler-plugin typecheck exit 0 を確認。
+
+2310) feat/shape/step4-basic-settings-cards (P1) — 進行中 (2026-01-24)
+  - update: 2026-01-24 01:35 JST boundaryDedupe UI を撤去し、既定値を true に固定。Advanced settings は削除。
+  - update: 2026-01-24 01:36 JST pnpm typecheck exit 0 を確認。
+  - update: 2026-01-24 01:22 JST Basic settings の Layering & IDs / Formats を撤去し、Advanced settings は boundaryDedupe のみ残す構成へ整理。
+  - update: 2026-01-24 01:23 JST pnpm typecheck exit 0 を確認。
+  - blocked: 2026-01-24 01:05 JST pnpm typecheck で app/shape-plugin の TransformConfig 型エラー（selfIntersectionTuningConfig 等）を検出。
+- ブランチ名: feat/shape/step4-basic-settings-cards
+- 依存: なし
+- 受け入れ基準: Step4 の Basic settings が内容ごとのカードに整理される／入力項目・バリデーション・保存/読み込み挙動が変わらない／ダークモードでも可読性が維持される／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/VTConfigSection.tsx`
+- ロールバック手順: Step4 のレイアウト変更差分を revert する
+- チェックリスト:
+  - Basic settings を内容ごとのカードに再構成する
+  - 既存の入力値/検証/保存フローが維持されることを確認する
+  - ダークモードの可読性を確認する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - update: 2026-01-24 15:15 JST large-area tolerance の初期値を tolerance と同値に変更。検証: pnpm typecheck exit 0。
+  - update: 2026-01-24 15:14 JST large-area tolerance の既定値を tolerance と一致させる対応に着手。
+  - update: 2026-01-24 15:01 JST VT GenerationのBasic settings撤去とTile geometry & marginの直下配置/2カラム化を反映。検証: pnpm typecheck exit 0。
+  - update: 2026-01-24 14:58 JST VT GenerationのBasic settings廃止とTile geometry & margin移動に着手。
+  - update: 2026-01-24 14:33 JST Step4のZoom band以外のカードにもホバーエフェクトを付与。検証: pnpm typecheck exit 0。
+  - update: 2026-01-24 14:31 JST Step4のZoom band以外のカードにホバーエフェクトを付与する対応に着手。
+  - update: 2026-01-24 14:28 JST Zoom band settings cardにホバーエフェクトを追加。検証: pnpm typecheck exit 0。
+  - update: 2026-01-24 14:27 JST Step4のZoom band cardにホバーエフェクトを追加する対応に着手。
+  - update: 2026-01-24 13:59 JST Range count整列とtolerance系スライダーのアイコン反転/ギャップ調整。検証: pnpm typecheck exit 0。
+  - update: 2026-01-24 13:58 JST Range countの中央寄せとtolerance系アイコン反転/ギャップ調整に着手。
+  - blocked: 2026-01-24 13:50 JST pnpm typecheck が shape-plugin の VTConfigSection watermark スライダーで number | undefined 型エラー。
+  - update: 2026-01-24 13:52 JST watermark スライダーの型ガードを追加し、pnpm typecheck exit 0 を確認。
+  - update: 2026-01-24 13:44 JST Step4のVT/Zoom band/Transform UIのスライダー/アイコン調整に着手。
+  - update: 2026-01-24 10:07 JST VT 設定UIの並列/用語/ヘルプを整理し、Dynamic concurrency 条件を調整。検証: pnpm typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-24 10:05 JST VT 設定UIの整理（並列・用語統一・ヘルプ更新）に着手。
+  - start: 2026-01-24 00:40 JST Step4 Basic settings のカード整理に着手。
+  - update: 2026-01-25 17:40 JST VT Basic settings のカードを 4/3/2/1 カラムに合わせて調整し、Fetch Retry カードの幅を 4/3 カラム時に 3 カラム分へ修正。
+  - update: 2026-01-25 17:45 JST pnpm typecheck exit 0（tsdown define 警告あり）。
+
+2325) refactor/shape/transform-simplify-only (P1) — 完了 (2026-01-25)
+- ブランチ名: refactor/shape/transform-simplify-only
+- 依存: なし
+- 受け入れ基準: simplify-only 以外の transformMode 分岐（full系）がコードから撤去される／simplify-only では効果がない UI（quantize など）を同時に撤去する／不要になったパラメータ・ログ・エラーレコード経路が整理される／i18n 文言が最新構成に一致する／pnpm typecheck が exit 0／TASKS.md に運用ログとロールバック手順が記載される
+- 影響範囲: `packages/vt-orchestrator/src/transform/**`, `packages/features/gis-sdk/src/config.ts`, `plugins/shape-plugin/src/common/types/constants.ts`, `plugins/shape-plugin/src/ui/components/step4/**`, `plugins/shape-plugin/src/ui/locales/**`, `plugins/shape-plugin/src/services/**`, `plugins/shape-plugin/src/**/__tests__/**`（調査後に確定）
+- ロールバック手順: simplify-only 固定化と UI/設定削除差分を revert し、full モード分岐を復帰する
+- チェックリスト:
+  - ExecPlan を作成する
+  - full モード分岐と関連パラメータの利用箇所を特定する
+  - simplify-only 固定化に合わせてコードと設定を整理する
+  - simplify-only で不要な UI を撤去する
+  - i18n 文言を更新する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-25 03:30 JST simplify-only 固定化と UI/設定整理に着手。
+  - update: 2026-01-25 04:05 JST pnpm --filter @hierarchidb/gis-sdk build exit 0（tsdown define 警告あり）。
+  - update: 2026-01-25 04:12 JST pnpm typecheck exit 0（tsdown define 警告あり）。
+  - done: 2026-01-25 04:15 JST simplify-only 固定化と不要 UI/設定の撤去を完了。
+
+2324) fix/shape/step4-fetch-filter-params (P1) — 完了 (2026-01-25)
+- ブランチ名: fix/shape/step4-fetch-filter-params
+- 依存: なし
+- 受け入れ基準: fetch ステージ終盤のフィルタリングに実際に使われるパラメータが Fetch アコーディオンに移動される／transform の簡略化 UI と混在しない／i18n の文言がステージ区分に一致する／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/**`, `plugins/shape-plugin/src/ui/locales/**`（調査後に確定）
+- ロールバック手順: Fetch/Transform の UI 再配置差分を revert し、従来の配置に戻す
+- チェックリスト:
+  - fetch ステージで実際に使用されるフィルタリングパラメータを特定する
+  - Fetch アコーディオンに該当 UI を移動する
+  - Transform 側から該当 UI を撤去する
+  - i18n 文言をステージ表記に合わせて更新する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-25 02:35 JST fetch ステージのフィルタリング UI を Fetch へ移設する作業に着手。
+  - blocked: 2026-01-25 02:50 JST pnpm typecheck が shape-plugin の import パス誤り（FetchConfigSection）で失敗。
+  - update: 2026-01-25 02:52 JST FetchConfigSection の import パスを修正。
+  - done: 2026-01-25 03:05 JST pnpm typecheck exit 0（tsdown define 警告あり）。
+
+2322) feat/shape/step4-area-based-tolerance-ui (P2) — 完了 (2026-01-23)
+- ブランチ名: feat/shape/step4-area-based-tolerance-ui
+- 依存: なし
+- 受け入れ基準: Step4 に大国向け簡略化調整のUIが追加され、既定OFFで挙動が変わらない／UIで設定した値が transform の簡略化に反映される／pnpm typecheck が exit 0／TASKS.md にロールバック手順と運用ログが記載される
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/**`, `plugins/shape-plugin/src/ui/locales/**`, `packages/features/gis-sdk/src/config.ts`, `packages/vt-orchestrator/src/transform/**`, `plugins/shape-plugin/src/common/types/constants.ts`（調査後に確定）
+- ロールバック手順: Step4 UI追加と area-based tolerance 設定差分を revert し、既定OFFの挙動を維持する
+- チェックリスト:
+  - area-based tolerance の設定項目を TransformConfig に追加する
+  - vt-orchestrator の tolerance 計算に設定値を反映する
+  - Step4 の UI に項目と説明文を追加する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 13:30 JST Step4 に area-based tolerance 設定を追加する対応に着手。
+  - update: 2026-01-23 13:35 JST area-based tolerance の設定項目を追加し、transform 簡略化へ反映。
+  - update: 2026-01-23 13:36 JST pnpm --filter @hierarchidb/gis-sdk build exit 0（tsdown define 警告あり）。
+  - done: 2026-01-23 13:38 JST pnpm typecheck exit 0（tsdown define 警告あり）。
+
+2323) feat/shape/step4-card-layout-icons (P2) — 完了 (2026-01-23)
+- ブランチ名: feat/shape/step4-card-layout-icons
+- 依存: なし
+- 受け入れ基準: Step4 の削除系スイッチにゴミ箱アイコンが付く／Fetch Retry の Timeout/Delay/Limit が1枚のカードに統合され時計アイコンとタイトルが付く／アコーディオン内フォームがカード化され適切なアイコンとタイトルが付く／pnpm typecheck が exit 0／TASKS.md にロールバック手順と運用ログが記載される
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/**`, `plugins/shape-plugin/src/ui/locales/**`（調査後に確定）
+- ロールバック手順: Step4 のカードレイアウト/アイコン変更差分を revert して従来の配置に戻す
+- チェックリスト:
+  - 削除系スイッチのラベルにゴミ箱アイコンを追加する
+  - Fetch Retry の Timeout/Delay/Limit を1枚のカードに統合する
+  - Step4 のフォームをカード化し、アイコンとタイトルを追加する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 13:55 JST Step4 のカード化とアイコン付与に着手。
+  - update: 2026-01-23 14:00 JST Fetch/Transform/VT/Zoom band/Cache 管理のカードにアイコンを追加し、Fetch Retry を統合カード化。
+  - update: 2026-01-23 14:02 JST Retry Limit を Retry Attempts に追従する表示へ調整。
+  - update: 2026-01-23 14:20 JST Retry Limit を非表示に切り替え、Zoom band のアイコン参照を修正。
+  - update: 2026-01-23 14:40 JST Step4 の Grid を最大4カラム（lg）に調整し、幅に応じて 3/2/1 カラムへ切り替え。
+  - update: 2026-01-23 19:25 JST Fetch Retry カードを 4/3/2 カラム時は2カラム幅、1カラム時は全幅に調整。
+  - update: 2026-01-23 19:40 JST Fetch Retry カードを 4/3 カラム時は3カラム幅、2/1 カラム時は全幅に調整。
+  - done: 2026-01-23 19:41 JST pnpm typecheck exit 0（tsdown define 警告あり）。
+
+2324) audit/shape/vt-ui-slimming (P2) — 進行中 (2026-01-23)
+- ブランチ名: audit/shape/vt-ui-slimming
+- 依存: なし
+- 受け入れ基準: VT ステージの各項目（Input/Output format & compression、TopoJSON simplify、Dynamic concurrency ほか）の実使用状況を確認し根拠付きで整理する／常時表示/Advanced/非表示（撤去候補）の構成案を提示する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/VTConfigSection.tsx`, `packages/vt-orchestrator/src/**`, `packages/features/gis-sdk/src/**`（調査後に確定）
+- ロールバック手順: 調査のみのため不要
+- チェックリスト:
+  - VT の設定項目が実際に使用されている箇所を確認する
+  - 使われていない/固定値運用の項目を整理する
+  - UI の整理案（常時表示/Advanced/非表示）をまとめる
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - update: 2026-01-24 11:15 JST サンプル画像ディレクトリを filtering-samples に移行し参照更新。検証: pnpm typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-24 11:30 JST LOWサンプルの小島を5つに増やす対応に着手。
+  - update: 2026-01-24 11:35 JST LOWサンプルの小島を5つに増やし配置を調整。検証: pnpm typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-24 12:10 JST Filteringサンプルのタイトル表記変更とSVG取り込み修正に着手。
+  - update: 2026-01-24 12:25 JST タイトル表記を簡潔化し、SVGをデータURL化してビルドエラーを解消。検証: pnpm --filter @hierarchidb/shape-plugin build exit 0（tsdown define 警告あり）、pnpm typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-24 12:40 JST Filtering選択肢ラベルをHigh/Medium/Low detailに統一する対応に着手。
+  - update: 2026-01-24 12:45 JST Filtering選択肢ラベルをHigh/Medium/Low detailへ更新。検証: pnpm typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-24 12:55 JST Filtering small shapes セクションの枠撤去に着手。
+  - update: 2026-01-24 13:05 JST Filtering small shapes セクションの枠を撤去。検証: pnpm typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-24 13:20 JST TransformのSimplificationカードを全幅にする対応に着手。
+  - update: 2026-01-24 13:30 JST TransformのSimplificationカードを全幅に変更。検証: pnpm typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-24 13:45 JST Area-based toleranceの簡素化と非線形スケール対応に着手。
+  - blocked: 2026-01-24 14:10 JST pnpm typecheck が vt-orchestrator の AreaBasedToleranceConfig 型不整合で失敗（gis-sdk の型出力未更新）。
+  - update: 2026-01-24 14:12 JST pnpm --filter @hierarchidb/gis-sdk build を実行して型出力を更新。
+  - update: 2026-01-24 14:14 JST Area-based tolerance の簡素化と非線形スライダーを反映。検証: pnpm typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-24 14:25 JST large-area tolerance を tolerance 以下に制限する対応に着手。
+  - update: 2026-01-24 14:35 JST large-area tolerance を tolerance 以下に制限。検証: pnpm typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-24 14:45 JST large-area tolerance スライダーのinverted化に着手。
+  - update: 2026-01-24 14:50 JST large-area tolerance スライダーをinverted化。検証: pnpm typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-24 11:20 JST サンプル画像ディレクトリ名から omit を排除し参照先を移行する対応に着手。
+  - update: 2026-01-24 11:12 JST 大中小の独立島が分離配置されるようサンプル画像を再修正。検証: pnpm typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-24 11:10 JST 自然な沿岸イメージの島配置（大/中/小が複数）へ再修正。検証: pnpm typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-24 11:06 JST 自然な沿岸配置の島サンプルへ再差し替え。検証: pnpm typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-24 10:59 JST サンプル画像を独立した島配置へ再修正。検証: pnpm typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-24 10:57 JST Filtering small shapes 表記/説明を簡潔化し、選択で除外係数/最小リング頂点数の推奨値を自動設定。検証: pnpm typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-24 10:55 JST Filtering small shapes 表記と簡潔化、推奨値の自動設定対応に着手。
+  - update: 2026-01-24 10:48 JST Detail omission のサンプル画像を島/海の配色へ差し替え、Box選択UIに変更。検証: pnpm typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-24 10:29 JST Detail omission の強調UIと瀬戸内海サンプル画像を追加し、誤解しやすい精度方向を明記。検証: pnpm typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-24 10:09 JST Detail omission の閾値と適用段階（transform/geometry）を確認し説明内容を整理。
+  - update: 2026-01-24 10:08 JST Detail omission の LOW/MEDIUM/HIGH の挙動差を確認し説明する対応に着手。
+  - start: 2026-01-23 19:47 JST VT ステージ UI の項目整理と実使用状況の調査に着手。
+  - update: 2026-01-25 13:40 JST Coordinate Quantization/Detail omission/AreaFilter の実使用確認を開始。
+  - update: 2026-01-25 13:55 JST Coordinate Quantization は未配線、Detail omission は fetch フィルタに適用、AreaFilter は transform で適用されることを確認。
+  - update: 2026-01-25 14:20 JST Detail omission の説明を Fetch フィルタ適用として明記し、AreaFilter の説明を Transform 適用として補足。
+  - done: 2026-01-25 14:45 JST pnpm typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-25 15:30 JST Transform の旧フィルタ/出力 UI を撤去し、turf.simplify 設定に絞り込み。
+  - update: 2026-01-25 15:35 JST pnpm typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-25 16:10 JST Delete simplified cache after VT completion の i18n を撤去。
+  - update: 2026-01-25 16:15 JST pnpm typecheck exit 0（tsdown define 警告あり）。
+
+2326) chore/shape/remove-topojson-simplify-ui (P2) — 進行中 (2026-01-25)
+- ブランチ名: chore/shape/remove-topojson-simplify-ui
+- 依存: なし
+- 受け入れ基準: Step4 の VT 設定から Enable TopoJSON simplify が撤去される／関連する i18n が削除される／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/VTConfigSection.tsx`, `plugins/shape-plugin/src/ui/locales/**`（必要なら拡張）
+- ロールバック手順: 該当差分を revert し、TopJSON simplify UI を復帰する
+- チェックリスト:
+  - VTConfigSection から TopoJSON simplify のスイッチを撤去する
+  - i18n の topojsonSimplify 文言を削除する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-25 12:30 JST TopoJSON simplify UI の撤去に着手。
+  - update: 2026-01-25 12:50 JST Step4 VT から TopoJSON simplify スイッチと i18n を撤去。
+  - update: 2026-01-25 13:05 JST TransformConfig に selfIntersectionTuningConfig/preSimplifyFilterConfig を復帰し、DEFAULT_BUILD_CONFIG を更新。
+  - update: 2026-01-25 13:08 JST pnpm --filter @hierarchidb/gis-sdk build exit 0（tsdown define 警告あり）。
+  - done: 2026-01-25 13:25 JST pnpm typecheck exit 0（tsdown define 警告あり）。
+
+2321) feat/shape/area-based-simplify-tolerance (P2) — 完了 (2026-01-23)
+- ブランチ名: feat/shape/area-based-simplify-tolerance
+- 依存: なし
+- 受け入れ基準: tolerance の基準が地図平面上の面積に切り替わっている／大国（例: Russia/China）で過剰簡略化が抑制され、小国の負荷は実質増えない／既存ズーム帯の見た目が不連続にならない／ロールバック手順が TASKS.md に明記されている
+- 影響範囲: `plugins/shape-plugin/src/services/vt/**`, `packages/vt-orchestrator/src/**`, `packages/features/gis-sdk/src/**`（調査後に確定）
+- ロールバック手順: tolerance 算出式の変更差分を revert し、従来の BBox 基準に戻す
+- チェックリスト:
+  - tolerance の算出ロジックと参照箇所を特定する
+  - 地図平面上の面積を基準にした tolerance へ切り替える
+  - 大国/小国の簡略化結果を比較し、過剰簡略化が抑制されることを確認する
+  - ズーム帯の見た目が不連続にならないことを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-23 13:22 JST 地図平面の面積基準で tolerance を調整する対応に着手。
+  - update: 2026-01-23 13:26 JST simplify-only/通常の簡略化で地図平面の面積に応じて tolerance を調整するロジックを追加。
+  - done: 2026-01-23 13:28 JST pnpm typecheck exit 0（tsdown define 警告あり）。
+
 2319) fix/ui-map/hover-snackbar-generic (P1) — 完了 (2026-01-24)
 - ブランチ名: fix/ui-map/hover-snackbar-generic
 - 依存: なし
@@ -89,6 +408,27 @@
   - done: 2026-01-24 23:40 JST step4 UI の用語揺れ/反映漏れ/孤児/未UI化を洗い出し、一覧を整理。
   - update: 2026-01-25 00:20 JST step4 用語統一・キャッシュ管理分離・未UIパラメータ追加に着手。
   - done: 2026-01-25 00:45 JST pnpm typecheck exit 0（tsdown define 警告あり）。
+
+2319) fix/shape/step4-accordion-titles (P1) — 完了 (2026-01-25)
+- ブランチ名: fix/shape/step4-accordion-titles
+- 依存: なし
+- 受け入れ基準: step4 のアコーディオン見出しが「Fetch / Transform / VT」に統一される（英日とも）／i18n の表記揺れが解消される／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/**`, `plugins/shape-plugin/src/ui/locales/**`（調査後に確定）
+- ロールバック手順: 見出し変更差分を revert する
+- チェックリスト:
+  - Fetch/Transform/VT の見出し表記を統一する
+  - i18n を更新する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-25 01:05 JST step4 アコーディオン見出しの統一に着手。
+  - blocked: 2026-01-25 01:20 JST pnpm typecheck が areaBasedTolerance 未定義エラー（constants.ts/utils.ts）で失敗。対応方針の確認待ち。
+  - done: 2026-01-25 01:25 JST pnpm typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-25 01:45 JST Zoom band のアイコン変更と Fetch Retry のレイアウト再調整に対応。
+  - done: 2026-01-25 01:50 JST pnpm typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-25 02:15 JST Fetch の Stage behavior UI を撤去。
+  - done: 2026-01-25 02:20 JST pnpm typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-25 02:05 JST Fetch Stage behavior の自動削除 UI を撤去。
 
 2313) fix/ui-map/hover-snackbar-bottom-center (P1) — 完了 (2026-01-24)
 - ブランチ名: fix/ui-map/hover-snackbar-bottom-center
@@ -552,6 +892,71 @@
   - update: 2026-01-23 21:28 JST Step2 でプレビューアコーディオンを無効化するフラグを追加。
   - update: 2026-01-23 21:29 JST pnpm --filter @hierarchidb/spreadsheet-plugin build で型定義を更新。
   - done: 2026-01-23 21:30 JST pnpm --filter @hierarchidb/styler-plugin typecheck exit 0 を確認。
+
+2326) fix/styler/step3-preview-filter-apply (P1) — 進行中 (2026-01-26)
+- ブランチ名: fix/styler/step3-preview-filter-apply
+- 依存: なし
+- 受け入れ基準: Styler Step3 のフィルタリング結果プレビューが表示される／Step2 のプレビュー撤去は維持される／初期フィルタ `{column:'Year', operator:'equals', value:'2023'}` が初回から正しく適用される／カラム型とUI値の比較ルールが確認できる／pnpm --filter @hierarchidb/styler-plugin typecheck が exit 0／TASKS.md に運用ログを記録する
+- 影響範囲: `plugins/styler-plugin/src/ui/**`, `packages/ui/tabular-extract/src/**`（調査後に確定）
+- ロールバック手順: Step3 プレビュー復旧とフィルタ適用修正の差分を revert する
+- チェックリスト:
+  - Step3 プレビュー表示の差分を特定し復旧する
+  - 初期フィルタが無視される原因を特定する
+  - カラム型とUI値の比較ルールを確認し修正する
+  - pnpm --filter @hierarchidb/styler-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 09:00 JST Styler Step3 のプレビュー復旧とフィルタ初回適用の不具合調査に着手。
+  - update: 2026-01-26 09:40 JST 初期フィルタの同期漏れ調査と修正に再着手。
+  - update: 2026-01-26 10:00 JST 初期フィルタの有効化状態を親へ同期する修正を追加。
+  - update: 2026-01-26 10:02 JST pnpm --filter @hierarchidb/ui-tabular typecheck exit 0。
+  - update: 2026-01-26 10:03 JST pnpm --filter @hierarchidb/styler-plugin typecheck exit 0。
+  - update: 2026-01-26 10:30 JST 初期フィルタ未適用とFiltering UIの揺れ/行高差分の再調査に着手。
+  - update: 2026-01-26 10:55 JST 初期フィルタの同期/プレビュー再実行と行高/進捗表示の安定化を反映。
+  - update: 2026-01-26 10:57 JST pnpm --filter @hierarchidb/ui-tabular typecheck exit 0。
+  - update: 2026-01-26 10:58 JST pnpm --filter @hierarchidb/spreadsheet-plugin typecheck exit 0。
+  - update: 2026-01-26 10:59 JST pnpm --filter @hierarchidb/styler-plugin typecheck exit 0。
+  - update: 2026-01-26 11:20 JST Filtering の processing 表示による高さ揺れを固定領域で抑制。
+  - update: 2026-01-26 11:21 JST pnpm --filter @hierarchidb/spreadsheet-plugin typecheck exit 0。
+  - update: 2026-01-26 11:22 JST pnpm --filter @hierarchidb/styler-plugin typecheck exit 0。
+  - update: 2026-01-26 11:35 JST Preview Tabular の件数表示を桁区切りに調整。
+  - update: 2026-01-26 11:36 JST pnpm --filter @hierarchidb/ui-tabular typecheck exit 0。
+  - update: 2026-01-26 09:20 JST Step3 のプレビュー復旧と初期フィルタ適用の修正案を反映。
+  - update: 2026-01-26 09:23 JST pnpm --filter @hierarchidb/ui-tabular typecheck exit 0。
+  - update: 2026-01-26 09:24 JST pnpm --filter @hierarchidb/spreadsheet-plugin typecheck exit 0。
+  - update: 2026-01-26 09:25 JST pnpm --filter @hierarchidb/spreadsheet-plugin build exit 0（tsdown define 警告あり）。
+  - update: 2026-01-26 09:26 JST pnpm --filter @hierarchidb/styler-plugin typecheck exit 0。
+
+
+2327) fix/shape/step4-filtering-ui-trim (P1) — 進行中 (2026-01-26)
+- ブランチ名: fix/shape/step4-filtering-ui-trim
+- 依存: なし
+- 受け入れ基準: Polygon Area Exclusion Coefficient/Min ring vertices の利用箇所が説明される／不要ならUIとスキーマ保持を撤去する／必要ならUI撤去後に Fetch-stage filtering の High/Medium/Low 選択で推奨値が自動設定される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記録する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/**`, `plugins/shape-plugin/src/common/types/**`, `packages/vt-orchestrator/src/**`（調査後に確定）
+- ロールバック手順: Step4 filtering UIと設定差分を revert する
+- チェックリスト:
+  - Polygon Area Exclusion Coefficient/Min ring vertices の利用箇所を特定する
+  - 利用状況に応じて UI 撤去と設定の扱いを整理する
+  - Fetch-stage filtering の High/Medium/Low に推奨値を自動設定する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 12:00 JST Step4 filtering UI の整理と推奨値連動の調査に着手。
+  - update: 2026-01-26 12:20 JST omitDetails の選択で推奨値を自動設定し、個別UIは撤去。
+  - update: 2026-01-26 12:22 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+  - update: 2026-01-26 13:05 JST VT Concurrency/Memory/Basic settings のカード再編と dynamic concurrency 自動有効化を反映。
+  - update: 2026-01-26 13:06 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+  - update: 2026-01-26 13:20 JST Tile geometry & margin の順序を Tile size → Extent → Tolerance → Margin に変更。
+  - update: 2026-01-26 13:21 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+  - update: 2026-01-26 13:45 JST Zoom band slidersの見出し/スライダー間余白とVTカードのアイコン/余白を調整。
+  - update: 2026-01-26 13:46 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+  - update: 2026-01-26 14:05 JST Tile extentアイコンをViewCompactへ変更し、tolerance下余白を16pxへ調整。
+  - update: 2026-01-26 14:06 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+  - update: 2026-01-26 14:50 JST Step4のバリデーションでlarge-area tolerance超過を警告扱いに変更。
+  - update: 2026-01-26 14:51 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+  - update: 2026-01-26 15:10 JST Transform toleranceの最小値を0.005へ変更し、large-area toleranceは動的maxではなくクランプに変更。
+  - update: 2026-01-26 15:11 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+  - update: 2026-01-26 14:30 JST Step4のバリデーション不一致の調査に着手。
 
 
 2302) fix/shape/feature-list-titlebar-icon-margin (P1) — 進行中 (2026-01-23)
