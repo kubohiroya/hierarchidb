@@ -19,7 +19,6 @@ type ShapeBuildProgressStageContentProps = {
   paneProgress?: PaneProgress[];
   isTaskSummaryLoading: boolean;
   isTasksLoading: boolean;
-  buildStatus: string;
   resolveStatusLabel: (statusValue?: string, skipped?: boolean) => string;
   resolveStatusColor: (statusValue?: string, skipped?: boolean) => 'default' | 'success' | 'error' | 'warning' | 'info';
   resolveTaskTitle: (task: TaskWithMetadata) => string;
@@ -33,7 +32,6 @@ export const ShapeBuildProgressStageContent = ({
   paneProgress,
   isTaskSummaryLoading,
   isTasksLoading,
-  buildStatus,
   resolveStatusLabel,
   resolveStatusColor,
   resolveTaskTitle,
@@ -57,9 +55,8 @@ export const ShapeBuildProgressStageContent = ({
   const hasTasks = filteredTasks.length > 0;
   const stagePane = paneProgress?.find((entry) => entry.paneId === stage.id);
   const hasSummaryTasks = (stagePane?.taskCount ?? 0) > 0;
-  const isBuildRunning = buildStatus === 'running';
-  const showSummarySkeleton = isBuildRunning && isTaskSummaryLoading && !hasTasks && !hasSummaryTasks;
-  const showTaskSkeleton = isBuildRunning && !hasTasks && !showSummarySkeleton && (isTasksLoading || hasSummaryTasks);
+  const showSummarySkeleton = isTaskSummaryLoading && !hasTasks && !hasSummaryTasks;
+  const showTaskSkeleton = !hasTasks && !showSummarySkeleton && (isTasksLoading || hasSummaryTasks);
 
   return (
     <Stack spacing={1} sx={{ p: 2, height: '100%', minHeight: 0 }}>
@@ -97,6 +94,7 @@ export const ShapeBuildProgressStageContent = ({
         </>
       ) : (
         <TaskListVirtualized
+          stageId={stage.id}
           tasks={displayTasks}
           stageValue={stageValue}
           resolveStatusLabel={resolveStatusLabel}

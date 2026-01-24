@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { Box } from '@mui/material';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { useSetAtom } from 'jotai';
 import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.js';
+import { taskViewportRangeAtom } from '../../atoms/shapeBuildProgressAtoms.js';
 import { TaskItem } from './TaskItem.tsx';
 import { formatGeometrySimplifySummary, parseGeometrySimplifyError } from './geometrySimplifyError.ts';
 import { useTranslation } from '../../i18n.js';
@@ -15,6 +17,7 @@ export const isSkippedMessage = (message?: string | null): boolean => {
 };
 
 type TaskListProps = {
+  stageId: string;
   tasks: ShapeBuildTaskSummary[];
   stageValue: number;
   resolveStatusLabel: (statusValue?: string, skipped?: boolean) => string;
@@ -55,6 +58,7 @@ export const sortVectorTileTasks = (tasks: ShapeBuildTaskSummary[]): ShapeBuildT
 };
 
 export const TaskListVirtualized = ({
+  stageId,
   tasks,
   stageValue,
   resolveStatusLabel,
@@ -65,6 +69,15 @@ export const TaskListVirtualized = ({
 }: TaskListProps) => {
   const { t } = useTranslation();
   const parentRef = useRef<HTMLDivElement | null>(null);
+  const setViewportRange = useSetAtom(taskViewportRangeAtom);
+  const lastViewportRef = useRef<{
+    stageId: string;
+    startIndex: number;
+    endIndex: number;
+    startTaskId: string;
+    endTaskId: string;
+    total: number;
+  } | null>(null);
   const virtualizer = useVirtualizer({
     count: tasks.length,
     getScrollElement: () => parentRef.current,
@@ -115,6 +128,45 @@ export const TaskListVirtualized = ({
     if (index < 0) return;
     virtualizer.scrollToIndex(index, { align: 'center' });
   }, [scrollRequestId, scrollToTaskId, tasks, virtualizer]);
+
+  const virtualItems = virtualizer.getVirtualItems();
+  useEffect(() => {
+    if (tasks.length === 0 || virtualItems.length === 0) {
+      setViewportRange((prev) => (prev && prev.stageId === stageId ? null : prev));
+      lastViewportRef.current = null;
+      return;
+    }
+    const startIndex = virtualItems[0]?.index ?? 0;
+    const endIndex = virtualItems[virtualItems.length - 1]?.index ?? startIndex;
+    const startTaskId = tasks[startIndex]?.taskId ?? '';
+    const endTaskId = tasks[endIndex]?.taskId ?? startTaskId;
+    if (!startTaskId || !endTaskId) return;
+    const next = {
+      stageId,
+      startIndex,
+      endIndex,
+      startTaskId,
+      endTaskId,
+      total: tasks.length,
+    };
+    const prev = lastViewportRef.current;
+    if (
+      prev
+      && prev.stageId === next.stageId
+      && prev.startIndex === next.startIndex
+      && prev.endIndex === next.endIndex
+      && prev.startTaskId === next.startTaskId
+      && prev.endTaskId === next.endTaskId
+      && prev.total === next.total
+    ) {
+      return;
+    }
+    lastViewportRef.current = next;
+    setViewportRange({
+      ...next,
+      updatedAt: Date.now(),
+    });
+  }, [setViewportRange, stageId, tasks, virtualItems]);
 
   return (
     <Box ref={parentRef} sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>

@@ -1,4 +1,4 @@
-import { Card, CardContent, LinearProgress, Stack, Typography } from '@mui/material';
+import { Card, CardContent, Stack, Typography } from '@mui/material';
 import { TaskProgressBar } from './TaskProgressBar.tsx';
 import type { TaskProgressSummary } from '../../atoms/shapeBuildProgressAtoms.ts';
 import type { BuildStage } from '@hierarchidb/components';
@@ -9,6 +9,7 @@ type TaskProgressSummaryCardProps = {
   summary: TaskProgressSummary;
   stages: BuildStage[];
   tasksByStage: Record<string, TaskWithMetadata[]>;
+  activeStageId?: string | null;
   resolveTaskTitle: (task: TaskWithMetadata) => string;
 };
 
@@ -16,6 +17,7 @@ export const TaskProgressSummaryCard = ({
                                     summary,
                                     stages,
                                     tasksByStage,
+                                    activeStageId,
                                     resolveTaskTitle,
                                   }: TaskProgressSummaryCardProps) => {
   const { t } = useTranslation();
@@ -49,15 +51,8 @@ export const TaskProgressSummaryCard = ({
             stages={stages}
             tasksByStage={tasksByStage}
             buildStatus={summary.buildStatus}
+            activeStageId={activeStageId}
             resolveTaskTitle={resolveTaskTitle}
-          />
-          <LinearProgress
-            variant="indeterminate"
-            sx={{
-              height: 6,
-              borderRadius: 6,
-              visibility: summary.buildStatus === 'running' ? 'visible' : 'hidden',
-            }}
           />
           <Typography variant="caption" color="text.secondary">
             {t('stage.progress.countsWithUnit', '{{percentage}}% ・ {{completed}}/{{total}} {{unit}} completed ・ failed {{failed}} ・ skipped {{skipped}}', {
