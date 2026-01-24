@@ -764,19 +764,27 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
     const existingTransformByBandTasks = resumeExistingTasks
       ? await listTasksByStage(taskQueue, params.nodeId, 'transform')
       : [];
-    const transformByBandTasks = existingTransformByBandTasks.length > 0
-      ? []
-      : await buildTransformByBandTasks(
-        params.nodeId,
-        bands,
-        enableHighDetailBands,
-        await loadCountryLookup(),
-      );
-    if (existingTransformByBandTasks.length > 0 || transformByBandTasks.length > 0) {
-      await params.waitIfPaused?.();
-      if (transformByBandTasks.length > 0) {
-        await putTasks(taskQueue, transformByBandTasks as Array<TaskQueueRecord<ShapeTransformByBandTaskInput>>);
+    const desiredTransformTasks = await buildTransformByBandTasks(
+      params.nodeId,
+      bands,
+      enableHighDetailBands,
+      await loadCountryLookup(),
+    );
+    let missingTransformTasks: Array<TaskQueueRecord<ShapeTransformByBandTaskInput>> = [];
+    if (resumeExistingTasks) {
+      const existingIds = new Set(existingTransformByBandTasks.map((task) => task.taskId));
+      missingTransformTasks = desiredTransformTasks.filter((task) => !existingIds.has(task.taskId)) as Array<TaskQueueRecord<ShapeTransformByBandTaskInput>>;
+      if (missingTransformTasks.length > 0) {
+        await putTasks(taskQueue, missingTransformTasks);
       }
+    } else {
+      missingTransformTasks = desiredTransformTasks as Array<TaskQueueRecord<ShapeTransformByBandTaskInput>>;
+      if (missingTransformTasks.length > 0) {
+        await putTasks(taskQueue, missingTransformTasks);
+      }
+    }
+    if (existingTransformByBandTasks.length > 0 || missingTransformTasks.length > 0) {
+      await params.waitIfPaused?.();
       const transformByBandAbortController = new AbortController();
       const transformByBandHandler = createTransformByBandHandler({
         ephemeralDB: ephemeralStore,
@@ -824,25 +832,33 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
         )));
       }
     }
-    const vtTasks = existingVtTasks.length > 0
-      ? []
-      : await buildVtTasks(
-        params.nodeId,
-        ephemeralStore,
-        bands,
-        enableHighDetailBands,
-      );
+    const desiredVtTasks = await buildVtTasks(
+      params.nodeId,
+      ephemeralStore,
+      bands,
+      enableHighDetailBands,
+    );
+    let missingVtTasks: Array<TaskQueueRecord<ShapeVtTaskInput>> = [];
+    if (resumeExistingTasks) {
+      const existingIds = new Set(existingVtTasks.map((task) => task.taskId));
+      missingVtTasks = desiredVtTasks.filter((task) => !existingIds.has(task.taskId)) as Array<TaskQueueRecord<ShapeVtTaskInput>>;
+      if (missingVtTasks.length > 0) {
+        await putTasks(taskQueue, missingVtTasks);
+      }
+    } else {
+      missingVtTasks = desiredVtTasks as Array<TaskQueueRecord<ShapeVtTaskInput>>;
+      if (missingVtTasks.length > 0) {
+        await putTasks(taskQueue, missingVtTasks);
+      }
+    }
     console.warn('[ShapeVt][PipelineMetrics] vt task prep', JSON.stringify({
       nodeId: params.nodeId,
       runId: params.pipelineRunId ?? null,
       existingTaskCount: existingVtTasks.length,
-      newTaskCount: vtTasks.length,
+      newTaskCount: missingVtTasks.length,
     }));
-    if (existingVtTasks.length > 0 || vtTasks.length > 0) {
+    if (existingVtTasks.length > 0 || missingVtTasks.length > 0) {
       await params.waitIfPaused?.();
-      if (vtTasks.length > 0) {
-        await putTasks(taskQueue, vtTasks as Array<TaskQueueRecord<ShapeVtTaskInput>>);
-      }
       console.warn('[ShapeVt][PipelineMetrics] vt queue snapshot', JSON.stringify({
         nodeId: params.nodeId,
         runId: params.pipelineRunId ?? null,

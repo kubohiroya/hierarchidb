@@ -613,18 +613,23 @@ export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise
   const existingTasks = resumeExistingTasks
     ? await listTasksByStage(params.taskQueue, params.nodeId, 'fetch')
     : [];
-  const shouldGenerateTasks = existingTasks.length === 0;
-  if (shouldGenerateTasks) {
-    const metadata = params.metadata ?? await metadataLoader.loadMetadata(params.dataSource, params.nodeId);
-    const payloads = (params.downloadTaskPayloads && params.downloadTaskPayloads.length > 0)
-      ? params.downloadTaskPayloads
-      : generateDownloadTaskPayloadsFromSelection(
-        params.dataSource,
-        params.selectedArrayByCountries,
-        metadata,
-      );
-    if (payloads.length === 0) return;
-    const tasks = buildFetchTasks(params.nodeId, payloads, metadata);
+  const metadata = params.metadata ?? await metadataLoader.loadMetadata(params.dataSource, params.nodeId);
+  const payloads = (params.downloadTaskPayloads && params.downloadTaskPayloads.length > 0)
+    ? params.downloadTaskPayloads
+    : generateDownloadTaskPayloadsFromSelection(
+      params.dataSource,
+      params.selectedArrayByCountries,
+      metadata,
+    );
+  if (payloads.length === 0) return;
+  const tasks = buildFetchTasks(params.nodeId, payloads, metadata);
+  if (resumeExistingTasks) {
+    const existingIds = new Set(existingTasks.map((task) => task.taskId));
+    const missingTasks = tasks.filter((task) => !existingIds.has(task.taskId));
+    if (missingTasks.length > 0) {
+      await putTasks(params.taskQueue, missingTasks);
+    }
+  } else {
     await putTasks(params.taskQueue, tasks);
   }
   await runStageTasks({
