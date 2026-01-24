@@ -10,11 +10,13 @@ import {
   Typography,
 } from '@mui/material';
 import type React from 'react';
+import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type {
   MapLibreStyleProperty,
   StylerStepData,
   StylerValueType,
+  StyleType,
 } from '../../common/types/StylerEntity.ts';
 import { useStylerTargetStep } from './useStylerTargetStep.js';
 
@@ -141,6 +143,21 @@ const TARGET_SECTIONS: TargetSection[] = [
   },
 ];
 
+const styleTypeToSectionId = (styleType?: StyleType): TargetSection['id'] | null => {
+  switch (styleType) {
+    case 'choropleth':
+      return 'area';
+    case 'points':
+      return 'point';
+    case 'lines':
+      return 'route';
+    default:
+      return null;
+  }
+};
+
+type TargetIndexEntry = { option: TargetOption; sectionId: TargetSection['id'] };
+
 export const StylerTargetStep: React.FC<
   PluginStepProps<StylerStepData> & { showTargetPanel?: boolean }
 > = ({ data, onChange, setValid, setError }) => {
@@ -161,6 +178,70 @@ export const StylerTargetStep: React.FC<
     t,
     numericRangeDefaultsFallback: { min: 0, max: 10 },
   });
+
+  const targetIndex = useMemo(() => {
+    const byId = new Map<string, TargetIndexEntry>();
+    const byProperty = new Map<MapLibreStyleProperty, TargetIndexEntry[]>();
+    for (const section of TARGET_SECTIONS) {
+      for (const option of section.options) {
+        const entry = { option, sectionId: section.id };
+        byId.set(option.id, entry);
+        const list = byProperty.get(option.property) ?? [];
+        list.push(entry);
+        byProperty.set(option.property, list);
+      }
+    }
+    return { byId, byProperty };
+  }, []);
+
+  useEffect(() => {
+    const mapping = (data?.mapping ?? {}) as Partial<NonNullable<StylerStepData['mapping']>>;
+    const resolvedProperty = mapping.targetProperty ?? null;
+    if (!resolvedProperty) return;
+
+    const needsValueType = !mapping.valueType;
+    const needsStyleType = !mapping.styleType;
+    const needsOptionId = !mapping.targetOptionId;
+    const needsMappingMode =
+      mapping.valueType === 'number' ? !mapping.mappingMode : false;
+
+    if (!needsValueType && !needsStyleType && !needsOptionId && !needsMappingMode) return;
+
+    let resolvedEntry: TargetIndexEntry | undefined = mapping.targetOptionId
+      ? targetIndex.byId.get(mapping.targetOptionId)
+      : undefined;
+
+    if (!resolvedEntry) {
+      const sectionId = styleTypeToSectionId(mapping.styleType);
+      if (sectionId) {
+        const option = TARGET_SECTIONS.find((section) => section.id === sectionId)?.options.find(
+          (candidate) => candidate.property === resolvedProperty
+        );
+        if (option) {
+          resolvedEntry = { option, sectionId };
+        }
+      }
+    }
+
+    if (!resolvedEntry) {
+      const matches = targetIndex.byProperty.get(resolvedProperty) ?? [];
+      if (matches.length === 1) {
+        resolvedEntry = matches[0];
+      }
+    }
+
+    if (resolvedEntry) {
+      handleTargetSelect(resolvedEntry.option, resolvedEntry.sectionId);
+    }
+  }, [
+    data?.mapping?.mappingMode,
+    data?.mapping?.styleType,
+    data?.mapping?.targetOptionId,
+    data?.mapping?.targetProperty,
+    data?.mapping?.valueType,
+    handleTargetSelect,
+    targetIndex,
+  ]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
