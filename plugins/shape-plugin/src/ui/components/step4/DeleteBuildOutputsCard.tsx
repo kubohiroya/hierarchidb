@@ -1,4 +1,5 @@
 import { Paper, Stack, Typography } from '@mui/material';
+import { DeleteSweep as DeleteSweepIcon } from '@mui/icons-material';
 import { FetchConfigFormControls } from './FetchConfigFormControls.tsx';
 
 export type DeleteBuildOutputsCardProps = {
@@ -15,6 +16,7 @@ export type DeleteBuildOutputsCardProps = {
   canDeleteVTCache: boolean;
   canDeleteMetadata: boolean;
   resetDisabled?: boolean;
+  disabled?: boolean;
   onDeleteFetchApiCache: () => void;
   onDeleteFetchFilteredCache: () => void;
   onDeleteTransformCache: () => void;
@@ -37,16 +39,31 @@ export const DeleteBuildOutputsCard: React.FC<DeleteBuildOutputsCardProps> = ({
   canDeleteVTCache,
   canDeleteMetadata,
   resetDisabled,
+  disabled,
   onDeleteFetchApiCache,
   onDeleteFetchFilteredCache,
   onDeleteTransformCache,
   onDeleteVTCache,
   onDeleteMetadata,
   onResetDefaults,
-}) => (
-  <Paper variant="outlined" sx={{ p: 2, width: '100%' }}>
+}) => {
+  const hoverCardSx = disabled
+    ? {}
+    : {
+        transition: 'all 0.3s ease',
+        '&:hover': {
+          transform: 'translateY(-2px)',
+          boxShadow: (theme: { shadows: string[] }) => theme.shadows[8],
+        },
+      };
+
+  return (
+    <Paper variant="outlined" sx={{ p: 2, width: '100%', ...hoverCardSx }}>
     <Stack spacing={1.5}>
-      <Typography variant="subtitle2">{title}</Typography>
+      <Stack direction="row" spacing={1} alignItems="center">
+        <DeleteSweepIcon fontSize="small" color="primary" />
+        <Typography variant="subtitle2">{title}</Typography>
+      </Stack>
       <FetchConfigFormControls
         deleteFetchApiLabel={deleteFetchApiLabel}
         deleteFetchFilteredLabel={deleteFetchFilteredLabel}
@@ -69,4 +86,5 @@ export const DeleteBuildOutputsCard: React.FC<DeleteBuildOutputsCardProps> = ({
       />
     </Stack>
   </Paper>
-);
+  );
+};

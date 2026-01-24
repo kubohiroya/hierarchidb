@@ -82,6 +82,7 @@ export const ZoomBandConfigSection: React.FC<Props> = ({
           <Stack spacing={2} sx={{ flex: 1, minWidth: 0 }}>
             <ZoomBandRangeCard
               title={t('processing.filter.zoomBandRangesTitle', 'Zoom band settings')}
+              icon={<SettingsIcon fontSize="small" color="primary" />}
               helperText={t(
                 'processing.filter.zoomBandRangesHelp',
                 'Configure the number of zoom ranges and their boundaries.',

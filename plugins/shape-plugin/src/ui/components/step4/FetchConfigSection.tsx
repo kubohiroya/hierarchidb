@@ -5,26 +5,26 @@ import {
   Box,
   Grid,
   Paper,
-  Slider,
   Stack,
-  TextField,
-  ToggleButton,
-  ToggleButtonGroup,
   Typography,
 } from '@mui/material';
 import {
   CloudDownload as CloudDownloadIcon,
-  CropSquare as CropSquareIcon,
   ExpandMore as ExpandMoreIcon,
-  Straighten as StraightenIcon,
   VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
+import {
+  filteringHighUrl,
+  filteringLowUrl,
+  filteringMediumUrl,
+} from '../../assets/filtering-samples/filteringSamples.ts';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { DownloadRetryControls } from './DownloadRetryControls.js';
 import type { FetchConfigSectionState } from './useFetchConfigSection.ts';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
-import { PrecisionPanel } from '../processing/PrecisionPanel.js';
 import type { ReactNode } from 'react';
+
+type OmitDetailsLevel = ShapeBuildConfig['transformConfig']['omitDetailsConfig']['level'];
 
 type Props = {
   fetchState: FetchConfigSectionState;
@@ -43,9 +43,35 @@ export const FetchConfigSection: React.FC<Props> = ({ fetchState, config, disabl
   const { t, baseFetchConfig, update } = fetchState;
   const baseTransformConfig = config.transformConfig;
   const omitDetailsLevel = baseTransformConfig.omitDetailsConfig.level;
-  const quantizeRank = Math.min(5, Math.max(1, Math.round(baseTransformConfig.quantize ?? 1)));
-  const quantizeOptions = [1, 2, 3, 4, 5];
-  const quantizeLabel = `x${Math.pow(2, quantizeRank - 1)}`;
+  const detailPresets: Record<OmitDetailsLevel, { excludePolygonAreaCoefficient: number; minRingVertices: number }> = {
+    weak: { excludePolygonAreaCoefficient: 0.5, minRingVertices: 4 },
+    medium: { excludePolygonAreaCoefficient: 1, minRingVertices: 5 },
+    strong: { excludePolygonAreaCoefficient: 2, minRingVertices: 6 },
+  };
+
+  const applyDetailPreset = (level: OmitDetailsLevel): void => {
+    const preset = detailPresets[level];
+    update({
+      transformConfig: {
+        ...baseTransformConfig,
+        omitDetailsConfig: {
+          level,
+        },
+        excludePolygonAreaCoefficient: preset.excludePolygonAreaCoefficient,
+        minRingVertices: preset.minRingVertices,
+      },
+    });
+  };
+
+  const hoverCardSx = disabled
+    ? {}
+    : {
+        transition: 'all 0.3s ease',
+        '&:hover': {
+          transform: 'translateY(-2px)',
+          boxShadow: (theme: { shadows: string[] }) => theme.shadows[8],
+        },
+      };
 
   return (
     <Accordion defaultExpanded>
@@ -98,150 +124,126 @@ export const FetchConfigSection: React.FC<Props> = ({ fetchState, config, disabl
               </Typography>
             </Stack>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-            <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
-              <Stack spacing={2}>
-                <SectionTitle
-                  icon={<StraightenIcon fontSize="small" color="primary" />}
-                  title={t('processing.filter.precisionTitle', 'Precision & Compression')}
-                />
-                <PrecisionPanel
-                  quantize={quantizeRank}
-                  quantizeOptions={quantizeOptions}
-                  quantizeRank={quantizeRank}
-                  quantizeLabel={quantizeLabel}
-                  disabled={disabled}
-                  onQuantizeChange={(quantize) =>
-                    update({
-                      transformConfig: {
-                        ...baseTransformConfig,
-                        quantize,
-                      },
-                    })
-                  }
-                />
-              </Stack>
-            </Paper>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 12, md: 8, lg: 9 }}>
-            <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
+          <Grid size={{ xs: 12 }}>
+            <Paper sx={{ p: 2, ...hoverCardSx }}>
               <Stack spacing={2}>
                 <SectionTitle
                   icon={<VisibilityOffIcon fontSize="small" color="primary" />}
-                  title={t('processing.filter.omitDetailsTitle', 'Detail omission')}
+                  title={t('processing.filter.omitDetailsTitle', 'Filtering small shapes (islands and enclaves)')}
                 />
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="body2" color="text.secondary">
                   {t(
                     'processing.filter.omitDetailsHelp',
-                    'Drops polygons that are too small to be visible at each zoom level using bbox and outer-ring area thresholds.',
+                    'Filters out small shapes at each zoom using bbox and area thresholds.',
                   )}
                 </Typography>
-                <ToggleButtonGroup
-                  exclusive
-                  size="small"
-                  value={omitDetailsLevel}
-                  onChange={(_, value) => {
-                    if (!value) return;
-                    const nextLevel = value as typeof omitDetailsLevel;
-                    update({
-                      transformConfig: {
-                        ...baseTransformConfig,
-                        omitDetailsConfig: {
-                          level: nextLevel,
-                        },
-                      },
-                    });
-                  }}
-                  disabled={disabled}
-                >
-                  <ToggleButton value="weak">
-                    {t('processing.filter.omitDetailsLevelWeak', 'Low')}
-                  </ToggleButton>
-                  <ToggleButton value="medium">
-                    {t('processing.filter.omitDetailsLevelMedium', 'Medium')}
-                  </ToggleButton>
-                  <ToggleButton value="strong">
-                    {t('processing.filter.omitDetailsLevelStrong', 'High')}
-                  </ToggleButton>
-                </ToggleButtonGroup>
-              </Stack>
-            </Paper>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 12, md: 8, lg: 9 }}>
-            <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
-              <Stack spacing={2}>
-                <SectionTitle
-                  icon={<CropSquareIcon fontSize="small" color="primary" />}
-                  title={t('processing.filter.excludePolygonAreaCoefficient', 'Polygon Area Exclusion Coefficient')}
-                />
-                <div>
-                  <Typography gutterBottom>
-                    {t('processing.filter.excludePolygonAreaCoefficient', 'Polygon Area Exclusion Coefficient')}
-                  </Typography>
-                  <Box sx={{ px: 2 }}>
-                    <Slider
-                      value={baseTransformConfig.excludePolygonAreaCoefficient}
-                      onChange={(_, value) => {
-                        const excludePolygonAreaCoefficient = value as number;
-                        update({
-                          transformConfig: {
-                            ...baseTransformConfig,
-                            excludePolygonAreaCoefficient,
-                          },
-                        });
+                <Typography variant="caption" color="text.secondary">
+                  {t(
+                    'processing.filter.omitDetailsClarityNote',
+                    'Low keeps more detail; High filters more aggressively.',
+                  )}
+                </Typography>
+                <Typography variant="subtitle2">
+                  {t('processing.filter.omitDetailsPreviewTitle', 'Filtering preview')}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {t(
+                    'processing.filter.omitDetailsPreviewHelp',
+                    'Pick a level to see how smaller islands drop out as filtering strengthens.',
+                  )}
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, md: 4 }}>
+                    <Box
+                      onClick={() => !disabled && applyDetailPreset('weak')}
+                      sx={{
+                        p: 2,
+                        borderRadius: 1,
+                        border: 2,
+                        cursor: disabled ? 'not-allowed' : 'pointer',
+                        borderColor: omitDetailsLevel === 'weak' ? 'primary.main' : 'divider',
+                        bgcolor: omitDetailsLevel === 'weak' ? 'action.selected' : 'background.paper',
+                        opacity: disabled ? 0.5 : 1,
+                        '&:hover': disabled ? {} : { bgcolor: 'action.hover' },
                       }}
-                      min={0}
-                      max={5}
-                      step={0.1}
-                      valueLabelDisplay="auto"
-                      marks={[
-                        { value: 0, label: '0' },
-                        { value: 0.5, label: '0.5' },
-                        { value: 1, label: '1.0' },
-                        { value: 2, label: '2.0' },
-                        { value: 5, label: '5.0' },
-                      ]}
-                      disabled={disabled}
-                    />
-                  </Box>
-                  <Typography variant="caption" color="text.secondary">
-                    {t(
-                      'processing.filter.excludePolygonAreaCoefficientHelp',
-                      'Excludes polygons smaller than coefficient × grid size × outline length / 2 after quantization.',
-                    )}
-                  </Typography>
-                </div>
-              </Stack>
-            </Paper>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-            <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
-              <Stack spacing={2}>
-                <SectionTitle
-                  icon={<StraightenIcon fontSize="small" color="primary" />}
-                  title={t('processing.filter.ringFixMinRingVertices', 'Min ring vertices')}
-                />
-                <TextField
-                  fullWidth
-                  type="number"
-                  label={t('processing.filter.ringFixMinRingVertices', 'Min ring vertices')}
-                  value={baseTransformConfig.ringFixConfig.minRingVertices}
-                  onChange={(event) => {
-                    const minRingVertices = Number(event.target.value);
-                    update({
-                      transformConfig: {
-                        ...baseTransformConfig,
-                        ringFixConfig: {
-                          ...baseTransformConfig.ringFixConfig,
-                          minRingVertices: Number.isFinite(minRingVertices)
-                            ? minRingVertices
-                            : baseTransformConfig.ringFixConfig.minRingVertices,
-                        },
-                      },
-                    });
-                  }}
-                  disabled={disabled}
-                />
+                    >
+                      <Stack spacing={1}>
+                        <Typography variant="subtitle2">
+                          {t('processing.filter.omitDetailsLevelWeak', 'High detail')}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {t('processing.filter.omitDetailsLevelWeakHelp', 'Keeps large, medium, and small islands.')}
+                        </Typography>
+                        <Box
+                          component="img"
+                          src={filteringLowUrl}
+                          alt={t('processing.filter.omitDetailsLevelWeak', 'High detail')}
+                          sx={{ width: '100%', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}
+                        />
+                      </Stack>
+                    </Box>
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 4 }}>
+                    <Box
+                      onClick={() => !disabled && applyDetailPreset('medium')}
+                      sx={{
+                        p: 2,
+                        borderRadius: 1,
+                        border: 2,
+                        cursor: disabled ? 'not-allowed' : 'pointer',
+                        borderColor: omitDetailsLevel === 'medium' ? 'primary.main' : 'divider',
+                        bgcolor: omitDetailsLevel === 'medium' ? 'action.selected' : 'background.paper',
+                        opacity: disabled ? 0.5 : 1,
+                        '&:hover': disabled ? {} : { bgcolor: 'action.hover' },
+                      }}
+                    >
+                      <Stack spacing={1}>
+                        <Typography variant="subtitle2">
+                          {t('processing.filter.omitDetailsLevelMedium', 'Medium detail')}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {t('processing.filter.omitDetailsLevelMediumHelp', 'Keeps large and medium islands.')}
+                        </Typography>
+                        <Box
+                          component="img"
+                          src={filteringMediumUrl}
+                          alt={t('processing.filter.omitDetailsLevelMedium', 'Medium detail')}
+                          sx={{ width: '100%', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}
+                        />
+                      </Stack>
+                    </Box>
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 4 }}>
+                    <Box
+                      onClick={() => !disabled && applyDetailPreset('strong')}
+                      sx={{
+                        p: 2,
+                        borderRadius: 1,
+                        border: 2,
+                        cursor: disabled ? 'not-allowed' : 'pointer',
+                        borderColor: omitDetailsLevel === 'strong' ? 'primary.main' : 'divider',
+                        bgcolor: omitDetailsLevel === 'strong' ? 'action.selected' : 'background.paper',
+                        opacity: disabled ? 0.5 : 1,
+                        '&:hover': disabled ? {} : { bgcolor: 'action.hover' },
+                      }}
+                    >
+                      <Stack spacing={1}>
+                        <Typography variant="subtitle2">
+                          {t('processing.filter.omitDetailsLevelStrong', 'Low detail')}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {t('processing.filter.omitDetailsLevelStrongHelp', 'Keeps only large islands.')}
+                        </Typography>
+                        <Box
+                          component="img"
+                          src={filteringHighUrl}
+                          alt={t('processing.filter.omitDetailsLevelStrong', 'Low detail')}
+                          sx={{ width: '100%', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}
+                        />
+                      </Stack>
+                    </Box>
+                  </Grid>
+                </Grid>
               </Stack>
             </Paper>
           </Grid>

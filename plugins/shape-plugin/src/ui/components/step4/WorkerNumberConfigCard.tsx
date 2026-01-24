@@ -54,6 +54,15 @@ export const WorkerNumberConfigCard: React.FC<WorkerNumberConfigCardProps> = ({
     onChange(Math.max(min, Math.min(max, resolved)));
   };
 
+  const hoverStyles = disabled
+    ? {}
+    : {
+        '&:hover': {
+          transform: 'translateY(-2px)',
+          boxShadow: (theme: { shadows: string[] }) => theme.shadows[8],
+        },
+      };
+
   return (
     <Paper
       variant="outlined"
@@ -63,6 +72,8 @@ export const WorkerNumberConfigCard: React.FC<WorkerNumberConfigCardProps> = ({
         pr: 2,
         borderRadius: 2,
         backgroundColor: (theme) => theme.palette.action.hover,
+        transition: 'all 0.3s ease',
+        ...hoverStyles,
       }}
     >
       <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>

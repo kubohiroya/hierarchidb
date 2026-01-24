@@ -9,7 +9,11 @@ import {
   Switch,
   Typography,
 } from '@mui/material';
-import { DeleteSweep as DeleteSweepIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
+import {
+  DeleteSweep as DeleteSweepIcon,
+  ExpandMore as ExpandMoreIcon,
+  Inventory2 as Inventory2Icon,
+} from '@mui/icons-material';
 import { DeleteBuildOutputsCard } from './DeleteBuildOutputsCard.tsx';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
 import type { FetchConfigSectionState } from './useFetchConfigSection.ts';
@@ -45,6 +49,16 @@ export const CacheManagementSection: React.FC<Props> = ({ config, fetchState, di
     update,
   } = fetchState;
 
+  const hoverCardSx = disabled
+    ? {}
+    : {
+        transition: 'all 0.3s ease',
+        '&:hover': {
+          transform: 'translateY(-2px)',
+          boxShadow: (theme: { shadows: string[] }) => theme.shadows[8],
+        },
+      };
+
   return (
     <Accordion defaultExpanded>
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -57,11 +71,17 @@ export const CacheManagementSection: React.FC<Props> = ({ config, fetchState, di
       </AccordionSummary>
       <AccordionDetails sx={{ p: 3 }}>
         <Stack spacing={2} direction={{ xs: 'column', lg: 'row' }} alignItems="stretch">
-          <Paper variant="outlined" sx={{ p: 2, width: '100%', flex: 1, minWidth: 0 }}>
+          <Paper
+            variant="outlined"
+            sx={{ p: 2, width: '100%', flex: 1, minWidth: 0, ...hoverCardSx }}
+          >
             <Stack spacing={1.5}>
-              <Typography variant="subtitle2">
-                {t('processing.download.retainTitle', 'Retain intermediate outputs after build')}
-              </Typography>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Inventory2Icon fontSize="small" color="primary" />
+                <Typography variant="subtitle2">
+                  {t('processing.download.retainTitle', 'Retain intermediate outputs after build')}
+                </Typography>
+              </Stack>
               <FormGroup>
                 <FormControlLabel
                   control={
@@ -175,6 +195,7 @@ export const CacheManagementSection: React.FC<Props> = ({ config, fetchState, di
               onDeleteMetadata={handleDeleteMetadata}
               onResetDefaults={handleResetDefaults}
               resetDisabled={disabled}
+              disabled={disabled}
             />
           </Stack>
         </Stack>

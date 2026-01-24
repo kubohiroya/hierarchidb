@@ -1,5 +1,11 @@
-import type { SyntheticEvent } from 'react';
+import type { ReactNode, SyntheticEvent } from 'react';
 import { Card, CardContent, Grid, Slider, Stack, Typography } from '@mui/material';
+import {
+  AddCircle as AddCircleIcon,
+  RemoveCircle as RemoveCircleIcon,
+  ZoomIn as ZoomInIcon,
+  ZoomOut as ZoomOutIcon,
+} from '@mui/icons-material';
 import {
   buildEvenZoomBandBoundaries,
   normalizeZoomBandBoundaries,
@@ -8,6 +14,7 @@ import {
 type ZoomBandRangeCardProps = {
   title: string;
   helperText: string;
+  icon?: ReactNode;
   rangeCountLabel: string;
   rangeCountHelperText: string;
   boundariesLabel: string;
@@ -25,6 +32,7 @@ type ZoomBandRangeCardProps = {
 export const ZoomBandRangeCard = ({
   title,
   helperText,
+  icon,
   rangeCountLabel,
   rangeCountHelperText,
   boundariesLabel,
@@ -69,12 +77,31 @@ export const ZoomBandRangeCard = ({
     onChange(nextBoundaries);
   };
 
+  const hoverStyles = disabled
+    ? {}
+    : {
+        '&:hover': {
+          transform: 'translateY(-2px)',
+          boxShadow: (theme: { shadows: string[] }) => theme.shadows[8],
+        },
+      };
+
   return (
-    <Card variant="outlined" sx={{ height: '100%' }}>
+    <Card
+      variant="outlined"
+      sx={{
+        height: '100%',
+        transition: 'all 0.3s ease',
+        ...hoverStyles,
+      }}
+    >
       <CardContent>
         <Stack spacing={2}>
           <Stack spacing={0.5}>
-            <Typography variant="subtitle1">{title}</Typography>
+            <Stack direction="row" spacing={1} alignItems="center">
+              {icon}
+              <Typography variant="subtitle1">{title}</Typography>
+            </Stack>
             <Typography variant="body2" color="text.secondary">
               {helperText}
             </Typography>
@@ -88,18 +115,22 @@ export const ZoomBandRangeCard = ({
                 <Typography variant="body2" fontWeight={600}>
                   {rangeCountLabel}
                 </Typography>
-                <Slider
-                  sx={{ mt: '36px !important' }}
-                  value={rangeCount}
-                  min={minRanges}
-                  max={maxRanges}
-                  step={1}
-                  marks
-                  valueLabelDisplay="on"
-                  onChange={handleRangeCountChange}
-                  disabled={disabled}
-                  aria-label={rangeCountLabel}
-                />
+                <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: '24px', pt: '24px' }}>
+                  <RemoveCircleIcon fontSize="small" color="action" />
+                  <Slider
+                    sx={{ flex: 1 }}
+                    value={rangeCount}
+                    min={minRanges}
+                    max={maxRanges}
+                    step={1}
+                    marks
+                    valueLabelDisplay="on"
+                    onChange={handleRangeCountChange}
+                    disabled={disabled}
+                    aria-label={rangeCountLabel}
+                  />
+                  <AddCircleIcon fontSize="small" color="action" />
+                </Stack>
                 <Typography variant="caption" color="text.secondary">
                   {rangeCountHelperText}
                 </Typography>
@@ -113,19 +144,23 @@ export const ZoomBandRangeCard = ({
                 <Typography variant="body2" fontWeight={600}>
                   {boundariesLabel}
                 </Typography>
-                <Slider
-                  sx={{ mt: '36px !important' }}
-                  value={sliderValues}
-                  min={minZoom}
-                  max={maxZoomLimit}
-                  step={1}
-                  marks
-                  disableSwap
-                  valueLabelDisplay="on"
-                  onChange={handleBoundariesChange}
-                  disabled={disabled}
-                  getAriaLabel={() => boundariesLabel}
-                />
+                <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: '24px', pt: '24px'}}>
+                  <ZoomOutIcon fontSize="small" color="action" />
+                  <Slider
+                    sx={{ flex: 1 }}
+                    value={sliderValues}
+                    min={minZoom}
+                    max={maxZoomLimit}
+                    step={1}
+                    marks
+                    disableSwap
+                    valueLabelDisplay="on"
+                    onChange={handleBoundariesChange}
+                    disabled={disabled}
+                    getAriaLabel={() => boundariesLabel}
+                  />
+                  <ZoomInIcon fontSize="small" color="action" />
+                </Stack>
                 <Typography variant="caption" color="text.secondary">
                   {boundariesHelperText}
                 </Typography>

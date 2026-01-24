@@ -76,6 +76,7 @@ export const ShapeBuildConfigStep: React.FC<ShapeDialogStepProps> = ({
         />
         <FetchConfigSection
           fetchState={fetchState}
+          config={config}
           disabled={disabled}
         />
         <TransformConfigSection config={config} onChange={handleChange} disabled={disabled} />
