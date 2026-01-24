@@ -89,6 +89,7 @@ const decodeFetchCache = async (buffer: ArrayBuffer): Promise<FeatureCollection 
 
 const EARTH_RADIUS_METERS = 6378137;
 const MVT_EXTENT = 4096;
+const MAX_VERTICES_PER_FEATURE = 65535;
 
 const metersPerPixel = (z: number): number => {
   return (2 * Math.PI * EARTH_RADIUS_METERS) / (MVT_EXTENT * Math.pow(2, z));
@@ -115,14 +116,17 @@ const simplifyOnlyCollection = (
   zTarget: number,
   toleranceK: number,
   areaBasedToleranceConfig: AreaBasedToleranceConfig,
+  options?: { skipLargeArea?: boolean },
 ): FeatureCollection => {
   if (typeof turfSimplify !== 'function') return collection;
-  const effectiveToleranceK = resolveLargeAreaToleranceForCollection(
-    collection,
-    zTarget,
-    areaBasedToleranceConfig,
-    toleranceK,
-  );
+  const effectiveToleranceK = options?.skipLargeArea
+    ? toleranceK
+    : resolveLargeAreaToleranceForCollection(
+      collection,
+      zTarget,
+      areaBasedToleranceConfig,
+      toleranceK,
+    );
   const tolerance = resolveSimplifyToleranceDegrees(zTarget, effectiveToleranceK);
   if (!Number.isFinite(tolerance) || tolerance <= 0) return collection;
   return turfSimplify(collection, {
@@ -1193,8 +1197,7 @@ export const createTransformByBandHandler = (
           heap: readHeapSnapshot(),
         });
         let processedPolygonCount = 0;
-        let lastProgressAt = Date.now();
-        let lastReportAt = 0;
+                let lastReportAt = 0;
         const reportProgressMaybe = async (force: boolean) => {
           const now = Date.now();
           if (!force && now - lastReportAt < 2000) return;
@@ -1216,10 +1219,9 @@ export const createTransformByBandHandler = (
           nodeId: String(task.nodeId),
           taskId,
           timeoutMs: 300000,
-          getLastProgressAt: () => lastProgressAt,
+          getLastProgressAt: () => Date.now(),
         });
         processedPolygonCount = inputPolygonCount;
-        lastProgressAt = Date.now();
         console.log('[ShapeTransform][SimplifyOnlyMetrics] done', {
           nodeId: task.nodeId,
           taskId,
@@ -1442,6 +1444,171 @@ export const createTransformByBandHandler = (
           errorMessage: `transform failed: geometry simplify error (extract1/${band.zMax}) (${err}) (invalidFeatures=${errorFeatureCount}/${inputFeatureCount}, invalidPolygons=${errorPolygonCount}/${inputPolygonCount}, missingGeometry=${inputMissingGeometry}, invalidGeometries=${invalidFeatureCount}) (invalidRings=${invalidRingCount}, openRings=${openRingCount}, emptyRings=${emptyRingCount}, nonFiniteCoords=${nonFiniteCoordCount}, minRingVertices=${minRingVertices ?? '-'}) (selfIntersections=${selfIntersectionCount}, degenerateRings=${degenerateRingCount}, duplicateVertices=${duplicateVertexCount}, minRingArea=${formatArea(minRingArea)}, maxRingArea=${formatArea(maxRingArea)}, maxRingVertices=${maxRingVertices ?? '-'}, avgRingVertices=${formatAverage(avgRingVertices)})${sampleDetails.length ? ` (samples=${sampleDetails.join(' | ')})` : ''}${analysisNote}`,
         };
       }
+      const retryToleranceStep = 0.5;
+      const maxRetrySteps = 20;
+      const countVertexLimitOverages = (collection: FeatureCollection) => {
+        let maxVertexCount = 0;
+        let overLimitFeatureCount = 0;
+        for (const feature of collection.features) {
+          if (!feature?.geometry) continue;
+          const vertexCount = countVerticesFromGeometry(feature.geometry);
+          if (vertexCount <= MAX_VERTICES_PER_FEATURE) continue;
+          overLimitFeatureCount += 1;
+          maxVertexCount = Math.max(maxVertexCount, vertexCount);
+        }
+        return { maxVertexCount, overLimitFeatureCount };
+      };
+
+      const resolveRetryToleranceK = (baseToleranceK: number) => (
+        resolveLargeAreaToleranceForCollection(
+          inputCollection,
+          band.zMax,
+          transformConfig.areaBasedTolerance,
+          baseToleranceK,
+        )
+      );
+
+      const runRetrySimplify = async (nextTolerance: number) => {
+        const retrySimplifyPromise = runStageWithLabel('simplify-only:retry', () => (
+          simplifyOnlyCollection(
+            inputCollection,
+            band.zMax,
+            nextTolerance,
+            transformConfig.areaBasedTolerance,
+            { skipLargeArea: true },
+          )
+        ));
+        const retryResult = await runWithStallTimeout({
+          promise: retrySimplifyPromise,
+          stage: 'simplify-only:retry',
+          nodeId: String(task.nodeId),
+          taskId,
+          timeoutMs: 300000,
+          getLastProgressAt: () => Date.now(),
+        });
+        if (!retryResult || retryResult.features.length === 0) return null;
+        return retryResult;
+      };
+
+      let adjustedTolerance = resolveRetryToleranceK(tolerance);
+      let adjustedSimplified = simplified;
+      let retryCount = 0;
+      let vertexLimitStats = countVertexLimitOverages(adjustedSimplified);
+      if (vertexLimitStats.overLimitFeatureCount > 0) {
+        let lowTolerance = adjustedTolerance;
+        let highTolerance = adjustedTolerance;
+        let bestSimplified: FeatureCollection | null = null;
+        let step = retryToleranceStep;
+        while (retryCount < maxRetrySteps) {
+          highTolerance += step;
+          step *= 2;
+          retryCount += 1;
+          const retryResult = await runRetrySimplify(highTolerance);
+          if (!retryResult) break;
+          const stats = countVertexLimitOverages(retryResult);
+          adjustedSimplified = retryResult;
+          vertexLimitStats = stats;
+          if (stats.overLimitFeatureCount === 0) {
+            bestSimplified = retryResult;
+            break;
+          }
+          lowTolerance = highTolerance;
+        }
+
+        if (bestSimplified) {
+          let low = lowTolerance;
+          let high = highTolerance;
+          let best = bestSimplified;
+          while (retryCount < maxRetrySteps && (high - low) > retryToleranceStep) {
+            const mid = (low + high) / 2;
+            retryCount += 1;
+            const retryResult = await runRetrySimplify(mid);
+            if (!retryResult) break;
+            const stats = countVertexLimitOverages(retryResult);
+            if (stats.overLimitFeatureCount > 0) {
+              low = mid;
+              adjustedSimplified = retryResult;
+              vertexLimitStats = stats;
+            } else {
+              high = mid;
+              best = retryResult;
+              adjustedSimplified = retryResult;
+              vertexLimitStats = stats;
+            }
+          }
+          adjustedSimplified = best;
+          vertexLimitStats = countVertexLimitOverages(adjustedSimplified);
+        }
+      }
+      simplified = adjustedSimplified;
+
+      const simplifiedFeatureCount = simplified.features.length;
+      stageLabel = 'validate:vertex-limit';
+      let maxVertexCount = 0;
+      let overLimitFeatureCount = 0;
+      const vertexLimitRecords: ShapeTransformErrorRecord[] = [];
+      const vertexRecordLimit = 200;
+      for (const [featureIndex, feature] of simplified.features.entries()) {
+        if (!feature?.geometry) continue;
+        const vertexCount = countVerticesFromGeometry(feature.geometry);
+        if (vertexCount <= MAX_VERTICES_PER_FEATURE) continue;
+        overLimitFeatureCount += 1;
+        maxVertexCount = Math.max(maxVertexCount, vertexCount);
+        if (vertexLimitRecords.length >= vertexRecordLimit) continue;
+        const rawFeatureId = feature.id
+          ?? (feature.properties && 'id' in feature.properties ? String(feature.properties.id) : undefined);
+        const featureId = rawFeatureId ? String(rawFeatureId) : `${input.sourceKey}:${featureIndex}`;
+        const lineFeaturesCandidate = buildErrorLineFeatures(feature.geometry, featureId);
+        const summary = analyzeGeometryIssues(feature.geometry);
+        vertexLimitRecords.push({
+          id: `${task.taskId}:vertex-limit:${featureIndex}`,
+          nodeId: task.nodeId,
+          taskId: task.taskId,
+          stage: 'transform',
+          issueStage: 'simplify-only',
+          issueKind: 'max-vertices',
+          bandId: input.bandId,
+          sourceKey: input.sourceKey,
+          countryCode: input.countryCode,
+          adminLevel: input.adminLevel,
+          featureId,
+          featureIndex,
+          geometryType: lineFeaturesCandidate?.geometryType ?? feature.geometry.type,
+          polygonCount: summary.polygonCount,
+          ringCount: summary.ringCount,
+          polygonErrorCount: summary.polygonCount,
+          ringErrorCount: summary.ringCount,
+          message: `max vertices per feature exceeded (vertexCount=${vertexCount} limit=${MAX_VERTICES_PER_FEATURE})`,
+          createdAt: Date.now(),
+          lineFeatures: {
+            type: 'FeatureCollection',
+            features: lineFeaturesCandidate?.features ?? [],
+          },
+        });
+      }
+      if (overLimitFeatureCount > 0) {
+        if (vertexLimitRecords.length > 0) {
+          try {
+            await ephemeralDB.transformErrors.bulkPut(vertexLimitRecords);
+            if (overLimitFeatureCount > vertexLimitRecords.length) {
+              console.warn('[ShapeTransform] vertex limit error records truncated', {
+                nodeId: task.nodeId,
+                taskId: task.taskId,
+                limit: vertexRecordLimit,
+                totalFeatures: overLimitFeatureCount,
+              });
+            }
+          } catch (storageError) {
+            console.warn('[ShapeTransform] failed to persist vertex limit error records', storageError);
+          }
+        }
+        await reportPolygonProgress(task.taskId, 0, inputPolygonCount);
+        return {
+          status: 'failed',
+          errorMessage: `transform failed: max vertices per feature exceeded (limit=${MAX_VERTICES_PER_FEATURE}, overLimit=${overLimitFeatureCount}/${simplifiedFeatureCount}, maxVertices=${maxVertexCount})`,
+        };
+      }
+
       const adminLevel = input.adminLevel;
       const layerName = typeof adminLevel === 'number' ? `admin${adminLevel}` : 'admin0';
       const boundaryLayerName = typeof adminLevel === 'number'
@@ -1452,7 +1619,6 @@ export const createTransformByBandHandler = (
         ? band.zMax < boundaryDisableAtZoomOrAbove
         : true;
 
-      const simplifiedFeatureCount = simplified.features.length;
       const simplifiedVertexCount = simplified.features.reduce(
         (sum, feature) => sum + countVerticesFromGeometry(feature.geometry),
         0,
