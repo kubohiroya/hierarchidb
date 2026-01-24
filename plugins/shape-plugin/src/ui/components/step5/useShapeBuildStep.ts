@@ -1,11 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { toNodeId, type NodeId, type NodeType, type TaskStage } from '@hierarchidb/common-types';
-import type { ProgressPhase } from '@hierarchidb/common-api';
+import type { NodeId, NodeType, TaskStage } from '@hierarchidb/common-types';
 import { useShapeBuildTasks } from './useShapeBuildTasks.ts';
 import { useBuildProgress } from './useBuildProgress.js';
 import { useTranslation } from '../../i18n.js';
-import { useAtom } from 'jotai';
-import { persistedTasksAtom, type ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.js';
 import {
   summarizeCheckboxState,
   validateBatchConfig,
@@ -23,7 +20,7 @@ import {
   recordBuildFinish,
   recordBuildStart,
 } from '@hierarchidb/ui-monitoring';
-import { ephemeralShapeAPIImpl, shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
+import { shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
 
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
 const buildMonitorConfig = {
@@ -33,7 +30,6 @@ const buildMonitorConfig = {
   heapWarningRatio: 0.85,
   heapCriticalRatio: 0.9,
 } as const;
-
 const fetchTileSummary = async (nodeId: NodeId) => {
   const summary = await shapeQueryAPIImpl.getVectorTileSummary(nodeId);
   return { tiles: summary.tiles, totalBytes: summary.totalBytes };
@@ -68,48 +64,6 @@ const toBuildStatus = (status?: string | null): BuildStatus => {
   }
 };
 
-const resolveCachedTaskStage = (taskType?: string | null): TaskStage => {
-  if (taskType === 'fetch' || taskType === 'transform' || taskType === 'vt') {
-    return taskType;
-  }
-  throw new Error(`[ShapeBuildStep] Invalid cached task stage: ${String(taskType ?? 'undefined')}`);
-};
-
-const resolveCachedTaskStatus = (status?: string | null): ProgressPhase => {
-  if (
-    status === 'queued'
-    || status === 'running'
-    || status === 'paused'
-    || status === 'completed'
-    || status === 'failed'
-    || status === 'regression'
-    || status === 'warning'
-  ) {
-    return status;
-  }
-  throw new Error(`[ShapeBuildStep] Invalid cached task status: ${String(status ?? 'undefined')}`);
-};
-
-const isTerminalTaskStatus = (status: ProgressPhase): boolean => (
-  status === 'completed'
-  || status === 'failed'
-  || status === 'regression'
-  || status === 'warning'
-);
-
-const buildCachedTaskSummaries = (
-  stage: TaskStage,
-  count: number,
-  seed: string,
-): ShapeBuildTaskSummary[] => (
-  Array.from({ length: count }).map((_, index) => ({
-    taskId: `cache:${stage}:${seed}:${index}`,
-    status: 'completed',
-    progress: 100,
-    message: 'cached',
-    stage,
-  }))
-);
 
 type Args = {
   data?: Partial<ShapeEntity>;
@@ -122,10 +76,8 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const activeNodeId = nodeId ?? data?.nodeId ?? null;
 
   const { progress, status, error } = useBuildProgress(activeNodeId, { autoSubscribe: Boolean(activeNodeId) });
-  const [persistedTasks, setPersistedTasks] = useAtom(persistedTasksAtom);
   const [isStartPending, setIsStartPending] = useState(false);
   const warnedSkippedTasksRef = useRef<Set<string>>(new Set());
-  const [stageTaskSummary, setStageTaskSummary] = useState<Record<string, { total: number; success: number; error: number; skip: number }>>({});
   const hasNodeId = Boolean(activeNodeId && !error);
   const effectiveProgress = hasNodeId ? progress : null;
   const effectiveStatus = hasNodeId ? status : null;
@@ -150,37 +102,10 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         return t('stage.status.ready', 'Ready to start stage');
     }
   }, [statusSource, t]);
-  const shouldPollTasksRef = useRef(false);
-  const { tasks, isLoading: isTasksLoading, refresh: refreshTasks } = useShapeBuildTasks(activeNodeId, {
-    autoRefresh: () => shouldPollTasksRef.current,
-    pollIntervalMs: 2000,
-  });
-  const [isTaskSummaryLoading, setIsTaskSummaryLoading] = useState(false);
-  const displayTasks = tasks.length > 0 ? tasks : persistedTasks;
-  const hasIncompleteTasks = useMemo(() => (
-    displayTasks.some((task) => !isTerminalTaskStatus(task.status))
-  ), [displayTasks]);
-  const shouldPollTasks = Boolean(activeNodeId)
-    && (
-      isStartPending
-      || runtimeStatus === 'processing'
-      || runtimeStatus === 'paused'
-      || ((statusSource === 'completed' || statusSource === 'failed') && hasIncompleteTasks)
-    );
-  useEffect(() => {
-    shouldPollTasksRef.current = shouldPollTasks;
-  }, [shouldPollTasks]);
-  const hasTaskSummary = useMemo(() => {
-    return Object.values(stageTaskSummary).some((summary) => (
-      (summary?.total ?? 0) > 0
-      || (summary?.success ?? 0) > 0
-      || (summary?.error ?? 0) > 0
-      || (summary?.skip ?? 0) > 0
-    ));
-  }, [stageTaskSummary]);
+  const { tasks, isLoading: isTasksLoading } = useShapeBuildTasks(activeNodeId);
+  const isTaskSummaryLoading = false;
+  const displayTasks = tasks;
   const lastBuildStartedAtRef = useRef<number | undefined>(data?.buildStartedAt);
-  const buildTaskHistoryLoadedRef = useRef(false);
-  const cacheTasksLoadedRef = useRef(false);
   const totalElapsedMsRef = useRef(0);
   const stageElapsedMsRef = useRef(0);
   const lastTickAtRef = useRef<number | null>(null);
@@ -238,111 +163,6 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   ]);
 
   useEffect(() => {
-    if (!shouldPollTasks) return;
-    void refreshTasks();
-  }, [refreshTasks, shouldPollTasks]);
-
-  const lastStatusSourceRef = useRef<string | null>(null);
-  useEffect(() => {
-    const prev = lastStatusSourceRef.current;
-    lastStatusSourceRef.current = statusSource ?? null;
-    if (!activeNodeId) return;
-    const justFinished = (statusSource === 'completed' || statusSource === 'failed')
-      && prev !== statusSource;
-    if (!justFinished) return;
-    void refreshTasks();
-  }, [activeNodeId, refreshTasks, statusSource]);
-
-  useEffect(() => {
-    if (!activeNodeId) {
-      setPersistedTasks([]);
-      return;
-    }
-    if (tasks.length > 0) {
-      setPersistedTasks(tasks);
-    }
-  }, [activeNodeId, tasks, setPersistedTasks]);
-
-  useEffect(() => {
-    buildTaskHistoryLoadedRef.current = false;
-    cacheTasksLoadedRef.current = false;
-  }, [activeNodeId]);
-
-  useEffect(() => {
-    if (!activeNodeId) return;
-    if (buildTaskHistoryLoadedRef.current) return;
-    if (tasks.length > 0 || persistedTasks.length > 0) return;
-    if (isTasksLoading || buildStatus === 'running') return;
-    let cancelled = false;
-    const nodeKey = toNodeId(String(activeNodeId));
-    const run = async () => {
-      try {
-        const cachedTasks = await shapeQueryAPIImpl.listBuildTasks(nodeKey as NodeId);
-        if (cancelled) return;
-        if (cachedTasks.length > 0) {
-          const resolved: ShapeBuildTaskSummary[] = cachedTasks.map((task) => ({
-            ...task,
-            status: resolveCachedTaskStatus(task.status),
-            stage: resolveCachedTaskStage(task.taskType),
-          }));
-          setPersistedTasks(resolved);
-        }
-      } catch (error) {
-        console.debug('[ShapeBuildStep] cachedTasks:loadFailed', error);
-      } finally {
-        buildTaskHistoryLoadedRef.current = true;
-      }
-    };
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, [activeNodeId, buildStatus, isTasksLoading, persistedTasks.length, setPersistedTasks, tasks.length]);
-
-  useEffect(() => {
-    if (!activeNodeId) return;
-    if (!buildTaskHistoryLoadedRef.current) return;
-    if (cacheTasksLoadedRef.current) return;
-    if (tasks.length > 0 || persistedTasks.length > 0) return;
-    if (isTasksLoading || buildStatus === 'running') return;
-    let cancelled = false;
-    const nodeKey = toNodeId(String(activeNodeId));
-    const run = async () => {
-      try {
-        const [fetchCaches, transformCaches, vtMetadata] = await Promise.all([
-          shapeQueryAPIImpl.listFetchCaches(nodeKey as NodeId),
-          shapeQueryAPIImpl.listTransformCaches(nodeKey as NodeId),
-          shapeQueryAPIImpl.listVTMetadata(nodeKey as NodeId),
-        ]);
-        if (cancelled) return;
-        const cachedTasks: ShapeBuildTaskSummary[] = [
-          ...buildCachedTaskSummaries('fetch', fetchCaches.length, String(nodeKey)),
-          ...buildCachedTaskSummaries('transform', transformCaches.length, String(nodeKey)),
-          ...buildCachedTaskSummaries('vt', vtMetadata.length, String(nodeKey)),
-        ];
-        if (cachedTasks.length === 0) return;
-        setPersistedTasks(cachedTasks);
-      } catch (error) {
-        console.debug('[ShapeBuildStep] cachedTasks:cacheLoadFailed', error);
-      } finally {
-        cacheTasksLoadedRef.current = true;
-      }
-    };
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, [activeNodeId, buildStatus, isTasksLoading, persistedTasks.length, setPersistedTasks, tasks.length]);
-
-  useEffect(() => {
-    if (!activeNodeId) return;
-    if (displayTasks.length > 0) return;
-    if (isTasksLoading) return;
-    if (!hasTaskSummary && !['failed', 'completed'].includes(buildStatus)) return;
-    void refreshTasks();
-  }, [activeNodeId, displayTasks.length, hasTaskSummary, isTasksLoading, buildStatus, refreshTasks]);
-
-  useEffect(() => {
     if (lastBuildStartedAtRef.current !== data?.buildStartedAt) {
       lastBuildStartedAtRef.current = data?.buildStartedAt;
       totalElapsedMsRef.current = 0;
@@ -350,8 +170,6 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       lastTickAtRef.current = null;
       lastStageIdRef.current = resolvedTaskType;
       setTimingSnapshot({ totalMs: 0, stageMs: 0 });
-      setStageTaskSummary({});
-      setIsTaskSummaryLoading(false);
     }
   }, [data?.buildStartedAt, resolvedTaskType]);
 
@@ -408,86 +226,6 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       window.clearInterval(id);
     };
   }, [buildStatus]);
-
-  useEffect(() => {
-    if (!activeNodeId) {
-      setStageTaskSummary({});
-      setIsTaskSummaryLoading(false);
-      return;
-    }
-    if (displayTasks.length > 0 || hasTaskSummary) {
-      setIsTaskSummaryLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setIsTaskSummaryLoading(true);
-    const nodeKey = toNodeId(String(activeNodeId));
-    const run = async () => {
-      try {
-        const rows = await ephemeralShapeAPIImpl.listBuildTasks(nodeKey as NodeId);
-        if (cancelled) return;
-        const summary: Record<string, { total: number; success: number; error: number; skip: number }> = {};
-        const ensure = (key: string) => {
-          if (!summary[key]) {
-            summary[key] = { total: 0, success: 0, error: 0, skip: 0 };
-          }
-          return summary[key];
-        };
-        rows.forEach((task) => {
-          const stageKey = task.taskType;
-          const slot = ensure(stageKey);
-          const weight = 1;
-          slot.total += weight;
-          if (isSkippedMessage(task.message)) {
-            slot.skip += weight;
-            return;
-          }
-          if (task.status === 'failed' || task.status === 'regression') {
-            slot.error += weight;
-            return;
-          }
-          if (task.status === 'completed') {
-            slot.success += weight;
-          }
-        });
-        setStageTaskSummary(summary);
-      } finally {
-        if (!cancelled) {
-          setIsTaskSummaryLoading(false);
-        }
-      }
-    };
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, [activeNodeId, displayTasks.length, hasTaskSummary]);
-
-  useEffect(() => {
-    if (!activeNodeId) return;
-    if (displayTasks.length > 0) return;
-    if (!hasTaskSummary) return;
-    let cancelled = false;
-    const nodeKey = toNodeId(String(activeNodeId));
-    const run = async () => {
-      try {
-        const total = await ephemeralShapeAPIImpl.countBuildTasks(nodeKey as NodeId);
-        if (cancelled) return;
-        if (total === 0) {
-          setStageTaskSummary({});
-        }
-      } catch (error) {
-        if (!cancelled) {
-          console.debug('[ShapeBuildStep] taskSummary:resetFailed', error);
-        }
-      }
-    };
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, [activeNodeId, displayTasks.length, hasTaskSummary]);
-
 
   useEffect(() => {
     if (buildStatus !== 'running') return;
@@ -603,21 +341,9 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     });
     return counts;
   }, [displayTasks]);
-  const summaryCounts = useMemo(() => {
-    const counts = { total: 0, completed: 0, failed: 0, skipped: 0 };
-    Object.values(stageTaskSummary).forEach((summary) => {
-      if (!summary) return;
-      counts.total += summary.total ?? 0;
-      counts.completed += summary.success ?? 0;
-      counts.failed += summary.error ?? 0;
-      counts.skipped += summary.skip ?? 0;
-    });
-    return counts;
-  }, [stageTaskSummary]);
   const hasProgressData = Boolean(effectiveProgress)
     || Boolean(effectiveStatus && effectiveStatus.status !== 'idle')
-    || displayTasks.length > 0
-    || hasTaskSummary;
+    || displayTasks.length > 0;
   useEffect(() => {
     if (displayTasks.length === 0) return;
     const warned = warnedSkippedTasksRef.current;
@@ -655,7 +381,6 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     return stages.map((stage) => {
       const base = paneProgress?.find((entry) => entry.paneId === stage.id);
       const inlineSummary = taskSummary[stage.id];
-      const fallbackSummary = stageTaskSummary[stage.id];
       const resolvedSummary = inlineSummary
         ? {
           total: inlineSummary.total,
@@ -663,7 +388,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
           error: inlineSummary.failed,
           skip: inlineSummary.skipped,
         }
-        : fallbackSummary;
+        : null;
       const hasSummaryData = Boolean(
         resolvedSummary
         && ((resolvedSummary.total ?? 0) > 0
@@ -724,7 +449,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         summary: { total, success, error, skip },
       };
     });
-  }, [effectiveProgress, buildStatus, paneProgress, resolvedTaskType, stageTaskSummary, stages, taskSummary]);
+  }, [effectiveProgress, buildStatus, paneProgress, resolvedTaskType, stages, taskSummary]);
   const lastUnfinishedStageId = useMemo(() => {
     if (buildStatus !== 'running') return undefined;
     let candidate: string | undefined;
@@ -788,12 +513,6 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         percentage: computePercentage(aggregatedCounts),
       };
     }
-    if (total === 0 && completed === 0 && failed === 0 && skipped === 0 && summaryCounts.total > 0) {
-      return {
-        ...summaryCounts,
-        percentage: computePercentage(summaryCounts),
-      };
-    }
     if (buildStatus === 'running' && total === 0 && completed === 0 && failed === 0 && skipped === 0 && derivedCounts?.total) {
       return {
         ...derivedCounts,
@@ -805,7 +524,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       ...baseCounts,
       percentage: total > 0 ? computePercentage(baseCounts) : Math.round(overallProgress),
     };
-  }, [aggregatedCounts, summaryCounts, buildStatus, completed, derivedCounts, failed, overallProgress, skipped, total]);
+  }, [aggregatedCounts, buildStatus, completed, derivedCounts, failed, overallProgress, skipped, total]);
   useEffect(() => {
     if (rawDisplayCounts.total > 0) {
       lastStableCountsRef.current = rawDisplayCounts;
@@ -864,7 +583,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     data,
     onChange,
     buildStatus,
-    canResume: runtimeStatus === 'paused',
+    canResume: buildStatus === 'paused',
   });
   const shouldSuspendRef = useRef(false);
   const activeNodeIdRef = useRef<NodeId | null>(null);
