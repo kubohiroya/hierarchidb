@@ -356,15 +356,7 @@ describe('Shape WorkerProvider full flow', () => {
         transformConfig: {
           ...DEFAULT_BUILD_CONFIG.transformConfig,
           zoomBandBoundaries: [0, 4],
-          selfIntersectionTuningConfig: {
-            ...DEFAULT_BUILD_CONFIG.transformConfig.selfIntersectionTuningConfig,
-            disableAtZoomOrBelow: 11,
-          },
           tolerance: 1,
-          preSimplifyFilterConfig: {
-            ...DEFAULT_BUILD_CONFIG.transformConfig.preSimplifyFilterConfig,
-            maxVerticesPerFeature: 20000,
-          },
         },
       };
       const selectedArrayByCountries: SelectedArrayByCountries = {

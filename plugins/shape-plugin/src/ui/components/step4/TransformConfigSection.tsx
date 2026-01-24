@@ -9,23 +9,20 @@ import {
   Paper,
   Slider,
   Tooltip,
-  Switch,
-  FormControlLabel,
-  ToggleButton,
-  ToggleButtonGroup,
-  TextField,
 } from '@mui/material';
 import {
+  AutoFixHigh as AutoFixHighIcon,
   FilterAlt as FilterAltIcon,
-  ExpandMore as ExpandMoreIcon,
-  FilterAlt,
   InfoOutlined as InfoOutlinedIcon,
+  ExpandMore as ExpandMoreIcon,
+  CropOriginal as CropOriginalIcon,
+  DensityLarge as DensityLargeIcon,
+  DensitySmall as DensitySmallIcon,
 } from '@mui/icons-material';
-import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { useTranslation } from '../../i18n.js';
 import { useTransformConfigSection } from './useTransformConfigSection.ts';
 import { ExtractionPanel } from '../processing/ExtractionPanel.js';
-import { PrecisionPanel } from '../processing/PrecisionPanel.js';
+import type { ReactNode } from 'react';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
 
 type Props = {
@@ -34,17 +31,118 @@ type Props = {
   onChange: (next: ShapeBuildConfig) => void;
 };
 
+const SectionTitle: React.FC<{ icon: ReactNode; title: string }> = ({ icon, title }) => (
+  <Stack direction="row" spacing={1} alignItems="center">
+    {icon}
+    <Typography variant="subtitle2">{title}</Typography>
+  </Stack>
+);
+
+const EARTH_RADIUS = 6378137;
+const MVT_EXTENT = 4096;
+const MAX_MERCATOR_LAT = 85.05112878;
+
+type Bbox = {
+  name: string;
+  minLon: number;
+  minLat: number;
+  maxLon: number;
+  maxLat: number;
+};
+
+const COUNTRY_BBOXES: Bbox[] = [
+  { name: 'Russia', minLon: 19, minLat: 41, maxLon: 180, maxLat: 82 },
+  { name: 'Canada', minLon: -141, minLat: 42, maxLon: -52, maxLat: 83 },
+  { name: 'China', minLon: 73, minLat: 18, maxLon: 135, maxLat: 54 },
+  { name: 'Australia', minLon: 113, minLat: -44, maxLon: 154, maxLat: -10 },
+  { name: 'Greenland', minLon: -73, minLat: 59, maxLon: -12, maxLat: 83 },
+  { name: 'India', minLon: 68, minLat: 6, maxLon: 97, maxLat: 35 },
+];
+
+const metersPerPixel = (z: number): number => (
+  (2 * Math.PI * EARTH_RADIUS) / (MVT_EXTENT * Math.pow(2, z))
+);
+
+const lonLatToMercator = (lon: number, lat: number): [number, number] => {
+  const clampedLat = Math.min(MAX_MERCATOR_LAT, Math.max(-MAX_MERCATOR_LAT, lat));
+  const x = (lon * Math.PI * EARTH_RADIUS) / 180;
+  const y = EARTH_RADIUS * Math.log(Math.tan(Math.PI / 4 + (clampedLat * Math.PI) / 360));
+  return [x, y];
+};
+
+const computeBboxAreaPx2 = (bbox: Bbox, zTarget: number): number => {
+  const [minX, minY] = lonLatToMercator(bbox.minLon, bbox.minLat);
+  const [maxX, maxY] = lonLatToMercator(bbox.maxLon, bbox.maxLat);
+  const width = Math.max(0, maxX - minX);
+  const height = Math.max(0, maxY - minY);
+  const areaMeters2 = width * height;
+  if (!Number.isFinite(areaMeters2) || areaMeters2 <= 0) return 0;
+  const mpp = metersPerPixel(zTarget);
+  if (!Number.isFinite(mpp) || mpp <= 0) return 0;
+  const areaPx2 = areaMeters2 / (mpp * mpp);
+  return Number.isFinite(areaPx2) ? areaPx2 : 0;
+};
+
+const formatPx2 = (value: number): string => {
+  if (!Number.isFinite(value) || value <= 0) return '0';
+  if (value >= 1e9) {
+    return `${(value / 1e9).toFixed(2)}e9`;
+  }
+  if (value >= 1e6) {
+    return `${(value / 1e6).toFixed(2)}e6`;
+  }
+  return new Intl.NumberFormat('en-US').format(Math.round(value));
+};
+
 export const TransformConfigSection: React.FC<Props> = ({ config, disabled, onChange }) => {
   const { t } = useTranslation();
   const {
     baseTransformConfig,
     update,
   } = useTransformConfigSection({ config, onChange });
-  const omitDetailsLevel = baseTransformConfig.omitDetailsConfig.level;
-  const quantizeRank = Math.min(5, Math.max(1, Math.round(baseTransformConfig.quantize ?? 1)));
-  const quantizeOptions = [1, 2, 3, 4, 5];
-  const quantizeLabel = `x${Math.pow(2, quantizeRank - 1)}`;
-  const transformModeValue = baseTransformConfig.transformMode ?? 'full';
+
+  const toleranceExpMin = Math.log2(0.005);
+  const toleranceExpMax = 0;
+  const toExponent = (value: number): number => {
+    if (!Number.isFinite(value) || value <= 0) return toleranceExpMin;
+    const exponent = Math.log2(value);
+    return Math.min(toleranceExpMax, Math.max(toleranceExpMin, exponent));
+  };
+  const toTolerance = (exponent: number): number => Math.pow(2, exponent);
+  const formatTolerance = (value: number): string => {
+    const rounded = Number(value.toFixed(4));
+    return String(rounded);
+  };
+  const toleranceMarks = [toleranceExpMin, -6, -4, -2, toleranceExpMax]
+    .filter((value, index, array) => array.indexOf(value) === index)
+    .map((value) => ({ value, label: formatTolerance(toTolerance(value)) }));
+  const areaBasedTolerance = baseTransformConfig.areaBasedTolerance;
+  const zoomBandBoundaries = baseTransformConfig.zoomBandBoundaries;
+  const zTarget = zoomBandBoundaries[1] ?? zoomBandBoundaries[0] ?? 0;
+  const thresholdAreaExponent = Math.log10(
+    Math.max(1, areaBasedTolerance.thresholdAreaPx2)
+  );
+  const thresholdAreaMarks = COUNTRY_BBOXES.map((bbox) => {
+    const areaPx2 = computeBboxAreaPx2(bbox, zTarget);
+    return {
+      value: Math.log10(Math.max(1, areaPx2)),
+      label: bbox.name,
+    };
+  });
+  const markValues = thresholdAreaMarks.map((mark) => mark.value);
+  const thresholdAreaRange = {
+    min: Math.floor(Math.min(thresholdAreaExponent, ...markValues) - 0.5),
+    max: Math.ceil(Math.max(thresholdAreaExponent, ...markValues) + 0.5),
+  };
+  const hoverCardSx = disabled
+    ? {}
+    : {
+        transition: 'all 0.3s ease',
+        '&:hover': {
+          transform: 'translateY(-2px)',
+          boxShadow: (theme: { shadows: string[] }) => theme.shadows[8],
+        },
+      };
 
   return (
     <Accordion defaultExpanded>
@@ -52,12 +150,12 @@ export const TransformConfigSection: React.FC<Props> = ({ config, disabled, onCh
         <Stack direction="row" spacing={2} alignItems="center">
           <FilterAltIcon color="primary" />
           <Typography variant="subtitle1">
-            {t('processing.extract1.title', 'Transform (Filtering)')}
+            {t('processing.transform.title', 'Transform')}
           </Typography>
           <Tooltip
             title={t(
-              'processing.extract1.omissionHelp',
-              'When enabled, small features may be removed based on area threshold, minimum vertex count, or hybrid filtering.',
+              'processing.transform.summaryHelp',
+              'Transform runs turf.simplify with the configured tolerance.',
             )}
             placement="top"
           >
@@ -68,975 +166,140 @@ export const TransformConfigSection: React.FC<Props> = ({ config, disabled, onCh
       <AccordionDetails sx={{ p: 3 }}>
         <Stack spacing={3}>
           <Grid container spacing={3}>
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-              <WorkerNumberConfigCard
-                icon={<FilterAlt fontSize="small" color="primary" />}
-                title={t('processing.filter.workersStage1', 'Transform Workers (Filtering)')}
-                value={baseTransformConfig.maxConcurrent}
-                helperText={t('processing.filter.workersStage1Help', 'Parallel workers for transform filtering.')}
-                warningText={undefined}
-                onChange={(maxConcurrent) =>
-                  update({
-                    transformConfig: {
-                      ...baseTransformConfig,
-                      maxConcurrent,
-                    },
-                  })
-                }
-                min={1}
-                max={8}
-                step={1}
-                disabled={disabled}
-              />
-            </Grid>
-          </Grid>
-          <Grid container spacing={3}>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
+            <Grid size={{ xs: 12 }}>
+              <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2, ...hoverCardSx }}>
                 <Stack spacing={2}>
-                  <Typography variant="subtitle2">
-                    {t('processing.filter.areaFilterTitle', 'Area Filter')}
-                  </Typography>
-                  <FormControlLabel
-                    control={(
-                      <Switch
-                        checked={baseTransformConfig.enableFeatureFiltering}
-                        onChange={(event) => {
-                          update({
-                            transformConfig: {
-                              ...baseTransformConfig,
-                              enableFeatureFiltering: event.target.checked,
-                            },
-                          });
-                        }}
-                        disabled={disabled}
-                      />
-                    )}
-                    label={t('processing.filter.enableFeatureFiltering', 'Enable feature filtering')}
+                  <SectionTitle
+                    icon={<AutoFixHighIcon fontSize="small" color="primary" />}
+                    title={t('processing.filter.extractionTitle', 'Simplification')}
                   />
-                  <ToggleButtonGroup
-                    exclusive
-                    size="small"
-                    value={baseTransformConfig.featureFilterMethod}
-                    onChange={(_, value) => {
-                      if (!value) return;
+                  <ExtractionPanel
+                    tolerance={baseTransformConfig.tolerance}
+                    toleranceLabelKey="processing.filter.tolerancePrimary"
+                    showTitle={false}
+                    startIcon={<DensitySmallIcon fontSize="small" />}
+                    endIcon={<DensityLargeIcon fontSize="small" />}
+                    onToleranceChange={(tolerance) => {
+                      const nextLargeAreaTolerance = Math.min(
+                        areaBasedTolerance.largeAreaTolerance,
+                        tolerance,
+                      );
                       update({
                         transformConfig: {
                           ...baseTransformConfig,
-                          featureFilterMethod: value,
-                        },
-                      });
-                    }}
-                    disabled={disabled || !baseTransformConfig.enableFeatureFiltering}
-                  >
-                    <ToggleButton value="none">
-                      {t('processing.filter.methodNone', 'Pass-through')}
-                    </ToggleButton>
-                    <ToggleButton value="bbox_only">
-                      {t('processing.filter.methodBBox', 'Bounding Box Only (Fastest)')}
-                    </ToggleButton>
-                    <ToggleButton value="polygon_only">
-                      {t('processing.filter.methodPolygon', 'Polygon Only')}
-                    </ToggleButton>
-                    <ToggleButton value="hybrid">
-                      {t('processing.filter.methodHybrid', 'Hybrid (Recommended)')}
-                    </ToggleButton>
-                  </ToggleButtonGroup>
-                  <Typography variant="caption" color="text.secondary">
-                    {t(
-                      'processing.filter.methodHelp',
-                      'Selects how small features are filtered before transform.',
-                    )}
-                  </Typography>
-                </Stack>
-              </Paper>
-            </Grid>
-            <Grid size={{ xs: 12, md: 8 }}>
-              <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
-                <Stack spacing={2}>
-                  <Typography variant="subtitle2">
-                    {t('processing.filter.areaFilterTitle', 'Area Filter')}
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid size={{ xs: 12, md: 4 }}>
-                      <TextField
-                        fullWidth
-                        type="number"
-                        label={t('processing.filter.minimumArea', 'Minimum Area (sq km)')}
-                        value={baseTransformConfig.featureAreaThreshold}
-                        onChange={(event) => {
-                          const featureAreaThreshold = Number(event.target.value);
-                          update({
-                            transformConfig: {
-                              ...baseTransformConfig,
-                              featureAreaThreshold: Number.isFinite(featureAreaThreshold)
-                                ? featureAreaThreshold
-                                : baseTransformConfig.featureAreaThreshold,
-                            },
-                          });
-                        }}
-                        helperText={t(
-                          'processing.filter.minimumAreaHelp',
-                          'Filters out features smaller than this area during transform.',
-                        )}
-                        disabled={disabled || !baseTransformConfig.enableFeatureFiltering}
-                      />
-                    </Grid>
-                    <Grid size={{ xs: 12, md: 4 }}>
-                      <TextField
-                        fullWidth
-                        type="number"
-                        label={t('processing.filter.minVertexCount', 'Min Vertex Count')}
-                        value={baseTransformConfig.minVertexCountForAreaFilter}
-                        onChange={(event) => {
-                          const minVertexCountForAreaFilter = Number(event.target.value);
-                          update({
-                            transformConfig: {
-                              ...baseTransformConfig,
-                              minVertexCountForAreaFilter: Number.isFinite(minVertexCountForAreaFilter)
-                                ? minVertexCountForAreaFilter
-                                : baseTransformConfig.minVertexCountForAreaFilter,
-                            },
-                          });
-                        }}
-                        helperText={t(
-                          'processing.filter.minVertexCountHelp',
-                          'Only apply area filtering when feature vertices exceed this count.',
-                        )}
-                        disabled={disabled || !baseTransformConfig.enableFeatureFiltering}
-                      />
-                    </Grid>
-                    <Grid size={{ xs: 12, md: 4 }}>
-                      <TextField
-                        fullWidth
-                        type="number"
-                        label={t('processing.filter.aspectRatioThreshold', 'Aspect Ratio Threshold')}
-                        value={baseTransformConfig.aspectRatioThreshold}
-                        onChange={(event) => {
-                          const aspectRatioThreshold = Number(event.target.value);
-                          update({
-                            transformConfig: {
-                              ...baseTransformConfig,
-                              aspectRatioThreshold: Number.isFinite(aspectRatioThreshold)
-                                ? aspectRatioThreshold
-                                : baseTransformConfig.aspectRatioThreshold,
-                            },
-                          });
-                        }}
-                        helperText={t(
-                          'processing.filter.aspectRatioThresholdHelp',
-                          'Filters elongated features when their aspect ratio exceeds this value.',
-                        )}
-                        disabled={disabled || !baseTransformConfig.enableFeatureFiltering}
-                      />
-                    </Grid>
-                    <Grid size={{ xs: 12, md: 4 }}>
-                      <TextField
-                        fullWidth
-                        type="number"
-                        label={t('processing.filter.areaThreshold', 'Area Threshold (sq km)')}
-                        value={baseTransformConfig.areaThreshold}
-                        onChange={(event) => {
-                          const areaThreshold = Number(event.target.value);
-                          update({
-                            transformConfig: {
-                              ...baseTransformConfig,
-                              areaThreshold: Number.isFinite(areaThreshold)
-                                ? areaThreshold
-                                : baseTransformConfig.areaThreshold,
-                            },
-                          });
-                        }}
-                        helperText={t(
-                          'processing.filter.areaThresholdHelp',
-                          'Minimum area used with aspect ratio filtering.',
-                        )}
-                        disabled={disabled || !baseTransformConfig.enableFeatureFiltering}
-                      />
-                    </Grid>
-                  </Grid>
-                </Stack>
-              </Paper>
-            </Grid>
-          </Grid>
-          <Grid container spacing={3}>
-            <Grid size={{ xs: 12, md: 8 }}>
-              <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
-                <Stack spacing={2}>
-                  <Typography variant="subtitle2">
-                    {t('processing.filter.hybridFilterTitle', 'Hybrid filter tuning')}
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid size={{ xs: 12, md: 4 }}>
-                      <TextField
-                        fullWidth
-                        type="number"
-                        label={t('processing.filter.quickRejectThreshold', 'Quick Reject Threshold')}
-                        value={baseTransformConfig.hybridFilterConfig.quickRejectThreshold}
-                        onChange={(event) => {
-                          const quickRejectThreshold = Number(event.target.value);
-                          update({
-                            transformConfig: {
-                              ...baseTransformConfig,
-                              hybridFilterConfig: {
-                                ...baseTransformConfig.hybridFilterConfig,
-                                quickRejectThreshold: Number.isFinite(quickRejectThreshold)
-                                  ? quickRejectThreshold
-                                  : baseTransformConfig.hybridFilterConfig.quickRejectThreshold,
-                              },
-                            },
-                          });
-                        }}
-                        helperText={t(
-                          'processing.filter.quickRejectHelp',
-                          'Lower values reject more tiny features quickly.',
-                        )}
-                        disabled={disabled || !baseTransformConfig.enableFeatureFiltering}
-                      />
-                    </Grid>
-                    <Grid size={{ xs: 12, md: 4 }}>
-                      <TextField
-                        fullWidth
-                        type="number"
-                        label={t('processing.filter.simpleShapeVertexThreshold', 'Simple Shape Vertex Threshold')}
-                        value={baseTransformConfig.hybridFilterConfig.simpleShapeVertexThreshold}
-                        onChange={(event) => {
-                          const simpleShapeVertexThreshold = Number(event.target.value);
-                          update({
-                            transformConfig: {
-                              ...baseTransformConfig,
-                              hybridFilterConfig: {
-                                ...baseTransformConfig.hybridFilterConfig,
-                                simpleShapeVertexThreshold: Number.isFinite(simpleShapeVertexThreshold)
-                                  ? simpleShapeVertexThreshold
-                                  : baseTransformConfig.hybridFilterConfig.simpleShapeVertexThreshold,
-                              },
-                            },
-                          });
-                        }}
-                        helperText={t(
-                          'processing.filter.simpleShapeVertexHelp',
-                          'Vertex count threshold for simple-shape handling.',
-                        )}
-                        disabled={disabled || !baseTransformConfig.enableFeatureFiltering}
-                      />
-                    </Grid>
-                    <Grid size={{ xs: 12, md: 4 }}>
-                      <TextField
-                        fullWidth
-                        type="number"
-                        label={t('processing.filter.elongatedShapeCorrectionFactor', 'Elongated Shape Correction Factor')}
-                        value={baseTransformConfig.hybridFilterConfig.elongatedShapeCorrectionFactor}
-                        onChange={(event) => {
-                          const elongatedShapeCorrectionFactor = Number(event.target.value);
-                          update({
-                            transformConfig: {
-                              ...baseTransformConfig,
-                              hybridFilterConfig: {
-                                ...baseTransformConfig.hybridFilterConfig,
-                                elongatedShapeCorrectionFactor: Number.isFinite(elongatedShapeCorrectionFactor)
-                                  ? elongatedShapeCorrectionFactor
-                                  : baseTransformConfig.hybridFilterConfig.elongatedShapeCorrectionFactor,
-                              },
-                            },
-                          });
-                        }}
-                        helperText={t(
-                          'processing.filter.elongatedShapeHelp',
-                          'Correction factor for elongated simple shapes.',
-                        )}
-                        disabled={disabled || !baseTransformConfig.enableFeatureFiltering}
-                      />
-                    </Grid>
-                    <Grid size={{ xs: 12, md: 4 }}>
-                      <TextField
-                        fullWidth
-                        type="number"
-                        label={t('processing.filter.regularShapeMinRatio', 'Regular Shape Min Ratio')}
-                        value={baseTransformConfig.hybridFilterConfig.regularShapeMinRatio}
-                        onChange={(event) => {
-                          const regularShapeMinRatio = Number(event.target.value);
-                          update({
-                            transformConfig: {
-                              ...baseTransformConfig,
-                              hybridFilterConfig: {
-                                ...baseTransformConfig.hybridFilterConfig,
-                                regularShapeMinRatio: Number.isFinite(regularShapeMinRatio)
-                                  ? regularShapeMinRatio
-                                  : baseTransformConfig.hybridFilterConfig.regularShapeMinRatio,
-                              },
-                            },
-                          });
-                        }}
-                        helperText={t(
-                          'processing.filter.regularShapeMinRatioHelp',
-                          'Minimum ratio considered a regular-shaped feature.',
-                        )}
-                        disabled={disabled || !baseTransformConfig.enableFeatureFiltering}
-                      />
-                    </Grid>
-                    <Grid size={{ xs: 12, md: 4 }}>
-                      <TextField
-                        fullWidth
-                        type="number"
-                        label={t('processing.filter.regularShapeMaxRatio', 'Regular Shape Max Ratio')}
-                        value={baseTransformConfig.hybridFilterConfig.regularShapeMaxRatio}
-                        onChange={(event) => {
-                          const regularShapeMaxRatio = Number(event.target.value);
-                          update({
-                            transformConfig: {
-                              ...baseTransformConfig,
-                              hybridFilterConfig: {
-                                ...baseTransformConfig.hybridFilterConfig,
-                                regularShapeMaxRatio: Number.isFinite(regularShapeMaxRatio)
-                                  ? regularShapeMaxRatio
-                                  : baseTransformConfig.hybridFilterConfig.regularShapeMaxRatio,
-                              },
-                            },
-                          });
-                        }}
-                        helperText={t(
-                          'processing.filter.regularShapeMaxRatioHelp',
-                          'Maximum ratio considered a regular-shaped feature.',
-                        )}
-                        disabled={disabled || !baseTransformConfig.enableFeatureFiltering}
-                      />
-                    </Grid>
-                  </Grid>
-                </Stack>
-              </Paper>
-            </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
-                <PrecisionPanel
-                  quantize={quantizeRank}
-                  quantizeOptions={quantizeOptions}
-                  quantizeRank={quantizeRank}
-                  quantizeLabel={quantizeLabel}
-                  disabled={disabled}
-                  onQuantizeChange={(quantize) =>
-                    update({
-                      transformConfig: {
-                        ...baseTransformConfig,
-                        quantize,
-                      },
-                    })
-                  }
-                />
-              </Paper>
-            </Grid>
-          </Grid>
-          <Grid container spacing={3}>
-            <Grid size={{ xs: 12, md: 8 }}>
-              <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
-                <Stack spacing={2}>
-                  <Typography variant="subtitle2">
-                    {t('processing.filter.omitDetailsTitle', 'Detail omission')}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {t(
-                      'processing.filter.omitDetailsHelp',
-                      'Drops polygons that are too small to be visible at each zoom level using bbox and outer-ring area thresholds.',
-                    )}
-                  </Typography>
-                  <ToggleButtonGroup
-                    exclusive
-                    size="small"
-                    value={omitDetailsLevel}
-                    onChange={(_, value) => {
-                      if (!value) return;
-                      const nextLevel = value as typeof omitDetailsLevel;
-                      update({
-                        transformConfig: {
-                          ...baseTransformConfig,
-                          omitDetailsConfig: {
-                            level: nextLevel,
+                          tolerance,
+                          areaBasedTolerance: {
+                            ...areaBasedTolerance,
+                            largeAreaTolerance: nextLargeAreaTolerance,
                           },
                         },
                       });
                     }}
+                    min={toleranceExpMin}
+                    max={toleranceExpMax}
+                    step={0.25}
+                    marks={toleranceMarks}
+                    showPerFeatureToggle={false}
                     disabled={disabled}
-                  >
-                    <ToggleButton value="weak">
-                      {t('processing.filter.omitDetailsLevelWeak', 'Low')}
-                    </ToggleButton>
-                    <ToggleButton value="medium">
-                      {t('processing.filter.omitDetailsLevelMedium', 'Medium')}
-                    </ToggleButton>
-                    <ToggleButton value="strong">
-                      {t('processing.filter.omitDetailsLevelStrong', 'High')}
-                    </ToggleButton>
-                  </ToggleButtonGroup>
-                </Stack>
-              </Paper>
-            </Grid>
-          </Grid>
-          <Grid container spacing={3}>
-            <Grid size={{ xs: 12, md: 8 }}>
-              <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
-                <Stack spacing={2}>
-                  <Typography variant="subtitle2">
-                    {t('processing.filter.excludePolygonAreaCoefficient', 'Polygon Area Exclusion Coefficient')}
-                  </Typography>
-                  <div>
-                    <Typography gutterBottom>
-                      {t('processing.filter.excludePolygonAreaCoefficient', 'Polygon Area Exclusion Coefficient')}
+                    valueTransform={{
+                      toSlider: toExponent,
+                      fromSlider: toTolerance,
+                      formatLabel: formatTolerance,
+                    }}
+                  />
+                  <Stack spacing={1.5}>
+                    <Typography variant="subtitle2">
+                      {t('processing.filter.areaBasedToleranceTitle', 'Area-based tolerance')}
                     </Typography>
-                    <Box sx={{ px: 2 }}>
-                      <Slider
-                        value={baseTransformConfig.excludePolygonAreaCoefficient}
-                        onChange={(_, value) => {
-                          const excludePolygonAreaCoefficient = value as number;
-                          update({
-                            transformConfig: {
-                              ...baseTransformConfig,
-                              excludePolygonAreaCoefficient,
-                            },
-                          });
-                        }}
-                        min={0}
-                        max={5}
-                        step={0.1}
-                        valueLabelDisplay="auto"
-                        marks={[
-                          { value: 0, label: '0' },
-                          { value: 0.5, label: '0.5' },
-                          { value: 1, label: '1.0' },
-                          { value: 2, label: '2.0' },
-                          { value: 5, label: '5.0' },
-                        ]}
-                        disabled={disabled}
-                      />
+                    <Stack spacing={1}>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <CropOriginalIcon fontSize="small" />
+                        <Typography variant="body2" fontWeight={600}>
+                          {t(
+                            'processing.filter.areaBasedToleranceThresholdArea',
+                            'Threshold area for relaxed tolerance on large areas (px^2)',
+                          )}
+                        </Typography>
+                      </Stack>
+                      <Box sx={{ px: 2 }}>
+                        <Slider
+                          value={thresholdAreaExponent}
+                          min={thresholdAreaRange.min}
+                          max={thresholdAreaRange.max}
+                          step={0.1}
+                          marks={thresholdAreaMarks}
+                          valueLabelDisplay="auto"
+                          track="inverted"
+                          valueLabelFormat={(value) => formatPx2(Math.pow(10, value))}
+                          onChange={(_, value) => {
+                            if (Array.isArray(value)) return;
+                            const nextArea = Math.pow(10, value);
+                            if (!Number.isFinite(nextArea)) return;
+                            update({
+                              transformConfig: {
+                                ...baseTransformConfig,
+                                areaBasedTolerance: {
+                                  ...areaBasedTolerance,
+                                  thresholdAreaPx2: nextArea,
+                                },
+                              },
+                            });
+                          }}
+                          disabled={disabled}
+                        />
+                      </Box>
+                      <Typography variant="caption" color="text.secondary">
+                        {t(
+                          'processing.filter.areaBasedToleranceThresholdHelp',
+                          'Marks use the max zoom of the first band (z={{zoom}}).',
+                          { zoom: zTarget },
+                        )}
+                      </Typography>
+                    </Stack>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">
+                        {t(
+                          'processing.filter.areaBasedToleranceLargeTolerance',
+                          'Relaxed tolerance on large areas',
+                        )}
+                      </Typography>
+                      <Box sx={{ px: 2, pt: 2, pb: 2 }}>
+                        <Stack direction="row" spacing={2} alignItems="center">
+                          <DensitySmallIcon fontSize="small" color="action" />
+                          <Slider
+                            sx={{ flex: 1 }}
+                            value={toExponent(areaBasedTolerance.largeAreaTolerance)}
+                            min={toleranceExpMin}
+                            max={toleranceExpMax}
+                            step={0.25}
+                            valueLabelDisplay="auto"
+                            track="inverted"
+                            valueLabelFormat={(value) => formatTolerance(toTolerance(value))}
+                            marks={toleranceMarks}
+                            onChange={(_, value) => {
+                              if (Array.isArray(value)) return;
+                              const nextTolerance = toTolerance(value);
+                              const clamped = Math.min(nextTolerance, baseTransformConfig.tolerance);
+                              update({
+                                transformConfig: {
+                                  ...baseTransformConfig,
+                                  areaBasedTolerance: {
+                                    ...areaBasedTolerance,
+                                    largeAreaTolerance: clamped,
+                                  },
+                                },
+                              });
+                            }}
+                            disabled={disabled}
+                          />
+                          <DensityLargeIcon fontSize="small" color="action" />
+                        </Stack>
+                      </Box>
                     </Box>
                     <Typography variant="caption" color="text.secondary">
                       {t(
-                        'processing.filter.excludePolygonAreaCoefficientHelp',
-                        'Excludes polygons smaller than coefficient × grid size × outline length / 2 after quantization.',
-                      )}
-                    </Typography>
-                  </div>
-                </Stack>
-              </Paper>
-            </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
-                <ExtractionPanel
-                  tolerance={baseTransformConfig.tolerance}
-                  toleranceLabelKey="processing.filter.tolerancePrimary"
-                  onToleranceChange={(tolerance) =>
-                    update({
-                      transformConfig: {
-                        ...baseTransformConfig,
-                        tolerance,
-                      },
-                    })
-                  }
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  marks={[
-                    { value: 0, label: '0' },
-                    { value: 0.05, label: '0.05' },
-                    { value: 0.1, label: '0.1' },
-                    { value: 0.25, label: '0.25' },
-                    { value: 0.5, label: '0.5' },
-                    { value: 0.75, label: '0.75' },
-                    { value: 1, label: '1.0' },
-                  ]}
-                  showPerFeatureToggle={false}
-                  disabled={disabled}
-                />
-              </Paper>
-            </Grid>
-          </Grid>
-          <Grid container spacing={3}>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
-                <Stack spacing={2}>
-                  <Typography variant="subtitle2">
-                    {t('processing.filter.selfIntersectionTuningTitle', 'Self-intersection tuning')}
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label={t('processing.filter.selfIntersectionDisableZoom', 'Disable fix at zoom or below')}
-                    value={baseTransformConfig.selfIntersectionTuningConfig.disableAtZoomOrBelow}
-                    onChange={(event) => {
-                      const disableAtZoomOrBelow = Number(event.target.value);
-                      update({
-                        transformConfig: {
-                          ...baseTransformConfig,
-                          selfIntersectionTuningConfig: {
-                            ...baseTransformConfig.selfIntersectionTuningConfig,
-                            disableAtZoomOrBelow: Number.isFinite(disableAtZoomOrBelow)
-                              ? disableAtZoomOrBelow
-                              : baseTransformConfig.selfIntersectionTuningConfig.disableAtZoomOrBelow,
-                          },
-                        },
-                      });
-                    }}
-                    disabled={disabled}
-                  />
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label={t('processing.filter.selfIntersectionMaxVerticesForFix', 'Max vertices for fix')}
-                    value={baseTransformConfig.selfIntersectionTuningConfig.maxVerticesForFix}
-                    onChange={(event) => {
-                      const maxVerticesForFix = Number(event.target.value);
-                      update({
-                        transformConfig: {
-                          ...baseTransformConfig,
-                          selfIntersectionTuningConfig: {
-                            ...baseTransformConfig.selfIntersectionTuningConfig,
-                            maxVerticesForFix: Number.isFinite(maxVerticesForFix)
-                              ? maxVerticesForFix
-                              : baseTransformConfig.selfIntersectionTuningConfig.maxVerticesForFix,
-                          },
-                        },
-                      });
-                    }}
-                    disabled={disabled}
-                  />
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label={t('processing.filter.selfIntersectionMaxVerticesForSplit', 'Max vertices for split')}
-                    value={baseTransformConfig.selfIntersectionTuningConfig.maxVerticesForSplit}
-                    onChange={(event) => {
-                      const maxVerticesForSplit = Number(event.target.value);
-                      update({
-                        transformConfig: {
-                          ...baseTransformConfig,
-                          selfIntersectionTuningConfig: {
-                            ...baseTransformConfig.selfIntersectionTuningConfig,
-                            maxVerticesForSplit: Number.isFinite(maxVerticesForSplit)
-                              ? maxVerticesForSplit
-                              : baseTransformConfig.selfIntersectionTuningConfig.maxVerticesForSplit,
-                          },
-                        },
-                      });
-                    }}
-                    disabled={disabled}
-                  />
-                </Stack>
-              </Paper>
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
-                <Stack spacing={2}>
-                  <Typography variant="subtitle2">
-                    {t('processing.filter.selfIntersectionHandlingTitle', 'Self-intersection handling')}
-                  </Typography>
-                  <ToggleButtonGroup
-                    exclusive
-                    size="small"
-                    value={baseTransformConfig.selfIntersectionConfig.strategy}
-                    onChange={(_, value) => {
-                      if (!value) return;
-                      update({
-                        transformConfig: {
-                          ...baseTransformConfig,
-                          selfIntersectionConfig: {
-                            ...baseTransformConfig.selfIntersectionConfig,
-                            strategy: value,
-                          },
-                        },
-                      });
-                    }}
-                    disabled={disabled}
-                  >
-                    <ToggleButton value="keep_largest">
-                      {t('processing.filter.selfIntersectionKeepLargest', 'Keep largest')}
-                    </ToggleButton>
-                    <ToggleButton value="keep_all">
-                      {t('processing.filter.selfIntersectionKeepAll', 'Keep all')}
-                    </ToggleButton>
-                    <ToggleButton value="keep_outer">
-                      {t('processing.filter.selfIntersectionKeepOuter', 'Keep outer')}
-                    </ToggleButton>
-                  </ToggleButtonGroup>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label={t('processing.filter.selfIntersectionMinPolygonAreaMultiplier', 'Min polygon area multiplier')}
-                    value={baseTransformConfig.selfIntersectionConfig.minPolygonAreaMultiplier}
-                    onChange={(event) => {
-                      const minPolygonAreaMultiplier = Number(event.target.value);
-                      update({
-                        transformConfig: {
-                          ...baseTransformConfig,
-                          selfIntersectionConfig: {
-                            ...baseTransformConfig.selfIntersectionConfig,
-                            minPolygonAreaMultiplier: Number.isFinite(minPolygonAreaMultiplier)
-                              ? minPolygonAreaMultiplier
-                              : baseTransformConfig.selfIntersectionConfig.minPolygonAreaMultiplier,
-                          },
-                        },
-                      });
-                    }}
-                    disabled={disabled}
-                  />
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label={t('processing.filter.selfIntersectionMaxPolygons', 'Max polygons')}
-                    value={baseTransformConfig.selfIntersectionConfig.maxPolygons}
-                    onChange={(event) => {
-                      const maxPolygons = Number(event.target.value);
-                      update({
-                        transformConfig: {
-                          ...baseTransformConfig,
-                          selfIntersectionConfig: {
-                            ...baseTransformConfig.selfIntersectionConfig,
-                            maxPolygons: Number.isFinite(maxPolygons)
-                              ? maxPolygons
-                              : baseTransformConfig.selfIntersectionConfig.maxPolygons,
-                          },
-                        },
-                      });
-                    }}
-                    disabled={disabled}
-                  />
-                  <FormControlLabel
-                    control={(
-                      <Switch
-                        checked={baseTransformConfig.selfIntersectionConfig.retainHoles}
-                        onChange={(event) => {
-                          update({
-                            transformConfig: {
-                              ...baseTransformConfig,
-                              selfIntersectionConfig: {
-                                ...baseTransformConfig.selfIntersectionConfig,
-                                retainHoles: event.target.checked,
-                              },
-                            },
-                          });
-                        }}
-                        disabled={disabled}
-                      />
-                    )}
-                    label={t('processing.filter.selfIntersectionRetainHoles', 'Retain holes')}
-                  />
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label={t('processing.filter.selfIntersectionSnapToleranceMultiplier', 'Snap tolerance multiplier')}
-                    value={baseTransformConfig.selfIntersectionConfig.snapToleranceMultiplier}
-                    onChange={(event) => {
-                      const snapToleranceMultiplier = Number(event.target.value);
-                      update({
-                        transformConfig: {
-                          ...baseTransformConfig,
-                          selfIntersectionConfig: {
-                            ...baseTransformConfig.selfIntersectionConfig,
-                            snapToleranceMultiplier: Number.isFinite(snapToleranceMultiplier)
-                              ? snapToleranceMultiplier
-                              : baseTransformConfig.selfIntersectionConfig.snapToleranceMultiplier,
-                          },
-                        },
-                      });
-                    }}
-                    disabled={disabled}
-                  />
-                </Stack>
-              </Paper>
-            </Grid>
-          </Grid>
-          <Grid container spacing={3}>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
-                <Stack spacing={2}>
-                  <Typography variant="subtitle2">
-                    {t('processing.filter.ringFixTitle', 'Ring fix settings')}
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label={t('processing.filter.ringFixMinRingVertices', 'Min ring vertices')}
-                    value={baseTransformConfig.ringFixConfig.minRingVertices}
-                    onChange={(event) => {
-                      const minRingVertices = Number(event.target.value);
-                      update({
-                        transformConfig: {
-                          ...baseTransformConfig,
-                          ringFixConfig: {
-                            ...baseTransformConfig.ringFixConfig,
-                            minRingVertices: Number.isFinite(minRingVertices)
-                              ? minRingVertices
-                              : baseTransformConfig.ringFixConfig.minRingVertices,
-                          },
-                        },
-                      });
-                    }}
-                    disabled={disabled}
-                  />
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label={t('processing.filter.ringFixMinRingAreaMultiplier', 'Min ring area multiplier')}
-                    value={baseTransformConfig.ringFixConfig.minRingAreaMultiplier}
-                    onChange={(event) => {
-                      const minRingAreaMultiplier = Number(event.target.value);
-                      update({
-                        transformConfig: {
-                          ...baseTransformConfig,
-                          ringFixConfig: {
-                            ...baseTransformConfig.ringFixConfig,
-                            minRingAreaMultiplier: Number.isFinite(minRingAreaMultiplier)
-                              ? minRingAreaMultiplier
-                              : baseTransformConfig.ringFixConfig.minRingAreaMultiplier,
-                          },
-                        },
-                      });
-                    }}
-                    disabled={disabled}
-                  />
-                  <FormControlLabel
-                    control={(
-                      <Switch
-                        checked={baseTransformConfig.ringFixConfig.removeDuplicateConsecutivePoints}
-                        onChange={(event) => {
-                          update({
-                            transformConfig: {
-                              ...baseTransformConfig,
-                              ringFixConfig: {
-                                ...baseTransformConfig.ringFixConfig,
-                                removeDuplicateConsecutivePoints: event.target.checked,
-                              },
-                            },
-                          });
-                        }}
-                        disabled={disabled}
-                      />
-                    )}
-                    label={t('processing.filter.ringFixRemoveDuplicatePoints', 'Remove duplicate points')}
-                  />
-                  <FormControlLabel
-                    control={(
-                      <Switch
-                        checked={baseTransformConfig.ringFixConfig.removeCollinearPoints}
-                        onChange={(event) => {
-                          update({
-                            transformConfig: {
-                              ...baseTransformConfig,
-                              ringFixConfig: {
-                                ...baseTransformConfig.ringFixConfig,
-                                removeCollinearPoints: event.target.checked,
-                              },
-                            },
-                          });
-                        }}
-                        disabled={disabled}
-                      />
-                    )}
-                    label={t('processing.filter.ringFixRemoveCollinearPoints', 'Remove collinear points')}
-                  />
-                </Stack>
-              </Paper>
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
-                <Stack spacing={2}>
-                  <Typography variant="subtitle2">
-                    {t('processing.filter.transformModeTitle', 'Transform mode')}
-                  </Typography>
-                  <ToggleButtonGroup
-                    exclusive
-                    size="small"
-                    value={transformModeValue}
-                    onChange={(_, value) => {
-                      if (!value) return;
-                      update({
-                        transformConfig: {
-                          ...baseTransformConfig,
-                          transformMode: value,
-                        },
-                      });
-                    }}
-                    disabled={disabled}
-                  >
-                    <ToggleButton value="full">
-                      {t('processing.filter.transformModeFull', 'Full')}
-                    </ToggleButton>
-                    <ToggleButton value="simplify-only">
-                      {t('processing.filter.transformModeSimplifyOnly', 'Simplify only')}
-                    </ToggleButton>
-                  </ToggleButtonGroup>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label={t(
-                      'processing.filter.boundaryDisableAtZoomOrAbove',
-                      'Disable boundary handling at zoom or above',
-                    )}
-                    value={baseTransformConfig.boundaryDisableAtZoomOrAbove ?? ''}
-                    onChange={(event) => {
-                      const rawValue = event.target.value;
-                      const boundaryDisableAtZoomOrAbove = rawValue === ''
-                        ? undefined
-                        : Number(rawValue);
-                      update({
-                        transformConfig: {
-                          ...baseTransformConfig,
-                          boundaryDisableAtZoomOrAbove: Number.isFinite(boundaryDisableAtZoomOrAbove ?? 0)
-                            ? boundaryDisableAtZoomOrAbove
-                            : baseTransformConfig.boundaryDisableAtZoomOrAbove,
-                        },
-                      });
-                    }}
-                    helperText={t(
-                      'processing.filter.boundaryDisableAtZoomOrAboveHelp',
-                      'Stops boundary preservation above this zoom.',
-                    )}
-                    disabled={disabled}
-                  />
-                  <FormControlLabel
-                    control={(
-                      <Switch
-                        checked={baseTransformConfig.deleteOnComplete}
-                        onChange={(event) => {
-                          update({
-                            transformConfig: {
-                              ...baseTransformConfig,
-                              deleteOnComplete: event.target.checked,
-                            },
-                          });
-                        }}
-                        disabled={disabled}
-                      />
-                    )}
-                    label={t(
-                      'processing.filter.deleteOnComplete',
-                      'Delete simplified cache after VT completion',
-                    )}
-                  />
-                  <Typography variant="caption" color="text.secondary">
-                    {t(
-                      'processing.filter.deleteOnCompleteHelp',
-                      'Removes transform-stage simplified cache once VT generation completes.',
-                    )}
-                  </Typography>
-                </Stack>
-              </Paper>
-            </Grid>
-          </Grid>
-          <Grid container spacing={3}>
-            <Grid size={{ xs: 12, md: 8 }}>
-              <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
-                <Stack spacing={2}>
-                  <Typography variant="subtitle2">
-                    {t('processing.filter.preSimplifyTitle', 'Pre-simplify Filters')}
-                  </Typography>
-                  <Stack spacing={1}>
-                    <FormControlLabel
-                      control={(
-                        <Switch
-                          checked={baseTransformConfig.preSimplifyFilterConfig.excludeInvalidGeometry}
-                          onChange={(event) => {
-                            update({
-                              transformConfig: {
-                                ...baseTransformConfig,
-                                preSimplifyFilterConfig: {
-                                  ...baseTransformConfig.preSimplifyFilterConfig,
-                                  excludeInvalidGeometry: event.target.checked,
-                                },
-                              },
-                            });
-                          }}
-                        />
-                      )}
-                      label={t('processing.filter.excludeInvalidGeometry', 'Exclude invalid geometry')}
-                      disabled={disabled}
-                    />
-                    <Typography variant="caption" color="text.secondary">
-                      {t(
-                        'processing.filter.excludeInvalidGeometryHelp',
-                        'Drops features with non-finite coordinates, open rings, or invalid polygons before simplify.',
-                      )}
-                    </Typography>
-                  </Stack>
-                  <Stack spacing={1}>
-                    <FormControlLabel
-                      control={(
-                        <Switch
-                          checked={baseTransformConfig.preSimplifyFilterConfig.dropInvalidHoles}
-                          onChange={(event) => {
-                            update({
-                              transformConfig: {
-                                ...baseTransformConfig,
-                                preSimplifyFilterConfig: {
-                                  ...baseTransformConfig.preSimplifyFilterConfig,
-                                  dropInvalidHoles: event.target.checked,
-                                },
-                              },
-                            });
-                          }}
-                        />
-                      )}
-                      label={t('processing.filter.dropInvalidHoles', 'Drop invalid holes')}
-                      disabled={disabled}
-                    />
-                    <Typography variant="caption" color="text.secondary">
-                      {t(
-                        'processing.filter.dropInvalidHolesHelp',
-                        'When a hole ring is invalid, only the hole is removed instead of dropping the polygon.',
-                      )}
-                    </Typography>
-                  </Stack>
-                  <Stack spacing={1}>
-                    <FormControlLabel
-                      control={(
-                        <Switch
-                          checked={baseTransformConfig.preSimplifyFilterConfig.splitSelfIntersections}
-                          onChange={(event) => {
-                            update({
-                              transformConfig: {
-                                ...baseTransformConfig,
-                                preSimplifyFilterConfig: {
-                                  ...baseTransformConfig.preSimplifyFilterConfig,
-                                  splitSelfIntersections: event.target.checked,
-                                },
-                              },
-                            });
-                          }}
-                        />
-                      )}
-                      label={t('processing.filter.splitSelfIntersections', 'Split self-intersections')}
-                      disabled={disabled}
-                    />
-                    <Typography variant="caption" color="text.secondary">
-                      {t(
-                        'processing.filter.splitSelfIntersectionsHelp',
-                        'Splits self-intersecting polygons before simplify to avoid geometry errors.',
-                      )}
-                    </Typography>
-                  </Stack>
-                  <Stack spacing={1}>
-                    <FormControlLabel
-                      control={(
-                        <Switch
-                          checked={baseTransformConfig.preSimplifyFilterConfig.dropSmallPolygons}
-                          onChange={(event) => {
-                            update({
-                              transformConfig: {
-                                ...baseTransformConfig,
-                                preSimplifyFilterConfig: {
-                                  ...baseTransformConfig.preSimplifyFilterConfig,
-                                  dropSmallPolygons: event.target.checked,
-                                },
-                              },
-                            });
-                          }}
-                        />
-                      )}
-                      label={t('processing.filter.dropSmallPolygons', 'Drop tiny polygons')}
-                      disabled={disabled}
-                    />
-                    <Typography variant="caption" color="text.secondary">
-                      {t(
-                        'processing.filter.dropSmallPolygonsHelp',
-                        'Removes polygons below the minimum area or vertex thresholds instead of simplifying them.',
+                        'processing.filter.areaBasedToleranceHelp',
+                        'If a feature exceeds the threshold area, tolerance is capped by the large-area value.',
                       )}
                     </Typography>
                   </Stack>

@@ -39,17 +39,6 @@ const metersPerPixel = (z: number): number => (
   (2 * Math.PI * EARTH_RADIUS) / (MVT_EXTENT * Math.pow(2, z))
 );
 
-const clampQuantizeRank = (quantize?: number): number => {
-  if (!Number.isFinite(quantize)) return 1;
-  const rounded = Math.round(quantize as number);
-  return Math.min(5, Math.max(1, rounded));
-};
-
-const resolveQuantizeFactor = (quantize?: number): number => {
-  const rank = clampQuantizeRank(quantize);
-  return Math.pow(2, rank - 1);
-};
-
 const lonLatToMercator = ([lon, lat]: LonLat): Mercator => {
   const clampedLat = Math.min(MAX_MERCATOR_LAT, Math.max(-MAX_MERCATOR_LAT, lat));
   const x = (lon * Math.PI * EARTH_RADIUS) / 180;
@@ -147,13 +136,12 @@ const shouldExcludeByArea = (
   coords: number[][][],
   coefficient: number,
   zTarget: number,
-  quantize?: number,
 ): boolean => {
   if (!Number.isFinite(coefficient) || coefficient <= 0) return false;
   const outlineLength = computeRingLengthMeters(coords[0] ?? []);
   if (outlineLength <= 0) return false;
   const area = computePolygonArea(coords);
-  const gridSizeMeters = metersPerPixel(zTarget) * resolveQuantizeFactor(quantize);
+  const gridSizeMeters = metersPerPixel(zTarget);
   const threshold = (coefficient * gridSizeMeters * outlineLength) / 2;
   return area < threshold;
 };
@@ -164,7 +152,6 @@ const filterPolygons = (
     zTarget: number;
     omitDetailsConfig: OmitDetailsConfig;
     excludePolygonAreaCoefficient: number;
-    quantize?: number;
     minRingVertices?: number;
   },
 ): number[][][][] => {
@@ -174,7 +161,7 @@ const filterPolygons = (
     const outer = coords[0] ?? [];
     if (outer.length < minRingVertices) continue;
     if (shouldOmitByDetails(coords, options.omitDetailsConfig, options.zTarget)) continue;
-    if (shouldExcludeByArea(coords, options.excludePolygonAreaCoefficient, options.zTarget, options.quantize)) continue;
+    if (shouldExcludeByArea(coords, options.excludePolygonAreaCoefficient, options.zTarget)) continue;
     filtered.push(coords);
   }
   return filtered;
@@ -186,7 +173,6 @@ const filterGeometry = (
     zTarget: number;
     omitDetailsConfig: OmitDetailsConfig;
     excludePolygonAreaCoefficient: number;
-    quantize?: number;
     minRingVertices?: number;
   },
 ): Geometry | null => {
@@ -210,7 +196,6 @@ export const filterFetchCollectionByZoom = (
     zTarget: number;
     omitDetailsConfig: OmitDetailsConfig;
     excludePolygonAreaCoefficient: number;
-    quantize?: number;
     minRingVertices?: number;
   },
 ): FeatureCollection => {

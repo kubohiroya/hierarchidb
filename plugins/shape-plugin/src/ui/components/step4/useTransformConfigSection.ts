@@ -15,9 +15,6 @@ export const useTransformConfigSection = ({ config, onChange }: Args) => {
   if (!baseTransformConfig.hybridFilterConfig) {
     throw new Error('TransformConfigSection: hybridFilterConfig is not defined');
   }
-  if (!baseTransformConfig.preSimplifyFilterConfig) {
-    throw new Error('TransformConfigSection: preSimplifyFilterConfig is not defined');
-  }
   if (!baseTransformConfig.omitDetailsConfig) {
     throw new Error('TransformConfigSection: omitDetailsConfig is not defined');
   }

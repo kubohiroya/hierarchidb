@@ -69,9 +69,8 @@ export type OmitDetailsConfig = {
 };
 
 export type AreaBasedToleranceConfig = {
-  enabled: boolean;
-  referenceAreaPx2: number;
-  minScale: number;
+  thresholdAreaPx2: number;
+  largeAreaTolerance: number;
 };
 
 export type SelfIntersectionTuningConfig = {
@@ -79,8 +78,6 @@ export type SelfIntersectionTuningConfig = {
   maxVerticesForFix: number;
   maxVerticesForSplit: number;
 };
-
-export type TransformMode = 'full' | 'simplify-only';
 
 export interface TransformConfig {
   zoomBandBoundaries: number[];
@@ -92,17 +89,12 @@ export interface TransformConfig {
   featureFilterMethod: FeatureFilterMethod;
   hybridFilterConfig: HybridFilterConfig;
   deleteOnComplete: boolean;
-  quantize?: number;
   tolerance: number;
   areaThreshold: number;
   excludePolygonAreaCoefficient: number;
   omitDetailsConfig: OmitDetailsConfig;
   areaBasedTolerance: AreaBasedToleranceConfig;
-  selfIntersectionTuningConfig: SelfIntersectionTuningConfig;
-  ringFixConfig: RingFixConfig;
-  selfIntersectionConfig: SelfIntersectionConfig;
-  preSimplifyFilterConfig: PreSimplifyFilterConfig;
-  transformMode?: TransformMode;
+  minRingVertices: number;
   boundaryDisableAtZoomOrAbove?: number;
 }
 

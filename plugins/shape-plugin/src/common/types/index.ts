@@ -19,8 +19,6 @@ export type {
   HybridFilterConfig,
   OmitDetailsConfig,
   OmitDetailsLevel,
-  PreSimplifyFilterConfig,
-  SelfIntersectionTuningConfig,
   TransformConfig,
   VTConfig,
 } from '@hierarchidb/gis-sdk';

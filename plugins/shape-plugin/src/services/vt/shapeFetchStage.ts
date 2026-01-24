@@ -530,8 +530,7 @@ const createFetchHandler = (params: {
         zTarget: filterZoom!,
         omitDetailsConfig: params.buildConfig.transformConfig.omitDetailsConfig,
         excludePolygonAreaCoefficient: params.buildConfig.transformConfig.excludePolygonAreaCoefficient,
-        quantize: params.buildConfig.transformConfig.quantize,
-        minRingVertices: params.buildConfig.transformConfig.ringFixConfig?.minRingVertices,
+        minRingVertices: params.buildConfig.transformConfig.minRingVertices,
       })
       : collection;
     if (filteredCollection.features.length === 0) {
