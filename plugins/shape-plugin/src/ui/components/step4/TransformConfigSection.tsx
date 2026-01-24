@@ -173,40 +173,7 @@ export const TransformConfigSection: React.FC<Props> = ({ config, disabled, onCh
                     icon={<AutoFixHighIcon fontSize="small" color="primary" />}
                     title={t('processing.filter.extractionTitle', 'Simplification')}
                   />
-                  <ExtractionPanel
-                    tolerance={baseTransformConfig.tolerance}
-                    toleranceLabelKey="processing.filter.tolerancePrimary"
-                    showTitle={false}
-                    startIcon={<DensitySmallIcon fontSize="small" />}
-                    endIcon={<DensityLargeIcon fontSize="small" />}
-                    onToleranceChange={(tolerance) => {
-                      const nextLargeAreaTolerance = Math.min(
-                        areaBasedTolerance.largeAreaTolerance,
-                        tolerance,
-                      );
-                      update({
-                        transformConfig: {
-                          ...baseTransformConfig,
-                          tolerance,
-                          areaBasedTolerance: {
-                            ...areaBasedTolerance,
-                            largeAreaTolerance: nextLargeAreaTolerance,
-                          },
-                        },
-                      });
-                    }}
-                    min={toleranceExpMin}
-                    max={toleranceExpMax}
-                    step={0.25}
-                    marks={toleranceMarks}
-                    showPerFeatureToggle={false}
-                    disabled={disabled}
-                    valueTransform={{
-                      toSlider: toExponent,
-                      fromSlider: toTolerance,
-                      formatLabel: formatTolerance,
-                    }}
-                  />
+
                   <Stack spacing={1.5}>
                     <Typography variant="subtitle2">
                       {t('processing.filter.areaBasedToleranceTitle', 'Area-based tolerance')}
@@ -217,7 +184,7 @@ export const TransformConfigSection: React.FC<Props> = ({ config, disabled, onCh
                         <Typography variant="body2" fontWeight={600}>
                           {t(
                             'processing.filter.areaBasedToleranceThresholdArea',
-                            'Threshold area for relaxed tolerance on large areas (px^2)',
+                            'Threshold area for tolerance #1 and tolerance #2 (px^2)',
                           )}
                         </Typography>
                       </Stack>
@@ -229,7 +196,6 @@ export const TransformConfigSection: React.FC<Props> = ({ config, disabled, onCh
                           step={0.1}
                           marks={thresholdAreaMarks}
                           valueLabelDisplay="auto"
-                          track="inverted"
                           valueLabelFormat={(value) => formatPx2(Math.pow(10, value))}
                           onChange={(_, value) => {
                             if (Array.isArray(value)) return;
@@ -256,11 +222,45 @@ export const TransformConfigSection: React.FC<Props> = ({ config, disabled, onCh
                         )}
                       </Typography>
                     </Stack>
+                    <ExtractionPanel
+                      tolerance={baseTransformConfig.tolerance}
+                      toleranceLabelKey="processing.filter.tolerancePrimary"
+                      showTitle={false}
+                      startIcon={<DensitySmallIcon fontSize="small" />}
+                      endIcon={<DensityLargeIcon fontSize="small" />}
+                      onToleranceChange={(tolerance) => {
+                        const nextLargeAreaTolerance = Math.min(
+                          areaBasedTolerance.largeAreaTolerance,
+                          tolerance,
+                        );
+                        update({
+                          transformConfig: {
+                            ...baseTransformConfig,
+                            tolerance,
+                            areaBasedTolerance: {
+                              ...areaBasedTolerance,
+                              largeAreaTolerance: nextLargeAreaTolerance,
+                            },
+                          },
+                        });
+                      }}
+                      min={toleranceExpMin}
+                      max={toleranceExpMax}
+                      step={0.25}
+                      marks={toleranceMarks}
+                      showPerFeatureToggle={false}
+                      disabled={disabled}
+                      valueTransform={{
+                        toSlider: toExponent,
+                        fromSlider: toTolerance,
+                        formatLabel: formatTolerance,
+                      }}
+                    />
                     <Box>
                       <Typography variant="caption" color="text.secondary">
                         {t(
                           'processing.filter.areaBasedToleranceLargeTolerance',
-                          'Relaxed tolerance on large areas',
+                          'Tolerance #2 on large areas',
                         )}
                       </Typography>
                       <Box sx={{ px: 2, pt: 2, pb: 2 }}>

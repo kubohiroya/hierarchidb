@@ -173,7 +173,7 @@
       "omitDetailsLevelMediumHelp": "Keeps large and medium islands.",
       "omitDetailsLevelStrongHelp": "Keeps only large islands.",
       "tolerance": "Simplification Strength",
-      "tolerancePrimary": "Tolerance",
+      "tolerancePrimary": "Tolerance #1 on small and medium areas",
       "toleranceSecondary": "Simplification strength (preprocessing)",
       "toleranceHelp": "Higher values straighten boundaries and remove fine details. Small or thin features are more likely to be filtered out in combination with the filters. Downstream (transform preprocessing and VT generation) becomes lighter and smaller, but geometric fidelity decreases.",
       "toleranceHelpStage2": "Applies transform preprocessing for tile generation.",
@@ -211,8 +211,8 @@
       "zoomBandRangeSummaryTitle": "Zoom band summary",
       "zoomBandRangeItem": "Range {{index}}: z{{min}}-{{max}}",
       "applyCommonZoomBandBoundaries": "Apply common zoom band settings",
-      "areaBasedToleranceThresholdArea": "Threshold area for relaxed tolerance on large areas (px^2)",
-      "areaBasedToleranceLargeTolerance": "Relaxed tolerance on large areas"
+      "areaBasedToleranceThresholdArea": "Threshold area for tolerance #1 and tolerance #2 (px^2)",
+      "areaBasedToleranceLargeTolerance": "Tolerance #2 on large areas"
     },
     "zoomBandSettings": {
       "title": "Zoom band settings"
