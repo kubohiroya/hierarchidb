@@ -27,6 +27,7 @@ interface BatchConfig {
     deleteOnComplete?: boolean;
   };
   transformConfig: {
+    zoomBandBoundaries: number[];
     maxConcurrent: number;
     enableFeatureFiltering: boolean;
     featureAreaThreshold: number;
@@ -35,13 +36,18 @@ interface BatchConfig {
     featureFilterMethod: string;
     hybridFilterConfig?: any;
     deleteOnComplete?: boolean;
-    quantize: number;
     tolerance: number;
-    areaBasedTolerance: {
-      enabled: boolean;
-      referenceAreaPx2: number;
-      minScale: number;
+    areaThreshold: number;
+    excludePolygonAreaCoefficient: number;
+    omitDetailsConfig: {
+      level: string;
     };
+    areaBasedTolerance: {
+      thresholdAreaPx2: number;
+      largeAreaTolerance: number;
+    };
+    minRingVertices: number;
+    boundaryDisableAtZoomOrAbove?: number;
   };
   vtConfig: {
     maxConcurrent: number;
@@ -67,6 +73,7 @@ export function createTestBatchConfig(): BatchConfig {
       deleteOnComplete: false,
     },
     transformConfig: {
+      zoomBandBoundaries: [0, 3, 6],
       maxConcurrent: 2,
       enableFeatureFiltering: true,
       featureAreaThreshold: 0.05,
@@ -81,13 +88,18 @@ export function createTestBatchConfig(): BatchConfig {
         elongatedShapeCorrectionFactor: 0.7,
       },
       deleteOnComplete: false,
-      quantize: 1e5,
       tolerance: 0.05,
-      areaBasedTolerance: {
-        enabled: false,
-        referenceAreaPx2: 4096 * 4096,
-        minScale: 0.2,
+      areaThreshold: 0.05,
+      excludePolygonAreaCoefficient: 1,
+      omitDetailsConfig: {
+        level: 'strong',
       },
+      areaBasedTolerance: {
+        thresholdAreaPx2: 4096 * 4096,
+        largeAreaTolerance: 0.1,
+      },
+      minRingVertices: 4,
+      boundaryDisableAtZoomOrAbove: 3,
     },
     vtConfig: {
       maxConcurrent: 2,
@@ -127,7 +139,7 @@ export function createTestShapeEntityJapanOnly(): ShapeEntity {
       ...baseEntity.buildConfig!,
       transformConfig: {
         ...baseEntity.buildConfig!.transformConfig,
-        quantize: 1e4,
+        tolerance: 0.03,
       },
       vtConfig: {
         ...baseEntity.buildConfig!.vtConfig,

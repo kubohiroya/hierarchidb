@@ -8,7 +8,14 @@ import {
   Switch,
   Typography,
 } from '@mui/material';
+import type { ReactNode } from 'react';
 import { useTranslation } from '../../i18n.js';
+
+type ValueTransform = {
+  toSlider: (value: number) => number;
+  fromSlider: (value: number) => number;
+  formatLabel?: (value: number) => string;
+};
 
 type Props = {
   tolerance: number;
@@ -18,6 +25,10 @@ type Props = {
   onPerFeatureChange?: (enabled: boolean) => void;
   toleranceHelpKey?: string;
   toleranceLabelKey?: string;
+  showTitle?: boolean;
+  valueTransform?: ValueTransform;
+  startIcon?: ReactNode;
+  endIcon?: ReactNode;
   min?: number;
   max?: number;
   step?: number;
@@ -44,32 +55,56 @@ export const ExtractionPanel: React.FC<Props> = ({
     { value: 3, label: '3' },
   ],
   disabled,
+  showTitle = true,
+  valueTransform,
+  startIcon,
+  endIcon,
 }) => {
   const { t } = useTranslation();
 
+  const sliderValue = valueTransform ? valueTransform.toSlider(tolerance) : tolerance;
+  const formatLabel = valueTransform?.formatLabel
+    ? (value: number) => valueTransform.formatLabel?.(valueTransform.fromSlider(value))
+    : undefined;
+
   return (
     <Stack spacing={2}>
-      <Typography variant="subtitle2">
-        {t('processing.filter.extractionTitle', 'Extraction')}
-      </Typography>
+      {showTitle && (
+        <Typography variant="subtitle2">
+          {t('processing.filter.extractionTitle', 'Extraction')}
+        </Typography>
+      )}
       <div>
         <Typography gutterBottom>
           {t(toleranceLabelKey, 'Extraction Tolerance (degrees)')}
         </Typography>
-        <Box sx={{ px: 2 }}>
-          <Slider
-            value={tolerance}
-            onChange={(_, value) => {
-              onToleranceChange(value as number);
-            }}
-            min={min}
-            max={max}
-            step={step}
-            marks={marks}
-            valueLabelDisplay="auto"
-            track="inverted"
-            disabled={disabled}
-          />
+        <Box sx={{ px: 2, pt: 2, pb: 2  }}>
+          <Stack direction="row" spacing={2} alignItems="center">
+            {startIcon ? (
+              <Box sx={{ color: 'text.secondary', display: 'flex' }}>{startIcon}</Box>
+            ) : null}
+            <Slider
+              sx={{ flex: 1 }}
+              value={sliderValue}
+              onChange={(_, value) => {
+                const nextValue = valueTransform
+                  ? valueTransform.fromSlider(value as number)
+                  : (value as number);
+                onToleranceChange(nextValue);
+              }}
+              min={min}
+              max={max}
+              step={step}
+              marks={marks}
+              valueLabelDisplay="auto"
+              valueLabelFormat={formatLabel}
+              track="inverted"
+              disabled={disabled}
+            />
+            {endIcon ? (
+              <Box sx={{ color: 'text.secondary', display: 'flex' }}>{endIcon}</Box>
+            ) : null}
+          </Stack>
         </Box>
         <Typography variant="caption" color="text.secondary">
           {t(toleranceHelpKey, 'Higher values extract geometry more aggressively.')}

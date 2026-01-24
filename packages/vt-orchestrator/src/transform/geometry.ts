@@ -192,32 +192,59 @@ const computeGeometryBoundsMeters = (geometry: Geometry): BoundsMeters | null =>
   return finalizeBounds(bounds);
 };
 
-export const resolveAreaToleranceScale = (
-  geometry: Geometry,
-  zTarget: number,
-  config: AreaBasedToleranceConfig,
-): number => {
-  if (!config.enabled) return 1;
-  const bounds = computeGeometryBoundsMeters(geometry);
-  if (!bounds) return 1;
+const resolveBoundsAreaPx2 = (bounds: BoundsMeters, zTarget: number): number => {
   const metersPerPixelValue = metersPerPixel(zTarget);
-  if (!Number.isFinite(metersPerPixelValue) || metersPerPixelValue <= 0) return 1;
+  if (!Number.isFinite(metersPerPixelValue) || metersPerPixelValue <= 0) return 0;
   const width = Math.max(0, bounds.maxX - bounds.minX);
   const height = Math.max(0, bounds.maxY - bounds.minY);
   const areaMeters2 = width * height;
-  if (!Number.isFinite(areaMeters2) || areaMeters2 <= 0) return 1;
+  if (!Number.isFinite(areaMeters2) || areaMeters2 <= 0) return 0;
   const areaPx2 = areaMeters2 / (metersPerPixelValue * metersPerPixelValue);
-  if (!Number.isFinite(areaPx2) || areaPx2 <= 0) return 1;
-  const scale = Math.sqrt(config.referenceAreaPx2 / areaPx2);
-  return Math.min(1, Math.max(config.minScale, scale));
+  if (!Number.isFinite(areaPx2) || areaPx2 <= 0) return 0;
+  return areaPx2;
 };
 
-export const resolveAreaToleranceScaleForCollection = (
+const resolveLargeAreaToleranceK = (
+  areaPx2: number,
+  config: AreaBasedToleranceConfig,
+  baseToleranceK: number,
+): number => {
+  if (!Number.isFinite(baseToleranceK) || baseToleranceK <= 0) return baseToleranceK;
+  if (!Number.isFinite(config.thresholdAreaPx2) || config.thresholdAreaPx2 <= 0) return baseToleranceK;
+  if (!Number.isFinite(config.largeAreaTolerance) || config.largeAreaTolerance <= 0) return baseToleranceK;
+  if (!Number.isFinite(areaPx2) || areaPx2 <= 0) return baseToleranceK;
+  if (areaPx2 < config.thresholdAreaPx2) return baseToleranceK;
+  const capped = Math.min(baseToleranceK, config.largeAreaTolerance);
+  return capped > 0 ? capped : baseToleranceK;
+};
+
+const resolveLargeAreaToleranceForBounds = (
+  bounds: BoundsMeters | null,
+  zTarget: number,
+  config: AreaBasedToleranceConfig,
+  baseToleranceK: number,
+): number => {
+  if (!bounds) return baseToleranceK;
+  const areaPx2 = resolveBoundsAreaPx2(bounds, zTarget);
+  return resolveLargeAreaToleranceK(areaPx2, config, baseToleranceK);
+};
+
+export const resolveLargeAreaToleranceForGeometry = (
+  geometry: Geometry,
+  zTarget: number,
+  config: AreaBasedToleranceConfig,
+  baseToleranceK: number,
+): number => {
+  const bounds = computeGeometryBoundsMeters(geometry);
+  return resolveLargeAreaToleranceForBounds(bounds, zTarget, config, baseToleranceK);
+};
+
+export const resolveLargeAreaToleranceForCollection = (
   collection: FeatureCollection,
   zTarget: number,
   config: AreaBasedToleranceConfig,
+  baseToleranceK: number,
 ): number => {
-  if (!config.enabled) return 1;
   const bounds = createEmptyBounds();
   let hasGeometry = false;
   for (const feature of collection.features) {
@@ -227,19 +254,9 @@ export const resolveAreaToleranceScaleForCollection = (
     mergeBounds(bounds, featureBounds);
     hasGeometry = true;
   }
-  if (!hasGeometry) return 1;
+  if (!hasGeometry) return baseToleranceK;
   const finalized = finalizeBounds(bounds);
-  if (!finalized) return 1;
-  const metersPerPixelValue = metersPerPixel(zTarget);
-  if (!Number.isFinite(metersPerPixelValue) || metersPerPixelValue <= 0) return 1;
-  const width = Math.max(0, finalized.maxX - finalized.minX);
-  const height = Math.max(0, finalized.maxY - finalized.minY);
-  const areaMeters2 = width * height;
-  if (!Number.isFinite(areaMeters2) || areaMeters2 <= 0) return 1;
-  const areaPx2 = areaMeters2 / (metersPerPixelValue * metersPerPixelValue);
-  if (!Number.isFinite(areaPx2) || areaPx2 <= 0) return 1;
-  const scale = Math.sqrt(config.referenceAreaPx2 / areaPx2);
-  return Math.min(1, Math.max(config.minScale, scale));
+  return resolveLargeAreaToleranceForBounds(finalized, zTarget, config, baseToleranceK);
 };
 
 const computeRingLengthMeters = (ring: number[][]): number => {
@@ -901,7 +918,12 @@ export const simplifyFeatureCollection = async (
   areaBasedToleranceConfig: AreaBasedToleranceConfig,
   options?: SimplifyOptions,
 ): Promise<FeatureCollection> => {
-  const baseTolerance = toleranceK * metersPerPixel(zTarget);
+  const metersPerPixelValue = metersPerPixel(zTarget);
+  const baseToleranceK = toleranceK;
+  const toMetersTolerance = (value: number): number => {
+    if (!Number.isFinite(metersPerPixelValue) || metersPerPixelValue <= 0) return value;
+    return value * metersPerPixelValue;
+  };
   const ringFix = ringFixConfig ?? {
     minRingVertices: 4,
     minRingAreaMultiplier: 1,
@@ -1179,8 +1201,13 @@ export const simplifyFeatureCollection = async (
         simplifyStarted = true;
         await options.onPhase('simplify:start');
       }
-      const toleranceScale = resolveAreaToleranceScale(intersectionCandidate, zTarget, areaBasedToleranceConfig);
-      const simplified = simplifyGeometryInMercator(intersectionCandidate, baseTolerance * toleranceScale);
+      const effectiveToleranceK = resolveLargeAreaToleranceForGeometry(
+        intersectionCandidate,
+        zTarget,
+        areaBasedToleranceConfig,
+        baseToleranceK,
+      );
+      const simplified = simplifyGeometryInMercator(intersectionCandidate, toMetersTolerance(effectiveToleranceK));
       const validated = validateSimplifiedGeometry(simplified, ringFix, minRingArea, preSimplify.dropInvalidHoles);
       features.push({ ...feature, geometry: validated });
     }

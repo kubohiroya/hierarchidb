@@ -126,27 +126,14 @@ export function validateBatchConfig(config: ShapeBuildConfig): ShapeStepValidati
   }
 
   const areaBasedTolerance = config.transformConfig.areaBasedTolerance;
-  if (areaBasedTolerance.referenceAreaPx2 <= 0 || !Number.isFinite(areaBasedTolerance.referenceAreaPx2)) {
-    errors.push('Area-based tolerance reference area must be > 0');
+  if (areaBasedTolerance.thresholdAreaPx2 <= 0 || !Number.isFinite(areaBasedTolerance.thresholdAreaPx2)) {
+    errors.push('Area-based tolerance threshold area must be > 0');
   }
-  if (areaBasedTolerance.minScale <= 0 || areaBasedTolerance.minScale > 1) {
-    errors.push('Area-based tolerance min scale must be between 0 and 1');
+  if (areaBasedTolerance.largeAreaTolerance < 0 || !Number.isFinite(areaBasedTolerance.largeAreaTolerance)) {
+    errors.push('Area-based tolerance large-area tolerance must be >= 0');
   }
-
-  const selfIntersectionTuning = config.transformConfig.selfIntersectionTuningConfig;
-  if (selfIntersectionTuning.disableAtZoomOrBelow < ZOOM_BAND_MIN_ZOOM
-    || selfIntersectionTuning.disableAtZoomOrBelow > ZOOM_BAND_MAX_ZOOM) {
-    errors.push(`Self-intersection disable zoom must be between ${ZOOM_BAND_MIN_ZOOM} and ${ZOOM_BAND_MAX_ZOOM}`);
-  }
-  if (selfIntersectionTuning.maxVerticesForFix < 0) {
-    errors.push('Self-intersection max vertices for fix must be >= 0');
-  }
-  if (selfIntersectionTuning.maxVerticesForSplit < 0) {
-    errors.push('Self-intersection max vertices for split must be >= 0');
-  }
-  if (selfIntersectionTuning.maxVerticesForFix > 0
-    && selfIntersectionTuning.maxVerticesForSplit > selfIntersectionTuning.maxVerticesForFix) {
-    errors.push('Self-intersection split threshold must be <= fix threshold');
+  if (areaBasedTolerance.largeAreaTolerance > config.transformConfig.tolerance) {
+    warnings.push('Area-based tolerance large-area tolerance exceeds tolerance; it will be capped.');
   }
 
   return {
@@ -350,15 +337,6 @@ export function mergeBuildConfig(
       hybridFilterConfig: bandOverrides.hybridFilterConfig
         ? { ...base.transformConfig.hybridFilterConfig, ...bandOverrides.hybridFilterConfig }
         : base.transformConfig.hybridFilterConfig,
-      ringFixConfig: bandOverrides.ringFixConfig
-        ? { ...base.transformConfig.ringFixConfig, ...bandOverrides.ringFixConfig }
-        : base.transformConfig.ringFixConfig,
-      selfIntersectionConfig: bandOverrides.selfIntersectionConfig
-        ? { ...base.transformConfig.selfIntersectionConfig, ...bandOverrides.selfIntersectionConfig }
-        : base.transformConfig.selfIntersectionConfig,
-      preSimplifyFilterConfig: bandOverrides.preSimplifyFilterConfig
-        ? { ...base.transformConfig.preSimplifyFilterConfig, ...bandOverrides.preSimplifyFilterConfig }
-        : base.transformConfig.preSimplifyFilterConfig,
       areaBasedTolerance: bandOverrides.areaBasedTolerance
         ? { ...base.transformConfig.areaBasedTolerance, ...bandOverrides.areaBasedTolerance }
         : base.transformConfig.areaBasedTolerance,
