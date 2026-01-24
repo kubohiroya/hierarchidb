@@ -37,6 +37,8 @@ const stopPointerPropagation = (event: React.PointerEvent | React.MouseEvent) =>
   event.stopPropagation();
 };
 
+const HEADER_HOVER_ZONE_HEIGHT = 24;
+
 export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
   title,
   subtitle,
@@ -101,7 +103,7 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
             top: 0,
             left: 0,
             right: 0,
-            height: 16,
+            height: HEADER_HOVER_ZONE_HEIGHT,
             zIndex: (theme.zIndex?.modal ?? 1300) + 2,
             backgroundColor: 'transparent',
             pointerEvents: 'auto',
@@ -112,13 +114,14 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
         data-dialog-drag-handle="true"
         onPointerDown={dragHandlePointerDown}
         onDoubleClick={handleHeaderDoubleClick}
-        onMouseLeave={handleHeaderMouseLeave}
+        onPointerLeave={handleHeaderMouseLeave}
         sx={(theme) => ({
-          display: headerVisible ? 'flex' : 'none',
+          display: 'flex',
           alignItems: 'flex-start',
           justifyContent: 'space-between',
-          padding: theme.spacing(1.5, 2, 0.1, 2),
-          borderBottom: `1px solid ${theme.palette.divider}`,
+          padding: headerVisible ? theme.spacing(1.5, 2, 0.1, 2) : 0,
+          borderBottom: '1px solid',
+          borderBottomColor: headerVisible ? theme.palette.divider : 'transparent',
           userSelect: 'none',
           gap: theme.spacing(1.5),
           cursor: ctx.displayMode === 'full-screen' ? 'default' : 'move',
@@ -126,9 +129,19 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
             theme.palette.mode === 'dark'
               ? alpha(theme.palette.common.white, 0.04)
               : getDialogSurfaceColor(theme),
-          transition: theme.transitions.create('background-color', {
-            duration: theme.transitions.duration.shorter,
-          }),
+          opacity: headerVisible ? 1 : 0,
+          maxHeight: headerVisible ? 240 : 0,
+          transform: headerVisible ? 'translateY(0)' : 'translateY(-8px)',
+          overflow: 'hidden',
+          pointerEvents: headerVisible ? 'auto' : 'none',
+          transition: [
+            `background-color ${theme.transitions.duration.shorter}ms ${theme.transitions.easing.easeInOut}`,
+            `opacity 200ms ${theme.transitions.easing.easeInOut} 0ms`,
+            `transform 200ms ${theme.transitions.easing.easeInOut} 0ms`,
+            `max-height 200ms ${theme.transitions.easing.easeInOut} 0ms`,
+            `padding 200ms ${theme.transitions.easing.easeInOut} 0ms`,
+            `border-color 200ms ${theme.transitions.easing.easeInOut} 0ms`,
+          ].join(', '),
           '&:hover': {
             backgroundColor:
               theme.palette.mode === 'dark'

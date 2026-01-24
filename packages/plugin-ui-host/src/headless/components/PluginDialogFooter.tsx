@@ -44,6 +44,8 @@ const stopPointerPropagation = (event: React.PointerEvent | React.MouseEvent) =>
   event.stopPropagation();
 };
 
+const FOOTER_HOVER_ZONE_HEIGHT = 24;
+
 type LoadingButtonProps = ButtonProps & { loading?: boolean };
 
 const LoadingButton = forwardRef<HTMLButtonElement, LoadingButtonProps>(function LoadingButton(
@@ -144,14 +146,27 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
 
   const sx = useCallback(
     (theme: Theme) => ({
-      display: footerVisible ? 'block' : 'none',
-      borderTop: `1px solid ${theme.palette.divider}`,
-      padding: theme.spacing(1.5, 2),
+      display: 'block',
+      borderTop: '1px solid',
+      borderTopColor: footerVisible ? theme.palette.divider : 'transparent',
+      padding: footerVisible ? theme.spacing(1.5, 2) : 0,
       backgroundColor: getDialogSurfaceColor(theme),
       position: 'relative',
       // Keep footer at the dialog surface z-index (modal) so popper menus can overlay it.
       zIndex: theme.zIndex?.modal ?? 1300,
-      pointerEvents: 'auto',
+      opacity: footerVisible ? 1 : 0,
+      maxHeight: footerVisible ? 240 : 0,
+      transform: footerVisible ? 'translateY(0)' : 'translateY(8px)',
+      overflow: 'hidden',
+      pointerEvents: footerVisible ? 'auto' : 'none',
+      transition: [
+        `background-color ${theme.transitions.duration.shorter}ms ${theme.transitions.easing.easeInOut}`,
+        `opacity 200ms ${theme.transitions.easing.easeInOut} 0ms`,
+        `transform 200ms ${theme.transitions.easing.easeInOut} 0ms`,
+        `max-height 200ms ${theme.transitions.easing.easeInOut} 0ms`,
+        `padding 200ms ${theme.transitions.easing.easeInOut} 0ms`,
+        `border-color 200ms ${theme.transitions.easing.easeInOut} 0ms`,
+      ].join(', '),
     }),
     [footerVisible]
   );
@@ -196,14 +211,14 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
             bottom: 0,
             left: 0,
             right: 0,
-            height: 16,
+            height: FOOTER_HOVER_ZONE_HEIGHT,
             zIndex: (theme: Theme) => (theme.zIndex?.modal ?? 1300) + 2,
             backgroundColor: 'transparent',
             pointerEvents: 'auto',
           }}
         />
       )}
-      <Box sx={sx} onMouseLeave={handleFooterMouseLeave}>
+      <Box sx={sx} onPointerLeave={handleFooterMouseLeave}>
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           spacing={{ xs: 1.5, sm: 2 }}

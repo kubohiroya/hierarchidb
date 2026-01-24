@@ -160,6 +160,8 @@ export const TabularPreviewGrid: React.FC<TabularPreviewGridProps> = ({
     );
   }
 
+  const formatCount = (value: number): string => new Intl.NumberFormat('en-US').format(value);
+
   return (
     <>
       <Box sx={{ mb: 1, display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: 1.5 }}>
@@ -172,9 +174,9 @@ export const TabularPreviewGrid: React.FC<TabularPreviewGridProps> = ({
         />
         <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
           {[
-            searchText ? `${sortedRows.length} Matched` : null,
-            hasFilters ? `${filteredRowCount ?? effectiveRows.length} Filtered` : null,
-            `${totalRowCount ?? effectiveRows.length} Rows`,
+            searchText ? `${formatCount(sortedRows.length)} Matched` : null,
+            hasFilters ? `${formatCount(filteredRowCount ?? effectiveRows.length)} Filtered` : null,
+            `${formatCount(totalRowCount ?? effectiveRows.length)} Rows`,
           ]
             .filter(Boolean)
             .join(' / ')}

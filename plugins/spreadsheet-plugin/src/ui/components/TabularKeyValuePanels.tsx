@@ -211,14 +211,18 @@ export const TabularKeyValuePanels: React.FC<Props> = ({
 
   return (
     <Stack spacing={1}>
-      {isProcessing && (
-        <Box sx={{ px: 1 }}>
-          <Typography variant="caption" color="text.secondary">
-            {t('filtering.processing', 'Processing tabular data...')}
-          </Typography>
-          <LinearProgress sx={{ mt: 0.5 }} />
-        </Box>
-      )}
+      <Box sx={{ px: 1, minHeight: 38 }}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ visibility: isProcessing ? 'visible' : 'hidden' }}
+        >
+          {t('filtering.processing', 'Processing tabular data...')}
+        </Typography>
+        <LinearProgress
+          sx={{ mt: 0.5, visibility: isProcessing ? 'visible' : 'hidden' }}
+        />
+      </Box>
       <Accordion defaultExpanded disableGutters square>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Stack direction="row" spacing={1} alignItems="center">
@@ -244,7 +248,12 @@ export const TabularKeyValuePanels: React.FC<Props> = ({
               <Typography variant="subtitle1">
                 {t('styleSettings.previewTabular.title', 'Preview Tabular')}
               </Typography>
-              {previewDirty && <LinearProgress variant="indeterminate" sx={{ flexGrow: 1, ml: 1 }} />}
+              <Box sx={{ flexGrow: 1, ml: 1, display: 'flex', alignItems: 'center' }}>
+                <LinearProgress
+                  variant="indeterminate"
+                  sx={{ width: '100%', visibility: previewDirty ? 'visible' : 'hidden' }}
+                />
+              </Box>
             </Stack>
           </AccordionSummary>
           <AccordionDetails>

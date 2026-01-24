@@ -17,13 +17,14 @@ import { tabularRowsAtom } from '../../state/tabularKeyValueAtoms.js';
 
 const TabularDataImportStep = TabularDataImport as unknown as React.FC<UseTabularDataSourceResult['importStepProps']>;
 
-export const TabularDataSourceStep: FC<PluginStepProps<SpreadsheetEntity>> = ({
+export const TabularDataSourceStep: FC<PluginStepProps<SpreadsheetEntity> & { showPreview?: boolean }> = ({
   data,
   onChange,
   setValid,
   setError,
   dialogRef,
   nodeId,
+  showPreview = true,
 }) => {
   const { t } = useTranslation('spreadsheet-plugin');
   const previewRows = useAtomValue(tabularRowsAtom);
@@ -105,7 +106,7 @@ export const TabularDataSourceStep: FC<PluginStepProps<SpreadsheetEntity>> = ({
         </AccordionDetails>
       </Accordion>
 
-      {previewRows.length ? (
+      {showPreview && previewRows.length ? (
         <Accordion defaultExpanded sx={{ mt: 1 }}>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

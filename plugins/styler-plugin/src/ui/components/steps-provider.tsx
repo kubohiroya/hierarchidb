@@ -74,7 +74,7 @@ registry.registerConfigProvider<StylerStepData>({
           p.setValid(valid);
         }
       }, [valid, p]);
-      return <TabularDataSourceStep {...p} />;
+      return <TabularDataSourceStep {...p} showPreview={false} />;
     };
     const FilterWithValidation = (p: PluginStepProps<StylerStepData>) => {
       const valid = ensureLoaded(p.data);
