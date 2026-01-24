@@ -259,9 +259,12 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
 
   const handleDeleteFetchApiCache = useCallback(async () => {
     await deleteRawDataDataSourceBuffersForNode(nodeId);
+    await clearBatchTasksForType('fetch');
+    setBuildTasks((prev) => prev.filter((task) => !isFetchTask(task)));
+    setPersistedTasks((prev) => prev.filter((task) => !isFetchTask(task)));
     await loadCounts();
     notify.success('Deleted API cache');
-  }, [nodeId, loadCounts]);
+  }, [nodeId, clearBatchTasksForType, loadCounts, setBuildTasks, setPersistedTasks]);
 
   const handleDeleteFetchFilteredCache = useCallback(async () => {
     await ephemeralShapeAPIImpl.clearStage(nodeId, 'fetch');
