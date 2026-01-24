@@ -2,6 +2,7 @@ import type {
   BatchProgressEvent,
   BatchSessionStatus,
   BatchTaskSummary,
+  BatchTaskUpdateEvent,
   WorkerAPI,
 } from '@hierarchidb/common-api';
 import type { BuildContinuationPolicy, NodeId, NodeType } from '@hierarchidb/common-types';
@@ -24,6 +25,11 @@ export interface WorkerBridge {
     buildContinuationPolicy?: BuildContinuationPolicy
   ): Promise<void>;
   getBatchTasks(nodeType: NodeType, nodeId: NodeId): Promise<BatchTaskSummary[]>;
+  subscribeBatchTasks(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    cb: (event: BatchTaskUpdateEvent) => void
+  ): Promise<() => void>;
   getStyleQueryAPI(): ReturnType<WorkerAPI['getStyleQueryAPI']>;
   getStyleMutationAPI(): ReturnType<WorkerAPI['getStyleMutationAPI']>;
   getShapeQueryAPI(): ReturnType<WorkerAPI['getShapeQueryAPI']>;
@@ -116,6 +122,22 @@ class WorkerBridgeImpl implements WorkerBridge {
   async getBatchTasks(nodeType: NodeType, nodeId: NodeId): Promise<BatchTaskSummary[]> {
     const api = await ensureWorkerAPI();
     return api.getBatchTasks(nodeType, nodeId);
+  }
+
+  async subscribeBatchTasks(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    cb: (event: BatchTaskUpdateEvent) => void
+  ): Promise<() => void> {
+    const api = await ensureWorkerAPI();
+    const unsubscribe = await api.subscribeBatchTasks(nodeType, nodeId, proxy(cb));
+    return () => {
+      try {
+        unsubscribe();
+      } catch (error) {
+        console.warn('[WorkerBridge] unsubscribe failed', error);
+      }
+    };
   }
 
   async getStyleQueryAPI(): Promise<Awaited<ReturnType<WorkerAPI['getStyleQueryAPI']>>> {

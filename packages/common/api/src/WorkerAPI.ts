@@ -14,6 +14,7 @@ import type {
   BatchProgressEvent,
   BatchSessionStatus,
   BatchTaskSummary,
+  BatchTaskUpdateEvent,
 } from './BatchControlAPI.js';
 import type { ImportExportAPI } from './ImportExportAPI.js';
 import type { TagAPI } from './TagAPI.js';
@@ -92,6 +93,11 @@ export interface WorkerAPI {
     buildContinuationPolicy?: BuildContinuationPolicy
   ): Promise<void>;
   getBatchTasks(nodeType: NodeType, nodeId: NodeId): Promise<BatchTaskSummary[]>;
+  subscribeBatchTasks(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    callback: (event: BatchTaskUpdateEvent) => void
+  ): Promise<() => void>;
   generateShapeDownloadTaskPayloadsFromSelection(
     nodeId: NodeId,
     dataSource: ShapeDataSourceName,

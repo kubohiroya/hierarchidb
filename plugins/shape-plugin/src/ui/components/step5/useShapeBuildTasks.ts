@@ -8,12 +8,11 @@ import {
   tasksErrorAtom,
   tasksLoadingAtom,
 } from '../../atoms/shapeBuildProgressAtoms.js';
-import type { BatchTaskSummary } from '@hierarchidb/common-api';
+import type { BatchTaskSummary, BatchTaskUpdateEvent } from '@hierarchidb/common-api';
 import { parseGeometrySimplifyError } from './geometrySimplifyError.ts';
 
 export interface UseShapeBuildTasksOptions {
-  autoRefresh?: boolean | (() => boolean);
-  pollIntervalMs?: number;
+  autoSubscribe?: boolean;
 }
 
 export interface UseShapeBuildTasksState {
@@ -31,6 +30,9 @@ type RawTaskSummary = BatchTaskSummary & {
   stage?: string;
   title?: string;
   metadata?: Record<string, unknown>;
+  error?: string;
+  errorMessage?: string;
+  index?: number;
 };
 
 const isTaskStage = (value: unknown): value is TaskStage => (
@@ -45,22 +47,37 @@ const resolveTaskStage = (task: RawTaskSummary): TaskStage => {
   throw new Error(`[ShapeBuildStep] Invalid task stage: ${String(candidate ?? 'undefined')}`);
 };
 
+const resolveTaskIndex = (task: ShapeBuildTaskSummary): number => {
+  if (typeof task.index === 'number' && Number.isFinite(task.index)) {
+    return task.index;
+  }
+  return Number.MAX_SAFE_INTEGER;
+};
+
+const sortTasks = (items: ShapeBuildTaskSummary[]): ShapeBuildTaskSummary[] => (
+  [...items].sort((a, b) => resolveTaskIndex(a) - resolveTaskIndex(b))
+);
+
 export function useShapeBuildTasks(
   nodeId: NodeId | null,
   options: UseShapeBuildTasksOptions = {},
 ): UseShapeBuildTasksState {
-  const { autoRefresh = true, pollIntervalMs = 2000 } = options;
+  const { autoSubscribe = true } = options;
   const bridgeRef = useRef(getWorkerBridge());
   const [tasks, setTasks] = useAtom(tasksAtom);
   const [isLoading, setIsLoading] = useAtom(tasksLoadingAtom);
   const [error, setError] = useAtom(tasksErrorAtom);
-  const tasksLength = tasks.length;
   const reportedFailuresRef = useRef<Set<string>>(new Set());
   const pendingTasksRef = useRef<ShapeBuildTaskSummary[] | null>(null);
   const flushTimerRef = useRef<number | null>(null);
   const lastFlushRef = useRef<number>(0);
-  const hasLoadedRef = useRef(false);
-  const requestIdRef = useRef(0);
+  const tasksRef = useRef<ShapeBuildTaskSummary[]>(tasks);
+  const subscriptionRef = useRef<(() => void) | null>(null);
+  const subscriptionIdRef = useRef(0);
+
+  useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
 
   useEffect(() => {
     reportedFailuresRef.current = new Set();
@@ -73,10 +90,18 @@ export function useShapeBuildTasks(
         flushTimerRef.current = null;
       }
       pendingTasksRef.current = null;
+      if (subscriptionRef.current) {
+        subscriptionRef.current();
+        subscriptionRef.current = null;
+      }
     };
   }, []);
 
   const flushTasks = useCallback((next: ShapeBuildTaskSummary[]) => {
+    if (flushTimerRef.current) {
+      window.clearTimeout(flushTimerRef.current);
+      flushTimerRef.current = null;
+    }
     setTasks(next);
     lastFlushRef.current = Date.now();
     pendingTasksRef.current = null;
@@ -87,7 +112,7 @@ export function useShapeBuildTasks(
     if (flushTimerRef.current) return;
     const now = Date.now();
     const elapsed = now - lastFlushRef.current;
-    const delay = Math.max(0, 500 - elapsed);
+    const delay = Math.max(0, 10 - elapsed);
     flushTimerRef.current = window.setTimeout(() => {
       const pending = pendingTasksRef.current;
       flushTimerRef.current = null;
@@ -97,77 +122,123 @@ export function useShapeBuildTasks(
     }, delay);
   }, [flushTasks]);
 
-  const refresh = useCallback(async () => {
-    if (!nodeId) {
+  const resolveTaskSummary = useCallback((task: RawTaskSummary): ShapeBuildTaskSummary => ({
+    ...task,
+    stage: resolveTaskStage(task),
+  }), []);
+
+  const mergeTask = useCallback((task: ShapeBuildTaskSummary) => {
+    const current = pendingTasksRef.current ?? tasksRef.current;
+    const idx = current.findIndex((entry) => entry.taskId === task.taskId);
+    if (idx >= 0) {
+      const next = [...current];
+      next[idx] = task;
+      return sortTasks(next);
+    }
+    return sortTasks([...current, task]);
+  }, []);
+
+  const handleSnapshot = useCallback((next: RawTaskSummary[]) => {
+    const resolved = sortTasks(next.map(resolveTaskSummary));
+    flushTasks(resolved);
+    setError(null);
+    setIsLoading(false);
+  }, [flushTasks, resolveTaskSummary, setError, setIsLoading]);
+
+  const handleUpdate = useCallback((task: RawTaskSummary) => {
+    const resolved = resolveTaskSummary(task);
+    const next = mergeTask(resolved);
+    scheduleFlush(next);
+    setError(null);
+    setIsLoading(false);
+  }, [mergeTask, resolveTaskSummary, scheduleFlush, setError, setIsLoading]);
+
+  const handleDelete = useCallback((taskId: string) => {
+    const current = pendingTasksRef.current ?? tasksRef.current;
+    const next = current.filter((task) => task.taskId !== taskId);
+    scheduleFlush(next);
+    setError(null);
+    setIsLoading(false);
+  }, [scheduleFlush, setError, setIsLoading]);
+
+  useEffect(() => {
+    if (subscriptionRef.current) {
+      subscriptionRef.current();
+      subscriptionRef.current = null;
+    }
+    pendingTasksRef.current = null;
+    if (!nodeId || !autoSubscribe) {
       setTasks([]);
       setError(null);
       setIsLoading(false);
-      console.debug('[ShapeBuildStep] buildTasks:skip', { nodeId });
       return;
     }
-    const requestId = requestIdRef.current + 1;
-    requestIdRef.current = requestId;
-    const shouldShowLoading = tasksLength === 0 && !hasLoadedRef.current;
-    if (shouldShowLoading) {
-      setIsLoading(true);
-    }
-    try {
-      await bridgeRef.current.initialize();
-      //console.debug('[ShapeBuildStep] buildTasks:fetch', { nodeId });
-      const next = await bridgeRef.current.getBatchTasks(SHAPE_NODE_TYPE, nodeId);
-      if (requestId !== requestIdRef.current) return;
-      const resolved = (next as RawTaskSummary[]).map((task) => ({
-        ...task,
-        stage: resolveTaskStage(task),
-      }) as ShapeBuildTaskSummary);
-      scheduleFlush(resolved);
-      setError(null);
-      hasLoadedRef.current = true;
-      //console.debug('[ShapeBuildStep] buildTasks:ok', { nodeId, count: next.length });
-    } catch (err) {
-      if (requestId !== requestIdRef.current) return;
-      const errObj = err instanceof Error ? err : new Error('Failed to fetch batch tasks');
-      setError(errObj);
-      console.debug('[ShapeBuildStep] buildTasks:error', {
-        nodeId,
-        message: errObj.message,
-      });
-    } finally {
-      if (shouldShowLoading && requestId === requestIdRef.current) {
-        setIsLoading(false);
-      }
-    }
-  }, [nodeId, scheduleFlush, setError, setIsLoading, setTasks, tasksLength]);
+    setTasks([]);
+    setError(null);
+    setIsLoading(true);
+    const subscriptionId = subscriptionIdRef.current + 1;
+    subscriptionIdRef.current = subscriptionId;
+    let cancelled = false;
 
-  useEffect(() => {
-    if (!nodeId) return;
-    if (typeof autoRefresh === 'function' && autoRefresh()) {
-      void refresh();
-      return;
-    }
-    if (autoRefresh === true) {
-      void refresh();
-    }
-  }, [autoRefresh, refresh, nodeId]);
-
-  useEffect(() => {
-    if (!nodeId) return;
-    const shouldAutoRefresh = typeof autoRefresh === 'function'
-      ? autoRefresh()
-      : autoRefresh;
-    if (!shouldAutoRefresh) return;
-    const id = window.setInterval(() => {
-      const stillAutoRefresh = typeof autoRefresh === 'function'
-        ? autoRefresh()
-        : autoRefresh;
-      if (!stillAutoRefresh) {
-        window.clearInterval(id);
+    const handleEvent = (event: BatchTaskUpdateEvent<RawTaskSummary>) => {
+      if (cancelled || subscriptionIdRef.current !== subscriptionId) return;
+      if (event.type === 'snapshot') {
+        handleSnapshot(event.tasks);
         return;
       }
-      void refresh();
-    }, pollIntervalMs);
-    return () => window.clearInterval(id);
-  }, [autoRefresh, pollIntervalMs, refresh, nodeId]);
+      if (event.type === 'update') {
+        handleUpdate(event.task);
+        return;
+      }
+      if (event.type === 'delete') {
+        handleDelete(event.taskId);
+      }
+    };
+
+    const start = async () => {
+      try {
+        await bridgeRef.current.initialize();
+        const unsubscribe = await bridgeRef.current.subscribeBatchTasks(
+          SHAPE_NODE_TYPE,
+          nodeId,
+          handleEvent,
+        );
+        if (cancelled) {
+          unsubscribe();
+          return;
+        }
+        subscriptionRef.current = unsubscribe;
+      } catch (err) {
+        if (cancelled) return;
+        const errObj = err instanceof Error ? err : new Error('Failed to subscribe batch tasks');
+        setError(errObj);
+        setIsLoading(false);
+      }
+    };
+
+    void start();
+
+    return () => {
+      cancelled = true;
+      if (subscriptionRef.current) {
+        subscriptionRef.current();
+        subscriptionRef.current = null;
+      }
+    };
+  }, [
+    autoSubscribe,
+    handleDelete,
+    handleSnapshot,
+    handleUpdate,
+    nodeId,
+    setError,
+    setIsLoading,
+    setTasks,
+  ]);
+
+  const refresh = useCallback(async () => {
+    return;
+  }, []);
 
   useEffect(() => {
     const reported = reportedFailuresRef.current;

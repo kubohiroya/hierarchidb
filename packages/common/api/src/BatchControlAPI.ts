@@ -121,6 +121,11 @@ export interface BatchTaskSummary {
   message?: string;
 }
 
+export type BatchTaskUpdateEvent<T extends BatchTaskSummary = BatchTaskSummary> =
+  | { type: 'snapshot'; nodeId: NodeId; tasks: T[] }
+  | { type: 'update'; nodeId: NodeId; task: T }
+  | { type: 'delete'; nodeId: NodeId; taskId: string };
+
 /** @deprecated Use BatchProgressEvent instead. */
 export type StandardProgressEvent<P = BatchProgressPayload> = BatchProgressEvent<P>;
 /** @deprecated Use BatchProgressPayload instead. */

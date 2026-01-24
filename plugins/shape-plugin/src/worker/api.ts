@@ -26,7 +26,13 @@ import {
 import { ShapeEntityHandler } from './handlers/index.js';
 
 import { metadataLoader } from '../services/metadata/MetadataLoader.js';
-import type { BatchProgressEvent, BatchProgressPayload } from '@hierarchidb/common-api';
+import type {
+  BatchProgressEvent,
+  BatchProgressPayload,
+  BatchTaskSummary,
+  BatchTaskUpdateEvent,
+  ProgressPhase,
+} from '@hierarchidb/common-api';
 import {
   generateDownloadTaskPayloads,
   getPreferredCountryCodeFormat,
@@ -39,9 +45,10 @@ import {
   listTasks,
   listTasksByStatus,
   onTaskQueueUpdate,
+  putTasks,
   updateTask,
 } from '@hierarchidb/vt-orchestrator';
-import { ephemeralShapeDB } from '@hierarchidb/shape-store';
+import { ephemeralShapeDB, type BuildTaskRecord } from '@hierarchidb/shape-store';
 import { runShapePipeline } from '../services/vt/shapePipeline.js';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../services/batch/ShapeBuildAPIClient.ts';
 
@@ -75,12 +82,18 @@ interface ProgressSubscription {
   callback?: (event: BatchProgressEvent) => void;
 }
 
+interface TaskSubscription {
+  unsubscribe?: () => void;
+  callback?: (event: BatchTaskUpdateEvent) => void;
+}
+
 type PauseState = {
   paused: boolean;
   waiters: Array<() => void>;
 };
 
 const progressCallbacks = new Map<string, ProgressSubscription>();
+const taskCallbacks = new Map<string, TaskSubscription>();
 const pauseStates = new Map<string, PauseState>();
 const activePipelines = new Set<string>();
 const activePipelineRuns = new Map<string, string>();
@@ -119,6 +132,57 @@ const normalizeTaskStatus = (status: TaskQueueRecord['status'] | string): BuildT
   if (normalized === 'paused') return 'paused';
   if (normalized === 'regression') return 'regression';
   return 'queued';
+};
+
+const normalizeTaskPhase = (status: TaskQueueRecord['status'] | string): ProgressPhase => {
+  const normalized = normalizeTaskStatus(status);
+  if (
+    normalized === 'queued'
+    || normalized === 'running'
+    || normalized === 'paused'
+    || normalized === 'completed'
+    || normalized === 'failed'
+    || normalized === 'regression'
+  ) {
+    return normalized;
+  }
+  return 'queued';
+};
+
+
+const normalizeResumedTaskStatus = (status: BuildTaskRecord['status']): TaskQueueRecord['status'] => {
+  if (status === 'failed' || status === 'regression' || status === 'running') {
+    return 'queued';
+  }
+  return status;
+};
+
+const mapBuildTaskToQueueTask = (task: BuildTaskRecord): TaskQueueRecord => {
+  const nextStatus = normalizeResumedTaskStatus(task.status);
+  const keepMessage = nextStatus === 'completed' ? task.message : undefined;
+  return {
+    taskId: task.taskId,
+    nodeId: task.nodeId,
+    stage: task.taskType,
+    status: nextStatus,
+    index: task.index,
+    progress: nextStatus === 'completed' ? task.progress : 0,
+    message: keepMessage,
+    inputData: task.inputData,
+    outputData: nextStatus === 'completed' ? task.outputData : undefined,
+    errorMessage: undefined,
+  };
+};
+
+const seedTaskQueueFromBuildTasks = async (nodeId: NodeId): Promise<void> => {
+  const existing = await ephemeralShapeDB.getBuildTasks(nodeId);
+  if (existing.length === 0) return;
+  const tasks = existing
+    .filter((task) => task.taskType === 'fetch' || task.taskType === 'transform' || task.taskType === 'vt')
+    .map(mapBuildTaskToQueueTask);
+  if (tasks.length === 0) return;
+  const taskQueue = new VtTaskQueueDb();
+  await putTasks(taskQueue, tasks);
 };
 
 const buildTaskQueueTitle = (task: TaskQueueRecord): string | undefined => {
@@ -202,12 +266,42 @@ const mapTaskQueueRecordToBatchTask = (
     : undefined,
 });
 
+const mapTaskQueueRecordToTaskSummary = (
+  task: TaskQueueRecord,
+  meta?: TaskWeightMeta,
+): ShapeBatchTaskSummary => ({
+  taskId: task.taskId,
+  stage: task.stage,
+  status: normalizeTaskPhase(task.status as string),
+  progress: resolveTaskProgress(task),
+  message: task.message ?? task.errorMessage,
+  title: buildTaskQueueTitle(task),
+  error: task.errorMessage,
+  errorMessage: task.errorMessage,
+  index: task.index,
+  metadata: meta
+    ? {
+      polygonCount: meta.polygonCount ?? undefined,
+      weight: meta.weight,
+      weightSource: meta.source,
+    }
+    : undefined,
+});
+
 type TaskWeightSource = 'output' | 'fetch-cache' | 'transform-cache' | 'fallback';
 
 type TaskWeightMetadata = {
   polygonCount?: number;
   weight: number;
   weightSource: TaskWeightSource;
+};
+
+type ShapeBatchTaskSummary = BatchTaskSummary & {
+  title?: string;
+  metadata?: TaskWeightMetadata;
+  error?: string;
+  errorMessage?: string;
+  index?: number;
 };
 
 type TaskWeightMeta = {
@@ -431,6 +525,15 @@ const buildTaskQueueSummary = async (tasks: TaskQueueRecord[]) => {
   };
 };
 
+const buildTaskSummarySnapshot = async (
+  nodeId: NodeId,
+  taskQueue: VtTaskQueueDb,
+): Promise<ShapeBatchTaskSummary[]> => {
+  const tasks = await listTasks(taskQueue, nodeId);
+  const weightMap = await buildTaskWeightMap(nodeId, tasks);
+  return tasks.map((task) => mapTaskQueueRecordToTaskSummary(task, weightMap.get(task.taskId)));
+};
+
 const buildProgressPayloadFromTasks = async (
   tasks: TaskQueueRecord[],
 ): Promise<BatchProgressPayload> => {
@@ -482,9 +585,27 @@ const resetRunningTasks = async (nodeId: NodeId): Promise<void> => {
   })));
 };
 
+
+const resetFailedTasks = async (nodeId: NodeId): Promise<void> => {
+  const taskQueue = new VtTaskQueueDb();
+  const failedTasks = await listTasksByStatus(taskQueue, nodeId, 'failed');
+  await Promise.all(failedTasks.map((task) => updateTask(taskQueue, task.taskId, {
+    status: 'queued',
+    progress: 0,
+    startedAt: undefined,
+    completedAt: undefined,
+    errorMessage: undefined,
+    message: undefined,
+    outputData: undefined,
+  })));
+};
+
 const resolveProgressPhase = (nodeId: NodeId, tasks: TaskQueueRecord[]): BatchProgressEvent['phase'] => {
   if (getPauseState(nodeId).paused) return 'paused';
   const status = summarizeTaskQueueStatus(tasks).status;
+  if (status === 'completed' && activePipelines.has(String(nodeId))) {
+    return 'running';
+  }
   switch (status) {
     case 'running':
       return 'running';
@@ -666,6 +787,18 @@ export const shapeBatchAPI = {
     setPaused(nodeForSession, false);
     activePipelines.add(pipelineKey);
     activePipelineRuns.set(pipelineKey, pipelineRunId);
+
+    const taskQueue = new VtTaskQueueDb();
+    let existingTasks = await listTasks(taskQueue, nodeForSession);
+    if (existingTasks.length === 0) {
+      await seedTaskQueueFromBuildTasks(nodeForSession);
+      existingTasks = await listTasks(taskQueue, nodeForSession);
+    }
+    const resumeExistingTasks = existingTasks.length > 0;
+    if (resumeExistingTasks) {
+      await resetRunningTasks(nodeForSession);
+      await resetFailedTasks(nodeForSession);
+    }
     console.warn('[shapeBatchAPI] startBatchProcess pipeline start', {
       nodeId: nodeForSession,
       runId: pipelineRunId,
@@ -679,6 +812,7 @@ export const shapeBatchAPI = {
       downloadTaskPayloads,
       waitIfPaused: () => waitIfPaused(nodeForSession),
       buildContinuationPolicy,
+      resumeExistingTasks,
       pipelineRunId,
     }).then(async () => {
       await handler.updateEntity(nodeForSession, {
@@ -694,6 +828,7 @@ export const shapeBatchAPI = {
       activePipelines.delete(pipelineKey);
       activePipelineRuns.delete(pipelineKey);
       pauseStates.delete(String(nodeForSession));
+      void emitProgressSnapshot(nodeForSession);
     });
 
     if (progressCallback) {
@@ -745,6 +880,11 @@ export const shapeBatchAPI = {
         if (activePipelines.has(pipelineKey)) {
           activePipelines.delete(pipelineKey);
         }
+      }
+      await resetFailedTasks(nodeId);
+      const existingTasks = await listTasks(taskQueue, nodeId);
+      if (existingTasks.length === 0) {
+        await seedTaskQueueFromBuildTasks(nodeId);
       }
       if (activePipelines.has(pipelineKey)) {
         console.warn('[shapeBatchAPI] resumeBatchSession ignored: pipeline already active', {
@@ -802,6 +942,7 @@ export const shapeBatchAPI = {
           activePipelines.delete(pipelineKey);
           activePipelineRuns.delete(pipelineKey);
           pauseStates.delete(pipelineKey);
+          void emitProgressSnapshot(nodeId);
         });
       }
       return;
@@ -1020,6 +1161,49 @@ export const shapeBatchAPI = {
       const active = progressCallbacks.get(String(nodeId));
       active?.unsubscribe?.();
       progressCallbacks.delete(String(nodeId));
+    };
+  },
+
+  subscribeToTasks: (nodeId: NodeId, callback: (event: BatchTaskUpdateEvent) => void): (() => void) => {
+    const key = String(nodeId);
+    const existing = taskCallbacks.get(key);
+    existing?.unsubscribe?.();
+    const taskQueue = new VtTaskQueueDb();
+    const sendSnapshot = async () => {
+      try {
+        const tasks = await buildTaskSummarySnapshot(nodeId, taskQueue);
+        callback({ type: 'snapshot', nodeId, tasks });
+      } catch (error) {
+        console.error('[shapeBatchAPI] task snapshot failed', error);
+      }
+    };
+    void sendSnapshot();
+    const unsubscribeTaskQueue = onTaskQueueUpdate(nodeId, (event) => {
+      void (async () => {
+        try {
+          const tasks = await listTasks(taskQueue, event.nodeId);
+          const weightMap = await buildTaskWeightMap(nodeId, tasks);
+          const summary = mapTaskQueueRecordToTaskSummary(
+            event.task,
+            weightMap.get(event.task.taskId)
+          );
+          callback({ type: 'update', nodeId: event.nodeId, task: summary });
+        } catch (error) {
+          console.error('[shapeBatchAPI] task update failed', error);
+        }
+      })();
+    });
+    const unsubscribe = () => {
+      unsubscribeTaskQueue();
+    };
+    taskCallbacks.set(key, { unsubscribe, callback });
+
+    return () => {
+      const active = taskCallbacks.get(key);
+      if (active?.unsubscribe === unsubscribe) {
+        taskCallbacks.delete(key);
+      }
+      unsubscribe();
     };
   },
 

@@ -6,6 +6,7 @@ import type {
   BatchProgressEvent,
   BatchProgressPayload,
   BatchTaskSummary,
+  BatchTaskUpdateEvent,
   ProgressPhase,
   WorkerAPI,
 } from '@hierarchidb/common-api';
@@ -65,6 +66,10 @@ vi.mock('~/worker-runtime/client.ts', async () => {
     subscribeToProgress: (
       nodeId: NodeId,
       callback: (payload: BatchProgressEvent<BatchProgressPayload>) => void
+    ) => () => void;
+    subscribeToTasks?: (
+      nodeId: NodeId,
+      callback: (event: BatchTaskUpdateEvent) => void
     ) => () => void;
   };
   const shapeWorker = await import('@hierarchidb/shape-plugin/worker') as unknown as {
@@ -197,6 +202,12 @@ vi.mock('~/worker-runtime/client.ts', async () => {
       getBatchTasks: async (_nodeType, nodeId) => {
         const tasks = await shapeBatchAPI.getBatchTasks(nodeId);
         return tasks.map(toBatchTaskSummary);
+      },
+      subscribeBatchTasks: async (_nodeType, nodeId, callback) => {
+        if (shapeBatchAPI.subscribeToTasks) {
+          return shapeBatchAPI.subscribeToTasks(nodeId, callback);
+        }
+        return () => {};
       },
       generateShapeDownloadTaskPayloadsFromSelection: async (
         nodeId,

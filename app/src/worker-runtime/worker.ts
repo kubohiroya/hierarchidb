@@ -9,6 +9,7 @@ import type {
   BatchProgressEvent,
   BatchSessionStatus,
   BatchTaskSummary,
+  BatchTaskUpdateEvent,
   UiStorageBridge,
 } from '@hierarchidb/common-api';
 import type { BuildContinuationPolicy, NodeId, NodeType } from '@hierarchidb/common-types';
@@ -55,6 +56,11 @@ type BatchProgressSubscriber = (
   callback: (event: BatchProgressEvent) => void
 ) => () => void;
 
+type BatchTaskSubscriber = (
+  nodeId: NodeId,
+  callback: (event: BatchTaskUpdateEvent) => void
+) => () => void;
+
 type ShapeBatchAPI = {
   startBatchProcess: (
     draftId: NodeId,
@@ -73,6 +79,7 @@ type ShapeBatchAPI = {
   resumeBatchProcessing?: (draftId: NodeId) => Promise<NodeId>;
   invokeBatchCommand?: (command: string, payload: Record<string, unknown>) => Promise<void>;
   subscribeToProgress?: BatchProgressSubscriber;
+  subscribeToTasks?: BatchTaskSubscriber;
 };
 
 const heapMonitor = createHeapPressureMonitor({ source: 'worker' });
@@ -442,6 +449,18 @@ reporter.reportStepProgress('Load Comlink', 0);
             return () => {};
           }
           const unsubscribe = api.subscribeToProgress(nodeId, callback);
+          return Comlink.proxy(unsubscribe);
+        },
+        subscribeBatchTasks: async (
+          nodeType: NodeType,
+          nodeId: NodeId,
+          callback: (event: BatchTaskUpdateEvent) => void
+        ): Promise<() => void> => {
+          const api = resolveShapeBatchApiOrThrow(nodeType);
+          if (!api.subscribeToTasks) {
+            return () => {};
+          }
+          const unsubscribe = api.subscribeToTasks(nodeId, callback);
           return Comlink.proxy(unsubscribe);
         },
         subscribeHeapPressure: async (
