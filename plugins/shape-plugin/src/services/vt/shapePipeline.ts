@@ -18,6 +18,7 @@ import type { ShapeBuildConfig } from '../../common/types/index.js';
 import {
   VtTaskQueueDb,
   deleteTasksByNode,
+  deleteTasksByIds,
   listTasksByStage,
   listTasksByStageAndStatus,
   putTasks,
@@ -33,6 +34,7 @@ import { updateShapeStageMetadata } from './shapeStageMetadata.js';
 import { metadataLoader } from '../metadata/MetadataLoader.js';
 import { shapeMutationAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
 import { deleteRawDataDataSourceBuffersForNode } from '../utils/chunkStore.js';
+import { buildStableSignature } from './taskSignatures.ts';
 import {
   buildZoomBandRanges,
   ZOOM_BAND_MAX_ZOOM,
@@ -50,6 +52,7 @@ export type ShapeTransformByBandTaskInput = {
   countryCode?: string;
   countryName?: string;
   adminLevel?: number;
+  configSignature?: string;
 };
 
 type ShapeVtTaskInput = {
@@ -62,9 +65,43 @@ type ShapeVtTaskInput = {
   featureCount: number;
   domainType: 'shape';
   sourceKey: string;
+  configSignature?: string;
 };
 
 const HIGH_DETAIL_ZOOM_MIN = 9;
+
+const buildTaskInputSignature = (input: unknown): string => (
+  buildStableSignature(input ?? null)
+);
+
+const filterObsoleteTasks = async (
+  taskQueue: VtTaskQueueDb,
+  existingTasks: TaskQueueRecord[],
+  desiredTasks: TaskQueueRecord[],
+): Promise<TaskQueueRecord[]> => {
+  const desiredSignatures = new Map(
+    desiredTasks.map((task) => [task.taskId, buildTaskInputSignature(task.inputData)] as const),
+  );
+  const obsoleteTaskIds: string[] = [];
+  const validExistingTasks: TaskQueueRecord[] = [];
+  existingTasks.forEach((task) => {
+    const desiredSignature = desiredSignatures.get(task.taskId);
+    if (!desiredSignature) {
+      obsoleteTaskIds.push(task.taskId);
+      return;
+    }
+    const existingSignature = buildTaskInputSignature(task.inputData);
+    if (existingSignature !== desiredSignature) {
+      obsoleteTaskIds.push(task.taskId);
+      return;
+    }
+    validExistingTasks.push(task);
+  });
+  if (obsoleteTaskIds.length > 0) {
+    await deleteTasksByIds(taskQueue, obsoleteTaskIds);
+  }
+  return validExistingTasks;
+};
 
 const buildBands = (zoomBandBoundaries: number[]) => {
   const ranges = buildZoomBandRanges(zoomBandBoundaries, ZOOM_BAND_MIN_ZOOM, ZOOM_BAND_MAX_ZOOM);
@@ -337,7 +374,7 @@ const backfillTileRelationsFromTransformCache = async (params: {
   bandId: number;
   zBase: number;
   ephemeralStore: typeof ephemeralShapeDB;
-}): Promise<number> => {
+}): Promise<{ relationCount: number; tileBuffers: Map<number, string[]> }> => {
   const { nodeId, bandId, zBase, ephemeralStore } = params;
   const buffers = await ephemeralStore.transaction('r', ephemeralStore.transformCache, async () => (
     ephemeralStore.transformCache
@@ -346,8 +383,11 @@ const backfillTileRelationsFromTransformCache = async (params: {
       .toArray()
   ));
   const completedBuffers = buffers.filter((buffer) => isTransformCacheComplete(buffer));
-  if (completedBuffers.length === 0) return 0;
-  const relations: Array<{
+  if (completedBuffers.length === 0) return { relationCount: 0, tileBuffers: new Map() };
+  const createdAt = Date.now();
+  const bufferIds = completedBuffers.map((buffer) => buffer.id);
+  await ephemeralStore.tileIdToBufferRelations.where('bufferId').anyOf(bufferIds).delete();
+  const pending: Array<{
     id: string;
     nodeId: NodeId;
     bandId: number;
@@ -355,7 +395,14 @@ const backfillTileRelationsFromTransformCache = async (params: {
     bufferId: string;
     createdAt: number;
   }> = [];
-  const createdAt = Date.now();
+  const tileBuffers = new Map<number, string[]>();
+  let written = 0;
+  const flushPending = async () => {
+    if (pending.length === 0) return;
+    await ephemeralStore.tileIdToBufferRelations.bulkPut(pending);
+    written += pending.length;
+    pending.length = 0;
+  };
   for (const buffer of completedBuffers) {
     const collection = await decodeTransformCache(buffer.data);
     if (!collection) {
@@ -375,7 +422,13 @@ const backfillTileRelationsFromTransformCache = async (params: {
     const tileIds = collectTileIdsForCollection(collection, zBase);
     if (tileIds.length === 0) continue;
     tileIds.forEach((tileId) => {
-      relations.push({
+      const bucket = tileBuffers.get(tileId);
+      if (bucket) {
+        bucket.push(buffer.id);
+      } else {
+        tileBuffers.set(tileId, [buffer.id]);
+      }
+      pending.push({
         id: `${String(nodeId)}:${bandId}:${tileId}:${buffer.id}`,
         nodeId,
         bandId,
@@ -384,12 +437,12 @@ const backfillTileRelationsFromTransformCache = async (params: {
         createdAt,
       });
     });
+    if (pending.length >= 5000) {
+      await flushPending();
+    }
   }
-  if (relations.length === 0) return 0;
-  const bufferIds = Array.from(new Set(relations.map((row) => row.bufferId)));
-  await ephemeralStore.tileIdToBufferRelations.where('bufferId').anyOf(bufferIds).delete();
-  await ephemeralStore.tileIdToBufferRelations.bulkPut(relations);
-  return relations.length;
+  await flushPending();
+  return { relationCount: written, tileBuffers };
 };
 
 const hasHighDetailSelection = (
@@ -406,6 +459,7 @@ const buildTransformByBandTasks = async (
   bands: Array<{ bandId: number; zMin: number; zMax: number; zBase: number }>,
   enableHighDetailBands: boolean,
   countryLookup: Map<string, CountryMetadata>,
+  configSignature: string,
 ): Promise<Array<TaskQueueRecord<ShapeTransformByBandTaskInput>>> => {
   const buffers = await ephemeralShapeDB.fetchCache.where('nodeId').equals(nodeId).toArray();
   const tasks: Array<TaskQueueRecord<ShapeTransformByBandTaskInput>> = [];
@@ -443,6 +497,7 @@ const buildTransformByBandTasks = async (
           countryCode,
           countryName: countryMeta?.countryName,
           adminLevel: buffer.adminLevel,
+          configSignature,
         },
       });
       index += 1;
@@ -495,6 +550,7 @@ const buildVtTasks = async (
   ephemeralStore: typeof ephemeralShapeDB,
   bands: Array<{ bandId: number; zMin: number; zMax: number; zBase: number }>,
   enableHighDetailBands: boolean,
+  configSignature: string,
 ): Promise<Array<TaskQueueRecord<ShapeVtTaskInput>>> => {
   const tasks: Array<TaskQueueRecord<ShapeVtTaskInput>> = [];
   let index = 0;
@@ -502,45 +558,50 @@ const buildVtTasks = async (
   for (const band of bands) {
     const isHighDetailBand = band.zMin >= HIGH_DETAIL_ZOOM_MIN;
     if (isHighDetailBand && !enableHighDetailBands) continue;
-    let relationRows = await ephemeralStore.tileIdToBufferRelations
-      .where('[nodeId+bandId]')
-      .equals([nodeId, band.bandId])
-      .toArray();
-    if (relationRows.length === 0) {
+    const tileBuffers = new Map<number, string[]>();
+    let relationCount = 0;
+    const buildTileBuffers = async () => {
+      await ephemeralStore.tileIdToBufferRelations
+        .where('[nodeId+bandId]')
+        .equals([nodeId, band.bandId])
+        .each((row) => {
+          relationCount += 1;
+          const tileId = Number(row.tileId);
+          if (!Number.isFinite(tileId)) return;
+          const bucket = tileBuffers.get(tileId);
+          if (bucket) {
+            bucket.push(row.bufferId);
+          } else {
+            tileBuffers.set(tileId, [row.bufferId]);
+          }
+        });
+    };
+    await buildTileBuffers();
+    if (relationCount === 0) {
       const backfilled = await backfillTileRelationsFromTransformCache({
         nodeId,
         bandId: band.bandId,
         zBase: band.zBase,
         ephemeralStore,
       });
-      if (backfilled > 0) {
-        relationRows = await ephemeralStore.tileIdToBufferRelations
-          .where('[nodeId+bandId]')
-          .equals([nodeId, band.bandId])
-          .toArray();
+      relationCount = backfilled.relationCount;
+      if (relationCount > 0) {
+        tileBuffers.clear();
+        backfilled.tileBuffers.forEach((value, key) => {
+          tileBuffers.set(key, value);
+        });
         console.warn('[shape-vt] rebuilt missing tile relations', {
           nodeId,
           bandId: band.bandId,
-          relationCount: relationRows.length,
+          relationCount,
         });
       }
     }
-    const tileBuffers = new Map<number, string[]>();
-    relationRows.forEach((row) => {
-      const tileId = Number(row.tileId);
-      if (!Number.isFinite(tileId)) return;
-      const bucket = tileBuffers.get(tileId);
-      if (bucket) {
-        bucket.push(row.bufferId);
-      } else {
-        tileBuffers.set(tileId, [row.bufferId]);
-      }
-    });
     console.info('[shape-vt] tile relation snapshot', {
       nodeId,
       bandId: band.bandId,
       zBase: band.zBase,
-      relationCount: relationRows.length,
+      relationCount,
       tileCount: tileBuffers.size,
       tileSample: [...tileBuffers.keys()].slice(0, 5),
     });
@@ -576,6 +637,7 @@ const buildVtTasks = async (
           featureCount,
           domainType: 'shape',
           sourceKey: 'mixed',
+          configSignature,
         },
       });
       index += 1;
@@ -696,6 +758,29 @@ const readHeapSnapshot = () => {
   };
 };
 
+const resetStageRunningTasks = async (
+  taskQueue: VtTaskQueueDb,
+  nodeId: NodeId,
+  stage: TaskQueueRecord['stage'],
+): Promise<void> => {
+  const runningTasks = await listTasksByStageAndStatus(taskQueue, nodeId, stage, 'running');
+  if (runningTasks.length === 0) return;
+  console.warn('[ShapePipeline] resetting stale running tasks', {
+    nodeId,
+    stage,
+    count: runningTasks.length,
+  });
+  await Promise.all(runningTasks.map((task) => updateTask(taskQueue, task.taskId, {
+    status: 'queued',
+    progress: 0,
+    startedAt: undefined,
+    completedAt: undefined,
+    errorMessage: undefined,
+    message: undefined,
+    outputData: undefined,
+  })));
+};
+
 export const runShapePipeline = async (params: ShapePipelineParams): Promise<void> => {
   const taskQueue = new VtTaskQueueDb();
   const ephemeralStore = ephemeralShapeDB;
@@ -761,15 +846,24 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
   }
 
   if (!stopAfterStage) {
-    const existingTransformByBandTasks = resumeExistingTasks
+    let existingTransformByBandTasks = resumeExistingTasks
       ? await listTasksByStage(taskQueue, params.nodeId, 'transform')
       : [];
+    const transformConfigSignature = buildStableSignature(resolveTransformConfig(params.buildConfig));
     const desiredTransformTasks = await buildTransformByBandTasks(
       params.nodeId,
       bands,
       enableHighDetailBands,
       await loadCountryLookup(),
+      transformConfigSignature,
     );
+    if (resumeExistingTasks && existingTransformByBandTasks.length > 0) {
+      existingTransformByBandTasks = await filterObsoleteTasks(
+        taskQueue,
+        existingTransformByBandTasks,
+        desiredTransformTasks,
+      );
+    }
     let missingTransformTasks: Array<TaskQueueRecord<ShapeTransformByBandTaskInput>> = [];
     if (resumeExistingTasks) {
       const existingIds = new Set(existingTransformByBandTasks.map((task) => task.taskId));
@@ -785,6 +879,7 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
     }
     if (existingTransformByBandTasks.length > 0 || missingTransformTasks.length > 0) {
       await params.waitIfPaused?.();
+      await resetStageRunningTasks(taskQueue, params.nodeId, 'transform');
       const transformByBandAbortController = new AbortController();
       const transformByBandHandler = createTransformByBandHandler({
         ephemeralDB: ephemeralStore,
@@ -817,9 +912,20 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
 
   if (!stopAfterStage) {
     const vtConfig = resolveVtConfig(params.buildConfig);
-    const existingVtTasks = resumeExistingTasks
+    let existingVtTasks = resumeExistingTasks
       ? await listTasksByStage(taskQueue, params.nodeId, 'vt')
       : [];
+    const vtConfigSignature = buildStableSignature(vtConfig);
+    const desiredVtTasks = await buildVtTasks(
+      params.nodeId,
+      ephemeralStore,
+      bands,
+      enableHighDetailBands,
+      vtConfigSignature,
+    );
+    if (resumeExistingTasks && existingVtTasks.length > 0) {
+      existingVtTasks = await filterObsoleteTasks(taskQueue, existingVtTasks, desiredVtTasks);
+    }
     if (resumeExistingTasks && existingVtTasks.length > 0) {
       const runningVtTasks = await listTasksByStageAndStatus(taskQueue, params.nodeId, 'vt', 'running');
       if (runningVtTasks.length > 0) {
@@ -832,12 +938,6 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
         )));
       }
     }
-    const desiredVtTasks = await buildVtTasks(
-      params.nodeId,
-      ephemeralStore,
-      bands,
-      enableHighDetailBands,
-    );
     let missingVtTasks: Array<TaskQueueRecord<ShapeVtTaskInput>> = [];
     if (resumeExistingTasks) {
       const existingIds = new Set(existingVtTasks.map((task) => task.taskId));

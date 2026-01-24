@@ -39,7 +39,19 @@ function emitTaskEvent(nodeId: NodeId, task: TaskQueueRecord): void {
   if (!subs) return;
   subs.forEach((cb) => {
     try {
-      cb({ nodeId, task });
+      cb({ nodeId, task, type: 'update' });
+    } catch (error) {
+      console.error('[vt-task-queue] listener failed', error);
+    }
+  });
+}
+
+function emitTaskDeleteEvent(nodeId: NodeId, taskId: string): void {
+  const subs = listeners.get(nodeId);
+  if (!subs) return;
+  subs.forEach((cb) => {
+    try {
+      cb({ nodeId, taskId, type: 'delete' });
     } catch (error) {
       console.error('[vt-task-queue] listener failed', error);
     }
@@ -68,13 +80,26 @@ export async function putTasks(
 ): Promise<void> {
   if (tasks.length === 0) return;
   const now = Date.now();
-  const payload = tasks.map((task) => ({
-    ...task,
-    progress: Number.isFinite(task.progress) ? task.progress : 0,
-    status: task.status ?? 'queued',
-    createdAt: task.createdAt ?? now,
-    updatedAt: now,
-  }));
+  const taskIds = tasks.map((task) => task.taskId);
+  const existing = await db.tasks.bulkGet(taskIds);
+  const existingSequence = new Map(
+    existing
+      .filter((task): task is TaskQueueRecord => Boolean(task))
+      .map((task) => [task.taskId, task.sequence ?? 0])
+  );
+  const payload = tasks.map((task) => {
+    const baseSequence = Number.isFinite(task.sequence) ? task.sequence ?? 0 : 0;
+    const priorSequence = existingSequence.get(task.taskId) ?? 0;
+    const nextSequence = Math.max(baseSequence, priorSequence, 1);
+    return {
+      ...task,
+      progress: Number.isFinite(task.progress) ? task.progress : 0,
+      status: task.status ?? 'queued',
+      createdAt: task.createdAt ?? now,
+      updatedAt: now,
+      sequence: nextSequence,
+    };
+  });
   await db.tasks.bulkPut(payload);
   payload.forEach((task) => {emitTaskEvent(task.nodeId, task)});
 }
@@ -85,9 +110,14 @@ export async function updateTask(
   updates: Partial<TaskQueueRecord>
 ): Promise<void> {
   const now = Date.now();
-  await db.tasks.update(taskId, { ...updates, updatedAt: now });
-  const task = await db.tasks.get(taskId);
-  if (task) emitTaskEvent(task.nodeId, task);
+  await db.transaction('rw', db.tasks, async () => {
+    const current = await db.tasks.get(taskId);
+    const currentSequence = typeof current?.sequence === 'number' ? current.sequence : 0;
+    const nextSequence = currentSequence + 1;
+    await db.tasks.update(taskId, { ...updates, updatedAt: now, sequence: nextSequence });
+    const task = await db.tasks.get(taskId);
+    if (task) emitTaskEvent(task.nodeId, task);
+  });
 }
 
 export async function listTasks(
@@ -127,6 +157,22 @@ export async function deleteTasksByNode(
   nodeId: NodeId
 ): Promise<void> {
   await db.tasks.where('nodeId').equals(nodeId).delete();
+}
+
+export async function deleteTasksByIds(
+  db: VtTaskQueueDb,
+  taskIds: string[]
+): Promise<void> {
+  if (taskIds.length === 0) return;
+  const tasks = await db.tasks.bulkGet(taskIds);
+  const seen = new Set<string>();
+  await db.tasks.bulkDelete(taskIds);
+  tasks.forEach((task) => {
+    if (!task) return;
+    if (seen.has(task.taskId)) return;
+    seen.add(task.taskId);
+    emitTaskDeleteEvent(task.nodeId, task.taskId);
+  });
 }
 
 export const vtTaskQueueDB = new VtTaskQueueDb();

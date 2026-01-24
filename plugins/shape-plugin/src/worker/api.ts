@@ -107,6 +107,14 @@ const isSkippedMessage = (message?: string | null): boolean => {
   return normalized === 'skipped' || normalized.startsWith('skipped:');
 };
 
+const resolveEffectiveTaskStatus = (task: TaskQueueRecord): TaskQueueRecord['status'] => {
+  if (task.stage !== 'vt') return task.status;
+  if (task.status !== 'completed') return task.status;
+  const progress = typeof task.progress === 'number' ? task.progress : 0;
+  const isFinal = typeof task.completedAt === 'number' || progress >= 100;
+  return isFinal ? task.status : 'running';
+};
+
 const resolveTaskProgress = (task: TaskQueueRecord): number => {
   if (task.stage !== 'transform') {
     return task.progress ?? 0;
@@ -249,7 +257,7 @@ const mapTaskQueueRecordToBatchTask = (
   taskId: task.taskId,
   nodeId: task.nodeId,
   stage: undefined,
-  status: normalizeTaskStatus(task.status as string),
+  status: normalizeTaskStatus(resolveEffectiveTaskStatus(task)),
   type: task.stage,
   index: task.index,
   progress: resolveTaskProgress(task),
@@ -272,13 +280,14 @@ const mapTaskQueueRecordToTaskSummary = (
 ): ShapeBatchTaskSummary => ({
   taskId: task.taskId,
   stage: task.stage,
-  status: normalizeTaskPhase(task.status as string),
+  status: normalizeTaskPhase(resolveEffectiveTaskStatus(task)),
   progress: resolveTaskProgress(task),
   message: task.message ?? task.errorMessage,
   title: buildTaskQueueTitle(task),
   error: task.errorMessage,
   errorMessage: task.errorMessage,
   index: task.index,
+  sequence: task.sequence,
   metadata: meta
     ? {
       polygonCount: meta.polygonCount ?? undefined,
@@ -339,14 +348,20 @@ const readStringArray = (value: unknown): string[] => {
 const resolveTaskType = (tasks: TaskQueueRecord[]): TaskQueueRecord['stage'] | undefined => {
   const stageOrder: Array<TaskQueueRecord['stage']> = ['fetch', 'transform', 'vt'];
   return stageOrder.find((stage) => (
-    tasks.some((task) => task.stage === stage && task.status !== 'completed' && task.status !== 'failed')
+    tasks.some((task) => {
+      const status = resolveEffectiveTaskStatus(task);
+      return task.stage === stage && status !== 'completed' && status !== 'failed';
+    })
   ));
 };
 
 const summarizeTaskQueueStatus = (tasks: TaskQueueRecord[]) => {
   const total = tasks.length;
-  const completed = tasks.filter((task) => task.status === 'completed' && !isSkippedMessage(task.message)).length;
-  const failed = tasks.filter((task) => task.status === 'failed').length;
+  const completed = tasks.filter((task) => {
+    const status = resolveEffectiveTaskStatus(task);
+    return status === 'completed' && !isSkippedMessage(task.message);
+  }).length;
+  const failed = tasks.filter((task) => resolveEffectiveTaskStatus(task) === 'failed').length;
   const skipped = tasks.filter((task) => isSkippedMessage(task.message)).length;
   const doneCount = Math.min(total, completed + skipped + failed);
   const status: BuildTask['status'] = failed > 0
@@ -836,6 +851,9 @@ export const shapeBatchAPI = {
       existing?.unsubscribe?.();
       const taskQueue = new VtTaskQueueDb();
       const unsubscribe = onTaskQueueUpdate(nodeForSession, (event) => {
+        if (event.type === 'delete') {
+          return;
+        }
         void (async () => {
           try {
             const vtTasks = await listTasks(taskQueue, event.nodeId);
@@ -1136,6 +1154,9 @@ export const shapeBatchAPI = {
     existing?.unsubscribe?.();
     const taskQueue = new VtTaskQueueDb();
     const unsubscribeTaskQueue = onTaskQueueUpdate(nodeId, (event) => {
+      if (event.type === 'delete') {
+        return;
+      }
       void (async () => {
         try {
           const vtTasks = await listTasks(taskQueue, event.nodeId);
@@ -1179,6 +1200,10 @@ export const shapeBatchAPI = {
     };
     void sendSnapshot();
     const unsubscribeTaskQueue = onTaskQueueUpdate(nodeId, (event) => {
+      if (event.type === 'delete') {
+        callback({ type: 'delete', nodeId: event.nodeId, taskId: event.taskId });
+        return;
+      }
       void (async () => {
         try {
           const tasks = await listTasks(taskQueue, event.nodeId);

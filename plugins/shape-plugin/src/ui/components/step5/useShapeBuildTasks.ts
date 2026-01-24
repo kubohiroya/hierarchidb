@@ -33,6 +33,7 @@ type RawTaskSummary = BatchTaskSummary & {
   error?: string;
   errorMessage?: string;
   index?: number;
+  sequence?: number;
 };
 
 const isTaskStage = (value: unknown): value is TaskStage => (
@@ -69,8 +70,7 @@ export function useShapeBuildTasks(
   const [error, setError] = useAtom(tasksErrorAtom);
   const reportedFailuresRef = useRef<Set<string>>(new Set());
   const pendingTasksRef = useRef<ShapeBuildTaskSummary[] | null>(null);
-  const flushTimerRef = useRef<number | null>(null);
-  const lastFlushRef = useRef<number>(0);
+  const pendingDeleteIdsRef = useRef<Set<string>>(new Set());
   const tasksRef = useRef<ShapeBuildTaskSummary[]>(tasks);
   const subscriptionRef = useRef<(() => void) | null>(null);
   const subscriptionIdRef = useRef(0);
@@ -85,10 +85,6 @@ export function useShapeBuildTasks(
 
   useEffect(() => {
     return () => {
-      if (flushTimerRef.current) {
-        window.clearTimeout(flushTimerRef.current);
-        flushTimerRef.current = null;
-      }
       pendingTasksRef.current = null;
       if (subscriptionRef.current) {
         subscriptionRef.current();
@@ -97,29 +93,22 @@ export function useShapeBuildTasks(
     };
   }, []);
 
+  const applyPendingDeletes = useCallback((next: ShapeBuildTaskSummary[]): ShapeBuildTaskSummary[] => {
+    const pendingDeletes = pendingDeleteIdsRef.current;
+    if (pendingDeletes.size === 0) return next;
+    pendingDeleteIdsRef.current = new Set();
+    return next.filter((task) => !pendingDeletes.has(task.taskId));
+  }, []);
+
   const flushTasks = useCallback((next: ShapeBuildTaskSummary[]) => {
-    if (flushTimerRef.current) {
-      window.clearTimeout(flushTimerRef.current);
-      flushTimerRef.current = null;
-    }
-    setTasks(next);
-    lastFlushRef.current = Date.now();
+    const cleaned = applyPendingDeletes(next);
+    setTasks(cleaned);
     pendingTasksRef.current = null;
-  }, [setTasks]);
+  }, [applyPendingDeletes, setTasks]);
 
   const scheduleFlush = useCallback((next: ShapeBuildTaskSummary[]) => {
     pendingTasksRef.current = next;
-    if (flushTimerRef.current) return;
-    const now = Date.now();
-    const elapsed = now - lastFlushRef.current;
-    const delay = Math.max(0, 10 - elapsed);
-    flushTimerRef.current = window.setTimeout(() => {
-      const pending = pendingTasksRef.current;
-      flushTimerRef.current = null;
-      if (pending) {
-        flushTasks(pending);
-      }
-    }, delay);
+    flushTasks(next);
   }, [flushTasks]);
 
   const resolveTaskSummary = useCallback((task: RawTaskSummary): ShapeBuildTaskSummary => ({
@@ -131,6 +120,13 @@ export function useShapeBuildTasks(
     const current = pendingTasksRef.current ?? tasksRef.current;
     const idx = current.findIndex((entry) => entry.taskId === task.taskId);
     if (idx >= 0) {
+      const currentTask = current[idx];
+      if (!currentTask) return current;
+      const currentSequence = typeof currentTask.sequence === 'number' ? currentTask.sequence : null;
+      const nextSequence = typeof task.sequence === 'number' ? task.sequence : null;
+      if (currentSequence !== null && nextSequence !== null && nextSequence <= currentSequence) {
+        return current;
+      }
       const next = [...current];
       next[idx] = task;
       return sortTasks(next);
@@ -139,6 +135,7 @@ export function useShapeBuildTasks(
   }, []);
 
   const handleSnapshot = useCallback((next: RawTaskSummary[]) => {
+    pendingDeleteIdsRef.current = new Set();
     const resolved = sortTasks(next.map(resolveTaskSummary));
     flushTasks(resolved);
     setError(null);
@@ -154,9 +151,9 @@ export function useShapeBuildTasks(
   }, [mergeTask, resolveTaskSummary, scheduleFlush, setError, setIsLoading]);
 
   const handleDelete = useCallback((taskId: string) => {
+    pendingDeleteIdsRef.current.add(taskId);
     const current = pendingTasksRef.current ?? tasksRef.current;
-    const next = current.filter((task) => task.taskId !== taskId);
-    scheduleFlush(next);
+    scheduleFlush(current);
     setError(null);
     setIsLoading(false);
   }, [scheduleFlush, setError, setIsLoading]);

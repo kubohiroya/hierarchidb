@@ -43,6 +43,8 @@ export const ShapeBuildProgressStageContent = ({
   const scrollTarget = useAtomValue(taskScrollTargetAtom);
   const scrollToTaskId = scrollTarget?.stageId === stage.id ? scrollTarget.taskId : undefined;
   const scrollRequestId = scrollTarget?.requestedAt;
+  const disableVirtualization = typeof window !== 'undefined'
+    && new URLSearchParams(window.location.search).has('noTaskVirtual');
   const filteredTasks = stageTasks.filter((task) => {
     if (isSkippedMessage(task.message)) return filter.skippedMode;
     if (task.status === 'failed') return filter.failedMode;
@@ -102,6 +104,7 @@ export const ShapeBuildProgressStageContent = ({
           resolveTaskTitle={resolveTaskTitle}
           scrollToTaskId={scrollToTaskId}
           scrollRequestId={scrollRequestId}
+          virtualize={!disableVirtualization}
         />
       )}
     </Stack>

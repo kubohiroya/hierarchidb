@@ -85,12 +85,24 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const processingStatus = data?.processingStatus ?? 'idle';
   const runtimeStatus = effectiveStatus?.status ?? null;
   const statusSource = runtimeStatus ?? processingStatus;
-  const buildStatus = useMemo<BuildStatus>(() => (
+  const baseBuildStatus = useMemo<BuildStatus>(() => (
     toBuildStatus(statusSource)
   ), [statusSource]);
+  const { tasks, isLoading: isTasksLoading } = useShapeBuildTasks(activeNodeId);
+  const isTaskSummaryLoading = false;
+  const displayTasks = tasks;
+  const hasInFlightTasks = useMemo(() => (
+    displayTasks.some((task) => task.status === 'running' || task.status === 'queued')
+  ), [displayTasks]);
+  const buildStatus = useMemo<BuildStatus>(() => {
+    if (baseBuildStatus === 'completed' && hasInFlightTasks) {
+      return 'running';
+    }
+    return baseBuildStatus;
+  }, [baseBuildStatus, hasInFlightTasks]);
   const statusLabel = useMemo(() => {
-    switch (statusSource) {
-      case 'processing':
+    switch (buildStatus) {
+      case 'running':
         return t('stage.status.running', 'Build in progress');
       case 'paused':
         return t('stage.status.paused', 'Build paused');
@@ -101,10 +113,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       default:
         return t('stage.status.ready', 'Ready to start stage');
     }
-  }, [statusSource, t]);
-  const { tasks, isLoading: isTasksLoading } = useShapeBuildTasks(activeNodeId);
-  const isTaskSummaryLoading = false;
-  const displayTasks = tasks;
+  }, [buildStatus, t]);
   const lastBuildStartedAtRef = useRef<number | undefined>(data?.buildStartedAt);
   const totalElapsedMsRef = useRef(0);
   const stageElapsedMsRef = useRef(0);

@@ -5,6 +5,7 @@ import type { StageHandler, TaskQueueRecord } from '@hierarchidb/common-types';
 import type { ShapeBuildConfig } from '../../common/types/index.js';
 import {
   type VtTaskQueueDb,
+  deleteTasksByIds,
   listTasksByStage,
   putTasks,
   runStageTasks,
@@ -36,6 +37,7 @@ import { shapeMutationAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
 import { buildFeatureId, extractGeometryStats } from './featureMetadataUtils.ts';
 import { filterFetchCollectionByZoom } from './fetchGeometryFilters.ts';
 import { buildZoomBandRanges } from '../../common/config/zoomBands.ts';
+import { buildStableSignature } from './taskSignatures.ts';
 
 export type ShapeFetchTaskInput = {
   url: string;
@@ -45,6 +47,7 @@ export type ShapeFetchTaskInput = {
   countryName?: string;
   urlCountryCode: string;
   adminLevel: number;
+  configSignature?: string;
 };
 
 export type ShapeFetchTaskOutput = {
@@ -393,6 +396,7 @@ const buildFetchTasks = (
   nodeId: NodeId,
   payloads: FetchTaskPayload[],
   metadata: CountryMetadata[],
+  configSignature: string,
 ): Array<TaskQueueRecord<ShapeFetchTaskInput, ShapeFetchTaskOutput>> => {
   const lookup = buildCountryLookup(metadata);
   return payloads.map((payload, index) => {
@@ -421,10 +425,15 @@ const buildFetchTasks = (
         countryName: countryMeta.countryName,
         urlCountryCode: payload.countryCode.trim().toUpperCase(),
         adminLevel: payload.adminLevel,
+        configSignature,
       },
     };
   });
 };
+
+const buildTaskInputSignature = (input: unknown): string => (
+  buildStableSignature(input ?? null)
+);
 
 const createFetchHandler = (params: {
   nodeId: NodeId;
@@ -622,9 +631,32 @@ export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise
       metadata,
     );
   if (payloads.length === 0) return;
-  const tasks = buildFetchTasks(params.nodeId, payloads, metadata);
+  const configSignature = buildStableSignature(params.buildConfig.fetchConfig ?? null);
+  const tasks = buildFetchTasks(params.nodeId, payloads, metadata, configSignature);
   if (resumeExistingTasks) {
-    const existingIds = new Set(existingTasks.map((task) => task.taskId));
+    const desiredSignatures = new Map(tasks.map((task) => [
+      task.taskId,
+      buildTaskInputSignature(task.inputData),
+    ]));
+    const obsoleteTaskIds: string[] = [];
+    const validExistingTasks: typeof existingTasks = [];
+    existingTasks.forEach((task) => {
+      const desiredSignature = desiredSignatures.get(task.taskId);
+      if (!desiredSignature) {
+        obsoleteTaskIds.push(task.taskId);
+        return;
+      }
+      const existingSignature = buildTaskInputSignature(task.inputData);
+      if (existingSignature !== desiredSignature) {
+        obsoleteTaskIds.push(task.taskId);
+        return;
+      }
+      validExistingTasks.push(task);
+    });
+    if (obsoleteTaskIds.length > 0) {
+      await deleteTasksByIds(params.taskQueue, obsoleteTaskIds);
+    }
+    const existingIds = new Set(validExistingTasks.map((task) => task.taskId));
     const missingTasks = tasks.filter((task) => !existingIds.has(task.taskId));
     if (missingTasks.length > 0) {
       await putTasks(params.taskQueue, missingTasks);

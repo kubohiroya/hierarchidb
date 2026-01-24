@@ -118,6 +118,7 @@ export interface BatchTaskSummary {
   stage: StageKey;
   status: ProgressPhase;
   progress: number;
+  sequence?: number;
   message?: string;
 }
 

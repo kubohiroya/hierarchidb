@@ -1,6 +1,7 @@
 export {
   VtTaskQueueDb,
   deleteTasksByNode,
+  deleteTasksByIds,
   listTasks,
   listTasksByStage,
   listTasksByStageAndStatus,

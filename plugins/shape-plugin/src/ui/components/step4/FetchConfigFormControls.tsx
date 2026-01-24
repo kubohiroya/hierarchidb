@@ -161,7 +161,7 @@ export const FetchConfigFormControls: React.FC<Props> = ({
         <Typography variant="caption" color="text.secondary">
           {t(
             'processing.download.deleteVtHelp',
-            'Tile index + tile data cache: generated vector tiles and tile relations (also clears feature/source metadata).',
+            'Tile index + tile data cache: generated vector tiles and tile relations (also clears feature/source metadata). Transform cache is preserved.',
           )}
         </Typography>
         <Typography variant="caption" color="text.secondary">

@@ -16,16 +16,16 @@ export type TaskQueueRecord<TInput = unknown, TOutput = unknown> = {
   completedAt?: number;
   createdAt?: number;
   updatedAt?: number;
+  sequence?: number;
   retryCount?: number;
   inputData?: TInput;
   outputData?: TOutput;
   errorMessage?: string;
 };
 
-export type TaskQueueEvent = {
-  nodeId: NodeId;
-  task: TaskQueueRecord;
-};
+export type TaskQueueEvent =
+  | { nodeId: NodeId; task: TaskQueueRecord; type?: 'update' }
+  | { nodeId: NodeId; taskId: string; type: 'delete' };
 
 export type StageHandlerResult<TOutput = unknown> = {
   status?: TaskStatus;

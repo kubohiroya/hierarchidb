@@ -1,3 +1,143 @@
+2362) fix/shape/task-update-sequence (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/shape/task-update-sequence
+- 依存: なし
+- 受け入れ基準: TaskQueueRecord/BatchTaskSummaryにsequenceを追加する／タスク更新のsequenceが単調増加する／UIはsequenceで新旧判定する／pnpm --filter @hierarchidb/common-types build と pnpm --filter @hierarchidb/vt-orchestrator build と pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `packages/common/types/src/task-queue-types.ts`, `packages/common/api/src/BatchControlAPI.ts`, `packages/vt-orchestrator/src/task/taskQueue.ts`, `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/ui/components/step5/useShapeBuildTasks.ts`, `plugins/shape-plugin/src/ui/atoms/shapeBuildProgressAtoms.ts`
+- ロールバック手順: sequence追加と更新ロジック差分を revert する
+- チェックリスト:
+  - TaskQueueRecord/BatchTaskSummaryにsequenceを追加する
+  - putTasks/updateTaskでsequenceを単調増加させる
+  - UIのmerge判定をsequenceに切り替える
+  - pnpm --filter @hierarchidb/common-types build を実行する
+  - pnpm --filter @hierarchidb/vt-orchestrator build を実行する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 11:02 JST sequence導入とmerge判定切り替えに着手。
+  - done: 2026-01-26 11:09 JST pnpm --filter @hierarchidb/common-types build / pnpm --filter @hierarchidb/common-api build / pnpm --filter @hierarchidb/vt-orchestrator build / pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2363) investigation/shape/task-list-virtualization (P1) — 進行中 (2026-01-26)
+- ブランチ名: investigation/shape/task-list-virtualization
+- 依存: なし
+- 受け入れ基準: 仮想化ON/OFFでタスク更新の反映安定性を比較できる／仮想化起因かどうかを結論づける根拠を示す／原因候補があれば箇所と再現条件を記録する／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/TaskListVirtualized.tsx`, `plugins/shape-plugin/src/ui/components/step5/ShapeBuildProgressPanel.tsx`
+- ロールバック手順: 調査用フラグ/ログを revert する
+- チェックリスト:
+  - 仮想化ON/OFFで挙動比較できるようにする
+  - 反映不安定の再現条件を記録する
+  - 結論と根拠を整理する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 11:14 JST TaskList仮想化の影響調査に着手。
+  - update: 2026-01-26 11:22 JST noTaskVirtualクエリで非仮想リストに切替できるようにし、pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2361) fix/shape/ignore-stale-task-updates (P1) — 進行中 (2026-01-25)
+- ブランチ名: fix/shape/ignore-stale-task-updates
+- 依存: なし
+- 受け入れ基準: 旧いupdateイベントが新しい状態を上書きしない／updatedAtに基づいて更新を棄却する／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/ui/components/step5/useShapeBuildTasks.ts`, `plugins/shape-plugin/src/ui/atoms/shapeBuildProgressAtoms.ts`
+- ロールバック手順: updatedAtの付与とmergeTaskのガードを revert する
+- チェックリスト:
+  - TaskSummaryにupdatedAtを付与する
+  - mergeTaskでupdatedAtが古い更新を無視する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-25 00:29 JST 旧いupdateの上書き抑止に着手。
+  - blocked: 2026-01-25 00:29 JST shapeBuildProgressAtomsにupdatedAtが無くtypecheck失敗。
+  - done: 2026-01-25 00:29 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2360) fix/shape/reset-stale-running-transform (P1) — 進行中 (2026-01-25)
+- ブランチ名: fix/shape/reset-stale-running-transform
+- 依存: なし
+- 受け入れ基準: Transform開始前にstaleなrunningタスクがqueuedへ戻される／Runningが残り続ける問題が緩和される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/vt/shapePipeline.ts`
+- ロールバック手順: resetStageRunningTasks追加と呼び出し差分を revert する
+- チェックリスト:
+  - Transform開始前にrunningタスクをリセットする
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-25 00:21 JST Transformのstale runningリセットに着手。
+  - done: 2026-01-25 00:21 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2359) fix/shape/task-update-no-debounce (P1) — 進行中 (2026-01-25)
+- ブランチ名: fix/shape/task-update-no-debounce
+- 依存: なし
+- 受け入れ基準: タスク更新は即時反映される／debounceが無効化される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/useShapeBuildTasks.ts`
+- ロールバック手順: scheduleFlushの即時反映差分を revert する
+- チェックリスト:
+  - scheduleFlushが即時反映になる
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-25 00:14 JST タスク更新debounceの無効化に着手。
+  - done: 2026-01-25 00:14 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2358) fix/shape/delete-event-batching-ui (P1) — 進行中 (2026-01-25)
+- ブランチ名: fix/shape/delete-event-batching-ui
+- 依存: なし
+- 受け入れ基準: 大量deleteイベントでもUIがクラッシュしない／削除はまとめて適用される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/useShapeBuildTasks.ts`
+- ロールバック手順: deleteイベントのバッチ適用差分を revert する
+- チェックリスト:
+  - deleteイベントをSetでバッチ適用する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-25 00:02 JST deleteイベントのバッチ適用でクラッシュ回避に着手。
+  - done: 2026-01-25 00:02 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2357) fix/shape/delete-stale-tasks (P1) — 進行中 (2026-01-24)
+- ブランチ名: fix/shape/delete-stale-tasks
+- 依存: なし
+- 受け入れ基準: 現行ビルド内容と不一致のタスクは削除される／VTタスクのCompleted→Queuedフリップが起きない／deleteイベントでUIがタスク削除を反映する／pnpm --filter @hierarchidb/shape-plugin typecheck と pnpm --filter @hierarchidb/vt-orchestrator typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `packages/common/types/src/task-queue-types.ts`, `packages/vt-orchestrator/src/task/taskQueue.ts`, `packages/vt-orchestrator/src/index.ts`, `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts`, `plugins/shape-plugin/src/services/vt/shapePipeline.ts`, `plugins/shape-plugin/src/services/vt/taskSignatures.ts`, `plugins/shape-plugin/src/worker/api.ts`
+- ロールバック手順: TaskQueueEventのdelete対応・deleteTasksByIds・タスク署名と削除ロジックの差分を revert する
+- チェックリスト:
+  - 現行ビルド内容と不一致のタスクを削除する
+  - deleteイベントをsubscribeToTasksへ伝搬する
+  - pnpm --filter @hierarchidb/common-types build を実行する
+  - pnpm --filter @hierarchidb/vt-orchestrator build を実行する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - pnpm --filter @hierarchidb/vt-orchestrator typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 23:57 JST ビルド内容不一致タスクの削除と通知対応に着手。
+  - blocked: 2026-01-24 23:57 JST pnpm --filter @hierarchidb/shape-plugin typecheck が deleteTasksByIds未公開・TaskQueueEvent型更新漏れで失敗。
+  - done: 2026-01-24 23:57 JST pnpm --filter @hierarchidb/common-types build / pnpm --filter @hierarchidb/vt-orchestrator build / pnpm --filter @hierarchidb/shape-plugin typecheck / pnpm --filter @hierarchidb/vt-orchestrator typecheck が exit 0。
+
+2356) fix/shape/vt-strict-completed-notify (P1) — 進行中 (2026-01-24)
+- ブランチ名: fix/shape/vt-strict-completed-notify
+- 依存: なし
+- 受け入れ基準: VTタスクのCompleted判定が進捗未完了では出ない／progressやcompletedAtに基づき完了判定を厳格化する／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/worker/api.ts`
+- ロールバック手順: resolveEffectiveTaskStatusの追加と適用箇所の差分を revert する
+- チェックリスト:
+  - VTのCompleted判定をprogress/完了情報で厳格化する
+  - 進捗報告で未完了タスクがCompletedにならない
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 23:37 JST VTタスクのCompleted判定厳格化に着手。
+  - done: 2026-01-24 23:37 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2355) fix/shape/vt-task-status-flap (P1) — 進行中 (2026-01-24)
+- ブランチ名: fix/shape/vt-task-status-flap
+- 依存: なし
+- 受け入れ基準: VTタスク表示でCompleted/Runningがフリップしない／buildStatusがcompletedでもin-flightタスクがあればrunningとして扱う／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/useShapeBuildStep.ts`
+- ロールバック手順: buildStatusのin-flightガード差分を revert する
+- チェックリスト:
+  - in-flightタスクがある場合はbuildStatusをrunningに固定する
+  - VTタスクの進捗表示でCompleted/Runningのフリップが起きない
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 23:29 JST VTタスクのRunning/Completedフリップ抑制に着手。
+  - done: 2026-01-24 23:29 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
 2336) fix/shape/transform-retry-tolerance-search (P1) — 完了 (2026-01-24)
 - ブランチ名: fix/shape/transform-retry-tolerance-search
 - 依存: なし
@@ -504,6 +644,55 @@
   - start: 2026-01-24 14:50 JST threshold area slider と国名 marks の対応に着手。
   - update: 2026-01-24 14:57 JST threshold area を Slider 化し、国名 marks と説明文を追加。
   - done: 2026-01-24 14:58 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2344) fix/shape/step5-start-after-cache-delete-crash-v2 (P1) — 完了 (2026-01-24)
+- ブランチ名: fix/shape/step5-start-after-cache-delete-crash-v2
+- 依存: なし
+- 受け入れ基準: Step4のDelete tile index + tile data cache後にStep5のStart Buildで進捗が開始されずクラッシュする原因が特定される／原因・発生範囲・修正方法と適用範囲が明記される／必要なら最小差分で修正する／pnpm typecheck が exit 0（既存エラーがあればblocked記録）／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`, `plugins/shape-plugin/src/services/**`, `plugins/shape-plugin/src/worker/**`（調査後に確定）
+- ロールバック手順: 修正差分を revert する
+- チェックリスト:
+  - Delete tile index + tile data cache後のビルド開始クラッシュの再現条件を整理する
+  - 原因を特定し、必要なら最小差分で修正する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 23:18 JST Delete tile index + tile data cache後のStart Buildクラッシュ再調査に着手。
+  - update: 2026-01-24 23:21 JST tile relationsの再構築結果を再読込せず、再構築中にtileBuffersを組み立てるよう最適化。
+  - done: 2026-01-24 23:21 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2342) docs/shape/step4-delete-vt-cache-copy (P1) — 完了 (2026-01-24)
+- ブランチ名: docs/shape/step4-delete-vt-cache-copy
+- 依存: なし
+- 受け入れ基準: Step4のDelete tile index + tile data cacheの説明文に「VTのみ削除・transformは残る」旨が明記される／既存動作は変わらない／pnpm typecheck が exit 0（既存エラーがあればblocked記録）／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/**`（調査後に確定）
+- ロールバック手順: 説明文変更差分を revert する
+- チェックリスト:
+  - Delete tile index + tile data cacheの説明文を更新する
+  - 既存動作が変わらないことを確認する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 23:15 JST Step4のVT削除説明文の明確化に着手。
+  - update: 2026-01-24 23:15 JST VT削除がtransform cacheを保持する旨を説明文に追加。
+  - done: 2026-01-24 23:15 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2341) fix/shape/step5-start-after-cache-delete-crash (P1) — 完了 (2026-01-24)
+- ブランチ名: fix/shape/step5-start-after-cache-delete-crash
+- 依存: なし
+- 受け入れ基準: Step4のDelete tile index + tile data cache後にStep5のビルド開始で遅延/クラッシュする原因が特定される／原因・発生範囲・修正方法と適用範囲が明記される／必要なら最小差分で修正する／pnpm typecheck が exit 0（既存エラーがあればblocked記録）／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`, `plugins/shape-plugin/src/services/**`, `plugins/shape-plugin/src/worker/**`（調査後に確定）
+- ロールバック手順: 修正差分を revert する
+- チェックリスト:
+  - Delete tile index + tile data cacheの実装と影響範囲を確認する
+  - Step5のビルド開始が遅延/クラッシュする原因を特定する
+  - 必要なら最小差分で修正する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-24 22:57 JST Delete tile index + tile data cache後のビルド開始遅延/クラッシュの調査に着手。
+  - update: 2026-01-24 23:01 JST tile relations再構築のバッチ書き込み化とストリーム処理でメモリ負荷を抑制。
+  - done: 2026-01-24 23:01 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
 
 2340) fix/shape/step5-vt-progress-flap (P1) — 完了 (2026-01-24)
 - ブランチ名: fix/shape/step5-vt-progress-flap
