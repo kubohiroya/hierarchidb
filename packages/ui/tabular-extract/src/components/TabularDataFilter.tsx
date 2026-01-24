@@ -106,12 +106,19 @@ export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
     getFilteredPreview,
     validateFilters,
     isLoading,
+    setRules,
   } = useTabularFilter({
     tableId: tableMetadata.id,
     pluginId,
     maxPreviewRows: MAX_PREVIEW_ROWS,
     initialRules: normalizedInitialFilters,
   });
+  useEffect(() => {
+    if (normalizedInitialFilters.length === 0) return;
+    if (previewData) return;
+    setPreviewDirty(true);
+  }, [normalizedInitialFilters.length, previewData]);
+
   const previewBusy = previewDirty || isLoading;
 
   const hasMetadataColumns = Boolean(tableMetadata.columns && tableMetadata.columns.length > 0);
@@ -214,7 +221,7 @@ export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
     });
   }, [columnOptions]);
 
-  const enabledFilters = useMemo(() => filters.filter((f) => f.enabled), [filters]);
+  const enabledFilters = useMemo(() => filters.filter((f) => f.enabled !== false), [filters]);
   const effectiveFilters = enabledFilters.length > 0 ? enabledFilters : filters;
   const hasAnyFilters = filters.length > 0;
 
@@ -238,6 +245,12 @@ export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
     }
     return true;
   }, []);
+
+  useEffect(() => {
+    if (!onSyncFilters) return;
+    if (filtersEqual(initialFilters, normalizedInitialFilters)) return;
+    onSyncFilters(normalizedInitialFilters);
+  }, [filtersEqual, initialFilters, normalizedInitialFilters, onSyncFilters]);
 
   const handleFiltersChange = useCallback((next: TabularFilterRule[]) => {
     setFilters((prev) => {
@@ -342,8 +355,14 @@ export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
 
   // 外部（初期値/atom）から filters が更新された場合に内部状態へ同期する
   useEffect(() => {
-    setFilters((prev) => (filtersEqual(prev, normalizedInitialFilters) ? prev : normalizedInitialFilters));
-  }, [filtersEqual, normalizedInitialFilters]);
+    const current = filtersRef.current;
+    if (filtersEqual(current, normalizedInitialFilters)) {
+      return;
+    }
+    setFilters(normalizedInitialFilters);
+    setRules(normalizedInitialFilters);
+    setPreviewDirty(true);
+  }, [filtersEqual, normalizedInitialFilters, setRules]);
 
   const previewNode = previewData ? (
     <Paper variant="outlined" sx={{ height: previewHeight, overflowY: 'auto' }}>

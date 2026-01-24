@@ -191,6 +191,9 @@ export function TabularDataFilterRulesVirtual({
   const bottomSpacer = Math.max(0, totalHeight - endIndex * rowHeight);
   const enabledCount = normalizedRules.filter((rule) => rule.enabled).length;
 
+  const inputHeight = Math.max(32, rowHeight - 10);
+  const rowCellSx = { py: 0.5, height: rowHeight };
+
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     setScrollTop(e.currentTarget.scrollTop);
   }, []);
@@ -281,9 +284,9 @@ export function TabularDataFilterRulesVirtual({
           <TableHead>
             <TableRow>
               <TableCell padding="checkbox" />
-              <TableCell>Column</TableCell>
-              <TableCell>Operator</TableCell>
-              <TableCell>Value</TableCell>
+              <TableCell sx={rowCellSx}>Column</TableCell>
+              <TableCell sx={rowCellSx}>Operator</TableCell>
+              <TableCell sx={rowCellSx}>Value</TableCell>
               <TableCell padding="checkbox" />
             </TableRow>
           </TableHead>
@@ -303,12 +306,12 @@ export function TabularDataFilterRulesVirtual({
                 <TableRow
                   key={rule.id}
                   hover
-                  sx={{ cursor: 'pointer' }}
+                  sx={{ cursor: 'pointer', height: rowHeight }}
                   onClick={() => {
                     setEditingRowId((prev) => (prev === rule.id ? prev : rule.id));
                   }}
                 >
-                  <TableCell padding="checkbox">
+                  <TableCell padding="checkbox" sx={rowCellSx}>
                     <Checkbox
                       size="small"
                       checked={rule.enabled && (!needsValue || valueDraft.trim().length > 0)}
@@ -319,12 +322,13 @@ export function TabularDataFilterRulesVirtual({
                       }}
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={rowCellSx}>
                     {isEditing ? (
                       <TextField
                         select
                         size="small"
                         fullWidth
+                        sx={{ '& .MuiInputBase-root': { height: inputHeight } }}
                         value={rule.column ?? ''}
                         onClick={(event) => event.stopPropagation()}
                         onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
@@ -356,12 +360,13 @@ export function TabularDataFilterRulesVirtual({
                       <Typography variant="body2">{rule.column}</Typography>
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={rowCellSx}>
                     {isEditing ? (
                       <TextField
                         select
                         size="small"
                         fullWidth
+                        sx={{ '& .MuiInputBase-root': { height: inputHeight } }}
                         value={rule.operator}
                         onClick={(event) => event.stopPropagation()}
                         onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
@@ -391,11 +396,12 @@ export function TabularDataFilterRulesVirtual({
                       <Typography variant="body2">{rule.operator}</Typography>
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={rowCellSx}>
                     {isEditing ? (
                       <TextField
                         size="small"
                         fullWidth
+                        sx={{ '& .MuiInputBase-root': { height: inputHeight } }}
                         value={valueDraft}
                         disabled={!needsValue}
                         onClick={(event) => event.stopPropagation()}
@@ -441,7 +447,7 @@ export function TabularDataFilterRulesVirtual({
                       </Typography>
                     )}
                   </TableCell>
-                  <TableCell padding="checkbox">
+                  <TableCell padding="checkbox" sx={rowCellSx}>
                     <Tooltip title="Delete rule">
                       <IconButton
                         size="small"

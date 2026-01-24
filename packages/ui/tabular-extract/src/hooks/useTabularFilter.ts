@@ -126,7 +126,7 @@ export const useTabularFilter = (options: UseTabularFilterOptions): UseTabularFi
 
         const data = await tabularApi.getFilteredPreview(
           tableId,
-          rules.filter((rule) => rule.enabled),
+          rules.filter((rule) => rule.enabled !== false),
           maxPreviewRows,
         );
 
@@ -360,7 +360,7 @@ export const useTabularSelection = (options: UseTabularSelectionOptions): UseTab
 
       const data = await tabularApi.getFilteredPreview(
         tableMetadataId,
-        filterRules.filter((rule) => rule.enabled),
+        filterRules.filter((rule) => rule.enabled !== false),
         previewRowCount,
       );
 
