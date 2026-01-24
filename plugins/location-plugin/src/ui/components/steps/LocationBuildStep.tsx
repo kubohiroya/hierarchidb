@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
-import { Alert, Box, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from '@mui/material';
 import { type BuildStatus, type BuildStage, BuildStepPanel } from '@hierarchidb/components';
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import { getWorkerBridge, type WorkerBridge } from '@hierarchidb/ui-worker-client';
@@ -119,9 +119,18 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [isMutating, setIsMutating] = useState(false);
   const [heapDialogOpen, setHeapDialogOpen] = useState(false);
+  const [completionDialogOpen, setCompletionDialogOpen] = useState(false);
+  const [completionSnapshot, setCompletionSnapshot] = useState<{
+    status: BuildStatus;
+    stageLabel: string;
+    taskTitle?: string;
+    taskMessage?: string;
+    reason?: string;
+  } | null>(null);
   const heapPauseRef = useRef<string | null>(null);
   const [ideGsmProgress, setIdeGsmProgress] = useState<IdeGsmImportProgress | null>(null);
   const { progress, unifiedProgress } = useLocationProgress(activeNodeId, { autoSubscribe: true });
+  const completionStatusRef = useRef<BuildStatus | null>(null);
 
   useEffect(() => {
     if (!activeNodeId) return;
@@ -156,6 +165,32 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
   const ideGsmOverallProgress = ideGsmProgress ? mapIdeGsmProgressToPercent(ideGsmProgress) : overallProgress;
 
   const normalizedStage = unifiedProgress?.stage ?? progress?.taskType;
+  const completionStageLabel = useMemo(() => {
+    if (ideGsmProgress) return resolveIdeGsmTaskLabel(t, ideGsmProgress);
+    const normalized = typeof normalizedStage === 'string' ? normalizedStage : undefined;
+    const stageMatch = stages.find((stage) => normalized && normalized.includes(stage.id));
+    return stageMatch?.title ?? normalized ?? t('stage.progress.unknownStage', 'Unknown stage');
+  }, [ideGsmProgress, normalizedStage, stages, t]);
+  const completionTaskTitle = useMemo(() => {
+    const title = ideGsmProgress
+      ? resolveIdeGsmTaskLabel(t, ideGsmProgress)
+      : completionStageLabel;
+    return title?.trim() ? title : t('stage.tasks.unknown', '(Task unavailable)');
+  }, [completionStageLabel, ideGsmProgress, t]);
+  const completionTaskMessage = useMemo(() => {
+    return unifiedProgress?.message
+      ?? progress?.message
+      ?? t('stage.progress.failedReason', 'Build failed due to task errors.');
+  }, [progress?.message, t, unifiedProgress?.message]);
+  const completionReason = useMemo(() => {
+    if (buildStatus === 'failed') {
+      return unifiedProgress?.message ?? progress?.message ?? t('stage.progress.failedReason', 'Build failed due to task errors.');
+    }
+    if (buildStatus === 'completed') {
+      return t('stage.progress.completedReason', 'All tasks completed.');
+    }
+    return t('stage.progress.endedReason', 'Build ended.');
+  }, [buildStatus, progress?.message, t, unifiedProgress?.message]);
   const stageProgress = useMemo(() => {
     if (ideGsmActive) {
       return stages.reduce<Record<string, number>>((acc, stage, index) => {
@@ -202,6 +237,39 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
     if (!heapEvent) return;
     setHeapDialogOpen(true);
   }, [heapEvent]);
+
+  useEffect(() => {
+    if (completionStatusRef.current === null) {
+      completionStatusRef.current = buildStatus;
+      return;
+    }
+    if (buildStatus === completionStatusRef.current) return;
+    completionStatusRef.current = buildStatus;
+    if (buildStatus === 'completed') {
+      setCompletionSnapshot({
+        status: buildStatus,
+        stageLabel: completionStageLabel,
+        reason: completionReason,
+      });
+      setCompletionDialogOpen(true);
+      return;
+    }
+    if (buildStatus === 'failed') {
+      setCompletionSnapshot({
+        status: buildStatus,
+        stageLabel: completionStageLabel,
+        taskTitle: completionTaskTitle,
+        taskMessage: completionTaskMessage,
+      });
+      setCompletionDialogOpen(true);
+    }
+  }, [
+    buildStatus,
+    completionReason,
+    completionStageLabel,
+    completionTaskMessage,
+    completionTaskTitle,
+  ]);
 
   useEffect(() => {
     if (!nodeId) return;
@@ -320,6 +388,42 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
         startLabel={t('stage.startLabel', 'Start')}
         controlLabel={t('stage.controlsLabel', 'Build controls')}
       />
+      <Dialog
+        open={completionDialogOpen}
+        onClose={() => setCompletionDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          {completionSnapshot?.status === 'completed'
+            ? t('stage.progress.completedTitle', 'Build completed')
+            : t('stage.progress.failedTitle', 'Build failed')}
+        </DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <Typography variant="body2">
+            {t('stage.progress.completedStageLabel', 'Stage')}: {completionSnapshot?.stageLabel ?? completionStageLabel}
+          </Typography>
+          {completionSnapshot?.status === 'failed' ? (
+            <>
+              <Typography variant="body2">
+                {t('stage.progress.failedTaskLabel', 'Task')}: {completionSnapshot?.taskTitle ?? completionTaskTitle}
+              </Typography>
+              <Typography variant="body2">
+                {t('stage.progress.failedMessageLabel', 'Message')}: {completionSnapshot?.taskMessage ?? completionTaskMessage}
+              </Typography>
+            </>
+          ) : (
+            <Typography variant="body2">
+              {t('stage.progress.completedReasonLabel', 'Reason')}: {completionSnapshot?.reason ?? completionReason}
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setCompletionDialogOpen(false)} variant="contained">
+            {t('common.close', 'Close')}
+          </Button>
+        </DialogActions>
+      </Dialog>
       <HeapPressureDialog
         open={heapDialogOpen}
         event={heapEvent}

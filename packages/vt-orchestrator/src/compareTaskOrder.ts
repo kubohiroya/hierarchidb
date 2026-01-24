@@ -57,6 +57,7 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
     await updateTask(db, taskId, {
       status: 'failed',
       errorMessage,
+      message: errorMessage,
       completedAt: Date.now(),
     });
   };

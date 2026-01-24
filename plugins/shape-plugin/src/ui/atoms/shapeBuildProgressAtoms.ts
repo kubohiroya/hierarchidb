@@ -6,8 +6,11 @@ import type { TaskStage } from '@hierarchidb/common-types';
 
 export type ShapeBuildTaskSummary = Omit<BatchTaskSummary, 'stage'> & {
   stage: TaskStage;
+  index?: number;
   metadata?: Record<string, unknown>;
   title?: string;
+  error?: string;
+  errorMessage?: string;
 };
 
 export type TaskProgressSummary = {
@@ -37,6 +40,16 @@ export type TaskScrollTarget = {
   stageId: string;
   taskId: string;
   requestedAt: number;
+};
+
+export type TaskViewportRange = {
+  stageId: string;
+  startTaskId: string;
+  endTaskId: string;
+  startIndex: number;
+  endIndex: number;
+  total: number;
+  updatedAt: number;
 };
 
 export type TaskProgressAuthState = {
@@ -70,6 +83,7 @@ export const taskProgressSummaryAtom = atom<TaskProgressSummary>({
   stageRemainingMs: null,
 });
 export const taskScrollTargetAtom = atom<TaskScrollTarget | null>(null);
+export const taskViewportRangeAtom = atom<TaskViewportRange | null>(null);
 export const taskWarningMessageAtom = atom<string | null>(null);
 export const taskProgressControlsAtom = atom<TaskProgressControls>({
   canStartOrResume: false,

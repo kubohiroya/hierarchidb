@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Box,
+  Button,
   Chip,
   Dialog,
   DialogActions,
@@ -147,6 +148,15 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
   const [errorRows, setErrorRows] = useState<IdeGsmRouteError[]>([]);
   const [ideGsmPhase, setIdeGsmPhase] = useState<IdeGsmImportProgress | null>(null);
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
+  const [completionDialogOpen, setCompletionDialogOpen] = useState(false);
+  const [completionSnapshot, setCompletionSnapshot] = useState<{
+    status: BuildStatus;
+    stageLabel: string;
+    taskTitle?: string;
+    taskMessage?: string;
+    reason?: string;
+  } | null>(null);
+  const completionStatusRef = useRef<BuildStatus | null>(null);
   const buildInFlightRef = useRef(false);
   const heapPauseRef = useRef<number | null>(null);
   const routeNodeId = (draft.treeNodeId ?? nodeId) as NodeId | undefined;
@@ -258,6 +268,66 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
         return 'IDE-GSM';
     }
   }, [t]);
+
+  const completionStageLabel = useMemo(() => {
+    if (ideGsmPhase) return resolveIdeGsmLabel(ideGsmPhase);
+    const activeStage = [...STAGES].reverse().find((stage) => (stageProgress[stage.id] ?? 0) > 0);
+    return activeStage?.title ?? STAGES[0]?.title ?? t('stage.progress.unknownStage', 'Unknown stage');
+  }, [ideGsmPhase, resolveIdeGsmLabel, stageProgress, t]);
+  const completionTaskTitle = useMemo(() => {
+    const title = ideGsmPhase ? resolveIdeGsmLabel(ideGsmPhase) : completionStageLabel;
+    return title?.trim() ? title : t('stage.tasks.unknown', '(Task unavailable)');
+  }, [completionStageLabel, ideGsmPhase, resolveIdeGsmLabel, t]);
+  const completionTaskMessage = useMemo(() => {
+    return (draft as { processingError?: string }).processingError
+      ?? t('stage.progress.failedReason', 'Build failed due to task errors.');
+  }, [draft, t]);
+  const completionReason = useMemo(() => {
+    if (status === 'failed') {
+      return (draft as { processingError?: string }).processingError
+        ?? t('stage.progress.failedReason', 'Build failed due to task errors.');
+    }
+    if (status === 'completed') {
+      if (errorRows.length > 0) {
+        return t('stage.progress.completedWithErrors', 'Completed with errors. Review the error list.');
+      }
+      return t('stage.progress.completedReason', 'All tasks completed.');
+    }
+    return t('stage.progress.endedReason', 'Build ended.');
+  }, [draft, errorRows.length, status, t]);
+
+  useEffect(() => {
+    if (completionStatusRef.current === null) {
+      completionStatusRef.current = status;
+      return;
+    }
+    if (status === completionStatusRef.current) return;
+    completionStatusRef.current = status;
+    if (status === 'completed') {
+      setCompletionSnapshot({
+        status,
+        stageLabel: completionStageLabel,
+        reason: completionReason,
+      });
+      setCompletionDialogOpen(true);
+      return;
+    }
+    if (status === 'failed') {
+      setCompletionSnapshot({
+        status,
+        stageLabel: completionStageLabel,
+        taskTitle: completionTaskTitle,
+        taskMessage: completionTaskMessage,
+      });
+      setCompletionDialogOpen(true);
+    }
+  }, [
+    completionReason,
+    completionStageLabel,
+    completionTaskMessage,
+    completionTaskTitle,
+    status,
+  ]);
 
   const resolveLocationNodes = useCallback(async (): Promise<NodeId[]> => {
     if (!api) return [];
@@ -425,6 +495,42 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
         confirmLabel={t('stage.heap.pauseConfirm', 'OK')}
         description={t('stage.heap.pauseHint', 'Reduce concurrency and resume when ready.')}
       />
+      <Dialog
+        open={completionDialogOpen}
+        onClose={() => setCompletionDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          {completionSnapshot?.status === 'completed'
+            ? t('stage.progress.completedTitle', 'Build completed')
+            : t('stage.progress.failedTitle', 'Build failed')}
+        </DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <Typography variant="body2">
+            {t('stage.progress.completedStageLabel', 'Stage')}: {completionSnapshot?.stageLabel ?? completionStageLabel}
+          </Typography>
+          {completionSnapshot?.status === 'failed' ? (
+            <>
+              <Typography variant="body2">
+                {t('stage.progress.failedTaskLabel', 'Task')}: {completionSnapshot?.taskTitle ?? completionTaskTitle}
+              </Typography>
+              <Typography variant="body2">
+                {t('stage.progress.failedMessageLabel', 'Message')}: {completionSnapshot?.taskMessage ?? completionTaskMessage}
+              </Typography>
+            </>
+          ) : (
+            <Typography variant="body2">
+              {t('stage.progress.completedReasonLabel', 'Reason')}: {completionSnapshot?.reason ?? completionReason}
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setCompletionDialogOpen(false)} variant="contained">
+            {t('common.close', 'Close')}
+          </Button>
+        </DialogActions>
+      </Dialog>
       <Dialog
         open={errorDialogOpen}
         onClose={() => setErrorDialogOpen(false)}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Button,
@@ -6,7 +6,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  LinearProgress,
   Snackbar,
   Stack,
   Typography,
@@ -15,7 +14,7 @@ import {
 import ConstructionIcon from '@mui/icons-material/Construction';
 import { useAtomValue } from 'jotai';
 import type { NodeId } from '@hierarchidb/common-types';
-import { BuildStepPanel } from '@hierarchidb/components';
+import { BuildStepPanel, type BuildStatus } from '@hierarchidb/components';
 import { useTranslation } from '../../i18n.js';
 import { useBuildCrashInsight } from './useBuildCrashInsight.js';
 import { useShapeBuildProgressWarnings } from './useShapeBuildProgressWarnings.js';
@@ -34,6 +33,7 @@ import type { TaskWithMetadata } from './TaskListVirtualized.tsx';
 import { TaskProgressSummaryCard } from './TaskProgressSummaryCard.tsx';
 import { TaskProgressBar } from './TaskProgressBar.tsx';
 import type { ShapeEntity } from '../../../common/types/ShapeEntity.ts';
+import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.ts';
 import { ShapeBuildProgressStageContent } from './ShapeBuildProgressStageContent.js';
 
 const isDev = import.meta.env.DEV;
@@ -50,11 +50,30 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
   const summary = useAtomValue(taskProgressSummaryAtom);
   const controls = useAtomValue(taskProgressControlsAtom);
   const warningMessage = useAtomValue(taskWarningMessageAtom);
+  const [completionDialogOpen, setCompletionDialogOpen] = useState(false);
+  const [completionSnapshot, setCompletionSnapshot] = useState<{
+    status: BuildStatus;
+    stageLabel: string;
+    taskTitle?: string;
+    taskMessage?: string;
+    reason?: string;
+  } | null>(null);
+  const completionKeyRef = useRef<string | null>(null);
   const crashInsight = useBuildCrashInsight({
     draft: data,
     nodeId: resolvedNodeId ? String(resolvedNodeId) : undefined,
   });
   const lastTaskStageSnapshotRef = useRef<string | null>(null);
+  const activeStageId = useMemo(() => {
+    if (summary.buildStatus !== 'running') return null;
+    for (const stage of stages) {
+      const stageTasks = tasksByStage[stage.id] ?? [];
+      if (stageTasks.some((task) => task.status === 'running')) {
+        return stage.id;
+      }
+    }
+    return null;
+  }, [stages, summary.buildStatus, tasksByStage]);
   const {
     startWarning,
     crashHint,
@@ -101,6 +120,101 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
       task.title ?? t('stage.tasks.unknown', '(Title unavailable)'),
     [t],
   );
+  const resolveFailureMessage = useCallback((task: ShapeBuildTaskSummary): string | null => {
+    const message = typeof task.message === 'string' ? task.message.trim() : '';
+    const errorMessage = typeof task.errorMessage === 'string' ? task.errorMessage.trim() : '';
+    const error = typeof task.error === 'string' ? task.error.trim() : '';
+    const fallback = errorMessage || error;
+    const normalized = message.toLowerCase();
+    const isGeneric = !message
+      || normalized === 'failed'
+      || normalized === 'stage task failed'
+      || normalized.startsWith('phase=');
+    if (fallback && isGeneric) return fallback;
+    if (message) return message;
+    return fallback || null;
+  }, []);
+  const failedTaskInfo = useMemo(() => {
+    const failedStatuses = new Set(['failed', 'regression']);
+    for (const stage of stages) {
+      const stageTasks = tasksByStage[stage.id] ?? [];
+      const failedTask = stageTasks.find((task) => failedStatuses.has(task.status));
+      if (!failedTask) continue;
+      const failureMessage = resolveFailureMessage(failedTask);
+      if (!failureMessage) continue;
+      return {
+        title: resolveTaskTitle(failedTask as TaskWithMetadata),
+        message: failureMessage,
+      };
+    }
+    return null;
+  }, [resolveFailureMessage, resolveTaskTitle, stages, tasksByStage]);
+
+  const completionStageLabel = summary.stageLabel?.trim()
+    ? summary.stageLabel
+    : t('stage.progress.unknownStage', 'Unknown stage');
+  const finalStage = stages[stages.length - 1];
+  const finalStageLabel = finalStage?.title ?? finalStage?.id ?? completionStageLabel;
+  const isFinalStageLabel = finalStage
+    ? completionStageLabel === finalStage.title || completionStageLabel === finalStage.id
+    : true;
+  const completionTaskTitle = failedTaskInfo?.title
+    ?? t('stage.tasks.unknown', '(Task unavailable)');
+  const completionTaskMessage = failedTaskInfo?.message
+    ?? t('stage.progress.failedReason', 'Build failed due to task errors.');
+  const completionReason = (() => {
+    if (summary.buildStatus === 'failed') {
+      const candidate = summary.taskLabel?.trim();
+      if (candidate && candidate.toLowerCase() !== 'failed') return candidate;
+      return t('stage.progress.failedReason', 'Build failed due to task errors.');
+    }
+    if (summary.buildStatus === 'completed') {
+      return t('stage.progress.completedReason', 'All tasks completed.');
+    }
+    return t('stage.progress.endedReason', 'Build ended.');
+  })();
+
+  useEffect(() => {
+    if (summary.buildStatus === 'completed') {
+      if (!isFinalStageLabel) return;
+      const key = `${summary.buildStatus}:${completionStageLabel}`;
+      if (completionKeyRef.current === key) return;
+      completionKeyRef.current = key;
+      setCompletionSnapshot({
+        status: summary.buildStatus,
+        stageLabel: finalStageLabel,
+        reason: completionReason,
+      });
+      setCompletionDialogOpen(true);
+      return;
+    }
+    if (summary.buildStatus === 'failed') {
+      if (!failedTaskInfo?.message) {
+        return;
+      }
+      const key = `${summary.buildStatus}:${completionStageLabel}:${completionTaskTitle ?? ''}:${completionTaskMessage ?? ''}`;
+      if (completionKeyRef.current === key) return;
+      completionKeyRef.current = key;
+      setCompletionSnapshot({
+        status: summary.buildStatus,
+        stageLabel: completionStageLabel,
+        taskTitle: completionTaskTitle,
+        taskMessage: completionTaskMessage,
+      });
+      setCompletionDialogOpen(true);
+      return;
+    }
+    completionKeyRef.current = null;
+  }, [
+    completionReason,
+    completionStageLabel,
+    completionTaskMessage,
+    completionTaskTitle,
+    failedTaskInfo?.message,
+    finalStageLabel,
+    isFinalStageLabel,
+    summary.buildStatus,
+  ]);
 
   const resolveStatusLabel = useCallback((statusValue?: string, skipped?: boolean): string => {
     if (skipped) {
@@ -217,29 +331,20 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
   const stageProgressContent = useMemo(() => (
     stages.reduce<Record<string, JSX.Element>>((acc, stage) => {
       const stageTasks = tasksByStage[stage.id] ?? [];
-      const isStageRunning = summary.buildStatus === 'running'
-        && stageTasks.some((task) => task.status === 'running');
       acc[stage.id] = (
         <Stack gap={1}>
           <TaskProgressBar
             stages={[stage]}
             tasksByStage={{ [stage.id]: stageTasks }}
             buildStatus={summary.buildStatus}
+            activeStageId={activeStageId}
             resolveTaskTitle={resolveTaskTitle}
-          />
-          <LinearProgress
-            variant="indeterminate"
-            sx={{
-              height: 6,
-              borderRadius: 6,
-              visibility: isStageRunning ? 'visible' : 'hidden',
-            }}
           />
         </Stack>
       );
       return acc;
     }, {})
-  ), [stages, tasksByStage, summary.buildStatus, resolveTaskTitle]);
+  ), [activeStageId, stages, tasksByStage, summary.buildStatus, resolveTaskTitle]);
 
   const stageContents = useMemo(() => (
     stages.reduce<Record<string, JSX.Element>>((acc, stage) => {
@@ -251,7 +356,6 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
           paneProgress={paneProgress ?? []}
           isTasksLoading={isTasksLoading}
           isTaskSummaryLoading={isTaskSummaryLoading}
-          buildStatus={summary.buildStatus}
           resolveStatusLabel={resolveStatusLabel}
           resolveStatusColor={resolveStatusColor}
           resolveTaskTitle={resolveTaskTitle}
@@ -263,8 +367,6 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
     }, {})
   ), [
     stages,
-    isTaskSummaryLoading,
-    isTasksLoading,
     paneProgress,
     resolveStageValue,
     resolveStatusColor,
@@ -318,6 +420,7 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
               summary={summary}
               stages={stages}
               tasksByStage={tasksByStage}
+              activeStageId={activeStageId}
               resolveTaskTitle={resolveTaskTitle}
             />
           ) : undefined}
@@ -352,6 +455,42 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
           {warningMessage}
         </Alert>
       </Snackbar>
+      <Dialog
+        open={completionDialogOpen}
+        onClose={() => setCompletionDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          {completionSnapshot?.status === 'completed'
+            ? t('stage.progress.completedTitle', 'Build completed')
+            : t('stage.progress.failedTitle', 'Build failed')}
+        </DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <Typography variant="body2">
+            {t('stage.progress.completedStageLabel', 'Stage')}: {completionSnapshot?.stageLabel ?? completionStageLabel}
+          </Typography>
+          {completionSnapshot?.status === 'failed' ? (
+            <>
+              <Typography variant="body2">
+                {t('stage.progress.failedTaskLabel', 'Task')}: {completionSnapshot?.taskTitle ?? completionTaskTitle}
+              </Typography>
+              <Typography variant="body2">
+                {t('stage.progress.failedMessageLabel', 'Message')}: {completionSnapshot?.taskMessage ?? completionTaskMessage}
+              </Typography>
+            </>
+          ) : (
+            <Typography variant="body2">
+              {t('stage.progress.completedReasonLabel', 'Reason')}: {completionSnapshot?.reason ?? completionReason}
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setCompletionDialogOpen(false)} variant="contained">
+            {t('common.close', 'Close')}
+          </Button>
+        </DialogActions>
+      </Dialog>
       {startWarning ? (
         <Dialog open={warningDialogOpen} onClose={() => setWarningDialogOpen(false)}>
           <DialogTitle>{startWarning.title}</DialogTitle>
