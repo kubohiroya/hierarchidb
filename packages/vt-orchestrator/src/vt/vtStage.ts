@@ -1060,8 +1060,12 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
               ...emptyTileWithFeatures,
             }));
             return {
-              status: 'failed',
-              errorMessage: 'geojson-vt produced empty tile for clipped features',
+              status: 'completed',
+              message: buildSkippedMessage(
+                adminFeatureSummary,
+                tileSummary,
+                'geojson-vt produced empty tile for clipped features',
+              ),
             };
           }
           if (aggregatedLayersByTileId.size === 0) {
