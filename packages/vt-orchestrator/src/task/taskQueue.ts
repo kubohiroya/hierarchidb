@@ -114,7 +114,19 @@ export async function updateTask(
     const current = await db.tasks.get(taskId);
     const currentSequence = typeof current?.sequence === 'number' ? current.sequence : 0;
     const nextSequence = currentSequence + 1;
-    await db.tasks.update(taskId, { ...updates, updatedAt: now, sequence: nextSequence });
+    const currentStatus = current?.status;
+    const nextStatusCandidate = updates.status;
+    const lockedStatus = currentStatus === 'completed' || currentStatus === 'failed';
+    const effectiveStatus = lockedStatus && nextStatusCandidate && nextStatusCandidate !== currentStatus
+      ? currentStatus
+      : nextStatusCandidate;
+    const payload = {
+      ...updates,
+      status: effectiveStatus ?? currentStatus,
+      updatedAt: now,
+      sequence: nextSequence,
+    };
+    await db.tasks.update(taskId, payload);
     const task = await db.tasks.get(taskId);
     if (task) emitTaskEvent(task.nodeId, task);
   });
