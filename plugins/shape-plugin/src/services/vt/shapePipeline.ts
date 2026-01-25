@@ -270,7 +270,14 @@ const isTransformCacheComplete = (record: { timestamp: number } | null | undefin
   Boolean(record && record.timestamp > 0)
 );
 
-const packTileId = (x: number, y: number, z: number): number => (x << z) | y;
+// Keep in sync with @hierarchidb/vt-orchestrator tileId encoding.
+const TILE_INDEX_BITS = 22;
+const TILE_INDEX_SCALE = 2 ** TILE_INDEX_BITS;
+const TILE_INDEX_STRIDE = TILE_INDEX_SCALE * TILE_INDEX_SCALE;
+
+const packTileId = (x: number, y: number, z: number): number => (
+  (z * TILE_INDEX_STRIDE) + (x * TILE_INDEX_SCALE) + y
+);
 
 const clampTileIndex = (value: number, maxIndex: number): number => (
   Math.min(maxIndex, Math.max(0, value))

@@ -221,12 +221,15 @@ const buildTaskQueueTitle = (task: TaskQueueRecord): string | undefined => {
     return [country, adminLevel, bandId, zoomBandLabel].filter(Boolean).join(" ");
   }
   if (task.stage === "vt") {
+    const TILE_INDEX_BITS = 22;
+    const TILE_INDEX_SCALE = 2 ** TILE_INDEX_BITS;
+    const TILE_INDEX_STRIDE = TILE_INDEX_SCALE * TILE_INDEX_SCALE;
     const unpackTileId = (tileId: number, zBase: number): { x: number; y: number } | null => {
       if (!Number.isFinite(tileId) || !Number.isFinite(zBase)) return null;
-      const divisor = 2 ** zBase;
-      if (!Number.isFinite(divisor) || divisor <= 0) return null;
-      const x = Math.floor(tileId / divisor);
-      const y = tileId - (x * divisor);
+      const offset = tileId - (zBase * TILE_INDEX_STRIDE);
+      if (!Number.isFinite(offset)) return null;
+      const x = Math.floor(offset / TILE_INDEX_SCALE);
+      const y = offset - (x * TILE_INDEX_SCALE);
       if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || y < 0) return null;
       return { x, y };
     };

@@ -1,13 +1,18 @@
 export type TileCoord = { x: number; y: number; z: number };
 
+// Keep in sync with maximum supported zoom (MapLibre maxZoom=22).
+const TILE_INDEX_BITS = 22;
+const TILE_INDEX_SCALE = 2 ** TILE_INDEX_BITS;
+const TILE_INDEX_STRIDE = TILE_INDEX_SCALE * TILE_INDEX_SCALE;
+
 export const packTileId = (x: number, y: number, z: number): number => {
-  return (x << z) | y;
+  return (z * TILE_INDEX_STRIDE) + (x * TILE_INDEX_SCALE) + y;
 };
 
 export const unpackTileId = (tileId: number, z: number): TileCoord => {
-  const mask = (1 << z) - 1;
-  const y = tileId & mask;
-  const x = tileId >> z;
+  const offset = tileId - (z * TILE_INDEX_STRIDE);
+  const x = Math.floor(offset / TILE_INDEX_SCALE);
+  const y = offset - (x * TILE_INDEX_SCALE);
   return { x, y, z };
 };
 
