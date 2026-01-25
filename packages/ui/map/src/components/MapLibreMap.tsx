@@ -4,7 +4,7 @@
  */
 
 import type React from 'react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Map as ReactMapLibreMap, MapProvider } from '@vis.gl/react-maplibre';
 import { Snackbar } from '@mui/material';
 import type { MapLibreMapInstance } from '../types/maplibre-public.js';
@@ -57,6 +57,14 @@ const normalizeStyle = (style?: React.CSSProperties): SafeStyle | undefined => {
   return (safeBackground !== undefined ? { ...rest, background: safeBackground } : { ...rest }) as SafeStyle;
 };
 
+const parseQueryBoolean = (value: string | null): boolean | undefined => {
+  if (value === null) return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === '1' || normalized === 'true') return true;
+  if (normalized === '0' || normalized === 'false') return false;
+  return undefined;
+};
+
 export const MapLibreMap: React.FC<MapLibreMapProps> = ({
                                                           initialViewState,
                                                           viewState,
@@ -88,6 +96,17 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
   const defaultIdentifyConfig = useMemo<MapFeatureIdentifyConfig>(() => ({
     radius: DEFAULT_IDENTIFY_RADIUS,
   }), []);
+  const locationSearch = typeof window !== 'undefined' ? window.location.search : '';
+  const queryOverrides = useMemo(() => {
+    if (!locationSearch) {
+      return { showTileBoundaries: undefined, showTileCoordinates: undefined };
+    }
+    const params = new URLSearchParams(locationSearch);
+    return {
+      showTileBoundaries: parseQueryBoolean(params.get('showTileBoundaries')),
+      showTileCoordinates: parseQueryBoolean(params.get('showTileCoordinates')),
+    };
+  }, [locationSearch]);
 
   const normalizePaintArrays = useCallback((map: MapLibreMapInstance) => {
     const style = map.getStyle?.();
