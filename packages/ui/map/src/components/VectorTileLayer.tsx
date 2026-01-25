@@ -202,9 +202,9 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
     const tilesKey = computedTiles.join('|');
     const prevConfig = sourceConfigRef.current;
     const needsReplace = !prevConfig
-      || prevConfig.sourceId != sourceId
-      || prevConfig.tilesKey != tilesKey
-      || prevConfig.promoteId != promoteId;
+      || prevConfig.sourceId !== sourceId
+      || prevConfig.tilesKey !== tilesKey
+      || prevConfig.promoteId !== promoteId;
 
     if (!needsReplace && mapRef.getSource(sourceId)) {
       setSourceAdded(true);
@@ -337,10 +337,10 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
     const prevLayerConfig = layerConfigRef.current;
     const layerConfigKey = { layerId, sourceId, layerType, sourceLayer };
     const needsReplace = !prevLayerConfig
-      || prevLayerConfig.layerId != layerConfigKey.layerId
-      || prevLayerConfig.sourceId != layerConfigKey.sourceId
-      || prevLayerConfig.layerType != layerConfigKey.layerType
-      || prevLayerConfig.sourceLayer != layerConfigKey.sourceLayer;
+      || prevLayerConfig.layerId !== layerConfigKey.layerId
+      || prevLayerConfig.sourceId !== layerConfigKey.sourceId
+      || prevLayerConfig.layerType !== layerConfigKey.layerType
+      || prevLayerConfig.sourceLayer !== layerConfigKey.sourceLayer;
 
     if (!needsReplace && mapRef.getLayer(layerId)) {
       setLayerAdded(true);
