@@ -4,7 +4,7 @@ import type {
   LocationQueryAPI,
 } from '@hierarchidb/plugin-service-api';
 import { ROUTE_MODES, type RouteLineString, type RouteMode, type RoutePoint } from '../../common/entities/RouteLineString.js';
-import type { LocationPointId } from '@hierarchidb/location-plugin';
+import type { LocationPointId } from '@hierarchidb/location-store';
 
 export type IdeGsmCsvError = {
   id: string;
