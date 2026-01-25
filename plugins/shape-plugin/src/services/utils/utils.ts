@@ -284,6 +284,7 @@ function buildDataSourceUrl(
   const baseUrls = {
     naturalearth: 'https://www.naturalearthdata.com/download',
     geoboundaries: GEOBOUNDARIES_RELEASE_BASE_URL,
+    'geoboundaries-topojson': GEOBOUNDARIES_RELEASE_BASE_URL,
     gadm: 'https://geodata.ucdavis.edu/gadm/gadm4.1',
     openstreetmap: 'https://download.geofabrik.de',
   } as const;
@@ -301,6 +302,7 @@ function buildDataSourceUrl(
       return `${baseUrl}/${scale}/cultural/${file}`;
     }
     case 'geoboundaries':
+    case 'geoboundaries-topojson':
       return `${baseUrl}/${countryCode}/ADM${adminLevel}`;
     case 'gadm':
       return adminLevel === 0

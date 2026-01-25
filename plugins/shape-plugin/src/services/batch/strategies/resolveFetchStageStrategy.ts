@@ -6,7 +6,8 @@ import { OsmFetchStageStrategy } from './OsmFetchStageStrategy.ts';
 
 const strategies: Record<string, FetchStageStrategy> = {
   gadm: new GadmFetchStageStrategy(),
-  geoboundaries: new GeoBoundariesFetchStageStrategy(),
+  geoboundaries: new GeoBoundariesFetchStageStrategy('geoboundaries'),
+  'geoboundaries-topojson': new GeoBoundariesFetchStageStrategy('geoboundaries-topojson'),
   naturalearth: new NaturalEarthDownloadStrategy(),
   openstreetmap: new OsmFetchStageStrategy(),
 };

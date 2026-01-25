@@ -1,4 +1,4 @@
-import type { Feature, FeatureCollection } from 'geojson';
+import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { NodeId, ISO2 } from '@hierarchidb/common-types';
 import { encodeFlatGeobufFromFeatureCollection } from '@hierarchidb/gis-sdk';
 import type { StageHandler, TaskQueueRecord } from '@hierarchidb/common-types';
@@ -32,12 +32,26 @@ import { metadataLoader } from '../metadata/MetadataLoader.js';
 import { DataSourceStrategyFactory } from '../datasources/DataSourceStrategyFactory.js';
 import { resolveStrategyIdFromDataSource } from '../datasources/strategyIds.js';
 import type { RetryConfig } from '../datasources/DataSourceStrategy.js';
+import type { Topology } from 'topojson-specification';
+import { feature as topojsonFeature, merge as topojsonMerge } from 'topojson-client';
+import { topology as topojsonTopology } from 'topojson-server';
 import * as turf from '@turf/turf';
 import { shapeMutationAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
 import { buildFeatureId, extractGeometryStats } from './featureMetadataUtils.ts';
 import { filterFetchCollectionByZoom } from './fetchGeometryFilters.ts';
 import { buildZoomBandRanges } from '../../common/config/zoomBands.ts';
 import { buildStableSignature } from './taskSignatures.ts';
+import {
+  buildRawDataDataSourceCacheKey,
+  buildShapeCacheKey,
+  createShapeChunkStore,
+  getOrFetchWithRetry,
+  jsonDeserializer,
+  jsonSerializer,
+} from '../utils/chunkStore.js';
+import { fetchRawDataWithPipeline } from '../utils/rawDataPipeline.js';
+import { buildGeoBoundariesMetadataUrl } from '../utils/geoboundariesEndpoints.js';
+import type { GeoBoundariesApiResponse } from '../datasources/GeoBoundariesStrategy.js';
 
 export type ShapeFetchTaskInput = {
   url: string;
@@ -58,6 +72,111 @@ export type ShapeFetchTaskOutput = {
 };
 
 const turfBbox = (turf as { bbox?: (input: unknown) => number[] }).bbox;
+const textEncoder = new TextEncoder();
+const textDecoder = new TextDecoder('utf-8');
+
+const GEOBOUNDARIES_MERGE_COUNTRIES = new Set(['CAN', 'GRL', 'CA', 'GL']);
+
+const isGeoBoundariesSource = (source: DataSourceName): boolean => (
+  source === 'geoboundaries' || source === 'geoboundaries-topojson'
+);
+
+const shouldMergeGeoBoundaries = (params: {
+  dataSource: DataSourceName;
+  adminLevel: number;
+  countryCode: string;
+}): boolean => {
+  if (!isGeoBoundariesSource(params.dataSource)) return false;
+  if (params.adminLevel !== 0) return false;
+  const normalized = params.countryCode.trim().toUpperCase();
+  return GEOBOUNDARIES_MERGE_COUNTRIES.has(normalized);
+};
+
+const compressGzip = async (buffer: ArrayBuffer): Promise<ArrayBuffer> => {
+  if (typeof CompressionStream !== 'function') {
+    throw new Error('CompressionStream is not available for gzip compression');
+  }
+  const stream = new CompressionStream('gzip');
+  const writer = stream.writable.getWriter();
+  await writer.write(new Uint8Array(buffer));
+  await writer.close();
+  return await new Response(stream.readable).arrayBuffer();
+};
+
+const decompressGzip = async (buffer: ArrayBuffer): Promise<ArrayBuffer> => {
+  if (typeof DecompressionStream !== 'function') {
+    throw new Error('DecompressionStream is not available for gzip decompression');
+  }
+  const stream = new DecompressionStream('gzip');
+  const writer = stream.writable.getWriter();
+  await writer.write(new Uint8Array(buffer));
+  await writer.close();
+  return await new Response(stream.readable).arrayBuffer();
+};
+
+const decodeTopoJson = (buffer: ArrayBuffer): Topology => {
+  const text = textDecoder.decode(new Uint8Array(buffer));
+  return JSON.parse(text) as Topology;
+};
+
+const encodeTopoJson = (topology: Topology): ArrayBuffer => (
+  textEncoder.encode(JSON.stringify(topology)).buffer
+);
+
+const resolveTopoJsonObject = (topology: Topology): { key: string; object: Topology['objects'][string] } | null => {
+  const keys = Object.keys(topology.objects ?? {});
+  const key = keys[0];
+  if (!key) return null;
+  const object = topology.objects[key];
+  if (!object) return null;
+  return { key, object };
+};
+
+const normalizeTopoJsonCollection = (topology: Topology): FeatureCollection => {
+  const entry = resolveTopoJsonObject(topology);
+  if (!entry) {
+    return { type: 'FeatureCollection', features: [] };
+  }
+  const geojson = topojsonFeature(
+    topology,
+    entry.object as Parameters<typeof topojsonFeature>[1],
+  ) as FeatureCollection | Feature;
+  if ('features' in geojson) {
+    const features = Array.isArray(geojson.features) ? geojson.features : [];
+    return { ...geojson, features };
+  }
+  return { type: 'FeatureCollection', features: [geojson] };
+};
+
+const mergeTopoJsonCollection = (topology: Topology, properties?: Record<string, unknown>): FeatureCollection | null => {
+  const entry = resolveTopoJsonObject(topology);
+  if (!entry) return null;
+  const geometries = (entry.object as { geometries?: unknown[] }).geometries;
+  if (!Array.isArray(geometries) || geometries.length === 0) return null;
+  const merged = topojsonMerge(topology, geometries as unknown as Parameters<typeof topojsonMerge>[1]);
+  if (!merged) return null;
+  return {
+    type: 'FeatureCollection',
+    features: [{
+      type: 'Feature',
+      geometry: merged as Geometry,
+      properties: { ...(properties ?? {}) },
+    }],
+  };
+};
+
+const normalizeGeojsonCollection = (collection: FeatureCollection): FeatureCollection => {
+  const features = Array.isArray(collection.features) ? collection.features : [];
+  return { ...collection, features };
+};
+
+const mergeGeojsonCollection = (collection: FeatureCollection): FeatureCollection => {
+  if (collection.features.length <= 1) return collection;
+  const topology = topojsonTopology({ collection });
+  const baseProps = collection.features[0]?.properties ?? {};
+  const merged = mergeTopoJsonCollection(topology, baseProps);
+  return merged ?? collection;
+};
 
 export type ShapeFetchStageParams = {
   nodeId: NodeId;
@@ -84,6 +203,95 @@ const buildRetryConfig = (config: ShapeBuildConfig): RetryConfig => {
     delay: retryDelay,
     backoff: downloadConfig.retryBackoff,
   };
+};
+
+const fetchGeoBoundariesApiData = async (params: {
+  nodeId: NodeId;
+  country: string;
+  adminLevel: number;
+  signal?: AbortSignal;
+  cacheKeyMode: 'url' | 'legacy';
+  retryConfig?: RetryConfig;
+}): Promise<GeoBoundariesApiResponse> => {
+  const adminLabel = `ADM${params.adminLevel}`;
+  const normalizedCountry = params.country.trim().toUpperCase();
+  const url = buildGeoBoundariesMetadataUrl(normalizedCountry, adminLabel);
+  const cacheKey = params.cacheKeyMode === 'url'
+    ? url
+    : buildShapeCacheKey(`geoboundaries:metadata:${normalizedCountry}:${adminLabel}`, url);
+  const store = createShapeChunkStore(jsonSerializer, jsonDeserializer);
+  const entry = params.retryConfig
+    ? await getOrFetchWithRetry(
+      store,
+      params.nodeId,
+      url,
+      {
+        accept: 'application/json',
+        cacheKey,
+        signal: params.signal,
+      },
+      params.retryConfig,
+    )
+    : await store.getOrFetchForNode(params.nodeId, url, {
+      accept: 'application/json',
+      cacheKey,
+      signal: params.signal,
+    });
+  return entry.value as GeoBoundariesApiResponse;
+};
+
+const fetchGeoBoundariesTopoJson = async (params: {
+  nodeId: NodeId;
+  country: string;
+  adminLevel: number;
+  signal?: AbortSignal;
+  cacheKeyMode: 'url' | 'legacy';
+  retryConfig?: RetryConfig;
+  timeoutMs?: number;
+}): Promise<{ topology: Topology; apiData: GeoBoundariesApiResponse; downloadUrl: string }> => {
+  const apiData = await fetchGeoBoundariesApiData({
+    nodeId: params.nodeId,
+    country: params.country,
+    adminLevel: params.adminLevel,
+    signal: params.signal,
+    cacheKeyMode: params.cacheKeyMode,
+    retryConfig: params.retryConfig,
+  });
+  const downloadUrl = apiData.tjDownloadURL;
+  if (!downloadUrl || typeof downloadUrl !== 'string') {
+    throw new Error(`TopoJSON download URL is missing for ${params.country} ADM${params.adminLevel}`);
+  }
+  const pipeline = {
+    prepareRequest: () => ({
+      url: downloadUrl,
+      cacheKey: params.cacheKeyMode === 'url'
+        ? downloadUrl
+        : buildRawDataDataSourceCacheKey({
+          dataSource: 'geoboundaries-topojson',
+          countryCode: params.country,
+          adminLevel: params.adminLevel,
+          url: downloadUrl,
+        }),
+      accept: 'application/json',
+    }),
+    transformStream: async (stream: ReadableStream<Uint8Array>) => ({
+      stream,
+      contentType: 'application/topojson',
+    }),
+    decodeBuffer: async (buffer: ArrayBuffer) => decodeTopoJson(buffer),
+  };
+  const { decoded } = await fetchRawDataWithPipeline({
+    nodeId: params.nodeId,
+    fetchOptions: {
+      nodeId: params.nodeId,
+      signal: params.signal,
+      timeout: params.timeoutMs,
+      cacheKeyMode: params.cacheKeyMode,
+    },
+    pipeline,
+    retryConfig: params.retryConfig,
+  });
+  return { topology: decoded, apiData, downloadUrl };
 };
 
 const buildCountryLookup = (metadata: CountryMetadata[]): Map<string, CountryMetadata> => {
@@ -146,9 +354,25 @@ const readNumericProperty = (properties: Record<string, unknown>, key: string): 
   return Number.isFinite(value) ? value : undefined;
 };
 
-const decodeFetchCacheData = async (buffer: ArrayBuffer): Promise<FeatureCollection | null> => {
+const decodeFetchCacheData = async (params: {
+  data: ArrayBuffer;
+  format?: string;
+  compression?: string;
+}): Promise<FeatureCollection | null> => {
+  const format = params.format ?? 'flatgeobuf';
+  if (format === 'topojson') {
+    try {
+      const buffer = params.compression === 'gzip'
+        ? await decompressGzip(params.data)
+        : params.data;
+      const topology = decodeTopoJson(buffer);
+      return normalizeTopoJsonCollection(topology);
+    } catch {
+      return null;
+    }
+  }
   try {
-    const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
+    const decoded = geojsonApi.deserialize(new Uint8Array(params.data));
     return await normalizeFeatureCollection(decoded as unknown);
   } catch {
     return null;
@@ -168,6 +392,8 @@ const putFetchCache = async (params: {
   countryCode: ISO2;
   adminLevel: number;
   data: ArrayBuffer;
+  format?: 'flatgeobuf' | 'topojson';
+  compression?: 'gzip' | 'none';
   featureCount: number;
   inputFeatureCount?: number;
   bbox: [number, number, number, number];
@@ -186,6 +412,8 @@ const putFetchCache = async (params: {
     countryCode: params.countryCode,
     adminLevel: params.adminLevel,
     data: params.data,
+    format: params.format,
+    compression: params.compression,
     featureCount: params.featureCount,
     inputFeatureCount: params.inputFeatureCount,
     bbox: params.bbox,
@@ -366,6 +594,26 @@ const countPolygonsFromGeometry = (geometry: Feature['geometry']): number => {
   return 0;
 };
 
+const applyOriginPropertiesToCollection = (collection: FeatureCollection, originKey: string): FeatureCollection => {
+  const features = collection.features.map((feature) => {
+    const properties = { ...(feature.properties ?? {}) } as Record<string, unknown>;
+    if (!properties.__hdbOriginKey) {
+      properties.__hdbOriginKey = originKey;
+    }
+    const geometry = feature.geometry;
+    if (geometry) {
+      if (typeof properties.__hdbFetchVertexCount !== 'number') {
+        properties.__hdbFetchVertexCount = countVerticesFromGeometry(geometry);
+      }
+      if (typeof properties.__hdbFetchPolygonCount !== 'number') {
+        properties.__hdbFetchPolygonCount = countPolygonsFromGeometry(geometry);
+      }
+    }
+    return { ...feature, properties };
+  });
+  return { ...collection, features };
+};
+
 const summarizeFeatureCollection = (
   collection: FeatureCollection
 ): {
@@ -442,7 +690,9 @@ const createFetchHandler = (params: {
   abortSignal?: AbortSignal;
 }): StageHandler<ShapeFetchTaskInput, ShapeFetchTaskOutput> => {
   const factory = new DataSourceStrategyFactory();
-  const strategyId = resolveStrategyIdFromDataSource(params.dataSource);
+  const isTopoJsonSource = params.dataSource === 'geoboundaries-topojson';
+  const strategySource = isTopoJsonSource ? 'geoboundaries' : params.dataSource;
+  const strategyId = resolveStrategyIdFromDataSource(strategySource);
   if (!strategyId) {
     throw new Error(`[shape-fetch] Unsupported data source: ${params.dataSource}`);
   }
@@ -468,7 +718,11 @@ const createFetchHandler = (params: {
     const existing = await getFetchCache(params.nodeId, input.sourceKey);
     if (existing) {
       const createdAt = Date.now();
-      const cachedCollection = await decodeFetchCacheData(existing.data);
+      const cachedCollection = await decodeFetchCacheData({
+        data: existing.data,
+        format: existing.format,
+        compression: existing.compression,
+      });
       if (cachedCollection && cachedCollection.features.length > 0) {
         const countryLookup = await getMetadataLookup();
         const cachedMetadata = buildFetchFeatureMetadata({
@@ -511,6 +765,117 @@ const createFetchHandler = (params: {
     }
 
     assertNotAborted(params.abortSignal);
+    const originKey = buildOriginKey(input.dataSource, input.sourceKey);
+    const zoomRanges = buildZoomBandRanges(params.buildConfig.transformConfig.zoomBandBoundaries);
+    const filterZoom = zoomRanges[0]?.max;
+
+    if (isTopoJsonSource) {
+      const downloadStart = Date.now();
+      const topojsonResult = await fetchGeoBoundariesTopoJson({
+        nodeId: params.nodeId,
+        country: input.urlCountryCode,
+        adminLevel: input.adminLevel,
+        signal: params.abortSignal,
+        cacheKeyMode: 'url',
+        retryConfig,
+        timeoutMs: params.buildConfig.fetchConfig.timeoutMs,
+      });
+      const downloadTime = Date.now() - downloadStart;
+
+      let baseCollection = normalizeTopoJsonCollection(topojsonResult.topology);
+      if (shouldMergeGeoBoundaries({
+        dataSource: input.dataSource,
+        adminLevel: input.adminLevel,
+        countryCode: input.urlCountryCode,
+      })) {
+        const merged = mergeTopoJsonCollection(topojsonResult.topology, baseCollection.features[0]?.properties ?? {});
+        if (merged) {
+          baseCollection = merged;
+        }
+      }
+      baseCollection = normalizeGeojsonCollection(baseCollection);
+      const inputSummary = summarizeFeatureCollection(baseCollection);
+      const filteredCollection = Number.isFinite(filterZoom)
+        ? filterFetchCollectionByZoom(baseCollection, {
+          zTarget: filterZoom!,
+          omitDetailsConfig: params.buildConfig.transformConfig.omitDetailsConfig,
+          excludePolygonAreaCoefficient: params.buildConfig.transformConfig.excludePolygonAreaCoefficient,
+          minRingVertices: params.buildConfig.transformConfig.minRingVertices,
+        })
+        : baseCollection;
+
+      if (filteredCollection.features.length === 0) {
+        const createdAt = Date.now();
+        const emptyMetadata = buildEmptyFeatureMetadata({
+          nodeId: params.nodeId,
+          originKey,
+          dataSource: input.dataSource,
+          countryCode: input.countryCode,
+          adminLevel: input.adminLevel,
+          createdAt,
+        });
+        await shapeMutationAPIImpl.putFeatureMetadata([emptyMetadata]);
+        return {
+          status: 'completed',
+          message: 'skipped: no features after fetch filter',
+        };
+      }
+
+      const collectionWithOrigin = applyOriginPropertiesToCollection(filteredCollection, originKey);
+      const createdAt = Date.now();
+      const countryLookup = await getMetadataLookup();
+      const featureMetadata = buildFetchFeatureMetadata({
+        nodeId: params.nodeId,
+        dataSource: input.dataSource,
+        collection: collectionWithOrigin,
+        createdAt,
+        countryLookup,
+      });
+      if (featureMetadata.length > 0) {
+        await shapeMutationAPIImpl.putFeatureMetadata(featureMetadata);
+      }
+
+      assertNotAborted(params.abortSignal);
+      const outputSummary = summarizeFeatureCollection(collectionWithOrigin);
+      const cachedTopology = topojsonTopology({ collection: collectionWithOrigin });
+      const encodedTopology = encodeTopoJson(cachedTopology);
+      const compressedTopology = await compressGzip(encodedTopology);
+      assertNotAborted(params.abortSignal);
+      const bufferId = await putFetchCache({
+        nodeId: params.nodeId,
+        sourceKey: input.sourceKey,
+        countryCode: input.countryCode,
+        adminLevel: input.adminLevel,
+        data: compressedTopology,
+        format: 'topojson',
+        compression: 'gzip',
+        featureCount: outputSummary.featureCount,
+        inputFeatureCount: inputSummary.featureCount,
+        bbox: outputSummary.bbox,
+        downloadTime,
+        vertexCount: outputSummary.vertexCount,
+        polygonCount: outputSummary.polygonCount,
+        inputVertexCount: inputSummary.vertexCount,
+        inputPolygonCount: inputSummary.polygonCount,
+      });
+      const reductionSummary = [
+        formatChangeSummary('features', inputSummary.featureCount, outputSummary.featureCount),
+        formatChangeSummary('polygons', inputSummary.polygonCount, outputSummary.polygonCount),
+        formatChangeSummary('vertices', inputSummary.vertexCount, outputSummary.vertexCount),
+      ].join(', ');
+
+      return {
+        status: 'completed',
+        message: reductionSummary,
+        outputData: {
+          fetchCacheId: bufferId,
+          featureCount: outputSummary.featureCount,
+          vertexCount: outputSummary.vertexCount,
+          polygonCount: outputSummary.polygonCount,
+        },
+      };
+    }
+
     const downloadStart = Date.now();
     const raw = await strategy.fetchData({
       nodeId: params.nodeId,
@@ -529,11 +894,16 @@ const createFetchHandler = (params: {
       transformations: strategy.config.processing.transformations,
       validation: true,
     });
-    const originKey = buildOriginKey(input.dataSource, input.sourceKey);
-    const collection = buildFetchFeatureCollection(processed, originKey);
+    let collection = buildFetchFeatureCollection(processed, originKey);
+    if (shouldMergeGeoBoundaries({
+      dataSource: input.dataSource,
+      adminLevel: input.adminLevel,
+      countryCode: input.urlCountryCode,
+    })) {
+      collection = mergeGeojsonCollection(collection);
+    }
+    collection = normalizeGeojsonCollection(collection);
     const inputSummary = summarizeFeatureCollection(collection);
-    const zoomRanges = buildZoomBandRanges(params.buildConfig.transformConfig.zoomBandBoundaries);
-    const filterZoom = zoomRanges[0]?.max;
     const filteredCollection = Number.isFinite(filterZoom)
       ? filterFetchCollectionByZoom(collection, {
         zTarget: filterZoom!,
@@ -582,6 +952,8 @@ const createFetchHandler = (params: {
       countryCode: input.countryCode,
       adminLevel: input.adminLevel,
       data,
+      format: 'flatgeobuf',
+      compression: 'none',
       featureCount,
       inputFeatureCount: inputSummary.featureCount,
       bbox,

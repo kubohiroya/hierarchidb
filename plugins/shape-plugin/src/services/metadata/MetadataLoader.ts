@@ -18,6 +18,7 @@ export class MetadataLoader {
   private readonly loaders: Record<DataSourceName, (nodeId: NodeId) => Promise<CountryMetadata[]>> = {
     gadm: fetchGadmMetadata,
     geoboundaries: fetchGeoBoundariesMetadata,
+    'geoboundaries-topojson': fetchGeoBoundariesMetadata,
     naturalearth: fetchNaturalEarthMetadata,
     openstreetmap: async () => {
       assertDataSourceSupported('openstreetmap');

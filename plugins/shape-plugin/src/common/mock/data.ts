@@ -32,6 +32,18 @@ export const DATA_SOURCE_CONFIGS: Record<string, DataSourceConfig> = {
     maxAdminLevel: 3,
     countryCodeFormat: 'iso3',
   },
+  'geoboundaries-topojson': {
+    name: 'geoboundaries-topojson',
+    displayName: 'geoBoundaries:TopoJSON',
+    description: 'geoBoundaries TopoJSON with merged ADM0 polygons',
+    license: 'Creative Commons BY 4.0',
+    licenseUrl: 'https://geoboundaries.org/index.html#getdata',
+    attribution: 'Data from geoBoundaries.org',
+    color: '#3458D4',
+    icon: '🧭',
+    maxAdminLevel: 3,
+    countryCodeFormat: 'iso3',
+  },
   gadm: {
     name: 'gadm',
     displayName: 'GADM',

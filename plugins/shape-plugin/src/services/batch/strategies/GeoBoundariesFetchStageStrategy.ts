@@ -5,14 +5,20 @@ import type {
   FetchStageStrategy,
   FetchPayloadBuildContext,
 } from './FetchStageStrategy.ts';
-import type { FetchTask, FetchTaskPayload } from '../../../common/types/index.js';
+import type { DataSourceName, FetchTask, FetchTaskPayload } from '../../../common/types/index.js';
 import { buildFetchTaskId, generateDownloadTaskPayloadsFromSelection } from '../../utils/utils.js';
 import { buildRawDataDataSourceCacheKey } from '../../utils/chunkStore.js';
 
 export class GeoBoundariesFetchStageStrategy implements FetchStageStrategy {
+  private readonly dataSource: DataSourceName;
+
+  constructor(dataSource: DataSourceName = 'geoboundaries') {
+    this.dataSource = dataSource;
+  }
+
   buildFetchTaskPayloads(context: FetchPayloadBuildContext) {
     return generateDownloadTaskPayloadsFromSelection(
-      'geoboundaries',
+      this.dataSource,
       context.selectedArrayByCountries,
       context.countryMetadata,
     );
@@ -27,7 +33,7 @@ export class GeoBoundariesFetchStageStrategy implements FetchStageStrategy {
         countryCode: metadata.countryCode,
         countryName: metadata.countryName,
         adminLevel: metadata.adminLevel,
-        dataSource: 'geoboundaries',
+        dataSource: this.dataSource,
       };
       inputsByTaskId.set(taskId, payload);
       return {

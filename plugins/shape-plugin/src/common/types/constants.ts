@@ -106,6 +106,18 @@ export const SHAPE_DATA_SOURCES = [
     countryCodeFormat: 'iso3',
   },
   {
+    name: 'geoboundaries-topojson' as DataSourceConfig['name'],
+    displayName: 'geoBoundaries:TopoJSON',
+    description: 'geoBoundaries with TopoJSON caching and merged ADM0 polygons',
+    license: 'CC BY 4.0',
+    licenseUrl: 'https://geoboundaries.org/globalLicense.html',
+    attribution: 'geoBoundaries Global Database',
+    color: '#3458D4',
+    icon: '🧭',
+    maxAdminLevel: 5,
+    countryCodeFormat: 'iso3',
+  },
+  {
     name: 'gadm' as DataSourceConfig['name'],
     displayName: 'GADM',
     description: 'Global Administrative Areas database',

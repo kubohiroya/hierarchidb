@@ -18,7 +18,7 @@ export async function invalidateCountrySelectionCaches(dataSource: string, nodeI
 
   const tasks: Array<Promise<void>> = [];
 
-  if (normalized === 'geoboundaries') {
+  if (normalized === 'geoboundaries' || normalized === 'geoboundaries-topojson') {
     tasks.push(
       jsonStore.deleteForNode(nodeId, buildShapeCacheKey('geoboundaries:metadata:all', GEOBOUNDARIES_ALL_METADATA_URL)),
     );
