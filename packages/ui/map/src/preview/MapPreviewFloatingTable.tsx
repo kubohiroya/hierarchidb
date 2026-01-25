@@ -309,6 +309,15 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
               overscrollBehavior: 'contain',
               WebkitOverflowScrolling: 'touch',
               minHeight: 0,
+              '& .MuiTable-root': {
+                tableLayout: 'fixed',
+                width: '100%',
+              },
+              '& .MuiTableCell-root': {
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              },
               flex: 1,
               ...(tableContainerSx ?? {}),
             }}

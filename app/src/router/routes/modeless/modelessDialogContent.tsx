@@ -206,14 +206,15 @@ const useShapeTableData = (
         const query = await bridgeRef.current.getShapeQueryAPI();
         const collection = await query.listFeatures(nodeId);
         const filterByViewport = visibleIds !== undefined && visibleIds !== null;
+        const visibleIdSet = filterByViewport ? new Set(visibleIds ?? []) : null;
         let totalRows = 0;
         let items: ShapeFeatureRecord[] = [];
         if (filterByViewport) {
-          if (visibleIds.size === 0) {
+          if (!visibleIdSet || visibleIdSet.size === 0) {
             totalRows = 0;
             items = [];
           } else {
-            const filtered = collection.filter((feature) => visibleIds.has(feature.id));
+            const filtered = collection.filter((feature) => visibleIdSet.has(feature.id));
             totalRows = filtered.length;
             items = filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
           }
@@ -291,14 +292,15 @@ const useRouteTableData = (
       try {
         const collection = routeDb.features.where('nodeId').equals(nodeId);
         const filterByViewport = visibleIds !== undefined && visibleIds !== null;
+        const visibleIdSet = filterByViewport ? new Set(visibleIds ?? []) : null;
         let totalRows = 0;
         let items: RouteLineString[] = [];
         if (filterByViewport) {
-          if (visibleIds.size === 0) {
+          if (!visibleIdSet || visibleIdSet.size === 0) {
             totalRows = 0;
             items = [];
           } else {
-            const filtered = await collection.and((line) => visibleIds.has(line.id)).toArray();
+            const filtered = await collection.and((line) => visibleIdSet.has(line.id)).toArray();
             totalRows = filtered.length;
             items = filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
           }
@@ -389,8 +391,9 @@ const useLocationTableData = (
         const svc = new TabularQueryService('location');
         const rows = await svc.query(tableId, [], MAX_ROWS + 1);
         const filterByViewport = visibleIds !== undefined && visibleIds !== null;
+        const visibleIdSet = filterByViewport ? new Set(visibleIds ?? []) : null;
         const filteredRows = filterByViewport
-          ? rows.filter((row) => visibleIds.has((row as { id?: string | number }).id ?? ''))
+          ? rows.filter((row) => visibleIdSet?.has((row as { id?: string | number }).id ?? ''))
           : rows;
         const truncated = filteredRows.length > MAX_ROWS;
         const trimmedRows = filteredRows.slice(0, MAX_ROWS) as DataGridRow[];
@@ -547,10 +550,22 @@ const useMapHighlightSelection = (nodeId: NodeId | null) => {
   return { getSelectedRows, setSelectedRows };
 };
 
+const areSetsEqual = <T,>(left?: Set<T> | null, right?: Set<T> | null) => {
+  if (left === right) return true;
+  if (!left || !right) return false;
+  if (left.size !== right.size) return false;
+  for (const value of left) {
+    if (!right.has(value)) return false;
+  }
+  return true;
+};
+
 const useViewportIdSet = (nodeId: NodeId | null) => {
   const mapLayerInfo = useAtomValue(mapLayerInfoAtom);
   const viewportFeatureIds = useAtomValue(mapViewportFeatureIdsAtom);
   const nodeKey = nodeId ? String(nodeId) : null;
+  const stableViewportIdSetRef = useRef<MapFeatureIdSet | null>(null);
+  const emptySetRef = useRef(new Set<string | number>());
 
   const layerInfoById = useMemo(() => {
     const map = new Map<string, MapLayerInfo>();
@@ -560,8 +575,20 @@ const useViewportIdSet = (nodeId: NodeId | null) => {
     return map;
   }, [mapLayerInfo]);
 
+  const layerTypesForNode = useMemo(() => {
+    const types: Partial<Record<MapNodeType, boolean>> = {};
+    if (!nodeKey) return types;
+    mapLayerInfo.forEach((info) => {
+      if (info.nodeId === nodeKey) {
+        types[info.nodeType] = true;
+      }
+    });
+    return types;
+  }, [mapLayerInfo, nodeKey]);
+
   const viewportIdSet = useMemo<MapFeatureIdSet | null>(() => {
     if (!viewportFeatureIds || !nodeKey) return null;
+    const prev = stableViewportIdSetRef.current;
     const next: MapFeatureIdSet = {};
     viewportFeatureIds.forEach((ids, layerId) => {
       const info = layerInfoById.get(layerId);
@@ -569,23 +596,29 @@ const useViewportIdSet = (nodeId: NodeId | null) => {
       if (!next[info.nodeId]) {
         next[info.nodeId] = {};
       }
+      const prevSet = prev?.[info.nodeId]?.[info.nodeType];
+      const stableSet = prevSet && areSetsEqual(prevSet, ids) ? prevSet : new Set(ids);
       next[info.nodeId] = {
         ...next[info.nodeId],
-        [info.nodeType]: new Set(ids),
+        [info.nodeType]: stableSet,
       };
     });
+    stableViewportIdSetRef.current = next;
     return next;
   }, [layerInfoById, nodeKey, viewportFeatureIds]);
 
   const getViewportIds = useCallback(
     (nodeType: MapNodeType) => {
-      if (!viewportIdSet || !nodeKey) return null;
+      if (!nodeKey) return null;
+      if (!viewportIdSet) {
+        return layerTypesForNode[nodeType] ? emptySetRef.current : null;
+      }
       const entry = viewportIdSet[nodeKey];
-      if (!entry) return new Set<string | number>();
+      if (!entry) return emptySetRef.current;
       const ids = entry[nodeType];
-      return ids ? new Set(ids) : new Set<string | number>();
+      return ids ?? emptySetRef.current;
     },
-    [nodeKey, viewportIdSet]
+    [layerTypesForNode, nodeKey, viewportIdSet]
   );
 
   return { getViewportIds };
@@ -1144,9 +1177,21 @@ export const MapGeneratedDataContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }
     [theme.palette.primary.main]
   );
 
-  const shapeState = useShapeTableData(nodeId, shapePage, shapeRowsPerPage, shapeVisibleIds);
-  const locationState = useLocationTableData(nodeId, locationVisibleIds);
-  const routeState = useRouteTableData(nodeId, routePage, routeRowsPerPage, routeVisibleIds);
+  const stableShapeVisibleIds = useMemo(
+    () => (shapeVisibleIds ? new Set(shapeVisibleIds) : shapeVisibleIds),
+    [shapeVisibleIds]
+  );
+  const shapeState = useShapeTableData(nodeId, shapePage, shapeRowsPerPage, stableShapeVisibleIds);
+  const stableLocationVisibleIds = useMemo(
+    () => (locationVisibleIds ? new Set(locationVisibleIds) : locationVisibleIds),
+    [locationVisibleIds]
+  );
+  const locationState = useLocationTableData(nodeId, stableLocationVisibleIds);
+  const stableRouteVisibleIds = useMemo(
+    () => (routeVisibleIds ? new Set(routeVisibleIds) : routeVisibleIds),
+    [routeVisibleIds]
+  );
+  const routeState = useRouteTableData(nodeId, routePage, routeRowsPerPage, stableRouteVisibleIds);
 
   useEffect(() => {
     setShapePage(0);
@@ -1555,7 +1600,11 @@ export const MapLocationListContent: React.FC<{ nodeId: NodeId }> = ({ nodeId })
   const { getSelectedRows, setSelectedRows } = useMapHighlightSelection(nodeId);
   const { getViewportIds } = useViewportIdSet(nodeId);
   const locationVisibleIds = useMemo(() => getViewportIds('location'), [getViewportIds]);
-  const locationState = useLocationTableData(nodeId, locationVisibleIds);
+  const stableLocationVisibleIds = useMemo(
+    () => (locationVisibleIds ? new Set(locationVisibleIds) : locationVisibleIds),
+    [locationVisibleIds]
+  );
+  const locationState = useLocationTableData(nodeId, stableLocationVisibleIds);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [matchedRowIds, setMatchedRowIds] = useState<string[]>([]);
 
@@ -1620,9 +1669,13 @@ export const MapRouteListContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }) =>
   const { getSelectedRows, setSelectedRows } = useMapHighlightSelection(nodeId);
   const { getViewportIds } = useViewportIdSet(nodeId);
   const routeVisibleIds = useMemo(() => getViewportIds('route'), [getViewportIds]);
+  const stableRouteVisibleIds = useMemo(
+    () => (routeVisibleIds ? new Set(routeVisibleIds) : routeVisibleIds),
+    [routeVisibleIds]
+  );
   const [page] = useState(0);
   const [rowsPerPage] = useState(1000);
-  const routeState = useRouteTableData(nodeId, page, rowsPerPage, routeVisibleIds);
+  const routeState = useRouteTableData(nodeId, page, rowsPerPage, stableRouteVisibleIds);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [matchedRowIds, setMatchedRowIds] = useState<string[]>([]);
 
