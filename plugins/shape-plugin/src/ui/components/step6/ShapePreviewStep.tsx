@@ -74,10 +74,10 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
   } = useShapePreviewStepView(data ?? {}, nodeId);
   React.useEffect(() => {
     setFeatureWindowOpen(true);
-  }, [nodeId]);
+  }, []);
   React.useEffect(() => {
     lastPersistedViewRef.current = data.previewMapView ?? null;
-  }, [data.previewMapView?.latitude, data.previewMapView?.longitude, data.previewMapView?.zoom]);
+  }, [data.previewMapView, data.previewMapView?.latitude, data.previewMapView?.longitude, data.previewMapView?.zoom]);
 
   const handleViewStateCommit = React.useCallback(
     (viewState: MapViewState) => {
