@@ -119,7 +119,9 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const stageElapsedMsRef = useRef(0);
   const lastTickAtRef = useRef<number | null>(null);
   const lastStageIdRef = useRef<string | undefined>(undefined);
+  const buildStartRequestedRef = useRef<string | null>(null);
   const [timingSnapshot, setTimingSnapshot] = useState({ totalMs: 0, stageMs: 0 });
+  const lastTimingSnapshotRef = useRef({ totalMs: 0, stageMs: 0 });
   const selectedArrayByCountries = data?.selectedArrayByCountries;
 
   const taskType = effectiveProgress?.taskType;
@@ -178,9 +180,19 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       stageElapsedMsRef.current = 0;
       lastTickAtRef.current = null;
       lastStageIdRef.current = resolvedTaskType;
-      setTimingSnapshot({ totalMs: 0, stageMs: 0 });
+      const next = { totalMs: 0, stageMs: 0 };
+      if (lastTimingSnapshotRef.current.totalMs !== next.totalMs || lastTimingSnapshotRef.current.stageMs !== next.stageMs) {
+        lastTimingSnapshotRef.current = next;
+        setTimingSnapshot(next);
+      }
     }
   }, [data?.buildStartedAt, resolvedTaskType]);
+
+  useEffect(() => {
+    if (buildStatus !== 'running') {
+      buildStartRequestedRef.current = null;
+    }
+  }, [buildStatus, nodeId, data?.nodeId]);
 
   useEffect(() => {
     if (lastStageIdRef.current !== resolvedTaskType) {
@@ -189,7 +201,12 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       if (buildStatus === 'running') {
         lastTickAtRef.current = Date.now();
       }
-      setTimingSnapshot((prev) => ({ ...prev, stageMs: 0 }));
+      setTimingSnapshot((prev) => {
+        if (prev.stageMs == 0) return prev;
+        const next = { ...prev, stageMs: 0 };
+        lastTimingSnapshotRef.current = next;
+        return next;
+      });
     }
   }, [buildStatus, resolvedTaskType]);
 
@@ -201,10 +218,14 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         totalElapsedMsRef.current += delta;
         stageElapsedMsRef.current += delta;
         lastTickAtRef.current = null;
-        setTimingSnapshot({
+        const next = {
           totalMs: totalElapsedMsRef.current,
           stageMs: stageElapsedMsRef.current,
-        });
+        };
+        if (lastTimingSnapshotRef.current.totalMs !== next.totalMs || lastTimingSnapshotRef.current.stageMs !== next.stageMs) {
+          lastTimingSnapshotRef.current = next;
+          setTimingSnapshot(next);
+        }
       }
       return;
     }
@@ -216,10 +237,14 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       totalElapsedMsRef.current += delta;
       stageElapsedMsRef.current += delta;
       lastTickAtRef.current = now;
-      setTimingSnapshot({
+      const next = {
         totalMs: totalElapsedMsRef.current,
         stageMs: stageElapsedMsRef.current,
-      });
+      };
+      if (lastTimingSnapshotRef.current.totalMs !== next.totalMs || lastTimingSnapshotRef.current.stageMs !== next.stageMs) {
+        lastTimingSnapshotRef.current = next;
+        setTimingSnapshot(next);
+      }
     }, 1000);
     return () => {
       const now = Date.now();
@@ -228,22 +253,33 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       totalElapsedMsRef.current += delta;
       stageElapsedMsRef.current += delta;
       lastTickAtRef.current = null;
-      setTimingSnapshot({
+      const next = {
         totalMs: totalElapsedMsRef.current,
         stageMs: stageElapsedMsRef.current,
-      });
+      };
+      if (lastTimingSnapshotRef.current.totalMs !== next.totalMs || lastTimingSnapshotRef.current.stageMs !== next.stageMs) {
+        lastTimingSnapshotRef.current = next;
+        setTimingSnapshot(next);
+      }
       window.clearInterval(id);
     };
   }, [buildStatus]);
 
   useEffect(() => {
     if (buildStatus !== 'running') return;
-    if (data?.buildStartedAt) return;
+    if (data?.buildStartedAt) {
+      buildStartRequestedRef.current = null;
+      return;
+    }
+    const key = nodeId ?? data?.nodeId ?? null;
+    if (!key) return;
+    if (buildStartRequestedRef.current === key) return;
+    buildStartRequestedRef.current = key;
     onChange({
       buildStartedAt: Date.now(),
       buildFinishedAt: undefined,
     });
-  }, [buildStatus, data?.buildStartedAt, onChange]);
+  }, [buildStatus, data?.buildStartedAt, data?.nodeId, nodeId, onChange]);
 
   useEffect(() => {
     if (!monitorKey) return;
