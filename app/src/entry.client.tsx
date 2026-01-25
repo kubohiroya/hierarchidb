@@ -1,5 +1,5 @@
 import { RouterProvider } from '@tanstack/react-router';
-import { startTransition } from 'react';
+import { startTransition, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import AppRoot from './root.js';
 import { createHierarchiRouter, getBasePath, getRouterMode } from './router/index.js';
@@ -28,21 +28,42 @@ function removeHydrateFallback(): void {
   document.getElementById('hdb-hydrate-fallback')?.remove();
 }
 
-initializeApp().then((router) => {
-  startTransition(() => {
-    let rootElement = document.getElementById('root');
-    if (!rootElement) {
-      rootElement = document.createElement('div');
-      rootElement.id = 'root';
-      document.body.appendChild(rootElement);
-    }
+type BootRouter = Awaited<ReturnType<typeof initializeApp>>;
 
+const BootstrappedApp = () => {
+  const [router, setRouter] = useState<BootRouter | null>(null);
+
+  useEffect(() => {
     removeHydrateFallback();
+  }, []);
 
-    createRoot(rootElement).render(
-      <AppRoot>
-        <RouterProvider router={router} />
-      </AppRoot>
-    );
-  });
-});
+  useEffect(() => {
+    let active = true;
+    initializeApp()
+      .then((nextRouter) => {
+        if (!active) return;
+        startTransition(() => setRouter(nextRouter));
+      })
+      .catch((error) => {
+        console.error('[entry.client] initializeApp failed', error);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return (
+    <AppRoot>
+      {router ? <RouterProvider router={router} /> : null}
+    </AppRoot>
+  );
+};
+
+let rootElement = document.getElementById('root');
+if (!rootElement) {
+  rootElement = document.createElement('div');
+  rootElement.id = 'root';
+  document.body.appendChild(rootElement);
+}
+
+createRoot(rootElement).render(<BootstrappedApp />);
