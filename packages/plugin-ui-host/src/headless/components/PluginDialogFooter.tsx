@@ -111,34 +111,6 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
     setFooterVisible(false);
   }, [isFullScreen]);
 
-  const leftPrimaryLabel =
-    primaryButtonOptions?.leftLabelOverride ??
-    (isFirstStep
-      ? t('dialogs.pluginDialog.buttons.cancel', 'Cancel')
-      : t('dialogs.pluginDialog.buttons.back', 'Back'));
-  const rightPrimaryLabel =
-    primaryButtonOptions?.rightLabelOverride ??
-    (isLastStep ? commitLabel : t('dialogs.pluginDialog.buttons.next', 'Next'));
-  const leftPrimaryIcon = isFirstStep ? (
-    <CloseIcon fontSize="small" />
-  ) : (
-    <ChevronLeftIcon fontSize="small" />
-  );
-  const hasPendingAction = Boolean(pendingAction);
-  const leftActionType = isFirstStep ? 'cancel' : 'back';
-  const rightActionType = isLastStep ? 'commit' : 'next';
-  const disableLeftPrimary = hasPendingAction;
-  const disableRightPrimary = hasPendingAction || (!isLastStep && !canNavigateNext);
-  const showSaveDraft = typeof onSaveDraft === 'function';
-  const showStartBatch = typeof onStartBatch === 'function';
-  const disableDraftButton = (disableDraft ?? !isDirty) || hasPendingAction;
-  const showLeftPrimary = primaryButtonOptions?.leftVisibility !== 'hidden';
-  const showRightPrimary = primaryButtonOptions?.rightVisibility !== 'hidden';
-  const showInlineSaveButton = mode === 'edit' && !isLastStep && showRightPrimary;
-  const inlineSaveDisabled =
-    !ctx.onRequestCommit || !allStepsValidated || !canCommit || hasPendingAction || !isDirty;
-  const shouldRenderNextButton = showRightPrimary && !isLastStep;
-  const shouldRenderFinalCommitButton = showRightPrimary && isLastStep;
 
   const handleInlineSave = useCallback(() => {
     ctx.onRequestCommit?.();
@@ -201,6 +173,38 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
     pendingAction?.type,
   ]);
 
+  const zIndex = useCallback((theme: Theme) => (theme.zIndex?.modal ?? 1300) + 2, [
+  ]);
+
+  const leftPrimaryLabel =
+    primaryButtonOptions?.leftLabelOverride ??
+    (isFirstStep
+      ? t('dialogs.pluginDialog.buttons.cancel', 'Cancel')
+      : t('dialogs.pluginDialog.buttons.back', 'Back'));
+  const rightPrimaryLabel =
+    primaryButtonOptions?.rightLabelOverride ??
+    (isLastStep ? commitLabel : t('dialogs.pluginDialog.buttons.next', 'Next'));
+  const leftPrimaryIcon = isFirstStep ? (
+    <CloseIcon fontSize="small" />
+  ) : (
+    <ChevronLeftIcon fontSize="small" />
+  );
+  const hasPendingAction = Boolean(pendingAction);
+  const leftActionType = isFirstStep ? 'cancel' : 'back';
+  const rightActionType = isLastStep ? 'commit' : 'next';
+  const disableLeftPrimary = hasPendingAction;
+  const disableRightPrimary = hasPendingAction || (!isLastStep && !canNavigateNext);
+  const showSaveDraft = typeof onSaveDraft === 'function';
+  const showStartBatch = typeof onStartBatch === 'function';
+  const disableDraftButton = (disableDraft ?? !isDirty) || hasPendingAction;
+  const showLeftPrimary = primaryButtonOptions?.leftVisibility !== 'hidden';
+  const showRightPrimary = primaryButtonOptions?.rightVisibility !== 'hidden';
+  const showInlineSaveButton = mode === 'edit' && !isLastStep && showRightPrimary;
+  const inlineSaveDisabled =
+    !ctx.onRequestCommit || !allStepsValidated || !canCommit || hasPendingAction || !isDirty;
+  const shouldRenderNextButton = showRightPrimary && !isLastStep;
+  const shouldRenderFinalCommitButton = showRightPrimary && isLastStep;
+
   return (
     <>
       {isFullScreen && (
@@ -212,7 +216,7 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
             left: 0,
             right: 0,
             height: FOOTER_HOVER_ZONE_HEIGHT,
-            zIndex: (theme: Theme) => (theme.zIndex?.modal ?? 1300) + 2,
+            zIndex,
             backgroundColor: 'transparent',
             pointerEvents: 'auto',
           }}
