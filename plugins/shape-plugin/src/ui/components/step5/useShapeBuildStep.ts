@@ -192,7 +192,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     if (buildStatus !== 'running') {
       buildStartRequestedRef.current = null;
     }
-  }, [buildStatus, nodeId, data?.nodeId]);
+  }, [buildStatus]);
 
   useEffect(() => {
     if (lastStageIdRef.current !== resolvedTaskType) {
@@ -202,7 +202,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         lastTickAtRef.current = Date.now();
       }
       setTimingSnapshot((prev) => {
-        if (prev.stageMs == 0) return prev;
+        if (prev.stageMs === 0) return prev;
         const next = { ...prev, stageMs: 0 };
         lastTimingSnapshotRef.current = next;
         return next;
@@ -494,7 +494,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
         summary: { total, success, error, skip },
       };
     });
-  }, [effectiveProgress, buildStatus, paneProgress, resolvedTaskType, stages, taskSummary]);
+  }, [effectiveProgress, buildStatus, paneProgress, resolvedTaskType, stages, taskType, taskSummary]);
   const lastUnfinishedStageId = useMemo(() => {
     if (buildStatus !== 'running') return undefined;
     let candidate: string | undefined;

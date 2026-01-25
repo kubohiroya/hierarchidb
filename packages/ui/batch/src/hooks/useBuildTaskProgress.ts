@@ -89,7 +89,7 @@ export const useBuildTaskProgress = <T extends BatchTaskSummary>(
         status: derivedStatus,
       };
     });
-  }, [buildStatus, overallProgress, stageProgress, stages, tasksByStage]);
+  }, [buildStatus, stages, tasksByStage]);
 
   return {
     stageProgress,

@@ -1,4 +1,4 @@
-import { type CSSProperties, useEffect, useMemo, useRef } from 'react';
+import { type CSSProperties, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Box } from '@mui/material';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useSetAtom } from 'jotai';
@@ -129,7 +129,7 @@ export const TaskListVirtualized = ({
     if (!scrollToTaskId) return;
     const index = tasks.findIndex((task) => task.taskId === scrollToTaskId);
     if (index < 0) return;
-    virtualizer.scrollToIndex(index, { align: 'center' });
+    window.requestAnimationFrame(() => virtualizer.scrollToIndex(index, { align: 'center' }));
   }, [ scrollToTaskId, shouldVirtualize, tasks, virtualizer]);
 
   const virtualItems = virtualizer.getVirtualItems();
@@ -211,7 +211,7 @@ export const TaskListVirtualized = ({
     });
   }, [setViewportRange, shouldVirtualize, stageId, tasks]);
 
-  const renderTaskItem = (task: ShapeBuildTaskSummary, key: string, style?: CSSProperties) => {
+  const renderTaskItem = useCallback((task: ShapeBuildTaskSummary, key: string, style?: CSSProperties) => {
     const statusValue = task.status;
     const isSkipped = isSkippedMessage(task.message);
     const statusLabelValue = resolveStatusLabel(statusValue, isSkipped);
@@ -238,7 +238,7 @@ export const TaskListVirtualized = ({
         />
       </Box>
     );
-  };
+  },[resolvePhaseMessage, resolveStatusColor, resolveStatusLabel, resolveTaskTitle, stageValue]);
 
   return (
     <Box ref={parentRef} sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>

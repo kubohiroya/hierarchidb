@@ -34,7 +34,7 @@ export const useBatchProgressState = (
 
   useEffect(() => {
     setError(null);
-  }, [nodeId]);
+  }, []);
 
   const adapter = useMemo(() => {
     if (!nodeId) return null;

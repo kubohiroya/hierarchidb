@@ -61,20 +61,20 @@ const sortTasks = (items: ShapeBuildTaskSummary[]): ShapeBuildTaskSummary[] => (
 );
 
 const isSameTaskList = (next: ShapeBuildTaskSummary[], current: ShapeBuildTaskSummary[]): boolean => {
-  if (next.length != current.length) return false;
+  if (next.length !== current.length) return false;
   for (let i = 0; i < next.length; i += 1) {
     const nextTask = next[i];
     const currentTask = current[i];
     if (!nextTask || !currentTask) return false;
-    if (nextTask.taskId != currentTask.taskId) return false;
+    if (nextTask.taskId !== currentTask.taskId) return false;
     const nextSeq = typeof nextTask.sequence === 'number' ? nextTask.sequence : null;
     const currentSeq = typeof currentTask.sequence === 'number' ? currentTask.sequence : null;
-    if (nextSeq != null || currentSeq != null) {
-      if (nextSeq != currentSeq) return false;
+    if (nextSeq !== null || currentSeq !== null) {
+      if (nextSeq !== currentSeq) return false;
       continue;
     }
-    if (nextTask.status != currentTask.status) return false;
-    if (nextTask.progress != currentTask.progress) return false;
+    if (nextTask.status !== currentTask.status) return false;
+    if (nextTask.progress !== currentTask.progress) return false;
   }
   return true;
 };
@@ -88,9 +88,12 @@ export function useShapeBuildTasks(
   const [tasks, setTasks] = useAtom(tasksAtom);
   const [isLoading, setIsLoading] = useAtom(tasksLoadingAtom);
   const [error, setError] = useAtom(tasksErrorAtom);
+  const isLoadingRef = useRef(isLoading);
+  const errorRef = useRef<Error | null>(error);
   const reportedFailuresRef = useRef<Set<string>>(new Set());
   const pendingTasksRef = useRef<ShapeBuildTaskSummary[] | null>(null);
   const flushScheduledRef = useRef(false);
+  const flushFrameRef = useRef<number | null>(null);
   const tasksMapRef = useRef<Map<string, ShapeBuildTaskSummary>>(new Map());
   const pendingDeleteIdsRef = useRef<Set<string>>(new Set());
   const tasksRef = useRef<ShapeBuildTaskSummary[]>(tasks);
@@ -106,12 +109,24 @@ export function useShapeBuildTasks(
   }, [tasks]);
 
   useEffect(() => {
+    isLoadingRef.current = isLoading;
+  }, [isLoading]);
+
+  useEffect(() => {
+    errorRef.current = error;
+  }, [error]);
+
+  useEffect(() => {
     reportedFailuresRef.current = new Set();
   }, []);
 
   useEffect(() => {
     return () => {
       pendingTasksRef.current = null;
+      if (flushFrameRef.current !== null) {
+        window.cancelAnimationFrame(flushFrameRef.current);
+        flushFrameRef.current = null;
+      }
       if (subscriptionRef.current) {
         subscriptionRef.current();
         subscriptionRef.current = null;
@@ -141,8 +156,9 @@ export function useShapeBuildTasks(
     pendingTasksRef.current = next;
     if (flushScheduledRef.current) return;
     flushScheduledRef.current = true;
-    queueMicrotask(() => {
+    flushFrameRef.current = window.requestAnimationFrame(() => {
       flushScheduledRef.current = false;
+      flushFrameRef.current = null;
       const pending = pendingTasksRef.current;
       if (pending) {
         flushTasks(pending);
@@ -182,16 +198,24 @@ export function useShapeBuildTasks(
     const resolved = sortTasks(next.map(resolveTaskSummary));
     tasksMapRef.current = new Map(resolved.map((task) => [task.taskId, task]));
     flushTasks(resolved);
-    setError(null);
-    setIsLoading(false);
+    if (errorRef.current !== null) {
+      setError(null);
+    }
+    if (isLoadingRef.current) {
+      setIsLoading(false);
+    }
   }, [flushTasks, resolveTaskSummary, setError, setIsLoading]);
 
   const handleUpdate = useCallback((task: RawTaskSummary) => {
     const resolved = resolveTaskSummary(task);
     const next = mergeTask(resolved);
     scheduleFlush(next);
-    setError(null);
-    setIsLoading(false);
+    if (errorRef.current !== null) {
+      setError(null);
+    }
+    if (isLoadingRef.current) {
+      setIsLoading(false);
+    }
   }, [mergeTask, resolveTaskSummary, scheduleFlush, setError, setIsLoading]);
 
   const handleDelete = useCallback((taskId: string) => {
@@ -199,8 +223,12 @@ export function useShapeBuildTasks(
     tasksMapRef.current.delete(taskId);
     const current = pendingTasksRef.current ?? tasksRef.current;
     scheduleFlush(current);
-    setError(null);
-    setIsLoading(false);
+    if (errorRef.current !== null) {
+      setError(null);
+    }
+    if (isLoadingRef.current) {
+      setIsLoading(false);
+    }
   }, [scheduleFlush, setError, setIsLoading]);
 
   useEffect(() => {
@@ -216,14 +244,26 @@ export function useShapeBuildTasks(
     }
     pendingTasksRef.current = null;
     if (!nodeId || !autoSubscribe) {
-      setTasks([]);
-      setError(null);
-      setIsLoading(false);
+      if (tasksRef.current.length > 0) {
+        setTasks([]);
+      }
+      if (errorRef.current !== null) {
+        setError(null);
+      }
+      if (isLoadingRef.current) {
+        setIsLoading(false);
+      }
       return;
     }
-    setTasks([]);
-    setError(null);
-    setIsLoading(true);
+    if (tasksRef.current.length > 0) {
+      setTasks([]);
+    }
+    if (errorRef.current !== null) {
+      setError(null);
+    }
+    if (!isLoadingRef.current) {
+      setIsLoading(true);
+    }
     const subscriptionId = subscriptionIdRef.current + 1;
     subscriptionIdRef.current = subscriptionId;
     let cancelled = false;
