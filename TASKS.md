@@ -1,3 +1,83 @@
+2356) fix/shape/step5-vt-status-flapping (P1) — 進行中 (2026-01-26)
+  - update: 2026-01-26 11:20 JST task更新の順序判定をsequenceで統一する方針の確認に着手。
+  - update: 2026-01-26 11:26 JST task更新の順序判定をsequenceへ統一（updatedAt判定を撤去）。
+  - update: 2026-01-26 11:28 JST sequence順序の再現テストを更新しグリーン化。
+  - done: 2026-01-26 11:29 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - blocked: 2026-01-26 11:30 JST pnpm --filter @hierarchidb/shape-plugin test が geoboundaries.org DNS失敗（ENOTFOUND）で失敗。
+- ブランチ名: fix/shape/step5-vt-status-flapping
+- 依存: なし
+- 受け入れ基準: Step5 VT Generationのタスク表示がCompleted/Runningを往復しない／原因をコード参照で説明する／再現テストを追加しグリーン化する／pnpm --filter @hierarchidb/shape-plugin test が exit 0／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`, `packages/ui/batch/src/hooks/useBuildTaskProgress.ts`, `plugins/shape-plugin/src/ui/__tests__/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert する
+- チェックリスト:
+  - VTステージのタスク表示がflapしないことを確認する
+  - 失敗再現テストを追加しグリーン化する
+  - pnpm --filter @hierarchidb/shape-plugin test を実行する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 10:55 JST step5 VTタスク表示のCompleted/Runningフラップ問題に着手。
+  - update: 2026-01-26 11:10 JST task更新イベントのupdatedAt順で古い更新を無視し、更新順序の逆転で表示が揺れないよう修正。
+  - update: 2026-01-26 11:12 JST Flap再現テストを追加（古い更新を無視する）。
+  - done: 2026-01-26 11:13 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - blocked: 2026-01-26 11:14 JST pnpm --filter @hierarchidb/shape-plugin test が geoboundaries.org DNS失敗（ENOTFOUND）で失敗。
+
+2370) fix/ui-map/show-tile-debug-flags (P1) — 進行中 (2026-01-25)
+- ブランチ名: fix/ui-map/show-tile-debug-flags
+- 依存: なし
+- 受け入れ基準: showTileBoundaries/showTileCoordinates が指定時に反映される／開発モードの自動有効化は維持しつつ明示指定が優先される／原因と発生範囲を説明できる／TASKS.mdに運用ログを記載する
+- 影響範囲: `packages/ui/map/src/**`
+- ロールバック手順: タイル境界/番号の反映修正とDEV自動化の差分を revert する
+- チェックリスト:
+  - 反映されない原因箇所を特定する
+  - タイル境界/番号の反映修正を実装する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-25 09:04 JST showTileBoundaries/showTileCoordinates 未反映の原因調査に着手。
+  - update: 2026-01-25 09:07 JST MapLibreMapでdebugフラグをmapインスタンスへ直接適用し、pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
+
+2371) feat/ui-map/show-tile-debug-query (P2) — 完了 (2026-01-25)
+- ブランチ名: feat/ui-map/show-tile-debug-query
+- 依存: なし
+- 受け入れ基準: showTileBoundaries/showTileCoordinates がURLクエリで有効/無効に切替できる／クエリ無しの既定挙動は維持される／TASKS.mdに運用ログを記載する
+- 影響範囲: `packages/ui/map/src/**`
+- ロールバック手順: URLクエリ判定と解釈ロジックの差分を revert する
+- チェックリスト:
+  - URLクエリの解釈ロジックを追加する
+  - クエリ優先で反映されることを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-25 09:14 JST showTileBoundaries/showTileCoordinates のURLクエリ切替に着手。
+  - done: 2026-01-25 09:15 JST URLクエリ優先でtile debug設定を反映し、pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
+
+2372) investigation/shape/vt-tiles-z0-z1-display (P1) — 進行中 (2026-01-25)
+- ブランチ名: investigation/shape/vt-tiles-z0-z1-display
+- 依存: なし
+- 受け入れ基準: z0-z1表示異常の原因切り分けができる／VT Generationのz1/z2生成の不整合有無を特定できる／影響範囲・修正方針・ロールバックを記録する／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/**`, `packages/ui/map/src/**`, `packages/features/map-adapter/src/**`
+- ロールバック手順: 調査用ログ/一時変更を revert する
+- チェックリスト:
+  - 表示側/生成側の切り分け手順を定義する
+  - VT Generationのz1/z2出力とタイルインデックスの整合性を確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-25 09:26 JST z0-z1タイル表示異常とVT Generationの不整合調査に着手。
+  - update: 2026-01-25 09:33 JST tileIdのz非包含による衝突が疑わしく、vt-orchestrator/shapePipeline/workerラベルのtileIdエンコードをz含有方式へ変更。pnpm --filter @hierarchidb/vt-orchestrator typecheck / pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2369) feat/app/dev-maplibre-debug-tiles (P2) — 完了 (2026-01-25)
+- ブランチ名: feat/app/dev-maplibre-debug-tiles
+- 依存: なし
+- 受け入れ基準: 開発モード時のみMapLibreGLのタイル境界とタイル番号が自動表示される／本番や開発モード以外の挙動は変わらない／TASKS.mdに運用ログを記載する
+- 影響範囲: `packages/ui/map/src/components/MapLibreMap.tsx`
+- ロールバック手順: 開発モード判定とMapLibreGLデバッグ設定の差分を revert する
+- チェックリスト:
+  - 開発モード判定の場所を確認する
+  - タイル境界/番号表示の自動有効化を追加する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-25 08:54 JST 開発モード時のMapLibreGLデバッグ表示自動化に着手。
+  - done: 2026-01-25 08:55 JST MapLibreMapでDEV時にtile境界/番号を自動有効化し、pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
+
 2362) fix/shape/task-update-sequence (P1) — 完了 (2026-01-26)
 - ブランチ名: fix/shape/task-update-sequence
 - 依存: なし
@@ -30,6 +110,83 @@
 - 運用ログ：
   - start: 2026-01-26 11:14 JST TaskList仮想化の影響調査に着手。
   - update: 2026-01-26 11:22 JST noTaskVirtualクエリで非仮想リストに切替できるようにし、pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-01-26 11:30 JST noTaskVirtual=1でもタスク更新は不安定との報告を受領。仮想化起因ではないと判断。
+
+2364) investigation/shape/task-update-sequence-order (P1) — 完了 (2026-01-26)
+- ブランチ名: investigation/shape/task-update-sequence-order
+- 依存: なし
+- 受け入れ基準: 更新イベントのsequence有無・順序をログで確認できる／UIが棄却する更新の条件をログで特定できる／イベント側かUI側かの切り分けができる／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/ui/components/step5/useShapeBuildTasks.ts`
+- ロールバック手順: 調査用ログ差分を revert する
+- チェックリスト:
+  - 更新イベントのsequenceをログ出力する
+  - UI側で棄却した更新をログ出力する
+  - 結論と根拠を整理する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 11:36 JST sequence順序のログ調査に着手。
+  - update: 2026-01-26 11:40 JST sequence付き更新ログと棄却ログを追加、pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-01-26 11:48 JST sequenceは単調増加で付与され、UI側の棄却ログも発生していないことを確認。仮想化が原因ではないと判断。
+
+2365) fix/shape/task-update-map-state (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/shape/task-update-map-state
+- 依存: なし
+- 受け入れ基準: UIのタスク保持がMapベースで更新イベントの取りこぼしが起きない／sequenceが低い更新は確実に棄却される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/useShapeBuildTasks.ts`
+- ロールバック手順: tasksMap導入とmerge処理の差分を revert する
+- チェックリスト:
+  - tasksMapで最新タスクを保持する
+  - sequenceの比較で確実に棄却する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 11:53 JST tasksMapベースの更新処理へ切り替え着手。
+  - done: 2026-01-26 11:59 JST tasksMapで更新を統一し、pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2366) fix/shape/task-status-flip-crash (P1) — 進行中 (2026-01-26)
+- ブランチ名: fix/shape/task-status-flip-crash
+- 依存: なし
+- 受け入れ基準: Running/Completedのフリップが止まる／タスク更新で無限ループやブラウザクラッシュが起きない／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/worker/api.ts`, `packages/vt-orchestrator/src/task/taskQueue.ts`, `plugins/shape-plugin/src/ui/components/step5/useShapeBuildTasks.ts`
+- ロールバック手順: status判定/イベント生成/Map更新の差分を revert する
+- チェックリスト:
+  - Completed通知条件を厳格化する
+  - updateイベントのループ要因を排除する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 12:06 JST statusフリップとクラッシュの修正に着手。
+  - update: 2026-01-26 12:18 JST completed/failedのstatusを更新で上書きしないようガードし、pnpm --filter @hierarchidb/vt-orchestrator build / pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2367) fix/shape/stuck-running-tasks (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/shape/stuck-running-tasks
+- 依存: なし
+- 受け入れ基準: Runningのまま残るタスクが発生しない／進捗更新・完了更新が欠落しない／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `packages/vt-orchestrator/src/task/taskQueue.ts`, `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`, `packages/vt-orchestrator/src/vt/vtStage.ts`, `plugins/shape-plugin/src/services/vt/shapePipeline.ts`
+- ロールバック手順: Running補正/完了反映の差分を revert する
+- チェックリスト:
+  - Running補正と完了反映を確認する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 12:28 JST Running残留タスクの修正に着手。
+  - done: 2026-01-26 12:36 JST fetch/transform完了時にpendingタスクをfailed化、pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2368) fix/shape/update-depth-loop-and-vt-running (P1) — 進行中 (2026-01-26)
+- ブランチ名: fix/shape/update-depth-loop-and-vt-running
+- 依存: なし
+- 受け入れ基準: useShapeBuildTasks/useBatchProgress/useShapeBuildStep の update depth ループが解消される／VT Generation の Running 残存が解消されビルド完了待ちにならない／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/useShapeBuildTasks.ts`, `packages/ui/batch/src/hooks/useBatchProgress.ts`, `plugins/shape-plugin/src/ui/components/step5/useShapeBuildStep.ts`, `plugins/shape-plugin/src/services/vt/shapePipeline.ts`
+- ロールバック手順: ループ抑止と完了確定の差分を revert する
+- チェックリスト:
+  - update depth ループを解消する
+  - VT Running 残存を解消する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 12:44 JST update depth ループとVT Running残存の修正に着手。
+  - update: 2026-01-26 13:21 JST useShapeBuildTasksでマイクロタスクflushと差分更新を導入、useBatchProgressで重複progress更新を抑止、useShapeBuildStepでtimingSnapshotの同値更新を抑止。pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-01-26 13:06 JST useShapeBuildTasksの購読依存を安定化、useBatchProgressのadapter参照と重複更新抑止、useShapeBuildStepのbuildStartedAt更新を単発化。pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
 
 2361) fix/shape/ignore-stale-task-updates (P1) — 進行中 (2026-01-25)
 - ブランチ名: fix/shape/ignore-stale-task-updates
@@ -174,6 +331,8 @@
   - done: 2026-01-24 22:19 JST 再試行で解消しない条件（入力ジオメトリの頂点数が上限超過）を整理。
 
 2355) fix/shape/step5-task-updates-no-polling (P1) — 進行中 (2026-01-26)
+  - update: 2026-01-26 10:50 JST TaskProgressBar の paddingRight を 16px へ修正に着手。
+  - blocked: 2026-01-26 10:51 JST TaskProgressBar.tsx 内に paddingRight: 64px の記述が見つからず、対象箇所の確認待ち。
 - ブランチ名: fix/shape/step5-task-updates-no-polling
 - 依存: なし
 - 受け入れ基準: Worker初期化時にタスクスナップショットをUIへ通知し、その後はタスク更新イベントのみでUIを更新する（UI側の再取得・ポーリングなし）／Step5のタスク一覧・サマリーが実行中/失敗時も更新される／失敗を再現するテストを追加しグリーン化する／pnpm --filter @hierarchidb/shape-plugin test が exit 0／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
