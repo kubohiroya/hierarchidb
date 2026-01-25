@@ -64,6 +64,22 @@
   - start: 2026-01-25 09:26 JST z0-z1タイル表示異常とVT Generationの不整合調査に着手。
   - update: 2026-01-25 09:33 JST tileIdのz非包含による衝突が疑わしく、vt-orchestrator/shapePipeline/workerラベルのtileIdエンコードをz含有方式へ変更。pnpm --filter @hierarchidb/vt-orchestrator typecheck / pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
 
+2373) feat/shape/task-progressbar-drag-scroll (P2) — 進行中 (2026-01-25)
+- ブランチ名: feat/shape/task-progressbar-drag-scroll
+- 依存: なし
+- 受け入れ基準: TaskProgressBarのクリックジャンプが現状動作していることを確認して記録する／ドラッグ中の位置に応じてタスク一覧のスクロールが追従する／クリック挙動は維持される／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/TaskProgressBar.tsx`
+- ロールバック手順: ドラッグ追従と確認ログを revert する
+- チェックリスト:
+  - 既存クリックジャンプ動作の確認方法と結果を記録する
+  - ドラッグ追従のスクロール更新を実装する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-25 10:24 JST TaskProgressBarのドラッグ追従スクロール対応に着手。
+  - update: 2026-01-25 10:26 JST TaskProgressBarにドラッグ追従を追加し、pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。クリックジャンプはコード上のonClickで動作確認（手元実行での確認は未実施）。
+  - update: 2026-01-25 10:33 JST ドラッグ追従のスクロール更新をデバウンス化し、pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-01-25 10:36 JST デバウンス内でpointer event参照が無効になる問題を修正し、pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
 2369) feat/app/dev-maplibre-debug-tiles (P2) — 完了 (2026-01-25)
 - ブランチ名: feat/app/dev-maplibre-debug-tiles
 - 依存: なし

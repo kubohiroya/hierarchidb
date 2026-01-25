@@ -1,7 +1,7 @@
-import type { KeyboardEvent, MouseEvent } from 'react';
+import type { KeyboardEvent, MouseEvent, PointerEvent } from 'react';
 import { Box, useTheme } from '@mui/material';
 import { useAtomValue, useSetAtom } from 'jotai';
-import { useId } from 'react';
+import { useCallback, useId, useRef } from 'react';
 
 import type {
   TaskWithMetadata,
@@ -124,6 +124,91 @@ export const TaskProgressBar = ({
     }
   }
   const flowBandWidth = viewWidth * 0.1;
+  const isDraggingRef = useRef(false);
+  const dragDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dragDebounceMs = 80;
+
+  const resolveTargetFromPosition = useCallback((position: number) => {
+    if (segments.length === 0) return null;
+    let offset = 0;
+    let index = 0;
+    for (const segment of segments) {
+      const next = offset + segment.width;
+      if (position >= offset && position < next) {
+        return { segment, index };
+      }
+      offset = next;
+      index += 1;
+    }
+    const lastSegment = segments[segments.length - 1];
+    if (!lastSegment) return null;
+    return { segment: lastSegment, index: segments.length - 1 };
+  }, [segments]);
+
+  const resolveNearestInteractiveSegment = useCallback((index: number) => {
+    for (let offset = 0; offset < segments.length; offset += 1) {
+      const left = index - offset;
+      if (left >= 0) {
+        const candidate = segments[left];
+        if (candidate?.taskId) return candidate;
+      }
+      const right = index + offset;
+      if (right < segments.length) {
+        const candidate = segments[right];
+        if (candidate?.taskId) return candidate;
+      }
+    }
+    return null;
+  }, [segments]);
+
+  const updateScrollTargetFromClientX = useCallback((clientX: number, rect: DOMRect) => {
+    if (!rect || rect.width <= 0 || viewWidth <= 0) return;
+    const ratio = (clientX - rect.left) / rect.width;
+    const clampedRatio = Math.max(0, Math.min(1, ratio));
+    const position = clampedRatio * viewWidth;
+    const resolved = resolveTargetFromPosition(position);
+    if (!resolved) return;
+    const segment = resolved.segment.taskId
+      ? resolved.segment
+      : resolveNearestInteractiveSegment(resolved.index);
+    if (!segment?.taskId) return;
+    setScrollTarget({
+      stageId: segment.stageId,
+      taskId: segment.taskId,
+      requestedAt: Date.now(),
+    });
+  }, [resolveNearestInteractiveSegment, resolveTargetFromPosition, setScrollTarget, viewWidth]);
+
+  const handlePointerDown = useCallback((event: PointerEvent<SVGSVGElement>) => {
+    event.preventDefault();
+    isDraggingRef.current = true;
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    updateScrollTargetFromClientX(event.clientX, event.currentTarget.getBoundingClientRect());
+  }, [updateScrollTargetFromClientX]);
+
+  const handlePointerMove = useCallback((event: PointerEvent<SVGSVGElement>) => {
+    if (!isDraggingRef.current) return;
+    if (dragDebounceRef.current) {
+      clearTimeout(dragDebounceRef.current);
+    }
+    const rect = event.currentTarget.getBoundingClientRect();
+    const clientX = event.clientX;
+    dragDebounceRef.current = setTimeout(() => {
+      dragDebounceRef.current = null;
+      updateScrollTargetFromClientX(clientX, rect);
+    }, dragDebounceMs);
+  }, [dragDebounceMs, updateScrollTargetFromClientX]);
+
+  const handlePointerUp = useCallback((event: PointerEvent<SVGSVGElement>) => {
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+    if (dragDebounceRef.current) {
+      clearTimeout(dragDebounceRef.current);
+      dragDebounceRef.current = null;
+    }
+    updateScrollTargetFromClientX(event.clientX, event.currentTarget.getBoundingClientRect());
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+  }, [updateScrollTargetFromClientX]);
 
   return (
     <Box
@@ -134,7 +219,18 @@ export const TaskProgressBar = ({
         overflow: 'hidden',
       }}
     >
-      <svg width="100%" height={rectHeight} viewBox={`0 0 ${viewWidth} 1`} preserveAspectRatio="none">
+      <svg
+        width="100%"
+        height={rectHeight}
+        viewBox={`0 0 ${viewWidth} 1`}
+        preserveAspectRatio="none"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onPointerLeave={handlePointerUp}
+        style={{ touchAction: 'none' }}
+      >
         {flowBandRange ? (
           <defs>
             <clipPath id={`task-progress-flow-${flowBandClipId}`}>
