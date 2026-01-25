@@ -17,10 +17,18 @@ export function useBatchProgress(
   const subscribedRef = useRef(false);
   const pendingRef = useRef<UnifiedProgressInfo | null>(null);
   const flushTimerRef = useRef<number | null>(null);
+  const adapterRef = useRef<Adapter>(adapter);
+  const lastTimestampRef = useRef<number | null>(null);
+  const lastProgressRef = useRef<UnifiedProgressInfo | null>(null);
+
+  useEffect(() => {
+    adapterRef.current = adapter;
+  }, [adapter]);
 
   const subscribe = useCallback(() => {
-    if (!adapter || subscribedRef.current) return;
-    const result: SubscribeResult = adapter.subscribe((info: UnifiedProgressInfo) => {
+    const currentAdapter = adapterRef.current;
+    if (!currentAdapter || subscribedRef.current) return;
+    const result: SubscribeResult = currentAdapter.subscribe((info: UnifiedProgressInfo) => {
       pendingRef.current = info;
       if (flushTimerRef.current) return;
       flushTimerRef.current = window.setTimeout(() => {
@@ -28,6 +36,25 @@ export function useBatchProgress(
         const next = pendingRef.current;
         pendingRef.current = null;
         if (next) {
+          const nextTimestamp = typeof next.timestamp === 'number' ? next.timestamp : null;
+          if (nextTimestamp !== null && lastTimestampRef.current === nextTimestamp) {
+            return;
+          }
+          const prev = lastProgressRef.current;
+          const isSame = prev
+            && prev.stage === next.stage
+            && prev.phase === next.phase
+            && prev.percentage === next.percentage
+            && prev.completed === next.completed
+            && prev.failed === next.failed
+            && prev.total === next.total
+            && prev.message === next.message;
+          if (isSame) {
+            lastTimestampRef.current = nextTimestamp;
+            return;
+          }
+          lastTimestampRef.current = nextTimestamp;
+          lastProgressRef.current = next;
           setProgress(next);
         }
       }, 100);
@@ -43,7 +70,7 @@ export function useBatchProgress(
     }
     subscribedRef.current = true;
     setSubscribed(true);
-  }, [adapter]);
+  }, []);
 
   const unsubscribe = useCallback(() => {
     if (!subscribedRef.current) return;
