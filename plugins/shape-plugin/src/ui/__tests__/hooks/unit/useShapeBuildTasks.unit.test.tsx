@@ -53,6 +53,7 @@ describe('useShapeBuildTasks', () => {
             progress: 0,
             message: 'Queued',
             index: 1,
+            sequence: 1,
           },
         ],
       });
@@ -74,6 +75,27 @@ describe('useShapeBuildTasks', () => {
           progress: 100,
           message: 'Done',
           index: 1,
+          sequence: 2,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.tasks[0]?.status).toBe('completed');
+    });
+
+    act(() => {
+      subscriber?.({
+        type: 'update',
+        nodeId: 'node-1',
+        task: {
+          taskId: 'task-1',
+          stage: 'fetch',
+          status: 'running',
+          progress: 50,
+          message: 'Late',
+          index: 1,
+          sequence: 1,
         },
       });
     });

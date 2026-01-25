@@ -256,7 +256,7 @@ export const TaskListVirtualized = ({
               left: 0,
               width: '100%',
               transform: `translateY(${virtualRow.start}px)`,
-              paddingRight: 8,
+              paddingRight: 2,
             });
           })}
         </Box>

@@ -263,7 +263,6 @@ const mapTaskQueueRecordToBatchTask = (
   status: normalizeTaskStatus(resolveEffectiveTaskStatus(task)),
   type: task.stage,
   index: task.index,
-  progress: resolveTaskProgress(task),
   retryCount: task.retryCount,
   error: task.errorMessage,
   message: task.message ?? task.errorMessage,
@@ -314,6 +313,7 @@ type ShapeBatchTaskSummary = BatchTaskSummary & {
   error?: string;
   errorMessage?: string;
   index?: number;
+  sequence?: number;
 };
 
 type TaskWeightMeta = {
@@ -1215,6 +1215,13 @@ export const shapeBatchAPI = {
             event.task,
             weightMap.get(event.task.taskId)
           );
+          console.debug('[shapeBatchAPI] task update', {
+            taskId: summary.taskId,
+            stage: summary.stage,
+            status: summary.status,
+            progress: summary.progress,
+            sequence: summary.sequence,
+          });
           callback({ type: 'update', nodeId: event.nodeId, task: summary });
         } catch (error) {
           console.error('[shapeBatchAPI] task update failed', error);

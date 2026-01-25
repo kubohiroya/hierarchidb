@@ -34,6 +34,7 @@ type RawTaskSummary = BatchTaskSummary & {
   errorMessage?: string;
   index?: number;
   sequence?: number;
+  updatedAt?: number;
 };
 
 const isTaskStage = (value: unknown): value is TaskStage => (
@@ -59,6 +60,25 @@ const sortTasks = (items: ShapeBuildTaskSummary[]): ShapeBuildTaskSummary[] => (
   [...items].sort((a, b) => resolveTaskIndex(a) - resolveTaskIndex(b))
 );
 
+const isSameTaskList = (next: ShapeBuildTaskSummary[], current: ShapeBuildTaskSummary[]): boolean => {
+  if (next.length != current.length) return false;
+  for (let i = 0; i < next.length; i += 1) {
+    const nextTask = next[i];
+    const currentTask = current[i];
+    if (!nextTask || !currentTask) return false;
+    if (nextTask.taskId != currentTask.taskId) return false;
+    const nextSeq = typeof nextTask.sequence === 'number' ? nextTask.sequence : null;
+    const currentSeq = typeof currentTask.sequence === 'number' ? currentTask.sequence : null;
+    if (nextSeq != null || currentSeq != null) {
+      if (nextSeq != currentSeq) return false;
+      continue;
+    }
+    if (nextTask.status != currentTask.status) return false;
+    if (nextTask.progress != currentTask.progress) return false;
+  }
+  return true;
+};
+
 export function useShapeBuildTasks(
   nodeId: NodeId | null,
   options: UseShapeBuildTasksOptions = {},
@@ -70,13 +90,19 @@ export function useShapeBuildTasks(
   const [error, setError] = useAtom(tasksErrorAtom);
   const reportedFailuresRef = useRef<Set<string>>(new Set());
   const pendingTasksRef = useRef<ShapeBuildTaskSummary[] | null>(null);
+  const flushScheduledRef = useRef(false);
+  const tasksMapRef = useRef<Map<string, ShapeBuildTaskSummary>>(new Map());
   const pendingDeleteIdsRef = useRef<Set<string>>(new Set());
   const tasksRef = useRef<ShapeBuildTaskSummary[]>(tasks);
+  const handleSnapshotRef = useRef<(tasks: RawTaskSummary[]) => void>(() => {});
+  const handleUpdateRef = useRef<(task: RawTaskSummary) => void>(() => {});
+  const handleDeleteRef = useRef<(taskId: string) => void>(() => {});
   const subscriptionRef = useRef<(() => void) | null>(null);
   const subscriptionIdRef = useRef(0);
 
   useEffect(() => {
     tasksRef.current = tasks;
+    tasksMapRef.current = new Map(tasks.map((task) => [task.taskId, task]));
   }, [tasks]);
 
   useEffect(() => {
@@ -102,13 +128,26 @@ export function useShapeBuildTasks(
 
   const flushTasks = useCallback((next: ShapeBuildTaskSummary[]) => {
     const cleaned = applyPendingDeletes(next);
+    if (isSameTaskList(cleaned, tasksRef.current)) {
+      pendingTasksRef.current = null;
+      return;
+    }
     setTasks(cleaned);
     pendingTasksRef.current = null;
+    tasksMapRef.current = new Map(cleaned.map((task) => [task.taskId, task]));
   }, [applyPendingDeletes, setTasks]);
 
   const scheduleFlush = useCallback((next: ShapeBuildTaskSummary[]) => {
     pendingTasksRef.current = next;
-    flushTasks(next);
+    if (flushScheduledRef.current) return;
+    flushScheduledRef.current = true;
+    queueMicrotask(() => {
+      flushScheduledRef.current = false;
+      const pending = pendingTasksRef.current;
+      if (pending) {
+        flushTasks(pending);
+      }
+    });
   }, [flushTasks]);
 
   const resolveTaskSummary = useCallback((task: RawTaskSummary): ShapeBuildTaskSummary => ({
@@ -117,26 +156,31 @@ export function useShapeBuildTasks(
   }), []);
 
   const mergeTask = useCallback((task: ShapeBuildTaskSummary) => {
-    const current = pendingTasksRef.current ?? tasksRef.current;
-    const idx = current.findIndex((entry) => entry.taskId === task.taskId);
-    if (idx >= 0) {
-      const currentTask = current[idx];
-      if (!currentTask) return current;
+    const baseList = pendingTasksRef.current ?? tasksRef.current;
+    const currentTask = tasksMapRef.current.get(task.taskId);
+    if (currentTask) {
       const currentSequence = typeof currentTask.sequence === 'number' ? currentTask.sequence : null;
       const nextSequence = typeof task.sequence === 'number' ? task.sequence : null;
       if (currentSequence !== null && nextSequence !== null && nextSequence <= currentSequence) {
-        return current;
+        console.debug('[ShapeBuildStep] task update ignored', {
+          taskId: task.taskId,
+          stage: task.stage,
+          currentSequence,
+          nextSequence,
+        });
+        return baseList;
       }
-      const next = [...current];
-      next[idx] = task;
-      return sortTasks(next);
     }
-    return sortTasks([...current, task]);
+    const nextMap = new Map(tasksMapRef.current);
+    nextMap.set(task.taskId, task);
+    tasksMapRef.current = nextMap;
+    return sortTasks(Array.from(nextMap.values()));
   }, []);
 
   const handleSnapshot = useCallback((next: RawTaskSummary[]) => {
     pendingDeleteIdsRef.current = new Set();
     const resolved = sortTasks(next.map(resolveTaskSummary));
+    tasksMapRef.current = new Map(resolved.map((task) => [task.taskId, task]));
     flushTasks(resolved);
     setError(null);
     setIsLoading(false);
@@ -152,11 +196,18 @@ export function useShapeBuildTasks(
 
   const handleDelete = useCallback((taskId: string) => {
     pendingDeleteIdsRef.current.add(taskId);
+    tasksMapRef.current.delete(taskId);
     const current = pendingTasksRef.current ?? tasksRef.current;
     scheduleFlush(current);
     setError(null);
     setIsLoading(false);
   }, [scheduleFlush, setError, setIsLoading]);
+
+  useEffect(() => {
+    handleSnapshotRef.current = handleSnapshot;
+    handleUpdateRef.current = handleUpdate;
+    handleDeleteRef.current = handleDelete;
+  }, [handleSnapshot, handleUpdate, handleDelete]);
 
   useEffect(() => {
     if (subscriptionRef.current) {
@@ -180,15 +231,15 @@ export function useShapeBuildTasks(
     const handleEvent = (event: BatchTaskUpdateEvent<RawTaskSummary>) => {
       if (cancelled || subscriptionIdRef.current !== subscriptionId) return;
       if (event.type === 'snapshot') {
-        handleSnapshot(event.tasks);
+        handleSnapshotRef.current(event.tasks);
         return;
       }
       if (event.type === 'update') {
-        handleUpdate(event.task);
+        handleUpdateRef.current(event.task);
         return;
       }
       if (event.type === 'delete') {
-        handleDelete(event.taskId);
+        handleDeleteRef.current(event.taskId);
       }
     };
 
@@ -224,9 +275,6 @@ export function useShapeBuildTasks(
     };
   }, [
     autoSubscribe,
-    handleDelete,
-    handleSnapshot,
-    handleUpdate,
     nodeId,
     setError,
     setIsLoading,
