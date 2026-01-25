@@ -66,7 +66,6 @@ export const TaskListVirtualized = ({
   resolveStatusColor,
   resolveTaskTitle,
   scrollToTaskId,
-  scrollRequestId,
   virtualize = true,
 }: TaskListProps) => {
   const { t } = useTranslation();
@@ -131,7 +130,7 @@ export const TaskListVirtualized = ({
     const index = tasks.findIndex((task) => task.taskId === scrollToTaskId);
     if (index < 0) return;
     virtualizer.scrollToIndex(index, { align: 'center' });
-  }, [scrollRequestId, scrollToTaskId, shouldVirtualize, tasks, virtualizer]);
+  }, [ scrollToTaskId, shouldVirtualize, tasks, virtualizer]);
 
   const virtualItems = virtualizer.getVirtualItems();
   useEffect(() => {
