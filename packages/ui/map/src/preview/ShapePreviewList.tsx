@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import type { GridColumn } from '@hierarchidb/ui-grid';
-import { FloatingWindow } from '@hierarchidb/ui-floating-window';
+import { FloatingWindow, useFloatingWindow } from '@hierarchidb/ui-floating-window';
 import {
   MapPreviewFloatingTable,
   type MapPreviewErrorSummaryById,
@@ -71,6 +71,8 @@ export type ShapePreviewListProps = {
   onClose?: () => void;
 };
 
+const WINDOW_PERSIST_KEY = 'hierarchidb:ui:floating-window:shape:features';
+
 const formatLogicalCode = (value: unknown) => {
   const text = String(value ?? '');
   if (text === 'N/A') {
@@ -113,6 +115,11 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
   onClose,
 }) => {
   const theme = useTheme();
+  const { windowState, handlers } = useFloatingWindow({
+    persistKey: WINDOW_PERSIST_KEY,
+    initialPosition: { x: 80, y: 140 },
+    initialSize: { width: 560, height: 420 },
+  });
   const [sortColumn, setSortColumn] = useState<string>('featureId');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const resolvedStatusLabels: MapPreviewStatusLabels = statusLabels ?? {
@@ -216,12 +223,8 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
   return (
     <FloatingWindow
       title={resolvedTitle}
-      initialState={{
-        position: { x: 80, y: 140 },
-        size: { width: 560, height: 420 },
-        isVisible: true,
-        isMinimized: false,
-      }}
+      initialState={windowState}
+      onStateChange={handlers.onStateChange}
       onClose={onClose}
     >
       <MapPreviewFloatingTable
