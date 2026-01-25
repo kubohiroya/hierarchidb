@@ -7,6 +7,9 @@ import {
   kinks as turfKinks,
   simplify as turfSimplify,
 } from '@turf/turf';
+import type { Topology } from 'topojson-specification';
+import { feature as topojsonFeature } from 'topojson-client';
+import { presimplify as topojsonPresimplify, simplify as topojsonSimplify } from 'topojson-simplify';
 import { geojson as geojsonApi } from 'flatgeobuf';
 import { applyFeatureFiltering, encodeFlatGeobufFromFeatureCollection, latToTileY, lonToTileX } from '@hierarchidb/gis-sdk';
 import type { AreaBasedToleranceConfig } from '@hierarchidb/gis-sdk';
@@ -35,6 +38,42 @@ const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureColl
     return { type: 'FeatureCollection', features };
   }
   return null;
+};
+
+const topojsonTextDecoder = new TextDecoder('utf-8');
+
+const decodeTopoJson = (buffer: ArrayBuffer): Topology => {
+  const text = topojsonTextDecoder.decode(new Uint8Array(buffer));
+  return JSON.parse(text) as Topology;
+};
+
+const resolveTopoJsonObject = (topology: Topology): Topology['objects'][string] | null => {
+  const keys = Object.keys(topology.objects ?? {});
+  const key = keys[0];
+  if (!key) return null;
+  return topology.objects[key] ?? null;
+};
+
+const normalizeTopoJsonCollection = (topology: Topology): FeatureCollection => {
+  const object = resolveTopoJsonObject(topology);
+  if (!object) return { type: 'FeatureCollection', features: [] };
+  const geojson = topojsonFeature(topology, object);
+  if (geojson.type === 'FeatureCollection') {
+    const features = Array.isArray(geojson.features) ? geojson.features : [];
+    return { ...geojson, features };
+  }
+  return { type: 'FeatureCollection', features: [geojson as Feature] };
+};
+
+const decompressGzip = async (buffer: ArrayBuffer): Promise<ArrayBuffer> => {
+  if (typeof DecompressionStream !== 'function') {
+    throw new Error('DecompressionStream is not available for gzip decompression');
+  }
+  const stream = new DecompressionStream('gzip');
+  const writer = stream.writable.getWriter();
+  await writer.write(new Uint8Array(buffer));
+  await writer.close();
+  return await new Response(stream.readable).arrayBuffer();
 };
 
 const describeBuffer = (buffer: ArrayBuffer): {
@@ -87,6 +126,39 @@ const decodeFetchCache = async (buffer: ArrayBuffer): Promise<FeatureCollection 
   return normalizeFeatureCollection(decoded as unknown);
 };
 
+const decodeTopoJsonFetchCache = async (params: {
+  buffer: ArrayBuffer;
+  compression?: string;
+  zTarget: number;
+  toleranceK: number;
+  areaBasedToleranceConfig: AreaBasedToleranceConfig;
+}): Promise<FeatureCollection | null> => {
+  const decompressed = params.compression === 'gzip'
+    ? await decompressGzip(params.buffer)
+    : params.buffer;
+  const topology = decodeTopoJson(decompressed);
+  let { collection, appliedToleranceK } = simplifyTopoJsonByZoom({
+    topology,
+    zTarget: params.zTarget,
+    toleranceK: params.toleranceK,
+    areaBasedToleranceConfig: params.areaBasedToleranceConfig,
+  });
+  let maxVertices = maxVerticesInCollection(collection);
+  if (maxVertices > MAX_VERTICES_PER_FEATURE) {
+    const retryToleranceK = appliedToleranceK * 1.5;
+    const retry = simplifyTopoJsonByZoom({
+      topology,
+      zTarget: params.zTarget,
+      toleranceK: retryToleranceK,
+      areaBasedToleranceConfig: params.areaBasedToleranceConfig,
+    });
+    const retryMaxVertices = maxVerticesInCollection(retry.collection);
+    collection = retry.collection;
+    maxVertices = retryMaxVertices;
+  }
+  return collection;
+};
+
 const EARTH_RADIUS_METERS = 6378137;
 const MVT_EXTENT = 4096;
 const MAX_VERTICES_PER_FEATURE = 65535;
@@ -109,6 +181,29 @@ const resolveTransformTolerance = (
   if (!Number.isFinite(baseTolerance)) return baseTolerance;
   if (zTarget <= 2) return 10.0;
   return 10.0;
+};
+
+const simplifyTopoJsonByZoom = (params: {
+  topology: Topology;
+  zTarget: number;
+  toleranceK: number;
+  areaBasedToleranceConfig: AreaBasedToleranceConfig;
+}): { topology: Topology; collection: FeatureCollection; appliedToleranceK: number } => {
+  const baseCollection = normalizeTopoJsonCollection(params.topology);
+  const appliedToleranceK = resolveLargeAreaToleranceForCollection(
+    baseCollection,
+    params.zTarget,
+    params.areaBasedToleranceConfig,
+    params.toleranceK,
+  );
+  const tolerance = resolveSimplifyToleranceDegrees(params.zTarget, appliedToleranceK);
+  if (!Number.isFinite(tolerance) || tolerance <= 0) {
+    return { topology: params.topology, collection: baseCollection, appliedToleranceK };
+  }
+  const presimplified = topojsonPresimplify(params.topology);
+  const simplified = topojsonSimplify(presimplified, tolerance);
+  const simplifiedCollection = normalizeTopoJsonCollection(simplified);
+  return { topology: simplified, collection: simplifiedCollection, appliedToleranceK };
 };
 
 const simplifyOnlyCollection = (
@@ -230,6 +325,17 @@ const countVerticesFromGeometry = (geometry?: Geometry | null): number => {
     return geometries.reduce((sum: number, child: Geometry) => sum + countVerticesFromGeometry(child), 0);
   }
   return countVertices(geometry.coordinates);
+};
+
+const maxVerticesInCollection = (collection: FeatureCollection): number => {
+  let maxVertices = 0;
+  for (const feature of collection.features) {
+    const vertexCount = countVerticesFromGeometry(feature.geometry);
+    if (vertexCount > maxVertices) {
+      maxVertices = vertexCount;
+    }
+  }
+  return maxVertices;
 };
 
 const countPolygonsFromGeometry = (geometry?: Geometry | null): number => {
@@ -1079,7 +1185,18 @@ export const createTransformByBandHandler = (
       stageLabel = 'decode';
       await updateTaskPhase(taskId, 'decode:start', 5);
       assertNotAborted(abortSignal);
-      const collection = await runStageWithLabel('decode', () => decodeFetchCache(fetchCache.data));
+      const collection = await runStageWithLabel('decode', () => {
+        if (fetchCache.format === 'topojson') {
+          return decodeTopoJsonFetchCache({
+            buffer: fetchCache.data,
+            compression: fetchCache.compression,
+            zTarget: band.zMax,
+            toleranceK: baseTolerance,
+            areaBasedToleranceConfig: transformConfig.areaBasedTolerance,
+          });
+        }
+        return decodeFetchCache(fetchCache.data);
+      });
       if (!collection || collection.features.length === 0) {
         return { status: 'failed', errorMessage: 'transform failed: empty fetch cache' };
       }
