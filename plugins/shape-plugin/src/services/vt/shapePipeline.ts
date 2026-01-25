@@ -848,6 +848,28 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
     runId: params.pipelineRunId ?? null,
     counts: await summarizeStageCounts(taskQueue, params.nodeId, 'fetch'),
   }));
+  const [queuedFetchTasks, runningFetchTasks] = await Promise.all([
+    listTasksByStageAndStatus(taskQueue, params.nodeId, 'fetch', 'queued'),
+    listTasksByStageAndStatus(taskQueue, params.nodeId, 'fetch', 'running'),
+  ]);
+  if (queuedFetchTasks.length > 0 || runningFetchTasks.length > 0) {
+    const now = Date.now();
+    await Promise.all(
+      [...queuedFetchTasks, ...runningFetchTasks].map((task) => (
+        updateTask(taskQueue, task.taskId, {
+          status: 'failed',
+          errorMessage: 'aborted: fetch stage completed with pending tasks',
+          completedAt: now,
+        })
+      )),
+    );
+    console.warn('[ShapeFetch][PipelineDiagnostics] fetch stage finalized pending tasks', JSON.stringify({
+      nodeId: params.nodeId,
+      runId: params.pipelineRunId ?? null,
+      queued: queuedFetchTasks.length,
+      running: runningFetchTasks.length,
+    }));
+  }
   if (shouldStopAfterStage(buildContinuationPolicy, await getFailedTaskCount(taskQueue, params.nodeId, 'fetch'))) {
     stopAfterStage = true;
   }
@@ -908,6 +930,28 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
         runId: params.pipelineRunId ?? null,
         counts: await summarizeStageCounts(taskQueue, params.nodeId, 'transform'),
       }));
+      const [queuedTransformTasks, runningTransformTasks] = await Promise.all([
+        listTasksByStageAndStatus(taskQueue, params.nodeId, 'transform', 'queued'),
+        listTasksByStageAndStatus(taskQueue, params.nodeId, 'transform', 'running'),
+      ]);
+      if (queuedTransformTasks.length > 0 || runningTransformTasks.length > 0) {
+        const now = Date.now();
+        await Promise.all(
+          [...queuedTransformTasks, ...runningTransformTasks].map((task) => (
+            updateTask(taskQueue, task.taskId, {
+              status: 'failed',
+              errorMessage: 'aborted: transform stage completed with pending tasks',
+              completedAt: now,
+            })
+          )),
+        );
+        console.warn('[ShapeTransform][PipelineDiagnostics] transform stage finalized pending tasks', JSON.stringify({
+          nodeId: params.nodeId,
+          runId: params.pipelineRunId ?? null,
+          queued: queuedTransformTasks.length,
+          running: runningTransformTasks.length,
+        }));
+      }
       if (shouldStopAfterStage(buildContinuationPolicy, await getFailedTaskCount(taskQueue, params.nodeId, 'transform'))) {
         stopAfterStage = true;
       }
