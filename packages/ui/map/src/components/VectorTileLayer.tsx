@@ -12,6 +12,11 @@ import type {
   VectorSourceSpecification,
 } from 'maplibre-gl';
 import type { MapLibreMapInstance } from '../types/maplibre-public.js';
+
+type MapLibreLayerUpdater = MapLibreMapInstance & {
+  setFilter?: (layerId: string, filter?: unknown) => void;
+  setLayerZoomRange?: (layerId: string, minzoom: number, maxzoom: number) => void;
+};
 import type { FeatureStateRecord, VectorTileProps } from '../types/unified-map-props.js';
 import { DEFAULT_MAP_CONFIG } from '../types/unified-map-props.js';
 import { loadMapLibreModule } from '../utils/maplibre-loader.js';
@@ -62,6 +67,10 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
   const prevFeatureStateRef = useRef<Map<string | number, FeatureStateRecord>>(new Map());
   const onTileRequestRef = useRef<VectorTileLayerProps['onTileRequest']>(onTileRequest);
   const paintRef = useRef<Record<string, unknown>>(normalizePaintLiteralArrays(paint ?? {}));
+  const layoutRef = useRef<Record<string, unknown>>({});
+  const filterRef = useRef<unknown>(filter ?? null);
+  const sourceConfigRef = useRef<{ sourceId?: string; tilesKey?: string; promoteId?: unknown } | null>(null);
+  const layerConfigRef = useRef<{ layerId?: string; sourceId?: string; layerType?: string; sourceLayer?: string } | null>(null);
 
   useEffect(() => {
     onTileRequestRef.current = onTileRequest;
@@ -187,12 +196,22 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
 
   // Add vector tile source
   useEffect(() => {
-    if (!map || !computedTiles) return;
+    if (!map || !computedTiles || !sourceId) return;
 
     const mapRef = map;
+    const tilesKey = computedTiles.join('|');
+    const prevConfig = sourceConfigRef.current;
+    const needsReplace = !prevConfig
+      || prevConfig.sourceId != sourceId
+      || prevConfig.tilesKey != tilesKey
+      || prevConfig.promoteId != promoteId;
 
-    // Remove existing source and layer if they exist
-    if (sourceId && mapRef.getSource(sourceId)) {
+    if (!needsReplace && mapRef.getSource(sourceId)) {
+      setSourceAdded(true);
+      return;
+    }
+
+    if (mapRef.getSource(sourceId)) {
       if (layerId && mapRef.getLayer(layerId)) {
         logLayerEvent('layer removed (pre-source)', { layerId, sourceId });
         mapRef.removeLayer(layerId);
@@ -201,7 +220,6 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
       mapRef.removeSource(sourceId);
     }
 
-    // Create vector tile source
     const vectorTileSource: VectorSourceSpecification & SourceSpecification = {
       type: 'vector',
       tiles: computedTiles,
@@ -211,14 +229,16 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
     if (promoteId) {
       vectorTileSource.promoteId = promoteId as VectorSourceSpecification['promoteId'];
     }
-    if (!sourceId) return;
+
     try {
       mapRef.addSource(sourceId, vectorTileSource as SourceSpecification);
       logLayerEvent('source added', { sourceId, minzoom, maxzoom });
       setSourceAdded(true);
+      sourceConfigRef.current = { sourceId, tilesKey, promoteId };
     } catch (error) {
       if (error instanceof Error && error.message.includes('already exists')) {
         setSourceAdded(true);
+        sourceConfigRef.current = { sourceId, tilesKey, promoteId };
       } else {
         console.error('Failed to add vector tile source:', error);
       }
@@ -233,20 +253,17 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
               logLayerEvent('layer removed (cleanup)', { layerId });
               mapRef.removeLayer(layerId);
             }
-            if (!sourceId) {
-              return;
-            }
-            if (mapRef.getSource(sourceId)) {
-              logLayerEvent('source removed (cleanup)', { sourceId });
-              mapRef.removeSource(sourceId);
-            }
+          }
+          if (mapRef.getSource(sourceId)) {
+            logLayerEvent('source removed (cleanup)', { sourceId });
+            mapRef.removeSource(sourceId);
           }
         }
       } catch (error) {
         console.debug('VectorTileLayer cleanup skipped due to map atoms:', error);
       }
     };
-  }, [map, computedTiles, sourceId, minzoom, maxzoom, layerId, promoteId]);
+  }, [map, computedTiles, sourceId, promoteId, layerId, minzoom, maxzoom]);
 
   // Apply feature-atoms values
   useEffect(() => {
@@ -314,14 +331,23 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
 
   // Add layer
   useEffect(() => {
-    if (!map || !sourceAdded) return;
+    if (!map || !sourceAdded || !layerId) return;
 
     const mapRef = map;
+    const prevLayerConfig = layerConfigRef.current;
+    const layerConfigKey = { layerId, sourceId, layerType, sourceLayer };
+    const needsReplace = !prevLayerConfig
+      || prevLayerConfig.layerId != layerConfigKey.layerId
+      || prevLayerConfig.sourceId != layerConfigKey.sourceId
+      || prevLayerConfig.layerType != layerConfigKey.layerType
+      || prevLayerConfig.sourceLayer != layerConfigKey.sourceLayer;
 
-    setLayerAdded(false);
+    if (!needsReplace && mapRef.getLayer(layerId)) {
+      setLayerAdded(true);
+      return;
+    }
 
-    // Remove existing layer if it exists
-    if (layerId && mapRef.getLayer(layerId)) {
+    if (mapRef.getLayer(layerId)) {
       logLayerEvent('layer removed (pre-add)', { layerId });
       mapRef.removeLayer(layerId);
     }
@@ -332,30 +358,22 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
         type: layerType,
         source: sourceId,
         paint: paintRef.current,
-        layout: {
-          visibility: visible ? 'visible' : 'none',
-          ...layout,
-        },
         minzoom,
         maxzoom,
       };
 
-      // Add source-layer if specified (for vector tiles)
       if (sourceLayer) {
         layerConfig['source-layer'] = sourceLayer;
-      }
-
-      // Add filter if specified
-      if (filter && Array.isArray(filter)) {
-        layerConfig.filter = filter;
       }
 
       mapRef.addLayer(layerConfig);
       logLayerEvent('layer added', { layerId, sourceId, layerType });
       setLayerAdded(true);
+      layerConfigRef.current = layerConfigKey;
     } catch (error) {
       if (layerId && mapRef.getLayer && mapRef.getLayer(layerId)) {
         setLayerAdded(true);
+        layerConfigRef.current = layerConfigKey;
       }
       if (!(error instanceof Error && error.message.includes('already exists'))) {
         console.error('Failed to add layer:', error);
@@ -376,18 +394,59 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
         console.debug('VectorTileLayer layer cleanup skipped due to map atoms:', error);
       }
     };
-  }, [map, sourceAdded, layerId, layerType, sourceId, layout, filter, visible, minzoom, maxzoom, sourceLayer]);
+  }, [map, sourceAdded, layerId, layerType, sourceId, sourceLayer, minzoom, maxzoom]);
 
-  // Update visibility
+
+  // Update layout properties without re-creating the layer
   useEffect(() => {
     if (!layerId || !map || !map.getLayer || !map.getLayer(layerId)) return;
+    const nextLayout: Record<string, unknown> = { visibility: visible ? 'visible' : 'none', ...layout };
+    const prevLayout: Record<string, unknown> = layoutRef.current;
+    layoutRef.current = nextLayout;
+    const keys = new Set([...Object.keys(prevLayout), ...Object.keys(nextLayout)]);
+    keys.forEach((key) => {
+      const prev = prevLayout[key];
+      const next = nextLayout[key];
+      if (JSON.stringify(prev) === JSON.stringify(next)) return;
+      try {
+        map.setLayoutProperty(layerId, key, next as never);
+      } catch (error) {
+        console.debug('VectorTileLayer layout update skipped:', error);
+      }
+    });
+  }, [map, layerId, layout, visible]);
 
+  // Update filter without re-creating the layer
+  useEffect(() => {
+    if (!layerId || !map || !map.getLayer || !map.getLayer(layerId)) return;
+    const mapRef = map as MapLibreLayerUpdater;
+    if (typeof mapRef.setFilter !== 'function') return;
+    const prevFilter = filterRef.current;
+    filterRef.current = filter ?? null;
+    if (JSON.stringify(prevFilter) === JSON.stringify(filter ?? null)) return;
     try {
-      map.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none');
+      if (filter && Array.isArray(filter)) {
+        mapRef.setFilter(layerId, filter);
+      } else {
+        mapRef.setFilter(layerId, undefined);
+      }
     } catch (error) {
-      console.warn('VectorTileLayer visibility update error:', error);
+      console.debug('VectorTileLayer filter update skipped:', error);
     }
-  }, [map, layerId, visible]);
+  }, [map, layerId, filter]);
+
+  // Update zoom range without re-creating the layer
+  useEffect(() => {
+    if (!layerId || !map || !map.getLayer || !map.getLayer(layerId)) return;
+    const mapRef = map as MapLibreLayerUpdater;
+    if (typeof mapRef.setLayerZoomRange !== 'function') return;
+    if (typeof minzoom !== 'number' || typeof maxzoom !== 'number') return;
+    try {
+      mapRef.setLayerZoomRange(layerId, minzoom, maxzoom);
+    } catch (error) {
+      console.debug('VectorTileLayer zoom range update skipped:', error);
+    }
+  }, [map, layerId, minzoom, maxzoom]);
 
   return null;
 };
