@@ -1,9 +1,10 @@
 import React from 'react';
 import { Box, Alert, Button, CircularProgress, Typography, Paper } from '@mui/material';
 import { TableRows as TableRowsIcon } from '@mui/icons-material';
+import type { MapViewState } from '@hierarchidb/ui-map';
 import { LayerSetVisibilityPanel, ResourceLayerMap, ScreenCenterSnackbar, ShapePreviewList } from '@hierarchidb/ui-map';
 import { useShapePreviewStepView } from './useShapePreviewStepView.js';
-import type { ShapeEntity } from '../../../common/types/index.js';
+import type { ShapeEntity, ShapePreviewMapView } from '../../../common/types/index.js';
 
 export type ShapeDialogStepProps = {
   nodeId: string;
@@ -12,8 +13,30 @@ export type ShapeDialogStepProps = {
   disabled?: boolean;
 };
 
-export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId }) => {
+const isFiniteNumber = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value);
+
+const arePreviewViewsClose = (a?: ShapePreviewMapView | null, b?: ShapePreviewMapView | null): boolean => {
+  if (!a || !b) return false;
+  const eps = 1e-6;
+  return (
+    Math.abs(a.longitude - b.longitude) < eps &&
+    Math.abs(a.latitude - b.latitude) < eps &&
+    Math.abs(a.zoom - b.zoom) < eps
+  );
+};
+
+const toPreviewMapView = (viewState: MapViewState): ShapePreviewMapView | null => {
+  const { longitude, latitude, zoom } = viewState;
+  if (!isFiniteNumber(longitude) || !isFiniteNumber(latitude) || !isFiniteNumber(zoom)) {
+    return null;
+  }
+  return { longitude, latitude, zoom };
+};
+
+export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId, onChange }) => {
   const [featureWindowOpen, setFeatureWindowOpen] = React.useState(true);
+  const lastPersistedViewRef = React.useRef<ShapePreviewMapView | null>(data.previewMapView ?? null);
   const {
     t,
     featureMetadataLoading,
@@ -52,6 +75,20 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
   React.useEffect(() => {
     setFeatureWindowOpen(true);
   }, [nodeId]);
+  React.useEffect(() => {
+    lastPersistedViewRef.current = data.previewMapView ?? null;
+  }, [data.previewMapView?.latitude, data.previewMapView?.longitude, data.previewMapView?.zoom]);
+
+  const handleViewStateCommit = React.useCallback(
+    (viewState: MapViewState) => {
+      const next = toPreviewMapView(viewState);
+      if (!next) return;
+      if (arePreviewViewsClose(lastPersistedViewRef.current, next)) return;
+      lastPersistedViewRef.current = next;
+      onChange({ previewMapView: next });
+    },
+    [onChange],
+  );
   const renderMapPreview = () => {
     return (
       <Box
@@ -145,6 +182,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId 
           }}
           onLoad={setMapInstance}
           onViewStateChange={handleViewStateChange}
+          onMoveEnd={handleViewStateCommit}
           identifyFeatureOnClick={{
             layerIds: vectorLayerIds,
             disableDefaultSnackbar: true,

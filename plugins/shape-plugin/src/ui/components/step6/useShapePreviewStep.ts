@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import { useTheme } from '@mui/material/styles';
-import type { DataSourceName, FetchTaskPayload, ShapeEntity } from '../../../common/types/index.js';
+import type {
+  DataSourceName,
+  FetchTaskPayload,
+  ShapeEntity,
+  ShapePreviewMapView,
+} from '../../../common/types/index.js';
 import { isShapePreviewMetadataEnabled } from '../../../common/config/previewFlags.js';
 import { toNodeId, type NodeId } from '@hierarchidb/common-types';
 import { useTranslation } from '../../i18n.js';
@@ -180,7 +185,7 @@ const buildLookupKey = (countryCode?: string, adminLevel?: number): string | nul
 };
 
 const buildAdminGroupKey = (row: ShapePreviewFeatureRow): string | null => {
-  if (row.dataSource !== 'geoboundaries') return null;
+  if (row.dataSource !== 'geoboundaries' && row.dataSource !== 'geoboundaries-topojson') return null;
   if (row.adminLevel !== 1) return null;
   const countryCode = normalizeCountryCodeValue(row.countryCode);
   const adminKey = normalizeText(row.adminCode) ?? normalizeText(row.adminName);
@@ -236,6 +241,23 @@ const fetchTile = async (
   const data = await shapeQueryAPIImpl.getVectorTile(toNodeId(nodeId), z, x, y);
   if (!data) return null;
   return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+};
+
+const resolvePersistedViewState = (
+  view?: ShapePreviewMapView,
+): MapWithVectorTilesProps['initialViewState'] | null => {
+  if (!view) return null;
+  const { longitude, latitude, zoom } = view;
+  if (!Number.isFinite(longitude) || !Number.isFinite(latitude) || !Number.isFinite(zoom)) {
+    return null;
+  }
+  return {
+    longitude,
+    latitude,
+    zoom,
+    bearing: 0,
+    pitch: 0,
+  };
 };
 
 export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string) => {
@@ -577,6 +599,11 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     };
   }, [filteredMetadataRows]);
 
+  const persistedViewState = useMemo(
+    () => resolvePersistedViewState(data.previewMapView),
+    [data.previewMapView?.latitude, data.previewMapView?.longitude, data.previewMapView?.zoom],
+  );
+
   const normalizedTransformErrorRows = useMemo(() => transformErrorRows.map((row) => {
     const context = resolveSourceContext({
       countryCode: row.countryCode,
@@ -604,6 +631,9 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   }), [resolveSourceContext, transformErrorRows]);
 
   const initialViewState = useMemo<MapWithVectorTilesProps['initialViewState']>(() => {
+    if (persistedViewState) {
+      return persistedViewState;
+    }
     if (!selectionBounds) {
       return DEFAULT_VIEW;
     }
@@ -616,10 +646,10 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       bearing: 0,
       pitch: 0,
     };
-  }, [selectionBounds]);
+  }, [persistedViewState, selectionBounds]);
 
   useEffect(() => {
-    if (!mapInstance || !selectionBounds) return;
+    if (!mapInstance || !selectionBounds || persistedViewState) return;
     const bounds: [[number, number], [number, number]] = [
       [selectionBounds.minLng, selectionBounds.minLat],
       [selectionBounds.maxLng, selectionBounds.maxLat],

@@ -2,6 +2,12 @@ import type { NodeId, ISO2 } from '@hierarchidb/common-types';
 import type { Geometry } from 'geojson';
 import type { ShapeBuildConfig } from './build.js';
 
+export interface ShapePreviewMapView {
+  longitude: number;
+  latitude: number;
+  zoom: number;
+}
+
 export interface ShapeEntity {
   // Identifiers
   //id?: string;
@@ -32,6 +38,9 @@ export interface ShapeEntity {
   tileSummary?: { tiles: number; totalBytes: number; zoomMin?: number; zoomMax?: number };
   buildStartedAt?: number;
   buildFinishedAt?: number;
+
+  // UI Preview
+  previewMapView?: ShapePreviewMapView;
 }
 
 export type SelectedArrayByCountries = Record<ISO2, boolean[]>;
