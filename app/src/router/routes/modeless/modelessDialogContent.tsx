@@ -1302,7 +1302,7 @@ type ShapeListState = {
   errorSummaryById: MapPreviewErrorSummaryById;
 };
 
-const useShapeListState = (nodeId: NodeId | null): ShapeListState => {
+const useShapeListState = (_nodeId: NodeId | null): ShapeListState => {
   const mapLayerInfo = useAtomValue(mapLayerInfoAtom);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [matchedFeatureIds, setMatchedFeatureIds] = useState<string[]>([]);
