@@ -278,7 +278,7 @@
         "plugins/shape-plugin/dist/*"
       ],
       "@hierarchidb/spreadsheet-plugin": [
-        "plugins/spreadsheet-plugin/dist/index.d.ts"
+        "plugins/spreadsheet-plugin/dist/index2.d.ts"
       ],
       "@hierarchidb/spreadsheet-plugin/*": [
         "plugins/spreadsheet-plugin/dist/*"

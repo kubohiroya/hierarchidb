@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-types';
 
-export type ShapeDataSourceName = 'naturalearth' | 'geoboundaries' | 'gadm' | 'openstreetmap';
+export type ShapeDataSourceName = 'naturalearth' | 'geoboundaries' | 'geoboundaries-topojson' | 'gadm' | 'openstreetmap';
 export type ShapeBuildStage =
   | 'fetch'
   | 'transform'

@@ -1,4 +1,129 @@
+2378) fix/ui/context-menu-order (P1) — 進行中 (2026-01-26)
+- ブランチ名: fix/ui/context-menu-order
+- 依存: なし
+- 受け入れ基準: TreeTable/TreeNodeInfoPanel/BreadCrumbのコンテキストメニューが Create||Cut|Copy|Duplicate|Move to Trash||Visible||Create|Edit|Build|Preview の順になる／区切りと文言は既存のまま維持される／TASKS.mdに運用ログを記載する
+- 影響範囲: `app/src/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert する
+- チェックリスト:
+  - TreeTableのメニュー順を修正する
+  - TreeNodeInfoPanelのメニュー順を修正する
+  - BreadCrumbのメニュー順を修正する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 07:45 JST TreeTable/TreeNodeInfoPanel/BreadCrumbのコンテキストメニュー並び順修正に着手。
+  - done: 2026-01-26 07:48 JST メニュー並び順を更新（未検証）。
+
+2379) fix/ui/app-init-loading-blank (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/ui/app-init-loading-blank
+- 依存: なし
+- 受け入れ基準: 初期化開始直後からローディングUIが表示され白画面の長時間露出が解消される／LinearProgress が繰り返しリセットされる原因を特定して抑止する／初期化進捗UIの状態遷移が安定し再マウントでチラつかない／pnpm --filter @hierarchidb/app typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `app/src/**`（調査後に確定）
+- ロールバック手順: 初期化UIの差分を revert し、現行の初期化表示へ戻す
+- チェックリスト:
+  - 初期化UIが表示されるまでの経路と白画面の原因を特定する
+  - LinearProgress の再初期化ループ原因を特定する
+  - 初期化UIの表示タイミングと状態遷移を安定化させる
+  - pnpm --filter @hierarchidb/app typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 16:20 JST 初期化UIの白画面/再読み込み問題の調査に着手。
+  - update: 2026-01-26 16:35 JST entry.client で先行レンダリングし、index.html に初期ローディングUIを追加。
+  - done: 2026-01-26 16:45 JST pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
+
+2377) feat/shape/geoboundaries-topojson-pipeline (P1) — 進行中 (2026-01-26)
+- ブランチ名: feat/shape/geoboundaries-topojson-pipeline
+- 依存: なし
+- 受け入れ基準: step2でgeoBoundariesと並置のサブタイプgeoBoundaries:TopoJSONが選択可能になる／step5 fetchでgeoBoundaries:TopoJSONはTopoJSON取得→(カナダ/グリーンランド時)TopoJSON merge→ズーム率簡略化→topojson+gzipでキャッシュ保存する／step5 fetchでgeoBoundariesはGeoJSON取得→(カナダ/グリーンランド時)TopoJSON変換+merge→GeoJSONへ戻す→ズーム率簡略化→flatgeobufでキャッシュ保存する／transformでキャッシュ形式に応じた処理ができTopoJSONキャッシュはgzip展開→面積px^2閾値に基づく2通りのtoleranceをズーム率で評価し必要なら再簡略化→最終的にflatgeobufでキャッシュ保存する／vtステージの挙動は維持される／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert する
+- チェックリスト:
+  - step2のデータソースにgeoBoundaries:TopoJSONを追加する
+  - step5 fetchのデータソース別ストラテジーを拡張する
+  - transformのキャッシュ形式別処理を拡張する
+  - vtステージの既存挙動が維持されることを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 15:10 JST shapeのgeoBoundaries:TopoJSON追加とfetch/transform拡張に着手。
+  - blocked: 2026-01-26 15:32 JST pnpm --filter @hierarchidb/shape-plugin typecheck が topojson型未解決/ShapeDataSourceName不一致/FetchCacheRecord format未定義で失敗。
+  - update: 2026-01-26 15:44 JST plugin-service-api/shape-store/gis-sdkのDataSource型とFetchCacheRecordを更新し、vt-orchestratorへtypes追加方針を確定。
+  - update: 2026-01-26 15:49 JST pnpm --filter @hierarchidb/plugin-service-api build / pnpm --filter @hierarchidb/shape-store build / pnpm --filter @hierarchidb/gis-sdk build を実行（tsdown define警告あり）。
+  - update: 2026-01-26 15:53 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-01-26 16:02 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck/build exit 0 を確認（tsdown define警告あり）。
+  - update: 2026-01-26 16:05 JST pnpm install 実行、peer dependency warning を記録。
+  - blocked: 2026-01-26 16:10 JST pnpm typecheck が route-plugin の既存型エラー（LocationPointId/ROUTE_MODES/RouteMode未export）で失敗。
+  - update: 2026-01-26 16:15 JST route-plugin の型エラー解消に向け export 差分の確認に着手。
+  - update: 2026-01-26 07:49 JST route-plugin の import 参照先を route-store/location-store へ修正し、pnpm --filter @hierarchidb/location-plugin build / pnpm --filter @hierarchidb/route-plugin build を実行（tsdown define警告あり）。
+  - update: 2026-01-26 07:49 JST pnpm --filter @hierarchidb/spreadsheet-plugin build を実行（tsdown define警告あり）。
+  - update: 2026-01-26 07:49 JST @hierarchidb/spreadsheet-plugin の types を dist/index2.d.ts へ切替（tsconfig.base.json と package.json）。
+  - done: 2026-01-26 07:53 JST pnpm typecheck exit 0 を確認（tsdown define警告あり）。
+
+2376) fix/ui-map/vector-tile-layer-flap (P1) — 進行中 (2026-01-26)
+- ブランチ名: fix/ui-map/vector-tile-layer-flap
+- 依存: なし
+- 受け入れ基準: VectorTileLayer の add/remove が連続発生しない／/map で layer が安定して 1 回のみ登録される／既存のレイヤー切替や再読み込み時の挙動が維持される／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert する
+- チェックリスト:
+  - add/remove 連続発生の原因を特定する
+  - layer 登録を安定化させる
+  - 既存挙動が維持されることを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 13:12 JST VectorTileLayer の add/remove 連続発生調査に着手。
+  - blocked: 2026-01-26 13:16 JST pnpm --filter @hierarchidb/ui-map typecheck が VectorTileLayer の型エラーで失敗。
+  - blocked: 2026-01-26 13:18 JST pnpm --filter @hierarchidb/ui-map typecheck が setLayerZoomRange の型エラーで失敗。
+  - update: 2026-01-26 13:20 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
+2376) feat/shape/step6-preview-map-persist (P1) — 完了 (2026-01-26)
+- ブランチ名: feat/shape/step6-preview-map-persist
+- 依存: なし
+- 受け入れ基準: shape step6 previewの地図中心座標/ズーム率がShapeEntityに永続化され、再読込で復元される／未保存の既存データは既定値で表示が維持される／型定義と保存/読込経路が整合している／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/**`, `packages/runtime-worker/src/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert する
+- チェックリスト:
+  - ShapeEntityに中心座標/ズーム率を追加する
+  - step6 previewの保存/復元経路を接続する
+  - 既存データの既定値を定義する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 13:20 JST shape step6 preview地図の中心/ズーム永続化に着手。
+  - update: 2026-01-26 13:30 JST ShapeEntityにpreviewMapViewを追加し、step6 previewでmap viewの保存/復元を接続。
+  - done: 2026-01-26 13:31 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+2375) fix/ui-map/route-list-empty-flap (P1) — 進行中 (2026-01-26)
+- ブランチ名: fix/ui-map/route-list-empty-flap
+- 依存: なし
+- 受け入れ基準: /map のフローティング route 一覧で "No data available" と "No visible feature" が激しく切り替わらない／表示条件が一貫している／既存の表示・検索・フィルタ挙動を維持する／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert する
+- チェックリスト:
+  - 表示切替の発生条件を特定する
+  - 空表示の条件を安定化させる
+  - 既存の表示・検索・フィルタ挙動が維持されることを確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 12:26 JST /map の route 一覧で空表示の切替フラップ調査に着手。
+  - update: 2026-01-26 12:55 JST viewportIdSet のSet再生成を抑制し、空表示のチラつき原因を切り分け。
+  - update: 2026-01-26 13:05 JST viewportFeatureIds 未準備でも layer 存在時は空Setを返し、空表示文言のフラップを抑制。
+  - update: 2026-01-26 13:07 JST pnpm --filter @hierarchidb/app typecheck exit 0 を確認（tsdown define 警告あり）。
+  - update: 2026-01-26 12:58 JST pnpm --filter @hierarchidb/app typecheck exit 0 を確認（tsdown define 警告あり）。
+  - update: 2026-01-26 12:35 JST visibleIds を Set で安定化し、emptyMessage の切替フラップを抑制。
+  - update: 2026-01-26 12:40 JST pnpm --filter @hierarchidb/app typecheck exit 0 を確認（tsdown define 警告あり）。
+2374) fix/shape/step6-features-table-stability (P1) — 進行中 (2026-01-26)
+- ブランチ名: fix/shape/step6-features-table-stability
+- 依存: なし
+- 受け入れ基準: Step6のメタデータ一覧テーブルでカラム幅/行高が安定し、表示の振動が発生しない／データ更新中でもスクロール位置のジャンプが起きない／既存の表示内容と並び順が維持される／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert する
+- チェックリスト:
+  - 振動の原因（可変レイアウト要因）を特定する
+  - カラム幅/行高を安定化させる
+  - スクロール位置の安定性を確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 12:15 JST Step6メタデータ一覧のレイアウト振動調査に着手。
+  - update: 2026-01-26 12:20 JST MapPreviewFloatingTable のテーブルレイアウト固定（fixed）とセルのnowrap/ellipsisを追加し、列幅/行高の振動を抑制。
+  - update: 2026-01-26 12:21 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
 2357) fix/ui-map/clamp-zoom-to-band (P1) — 進行中 (2026-01-26)
+- update: 2026-01-26 12:10 JST map画面/shape step6 のズーム上限超過の原因調査に着手。
 - ブランチ名: fix/ui-map/clamp-zoom-to-band
 - 依存: なし
 - 受け入れ基準: ui-map の地図表示で共通ズーム帯設定の範囲外はクランプされる／初期表示とユーザー操作の両方で範囲外にならない／再現テストを追加しグリーン化する／pnpm --filter @hierarchidb/ui-map typecheck が exit 0／pnpm --filter @hierarchidb/ui-map test が exit 0／TASKS.md に運用ログを記載する
@@ -12,6 +137,18 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-26 11:35 JST ui-mapのズームクランプ対応に着手。
+  - update: 2026-01-26 11:45 JST MapLibreMapの初期/更新/操作のズームを共通ズーム帯のmin/maxにクランプ。
+  - update: 2026-01-26 12:05 JST minZoom/maxZoom を数値に確定するガードを追加し型エラーを修正。
+  - update: 2026-01-26 11:46 JST ズームクランプのユニットテストを追加。
+  - done: 2026-01-26 11:47 JST pnpm --filter @hierarchidb/ui-map typecheck/test exit 0 を確認。
+  - update: 2026-01-26 13:05 JST map画面/shape step6でクランプ未反映の再調査と再現テスト整備に着手。
+  - update: 2026-01-26 13:25 JST MapLibreMapで解決済みmin/maxをMapLibre propsに反映し、mapOptions欠落時の再現テストを追加。
+  - update: 2026-01-26 13:30 JST MapPage/Shape Step6で共通ズーム帯設定からmin/maxを適用。
+  - done: 2026-01-26 13:35 JST pnpm --filter @hierarchidb/ui-map test/typecheck exit 0、pnpm --filter @hierarchidb/app typecheck exit 0、pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-01-26 13:50 JST MapPreviewFloatingTableの例外（maxHeight未定義）と未捕捉エラーの調査に着手。
+  - update: 2026-01-26 14:10 JST MapPreviewFloatingTableでmaxHeightの参照漏れを修正し、再現テストを追加。
+  - update: 2026-01-26 14:12 JST pnpm --filter @hierarchidb/ui-grid build でdist型を更新。
+  - done: 2026-01-26 14:15 JST pnpm --filter @hierarchidb/ui-map test/typecheck exit 0 を確認。
 
 2356) fix/shape/step5-vt-status-flapping (P1) — 進行中 (2026-01-26)
   - update: 2026-01-26 11:20 JST task更新の順序判定をsequenceで統一する方針の確認に着手。
@@ -94,6 +231,52 @@
   - update: 2026-01-25 10:26 JST TaskProgressBarにドラッグ追従を追加し、pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。クリックジャンプはコード上のonClickで動作確認（手元実行での確認は未実施）。
   - update: 2026-01-25 10:33 JST ドラッグ追従のスクロール更新をデバウンス化し、pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
   - update: 2026-01-25 10:36 JST デバウンス内でpointer event参照が無効になる問題を修正し、pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2374) feat/ui-floating-window/persist-shape-feature-window (P2) — 完了 (2026-01-25)
+- ブランチ名: feat/ui-floating-window/persist-shape-feature-window
+- 依存: なし
+- 受け入れ基準: shapeのFeaturesフローティングウィンドウの位置/サイズ/表示モードがJSON文字列で永続化される／nodeTypeで区別しnodeIdで区別しないキー体系を使う／再表示で復元される／TASKS.mdに運用ログを記載する
+- 影響範囲: `packages/ui/map/src/preview/ShapePreviewList.tsx`
+- ロールバック手順: 永続化キーと状態同期の差分を revert する
+- チェックリスト:
+  - 永続化キーの階層設計を定義する
+  - FloatingWindowの状態を永続化/復元する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-25 14:22 JST shape Featuresフローティングウィンドウの永続化対応に着手。
+  - done: 2026-01-25 14:23 JST shape用の永続化キーを定義してFloatingWindow状態を保存/復元し、pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
+
+2375) plan/ui-grid/tanstack-migration (P1) — 完了 (2026-01-25)
+- ブランチ名: plan/ui-grid/tanstack-migration
+- 依存: なし
+- 受け入れ基準: TanStack Table移行のExecPlanを作成し、機能要件（仮想化/列可視性/リサイズ+永続化/ソート+永続化/インライン編集/行選択/グルーピング/検索）と永続化キー設計を明記する／TASKS.mdに運用ログを記載する
+- 影響範囲: `plans/tanstack-grid-migration-execplan.md`
+- ロールバック手順: ExecPlan作成差分を revert する
+- チェックリスト:
+  - ExecPlanを作成する
+  - 保存キーの設計とグルーピング方針を明記する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-25 18:24 JST TanStack Table移行のExecPlan作成に着手。
+  - done: 2026-01-25 18:25 JST ExecPlanを作成し、永続化キー設計とグルーピング方針を明記。
+
+2376) feat/ui-grid/tanstack-grid-implementation (P1) — 進行中 (2026-01-25)
+- ブランチ名: feat/ui-grid/tanstack-grid-implementation
+- 依存: なし
+- 受け入れ基準: TanStack Tableベースの新グリッドが仮想化/列可視性/列リサイズ+永続化/ソート+永続化/インライン編集/行選択/グルーピング/検索を支援する／shape Step6と/mapのshape一覧でADMグルーピングが有効になる／TASKS.mdに運用ログを記載する
+- 影響範囲: `packages/ui/data-grid/src/TanstackDataGrid.tsx`, `packages/ui/data-grid/src/storage/gridStateStorage.ts`, `packages/ui/map/src/preview/MapPreviewFloatingTable.tsx`, `packages/ui/map/src/preview/ShapePreviewList.tsx`, `app/src/router/routes/modeless/modelessDialogContent.tsx`, `packages/ui/map/src/preview/RoutePreviewList.tsx`, `packages/ui/data-grid/package.json`
+- ロールバック手順: 新グリッド追加とMapPreviewFloatingTable置換差分を revert する
+- チェックリスト:
+  - TanStack Tableベースの新グリッドを追加する
+  - localStorage永続化のキーと保存処理を実装する
+  - shape Step6と/mapでグルーピング設定を適用する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-25 18:40 JST TanStack Table移行の実装に着手。
+  - update: 2026-01-25 22:01 JST TanStack Grid実装作業を再開。
+  - update: 2026-01-25 22:43 JST TanstackDataGridにソート操作UI（▲▼）を追加し、pnpm installとui-grid/ui-map/appのtypecheckを実行。
+  - update: 2026-01-25 22:53 JST TanstackDataGridの列幅ドラッグリサイズをTreeTableCore実装に合わせて対応開始。
+  - update: 2026-01-25 22:55 JST TanstackDataGridの列幅ドラッグリサイズを実装し、pnpm --filter @hierarchidb/ui-grid typecheck / pnpm --filter @hierarchidb/ui-map typecheck / pnpm --filter @hierarchidb/app typecheck exit 0 を確認。
 
 2369) feat/app/dev-maplibre-debug-tiles (P2) — 完了 (2026-01-25)
 - ブランチ名: feat/app/dev-maplibre-debug-tiles
@@ -925,6 +1108,21 @@
   - start: 2026-01-24 23:18 JST Delete tile index + tile data cache後のStart Buildクラッシュ再調査に着手。
   - update: 2026-01-24 23:21 JST tile relationsの再構築結果を再読込せず、再構築中にtileBuffersを組み立てるよう最適化。
   - done: 2026-01-24 23:21 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2345) feat/shape/step6-preview-map-state-persist (P1) — 進行中 (2026-01-25)
+- ブランチ名: feat/shape/step6-preview-map-state-persist
+- 依存: なし
+- 受け入れ基準: Step6プレビューの地図中心座標とズーム率がShapeEntityに保存される／再度Step6を開いた際に保存値が復元される／既存のプレビュー操作や保存フローに影響しない／pnpm typecheck が exit 0（必要なら該当パッケージで実行）／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/**`（調査後に確定）
+- ロールバック手順: 地図状態永続化の差分を revert する
+- チェックリスト:
+  - Step6プレビューの中心座標/ズーム率の保存箇所を特定する
+  - ShapeEntityへ永続化する
+  - Step6再表示時に保存値が復元されることを確認する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-25 18:13 JST Step6プレビュー地図状態の永続化対応に着手。
 
 2342) docs/shape/step4-delete-vt-cache-copy (P1) — 完了 (2026-01-24)
 - ブランチ名: docs/shape/step4-delete-vt-cache-copy

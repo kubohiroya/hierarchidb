@@ -1355,6 +1355,7 @@ function requireDataSourceName(value: unknown, context: string): DataSourceName 
 function isDataSourceName(value: string): value is DataSourceName {
   return value === 'naturalearth' ||
     value === 'geoboundaries' ||
+    value === 'geoboundaries-topojson' ||
     value === 'gadm' ||
     value === 'openstreetmap';
 }

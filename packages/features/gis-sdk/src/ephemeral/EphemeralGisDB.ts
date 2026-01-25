@@ -7,6 +7,8 @@ export interface FetchCacheRecord {
   id: string;
   nodeId: NodeId;
   data: ArrayBuffer;
+  format?: 'flatgeobuf' | 'topojson';
+  compression?: 'gzip' | 'none';
   featureCount: number;
   bbox: [number, number, number, number];
   downloadTime: number;

@@ -5,10 +5,10 @@
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "types": "dist/index2.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./dist/index2.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
@@ -40,7 +40,7 @@
         "dist/icon/index.d.ts"
       ],
       "*": [
-        "dist/index.d.ts"
+        "dist/index2.d.ts"
       ]
     }
   },

@@ -28,7 +28,10 @@
     "@turf/turf": "^7.0.0",
     "flatgeobuf": "^4.4.0",
     "geojson-vt": "^3.2.1",
-    "@hierarchidb/shape-store": "workspace:*"
+    "@hierarchidb/shape-store": "workspace:*",
+    "topojson-client": "^3.1.0",
+    "topojson-server": "^3.0.1",
+    "topojson-simplify": "^3.0.3"
   },
   "devDependencies": {
     "@hierarchidb/chunk-store": "workspace:*",
@@ -41,8 +44,13 @@
     "@turf/clean-coords": "^7.0.0",
     "@turf/turf": "^7.0.0",
     "@types/geojson": "^7946.0.14",
+    "@types/topojson-client": "^3.1.5",
+    "@types/topojson-specification": "^1.0.5",
     "flatgeobuf": "^4.4.0",
     "geojson-vt": "^3.2.1",
+    "topojson-client": "^3.1.0",
+    "topojson-server": "^3.0.1",
+    "topojson-simplify": "^3.0.3",
     "typescript": "workspace:^5.9.3"
   },
   "dependencies": {

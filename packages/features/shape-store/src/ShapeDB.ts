@@ -18,7 +18,7 @@ import type {
   HybridFilterConfig, TransformConfig, VTConfig } from '@hierarchidb/gis-sdk';
 type CacheEntryData = Record<string, unknown> | string | number | boolean | null;
 
-export type DataSourceName = 'naturalearth' | 'geoboundaries' | 'gadm' | 'openstreetmap';
+export type DataSourceName = 'naturalearth' | 'geoboundaries' | 'geoboundaries-topojson' | 'gadm' | 'openstreetmap';
 
 export interface CommonSessionConfig {
   dataSource?: DataSourceName;

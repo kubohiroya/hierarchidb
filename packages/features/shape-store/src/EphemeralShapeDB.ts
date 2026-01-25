@@ -38,6 +38,8 @@ export type FetchCacheRecord = {
   countryCode?: string;
   adminLevel?: number;
   data: ArrayBuffer;
+  format?: 'flatgeobuf' | 'topojson';
+  compression?: 'gzip' | 'none';
   featureCount: number;
   inputFeatureCount?: number;
   bbox: [number, number, number, number];

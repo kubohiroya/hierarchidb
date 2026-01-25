@@ -9,6 +9,8 @@ export const resolveStrategyIdFromDataSource = (source?: DataSourceName): DataSo
       return 'natural-earth-shapes';
     case 'geoboundaries':
       return 'geoboundaries-admin-areas';
+    case 'geoboundaries-topojson':
+      return 'geoboundaries-admin-areas';
     case 'openstreetmap':
       return 'openstreetmap-overpass';
     default:

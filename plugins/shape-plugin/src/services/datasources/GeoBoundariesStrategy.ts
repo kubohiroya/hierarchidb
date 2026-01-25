@@ -38,6 +38,7 @@ type GeoBoundariesFeature = Feature<Geometry, GeoBoundariesProperties>;
 
 export interface GeoBoundariesApiResponse {
   gjDownloadURL?: string;
+  tjDownloadURL?: string;
   simplifiedGeometryGeoJSON?: string;
   Continent?: string;
   boundaryYear?: number;
