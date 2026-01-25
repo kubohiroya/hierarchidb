@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type {
   MapAttributionItem,
+  MapViewState,
   ResourceGeoJsonLayer,
   ResourceVectorLayer,
   LayerSetId,
@@ -9,6 +10,11 @@ import type {
   LayerSetListItem,
 } from '@hierarchidb/ui-map';
 import { DEFAULT_LAYER_SETS, buildLayerSetListItems, getLayerSetDefinition, resolveLayerSetEntries } from '@hierarchidb/ui-map';
+import {
+  loadTreeConsoleSettings,
+  TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM,
+  TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM,
+} from '@hierarchidb/util';
 import { getDataSourceConfig } from '../../../services/utils/utils.js';
 import type { ShapeEntity } from '../../../common/types/index.js';
 import { useShapePreviewStep } from './useShapePreviewStep.js';
@@ -16,11 +22,29 @@ import { useShapePreviewStep } from './useShapePreviewStep.js';
 const LIGHT_BASEMAP_STYLE_URL = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
 const DARK_BASEMAP_STYLE_URL = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
 
+const resolveCommonZoomBounds = () => {
+  const settings = loadTreeConsoleSettings();
+  const boundaries = Array.isArray(settings.zoomBandBoundaries)
+    ? settings.zoomBandBoundaries.filter((value) => typeof value === 'number' && Number.isFinite(value))
+    : [];
+  if (boundaries.length === 0) {
+    return {
+      minZoom: TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM,
+      maxZoom: TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM,
+    };
+  }
+  const sorted = [...boundaries].sort((a, b) => a - b);
+  const minZoom = sorted[0] ?? TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM;
+  const maxZoom = sorted[sorted.length - 1] ?? TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM;
+  return {
+    minZoom,
+    maxZoom: Math.max(minZoom, maxZoom),
+  };
+};
 
 export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: string) => {
   const preview = useShapePreviewStep(data, nodeId);
-  const minZoom = 0;
-  const maxZoom = 11;
+  const { minZoom, maxZoom } = useMemo(() => resolveCommonZoomBounds(), []);
   const baseMapStyleUrl = preview.theme.palette.mode === 'dark'
     ? DARK_BASEMAP_STYLE_URL
     : LIGHT_BASEMAP_STYLE_URL;
@@ -42,7 +66,7 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
     }));
   }, []);
 
-  const handleViewStateChange = useCallback((viewState: { zoom: number }) => {
+  const handleViewStateChange = useCallback((viewState: MapViewState) => {
     const zoom = Number(viewState.zoom);
     if (!Number.isFinite(zoom)) return;
     const lastZoom = lastZoomRef.current;

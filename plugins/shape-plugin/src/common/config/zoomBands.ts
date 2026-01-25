@@ -84,3 +84,7 @@ export const buildZoomBandRanges = (
   }
   return ranges;
 };
+
+export const clampZoom = (value: number, minZoom = ZOOM_BAND_MIN_ZOOM, maxZoom = ZOOM_BAND_MAX_ZOOM): number => (
+  Math.min(maxZoom, Math.max(minZoom, value))
+);

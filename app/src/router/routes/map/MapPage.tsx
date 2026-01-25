@@ -23,6 +23,11 @@ import {
   ScreenCenterSnackbar,
 } from '@hierarchidb/ui-plugin-shell/ui-map';
 import { ensureWorkerAPI } from '@hierarchidb/ui-worker-client';
+import {
+  loadTreeConsoleSettings,
+  TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM,
+  TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM,
+} from '@hierarchidb/util';
 import type { SvgIconComponent } from '@mui/icons-material';
 import {
   DirectionsBoat as DirectionsBoatIcon,
@@ -75,6 +80,26 @@ const ICON_SIZE_MIN = 0.7;
 const ICON_SIZE_SLOPE = 0.05;
 const ICON_SIZE_AT_MAX = ICON_SIZE_MIN + LOCATION_MAX_ZOOM * ICON_SIZE_SLOPE;
 const FIT_BOUNDS_PADDING_PX = 64;
+const resolveCommonZoomBounds = () => {
+  const settings = loadTreeConsoleSettings();
+  const boundaries = Array.isArray(settings.zoomBandBoundaries)
+    ? settings.zoomBandBoundaries.filter((value) => typeof value === 'number' && Number.isFinite(value))
+    : [];
+  if (boundaries.length === 0) {
+    return {
+      minZoom: TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM,
+      maxZoom: TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM,
+    };
+  }
+  const sorted = [...boundaries].sort((a, b) => a - b);
+  const minZoom = sorted[0] ?? TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM;
+  const maxZoom = sorted[sorted.length - 1] ?? TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM;
+  return {
+    minZoom,
+    maxZoom: Math.max(minZoom, maxZoom),
+  };
+};
+
 
 const resolveLayerSetEntryPriority = (layerSetId: LayerSetId, entryId?: string): number => {
   const layerSet = DEFAULT_LAYER_SETS.find((set) => set.id === layerSetId);
@@ -142,6 +167,8 @@ export default function MapPage() {
       loaderViewState,
       geolocation,
     });
+
+  const commonZoomBounds = useMemo(() => resolveCommonZoomBounds(), []);
 
   const {
     basemapStyles,
@@ -1020,6 +1047,8 @@ export default function MapPage() {
           dragRotate: true,
           doubleClickZoom: true,
           touchZoomRotate: true,
+          minZoom: commonZoomBounds.minZoom,
+          maxZoom: commonZoomBounds.maxZoom,
         }}
       />
       <ScreenCenterSnackbar

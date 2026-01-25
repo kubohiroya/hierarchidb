@@ -192,23 +192,29 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
     onLoad?.(map);
   }, [onLoad, controls, normalizePaintArrays, applyDebugTileSettings]);
 
-  const handleMove = useCallback(
-    (event: { viewState: MapViewState}) => {
-      const { longitude, latitude, zoom, bearing, pitch } = event.viewState;
-      const nextState: MapViewState = { longitude, latitude, zoom, bearing, pitch };
-      onMove?.(nextState);
-      onViewStateChange?.(nextState);
-    },
-    [onMove, onViewStateChange]
-  );
+  const resolveZoomBounds = useCallback(() => {
+    const fallbackMin = DEFAULT_MAP_CONFIG.interactionOptions.minZoom ?? 0;
+    const fallbackMax = DEFAULT_MAP_CONFIG.interactionOptions.maxZoom ?? 22;
+    const minZoom = typeof mapOptions.minZoom === 'number' ? mapOptions.minZoom : fallbackMin;
+    const maxZoom = typeof mapOptions.maxZoom === 'number' ? mapOptions.maxZoom : fallbackMax;
+    return { minZoom, maxZoom };
+  }, [mapOptions.maxZoom, mapOptions.minZoom]);
+
+  const clampViewStateZoom = useCallback((state: MapViewState): MapViewState => {
+    const { minZoom, maxZoom } = resolveZoomBounds();
+    const clampedZoom = Math.min(maxZoom, Math.max(minZoom, state.zoom));
+    if (clampedZoom === state.zoom) return state;
+    return { ...state, zoom: clampedZoom };
+  }, [resolveZoomBounds]);
 
   const handleMoveEnd = useCallback(
     (event: { viewState: MapViewState}) => {
       const { longitude, latitude, zoom, bearing, pitch } = event.viewState;
       const nextState: MapViewState = { longitude, latitude, zoom, bearing, pitch };
-      onMoveEnd?.(nextState);
+      const clampedState = clampViewStateZoom(nextState);
+      onMoveEnd?.(clampedState);
     },
-    [onMoveEnd]
+    [clampViewStateZoom, onMoveEnd]
   );
 
   const handleMapClick = useCallback(
@@ -254,9 +260,6 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
     applyDebugTileSettings(mapRef.current);
   }, [applyDebugTileSettings]);
 
-
-
-
   const containerStyle: SafeStyle = {
     width,
     height,
@@ -269,8 +272,28 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
     height: '100%',
   };
 
+  const handleMove = useCallback(
+    (event: { viewState: MapViewState}) => {
+      const { longitude, latitude, zoom, bearing, pitch } = event.viewState;
+      const nextState: MapViewState = { longitude, latitude, zoom, bearing, pitch };
+      const clampedState = clampViewStateZoom(nextState);
+      onMove?.(clampedState);
+      onViewStateChange?.(clampedState);
+    },
+    [clampViewStateZoom, onMove, onViewStateChange]
+  );
+
   const resolvedMapStyle = (mapStyleObject ?? mapStyleUrl ?? defaultMapStyleUrl) as React.ComponentProps<typeof ReactMapLibreMap>['mapStyle'];
+  const clampedInitialViewState = useMemo(() => {
+    if (!initialViewState) return initialViewState;
+    return clampViewStateZoom(initialViewState);
+  }, [clampViewStateZoom, initialViewState]);
+  const clampedViewState = useMemo(() => {
+    if (!viewState) return viewState;
+    return clampViewStateZoom(viewState);
+  }, [clampViewStateZoom, viewState]);
   const disableDefaultAttribution = Boolean(controls?.attribution);
+  const resolvedZoomBounds = useMemo(() => resolveZoomBounds(), [resolveZoomBounds]);
 
   return (
     <div style={containerStyle}>
@@ -278,8 +301,8 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
         <ReactMapLibreMap
           style={mapStyleForMapLibre}
           mapStyle={resolvedMapStyle}
-          initialViewState={initialViewState}
-          viewState={viewState}
+          initialViewState={clampedInitialViewState}
+          viewState={clampedViewState}
           attributionControl={!disableDefaultAttribution}
           onLoad={handleMapLoad}
           onMove={handleMove}
@@ -291,8 +314,8 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
           dragRotate={mapOptions.dragRotate}
           doubleClickZoom={mapOptions.doubleClickZoom}
           touchZoomRotate={mapOptions.touchZoomRotate}
-          minZoom={mapOptions.minZoom}
-          maxZoom={mapOptions.maxZoom}
+          minZoom={resolvedZoomBounds.minZoom}
+          maxZoom={resolvedZoomBounds.maxZoom}
           showTileBoundaries={resolvedShowTileBoundaries}
           showTileCoordinates={resolvedShowTileCoordinates}
         >
