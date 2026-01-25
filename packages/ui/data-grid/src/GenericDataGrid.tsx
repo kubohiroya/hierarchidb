@@ -76,6 +76,10 @@ export interface GridColumn<T extends RowRecord = RowRecord> {
   align?: 'left' | 'center' | 'right';
   /** Custom value formatter */
   format?: (value: unknown, row: T) => ReactNode;
+  /** Optional grouping label/value resolver */
+  groupingValue?: (row: T) => string | number | null | undefined;
+  /** Inline editing flag */
+  editable?: boolean;
   /** Enable sorting for this column */
   sortable?: boolean;
   /** Enable filtering for this column */

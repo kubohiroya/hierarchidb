@@ -12,6 +12,23 @@ export type { AbstractDataGridProps } from './AbstractDataGrid.js';
 // Legacy generic grid (will be deprecated)
 export { GenericDataGrid } from './GenericDataGrid.js';
 export type { GenericDataGridProps, GridColumn } from './GenericDataGrid.js';
+export { TanstackDataGrid } from './TanstackDataGrid.js';
+export type {
+  TanstackDataGridProps,
+  GridSortingState,
+  GridGroupingState,
+  GridColumnSizingState,
+  GridColumnVisibilityState,
+  GridCellEditParams,
+  GridCellClickParams,
+  GridRowState,
+} from './TanstackDataGrid.js';
+
+export {
+  buildGridStateKey,
+  loadGridStateValue,
+  saveGridStateValue,
+} from './storage/gridStateStorage.js';
 
 // Data provider types
 export type {

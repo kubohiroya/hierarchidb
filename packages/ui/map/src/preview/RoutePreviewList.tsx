@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useTheme } from '@mui/material/styles';
 import type { GridColumn } from '@hierarchidb/ui-grid';
 import { FloatingWindow } from '@hierarchidb/ui-floating-window';
@@ -120,8 +120,6 @@ export const RoutePreviewList: React.FC<RoutePreviewListProps> = ({
   maxHeight,
 }) => {
   const theme = useTheme();
-  const [sortColumn, setSortColumn] = useState<string>('lineId');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   const tableRows = useMemo(() => {
     const keyword = search?.value.trim().toLowerCase();
@@ -138,28 +136,13 @@ export const RoutePreviewList: React.FC<RoutePreviewListProps> = ({
       distanceMeters: formatInteger(row.distanceMeters),
       vertexCount: typeof row.vertexCount === 'number' ? row.vertexCount : '',
     }));
-    const sorted = [...mapped].sort((a, b) => {
-      const av = a[sortColumn as keyof typeof a];
-      const bv = b[sortColumn as keyof typeof b];
-      if (typeof av === 'number' && typeof bv === 'number') {
-        return sortDirection === 'asc' ? av - bv : bv - av;
-      }
-      const astr = String(av ?? '');
-      const bstr = String(bv ?? '');
-      return sortDirection === 'asc' ? astr.localeCompare(bstr) : bstr.localeCompare(astr);
-    });
-    return sorted;
-  }, [matchedRows, rows, search?.value, sortColumn, sortDirection]);
+    return mapped;
+  }, [matchedRows, rows, search?.value]);
 
   const resolvedMatchedRows = useMemo(() => {
     if (!matchedRows) return undefined;
     return new Set(Array.from(matchedRows).map(String));
   }, [matchedRows]);
-
-  const handleSort = useCallback((column: string, direction: 'asc' | 'desc') => {
-    setSortColumn(column);
-    setSortDirection(direction);
-  }, []);
 
   const columns = useMemo<GridColumn<(typeof tableRows)[number]>[]>(() => ([
     { id: 'lineId', label: columnLabels.lineId, width: 120, sortable: true },
@@ -206,9 +189,6 @@ export const RoutePreviewList: React.FC<RoutePreviewListProps> = ({
         selectionMode="multiple"
         selectedRows={selectedRows}
         onSelectionChange={onSelectionChange}
-        sortColumn={sortColumn}
-        sortDirection={sortDirection}
-        onSort={handleSort}
         rowSx={(state) => {
           if (state.selected) {
             const selectedBg = theme.palette.primary.light;

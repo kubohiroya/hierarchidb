@@ -18,7 +18,17 @@ import {
   Typography,
 } from '@mui/material';
 import { Close as CloseIcon, MoreVert as MoreVertIcon, Search as SearchIcon } from '@mui/icons-material';
-import { GenericDataGrid, type GridColumn } from '@hierarchidb/ui-grid';
+import {
+  TanstackDataGrid,
+  type GridColumn,
+  type GridColumnSizingState,
+  type GridColumnVisibilityState,
+  type GridGroupingState,
+  type GridSortingState,
+  buildGridStateKey,
+  loadGridStateValue,
+  saveGridStateValue,
+} from '@hierarchidb/ui-grid';
 
 export type MapPreviewErrorSummary = {
   count: number;
@@ -52,6 +62,9 @@ export type MapPreviewFloatingTableProps<Row extends { id: string | number }> = 
   enableColumnSelector?: boolean;
   rows: Row[];
   columns: GridColumn<Row>[];
+  persistKeyBase?: string;
+  defaultGrouping?: GridGroupingState;
+  defaultSorting?: GridSortingState;
   search?: MapPreviewSearchConfig;
   countText?: string;
   loading?: boolean;
@@ -61,13 +74,8 @@ export type MapPreviewFloatingTableProps<Row extends { id: string | number }> = 
   selectionMode?: 'single' | 'multiple';
   selectedRows?: Set<string>;
   onSelectionChange?: (selected: Set<string | number>) => void;
-  sortColumn?: string;
-  sortDirection?: 'asc' | 'desc';
-  onSort?: (column: string, direction: 'asc' | 'desc') => void;
   rowSx?: (state: { selected: boolean; matched: boolean; hovered: boolean }) => Record<string, unknown> | undefined;
-  tableContainerSx?: Record<string, unknown>;
   maxHeight?: number;
-  toolbarComponent?: React.ReactNode;
   emptyContent?: React.ReactNode;
   errorSummaryById?: MapPreviewErrorSummaryById;
   errorColumnLabels?: MapPreviewErrorColumnLabels;
@@ -108,6 +116,9 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
     enableColumnSelector = true,
     rows,
     columns,
+    persistKeyBase,
+    defaultGrouping = [],
+    defaultSorting = [],
     search,
     countText,
     loading,
@@ -117,12 +128,8 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
     selectionMode,
     selectedRows,
     onSelectionChange,
-    sortColumn,
-    sortDirection,
-    onSort,
     rowSx,
-    tableContainerSx,
-    toolbarComponent,
+    maxHeight,
     emptyContent,
     errorSummaryById,
     errorColumnLabels,
@@ -131,8 +138,30 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
     containerSx,
   } = props;
   const [columnSelectorOpen, setColumnSelectorOpen] = useState(false);
-  const [visibleColumnIds, setVisibleColumnIds] = useState<Set<string> | null>(null);
-  const [hasUserColumnSelection, setHasUserColumnSelection] = useState(false);
+  const visibilityKey = persistKeyBase ? buildGridStateKey(persistKeyBase, 'visibility') : null;
+  const columnSizingKey = persistKeyBase ? buildGridStateKey(persistKeyBase, 'columnSizing') : null;
+  const sortingKey = persistKeyBase ? buildGridStateKey(persistKeyBase, 'sorting') : null;
+  const groupingKey = persistKeyBase ? buildGridStateKey(persistKeyBase, 'grouping') : null;
+  const [columnVisibility, setColumnVisibility] = useState<GridColumnVisibilityState>(() => (
+    visibilityKey ? (loadGridStateValue<GridColumnVisibilityState>(visibilityKey) ?? {}) : {}
+  ));
+  const [columnSizing, setColumnSizing] = useState<GridColumnSizingState>(() => (
+    columnSizingKey ? (loadGridStateValue<GridColumnSizingState>(columnSizingKey) ?? {}) : {}
+  ));
+  const [sorting, setSorting] = useState<GridSortingState>(() => {
+    if (sortingKey) {
+      const saved = loadGridStateValue<GridSortingState>(sortingKey);
+      if (saved) return saved;
+    }
+    return defaultSorting;
+  });
+  const [grouping, setGrouping] = useState<GridGroupingState>(() => {
+    if (groupingKey) {
+      const saved = loadGridStateValue<GridGroupingState>(groupingKey);
+      if (saved) return saved;
+    }
+    return defaultGrouping;
+  });
   const resolvedStatusLabels: MapPreviewStatusLabels = statusLabels ?? {
     completed: 'Completed',
     failed: 'Failed',
@@ -192,27 +221,45 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
     [resolvedColumns],
   );
   useEffect(() => {
-    if (!hasUserColumnSelection) return;
-    setVisibleColumnIds((prev) => {
-      if (!prev) {
-        return new Set(resolvedColumnIds);
-      }
-      const next = new Set(prev);
-      const resolvedSet = new Set(resolvedColumnIds);
+    setColumnVisibility((prev: GridColumnVisibilityState) => {
+      const next = { ...prev };
       let changed = false;
-      Array.from(next).forEach((id) => {
+      const resolvedSet = new Set(resolvedColumnIds);
+      resolvedColumnIds.forEach((id) => {
+        if (!(id in next)) {
+          next[id] = true;
+          changed = true;
+        }
+      });
+      Object.keys(next).forEach((id) => {
         if (!resolvedSet.has(id)) {
-          next.delete(id);
+          delete next[id];
           changed = true;
         }
       });
       return changed ? next : prev;
     });
-  }, [hasUserColumnSelection, resolvedColumnIds]);
-  const filteredColumns = useMemo(() => {
-    if (!visibleColumnIds) return resolvedColumns;
-    return resolvedColumns.filter((column) => visibleColumnIds.has(String(column.id)));
-  }, [resolvedColumns, visibleColumnIds]);
+  }, [resolvedColumnIds]);
+
+  useEffect(() => {
+    if (!visibilityKey) return;
+    saveGridStateValue(visibilityKey, columnVisibility);
+  }, [columnVisibility, visibilityKey]);
+
+  useEffect(() => {
+    if (!columnSizingKey) return;
+    saveGridStateValue(columnSizingKey, columnSizing);
+  }, [columnSizing, columnSizingKey]);
+
+  useEffect(() => {
+    if (!sortingKey) return;
+    saveGridStateValue(sortingKey, sorting);
+  }, [sorting, sortingKey]);
+
+  useEffect(() => {
+    if (!groupingKey) return;
+    saveGridStateValue(groupingKey, grouping);
+  }, [grouping, groupingKey]);
 
   return (
     <Paper
@@ -298,34 +345,10 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
         {rows.length === 0 && emptyContent ? (
           emptyContent
         ) : (
-          <GenericDataGrid
-            columns={filteredColumns}
+          <TanstackDataGrid
+            columns={resolvedColumns}
             rows={rows}
-            maxHeight="100%"
-            tableContainerSx={{
-              height: '100%',
-              overflowY: 'auto',
-              overflowX: 'auto',
-              overscrollBehavior: 'contain',
-              WebkitOverflowScrolling: 'touch',
-              minHeight: 0,
-              '& .MuiTable-root': {
-                tableLayout: 'fixed',
-                width: '100%',
-              },
-              '& .MuiTableCell-root': {
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              },
-              flex: 1,
-              ...(tableContainerSx ?? {}),
-            }}
-            rowHeight={38}
-            stickyHeader
-            dense
-            hover
-            striped
+            maxHeight={maxHeight ?? '100%'}
             enableVirtualization
             loading={loading}
             error={error ?? undefined}
@@ -334,13 +357,15 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
             selectionMode={selectionMode}
             selectedRows={selectedRows}
             onSelectionChange={onSelectionChange}
-            sortColumn={sortColumn}
-            sortDirection={sortDirection}
-            onSort={onSort}
+            sorting={sorting}
+            onSortingChange={setSorting}
+            grouping={grouping}
+            onGroupingChange={setGrouping}
+            columnVisibility={columnVisibility}
+            onColumnVisibilityChange={setColumnVisibility}
+            columnSizing={columnSizing}
+            onColumnSizingChange={setColumnSizing}
             rowSx={rowSx}
-            toolbarComponent={toolbarComponent}
-            showSearch={false}
-            stopWheelPropagation
           />
         )}
       </Box>
@@ -355,24 +380,19 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
           <FormGroup>
             {resolvedColumns.map((column) => {
               const id = String(column.id);
+              const isVisible = columnVisibility[id] !== false;
               return (
                 <FormControlLabel
                   key={id}
                   control={(
                     <Checkbox
-                      checked={visibleColumnIds?.has(id) ?? true}
+                      checked={isVisible}
                       onChange={(event) => {
                         const checked = event.target.checked;
-                        setHasUserColumnSelection(true);
-                        setVisibleColumnIds((prev) => {
-                          const next = new Set(prev ?? resolvedColumnIds);
-                          if (checked) {
-                            next.add(id);
-                          } else {
-                            next.delete(id);
-                          }
-                          return next;
-                        });
+                        setColumnVisibility((prev: GridColumnVisibilityState) => ({
+                          ...prev,
+                          [id]: checked,
+                        }));
                       }}
                     />
                   )}

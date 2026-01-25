@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import type { GridColumn } from '@hierarchidb/ui-grid';
@@ -120,8 +120,14 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
     initialPosition: { x: 80, y: 140 },
     initialSize: { width: 560, height: 420 },
   });
-  const [sortColumn, setSortColumn] = useState<string>('featureId');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const normalizeAdminLevelGroup = useCallback((value: string) => {
+    const match = /^ADM(\d+)$/i.exec(value.trim());
+    if (!match) return value;
+    const level = Number(match[1]);
+    if (!Number.isFinite(level)) return value;
+    if (level >= 3) return 'ADM3+';
+    return `ADM${level}`;
+  }, []);
   const resolvedStatusLabels: MapPreviewStatusLabels = statusLabels ?? {
     completed: 'Completed',
     failed: 'Failed',
@@ -154,17 +160,7 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
       bbox: formatBBox(row.bbox),
       area: formatArea(row.area),
     }));
-    const sorted = [...mapped].sort((a, b) => {
-      const av = a[sortColumn as keyof typeof a];
-      const bv = b[sortColumn as keyof typeof b];
-      if (typeof av === 'number' && typeof bv === 'number') {
-        return sortDirection === 'asc' ? av - bv : bv - av;
-      }
-      const astr = String(av ?? '');
-      const bstr = String(bv ?? '');
-      return sortDirection === 'asc' ? astr.localeCompare(bstr) : bstr.localeCompare(astr);
-    });
-    return sorted;
+    return mapped;
   }, [
     errorSummaryById,
     matchedRows,
@@ -172,8 +168,6 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
     resolvedStatusLabels.failed,
     rows,
     search?.value,
-    sortColumn,
-    sortDirection,
   ]);
 
   const resolvedMatchedRows = useMemo(() => {
@@ -188,17 +182,19 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
     return mapped;
   }, [matchedRows, rows]);
 
-  const handleSort = useCallback((column: string, direction: 'asc' | 'desc') => {
-    setSortColumn(column);
-    setSortDirection(direction);
-  }, []);
-
   const columns = useMemo<GridColumn<(typeof tableRows)[number]>[]>(() => ([
     { id: 'featureId', label: columnLabels.featureId, width: 220, sortable: true },
     { id: 'countryName', label: columnLabels.countryName, width: 180, sortable: true },
     { id: 'countryCode', label: columnLabels.countryCode, width: 120, sortable: true },
     { id: 'adminName', label: columnLabels.adminName, width: 180, sortable: true },
-    { id: 'adminLevel', label: columnLabels.adminLevel, width: 120, align: 'right', sortable: true },
+    {
+      id: 'adminLevel',
+      label: columnLabels.adminLevel,
+      width: 120,
+      align: 'right',
+      sortable: true,
+      groupingValue: (row) => normalizeAdminLevelGroup(String(row.adminLevel ?? '')),
+    },
     { id: 'adminCode', label: columnLabels.adminCode, width: 120, sortable: true },
     { id: 'dataSource', label: columnLabels.dataSource, width: 140, sortable: true },
     { id: 'createdAt', label: columnLabels.createdAt, width: 180, sortable: true },
@@ -206,7 +202,7 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
     { id: 'polygonCount', label: columnLabels.polygonCount, width: 120, align: 'right', sortable: true },
     { id: 'bbox', label: columnLabels.bbox, width: 220, sortable: true },
     { id: 'area', label: columnLabels.area, width: 140, align: 'right', sortable: true, format: formatLogicalCode },
-  ]), [columnLabels]);
+  ]), [columnLabels, normalizeAdminLevelGroup]);
 
   const resolvedCountText = useMemo(() => {
     if (countText) return countText;
@@ -232,6 +228,9 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
         showTitle={false}
         rows={tableRows}
         columns={columns}
+        persistKeyBase="hierarchidb:grid:shape:step6:features"
+        defaultGrouping={['adminLevel']}
+        defaultSorting={[{ id: 'featureId', desc: false }]}
         search={search}
         loading={loading}
         error={error}
@@ -240,9 +239,6 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
         selectionMode="multiple"
         selectedRows={selectedRows}
         onSelectionChange={onSelectionChange}
-        sortColumn={sortColumn}
-        sortDirection={sortDirection}
-        onSort={handleSort}
         rowSx={(state) => {
           if (state.selected) {
             const selectedBg = theme.palette.primary.light;

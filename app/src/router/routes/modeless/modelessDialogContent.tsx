@@ -1458,8 +1458,14 @@ export const MapShapeListContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }) =>
     errorSummaryById,
   } = useShapeListState(nodeId);
   const { getSelectedRows, setSelectedRows } = useMapHighlightSelection(nodeId);
-  const [sortColumn, setSortColumn] = useState<string>('featureId');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const normalizeAdminLevelGroup = useCallback((value: string) => {
+    const match = /^ADM(\d+)$/i.exec(value.trim());
+    if (!match) return value;
+    const level = Number(match[1]);
+    if (!Number.isFinite(level)) return value;
+    if (level >= 3) return 'ADM3+';
+    return `ADM${level}`;
+  }, []);
 
   const tableRows = useMemo(() => {
     const normalizeCount = (value?: number) => (typeof value === 'number' ? value : '');
@@ -1482,25 +1488,22 @@ export const MapShapeListContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }) =>
       bbox: formatBBox(row.bbox),
       area: formatArea(row.area),
     }));
-    const sorted = [...mapped].sort((a, b) => {
-      const av = a[sortColumn as keyof typeof a];
-      const bv = b[sortColumn as keyof typeof b];
-      if (typeof av === 'number' && typeof bv === 'number') {
-        return sortDirection === 'asc' ? av - bv : bv - av;
-      }
-      const astr = String(av ?? '');
-      const bstr = String(bv ?? '');
-      return sortDirection === 'asc' ? astr.localeCompare(bstr) : bstr.localeCompare(astr);
-    });
-    return sorted;
-  }, [matchedIds, rows, searchKeyword, sortColumn, sortDirection]);
+    return mapped;
+  }, [matchedIds, rows, searchKeyword]);
 
   const columns = useMemo<GridColumn<(typeof tableRows)[number]>[]>(() => ([
     { id: 'featureId', label: 'Feature ID', width: 220, sortable: true },
     { id: 'countryName', label: 'Country', width: 180, sortable: true },
     { id: 'countryCode', label: 'Country Code', width: 120, sortable: true },
     { id: 'adminName', label: 'Admin Name', width: 180, sortable: true },
-    { id: 'adminLevel', label: 'Admin Level', width: 120, align: 'right', sortable: true },
+    {
+      id: 'adminLevel',
+      label: 'Admin Level',
+      width: 120,
+      align: 'right',
+      sortable: true,
+      groupingValue: (row) => normalizeAdminLevelGroup(String(row.adminLevel ?? '')),
+    },
     { id: 'adminCode', label: 'Admin Code', width: 120, sortable: true },
     { id: 'dataSource', label: 'Data Source', width: 140, sortable: true },
     { id: 'createdAt', label: 'Created At', width: 180, sortable: true },
@@ -1508,7 +1511,7 @@ export const MapShapeListContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }) =>
     { id: 'polygonCount', label: 'Polygons', width: 120, align: 'right', sortable: true },
     { id: 'bbox', label: 'Bounding Box', width: 220, sortable: true },
     { id: 'area', label: 'Area', width: 140, align: 'right', sortable: true, format: formatLogicalCode },
-  ]), []);
+  ]), [normalizeAdminLevelGroup]);
 
   const resolvedCountText = useMemo(() => {
     const keyword = searchKeyword.trim();
@@ -1531,31 +1534,28 @@ export const MapShapeListContent: React.FC<{ nodeId: NodeId }> = ({ nodeId }) =>
   );
 
   return (
-    <MapPreviewFloatingTable
-      title={`shape一覧 (${resolvedCountText})`}
-      showTitle
-      rows={tableRows}
-      columns={columns}
-      search={{
-        value: searchKeyword,
-        onChange: setSearchKeyword,
-        placeholder: 'Search metadata',
-        ariaLabel: 'Search metadata',
-      }}
+      <MapPreviewFloatingTable
+        title={`shape一覧 (${resolvedCountText})`}
+        showTitle
+        rows={tableRows}
+        columns={columns}
+        persistKeyBase="hierarchidb:grid:/map:shape:features"
+        defaultGrouping={['adminLevel']}
+        defaultSorting={[{ id: 'featureId', desc: false }]}
+        search={{
+          value: searchKeyword,
+          onChange: setSearchKeyword,
+          placeholder: 'Search metadata',
+          ariaLabel: 'Search metadata',
+        }}
       loading={loading}
       error={error}
       matchedRows={matchedIds}
-      selectable
-      selectionMode="multiple"
-      selectedRows={new Set(Array.from(getSelectedRows('shape')).map(String))}
-      onSelectionChange={(next) => setSelectedRows('shape', next)}
-      sortColumn={sortColumn}
-      sortDirection={sortDirection}
-      onSort={(column, direction) => {
-        setSortColumn(column);
-        setSortDirection(direction);
-      }}
-      rowSx={(state) => {
+        selectable
+        selectionMode="multiple"
+        selectedRows={new Set(Array.from(getSelectedRows('shape')).map(String))}
+        onSelectionChange={(next) => setSelectedRows('shape', next)}
+        rowSx={(state) => {
         if (state.selected) {
           const selectedBg = theme.palette.primary.light;
           const selectedText = theme.palette.getContrastText(selectedBg);
