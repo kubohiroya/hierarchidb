@@ -45,6 +45,10 @@ export type MapLibreQueryGeometry =
   | [[number, number], [number, number]];
 
 export interface MapLibreMapInstance {
+  showTileBoundaries?: boolean;
+  showTileCoordinates?: boolean;
+  triggerRepaint?: () => void;
+
   getStyle(): MapLibreStyle;
 
   getLayer(id: string): MapLibreLayer | undefined;

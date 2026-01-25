@@ -121,11 +121,23 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
     });
   }, []);
 
+  const resolvedShowTileBoundaries =
+    queryOverrides.showTileBoundaries ?? showTileBoundaries ?? import.meta.env.DEV;
+  const resolvedShowTileCoordinates =
+    queryOverrides.showTileCoordinates ?? showTileCoordinates ?? import.meta.env.DEV;
+  const applyDebugTileSettings = useCallback((map: MapLibreMapInstance | null) => {
+    if (!map) return;
+    map.showTileBoundaries = resolvedShowTileBoundaries;
+    map.showTileCoordinates = resolvedShowTileCoordinates;
+    map.triggerRepaint?.();
+  }, [resolvedShowTileBoundaries, resolvedShowTileCoordinates]);
+
   const handleMapLoad = useCallback((e: {target: MapLibreMapInstance}) => {
     const map = e.target;
     mapRef.current = map;
     normalizePaintArrays(map);
     map.on('styledata', () => normalizePaintArrays(map));
+    applyDebugTileSettings(map);
     if (controls) {
       void loadMapLibreModule().then((mlib) => {
         if (!mlib) return;
@@ -159,7 +171,7 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
     }
     setMapLoaded(true);
     onLoad?.(map);
-  }, [onLoad, controls, normalizePaintArrays]);
+  }, [onLoad, controls, normalizePaintArrays, applyDebugTileSettings]);
 
   const handleMove = useCallback(
     (event: { viewState: MapViewState}) => {
@@ -219,6 +231,10 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
     setIdentifySnackbarState((prev) => ({ ...prev, open: false }));
   }, []);
 
+  useEffect(() => {
+    applyDebugTileSettings(mapRef.current);
+  }, [applyDebugTileSettings]);
+
 
 
 
@@ -258,8 +274,8 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
           touchZoomRotate={mapOptions.touchZoomRotate}
           minZoom={mapOptions.minZoom}
           maxZoom={mapOptions.maxZoom}
-          showTileBoundaries={showTileBoundaries}
-          showTileCoordinates={showTileCoordinates}
+          showTileBoundaries={resolvedShowTileBoundaries}
+          showTileCoordinates={resolvedShowTileCoordinates}
         >
           {mapLoaded && children}
         </ReactMapLibreMap>
