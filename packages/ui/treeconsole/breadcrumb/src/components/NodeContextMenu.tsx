@@ -386,29 +386,6 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
 
         {canCreate && <Divider />}
 
-        {isFolder ? (
-          <MenuItem onClick={handleOpenFolderClick} aria-label={openFolderLabel}>
-            <ListItemIcon>
-              <FolderIcon />
-            </ListItemIcon>
-            <ListItemText primary={openFolderLabel} />
-          </MenuItem>
-        ) : (
-          <MenuItem onClick={handleOpenClick} aria-label={openLabel}>
-            <ListItemIcon>
-              <FolderIcon />
-            </ListItemIcon>
-            <ListItemText primary={openLabel} />
-          </MenuItem>
-        )}
-
-        <MenuItem onClick={handleEditClick} disabled={!canEdit} aria-label={editLabel}>
-          <ListItemIcon>
-            <EditIcon />
-          </ListItemIcon>
-          <ListItemText primary={editLabel} />
-        </MenuItem>
-
         <MenuItem onClick={handleCutClick} disabled={!canCut} aria-label={cutLabel}>
           <ListItemIcon>
             <ContentCutIcon />
@@ -461,13 +438,30 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
         </MenuItem>
 
         {[
-          <Divider key="divider-preview" />,
+          <Divider key="divider-action-group" />,
+          isFolder ? (
+            <MenuItem key="menuitem-open-folder" onClick={handleOpenFolderClick} aria-label={openFolderLabel}>
+              <ListItemIcon>
+                <FolderIcon />
+              </ListItemIcon>
+              <ListItemText primary={openFolderLabel} />
+            </MenuItem>
+          ) : (
+            <MenuItem key="menuitem-open" onClick={handleOpenClick} aria-label={openLabel}>
+              <ListItemIcon>
+                <FolderIcon />
+              </ListItemIcon>
+              <ListItemText primary={openLabel} />
+            </MenuItem>
+          ),
+          <MenuItem key="menuitem-edit" onClick={handleEditClick} disabled={!canEdit} aria-label={editLabel}>
+            <ListItemIcon>
+              <EditIcon />
+            </ListItemIcon>
+            <ListItemText primary={editLabel} />
+          </MenuItem>,
           canBuildEntry ? (
-            <MenuItem
-              key="menuitem-build"
-              onClick={handleBuildClick}
-              aria-label={buildLabel}
-            >
+            <MenuItem key="menuitem-build" onClick={handleBuildClick} aria-label={buildLabel}>
               <ListItemIcon>
                 <ConstructionIcon />
               </ListItemIcon>
