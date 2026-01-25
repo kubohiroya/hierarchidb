@@ -1,7 +1,7 @@
 import type { KeyboardEvent, MouseEvent, PointerEvent } from 'react';
 import { Box, useTheme } from '@mui/material';
 import { useAtomValue, useSetAtom } from 'jotai';
-import { useCallback, useId, useRef } from 'react';
+import { useCallback, useId, useMemo, useRef } from 'react';
 
 import type {
   TaskWithMetadata,
@@ -53,55 +53,69 @@ export const TaskProgressBar = ({
       viewportEndIndex = Math.max(startIndex, endIndex);
     }
   }
-  const segments: Array<{ fill: string; stageId: string; taskId?: string; title: string; width: number }> = [];
-  const stageOffsets = new Map<string, number>();
-  const stageCounts = new Map<string, number>();
-  let totalCount = 0;
-  stages.forEach((stage) => {
-    const fallbackStageId = stage.id === 'transform'
-      && stages.length === 1
-      && (tasksByStage.transform?.length ?? 0) === 0
-      && (tasksByStage.fetch?.length ?? 0) > 0
-      ? 'fetch'
-      : stage.id;
-    const sourceStageId = fallbackStageId;
-    const stageTasks = tasksByStage[sourceStageId] ?? [];
-    stageOffsets.set(stage.id, totalCount);
-    if (stageTasks.length === 0) {
-      stageCounts.set(stage.id, 0);
-      return;
-    }
-    const orderedTasks = stage.id === 'vt'
-      ? sortVectorTileTasks(stageTasks)
-      : stageTasks;
-    stageCounts.set(stage.id, orderedTasks.length);
-    orderedTasks.forEach((task) => {
-      const statusValue = (task.status ?? '').toString().toLowerCase();
-      let fill = waitingColor;
-      const isSkipped = isSkippedMessage(task.message);
-      if (isSkipped) {
-        fill = skippedColor;
-      } else if (statusValue === 'completed') {
-        fill = theme.palette.success.main;
-      } else if (statusValue === 'failed') {
-        fill = failedColor;
-      } else if (statusValue === 'running') {
-        fill = runningColor;
-      } else if (statusValue === 'paused') {
-        fill = theme.palette.warning.main;
+  const successColor = theme.palette.success.main;
+  const pausedColor = theme.palette.warning.main;
+  const { segments, stageOffsets, stageCounts } = useMemo(() => {
+    const nextSegments: Array<{ fill: string; stageId: string; taskId?: string; title: string; width: number }> = [];
+    const nextStageOffsets = new Map<string, number>();
+    const nextStageCounts = new Map<string, number>();
+    let totalCount = 0;
+    stages.forEach((stage) => {
+      const fallbackStageId = stage.id === 'transform'
+        && stages.length === 1
+        && (tasksByStage.transform?.length ?? 0) === 0
+        && (tasksByStage.fetch?.length ?? 0) > 0
+        ? 'fetch'
+        : stage.id;
+      const sourceStageId = fallbackStageId;
+      const stageTasks = tasksByStage[sourceStageId] ?? [];
+      nextStageOffsets.set(stage.id, totalCount);
+      if (stageTasks.length === 0) {
+        nextStageCounts.set(stage.id, 0);
+        return;
       }
-      const isExternalStage = sourceStageId !== stage.id;
-      segments.push({
-        fill,
-        stageId: stage.id,
-        taskId: isExternalStage ? undefined : task.taskId,
-        title: resolveTaskTitle(task),
-        width: 1,
+      const orderedTasks = stage.id === 'vt'
+        ? sortVectorTileTasks(stageTasks)
+        : stageTasks;
+      nextStageCounts.set(stage.id, orderedTasks.length);
+      orderedTasks.forEach((task) => {
+        const statusValue = (task.status ?? '').toString().toLowerCase();
+        let fill = waitingColor;
+        const isSkipped = isSkippedMessage(task.message);
+        if (isSkipped) {
+          fill = skippedColor;
+        } else if (statusValue === 'completed') {
+          fill = successColor;
+        } else if (statusValue === 'failed') {
+          fill = failedColor;
+        } else if (statusValue === 'running') {
+          fill = runningColor;
+        } else if (statusValue === 'paused') {
+          fill = pausedColor;
+        }
+        const isExternalStage = sourceStageId !== stage.id;
+        nextSegments.push({
+          fill,
+          stageId: stage.id,
+          taskId: isExternalStage ? undefined : task.taskId,
+          title: resolveTaskTitle(task),
+          width: 1,
+        });
+        totalCount += 1;
       });
-      totalCount += 1;
     });
-  });
-
+    return { segments: nextSegments, stageOffsets: nextStageOffsets, stageCounts: nextStageCounts };
+  }, [
+    failedColor,
+    pausedColor,
+    resolveTaskTitle,
+    runningColor,
+    skippedColor,
+    stages,
+    successColor,
+    tasksByStage,
+    waitingColor,
+  ]);
   const viewWidth = Math.max(1, segments.reduce((total, segment) => total + segment.width, 0));
   const rectHeight = 20;
   if (viewportStageId && viewportStartIndex !== null && viewportEndIndex !== null) {
@@ -197,7 +211,7 @@ export const TaskProgressBar = ({
       dragDebounceRef.current = null;
       updateScrollTargetFromClientX(clientX, rect);
     }, dragDebounceMs);
-  }, [dragDebounceMs, updateScrollTargetFromClientX]);
+  }, [updateScrollTargetFromClientX]);
 
   const handlePointerUp = useCallback((event: PointerEvent<SVGSVGElement>) => {
     if (!isDraggingRef.current) return;
@@ -279,14 +293,14 @@ export const TaskProgressBar = ({
               return (
                 <g key={`task-${index.toString()}`}>
                   {rect}
-                  <title>{segment.title}</title>
+                  <title>{segment.title ?? 'Task segment'}</title>
                 </g>
               );
             }
             return (
               <a
                 key={`task-${index.toString()}`}
-                href="#"
+                href={`#task-${segment.taskId}`}
                 onClick={handleActivate}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' || event.key === ' ') {
@@ -297,7 +311,7 @@ export const TaskProgressBar = ({
                 style={{ cursor: 'pointer' }}
               >
                 {rect}
-                <title>{segment.title}</title>
+                <title>{segment.title ?? 'Task segment'}</title>
               </a>
             );
           });

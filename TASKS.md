@@ -1,3 +1,18 @@
+2357) fix/ui-map/clamp-zoom-to-band (P1) — 進行中 (2026-01-26)
+- ブランチ名: fix/ui-map/clamp-zoom-to-band
+- 依存: なし
+- 受け入れ基準: ui-map の地図表示で共通ズーム帯設定の範囲外はクランプされる／初期表示とユーザー操作の両方で範囲外にならない／再現テストを追加しグリーン化する／pnpm --filter @hierarchidb/ui-map typecheck が exit 0／pnpm --filter @hierarchidb/ui-map test が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert する
+- チェックリスト:
+  - 共通ズーム帯設定から min/max を取得する
+  - 範囲外ズームが発生しないことを確認する
+  - pnpm --filter @hierarchidb/ui-map typecheck を実行する
+  - pnpm --filter @hierarchidb/ui-map test を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 11:35 JST ui-mapのズームクランプ対応に着手。
+
 2356) fix/shape/step5-vt-status-flapping (P1) — 進行中 (2026-01-26)
   - update: 2026-01-26 11:20 JST task更新の順序判定をsequenceで統一する方針の確認に着手。
   - update: 2026-01-26 11:26 JST task更新の順序判定をsequenceへ統一（updatedAt判定を撤去）。
@@ -219,6 +234,65 @@
 - 運用ログ：
   - start: 2026-01-26 13:30 JST update depth ループ（tasks/batch/footer）修正に着手。
   - update: 2026-01-26 13:43 JST useShapeBuildTasksのrAF flushと同値更新抑止、useBatchProgressのrAF更新と重複progress抑止、useShapeBuildTasksでerror/loadingの同値更新抑止を追加。pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2370) fix/shape/biome-svg-title (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/shape/biome-svg-title
+- 依存: なし
+- 受け入れ基準: TaskProgressBarのSVG titleが空でない／Biome a11y/noSvgWithoutTitleが解消する／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/TaskProgressBar.tsx`
+- ロールバック手順: title追加差分を revert する
+- チェックリスト:
+  - SVG titleを空でない値にする
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 13:52 JST TaskProgressBarのSVG title修正に着手。
+  - done: 2026-01-26 13:58 JST TaskProgressBarの空titleを回避し、pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2371) fix/shape/task-progress-anchor-to-button (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/shape/task-progress-anchor-to-button
+- 依存: なし
+- 受け入れ基準: TaskProgressBar の a を button に置換し、Biome useValidAnchor を解消する／表示が崩れない／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/TaskProgressBar.tsx`
+- ロールバック手順: button置換差分を revert する
+- チェックリスト:
+  - a を button に置換する
+  - クリック/キー操作が維持される
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 14:10 JST TaskProgressBarのa→button置換に着手。
+  - update: 2026-01-26 14:28 JST SVG内buttonをforeignObject経由に変更し、表示不具合を回避。pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-01-26 14:16 JST TaskProgressBarのaをbuttonに置換し、pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2372) fix/shape/task-progress-anchor-valid (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/shape/task-progress-anchor-valid
+- 依存: なし
+- 受け入れ基準: TaskProgressBarのbutton/foreignObjectを撤去しSVG表示を復旧する／a要素は有効なhrefを持つ／Biome useValidAnchorを回避する／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/TaskProgressBar.tsx`
+- ロールバック手順: anchor修正差分を revert する
+- チェックリスト:
+  - foreignObject/buttonを撤去する
+  - 有効なhrefを付けたaに戻す
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 14:45 JST TaskProgressBarのanchor復旧に着手。
+  - done: 2026-01-26 14:50 JST foreignObject/buttonを撤去し、有効なhrefのaへ戻す。pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2373) perf/shape/task-progress-heavy-reflow (P1) — 進行中 (2026-01-26)
+- ブランチ名: perf/shape/task-progress-heavy-reflow
+- 依存: なし
+- 受け入れ基準: message handler/reflowの原因を特定し軽量化する／タスク進捗UIの描画が改善する／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/TaskProgressBar.tsx`, `plugins/shape-plugin/src/ui/components/step5/useShapeBuildTasks.ts`, `packages/features/batch/src/progress/useBatchProgress.ts`
+- ロールバック手順: 計測/軽量化差分を revert する
+- チェックリスト:
+  - 重い処理の原因箇所を特定する
+  - 更新頻度/描画範囲の最適化を行う
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 15:02 JST message handler/reflowの軽量化に着手。
 
 2361) fix/shape/ignore-stale-task-updates (P1) — 進行中 (2026-01-25)
 - ブランチ名: fix/shape/ignore-stale-task-updates
