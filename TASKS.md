@@ -204,6 +204,22 @@
   - update: 2026-01-26 13:21 JST useShapeBuildTasksでマイクロタスクflushと差分更新を導入、useBatchProgressで重複progress更新を抑止、useShapeBuildStepでtimingSnapshotの同値更新を抑止。pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
   - update: 2026-01-26 13:06 JST useShapeBuildTasksの購読依存を安定化、useBatchProgressのadapter参照と重複更新抑止、useShapeBuildStepのbuildStartedAt更新を単発化。pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
 
+2369) fix/shape/update-depth-loop-batch-footer (P1) — 進行中 (2026-01-26)
+- ブランチ名: fix/shape/update-depth-loop-batch-footer
+- 依存: なし
+- 受け入れ基準: useShapeBuildTasks/useBatchProgress/PluginDialogFooter の update depth ループが解消される／setTimeout起因の再入が抑止される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/useShapeBuildTasks.ts`, `packages/features/batch/src/progress/useBatchProgress.ts`, `packages/ui/dialog/src/PluginDialogFooter.tsx`
+- ロールバック手順: ループ抑止差分を revert する
+- チェックリスト:
+  - useShapeBuildTasksの再入ループを解消する
+  - useBatchProgressのタイマー更新を安定化する
+  - PluginDialogFooterの連続setStateを抑止する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 13:30 JST update depth ループ（tasks/batch/footer）修正に着手。
+  - update: 2026-01-26 13:43 JST useShapeBuildTasksのrAF flushと同値更新抑止、useBatchProgressのrAF更新と重複progress抑止、useShapeBuildTasksでerror/loadingの同値更新抑止を追加。pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
 2361) fix/shape/ignore-stale-task-updates (P1) — 進行中 (2026-01-25)
 - ブランチ名: fix/shape/ignore-stale-task-updates
 - 依存: なし
