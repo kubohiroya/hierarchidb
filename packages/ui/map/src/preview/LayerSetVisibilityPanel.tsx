@@ -70,6 +70,7 @@ export const LayerSetVisibilityPanel: React.FC<LayerSetVisibilityPanelProps> = (
         return (
           <Box key={set.id}>
             <FormControlLabel
+              sx={{ ml: 0 }}
               control={(
                 <Switch
                   size="small"
