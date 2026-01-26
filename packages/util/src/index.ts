@@ -19,5 +19,18 @@ export * from './env.js';
 export * from './webCrypto.js';
 export * from './dualKeyMap.js';
 export * from './treeConsoleSettings.js';
+export {
+  DEFAULT_ZOOM_BAND_BOUNDARIES,
+  ZOOM_BAND_MAX_RANGES,
+  ZOOM_BAND_MAX_ZOOM,
+  ZOOM_BAND_MIN_RANGES,
+  ZOOM_BAND_MIN_ZOOM,
+  areZoomBandBoundariesEqual,
+  buildEvenZoomBandBoundaries,
+  buildZoomBandRanges,
+  normalizeZoomBandBoundaries,
+  resolveZoomBandSettings,
+} from './zoomBandSettings.js';
+export type { ZoomBandRange, ZoomBandSettings, ZoomBandSettingsSource } from './zoomBandSettings.js';
 export * from './sleep.js';
 // Note: Dexie-specific helpers are internal; avoid leaking Dexie types to consumers

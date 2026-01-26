@@ -5,6 +5,7 @@
 import type { DataSourceConfig } from './data-source.js';
 
 import type { ShapeBuildConfig } from './build.js';
+import { DEFAULT_ZOOM_BAND_BOUNDARIES } from '@hierarchidb/util';
 
 export const DEFAULT_BUILD_CONFIG: ShapeBuildConfig = {
   dataSourceName: 'geoboundaries',
@@ -18,7 +19,7 @@ export const DEFAULT_BUILD_CONFIG: ShapeBuildConfig = {
     retryBackoff: 'linear',
   },
   transformConfig: {
-    zoomBandBoundaries: [0, 3, 6],
+    zoomBandBoundaries: DEFAULT_ZOOM_BAND_BOUNDARIES,
     maxConcurrent: 2,
     enableFeatureFiltering: true,
     featureAreaThreshold: 1.0,

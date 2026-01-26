@@ -19,7 +19,7 @@ import {
   ZOOM_BAND_MAX_ZOOM,
   ZOOM_BAND_MIN_RANGES,
   ZOOM_BAND_MIN_ZOOM,
-} from '../../common/config/zoomBands.js';
+} from '@hierarchidb/util';
 
 export function getDataSourceConfig(dataSource?: DataSourceName | null) {
   if (!dataSource) return undefined;

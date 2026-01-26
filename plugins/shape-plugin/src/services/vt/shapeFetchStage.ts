@@ -39,7 +39,7 @@ import * as turf from '@turf/turf';
 import { shapeMutationAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
 import { buildFeatureId, extractGeometryStats } from './featureMetadataUtils.ts';
 import { filterFetchCollectionByZoom } from './fetchGeometryFilters.ts';
-import { buildZoomBandRanges } from '../../common/config/zoomBands.ts';
+import { buildZoomBandRanges } from '@hierarchidb/util';
 import { buildStableSignature } from './taskSignatures.ts';
 import {
   buildRawDataDataSourceCacheKey,

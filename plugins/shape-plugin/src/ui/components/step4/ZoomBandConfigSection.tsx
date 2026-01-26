@@ -16,12 +16,15 @@ import { useTranslation } from '../../i18n.js';
 import { useTransformConfigSection } from './useTransformConfigSection.ts';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
 import {
+  areZoomBandBoundariesEqual,
+  resolveZoomBandSettings,
   ZOOM_BAND_MAX_RANGES,
   ZOOM_BAND_MAX_ZOOM,
   ZOOM_BAND_MIN_RANGES,
   ZOOM_BAND_MIN_ZOOM,
-} from '../../../common/config/zoomBands.js';
-import { TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES, loadTreeConsoleSettings } from '@hierarchidb/util';
+  TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES,
+  loadTreeConsoleSettings,
+} from '@hierarchidb/util';
 import { ZoomBandRangeCard } from './ZoomBandRangeCard.js';
 
 type Props = {
@@ -38,14 +41,15 @@ export const ZoomBandConfigSection: React.FC<Props> = ({
   const { t } = useTranslation();
   const { baseTransformConfig, update } = useTransformConfigSection({ config, onChange });
   const settings = loadTreeConsoleSettings();
-  const commonZoomBandBoundaries: number[] = Array.isArray(settings.zoomBandBoundaries)
-    ? settings.zoomBandBoundaries
-    : TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES;
-  const showApplyCommon =
-    commonZoomBandBoundaries.length !== baseTransformConfig.zoomBandBoundaries.length
-    || commonZoomBandBoundaries.some(
-      (value, index) => value !== baseTransformConfig.zoomBandBoundaries[index],
-    );
+  const { boundaries: commonZoomBandBoundaries } = resolveZoomBandSettings({
+    commonBoundaries: settings.zoomBandBoundaries,
+    fallbackBoundaries: TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES,
+    preferCommon: true,
+  });
+  const showApplyCommon = !areZoomBandBoundariesEqual(
+    commonZoomBandBoundaries,
+    baseTransformConfig.zoomBandBoundaries,
+  );
 
   const applyCommonZoomBandBoundaries = () => {
     update({

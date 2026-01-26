@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useMemo } from 'react';
-import { TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES, loadTreeConsoleSettings } from '@hierarchidb/util';
+import {
+  resolveZoomBandSettings,
+  TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES,
+  loadTreeConsoleSettings,
+} from '@hierarchidb/util';
 import { DEFAULT_BUILD_CONFIG, mergeBuildConfig } from '../../../common/types/index.js';
 import type { ShapeEntity } from '../../../common/types/index.js';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
@@ -12,9 +16,11 @@ type Args = {
 
 const resolveInitialBuildConfig = (): ShapeBuildConfig => {
   const settings = loadTreeConsoleSettings();
-  const zoomBandBoundaries = Array.isArray(settings.zoomBandBoundaries)
-    ? settings.zoomBandBoundaries
-    : TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES;
+  const { boundaries: zoomBandBoundaries } = resolveZoomBandSettings({
+    commonBoundaries: settings.zoomBandBoundaries,
+    fallbackBoundaries: TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES,
+    preferCommon: true,
+  });
   return {
     ...DEFAULT_BUILD_CONFIG,
     transformConfig: {

@@ -39,7 +39,7 @@ import {
   buildZoomBandRanges,
   ZOOM_BAND_MAX_ZOOM,
   ZOOM_BAND_MIN_ZOOM,
-} from '../../common/config/zoomBands.js';
+} from '@hierarchidb/util';
 
 export type ShapeTransformByBandTaskInput = {
   fetchCacheId: string;

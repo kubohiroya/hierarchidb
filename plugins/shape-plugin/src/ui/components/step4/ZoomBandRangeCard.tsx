@@ -9,7 +9,7 @@ import {
 import {
   buildEvenZoomBandBoundaries,
   normalizeZoomBandBoundaries,
-} from '../../../common/config/zoomBands.js';
+} from '@hierarchidb/util';
 
 type ZoomBandRangeCardProps = {
   title: string;
