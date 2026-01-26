@@ -160,34 +160,5 @@ export const RouteDataSourceStep: React.FC<RouteDataSourceStepProps> = ({
           );
         }}
       />
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-        <Button
-          variant="outlined"
-          onClick={async () => {
-            if (!resolvedNodeId) {
-              notify.warning(t('dataSource.cacheMissingNode', 'NodeId is missing.'));
-              return;
-            }
-            if (!resolvedSource) {
-              notify.warning(t('dataSource.cacheMissing', 'Select a data source first.'));
-              return;
-            }
-            try {
-              setIsClearing(true);
-              await clearRouteDataSourceCache(resolvedNodeId, resolvedSource);
-              notify.success(t('dataSource.cacheCleared', 'Cleared cache for selected data source.'));
-            } catch (error) {
-              console.error('[route] failed to clear data source cache', error);
-              notify.error(t('dataSource.cacheClearFailed', 'Failed to clear data source cache.'));
-            } finally {
-              setIsClearing(false);
-            }
-          }}
-          disabled={Boolean(disabled || !resolvedSource || isClearing)}
-        >
-          {t('dataSource.clearCache', 'Clear cache for selected data source')}
-        </Button>
-      </Box>
-    </Box>
   );
 };
