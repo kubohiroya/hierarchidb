@@ -121,8 +121,8 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
         const logKey = `${layer.id}:${key}`;
         if (!loggedPaintArraysRef.current.has(logKey)) {
           loggedPaintArraysRef.current.add(logKey);
-          if (import.meta.env.DEV) {
-            // Debug which layer/paint has array values during style load.
+          if (import.meta.env.DEV && !isExpressionArray) {
+            // Debug which layer/paint has non-expression array values during style load.
             console.warn('[ui-map][paint-array]', {
               layerId: layer.id,
               property: key,

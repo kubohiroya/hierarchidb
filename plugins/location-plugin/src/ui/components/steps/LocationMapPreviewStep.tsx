@@ -4,13 +4,7 @@
 
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Box,
-  Button,
-  CircularProgress,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Box, Button } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { Layers as LayersIcon, TableRows as TableRowsIcon } from '@mui/icons-material';
 import { DirectionsBoat, FlightTakeoff, ForkRight, LocationCity, Public, Train } from '@mui/icons-material';
@@ -44,7 +38,6 @@ import type {
 } from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
 import { getLocationDB } from '@hierarchidb/location-store';
-import { DataGridPreview } from '@hierarchidb/ui-grid';
 import { FloatingWindow, useFloatingWindow } from '@hierarchidb/ui-floating-window';
 import { LOCATION_TYPE_STYLES } from './locationTypes.js';
 import { resolveLocationAttribution } from '../../../common/datasources/attribution.js';
@@ -362,13 +355,6 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       ? MONOCHROME_STYLE_URLS.dark
       : MONOCHROME_STYLE_URLS.light
   ), [theme.palette.mode]);
-
-  const metadataWindow = useFloatingWindow({
-    persistKey: 'hierarchidb:ui:floating-window:location:metadata',
-    initialPosition: { x: 80, y: 140 },
-    initialSize: { width: 560, height: 420 },
-  });
-
   const terrainWindow = useFloatingWindow({
     persistKey: 'hierarchidb:ui:floating-window:location:terrain',
     initialPosition: { x: 80, y: 40 },
@@ -549,32 +535,6 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       }
     };
   }, [scheduleViewportQuery]);
-
-  const metadataContent = useMemo(() => {
-    if (loading) {
-      return (
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <CircularProgress size={16} />
-          <Typography variant="body2" color="text.secondary">
-            {translations.mapPreview?.metadataLoading ?? 'Loading metadata...'}
-          </Typography>
-        </Stack>
-      );
-    }
-    if (!tableId) {
-      return (
-        <Typography variant="body2" color="text.secondary">
-          {translations.mapPreview?.metadataEmpty ?? 'No metadata available yet.'}
-        </Typography>
-      );
-    }
-    return (
-      <Box sx={{ height: '100%', minHeight: 0 }}>
-        <DataGridPreview pluginId="location" tableId={tableId} />
-      </Box>
-    );
-  }, [loading, tableId, translations.mapPreview?.metadataEmpty, translations.mapPreview?.metadataLoading]);
-
   const knownLocationTypes = useMemo(() => LOCATION_TYPE_OPTIONS.map((option) => option.id), []);
   const locationFilter = useMemo(
     () => buildCategoryFilter(enabledLocationTypes, knownLocationTypes, ['kind', 'type']),
@@ -595,6 +555,38 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       };
     });
   }, [iconConfig]);
+  const iconAssetsById = useMemo(
+    () => new Map(iconAssets.map((asset) => [asset.imageId, asset])),
+    [iconAssets],
+  );
+
+  const loadIconImage = useCallback((map: MapLibreMapInstance, asset: {
+    imageId: string;
+    Icon: typeof LocationCity;
+    color: string;
+  }) => new Promise<void>((resolve) => {
+    const mapWithImages = map as MapLibreMapInstance & {
+      hasImage?: (id: string) => boolean;
+      addImage?: (id: string, image: HTMLImageElement) => void;
+    };
+    if (!mapWithImages.addImage) {
+      resolve();
+      return;
+    }
+    if (mapWithImages.hasImage?.(asset.imageId)) {
+      resolve();
+      return;
+    }
+    const svg = renderToStaticMarkup(<asset.Icon htmlColor={asset.color} />);
+    const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+    const image = new Image();
+    image.onload = () => {
+      mapWithImages.addImage?.(asset.imageId, image);
+      resolve();
+    };
+    image.onerror = () => resolve();
+    image.src = dataUrl;
+  }), []);
 
   const loadMapIcons = useCallback((map: MapLibreMapInstance) => {
     const mapWithImages = map as MapLibreMapInstance & {
@@ -604,20 +596,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     };
     if (!mapWithImages.addImage) return;
     setIconsReady(false);
-    const loaders = iconAssets.map((asset) => new Promise<void>((resolve) => {
-      if (mapWithImages.hasImage?.(asset.imageId)) {
-        mapWithImages.removeImage?.(asset.imageId);
-      }
-      const svg = renderToStaticMarkup(<asset.Icon htmlColor={asset.color} />);
-      const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-      const image = new Image();
-      image.onload = () => {
-        mapWithImages.addImage?.(asset.imageId, image);
-        resolve();
-      };
-      image.onerror = () => resolve();
-      image.src = dataUrl;
-    }));
+    const loaders = iconAssets.map((asset) => loadIconImage(map, asset));
     void Promise.all(loaders).then(() => setIconsReady(true));
   }, [iconAssets, loadIconImage]);
 
@@ -888,10 +867,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
             <Box sx={{ height: '100%', minHeight: 0 }}>
               <MapToggleCard
                 title=""
-                options={LOCATION_TYPE_OPTIONS.map((option) => ({
-                  ...option,
-                  label: translations.locationTypes?.[option.id as LocationType] ?? option.label,
-                }))}
+                options={terrainToggleOptions}
                 selection={locationTypeSelection}
                 onToggle={handleLocationToggle}
               />
