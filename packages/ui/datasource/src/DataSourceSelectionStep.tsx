@@ -24,6 +24,7 @@ export interface DataSourceSelectionStepProps<TAgreedAt = string | number | unde
   licenseRequired?: boolean;
   licenseRequiredText?: React.ReactNode;
   disabled?: boolean;
+  showDetailsCard?: boolean;
   title?: string;
   description?: React.ReactNode;
   renderOption?: DataSourceSelectorProps['renderOption'];
@@ -47,6 +48,7 @@ export const DataSourceSelectionStep = <TAgreedAt,>({
   licenseRequired = true,
   licenseRequiredText,
   disabled,
+  showDetailsCard = true,
   title = 'Select Data Source',
   description,
   renderOption,
@@ -117,7 +119,7 @@ export const DataSourceSelectionStep = <TAgreedAt,>({
         renderOption={renderOption}
       />
 
-      {selected ? (
+      {selected && showDetailsCard ? (
         <DataSourceDetailsCard title={detailsTitle}>
           {detailsContent ?? (
             <LicenseAgreementStep
