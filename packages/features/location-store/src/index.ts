@@ -107,6 +107,16 @@ export interface LocationPointProperties {
   admin2?: string;
   admin1Code?: string;
   admin2Code?: string;
+  z0?: string;
+  z1?: string;
+  z2?: string;
+  z3?: string;
+  z4?: string;
+  z5?: string;
+  z6?: string;
+  z7?: string;
+  z8?: string;
+  z9?: string;
   metadata?: LocationPointMetadata;
 }
 
@@ -189,6 +199,8 @@ export {
   MORTON_MAX_BITS,
   clampMortonZoom,
   lonLatToTileXY,
+  formatTileId,
+  buildTileIdByZoom,
   mortonKeyFromLonLat,
   mortonRangeForTile,
 } from './morton.js';

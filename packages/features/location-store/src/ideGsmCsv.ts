@@ -2,6 +2,7 @@ import { generateId } from '@hierarchidb/util';
 import { ensureIso3166Data, getAllCountries, getCountry, resolveIso3166CsvUrl } from '@hierarchidb/gen-iso3166-2/browser';
 import type { IdeGsmSelectionEntry } from '@hierarchidb/plugin-service-api';
 import type { LocationPointId, LocationPointProperties, LocationType } from './index.js';
+import { buildTileIdByZoom } from './morton.js';
 import { parseCsvTable } from './csvUtils.js';
 
 const DEFAULT_CSV_URL = resolveIso3166CsvUrl();
@@ -106,6 +107,7 @@ export const parseIdeGsmCsv = async (csvText: string): Promise<IdeGsmParseResult
       longitude: lon,
       kind,
       countryCode: '',
+      ...buildTileIdByZoom(lon, lat),
       countryName,
       admin1,
       admin2: undefined,

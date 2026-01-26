@@ -165,3 +165,12 @@ export type {
   SelectionResolver,
   SelectionContextDeriver,
 } from './preview/useVectorTilePreviewSelection.js';
+
+export {
+  clampTileZoom,
+  lonLatToTileXY,
+  formatTileId,
+  resolveTileIdField,
+  getViewportTileIdSet,
+  filterItemsByTileIdSet,
+} from './utils/tileIds.js';

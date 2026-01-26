@@ -5,6 +5,7 @@ import type { NodeId, ProgressEvent } from '@hierarchidb/common-types';
 import { getLocationDB } from '../../database/EphemeralLocationDB.js';
 import { TabularWriter } from '@hierarchidb/tabular-store';
 import { digestSha256Hex } from '@hierarchidb/util';
+import { buildTileIdByZoom } from '@hierarchidb/location-store';
 // External libs (ambient types declared under types/external.d.ts)
 import { BatchService, createLaneSemaphoreRegistry } from '@hierarchidb/batch';
 import { getLocationRuntimeWorkerClient } from './adapters/RuntimeWorkerClient.js';
@@ -246,6 +247,7 @@ function featuresToRows(features: LocationFeature[]): Array<Record<string, unkno
       id: f?.id,
       lon,
       lat,
+      ...buildTileIdByZoom(lon, lat),
       ...(f?.properties || {}),
     };
   });

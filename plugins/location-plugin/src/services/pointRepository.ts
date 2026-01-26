@@ -1,5 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { FeatureItemBase } from '@hierarchidb/runtime-worker';
+import { buildTileIdByZoom } from '@hierarchidb/location-store';
 import { LocationDB } from '../worker/locationEntitiesDB.js';
 import { toGroupRow, fromGroupRow } from '../worker/normalizers.js';
 import type { LocationGroupItemData } from '../common/types/entities.js';
@@ -28,11 +29,23 @@ async function getDb(): Promise<LocationDB> {
   return dbPromise;
 }
 
-const toItem = (point: PointProperties): PointItem => ({
-  id: point.pointId,
-  data: { ...point },
-  updatedAt: Date.now(),
-});
+const toItem = (point: PointProperties): PointItem => {
+  const longitude = point.longitude;
+  const latitude = point.latitude;
+  const withTiles = (
+    typeof longitude === 'number'
+    && Number.isFinite(longitude)
+    && typeof latitude === 'number'
+    && Number.isFinite(latitude)
+  )
+    ? { ...point, ...buildTileIdByZoom(longitude, latitude) }
+    : point;
+  return {
+    id: point.pointId,
+    data: { ...withTiles },
+    updatedAt: Date.now(),
+  };
+};
 
 export async function appendLocationPoints(nodeId: NodeId, points: PointProperties[]): Promise<void> {
   if (!points.length) return;

@@ -1,6 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { TabularDataResult } from '@hierarchidb/ui-tabular';
 import type { LocationPointProperties, LocationPointId } from '../../common/entities/LocationPoint.js';
+import { buildTileIdByZoom } from '@hierarchidb/location-store';
 import { replaceLocationPoints } from '../../services/pointRepository.js';
 type ProgressReporter = (progress: {
   stage?: string;
@@ -61,6 +62,7 @@ export async function materializeLocationPointsFromTabular(
       countryName,
       admin1,
       admin2,
+      ...buildTileIdByZoom(lon, lat),
       metadata: toMetadata(r),
     });
     processed += 1;
