@@ -5,6 +5,7 @@ export type MapToggleOption = {
   id: string;
   label: string;
   icon: React.ReactNode;
+  labelColor?: string;
 };
 
 export type MapToggleSelection = Record<string, boolean>;
@@ -49,7 +50,12 @@ export const MapToggleCard: React.FC<{
           >
             <Stack spacing={0.5} alignItems="center">
               {option.icon}
-              <Typography variant="caption">{option.label}</Typography>
+              <Typography
+                variant="caption"
+                sx={option.labelColor ? { color: option.labelColor } : undefined}
+              >
+                {option.label}
+              </Typography>
             </Stack>
           </ToggleButton>
         ))}

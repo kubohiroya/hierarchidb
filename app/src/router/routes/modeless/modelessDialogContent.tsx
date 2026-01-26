@@ -689,8 +689,8 @@ export const MapLayerContent: React.FC<{
 }> = ({ basemapStyles, vectorLayers, geoJsonLayers, layerSets, layerSetVisibility, onToggleLayerSet }) => (
   <Stack spacing={2}>
     <Box>
+      <Typography variant="subtitle2">Layer Sets</Typography>
       <LayerSetVisibilityPanel
-        title="Layer Sets"
         layerSets={layerSets}
         visibility={layerSetVisibility}
         onToggle={onToggleLayerSet}
