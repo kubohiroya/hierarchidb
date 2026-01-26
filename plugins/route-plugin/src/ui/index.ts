@@ -1,5 +1,6 @@
 
 import './i18n.js';
+import './components/steps-provider.js';
 
 type PluginDialogComponent = (props: HostPluginDialogProps) => JSX.Element | null;
 
