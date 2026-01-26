@@ -86,8 +86,8 @@ const MAX_ICON_SIZE = 12;
 const MIN_LABEL_SIZE = 0;
 const MAX_LABEL_SIZE = 12;
 
-const sliderSx = { mx: 3 };
-const sliderContainerSx = { p: 2 };
+const sliderSx = { ml: 3, mr: 0, width: 'calc(100% - 24px)' };
+const sliderContainerSx = { m: 2 };
 
 
 function clamp(value: number, min: number, max: number): number {
