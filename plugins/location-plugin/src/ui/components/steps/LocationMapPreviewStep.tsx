@@ -51,6 +51,7 @@ import { resolveLocationAttribution } from '../../../common/datasources/attribut
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import type { MapLibreMapInstance } from '@hierarchidb/ui-map';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { useIdeGsmImportOnEntry } from '../../hooks/useIdeGsmImportOnEntry.js';
 
 const KNOWN_LOCATION_TYPES: readonly LocationType[] = [
   'area_centroid',
@@ -236,8 +237,9 @@ type PreviewPoint = {
   tileId?: string;
 };
 
-export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ draft: _draft, nodeId }) => {
+export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ draft: _draft, nodeId, onUpdate }) => {
   const theme = useTheme();
+  useIdeGsmImportOnEntry({ draft: _draft, nodeId, onUpdate });
   const { translations } = useTranslation();
     const previewNodeId = nodeId ?? 'preview' as NodeId;
   const [previewPoints, setPreviewPoints] = useState<PreviewPoint[]>([]);

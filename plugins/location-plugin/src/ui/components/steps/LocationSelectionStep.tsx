@@ -3,12 +3,16 @@
  */
 
 import type React from 'react';
-import { Suspense, useCallback, useMemo } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import type { LocationEntity } from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
+import { parseIdeGsmCsv } from '@hierarchidb/location-store';
+import { downloadFile } from '@hierarchidb/ui-file';
+import { notify } from '@hierarchidb/components';
+import { buildAvailabilityMapFromIdeGsmPoints, buildSelectionMapFromAvailability } from '../../utils/ideGsmSelection.js';
 import type { LocationType } from '../../../common/types/index.js';
-import { CountryMatrixSelector, useIsoCountries, type MatrixConfig, type MatrixSelection } from '@hierarchidb/ui-country-select';
+import { CountryMatrixSelector, useIsoCountries, type Country, type MatrixConfig, type MatrixSelection } from '@hierarchidb/ui-country-select';
 import { BASE_LOCATION_TYPES, resolveTypesForSource } from './locationTypes.js';
 import { AuthReadyGate } from '@hierarchidb/ui-auth';
 
@@ -84,7 +88,55 @@ const LocationSelectionContent: React.FC<LocationSelectionStepProps> = ({ draft,
 
   type CountryMatrixSelection = MatrixSelection;
 
-  const selectionByCountries = useMemo(()=>draft.selectedArrayByCountries ?? {}, [draft.selectedArrayByCountries]);
+  const selectionByCountries = useMemo(() => draft.selectedArrayByCountries ?? {}, [draft.selectedArrayByCountries]);
+  const [availabilityByCountry, setAvailabilityByCountry] = useState<Record<string, boolean[]>>({});
+  const parseInFlightRef = useRef(false);
+  const typeIndex = useMemo(
+    () => new Map(BASE_LOCATION_TYPES.map((type, index) => [type.id, index])),
+    [],
+  );
+
+  const hasSelection = useMemo(() => (
+    Object.values(selectionByCountries).some((row) => Array.isArray(row) && row.some(Boolean))
+  ), [selectionByCountries]);
+
+  const hasAvailability = useMemo(
+    () => Object.keys(availabilityByCountry).length > 0,
+    [availabilityByCountry],
+  );
+
+  useEffect(() => {
+    if (draft.dataSource !== 'ide-gsm') return;
+    const sourceUrl = draft.ideGsmSourceUrl;
+    if (!sourceUrl) return;
+    if (parseInFlightRef.current) return;
+    if (hasSelection && hasAvailability) return;
+
+    parseInFlightRef.current = true;
+    const run = async () => {
+      try {
+        const blob = await downloadFile(sourceUrl);
+        const csvText = await blob.text();
+        const parsed = await parseIdeGsmCsv(csvText);
+        const availabilityMap = buildAvailabilityMapFromIdeGsmPoints(parsed.points, BASE_LOCATION_TYPES);
+        setAvailabilityByCountry(availabilityMap);
+        if (!hasSelection) {
+          const selectionMap = buildSelectionMapFromAvailability(availabilityMap);
+          onUpdate({ selectedArrayByCountries: selectionMap });
+        }
+        if (!parsed.points.length) {
+          notify.warning(t('dataSource.ideGsm.empty', 'No valid IDE-GSM rows found.'));
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        notify.error(`${t('dataSource.ideGsm.parseError', 'Failed to parse IDE-GSM CSV.')} ${message}`);
+      } finally {
+        parseInFlightRef.current = false;
+      }
+    };
+
+    void run();
+  }, [draft.dataSource, draft.ideGsmSourceUrl, hasAvailability, hasSelection, onUpdate, t]);
 
   const selectionMatrixSource = useMemo(() => {
     if (iso.status !== 'ready') return [];
@@ -122,6 +174,19 @@ const LocationSelectionContent: React.FC<LocationSelectionStepProps> = ({ draft,
       }
     },
     [allowedTypeSet, deepEqualSelectionRecord, iso.countries, iso.status, matrixConfig.columns, onUpdate, selectionRecordSource],
+  );
+
+  const isCellEnabled = useCallback(
+    (country: Country, columnId: string) => {
+      if (!allowedTypeSet.has(columnId as LocationType)) return false;
+      if (draft.dataSource !== 'ide-gsm') return true;
+      const row = availabilityByCountry[country.code];
+      if (!row) return false;
+      const idx = typeIndex.get(columnId as LocationType);
+      if (idx == null) return false;
+      return Boolean(row[idx]);
+    },
+    [allowedTypeSet, availabilityByCountry, draft.dataSource, typeIndex],
   );
 
   if (iso.status === 'loading') {
@@ -163,7 +228,7 @@ const LocationSelectionContent: React.FC<LocationSelectionStepProps> = ({ draft,
         showAlphabetIndex
         showRegionIndex
         rowHeight={40}
-        isCellEnabled={(_, columnId) => allowedTypeSet.has(columnId as LocationType)}
+        isCellEnabled={isCellEnabled}
         height="100%"
         maxHeight={undefined}
       />

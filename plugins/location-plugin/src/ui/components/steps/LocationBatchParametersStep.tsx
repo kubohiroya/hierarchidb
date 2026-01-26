@@ -25,6 +25,7 @@ import type {
   LocationRepresentationByZoomLevelConfig,
   LocationType,
 } from '../../../common/types/index.js';
+import type { NodeId } from '@hierarchidb/common-types';
 import { useTranslation } from '../../../common/i18n/index.js';
 import {
   DirectionsBoat,
@@ -35,11 +36,13 @@ import {
 } from '@mui/icons-material';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { LOCATION_TYPE_STYLES } from './locationTypes.js';
+import { useIdeGsmImportOnEntry } from '../../hooks/useIdeGsmImportOnEntry.js';
 
 interface LocationBatchParametersStepProps {
   draft: Partial<LocationEntity>;
   onUpdate: (updates: Partial<LocationEntity>) => void;
   disabled?: boolean;
+  nodeId?: NodeId;
 }
 
 const MIN_ZOOM_LEVEL = 0;
@@ -162,9 +165,11 @@ export const LocationBatchParametersStep: React.FC<LocationBatchParametersStepPr
   draft: draftProp,
   onUpdate,
   disabled,
+  nodeId,
 }) => {
   const { translations } = useTranslation();
   const draft = draftProp ?? {};
+  useIdeGsmImportOnEntry({ draft, nodeId, onUpdate });
   const tilesMaxZoom = clamp(draft.tilesMaxZoom ?? DEFAULT_MAX_ZOOM, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
 
   const representationDefaults = useMemo(

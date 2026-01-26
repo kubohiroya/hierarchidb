@@ -69,6 +69,7 @@ export interface LocationEntity extends TreeNodeData {
   licenseAgreedAt?: Timestamp;
   ideGsmFileName?: string;
   ideGsmSourceUrl?: string;
+  ideGsmSelectionHash?: string;
   selectedArrayByCountries: Record<ISO2, boolean[]>;
   tilesMinZoom?: number;
   tilesMaxZoom?: number;
