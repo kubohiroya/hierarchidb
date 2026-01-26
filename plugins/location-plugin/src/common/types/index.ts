@@ -23,7 +23,11 @@ import type {
   LocationPoint,
   LocationPointProperties,
   LocationPointKind,
-  LocationPointId
+  LocationPointId,
+  LocationIconConfig,
+  LocationIconId,
+  LocationLabelConfig,
+  LocationRepresentationByZoomLevelConfig
 } from '@hierarchidb/location-store';
 
 export type LocationEntity = LocationEntityDefinition;
@@ -38,6 +42,10 @@ export type {
   LocationPointProperties,
   LocationPointKind,
   LocationPointId,
+  LocationIconConfig,
+  LocationIconId,
+  LocationLabelConfig,
+  LocationRepresentationByZoomLevelConfig,
 };
 export type { BatchConfig, UnifiedLocationBatchConfig } from '@hierarchidb/location-store';
 

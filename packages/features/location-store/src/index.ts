@@ -29,6 +29,40 @@ export type LocationProcessingStatus =
   | 'completed'
   | 'failed';
 
+
+export type LocationRepresentationByZoomLevel = {
+  pointFromZoom: number;
+  polygonFromZoom: number;
+  iconFromZoom: number;
+  iconFixedFromZoom: number;
+};
+
+export type LocationRepresentationByZoomLevelConfig = Record<LocationType, LocationRepresentationByZoomLevel>;
+
+export type LocationIconId =
+  | 'public'
+  | 'location_city'
+  | 'flight_takeoff'
+  | 'directions_boat'
+  | 'train'
+  | 'fork_right';
+
+export type LocationIconConfigEntry = {
+  color: string;
+  iconId: LocationIconId;
+  sizeRange: [number, number];
+};
+
+export type LocationIconConfig = Record<LocationType, LocationIconConfigEntry>;
+
+export type LocationLabelConfigEntry = {
+  color: string;
+  zoomRange: [number, number];
+  sizeRange: [number, number];
+};
+
+export type LocationLabelConfig = Record<LocationType, LocationLabelConfigEntry>;
+
 export interface LocationEntity extends TreeNodeData {
   dataSource: LocationDataSource;
   licenseAgreement: boolean;
@@ -44,6 +78,9 @@ export interface LocationEntity extends TreeNodeData {
   processedAt?: Timestamp;
   tabularSourceId?: string;
   extractConfig?: Record<string, unknown>;
+  representationByZoomLevelConfig?: LocationRepresentationByZoomLevelConfig;
+  iconConfig?: LocationIconConfig;
+  labelConfig?: LocationLabelConfig;
 }
 
 export interface LocationBatchFilterCriteria {
