@@ -183,7 +183,7 @@
   },
   "mapPreview": {
     "title": "Map Preview",
-    "loading": "Loading map preview…",
+    "loading": "Loading map preview\u2026",
     "description": "Preview the generated points on the map.",
     "tabs": {
       "map": "Map",

@@ -5,7 +5,6 @@ import {
   FlightTakeoff,
   ForkRight,
   LocationCity,
-  Public,
   Train,
 } from '@mui/icons-material';
 
@@ -18,8 +17,7 @@ type LocationTypeStyle = {
 export const LOCATION_TYPE_STYLES: Record<LocationType, LocationTypeStyle> = {
   area_centroid: {
     color: '#1f77b4',
-    icon: Public,
-    altIcon: LocationCity,
+    icon: LocationCity,
   },
   airport: {
     color: '#ff7f0e',

@@ -8,14 +8,13 @@ import {
   Box,
   Button,
   CircularProgress,
-  Divider,
-  Paper,
   Stack,
-  Tab,
-  Tabs,
   Typography,
 } from '@mui/material';
-import RefreshIcon from '@mui/icons-material/Refresh';
+import { useTheme } from '@mui/material/styles';
+import { Layers as LayersIcon, TableRows as TableRowsIcon } from '@mui/icons-material';
+import { DirectionsBoat, FlightTakeoff, ForkRight, LocationCity, Public, Train } from '@mui/icons-material';
+import type { SvgIconComponent } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-types';
 import type {
   MapToggleSelection,
@@ -25,14 +24,28 @@ import type {
 } from '@hierarchidb/ui-map';
 import {
   buildCategoryFilter,
+  clampTileZoom,
   DEFAULT_MAP_CONFIG,
+  filterItemsByTileIdSet,
+  formatTileId,
+  getViewportTileIdSet,
+  lonLatToTileXY,
   MapToggleCard,
   ResourceLayerMap,
+  resolveTileIdField,
 } from '@hierarchidb/ui-map';
-import type { LocationEntity, LocationType } from '../../../common/types/index.js';
+import type {
+  LocationEntity,
+  LocationIconConfig,
+  LocationIconId,
+  LocationLabelConfig,
+  LocationRepresentationByZoomLevelConfig,
+  LocationType,
+} from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
 import { getLocationDB } from '@hierarchidb/location-store';
 import { DataGridPreview } from '@hierarchidb/ui-grid';
+import { FloatingWindow, useFloatingWindow } from '@hierarchidb/ui-floating-window';
 import { LOCATION_TYPE_STYLES } from './locationTypes.js';
 import { resolveLocationAttribution } from '../../../common/datasources/attribution.js';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
@@ -47,14 +60,137 @@ const KNOWN_LOCATION_TYPES: readonly LocationType[] = [
   'interchange',
 ];
 
+const DEFAULT_TYPE_COLORS: Record<LocationType, string> = {
+  area_centroid: '#d62728',
+  airport: LOCATION_TYPE_STYLES.airport.color,
+  port: '#1f77b4',
+  railway_station: '#2ca02c',
+  interchange: LOCATION_TYPE_STYLES.interchange.color,
+};
+
 const PREFETCH_MARGIN_PX = 64;
 const CIRCLE_RADIUS_MIN = 2;
 const CIRCLE_RADIUS_MAX_ZOOM = 11;
 const CIRCLE_RADIUS_SLOPE = 0.6;
 const CIRCLE_RADIUS_AT_MAX = CIRCLE_RADIUS_MIN + CIRCLE_RADIUS_MAX_ZOOM * CIRCLE_RADIUS_SLOPE;
-const ICON_SIZE_MIN = 0.7;
-const ICON_SIZE_SLOPE = 0.05;
-const ICON_SIZE_AT_MAX = ICON_SIZE_MIN + CIRCLE_RADIUS_MAX_ZOOM * ICON_SIZE_SLOPE;
+
+const MAX_TILE_ID_ZOOM = 9;
+const MIN_ZOOM_LEVEL = 0;
+const MAX_ZOOM_LEVEL = 22;
+const DEFAULT_MAX_ZOOM = 12;
+const DEFAULT_ICON_SIZE_RANGE: [number, number] = [12, 28];
+const DEFAULT_LABEL_SIZE_RANGE: [number, number] = [10, 18];
+const MONOCHROME_STYLE_URLS = {
+  dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+  light: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+};
+const MIN_ICON_SIZE = 8;
+const MAX_ICON_SIZE = 48;
+const MIN_LABEL_SIZE = 8;
+const MAX_LABEL_SIZE = 32;
+const ICON_BASE_PX = 24;
+
+const LOCATION_ICON_COMPONENTS: Record<LocationIconId, SvgIconComponent> = {
+  public: Public,
+  location_city: LocationCity,
+  flight_takeoff: FlightTakeoff,
+  directions_boat: DirectionsBoat,
+  train: Train,
+  fork_right: ForkRight,
+};
+
+
+const DEFAULT_ICON_IDS: Record<LocationType, LocationIconId> = {
+  area_centroid: 'location_city',
+  airport: 'flight_takeoff',
+  port: 'directions_boat',
+  railway_station: 'train',
+  interchange: 'fork_right',
+};
+
+const clamp = (value: number, min: number, max: number): number =>
+  Math.min(max, Math.max(min, value));
+
+const normalizeRange = (value: number[] | number, min: number, max: number): [number, number] => {
+  const array = Array.isArray(value) ? value : [value, value];
+  const first = clamp(Number(array[0] ?? min), min, max);
+  const second = clamp(Number(array[1] ?? first), min, max);
+  return first <= second ? [first, second] : [second, first];
+};
+
+const normalizeZoomStops = (values: number[], maxZoom: number): [number, number, number, number] => {
+  const clamped = values.map((value) => clamp(Math.round(value), MIN_ZOOM_LEVEL, maxZoom));
+  const normalized: number[] = [];
+  let last = MIN_ZOOM_LEVEL;
+  for (let index = 0; index < 4; index += 1) {
+    const next = clamp(clamped[index] ?? last, last, maxZoom);
+    normalized.push(next);
+    last = next;
+  }
+  return normalized as [number, number, number, number];
+};
+
+const buildDefaultRepresentationConfig = (maxZoom: number): LocationRepresentationByZoomLevelConfig => {
+  const stops = normalizeZoomStops([
+    0,
+    Math.round(maxZoom * 0.4),
+    Math.round(maxZoom * 0.6),
+    Math.round(maxZoom * 0.8),
+  ], maxZoom);
+  return KNOWN_LOCATION_TYPES.reduce((acc, type) => {
+    acc[type] = {
+      pointFromZoom: stops[0],
+      polygonFromZoom: stops[1],
+      iconFromZoom: stops[2],
+      iconFixedFromZoom: stops[3],
+    };
+    return acc;
+  }, {} as LocationRepresentationByZoomLevelConfig);
+};
+
+const buildDefaultIconConfig = (): LocationIconConfig => (
+  KNOWN_LOCATION_TYPES.reduce((acc, type) => {
+    acc[type] = {
+      color: DEFAULT_TYPE_COLORS[type],
+      iconId: DEFAULT_ICON_IDS[type],
+      sizeRange: DEFAULT_ICON_SIZE_RANGE,
+    };
+    return acc;
+  }, {} as LocationIconConfig)
+);
+
+const buildDefaultLabelConfig = (maxZoom: number): LocationLabelConfig => {
+  const zoomRange = normalizeRange([
+    Math.round(maxZoom * 0.6),
+    Math.round(maxZoom * 0.8),
+  ], MIN_ZOOM_LEVEL, maxZoom);
+  return KNOWN_LOCATION_TYPES.reduce((acc, type) => {
+    acc[type] = {
+      color: DEFAULT_TYPE_COLORS[type],
+      zoomRange,
+      sizeRange: DEFAULT_LABEL_SIZE_RANGE,
+    };
+    return acc;
+  }, {} as LocationLabelConfig);
+};
+
+const buildTypeMatchExpression = (
+  entries: Array<[LocationType, unknown]>,
+  fallback: unknown,
+): Array<string | unknown> => {
+  const expression: Array<string | unknown> = ['match', ['get', 'kind']];
+  entries.forEach(([kind, value]) => {
+    expression.push(kind, value);
+  });
+  expression.push(fallback);
+  return expression;
+};
+
+const toIconScaleRange = (sizeRange: [number, number]): [number, number] => [
+  sizeRange[0] / ICON_BASE_PX,
+  sizeRange[1] / ICON_BASE_PX,
+];
+
 
 const resolveLocationType = (kind: string): LocationType => (
   (KNOWN_LOCATION_TYPES as readonly string[]).includes(kind)
@@ -91,32 +227,27 @@ interface LocationMapPreviewStepProps {
   onUpdate?: (updates: Partial<LocationEntity>) => void;
 }
 
-type PreviewSummary = {
-  totalPoints: number;
-};
-
 type PreviewPoint = {
   id: string;
+  name?: string;
   longitude: number;
   latitude: number;
   kind: LocationType;
+  tileId?: string;
 };
 
 export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ draft: _draft, nodeId }) => {
+  const theme = useTheme();
   const { translations } = useTranslation();
-  const panelTranslations = translations.panel ?? {};
-  const previewNodeId = nodeId ?? 'preview' as NodeId;
-  const [summary, setSummary] = useState<PreviewSummary | null>(null);
+    const previewNodeId = nodeId ?? 'preview' as NodeId;
   const [previewPoints, setPreviewPoints] = useState<PreviewPoint[]>([]);
   const [tableId, setTableId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [iconsReady, setIconsReady] = useState(false);
   const isMountedRef = useRef(true);
   const mapRef = useRef<MapLibreMapInstance | null>(null);
   const queryTimerRef = useRef<number | null>(null);
   const queryRequestRef = useRef(0);
-  const [activeTab, setActiveTab] = useState(0);
   const [locationTypeSelection, setLocationTypeSelection] = useState<MapToggleSelection>(() =>
     Object.fromEntries(LOCATION_TYPE_OPTIONS.map((option) => [option.id, true])) as MapToggleSelection
   );
@@ -124,6 +255,46 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     () => resolveLocationAttribution(_draft.dataSource ?? null),
     [_draft.dataSource],
   );
+  const tilesMaxZoom = clamp(_draft.tilesMaxZoom ?? DEFAULT_MAX_ZOOM, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
+  const representationConfig = useMemo(() => {
+    const defaults = buildDefaultRepresentationConfig(tilesMaxZoom);
+    return KNOWN_LOCATION_TYPES.reduce((acc, type) => {
+      acc[type] = _draft.representationByZoomLevelConfig?.[type] ?? defaults[type];
+      return acc;
+    }, {} as LocationRepresentationByZoomLevelConfig);
+  }, [_draft.representationByZoomLevelConfig, tilesMaxZoom]);
+  const iconConfig = useMemo(() => {
+    const defaults = buildDefaultIconConfig();
+    return KNOWN_LOCATION_TYPES.reduce((acc, type) => {
+      acc[type] = _draft.iconConfig?.[type] ?? defaults[type];
+      return acc;
+    }, {} as LocationIconConfig);
+  }, [_draft.iconConfig]);
+  const labelConfig = useMemo(() => {
+    const defaults = buildDefaultLabelConfig(tilesMaxZoom);
+    return KNOWN_LOCATION_TYPES.reduce((acc, type) => {
+      acc[type] = _draft.labelConfig?.[type] ?? defaults[type];
+      return acc;
+    }, {} as LocationLabelConfig);
+  }, [_draft.labelConfig, tilesMaxZoom]);
+  const mapStyleUrl = useMemo(() => (
+    theme.palette.mode === 'dark'
+      ? MONOCHROME_STYLE_URLS.dark
+      : MONOCHROME_STYLE_URLS.light
+  ), [theme.palette.mode]);
+
+  const metadataWindow = useFloatingWindow({
+    persistKey: 'hierarchidb:ui:floating-window:location:metadata',
+    initialPosition: { x: 80, y: 140 },
+    initialSize: { width: 560, height: 420 },
+  });
+
+  const terrainWindow = useFloatingWindow({
+    persistKey: 'hierarchidb:ui:floating-window:location:terrain',
+    initialPosition: { x: 80, y: 40 },
+    initialSize: { width: 280, height: 280 },
+  });
+
   const attributionItems = useMemo<MapAttributionItem[]>(() => {
     if (!dataSourceAttribution) return [];
     return [{
@@ -140,25 +311,20 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     if (!isMountedRef.current) return;
 
     if (typeof window === 'undefined') {
-      setSummary(null);
       setPreviewPoints([]);
       return;
     }
 
     if (!previewNodeId || previewNodeId === 'preview') {
-      setSummary(null);
       setPreviewPoints([]);
       return;
     }
 
     setLoading(true);
-    setError(null);
     try {
       const db = getLocationDB();
       const sessions = db.sessions;
-      const totalPoints = await db.features.where('nodeId').equals(previewNodeId).count();
       if (!isMountedRef.current) return;
-      setSummary({ totalPoints });
       setPreviewPoints([]);
       if (!sessions || typeof sessions.where !== 'function') {
         setTableId(null);
@@ -176,8 +342,6 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       }, null);
       setTableId(latest?.tableId ?? null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-      setSummary(null);
       setTableId(null);
       setPreviewPoints([]);
     } finally {
@@ -237,10 +401,14 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       const bridge = getWorkerBridge();
       await bridge.initialize();
       const api = await bridge.getLocationQueryAPI();
+      const zoomValue = viewState?.zoom ?? map.getZoom();
+      const tileZoom = clampTileZoom(zoomValue, 0, MAX_TILE_ID_ZOOM);
+      const tileIdField = resolveTileIdField(tileZoom, MAX_TILE_ID_ZOOM);
+      const tileIdSet = getViewportTileIdSet(bbox, tileZoom, { minZoom: 0, maxZoom: MAX_TILE_ID_ZOOM });
       const items = await api.queryByViewport(
         previewNodeId as NodeId,
         bbox,
-        viewState?.zoom ?? map.getZoom(),
+        zoomValue,
         enabledLocationTypes,
         {
           prefetchMarginPx: PREFETCH_MARGIN_PX,
@@ -250,21 +418,31 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       if (requestId !== queryRequestRef.current) return;
       const points = items
         .map((item) => {
-          const data = item.data as { longitude?: number; latitude?: number; kind?: string } | undefined;
+          const data = item.data as Record<string, unknown> | undefined;
           if (!data) return null;
-          const longitude = data.longitude;
-          const latitude = data.latitude;
+          const longitude = data.longitude as number | undefined;
+          const latitude = data.latitude as number | undefined;
           if (typeof longitude !== 'number' || !Number.isFinite(longitude)) return null;
           if (typeof latitude !== 'number' || !Number.isFinite(latitude)) return null;
+          const fallbackTile = (() => {
+            const { x, y } = lonLatToTileXY(longitude, latitude, tileZoom);
+            return formatTileId(tileZoom, x, y);
+          })();
+          const tileId = typeof data[tileIdField] === 'string' ? data[tileIdField] as string : fallbackTile;
+          const name = typeof data.name === 'string' ? data.name : undefined;
           return {
             id: String(item.id),
+            name,
             longitude,
             latitude,
-            kind: resolveLocationType(data.kind ?? 'area_centroid'),
-          } satisfies PreviewPoint;
+            kind: resolveLocationType(String(data.kind ?? 'area_centroid')),
+            tileId,
+            [tileIdField]: tileId,
+          } as PreviewPoint & Record<string, unknown>;
         })
-        .filter((point): point is PreviewPoint => Boolean(point));
-      setPreviewPoints(points);
+        .filter((point): point is PreviewPoint & Record<string, unknown> => Boolean(point));
+      const filtered = filterItemsByTileIdSet(points, tileIdSet, tileIdField);
+      setPreviewPoints(filtered as PreviewPoint[]);
     } catch (err) {
       if (requestId === queryRequestRef.current) {
         setPreviewPoints([]);
@@ -292,47 +470,6 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     };
   }, [scheduleViewportQuery]);
 
-  const summaryContent = useMemo(() => {
-    if (loading) {
-      return (
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <CircularProgress size={16} />
-          <Typography variant="body2" color="text.secondary">
-            {translations.mapPreview?.loading ?? 'Loading map preview...'}
-          </Typography>
-        </Stack>
-      );
-    }
-
-    if (error) {
-      const message = translations.mapPreview?.error
-        ?.replace('{message}', error)
-        ?? `Failed to load map preview: ${error}`;
-      return (
-        <Typography variant="body2" color="error">
-          {message}
-        </Typography>
-      );
-    }
-
-    if (!summary || summary.totalPoints === 0) {
-      return (
-        <Typography variant="body2" color="text.secondary">
-          {translations.mapPreview?.summary?.noData ?? 'No location points available yet.'}
-        </Typography>
-      );
-    }
-
-    return (
-      <Stack spacing={0.5}>
-        <Typography variant="body2">
-          {translations.mapPreview?.summary?.points?.replace('{count}', String(summary.totalPoints))
-            ?? `Stored points: ${summary.totalPoints}`}
-        </Typography>
-      </Stack>
-    );
-  }, [error, loading, summary, translations.mapPreview]);
-
   const metadataContent = useMemo(() => {
     if (loading) {
       return (
@@ -352,7 +489,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       );
     }
     return (
-      <Box sx={{ height: 420 }}>
+      <Box sx={{ height: '100%', minHeight: 0 }}>
         <DataGridPreview pluginId="location" tableId={tableId} />
       </Box>
     );
@@ -363,30 +500,133 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     () => buildCategoryFilter(enabledLocationTypes, knownLocationTypes, ['kind', 'type']),
     [enabledLocationTypes, knownLocationTypes],
   );
-  const circleColorExpression = useMemo(() => {
-    const expression: Array<string | unknown> = ['match', ['get', 'kind']];
-    Object.entries(LOCATION_TYPE_STYLES).forEach(([kind, style]) => {
-      expression.push(kind, style.color);
+  const iconAssets = useMemo(() => {
+    return KNOWN_LOCATION_TYPES.map((type) => {
+      const entry = iconConfig[type];
+      const iconId = entry?.iconId ?? DEFAULT_ICON_IDS[type];
+      const Icon = LOCATION_ICON_COMPONENTS[iconId] ?? LocationCity;
+      const color = entry?.color ?? DEFAULT_TYPE_COLORS[type];
+      return {
+        type,
+        iconId,
+        Icon,
+        color,
+        imageId: `location-preview-icon-${type}`,
+      };
     });
-    expression.push(LOCATION_TYPE_STYLES.area_centroid.color);
-    return expression;
-  }, []);
-  const circleRadiusExpression = useMemo(
-    () => (['interpolate', ['linear'], ['zoom'], 0, CIRCLE_RADIUS_MIN, CIRCLE_RADIUS_MAX_ZOOM, CIRCLE_RADIUS_AT_MAX] as unknown),
-    [],
-  );
-  const iconImageExpression = useMemo(() => {
-    const expression: Array<string | unknown> = ['match', ['get', 'kind']];
-    Object.entries(LOCATION_TYPE_STYLES).forEach(([kind]) => {
-      expression.push(kind, `location-preview-icon-${kind}`);
+  }, [iconConfig]);
+
+  const loadMapIcons = useCallback((map: MapLibreMapInstance) => {
+    const mapWithImages = map as MapLibreMapInstance & {
+      hasImage?: (id: string) => boolean;
+      addImage?: (id: string, image: HTMLImageElement) => void;
+      removeImage?: (id: string) => void;
+    };
+    if (!mapWithImages.addImage) return;
+    setIconsReady(false);
+    const loaders = iconAssets.map((asset) => new Promise<void>((resolve) => {
+      if (mapWithImages.hasImage?.(asset.imageId)) {
+        mapWithImages.removeImage?.(asset.imageId);
+      }
+      const svg = renderToStaticMarkup(<asset.Icon htmlColor={asset.color} />);
+      const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+      const image = new Image();
+      image.onload = () => {
+        mapWithImages.addImage?.(asset.imageId, image);
+        resolve();
+      };
+      image.onerror = () => resolve();
+      image.src = dataUrl;
+    }));
+    void Promise.all(loaders).then(() => setIconsReady(true));
+  }, [iconAssets]);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+    loadMapIcons(mapRef.current);
+  }, [loadMapIcons]);
+
+  const circleColorExpression = useMemo(() => buildTypeMatchExpression(
+    KNOWN_LOCATION_TYPES.map((type) => [type, iconConfig[type]?.color ?? DEFAULT_TYPE_COLORS[type]]),
+    DEFAULT_TYPE_COLORS.area_centroid,
+  ), [iconConfig]);
+
+  const circleRadiusExpression = useMemo(() => {
+    const entries: Array<[LocationType, Array<string | unknown>]> = KNOWN_LOCATION_TYPES.map((type) => {
+      const rep = representationConfig[type];
+      const base = [
+        'interpolate',
+        ['linear'],
+        ['zoom'],
+        MIN_ZOOM_LEVEL,
+        CIRCLE_RADIUS_MIN,
+        CIRCLE_RADIUS_MAX_ZOOM,
+        CIRCLE_RADIUS_AT_MAX,
+      ];
+      const expr = ['case', ['<', ['zoom'], rep.pointFromZoom], 0, base];
+      return [type, expr];
     });
-    expression.push(`location-preview-icon-area_centroid`);
-    return expression;
-  }, []);
-  const iconSizeExpression = useMemo(
-    () => (['interpolate', ['linear'], ['zoom'], 0, ICON_SIZE_MIN, CIRCLE_RADIUS_MAX_ZOOM, ICON_SIZE_AT_MAX] as unknown),
-    [],
-  );
+    return buildTypeMatchExpression(entries, CIRCLE_RADIUS_MIN);
+  }, [representationConfig]);
+
+  const iconImageExpression = useMemo(() => buildTypeMatchExpression(
+    KNOWN_LOCATION_TYPES.map((type) => [type, `location-preview-icon-${type}`]),
+    'location-preview-icon-area_centroid',
+  ), []);
+
+  const iconSizeExpression = useMemo(() => {
+    const entries: Array<[LocationType, Array<string | unknown>]> = KNOWN_LOCATION_TYPES.map((type) => {
+      const rep = representationConfig[type];
+      const range = normalizeRange(iconConfig[type]?.sizeRange ?? DEFAULT_ICON_SIZE_RANGE, MIN_ICON_SIZE, MAX_ICON_SIZE);
+      const [minScale, maxScale] = toIconScaleRange(range);
+      const startZoom = rep.iconFromZoom;
+      const fixedZoom = Math.max(startZoom, rep.iconFixedFromZoom);
+      const base = [
+        'interpolate',
+        ['linear'],
+        ['zoom'],
+        startZoom,
+        minScale,
+        fixedZoom,
+        maxScale,
+        fixedZoom + 1,
+        maxScale,
+      ];
+      const expr = ['case', ['<', ['zoom'], startZoom], 0, base];
+      return [type, expr];
+    });
+    return buildTypeMatchExpression(entries, 0);
+  }, [iconConfig, representationConfig]);
+
+  const labelColorExpression = useMemo(() => buildTypeMatchExpression(
+    KNOWN_LOCATION_TYPES.map((type) => [type, labelConfig[type]?.color ?? DEFAULT_TYPE_COLORS[type]]),
+    DEFAULT_TYPE_COLORS.area_centroid,
+  ), [labelConfig]);
+
+  const labelSizeExpression = useMemo(() => {
+    const entries: Array<[LocationType, Array<string | unknown>]> = KNOWN_LOCATION_TYPES.map((type) => {
+      const entry = labelConfig[type];
+      const zoomRange = normalizeRange(entry?.zoomRange ?? [MIN_ZOOM_LEVEL, tilesMaxZoom], MIN_ZOOM_LEVEL, tilesMaxZoom);
+      const sizeRange = normalizeRange(entry?.sizeRange ?? DEFAULT_LABEL_SIZE_RANGE, MIN_LABEL_SIZE, MAX_LABEL_SIZE);
+      const startZoom = zoomRange[0];
+      const fixedZoom = Math.max(startZoom, zoomRange[1]);
+      const base = [
+        'interpolate',
+        ['linear'],
+        ['zoom'],
+        startZoom,
+        sizeRange[0],
+        fixedZoom,
+        sizeRange[1],
+        fixedZoom + 1,
+        sizeRange[1],
+      ];
+      const expr = ['case', ['<', ['zoom'], startZoom], 0, base];
+      return [type, expr];
+    });
+    return buildTypeMatchExpression(entries, 0);
+  }, [labelConfig, tilesMaxZoom]);
+
   const initialViewState = useMemo(
     () => buildInitialViewState(undefined),
     [],
@@ -394,6 +634,9 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
   const locationGeoJsonLayers = useMemo<ResourceGeoJsonLayer[]>(() => {
     if (enabledLocationTypes.length === 0) return [];
     if (previewPoints.length === 0) return [];
+    const labelFilter = locationFilter
+      ? ['all', locationFilter, ['has', 'name']]
+      : ['has', 'name'];
     const layers: ResourceGeoJsonLayer[] = [
       {
         layerId: `location-preview-${previewNodeId}-circle`,
@@ -411,6 +654,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
             },
             properties: {
               kind: resolveLocationType(point.kind),
+              name: point.name ?? '',
             },
           })),
         },
@@ -438,6 +682,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
             },
             properties: {
               kind: resolveLocationType(point.kind),
+              name: point.name ?? '',
             },
           })),
         },
@@ -449,6 +694,38 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
         },
       });
     }
+    layers.push({
+      layerId: `location-preview-${previewNodeId}-label`,
+      sourceId: `location-preview-source-${previewNodeId}`,
+      layerType: 'symbol',
+      filter: labelFilter ?? undefined,
+      data: {
+        type: 'FeatureCollection',
+        features: previewPoints.map((point) => ({
+          type: 'Feature',
+          id: point.id,
+          geometry: {
+            type: 'Point',
+            coordinates: [point.longitude, point.latitude],
+          },
+          properties: {
+            kind: resolveLocationType(point.kind),
+            name: point.name ?? '',
+          },
+        })),
+      },
+      layout: {
+        'text-field': ['get', 'name'],
+        'text-size': labelSizeExpression,
+        'text-offset': [0, 1.2],
+        'text-anchor': 'top',
+      },
+      paint: {
+        'text-color': labelColorExpression,
+        'text-halo-color': '#ffffff',
+        'text-halo-width': 1,
+      },
+    });
     return layers;
   }, [
     circleColorExpression,
@@ -457,6 +734,8 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     iconImageExpression,
     iconSizeExpression,
     iconsReady,
+    labelColorExpression,
+    labelSizeExpression,
     locationFilter,
     previewPoints,
     previewNodeId,
@@ -466,105 +745,92 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
   }, []);
   const handleMapLoad = useCallback((map: MapLibreMapInstance) => {
     mapRef.current = map;
-    const mapWithImages = map as MapLibreMapInstance & {
-      hasImage?: (id: string) => boolean;
-      addImage?: (id: string, image: HTMLImageElement) => void;
-    };
-    if (mapWithImages.addImage) {
-      const missing = (Object.entries(LOCATION_TYPE_STYLES) as Array<[LocationType, (typeof LOCATION_TYPE_STYLES)[LocationType]]>)
-        .filter(([kind]) => !mapWithImages.hasImage?.(`location-preview-icon-${kind}`));
-      if (missing.length === 0) {
-        setIconsReady(true);
-      } else {
-        setIconsReady(false);
-      }
-      const loaders = missing.map(([kind, style]) => new Promise<void>((resolve) => {
-        const iconId = `location-preview-icon-${kind}`;
-        const Icon = style.icon;
-        const svg = renderToStaticMarkup(<Icon htmlColor={style.color} />);
-        const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-        const image = new Image();
-        image.onload = () => {
-          if (!mapWithImages.hasImage?.(iconId)) {
-            mapWithImages.addImage?.(iconId, image);
-          }
-          resolve();
-        };
-        image.onerror = () => resolve();
-        image.src = dataUrl;
-      }));
-      void Promise.all(loaders).then(() => setIconsReady(true));
-    }
+    loadMapIcons(map);
     scheduleViewportQuery();
-  }, [scheduleViewportQuery]);
+  }, [loadMapIcons, scheduleViewportQuery]);
   const handleMapMoveEnd = useCallback((viewState: MapViewState) => {
     scheduleViewportQuery(viewState);
   }, [scheduleViewportQuery]);
 
   return (
-    <Box display="flex" flexDirection="column" gap={2} sx={{ height: '100%' }}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
-        <Typography variant="body2" color="text.secondary">
-          {translations.mapPreview?.description ?? 'Preview the generated points on the map.'}
-        </Typography>
-        <Button
-          size="small"
-          variant="outlined"
-          startIcon={<RefreshIcon fontSize="small" />}
-          onClick={loadData}
-        >
-          {panelTranslations.refresh ?? 'Refresh'}
-        </Button>
-      </Stack>
-
-      <Box>
-        {summaryContent}
-      </Box>
-
-      <Divider />
-
-      <Paper elevation={0} sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs
-          value={activeTab}
-          onChange={(_, value) => setActiveTab(value)}
-          variant="scrollable"
-          scrollButtons="auto"
-        >
-          <Tab label={translations.mapPreview?.tabs?.map ?? 'Map'} />
-          <Tab label={translations.mapPreview?.tabs?.metadata ?? 'Metadata'} />
-        </Tabs>
-      </Paper>
-
-      <Box flex={1} minHeight={320}>
-        {activeTab === 0 ? (
-          <Stack spacing={2} sx={{ height: '100%' }}>
-            <MapToggleCard
-              title="Terrain Types"
-              options={LOCATION_TYPE_OPTIONS.map((option) => ({
-                ...option,
-                label: translations.locationTypes?.[option.id as LocationType] ?? option.label,
-              }))}
-              selection={locationTypeSelection}
-              onToggle={handleLocationToggle}
-            />
-            <Box flex={1} minHeight={320}>
-              <ResourceLayerMap
-                initialViewState={initialViewState}
-                width="100%"
-                height="100%"
-                mapStyleUrl={DEFAULT_MAP_CONFIG.mapStyleUrl}
-                basemapStyles={[]}
-                vectorLayers={[]}
-                geoJsonLayers={locationGeoJsonLayers}
-                attributionItems={attributionItems}
-                mapOptions={DEFAULT_MAP_CONFIG.interactionOptions}
-                onLoad={handleMapLoad}
-                onMoveEnd={handleMapMoveEnd}
+    <Box display="flex" flexDirection="column" height="100%" minHeight={0} flex={1}>
+      <Box
+        flex={1}
+        minHeight={0}
+        height="100%"
+        borderRadius={1}
+        overflow="hidden"
+        position="relative"
+        sx={{ overscrollBehavior: 'contain', p: 0 }}
+      >
+        <ResourceLayerMap
+          initialViewState={initialViewState}
+          width="100%"
+          height="100%"
+          mapStyleUrl={mapStyleUrl}
+          basemapStyles={[]}
+          vectorLayers={[]}
+          geoJsonLayers={locationGeoJsonLayers}
+          attributionItems={attributionItems}
+          mapOptions={DEFAULT_MAP_CONFIG.interactionOptions}
+          onLoad={handleMapLoad}
+          onMoveEnd={handleMapMoveEnd}
+        />
+        {terrainWindow.windowState.isVisible ? (
+          <FloatingWindow
+            title="Terrain Types"
+            initialState={terrainWindow.windowState}
+            onStateChange={terrainWindow.handlers.onStateChange}
+            onClose={terrainWindow.handlers.onClose}
+          >
+            <Box sx={{ height: '100%', minHeight: 0 }}>
+              <MapToggleCard
+                title=""
+                options={LOCATION_TYPE_OPTIONS.map((option) => ({
+                  ...option,
+                  label: translations.locationTypes?.[option.id as LocationType] ?? option.label,
+                }))}
+                selection={locationTypeSelection}
+                onToggle={handleLocationToggle}
               />
             </Box>
-          </Stack>
+          </FloatingWindow>
         ) : (
-          metadataContent
+          <Box position="absolute" top={8} right={8} zIndex={3}>
+            <Button
+              variant="contained"
+              color="primary"
+              size="large"
+              aria-label="Show terrain types"
+              onClick={terrainWindow.handlers.show}
+            >
+              <LayersIcon />
+            </Button>
+          </Box>
+        )}
+        {metadataWindow.windowState.isVisible ? (
+          <FloatingWindow
+            title={translations.mapPreview?.tabs?.metadata ?? 'Metadata'}
+            initialState={metadataWindow.windowState}
+            onStateChange={metadataWindow.handlers.onStateChange}
+            onClose={metadataWindow.handlers.onClose}
+          >
+            <Box sx={{ height: '100%', minHeight: 0 }}>
+              {metadataContent}
+            </Box>
+          </FloatingWindow>
+        ) : (
+          <Box position="absolute" top={8} left={8} zIndex={3}>
+            <Button
+              variant="contained"
+              color="primary"
+              size="large"
+              aria-label="Show list"
+              onClick={metadataWindow.handlers.show}
+            >
+              <TableRowsIcon />
+            </Button>
+          </Box>
         )}
       </Box>
     </Box>
