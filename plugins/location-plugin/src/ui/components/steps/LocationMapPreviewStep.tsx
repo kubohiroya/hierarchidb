@@ -324,6 +324,8 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
   const [iconsReady, setIconsReady] = useState(false);
   const isMountedRef = useRef(true);
   const mapRef = useRef<MapLibreMapInstance | null>(null);
+  const styleImageMissingHandlerRef = useRef<((event: { id: string }) => void) | null>(null);
+  const styleDataHandlerRef = useRef<(() => void) | null>(null);
   const queryTimerRef = useRef<number | null>(null);
   const queryRequestRef = useRef(0);
   const [locationTypeSelection, setLocationTypeSelection] = useState<MapToggleSelection>(() =>
@@ -617,12 +619,26 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       image.src = dataUrl;
     }));
     void Promise.all(loaders).then(() => setIconsReady(true));
-  }, [iconAssets]);
+  }, [iconAssets, loadIconImage]);
 
   useEffect(() => {
     if (!mapRef.current) return;
     loadMapIcons(mapRef.current);
   }, [loadMapIcons]);
+  useEffect(() => () => {
+    if (!mapRef.current) return;
+    const mapWithEvents = mapRef.current as MapLibreMapInstance & {
+      off?: (type: string, listener: (event: { id: string }) => void) => void;
+    };
+    const handler = styleImageMissingHandlerRef.current;
+    if (handler) {
+      mapWithEvents.off?.('styleimagemissing', handler);
+    }
+    const styleDataHandler = styleDataHandlerRef.current;
+    if (styleDataHandler) {
+      mapWithEvents.off?.('styledata', styleDataHandler);
+    }
+  }, []);
 
   const circleColorExpression = useMemo(() => buildTypeMatchExpression(
     KNOWN_LOCATION_TYPES.map((type) => [type, iconConfig[type]?.color ?? DEFAULT_TYPE_COLORS[type]]),
@@ -804,8 +820,36 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
   const handleMapLoad = useCallback((map: MapLibreMapInstance) => {
     mapRef.current = map;
     loadMapIcons(map);
+    const mapWithEvents = map as MapLibreMapInstance & {
+      on?: (type: string, listener: (event: { id: string }) => void) => void;
+      off?: (type: string, listener: (event: { id: string }) => void) => void;
+    };
+    if (!styleImageMissingHandlerRef.current) {
+      styleImageMissingHandlerRef.current = (event: { id: string }) => {
+        const asset = iconAssetsById.get(event.id);
+        if (!asset || !mapRef.current) return;
+        void loadIconImage(mapRef.current, asset);
+      };
+    }
+    const handler = styleImageMissingHandlerRef.current;
+    if (handler) {
+      mapWithEvents.off?.('styleimagemissing', handler);
+      mapWithEvents.on?.('styleimagemissing', handler);
+    }
+    if (!styleDataHandlerRef.current) {
+      styleDataHandlerRef.current = () => {
+        if (!mapRef.current) return;
+        setIconsReady(false);
+        loadMapIcons(mapRef.current);
+      };
+    }
+    const styleDataHandler = styleDataHandlerRef.current;
+    if (styleDataHandler) {
+      mapWithEvents.off?.('styledata', styleDataHandler);
+      mapWithEvents.on?.('styledata', styleDataHandler);
+    }
     scheduleViewportQuery();
-  }, [loadMapIcons, scheduleViewportQuery]);
+  }, [iconAssetsById, loadIconImage, loadMapIcons, scheduleViewportQuery]);
   const handleMapMoveEnd = useCallback((viewState: MapViewState) => {
     scheduleViewportQuery(viewState);
   }, [scheduleViewportQuery]);
