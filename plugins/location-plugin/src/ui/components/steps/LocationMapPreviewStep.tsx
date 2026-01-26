@@ -81,6 +81,7 @@ const MAX_ZOOM_LEVEL = 22;
 const DEFAULT_MAX_ZOOM = 12;
 const DEFAULT_ICON_SIZE_RANGE: [number, number] = [12, 28];
 const DEFAULT_LABEL_SIZE_RANGE: [number, number] = [10, 18];
+const LABEL_SIZE_SCALE = 1.3;
 const MONOCHROME_STYLE_URLS = {
   dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
   light: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
@@ -184,6 +185,81 @@ const buildTypeMatchExpression = (
     expression.push(kind, value);
   });
   expression.push(fallback);
+  return expression;
+};
+
+type ZoomScaledMatchConfig = {
+  startZoom: number;
+  fixedZoom: number;
+  minValue: number;
+  maxValue: number;
+};
+
+type ThresholdZoomMatchConfig = ZoomScaledMatchConfig & {
+  baseStartZoom: number;
+};
+
+const buildZoomScaledMatchExpression = (
+  entries: Array<[LocationType, ZoomScaledMatchConfig]>,
+  fallback: number,
+  minZoom: number,
+  maxZoom: number,
+): Array<string | unknown> => {
+  const stops = new Set<number>([minZoom, maxZoom]);
+  entries.forEach(([, config]) => {
+    stops.add(config.startZoom);
+    stops.add(config.fixedZoom);
+  });
+  const sortedStops = Array.from(stops).sort((a, b) => a - b);
+  const sizeAtZoom = (config: ZoomScaledMatchConfig, zoom: number) => {
+    if (zoom < config.startZoom) return 0;
+    if (zoom >= config.fixedZoom) return config.maxValue;
+    if (config.fixedZoom === config.startZoom) return config.maxValue;
+    const t = (zoom - config.startZoom) / (config.fixedZoom - config.startZoom);
+    return config.minValue + (config.maxValue - config.minValue) * t;
+  };
+  const expression: Array<string | unknown> = ['interpolate', ['linear'], ['zoom']];
+  sortedStops.forEach((zoom) => {
+    const matchEntries: Array<[LocationType, number]> = entries.map(([kind, config]) => [
+      kind,
+      sizeAtZoom(config, zoom),
+    ]);
+    expression.push(zoom, buildTypeMatchExpression(matchEntries, fallback));
+  });
+  return expression;
+};
+
+const buildThresholdedZoomMatchExpression = (
+  entries: Array<[LocationType, ThresholdZoomMatchConfig]>,
+  fallback: number,
+  minZoom: number,
+  maxZoom: number,
+): Array<string | unknown> => {
+  const stops = new Set<number>([minZoom, maxZoom]);
+  entries.forEach(([, config]) => {
+    stops.add(config.startZoom);
+    if (config.startZoom + 1 <= maxZoom) {
+      stops.add(config.startZoom + 1);
+    }
+    stops.add(config.fixedZoom);
+  });
+  const sortedStops = Array.from(stops).sort((a, b) => a - b);
+  const sizeAtZoom = (config: ThresholdZoomMatchConfig, zoom: number) => {
+    if (zoom <= config.startZoom) return 0;
+    const denom = config.fixedZoom - config.baseStartZoom;
+    if (denom <= 0) return config.maxValue;
+    const clampedZoom = Math.min(Math.max(zoom, config.baseStartZoom), config.fixedZoom);
+    const t = (clampedZoom - config.baseStartZoom) / denom;
+    return config.minValue + (config.maxValue - config.minValue) * t;
+  };
+  const expression: Array<string | unknown> = ['interpolate', ['linear'], ['zoom']];
+  sortedStops.forEach((zoom) => {
+    const matchEntries: Array<[LocationType, number]> = entries.map(([kind, config]) => [
+      kind,
+      sizeAtZoom(config, zoom),
+    ]);
+    expression.push(zoom, buildTypeMatchExpression(matchEntries, fallback));
+  });
   return expression;
 };
 
@@ -554,22 +630,21 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
   ), [iconConfig]);
 
   const circleRadiusExpression = useMemo(() => {
-    const entries: Array<[LocationType, Array<string | unknown>]> = KNOWN_LOCATION_TYPES.map((type) => {
+    const entries: Array<[LocationType, ThresholdZoomMatchConfig]> = KNOWN_LOCATION_TYPES.map((type) => {
       const rep = representationConfig[type];
-      const base = [
-        'interpolate',
-        ['linear'],
-        ['zoom'],
-        MIN_ZOOM_LEVEL,
-        CIRCLE_RADIUS_MIN,
-        CIRCLE_RADIUS_MAX_ZOOM,
-        CIRCLE_RADIUS_AT_MAX,
+      return [
+        type,
+        {
+          startZoom: rep.pointFromZoom,
+          baseStartZoom: MIN_ZOOM_LEVEL,
+          fixedZoom: CIRCLE_RADIUS_MAX_ZOOM,
+          minValue: CIRCLE_RADIUS_MIN,
+          maxValue: CIRCLE_RADIUS_AT_MAX,
+        },
       ];
-      const expr = ['case', ['<', ['zoom'], rep.pointFromZoom], 0, base];
-      return [type, expr];
     });
-    return buildTypeMatchExpression(entries, CIRCLE_RADIUS_MIN);
-  }, [representationConfig]);
+    return buildThresholdedZoomMatchExpression(entries, CIRCLE_RADIUS_MIN, MIN_ZOOM_LEVEL, tilesMaxZoom);
+  }, [representationConfig, tilesMaxZoom]);
 
   const iconImageExpression = useMemo(() => buildTypeMatchExpression(
     KNOWN_LOCATION_TYPES.map((type) => [type, `location-preview-icon-${type}`]),
@@ -577,28 +652,16 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
   ), []);
 
   const iconSizeExpression = useMemo(() => {
-    const entries: Array<[LocationType, Array<string | unknown>]> = KNOWN_LOCATION_TYPES.map((type) => {
+    const entries: Array<[LocationType, ZoomScaledMatchConfig]> = KNOWN_LOCATION_TYPES.map((type) => {
       const rep = representationConfig[type];
       const range = normalizeRange(iconConfig[type]?.sizeRange ?? DEFAULT_ICON_SIZE_RANGE, MIN_ICON_SIZE, MAX_ICON_SIZE);
       const [minScale, maxScale] = toIconScaleRange(range);
       const startZoom = rep.iconFromZoom;
       const fixedZoom = Math.max(startZoom, rep.iconFixedFromZoom);
-      const base = [
-        'interpolate',
-        ['linear'],
-        ['zoom'],
-        startZoom,
-        minScale,
-        fixedZoom,
-        maxScale,
-        fixedZoom + 1,
-        maxScale,
-      ];
-      const expr = ['case', ['<', ['zoom'], startZoom], 0, base];
-      return [type, expr];
+      return [type, { startZoom, fixedZoom, minValue: minScale, maxValue: maxScale }];
     });
-    return buildTypeMatchExpression(entries, 0);
-  }, [iconConfig, representationConfig]);
+    return buildZoomScaledMatchExpression(entries, 0, MIN_ZOOM_LEVEL, tilesMaxZoom);
+  }, [iconConfig, representationConfig, tilesMaxZoom]);
 
   const labelColorExpression = useMemo(() => buildTypeMatchExpression(
     KNOWN_LOCATION_TYPES.map((type) => [type, labelConfig[type]?.color ?? DEFAULT_TYPE_COLORS[type]]),
@@ -606,27 +669,20 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
   ), [labelConfig]);
 
   const labelSizeExpression = useMemo(() => {
-    const entries: Array<[LocationType, Array<string | unknown>]> = KNOWN_LOCATION_TYPES.map((type) => {
+    const entries: Array<[LocationType, ZoomScaledMatchConfig]> = KNOWN_LOCATION_TYPES.map((type) => {
       const entry = labelConfig[type];
       const zoomRange = normalizeRange(entry?.zoomRange ?? [MIN_ZOOM_LEVEL, tilesMaxZoom], MIN_ZOOM_LEVEL, tilesMaxZoom);
-      const sizeRange = normalizeRange(entry?.sizeRange ?? DEFAULT_LABEL_SIZE_RANGE, MIN_LABEL_SIZE, MAX_LABEL_SIZE);
+      const baseRange = normalizeRange(entry?.sizeRange ?? DEFAULT_LABEL_SIZE_RANGE, MIN_LABEL_SIZE, MAX_LABEL_SIZE);
+      const scaledRange = normalizeRange(
+        [baseRange[0] * LABEL_SIZE_SCALE, baseRange[1] * LABEL_SIZE_SCALE],
+        MIN_LABEL_SIZE,
+        MAX_LABEL_SIZE,
+      );
       const startZoom = zoomRange[0];
       const fixedZoom = Math.max(startZoom, zoomRange[1]);
-      const base = [
-        'interpolate',
-        ['linear'],
-        ['zoom'],
-        startZoom,
-        sizeRange[0],
-        fixedZoom,
-        sizeRange[1],
-        fixedZoom + 1,
-        sizeRange[1],
-      ];
-      const expr = ['case', ['<', ['zoom'], startZoom], 0, base];
-      return [type, expr];
+      return [type, { startZoom, fixedZoom, minValue: scaledRange[0], maxValue: scaledRange[1] }];
     });
-    return buildTypeMatchExpression(entries, 0);
+    return buildZoomScaledMatchExpression(entries, 0, MIN_ZOOM_LEVEL, tilesMaxZoom);
   }, [labelConfig, tilesMaxZoom]);
 
   const initialViewState = useMemo(
