@@ -54,17 +54,14 @@ export class LocationSessionController {
     try {
       const columns = determineColumns(norm.features, this.settings.attributeAllowlist);
       const writer = new TabularWriter('location');
-      await writer.begin({ filename: `location-${this.nodeId}.json`, columns });
+      await writer.begin({ tableId: String(this.nodeId), filename: `location-${this.nodeId}.json`, columns });
       const rows = featuresToRows(norm.features);
       // Write in chunks
       const CHUNK = 2000;
       for (let i = 0; i < rows.length; i += CHUNK) {
         await writer.writeRows(rows.slice(i, i + CHUNK));
       }
-      const { tableId: committedId } = await writer.commit();
-      // Link tableId to session (best-effort)
-        const db = getLocationDB();
-        await db.table('sessions').update(this.nodeId, { tableId: committedId });
+      await writer.commit();
     } catch (e) {
       console.warn('[Location][Session] tabular-source persist skipped:', e);
     }

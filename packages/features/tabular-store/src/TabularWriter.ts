@@ -23,8 +23,8 @@ export class TabularWriter {
 
   private indexColumns: string[];
 
-  async begin(schema: { filename?: string; columns: string[]; contentHash?: string }): Promise<string> {
-    const id = crypto.randomUUID();
+  async begin(schema: { tableId?: string; filename?: string; columns: string[]; contentHash?: string }): Promise<string> {
+    const id = schema.tableId ?? crypto.randomUUID();
     // Local shape compatible with StylerMetadataManager.create()
     const columns: TabularColumnInfo[] = schema.columns.map((name, index) => ({ name, index }));
     const base: TabularTableMetadataLike = {
