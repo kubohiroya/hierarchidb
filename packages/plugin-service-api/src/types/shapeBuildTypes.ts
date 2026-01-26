@@ -212,6 +212,7 @@ export interface ShapeFeatureMetadata {
   transformPolygonCount?: number;
   bbox?: [number, number, number, number];
   area: number;
+  recycling?: boolean;
 }
 
 export interface ShapeSourceMetadata {

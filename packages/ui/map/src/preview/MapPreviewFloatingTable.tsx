@@ -81,6 +81,8 @@ export type MapPreviewFloatingTableProps<Row extends { id: string | number }> = 
   errorColumnLabels?: MapPreviewErrorColumnLabels;
   statusLabels?: MapPreviewStatusLabels;
   formatErrorMessage?: (summary: MapPreviewErrorSummary) => string;
+  statusAdornment?: (row: Row) => React.ReactNode;
+  toolbarActions?: React.ReactNode;
   containerSx?: Record<string, unknown>;
 };
 
@@ -135,6 +137,8 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
     errorColumnLabels,
     statusLabels,
     formatErrorMessage,
+    statusAdornment,
+    toolbarActions,
     containerSx,
   } = props;
   const [columnSelectorOpen, setColumnSelectorOpen] = useState(false);
@@ -179,12 +183,16 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
       format: (_value, row) => {
         const summary = errorSummaryById.get(String(row.id));
         const hasErrors = Boolean(summary && summary.count > 0);
+        const adornment = statusAdornment?.(row);
         return (
-          <Chip
-            size="small"
-            color={hasErrors ? 'error' : 'success'}
-            label={hasErrors ? resolvedStatusLabels.failed : resolvedStatusLabels.completed}
-          />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Chip
+              size="small"
+              color={hasErrors ? 'error' : 'success'}
+              label={hasErrors ? resolvedStatusLabels.failed : resolvedStatusLabels.completed}
+            />
+            {adornment}
+          </Box>
         );
       },
     };
@@ -324,6 +332,11 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
                 ),
               }}
             />
+            {toolbarActions ? (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                {toolbarActions}
+              </Box>
+            ) : null}
             {enableColumnSelector ? (
               <IconButton
                 aria-label="Select columns"

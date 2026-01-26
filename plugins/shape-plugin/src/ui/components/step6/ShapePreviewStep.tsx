@@ -50,6 +50,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
     matchedFeatureIdSet,
     selectedFeatureIds,
     setSelectedFeatureIds,
+    toggleRecyclingForSelection,
     vectorLayerIds,
     setMapInstance,
     handleMapIdentify,
@@ -121,7 +122,6 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
           minHeight={180}
         >
           <LayerSetVisibilityPanel
-            title={t('preview.layerSets.title', 'Layer Sets')}
             layerSets={availableLayerSets}
             visibility={layerSetVisibility}
             onToggle={toggleLayerSetVisibility}
@@ -276,6 +276,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
           completed: t('build.taskStatus.completed', 'Completed'),
         }}
         onClose={() => setFeatureWindowOpen(false)}
+        onToggleRecycling={toggleRecyclingForSelection}
       />
     );
   };

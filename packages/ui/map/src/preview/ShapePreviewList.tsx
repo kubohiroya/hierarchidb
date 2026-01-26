@@ -1,7 +1,8 @@
 import React, { useCallback, useMemo } from 'react';
-import { Typography } from '@mui/material';
+import { IconButton, Typography } from '@mui/material';
 import { Hexagon } from '@mui/icons-material';
 import { alpha, useTheme } from '@mui/material/styles';
+import { Recycling as RecyclingIcon } from '@mui/icons-material';
 import type { GridColumn } from '@hierarchidb/ui-grid';
 import { FloatingWindow, useFloatingWindow } from '@hierarchidb/ui-floating-window';
 import {
@@ -13,6 +14,7 @@ import {
 } from './MapPreviewFloatingTable.js';
 
 type ShapePreviewRowBase = {
+  recycling?: boolean;
   id: string;
   featureId?: string;
   memberFeatureIds?: string[];
@@ -70,6 +72,7 @@ export type ShapePreviewListProps = {
   statusLabels?: MapPreviewStatusLabels;
   maxHeight?: number;
   onClose?: () => void;
+  onToggleRecycling?: () => void;
 };
 
 const WINDOW_PERSIST_KEY = 'hierarchidb:ui:floating-window:shape:features';
@@ -114,6 +117,7 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
   statusLabels,
   maxHeight,
   onClose,
+  onToggleRecycling,
 }) => {
   const theme = useTheme();
   const { windowState, handlers } = useFloatingWindow({
@@ -160,6 +164,7 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
       polygonCount: normalizeCount(row.polygonCount),
       bbox: formatBBox(row.bbox),
       area: formatArea(row.area),
+      recycling: row.recycling ?? false,
     }));
     return mapped;
   }, [
@@ -204,6 +209,16 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
     { id: 'bbox', label: columnLabels.bbox, width: 220, sortable: true },
     { id: 'area', label: columnLabels.area, width: 140, align: 'right', sortable: true, format: formatLogicalCode },
   ]), [columnLabels, normalizeAdminLevelGroup]);
+
+  const recyclingSelectionState = useMemo(() => {
+    if (!selectedRows || selectedRows.size === 0) return 'none';
+    const selected = rows.filter((row) => selectedRows.has(String(row.featureId ?? row.id)));
+    if (selected.length === 0) return 'none';
+    const recyclingCount = selected.filter((row) => row.recycling).length;
+    if (recyclingCount === 0) return 'off';
+    if (recyclingCount === selected.length) return 'on';
+    return 'partial';
+  }, [rows, selectedRows]);
 
   const resolvedCountText = useMemo(() => {
     if (countText) return countText;
@@ -268,6 +283,20 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
         errorSummaryById={errorSummaryById}
         errorColumnLabels={errorColumnLabels}
         statusLabels={statusLabels}
+        statusAdornment={(row) => (row.recycling ? <RecyclingIcon fontSize="small" color="success" /> : null)}
+        toolbarActions={onToggleRecycling ? (
+          <IconButton
+            aria-label="Toggle recycling"
+            size="small"
+            onClick={onToggleRecycling}
+            disabled={recyclingSelectionState === 'none'}
+          >
+            <RecyclingIcon
+              fontSize="small"
+              color={recyclingSelectionState === 'on' ? 'success' : recyclingSelectionState === 'partial' ? 'warning' : 'inherit'}
+            />
+          </IconButton>
+        ) : null}
         maxHeight={maxHeight}
         containerSx={{
           position: 'static',

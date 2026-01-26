@@ -44,7 +44,7 @@ import { VectorTile } from '@mapbox/vector-tile';
 import Pbf from 'pbf';
 //import { getShapeDbAPIClient } from '../../../services/batch/ShapeBuildAPIClient.ts';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
-import { shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
+import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
 
 type ShapePreviewDraft = Partial<ShapeEntity> & {
   tilesUrl?: string;
@@ -826,6 +826,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
         polygonCount: row.polygonCount,
         bbox: row.bbox,
         area: row.area,
+        recycling: row.recycling ?? false,
       };
     },
     [resolveSourceContext],
@@ -999,6 +1000,29 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       getMessage: (row) => row.message ?? undefined,
     })
   ), [normalizedTransformErrorRows]);
+
+  const toggleRecyclingForSelection = useCallback(async () => {
+    if (selectedFeatureIds.length === 0) return;
+    const expandedIds = new Set<string>();
+    selectedFeatureIds.forEach((id) => {
+      const members = rowIdToMembers.get(id) ?? [id];
+      members.forEach((memberId) => expandedIds.add(memberId));
+    });
+    if (expandedIds.size === 0) return;
+    const selectedRows = featureMetadataRows.filter((row) => {
+      const key = String(row.featureId ?? row.id);
+      return expandedIds.has(key);
+    });
+    if (selectedRows.length === 0) return;
+    const recyclingCount = selectedRows.filter((row) => row.recycling).length;
+    const nextValue = recyclingCount !== selectedRows.length;
+    const updatedRows = selectedRows.map((row) => ({ ...row, recycling: nextValue }));
+    try {
+      await shapeMutationAPIImpl.putFeatureMetadata(updatedRows);
+    } catch (error) {
+      console.warn('[ShapePreviewStep] failed to toggle recycling', error);
+    }
+  }, [featureMetadataRows, rowIdToMembers, selectedFeatureIds]);
 
   const errorSummaryById = useMemo<MapPreviewErrorSummaryById>(() => {
     if (featureListRows.length === 0) return baseErrorSummaryById;
@@ -1254,6 +1278,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     setSelectedIds,
     selectedFeatureIds,
     setSelectedFeatureIds,
+    toggleRecyclingForSelection,
     hoveredId,
     setHoveredId,
     selectionContext,
