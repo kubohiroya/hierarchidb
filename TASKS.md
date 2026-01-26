@@ -1,3 +1,308 @@
+2393) feat/location/step2-data-source-inline-import-ui (P1) — 完了 (2026-01-26)
+- ブランチ名: feat/location/step2-data-source-inline-import-ui
+- 依存: なし
+- 受け入れ基準: Step2 の IDE-GSM Box に読み込み済み時はファイル名+Fileアイコン+削除×ボタンが表示される／未読み込み時は "No CSV files imported." と Import Local Files/Import Remote Files が secondary 色で横並び表示される／未読み込み時は Step3 に遷移できない／Import Local Files で現行 Alternative Method 上半分をモーダル表示し×で閉じられ、読み込み成功で自動クローズ／Import Remote Files で Alternative Method 下半分をモーダル表示し×で閉じられ、Download ボタン押下の読み込み成功で自動クローズ／Clear cache for selected data source ボタンが撤去される／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationDataSourceStep.tsx` など（調査後に確定）
+- ロールバック手順: 該当差分を revert して Step2 の Data Source/Details の従来レイアウトに戻す
+- チェックリスト:
+  - IDE-GSM Box の未読込/読込済み表示を統合する
+  - Import Local/Remote のモーダルを現行 Alternative Method から移設する
+  - Clear cache ボタンを撤去する
+  - Step3 遷移ガードを未読込時に維持する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 22:11 JST Step2 Data Source の統合UIとモーダル再編に着手。
+  - update: 2026-01-26 22:18 JST IDE-GSM Box 内にファイル状態/Import ボタン/削除ボタンを集約し、Local/Remote モーダルを追加。
+  - update: 2026-01-26 22:19 JST Step3 遷移条件を IDE-GSM ファイル読み込み必須に更新。
+  - update: 2026-01-26 22:20 JST pnpm --filter @hierarchidb/ui-file typecheck exit 0。
+  - update: 2026-01-26 22:20 JST pnpm --filter @hierarchidb/ui-datasource typecheck exit 0。
+  - update: 2026-01-26 22:20 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
+  - update: 2026-01-26 22:21 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
+  - done: 2026-01-26 22:21 JST Step2 の Data Source 統合UIと Import モーダル再編を完了。
+
+2394) fix/location/step2-ide-gsm-parse-snackbar (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/location/step2-ide-gsm-parse-snackbar
+- 依存: なし
+- 受け入れ基準: Step2でIDE-GSMファイル選択→Step3遷移時に "Failed to parse ...csv" のSnackbarが出ない／IDE-GSMの読み込み/選択フローは維持される／原因・発生範囲・修正方法と適用範囲を説明できる／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationSelectionStep.tsx` など（調査後に確定）
+- ロールバック手順: 該当差分を revert して従来の IDE-GSM 解析処理に戻す
+- チェックリスト:
+  - 失敗Snackbarの発生条件を特定する
+  - 原因と発生範囲を説明できるようにする
+  - 影響範囲を最小に修正する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 22:24 JST Step2 IDE-GSM 選択後の parse Snackbar 不具合の調査に着手。
+  - update: 2026-01-26 22:25 JST Step2 unmount 時の blob URL revoke が Step3 解析失敗を誘発していたため、保持条件を追加。
+  - update: 2026-01-26 22:25 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
+  - done: 2026-01-26 22:25 JST Step3 での parse Snackbar 不具合を修正。
+
+2350) feat/shape/step6-recycling-diff-build (P1) — 進行中 (2026-01-26)
+- ブランチ名: feat/shape/step6-recycling-diff-build
+- 依存: なし
+- 受け入れ基準: Step6 Features FloatingWindow に Recycling ボタンが追加され、選択行の Recycling 状態が部分的→オン→オフの循環で切替できる／Status 列に Recycling アイコンが表示される／Recycling がオンの行がある場合は次回 build が差分ビルドになり、完了後に該当行の Recycling が自動でオフになる／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/preview/**`, `plugins/shape-plugin/src/ui/components/step6/**`, `packages/vt-orchestrator/src/**`, `plugins/shape-plugin/src/services/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert して Recycling UI/差分ビルド経路を元に戻す
+- チェックリスト:
+  - ExecPlan を作成する
+  - Recycling UI と状態トグルを実装する
+  - Recycling 状態の永続化と Status 表示を実装する
+  - 差分ビルドの実行と完了後の解除を実装する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 20:20 JST Step6 Recycling UI と差分ビルド対応の ExecPlan 作成に着手。
+  - update: 2026-01-26 20:30 JST ExecPlan を plans/shape-step6-recycling-diff-build-execplan.md に作成。
+
+2392) fix/shape/step5-resume-queued-fetch-retry (P1) — 進行中 (2026-01-26)
+- ブランチ名: fix/shape/step5-resume-queued-fetch-retry
+- 依存: なし
+- 受け入れ基準: メモリ溢れ/クラッシュでfetchのqueuedが残っても再ビルドで再処理される／selectedArrayByCountries が空の復帰でも queued が failed 固定にならない／既存の正常ビルドフローが維持される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts`, `plugins/shape-plugin/src/services/vt/shapePipeline.ts`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert して従来の resume/fetch 挙動へ戻す
+- チェックリスト:
+  - resume 時に payloads なしでも既存 fetch タスクを再処理できる条件を整理する
+  - fetch 未実行で queued を failed に落とす挙動を抑制する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 21:53 JST resume build でfetchのqueuedがfailed固定になる問題の修正に着手。
+  - update: 2026-01-26 21:54 JST resume時に payloads が空でも既存 fetch タスクがある場合は runStageTasks で再処理するように変更。
+  - update: 2026-01-26 21:55 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-01-26 20:55 JST Recycling UI/差分ビルド対応の実装に着手（UI/パイプライン/VT フィルタ）。
+  - update: 2026-01-26 21:10 JST Recycling トグル/UI/Status 表示と差分ビルドの allowlist フィルタ/完了後の解除を実装。
+  - done: 2026-01-26 21:12 JST pnpm --filter @hierarchidb/shape-plugin typecheck / pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+  - update: 2026-01-26 21:20 JST 既存 fetch cache に __hdbFeatureId がない場合の再エンコード処理を追加。
+  - done: 2026-01-26 21:21 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を再確認。
+
+2349) fix/location/step4-slider-right-overflow (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/location/step4-slider-right-overflow
+- 依存: なし
+- 受け入れ基準: Step4 のスライダーが右側にはみ出さずコンテナ内に収まる／既存の見た目余白は維持される／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationBatchParametersStep.tsx`
+- ロールバック手順: 該当差分を revert してスライダーの幅/マージンを元に戻す
+- チェックリスト:
+  - slider の右側はみ出しを解消する
+  - 見た目の余白が維持されることを確認する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 20:05 JST Step4 slider の右側はみ出し修正に着手。
+  - update: 2026-01-26 20:08 JST slider の幅を calc(100% - 24px) にして右側のはみ出しを抑止。
+  - done: 2026-01-26 20:09 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+
+2348) fix/location/step4-slider-container-margin (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/location/step4-slider-container-margin
+- 依存: なし
+- 受け入れ基準: Step4 Display Settings 配下の Slider コンテナに 16px の margin が入り、間隔が改善される／既存の 24px スライダーマージンと marks 表示は維持される／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationBatchParametersStep.tsx`
+- ロールバック手順: 該当差分を revert して margin を元に戻す
+- チェックリスト:
+  - Slider コンテナの padding を margin に変更する
+  - 既存の slider margin/marks が維持されることを確認する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 19:45 JST Step4 Slider コンテナの margin 変更に着手。
+  - update: 2026-01-26 19:47 JST slider コンテナの sx を p:2 から m:2 に変更。
+  - done: 2026-01-26 19:48 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+
+2347) fix/location/step4-slider-container-padding (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/location/step4-slider-container-padding
+- 依存: なし
+- 受け入れ基準: Step4 Display Settings 配下の Slider コンテナに 16px padding が入り、並列スライダーの間隔が改善される／既存の 24px スライダーマージンと marks 表示は維持される／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationBatchParametersStep.tsx`
+- ロールバック手順: 該当差分を revert して padding を元に戻す
+- チェックリスト:
+  - Display Settings 配下の Slider コンテナに 16px padding を追加する
+  - 既存の slider margin/marks が維持されることを確認する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 19:30 JST Step4 Slider コンテナの padding 追加に着手。
+  - update: 2026-01-26 19:35 JST Display Settings 配下の slider コンテナに p=2 を適用。
+  - done: 2026-01-26 19:36 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+
+2346) fix/location/step5-terrain-title-and-metadata-loading (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/location/step5-terrain-title-and-metadata-loading
+- 依存: なし
+- 受け入れ基準: Terrain Types ウィンドウ内の冗長なタイトル表示が撤去される／Metadata の Loading 表示が出る理由を説明する／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/components/MapToggleCard.tsx`, `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`
+- ロールバック手順: 該当差分を revert して従来のタイトル表示に戻す
+- チェックリスト:
+  - Terrain Types カードのタイトル表示を撤去する
+  - Metadata Loading の理由を説明する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 19:05 JST Terrain Types タイトル撤去と metadata loading 説明に着手。
+  - update: 2026-01-26 19:10 JST Terrain Types 内タイトル表示を抑止するため MapToggleCard のヘッダを条件表示に変更。
+  - done: 2026-01-26 19:11 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+
+2345) fix/location/step5-terrain-floating-window (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/location/step5-terrain-floating-window
+- 依存: なし
+- 受け入れ基準: location step5 preview の Terrain Types が FloatingWindow 化される／Area Centroid のアイコンが City 表示になる／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`, `plugins/location-plugin/src/ui/components/steps/locationTypes.ts`
+- ロールバック手順: 該当差分を revert して Terrain Types を固定パネルに戻し、アイコンを元に戻す
+- チェックリスト:
+  - Terrain Types を FloatingWindow 化する
+  - Area Centroid アイコンを City に戻す
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 18:45 JST Terrain Types の FloatingWindow 化とアイコン修正に着手。
+  - update: 2026-01-26 18:55 JST Terrain Types を FloatingWindow 化し、Area Centroid のアイコンを City に変更。
+  - done: 2026-01-26 18:56 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+
+2344) fix/location/step5-preview-floating-parity (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/location/step5-preview-floating-parity
+- 依存: なし
+- 受け入れ基準: location step5 preview から "Preview the generated points on the map." 表示/Refresh/Loading map preview を撤去する／Terrain Types と Metadata の floating window が shape-plugin step6 preview と同等の見た目・挙動になる／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`
+- ロールバック手順: 該当差分を revert して従来の説明文/Refresh/パネル表示へ戻す
+- チェックリスト:
+  - 説明文/Refresh/Loading map preview を撤去する
+  - Terrain Types/Metadata の floating window を shape preview と同等にする
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 18:15 JST location step5 preview の表示整理と floating window の parity 修正に着手。
+  - update: 2026-01-26 18:28 JST 説明文/Refresh/Loading 表示を撤去し、FloatingWindow で metadata を表示。
+  - done: 2026-01-26 18:29 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+
+2343) fix/location/step5-preview-floating-panels (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/location/step5-preview-floating-panels
+- 依存: なし
+- 受け入れ基準: location step5 preview で map/metadata のタブ切替が廃止され map が常時全面表示になる／Terrain Types の表示トグルと metadata テーブルが map 上の floating window に移動する（shape preview と同様）／既存の地図操作が維持される／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`（調査後に確定）
+- ロールバック手順: 該当差分を revert してタブ切替と従来レイアウトへ戻す
+- チェックリスト:
+  - preview のタブ切替 UI を撤去する
+  - map を常時全面表示にする
+  - Terrain Types トグルと metadata テーブルを floating window 化する
+  - 既存の地図操作が維持されることを確認する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 17:40 JST location step5 preview のタブ撤去と floating panel 化に着手。
+  - update: 2026-01-26 17:55 JST タブ撤去と map 全面化、Terrain/metadata の floating panel 化を反映。
+  - done: 2026-01-26 17:56 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+
+2342) fix/location/step4-slider-margins-and-default-colors (P1) — 進行中 (2026-01-26)
+- ブランチ名: fix/location/step4-slider-margins-and-default-colors
+- 依存: なし
+- 受け入れ基準: Step4 の全 Slider に左右 24px のマージンが入る／Icon/Label の size range に min/max の marks (0/12) が表示される／Area centroid は赤、Port は青、Station は緑が Icon/Label の既定色になる／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationBatchParametersStep.tsx`
+- ロールバック手順: 該当差分を revert してスライダー/既定色/marks を元に戻す
+- チェックリスト:
+  - Slider に左右 24px のマージンを適用する
+  - Icon/Label の size range に 0/12 の marks を追加する
+  - Icon/Label の既定色を指定通りに変更する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 16:37 JST Step4 スライダー調整と既定色変更に着手。
+  - update: 2026-01-26 17:05 JST Icon/Label の既定色変更に着手。
+  - update: 2026-01-26 17:18 JST location-store/ui-map の build を実行し、LocationMapPreviewStep の型エラーを修正。
+  - done: 2026-01-26 17:20 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-01-26 17:26 JST LocationMapPreviewStep の既定色整合と public アイコン対応を反映。
+  - done: 2026-01-26 17:27 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を再確認。
+
+2341) fix/location/step4-style-config-tweaks (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/location/step4-style-config-tweaks
+- 依存: なし
+- 受け入れ基準: Step4 の Zoom Level スライダーに min/max marks が表示される／Icon Settings の area_centroid デフォルトが City になる／Icon 選択肢から Public が削除される／Step4 タイトルが Style Config になる／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationBatchParametersStep.tsx`, `plugins/location-plugin/src/ui/components/steps-provider.tsx`, `plugins/location-plugin/src/ui/locales/*.json`（調査後に確定）
+- ロールバック手順: 該当差分を revert して UI/文言/デフォルトを元に戻す
+- チェックリスト:
+  - Zoom Level スライダーに marks を追加する
+  - area_centroid のデフォルトアイコンを City に変更する
+  - Icon 選択肢から Public を削除する
+  - Step4 のタイトルを Style Config に変更する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 16:01 JST Step4 の Style Config 調整に着手。
+  - update: 2026-01-26 16:02 JST Zoom marks 追加、area_centroid のデフォルトを City に変更、Public を削除。
+  - update: 2026-01-26 16:02 JST Step4 タイトルを Style Config に変更。
+  - done: 2026-01-26 16:02 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+
+2340) fix/location/step4-remove-build-and-cleanup (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/location/step4-remove-build-and-cleanup
+- 依存: なし
+- 受け入れ基準: Step4 から download/cleanup の説明文と concurrent/cleanup UI が撤去される／Location の Build ステップが撤去され、プレビューが Step4 になる／TreeConsole の location ノードでコンテキストメニューと InfoPanel のビルドが disabled になる／pnpm --filter @hierarchidb/app typecheck もしくは関連パッケージの typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationBatchParametersStep.tsx`, `plugins/location-plugin/src/ui/components/steps-provider.tsx`, `app/src/router/pages/tree/console/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert して Step4/Build/ボタン挙動を元に戻す
+- チェックリスト:
+  - Step4 の download/cleanup UI を撤去する
+  - Build ステップを撤去しプレビューが Step4 になることを確認する
+  - TreeConsole の build ボタン/メニューを location では disabled にする
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 15:53 JST Step4 の download/cleanup UI 撤去と Build ステップ削除に着手。
+  - update: 2026-01-26 15:58 JST Step4 から download/cleanup UI を撤去し、Build ステップを削除。
+  - update: 2026-01-26 15:59 JST location のビルドメニューと InfoPanel のビルドボタンを disabled に変更。
+  - update: 2026-01-26 15:59 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-01-26 16:00 JST pnpm --filter @hierarchidb/app typecheck exit 0 を確認（tsdown define 警告あり）。
+
+2339) feat/location/step4-display-config (P1) — 完了 (2026-01-26)
+- ブランチ名: feat/location/step4-display-config
+- 依存: なし
+- 受け入れ基準: Step4 に Representation/Icon/Label の各設定カードが追加され、Area Centroid/Airport/Port/Station/Interchange それぞれの値を保存できる／LocationEntity スキーマに設定が追加される／i18n で各設定の意味を表示する／既存の Step4 挙動と保存/読み込みが維持される／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログ・ロールバック手順を記載する
+- 影響範囲: `packages/features/location-store/src/index.ts`, `plugins/location-plugin/src/ui/components/steps/LocationBatchParametersStep.tsx`, `plugins/location-plugin/src/ui/locales/*.json`, `plugins/location-plugin/src/common/i18n/index.ts`
+- ロールバック手順: 上記ファイルの差分を revert して Step4 を既存 UI に戻す
+- チェックリスト:
+  - LocationEntity に表示設定スキーマを追加する
+  - Step4 に Representation/Icon/Label 設定 UI を追加する
+  - i18n 文言を追加する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 15:19 JST Step4 の表示設定（Representation/Icon/Label）追加に着手。
+  - update: 2026-01-26 15:26 JST location-store に表示設定の型と LocationEntity のフィールドを追加。
+  - update: 2026-01-26 15:27 JST Step4 に Representation/Icon/Label の UI と i18n を追加。
+  - update: 2026-01-26 15:28 JST pnpm --filter @hierarchidb/location-store build exit 0（tsdown define 警告あり）を確認。
+  - done: 2026-01-26 15:29 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-01-26 15:22 JST ExecPlan を plans/location-step4-display-config-execplan.md に作成。
+
+2338) fix/app/create-basemap-command-error (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/app/create-basemap-command-error
+- 依存: なし
+- 受け入れ基準: create:basemap 実行時の INVALID_OPERATION Unknown action エラーが出力されない／basemap 初期ノード作成とダイアログ起動が維持される／影響範囲が明確になる／pnpm typecheck が exit 0 もしくは関連パッケージの typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/**`, `packages/**`, `plugins/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert して既存挙動に戻す
+- チェックリスト:
+  - create:basemap のコマンド登録/呼び出し経路を特定する
+  - Unknown action エラーの発生条件を特定する
+  - エラーが出ないように修正する
+  - pnpm typecheck もしくは関連パッケージ typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 14:44 JST create:basemap の Unknown action エラー調査に着手。
+  - update: 2026-01-26 14:45 JST create: の成功経路で return せず Unknown action に落ちる問題を修正。
+  - done: 2026-01-26 14:45 JST pnpm --filter @hierarchidb/app typecheck exit 0 を確認（tsdown define 警告あり）。
+
+2337) fix/shape/step6-feature-table-match-highlight (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/shape/step6-feature-table-match-highlight
+- 依存: なし
+- 受け入れ基準: Step6 の Features テーブルでキーワード一致行の背景色が paper ベースの淡い紫に調整される／文字色と可読性が維持される／選択/ホバーなど他状態の色に影響しない／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`（調査後に確定）
+- ロールバック手順: 該当スタイル差分を revert し、従来の強い secondary 背景に戻す
+- チェックリスト:
+  - Step6 の一致行背景スタイルを特定する
+  - paper ベースの淡い紫に調整する
+  - 既存の選択/ホバー状態が影響を受けないことを確認する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 12:57 JST Step6 Features テーブルの一致行背景色調整に着手。
+  - update: 2026-01-26 12:58 JST matched 行の背景色を paper ベースの淡い紫に調整。
+  - done: 2026-01-26 12:58 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
 2378) fix/ui/context-menu-order (P1) — 進行中 (2026-01-26)
 - ブランチ名: fix/ui/context-menu-order
 - 依存: なし
@@ -12,6 +317,9 @@
 - 運用ログ：
   - start: 2026-01-26 07:45 JST TreeTable/TreeNodeInfoPanel/BreadCrumbのコンテキストメニュー並び順修正に着手。
   - done: 2026-01-26 07:48 JST メニュー並び順を更新（未検証）。
+  - blocked: 2026-01-26 07:49 JST pnpm --filter @hierarchidb/app build で @hierarchidb/util の buildEvenZoomBandBoundaries/normalizeZoomBandBoundaries が重複 export になり失敗（AMBIGUOUS_EXTERNAL_NAMESPACES）。
+  - update: 2026-01-26 07:52 JST @hierarchidb/util の index export を整理し重複解消（未検証）。
+  - done: 2026-01-26 07:58 JST pnpm --filter @hierarchidb/app build exit 0（tsdown define 警告/プラグイン警告/チャンクサイズ警告あり）。
 
 2379) fix/ui/app-init-loading-blank (P1) — 完了 (2026-01-26)
 - ブランチ名: fix/ui/app-init-loading-blank
@@ -56,6 +364,16 @@
   - update: 2026-01-26 07:49 JST pnpm --filter @hierarchidb/spreadsheet-plugin build を実行（tsdown define警告あり）。
   - update: 2026-01-26 07:49 JST @hierarchidb/spreadsheet-plugin の types を dist/index2.d.ts へ切替（tsconfig.base.json と package.json）。
   - done: 2026-01-26 07:53 JST pnpm typecheck exit 0 を確認（tsdown define警告あり）。
+  - update: 2026-01-26 08:02 JST Step5 のタスク生成〜永続化〜検索〜アルゴリズム呼び出しの流れの整理に着手。
+  - update: 2026-01-26 08:05 JST Step5整理内容を docs/shape-plugin-multi-stage-vt-generation.md にドキュメント化する作業に着手。
+  - done: 2026-01-26 17:01 JST docs/shape-plugin-multi-stage-vt-generation.md を追加。
+  - update: 2026-01-26 17:05 JST TopoJSON処理の世界共通グリッド化ユーティリティ有無の調査に着手。
+  - update: 2026-01-26 17:43 JST TopoJSONグリッド量子化とズーム帯設定の共通化リファクタに着手（util/vt-orchestrator/shape-plugin を更新）。
+  - update: 2026-01-26 17:50 JST pnpm --filter @hierarchidb/util build / pnpm --filter @hierarchidb/gis-sdk build / pnpm --filter @hierarchidb/vt-orchestrator build を実行（tsdown define 警告あり）。
+  - update: 2026-01-26 17:50 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - blocked: 2026-01-26 17:50 JST pnpm typecheck が ui-map の未使用変数警告（ResourceLayerMap.tsx）で失敗。
+  - start: 2026-01-26 18:05 JST ui-map 未使用変数の解消と pnpm typecheck 再実行に着手。
+  - done: 2026-01-26 18:06 JST pnpm typecheck exit 0 を確認（ui-map 未使用変数エラーは再現せず）。
 
 2376) fix/ui-map/vector-tile-layer-flap (P1) — 進行中 (2026-01-26)
 - ブランチ名: fix/ui-map/vector-tile-layer-flap
@@ -88,6 +406,32 @@
   - start: 2026-01-26 13:20 JST shape step6 preview地図の中心/ズーム永続化に着手。
   - update: 2026-01-26 13:30 JST ShapeEntityにpreviewMapViewを追加し、step6 previewでmap viewの保存/復元を接続。
   - done: 2026-01-26 13:31 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2376) fix/location/step2-tileid-and-ui-map-filter (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/location/step2-tileid-and-ui-map-filter
+- 依存: なし
+- 受け入れ基準: Step2でlon/latからz0-z9のタイルIDを保持する／ui-mapの基本機能として表示中タイルIDに一致するlocationのみ抽出できる／表示内容はStep4の表示設定を反映する／再現テストを追加しグリーン化する／pnpm --filter @hierarchidb/ui-map typecheck が exit 0／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/**`, `packages/ui/map/src/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert する
+- チェックリスト:
+  - Step2の読み込みデータにz0-z9のtileIdを付与する
+  - ui-mapで表示中タイルIDに一致するlocation抽出の基本機能を追加する
+  - Step4表示設定を反映した描画経路を接続する
+  - 再現テストを追加しグリーン化する
+  - pnpm --filter @hierarchidb/ui-map typecheck を実行する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - update: 2026-01-26 18:52 JST pnpm --filter @hierarchidb/location-store build exit 0（tsdown define 警告あり）。
+  - update: 2026-01-26 18:53 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define 警告あり）。
+  - update: 2026-01-26 18:55 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0。
+  - update: 2026-01-26 18:57 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
+  - update: 2026-01-26 18:59 JST pnpm --filter @hierarchidb/location-plugin test exit 0（--localstorage-file 警告あり）。
+  - done: 2026-01-26 19:00 JST location Step2 のタイルID付与と ui-map のタイル抽出/プレビュー連携を完了。
+  - update: 2026-01-26 18:40 JST location-store と location-plugin の tabular/feature 生成にタイルID (z0-z9) 付与を追加。
+  - update: 2026-01-26 18:42 JST ui-map にタイルID抽出/フィルタ共通ユーティリティを追加し、location Step4 設定の描画へ接続。
+  - update: 2026-01-26 18:45 JST location-plugin の tabular materialize にタイルID付与の再現テストを追加。
+  - start: 2026-01-26 14:30 JST location Step2のtileId付与とui-mapのタイル一致抽出対応に着手。
 2375) fix/ui-map/route-list-empty-flap (P1) — 進行中 (2026-01-26)
 - ブランチ名: fix/ui-map/route-list-empty-flap
 - 依存: なし
@@ -2643,6 +2987,9 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-22 20:15 JST Step5のタスク表示書式統一とvt集計表示の対応に着手。
+  - start: 2026-01-26 21:20 JST Shape step5 の fetch サマリ表示（Skipped 15, 379/430 と Queued 36 の不一致）について確認開始。
+  - update: 2026-01-26 21:22 JST useShapeBuildStep の集計は total 内訳（completed/failed/skipped）のみを表示し、Queued は残タスクとして total に含まれるため 430-(379+15)=36 で整合することを確認。
+  - update: 2026-01-26 21:29 JST runShapePipeline は fetch→transform→vt の順に実行し、fetch 完了後に queued/running が残る場合は failed に更新するが、resume 時に selectedArrayByCountries が空だと runShapeFetchStage が早期 return し既存 fetch キューが残る可能性があることを確認。
   - update: 2026-01-22 20:35 JST fetch/transformの表示書式を統一し、vtのADM別features/tiles集計表示へ変更。
   - update: 2026-01-22 20:40 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck / pnpm --filter @hierarchidb/shape-plugin typecheck ともに exit 0 を確認。
   - update: 2026-01-22 22:15 JST vt完了時のメッセージをADM別features+tiles集計に統一し、タスク一覧に残るよう修正。
@@ -9093,3 +9440,209 @@
   - update: 2026-01-22 11:39 JST Step6 のベクタタイルレイヤー解決を境界レイヤー判定つきに更新し、境界のみの場合はライン描画を使うよう調整。VectorTileLayer の feature state に sourceLayer を付与。
   - update: 2026-01-22 11:40 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define 警告あり）。
   - blocked: 2026-01-22 11:41 JST pnpm typecheck が runtime-worker の dexie-stores.ts で TS2352。既存エラーのため対応方針の指示待ち。
+2380) fix/location/step5-monochrome-basemap (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/location/step5-monochrome-basemap
+- 依存: なし
+- 受け入れ基準: Location Step5 のプレビュー地図がテーマに応じてモノクロベースマップに自動切替される／カラフルな国別配色のベースマップが使われない／既存のプレビュー表示（アイコン/ラベル/色設定）が維持される／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`
+- ロールバック手順: 該当差分を revert して mapStyleUrl を既定に戻す
+- チェックリスト:
+  - テーマ別のモノクロベースマップURLを用意する
+  - Step5 の mapStyleUrl をテーマで切替える
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - update: 2026-01-26 19:12 JST Step5 プレビューの mapStyleUrl をテーマ別モノクロに切替。
+  - update: 2026-01-26 19:13 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-01-26 19:14 JST Location Step5 のモノクロベースマップ自動切替を完了。
+  - start: 2026-01-26 19:10 JST Location Step5 のモノクロベースマップ自動切替に着手。
+2381) fix/shape/step6-floating-stats-layer-sets (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/shape/step6-floating-stats-layer-sets
+- 依存: なし
+- 受け入れ基準: Step6 preview の Dexie Tile Stats と Layer Sets が FloatingWindow で表示される／Vector Tile Layers の表示が撤去される／既存の地図プレビュー操作が維持される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/ShapePreviewStep.tsx`（必要なら関連コンポーネント）
+- ロールバック手順: 該当差分を revert して元のカード表示に戻す
+- チェックリスト:
+  - Dexie Tile Stats を FloatingWindow に移す
+  - Layer Sets を FloatingWindow に移す
+  - Vector Tile Layers の表示を撤去する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - update: 2026-01-26 19:28 JST ResourceLayerMap の Dexie Tile Stats を FloatingWindow 表示に対応。
+  - update: 2026-01-26 19:30 JST Step6 の Layer Sets を FloatingWindow 化し、Vector Tile Layers 表示を撤去。
+  - update: 2026-01-26 19:32 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0。
+  - update: 2026-01-26 19:33 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+  - done: 2026-01-26 19:34 JST Step6 preview のフローティングカード対応を完了。
+  - start: 2026-01-26 19:20 JST Step6 preview のフローティング表示対応に着手。
+2382) fix/ui/floating-window-titlebar-icons-and-size (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/ui/floating-window-titlebar-icons-and-size
+- 依存: なし
+- 受け入れ基準: FloatingWindow のタイトルバー文字サイズが1.66倍になる／Features・Layer Sets・Dexie Tile Stats のタイトルバーアイコンが指定のものに置換される／Layer Sets と Dexie Tile Stats がリサイズ可能になる／pnpm --filter @hierarchidb/ui-floating-window typecheck と pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `packages/ui/floating-window/src/components/FloatingWindow.tsx`, `packages/ui/map/src/components/ResourceLayerMap.tsx`, `plugins/shape-plugin/src/ui/components/step6/ShapePreviewStep.tsx`, `packages/ui/map/src/preview/ShapePreviewList.tsx`
+- ロールバック手順: 該当差分を revert してタイトルバーサイズ/アイコン/リサイズ設定を元に戻す
+- チェックリスト:
+  - FloatingWindow のタイトルバー文字サイズを1.66倍にする
+  - Features/Layer Sets/Dexie Tile Stats のタイトルバーアイコンを差し替える
+  - Layer Sets と Dexie Tile Stats をリサイズ可能にする
+  - pnpm --filter @hierarchidb/ui-floating-window typecheck を実行する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - update: 2026-01-26 19:43 JST FloatingWindow タイトルバーのサイズ調整と titleIcon 対応を追加。
+  - update: 2026-01-26 19:45 JST Features/Layer Sets/Dexie Tile Stats にアイコンを指定し、Layer Sets/Dexie Tile Stats をリサイズ可能に変更。
+  - update: 2026-01-26 19:47 JST pnpm --filter @hierarchidb/ui-floating-window typecheck exit 0。
+  - update: 2026-01-26 19:48 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0。
+  - update: 2026-01-26 19:49 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define 警告あり）。
+  - update: 2026-01-26 19:50 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+  - done: 2026-01-26 19:51 JST FloatingWindow タイトルバーとアイコン/リサイズ対応を完了。
+  - start: 2026-01-26 19:40 JST FloatingWindow タイトルバー調整とアイコン差し替えに着手。
+2383) fix/shape/step6-layer-sets-window-layout (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/shape/step6-layer-sets-window-layout
+- 依存: なし
+- 受け入れ基準: Dexie Tile Stats のカード風最小サイズ制約が撤去される／Layer Sets ウィンドウのデフォルト高さが1.5倍になる／Layer Sets 見出しが撤去される／Location/Route/Shape スイッチ左側に 24px マージンが入る／pnpm --filter @hierarchidb/ui-map typecheck と pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `packages/ui/map/src/components/ResourceLayerMap.tsx`, `packages/ui/map/src/preview/LayerSetVisibilityPanel.tsx`, `plugins/shape-plugin/src/ui/components/step6/ShapePreviewStep.tsx`
+- ロールバック手順: 該当差分を revert してウィンドウ/マージン/見出しを元に戻す
+- チェックリスト:
+  - Dexie Tile Stats のカード/最小幅制約を撤去する
+  - Layer Sets ウィンドウのデフォルト高さを1.5倍にする
+  - Layer Sets 見出しを撤去する
+  - スイッチ左側の 24px マージンを追加する
+  - pnpm --filter @hierarchidb/ui-map typecheck を実行する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - update: 2026-01-26 20:08 JST Dexie Tile Stats のカード/最小幅を撤去し内容ベースで表示。
+  - update: 2026-01-26 20:10 JST Layer Sets のデフォルト高さを1.5倍化し見出しを撤去。
+  - update: 2026-01-26 20:11 JST Layer Sets のスイッチ左側に 24px マージンを追加。
+  - update: 2026-01-26 20:12 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0。
+  - update: 2026-01-26 20:13 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+  - done: 2026-01-26 20:14 JST Step6 のウィンドウレイアウト調整を完了。
+  - start: 2026-01-26 20:05 JST Step6 Layer Sets/Dexie Tile Stats のウィンドウ調整に着手。
+2384) fix/ui/layer-sets-switch-padding (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/ui/layer-sets-switch-padding
+- 依存: なし
+- 受け入れ基準: Layer Sets のスイッチ左余白が padding で 24px 相当に確保される／pnpm --filter @hierarchidb/ui-map typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `packages/ui/map/src/preview/LayerSetVisibilityPanel.tsx`
+- ロールバック手順: 該当差分を revert して margin ベースに戻す
+- チェックリスト:
+  - スイッチ左側の余白を padding で追加する
+  - pnpm --filter @hierarchidb/ui-map typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - update: 2026-01-26 20:22 JST Layer Sets のスイッチ左余白を padding に変更。
+  - update: 2026-01-26 20:23 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0。
+  - done: 2026-01-26 20:24 JST Layer Sets スイッチ余白の調整を完了。
+  - start: 2026-01-26 20:20 JST Layer Sets スイッチの余白を padding に変更する作業に着手。
+2385) fix/ui/layer-sets-switch-container-margin (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/ui/layer-sets-switch-container-margin
+- 依存: なし
+- 受け入れ基準: Layer Sets の3スイッチコンテナの左側に 24px のマージンが入る／pnpm --filter @hierarchidb/ui-map typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `packages/ui/map/src/preview/LayerSetVisibilityPanel.tsx`
+- ロールバック手順: 該当差分を revert して余白を戻す
+- チェックリスト:
+  - スイッチコンテナの左側に 24px のマージンを追加する
+  - pnpm --filter @hierarchidb/ui-map typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - update: 2026-01-26 20:32 JST Layer Sets のスイッチコンテナ左側に 24px マージンを追加。
+  - update: 2026-01-26 20:33 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0。
+  - done: 2026-01-26 20:34 JST Layer Sets のコンテナ余白調整を完了。
+  - start: 2026-01-26 20:30 JST Layer Sets スイッチコンテナ左マージン追加に着手。
+2386) fix/ui/layer-sets-switch-block-margin-left (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/ui/layer-sets-switch-block-margin-left
+- 依存: なし
+- 受け入れ基準: Layer Sets のスイッチブロック全体が左マージン24pxで右に移動する／pnpm --filter @hierarchidb/ui-map typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `packages/ui/map/src/preview/LayerSetVisibilityPanel.tsx`
+- ロールバック手順: 該当差分を revert して余白を元に戻す
+- チェックリスト:
+  - スイッチブロック全体に左マージンを適用する
+  - pnpm --filter @hierarchidb/ui-map typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - update: 2026-01-26 20:42 JST スイッチブロック全体に左マージン24pxを付与。
+  - update: 2026-01-26 20:43 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0。
+  - done: 2026-01-26 20:44 JST Layer Sets のブロック余白を修正。
+  - start: 2026-01-26 20:40 JST Layer Sets スイッチブロック左マージンの修正に着手。
+2387) fix/ui/layer-sets-formcontrollabel-margin-reset (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/ui/layer-sets-formcontrollabel-margin-reset
+- 依存: なし
+- 受け入れ基準: Layer Sets の FormControlLabel 既定の負の margin を上書きして左マージン24pxが有効になる／pnpm --filter @hierarchidb/ui-map typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `packages/ui/map/src/preview/LayerSetVisibilityPanel.tsx`
+- ロールバック手順: 該当差分を revert して既定スタイルに戻す
+- チェックリスト:
+  - FormControlLabel の margin-left を上書きする
+  - pnpm --filter @hierarchidb/ui-map typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - update: 2026-01-26 20:52 JST FormControlLabel の margin-left を 0 に固定して負のマージンを無効化。
+  - update: 2026-01-26 20:53 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0。
+  - done: 2026-01-26 20:54 JST Layer Sets の余白上書きを完了。
+  - start: 2026-01-26 20:50 JST FormControlLabel の負のマージン上書きに着手。
+2388) fix/location/terrain-types-4-column-layout (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/location/terrain-types-4-column-layout
+- 依存: なし
+- 受け入れ基準: Terrain Types のトグルがデフォルトで4つ横並びになる／選択/表示切替は維持される／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`
+- ロールバック手順: 該当差分を revert して元のレイアウトに戻す
+- チェックリスト:
+  - Terrain Types のトグルを4列レイアウトに調整する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - update: 2026-01-26 21:03 JST MapToggleCard に列数オプションを追加し Terrain Types を4列化。
+  - update: 2026-01-26 21:04 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0。
+  - update: 2026-01-26 21:05 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
+  - done: 2026-01-26 21:06 JST Terrain Types の4列レイアウト対応を完了。
+  - start: 2026-01-26 21:00 JST Terrain Types の4列レイアウト対応に着手。
+2389) fix/location/data-source-order-ide-gsm-first (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/location/data-source-order-ide-gsm-first
+- 依存: なし
+- 受け入れ基準: Location Data Source の選択肢で IDE-GSM が先頭になる／IDE-GSM選択後の処理フローをコード根拠付きで説明できる／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert して順序を元に戻す
+- チェックリスト:
+  - Data Source の定義/並び順を特定する
+  - IDE-GSM を先頭にする
+  - IDE-GSM 選択後の処理フローを説明する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - update: 2026-01-26 21:18 JST Data Source の並びを IDE-GSM 先頭へ変更。
+  - update: 2026-01-26 21:19 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
+  - done: 2026-01-26 21:20 JST IDE-GSM先頭化と処理フロー説明を完了。
+  - start: 2026-01-26 21:12 JST Location Data Source の並び順と処理フロー確認に着手。
+2390) fix/location/ide-gsm-selection-flow (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/location/ide-gsm-selection-flow
+- 依存: なし
+- 受け入れ基準: Step2のData Source変更時にselectedArrayByCountriesを空で保存する／Step3遷移時に空ならparseIdeGsmCsvで国×種別マップを生成して保存される／空の間はStep4/Step5へ進めない条件が維持/確認される／Step3編集差分が保存される／Step4/Step5遷移時に差分がある場合はWorker側の本パース・保存が走る／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps-provider.tsx`, `plugins/location-plugin/src/ui/components/steps/LocationDataSourceStep.tsx`, `plugins/location-plugin/src/ui/components/steps/LocationSelectionStep.tsx`, `packages/runtime-worker/src/services/LocationMutationService.ts`（必要なら）
+- ロールバック手順: 該当差分を revert して元の選択/保存フローに戻す
+- チェックリスト:
+  - Step2変更時にselectedArrayByCountriesを空で保存する
+  - Step3遷移時に空ならparseIdeGsmCsvを実行する
+  - Step4/Step5遷移時に差分があればWorker側インポートを実行する
+  - 条件によりStep4/Step5に進めないことを確認する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - update: 2026-01-26 21:35 JST Step2 の Data Source 変更/ファイル選択で選択マップを空にするよう変更。
+  - update: 2026-01-26 21:38 JST Step3 で選択マップが空なら IDE-GSM をパースして自動生成する処理を追加。
+  - update: 2026-01-26 21:41 JST Step4/Step5 で選択差分があれば Worker で IDE-GSM 取り込みを実行し差分ハッシュを保存。
+  - update: 2026-01-26 21:43 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
+  - done: 2026-01-26 21:44 JST IDE-GSM 選択フローの修正を完了。
+  - start: 2026-01-26 21:30 JST IDE-GSM 選択フローの修正に着手。
+2391) fix/location/ide-gsm-default-selection-all-checked (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/location/ide-gsm-default-selection-all-checked
+- 依存: 2390
+- 受け入れ基準: Step3のIDE-GSM初期選択はCSVに存在する国×種別のみチェックボックスを表示し、その初期状態は全てONになる／既存の選択編集・保存・差分検知は維持される／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/utils/ideGsmSelection.ts`
+- ロールバック手順: 該当差分を revert して従来の種類別チェックへ戻す
+- チェックリスト:
+  - IDE-GSM の初期選択マップ生成ロジックを修正する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 21:55 JST IDE-GSM 初期選択を全チェックに変更する作業に着手。
+  - update: 2026-01-26 22:20 JST IDE-GSM の存在タイプのみ初期ONにし、存在しない種別はセルを無効化。
+  - done: 2026-01-26 22:22 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
