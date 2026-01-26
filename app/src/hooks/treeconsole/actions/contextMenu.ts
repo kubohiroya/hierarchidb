@@ -156,8 +156,11 @@ export const createContextMenuAction = (
             // default (speed dial etc.)
             await refreshParent(targetNodeId);
             navigateToCreateDialog();
-          } catch {
-            // ...existing code...
+            return;
+          } catch (error) {
+            console.error('Create failed:', error);
+            showCommandError('UNKNOWN_ERROR');
+            return;
           }
         }
 
