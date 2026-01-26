@@ -26,7 +26,7 @@ import { isFolderNodeType } from '../utils/nodeTypeIconColor.js';
 type CreateMenuEntry = { key: string; nodeType: string; label: string; description?: string; icon?: { muiIconName?: string; emoji?: string; color?: string } };
 type CreateMenuBuilder = (treeId?: string) => CreateMenuEntry[];
 type GlobalMenuBuilders = { buildMenuItemsForTreeId?: CreateMenuBuilder; buildMenuItemsForContext?: CreateMenuBuilder };
-const buildableNodeTypes = new Set(['styler', 'shape', 'location', 'route']);
+const buildableNodeTypes = new Set(['styler', 'shape', 'route']);
 
 const logNodeContextMenuWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -145,11 +145,14 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
   const effectiveInvisible = !effectiveVisible;
   const canPreview = !effectiveInvisible;
   const normalizedNodeType = String(nodeType ?? '').trim().toLowerCase();
+  const isLocationNode = normalizedNodeType === 'location';
   const canBuildEntry =
     Boolean(_onBuild) &&
     (typeof canBuild === 'boolean'
       ? canBuild
       : isFolderNodeType(nodeType) || buildableNodeTypes.has(normalizedNodeType));
+  const showBuildEntry = Boolean(_onBuild) && (canBuildEntry || isLocationNode);
+  const buildDisabled = !canBuildEntry || isLocationNode;
 
   // Use refs to store the latest props to avoid stale closures
   const propsRef = useRef(props);
@@ -460,8 +463,13 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
             </ListItemIcon>
             <ListItemText primary={editLabel} />
           </MenuItem>,
-          canBuildEntry ? (
-            <MenuItem key="menuitem-build" onClick={handleBuildClick} aria-label={buildLabel}>
+          showBuildEntry ? (
+            <MenuItem
+              key="menuitem-build"
+              onClick={handleBuildClick}
+              aria-label={buildLabel}
+              disabled={buildDisabled}
+            >
               <ListItemIcon>
                 <ConstructionIcon />
               </ListItemIcon>

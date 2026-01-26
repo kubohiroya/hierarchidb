@@ -193,7 +193,7 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
               startIcon={<ConstructionIcon />}
               onClick={handleBuild}
               aria-label={labels.buildAria}
-              disabled={buildTargetLoading}
+              disabled={buildTargetLoading || currentNode?.nodeType === 'location'}
             >
               {labels.buildLabel}
             </Button>
