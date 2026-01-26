@@ -30,7 +30,12 @@
     },
     "ideGsm": {
       "buttonLabel": "Select IDE-GSM file",
-      "instructions": "Provide an IDE-GSM CSV/Excel file (location/resource) via upload or URL."
+      "instructions": "Provide an IDE-GSM CSV/Excel file (location/resource) via upload or URL.",
+      "noFiles": "No CSV files imported.",
+      "importLocal": "Import Local Files",
+      "importRemote": "Import Remote Files",
+      "fileFallback": "Imported file",
+      "removeFile": "Remove imported file"
     }
   },
   "routeConfig": {

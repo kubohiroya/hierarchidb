@@ -3,17 +3,17 @@
  * @description Step 2: select data source for route generation.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Box, Button } from '@mui/material';
-import { notify } from '@hierarchidb/components';
-import { FileInputWithUrl } from '@hierarchidb/ui-file';
-import { DataSourceSelectionStep, type DataSourceSelectionOption } from '@hierarchidb/ui-datasource';
+import { useCallback, useEffect, useMemo } from 'react';
+import { Stack, Typography } from '@mui/material';
+import {
+  DataSourceSelectionStep,
+  type DataSourceSelectionOption,
+  IdeGsmImportPanel,
+} from '@hierarchidb/ui-datasource';
 import { useTranslation } from '../../../common/i18n/index.js';
 import type { RouteEntity, RouteUpdaterPayload } from '../../../common/entities/RouteEntity.js';
 import { getRouteUpdaterPayload } from '../../../common/utils/draft.js';
 import { ROUTE_DATA_SOURCES } from '../../../common/datasource/configs.js';
-import { clearRouteDataSourceCache } from '../../utils/clearDataSourceCache.js';
-import { toNodeId } from '@hierarchidb/common-types';
 
 export interface RouteDataSourceStepProps {
   draft: RouteUpdaterPayload;
@@ -23,12 +23,7 @@ export interface RouteDataSourceStepProps {
   nodeId?: string;
 }
 
-const DATA_SOURCE_OPTIONS = [
-  { id: 'openstreetmap', key: 'openstreetmap' },
-  { id: 'searoute', key: 'searoute' },
-  { id: 'ide-gsm', key: 'ide-gsm' },
-  { id: 'custom', key: 'custom' },
-] as const;
+const DATA_SOURCE_OPTIONS = [{ id: 'ide-gsm', key: 'ide-gsm' }] as const;
 
 type DataSourceKey = typeof DATA_SOURCE_OPTIONS[number]['id'];
 
@@ -37,16 +32,28 @@ export const RouteDataSourceStep: React.FC<RouteDataSourceStepProps> = ({
   onUpdate,
   onValidationChange,
   disabled = false,
-  nodeId,
 }) => {
   const { t } = useTranslation();
   const draft = useMemo(() => getRouteUpdaterPayload(draftProp), [draftProp]);
   const resolvedSource = (draft.dataSourceName as DataSourceKey | undefined) ?? 'openstreetmap';
-  const resolvedNodeId = nodeId ? toNodeId(String(nodeId)) : undefined;
-  const [isClearing, setIsClearing] = useState(false);
   const dataSourceMap = useMemo(
     () => new Map(ROUTE_DATA_SOURCES.map((source) => [source.name, source])),
     [],
+  );
+  const ideGsmLabels = useMemo(
+    () => ({
+      noFiles: t('dataSource.ideGsm.noFiles', 'No CSV files imported.'),
+      importLocal: t('dataSource.ideGsm.importLocal', 'Import Local Files'),
+      importRemote: t('dataSource.ideGsm.importRemote', 'Import Remote Files'),
+      fileFallback: t('dataSource.ideGsm.fileFallback', 'Imported file'),
+      removeFile: t('dataSource.ideGsm.removeFile', 'Remove imported file'),
+      buttonLabel: t('dataSource.ideGsm.buttonLabel', 'Select IDE-GSM file'),
+      instructions: t(
+        'dataSource.ideGsm.instructions',
+        'Provide an IDE-GSM schema file (location/resource) via upload or URL.',
+      ),
+    }),
+    [t],
   );
   const options = useMemo<DataSourceSelectionOption[]>(
     () =>
@@ -85,8 +92,7 @@ export const RouteDataSourceStep: React.FC<RouteDataSourceStepProps> = ({
   }, [draft.dataSourceName, emitUpdate, resolvedSource]);
 
   return (
-    <Box sx={{ p: 3, maxWidth: 720, margin: '0 auto' }}>
-      <DataSourceSelectionStep<number>
+    <DataSourceSelectionStep<number>
         title={t('dataSource.title', 'Data Source')}
         options={options}
         state={{
@@ -116,24 +122,41 @@ export const RouteDataSourceStep: React.FC<RouteDataSourceStepProps> = ({
           'dataSource.licenseRequired',
           'License agreement is required to proceed.',
         )}
-        renderDetails={(selected) => {
-          if (selected.id !== 'ide-gsm') return null;
+        showDetailsCard={false}
+        renderOption={(option, active) => {
+          const isIdeGsm = option.id === 'ide-gsm';
           return (
-            <FileInputWithUrl
-              accept=".csv,.xlsx,.xls"
-              buttonLabel={t('dataSource.ideGsm.buttonLabel', 'Select IDE-GSM file')}
-              instructions={t(
-                'dataSource.ideGsm.instructions',
-                'Provide an IDE-GSM schema file (location/resource) via upload or URL.',
-              )}
-              defaultDownloadUrl={draft.ideGsmSourceUrl}
-              onFileSelect={(file, downloadUrl) => {
-                emitUpdate({
-                  ideGsmFileName: file.name,
-                  ideGsmSourceUrl: downloadUrl ?? undefined,
-                });
-              }}
-            />
+            <Stack spacing={0.5}>
+              <Typography variant="subtitle1">
+                {option.icon} {option.name}
+              </Typography>
+              {option.description ? (
+                <Typography variant="body2" color="text.secondary">
+                  {option.description}
+                </Typography>
+              ) : null}
+              {isIdeGsm && active ? (
+                <IdeGsmImportPanel
+                  fileName={draft.ideGsmFileName}
+                  sourceUrl={draft.ideGsmSourceUrl}
+                  labels={ideGsmLabels}
+                  defaultDownloadUrl={draft.ideGsmSourceUrl}
+                  disabled={disabled}
+                  onChange={(payload) =>
+                    emitUpdate({
+                      ideGsmFileName: payload.fileName,
+                      ideGsmSourceUrl: payload.sourceUrl,
+                    })
+                  }
+                  onClear={() =>
+                    emitUpdate({
+                      ideGsmFileName: undefined,
+                      ideGsmSourceUrl: undefined,
+                    })
+                  }
+                />
+              ) : null}
+            </Stack>
           );
         }}
       />

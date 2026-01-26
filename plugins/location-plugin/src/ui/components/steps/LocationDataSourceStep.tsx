@@ -3,15 +3,14 @@
  */
 
 import type React from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Close, InsertDriveFile } from '@mui/icons-material';
-import { Box, Button, Dialog, DialogContent, IconButton, Stack, Typography } from '@mui/material';
+import { useMemo } from 'react';
+import { Box, Stack, Typography } from '@mui/material';
 import {
   DataSourceSelectionStep,
   type DataSourceSelectionOption,
   type DataSourceSelectorProps,
+  IdeGsmImportPanel,
 } from '@hierarchidb/ui-datasource';
-import { FileInputWithUrl } from '@hierarchidb/ui-file';
 import type { LocationDataSource, LocationEntity, LocationType } from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
 import type { Timestamp } from '@hierarchidb/common-types';
@@ -145,8 +144,6 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
   disabled,
 }) => {
   const { t } = useTranslation();
-  const [localDialogOpen, setLocalDialogOpen] = useState(false);
-  const [remoteDialogOpen, setRemoteDialogOpen] = useState(false);
 
   const value = useMemo<LocationDataSource>(
     () => (draft.dataSource as LocationDataSource) ?? 'openstreetmap',
@@ -170,65 +167,22 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
     [t]
   );
 
-  const blobUrlRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (
-        blobUrlRef.current &&
-        blobUrlRef.current.startsWith('blob:') &&
-        blobUrlRef.current !== draft.ideGsmSourceUrl
-      ) {
-        URL.revokeObjectURL(blobUrlRef.current);
-        blobUrlRef.current = null;
-      }
-    };
-  }, [draft.ideGsmSourceUrl]);
-
   const description = t('dataSource.description', 'Choose a dataset source to fetch location data.');
-  const hasIdeGsmFile = Boolean(draft.ideGsmFileName || draft.ideGsmSourceUrl);
-  const ideGsmFileLabel =
-    draft.ideGsmFileName ??
-    draft.ideGsmSourceUrl ??
-    t('dataSource.ideGsm.fileFallback', 'Imported file');
-
-  const closeDialogs = () => {
-    setLocalDialogOpen(false);
-    setRemoteDialogOpen(false);
-  };
-
-  const handleIdeGsmFileSelect = async (file: File, downloadUrl?: string) => {
-    if (blobUrlRef.current && blobUrlRef.current.startsWith('blob:')) {
-      URL.revokeObjectURL(blobUrlRef.current);
-      blobUrlRef.current = null;
-    }
-    const sourceUrl = downloadUrl ?? URL.createObjectURL(file);
-    if (!downloadUrl) {
-      blobUrlRef.current = sourceUrl;
-    }
-    const updates: Partial<LocationEntity> = {
-      ideGsmFileName: file.name,
-      ideGsmSourceUrl: sourceUrl,
-      selectedArrayByCountries: {},
-      ideGsmSelectionHash: undefined,
-    };
-    onUpdate(updates);
-    closeDialogs();
-  };
-
-  const handleClearIdeGsmFile = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation();
-    if (blobUrlRef.current && blobUrlRef.current.startsWith('blob:')) {
-      URL.revokeObjectURL(blobUrlRef.current);
-      blobUrlRef.current = null;
-    }
-    onUpdate({
-      ideGsmFileName: undefined,
-      ideGsmSourceUrl: undefined,
-      selectedArrayByCountries: {},
-      ideGsmSelectionHash: undefined,
-    });
-  };
+  const ideGsmLabels = useMemo(
+    () => ({
+      noFiles: t('dataSource.ideGsm.noFiles', 'No CSV files imported.'),
+      importLocal: t('dataSource.ideGsm.importLocal', 'Import Local Files'),
+      importRemote: t('dataSource.ideGsm.importRemote', 'Import Remote Files'),
+      fileFallback: t('dataSource.ideGsm.fileFallback', 'Imported file'),
+      removeFile: t('dataSource.ideGsm.removeFile', 'Remove imported file'),
+      buttonLabel: t('dataSource.ideGsm.buttonLabel', 'Select IDE-GSM file'),
+      instructions: t(
+        'dataSource.ideGsm.instructions',
+        'Provide an IDE-GSM CSV file via upload or URL.',
+      ),
+    }),
+    [t],
+  );
 
   const renderOption: DataSourceSelectorProps['renderOption'] = (option, active) => {
     const supported =
@@ -255,73 +209,29 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
           <Typography variant="caption">{icons}</Typography>
         </Box>
         {isIdeGsm && active ? (
-          <Box
-            sx={{
-              mt: 1.5,
-              p: 1.5,
-              borderRadius: 1,
-              border: 1,
-              borderColor: 'divider',
-              bgcolor: 'background.default',
-            }}
-          >
-            {hasIdeGsmFile ? (
-              <Box display="flex" alignItems="center" justifyContent="space-between" gap={1}>
-                <Box display="flex" alignItems="center" gap={1} sx={{ minWidth: 0 }}>
-                  <InsertDriveFile fontSize="small" color="action" />
-                  <Typography variant="body2" noWrap title={ideGsmFileLabel}>
-                    {ideGsmFileLabel}
-                  </Typography>
-                </Box>
-                <IconButton
-                  size="small"
-                  aria-label={t('dataSource.ideGsm.removeFile', 'Remove imported file')}
-                  onClick={handleClearIdeGsmFile}
-                  disabled={Boolean(disabled)}
-                >
-                  <Close fontSize="small" />
-                </IconButton>
-              </Box>
-            ) : (
-              <Stack spacing={1}>
-                <Typography variant="body2" color="text.secondary">
-                  {t('dataSource.ideGsm.noFiles', 'No CSV files imported.')}
-                </Typography>
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  useFlexGap
-                  flexWrap="wrap"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <Button
-                    variant="outlined"
-                    color="secondary"
-                    size="small"
-                    disabled={Boolean(disabled)}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setLocalDialogOpen(true);
-                    }}
-                  >
-                    {t('dataSource.ideGsm.importLocal', 'Import Local Files')}
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="secondary"
-                    size="small"
-                    disabled={Boolean(disabled)}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setRemoteDialogOpen(true);
-                    }}
-                  >
-                    {t('dataSource.ideGsm.importRemote', 'Import Remote Files')}
-                  </Button>
-                </Stack>
-              </Stack>
-            )}
-          </Box>
+          <IdeGsmImportPanel
+            fileName={draft.ideGsmFileName}
+            sourceUrl={draft.ideGsmSourceUrl}
+            labels={ideGsmLabels}
+            defaultDownloadUrl={draft.ideGsmSourceUrl}
+            disabled={Boolean(disabled)}
+            onChange={(payload) =>
+              onUpdate({
+                ideGsmFileName: payload.fileName,
+                ideGsmSourceUrl: payload.sourceUrl,
+                selectedArrayByCountries: {},
+                ideGsmSelectionHash: undefined,
+              })
+            }
+            onClear={() =>
+              onUpdate({
+                ideGsmFileName: undefined,
+                ideGsmSourceUrl: undefined,
+                selectedArrayByCountries: {},
+                ideGsmSelectionHash: undefined,
+              })
+            }
+          />
         ) : null}
       </Stack>
     );
@@ -364,69 +274,6 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
         detailsTitle={t('dataSource.detailsTitle', 'Data Source Details')}
         showDetailsCard={false}
       />
-      <Dialog
-        open={localDialogOpen}
-        onClose={() => setLocalDialogOpen(false)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, pt: 2 }}>
-          <Typography variant="subtitle1">
-            {t('dataSource.ideGsm.importLocal', 'Import Local Files')}
-          </Typography>
-          <IconButton
-            aria-label={t('common.close', 'Close')}
-            onClick={() => setLocalDialogOpen(false)}
-          >
-            <Close />
-          </IconButton>
-        </Box>
-        <DialogContent sx={{ pt: 1.5 }}>
-          <FileInputWithUrl
-            accept=".csv,.xlsx,.xls"
-            buttonLabel={t('dataSource.ideGsm.buttonLabel', 'Select IDE-GSM file')}
-            instructions={t(
-              'dataSource.ideGsm.instructions',
-              'Provide an IDE-GSM CSV file via upload or URL.',
-            )}
-            onFileSelect={handleIdeGsmFileSelect}
-            disabled={Boolean(disabled)}
-            mode="local"
-          />
-        </DialogContent>
-      </Dialog>
-      <Dialog
-        open={remoteDialogOpen}
-        onClose={() => setRemoteDialogOpen(false)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, pt: 2 }}>
-          <Typography variant="subtitle1">
-            {t('dataSource.ideGsm.importRemote', 'Import Remote Files')}
-          </Typography>
-          <IconButton
-            aria-label={t('common.close', 'Close')}
-            onClick={() => setRemoteDialogOpen(false)}
-          >
-            <Close />
-          </IconButton>
-        </Box>
-        <DialogContent sx={{ pt: 1.5 }}>
-          <FileInputWithUrl
-            accept=".csv,.xlsx,.xls"
-            buttonLabel={t('dataSource.ideGsm.buttonLabel', 'Select IDE-GSM file')}
-            instructions={t(
-              'dataSource.ideGsm.instructions',
-              'Provide an IDE-GSM CSV file via upload or URL.',
-            )}
-            defaultDownloadUrl={draft.ideGsmSourceUrl}
-            onFileSelect={handleIdeGsmFileSelect}
-            disabled={Boolean(disabled)}
-            mode="url"
-          />
-        </DialogContent>
-      </Dialog>
     </Box>
   );
 };
