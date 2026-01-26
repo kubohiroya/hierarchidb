@@ -25,6 +25,7 @@ import {
   getViewportTileIdSet,
   lonLatToTileXY,
   MapToggleCard,
+  LocationPreviewList,
   ResourceLayerMap,
   resolveTileIdField,
 } from '@hierarchidb/ui-map';
@@ -37,7 +38,6 @@ import type {
   LocationType,
 } from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
-import { getLocationDB } from '@hierarchidb/location-store';
 import { FloatingWindow, useFloatingWindow } from '@hierarchidb/ui-floating-window';
 import { LOCATION_TYPE_STYLES } from './locationTypes.js';
 import { resolveLocationAttribution } from '../../../common/datasources/attribution.js';
@@ -311,11 +311,10 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
   useIdeGsmImportOnEntry({ draft: _draft, nodeId, onUpdate });
   const { translations } = useTranslation();
     const previewNodeId = nodeId ?? 'preview' as NodeId;
+  const metadataTableId = nodeId ? String(nodeId) : undefined;
   const [previewPoints, setPreviewPoints] = useState<PreviewPoint[]>([]);
-  const [tableId, setTableId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [iconsReady, setIconsReady] = useState(false);
-  const isMountedRef = useRef(true);
+  const [metadataWindowOpen, setMetadataWindowOpen] = useState(true);
   const mapRef = useRef<MapLibreMapInstance | null>(null);
   const styleImageMissingHandlerRef = useRef<((event: { id: string }) => void) | null>(null);
   const styleDataHandlerRef = useRef<(() => void) | null>(null);
@@ -350,6 +349,22 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       return acc;
     }, {} as LocationLabelConfig);
   }, [_draft.labelConfig, tilesMaxZoom]);
+
+  const terrainToggleOptions = useMemo(() => (
+    LOCATION_TYPE_OPTIONS.map((option) => {
+      const type = option.id as LocationType;
+      const Icon = LOCATION_TYPE_STYLES[type].icon;
+      const iconColor = iconConfig[type]?.color ?? DEFAULT_TYPE_COLORS[type];
+      const labelColor = labelConfig[type]?.color ?? DEFAULT_TYPE_COLORS[type];
+      return {
+        id: option.id,
+        label: translations.locationTypes?.[type] ?? option.label,
+        icon: <Icon fontSize="small" htmlColor={iconColor} />,
+        labelColor,
+      };
+    })
+  ), [iconConfig, labelConfig, translations.locationTypes]);
+
   const mapStyleUrl = useMemo(() => (
     theme.palette.mode === 'dark'
       ? MONOCHROME_STYLE_URLS.dark
@@ -373,57 +388,6 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     }];
   }, [dataSourceAttribution]);
 
-  const loadData = useCallback(async () => {
-    if (!isMountedRef.current) return;
-
-    if (typeof window === 'undefined') {
-      setPreviewPoints([]);
-      return;
-    }
-
-    if (!previewNodeId || previewNodeId === 'preview') {
-      setPreviewPoints([]);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const db = getLocationDB();
-      const sessions = db.sessions;
-      if (!isMountedRef.current) return;
-      setPreviewPoints([]);
-      if (!sessions || typeof sessions.where !== 'function') {
-        setTableId(null);
-        return;
-      }
-      const records = await sessions.where('nodeId').equals(previewNodeId).toArray().catch(() => []);
-      if (!records?.length) {
-        setTableId(null);
-        return;
-      }
-      type SessionRecord = NonNullable<(typeof records)[number]>;
-      const latest = records.reduce<SessionRecord | null>((acc, current) => {
-        if (!acc) return current;
-        return (current.createdAt ?? 0) > (acc.createdAt ?? 0) ? current : acc;
-      }, null);
-      setTableId(latest?.tableId ?? null);
-    } catch {
-      setTableId(null);
-      setPreviewPoints([]);
-    } finally {
-      if (isMountedRef.current) {
-        setLoading(false);
-      }
-    }
-  }, [previewNodeId]);
-
-  useEffect(() => () => {
-    isMountedRef.current = false;
-  }, []);
-
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
 
   const enabledLocationTypes = useMemo(
     () => LOCATION_TYPE_OPTIONS.filter((option) => locationTypeSelection[option.id]).map((option) => option.id),
@@ -886,17 +850,14 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
             </Button>
           </Box>
         )}
-        {metadataWindow.windowState.isVisible ? (
-          <FloatingWindow
+        {metadataWindowOpen ? (
+          <LocationPreviewList
             title={translations.mapPreview?.tabs?.metadata ?? 'Metadata'}
-            initialState={metadataWindow.windowState}
-            onStateChange={metadataWindow.handlers.onStateChange}
-            onClose={metadataWindow.handlers.onClose}
-          >
-            <Box sx={{ height: '100%', minHeight: 0 }}>
-              {metadataContent}
-            </Box>
-          </FloatingWindow>
+            tableId={metadataTableId}
+            loadingText={translations.mapPreview?.metadataLoading ?? 'Loading metadata...'}
+            emptyText={translations.mapPreview?.metadataEmpty ?? 'No metadata available yet.'}
+            onClose={() => setMetadataWindowOpen(false)}
+          />
         ) : (
           <Box position="absolute" top={8} left={8} zIndex={3}>
             <Button
@@ -904,7 +865,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
               color="primary"
               size="large"
               aria-label="Show list"
-              onClick={metadataWindow.handlers.show}
+              onClick={() => setMetadataWindowOpen(true)}
             >
               <TableRowsIcon />
             </Button>

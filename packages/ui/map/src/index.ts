@@ -119,6 +119,10 @@ export {
   type ShapePreviewListProps,
 } from './preview/ShapePreviewList.js';
 export {
+  LocationPreviewList,
+  type LocationPreviewListProps,
+} from './preview/LocationPreviewList.js';
+export {
   RoutePreviewList,
   buildRoutePreviewRows,
   type RoutePreviewLineRow,
