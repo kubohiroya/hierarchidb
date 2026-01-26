@@ -15,7 +15,8 @@ export const MapToggleCard: React.FC<{
   options: MapToggleOption[];
   selection: MapToggleSelection;
   onToggle: (id: string) => void;
-}> = ({ title, helperText, options, selection, onToggle }) => (
+  columns?: number;
+}> = ({ title, helperText, options, selection, onToggle, columns }) => (
   <Paper variant="outlined" sx={{ p: 1.5 }}>
     <Stack spacing={1}>
       {(title || helperText) ? (
@@ -30,7 +31,7 @@ export const MapToggleCard: React.FC<{
           ) : null}
         </Box>
       ) : null}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(72px, 1fr))', gap: 1 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: columns ? `repeat(${columns}, minmax(72px, 1fr))` : 'repeat(auto-fit, minmax(72px, 1fr))', gap: 1 }}>
         {options.map((option) => (
           <ToggleButton
             key={option.id}
