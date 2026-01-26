@@ -173,7 +173,8 @@ export function TanstackDataGrid<T extends RowRecord>(props: TanstackDataGridPro
   const [internalColumnSizing, setInternalColumnSizing] = useState<GridColumnSizingState>(columnSizing ?? {});
   const [internalSelectedRows, setInternalSelectedRows] = useState<Set<string | number>>(selectedRows ?? new Set());
   const [editingCell, setEditingCell] = useState<{ rowId: string | number; columnId: string; value: string } | null>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  const headerContainerRef = useRef<HTMLDivElement | null>(null);
+  const bodyContainerRef = useRef<HTMLDivElement | null>(null);
   const resizeRef = useRef<{
     startX: number;
     leftStart: number;
@@ -450,10 +451,25 @@ export function TanstackDataGrid<T extends RowRecord>(props: TanstackDataGridPro
   const rowModel = table.getRowModel().rows;
   const virtualizer = useVirtualizer({
     count: enableVirtualization ? rowModel.length : 0,
-    getScrollElement: () => containerRef.current,
+    getScrollElement: () => bodyContainerRef.current,
     estimateSize: () => rowHeight,
     overscan: 6,
   });
+
+  useEffect(() => {
+    const bodyElement = bodyContainerRef.current;
+    const headerElement = headerContainerRef.current;
+    if (!bodyElement || !headerElement) return undefined;
+
+    const handleScroll = () => {
+      headerElement.scrollLeft = bodyElement.scrollLeft;
+    };
+
+    bodyElement.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      bodyElement.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
   const virtualRows = enableVirtualization
     ? virtualizer.getVirtualItems()
@@ -489,175 +505,189 @@ export function TanstackDataGrid<T extends RowRecord>(props: TanstackDataGridPro
   }
 
   return (
-    <TableContainer
-      component={Paper}
-      ref={containerRef}
-      sx={{
-        flex: 1,
-        minHeight: 0,
-        maxHeight: enableVirtualization ? maxHeight : undefined,
-        overflow: 'auto',
-      }}
-    >
-      <Table stickyHeader size="small" sx={{ tableLayout: 'fixed' }}>
-        <TableHead>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header, headerIndex) => {
-                const meta = header.column.columnDef.meta as { align?: 'left' | 'center' | 'right' } | undefined;
-                const canSort = header.column.getCanSort();
-                const sortState = header.column.getIsSorted();
-                const rightNeighbor = headerGroup.headers[headerIndex + 1];
-                return (
-                  <TableCell
-                    key={header.id}
-                    align={meta?.align ?? 'left'}
-                    sx={{
-                      position: 'relative',
-                      width: header.getSize(),
-                      maxWidth: header.getSize(),
-                      fontWeight: 'bold',
-                      py: 0.5,
-                      px: 1,
-                    }}
-                  >
-                    {header.isPlaceholder ? null : (
-                      <Box
-                        display="flex"
-                        alignItems="center"
-                        gap={1}
-                        sx={{ cursor: canSort ? 'pointer' : 'default', userSelect: 'none' }}
-                        onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
-                      >
-                        {flexRender(header.column.columnDef.header, header.getContext())}
-                        {canSort ? (
-                          <Box
-                            component="span"
-                            sx={{
-                              display: 'inline-flex',
-                              flexDirection: 'column',
-                              lineHeight: 1,
-                              fontSize: 10,
-                            }}
-                          >
-                            <Box
-                              component="span"
-                              sx={{ color: sortState === 'asc' ? 'text.primary' : 'text.disabled' }}
-                            >
-                              ▲
-                            </Box>
-                            <Box
-                              component="span"
-                              sx={{ color: sortState === 'desc' ? 'text.primary' : 'text.disabled' }}
-                            >
-                              ▼
-                            </Box>
-                          </Box>
-                        ) : null}
-                      </Box>
-                    )}
-                    {header.column.getCanResize() && rightNeighbor ? (
-                      <Box
-                        onMouseDown={(event) => {
-                          handleResizeStart(header, rightNeighbor, event);
-                        }}
-                        sx={{
-                          position: 'absolute',
-                          right: 0,
-                          top: 0,
-                          height: '100%',
-                          width: 6,
-                          cursor: 'col-resize',
-                          userSelect: 'none',
-                        }}
-                      />
-                    ) : null}
-                  </TableCell>
-                );
-              })}
-            </TableRow>
-          ))}
-        </TableHead>
-        <TableBody>
-          {enableVirtualization && paddingTop > 0 ? (
-            <TableRow>
-              <TableCell colSpan={table.getAllLeafColumns().length} sx={{ height: paddingTop, padding: 0, border: 0 }} />
-            </TableRow>
-          ) : null}
-          {virtualRows.map((virtualRow) => {
-            const row = rowModel[virtualRow.index];
-            if (!row) return null;
-            const rowId = row.id;
-            const state: GridRowState = {
-              selected: normalizedSelectedRows.has(rowId),
-              matched: normalizedMatchedRows?.has(rowId) ?? false,
-              hovered: normalizedHoveredRows?.has(rowId) ?? false,
-              dragging: normalizedDraggingRows?.has(rowId) ?? false,
-              dropTarget: normalizedDropTargetRows?.has(rowId) ?? false,
-            };
-            const sx = rowSx?.(state);
-            return (
-              <TableRow
-                key={row.id}
-                hover
-                sx={sx}
-                onMouseEnter={() => onRowHover?.(row.original, rowId)}
-                onMouseLeave={() => onRowLeave?.(row.original, rowId)}
-                onClick={() => onRowClick?.(row.original, rowId)}
-              >
-                {row.getVisibleCells().map((cell) => {
-                  const isGrouped = cell.getIsGrouped();
-                  const isAggregated = cell.getIsAggregated();
-                  const isPlaceholder = cell.getIsPlaceholder();
-                  const groupedLabel = isGrouped
-                    ? `${cell.getValue() ?? ''} (${row.subRows.length})`
-                    : null;
+    <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+      <Box ref={headerContainerRef} sx={{ overflow: 'hidden' }}>
+        <Table size="small" sx={{ tableLayout: 'fixed', width: 'max-content', minWidth: '100%' }}>
+          <TableHead>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header, headerIndex) => {
+                  const meta = header.column.columnDef.meta as { align?: 'left' | 'center' | 'right' } | undefined;
+                  const canSort = header.column.getCanSort();
+                  const sortState = header.column.getIsSorted();
+                  const rightNeighbor = headerGroup.headers[headerIndex + 1];
                   return (
                     <TableCell
-                      key={cell.id}
-                      align={(cell.column.columnDef.meta as { align?: 'left' | 'center' | 'right' } | undefined)?.align ?? 'left'}
-                      sx={{ py: 0.5, px: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        const columnId = String(cell.column.id);
-                        onCellClick?.({ row: row.original, columnId });
+                      key={header.id}
+                      align={meta?.align ?? 'left'}
+                      sx={{
+                        position: 'relative',
+                        width: header.getSize(),
+                        maxWidth: header.getSize(),
+                        fontWeight: 'bold',
+                        py: 0.5,
+                        px: 1,
                       }}
                     >
-                      {isGrouped ? (
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <Box
-                            component="button"
-                            type="button"
-                            onClick={row.getToggleExpandedHandler()}
-                            style={{
-                              border: 'none',
-                              background: 'transparent',
-                              cursor: 'pointer',
-                              padding: 0,
-                            }}
-                          >
-                            {row.getIsExpanded() ? '▼' : '▶'}
-                          </Box>
-                          <span>{groupedLabel}</span>
+                      {header.isPlaceholder ? null : (
+                        <Box
+                          display="flex"
+                          alignItems="center"
+                          gap={1}
+                          sx={{ cursor: canSort ? 'pointer' : 'default', userSelect: 'none' }}
+                          onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
+                        >
+                          {flexRender(header.column.columnDef.header, header.getContext())}
+                          {canSort ? (
+                            <Box
+                              component="span"
+                              sx={{
+                                display: 'inline-flex',
+                                flexDirection: 'column',
+                                lineHeight: 1,
+                                fontSize: 10,
+                              }}
+                            >
+                              <Box
+                                component="span"
+                                sx={{ color: sortState === 'asc' ? 'text.primary' : 'text.disabled' }}
+                              >
+                                ▲
+                              </Box>
+                              <Box
+                                component="span"
+                                sx={{ color: sortState === 'desc' ? 'text.primary' : 'text.disabled' }}
+                              >
+                                ▼
+                              </Box>
+                            </Box>
+                          ) : null}
                         </Box>
-                      ) : isAggregated ? (
-                        flexRender(cell.column.columnDef.cell, cell.getContext())
-                      ) : isPlaceholder ? null : (
-                        flexRender(cell.column.columnDef.cell, cell.getContext())
                       )}
+                      {header.column.getCanResize() && rightNeighbor ? (
+                        <Box
+                          onMouseDown={(event) => {
+                            handleResizeStart(header, rightNeighbor, event);
+                          }}
+                          sx={{
+                            position: 'absolute',
+                            right: 0,
+                            top: 0,
+                            height: '100%',
+                            width: 6,
+                            cursor: 'col-resize',
+                            userSelect: 'none',
+                          }}
+                        />
+                      ) : null}
                     </TableCell>
                   );
                 })}
               </TableRow>
-            );
-          })}
-          {enableVirtualization && paddingBottom > 0 ? (
-            <TableRow>
-              <TableCell colSpan={table.getAllLeafColumns().length} sx={{ height: paddingBottom, padding: 0, border: 0 }} />
-            </TableRow>
-          ) : null}
-        </TableBody>
-      </Table>
-    </TableContainer>
+            ))}
+          </TableHead>
+        </Table>
+      </Box>
+      <TableContainer
+        component={Paper}
+        ref={bodyContainerRef}
+        sx={{
+          flex: 1,
+          minHeight: 0,
+          maxHeight: enableVirtualization ? maxHeight : undefined,
+          overflow: 'auto',
+        }}
+      >
+        <Table size="small" sx={{ tableLayout: 'fixed', width: 'max-content', minWidth: '100%' }}>
+          <TableBody>
+            {enableVirtualization && paddingTop > 0 ? (
+              <TableRow>
+                <TableCell colSpan={table.getAllLeafColumns().length} sx={{ height: paddingTop, padding: 0, border: 0 }} />
+              </TableRow>
+            ) : null}
+            {virtualRows.map((virtualRow) => {
+              const row = rowModel[virtualRow.index];
+              if (!row) return null;
+              const rowId = row.id;
+              const state: GridRowState = {
+                selected: normalizedSelectedRows.has(rowId),
+                matched: normalizedMatchedRows?.has(rowId) ?? false,
+                hovered: normalizedHoveredRows?.has(rowId) ?? false,
+                dragging: normalizedDraggingRows?.has(rowId) ?? false,
+                dropTarget: normalizedDropTargetRows?.has(rowId) ?? false,
+              };
+              const sx = rowSx?.(state);
+              return (
+                <TableRow
+                  key={row.id}
+                  hover
+                  sx={sx}
+                  onMouseEnter={() => onRowHover?.(row.original, rowId)}
+                  onMouseLeave={() => onRowLeave?.(row.original, rowId)}
+                  onClick={() => onRowClick?.(row.original, rowId)}
+                >
+                  {row.getVisibleCells().map((cell) => {
+                    const isGrouped = cell.getIsGrouped();
+                    const isAggregated = cell.getIsAggregated();
+                    const isPlaceholder = cell.getIsPlaceholder();
+                    const groupedLabel = isGrouped
+                      ? `${cell.getValue() ?? ''} (${row.subRows.length})`
+                      : null;
+                    return (
+                      <TableCell
+                        key={cell.id}
+                        align={(cell.column.columnDef.meta as { align?: 'left' | 'center' | 'right' } | undefined)?.align ?? 'left'}
+                        sx={{
+                          width: cell.column.getSize(),
+                          maxWidth: cell.column.getSize(),
+                          py: 0.5,
+                          px: 1,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          const columnId = String(cell.column.id);
+                          onCellClick?.({ row: row.original, columnId });
+                        }}
+                      >
+                        {isGrouped ? (
+                          <Box display="flex" alignItems="center" gap={1}>
+                            <Box
+                              component="button"
+                              type="button"
+                              onClick={row.getToggleExpandedHandler()}
+                              style={{
+                                border: 'none',
+                                background: 'transparent',
+                                cursor: 'pointer',
+                                padding: 0,
+                              }}
+                            >
+                              {row.getIsExpanded() ? '▼' : '▶'}
+                            </Box>
+                            <span>{groupedLabel}</span>
+                          </Box>
+                        ) : isAggregated ? (
+                          flexRender(cell.column.columnDef.cell, cell.getContext())
+                        ) : isPlaceholder ? null : (
+                          flexRender(cell.column.columnDef.cell, cell.getContext())
+                        )}
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              );
+            })}
+            {enableVirtualization && paddingBottom > 0 ? (
+              <TableRow>
+                <TableCell colSpan={table.getAllLeafColumns().length} sx={{ height: paddingBottom, padding: 0, border: 0 }} />
+              </TableRow>
+            ) : null}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
   );
 }
