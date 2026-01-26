@@ -20,6 +20,8 @@ export type {
   DataSourceWithLicenseOption,
   DataSourceWithLicenseState,
 } from './DataSourceWithLicense.js';
+export { IdeGsmImportPanel } from './IdeGsmImportPanel.js';
+export type { IdeGsmImportLabels, IdeGsmImportPanelProps } from './IdeGsmImportPanel.js';
 
 // Types and utilities
 export {
