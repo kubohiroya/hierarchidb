@@ -3,24 +3,21 @@
  */
 
 import type React from 'react';
-import { useMemo, useState } from 'react';
-import { Alert, Box, Button, Stack, Typography } from '@mui/material';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Close, InsertDriveFile } from '@mui/icons-material';
+import { Box, Button, Dialog, DialogContent, IconButton, Stack, Typography } from '@mui/material';
 import {
   DataSourceSelectionStep,
   type DataSourceSelectionOption,
   type DataSourceSelectorProps,
 } from '@hierarchidb/ui-datasource';
 import { FileInputWithUrl } from '@hierarchidb/ui-file';
-import { notify } from '@hierarchidb/components';
 import type { LocationDataSource, LocationEntity, LocationType } from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
 import type { Timestamp } from '@hierarchidb/common-types';
-import { toNodeId } from '@hierarchidb/common-types';
-import { parseIdeGsmCsv } from '@hierarchidb/location-store';
-import { BASE_LOCATION_TYPES } from './locationTypes.js';
-import { clearLocationDataSourceCache } from '../../utils/clearDataSourceCache.js';
 
 const ORDERED_DATA_SOURCES: LocationDataSource[] = [
+  'ide-gsm',
   'openstreetmap',
   'overpass',
   'geonames',
@@ -29,7 +26,6 @@ const ORDERED_DATA_SOURCES: LocationDataSource[] = [
   'openflights',
   'world-port-index',
   'natural-earth',
-  'ide-gsm',
   'custom',
   'manual',
 ];
@@ -39,7 +35,6 @@ interface LocationDataSourceStepProps {
   onUpdate: (updates: Partial<LocationEntity>) => void;
   licenseRequired?: boolean;
   disabled?: boolean;
-  nodeId?: string;
 }
 
 const LICENSE_DETAILS: Record<
@@ -148,11 +143,10 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
   onUpdate,
   licenseRequired = true,
   disabled,
-  nodeId,
 }) => {
   const { t } = useTranslation();
-  const [isClearing, setIsClearing] = useState(false);
-  const resolvedNodeId = nodeId ? toNodeId(String(nodeId)) : undefined;
+  const [localDialogOpen, setLocalDialogOpen] = useState(false);
+  const [remoteDialogOpen, setRemoteDialogOpen] = useState(false);
 
   const value = useMemo<LocationDataSource>(
     () => (draft.dataSource as LocationDataSource) ?? 'openstreetmap',
@@ -176,14 +170,73 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
     [t]
   );
 
-  const description = t('dataSource.description', 'Choose a dataset source to fetch location data.');
+  const blobUrlRef = useRef<string | null>(null);
 
-  const renderOption: DataSourceSelectorProps['renderOption'] = (option) => {
+  useEffect(() => {
+    return () => {
+      if (
+        blobUrlRef.current &&
+        blobUrlRef.current.startsWith('blob:') &&
+        blobUrlRef.current !== draft.ideGsmSourceUrl
+      ) {
+        URL.revokeObjectURL(blobUrlRef.current);
+        blobUrlRef.current = null;
+      }
+    };
+  }, [draft.ideGsmSourceUrl]);
+
+  const description = t('dataSource.description', 'Choose a dataset source to fetch location data.');
+  const hasIdeGsmFile = Boolean(draft.ideGsmFileName || draft.ideGsmSourceUrl);
+  const ideGsmFileLabel =
+    draft.ideGsmFileName ??
+    draft.ideGsmSourceUrl ??
+    t('dataSource.ideGsm.fileFallback', 'Imported file');
+
+  const closeDialogs = () => {
+    setLocalDialogOpen(false);
+    setRemoteDialogOpen(false);
+  };
+
+  const handleIdeGsmFileSelect = async (file: File, downloadUrl?: string) => {
+    if (blobUrlRef.current && blobUrlRef.current.startsWith('blob:')) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
+    const sourceUrl = downloadUrl ?? URL.createObjectURL(file);
+    if (!downloadUrl) {
+      blobUrlRef.current = sourceUrl;
+    }
+    const updates: Partial<LocationEntity> = {
+      ideGsmFileName: file.name,
+      ideGsmSourceUrl: sourceUrl,
+      selectedArrayByCountries: {},
+      ideGsmSelectionHash: undefined,
+    };
+    onUpdate(updates);
+    closeDialogs();
+  };
+
+  const handleClearIdeGsmFile = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    if (blobUrlRef.current && blobUrlRef.current.startsWith('blob:')) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
+    onUpdate({
+      ideGsmFileName: undefined,
+      ideGsmSourceUrl: undefined,
+      selectedArrayByCountries: {},
+      ideGsmSelectionHash: undefined,
+    });
+  };
+
+  const renderOption: DataSourceSelectorProps['renderOption'] = (option, active) => {
     const supported = SOURCE_TYPES[option.id as LocationDataSource] ?? SOURCE_TYPES.openstreetmap;
     const icons = supported
       .map((type) => TYPE_ICONS[type] ?? '')
       .filter(Boolean)
       .join(' ');
+    const isIdeGsm = option.id === 'ide-gsm';
     return (
       <Stack spacing={0.5}>
         <Typography variant="subtitle1">
@@ -200,6 +253,75 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
           </Typography>
           <Typography variant="caption">{icons}</Typography>
         </Box>
+        {isIdeGsm && active ? (
+          <Box
+            sx={{
+              mt: 1.5,
+              p: 1.5,
+              borderRadius: 1,
+              border: 1,
+              borderColor: 'divider',
+              bgcolor: 'background.default',
+            }}
+          >
+            {hasIdeGsmFile ? (
+              <Box display="flex" alignItems="center" justifyContent="space-between" gap={1}>
+                <Box display="flex" alignItems="center" gap={1} sx={{ minWidth: 0 }}>
+                  <InsertDriveFile fontSize="small" color="action" />
+                  <Typography variant="body2" noWrap title={ideGsmFileLabel}>
+                    {ideGsmFileLabel}
+                  </Typography>
+                </Box>
+                <IconButton
+                  size="small"
+                  aria-label={t('dataSource.ideGsm.removeFile', 'Remove imported file')}
+                  onClick={handleClearIdeGsmFile}
+                  disabled={Boolean(disabled)}
+                >
+                  <Close fontSize="small" />
+                </IconButton>
+              </Box>
+            ) : (
+              <Stack spacing={1}>
+                <Typography variant="body2" color="text.secondary">
+                  {t('dataSource.ideGsm.noFiles', 'No CSV files imported.')}
+                </Typography>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  useFlexGap
+                  flexWrap="wrap"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    size="small"
+                    disabled={Boolean(disabled)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setLocalDialogOpen(true);
+                    }}
+                  >
+                    {t('dataSource.ideGsm.importLocal', 'Import Local Files')}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    size="small"
+                    disabled={Boolean(disabled)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setRemoteDialogOpen(true);
+                    }}
+                  >
+                    {t('dataSource.ideGsm.importRemote', 'Import Remote Files')}
+                  </Button>
+                </Stack>
+              </Stack>
+            )}
+          </Box>
+        ) : null}
       </Stack>
     );
   };
@@ -216,12 +338,16 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
         }}
         onChange={(next) => {
           const nextSource = (next.dataSourceId as LocationDataSource | undefined) ?? value;
+          const sourceChanged = nextSource !== value;
           onUpdate({
             dataSource: nextSource,
             licenseAgreement: next.licenseAgreement,
             licenseAgreedAt: next.licenseAgreedAt,
             ideGsmFileName: nextSource === 'ide-gsm' ? draft.ideGsmFileName : undefined,
             ideGsmSourceUrl: nextSource === 'ide-gsm' ? draft.ideGsmSourceUrl : undefined,
+            ...(sourceChanged
+              ? { selectedArrayByCountries: {}, ideGsmSelectionHash: undefined }
+              : {}),
           });
         }}
         licenseRequired={licenseRequired}
@@ -235,95 +361,71 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
         createAgreedAt={() => Date.now() as Timestamp}
         selectionTitle={t('dataSource.selectionTitle', 'Data Source')}
         detailsTitle={t('dataSource.detailsTitle', 'Data Source Details')}
-        renderDetails={(selected) => {
-          if (DISABLED_SOURCES.includes(selected.id as LocationDataSource)) {
-            return (
-              <Alert severity="warning">
-                {t(
-                  'dataSource.unsupported',
-                  'This data source is not supported yet. Please select another source.',
-                )}
-              </Alert>
-            );
-          }
-          if (selected.id !== 'ide-gsm') return null;
-          return (
-            <FileInputWithUrl
-              accept=".csv,.xlsx,.xls"
-              buttonLabel={t('dataSource.ideGsm.buttonLabel', 'Select IDE-GSM file')}
-              instructions={t(
-                'dataSource.ideGsm.instructions',
-                'Provide an IDE-GSM CSV file via upload or URL.',
-              )}
-              defaultDownloadUrl={draft.ideGsmSourceUrl}
-              onFileSelect={async (file, downloadUrl) => {
-                const updates: Partial<LocationEntity> = {
-                  ideGsmFileName: file.name,
-                  ideGsmSourceUrl: downloadUrl ?? undefined,
-                };
-                try {
-                  const csvText = await file.text();
-                  const parsed = await parseIdeGsmCsv(csvText);
-                  if (!parsed.points.length) {
-                    notify.warning(t('dataSource.ideGsm.empty', 'No valid IDE-GSM rows found.'));
-                    updates.selectedArrayByCountries = {};
-                  } else {
-                    const typeIndex = new Map(
-                      BASE_LOCATION_TYPES.map((typeDef, index) => [typeDef.id, index]),
-                    );
-                    const selectionMap: Record<string, boolean[]> = {};
-                    parsed.points.forEach((point) => {
-                      const countryCode = point.countryCode?.toUpperCase();
-                      if (!countryCode) return;
-                      const idx = typeIndex.get(point.kind as LocationType);
-                      if (idx == null) return;
-                      if (!selectionMap[countryCode]) {
-                        selectionMap[countryCode] = Array(BASE_LOCATION_TYPES.length).fill(false);
-                      }
-                      selectionMap[countryCode][idx] = true;
-                    });
-                    updates.selectedArrayByCountries = selectionMap;
-                  }
-                } catch (error) {
-                  const message = error instanceof Error ? error.message : String(error);
-                  notify.error(
-                    `${t('dataSource.ideGsm.parseError', 'Failed to parse IDE-GSM CSV.')} ${message}`,
-                  );
-                }
-                onUpdate(updates);
-              }}
-            />
-          );
-        }}
+        showDetailsCard={false}
       />
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-        <Button
-          variant="outlined"
-          onClick={async () => {
-            if (!resolvedNodeId) {
-              notify.warning(t('dataSource.cacheMissingNode', 'NodeId is missing.'));
-              return;
-            }
-            if (!value) {
-              notify.warning(t('dataSource.cacheMissing', 'Select a data source first.'));
-              return;
-            }
-            try {
-              setIsClearing(true);
-              await clearLocationDataSourceCache(resolvedNodeId);
-              notify.success(t('dataSource.cacheCleared', 'Cleared cache for selected data source.'));
-            } catch (error) {
-              console.error('[location] failed to clear data source cache', error);
-              notify.error(t('dataSource.cacheClearFailed', 'Failed to clear data source cache.'));
-            } finally {
-              setIsClearing(false);
-            }
-          }}
-          disabled={Boolean(disabled || !value || isClearing)}
-        >
-          {t('dataSource.clearCache', 'Clear cache for selected data source')}
-        </Button>
-      </Box>
+      <Dialog
+        open={localDialogOpen}
+        onClose={() => setLocalDialogOpen(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, pt: 2 }}>
+          <Typography variant="subtitle1">
+            {t('dataSource.ideGsm.importLocal', 'Import Local Files')}
+          </Typography>
+          <IconButton
+            aria-label={t('common.close', 'Close')}
+            onClick={() => setLocalDialogOpen(false)}
+          >
+            <Close />
+          </IconButton>
+        </Box>
+        <DialogContent sx={{ pt: 1.5 }}>
+          <FileInputWithUrl
+            accept=".csv,.xlsx,.xls"
+            buttonLabel={t('dataSource.ideGsm.buttonLabel', 'Select IDE-GSM file')}
+            instructions={t(
+              'dataSource.ideGsm.instructions',
+              'Provide an IDE-GSM CSV file via upload or URL.',
+            )}
+            onFileSelect={handleIdeGsmFileSelect}
+            disabled={Boolean(disabled)}
+            mode="local"
+          />
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={remoteDialogOpen}
+        onClose={() => setRemoteDialogOpen(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, pt: 2 }}>
+          <Typography variant="subtitle1">
+            {t('dataSource.ideGsm.importRemote', 'Import Remote Files')}
+          </Typography>
+          <IconButton
+            aria-label={t('common.close', 'Close')}
+            onClick={() => setRemoteDialogOpen(false)}
+          >
+            <Close />
+          </IconButton>
+        </Box>
+        <DialogContent sx={{ pt: 1.5 }}>
+          <FileInputWithUrl
+            accept=".csv,.xlsx,.xls"
+            buttonLabel={t('dataSource.ideGsm.buttonLabel', 'Select IDE-GSM file')}
+            instructions={t(
+              'dataSource.ideGsm.instructions',
+              'Provide an IDE-GSM CSV file via upload or URL.',
+            )}
+            defaultDownloadUrl={draft.ideGsmSourceUrl}
+            onFileSelect={handleIdeGsmFileSelect}
+            disabled={Boolean(disabled)}
+            mode="url"
+          />
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 };

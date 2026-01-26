@@ -71,6 +71,11 @@
     "ideGsm": {
       "buttonLabel": "IDE-GSM ファイルを選択",
       "instructions": "IDE-GSM の CSV/Excel ファイルをアップロードまたはURL指定してください。",
+      "noFiles": "CSV ファイルはまだ読み込まれていません。",
+      "importLocal": "ローカルファイルを読み込む",
+      "importRemote": "リモートファイルを読み込む",
+      "fileFallback": "読み込み済みファイル",
+      "removeFile": "読み込み済みファイルを削除",
       "missing": "IDE-GSM ソース URL が必要です。",
       "fetchError": "IDE-GSM ファイルの読み込みに失敗しました。(status: {{status}})"
     }

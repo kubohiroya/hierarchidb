@@ -71,6 +71,11 @@
     "ideGsm": {
       "buttonLabel": "Select IDE-GSM file",
       "instructions": "Provide an IDE-GSM CSV/Excel file via upload or URL.",
+      "noFiles": "No CSV files imported.",
+      "importLocal": "Import Local Files",
+      "importRemote": "Import Remote Files",
+      "fileFallback": "Imported file",
+      "removeFile": "Remove imported file",
       "missing": "IDE-GSM source URL is required.",
       "fetchError": "Failed to load IDE-GSM file. (status: {{status}})"
     }

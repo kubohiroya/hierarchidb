@@ -32,6 +32,15 @@ type StepProps = PluginStepProps<LocationStepData>;
 
 const LICENSE_REQUIRED = false;
 
+const canProceedFromDataSource = (data?: LocationStepData): boolean => {
+  const source = data?.dataSource;
+  if (!source) return false;
+  if (source === 'ide-gsm') {
+    return Boolean(data?.ideGsmSourceUrl);
+  }
+  return true;
+};
+
 const hasSelection = (data?: LocationStepData): boolean => {
   const selected = data?.selectedArrayByCountries ?? {};
   return Object.values(selected).some((row) => Array.isArray(row) && row.some(Boolean));
@@ -61,11 +70,10 @@ registry.registerConfigProvider<LocationStepData>({
               onUpdate={(updates) => p.onChange(mergeData(draft, updates))}
               licenseRequired={LICENSE_REQUIRED}
               disabled={Boolean(p.disabled)}
-              nodeId={p.nodeId}
             />
           );
         },
-        validate: (data?: LocationStepData) => Boolean(data?.dataSource),
+        validate: (data?: LocationStepData) => canProceedFromDataSource(data),
       },
       {
         id: 'selection',
@@ -91,6 +99,7 @@ registry.registerConfigProvider<LocationStepData>({
               draft={draft}
               onUpdate={(updates) => p.onChange(mergeData(draft, updates))}
               disabled={Boolean(p.disabled)}
+              nodeId={p.nodeId as NodeId | undefined}
             />
           );
         },
@@ -106,6 +115,7 @@ registry.registerConfigProvider<LocationStepData>({
             <LocationMapPreviewStep
               draft={draft}
               nodeId={p.nodeId as unknown as NodeId | undefined}
+              onUpdate={(updates) => p.onChange(mergeData(draft, updates))}
             />
           );
         },
