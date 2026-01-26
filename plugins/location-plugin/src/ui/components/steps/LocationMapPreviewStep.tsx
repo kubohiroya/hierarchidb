@@ -343,7 +343,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
         return (current.createdAt ?? 0) > (acc.createdAt ?? 0) ? current : acc;
       }, null);
       setTableId(latest?.tableId ?? null);
-    } catch (err) {
+    } catch {
       setTableId(null);
       setPreviewPoints([]);
     } finally {

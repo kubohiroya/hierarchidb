@@ -216,14 +216,7 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
       },
     };
     return [statusColumn, ...columns, errorCountColumn, errorMessageColumn];
-  }, [
-    columns,
-    errorSummaryById,
-    resolvedErrorLabels,
-    resolvedFormatMessage,
-    resolvedStatusLabels.completed,
-    resolvedStatusLabels.failed,
-  ]);
+  }, [columns, errorSummaryById, resolvedErrorLabels, resolvedFormatMessage, resolvedStatusLabels.completed, resolvedStatusLabels.failed, statusAdornment]);
   const resolvedColumnIds = useMemo(
     () => resolvedColumns.map((column) => String(column.id)),
     [resolvedColumns],
