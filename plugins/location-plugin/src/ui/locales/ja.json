@@ -122,7 +122,43 @@
     "deleteMetadata": "メタデータを削除 ({count})",
     "deleteDownloadsDone": "ダウンロード済みポイントを削除しました",
     "deleteCacheDone": "中間キャッシュを削除しました",
-    "deleteMetadataDone": "メタデータを削除しました"
+    "deleteMetadataDone": "メタデータを削除しました",
+    "displayConfig": {
+      "title": "表示設定",
+      "description": "ロケーション種別ごとの表示・アイコン・ラベル設定を調整します。",
+      "representation": {
+        "title": "ズーム別の表示切替",
+        "description": "ズームに応じた点・ポリゴン・アイコン表示の開始タイミングを調整します。",
+        "pointLabel": "1px の点表示を開始するズーム率。",
+        "polygonLabel": "拡大ポリゴン表示を開始するズーム率。",
+        "iconLabel": "拡大 SVG アイコン表示を開始するズーム率。",
+        "iconFixedLabel": "アイコンの拡大を止め固定サイズにするズーム率。"
+      },
+      "icon": {
+        "title": "アイコン設定",
+        "description": "アイコンの色・種類・サイズ範囲を調整します。",
+        "colorLabel": "アイコン色",
+        "iconLabel": "アイコン",
+        "sizeLabel": "アイコンサイズ範囲",
+        "options": {
+          "public": "グローブ",
+          "location_city": "都市",
+          "flight_takeoff": "飛行機",
+          "directions_boat": "船",
+          "train": "鉄道",
+          "fork_right": "インターチェンジ"
+        }
+      },
+      "label": {
+        "title": "ラベル設定",
+        "description": "ラベルの色・サイズ範囲とズーム閾値を調整します。",
+        "colorLabel": "ラベル色",
+        "zoomRangeLabel": "ラベルズーム範囲",
+        "sizeLabel": "ラベルサイズ範囲",
+        "zoomStartLabel": "1つ目のズームからサイズ変動表示を開始します。",
+        "zoomFixedLabel": "2つ目のズーム以降は固定サイズで表示します。"
+      }
+    }
   },
   "tileSettings": {
     "description": "ベクタタイル生成のパラメータを設定します。",

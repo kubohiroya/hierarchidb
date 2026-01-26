@@ -1,12 +1,26 @@
 {
   "steps": {
-    "dataSource": { "label": "Data Source" },
-    "license": { "label": "License Agreement" },
-    "selection": { "label": "Location Selection" },
-    "batchParameters": { "label": "Processing Settings" },
-    "tileSettings": { "label": "Vector Tile Settings" },
-    "build": { "label": "Build" },
-    "mapPreview": { "label": "Preview" }
+    "dataSource": {
+      "label": "Data Source"
+    },
+    "license": {
+      "label": "License Agreement"
+    },
+    "selection": {
+      "label": "Location Selection"
+    },
+    "batchParameters": {
+      "label": "Style Config"
+    },
+    "tileSettings": {
+      "label": "Vector Tile Settings"
+    },
+    "build": {
+      "label": "Build"
+    },
+    "mapPreview": {
+      "label": "Preview"
+    }
   },
   "auth": {
     "loading": "Checking authentication..."
@@ -122,7 +136,43 @@
     "deleteMetadata": "Delete metadata ({count})",
     "deleteDownloadsDone": "Deleted downloaded points",
     "deleteCacheDone": "Deleted cached intermediate data",
-    "deleteMetadataDone": "Deleted metadata"
+    "deleteMetadataDone": "Deleted metadata",
+    "displayConfig": {
+      "title": "Display Settings",
+      "description": "Configure representation, icon, and label settings for each location type.",
+      "representation": {
+        "title": "Representation by Zoom Level",
+        "description": "Adjust when points, polygons, and icons appear as you zoom.",
+        "pointLabel": "Point rendering (1px) starts from this zoom.",
+        "polygonLabel": "Scaled polygon rendering starts from this zoom.",
+        "iconLabel": "Scaled SVG icon rendering starts from this zoom.",
+        "iconFixedLabel": "Icons stop scaling and become fixed size from this zoom."
+      },
+      "icon": {
+        "title": "Icon Settings",
+        "description": "Configure icon colors, symbols, and size range.",
+        "colorLabel": "Icon color",
+        "iconLabel": "Icon",
+        "sizeLabel": "Icon size range",
+        "options": {
+          "public": "Public",
+          "location_city": "City",
+          "flight_takeoff": "Flight Takeoff",
+          "directions_boat": "Boat",
+          "train": "Train",
+          "fork_right": "Interchange"
+        }
+      },
+      "label": {
+        "title": "Label Settings",
+        "description": "Configure label colors, size range, and zoom thresholds.",
+        "colorLabel": "Label color",
+        "zoomRangeLabel": "Label zoom range",
+        "sizeLabel": "Label size range",
+        "zoomStartLabel": "Scaled label rendering starts from the first zoom value.",
+        "zoomFixedLabel": "Labels become fixed size from the second zoom value."
+      }
+    }
   },
   "tileSettings": {
     "description": "Configure vector tile generation parameters.",

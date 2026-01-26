@@ -69,6 +69,35 @@ type LocationTranslations = {
     deleteDownloadsDone?: string;
     deleteCacheDone?: string;
     deleteMetadataDone?: string;
+    displayConfig?: {
+      title?: string;
+      description?: string;
+      representation?: {
+        title?: string;
+        description?: string;
+        pointLabel?: string;
+        polygonLabel?: string;
+        iconLabel?: string;
+        iconFixedLabel?: string;
+      };
+      icon?: {
+        title?: string;
+        description?: string;
+        colorLabel?: string;
+        iconLabel?: string;
+        sizeLabel?: string;
+        options?: TranslationMap;
+      };
+      label?: {
+        title?: string;
+        description?: string;
+        colorLabel?: string;
+        zoomRangeLabel?: string;
+        sizeLabel?: string;
+        zoomStartLabel?: string;
+        zoomFixedLabel?: string;
+      };
+    };
   };
   // Added tileSettings to reflect i18n resource structure used in UI components
   tileSettings?: {
@@ -204,6 +233,42 @@ const baseTranslations: LocationTranslations = {
     deleteDownloadsDone: 'Deleted downloaded points',
     deleteCacheDone: 'Deleted cached intermediate data',
     deleteMetadataDone: 'Deleted metadata',
+    displayConfig: {
+      title: 'Display Settings',
+      description: 'Configure representation, icon, and label settings for each location type.',
+      representation: {
+        title: 'Representation by Zoom Level',
+        description: 'Adjust when points, polygons, and icons appear as you zoom.',
+        pointLabel: 'Point rendering (1px) starts from this zoom.',
+        polygonLabel: 'Scaled polygon rendering starts from this zoom.',
+        iconLabel: 'Scaled SVG icon rendering starts from this zoom.',
+        iconFixedLabel: 'Icons stop scaling and become fixed size from this zoom.',
+      },
+      icon: {
+        title: 'Icon Settings',
+        description: 'Configure icon colors, symbols, and size range.',
+        colorLabel: 'Icon color',
+        iconLabel: 'Icon',
+        sizeLabel: 'Icon size range',
+        options: {
+          public: 'Public',
+          location_city: 'City',
+          flight_takeoff: 'Flight Takeoff',
+          directions_boat: 'Boat',
+          train: 'Train',
+          fork_right: 'Interchange',
+        },
+      },
+      label: {
+        title: 'Label Settings',
+        description: 'Configure label colors, size range, and zoom thresholds.',
+        colorLabel: 'Label color',
+        zoomRangeLabel: 'Label zoom range',
+        sizeLabel: 'Label size range',
+        zoomStartLabel: 'Scaled label rendering starts from the first zoom value.',
+        zoomFixedLabel: 'Labels become fixed size from the second zoom value.',
+      },
+    },
   },
   // Provide default tileSettings translations so components referencing translations.tileSettings won't be undefined
   tileSettings: {

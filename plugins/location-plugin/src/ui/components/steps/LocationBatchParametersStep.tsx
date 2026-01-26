@@ -3,21 +3,42 @@
  */
 
 import type React from 'react';
-import { useEffect, useState, useCallback } from 'react';
-import { Box, Button, Grid, Slider, Typography } from '@mui/material';
-import type { LocationEntity } from '../../../common/types/index.js';
+import { useEffect, useMemo } from 'react';
+import {
+  Box,
+  Card,
+  CardContent,
+  FormControl,
+  Grid,
+  InputLabel,
+  MenuItem,
+  Select,
+  Slider,
+  TextField,
+  Typography,
+} from '@mui/material';
+import type {
+  LocationEntity,
+  LocationIconConfig,
+  LocationIconId,
+  LocationLabelConfig,
+  LocationRepresentationByZoomLevelConfig,
+  LocationType,
+} from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
-import type { NodeId } from '@hierarchidb/common-types';
-import { notify } from '@hierarchidb/components';
-import { listLocationPoints, clearLocationPoints } from '../../../services/pointRepository.js';
-import { getLocationDB } from '../../../database/EphemeralLocationDB.js';
-import { LocationTabularMetadataManager } from '../../../common/tabular/LocationTabularMetadataManager.js';
-import { getRowStoreDB } from '@hierarchidb/tabular-store';
+import {
+  DirectionsBoat,
+  FlightTakeoff,
+  ForkRight,
+  LocationCity,
+  Train,
+} from '@mui/icons-material';
+import type { SvgIconComponent } from '@mui/icons-material';
+import { LOCATION_TYPE_STYLES } from './locationTypes.js';
 
 interface LocationBatchParametersStepProps {
   draft: Partial<LocationEntity>;
   onUpdate: (updates: Partial<LocationEntity>) => void;
-  nodeId?: NodeId;
   disabled?: boolean;
 }
 
@@ -177,6 +198,7 @@ export const LocationBatchParametersStep: React.FC<LocationBatchParametersStepPr
           </Grid>
         </Grid>
       </Box>
+
     </Box>
   );
 };
