@@ -1093,7 +1093,7 @@ const buildCollectionDiagnostics = (collection: FeatureCollection | null, label:
 export const createTransformByBandHandler = (
   context: TransformByBandStageContext
 ): StageHandler<TransformByBandTaskInput> => {
-  const { ephemeralDB, transformConfig, bands, abortSignal } = context;
+  const { ephemeralDB, transformConfig, bands, abortSignal, featureIdAllowlist } = context;
   const taskQueue = new VtTaskQueueDb();
   const taskProgressRange = {
     decodeEnd: 10,
@@ -1191,7 +1191,7 @@ export const createTransformByBandHandler = (
       stageLabel = 'decode';
       await updateTaskPhase(taskId, 'decode:start', 5);
       assertNotAborted(abortSignal);
-      const collection = await runStageWithLabel('decode', () => {
+      let collection = await runStageWithLabel('decode', () => {
         if (fetchCache.format === 'topojson') {
           return decodeTopoJsonFetchCache({
             buffer: fetchCache.data,
@@ -1209,6 +1209,38 @@ export const createTransformByBandHandler = (
       }
       await updateTaskPhase(taskId, 'decode:done', taskProgressRange.decodeEnd);
 
+      if (featureIdAllowlist && featureIdAllowlist.size > 0) {
+        const hasFeatureIds = collection.features.some((feature) => {
+          const props = feature?.properties as Record<string, unknown> | undefined;
+          return typeof props?.__hdbFeatureId === 'string' && props.__hdbFeatureId.length > 0;
+        });
+        if (!hasFeatureIds) {
+          console.warn('[ShapeTransform] recycling allowlist ignored (missing __hdbFeatureId)', {
+            nodeId: task.nodeId,
+            taskId,
+            sourceKey: input.sourceKey,
+          });
+        } else {
+          const filteredFeatures = collection.features.filter((feature) => {
+            const props = feature?.properties as Record<string, unknown> | undefined;
+            const featureId = typeof props?.__hdbFeatureId === 'string' ? props.__hdbFeatureId : null;
+            return featureId ? featureIdAllowlist.has(featureId) : false;
+          });
+          if (filteredFeatures.length === 0) {
+            await reportPolygonProgress(taskId, 0, 0);
+            return {
+              status: 'completed',
+              progress: 100,
+              message: 'skipped: no recycling features in cache',
+              outputData: {
+                processedPolygons: 0,
+                totalPolygons: 0,
+              },
+            };
+          }
+          collection = { ...collection, features: filteredFeatures };
+        }
+      }
       workingCollection = collection;
       if (enableFeatureFiltering && transformConfig.enableFeatureFiltering) {
         stageLabel = 'filter:featureFiltering';

@@ -186,6 +186,7 @@ export type ShapeFetchStageParams = {
   buildConfig: ShapeBuildConfig;
   taskQueue: VtTaskQueueDb;
   metadata?: CountryMetadata[];
+  recyclingByFeatureId?: Map<string, boolean>;
   waitIfPaused?: () => Promise<void>;
   resumeExistingTasks?: boolean;
   abortController?: AbortController;
@@ -492,6 +493,7 @@ const buildEmptyFeatureMetadata = (params: {
   countryCode?: ISO2;
   adminLevel?: number;
   createdAt: number;
+  recyclingByFeatureId?: Map<string, boolean>;
 }): ShapeFeatureMetadata => {
   const featureId = `empty:${params.originKey}`;
   return {
@@ -507,6 +509,7 @@ const buildEmptyFeatureMetadata = (params: {
     fetchVertexCount: 0,
     fetchPolygonCount: 0,
     area: 0,
+    recycling: params.recyclingByFeatureId?.get(featureId),
   };
 };
 
@@ -516,6 +519,7 @@ const buildFetchFeatureMetadata = (params: {
   collection: FeatureCollection;
   createdAt: number;
   countryLookup?: Map<string, CountryMetadata>;
+  recyclingByFeatureId?: Map<string, boolean>;
 }): ShapeFeatureMetadata[] => {
   const records: ShapeFeatureMetadata[] = [];
   for (let index = 0; index < params.collection.features.length; index += 1) {
@@ -528,6 +532,9 @@ const buildFetchFeatureMetadata = (params: {
     const adminLevel = originInfo.adminLevel;
     const adminCode = pickAdminCode(properties);
     const featureId = buildFeatureId(feature, index, { countryCode, adminLevel, adminCode });
+    if (properties.__hdbFeatureId !== featureId) {
+      properties.__hdbFeatureId = featureId;
+    }
     const stats = extractGeometryStats(feature);
     const fetchVertexCount = readNumericProperty(properties, '__hdbFetchVertexCount') ?? stats.vertexCount;
     const fetchPolygonCount = readNumericProperty(properties, '__hdbFetchPolygonCount') ?? stats.polygonCount;
@@ -548,6 +555,7 @@ const buildFetchFeatureMetadata = (params: {
       fetchPolygonCount,
       bbox: stats.bbox,
       area: stats.area,
+      recycling: params.recyclingByFeatureId?.get(featureId),
     });
   }
   return records;
@@ -687,6 +695,7 @@ const createFetchHandler = (params: {
   nodeId: NodeId;
   buildConfig: ShapeBuildConfig;
   dataSource: DataSourceName;
+  recyclingByFeatureId?: Map<string, boolean>;
   abortSignal?: AbortSignal;
 }): StageHandler<ShapeFetchTaskInput, ShapeFetchTaskOutput> => {
   const factory = new DataSourceStrategyFactory();
@@ -724,6 +733,10 @@ const createFetchHandler = (params: {
         compression: existing.compression,
       });
       if (cachedCollection && cachedCollection.features.length > 0) {
+        const hasMissingFeatureIds = cachedCollection.features.some((feature) => {
+          const props = feature?.properties as Record<string, unknown> | undefined;
+          return typeof props?.__hdbFeatureId !== 'string' || props.__hdbFeatureId.length === 0;
+        });
         const countryLookup = await getMetadataLookup();
         const cachedMetadata = buildFetchFeatureMetadata({
           nodeId: params.nodeId,
@@ -731,9 +744,29 @@ const createFetchHandler = (params: {
           collection: cachedCollection,
           createdAt,
           countryLookup,
+          recyclingByFeatureId: params.recyclingByFeatureId,
         });
         if (cachedMetadata.length > 0) {
           await shapeMutationAPIImpl.putFeatureMetadata(cachedMetadata);
+        }
+        if (hasMissingFeatureIds) {
+          let data: ArrayBuffer | null = null;
+          if (existing.format === 'topojson') {
+            const topology = topojsonTopology({ collection: cachedCollection });
+            const encoded = encodeTopoJson(topology);
+            data = existing.compression === 'gzip'
+              ? await compressGzip(encoded)
+              : encoded;
+          } else if (existing.format === 'flatgeobuf' || !existing.format) {
+            data = await encodeFlatGeobufFromFeatureCollection(cachedCollection);
+          }
+          if (data) {
+            await ephemeralShapeDB.fetchCache.update(existing.id, {
+              data,
+              size: data.byteLength,
+              timestamp: Date.now(),
+            });
+          }
         }
       } else if (existing.featureCount === 0) {
         const emptyMetadata = buildEmptyFeatureMetadata({
@@ -743,6 +776,7 @@ const createFetchHandler = (params: {
           countryCode: input.countryCode,
           adminLevel: input.adminLevel,
           createdAt,
+          recyclingByFeatureId: params.recyclingByFeatureId,
         });
         await shapeMutationAPIImpl.putFeatureMetadata([emptyMetadata]);
       }
@@ -813,6 +847,7 @@ const createFetchHandler = (params: {
           countryCode: input.countryCode,
           adminLevel: input.adminLevel,
           createdAt,
+          recyclingByFeatureId: params.recyclingByFeatureId,
         });
         await shapeMutationAPIImpl.putFeatureMetadata([emptyMetadata]);
         return {
@@ -830,6 +865,7 @@ const createFetchHandler = (params: {
         collection: collectionWithOrigin,
         createdAt,
         countryLookup,
+        recyclingByFeatureId: params.recyclingByFeatureId,
       });
       if (featureMetadata.length > 0) {
         await shapeMutationAPIImpl.putFeatureMetadata(featureMetadata);
@@ -921,6 +957,7 @@ const createFetchHandler = (params: {
         countryCode: input.countryCode,
         adminLevel: input.adminLevel,
         createdAt,
+        recyclingByFeatureId: params.recyclingByFeatureId,
       });
       await shapeMutationAPIImpl.putFeatureMetadata([emptyMetadata]);
       return {
@@ -937,6 +974,7 @@ const createFetchHandler = (params: {
       collection: filteredCollection,
       createdAt,
       countryLookup,
+      recyclingByFeatureId: params.recyclingByFeatureId,
     });
     if (featureMetadata.length > 0) {
       await shapeMutationAPIImpl.putFeatureMetadata(featureMetadata);
@@ -1002,39 +1040,42 @@ export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise
       params.selectedArrayByCountries,
       metadata,
     );
-  if (payloads.length === 0) return;
+  const reuseExistingTasks = resumeExistingTasks && existingTasks.length > 0 && payloads.length === 0;
+  if (payloads.length === 0 && !reuseExistingTasks) return;
   const configSignature = buildStableSignature(params.buildConfig.fetchConfig ?? null);
-  const tasks = buildFetchTasks(params.nodeId, payloads, metadata, configSignature);
-  if (resumeExistingTasks) {
-    const desiredSignatures = new Map(tasks.map((task) => [
-      task.taskId,
-      buildTaskInputSignature(task.inputData),
-    ]));
-    const obsoleteTaskIds: string[] = [];
-    const validExistingTasks: typeof existingTasks = [];
-    existingTasks.forEach((task) => {
-      const desiredSignature = desiredSignatures.get(task.taskId);
-      if (!desiredSignature) {
-        obsoleteTaskIds.push(task.taskId);
-        return;
+  if (!reuseExistingTasks) {
+    const tasks = buildFetchTasks(params.nodeId, payloads, metadata, configSignature);
+    if (resumeExistingTasks) {
+      const desiredSignatures = new Map(tasks.map((task) => [
+        task.taskId,
+        buildTaskInputSignature(task.inputData),
+      ]));
+      const obsoleteTaskIds: string[] = [];
+      const validExistingTasks: typeof existingTasks = [];
+      existingTasks.forEach((task) => {
+        const desiredSignature = desiredSignatures.get(task.taskId);
+        if (!desiredSignature) {
+          obsoleteTaskIds.push(task.taskId);
+          return;
+        }
+        const existingSignature = buildTaskInputSignature(task.inputData);
+        if (existingSignature !== desiredSignature) {
+          obsoleteTaskIds.push(task.taskId);
+          return;
+        }
+        validExistingTasks.push(task);
+      });
+      if (obsoleteTaskIds.length > 0) {
+        await deleteTasksByIds(params.taskQueue, obsoleteTaskIds);
       }
-      const existingSignature = buildTaskInputSignature(task.inputData);
-      if (existingSignature !== desiredSignature) {
-        obsoleteTaskIds.push(task.taskId);
-        return;
+      const existingIds = new Set(validExistingTasks.map((task) => task.taskId));
+      const missingTasks = tasks.filter((task) => !existingIds.has(task.taskId));
+      if (missingTasks.length > 0) {
+        await putTasks(params.taskQueue, missingTasks);
       }
-      validExistingTasks.push(task);
-    });
-    if (obsoleteTaskIds.length > 0) {
-      await deleteTasksByIds(params.taskQueue, obsoleteTaskIds);
+    } else {
+      await putTasks(params.taskQueue, tasks);
     }
-    const existingIds = new Set(validExistingTasks.map((task) => task.taskId));
-    const missingTasks = tasks.filter((task) => !existingIds.has(task.taskId));
-    if (missingTasks.length > 0) {
-      await putTasks(params.taskQueue, missingTasks);
-    }
-  } else {
-    await putTasks(params.taskQueue, tasks);
   }
   await runStageTasks({
     nodeId: params.nodeId,
@@ -1043,6 +1084,7 @@ export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise
       nodeId: params.nodeId,
       buildConfig: params.buildConfig,
       dataSource: params.dataSource,
+      recyclingByFeatureId: params.recyclingByFeatureId,
       abortSignal,
     }),
     waitIfPaused: params.waitIfPaused,

@@ -6,6 +6,7 @@ export type TransformByBandStageContext = {
   ephemeralDB: EphemeralShapeDB;
   transformConfig: TransformConfig;
   bands: BandConfig[];
+  featureIdAllowlist?: Set<string>;
   abortSignal?: AbortSignal;
 };
 

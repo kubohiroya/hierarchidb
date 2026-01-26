@@ -32,7 +32,7 @@ import type { CountryMetadata, DataSourceName, FetchTaskPayload, SelectedArrayBy
 import { runShapeFetchStage } from './shapeFetchStage.js';
 import { updateShapeStageMetadata } from './shapeStageMetadata.js';
 import { metadataLoader } from '../metadata/MetadataLoader.js';
-import { shapeMutationAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
+import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
 import { deleteRawDataDataSourceBuffersForNode } from '../utils/chunkStore.js';
 import { buildStableSignature } from './taskSignatures.ts';
 import {
@@ -189,6 +189,7 @@ const buildFeatureMetadataFromTransformCaches = async (
   nodeId: NodeId,
   dataSource: DataSourceName,
   ephemeralStore: typeof ephemeralShapeDB,
+  recyclingByFeatureId?: Map<string, boolean>,
 ): Promise<ShapeFeatureMetadata[]> => {
   const records: ShapeFeatureMetadata[] = [];
   const createdAt = Date.now();
@@ -231,6 +232,7 @@ const buildFeatureMetadataFromTransformCaches = async (
         transformPolygonCount: stats.polygonCount,
         bbox: stats.bbox,
         area: stats.area,
+        recycling: recyclingByFeatureId?.get(featureId),
       });
     }
   }
@@ -798,6 +800,18 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
   let metadataCache: CountryMetadata[] | null = null;
   let countryLookup: Map<string, CountryMetadata> | null = null;
   let continentLookup: Map<string, string> | null = null;
+  const existingFeatureMetadata = await shapeQueryAPIImpl.listFeatureMetadata(params.nodeId);
+  const recyclingByFeatureId = new Map<string, boolean>();
+  const recyclingAllowlist = new Set<string>();
+  existingFeatureMetadata.forEach((row) => {
+    if (!row.featureId) return;
+    if (row.recycling) {
+      recyclingAllowlist.add(row.featureId);
+      recyclingByFeatureId.set(row.featureId, true);
+    }
+  });
+  const diffBuildEnabled = recyclingAllowlist.size > 0;
+
   console.warn('[ShapePipeline] run start', JSON.stringify({
     nodeId: params.nodeId,
     runId: params.pipelineRunId ?? null,
@@ -806,7 +820,9 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
   }));
   if (!resumeExistingTasks) {
     await deleteTasksByNode(taskQueue, params.nodeId);
-    await shapeMutationAPIImpl.deleteFeatureMetadataByNode(params.nodeId);
+    if (!diffBuildEnabled) {
+      await shapeMutationAPIImpl.deleteFeatureMetadataByNode(params.nodeId);
+    }
   }
 
   const enableHighDetailBands = hasHighDetailSelection(
@@ -914,6 +930,7 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
         ephemeralDB: ephemeralStore,
         transformConfig: resolveTransformConfig(params.buildConfig),
         bands,
+        featureIdAllowlist: diffBuildEnabled ? recyclingAllowlist : undefined,
         abortSignal: transformByBandAbortController.signal,
       });
       await runStageTasks({
@@ -1103,6 +1120,7 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
     params.nodeId,
     params.dataSource,
     ephemeralStore,
+    diffBuildEnabled ? recyclingByFeatureId : undefined,
   );
   if (featureMetadataRows.length > 0) {
     await shapeMutationAPIImpl.putFeatureMetadata(featureMetadataRows);
@@ -1114,6 +1132,17 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
     shapeStore: ephemeralStore,
     shapeDb: shapeDB,
   });
+
+  if (diffBuildEnabled && recyclingAllowlist.size > 0) {
+    const latestRows = await shapeQueryAPIImpl.listFeatureMetadata(params.nodeId);
+    const cleared = latestRows.filter((row) => recyclingAllowlist.has(row.featureId)).map((row) => ({
+      ...row,
+      recycling: false,
+    }));
+    if (cleared.length > 0) {
+      await shapeMutationAPIImpl.putFeatureMetadata(cleared);
+    }
+  }
 
   const cleanupConfig = params.buildConfig.cleanupConfig;
   if (cleanupConfig?.deleteFetchFilteredCache) {
