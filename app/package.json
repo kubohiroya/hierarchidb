@@ -43,6 +43,8 @@
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/tag": "workspace:*",
     "@hierarchidb/ui-country-select": "workspace:*",
+    "@hierarchidb/ui-datasource": "workspace:*",
+    "@hierarchidb/ui-floating-window": "workspace:*",
     "@hierarchidb/ui-grid": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/ui-lru-splitview": "workspace:*",

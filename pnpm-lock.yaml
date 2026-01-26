@@ -331,6 +331,12 @@ importers:
       '@hierarchidb/ui-country-select':
         specifier: workspace:*
         version: link:../packages/ui/country-select
+      '@hierarchidb/ui-datasource':
+        specifier: workspace:*
+        version: link:../packages/ui/datasource
+      '@hierarchidb/ui-floating-window':
+        specifier: workspace:*
+        version: link:../packages/ui/floating-window
       '@hierarchidb/ui-grid':
         specifier: workspace:*
         version: link:../packages/ui/data-grid
@@ -3167,6 +3173,9 @@ importers:
       '@hierarchidb/ui-batch-progress':
         specifier: workspace:*
         version: link:../../packages/ui/batch
+      '@hierarchidb/ui-floating-window':
+        specifier: workspace:*
+        version: link:../../packages/ui/floating-window
       '@hierarchidb/ui-grid':
         specifier: workspace:*
         version: link:../../packages/ui/data-grid
@@ -3373,6 +3382,12 @@ importers:
       '@hierarchidb/ui-auth':
         specifier: workspace:*
         version: link:../../packages/ui/auth
+      '@hierarchidb/ui-country-select':
+        specifier: workspace:*
+        version: link:../../packages/ui/country-select
+      '@hierarchidb/ui-datasource':
+        specifier: workspace:*
+        version: link:../../packages/ui/datasource
       '@hierarchidb/ui-map':
         specifier: workspace:*
         version: link:../../packages/ui/map
@@ -3530,6 +3545,9 @@ importers:
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../packages/ui/dialog
+      '@hierarchidb/ui-floating-window':
+        specifier: workspace:*
+        version: link:../../packages/ui/floating-window
       '@hierarchidb/ui-grid':
         specifier: workspace:*
         version: link:../../packages/ui/data-grid
