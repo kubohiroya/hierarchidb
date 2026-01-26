@@ -73,6 +73,11 @@ export interface FileInputWithUrlProps {
    * Layout orientation - horizontal layout with compact styling
    */
   layout?: 'vertical' | 'horizontal';
+
+  /**
+   * Display mode for local vs. URL inputs
+   */
+  mode?: 'local' | 'url' | 'both';
 }
 
 export const FileInputWithUrl: React.FC<FileInputWithUrlProps> = ({
@@ -89,8 +94,13 @@ export const FileInputWithUrl: React.FC<FileInputWithUrlProps> = ({
   defaultDownloadUrl,
   onDownloadProgress,
   layout = 'vertical',
+  mode,
 }) => {
   const [hoveredSection, setHoveredSection] = useState<'drag' | 'url' | undefined>();
+  const resolvedMode =
+    mode ?? (showUrlDownload ? 'both' : 'local');
+  const showLocalUpload = resolvedMode !== 'url';
+  const showUrlDownloadSection = resolvedMode !== 'local';
 
   // Use custom hooks for logic separation
   const { fileInputRef, localError, setLocalError, setDownloadError, handleFileSelect } =
@@ -133,7 +143,7 @@ export const FileInputWithUrl: React.FC<FileInputWithUrlProps> = ({
   const displayError = error || localError;
 
   // Render horizontal layout
-  if (layout === 'horizontal' && showUrlDownload) {
+  if (layout === 'horizontal' && showLocalUpload && showUrlDownloadSection) {
     return (
       <Box
         sx={{
@@ -255,29 +265,33 @@ export const FileInputWithUrl: React.FC<FileInputWithUrlProps> = ({
         ...sx,
       }}
     >
-      <DragDropSection
-        isDragging={isDragging}
-        disabled={disabled}
-        loading={loading}
-        isDownloading={isDownloading}
-        buttonLabel={buttonLabel}
-        fileInputRef={fileInputRef as React.RefObject<HTMLInputElement>}
-        accept={accept}
-        hoveredSection={hoveredSection}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        onFileSelect={handleFileSelect}
-        onMouseEnter={() => setHoveredSection('drag')}
-        onMouseLeave={() => setHoveredSection(undefined)}
-      />
+      {showLocalUpload ? (
+        <DragDropSection
+          isDragging={isDragging}
+          disabled={disabled}
+          loading={loading}
+          isDownloading={isDownloading}
+          buttonLabel={buttonLabel}
+          fileInputRef={fileInputRef as React.RefObject<HTMLInputElement>}
+          accept={accept}
+          hoveredSection={hoveredSection}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onFileSelect={handleFileSelect}
+          onMouseEnter={() => setHoveredSection('drag')}
+          onMouseLeave={() => setHoveredSection(undefined)}
+        />
+      ) : null}
 
       {/* URL download section */}
-      {showUrlDownload && (
+      {showUrlDownloadSection && (
         <>
-          <Divider sx={{ my: 3 }}>
-            <Chip label="Alternative Method" size="small" color="default" sx={{ px: 2 }} />
-          </Divider>
+          {showLocalUpload ? (
+            <Divider sx={{ my: 3 }}>
+              <Chip label="Alternative Method" size="small" color="default" sx={{ px: 2 }} />
+            </Divider>
+          ) : null}
 
           <UrlDownloadSection
             downloadUrl={downloadUrl}

@@ -166,7 +166,7 @@ export const UrlDownloadSection: React.FC<UrlDownloadSectionProps> = ({
                 fontSize: compact ? '0.875rem' : '1rem',
               }}
             >
-              {isDownloading ? 'Downloading...' : compact ? 'Download' : 'Download from URL'}
+              {isDownloading ? 'Downloading...' : 'Download'}
             </Button>
           </Box>
 
