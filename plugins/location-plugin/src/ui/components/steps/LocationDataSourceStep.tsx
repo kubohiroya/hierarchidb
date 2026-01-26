@@ -120,7 +120,7 @@ const TYPE_ICONS: Record<string, string> = {
   interchange: '🛣️',
 };
 
-const SOURCE_TYPES: Record<LocationDataSource, LocationType[]> = {
+const SOURCE_TYPES: Partial<Record<LocationDataSource, LocationType[]>> = {
   openstreetmap: ['area_centroid', 'airport', 'port', 'railway_station', 'interchange'],
   overpass: ['area_centroid', 'airport', 'port', 'railway_station', 'interchange'],
   geonames: ['area_centroid', 'airport', 'port'],
@@ -130,13 +130,13 @@ const SOURCE_TYPES: Record<LocationDataSource, LocationType[]> = {
   'world-port-index': ['port'],
   'natural-earth': ['area_centroid', 'airport', 'port'],
   'ide-gsm': ['area_centroid', 'airport', 'port', 'railway_station', 'interchange'],
-  custom: ['area_centroid', 'airport', 'port', 'railway_station', 'interchange'],
-  manual: ['area_centroid', 'airport', 'port', 'railway_station', 'interchange'],
 };
 
 const DISABLED_SOURCES: LocationDataSource[] = ORDERED_DATA_SOURCES.filter(
   (sourceId) => sourceId !== 'ide-gsm',
 );
+
+const HIDDEN_SOURCES: LocationDataSource[] = ['custom', 'manual'];
 
 export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
   draft,
@@ -155,7 +155,7 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
 
   const options = useMemo<DataSourceSelectionOption[]>(
     () =>
-      ORDERED_DATA_SOURCES.map((sourceId) => {
+      ORDERED_DATA_SOURCES.filter((sourceId) => !HIDDEN_SOURCES.includes(sourceId)).map((sourceId) => {
         const license = LICENSE_DETAILS[sourceId];
         return {
           id: sourceId,
@@ -231,7 +231,8 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
   };
 
   const renderOption: DataSourceSelectorProps['renderOption'] = (option, active) => {
-    const supported = SOURCE_TYPES[option.id as LocationDataSource] ?? SOURCE_TYPES.openstreetmap;
+    const supported =
+      SOURCE_TYPES[option.id as LocationDataSource] ?? SOURCE_TYPES.openstreetmap ?? [];
     const icons = supported
       .map((type) => TYPE_ICONS[type] ?? '')
       .filter(Boolean)

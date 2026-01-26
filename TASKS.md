@@ -39,6 +39,22 @@
   - update: 2026-01-26 22:25 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
   - done: 2026-01-26 22:25 JST Step3 での parse Snackbar 不具合を修正。
 
+2395) fix/location/step2-hide-custom-manual (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/location/step2-hide-custom-manual
+- 依存: なし
+- 受け入れ基準: Step2のData Source選択肢からCustom/Manualが表示されない／既存の他選択肢の表示・挙動が維持される／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationDataSourceStep.tsx`
+- ロールバック手順: 該当差分を revert して Custom/Manual を再表示する
+- チェックリスト:
+  - Data Source から custom/manual を除外する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 22:27 JST Step2 の Data Source から custom/manual を除外する作業に着手。
+  - update: 2026-01-26 22:28 JST Data Source の選択肢から custom/manual を非表示に変更。
+  - update: 2026-01-26 22:28 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
+  - done: 2026-01-26 22:28 JST Step2 の Data Source から custom/manual を除外。
+
 2350) feat/shape/step6-recycling-diff-build (P1) — 進行中 (2026-01-26)
 - ブランチ名: feat/shape/step6-recycling-diff-build
 - 依存: なし
