@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo } from 'react';
 import { Typography } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { Hexagon } from '@mui/icons-material';
+import { alpha, useTheme } from '@mui/material/styles';
 import type { GridColumn } from '@hierarchidb/ui-grid';
 import { FloatingWindow, useFloatingWindow } from '@hierarchidb/ui-floating-window';
 import {
@@ -219,6 +220,7 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
   return (
     <FloatingWindow
       title={resolvedTitle}
+      titleIcon={<Hexagon sx={{ fontSize: '1rem', ml: 1 }} />}
       initialState={windowState}
       onStateChange={handlers.onStateChange}
       onClose={onClose}
@@ -250,13 +252,11 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
             };
           }
           if (state.matched) {
-            const matchedBg = theme.palette.secondary.light;
-            const matchedText = theme.palette.getContrastText(matchedBg);
+            const matchedBg = alpha(theme.palette.secondary.main, 0.08);
+            const matchedBorder = alpha(theme.palette.secondary.main, 0.4);
             return {
               backgroundColor: matchedBg,
-              boxShadow: `inset 3px 0 0 0 ${theme.palette.secondary.main}`,
-              color: matchedText,
-              '& td, & td *': { color: matchedText },
+              boxShadow: `inset 3px 0 0 0 ${matchedBorder}`,
             };
           }
           if (state.hovered) {

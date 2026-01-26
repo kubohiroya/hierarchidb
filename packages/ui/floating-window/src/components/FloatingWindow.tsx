@@ -114,6 +114,7 @@ const ResizeHandle = styled(Box)({
 
 export const FloatingWindow: React.FC<FloatingWindowProps> = ({
   title,
+  titleIcon,
   children,
   initialState,
   onStateChange,
@@ -374,9 +375,9 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
         className="title-bar"
         onMouseDown={handleMouseDown}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.5rem' }}>
-          <WindowIcon sx={{ fontSize: '0.6rem', ml: 1 }} />
-          <Typography sx={{ fontWeight: 600, fontSize: '0.5rem', lineHeight: 1.2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.83rem' }}>
+          {titleIcon ?? <WindowIcon sx={{ fontSize: '1rem', ml: 1 }} />}
+          <Typography sx={{ fontWeight: 600, fontSize: '0.83rem', lineHeight: 1.2 }}>
             {title}
           </Typography>
         </Box>

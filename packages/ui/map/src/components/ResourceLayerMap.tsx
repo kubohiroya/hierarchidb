@@ -5,7 +5,9 @@
 
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { Box, IconButton, Paper, Snackbar, Typography } from '@mui/material';
+import { Box, IconButton, Snackbar, Typography } from '@mui/material';
+import { FloatingWindow } from '@hierarchidb/ui-floating-window';
+import type { WindowState } from '@hierarchidb/ui-floating-window';
 import type { Theme } from '@mui/material/styles';
 import { useTheme } from '@mui/material/styles';
 import { Close as CloseIcon, FitScreen as FitScreenIcon, Tune as TuneIcon } from '@mui/icons-material';
@@ -146,7 +148,19 @@ export type ResourceLayerMapProps = BaseMapProps & {
   stats?: {
     enabled?: boolean;
     position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+    display?: 'overlay' | 'floating';
     renderExtra?: () => React.ReactNode;
+    floatingWindow?: {
+      title?: string;
+      titleIcon?: React.ReactNode;
+      initialState?: WindowState;
+      resizable?: boolean;
+      draggable?: boolean;
+      minWidth?: number;
+      minHeight?: number;
+      maxWidth?: number;
+      maxHeight?: number;
+    };
   };
 };
 
@@ -478,24 +492,22 @@ const MapStatsPanel: React.FC<{
   store: MapStatsStore;
   vectorLayerEntries: Array<{ id: string; label?: string }>;
   renderExtra?: () => React.ReactNode;
-}> = ({ store, vectorLayerEntries, renderExtra }) => {
+  showTitle?: boolean;
+  title?: string;
+}> = ({ store, vectorLayerEntries, renderExtra, showTitle = true, title = 'Dexie Tile Stats' }) => {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
   return (
-    <Box display="flex" gap={1} alignItems="flex-start">
-      <Paper
-        elevation={3}
-        sx={{
-          px: 1.5,
-          py: 1,
-          minWidth: 220,
-          bgcolor: 'background.paper',
-          color: 'text.primary',
-          opacity: 0.92,
-        }}
-      >
-        <Typography variant="caption" fontWeight={700} display="block">
-          Dexie Tile Stats
-        </Typography>
+    <Box
+      display="flex"
+      gap={1}
+      alignItems="flex-start"
+      sx={{ px: 1.5, py: 1, color: 'text.primary' }}
+    >
+        {showTitle ? (
+          <Typography variant="caption" fontWeight={700} display="block">
+            {title}
+          </Typography>
+        ) : null}
         <Box mt={0.5}>
           <Typography variant="caption" display="block">
             Requests: {snapshot.tileStats.requests.toLocaleString()}
@@ -520,24 +532,22 @@ const MapStatsPanel: React.FC<{
             ))
           )}
         </Box>
-      </Paper>
       {renderExtra ? (
-        <Paper
-          elevation={3}
-          sx={{
-            px: 1.5,
-            py: 1,
-            minWidth: 220,
-            bgcolor: 'background.paper',
-            color: 'text.primary',
-            opacity: 0.92,
-          }}
-        >
+        <Box sx={{ px: 1.5, py: 1, color: 'text.primary' }}>
           {renderExtra()}
-        </Paper>
+        </Box>
       ) : null}
     </Box>
   );
+};
+
+const DEFAULT_STATS_WINDOW_STATE: WindowState = {
+  position: { x: 24, y: 96 },
+  size: { width: 260, height: 220 },
+  isMinimized: false,
+  isFullscreen: false,
+  isVisible: true,
+  zIndex: 1200,
 };
 
 
@@ -617,6 +627,19 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
 
   const statsEnabled = Boolean(stats?.enabled);
   const statsPosition = stats?.position ?? 'top-left';
+  const statsDisplay = stats?.display ?? 'overlay';
+  const statsWindowConfig = stats?.floatingWindow;
+  const statsWindowTitle = statsWindowConfig?.title ?? 'Dexie Tile Stats';
+  const statsWindowIcon = statsWindowConfig?.titleIcon;
+  const statsWindowState = statsWindowConfig?.initialState ?? DEFAULT_STATS_WINDOW_STATE;
+  const statsWindowProps = {
+    resizable: statsWindowConfig?.resizable ?? false,
+    draggable: statsWindowConfig?.draggable ?? true,
+    minWidth: statsWindowConfig?.minWidth ?? 220,
+    minHeight: statsWindowConfig?.minHeight ?? 140,
+    maxWidth: statsWindowConfig?.maxWidth,
+    maxHeight: statsWindowConfig?.maxHeight,
+  };
   const tileStatsRef = useRef({ requests: 0, bytes: 0 });
   const tileStatsTimerRef = useRef<number | null>(null);
   const statsStoreRef = useRef({
@@ -1211,7 +1234,7 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
             />
           ))}
       </MapLibreMap>
-      {statsActive && statsContainer ? (
+      {statsActive && statsDisplay === 'overlay' && statsContainer ? (
         createPortal(
           <Box
             sx={{
@@ -1229,6 +1252,26 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
           </Box>,
           statsContainer,
         )
+      ) : null}
+      {statsActive && statsDisplay === 'floating' ? (
+        <FloatingWindow
+          title={statsWindowTitle}
+          titleIcon={statsWindowIcon}
+          initialState={statsWindowState}
+          resizable={statsWindowProps.resizable}
+          draggable={statsWindowProps.draggable}
+          minWidth={statsWindowProps.minWidth}
+          minHeight={statsWindowProps.minHeight}
+          maxWidth={statsWindowProps.maxWidth}
+          maxHeight={statsWindowProps.maxHeight}
+        >
+          <MapStatsPanel
+            store={{ subscribe: subscribeToStats, getSnapshot: getStatsSnapshot }}
+            vectorLayerEntries={vectorLayerEntries}
+            renderExtra={stats?.renderExtra}
+            showTitle={false}
+          />
+        </FloatingWindow>
       ) : null}
       {searchEnabled && searchConfig?.targetDefinitions ? (
         <>
