@@ -18,14 +18,18 @@ export const MapToggleCard: React.FC<{
 }> = ({ title, helperText, options, selection, onToggle }) => (
   <Paper variant="outlined" sx={{ p: 1.5 }}>
     <Stack spacing={1}>
-      <Box>
-        <Typography variant="subtitle2">{title}</Typography>
-        {helperText ? (
-          <Typography variant="caption" color="text.secondary">
-            {helperText}
-          </Typography>
-        ) : null}
-      </Box>
+      {(title || helperText) ? (
+        <Box>
+          {title ? (
+            <Typography variant="subtitle2">{title}</Typography>
+          ) : null}
+          {helperText ? (
+            <Typography variant="caption" color="text.secondary">
+              {helperText}
+            </Typography>
+          ) : null}
+        </Box>
+      ) : null}
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(72px, 1fr))', gap: 1 }}>
         {options.map((option) => (
           <ToggleButton
