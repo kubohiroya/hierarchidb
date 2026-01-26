@@ -1,8 +1,9 @@
 import React from 'react';
-import { Box, Alert, Button, CircularProgress, Typography, Paper } from '@mui/material';
-import { TableRows as TableRowsIcon } from '@mui/icons-material';
+import { Box, Alert, Button, CircularProgress } from '@mui/material';
+import { TableRows as TableRowsIcon, Layers as LayersIcon, QueryStats as QueryStatsIcon } from '@mui/icons-material';
 import type { MapViewState } from '@hierarchidb/ui-map';
 import { LayerSetVisibilityPanel, ResourceLayerMap, ScreenCenterSnackbar, ShapePreviewList } from '@hierarchidb/ui-map';
+import { FloatingWindow } from '@hierarchidb/ui-floating-window';
 import { useShapePreviewStepView } from './useShapePreviewStepView.js';
 import type { ShapeEntity, ShapePreviewMapView } from '../../../common/types/index.js';
 
@@ -65,8 +66,6 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
     highlightOverridesByType,
     geoJsonLayers,
     attributionItems,
-    tileLayerNames,
-    resolvedLayerNames,
     layerSetVisibility,
     toggleLayerSetVisibility,
     layerSetItems,
@@ -78,6 +77,18 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
   React.useEffect(() => {
     lastPersistedViewRef.current = data.previewMapView ?? null;
   }, [data.previewMapView, data.previewMapView?.latitude, data.previewMapView?.longitude, data.previewMapView?.zoom]);
+
+  const layerSetsWindowState = React.useMemo(
+    () => ({
+      position: { x: 320, y: 96 },
+      size: { width: 260, height: 420 },
+      isMinimized: false,
+      isFullscreen: false,
+      isVisible: true,
+      zIndex: 1200,
+    }),
+    [],
+  );
 
   const handleViewStateCommit = React.useCallback(
     (viewState: MapViewState) => {
@@ -101,27 +112,22 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
         position="relative"
         sx={{ overscrollBehavior: 'contain', p: 0 }}
       >
-        <Box position="absolute" top={12} right={12} zIndex={3} sx={{ pointerEvents: 'auto' }}>
-          <Paper
-            elevation={3}
-            sx={{
-              px: 1.5,
-              py: 1,
-              minWidth: 220,
-              bgcolor: 'background.paper',
-              color: 'text.primary',
-              opacity: 0.92,
-            }}
-          >
-            <LayerSetVisibilityPanel
-              title={t('preview.layerSets.title', 'Layer Sets')}
-              layerSets={availableLayerSets}
-              visibility={layerSetVisibility}
-              onToggle={toggleLayerSetVisibility}
-              items={layerSetItems}
-            />
-          </Paper>
-        </Box>
+        <FloatingWindow
+          title={t('preview.layerSets.title', 'Layer Sets')}
+          titleIcon={<LayersIcon sx={{ fontSize: '1rem', ml: 1 }} />}
+          initialState={layerSetsWindowState}
+          resizable
+          minWidth={220}
+          minHeight={180}
+        >
+          <LayerSetVisibilityPanel
+            title={t('preview.layerSets.title', 'Layer Sets')}
+            layerSets={availableLayerSets}
+            visibility={layerSetVisibility}
+            onToggle={toggleLayerSetVisibility}
+            items={layerSetItems}
+          />
+        </FloatingWindow>
         <ResourceLayerMap
           initialViewState={defaultView}
           width="100%"
@@ -135,25 +141,19 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
           highlightOverridesByType={highlightOverridesByType}
           stats={{
             enabled: true,
-            position: 'top-left',
-            renderExtra: () => (
-              <>
-                <Typography variant="caption" fontWeight={700} display="block">
-                  Vector Tile Layers
-                </Typography>
-                <Typography variant="caption" display="block">
-                  Available: {tileLayerNames.length ? tileLayerNames.join(', ') : '(none detected)'}
-                </Typography>
-                <Typography variant="caption" display="block">
-                  admin0: {resolvedLayerNames.admin0 ? `${resolvedLayerNames.admin0}${resolvedLayerNames.admin0IsBoundary ? ' (boundary)' : ''}` : 'n/a'}
-                </Typography>
-                {resolvedLayerNames.admin1 && (
-                  <Typography variant="caption" display="block">
-                    admin1: {`${resolvedLayerNames.admin1}${resolvedLayerNames.admin1IsBoundary ? ' (boundary)' : ''}`}
-                  </Typography>
-                )}
-              </>
-            ),
+            display: 'floating',
+            floatingWindow: {
+              titleIcon: <QueryStatsIcon sx={{ fontSize: '1rem', ml: 1 }} />,
+              initialState: {
+                position: { x: 24, y: 96 },
+                size: { width: 260, height: 220 },
+                isMinimized: false,
+                isFullscreen: false,
+                isVisible: true,
+                zIndex: 1200,
+              },
+              resizable: true,
+            },
           }}
           showTileBoundaries
           showTileCoordinates

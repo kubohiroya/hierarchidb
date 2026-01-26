@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Box, Divider, FormControlLabel, List, ListItem, ListItemText, Stack, Switch, Typography } from '@mui/material';
+import { Box, FormControlLabel, List, ListItem, ListItemText, Stack, Switch, Typography } from '@mui/material';
 import type { LayerSetDefinition, LayerSetId, ResolvedLayerSetEntry } from './layerSetDefinitions.js';
 
 export type LayerSetVisibility = Record<LayerSetId, boolean>;
@@ -28,7 +28,6 @@ export const buildLayerSetListItems = (entries: ResolvedLayerSetEntry[]): LayerS
   }));
 
 export type LayerSetVisibilityPanelProps = {
-  title?: string;
   layerSets: LayerSetDefinition[];
   visibility: LayerSetVisibility;
   onToggle: (id: LayerSetId) => void;
@@ -36,7 +35,6 @@ export type LayerSetVisibilityPanelProps = {
 };
 
 export const LayerSetVisibilityPanel: React.FC<LayerSetVisibilityPanelProps> = ({
-  title = 'Layer Sets',
   layerSets,
   visibility,
   onToggle,
@@ -59,8 +57,6 @@ export const LayerSetVisibilityPanel: React.FC<LayerSetVisibilityPanelProps> = (
 
   return (
     <Stack spacing={1.5}>
-      <Typography variant="subtitle2">{title}</Typography>
-      <Divider />
       {orderedSets.map((set) => {
         const visible = visibility[set.id] ?? false;
         const setItems = itemsBySet.get(set.id) ?? [];
