@@ -18,6 +18,7 @@ import {
   buildBoundaryFeature,
   resolveLargeAreaToleranceForCollection,
 } from './geometry.js';
+import { quantizeTopoJsonToGrid } from './topojsonGrid.js';
 import type { TransformByBandStageContext } from '../contexts.js';
 import type { StageHandler, StageHandlerResult, TransformByBandTaskInput } from '../types/types.js';
 import { VtTaskQueueDb, updateTask } from '../task/taskQueue.js';
@@ -132,13 +133,18 @@ const decodeTopoJsonFetchCache = async (params: {
   zTarget: number;
   toleranceK: number;
   areaBasedToleranceConfig: AreaBasedToleranceConfig;
+  quantize?: number;
 }): Promise<FeatureCollection | null> => {
   const decompressed = params.compression === 'gzip'
     ? await decompressGzip(params.buffer)
     : params.buffer;
   const topology = decodeTopoJson(decompressed);
+  const snappedTopology = quantizeTopoJsonToGrid(topology, {
+    zTarget: params.zTarget,
+    quantize: params.quantize,
+  });
   let { collection, appliedToleranceK } = simplifyTopoJsonByZoom({
-    topology,
+    topology: snappedTopology,
     zTarget: params.zTarget,
     toleranceK: params.toleranceK,
     areaBasedToleranceConfig: params.areaBasedToleranceConfig,
@@ -1193,6 +1199,7 @@ export const createTransformByBandHandler = (
             zTarget: band.zMax,
             toleranceK: baseTolerance,
             areaBasedToleranceConfig: transformConfig.areaBasedTolerance,
+            quantize: transformConfig.quantize,
           });
         }
         return decodeFetchCache(fetchCache.data);

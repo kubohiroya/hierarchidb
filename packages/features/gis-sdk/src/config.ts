@@ -90,6 +90,7 @@ export interface TransformConfig {
   hybridFilterConfig: HybridFilterConfig;
   deleteOnComplete: boolean;
   tolerance: number;
+  quantize?: number;
   areaThreshold: number;
   excludePolygonAreaCoefficient: number;
   omitDetailsConfig: OmitDetailsConfig;
