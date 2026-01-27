@@ -111,6 +111,12 @@ const LocationSelectionContent: React.FC<LocationSelectionStepProps> = ({ draft,
     if (!sourceUrl) return;
     if (parseInFlightRef.current) return;
     if (hasSelection && hasAvailability) return;
+    if (sourceUrl.startsWith('blob:')) {
+      if (hasSelection && !hasAvailability) {
+        setAvailabilityByCountry(selectionByCountries);
+      }
+      return;
+    }
 
     parseInFlightRef.current = true;
     const run = async () => {
@@ -136,7 +142,7 @@ const LocationSelectionContent: React.FC<LocationSelectionStepProps> = ({ draft,
     };
 
     void run();
-  }, [draft.dataSource, draft.ideGsmSourceUrl, hasAvailability, hasSelection, onUpdate, t]);
+  }, [draft.dataSource, draft.ideGsmSourceUrl, hasAvailability, hasSelection, onUpdate, selectionByCountries, t]);
 
   const selectionMatrixSource = useMemo(() => {
     if (iso.status !== 'ready') return [];
