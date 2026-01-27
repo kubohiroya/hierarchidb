@@ -14,10 +14,37 @@
   - update: 2026-01-27 17:16 JST shape Step6 feature 一覧の floating window 非表示の調査/修正に着手。
   - update: 2026-01-27 17:16 JST ShapePreviewList の初期サイズ異常を検知して初期サイズへ復元する処理を追加。
   - update: 2026-01-27 17:19 JST pnpm typecheck exit 0（tsdown define warning あり）。
+  - update: 2026-01-27 19:47 JST FloatingWindow の initialState 反映を差分がある場合のみ setState するよう調整し、最大更新深度の警告を抑止。
+  - update: 2026-01-27 19:48 JST pnpm typecheck exit 0（tsdown define warning あり）。
+  - update: 2026-01-27 20:35 JST FloatingWindow の incoming position/size/zIndex を正規化し、NaN/無効値での無限更新を回避。
+  - update: 2026-01-27 20:35 JST pnpm typecheck exit 0（tsdown define warning あり）。
+  - update: 2026-01-27 20:52 JST FloatingWindow の initialState 同期は initialState 変化時のみ評価するよう戻し、最大更新深度のループを抑止。
+  - update: 2026-01-27 20:52 JST pnpm typecheck exit 0（tsdown define warning あり）。
+  - update: 2026-01-27 20:59 JST MapPreviewFloatingTable の列可視性同期で同一カラム配列時の setState を抑制。
+  - update: 2026-01-27 20:59 JST pnpm typecheck exit 0（tsdown define warning あり）。
+  - update: 2026-01-27 21:03 JST FloatingWindow の initialState 同期時は onStateChange 通知を抑止し、無限更新を遮断。
+  - update: 2026-01-27 21:03 JST pnpm typecheck exit 0（tsdown define warning あり）。
   - start: 2026-01-27 08:43 JST commitDraft request ログの連続出力調査に着手。
-  - update: 2026-01-27 12:06 JST useTreeNodeUpdater の unsaved 判定を安定化し、draftData/draftMetadata のキー順差異による autosave 連続を抑止。
-  - update: 2026-01-27 12:06 JST pnpm --filter @hierarchidb/plugin-ui-sdk typecheck exit 0 を確認。
-  - done: 2026-01-27 12:06 JST autosave の連続 commitDraft 呼び出しを抑止する修正を反映。
+ - update: 2026-01-27 12:06 JST useTreeNodeUpdater の unsaved 判定を安定化し、draftData/draftMetadata のキー順差異による autosave 連続を抑止。
+ - update: 2026-01-27 12:06 JST pnpm --filter @hierarchidb/plugin-ui-sdk typecheck exit 0 を確認。
+ - done: 2026-01-27 12:06 JST autosave の連続 commitDraft 呼び出しを抑止する修正を反映。
+
+2402) fix/ui-floating-window/drag-layer-sets-max-depth (P1) — 進行中 (2026-01-27)
+- ブランチ名: fix/ui-floating-window/drag-layer-sets-max-depth
+- 依存: なし
+- 受け入れ基準: shape Step6 の Layer Sets FloatingWindow をドラッグしても Maximum update depth exceeded が発生しない／他の FloatingWindow のドラッグ/リサイズ/保存挙動が退行しない／pnpm --filter @hierarchidb/ui-floating-window typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/floating-window/src/hooks/useFloatingWindow.ts`（調査後に確定）
+- ロールバック手順: 該当差分を revert して従来の windowState 同期挙動へ戻す
+- チェックリスト:
+  - 再現条件と呼び出し経路を特定する
+  - windowState 同期の無限更新を抑止する
+  - pnpm --filter @hierarchidb/ui-floating-window typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-27 18:25 JST FloatingWindow ドラッグ時の Maximum update depth exceeded 調査に着手。
+  - update: 2026-01-27 18:25 JST useFloatingWindow の onStateChange で同値ガードを追加し、同一状態の再反映を抑止。
+  - update: 2026-01-27 18:25 JST pnpm --filter @hierarchidb/ui-floating-window typecheck exit 0 を確認。
+  - done: 2026-01-27 18:25 JST Layer Sets ドラッグ時の無限更新を抑止する修正を反映。
 
 2400) fix/shape/step6-features-table-body-scroll (P1) — 進行中 (2026-01-26)
 - ブランチ名: fix/shape/step6-features-table-body-scroll
@@ -115,6 +142,24 @@
   - update: 2026-01-27 07:40 JST location の sessions ストレージ/参照を削除し nodeId 直結に統一。
   - update: 2026-01-27 07:40 JST pnpm --filter @hierarchidb/location-store build exit 0（tsdown define warning あり）。
   - update: 2026-01-27 07:40 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+
+2403) fix/location/id-pointid-separation (P1) — 進行中 (2026-01-27)
+- ブランチ名: fix/location/id-pointid-separation
+- 依存: なし
+- 受け入れ基準: location の id が uuidv4() で生成される／pointId が lat/lon 小数5桁のハッシュから生成される／IDE-GSM と tabular 取り込みの両方で同じ pointId 生成ルールが適用される／既存 UI 表示が退行しない／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/location-store/src/index.ts`, `packages/features/location-store/src/ideGsmCsv.ts`, `plugins/location-plugin/src/worker/tabular/materialize.ts`, `packages/runtime-worker/src/services/LocationMutationService.ts`, `plugins/location-plugin/src/services/pointRepository.ts`（調査後に確定）
+- ロールバック手順: 該当差分を revert して id=pointId の従来挙動に戻す
+- チェックリスト:
+  - pointId 生成の共通ヘルパーを用意し IDE-GSM/Tabular 両方へ適用する
+  - location id を uuidv4() で生成するよう置き換える
+  - 既存 UI/保存フローの影響を確認する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-27 18:43 JST id/pointId 分離の実装に着手。
+  - update: 2026-01-27 19:43 JST pnpm --filter @hierarchidb/location-store build exit 0（tsdown define warning あり）。
+  - update: 2026-01-27 19:43 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-01-27 19:43 JST pnpm --filter @hierarchidb/runtime-worker typecheck exit 0 を確認。
 
 2394) fix/route/create-dialog-stepper-visible (P1) — 完了 (2026-01-26)
 - ブランチ名: fix/route/create-dialog-stepper-visible
@@ -285,7 +330,7 @@
   - update: 2026-01-27 09:35 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
   - done: 2026-01-27 09:35 JST Step3 の blob URL fetch エラーを回避。
 
-2401) fix/location/step3-step5-empty-after-tab-reopen (P1) — 進行中 (2026-01-27)
+2401) fix/location/step3-step5-empty-after-tab-reopen (P1) — 完了 (2026-01-27)
 - ブランチ名: fix/location/step3-step5-empty-after-tab-reopen
 - 依存: なし
 - 受け入れ基準: Step2→Step3遷移後に国×タイプのチェックボックスが表示される／Step5プレビューで地図とテーブルが表示される／kind→type のプロパティ名変更の影響を含め原因・発生範囲・修正方法と適用範囲を説明できる／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
@@ -303,6 +348,39 @@
   - update: 2026-01-27 12:17 JST pnpm --filter @hierarchidb/ui-datasource typecheck exit 0。
   - update: 2026-01-27 12:17 JST pnpm --filter @hierarchidb/ui-datasource build exit 0（tsdown warning: define オプション）。
   - update: 2026-01-27 12:17 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
+  - update: 2026-01-27 18:50 JST IDE-GSM を複数読み込み可能にし、Split button UI を追加。
+  - update: 2026-01-27 18:51 JST pnpm --filter @hierarchidb/ui-datasource typecheck exit 0。
+  - update: 2026-01-27 18:52 JST pnpm --filter @hierarchidb/ui-datasource build exit 0（tsdown warning: define オプション）。
+  - update: 2026-01-27 18:52 JST pnpm --filter @hierarchidb/location-store build exit 0（tsdown warning: define オプション）。
+  - update: 2026-01-27 18:52 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
+  - update: 2026-01-27 18:52 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0。
+  - done: 2026-01-27 18:53 JST Step3/Step5 の空表示と IDE-GSM 複数読み込み対応を完了。
+
+2402) feat/location/step2-split-button-multi-file-cards (P1) — 進行中 (2026-01-27)
+- ブランチ名: feat/location/step2-split-button-multi-file-cards
+- 依存: なし
+- 受け入れ基準: Step2 の Import が Split button になり、左側ラベル/アクションが直近の選択に追従する／Split button の見た目が一体化して表示される／読み込み済みファイルが「アイコン+ファイル名+サイズ+×」カードとして複数表示される／×で個別削除できる／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/datasource/src/IdeGsmImportPanel.tsx`, `plugins/location-plugin/src/ui/components/steps/LocationDataSourceStep.tsx` など（調査後に確定）
+- ロールバック手順: 該当差分を revert して従来の IDE-GSM UI に戻す
+- チェックリスト:
+  - Split button UI と最終選択アクションを実装する
+  - 複数ファイル表示カードを実装する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-27 19:45 JST Step2 Split button と複数ファイルカード対応に着手。
+  - update: 2026-01-27 19:55 JST Split button の最終選択追従・統一見た目・ファイルカード再構成対応に着手。
+ - update: 2026-01-27 20:05 JST pnpm --filter @hierarchidb/ui-datasource typecheck exit 0。
+ - update: 2026-01-27 20:06 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
+ - done: 2026-01-27 20:07 JST Split button の最終選択追従・統一見た目・ファイルカード再構成を完了。
+ - update: 2026-01-27 20:15 JST ファイルカードのレイアウト幅を内容ベースに調整する対応に着手。
+ - update: 2026-01-27 20:17 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
+ - update: 2026-01-27 20:20 JST ファイルカードにボーダーを追加する対応に着手。
+ - update: 2026-01-27 20:22 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
+ - update: 2026-01-27 20:25 JST ファイルカードコンテナに flex-wrap を適用する対応に着手。
+ - update: 2026-01-27 20:27 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
+ - update: 2026-01-27 20:30 JST Import 重複（同一ファイル/URL）の再追加を無視する対応に着手。
+ - update: 2026-01-27 20:32 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
 
 2350) feat/shape/step6-recycling-diff-build (P1) — 進行中 (2026-01-26)
 - ブランチ名: feat/shape/step6-recycling-diff-build
