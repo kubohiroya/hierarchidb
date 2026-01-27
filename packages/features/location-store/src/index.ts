@@ -138,7 +138,7 @@ export interface LocationPointProperties {
   name: string;
   latitude: number;
   longitude: number;
-  kind: LocationPointKind;
+  type: LocationPointKind;
   countryName?: string;
   countryCode: CountryCode;
   admin1?: string;
@@ -249,7 +249,6 @@ export {
   LocationDB,
   type LocationFeatureRow,
   type LocationRelationRow,
-  type LocationSessionRecord,
   type PendingLocationSession,
   type VectorTileRecord,
   closeLocationDB,
