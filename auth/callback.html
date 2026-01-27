@@ -102,9 +102,10 @@
         console.log('[auth-callback] App path detected:', appPath);
         console.log('[auth-callback] Redirecting to SPA callback:', spaCallbackUrl);
 
-        // For GitHub Pages, we need to ensure we're using the correct routing
-        // If hash routing is enabled, redirect to hash-based route
-        const useHashRouter = window.location.hash.includes('#/');
+        // Prefer hash routing outside localhost (production defaults to hash mode)
+        const hostname = window.location.hostname;
+        const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+        const useHashRouter = !isLocalhost || window.location.hash.includes('#/');
         if (useHashRouter) {
           const hashCallbackUrl = `${window.location.origin}${appPath}/#/auth/callback${currentSearch}`;
           console.log('[auth-callback] Using hash router, redirecting to:', hashCallbackUrl);
