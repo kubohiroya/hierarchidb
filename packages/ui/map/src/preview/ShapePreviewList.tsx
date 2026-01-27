@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { IconButton, Typography } from '@mui/material';
 import { Hexagon } from '@mui/icons-material';
 import { alpha, useTheme } from '@mui/material/styles';
@@ -9,9 +9,9 @@ import {
   MapPreviewFloatingTable,
   type MapPreviewErrorSummaryById,
   type MapPreviewErrorColumnLabels,
-  type MapPreviewSearchConfig,
   type MapPreviewStatusLabels,
 } from './MapPreviewFloatingTable.js';
+import type { FeatureTableSearchConfig } from './FeatureTableToolbar.js';
 
 type ShapePreviewRowBase = {
   recycling?: boolean;
@@ -58,7 +58,7 @@ export type ShapePreviewListProps = {
   title: string;
   rows: ShapePreviewFeatureRow[];
   columnLabels: ShapePreviewColumnLabels;
-  search?: MapPreviewSearchConfig;
+  search?: FeatureTableSearchConfig;
   matchedRows?: Set<string>;
   selectedRows?: Set<string>;
   onSelectionChange?: (selected: Set<string | number>) => void;
@@ -125,6 +125,11 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
     initialPosition: { x: 80, y: 140 },
     initialSize: { width: 560, height: 420 },
   });
+  const { show } = handlers;
+
+  useEffect(() => {
+    show();
+  }, [show]);
   const normalizeAdminLevelGroup = useCallback((value: string) => {
     const match = /^ADM(\d+)$/i.exec(value.trim());
     if (!match) return value;
