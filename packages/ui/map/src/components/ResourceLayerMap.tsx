@@ -5,7 +5,7 @@
 
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { Box, IconButton, Snackbar, Typography } from '@mui/material';
+import { Box, Button, IconButton, Snackbar, Typography } from '@mui/material';
 import { FloatingWindow } from '@hierarchidb/ui-floating-window';
 import type { WindowState } from '@hierarchidb/ui-floating-window';
 import type { Theme } from '@mui/material/styles';
@@ -659,6 +659,17 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
   const statsToggleButtonVisible = statsWindowConfig?.showToggleButton ?? false;
   const statsToggleButtonIcon = statsWindowConfig?.toggleButtonIcon ?? statsWindowIcon ?? <TuneIcon fontSize="small" />;
   const statsToggleButtonPosition = statsWindowConfig?.toggleButtonPosition ?? { top: 12, left: 12 };
+  const resolvedStatsToggleButtonPosition = useMemo(() => {
+    if (!mapControlContainer || statsToggleButtonPosition.top == null || statsToggleButtonPosition.right == null) {
+      return statsToggleButtonPosition;
+    }
+    const rect = mapControlContainer.getBoundingClientRect();
+    const offset = Number.isFinite(rect.height) ? rect.height : 0;
+    if (offset <= 0) return statsToggleButtonPosition;
+    const adjustedTop = Math.max(statsToggleButtonPosition.top, offset + 8);
+    if (adjustedTop === statsToggleButtonPosition.top) return statsToggleButtonPosition;
+    return { ...statsToggleButtonPosition, top: adjustedTop };
+  }, [mapControlContainer, statsToggleButtonPosition]);
   const statsWindowOpen = statsWindowState.isVisible !== false;
   const tileStatsRef = useRef({ requests: 0, bytes: 0 });
   const tileStatsTimerRef = useRef<number | null>(null);
@@ -1296,14 +1307,16 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
         </FloatingWindow>
       ) : null}
       {statsActive && statsDisplay === 'floating' && statsToggleButtonVisible && !statsWindowOpen ? (
-        <Box sx={{ position: 'absolute', zIndex: 3, ...statsToggleButtonPosition }}>
-          <IconButton
+        <Box sx={{ position: 'absolute', zIndex: 3, ...resolvedStatsToggleButtonPosition }}>
+          <Button
+            variant="contained"
             color="primary"
+            size="large"
             aria-label="Show data tiles stats"
             onClick={() => setStatsWindowState((prev) => ({ ...prev, isVisible: true }))}
           >
             {statsToggleButtonIcon}
-          </IconButton>
+          </Button>
         </Box>
       ) : null}
       {searchEnabled && searchConfig?.targetDefinitions ? (

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-types';
-import { LocationPointInput, LocationTileSettings, SessionSummary } from '../../../../common/types/batch-types';
-import { LocationDB } from '../../../../database/EphemeralLocationDB';
+import type { LocationPointInput, LocationTileSettings, SessionSummary } from '../../../../common/types/batch-types';
+import type { LocationDB } from '../../../../database/EphemeralLocationDB';
 //import type { LocationPointInput, LocationTileSettings, SessionSummary } from '../../../_obsolate_common/types/batch-types.js';
 //import type { LocationDB } from '../../../database/EphemeralLocationDB.js';
 type PendingSessionPayload = {

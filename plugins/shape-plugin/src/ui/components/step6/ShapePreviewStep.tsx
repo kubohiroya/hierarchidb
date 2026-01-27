@@ -37,7 +37,10 @@ const toPreviewMapView = (viewState: MapViewState): ShapePreviewMapView | null =
 
 export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId, onChange }) => {
   const [featureWindowOpen, setFeatureWindowOpen] = React.useState(true);
+  const [layerSetsToggleTop, setLayerSetsToggleTop] = React.useState(72);
   const lastPersistedViewRef = React.useRef<ShapePreviewMapView | null>(data.previewMapView ?? null);
+  const layerSetsResizeObserverRef = React.useRef<ResizeObserver | null>(null);
+  const layerSetsObservedControlRef = React.useRef<HTMLElement | null>(null);
   const {
     t,
     featureMetadataLoading,
@@ -84,6 +87,49 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
     initialPosition: { x: 320, y: 96 },
     initialSize: { width: 260, height: 420 },
   });
+  const statsToggleTop = layerSetsToggleTop + 56;
+
+  React.useEffect(() => {
+    const container = mapContainerRef.current;
+    if (!container) return undefined;
+
+    const updateOffset = () => {
+      const control = container.querySelector('.maplibregl-ctrl-top-right');
+      if (!(control instanceof HTMLElement)) {
+        setLayerSetsToggleTop(8);
+        return;
+      }
+      const rect = control.getBoundingClientRect();
+      const baseTop = Math.max(8, (Number.isFinite(rect.height) ? rect.height : 0) + 8);
+      const nextTop = baseTop;
+      setLayerSetsToggleTop((prev) => (prev === nextTop ? prev : nextTop));
+      if (typeof ResizeObserver !== 'undefined' && layerSetsObservedControlRef.current !== control) {
+        layerSetsResizeObserverRef.current?.disconnect();
+        const observer = new ResizeObserver(() => updateOffset());
+        observer.observe(control);
+        layerSetsResizeObserverRef.current = observer;
+        layerSetsObservedControlRef.current = control;
+      }
+    };
+
+    updateOffset();
+
+    const handleResize = () => updateOffset();
+    window.addEventListener('resize', handleResize);
+
+    const mutationObserver = typeof MutationObserver !== 'undefined'
+      ? new MutationObserver(() => updateOffset())
+      : null;
+    mutationObserver?.observe(container, { childList: true, subtree: true });
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      mutationObserver?.disconnect();
+      layerSetsResizeObserverRef.current?.disconnect();
+      layerSetsResizeObserverRef.current = null;
+      layerSetsObservedControlRef.current = null;
+    };
+  }, [mapContainerRef]);
 
   const handleViewStateCommit = React.useCallback(
     (viewState: MapViewState) => {
@@ -126,7 +172,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
             />
           </FloatingWindow>
         ) : (
-          <Box position="absolute" top={8} right={8} zIndex={3}>
+          <Box position="absolute" top={layerSetsToggleTop} right={8} zIndex={3}>
             <Button
               variant="contained"
               color="primary"
@@ -165,7 +211,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
               resizable: true,
               showToggleButton: true,
               toggleButtonIcon: <QueryStatsIcon fontSize="small" />,
-              toggleButtonPosition: { top: 56, right: 8 },
+              toggleButtonPosition: { top: statsToggleTop, right: 8 },
             },
           }}
           showTileBoundaries

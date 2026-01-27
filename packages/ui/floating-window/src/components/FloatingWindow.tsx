@@ -145,6 +145,32 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
     zIndex: initialState?.zIndex || 1000,
   });
   const normalStateRef = useRef<{ position: { x: number; y: number }; size: { width: number; height: number } } | null>(null);
+  const resolveIncomingState = useCallback((prev: WindowState, incoming?: Partial<WindowState>): WindowState | null => {
+    if (!incoming) return null;
+    const next: WindowState = {
+      position: incoming.position ?? prev.position,
+      size: incoming.size ?? prev.size,
+      isMinimized: incoming.isMinimized ?? prev.isMinimized,
+      isFullscreen: incoming.isFullscreen ?? prev.isFullscreen,
+      isVisible: incoming.isVisible ?? prev.isVisible,
+      zIndex: incoming.zIndex ?? prev.zIndex,
+    };
+    const samePosition = next.position.x === prev.position.x && next.position.y === prev.position.y;
+    const sameSize = next.size.width === prev.size.width && next.size.height === prev.size.height;
+    const sameFlags = next.isMinimized === prev.isMinimized
+      && next.isFullscreen === prev.isFullscreen
+      && next.isVisible === prev.isVisible
+      && next.zIndex === prev.zIndex;
+    if (samePosition && sameSize && sameFlags) return null;
+    return next;
+  }, []);
+
+  useEffect(() => {
+    setState((prev) => {
+      const next = resolveIncomingState(prev, initialState);
+      return next ?? prev;
+    });
+  }, [initialState, resolveIncomingState]);
 
   // Calculate constraints
   const effectiveMaxWidth = maxWidth || window.innerWidth - 50;

@@ -11,6 +11,9 @@
   - pnpm --filter @hierarchidb/runtime-worker typecheck を実行する
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
+  - update: 2026-01-27 17:16 JST shape Step6 feature 一覧の floating window 非表示の調査/修正に着手。
+  - update: 2026-01-27 17:16 JST ShapePreviewList の初期サイズ異常を検知して初期サイズへ復元する処理を追加。
+  - update: 2026-01-27 17:19 JST pnpm typecheck exit 0（tsdown define warning あり）。
   - start: 2026-01-27 08:43 JST commitDraft request ログの連続出力調査に着手。
   - update: 2026-01-27 12:06 JST useTreeNodeUpdater の unsaved 判定を安定化し、draftData/draftMetadata のキー順差異による autosave 連続を抑止。
   - update: 2026-01-27 12:06 JST pnpm --filter @hierarchidb/plugin-ui-sdk typecheck exit 0 を確認。
@@ -656,6 +659,17 @@
   - update: 2026-01-27 08:10 JST modeless の location 表示を nodeId 参照に戻すため、tableId/latest 依存の撤去に着手。
   - update: 2026-01-27 08:16 JST pnpm typecheck exit 0 を確認。
   - update: 2026-01-27 08:27 JST ideGsmCsv の row undefined ガードを追加し pnpm typecheck exit 0 を確認。
+  - update: 2026-01-27 08:35 JST shape step6 preview の floating window が再表示できるよう FloatingWindow の初期状態同期を追加。
+  - update: 2026-01-27 08:45 JST pnpm typecheck exit 0 を確認（tsdown define 警告あり）。
+  - update: 2026-01-27 08:56 JST Dexie Tile Stats の閉じた時ボタンを Layer Sets と同じデザインに揃え、MapLibre コントロールとの重なり回避調整を追加。
+  - update: 2026-01-27 09:01 JST pnpm typecheck exit 0 を確認（tsdown define 警告あり）。
+  - update: 2026-01-27 09:07 JST shape Step6 の Layer Sets 再表示ボタンを MapLibre コントロールと重ならない位置へ調整。
+  - update: 2026-01-27 09:11 JST pnpm typecheck exit 0 を確認（tsdown define 警告あり）。
+  - update: 2026-01-27 09:17 JST shape Step6 の Layer Sets 再表示ボタン位置を右上コントロール高さに追従させるよう調整。
+  - update: 2026-01-27 09:22 JST pnpm typecheck exit 0 を確認（tsdown define 警告あり）。
+  - update: 2026-01-27 09:26 JST Layer Sets と Dexie Tile Stats の再表示ボタンが重ならないよう上下に分離。
+  - update: 2026-01-27 09:30 JST pnpm typecheck exit 0 を確認（tsdown define 警告あり）。
+  - update: 2026-01-27 09:37 JST shape Step6 の feature 一覧ウィンドウが画面外に保存されても再表示できるよう位置補正を追加。
   - done: 2026-01-27 07:42 JST pnpm typecheck exit 0 を確認（tsdown define 警告あり）。
 
 2376) fix/ui-map/vector-tile-layer-flap (P1) — 進行中 (2026-01-26)

@@ -120,16 +120,45 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
   onToggleRecycling,
 }) => {
   const theme = useTheme();
+  const initialPosition = useMemo(() => ({ x: 80, y: 140 }), []);
+  const initialSize = useMemo(() => ({ width: 560, height: 420 }), []);
   const { windowState, handlers } = useFloatingWindow({
     persistKey: WINDOW_PERSIST_KEY,
-    initialPosition: { x: 80, y: 140 },
-    initialSize: { width: 560, height: 420 },
+    initialPosition,
+    initialSize,
   });
   const { show } = handlers;
 
   useEffect(() => {
     show();
   }, [show]);
+  const normalizedRef = React.useRef(false);
+  useEffect(() => {
+    if (!windowState.isVisible) {
+      show();
+      return;
+    }
+    if (normalizedRef.current) return;
+    const width = window.innerWidth || 0;
+    const height = window.innerHeight || 0;
+    if (width === 0 || height === 0) return;
+    const hasValidSize = Number.isFinite(windowState.size.width)
+      && Number.isFinite(windowState.size.height)
+      && windowState.size.width >= 200
+      && windowState.size.height >= 140;
+    if (!hasValidSize) {
+      handlers.setSize(initialSize);
+    }
+    const offscreen =
+      windowState.position.x > width - 48 ||
+      windowState.position.y > height - 48 ||
+      windowState.position.x + windowState.size.width < 48 ||
+      windowState.position.y + windowState.size.height < 48;
+    if (offscreen) {
+      handlers.setPosition(initialPosition);
+    }
+    normalizedRef.current = true;
+  }, [handlers, initialPosition, initialSize, show, windowState.isVisible, windowState.position.x, windowState.position.y, windowState.size.height, windowState.size.width]);
   const normalizeAdminLevelGroup = useCallback((value: string) => {
     const match = /^ADM(\d+)$/i.exec(value.trim());
     if (!match) return value;
