@@ -160,6 +160,14 @@ export type ResourceLayerMapProps = BaseMapProps & {
       minHeight?: number;
       maxWidth?: number;
       maxHeight?: number;
+      showToggleButton?: boolean;
+      toggleButtonIcon?: React.ReactNode;
+      toggleButtonPosition?: {
+        top?: number;
+        right?: number;
+        bottom?: number;
+        left?: number;
+      };
     };
   };
 };
@@ -631,7 +639,15 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
   const statsWindowConfig = stats?.floatingWindow;
   const statsWindowTitle = statsWindowConfig?.title ?? 'Dexie Tile Stats';
   const statsWindowIcon = statsWindowConfig?.titleIcon;
-  const statsWindowState = statsWindowConfig?.initialState ?? DEFAULT_STATS_WINDOW_STATE;
+  const statsWindowInitialState = statsWindowConfig?.initialState ?? DEFAULT_STATS_WINDOW_STATE;
+  const [statsWindowState, setStatsWindowState] = useState<WindowState>(() => ({
+    position: statsWindowInitialState.position,
+    size: statsWindowInitialState.size,
+    isMinimized: statsWindowInitialState.isMinimized ?? false,
+    isFullscreen: statsWindowInitialState.isFullscreen ?? false,
+    isVisible: statsWindowInitialState.isVisible !== false,
+    zIndex: statsWindowInitialState.zIndex ?? 1000,
+  }));
   const statsWindowProps = {
     resizable: statsWindowConfig?.resizable ?? false,
     draggable: statsWindowConfig?.draggable ?? true,
@@ -640,6 +656,10 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
     maxWidth: statsWindowConfig?.maxWidth,
     maxHeight: statsWindowConfig?.maxHeight,
   };
+  const statsToggleButtonVisible = statsWindowConfig?.showToggleButton ?? false;
+  const statsToggleButtonIcon = statsWindowConfig?.toggleButtonIcon ?? statsWindowIcon ?? <TuneIcon fontSize="small" />;
+  const statsToggleButtonPosition = statsWindowConfig?.toggleButtonPosition ?? { top: 12, left: 12 };
+  const statsWindowOpen = statsWindowState.isVisible !== false;
   const tileStatsRef = useRef({ requests: 0, bytes: 0 });
   const tileStatsTimerRef = useRef<number | null>(null);
   const statsStoreRef = useRef({
@@ -1253,11 +1273,13 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
           statsContainer,
         )
       ) : null}
-      {statsActive && statsDisplay === 'floating' ? (
+      {statsActive && statsDisplay === 'floating' && statsWindowOpen ? (
         <FloatingWindow
           title={statsWindowTitle}
           titleIcon={statsWindowIcon}
           initialState={statsWindowState}
+          onStateChange={setStatsWindowState}
+          onClose={() => setStatsWindowState((prev) => ({ ...prev, isVisible: false }))}
           resizable={statsWindowProps.resizable}
           draggable={statsWindowProps.draggable}
           minWidth={statsWindowProps.minWidth}
@@ -1272,6 +1294,17 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
             showTitle={false}
           />
         </FloatingWindow>
+      ) : null}
+      {statsActive && statsDisplay === 'floating' && statsToggleButtonVisible && !statsWindowOpen ? (
+        <Box sx={{ position: 'absolute', zIndex: 3, ...statsToggleButtonPosition }}>
+          <IconButton
+            color="primary"
+            aria-label="Show data tiles stats"
+            onClick={() => setStatsWindowState((prev) => ({ ...prev, isVisible: true }))}
+          >
+            {statsToggleButtonIcon}
+          </IconButton>
+        </Box>
       ) : null}
       {searchEnabled && searchConfig?.targetDefinitions ? (
         <>
