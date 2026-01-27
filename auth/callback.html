@@ -72,19 +72,13 @@
           console.error('[auth-callback] Error description:', errorDescription);
         }
 
-        // Check if we're already at the SPA callback route to prevent loops
-        // But if we're in callback.html, we should always redirect to the SPA route
-        const currentPath = window.location.pathname;
-        const isStaticCallback = currentPath.endsWith('/callback.html');
-        const isSPACallback =
-          currentPath.endsWith('/auth/callback') && !currentPath.endsWith('.html');
-
-        if (isSPACallback && !isStaticCallback) {
-          console.log('[auth-callback] Already at SPA callback route, skipping redirect');
+        // If we're already on the hash callback route, don't redirect again.
+        if (window.location.hash.startsWith('#/auth/callback')) {
+          console.log('[auth-callback] Already at hash callback route, skipping redirect');
           return;
         }
 
-        console.log('[auth-callback] In static callback, proceeding to redirect to SPA route');
+        console.log('[auth-callback] Proceeding to redirect to SPA callback route');
 
         // Add a flag to prevent redirect loops
         const redirectKey = 'auth_callback_redirect_' + Date.now();
