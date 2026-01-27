@@ -32,6 +32,10 @@ export function DataGridPreview({
   showFilterControls = true,
   showFilterToggle = true,
   showRowCount = true,
+  showSearch = true,
+  showColumnSelector = true,
+  searchValue,
+  onSearchChange,
   onRowSummaryChange,
 }: {
   pluginId?: string;
@@ -43,6 +47,10 @@ export function DataGridPreview({
   showFilterControls?: boolean;
   showFilterToggle?: boolean;
   showRowCount?: boolean;
+  showSearch?: boolean;
+  showColumnSelector?: boolean;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
   onRowSummaryChange?: (summary: { query: string; filtered: number; total: number }) => void;
 }): ReactNode {
   const { t } = useTranslation('common');
@@ -72,14 +80,16 @@ export function DataGridPreview({
 
   return (
     <Box sx={{ p: 2, height, minHeight: 0, boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+      {(showTitle || showColumnSelector) ? (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
         {showTitle ? (
           <Typography variant="subtitle1" sx={{ flex: 1 }}>{t('dataGrid.preview.title', 'Data table')}</Typography>
         ) : (
           <Box sx={{ flex: 1 }} />
         )}
         {/* Visible columns selector */}
-        <FormControl size="small" sx={{ minWidth: 180 }}>
+        {showColumnSelector ? (
+          <FormControl size="small" sx={{ minWidth: 180 }}>
           <InputLabel htmlFor="tp-cols-label"><ViewColumn fontSize="small" sx={{ mr: 0.5 }} />{t('dataGrid.preview.visibleColumns', 'Visible columns')}</InputLabel>
           <Select<string[]> multiple labelId="tp-cols-label" input={<OutlinedInput label={t('dataGrid.preview.visibleColumns', 'Visible columns')} />} value={visibleCols || []}
                   onChange={(e: SelectChangeEvent<string[]>) => {
@@ -98,8 +108,10 @@ export function DataGridPreview({
               </MenuItem>
             ))}
           </Select>
-        </FormControl>
+          </FormControl>
+        ) : null}
       </Box>
+      ) : null}
 
       {/* Filters */}
       {showFilterControls ? (
@@ -153,6 +165,9 @@ export function DataGridPreview({
           sortColumn={sortState.column}
           sortDirection={sortState.direction}
           onSort={onSort}
+          showSearch={showSearch}
+          searchValue={searchValue}
+          onSearchChange={onSearchChange}
           showFilterToggle={showFilterToggle}
           showRowCount={showRowCount}
           onRowSummaryChange={onRowSummaryChange}
