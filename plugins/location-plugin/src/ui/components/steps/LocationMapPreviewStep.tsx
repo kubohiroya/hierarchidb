@@ -373,10 +373,82 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
   const previewNodeId = nodeId ?? 'preview' as NodeId;
   const [previewPoints, setPreviewPoints] = useState<PreviewPoint[]>([]);
   const [metadataRows, setMetadataRows] = useState<Array<Record<string, unknown>>>([]);
-  const [metadataColumns, setMetadataColumns] = useState<string[]>([]);
+  const [metadataItems, setMetadataItems] = useState<LocationGroupItem[]>([]);
   const [metadataLoading, setMetadataLoading] = useState(false);
+  const [selectedMetadataIds, setSelectedMetadataIds] = useState<Set<string>>(new Set());
   const [metadataError, setMetadataError] = useState<string | undefined>();
   const metadataRequestRef = useRef(0);
+  const [locationTypeSelection, setLocationTypeSelection] = useState<MapToggleSelection>(() =>
+    Object.fromEntries(LOCATION_TYPE_OPTIONS.map((option) => [option.id, true])) as MapToggleSelection
+  );
+  const filteredMetadataRows = useMemo(() => {
+    if (!metadataRows.length) return metadataRows;
+    return metadataRows.filter((row) => {
+      const type = typeof row.type === 'string' ? row.type : undefined;
+      if (!type) return false;
+      return Boolean(locationTypeSelection[type]);
+    });
+  }, [metadataRows, locationTypeSelection]);
+
+  const filteredMetadataColumns = useMemo(
+    () => buildMetadataColumns(filteredMetadataRows),
+    [filteredMetadataRows],
+  );
+
+  const handleMetadataSelectionChange = useCallback((selected: Set<string | number>) => {
+    const next = new Set<string>();
+    selected.forEach((value) => next.add(String(value)));
+    setSelectedMetadataIds(next);
+  }, []);
+
+  const isMetadataRecycling = useCallback((item: LocationGroupItem) => {
+    const meta = item.data?.metadata;
+    if (!meta || typeof meta !== 'object') return false;
+    return (meta as Record<string, unknown>).recycling === 'true';
+  }, []);
+
+  const recyclingState = useMemo(() => {
+    if (selectedMetadataIds.size === 0) return 'none' as const;
+    const selectedItems = metadataItems.filter((item) => selectedMetadataIds.has(String(item.id)));
+    if (selectedItems.length == 0) return 'none' as const;
+    const recyclingCount = selectedItems.filter(isMetadataRecycling).length;
+    if (recyclingCount == 0) return 'off' as const;
+    if (recyclingCount == selectedItems.length) return 'on' as const;
+    return 'partial' as const;
+  }, [isMetadataRecycling, metadataItems, selectedMetadataIds]);
+
+  const handleToggleRecycling = useCallback(async () => {
+    if (!nodeId) return;
+    if (selectedMetadataIds.size === 0) return;
+    type LocationGroupItemWithData = LocationGroupItem & { data: NonNullable<LocationGroupItem['data']> };
+    const selectedItems = metadataItems.filter(
+      (item): item is LocationGroupItemWithData => (
+        selectedMetadataIds.has(String(item.id)) && item.data?.schemaVersion === 2
+      )
+    );
+    if (selectedItems.length == 0) return;
+    const recyclingCount = selectedItems.filter(isMetadataRecycling).length;
+    const nextValue = recyclingCount != selectedItems.length;
+    const updatedItems: LocationGroupItem[] = selectedItems.map((item) => ({
+      ...item,
+      data: {
+        ...item.data,
+        metadata: {
+          ...((item.data?.metadata ?? {}) as Record<string, unknown>),
+          recycling: nextValue ? 'true' : 'false',
+        },
+      },
+    }));
+    const bridge = getWorkerBridge();
+    await bridge.initialize();
+    const api = await bridge.getLocationMutationAPI();
+    await api.upsertLocationGroups(nodeId, updatedItems);
+    const updatedMap = new Map(updatedItems.map((item) => [String(item.id), item]));
+    const nextItems: LocationGroupItem[] = metadataItems.map((item) => updatedMap.get(String(item.id)) ?? item);
+    setMetadataItems(nextItems);
+    setMetadataRows(buildMetadataRows(nextItems));
+  }, [isMetadataRecycling, metadataItems, nodeId, selectedMetadataIds]);
+
   const [iconsReady, setIconsReady] = useState(false);
   const [metadataWindowOpen, setMetadataWindowOpen] = useState(true);
   const mapRef = useRef<MapLibreMapInstance | null>(null);
@@ -436,12 +508,14 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
         const items = await api.listLocationGroups(nodeId);
         if (cancelled || requestId !== metadataRequestRef.current) return;
         const rows = buildMetadataRows(items);
+        setMetadataItems(items);
         setMetadataRows(rows);
         setMetadataColumns(buildMetadataColumns(rows));
         setMetadataLoading(false);
       } catch (error) {
         if (cancelled || requestId !== metadataRequestRef.current) return;
         const message = error instanceof Error ? error.message : String(error);
+        setMetadataItems([]);
         setMetadataRows([]);
         setMetadataColumns([]);
         setMetadataLoading(false);
@@ -970,12 +1044,16 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
         {metadataWindowOpen ? (
           <LocationPreviewList
             title='Location'
-            rows={metadataRows}
-            columns={metadataColumns}
+            rows={filteredMetadataRows}
+            columns={filteredMetadataColumns}
             loading={metadataLoading}
             loadingText={translations.mapPreview?.metadataLoading ?? 'Loading metadata...'}
             emptyText={translations.mapPreview?.metadataEmpty ?? 'No metadata available yet.'}
             errorText={metadataError}
+            selectedRows={selectedMetadataIds}
+            onSelectionChange={handleMetadataSelectionChange}
+            recyclingState={recyclingState}
+            onToggleRecycling={handleToggleRecycling}
             onClose={() => setMetadataWindowOpen(false)}
           />
         ) : (
