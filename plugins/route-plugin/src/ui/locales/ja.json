@@ -29,6 +29,7 @@
       "custom": "カスタム"
     },
     "ideGsm": {
+      "importButton": "Import",
       "buttonLabel": "IDE-GSM ファイルを選択",
       "instructions": "IDE-GSM の CSV/Excel ファイル（location/resource）をアップロードまたはURL指定してください。",
       "noFiles": "CSV ファイルはまだ読み込まれていません。",
