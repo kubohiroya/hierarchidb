@@ -658,7 +658,9 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
   };
   const statsToggleButtonVisible = statsWindowConfig?.showToggleButton ?? false;
   const statsToggleButtonIcon = statsWindowConfig?.toggleButtonIcon ?? statsWindowIcon ?? <TuneIcon fontSize="small" />;
-  const statsToggleButtonPosition = statsWindowConfig?.toggleButtonPosition ?? { top: 12, left: 12 };
+  const statsToggleButtonPosition = useMemo(()=>statsWindowConfig?.toggleButtonPosition ?? { top: 12, left: 12 }, [
+    statsWindowConfig?.toggleButtonPosition
+  ]);
   const resolvedStatsToggleButtonPosition = useMemo(() => {
     if (!mapControlContainer || statsToggleButtonPosition.top == null || statsToggleButtonPosition.right == null) {
       return statsToggleButtonPosition;
@@ -824,7 +826,7 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
   const getStatsSnapshot = useCallback<MapStatsStore['getSnapshot']>(() => statsStoreRef.current.snapshot, []);
 
   const notifyStats = useCallback(() => {
-    statsStoreRef.current.listeners.forEach((listener) => listener());
+    statsStoreRef.current.listeners.forEach((listener) => { listener(); });
   }, []);
 
   const setStatsSnapshot = useCallback((next: MapStatsSnapshot) => {
