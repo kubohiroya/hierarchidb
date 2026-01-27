@@ -1,4 +1,4 @@
-import { generateId } from '@hierarchidb/util';
+import { digestSha256Hex } from '@hierarchidb/util';
 import { ensureIso3166Data, getAllCountries, getCountry, resolveIso3166CsvUrl } from '@hierarchidb/gen-iso3166-2/browser';
 import type { IdeGsmSelectionEntry } from '@hierarchidb/plugin-service-api';
 import type { LocationPointId, LocationPointProperties, LocationType } from './index.js';
@@ -12,7 +12,27 @@ export type IdeGsmParseResult = {
   rowCount: number;
 };
 
-const toPointId = (): LocationPointId => generateId() as LocationPointId;
+
+const POINT_ID_VERSION = 'v1';
+const POINT_ID_PRECISION = 5;
+const POINT_ID_PREFIX = `p:${POINT_ID_VERSION}`;
+const textEncoder = new TextEncoder();
+
+const normalizeCoord = (value: number): string => {
+  const rounded = Number(value.toFixed(POINT_ID_PRECISION));
+  return Number.isFinite(rounded) ? rounded.toFixed(POINT_ID_PRECISION) : '0.00000';
+};
+
+const encodePointKey = (lat: number, lon: number): Uint8Array => {
+  const latKey = normalizeCoord(lat);
+  const lonKey = normalizeCoord(lon);
+  return textEncoder.encode(`${latKey}|${lonKey}`);
+};
+
+const toPointId = async (lat: number, lon: number): Promise<LocationPointId> => {
+  const hash = await digestSha256Hex(encodePointKey(lat, lon));
+  return `${POINT_ID_PREFIX}:${hash}` as LocationPointId;
+};
 
 const normalizeMetadataValue = (value: unknown): string | number | null => {
   if (value == null) return null;
@@ -28,7 +48,7 @@ const normalizeMetadataValue = (value: unknown): string | number | null => {
   return String(value);
 };
 
-const toLocationKind = (name: string, isAdminCenter: boolean): LocationType => {
+const toLocationType = (name: string, isAdminCenter: boolean): LocationType => {
   if (isAdminCenter) return 'area_centroid';
   const trimmed = name.trim();
   if (trimmed.startsWith('Airport ')) return 'airport';
@@ -80,16 +100,17 @@ const resolveAdmin1Code = async (countryCode?: string, admin1?: string): Promise
 export const parseIdeGsmCsv = async (csvText: string): Promise<IdeGsmParseResult> => {
   const points: LocationPointProperties[] = [];
   const { headers, rows } = parseCsvTable(csvText, { delimiter: ',', hasHeader: true });
-  rows.forEach((row, index) => {
-    const name = row[0]?.trim() ?? '';
-    const lat = Number(row[1]);
-    const lon = Number(row[2]);
-    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+  for (let index = 0; index < rows.length; index += 1) {
+    const row = rows[index];
+    const name = row?.[0]?.trim() ?? '';
+    const lat = Number(row?.[1]);
+    const lon = Number(row?.[2]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
     const admin1 = row[3]?.trim() || undefined;
     const countryName = row[4]?.trim() || undefined;
     const adminCenterFlag = row[5]?.trim() ?? '0';
     const isAdminCenter = adminCenterFlag === '1';
-    const kind = toLocationKind(name, isAdminCenter);
+    const type = toLocationType(name, isAdminCenter);
     const metadata = headers.reduce<Record<string, string | number | null>>((acc, header, colIdx) => {
       if (colIdx < 6) return acc;
       const key = header?.trim();
@@ -101,11 +122,11 @@ export const parseIdeGsmCsv = async (csvText: string): Promise<IdeGsmParseResult
 
     points.push({
       schemaVersion: 2,
-      pointId: toPointId(),
+      pointId: await toPointId(lat, lon),
       name: name || `IDE-GSM ${index + 1}`,
       latitude: lat,
       longitude: lon,
-      kind,
+      type,
       countryCode: '',
       ...buildTileIdByZoom(lon, lat),
       countryName,
@@ -113,7 +134,7 @@ export const parseIdeGsmCsv = async (csvText: string): Promise<IdeGsmParseResult
       admin2: undefined,
       metadata,
     });
-  });
+  }
 
   if (!points.length) return { points, rowCount: rows.length };
   const countryCodeCache = new Map<string, string>();
@@ -148,7 +169,7 @@ export const filterIdeGsmPointsBySelection = (
       (!normalizedCode && !normalizedName)
       || (normalizedCode && countrySet.has(normalizedCode))
       || (normalizedName && countryNameSet.has(normalizedName));
-    const matchesType = typeSet.size === 0 || typeSet.has(point.kind as LocationType);
+    const matchesType = typeSet.size === 0 || typeSet.has(point.type as LocationType);
     return matchesCountry && matchesType;
   });
 };
