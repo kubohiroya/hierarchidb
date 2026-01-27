@@ -132,6 +132,7 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
   const windowRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const isResizing = useRef(false);
+  const suppressNotifyRef = useRef(false);
   const dragStart = useRef({ x: 0, y: 0 });
   const resizeStart = useRef({ width: 0, height: 0, x: 0, y: 0, positionX: 0, positionY: 0 });
   const resizeDirection = useRef<string>('');
@@ -147,13 +148,32 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
   const normalStateRef = useRef<{ position: { x: number; y: number }; size: { width: number; height: number } } | null>(null);
   const resolveIncomingState = useCallback((prev: WindowState, incoming?: Partial<WindowState>): WindowState | null => {
     if (!incoming) return null;
+    const normalizePosition = (value: WindowState['position'] | undefined) => {
+      if (!value) return prev.position;
+      const { x, y } = value;
+      if (!Number.isFinite(x) || !Number.isFinite(y)) {
+        return prev.position;
+      }
+      return value;
+    };
+    const normalizeSize = (value: WindowState['size'] | undefined) => {
+      if (!value) return prev.size;
+      const { width, height } = value;
+      if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+        return prev.size;
+      }
+      return value;
+    };
+    const normalizeZIndex = (value: number | undefined) => (
+      typeof value === 'number' && Number.isFinite(value) ? value : prev.zIndex
+    );
     const next: WindowState = {
-      position: incoming.position ?? prev.position,
-      size: incoming.size ?? prev.size,
+      position: normalizePosition(incoming.position),
+      size: normalizeSize(incoming.size),
       isMinimized: incoming.isMinimized ?? prev.isMinimized,
       isFullscreen: incoming.isFullscreen ?? prev.isFullscreen,
       isVisible: incoming.isVisible ?? prev.isVisible,
-      zIndex: incoming.zIndex ?? prev.zIndex,
+      zIndex: normalizeZIndex(incoming.zIndex),
     };
     const samePosition = next.position.x === prev.position.x && next.position.y === prev.position.y;
     const sameSize = next.size.width === prev.size.width && next.size.height === prev.size.height;
@@ -168,6 +188,9 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
   useEffect(() => {
     setState((prev) => {
       const next = resolveIncomingState(prev, initialState);
+      if (next) {
+        suppressNotifyRef.current = true;
+      }
       return next ?? prev;
     });
   }, [initialState, resolveIncomingState]);
@@ -189,6 +212,10 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
 
   // Update external atoms
   useEffect(() => {
+    if (suppressNotifyRef.current) {
+      suppressNotifyRef.current = false;
+      return;
+    }
     onStateChange?.(state);
   }, [state, onStateChange]);
 

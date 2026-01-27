@@ -35,6 +35,16 @@ export function useFloatingWindow(options: UseFloatingWindowOptions = {}): UseFl
     persistKey,
     onStateChange: externalOnStateChange,
   } = options;
+  const isSameWindowState = useCallback((left: WindowState, right: WindowState): boolean => (
+    left.position.x === right.position.x
+    && left.position.y === right.position.y
+    && left.size.width === right.size.width
+    && left.size.height === right.size.height
+    && left.isMinimized === right.isMinimized
+    && left.isFullscreen === right.isFullscreen
+    && left.isVisible === right.isVisible
+    && left.zIndex === right.zIndex
+  ), []);
 
   // Load persisted atoms if available
   const loadPersistedState = useCallback((): Partial<WindowState> | null => {
@@ -82,8 +92,8 @@ export function useFloatingWindow(options: UseFloatingWindowOptions = {}): UseFl
 
   // Handler for atoms changes from the FloatingWindow component
   const onStateChange = useCallback((newState: WindowState) => {
-    setWindowState(newState);
-  }, []);
+    setWindowState((prev) => (isSameWindowState(prev, newState) ? prev : newState));
+  }, [isSameWindowState]);
 
   // Handler for closing the window
   const onClose = useCallback(() => {

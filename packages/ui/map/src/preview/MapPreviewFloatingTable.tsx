@@ -1,6 +1,6 @@
 import type React from 'react';
 import { FeatureTableToolbar, type FeatureTableSearchConfig } from './FeatureTableToolbar.js';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Button,
@@ -211,7 +211,14 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
     () => resolvedColumns.map((column) => String(column.id)),
     [resolvedColumns],
   );
+  const prevColumnIdsRef = useRef<string[]>([]);
   useEffect(() => {
+    const prevIds = prevColumnIdsRef.current;
+    const isSame =
+      prevIds.length === resolvedColumnIds.length &&
+      prevIds.every((id, idx) => id === resolvedColumnIds[idx]);
+    if (isSame) return;
+    prevColumnIdsRef.current = resolvedColumnIds;
     setColumnVisibility((prev: GridColumnVisibilityState) => {
       const next = { ...prev };
       let changed = false;
