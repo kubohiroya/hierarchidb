@@ -14,7 +14,6 @@ export class LocationBatchSessionManager extends BaseBatchSessionManager {
   private legacyProgress = new Map<NodeId, Set<(p: ProgressEvent) => void>>();
   private summaries = new Map<NodeId, SessionSummary>();
 
-  private static readonly SESSION_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
   private static readonly PENDING_TTL = 24 * 60 * 60 * 1000; // 24 hours
   private static readonly VECTOR_TILE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
 
@@ -49,26 +48,16 @@ export class LocationBatchSessionManager extends BaseBatchSessionManager {
       const { getLocationDB } = await import('../../database/EphemeralLocationDB.js');
       const db = getLocationDB();
       try {
-        await db.clearExpiredSessions(LocationBatchSessionManager.SESSION_TTL);
         await db.clearExpiredPendingSessions(LocationBatchSessionManager.PENDING_TTL);
         await db.clearExpiredVectorTiles(LocationBatchSessionManager.VECTOR_TILE_TTL);
       } catch (error) {
         if (isDevEnvironment) {
-          console.warn('[LocationBatchSessionManager] clearExpiredSessions failed', error);
+          console.warn('[LocationBatchSessionManager] cleanup failed', error);
         }
       }
-      await db.sessions?.put({
-        nodeId,
-        bbox,
-        zoomMin: summary.zoomMin,
-        zoomMax: summary.zoomMax,
-        totalPoints: points.length,
-        createdAt: Date.now(),
-        status: 'running',
-      });
     } catch (error) {
       if (isDevEnvironment) {
-        console.warn('[LocationBatchSessionManager] failed to persist session metadata', error);
+        console.warn('[LocationBatchSessionManager] failed to access location DB', error);
       }
     }
     //  Fire and forget
@@ -123,45 +112,13 @@ export class LocationBatchSessionManager extends BaseBatchSessionManager {
     });
   }
 
-  protected async onSessionProgress(session: LocationBatchSession, event: BatchProgressEvent): Promise<void> {
-    const payload = event.payload ?? {};
-    const total = payload.total ?? 0;
-    const completed = payload.completed ?? 0;
-    const failed = payload.failed ?? 0;
-    const percentage = total > 0 ? (completed / total) * 100 : 0;
-    try {
-      const { getLocationDB } = await import('../../database/EphemeralLocationDB.js');
-      const db = getLocationDB();
-      await db.sessions?.update(session.getState().nodeId, {
-        progress: {
-          total,
-          completed,
-          failed,
-          percentage,
-          taskType: event.stage,
-        },
-        updatedAt: event.timestamp,
-      });
-    } catch (error) {
-      if (isDevEnvironment) {
-        console.warn('[LocationBatchSessionManager] failed to persist progress', error);
-      }
-    }
+  protected async onSessionProgress(_session: LocationBatchSession, _event: BatchProgressEvent): Promise<void> {
   }
 
   protected async onSessionStatusChange(session: LocationBatchSession): Promise<void> {
     const state = session.getState();
     if (state.status === 'idle') {
       return;
-    }
-    try {
-      const { getLocationDB } = await import('../../database/EphemeralLocationDB.js');
-      const db = getLocationDB();
-      await db.sessions?.update(state.nodeId, { status: state.status, updatedAt: Date.now() });
-    } catch (error) {
-      if (isDevEnvironment) {
-        console.warn('[LocationBatchSessionManager] failed to persist status', error);
-      }
     }
     if (state.status === 'completed' || state.status === 'failed') {
       this.sessions.delete(state.nodeId);

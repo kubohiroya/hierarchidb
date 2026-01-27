@@ -100,12 +100,6 @@ function createLocalBridge(manager: UnifiedLocationBatchManager): BridgeLike {
         },
       } satisfies BatchProgressEvent;
       const timer = setTimeout(() => {
-        const db = getLocationDB();
-        void db.sessions?.update?.(nodeId, {
-          status: 'completed',
-          progress: event.payload?.completed,
-          updatedAt: Date.now(),
-        });
         cb(event);
       }, 0);
       return () => {

@@ -3,19 +3,9 @@ import { waitFor } from '@testing-library/react';
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-types';
 import type { LocationPointInput, LocationTileSettings, SessionSummary } from '../../../_obsolate_common/types/batch-types.js';
 
-vi.mock('@hierarchidb/tabular-source-store', () => ({
-  TabularWriter: class {
-    async begin() {}
-    async writeRows() {}
-    async commit() {
-      return { tableId: 'mock-table' };
-    }
-  },
-}));
 
 type MockDbTables = {
   pending: Map<string, any>;
-  sessions: Map<string, any>;
   vectorTiles: Map<string, any>;
 };
 
@@ -25,7 +15,6 @@ const closeLocationDB = vi.fn();
 
 function createMockDb(): [any, MockDbTables] {
   const pending = new Map<string, any>();
-  const sessions = new Map<string, any>();
   const vectorTiles = new Map<string, any>();
 
   const db = {
@@ -38,23 +27,12 @@ function createMockDb(): [any, MockDbTables] {
         pending.delete(nodeId);
       }),
     },
-    sessions: {
-      put: vi.fn(async (payload: any) => {
-        sessions.set(payload.nodeId, payload);
-      }),
-      update: vi.fn(async (nodeId: string, changes: any) => {
-        const current = sessions.get(nodeId) ?? {};
-        sessions.set(nodeId, { ...current, ...changes });
-      }),
-      where: vi.fn(() => ({ equals: vi.fn(() => ({ delete: vi.fn(async () => {}) })) })),
-    },
     vectorTiles: {
       put: vi.fn(async (payload: any) => {
         vectorTiles.set(payload.id, payload);
       }),
       where: vi.fn(() => ({ equals: vi.fn(() => ({ delete: vi.fn(async () => {}) })) })),
     },
-    clearExpiredSessions: vi.fn(async () => 0),
     clearExpiredPendingSessions: vi.fn(async () => 0),
     clearExpiredVectorTiles: vi.fn(async () => 0),
     clearVectorTilesForNode: vi.fn(async (nodeId: string) => {
@@ -65,14 +43,13 @@ function createMockDb(): [any, MockDbTables] {
       }
     }),
     table: vi.fn((name: string) => {
-      if (name === 'sessions') return db.sessions;
       if (name === 'vectorTiles') return db.vectorTiles;
       if (name === 'pendingSessions') return db.pendingSessions;
       throw new Error(`Unknown table ${name}`);
     }),
   } as const;
 
-  return [db, { pending, sessions, vectorTiles }];
+  return [db, { pending, vectorTiles }];
 }
 
 vi.mock('../../database/EphemeralLocationDB', () => ({
@@ -201,69 +178,8 @@ describe('UnifiedLocationBatchManager persistence contract', () => {
     expect(mockDb.pendingSessions.delete).toHaveBeenCalledWith(sampleNode);
     expect(stub.createSpy).toHaveBeenCalledWith(sampleNode, samplePoints, sampleSettings, { concurrency: 2 });
     expect(mockDb.clearVectorTilesForNode).toHaveBeenCalledWith(sampleNode);
-    expect(mockDb.sessions.put).toHaveBeenCalledWith(expect.objectContaining({
-      nodeId: sampleNode,
-      status: 'running',
-      totalPoints: samplePoints.length,
-      config: { concurrency: 2 },
-    }));
   });
 
-  it('updates Dexie session progress on progress events', async () => {
-    const mgr = new UnifiedLocationBatchManager();
-    const stub = new StubSessionManager();
-    mgr.setDbProvider(() => mockDb);
-    mgr.setInternalManager(stub);
-
-    await mgr.prepareSession(sampleNode, {}, { points: samplePoints, settings: sampleSettings });
-
-    const sessionStatus = await mgr.startBatchSession(sampleNode);
-
-    const progressSpy = vi.fn();
-    mgr.onBatchProgress(sessionStatus.nodeId, progressSpy);
-
-    stub.emit({
-      nodeId: sessionStatus.nodeId,
-      taskType: 'normalize',
-      total: 10,
-      completed: 4,
-      failed: 0,
-      percentage: 40,
-      message: 'normalizing',
-    });
-
-    await waitFor(() => {
-      expect(mockDb.sessions.update).toHaveBeenCalledWith(sessionStatus.nodeId, expect.objectContaining({
-        status: 'running',
-        updatedAt: expect.any(Number),
-        progress: expect.objectContaining({
-          total: 10,
-          completed: 4,
-          failed: 0,
-          percentage: 40,
-          taskType: 'extract1',
-        }),
-      }));
-    });
-
-    stub.emit({
-      nodeId: sessionStatus.nodeId,
-      taskType: 'completed',
-      total: 10,
-      completed: 10,
-      failed: 0,
-      percentage: 100,
-      message: 'done',
-    });
-
-    await waitFor(() => {
-      expect(mockDb.sessions.update).toHaveBeenCalledWith(sessionStatus.nodeId, expect.objectContaining({
-        status: 'completed',
-      }));
-    });
-
-    expect(progressSpy).toHaveBeenCalledTimes(2);
-  });
 });
 
 describe('UnifiedLocationBatchManager control operations', () => {
@@ -285,8 +201,6 @@ describe('UnifiedLocationBatchManager control operations', () => {
       expect(pauseSpy).toHaveBeenCalledWith('node-test');
       expect(resumeSpy).toHaveBeenCalledWith('node-test');
 
-      expect(mockDb.sessions.update).toHaveBeenCalledWith('node-test', expect.objectContaining({ status: 'paused' }));
-      expect(mockDb.sessions.update).toHaveBeenCalledWith('node-test', expect.objectContaining({ status: 'running' }));
     } finally {
       pauseSpy.mockRestore();
       resumeSpy.mockRestore();
