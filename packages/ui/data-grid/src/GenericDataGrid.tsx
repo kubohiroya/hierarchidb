@@ -141,6 +141,12 @@ export interface GenericDataGridProps<T extends RowRecord = RowRecord> {
   onSearchChange?: (value: string) => void;
   /** Whether to show the built-in search field */
   showSearch?: boolean;
+  /** Whether to show the filter toggle button */
+  showFilterToggle?: boolean;
+  /** Whether to show the row count chip */
+  showRowCount?: boolean;
+  /** Report search and filter summary */
+  onRowSummaryChange?: (summary: { query: string; filtered: number; total: number }) => void;
 
   // Selection
   /** Enable row selection */
@@ -275,6 +281,9 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
                                            searchValue = '',
                                            onSearchChange,
                                            showSearch = true,
+                                           showFilterToggle = true,
+                                           showRowCount = true,
+                                           onRowSummaryChange,
                                            selectable = false,
                                            selectionMode = 'multiple',
                                            selectedRows = new Set(),
@@ -314,6 +323,7 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
   const [showFilters, setShowFilters] = useState(false);
   const controlId = React.useId();
   const [localSearchValue, setLocalSearchValue] = useState(searchValue);
+  const resolvedSearchValue = onSearchChange ? searchValue : localSearchValue;
 
   // Virtual scrolling setup
   const parentRef = React.useRef<HTMLDivElement>(null);
@@ -343,7 +353,7 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
     let result = [...rows];
 
     // Apply global search
-    const searchTerm = onSearchChange ? searchValue : localSearchValue;
+    const searchTerm = resolvedSearchValue;
     if (searchTerm) {
       result = result.filter((row) => {
         return columns.some((col) => {
@@ -373,7 +383,16 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
     });
 
     return result;
-  }, [rows, searchValue, localSearchValue, onSearchChange, filters, columns]);
+  }, [rows, resolvedSearchValue, filters, columns]);
+
+  useEffect(() => {
+    if (!onRowSummaryChange) return;
+    onRowSummaryChange({
+      query: String(resolvedSearchValue ?? ''),
+      filtered: filteredRows.length,
+      total: rows.length,
+    });
+  }, [filteredRows.length, onRowSummaryChange, resolvedSearchValue, rows.length]);
 
   // Handle pagination
   const displayRows = useMemo(() => {
@@ -507,11 +526,13 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
             />
           ) : null}
 
-          <Tooltip title="Toggle Filters">
-            <IconButton onClick={() => setShowFilters(!showFilters)}>
-              <FilterList />
-            </IconButton>
-          </Tooltip>
+          {showFilterToggle ? (
+            <Tooltip title="Toggle Filters">
+              <IconButton onClick={() => setShowFilters(!showFilters)}>
+                <FilterList />
+              </IconButton>
+            </Tooltip>
+          ) : null}
 
           {onRefresh && (
             <Tooltip title="Refresh">
@@ -529,7 +550,9 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
             </Tooltip>
           )}
 
-          <Chip label={`${totalRows ?? filteredRows.length} rows`} size="small" color="primary" />
+          {showRowCount ? (
+            <Chip label={`${totalRows ?? filteredRows.length} rows`} size="small" color="primary" />
+          ) : null}
         </Box>
       )}
 
