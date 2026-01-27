@@ -102,6 +102,7 @@ export const parseIdeGsmCsv = async (csvText: string): Promise<IdeGsmParseResult
   const { headers, rows } = parseCsvTable(csvText, { delimiter: ',', hasHeader: true });
   for (let index = 0; index < rows.length; index += 1) {
     const row = rows[index];
+    if (!row) continue;
     const name = row?.[0]?.trim() ?? '';
     const lat = Number(row?.[1]);
     const lon = Number(row?.[2]);
