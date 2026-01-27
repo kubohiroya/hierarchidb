@@ -1,0 +1,1 @@
+import{t as e}from"./Indexer-B4Oh-TAS.js";export{e as TabularIndexer};
