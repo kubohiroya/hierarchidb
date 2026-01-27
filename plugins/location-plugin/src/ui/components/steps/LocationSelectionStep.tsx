@@ -12,6 +12,7 @@ import { downloadFile } from '@hierarchidb/ui-file';
 import { notify } from '@hierarchidb/components';
 import { buildAvailabilityMapFromIdeGsmPoints, buildSelectionMapFromAvailability } from '../../utils/ideGsmSelection.js';
 import type { LocationType } from '../../../common/types/index.js';
+import type { IdeGsmSourceEntry } from '@hierarchidb/location-store';
 import { CountryMatrixSelector, useIsoCountries, type Country, type MatrixConfig, type MatrixSelection } from '@hierarchidb/ui-country-select';
 import { BASE_LOCATION_TYPES, resolveTypesForSource } from './locationTypes.js';
 import { AuthReadyGate } from '@hierarchidb/ui-auth';
@@ -89,6 +90,18 @@ const LocationSelectionContent: React.FC<LocationSelectionStepProps> = ({ draft,
   type CountryMatrixSelection = MatrixSelection;
 
   const selectionByCountries = useMemo(() => draft.selectedArrayByCountries ?? {}, [draft.selectedArrayByCountries]);
+  const ideGsmSources = useMemo<IdeGsmSourceEntry[]>(() => {
+    if (draft.ideGsmSources && draft.ideGsmSources.length > 0) {
+      return draft.ideGsmSources;
+    }
+    if (draft.ideGsmSourceUrl) {
+      return [{
+        fileName: draft.ideGsmFileName ?? '',
+        sourceUrl: draft.ideGsmSourceUrl,
+      }];
+    }
+    return [];
+  }, [draft.ideGsmFileName, draft.ideGsmSourceUrl, draft.ideGsmSources]);
   const [availabilityByCountry, setAvailabilityByCountry] = useState<Record<string, boolean[]>>({});
   const parseInFlightRef = useRef(false);
   const typeIndex = useMemo(
@@ -107,11 +120,12 @@ const LocationSelectionContent: React.FC<LocationSelectionStepProps> = ({ draft,
 
   useEffect(() => {
     if (draft.dataSource !== 'ide-gsm') return;
-    const sourceUrl = draft.ideGsmSourceUrl;
-    if (!sourceUrl) return;
+    const sources = ideGsmSources.filter((source) => source.sourceUrl);
+    if (sources.length === 0) return;
     if (parseInFlightRef.current) return;
     if (hasSelection && hasAvailability) return;
-    if (sourceUrl.startsWith('blob:')) {
+    const nonBlobSources = sources.filter((source) => !source.sourceUrl.startsWith('blob:'));
+    if (nonBlobSources.length === 0) {
       if (hasSelection && !hasAvailability) {
         setAvailabilityByCountry(selectionByCountries);
       }
@@ -121,16 +135,21 @@ const LocationSelectionContent: React.FC<LocationSelectionStepProps> = ({ draft,
     parseInFlightRef.current = true;
     const run = async () => {
       try {
-        const blob = await downloadFile(sourceUrl);
-        const csvText = await blob.text();
-        const parsed = await parseIdeGsmCsv(csvText);
-        const availabilityMap = buildAvailabilityMapFromIdeGsmPoints(parsed.points, BASE_LOCATION_TYPES);
+        const parsedList = await Promise.all(
+          nonBlobSources.map(async (source) => {
+            const blob = await downloadFile(source.sourceUrl);
+            const csvText = await blob.text();
+            return parseIdeGsmCsv(csvText);
+          }),
+        );
+        const points = parsedList.flatMap((parsed) => parsed.points);
+        const availabilityMap = buildAvailabilityMapFromIdeGsmPoints(points, BASE_LOCATION_TYPES);
         setAvailabilityByCountry(availabilityMap);
         if (!hasSelection) {
           const selectionMap = buildSelectionMapFromAvailability(availabilityMap);
           onUpdate({ selectedArrayByCountries: selectionMap });
         }
-        if (!parsed.points.length) {
+        if (!points.length) {
           notify.warning(t('dataSource.ideGsm.empty', 'No valid IDE-GSM rows found.'));
         }
       } catch (error) {
@@ -142,7 +161,15 @@ const LocationSelectionContent: React.FC<LocationSelectionStepProps> = ({ draft,
     };
 
     void run();
-  }, [draft.dataSource, draft.ideGsmSourceUrl, hasAvailability, hasSelection, onUpdate, selectionByCountries, t]);
+  }, [
+    draft.dataSource,
+    hasAvailability,
+    hasSelection,
+    ideGsmSources,
+    onUpdate,
+    selectionByCountries,
+    t,
+  ]);
 
   const selectionMatrixSource = useMemo(() => {
     if (iso.status !== 'ready') return [];

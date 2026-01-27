@@ -10,6 +10,7 @@ import {
   type DataSourceSelectionOption,
   type DataSourceSelectorProps,
   IdeGsmImportPanel,
+  type IdeGsmFileEntry,
 } from '@hierarchidb/ui-datasource';
 import type { LocationDataSource, LocationEntity, LocationType } from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
@@ -170,6 +171,7 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
   const description = t('dataSource.description', 'Choose a dataset source to fetch location data.');
   const ideGsmLabels = useMemo(
     () => ({
+      importButton: t('dataSource.ideGsm.importButton', 'Import'),
       noFiles: t('dataSource.ideGsm.noFiles', 'No CSV files imported.'),
       importLocal: t('dataSource.ideGsm.importLocal', 'Import Local Files'),
       importRemote: t('dataSource.ideGsm.importRemote', 'Import Remote Files'),
@@ -183,6 +185,27 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
     }),
     [t],
   );
+  const ideGsmSources = useMemo<IdeGsmFileEntry[]>(() => {
+    if (draft.ideGsmSources && draft.ideGsmSources.length > 0) {
+      return draft.ideGsmSources.map((entry) => ({
+        ...entry,
+        sourceType:
+          entry.sourceType ??
+          (entry.sourceUrl.startsWith('http://') || entry.sourceUrl.startsWith('https://')
+            ? 'remote'
+            : 'local'),
+      }));
+    }
+    if (draft.ideGsmSourceUrl) {
+      const sourceUrl = draft.ideGsmSourceUrl;
+      return [{
+        fileName: draft.ideGsmFileName ?? t('dataSource.ideGsm.fileFallback', 'Imported file'),
+        sourceUrl,
+        sourceType: sourceUrl.startsWith('http://') || sourceUrl.startsWith('https://') ? 'remote' : 'local',
+      }];
+    }
+    return [];
+  }, [draft.ideGsmFileName, draft.ideGsmSourceUrl, draft.ideGsmSources, t]);
 
   const renderOption: DataSourceSelectorProps['renderOption'] = (option, active) => {
     const supported =
@@ -210,27 +233,32 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
         </Box>
         {isIdeGsm && active ? (
           <IdeGsmImportPanel
-            fileName={draft.ideGsmFileName}
-            sourceUrl={draft.ideGsmSourceUrl}
+            files={ideGsmSources}
             labels={ideGsmLabels}
             defaultDownloadUrl={draft.ideGsmSourceUrl}
             disabled={Boolean(disabled)}
-            onChange={(payload) =>
+            onAddFile={(payload) => {
+              const nextSources = [...ideGsmSources, payload];
+              const primary = nextSources[nextSources.length - 1];
               onUpdate({
-                ideGsmFileName: payload.fileName,
-                ideGsmSourceUrl: payload.sourceUrl,
+                ideGsmSources: nextSources,
+                ideGsmFileName: primary?.fileName,
+                ideGsmSourceUrl: primary?.sourceUrl,
                 selectedArrayByCountries: {},
                 ideGsmSelectionHash: undefined,
-              })
-            }
-            onClear={() =>
+              });
+            }}
+            onRemoveFile={(index) => {
+              const nextSources = ideGsmSources.filter((_, idx) => idx !== index);
+              const primary = nextSources[nextSources.length - 1];
               onUpdate({
-                ideGsmFileName: undefined,
-                ideGsmSourceUrl: undefined,
+                ideGsmSources: nextSources.length > 0 ? nextSources : undefined,
+                ideGsmFileName: primary?.fileName,
+                ideGsmSourceUrl: primary?.sourceUrl,
                 selectedArrayByCountries: {},
                 ideGsmSelectionHash: undefined,
-              })
-            }
+              });
+            }}
           />
         ) : null}
       </Stack>
@@ -256,6 +284,7 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
             licenseAgreedAt: next.licenseAgreedAt,
             ideGsmFileName: nextSource === 'ide-gsm' ? draft.ideGsmFileName : undefined,
             ideGsmSourceUrl: nextSource === 'ide-gsm' ? draft.ideGsmSourceUrl : undefined,
+            ideGsmSources: nextSource === 'ide-gsm' ? draft.ideGsmSources : undefined,
             ...(sourceChanged
               ? { selectedArrayByCountries: {}, ideGsmSelectionHash: undefined }
               : {}),

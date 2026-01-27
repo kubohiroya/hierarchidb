@@ -63,12 +63,20 @@ export type LocationLabelConfigEntry = {
 
 export type LocationLabelConfig = Record<LocationType, LocationLabelConfigEntry>;
 
+export type IdeGsmSourceEntry = {
+  fileName: string;
+  sourceUrl: string;
+  sizeBytes?: number;
+  sourceType?: 'local' | 'remote';
+};
+
 export interface LocationEntity extends TreeNodeData {
   dataSource: LocationDataSource;
   licenseAgreement: boolean;
   licenseAgreedAt?: Timestamp;
   ideGsmFileName?: string;
   ideGsmSourceUrl?: string;
+  ideGsmSources?: IdeGsmSourceEntry[];
   ideGsmSelectionHash?: string;
   selectedArrayByCountries: Record<ISO2, boolean[]>;
   tilesMinZoom?: number;

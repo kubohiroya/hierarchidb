@@ -5,6 +5,7 @@ import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useIsoCountries } from '@hierarchidb/ui-country-select';
 import { IDE_GSM_BULK_CHUNK_SIZE, type IdeGsmImportProgress } from '@hierarchidb/plugin-service-api';
 import type { LocationEntity } from '../../common/types/index.js';
+import type { IdeGsmSourceEntry } from '@hierarchidb/location-store';
 import { BASE_LOCATION_TYPES } from '../components/steps/locationTypes.js';
 import { updateIdeGsmProgress } from '../state/ideGsmProgress.js';
 import { buildIdeGsmSelectionEntries, buildIdeGsmSelectionHash } from '../utils/ideGsmSelection.js';
@@ -21,15 +22,34 @@ export const useIdeGsmImportOnEntry = ({
   const iso = useIsoCountries();
   const selection = draft.selectedArrayByCountries ?? {};
   const selectionHash = useMemo(() => buildIdeGsmSelectionHash(selection), [selection]);
+  const ideGsmSources = useMemo<IdeGsmSourceEntry[]>(() => {
+    if (draft.ideGsmSources && draft.ideGsmSources.length > 0) {
+      return draft.ideGsmSources;
+    }
+    if (draft.ideGsmSourceUrl) {
+      return [{
+        fileName: draft.ideGsmFileName ?? '',
+        sourceUrl: draft.ideGsmSourceUrl,
+      }];
+    }
+    return [];
+  }, [draft.ideGsmFileName, draft.ideGsmSourceUrl, draft.ideGsmSources]);
+  const sourceKey = useMemo(
+    () => ideGsmSources.map((source) => source.sourceUrl).sort().join('|'),
+    [ideGsmSources],
+  );
+  const combinedHash = useMemo(
+    () => (selectionHash ? `${selectionHash}::${sourceKey}` : ''),
+    [selectionHash, sourceKey],
+  );
   const inFlightRef = useRef(false);
 
   useEffect(() => {
     if (draft.dataSource !== 'ide-gsm') return;
     if (!nodeId) return;
-    const sourceUrl = draft.ideGsmSourceUrl;
-    if (!sourceUrl) return;
-    if (!selectionHash) return;
-    if (draft.ideGsmSelectionHash === selectionHash) return;
+    if (ideGsmSources.length === 0) return;
+    if (!combinedHash) return;
+    if (draft.ideGsmSelectionHash === combinedHash) return;
     if (iso.status !== 'ready') return;
     if (inFlightRef.current) return;
 
@@ -45,20 +65,22 @@ export const useIdeGsmImportOnEntry = ({
         const bridge = getWorkerBridge();
         await bridge.initialize();
         const api = await bridge.getLocationMutationAPI();
-        await api.importIdeGsmLocations(
-          {
-            nodeId,
-            sourceUrl,
-            selectionEntries,
-            chunkSize: IDE_GSM_BULK_CHUNK_SIZE,
-          },
-          proxy((progress: IdeGsmImportProgress) => {
-            updateIdeGsmProgress(nodeId, progress);
-          }),
-        );
+        for (const source of ideGsmSources) {
+          await api.importIdeGsmLocations(
+            {
+              nodeId,
+              sourceUrl: source.sourceUrl,
+              selectionEntries,
+              chunkSize: IDE_GSM_BULK_CHUNK_SIZE,
+            },
+            proxy((progress: IdeGsmImportProgress) => {
+              updateIdeGsmProgress(nodeId, progress);
+            }),
+          );
+        }
         if (cancelled) return;
         onUpdate?.({
-          ideGsmSelectionHash: selectionHash,
+          ideGsmSelectionHash: combinedHash,
           processingStatus: 'completed',
           processedAt: Date.now(),
           lastProcessedAt: Date.now(),
@@ -88,12 +110,12 @@ export const useIdeGsmImportOnEntry = ({
   }, [
     draft.dataSource,
     draft.ideGsmSelectionHash,
-    draft.ideGsmSourceUrl,
     iso.countries,
     iso.status,
+    ideGsmSources,
     nodeId,
     onUpdate,
     selection,
-    selectionHash,
+    combinedHash,
   ]);
 };

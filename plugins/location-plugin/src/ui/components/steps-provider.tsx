@@ -36,6 +36,8 @@ const canProceedFromDataSource = (data?: LocationStepData): boolean => {
   const source = data?.dataSource;
   if (!source) return false;
   if (source === 'ide-gsm') {
+    const sources = data?.ideGsmSources ?? [];
+    if (sources.length > 0) return true;
     return Boolean(data?.ideGsmSourceUrl);
   }
   return true;

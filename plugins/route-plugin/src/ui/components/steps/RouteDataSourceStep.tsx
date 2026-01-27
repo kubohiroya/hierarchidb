@@ -42,6 +42,7 @@ export const RouteDataSourceStep: React.FC<RouteDataSourceStepProps> = ({
   );
   const ideGsmLabels = useMemo(
     () => ({
+      importButton: t('dataSource.ideGsm.importButton', 'Import'),
       noFiles: t('dataSource.ideGsm.noFiles', 'No CSV files imported.'),
       importLocal: t('dataSource.ideGsm.importLocal', 'Import Local Files'),
       importRemote: t('dataSource.ideGsm.importRemote', 'Import Remote Files'),
