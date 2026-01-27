@@ -1,1 +1,0 @@
-import{D as e}from"./index.js";function t(t){return e(t)}export{t as createRouteFeatureStoreDexie};
