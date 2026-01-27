@@ -1,1 +1,0 @@
-import"./vendor-react-7Qv6hoHe.js";import"./ui-plugin-loader-Bide2z2c.js";import{t as e}from"./rootRoute-DBskEc-C.js";export{e as rootRoute};
