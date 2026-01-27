@@ -2,7 +2,7 @@
   * Batch Progress Dialog
    */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
@@ -50,10 +50,8 @@ import {
 } from '@mui/icons-material';
 import type { NodeId } from '../../../common/types/index.js';
 import { useLocationProgress } from '../../../common/hooks/useLocationProgress.js';
-import { isDevEnvironment } from '../../../common/utils/env.js';
 import { useTranslation, formatBytes as formatBytesIntl, formatNumber } from '../../../common/i18n/index.js';
 import { CrossViewSnackbar, DataGridPreview } from '@hierarchidb/ui-grid';
-import { getLocationDB } from '@hierarchidb/location-store';
 
 interface ProgressInfo {
   percentage: number;
@@ -148,7 +146,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
                                                                           nodeId,
                                                                         }) => {
   const [tabValue, setTabValue] = useState(0);
-  const [tableId, setTableId] = useState<string | null>(null);
+  const tableId = nodeId ? String(nodeId) : null;
   const datasetId = React.useMemo(() => (tableId ? `location:${tableId}` : null), [tableId]);
   const { translations, locale } = useTranslation();
   const {
@@ -256,23 +254,6 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
     [],
   );
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const db = getLocationDB();
-        const session = (await db.sessions?.get(nodeId)) ?? null;
-        if (!cancelled) setTableId(session?.tableId ?? null);
-      } catch (error) {
-        if (isDevEnvironment) {
-          console.warn('[BatchProgressDialog] failed to load session metadata', error);
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [nodeId]);
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
