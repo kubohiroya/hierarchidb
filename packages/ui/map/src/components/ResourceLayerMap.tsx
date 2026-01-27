@@ -881,7 +881,7 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
       return;
     }
     resetTileStats();
-  }, [resetTileStats, setStatsSnapshot, statsActive, vectorLayerEntries.length, notifyStats]);
+  }, [resetTileStats, setStatsSnapshot, statsActive, notifyStats]);
 
   useEffect(() => {
     if (!mapInstance || !statsActive) return;
