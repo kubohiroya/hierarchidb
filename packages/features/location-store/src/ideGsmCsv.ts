@@ -1,7 +1,7 @@
-import { digestSha256Hex } from '@hierarchidb/util';
 import { ensureIso3166Data, getAllCountries, getCountry, resolveIso3166CsvUrl } from '@hierarchidb/gen-iso3166-2/browser';
 import type { IdeGsmSelectionEntry } from '@hierarchidb/plugin-service-api';
-import type { LocationPointId, LocationPointProperties, LocationType } from './index.js';
+import type { LocationPointProperties, LocationType } from './index.js';
+import { buildLocationPointIdFromLatLon } from './index.js';
 import { buildTileIdByZoom } from './morton.js';
 import { parseCsvTable } from './csvUtils.js';
 
@@ -12,27 +12,6 @@ export type IdeGsmParseResult = {
   rowCount: number;
 };
 
-
-const POINT_ID_VERSION = 'v1';
-const POINT_ID_PRECISION = 5;
-const POINT_ID_PREFIX = `p:${POINT_ID_VERSION}`;
-const textEncoder = new TextEncoder();
-
-const normalizeCoord = (value: number): string => {
-  const rounded = Number(value.toFixed(POINT_ID_PRECISION));
-  return Number.isFinite(rounded) ? rounded.toFixed(POINT_ID_PRECISION) : '0.00000';
-};
-
-const encodePointKey = (lat: number, lon: number): Uint8Array => {
-  const latKey = normalizeCoord(lat);
-  const lonKey = normalizeCoord(lon);
-  return textEncoder.encode(`${latKey}|${lonKey}`);
-};
-
-const toPointId = async (lat: number, lon: number): Promise<LocationPointId> => {
-  const hash = await digestSha256Hex(encodePointKey(lat, lon));
-  return `${POINT_ID_PREFIX}:${hash}` as LocationPointId;
-};
 
 const normalizeMetadataValue = (value: unknown): string | number | null => {
   if (value == null) return null;
@@ -123,7 +102,7 @@ export const parseIdeGsmCsv = async (csvText: string): Promise<IdeGsmParseResult
 
     points.push({
       schemaVersion: 2,
-      pointId: await toPointId(lat, lon),
+      pointId: await buildLocationPointIdFromLatLon(lat, lon),
       name: name || `IDE-GSM ${index + 1}`,
       latitude: lat,
       longitude: lon,

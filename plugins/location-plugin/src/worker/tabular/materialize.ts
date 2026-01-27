@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { TabularDataResult } from '@hierarchidb/ui-tabular';
-import type { LocationPointProperties, LocationPointId } from '../../common/entities/LocationPoint.js';
-import { buildTileIdByZoom } from '@hierarchidb/location-store';
+import type { LocationPointProperties } from '../../common/entities/LocationPoint.js';
+import { buildLocationPointIdFromLatLon, buildTileIdByZoom } from '@hierarchidb/location-store';
 import { replaceLocationPoints } from '../../services/pointRepository.js';
 type ProgressReporter = (progress: {
   stage?: string;
@@ -53,7 +53,7 @@ export async function materializeLocationPointsFromTabular(
 
     normalized.push({
       schemaVersion: 2,
-      pointId: crypto.randomUUID() as LocationPointId,
+      pointId: await buildLocationPointIdFromLatLon(lat, lon),
       name,
       latitude: lat,
       longitude: lon,

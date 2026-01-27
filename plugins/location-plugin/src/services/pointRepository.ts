@@ -41,7 +41,7 @@ const toItem = (point: PointProperties): PointItem => {
     ? { ...point, ...buildTileIdByZoom(longitude, latitude) }
     : point;
   return {
-    id: point.pointId,
+    id: crypto.randomUUID(),
     data: { ...withTiles },
     updatedAt: Date.now(),
   };

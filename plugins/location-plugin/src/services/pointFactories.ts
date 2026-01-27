@@ -1,5 +1,5 @@
 import type { CountryCode, Timestamp } from '@hierarchidb/common-types';
-import { generateId } from '@hierarchidb/util';
+import { buildLocationPointIdFromLatLon } from '@hierarchidb/location-store';
 import type {
   LocationPointProperties,
   LocationPointId,
@@ -56,15 +56,17 @@ export const createLocationPointProperties = (params: BasePointParams): Location
   metadata: params.metadata,
 });
 
-const toPointId = (): LocationPointId => generateId() as LocationPointId;
+const buildPointIdFromLatLon = async (lat: number, lon: number): Promise<LocationPointId> => (
+  buildLocationPointIdFromLatLon(lat, lon)
+);
 
-export const buildOsmPointProperties = (
+export const buildOsmPointProperties = async (
   raw: RawNominatimResult,
   type: LocationPointKind,
   latitude: number,
   longitude: number,
   timestamp: Timestamp,
-): LocationPointProperties => {
+): Promise<LocationPointProperties> => {
   const metadata = toMetadata({
     osmId: raw.osm_id,
     osmType: raw.osm_type,
@@ -83,7 +85,7 @@ export const buildOsmPointProperties = (
   const admin2 = raw.address?.city || raw.address?.town || raw.address?.village;
 
   return createLocationPointProperties({
-    pointId: toPointId(),
+    pointId: await buildPointIdFromLatLon(latitude, longitude),
     name: raw.display_name ?? 'Unknown',
     type,
     latitude,
@@ -96,13 +98,13 @@ export const buildOsmPointProperties = (
   });
 };
 
-export const buildOverpassPointProperties = (
+export const buildOverpassPointProperties = async (
   raw: RawOverpassElement,
   type: LocationPointKind,
   latitude: number,
   longitude: number,
   timestamp: Timestamp,
-): LocationPointProperties => {
+): Promise<LocationPointProperties> => {
   const metadata = toMetadata({
     overpassRawId: raw.id,
     osmType: raw.type,
@@ -116,7 +118,7 @@ export const buildOverpassPointProperties = (
   const admin2 = raw.tags?.['addr:city'] ?? raw.tags?.['addr:district'];
 
   return createLocationPointProperties({
-    pointId: toPointId(),
+    pointId: await buildPointIdFromLatLon(latitude, longitude),
     name: raw.tags?.name ?? 'Unknown',
     type,
     latitude,
@@ -128,11 +130,11 @@ export const buildOverpassPointProperties = (
   });
 };
 
-export const buildGeoNamesPointProperties = (
+export const buildGeoNamesPointProperties = async (
   raw: { geonameId: number; name: string; countryCode?: string; adminCode1?: string; adminCode2?: string; lat: number; lng: number; featureClass?: string; featureCode?: string; population?: number; elevation?: number; timezone?: string; alternateNames?: string[]; },
   type: LocationPointKind,
   timestamp: Timestamp,
-): LocationPointProperties => {
+): Promise<LocationPointProperties> => {
   const metadata = toMetadata({
     geoNameId: raw.geonameId,
     featureClass: raw.featureClass ?? 'unknown',
@@ -147,7 +149,7 @@ export const buildGeoNamesPointProperties = (
   });
 
   return createLocationPointProperties({
-    pointId: toPointId(),
+    pointId: await buildPointIdFromLatLon(raw.lat, raw.lng),
     name: raw.name,
     type,
     latitude: raw.lat,
@@ -159,11 +161,11 @@ export const buildGeoNamesPointProperties = (
   });
 };
 
-export const buildWikidataPointProperties = (
+export const buildWikidataPointProperties = async (
   raw: { entityId: string; label: string; coordinates: { lat: number; lon: number }; countryCode?: string; admin1?: string; admin2?: string; descriptions?: Record<string, string>; wikipediaTitle?: string; instanceOf?: string[]; properties?: Record<string, unknown>; },
   type: LocationPointKind,
   timestamp: Timestamp,
-): LocationPointProperties => {
+): Promise<LocationPointProperties> => {
   const metadata = toMetadata({
     wikidataEntityId: raw.entityId,
     label: raw.label,
@@ -175,7 +177,7 @@ export const buildWikidataPointProperties = (
   });
 
   return createLocationPointProperties({
-    pointId: toPointId(),
+    pointId: await buildPointIdFromLatLon(raw.coordinates.lat, raw.coordinates.lon),
     name: raw.label,
     type,
     latitude: raw.coordinates.lat,
@@ -187,11 +189,11 @@ export const buildWikidataPointProperties = (
   });
 };
 
-export const buildCustomPointProperties = (
+export const buildCustomPointProperties = async (
   raw: { id: string; name: string; latitude: number; longitude: number; countryCode?: string; admin1?: string; admin2?: string; attributes?: Record<string, unknown>; },
   type: LocationPointKind,
   timestamp: Timestamp,
-): LocationPointProperties => {
+): Promise<LocationPointProperties> => {
   const metadata = toMetadata({
     customId: raw.id,
     attributes: raw.attributes ?? {},
@@ -199,7 +201,7 @@ export const buildCustomPointProperties = (
   });
 
   return createLocationPointProperties({
-    pointId: toPointId(),
+    pointId: await buildPointIdFromLatLon(raw.latitude, raw.longitude),
     name: raw.name,
     type,
     latitude: raw.latitude,
@@ -211,7 +213,7 @@ export const buildCustomPointProperties = (
   });
 };
 
-export const buildOurAirportsPointProperties = (
+export const buildOurAirportsPointProperties = async (
   raw: {
     id: string;
     name: string;
@@ -234,7 +236,7 @@ export const buildOurAirportsPointProperties = (
     keywords?: string;
   },
   timestamp: Timestamp,
-): LocationPointProperties => {
+): Promise<LocationPointProperties> => {
   const primaryCode = raw.iataCode || raw.icaoCode || raw.localCode || raw.ident;
   const metadata = toMetadata({
     ourAirportsId: raw.id,
@@ -256,7 +258,7 @@ export const buildOurAirportsPointProperties = (
   });
 
   return createLocationPointProperties({
-    pointId: toPointId(),
+    pointId: await buildPointIdFromLatLon(raw.latitude, raw.longitude),
     name: raw.name,
     type: 'airport',
     latitude: raw.latitude,
@@ -269,7 +271,7 @@ export const buildOurAirportsPointProperties = (
   });
 };
 
-export const buildOpenFlightsPointProperties = (
+export const buildOpenFlightsPointProperties = async (
   raw: {
     id: string;
     name: string;
@@ -287,7 +289,7 @@ export const buildOpenFlightsPointProperties = (
     source?: string;
   },
   timestamp: Timestamp,
-): LocationPointProperties => {
+): Promise<LocationPointProperties> => {
   const primaryCode = raw.iata || raw.icao;
   const metadata = toMetadata({
     openFlightsId: raw.id,
@@ -305,7 +307,7 @@ export const buildOpenFlightsPointProperties = (
   });
 
   return createLocationPointProperties({
-    pointId: toPointId(),
+    pointId: await buildPointIdFromLatLon(raw.latitude, raw.longitude),
     name: raw.name,
     type: 'airport',
     latitude: raw.latitude,
@@ -318,7 +320,7 @@ export const buildOpenFlightsPointProperties = (
   });
 };
 
-export const buildWorldPortIndexPointProperties = (
+export const buildWorldPortIndexPointProperties = async (
   raw: {
     id?: string;
     name: string;
@@ -334,7 +336,7 @@ export const buildWorldPortIndexPointProperties = (
     tideRange?: string;
   },
   timestamp: Timestamp,
-): LocationPointProperties => {
+): Promise<LocationPointProperties> => {
   const metadata = toMetadata({
     worldPortIndexId: raw.id,
     portCode: raw.unlocode,
@@ -346,7 +348,7 @@ export const buildWorldPortIndexPointProperties = (
   });
 
   return createLocationPointProperties({
-    pointId: toPointId(),
+    pointId: await buildPointIdFromLatLon(raw.latitude, raw.longitude),
     name: raw.name,
     type: 'port',
     latitude: raw.latitude,

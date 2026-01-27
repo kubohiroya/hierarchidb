@@ -121,7 +121,7 @@ export class LocationMutationService implements LocationMutationAPI {
       const points = filtered.map((point) => ({
         lon: Number(point.longitude) || 0,
         lat: Number(point.latitude) || 0,
-        id: point.pointId,
+        id: crypto.randomUUID(),
         properties: {
           name: point.name,
           type: point.type,
@@ -174,7 +174,7 @@ export class LocationMutationService implements LocationMutationAPI {
       const slice = points.slice(i, i + chunkSize);
       const now = Date.now();
       const items: LocationGroupItem[] = slice.map((point: LocationPointProperties) => ({
-        id: point.pointId,
+        id: crypto.randomUUID(),
         data: { ...point },
         updatedAt: now,
       }));
