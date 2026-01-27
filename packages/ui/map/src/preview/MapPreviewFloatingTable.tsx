@@ -1,4 +1,5 @@
 import type React from 'react';
+import { FeatureTableToolbar, type FeatureTableSearchConfig } from './FeatureTableToolbar.js';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Box,
@@ -11,13 +12,8 @@ import {
   DialogTitle,
   FormControlLabel,
   FormGroup,
-  IconButton,
-  InputAdornment,
   Paper,
-  TextField,
-  Typography,
 } from '@mui/material';
-import { Close as CloseIcon, MoreVert as MoreVertIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
   TanstackDataGrid,
   type GridColumn,
@@ -37,14 +33,6 @@ export type MapPreviewErrorSummary = {
 
 export type MapPreviewErrorSummaryById = Map<string, MapPreviewErrorSummary>;
 
-export type MapPreviewSearchConfig = {
-  value: string;
-  onChange: (value: string) => void;
-  onCommit?: () => void;
-  placeholder?: string;
-  ariaLabel?: string;
-};
-
 export type MapPreviewErrorColumnLabels = {
   status: string;
   errorCount: string;
@@ -56,6 +44,8 @@ export type MapPreviewStatusLabels = {
   failed: string;
 };
 
+export type MapPreviewSearchConfig = FeatureTableSearchConfig;
+
 export type MapPreviewFloatingTableProps<Row extends { id: string | number }> = {
   title: string;
   showTitle?: boolean;
@@ -65,7 +55,7 @@ export type MapPreviewFloatingTableProps<Row extends { id: string | number }> = 
   persistKeyBase?: string;
   defaultGrouping?: GridGroupingState;
   defaultSorting?: GridSortingState;
-  search?: MapPreviewSearchConfig;
+  search?: FeatureTableSearchConfig;
   countText?: string;
   loading?: boolean;
   error?: string;
@@ -280,73 +270,15 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
         ...(containerSx ?? {}),
       }}
     >
-      <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
-        {showTitle ? <Typography variant="subtitle2">{title}</Typography> : null}
-        {search ? (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <TextField
-              size="small"
-              value={search.value}
-              onChange={(event) => search.onChange(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  search.onCommit?.();
-                }
-              }}
-              placeholder={search.placeholder}
-              inputProps={{ 'aria-label': search.ariaLabel }}
-              fullWidth
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 999,
-                  paddingLeft: 0,
-                },
-                '& .MuiOutlinedInput-input': {
-                  paddingLeft: 0,
-                },
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon fontSize="small" color="action" sx={{ ml: 2 }} />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="Clear search"
-                      size="small"
-                      onClick={() => search.onChange('')}
-                      disabled={!search.value.trim()}
-                    >
-                      <CloseIcon fontSize="small" />
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-            {toolbarActions ? (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                {toolbarActions}
-              </Box>
-            ) : null}
-            {enableColumnSelector ? (
-              <IconButton
-                aria-label="Select columns"
-                size="small"
-                onClick={() => setColumnSelectorOpen(true)}
-              >
-                <MoreVertIcon fontSize="small" />
-              </IconButton>
-            ) : null}
-          </Box>
-        ) : null}
-        {countText ? (
-          <Typography variant="body2" color="text.secondary">
-            {countText}
-          </Typography>
-        ) : null}
-      </Box>
+      <FeatureTableToolbar
+        title={title}
+        showTitle={showTitle}
+        search={search}
+        toolbarActions={toolbarActions}
+        enableColumnSelector={enableColumnSelector}
+        onOpenColumnSelector={enableColumnSelector ? () => setColumnSelectorOpen(true) : undefined}
+        countText={countText}
+      />
       <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
         {rows.length === 0 && emptyContent ? (
           emptyContent
