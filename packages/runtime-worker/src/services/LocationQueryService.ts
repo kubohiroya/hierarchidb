@@ -119,7 +119,7 @@ export class LocationQueryService implements LocationQueryAPI {
   async queryByMortonPrefixes(
     nodeId: NodeId,
     prefixes: string[],
-    kinds?: string[]
+    types?: string[]
   ): Promise<LocationGroupItem[]> {
     const db = getLocationDB();
     const results = new Map<string, LocationGroupItem>();
@@ -128,15 +128,15 @@ export class LocationQueryService implements LocationQueryAPI {
     );
     if (normalizedPrefixes.length === 0) return [];
 
-    const collect = async (prefix: string, kind?: string) => {
+    const collect = async (prefix: string, type?: string) => {
       const normalizedPrefix =
         prefix.length > MORTON_KEY_HEX_LENGTH ? prefix.slice(0, MORTON_KEY_HEX_LENGTH) : prefix;
       const start = normalizedPrefix.padEnd(MORTON_KEY_HEX_LENGTH, '0');
       const end = normalizedPrefix.padEnd(MORTON_KEY_HEX_LENGTH, 'f');
-      const rows = kind
+      const rows = type
         ? await db.features
-            .where('[nodeId+kind+mortonKey]')
-            .between([nodeId, kind, start], [nodeId, kind, end], true, true)
+            .where('[nodeId+type+mortonKey]')
+            .between([nodeId, type, start], [nodeId, type, end], true, true)
             .toArray()
         : await db.features
             .where('[nodeId+mortonKey]')
@@ -148,10 +148,10 @@ export class LocationQueryService implements LocationQueryAPI {
       }
     };
 
-    if (kinds && kinds.length > 0) {
-      for (const kind of kinds) {
+    if (types && types.length > 0) {
+      for (const type of types) {
         for (const prefix of normalizedPrefixes) {
-          await collect(prefix, kind);
+          await collect(prefix, type);
         }
       }
     } else {
@@ -167,7 +167,7 @@ export class LocationQueryService implements LocationQueryAPI {
     nodeId: NodeId,
     bbox: LocationViewportBbox,
     zoom: number,
-    kinds?: string[],
+    types?: string[],
     options?: LocationViewportQueryOptions
   ): Promise<LocationGroupItem[]> {
     const expanded = expandBbox(bbox, options);
@@ -183,11 +183,11 @@ export class LocationQueryService implements LocationQueryAPI {
     const results = new Map<string, LocationGroupItem>();
     const maxPoints = options?.maxPoints ?? 0;
 
-    const collectRange = async (start: string, end: string, kind?: string) => {
-      const rows = kind
+    const collectRange = async (start: string, end: string, type?: string) => {
+      const rows = type
         ? await db.features
-            .where('[nodeId+kind+mortonKey]')
-            .between([nodeId, kind, start], [nodeId, kind, end], true, true)
+            .where('[nodeId+type+mortonKey]')
+            .between([nodeId, type, start], [nodeId, type, end], true, true)
             .toArray()
         : await db.features
             .where('[nodeId+mortonKey]')
@@ -195,7 +195,7 @@ export class LocationQueryService implements LocationQueryAPI {
             .toArray();
       for (const row of rows) {
         const data = row.data as
-          | { latitude?: number; longitude?: number; kind?: string }
+          | { latitude?: number; longitude?: number; type?: string }
           | undefined;
         const longitude = data?.longitude;
         const latitude = data?.latitude;
@@ -207,9 +207,9 @@ export class LocationQueryService implements LocationQueryAPI {
         ) {
           continue;
         }
-        if (kinds && kinds.length > 0) {
-          const kind = data?.kind;
-          if (!kind || !kinds.includes(String(kind))) continue;
+        if (types && types.length > 0) {
+          const type = data?.type;
+          if (!type || !types.includes(String(type))) continue;
         }
         if (!isWithinBbox(longitude, latitude, targetBbox)) continue;
         results.set(row.id, toGroupItem(row));
@@ -220,9 +220,9 @@ export class LocationQueryService implements LocationQueryAPI {
     for (let x = minX; x <= maxX; x += 1) {
       for (let y = minY; y <= maxY; y += 1) {
         const range = mortonRangeForTile(x, y, z);
-        if (kinds && kinds.length > 0) {
-          for (const kind of kinds) {
-            await collectRange(range.start, range.end, kind);
+        if (types && types.length > 0) {
+          for (const type of types) {
+            await collectRange(range.start, range.end, type);
             if (maxPoints > 0 && results.size >= maxPoints) return Array.from(results.values());
           }
         } else {
@@ -275,7 +275,7 @@ export class LocationQueryService implements LocationQueryAPI {
         const point: LocationNearestPoint = {
           id: item.id,
           name: (item.data as { name?: string } | undefined)?.name,
-          kind: (item.data as { kind?: string } | undefined)?.kind,
+          type: (item.data as { type?: string } | undefined)?.type,
           region: (item.data as { admin1?: string } | undefined)?.admin1,
           countryName: (item.data as { countryName?: string } | undefined)?.countryName,
           longitude,

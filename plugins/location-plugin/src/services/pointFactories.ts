@@ -12,7 +12,7 @@ import { sanitizeTags } from './download/mappers.js';
 interface BasePointParams {
   pointId: LocationPointId;
   name: string;
-  kind: LocationPointKind;
+  type: LocationPointKind;
   latitude: number;
   longitude: number;
   countryCode: CountryCode;
@@ -48,7 +48,7 @@ export const createLocationPointProperties = (params: BasePointParams): Location
   name: params.name,
   latitude: params.latitude,
   longitude: params.longitude,
-  kind: params.kind,
+  type: params.type,
   countryCode: params.countryCode,
   countryName: params.countryName,
   admin1: params.admin1,
@@ -60,7 +60,7 @@ const toPointId = (): LocationPointId => generateId() as LocationPointId;
 
 export const buildOsmPointProperties = (
   raw: RawNominatimResult,
-  kind: LocationPointKind,
+  type: LocationPointKind,
   latitude: number,
   longitude: number,
   timestamp: Timestamp,
@@ -85,7 +85,7 @@ export const buildOsmPointProperties = (
   return createLocationPointProperties({
     pointId: toPointId(),
     name: raw.display_name ?? 'Unknown',
-    kind,
+    type,
     latitude,
     longitude,
     countryCode,
@@ -98,7 +98,7 @@ export const buildOsmPointProperties = (
 
 export const buildOverpassPointProperties = (
   raw: RawOverpassElement,
-  kind: LocationPointKind,
+  type: LocationPointKind,
   latitude: number,
   longitude: number,
   timestamp: Timestamp,
@@ -118,7 +118,7 @@ export const buildOverpassPointProperties = (
   return createLocationPointProperties({
     pointId: toPointId(),
     name: raw.tags?.name ?? 'Unknown',
-    kind,
+    type,
     latitude,
     longitude,
     countryCode,
@@ -130,7 +130,7 @@ export const buildOverpassPointProperties = (
 
 export const buildGeoNamesPointProperties = (
   raw: { geonameId: number; name: string; countryCode?: string; adminCode1?: string; adminCode2?: string; lat: number; lng: number; featureClass?: string; featureCode?: string; population?: number; elevation?: number; timezone?: string; alternateNames?: string[]; },
-  kind: LocationPointKind,
+  type: LocationPointKind,
   timestamp: Timestamp,
 ): LocationPointProperties => {
   const metadata = toMetadata({
@@ -149,7 +149,7 @@ export const buildGeoNamesPointProperties = (
   return createLocationPointProperties({
     pointId: toPointId(),
     name: raw.name,
-    kind,
+    type,
     latitude: raw.lat,
     longitude: raw.lng,
     countryCode: raw.countryCode ?? '',
@@ -161,7 +161,7 @@ export const buildGeoNamesPointProperties = (
 
 export const buildWikidataPointProperties = (
   raw: { entityId: string; label: string; coordinates: { lat: number; lon: number }; countryCode?: string; admin1?: string; admin2?: string; descriptions?: Record<string, string>; wikipediaTitle?: string; instanceOf?: string[]; properties?: Record<string, unknown>; },
-  kind: LocationPointKind,
+  type: LocationPointKind,
   timestamp: Timestamp,
 ): LocationPointProperties => {
   const metadata = toMetadata({
@@ -177,7 +177,7 @@ export const buildWikidataPointProperties = (
   return createLocationPointProperties({
     pointId: toPointId(),
     name: raw.label,
-    kind,
+    type,
     latitude: raw.coordinates.lat,
     longitude: raw.coordinates.lon,
     countryCode: raw.countryCode ?? '',
@@ -189,7 +189,7 @@ export const buildWikidataPointProperties = (
 
 export const buildCustomPointProperties = (
   raw: { id: string; name: string; latitude: number; longitude: number; countryCode?: string; admin1?: string; admin2?: string; attributes?: Record<string, unknown>; },
-  kind: LocationPointKind,
+  type: LocationPointKind,
   timestamp: Timestamp,
 ): LocationPointProperties => {
   const metadata = toMetadata({
@@ -201,7 +201,7 @@ export const buildCustomPointProperties = (
   return createLocationPointProperties({
     pointId: toPointId(),
     name: raw.name,
-    kind,
+    type,
     latitude: raw.latitude,
     longitude: raw.longitude,
     countryCode: raw.countryCode ?? '',
@@ -258,7 +258,7 @@ export const buildOurAirportsPointProperties = (
   return createLocationPointProperties({
     pointId: toPointId(),
     name: raw.name,
-    kind: 'airport',
+    type: 'airport',
     latitude: raw.latitude,
     longitude: raw.longitude,
     countryCode: raw.isoCountry?.toUpperCase() ?? '',
@@ -307,7 +307,7 @@ export const buildOpenFlightsPointProperties = (
   return createLocationPointProperties({
     pointId: toPointId(),
     name: raw.name,
-    kind: 'airport',
+    type: 'airport',
     latitude: raw.latitude,
     longitude: raw.longitude,
     countryCode: '',
@@ -348,7 +348,7 @@ export const buildWorldPortIndexPointProperties = (
   return createLocationPointProperties({
     pointId: toPointId(),
     name: raw.name,
-    kind: 'port',
+    type: 'port',
     latitude: raw.latitude,
     longitude: raw.longitude,
     countryCode: raw.countryCode?.toUpperCase() ?? '',

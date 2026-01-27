@@ -124,7 +124,7 @@ export class LocationMutationService implements LocationMutationAPI {
         id: point.pointId,
         properties: {
           name: point.name,
-          kind: point.kind,
+          type: point.type,
           countryCode: point.countryCode,
           countryName: point.countryName,
           admin1: point.admin1,

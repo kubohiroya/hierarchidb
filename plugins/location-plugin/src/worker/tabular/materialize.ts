@@ -45,7 +45,7 @@ export async function materializeLocationPointsFromTabular(
 
     const featureClass = toStringVal(r.featureClass);
     const featureCode = toStringVal(r.featureCode);
-    const kind = featureCode ?? featureClass ?? 'poi';
+    const type = featureCode ?? featureClass ?? 'poi';
     const countryCode = toStringVal(r.countryCode) ?? '';
     const admin1 = toStringVal(r.admin1) ?? toStringVal(r.adminCode1);
     const admin2 = toStringVal(r.admin2) ?? toStringVal(r.adminCode2);
@@ -57,7 +57,7 @@ export async function materializeLocationPointsFromTabular(
       name,
       latitude: lat,
       longitude: lon,
-      kind,
+      type,
       countryCode,
       countryName,
       admin1,

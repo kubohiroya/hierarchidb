@@ -106,7 +106,7 @@ export async function listLocationPoints(nodeId: NodeId): Promise<PointPropertie
       name: '',
       latitude: 0,
       longitude: 0,
-      kind: 'unknown',
+      type: 'unknown',
       countryCode: '',
       metadata: undefined,
     }),

@@ -462,9 +462,9 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
   const hoverMessage = useMemo(() => {
     const nearest = hoverInfo?.matches[0]?.point;
     if (!nearest) return '';
-    const typeLabel = nearest.kind && typeSettings[nearest.kind as LocationType]?.name
-      ? typeSettings[nearest.kind as LocationType].name
-      : nearest.kind ?? 'unknown';
+    const typeLabel = nearest.type && typeSettings[nearest.type as LocationType]?.name
+      ? typeSettings[nearest.type as LocationType].name
+      : nearest.type ?? 'unknown';
     const countryLabel = nearest.countryName ?? '';
     const regionLabel = nearest.region ?? '';
     const latText = Number.isFinite(nearest.latitude) ? nearest.latitude.toFixed(5) : String(nearest.latitude);

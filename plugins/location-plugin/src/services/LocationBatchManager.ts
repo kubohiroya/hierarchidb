@@ -769,7 +769,7 @@ export class LocationBatchManager {
     const normalizedNames = criteria.countryNames?.map((name) => name.toLowerCase()) ?? [];
 
     return locations.filter(location => {
-      if (criteria.allowedTypes && !criteria.allowedTypes.includes(location.kind as LocationType)) {
+      if (criteria.allowedTypes && !criteria.allowedTypes.includes(location.type as LocationType)) {
         return false;
       }
 
@@ -810,7 +810,7 @@ export class LocationBatchManager {
     if (!hasTypeFilter && !hasCountryFilter) return locations;
 
     return locations.filter((location) => {
-      if (hasTypeFilter && !allowedTypes.includes(location.kind as LocationType)) {
+      if (hasTypeFilter && !allowedTypes.includes(location.type as LocationType)) {
         return false;
       }
       if (!hasCountryFilter) return true;

@@ -16,7 +16,7 @@ describe('csvSources', () => {
     ].join('\n');
     const points = parseOurAirportsCsv(csv, timestamp);
     expect(points).toHaveLength(1);
-    expect(points[0].kind).toBe('airport');
+    expect(points[0].type).toBe('airport');
     expect(points[0].countryCode).toBe('JP');
     expect(points[0].name).toBe('Alpha Airport');
     expect(points[0].metadata?.ourAirportsId).toBe('1');
@@ -31,7 +31,7 @@ describe('csvSources', () => {
     ].join('\n');
     const points = parseOpenFlightsCsv(csv, timestamp);
     expect(points).toHaveLength(1);
-    expect(points[0].kind).toBe('airport');
+    expect(points[0].type).toBe('airport');
     expect(points[0].name).toBe('Alpha Airport');
     expect(points[0].metadata?.openFlightsId).toBe('1');
     expect(points[0].metadata?.iataCode).toBe('AAA');
@@ -45,7 +45,7 @@ describe('csvSources', () => {
     ].join('\n');
     const points = parseWorldPortIndexCsv(csv, timestamp);
     expect(points).toHaveLength(1);
-    expect(points[0].kind).toBe('port');
+    expect(points[0].type).toBe('port');
     expect(points[0].countryCode).toBe('');
     expect(points[0].countryName).toBe('Japan');
     expect(points[0].metadata?.worldPortIndexId).toBe('123');

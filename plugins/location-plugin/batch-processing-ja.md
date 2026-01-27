@@ -12,7 +12,7 @@ LocationDialog における Start Batch は以下の段階で構成する。
   - `pid`（点 ID）
   - `name`
   - `latitude` / `longitude`
-  - `kind`（点の種類: POI / 拠点 / etc.）
+  - `type`（点の種類: POI / 拠点 / etc.）
   - `countryCode`（国コード）, `admin1`（行政レベル 1）, `admin2`（行政レベル 2）
   - `metadata`（種別ごとの拡張情報。`Record<string, string | number | null>` として保持）
 - 変換時に必須フィールドが欠落しているレコードは検出し、ログ・リトライ・スキップなどを一元管理する。
@@ -33,7 +33,7 @@ type LocationPoint = GroupEntity<string> & {
   latitude: number;
   longitude: number;
   /** 点の種類（例: poi / facility / station など） */
-  kind: string;
+  type: string;
   /** 行政区分。countryCode: 国, admin1: 都道府県相当, admin2: 市区町村相当 */
   countryCode: string;
   admin1?: string;

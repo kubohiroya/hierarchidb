@@ -108,7 +108,7 @@ const METADATA_COLUMNS_ORDER = [
   'id',
   'pointId',
   'name',
-  'kind',
+  'type',
   'latitude',
   'longitude',
   'countryCode',
@@ -133,7 +133,7 @@ const buildMetadataRows = (items: LocationGroupItem[]): Array<Record<string, unk
       id: item.id,
       pointId: data?.pointId,
       name: data?.name,
-      kind: data?.kind,
+      type: data?.type,
       latitude: data?.latitude,
       longitude: data?.longitude,
       countryCode: data?.countryCode,
@@ -233,9 +233,9 @@ const buildTypeMatchExpression = (
   entries: Array<[LocationType, unknown]>,
   fallback: unknown,
 ): Array<string | unknown> => {
-  const expression: Array<string | unknown> = ['match', ['get', 'kind']];
-  entries.forEach(([kind, value]) => {
-    expression.push(kind, value);
+  const expression: Array<string | unknown> = ['match', ['get', 'type']];
+  entries.forEach(([type, value]) => {
+    expression.push(type, value);
   });
   expression.push(fallback);
   return expression;
@@ -273,8 +273,8 @@ const buildZoomScaledMatchExpression = (
   };
   const expression: Array<string | unknown> = ['interpolate', ['linear'], ['zoom']];
   sortedStops.forEach((zoom) => {
-    const matchEntries: Array<[LocationType, number]> = entries.map(([kind, config]) => [
-      kind,
+    const matchEntries: Array<[LocationType, number]> = entries.map(([type, config]) => [
+      type,
       sizeAtZoom(config, zoom),
     ]);
     expression.push(zoom, buildTypeMatchExpression(matchEntries, fallback));
@@ -307,8 +307,8 @@ const buildThresholdedZoomMatchExpression = (
   };
   const expression: Array<string | unknown> = ['interpolate', ['linear'], ['zoom']];
   sortedStops.forEach((zoom) => {
-    const matchEntries: Array<[LocationType, number]> = entries.map(([kind, config]) => [
-      kind,
+    const matchEntries: Array<[LocationType, number]> = entries.map(([type, config]) => [
+      type,
       sizeAtZoom(config, zoom),
     ]);
     expression.push(zoom, buildTypeMatchExpression(matchEntries, fallback));
@@ -322,9 +322,9 @@ const toIconScaleRange = (sizeRange: [number, number]): [number, number] => [
 ];
 
 
-const resolveLocationType = (kind: string): LocationType => (
-  (KNOWN_LOCATION_TYPES as readonly string[]).includes(kind)
-    ? kind as LocationType
+const resolveLocationType = (value: string): LocationType => (
+  (KNOWN_LOCATION_TYPES as readonly string[]).includes(value)
+    ? value as LocationType
     : 'area_centroid'
 );
 
@@ -362,7 +362,7 @@ type PreviewPoint = {
   name?: string;
   longitude: number;
   latitude: number;
-  kind: LocationType;
+  type: LocationType;
   tileId?: string;
 };
 
@@ -571,7 +571,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
             name,
             longitude,
             latitude,
-            kind: resolveLocationType(String(data.kind ?? 'area_centroid')),
+            type: resolveLocationType(String(data.type ?? 'area_centroid')),
             tileId,
             [tileIdField]: tileId,
           } as PreviewPoint & Record<string, unknown>;
@@ -607,7 +607,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
   }, [scheduleViewportQuery]);
   const knownLocationTypes = useMemo(() => LOCATION_TYPE_OPTIONS.map((option) => option.id), []);
   const locationFilter = useMemo(
-    () => buildCategoryFilter(enabledLocationTypes, knownLocationTypes, ['kind', 'type']),
+    () => buildCategoryFilter(enabledLocationTypes, knownLocationTypes, ['type']),
     [enabledLocationTypes, knownLocationTypes],
   );
   const iconAssets = useMemo(() => {
@@ -776,7 +776,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
               coordinates: [point.longitude, point.latitude],
             },
             properties: {
-              kind: resolveLocationType(point.kind),
+              type: resolveLocationType(point.type),
               name: point.name ?? '',
             },
           })),
@@ -804,7 +804,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
               coordinates: [point.longitude, point.latitude],
             },
             properties: {
-              kind: resolveLocationType(point.kind),
+              type: resolveLocationType(point.type),
               name: point.name ?? '',
             },
           })),
@@ -832,7 +832,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
             coordinates: [point.longitude, point.latitude],
           },
           properties: {
-            kind: resolveLocationType(point.kind),
+            type: resolveLocationType(point.type),
             name: point.name ?? '',
           },
         })),
@@ -963,7 +963,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
               aria-label="Show terrain types"
               onClick={terrainWindow.handlers.show}
             >
-              <LayersIcon />
+              <LocationCity />
             </Button>
           </Box>
         )}

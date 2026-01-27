@@ -38,7 +38,7 @@ export interface LocationNearestPointQuery {
 export interface LocationNearestPoint {
   id?: string;
   name?: string;
-  kind?: string;
+  type?: string;
   region?: string;
   countryName?: string;
   longitude: number;
@@ -70,9 +70,9 @@ export interface LocationQueryAPI {
     nodeId: NodeId,
     bbox: LocationViewportBbox,
     zoom: number,
-    kinds?: string[],
+    types?: string[],
     options?: LocationViewportQueryOptions,
   ): Promise<LocationGroupItem[]>;
-  queryByMortonPrefixes(nodeId: NodeId, prefixes: string[], kinds?: string[]): Promise<LocationGroupItem[]>;
+  queryByMortonPrefixes(nodeId: NodeId, prefixes: string[], types?: string[]): Promise<LocationGroupItem[]>;
   findNearestLocationPoint(query: LocationNearestPointQuery): Promise<LocationNearestPointResponse>;
 }

@@ -295,7 +295,7 @@ export default function MapPage() {
     [locationTypeSelection]
   );
   const locationTypeFilter = useMemo(
-    () => buildCategoryFilter(enabledLocationKinds, locationKinds, ['kind', 'type']),
+    () => buildCategoryFilter(enabledLocationKinds, locationKinds, ['type']),
     [enabledLocationKinds, locationKinds]
   );
   const routeModeValues = useMemo(
@@ -554,9 +554,9 @@ export default function MapPage() {
   }, [highlightColors, styleOverridesByType]);
 
   const locationBaseColorExpression = useMemo(() => {
-    const expression: Array<string | unknown> = ['match', ['get', 'kind']];
-    Object.entries(LOCATION_TYPE_COLORS).forEach(([kind, color]) => {
-      expression.push(kind, color);
+    const expression: Array<string | unknown> = ['match', ['get', 'type']];
+    Object.entries(LOCATION_TYPE_COLORS).forEach(([type, color]) => {
+      expression.push(type, color);
     });
     expression.push(LOCATION_TYPE_COLORS.area_centroid);
     return expression;
@@ -611,9 +611,9 @@ export default function MapPage() {
   }, [highlightColors, locationBaseColorExpression, locationCircleRadiusExpression]);
 
   const locationIconImageExpression = useMemo(() => {
-    const expression: Array<string | unknown> = ['match', ['get', 'kind']];
-    (Object.keys(LOCATION_TYPE_COLORS) as LocationType[]).forEach((kind) => {
-      expression.push(kind, `location-icon-${kind}`);
+    const expression: Array<string | unknown> = ['match', ['get', 'type']];
+    (Object.keys(LOCATION_TYPE_COLORS) as LocationType[]).forEach((type) => {
+      expression.push(type, `location-icon-${type}`);
     });
     expression.push(`location-icon-area_centroid`);
     return expression;
@@ -641,17 +641,17 @@ export default function MapPage() {
     if (!mapWithImages.addImage) return;
     const missing = (
       Object.entries(LOCATION_ICON_COMPONENTS) as Array<[LocationType, SvgIconComponent]>
-    ).filter(([kind]) => !mapWithImages.hasImage?.(`location-icon-${kind}`));
+    ).filter(([type]) => !mapWithImages.hasImage?.(`location-icon-${type}`));
     if (missing.length === 0) {
       setLocationIconsReady(true);
       return;
     }
     setLocationIconsReady(false);
     const loaders = missing.map(
-      ([kind, Icon]) =>
+      ([type, Icon]) =>
         new Promise<void>((resolve) => {
-          const iconId = `location-icon-${kind}`;
-          const svg = renderToStaticMarkup(<Icon htmlColor={LOCATION_TYPE_COLORS[kind]} />);
+          const iconId = `location-icon-${type}`;
+          const svg = renderToStaticMarkup(<Icon htmlColor={LOCATION_TYPE_COLORS[type]} />);
           const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
           const image = new Image();
           image.onload = () => {
@@ -773,7 +773,7 @@ export default function MapPage() {
                     name?: string;
                     longitude?: number;
                     latitude?: number;
-                    kind?: string;
+                    type?: string;
                     countryName?: string;
                     countryCode?: string;
                     admin1?: string;
@@ -804,7 +804,7 @@ export default function MapPage() {
                   id: String(item.id),
                   pointId: data?.pointId ?? item.id,
                   name: data?.name,
-                  kind: data?.kind ?? 'area_centroid',
+                  type: data?.type ?? 'area_centroid',
                   countryName: data?.countryName,
                   countryCode: data?.countryCode,
                   admin1: data?.admin1,

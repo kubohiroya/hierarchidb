@@ -4,7 +4,7 @@ import type { LocationPointProperties } from '../../../common/entities/LocationP
 import type { LocationBatchConfig } from '../../../common/entities/LocationEntity.js';
 
 const { strategySearch } = vi.hoisted(() => ({
-  strategySearch: vi.fn<[], Promise<LocationPointProperties[]>>(),
+  strategySearch: vi.fn(),
 }));
 
 vi.mock('../../download/strategyRegistry.js', () => ({
@@ -52,7 +52,7 @@ describe('LocationBatchManager country normalization', () => {
         name: 'Alpha',
         latitude: 35.0,
         longitude: 140.0,
-        kind: 'airport',
+        type: 'airport',
         countryCode: 'USA',
         countryName: 'United States',
       },
@@ -62,7 +62,7 @@ describe('LocationBatchManager country normalization', () => {
         name: 'Bravo',
         latitude: 36.0,
         longitude: 139.0,
-        kind: 'port',
+        type: 'port',
         countryCode: '',
         countryName: 'Japan',
       },
@@ -72,7 +72,7 @@ describe('LocationBatchManager country normalization', () => {
         name: 'Charlie',
         latitude: 34.0,
         longitude: 138.0,
-        kind: 'airport',
+        type: 'airport',
         countryCode: 'US',
         countryName: 'United States',
       },
@@ -82,7 +82,7 @@ describe('LocationBatchManager country normalization', () => {
         name: 'Delta',
         latitude: 33.0,
         longitude: 137.0,
-        kind: 'airport',
+        type: 'airport',
         countryCode: '',
         countryName: 'Unknownland',
       },

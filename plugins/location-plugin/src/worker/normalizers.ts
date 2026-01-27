@@ -104,7 +104,7 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
       name: typeof value.name === 'string' ? value.name : '',
       latitude: typeof value.latitude === 'number' ? value.latitude : 0,
       longitude: typeof value.longitude === 'number' ? value.longitude : 0,
-      kind: typeof value.kind === 'string' ? value.kind : 'unknown',
+      type: typeof value.type === 'string' ? value.type : 'unknown',
       countryCode: typeof legacy.gid0 === 'string' ? legacy.gid0 : '',
       admin1: typeof legacy.gid1 === 'string' ? legacy.gid1 : undefined,
       admin2: typeof legacy.gid2 === 'string' ? legacy.gid2 : undefined,
@@ -119,7 +119,7 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
       name: '',
       latitude: 0,
       longitude: 0,
-      kind: 'unknown',
+      type: 'unknown',
       countryCode: '',
       admin1: undefined,
       admin2: undefined,
@@ -135,7 +135,7 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
   const name = typeof value.name === 'string' ? value.name : '';
   const latitude = typeof value.latitude === 'number' ? value.latitude : 0;
   const longitude = typeof value.longitude === 'number' ? value.longitude : 0;
-  const kind = typeof value.kind === 'string' ? value.kind : 'unknown';
+  const type = typeof value.type === 'string' ? value.type : 'unknown';
   const countryCode = typeof (value as Record<string, unknown>).countryCode === 'string'
     ? (value as Record<string, unknown>).countryCode as string
     : typeof (value as Record<string, unknown>).gid0 === 'string'
@@ -161,7 +161,7 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
     name,
     latitude,
     longitude,
-    kind,
+    type,
     countryCode,
     countryName,
     admin1,
@@ -177,7 +177,7 @@ export const toGroupRow = (
 ): LocationFeatureRow => ({
   nodeId,
   id: String(item.id),
-  kind: item.data && typeof item.data.kind === 'string' ? item.data.kind : undefined,
+  type: item.data && typeof item.data.type === 'string' ? item.data.type : undefined,
   mortonKey: item.data && Number.isFinite(item.data.longitude) && Number.isFinite(item.data.latitude)
     ? mortonKeyFromLonLat(item.data.longitude, item.data.latitude)
     : undefined,
