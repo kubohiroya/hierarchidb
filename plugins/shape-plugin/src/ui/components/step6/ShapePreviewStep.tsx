@@ -1,9 +1,9 @@
 import React from 'react';
 import { Box, Alert, Button, CircularProgress } from '@mui/material';
-import { TableRows as TableRowsIcon, Layers as LayersIcon, QueryStats as QueryStatsIcon } from '@mui/icons-material';
+import { Hexagon as HexagonIcon, Layers as LayersIcon, QueryStats as QueryStatsIcon } from '@mui/icons-material';
 import type { MapViewState } from '@hierarchidb/ui-map';
 import { LayerSetVisibilityPanel, ResourceLayerMap, ScreenCenterSnackbar, ShapePreviewList } from '@hierarchidb/ui-map';
-import { FloatingWindow } from '@hierarchidb/ui-floating-window';
+import { FloatingWindow, useFloatingWindow } from '@hierarchidb/ui-floating-window';
 import { useShapePreviewStepView } from './useShapePreviewStepView.js';
 import type { ShapeEntity, ShapePreviewMapView } from '../../../common/types/index.js';
 
@@ -79,17 +79,11 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
     lastPersistedViewRef.current = data.previewMapView ?? null;
   }, [data.previewMapView, data.previewMapView?.latitude, data.previewMapView?.longitude, data.previewMapView?.zoom]);
 
-  const layerSetsWindowState = React.useMemo(
-    () => ({
-      position: { x: 320, y: 96 },
-      size: { width: 260, height: 420 },
-      isMinimized: false,
-      isFullscreen: false,
-      isVisible: true,
-      zIndex: 1200,
-    }),
-    [],
-  );
+  const layerSetsWindow = useFloatingWindow({
+    persistKey: 'hierarchidb:ui:floating-window:shape:layer-sets',
+    initialPosition: { x: 320, y: 96 },
+    initialSize: { width: 260, height: 420 },
+  });
 
   const handleViewStateCommit = React.useCallback(
     (viewState: MapViewState) => {
@@ -113,21 +107,37 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
         position="relative"
         sx={{ overscrollBehavior: 'contain', p: 0 }}
       >
-        <FloatingWindow
-          title={t('preview.layerSets.title', 'Layer Sets')}
-          titleIcon={<LayersIcon sx={{ fontSize: '1rem', ml: 1 }} />}
-          initialState={layerSetsWindowState}
-          resizable
-          minWidth={220}
-          minHeight={180}
-        >
-          <LayerSetVisibilityPanel
-            layerSets={availableLayerSets}
-            visibility={layerSetVisibility}
-            onToggle={toggleLayerSetVisibility}
-            items={layerSetItems}
-          />
-        </FloatingWindow>
+        {layerSetsWindow.windowState.isVisible ? (
+          <FloatingWindow
+            title={t('preview.layerSets.title', 'Layer Sets')}
+            titleIcon={<LayersIcon sx={{ fontSize: '1rem', ml: 1 }} />}
+            initialState={layerSetsWindow.windowState}
+            onStateChange={layerSetsWindow.handlers.onStateChange}
+            onClose={layerSetsWindow.handlers.onClose}
+            resizable
+            minWidth={220}
+            minHeight={180}
+          >
+            <LayerSetVisibilityPanel
+              layerSets={availableLayerSets}
+              visibility={layerSetVisibility}
+              onToggle={toggleLayerSetVisibility}
+              items={layerSetItems}
+            />
+          </FloatingWindow>
+        ) : (
+          <Box position="absolute" top={8} right={8} zIndex={3}>
+            <Button
+              variant="contained"
+              color="primary"
+              size="large"
+              aria-label={t('preview.layerSets.reopen', 'Show layer sets')}
+              onClick={layerSetsWindow.handlers.show}
+            >
+              <LayersIcon />
+            </Button>
+          </Box>
+        )}
         <ResourceLayerMap
           initialViewState={defaultView}
           width="100%"
@@ -153,6 +163,9 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
                 zIndex: 1200,
               },
               resizable: true,
+              showToggleButton: true,
+              toggleButtonIcon: <QueryStatsIcon fontSize="small" />,
+              toggleButtonPosition: { top: 56, right: 8 },
             },
           }}
           showTileBoundaries
@@ -208,7 +221,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
               aria-label={t('preview.metadata.reopenList', 'Show list')}
               onClick={() => setFeatureWindowOpen(true)}
             >
-              <TableRowsIcon />
+              <HexagonIcon />
             </Button>
           </Box>
         )}
@@ -221,7 +234,8 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
     if (!featureWindowOpen) return null;
     return (
       <ShapePreviewList
-        title={t('preview.tabs.features', 'Features')}
+        title={t('preview.tabs.shape', 'Shape')}
+        onClose={() => setFeatureWindowOpen(false)}
         rows={featureListRows}
         columnLabels={{
           featureId: t('preview.metadata.columns.featureId', 'Feature ID'),
@@ -275,7 +289,6 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
           failed: t('build.taskStatus.failed', 'Failed'),
           completed: t('build.taskStatus.completed', 'Completed'),
         }}
-        onClose={() => setFeatureWindowOpen(false)}
         onToggleRecycling={toggleRecyclingForSelection}
       />
     );
