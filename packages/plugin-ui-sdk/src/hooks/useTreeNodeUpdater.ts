@@ -62,6 +62,34 @@ export type PluginDialogData<TPayload extends TreeNodeData = TreeNodeData> = TPa
 
 const DEFAULT_DIALOG_UI_STATE: DialogUIState = {};
 
+const normalizeComparableValue = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    return value.map((entry) => normalizeComparableValue(entry));
+  }
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    const next: Record<string, unknown> = {};
+    Object.keys(record)
+      .sort()
+      .forEach((key) => {
+        next[key] = normalizeComparableValue(record[key]);
+      });
+    return next;
+  }
+  return value;
+};
+
+const stableStringify = (value: unknown): string => {
+  try {
+    return JSON.stringify(value);
+  } catch (error) {
+    if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+      console.warn('[useTreeNodeUpdater] stableStringify failed', error);
+    }
+    return String(value);
+  }
+};
+
 export const createTreeNodeUpdaterActions = <TPayload extends TreeNodeData = TreeNodeData>(
   updateDraft: (data: Partial<TreeNodeUpdaterState<TPayload>>) => void
 ) => {
@@ -227,8 +255,8 @@ export function useTreeNodeUpdater<TPayload extends Record<string, unknown> = Re
     (state: TreeNodeUpdaterState<TPayload> | null) => {
       if (!state) return { draftMetadata: null, draftData: null };
       return {
-        draftMetadata: state.draftMetadata ?? null,
-        draftData: state.draftData ?? null,
+        draftMetadata: normalizeComparableValue(state.draftMetadata ?? null),
+        draftData: normalizeComparableValue(state.draftData ?? null),
       };
     },
     []
@@ -238,7 +266,7 @@ export function useTreeNodeUpdater<TPayload extends Record<string, unknown> = Re
     if (!draft || !originalCopy) return false;
     const current = buildComparableDraft(draft);
     const initial = buildComparableDraft(originalCopy);
-    return JSON.stringify(current) !== JSON.stringify(initial);
+    return stableStringify(current) !== stableStringify(initial);
   }, [buildComparableDraft, draft, originalCopy]);
 
   useEffect(() => {
