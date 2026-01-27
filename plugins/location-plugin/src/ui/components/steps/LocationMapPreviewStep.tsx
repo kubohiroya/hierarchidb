@@ -317,7 +317,8 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
   const [metadataWindowOpen, setMetadataWindowOpen] = useState(true);
   const mapRef = useRef<MapLibreMapInstance | null>(null);
   const styleImageMissingHandlerRef = useRef<((event: { id: string }) => void) | null>(null);
-  const styleDataHandlerRef = useRef<(() => void) | null>(null);
+  const styleLoadHandlerRef = useRef<(() => void) | null>(null);
+  const iconReloadingRef = useRef(false);
   const queryTimerRef = useRef<number | null>(null);
   const queryRequestRef = useRef(0);
   const [locationTypeSelection, setLocationTypeSelection] = useState<MapToggleSelection>(() =>
@@ -577,9 +578,9 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     if (handler) {
       mapWithEvents.off?.('styleimagemissing', handler);
     }
-    const styleDataHandler = styleDataHandlerRef.current;
-    if (styleDataHandler) {
-      mapWithEvents.off?.('styledata', styleDataHandler);
+    const styleLoadHandler = styleLoadHandlerRef.current;
+    if (styleLoadHandler) {
+      mapWithEvents.off?.('style.load', styleLoadHandler);
     }
   }, []);
 
@@ -766,6 +767,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     const mapWithEvents = map as MapLibreMapInstance & {
       on?: (type: string, listener: (event: { id: string }) => void) => void;
       off?: (type: string, listener: (event: { id: string }) => void) => void;
+      hasImage?: (id: string) => boolean;
     };
     if (!styleImageMissingHandlerRef.current) {
       styleImageMissingHandlerRef.current = (event: { id: string }) => {
@@ -779,20 +781,30 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       mapWithEvents.off?.('styleimagemissing', handler);
       mapWithEvents.on?.('styleimagemissing', handler);
     }
-    if (!styleDataHandlerRef.current) {
-      styleDataHandlerRef.current = () => {
-        if (!mapRef.current) return;
+    if (!styleLoadHandlerRef.current) {
+      styleLoadHandlerRef.current = () => {
+        const currentMap = mapRef.current;
+        if (!currentMap) return;
+        if (iconReloadingRef.current) return;
+        const mapWithImages = currentMap as MapLibreMapInstance & {
+          hasImage?: (id: string) => boolean;
+        };
+        const hasAllIcons = iconAssets.every((asset) => mapWithImages.hasImage?.(asset.imageId));
+        if (hasAllIcons) return;
+        iconReloadingRef.current = true;
         setIconsReady(false);
-        loadMapIcons(mapRef.current);
+        void Promise.resolve(loadMapIcons(currentMap)).finally(() => {
+          iconReloadingRef.current = false;
+        });
       };
     }
-    const styleDataHandler = styleDataHandlerRef.current;
-    if (styleDataHandler) {
-      mapWithEvents.off?.('styledata', styleDataHandler);
-      mapWithEvents.on?.('styledata', styleDataHandler);
+    const styleLoadHandler = styleLoadHandlerRef.current;
+    if (styleLoadHandler) {
+      mapWithEvents.off?.('style.load', styleLoadHandler);
+      mapWithEvents.on?.('style.load', styleLoadHandler);
     }
     scheduleViewportQuery();
-  }, [iconAssetsById, loadIconImage, loadMapIcons, scheduleViewportQuery]);
+  }, [iconAssets, iconAssetsById, loadIconImage, loadMapIcons, scheduleViewportQuery]);
   const handleMapMoveEnd = useCallback((viewState: MapViewState) => {
     scheduleViewportQuery(viewState);
   }, [scheduleViewportQuery]);
