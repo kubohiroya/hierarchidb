@@ -9,7 +9,7 @@ import {
   Typography,
 } from '@mui/material';
 import type React from 'react';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { FileInputWithUrl } from '@hierarchidb/ui-file';
 
 export type IdeGsmImportLabels = {
@@ -45,10 +45,16 @@ export const IdeGsmImportPanel: React.FC<IdeGsmImportPanelProps> = ({
 }) => {
   const [localDialogOpen, setLocalDialogOpen] = useState(false);
   const [remoteDialogOpen, setRemoteDialogOpen] = useState(false);
-  const blobUrlRef = useRef<string | null>(null);
-
   const hasFile = Boolean(fileName || sourceUrl);
   const displayLabel = fileName ?? sourceUrl ?? labels.fileFallback;
+
+  const readFileAsDataUrl = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result ?? ''));
+      reader.onerror = () => reject(reader.error ?? new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
 
   const closeDialogs = () => {
     setLocalDialogOpen(false);
@@ -56,24 +62,13 @@ export const IdeGsmImportPanel: React.FC<IdeGsmImportPanelProps> = ({
   };
 
   const handleFileSelect = async (file: File, downloadUrl?: string) => {
-    if (blobUrlRef.current && blobUrlRef.current.startsWith('blob:')) {
-      URL.revokeObjectURL(blobUrlRef.current);
-      blobUrlRef.current = null;
-    }
-    const nextUrl = downloadUrl ?? URL.createObjectURL(file);
-    if (!downloadUrl) {
-      blobUrlRef.current = nextUrl;
-    }
+    const nextUrl = downloadUrl ?? (await readFileAsDataUrl(file));
     onChange({ fileName: file.name, sourceUrl: nextUrl });
     closeDialogs();
   };
 
   const handleClear = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    if (blobUrlRef.current && blobUrlRef.current.startsWith('blob:')) {
-      URL.revokeObjectURL(blobUrlRef.current);
-      blobUrlRef.current = null;
-    }
     onClear();
   };
 
