@@ -4,7 +4,6 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-types';
-import { getLocationDB } from '@hierarchidb/location-store';
 import type {
   ShapeFeatureMetadata,
   ShapeFeatureRecord,
@@ -369,11 +368,10 @@ const useLocationTableData = (
     const load = async () => {
       setState((prev) => ({ ...prev, loading: true, error: undefined }));
       try {
-        const db = getLocationDB();
-        const sessions = await db.sessions.where('nodeId').equals(nodeId).toArray();
-        const latest = sessions.sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))[0];
-        const tableId = latest?.tableId;
-        if (!tableId) {
+        const tableId = String(nodeId);
+        const manager = new TabularDatabaseManager(getDBName('location-metadata'));
+        const metadata = await manager.get(tableId);
+        if (!metadata) {
           if (!cancelled) {
             setState((prev) => ({
               ...prev,
@@ -385,8 +383,6 @@ const useLocationTableData = (
           }
           return;
         }
-        const manager = new TabularDatabaseManager(getDBName('location-metadata'));
-        const metadata = await manager.get(tableId);
         const columnNames = extractColumnNames(metadata?.columns);
         const svc = new TabularQueryService('location');
         const rows = await svc.query(tableId, [], MAX_ROWS + 1);

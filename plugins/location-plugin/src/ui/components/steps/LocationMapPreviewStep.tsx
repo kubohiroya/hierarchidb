@@ -43,6 +43,7 @@ import { LOCATION_TYPE_STYLES } from './locationTypes.js';
 import { resolveLocationAttribution } from '../../../common/datasources/attribution.js';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import type { MapLibreMapInstance } from '@hierarchidb/ui-map';
+import type { LocationGroupItem } from '@hierarchidb/plugin-service-api';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { useIdeGsmImportOnEntry } from '../../hooks/useIdeGsmImportOnEntry.js';
 
@@ -101,6 +102,65 @@ const DEFAULT_ICON_IDS: Record<LocationType, LocationIconId> = {
   port: 'directions_boat',
   railway_station: 'train',
   interchange: 'fork_right',
+};
+
+const METADATA_COLUMNS_ORDER = [
+  'id',
+  'pointId',
+  'name',
+  'kind',
+  'latitude',
+  'longitude',
+  'countryCode',
+  'countryName',
+  'admin1',
+  'admin2',
+  'admin1Code',
+  'admin2Code',
+  'updatedAt',
+  'metadata',
+] as const;
+
+const formatTimestamp = (value?: number): string | undefined => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;
+  return new Date(value).toISOString();
+};
+
+const buildMetadataRows = (items: LocationGroupItem[]): Array<Record<string, unknown>> => (
+  items.map((item) => {
+    const data = item.data;
+    return {
+      id: item.id,
+      pointId: data?.pointId,
+      name: data?.name,
+      kind: data?.kind,
+      latitude: data?.latitude,
+      longitude: data?.longitude,
+      countryCode: data?.countryCode,
+      countryName: data?.countryName,
+      admin1: data?.admin1,
+      admin2: data?.admin2,
+      admin1Code: data?.admin1Code,
+      admin2Code: data?.admin2Code,
+      updatedAt: formatTimestamp(item.updatedAt),
+      metadata: data?.metadata,
+    };
+  })
+);
+
+const buildMetadataColumns = (rows: Array<Record<string, unknown>>): string[] => {
+  const baseColumns = METADATA_COLUMNS_ORDER.filter((col) =>
+    rows.some((row) => row[col] != null && row[col] !== ''),
+  );
+  const extra = new Set<string>();
+  rows.forEach((row) => {
+    Object.keys(row).forEach((key) => {
+      if (METADATA_COLUMNS_ORDER.includes(key as typeof METADATA_COLUMNS_ORDER[number])) return;
+      if (row[key] == null || row[key] === '') return;
+      extra.add(key);
+    });
+  });
+  return [...baseColumns, ...extra];
 };
 
 const clamp = (value: number, min: number, max: number): number =>
@@ -310,9 +370,13 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
   const theme = useTheme();
   useIdeGsmImportOnEntry({ draft: _draft, nodeId, onUpdate });
   const { translations } = useTranslation();
-    const previewNodeId = nodeId ?? 'preview' as NodeId;
-  const metadataTableId = nodeId ? String(nodeId) : undefined;
+  const previewNodeId = nodeId ?? 'preview' as NodeId;
   const [previewPoints, setPreviewPoints] = useState<PreviewPoint[]>([]);
+  const [metadataRows, setMetadataRows] = useState<Array<Record<string, unknown>>>([]);
+  const [metadataColumns, setMetadataColumns] = useState<string[]>([]);
+  const [metadataLoading, setMetadataLoading] = useState(false);
+  const [metadataError, setMetadataError] = useState<string | undefined>();
+  const metadataRequestRef = useRef(0);
   const [iconsReady, setIconsReady] = useState(false);
   const [metadataWindowOpen, setMetadataWindowOpen] = useState(true);
   const mapRef = useRef<MapLibreMapInstance | null>(null);
@@ -350,6 +414,47 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       return acc;
     }, {} as LocationLabelConfig);
   }, [_draft.labelConfig, tilesMaxZoom]);
+
+  useEffect(() => {
+    if (!nodeId) {
+      setMetadataRows([]);
+      setMetadataColumns([]);
+      setMetadataLoading(false);
+      setMetadataError(undefined);
+      return;
+    }
+    let cancelled = false;
+    const requestId = ++metadataRequestRef.current;
+    setMetadataLoading(true);
+    setMetadataError(undefined);
+
+    const run = async () => {
+      try {
+        const bridge = getWorkerBridge();
+        await bridge.initialize();
+        const api = await bridge.getLocationQueryAPI();
+        const items = await api.listLocationGroups(nodeId);
+        if (cancelled || requestId !== metadataRequestRef.current) return;
+        const rows = buildMetadataRows(items);
+        setMetadataRows(rows);
+        setMetadataColumns(buildMetadataColumns(rows));
+        setMetadataLoading(false);
+      } catch (error) {
+        if (cancelled || requestId !== metadataRequestRef.current) return;
+        const message = error instanceof Error ? error.message : String(error);
+        setMetadataRows([]);
+        setMetadataColumns([]);
+        setMetadataLoading(false);
+        setMetadataError(message);
+      }
+    };
+
+    void run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [nodeId]);
 
   const terrainToggleOptions = useMemo(() => (
     LOCATION_TYPE_OPTIONS.map((option) => {
@@ -864,10 +969,13 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
         )}
         {metadataWindowOpen ? (
           <LocationPreviewList
-            title={translations.mapPreview?.tabs?.metadata ?? 'Metadata'}
-            tableId={metadataTableId}
+            title='Location'
+            rows={metadataRows}
+            columns={metadataColumns}
+            loading={metadataLoading}
             loadingText={translations.mapPreview?.metadataLoading ?? 'Loading metadata...'}
             emptyText={translations.mapPreview?.metadataEmpty ?? 'No metadata available yet.'}
+            errorText={metadataError}
             onClose={() => setMetadataWindowOpen(false)}
           />
         ) : (
