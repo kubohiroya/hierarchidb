@@ -385,7 +385,11 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
       id: 'map-preview',
       label: translations.mapPreview?.title ?? 'Map Preview',
       component: ({ data }: { data: LocationDraft }) => (
-        <LocationMapPreviewStep draft={data} />
+        <LocationMapPreviewStep
+          draft={data}
+          nodeId={data.treeNodeId as NodeId}
+          onUpdate={(updates) => handleDraftPatch({ draft: { ...(data.draft ?? {}), ...updates } })}
+        />
       ),
     },
   ]), [translations.basicInfo.title, translations.basicInfo.tagSuggestions, translations.dialog.dataSourceLabel, translations.dialog.dataSourceDescription, translations.selection.title, translations.selection?.filterTitle, translations.selection?.buildLabel, translations.panel.processingSettings, translations.mapPreview?.title, translations.errors.nameRequired, mode, emptyTableMetadata, buildStatus, nodeId]);
