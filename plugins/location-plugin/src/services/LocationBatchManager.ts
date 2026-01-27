@@ -104,8 +104,8 @@ export class LocationBatchManager {
   private locationSessions: Map<NodeId, LocationBatchSession> = new Map();
   private locationTasks: Map<NodeId, LocationBatchTask[]> = new Map();
   private progressCallbacks: Map<NodeId, (event: LocationBatchProgressEvent) => void> = new Map();
-  private countryNameMap: Map<string, string> | null = null;
   private net: FetchNetworkPort | null = null;
+  countryNameMap: Map<string, string> | null = null;
 
   private async persistLocationPoints(
     nodeId: NodeId,

@@ -1,3 +1,136 @@
+2401) investigation/runtime-worker/commit-draft-repeat-log (P1) — 進行中 (2026-01-27)
+- ブランチ名: investigation/runtime-worker/commit-draft-repeat-log
+- 依存: なし
+- 受け入れ基準: [DraftService] commitDraft request ログが繰り返し出る原因と発生条件を特定し記載する／必要なら最小修正で再発を止める（意図的なリトライは維持）／TASKS.md に運用ログ・影響範囲・ロールバック手順を記載する
+- 影響範囲: `packages/runtime-worker/src/services/TreeNodeUpdaterService.ts`, `packages/ui/treeconsole/base/src/**` など（調査後に確定）
+- ロールバック手順: 該当差分を revert して従来の commitDraft 呼び出し・ログ出力に戻す
+- チェックリスト:
+  - 再現条件と呼び出し元を特定する
+  - 連続呼び出しの原因（同値更新/再レンダ/リトライ）を切り分ける
+  - 必要なら抑止ガードを最小差分で追加する
+  - pnpm --filter @hierarchidb/runtime-worker typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-27 08:43 JST commitDraft request ログの連続出力調査に着手。
+  - update: 2026-01-27 12:06 JST useTreeNodeUpdater の unsaved 判定を安定化し、draftData/draftMetadata のキー順差異による autosave 連続を抑止。
+  - update: 2026-01-27 12:06 JST pnpm --filter @hierarchidb/plugin-ui-sdk typecheck exit 0 を確認。
+  - done: 2026-01-27 12:06 JST autosave の連続 commitDraft 呼び出しを抑止する修正を反映。
+
+2400) fix/shape/step6-features-table-body-scroll (P1) — 進行中 (2026-01-26)
+- ブランチ名: fix/shape/step6-features-table-body-scroll
+- 依存: なし
+- 受け入れ基準: shape Step6 preview の Features 一覧表でスクロールはボディのみになりヘッダは固定表示される／ヘッダとボディの列幅・整列が一致する／既存のプレビュー表示が退行しない／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/**`, `packages/ui/map/src/preview/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert して従来のスクロール挙動に戻す
+- チェックリスト:
+  - Features テーブルの構造/スクロール要素を特定する
+  - ヘッダ固定 + ボディスクロール構成へ調整する
+  - ヘッダ/ボディの列幅が一致することを確認する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - update: 2026-01-27 14:52 JST Shape Step6 メタデータウィンドウの再表示制御を修正。
+  - update: 2026-01-27 14:52 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-01-27 14:48 JST Shape Step6 のメタデータ一覧ウィンドウ再表示の不具合を調査。
+  - update: 2026-01-27 12:07 JST Shape Step6 の Features/Layer Sets/Data Tiles Stats の再表示ボタンとアイコン調整を反映。
+  - update: 2026-01-27 12:07 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define warning あり）。
+  - update: 2026-01-27 12:07 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-01-27 12:01 JST Shape Step6 のウィンドウ閉じボタン表示とアイコン修正に着手。
+  - start: 2026-01-27 08:10 JST Step5 メタデータテーブルを GroupEntity から表示する互換レイヤ実装に着手。
+  - start: 2026-01-26 23:58 JST shape Step6 Features テーブルのヘッダ固定/ボディスクロール対応に着手。
+  - update: 2026-01-27 06:37 JST TanstackDataGrid をヘッダ固定/ボディスクロール構成へ変更し、列幅同期を調整。
+  - update: 2026-01-27 06:37 JST pnpm --filter @hierarchidb/ui-grid typecheck exit 0 を確認。
+  - update: 2026-01-27 06:37 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-01-27 06:37 JST Step6 Features テーブルのヘッダ固定/ボディスクロール対応を完了。
+
+2396) fix/location/step5-terrain-floating-color-follow-step4 (P1) — 進行中 (2026-01-26)
+- ブランチ名: fix/location/step5-terrain-floating-color-follow-step4
+- 依存: なし
+- 受け入れ基準: location Step5 preview の Terrain Types フローティングウィンドウでアイコン/ラベル色が Step4 の設定色に追従する／Step5 のラベルベースサイズが現状の 1.3 倍になる／location Step5 のメタデータテーブルが shape Step6 と同様の FloatingWindow 仕組みになる／GroupEntity のデータが nodeId で抽出され Step5 メタデータテーブルに表示される（tabular 互換レイヤ経由）／既存の Step5 preview 表示が退行しない／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`, `packages/ui/map/src/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert して Terrain Types の色表示を従来に戻す
+- チェックリスト:
+  - Step4 の設定色が Step5 preview に伝搬される経路を特定する
+  - Terrain Types の icon/label に設定色を反映する
+  - Step5 のラベルベースサイズを 1.3 倍に調整する
+  - location Step5 のメタデータテーブルを shape Step6 同様の FloatingWindow 構成にする
+  - GroupEntity を tabular 互換の rows/columns に変換して Step5 のメタデータテーブルへ渡す
+  - 既存の preview 表示が維持されることを確認する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - update: 2026-01-27 14:52 JST Location メタデータ一覧を MapPreviewFloatingTable 化し、選択/カラム切替/再ビルド操作を復旧。
+  - update: 2026-01-27 14:52 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define warning あり）。
+  - update: 2026-01-27 14:52 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-01-27 14:48 JST Location Step5 メタデータテーブルの列切替/選択/再ビルド操作UIの復旧に着手。
+  - update: 2026-01-27 11:52 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-01-27 11:52 JST Step5 の閉じた Location/Terrain ボタンのアイコンを LocationOn/LocationCity に変更。
+  - update: 2026-01-27 11:49 JST LocationDialog の Step5 で nodeId/onUpdate が渡されず previewNodeId が 'preview' 扱いになっていたため、nodeId を伝搬しメタデータ/地図表示を復旧。
+  - update: 2026-01-27 11:49 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-01-27 11:47 JST Location Step5 の地図/テーブル未表示の原因調査に着手。
+  - update: 2026-01-27 11:36 JST kind→type リネーム、Location Step5 メタデータの Terrain Type 連動フィルタと FeatureTableToolbar 共通化を反映。
+  - update: 2026-01-27 11:36 JST runtime-worker typecheck が plugin-service-api dist の旧定義で失敗したため build 後に再実行。
+  - update: 2026-01-27 11:36 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define warning あり）。
+  - update: 2026-01-27 11:36 JST pnpm --filter @hierarchidb/ui-grid build exit 0（tsdown define warning あり）。
+  - update: 2026-01-27 11:36 JST pnpm --filter @hierarchidb/location-store build exit 0（tsdown define warning あり）。
+  - update: 2026-01-27 11:36 JST pnpm --filter @hierarchidb/plugin-service-api build exit 0（tsdown define warning あり）。
+  - update: 2026-01-27 11:36 JST pnpm --filter @hierarchidb/runtime-worker typecheck exit 0 を確認。
+  - update: 2026-01-27 11:36 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-01-27 11:36 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-01-27 11:36 JST pnpm --filter @hierarchidb/app typecheck exit 0（plugin-base build は tsdown define warning あり）。
+  - update: 2026-01-27 11:25 JST kind→type リネームと FeatureTableToolbar 共通化/フィルタ連携対応に着手。
+  - start: 2026-01-27 09:45 JST location GroupEntity kind→type 変更と Step5 フィルタ/toolbar 共通化に着手。
+  - update: 2026-01-27 09:32 JST pnpm --filter @hierarchidb/location-store build exit 0（tsdown define warning あり）。
+  - update: 2026-01-27 09:32 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-01-27 09:30 JST IDE-GSM の pointId を lat/lon 小数5桁+SHA-256 ハッシュに変更。
+  - update: 2026-01-27 09:20 JST IDE-GSM の pointId 生成と locationId 重複可否をコード調査。
+  - update: 2026-01-27 09:07 JST pnpm --filter @hierarchidb/ui-grid build exit 0（tsdown define warning あり）。
+  - update: 2026-01-27 09:07 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define warning あり）。
+  - update: 2026-01-27 09:08 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-01-27 09:05 JST metadata テーブルのタイトル/フィルタ/件数UIを Location 表示に合わせて調整。
+  - start: 2026-01-27 08:52 JST metadata テーブルの UI（タイトル/フィルタ/カウント表示）を shape preview 方式に合わせて調整開始。
+  - update: 2026-01-27 08:43 JST pnpm --filter @hierarchidb/ui-grid build exit 0（tsdown define warning あり）。
+  - update: 2026-01-27 08:44 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-01-27 08:40 JST metadata テーブルの高さが小さい問題に対し DataGridPreview を親高さ追従に変更。
+  - update: 2026-01-27 08:33 JST DataGridPreview が tableId 無しでも rows があれば表示するよう条件を修正。
+  - update: 2026-01-27 08:34 JST pnpm --filter @hierarchidb/ui-grid build exit 0（tsdown define warning あり）。
+  - update: 2026-01-27 08:34 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-01-27 08:30 JST metadata テーブルが "Table not created yet" のみ表示される原因を DataGridPreview 側で調査。
+  - update: 2026-01-27 08:22 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define warning あり）。
+  - update: 2026-01-27 08:23 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-01-27 08:20 JST Step5 メタデータテーブルを GroupEntity 由来の rows/columns で表示するアダプタを実装。
+  - start: 2026-01-26 23:21 JST Step5 Terrain Types の色を Step4 設定に追従させる調査に着手。
+  - update: 2026-01-26 23:24 JST Step5 ラベルサイズを 1.3 倍へ調整する要件を追加。
+  - update: 2026-01-26 23:38 JST Step5 メタデータの FloatingWindow を shape Step6 と同様の構成へ移行する作業に着手。
+  - update: 2026-01-26 23:39 JST LocationPreviewList を追加し Step5 メタデータ表示を移行、ラベルサイズ/色反映を更新。
+  - update: 2026-01-26 23:39 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-01-26 23:56 JST LocationPreviewList の再表示で isVisible が復元されない問題を修正。
+  - update: 2026-01-26 23:56 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-01-27 07:23 JST location のメタデータを nodeId 直結テーブルに変更し sessions/tableId 依存を撤去。
+  - update: 2026-01-27 07:24 JST pnpm --filter @hierarchidb/tabular-store build exit 0（tsdown define warning あり）。
+  - update: 2026-01-27 07:24 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-01-27 07:40 JST location の sessions ストレージ/参照を削除し nodeId 直結に統一。
+  - update: 2026-01-27 07:40 JST pnpm --filter @hierarchidb/location-store build exit 0（tsdown define warning あり）。
+  - update: 2026-01-27 07:40 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+
+2394) fix/route/create-dialog-stepper-visible (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/route/create-dialog-stepper-visible
+- 依存: なし
+- 受け入れ基準: Create Route ダイアログ上部に Stepper が表示される／他の Create ダイアログの Stepper 表示が退行しない／pnpm --filter @hierarchidb/route-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/route-plugin/src/**`, `app/src/**`, `packages/plugin-ui-host/src/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert して Create Route の Stepper 表示を元に戻す
+- チェックリスト:
+  - Create Route ダイアログの Stepper 非表示条件を特定する
+  - Stepper 表示条件を修正する
+  - 他 Create ダイアログの Stepper 表示が維持されることを確認する
+  - pnpm --filter @hierarchidb/route-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 22:21 JST Create Route ダイアログの Stepper 非表示問題の調査に着手。
+  - update: 2026-01-26 22:22 JST route-plugin UI entry に steps-provider 登録を追加。
+  - update: 2026-01-26 22:23 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+  - done: 2026-01-26 22:24 JST Create Route の Stepper 表示を確認し完了。
+
 2393) feat/location/step2-data-source-inline-import-ui (P1) — 完了 (2026-01-26)
 - ブランチ名: feat/location/step2-data-source-inline-import-ui
 - 依存: なし
@@ -54,6 +187,119 @@
   - update: 2026-01-26 22:28 JST Data Source の選択肢から custom/manual を非表示に変更。
   - update: 2026-01-26 22:28 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
   - done: 2026-01-26 22:28 JST Step2 の Data Source から custom/manual を除外。
+
+2396) fix/location/step2-ide-gsm-fetch-error-snackbar (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/location/step2-ide-gsm-fetch-error-snackbar
+- 依存: なし
+- 受け入れ基準: Step2でIDE-GSMファイル選択直後に "Failed to parse IDE-GSM CSV. Failed to fetch" のSnackbarが出ない／IDE-GSMの読み込み/選択フローは維持される／原因・発生範囲・修正方法と適用範囲を説明できる／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationDataSourceStep.tsx` など（調査後に確定）
+- ロールバック手順: 該当差分を revert して従来の blob URL revoke 挙動へ戻す
+- チェックリスト:
+  - 失敗Snackbarの発生条件を特定する
+  - 原因と発生範囲を説明できるようにする
+  - 影響範囲を最小に修正する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 22:31 JST Step2 IDE-GSM 選択直後の Failed to fetch Snackbar 調査に着手。
+  - update: 2026-01-26 22:31 JST Step2のunmount cleanupでblob URLが早期revokeされる場合があり、fetch失敗に繋がるため撤去。
+  - update: 2026-01-26 22:32 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
+  - done: 2026-01-26 22:32 JST Step2 選択直後の Failed to fetch Snackbar を解消。
+
+2397) refactor/location-route/step2-data-source-common (P1) — 完了 (2026-01-26)
+- ブランチ名: refactor/location-route/step2-data-source-common
+- 依存: なし
+- 受け入れ基準: location-plugin Step2 の構成要素が共通化される／route-plugin Step2 が共通実装に置き換わる／既存の route Step2 の表示/挙動/遷移条件が維持される（差分は明記）／pnpm --filter @hierarchidb/location-plugin typecheck と pnpm --filter @hierarchidb/route-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationDataSourceStep.tsx`, `plugins/route-plugin/src/ui/components/steps/RouteDataSourceStep.tsx`, 共有UIパッケージ配下（調査後に確定）
+- ロールバック手順: 該当差分を revert して各プラグイン独自Step2へ戻す
+- チェックリスト:
+  - ExecPlan を作成する
+  - location Step2 の共通コンポーネントを作成する
+  - route Step2 を共通コンポーネント利用へ置換する
+  - 翻訳キーと既存の文言差分を整理する
+  - pnpm --filter @hierarchidb/location-plugin typecheck と pnpm --filter @hierarchidb/route-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 22:40 JST location/route Step2 の共通化と route 再構築に着手。
+  - update: 2026-01-26 22:45 JST ui-datasource に IdeGsmImportPanel を追加し location/route Step2 に適用。
+  - update: 2026-01-26 22:46 JST route-plugin の IDE-GSM 文言を補完。
+  - update: 2026-01-26 22:46 JST pnpm --filter @hierarchidb/ui-datasource build exit 0（tsdown warning: define オプション）。
+  - update: 2026-01-26 22:47 JST pnpm --filter @hierarchidb/ui-datasource typecheck exit 0。
+  - update: 2026-01-26 22:47 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
+  - update: 2026-01-26 22:47 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0。
+  - done: 2026-01-26 22:47 JST location/route Step2 の共通化と route Step2 再構築を完了。
+  - update: 2026-01-26 22:49 JST pnpm --filter @hierarchidb/ui-datasource typecheck exit 0。
+  - update: 2026-01-26 22:49 JST pnpm --filter @hierarchidb/ui-datasource build exit 0（tsdown warning: define オプション）。
+  - update: 2026-01-26 22:49 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
+  - update: 2026-01-26 22:49 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0。
+
+2398) fix/route/step2-hide-non-ide-gsm (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/route/step2-hide-non-ide-gsm
+- 依存: なし
+- 受け入れ基準: route Step2 の Data Source から OpenStreetMap/Searoute/Custom が表示されない／IDE-GSM の表示・挙動が維持される／pnpm --filter @hierarchidb/route-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/route-plugin/src/ui/components/steps/RouteDataSourceStep.tsx`
+- ロールバック手順: 該当差分を revert して Data Source 選択肢を元に戻す
+- チェックリスト:
+  - Data Source から OpenStreetMap/Searoute/Custom を除外する
+  - pnpm --filter @hierarchidb/route-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 23:07 JST route Step2 の Data Source から OSM/Searoute/Custom を除外する作業に着手。
+  - update: 2026-01-26 23:08 JST Data Source を IDE-GSM のみに変更。
+  - update: 2026-01-26 23:08 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0。
+  - done: 2026-01-26 23:08 JST route Step2 の Data Source から OSM/Searoute/Custom を除外。
+
+2399) fix/route/step2-remove-clear-cache-button (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/route/step2-remove-clear-cache-button
+- 依存: なし
+- 受け入れ基準: route Step2 の「Clear cache for selected data source」ボタンが表示されない／他の UI/挙動は維持される／pnpm --filter @hierarchidb/route-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/route-plugin/src/ui/components/steps/RouteDataSourceStep.tsx`
+- ロールバック手順: 該当差分を revert して Clear cache ボタンを復元する
+- チェックリスト:
+  - Clear cache ボタンを撤去する
+  - pnpm --filter @hierarchidb/route-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 23:29 JST route Step2 の Clear cache ボタン撤去に着手。
+  - update: 2026-01-26 23:30 JST Clear cache ボタンを撤去し Step2 レイアウトを調整。
+  - update: 2026-01-26 23:30 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0。
+  - done: 2026-01-26 23:30 JST route Step2 の Clear cache ボタン撤去を完了。
+
+2400) fix/location/step3-ide-gsm-blob-fetch-error (P1) — 完了 (2026-01-27)
+- ブランチ名: fix/location/step3-ide-gsm-blob-fetch-error
+- 依存: なし
+- 受け入れ基準: IDE-GSM.csv を読み込み→タブ再起動後に location Step3 へ遷移しても "Failed to parse IDE-GSM CSV. Failed to fetch" のSnackbarが出ない／IDE-GSMの読み込み/選択フローは維持される／原因・発生範囲・修正方法と適用範囲を説明できる／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationSelectionStep.tsx`
+- ロールバック手順: 該当差分を revert して従来の IDE-GSM 解析フローに戻す
+- チェックリスト:
+  - 失敗Snackbarの発生条件を特定する
+  - blob URL 失効時の挙動を調整する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-27 09:04 JST Step3 の blob URL 失効による parse エラー調査に着手。
+  - update: 2026-01-27 09:34 JST blob URL が失効している場合は再解析せず、既存選択から availability を復元。
+  - update: 2026-01-27 09:35 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
+  - done: 2026-01-27 09:35 JST Step3 の blob URL fetch エラーを回避。
+
+2401) fix/location/step3-step5-empty-after-tab-reopen (P1) — 進行中 (2026-01-27)
+- ブランチ名: fix/location/step3-step5-empty-after-tab-reopen
+- 依存: なし
+- 受け入れ基準: Step2→Step3遷移後に国×タイプのチェックボックスが表示される／Step5プレビューで地図とテーブルが表示される／kind→type のプロパティ名変更の影響を含め原因・発生範囲・修正方法と適用範囲を説明できる／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationSelectionStep.tsx`, `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx` など（調査後に確定）
+- ロールバック手順: 該当差分を revert して従来の Step3/Step5 挙動に戻す
+- チェックリスト:
+  - Step3/Step5 が空になる条件を特定する
+  - kind→type 変更の影響範囲を確認する
+  - 最小修正で再表示されるようにする
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-27 12:11 JST Step3/Step5 の空表示問題の調査に着手。
+  - update: 2026-01-27 12:16 JST local ファイルは data URL を保存し、タブ再起動後も fetch 可能に変更。
+  - update: 2026-01-27 12:17 JST pnpm --filter @hierarchidb/ui-datasource typecheck exit 0。
+  - update: 2026-01-27 12:17 JST pnpm --filter @hierarchidb/ui-datasource build exit 0（tsdown warning: define オプション）。
+  - update: 2026-01-27 12:17 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
 
 2350) feat/shape/step6-recycling-diff-build (P1) — 進行中 (2026-01-26)
 - ブランチ名: feat/shape/step6-recycling-diff-build
@@ -390,6 +636,27 @@
   - blocked: 2026-01-26 17:50 JST pnpm typecheck が ui-map の未使用変数警告（ResourceLayerMap.tsx）で失敗。
   - start: 2026-01-26 18:05 JST ui-map 未使用変数の解消と pnpm typecheck 再実行に着手。
   - done: 2026-01-26 18:06 JST pnpm typecheck exit 0 を確認（ui-map 未使用変数エラーは再現せず）。
+  - update: 2026-01-26 22:40 JST location preview の label/icon size を zoom top-level interpolate へ再構成し、text-size の zoom 式エラーを回避。
+  - update: 2026-01-26 22:40 JST app 側の LayerSetVisibilityPanel title props を削除し見出し表示へ置換。
+  - done: 2026-01-26 22:40 JST pnpm typecheck exit 0 を確認（tsdown define 警告あり）。
+  - update: 2026-01-26 23:11 JST circle-radius の zoom 式を top-level interpolate へ再構成し、zoom 式エラーを回避。
+  - done: 2026-01-26 23:11 JST pnpm typecheck exit 0 を確認（tsdown define 警告あり）。
+  - update: 2026-01-26 23:14 JST location preview の styleimagemissing でアイコン画像を再注入する処理を追加。
+  - done: 2026-01-26 23:15 JST pnpm typecheck exit 0 を確認（tsdown define 警告あり）。
+  - update: 2026-01-27 06:36 JST location preview の icon load を onload 完了まで待機し、missing image 警告を抑制。
+  - update: 2026-01-27 06:36 JST ui-map の paint-array ログを非式配列のみ警告するよう調整。
+  - done: 2026-01-27 06:37 JST pnpm typecheck exit 0 を確認（tsdown define 警告あり）。
+  - update: 2026-01-27 06:46 JST styledata で icon 再注入と iconsReady リセットを行い、missing 警告の再発を抑制。
+  - done: 2026-01-27 06:46 JST pnpm typecheck exit 0 を確認（tsdown define 警告あり）。
+  - update: 2026-01-27 07:33 JST LocationPreviewList の show 呼び出し依存を見直し、maximum update depth を解消。
+  - update: 2026-01-27 07:33 JST style.load で icon 再注入を行い、styledata 由来の更新ループを回避。
+  - update: 2026-01-27 07:35 JST LocationPreviewList の show 呼び出しを isVisible ガードし、更新ループを抑制。
+  - update: 2026-01-27 07:35 JST location-plugin の未使用 import と MapLibre hasImage 型エラーを解消。
+  - update: 2026-01-27 07:42 JST location の modeless 表示は tabular metadata の latest を参照するように修正（LocationDB.sessions 参照を撤去）。
+  - update: 2026-01-27 08:10 JST modeless の location 表示を nodeId 参照に戻すため、tableId/latest 依存の撤去に着手。
+  - update: 2026-01-27 08:16 JST pnpm typecheck exit 0 を確認。
+  - update: 2026-01-27 08:27 JST ideGsmCsv の row undefined ガードを追加し pnpm typecheck exit 0 を確認。
+  - done: 2026-01-27 07:42 JST pnpm typecheck exit 0 を確認（tsdown define 警告あり）。
 
 2376) fix/ui-map/vector-tile-layer-flap (P1) — 進行中 (2026-01-26)
 - ブランチ名: fix/ui-map/vector-tile-layer-flap
@@ -637,6 +904,11 @@
   - update: 2026-01-25 22:43 JST TanstackDataGridにソート操作UI（▲▼）を追加し、pnpm installとui-grid/ui-map/appのtypecheckを実行。
   - update: 2026-01-25 22:53 JST TanstackDataGridの列幅ドラッグリサイズをTreeTableCore実装に合わせて対応開始。
   - update: 2026-01-25 22:55 JST TanstackDataGridの列幅ドラッグリサイズを実装し、pnpm --filter @hierarchidb/ui-grid typecheck / pnpm --filter @hierarchidb/ui-map typecheck / pnpm --filter @hierarchidb/app typecheck exit 0 を確認。
+  - blocked: 2026-01-26 23:40 JST pnpm --filter @hierarchidb/app build で @hierarchidb/ui-floating-window / @hierarchidb/ui-country-select / @hierarchidb/ui-datasource の UNLOADABLE_DEPENDENCY エラーが発生。
+  - update: 2026-01-26 23:43 JST app依存にui-floating-window/ui-datasourceを追加し、ビルド依存の解消を試行。
+  - update: 2026-01-26 23:46 JST shape-plugin/route-pluginのpeer/dev依存にui-floating-window・ui-country-select・ui-datasourceを追加して解決を試行。
+  - update: 2026-01-26 23:47 JST location-pluginのpeer/dev依存にui-floating-windowを追加してビルド解消を試行。
+  - update: 2026-01-26 23:48 JST pnpm --filter @hierarchidb/app build exit 0 を確認（tsdown define警告とchunk警告あり）。
 
 2369) feat/app/dev-maplibre-debug-tiles (P2) — 完了 (2026-01-25)
 - ブランチ名: feat/app/dev-maplibre-debug-tiles
@@ -9662,3 +9934,35 @@
   - start: 2026-01-26 21:55 JST IDE-GSM 初期選択を全チェックに変更する作業に着手。
   - update: 2026-01-26 22:20 JST IDE-GSM の存在タイプのみ初期ONにし、存在しない種別はセルを無効化。
   - done: 2026-01-26 22:22 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+2393) fix/location/test-unified-batch-manager-types (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/location/test-unified-batch-manager-types
+- 依存: なし
+- 受け入れ基準: UnifiedLocationBatchManager.unit.test.ts から any と top-level await が撤去される／テストの意図と既存アサーションが維持される／pnpm --filter @hierarchidb/location-plugin test が exit 0（必要なら実行）／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/services/batch/__tests__/unit/UnifiedLocationBatchManager.unit.test.ts`
+- ロールバック手順: 該当差分を revert して any/top-level await を元に戻す
+- チェックリスト:
+  - any を適切な型に置き換える
+  - top-level await を撤去する
+  - pnpm --filter @hierarchidb/location-plugin test を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 22:30 JST UnifiedLocationBatchManager.unit.test.ts の型とトップレベルawait整理に着手。
+  - update: 2026-01-26 22:36 JST any撤去とtop-level await廃止、テスト用モック型を整理。
+  - update: 2026-01-26 22:39 JST vitest用に@hierarchidb/ui-fileをテストシム化し、CSVテストのtype参照を修正。
+  - done: 2026-01-26 22:41 JST pnpm --filter @hierarchidb/location-plugin test exit 0 を確認。
+2394) fix/location/unified-batch-manager-test-typecheck (P1) — 完了 (2026-01-26)
+- ブランチ名: fix/location/unified-batch-manager-test-typecheck
+- 依存: なし
+- 受け入れ基準: UnifiedLocationBatchManager.unit.test.ts の型エラーが解消される／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/services/batch/__tests__/unit/UnifiedLocationBatchManager.unit.test.ts`
+- ロールバック手順: 該当差分を revert して元に戻す
+- チェックリスト:
+  - 型エラーの再現と原因特定
+  - 修正の実施
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 22:55 JST UnifiedLocationBatchManager.unit.test.ts の型エラー調査に着手。
+  - update: 2026-01-26 22:56 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認（型エラー再現せず）。
+  - update: 2026-01-26 23:05 JST TS2802/TS2740の対処としてforEach化とLocationDB型キャストを適用。
+  - done: 2026-01-26 23:06 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。

@@ -6,7 +6,7 @@ import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Button } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { Layers as LayersIcon, TableRows as TableRowsIcon } from '@mui/icons-material';
+import { LocationOn } from '@mui/icons-material';
 import { DirectionsBoat, FlightTakeoff, ForkRight, LocationCity, Public, Train } from '@mui/icons-material';
 import type { SvgIconComponent } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-types';
@@ -457,9 +457,6 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
   const iconReloadingRef = useRef(false);
   const queryTimerRef = useRef<number | null>(null);
   const queryRequestRef = useRef(0);
-  const [locationTypeSelection, setLocationTypeSelection] = useState<MapToggleSelection>(() =>
-    Object.fromEntries(LOCATION_TYPE_OPTIONS.map((option) => [option.id, true])) as MapToggleSelection
-  );
   const dataSourceAttribution = useMemo(
     () => resolveLocationAttribution(_draft.dataSource ?? null),
     [_draft.dataSource],
@@ -490,7 +487,6 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
   useEffect(() => {
     if (!nodeId) {
       setMetadataRows([]);
-      setMetadataColumns([]);
       setMetadataLoading(false);
       setMetadataError(undefined);
       return;
@@ -510,14 +506,12 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
         const rows = buildMetadataRows(items);
         setMetadataItems(items);
         setMetadataRows(rows);
-        setMetadataColumns(buildMetadataColumns(rows));
         setMetadataLoading(false);
       } catch (error) {
         if (cancelled || requestId !== metadataRequestRef.current) return;
         const message = error instanceof Error ? error.message : String(error);
         setMetadataItems([]);
         setMetadataRows([]);
-        setMetadataColumns([]);
         setMetadataLoading(false);
         setMetadataError(message);
       }
@@ -1065,7 +1059,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
               aria-label="Show list"
               onClick={() => setMetadataWindowOpen(true)}
             >
-              <TableRowsIcon />
+              <LocationOn />
             </Button>
           </Box>
         )}

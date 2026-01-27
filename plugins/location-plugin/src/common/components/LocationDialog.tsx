@@ -392,7 +392,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
         />
       ),
     },
-  ]), [translations.basicInfo.title, translations.basicInfo.tagSuggestions, translations.dialog.dataSourceLabel, translations.dialog.dataSourceDescription, translations.selection.title, translations.selection?.filterTitle, translations.selection?.buildLabel, translations.panel.processingSettings, translations.mapPreview?.title, translations.errors.nameRequired, mode, emptyTableMetadata, buildStatus, nodeId]);
+  ]), [translations.basicInfo.title, translations.basicInfo.tagSuggestions, translations.dialog.dataSourceLabel, translations.dialog.dataSourceDescription, translations.selection.title, translations.selection?.filterTitle, translations.selection?.buildLabel, translations.panel.processingSettings, translations.mapPreview?.title, translations.errors.nameRequired, mode, emptyTableMetadata, buildStatus, nodeId, handleDraftPatch]);
 
   const enabledStepIndices = useMemo(() => stepComponents.map((_, index) => index), [stepComponents]);
   const committableStepIndices = useMemo(() => [stepComponents.length - 1], [stepComponents.length]);

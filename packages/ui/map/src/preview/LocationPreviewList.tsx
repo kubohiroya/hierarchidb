@@ -16,7 +16,7 @@ export type LocationPreviewListProps = {
   emptyText?: string;
   errorText?: string;
   pluginId?: string;
-  selectedRows?: Set<string | number>;
+  selectedRows?: Set<string>;
   onSelectionChange?: (selected: Set<string | number>) => void;
   recyclingState?: 'none' | 'off' | 'on' | 'partial';
   onToggleRecycling?: () => void;
@@ -45,7 +45,6 @@ export const LocationPreviewList: React.FC<LocationPreviewListProps> = ({
   loadingText = 'Loading metadata...',
   emptyText = 'No metadata available yet.',
   errorText,
-  pluginId = 'location',
   selectedRows,
   onSelectionChange,
   recyclingState = 'none',
@@ -64,12 +63,12 @@ export const LocationPreviewList: React.FC<LocationPreviewListProps> = ({
   }, [show]);
 
   const [searchValue, setSearchValue] = useState('');
-  const normalizedRows = Array.isArray(rows) ? rows : [];
+  const normalizedRows = useMemo(()=>Array.isArray(rows) ? rows : [], [rows]);
   const resolvedColumns = useMemo(() => {
     if (columns && columns.length > 0) return columns;
     const keys = new Set<string>();
     normalizedRows.forEach((row) => {
-      Object.keys(row).forEach((key) => keys.add(key));
+      Object.keys(row).map((key) => keys.add(key));
     });
     return Array.from(keys);
   }, [columns, normalizedRows]);
@@ -165,7 +164,6 @@ export const LocationPreviewList: React.FC<LocationPreviewListProps> = ({
               />
             </IconButton>
           ) : null}
-          maxHeight="100%"
           containerSx={{
             position: 'static',
             width: '100%',
