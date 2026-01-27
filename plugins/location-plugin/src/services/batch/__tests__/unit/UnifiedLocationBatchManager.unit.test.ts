@@ -1,25 +1,57 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-types';
-import type { LocationPointInput, LocationTileSettings, SessionSummary } from '../../../_obsolate_common/types/batch-types.js';
-
-
-type MockDbTables = {
-  pending: Map<string, any>;
-  vectorTiles: Map<string, any>;
+import { LocationPointInput, LocationTileSettings, SessionSummary } from '../../../../common/types/batch-types';
+import { LocationDB } from '../../../../database/EphemeralLocationDB';
+//import type { LocationPointInput, LocationTileSettings, SessionSummary } from '../../../_obsolate_common/types/batch-types.js';
+//import type { LocationDB } from '../../../database/EphemeralLocationDB.js';
+type PendingSessionPayload = {
+  nodeId: string;
+  points: LocationPointInput[];
+  settings: LocationTileSettings;
+  config?: { concurrency?: number };
 };
 
-let mockDb: any;
+type VectorTilePayload = {
+  id: string;
+  nodeId: string;
+};
+
+type MockDbTables = {
+  pending: Map<string, PendingSessionPayload>;
+  vectorTiles: Map<string, VectorTilePayload>;
+};
+
+type MockDb = {
+  pendingSessions: {
+    put: (payload: PendingSessionPayload) => Promise<void>;
+    get: (nodeId: string) => Promise<PendingSessionPayload | undefined>;
+    delete: (nodeId: string) => Promise<void>;
+  };
+  vectorTiles: {
+    put: (payload: VectorTilePayload) => Promise<void>;
+    where: (field: string) => { equals: (value: string) => { delete: () => Promise<void> } };
+  };
+  clearExpiredPendingSessions: () => Promise<number>;
+  clearExpiredVectorTiles: () => Promise<number>;
+  clearVectorTilesForNode: (nodeId: string) => Promise<void>;
+  table: (name: string) => MockDb['vectorTiles'] | MockDb['pendingSessions'];
+};
+
+let UnifiedLocationBatchManager: typeof import('../../UnifiedLocationBatchManager').UnifiedLocationBatchManager;
+let LocationBatchSessionManager: typeof import('../../BatchSessionManager').LocationBatchSessionManager;
+
+let mockDb: LocationDB;
+let mockDbState: MockDb;
 let mockState: MockDbTables;
 const closeLocationDB = vi.fn();
 
-function createMockDb(): [any, MockDbTables] {
-  const pending = new Map<string, any>();
-  const vectorTiles = new Map<string, any>();
+function createMockDb(): [MockDb, MockDbTables] {
+  const pending = new Map<string, PendingSessionPayload>();
+  const vectorTiles = new Map<string, VectorTilePayload>();
 
   const db = {
     pendingSessions: {
-      put: vi.fn(async (payload: any) => {
+      put: vi.fn(async (payload: PendingSessionPayload) => {
         pending.set(payload.nodeId, payload);
       }),
       get: vi.fn(async (nodeId: string) => pending.get(nodeId)),
@@ -28,7 +60,7 @@ function createMockDb(): [any, MockDbTables] {
       }),
     },
     vectorTiles: {
-      put: vi.fn(async (payload: any) => {
+      put: vi.fn(async (payload: VectorTilePayload) => {
         vectorTiles.set(payload.id, payload);
       }),
       where: vi.fn(() => ({ equals: vi.fn(() => ({ delete: vi.fn(async () => {}) })) })),
@@ -36,18 +68,18 @@ function createMockDb(): [any, MockDbTables] {
     clearExpiredPendingSessions: vi.fn(async () => 0),
     clearExpiredVectorTiles: vi.fn(async () => 0),
     clearVectorTilesForNode: vi.fn(async (nodeId: string) => {
-      for (const [key, record] of vectorTiles.entries()) {
+      vectorTiles.forEach((record, key) => {
         if (record.nodeId === nodeId) {
           vectorTiles.delete(key);
         }
-      }
+      });
     }),
     table: vi.fn((name: string) => {
       if (name === 'vectorTiles') return db.vectorTiles;
       if (name === 'pendingSessions') return db.pendingSessions;
       throw new Error(`Unknown table ${name}`);
     }),
-  } as const;
+  } satisfies MockDb;
 
   return [db, { pending, vectorTiles }];
 }
@@ -58,12 +90,15 @@ vi.mock('../../database/EphemeralLocationDB', () => ({
   closeLocationDB,
 }));
 
-const { UnifiedLocationBatchManager } = await import('../../UnifiedLocationBatchManager');
-const { LocationBatchSessionManager } = await import('../../BatchSessionManager');
+beforeAll(async () => {
+  ({ UnifiedLocationBatchManager } = await import('../../UnifiedLocationBatchManager'));
+  ({ LocationBatchSessionManager } = await import('../../BatchSessionManager'));
+});
 
 describe('UnifiedLocationBatchManager.onBatchProgress', () => {
   beforeEach(() => {
-    [mockDb, mockState] = createMockDb();
+    [mockDbState, mockState] = createMockDb();
+    mockDb = mockDbState as unknown as LocationDB;
     closeLocationDB.mockClear();
   });
 
@@ -106,49 +141,54 @@ const sampleSettings: LocationTileSettings = {
   zoomMaxServe: 12,
 };
 
-class StubSessionManager extends LocationBatchSessionManager {
-  public createSpy = vi.fn();
-  private summary: SessionSummary | undefined;
-  private progressCb?: (e: ProgressEvent) => void;
+const createStubSessionManager = () => {
+  class StubSessionManager extends LocationBatchSessionManager {
+    public createSpy = vi.fn();
+    private summary: SessionSummary | undefined;
+    private progressCb?: (e: ProgressEvent) => void;
 
-  override async createSession(
-    nodeId: NodeId,
-    points: LocationPointInput[],
-    settings: LocationTileSettings,
-    options?: { concurrency?: number },
-  ): Promise<SessionSummary> {
-    this.createSpy(nodeId, points, settings, options);
-    this.summary = {
-      nodeId,
-      zoomMin: settings.zoomMinGenerate,
-      zoomMax: settings.zoomMaxGenerate,
-      zoomMaxServe: settings.zoomMaxServe,
-      bbox: [0, 0, 0, 0],
-      totalPoints: points.length,
-      layers: ['location_points'],
-    };
-    return this.summary;
+    override async createSession(
+      nodeId: NodeId,
+      points: LocationPointInput[],
+      settings: LocationTileSettings,
+      options?: { concurrency?: number },
+    ): Promise<SessionSummary> {
+      this.createSpy(nodeId, points, settings, options);
+      this.summary = {
+        nodeId,
+        zoomMin: settings.zoomMinGenerate,
+        zoomMax: settings.zoomMaxGenerate,
+        zoomMaxServe: settings.zoomMaxServe,
+        bbox: [0, 0, 0, 0],
+        totalPoints: points.length,
+        layers: ['location_points'],
+      };
+      return this.summary;
+    }
+
+    override getInitialSummary(): SessionSummary | undefined {
+      return this.summary;
+    }
+
+    override onProgress(_nodeId: string, cb: (e: ProgressEvent) => void): () => void {
+      this.progressCb = cb;
+      return () => {
+        this.progressCb = undefined;
+      };
+    }
+
+    emit(event: ProgressEvent): void {
+      this.progressCb?.(event);
+    }
   }
 
-  override getInitialSummary(): SessionSummary | undefined {
-    return this.summary;
-  }
-
-  override onProgress(_nodeId: string, cb: (e: ProgressEvent) => void): () => void {
-    this.progressCb = cb;
-    return () => {
-      this.progressCb = undefined;
-    };
-  }
-
-  emit(event: ProgressEvent): void {
-    this.progressCb?.(event);
-  }
-}
+  return new StubSessionManager();
+};
 
 describe('UnifiedLocationBatchManager persistence contract', () => {
   beforeEach(() => {
-    [mockDb, mockState] = createMockDb();
+    [mockDbState, mockState] = createMockDb();
+    mockDb = mockDbState as unknown as LocationDB;
   });
 
   it('persists pending session via prepareSession', async () => {
@@ -167,7 +207,7 @@ describe('UnifiedLocationBatchManager persistence contract', () => {
 
   it('hydrates session from pendingSessions and records summary', async () => {
     const mgr = new UnifiedLocationBatchManager();
-    const stub = new StubSessionManager();
+    const stub = createStubSessionManager();
     mgr.setDbProvider(() => mockDb);
     mgr.setInternalManager(stub);
 
@@ -184,7 +224,8 @@ describe('UnifiedLocationBatchManager persistence contract', () => {
 
 describe('UnifiedLocationBatchManager control operations', () => {
   beforeEach(() => {
-    [mockDb] = createMockDb();
+    [mockDbState] = createMockDb();
+    mockDb = mockDbState as unknown as LocationDB;
   });
 
   it('delegates pause/resume to internal session manager', async () => {
