@@ -435,7 +435,7 @@ export class LocationBatchManager {
         logLocationBatchWarning('Unexpected Nominatim response shape', data);
         return [];
       }
-      return this.convertOSMToLocations(data);
+      return await this.convertOSMToLocations(data);
     } catch (error) {
       console.error('OSM search failed:', error);
       return [];
@@ -477,7 +477,7 @@ export class LocationBatchManager {
         query,
         { 'Content-Type': 'application/x-www-form-urlencoded' },
       );
-      return this.convertOverpassToLocations(data);
+      return await this.convertOverpassToLocations(data);
     } catch (error) {
       console.error('Overpass search failed:', error);
       return [];
@@ -514,7 +514,7 @@ export class LocationBatchManager {
       const customHeaders = config.options.customHeaders as HeadersInit | undefined;
       const init: RequestInit | undefined = customHeaders ? { headers: customHeaders } : undefined;
       const data = await this.getJson(requestUrl, init);
-      return this.convertCustomToLocations(data);
+      return await this.convertCustomToLocations(data);
     } catch (error) {
       console.error('Custom search failed:', error);
       return [];
@@ -530,7 +530,7 @@ export class LocationBatchManager {
     }
     try {
       const csv = await this.getText(endpoint);
-      return parseOurAirportsCsv(csv, Date.now());
+      return await parseOurAirportsCsv(csv, Date.now());
     } catch (error) {
       console.error('OurAirports search failed:', error);
       return [];
@@ -546,7 +546,7 @@ export class LocationBatchManager {
     }
     try {
       const csv = await this.getText(endpoint);
-      return parseOpenFlightsCsv(csv, Date.now());
+      return await parseOpenFlightsCsv(csv, Date.now());
     } catch (error) {
       console.error('OpenFlights search failed:', error);
       return [];
@@ -562,7 +562,7 @@ export class LocationBatchManager {
     }
     try {
       const csv = await this.getText(endpoint);
-      return parseWorldPortIndexCsv(csv, Date.now());
+      return await parseWorldPortIndexCsv(csv, Date.now());
     } catch (error) {
       console.error('World Port Index search failed:', error);
       return [];
@@ -656,26 +656,28 @@ export class LocationBatchManager {
   /**
    * Convert OSM data to location entities
    */
-  private convertOSMToLocations(data: RawNominatimLike[]): LocationPointProperties[] {
-    return data
-      .map((item) => this.createLocationFromOSM(item))
-      .filter((value): value is LocationPointProperties => value !== null);
+  private async convertOSMToLocations(data: RawNominatimLike[]): Promise<LocationPointProperties[]> {
+    const points = await Promise.all(
+      data.map((item) => this.createLocationFromOSM(item)),
+    );
+    return points.filter((value): value is LocationPointProperties => value !== null);
   }
 
   /**
    * Convert Overpass data to location entities
    */
-  private convertOverpassToLocations(data: { elements?: RawOverpassElement[] }): LocationPointProperties[] {
+  private async convertOverpassToLocations(data: { elements?: RawOverpassElement[] }): Promise<LocationPointProperties[]> {
     if (!Array.isArray(data.elements)) return [];
-    return data.elements
-      .map((item) => this.createLocationFromOverpass(item))
-      .filter((value): value is LocationPointProperties => value !== null);
+    const points = await Promise.all(
+      data.elements.map((item) => this.createLocationFromOverpass(item)),
+    );
+    return points.filter((value): value is LocationPointProperties => value !== null);
   }
 
   /**
    * Convert custom data to location entities
    */
-  private convertCustomToLocations(_data: unknown): LocationPointProperties[] {
+  private async convertCustomToLocations(_data: unknown): Promise<LocationPointProperties[]> {
     // This would need custom mapping logic based on the data format
     return [];
   }
@@ -683,14 +685,14 @@ export class LocationBatchManager {
   /**
    * Create location entity from OSM data
    */
-  private createLocationFromOSM(osmData: RawNominatimLike): LocationPointProperties | null {
+  private async createLocationFromOSM(osmData: RawNominatimLike): Promise<LocationPointProperties | null> {
     const lon = parseNumber(osmData.lon);
     const lat = parseNumber(osmData.lat);
     if (typeof lon !== 'number' || typeof lat !== 'number') return null;
 
     const type = mapType(osmData.type);
     const fetchedAt = Date.now();
-    const point = buildOsmPointProperties(
+    const point = await buildOsmPointProperties(
       osmData,
       type,
       lat,
@@ -703,7 +705,7 @@ export class LocationBatchManager {
   /**
    * Create location entity from Overpass data
    */
-  private createLocationFromOverpass(overpassData: RawOverpassElement): LocationPointProperties | null {
+  private async createLocationFromOverpass(overpassData: RawOverpassElement): Promise<LocationPointProperties | null> {
     const lon = typeof overpassData.lon === 'number'
       ? overpassData.lon
       : typeof overpassData.lon === 'string'
@@ -719,7 +721,7 @@ export class LocationBatchManager {
     const tags = overpassData.tags ?? {};
     const mappedType = this.detectTypeFromTags(tags);
     const fetchedAt = Date.now();
-    const point = buildOverpassPointProperties(
+    const point = await buildOverpassPointProperties(
       overpassData,
       mappedType,
       lat,

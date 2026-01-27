@@ -32,16 +32,17 @@ export class OverpassStrategy implements ILocationDownloadStrategy {
       });
       const data = await res.json();
       const elements = Array.isArray(data?.elements) ? data.elements as RawOverpassElement[] : [];
-      return elements
-        .map((item) => this.fromOverpass(item))
-        .filter((value): value is LocationPointProperties => value !== null);
+      const points = await Promise.all(
+        elements.map((item) => this.fromOverpass(item)),
+      );
+      return points.filter((value): value is LocationPointProperties => value !== null);
     } catch (e) {
       console.error('[Location][Strategy:Overpass] search failed', e);
       return [];
     }
   }
 
-  private fromOverpass(overpassData: RawOverpassElement): LocationPointProperties | null {
+  private async fromOverpass(overpassData: RawOverpassElement): Promise<LocationPointProperties | null> {
     const lon = typeof overpassData.lon === 'number'
       ? overpassData.lon
       : overpassData.center?.lon;
@@ -54,7 +55,7 @@ export class OverpassStrategy implements ILocationDownloadStrategy {
     const primaryType = this.detectType(tags);
     const mappedType = mapType(primaryType);
     const fetchedAt = Date.now();
-    const point = buildOverpassPointProperties(
+    const point = await buildOverpassPointProperties(
       overpassData,
       mappedType,
       lat,

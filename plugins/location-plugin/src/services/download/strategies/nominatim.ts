@@ -37,24 +37,24 @@ export class NominatimStrategy implements ILocationDownloadStrategy {
       const response = await authFetch('location', `${endpoint}?${params}`);
       const data = await response.json();
       if (!Array.isArray(data)) return [];
-      const points = data
-        .map((item) => this.fromOSM(item as RawNominatimResult))
-        .filter((value): value is LocationPointProperties => value !== null);
-      return points;
+      const points = await Promise.all(
+        data.map((item) => this.fromOSM(item as RawNominatimResult)),
+      );
+      return points.filter((value): value is LocationPointProperties => value !== null);
     } catch (e) {
       console.error('[Location][Strategy:Nominatim] search failed', e);
       return [];
     }
   }
 
-  private fromOSM(osmData: RawNominatimResult): LocationPointProperties | null {
+  private async fromOSM(osmData: RawNominatimResult): Promise<LocationPointProperties | null> {
     const lon = parseNumber(osmData.lon);
     const lat = parseNumber(osmData.lat);
     if (typeof lon !== 'number' || typeof lat !== 'number') return null;
 
     const type: LocationType = mapType(osmData.type);
     const fetchedAt = Date.now();
-    const point = buildOsmPointProperties(
+    const point = await buildOsmPointProperties(
       osmData,
       type,
       lat,
