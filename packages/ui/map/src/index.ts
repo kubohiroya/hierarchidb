@@ -111,6 +111,7 @@ export { useMapFeatureHoverCandidates } from './preview/useMapFeatureHoverCandid
 export { useMapFeatureSelectionGestures } from './preview/useMapFeatureSelectionGestures.js';
 export { MapPreviewSearchPanel } from './preview/MapPreviewSearchPanel.js';
 export { MapPreviewSearchSettingsDialog } from './preview/MapPreviewSearchSettingsDialog.js';
+export { FeatureTableToolbar, type FeatureTableSearchConfig, type FeatureTableToolbarProps } from './preview/FeatureTableToolbar.js';
 export {
   ShapePreviewList,
   type ShapePreviewFeatureRow,
