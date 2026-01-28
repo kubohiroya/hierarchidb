@@ -107,7 +107,7 @@ const SOURCE_DESCRIPTIONS: Record<LocationDataSource, string> = {
   openflights: 'OpenFlights airport dataset with IATA/ICAO codes',
   'world-port-index': 'World Port Index (NGA) major ports worldwide',
   'natural-earth': 'Natural Earth populated places and transport hubs',
-  'ide-gsm': 'IDE-GSM CSV files provided by your organization',
+  'ide-gsm': 'IDE-GSM schema represents city data',
   custom: 'Upload your own tabular dataset',
   manual: 'Enter locations manually',
 };

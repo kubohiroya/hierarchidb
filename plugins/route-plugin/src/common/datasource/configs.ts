@@ -93,7 +93,7 @@ export const ROUTE_DATA_SOURCES: ReadonlyArray<RouteDataSourceConfig> = [
   {
     name: 'ide-gsm',
     displayName: 'IDE-GSM',
-    description: 'IDE-GSM schema files provided by your organization',
+    description: 'IDE-GSM schema files represents route data',
     license: 'IDE-GSM License',
     licenseUrl: '',
     attribution: '',
