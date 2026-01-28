@@ -2,8 +2,7 @@ import { useCallback, useMemo } from 'react';
 import type { DataSourceSelectionOption } from '@hierarchidb/ui-datasource';
 import type { DataSourceConfig, DataSourceName, ShapeEntity } from '../../../common/types/index.js';
 import { mergeBuildConfig } from '../../../services/utils/utils.js';
-import { DEFAULT_BUILD_CONFIG } from '../../../common/types/index.js';
-import { DATA_SOURCE_CONFIGS } from '../../../common/mock/data.js';
+import { DEFAULT_BUILD_CONFIG, SHAPE_DATA_SOURCES } from '../../../common/types/index.js';
 
 type Args = {
   data: Partial<ShapeEntity>;
@@ -12,7 +11,7 @@ type Args = {
 
 export const useShapeDataSourceStep = ({ data, onChange }: Args) => {
   const draftData = data ?? {};
-  const sources = Object.values(DATA_SOURCE_CONFIGS) as DataSourceConfig[];
+  const sources = SHAPE_DATA_SOURCES as DataSourceConfig[];
   const options: DataSourceSelectionOption[] = useMemo(
     () => sources.map((source) => ({
       id: source.name,

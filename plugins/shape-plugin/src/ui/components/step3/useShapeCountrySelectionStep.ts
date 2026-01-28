@@ -5,11 +5,10 @@ import type { CountryMetadata, ShapeEntity } from '../../../common/types/index.j
 import {
   calculateEstimatedFeatures,
   calculateEstimatedSize,
-  DATA_SOURCE_CONFIGS,
   formatBytes,
   formatNumber,
-} from '../../../common/mock/data.js';
-import type { DataSourceName } from '../../../common/types/index.js';
+} from '../../../common/utils/estimates.js';
+import { isDataSourceName, SHAPE_DATA_SOURCE_BY_NAME } from '../../../common/types/index.js';
 import type { CountryAvailabilityWorkerAPI, SerializedCountryAvailability } from '../../workers/countryAvailability.types.js';
 import { wrap, releaseProxy, proxy } from 'comlink';
 import type { NodeId } from '@hierarchidb/common-types';
@@ -92,11 +91,6 @@ const isSelectionEqual = (
   });
 };
 
-const isDataSourceName = (value: unknown): value is DataSourceName => (
-  typeof value === 'string'
-  && Object.prototype.hasOwnProperty.call(DATA_SOURCE_CONFIGS, value)
-);
-
 // Availability is resolved in a worker (and AuthRequired notifications are bridged to UI).
 
 type Args = {
@@ -171,7 +165,7 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
 
   const resolvedMaxAdminLevel = useMemo(() => {
     if (!dataSourceKey) return 0;
-    return DATA_SOURCE_CONFIGS[dataSourceKey]?.maxAdminLevel ?? 0;
+    return SHAPE_DATA_SOURCE_BY_NAME[dataSourceKey]?.maxAdminLevel ?? 0;
   }, [dataSourceKey]);
   useEffect(() => {
     if (dataSourceError) {

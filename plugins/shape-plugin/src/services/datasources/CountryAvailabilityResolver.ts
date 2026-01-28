@@ -3,7 +3,7 @@ import type { NodeId } from '@hierarchidb/common-types';
 import type { DataSourceName } from '../../common/types/index.js';
 import { defaultDataSourceFactory } from './DataSourceStrategyFactory.js';
 import { resolveStrategyIdFromDataSource } from './strategyIds.js';
-import { DATA_SOURCE_CONFIGS } from '../../common/mock/data.js';
+import { SHAPE_DATA_SOURCE_BY_NAME } from '../../common/types/constants.js';
 
 type AvailabilitySource = 'strategy' | 'metadata' | 'none';
 
@@ -56,7 +56,7 @@ const buildAvailabilityFromMetadata = async (
       entries.set(code, levels);
     }
   });
-  const fallbackMax = DATA_SOURCE_CONFIGS[dataSource]?.maxAdminLevel ?? 0;
+  const fallbackMax = SHAPE_DATA_SOURCE_BY_NAME[dataSource]?.maxAdminLevel ?? 0;
   const maxAdminLevel = Math.max(
     fallbackMax,
     toMaxAdminLevel(Array.from(entries.values()).flat()),
@@ -96,7 +96,7 @@ const fetchAvailabilityFromStrategy = async (dataSource: DataSourceName): Promis
     return null;
   }
 
-  const fallbackMax = DATA_SOURCE_CONFIGS[dataSource]?.maxAdminLevel ?? 0;
+  const fallbackMax = SHAPE_DATA_SOURCE_BY_NAME[dataSource]?.maxAdminLevel ?? 0;
   const maxAdminLevel = Math.max(
     fallbackMax,
     toMaxAdminLevel(Array.from(entries.values()).flat()),

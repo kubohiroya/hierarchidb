@@ -14,6 +14,8 @@ import {
   SHAPE_DATA_SOURCES,
   DEFAULT_BUILD_CONFIG,
   mergeBuildConfig,
+  isDataSourceName,
+  requireDataSourceName,
   type ProcessingStatus,
   type ProgressInfo,
   type TileInfo,
@@ -26,13 +28,7 @@ import {
 import { ShapeEntityHandler } from './handlers/index.js';
 
 import { metadataLoader } from '../services/metadata/MetadataLoader.js';
-import type {
-  BatchProgressEvent,
-  BatchProgressPayload,
-  BatchTaskSummary,
-  BatchTaskUpdateEvent,
-  ProgressPhase,
-} from '@hierarchidb/common-api';
+import { normalizeProgressPhase, type BatchProgressEvent, type BatchProgressPayload, type BatchTaskSummary, type BatchTaskUpdateEvent, type ProgressPhase } from '@hierarchidb/common-api';
 import {
   generateDownloadTaskPayloads,
   getPreferredCountryCodeFormat,
@@ -51,6 +47,13 @@ import {
 import { ephemeralShapeDB, type BuildTaskRecord } from '@hierarchidb/shape-store';
 import { runShapePipeline } from '../services/vt/shapePipeline.js';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../services/batch/ShapeBuildAPIClient.ts';
+import { isSkippedMessage } from '../common/utils/taskMessages.ts';
+import { buildShapeTaskTitle } from '../common/utils/taskTitles.ts';
+import {
+  resolveTaskActivityTimestamp,
+  resolveTaskProcessingTimestamp,
+  selectLatestTaskBySequence,
+} from './taskOrdering.ts';
 
 type DraftLike = {
   nodeId?: NodeId;
@@ -64,7 +67,7 @@ const resolveBatchNodeId = (draft: DraftLike | null | undefined): NodeId | undef
 };
 
 const buildBuildSessionConfig = (buildConfig: ShapeBuildConfig): ShapeBuildConfig => {
- const resolvedDataSource = requireDataSourceName(
+  const resolvedDataSource = requireDataSourceName(
     buildConfig.dataSourceName,
     'buildBuildSessionConfig',
   );
@@ -101,12 +104,6 @@ const activePipelineRuns = new Map<string, string>();
 const shapeEntityHandlerSingleton = new ShapeEntityHandler();
 const getShapeEntityHandler = (): ShapeEntityHandler => shapeEntityHandlerSingleton;
 
-const isSkippedMessage = (message?: string | null): boolean => {
-  if (!message) return false;
-  const normalized = message.trim().toLowerCase();
-  return normalized === 'skipped' || normalized.startsWith('skipped:');
-};
-
 const resolveEffectiveTaskStatus = (task: TaskQueueRecord): TaskQueueRecord['status'] => {
   if (task.stage !== 'vt') return task.status;
   if (task.status !== 'completed') return task.status;
@@ -129,33 +126,13 @@ const resolveTaskProgress = (task: TaskQueueRecord): number => {
 };
 
 const normalizeTaskStatus = (status: TaskQueueRecord['status'] | string): BuildTask['status'] => {
-  const normalized = status.toString().toLowerCase();
-  if (normalized === 'success') return 'completed';
-  if (normalized === 'error') return 'failed';
-  if (normalized === 'process') return 'running';
-  if (normalized === 'queued') return 'queued';
-  if (normalized === 'running') return 'running';
-  if (normalized === 'completed') return 'completed';
-  if (normalized === 'failed') return 'failed';
-  if (normalized === 'paused') return 'paused';
-  if (normalized === 'regression') return 'regression';
-  return 'queued';
+  const normalized = normalizeProgressPhase(status);
+  return normalized === 'warning' ? 'queued' : normalized;
 };
 
-const normalizeTaskPhase = (status: TaskQueueRecord['status'] | string): ProgressPhase => {
-  const normalized = normalizeTaskStatus(status);
-  if (
-    normalized === 'queued'
-    || normalized === 'running'
-    || normalized === 'paused'
-    || normalized === 'completed'
-    || normalized === 'failed'
-    || normalized === 'regression'
-  ) {
-    return normalized;
-  }
-  return 'queued';
-};
+const normalizeTaskPhase = (status: TaskQueueRecord['status'] | string): ProgressPhase => (
+  normalizeProgressPhase(status)
+);
 
 
 const normalizeResumedTaskStatus = (status: BuildTaskRecord['status']): TaskQueueRecord['status'] => {
@@ -193,111 +170,77 @@ const seedTaskQueueFromBuildTasks = async (nodeId: NodeId): Promise<void> => {
   await putTasks(taskQueue, tasks);
 };
 
-const buildTaskQueueTitle = (task: TaskQueueRecord): string | undefined => {
-  const input = task.inputData as Record<string, unknown> | undefined;
-  if (!input) return undefined;
-  if (task.stage === "fetch") {
-    const country = typeof input.countryName === "string"
-      ? input.countryName
-      : typeof input.countryCode === "string"
-        ? input.countryCode
-        : undefined;
-    const adminLevel = typeof input.adminLevel === "number" ? `ADM${input.adminLevel}` : undefined;
-    return [country, adminLevel].filter(Boolean).join(" ");
-  }
-  if (task.stage === "transform") {
-    const country = typeof input.countryName === "string"
-      ? input.countryName
-      : typeof input.countryCode === "string"
-        ? input.countryCode
-        : undefined;
-    const adminLevel = typeof input.adminLevel === "number" ? `ADM${input.adminLevel}` : undefined;
-    const bandId = typeof input.bandId === "number" ? `band${input.bandId}` : undefined;
-    const bandMinZoom = typeof input.bandMinZoom === "number" ? input.bandMinZoom : undefined;
-    const bandMaxZoom = typeof input.bandMaxZoom === "number" ? input.bandMaxZoom : undefined;
-    const zoomBandLabel = bandMinZoom !== undefined && bandMaxZoom !== undefined
-      ? `z${bandMinZoom}-z${bandMaxZoom}`
-      : undefined;
-    return [country, adminLevel, bandId, zoomBandLabel].filter(Boolean).join(" ");
-  }
-  if (task.stage === "vt") {
-    const TILE_INDEX_BITS = 22;
-    const TILE_INDEX_SCALE = 2 ** TILE_INDEX_BITS;
-    const TILE_INDEX_STRIDE = TILE_INDEX_SCALE * TILE_INDEX_SCALE;
-    const unpackTileId = (tileId: number, zBase: number): { x: number; y: number } | null => {
-      if (!Number.isFinite(tileId) || !Number.isFinite(zBase)) return null;
-      const offset = tileId - (zBase * TILE_INDEX_STRIDE);
-      if (!Number.isFinite(offset)) return null;
-      const x = Math.floor(offset / TILE_INDEX_SCALE);
-      const y = offset - (x * TILE_INDEX_SCALE);
-      if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || y < 0) return null;
-      return { x, y };
-    };
-    const bandId = typeof input.bandId === "number" && Number.isFinite(input.bandId)
-      ? `band${input.bandId}`
-      : undefined;
-    const zBase = typeof input.zBase === "number" && Number.isFinite(input.zBase)
-      ? input.zBase
-      : undefined;
-    const tileId = typeof input.tileId === "number" && Number.isFinite(input.tileId)
-      ? input.tileId
-      : undefined;
-    const coords = zBase !== undefined && tileId !== undefined
-      ? unpackTileId(tileId, zBase)
-      : null;
-    const zoomLabel = zBase !== undefined && coords
-      ? `z${zBase}/${coords.x}/${coords.y}`
-      : undefined;
-    return [bandId, zoomLabel].filter(Boolean).join(" ");
-  }
-  return undefined;
-};
 
-const mapTaskQueueRecordToBatchTask = (
-  task: TaskQueueRecord,
-  meta?: TaskWeightMeta,
-): BuildTask & { title?: string; message?: string; metadata?: TaskWeightMetadata } => ({
-  taskId: task.taskId,
-  nodeId: task.nodeId,
-  stage: undefined,
-  status: normalizeTaskStatus(resolveEffectiveTaskStatus(task)),
-  type: task.stage,
-  index: task.index,
-  retryCount: task.retryCount,
-  error: task.errorMessage,
-  message: task.message ?? task.errorMessage,
-  title: buildTaskQueueTitle(task),
-  metadata: meta
+const buildTaskSummaryMetadata = (meta?: TaskWeightMeta): TaskWeightMetadata | undefined => (
+  meta
     ? {
       polygonCount: meta.polygonCount ?? undefined,
       weight: meta.weight,
       weightSource: meta.source,
     }
-    : undefined,
-});
+    : undefined
+);
 
-const mapTaskQueueRecordToTaskSummary = (
+const buildTaskSummaryFields = (
   task: TaskQueueRecord,
   meta?: TaskWeightMeta,
-): ShapeBatchTaskSummary => ({
-  taskId: task.taskId,
-  stage: task.stage,
-  status: normalizeTaskPhase(resolveEffectiveTaskStatus(task)),
-  progress: resolveTaskProgress(task),
+): {
+  message?: string;
+  title?: string;
+  error?: string;
+  errorMessage?: string;
+  index?: number;
+  sequence?: number;
+  metadata?: TaskWeightMetadata;
+} => ({
   message: task.message ?? task.errorMessage,
-  title: buildTaskQueueTitle(task),
+  title: buildShapeTaskTitle(task),
   error: task.errorMessage,
   errorMessage: task.errorMessage,
   index: task.index,
   sequence: task.sequence,
-  metadata: meta
-    ? {
-      polygonCount: meta.polygonCount ?? undefined,
-      weight: meta.weight,
-      weightSource: meta.source,
-    }
-    : undefined,
+  metadata: buildTaskSummaryMetadata(meta),
 });
+
+const mapTaskQueueRecordToBatchTask = (
+  task: TaskQueueRecord,
+  meta?: TaskWeightMeta,
+): BuildTask & { title?: string; message?: string; metadata?: TaskWeightMetadata } => {
+  const base = buildTaskSummaryFields(task, meta);
+  return {
+    taskId: task.taskId,
+    nodeId: task.nodeId,
+    stage: undefined,
+    status: normalizeTaskStatus(resolveEffectiveTaskStatus(task)),
+    type: task.stage,
+    index: task.index,
+    retryCount: task.retryCount,
+    error: base.error,
+    message: base.message,
+    title: base.title,
+    metadata: base.metadata,
+  };
+};
+
+const mapTaskQueueRecordToTaskSummary = (
+  task: TaskQueueRecord,
+  meta?: TaskWeightMeta,
+): ShapeBatchTaskSummary => {
+  const base = buildTaskSummaryFields(task, meta);
+  return {
+    taskId: task.taskId,
+    stage: task.stage,
+    status: normalizeTaskPhase(resolveEffectiveTaskStatus(task)),
+    progress: resolveTaskProgress(task),
+    message: base.message,
+    title: base.title,
+    error: base.error,
+    errorMessage: base.errorMessage,
+    index: base.index,
+    sequence: base.sequence,
+    metadata: base.metadata,
+  };
+};
 
 type TaskWeightSource = 'output' | 'fetch-cache' | 'transform-cache' | 'fallback';
 
@@ -510,15 +453,16 @@ const summarizeTaskQueueProgress = async (
   let skipped = 0;
   tasks.forEach((task) => {
     total += 1;
+    const status = resolveEffectiveTaskStatus(task);
     if (isSkippedMessage(task.message)) {
       skipped += 1;
       return;
     }
-    if (task.status === 'failed') {
+    if (status === 'failed') {
       failed += 1;
       return;
     }
-    if (task.status === 'completed') {
+    if (status === 'completed') {
       completed += 1;
     }
   });
@@ -1087,10 +1031,8 @@ export const shapeBatchAPI = {
     const taskQueue = new VtTaskQueueDb();
     const vtTasks = await listTasks(taskQueue, nodeId);
     if (vtTasks.length > 0) {
-      const lastActivity = vtTasks.reduce((latest, task) => {
-        const candidate = task.updatedAt ?? task.startedAt ?? task.createdAt ?? 0;
-        return candidate > latest ? candidate : latest;
-      }, 0);
+      const latestTask = selectLatestTaskBySequence(vtTasks);
+      const lastActivity = latestTask ? resolveTaskActivityTimestamp(latestTask) : 0;
       const paused = getPauseState(nodeId).paused;
       return {
         exists: true,
@@ -1296,10 +1238,8 @@ export const shapeBatchAPI = {
     if (vtTasks.length > 0) {
       const summary = await buildTaskQueueSummary(vtTasks);
       const paused = getPauseState(nodeId).paused;
-      const lastProcessed = vtTasks.reduce((latest, task) => {
-        const candidate = task.completedAt ?? task.updatedAt ?? task.startedAt ?? task.createdAt ?? 0;
-        return candidate > latest ? candidate : latest;
-      }, 0);
+      const latestTask = selectLatestTaskBySequence(vtTasks);
+      const lastProcessed = latestTask ? resolveTaskProcessingTimestamp(latestTask) : 0;
       return {
         status: paused
           ? 'paused'
@@ -1340,18 +1280,3 @@ export const shapeBatchAPI = {
     }
   },
 };
-
-function requireDataSourceName(value: unknown, context: string): DataSourceName {
-  if (typeof value !== 'string') {
-    throw new Error(`[shape-plugin] ${context} requires a data source name.`);
-  }
-  if (isDataSourceName(value)) return value;
-  throw new Error(`[shape-plugin] ${context} received invalid data source: ${value}`);
-}
-
-function isDataSourceName(value: string): value is DataSourceName {
-  return value === 'naturalearth' ||
-    value === 'geoboundaries' ||
-    value === 'geoboundaries-topojson' ||
-    value === 'gadm';
-}

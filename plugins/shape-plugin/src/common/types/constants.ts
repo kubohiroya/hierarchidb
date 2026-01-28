@@ -131,3 +131,7 @@ export const SHAPE_DATA_SOURCES = [
     countryCodeFormat: 'iso3',
   },
 ] as DataSourceConfig[];
+
+export const SHAPE_DATA_SOURCE_BY_NAME = Object.fromEntries(
+  SHAPE_DATA_SOURCES.map((source) => [source.name, source]),
+) as Record<DataSourceConfig['name'], DataSourceConfig>;

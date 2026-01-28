@@ -38,3 +38,19 @@ export interface FetchTaskPayload {
   adminLevel: number;
   dataSource: DataSourceName;
 }
+
+export function isDataSourceName(value: unknown): value is DataSourceName {
+  if (typeof value !== 'string') return false;
+  return value === 'naturalearth'
+    || value === 'geoboundaries'
+    || value === 'geoboundaries-topojson'
+    || value === 'gadm';
+}
+
+export function requireDataSourceName(value: unknown, context: string): DataSourceName {
+  if (typeof value !== 'string') {
+    throw new Error(`[shape-plugin] ${context} requires a data source name.`);
+  }
+  if (isDataSourceName(value)) return value;
+  throw new Error(`[shape-plugin] ${context} received invalid data source: ${value}`);
+}
