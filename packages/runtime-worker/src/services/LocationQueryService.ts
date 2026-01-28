@@ -104,9 +104,13 @@ export class LocationQueryService implements LocationQueryAPI {
 
   async listLocationGroups(nodeId: NodeId): Promise<LocationGroupItem[]> {
     const store = storeRegistry.getFeatures('location');
-    if (!store) return [];
-    const items = await store.list(nodeId);
-    return items.map((item) => ({ ...item })) as LocationGroupItem[];
+    if (store) {
+      const items = await store.list(nodeId);
+      return items.map((item) => ({ ...item })) as LocationGroupItem[];
+    }
+    const db = getLocationDB();
+    const rows = await db.features.where('nodeId').equals(nodeId).toArray();
+    return rows.map((row) => toGroupItem(row));
   }
 
   async listLocationRelations(nodeId: NodeId): Promise<LocationRelation[]> {
