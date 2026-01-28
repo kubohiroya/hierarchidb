@@ -73,6 +73,7 @@ export type MapPreviewFloatingTableProps<Row extends { id: string | number }> = 
   formatErrorMessage?: (summary: MapPreviewErrorSummary) => string;
   statusAdornment?: (row: Row) => React.ReactNode;
   toolbarActions?: React.ReactNode;
+  onCellClick?: (params: { row: Row; columnId: string }) => void;
   containerSx?: Record<string, unknown>;
 };
 
@@ -129,6 +130,7 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
     formatErrorMessage,
     statusAdornment,
     toolbarActions,
+    onCellClick,
     containerSx,
   } = props;
   const [columnSelectorOpen, setColumnSelectorOpen] = useState(false);
@@ -302,6 +304,7 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
             selectionMode={selectionMode}
             selectedRows={selectedRows}
             onSelectionChange={onSelectionChange}
+            onCellClick={onCellClick}
             sorting={sorting}
             onSortingChange={setSorting}
             grouping={grouping}
