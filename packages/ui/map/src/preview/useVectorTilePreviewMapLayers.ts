@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import type { Theme } from '@mui/material/styles';
 import type { MapLibreMapInstance } from '../types/maplibre-public.js';
+import { isFloatingWindowInteractionActive } from '../lib/floating-window-interaction.js';
 
 type MapLibreInteractiveMap = MapLibreMapInstance & {
   on(event: string, cb: (...args: unknown[]) => void): void;
@@ -111,10 +112,19 @@ export const useVectorTilePreviewMapLayers = ({
   useEffect(() => {
     if (!mapInstance) return;
     const map = mapInstance as MapLibreInteractiveMap;
+    let hoverBlocked = false;
     const hasStyle = () =>
       Boolean(typeof map.getStyle === 'function' ? map.getStyle() : map.style);
     let attached = false;
     const handleMouseMove = (...args: unknown[]) => {
+      if (isFloatingWindowInteractionActive()) {
+        if (!hoverBlocked) {
+          hoverBlocked = true;
+          setHoveredId(null);
+        }
+        return;
+      }
+      hoverBlocked = false;
       const event = args[0] as { features?: Array<{ id?: unknown; properties?: Record<string, unknown> }> };
       const feature = event?.features?.[0];
       if (feature?.properties) {

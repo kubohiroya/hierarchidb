@@ -5,6 +5,7 @@
 
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Box, IconButton, Paper, styled, Typography } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -129,6 +130,18 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
   style,
 }) => {
 
+  const setInteractionActive = useCallback((active: boolean) => {
+    if (typeof document === 'undefined') return;
+    const body = document.body;
+    if (!body) return;
+    if (active) {
+      body.dataset.hdbFloatingWindowInteraction = '1';
+    } else {
+      delete body.dataset.hdbFloatingWindowInteraction;
+    }
+  }, []);
+  const [overlayActive, setOverlayActive] = useState(false);
+
   const windowRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const isResizing = useRef(false);
@@ -229,12 +242,14 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
     if (!target.closest('.title-bar')) return;
 
     isDragging.current = true;
+    setInteractionActive(true);
+    setOverlayActive(true);
     dragStart.current = {
       x: e.clientX - state.position.x,
       y: e.clientY - state.position.y,
     };
     e.preventDefault();
-  }, [draggable, state.isFullscreen, state.position]);
+  }, [draggable, setInteractionActive, setOverlayActive, state.isFullscreen, state.position]);
 
   const bringToFront = useCallback(() => {
     floatingWindowZIndex += 1;
@@ -251,6 +266,8 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
     if (state.isMinimized || state.isFullscreen) return;
 
     isResizing.current = true;
+    setInteractionActive(true);
+    setOverlayActive(true);
     resizeDirection.current = direction;
     resizeStart.current = {
       width: state.size.width,
@@ -263,7 +280,7 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
 
     e.preventDefault();
     e.stopPropagation();
-  }, [resizable, state.isFullscreen, state.isMinimized, state.position, state.size]);
+  }, [resizable, setInteractionActive, setOverlayActive, state.isFullscreen, state.isMinimized, state.position, state.size]);
 
   // Global mouse move handler
   useEffect(() => {
@@ -322,6 +339,8 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
       isDragging.current = false;
       isResizing.current = false;
       resizeDirection.current = '';
+      setInteractionActive(false);
+      setOverlayActive(false);
     };
 
     if (state.isVisible && !state.isMinimized) {
@@ -332,8 +351,10 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      setInteractionActive(false);
+      setOverlayActive(false);
     };
-  }, [clamp, effectiveMaxHeight, effectiveMaxWidth, minHeight, minWidth, resolveBounds, state]);
+  }, [clamp, effectiveMaxHeight, effectiveMaxWidth, minHeight, minWidth, resolveBounds, setInteractionActive, setOverlayActive, state]);
 
   // Handle minimize/restore
   const handleMinimize = useCallback(() => {
@@ -414,16 +435,31 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
   }
 
   return (
-    <StyledWindow
-      ref={windowRef}
-      className={`floating-window ${className || ''}`}
-      style={windowStyle}
-      elevation={8}
-      onMouseDownCapture={(event) => {
-        if (event.button !== 0) return;
-        bringToFront();
-      }}
-    >
+    <>
+      {overlayActive && typeof document !== 'undefined'
+        ? createPortal(
+            <Box
+              sx={{
+                position: 'fixed',
+                inset: 0,
+                backgroundColor: 'transparent',
+                zIndex: Math.max(0, (state.zIndex ?? 1000) - 1),
+                cursor: isResizing.current ? 'nwse-resize' : 'move',
+              }}
+            />,
+            document.body
+          )
+        : null}
+      <StyledWindow
+        ref={windowRef}
+        className={`floating-window ${className || ''}`}
+        style={windowStyle}
+        elevation={8}
+        onMouseDownCapture={(event) => {
+          if (event.button !== 0) return;
+          bringToFront();
+        }}
+      >
       <TitleBar
         className="title-bar"
         onMouseDown={handleMouseDown}
@@ -479,6 +515,7 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
           )}
         </>
       )}
-    </StyledWindow>
+      </StyledWindow>
+    </>
   );
 };

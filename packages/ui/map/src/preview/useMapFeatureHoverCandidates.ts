@@ -5,6 +5,7 @@ import type {
   MapLibreMapMouseEvent,
 } from '../types/maplibre-public.js';
 import { defaultFeatureIdAccessor, resolveIdentifyCandidates } from '../lib/feature-identification.js';
+import { isFloatingWindowInteractionActive } from '../lib/floating-window-interaction.js';
 
 const isPointLayer = (feature: MapLibreGeoJSONFeature): boolean => {
   const layerType = feature.layer?.type;
@@ -97,7 +98,16 @@ export const useMapFeatureHoverCandidates = <HighlightEntry extends { source: st
 }: UseMapFeatureHoverCandidatesParams<HighlightEntry>) => {
   useEffect(() => {
     if (!mapInstance) return undefined;
+    const blockedRef = { current: false };
     const handleMouseMove = (event: MapLibreMapMouseEvent) => {
+      if (isFloatingWindowInteractionActive()) {
+        if (!blockedRef.current) {
+          blockedRef.current = true;
+          onHoverChange([], []);
+        }
+        return;
+      }
+      blockedRef.current = false;
       const activeLayerIds = highlightLayerIds.filter((layerId) => Boolean(mapInstance.getLayer(layerId)));
       if (activeLayerIds.length === 0) {
         onHoverChange([], []);

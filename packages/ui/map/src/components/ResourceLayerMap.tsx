@@ -33,6 +33,7 @@ import { useMapFeatureHoverCandidates } from '../preview/useMapFeatureHoverCandi
 import { useMapFeatureSearch } from '../preview/useMapFeatureSearch.js';
 import { useMapFeatureSelectionGestures } from '../preview/useMapFeatureSelectionGestures.js';
 import { defaultFeatureIdAccessor } from '../lib/feature-identification.js';
+import { isFloatingWindowInteractionActive } from '../lib/floating-window-interaction.js';
 import type { MapSearchTargetDefinition, MapSearchTargetGroup } from '../preview/mapPreviewSearchTypes.js';
 import {
   buildHighlightKey,
@@ -601,6 +602,41 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
   const [fitControlContainer, setFitControlContainer] = useState<HTMLElement | null>(null);
   const [statsContainer, setStatsContainer] = useState<HTMLElement | null>(null);
   const [searchSettingsOpen, setSearchSettingsOpen] = useState(false);
+  const [floatingInteractionActive, setFloatingInteractionActive] = useState(false);
+  const canvasPointerEventsRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return undefined;
+    const body = document.body;
+    if (!body) return undefined;
+    const updateState = () => {
+      setFloatingInteractionActive(isFloatingWindowInteractionActive());
+    };
+    updateState();
+    const observer = new MutationObserver(() => updateState());
+    observer.observe(body, { attributes: true, attributeFilter: ['data-hdb-floating-window-interaction'] });
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!mapInstance) return;
+    const canvas = mapInstance.getCanvas();
+    if (floatingInteractionActive) {
+      if (canvasPointerEventsRef.current === null) {
+        canvasPointerEventsRef.current = canvas.style.pointerEvents;
+      }
+      canvas.style.pointerEvents = 'none';
+    } else if (canvasPointerEventsRef.current !== null) {
+      canvas.style.pointerEvents = canvasPointerEventsRef.current;
+      canvasPointerEventsRef.current = null;
+    }
+    return () => {
+      if (canvasPointerEventsRef.current !== null) {
+        canvas.style.pointerEvents = canvasPointerEventsRef.current;
+        canvasPointerEventsRef.current = null;
+      }
+    };
+  }, [floatingInteractionActive, mapInstance]);
 
   const orderedBasemaps = useMemo(() => (basemapStyles ? sortByPath(basemapStyles) : []), [basemapStyles]);
   const orderedLayers = useMemo(() => sortByLayerPriority(vectorLayers), [vectorLayers]);
