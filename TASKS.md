@@ -1,3 +1,222 @@
+2416) refactor/shape/step5-task-sync-datasource-refactor (P1) — 完了 (2026-01-28)
+- ブランチ名: refactor/shape/step5-task-sync-datasource-refactor
+- 依存: なし
+- ExecPlan: plans/shape-step5-task-sync-datasource-refactor-execplan.md
+- 受け入れ基準: useShapeBuildTasks の同期処理が useShapeBuildTaskSync に集約され既存挙動が維持される／shapeFetchStage の分岐が関数分割され payload 解決/タスク整合/実行が明確になる／DataSource 設定が単一ソース化され旧 DATA_SOURCE_CONFIGS と common/mock/data.ts 参照が残らない／dataSource バリデーションが common/types/data-source.ts の関数に統一される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/useShapeBuildTasks.ts`, `plugins/shape-plugin/src/ui/components/step5/useShapeBuildTaskSync.ts`, `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts`, `plugins/shape-plugin/src/common/types/constants.ts`, `plugins/shape-plugin/src/common/types/data-source.ts`, `plugins/shape-plugin/src/ui/components/step2/useShapeDataSourceStep.ts`, `plugins/shape-plugin/src/ui/components/step3/useShapeCountrySelectionStep.ts`, `plugins/shape-plugin/src/services/datasources/CountryAvailabilityResolver.ts`, `plugins/shape-plugin/src/worker/api.ts`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert して従来のタスク同期/データソース参照/フェッチ分岐に戻す
+- チェックリスト:
+  - useShapeBuildTaskSync へ同期ロジックを集約し、useShapeBuildTasks を薄くする
+  - shapeFetchStage の分岐を payload 解決/タスク整合/実行の関数に分割する
+  - DataSource 定義を単一ソース化し、旧 DATA_SOURCE_CONFIGS と mock 参照を撤去する
+  - dataSource バリデーションを共通関数に統一する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-28 23:42 JST shape Step5 タスク同期/Fetch 分割/DataSource 統一のリファクタに着手。
+  - update: 2026-01-28 23:45 JST useShapeBuildTaskSync を追加して useShapeBuildTasks を薄くし、shapeFetchStage を payload 解決/タスク整合関数に分割。
+  - update: 2026-01-28 23:45 JST DataSource 定義を SHAPE_DATA_SOURCE_BY_NAME に統一し、dataSource バリデーションを common/types に集約。
+  - update: 2026-01-28 23:46 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-01-28 23:46 JST Step5 タスク同期/Fetch 分割/DataSource 統一のリファクタを完了。
+
+2417) refactor/shape/step4-common-ui-sections (P2) — 完了 (2026-01-28)
+- ブランチ名: refactor/shape/step4-common-ui-sections
+- 依存: なし
+- ExecPlan: plans/shape-step4-common-ui-sections-execplan.md
+- 受け入れ基準: step4 の各セクションで重複していた disabled/hoverCard/カード構成のUIが共通コンポーネントに集約される／step4 の設定UIの見た目と挙動が維持される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/**`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert して step4 セクションの個別実装へ戻す
+- チェックリスト:
+  - step4 の重複UIパターンを抽出して共通コンポーネント化する
+  - 各セクションの呼び出しを新コンポーネントへ置換する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-28 23:50 JST shape Step4 の共通UI抽出リファクタに着手。
+  - update: 2026-01-28 23:55 JST Step4 の hover card/section title を共通コンポーネント化。
+  - update: 2026-01-28 23:55 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-01-28 23:55 JST Step4 の共通UI抽出リファクタを完了。
+
+2415) investigation/ui-location/preview-requires-step5 (P1) — 完了 (2026-01-28)
+- ブランチ名: investigation/ui-location/preview-requires-step5
+- 依存: なし
+- 受け入れ基準: location ノードの Preview で「表示のための設定および処理が完了していません」となる原因/発生条件を特定し説明できる／Edit→Step5 では表示できる理由を整理できる／TASKS.md に運用ログを記載する
+- 影響範囲: 調査後に確定
+- ロールバック手順: 該当差分があれば revert して従来の挙動へ戻す
+- チェックリスト:
+  - TreeNodeInfoPanel から Preview を開く経路を確認する
+  - location プラグイン側の preview 可否判定と Step5 の関係を確認する
+  - 問題の原因/条件/回避手順を整理する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-28 17:44 JST location Preview の表示未完了メッセージの原因調査に着手。
+  - update: 2026-01-28 17:44 JST preview ガードで location の最終ステップ validate が isLocationBuildPersisted を要求し、Map Preview 侵入前は未完了扱いになる点を確認。
+  - update: 2026-01-28 17:44 JST Map Preview 進入時に useIdeGsmImportOnEntry が処理を実行し、processingStatus/DB を更新するため Edit→Step5 は表示できる点を確認。
+  - update: 2026-01-28 17:44 JST preview ガードで location の非同期処理を許可し、InfoPanel の Preview ボタンはガード結果で disabled 制御する方針を反映。
+  - update: 2026-01-28 17:44 JST pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define warning あり）。
+  - update: 2026-01-28 17:44 JST コンテキストメニューの Preview もガード結果で disabled になるよう連携を追加。
+  - update: 2026-01-28 19:10 JST ui-treeconsole-breadcrumb/treetable/base を build して d.ts を更新。
+  - update: 2026-01-28 19:10 JST pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define warning あり）。
+  - done: 2026-01-28 17:44 JST Preview ガードの非同期許可と InfoPanel の Preview 無効化制御を反映。
+
+2414) fix/ui-floating-window/discard-dialog-front (P1) — 完了 (2026-01-28)
+- ブランチ名: fix/ui-floating-window/discard-dialog-front
+- 依存: なし
+- 受け入れ基準: “Discard Changes?” ダイアログが FloatingWindow より常に前面に表示される／ダイアログの操作（破棄/キャンセル/閉じる）が従来通り動作する／他のモーダルに副作用がない／pnpm --filter @hierarchidb/app typecheck が exit 0（影響範囲に応じて追加）／TASKS.md に運用ログを記載する
+- 影響範囲: 調査後に確定
+- ロールバック手順: 該当差分を revert して従来の表示階層へ戻す
+- チェックリスト:
+  - “Discard Changes?” ダイアログの実装箇所と portal を特定する
+  - FloatingWindow より前面に出るよう z-index/portal を調整する
+  - pnpm --filter @hierarchidb/app typecheck を実行する（必要なら追加パッケージも）
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-28 19:50 JST “Discard Changes?” ダイアログを FloatingWindow より前面にする作業に着手。
+  - update: 2026-01-28 19:53 JST pnpm --filter @hierarchidb/plugin-ui-host typecheck exit 0 を確認。
+  - done: 2026-01-28 19:53 JST “Discard Changes?” ダイアログの root z-index を引き上げて前面化。
+
+2414) fix/ui-floating-window/clamp-initial-position (P1) — 進行中 (2026-01-28)
+- ブランチ名: fix/ui-floating-window/clamp-initial-position
+- 依存: なし
+- 受け入れ基準: 初期/復元位置が画面外でも FloatingWindow が画面内に表示される／ドラッグ/リサイズ/前面化に副作用が出ない／pnpm --filter @hierarchidb/ui-floating-window typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/floating-window/src/components/FloatingWindow.tsx`
+- ロールバック手順: 該当差分を revert して従来の初期位置をそのまま使う挙動へ戻す
+- チェックリスト:
+  - initialState の position を画面内にクランプする
+  - 既存のドラッグ/リサイズが影響を受けないことを確認する
+  - pnpm --filter @hierarchidb/ui-floating-window typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-28 20:06 JST Location Step5 のリストが表示されない件の調査に着手。
+  - update: 2026-01-28 20:06 JST initialState の position を画面内にクランプする対応を追加。
+  - update: 2026-01-28 20:07 JST pnpm --filter @hierarchidb/ui-floating-window typecheck exit 0 を確認。
+
+2415) feat/ui-json-treeview/location-metadata-drilldown (P1) — 進行中 (2026-01-28)
+- ブランチ名: feat/ui-json-treeview/location-metadata-drilldown
+- 依存: なし
+- 受け入れ基準: ui-json-treeview が JSON を階層的に表示できる（TanStack Table Expanding 使用）／Location Step5 の metadata カラムクリックで階層表示が開く／既存の選択/検索/スクロールに副作用がない／pnpm --filter @hierarchidb/ui-json-treeview typecheck と pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/json-treeview/src/**`, `packages/ui/map/src/preview/MapPreviewFloatingTable.tsx`, `packages/ui/map/src/preview/LocationPreviewList.tsx`, `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`
+- ロールバック手順: 該当差分を revert して metadata カラムクリック時の表示を従来のままに戻す
+- チェックリスト:
+  - ui-json-treeview を新設し、TanStack Table Expanding で階層表示する
+  - MapPreviewFloatingTable へ onCellClick を追加する
+  - Location Step5 の metadata カラムで JSON ツリービューを開く
+  - pnpm --filter @hierarchidb/ui-json-treeview typecheck を実行する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-28 20:20 JST Location Step5 metadata の階層表示を追加する作業に着手。
+  - update: 2026-01-28 20:28 JST ui-json-treeview パッケージを新設し、TanStack Table Expanding で JSON を階層表示するコンポーネントを追加。
+  - update: 2026-01-28 20:28 JST MapPreviewFloatingTable に onCellClick を追加し、Location Step5 の metadata クリックで JSON ダイアログを表示。
+  - blocked: 2026-01-28 20:30 JST pnpm --filter @hierarchidb/ui-json-treeview typecheck が @tanstack/react-table 未解決で失敗。
+  - update: 2026-01-28 20:31 JST pnpm install を実行して workspace 依存を解決。
+  - update: 2026-01-28 20:32 JST ExpandedState の型エラーを修正。
+  - update: 2026-01-28 20:32 JST pnpm --filter @hierarchidb/ui-json-treeview typecheck exit 0 を確認。
+  - update: 2026-01-28 20:33 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+
+2413) fix/ui-map/shape-step6-disable-admin-grouping (P1) — 進行中 (2026-01-28)
+- ブランチ名: fix/ui-map/shape-step6-disable-admin-grouping
+- 依存: なし
+- 受け入れ基準: Shape Step6 のメタデータテーブルで Admin Level の自動グループ化が行われない／選択・並び替え・検索の挙動が変わらない／pnpm --filter @hierarchidb/ui-map typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/preview/ShapePreviewList.tsx`
+- ロールバック手順: 該当差分を revert して adminLevel の defaultGrouping を復元する
+- チェックリスト:
+  - defaultGrouping の指定を除去する
+  - 表示のグループ化が消えることを確認する
+  - pnpm --filter @hierarchidb/ui-map typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-28 19:44 JST Shape Step6 の Admin Level 自動グループ化を無効化する作業に着手。
+  - update: 2026-01-28 19:45 JST defaultGrouping の指定を削除。
+  - update: 2026-01-28 19:45 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
+
+2412) fix/ui-floating-window/admin-level-arrow-color (P1) — 完了 (2026-01-28)
+- ブランチ名: fix/ui-floating-window/admin-level-arrow-color
+- 依存: なし
+- 受け入れ基準: Floating Window の Admin Level カラムに表示される ▶︎/▼ の色が primary になる／他カラムの表示や操作は変わらない／pnpm --filter @hierarchidb/ui-map typecheck が exit 0（影響範囲が他パッケージなら該当パッケージも）／TASKS.md に運用ログを記載する
+- 影響範囲: 調査後に確定
+- ロールバック手順: 該当差分を revert してアイコン色を元に戻す
+- チェックリスト:
+  - Admin Level カラムの描画箇所を特定する
+  - ▶︎/▼ の色を primary に変更する
+  - pnpm --filter @hierarchidb/ui-map typecheck を実行する（必要なら追加パッケージも）
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-28 19:35 JST Admin Level カラムの矢印色を primary に変更する作業に着手。
+  - update: 2026-01-28 19:38 JST pnpm --filter @hierarchidb/ui-grid typecheck exit 0 を確認。
+  - done: 2026-01-28 19:38 JST Admin Level カラムの矢印色を primary に変更。
+
+2411) fix/ui-map/titlebar-row-count-format (P1) — 進行中 (2026-01-28)
+- ブランチ名: fix/ui-map/titlebar-row-count-format
+- 依存: なし
+- 受け入れ基準: FloatingWindow タイトルバーの行数表示が「Shape (111/999 rows)」形式になる／スペースと rows の小文字化以外の表示は変わらない／pnpm --filter @hierarchidb/ui-map typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/preview/ShapePreviewList.tsx`
+- ロールバック手順: 該当差分を revert して従来の表記に戻す
+- チェックリスト:
+  - 表記生成ロジックの位置を特定する
+  - スペース追加と rows の小文字化を反映する
+  - pnpm --filter @hierarchidb/ui-map typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-28 19:08 JST FloatingWindow タイトルバーの行数表記修正に着手。
+  - update: 2026-01-28 19:12 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
+  - done: 2026-01-28 19:12 JST タイトルバーの行数表記を「Shape (111/999 rows)」形式へ修正。
+
+2411) fix/ui-grid/selection-column-dot (P1) — 進行中 (2026-01-28)
+- ブランチ名: fix/ui-grid/selection-column-dot
+- 依存: なし
+- 受け入れ基準: Step6 Features テーブルのチェックボックス列右端の「.」が表示されない／選択操作が従来通り動作する／pnpm --filter @hierarchidb/ui-grid typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/data-grid/src/TanstackDataGrid.tsx`
+- ロールバック手順: 該当差分を revert して従来のセル描画へ戻す
+- チェックリスト:
+  - チェックボックス列の描画とセルスタイルを確認する
+  - 選択列の TableCell のスタイルを調整して不要な表示を除去する
+  - pnpm --filter @hierarchidb/ui-grid typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+  - 運用ログ：
+  - start: 2026-01-28 18:17 JST Step6 Features テーブルのチェックボックス列に「.」が出る問題の修正に着手。
+  - update: 2026-01-28 18:20 JST 選択列の TableCell を checkbox padding/clip overflow にして不要な点表示を抑止。
+  - update: 2026-01-28 18:20 JST pnpm --filter @hierarchidb/ui-grid typecheck exit 0 を確認。
+
+2410) fix/ui-floating-window/minimized-drag (P1) — 進行中 (2026-01-28)
+- ブランチ名: fix/ui-floating-window/minimized-drag
+- 依存: なし
+- 受け入れ基準: 最小化状態の FloatingWindow をタイトルバーでドラッグできる／通常状態のドラッグ/リサイズ/前面化が退行しない／pnpm --filter @hierarchidb/ui-floating-window typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/floating-window/src/components/FloatingWindow.tsx`
+- ロールバック手順: 該当差分を revert して最小化状態のドラッグを不可に戻す
+- チェックリスト:
+  - 最小化時のドラッグ開始条件を確認する
+  - mousemove/mouseup のハンドラ登録が最小化時も有効かを確認する
+  - pnpm --filter @hierarchidb/ui-floating-window typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-28 18:06 JST 最小化状態の FloatingWindow がドラッグできない問題の修正に着手。
+  - update: 2026-01-28 18:06 JST 最小化時もタイトルバーからドラッグ開始できるようにし、mousemove/mouseup の監視を維持。
+  - update: 2026-01-28 18:07 JST pnpm --filter @hierarchidb/ui-floating-window typecheck exit 0 を確認。
+
+2409) fix/ui-floating-window/column-selector-front (P1) — 進行中 (2026-01-28)
+- ブランチ名: fix/ui-floating-window/column-selector-front
+- 依存: なし
+- 受け入れ基準: カラムセレクタが FloatingWindow の背面に回らず常に前面に表示される／クリック・ドラッグ・リサイズの挙動に副作用が出ない／pnpm --filter @hierarchidb/ui-floating-window typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/preview/MapPreviewFloatingTable.tsx`, `packages/ui/data-grid/src/AbstractDataGrid.tsx` など（調査後に確定）
+- ロールバック手順: 該当差分を revert して従来のポップオーバー表示に戻す
+- チェックリスト:
+  - カラムセレクタの表示方式（Popover/Portal/Popover container）を特定する
+  - FloatingWindow より前面に出るよう表示階層を調整する
+  - pnpm --filter @hierarchidb/ui-floating-window typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-28 16:42 JST カラムセレクタが FloatingWindow の背面に表示される問題の修正に着手。
+  - update: 2026-01-28 17:06 JST FloatingWindowPortalProvider を追加し、portal root を AppProviders 末尾に配置して DOM 順で前面化できるよう調整。
+  - update: 2026-01-28 17:06 JST pnpm --filter @hierarchidb/ui-floating-window typecheck exit 0 を確認。
+  - blocked: 2026-01-28 17:07 JST pnpm --filter @hierarchidb/app typecheck が ui-floating-window の dist 未更新で失敗。
+  - update: 2026-01-28 17:08 JST pnpm --filter @hierarchidb/ui-floating-window build を実行し dist を更新。
+  - update: 2026-01-28 17:09 JST pnpm --filter @hierarchidb/app typecheck exit 0 を確認。
+  - update: 2026-01-28 17:23 JST FloatingWindowPortalProvider が body 直下に portal root を作るよう変更し、固定配置での描画/クリッピング問題を回避。
+  - update: 2026-01-28 17:23 JST pnpm --filter @hierarchidb/ui-floating-window typecheck exit 0 を確認。
+  - update: 2026-01-28 17:38 JST FloatingWindow の portal root z-index を modal より上に調整し、PluginDialog の背後に隠れないよう変更。
+  - update: 2026-01-28 17:38 JST Column selector Dialog を floating window より前面に出す z-index を付与。
+
 2401) investigation/runtime-worker/commit-draft-repeat-log (P1) — 進行中 (2026-01-27)
 - ブランチ名: investigation/runtime-worker/commit-draft-repeat-log
 - 依存: なし
@@ -69,6 +288,104 @@
   - update: 2026-01-28 00:26 JST pnpm --filter @hierarchidb/ui-floating-window typecheck exit 0 を確認。
   - update: 2026-01-28 01:12 JST map canvas の pointer-events をドラッグ中に無効化する対応を追加。
   - update: 2026-01-28 01:12 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
+  - update: 2026-01-28 14:44 JST 透明オーバーレイをウィンドウより前面に出し、map container/canvas の pointer-events を同時に無効化。
+  - update: 2026-01-28 14:44 JST pnpm --filter @hierarchidb/ui-floating-window typecheck exit 0 を確認。
+  - update: 2026-01-28 14:44 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
+
+2404) feat/route/step3-mode-icons (P1) — 進行中 (2026-01-28)
+- ブランチ名: feat/route/step3-mode-icons
+- 依存: なし
+- 受け入れ基準: Route Step3 の Air/Sea/High-speed rail/Conventional rail/General road に MUI アイコンが表示される／既存の選択 UI が退行しない／pnpm --filter @hierarchidb/route-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/route-plugin/src/ui/components/steps/RouteSelectionStep.tsx`, `packages/components/src/SelectionMatrix/SelectionMatrix.tsx`, `packages/ui/country-select/src/components/CountryMatrixSelector.tsx`（調査後に確定）
+- ロールバック手順: 該当差分を revert して列ヘッダのアイコン表示を撤去する
+- チェックリスト:
+  - Route Step3 の列に適切な MUI アイコンを割り当てる
+  - SelectionMatrix のヘッダにアイコンを描画する
+  - pnpm --filter @hierarchidb/route-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-28 19:21 JST Route Step3 のモード列アイコン追加に着手。
+  - update: 2026-01-28 19:27 JST SelectionMatrix の列ヘッダをアイコン+ラベルの横並び表示に変更。
+  - update: 2026-01-28 19:27 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+  - update: 2026-01-28 20:49 JST High-speed rail を Train、Conventional rail を Tram のアイコンに変更。
+  - update: 2026-01-28 20:49 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+
+2405) fix/location/step3-type-icons-anchor (P1) — 進行中 (2026-01-28)
+- ブランチ名: fix/location/step3-type-icons-anchor
+- 依存: なし
+- 受け入れ基準: Location Step3 の Area centroid/Airport/Port/Station/Interchange に既存の種別アイコンが表示される／Port は MUI Anchor アイコンが使用される／アイコンはラベルの左側に横並びで表示される／既存の選択 UI が退行しない／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationSelectionStep.tsx`, `plugins/location-plugin/src/ui/components/steps/locationTypes.ts`, `plugins/location-plugin/src/ui/components/steps/LocationBatchParametersStep.tsx`, `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`, `packages/components/src/SelectionMatrix/SelectionMatrix.tsx`, `packages/ui/country-select/src/components/CountryMatrixSelector.tsx`（調査後に確定）
+- ロールバック手順: 該当差分を revert して従来のアイコン/表示配置へ戻す
+- チェックリスト:
+  - Location Step3 の列にアイコンを表示し横並び配置にする
+  - Port のアイコンを Anchor に差し替える
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-28 19:24 JST Location Step3 の種別アイコン/Anchor 対応に着手。
+  - update: 2026-01-28 19:27 JST Port アイコンを Anchor に変更し、Step3 の種別アイコン表示を適用。
+  - update: 2026-01-28 19:27 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-01-28 19:28 JST Station アイコンを Subway に変更。
+  - update: 2026-01-28 19:28 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+
+2404) fix/ui-floating-window/minimize-restore-drag-state (P1) — 進行中 (2026-01-28)
+- ブランチ名: fix/ui-floating-window/minimize-restore-drag-state
+- 依存: なし
+- 受け入れ基準: 最小化→通常復帰のクリック後にドラッグ状態へ入らない／再クリックで移動確定のような挙動が発生しない／pnpm --filter @hierarchidb/ui-floating-window typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/floating-window/src/components/FloatingWindow.tsx`（調査後に確定）
+- ロールバック手順: 該当差分を revert して従来の minimize/restore 挙動に戻す
+- チェックリスト:
+  - minimize/restore クリック時の drag 状態遷移を確認する
+  - minimize/restore で drag/resizing を解除する
+  - pnpm --filter @hierarchidb/ui-floating-window typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-28 14:53 JST minimize/restore 後に drag 状態へ入る挙動の調査に着手。
+  - update: 2026-01-28 14:53 JST minimize/restore 時に drag/resizing 状態を解除し、最小化時の drag 開始を抑止。
+  - update: 2026-01-28 14:53 JST pnpm --filter @hierarchidb/ui-floating-window typecheck exit 0 を確認。
+
+2405) fix/ui-floating-window/zindex-and-titlebar-controls (P1) — 進行中 (2026-01-28)
+- ブランチ名: fix/ui-floating-window/zindex-and-titlebar-controls
+- 依存: なし
+- 受け入れ基準: FloatingWindow をクリックすると常に最前面に移動する／タイトルバーの最小化・最大化・閉じるボタンが状態に関係なく動作する／pnpm --filter @hierarchidb/ui-floating-window typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/floating-window/src/components/FloatingWindow.tsx`（調査後に確定）
+- ロールバック手順: 該当差分を revert して従来の z-index/ボタン挙動へ戻す
+- チェックリスト:
+  - クリック時の z-index 更新が常に反映されるようにする
+  - タイトルバーの操作でドラッグが干渉しないようにする
+  - pnpm --filter @hierarchidb/ui-floating-window typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-28 15:09 JST FloatingWindow の z-index/タイトルバー操作の不具合調査に着手。
+  - update: 2026-01-28 15:09 JST タイトルバーのボタン操作時にドラッグを開始しないようガードし、操作時に前面化するよう調整。
+  - update: 2026-01-28 15:09 JST pnpm --filter @hierarchidb/ui-floating-window typecheck exit 0 を確認。
+  - update: 2026-01-28 15:15 JST FloatingWindow を共通 portal root に移し、クリック時に DOM 順で前面化するよう調整。
+  - update: 2026-01-28 15:15 JST pnpm --filter @hierarchidb/ui-floating-window typecheck exit 0 を確認。
+  - update: 2026-01-28 15:21 JST FloatingWindow を個別の portal host に差し替え、クリック時に host の DOM 順で前面化するよう変更。
+  - update: 2026-01-28 15:21 JST pnpm --filter @hierarchidb/ui-floating-window typecheck exit 0 を確認。
+
+2406) fix/shape/step6-recycling-toggle-ui (P1) — 進行中 (2026-01-28)
+- ブランチ名: fix/shape/step6-recycling-toggle-ui
+- 依存: なし
+- 受け入れ基準: Step6 の Recycling ボタンで選択行の再処理マークが即時反映される／更新が永続化される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/useShapePreviewStep.ts`（調査後に確定）
+- ロールバック手順: 該当差分を revert して従来の更新挙動に戻す
+- チェックリスト:
+  - Recycling トグルの反映経路を特定する
+  - UI への即時反映を追加する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-28 16:16 JST Step6 Recycling トグルが反映されない問題の調査に着手。
+  - update: 2026-01-28 16:16 JST putFeatureMetadata 成功後に featureMetadata をローカル更新して UI を即時反映。
+  - update: 2026-01-28 16:16 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-01-28 15:17 JST portal root の z-index を固定し、FloatingWindow が常に前面に表示されるよう調整。
+  - update: 2026-01-28 15:17 JST pnpm --filter @hierarchidb/ui-floating-window typecheck exit 0 を確認。
+  - update: 2026-01-28 14:58 JST ドラッグ/リサイズ中のオーバーレイを50%グレーで可視化。
+  - update: 2026-01-28 14:58 JST pnpm --filter @hierarchidb/ui-floating-window typecheck exit 0 を確認。
+  - update: 2026-01-28 15:00 JST ドラッグ中の state 更新でイベント登録が再初期化されないよう依存を限定し、cleanup での解除を撤去。
+  - update: 2026-01-28 15:00 JST pnpm --filter @hierarchidb/ui-floating-window typecheck exit 0 を確認。
+  - update: 2026-01-28 15:01 JST ドラッグ中オーバーレイを透明に戻す。
 
 2405) fix/auth/callback-stuck-waiting (P1) — 進行中 (2026-01-27)
 - ブランチ名: fix/auth/callback-stuck-waiting
@@ -556,11 +873,58 @@
   - start: 2026-01-26 21:53 JST resume build でfetchのqueuedがfailed固定になる問題の修正に着手。
   - update: 2026-01-26 21:54 JST resume時に payloads が空でも既存 fetch タスクがある場合は runStageTasks で再処理するように変更。
   - update: 2026-01-26 21:55 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2393) analysis/shape-route/build-commonization-status (P2) — 進行中 (2026-01-28)
+- ブランチ名: analysis/shape-route/build-commonization-status
+- 依存: なし
+- 受け入れ基準: shape/route のビルドプロセス共通化の現状をコード参照付きで説明できる／共通化済み領域と未共通化領域を整理できる／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/vt/**`, `plugins/route-plugin/src/services/**`, `packages/batch-runtime-services/**`, `packages/ui-batch-progress/**`（必要に応じて追加）
+- ロールバック手順: なし（調査のみ）
+- チェックリスト:
+  - 共通化済みの基盤（BatchSession/TaskQueue/Progress）を列挙する
+  - shape/route 固有ロジックの差分を整理する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-28 22:34 JST shape/route ビルド共通化の現状整理に着手。
+  - update: 2026-01-28 22:34 JST route は AbstractBatchSession + BaseBatchSessionManager と VtTaskQueueDb を採用し進捗/タスクキューを共通化済みだが、shape は runShapePipeline/runStageTasks の独自パイプラインで共通セッション化は未実施であることを確認。
+
+2394) analysis/shape/unused-implementation-candidates (P2) — 進行中 (2026-01-28)
+- ブランチ名: analysis/shape/unused-implementation-candidates
+- 依存: なし
+- 受け入れ基準: shape-plugin 内の未使用/無効化実装をコード根拠付きで列挙できる／削除候補の影響範囲を示す／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/**`（調査後に確定）
+- ロールバック手順: なし（調査のみ）
+- チェックリスト:
+  - 未使用/無効化の候補を抽出する
+  - 参照状況（未使用根拠）を確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-28 22:38 JST shape-plugin の未使用/無効化実装の棚卸しに着手。
+  - update: 2026-01-28 22:40 JST OpenStreetMap データソースの UI 無効化/メタデータ取得拒否、legacy 選択配列対応、未参照の FetchRetentionToggle、describe.skip テストを削除候補として列挙。
+  - update: 2026-01-28 22:52 JST OpenStreetMap データソース/legacy 選択配列/未参照コンポーネント/skipテストを削除し、pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2395) analysis/shape/refactor-candidates (P2) — 進行中 (2026-01-28)
+- ブランチ名: analysis/shape/refactor-candidates
+- 依存: なし
+- 受け入れ基準: shape-plugin 内のリファクタリング候補をコード根拠付きで列挙できる／理由・影響範囲・優先度を示す／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/**`（調査後に確定）
+- ロールバック手順: なし（調査のみ）
+- チェックリスト:
+  - リファクタリング候補を抽出する
+  - 理由/影響範囲/優先度を整理する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-28 23:17 JST shape-plugin のリファクタリング候補整理に着手。
+  - update: 2026-01-28 23:21 JST plans/shape-step5-refactor-execplan.md を作成し Step5/UI と pipeline の分割リファクタ計画を明文化。
+  - update: 2026-01-28 23:25 JST Step5 の進捗集計を shared helper に抽出し、runShapePipeline を stage セクション化して整理。
+  - done: 2026-01-28 23:25 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-01-28 23:30 JST useShapeBuildStep を timing/auto-resume/tileSummary の3フックに分割し、pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
   - update: 2026-01-26 20:55 JST Recycling UI/差分ビルド対応の実装に着手（UI/パイプライン/VT フィルタ）。
   - update: 2026-01-26 21:10 JST Recycling トグル/UI/Status 表示と差分ビルドの allowlist フィルタ/完了後の解除を実装。
   - done: 2026-01-26 21:12 JST pnpm --filter @hierarchidb/shape-plugin typecheck / pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
   - update: 2026-01-26 21:20 JST 既存 fetch cache に __hdbFeatureId がない場合の再エンコード処理を追加。
   - done: 2026-01-26 21:21 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を再確認。
+  - update: 2026-01-29 03:59 JST shape-plugin の追加リファクタ候補を提示。
 
 2349) fix/location/step4-slider-right-overflow (P1) — 完了 (2026-01-26)
 - ブランチ名: fix/location/step4-slider-right-overflow
@@ -7331,8 +7695,8 @@
   - update: 2026-01-13 14:25 JST 他ドキュメントの重複記述を参照表記へ置換する作業に着手。検証: 未実施。
   - update: 2026-01-13 14:30 JST vt-shape/vt-route の Step4 に入力仕様の参照先を追記。検証: 未実施。
   - update: 2026-01-13 14:35 JST vt-shape/vt-route/location-route の Step4 参照注記を追加し重複記述を抑制。検証: 未実施。
-  - update: 2026-01-13 14:45 JST Step4 の「Processing Settings」を「Build Settings」に統一する作業に着手。検証: 未実施。
-  - update: 2026-01-13 14:50 JST Step4 の「Processing Settings」を「Build Settings」に統一。検証: 未実施。
+  - update: 2026-01-13 14:45 JST Step4 の「Settings」を「Build Settings」に統一する作業に着手。検証: 未実施。
+  - update: 2026-01-13 14:50 JST Step4 の「Settings」を「Build Settings」に統一。検証: 未実施。
   - update: 2026-01-13 15:00 JST 置換表から旧表記を削除し Build Settings 表記に整理する作業に着手。検証: 未実施。
   - update: 2026-01-13 15:05 JST 置換表から旧表記を削除し Build Settings 表記のみに整理。検証: 未実施。
   - update: 2026-01-13 15:15 JST UI 表記セクションの見出し簡潔化に着手。検証: 未実施。
@@ -10201,6 +10565,23 @@
   - update: 2026-01-26 23:05 JST TS2802/TS2740の対処としてforEach化とLocationDB型キャストを適用。
   - done: 2026-01-26 23:06 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
 
+2395) fix/build/tsconfig-paths-dist-alignment (P1) — 進行中 (2026-01-26)
+- ブランチ名: fix/build/tsconfig-paths-dist-alignment
+- 依存: なし
+- 受け入れ基準: tsconfig.base.json の @hierarchidb/ui-json-treeview paths が dist 指向になる／AGENTS.md の paths 規約が dist 指向へ更新される／turbo の依存順序を確認し必要なら補正する／pnpm typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `tsconfig.base.json`, `AGENTS.md`, `turbo.json`（必要なら）
+- ロールバック手順: 該当差分を revert して src 指向のpaths/規約へ戻す
+- チェックリスト:
+  - tsconfig.base.json の ui-json-treeview paths を dist 指向へ変更
+  - AGENTS.md の paths 規約を dist 指向へ更新
+  - turbo の依存順序を確認し必要なら補正
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 23:15 JST tsconfig paths と規約の dist 指向化に着手。
+  - update: 2026-01-26 23:22 JST ui-json-treeview の paths を dist に変更し、AGENTS.md の規約を dist 指向へ更新。
+  - update: 2026-01-26 23:28 JST ui-json-treeview に build:types を追加し、ui-map に ui-json-treeview 依存を追加。
+  - blocked: 2026-01-26 23:30 JST pnpm install が EPERM (symlink) で失敗し、pnpm typecheck が ui-map の ui-json-treeview 解決失敗で停止。
 2409) fix/auth/bff-production-mode (P1) — 進行中 (2026-01-28)
 - ブランチ名: fix/auth/bff-production-mode
 - 依存: なし
@@ -10220,3 +10601,196 @@
   - update: 2026-01-28 00:45 JST auth callback の戻り先を hash ルーティング時に base prefix を除去するよう調整。
   - update: 2026-01-28 00:47 JST pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define warning あり）。
   - update: 2026-01-28 00:47 JST pnpm --filter @hierarchidb/ui-auth typecheck exit 0。
+2396) refactor/shape/vt-pipeline-split (P1) — 完了 (2026-01-26)
+- ブランチ名: refactor/shape/vt-pipeline-split
+- 依存: なし
+- 受け入れ基準: shapePipeline の責務が生成/割当/統計/永続化に分割され、各段の入出力が型で固定される／既存のタイル生成結果と統計が一致する／ユニットテストが追加または更新される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/vt/shapePipeline.ts` ほか（調査後に確定）
+- ロールバック手順: 該当差分を revert して shapePipeline の一体構成に戻す
+- チェックリスト:
+  - ExecPlan を作成する
+  - パイプライン分割の設計と移行を実施する
+  - ユニットテストを更新/追加する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-26 23:40 JST VTパイプライン分割リファクタの準備に着手。
+  - update: 2026-01-26 23:55 JST ExecPlan を plans/shape-vt-pipeline-split-execplan.md に作成。
+  - update: 2026-01-27 00:20 JST パイプラインをステージ別モジュールへ分割し、shapePipeline をオーケストレーターに整理。
+  - update: 2026-01-27 00:24 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+  - done: 2026-01-27 00:35 JST pnpm --filter @hierarchidb/shape-plugin test 9 passed / 1 skipped を確認。
+
+2397) refactor/shape/task-progress-model-unify (P1) — 進行中 (2026-01-26)
+- ブランチ名: refactor/shape/task-progress-model-unify
+- 依存: 2396
+- 受け入れ基準: 進捗イベント/DB保存/UI表示が同一のステータス集合を共有し、順序はsequenceに統一される／進捗表示の揺れが再発しない／pnpm --filter @hierarchidb/shape-plugin test が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`, `plugins/shape-plugin/src/services/**`, `packages/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert して従来の進捗モデルに戻す
+- チェックリスト:
+  - ExecPlan を作成する
+  - 進捗モデルの統一設計を実施する
+  - UI/DB/Workerの更新を行う
+  - pnpm --filter @hierarchidb/shape-plugin test を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+
+  - start: 2026-01-27 00:42 JST 進捗モデル統一のExecPlan作成に着手。
+  - update: 2026-01-27 00:45 JST ExecPlan を plans/shape-task-progress-unify-execplan.md に作成。
+  - update: 2026-01-29 00:33 JST 進捗モデル統一の実装・調査を再開。
+  - update: 2026-01-29 00:52 JST sequence順での最新タスク選択ヘルパーを追加し、getBuildSessionStatus/getProcessingStatus をsequence基準で算出するよう更新。taskOrdering のユニットテストを追加。
+  - blocked: 2026-01-29 00:52 JST pnpm --filter @hierarchidb/shape-plugin test が geoboundaries.org の ENOTFOUND(fetch failed)で失敗。
+  - update: 2026-01-29 00:58 JST progress 集計も resolveEffectiveTaskStatus を参照するよう統一。
+  - blocked: 2026-01-29 00:58 JST pnpm --filter @hierarchidb/shape-plugin test が geoboundaries.org の ENOTFOUND(fetch failed)で失敗。
+  - update: 2026-01-29 01:02 JST pnpm --filter @hierarchidb/shape-plugin test が Test Files 6 passed / Tests 9 passed | 1 skipped で成功。
+2398) refactor/shape/step5-6-selector-unify (P1) — 未着手 (2026-01-26)
+- ブランチ名: refactor/shape/step5-6-selector-unify
+- 依存: 2397
+- 受け入れ基準: Step5/Step6 の取得・変換ロジックがSelector層に集約される／表示内容が変わらない／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/**`, `plugins/shape-plugin/src/ui/components/step6/**`
+- ロールバック手順: 該当差分を revert して従来のロジック分散に戻す
+- チェックリスト:
+  - ExecPlan を作成する
+  - Selector 層を定義する
+  - Step5/Step6 をSelector参照へ移行する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+
+2399) refactor/shape/selection-normalize-unify (P1) — 未着手 (2026-01-26)
+- ブランチ名: refactor/shape/selection-normalize-unify
+- 依存: 2398
+- 受け入れ基準: selectedArrayByCountries の正規化処理が単一関数に集約され、旧/新形式が同一入口で正規化される／テストで互換性が保証される／pnpm --filter @hierarchidb/shape-plugin test が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`, `plugins/shape-plugin/src/services/**`
+- ロールバック手順: 該当差分を revert して既存の正規化分散に戻す
+- チェックリスト:
+  - ExecPlan を作成する
+  - 正規化関数の集約と呼び出し整理を行う
+  - 互換性テストを更新/追加する
+  - pnpm --filter @hierarchidb/shape-plugin test を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+
+2400) refactor/shape/worker-error-structure (P1) — 未着手 (2026-01-26)
+- ブランチ名: refactor/shape/worker-error-structure
+- 依存: 2399
+- 受け入れ基準: エラーが構造化されUIで詳細が表示される／余計なダイアログが出ない／pnpm --filter @hierarchidb/shape-plugin test が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/**`, `plugins/shape-plugin/src/ui/**`
+- ロールバック手順: 該当差分を revert して従来のmessage文字列中心の処理に戻す
+- チェックリスト:
+  - ExecPlan を作成する
+  - エラー構造の定義と伝搬経路を整理する
+  - UI表示の統一を行う
+  - pnpm --filter @hierarchidb/shape-plugin test を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+
+2401) refactor/shape/floating-window-config-unify (P1) — 未着手 (2026-01-26)
+- ブランチ名: refactor/shape/floating-window-config-unify
+- 依存: 2400
+- 受け入れ基準: Step6 の FloatingWindow 定義が共通化され、位置/サイズ/リサイズ設定が再現される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.mdに運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step6/**`, `packages/ui/floating-window/**`
+- ロールバック手順: 該当差分を revert して個別定義に戻す
+- チェックリスト:
+  - ExecPlan を作成する
+  - 共通定義を作成し参照へ移行する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+
+2420) refactor/shape/skip-message-unify (P1) — 進行中 (2026-01-29)
+- ブランチ名: refactor/shape/skip-message-unify
+- 依存: なし
+- 受け入れ基準: isSkippedMessage の判定が共通関数に集約され UI/Worker で同一挙動になる／ステージ集計・一覧表示の結果が変わらない／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／pnpm --filter @hierarchidb/shape-plugin test が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/ui/components/step5/TaskListVirtualized.tsx`, `plugins/shape-plugin/src/ui/components/step5/shapeBuildProgressUtils.ts`
+- ロールバック手順: 該当差分を revert して各所の判定を元に戻す
+- チェックリスト:
+  - 共通の判定関数を用意し参照へ差し替える
+  - 既存の一覧/集計の挙動が変わらないことを確認する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - pnpm --filter @hierarchidb/shape-plugin test を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-29 04:05 JST isSkippedMessage の共通化に着手。
+  - update: 2026-01-29 04:47 JST isSkippedMessage を common/utils に集約し UI/Worker 参照を差し替え。
+
+2421) refactor/shape/task-title-unify (P1) — 進行中 (2026-01-29)
+- ブランチ名: refactor/shape/task-title-unify
+- 依存: 2420
+- 受け入れ基準: Worker/ UI のタスクタイトル生成が単一実装に統一される／タイトル表示の既存内容が維持される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／pnpm --filter @hierarchidb/shape-plugin test が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/ui/components/step5/ShapeBuildProgressPanel.tsx`, `plugins/shape-plugin/src/ui/components/step5/TaskListVirtualized.tsx`
+- ロールバック手順: 該当差分を revert して従来の個別タイトル生成に戻す
+- チェックリスト:
+  - 共通のタイトル生成関数を作成する
+  - Worker/ UI の参照先を統一する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - pnpm --filter @hierarchidb/shape-plugin test を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-29 04:47 JST タスクタイトル生成の共通化に着手。
+  - update: 2026-01-29 04:49 JST taskTitles 共通ヘルパーを追加し Worker/ UI のタスクタイトル解決を統一。
+
+2422) refactor/shape/phase-labels-extract (P1) — 進行中 (2026-01-29)
+- ブランチ名: refactor/shape/phase-labels-extract
+- 依存: 2421
+- 受け入れ基準: phase ラベル辞書が専用モジュールへ切り出され TaskListVirtualized の責務が簡潔になる／UI表示は既存と一致する／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／pnpm --filter @hierarchidb/shape-plugin test が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/TaskListVirtualized.tsx` と新規モジュール
+- ロールバック手順: 該当差分を revert して TaskListVirtualized 内定義へ戻す
+- チェックリスト:
+  - phase ラベル定義を分離する
+  - TaskListVirtualized から参照する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - pnpm --filter @hierarchidb/shape-plugin test を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-29 04:49 JST phase ラベル辞書の分離に着手。
+  - update: 2026-01-29 04:50 JST phase ラベル辞書を taskPhaseLabels モジュールへ分離し TaskListVirtualized で参照。
+
+2423) refactor/ui-batch/task-merge-unify (P1) — 進行中 (2026-01-29)
+- ブランチ名: refactor/ui-batch/task-merge-unify
+- 依存: 2422
+- 受け入れ基準: タスク更新のマージ/順序ロジックが ui-batch-progress 側に移行し shape 側の同期ロジックが薄くなる／既存の更新順/表示が維持される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／pnpm --filter @hierarchidb/shape-plugin test が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step5/useShapeBuildTaskSync.ts`, `packages/ui/batch/src/**`
+- ロールバック手順: 該当差分を revert して shape 側にロジックを戻す
+- チェックリスト:
+  - ui-batch-progress に共通マージロジックを追加する
+  - shape 側の同期ロジックを共通関数参照へ移行する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - pnpm --filter @hierarchidb/shape-plugin test を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-29 04:50 JST task merge/ordering の共通化に着手。
+  - update: 2026-01-29 04:54 JST ui-batch-progress に taskSyncHelpers を追加し、shape の task merge/ordering を共通関数へ移行。
+
+2424) refactor/shape/status-phase-normalize-unify (P1) — 進行中 (2026-01-29)
+- ブランチ名: refactor/shape/status-phase-normalize-unify
+- 依存: 2423
+- 受け入れ基準: status/phase の正規化関数が共通化され shape/route/location で同一挙動になる／既存の表示が変わらない／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／pnpm --filter @hierarchidb/shape-plugin test が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/worker/api.ts` ほか共通化先
+- ロールバック手順: 該当差分を revert して shape 固有の正規化に戻す
+- チェックリスト:
+  - 正規化関数の共通化方針を決めて切り出す
+  - shape/route/location の参照先を統一する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - pnpm --filter @hierarchidb/shape-plugin test を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-29 04:54 JST status/phase 正規化の共通化に着手。
+  - update: 2026-01-29 04:55 JST common-api に normalizeProgressPhase/mapProgressPhaseToBatchStatus を追加し、shape/route/location へ適用。
+
+2425) refactor/shape/task-summary-mapper-unify (P1) — 進行中 (2026-01-29)
+- ブランチ名: refactor/shape/task-summary-mapper-unify
+- 依存: 2424
+- 受け入れ基準: task summary のマッピング関数が統合され重複がなくなる／表示内容/ログ内容が維持される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／pnpm --filter @hierarchidb/shape-plugin test が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/worker/api.ts`
+- ロールバック手順: 該当差分を revert して個別 mapper に戻す
+- チェックリスト:
+  - 共通 mapper を作成する
+  - 既存の mapper を統合する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - pnpm --filter @hierarchidb/shape-plugin test を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-29 04:55 JST task summary mapper の統合に着手。
+  - update: 2026-01-29 04:56 JST task summary の共通フィールド生成を追加し mapper を統合。
+  - update: 2026-01-29 04:58 JST pnpm --filter @hierarchidb/ui-batch-progress build / pnpm --filter @hierarchidb/common-api build / pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - blocked: 2026-01-29 04:58 JST pnpm --filter @hierarchidb/shape-plugin test が geoboundaries.org の ENOTFOUND(fetch failed)で失敗。
