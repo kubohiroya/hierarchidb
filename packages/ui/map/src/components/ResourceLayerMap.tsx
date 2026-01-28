@@ -604,6 +604,7 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
   const [searchSettingsOpen, setSearchSettingsOpen] = useState(false);
   const [floatingInteractionActive, setFloatingInteractionActive] = useState(false);
   const canvasPointerEventsRef = useRef<string | null>(null);
+  const containerPointerEventsRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (typeof document === 'undefined') return undefined;
@@ -620,17 +621,28 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
 
   useEffect(() => {
     if (!mapInstance) return;
+    const container = mapInstance.getContainer();
     const canvas = mapInstance.getCanvas();
     if (floatingInteractionActive) {
       if (canvasPointerEventsRef.current === null) {
         canvasPointerEventsRef.current = canvas.style.pointerEvents;
       }
+      if (containerPointerEventsRef.current === null) {
+        containerPointerEventsRef.current = container.style.pointerEvents;
+      }
+      container.style.pointerEvents = 'none';
       canvas.style.pointerEvents = 'none';
     } else if (canvasPointerEventsRef.current !== null) {
+      container.style.pointerEvents = containerPointerEventsRef.current ?? '';
+      containerPointerEventsRef.current = null;
       canvas.style.pointerEvents = canvasPointerEventsRef.current;
       canvasPointerEventsRef.current = null;
     }
     return () => {
+      if (containerPointerEventsRef.current !== null) {
+        container.style.pointerEvents = containerPointerEventsRef.current;
+        containerPointerEventsRef.current = null;
+      }
       if (canvasPointerEventsRef.current !== null) {
         canvas.style.pointerEvents = canvasPointerEventsRef.current;
         canvasPointerEventsRef.current = null;

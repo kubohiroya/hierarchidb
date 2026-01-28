@@ -16,8 +16,28 @@ import {
   Window as WindowIcon,
 } from '@mui/icons-material';
 import type { FloatingWindowProps, WindowState } from '../types/WindowState.js';
+import {
+  DEFAULT_FLOATING_WINDOW_Z_INDEX,
+  FLOATING_WINDOW_ROOT_ID,
+  useFloatingWindowPortal,
+} from './FloatingWindowPortalProvider.js';
 
-let floatingWindowZIndex = 2000;
+const ensureFloatingWindowRoot = (): HTMLElement | null => {
+  if (typeof document === 'undefined') return null;
+  const body = document.body;
+  if (!body) return null;
+  let root = document.getElementById(FLOATING_WINDOW_ROOT_ID);
+  if (!root) {
+    root = document.createElement('div');
+    root.id = FLOATING_WINDOW_ROOT_ID;
+    root.style.position = 'fixed';
+    root.style.inset = '0';
+    root.style.pointerEvents = 'none';
+    body.appendChild(root);
+  }
+  root.style.zIndex = String(DEFAULT_FLOATING_WINDOW_Z_INDEX);
+  return root;
+};
 
 const StyledWindow = styled(Paper)(({ theme }) => ({
   position: 'fixed',
@@ -141,6 +161,26 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
     }
   }, []);
   const [overlayActive, setOverlayActive] = useState(false);
+  const portalContext = useFloatingWindowPortal();
+  const portalRoot = portalContext.isProvider ? portalContext.root : ensureFloatingWindowRoot();
+  const portalHostRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!portalRoot) return undefined;
+    if (!portalHostRef.current) {
+      const host = document.createElement('div');
+      host.style.position = 'relative';
+      host.style.pointerEvents = 'auto';
+      portalHostRef.current = host;
+      portalRoot.appendChild(host);
+    }
+    return () => {
+      const host = portalHostRef.current;
+      if (host && portalRoot.contains(host)) {
+        portalRoot.removeChild(host);
+      }
+      portalHostRef.current = null;
+    };
+  }, [portalRoot]);
 
   const windowRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
@@ -158,6 +198,10 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
     isVisible: initialState?.isVisible !== false,
     zIndex: initialState?.zIndex || 1000,
   });
+  const stateRef = useRef<WindowState>(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
   const normalStateRef = useRef<{ position: { x: number; y: number }; size: { width: number; height: number } } | null>(null);
   const resolveIncomingState = useCallback((prev: WindowState, incoming?: Partial<WindowState>): WindowState | null => {
     if (!incoming) return null;
@@ -232,6 +276,14 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
     onStateChange?.(state);
   }, [state, onStateChange]);
 
+  const bringToFront = useCallback(() => {
+    const host = portalHostRef.current;
+    const parent = host?.parentElement;
+    if (host && parent && parent.lastElementChild !== host) {
+      parent.appendChild(host);
+    }
+  }, []);
+
   // Handle dragging
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (!draggable || e.button !== 0) return;
@@ -240,25 +292,18 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
     // Check if clicking on title bar
     const target = e.target as HTMLElement;
     if (!target.closest('.title-bar')) return;
+    if (target.closest('button')) return;
 
     isDragging.current = true;
     setInteractionActive(true);
     setOverlayActive(true);
+    bringToFront();
     dragStart.current = {
-      x: e.clientX - state.position.x,
-      y: e.clientY - state.position.y,
+      x: e.clientX - stateRef.current.position.x,
+      y: e.clientY - stateRef.current.position.y,
     };
     e.preventDefault();
-  }, [draggable, setInteractionActive, setOverlayActive, state.isFullscreen, state.position]);
-
-  const bringToFront = useCallback(() => {
-    floatingWindowZIndex += 1;
-    setState(prev => {
-      const nextZIndex = Math.max(prev.zIndex ?? 1000, floatingWindowZIndex);
-      if (nextZIndex === prev.zIndex) return prev;
-      return { ...prev, zIndex: nextZIndex };
-    });
-  }, []);
+  }, [bringToFront, draggable, setInteractionActive, setOverlayActive, state.isFullscreen]);
 
   // Handle resizing
   const handleResizeMouseDown = useCallback((direction: string) => (e: React.MouseEvent) => {
@@ -268,21 +313,23 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
     isResizing.current = true;
     setInteractionActive(true);
     setOverlayActive(true);
+    bringToFront();
     resizeDirection.current = direction;
     resizeStart.current = {
-      width: state.size.width,
-      height: state.size.height,
+      width: stateRef.current.size.width,
+      height: stateRef.current.size.height,
       x: e.clientX,
       y: e.clientY,
-      positionX: state.position.x,
-      positionY: state.position.y,
+      positionX: stateRef.current.position.x,
+      positionY: stateRef.current.position.y,
     };
 
     e.preventDefault();
     e.stopPropagation();
-  }, [resizable, setInteractionActive, setOverlayActive, state.isFullscreen, state.isMinimized, state.position, state.size]);
+  }, [bringToFront, resizable, setInteractionActive, setOverlayActive, state.isFullscreen, state.isMinimized]);
 
   // Global mouse move handler
+  const interactionEnabled = state.isVisible;
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isDragging.current) {
@@ -343,7 +390,7 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
       setOverlayActive(false);
     };
 
-    if (state.isVisible && !state.isMinimized) {
+    if (interactionEnabled) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
     }
@@ -351,13 +398,27 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
-      setInteractionActive(false);
-      setOverlayActive(false);
     };
-  }, [clamp, effectiveMaxHeight, effectiveMaxWidth, minHeight, minWidth, resolveBounds, setInteractionActive, setOverlayActive, state]);
+  }, [
+    clamp,
+    effectiveMaxHeight,
+    effectiveMaxWidth,
+    interactionEnabled,
+    minHeight,
+    minWidth,
+    resolveBounds,
+    setInteractionActive,
+    setOverlayActive,
+  ]);
 
   // Handle minimize/restore
   const handleMinimize = useCallback(() => {
+    isDragging.current = false;
+    isResizing.current = false;
+    resizeDirection.current = '';
+    setInteractionActive(false);
+    setOverlayActive(false);
+    bringToFront();
     setState(prev => {
       if (prev.isMinimized) {
         return { ...prev, isMinimized: false };
@@ -371,9 +432,10 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
         size: normal?.size ?? prev.size,
       };
     });
-  }, []);
+  }, [bringToFront, setInteractionActive, setOverlayActive]);
 
   const handleFullscreen = useCallback(() => {
+    bringToFront();
     setState(prev => {
       if (prev.isFullscreen) {
         const normal = normalStateRef.current;
@@ -393,13 +455,14 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
         size: { width: Math.max(minWidth, window.innerWidth), height: Math.max(minHeight, window.innerHeight) },
       };
     });
-  }, [minHeight, minWidth]);
+  }, [bringToFront, minHeight, minWidth]);
 
   // Handle close
   const handleClose = useCallback(() => {
+    bringToFront();
     setState(prev => ({ ...prev, isVisible: false }));
     onClose?.();
-  }, [onClose]);
+  }, [bringToFront, onClose]);
 
   useEffect(() => {
     if (!state.isFullscreen) return;
@@ -425,44 +488,49 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
     top: state.position.y,
     width: state.isMinimized ? 250 : state.size.width,
     height: state.isMinimized ? 40 : state.size.height,
-    zIndex: state.zIndex,
+    zIndex: 0,
     display: state.isVisible ? 'flex' : 'none',
     ...style,
   }), [state, style]);
+  const overlayZIndex = 1;
 
   if (!state.isVisible) {
     return null;
   }
+  if (portalContext.isProvider && !portalRoot) {
+    return null;
+  }
 
-  return (
-    <>
-      {overlayActive && typeof document !== 'undefined'
-        ? createPortal(
-            <Box
-              sx={{
-                position: 'fixed',
-                inset: 0,
-                backgroundColor: 'transparent',
-                zIndex: Math.max(0, (state.zIndex ?? 1000) - 1),
-                cursor: isResizing.current ? 'nwse-resize' : 'move',
-              }}
-            />,
-            document.body
-          )
-        : null}
-      <StyledWindow
-        ref={windowRef}
-        className={`floating-window ${className || ''}`}
-        style={windowStyle}
-        elevation={8}
+  const overlayNode = (
+    <Box
+      sx={{
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'transparent',
+        zIndex: overlayZIndex,
+        cursor: isResizing.current ? 'nwse-resize' : 'move',
+        pointerEvents: 'auto',
+      }}
+    />
+  );
+  const windowNode = (
+    <StyledWindow
+      ref={windowRef}
+      className={`floating-window ${className || ''}`}
+      style={{ ...windowStyle, pointerEvents: 'auto' }}
+      elevation={8}
+      onMouseDownCapture={(event) => {
+        if (event.button !== 0) return;
+        bringToFront();
+      }}
+    >
+      <TitleBar
+        className="title-bar"
+        onMouseDown={handleMouseDown}
         onMouseDownCapture={(event) => {
           if (event.button !== 0) return;
           bringToFront();
         }}
-      >
-      <TitleBar
-        className="title-bar"
-        onMouseDown={handleMouseDown}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.83rem' }}>
           {titleIcon ?? <WindowIcon sx={{ fontSize: '1rem', ml: 1 }} />}
@@ -515,7 +583,13 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
           )}
         </>
       )}
-      </StyledWindow>
+    </StyledWindow>
+  );
+
+  return (
+    <>
+      {overlayActive && portalRoot ? createPortal(overlayNode, portalRoot) : overlayActive ? overlayNode : null}
+      {portalHostRef.current ? createPortal(windowNode, portalHostRef.current) : windowNode}
     </>
   );
 };

@@ -319,6 +319,7 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
         onClose={() => setColumnSelectorOpen(false)}
         maxWidth="xs"
         fullWidth
+        sx={{ zIndex: (theme) => theme.zIndex.modal + 20 }}
       >
         <DialogTitle>Columns</DialogTitle>
         <DialogContent dividers>
