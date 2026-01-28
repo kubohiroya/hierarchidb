@@ -310,10 +310,6 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
 
   useEffect(() => {
     if (!availabilityError) return;
-    if (/openstreetmap/i.test(availabilityError.message)) {
-      enqueueSnackbar(availabilityError.message, { variant: 'error' });
-      return;
-    }
     enqueueSnackbar(
       'Failed to load data source availability.',
       { variant: 'error' },
@@ -393,15 +389,7 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
 
   const normalizedSelection = useMemo<Record<string, boolean[]>>(() => {
     if (!selectedArrayByCountries) return {};
-    if (Array.isArray(selectedArrayByCountries)) {
-      const legacy = selectedArrayByCountries as boolean[][];
-      const mapped: Record<string, boolean[]> = {};
-      baseCountries.forEach((entry, rowIndex) => {
-        const row = legacy[rowIndex] ?? [];
-        mapped[entry.country.code] = Array.from({ length: resolvedMaxAdminLevel + 1 }, (_, idx) => Boolean(row[idx]));
-      });
-      return mapped;
-    }
+    if (Array.isArray(selectedArrayByCountries)) return {};
     const resolveSelectionKey = (code: string) => {
       const normalized = code.trim().toUpperCase();
       if (normalized.length === 2) return normalized;
