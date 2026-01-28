@@ -75,7 +75,7 @@ export const OAuthCallback: React.FC = () => {
     };
 
     handleCallback();
-  }, [navigate]);
+  }, [navigate, resolveReturnUrl]);
 
   if (error) {
     return (

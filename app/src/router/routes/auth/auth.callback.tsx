@@ -5,7 +5,7 @@
 import { BFFAuthService } from '@hierarchidb/ui-plugin-shell/ui-auth';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import { useLocation, useNavigate } from '@tanstack/react-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 export default function AuthCallbackRoute() {
   const navigate = useNavigate();
@@ -18,13 +18,13 @@ export default function AuthCallbackRoute() {
   //const { handleCallback } = ;
   const [error, setError] = useState<string | null>(null);
 
-  const getAppBasePrefix = () => {
+  const getAppBasePrefix = useCallback(() => {
     const base = import.meta.env.BASE_URL || '/';
     const normalized = String(base).startsWith('/') ? String(base) : `/${String(base)}`;
     return normalized.endsWith('/') ? normalized.slice(0, -1) : normalized;
-  };
+  }, []);
 
-  const normalizeHashReturnPath = (pathname: string) => {
+  const normalizeHashReturnPath = useCallback((pathname: string) => {
     const basePrefix = getAppBasePrefix();
     if (!basePrefix || basePrefix === '/') return pathname;
     if (pathname === basePrefix) return '/';
@@ -33,9 +33,9 @@ export default function AuthCallbackRoute() {
       return stripped.length > 0 ? stripped : '/';
     }
     return pathname;
-  };
+  }, [getAppBasePrefix]);
 
-  const resolveReturnUrl = (rawUrl: string) => {
+  const resolveReturnUrl = useCallback((rawUrl: string) => {
     try {
       const resolved = new URL(rawUrl, window.location.origin);
       if (resolved.origin !== window.location.origin) {
@@ -49,7 +49,7 @@ export default function AuthCallbackRoute() {
     } catch {
       return { isExternal: false, url: '/' };
     }
-  };
+  }, [normalizeHashReturnPath]);
 
   useEffect(() => {
     async function processCallback() {
@@ -102,7 +102,7 @@ export default function AuthCallbackRoute() {
     }
 
     processCallback();
-  }, [searchParams, navigate]);
+  }, [searchParams, navigate, resolveReturnUrl]);
 
   useEffect(() => {
     if (window.opener) {
