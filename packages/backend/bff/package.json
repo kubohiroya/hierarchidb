@@ -7,7 +7,7 @@
   "scripts": {
     "dev:manual": "wrangler dev",
     "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
-    "deploy": "wrangler deploy --config wrangler.hierarchidb.toml",
+    "deploy": "wrangler deploy --config wrangler.hierarchidb.toml --env production",
     "deploy:production": "wrangler deploy --config wrangler.hierarchidb.toml --env production",
     "logs": "wrangler tail --config wrangler.hierarchidb.toml",
     "clean": "rm -rf dist",
