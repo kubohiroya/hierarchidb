@@ -20,6 +20,7 @@ export interface UseDialogUrlSyncOptions {
     mode?: DialogModeState;
     map?: DialogMapState;
   };
+  writeWhenNoDialogPath?: boolean; // default: true (sync even when not on /t/.../mode/step)
   debounce?: {
     step?: number; // usually 0 (immediate)
     map?: number; // default 400ms
@@ -41,7 +42,14 @@ function debounceFn<TArgs extends unknown[]>(fn: (...args: TArgs) => void, wait:
 }
 
 export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
-  const { namespace = '', defaults, debounce, history, readFrom = 'search' } = options;
+  const {
+    namespace = '',
+    defaults,
+    debounce,
+    history,
+    readFrom = 'search',
+    writeWhenNoDialogPath = true,
+  } = options;
 
   const [step, setStep] = useState<number>(defaults?.step ?? 0);
   const [mode, setMode] = useState<DialogModeState>(defaults?.mode ?? 'normal');
@@ -219,6 +227,9 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
           url.search = q.toString();
         }
       } else {
+        if (!writeWhenNoDialogPath) {
+          return;
+        }
         if (fields.step != null) q.set(ns('step'), String(fields.step));
         if (fields.mode) q.set(ns('mode'), fields.mode);
         if (fields.map) {
@@ -254,7 +265,15 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
         writingRef.current = false;
       }, 0);
     },
-    [defaults?.step, getDialogPathState, history?.step, isBrowser, namespace, readFrom]
+    [
+      defaults?.step,
+      getDialogPathState,
+      history?.step,
+      isBrowser,
+      namespace,
+      readFrom,
+      writeWhenNoDialogPath,
+    ]
   );
 
   // atoms -> URL (step, immediate)

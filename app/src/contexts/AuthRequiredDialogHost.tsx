@@ -15,7 +15,7 @@ export function AuthRequiredDialogHost(): JSX.Element | null {
   const registry = AuthNotificationRegistry.getInstance();
   const [notification, setNotification] = useState<AuthRequiredNotification | null>(null);
   const activeRequestIdRef = useRef<string | null>(null);
-  const { setStep } = useDialogUrlSync();
+  const { setStep } = useDialogUrlSync({ writeWhenNoDialogPath: false });
 
   const isAuthDebugEnabled = () => {
     try {
