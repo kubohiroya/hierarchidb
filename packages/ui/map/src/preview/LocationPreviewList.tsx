@@ -1,9 +1,10 @@
 import type React from 'react';
-import { useEffect, useMemo, useState } from 'react';
-import { Box, CircularProgress, IconButton, Stack, Typography } from '@mui/material';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Box, CircularProgress, Dialog, DialogContent, DialogTitle, IconButton, Stack, Typography } from '@mui/material';
 import { Place as PlaceIcon, Recycling as RecyclingIcon } from '@mui/icons-material';
 import type { GridColumn } from '@hierarchidb/ui-grid';
 import { FloatingWindow, useFloatingWindow } from '@hierarchidb/ui-floating-window';
+import { JsonTreeView } from '@hierarchidb/ui-json-treeview';
 import { MapPreviewFloatingTable } from './MapPreviewFloatingTable.js';
 
 export type LocationPreviewListProps = {
@@ -63,6 +64,9 @@ export const LocationPreviewList: React.FC<LocationPreviewListProps> = ({
   }, [show]);
 
   const [searchValue, setSearchValue] = useState('');
+  const [jsonDialogOpen, setJsonDialogOpen] = useState(false);
+  const [jsonDialogValue, setJsonDialogValue] = useState<unknown>(null);
+  const [jsonDialogTitle, setJsonDialogTitle] = useState<string>('Metadata');
   const normalizedRows = useMemo(()=>Array.isArray(rows) ? rows : [], [rows]);
   const resolvedColumns = useMemo(() => {
     if (columns && columns.length > 0) return columns;
@@ -107,6 +111,19 @@ export const LocationPreviewList: React.FC<LocationPreviewListProps> = ({
     }))
   ), [resolvedColumns]);
 
+  const handleCellClick = useCallback((params: { row: Record<string, unknown>; columnId: string }) => {
+    if (params.columnId !== 'metadata') return;
+    const value = params.row.metadata;
+    setJsonDialogValue(value ?? null);
+    const name = typeof params.row.name === 'string' && params.row.name.length > 0
+      ? params.row.name
+      : params.row.id != null
+        ? String(params.row.id)
+        : 'Metadata';
+    setJsonDialogTitle(`Metadata: ${name}`);
+    setJsonDialogOpen(true);
+  }, []);
+
   const content = useMemo(() => {
     if (loading) {
       return (
@@ -150,6 +167,7 @@ export const LocationPreviewList: React.FC<LocationPreviewListProps> = ({
           selectionMode="multiple"
           selectedRows={selectedRows}
           onSelectionChange={onSelectionChange}
+          onCellClick={handleCellClick}
           enableColumnSelector
           toolbarActions={onToggleRecycling ? (
             <IconButton
@@ -190,6 +208,18 @@ export const LocationPreviewList: React.FC<LocationPreviewListProps> = ({
       <Box sx={{ height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
         {content}
       </Box>
+      <Dialog
+        open={jsonDialogOpen}
+        onClose={() => setJsonDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+        sx={{ zIndex: (theme) => theme.zIndex.modal + 30 }}
+      >
+        <DialogTitle>{jsonDialogTitle}</DialogTitle>
+        <DialogContent dividers>
+          <JsonTreeView data={jsonDialogValue} defaultExpandedDepth={2} maxHeight={420} />
+        </DialogContent>
+      </Dialog>
     </FloatingWindow>
   );
 };

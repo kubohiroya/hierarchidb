@@ -379,6 +379,12 @@
       "@hierarchidb/ui-i18n/*": [
         "packages/ui/i18n/dist/*"
       ],
+      "@hierarchidb/ui-json-treeview": [
+        "packages/ui/json-treeview/src/index.ts"
+      ],
+      "@hierarchidb/ui-json-treeview/*": [
+        "packages/ui/json-treeview/src/*"
+      ],
       "@hierarchidb/ui-icon": [
         "packages/ui/icon/dist/index.d.ts"
       ],
