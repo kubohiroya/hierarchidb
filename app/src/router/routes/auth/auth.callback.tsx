@@ -18,16 +18,34 @@ export default function AuthCallbackRoute() {
   //const { handleCallback } = ;
   const [error, setError] = useState<string | null>(null);
 
+  const getAppBasePrefix = () => {
+    const base = import.meta.env.BASE_URL || '/';
+    const normalized = String(base).startsWith('/') ? String(base) : `/${String(base)}`;
+    return normalized.endsWith('/') ? normalized.slice(0, -1) : normalized;
+  };
+
+  const normalizeHashReturnPath = (pathname: string) => {
+    const basePrefix = getAppBasePrefix();
+    if (!basePrefix || basePrefix === '/') return pathname;
+    if (pathname === basePrefix) return '/';
+    if (pathname.startsWith(`${basePrefix}/`)) {
+      const stripped = pathname.slice(basePrefix.length);
+      return stripped.length > 0 ? stripped : '/';
+    }
+    return pathname;
+  };
+
   const resolveReturnUrl = (rawUrl: string) => {
     try {
       const resolved = new URL(rawUrl, window.location.origin);
       if (resolved.origin !== window.location.origin) {
         return { isExternal: true, url: resolved.toString() };
       }
-      return {
-        isExternal: false,
-        url: `${resolved.pathname}${resolved.search}${resolved.hash}`,
-      };
+      const usesHashRouting = window.location.hash.startsWith('#/');
+      const normalizedPath = usesHashRouting
+        ? normalizeHashReturnPath(resolved.pathname)
+        : resolved.pathname;
+      return { isExternal: false, url: `${normalizedPath}${resolved.search}${resolved.hash}` };
     } catch {
       return { isExternal: false, url: '/' };
     }
