@@ -16,6 +16,11 @@ export const PluginDialogShell: React.FC<PluginDialogShellProps> = (props) => {
   const backdropSx = unsavedChangeDialog?.open ? { pointerEvents: 'none' as const } : undefined;
 
   const unsavedDialogSlotProps = {
+    root: {
+      sx: {
+        zIndex: (theme: Theme) => (theme?.zIndex?.modal ?? 1300) + 8000,
+      },
+    },
     backdrop: {
       sx: {
         zIndex: (theme: Theme) => (theme?.zIndex?.modal ?? 1300) + 8000,
