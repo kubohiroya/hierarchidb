@@ -203,6 +203,21 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
     stateRef.current = state;
   }, [state]);
   const normalStateRef = useRef<{ position: { x: number; y: number }; size: { width: number; height: number } } | null>(null);
+  // Calculate constraints
+  const effectiveMaxWidth = maxWidth || window.innerWidth - 50;
+  const effectiveMaxHeight = maxHeight || window.innerHeight - 50;
+  const clamp = useCallback((value: number, min: number, max: number) => Math.min(max, Math.max(min, value)), []);
+  const resolveBounds = useCallback(() => {
+    const minVisibleLeft = 64;
+    const minVisibleTop = 24;
+    return {
+      minX: 0,
+      minY: 0,
+      maxX: Math.max(0, window.innerWidth - minVisibleLeft),
+      maxY: Math.max(0, window.innerHeight - minVisibleTop),
+    };
+  }, []);
+
   const resolveIncomingState = useCallback((prev: WindowState, incoming?: Partial<WindowState>): WindowState | null => {
     if (!incoming) return null;
     const normalizePosition = (value: WindowState['position'] | undefined) => {
@@ -211,7 +226,11 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
       if (!Number.isFinite(x) || !Number.isFinite(y)) {
         return prev.position;
       }
-      return value;
+      const bounds = resolveBounds();
+      return {
+        x: clamp(x, bounds.minX, bounds.maxX),
+        y: clamp(y, bounds.minY, bounds.maxY),
+      };
     };
     const normalizeSize = (value: WindowState['size'] | undefined) => {
       if (!value) return prev.size;
@@ -240,7 +259,7 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
       && next.zIndex === prev.zIndex;
     if (samePosition && sameSize && sameFlags) return null;
     return next;
-  }, []);
+  }, [clamp, resolveBounds]);
 
   useEffect(() => {
     setState((prev) => {
@@ -251,21 +270,6 @@ export const FloatingWindow: React.FC<FloatingWindowProps> = ({
       return next ?? prev;
     });
   }, [initialState, resolveIncomingState]);
-
-  // Calculate constraints
-  const effectiveMaxWidth = maxWidth || window.innerWidth - 50;
-  const effectiveMaxHeight = maxHeight || window.innerHeight - 50;
-  const clamp = useCallback((value: number, min: number, max: number) => Math.min(max, Math.max(min, value)), []);
-  const resolveBounds = useCallback(() => {
-    const minVisibleLeft = 64;
-    const minVisibleTop = 24;
-    return {
-      minX: 0,
-      minY: 0,
-      maxX: Math.max(0, window.innerWidth - minVisibleLeft),
-      maxY: Math.max(0, window.innerHeight - minVisibleTop),
-    };
-  }, []);
 
   // Update external atoms
   useEffect(() => {
