@@ -5,6 +5,7 @@ export type PrefixedEnv = {
   BFF_SESSION_DURATION_HOURS?: string;
   BFF_ALLOWED_ORIGINS?: string;
   BFF_APP_BASE_URL?: string;
+  BFF_APP_BASE_URLS?: string;
   BFF_REDIRECT_URI?: string;
   BFF_GITHUB_REDIRECT_URI?: string;
   BFF_MICROSOFT_REDIRECT_URI?: string;
@@ -29,6 +30,7 @@ export interface MappedEnv extends Env, AdditionalEnv {
   SESSION_DURATION_HOURS: string;
   ALLOWED_ORIGINS: string;
   APP_BASE_URL?: string;
+  APP_BASE_URLS?: string;
   REDIRECT_URI: string;
   GITHUB_REDIRECT_URI?: string;
   MICROSOFT_REDIRECT_URI?: string;
@@ -46,6 +48,7 @@ export function mapEnvironmentVariables(env: RawEnv): MappedEnv {
     SESSION_DURATION_HOURS: env.BFF_SESSION_DURATION_HOURS || env.SESSION_DURATION_HOURS || '24',
     ALLOWED_ORIGINS: env.BFF_ALLOWED_ORIGINS || env.ALLOWED_ORIGINS || '',
     APP_BASE_URL: env.BFF_APP_BASE_URL || env.APP_BASE_URL,
+    APP_BASE_URLS: env.BFF_APP_BASE_URLS || env.APP_BASE_URLS,
     REDIRECT_URI: env.BFF_REDIRECT_URI || env.REDIRECT_URI || '',
     GITHUB_REDIRECT_URI: env.BFF_GITHUB_REDIRECT_URI || env.GITHUB_REDIRECT_URI,
     MICROSOFT_REDIRECT_URI: env.BFF_MICROSOFT_REDIRECT_URI || env.MICROSOFT_REDIRECT_URI,

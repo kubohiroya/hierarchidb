@@ -21,6 +21,7 @@ export interface Env {
   // CORS and App Configuration
   ALLOWED_ORIGINS: string;
   APP_BASE_URL?: string;
+  APP_BASE_URLS?: string;
   REDIRECT_URI: string;
   GITHUB_REDIRECT_URI?: string;
   MICROSOFT_REDIRECT_URI?: string;
@@ -30,6 +31,7 @@ export interface Env {
   BFF_SESSION_DURATION_HOURS?: string;
   BFF_ALLOWED_ORIGINS?: string;
   BFF_APP_BASE_URL?: string;
+  BFF_APP_BASE_URLS?: string;
   BFF_REDIRECT_URI?: string;
   BFF_GITHUB_REDIRECT_URI?: string;
   BFF_MICROSOFT_REDIRECT_URI?: string;

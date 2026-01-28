@@ -3,6 +3,7 @@ import { createSessionToken } from '../utils/jwt.js';
 import { KVStorageManager } from '../utils/kv-storage.js';
 import { parseEnvInt } from '../utils/number.js';
 import {
+  buildAppCallbackUrl,
   getAppCallbackUrlFromState,
   getDynamicRedirectUri,
   validateRedirectUri,
@@ -30,12 +31,12 @@ import {
  * This receives the authorization code and exchanges it for tokens
  */
 export async function handleOAuth2Callback(c: BffContext) {
+  let stateOrigin: string | undefined;
   try {
     const url = new URL(c.req.url);
     const code = url.searchParams.get('code');
     const state = url.searchParams.get('state');
     const error = url.searchParams.get('error');
-
     //  StateCSRF
     if (state) {
       const env = getEnv(c);
@@ -45,10 +46,13 @@ export async function handleOAuth2Callback(c: BffContext) {
       if (!stateData) {
         console.warn('State validation failed; continuing without atoms enforcement');
       } else if (stateData.origin) {
-        const appBaseUrl = getAppCallbackUrlFromState(c, state);
+        stateOrigin = stateData.origin;
+        const appBaseUrl = getAppCallbackUrlFromState(c, state, stateOrigin);
         if (!appBaseUrl.startsWith(stateData.origin)) {
           console.warn('State origin mismatch:', stateData.origin, appBaseUrl);
-          return c.redirect(`${stateData.origin}/auth/callback?error=invalid_state`);
+          const errorUrl = buildAppCallbackUrl(c, stateData.origin);
+          errorUrl.searchParams.set('error', 'invalid_state');
+          return c.redirect(errorUrl.toString());
         }
       }
     }
@@ -58,8 +62,8 @@ export async function handleOAuth2Callback(c: BffContext) {
       const errorDescription = url.searchParams.get('error_description') || 'Authentication failed';
 
       // Redirect back to src with error
-      const appBaseUrl = getAppCallbackUrlFromState(c, state);
-      const appCallbackUrl = new URL(`${appBaseUrl}/auth/callback`);
+      const appBaseUrl = getAppCallbackUrlFromState(c, state, stateOrigin);
+      const appCallbackUrl = buildAppCallbackUrl(c, appBaseUrl);
       appCallbackUrl.searchParams.set('error', error);
       appCallbackUrl.searchParams.set('error_description', errorDescription);
       return c.redirect(appCallbackUrl.toString());
@@ -67,16 +71,16 @@ export async function handleOAuth2Callback(c: BffContext) {
 
     if (!code) {
       // Redirect back to src with error
-      const appBaseUrl = getAppCallbackUrlFromState(c, state);
-      const appCallbackUrl = new URL(`${appBaseUrl}/auth/callback`);
+      const appBaseUrl = getAppCallbackUrlFromState(c, state, stateOrigin);
+      const appCallbackUrl = buildAppCallbackUrl(c, appBaseUrl);
       appCallbackUrl.searchParams.set('error', 'invalid_request');
       appCallbackUrl.searchParams.set('error_description', 'Authorization code missing');
       return c.redirect(appCallbackUrl.toString());
     }
 
     // Redirect to src callback with the authorization code
-    const appBaseUrl = getAppCallbackUrlFromState(c, state);
-    const appCallbackUrl = new URL(`${appBaseUrl}/auth/callback`);
+    const appBaseUrl = getAppCallbackUrlFromState(c, state, stateOrigin);
+    const appCallbackUrl = buildAppCallbackUrl(c, appBaseUrl);
     appCallbackUrl.searchParams.set('code', code);
     if (state) {
       appCallbackUrl.searchParams.set('state', state);
@@ -89,8 +93,8 @@ export async function handleOAuth2Callback(c: BffContext) {
     // Redirect back to src with error
     const url = new URL(c.req.url);
     const state = url.searchParams.get('state');
-    const appBaseUrl = getAppCallbackUrlFromState(c, state);
-    const appCallbackUrl = new URL(`${appBaseUrl}/auth/callback`);
+    const appBaseUrl = getAppCallbackUrlFromState(c, state, stateOrigin);
+    const appCallbackUrl = buildAppCallbackUrl(c, appBaseUrl);
     appCallbackUrl.searchParams.set('error', 'server_error');
     appCallbackUrl.searchParams.set('error_description', 'Failed to process authentication');
 
