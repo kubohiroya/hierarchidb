@@ -15,6 +15,7 @@ import { Subscriptions } from '~/hooks/SubscriptionServices.ts';
 import { useTreeConsoleSSOT } from '~/state/treeconsole.atoms.ts';
 import { convertTreeNodeToTreeNodeData } from '~/utils/treeNodeConverter.js';
 import { resolveBuildTargetForNode, startBuildFlow } from './buildFlow.ts';
+import { resolvePreviewGuardState } from '~/hooks/treeconsole/actions/dialog.ts';
 
 type ContextMenuHandler = NonNullable<TreeConsolePanelProps['onContextMenuAction']>;
 
@@ -45,6 +46,8 @@ export function useTreeNodeInfoPanel({
   const [currentNode, setCurrentNode] = useState<TreeNode | undefined>(node);
   const [buildTarget, setBuildTarget] = useState<BuildStepTarget | null>(null);
   const [buildTargetLoading, setBuildTargetLoading] = useState(false);
+  const [previewGuardState, setPreviewGuardState] = useState<{ canOpen: boolean } | null>(null);
+  const [previewGuardLoading, setPreviewGuardLoading] = useState(false);
   const nodeData = useMemo(
     () => (currentNode ? convertTreeNodeToTreeNodeData(currentNode) : undefined),
     [currentNode]
@@ -76,6 +79,37 @@ export function useTreeNodeInfoPanel({
       return prev;
     });
   }, [indexedNode, node]);
+
+  useEffect(() => {
+    const candidate = currentNode ?? node;
+    const nodeId = candidate?.id;
+    const nodeType = String(candidate?.nodeType ?? '');
+    if (!nodeId || !nodeType || isFolderNodeType(nodeType)) {
+      setPreviewGuardState({ canOpen: true });
+      setPreviewGuardLoading(false);
+      return;
+    }
+    if (!workerClient) {
+      setPreviewGuardState({ canOpen: true });
+      setPreviewGuardLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setPreviewGuardLoading(true);
+    void (async () => {
+      const guard = await resolvePreviewGuardState({
+        client: workerClient,
+        nodeType,
+        nodeId: nodeId as NodeId,
+      });
+      if (cancelled) return;
+      setPreviewGuardState(guard);
+      setPreviewGuardLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentNode, node, workerClient]);
 
   useEffect(() => {
     let cancelled = false;
@@ -325,6 +359,7 @@ export function useTreeNodeInfoPanel({
 
   const isBuildable =
     Boolean(nodeTypeLabel && isFolderNodeType(nodeTypeLabel)) || Boolean(buildTarget?.stepNumber);
+  const canPreview = previewGuardState?.canOpen ?? true;
 
   return {
     currentNode,
@@ -344,6 +379,8 @@ export function useTreeNodeInfoPanel({
     isDraft,
     isBuildable,
     buildTargetLoading,
+    canPreview,
+    previewGuardLoading,
     treeId,
   };
 }

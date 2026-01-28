@@ -98,6 +98,9 @@ export interface TreeConsolePanelProps {
       nextVisible?: boolean;
     }
   ) => void;
+  readonly resolvePreviewGuardState?: (
+    node: HierarchicalTreeNode
+  ) => Promise<{ canOpen: boolean; finalStepIndex?: number }>;
   readonly onBreadcrumbContextAction?: (
     action: string,
     node: PanelBreadcrumbNode,
@@ -243,6 +246,9 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       onMoveNodes: (nodeIds: string[], targetParentId: string) => {
         props.onMoveNodes?.(nodeIds, targetParentId);
       },
+      resolvePreviewGuardState: props.resolvePreviewGuardState
+        ? (node: TreeNodeInUI) => props.resolvePreviewGuardState?.(node as HierarchicalTreeNode)
+        : undefined,
       onContextAction: (
         action: string,
         node: TreeNodeInUI,

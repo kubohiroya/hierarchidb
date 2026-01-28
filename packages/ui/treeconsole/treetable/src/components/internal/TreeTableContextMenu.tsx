@@ -5,8 +5,8 @@
 
 import type { TreeNode } from '@hierarchidb/common-types';
 import type { NodeContextMenuProps } from '@hierarchidb/ui-treeconsole-breadcrumb';
-import type { ComponentType } from 'react';
-import type { TreeTableController } from '../../types.js';
+import { useEffect, useState, type ComponentType } from 'react';
+import type { TreeNodeInUI, TreeTableController } from '../../types.js';
 
 interface TreeTableContextMenuState {
   anchorEl: HTMLElement | null;
@@ -31,6 +31,34 @@ export function TreeTableContextMenu({
 }: TreeTableContextMenuProps) {
   const node = contextMenuState.node;
   const isRoot = !!node && node.depth === 0;
+  const open = Boolean(contextMenuState.anchorEl) || Boolean(contextMenuState.anchorPosition);
+  const [previewGuardState, setPreviewGuardState] = useState<{ canOpen: boolean } | null>(null);
+  const [previewGuardLoading, setPreviewGuardLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open || !node) {
+      setPreviewGuardState(null);
+      setPreviewGuardLoading(false);
+      return;
+    }
+    const resolver = controller?.resolvePreviewGuardState;
+    if (!resolver) {
+      setPreviewGuardState(null);
+      setPreviewGuardLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setPreviewGuardLoading(true);
+    void (async () => {
+      const guard = await resolver(node as TreeNodeInUI);
+      if (cancelled) return;
+      setPreviewGuardState(guard);
+      setPreviewGuardLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [controller, node, open]);
 
   const handleClose = () => {
     onClose();
@@ -49,11 +77,13 @@ export function TreeTableContextMenu({
     controller?.onContextAction?.(action, node, options);
   };
 
+  const canPreview = (previewGuardState?.canOpen ?? true) && !previewGuardLoading;
+
   return (
     <ContextMenuComponent
       anchorEl={contextMenuState.anchorEl}
       anchorPosition={contextMenuState.anchorPosition}
-      open={Boolean(contextMenuState.anchorEl) || Boolean(contextMenuState.anchorPosition)}
+      open={open}
       onClose={handleClose}
       nodeId={node?.id || ''}
       nodeType={node?.nodeType || 'folder'}
@@ -66,6 +96,7 @@ export function TreeTableContextMenu({
       canDuplicate={!isRoot}
       canCopy={!isRoot}
       canCut={!isRoot}
+      canPreview={canPreview}
       onToggleVisible={(nextVisible) => {
         if (node) {
           triggerContextAction('toggle-visibility', { source: 'treetable', nextVisible });

@@ -52,6 +52,7 @@ export interface NodeContextMenuProps {
   canCopy?: boolean;
   canCut?: boolean;
   canBuild?: boolean;
+  canPreview?: boolean;
   onOpen?: () => void;
   onOpenFolder?: () => void;
   onPreview?: () => void;
@@ -95,6 +96,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     canCopy = true,
     canCut = true,
     canBuild,
+    canPreview: canPreviewOverride,
     onOpen: _onOpen,
     onOpenFolder: _onOpenFolder,
     onPreview: _onPreview,
@@ -143,7 +145,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
   const effectiveVisible =
     localInvisible !== null ? !localInvisible : (typeof isVisible === 'boolean' ? isVisible : true);
   const effectiveInvisible = !effectiveVisible;
-  const canPreview = !effectiveInvisible;
+  const canPreview = typeof canPreviewOverride === 'boolean' ? canPreviewOverride : !effectiveInvisible;
   const normalizedNodeType = String(nodeType ?? '').trim().toLowerCase();
   const isLocationNode = normalizedNodeType === 'location';
   const canBuildEntry =

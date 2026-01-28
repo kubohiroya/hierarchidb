@@ -57,6 +57,8 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
     isDraft,
     isBuildable,
     buildTargetLoading,
+    canPreview,
+    previewGuardLoading,
   } = useTreeNodeInfoPanel({ treeId, node, onContextMenuAction });
   const isVisible = currentNode?.visible !== false;
   const parentNodeId = currentNode?.parentId;
@@ -203,7 +205,7 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
             startIcon={<PlayArrowIcon />}
             onClick={() => handleContextMenuTrigger('preview')}
             aria-label={labels.previewAria}
-            disabled={!isVisible}
+            disabled={!isVisible || !canPreview || previewGuardLoading}
           >
             {labels.previewLabel}
           </Button>
@@ -240,6 +242,7 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
         canTrash={canMutate}
         canRemove={canMutate}
         canBuild={isBuildable}
+        canPreview={canPreview && !previewGuardLoading}
         onOpen={() => handleContextMenuTrigger('navigate')}
         onOpenFolder={() => handleContextMenuTrigger('navigate')}
         onPreview={() => handleContextMenuTrigger('preview')}

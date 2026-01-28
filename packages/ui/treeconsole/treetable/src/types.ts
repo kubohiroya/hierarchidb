@@ -63,6 +63,9 @@ export interface TreeTableController {
     node: TreeNodeInUI,
     options?: { navigateToParent?: boolean; nextVisible?: boolean }
   ) => void;
+  resolvePreviewGuardState?: (
+    node: TreeNodeInUI
+  ) => Promise<{ canOpen: boolean; finalStepIndex?: number }>;
 }
 
 // TreeTable core props
