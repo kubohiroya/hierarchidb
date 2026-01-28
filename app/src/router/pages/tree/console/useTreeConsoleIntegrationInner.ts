@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from '@tanstack/react-router';
 import type { Remote } from 'comlink';
 import { useCallback, useMemo, useState } from 'react';
 import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration.ts';
+import { resolvePreviewGuardState } from '~/hooks/treeconsole/actions/dialog.ts';
 import { resolveDeveloperMode } from '~/utils/developerMode.ts';
 import { canImportFromNode } from './treeConsoleIntegrationUtils.js';
 import { useIndexedDbReset } from './useIndexedDbReset.js';
@@ -113,6 +114,18 @@ export function useTreeConsoleIntegrationInner({
   const developerModeEnabled = useMemo(
     () => resolveDeveloperMode(location.searchStr),
     [location.searchStr]
+  );
+
+  const resolvePreviewGuardStateForNode = useCallback(
+    async (node: HierarchicalTreeNode) => {
+      if (!client) return { canOpen: true };
+      return resolvePreviewGuardState({
+        client,
+        nodeType: String(node.nodeType ?? ''),
+        nodeId: node.id as NodeId,
+      });
+    },
+    [client]
   );
 
   const { hasTrashItems, trashRootIdRef } = useTreeConsoleTrashWatcher({
@@ -305,6 +318,7 @@ export function useTreeConsoleIntegrationInner({
     canGoBack: state.canGoBack,
     canGoForward: state.canGoForward,
     onContextMenuAction: handleContextMenuAction,
+    resolvePreviewGuardState: resolvePreviewGuardStateForNode,
     onBreadcrumbContextAction: handleBreadcrumbContextAction,
     onMoveNodes: actions.handleMoveNodes,
     useTrashColumns: isTrashPage,

@@ -170,6 +170,8 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
 
     const depthOffset = 1 - (Number.isFinite(baseDepth) ? baseDepth : 1);
 
+    const resolvePreviewGuardState = props.resolvePreviewGuardState;
+
     const toTreeNodeInUI = (node: HierarchicalTreeNode, fallbackDepth: number): TreeNodeInUI => {
       const resolvedDepth = Number.isFinite(node.depth) ? Number(node.depth) : fallbackDepth;
       const normalizedDepth = Math.max(1, Math.round(resolvedDepth + depthOffset));
@@ -246,8 +248,8 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       onMoveNodes: (nodeIds: string[], targetParentId: string) => {
         props.onMoveNodes?.(nodeIds, targetParentId);
       },
-      resolvePreviewGuardState: props.resolvePreviewGuardState
-        ? (node: TreeNodeInUI) => props.resolvePreviewGuardState?.(node as HierarchicalTreeNode)
+      resolvePreviewGuardState: resolvePreviewGuardState
+        ? (node: TreeNodeInUI) => resolvePreviewGuardState(node as HierarchicalTreeNode)
         : undefined,
       onContextAction: (
         action: string,
