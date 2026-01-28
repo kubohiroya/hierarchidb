@@ -46,6 +46,122 @@
   - update: 2026-01-27 18:25 JST pnpm --filter @hierarchidb/ui-floating-window typecheck exit 0 を確認。
   - done: 2026-01-27 18:25 JST Layer Sets ドラッグ時の無限更新を抑止する修正を反映。
 
+2403) fix/ui-map/disable-hover-while-floating-drag (P1) — 進行中 (2026-01-27)
+- ブランチ名: fix/ui-map/disable-hover-while-floating-drag
+- 依存: なし
+- 受け入れ基準: FloatingWindow のドラッグ/リサイズ中は地図の hover イベントが発火せずウィンドウ移動がガクガクしない／ドラッグ終了後は hover が従来通り動作する／pnpm --filter @hierarchidb/ui-map typecheck と pnpm --filter @hierarchidb/ui-floating-window typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/floating-window/src/components/FloatingWindow.tsx`, `packages/ui/map/src/preview/useMapFeatureHoverCandidates.ts`, `packages/ui/map/src/preview/useVectorTilePreviewMapLayers.ts`, `packages/ui/map/src/lib/floating-window-interaction.ts`（調査後に確定）
+- ロールバック手順: 該当差分を revert して hover 抑止とドラッグ連携を元に戻す
+- チェックリスト:
+  - FloatingWindow のドラッグ/リサイズ開始・終了を検知できるようにする
+  - hover ハンドラでドラッグ中のイベントを抑止する
+  - pnpm --filter @hierarchidb/ui-floating-window typecheck を実行する
+  - pnpm --filter @hierarchidb/ui-map typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-27 22:38 JST FloatingWindow ドラッグ/リサイズ中の map hover 抑止に着手。
+  - update: 2026-01-27 22:38 JST FloatingWindow でドラッグ/リサイズ状態を body dataset へ反映。
+  - update: 2026-01-27 22:38 JST hover ハンドラで drag 中を検知して hover 更新を抑止。
+  - update: 2026-01-27 22:38 JST pnpm --filter @hierarchidb/ui-floating-window typecheck exit 0 を確認。
+  - update: 2026-01-27 22:38 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
+  - done: 2026-01-27 22:38 JST FloatingWindow ドラッグ中の hover 抑止を反映。
+  - update: 2026-01-28 00:26 JST ドラッグ中に透明オーバーレイを表示する対応を追加し、重複 import を修正。
+  - update: 2026-01-28 00:26 JST pnpm --filter @hierarchidb/ui-floating-window typecheck exit 0 を確認。
+  - update: 2026-01-28 01:12 JST map canvas の pointer-events をドラッグ中に無効化する対応を追加。
+  - update: 2026-01-28 01:12 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
+
+2405) fix/auth/callback-stuck-waiting (P1) — 進行中 (2026-01-27)
+- ブランチ名: fix/auth/callback-stuck-waiting
+- 依存: なし
+- 受け入れ基準: OAuth リダイレクト後の callback.html が hash/router 判定ミスで待機画面に停滞しない／localhost と GitHub Pages の両方で `/auth/callback` からアプリに戻れる／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `app/public/auth/callback.html`
+- ロールバック手順: 該当差分を revert して callback.html のルーティング判定を元に戻す
+- チェックリスト:
+  - callback.html の hash/router 判定ロジックを確認する
+  - localhost 以外は hash ルーティングへ誘導する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-27 22:40 JST callback.html が待機で停止する問題の修正に着手。
+  - update: 2026-01-27 22:55 JST pnpm typecheck exit 0（tsdown define warning あり）を確認。
+  - done: 2026-01-27 22:55 JST callback.html の hash ルーティング判定を localhost 以外で優先するよう修正。
+  - update: 2026-01-27 23:05 JST state 署名の origin を callback で反映し、return_origin を authorize に付与する修正に着手。
+  - blocked: 2026-01-27 23:05 JST pnpm typecheck が @hierarchidb/bff の TS2304（stateOrigin 未定義）で失敗。
+  - update: 2026-01-27 23:06 JST pnpm typecheck exit 0（tsdown define warning あり）を確認。
+  - update: 2026-01-27 23:14 JST return_origin に base URL を渡し、state の origin を base URL 解決に反映する修正に着手。
+  - update: 2026-01-27 23:15 JST pnpm typecheck exit 0（tsdown define warning あり）を確認。
+  - done: 2026-01-27 23:15 JST state の origin へ base URL を反映し、callback のリダイレクト先に /hierarchidb を含めるよう修正。
+  - update: 2026-01-27 23:22 JST callback.html が /auth/callback 直配下でも hash へ遷移するように調整。
+  - update: 2026-01-27 23:22 JST pnpm typecheck exit 0（tsdown define warning あり）を確認。
+  - done: 2026-01-27 23:22 JST callback.html の SPA 判定を hash ルート優先に変更し、/auth/callback 直配下でも遷移するよう修正。
+
+2406) fix/app/remove-default-step-mode-query (P1) — 進行中 (2026-01-27)
+- ブランチ名: fix/app/remove-default-step-mode-query
+- 依存: なし
+- 受け入れ基準: github.io 上で `?step=0&mode=normal` が自動付与されない／必要なルーティングで step/mode が欠けて動作が壊れない／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert して従来のクエリ付与挙動に戻す
+- チェックリスト:
+  - step/mode を自動付与している箇所を特定する
+  - 不要な自動付与を削除し、必要なケースは維持する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-27 23:31 JST github.io で `?step=0&mode=normal` が自動付与される件の調査に着手。
+  - update: 2026-01-27 23:39 JST AuthRequiredDialogHost の URL 同期を dialog パス時のみ有効化し、通常画面で step/mode を付与しないよう調整。
+  - update: 2026-01-27 23:40 JST pnpm typecheck exit 0（tsdown define warning あり）を確認。
+
+2407) fix/auth/github-pages-callback-404 (P1) — 進行中 (2026-01-27)
+- ブランチ名: fix/auth/github-pages-callback-404
+- 依存: なし
+- 受け入れ基準: GitHub Pages で `/auth/callback` が 404 にならず認証完了後にアプリへ戻れる／localhost でも認証フローが完了する／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/backend/bff/src/**`, `app/public/auth/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert して従来の callback URL 生成とリダイレクト挙動へ戻す
+- チェックリスト:
+  - GitHub Pages での callback URL 生成経路を特定する
+  - `/auth/callback` 直アクセスで 404 が出ないように修正する
+  - localhost/GitHub Pages の双方で callback からアプリに遷移できることを確認する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-27 23:46 JST GitHub Pages の /auth/callback 404 を解消する調査に着手。
+  - update: 2026-01-27 23:52 JST GitHub Pages では /auth/callback.html を用いるよう callback URL 生成を調整。
+  - update: 2026-01-27 23:53 JST pnpm typecheck exit 0（tsdown define warning あり）を確認。
+
+2408) fix/auth/token-exchange-403 (P1) — 進行中 (2026-01-27)
+- ブランチ名: fix/auth/token-exchange-403
+- 依存: なし
+- 受け入れ基準: GitHub Pages / localhost の両方で `/auth/token` が 403 にならずトークン交換が完了する／認証完了後に待機画面から復帰する／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/backend/bff/src/**`, `app/src/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert して従来のトークン交換・CORS 判定へ戻す
+- チェックリスト:
+  - /auth/token 403 の発生条件を特定する
+  - Origin/CSRF/状態署名の検証ロジックを確認する
+  - GitHub Pages/localhost で許可されるよう修正する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-28 00:03 JST /auth/token 403 の調査に着手。
+  - update: 2026-01-28 00:09 JST APP_BASE_URL(S) の origin を ALLOWED_ORIGINS に加味し、/auth/token の Origin 判定/CORS を許可するよう調整。
+  - update: 2026-01-28 00:09 JST pnpm typecheck exit 0（tsdown define warning あり）を確認。
+
+2404) feat/app/version-display-build-time (P1) — 進行中 (2026-01-27)
+- ブランチ名: feat/app/version-display-build-time
+- 依存: なし
+- 受け入れ基準: Home 画面左上のバージョン表記が `v1.1.0 (YYYY/MM/DD HH:mm)` 形式になる／日時はビルド時刻で自動更新される／既存の表示要素が崩れない／pnpm typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/pages/home/HomePage.tsx`, `app/vite.config.ts`（調査後に確定）
+- ロールバック手順: 該当差分を revert して固定表示（v1.0.0）に戻す
+- チェックリスト:
+  - Home 画面のバージョン表示の参照元を特定する
+  - APP_VERSION とビルド時刻の表示を組み合わせる
+  - 表示フォーマットを `vX.Y.Z (YYYY/MM/DD HH:mm)` に統一する
+  - pnpm typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-27 22:29 JST Home 画面のバージョン表示をビルド時刻付きに変更する作業に着手。
+  - update: 2026-01-27 22:29 JST pnpm typecheck exit 0（tsdown define warning あり）を確認。
+  - done: 2026-01-27 22:29 JST Home 画面のバージョン表記を v{APP_VERSION} (YYYY/MM/DD HH:mm) に変更。
+
 2400) fix/shape/step6-features-table-body-scroll (P1) — 進行中 (2026-01-26)
 - ブランチ名: fix/shape/step6-features-table-body-scroll
 - 依存: なし
@@ -92,6 +208,15 @@
   - update: 2026-01-27 14:52 JST Location メタデータ一覧を MapPreviewFloatingTable 化し、選択/カラム切替/再ビルド操作を復旧。
   - update: 2026-01-27 14:52 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define warning あり）。
   - update: 2026-01-27 14:52 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-01-27 21:12 JST location Step5 の metadata table が「No metadata available yet.」になる件の原因調査と修正に着手。
+  - update: 2026-01-27 21:18 JST pnpm typecheck exit 0（tsdown warning: define オプション）を確認。
+  - update: 2026-01-27 21:24 JST 認証後に localhost:4200 へリダイレクトされる問題の原因調査に着手。
+  - update: 2026-01-27 21:29 JST pnpm typecheck exit 0（tsdown warning: define オプション）を確認。
+  - update: 2026-01-27 21:36 JST auth state に origin を含める対応に着手。
+  - update: 2026-01-27 21:41 JST pnpm typecheck exit 0（tsdown warning: define オプション）を確認。
+  - update: 2026-01-27 21:49 JST state を BFF 生成に統一する修正に着手。
+  - blocked: 2026-01-27 21:53 JST pnpm typecheck が @hierarchidb/ui-auth の TS6133（generateState 未使用）で失敗。
+  - update: 2026-01-27 22:29 JST pnpm typecheck exit 0 を確認。
   - update: 2026-01-27 14:48 JST Location Step5 メタデータテーブルの列切替/選択/再ビルド操作UIの復旧に着手。
   - update: 2026-01-27 11:52 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
   - update: 2026-01-27 11:52 JST Step5 の閉じた Location/Terrain ボタンのアイコンを LocationOn/LocationCity に変更。
@@ -380,7 +505,24 @@
  - update: 2026-01-27 20:25 JST ファイルカードコンテナに flex-wrap を適用する対応に着手。
  - update: 2026-01-27 20:27 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
  - update: 2026-01-27 20:30 JST Import 重複（同一ファイル/URL）の再追加を無視する対応に着手。
- - update: 2026-01-27 20:32 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
+  - update: 2026-01-27 20:32 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0。
+
+2403) fix/bff/multi-app-base-url (P1) — 進行中 (2026-01-27)
+- ブランチ名: fix/bff/multi-app-base-url
+- 依存: なし
+- 受け入れ基準: BFF が APP_BASE_URL 未設定でも `http://localhost:4200` と `https://kubohiroya.github.io/hierarchidb` の両方からのログインで正しいフロントに戻る／APP_BASE_URLS で複数ベースURL（パス含む）を扱える／既存の単一 APP_BASE_URL 運用が維持される／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/backend/bff/src/utils/redirect-uri.ts`, `packages/backend/bff/src/env-mapper.ts`, `packages/backend/bff/src/types.ts`（必要に応じて）
+- ロールバック手順: 該当差分を revert して従来の APP_BASE_URL/ALLOWED_ORIGINS 判定に戻す
+- チェックリスト:
+  - APP_BASE_URLS の導入と複数ベースURL選択ロジックを実装する
+  - state から returnOrigin を解釈できるようにする
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-27 20:45 JST BFF の複数ベースURL対応に着手。
+  - update: 2026-01-27 20:55 JST pnpm --filter @hierarchidb/bff typecheck exit 0。
+  - done: 2026-01-27 20:56 JST APP_BASE_URLS を導入し複数フロントの戻り先判定を更新。
+  - update: 2026-01-27 21:05 JST BFF の wrangler.toml から未使用 env を撤去する作業に着手。
+  - done: 2026-01-27 21:10 JST wrangler.hierarchidb.toml から未使用 env を撤去。
 
 2350) feat/shape/step6-recycling-diff-build (P1) — 進行中 (2026-01-26)
 - ブランチ名: feat/shape/step6-recycling-diff-build
@@ -10058,3 +10200,23 @@
   - update: 2026-01-26 22:56 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認（型エラー再現せず）。
   - update: 2026-01-26 23:05 JST TS2802/TS2740の対処としてforEach化とLocationDB型キャストを適用。
   - done: 2026-01-26 23:06 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+
+2409) fix/auth/bff-production-mode (P1) — 進行中 (2026-01-28)
+- ブランチ名: fix/auth/bff-production-mode
+- 依存: なし
+- 受け入れ基準: GitHub deploy の BFF が development 判定されず production として動作する／/auth/token で "Only localhost origins are allowed in development mode" が出ない／TASKS.md に運用ログと検証結果を記載する
+- 影響範囲: `packages/backend/bff/src/**`, `packages/backend/bff/wrangler.toml`（調査後に確定）
+- ロールバック手順: 該当差分を revert して従来の環境判定へ戻す
+- チェックリスト:
+  - development 判定の条件と参照元を特定する
+  - GitHub deploy では production 判定になるよう修正する
+  - BFF のデプロイ設定に反映する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-28 00:20 JST GitHub deploy で development 判定される問題の調査に着手。
+  - update: 2026-01-28 00:26 JST wrangler.hierarchidb.toml に ENVIRONMENT を追加し、production/development 判定を明示化。
+  - update: 2026-01-28 00:32 JST BFF deploy スクリプトに production 指定の wrangler deploy を組み込み。
+  - update: 2026-01-28 00:40 JST GitHub Pages の callback 後リダイレクトで #/hierarchidb が付く問題の修正に着手。
+  - update: 2026-01-28 00:45 JST auth callback の戻り先を hash ルーティング時に base prefix を除去するよう調整。
+  - update: 2026-01-28 00:47 JST pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define warning あり）。
+  - update: 2026-01-28 00:47 JST pnpm --filter @hierarchidb/ui-auth typecheck exit 0。
