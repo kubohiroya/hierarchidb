@@ -7,7 +7,7 @@ import type React from 'react';
 import { Suspense, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import type { SvgIconComponent } from '@mui/icons-material';
-import { DirectionsBoat, DirectionsCar, Flight, Speed, Train } from '@mui/icons-material';
+import { DirectionsBoat, DirectionsCar, Flight, Train, Tram } from '@mui/icons-material';
 import type { RouteEntity, RouteUpdaterPayload } from '../../../common/entities/RouteEntity.js';
 import { useTranslation } from '../../../common/i18n/index.js';
 import { getRouteUpdaterPayload } from '../../../common/utils/draft.js';
@@ -33,8 +33,8 @@ type SelectionColumn = {
 const ROUTE_MODE_COLUMNS: SelectionColumn[] = [
   { id: ROUTE_MODES.AIRWAY, labelKey: 'transportModes.air', icon: Flight },
   { id: ROUTE_MODES.WATERWAY, labelKey: 'transportModes.sea', icon: DirectionsBoat },
-  { id: ROUTE_MODES.H_RAILWAY, labelKey: 'transportModes.highSpeedRail', icon: Speed },
-  { id: ROUTE_MODES.RAILWAY, labelKey: 'transportModes.rail', icon: Train },
+  { id: ROUTE_MODES.H_RAILWAY, labelKey: 'transportModes.highSpeedRail', icon: Train },
+  { id: ROUTE_MODES.RAILWAY, labelKey: 'transportModes.rail', icon: Tram },
   { id: ROUTE_MODES.ROAD, labelKey: 'transportModes.road', icon: DirectionsCar },
 ];
 
