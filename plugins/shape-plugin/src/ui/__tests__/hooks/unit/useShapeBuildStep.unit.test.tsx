@@ -24,27 +24,32 @@ vi.mock('../../../components/build-progress/useBuildProgress.ts', () => ({
   }),
 }));
 
-vi.mock('../../../components/build-progress/useBuildStages.tsx', () => ({
-  useBuildStages: () => ([
-    { id: 'fetch', title: 'Fetch', description: '', icon: null },
-    { id: 'transform', title: 'Transform', description: '', icon: null },
-    { id: 'vt', title: 'VT', description: '', icon: null },
-  ]),
+vi.mock('../../../i18n.js', () => ({
+  useTranslation: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),
 }));
 
-vi.mock('../../../components/build-progress/useBatchSessionActions.ts', () => ({
-  useBatchSessionActions: () => ({
-    canStartOrResume: false,
-    handleStartOrResume: vi.fn(),
-    handlePause: vi.fn(),
-    authDialogOpen: false,
-    closeAuthDialog: vi.fn(),
-    handleProviderSelect: vi.fn(),
+vi.mock('@hierarchidb/ui-worker-client', () => ({
+  getWorkerBridge: () => ({
+    initialize: vi.fn(),
+    resumeBatchSession: vi.fn(),
+    startBatchSession: vi.fn(),
+    pauseBatchSession: vi.fn(),
   }),
 }));
 
-vi.mock('../../../i18n.js', () => ({
-  useTranslation: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),
+vi.mock('@hierarchidb/ui-worker-provider', () => ({
+  getWorkerClientHook: () => () => null,
+}));
+
+vi.mock('@hierarchidb/components', () => ({
+  notify: {
+    warning: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
+vi.mock('@hierarchidb/util', () => ({
+  loadTreeConsoleSettings: () => ({ buildContinuationPolicy: 'finish_all_stages' }),
 }));
 
 vi.mock('@hierarchidb/ui-monitoring', () => ({

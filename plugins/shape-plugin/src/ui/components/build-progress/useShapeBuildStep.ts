@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { createElement, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { NodeId, NodeType, TaskStage } from '@hierarchidb/common-types';
 import { useShapeBuildTasks } from './useShapeBuildTasks.ts';
 import { useBuildProgress } from './useBuildProgress.js';
@@ -8,10 +8,9 @@ import {
   validateBatchConfig,
   type ShapeEntity,
 } from '../../../common/types/index.js';
-import { useBuildStages } from './useBuildStages.js';
+import type { BuildStage } from '@hierarchidb/components';
 import { useBuildTaskProgress } from '@hierarchidb/ui-batch-progress';
 import type { BuildStatus } from '@hierarchidb/components';
-import { useBatchSessionActions } from './useBatchSessionActions.js';
 import {
   buildStageTaskSummary,
   buildTaskCountSummary,
@@ -22,6 +21,17 @@ import { getBuildMonitorKey } from '@hierarchidb/ui-monitoring';
 import { useShapeBuildTiming } from './useShapeBuildTiming.ts';
 import { useShapeBuildTileSummary } from './useShapeBuildTileSummary.ts';
 import { useShapeBuildAutoResume } from './useShapeBuildAutoResume.ts';
+import {
+  CloudDownload as CloudDownloadIcon,
+  Tune as TuneIcon,
+  Layers as LayersIcon,
+} from '@mui/icons-material';
+import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
+import { notify } from '@hierarchidb/components';
+import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
+import type { FetchTaskPayload } from '../../../common/types/index.js';
+import { loadTreeConsoleSettings } from '@hierarchidb/util';
+import type { AuthProviderType } from '@hierarchidb/ui-auth';
 
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
 type StageLikeTask = {
@@ -63,7 +73,26 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const hasNodeId = Boolean(activeNodeId && !error);
   const effectiveProgress = hasNodeId ? progress : null;
   const effectiveStatus = hasNodeId ? status : null;
-  const stages = useBuildStages();
+  const stages = useMemo<BuildStage[]>(() => ([
+    {
+      id: 'fetch',
+      title: t('processing.fetch.title', 'Fetch'),
+      description: t('stage.stages.fetch.description', 'Fetch and normalize source data.'),
+      icon: createElement(CloudDownloadIcon, { color: 'primary' }),
+    },
+    {
+      id: 'transform',
+      title: t('processing.transform.title', 'Transform'),
+      description: t('stage.stages.transform.description', 'Simplify features per zoom band.'),
+      icon: createElement(TuneIcon, { color: 'primary' }),
+    },
+    {
+      id: 'vt',
+      title: t('processing.vt.title', 'VT Generation'),
+      description: t('stage.stages.vt.description', 'Generate vector tiles for the selected zoom range.'),
+      icon: createElement(LayersIcon, { color: 'primary' }),
+    },
+  ]), [t]);
   const processingStatus = data?.processingStatus ?? 'idle';
   const runtimeStatus = effectiveStatus?.status ?? null;
   const statusSource = runtimeStatus ?? processingStatus;
@@ -386,20 +415,187 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   }, [data?.buildConfig]);
   const hasSelection = summarizeCheckboxState(selectedArrayByCountries).hasSelection;
   const hasDataSource = Boolean(data?.buildConfig?.dataSourceName);
-  const {
-    handleStartOrResume,
-    handlePause,
-    authDialogOpen,
-    closeAuthDialog,
-    handleProviderSelect,
-  } = useBatchSessionActions({
-    nodeType: SHAPE_NODE_TYPE,
-    nodeId: activeNodeId ?? undefined,
-    data,
-    onChange,
-    buildStatus,
-    canResume: buildStatus === 'paused',
-  });
+  const debugScope = '[ShapeBuildStep]';
+  const bridgeRef = useRef(getWorkerBridge());
+  const workerClientHook = useMemo(() => {
+    try {
+      return getWorkerClientHook<WorkerClientRef | null>();
+    } catch {
+      return null;
+    }
+  }, []);
+  const workerClient = workerClientHook ? workerClientHook() : null;
+  const authDialogOpen = false;
+  const closeAuthDialog = useCallback(() => {}, []);
+  const handleProviderSelect = useCallback((_provider: AuthProviderType) => {}, []);
+
+  const saveDraftBeforeBatch = useCallback(async (patch?: Partial<ShapeEntity>) => {
+    console.debug(`${debugScope} saveDraftBeforeBatch:start`, {
+      nodeId: activeNodeId,
+      hasWorkerClient: Boolean(workerClient),
+      buildStatus,
+    });
+    if (!activeNodeId) {
+      console.debug(`${debugScope} saveDraftBeforeBatch:missingNodeId`);
+      notify.warning('NodeId is missing.');
+      return false;
+    }
+    if (!workerClient) {
+      console.debug(`${debugScope} saveDraftBeforeBatch:missingWorkerClient`);
+      notify.error('Worker client is unavailable.');
+      return false;
+    }
+    const baseBatchConfig = {
+      ...(data?.buildConfig ?? {}),
+      ...(patch?.buildConfig ?? {}),
+    };
+    try {
+      console.debug(`${debugScope} saveDraftBeforeBatch:updateDraft`, {
+        nodeId: activeNodeId,
+        dataSourceName: baseBatchConfig.dataSourceName ?? null,
+      });
+      const api = workerClient.getAPI();
+      const updater = await api.getTreeNodeUpdaterAPI();
+      await updater.updateTreeNode(activeNodeId, {
+        mode: 'save-draft',
+        draftData: {
+          ...(data ?? {}),
+          ...(patch ?? {}),
+          batchConfig: baseBatchConfig,
+        } as Record<string, unknown>,
+      });
+      console.debug(`${debugScope} saveDraftBeforeBatch:complete`, {
+        nodeId: activeNodeId,
+        dataSourceName: baseBatchConfig.dataSourceName ?? null,
+      });
+      return true;
+    } catch (error) {
+      notify.error('Failed to save draft.');
+      console.error('[ShapeBuildProgressStep] save draft failed', error);
+      return false;
+    }
+  }, [activeNodeId, buildStatus, data, workerClient]);
+
+  const persistDraftPatch = useCallback(async (patch: Partial<ShapeEntity>) => {
+    if (!activeNodeId || !workerClient) return;
+    try {
+      const api = workerClient.getAPI();
+      const updater = await api.getTreeNodeUpdaterAPI();
+      await updater.updateTreeNode(activeNodeId, {
+        mode: 'save-draft',
+        draftData: {
+          ...(data ?? {}),
+          ...patch,
+        } as Record<string, unknown>,
+      });
+      onChange(patch);
+    } catch (error) {
+      console.error('[ShapeBuildProgressStep] failed to persist build markers', error);
+    }
+  }, [activeNodeId, data, onChange, workerClient]);
+
+  const buildDownloadTaskPayloads = useCallback(async (): Promise<FetchTaskPayload[] | null> => {
+    if (!workerClient) {
+      notify.error('Worker client is unavailable.');
+      return null;
+    }
+    if (!activeNodeId) {
+      notify.warning('NodeId is missing.');
+      return null;
+    }
+    const resolvedDataSource = data?.buildConfig?.dataSourceName;
+    if (!resolvedDataSource) {
+      notify.warning('Data source is missing.');
+      return null;
+    }
+    const selectionRecord = data?.selectedArrayByCountries;
+    if (!selectionRecord || (typeof selectionRecord === 'object' && !Array.isArray(selectionRecord) && Object.keys(selectionRecord).length === 0)) {
+      notify.warning('Selection is empty.');
+      return null;
+    }
+    const api = workerClient.getAPI();
+    return api.generateShapeDownloadTaskPayloadsFromSelection(
+      activeNodeId,
+      resolvedDataSource,
+      selectionRecord,
+    ) as Promise<FetchTaskPayload[]>;
+  }, [activeNodeId, data?.buildConfig?.dataSourceName, data?.selectedArrayByCountries, workerClient]);
+
+  const canResume = buildStatus === 'paused';
+  const handleStartOrResume = useCallback(async (options?: { forceRestart?: boolean; autoResume?: boolean }): Promise<boolean> => {
+    console.debug(`${debugScope} startOrResume:click`, {
+      nodeId: activeNodeId,
+      buildStatus,
+      forceRestart: options?.forceRestart ?? false,
+      autoResume: options?.autoResume ?? false,
+    });
+    if (!activeNodeId) {
+      notify.warning('NodeId is missing.');
+      return false;
+    }
+    // autoResumeBuild is only set by route transitions (build=1). Avoid writing on manual clicks.
+    if (canResume && !options?.forceRestart) {
+      try {
+        await bridgeRef.current.initialize();
+        const policy = loadTreeConsoleSettings().buildContinuationPolicy ?? 'finish_all_stages';
+        await bridgeRef.current.resumeBatchSession(SHAPE_NODE_TYPE, activeNodeId, policy);
+        await persistDraftPatch({ processingStatus: 'processing' });
+        return true;
+      } catch (error) {
+        notify.error('Failed to resume build.');
+        console.error('[ShapeBuildProgressStep] resume failed', error);
+        return false;
+      }
+    }
+    const saved = await saveDraftBeforeBatch();
+    if (!saved) {
+      console.debug(`${debugScope} startOrResume:saveDraftFailed`);
+      return false;
+    }
+    try {
+      await bridgeRef.current.initialize();
+      console.debug(`${debugScope} startOrResume:bridgeReady`);
+      const payloads = await buildDownloadTaskPayloads();
+      if (!payloads || payloads.length === 0) {
+        console.debug(`${debugScope} startOrResume:missingPayloads`, { nodeId: activeNodeId });
+        return false;
+      }
+      console.debug(`${debugScope} startOrResume:startBatch`, {
+        nodeId: activeNodeId,
+        nodeType: SHAPE_NODE_TYPE,
+        payloadCount: payloads.length,
+      });
+      const policy = loadTreeConsoleSettings().buildContinuationPolicy ?? 'finish_all_stages';
+      const statusResult = await bridgeRef.current.startBatchSession(SHAPE_NODE_TYPE, activeNodeId, payloads, policy);
+      console.debug(`${debugScope} startOrResume:startBatchResult`, statusResult ?? null);
+      const nextStatus = statusResult.status === 'completed'
+        ? 'completed'
+        : statusResult.status === 'failed'
+          ? 'failed'
+          : 'processing';
+      await persistDraftPatch({ processingStatus: nextStatus });
+      return true;
+    } catch (error) {
+      notify.error('Failed to start or resume build.');
+      console.error('[ShapeBuildProgressStep] start/resume failed', error);
+      return false;
+    }
+  }, [activeNodeId, buildStatus, buildDownloadTaskPayloads, canResume, persistDraftPatch, saveDraftBeforeBatch]);
+
+  const handlePause = useCallback(async (): Promise<void> => {
+    if (!activeNodeId) {
+      notify.warning('NodeId is missing.');
+      return;
+    }
+    try {
+      await bridgeRef.current.initialize();
+      await bridgeRef.current.pauseBatchSession(SHAPE_NODE_TYPE, activeNodeId);
+      await persistDraftPatch({ processingStatus: 'paused' });
+    } catch (error) {
+      notify.error('Failed to pause build.');
+      console.error('[ShapeBuildProgressStep] pause failed', error);
+    }
+  }, [activeNodeId, persistDraftPatch]);
   const { canStartOrResume, isStartPending, startOrResume } = useShapeBuildAutoResume({
     activeNodeId,
     buildStatus,

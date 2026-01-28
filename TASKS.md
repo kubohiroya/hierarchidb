@@ -91,7 +91,7 @@
   - update: 2026-01-29 08:16 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
   - done: 2026-01-29 08:16 JST UI ロジック抽出リファクタを完了。
 
-2421) refactor/shape/remove-thin-wrappers (P1) — 進行中 (2026-01-29)
+2421) refactor/shape/remove-thin-wrappers (P1) — 完了 (2026-01-29)
 - ブランチ名: refactor/shape/remove-thin-wrappers
 - 依存: なし
 - ExecPlan: plans/shape-remove-thin-wrappers-execplan.md
@@ -105,6 +105,10 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-29 08:22 JST shape-plugin の薄いラッパー削除/統合リファクタに着手。
+  - update: 2026-01-29 08:31 JST Build Progress パネル内へ stage/task summary/scroll bar を統合し、AtomSync を Step 内部へ移設。
+  - update: 2026-01-29 08:31 JST useBuildStages/useBatchSessionActions/useBuildStatus/useBatchCommand/useTransformErrorTable を削除し呼び出し側に統合。
+  - update: 2026-01-29 08:31 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-01-29 08:31 JST 薄いラッパー削除/統合リファクタを完了。
 
 2415) investigation/ui-location/preview-requires-step5 (P1) — 完了 (2026-01-28)
 - ブランチ名: investigation/ui-location/preview-requires-step5

@@ -11,10 +11,10 @@ shape-plugin には独自の責務が薄く、単に props を流すだけのラ
 ## Progress
 
 - [x] (2026-01-29 08:22 JST) TASKS.md にタスクを追加して着手ログを記載。
-- [ ] (2026-01-29 08:22 JST) 指定候補ファイルの現状責務と置換先を確認。
-- [ ] (2026-01-29 08:22 JST) ラッパー/薄いフックを削除し、呼び出し構成を統合。
-- [ ] (2026-01-29 08:22 JST) `pnpm --filter @hierarchidb/shape-plugin typecheck` を実行。
-- [ ] (2026-01-29 08:22 JST) TASKS.md に完了ログを記載。
+- [x] (2026-01-29 08:28 JST) 指定候補ファイルの現状責務と置換先を確認。
+- [x] (2026-01-29 08:30 JST) ラッパー/薄いフックを削除し、呼び出し構成を統合。
+- [x] (2026-01-29 08:31 JST) `pnpm --filter @hierarchidb/shape-plugin typecheck` を実行。
+- [x] (2026-01-29 08:31 JST) TASKS.md に完了ログを記載。
 
 ## Surprises & Discoveries
 
@@ -23,13 +23,16 @@ shape-plugin には独自の責務が薄く、単に props を流すだけのラ
 
 ## Decision Log
 
-- Decision: まだなし。
-  Rationale: 対象ファイルの責務整理後に判断する。
+- Decision: Build Progress の stage/task 表示ロジックは `ShapeBuildProgressPanel` 内部に統合する。
+  Rationale: 外部コンポーネントは薄いラッパーだったため、単一ファイルで完結させた方が理解しやすい。
+  Date/Author: 2026-01-29 (Codex).
+- Decision: AtomSync は `ShapeBuildStep` 内部の非公開コンポーネントとして統合する。
+  Rationale: Provider 配下で動かす必要があるが、外部公開する必要はないため。
   Date/Author: 2026-01-29 (Codex).
 
 ## Outcomes & Retrospective
 
-- Outcome: 未完。typecheck 完了後に追記する。
+- Outcome: 薄いラッパー群を削除して Build Progress の表示/同期を統合し、呼び出し構成が簡素化された。shape-plugin typecheck は成功した。
 
 ## Context and Orientation
 
@@ -83,4 +86,4 @@ shape-plugin には独自の責務が薄く、単に props を流すだけのラ
 
 - 既存の外部API/props 形状は変えず、呼び出し構成だけを簡素化する。
 
-Plan updated on 2026-01-29 to capture task start and removal targets.
+Plan updated on 2026-01-29 to capture removal完了と統合方針。
