@@ -12,6 +12,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   flexRender,
@@ -131,6 +132,7 @@ const resolveUpdater = <T,>(updater: Updater<T>, prev: T): T => (
 const MIN_COLUMN_WIDTH = 60;
 
 export function TanstackDataGrid<T extends RowRecord>(props: TanstackDataGridProps<T>): React.ReactElement {
+  const theme = useTheme();
   const {
     columns,
     rows,
@@ -509,35 +511,41 @@ export function TanstackDataGrid<T extends RowRecord>(props: TanstackDataGridPro
       <Box ref={headerContainerRef} sx={{ overflow: 'hidden' }}>
         <Table size="small" sx={{ tableLayout: 'fixed', width: 'max-content', minWidth: '100%' }}>
           <TableHead>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header, headerIndex) => {
-                  const meta = header.column.columnDef.meta as { align?: 'left' | 'center' | 'right' } | undefined;
-                  const canSort = header.column.getCanSort();
-                  const sortState = header.column.getIsSorted();
-                  const rightNeighbor = headerGroup.headers[headerIndex + 1];
-                  return (
-                    <TableCell
-                      key={header.id}
-                      align={meta?.align ?? 'left'}
-                      sx={{
-                        position: 'relative',
-                        width: header.getSize(),
-                        maxWidth: header.getSize(),
-                        fontWeight: 'bold',
-                        py: 0.5,
-                        px: 1,
-                      }}
-                    >
-                      {header.isPlaceholder ? null : (
-                        <Box
-                          display="flex"
-                          alignItems="center"
-                          gap={1}
-                          sx={{ cursor: canSort ? 'pointer' : 'default', userSelect: 'none' }}
-                          onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header, headerIndex) => {
+                      const meta = header.column.columnDef.meta as { align?: 'left' | 'center' | 'right' } | undefined;
+                      const canSort = header.column.getCanSort();
+                      const sortState = header.column.getIsSorted();
+                      const isSelectionColumn = header.column.id === '__select';
+                      const rightNeighbor = headerGroup.headers[headerIndex + 1];
+                      return (
+                        <TableCell
+                          key={header.id}
+                          align={meta?.align ?? 'left'}
+                          padding={isSelectionColumn ? 'checkbox' : 'normal'}
+                          sx={{
+                            position: 'relative',
+                            width: header.getSize(),
+                            maxWidth: header.getSize(),
+                            fontWeight: 'bold',
+                            py: 0.5,
+                            px: isSelectionColumn ? 0.5 : 1,
+                            whiteSpace: 'nowrap',
+                            overflow: isSelectionColumn ? 'visible' : 'hidden',
+                            textOverflow: isSelectionColumn ? 'clip' : 'ellipsis',
+                          }}
                         >
-                          {flexRender(header.column.columnDef.header, header.getContext())}
+                          {header.isPlaceholder ? null : (
+                            <Box
+                              display="flex"
+                              alignItems="center"
+                              justifyContent={isSelectionColumn ? 'center' : 'flex-start'}
+                              gap={1}
+                              sx={{ cursor: canSort ? 'pointer' : 'default', userSelect: 'none' }}
+                              onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
+                            >
+                              {flexRender(header.column.columnDef.header, header.getContext())}
                           {canSort ? (
                             <Box
                               component="span"
@@ -627,9 +635,12 @@ export function TanstackDataGrid<T extends RowRecord>(props: TanstackDataGridPro
                   onClick={() => onRowClick?.(row.original, rowId)}
                 >
                   {row.getVisibleCells().map((cell) => {
+                    const isSelectionColumn = cell.column.id === '__select';
                     const isGrouped = cell.getIsGrouped();
                     const isAggregated = cell.getIsAggregated();
                     const isPlaceholder = cell.getIsPlaceholder();
+                    const isAdminLevelGroup = isGrouped && cell.column.id === 'adminLevel';
+                    const groupToggleColor = isAdminLevelGroup ? theme.palette.primary.main : 'inherit';
                     const groupedLabel = isGrouped
                       ? `${cell.getValue() ?? ''} (${row.subRows.length})`
                       : null;
@@ -637,14 +648,15 @@ export function TanstackDataGrid<T extends RowRecord>(props: TanstackDataGridPro
                       <TableCell
                         key={cell.id}
                         align={(cell.column.columnDef.meta as { align?: 'left' | 'center' | 'right' } | undefined)?.align ?? 'left'}
+                        padding={isSelectionColumn ? 'checkbox' : 'normal'}
                         sx={{
                           width: cell.column.getSize(),
                           maxWidth: cell.column.getSize(),
                           py: 0.5,
-                          px: 1,
+                          px: isSelectionColumn ? 0.5 : 1,
                           whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
+                          overflow: isSelectionColumn ? 'visible' : 'hidden',
+                          textOverflow: isSelectionColumn ? 'clip' : 'ellipsis',
                         }}
                         onClick={(event) => {
                           event.stopPropagation();
@@ -663,6 +675,7 @@ export function TanstackDataGrid<T extends RowRecord>(props: TanstackDataGridPro
                                 background: 'transparent',
                                 cursor: 'pointer',
                                 padding: 0,
+                                color: groupToggleColor,
                               }}
                             >
                               {row.getIsExpanded() ? '▼' : '▶'}
