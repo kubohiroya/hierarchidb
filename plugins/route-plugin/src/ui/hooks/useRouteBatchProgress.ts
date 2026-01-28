@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import { getWorkerBridge, type WorkerBridge } from '@hierarchidb/ui-worker-client';
-import type { BatchSessionStatus, ProgressPhase, UnifiedProgressInfo } from '@hierarchidb/common-api';
+import { mapProgressPhaseToBatchStatus, type BatchSessionStatus, type ProgressPhase, type UnifiedProgressInfo } from '@hierarchidb/common-api';
 import { usePluginBatchProgress } from '@hierarchidb/ui-batch-progress';
 
 const ROUTE_NODE_TYPE = 'route' as NodeType;
@@ -121,7 +121,7 @@ function toBatchSessionStatus(nodeId: NodeId, info: UnifiedProgressInfo): BatchS
   const phase = info.phase as ProgressPhase | undefined;
   return {
     nodeId,
-    status: mapPhaseToStatus(phase),
+    status: mapProgressPhaseToBatchStatus(phase),
     progress: {
       total: info.total ?? 0,
       completed: info.completed ?? 0,
@@ -135,22 +135,6 @@ function toBatchSessionStatus(nodeId: NodeId, info: UnifiedProgressInfo): BatchS
   };
 }
 
-function mapPhaseToStatus(phase?: ProgressPhase): BatchSessionStatus['status'] {
-  switch (phase) {
-    case 'completed':
-      return 'completed';
-    case 'failed':
-    case 'regression':
-      return 'failed';
-    case 'paused':
-      return 'paused';
-    case 'queued':
-      return 'idle';
-    case 'warning':
-    case 'running':
-    default:
-      return 'running';
-  }
 }
 
 function toErrorMessage(error: unknown): string {
