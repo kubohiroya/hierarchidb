@@ -1033,49 +1033,13 @@ export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise
     ? await listTasksByStage(params.taskQueue, params.nodeId, 'fetch')
     : [];
   const metadata = params.metadata ?? await metadataLoader.loadMetadata(params.dataSource, params.nodeId);
-  const payloads = (params.downloadTaskPayloads && params.downloadTaskPayloads.length > 0)
-    ? params.downloadTaskPayloads
-    : generateDownloadTaskPayloadsFromSelection(
-      params.dataSource,
-      params.selectedArrayByCountries,
-      metadata,
-    );
+  const payloads = resolveFetchPayloads(params, metadata);
   const reuseExistingTasks = resumeExistingTasks && existingTasks.length > 0 && payloads.length === 0;
   if (payloads.length === 0 && !reuseExistingTasks) return;
   const configSignature = buildStableSignature(params.buildConfig.fetchConfig ?? null);
   if (!reuseExistingTasks) {
     const tasks = buildFetchTasks(params.nodeId, payloads, metadata, configSignature);
-    if (resumeExistingTasks) {
-      const desiredSignatures = new Map(tasks.map((task) => [
-        task.taskId,
-        buildTaskInputSignature(task.inputData),
-      ]));
-      const obsoleteTaskIds: string[] = [];
-      const validExistingTasks: typeof existingTasks = [];
-      existingTasks.forEach((task) => {
-        const desiredSignature = desiredSignatures.get(task.taskId);
-        if (!desiredSignature) {
-          obsoleteTaskIds.push(task.taskId);
-          return;
-        }
-        const existingSignature = buildTaskInputSignature(task.inputData);
-        if (existingSignature !== desiredSignature) {
-          obsoleteTaskIds.push(task.taskId);
-          return;
-        }
-        validExistingTasks.push(task);
-      });
-      if (obsoleteTaskIds.length > 0) {
-        await deleteTasksByIds(params.taskQueue, obsoleteTaskIds);
-      }
-      const existingIds = new Set(validExistingTasks.map((task) => task.taskId));
-      const missingTasks = tasks.filter((task) => !existingIds.has(task.taskId));
-      if (missingTasks.length > 0) {
-        await putTasks(params.taskQueue, missingTasks);
-      }
-    } else {
-      await putTasks(params.taskQueue, tasks);
-    }
+    await reconcileFetchTasks(params, existingTasks, tasks, resumeExistingTasks);
   }
   await runStageTasks({
     nodeId: params.nodeId,
@@ -1092,4 +1056,57 @@ export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise
     failureHandling: params.failureHandling,
     abortController: params.abortController,
   });
+};
+
+const resolveFetchPayloads = (
+  params: ShapeFetchStageParams,
+  metadata: CountryMetadata[],
+): FetchTaskPayload[] => {
+  if (params.downloadTaskPayloads && params.downloadTaskPayloads.length > 0) {
+    return params.downloadTaskPayloads;
+  }
+  return generateDownloadTaskPayloadsFromSelection(
+    params.dataSource,
+    params.selectedArrayByCountries,
+    metadata,
+  );
+};
+
+const reconcileFetchTasks = async (
+  params: ShapeFetchStageParams,
+  existingTasks: TaskQueueRecord[],
+  desiredTasks: TaskQueueRecord[],
+  resumeExistingTasks: boolean,
+): Promise<void> => {
+  if (!resumeExistingTasks) {
+    await putTasks(params.taskQueue, desiredTasks);
+    return;
+  }
+  const desiredSignatures = new Map(desiredTasks.map((task) => [
+    task.taskId,
+    buildTaskInputSignature(task.inputData),
+  ]));
+  const obsoleteTaskIds: string[] = [];
+  const validExistingTasks: typeof existingTasks = [];
+  existingTasks.forEach((task) => {
+    const desiredSignature = desiredSignatures.get(task.taskId);
+    if (!desiredSignature) {
+      obsoleteTaskIds.push(task.taskId);
+      return;
+    }
+    const existingSignature = buildTaskInputSignature(task.inputData);
+    if (existingSignature !== desiredSignature) {
+      obsoleteTaskIds.push(task.taskId);
+      return;
+    }
+    validExistingTasks.push(task);
+  });
+  if (obsoleteTaskIds.length > 0) {
+    await deleteTasksByIds(params.taskQueue, obsoleteTaskIds);
+  }
+  const existingIds = new Set(validExistingTasks.map((task) => task.taskId));
+  const missingTasks = desiredTasks.filter((task) => !existingIds.has(task.taskId));
+  if (missingTasks.length > 0) {
+    await putTasks(params.taskQueue, missingTasks);
+  }
 };
