@@ -121,6 +121,12 @@ const METADATA_COLUMNS_ORDER = [
   'metadata',
 ] as const;
 
+const resolveLocationType = (value: string): LocationType => (
+  (KNOWN_LOCATION_TYPES as readonly string[]).includes(value)
+    ? value as LocationType
+    : 'area_centroid'
+);
+
 const formatTimestamp = (value?: number): string | undefined => {
   if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;
   return new Date(value).toISOString();
@@ -129,11 +135,12 @@ const formatTimestamp = (value?: number): string | undefined => {
 const buildMetadataRows = (items: LocationGroupItem[]): Array<Record<string, unknown>> => (
   items.map((item) => {
     const data = item.data;
+    const rawType = typeof data?.type === 'string' ? data.type : undefined;
     return {
       id: item.id,
       pointId: data?.pointId,
       name: data?.name,
-      type: data?.type,
+      type: rawType ? resolveLocationType(rawType) : 'area_centroid',
       latitude: data?.latitude,
       longitude: data?.longitude,
       countryCode: data?.countryCode,
@@ -321,12 +328,6 @@ const toIconScaleRange = (sizeRange: [number, number]): [number, number] => [
   sizeRange[1] / ICON_BASE_PX,
 ];
 
-
-const resolveLocationType = (value: string): LocationType => (
-  (KNOWN_LOCATION_TYPES as readonly string[]).includes(value)
-    ? value as LocationType
-    : 'area_centroid'
-);
 
 const LOCATION_TYPE_OPTIONS = (Object.entries(LOCATION_TYPE_STYLES) as Array<
   [LocationType, (typeof LOCATION_TYPE_STYLES)[LocationType]]
