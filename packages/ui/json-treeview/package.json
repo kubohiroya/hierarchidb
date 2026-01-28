@@ -1,0 +1,42 @@
+{
+  "name": "@hierarchidb/ui-json-treeview",
+  "version": "0.1.0",
+  "description": "JSON tree view component built on TanStack Table for HierarchiDB",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0",
+    "@mui/material": "^7.3.6",
+    "@tanstack/react-table": "^8.21.2"
+  },
+  "devDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0",
+    "@mui/material": "^7.3.6",
+    "@tanstack/react-table": "^8.21.2",
+    "typescript": "workspace:^5.9.3"
+  },
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  }
+}
