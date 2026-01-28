@@ -16,7 +16,7 @@ import { getCORSHeaders, parseAllowedOrigins } from './utils/cors.js';
 import { type BffBindings, getEnv } from './utils/env.js';
 import { createSessionToken, extractBearerToken, verifySessionToken } from './utils/jwt.js';
 import { parseEnvInt } from './utils/number.js';
-import { getDynamicRedirectUri } from './utils/redirect-uri.js';
+import { getDynamicRedirectUri, resolveStateOrigin } from './utils/redirect-uri.js';
 import { StateManager } from './utils/state-manager.js';
 import { requireTurnstile } from './utils/turnstile.js';
 
@@ -107,9 +107,10 @@ app.get('/auth/authorize/:provider', requireTurnstile, async (c) => {
     const provider = c.req.param('provider');
     const url = new URL(c.req.url);
     const env = getEnv(c);
-    const client_state = url.searchParams.get('state');
     const stateManager = new StateManager(env.JWT_SECRET || 'default-secret');
-    const state = client_state || (await stateManager.createState(c));
+    const returnOrigin = url.searchParams.get('return_origin');
+    const stateOrigin = resolveStateOrigin(c, returnOrigin);
+    const state = await stateManager.createState(c, stateOrigin);
 
     switch (provider) {
       case 'google': {
@@ -206,9 +207,10 @@ app.post('/auth/authorize/:provider', async (c) => {
     const provider = c.req.param('provider');
     const url = new URL(c.req.url);
     const env = getEnv(c);
-    const client_state = url.searchParams.get('state');
     const stateManager = new StateManager(env.JWT_SECRET || 'default-secret');
-    const state = client_state || (await stateManager.createState(c));
+    const returnOrigin = url.searchParams.get('return_origin');
+    const stateOrigin = resolveStateOrigin(c, returnOrigin);
+    const state = await stateManager.createState(c, stateOrigin);
     switch (provider) {
       case 'google': {
         const redirectUri = getDynamicRedirectUri(c, 'google');

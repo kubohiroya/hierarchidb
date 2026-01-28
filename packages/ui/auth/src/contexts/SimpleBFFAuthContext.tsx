@@ -292,17 +292,8 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
         const codeVerifier = generateRandomString(64);
         const codeChallenge = await generateCodeChallenge(codeVerifier);
 
-        // Include environment info in atoms for BFF to redirect to correct frontend
-        const stateData = {
-          nonce: generateRandomString(32),
-          returnOrigin: window.location.origin,
-          isProduction: window.location.hostname === 'kubohiroya.github.io',
-        };
-        const state = btoa(JSON.stringify(stateData));
-
         // Store code verifier for later use - with timestamp to track freshness
         localStorage.setItem('pkce_code_verifier', codeVerifier);
-        localStorage.setItem('pkce_state', state);
         localStorage.setItem('pkce_timestamp', Date.now().toString());
         localStorage.setItem('auth_provider', provider);
 
@@ -333,7 +324,6 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
         // Don't send redirect_uri - let BFF use its configured value
         authUrl.searchParams.set('response_type', 'code');
         authUrl.searchParams.set('scope', 'openid profile email');
-        authUrl.searchParams.set('state', state);
         authUrl.searchParams.set('code_challenge', codeChallenge);
         authUrl.searchParams.set('code_challenge_method', 'S256');
 

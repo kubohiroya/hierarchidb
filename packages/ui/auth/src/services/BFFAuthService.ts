@@ -196,11 +196,10 @@ export class BFFAuthService {
     // Add PKCE parameters
     authUrl.searchParams.set('code_challenge', codeChallenge);
     authUrl.searchParams.set('code_challenge_method', 'S256');
-
-    // Add atoms for CSRF protection
-    const state = this.generateState();
-    authUrl.searchParams.set('state', state);
-    localStorage.setItem('oauth_state', state);
+    authUrl.searchParams.set(
+      'return_origin',
+      `${window.location.origin}${this.getAppBasePrefix()}`
+    );
 
     // Add redirect URI (BFF will handle the actual OAuth redirect)
     if (method === 'redirect') {
@@ -575,15 +574,6 @@ export class BFFAuthService {
     );
 
     return this.popupWindow;
-  }
-
-  /**
-   * Generate random atoms for CSRF protection
-   */
-  private generateState(): string {
-    const array = new Uint8Array(32);
-    crypto.getRandomValues(array);
-    return Array.from(array, (byte) => byte.toString(16).padStart(2, '0')).join('');
   }
 
   /**
