@@ -467,7 +467,7 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, flex: 1, minHeight: 0 }}>
       <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" justifyContent="flex-start">
-        <Box sx={{ flexBasis: '260px', flexGrow: 0, flexShrink: 1 }}>
+        <Box sx={{ flexBasis: '260px', flexGrow: 0, flexShrink: 1, paddingBottom: 1 }}>
           <SearchField
             searchText={search}
             handleSearchTextChange={setSearch}
