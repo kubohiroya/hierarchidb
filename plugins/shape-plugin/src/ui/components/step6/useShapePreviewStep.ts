@@ -383,6 +383,10 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     loadFeatureMetadataRows,
     metadataPollIntervalMs,
   );
+  const [featureMetadataOverride, setFeatureMetadataOverride] = useState<ShapeFeatureMetadata[] | null>(null);
+  useEffect(() => {
+    setFeatureMetadataOverride(null);
+  }, [rawFeatureMetadataRows]);
 
   const {
     metadataRows: rawTransformErrorRows,
@@ -454,7 +458,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   }, [rawSourceMetadataRows, selectionFilters]);
 
   const sourceMetadataRows = filteredMetadataRows;
-  const featureMetadataRows = rawFeatureMetadataRows;
+  const featureMetadataRows = featureMetadataOverride ?? rawFeatureMetadataRows;
   const transformErrorRows = rawTransformErrorRows;
 
   const sourceMetadataLookup = useMemo(() => {
@@ -1019,6 +1023,14 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     const updatedRows = selectedRows.map((row) => ({ ...row, recycling: nextValue }));
     try {
       await shapeMutationAPIImpl.putFeatureMetadata(updatedRows);
+      const updatedRowIds = new Set(updatedRows.map((row) => String(row.featureId ?? row.id)));
+      const nextRows = featureMetadataRows.map((row) => {
+        const key = String(row.featureId ?? row.id);
+        if (!updatedRowIds.has(key)) return row;
+        const updated = updatedRows.find((entry) => String(entry.featureId ?? entry.id) === key);
+        return updated ?? row;
+      });
+      setFeatureMetadataOverride(nextRows);
     } catch (error) {
       console.warn('[ShapePreviewStep] failed to toggle recycling', error);
     }
