@@ -3,18 +3,14 @@ import { Box } from '@mui/material';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useSetAtom } from 'jotai';
 import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.js';
+import { isSkippedMessage } from '../../../common/utils/taskMessages.ts';
 import { taskViewportRangeAtom } from '../../atoms/shapeBuildProgressAtoms.js';
 import { TaskItem } from './TaskItem.tsx';
 import { formatGeometrySimplifySummary, parseGeometrySimplifyError } from './geometrySimplifyError.ts';
+import { taskPhaseLabels } from './taskPhaseLabels.ts';
 import { useTranslation } from '../../i18n.js';
 
 export type TaskWithMetadata = ShapeBuildTaskSummary & { title?: string };
-
-export const isSkippedMessage = (message?: string | null): boolean => {
-  if (!message) return false;
-  const normalized = message.trim().toLowerCase();
-  return normalized === 'skipped' || normalized.startsWith('skipped:');
-};
 
 type TaskListProps = {
   stageId: string;
@@ -86,31 +82,6 @@ export const TaskListVirtualized = ({
     estimateSize: () => 72,
     overscan: 8,
   });
-  const phaseLabels = useMemo(() => new Map<string, { key: string; fallback: string }>([
-    ['fetch-cache:start', { key: 'stage.taskPhase.fetchCacheStart', fallback: 'Fetch cache start' }],
-    ['fetch-cache:done', { key: 'stage.taskPhase.fetchCacheDone', fallback: 'Fetch cache done' }],
-    ['decode:start', { key: 'stage.taskPhase.decodeStart', fallback: 'Decode start' }],
-    ['decode:done', { key: 'stage.taskPhase.decodeDone', fallback: 'Decode done' }],
-    ['filtering:start', { key: 'stage.taskPhase.filteringStart', fallback: 'Filtering start' }],
-    ['filtering:done', { key: 'stage.taskPhase.filteringDone', fallback: 'Filtering done' }],
-    ['prepare:counts:start', { key: 'stage.taskPhase.prepareCountsStart', fallback: 'Prepare counts start' }],
-    ['prepare:counts:done', { key: 'stage.taskPhase.prepareCountsDone', fallback: 'Prepare counts done' }],
-    ['simplify:start', { key: 'stage.taskPhase.simplifyStart', fallback: 'Simplify start' }],
-    ['simplify:done', { key: 'stage.taskPhase.simplifyDone', fallback: 'Simplify done' }],
-    ['simplify:preprocess:start', { key: 'stage.taskPhase.simplifyPreprocessStart', fallback: 'Preprocess start' }],
-    ['simplify:preprocess:done', { key: 'stage.taskPhase.simplifyPreprocessDone', fallback: 'Preprocess done' }],
-    ['simplify:selfIntersection:start', { key: 'stage.taskPhase.simplifySelfIntersectionStart', fallback: 'Self-intersection fix start' }],
-    ['simplify:selfIntersection:done', { key: 'stage.taskPhase.simplifySelfIntersectionDone', fallback: 'Self-intersection fix done' }],
-    ['simplify:simplify:start', { key: 'stage.taskPhase.simplifyGeometryStart', fallback: 'Geometry simplify start' }],
-    ['simplify:simplify:done', { key: 'stage.taskPhase.simplifyGeometryDone', fallback: 'Geometry simplify done' }],
-    ['output:build:start', { key: 'stage.taskPhase.outputBuildStart', fallback: 'Output build start' }],
-    ['output:build:done', { key: 'stage.taskPhase.outputBuildDone', fallback: 'Output build done' }],
-    ['output:counts:start', { key: 'stage.taskPhase.outputCountsStart', fallback: 'Output counts start' }],
-    ['encode:start', { key: 'stage.taskPhase.encodeStart', fallback: 'Encode start' }],
-    ['encode:done', { key: 'stage.taskPhase.encodeDone', fallback: 'Encode done' }],
-    ['cache:put:start', { key: 'stage.taskPhase.cachePutStart', fallback: 'Cache write start' }],
-    ['cache:put:done', { key: 'stage.taskPhase.cachePutDone', fallback: 'Cache write done' }],
-  ]), []);
   const resolvePhaseMessage = useMemo(() => {
     return (message?: string | null): string | null => {
       if (!message) return null;
@@ -118,11 +89,11 @@ export const TaskListVirtualized = ({
       if (!match) return null;
       const phase = match[1];
       if (!phase) return null;
-      const entry = phaseLabels.get(phase);
+      const entry = taskPhaseLabels.get(phase);
       if (!entry) return null;
       return t(entry.key, entry.fallback);
     };
-  }, [phaseLabels, t]);
+  }, [t]);
 
   useEffect(() => {
     if (!shouldVirtualize) return;

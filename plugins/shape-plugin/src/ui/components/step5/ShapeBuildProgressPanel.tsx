@@ -16,6 +16,7 @@ import { useAtomValue } from 'jotai';
 import type { NodeId } from '@hierarchidb/common-types';
 import { BuildStepPanel, type BuildStatus } from '@hierarchidb/components';
 import { useTranslation } from '../../i18n.js';
+import { resolveShapeTaskTitle } from '../../../common/utils/taskTitles.ts';
 import { useBuildCrashInsight } from './useBuildCrashInsight.js';
 import { useShapeBuildProgressWarnings } from './useShapeBuildProgressWarnings.js';
 import {
@@ -117,7 +118,7 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
 
   const resolveTaskTitle = useCallback(
     (task: TaskWithMetadata): string =>
-      task.title ?? t('stage.tasks.unknown', '(Title unavailable)'),
+      resolveShapeTaskTitle(task, t('stage.tasks.unknown', '(Title unavailable)')),
     [t],
   );
   const resolveFailureMessage = useCallback((task: ShapeBuildTaskSummary): string | null => {

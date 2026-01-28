@@ -6,7 +6,8 @@ import { useCallback, useId, useMemo, useRef } from 'react';
 import type {
   TaskWithMetadata,
 } from './TaskListVirtualized.tsx';
-import { isSkippedMessage, sortVectorTileTasks } from './TaskListVirtualized.tsx';
+import { sortVectorTileTasks } from './TaskListVirtualized.tsx';
+import { isSkippedMessage } from '../../../common/utils/taskMessages.ts';
 import type { TaskProgressSummary } from '../../atoms/shapeBuildProgressAtoms.ts';
 import { taskScrollTargetAtom, taskViewportRangeAtom } from '../../atoms/shapeBuildProgressAtoms.ts';
 import type { BuildStage } from '@hierarchidb/components';
