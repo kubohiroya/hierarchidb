@@ -6,7 +6,7 @@ This plan is maintained in accordance with `PLANS.md` at the repository root.
 
 ## Purpose / Big Picture
 
-Rebuild the shape-plugin TopoJSON path so extract2 and vectortile follow a unified, zoom-grouped flow. The goal is to keep tile boundaries stable while scaling simplification based on zoom and to control the scope of TopoJSON aggregation (world, continent, country) by zoom ranges. Users can configure the tile-boundary expansion factor and margin in Step4 (processing settings). After this change, extract2 generates TopoJSON buffers by group, attaches tileId indexes, and vectortile consumes those buffers in a consistent way.
+Rebuild the shape-plugin TopoJSON path so extract2 and vectortile follow a unified, zoom-grouped flow. The goal is to keep tile boundaries stable while scaling simplification based on zoom and to control the scope of TopoJSON aggregation (world, continent, country) by zoom ranges. Users can configure the tile-boundary expansion factor and margin in Step4 (Settings). After this change, extract2 generates TopoJSON buffers by group, attaches tileId indexes, and vectortile consumes those buffers in a consistent way.
 
 ## Progress
 

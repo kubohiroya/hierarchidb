@@ -22,7 +22,6 @@ import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { DownloadRetryControls } from './DownloadRetryControls.js';
 import type { FetchConfigSectionState } from './useFetchConfigSection.ts';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
-import type { ReactNode } from 'react';
 import { Step4SectionTitle } from './Step4SectionTitle.tsx';
 import { getStep4HoverCardSx } from './step4CardStyles.ts';
 
@@ -33,10 +32,6 @@ type Props = {
   config: ShapeBuildConfig;
   disabled?: boolean;
 };
-
-  <Stack direction="row" spacing={1} alignItems="center">
-    <Typography variant="subtitle2">{title}</Typography>
-);
 
 export const FetchConfigSection: React.FC<Props> = ({ fetchState, config, disabled }) => {
   const { t, baseFetchConfig, update } = fetchState;

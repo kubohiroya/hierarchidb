@@ -45,7 +45,7 @@ Key tables and types:
 
 - Route line data: `RouteDatabase.lineStrings` (RouteLineString) in `plugins/route-plugin/src/services/database/RouteDatabase.ts`.
 - Route build UI step: `plugins/route-plugin/src/ui/components/steps/RouteBuildStep.tsx`.
-- Route processing settings UI: `plugins/route-plugin/src/ui/components/steps/RouteProcessingStep.tsx`.
+- Route Settings UI: `plugins/route-plugin/src/ui/components/steps/RouteProcessingStep.tsx`.
 - Route build monitor utilities: `plugins/route-plugin/src/ui/utils/buildMonitor.ts` and `plugins/route-plugin/src/ui/hooks/useRouteBuildCrashInsight.ts`.
 
 A “build” in this context is the pipeline that ingests data, generates route geometry, and writes lineStrings and tiles. “Crash detection” means detecting an interrupted build by seeing a buildStartedAt timestamp with no buildFinishedAt, and showing a warning that suggests cleanup and restart.

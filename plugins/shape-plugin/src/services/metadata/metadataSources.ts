@@ -143,7 +143,7 @@ export async function fetchGeoBoundariesMetadata(nodeId: NodeId): Promise<Countr
   }
 
   const results: CountryMetadata[] = [];
-  let missingContinentCount = 0;
+  // let missingContinentCount = 0;
   const missingSamples: Array<{ iso2?: string; iso3: string; metadata: string | null }> = [];
   for (const entry of entries.values()) {
     const iso2 = await normalizeCountryCodeFormat(entry.iso3, 'iso2', {
@@ -160,7 +160,7 @@ export async function fetchGeoBoundariesMetadata(nodeId: NodeId): Promise<Countr
     const rawContinent = (entry.continent ?? '').trim();
     const resolvedContinent = resolveGeoBoundariesContinent(rawContinent, resolvedContinentCode, fallbackContinent);
     if (!rawContinent && resolvedContinentCode === 'XX') {
-      missingContinentCount += 1;
+      // missingContinentCount += 1;
       if (missingSamples.length < 5) {
         missingSamples.push({ iso2: normalizedIso2, iso3: entry.iso3, metadata: rawContinent || null });
       }

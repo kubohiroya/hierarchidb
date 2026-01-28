@@ -22,21 +22,15 @@ import {
 import { useTranslation } from '../../i18n.js';
 import { useTransformConfigSection } from './useTransformConfigSection.ts';
 import { ExtractionPanel } from '../processing/ExtractionPanel.js';
-import type { ReactNode } from 'react';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
+import { Step4SectionTitle } from './Step4SectionTitle.tsx';
+import { getStep4HoverCardSx } from './step4CardStyles.ts';
 
 type Props = {
   config: ShapeBuildConfig;
   disabled?: boolean;
   onChange: (next: ShapeBuildConfig) => void;
 };
-
-const SectionTitle: React.FC<{ icon: ReactNode; title: string }> = ({ icon, title }) => (
-  <Stack direction="row" spacing={1} alignItems="center">
-    {icon}
-    <Typography variant="subtitle2">{title}</Typography>
-  </Stack>
-);
 
 const EARTH_RADIUS = 6378137;
 const MVT_EXTENT = 4096;

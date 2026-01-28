@@ -26,12 +26,12 @@ The workspace relies on `pnpm`. `app/` contains the main UI, with shared documen
   - `plugins/` 直下には folder/location/shape/... の各ノードタイプが pnpm パッケージとして存在し、`src/{ui,worker,shared,icon}` と Dexie schema を同居させる（`plugins/README.md` の比較表・3 層図を参照）。`package.json` の `turbo.pipeline` で `@hierarchidb/plugin-base` や runtime への `build` 依存を宣言し、`dist/` の `clean: false` 前提で再ビルドを最小化する。
   - `config/` は Feature Flag や Turbo パイプライン (pipeline) の実行順、`scripts/env/*.sh` は dev/build で読み込む環境変数を保持。`docs/` と `app/docs/` はアーキテクチャ設計、Worker 初期化、プラグイン実装ガイドの一次情報。
 
-- **TypeScript path & references policy (2025-10-21, NodeNext 対応版)**
-  - ルートの `tsconfig.base.json` に、ワークスペース alias（例: `@hierarchidb/foo`）を **必ず `src/` 指向で** 定義する。`dist/` 参照は登録しない。
+- **TypeScript path & references policy (2026-01-26, NodeNext 対応版)**
+  - ルートの `tsconfig.base.json` に、ワークスペース alias（例: `@hierarchidb/foo`）を **必ず `dist/*.d.ts` または公開 exports 指向で** 定義する。`src/` 参照は登録しない。
   - 各パッケージの `tsconfig.json` では、原則として追加の `paths` を持たず、`tsconfig.base.json` の alias をそのまま利用する。暫定対処でローカル `paths` を追加した場合は、依存の `.d.ts` 出力が整い次第速やかに撤去する。
   - `tsconfig.build.json` では `paths` を空（もしくは最小限）に保ち、代わりに `references` で依存パッケージ（例: `../common/types/tsconfig.build.json`）を明示する。`tsc -b` で依存先の型出力を先に生成し、NodeNext の解決規約に従ってビルド順を保証する。
-  - NodeNext では未生成の `dist/*.d.ts` を `paths` で直接指すと TS7016/TS6305 が即座に発生するため、**build 依存は project references に一本化** する。どうしても暫定で相対パスを追加する場合は、TASKS 運用ログに理由と撤去予定を記録すること。
-  - Turbo 側は従来同様 `dependsOn: ['^build:types']` を設定しつつ、`pnpm typecheck:graph` が NodeNext モードでグリーンになることを DoD とする。必要に応じて `npx tsc -b` で依存チェーンの `.d.ts` を明示的に更新する。
+  - NodeNext では `dist/*.d.ts` 未生成だと TS7016/TS6305 が発生するため、**build 依存は project references + Turbo の依存順序で保証する**。必要に応じて `pnpm --filter <pkg> build` または `npx tsc -b` で依存チェーンの `.d.ts` を明示的に更新し、理由と撤去予定を TASKS 運用ログに記録すること。
+  - Turbo 側は `dependsOn: ['^build:types']` を維持し、`pnpm typecheck:graph` が NodeNext モードでグリーンになることを DoD とする。
 
 ## プラグイン機構と UI ↔ Worker API
 

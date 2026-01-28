@@ -37,7 +37,7 @@ Location plugin current steps live in `plugins/location-plugin/src/ui/components
 
 Route plugin steps are defined in `plugins/route-plugin/src/ui/components/steps-provider.tsx` and components under `plugins/route-plugin/src/ui/components/steps/`. Build/startBatch is currently a stub that only notifies. Batch logic lives in `plugins/route-plugin/src/services/RouteBatchSession.ts`, `RouteBatchManager.ts`, and `RouteBatchSessionOrchestrator.ts`, but no vector tile generation exists yet.
 
-Shape plugin provides the reference behavior: processing settings, vector tile build stages, and metadata preview (`plugins/shape-plugin/src/ui/components/steps-provider.tsx`, `ShapeBuildStep.tsx`, `ShapePreviewStep.tsx`, `useShapeBuildStep.ts`, and vector tile adapters under `plugins/shape-plugin/src/services/batch`). Runtime worker adapters for vector tiles are already wired via `RuntimeWorkerVectorTileAdapter` and `RuntimeTileClient`.
+Shape plugin provides the reference behavior: Settings, vector tile build stages, and metadata preview (`plugins/shape-plugin/src/ui/components/steps-provider.tsx`, `ShapeBuildStep.tsx`, `ShapePreviewStep.tsx`, `useShapeBuildStep.ts`, and vector tile adapters under `plugins/shape-plugin/src/services/batch`). Runtime worker adapters for vector tiles are already wired via `RuntimeWorkerVectorTileAdapter` and `RuntimeTileClient`.
 
 Tabular metadata is persisted via `@hierarchidb/tabular-store` with `TabularWriter` in the batch controllers (e.g., `LocationSessionController.ts`, `RouteBatchSession.ts`). Vector tiles are stored in plugin-specific ephemeral Dexie DBs (`plugins/location-plugin/src/database/EphemeralLocationDB.ts`, `plugins/route-plugin/src/worker/*` once implemented).
 
