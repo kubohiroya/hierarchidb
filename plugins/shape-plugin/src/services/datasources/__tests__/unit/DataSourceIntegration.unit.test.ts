@@ -7,7 +7,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DataSourceStrategyFactory } from '../DataSourceStrategyFactory.js';
 import type { FetchOptions } from '../DataSourceStrategy.js';
-import { OpenStreetMapStrategy } from '../OpenStreetMapStrategy.js';
 import { GeoBoundariesStrategy } from '../GeoBoundariesStrategy.js';
 import { metadataLoader } from '../../metadata/MetadataLoader.js';
 
@@ -16,80 +15,6 @@ describe('Data Source Integration Tests', () => {
 
   beforeEach(() => {
     factory = new DataSourceStrategyFactory();
-  });
-
-  describe('OpenStreetMap Integration', () => {
-    let strategy: OpenStreetMapStrategy;
-
-    beforeEach(() => {
-      strategy = new OpenStreetMapStrategy();
-    });
-
-    it('should fetch real data from Overpass API', async () => {
-      const options: FetchOptions = {
-        bbox: {
-          minLat: 35.6,
-          maxLat: 35.7,
-          minLng: 139.7,
-          maxLng: 139.8,
-        },
-        // Use a TagFilter rather than a plain string to satisfy typing
-        tags: [{ key: 'type', operator: 'eq', value: 'countries' }],
-        timeout: 10,
-      };
-
-      try {
-        const rawData = await strategy.fetchData(options);
-
-        expect(rawData.elements).toBeDefined();
-        expect(Array.isArray(rawData.elements)).toBe(true);
-        expect(rawData.metadata).toBeDefined();
-        expect(rawData.metadata.source).toBe('osm-overpass');
-
-        console.log(`OSM: Fetched ${rawData.elements.length} elements`);
-
-        if (rawData.elements.length > 0) {
-          const processedData = await strategy.processData(rawData);
-          expect(Array.isArray(processedData)).toBe(true);
-
-          if (processedData.length > 0) {
-            const entity = processedData[0] as any;
-            expect(entity?.id).toBeDefined();
-            console.log(`OSM: Processed ${processedData.length} entities`);
-          }
-        }
-
-      } catch (error) {
-        console.error('OSM integration test failed:', error);
-        //  Overpass API
-        console.warn('OSM test skipped due to API limitations or network issues');
-      }
-    }, 30000); //  30
-
-    it('should stage and execute administrative query', async () => {
-      const query = strategy.buildPresetQuery('administrative', {
-        minLat: 35.0,
-        maxLat: 36.0,
-        minLng: 139.0,
-        maxLng: 140.0,
-      });
-
-      expect(query).toContain('[admin_level]');
-      expect(query).toContain('[boundary=administrative]');
-      expect(query).toContain('(35,139,36,140)');
-
-      console.log('Generated OSM Query:', query.substring(0, 200) + '...');
-
-      expect(query).toMatch(/\[timeout:\d+\]/);
-      expect(query).toContain('out geom');
-    });
-
-    it('should handle rate limiting gracefully', async () => {
-      //  APIconfig
-      expect(strategy.config.access.rateLimit).toBeDefined();
-      expect(strategy.config.access.rateLimit?.requests).toBe(2);
-      expect(strategy.config.access.rateLimit?.period).toBe(60000);
-    });
   });
 
   describe('GeoBoundaries Integration', () => {
@@ -217,7 +142,7 @@ describe('Data Source Integration Tests', () => {
 
       console.log('Factory statistics:', stats);
 
-      expect(stats.total).toBeGreaterThanOrEqual(4); //  4
+      expect(stats.total).toBeGreaterThanOrEqual(3);
       expect(stats.supported).toBeGreaterThan(0);
       expect(Object.keys(stats.byCategory).length).toBeGreaterThan(0);
       expect(Object.keys(stats.byCoverageLevel).length).toBeGreaterThan(0);
@@ -228,24 +153,6 @@ describe('Data Source Integration Tests', () => {
   });
 
   describe('Error Handling', () => {
-    it('should handle network failures gracefully', async () => {
-      const strategy = factory.create('openstreetmap-overpass');
-
-      const options: FetchOptions = {
-        query: 'invalid overpass query syntax',
-        timeout: 1,
-      };
-
-      try {
-        await strategy.fetchData(options);
-        //  API
-        console.log('Strategy handled invalid query gracefully');
-      } catch (error) {
-        expect(error).toBeInstanceOf(Error);
-        console.log('Strategy properly threw error for invalid query:', error?.message);
-      }
-    });
-
     it('should handle empty/invalid data processing', async () => {
       const strategy = factory.create('natural-earth-shapes');
 

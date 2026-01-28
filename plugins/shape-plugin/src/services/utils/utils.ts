@@ -286,7 +286,6 @@ function buildDataSourceUrl(
     geoboundaries: GEOBOUNDARIES_RELEASE_BASE_URL,
     'geoboundaries-topojson': GEOBOUNDARIES_RELEASE_BASE_URL,
     gadm: 'https://geodata.ucdavis.edu/gadm/gadm4.1',
-    openstreetmap: 'https://download.geofabrik.de',
   } as const;
 
   const baseUrl = baseUrls[dataSource];
@@ -308,8 +307,6 @@ function buildDataSourceUrl(
       return adminLevel === 0
         ? `${baseUrl}/json/gadm41_${countryCode.toUpperCase()}_${adminLevel}.json`
         : `${baseUrl}/json/gadm41_${countryCode.toUpperCase()}_${adminLevel}.json.zip`;
-    case 'openstreetmap':
-      return `${baseUrl}/${countryCode.toLowerCase()}-latest.osm.pbf`;
     default:
       return null;
   }

@@ -68,19 +68,6 @@ describe('DataSourceManager Migration Tests', () => {
       expect(metadata.adminLevels).toBeDefined();
     });
 
-    it('OpenStreetMap戦略が正常に実装される', async () => {
-      //  Given: OpenStreetMap
-      const dataSource: DataSourceName = 'openstreetmap';
-
-      //  When: OpenStreetMap
-      const metadata = await dataSourceManager.getCountryMetadata(dataSource, 'JP');
-
-      //  Then: OpenStreetMap
-      expect(metadata).toBeDefined();
-      expect(metadata.countryCode).toBe('JP');
-      //  OpenStreetMap
-      expect(metadata.adminLevels).toBeDefined();
-    });
   });
 
   describe('エラーハンドリングテスト', () => {

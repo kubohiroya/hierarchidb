@@ -130,16 +130,4 @@ export const SHAPE_DATA_SOURCES = [
     maxAdminLevel: 4,
     countryCodeFormat: 'iso3',
   },
-  {
-    name: 'openstreetmap' as DataSourceConfig['name'],
-    displayName: 'OpenStreetMap',
-    description: 'Community-driven geographic data',
-    license: 'ODbL',
-    licenseUrl: 'https://opendatacommons.org/licenses/odbl/',
-    attribution: '© OpenStreetMap contributors',
-    color: '#7EDD00',
-    icon: '🛣️',
-    maxAdminLevel: 3,
-    countryCodeFormat: 'iso2',
-  },
 ] as DataSourceConfig[];

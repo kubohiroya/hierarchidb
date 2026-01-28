@@ -6,7 +6,6 @@ import { DataSourceStrategyFactory, defaultDataSourceFactory } from '../DataSour
 import { BaseDataSourceStrategy, type FetchOptions, type ProcessOptions, type SaveTarget, type DataSourceConfig } from '../DataSourceStrategy.js';
 import { NaturalEarthStrategy } from '../NaturalEarthStrategy.js';
 import { GADMStrategy } from '../GADMStrategy.js';
-import { OpenStreetMapStrategy } from '../OpenStreetMapStrategy.js';
 import { GeoBoundariesStrategy } from '../GeoBoundariesStrategy.js';
 import type { ShapeEntity } from '../../../common/types/ShapeEntity.js';
 
@@ -32,11 +31,6 @@ vi.mock('@hierarchidb/auth-recovery', () => {
     }
     if (url.includes('mock.local/gb.geojson')) {
       return new Response(JSON.stringify({ type: 'FeatureCollection', features: [{ type: 'Feature', geometry: { type: 'Polygon', coordinates: [[[0,0],[1,0],[1,1],[0,1],[0,0]]] }, properties: { shapeName: 'Mock' } }] } as any), { status: 200 });
-    }
-
-    // OSM Overpass interpreter
-    if (url.includes('overpass-api.de')) {
-      return new Response(JSON.stringify({ elements: [{ type: 'node', id: 1, lat: 0, lon: 0, tags: { name: 'Mock' } }], generator: 'mock' }), { status: 200 });
     }
 
     // Default health check OK
@@ -238,7 +232,6 @@ describe('DataSourceStrategyFactory', () => {
     const strategies = factory.getAvailableStrategies();
     expect(strategies).toContain('natural-earth-shapes');
     expect(strategies).toContain('gadm-administrative-areas');
-    expect(strategies).toContain('openstreetmap-overpass');
     expect(strategies).toContain('geoboundaries-admin-areas');
   });
 
@@ -250,10 +243,6 @@ describe('DataSourceStrategyFactory', () => {
     const gadm = factory.create('gadm-administrative-areas');
     expect(gadm).toBeInstanceOf(GADMStrategy);
     expect(gadm.id).toBe('gadm-administrative-areas');
-
-    const osm = factory.create('openstreetmap-overpass');
-    expect(osm).toBeInstanceOf(OpenStreetMapStrategy);
-    expect(osm.id).toBe('openstreetmap-overpass');
 
     const geoBoundaries = factory.create('geoboundaries-admin-areas');
     expect(geoBoundaries).toBeInstanceOf(GeoBoundariesStrategy);
@@ -285,7 +274,6 @@ describe('DataSourceStrategyFactory', () => {
     const globalStrategies = factory.getStrategiesByCoverageLevel('global');
     expect(globalStrategies).toContain('natural-earth-shapes');
     expect(globalStrategies).toContain('gadm-administrative-areas');
-    expect(globalStrategies).toContain('openstreetmap-overpass');
     expect(globalStrategies).toContain('geoboundaries-admin-areas');
   });
 
@@ -330,7 +318,7 @@ describe('DataSourceStrategyFactory', () => {
     expect(naturalRec).toBe('natural-earth-shapes');
 
     const realtimeRec = factory.getRecommendedStrategy('realtime');
-    expect(realtimeRec).toBe('openstreetmap-overpass');
+    expect(realtimeRec).toBeNull();
 
     const researchRec = factory.getRecommendedStrategy('research');
     expect(researchRec).toBe('geoboundaries-admin-areas');
@@ -406,42 +394,6 @@ describe('GADM Strategy', () => {
   it('should normalize country codes', () => {
     expect(strategy.config.access.endpoints).toHaveProperty('country-json');
     expect(strategy.config.access.endpoints).toHaveProperty('country-json-zip');
-  });
-});
-
-describe('OpenStreetMap Strategy', () => {
-  let strategy: OpenStreetMapStrategy;
-
-  beforeEach(() => {
-    strategy = new OpenStreetMapStrategy();
-  });
-
-  it('should have correct configuration', () => {
-    expect(strategy.id).toBe('openstreetmap-overpass');
-    expect(strategy.name).toBe('OpenStreetMap Overpass API');
-    expect(strategy.config.access.method).toBe('REST');
-    expect(strategy.config.access.baseUrl).toContain('overpass-api.de');
-  });
-
-  it('should get available presets', () => {
-    const presets = strategy.getAvailablePresets();
-    expect(presets).toHaveProperty('administrative');
-    expect(presets).toHaveProperty('countries');
-    expect(presets).toHaveProperty('cities');
-    expect(presets).toHaveProperty('coastlines');
-  });
-
-  it('should stage preset query', () => {
-    const query = strategy.buildPresetQuery('countries');
-    expect(query).toContain('admin_level=2');
-    expect(query).toContain('boundary=administrative');
-    expect(query).toContain('out geom');
-  });
-
-  it('should stage query with bbox', () => {
-    const bbox = { minLat: 35, maxLat: 36, minLng: 139, maxLng: 140 };
-    const query = strategy.buildPresetQuery('countries', bbox);
-    expect(query).toContain('(35,139,36,140)');
   });
 });
 

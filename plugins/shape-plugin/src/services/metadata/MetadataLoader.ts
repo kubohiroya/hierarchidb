@@ -1,7 +1,6 @@
 import type { CountryMetadata, DataSourceName } from '../../common/types/index.js';
 import type { NodeId } from '@hierarchidb/common-types';
 import {
-  assertDataSourceSupported,
   fetchGeoBoundariesMetadata,
   fetchGadmMetadata,
   fetchNaturalEarthMetadata,
@@ -20,10 +19,6 @@ export class MetadataLoader {
     geoboundaries: fetchGeoBoundariesMetadata,
     'geoboundaries-topojson': fetchGeoBoundariesMetadata,
     naturalearth: fetchNaturalEarthMetadata,
-    openstreetmap: async () => {
-      assertDataSourceSupported('openstreetmap');
-      return [];
-    },
   };
 
   private constructor() {

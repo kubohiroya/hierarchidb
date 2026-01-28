@@ -5,13 +5,11 @@
 import type { DataSourceStrategy } from './DataSourceStrategy.js';
 import { NaturalEarthStrategy } from './NaturalEarthStrategy.js';
 import { GADMStrategy } from './GADMStrategy.js';
-import { OpenStreetMapStrategy } from './OpenStreetMapStrategy.js';
 import { GeoBoundariesStrategy } from './GeoBoundariesStrategy.js';
 
 export type DataSourceStrategyId =
   | 'natural-earth-shapes'
   | 'gadm-administrative-areas'
-  | 'openstreetmap-overpass'
   | 'geoboundaries-admin-areas';
 
 /**
@@ -74,24 +72,6 @@ export class DataSourceStrategyFactory {
         updateFrequency: 'yearly',
         license: 'Free for non-commercial use',
         attribution: 'GADM',
-        supported: true,
-      },
-    );
-
-    //  OpenStreetMap
-    this.register(
-      'openstreetmap-overpass',
-      () => new OpenStreetMapStrategy(),
-      {
-        id: 'openstreetmap-overpass',
-        name: 'OpenStreetMap',
-        description: 'Crowdsourced geographic data via Overpass API',
-        category: 'general',
-        dataTypes: ['administrative', 'natural', 'infrastructure', 'poi'],
-        coverageLevel: 'global',
-        updateFrequency: 'realtime',
-        license: 'Open Database License (ODbL)',
-        attribution: 'OpenStreetMap contributors',
         supported: true,
       },
     );
@@ -285,8 +265,7 @@ export class DataSourceStrategyFactory {
         return strategies.find(id => id === 'natural-earth-shapes') || null;
 
       case 'realtime':
-        //  OpenStreetMap
-        return strategies.find(id => id === 'openstreetmap-overpass') || null;
+        return null;
 
       case 'research':
         //  GeoBoundaries

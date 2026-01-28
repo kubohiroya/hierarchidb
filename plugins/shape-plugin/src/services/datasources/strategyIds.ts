@@ -11,8 +11,6 @@ export const resolveStrategyIdFromDataSource = (source?: DataSourceName): DataSo
       return 'geoboundaries-admin-areas';
     case 'geoboundaries-topojson':
       return 'geoboundaries-admin-areas';
-    case 'openstreetmap':
-      return 'openstreetmap-overpass';
     default:
       return null;
   }

@@ -56,18 +56,6 @@ export const DATA_SOURCE_CONFIGS: Record<string, DataSourceConfig> = {
     maxAdminLevel: 5,
     countryCodeFormat: 'iso3',
   },
-  openstreetmap: {
-    name: 'openstreetmap',
-    displayName: 'OpenStreetMap',
-    description: 'Community-driven open geographic database of the world',
-    license: 'ODbL 1.0',
-    licenseUrl: 'https://www.openstreetmap.org/copyright',
-    attribution: '© OpenStreetMap contributors',
-    color: '#9C27B0',
-    icon: '🚗',
-    maxAdminLevel: 4,
-    countryCodeFormat: 'iso2',
-  },
 };
 
 // ================================

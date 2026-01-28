@@ -68,19 +68,11 @@ describe('generateDownloadTaskPayloads', () => {
     ]);
   });
 
-  it('creates openstreetmap URLs for JP/ID levels 0/1', () => {
-    assertUrls('openstreetmap', [
-      'https://download.geofabrik.de/jp-latest.osm.pbf',
-      'https://download.geofabrik.de/jp-latest.osm.pbf',
-      'https://download.geofabrik.de/id-latest.osm.pbf',
-      'https://download.geofabrik.de/id-latest.osm.pbf',
-    ]);
-  });
 });
 
 describe('generateDownloadTaskPayloads (network)', () => {
   it('fetches URLs successfully for each data source', async () => {
-    const sources: DataSourceName[] = ['naturalearth', 'geoboundaries', 'gadm', 'openstreetmap'];
+    const sources: DataSourceName[] = ['naturalearth', 'geoboundaries', 'gadm'];
     const urlLists = sources.flatMap((source) => buildUrls(source));
     for (const url of urlLists) {
       await fetchUrlOk(url);

@@ -39,14 +39,6 @@ export function useCountryMetadata({
       return;
     }
 
-    if (dataSource === 'openstreetmap') {
-      const err = new Error('OpenStreetMap is not supported in Step3 country selection.');
-      setError(err);
-      setMetadata([]);
-      setLoading(false);
-      return;
-    }
-
     if (options?.force) {
       // Clear in-memory cache so we can re-fetch from the underlying chunk-store/network.
       metadataLoader.clearCache(dataSource);

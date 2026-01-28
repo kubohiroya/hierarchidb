@@ -1,6 +1,6 @@
 import type { ISO2, ISO3 } from '@hierarchidb/common-types';
 
-export type DataSourceName = 'naturalearth' | 'geoboundaries' | 'geoboundaries-topojson' | 'gadm' | 'openstreetmap';
+export type DataSourceName = 'naturalearth' | 'geoboundaries' | 'geoboundaries-topojson' | 'gadm';
 export type CountryCode = ISO2 | ISO3;
 export type CountryCodeFormat = 'iso2' | 'iso3';
 

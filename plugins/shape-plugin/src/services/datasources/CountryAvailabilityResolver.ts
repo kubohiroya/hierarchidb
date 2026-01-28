@@ -114,10 +114,6 @@ export const fetchCountryAvailability = async (
   dataSource: DataSourceName,
   nodeId: NodeId,
 ): Promise<CountryAvailabilityMatrix> => {
-  if (dataSource === 'openstreetmap') {
-    throw new Error('OpenStreetMap is not supported in Step3 country selection.');
-  }
-
   const strategyAvailability = await fetchAvailabilityFromStrategy(dataSource).catch((error) => {
     console.warn('[CountryAvailabilityResolver] strategy availability failed', { dataSource, error });
     return null;

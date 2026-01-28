@@ -52,9 +52,4 @@ describe('MetadataLoader', () => {
     expect(getOrFetchForNode).toHaveBeenCalledTimes(1);
   });
 
-  it('throws on openstreetmap', async () => {
-    await expect(metadataLoader.loadMetadata('openstreetmap', 'node-1')).rejects.toThrow(
-      'OpenStreetMap is not supported in Step3 country selection.',
-    );
-  });
 });

@@ -17,7 +17,6 @@ describe('Data Source Strategy Simple Test', () => {
 
     expect(strategies).toContain('natural-earth-shapes');
     expect(strategies).toContain('gadm-administrative-areas');
-    expect(strategies).toContain('openstreetmap-overpass');
     expect(strategies).toContain('geoboundaries-admin-areas');
   });
 
@@ -51,7 +50,6 @@ describe('Data Source Strategy Simple Test', () => {
 
     const generalStrategies = factory.getStrategiesByCategory('general');
     expect(generalStrategies).toContain('natural-earth-shapes');
-    expect(generalStrategies).toContain('openstreetmap-overpass');
   });
 
   it('should provide recommendations', () => {
@@ -64,17 +62,17 @@ describe('Data Source Strategy Simple Test', () => {
     expect(naturalRec).toBe('natural-earth-shapes');
 
     const realtimeRec = factory.getRecommendedStrategy('realtime');
-    expect(realtimeRec).toBe('openstreetmap-overpass');
+    expect(realtimeRec).toBeNull();
   });
 
   it('should provide statistics', () => {
     const factory = new DataSourceStrategyFactory();
     const stats = factory.getStatistics();
 
-    expect(stats.total).toBe(4);
-    expect(stats.supported).toBe(4);
-    expect(stats.byCategory.general).toBe(2);
+    expect(stats.total).toBe(3);
+    expect(stats.supported).toBe(3);
+    expect(stats.byCategory.general).toBe(1);
     expect(stats.byCategory.administrative).toBe(2);
-    expect(stats.byCoverageLevel.global).toBe(4);
+    expect(stats.byCoverageLevel.global).toBe(3);
   });
 });

@@ -673,9 +673,6 @@ export const shapeBatchAPI = {
   },
 
   getCountryMetadata: async (nodeId: NodeId, dataSource: DataSourceName): Promise<CountryMetadata[]> => {
-    if (dataSource === 'openstreetmap') {
-      throw new Error('OpenStreetMap is not supported in Step3 country selection.');
-    }
     const data = await metadataLoader.loadMetadata(dataSource, nodeId);
     if (Array.isArray(data) && data.length > 0) return data;
     throw new Error(`No country metadata returned for data source: ${dataSource}`);
@@ -1356,6 +1353,5 @@ function isDataSourceName(value: string): value is DataSourceName {
   return value === 'naturalearth' ||
     value === 'geoboundaries' ||
     value === 'geoboundaries-topojson' ||
-    value === 'gadm' ||
-    value === 'openstreetmap';
+    value === 'gadm';
 }
