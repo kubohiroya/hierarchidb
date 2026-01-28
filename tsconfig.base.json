@@ -380,10 +380,10 @@
         "packages/ui/i18n/dist/*"
       ],
       "@hierarchidb/ui-json-treeview": [
-        "packages/ui/json-treeview/src/index.ts"
+        "packages/ui/json-treeview/dist/index.d.ts"
       ],
       "@hierarchidb/ui-json-treeview/*": [
-        "packages/ui/json-treeview/src/*"
+        "packages/ui/json-treeview/dist/*"
       ],
       "@hierarchidb/ui-icon": [
         "packages/ui/icon/dist/index.d.ts"
