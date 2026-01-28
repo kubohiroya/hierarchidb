@@ -12,6 +12,7 @@ import {
 import { Box, Button, IconButton, Tooltip } from '@mui/material';
 import { useMemo } from 'react';
 import { loadAppConfig, resolveAssetHref } from '~/loadAppConfig.js';
+import { APP_VERSION, BUILD_TIME } from '../../../version.ts';
 import { TitleLogo } from './TitleLogo.js';
 import { TopPageGuidedTour } from './tour/TopPageGuidedTour.js';
 import { useHomePage } from './useHomePage.js';
@@ -30,6 +31,18 @@ export function meta() {
     },
   ];
 }
+
+const formatBuildTime = (value: string): string => {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+  const pad2 = (input: number) => String(input).padStart(2, '0');
+  return [
+    `${parsed.getFullYear()}/${pad2(parsed.getMonth() + 1)}/${pad2(parsed.getDate())}`,
+    `${pad2(parsed.getHours())}:${pad2(parsed.getMinutes())}`,
+  ].join(' ');
+};
 
 const treeButtonConfigs: TreeConfig[] = [
   {
@@ -104,7 +117,9 @@ export default function HomePage() {
             alignItems: 'center',
           }}
         >
-          <div style={{ fontSize: '12px', color: '#999999' }}>v1.0.0</div>
+          <div style={{ fontSize: '12px', color: '#999999' }}>
+            v{APP_VERSION} ({formatBuildTime(BUILD_TIME)})
+          </div>
           {isUserMenuReady ? (
             <Box data-tour-id="home-user-menu">
               <UserLoginButton />
