@@ -10,6 +10,7 @@ import {
   buildEvenZoomBandBoundaries,
   normalizeZoomBandBoundaries,
 } from '@hierarchidb/util';
+import { getStep4HoverCardSx } from './step4CardStyles.ts';
 
 type ZoomBandRangeCardProps = {
   title: string;
@@ -77,21 +78,13 @@ export const ZoomBandRangeCard = ({
     onChange(nextBoundaries);
   };
 
-  const hoverStyles = disabled
-    ? {}
-    : {
-        '&:hover': {
-          transform: 'translateY(-2px)',
-          boxShadow: (theme: { shadows: string[] }) => theme.shadows[8],
-        },
-      };
+  const hoverStyles = getStep4HoverCardSx(disabled);
 
   return (
     <Card
       variant="outlined"
       sx={{
         height: '100%',
-        transition: 'all 0.3s ease',
         ...hoverStyles,
       }}
     >

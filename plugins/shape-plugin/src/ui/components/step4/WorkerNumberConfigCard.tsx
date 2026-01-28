@@ -9,6 +9,7 @@ import {
 } from '@mui/material';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import { useTranslation } from '../../i18n.js';
+import { getStep4HoverCardSx } from './step4CardStyles.ts';
 
 type WorkerNumberConfigCardProps = {
   title: string;
@@ -54,14 +55,7 @@ export const WorkerNumberConfigCard: React.FC<WorkerNumberConfigCardProps> = ({
     onChange(Math.max(min, Math.min(max, resolved)));
   };
 
-  const hoverStyles = disabled
-    ? {}
-    : {
-        '&:hover': {
-          transform: 'translateY(-2px)',
-          boxShadow: (theme: { shadows: string[] }) => theme.shadows[8],
-        },
-      };
+  const hoverStyles = getStep4HoverCardSx(disabled);
 
   return (
     <Paper
@@ -72,7 +66,6 @@ export const WorkerNumberConfigCard: React.FC<WorkerNumberConfigCardProps> = ({
         pr: 2,
         borderRadius: 2,
         backgroundColor: (theme) => theme.palette.action.hover,
-        transition: 'all 0.3s ease',
         ...hoverStyles,
       }}
     >

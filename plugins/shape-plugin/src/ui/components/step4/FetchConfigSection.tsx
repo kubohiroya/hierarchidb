@@ -23,6 +23,8 @@ import { DownloadRetryControls } from './DownloadRetryControls.js';
 import type { FetchConfigSectionState } from './useFetchConfigSection.ts';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
 import type { ReactNode } from 'react';
+import { Step4SectionTitle } from './Step4SectionTitle.tsx';
+import { getStep4HoverCardSx } from './step4CardStyles.ts';
 
 type OmitDetailsLevel = ShapeBuildConfig['transformConfig']['omitDetailsConfig']['level'];
 
@@ -32,11 +34,8 @@ type Props = {
   disabled?: boolean;
 };
 
-const SectionTitle: React.FC<{ icon: ReactNode; title: string }> = ({ icon, title }) => (
   <Stack direction="row" spacing={1} alignItems="center">
-    {icon}
     <Typography variant="subtitle2">{title}</Typography>
-  </Stack>
 );
 
 export const FetchConfigSection: React.FC<Props> = ({ fetchState, config, disabled }) => {
@@ -63,15 +62,7 @@ export const FetchConfigSection: React.FC<Props> = ({ fetchState, config, disabl
     });
   };
 
-  const hoverCardSx = disabled
-    ? {}
-    : {
-        transition: 'all 0.3s ease',
-        '&:hover': {
-          transform: 'translateY(-2px)',
-          boxShadow: (theme: { shadows: string[] }) => theme.shadows[8],
-        },
-      };
+  const hoverCardSx = getStep4HoverCardSx(disabled);
 
   return (
     <Accordion defaultExpanded>
@@ -127,7 +118,7 @@ export const FetchConfigSection: React.FC<Props> = ({ fetchState, config, disabl
           <Grid size={{ xs: 12 }}>
             <Paper sx={{ p: 2, ...hoverCardSx }}>
               <Stack spacing={2}>
-                <SectionTitle
+                <Step4SectionTitle
                   icon={<VisibilityOffIcon fontSize="small" color="primary" />}
                   title={t('processing.filter.omitDetailsTitle', 'Filtering small shapes (islands and enclaves)')}
                 />
