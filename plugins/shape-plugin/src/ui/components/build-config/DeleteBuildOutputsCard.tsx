@@ -1,7 +1,7 @@
 import { Paper, Stack, Typography } from '@mui/material';
 import { DeleteSweep as DeleteSweepIcon } from '@mui/icons-material';
 import { FetchConfigFormControls } from './FetchConfigFormControls.tsx';
-import { getStep4HoverCardSx } from './step4CardStyles.ts';
+import { getBuildConfigHoverCardSx } from './buildConfigCardStyles.ts';
 
 export type DeleteBuildOutputsCardProps = {
   title: string;
@@ -48,7 +48,7 @@ export const DeleteBuildOutputsCard: React.FC<DeleteBuildOutputsCardProps> = ({
   onDeleteMetadata,
   onResetDefaults,
 }) => {
-  const hoverCardSx = getStep4HoverCardSx(disabled);
+  const hoverCardSx = getBuildConfigHoverCardSx(disabled);
 
   return (
     <Paper variant="outlined" sx={{ p: 2, width: '100%', ...hoverCardSx }}>

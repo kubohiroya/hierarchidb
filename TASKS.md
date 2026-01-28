@@ -37,6 +37,75 @@
   - update: 2026-01-28 23:55 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
   - done: 2026-01-28 23:55 JST Step4 の共通UI抽出リファクタを完了。
 
+2418) refactor/shape/replace-step-number-names (P1) — 完了 (2026-01-29)
+- ブランチ名: refactor/shape/replace-step-number-names
+- 依存: なし
+- ExecPlan: plans/shape-step-number-to-logical-names-execplan.md
+- 受け入れ基準: shape-plugin 内の step番号を含む型名/関数名/コンポーネント名/ファイル名/i18nキー/UI表示文言が論理名へ置換される／参照の整合性が維持される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/**`, `plugins/shape-plugin/src/ui/locales/**`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert して step 番号命名に戻す
+- チェックリスト:
+  - step番号が含まれるシンボル/ファイル名/i18nキー/UI文言を列挙する
+  - 論理名へ置換し、import/export/参照を更新する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-29 07:59 JST shape-plugin の step番号命名を論理名へ置換するリファクタに着手。
+  - update: 2026-01-29 08:06 JST step2/3/4/5/6 フォルダを data-source/country-selection/build-config/build-progress/preview に置換し、build-config の共通コンポーネント名も論理名へ変更。
+  - update: 2026-01-29 08:06 JST Step2/Step3 表記を Data Source selection など論理表現へ更新。
+  - update: 2026-01-29 08:06 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-01-29 08:06 JST step番号命名の置換を完了。
+
+2419) docs/shape/replace-step-names (P2) — 完了 (2026-01-29)
+- ブランチ名: docs/shape/replace-step-names
+- 依存: なし
+- 受け入れ基準: shape-plugin の README/TODO/設計ドキュメント内の Step 表記が論理名に更新される／文脈に応じて Data Source selection/Country selection/Build Config/Build Progress/Preview などに統一される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/README.md`, `plugins/shape-plugin/TODO.md`, `plugins/shape-plugin/docs/**`
+- ロールバック手順: 変更差分を revert して Step 表記へ戻す
+- チェックリスト:
+  - Step 表記が残る箇所を列挙する
+  - 論理名へ置換し、日本語文脈は自然な表現に整える
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-29 08:08 JST shape-plugin ドキュメントの Step 表記を論理名に置換する作業に着手。
+  - update: 2026-01-29 08:10 JST README/TODO/設計ドキュメントの Step 表記を Build Progress など論理名へ更新。
+  - update: 2026-01-29 08:10 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-01-29 08:10 JST step 表記の論理名化を完了。
+
+2420) refactor/shape/ui-logic-hooks (P1) — 完了 (2026-01-29)
+- ブランチ名: refactor/shape/ui-logic-hooks
+- 依存: なし
+- ExecPlan: plans/shape-ui-logic-hooks-execplan.md
+- 受け入れ基準: shape-plugin UI コンポーネント内の表示/ロジック混在が解消され、ロジックがカスタムフックへ抽出される／表示は抽出したフックの戻り値に依存する構造になる／挙動と見た目が維持される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/**`（調査後に確定）
+- ロールバック手順: 変更差分を revert して元のコンポーネント構造へ戻す
+- チェックリスト:
+  - 表示/ロジックが混在している UI コンポーネントを列挙する
+  - ロジックをカスタムフックへ抽出し、表示はデータを受け取って描画するように整理する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-29 08:10 JST shape-plugin UI の表示/ロジック分離に着手。
+  - update: 2026-01-29 08:16 JST Build Progress パネル/ステップのロジックをカスタムフックに抽出。
+  - update: 2026-01-29 08:16 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-01-29 08:16 JST UI ロジック抽出リファクタを完了。
+
+2421) refactor/shape/remove-thin-wrappers (P1) — 進行中 (2026-01-29)
+- ブランチ名: refactor/shape/remove-thin-wrappers
+- 依存: なし
+- ExecPlan: plans/shape-remove-thin-wrappers-execplan.md
+- 受け入れ基準: shape-plugin の薄いラッパー（指定候補）を削除/統合して呼び出し構成が簡素化される／挙動と表示が維持される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/**`, `plugins/shape-plugin/src/ui/components/preview/**`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert してラッパーコンポーネント/フックを復元する
+- チェックリスト:
+  - 指定候補の薄いラッパーを削除・統合する
+  - 参照元の import/利用を置換する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-29 08:22 JST shape-plugin の薄いラッパー削除/統合リファクタに着手。
+
 2415) investigation/ui-location/preview-requires-step5 (P1) — 完了 (2026-01-28)
 - ブランチ名: investigation/ui-location/preview-requires-step5
 - 依存: なし
@@ -914,6 +983,7 @@
   - 理由/影響範囲/優先度を整理する
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
+  - update: 2026-01-29 07:54 JST shape/route Step4/Step5 UI 共通化の現状を調査して整理。
   - start: 2026-01-28 23:17 JST shape-plugin のリファクタリング候補整理に着手。
   - update: 2026-01-28 23:21 JST plans/shape-step5-refactor-execplan.md を作成し Step5/UI と pipeline の分割リファクタ計画を明文化。
   - update: 2026-01-28 23:25 JST Step5 の進捗集計を shared helper に抽出し、runShapePipeline を stage セクション化して整理。
@@ -10697,7 +10767,7 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
 
-2420) refactor/shape/skip-message-unify (P1) — 進行中 (2026-01-29)
+2420) refactor/shape/skip-message-unify (P1) — 完了 (2026-01-29)
 - ブランチ名: refactor/shape/skip-message-unify
 - 依存: なし
 - 受け入れ基準: isSkippedMessage の判定が共通関数に集約され UI/Worker で同一挙動になる／ステージ集計・一覧表示の結果が変わらない／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／pnpm --filter @hierarchidb/shape-plugin test が exit 0／TASKS.md に運用ログを記載する
@@ -10710,10 +10780,11 @@
   - pnpm --filter @hierarchidb/shape-plugin test を実行する
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
+  - done: 2026-01-29 07:15 JST isSkippedMessage の共通化が完了。
   - start: 2026-01-29 04:05 JST isSkippedMessage の共通化に着手。
   - update: 2026-01-29 04:47 JST isSkippedMessage を common/utils に集約し UI/Worker 参照を差し替え。
 
-2421) refactor/shape/task-title-unify (P1) — 進行中 (2026-01-29)
+2421) refactor/shape/task-title-unify (P1) — 完了 (2026-01-29)
 - ブランチ名: refactor/shape/task-title-unify
 - 依存: 2420
 - 受け入れ基準: Worker/ UI のタスクタイトル生成が単一実装に統一される／タイトル表示の既存内容が維持される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／pnpm --filter @hierarchidb/shape-plugin test が exit 0／TASKS.md に運用ログを記載する
@@ -10726,10 +10797,11 @@
   - pnpm --filter @hierarchidb/shape-plugin test を実行する
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
+  - done: 2026-01-29 07:15 JST taskTitles 共通化が完了。
   - start: 2026-01-29 04:47 JST タスクタイトル生成の共通化に着手。
   - update: 2026-01-29 04:49 JST taskTitles 共通ヘルパーを追加し Worker/ UI のタスクタイトル解決を統一。
 
-2422) refactor/shape/phase-labels-extract (P1) — 進行中 (2026-01-29)
+2422) refactor/shape/phase-labels-extract (P1) — 完了 (2026-01-29)
 - ブランチ名: refactor/shape/phase-labels-extract
 - 依存: 2421
 - 受け入れ基準: phase ラベル辞書が専用モジュールへ切り出され TaskListVirtualized の責務が簡潔になる／UI表示は既存と一致する／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／pnpm --filter @hierarchidb/shape-plugin test が exit 0／TASKS.md に運用ログを記載する
@@ -10742,10 +10814,11 @@
   - pnpm --filter @hierarchidb/shape-plugin test を実行する
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
+  - done: 2026-01-29 07:15 JST phase ラベル辞書の分離が完了。
   - start: 2026-01-29 04:49 JST phase ラベル辞書の分離に着手。
   - update: 2026-01-29 04:50 JST phase ラベル辞書を taskPhaseLabels モジュールへ分離し TaskListVirtualized で参照。
 
-2423) refactor/ui-batch/task-merge-unify (P1) — 進行中 (2026-01-29)
+2423) refactor/ui-batch/task-merge-unify (P1) — 完了 (2026-01-29)
 - ブランチ名: refactor/ui-batch/task-merge-unify
 - 依存: 2422
 - 受け入れ基準: タスク更新のマージ/順序ロジックが ui-batch-progress 側に移行し shape 側の同期ロジックが薄くなる／既存の更新順/表示が維持される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／pnpm --filter @hierarchidb/shape-plugin test が exit 0／TASKS.md に運用ログを記載する
@@ -10758,10 +10831,11 @@
   - pnpm --filter @hierarchidb/shape-plugin test を実行する
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
+  - done: 2026-01-29 07:15 JST task merge/ordering の共通化が完了。
   - start: 2026-01-29 04:50 JST task merge/ordering の共通化に着手。
   - update: 2026-01-29 04:54 JST ui-batch-progress に taskSyncHelpers を追加し、shape の task merge/ordering を共通関数へ移行。
 
-2424) refactor/shape/status-phase-normalize-unify (P1) — 進行中 (2026-01-29)
+2424) refactor/shape/status-phase-normalize-unify (P1) — 完了 (2026-01-29)
 - ブランチ名: refactor/shape/status-phase-normalize-unify
 - 依存: 2423
 - 受け入れ基準: status/phase の正規化関数が共通化され shape/route/location で同一挙動になる／既存の表示が変わらない／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／pnpm --filter @hierarchidb/shape-plugin test が exit 0／TASKS.md に運用ログを記載する
@@ -10774,10 +10848,11 @@
   - pnpm --filter @hierarchidb/shape-plugin test を実行する
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
+  - done: 2026-01-29 07:15 JST status/phase 正規化の共通化が完了。
   - start: 2026-01-29 04:54 JST status/phase 正規化の共通化に着手。
   - update: 2026-01-29 04:55 JST common-api に normalizeProgressPhase/mapProgressPhaseToBatchStatus を追加し、shape/route/location へ適用。
 
-2425) refactor/shape/task-summary-mapper-unify (P1) — 進行中 (2026-01-29)
+2425) refactor/shape/task-summary-mapper-unify (P1) — 完了 (2026-01-29)
 - ブランチ名: refactor/shape/task-summary-mapper-unify
 - 依存: 2424
 - 受け入れ基準: task summary のマッピング関数が統合され重複がなくなる／表示内容/ログ内容が維持される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／pnpm --filter @hierarchidb/shape-plugin test が exit 0／TASKS.md に運用ログを記載する
@@ -10790,7 +10865,9 @@
   - pnpm --filter @hierarchidb/shape-plugin test を実行する
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
+  - done: 2026-01-29 07:15 JST task summary mapper の統合が完了。
   - start: 2026-01-29 04:55 JST task summary mapper の統合に着手。
   - update: 2026-01-29 04:56 JST task summary の共通フィールド生成を追加し mapper を統合。
   - update: 2026-01-29 04:58 JST pnpm --filter @hierarchidb/ui-batch-progress build / pnpm --filter @hierarchidb/common-api build / pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
   - blocked: 2026-01-29 04:58 JST pnpm --filter @hierarchidb/shape-plugin test が geoboundaries.org の ENOTFOUND(fetch failed)で失敗。
+  - update: 2026-01-29 07:15 JST pnpm --filter @hierarchidb/shape-plugin test が Test Files 6 passed / Tests 9 passed | 1 skipped で成功。

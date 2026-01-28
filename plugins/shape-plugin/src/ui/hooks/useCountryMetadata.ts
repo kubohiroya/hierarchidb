@@ -32,7 +32,7 @@ export function useCountryMetadata({
 
   const loadMetadata = useCallback(async (options?: { force?: boolean }) => {
     if (!dataSource) {
-      const err = new Error('Data source is not set. Please go back to Step2 and select a data source.');
+      const err = new Error('Data source is not set. Please go back to Data Source selection.');
       setError(err);
       setMetadata([]);
       setLoading(false);

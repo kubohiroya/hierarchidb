@@ -23,8 +23,8 @@ import { useTranslation } from '../../i18n.js';
 import { useTransformConfigSection } from './useTransformConfigSection.ts';
 import { ExtractionPanel } from '../processing/ExtractionPanel.js';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
-import { Step4SectionTitle } from './Step4SectionTitle.tsx';
-import { getStep4HoverCardSx } from './step4CardStyles.ts';
+import { BuildConfigSectionTitle } from './BuildConfigSectionTitle.tsx';
+import { getBuildConfigHoverCardSx } from './buildConfigCardStyles.ts';
 
 type Props = {
   config: ShapeBuildConfig;
@@ -128,7 +128,7 @@ export const TransformConfigSection: React.FC<Props> = ({ config, disabled, onCh
     min: Math.floor(Math.min(thresholdAreaExponent, ...markValues) - 0.5),
     max: Math.ceil(Math.max(thresholdAreaExponent, ...markValues) + 0.5),
   };
-  const hoverCardSx = getStep4HoverCardSx(disabled);
+  const hoverCardSx = getBuildConfigHoverCardSx(disabled);
 
   return (
     <Accordion defaultExpanded>
@@ -155,7 +155,7 @@ export const TransformConfigSection: React.FC<Props> = ({ config, disabled, onCh
             <Grid size={{ xs: 12 }}>
               <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2, ...hoverCardSx }}>
                 <Stack spacing={2}>
-                  <Step4SectionTitle
+                  <BuildConfigSectionTitle
                     icon={<AutoFixHighIcon fontSize="small" color="primary" />}
                     title={t('processing.filter.extractionTitle', 'Simplification')}
                   />

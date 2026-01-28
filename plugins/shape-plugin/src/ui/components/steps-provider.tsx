@@ -7,13 +7,13 @@ import type {
 } from '../../common/types/ShapeEntity.ts';
 import { summarizeCheckboxState, validateBatchConfig } from '../../common/types/index.js';
 import { type NodeId, toNodeId } from '@hierarchidb/common-types';
-import { ShapeDataSourceStep } from './step2/ShapeDataSourceStep.tsx';
-import { ShapePreviewStep } from './step6/ShapePreviewStep.tsx';
+import { ShapeDataSourceStep } from './data-source/ShapeDataSourceStep.tsx';
+import { ShapePreviewStep } from './preview/ShapePreviewStep.tsx';
 import { useTranslation as getTranslation } from '../../ui/i18n.js';
 import type { ShapeDialogStepProps } from './ShapeDialogStepProps.js';
-import { ShapeBuildConfigStep } from './step4/ShapeBuildConfigStep.tsx';
-import { ShapeCountrySelectionStep } from './step3/ShapeCountrySelectionStep.tsx';
-import { ShapeBuildStep } from './step5/ShapeBuildStep.tsx';
+import { ShapeBuildConfigStep } from './build-config/ShapeBuildConfigStep.tsx';
+import { ShapeCountrySelectionStep } from './country-selection/ShapeCountrySelectionStep.tsx';
+import { ShapeBuildStep } from './build-progress/ShapeBuildStep.tsx';
 import { shapeQueryAPIImpl } from '../../services/batch/ShapeBuildAPIClient.ts';
 
 const registry = PluginStepRegistry.getInstance();

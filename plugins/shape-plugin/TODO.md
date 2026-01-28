@@ -14,7 +14,7 @@
 
 ## Phase 2: Batch UI Restoration
 - [ ] Reimplement `useShapeProgress` to subscribe to batch progress via worker events.
-- [ ] Rebuild Step5 progress view with control buttons and data tabs.
+- [ ] Rebuild Build Progress view with control buttons and data tabs.
 - [ ] Rebuild `BatchRecoveryDialog` to list sessions and allow resume/discard through worker API.
 - [ ] Reinstate auxiliary components (`TilePreview`, `ErrorDisplay`) to match original behavior.
 

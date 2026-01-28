@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useShapeBuildStep } from '../../../components/step5/useShapeBuildStep.ts';
+import { useShapeBuildStep } from '../../../components/build-progress/useShapeBuildStep.ts';
 import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms.js';
 
 let tasksMock: ShapeBuildTaskSummary[] = [];
 let isLoadingMock = false;
 
-vi.mock('../../../components/step5/useShapeBuildTasks.ts', () => ({
+vi.mock('../../../components/build-progress/useShapeBuildTasks.ts', () => ({
   useShapeBuildTasks: () => ({
     tasks: tasksMock,
     isLoading: isLoadingMock,
@@ -14,7 +14,7 @@ vi.mock('../../../components/step5/useShapeBuildTasks.ts', () => ({
   }),
 }));
 
-vi.mock('../../../components/step5/useBuildProgress.ts', () => ({
+vi.mock('../../../components/build-progress/useBuildProgress.ts', () => ({
   useBuildProgress: () => ({
     progress: null,
     status: null,
@@ -24,7 +24,7 @@ vi.mock('../../../components/step5/useBuildProgress.ts', () => ({
   }),
 }));
 
-vi.mock('../../../components/step5/useBuildStages.tsx', () => ({
+vi.mock('../../../components/build-progress/useBuildStages.tsx', () => ({
   useBuildStages: () => ([
     { id: 'fetch', title: 'Fetch', description: '', icon: null },
     { id: 'transform', title: 'Transform', description: '', icon: null },
@@ -32,7 +32,7 @@ vi.mock('../../../components/step5/useBuildStages.tsx', () => ({
   ]),
 }));
 
-vi.mock('../../../components/step5/useBatchSessionActions.ts', () => ({
+vi.mock('../../../components/build-progress/useBatchSessionActions.ts', () => ({
   useBatchSessionActions: () => ({
     canStartOrResume: false,
     handleStartOrResume: vi.fn(),

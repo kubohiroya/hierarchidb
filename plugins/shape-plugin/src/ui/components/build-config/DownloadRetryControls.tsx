@@ -17,7 +17,7 @@ import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import { useTranslation } from '../../i18n.js';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
 import type { FetchConfig } from '@hierarchidb/gis-sdk';
-import { getStep4HoverCardSx } from './step4CardStyles.ts';
+import { getBuildConfigHoverCardSx } from './buildConfigCardStyles.ts';
 
 type Props = {
   baseDownloadConfig: FetchConfig;
@@ -45,7 +45,7 @@ export const DownloadRetryControls: React.FC<Props> = ({
     });
   }, [baseDownloadConfig, retryAttemptsValue, update]);
 
-  const hoverCardSx = getStep4HoverCardSx(disabled);
+  const hoverCardSx = getBuildConfigHoverCardSx(disabled);
 
   return (
     <>

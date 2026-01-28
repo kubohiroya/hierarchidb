@@ -16,11 +16,11 @@ vi.mock('../../../i18n.js', () => ({
   useTranslation: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),
 }));
 
-vi.mock('../../../components/step5/useBuildCrashInsight.js', () => ({
+vi.mock('../../../components/build-progress/useBuildCrashInsight.js', () => ({
   useBuildCrashInsight: () => null,
 }));
 
-vi.mock('../../../components/step5/useShapeBuildProgressWarnings.js', () => ({
+vi.mock('../../../components/build-progress/useShapeBuildProgressWarnings.js', () => ({
   useShapeBuildProgressWarnings: () => ({
     startWarning: null,
     crashHint: null,
@@ -33,7 +33,7 @@ vi.mock('../../../components/step5/useShapeBuildProgressWarnings.js', () => ({
   }),
 }));
 
-import { ShapeBuildProgressPanel } from '../../../components/step5/ShapeBuildProgressPanel.tsx';
+import { ShapeBuildProgressPanel } from '../../../components/build-progress/ShapeBuildProgressPanel.tsx';
 import type { ShapeBuildTaskSummary } from '../../../atoms/shapeBuildProgressAtoms.js';
 import {
   buildStagesAtom,

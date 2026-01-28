@@ -6,7 +6,7 @@
 - 定義/ハンドラ: `ShapePluginDefinition` / `ShapeEntityHandler`
 - バッチ: download → extract1 → extract2 → vectorTiles（統一バッチ API）
 - DB: `shape`（entities）+ エフェメラル `rawBuffers`/`extractedBuffers`/`vectorTiles`/`sessions`/`cache`
-- UI: Step5 進捗ビュー、タブラー（`SHAPE_TABULAR=1`）、マップ統合
+- UI: Build Progress 進捗ビュー、タブラー（`SHAPE_TABULAR=1`）、マップ統合
 
 Shape バッチ機能の新アーキテクチャ概要と利用メモ。
 
@@ -59,7 +59,7 @@ Shape バッチ機能の新アーキテクチャ概要と利用メモ。
 
 ドラフト保存フロー（UI→Worker→Dexie）
 --------------------------------------
-- 対象: Shape の PluginDialog（Step2 以降のフォーム更新）。
+- 対象: Shape の PluginDialog（Data Source selection 以降のフォーム更新）。
 - UI フロー:
   - 各ステップの `onUpdate` は `ShapeDialogHost` の `handleUpdate` を呼ぶ。
   - `handleUpdate` は `useTreeNodeUpdater.updateDraft` にパッチを渡し、`draftData` をマージしつつ `draftMetadata`（name/description/tags）も更新する。
@@ -85,13 +85,13 @@ Shape バッチ機能の新アーキテクチャ概要と利用メモ。
 - tsup external は共通設定で外部化済み。
 
 ## Tabular Preview（データテーブル）
-- フラグ `SHAPE_TABULAR=1` を有効にすると、Step5 の進捗ビューに「Data Table」タブが追加され、簡略化後のプロパティ表を閲覧できます。
+- フラグ `SHAPE_TABULAR=1` を有効にすると、Build Progress の進捗ビューに「Data Table」タブが追加され、簡略化後のプロパティ表を閲覧できます。
 - 機能: 複数条件フィルタ（AND）、列の可視切替、`eq` 条件の索引（初回遅延作成）。
 - 目的: プロパティ水準での確認・検索。正式なシリアライズ/デシリアライズは Import/Export を利用してください。
 
 
 ## Batch execution design (2025-12 WIP)
-- Entry (UI Step5): call worker API `startBatchSession(nodeId, config)`; UI keeps `sessionId` and subscribes to progress.
+- Entry (UI Build Progress): call worker API `startBatchSession(nodeId, config)`; UI keeps `sessionId` and subscribes to progress.
 - Worker API: expose `startBatchSession`, `pauseSession`, `resumeSession`, `cancelSession`, `subscribe(sessionId, cb)`; bridge ProgressInfo to UI.
 - Batch manager: `UnifiedShapeBatchManager` coordinates stages (download → extract1 → extract2 → vectorTiles) and emits stage-scoped progress.
 - Ephemeral DB (Dexie, `getDBName('shape-ephemeral')`):

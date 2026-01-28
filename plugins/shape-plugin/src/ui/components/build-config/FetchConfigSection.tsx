@@ -22,8 +22,8 @@ import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { DownloadRetryControls } from './DownloadRetryControls.js';
 import type { FetchConfigSectionState } from './useFetchConfigSection.ts';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
-import { Step4SectionTitle } from './Step4SectionTitle.tsx';
-import { getStep4HoverCardSx } from './step4CardStyles.ts';
+import { BuildConfigSectionTitle } from './BuildConfigSectionTitle.tsx';
+import { getBuildConfigHoverCardSx } from './buildConfigCardStyles.ts';
 
 type OmitDetailsLevel = ShapeBuildConfig['transformConfig']['omitDetailsConfig']['level'];
 
@@ -57,7 +57,7 @@ export const FetchConfigSection: React.FC<Props> = ({ fetchState, config, disabl
     });
   };
 
-  const hoverCardSx = getStep4HoverCardSx(disabled);
+  const hoverCardSx = getBuildConfigHoverCardSx(disabled);
 
   return (
     <Accordion defaultExpanded>
@@ -113,7 +113,7 @@ export const FetchConfigSection: React.FC<Props> = ({ fetchState, config, disabl
           <Grid size={{ xs: 12 }}>
             <Paper sx={{ p: 2, ...hoverCardSx }}>
               <Stack spacing={2}>
-                <Step4SectionTitle
+                <BuildConfigSectionTitle
                   icon={<VisibilityOffIcon fontSize="small" color="primary" />}
                   title={t('processing.filter.omitDetailsTitle', 'Filtering small shapes (islands and enclaves)')}
                 />

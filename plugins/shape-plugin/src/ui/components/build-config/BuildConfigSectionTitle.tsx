@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react';
 import { Stack, Typography } from '@mui/material';
 
-type Step4SectionTitleProps = {
+type BuildConfigSectionTitleProps = {
   icon: ReactNode;
   title: string;
 };
 
-export const Step4SectionTitle: React.FC<Step4SectionTitleProps> = ({ icon, title }) => (
+export const BuildConfigSectionTitle: React.FC<BuildConfigSectionTitleProps> = ({ icon, title }) => (
   <Stack direction="row" spacing={1} alignItems="center">
     {icon}
     <Typography variant="subtitle2">{title}</Typography>

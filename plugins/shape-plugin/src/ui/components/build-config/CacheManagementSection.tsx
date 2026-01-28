@@ -18,7 +18,7 @@ import { DeleteBuildOutputsCard } from './DeleteBuildOutputsCard.tsx';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
 import type { FetchConfigSectionState } from './useFetchConfigSection.ts';
 import { useTranslation } from '../../i18n.js';
-import { getStep4HoverCardSx } from './step4CardStyles.ts';
+import { getBuildConfigHoverCardSx } from './buildConfigCardStyles.ts';
 
 type Props = {
   config: ShapeBuildConfig;
@@ -50,7 +50,7 @@ export const CacheManagementSection: React.FC<Props> = ({ config, fetchState, di
     update,
   } = fetchState;
 
-  const hoverCardSx = getStep4HoverCardSx(disabled);
+  const hoverCardSx = getBuildConfigHoverCardSx(disabled);
 
   return (
     <Accordion defaultExpanded>

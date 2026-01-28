@@ -15,11 +15,11 @@ Shape Pluginでは、バッチ処理の開始、進捗監視、完了/中断処�
   - Cancelボタン押下
   - Saveボタン押下後、保存成功時
 
-### 2. Step5 Build（進捗ビュー）
+### 2. Build Progress（進捗ビュー）
 - **役割**: バッチ処理の進捗表示と制御
 - **表示条件**:
-  - ShapeEditDialog の Step5 に到達
-  - ShapePanel からの再開導線で Step5 を開く
+  - ShapeEditDialog の Build Progress に到達
+  - ShapePanel からの再開導線で Build Progress を開く
 - **終了条件**:
   - 処理完了後にユーザーがダイアログを閉じる
   - エラー発生時にユーザーが確認/再試行する
@@ -28,7 +28,7 @@ Shape Pluginでは、バッチ処理の開始、進捗監視、完了/中断処�
 ### 3. ConfirmationDialog（確認ダイアログ）
 - **役割**: 処理の中断・キャンセルの確認
 - **開く条件**:
-  - Step5 Build で Cancel 操作を実行した時
+  - Build Progress で Cancel 操作を実行した時
   - エラー発生時の再試行確認
 - **閉じる条件**:
   - Yes/Noボタン押下
@@ -67,7 +67,7 @@ stateDiagram-v2
 
 ## ダイアログ制御の詳細仕様
 
-### 1. ShapeEditDialog 内の Step5 への遷移
+### 1. ShapeEditDialog 内の Build Progress への遷移
 
 ```typescript
 interface DialogTransition {
@@ -86,7 +86,7 @@ interface DialogTransition {
       'registerProgressCallback'
     ];
     onTransition: [
-      'advanceToStep5',
+      'advanceToBuildProgress',
       'startProgressMonitoring'
     ];
   };
@@ -259,7 +259,7 @@ interface ErrorRecovery {
 ## テスト要件
 
 ### 1. ダイアログ遷移テスト
-- [ ] ShapeEditDialog 内で Step5 Build を開く導線
+- [ ] ShapeEditDialog 内で Build Progress を開く導線
 - [ ] 処理完了時の自動クローズ
 - [ ] エラー時のダイアログ残留
 - [ ] キャンセル確認ダイアログの表示
@@ -278,7 +278,7 @@ interface ErrorRecovery {
 
 ### 実装済み ✅
 - ShapeEditDialogの基本機能
-- Step5 Build 進捗ビューの骨組み
+- Build Progress 進捗ビューの骨組み
 - 進捗情報の表示コンポーネント
 
 ### 未実装 ❌

@@ -26,15 +26,15 @@ import {
   SquareFoot as SquareFootIcon,
   Update as UpdateIcon,
 } from '@mui/icons-material';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import type { ShapeEntity } from '../../../common/types/index.js';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { useTranslation } from '../../i18n.js';
 import { useVTConfigSection } from './useVTConfigSection.ts';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
 import { DEFAULT_BUILD_CONFIG } from '../../../common/types/constants.js';
-import { Step4SectionTitle } from './Step4SectionTitle.tsx';
-import { getStep4HoverCardSx } from './step4CardStyles.ts';
+import { BuildConfigSectionTitle } from './BuildConfigSectionTitle.tsx';
+import { getBuildConfigHoverCardSx } from './buildConfigCardStyles.ts';
 
 type Props = {
   buildConfig: ShapeBuildConfig;
@@ -46,7 +46,7 @@ type Props = {
 export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChange }) => {
   const { t } = useTranslation();
   const { update } = useVTConfigSection({ buildConfig, onChange });
-  const dynamicConcurrency = buildConfig.vtConfig.dynamicConcurrency
+  const dynamicConcurrency = useMemo(()=>buildConfig.vtConfig.dynamicConcurrency
     ?? DEFAULT_BUILD_CONFIG.vtConfig.dynamicConcurrency
     ?? {
       enabled: false,
@@ -56,10 +56,10 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
       lowWatermark: 0.6,
       adjustStep: 1,
       sampleMs: 2000,
-    };
+    }, [buildConfig.vtConfig.dynamicConcurrency, buildConfig.vtConfig.maxConcurrent]);
   const dynamicConcurrencyActive = buildConfig.vtConfig.maxConcurrent >= 2;
   const tileToleranceMax = Math.max(10, buildConfig.vtConfig.tolerance);
-  const hoverCardSx = getStep4HoverCardSx(disabled);
+  const hoverCardSx = getBuildConfigHoverCardSx(disabled);
 
   useEffect(() => {
     if (dynamicConcurrency.enabled === dynamicConcurrencyActive) return;
@@ -97,7 +97,7 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
         <Stack spacing={3}>
           <Paper variant="outlined" sx={{ p: 2, ...hoverCardSx }}>
             <Stack spacing={2}>
-              <Step4SectionTitle
+              <BuildConfigSectionTitle
                 icon={<TuneIcon fontSize="small" color="primary" />}
                 title={t('processing.tile.basicGeometry', 'Tile geometry & margin')}
               />
@@ -234,7 +234,7 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
           </Paper>
           <Paper variant="outlined" sx={{ p: 2, ...hoverCardSx }}>
             <Stack spacing={2}>
-              <Step4SectionTitle
+              <BuildConfigSectionTitle
                 icon={<SpeedIcon fontSize="small" color="primary" />}
                 title={t('processing.tile.basicPerformance', 'Concurrency')}
               />
@@ -376,7 +376,7 @@ export const VTConfigSection: React.FC<Props> = ({ buildConfig, disabled, onChan
 
           <Paper variant="outlined" sx={{ p: 2, ...hoverCardSx }}>
             <Stack spacing={2}>
-              <Step4SectionTitle
+              <BuildConfigSectionTitle
                 icon={<TuneIcon fontSize="small" color="primary" />}
                 title={t('processing.tile.memoryOverflowTitle', 'Memory Overflow Prevenstions')}
               />

@@ -6,7 +6,7 @@ import { GEOBOUNDARIES_ALL_METADATA_URL } from '../../services/utils/geoboundari
 const GADM_MAPS_URL = 'https://gadm.org/maps.html';
 
 /**
- * Removes cached entries that participate in Step3 country×admin-level matrix building.
+ * Removes cached entries that participate in the country selection matrix building.
  * This targets the shape-plugin chunk-store (DB: "shape-chunks").
  */
 export async function invalidateCountrySelectionCaches(dataSource: string, nodeId: NodeId): Promise<void> {
@@ -35,7 +35,7 @@ export async function invalidateCountrySelectionCaches(dataSource: string, nodeI
   }
 
   // naturalearth: currently bundled only. No cache to invalidate.
-  // openstreetmap: unsupported in Step3.
+  // openstreetmap: unsupported in country selection.
 
   return Promise.all(tasks).then(() => undefined);
 }

@@ -148,13 +148,13 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
       // Don't guess a data source (no implicit fallback to GADM).
       // Surface an error only after data is available.
       if (hasData && hasBatchConfig) {
-        console.warn('[shape-plugin][step3] dataSource missing', {
+        console.warn('[shape-plugin][country-selection] dataSource missing', {
           batchConfigKeys: batchConfig ? Object.keys(batchConfig) : null,
           draftDataKeys: draftData ? Object.keys(draftData) : null,
         });
         return {
           dataSourceKey: undefined,
-          dataSourceError: new Error('Data source is not set. Please go back to Step2 and select a data source.'),
+          dataSourceError: new Error('Data source is not set. Please go back to Data Source selection.'),
         };
       }
       return { dataSourceKey: undefined, dataSourceError: null as Error | null };
