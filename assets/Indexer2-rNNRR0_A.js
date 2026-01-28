@@ -1,1 +1,0 @@
-import{t as e}from"./Indexer-Bn7Advn7.js";export{e as TabularIndexer};
