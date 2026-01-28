@@ -111,6 +111,7 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
         id: col.id,
         label: col.label,
         description: col.description,
+        icon: col.icon,
         width: col.width,
         disabled: disabledColumnIdSet.has(col.id),
       })),

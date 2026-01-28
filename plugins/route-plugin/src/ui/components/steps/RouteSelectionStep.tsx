@@ -6,6 +6,8 @@
 import type React from 'react';
 import { Suspense, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
+import type { SvgIconComponent } from '@mui/icons-material';
+import { DirectionsBoat, DirectionsCar, Flight, Speed, Train } from '@mui/icons-material';
 import type { RouteEntity, RouteUpdaterPayload } from '../../../common/entities/RouteEntity.js';
 import { useTranslation } from '../../../common/i18n/index.js';
 import { getRouteUpdaterPayload } from '../../../common/utils/draft.js';
@@ -25,14 +27,15 @@ export interface RouteSelectionStepProps {
 type SelectionColumn = {
   id: RouteMode;
   labelKey: string;
+  icon: SvgIconComponent;
 };
 
 const ROUTE_MODE_COLUMNS: SelectionColumn[] = [
-  { id: ROUTE_MODES.AIRWAY, labelKey: 'transportModes.air' },
-  { id: ROUTE_MODES.WATERWAY, labelKey: 'transportModes.sea' },
-  { id: ROUTE_MODES.H_RAILWAY, labelKey: 'transportModes.highSpeedRail' },
-  { id: ROUTE_MODES.RAILWAY, labelKey: 'transportModes.rail' },
-  { id: ROUTE_MODES.ROAD, labelKey: 'transportModes.road' },
+  { id: ROUTE_MODES.AIRWAY, labelKey: 'transportModes.air', icon: Flight },
+  { id: ROUTE_MODES.WATERWAY, labelKey: 'transportModes.sea', icon: DirectionsBoat },
+  { id: ROUTE_MODES.H_RAILWAY, labelKey: 'transportModes.highSpeedRail', icon: Speed },
+  { id: ROUTE_MODES.RAILWAY, labelKey: 'transportModes.rail', icon: Train },
+  { id: ROUTE_MODES.ROAD, labelKey: 'transportModes.road', icon: DirectionsCar },
 ];
 
 type ModePolicy = {
@@ -93,6 +96,7 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = ({
       description: t(mode.labelKey, mode.id),
       type: 'custom',
       width: 150,
+      icon: mode.icon,
     })),
     virtualization: {
       rowHeight: 40,
@@ -238,12 +242,6 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = ({
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-      <Typography variant="h6" gutterBottom>
-        {t('routeConfig.title', 'Route mode selection')}
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        {t('routeConfig.description', 'Select route modes by country. Availability depends on the data source.')}
-      </Typography>
       <CountryMatrixSelector
         countries={iso.countries}
         matrixConfig={matrixConfig}

@@ -19,6 +19,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import type { SvgIconComponent } from '@mui/icons-material';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import { TableVirtuoso, type ItemProps, type TableComponents } from 'react-virtuoso';
@@ -27,6 +28,7 @@ export interface SelectionMatrixColumn {
   id: string;
   label: string;
   description?: string;
+  icon?: SvgIconComponent;
   width?: number;
   disabled?: boolean;
 }
@@ -365,6 +367,15 @@ export function SelectionMatrix<T = any>({
                   />
                 )}
                 <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+                  {column.icon && (() => {
+                    const Icon = column.icon;
+                    return (
+                      <Icon
+                        fontSize="small"
+                        sx={{ color: isColumnDisabled ? 'text.disabled' : 'text.secondary' }}
+                      />
+                    );
+                  })()}
                   {column.description ? (
                     <Typography variant="caption" sx={{ cursor: 'help' }} color={isColumnDisabled ? 'text.disabled' : undefined}>
                       {column.label}
