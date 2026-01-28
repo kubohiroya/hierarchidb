@@ -455,7 +455,7 @@ export const ModelessDialogManager: React.FC<ModelessDialogManagerProps> = ({
       },
       {
         id: 'map-route-modes',
-        title: 'Route Modes',
+        title: 'Settings',
         icon: <AltRouteIcon fontSize="small" />,
         defaultSize: { width: 360, height: 220 },
         contentPadding: 0,
@@ -463,7 +463,7 @@ export const ModelessDialogManager: React.FC<ModelessDialogManagerProps> = ({
         transparent: true,
         content: (
           <MapToggleCard
-            title="Route Modes"
+            title="Route Selection"
             options={routeModeOptions}
             selection={routeModeSelection}
             onToggle={onToggleRouteMode}

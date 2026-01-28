@@ -103,7 +103,7 @@ registry.registerConfigProvider<RouteStepData>({
       },
       {
         id: 'route-config',
-        label: t('steps.routeConfig.label', 'Route modes'),
+        label: t('steps.routeConfig.label', 'Route Selection'),
         componentFactory: (p: StepProps) => {
           const draft = ensureDraft(p.data);
           return (
@@ -121,7 +121,7 @@ registry.registerConfigProvider<RouteStepData>({
       },
       {
         id: 'processing',
-        label: t('steps.processing.label', 'Processing Settings'),
+        label: t('steps.processing.label', 'Settings'),
         componentFactory: (p: StepProps) => {
           const draft = ensureDraft(p.data);
           return (

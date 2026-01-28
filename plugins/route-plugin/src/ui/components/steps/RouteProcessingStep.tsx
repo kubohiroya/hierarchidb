@@ -231,7 +231,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
   return (
     <Box display="flex" flexDirection="column" gap={3}>
       <Typography variant="h6">
-        {t('processing.title', 'Processing Settings')}
+        {t('processing.title', 'Settings')}
       </Typography>
       <Typography variant="body2" color="text.secondary">
         {t('processing.description', 'Tune the API usage and geometry settings for route generation.')}

@@ -1,6 +1,6 @@
 /**
  * RouteSelectionStep - Step 3 of route creation dialog.
- * Selects route modes per country, aligned with LocationSelectionStep UI.
+ * Selects Route Selection per country, aligned with LocationSelectionStep UI.
  */
 
 import type React from 'react';
@@ -261,7 +261,7 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = ({
       )}
       {translations && dataSourceName && !policy.defaultChecked && (
         <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-          {t('routeConfig.customSelectionNote', 'Choose the route modes to fetch for each country.')}
+          {t('routeConfig.customSelectionNote', 'Choose the Route Selection to fetch for each country.')}
         </Typography>
       )}
     </Box>

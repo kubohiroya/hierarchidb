@@ -210,7 +210,7 @@ const baseTranslations: LocationTranslations = {
     licensePending: 'Pending',
     createdAt: 'Created at',
     updatedAt: 'Updated at',
-    processingSettings: 'Processing Settings',
+    processingSettings: 'Settings',
     concurrentDownloads: 'Concurrent downloads',
   },
   selection: {

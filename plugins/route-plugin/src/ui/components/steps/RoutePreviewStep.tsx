@@ -349,7 +349,7 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
             <Typography variant="subtitle1">{t('preview.mapTitle', 'Map Preview')}</Typography>
             <Stack spacing={2} mt={1}>
               <MapToggleCard
-                title="Route Modes"
+                title="Route Selection"
                 options={ROUTE_MODE_OPTIONS.map((option) => ({
                   id: option.id,
                   label: option.label,

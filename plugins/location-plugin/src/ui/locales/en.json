@@ -122,7 +122,7 @@
     "columnHeader": "Country / Type"
   },
   "batch": {
-    "settings": "Processing Settings",
+    "settings": "Settings",
     "concurrency": "Concurrent downloads",
     "zoomMin": "Min zoom to generate",
     "zoomMax": "Max zoom to generate",

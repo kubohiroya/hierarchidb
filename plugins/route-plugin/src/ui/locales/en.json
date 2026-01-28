@@ -1,8 +1,8 @@
 {
   "steps": {
     "dataSource": { "label": "Data Source" },
-    "routeConfig": { "label": "Route modes" },
-    "processing": { "label": "Processing Settings" },
+    "routeConfig": { "label": "Route Selection" },
+    "processing": { "label": "Settings" },
     "tileSettings": { "label": "Vector Tile Settings" },
     "build": { "label": "Build" },
     "preview": { "label": "Preview" }
@@ -11,7 +11,7 @@
     "loading": "Checking authentication..."
   },
   "messages": {
-    "completeBeforeBuild": "Select route modes by country before starting a build.",
+    "completeBeforeBuild": "Select Route by country before starting a build.",
     "batchNotImplemented": "Route batch launch is not yet implemented in this dialog."
   },
   "dataSource": {
@@ -40,13 +40,13 @@
     }
   },
   "routeConfig": {
-    "title": "Route modes by country",
-    "description": "Select which route modes to include for each country. Availability depends on the data source.",
+    "title": "Route Selection by country",
+    "description": "Select which Route Selection to include for each country. Availability depends on the data source.",
     "loadingCountries": "Loading countries...",
     "loadError": "Failed to load country list",
     "emptyCountries": "No countries available. Please try again later.",
     "defaultSelectionNote": "Default selections are applied based on the data source.",
-    "customSelectionNote": "Choose the route modes to fetch for each country.",
+    "customSelectionNote": "Choose the Route Selection to fetch for each country.",
     "transportModeLabel": "Transport mode",
     "transportModeHelperText": "Choose the primary transport mode for this route.",
     "routeTypeLabel": "Route type",
@@ -92,7 +92,7 @@
     "road": "General road"
   },
   "processing": {
-    "title": "Processing Settings",
+    "title": "Settings",
     "description": "Tune the API usage and geometry settings for route generation.",
     "apiThrottleTitle": "API throttling",
     "apiThrottleDescription": "Limit API calls to avoid rate limits.",
@@ -127,7 +127,7 @@
     "startLocation": "Start:",
     "endLocation": "End:",
     "notConfigured": "Not configured",
-    "missing": "Select route modes by country before building.",
+    "missing": "Select Route by country before building.",
     "crashHint": "Previous build did not finish. Consider cleaning data before restarting.",
     "start": "When ready, click the Build button below to start the batch session.",
     "title": "Build routes",
