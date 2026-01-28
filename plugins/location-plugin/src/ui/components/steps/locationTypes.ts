@@ -1,11 +1,11 @@
 import type { LocationType } from '../../../common/types/index.js';
 import type { SvgIconComponent } from '@mui/icons-material';
 import {
-  DirectionsBoat,
+  Anchor,
   FlightTakeoff,
   ForkRight,
   LocationCity,
-  Train,
+  Subway,
 } from '@mui/icons-material';
 
 type LocationTypeStyle = {
@@ -25,11 +25,11 @@ export const LOCATION_TYPE_STYLES: Record<LocationType, LocationTypeStyle> = {
   },
   port: {
     color: '#2ca02c',
-    icon: DirectionsBoat,
+    icon: Anchor,
   },
   railway_station: {
     color: '#d62728',
-    icon: Train,
+    icon: Subway,
   },
   interchange: {
     color: '#9467bd',

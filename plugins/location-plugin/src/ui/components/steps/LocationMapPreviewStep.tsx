@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Button } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { LocationOn } from '@mui/icons-material';
-import { DirectionsBoat, FlightTakeoff, ForkRight, LocationCity, Public, Train } from '@mui/icons-material';
+import { Anchor, FlightTakeoff, ForkRight, LocationCity, Public, Subway } from '@mui/icons-material';
 import type { SvgIconComponent } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-types';
 import type {
@@ -90,8 +90,8 @@ const LOCATION_ICON_COMPONENTS: Record<LocationIconId, SvgIconComponent> = {
   public: Public,
   location_city: LocationCity,
   flight_takeoff: FlightTakeoff,
-  directions_boat: DirectionsBoat,
-  train: Train,
+  directions_boat: Anchor,
+  train: Subway,
   fork_right: ForkRight,
 };
 

@@ -28,11 +28,11 @@ import type {
 import type { NodeId } from '@hierarchidb/common-types';
 import { useTranslation } from '../../../common/i18n/index.js';
 import {
-  DirectionsBoat,
+  Anchor,
   FlightTakeoff,
   ForkRight,
   LocationCity,
-  Train,
+  Subway,
 } from '@mui/icons-material';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { LOCATION_TYPE_STYLES } from './locationTypes.js';
@@ -76,8 +76,8 @@ const DEFAULT_ICON_IDS: Record<LocationType, LocationIconId> = {
 const ICON_OPTIONS: Array<{ id: LocationIconId; Icon: SvgIconComponent; labelKey: string }> = [
   { id: 'location_city', Icon: LocationCity, labelKey: 'location_city' },
   { id: 'flight_takeoff', Icon: FlightTakeoff, labelKey: 'flight_takeoff' },
-  { id: 'directions_boat', Icon: DirectionsBoat, labelKey: 'directions_boat' },
-  { id: 'train', Icon: Train, labelKey: 'train' },
+  { id: 'directions_boat', Icon: Anchor, labelKey: 'directions_boat' },
+  { id: 'train', Icon: Subway, labelKey: 'train' },
   { id: 'fork_right', Icon: ForkRight, labelKey: 'fork_right' },
 ];
 
