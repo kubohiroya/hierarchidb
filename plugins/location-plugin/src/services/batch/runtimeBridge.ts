@@ -1,4 +1,4 @@
-import type { BatchProgressEvent, BatchSessionStatus, ProgressPhase } from '@hierarchidb/common-api';
+import { normalizeProgressPhase, type BatchProgressEvent, type BatchSessionStatus, type ProgressPhase } from '@hierarchidb/common-api';
 
 const stageMap: Record<string, BatchProgressEvent['stage']> = {
   download: 'download',
@@ -18,8 +18,9 @@ export const mapStageToBatchStage = (stage?: string): BatchProgressEvent['stage'
 };
 
 export const mapManagerStatusToLocationStatus = (phase: ProgressPhase | BatchSessionStatus['status']): LocationSessionStatus => {
-  if (phase === 'paused' || phase === 'completed' || phase === 'failed') {
-    return phase;
+  const normalized = normalizeProgressPhase(phase);
+  if (normalized === 'paused' || normalized === 'completed' || normalized === 'failed') {
+    return normalized;
   }
   return 'running';
 };

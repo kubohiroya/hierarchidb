@@ -1,4 +1,4 @@
-import type { BatchTaskSummary } from '@hierarchidb/common-api';
+import { normalizeProgressPhase, type BatchTaskSummary } from '@hierarchidb/common-api';
 import type { NodeId } from '@hierarchidb/common-types';
 import { VtTaskQueueDb, listTasks } from '@hierarchidb/vt-orchestrator';
 import type { TaskQueueRecord } from '@hierarchidb/common-types';
@@ -6,7 +6,7 @@ import type { TaskQueueRecord } from '@hierarchidb/common-types';
 const mapTaskQueueRecord = (task: TaskQueueRecord): BatchTaskSummary => ({
   taskId: task.taskId,
   stage: task.stage,
-  status: task.status,
+  status: normalizeProgressPhase(task.status),
   progress: task.progress,
   message: task.message ?? task.errorMessage,
 });

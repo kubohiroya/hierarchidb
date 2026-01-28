@@ -43,3 +43,4 @@ export type { TreeSubscriptionAPI } from './TreeSubscriptionAPI.js';
 export type { TreeTableExpandedAPI } from './TreeTableExpandedAPI.js';
 export { findRelatedNodesByPriority, type RelatedNodeSearchOptions } from './treeNodeSearch.js';
 export type { UiStorageBridge, WorkerAPI } from './WorkerAPI.js';
+export * from './taskStatus.js';
