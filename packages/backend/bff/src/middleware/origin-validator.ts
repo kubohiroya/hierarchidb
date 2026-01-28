@@ -6,6 +6,35 @@ import type { Next } from 'hono';
 import { parseAllowedOrigins } from '../utils/cors.js';
 import { type BffContext, getEnv } from '../utils/env.js';
 
+const parseAppBaseUrls = (value?: string): string[] => {
+  if (!value) return [];
+  return value
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+};
+
+const extractOrigins = (values: string[]): string[] => {
+  const origins: string[] = [];
+  for (const entry of values) {
+    try {
+      const url = new URL(entry);
+      origins.push(`${url.protocol}//${url.host}`);
+    } catch {
+      // Ignore invalid URLs.
+    }
+  }
+  return origins;
+};
+
+const collectAllowedOrigins = (env: { ALLOWED_ORIGINS?: string; APP_BASE_URL?: string; APP_BASE_URLS?: string }) => {
+  const allowed = parseAllowedOrigins(env.ALLOWED_ORIGINS || '');
+  const appBases = [env.APP_BASE_URL, ...parseAppBaseUrls(env.APP_BASE_URLS)].filter(
+    (value): value is string => typeof value === 'string' && value.length > 0
+  );
+  return new Set([...allowed, ...extractOrigins(appBases)]);
+};
+
 /**
  * Origin
  * localhost
@@ -21,9 +50,9 @@ export async function validateOrigin(c: BffContext, next: Next) {
   }
 
   if (env.ENVIRONMENT === 'production' || env.NODE_ENV === 'production') {
-    const allowedOrigins = parseAllowedOrigins(env.ALLOWED_ORIGINS || '');
+    const allowedOrigins = collectAllowedOrigins(env);
 
-    if (!allowedOrigins.includes(origin)) {
+    if (!allowedOrigins.has(origin)) {
       console.warn(`Blocked request from unauthorized origin in production: ${origin}`);
       return c.json(
         {

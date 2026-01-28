@@ -34,10 +34,37 @@ app.use('*', async (c, next) => {
 });
 
 // CORS middleware for all requests
+const parseAppBaseUrls = (value?: string): string[] => {
+  if (!value) return [];
+  return value
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+};
+
+const extractOrigins = (values: string[]): string[] => {
+  const origins: string[] = [];
+  for (const entry of values) {
+    try {
+      const url = new URL(entry);
+      origins.push(`${url.protocol}//${url.host}`);
+    } catch {
+      // Ignore invalid URLs.
+    }
+  }
+  return origins;
+};
+
 app.use('*', async (c, next) => {
   const env = getEnv(c);
   const origin = c.req.header('Origin');
-  const allowedOrigins = parseAllowedOrigins(env.ALLOWED_ORIGINS);
+  const appBases = [env.APP_BASE_URL, ...parseAppBaseUrls(env.APP_BASE_URLS)].filter(
+    (value): value is string => typeof value === 'string' && value.length > 0
+  );
+  const allowedOrigins = [
+    ...parseAllowedOrigins(env.ALLOWED_ORIGINS),
+    ...extractOrigins(appBases),
+  ];
   const corsHeaders = getCORSHeaders(origin, { allowedOrigins });
 
   // Handle preflight OPTIONS requests
