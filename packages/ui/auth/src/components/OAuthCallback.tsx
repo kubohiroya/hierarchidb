@@ -7,7 +7,7 @@
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import type React from 'react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { BFFAuthService } from '../services/BFFAuthService.js';
 
 export const OAuthCallback: React.FC = () => {
@@ -15,13 +15,13 @@ export const OAuthCallback: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(true);
 
-  const getAppBasePrefix = () => {
+  const getAppBasePrefix = useCallback(() => {
     const base = import.meta.env.BASE_URL || '/';
     const normalized = String(base).startsWith('/') ? String(base) : `/${String(base)}`;
     return normalized.endsWith('/') ? normalized.slice(0, -1) : normalized;
-  };
+  }, []);
 
-  const normalizeHashReturnPath = (pathname: string) => {
+  const normalizeHashReturnPath = useCallback((pathname: string) => {
     const basePrefix = getAppBasePrefix();
     if (!basePrefix || basePrefix === '/') return pathname;
     if (pathname === basePrefix) return '/';
@@ -30,9 +30,9 @@ export const OAuthCallback: React.FC = () => {
       return stripped.length > 0 ? stripped : '/';
     }
     return pathname;
-  };
+  }, [getAppBasePrefix]);
 
-  const resolveReturnUrl = (rawUrl: string) => {
+  const resolveReturnUrl = useCallback((rawUrl: string) => {
     try {
       const resolved = new URL(rawUrl, window.location.origin);
       if (resolved.origin !== window.location.origin) {
@@ -46,7 +46,7 @@ export const OAuthCallback: React.FC = () => {
     } catch {
       return { isExternal: false, url: '/' };
     }
-  };
+  }, [normalizeHashReturnPath]);
 
   useEffect(() => {
     const handleCallback = async () => {
