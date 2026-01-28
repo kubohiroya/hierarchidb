@@ -263,7 +263,8 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
   }, [countLabels, countText, search?.value, tableRows.length]);
   const resolvedTitle = useMemo(() => {
     if (!resolvedCountText) return title;
-    return `${title}(${resolvedCountText})`;
+    const normalizedCountText = resolvedCountText.replace(/\bRows\b/g, 'rows');
+    return `${title} (${normalizedCountText})`;
   }, [resolvedCountText, title]);
 
   return (
@@ -280,7 +281,6 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
         rows={tableRows}
         columns={columns}
         persistKeyBase="hierarchidb:grid:shape:step6:features"
-        defaultGrouping={['adminLevel']}
         defaultSorting={[{ id: 'featureId', desc: false }]}
         search={search}
         loading={loading}
