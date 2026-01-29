@@ -301,24 +301,11 @@ export class ShapeDB extends VectorTileDbBase {
   constructor() {
     super(getDBName('shape'));
 
-    this.version(5).stores(this.mergeVectorTileStores({
-      batchSessions: '&nodeId, status, startedAt, updatedAt',
-      features:
-        '++id, nodeId, [nodeId+adminLevel], [nodeId+countryCode], mortonCode, adminLevel, countryCode, name, createdAt',
-      relations: '&[srcNodeId+type+dstNodeId], srcNodeId, dstNodeId, type, updatedAt',
-      vectorTiles: '&tileId, nodeId, [nodeId+z+x+y], [z+x+y], z, generatedAt, lastAccessed, size',
-    }));
-    this.version(6).stores(this.mergeVectorTileStores({
+    this.version(7).stores(this.mergeVectorTileStores({
       buildSessions: '&nodeId, status, startedAt, updatedAt',
-      features:
-        '++id, nodeId, [nodeId+adminLevel], [nodeId+countryCode], mortonCode, adminLevel, countryCode, name, createdAt',
-      vectorTiles: '&tileId, nodeId, [nodeId+z+x+y], [z+x+y], z, generatedAt, lastAccessed, size',
-    })).upgrade(async (tx) => {
-      const previous = await tx.table('batchSessions').toArray();
-      if (previous.length > 0) {
-        await tx.table('buildSessions').bulkPut(previous);
-      }
-    });
+      features: '++id, nodeId, [nodeId+adminLevel]',
+      vectorTiles: '&tileId, nodeId, [nodeId+z+x+y]',
+    }));
 
     this.initVectorTileTables();
     this.buildSessions = this.table('buildSessions');

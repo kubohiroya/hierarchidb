@@ -3,8 +3,16 @@ import type {
   ShapeBuildSessionRecord,
   ShapeVectorTileRecord,
 } from '@hierarchidb/plugin-service-api';
-import type { LayerInfo, ProgressInfo, ResourceUsage, StageStatus } from '../types.ts';
-import type { BuildSessionConfig, BuildSessionRecord, BuildTaskType, VectorTileRecord } from '@hierarchidb/shape-store';
+import type {
+  BuildSessionConfig,
+  BuildSessionRecord,
+  BuildTaskType,
+  LayerInfo,
+  ProgressInfo,
+  ResourceUsage,
+  StageStatus,
+  VectorTileRecord,
+} from '@hierarchidb/shape-store';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
