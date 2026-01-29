@@ -9,7 +9,7 @@ import type {
 } from '@hierarchidb/common-api';
 import type { NodeType } from '@hierarchidb/common-types';
 import { enableAllExporters, enableAllImporters } from '@hierarchidb/import-export';
-import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/location-store';
+import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/plugin-service-api';
 import type {
   PluginLifecycleAPI,
   ShapeMutationAPI,
@@ -17,11 +17,8 @@ import type {
   StyleMutationAPI,
   StyleQueryAPI,
 } from '@hierarchidb/plugin-service-api';
-import type {
-  RouteDatabaseHandle,
-  RouteMutationAPI,
-  RouteQueryAPI,
-} from '@hierarchidb/route-store';
+import type { RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/plugin-service-api';
+import type { RouteDatabaseHandle } from '@hierarchidb/route-store';
 import { RouteDB } from '@hierarchidb/route-store';
 import { ShapeDB } from '@hierarchidb/shape-store';
 import { StylerDB } from '@hierarchidb/styler-store';

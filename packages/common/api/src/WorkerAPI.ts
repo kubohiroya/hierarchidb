@@ -1,5 +1,5 @@
 import type { BuildContinuationPolicy, NodeId, NodeType } from '@hierarchidb/common-types';
-import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/location-store';
+import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/plugin-service-api';
 import type { HeapPressureEvent } from '@hierarchidb/memory';
 import type {
   PluginLifecycleAPI,
@@ -9,7 +9,7 @@ import type {
   StyleMutationAPI,
   StyleQueryAPI,
 } from '@hierarchidb/plugin-service-api';
-import type { RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/route-store';
+import type { RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/plugin-service-api';
 import type {
   BatchProgressEvent,
   BatchSessionStatus,

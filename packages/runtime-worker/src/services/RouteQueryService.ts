@@ -5,7 +5,8 @@ import type {
   RouteNearestLineQuery,
   RouteNearestLineResponse,
 } from '@hierarchidb/plugin-service-api';
-import type { RouteDatabaseHandle, RouteQueryAPI } from '@hierarchidb/route-store';
+import type { RouteDatabaseHandle } from '@hierarchidb/route-store';
+import type { RouteQueryAPI } from '@hierarchidb/plugin-service-api';
 import { SingletonMixin } from '@hierarchidb/util';
 import {
   BTree,

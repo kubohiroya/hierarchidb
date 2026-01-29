@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { LocationPointId, LocationQueryAPI } from '@hierarchidb/location-store';
-import type { IdeGsmRouteError, LocationGroupItemData } from '@hierarchidb/plugin-service-api';
+import type { LocationPointId } from '@hierarchidb/location-store';
+import type { IdeGsmRouteError, LocationGroupItemData, LocationQueryAPI } from '@hierarchidb/plugin-service-api';
 import {
   ROUTE_MODES,
   type RouteLineString,
