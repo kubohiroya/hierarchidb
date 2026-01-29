@@ -42,10 +42,6 @@ async function ensureLocationStores(registry: StoreRegistry): Promise<void> {
     const { createLocationFeatureStoreDexie } = await import('../locationGroupStore.dexie.js');
     registry.registerFeatures('location', createLocationFeatureStoreDexie(db));
   }
-  if (!registry.getRelations('location')) {
-    const { createLocationRelationStoreDexie } = await import('../locationRelationStore.dexie.js');
-    registry.registerRelations('location', createLocationRelationStoreDexie(db));
-  }
 }
 
 export async function registerLocationWorkerStores(options: RegisterLocationWorkerStoresOptions = {}): Promise<void> {

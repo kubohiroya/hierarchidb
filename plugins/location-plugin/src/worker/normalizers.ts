@@ -1,12 +1,11 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { FeatureItemBase, RelationBase } from '@hierarchidb/runtime-worker';
+import type { FeatureItemBase } from '@hierarchidb/runtime-worker';
 import type {
   LocationPeerData,
   LocationGroupItemData,
-  LocationRelationMeta,
 } from '../common/types/entities.js';
 import { mortonKeyFromLonLat } from '@hierarchidb/location-store';
-import type { LocationFeature, LocationRelation } from './locationEntitiesDB.js';
+import type { LocationFeature } from './locationEntitiesDB.js';
 
 type Progress = NonNullable<LocationPeerData['lastProgress']>;
 type ErrorInfo = NonNullable<LocationPeerData['lastError']>;
@@ -59,6 +58,19 @@ const sanitizeMetadata = (value: unknown): Record<string, string | number | null
   );
 };
 
+const normalizeCentroidForShapeId = (value: unknown): number | undefined => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return undefined;
+};
+
+const normalizeCentroidForShapeContainerNodeId = (value: unknown): NodeId | undefined => (
+  typeof value === 'string' && value.trim().length > 0 ? (value as NodeId) : undefined
+);
+
 export const normalizePeerData = (data: unknown): LocationPeerData => {
   if (isObject(data) && data.schemaVersion === 1) {
     return {
@@ -91,13 +103,24 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
   if (isGroupData(value)) {
     const schemaVersion = value.schemaVersion === 2 ? 2 : 1;
     if (schemaVersion === 2) {
+      const valueRecord = value as unknown as Record<string, unknown>;
+      const centroidForShapeId = normalizeCentroidForShapeId(valueRecord.centroidForShapeId);
+      const centroidForShapeContainerNodeId = normalizeCentroidForShapeContainerNodeId(
+        valueRecord.centroidForShapeContainerNodeId
+      );
       return {
         ...value,
         schemaVersion: 2,
+        ...(centroidForShapeId !== undefined && { centroidForShapeId }),
+        ...(centroidForShapeContainerNodeId && { centroidForShapeContainerNodeId }),
         metadata: sanitizeMetadata(value.metadata),
       };
     }
     const legacy = value as unknown as Record<string, unknown>;
+    const centroidForShapeId = normalizeCentroidForShapeId(legacy.centroidForShapeId);
+    const centroidForShapeContainerNodeId = normalizeCentroidForShapeContainerNodeId(
+      legacy.centroidForShapeContainerNodeId
+    );
     return {
       schemaVersion: 2,
       pointId: (legacy.pid ?? '') as LocationGroupItemData['pointId'],
@@ -108,6 +131,8 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
       countryCode: typeof legacy.gid0 === 'string' ? legacy.gid0 : '',
       admin1: typeof legacy.gid1 === 'string' ? legacy.gid1 : undefined,
       admin2: typeof legacy.gid2 === 'string' ? legacy.gid2 : undefined,
+      ...(centroidForShapeId !== undefined && { centroidForShapeId }),
+      ...(centroidForShapeContainerNodeId && { centroidForShapeContainerNodeId }),
       metadata: sanitizeMetadata(legacy.payload),
     };
   }
@@ -155,6 +180,11 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
     ? (value as Record<string, unknown>).countryName as string
     : undefined;
 
+  const valueRecord = value as Record<string, unknown>;
+  const centroidForShapeId = normalizeCentroidForShapeId(valueRecord.centroidForShapeId);
+  const centroidForShapeContainerNodeId = normalizeCentroidForShapeContainerNodeId(
+    valueRecord.centroidForShapeContainerNodeId
+  );
   return {
     schemaVersion: 2,
     pointId: pointId as LocationGroupItemData['pointId'],
@@ -166,6 +196,8 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
     countryName,
     admin1,
     admin2,
+    ...(centroidForShapeId !== undefined && { centroidForShapeId }),
+    ...(centroidForShapeContainerNodeId && { centroidForShapeContainerNodeId }),
     metadata: sanitizeMetadata((value as Record<string, unknown>).metadata ?? (value as Record<string, unknown>).payload),
   };
 };
@@ -174,16 +206,23 @@ export const toGroupRow = (
   nodeId: NodeId,
   item: FeatureItemBase<LocationGroupItemData>,
   timestamp = Date.now(),
-): LocationFeature => ({
-  nodeId,
-  id: String(item.id),
-  type: item.data && typeof item.data.type === 'string' ? item.data.type : undefined,
-  mortonKey: item.data && Number.isFinite(item.data.longitude) && Number.isFinite(item.data.latitude)
-    ? mortonKeyFromLonLat(item.data.longitude, item.data.latitude)
-    : undefined,
-  data: item.data ? normalizeGroupData(item.data) : undefined,
-  updatedAt: timestamp,
-});
+): LocationFeature => {
+  const normalizedData = item.data ? normalizeGroupData(item.data) : undefined;
+  const centroidForShapeId = normalizedData?.centroidForShapeId;
+  const centroidForShapeContainerNodeId = normalizedData?.centroidForShapeContainerNodeId;
+  return {
+    nodeId,
+    id: String(item.id),
+    type: item.data && typeof item.data.type === 'string' ? item.data.type : undefined,
+    mortonKey: item.data && Number.isFinite(item.data.longitude) && Number.isFinite(item.data.latitude)
+      ? mortonKeyFromLonLat(item.data.longitude, item.data.latitude)
+      : undefined,
+    data: normalizedData,
+    ...(centroidForShapeId !== undefined && { centroidForShapeId }),
+    ...(centroidForShapeContainerNodeId && { centroidForShapeContainerNodeId }),
+    updatedAt: timestamp,
+  };
+};
 
 export const fromGroupRow = (
   rows: LocationFeature[],
@@ -194,37 +233,3 @@ export const fromGroupRow = (
     updatedAt,
   }));
 
-const isRelationMeta = (value: unknown): value is LocationRelationMeta =>
-  isObject(value) && value.schemaVersion === 1;
-
-const normalizeRelationMeta = (value: unknown): LocationRelationMeta | undefined => {
-  if (!value) return undefined;
-  if (isRelationMeta(value)) return value;
-  if (!isObject(value)) return { schemaVersion: 1 };
-  const relationKind = typeof value.relationKind === 'string' ? value.relationKind : undefined;
-  const weight = typeof value.weight === 'number' ? value.weight : undefined;
-  const metadata = sanitizeMetadata(value.metadata);
-  return { schemaVersion: 1, relationKind, weight, metadata };
-};
-
-export const toRelationRow = (
-  rel: RelationBase<LocationRelationMeta>,
-  timestamp = Date.now(),
-): LocationRelation => ({
-  srcNodeId: rel.srcNodeId,
-  dstNodeId: rel.dstNodeId,
-  type: rel.type,
-  meta: normalizeRelationMeta(rel.meta),
-  updatedAt: timestamp,
-});
-
-export const fromRelationRows = (
-  rows: LocationRelation[],
-): RelationBase<LocationRelationMeta>[] =>
-  rows.map(({ srcNodeId, dstNodeId, type, meta, updatedAt }) => ({
-    srcNodeId,
-    dstNodeId,
-    type,
-    meta: normalizeRelationMeta(meta),
-    updatedAt,
-  }));

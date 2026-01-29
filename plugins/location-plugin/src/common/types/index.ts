@@ -20,15 +20,16 @@ import type {
   LocationBatchProcessingOptions,
   LocationType,
   LocationSearchConfig,
-  LocationPoint,
-  LocationPointProperties,
-  LocationPointKind,
-  LocationPointId,
   LocationIconConfig,
   LocationIconId,
   LocationLabelConfig,
-  LocationRepresentationByZoomLevelConfig
-} from '@hierarchidb/location-store';
+  LocationRepresentationByZoomLevelConfig,
+} from '../entities/LocationEntity.js';
+import type {
+  LocationPointProperties,
+  LocationPointKind,
+  LocationPointId,
+} from '../entities/LocationPoint.js';
 
 export type LocationEntity = LocationEntityDefinition;
 export type {
@@ -38,7 +39,6 @@ export type {
   LocationBatchFilterCriteria,
   LocationBatchProcessingOptions,
   LocationSearchConfig,
-  LocationPoint,
   LocationPointProperties,
   LocationPointKind,
   LocationPointId,

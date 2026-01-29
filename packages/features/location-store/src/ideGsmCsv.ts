@@ -1,7 +1,7 @@
 import { ensureIso3166Data, getAllCountries, getCountry, resolveIso3166CsvUrl } from '@hierarchidb/gen-iso3166-2/browser';
 import type { IdeGsmSelectionEntry } from '@hierarchidb/plugin-service-api';
-import type { LocationPointProperties, LocationType } from './index.js';
-import { buildLocationPointIdFromLatLon } from './index.js';
+import type { LocationPointProperties, LocationType } from './locationTypes.js';
+import { buildLocationPointIdFromLatLon } from './locationPointId.js';
 import { buildTileIdByZoom } from './morton.js';
 import { parseCsvTable } from './csvUtils.js';
 
