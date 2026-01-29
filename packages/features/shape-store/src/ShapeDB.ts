@@ -16,7 +16,6 @@ import { VectorTileDbBase } from '@hierarchidb/vectortile-store';
 import type {
   FeatureFilterMethod, FetchConfig,
   HybridFilterConfig, TransformConfig, VTConfig } from '@hierarchidb/gis-sdk';
-type CacheEntryData = Record<string, unknown> | string | number | boolean | null;
 
 export type DataSourceName = 'naturalearth' | 'geoboundaries' | 'geoboundaries-topojson' | 'gadm' | 'openstreetmap';
 
@@ -81,20 +80,6 @@ export interface LayerInfo {
   minZoom: number;
   maxZoom: number;
   fields: string[];
-}
-
-export interface CacheStatistics {
-  hits: number;
-  misses: number;
-  sizeBytes?: number;
-  totalSize?: number;
-  totalItems?: number;
-  byType?: Record<string, { totalSize: number; count: number; averageSize: number }>;
-  hitRate?: number;
-  missRate?: number;
-  evictionCount?: number;
-  oldestItem?: number;
-  newestItem?: number;
 }
 
 export interface BuildSessionRecord {
@@ -302,31 +287,6 @@ export interface VectorTileRecord {
   version: number;
 }
 
-export interface TileBufferRecord {
-  bufferId: string;
-  nodeId: ShapeContainerNodeId;
-  z: number;
-  x: number;
-  y: number;
-  stage: BuildStage;
-  data_Uint8Array: Uint8Array;
-  featureCount: number;
-  byteSize: number;
-  createdAt: number;
-}
-
-export interface CacheEntryRecord {
-  cacheKey: string;
-  nodeId?: ShapeContainerNodeId;
-  cacheType: 'features' | 'tiles' | 'buffers' | 'metadata';
-  data: CacheEntryData;
-  size: number;
-  hits: number;
-  lastHit: number;
-  createdAt: number;
-  expiresAt?: number;
-}
-
 export class ShapeDB extends VectorTileDbBase {
 
   // Build processing tables
@@ -494,31 +454,6 @@ export class ShapeDB extends VectorTileDbBase {
       .toArray();
   }
 
-  async getStorageUsage(): Promise<{ totalSize: number; breakdown: Record<string, number> }> {
-    const [sessionsSize, featuresSize, tilesSize] =
-      await Promise.all([
-        this.buildSessions.toArray().then((items: BuildSessionRecord[]) => items.length * 2000),
-        this.features
-          .toArray()
-          .then((items: ShapeFeature[]) =>
-            items.reduce((sum: number, f: ShapeFeature) => sum + JSON.stringify(f).length, 0),
-          ),
-        this.vectorTiles
-          .toArray()
-          .then((items: VectorTileRecord[]) =>
-            items.reduce((sum: number, t: VectorTileRecord) => sum + t.size, 0),
-          ),
-      ]);
-
-    return {
-      totalSize: sessionsSize + featuresSize + tilesSize,
-      breakdown: {
-        sessions: sessionsSize,
-        features: featuresSize,
-        tiles: tilesSize,
-      },
-    };
-  }
 }
 
 // Aligned alias for cross-plugin naming consistency.

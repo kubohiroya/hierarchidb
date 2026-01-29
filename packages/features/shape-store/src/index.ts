@@ -15,8 +15,6 @@ export {
   type ShapeBuildTaskResult,
   type BuildTaskType,
   type BuildTaskRecord,
-  type CacheEntryRecord,
-  type CacheStatistics,
   type ShapeFeatureBuffer,
   type ShapeFeature,
   type ShapeContainerNodeId,
@@ -26,7 +24,6 @@ export {
   type ResourceUsage,
   type StageStatus,
   type TaskStatus,
-  type TileBufferRecord,
   type VectorTileRecord,
   shapeDB,
 } from './ShapeDB.js';
