@@ -1,3 +1,18 @@
+2423) investigation/shape-plugin-remove-remnants (P1) — 進行中 (2026-01-29)
+- ブランチ名: investigation/shape-plugin-remove-remnants
+- 依存: なし
+- 受け入れ基準: shape-plugin の DB テーブル/関連コード/未使用ファイル・クラス・関数・定数を調査し、削除候補を根拠付きで整理できる／削除可否の判断材料（参照有無/影響範囲）を列挙できる／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/**`, `packages/features/shape-store/src/**`, `packages/runtime-worker/src/services/**`, `plugins/shape-plugin/docs/**`（調査後に確定）
+- ロールバック手順: 調査のみのため差分なし
+- チェックリスト:
+  - shape-plugin の永続化テーブル/型定義を整理する
+  - 参照されないファイル/クラス/関数/定数を抽出する
+  - 削除候補を「削除OK/要確認/保留」に分類する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-29 11:28 JST shape-plugin 残骸整理の調査に着手。
+  - done: 2026-01-29 11:40 JST shape-plugin の未使用テーブル/コード/型の候補を整理（削除候補一覧化）。
+
 2422) refactor/location/remove-vectortiles-remnants (P1) — 進行中 (2026-01-29)
 - ブランチ名: refactor/location/remove-vectortiles-remnants
 - 依存: なし
@@ -165,6 +180,23 @@
   - update: 2026-01-28 19:10 JST ui-treeconsole-breadcrumb/treetable/base を build して d.ts を更新。
   - update: 2026-01-28 19:10 JST pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define warning あり）。
   - done: 2026-01-28 17:44 JST Preview ガードの非同期許可と InfoPanel の Preview 無効化制御を反映。
+
+2415) fix/location-plugin/remove-row-type-alias (P1) — 完了 (2026-01-28)
+- ブランチ名: fix/location-plugin/remove-row-type-alias
+- 依存: なし
+- 受け入れ基準: LocationFeatureRow/LocationRelationRow のエイリアスが撤去される／LocationFeature/LocationRelation を直接使用する／@hierarchidb/location-plugin の typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/worker/locationEntitiesDB.ts`, `plugins/location-plugin/src/worker/normalizers.ts`（調査後に確定）
+- ロールバック手順: 該当差分を revert してエイリアスに戻す
+- チェックリスト:
+  - LocationFeatureRow/LocationRelationRow の参照を特定する
+  - LocationFeature/LocationRelation へ直接置換する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-28 20:05 JST LocationFeatureRow/LocationRelationRow エイリアス撤去に着手。
+  - update: 2026-01-28 20:08 JST LocationFeature/LocationRelation を直接参照するよう置換。
+  - update: 2026-01-28 20:08 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-01-28 20:08 JST エイリアス撤去と型置換を完了。
 
 2414) fix/ui-floating-window/discard-dialog-front (P1) — 完了 (2026-01-28)
 - ブランチ名: fix/ui-floating-window/discard-dialog-front

@@ -6,7 +6,7 @@ import type {
   LocationRelationMeta,
 } from '../common/types/entities.js';
 import { mortonKeyFromLonLat } from '@hierarchidb/location-store';
-import type { LocationFeatureRow, LocationRelationRow } from './locationEntitiesDB.js';
+import type { LocationFeature, LocationRelation } from './locationEntitiesDB.js';
 
 type Progress = NonNullable<LocationPeerData['lastProgress']>;
 type ErrorInfo = NonNullable<LocationPeerData['lastError']>;
@@ -174,7 +174,7 @@ export const toGroupRow = (
   nodeId: NodeId,
   item: FeatureItemBase<LocationGroupItemData>,
   timestamp = Date.now(),
-): LocationFeatureRow => ({
+): LocationFeature => ({
   nodeId,
   id: String(item.id),
   type: item.data && typeof item.data.type === 'string' ? item.data.type : undefined,
@@ -186,7 +186,7 @@ export const toGroupRow = (
 });
 
 export const fromGroupRow = (
-  rows: LocationFeatureRow[],
+  rows: LocationFeature[],
 ): FeatureItemBase<LocationGroupItemData>[] =>
   rows.map(({ id, data, updatedAt }) => ({
     id,
@@ -210,7 +210,7 @@ const normalizeRelationMeta = (value: unknown): LocationRelationMeta | undefined
 export const toRelationRow = (
   rel: RelationBase<LocationRelationMeta>,
   timestamp = Date.now(),
-): LocationRelationRow => ({
+): LocationRelation => ({
   srcNodeId: rel.srcNodeId,
   dstNodeId: rel.dstNodeId,
   type: rel.type,
@@ -219,7 +219,7 @@ export const toRelationRow = (
 });
 
 export const fromRelationRows = (
-  rows: LocationRelationRow[],
+  rows: LocationRelation[],
 ): RelationBase<LocationRelationMeta>[] =>
   rows.map(({ srcNodeId, dstNodeId, type, meta, updatedAt }) => ({
     srcNodeId,
