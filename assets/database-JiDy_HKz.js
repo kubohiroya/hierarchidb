@@ -1,0 +1,1 @@
+import{Ga as e,mo as t,un as n}from"./index.js";e();async function r(){await n.delete(t(`resolver-db`))}e();var i=class extends n{resolvers;constructor(){super(t(`resolver-db`)),this.version(1).stores({resolvers:`&id, nodeId, name`})}};const a=new i;export{i as ResolverEntitiesDB,r as clearDatabases,a as resolverEntitiesDB};
