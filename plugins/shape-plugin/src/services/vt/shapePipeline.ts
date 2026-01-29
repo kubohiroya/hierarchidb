@@ -30,17 +30,24 @@ export type ShapePipelineParams = {
   pipelineRunId?: string;
 };
 
-export const runShapePipeline = async (params: ShapePipelineParams): Promise<void> => {
-  const taskQueue = new VtTaskQueueDb();
-  const ephemeralStore = ephemeralShapeDB;
-  const resumeExistingTasks = Boolean(params.resumeExistingTasks);
-  const buildContinuationPolicy = params.buildContinuationPolicy ?? 'finish_all_stages';
-  const failureHandling = resolveFailureHandling(buildContinuationPolicy);
-  let stopAfterStage = false;
-  let metadataCache: CountryMetadata[] | null = null;
-  let countryLookup: Map<string, CountryMetadata> | null = null;
-  let continentLookup: Map<string, string> | null = null;
-  const existingFeatureMetadata = await shapeQueryAPIImpl.listFeatureMetadata(params.nodeId);
+type ShapePipelineContext = {
+  params: ShapePipelineParams;
+  taskQueue: VtTaskQueueDb;
+  ephemeralStore: typeof ephemeralShapeDB;
+  resumeExistingTasks: boolean;
+  buildContinuationPolicy: BuildContinuationPolicy;
+  failureHandling: ReturnType<typeof resolveFailureHandling>;
+  enableHighDetailBands: boolean;
+  bands: ReturnType<typeof buildBands>;
+  diffBuildEnabled: boolean;
+  recyclingAllowlist: Set<string>;
+  recyclingByFeatureId: Map<string, boolean>;
+  loadCountryLookup: () => Promise<Map<string, CountryMetadata>>;
+  loadContinentLookup: () => Promise<Map<string, string>>;
+};
+
+const collectRecyclingAllowlist = async (nodeId: NodeId) => {
+  const existingFeatureMetadata = await shapeQueryAPIImpl.listFeatureMetadata(nodeId);
   const recyclingByFeatureId = new Map<string, boolean>();
   const recyclingAllowlist = new Set<string>();
   existingFeatureMetadata.forEach((row) => {
@@ -50,26 +57,28 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
       recyclingByFeatureId.set(row.featureId, true);
     }
   });
-  const diffBuildEnabled = recyclingAllowlist.size > 0;
+  return { recyclingByFeatureId, recyclingAllowlist };
+};
 
-  console.warn('[ShapePipeline] run start', JSON.stringify({
-    nodeId: params.nodeId,
-    runId: params.pipelineRunId ?? null,
-    resumeExistingTasks,
-    buildContinuationPolicy,
-  }));
-  if (!resumeExistingTasks) {
-    await deleteTasksByNode(taskQueue, params.nodeId);
-    if (!diffBuildEnabled) {
-      await shapeMutationAPIImpl.deleteFeatureMetadataByNode(params.nodeId);
-    }
-  }
+const createShapePipelineContext = async (params: ShapePipelineParams): Promise<ShapePipelineContext> => {
+  const taskQueue = new VtTaskQueueDb();
+  const ephemeralStore = ephemeralShapeDB;
+  const resumeExistingTasks = Boolean(params.resumeExistingTasks);
+  const buildContinuationPolicy = params.buildContinuationPolicy ?? 'finish_all_stages';
+  const failureHandling = resolveFailureHandling(buildContinuationPolicy);
+
+  const { recyclingAllowlist, recyclingByFeatureId } = await collectRecyclingAllowlist(params.nodeId);
+  const diffBuildEnabled = recyclingAllowlist.size > 0;
 
   const enableHighDetailBands = hasHighDetailSelection(
     params.selectedArrayByCountries,
     params.downloadTaskPayloads,
   );
   const bands = buildBands(params.buildConfig.transformConfig.zoomBandBoundaries);
+
+  let metadataCache: CountryMetadata[] | null = null;
+  let countryLookup: Map<string, CountryMetadata> | null = null;
+  let continentLookup: Map<string, string> | null = null;
   const loadMetadata = async (): Promise<CountryMetadata[]> => {
     if (metadataCache) return metadataCache;
     metadataCache = await metadataLoader.loadMetadata(params.dataSource, params.nodeId);
@@ -86,7 +95,42 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
     return continentLookup;
   };
 
-  stopAfterStage = await runShapeFetchStageSection({
+  return {
+    params,
+    taskQueue,
+    ephemeralStore,
+    resumeExistingTasks,
+    buildContinuationPolicy,
+    failureHandling,
+    enableHighDetailBands,
+    bands,
+    diffBuildEnabled,
+    recyclingAllowlist,
+    recyclingByFeatureId,
+    loadCountryLookup,
+    loadContinentLookup,
+  };
+};
+
+const preparePipelineRun = async (context: ShapePipelineContext): Promise<void> => {
+  const { params, taskQueue, resumeExistingTasks, buildContinuationPolicy, diffBuildEnabled } = context;
+  console.warn('[ShapePipeline] run start', JSON.stringify({
+    nodeId: params.nodeId,
+    runId: params.pipelineRunId ?? null,
+    resumeExistingTasks,
+    buildContinuationPolicy,
+  }));
+  if (!resumeExistingTasks) {
+    await deleteTasksByNode(taskQueue, params.nodeId);
+    if (!diffBuildEnabled) {
+      await shapeMutationAPIImpl.deleteFeatureMetadataByNode(params.nodeId);
+    }
+  }
+};
+
+const runFetchStage = async (context: ShapePipelineContext): Promise<boolean> => {
+  const { params, taskQueue, resumeExistingTasks, failureHandling, buildContinuationPolicy } = context;
+  return runShapeFetchStageSection({
     nodeId: params.nodeId,
     dataSource: params.dataSource,
     selectedArrayByCountries: params.selectedArrayByCountries,
@@ -99,40 +143,68 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
     buildContinuationPolicy,
     pipelineRunId: params.pipelineRunId,
   });
-  if (!stopAfterStage) {
-    stopAfterStage = await runShapeTransformStageSection({
-      nodeId: params.nodeId,
-      buildConfig: params.buildConfig,
-      bands,
-      enableHighDetailBands,
-      countryLookup: await loadCountryLookup(),
-      taskQueue,
-      waitIfPaused: params.waitIfPaused,
-      resumeExistingTasks,
-      failureHandling,
-      buildContinuationPolicy,
-      pipelineRunId: params.pipelineRunId,
-      ephemeralStore,
-      diffBuildEnabled,
-      recyclingAllowlist,
-    });
-  }
-  if (!stopAfterStage) {
-    await runShapeVtStageSection({
-      nodeId: params.nodeId,
-      buildConfig: params.buildConfig,
-      bands,
-      enableHighDetailBands,
-      taskQueue,
-      waitIfPaused: params.waitIfPaused,
-      resumeExistingTasks,
-      failureHandling,
-      pipelineRunId: params.pipelineRunId,
-      ephemeralStore,
-      loadContinentLookup,
-    });
-  }
+};
 
+const runTransformStage = async (context: ShapePipelineContext): Promise<boolean> => {
+  const {
+    params,
+    taskQueue,
+    resumeExistingTasks,
+    failureHandling,
+    buildContinuationPolicy,
+    bands,
+    enableHighDetailBands,
+    diffBuildEnabled,
+    recyclingAllowlist,
+    loadCountryLookup,
+    ephemeralStore,
+  } = context;
+  return runShapeTransformStageSection({
+    nodeId: params.nodeId,
+    buildConfig: params.buildConfig,
+    bands,
+    enableHighDetailBands,
+    countryLookup: await loadCountryLookup(),
+    taskQueue,
+    waitIfPaused: params.waitIfPaused,
+    resumeExistingTasks,
+    failureHandling,
+    buildContinuationPolicy,
+    pipelineRunId: params.pipelineRunId,
+    ephemeralStore,
+    diffBuildEnabled,
+    recyclingAllowlist,
+  });
+};
+
+const runVtStage = async (context: ShapePipelineContext): Promise<void> => {
+  const {
+    params,
+    taskQueue,
+    resumeExistingTasks,
+    failureHandling,
+    bands,
+    enableHighDetailBands,
+    loadContinentLookup,
+    ephemeralStore,
+  } = context;
+  await runShapeVtStageSection({
+    nodeId: params.nodeId,
+    buildConfig: params.buildConfig,
+    bands,
+    enableHighDetailBands,
+    taskQueue,
+    waitIfPaused: params.waitIfPaused,
+    resumeExistingTasks,
+    failureHandling,
+    pipelineRunId: params.pipelineRunId,
+    ephemeralStore,
+    loadContinentLookup,
+  });
+};
+
+const runMetadataStage = async (context: ShapePipelineContext): Promise<void> => {
+  const { params, diffBuildEnabled, recyclingAllowlist, recyclingByFeatureId, ephemeralStore } = context;
   await runShapeMetadataStage({
     nodeId: params.nodeId,
     dataSource: params.dataSource,
@@ -142,10 +214,28 @@ export const runShapePipeline = async (params: ShapePipelineParams): Promise<voi
     recyclingAllowlist,
     diffBuildEnabled,
   });
+};
 
+const runCleanupStage = async (context: ShapePipelineContext): Promise<void> => {
+  const { params, ephemeralStore } = context;
   await runShapePipelineCleanup({
     nodeId: params.nodeId,
     buildConfig: params.buildConfig,
     ephemeralStore,
   });
+};
+
+export const runShapePipeline = async (params: ShapePipelineParams): Promise<void> => {
+  const context = await createShapePipelineContext(params);
+  await preparePipelineRun(context);
+
+  let stopAfterStage = await runFetchStage(context);
+  if (!stopAfterStage) {
+    stopAfterStage = await runTransformStage(context);
+  }
+  if (!stopAfterStage) {
+    await runVtStage(context);
+  }
+  await runMetadataStage(context);
+  await runCleanupStage(context);
 };

@@ -3,6 +3,7 @@ import type {
   BatchSessionStatus,
   UnifiedProgressInfo,
 } from '@hierarchidb/common-api';
+import { computePercentage } from '@hierarchidb/ui-batch-progress';
 
 export interface BuildProgress {
   total: number;
@@ -40,12 +41,9 @@ export function toShapeProgress(info: ExtendedProgress | null): BuildProgress | 
   const failed = info.failed ?? info.payload?.failed ?? 0;
   const skipped = info.payload?.skipped ?? 0;
   const taskType = info.stage ?? info.payload?.stage;
-  const done = completed + failed + skipped;
   const percentage = typeof info.percentage === 'number' && Number.isFinite(info.percentage)
     ? info.percentage
-    : total > 0
-      ? Math.max(0, Math.min(100, Math.round((done / total) * 100)))
-      : 0;
+    : Math.max(0, Math.min(100, computePercentage({ total, completed, failed, skipped })));
   return {
     total,
     completed,

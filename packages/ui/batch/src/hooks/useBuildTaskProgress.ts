@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { BuildStage, BuildStatus } from '@hierarchidb/components';
 import type { BatchTaskSummary } from '@hierarchidb/common-api';
+import { buildTaskCountSummary } from '../utils/taskProgressSummary.js';
 
 type TaskStageCarrier = BatchTaskSummary & { taskType?: string; type?: string; stage?: string };
 
@@ -71,12 +72,10 @@ export const useBuildTaskProgress = <T extends BatchTaskSummary>(
     return stages.map((stage) => {
       const stageTasks = tasksByStage[stage.id] ?? [];
       const taskCount = stageTasks.length;
-      const skippedCount = stageTasks.filter(isSkippedTask).length;
-      const taskCountEffective = Math.max(0, taskCount - skippedCount);
-      const completedCount = stageTasks.filter((task) => task.status === 'completed' && !isSkippedTask(task)).length;
-      const failedCount = stageTasks.filter(
-        (task) => task.status === 'failed' || task.status === 'regression',
-      ).length;
+      const counts = buildTaskCountSummary(stageTasks, isSkippedTask);
+      const taskCountEffective = Math.max(0, counts.total - counts.skipped);
+      const completedCount = counts.completed;
+      const failedCount = counts.failed;
       const progressValue = taskCount > 0
         ? Math.round(stageTasks.reduce((sum, task) => sum + (task.progress ?? 0), 0) / taskCount)
         : 0;
