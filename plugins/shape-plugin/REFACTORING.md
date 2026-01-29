@@ -10,8 +10,6 @@ from `plugins/shape-plugin/src/index.ts`, verify external usage before removal.
   - Evidence: `rg` hits only within this file; excluded from Vitest by path
 - `plugins/shape-plugin/src/services/datasources/__tests__/manual-test.ts`
   - Evidence: `rg` hits not found
-- `plugins/shape-plugin/src/services/README.md`
-  - Evidence: `rg` hits not found
 - `plugins/shape-plugin/src/services/RecoveryStrategy.ts`
   - Evidence: `rg` hits only within this file; referenced only in docs
 - `plugins/shape-plugin/src/services/auth/index.ts`
@@ -20,8 +18,6 @@ from `plugins/shape-plugin/src/index.ts`, verify external usage before removal.
   - Evidence: `rg` hits only within this file
 - `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerExtractAdapters.ts`
   - Evidence: `rg` hits only within this file
-- `plugins/shape-plugin/src/services/tiles/VectorTileService.ts`
-  - Evidence: `rg` hits only within this file; referenced only in docs
 - `plugins/shape-plugin/src/services/tiles/RuntimeTileClient.ts`
   - Evidence: `rg` hits only within this file
   - Note: exported in `plugins/shape-plugin/src/index.ts`, check external usage

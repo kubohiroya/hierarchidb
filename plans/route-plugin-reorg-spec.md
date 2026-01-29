@@ -235,7 +235,7 @@ Route should expose or implement a thin adapter that:
 
 #### Route Storage Updates
 
-- Route DB persistence remains in `plugins/route-plugin/src/services/database/RouteDatabase.ts`.
+- Route DB persistence remains in `plugins/route-plugin/src/services/database/RouteDB.ts`.
 - The SDK should not write into route-specific DB tables directly.
 - Route plugin remains responsible for linking SDK outputs to nodeId and sessionId.
 
@@ -308,7 +308,7 @@ Reference plan: `plans/shape-route-api-rework.md`
 
 - `RouteQueryAPI` is exposed via runtime-worker services and WorkerAPI.
 - `RouteMutationAPI` was recently added for cleanup operations.
-- Route DB remains in `plugins/route-plugin/src/services/database/RouteDatabase.ts`.
+- Route DB remains in `plugins/route-plugin/src/services/database/RouteDB.ts`.
 - UI steps use draft data and do not yet invoke route Query/Mutation APIs directly.
 
 ### Target Behavior

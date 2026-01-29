@@ -1,3 +1,72 @@
+2424) refactor/location-store/index-cleanup (P1) — 完了 (2026-01-29)
+- ブランチ名: refactor/location-store/index-cleanup
+- 依存: なし
+- 受け入れ基準: location-store の index.ts が再エクスポートのみになる／LocationMutationAPI/LocationQueryAPI の再エクスポートが撤去され、参照側が plugin-service-api 参照へ移行される／未使用型 LocationEntity/LocationBatchConfig/LocationPoint が削除される／型定義が個別ファイルへ整理される／pnpm --filter @hierarchidb/location-store typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/location-store/src/index.ts`, `packages/features/location-store/src/**`, `packages/plugin-service-api/src/**`, `packages/**`
+- ロールバック手順: 該当差分を revert して index.ts と型定義の配置を元に戻す
+- チェックリスト:
+  - index.ts の再エクスポート以外の定義を個別ファイルへ移動する
+  - LocationMutationAPI/LocationQueryAPI の再エクスポートを撤去し参照側を修正する
+  - 未使用型 LocationEntity/LocationBatchConfig/LocationPoint を削除する
+  - pnpm --filter @hierarchidb/location-store typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-29 13:35 JST location-store index.ts の整理と再エクスポート撤去に着手。
+  - update: 2026-01-29 13:39 JST location-store の型定義を locationTypes/locationPointId に分離し、LocationEntity/LocationBatchConfig/LocationPoint を削除して index.ts を再エクスポート専用に整理。
+  - update: 2026-01-29 13:40 JST LocationMutationAPI/LocationQueryAPI の参照を plugin-service-api へ移行。
+  - blocked: 2026-01-29 13:41 JST pnpm --filter @hierarchidb/location-store typecheck が未使用 ISO2 で失敗。
+  - update: 2026-01-29 13:41 JST 未使用 import を整理し、pnpm --filter @hierarchidb/location-store typecheck exit 0 を確認。
+  - blocked: 2026-01-29 13:42 JST pnpm --filter @hierarchidb/location-plugin typecheck が LocationEntity export 不足で失敗。
+  - update: 2026-01-29 13:43 JST LocationEntity の型再エクスポートを補正し、pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-01-29 13:43 JST pnpm --filter @hierarchidb/runtime-worker typecheck exit 0 を確認。
+  - update: 2026-01-29 13:44 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+  - update: 2026-01-29 13:44 JST pnpm --filter @hierarchidb/common-api typecheck exit 0 を確認。
+  - done: 2026-01-29 13:45 JST location-store index.ts の整理と再エクスポート撤去を完了。
+
+2425) refactor/route-store/index-cleanup (P1) — 完了 (2026-01-29)
+- ブランチ名: refactor/route-store/index-cleanup
+- 依存: なし
+- 受け入れ基準: route-store の index.ts が再エクスポートのみになる／RouteMutationAPI/RouteQueryAPI の再エクスポートが撤去され、参照側が plugin-service-api 参照へ移行される／型定義が個別ファイルへ整理される／pnpm --filter @hierarchidb/route-store typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/route-store/src/index.ts`, `packages/features/route-store/src/**`, `packages/plugin-service-api/src/**`, `packages/**`
+- ロールバック手順: 該当差分を revert して index.ts と型定義の配置を元に戻す
+- チェックリスト:
+  - index.ts の再エクスポート以外の定義を個別ファイルへ移動する
+  - RouteMutationAPI/RouteQueryAPI の再エクスポートを撤去し参照側を修正する
+  - pnpm --filter @hierarchidb/route-store typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-29 13:55 JST route-store index.ts の整理と再エクスポート撤去に着手。
+  - update: 2026-01-29 14:03 JST routeTypes/routeDbTypes を新設して index.ts を再エクスポート専用に整理。
+  - update: 2026-01-29 14:04 JST RouteMutationAPI/RouteQueryAPI の参照を plugin-service-api へ移行。
+  - update: 2026-01-29 14:05 JST pnpm --filter @hierarchidb/route-store typecheck exit 0 を確認。
+  - update: 2026-01-29 14:05 JST pnpm --filter @hierarchidb/common-api typecheck exit 0 を確認。
+  - update: 2026-01-29 14:06 JST pnpm --filter @hierarchidb/runtime-worker typecheck exit 0 を確認。
+  - update: 2026-01-29 14:06 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+  - done: 2026-01-29 14:06 JST route-store index.ts の整理と再エクスポート撤去を完了。
+
+2426) refactor/location-store/remove-unused-tables (P1) — 完了 (2026-01-29)
+- ブランチ名: refactor/location-store/remove-unused-tables
+- 依存: なし
+- 受け入れ基準: LocationDB の relations/vectorTiles と hidb-location-metadata の tabularMetadata の参照箇所を調査し、未使用なら撤去・使用中なら根拠を提示する／撤去時は型・マイグレーション・参照箇所も整理する／pnpm --filter @hierarchidb/location-store typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/location-store/src/LocationDB.ts`, `packages/features/location-store/src/**`, `packages/runtime-worker/src/**`, `plugins/location-plugin/src/**`, `packages/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert して tables と参照を復元する
+- チェックリスト:
+  - relations/vectorTiles の参照箇所を特定する
+  - tabularMetadata の参照箇所を特定する
+  - 未使用ならテーブル/型/参照を撤去する
+  - pnpm --filter @hierarchidb/location-store typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-29 14:15 JST relations/vectorTiles/tabularMetadata の利用状況調査に着手。
+  - update: 2026-01-29 14:22 JST LocationDB の relations テーブルは relation store 登録のみで書き込み利用が見当たらないため、v12 で撤去。
+  - update: 2026-01-29 14:23 JST locationRelationStore と関連 normalizer を削除し、relations 登録を停止。
+  - update: 2026-01-29 14:25 JST tabularMetadata は LocationDialog の createLocationTabularApi で利用しているため維持。
+  - update: 2026-01-29 14:26 JST vectorTiles は v11 以降の LocationDB から除外済みで利用箇所なし（レガシー定義のみ）を確認。
+  - update: 2026-01-29 14:27 JST pnpm --filter @hierarchidb/location-store typecheck exit 0 を確認。
+  - blocked: 2026-01-29 14:27 JST pnpm --filter @hierarchidb/location-plugin typecheck が createLocationTabularApi 欠落で失敗。
+  - update: 2026-01-29 14:28 JST tabular API を復元し、pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-01-29 14:29 JST relations テーブル撤去と利用状況の整理を完了。
+
 2423) investigation/shape-plugin-remove-remnants (P1) — 進行中 (2026-01-29)
 - ブランチ名: investigation/shape-plugin-remove-remnants
 - 依存: なし
@@ -11,7 +80,12 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-29 11:28 JST shape-plugin 残骸整理の調査に着手。
-  - done: 2026-01-29 11:40 JST shape-plugin の未使用テーブル/コード/型の候補を整理（削除候補一覧化）。
+  - update: 2026-01-29 11:48 JST VectorTileDB2Procedure/VectorTileService/services/types/tiles 型を削除し、shape-store の索引縮小と vectortile-store の meta/sources/tileIndex テーブル撤去に合わせてバージョン更新。
+  - update: 2026-01-29 11:48 JST RouteDB を v3 に更新して vectortile-store 変更に追従。
+  - update: 2026-01-29 11:52 JST shapeSessionMappers の型参照を shape-store に寄せ、pnpm --filter @hierarchidb/vectortile-store|shape-store|route-store|shape-plugin typecheck を実行して exit 0 を確認。
+  - update: 2026-01-29 12:05 JST ShapeDB の旧スキーマ互換を撤去し最新スキーマのみに整理。shape-plugin ドキュメントの残骸を削除。
+  - update: 2026-01-29 12:10 JST pnpm --filter @hierarchidb/shape-store|shape-plugin|vectortile-store typecheck を実行して exit 0 を確認。
+  - done: 2026-01-29 12:05 JST shape-plugin 残骸整理（削除実施）を完了。
 
 2422) refactor/location/remove-vectortiles-remnants (P1) — 進行中 (2026-01-29)
 - ブランチ名: refactor/location/remove-vectortiles-remnants
@@ -31,7 +105,7 @@
   - update: 2026-01-29 11:21 JST pnpm --filter @hierarchidb/location-store typecheck / pnpm --filter @hierarchidb/location-plugin typecheck ともに exit 0 を確認。
   - done: 2026-01-29 11:21 JST location の vectorTiles 残骸撤去を完了。
 
-2416) feat/core/node-references-index-and-guard (P1) — 進行中 (2026-01-29)
+2416) feat/core/node-references-index-and-guard (P1) — 完了 (2026-01-29)
 - ブランチ名: feat/core/node-references-index-and-guard
 - 依存: なし
 - 受け入れ基準: nodes テーブルの references が indexed になり参照元/参照先検索が可能になる／shape・route が参照先 nodeId を references 配列へ保存する／references により参照されているノードはゴミ箱へ移動不可となる／TASKS.md に運用ログ・検証結果を記載する
@@ -46,6 +120,13 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-29 10:54 JST node references の index/guard 実装に着手。
+  - update: 2026-01-29 10:54 JST references の見直しは保留し、LocationFeature の centroidForShapeId/centroidForShapeContainerNodeId を参照表現として採用。
+  - update: 2026-01-29 13:18 JST location-store と plugin-service-api に centroidForShapeId/centroidForShapeContainerNodeId を追加し、location normalizer が保持するよう更新。
+  - update: 2026-01-29 13:18 JST pnpm --filter @hierarchidb/location-store build exit 0（tsdown define warning あり）。
+  - update: 2026-01-29 13:18 JST pnpm --filter @hierarchidb/plugin-service-api build exit 0（tsdown define warning あり）。
+  - blocked: 2026-01-29 13:18 JST pnpm --filter @hierarchidb/location-plugin typecheck が centroidForShapeContainerNodeId の型不一致で失敗。
+  - update: 2026-01-29 13:18 JST normalizers で NodeId 正規化を追加し、pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-01-29 13:18 JST LocationFeature の centroidForShapeId/centroidForShapeContainerNodeId を参照表現として利用する更新を完了。
 
 2416) refactor/shape/step5-task-sync-datasource-refactor (P1) — 完了 (2026-01-28)
 - ブランチ名: refactor/shape/step5-task-sync-datasource-refactor
@@ -234,7 +315,7 @@
 - ブランチ名: investigation/shape-location-route-persistence-audit
 - 依存: なし
 - 受け入れ基準: shape/location/route の永続化データ型とテーブル一覧を整理する／未使用・冗長な型・テーブル・インデックス候補を根拠付きで指摘する／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/shape-store/src/ShapeDB.ts`, `packages/features/location-store/src/LocationDB.ts`, `packages/features/route-store/src/RouteDatabase.ts`, `packages/features/vectortile-store/src/tilesDb.ts`, `packages/runtime-worker/src/services/**`, `plugins/*/src/**`
+- 影響範囲: `packages/features/shape-store/src/ShapeDB.ts`, `packages/features/location-store/src/LocationDB.ts`, `packages/features/route-store/src/RouteDB.ts`, `packages/features/vectortile-store/src/tilesDb.ts`, `packages/runtime-worker/src/services/**`, `plugins/*/src/**`
 - ロールバック手順: なし（調査のみ）
 - チェックリスト:
   - 各 DB のテーブル/型/インデックスを列挙する

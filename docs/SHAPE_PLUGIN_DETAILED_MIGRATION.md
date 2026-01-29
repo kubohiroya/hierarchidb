@@ -44,7 +44,6 @@ export interface ShapeEntity extends FolderEntity {
 ### バッチ処理システム（完成済み）
 - **BatchSessionManager**: セッション管理
 - **WorkerPoolManager**: ワーカープール管理
-- **VectorTileService**: ベクタタイル生成
 - **ShapeService**: 地理データ処理サービス
 
 ### データベース統合（完成済み）

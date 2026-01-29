@@ -134,7 +134,7 @@ Record schema version bumps and cleanup validation here once implemented.
 Primary interfaces to update:
 
 - `packages/features/shape-store/src/ShapeDB.ts` and `EphemeralShapeDB.ts` for shape artifacts.
-- `packages/features/route-store/src/RouteDatabase.ts` and any EphemeralRouteDB counterpart.
+- `packages/features/route-store/src/RouteDB.ts` and any EphemeralRouteDB counterpart.
 - `packages/features/location-store/src/LocationDB.ts` for `LocationDB` and ephemeral storage.
 - `packages/vt-orchestrator/src/vt/vtStage.ts` and any pipeline stages that write tiles.
 - `plugins/*/src/services/vt/*` for fetch/transform/vt stage wiring.

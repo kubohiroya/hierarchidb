@@ -50,7 +50,7 @@
 - route-plugin
   - DB: `RouteDB`（OK）
   - Tables: `routes`, `workingCopies`, `routeCache`（OK）
-  - 実装: `packages/plugins/route-plugin/src/database/RouteDatabase.ts`
+  - 実装: `packages/plugins/route-plugin/src/database/RouteDB.ts`
 - resolver-plugin
   - DB: `ResolverDB`（OK）
   - Tables: `resolvers`, `workingCopies`（OK）

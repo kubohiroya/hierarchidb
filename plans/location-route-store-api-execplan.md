@@ -56,7 +56,7 @@ Work from the repo root.
 
 3) Confirm plugin database entrypoints remain re-exports.
    - `plugins/location-plugin/src/database/LocationDB.ts`
-   - `plugins/route-plugin/src/services/database/RouteDatabase.ts`
+   - `plugins/route-plugin/src/services/database/RouteDB.ts`
 
 4) Run typechecks and log results.
 

@@ -41,7 +41,7 @@ Not started.
 
 The current Shape plugin exposes a monolithic `ShapeAPI` and `shapePluginAPI` in `plugins/shape-plugin/src/worker/api.ts`, which is registered in `plugins/shape-plugin/src/worker/plugin.ts` under `api: shapePluginAPI`. The UI hook `plugins/shape-plugin/src/ui/hooks/useShapeAPI.ts` is stubbed and unused in runtime, but tests and docs still reference it. Shape persistence is split between CoreDB TreeNode payloads (handled in `plugins/shape-plugin/src/worker/handlers/ShapeEntityService.ts`) and Dexie tables in `plugins/shape-plugin/src/services/database/ShapeDB.ts`.
 
-Route persistence lives in `plugins/route-plugin/src/services/database/RouteDatabase.ts`. Runtime Worker already exposes `RouteQueryAPI` through `packages/runtime-worker/src/services/RouteQueryService.ts` and `packages/common/api/src/WorkerAPI.ts`.
+Route persistence lives in `plugins/route-plugin/src/services/database/RouteDB.ts`. Runtime Worker already exposes `RouteQueryAPI` through `packages/runtime-worker/src/services/RouteQueryService.ts` and `packages/common/api/src/WorkerAPI.ts`.
 
 The Worker API facade is defined in `packages/common/api/src/WorkerAPI.ts` and wired in `app/src/worker-runtime/worker.ts` and `packages/ui/worker-client/src/workerBridge.ts`. The plugin-service-api type package lives at `packages/plugin-service-api/src/types` and is the canonical place to define Query/Mutation APIs.
 

@@ -37,13 +37,13 @@ Users should be able to run route builds without accumulating unused persistence
 
 ## Context and Orientation
 
-Route plugin build flow currently mixes a UI-driven IDE-GSM build path with a batch-oriented path that persists task results and cursor tables in `RouteDatabase`. The tables `routeResults` and `routeCursors` existed in `plugins/route-plugin/src/services/database/RouteDatabase.ts` and were used by `plugins/route-plugin/src/services/RouteBatchSession.ts` and `RouteBatchManager.ts`. The query API `packages/runtime-worker/src/services/RouteQueryService.ts` exposed `listRouteResults`, reading from `routeResults`. The IDE-GSM route build in `plugins/route-plugin/src/ui/components/steps/RouteBuildStep.tsx` persists `RouteLineString` records directly, so it does not use routeResults or routeCursors at all.
+Route plugin build flow currently mixes a UI-driven IDE-GSM build path with a batch-oriented path that persists task results and cursor tables in `RouteDatabase`. The tables `routeResults` and `routeCursors` existed in `plugins/route-plugin/src/services/database/RouteDB.ts` and were used by `plugins/route-plugin/src/services/RouteBatchSession.ts` and `RouteBatchManager.ts`. The query API `packages/runtime-worker/src/services/RouteQueryService.ts` exposed `listRouteResults`, reading from `routeResults`. The IDE-GSM route build in `plugins/route-plugin/src/ui/components/steps/RouteBuildStep.tsx` persists `RouteLineString` records directly, so it does not use routeResults or routeCursors at all.
 
 Shape’s crash detection and build monitoring is implemented in `plugins/shape-plugin/src/ui/utils/buildMonitor.ts` and `plugins/shape-plugin/src/ui/hooks/useBuildCrashInsight.ts`. Shape build progress step uses `buildStartedAt` and `buildFinishedAt` on the draft data to mark build start/finish and to infer crashes. Route now mirrors this pattern in its build step and adds a route-specific build monitor for localStorage storage.
 
 Key tables and types:
 
-- Route line data: `RouteDatabase.lineStrings` (RouteLineString) in `plugins/route-plugin/src/services/database/RouteDatabase.ts`.
+- Route line data: `RouteDatabase.lineStrings` (RouteLineString) in `plugins/route-plugin/src/services/database/RouteDB.ts`.
 - Route build UI step: `plugins/route-plugin/src/ui/components/steps/RouteBuildStep.tsx`.
 - Route Settings UI: `plugins/route-plugin/src/ui/components/steps/RouteProcessingStep.tsx`.
 - Route build monitor utilities: `plugins/route-plugin/src/ui/utils/buildMonitor.ts` and `plugins/route-plugin/src/ui/hooks/useRouteBuildCrashInsight.ts`.
@@ -65,7 +65,7 @@ Finally, run `pnpm --filter @hierarchidb/route-plugin typecheck` and record resu
 All commands are run from the repository root `/Users/hiroya/WebstormProjects/hierarchidb`.
 
 1) Update route database schema and delete routeResults/routeCursors usage.
-   - Edit `plugins/route-plugin/src/services/database/RouteDatabase.ts` to remove `routeResults` and `routeCursors` tables and their schema entries.
+   - Edit `plugins/route-plugin/src/services/database/RouteDB.ts` to remove `routeResults` and `routeCursors` tables and their schema entries.
    - Remove `RouteResultRow`/`RouteCursorRow` types.
    - Update `plugins/route-plugin/src/services/RouteBatchSession.ts` to stop writing to these tables.
    - Update `packages/runtime-worker/src/services/RouteQueryService.ts` to remove `listRouteResults`.
@@ -104,7 +104,7 @@ Edits to schema and UI are idempotent if reapplied. If a step fails, revert the 
 ## Interfaces and Dependencies
 
 - Route data types in `plugins/route-plugin/src/common/entities/RouteEntity.ts` and `RouteLineString.ts` define the draft fields and persistent line data.
-- Route database is defined in `plugins/route-plugin/src/services/database/RouteDatabase.ts` and was updated to remove obsolete tables.
+- Route database is defined in `plugins/route-plugin/src/services/database/RouteDB.ts` and was updated to remove obsolete tables.
 - Runtime-worker query and mutation APIs live under `packages/runtime-worker/src/services` and no longer depend on removed tables.
 - Shape’s build monitoring logic is in `plugins/shape-plugin/src/ui/utils/buildMonitor.ts` and `plugins/shape-plugin/src/ui/hooks/useBuildCrashInsight.ts`. The route implementation mirrors this behavior in route-specific utilities.
 

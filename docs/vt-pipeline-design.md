@@ -87,7 +87,7 @@
   - ShapeDB（成果物の永続化）
 - `packages/features/shape-store/src/EphemeralShapeDB.ts`
   - EphemeralShapeDB（stage1/transform の中間生成物）
-- `packages/features/route-store/src/RouteDatabase.ts`
+- `packages/features/route-store/src/RouteDB.ts`
   - RouteDB（成果物の永続化）
 - `packages/features/location-store/src/LocationDB.ts`
   - LocationDB（成果物の永続化）と EphemeralLocationDB

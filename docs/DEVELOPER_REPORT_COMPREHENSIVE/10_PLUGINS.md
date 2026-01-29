@@ -140,7 +140,6 @@ graph TB
     subgraph "Data Management"
         ShapeDB["Shape Database"]
         FeatureBuffer["Feature Buffer"]
-        VectorTileService["Vector Tile Service"]
         BatchProcessor["Batch Processor"]
     end
     
@@ -170,8 +169,7 @@ graph TB
     
     ShapeEntityHandler --> ShapeDB
     ShapeDB --> FeatureBuffer
-    FeatureBuffer --> VectorTileService
-    VectorTileService --> BatchProcessor
+    FeatureBuffer --> BatchProcessor
     
     ShapePlugin --> ShapeDialog
     ShapeDialog --> MapPreview
@@ -195,7 +193,7 @@ graph TB
     classDef processing fill:#ffebee
     
     class ShapePlugin,ShapeEntityHandler,ShapeDefinition core
-    class ShapeDB,FeatureBuffer,VectorTileService,BatchProcessor data
+    class ShapeDB,FeatureBuffer,BatchProcessor data
     class ShapeDialog,MapPreview,BatchMonitor,ProgressIndicator ui
     class GADMConnector,NaturalEarthAPI,GeoBoundariesAPI,CORSProxy external
     class DownloadWorker,ExtractWorker,TileGenerator,CacheManager processing
