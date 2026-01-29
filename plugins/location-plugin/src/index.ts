@@ -11,6 +11,3 @@ export * as worker from './worker/index.js';
 
 // Services entry (DB, batch managers, download registry, etc.)
 export * from './services/index.js';
-
-// Unified Batch Control API (API v2)
-export * from './services/batch/UnifiedLocationBatchManager.js';

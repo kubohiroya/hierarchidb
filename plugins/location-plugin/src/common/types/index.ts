@@ -47,7 +47,6 @@ export type {
   LocationLabelConfig,
   LocationRepresentationByZoomLevelConfig,
 };
-export type { BatchConfig, UnifiedLocationBatchConfig } from '@hierarchidb/location-store';
 
 export interface LocationDraft extends Partial<LocationEntityDefinition> {
   treeNodeId: NodeId;

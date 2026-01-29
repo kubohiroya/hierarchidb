@@ -13,4 +13,3 @@ export {
   clearLocationPoints,
 } from './pointRepository.js';
 export type { LocationPointWriteProgress } from './pointRepository.js';
-export { LocationBatchSessionManager } from './batch/BatchSessionManager.js';
