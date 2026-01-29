@@ -7,7 +7,6 @@ export * from './constants.js';
 export type { ShapeEntity, ShapePreviewMapView, SelectedArrayByCountries } from './ShapeEntity.js';
 export type { ProcessingStatus, TileInfo } from './api.js';
 export type { VectorTileEntity } from './VectorTileEntity.js';
-export type { MetaRow, SourceRow, TileIndexRow } from './tiles.js';
 export type {
   BaseBuildConfig,
   BoundingBox,
