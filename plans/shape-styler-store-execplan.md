@@ -43,7 +43,7 @@ This change removes direct plugin DB imports from host code and consolidates sto
 
 ## Context and Orientation
 
-Shape DB logic previously lived in `plugins/shape-plugin/src/services/database/ShapeDB.ts` and `plugins/shape-plugin/src/services/database/EphemeralShapeDB.ts`. Route DB logic lived in `plugins/route-plugin/src/services/database/RouteDatabase.ts`, and location tiles were stored in `plugins/location-plugin/src/database/EphemeralLocationDB.ts`. The map route (`app/src/router/routes/map.tsx`) read tiles directly from these DBs and from `TilesDB` in `@hierarchidb/gis-sdk`. Cleanup logic in `packages/runtime-worker/src/entity/EntityLifecycleManager.ts` used dynamic imports of plugin databases to delete artifacts. Query/Mutation API contracts are defined under `packages/plugin-service-api/src/types` and are implemented by runtime-worker services.
+Shape DB logic previously lived in `plugins/shape-plugin/src/services/database/ShapeDB.ts` and `plugins/shape-plugin/src/services/database/EphemeralShapeDB.ts`. Route DB logic lived in `plugins/route-plugin/src/services/database/RouteDatabase.ts`, and location tiles were stored in `plugins/location-plugin/src/database/LocationDB.ts`. The map route (`app/src/router/routes/map.tsx`) read tiles directly from these DBs and from `TilesDB` in `@hierarchidb/gis-sdk`. Cleanup logic in `packages/runtime-worker/src/entity/EntityLifecycleManager.ts` used dynamic imports of plugin databases to delete artifacts. Query/Mutation API contracts are defined under `packages/plugin-service-api/src/types` and are implemented by runtime-worker services.
 
 ## Plan of Work
 

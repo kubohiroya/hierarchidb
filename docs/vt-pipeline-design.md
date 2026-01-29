@@ -89,7 +89,7 @@
   - EphemeralShapeDB（stage1/transform の中間生成物）
 - `packages/features/route-store/src/RouteDatabase.ts`
   - RouteDB（成果物の永続化）
-- `packages/features/location-store/src/EphemeralLocationDB.ts`
+- `packages/features/location-store/src/LocationDB.ts`
   - LocationDB（成果物の永続化）と EphemeralLocationDB
 
 ### vt-orchestrator

@@ -1,3 +1,37 @@
+2422) refactor/location/remove-vectortiles-remnants (P1) — 進行中 (2026-01-29)
+- ブランチ名: refactor/location/remove-vectortiles-remnants
+- 依存: なし
+- 受け入れ基準: LocationDB から vectorTiles テーブルと VectorTileDbBase 依存が撤去される／location のベクトルタイル関連コード・テストが削除される／他の残骸候補（未使用テーブル/型/コード）が一覧化される／pnpm --filter @hierarchidb/location-store typecheck など必要範囲が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/location-store/src/LocationDB.ts`, `plugins/location-plugin/src/**`, `packages/features/vectortile-store/src/**`（必要に応じて追加）
+- ロールバック手順: 該当差分を revert して Location の vectorTiles テーブルと関連コードを復元する
+- チェックリスト:
+  - LocationDB から VectorTileDbBase 継承と vectorTiles テーブルを撤去する
+  - vectorTiles を利用する location 側コード/テストを削除する
+  - 残骸候補の一覧を更新し、削除対象を明確化する
+  - pnpm --filter @hierarchidb/location-store typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-29 11:12 JST location の vectorTiles 残骸撤去に着手。
+  - update: 2026-01-29 11:20 JST LocationDB を Dexie に切替え、v11 で vectorTiles/pendingSessions を撤去。location-plugin の vectortile 関連コード/テスト/エクスポートを削除。
+  - update: 2026-01-29 11:21 JST pnpm --filter @hierarchidb/location-store typecheck / pnpm --filter @hierarchidb/location-plugin typecheck ともに exit 0 を確認。
+  - done: 2026-01-29 11:21 JST location の vectorTiles 残骸撤去を完了。
+
+2416) feat/core/node-references-index-and-guard (P1) — 進行中 (2026-01-29)
+- ブランチ名: feat/core/node-references-index-and-guard
+- 依存: なし
+- 受け入れ基準: nodes テーブルの references が indexed になり参照元/参照先検索が可能になる／shape・route が参照先 nodeId を references 配列へ保存する／references により参照されているノードはゴミ箱へ移動不可となる／TASKS.md に運用ログ・検証結果を記載する
+- 影響範囲: 調査後に確定
+- ロールバック手順: 該当差分を revert して references index と guard を撤去する
+- チェックリスト:
+  - nodes テーブル定義と references の現状を確認する
+  - references の Dexie index を追加する
+  - shape/route から参照先 nodeId を保存する箇所を特定し references 更新を追加する
+  - 参照されているノードの trash 操作を失敗させるガードを追加する
+  - pnpm typecheck/test を必要範囲で実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-29 10:54 JST node references の index/guard 実装に着手。
+
 2416) refactor/shape/step5-task-sync-datasource-refactor (P1) — 完了 (2026-01-28)
 - ブランチ名: refactor/shape/step5-task-sync-datasource-refactor
 - 依存: なし
@@ -163,6 +197,44 @@
   - start: 2026-01-28 20:06 JST Location Step5 のリストが表示されない件の調査に着手。
   - update: 2026-01-28 20:06 JST initialState の position を画面内にクランプする対応を追加。
   - update: 2026-01-28 20:07 JST pnpm --filter @hierarchidb/ui-floating-window typecheck exit 0 を確認。
+
+2417) investigation/shape-location-route-persistence-audit (P1) — 進行中 (2026-01-29)
+- ブランチ名: investigation/shape-location-route-persistence-audit
+- 依存: なし
+- 受け入れ基準: shape/location/route の永続化データ型とテーブル一覧を整理する／未使用・冗長な型・テーブル・インデックス候補を根拠付きで指摘する／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/shape-store/src/ShapeDB.ts`, `packages/features/location-store/src/LocationDB.ts`, `packages/features/route-store/src/RouteDatabase.ts`, `packages/features/vectortile-store/src/tilesDb.ts`, `packages/runtime-worker/src/services/**`, `plugins/*/src/**`
+- ロールバック手順: なし（調査のみ）
+- チェックリスト:
+  - 各 DB のテーブル/型/インデックスを列挙する
+  - 参照・クエリ箇所を追跡して未使用候補を特定する
+  - 根拠（参照有無/参照箇所）を明記する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-29 09:34 JST shape/location/route の永続化データ型とテーブルの調査に着手。
+  - done: 2026-01-29 09:40 JST 各DBのテーブル/インデックスと参照箇所を整理し、未使用・冗長候補を洗い出し。
+
+2416) fix/shape-location-store/schema-alignment (P1) — 進行中 (2026-01-29)
+- ブランチ名: fix/shape-location-store/schema-alignment
+- 依存: なし
+- 受け入れ基準: ShapeDB の buildSessions 命名が統一され relations テーブルが削除される／ShapeContainerNodeId を形状系で優先使用する／LocationFeature に centroidForShapeId/centroidForShapeContainerNodeId を追加し features のインデックスが更新される／pnpm --filter @hierarchidb/shape-store typecheck と pnpm --filter @hierarchidb/location-store typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/shape-store/src/ShapeDB.ts`, `packages/features/shape-store/src/index.ts`, `packages/features/location-store/src/LocationDB.ts`, `packages/features/location-store/package.json`
+- ロールバック手順: 該当差分を revert して旧スキーマと命名へ戻す
+- チェックリスト:
+  - ShapeDB の batchSessions を buildSessions へ統一し、relations テーブルを削除する
+  - ShapeContainerNodeId を形状系の NodeId に置き換える
+  - LocationFeature と features インデックスに centroid 情報を追加する
+  - pnpm --filter @hierarchidb/shape-store typecheck を実行する
+  - pnpm --filter @hierarchidb/location-store typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-29 09:12 JST Shape/Location store のスキーマ整合化に着手。
+  - update: 2026-01-29 09:15 JST ShapeDB を buildSessions 命名へ統一し、relations テーブルを削除。ShapeContainerNodeId を形状系へ適用。
+  - update: 2026-01-29 09:15 JST LocationFeature に centroidForShapeId/centroidForShapeContainerNodeId を追加し、features インデックスを更新。
+  - update: 2026-01-29 09:17 JST pnpm --filter @hierarchidb/shape-store build:types を実行。
+  - update: 2026-01-29 09:17 JST pnpm --filter @hierarchidb/shape-store typecheck exit 0 を確認。
+  - blocked: 2026-01-29 09:18 JST pnpm --filter @hierarchidb/location-store typecheck が @hierarchidb/shape-store 未解決で失敗。
+  - update: 2026-01-29 09:19 JST pnpm install を実行して依存を更新。
+  - update: 2026-01-29 09:20 JST pnpm --filter @hierarchidb/location-store typecheck exit 0 を確認。
 
 2415) feat/ui-json-treeview/location-metadata-drilldown (P1) — 進行中 (2026-01-28)
 - ブランチ名: feat/ui-json-treeview/location-metadata-drilldown
@@ -7242,7 +7314,7 @@
 - 依存: なし
 - ExecPlan: `plans/location-plugin-repair-execplan.md`
 - 受け入れ基準: location-plugin の Step2-6 が CSV ソースのビルドと非VTの MapLibre プレビューに対応し、LocationQueryAPI が viewport 検索と prefetch マージン指定を受けられる／vectorTiles を参照せず points を描画できる／地物種類トグル・前方一致検索・ホバー/選択（半径8px）の強調表示が非VTでも動作する／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/plugin-service-api/src/types/LocationQueryAPI.ts`, `packages/plugin-service-api/src/types/LocationMutationAPI.ts`, `packages/runtime-worker/src/services/LocationQueryService.ts`, `packages/runtime-worker/src/services/LocationMutationService.ts`, `packages/features/location-store/src/EphemeralLocationDB.ts`, `plugins/location-plugin/src/worker/**`, `plugins/location-plugin/src/ui/components/**`, `docs/location-plugin-design.md`（参照整合が必要な場合）
+- 影響範囲: `packages/plugin-service-api/src/types/LocationQueryAPI.ts`, `packages/plugin-service-api/src/types/LocationMutationAPI.ts`, `packages/runtime-worker/src/services/LocationQueryService.ts`, `packages/runtime-worker/src/services/LocationMutationService.ts`, `packages/features/location-store/src/LocationDB.ts`, `plugins/location-plugin/src/worker/**`, `plugins/location-plugin/src/ui/components/**`, `docs/location-plugin-design.md`（参照整合が必要な場合）
 - ロールバック手順: 上記差分を revert し、vectorTiles ベースの LocationQueryService と UI の既存プレビューへ戻す
 - チェックリスト:
   - LocationQuery/Mutation API と worker 実装を非VT検索へ移行する
@@ -10875,3 +10947,22 @@
   - update: 2026-01-29 04:58 JST pnpm --filter @hierarchidb/ui-batch-progress build / pnpm --filter @hierarchidb/common-api build / pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
   - blocked: 2026-01-29 04:58 JST pnpm --filter @hierarchidb/shape-plugin test が geoboundaries.org の ENOTFOUND(fetch failed)で失敗。
   - update: 2026-01-29 07:15 JST pnpm --filter @hierarchidb/shape-plugin test が Test Files 6 passed / Tests 9 passed | 1 skipped で成功。
+2422) refactor/shape/build-progress-aggregation-and-pipeline-split (P1) — 完了 (2026-01-29)
+- ブランチ名: refactor/shape/build-progress-aggregation-and-pipeline-split
+- 依存: なし
+- ExecPlan: plans/shape-build-progress-aggregation-and-pipeline-split-execplan.md
+- 受け入れ基準: Step5 集計ロジック（completed/failed/skipped/total）が共通ユーティリティへ集約され shape-plugin と ui-batch の双方で同一関数を利用する／useShapeBuildStep の責務が「進捗計算」「表示ラベル」「自動再開/タイマー」「サマリ生成」に分割される／runShapePipeline がステージ単位のランナー/ポリシー判定へ分割され orchestrator に集約される／既存の UI 表示と挙動が維持される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts`, `plugins/shape-plugin/src/ui/components/build-progress/shapeBuildProgressMapping.ts`, `packages/ui/batch/src/hooks/useBuildTaskProgress.ts`, `plugins/shape-plugin/src/services/vt/shapePipeline.ts`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert して従来の Step5 集計/ビルドステップ/パイプライン構成に戻す
+- チェックリスト:
+  - Step5 の集計ロジックを共通ユーティリティへ集約する
+  - useShapeBuildStep の責務を分割フックに移す
+  - runShapePipeline をステージ単位のランナーへ分割する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-29 09:12 JST Step5 集計ロジックの共通化と runShapePipeline 分割に着手。
+  - update: 2026-01-29 09:25 JST ui-batch-progress に taskProgressSummary を追加し、Step5 集計/ラベル/進捗を分割フック化。shapePipeline をステージ単位関数に分割。
+  - update: 2026-01-29 09:27 JST pnpm --filter @hierarchidb/ui-batch-progress build exit 0（tsdown define warning あり）。
+  - update: 2026-01-29 09:28 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-01-29 09:28 JST Step5 集計共通化・useShapeBuildStep 分割・shapePipeline 分割を完了。

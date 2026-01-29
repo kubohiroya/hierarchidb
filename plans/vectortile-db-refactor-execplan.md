@@ -41,7 +41,7 @@ Key files to know:
 - packages/runtime-worker/src/types.ts and packages/runtime-worker/src/services/StageProcessingService.ts: vector tile worker API.
 - packages/runtime-worker/src/services/vectorTileStageRunner.ts: writes inputs and triggers generateTiles/listTiles.
 - packages/features/shape-store/src/ShapeDB.ts: shapeDB schema (currently has vectorTiles but no metadata tables).
-- packages/features/location-store/src/EphemeralLocationDB.ts: locationDB schema (vectorTiles table).
+- packages/features/location-store/src/LocationDB.ts: locationDB schema (vectorTiles table).
 - packages/features/route-store/src/RouteDatabase.ts: routeDB schema (vectorTiles table).
 - plugins/shape-plugin/src/services/database/VectorTileDB.ts: duplicate VectorTileDB and VectorTileDB2 definitions to be consolidated.
 - packages/features/vectortile-store: shared base class and metadata schema for per-plugin DBs.

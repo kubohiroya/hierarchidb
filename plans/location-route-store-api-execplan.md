@@ -55,7 +55,7 @@ Work from the repo root.
      - `packages/common/api/src/WorkerAPI.ts`
 
 3) Confirm plugin database entrypoints remain re-exports.
-   - `plugins/location-plugin/src/database/EphemeralLocationDB.ts`
+   - `plugins/location-plugin/src/database/LocationDB.ts`
    - `plugins/route-plugin/src/services/database/RouteDatabase.ts`
 
 4) Run typechecks and log results.

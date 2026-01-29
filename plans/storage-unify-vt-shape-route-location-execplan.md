@@ -52,7 +52,7 @@ Current storage layout splits intermediate artifacts and tiles across multiple s
 - `packages/vt-store`: `VtDb` stores vector tiles used by UI queries.
 - `packages/features/shape-store`: `ShapeDB` is the persistent domain DB for shape features.
 - `packages/features/route-store`: `RouteDB` is the persistent domain DB for route features.
-- `packages/features/location-store`: `LocationDB` is the persistent domain DB for location points (defined in `EphemeralLocationDB.ts`).
+- `packages/features/location-store`: `LocationDB` is the persistent domain DB for location points (defined in `LocationDB.ts`).
 - `packages/features/shape-store/src/EphemeralShapeDB.ts`: `EphemeralShapeDB` stores current transform caches and tile relations.
 
 The goal is to remove `VtShapeDb` and `VtDb` entirely and use per-node DBs:
@@ -135,7 +135,7 @@ Primary interfaces to update:
 
 - `packages/features/shape-store/src/ShapeDB.ts` and `EphemeralShapeDB.ts` for shape artifacts.
 - `packages/features/route-store/src/RouteDatabase.ts` and any EphemeralRouteDB counterpart.
-- `packages/features/location-store/src/EphemeralLocationDB.ts` for `LocationDB` and ephemeral storage.
+- `packages/features/location-store/src/LocationDB.ts` for `LocationDB` and ephemeral storage.
 - `packages/vt-orchestrator/src/vt/vtStage.ts` and any pipeline stages that write tiles.
 - `plugins/*/src/services/vt/*` for fetch/transform/vt stage wiring.
 - `packages/runtime-worker/src/entity/EntityLifecycleManager.ts` for node deletion cleanup hooks.
