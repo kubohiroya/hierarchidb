@@ -1,5 +1,5 @@
 /**
- * @file RouteDatabase.ts
+ * @file RouteDB.ts
  * @description Database schema and operations for Route plugin
  */
 
@@ -8,7 +8,7 @@ import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
 import { VectorTileDbBase } from '@hierarchidb/vectortile-store';
 
-import type { RouteLineString } from './index.js';
+import type { RouteFeature } from './routeTypes.js';
 
 export type RouteVectorTileRecord = {
   tileId: string;
@@ -23,18 +23,12 @@ export type RouteVectorTileRecord = {
 };
 
 export class RouteDB extends VectorTileDbBase {
-  features!: Table<RouteLineString, NodeId>;
+  features!: Table<RouteFeature, NodeId>;
   vectorTiles!: Table<RouteVectorTileRecord, string>;
 
   constructor(dbName: string = getDBName('route')) {
     super(dbName);
-    this.version(1).stores({
-      features:
-        '&id, nodeId, startLocationId, endLocationId, transportMode, [startLocationId+endLocationId], processingStatus, createdAt, updatedAt',
-      vectorTiles: '&tileId, nodeId, [nodeId+z+x+y], z, timestamp',
-    });
-
-    this.version(2).stores(this.mergeVectorTileStores({
+    this.version(3).stores(this.mergeVectorTileStores({
       features:
         '&id, nodeId, startLocationId, endLocationId, transportMode, [startLocationId+endLocationId], processingStatus, createdAt, updatedAt',
       vectorTiles: '&tileId, nodeId, [nodeId+z+x+y], z, timestamp',
