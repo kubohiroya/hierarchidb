@@ -835,6 +835,9 @@ importers:
       '@hierarchidb/plugin-service-api':
         specifier: workspace:*
         version: link:../../plugin-service-api
+      '@hierarchidb/shape-store':
+        specifier: workspace:*
+        version: link:../shape-store
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../util
