@@ -1,8 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { LocationPointProperties } from '../../../common/entities/LocationPoint.js';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { TabularDataResult } from '@hierarchidb/ui-tabular';
-import { buildTileIdByZoom } from '@hierarchidb/location-store';
+import { buildTileIdByZoom, type LocationPointProperties } from '@hierarchidb/location-store';
 
 const capturedPoints: LocationPointProperties[] = [];
 
