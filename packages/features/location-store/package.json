@@ -22,6 +22,7 @@
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/gen-iso3166-2": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
+    "@hierarchidb/shape-store": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/vectortile-store": "workspace:*",
     "dexie": "^4.2.0"
@@ -30,6 +31,7 @@
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/gen-iso3166-2": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
+    "@hierarchidb/shape-store": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/vectortile-store": "workspace:*",
     "dexie": "^4.2.0",

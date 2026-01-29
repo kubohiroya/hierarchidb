@@ -98,8 +98,8 @@ export interface CacheStatistics {
 }
 
 export interface BuildSessionRecord {
-  nodeId: NodeId;
-  draftId?: NodeId;
+  nodeId: ShapeContainerNodeId;
+  draftId?: ShapeContainerNodeId;
   status: 'idle' | 'running' | 'paused' | 'completed' | 'failed';
   config: BuildProcessConfig;
   startedAt: number;
@@ -240,7 +240,7 @@ export type ShapeBuildTaskResult =
 
 export interface BuildTaskRecord<TInput = ShapeBuildTaskPayload, TOutput = ShapeBuildTaskResult> {
   taskId: string;
-  nodeId: NodeId;
+  nodeId: ShapeContainerNodeId;
   taskType: BuildTaskType;
   status: TaskStatus;
   index: number;
@@ -252,9 +252,11 @@ export interface BuildTaskRecord<TInput = ShapeBuildTaskPayload, TOutput = Shape
   errorMessage?: string;
 }
 
-export interface FeatureRecord {
+export type ShapeContainerNodeId = NodeId;
+
+export interface ShapeFeature {
   id: number;
-  nodeId: NodeId;
+  nodeId: ShapeContainerNodeId;
   properties: Record<string, unknown>;
   geometry: Geometry; // GeoJSON.Geometry
   bbox?: [number, number, number, number];
@@ -270,17 +272,9 @@ export interface FeatureRecord {
   updatedAt: number;
 }
 
-export interface ShapeRelationRow {
-  srcNodeId: NodeId;
-  dstNodeId: NodeId;
-  type: string;
-  meta?: unknown;
-  updatedAt?: number;
-}
-
-export interface FeatureBufferRecord {
+export interface ShapeFeatureBuffer {
   bufferId: string;
-  nodeId: NodeId;
+  nodeId: ShapeContainerNodeId;
   stage: BuildStage;
   data_Uint8Array: Uint8Array;
   format: 'geojson' | 'topojson' | 'geobuf' | 'flatgeobuf';
@@ -293,7 +287,7 @@ export interface FeatureBufferRecord {
 
 export interface VectorTileRecord {
   tileId: string;
-  nodeId: NodeId;
+  nodeId: ShapeContainerNodeId;
   z: number;
   x: number;
   y: number;
@@ -310,7 +304,7 @@ export interface VectorTileRecord {
 
 export interface TileBufferRecord {
   bufferId: string;
-  nodeId: NodeId;
+  nodeId: ShapeContainerNodeId;
   z: number;
   x: number;
   y: number;
@@ -323,7 +317,7 @@ export interface TileBufferRecord {
 
 export interface CacheEntryRecord {
   cacheKey: string;
-  nodeId?: NodeId;
+  nodeId?: ShapeContainerNodeId;
   cacheType: 'features' | 'tiles' | 'buffers' | 'metadata';
   data: CacheEntryData;
   size: number;
@@ -336,11 +330,10 @@ export interface CacheEntryRecord {
 export class ShapeDB extends VectorTileDbBase {
 
   // Build processing tables
-  buildSessions!: Table<BuildSessionRecord, NodeId>;
+  buildSessions!: Table<BuildSessionRecord, ShapeContainerNodeId>;
 
   // Feature storage tables
-  features!: Table<FeatureRecord, number>;
-  relations!: Table<ShapeRelationRow, [NodeId, string, NodeId]>;
+  features!: Table<ShapeFeature, number>;
 
   // Tile storage tables
   vectorTiles!: Table<VectorTileRecord, string>;
@@ -355,9 +348,20 @@ export class ShapeDB extends VectorTileDbBase {
       relations: '&[srcNodeId+type+dstNodeId], srcNodeId, dstNodeId, type, updatedAt',
       vectorTiles: '&tileId, nodeId, [nodeId+z+x+y], [z+x+y], z, generatedAt, lastAccessed, size',
     }));
+    this.version(6).stores(this.mergeVectorTileStores({
+      buildSessions: '&nodeId, status, startedAt, updatedAt',
+      features:
+        '++id, nodeId, [nodeId+adminLevel], [nodeId+countryCode], mortonCode, adminLevel, countryCode, name, createdAt',
+      vectorTiles: '&tileId, nodeId, [nodeId+z+x+y], [z+x+y], z, generatedAt, lastAccessed, size',
+    })).upgrade(async (tx) => {
+      const previous = await tx.table('batchSessions').toArray();
+      if (previous.length > 0) {
+        await tx.table('buildSessions').bulkPut(previous);
+      }
+    });
 
     this.initVectorTileTables();
-    this.buildSessions = this.table('batchSessions');
+    this.buildSessions = this.table('buildSessions');
   }
 
   // Build Session Management
@@ -368,18 +372,18 @@ export class ShapeDB extends VectorTileDbBase {
     return session;
   }
 
-  async getBuildSession(nodeId: NodeId): Promise<BuildSessionRecord | undefined> {
+  async getBuildSession(nodeId: ShapeContainerNodeId): Promise<BuildSessionRecord | undefined> {
     return await this.buildSessions.get(nodeId);
   }
 
-  async updateBuildSession(nodeId: NodeId, updates: Partial<BuildSessionRecord>): Promise<void> {
+  async updateBuildSession(nodeId: ShapeContainerNodeId, updates: Partial<BuildSessionRecord>): Promise<void> {
     await this.buildSessions.update(nodeId, {
       ...updates,
       updatedAt: Date.now(),
     });
   }
 
-  async getActiveBuildSessions(nodeId: NodeId): Promise<BuildSessionRecord[]> {
+  async getActiveBuildSessions(nodeId: ShapeContainerNodeId): Promise<BuildSessionRecord[]> {
     return await this.buildSessions
       .where('nodeId')
       .equals(nodeId)
@@ -389,15 +393,15 @@ export class ShapeDB extends VectorTileDbBase {
 
   // Build Task Management
   // Feature Management
-  async storeFeature(feature: Omit<FeatureRecord, 'id'>): Promise<number> {
+  async storeFeature(feature: Omit<ShapeFeature, 'id'>): Promise<number> {
     return await this.features.add({
       ...feature,
       createdAt: Date.now(),
       updatedAt: Date.now(),
-    } as FeatureRecord);
+    } as ShapeFeature);
   }
 
-  async storeFeatures(features: Omit<FeatureRecord, 'id'>[]): Promise<number[]> {
+  async storeFeatures(features: Omit<ShapeFeature, 'id'>[]): Promise<number[]> {
     const now = Date.now();
     const featuresWithTimestamps = features.map(
       (feature) =>
@@ -405,17 +409,17 @@ export class ShapeDB extends VectorTileDbBase {
           ...feature,
           createdAt: now,
           updatedAt: now,
-        }) as FeatureRecord,
+        }) as ShapeFeature,
     );
 
     return await this.features.bulkAdd(featuresWithTimestamps, { allKeys: true });
   }
 
   async getFeaturesInBbox(
-    nodeId: NodeId,
+    nodeId: ShapeContainerNodeId,
     bbox: [number, number, number, number],
     adminLevel?: number,
-  ): Promise<FeatureRecord[]> {
+  ): Promise<ShapeFeature[]> {
     let query = this.features.where('nodeId').equals(nodeId);
 
     if (adminLevel !== undefined) {
@@ -434,10 +438,10 @@ export class ShapeDB extends VectorTileDbBase {
   }
 
   async searchFeatures(
-    nodeId: NodeId,
+    nodeId: ShapeContainerNodeId,
     query: string,
     limit: number = 50,
-  ): Promise<FeatureRecord[]> {
+  ): Promise<ShapeFeature[]> {
     const searchTerm = query.toLowerCase();
 
     return await this.features
@@ -461,7 +465,7 @@ export class ShapeDB extends VectorTileDbBase {
   }
 
   async getVectorTile(
-    nodeId: NodeId,
+    nodeId: ShapeContainerNodeId,
     z: number,
     x: number,
     y: number,
@@ -479,7 +483,7 @@ export class ShapeDB extends VectorTileDbBase {
   }
 
   async getTilesInZoomRange(
-    nodeId: NodeId,
+    nodeId: ShapeContainerNodeId,
     minZ: number,
     maxZ: number,
   ): Promise<VectorTileRecord[]> {
@@ -496,8 +500,8 @@ export class ShapeDB extends VectorTileDbBase {
         this.buildSessions.toArray().then((items: BuildSessionRecord[]) => items.length * 2000),
         this.features
           .toArray()
-          .then((items: FeatureRecord[]) =>
-            items.reduce((sum: number, f: FeatureRecord) => sum + JSON.stringify(f).length, 0),
+          .then((items: ShapeFeature[]) =>
+            items.reduce((sum: number, f: ShapeFeature) => sum + JSON.stringify(f).length, 0),
           ),
         this.vectorTiles
           .toArray()
