@@ -1,4 +1,4 @@
-import type { CountryCode } from '@hierarchidb/common-types';
+import type { CountryCode, NodeId } from '@hierarchidb/common-types';
 
 export type LocationPointKind = string;
 
@@ -19,6 +19,8 @@ export interface LocationPointProperties {
   admin2?: string;
   admin1Code?: string;
   admin2Code?: string;
+  centroidForShapeId?: number;
+  centroidForShapeContainerNodeId?: NodeId;
   metadata?: LocationPointMetadata;
 }
 
