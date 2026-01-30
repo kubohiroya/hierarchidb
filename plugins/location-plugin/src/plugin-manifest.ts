@@ -37,12 +37,18 @@ export const PLUGIN_MANIFEST = {
     visualization: true,
   },
   database: {
-    prewarm: [
-      {
-        specifier: '@hierarchidb/location-plugin/database',
-        export: 'getLocationDB',
-      },
-    ],
+    dbName: 'location',
+    tableName: 'features',
+    version: 12,
+    schema: {
+      fields: [
+        { name: 'nodeId', indexed: true },
+        { name: 'id', indexed: true },
+        { name: 'type', indexed: true },
+        { name: 'mortonKey', indexed: true },
+        { name: 'updatedAt', indexed: true },
+      ],
+    },
   },
   worker: {
     preload: ['registerLocationWorkerStores', 'loadLocationEntitiesDbModule'],

@@ -54,12 +54,18 @@ export const PLUGIN_MANIFEST = {
     ],
   },
   database: {
-    prewarm: [
-      {
-        specifier: '@hierarchidb/shape-plugin',
-        export: 'ShapeDB',
-      },
-    ],
+    dbName: 'shape',
+    tableName: 'features',
+    version: 7,
+    schema: {
+      fields: [
+        { name: 'nodeId', indexed: true },
+        { name: 'adminLevel', indexed: true },
+        { name: 'featureId', indexed: true },
+        { name: 'createdAt', indexed: true },
+        { name: 'updatedAt', indexed: true },
+      ],
+    },
   },
   worker: {
     preload: ['registerShapeWorkerStores', 'loadShapeEntitiesDbModule'],

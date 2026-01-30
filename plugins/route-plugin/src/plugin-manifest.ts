@@ -30,12 +30,21 @@ export const PLUGIN_MANIFEST: PluginManifest = {
     createOrder: 60,
   },
   database: {
-    prewarm: [
-      {
-        specifier: '@hierarchidb/route-plugin/database',
-        export: 'RouteDB',
-      },
-    ],
+    dbName: 'route',
+    tableName: 'features',
+    version: 3,
+    schema: {
+      fields: [
+        { name: 'id', indexed: true },
+        { name: 'nodeId', indexed: true },
+        { name: 'startLocationId', indexed: true },
+        { name: 'endLocationId', indexed: true },
+        { name: 'transportMode', indexed: true },
+        { name: 'processingStatus', indexed: true },
+        { name: 'createdAt', indexed: true },
+        { name: 'updatedAt', indexed: true },
+      ],
+    },
   },
   worker: {
     preload: ['registerRouteWorkerStores'],

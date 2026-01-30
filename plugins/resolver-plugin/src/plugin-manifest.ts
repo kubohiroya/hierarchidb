@@ -36,12 +36,16 @@ export const PLUGIN_MANIFEST: PluginManifest = {
     relationalData: true,
   },
   database: {
-    prewarm: [
-      {
-        specifier: '@hierarchidb/resolver-plugin/database',
-        export: 'resolverEntitiesDB',
-      },
-    ],
+    dbName: 'resolver-db',
+    tableName: 'resolvers',
+    version: 1,
+    schema: {
+      fields: [
+        { name: 'id', indexed: true },
+        { name: 'nodeId', indexed: true },
+        { name: 'name', indexed: true },
+      ],
+    },
   },
   worker: {
     preload: ['registerResolverWorkerStores'],
