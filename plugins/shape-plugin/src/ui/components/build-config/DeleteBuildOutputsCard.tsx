@@ -1,7 +1,7 @@
 import { Paper, Stack, Typography } from '@mui/material';
 import { DeleteSweep as DeleteSweepIcon } from '@mui/icons-material';
 import { FetchConfigFormControls } from './FetchConfigFormControls.tsx';
-import { getBuildConfigHoverCardSx } from './buildConfigCardStyles.ts';
+import { getBuildConfigHoverCardSx } from '@hierarchidb/ui-accordion-config';
 
 export type DeleteBuildOutputsCardProps = {
   title: string;

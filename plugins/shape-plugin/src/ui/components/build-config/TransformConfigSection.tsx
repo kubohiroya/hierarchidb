@@ -23,8 +23,7 @@ import { useTranslation } from '../../i18n.js';
 import { useTransformConfigSection } from './useTransformConfigSection.ts';
 import { ExtractionPanel } from '../processing/ExtractionPanel.js';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
-import { BuildConfigSectionTitle } from './BuildConfigSectionTitle.tsx';
-import { getBuildConfigHoverCardSx } from './buildConfigCardStyles.ts';
+import { BuildConfigSectionTitle, getBuildConfigHoverCardSx } from '@hierarchidb/ui-accordion-config';
 
 type Props = {
   config: ShapeBuildConfig;

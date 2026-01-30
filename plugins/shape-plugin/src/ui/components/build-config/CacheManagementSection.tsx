@@ -18,7 +18,7 @@ import { DeleteBuildOutputsCard } from './DeleteBuildOutputsCard.tsx';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
 import type { FetchConfigSectionState } from './useFetchConfigSection.ts';
 import { useTranslation } from '../../i18n.js';
-import { getBuildConfigHoverCardSx } from './buildConfigCardStyles.ts';
+import { getBuildConfigHoverCardSx } from '@hierarchidb/ui-accordion-config';
 
 type Props = {
   config: ShapeBuildConfig;

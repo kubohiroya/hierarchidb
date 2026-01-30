@@ -25,7 +25,7 @@ import {
   TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES,
   loadTreeConsoleSettings,
 } from '@hierarchidb/util';
-import { ZoomBandRangeCard } from './ZoomBandRangeCard.js';
+import { ZoomBandRangeCard } from '@hierarchidb/ui-accordion-config';
 
 type Props = {
   config: ShapeBuildConfig;

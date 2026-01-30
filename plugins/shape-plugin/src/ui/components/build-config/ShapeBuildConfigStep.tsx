@@ -2,9 +2,8 @@ import type React from 'react';
 import { useMemo } from 'react';
 import { Alert, Box, Stack } from '@mui/material';
 import type { AlertColor } from '@mui/material';
-import { FetchConfigSection } from './FetchConfigSection.tsx';
+import { FetchConfigSection, VTConfigSection } from '@hierarchidb/ui-accordion-config';
 import { TransformConfigSection } from './TransformConfigSection.js';
-import { VTConfigSection } from './VTConfigSection.tsx';
 import { ZoomBandConfigSection } from './ZoomBandConfigSection.js';
 import { CacheManagementSection } from './CacheManagementSection.tsx';
 import { useShapeBuildConfigStep } from './useShapeBuildConfigStep.js';
@@ -13,6 +12,12 @@ import { useTranslation } from '../../i18n.js';
 import type { ShapeDialogStepProps } from '../ShapeDialogStepProps.tsx';
 import type { NodeId } from '@hierarchidb/common-types';
 import { useFetchConfigSection } from './useFetchConfigSection.ts';
+import {
+  filteringHighUrl,
+  filteringLowUrl,
+  filteringMediumUrl,
+} from '../../assets/filtering-samples/filteringSamples.ts';
+import { useVTConfigSection } from './useVTConfigSection.ts';
 
 /**
  * Processing configuration step for Shape plugin.
@@ -52,6 +57,12 @@ export const ShapeBuildConfigStep: React.FC<ShapeDialogStepProps> = ({
       buildFinishedAt: undefined,
     });
   };
+  const filteringPreviewImages = useMemo(() => ({
+    weak: filteringLowUrl,
+    medium: filteringMediumUrl,
+    strong: filteringHighUrl,
+  }), []);
+  const { update: updateVTConfig } = useVTConfigSection({ buildConfig: config, onChange: handleChange });
   const fetchState = useFetchConfigSection({
     config,
     draft: data,
@@ -75,12 +86,14 @@ export const ShapeBuildConfigStep: React.FC<ShapeDialogStepProps> = ({
           disabled={disabled}
         />
         <FetchConfigSection
-          fetchState={fetchState}
-          config={config}
+          t={t}
+          buildConfig={config}
+          update={fetchState.update}
+          filteringPreviewImages={filteringPreviewImages}
           disabled={disabled}
         />
         <TransformConfigSection config={config} onChange={handleChange} disabled={disabled} />
-        <VTConfigSection buildConfig={config} draft={data} onChange={handleChange} disabled={disabled} />
+        <VTConfigSection t={t} buildConfig={config} update={updateVTConfig} disabled={disabled} />
         <CacheManagementSection config={config} fetchState={fetchState} disabled={disabled} />
       </Stack>
     </Box>
