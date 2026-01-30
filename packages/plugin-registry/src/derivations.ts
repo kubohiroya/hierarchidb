@@ -33,6 +33,14 @@ export function derivePluginDefinitions(
         ? entry.manifest.priority
         : 0,
     dependencies: entry.dependencies,
+    database: entry.manifest?.database
+      ? {
+          dbName: entry.manifest.database.dbName,
+          tableName: entry.manifest.database.tableName,
+          version: entry.manifest.database.version,
+          schema: entry.manifest.database.schema,
+        }
+      : undefined,
   }));
 }
 
@@ -63,4 +71,3 @@ export function derivePluginModuleSources(
   }
   return Object.fromEntries(pairs);
 }
-

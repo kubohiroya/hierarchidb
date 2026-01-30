@@ -58,6 +58,16 @@ export type PluginDatabasePrewarmConfig =
   | PluginDatabasePrewarmEntry
   | Array<string | PluginDatabasePrewarmEntry>;
 
+export interface PluginDatabaseConfig {
+  dbName?: string;
+  tableName?: string;
+  version?: number;
+  schema?: Record<string, unknown>;
+  prewarm?: PluginDatabasePrewarmConfig;
+}
+
+export type PluginDefinitionDatabaseConfig = Omit<PluginDatabaseConfig, 'prewarm'>;
+
 export interface PluginManifest {
   id?: string;
   name?: string;
@@ -81,9 +91,7 @@ export interface PluginManifest {
   worker?: {
     preload?: string[];
   } | null;
-  database?: {
-    prewarm?: PluginDatabasePrewarmConfig;
-  } | null;
+  database?: PluginDatabaseConfig | null;
 }
 
 export interface PluginModuleInfo {
@@ -119,4 +127,5 @@ export interface PluginDefinition {
   displayName: string;
   priority: number;
   dependencies: string[];
+  database?: PluginDefinitionDatabaseConfig;
 }

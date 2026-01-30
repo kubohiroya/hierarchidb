@@ -1,7 +1,6 @@
-import { pluginDatabaseLoaders } from '~/plugin-loaders/database-loaders.ts';
-import { pluginRegistry } from '~/plugin-loaders/index.ts';
+import { databaseStoreLoaders, APP_DATABASE_NODE_TYPES_SET } from './database-store-loaders.ts';
 
-type DatabaseLoaderEntry = (typeof pluginDatabaseLoaders)[string];
+type DatabaseLoaderEntry = (typeof databaseStoreLoaders)[string];
 type PrewarmDescriptor = NonNullable<DatabaseLoaderEntry['prewarm']>[number];
 
 type PrewarmHandle = {
@@ -13,33 +12,6 @@ const MAX_DEPTH = 3;
 
 const prewarmNodeTypesCache: string[] = computePrewarmNodeTypes();
 
-type PluginModuleExports = { worker: boolean; database: boolean };
-
-const resolveExports = (
-  entry: (typeof pluginRegistry)[number] | undefined
-): PluginModuleExports => {
-  const exportsList = Array.isArray(entry?.exports)
-    ? entry.exports.map((value) => value.replace(/^\.?\//, ''))
-    : [];
-  const hasWorkerExport =
-    exportsList.length > 0
-      ? exportsList.some((value) => value === 'worker' || value.startsWith('worker/'))
-      : Boolean(entry?.modules?.worker);
-  const hasDatabaseExport =
-    exportsList.length > 0
-      ? exportsList.some(
-          (value) =>
-            value === 'database' ||
-            value.startsWith('database/') ||
-            value === 'worker/database' ||
-            value.startsWith('worker/database/')
-        )
-      : Boolean(entry?.modules?.database);
-  return { worker: hasWorkerExport, database: hasDatabaseExport };
-};
-
-const hasDatabaseExport = (exportsMap: PluginModuleExports): boolean => exportsMap.database;
-
 const isBrowserEnvironment = (): boolean => typeof window !== 'undefined';
 
 const logDatabaseWarning = (nodeType: string, error: unknown): void => {
@@ -48,14 +20,9 @@ const logDatabaseWarning = (nodeType: string, error: unknown): void => {
 };
 
 function computePrewarmNodeTypes(): string[] {
-  return Object.entries(pluginDatabaseLoaders)
-    .filter(([nodeType, entry]) => {
-      const registryEntry = pluginRegistry.find((item) => item.nodeType === nodeType);
-      const exportsMap = resolveExports(registryEntry);
-      return (
-        hasDatabaseExport(exportsMap) && Array.isArray(entry?.prewarm) && entry.prewarm.length > 0
-      );
-    })
+  return Object.entries(databaseStoreLoaders)
+    .filter(([nodeType]) => APP_DATABASE_NODE_TYPES_SET.has(nodeType))
+    .filter(([, entry]) => Array.isArray(entry?.prewarm) && entry.prewarm.length > 0)
     .map(([nodeType]) => nodeType)
     .sort();
 }
@@ -208,15 +175,12 @@ export async function prewarmPluginDatabases(inputNodeTypes?: string[]): Promise
   const successful = new Set<string>();
   const moduleCache = new Map<string, Promise<unknown>>();
   const targetNodeTypes = (inputNodeTypes ?? prewarmNodeTypesCache).filter((nodeType) => {
-    const registryEntry = pluginRegistry.find((item) => item.nodeType === nodeType);
-    return (
-      hasDatabaseExport(resolveExports(registryEntry)) &&
-      getPrewarmDescriptors(pluginDatabaseLoaders[nodeType]).length > 0
-    );
+    if (!APP_DATABASE_NODE_TYPES_SET.has(nodeType)) return false;
+    return getPrewarmDescriptors(databaseStoreLoaders[nodeType]).length > 0;
   });
 
   for (const nodeType of targetNodeTypes) {
-    const entry = pluginDatabaseLoaders[nodeType];
+    const entry = databaseStoreLoaders[nodeType];
     const descriptors = getPrewarmDescriptors(entry);
     if (descriptors.length === 0) continue;
 

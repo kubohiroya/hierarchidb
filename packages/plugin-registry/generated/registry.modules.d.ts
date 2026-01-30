@@ -60,12 +60,6 @@ declare module '@hierarchidb/location-plugin/icon' {
   export default LocationPluginIcon;
 }
 
-declare module '@hierarchidb/location-plugin/database' {
-  export const getLocationDB: unknown;
-  const mod: Record<string, unknown>;
-  export default mod;
-}
-
 declare module '@hierarchidb/resolver-plugin/ui' {
   const mod: Record<string, unknown>;
   export default mod;
@@ -81,12 +75,6 @@ declare module '@hierarchidb/resolver-plugin/icon' {
   export default ResolverPluginIcon;
 }
 
-declare module '@hierarchidb/resolver-plugin/database' {
-  export const resolverEntitiesDB: unknown;
-  const mod: Record<string, unknown>;
-  export default mod;
-}
-
 declare module '@hierarchidb/route-plugin/ui' {
   const mod: Record<string, unknown>;
   export default mod;
@@ -100,12 +88,6 @@ declare module '@hierarchidb/route-plugin/worker' {
 declare module '@hierarchidb/route-plugin/icon' {
   export const RoutePluginIcon: unknown;
   export default RoutePluginIcon;
-}
-
-declare module '@hierarchidb/route-plugin/database' {
-  export const RouteDB: unknown;
-  const mod: Record<string, unknown>;
-  export default mod;
 }
 
 declare module '@hierarchidb/shape-plugin/ui' {

@@ -19,7 +19,7 @@ const importPluginWorkerMock = vi.hoisted(() =>
 
 const mockStoreRegistry = {};
 
-const pluginWorkerPreloadsMock: Record<string, string[]> = {
+const appWorkerStorePreloadsMock: Record<string, string[]> = {
   basemap: ['loadBasemapEntitiesDbModule'],
   folder: ['loadFolderEntitiesDbModule'],
   resolver: ['loadResolverEntitiesDbModule'],
@@ -34,11 +34,14 @@ const pluginWorkerPreloadsMock: Record<string, string[]> = {
 
 vi.mock('~/plugin-loaders/worker-loaders.ts', () => ({
   pluginWorkerLoaders: {},
-  pluginWorkerPreloads: pluginWorkerPreloadsMock,
+}));
+
+vi.mock('~/plugin-runtime/store-selection.ts', () => ({
+  APP_WORKER_STORE_PRELOADS: appWorkerStorePreloadsMock,
 }));
 
 vi.mock('~/plugin-loaders/index.ts', () => ({
-  pluginRegistry: Object.keys(pluginWorkerPreloadsMock).map((nodeType) => ({
+  pluginRegistry: Object.keys(appWorkerStorePreloadsMock).map((nodeType) => ({
     nodeType,
     modules: { worker: `./${nodeType}/worker` },
   })),
@@ -92,7 +95,7 @@ describe('WorkerModuleLoader', () => {
     importPluginWorkerMock.mockImplementation(async (id: string) => {
       const loader = loaderMap[id];
       if (!loader) return {};
-      const exportNames = pluginWorkerPreloadsMock[id] ?? [];
+      const exportNames = appWorkerStorePreloadsMock[id] ?? [];
       return Object.fromEntries(exportNames.map((name) => [name, loader]));
     });
 

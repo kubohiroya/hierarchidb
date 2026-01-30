@@ -1,6 +1,6 @@
 import { getDBName } from '@hierarchidb/util';
 import { Dexie } from 'dexie';
-import { pluginDatabaseLoaders } from '~/plugin-loaders/database-loaders.ts';
+import { databaseStoreLoaders, APP_DATABASE_NODE_TYPES_SET } from './database-store-loaders.ts';
 
 type ClearFn = () => Promise<void> | void;
 
@@ -57,7 +57,9 @@ export async function clearAppIndexedDBsViaPlugins(): Promise<ClearResult> {
     errors.push({ nodeType: 'core', error });
   }
 
-  const entries = Object.entries(pluginDatabaseLoaders ?? {});
+  const entries = Object.entries(databaseStoreLoaders ?? {}).filter(([nodeType]) =>
+    APP_DATABASE_NODE_TYPES_SET.has(nodeType)
+  );
 
   for (const [nodeType, entry] of entries) {
     try {

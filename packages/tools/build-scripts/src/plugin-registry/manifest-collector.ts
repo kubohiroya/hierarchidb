@@ -244,7 +244,20 @@ export async function collectManifests(mode: PluginSpecifierMode): Promise<Manif
       delete sanitizedManifest.worker;
     }
     if (!hasExportedDatabase) {
-      delete sanitizedManifest.database;
+      const databaseRecord = getRecord(sanitizedManifest.database);
+      if (databaseRecord) {
+        delete databaseRecord.prewarm;
+        const hasDatabaseMetadata =
+          typeof databaseRecord.dbName === 'string' ||
+          typeof databaseRecord.tableName === 'string' ||
+          typeof databaseRecord.version === 'number' ||
+          typeof databaseRecord.schema === 'object';
+        if (!hasDatabaseMetadata) {
+          delete sanitizedManifest.database;
+        }
+      } else {
+        delete sanitizedManifest.database;
+      }
     }
 
     const workerRecord = getRecord(sanitizedManifest.worker);

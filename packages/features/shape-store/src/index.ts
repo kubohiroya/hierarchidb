@@ -26,6 +26,8 @@ export {
   type TaskStatus,
   type VectorTileRecord,
   shapeDB,
+  clearShapeDatabases,
+  clearShapeDatabases as clearDatabases,
 } from './ShapeDB.js';
 export {
   EphemeralShapeDB,

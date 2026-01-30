@@ -3,8 +3,9 @@ import type { PluginWorkerId } from '@hierarchidb/runtime-worker';
 import { configureWorkerContainer, WorkerDiTokens } from '@hierarchidb/runtime-worker';
 import type { Remote } from 'comlink';
 import { pluginRegistry } from '~/plugin-loaders/index.ts';
-import { pluginWorkerLoaders, pluginWorkerPreloads } from '~/plugin-loaders/worker-loaders.ts';
+import { pluginWorkerLoaders } from '~/plugin-loaders/worker-loaders.ts';
 import { loadWorkerAPIClientModule } from './workerApiClientLoader.js';
+import { APP_WORKER_STORE_PRELOADS } from '../plugin-runtime/store-selection.ts';
 
 // NOTE: Worker runtime-worker and plugin worker modules are no longer imported through
 // legacy `*/worker` subpath specifiers.  Instead we delegate to the
@@ -15,8 +16,8 @@ import { loadWorkerAPIClientModule } from './workerApiClientLoader.js';
 
 type ModulePathsModule = typeof import('@hierarchidb/runtime-worker');
 
-const pluginWorkerPreloadMap = pluginWorkerPreloads as Record<string, string[]>;
-const PLUGINS_TO_PRELOAD = Object.keys(pluginWorkerPreloadMap) as PluginWorkerId[];
+const pluginWorkerPreloadMap = APP_WORKER_STORE_PRELOADS as Record<string, string[]>;
+const PLUGINS_TO_PRELOAD = Object.keys(APP_WORKER_STORE_PRELOADS) as PluginWorkerId[];
 
 const hasWorkerExport = (nodeType: string): boolean => {
   const entry = pluginRegistry.find((item) => item.nodeType === nodeType);

@@ -8,7 +8,7 @@
  * - Vector tiles
  */
 
-import type { Table } from 'dexie';
+import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { Geometry } from 'geojson';
@@ -448,3 +448,8 @@ export class ShapeDB extends VectorTileDbBase {
 
 // Singleton instance
 export const shapeDB = new ShapeDB();
+
+export async function clearShapeDatabases(): Promise<void> {
+  await Dexie.delete(getDBName('shape'));
+  await Dexie.delete(getDBName('shape-ephemeral'));
+}
