@@ -99,7 +99,8 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "@hierarchidb/plugin-base": "workspace:*",
-    "@hierarchidb/ui-tabular": "workspace:*"
+    "@hierarchidb/ui-tabular": "workspace:*",
+    "@hierarchidb/ui-accordion-config": "workspace:*"
   },
   "devDependencies": {
     "@hierarchidb/auth-recovery": "workspace:*",
@@ -122,7 +123,8 @@
     "@mui/icons-material": "^7.3.6",
     "@types/geojson": "^7946.0.14",
     "@types/node": "^20.10.5",
-    "typescript": "workspace:^5.9.3"
+    "typescript": "workspace:^5.9.3",
+    "@hierarchidb/ui-accordion-config": "workspace:*"
   },
   "hierarchidb": {
     "plugin": {

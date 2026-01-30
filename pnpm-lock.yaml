@@ -920,9 +920,15 @@ importers:
 
   packages/features/route-store:
     devDependencies:
+      '@hierarchidb/common-api':
+        specifier: workspace:*
+        version: link:../../common/api
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../common/types
+      '@hierarchidb/gis-sdk':
+        specifier: workspace:*
+        version: link:../gis-sdk
       '@hierarchidb/location-store':
         specifier: workspace:*
         version: link:../location-store
@@ -1542,6 +1548,13 @@ importers:
   packages/tools/schemas: {}
 
   packages/ui/accordion-config:
+    dependencies:
+      '@hierarchidb/gis-sdk':
+        specifier: workspace:*
+        version: link:../../features/gis-sdk
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../../util
     devDependencies:
       '@mui/icons-material':
         specifier: ^7.3.6
@@ -3406,6 +3419,9 @@ importers:
       '@hierarchidb/tabular-store':
         specifier: workspace:*
         version: link:../../packages/features/tabular-store
+      '@hierarchidb/ui-accordion-config':
+        specifier: workspace:*
+        version: link:../../packages/ui/accordion-config
       '@hierarchidb/ui-auth':
         specifier: workspace:*
         version: link:../../packages/ui/auth

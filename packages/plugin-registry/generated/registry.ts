@@ -616,7 +616,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "react",
         "react-dom",
         "@hierarchidb/plugin-base",
-        "@hierarchidb/ui-tabular"
+        "@hierarchidb/ui-tabular",
+        "@hierarchidb/ui-accordion-config"
       ],
     exports: ["","worker","icon","database","ui"],
     manifest: {
@@ -667,7 +668,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "react",
           "react-dom",
           "@hierarchidb/plugin-base",
-          "@hierarchidb/ui-tabular"
+          "@hierarchidb/ui-tabular",
+          "@hierarchidb/ui-accordion-config"
         ],
         "icon": {
           "mui": "Route",

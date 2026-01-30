@@ -40,7 +40,10 @@
     "directory": "packages/ui-accordion-config"
   },
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "@hierarchidb/gis-sdk": "workspace:*",
+    "@hierarchidb/util": "workspace:*"
+  },
   "devDependencies": {
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",

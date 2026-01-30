@@ -24,7 +24,9 @@
     "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/vectortile-store": "workspace:*",
-    "dexie": "^4.2.0"
+    "dexie": "^4.2.0",
+    "@hierarchidb/gis-sdk": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*"
   },
   "devDependencies": {
     "@hierarchidb/common-types": "workspace:*",
@@ -33,6 +35,8 @@
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/vectortile-store": "workspace:*",
     "dexie": "^4.2.0",
-    "typescript": "workspace:^5.9.3"
+    "typescript": "workspace:^5.9.3",
+    "@hierarchidb/gis-sdk": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*"
   }
 }
