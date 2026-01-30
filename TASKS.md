@@ -1,3 +1,119 @@
+2428) fix/tsconfig/paths-no-src (P1) — 完了 (2026-01-30)
+- ブランチ名: fix/tsconfig/paths-no-src
+- 依存: なし
+- 受け入れ基準: tsconfig.base.json の paths で packages/plugins の src を指すエントリが撤去され、dist/*.d.ts へ修正される／dependency-guard が exit 0 になる／TASKS.md に運用ログを記載する
+- 影響範囲: `tsconfig.base.json`
+- ロールバック手順: tsconfig.base.json の該当 paths を src 指向へ戻す
+- チェックリスト:
+  - tsconfig.base.json の該当 paths を dist 指向へ更新する
+  - dependency-guard を実行して exit 0 を確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-30 12:14 JST dependency-guard の tsconfig paths no-src エラー対応に着手。
+  - update: 2026-01-30 12:16 JST tsconfig.base.json の location/shape/route/gen-iso の paths を dist 指向へ修正。
+  - done: 2026-01-30 12:17 JST node scripts/with-clean-npm-config.mjs node scripts/run-dependency-guard.mjs exit 0 を確認。
+
+2429) fix/deps/break-cycle-location-route (P1) — 完了 (2026-01-30)
+- ブランチ名: fix/deps/break-cycle-location-route
+- 依存: なし
+- 受け入れ基準: cyclic dependency が解消され dependency graph 検証が pass する／依存関係の変更理由を記録する／必要範囲の typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/plugin-service-api/package.json`, `packages/features/location-api/package.json`, `packages/features/route-api/package.json`（必要に応じて追加）
+- ロールバック手順: 依存関係の差分を revert して元の依存構成へ戻す
+- チェックリスト:
+  - 循環依存を構成する依存関係を特定する
+  - 依存関係を整理して循環を解消する
+  - dependency graph 検証を実行する
+  - 必要範囲の typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-30 12:18 JST dependency graph の循環依存解消に着手。
+  - update: 2026-01-30 12:22 JST location-api の ShapeContainerNodeId 依存を NodeId へ置換し shape-store の依存を撤去。
+  - update: 2026-01-30 12:24 JST pnpm -w list --depth -1 --json → package dependency graph を生成し cycles detected: none を確認。
+  - done: 2026-01-30 12:24 JST 循環依存の解消を完了。
+
+2430) investigation/plugin-service-api-current-scope (P1) — 完了 (2026-01-30)
+- ブランチ名: investigation/plugin-service-api-current-scope
+- 依存: なし
+- 受け入れ基準: plugin-service-api に残っているモジュール/責務/依存を整理し、location-api/route-api への移行済み/未移行を区別して報告できる／廃止に向けた作業計画を提示できる／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/plugin-service-api/src/**`, `packages/features/location-api/src/**`, `packages/features/route-api/src/**`, `plans/**`（調査結果に応じて追加）
+- ロールバック手順: 調査のみのため差分なし
+- チェックリスト:
+  - plugin-service-api の残存モジュール/責務/依存を整理する
+  - location-api/route-api への移行状況を分類する
+  - 廃止に向けた段階計画と検証項目を提示する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-30 12:29 JST plugin-service-api の現状整理と廃止計画の策定に着手。
+  - update: 2026-01-30 12:31 JST plugin-service-api の残存モジュール/依存/参照先を整理し、廃止に向けた移行計画案を作成。
+  - done: 2026-01-30 12:31 JST 調査と計画提示の準備を完了。
+
+2431) feat/shape-api/move-shape-types (P1) — 完了 (2026-01-30)
+- ブランチ名: feat/shape-api/move-shape-types
+- 依存: なし
+- 受け入れ基準: @hierarchidb/shape-api を新設し EphemeralShapeAPI/ShapeQueryAPI/ShapeMutationAPI と依存型を移行する／plugin-service-api から該当型の export を撤去する／参照先を shape-api へ切替する／必要範囲の typecheck/build が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/shape-api/src/**`, `packages/plugin-service-api/src/**`, `packages/**`, `plugins/shape-plugin/src/**`, `app/src/**`（必要に応じて追加）
+- ロールバック手順: 追加した shape-api を削除し、plugin-service-api の shape 型を復元、参照を元に戻す
+- チェックリスト:
+  - shape-api を新設し shape 系型を移行する
+  - plugin-service-api から shape 系型を削除する
+  - 参照先を shape-api へ切替する
+  - 影響範囲の build/typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-30 13:00 JST shape-api 新設と shape 型移行に着手。
+  - update: 2026-01-30 13:08 JST shape-api を追加し shape 系型（ShapeQuery/Mutation/Ephemeral と build/db/types）を移行。plugin-service-api の該当 export を撤去し、参照先を shape-api へ切替。
+  - update: 2026-01-30 13:13 JST ui-accordion-config をジェネリック対応し shape-plugin の型不一致を解消。
+  - update: 2026-01-30 13:15 JST pnpm --filter @hierarchidb/shape-api build/typecheck、@hierarchidb/ui-accordion-config build、@hierarchidb/shape-plugin typecheck、@hierarchidb/runtime-worker typecheck、@hierarchidb/app typecheck を実行（exit 0）。
+  - update: 2026-01-30 13:15 JST pnpm install を実行（peer dependency 警告あり）。
+  - done: 2026-01-30 13:15 JST shape-api への移行を完了。
+
+2432) fix/route-plugin/ide-gsm-waypoints (P1) — 進行中 (2026-01-30)
+- ブランチ名: fix/route-plugin/ide-gsm-waypoints
+- 依存: なし
+- 受け入れ基準: ideGsmWaypoints.ts の number | undefined エラーを解消する／pnpm --filter @hierarchidb/route-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/route-plugin/src/services/ide-gsm/ideGsmWaypoints.ts`
+- ロールバック手順: 該当差分を revert して元の実装へ戻す
+- チェックリスト:
+  - ideGsmWaypoints.ts の undefined ガードを追加する
+  - pnpm --filter @hierarchidb/route-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-30 13:06 JST ideGsmWaypoints の typecheck エラー修正に着手。
+  - update: 2026-01-30 13:08 JST start/end の緯度経度が未定義の場合に waypoints を生成しないガードを追加。
+  - done: 2026-01-30 13:08 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+
+2433) fix/route-api/routepoint-required-latlng (P1) — 進行中 (2026-01-30)
+- ブランチ名: fix/route-api/routepoint-required-latlng
+- 依存: なし
+- 受け入れ基準: RoutePoint の latitude/longitude を必須化する／依存箇所の型整合が取れる／pnpm --filter @hierarchidb/route-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/route-api/src/routeTypes.ts`, `plugins/route-plugin/src/services/ide-gsm/ideGsmWaypoints.ts`（必要に応じて追加）
+- ロールバック手順: RoutePoint の型を元に戻し、関連修正を revert する
+- チェックリスト:
+  - RoutePoint の latitude/longitude を必須化する
+  - 参照箇所の型整合を確認する
+  - pnpm --filter @hierarchidb/route-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-30 13:11 JST RoutePoint の緯度経度必須化に着手。
+  - blocked: 2026-01-30 13:13 JST route-plugin typecheck が route-api の dist 型未更新で失敗。
+  - update: 2026-01-30 13:14 JST pnpm --filter @hierarchidb/route-api build を実行（tsdown define warning あり）。
+  - done: 2026-01-30 13:14 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+
+2434) fix/location-plugin/preview-step-cast (P1) — 進行中 (2026-01-30)
+- ブランチ名: fix/location-plugin/preview-step-cast
+- 依存: なし
+- 受け入れ基準: LocationMapPreviewStep の Record キャストエラーを解消する／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`
+- ロールバック手順: 該当差分を revert して元のキャストに戻す
+- チェックリスト:
+  - Record キャストの型整合を修正する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-30 13:15 JST LocationMapPreviewStep のキャストエラー修正に着手。
+  - update: 2026-01-30 13:17 JST LocationPointProperties の型に合わせて Record キャストを撤去し、tileId 解決を型安全化。
+  - done: 2026-01-30 13:17 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+
 2424) refactor/location-store/index-cleanup (P1) — 完了 (2026-01-29)
 - ブランチ名: refactor/location-store/index-cleanup
 - 依存: なし
@@ -90,6 +206,8 @@
   - update: 2026-01-29 21:20 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
   - update: 2026-01-29 21:23 JST pnpm --filter @hierarchidb/route-store build exit 0（tsdown define warning あり）。
   - update: 2026-01-29 21:24 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+  - start: 2026-01-30 12:35 JST ui-accordion-config の typecheck 失敗（build-config セクションの update 型エラー）修正に着手。
+  - update: 2026-01-30 12:40 JST FetchConfigSection/VTConfigSection の update 型を BaseBuildConfig に統一し、pnpm --filter @hierarchidb/ui-accordion-config typecheck exit 0 を確認。
 
 2424) fix/location/idegdm-pointid-type (P1) — 完了 (2026-01-29)
 - ブランチ名: fix/location/idegdm-pointid-type
@@ -324,6 +442,8 @@
   - start: 2026-01-30 13:20 JST route IDE-GSM CSV のパース/検証を route-api へ移動し、runtime-worker/route-plugin はラッパー化する作業に着手（DoD 合意済み）。未追跡ファイル（packages/features/resolver-store、plans/app-db-init-responsibility-execplan.md）の扱いは確認中。
   - update: 2026-01-30 13:35 JST route-api に IDE-GSM CSV の parse/validate を集約し、runtime-worker/route-plugin 側はラッパーに整理。
   - update: 2026-01-30 13:35 JST pnpm --filter @hierarchidb/route-api build / pnpm --filter @hierarchidb/plugin-service-api build / pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-30 14:05 JST plugin-service-api から route-api 依存を撤去（Route* 型はローカル定義、IdeGsmRouteError は route-api 直参照へ移行）し、循環依存の解消方針に合わせて整理。
+  - update: 2026-01-30 14:05 JST pnpm --filter @hierarchidb/plugin-service-api build / pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
 
 2416) fix/depgraph/route-store-common-api-cycle (P1) — 完了 (2026-01-28)
 - ブランチ名: fix/depgraph/route-store-common-api-cycle

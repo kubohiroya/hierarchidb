@@ -310,12 +310,18 @@ importers:
       '@hierarchidb/plugin-ui-sdk':
         specifier: workspace:*
         version: link:../packages/plugin-ui-sdk
+      '@hierarchidb/resolver-store':
+        specifier: workspace:*
+        version: link:../packages/features/resolver-store
       '@hierarchidb/route-store':
         specifier: workspace:*
         version: link:../packages/features/route-store
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../packages/runtime-worker
+      '@hierarchidb/shape-api':
+        specifier: workspace:*
+        version: link:../packages/features/shape-api
       '@hierarchidb/shape-store':
         specifier: workspace:*
         version: link:../packages/features/shape-store
@@ -582,9 +588,9 @@ importers:
       '@hierarchidb/plugin-service-api':
         specifier: workspace:*
         version: link:../../plugin-service-api
-      '@hierarchidb/route-store':
+      '@hierarchidb/shape-api':
         specifier: workspace:*
-        version: link:../../features/route-store
+        version: link:../../features/shape-api
       comlink:
         specifier: ^4.4.2
         version: 4.4.2
@@ -747,9 +753,9 @@ importers:
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../common/types
-      '@hierarchidb/plugin-service-api':
+      '@hierarchidb/shape-api':
         specifier: workspace:*
-        version: link:../../plugin-service-api
+        version: link:../shape-api
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../util
@@ -824,7 +830,7 @@ importers:
         specifier: 5.8.2
         version: 5.8.2
 
-  packages/features/location-store:
+  packages/features/location-api:
     devDependencies:
       '@hierarchidb/common-types':
         specifier: workspace:*
@@ -832,9 +838,21 @@ importers:
       '@hierarchidb/gen-iso3166-2':
         specifier: workspace:*
         version: link:../../tools/gen-iso3166-2
-      '@hierarchidb/plugin-service-api':
+      '@hierarchidb/util':
         specifier: workspace:*
-        version: link:../../plugin-service-api
+        version: link:../../util
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
+  packages/features/location-store:
+    devDependencies:
+      '@hierarchidb/common-types':
+        specifier: workspace:*
+        version: link:../../common/types
+      '@hierarchidb/location-api':
+        specifier: workspace:*
+        version: link:../location-api
       '@hierarchidb/shape-store':
         specifier: workspace:*
         version: link:../shape-store
@@ -883,6 +901,39 @@ importers:
         specifier: 5.8.2
         version: 5.8.2
 
+  packages/features/resolver-store:
+    devDependencies:
+      '@hierarchidb/common-types':
+        specifier: workspace:*
+        version: link:../../common/types
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../../util
+      dexie:
+        specifier: 4.2.0
+        version: 4.2.0
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
+  packages/features/route-api:
+    devDependencies:
+      '@hierarchidb/common-api':
+        specifier: workspace:*
+        version: link:../../common/api
+      '@hierarchidb/common-types':
+        specifier: workspace:*
+        version: link:../../common/types
+      '@hierarchidb/gis-sdk':
+        specifier: workspace:*
+        version: link:../gis-sdk
+      '@hierarchidb/location-api':
+        specifier: workspace:*
+        version: link:../location-api
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
   packages/features/route-engine:
     devDependencies:
       '@hierarchidb/route-store':
@@ -920,21 +971,12 @@ importers:
 
   packages/features/route-store:
     devDependencies:
-      '@hierarchidb/common-api':
-        specifier: workspace:*
-        version: link:../../common/api
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../common/types
-      '@hierarchidb/gis-sdk':
+      '@hierarchidb/route-api':
         specifier: workspace:*
-        version: link:../gis-sdk
-      '@hierarchidb/location-store':
-        specifier: workspace:*
-        version: link:../location-store
-      '@hierarchidb/plugin-service-api':
-        specifier: workspace:*
-        version: link:../../plugin-service-api
+        version: link:../route-api
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../util
@@ -948,6 +990,15 @@ importers:
         specifier: 5.8.2
         version: 5.8.2
 
+  packages/features/shape-api:
+    devDependencies:
+      '@hierarchidb/common-types':
+        specifier: workspace:*
+        version: link:../../common/types
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
   packages/features/shape-store:
     devDependencies:
       '@hierarchidb/common-types':
@@ -956,9 +1007,9 @@ importers:
       '@hierarchidb/gis-sdk':
         specifier: workspace:*
         version: link:../gis-sdk
-      '@hierarchidb/plugin-service-api':
+      '@hierarchidb/shape-api':
         specifier: workspace:*
-        version: link:../../plugin-service-api
+        version: link:../shape-api
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../util
@@ -1093,9 +1144,9 @@ importers:
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../common/types
-      '@hierarchidb/plugin-service-api':
+      '@hierarchidb/shape-api':
         specifier: workspace:*
-        version: link:../../plugin-service-api
+        version: link:../shape-api
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../util
@@ -1193,6 +1244,9 @@ importers:
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../common/types
+      '@hierarchidb/location-api':
+        specifier: workspace:*
+        version: link:../features/location-api
     devDependencies:
       '@types/react-transition-group':
         specifier: ^4.4.10
@@ -1348,12 +1402,18 @@ importers:
       '@hierarchidb/plugin-service-api':
         specifier: workspace:*
         version: link:../plugin-service-api
+      '@hierarchidb/route-api':
+        specifier: workspace:*
+        version: link:../features/route-api
       '@hierarchidb/route-engine':
         specifier: workspace:*
         version: link:../features/route-engine
       '@hierarchidb/route-store':
         specifier: workspace:*
         version: link:../features/route-store
+      '@hierarchidb/shape-api':
+        specifier: workspace:*
+        version: link:../features/shape-api
       '@hierarchidb/shape-store':
         specifier: workspace:*
         version: link:../features/shape-store
@@ -2819,6 +2879,9 @@ importers:
       '@hierarchidb/plugin-service-api':
         specifier: workspace:*
         version: link:../plugin-service-api
+      '@hierarchidb/shape-api':
+        specifier: workspace:*
+        version: link:../features/shape-api
       '@hierarchidb/shape-store':
         specifier: workspace:*
         version: link:../features/shape-store
@@ -3116,6 +3179,9 @@ importers:
       '@hierarchidb/gen-iso3166-2':
         specifier: workspace:*
         version: link:../../packages/tools/gen-iso3166-2
+      '@hierarchidb/location-api':
+        specifier: workspace:*
+        version: link:../../packages/features/location-api
       '@hierarchidb/location-store':
         specifier: workspace:*
         version: link:../../packages/features/location-store
@@ -3346,6 +3412,9 @@ importers:
       '@hierarchidb/plugin-ui-sdk':
         specifier: workspace:*
         version: link:../../packages/plugin-ui-sdk
+      '@hierarchidb/route-api':
+        specifier: workspace:*
+        version: link:../../packages/features/route-api
       '@hierarchidb/route-engine':
         specifier: workspace:*
         version: link:../../packages/features/route-engine
@@ -3564,6 +3633,9 @@ importers:
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../../packages/runtime-worker
+      '@hierarchidb/shape-api':
+        specifier: workspace:*
+        version: link:../../packages/features/shape-api
       '@hierarchidb/spreadsheet-plugin':
         specifier: workspace:*
         version: link:../spreadsheet-plugin
