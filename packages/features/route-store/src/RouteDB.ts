@@ -23,7 +23,7 @@ export type RouteVectorTileRecord = {
 };
 
 export class RouteDB extends VectorTileDbBase {
-  features!: Table<RouteFeature, NodeId>;
+  features!: Table<RouteFeature, RouteFeature['id']>;
   vectorTiles!: Table<RouteVectorTileRecord, string>;
 
   constructor(dbName: string = getDBName('route')) {
