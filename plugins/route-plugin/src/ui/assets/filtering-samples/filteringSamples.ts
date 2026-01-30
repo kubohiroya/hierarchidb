@@ -1,0 +1,38 @@
+const toDataUrl = (svg: string): string =>
+  `data:image/svg+xml;utf8,${encodeURIComponent(svg.trim())}`;
+
+export const filteringLowUrl = toDataUrl(`
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="210" viewBox="0 0 360 210">
+  <rect width="360" height="210" fill="#bfe9ff" />
+  <g fill="#4fb96a">
+    <path d="M60 110 L90 90 L128 88 L156 102 L170 126 L164 150 L140 168 L108 172 L78 158 L62 136 Z" />
+    <path d="M220 60 L240 50 L266 52 L286 66 L292 90 L280 108 L254 114 L230 104 L218 84 Z" />
+    <path d="M260 140 L276 134 L292 138 L302 152 L300 170 L286 180 L268 176 L258 160 Z" />
+    <circle cx="178" cy="96" r="5" />
+    <circle cx="195" cy="110" r="6" />
+    <circle cx="210" cy="124" r="5" />
+    <circle cx="188" cy="140" r="4" />
+    <circle cx="204" cy="152" r="5" />
+  </g>
+</svg>
+`);
+
+export const filteringMediumUrl = toDataUrl(`
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="210" viewBox="0 0 360 210">
+  <rect width="360" height="210" fill="#bfe9ff" />
+  <g fill="#4fb96a">
+    <path d="M60 110 L90 90 L128 88 L156 102 L170 126 L164 150 L140 168 L108 172 L78 158 L62 136 Z" />
+    <path d="M220 60 L240 50 L266 52 L286 66 L292 90 L280 108 L254 114 L230 104 L218 84 Z" />
+    <path d="M260 140 L276 134 L292 138 L302 152 L300 170 L286 180 L268 176 L258 160 Z" />
+  </g>
+</svg>
+`);
+
+export const filteringHighUrl = toDataUrl(`
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="210" viewBox="0 0 360 210">
+  <rect width="360" height="210" fill="#bfe9ff" />
+  <g fill="#4fb96a">
+    <path d="M60 110 L90 90 L128 88 L156 102 L170 126 L164 150 L140 168 L108 172 L78 158 L62 136 Z" />
+  </g>
+</svg>
+`);
