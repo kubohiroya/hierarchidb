@@ -4,7 +4,7 @@ import {
   TREE_CONSOLE_DEFAULT_ZOOM_BAND_BOUNDARIES,
   loadTreeConsoleSettings,
 } from '@hierarchidb/util';
-import type { RouteEntity } from '@hierarchidb/route-store';
+import type { RouteEntity } from '@hierarchidb/route-api';
 import { DEFAULT_ROUTE_BUILD_CONFIG, mergeRouteBuildConfig } from '../../../common/config/buildConfig.js';
 
 const resolveInitialBuildConfig = (dataSourceName?: string) => {

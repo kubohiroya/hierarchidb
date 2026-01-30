@@ -1,4 +1,6 @@
-import type { CountryCode, NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/common-types';
+import type { IdeGsmSelectionEntry } from '@hierarchidb/location-api';
+import type { IdeGsmRouteError } from '@hierarchidb/route-api';
 
 export type IdeGsmImportPhase =
   | 'fetch'
@@ -23,12 +25,6 @@ export type IdeGsmImportProgress = {
 
 export type IdeGsmImportCallback = (progress: IdeGsmImportProgress) => void;
 
-export type IdeGsmSelectionEntry = {
-  countryCode: CountryCode;
-  countryName: string;
-  types: string[];
-};
-
 export type IdeGsmLocationPointInput = {
   lon: number;
   lat: number;
@@ -36,13 +32,7 @@ export type IdeGsmLocationPointInput = {
   properties?: Record<string, unknown>;
 };
 
-export type IdeGsmRouteError = {
-  id: string;
-  rowNumber: number;
-  start: string;
-  end: string;
-  reason: string;
-};
+export type { IdeGsmRouteError };
 
 export type IdeGsmLocationImportRequest = {
   nodeId: NodeId;

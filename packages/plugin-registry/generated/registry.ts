@@ -318,6 +318,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     version: "0.1.0",
     dependencies: [
         "@hierarchidb/gen-iso3166-2",
+        "@hierarchidb/location-api",
         "@hierarchidb/location-store",
         "@hierarchidb/ui-country-select",
         "@hierarchidb/ui-tabular",
@@ -357,12 +358,13 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/plugin-base",
         "@hierarchidb/ui-worker-client",
         "@hierarchidb/ui-search-field",
+        "@hierarchidb/location-api",
         "@hierarchidb/location-store",
         "@hierarchidb/gis-sdk",
         "react-virtuoso",
         "notistack"
       ],
-    exports: ["","worker","icon","ui","database"],
+    exports: ["","worker","icon","ui"],
     manifest: {
         "id": "@hierarchidb/location-plugin",
         "name": "Location Plugin",
@@ -374,6 +376,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "priority": 40,
         "dependencies": [
           "@hierarchidb/gen-iso3166-2",
+          "@hierarchidb/location-api",
           "@hierarchidb/location-store",
           "@hierarchidb/ui-country-select",
           "@hierarchidb/ui-tabular",
@@ -413,6 +416,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/plugin-base",
           "@hierarchidb/ui-worker-client",
           "@hierarchidb/ui-search-field",
+          "@hierarchidb/location-api",
           "@hierarchidb/location-store",
           "@hierarchidb/gis-sdk",
           "react-virtuoso",
@@ -440,12 +444,33 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           ]
         },
         "database": {
-          "prewarm": [
-            {
-              "export": "getLocationDB",
-              "specifier": "@hierarchidb/location-plugin/database"
-            }
-          ]
+          "dbName": "location",
+          "tableName": "features",
+          "version": 12,
+          "schema": {
+            "fields": [
+              {
+                "name": "nodeId",
+                "indexed": true
+              },
+              {
+                "name": "id",
+                "indexed": true
+              },
+              {
+                "name": "type",
+                "indexed": true
+              },
+              {
+                "name": "mortonKey",
+                "indexed": true
+              },
+              {
+                "name": "updatedAt",
+                "indexed": true
+              }
+            ]
+          }
         },
         "packageName": "@hierarchidb/location-plugin"
       },
@@ -460,10 +485,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     worker: {
         specifier: "@hierarchidb/location-plugin/worker",
         source: "plugins/location-plugin/src/worker/index.ts",
-      },
-    database: {
-        specifier: "@hierarchidb/location-plugin/database",
-        source: "plugins/location-plugin/src/database/index.ts",
       },
     icon: {
         specifier: "@hierarchidb/location-plugin/icon",
@@ -497,7 +518,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/runtime-worker",
         "@hierarchidb/plugin-base"
       ],
-    exports: ["","database","icon","ui"],
+    exports: ["","icon","ui"],
     manifest: {
         "id": "@hierarchidb/resolver-plugin",
         "name": "Resolver Plugin",
@@ -544,12 +565,25 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "treeId": "*"
         },
         "database": {
-          "prewarm": [
-            {
-              "export": "resolverEntitiesDB",
-              "specifier": "@hierarchidb/resolver-plugin/database"
-            }
-          ]
+          "dbName": "resolver-db",
+          "tableName": "resolvers",
+          "version": 1,
+          "schema": {
+            "fields": [
+              {
+                "name": "id",
+                "indexed": true
+              },
+              {
+                "name": "nodeId",
+                "indexed": true
+              },
+              {
+                "name": "name",
+                "indexed": true
+              }
+            ]
+          }
         },
         "packageName": "@hierarchidb/resolver-plugin"
       },
@@ -560,10 +594,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     ui: {
         specifier: "@hierarchidb/resolver-plugin/ui",
         source: "plugins/resolver-plugin/src/ui/index.ts",
-      },
-    database: {
-        specifier: "@hierarchidb/resolver-plugin/database",
-        source: "plugins/resolver-plugin/src/worker/database/index.ts",
       },
     icon: {
         specifier: "@hierarchidb/resolver-plugin/icon",
@@ -579,6 +609,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     dependencies: [
         "dexie",
         "@hierarchidb/location-store",
+        "@hierarchidb/route-api",
         "@hierarchidb/route-engine",
         "@hierarchidb/route-store",
         "@hierarchidb/vt-orchestrator",
@@ -596,6 +627,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/runtime-worker",
         "@hierarchidb/ui-worker-client",
         "@hierarchidb/location-store",
+        "@hierarchidb/route-api",
         "@hierarchidb/route-engine",
         "@hierarchidb/route-store",
         "@hierarchidb/ui-plugin-basic-info",
@@ -619,7 +651,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/ui-tabular",
         "@hierarchidb/ui-accordion-config"
       ],
-    exports: ["","worker","icon","database","ui"],
+    exports: ["","worker","icon","ui"],
     manifest: {
         "id": "@hierarchidb/route-plugin",
         "name": "Route Plugin",
@@ -631,6 +663,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "dependencies": [
           "dexie",
           "@hierarchidb/location-store",
+          "@hierarchidb/route-api",
           "@hierarchidb/route-engine",
           "@hierarchidb/route-store",
           "@hierarchidb/vt-orchestrator",
@@ -648,6 +681,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/runtime-worker",
           "@hierarchidb/ui-worker-client",
           "@hierarchidb/location-store",
+          "@hierarchidb/route-api",
           "@hierarchidb/route-engine",
           "@hierarchidb/route-store",
           "@hierarchidb/ui-plugin-basic-info",
@@ -691,12 +725,45 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           ]
         },
         "database": {
-          "prewarm": [
-            {
-              "export": "RouteDB",
-              "specifier": "@hierarchidb/route-plugin/database"
-            }
-          ]
+          "dbName": "route",
+          "tableName": "features",
+          "version": 3,
+          "schema": {
+            "fields": [
+              {
+                "name": "id",
+                "indexed": true
+              },
+              {
+                "name": "nodeId",
+                "indexed": true
+              },
+              {
+                "name": "startLocationId",
+                "indexed": true
+              },
+              {
+                "name": "endLocationId",
+                "indexed": true
+              },
+              {
+                "name": "transportMode",
+                "indexed": true
+              },
+              {
+                "name": "processingStatus",
+                "indexed": true
+              },
+              {
+                "name": "createdAt",
+                "indexed": true
+              },
+              {
+                "name": "updatedAt",
+                "indexed": true
+              }
+            ]
+          }
         },
         "packageName": "@hierarchidb/route-plugin"
       },
@@ -711,10 +778,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     worker: {
         specifier: "@hierarchidb/route-plugin/worker",
         source: "plugins/route-plugin/src/worker/index.ts",
-      },
-    database: {
-        specifier: "@hierarchidb/route-plugin/database",
-        source: "plugins/route-plugin/src/services/database/index.ts",
       },
     icon: {
         specifier: "@hierarchidb/route-plugin/icon",
@@ -903,6 +966,35 @@ export const pluginRegistry: PluginRegistryEntry[] = [
             "registerShapeWorkerStores",
             "loadShapeEntitiesDbModule"
           ]
+        },
+        "database": {
+          "dbName": "shape",
+          "tableName": "features",
+          "version": 7,
+          "schema": {
+            "fields": [
+              {
+                "name": "nodeId",
+                "indexed": true
+              },
+              {
+                "name": "adminLevel",
+                "indexed": true
+              },
+              {
+                "name": "featureId",
+                "indexed": true
+              },
+              {
+                "name": "createdAt",
+                "indexed": true
+              },
+              {
+                "name": "updatedAt",
+                "indexed": true
+              }
+            ]
+          }
         },
         "packageName": "@hierarchidb/shape-plugin"
       },

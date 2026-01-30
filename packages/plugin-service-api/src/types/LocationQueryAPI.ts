@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { LocationGroupItemData, LocationRelationMeta } from './locationTypes.js';
+import type { LocationFeature, LocationGroupItemData, LocationRelationMeta } from '@hierarchidb/location-api';
 
 export interface LocationGroupItem {
   id: string;
@@ -64,6 +64,7 @@ export interface LocationNearestPointResponse {
  * Data is persisted independently and is not yet tied to TreeNode lifecycle events.
  */
 export interface LocationQueryAPI {
+  listLocationFeatures(nodeId: NodeId): Promise<LocationFeature[]>;
   listLocationGroups(nodeId: NodeId): Promise<LocationGroupItem[]>;
   listLocationRelations(nodeId: NodeId): Promise<LocationRelation[]>;
   queryByViewport(
@@ -72,7 +73,7 @@ export interface LocationQueryAPI {
     zoom: number,
     types?: string[],
     options?: LocationViewportQueryOptions,
-  ): Promise<LocationGroupItem[]>;
-  queryByMortonPrefixes(nodeId: NodeId, prefixes: string[], types?: string[]): Promise<LocationGroupItem[]>;
+  ): Promise<LocationFeature[]>;
+  queryByMortonPrefixes(nodeId: NodeId, prefixes: string[], types?: string[]): Promise<LocationFeature[]>;
   findNearestLocationPoint(query: LocationNearestPointQuery): Promise<LocationNearestPointResponse>;
 }

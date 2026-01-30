@@ -8,11 +8,11 @@ import { Suspense, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { DirectionsBoat, DirectionsCar, Flight, Train, Tram } from '@mui/icons-material';
-import type { RouteEntity, RouteUpdaterPayload } from '../../../common/entities/RouteEntity.js';
+import type { RouteEntity, RouteUpdaterPayload } from '@hierarchidb/route-api';
 import { useTranslation } from '../../../common/i18n/index.js';
 import { getRouteUpdaterPayload } from '../../../common/utils/draft.js';
 import { CountryMatrixSelector, useIsoCountries, type MatrixConfig, type MatrixSelection } from '@hierarchidb/ui-country-select';
-import { ROUTE_MODES, type RouteMode } from '@hierarchidb/route-store';
+import { ROUTE_MODES, type RouteMode } from '@hierarchidb/route-api';
 import { AuthReadyGate } from '@hierarchidb/ui-auth';
 
 export interface RouteSelectionStepProps {

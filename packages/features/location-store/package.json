@@ -20,8 +20,7 @@
   },
   "peerDependencies": {
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/gen-iso3166-2": "workspace:*",
-    "@hierarchidb/plugin-service-api": "workspace:*",
+    "@hierarchidb/location-api": "workspace:*",
     "@hierarchidb/shape-store": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/vectortile-store": "workspace:*",
@@ -29,8 +28,7 @@
   },
   "devDependencies": {
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/gen-iso3166-2": "workspace:*",
-    "@hierarchidb/plugin-service-api": "workspace:*",
+    "@hierarchidb/location-api": "workspace:*",
     "@hierarchidb/shape-store": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/vectortile-store": "workspace:*",

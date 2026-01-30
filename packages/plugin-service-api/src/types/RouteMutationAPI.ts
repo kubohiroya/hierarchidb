@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { RouteWaypointInput, RouteWaypointResult } from './routeTypes.js';
+import type { RouteWaypointInput, RouteWaypointResult } from '@hierarchidb/route-api';
 import type {
   IdeGsmImportCallback,
   IdeGsmRouteImportRequest,

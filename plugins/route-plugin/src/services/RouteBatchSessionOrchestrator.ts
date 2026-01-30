@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import { RouteBatchManager, type RouteBatchRouteInput, type RouteBatchManagerDeps } from './RouteBatchManager.js';
 import type { RouteBatchSession } from './RouteBatchSession.js';
-import type { RouteBatchConfig } from '../common/types/BatchConfig.js';
+import type { RouteBatchConfig } from '@hierarchidb/route-store';
 import type {
   BatchProgressCallback,
   BatchProgressEvent,

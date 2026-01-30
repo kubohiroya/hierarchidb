@@ -1,8 +1,8 @@
 import { AbstractBatchSession } from '@hierarchidb/batch-runtime-services';
 import type { BatchProgressEvent } from '@hierarchidb/common-api';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { RouteGenerationConfig, RouteGenerationMethod } from '../common/entities/RouteEntity.js';
-import type { RouteBatchConfig } from '../common/types/BatchConfig.js';
+import type { RouteGenerationConfig, RouteGenerationMethod } from '@hierarchidb/route-store';
+import type { RouteBatchConfig } from '@hierarchidb/route-store';
 import { RouteGenerator } from '@hierarchidb/route-engine';
 import type { TaskQueueRecord } from '@hierarchidb/common-types';
 import { updateTask, type VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';

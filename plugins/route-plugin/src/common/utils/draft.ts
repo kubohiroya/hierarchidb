@@ -1,5 +1,5 @@
 import type { NodeId, TreeNodeMetadata } from '@hierarchidb/common-types';
-import type { RouteUpdaterPayload, RouteEntity } from '../entities/RouteEntity.js';
+import { RouteEntity, RouteUpdaterPayload } from '@hierarchidb/route-store';
 
 export function toRouteUpdaterPayload(
   routeDraft: RouteUpdaterPayload | null,

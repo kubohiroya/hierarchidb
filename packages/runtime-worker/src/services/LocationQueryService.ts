@@ -2,6 +2,7 @@ import type { NodeId } from '@hierarchidb/common-types';
 import {
   clampMortonZoom,
   getLocationDB,
+  type LocationFeature,
   lonLatToTileXY,
   MORTON_KEY_HEX_LENGTH,
   mortonRangeForTile,
@@ -102,11 +103,22 @@ export class LocationQueryService implements LocationQueryAPI {
     );
   }
 
-  async listLocationGroups(nodeId: NodeId): Promise<LocationGroupItem[]> {
-    const store = storeRegistry.getFeatures('location');
+  async listLocationFeatures(nodeId: NodeId): Promise<LocationFeature[]> {
+    const store = storeRegistry.getFeatures<LocationFeature>('location');
     if (store) {
       const items = await store.list(nodeId);
-      return items.map((item) => ({ ...item })) as LocationGroupItem[];
+      return items;
+    }
+    const db = getLocationDB();
+    const rows = await db.features.where('nodeId').equals(nodeId).toArray();
+    return rows;
+  }
+
+  async listLocationGroups(nodeId: NodeId): Promise<LocationGroupItem[]> {
+    const store = storeRegistry.getFeatures<LocationGroupItem>('location');
+    if (store) {
+      const items = await store.list(nodeId);
+      return items.map((item) => toGroupItem(item));
     }
     const db = getLocationDB();
     const rows = await db.features.where('nodeId').equals(nodeId).toArray();
@@ -124,9 +136,9 @@ export class LocationQueryService implements LocationQueryAPI {
     nodeId: NodeId,
     prefixes: string[],
     types?: string[]
-  ): Promise<LocationGroupItem[]> {
+  ): Promise<LocationFeature[]> {
     const db = getLocationDB();
-    const results = new Map<string, LocationGroupItem>();
+    const results = new Map<string, LocationFeature>();
     const normalizedPrefixes = prefixes.filter(
       (prefix) => typeof prefix === 'string' && prefix.length > 0
     );
@@ -148,7 +160,7 @@ export class LocationQueryService implements LocationQueryAPI {
             .toArray();
       for (const row of rows) {
         if (!row.data) continue;
-        results.set(row.id, toGroupItem(row));
+        results.set(row.id, row);
       }
     };
 
@@ -173,7 +185,7 @@ export class LocationQueryService implements LocationQueryAPI {
     zoom: number,
     types?: string[],
     options?: LocationViewportQueryOptions
-  ): Promise<LocationGroupItem[]> {
+  ): Promise<LocationFeature[]> {
     const expanded = expandBbox(bbox, options);
     const targetBbox = normalizeBbox(bbox);
     const z = clampMortonZoom(zoom);
@@ -184,7 +196,7 @@ export class LocationQueryService implements LocationQueryAPI {
     const minY = Math.min(topLeft.y, bottomRight.y);
     const maxY = Math.max(topLeft.y, bottomRight.y);
     const db = getLocationDB();
-    const results = new Map<string, LocationGroupItem>();
+    const results = new Map<string, LocationFeature>();
     const maxPoints = options?.maxPoints ?? 0;
 
     const collectRange = async (start: string, end: string, type?: string) => {
@@ -216,7 +228,7 @@ export class LocationQueryService implements LocationQueryAPI {
           if (!type || !types.includes(String(type))) continue;
         }
         if (!isWithinBbox(longitude, latitude, targetBbox)) continue;
-        results.set(row.id, toGroupItem(row));
+        results.set(row.id, row);
         if (maxPoints > 0 && results.size >= maxPoints) return;
       }
     };

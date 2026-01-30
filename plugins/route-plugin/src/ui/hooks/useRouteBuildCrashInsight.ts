@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { RouteEntity } from '../../common/entities/RouteEntity.js';
+import type { RouteEntity } from '@hierarchidb/route-api';
 import {
   type BuildMonitorConfig,
   getBuildMonitorKey,

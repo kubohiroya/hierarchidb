@@ -21,11 +21,6 @@
       "import": "./dist/icon/index.js",
       "default": "./dist/icon/index.js"
     },
-    "./database": {
-      "types": "./dist/services/database/index.d.ts",
-      "import": "./dist/services/database/index.js",
-      "default": "./dist/services/database/index.js"
-    },
     "./ui": {
       "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.js"
@@ -35,9 +30,6 @@
     "*": {
       "ui": [
         "dist/ui/index.d.ts"
-      ],
-      "database": [
-        "dist/services/database/index.d.ts"
       ],
       "icon": [
         "dist/icon/index.d.ts"
@@ -51,7 +43,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts src/services/database/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/icon/index.ts --config ../../tsdown.config.ts",
+    "build": "tsdown src/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/icon/index.ts --config ../../tsdown.config.ts",
     "test:watch": "vitest",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
@@ -60,6 +52,7 @@
   "dependencies": {
     "dexie": "^4.2.0",
     "@hierarchidb/location-store": "workspace:*",
+    "@hierarchidb/route-api": "workspace:*",
     "@hierarchidb/route-engine": "workspace:*",
     "@hierarchidb/route-store": "workspace:*",
     "@hierarchidb/vt-orchestrator": "workspace:*"
@@ -79,6 +72,7 @@
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
     "@hierarchidb/location-store": "workspace:*",
+    "@hierarchidb/route-api": "workspace:*",
     "@hierarchidb/route-engine": "workspace:*",
     "@hierarchidb/route-store": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
@@ -112,6 +106,7 @@
     "@hierarchidb/ui-auth": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/location-store": "workspace:*",
+    "@hierarchidb/route-api": "workspace:*",
     "@hierarchidb/route-engine": "workspace:*",
     "@hierarchidb/route-store": "workspace:*",
     "@hierarchidb/gis-sdk": "workspace:*",

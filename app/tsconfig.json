@@ -69,6 +69,24 @@
       "@hierarchidb/gis-sdk/*": [
         "../packages/features/gis-sdk/src/*"
       ],
+      "@hierarchidb/gen-iso3166-2": [
+        "../packages/tools/gen-iso3166-2/src/index.ts"
+      ],
+      "@hierarchidb/gen-iso3166-2/browser": [
+        "../packages/tools/gen-iso3166-2/src/browser.ts"
+      ],
+      "@hierarchidb/gen-iso3166-2/node": [
+        "../packages/tools/gen-iso3166-2/src/node.ts"
+      ],
+      "@hierarchidb/gen-iso3166-2/*": [
+        "../packages/tools/gen-iso3166-2/src/*"
+      ],
+      "@hierarchidb/location-api": [
+        "../packages/features/location-api/src/index.ts"
+      ],
+      "@hierarchidb/location-api/*": [
+        "../packages/features/location-api/src/*"
+      ],
       "@hierarchidb/ui-worker-client": [
         "../packages/ui/worker-client/src/index.ts"
       ],
@@ -150,6 +168,18 @@
       ],
       "@hierarchidb/runtime-worker/*": [
         "../packages/runtime-worker/src/*"
+      ],
+      "@hierarchidb/shape-store": [
+        "../packages/features/shape-store/src/index.ts"
+      ],
+      "@hierarchidb/shape-store/*": [
+        "../packages/features/shape-store/src/*"
+      ],
+      "@hierarchidb/route-api": [
+        "../packages/features/route-api/src/index.ts"
+      ],
+      "@hierarchidb/route-api/*": [
+        "../packages/features/route-api/src/*"
       ],
       "@hierarchidb/ui-icon": [
         "../packages/ui/icon/src/index.ts"

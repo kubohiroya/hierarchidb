@@ -1,6 +1,5 @@
 import type { Country } from '@hierarchidb/ui-country-select';
-import type { IdeGsmSelectionEntry } from '@hierarchidb/plugin-service-api';
-import type { LocationPointProperties, LocationType } from '@hierarchidb/location-store';
+import type { IdeGsmSelectionEntry, LocationPointProperties, LocationType } from '@hierarchidb/location-api';
 
 export const buildIdeGsmSelectionHash = (selection: Record<string, boolean[]>): string => {
   const keys = Object.keys(selection).sort();

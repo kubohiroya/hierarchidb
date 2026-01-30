@@ -3,4 +3,4 @@ export type {
   LocationPointMetadata,
   LocationPointId,
   LocationPointProperties,
-} from '@hierarchidb/location-store';
+} from '@hierarchidb/location-api';

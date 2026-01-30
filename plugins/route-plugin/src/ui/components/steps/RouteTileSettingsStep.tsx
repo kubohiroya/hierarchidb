@@ -1,7 +1,7 @@
 import type React from 'react';
 import { useEffect, useId } from 'react';
 import { Box, Grid, Slider, TextField, Typography } from '@mui/material';
-import type { RouteUpdaterPayload } from '../../../common/entities/RouteEntity.js';
+import type { RouteUpdaterPayload } from '@hierarchidb/route-api';
 import { useTranslation } from '../../../common/i18n/index.js';
 
 interface RouteTileSettingsStepProps {

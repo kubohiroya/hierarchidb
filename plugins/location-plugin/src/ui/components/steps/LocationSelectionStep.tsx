@@ -7,12 +7,12 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import type { LocationEntity } from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
-import { parseIdeGsmCsv } from '@hierarchidb/location-store';
+import { parseIdeGsmCsv } from '@hierarchidb/location-api';
 import { downloadFile } from '@hierarchidb/ui-file';
 import { notify } from '@hierarchidb/components';
 import { buildAvailabilityMapFromIdeGsmPoints, buildSelectionMapFromAvailability } from '../../utils/ideGsmSelection.js';
 import type { LocationType } from '../../../common/types/index.js';
-import type { IdeGsmSourceEntry } from '@hierarchidb/location-store';
+import type { IdeGsmSourceEntry } from '@hierarchidb/location-api';
 import { CountryMatrixSelector, useIsoCountries, type Country, type MatrixConfig, type MatrixSelection } from '@hierarchidb/ui-country-select';
 import { BASE_LOCATION_TYPES, resolveTypesForSource } from './locationTypes.js';
 import { AuthReadyGate } from '@hierarchidb/ui-auth';

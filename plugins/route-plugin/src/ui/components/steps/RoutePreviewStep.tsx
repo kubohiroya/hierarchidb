@@ -29,10 +29,9 @@ import {
 } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-types';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
-import type { RouteNearestLineResponse } from '@hierarchidb/plugin-service-api';
-import type { RouteUpdaterPayload } from '../../../common/entities/RouteEntity.js';
+import type { RouteNearestLineResponse, RouteUpdaterPayload } from '@hierarchidb/route-api';
 import { formatDistance, getTransportModeName, useTranslation } from '../../../common/i18n/index.js';
-import { ROUTE_MODES, type RouteMode } from '@hierarchidb/route-store';
+import { ROUTE_MODES, type RouteMode } from '@hierarchidb/route-api';
 import { ROUTE_DATA_SOURCES } from '../../../common/datasource/configs.js';
 
 interface RoutePreviewStepProps {

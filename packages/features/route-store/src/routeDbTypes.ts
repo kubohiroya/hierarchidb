@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { RouteVectorTileRecord } from './RouteDB.js';
-import type { RouteFeature } from './routeTypes.js';
+import type { RouteFeature } from '@hierarchidb/route-api';
 
 export type RouteDatabaseHandle = {
   open?: () => Promise<unknown>;

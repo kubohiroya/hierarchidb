@@ -103,5 +103,5 @@ import type {
   LocationPeerData,
   LocationGroupItemData,
   LocationRelationMeta,
-} from '@hierarchidb/location-store';
+} from '@hierarchidb/location-api';
 export type { LocationPeerData, LocationGroupItemData, LocationRelationMeta };

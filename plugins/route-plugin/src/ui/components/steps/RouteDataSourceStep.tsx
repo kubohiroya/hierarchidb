@@ -11,7 +11,7 @@ import {
   IdeGsmImportPanel,
 } from '@hierarchidb/ui-datasource';
 import { useTranslation } from '../../../common/i18n/index.js';
-import type { RouteEntity, RouteUpdaterPayload } from '../../../common/entities/RouteEntity.js';
+import type { RouteEntity, RouteUpdaterPayload } from '@hierarchidb/route-api';
 import { getRouteUpdaterPayload } from '../../../common/utils/draft.js';
 import { ROUTE_DATA_SOURCES } from '../../../common/datasource/configs.js';
 

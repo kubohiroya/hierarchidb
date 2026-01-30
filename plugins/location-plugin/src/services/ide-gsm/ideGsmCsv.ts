@@ -1,2 +1,2 @@
-export { filterIdeGsmPointsBySelection, parseIdeGsmCsv } from '@hierarchidb/location-store';
-export type { IdeGsmParseResult } from '@hierarchidb/location-store';
+export { filterIdeGsmPointsBySelection, parseIdeGsmCsv } from '@hierarchidb/location-api';
+export type { IdeGsmParseResult } from '@hierarchidb/location-api';

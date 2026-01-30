@@ -5,7 +5,7 @@
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
 import { Dexie, type Table } from 'dexie';
-import type { LocationFeature } from './locationTypes.js';
+import type { LocationFeature } from '@hierarchidb/location-api';
 
 
 export class LocationDB extends Dexie {
@@ -56,6 +56,10 @@ export async function closeLocationDB(): Promise<void> {
     await singleton.close();
     singleton = null;
   }
+}
+
+export async function clearLocationDatabases(): Promise<void> {
+  await Dexie.delete(getDBName('location'));
 }
 
 // Backward-compatible aliases (to be removed after migration window).

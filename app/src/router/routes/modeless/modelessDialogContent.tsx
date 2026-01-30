@@ -9,7 +9,8 @@ import type {
   ShapeFeatureRecord,
   ShapeTransformErrorRecord,
 } from '@hierarchidb/plugin-service-api';
-import { RouteDB, type RouteLineString } from '@hierarchidb/route-store';
+import type { RouteLineString } from '@hierarchidb/route-api';
+import { RouteDB } from '@hierarchidb/route-store';
 import { TabularDatabaseManager, TabularQueryService } from '@hierarchidb/tabular-store';
 import { GenericDataGrid, type GenericDataGridProps, type GridColumn } from '@hierarchidb/ui-grid';
 import type {

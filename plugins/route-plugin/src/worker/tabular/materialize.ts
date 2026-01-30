@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { TabularDataResult } from '@hierarchidb/ui-tabular';
-import { RouteDB } from '../../services/database/RouteDatabase.js';
-import type { RouteEntity } from '../../common/entities/RouteEntity.js';
+import { RouteDB } from '@hierarchidb/route-store';
+import type { RouteEntity } from '@hierarchidb/route-store';
 import type { ProgressReporter } from '@hierarchidb/plugin-service-api';
 
 const toNumber = (val: unknown): number | null => (typeof val === 'number' ? val : null);

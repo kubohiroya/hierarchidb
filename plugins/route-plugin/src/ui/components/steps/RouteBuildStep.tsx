@@ -24,8 +24,7 @@ import {
   type IdeGsmImportProgress,
   type IdeGsmRouteError,
 } from '@hierarchidb/plugin-service-api';
-import type { RouteTransportSelection, RouteUpdaterPayload } from '../../../common/entities/RouteEntity.js';
-import type { RouteEntity } from '../../../common/entities/RouteEntity.js';
+import type { RouteTransportSelection, RouteUpdaterPayload, RouteEntity } from '@hierarchidb/route-api';
 import { useTranslation } from '../../../common/i18n/index.js';
 import { getRouteUpdaterPayload } from '../../../common/utils/draft.js';
 import { useRouteBuildCrashInsight } from '../../hooks/useRouteBuildCrashInsight.js';
@@ -116,6 +115,9 @@ const resolveTransportLabel = (draft: RouteUpdaterPayload, t: (key: string, fall
     throw new Error(`Unsupported transportSelection: ${String(selection)}`);
   }
   const entry = TRANSPORT_SELECTION_LABELS[selection];
+  if (!entry) {
+    return t('stage.notConfigured', 'Not configured');
+  }
   return t(entry.key, entry.fallback);
 };
 

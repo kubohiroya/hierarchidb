@@ -6,8 +6,8 @@
 import type { NodeId } from '@hierarchidb/common-types';
 
 // No longer extend local batch shim; RouteBatchSession provides shared behavior
-import type { RouteGenerationConfig } from '../common/entities/RouteEntity.js';
-import type { RouteBatchConfig } from '../common/types/BatchConfig.js';
+import type { RouteGenerationConfig } from '@hierarchidb/route-store';
+import type { RouteBatchConfig } from '@hierarchidb/route-store';
 import { RouteBatchSession, type RouteBatchTask } from './RouteBatchSession.js';
 import type { BatchProgressEvent } from '@hierarchidb/common-api';
 import { VtTaskQueueDb, putTasks } from '@hierarchidb/vt-orchestrator';

@@ -3,12 +3,12 @@
  * @description Database schema and operations for Route plugin
  */
 
-import type { Table } from 'dexie';
+import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
 import { VectorTileDbBase } from '@hierarchidb/vectortile-store';
 
-import type { RouteFeature } from './routeTypes.js';
+import type { RouteFeature } from '@hierarchidb/route-api';
 
 export type RouteVectorTileRecord = {
   tileId: string;
@@ -39,4 +39,22 @@ export class RouteDB extends VectorTileDbBase {
     this.initVectorTileTables();
   }
 
+}
+
+let singleton: RouteDB | null = null;
+
+export function getRouteDB(): RouteDB {
+  if (!singleton) singleton = new RouteDB();
+  return singleton;
+}
+
+export async function closeRouteDB(): Promise<void> {
+  if (singleton) {
+    await singleton.close();
+    singleton = null;
+  }
+}
+
+export async function clearRouteDatabases(): Promise<void> {
+  await Dexie.delete(getDBName('route'));
 }

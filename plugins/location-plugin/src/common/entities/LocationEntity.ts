@@ -9,7 +9,7 @@ import type {
   LocationProcessingStatus,
   LocationRepresentationByZoomLevelConfig,
   LocationSearchConfig,
-} from '@hierarchidb/location-store';
+} from '@hierarchidb/location-api';
 
 export type {
   LocationType,
@@ -24,7 +24,7 @@ export type {
   LocationIconId,
   LocationLabelConfig,
   IdeGsmSourceEntry,
-} from '@hierarchidb/location-store';
+} from '@hierarchidb/location-api';
 
 export interface LocationEntity extends TreeNodeData {
   dataSource: LocationDataSource;

@@ -25,9 +25,10 @@ export * from './types/ShapeQueryAPI.js';
 export * from './types/ShapeMutationAPI.js';
 export * from './types/EphemeralShapeAPI.js';
 export * from './types/ideGsmTypes.js';
-export * from './types/locationTypes.js';
 export * from './types/LocationQueryAPI.js';
 export * from './types/LocationMutationAPI.js';
-export * from './types/routeTypes.js';
 export * from './types/RouteQueryAPI.js';
 export * from './types/RouteMutationAPI.js';
+// Transitional re-exports: location/route API types live in feature-scoped packages.
+export * from '@hierarchidb/location-api';
+export * from '@hierarchidb/route-api';

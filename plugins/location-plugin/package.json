@@ -22,10 +22,6 @@
     "./ui": {
       "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.js"
-    },
-    "./database": {
-      "types": "./dist/database/index.d.ts",
-      "import": "./dist/database/index.js"
     }
   },
   "typesVersions": {
@@ -41,14 +37,11 @@
       ],
       "worker": [
         "dist/worker/index.d.ts"
-      ],
-      "database": [
-        "dist/database/index.d.ts"
       ]
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts src/services/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/worker/locationEntitiesDB.ts src/worker/locationGroupStore.dexie.ts src/worker/locationRelationStore.dexie.ts src/database/index.ts src/locationEntitiesDB.ts src/icon/index.ts --config ../../tsdown.config.ts",
+    "build": "tsdown src/index.ts src/services/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/worker/locationEntitiesDB.ts src/worker/locationGroupStore.dexie.ts src/worker/locationRelationStore.dexie.ts src/locationEntitiesDB.ts src/icon/index.ts --config ../../tsdown.config.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:watch": "vitest",
@@ -57,6 +50,7 @@
   },
   "dependencies": {
     "@hierarchidb/gen-iso3166-2": "workspace:*",
+    "@hierarchidb/location-api": "workspace:*",
     "@hierarchidb/location-store": "workspace:*",
     "@hierarchidb/ui-country-select": "workspace:*",
     "@hierarchidb/ui-tabular": "workspace:*",
@@ -88,6 +82,7 @@
     "@hierarchidb/ui-json-treeview": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
     "@hierarchidb/ui-search-field": "workspace:*",
+    "@hierarchidb/location-api": "workspace:*",
     "@hierarchidb/location-store": "workspace:*",
     "@hierarchidb/gis-sdk": "workspace:*",
     "react-virtuoso": "^4.14.0"
@@ -127,6 +122,7 @@
     "@hierarchidb/plugin-base": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
     "@hierarchidb/ui-search-field": "workspace:*",
+    "@hierarchidb/location-api": "workspace:*",
     "@hierarchidb/location-store": "workspace:*",
     "@hierarchidb/gis-sdk": "workspace:*",
     "react-virtuoso": "^4.14.0",
