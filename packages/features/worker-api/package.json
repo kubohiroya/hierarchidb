@@ -1,5 +1,5 @@
 {
-  "name": "@hierarchidb/tag",
+  "name": "@hierarchidb/worker-api",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -19,14 +19,26 @@
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "peerDependencies": {
+    "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/tree-api": "workspace:*",
-    "@hierarchidb/util": "workspace:*"
+    "@hierarchidb/location-api": "workspace:*",
+    "@hierarchidb/memory": "workspace:*",
+    "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/route-api": "workspace:*",
+    "@hierarchidb/shape-api": "workspace:*",
+    "@hierarchidb/style-api": "workspace:*",
+    "@hierarchidb/tree-api": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "workspace:^5.9.3",
+    "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/location-api": "workspace:*",
+    "@hierarchidb/memory": "workspace:*",
+    "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/route-api": "workspace:*",
+    "@hierarchidb/shape-api": "workspace:*",
+    "@hierarchidb/style-api": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
-    "@hierarchidb/util": "workspace:*"
+    "typescript": "workspace:^5.9.3"
   }
 }

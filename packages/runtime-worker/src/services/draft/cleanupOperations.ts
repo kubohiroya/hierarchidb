@@ -1,4 +1,4 @@
-import type { DiscardDraftOptions } from '@hierarchidb/common-api';
+import type { DiscardDraftOptions } from '@hierarchidb/tree-api';
 import type { NodeId } from '@hierarchidb/common-types';
 import { generateUUID } from '@hierarchidb/util';
 import type { CoreDB } from '../CoreDB.js';

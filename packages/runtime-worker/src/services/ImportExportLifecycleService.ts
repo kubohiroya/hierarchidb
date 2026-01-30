@@ -1,4 +1,4 @@
-import type { ImportNodesParams, ImportResult } from '@hierarchidb/common-api';
+import type { ImportNodesParams, ImportResult } from '@hierarchidb/import-export-api';
 import type { CommandEnvelope, ImportNodesPayload, Timestamp } from '@hierarchidb/common-types';
 import type { ImportExportDBPort } from '@hierarchidb/import-export';
 import { ImportExportService as BaseImportExportService } from '@hierarchidb/import-export';

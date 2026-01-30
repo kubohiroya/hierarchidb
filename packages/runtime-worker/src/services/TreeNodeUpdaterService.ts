@@ -3,7 +3,7 @@ import type {
   CommitDraftRequest,
   DiscardDraftOptions,
   TreeNodeUpdaterAPI,
-} from '@hierarchidb/common-api';
+} from '@hierarchidb/tree-api';
 import type {
   CommitResult,
   DialogUIState,

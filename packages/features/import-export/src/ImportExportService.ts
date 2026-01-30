@@ -10,7 +10,7 @@ import type {
   ValidateImportParams,
   ImportValidationIssue,
   ImportValidationResult,
-} from '@hierarchidb/common-api';
+} from '@hierarchidb/import-export-api';
 import { SingletonMixin, generateUUID } from '@hierarchidb/util';
 import type { ImportExportDBPort } from './ports.js';
 

@@ -9,7 +9,7 @@ Shared type and API definitions for HierarchiDB. These packages define the UI↔
 
 ## Directory layout
 ```
-api/     RPC interfaces and exports (WorkerAPI, TreeNodeUpdaterAPI, TreeQueryAPI, ImportExportAPI, TagAPI, PluginDialogAPI, DialogStateAPI, TreeSubscriptionAPI)
+api/     RPC interfaces and exports (ImportExportAPI, PluginDialogAPI, TreeTableExpandedAPI, BatchControlAPI)
 auth/    AuthNotificationSystem (types, guards, registry, helpers)
 types/   Brand IDs (TreeId, TreeNodeId, SessionId...), tree/node entities, handlers, validation/progress primitives
 README.md
@@ -17,7 +17,7 @@ README.md
 
 ## Key exports (per package)
 - `api`:
-  - `WorkerAPI`, `TreeNodeUpdaterAPI`, `TreeQueryAPI`, `TreeMutationAPI`, `ImportExportAPI`, `TagAPI`, `TreeSubscriptionAPI`
+  - `ImportExportAPI`, `BatchControlAPI`, `TreeTableExpandedAPI`
   - Dialog contracts: `PluginDialogAPI`, `DialogStateAPI`, `StepCapabilities`
   - Wiring: `PluginRuntimeWiring`
 - `auth`:
@@ -31,7 +31,7 @@ README.md
   - Tag: `TagEntity`, `TagType`, `TagHandler`
 
 ## Consumers / usage
-- Worker side: `@hierarchidb/runtime-worker`, `@hierarchidb/plugin-service-sdk`, plugins’ worker services implement `WorkerAPI` / `TreeNodeUpdaterAPI`.
+- Worker side: `@hierarchidb/runtime-worker`, `@hierarchidb/plugin-service-sdk`, plugins’ worker services implement `WorkerAPI` / tree APIs (now in `@hierarchidb/worker-api` / `@hierarchidb/tree-api`).
 - UI side: `@hierarchidb/plugin-ui-sdk`（draft handling）, `@hierarchidb/plugin-ui-host`（dialog shell）, `app/src` dialog routes.
 - Cross-cutting: Feature plugins（basemap, shape, route, spreadsheet など）が `types` / `api` を介してエンティティ契約を共有。`packages/ui/auth` が `auth` を利用。
 

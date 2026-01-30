@@ -1,5 +1,5 @@
 {
-  "name": "@hierarchidb/tag",
+  "name": "@hierarchidb/import-export-api",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -19,14 +19,10 @@
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "peerDependencies": {
-    "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/tree-api": "workspace:*",
-    "@hierarchidb/util": "workspace:*"
+    "@hierarchidb/common-types": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "workspace:^5.9.3",
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/tree-api": "workspace:*",
-    "@hierarchidb/util": "workspace:*"
+    "typescript": "workspace:^5.9.3"
   }
 }
