@@ -6,7 +6,6 @@ import { LocationSelectionStep } from './steps/LocationSelectionStep.js';
 import { LocationBatchParametersStep } from './steps/LocationBatchParametersStep.js';
 import { LocationMapPreviewStep } from './steps/LocationMapPreviewStep.js';
 import { i18n } from '@hierarchidb/ui-i18n';
-import { getLocationDB } from '@hierarchidb/location-store';
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -48,14 +47,9 @@ const hasSelection = (data?: LocationStepData): boolean => {
   return Object.values(selected).some((row) => Array.isArray(row) && row.some(Boolean));
 };
 
-const isLocationBuildPersisted = async (data?: Partial<LocationEntity>): Promise<boolean> => {
-  const nodeId = data?.nodeId as NodeId | undefined;
-  if (!nodeId) return Boolean(data?.processingStatus === 'completed');
-  const db = getLocationDB();
-  const count = await db.features.where('nodeId').equals(nodeId).count();
-  if (count > 0) return true;
-  return data?.processingStatus === 'completed';
-};
+const isLocationBuildPersisted = async (data?: Partial<LocationEntity>): Promise<boolean> => (
+  Boolean(data?.processingStatus === 'completed')
+);
 
 registry.registerConfigProvider<LocationStepData>({
   nodeType: 'location',

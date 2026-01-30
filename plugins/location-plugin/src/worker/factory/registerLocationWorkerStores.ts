@@ -64,6 +64,3 @@ export async function loadLocationEntitiesDbModule(): Promise<LocationEntitiesDb
     return null;
   }
 }
-
-// Side-effect for legacy consumers
-registerLocationWorkerStores().catch(() => {});

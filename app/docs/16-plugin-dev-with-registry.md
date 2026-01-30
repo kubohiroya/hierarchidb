@@ -2,7 +2,7 @@
 
 2025-10 時点で HierarchiDB のプラグインは **単一の静的レジストリ** を唯一の情報源とします。従来の Vite 仮想モジュール（`virtual:plugin-*`）や複数の自動生成ファイルは廃止され、生成物は次の 1 ファイルのみです。
 
-1. `packages/plugin-registry/generated/registry.ts` – すべてのプラグインに関するメタデータとモジュール specifier（root/ui/worker/database/common）を保持する正典ファイル。
+1. `packages/plugin-registry/generated/registry.ts` – すべてのプラグインに関するメタデータとモジュール specifier（root/ui/worker/icon/common）を保持する正典ファイル。
 
 アプリケーション側ではこのレジストリを `@hierarchidb/plugin-registry` として読み込み、UI/Worker それぞれの DI コンテナが必要な派生データ（`pluginUiModuleMap` や `pluginWorkerModuleMap` など）を実行時に計算します。`import()` で使用するパスはすべてレジストリから取得した文字列リテラルのため、Vite/Rollup が確実に解決可能です。
 
@@ -11,7 +11,7 @@
 ## 仕組みの概要
 - **生成スクリプト**: `scripts/generate-plugin-loader.mjs` が `app/package.json` の `@hierarchidb/*-plugin` 依存を列挙し、各プラグインの `exports` と `src/plugin-manifest.ts` を解析して正典レジストリを生成します。旧来の `app/src/generated/*` や `types/generated/*` は再生成時に自動削除されます。
 - **Vite 設定**: `@hierarchidb/vite-plugin-hierarchidb-plugin-alias` から提供される alias プラグインのみを使用し、`@hierarchidb/<node>-plugin/<kind>` を `/@fs/.../src` に解決します。仮想モジュールは生成しません。
-- **実行時**: UI/Worker はレジストリを InversifyJS コンテナに読み込み、そこから module loader を取得して `import()` を実行します。Dexie などの追加初期化も各プラグインが自律的に行います。
+- **実行時**: UI/Worker はレジストリを InversifyJS コンテナに読み込み、そこから module loader を取得して `import()` を実行します。DB の prewarm/clear は app が `*-store` 経由で行います。
 
 ## プラグイン側の要件
 ### 1) package.json（最低限）
@@ -24,7 +24,6 @@
     ".":          { "types": "./dist/index.d.ts",      "import": "./dist/index.js" },
     "./ui":       { "types": "./dist/ui/index.d.ts",   "import": "./dist/ui/index.js" },
     "./worker":   { "types": "./dist/worker/index.d.ts","import": "./dist/worker/index.js" },
-    "./database": { "types": "./dist/database/index.d.ts","import": "./dist/database/index.js" }
   },
   "scripts": {
     "build": "pnpm run build:bundle",
@@ -62,7 +61,6 @@ export const PLUGIN_MANIFEST: PluginMetadata = {
 - `src/preconnect.ts` – 汎用 API（hooks など）をここで再エクスポート。
 - `src/ui/preconnect.ts` – ステップ登録や UI 拡張の副作用を定義。
 - `src/worker/preconnect.ts` – Worker 側処理。EntitiesDB を公開する場合は `export class FooEntitiesDB` をここで定義。
-- `src/database/preconnect.ts` – UI から直接 Dexie にアクセスする際のヘルパー。
 
 ## アプリへの接続（自動化フロー）
 1. `pnpm dev` / `pnpm build` は事前に `scripts/generate-plugin-loader.mjs` を実行し、最新のレジストリを生成します。
@@ -178,7 +176,7 @@ await wirePluginsFromModules(modules.filter((entry): entry is { nodeType: string
 
 ## チェックリスト（プラグイン追加時）
 1. `packages/plugins/<node>-plugin` を作成し、`package.json` で `@hierarchidb/<node>-plugin` を宣言。
-2. `exports` に必要なサブパス (`./ui`, `./worker`, `./database`) を登録。存在しないものは省略。
+2. `exports` に必要なサブパス (`./ui`, `./worker`, `./icon`) を登録。存在しないものは省略。
 3. `src/plugin-manifest.ts` で `PLUGIN_MANIFEST` を定義し、依存関係や優先度を記述。
 4. UI/Worker のエントリポイントを `src/ui/preconnect.ts`, `src/worker/preconnect.ts` へ配置。
 5. `pnpm --filter @hierarchidb/<node>-plugin build` で dist を生成。

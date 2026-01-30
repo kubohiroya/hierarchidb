@@ -15,7 +15,7 @@ export const parseOurAirportsCsv = async (
   const { headers, rows } = parseCsvTable(text, { hasHeader: true });
   if (headers.length === 0) return [];
   const headerIndex = buildHeaderIndex(headers);
-  const mapped = await Promise.all(rows.map(async (row) => {
+  const mapped = await Promise.all(rows.map(async (row: string[]) => {
     const id = getColumnValue(row, headerIndex, 'id');
     const name = getColumnValue(row, headerIndex, 'name');
     const lat = parseNumber(getColumnValue(row, headerIndex, 'latitude_deg', 'latitude'));
@@ -52,7 +52,7 @@ export const parseOpenFlightsCsv = async (
 ): Promise<LocationPointProperties[]> => {
   const { rows } = parseCsvTable(text, { hasHeader: false });
   if (rows.length === 0) return [];
-  const mapped = await Promise.all(rows.map(async (row) => {
+  const mapped = await Promise.all(rows.map(async (row: string[]) => {
     const id = row[0];
     const name = row[1];
     const city = row[2];
@@ -95,7 +95,7 @@ export const parseWorldPortIndexCsv = async (
   const { headers, rows } = parseCsvTable(text, { hasHeader: true });
   if (headers.length === 0) return [];
   const headerIndex = buildHeaderIndex(headers);
-  const mapped = await Promise.all(rows.map(async (row) => {
+  const mapped = await Promise.all(rows.map(async (row: string[]) => {
     const name = getColumnValue(row, headerIndex, 'port_name', 'portname', 'main_port_name', 'mainportname', 'name');
     const lat = parseNumber(getColumnValue(row, headerIndex, 'latitude', 'lat'));
     const lon = parseNumber(getColumnValue(row, headerIndex, 'longitude', 'lon', 'lng'));

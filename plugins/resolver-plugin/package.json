@@ -8,9 +8,6 @@
   "types": "dist/index.d.ts",
   "typesVersions": {
     "*": {
-      "database": [
-        "dist/worker/database/index.d.ts"
-      ],
       "worker": [
         "dist/worker/index.d.ts"
       ],
@@ -27,11 +24,6 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
-    },
-    "./database": {
-      "types": "./dist/worker/database/index.d.ts",
-      "import": "./dist/worker/database/index.js",
-      "default": "./dist/worker/database/index.js"
     },
     "./worker": {
       "types": "./dist/worker/index.d.ts",
@@ -52,7 +44,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsdown src/index.ts src/ui/index.ts src/worker/index.ts src/worker/database/index.ts src/worker/factory/index.ts src/icon/index.ts --config ../../tsdown.config.ts",
+    "build": "tsdown src/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/icon/index.ts --config ../../tsdown.config.ts",
     "test": "vitest run",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",

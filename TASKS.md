@@ -67,6 +67,45 @@
   - update: 2026-01-29 14:28 JST tabular API を復元し、pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
   - done: 2026-01-29 14:29 JST relations テーブル撤去と利用状況の整理を完了。
 
+2427) feat/ui/step-config-shared (P1) — 進行中 (2026-01-29)
+- ブランチ名: feat/ui/step-config-shared
+- 依存: なし
+- 受け入れ基準: shape step4 の ZoomBandRangeCard/FetchConfigSection/WorkerNumberConfigCard/VTConfigSection を共通パッケージへ移設し、route step5 でも同一コンポーネントを利用できる／UI表示と挙動が従来と同等である／pnpm --filter <共通パッケージ> build が exit 0／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／pnpm --filter @hierarchidb/route-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/step4/**`, `plugins/route-plugin/src/ui/components/steps/**`, `packages/ui/**`（共通化先）
+- ロールバック手順: 該当差分を revert し、shape/route 側のローカルコンポーネントに戻す
+- チェックリスト:
+  - 共通化先パッケージとAPIを確定する
+  - shape の対象コンポーネントを移設し export を追加する
+  - route の step5 で共通コンポーネントを参照する
+  - 既存UIとの差分がないことを確認する
+  - pnpm --filter <共通パッケージ> build を実行する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - pnpm --filter @hierarchidb/route-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-29 20:40 JST shape/route step4/5 設定コンポーネントの共通化に着手。
+  - update: 2026-01-29 21:15 JST build-config 共通コンポーネントを ui-accordion-config に移設し、shape/route の設定ステップから参照するよう整理。
+  - blocked: 2026-01-29 21:16 JST pnpm install が registry.npmjs.org の ENOTFOUND と EPERM symlink で失敗。
+  - update: 2026-01-29 21:18 JST pnpm --filter @hierarchidb/ui-accordion-config build exit 0（tsdown define warning あり）。
+  - update: 2026-01-29 21:20 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-01-29 21:23 JST pnpm --filter @hierarchidb/route-store build exit 0（tsdown define warning あり）。
+  - update: 2026-01-29 21:24 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+
+2424) fix/location/idegdm-pointid-type (P1) — 完了 (2026-01-29)
+- ブランチ名: fix/location/idegdm-pointid-type
+- 依存: なし
+- 受け入れ基準: ideGsmCsv の pointId 型エラーが解消される／LocationFeatureId と LocationPointId の整合が取れる／pnpm --filter @hierarchidb/location-store typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/location-store/src/locationTypes.ts`, `packages/features/location-store/src/ideGsmCsv.ts`（必要に応じて）
+- ロールバック手順: 型定義の変更差分を revert して元の brand 定義へ戻す
+- チェックリスト:
+  - LocationFeatureId と LocationPointId の型整合を修正する
+  - pnpm --filter @hierarchidb/location-store typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-29 12:20 JST ideGsmCsv の pointId 型エラー修正に着手。
+  - update: 2026-01-29 12:27 JST LocationFeatureId の独立ブランドを復元し、LocationFeatureProperties を導入して ideGsmCsv を更新。
+  - done: 2026-01-29 12:27 JST pnpm --filter @hierarchidb/location-store typecheck exit 0 を確認。
+
 2423) investigation/shape-plugin-remove-remnants (P1) — 進行中 (2026-01-29)
 - ブランチ名: investigation/shape-plugin-remove-remnants
 - 依存: なし
@@ -262,6 +301,47 @@
   - update: 2026-01-28 19:10 JST pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define warning あり）。
   - done: 2026-01-28 17:44 JST Preview ガードの非同期許可と InfoPanel の Preview 無効化制御を反映。
 
+2417) refactor/plugin-service-api/split-location-route (P1) — 進行中 (2026-01-28)
+- ブランチ名: refactor/plugin-service-api/split-location-route
+- 依存: なし
+- 受け入れ基準: locationTypes.ts/routeTypes.ts が新しい api パッケージへ移設され、依存先が切り替わる／移行フェーズが TASKS.md と ExecPlan に明記される／app が必要な `*-store` 依存と DB 初期化/登録を担い、plugins が DB 選定や登録を行わない／`*-api` にスキーマ型/DB ラップ API、`*-store` に DB 初期化が集約される／該当パッケージの typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: 調査後に確定
+- ロールバック手順: 該当差分を revert して plugin-service-api 参照に戻す
+- チェックリスト:
+  - ExecPlan を作成して plans/ に配置する
+  - location/route の新 api パッケージ設計と移設対象を確定する
+  - 依存先切替と typecheck を段階的に実施する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-28 20:25 JST plugin-service-api の location/route 型分離計画に着手。
+  - update: 2026-01-28 20:35 JST ExecPlan を plans/plugin-service-api-split-location-route-execplan.md に作成。
+  - update: 2026-01-28 20:45 JST 要件追加（api へ型統合、store は api 依存、UI は api のみ）を反映して ExecPlan を改訂。
+  - update: 2026-01-30 10:12 JST app が store 選定/DB 初期化を担い、plugins は DB 責務を持たない方針を ExecPlan と DoD に追加。
+  - update: 2026-01-30 10:35 JST app 側に store 選定リストを追加し、WorkerModuleLoader/DB prewarm/clear が app の選定を参照するよう更新。plugins の自動 store 登録サイドエフェクトを撤去。
+  - update: 2026-01-30 12:05 JST pnpm --filter @hierarchidb/location-api build / @hierarchidb/route-api build / @hierarchidb/location-store build / @hierarchidb/route-store build / @hierarchidb/plugin-service-api build を実行（tsdown define 警告あり）。
+  - update: 2026-01-30 12:05 JST pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-01-30 12:20 JST route IDE-GSM CSV パース/検証の共通化方針（route-apiへ純粋関数を移動）で調整開始。
+  - start: 2026-01-30 13:20 JST route IDE-GSM CSV のパース/検証を route-api へ移動し、runtime-worker/route-plugin はラッパー化する作業に着手（DoD 合意済み）。未追跡ファイル（packages/features/resolver-store、plans/app-db-init-responsibility-execplan.md）の扱いは確認中。
+  - update: 2026-01-30 13:35 JST route-api に IDE-GSM CSV の parse/validate を集約し、runtime-worker/route-plugin 側はラッパーに整理。
+  - update: 2026-01-30 13:35 JST pnpm --filter @hierarchidb/route-api build / pnpm --filter @hierarchidb/plugin-service-api build / pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
+
+2416) fix/depgraph/route-store-common-api-cycle (P1) — 完了 (2026-01-28)
+- ブランチ名: fix/depgraph/route-store-common-api-cycle
+- 依存: なし
+- 受け入れ基準: @hierarchidb/route-store と @hierarchidb/common-api の循環依存が解消される／依存変更の意図が保たれる／該当パッケージの typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: 依存グラフ調査後に確定
+- ロールバック手順: 該当差分を revert して依存関係を元に戻す
+- チェックリスト:
+  - 依存循環の発生箇所を特定する
+  - どちらの依存を外すか決め、代替型/インターフェースへ移行する
+  - typecheck を実行して確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-28 20:12 JST route-store と common-api の循環依存解消に着手。
+  - update: 2026-01-28 20:16 JST common-api から route-store の依存を削除。
+  - update: 2026-01-28 20:16 JST pnpm --filter @hierarchidb/common-api typecheck exit 0 を確認。
+  - done: 2026-01-28 20:16 JST route-store/common-api の循環依存を解消。
+
 2415) fix/location-plugin/remove-row-type-alias (P1) — 完了 (2026-01-28)
 - ブランチ名: fix/location-plugin/remove-row-type-alias
 - 依存: なし
@@ -403,6 +483,27 @@
   - start: 2026-01-28 19:35 JST Admin Level カラムの矢印色を primary に変更する作業に着手。
   - update: 2026-01-28 19:38 JST pnpm --filter @hierarchidb/ui-grid typecheck exit 0 を確認。
   - done: 2026-01-28 19:38 JST Admin Level カラムの矢印色を primary に変更。
+
+2412) refactor/app-db/init-responsibility (P1) — 進行中 (2026-01-30)
+- ブランチ名: refactor/app-db/init-responsibility
+- 依存: なし
+- 受け入れ基準: PluginDefinition の database(dbName/schema/version) から DB 自動作成・初期化(prewarm含む)が app 側で実行される／prewarm/clear 実装が *-store に移動される／既存の初期化順序と挙動が退行しない／pnpm --filter @hierarchidb/app typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: app, packages/runtime-worker, packages/plugin-registry, packages/*-store, plugins/*-plugin（調査後に確定）
+- ロールバック手順: 該当差分を revert して DB 初期化を従来の runtime-worker 側に戻す
+- チェックリスト:
+  - DB 初期化・prewarm の現行実装位置を特定する
+  - app 側への移管ポイントを設計し最小差分で移行する
+  - prewarm/clear の実装を *-store へ移動する
+  - 既存の依存順/初期化順を維持できることを確認する
+  - pnpm --filter @hierarchidb/app typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-30 10:42 JST PluginDefinition DB 初期化責務の app 移管と prewarm/clear の *-store 移動に着手。
+  - blocked: 2026-01-30 10:48 JST 「PluginDefinition 由来の dbName/schema/version を app がどう利用するか」「resolver 用 *-store 新設の可否」など方針確認が必要。
+  - update: 2026-01-30 11:32 JST resolver-store 新設、store への prewarm/clear 実装移管、app 側の prewarm/clear を store ベースに切替。
+  - update: 2026-01-30 11:33 JST pnpm tools:gen-plugin-registry 実行（tsdown define warning / database export 未設定の警告あり）。
+  - update: 2026-01-30 11:36 JST pnpm --filter @hierarchidb/app typecheck exit 0 を確認。
+  - done: 2026-01-30 11:36 JST PluginDefinition の database メタ追加と DB 初期化責務の app 移管を完了。
 
 2411) fix/ui-map/titlebar-row-count-format (P1) — 進行中 (2026-01-28)
 - ブランチ名: fix/ui-map/titlebar-row-count-format

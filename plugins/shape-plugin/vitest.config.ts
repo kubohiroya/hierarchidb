@@ -85,15 +85,15 @@ export default defineConfig({
         replacement: path.resolve(__dirname, './src/headless/mocks/auth-recovery.ts'),
       },
       {
-        find: '@hierarchidb/resolver-plugin/database',
+        find: '@hierarchidb/resolver-store',
         replacement: path.resolve(
           __dirname,
-          '../../plugins/resolver-plugin/src/worker/database/index.ts',
+          '../../packages/features/resolver-store/src/index.ts',
         ),
       },
       {
-        find: '@hierarchidb/location-plugin/database',
-        replacement: path.resolve(__dirname, '../../plugins/location-plugin/src/database/index.ts'),
+        find: '@hierarchidb/location-store',
+        replacement: path.resolve(__dirname, '../../packages/features/location-store/src/index.ts'),
       },
       {
         find: '@hierarchidb/download',

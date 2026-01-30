@@ -133,7 +133,9 @@ export class LocationBatchManager {
       progress: 0,
     }));
     const collected: LocationPointProperties[] = [];
-    const { concurrent } = config.processingOptions;
+    const concurrent = typeof config.processingOptions.concurrent === 'number'
+      ? config.processingOptions.concurrent
+      : 1;
     const batches = this.createBatches(tasks, concurrent);
 
     for (const batch of batches) {
@@ -222,7 +224,9 @@ export class LocationBatchManager {
     }
 
     // Process tasks with concurrency control
-    const { concurrent } = session.config.processingOptions;
+    const concurrent = typeof session.config.processingOptions.concurrent === 'number'
+      ? session.config.processingOptions.concurrent
+      : 1;
     const batches = this.createBatches(tasks, concurrent);
 
     for (const batch of batches) {
@@ -657,7 +661,7 @@ export class LocationBatchManager {
    * Convert OSM data to location entities
    */
   private async convertOSMToLocations(data: RawNominatimLike[]): Promise<LocationPointProperties[]> {
-    const points = await Promise.all(
+    const points: Array<LocationPointProperties | null> = await Promise.all(
       data.map((item) => this.createLocationFromOSM(item)),
     );
     return points.filter((value): value is LocationPointProperties => value !== null);
@@ -668,7 +672,7 @@ export class LocationBatchManager {
    */
   private async convertOverpassToLocations(data: { elements?: RawOverpassElement[] }): Promise<LocationPointProperties[]> {
     if (!Array.isArray(data.elements)) return [];
-    const points = await Promise.all(
+    const points: Array<LocationPointProperties | null> = await Promise.all(
       data.elements.map((item) => this.createLocationFromOverpass(item)),
     );
     return points.filter((value): value is LocationPointProperties => value !== null);
@@ -767,8 +771,8 @@ export class LocationBatchManager {
   ): Promise<LocationPointProperties[]> {
     if (!criteria) return locations;
 
-    const normalizedCodes = criteria.countryCodes?.map((code) => code.toUpperCase()) ?? [];
-    const normalizedNames = criteria.countryNames?.map((name) => name.toLowerCase()) ?? [];
+    const normalizedCodes = criteria.countryCodes?.map((code: string) => code.toUpperCase()) ?? [];
+    const normalizedNames = criteria.countryNames?.map((name: string) => name.toLowerCase()) ?? [];
 
     return locations.filter(location => {
       if (criteria.allowedTypes && !criteria.allowedTypes.includes(location.type as LocationType)) {

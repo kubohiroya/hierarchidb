@@ -124,9 +124,7 @@ function createRuntimeAliasConfig({
     { spec: '@hierarchidb/location-plugin', src: '../plugins/location-plugin/src/index.ts', dist: '../plugins/location-plugin/dist/index.js' },
     { spec: '@hierarchidb/linker-plugin', src: '../plugins/linker-plugin/src/index.ts', dist: '../plugins/linker-plugin/dist/index.js' },
     { spec: '@hierarchidb/resolver-plugin', src: '../plugins/resolver-plugin/src/index.ts', dist: '../plugins/resolver-plugin/dist/index.js' },
-    { spec: '@hierarchidb/resolver-plugin/database', src: '../plugins/resolver-plugin/src/worker/database/index.ts', dist: '../plugins/resolver-plugin/dist/worker/database/index.js' },
     { spec: '@hierarchidb/route-plugin', src: '../plugins/route-plugin/src/index.ts', dist: '../plugins/route-plugin/dist/index.js' },
-    { spec: '@hierarchidb/route-plugin/database', src: '../plugins/route-plugin/src/services/database/index.ts', dist: '../plugins/route-plugin/dist/services/database/index.js' },
     { spec: '@hierarchidb/route-plugin/common/entities/RouteLineString.ts', src: '../plugins/route-plugin/src/common/entities/RouteLineString.ts', dist: '../plugins/route-plugin/dist/common/entities/RouteLineString.js' },
     { spec: '@hierarchidb/route-plugin/services/RouteGenerator.js', src: '../plugins/route-plugin/src/services/RouteGenerator.ts', dist: '../plugins/route-plugin/dist/services/RouteGenerator.js' },
     { spec: '@hierarchidb/route-plugin/services/engines/SearouteEngine.js', src: '../plugins/route-plugin/src/services/engines/SearouteEngine.ts', dist: '../plugins/route-plugin/dist/services/engines/SearouteEngine.js' },
@@ -134,7 +132,6 @@ function createRuntimeAliasConfig({
     { spec: '@hierarchidb/spreadsheet-plugin', src: '../plugins/spreadsheet-plugin/src/index.ts', dist: '../plugins/spreadsheet-plugin/dist/index.js' },
     { spec: '@hierarchidb/styler-plugin', src: '../plugins/styler-plugin/src/index.ts', dist: '../plugins/styler-plugin/dist/index.js' },
     { spec: '@hierarchidb/location-plugin', src: '../plugins/location-plugin/src/index.ts', dist: '../plugins/location-plugin/dist/index.js' },
-    { spec: '@hierarchidb/location-plugin/database', src: '../plugins/location-plugin/src/database/index.ts', dist: '../plugins/location-plugin/dist/database/index.js' },
     { spec: '@hierarchidb/tabular-source-xlsx', src: '../packages/features/tabular-source-xlsx/src/index.ts', dist: '../packages/features/tabular-source-xlsx/dist/index.js' },
     { spec: '@hierarchidb/timeline-plugin', src: '../plugins/timeline-plugin/src/index.ts', dist: '../plugins/timeline-plugin/dist/index.js' },
   ] as const;

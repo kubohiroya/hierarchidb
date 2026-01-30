@@ -13,5 +13,3 @@ export async function registerLinkerWorkerStores(options: RegisterLinkerWorkerSt
 export async function loadLinkerEntitiesDbModule(): Promise<null> {
   return null;
 }
-
-registerLinkerWorkerStores().catch(() => {});

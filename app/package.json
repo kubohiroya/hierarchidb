@@ -37,6 +37,7 @@
     "@hierarchidb/plugin-ui-host": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/route-store": "workspace:*",
+    "@hierarchidb/resolver-store": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/shape-store": "workspace:*",
     "@hierarchidb/styler-store": "workspace:*",

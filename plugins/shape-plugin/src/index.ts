@@ -22,18 +22,4 @@ export { PLUGIN_MANIFEST as ShapePluginManifest } from './plugin-manifest.js';
 // Export plugin definition for worker fallback loading
 // Plugin definition export removed: metadata is sourced from package.json
 
-let initialized = false;
-
-export async function onRegister(): Promise<void> {
-  if (initialized) return;
-  initialized = true;
-
-  try {
-    const { ShapeDB } = await import('@hierarchidb/shape-store');
-    const db = new ShapeDB();
-    await db.open();
-    await db.close();
-  } catch (error) {
-    console.warn('[shape-plugin] failed to pre-open ShapeDB:', error);
-  }
-}
+// Plugin-side DB prewarm removed; handled by app via store loaders.

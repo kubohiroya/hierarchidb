@@ -80,16 +80,22 @@
         "packages/features/chunk-store/dist/*"
       ],
       "@hierarchidb/location-store": [
-        "packages/features/location-store/dist/index.d.ts"
+        "packages/features/location-store/src/index.ts"
       ],
       "@hierarchidb/location-store/*": [
-        "packages/features/location-store/dist/*"
+        "packages/features/location-store/src/*"
+      ],
+      "@hierarchidb/location-api": [
+        "packages/features/location-api/src/index.ts"
+      ],
+      "@hierarchidb/location-api/*": [
+        "packages/features/location-api/src/*"
       ],
       "@hierarchidb/shape-store": [
-        "packages/features/shape-store/dist/index.d.ts"
+        "packages/features/shape-store/src/index.ts"
       ],
       "@hierarchidb/shape-store/*": [
-        "packages/features/shape-store/dist/*"
+        "packages/features/shape-store/src/*"
       ],
       "@hierarchidb/styler-store": [
         "packages/features/styler-store/dist/index.d.ts"
@@ -227,10 +233,16 @@
         "packages/features/route-searoute/dist/*"
       ],
       "@hierarchidb/route-store": [
-        "packages/features/route-store/dist/index.d.ts"
+        "packages/features/route-store/src/index.ts"
       ],
       "@hierarchidb/route-store/*": [
-        "packages/features/route-store/dist/*"
+        "packages/features/route-store/src/*"
+      ],
+      "@hierarchidb/route-api": [
+        "packages/features/route-api/src/index.ts"
+      ],
+      "@hierarchidb/route-api/*": [
+        "packages/features/route-api/src/*"
       ],
       "@hierarchidb/vectortile-store": [
         "packages/features/vectortile-store/dist/index.d.ts"
@@ -404,10 +416,16 @@
         "packages/ui/license/dist/*"
       ],
       "@hierarchidb/gen-iso3166-2": [
-        "packages/tools/gen-iso3166-2/dist/index.d.ts"
+        "packages/tools/gen-iso3166-2/src/index.ts"
+      ],
+      "@hierarchidb/gen-iso3166-2/browser": [
+        "packages/tools/gen-iso3166-2/src/browser.ts"
+      ],
+      "@hierarchidb/gen-iso3166-2/node": [
+        "packages/tools/gen-iso3166-2/src/node.ts"
       ],
       "@hierarchidb/gen-iso3166-2/*": [
-        "packages/tools/gen-iso3166-2/dist/*"
+        "packages/tools/gen-iso3166-2/src/*"
       ],
       "@hierarchidb/ui-lru-splitview": [
         "packages/ui/lru-splitview/dist/index.d.ts"

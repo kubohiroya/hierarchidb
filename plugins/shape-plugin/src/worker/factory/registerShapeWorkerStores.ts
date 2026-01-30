@@ -78,5 +78,3 @@ export async function loadShapeEntitiesDbModule() {
   return import('../shapeEntitiesDB.js');
 }
  */
-
-registerShapeWorkerStores().catch(() => {});

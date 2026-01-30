@@ -11,6 +11,3 @@ export async function registerSpreadsheetWorkerStores(
     return;
   }
 }
-
-// Side-effect registration to preserve legacy behavior
-registerSpreadsheetWorkerStores().catch(() => {});
