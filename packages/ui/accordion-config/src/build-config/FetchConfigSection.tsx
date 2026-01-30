@@ -28,10 +28,10 @@ type DetailPreset = {
 
 type FilteringPreviewImages = Partial<Record<OmitDetailsLevel, string>>;
 
-type Props<TBuildConfig extends BaseBuildConfig = BaseBuildConfig> = {
+type Props<TDataSourceName = unknown> = {
   t: TranslateFn;
-  buildConfig: TBuildConfig;
-  update: (partial: Partial<TBuildConfig>) => void;
+  buildConfig: BaseBuildConfig<TDataSourceName>;
+  update: (partial: Partial<BaseBuildConfig<TDataSourceName>>) => void;
   disabled?: boolean;
   filteringPreviewImages?: FilteringPreviewImages;
   detailPresets?: Partial<Record<OmitDetailsLevel, DetailPreset>>;
@@ -45,14 +45,14 @@ const DEFAULT_DETAIL_PRESETS: Record<OmitDetailsLevel, DetailPreset> = {
 
 const FILTERING_PREVIEW_LEVELS: OmitDetailsLevel[] = ['weak', 'medium', 'strong'];
 
-export const FetchConfigSection = <TBuildConfig extends BaseBuildConfig>({
+export const FetchConfigSection = <TDataSourceName,>({
   t,
   buildConfig,
   update,
   disabled,
   filteringPreviewImages,
   detailPresets,
-}: Props<TBuildConfig>) => {
+}: Props<TDataSourceName>) => {
   const baseFetchConfig = buildConfig.fetchConfig;
   const baseTransformConfig = buildConfig.transformConfig;
   const omitDetailsLevel = baseTransformConfig.omitDetailsConfig.level;

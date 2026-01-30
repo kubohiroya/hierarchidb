@@ -34,11 +34,11 @@ import { getBuildConfigHoverCardSx } from './buildConfigCardStyles.js';
 
 type TranslateFn = (key: string, fallback?: string, options?: Record<string, unknown>) => string;
 
-type Props<TBuildConfig extends BaseBuildConfig = BaseBuildConfig> = {
+type Props<TDataSourceName = unknown> = {
   t: TranslateFn;
-  buildConfig: TBuildConfig;
+  buildConfig: BaseBuildConfig<TDataSourceName>;
   disabled?: boolean;
-  update: (partial: Partial<TBuildConfig>) => void;
+  update: (partial: Partial<BaseBuildConfig<TDataSourceName>>) => void;
 };
 
 const createDefaultDynamicConcurrency = (maxConcurrent: number): DynamicConcurrencyConfig => ({
@@ -51,12 +51,12 @@ const createDefaultDynamicConcurrency = (maxConcurrent: number): DynamicConcurre
   sampleMs: 2000,
 });
 
-export const VTConfigSection = <TBuildConfig extends BaseBuildConfig>({
+export const VTConfigSection = <TDataSourceName,>({
   t,
   buildConfig,
   disabled,
   update,
-}: Props<TBuildConfig>) => {
+}: Props<TDataSourceName>) => {
   const dynamicConcurrency = useMemo(() => buildConfig.vtConfig.dynamicConcurrency
     ?? createDefaultDynamicConcurrency(buildConfig.vtConfig.maxConcurrent), [buildConfig.vtConfig.dynamicConcurrency, buildConfig.vtConfig.maxConcurrent]);
   const dynamicConcurrencyActive = buildConfig.vtConfig.maxConcurrent >= 2;
