@@ -1,5 +1,5 @@
 import type { NodeType } from '@hierarchidb/common-types';
-import type { PluginManifest } from '@hierarchidb/plugin-service-api';
+import type { PluginManifest } from '@hierarchidb/plugin-base';
 
 export const PLUGIN_ID = '@hierarchidb/styler-plugin' as const;
 export const PLUGIN_VERSION = '1.0.0' as const;

@@ -1,5 +1,5 @@
 import type { NodeType } from '@hierarchidb/common-types';
-import type { PluginManifest } from '@hierarchidb/plugin-service-api';
+import type { PluginManifest } from '@hierarchidb/plugin-base';
 
 export const PLUGIN_ID = '@hierarchidb/timeline-plugin' as const;
 export const PLUGIN_VERSION = '0.0.1' as const;

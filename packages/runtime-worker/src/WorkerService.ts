@@ -10,11 +10,7 @@ import type {
 import type { NodeType } from '@hierarchidb/common-types';
 import { enableAllExporters, enableAllImporters } from '@hierarchidb/import-export';
 import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/plugin-service-api';
-import type {
-  PluginLifecycleAPI,
-  StyleMutationAPI,
-  StyleQueryAPI,
-} from '@hierarchidb/plugin-service-api';
+import type { PluginLifecycleAPI } from '@hierarchidb/plugin-base';
 import type { RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/plugin-service-api';
 import type { RouteDatabaseHandle } from '@hierarchidb/route-store';
 import { RouteDB } from '@hierarchidb/route-store';
@@ -23,6 +19,7 @@ import { StylerDB } from '@hierarchidb/styler-store';
 import { TagService } from '@hierarchidb/tag';
 import { SingletonMixin } from '@hierarchidb/util';
 import type { ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
+import type { StyleMutationAPI, StyleQueryAPI } from '@hierarchidb/style-api';
 import { EntityLifecycleManager } from './entity/EntityLifecycleManager.js';
 import { ImportExportDBPortCoreDBAdapter } from './services/adapters/ImportExportDBPortCoreDBAdapter.js';
 import { TagDBPortCoreDBAdapter } from './services/adapters/TagDBPortCoreDBAdapter.js';

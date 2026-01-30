@@ -5,7 +5,7 @@ import type {
   StyleMutationAPI,
   StyleQueryAPI,
   StyleRecord,
-} from '@hierarchidb/plugin-service-api';
+} from '@hierarchidb/style-api';
 import type { StylerDB } from '@hierarchidb/styler-store';
 import { SingletonMixin } from '@hierarchidb/util';
 

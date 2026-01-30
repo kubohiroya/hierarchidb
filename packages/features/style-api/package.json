@@ -1,5 +1,5 @@
 {
-  "name": "@hierarchidb/styler-store",
+  "name": "@hierarchidb/style-api",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -19,22 +19,10 @@
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "peerDependencies": {
-    "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/plugin-base": "workspace:*",
-    "@hierarchidb/style-api": "workspace:*",
-    "@hierarchidb/spreadsheet-store": "workspace:*",
-    "@hierarchidb/ui-map": "workspace:*",
-    "@hierarchidb/util": "workspace:*",
-    "dexie": "^4.2.0"
+    "@hierarchidb/common-types": "workspace:*"
   },
   "devDependencies": {
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/plugin-base": "workspace:*",
-    "@hierarchidb/style-api": "workspace:*",
-    "@hierarchidb/spreadsheet-store": "workspace:*",
-    "@hierarchidb/ui-map": "workspace:*",
-    "@hierarchidb/util": "workspace:*",
-    "dexie": "^4.2.0",
     "typescript": "workspace:^5.9.3"
   }
 }

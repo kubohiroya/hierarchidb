@@ -97,6 +97,12 @@
       "@hierarchidb/shape-api/*": [
         "packages/features/shape-api/dist/*"
       ],
+      "@hierarchidb/style-api": [
+        "packages/features/style-api/dist/index.d.ts"
+      ],
+      "@hierarchidb/style-api/*": [
+        "packages/features/style-api/dist/*"
+      ],
       "@hierarchidb/shape-store": [
         "packages/features/shape-store/dist/index.d.ts"
       ],

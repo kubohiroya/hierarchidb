@@ -4,7 +4,7 @@
  */
 
 import type { Timestamp } from '@hierarchidb/common-types';
-import type { BaseSearchCriteria } from '@hierarchidb/plugin-service-api';
+import type { BaseSearchCriteria } from '@hierarchidb/plugin-base';
 
 /**
  * Map style configuration

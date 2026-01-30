@@ -38,7 +38,11 @@
   },
   "dependencies": {
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/location-api": "workspace:*"
+    "@hierarchidb/location-api": "workspace:*",
+    "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/route-api": "workspace:*",
+    "@hierarchidb/shape-api": "workspace:*",
+    "@hierarchidb/style-api": "workspace:*"
   },
   "devDependencies": {
     "@types/react-transition-group": "^4.4.10",

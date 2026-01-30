@@ -1,4 +1,4 @@
-import type { PluginManifest } from '@hierarchidb/plugin-service-api';
+import type { PluginManifest } from '@hierarchidb/plugin-base';
 import { PLUGIN_MANIFEST } from '../../plugin-manifest.js';
 
 /**

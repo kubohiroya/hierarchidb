@@ -4,7 +4,7 @@
   */
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { NodeId, NodeType } from '@hierarchidb/common-types';
-import { NodeTypeAPI } from '@hierarchidb/plugin-service-api';
+import { NodeTypeAPI } from '@hierarchidb/plugin-base';
 
 describe.skip('NodeTypeAPI (skipped pending implementation)', () => {
   let nodeTypeAPI: NodeTypeAPI;

@@ -114,6 +114,23 @@
   - update: 2026-01-30 13:17 JST LocationPointProperties の型に合わせて Record キャストを撤去し、tileId 解決を型安全化。
   - done: 2026-01-30 13:17 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
 
+2435) refactor/plugin-service-api/deprecate (P1) — 進行中 (2026-01-30)
+- ブランチ名: refactor/plugin-service-api/deprecate
+- 依存: なし
+- ExecPlan: plans/deprecate-plugin-service-api-execplan.md
+- 受け入れ基準: plugin-service-api の残存契約が plugin-base / feature API に移行される／style-api が新設される／主要参照先が新パッケージを参照する／必要範囲の typecheck/build が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/plugin-service-api/src/**`, `packages/plugin-base/src/**`, `packages/features/*-api/**`, `packages/**`, `plugins/**`, `app/**`
+- ロールバック手順: plan に記載した手順で plugin-service-api の型を復元し、参照を戻す
+- チェックリスト:
+  - style-api を新設して style 契約を移行する
+  - plugin-base に plugin 契約を移行して export を更新する
+  - 参照先を新パッケージへ切替する
+  - plugin-service-api を transitional re-export に整理する
+  - 影響範囲の build/typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-30 13:20 JST plugin-service-api 廃止に向けた移行作業に着手。
+
 2424) refactor/location-store/index-cleanup (P1) — 完了 (2026-01-29)
 - ブランチ名: refactor/location-store/index-cleanup
 - 依存: なし

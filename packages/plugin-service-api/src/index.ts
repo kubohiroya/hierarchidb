@@ -1,27 +1,12 @@
-export * from './types/BaseSearchCriteria.js';
-export * from './types/EntityLifecycleHooks.js';
-export * from './types/OperationResult.js';
-export * from './types/PaginatedResult.js';
-export * from './types/PackageJson.js';
-export * from './types/plugin-definition.js';
-export * from './types/plugin-metadata.js';
-export * from './types/plugin-serialization.js';
-export * from './types/PluginExtensionAPI.js';
-export * from './types/PluginLifecycleAPI.js';
-export * from './types/PluginRegistryAPI.js';
-export * from './types/NodeTypeAPI.js';
-export * from './types/PluginDBQueryAPI.js';
-export * from './types/PluginEphemeralDBAPI.js';
-export * from './types/extensions.js';
-export * from './types/registry.js';
-export * from './types/PluginTreeAPI.js';
-export * from './types/styleTypes.js';
-export * from './types/StyleQueryAPI.js';
-export * from './types/StyleMutationAPI.js';
+// Transitional re-exports for deprecated package.
+export * from '@hierarchidb/plugin-base';
+export * from '@hierarchidb/style-api';
+export * from '@hierarchidb/shape-api';
+export * from '@hierarchidb/location-api';
+export * from '@hierarchidb/route-api';
+
 export * from './types/ideGsmTypes.js';
 export * from './types/LocationQueryAPI.js';
 export * from './types/LocationMutationAPI.js';
 export * from './types/RouteQueryAPI.js';
 export * from './types/RouteMutationAPI.js';
-// Transitional re-exports: location/route API types live in feature-scoped packages.
-export * from '@hierarchidb/location-api';
