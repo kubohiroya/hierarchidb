@@ -1,0 +1,32 @@
+{
+  "name": "@hierarchidb/resolver-store",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
+    "build:types": "tsc --emitDeclarationOnly --declaration --declarationMap --project tsconfig.json --outDir dist",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
+  },
+  "peerDependencies": {
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
+    "dexie": "^4.2.0"
+  },
+  "devDependencies": {
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
+    "dexie": "^4.2.0",
+    "typescript": "workspace:^5.9.3"
+  }
+}
