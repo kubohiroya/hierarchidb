@@ -1,6 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { IdeGsmSelectionEntry } from '@hierarchidb/location-api';
-import type { IdeGsmRouteError } from '@hierarchidb/route-api';
 
 export type IdeGsmImportPhase =
   | 'fetch'
@@ -32,7 +31,13 @@ export type IdeGsmLocationPointInput = {
   properties?: Record<string, unknown>;
 };
 
-export type { IdeGsmRouteError };
+type IdeGsmRouteErrorShape = {
+  id: string;
+  rowNumber: number;
+  start: string;
+  end: string;
+  reason: string;
+};
 
 export type IdeGsmLocationImportRequest = {
   nodeId: NodeId;
@@ -56,5 +61,5 @@ export type IdeGsmRouteImportRequest = {
 export type IdeGsmRouteImportResult = {
   saved: number;
   errorCount: number;
-  errors: IdeGsmRouteError[];
+  errors: IdeGsmRouteErrorShape[];
 };

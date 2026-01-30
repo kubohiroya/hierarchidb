@@ -18,8 +18,8 @@ export interface RoutePoint {
   locationFeatureId?: LocationFeatureId;
   locationId?: NodeId;
   pointId?: string;
-  latitude?: number;
-  longitude?: number;
+  latitude: number;
+  longitude: number;
   locationName?: string;
   name?: string;
   admin0Name?: string;

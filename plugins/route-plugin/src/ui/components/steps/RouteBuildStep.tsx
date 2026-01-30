@@ -19,12 +19,13 @@ import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import { findRelatedNodesByPriority } from '@hierarchidb/common-api';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
 import { proxy } from 'comlink';
-import {
-  IDE_GSM_BULK_CHUNK_SIZE,
-  type IdeGsmImportProgress,
-  type IdeGsmRouteError,
-} from '@hierarchidb/plugin-service-api';
-import type { RouteTransportSelection, RouteUpdaterPayload, RouteEntity } from '@hierarchidb/route-api';
+import { IDE_GSM_BULK_CHUNK_SIZE, type IdeGsmImportProgress } from '@hierarchidb/plugin-service-api';
+import type {
+  IdeGsmRouteError,
+  RouteTransportSelection,
+  RouteUpdaterPayload,
+  RouteEntity,
+} from '@hierarchidb/route-api';
 import { useTranslation } from '../../../common/i18n/index.js';
 import { getRouteUpdaterPayload } from '../../../common/utils/draft.js';
 import { useRouteBuildCrashInsight } from '../../hooks/useRouteBuildCrashInsight.js';

@@ -25,4 +25,3 @@ export * from './types/RouteQueryAPI.js';
 export * from './types/RouteMutationAPI.js';
 // Transitional re-exports: location/route API types live in feature-scoped packages.
 export * from '@hierarchidb/location-api';
-export * from '@hierarchidb/route-api';

@@ -1,5 +1,41 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { RouteNearestLineQuery, RouteNearestLineResponse } from '@hierarchidb/route-api';
+
+export interface RouteNearestLineQuery {
+  nodeId: NodeId;
+  longitude: number;
+  latitude: number;
+  zoom: number;
+  maxDistanceMeters: number;
+}
+
+export interface RouteNearestEndpoint {
+  name?: string;
+  admin1Name?: string;
+  admin0Name?: string;
+  pointId?: string;
+}
+
+export interface RouteNearestLine {
+  lineStringId?: string;
+  featureId?: string;
+  routeMode?: string;
+  routeDistanceMeters?: number;
+  start?: RouteNearestEndpoint;
+  end?: RouteNearestEndpoint;
+}
+
+export interface RouteNearestLineMatch {
+  line: RouteNearestLine;
+  distanceMeters: number;
+}
+
+export interface RouteNearestLineResponse {
+  cursor: {
+    longitude: number;
+    latitude: number;
+  };
+  matches: RouteNearestLineMatch[];
+}
 
 /**
  * Exposes route plugin artifacts.
