@@ -1,5 +1,4 @@
 import type { CountryCode, NodeId } from '@hierarchidb/common-types';
-import type { ShapeContainerNodeId } from '@hierarchidb/shape-store';
 
 export type LocationPointKind = string;
 
@@ -189,6 +188,6 @@ export type LocationFeature = {
   data: LocationFeatureProperties;
   mortonKey?: string;
   centroidForShapeId?: number;
-  centroidForShapeContainerNodeId?: ShapeContainerNodeId;
+  centroidForShapeContainerNodeId?: NodeId;
   updatedAt?: number;
 };

@@ -21,13 +21,11 @@
   "peerDependencies": {
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/gen-iso3166-2": "workspace:*",
-    "@hierarchidb/shape-store": "workspace:*",
     "@hierarchidb/util": "workspace:*"
   },
   "devDependencies": {
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/gen-iso3166-2": "workspace:*",
-    "@hierarchidb/shape-store": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "typescript": "workspace:^5.9.3"
   }
