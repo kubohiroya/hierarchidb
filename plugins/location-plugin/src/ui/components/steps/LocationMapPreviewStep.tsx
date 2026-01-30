@@ -623,17 +623,19 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       if (requestId !== queryRequestRef.current) return;
       const points = items
         .map((item) => {
-          const data = item.data as Record<string, unknown> | undefined;
+          const data = item.data;
           if (!data) return null;
-          const longitude = data.longitude as number | undefined;
-          const latitude = data.latitude as number | undefined;
+          const longitude = data.longitude;
+          const latitude = data.latitude;
           if (typeof longitude !== 'number' || !Number.isFinite(longitude)) return null;
           if (typeof latitude !== 'number' || !Number.isFinite(latitude)) return null;
           const fallbackTile = (() => {
             const { x, y } = lonLatToTileXY(longitude, latitude, tileZoom);
             return formatTileId(tileZoom, x, y);
           })();
-          const tileId = typeof data[tileIdField] === 'string' ? data[tileIdField] as string : fallbackTile;
+          const tileId = typeof data[tileIdField as keyof typeof data] === 'string'
+            ? (data[tileIdField as keyof typeof data] as string)
+            : fallbackTile;
           const name = typeof data.name === 'string' ? data.name : undefined;
           return {
             id: String(item.id),
