@@ -4,20 +4,9 @@
 
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { ShapeContainerNodeId } from '@hierarchidb/shape-store';
 import { Dexie, type Table } from 'dexie';
-import type { LocationGroupItemData } from './locationTypes.js';
+import type { LocationFeature } from './locationTypes.js';
 
-export type LocationFeature = {
-  nodeId: NodeId;
-  id: string;
-  type?: string;
-  mortonKey?: string;
-  data?: LocationGroupItemData;
-  centroidForShapeId?: number;
-  centroidForShapeContainerNodeId?: ShapeContainerNodeId;
-  updatedAt?: number;
-};
 
 export class LocationDB extends Dexie {
   features!: Table<LocationFeature, [NodeId, string]>;

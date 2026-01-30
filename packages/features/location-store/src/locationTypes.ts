@@ -1,4 +1,5 @@
-import type { CountryCode, NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/common-types';
+import { ShapeContainerNodeId } from '@hierarchidb/shape-store';
 
 export type LocationType =
   | 'area_centroid'
@@ -68,23 +69,22 @@ export type IdeGsmSourceEntry = {
   sourceType?: 'local' | 'remote';
 };
 
-export type LocationPointKind = LocationType | string;
-
-export type LocationPointMetadata = Record<string, string | number | null>;
+export type LocationMetadata = Record<string, string | number | null>;
 
 export type LocationPointId = string & { readonly __brand: 'LocationPointId' };
+export type LocationFeatureId = string & { readonly __brand: 'LocationFeatureId' };
 
-export interface LocationPointProperties {
+export interface LocationFeatureProperties {
   schemaVersion: 2;
   pointId: LocationPointId;
   name: string;
   latitude: number;
   longitude: number;
-  type: LocationPointKind;
-  countryName?: string;
-  countryCode: CountryCode;
-  admin1?: string;
-  admin2?: string;
+  type: LocationType;
+  admin0Name?: string;
+  admin1Name?: string;
+  admin2Name?: string;
+  admin0Code?: string;
   admin1Code?: string;
   admin2Code?: string;
   centroidForShapeId?: number;
@@ -99,14 +99,18 @@ export interface LocationPointProperties {
   z7?: string;
   z8?: string;
   z9?: string;
-  metadata?: LocationPointMetadata;
+  mortonKey?: string;
+  metadata?: LocationMetadata;
 }
 
-export interface LocationGroupItemData extends LocationPointProperties {}
+export type LocationPointProperties = LocationFeatureProperties;
 
-export interface LocationRelationMeta {
-  schemaVersion: 1;
-  relationKind?: string;
-  weight?: number;
-  metadata?: Record<string, unknown>;
-}
+export type LocationFeature = {
+  nodeId: NodeId;
+  id: LocationFeatureId;
+  type: string;
+  data: LocationFeatureProperties;
+  centroidForShapeId?: number;
+  centroidForShapeContainerNodeId?: ShapeContainerNodeId;
+  updatedAt?: number;
+};

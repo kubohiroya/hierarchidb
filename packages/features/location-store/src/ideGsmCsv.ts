@@ -1,6 +1,6 @@
 import { ensureIso3166Data, getAllCountries, getCountry, resolveIso3166CsvUrl } from '@hierarchidb/gen-iso3166-2/browser';
 import type { IdeGsmSelectionEntry } from '@hierarchidb/plugin-service-api';
-import type { LocationPointProperties, LocationType } from './locationTypes.js';
+import type { LocationFeatureProperties, LocationType } from './locationTypes.js';
 import { buildLocationPointIdFromLatLon } from './locationPointId.js';
 import { buildTileIdByZoom } from './morton.js';
 import { parseCsvTable } from './csvUtils.js';
@@ -8,7 +8,7 @@ import { parseCsvTable } from './csvUtils.js';
 const DEFAULT_CSV_URL = resolveIso3166CsvUrl();
 
 export type IdeGsmParseResult = {
-  points: LocationPointProperties[];
+  points: LocationFeatureProperties[];
   rowCount: number;
 };
 
@@ -77,7 +77,7 @@ const resolveAdmin1Code = async (countryCode?: string, admin1?: string): Promise
 };
 
 export const parseIdeGsmCsv = async (csvText: string): Promise<IdeGsmParseResult> => {
-  const points: LocationPointProperties[] = [];
+  const points: LocationFeatureProperties[] = [];
   const { headers, rows } = parseCsvTable(csvText, { delimiter: ',', hasHeader: true });
   for (let index = 0; index < rows.length; index += 1) {
     const row = rows[index];
@@ -86,8 +86,8 @@ export const parseIdeGsmCsv = async (csvText: string): Promise<IdeGsmParseResult
     const lat = Number(row?.[1]);
     const lon = Number(row?.[2]);
     if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
-    const admin1 = row[3]?.trim() || undefined;
-    const countryName = row[4]?.trim() || undefined;
+    const admin0Name = row[3]?.trim() || undefined;
+    const admin1Name = row[4]?.trim() || undefined;
     const adminCenterFlag = row[5]?.trim() ?? '0';
     const isAdminCenter = adminCenterFlag === '1';
     const type = toLocationType(name, isAdminCenter);
@@ -107,11 +107,9 @@ export const parseIdeGsmCsv = async (csvText: string): Promise<IdeGsmParseResult
       latitude: lat,
       longitude: lon,
       type,
-      countryCode: '',
       ...buildTileIdByZoom(lon, lat),
-      countryName,
-      admin1,
-      admin2: undefined,
+      admin0Name,
+      admin1Name,
       metadata,
     });
   }
@@ -119,15 +117,15 @@ export const parseIdeGsmCsv = async (csvText: string): Promise<IdeGsmParseResult
   if (!points.length) return { points, rowCount: rows.length };
   const countryCodeCache = new Map<string, string>();
   for (const point of points) {
-    const key = point.countryName ?? '';
+    const key = point.admin0Name ?? '';
     if (key) {
       if (!countryCodeCache.has(key)) {
         countryCodeCache.set(key, await getCountryCodeByName(key));
       }
-      point.countryCode = countryCodeCache.get(key) ?? '';
+      point.admin0Code = countryCodeCache.get(key) ?? '';
     }
-    if (point.admin1) {
-      point.admin1Code = await resolveAdmin1Code(point.countryCode, point.admin1);
+    if (point.admin1Code) {
+      point.admin1Code = await resolveAdmin1Code(point.admin0Code, point.admin1Code);
     }
   }
 
@@ -135,16 +133,16 @@ export const parseIdeGsmCsv = async (csvText: string): Promise<IdeGsmParseResult
 };
 
 export const filterIdeGsmPointsBySelection = (
-  points: LocationPointProperties[],
+  points: LocationFeatureProperties[],
   entries: IdeGsmSelectionEntry[],
-): LocationPointProperties[] => {
+): LocationFeatureProperties[] => {
   if (entries.length === 0) return points;
   const countrySet = new Set(entries.map((entry) => entry.countryCode));
   const countryNameSet = new Set(entries.map((entry) => entry.countryName.toLowerCase()));
   const typeSet = new Set(entries.flatMap((entry) => entry.types));
   return points.filter((point) => {
-    const normalizedCode = point.countryCode?.toUpperCase();
-    const normalizedName = point.countryName?.toLowerCase();
+    const normalizedCode = point.admin0Code?.toUpperCase();
+    const normalizedName = point.admin0Name?.toLowerCase();
     const matchesCountry =
       (!normalizedCode && !normalizedName)
       || (normalizedCode && countrySet.has(normalizedCode))
