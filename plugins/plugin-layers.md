@@ -34,7 +34,7 @@ TreeNodeUpdaterAPI / useTreeNodeUpdater / useSingleSourceDialogAtom への一本
 
 ## 理想的な層構成（全プラグイン共通の型）
 ```
-🟥 App Shell / RuntimeWiring
+🟥 App Shell / AuthRuntimeBridge
    └─ PluginDefinition → plugin-registry → UI/Worker エントリ解決
 🟧 UI Plugin (useTreeNodeUpdater + TreeNodeUpdaterAPI)
    └─ Step onUpdate → draftMetadata/draftData にマージ

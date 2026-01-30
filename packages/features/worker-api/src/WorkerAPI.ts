@@ -1,20 +1,20 @@
-import type { BuildContinuationPolicy, NodeId, NodeType } from '@hierarchidb/common-types';
+import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/location-api';
 import type { HeapPressureEvent } from '@hierarchidb/memory';
 import type { PluginLifecycleAPI } from '@hierarchidb/plugin-base';
 import type { RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/route-api';
 import type { ShapeDataSourceName, ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
 import type { StyleMutationAPI, StyleQueryAPI } from '@hierarchidb/style-api';
-import type {
-  BatchProgressEvent,
-  BatchSessionStatus,
-  BatchTaskSummary,
-  BatchTaskUpdateEvent,
-  TreeTableExpandedAPI,
-} from '@hierarchidb/common-api';
+import type { BatchProgressEvent, BatchSessionStatus, BatchTaskSummary, BatchTaskUpdateEvent, BuildContinuationPolicy } from '@hierarchidb/batch-api';
 import type { ImportExportAPI } from '@hierarchidb/import-export-api';
-import type { TagAPI, TreeNodeUpdaterAPI, TreeSubscriptionAPI } from '@hierarchidb/tree-api';
-import type { TreeMutationAPI, TreeQueryAPI } from '@hierarchidb/tree-api';
+import type { TagAPI } from '@hierarchidb/tag-api';
+import type {
+  TreeMutationAPI,
+  TreeNodeUpdaterAPI,
+  TreeQueryAPI,
+  TreeSubscriptionAPI,
+  TreeTableExpandedAPI,
+} from '@hierarchidb/tree-api';
 
 type ShapeDownloadTaskPayload = {
   url: string;

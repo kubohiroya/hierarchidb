@@ -10,7 +10,7 @@ import {
 } from '@hierarchidb/ui-batch-progress';
 import type { TaskStage } from '@hierarchidb/common-types';
 import type { BuildProgress, BuildProgressStatus } from './shapeBuildProgressMapping.ts';
-import type { BatchTaskSummary } from '@hierarchidb/common-api';
+import type { BatchTaskSummary } from '@hierarchidb/batch-api';
 
 type CountsWithPercentage = TaskCountSummary & { percentage: number };
 

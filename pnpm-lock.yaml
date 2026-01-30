@@ -277,15 +277,21 @@ importers:
       '@emotion/styled':
         specifier: 11.14.0
         version: 11.14.0(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react@18.3.1)
-      '@hierarchidb/common-api':
+      '@hierarchidb/batch-api':
         specifier: workspace:*
-        version: link:../packages/common/api
+        version: link:../packages/features/batch-api
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../packages/common/types
+      '@hierarchidb/core-types':
+        specifier: workspace:*
+        version: link:../packages/core-types
       '@hierarchidb/gen-iso3166-2':
         specifier: workspace:*
         version: link:../packages/tools/gen-iso3166-2
+      '@hierarchidb/import-export-api':
+        specifier: workspace:*
+        version: link:../packages/features/import-export-api
       '@hierarchidb/location-api':
         specifier: workspace:*
         version: link:../packages/features/location-api
@@ -337,6 +343,9 @@ importers:
       '@hierarchidb/tag':
         specifier: workspace:*
         version: link:../packages/features/tag
+      '@hierarchidb/tag-api':
+        specifier: workspace:*
+        version: link:../packages/features/tag-api
       '@hierarchidb/tree-api':
         specifier: workspace:*
         version: link:../packages/features/tree-api
@@ -561,9 +570,9 @@ importers:
       '@hierarchidb/auth-recovery':
         specifier: workspace:*
         version: link:../features/auth-recovery
-      '@hierarchidb/common-api':
+      '@hierarchidb/batch-api':
         specifier: workspace:*
-        version: link:../common/api
+        version: link:../features/batch-api
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../common/types
@@ -583,25 +592,6 @@ importers:
         specifier: 5.8.2
         version: 5.8.2
 
-  packages/common/api:
-    dependencies:
-      '@hierarchidb/common-types':
-        specifier: workspace:*
-        version: link:../types
-      '@hierarchidb/tree-api':
-        specifier: workspace:*
-        version: link:../../features/tree-api
-      comlink:
-        specifier: ^4.4.2
-        version: 4.4.2
-      rxjs:
-        specifier: ^7.8.2
-        version: 7.8.2
-    devDependencies:
-      '@types/node':
-        specifier: 18.19.123
-        version: 18.19.123
-
   packages/common/auth:
     devDependencies:
       '@hierarchidb/common-types':
@@ -616,6 +606,21 @@ importers:
 
   packages/common/types:
     dependencies:
+      '@hierarchidb/batch-api':
+        specifier: workspace:*
+        version: link:../../features/batch-api
+      '@hierarchidb/core-types':
+        specifier: workspace:*
+        version: link:../../core-types
+      '@hierarchidb/import-export-api':
+        specifier: workspace:*
+        version: link:../../features/import-export-api
+      '@hierarchidb/tag-api':
+        specifier: workspace:*
+        version: link:../../features/tag-api
+      '@hierarchidb/tree-api':
+        specifier: workspace:*
+        version: link:../../features/tree-api
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../util
@@ -660,6 +665,21 @@ importers:
         specifier: ^4.14.0
         version: 4.14.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
+  packages/core-types:
+    devDependencies:
+      '@types/node':
+        specifier: 18.19.123
+        version: 18.19.123
+      fake-indexeddb:
+        specifier: ^6.1.0
+        version: 6.2.5
+
+  packages/features/auth-api:
+    devDependencies:
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
   packages/features/auth-recovery:
     devDependencies:
       '@hierarchidb/common-auth':
@@ -674,9 +694,9 @@ importers:
 
   packages/features/batch:
     devDependencies:
-      '@hierarchidb/common-api':
+      '@hierarchidb/batch-api':
         specifier: workspace:*
-        version: link:../../common/api
+        version: link:../batch-api
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../common/types
@@ -689,6 +709,15 @@ importers:
       react:
         specifier: '>=18.0.0'
         version: 18.3.1
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
+  packages/features/batch-api:
+    devDependencies:
+      '@hierarchidb/core-types':
+        specifier: workspace:*
+        version: link:../../core-types
       typescript:
         specifier: 5.8.2
         version: 5.8.2
@@ -817,15 +846,24 @@ importers:
 
   packages/features/import-export:
     devDependencies:
-      '@hierarchidb/common-api':
-        specifier: workspace:*
-        version: link:../../common/api
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../common/types
+      '@hierarchidb/import-export-api':
+        specifier: workspace:*
+        version: link:../import-export-api
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../util
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
+  packages/features/import-export-api:
+    devDependencies:
+      '@hierarchidb/core-types':
+        specifier: workspace:*
+        version: link:../../core-types
       typescript:
         specifier: 5.8.2
         version: 5.8.2
@@ -918,9 +956,9 @@ importers:
 
   packages/features/route-api:
     devDependencies:
-      '@hierarchidb/common-api':
+      '@hierarchidb/batch-api':
         specifier: workspace:*
-        version: link:../../common/api
+        version: link:../batch-api
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../common/types
@@ -1119,12 +1157,12 @@ importers:
 
   packages/features/tag:
     devDependencies:
-      '@hierarchidb/common-types':
+      '@hierarchidb/core-types':
         specifier: workspace:*
-        version: link:../../common/types
-      '@hierarchidb/tree-api':
+        version: link:../../core-types
+      '@hierarchidb/tag-api':
         specifier: workspace:*
-        version: link:../tree-api
+        version: link:../tag-api
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../util
@@ -1132,11 +1170,23 @@ importers:
         specifier: 5.8.2
         version: 5.8.2
 
+  packages/features/tag-api:
+    devDependencies:
+      '@hierarchidb/core-types':
+        specifier: workspace:*
+        version: link:../../core-types
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
   packages/features/tree-api:
     devDependencies:
-      '@hierarchidb/common-types':
+      '@hierarchidb/core-types':
         specifier: workspace:*
-        version: link:../../common/types
+        version: link:../../core-types
+      comlink:
+        specifier: ^4.4.2
+        version: 4.4.2
       typescript:
         specifier: 5.8.2
         version: 5.8.2
@@ -1177,12 +1227,15 @@ importers:
 
   packages/features/worker-api:
     devDependencies:
-      '@hierarchidb/common-api':
+      '@hierarchidb/batch-api':
         specifier: workspace:*
-        version: link:../../common/api
-      '@hierarchidb/common-types':
+        version: link:../batch-api
+      '@hierarchidb/core-types':
         specifier: workspace:*
-        version: link:../../common/types
+        version: link:../../core-types
+      '@hierarchidb/import-export-api':
+        specifier: workspace:*
+        version: link:../import-export-api
       '@hierarchidb/location-api':
         specifier: workspace:*
         version: link:../location-api
@@ -1201,6 +1254,9 @@ importers:
       '@hierarchidb/style-api':
         specifier: workspace:*
         version: link:../style-api
+      '@hierarchidb/tag-api':
+        specifier: workspace:*
+        version: link:../tag-api
       '@hierarchidb/tree-api':
         specifier: workspace:*
         version: link:../tree-api
@@ -1220,9 +1276,9 @@ importers:
         specifier: ^18.3.1
         version: 18.3.1
     devDependencies:
-      '@hierarchidb/common-types':
+      '@hierarchidb/core-types':
         specifier: workspace:*
-        version: link:../common/types
+        version: link:../core-types
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../ui/dialog
@@ -1320,12 +1376,9 @@ importers:
 
   packages/plugin-ui-host:
     devDependencies:
-      '@hierarchidb/common-api':
+      '@hierarchidb/core-types':
         specifier: workspace:*
-        version: link:../common/api
-      '@hierarchidb/common-types':
-        specifier: workspace:*
-        version: link:../common/types
+        version: link:../core-types
       '@hierarchidb/plugin-base':
         specifier: workspace:*
         version: link:../plugin-base
@@ -1338,6 +1391,12 @@ importers:
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../runtime-worker
+      '@hierarchidb/tag-api':
+        specifier: workspace:*
+        version: link:../features/tag-api
+      '@hierarchidb/tree-api':
+        specifier: workspace:*
+        version: link:../features/tree-api
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../ui/dialog
@@ -1411,9 +1470,6 @@ importers:
         specifier: workspace:*
         version: link:../features/worker-api
     devDependencies:
-      '@hierarchidb/common-api':
-        specifier: workspace:*
-        version: link:../common/api
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../common/types
@@ -1465,9 +1521,15 @@ importers:
 
   packages/runtime-worker:
     dependencies:
+      '@hierarchidb/core-types':
+        specifier: workspace:*
+        version: link:../core-types
       '@hierarchidb/gis-sdk':
         specifier: workspace:*
         version: link:../features/gis-sdk
+      '@hierarchidb/import-export-api':
+        specifier: workspace:*
+        version: link:../features/import-export-api
       '@hierarchidb/location-api':
         specifier: workspace:*
         version: link:../features/location-api
@@ -1495,6 +1557,9 @@ importers:
       '@hierarchidb/styler-store':
         specifier: workspace:*
         version: link:../features/styler-store
+      '@hierarchidb/tag-api':
+        specifier: workspace:*
+        version: link:../features/tag-api
       '@hierarchidb/tree-api':
         specifier: workspace:*
         version: link:../features/tree-api
@@ -1541,12 +1606,12 @@ importers:
       '@hierarchidb/auth-recovery':
         specifier: workspace:*
         version: link:../features/auth-recovery
+      '@hierarchidb/batch-api':
+        specifier: workspace:*
+        version: link:../features/batch-api
       '@hierarchidb/chunk-store':
         specifier: workspace:*
         version: link:../features/chunk-store
-      '@hierarchidb/common-api':
-        specifier: workspace:*
-        version: link:../common/api
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../common/types
@@ -1602,12 +1667,12 @@ importers:
 
   packages/testing/plugin-dialog-mocks:
     dependencies:
-      '@hierarchidb/common-api':
-        specifier: workspace:*
-        version: link:../../common/api
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../common/types
+      '@hierarchidb/tree-api':
+        specifier: workspace:*
+        version: link:../../features/tree-api
     devDependencies:
       typescript:
         specifier: 5.8.2
@@ -1772,9 +1837,9 @@ importers:
       '@hierarchidb/batch':
         specifier: workspace:*
         version: link:../../features/batch
-      '@hierarchidb/common-api':
+      '@hierarchidb/batch-api':
         specifier: workspace:*
-        version: link:../../common/api
+        version: link:../../features/batch-api
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../common/types
@@ -1860,9 +1925,9 @@ importers:
 
   packages/ui/dialog:
     dependencies:
-      '@hierarchidb/common-types':
+      '@hierarchidb/tree-api':
         specifier: workspace:*
-        version: link:../../common/types
+        version: link:../../features/tree-api
       '@mui/icons-material':
         specifier: ^7.3.6
         version: 7.3.6(@mui/material@7.3.6(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.27)(react@18.3.1)
@@ -2378,9 +2443,6 @@ importers:
         specifier: ^2.13.1
         version: 2.15.0(@babel/core@7.28.5)(@babel/template@7.27.2)(@types/react@18.3.27)(react@18.3.1)
     devDependencies:
-      '@hierarchidb/common-api':
-        specifier: workspace:*
-        version: link:../../common/api
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../common/types
@@ -2516,9 +2578,6 @@ importers:
       '@emotion/styled':
         specifier: 11.14.0
         version: 11.14.0(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react@18.3.1)
-      '@hierarchidb/common-api':
-        specifier: workspace:*
-        version: link:../../../common/api
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../../common/types
@@ -2846,10 +2905,14 @@ importers:
         version: rolldown-vite@7.2.10(@types/node@18.19.123)(esbuild@0.25.12)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
 
   packages/ui/worker-client:
-    devDependencies:
-      '@hierarchidb/common-api':
+    dependencies:
+      '@hierarchidb/auth-api':
         specifier: workspace:*
-        version: link:../../common/api
+        version: link:../../features/auth-api
+    devDependencies:
+      '@hierarchidb/batch-api':
+        specifier: workspace:*
+        version: link:../../features/batch-api
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../common/types
@@ -2893,9 +2956,6 @@ importers:
         specifier: workspace:*
         version: link:../worker-client
     devDependencies:
-      '@hierarchidb/common-api':
-        specifier: workspace:*
-        version: link:../../common/api
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../common/types
@@ -3030,9 +3090,6 @@ importers:
         specifier: workspace:*
         version: link:../../packages/ui/plugin-basic-info
     devDependencies:
-      '@hierarchidb/common-api':
-        specifier: workspace:*
-        version: link:../../packages/common/api
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../packages/common/types
@@ -3103,9 +3160,6 @@ importers:
         specifier: 12.3.1
         version: 12.3.1(i18next@22.5.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
-      '@hierarchidb/common-api':
-        specifier: workspace:*
-        version: link:../../packages/common/api
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../packages/common/types
@@ -3203,9 +3257,6 @@ importers:
       '@deck.gl/mesh-layers':
         specifier: ^9.0.0
         version: 9.2.1(@deck.gl/core@9.2.1)(@loaders.gl/core@4.3.4)(@luma.gl/core@9.2.2)(@luma.gl/engine@9.2.2(@luma.gl/core@9.2.2)(@luma.gl/shadertools@9.2.2(@luma.gl/core@9.2.2)))(@luma.gl/gltf@9.2.2(@luma.gl/constants@9.2.2)(@luma.gl/core@9.2.2)(@luma.gl/engine@9.2.2(@luma.gl/core@9.2.2)(@luma.gl/shadertools@9.2.2(@luma.gl/core@9.2.2)))(@luma.gl/shadertools@9.2.2(@luma.gl/core@9.2.2)))(@luma.gl/shadertools@9.2.2(@luma.gl/core@9.2.2))
-      '@hierarchidb/common-api':
-        specifier: workspace:*
-        version: link:../../packages/common/api
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../packages/common/types
@@ -3342,12 +3393,12 @@ importers:
       '@hierarchidb/batch':
         specifier: workspace:*
         version: link:../../packages/features/batch
+      '@hierarchidb/batch-api':
+        specifier: workspace:*
+        version: link:../../packages/features/batch-api
       '@hierarchidb/batch-runtime-services':
         specifier: workspace:*
         version: link:../../packages/batch-runtime-services
-      '@hierarchidb/common-api':
-        specifier: workspace:*
-        version: link:../../packages/common/api
       '@hierarchidb/common-auth':
         specifier: workspace:*
         version: link:../../packages/common/auth
@@ -3427,9 +3478,6 @@ importers:
         specifier: workspace:*
         version: link:../../packages/ui/worker-provider
     devDependencies:
-      '@hierarchidb/common-api':
-        specifier: workspace:*
-        version: link:../../packages/common/api
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../packages/common/types
@@ -3563,12 +3611,12 @@ importers:
       '@hierarchidb/auth-recovery':
         specifier: workspace:*
         version: link:../../packages/features/auth-recovery
+      '@hierarchidb/batch-api':
+        specifier: workspace:*
+        version: link:../../packages/features/batch-api
       '@hierarchidb/chunk-store':
         specifier: workspace:*
         version: link:../../packages/features/chunk-store
-      '@hierarchidb/common-api':
-        specifier: workspace:*
-        version: link:../../packages/common/api
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../packages/common/types
@@ -3693,15 +3741,15 @@ importers:
       '@hierarchidb/batch':
         specifier: workspace:*
         version: link:../../packages/features/batch
+      '@hierarchidb/batch-api':
+        specifier: workspace:*
+        version: link:../../packages/features/batch-api
       '@hierarchidb/batch-runtime-services':
         specifier: workspace:*
         version: link:../../packages/batch-runtime-services
       '@hierarchidb/chunk-store':
         specifier: workspace:*
         version: link:../../packages/features/chunk-store
-      '@hierarchidb/common-api':
-        specifier: workspace:*
-        version: link:../../packages/common/api
       '@hierarchidb/common-auth':
         specifier: workspace:*
         version: link:../../packages/common/auth
@@ -3876,9 +3924,6 @@ importers:
       '@hierarchidb/auth-recovery':
         specifier: workspace:*
         version: link:../../packages/features/auth-recovery
-      '@hierarchidb/common-api':
-        specifier: workspace:*
-        version: link:../../packages/common/api
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../packages/common/types
@@ -4067,9 +4112,6 @@ importers:
       '@emotion/styled':
         specifier: 11.14.0
         version: 11.14.0(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react@18.3.1)
-      '@hierarchidb/common-api':
-        specifier: workspace:*
-        version: link:../../packages/common/api
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../packages/common/types

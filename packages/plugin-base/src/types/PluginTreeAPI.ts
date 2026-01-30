@@ -1,4 +1,4 @@
-import type { NodeType, TreeId } from '@hierarchidb/common-types';
+import type { NodeType, TreeId } from '@hierarchidb/core-types';
 import type { NodeCapability } from './plugin-definition.js';
 
 export interface TreePluginInfo {

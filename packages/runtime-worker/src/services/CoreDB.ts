@@ -1,17 +1,14 @@
-import type { ListChildrenOptions } from '@hierarchidb/tree-api';
 import type {
   DialogUIState,
-  NodeId,
+  ListChildrenOptions,
   NodePayload,
-  NodeTagAssociation,
-  NodeType,
-  TagEntity,
   Tree,
   TreeChangeEvent,
-  TreeId,
   TreeNode,
   TreeRootState,
-} from '@hierarchidb/common-types';
+} from '@hierarchidb/tree-api';
+import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
+import type { NodeTagAssociation, TagEntity } from '@hierarchidb/tag-api';
 import { getDBName, SingletonMixin } from '@hierarchidb/util';
 import type { BulkError } from 'dexie';
 import { Dexie, type Table } from 'dexie';

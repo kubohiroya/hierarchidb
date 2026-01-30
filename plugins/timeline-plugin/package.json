@@ -51,7 +51,6 @@
   },
   "dependencies": {
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
@@ -66,7 +65,6 @@
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
     "react": ">=18.0.0",
-    "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
@@ -81,7 +79,6 @@
     "@types/node": "^20.10.5",
     "react": ">=18.0.0",
     "typescript": "workspace:^5.9.3",
-    "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",

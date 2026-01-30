@@ -2,7 +2,7 @@
  * Multi-step dialog type definitions
  */
 
-import { DialogDisplayMode } from '@hierarchidb/common-types';
+import { DialogDisplayMode } from '@hierarchidb/tree-api';
 import { ReactNode } from 'react';
 
 /**

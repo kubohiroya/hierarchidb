@@ -19,25 +19,29 @@
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "peerDependencies": {
-    "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
+    "@hierarchidb/import-export-api": "workspace:*",
     "@hierarchidb/location-api": "workspace:*",
     "@hierarchidb/memory": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*",
     "@hierarchidb/route-api": "workspace:*",
     "@hierarchidb/shape-api": "workspace:*",
     "@hierarchidb/style-api": "workspace:*",
+    "@hierarchidb/tag-api": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*"
   },
   "devDependencies": {
-    "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
+    "@hierarchidb/import-export-api": "workspace:*",
     "@hierarchidb/location-api": "workspace:*",
     "@hierarchidb/memory": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*",
     "@hierarchidb/route-api": "workspace:*",
     "@hierarchidb/shape-api": "workspace:*",
     "@hierarchidb/style-api": "workspace:*",
+    "@hierarchidb/tag-api": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
     "typescript": "workspace:^5.9.3"
   }

@@ -1,13 +1,8 @@
-import type {
-  CommitResult,
-  DialogUIState,
-  NodeId,
-  NodeType,
-  OnNameConflict,
-  TreeNode,
-  TreeNodeMetadata,
-  ValidationResult,
-} from '@hierarchidb/common-types';
+import type { NodeId, NodeType, ValidationResult } from '@hierarchidb/core-types';
+import type { OnNameConflict } from './command-types.js';
+import type { CommitResult } from './commit-types.js';
+import type { DialogUIState } from './dialog-state.js';
+import type { TreeNode, TreeNodeMetadata } from './tree-node-types.js';
 
 /**
  * Tree node updater API (formerly DraftAPI).

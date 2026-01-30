@@ -28,7 +28,7 @@
   },
   "peerDependencies": {
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/download": "workspace:*",
     "@hierarchidb/auth-recovery": "workspace:*"
   },
@@ -39,7 +39,7 @@
     "typescript": "workspace:^5.9.3",
     "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/download": "workspace:*",
     "@hierarchidb/auth-recovery": "workspace:*"
   }

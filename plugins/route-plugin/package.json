@@ -63,8 +63,8 @@
     "@emotion/styled": "^11.14.0",
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/batch-runtime-services": "workspace:*",
+    "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/chunk-store": "workspace:*",
-    "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/download": "workspace:*",
     "@hierarchidb/ui-auth": "workspace:*",
@@ -101,7 +101,7 @@
   "devDependencies": {
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/chunk-store": "workspace:*",
-    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/download": "workspace:*",
     "@hierarchidb/ui-auth": "workspace:*",

@@ -28,7 +28,7 @@ import {
 import { ShapeEntityHandler } from './handlers/index.js';
 
 import { metadataLoader } from '../services/metadata/MetadataLoader.js';
-import { normalizeProgressPhase, type BatchProgressEvent, type BatchProgressPayload, type BatchTaskSummary, type BatchTaskUpdateEvent, type ProgressPhase } from '@hierarchidb/common-api';
+import { type BatchProgressEvent, type BatchProgressPayload, type BatchTaskSummary, type BatchTaskUpdateEvent, type ProgressPhase } from '@hierarchidb/batch-api';
 import {
   generateDownloadTaskPayloads,
   getPreferredCountryCodeFormat,
@@ -126,12 +126,12 @@ const resolveTaskProgress = (task: TaskQueueRecord): number => {
 };
 
 const normalizeTaskStatus = (status: TaskQueueRecord['status'] | string): BuildTask['status'] => {
-  const normalized = normalizeProgressPhase(status);
-  return normalized === 'warning' ? 'queued' : normalized;
+  if (status === 'warning') return 'queued';
+  return status as BuildTask['status'];
 };
 
 const normalizeTaskPhase = (status: TaskQueueRecord['status'] | string): ProgressPhase => (
-  normalizeProgressPhase(status)
+  status as ProgressPhase
 );
 
 

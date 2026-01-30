@@ -3,6 +3,7 @@
  * Dialog UI atoms is persisted on TreeNode.dialogUIState via TreeNodeUpdaterAPI.
  */
 import type { WorkerAPI } from '@hierarchidb/worker-api';
+import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import type {
   DialogDisplayMode,
   DialogPosition,
@@ -11,9 +12,7 @@ import type {
   DialogState,
   DialogUIState,
   DialogWindowState,
-  NodeId,
-  TreeId,
-} from '@hierarchidb/common-types';
+} from '@hierarchidb/tree-api';
 import {
   composeStepConfigs,
   HostProfileRegistry,

@@ -19,14 +19,14 @@
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "peerDependencies": {
-    "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/import-export-api": "workspace:*",
     "@hierarchidb/util": "workspace:*"
   },
   "devDependencies": {
     "typescript": "workspace:^5.9.3",
-    "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/import-export-api": "workspace:*",
     "@hierarchidb/util": "workspace:*"
   }
 }

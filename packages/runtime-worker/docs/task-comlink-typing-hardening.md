@@ -2,7 +2,7 @@
 
 目的
 - Comlink の expose/wrap で any/キャストを排除し、境界で型が消えないようにする。
-- 共有契約（`@hierarchidb/common-api`）に実装を厳密一致させ、コンパイル時に逸脱を検出する。
+- 共有契約（`@hierarchidb/worker-api` / `@hierarchidb/batch-api`）に実装を厳密一致させ、コンパイル時に逸脱を検出する。
 
 範囲
 - `WorkerService` の公開APIを `WorkerAPI` の関数群に限定（privateなクラス実装を直接渡さない）。
@@ -11,10 +11,10 @@
 
 提案ファイル/変更箇所
 - `packages/runtime/worker/src/RuntimeWorkerService.ts`（`WorkerService` の公開インターフェース確認）
-- `@hierarchidb/common-api`（必要時、契約の明確化と型の更新）
+- `@hierarchidb/worker-api` / `@hierarchidb/batch-api`（必要時、契約の明確化と型の更新）
 
 実施手順
-1) `WorkerService` が返す各 API の戻り値/引数が `@hierarchidb/common-api` と一致しているか型チェック。
+1) `WorkerService` が返す各 API の戻り値/引数が `@hierarchidb/worker-api` / `@hierarchidb/batch-api` と一致しているか型チェック。
 2) `wrap<WorkerAPI>()` を用いて呼び出す側の型を強制（キャスト排除）。
 3) クラスのインスタンスをそのまま expose せず、`expose<WorkerAPI>(impl)` でプレーンな関数群として公開。
 4) `ProxyMarked` を返す箇所の設計を見直し、必要なら関数越しに操作させるようAPIを再設計。
@@ -34,4 +34,3 @@
 補足（tsconfig/ESLint）
 - `strict: true`, `noImplicitAny: true`, `exactOptionalPropertyTypes: true`, `noUncheckedIndexedAccess: true` を確認。
 - ESLint: `@typescript-eslint/no-explicit-any: 'error'`, `no-unsafe-assignment/argument/member-access/return` を有効化。
-

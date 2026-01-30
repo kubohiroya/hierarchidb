@@ -1,4 +1,4 @@
-import { DialogDisplayMode, DialogPosition, DialogSize } from '@hierarchidb/common-types';
+import { DialogDisplayMode, DialogPosition, DialogSize } from '@hierarchidb/tree-api';
 import type { ReactNode, ComponentType, PointerEvent as ReactPointerEvent } from 'react';
 
 /** Step navigation commands emitted by the dialog shell. */

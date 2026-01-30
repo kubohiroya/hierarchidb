@@ -1,4 +1,4 @@
-import type { PluginDialogAPI, StepCapabilities } from '@hierarchidb/common-api';
+import type { PluginDialogAPI, StepCapabilities } from '@hierarchidb/tree-api';
 import type { TreeNodeUpdater, TreeNodeUpdaterPayload } from '@hierarchidb/common-types';
 import type { NodeId, ValidationResult } from '@hierarchidb/common-types';
 

@@ -58,7 +58,7 @@ from `plugins/shape-plugin/src/index.ts`, verify external usage before removal.
 
 ## Notes
 
-- `plugins/shape-plugin/src/index.ts` exports `RuntimeWiring` and `onRegister`.
+- `plugins/shape-plugin/src/index.ts` exports `AuthRuntimeBridge` and `onRegister`.
   These are part of the plugin runtime wiring interface, so they are not marked
   as unused here.
 - If a candidate is exported in `plugins/shape-plugin/src/index.ts`, confirm

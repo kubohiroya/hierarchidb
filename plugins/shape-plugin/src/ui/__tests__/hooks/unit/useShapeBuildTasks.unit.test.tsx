@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { BatchTaskUpdateEvent } from '@hierarchidb/common-api';
+import type { BatchTaskUpdateEvent } from '@hierarchidb/batch-api';
 import { useShapeBuildTasks } from '../../../components/build-progress/useShapeBuildTasks.ts';
 
 const initializeMock = vi.fn<[], Promise<void>>();

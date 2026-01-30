@@ -1,24 +1,20 @@
-// Local copy of shared type to avoid stage-time cross-package coupling
-export interface PluginRuntimeWiring {
-  registerAuthNotifier?: () => Promise<void> | void;
-  registerRuntimeWorkerAdapters?: () => Promise<void> | void;
-}
+import type { AuthRuntimeBridge } from '@hierarchidb/auth-api';
 
 /**
  * wirePluginsFromModules
- * Reflectively scans given modules for an exported `runtimeWiring` object/class and
+ * Reflectively scans given modules for an exported auth runtime bridge and
  * calls its optional hooks in a safe, best-effort manner.
  */
 import { registerRuntimeExports } from './runtime-export-registry.js';
 
-const RUNTIME_METHOD_KEYS: Array<keyof PluginRuntimeWiring> = [
+const RUNTIME_METHOD_KEYS = [
   'registerAuthNotifier',
   'registerRuntimeWorkerAdapters',
-];
+] as const;
 
-function toRuntimeWiring(candidate: unknown): PluginRuntimeWiring | undefined {
+function toRuntimeWiring(candidate: unknown): AuthRuntimeBridge | undefined {
   if (!candidate) return undefined;
-  const wiring: PluginRuntimeWiring = {};
+  const wiring: AuthRuntimeBridge = {};
   const source = candidate as Record<string, unknown>;
   let hasMember = false;
   for (const key of RUNTIME_METHOD_KEYS) {
@@ -66,11 +62,15 @@ export async function wirePluginsFromModules(entries: PluginModuleEntry[]): Prom
         (typeof mod === 'object' || typeof mod === 'function') && mod !== null
           ? (mod as Record<string, unknown>)
           : null;
-      const wiringCandidates: PluginRuntimeWiring[] = [];
-      const objectWiring = toRuntimeWiring(moduleRecord?.runtimeWiring);
+      const wiringCandidates: AuthRuntimeBridge[] = [];
+      const objectWiring = toRuntimeWiring(moduleRecord?.authRuntimeBridge);
       if (objectWiring) wiringCandidates.push(objectWiring);
-      const classWiring = toRuntimeWiring(moduleRecord?.RuntimeWiring);
+      const classWiring = toRuntimeWiring(moduleRecord?.AuthRuntimeBridge);
       if (classWiring) wiringCandidates.push(classWiring);
+      const legacyObjectWiring = toRuntimeWiring(moduleRecord?.runtimeWiring);
+      if (legacyObjectWiring) wiringCandidates.push(legacyObjectWiring);
+      const legacyClassWiring = toRuntimeWiring(moduleRecord?.RuntimeWiring);
+      if (legacyClassWiring) wiringCandidates.push(legacyClassWiring);
 
       for (const wiring of wiringCandidates) {
         if (typeof wiring.registerAuthNotifier === 'function') {

@@ -4,7 +4,9 @@
  * This API provides efficient query operations for retrieving console structures,
  * node information, and performing searches without modifying data.
  */
-import type { NodeId, Tree, TreeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, TreeId } from '@hierarchidb/core-types';
+import type { Tree } from './tree-types.js';
+import type { TreeNode } from './tree-node-types.js';
 
 /**
  * Read-only data access API for console and node queries

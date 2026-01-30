@@ -8,7 +8,7 @@ import {
   tasksErrorAtom,
   tasksLoadingAtom,
 } from '../../atoms/shapeBuildProgressAtoms.js';
-import type { BatchTaskUpdateEvent } from '@hierarchidb/common-api';
+import type { BatchTaskUpdateEvent } from '@hierarchidb/batch-api';
 import { parseGeometrySimplifyError } from './geometrySimplifyError.ts';
 import { useShapeBuildTaskSync, type RawTaskSummary } from './useShapeBuildTaskSync.ts';
 

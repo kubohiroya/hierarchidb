@@ -25,7 +25,7 @@
   "peerDependencies": {
     "react": ">=18.0.0",
     "@hierarchidb/batch": "workspace:*",
-    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
     "@hierarchidb/components": "workspace:*"
@@ -33,7 +33,7 @@
   "devDependencies": {
     "react": ">=18.0.0",
     "@hierarchidb/batch": "workspace:*",
-    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
     "@hierarchidb/components": "workspace:*",

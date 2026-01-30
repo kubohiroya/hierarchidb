@@ -4,7 +4,7 @@ import type {
   DialogDisplayMode,
   DialogPosition,
   DialogSize,
-} from '@hierarchidb/common-types';
+} from '@hierarchidb/tree-api';
 
 export const FRAME_CONSTANTS = {
   MIN_DIALOG_WIDTH: 560,

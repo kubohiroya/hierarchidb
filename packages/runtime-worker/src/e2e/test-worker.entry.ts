@@ -2,7 +2,7 @@
 // Runs in the same process for simplicity; fake-indexeddb provides IndexedDB in Node.
 import 'fake-indexeddb/auto';
 import type { ImportExportAPI } from '@hierarchidb/import-export-api';
-import type { TreeTableExpandedAPI } from '@hierarchidb/common-api';
+import type { TreeTableExpandedAPI } from '@hierarchidb/tree-api';
 import type {
   TreeMutationAPI,
   TreeNodeUpdaterAPI,

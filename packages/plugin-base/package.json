@@ -28,7 +28,7 @@
   "peerDependencies": {
     "react": "^18.3.1",
     "jotai": "^2.11.2",
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*"
   },
   "devDependencies": {
@@ -37,7 +37,7 @@
     "@types/react": "^18.3.1",
     "@testing-library/react": "^16.1.0",
     "jotai": "^2.11.2",
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*"
   },
   "turbo": {

@@ -2,13 +2,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 import { render, cleanup, waitFor } from '@testing-library/react';
 import React from 'react';
 import { readFile } from 'node:fs/promises';
-import type {
-  BatchProgressEvent,
-  BatchProgressPayload,
-  BatchTaskSummary,
-  BatchTaskUpdateEvent,
-  ProgressPhase,
-} from '@hierarchidb/common-api';
+import type { BatchProgressEvent, BatchProgressPayload, BatchTaskSummary, BatchTaskUpdateEvent, ProgressPhase } from '@hierarchidb/batch-api';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import { DEFAULT_BUILD_CONFIG, type SelectedArrayByCountries } from '@hierarchidb/shape-plugin';

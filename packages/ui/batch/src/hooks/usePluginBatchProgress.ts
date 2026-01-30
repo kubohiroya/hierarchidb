@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { NodeType } from '@hierarchidb/common-types';
-import type { BatchSessionStatus, UnifiedProgressInfo } from '@hierarchidb/common-api';
+import type { BatchSessionStatus, UnifiedProgressInfo } from '@hierarchidb/batch-api';
 import { useBatchProgressState, type UseBatchProgressStateOptions } from './useBatchProgressState.js';
 
 export type UsePluginBatchProgressOptions<TProgress, TStatus> = UseBatchProgressStateOptions & {

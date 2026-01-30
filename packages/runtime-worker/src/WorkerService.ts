@@ -1,13 +1,13 @@
 import type { ImportExportAPI } from '@hierarchidb/import-export-api';
-import type { TreeTableExpandedAPI } from '@hierarchidb/common-api';
+import type { TreeTableExpandedAPI } from '@hierarchidb/tree-api';
 import type {
-  TagAPI,
   TreeMutationAPI,
   TreeNodeUpdaterAPI,
   TreeQueryAPI,
   TreeSubscriptionAPI,
 } from '@hierarchidb/tree-api';
-import type { NodeType } from '@hierarchidb/common-types';
+import type { TagAPI } from '@hierarchidb/tag-api';
+import type { NodeType } from '@hierarchidb/core-types';
 import { enableAllExporters, enableAllImporters } from '@hierarchidb/import-export';
 import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/location-api';
 import type { PluginLifecycleAPI } from '@hierarchidb/plugin-base';

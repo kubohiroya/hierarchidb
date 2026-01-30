@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFile } from 'node:fs/promises';
 import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-types';
-import type { ImportData } from '@hierarchidb/common-api';
+import type { ImportData } from '@hierarchidb/import-export-api';
 import type { ImportExportDBPort } from '../ports.js';
 
 class InMemoryImportExportPort implements ImportExportDBPort {

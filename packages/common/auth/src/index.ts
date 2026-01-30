@@ -16,7 +16,6 @@ export type {
 } from './AuthNotificationSystem.js';
 export * from './AuthNotificationSystem.js';
 
-// Re-export main classes and utilities
 export {
   AUTH_CONSTANTS,
   AuthNotificationFactory,

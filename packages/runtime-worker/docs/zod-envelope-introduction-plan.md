@@ -8,7 +8,7 @@
 - 目的（Scope）
   - CommandEnvelope（`commandId/groupId/kind/issuedAt/meta?`）の必須項目と上限値の検証を `processCommand` 入口で実施。
   - 検証失敗は `success:false + code: VALIDATION_ERROR` で一貫して返す（メッセージはサニタイズ）。
-  - 型定義は既存の `@hierarchidb/common-api`/`@hierarchidb/common-type` を継続利用し、スキーマから `z.infer` を使う場合でも型の二重管理を避ける（段階導入）。
+  - 型定義は既存の `@hierarchidb/worker-api`/`@hierarchidb/common-types` を継続利用し、スキーマから `z.infer` を使う場合でも型の二重管理を避ける（段階導入）。
 - 非目的（Out of Scope）
   - コマンドごとの payload 検証（paste/import/duplicate など）は本フェーズの対象外。
   - ドメイン/DB レイヤの詳細な整合性検証は従来どおり（既存の手書き検証に委譲）。
@@ -136,4 +136,3 @@
 - 高リスクコマンド（paste/import/duplicate）へのスキーマ拡張。
 - レジストリ登録時の `schema` 必須化（未定義ハンドラの禁止）。
 - `z.infer` を一次ソースにする共通スキーマパッケージ（`@hierarchidb/common-schema`）の新設。
-

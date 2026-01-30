@@ -1,5 +1,5 @@
 import { AbstractBatchSession } from '@hierarchidb/batch-runtime-services';
-import type { BatchProgressEvent } from '@hierarchidb/common-api';
+import type { BatchProgressEvent } from '@hierarchidb/batch-api';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { RouteGenerationConfig, RouteGenerationMethod } from '@hierarchidb/route-store';
 import type { RouteBatchConfig } from '@hierarchidb/route-store';

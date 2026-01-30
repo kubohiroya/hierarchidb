@@ -1,4 +1,4 @@
-import type { TreeQueryAPI } from '@hierarchidb/tree-api';
+import type { SubscriptionId, SubscriptionOptions, TreeQueryAPI } from '@hierarchidb/tree-api';
 import type {
   CommandEnvelope,
   NodeId,
@@ -6,8 +6,6 @@ import type {
   ObserveSubtreePayload,
   SubscribeChildrenPayload,
   SubscriptionFilter,
-  SubscriptionId,
-  SubscriptionOptions,
   Timestamp,
   TreeChangeEvent,
   TreeId,

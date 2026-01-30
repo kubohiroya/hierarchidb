@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { BuildStage, BuildStatus } from '@hierarchidb/components';
-import type { BatchTaskSummary } from '@hierarchidb/common-api';
+import type { BatchTaskSummary } from '@hierarchidb/batch-api';
 import { buildTaskCountSummary } from '../utils/taskProgressSummary.js';
 
 type TaskStageCarrier = BatchTaskSummary & { taskType?: string; type?: string; stage?: string };

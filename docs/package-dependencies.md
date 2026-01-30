@@ -22,7 +22,7 @@ graph LR
     N4["@hierarchidb/batch-runtime-services"]
   end
   subgraph G_packages_common["packages/common"]
-    N5["@hierarchidb/common-api"]
+    N5["@hierarchidb/batch-api"]
     N6["@hierarchidb/common-auth"]
     N7["@hierarchidb/common-types"]
   end

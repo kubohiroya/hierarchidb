@@ -10,6 +10,7 @@ packages:
   - packages/testing/*
   - packages/memory
   - packages/common/*
+  - packages/core-types
   - packages/runtime-worker
   - packages/runtime-worker/*
   - packages/ui/*

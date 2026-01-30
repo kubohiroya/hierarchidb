@@ -1,5 +1,7 @@
 import type { WorkerAPI } from '@hierarchidb/worker-api';
-import type { NodeId, TagEntity, TreeNodeMetadata } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { TagEntity } from '@hierarchidb/tag-api';
+import type { TreeNodeMetadata } from '@hierarchidb/tree-api';
 import { resolveDefaultNodeName } from '@hierarchidb/runtime-worker';
 import type { Remote } from 'comlink';
 import type React from 'react';

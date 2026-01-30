@@ -19,10 +19,12 @@
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "peerDependencies": {
-    "@hierarchidb/common-types": "workspace:*"
+    "@hierarchidb/core-types": "workspace:*",
+    "comlink": "^4.4.2"
   },
   "devDependencies": {
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
+    "comlink": "^4.4.2",
     "typescript": "workspace:^5.9.3"
   }
 }

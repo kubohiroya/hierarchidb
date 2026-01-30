@@ -36,8 +36,11 @@
   ],
   "author": "",
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "@hierarchidb/auth-api": "workspace:*"
+  },
   "devDependencies": {
+    "@hierarchidb/auth-api": "workspace:*",
     "@hierarchidb/memory": "workspace:*",
     "@types/node": "^20.11.5",
     "@vitest/ui": "^3.2.4",
@@ -48,7 +51,8 @@
     "vite": "^5.0.11",
     "vitest": "^3.2.4",
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/auth-api": "workspace:*",
     "@hierarchidb/worker-api": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*"
   },
@@ -56,7 +60,8 @@
     "comlink": "^4.4.1",
     "@hierarchidb/memory": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/auth-api": "workspace:*",
     "@hierarchidb/worker-api": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*"
   },

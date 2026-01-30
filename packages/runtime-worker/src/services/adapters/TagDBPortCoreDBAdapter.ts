@@ -1,4 +1,5 @@
-import type { NodeId, NodeTagAssociation, TagEntity, TagId } from '@hierarchidb/common-types';
+import type { NodeId, TagId } from '@hierarchidb/core-types';
+import type { NodeTagAssociation, TagEntity } from '@hierarchidb/tag-api';
 import type { TagDBPort } from '@hierarchidb/tag';
 import type { CoreDB } from '../CoreDB.js';
 

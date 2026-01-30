@@ -3,7 +3,7 @@
  * @description Base interfaces for node type and plugin registries
  * Moved from _obsolate_common-core/src/registry/INodeTypeRegistry.ts
  */
-import type { NodeType } from '@hierarchidb/common-types';
+import type { NodeType } from '@hierarchidb/core-types';
 
 /**
  * Base interface for all node type registries

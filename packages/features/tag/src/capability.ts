@@ -1,4 +1,4 @@
-import type { NodeType } from '@hierarchidb/common-types';
+import type { NodeType } from '@hierarchidb/core-types';
 
 /**
  * Taggable capability registry
@@ -27,4 +27,3 @@ export function isTaggable(nodeType: NodeType): boolean {
 export function listTaggable(): NodeType[] {
   return Array.from(taggableSet.values());
 }
-

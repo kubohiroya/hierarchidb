@@ -1,4 +1,4 @@
-import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-types';
+import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 
 /**
  * Mutation API for creating and managing nodes within a console hierarchy.

@@ -16,6 +16,12 @@
       "@hierarchidb/auth-recovery/*": [
         "packages/features/auth-recovery/dist/*"
       ],
+      "@hierarchidb/auth-api": [
+        "packages/features/auth-api/dist/index.d.ts"
+      ],
+      "@hierarchidb/auth-api/*": [
+        "packages/features/auth-api/dist/*"
+      ],
       "@hierarchidb/basemap-plugin": [
         "plugins/basemap-plugin/dist/index.d.ts"
       ],
@@ -55,11 +61,17 @@
       "@hierarchidb/common-types/*": [
         "packages/common/types/dist/*"
       ],
-      "@hierarchidb/common-api": [
-        "packages/common/api/dist/index.d.ts"
+      "@hierarchidb/core-types": [
+        "packages/core-types/dist/index.d.ts"
       ],
-      "@hierarchidb/common-api/*": [
-        "packages/common/api/dist/*"
+      "@hierarchidb/core-types/*": [
+        "packages/core-types/dist/*"
+      ],
+      "@hierarchidb/common-auth": [
+        "packages/common/auth/dist/index.d.ts"
+      ],
+      "@hierarchidb/common-auth/*": [
+        "packages/common/auth/dist/*"
       ],
       "@hierarchidb/cors-proxy": [
         "packages/backend/cors-proxy/dist/index.d.ts"
@@ -96,6 +108,24 @@
       ],
       "@hierarchidb/tree-api/*": [
         "packages/features/tree-api/dist/*"
+      ],
+      "@hierarchidb/tag-api": [
+        "packages/features/tag-api/dist/index.d.ts"
+      ],
+      "@hierarchidb/tag-api/*": [
+        "packages/features/tag-api/dist/*"
+      ],
+      "@hierarchidb/batch-api": [
+        "packages/features/batch-api/dist/index.d.ts"
+      ],
+      "@hierarchidb/batch-api/*": [
+        "packages/features/batch-api/dist/*"
+      ],
+      "@hierarchidb/import-export-api": [
+        "packages/features/import-export-api/dist/index.d.ts"
+      ],
+      "@hierarchidb/import-export-api/*": [
+        "packages/features/import-export-api/dist/*"
       ],
       "@hierarchidb/shape-api": [
         "packages/features/shape-api/dist/index.d.ts"

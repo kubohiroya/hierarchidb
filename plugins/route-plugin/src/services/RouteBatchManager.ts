@@ -9,7 +9,7 @@ import type { NodeId } from '@hierarchidb/common-types';
 import type { RouteGenerationConfig } from '@hierarchidb/route-store';
 import type { RouteBatchConfig } from '@hierarchidb/route-store';
 import { RouteBatchSession, type RouteBatchTask } from './RouteBatchSession.js';
-import type { BatchProgressEvent } from '@hierarchidb/common-api';
+import type { BatchProgressEvent } from '@hierarchidb/batch-api';
 import { VtTaskQueueDb, putTasks } from '@hierarchidb/vt-orchestrator';
 import type { TaskQueueRecord, TaskStage } from '@hierarchidb/common-types';
 

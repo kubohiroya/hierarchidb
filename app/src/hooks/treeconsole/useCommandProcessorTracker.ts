@@ -6,6 +6,7 @@
  */
 
 import type { WorkerAPI } from '@hierarchidb/worker-api';
+import type { TreeSubscriptionAPI } from '@hierarchidb/tree-api';
 import type { SubscriptionId, UndoStateEvent } from '@hierarchidb/common-types';
 import { proxy, type Remote } from 'comlink';
 import type { Dispatch, SetStateAction } from 'react';
@@ -83,7 +84,7 @@ export function useCommandProcessorTracker({ client, setState, setSSOT }: Params
         const pendingId = subscriptionId;
         void client
           .getSubscriptionAPI()
-          .then((api) => api.unsubscribe(pendingId))
+          .then((api: TreeSubscriptionAPI) => api.unsubscribe(pendingId))
           .catch(() => {});
       }
     };

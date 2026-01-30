@@ -2,7 +2,7 @@
  * Atoms for Jotai atoms management
  */
 
-import type { NodeId, TreeId } from '@hierarchidb/common-types';
+import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import type { DialogStep } from '@hierarchidb/ui-dialog';
 import { atom } from 'jotai';
 

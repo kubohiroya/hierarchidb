@@ -28,6 +28,7 @@ The workspace relies on `pnpm`. `app/` contains the main UI, with shared documen
 
 - **TypeScript path & references policy (2026-01-26, NodeNext 対応版)**
   - ルートの `tsconfig.base.json` に、ワークスペース alias（例: `@hierarchidb/foo`）を **必ず `dist/*.d.ts` または公開 exports 指向で** 定義する。`src/` 参照は登録しない。
+  - 型チェックは **常に dist が最新であることを前提**に実行する。`pnpm typecheck` は Turbo の build 依存で dist を先に生成する運用とし、個別の `pnpm --filter <pkg> typecheck` でも必要に応じて先に `build` を実行する。
   - 各パッケージの `tsconfig.json` では、原則として追加の `paths` を持たず、`tsconfig.base.json` の alias をそのまま利用する。暫定対処でローカル `paths` を追加した場合は、依存の `.d.ts` 出力が整い次第速やかに撤去する。
   - `tsconfig.build.json` では `paths` を空（もしくは最小限）に保ち、代わりに `references` で依存パッケージ（例: `../common/types/tsconfig.build.json`）を明示する。`tsc -b` で依存先の型出力を先に生成し、NodeNext の解決規約に従ってビルド順を保証する。
   - NodeNext では `dist/*.d.ts` 未生成だと TS7016/TS6305 が発生するため、**build 依存は project references + Turbo の依存順序で保証する**。必要に応じて `pnpm --filter <pkg> build` または `npx tsc -b` で依存チェーンの `.d.ts` を明示的に更新し、理由と撤去予定を TASKS 運用ログに記録すること。

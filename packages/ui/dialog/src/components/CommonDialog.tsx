@@ -8,7 +8,7 @@ import { Dialog, DialogContent } from '@mui/material';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog.js';
 import { CommonDialogActions } from './CommonDialogActions.js';
 import { CommonDialogTitle } from './CommonDialogTitle.js';
-import type { DialogDisplayMode } from '@hierarchidb/common-types';
+import type { DialogDisplayMode } from '@hierarchidb/tree-api';
 
 export interface CommonPluginDialogProps {
   mode: 'create' | 'edit' | 'preview';

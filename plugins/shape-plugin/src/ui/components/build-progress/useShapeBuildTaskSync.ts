@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { TaskStage } from '@hierarchidb/common-types';
-import type { BatchTaskSummary } from '@hierarchidb/common-api';
+import type { BatchTaskSummary } from '@hierarchidb/batch-api';
 import {
   areTaskListsEqual,
   shouldApplyTaskUpdate,

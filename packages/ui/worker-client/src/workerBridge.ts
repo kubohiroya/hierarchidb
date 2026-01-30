@@ -1,9 +1,4 @@
-import type {
-  BatchProgressEvent,
-  BatchSessionStatus,
-  BatchTaskSummary,
-  BatchTaskUpdateEvent,
-} from '@hierarchidb/common-api';
+import type { BatchProgressEvent, BatchSessionStatus, BatchTaskSummary, BatchTaskUpdateEvent } from '@hierarchidb/batch-api';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { BuildContinuationPolicy, NodeId, NodeType } from '@hierarchidb/common-types';
 import type { HeapPressureEvent } from '@hierarchidb/memory';

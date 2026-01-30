@@ -11,7 +11,7 @@ import {
   type BatchSessionStatus,
   type IBatchSessionManager,
   isBatchControlAPIV2Enabled,
-} from '@hierarchidb/common-api';
+} from '@hierarchidb/batch-api';
 
 /**
  * Base implementation for batch session managers

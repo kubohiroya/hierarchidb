@@ -18,7 +18,7 @@ __tests__/              Unit tests
 - `FeatureDefinition.manifest` (`provides: ['import', 'export']`).
 
 ## Consumers / usage
-- Worker runtime wires `ImportExportService` to CoreDB via an adapter; UI calls go through `@hierarchidb/common-api` contracts.
+- Worker runtime wires `ImportExportService` to CoreDB via an adapter; UI calls go through `@hierarchidb/import-export-api` contracts.
 - Feature plugins and tooling use the capability helpers to opt-out specific node types.
 - Used by spreadsheet/location/route plugins when importing/exporting tree data.
 

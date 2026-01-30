@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { BatchProgressAdapter, BatchProgressEvent, UnifiedProgressInfo, UseBatchProgressOptions } from '@hierarchidb/common-api';
+import type { BatchProgressEvent, UnifiedProgressInfo } from '@hierarchidb/batch-api';
+import type { BatchProgressAdapter, UseBatchProgressOptions } from '@hierarchidb/batch-api';
 
 export class BatchService {
   async mapChunks<T, R>(items: T[], mapper: (item: T) => Promise<R>, _options?: { concurrency?: number }): Promise<R[]> {

@@ -150,6 +150,84 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-30 15:20 JST ImportExportAPI/PluginDialogAPI の移設作業に着手。
+  - update: 2026-01-30 15:52 JST ImportExportAPI を features/import-export-api へ移設し、PluginDialogAPI を tree-api へ移設。参照/依存/tsconfig を更新。
+  - update: 2026-01-30 15:57 JST plugin-base に PluginManifest/PluginLifecycleAPI を追加、common-api に BaseBatchConfig を追加、app tsconfig に auth-api/import-export-api を追加。
+  - update: 2026-01-30 16:02 JST pnpm --filter @hierarchidb/import-export-api/tree-api/common-api/import-export/worker-api/runtime-worker build を実行（tsdown define 警告あり）。
+  - update: 2026-01-30 16:03 JST pnpm --filter @hierarchidb/common-api build を実行し BaseBatchConfig を dist へ反映（tsdown define 警告あり）。
+  - done: 2026-01-30 16:05 JST pnpm --filter @hierarchidb/app typecheck exit 0 を確認（tsdown define 警告あり）。
+
+2437) refactor/common-api/move-batch-control-api (P1) — 進行中 (2026-01-30)
+- ブランチ名: refactor/common-api/move-batch-control-api
+- 依存: なし
+- 受け入れ基準: packages/features/batch-api を新設し BatchControlAPI/taskStatus を移設する／common-api から該当 export を撤去する／参照先の import を @hierarchidb/batch-api に切替する／tsconfig.base.json と app/tsconfig.json に batch-api paths を追加する／pnpm --filter @hierarchidb/batch-api build が exit 0／pnpm --filter @hierarchidb/app typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/common/api/src/**`, `packages/features/batch-api/src/**`, `packages/**`, `app/**`（必要に応じて追加）
+- ロールバック手順: batch-api を削除し common-api に BatchControlAPI/taskStatus を復元、参照を差し戻す
+- チェックリスト:
+  - batch-api を新設して BatchControlAPI/taskStatus を移設する
+  - common-api から該当 export を撤去する
+  - 参照先を batch-api へ切替する
+  - tsconfig.base.json と app/tsconfig.json に batch-api paths を追加する
+  - pnpm --filter @hierarchidb/batch-api build を実行する
+  - pnpm --filter @hierarchidb/app typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-30 16:10 JST BatchControlAPI/taskStatus の batch-api 移設作業に着手。
+  - update: 2026-01-30 16:22 JST BatchControlAPI/taskStatus を features/batch-api に移設し、参照・依存・tsconfig を batch-api へ切替。
+  - update: 2026-01-30 16:25 JST pnpm --filter @hierarchidb/batch-api build を実行（tsdown define 警告あり）。
+  - blocked: 2026-01-30 16:27 JST pnpm --filter @hierarchidb/app typecheck が common-types の既存 export 欠落（SubscriptionId/TreeChangeEvent/CommandEnvelope など）で失敗。
+
+2438) refactor/tsconfig/paths-dist-align (P1) — 進行中 (2026-01-30)
+- ブランチ名: refactor/tsconfig/paths-dist-align
+- 依存: なし
+- 受け入れ基準: AGENTS.md に tsconfig は dist 指向で統一する方針が明記される／tsconfig.base.json が dist 指向 paths のみになる／app/tsconfig.json の ../packages/**/src 指向 paths が撤去され dist 指向に統一される／node scripts/policy/ban-tsconfig-paths-dist-dts.mjs が OK を維持する／pnpm --filter @hierarchidb/app typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `AGENTS.md`, `tsconfig.base.json`, `app/tsconfig.json`（必要に応じて追加）
+- ロールバック手順: 各 tsconfig と AGENTS.md の変更を revert して元の paths 方針へ戻す
+- チェックリスト:
+  - AGENTS.md の TypeScript path 方針を dist 指向へ揃える
+  - tsconfig.base.json の paths を dist 指向へ統一する
+  - app/tsconfig.json の ../packages/**/src paths を撤去する
+  - policy スクリプトを実行して OK を確認する
+  - app typecheck を実行して exit 0 を確認する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-30 16:40 JST tsconfig の dist 指向統一に着手。
+  - update: 2026-01-30 16:57 JST AGENTS.md の TypeScript path 方針に「型チェック前の build 前提」を明記。
+
+2439) fix/common-types/validation-rule-tag-suggestion (P1) — 完了 (2026-01-30)
+- ブランチ名: fix/common-types/validation-rule-tag-suggestion
+- 依存: なし
+- 受け入れ基準: TagService の TagSuggestion import を tree-api 経由へ修正する／common-types に ValidationRule を定義し plugin-base の import エラーを解消する／@hierarchidb/tag と @hierarchidb/plugin-base の typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/tag/src/TagService.ts`, `packages/common/types/src/validation-types.ts`, `packages/plugin-base/src/types/plugin-definition.ts`（必要に応じて追加）
+- ロールバック手順: TagService の import を元へ戻し、ValidationRule 定義を削除して差分を revert する
+- チェックリスト:
+  - TagService の TagSuggestion import を tree-api 参照に切替する
+  - common-types に ValidationRule を追加する
+  - @hierarchidb/tag と @hierarchidb/plugin-base の typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+  - 運用ログ：
+    - start: 2026-01-30 22:40 JST TagSuggestion/ValidationRule の型解決エラー修正に着手。
+  - update: 2026-01-30 22:41 JST TagService の TagSuggestion import を tree-api 参照へ切替、common-types に ValidationRule を追加。
+  - done: 2026-01-30 22:41 JST pnpm --filter @hierarchidb/common-types build、@hierarchidb/tag typecheck、@hierarchidb/plugin-base typecheck exit 0 を確認。
+
+2440) refactor/common-types/split-into-domain-packages (P1) — 進行中 (2026-01-30)
+- ブランチ名: refactor/common-types/split-into-domain-packages
+- 依存: なし
+- ExecPlan: plans/refactor-common-types-execplan.md
+- 受け入れ基準: tree-api/tag-api/import-export-api/batch-api/core-types へ型が移設され、参照先が切替される／common-types は再エクスポートのみ（最終的に空にして削除可能な状態）／build/typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/common/types/src/**`, `packages/features/tree-api/**`, `packages/features/tag-api/**`, `packages/features/import-export-api/**`, `packages/features/batch-api/**`, `packages/core-types/**`, `packages/**`, `plugins/**`, `app/**`（必要に応じて追加）
+- ロールバック手順: 新規パッケージ追加と移設差分を revert し、common-types の型を元に戻す
+- チェックリスト:
+  - ExecPlan を作成し、移設対象と順序を明記する
+  - tag-api と core-types を新設する
+  - tree-api/tag-api/import-export-api/batch-api/core-types へ型を移設する
+  - 参照先の import を新パッケージへ切替する
+  - common-types を再エクスポート専用に縮退する
+  - 影響範囲の build/typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-30 23:24 JST common-types の分割移設に着手。
+  - update: 2026-01-30 23:58 JST runtime-worker typecheck の再実行と残エラー修正に着手。
+  - update: 2026-01-30 23:59 JST pnpm --filter @hierarchidb/runtime-worker typecheck exit 0 を確認。
 
 2424) refactor/location-store/index-cleanup (P1) — 完了 (2026-01-29)
 - ブランチ名: refactor/location-store/index-cleanup
@@ -484,6 +562,28 @@
   - start: 2026-01-30 14:25 JST common-api の WorkerAPI / TreeQueryAPI / TreeMutationAPI を worker-api / tree-api へ分割する作業に着手（循環依存解消対応）。
   - update: 2026-01-30 15:05 JST WorkerAPI を features/worker-api に移設、TreeQueryAPI/TreeMutationAPI を features/tree-api に移設し、参照と依存を新パッケージへ切替（common-api から該当 exports を撤去）。
   - update: 2026-01-30 15:05 JST pnpm --filter @hierarchidb/tree-api build / pnpm --filter @hierarchidb/worker-api build / pnpm --filter @hierarchidb/common-api build / pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
+  - start: 2026-01-30 15:20 JST AuthRuntimeBridge を新設する auth-api へ集約し、common-api と worker-client の重複定義を整理する作業に着手。
+  - update: 2026-01-30 15:45 JST AuthRuntimeBridge を features/auth-api に移設し、wirePlugins と plugin RuntimeWiring を AuthRuntimeBridge へ切替。common-api の RuntimeWiring 定義を撤去。
+  - update: 2026-01-30 15:45 JST pnpm --filter @hierarchidb/auth-api build / pnpm --filter @hierarchidb/import-export-api build / pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
+  - start: 2026-01-30 16:00 JST taskStatus の normalizeProgressPhase 廃止と TreeTableExpandedAPI の移動、ProgressPhase/BatchSessionStatus の型統一対応に着手。
+  - update: 2026-01-30 16:15 JST DoD 合意。normalizeProgressPhase 廃止、taskStatus 撤去、ProgressPhase/BatchSessionStatus 型統一、TreeTableExpandedAPI は app 専用でないため移動せずの方針で対応開始。
+  - update: 2026-01-30 16:40 JST common-api に BatchStatus/ProgressPhase 統合と BatchProgress/UnifiedProgressInfo 等の型を追加し、taskStatus の normalize/map を撤去。route/shape plugin の利用箇所を直接ステータス参照へ置換。
+  - update: 2026-01-30 16:42 JST pnpm --filter @hierarchidb/common-api build exit 0（tsdown define 警告あり）。
+  - update: 2026-01-30 16:42 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0。
+  - update: 2026-01-30 16:43 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+  - update: 2026-01-30 16:55 JST TreeTableExpandedAPI を tree-api へ移設し、common-api から撤去。worker-api/runtime-worker/app の参照を tree-api へ切替。
+  - update: 2026-01-30 16:56 JST pnpm --filter @hierarchidb/tree-api build exit 0（tsdown define 警告あり）。
+  - blocked: 2026-01-30 16:57 JST pnpm --filter @hierarchidb/runtime-worker typecheck が import-export-api の未解決と common-types の export 不足で失敗（TreeTableExpandedAPI 移設とは別要因）。
+  - update: 2026-01-30 17:10 JST tree-api の TagSuggestion/SubscriptionId/SubscriptionOptions を tree-api 内の新定義へ切替し、common-types 依存を解除。
+  - update: 2026-01-30 17:12 JST pnpm --filter @hierarchidb/tree-api build exit 0（tsdown define 警告あり）。
+  - update: 2026-01-30 17:25 JST runtime-worker の SubscriptionId/SubscriptionOptions を tree-api へ切替。
+  - update: 2026-01-30 17:28 JST pnpm --filter @hierarchidb/tree-api build exit 0（tsdown define 警告あり）。
+  - blocked: 2026-01-30 17:29 JST pnpm --filter @hierarchidb/runtime-worker typecheck が import-export-api 未解決と common-types exports 不足で失敗（SubscriptionId/Options 切替とは別要因）。
+  - start: 2026-01-30 17:40 JST common-api 廃止のため、参照を batch-api/tree-api/import-export-api へ移設しパッケージ削除を進行。
+  - update: 2026-01-30 18:05 JST common-api 参照のコード/依存/設定/ドキュメントを batch-api/tree-api/import-export-api へ切替し、packages/common/api を削除。
+  - update: 2026-01-30 18:08 JST pnpm install を実行（peer 警告あり、tsdown define 警告はなし）。
+  - update: 2026-01-30 18:10 JST pnpm tools:gen-plugin-registry を実行（tsdown define 警告あり、registry 更新なし）。
+  - blocked: 2026-01-30 18:12 JST pnpm --filter @hierarchidb/app typecheck が多数の依存未解決/暗黙 any で失敗（既存課題）。
 
 2416) fix/depgraph/route-store-common-api-cycle (P1) — 完了 (2026-01-28)
 - ブランチ名: fix/depgraph/route-store-common-api-cycle

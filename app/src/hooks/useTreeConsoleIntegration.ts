@@ -5,7 +5,7 @@
  * Avoids Orchestrated APIs and uses direct Worker API calls.
  */
 
-import type { TreeTableExpandedAPI } from '@hierarchidb/common-api';
+import type { TreeTableExpandedAPI } from '@hierarchidb/tree-api';
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-toolbar';

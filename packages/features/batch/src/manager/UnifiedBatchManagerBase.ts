@@ -1,10 +1,5 @@
 import type { NodeId, Timestamp } from '@hierarchidb/common-types';
-import type {
-  BatchProgressCallback,
-  BatchProgressEvent,
-  BatchSessionStatus,
-  IBatchSessionManager,
-} from '@hierarchidb/common-api';
+import type { BatchProgressCallback, BatchProgressEvent, BatchSessionStatus, IBatchSessionManager } from '@hierarchidb/batch-api';
 
 export interface UnifiedBatchSession<TConfig, TData> {
   config: TConfig;

@@ -15,6 +15,6 @@ export type {
   UseBatchProgressOptions,
   StandardProgressEvent,
   StandardProgressPayload,
-} from '@hierarchidb/common-api';
+} from '@hierarchidb/batch-api';
 
 export type { BatchPersistence, UnifiedBatchSession } from './manager/UnifiedBatchManagerBase.js';

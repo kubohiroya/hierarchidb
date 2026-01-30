@@ -18,7 +18,7 @@ index.ts        Public exports + FeatureDefinition
 - `FeatureDefinition.manifest` (`provides: ['tag']`).
 
 ## Consumers / usage
-- Worker runtime wires `TagService` to CoreDB/Dexie; UI uses TagAPI from `@hierarchidb/tree-api`.
+- Worker runtime wires `TagService` to CoreDB/Dexie; UI uses TagAPI from `@hierarchidb/tag-api`.
 - Plugins toggle tag UI via `registerTaggable(nodeType)` instead of hardcoding.
 
 ## Notes / roadmap

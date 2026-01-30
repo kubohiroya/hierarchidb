@@ -1,8 +1,4 @@
-import type {
-  BatchProgressPayload,
-  BatchSessionStatus,
-  UnifiedProgressInfo,
-} from '@hierarchidb/common-api';
+import type { BatchProgressPayload, BatchSessionStatus, UnifiedProgressInfo } from '@hierarchidb/batch-api';
 import { computePercentage } from '@hierarchidb/ui-batch-progress';
 
 export interface BuildProgress {

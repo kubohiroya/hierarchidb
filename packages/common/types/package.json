@@ -33,6 +33,11 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
+    "@hierarchidb/import-export-api": "workspace:*",
+    "@hierarchidb/tag-api": "workspace:*",
+    "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/util": "workspace:*"
   }
 }

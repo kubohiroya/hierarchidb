@@ -5,14 +5,10 @@
  * and handling the full lifecycle of subscriptions.
  */
 
-import type {
-  NodeId,
-  SubscriptionId,
-  SubscriptionOptions,
-  TreeId,
-  TreeNodeEvent,
-  UndoStateEvent,
-} from '@hierarchidb/common-types';
+import type { NodeId, TreeId } from '@hierarchidb/core-types';
+import type { TreeNodeEvent } from './tree-node-event-types.js';
+import type { UndoStateEvent } from './undo-state-events.js';
+import type { SubscriptionId, SubscriptionOptions } from './TreeSubscriptionTypes.js';
 
 /**
  * Real-time data subscription and monitoring API

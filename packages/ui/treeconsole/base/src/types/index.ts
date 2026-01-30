@@ -355,6 +355,17 @@ export type LegacySubTreeChanges = unknown;
 
 export type { TreeChangeEvent };
 export type TreeChangeCallback = (event: TreeChangeEvent) => void;
+
+export type {
+  CreateMenuBuilder,
+  CreateMenuEntry,
+  CreateMenuItem,
+  CreateMenuItemOrDivider,
+  GlobalMenuBuilders,
+  IconComponent,
+  MenuDividerItem,
+  PluginMenuIconSpec,
+} from './menu-types.js';
 export type UnsubscribeFunction = () => void;
 export type ExpandedStateChange = unknown; // TODO: Define proper type
 export type SubTreeChange = unknown; // TODO: Define proper type

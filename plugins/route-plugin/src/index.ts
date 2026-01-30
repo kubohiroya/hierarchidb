@@ -8,7 +8,7 @@ export type { RouteDataSourceConfig } from './common/datasource/configs.js';
 export { ROUTE_DATA_SOURCES } from './common/datasource/configs.js';
 export * as worker from './worker/index.js';
 
-export class RuntimeWiring {
+export class AuthRuntimeBridge {
   static async registerRuntimeWorkerAdapters(): Promise<void> {
     try {
       const mod = await import('./services/batch/adapters/registerRuntimeWorker.js');

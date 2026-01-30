@@ -1,4 +1,4 @@
-import type { TagEntity } from '@hierarchidb/common-types';
+import type { TagEntity } from '@hierarchidb/tag-api';
 import { FolderOpen as NodeIcon, LocalOffer as TagIcon } from '@mui/icons-material';
 import {
   Box,

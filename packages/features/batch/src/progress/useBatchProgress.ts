@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { BatchProgressAdapter, UnifiedProgressInfo, UseBatchProgressOptions } from '@hierarchidb/common-api';
+import type { UnifiedProgressInfo } from '@hierarchidb/batch-api';
+import type { BatchProgressAdapter, UseBatchProgressOptions } from '@hierarchidb/batch-api';
 
 type Unsubscribe = () => void;
 

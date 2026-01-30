@@ -36,8 +36,8 @@
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
-    "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/common-types": "workspace:*"
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/tree-api": "workspace:*"
   },
   "devDependencies": {
     "typescript": "workspace:^5.9.3",

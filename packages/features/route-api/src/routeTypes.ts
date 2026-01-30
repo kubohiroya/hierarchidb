@@ -1,5 +1,5 @@
 import type { ISO2, GroupEntity, NodeId, Timestamp, TreeNodeUpdaterPayload } from '@hierarchidb/common-types';
-import type { BaseBatchConfig } from '@hierarchidb/common-api';
+import type { BaseBatchConfig } from '@hierarchidb/batch-api';
 import type { BaseBuildConfig } from '@hierarchidb/gis-sdk';
 import type { LocationFeatureId } from '@hierarchidb/location-api';
 

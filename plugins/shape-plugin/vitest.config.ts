@@ -50,8 +50,8 @@ export default defineConfig({
         replacement: path.resolve(__dirname, '../../packages/common/types/src/index.ts'),
       },
       {
-        find: '@hierarchidb/common-api',
-        replacement: path.resolve(__dirname, '../../packages/common/api/src/index.ts'),
+        find: '@hierarchidb/batch-api',
+        replacement: path.resolve(__dirname, '../../packages/features/batch-api/src/index.ts'),
       },
       {
         find: '@hierarchidb/ui-worker-client',

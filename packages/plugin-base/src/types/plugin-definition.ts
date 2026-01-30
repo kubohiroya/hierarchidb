@@ -3,7 +3,7 @@
  * Combines core node definition with worker-side entity handler
  */
 
-import type { NodeType, TreeId, PeerEntity, ValidationRule } from '@hierarchidb/common-types';
+import type { NodeType, TreeId, PeerEntity, ValidationRule } from '@hierarchidb/core-types';
 
 export interface PluginDefinition {
   // Basic node information

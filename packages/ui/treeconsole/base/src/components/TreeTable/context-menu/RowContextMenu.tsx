@@ -1,5 +1,5 @@
 import { memo, type MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { CreateMenuBuilder, GlobalMenuBuilders, CreateMenuEntry } from '@hierarchidb/common-types';
+import type { CreateMenuBuilder, CreateMenuEntry, GlobalMenuBuilders } from '../../../types/menu-types.js';
 import { Divider, ListItemIcon, ListItemText, Menu, MenuItem, Switch, Tooltip } from '@mui/material';
 import {
   Add as AddIcon,

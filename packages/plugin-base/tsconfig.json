@@ -6,12 +6,6 @@
       "react",
       "react/jsx-runtime"
     ],
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ]
-    },
-    "baseUrl": ".",
     "jsx": "react-jsx"
   },
   "exclude": [

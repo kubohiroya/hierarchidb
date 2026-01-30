@@ -5,12 +5,7 @@
 
 import './worker-react-refresh-shim.js';
 import { AuthService } from '@hierarchidb/auth-recovery';
-import type {
-  BatchProgressEvent,
-  BatchSessionStatus,
-  BatchTaskSummary,
-  BatchTaskUpdateEvent,
-} from '@hierarchidb/common-api';
+import type { BatchProgressEvent, BatchSessionStatus, BatchTaskSummary, BatchTaskUpdateEvent } from '@hierarchidb/batch-api';
 import type { UiStorageBridge } from '@hierarchidb/worker-api';
 import type { BuildContinuationPolicy, NodeId, NodeType } from '@hierarchidb/common-types';
 import { setCorsProxyBaseURL } from '@hierarchidb/download';

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { NodeId, NodeType, ProgressEvent } from '@hierarchidb/common-types';
-import type { UnifiedProgressInfo } from '@hierarchidb/common-api';
+import type { UnifiedProgressInfo } from '@hierarchidb/batch-api';
 import { AuthNotificationRegistry } from '@hierarchidb/common-auth';
 import { usePluginBatchProgress } from '@hierarchidb/ui-batch-progress';
 

@@ -1,4 +1,5 @@
-import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, NodeType } from '@hierarchidb/core-types';
+import type { TreeNode } from './tree-node-types.js';
 import type { TreeQueryAPI } from './TreeQueryAPI.js';
 
 export type RelatedNodeSearchOptions = {

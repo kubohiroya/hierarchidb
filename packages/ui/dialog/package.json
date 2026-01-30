@@ -43,6 +43,6 @@
     "@mui/material": "^7.3.6",
     "@mui/icons-material": "^7.3.6",
     "react-resizable": "^3.0.5",
-    "@hierarchidb/common-types": "workspace:*"
+    "@hierarchidb/tree-api": "workspace:*"
   }
 }

@@ -282,7 +282,8 @@ MIT © HierarchiDB Project
 ## 🔗 Related Packages
 
 - [@hierarchidb/runtime-worker](../runtime/worker) - Worker implementation
-- [@hierarchidb/common-api](../common/api) - API interfaces
+- [@hierarchidb/worker-api](../features/worker-api) - Worker RPC interfaces
+- [@hierarchidb/batch-api](../features/batch-api) - Batch progress interfaces
 - [Comlink](https://github.com/GoogleChromeLabs/comlink) - RPC library for Web Workers
 
 ## 💡 Best Practices

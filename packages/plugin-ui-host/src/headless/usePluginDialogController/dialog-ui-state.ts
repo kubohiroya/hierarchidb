@@ -6,7 +6,7 @@ import type {
   DialogState,
   DialogUIState,
   DialogWindowState,
-} from '@hierarchidb/common-types';
+} from '@hierarchidb/tree-api';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 type RestoreDeps = {

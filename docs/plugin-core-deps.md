@@ -13,7 +13,7 @@ graph LR
 
   %% Shared libraries (light nodes)
   CT["@hierarchidb/common-types"]
-  CA["@hierarchidb/common-api"]
+  BA["@hierarchidb/batch-api"]
   BT["@hierarchidb/batch-types"]
   DL["@hierarchidb/download"]
   FR["@hierarchidb/feature-registry"]
@@ -43,7 +43,7 @@ graph LR
   %% Runtime dependencies
   RW --> PR
   RW --> PSA
-  RW --> CA
+  RW --> BA
   RW --> CT
   RW --> FR
   RW --> MAP
@@ -58,7 +58,7 @@ graph LR
   RW --> AUTH
 
   RC --> RW
-  RC --> CA
+  RC --> BA
   RC --> CT
 
   PR --> PSA

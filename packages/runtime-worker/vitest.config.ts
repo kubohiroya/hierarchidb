@@ -44,9 +44,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@hierarchidb/common-api': path.resolve(
+      '@hierarchidb/batch-api': path.resolve(
         workspaceRoot,
-        'packages/common/api/src/index.ts',
+        'packages/features/batch-api/src/index.ts',
       ),
       '@hierarchidb/tree-api': path.resolve(
         workspaceRoot,

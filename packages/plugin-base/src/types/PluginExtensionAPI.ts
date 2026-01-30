@@ -1,4 +1,5 @@
-import type { APIMethodArgs, APIMethodReturn, NodeType, WorkerAPIMethod } from '@hierarchidb/common-types';
+import type { NodeType } from '@hierarchidb/core-types';
+import type { APIMethodArgs, APIMethodReturn, WorkerAPIMethod } from './api-types.js';
 
 /**
  * Plugin API extension interface defining custom worker-facing methods.
