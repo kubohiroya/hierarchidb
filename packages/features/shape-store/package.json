@@ -21,7 +21,7 @@
   "peerDependencies": {
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/gis-sdk": "workspace:*",
-    "@hierarchidb/plugin-service-api": "workspace:*",
+    "@hierarchidb/shape-api": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/vectortile-store": "workspace:*",
     "dexie": "^4.2.0"
@@ -29,7 +29,7 @@
   "devDependencies": {
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/gis-sdk": "workspace:*",
-    "@hierarchidb/plugin-service-api": "workspace:*",
+    "@hierarchidb/shape-api": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/vectortile-store": "workspace:*",
     "@types/geojson": "^7946.0.14",

@@ -20,13 +20,13 @@
   },
   "peerDependencies": {
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/plugin-service-api": "workspace:*",
+    "@hierarchidb/shape-api": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "dexie": "^4.2.0"
   },
   "devDependencies": {
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/plugin-service-api": "workspace:*",
+    "@hierarchidb/shape-api": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "dexie": "^4.2.1",
     "typescript": "workspace:^5.9.3"

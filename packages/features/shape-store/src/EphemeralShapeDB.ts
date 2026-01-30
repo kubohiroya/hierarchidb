@@ -2,7 +2,7 @@ import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { Table } from 'dexie';
 import type { BuildProcessConfig, BuildTaskRecord, TaskStatus } from './ShapeDB.js';
-import type { ShapeTransformErrorRecord } from '@hierarchidb/plugin-service-api';
+import type { ShapeTransformErrorRecord } from '@hierarchidb/shape-api';
 import {
   EphemeralGisDB,
   type BatchSessionMetadata as BaseBuildSessionMetadata,

@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/plugin-service-api": "workspace:*",
+    "@hierarchidb/shape-api": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/vectortile-store": "workspace:*",
     "@mapbox/vector-tile": "^2.0.4",

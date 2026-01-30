@@ -8,7 +8,7 @@ import type {
   ShapeFeatureMetadata,
   ShapeFeatureRecord,
   ShapeTransformErrorRecord,
-} from '@hierarchidb/plugin-service-api';
+} from '@hierarchidb/shape-api';
 import type { RouteLineString } from '@hierarchidb/route-api';
 import { RouteDB } from '@hierarchidb/route-store';
 import { TabularDatabaseManager, TabularQueryService } from '@hierarchidb/tabular-store';

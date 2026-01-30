@@ -13,7 +13,7 @@ import { presimplify as topojsonPresimplify, simplify as topojsonSimplify } from
 import { geojson as geojsonApi } from 'flatgeobuf';
 import { applyFeatureFiltering, encodeFlatGeobufFromFeatureCollection, latToTileY, lonToTileX } from '@hierarchidb/gis-sdk';
 import type { AreaBasedToleranceConfig } from '@hierarchidb/gis-sdk';
-import type { ShapeTransformErrorRecord } from '@hierarchidb/plugin-service-api';
+import type { ShapeTransformErrorRecord } from '@hierarchidb/shape-api';
 import {
   buildBoundaryFeature,
   resolveLargeAreaToleranceForCollection,

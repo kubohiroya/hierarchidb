@@ -2,7 +2,7 @@ import type {
   ShapeBuildProgressSummary,
   ShapeBuildSessionRecord,
   ShapeVectorTileRecord,
-} from '@hierarchidb/plugin-service-api';
+} from '@hierarchidb/shape-api';
 import type {
   BuildSessionConfig,
   BuildSessionRecord,

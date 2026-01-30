@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { ShapeFeatureMetadata } from '@hierarchidb/plugin-service-api';
+import type { ShapeFeatureMetadata } from '@hierarchidb/shape-api';
 import { buildFeatureId, extractGeometryStats } from './featureMetadataUtils.ts';
 import { pickAdminCode, pickAdminName } from '@hierarchidb/gis-sdk';
 import type { CountryMetadata, DataSourceName } from '../../common/types/index.js';

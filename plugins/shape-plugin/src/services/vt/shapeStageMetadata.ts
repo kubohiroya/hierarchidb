@@ -1,6 +1,6 @@
 import type { Feature, Geometry } from 'geojson';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { ShapeSourceMetadata } from '@hierarchidb/plugin-service-api';
+import type { ShapeSourceMetadata } from '@hierarchidb/shape-api';
 import type { EphemeralShapeDB, ShapeDB } from '@hierarchidb/shape-store';
 import { VectorTile } from '@mapbox/vector-tile';
 import Pbf from 'pbf';

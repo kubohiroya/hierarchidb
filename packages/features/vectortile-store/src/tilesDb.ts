@@ -1,5 +1,5 @@
 import { Dexie, type Table } from 'dexie';
-import type { ShapeFeatureMetadata, ShapeSourceMetadata } from '@hierarchidb/plugin-service-api';
+import type { ShapeFeatureMetadata, ShapeSourceMetadata } from '@hierarchidb/shape-api';
 
 export type FeatureMetadataRow = ShapeFeatureMetadata;
 export type SourceMetadataRow = ShapeSourceMetadata;

@@ -9,8 +9,8 @@ import type {
   TreeNode,
 } from '@hierarchidb/common-types';
 import type { LocationMutationAPI } from '@hierarchidb/plugin-service-api';
-import type { ShapeMutationAPI } from '@hierarchidb/plugin-service-api';
 import type { RouteMutationAPI } from '@hierarchidb/plugin-service-api';
+import type { ShapeMutationAPI } from '@hierarchidb/shape-api';
 import type { CoreDB } from '../services/CoreDB.js';
 import type { CommandEnvelope } from '../services/command-types.js';
 import { storeRegistry } from './store-registry.js';

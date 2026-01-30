@@ -11,7 +11,7 @@ import {
   runStageTasks,
 } from '@hierarchidb/vt-orchestrator';
 import { ephemeralShapeDB } from '@hierarchidb/shape-store';
-import type { ShapeFeatureMetadata } from '@hierarchidb/plugin-service-api';
+import type { ShapeFeatureMetadata } from '@hierarchidb/shape-api';
 import {
   pickAdminCode,
   pickAdminLevel,

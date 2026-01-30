@@ -9,7 +9,7 @@ import type {
   ShapeSourceMetadata,
   ShapeTransformCache,
   ShapeVectorTileRecord,
-} from '@hierarchidb/plugin-service-api';
+} from '@hierarchidb/shape-api';
 import {
   type BuildProcessConfig,
   type BuildSessionRecord,

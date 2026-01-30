@@ -1,4 +1,4 @@
-import type { ShapeBuildStage } from '@hierarchidb/plugin-service-api';
+import type { ShapeBuildStage } from '@hierarchidb/shape-api';
 import type { ShapeEntity } from '../../../common/types/index.js';
 import { mergeBuildConfig } from '../../../common/types/index.js';
 import { toNodeId, type NodeId } from '@hierarchidb/common-types';

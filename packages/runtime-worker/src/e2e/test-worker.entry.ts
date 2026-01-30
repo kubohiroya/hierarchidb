@@ -11,12 +11,11 @@ import type {
 } from '@hierarchidb/common-api';
 import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/plugin-service-api';
 import type {
-  ShapeMutationAPI,
-  ShapeQueryAPI,
   StyleMutationAPI,
   StyleQueryAPI,
 } from '@hierarchidb/plugin-service-api';
 import type { RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/plugin-service-api';
+import type { ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
 import type { Endpoint as ComlinkEndpoint } from 'comlink';
 import { expose, proxy } from 'comlink';
 import type { CommandProcessor } from '../services/CommandProcessor.js';

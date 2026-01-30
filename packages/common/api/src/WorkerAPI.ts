@@ -3,13 +3,11 @@ import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/plugin-
 import type { HeapPressureEvent } from '@hierarchidb/memory';
 import type {
   PluginLifecycleAPI,
-  ShapeDataSourceName,
-  ShapeMutationAPI,
-  ShapeQueryAPI,
   StyleMutationAPI,
   StyleQueryAPI,
 } from '@hierarchidb/plugin-service-api';
 import type { RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/plugin-service-api';
+import type { ShapeDataSourceName, ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
 import type {
   BatchProgressEvent,
   BatchSessionStatus,

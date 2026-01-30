@@ -12,8 +12,6 @@ import { enableAllExporters, enableAllImporters } from '@hierarchidb/import-expo
 import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/plugin-service-api';
 import type {
   PluginLifecycleAPI,
-  ShapeMutationAPI,
-  ShapeQueryAPI,
   StyleMutationAPI,
   StyleQueryAPI,
 } from '@hierarchidb/plugin-service-api';
@@ -24,6 +22,7 @@ import { ShapeDB } from '@hierarchidb/shape-store';
 import { StylerDB } from '@hierarchidb/styler-store';
 import { TagService } from '@hierarchidb/tag';
 import { SingletonMixin } from '@hierarchidb/util';
+import type { ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
 import { EntityLifecycleManager } from './entity/EntityLifecycleManager.js';
 import { ImportExportDBPortCoreDBAdapter } from './services/adapters/ImportExportDBPortCoreDBAdapter.js';
 import { TagDBPortCoreDBAdapter } from './services/adapters/TagDBPortCoreDBAdapter.js';

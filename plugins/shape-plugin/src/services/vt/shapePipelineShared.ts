@@ -17,7 +17,7 @@ import {
 } from '@hierarchidb/util';
 import type { ShapeBuildConfig } from '../../common/types/index.js';
 import type { CountryMetadata, FetchTaskPayload, SelectedArrayByCountries } from '../../common/types/index.js';
-import type { ShapeTileLayerInfo, ShapeVectorTileRecord } from '@hierarchidb/plugin-service-api';
+import type { ShapeTileLayerInfo, ShapeVectorTileRecord } from '@hierarchidb/shape-api';
 import { extractGeometryStats } from './featureMetadataUtils.ts';
 import { buildStableSignature } from './taskSignatures.ts';
 import { deleteTasksByIds, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';

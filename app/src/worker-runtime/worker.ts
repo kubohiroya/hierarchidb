@@ -20,7 +20,7 @@ import {
   type HeapPressureEvent,
 } from '@hierarchidb/memory';
 import type { PluginDefinition } from '@hierarchidb/plugin-registry/types';
-import type { ShapeDataSourceName } from '@hierarchidb/plugin-service-api';
+import type { ShapeDataSourceName } from '@hierarchidb/shape-api';
 import {
   configureWorkerContainer,
   getWorkerContainer,

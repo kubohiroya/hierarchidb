@@ -86,10 +86,16 @@
         "packages/features/location-store/src/*"
       ],
       "@hierarchidb/location-api": [
-        "packages/features/location-api/src/index.ts"
+        "packages/features/location-api/dist/index.d.ts"
       ],
       "@hierarchidb/location-api/*": [
-        "packages/features/location-api/src/*"
+        "packages/features/location-api/dist/*"
+      ],
+      "@hierarchidb/shape-api": [
+        "packages/features/shape-api/dist/index.d.ts"
+      ],
+      "@hierarchidb/shape-api/*": [
+        "packages/features/shape-api/dist/*"
       ],
       "@hierarchidb/shape-store": [
         "packages/features/shape-store/src/index.ts"

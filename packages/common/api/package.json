@@ -28,6 +28,7 @@
     "@hierarchidb/location-store": "workspace:*",
     "@hierarchidb/memory": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
+    "@hierarchidb/shape-api": "workspace:*",
     "comlink": "^4.4.2",
     "rxjs": "^7.8.2"
   },

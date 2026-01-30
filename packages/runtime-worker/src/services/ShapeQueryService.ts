@@ -19,7 +19,7 @@ import type {
   ShapeTransformErrorRecord,
   ShapeVectorTileRecord,
   ShapeVTMetadata,
-} from '@hierarchidb/plugin-service-api';
+} from '@hierarchidb/shape-api';
 import {
   type BuildSessionRecord,
   type BuildTaskRecord,
