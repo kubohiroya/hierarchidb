@@ -157,10 +157,11 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
     : typeof (value as Record<string, unknown>).pid === 'string'
       ? (value as Record<string, unknown>).pid as string
       : '';
-  const name = typeof value.name === 'string' ? value.name : '';
-  const latitude = typeof value.latitude === 'number' ? value.latitude : 0;
-  const longitude = typeof value.longitude === 'number' ? value.longitude : 0;
-  const type = typeof value.type === 'string' ? value.type : 'unknown';
+  const valueRecord = value as Record<string, unknown>;
+  const name = typeof valueRecord.name === 'string' ? valueRecord.name : '';
+  const latitude = typeof valueRecord.latitude === 'number' ? valueRecord.latitude : 0;
+  const longitude = typeof valueRecord.longitude === 'number' ? valueRecord.longitude : 0;
+  const type = typeof valueRecord.type === 'string' ? valueRecord.type : 'unknown';
   const countryCode = typeof (value as Record<string, unknown>).countryCode === 'string'
     ? (value as Record<string, unknown>).countryCode as string
     : typeof (value as Record<string, unknown>).gid0 === 'string'
@@ -180,7 +181,6 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
     ? (value as Record<string, unknown>).countryName as string
     : undefined;
 
-  const valueRecord = value as Record<string, unknown>;
   const centroidForShapeId = normalizeCentroidForShapeId(valueRecord.centroidForShapeId);
   const centroidForShapeContainerNodeId = normalizeCentroidForShapeContainerNodeId(
     valueRecord.centroidForShapeContainerNodeId
@@ -207,13 +207,13 @@ export const toGroupRow = (
   item: FeatureItemBase<LocationGroupItemData>,
   timestamp = Date.now(),
 ): LocationFeature => {
-  const normalizedData = item.data ? normalizeGroupData(item.data) : undefined;
+  const normalizedData = normalizeGroupData(item.data ?? {});
   const centroidForShapeId = normalizedData?.centroidForShapeId;
   const centroidForShapeContainerNodeId = normalizedData?.centroidForShapeContainerNodeId;
   return {
     nodeId,
-    id: String(item.id),
-    type: item.data && typeof item.data.type === 'string' ? item.data.type : undefined,
+    id: String(item.id) as LocationFeature['id'],
+    type: normalizedData.type,
     mortonKey: item.data && Number.isFinite(item.data.longitude) && Number.isFinite(item.data.latitude)
       ? mortonKeyFromLonLat(item.data.longitude, item.data.latitude)
       : undefined,
@@ -232,4 +232,3 @@ export const fromGroupRow = (
     data: data ? normalizeGroupData(data) : undefined,
     updatedAt,
   }));
-
