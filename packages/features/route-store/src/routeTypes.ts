@@ -1,5 +1,8 @@
 import type { ISO2, GroupEntity, NodeId, Timestamp, TreeNodeUpdaterPayload } from '@hierarchidb/common-types';
-import type { LocationPointId } from '@hierarchidb/location-store';
+import type { BaseBatchConfig } from '@hierarchidb/common-api';
+import type { BaseBuildConfig } from '@hierarchidb/gis-sdk';
+import type { LocationFeatureId } from '@hierarchidb/location-store';
+
 
 export const ROUTE_MODES = {
   AIRWAY: 'airway',
@@ -13,18 +16,18 @@ export const ROUTE_MODES = {
 export type RouteMode = typeof ROUTE_MODES[keyof typeof ROUTE_MODES];
 
 export interface RoutePoint {
-  coordinates: [number, number];
-  pointId: LocationPointId;
-  locationId?: NodeId;
-  name: string;
-  admin0Name: string;
-  admin1Name: string;
+  locationFeatureId: LocationFeatureId;
+  latitude: number;
+  longitude: number;
+  locationName: string;
+  admin0Name?: string;
+  admin1Name?: string;
   admin2Name?: string;
 }
 
 export interface RouteFeature extends GroupEntity {
-  name: string;
   featureId: string;
+  name: string;
   routeMode: RouteMode;
   startPoint: RoutePoint;
   endPoint: RoutePoint;
@@ -52,6 +55,11 @@ export interface RouteGenerationOptions {
 }
 
 export type TransportMode = 'air' | 'sea' | 'rail' | 'road';
+
+export type RouteGenerationConfig = {
+  method: RouteGenerationMethod;
+  options?: RouteGenerationOptions;
+};
 
 export type RouteTransportSelection =
   | 'air'
@@ -97,6 +105,7 @@ export interface RouteEntity {
   endLocationId?: NodeId;
   lineGeometry?: [number, number][];
   config?: RouteProcessingConfig;
+  buildConfig?: BaseBuildConfig<string>;
   processing?: RouteProcessingConfig;
   processedAt?: number;
   processingStatus?: 'pending' | 'processing' | 'completed' | 'failed';
@@ -107,6 +116,24 @@ export interface RouteEntity {
 }
 
 export type RouteUpdaterPayload = TreeNodeUpdaterPayload<RouteEntity>;
+
+export interface RouteBatchConfig extends BaseBatchConfig {
+  routeGeneration: {
+    method: RouteGenerationMethod;
+    parallel: boolean;
+    maxConcurrent: number;
+    retryOnFailure: boolean;
+    maxRetries: number;
+  };
+  locationResolution?: { batchSize: number; cacheResults: boolean; fallbackToCoordinates: boolean };
+  validation?: {
+    checkLocationExists: boolean;
+    checkDuplicateRoutes: boolean;
+    validateDistance: boolean;
+    maxDistanceKm?: number;
+  };
+  laneCaps?: Partial<Record<RouteGenerationMethod, number>>;
+}
 
 export interface RouteBuildConfig {
   maxRetries?: number;
