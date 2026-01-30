@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { IdeGsmImportProgress } from '@hierarchidb/plugin-service-api';
+import type { IdeGsmImportProgress } from '@hierarchidb/location-api';
 
 type Listener = (progress: IdeGsmImportProgress | null) => void;
 

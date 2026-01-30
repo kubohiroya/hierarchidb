@@ -5,7 +5,7 @@
  * to replace hardcoded plugin actions with dynamic plugin loading.
  */
 
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-types';
 import {
   type HierarchicalTreeNode,

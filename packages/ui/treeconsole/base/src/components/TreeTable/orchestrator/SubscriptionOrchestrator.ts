@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import type { NodeId, TreeNode, TreeNodeEvent } from '@hierarchidb/common-types';
 import type { SubTreeChanges } from '../state/features/subscription.atoms.js';
 import { coalesceBatches } from './mergeUtils.js';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import {
   lastUpdateTimestampAtom,
   pendingUpdatesAtom,

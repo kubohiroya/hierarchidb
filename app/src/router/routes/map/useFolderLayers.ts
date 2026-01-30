@@ -1,5 +1,5 @@
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';
-import type { RouteQueryAPI } from '@hierarchidb/plugin-service-api';
+import type { RouteQueryAPI } from '@hierarchidb/route-api';
 import type { ShapeQueryAPI } from '@hierarchidb/shape-api';
 import { MAPLIBRE_PROPERTY_METADATA } from '@hierarchidb/styler-store';
 import type {

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, IconButton, InputAdornment, Stack, TextField, Tooltip, Typography } from '@mui/material';
-import type { TreeQueryAPI } from '@hierarchidb/common-api';
+import type { TreeQueryAPI } from '@hierarchidb/tree-api';
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import { DualKeyMap } from '@hierarchidb/util';

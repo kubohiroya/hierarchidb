@@ -1,4 +1,4 @@
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { NodeId, TagEntity, TreeNodeMetadata } from '@hierarchidb/common-types';
 import { resolveDefaultNodeName } from '@hierarchidb/runtime-worker';
 import type { Remote } from 'comlink';

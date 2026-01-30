@@ -1,4 +1,4 @@
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { NodeId, TreeNodeData, TreeNodeMetadata } from '@hierarchidb/common-types';
 import type { TreeNodeUpdaterState } from '@hierarchidb/plugin-ui-sdk';
 import type { Remote } from 'comlink';

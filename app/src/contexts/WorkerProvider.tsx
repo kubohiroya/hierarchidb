@@ -6,7 +6,7 @@
  * bootstrap flow so that consumers never observe a null client reference.
  */
 
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import { useTranslation } from '@hierarchidb/ui-plugin-shell/ui-i18n';
 import type { WorkerInitializationChannel } from '@hierarchidb/ui-worker-client';
 import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';

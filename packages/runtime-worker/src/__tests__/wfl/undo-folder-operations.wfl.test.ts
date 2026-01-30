@@ -6,8 +6,8 @@ import { MessageChannel, type MessagePort as NodeMessagePort } from 'worker_thre
 import { createEndpointFromMessagePort } from '../../e2e/test-utils/messagePortEndpoint.js';
 
 type WorkerTestAPI = {
-  getQueryAPI(): Promise<import('@hierarchidb/common-api').TreeQueryAPI>;
-  getMutationAPI(): Promise<import('@hierarchidb/common-api').TreeMutationAPI>;
+  getQueryAPI(): Promise<import('@hierarchidb/tree-api').TreeQueryAPI>;
+  getMutationAPI(): Promise<import('@hierarchidb/tree-api').TreeMutationAPI>;
   getCommandProcessor(): Promise<import('../../services/CommandProcessor.js').CommandProcessor>;
 };
 

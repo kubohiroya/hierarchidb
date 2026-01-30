@@ -10,9 +10,9 @@ import { exposeTestAPI } from '../../e2e/test-worker.entry.js';
 const decodeDraftHolderName = (name: string) => ({ targetNodeId: name as NodeId });
 
 type TestWorkerAPI = {
-  getQueryAPI(): Promise<import('@hierarchidb/common-api').TreeQueryAPI>;
-  getMutationAPI(): Promise<import('@hierarchidb/common-api').TreeMutationAPI>;
-  getTreeNodeUpdaterAPI(): Promise<import('@hierarchidb/common-api').TreeNodeUpdaterAPI>;
+  getQueryAPI(): Promise<import('@hierarchidb/tree-api').TreeQueryAPI>;
+  getMutationAPI(): Promise<import('@hierarchidb/tree-api').TreeMutationAPI>;
+  getTreeNodeUpdaterAPI(): Promise<import('@hierarchidb/tree-api').TreeNodeUpdaterAPI>;
 };
 
 async function createCommittedNode(

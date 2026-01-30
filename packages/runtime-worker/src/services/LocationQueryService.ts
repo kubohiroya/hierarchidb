@@ -16,7 +16,7 @@ import type {
   LocationRelation,
   LocationViewportBbox,
   LocationViewportQueryOptions,
-} from '@hierarchidb/plugin-service-api';
+} from '@hierarchidb/location-api';
 import { SingletonMixin } from '@hierarchidb/util';
 import { storeRegistry } from '../entity/store-registry.js';
 import { haversineMeters, metersToLongitudeDelta } from './nearest/tileNearest.js';

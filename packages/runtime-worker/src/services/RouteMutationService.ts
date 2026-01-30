@@ -1,18 +1,17 @@
 import { DexieChunkStore } from '@hierarchidb/chunk-store';
 import type { NodeId } from '@hierarchidb/common-types';
 import { FetchNetworkPort, getCorsProxyBaseURL } from '@hierarchidb/download';
-import type { LocationQueryAPI } from '@hierarchidb/plugin-service-api';
-import type { RouteWaypointInput, RouteWaypointResult } from '@hierarchidb/route-api';
+import type { LocationQueryAPI } from '@hierarchidb/location-api';
+import type { RouteMutationAPI, RouteWaypointInput, RouteWaypointResult } from '@hierarchidb/route-api';
 import {
   IDE_GSM_BULK_CHUNK_SIZE,
   type IdeGsmImportCallback,
   type IdeGsmImportProgress,
   type IdeGsmRouteImportRequest,
   type IdeGsmRouteImportResult,
-} from '@hierarchidb/plugin-service-api';
+} from '@hierarchidb/route-api';
 import { RouteGenerator, SearouteEngine } from '@hierarchidb/route-engine';
 import type { RouteDatabaseHandle } from '@hierarchidb/route-store';
-import type { RouteMutationAPI } from '@hierarchidb/plugin-service-api';
 import { SingletonMixin } from '@hierarchidb/util';
 import { buildIdeGsmLocationIndex, parseIdeGsmCsv } from './route/ideGsmCsv.js';
 

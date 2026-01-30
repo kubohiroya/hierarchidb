@@ -5,7 +5,7 @@
  * Tests retry logic, timeout handling, and success scenarios
  */
 
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { Remote } from 'comlink';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {

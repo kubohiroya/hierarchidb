@@ -8,8 +8,8 @@ import type {
   BatchTaskSummary,
   BatchTaskUpdateEvent,
   ProgressPhase,
-  WorkerAPI,
 } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import { DEFAULT_BUILD_CONFIG, type SelectedArrayByCountries } from '@hierarchidb/shape-plugin';
 import { WorkerProvider } from '../WorkerProvider.tsx';

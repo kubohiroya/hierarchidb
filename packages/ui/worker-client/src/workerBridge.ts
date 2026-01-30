@@ -3,8 +3,8 @@ import type {
   BatchSessionStatus,
   BatchTaskSummary,
   BatchTaskUpdateEvent,
-  WorkerAPI,
 } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { BuildContinuationPolicy, NodeId, NodeType } from '@hierarchidb/common-types';
 import type { HeapPressureEvent } from '@hierarchidb/memory';
 import { proxy, type Remote } from 'comlink';

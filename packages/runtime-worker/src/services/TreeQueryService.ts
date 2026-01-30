@@ -1,4 +1,4 @@
-import type { ListChildrenOptions, TreeQueryAPI } from '@hierarchidb/common-api';
+import type { ListChildrenOptions, TreeQueryAPI } from '@hierarchidb/tree-api';
 import type {
   CommandResult,
   CopyNodesPayload,
@@ -148,7 +148,7 @@ export class TreeQueryService implements TreeQueryAPI {
   async searchNodes(options: {
     rootNodeId: NodeId;
     query: string;
-    mode?: 'exact' | 'prefix' | 'suffix' | 'partial';
+    mode?: 'exact' | 'contains' | 'prefix' | 'suffix';
     maxDepth?: number;
     maxResults?: number;
     caseSensitive?: boolean;
@@ -157,7 +157,7 @@ export class TreeQueryService implements TreeQueryAPI {
     const {
       rootNodeId,
       query,
-      mode = 'partial',
+      mode = 'contains',
       maxDepth,
       maxResults,
       caseSensitive = false,
@@ -186,6 +186,8 @@ export class TreeQueryService implements TreeQueryAPI {
         switch (mode) {
           case 'exact':
             return text === searchString;
+          case 'contains':
+            return text.includes(searchString);
           case 'prefix':
             return text.startsWith(searchString);
           case 'suffix':
@@ -204,6 +206,47 @@ export class TreeQueryService implements TreeQueryAPI {
       }
     }
 
+    return results;
+  }
+
+  async searchNodesByType(options: {
+    rootNodeId: NodeId;
+    nodeType: string;
+    maxDepth?: number;
+    maxResults?: number;
+  }): Promise<TreeNode[]> {
+    const { rootNodeId, nodeType, maxDepth, maxResults } = options;
+    const descendants = await this.listDescendants(rootNodeId, maxDepth);
+    const results: TreeNode[] = [];
+    for (const node of descendants) {
+      if (node.nodeType !== nodeType) continue;
+      results.push(node);
+      if (maxResults && results.length >= maxResults) break;
+    }
+    return results;
+  }
+
+  async getNodePath(nodeId: NodeId): Promise<TreeNode[]> {
+    const node = await this.getNode(nodeId);
+    if (!node) return [];
+    const ancestors = await this.listAncestors(nodeId);
+    return [...ancestors, node];
+  }
+
+  async queryNodes(options: {
+    rootNodeId: NodeId;
+    predicate: (node: TreeNode) => boolean;
+    maxDepth?: number;
+    maxResults?: number;
+  }): Promise<TreeNode[]> {
+    const { rootNodeId, predicate, maxDepth, maxResults } = options;
+    const descendants = await this.listDescendants(rootNodeId, maxDepth);
+    const results: TreeNode[] = [];
+    for (const node of descendants) {
+      if (!predicate(node)) continue;
+      results.push(node);
+      if (maxResults && results.length >= maxResults) break;
+    }
     return results;
   }
 

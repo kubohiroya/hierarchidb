@@ -48,6 +48,14 @@ export default defineConfig({
         workspaceRoot,
         'packages/common/api/src/index.ts',
       ),
+      '@hierarchidb/tree-api': path.resolve(
+        workspaceRoot,
+        'packages/features/tree-api/src/index.ts',
+      ),
+      '@hierarchidb/worker-api': path.resolve(
+        workspaceRoot,
+        'packages/features/worker-api/src/index.ts',
+      ),
       '@hierarchidb/common-types': path.resolve(
         workspaceRoot,
         'packages/common/types/src/index.ts',

@@ -43,7 +43,7 @@ import { LOCATION_TYPE_STYLES } from './locationTypes.js';
 import { resolveLocationAttribution } from '../../../common/datasources/attribution.js';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import type { MapLibreMapInstance } from '@hierarchidb/ui-map';
-import type { LocationGroupItem } from '@hierarchidb/plugin-service-api';
+import type { LocationGroupItem } from '@hierarchidb/location-api';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { useIdeGsmImportOnEntry } from '../../hooks/useIdeGsmImportOnEntry.js';
 

@@ -1,4 +1,4 @@
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { NodeId, SubscriptionId } from '@hierarchidb/common-types';
 import type { Remote } from 'comlink';
 

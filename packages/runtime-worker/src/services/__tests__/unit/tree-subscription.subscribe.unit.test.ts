@@ -1,4 +1,4 @@
-import type { TreeQueryAPI } from '@hierarchidb/common-api';
+import type { TreeQueryAPI } from '@hierarchidb/tree-api';
 import type {
   NodeId,
   NodeType,
@@ -62,6 +62,14 @@ function createTreeQueryStub(core: CoreDB & { __store: Map<NodeId, TreeNode> }):
     listDescendants: vi.fn(listDescendants) as TreeQueryAPI['listDescendants'],
     listAncestors: vi.fn(async () => []),
     searchNodes: vi.fn(async () => listAllNodes()),
+    searchNodesByType: vi.fn(async ({ nodeType }) =>
+      listAllNodes().filter((node) => node.nodeType === nodeType)
+    ),
+    getNodePath: vi.fn(async (nodeId: NodeId) => {
+      const node = await core.getNode(nodeId);
+      return node ? [node] : [];
+    }),
+    queryNodes: vi.fn(async ({ predicate }) => listAllNodes().filter((node) => predicate(node))),
     searchNodesFulltext: vi.fn(async () => []),
   } as TreeQueryAPI;
 }

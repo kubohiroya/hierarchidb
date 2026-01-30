@@ -3,7 +3,8 @@
   * TreeConsoleCRUDWorkerAPICommandEnvelope
    */
 
-import type { WorkerAPI, TreeMutationAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
+import type { TreeMutationAPI } from '@hierarchidb/tree-api';
 import type {
   DuplicateNodesPayload,
   MoveNodesPayload,

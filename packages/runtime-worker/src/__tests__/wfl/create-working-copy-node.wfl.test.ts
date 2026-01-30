@@ -9,9 +9,9 @@ import { exposeTestAPI } from '../../e2e/test-worker.entry.js';
 
 type TestWorkerAPI = {
   ping(): Promise<{ response: string; timestamp: number }>;
-  getQueryAPI(): Promise<import('@hierarchidb/common-api').TreeQueryAPI>;
-  getMutationAPI(): Promise<import('@hierarchidb/common-api').TreeMutationAPI>;
-  getSubscriptionAPI(): Promise<import('@hierarchidb/common-api').TreeSubscriptionAPI>;
+  getQueryAPI(): Promise<import('@hierarchidb/tree-api').TreeQueryAPI>;
+  getMutationAPI(): Promise<import('@hierarchidb/tree-api').TreeMutationAPI>;
+  getSubscriptionAPI(): Promise<import('@hierarchidb/tree-api').TreeSubscriptionAPI>;
 };
 
 type SubscriptionEvent = TreeNodeEvent;

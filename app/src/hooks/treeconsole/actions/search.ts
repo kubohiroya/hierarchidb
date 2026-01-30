@@ -24,7 +24,7 @@ export const createSearchActions = (deps: TreeConsoleActionDeps) => {
       const results = (await queryAPI.searchNodes({
         rootNodeId: root,
         query: trimmed,
-        mode: 'partial',
+        mode: 'contains',
         maxResults: 200,
       })) as TreeNode[];
       const index = buildIndexFromNodes(results, root);

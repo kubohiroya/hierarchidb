@@ -1,4 +1,4 @@
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import {
   NodeAction,
   type NodeId,

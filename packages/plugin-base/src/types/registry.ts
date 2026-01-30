@@ -3,8 +3,7 @@
  * @description Base interfaces for node type and plugin registries
  * Moved from _obsolate_common-core/src/registry/INodeTypeRegistry.ts
  */
-import { PluginDefinition } from './plugin-definition.js';
-import type {  EntityHandler, NodeType } from '@hierarchidb/common-types';
+import type { NodeType } from '@hierarchidb/common-types';
 
 /**
  * Base interface for all node type registries
@@ -41,27 +40,6 @@ export interface INodeTypeRegistry<TValue = unknown> {
   clear(): void;
 }
 
-
-/**
- * Interface for node type definition registry (original core registry)
- */
-export interface INodeDefinitionRegistry extends INodeTypeRegistry<PluginDefinition> {
-  /**
-   * Register a node type definition
-   */
-  registerDefinition(definition: PluginDefinition): void;
-
-  /**
-   * Get node type definition
-   */
-  getDefinition(nodeType: NodeType): PluginDefinition | undefined;
-
-  /**
-   * Get entity handler
-   */
-  getHandler(nodeType: NodeType): EntityHandler | undefined;
-}
-
 /**
  * Simple configuration for node types (used in worker)
  */
@@ -77,29 +55,4 @@ export interface NodeTypeConfig {
   canBeMoved?: boolean;
   sortOrder?: number;
   metadata?: Record<string, unknown>;
-}
-
-/**
- * Interface for simple node type registry (lightweight version)
- */
-export interface ISimpleNodeTypeRegistry extends INodeTypeRegistry<NodeTypeConfig> {
-  /**
-   * Register node type with simple config
-   */
-  registerNodeType(nodeType: NodeType, config: NodeTypeConfig): void;
-
-  /**
-   * Get node type config
-   */
-  getNodeTypeConfig(nodeType: NodeType): NodeTypeConfig | undefined;
-
-  /**
-   * Check if a child type can be added to a parent type
-   */
-  canAddChild(parentType: NodeType, childType: NodeType): boolean;
-
-  /**
-   * Get default icon for a node type
-   */
-  getDefaultIcon(nodeType: NodeType): string;
 }

@@ -46,45 +46,6 @@ export interface PluginDefinition {
   readonly version: string;
 }
 
-/*
- // CoreUI
- export interface NodeTypeDefinition<
- TEntity extends PeerEntity = PeerEntity,
- TGroupEntity extends GroupEntity = GroupEntity,
- TDraft extends TEntity & DraftProperties = TEntity & DraftProperties,
- > {
- //
- readonly nodeType: NodeType;
- readonly name: string;
- readonly displayName: string;
- readonly icon?: string;
- readonly color?: string;
- //
- readonly database: {
- entityStore: string;
- groupEntityStores?: string[];
- schema: DatabaseSchema;
- version: number;
- };
- //
- readonly entityHandler: EntityHandler<TEntity, TGroupEntity, TDraft>;
- //
- readonly lifecycle: NodeLifecycleHooks<TEntity>;
- // API
- readonly api?: {
- workerExtensions?: WorkerAPIExtensions;
- clientExtensions?: ClientAPIExtensions;
- };
- //
- readonly validation?: {
- namePattern?: RegExp;
- maxChildren?: number;
- allowedChildTypes?: NodeType[];
- customValidators?: ValidationRule<TEntity>[];
- };
- }
-*/
-
 export interface NodeTypeIconDefinition {
   // MUI icon name (e.g., 'Folder', 'Description', 'Map')
   muiIconName?: string;
@@ -220,13 +181,4 @@ export interface PluginI18nConfig {
 
 export interface DatabaseSchema {
   [storeName: string]: string; // Dexie schema string
-}
-
-// CoreNodeDefinition removed - use PluginDefinition directly
-// This reduces type confusion and improves clarity
-
-// Plugin routing configuration
-export interface PluginRoutingConfig {
-  actions: Record<string, WorkerPluginRouterAction>;
-  defaultAction?: string;
 }

@@ -5,22 +5,12 @@ declare module '@hierarchidb/basemap-plugin/ui' {
   export default mod;
 }
 
-declare module '@hierarchidb/basemap-plugin/worker' {
-  const mod: Record<string, unknown>;
-  export default mod;
-}
-
 declare module '@hierarchidb/basemap-plugin/icon' {
   export const BasemapPluginIcon: unknown;
   export default BasemapPluginIcon;
 }
 
 declare module '@hierarchidb/folder-plugin/ui' {
-  const mod: Record<string, unknown>;
-  export default mod;
-}
-
-declare module '@hierarchidb/folder-plugin/worker' {
   const mod: Record<string, unknown>;
   export default mod;
 }
@@ -61,11 +51,6 @@ declare module '@hierarchidb/location-plugin/icon' {
 }
 
 declare module '@hierarchidb/resolver-plugin/ui' {
-  const mod: Record<string, unknown>;
-  export default mod;
-}
-
-declare module '@hierarchidb/resolver-plugin/worker' {
   const mod: Record<string, unknown>;
   export default mod;
 }
@@ -125,22 +110,12 @@ declare module '@hierarchidb/styler-plugin/ui' {
   export default mod;
 }
 
-declare module '@hierarchidb/styler-plugin/worker' {
-  const mod: Record<string, unknown>;
-  export default mod;
-}
-
 declare module '@hierarchidb/styler-plugin/icon' {
   export const StylerPluginIcon: unknown;
   export default StylerPluginIcon;
 }
 
 declare module '@hierarchidb/timeline-plugin/ui' {
-  const mod: Record<string, unknown>;
-  export default mod;
-}
-
-declare module '@hierarchidb/timeline-plugin/worker' {
   const mod: Record<string, unknown>;
   export default mod;
 }

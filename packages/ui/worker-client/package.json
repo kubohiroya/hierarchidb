@@ -49,6 +49,7 @@
     "vitest": "^3.2.4",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/worker-api": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*"
   },
   "peerDependencies": {
@@ -56,6 +57,7 @@
     "@hierarchidb/memory": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/worker-api": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*"
   },
   "peerDependenciesMeta": {

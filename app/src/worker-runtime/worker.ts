@@ -10,8 +10,8 @@ import type {
   BatchSessionStatus,
   BatchTaskSummary,
   BatchTaskUpdateEvent,
-  UiStorageBridge,
 } from '@hierarchidb/common-api';
+import type { UiStorageBridge } from '@hierarchidb/worker-api';
 import type { BuildContinuationPolicy, NodeId, NodeType } from '@hierarchidb/common-types';
 import { setCorsProxyBaseURL } from '@hierarchidb/download';
 import {

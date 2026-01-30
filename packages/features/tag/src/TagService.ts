@@ -1,5 +1,5 @@
 import type { TagId, NodeId, NodeTagAssociation, NodeTagAssociationId, TagEntity, TagSuggestion, Timestamp } from '@hierarchidb/common-types';
-import type { CreateTagRequest, TagAPI, TagAssociationRequest, UpdateTagRequest } from '@hierarchidb/common-api';
+import type { CreateTagRequest, TagAPI, TagAssociationRequest, UpdateTagRequest } from '@hierarchidb/tree-api';
 import { SingletonMixin, generateId } from '@hierarchidb/util';
 import type { TagDBPort } from './ports.js';
 

@@ -27,8 +27,10 @@
   "dependencies": {
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
+    "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/ui-worker-provider": "workspace:*",
-    "@hierarchidb/ui-dialog": "workspace:*"
+    "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/worker-api": "workspace:*"
   },
   "peerDependencies": {
     "dexie": "^4.2.0",
@@ -38,9 +40,11 @@
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/download": "workspace:*",
     "comlink": "^4.4.1",
-    "jotai": "^2.13.1"
+    "jotai": "^2.13.1",
+    "@hierarchidb/worker-api": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
@@ -56,9 +60,11 @@
     "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/download": "workspace:*",
     "@hierarchidb/ui-worker-provider": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/worker-api": "workspace:*",
     "jotai": "^2.13.1",
     "vitest": "^3.2.4",
     "@testing-library/react": "^16.1.0",

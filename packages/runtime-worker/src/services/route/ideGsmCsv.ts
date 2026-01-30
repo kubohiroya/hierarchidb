@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { LocationQueryAPI } from '@hierarchidb/plugin-service-api';
+import type { LocationQueryAPI } from '@hierarchidb/location-api';
 import type {
   IdeGsmLocationRecord,
   IdeGsmRouteError,

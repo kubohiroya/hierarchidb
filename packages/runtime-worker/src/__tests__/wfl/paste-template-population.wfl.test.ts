@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
-import type { ImportData } from '@hierarchidb/common-api';
+import type { ImportData } from '@hierarchidb/import-export-api';
 import type {
   CommandEnvelope,
   CommandResult,
@@ -17,14 +17,14 @@ import { MessageChannel } from 'worker_threads';
 import { createEndpointFromMessagePort } from '../../e2e/test-utils/messagePortEndpoint.js';
 import { exposeTestAPI } from '../../e2e/test-worker.entry.js';
 
-type ExtendedTreeMutationAPI = import('@hierarchidb/common-api').TreeMutationAPI & {
+type ExtendedTreeMutationAPI = import('@hierarchidb/tree-api').TreeMutationAPI & {
   pasteNodes(command: CommandEnvelope<'pasteNodes', PasteNodesPayload>): Promise<CommandResult>;
 };
 
 type TestWorkerAPI = {
-  getQueryAPI(): Promise<import('@hierarchidb/common-api').TreeQueryAPI>;
+  getQueryAPI(): Promise<import('@hierarchidb/tree-api').TreeQueryAPI>;
   getMutationAPI(): Promise<ExtendedTreeMutationAPI>;
-  getImportExportAPI(): Promise<import('@hierarchidb/common-api').ImportExportAPI>;
+  getImportExportAPI(): Promise<import('@hierarchidb/import-export-api').ImportExportAPI>;
 };
 
 type TemplateNode = {
@@ -93,7 +93,7 @@ function buildImportNodes(data: TemplateFile): ImportData['nodes'] {
 }
 
 async function buildClipboard(
-  queryAPI: import('@hierarchidb/common-api').TreeQueryAPI,
+  queryAPI: import('@hierarchidb/tree-api').TreeQueryAPI,
   rootId: NodeId
 ): Promise<{ nodes: Record<NodeId, TreeNode>; nodeIds: NodeId[] }> {
   const rootNode = await queryAPI.getNode(rootId);

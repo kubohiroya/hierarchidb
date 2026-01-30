@@ -16,10 +16,10 @@ import { BuildStepPanel, type BuildStage, type BuildStatus, notify } from '@hier
 import { HeapPressureDialog, useHeapPressureGuard } from '@hierarchidb/ui-memory';
 import { GenericDataGrid, type GridColumn } from '@hierarchidb/ui-grid';
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
-import { findRelatedNodesByPriority } from '@hierarchidb/common-api';
+import { findRelatedNodesByPriority } from '@hierarchidb/tree-api';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
 import { proxy } from 'comlink';
-import { IDE_GSM_BULK_CHUNK_SIZE, type IdeGsmImportProgress } from '@hierarchidb/plugin-service-api';
+import { IDE_GSM_BULK_CHUNK_SIZE, type IdeGsmImportProgress } from '@hierarchidb/route-api';
 import type {
   IdeGsmRouteError,
   RouteTransportSelection,

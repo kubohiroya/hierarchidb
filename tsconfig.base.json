@@ -91,6 +91,12 @@
       "@hierarchidb/location-api/*": [
         "packages/features/location-api/dist/*"
       ],
+      "@hierarchidb/tree-api": [
+        "packages/features/tree-api/dist/index.d.ts"
+      ],
+      "@hierarchidb/tree-api/*": [
+        "packages/features/tree-api/dist/*"
+      ],
       "@hierarchidb/shape-api": [
         "packages/features/shape-api/dist/index.d.ts"
       ],
@@ -108,6 +114,12 @@
       ],
       "@hierarchidb/shape-store/*": [
         "packages/features/shape-store/dist/*"
+      ],
+      "@hierarchidb/worker-api": [
+        "packages/features/worker-api/dist/index.d.ts"
+      ],
+      "@hierarchidb/worker-api/*": [
+        "packages/features/worker-api/dist/*"
       ],
       "@hierarchidb/styler-store": [
         "packages/features/styler-store/dist/index.d.ts"

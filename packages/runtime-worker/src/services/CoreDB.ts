@@ -1,4 +1,4 @@
-import type { ListChildrenOptions } from '@hierarchidb/common-api';
+import type { ListChildrenOptions } from '@hierarchidb/tree-api';
 import type {
   DialogUIState,
   NodeId,

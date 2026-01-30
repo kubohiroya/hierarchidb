@@ -71,10 +71,12 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
+    "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/ui-treeconsole-base": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/plugin-base": "workspace:*"
+    "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/worker-api": "workspace:*"
   },
   "devDependencies": {
     "@deck.gl/aggregation-layers": "^9.0.0",
@@ -100,10 +102,12 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
+    "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/ui-treeconsole-base": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/plugin-base": "workspace:*"
+    "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/worker-api": "workspace:*"
   },
   "author": "",
   "license": "MIT",

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { TreeNode } from '@hierarchidb/common-types';
 import { Provider, useAtomValue, useSetAtom } from 'jotai';
 import { type FC, useEffect, type PropsWithChildren, type ReactElement } from 'react';

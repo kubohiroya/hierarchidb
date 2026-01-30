@@ -242,7 +242,7 @@ export function useTreeConsoleIntegration({
           const results = (await queryAPI.searchNodes({
             rootNodeId: pageNodeId as NodeId,
             query: searchQuery,
-            mode: 'partial',
+            mode: 'contains',
             maxResults: 200,
           })) as TreeNode[];
           const index = new DualKeyMap<NodeId, NodeId, TreeNode>();

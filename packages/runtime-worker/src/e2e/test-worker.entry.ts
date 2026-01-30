@@ -1,17 +1,17 @@
 // Test-only worker entry that exposes WorkerService over a MessagePort/Comlink endpoint.
 // Runs in the same process for simplicity; fake-indexeddb provides IndexedDB in Node.
 import 'fake-indexeddb/auto';
+import type { ImportExportAPI } from '@hierarchidb/import-export-api';
+import type { TreeTableExpandedAPI } from '@hierarchidb/common-api';
 import type {
-  ImportExportAPI,
   TreeMutationAPI,
   TreeNodeUpdaterAPI,
   TreeQueryAPI,
   TreeSubscriptionAPI,
-  TreeTableExpandedAPI,
-} from '@hierarchidb/common-api';
-import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/plugin-service-api';
+} from '@hierarchidb/tree-api';
+import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/location-api';
 import type { StyleMutationAPI, StyleQueryAPI } from '@hierarchidb/style-api';
-import type { RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/plugin-service-api';
+import type { RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/route-api';
 import type { ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
 import type { Endpoint as ComlinkEndpoint } from 'comlink';
 import { expose, proxy } from 'comlink';

@@ -8,7 +8,7 @@
 
 import { useMemo } from 'react';
 import type { TreeViewController } from '../../../types/index.js';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import { useAtomValue } from 'jotai';
 import { tableDataAtom } from '../state/index.js';
 

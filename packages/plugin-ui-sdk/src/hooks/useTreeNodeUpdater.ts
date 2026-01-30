@@ -9,14 +9,10 @@ import {
   Timestamp,
   TreeNodeData,
 } from '@hierarchidb/common-types';
-import type {
-  CommitDraftMode,
-  DiscardDraftOptions,
-  TreeNodeUpdaterAPI,
-  TreeQueryAPI,
-} from '@hierarchidb/common-api';
+import type { CommitDraftMode, DiscardDraftOptions, TreeNodeUpdaterAPI } from '@hierarchidb/tree-api';
+import type { TreeQueryAPI } from '@hierarchidb/tree-api';
 import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import { Remote } from 'comlink';
 
 export interface TreeNodeUpdaterState<TPayload extends TreeNodeData = TreeNodeData> {

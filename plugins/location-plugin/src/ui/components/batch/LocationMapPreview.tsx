@@ -43,7 +43,7 @@ import type { LocationType, NodeId } from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
 import { LOCATION_TYPE_STYLES } from '../steps/locationTypes.js';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
-import type { LocationNearestPointResponse } from '@hierarchidb/plugin-service-api';
+import type { LocationNearestPointResponse } from '@hierarchidb/location-api';
 
 export interface PreviewLocationPoint {
   id: string;

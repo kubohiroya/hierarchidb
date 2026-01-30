@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import type { TreeQueryAPI } from '@hierarchidb/common-api';
+import type { TreeQueryAPI } from '@hierarchidb/tree-api';
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TreeTableExpandedService } from '../../TreeTableExpandedService.js';
@@ -13,9 +13,19 @@ describe('TreeTableExpandedService', () => {
   beforeEach(async () => {
     db = new UIStateDB(`ui-state-test-${Date.now()}-${Math.random()}`);
     await db.open();
-    const queryService = {
+    const queryService: TreeQueryAPI = {
+      getTree: vi.fn(async () => undefined),
+      listTrees: vi.fn(async () => []),
+      getNode: vi.fn(async () => undefined),
+      listChildren: vi.fn(async () => []),
       listDescendants,
-    } as unknown as TreeQueryAPI;
+      listAncestors: vi.fn(async () => []),
+      searchNodes: vi.fn(async () => []),
+      searchNodesByType: vi.fn(async () => []),
+      searchNodesFulltext: vi.fn(async () => []),
+      getNodePath: vi.fn(async () => []),
+      queryNodes: vi.fn(async () => []),
+    };
     service = new TreeTableExpandedService(db, queryService);
     listDescendants.mockReset();
   });

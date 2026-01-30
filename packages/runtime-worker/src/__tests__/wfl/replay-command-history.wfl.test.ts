@@ -8,9 +8,9 @@ import { exposeTestAPI } from '../../e2e/test-worker.entry.js';
 import { assertCommandSuccess, type CommandResultSuccess } from '../../test-utils/assertions.js';
 
 type WorkerTestAPI = {
-  getQueryAPI(): Promise<import('@hierarchidb/common-api').TreeQueryAPI>;
-  getMutationAPI(): Promise<import('@hierarchidb/common-api').TreeMutationAPI>;
-  getTreeNodeUpdaterAPI(): Promise<import('@hierarchidb/common-api').TreeNodeUpdaterAPI>;
+  getQueryAPI(): Promise<import('@hierarchidb/tree-api').TreeQueryAPI>;
+  getMutationAPI(): Promise<import('@hierarchidb/tree-api').TreeMutationAPI>;
+  getTreeNodeUpdaterAPI(): Promise<import('@hierarchidb/tree-api').TreeNodeUpdaterAPI>;
   getCommandProcessor(): Promise<import('../../services/CommandProcessor.js').CommandProcessor>;
 };
 

@@ -5,7 +5,7 @@
  * when change events stream in from the runtime-worker.
  */
 
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import { DualKeyMap } from '@hierarchidb/util';
 import type { Remote } from 'comlink';

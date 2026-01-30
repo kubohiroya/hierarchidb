@@ -5,7 +5,7 @@
   */
 
 // import { Observable } from 'rxjs'; // TODO: will be used when implementing actual Observable subscriptions
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import * as Comlink from 'comlink';
 import type { NodeId, TreeNodeEvent } from '@hierarchidb/common-types';
 import type { AdapterContext, UnsubscribeFunction } from '../../types/index.js';

@@ -3,7 +3,7 @@ import { proxy } from 'comlink';
 import type { NodeId } from '@hierarchidb/common-types';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useIsoCountries } from '@hierarchidb/ui-country-select';
-import { IDE_GSM_BULK_CHUNK_SIZE, type IdeGsmImportProgress } from '@hierarchidb/plugin-service-api';
+import { IDE_GSM_BULK_CHUNK_SIZE, type IdeGsmImportProgress } from '@hierarchidb/location-api';
 import type { LocationEntity } from '../../common/types/index.js';
 import type { IdeGsmSourceEntry } from '@hierarchidb/location-api';
 import { BASE_LOCATION_TYPES } from '../components/steps/locationTypes.js';

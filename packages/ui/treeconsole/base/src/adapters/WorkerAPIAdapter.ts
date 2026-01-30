@@ -4,7 +4,7 @@
  * WorkerAPITreeConsole
    */
 
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { NodeId, TreeNodeEvent } from '@hierarchidb/common-types';
 // import { TreeObservableAdapter } from './subscriptions/TreeObservableAdapter.js'; // Currently unused
 import { TreeMutationCommandsAdapter } from './commands/TreeMutationCommands.js';

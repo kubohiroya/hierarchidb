@@ -114,7 +114,7 @@
   - update: 2026-01-30 13:17 JST LocationPointProperties の型に合わせて Record キャストを撤去し、tileId 解決を型安全化。
   - done: 2026-01-30 13:17 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
 
-2435) refactor/plugin-service-api/deprecate (P1) — 進行中 (2026-01-30)
+2435) refactor/plugin-service-api/deprecate (P1) — 完了 (2026-01-30)
 - ブランチ名: refactor/plugin-service-api/deprecate
 - 依存: なし
 - ExecPlan: plans/deprecate-plugin-service-api-execplan.md
@@ -130,6 +130,26 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-30 13:20 JST plugin-service-api 廃止に向けた移行作業に着手。
+  - update: 2026-01-30 13:48 JST Location/Route Query・Mutation API と IDE-GSM 契約を location-api/route-api に移設し、app/runtime-worker/location/route plugin/worker-api/common-api の参照と依存を更新。
+  - update: 2026-01-30 13:52 JST TreeQueryAPI に searchNodesFulltext/searchNodesByType/getNodePath/queryNodes を整合追加し、searchNodes の mode を contains に統一。TreeQueryService とテストスタブを補正。
+  - update: 2026-01-30 13:56 JST pnpm install、location-api/route-api/tree-api/plugin-base/style-api build、location-api/route-api/common-api/worker-api/runtime-worker/location-plugin/route-plugin/app typecheck を実行（tsdown define 警告あり）。
+  - done: 2026-01-30 13:56 JST plugin-service-api の残存契約移設と主要参照先の切替を完了。
+
+2436) refactor/common-api/move-import-export-plugin-dialog (P1) — 進行中 (2026-01-30)
+- ブランチ名: refactor/common-api/move-import-export-plugin-dialog
+- 依存: なし
+- 受け入れ基準: packages/features/import-export-api を新設し ImportExportAPI を移設する／common-api から ImportExportAPI と PluginDialogAPI を撤去し、PluginDialogAPI は tree-api に移設する／参照先の import が新パッケージへ切替される／必要範囲の build/typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/common/api/src/**`, `packages/features/import-export-api/src/**`, `packages/features/tree-api/src/**`, `packages/**`, `plugins/**`, `app/**`（必要に応じて追加）
+- ロールバック手順: import-export-api を削除し common-api に ImportExportAPI を復元、tree-api の PluginDialogAPI を元に戻し、参照を差し戻す
+- チェックリスト:
+  - import-export-api を新設して ImportExportAPI を移設する
+  - common-api から ImportExportAPI/PluginDialogAPI を撤去する
+  - PluginDialogAPI を tree-api に移設する
+  - 参照先を新パッケージへ切替する
+  - 影響範囲の build/typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-30 15:20 JST ImportExportAPI/PluginDialogAPI の移設作業に着手。
 
 2424) refactor/location-store/index-cleanup (P1) — 完了 (2026-01-29)
 - ブランチ名: refactor/location-store/index-cleanup
@@ -461,6 +481,9 @@
   - update: 2026-01-30 13:35 JST pnpm --filter @hierarchidb/route-api build / pnpm --filter @hierarchidb/plugin-service-api build / pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
   - update: 2026-01-30 14:05 JST plugin-service-api から route-api 依存を撤去（Route* 型はローカル定義、IdeGsmRouteError は route-api 直参照へ移行）し、循環依存の解消方針に合わせて整理。
   - update: 2026-01-30 14:05 JST pnpm --filter @hierarchidb/plugin-service-api build / pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
+  - start: 2026-01-30 14:25 JST common-api の WorkerAPI / TreeQueryAPI / TreeMutationAPI を worker-api / tree-api へ分割する作業に着手（循環依存解消対応）。
+  - update: 2026-01-30 15:05 JST WorkerAPI を features/worker-api に移設、TreeQueryAPI/TreeMutationAPI を features/tree-api に移設し、参照と依存を新パッケージへ切替（common-api から該当 exports を撤去）。
+  - update: 2026-01-30 15:05 JST pnpm --filter @hierarchidb/tree-api build / pnpm --filter @hierarchidb/worker-api build / pnpm --filter @hierarchidb/common-api build / pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
 
 2416) fix/depgraph/route-store-common-api-cycle (P1) — 完了 (2026-01-28)
 - ブランチ名: fix/depgraph/route-store-common-api-cycle

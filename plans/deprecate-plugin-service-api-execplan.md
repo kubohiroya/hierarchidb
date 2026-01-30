@@ -10,16 +10,17 @@ After this change, the shared contracts that plugins and the host use are no lon
 
 ## Progress
 
-- [ ] (2026-01-30 13:20 JST) Create a new style API package and move Style* contracts into it.
-- [ ] (2026-01-30 13:20 JST) Move plugin contract types (PluginManifest/registry/lifecycle/etc.) into plugin-base and update exports.
-- [ ] (2026-01-30 13:20 JST) Replace imports across app/runtime-worker/plugins to use the new packages.
-- [ ] (2026-01-30 13:20 JST) Reduce plugin-service-api to transitional re-exports only, or remove unused files.
-- [ ] (2026-01-30 13:20 JST) Run targeted builds/typechecks and record results.
+- [x] (2026-01-30 13:20 JST) Create a new style API package and move Style* contracts into it.
+- [x] (2026-01-30 13:20 JST) Move plugin contract types (PluginManifest/registry/lifecycle/etc.) into plugin-base and update exports.
+- [x] (2026-01-30 13:20 JST) Replace imports across app/runtime-worker/plugins to use the new packages.
+- [x] (2026-01-30 13:20 JST) Reduce plugin-service-api to transitional re-exports only, or remove unused files.
+- [x] (2026-01-30 13:20 JST) Run targeted builds/typechecks and record results.
 
 ## Surprises & Discoveries
 
 - Observation: plugin-service-api still contains many base plugin contracts even after location/route/shape extraction.
   Evidence: `packages/plugin-service-api/src/types/*` listing on 2026-01-30.
+- Observation: runtime-worker typecheck required tree-api/dist availability and TreeQueryAPI parity; added missing TreeQueryAPI methods and updated search mode to align with tree-api.
 
 ## Decision Log
 
@@ -33,7 +34,7 @@ After this change, the shared contracts that plugins and the host use are no lon
 
 ## Outcomes & Retrospective
 
-- Not completed yet.
+- plugin-service-api now exports only transitional re-exports; location/route APIs moved to feature packages and consumers updated.
 
 ## Context and Orientation
 

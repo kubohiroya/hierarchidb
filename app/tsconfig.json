@@ -21,6 +21,18 @@
       "@hierarchidb/common-api/*": [
         "../packages/common/api/src/*"
       ],
+      "@hierarchidb/tree-api": [
+        "../packages/features/tree-api/src/index.ts"
+      ],
+      "@hierarchidb/tree-api/*": [
+        "../packages/features/tree-api/src/*"
+      ],
+      "@hierarchidb/worker-api": [
+        "../packages/features/worker-api/src/index.ts"
+      ],
+      "@hierarchidb/worker-api/*": [
+        "../packages/features/worker-api/src/*"
+      ],
       "@hierarchidb/common-auth": [
         "../packages/common/auth/src/index.ts"
       ],

@@ -5,7 +5,7 @@
  * Plugins can retrieve it via `getWorkerClientHook()` to acquire the app's worker client.
  */
 
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { Remote } from 'comlink';
 
 export interface WorkerClientRef {

@@ -1,5 +1,8 @@
 export * from './locationTypes.js';
 export * from './locationPointId.js';
+export * from './ideGsmTypes.js';
+export * from './LocationQueryAPI.js';
+export * from './LocationMutationAPI.js';
 export type { CsvTable } from './csvUtils.js';
 export { buildHeaderIndex, getColumnValue, parseCsvTable } from './csvUtils.js';
 export {

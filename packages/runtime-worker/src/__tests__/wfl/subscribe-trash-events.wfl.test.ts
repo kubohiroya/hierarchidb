@@ -11,10 +11,10 @@ const decodeDraftHolderName = (name: string) => ({ targetNodeId: name as NodeId 
 
 type TestWorkerAPI = {
   ping(): Promise<{ response: string; timestamp: number }>;
-  getQueryAPI(): Promise<import('@hierarchidb/common-api').TreeQueryAPI>;
-  getMutationAPI(): Promise<import('@hierarchidb/common-api').TreeMutationAPI>;
-  getSubscriptionAPI(): Promise<import('@hierarchidb/common-api').TreeSubscriptionAPI>;
-  getTreeNodeUpdaterAPI(): Promise<import('@hierarchidb/common-api').TreeNodeUpdaterAPI>;
+  getQueryAPI(): Promise<import('@hierarchidb/tree-api').TreeQueryAPI>;
+  getMutationAPI(): Promise<import('@hierarchidb/tree-api').TreeMutationAPI>;
+  getSubscriptionAPI(): Promise<import('@hierarchidb/tree-api').TreeSubscriptionAPI>;
+  getTreeNodeUpdaterAPI(): Promise<import('@hierarchidb/tree-api').TreeNodeUpdaterAPI>;
 };
 
 type SubscriptionEvent = TreeNodeEvent;

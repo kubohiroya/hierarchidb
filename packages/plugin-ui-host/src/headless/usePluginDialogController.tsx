@@ -2,7 +2,7 @@
  * usePluginDialogController – headless orchestrator for plugin dialogs.
  * Dialog UI atoms is persisted on TreeNode.dialogUIState via TreeNodeUpdaterAPI.
  */
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type {
   DialogDisplayMode,
   DialogPosition,

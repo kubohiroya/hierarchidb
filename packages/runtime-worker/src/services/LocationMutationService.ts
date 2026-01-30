@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import { authFetch } from '@hierarchidb/download';
 import type { LocationPointProperties } from '@hierarchidb/location-store';
-import type { LocationMutationAPI } from '@hierarchidb/plugin-service-api';
+import type { LocationMutationAPI } from '@hierarchidb/location-api';
 import {
   filterIdeGsmPointsBySelection,
   getLocationDB,
@@ -15,7 +15,7 @@ import {
   type IdeGsmLocationImportResult,
   type LocationGroupItem,
   type LocationRelation,
-} from '@hierarchidb/plugin-service-api';
+} from '@hierarchidb/location-api';
 import { SingletonMixin } from '@hierarchidb/util';
 import { storeRegistry } from '../entity/store-registry.js';
 

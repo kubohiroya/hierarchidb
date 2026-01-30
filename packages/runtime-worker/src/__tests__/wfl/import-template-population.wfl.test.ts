@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { readFile } from 'node:fs/promises';
-import type { ImportData } from '@hierarchidb/common-api';
+import type { ImportData } from '@hierarchidb/import-export-api';
 import type { NodeId, TreeId } from '@hierarchidb/common-types';
 import { toNodeType } from '@hierarchidb/common-types';
 import * as Comlink from 'comlink';
@@ -10,8 +10,8 @@ import { createEndpointFromMessagePort } from '../../e2e/test-utils/messagePortE
 import { exposeTestAPI } from '../../e2e/test-worker.entry.js';
 
 type TestWorkerAPI = {
-  getQueryAPI(): Promise<import('@hierarchidb/common-api').TreeQueryAPI>;
-  getImportExportAPI(): Promise<import('@hierarchidb/common-api').ImportExportAPI>;
+  getQueryAPI(): Promise<import('@hierarchidb/tree-api').TreeQueryAPI>;
+  getImportExportAPI(): Promise<import('@hierarchidb/import-export-api').ImportExportAPI>;
 };
 
 type TemplateNode = {

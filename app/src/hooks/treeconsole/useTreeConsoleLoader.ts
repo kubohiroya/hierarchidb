@@ -4,7 +4,7 @@
  * Centralises the logic for fetching, normalising, and sorting console data.
  */
 
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import { DualKeyMap } from '@hierarchidb/util';
 import type { Remote } from 'comlink';

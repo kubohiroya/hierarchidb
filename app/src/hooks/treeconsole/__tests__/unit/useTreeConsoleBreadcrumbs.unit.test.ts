@@ -1,4 +1,4 @@
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { Remote } from 'comlink';

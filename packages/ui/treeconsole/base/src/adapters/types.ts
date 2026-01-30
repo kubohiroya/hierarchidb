@@ -4,7 +4,7 @@
  * TreeConsoleObservable
   */
 
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { NodeId, TreeChangeEvent, TreeChangeEventType, TreeNode } from '@hierarchidb/common-types';
 
 /**

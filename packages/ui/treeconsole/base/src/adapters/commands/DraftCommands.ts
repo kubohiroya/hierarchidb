@@ -4,7 +4,8 @@
  * Working Copy
   */
 
-import type { CommitDraftOptions, WorkerAPI } from '@hierarchidb/common-api';
+import type { CommitDraftOptions } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type {
   CommitResult,
   CommitDraftForCreatePayload,

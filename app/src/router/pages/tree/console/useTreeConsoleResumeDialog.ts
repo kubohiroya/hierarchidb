@@ -1,4 +1,4 @@
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import type { Remote } from 'comlink';

@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import { resolveLocationAttribution } from '@hierarchidb/location-plugin';
 import type { LocationType } from '@hierarchidb/location-store';
-import type { LocationQueryAPI } from '@hierarchidb/plugin-service-api';
+import type { LocationQueryAPI } from '@hierarchidb/location-api';
 import { ROUTE_DATA_SOURCES } from '@hierarchidb/route-plugin';
 import { SHAPE_DATA_SOURCES } from '@hierarchidb/shape-plugin';
 import type {

@@ -3,7 +3,7 @@
  * API
  */
 
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 // Observable/Subscription types
 import type { NodeId, NodeType, TreeChangeEvent, TreeNode } from '@hierarchidb/common-types';
 import type { DualKeyMap } from '@hierarchidb/util';

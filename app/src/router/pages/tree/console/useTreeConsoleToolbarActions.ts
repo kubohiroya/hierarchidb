@@ -1,4 +1,5 @@
-import type { ImportData, WorkerAPI } from '@hierarchidb/common-api';
+import type { ImportData } from '@hierarchidb/import-export-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type {
   BuildContinuationPolicy,
   NodeId,

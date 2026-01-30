@@ -5,7 +5,7 @@
  * useTreeConsoleIntegration hook modules.
  */
 
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { CommandResult, NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
