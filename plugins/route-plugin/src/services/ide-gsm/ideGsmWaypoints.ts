@@ -20,14 +20,8 @@ async function applyWaypoints(line: RouteFeature): Promise<RouteFeature> {
   }
 
   const points: [number, number][] = [
-    [
-      line.startPoint.latitude,
-      line.startPoint.longitude,
-    ],
-    [
-      line.endPoint.latitude,
-      line.endPoint.longitude,
-    ]
+    [line.startPoint.latitude, line.startPoint.longitude],
+    [line.endPoint.latitude, line.endPoint.longitude],
   ];
   const result = await generator.generate(points, { method });
   const next: RouteFeature = {
