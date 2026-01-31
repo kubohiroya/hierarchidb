@@ -194,6 +194,7 @@ function buildRoutePoint(
     latitude: location.latitude,
     longitude: location.longitude,
     admin0Name: admin0Name ?? location.admin0Name ?? location.admin0Code ?? '',
+    admin0Code: location.admin0Code,
     admin1Name: admin1Name ?? location.admin1Name ?? location.admin1Code ?? '',
     admin2Name: location.admin2Name ?? location.admin2Code,
     locationFeatureId: location.locationFeatureId,

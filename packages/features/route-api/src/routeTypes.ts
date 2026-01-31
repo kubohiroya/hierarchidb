@@ -24,6 +24,7 @@ export interface RoutePoint {
   locationName?: string;
   name?: string;
   admin0Name?: string;
+  admin0Code?: string;
   admin1Name?: string;
   admin2Name?: string;
 }
