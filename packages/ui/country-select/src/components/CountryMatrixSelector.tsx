@@ -24,6 +24,8 @@ export interface CountryMatrixSelectorProps {
   selections: MatrixSelection[];
   /** Callback when selections change */
   onSelectionsChange: (selections: MatrixSelection[]) => void;
+  /** Show row-level selection checkboxes */
+  showRowSelection?: boolean;
   /** Whether to show alphabetical index chips */
   showAlphabetIndex?: boolean;
   /** Whether to show region index chips */
@@ -65,6 +67,7 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
   matrixConfig,
   selections,
   onSelectionsChange,
+  showRowSelection = false,
   showAlphabetIndex = true,
   showRegionIndex = true,
   scrollBehavior = 'smooth',
@@ -224,6 +227,8 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
   }, []);
 
   const selectionMapForSort = sortState.kind === 'column' ? selectionMap : null;
+  const selectAllBatchRef = useRef<{ map: Map<string, Record<string, boolean>> } | null>(null);
+  const selectAllScheduledRef = useRef(false);
 
   const filteredRows = useMemo(() => {
     const keyword = search.trim().toLowerCase();
@@ -364,13 +369,47 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
     (colIndex: number, checked: boolean, enabledRowIndices: number[]) => {
       const col = selectionColumns[colIndex];
       if (!col) return;
-      const next = new Map(selectionMap);
+      const base = selectAllBatchRef.current?.map ?? new Map(selectionMap);
       enabledRowIndices.forEach((rowIdx) => {
         const row = rows[rowIdx];
         if (!row) return;
-        const prev = next.get(row.data.country.code) ?? {};
-        next.set(row.data.country.code, { ...prev, [col.id]: checked });
+        const prev = base.get(row.data.country.code) ?? {};
+        base.set(row.data.country.code, { ...prev, [col.id]: checked });
       });
+      selectAllBatchRef.current = { map: base };
+      if (!selectAllScheduledRef.current) {
+        selectAllScheduledRef.current = true;
+        queueMicrotask(() => {
+          selectAllScheduledRef.current = false;
+          const snapshot = selectAllBatchRef.current?.map;
+          if (!snapshot) return;
+          selectAllBatchRef.current = null;
+          const normalized: MatrixSelection[] = countries.map((country) => ({
+            countryCode: country.code,
+            selections: snapshot.get(country.code) ?? {},
+          }));
+          setMatrixFromSelections(normalized);
+          onSelectionsChange(normalized);
+        });
+      }
+    },
+    [countries, onSelectionsChange, rows, selectionColumns, selectionMap, setMatrixFromSelections],
+  );
+
+  const handleSelectRow = useCallback(
+    (rowIndex: number, checked: boolean, enabledColumnIndices: number[]) => {
+      const row = rows[rowIndex];
+      if (!row) return;
+      const countryCode = row.data.country.code;
+      const next = new Map(selectionMap);
+      const existing = next.get(countryCode) ?? {};
+      const updated = { ...existing };
+      enabledColumnIndices.forEach((colIndex) => {
+        const col = selectionColumns[colIndex];
+        if (!col) return;
+        updated[col.id] = checked;
+      });
+      next.set(countryCode, updated);
       const normalized: MatrixSelection[] = countries.map((country) => ({
         countryCode: country.code,
         selections: next.get(country.code) ?? {},
@@ -531,6 +570,8 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
             isCellEnabledWrapper={isCellEnabledWrapper}
             handleSelectionChange={handleSelectionChange}
             handleSelectAllColumn={handleSelectAllColumn}
+            handleSelectRow={handleSelectRow}
+            showRowSelection={showRowSelection}
             handleSortToggle={handleSortToggle}
             getColumnSortDirection={getColumnSortDirection}
             getRowMetaSortDirection={getRowMetaSortDirection}
@@ -557,6 +598,8 @@ type CountryMatrixTableProps = {
   ) => boolean;
   handleSelectionChange: (rowIndex: number, colIndex: number, checked: boolean) => void;
   handleSelectAllColumn: (colIndex: number, checked: boolean, enabledRowIndices: number[]) => void;
+  handleSelectRow: (rowIndex: number, checked: boolean, enabledColumnIndices: number[]) => void;
+  showRowSelection: boolean;
   handleSortToggle: (kind: 'country' | 'region' | 'column', columnId?: string) => void;
   getColumnSortDirection: (colIndex: number) => 'asc' | 'desc' | 'none';
   getRowMetaSortDirection: (metaIndex: number) => 'asc' | 'desc' | 'none';
@@ -575,6 +618,8 @@ const CountryMatrixTable: React.FC<CountryMatrixTableProps> = ({
   isCellEnabledWrapper,
   handleSelectionChange,
   handleSelectAllColumn,
+  handleSelectRow,
+  showRowSelection,
   handleSortToggle,
   getColumnSortDirection,
   getRowMetaSortDirection,
@@ -619,6 +664,8 @@ const CountryMatrixTable: React.FC<CountryMatrixTableProps> = ({
       state={matrixState}
       onChange={handleSelectionChange}
       onSelectAll={handleSelectAllColumn}
+      onSelectRow={handleSelectRow}
+      showRowSelection={showRowSelection}
       rowMetaColumns={[
         {
           header: 'Region',
