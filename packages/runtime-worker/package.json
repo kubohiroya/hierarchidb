@@ -57,7 +57,6 @@
     "zod": "^3.22.3"
   },
   "peerDependencies": {
-    "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/chunk-store": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
@@ -83,14 +82,15 @@
     "@hierarchidb/styler-store": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "jotai": "^2.13.1"
+    "jotai": "^2.13.1",
+    "@hierarchidb/auth": "workspace:*",
+    "@hierarchidb/auth-api": "workspace:*"
   },
   "optionalDependencies": {
     "@hierarchidb/tabular-source-xlsx": "workspace:*"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.0",
-    "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/chunk-store": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
@@ -120,7 +120,9 @@
     "@types/node": "^24.3.0",
     "@types/uuid": "^10.0.0",
     "fake-indexeddb": "^6.2.2",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "@hierarchidb/auth": "workspace:*",
+    "@hierarchidb/auth-api": "workspace:*"
   },
   "license": "MIT",
   "turbo": {

@@ -81,7 +81,7 @@ tree-api は `packages/features/tree-api/src`、import-export-api は `packages/
 
 1. 影響範囲の利用箇所を検索し、移設先を確定する。
    例:
-     rg -n "@hierarchidb/common-types" packages plugins app
+     rg -n "@hierarchidb/core-types" packages plugins app
 
 2. tag-api を新設する。
    - ルート: `packages/features/tag-api`
@@ -109,7 +109,7 @@ tree-api は `packages/features/tree-api/src`、import-export-api は `packages/
      pnpm --filter @hierarchidb/tree-api build
      pnpm --filter @hierarchidb/import-export-api build
      pnpm --filter @hierarchidb/batch-api build
-     pnpm --filter @hierarchidb/common-types build
+     pnpm --filter @hierarchidb/core-types build
      pnpm --filter @hierarchidb/tag typecheck
      pnpm --filter @hierarchidb/plugin-base typecheck
 

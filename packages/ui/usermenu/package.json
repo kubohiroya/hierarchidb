@@ -22,7 +22,6 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "@hierarchidb/common-auth": "workspace:*",
     "@hierarchidb/ui-auth": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/ui-monitoring": "workspace:*",
@@ -37,7 +36,6 @@
     "@vitejs/plugin-react": "^5.0.1"
   },
   "peerDependencies": {
-    "@hierarchidb/common-auth": "workspace:*",
     "@hierarchidb/ui-auth": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/ui-monitoring": "workspace:*",

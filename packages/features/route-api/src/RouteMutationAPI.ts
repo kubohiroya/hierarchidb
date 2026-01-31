@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type { IdeGsmImportCallback } from '@hierarchidb/location-api';
-import type { IdeGsmLocationRecord } from './ideGsmCsv.js';
+import type { IdeGsmLocationRecord } from './ideGsmRouteCsv.js';
 import type { IdeGsmRouteImportRequest, IdeGsmRouteImportResult } from './ideGsmRouteTypes.js';
 import type { RouteWaypointInput, RouteWaypointResult } from './routeTypes.js';
 

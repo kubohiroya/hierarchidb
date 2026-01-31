@@ -1,24 +1,34 @@
 {
-  "name": "@hierarchidb/auth-recovery",
+  "name": "@hierarchidb/auth",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
-    "build": "tsdown src/index.ts src/ports.ts src/AuthService.ts src/AuthRecoveryService.ts src/capability.ts --config ../../../tsdown.config.ts --outDir dist",
+    "build": "tsdown src/index.ts src/AuthService.ts src/AuthRecoveryService.ts src/AuthNotificationSystem.ts --config ../../../tsdown.config.ts --outDir dist",
     "build:types": "tsc --emitDeclarationOnly --declaration --declarationMap --project tsconfig.json --outDir dist",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "peerDependencies": {
-    "@hierarchidb/common-auth": "workspace:*",
+    "@hierarchidb/auth-api": "workspace:*",
     "@hierarchidb/util": "workspace:*"
   },
   "devDependencies": {
     "typescript": "workspace:^5.9.3",
-    "@hierarchidb/common-auth": "workspace:*",
+    "@hierarchidb/auth-api": "workspace:*",
     "@hierarchidb/util": "workspace:*"
-  }
+  },
+  "files": [
+    "dist"
+  ]
 }

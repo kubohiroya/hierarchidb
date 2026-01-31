@@ -12,7 +12,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@hierarchidb/auth-recovery': path.resolve(__dirname, '../auth-recovery/src/index.ts'),
+      '@hierarchidb/auth': path.resolve(__dirname, '../auth/src/index.ts'),
     },
   },
 });

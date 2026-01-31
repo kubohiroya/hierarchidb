@@ -1,8 +1,8 @@
 import { AuthService } from './AuthService.js';
 
 /**
- * @deprecated 初回認証も含めた認証付きfetchの入口は {@link AuthService} に統一しました。
- * 既存import互換のためにこの名前を残しています。
+ * @deprecated Use {@link AuthService} for authenticated fetches, including initial auth.
+ * This class remains for backward-compatible imports.
  */
 export class AuthRecoveryService extends AuthService {
   static override async getSingleton(): Promise<AuthService> {

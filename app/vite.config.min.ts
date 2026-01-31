@@ -93,7 +93,7 @@ function createRuntimeAliasConfig({
     { spec: '@hierarchidb/_obsolate_common-types', src: '../packages/_obsolate_common/types/src/index.ts', dist: '../packages/_obsolate_common/types/dist/index.js' },
     { spec: '@hierarchidb/download', src: '../packages/features/download/src/index.ts', dist: '../packages/features/download/dist/index.js' },
     { spec: '@hierarchidb/chunk-store', src: '../packages/features/chunk-store/src/index.ts', dist: '../packages/features/chunk-store/dist/index.js' },
-    { spec: '@hierarchidb/auth-recovery', src: '../packages/features/auth-recovery/src/index.ts', dist: '../packages/features/auth-recovery/dist/index.js' },
+    { spec: '@hierarchidb/auth', src: '../packages/features/auth/src/index.ts', dist: '../packages/features/auth/dist/index.js' },
     { spec: '@hierarchidb/util', src: '../packages/util/src/index.ts', dist: '../packages/util/dist/index.js' },
     { spec: '@hierarchidb/ui-worker-client', src: '../packages/ui/worker-client/src/index.ts', dist: '../packages/ui/worker-client/dist/index.js' },
     { spec: '@hierarchidb/ui-worker-provider', src: '../packages/ui/worker-provider/src/index.ts', dist: '../packages/ui/worker-provider/dist/index.js' },

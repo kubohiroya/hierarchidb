@@ -12,7 +12,7 @@ import {
   Typography,
 } from '@mui/material';
 import { CheckCircle, CloudDownload, Tune, AltRoute } from '@mui/icons-material';
-import { BuildStepPanel, type BuildStage, type BuildStatus, notify } from '@hierarchidb/components';
+import { BuildProgressPanel, type BuildStage, type BuildStatus, notify } from '@hierarchidb/components';
 import { HeapPressureDialog, useHeapPressureGuard } from '@hierarchidb/ui-memory';
 import { GenericDataGrid, type GridColumn } from '@hierarchidb/ui-grid';
 import type { NodeId } from '@hierarchidb/core-types';
@@ -443,7 +443,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
           {resolveIdeGsmLabel(ideGsmPhase)}
         </Typography>
       ) : null}
-      <BuildStepPanel
+      <BuildProgressPanel
         status={status}
         overallProgress={overallProgress}
         stages={STAGES}
@@ -457,90 +457,94 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
           setStatus('completed');
           setOverallProgress(100);
         }}
-      />
-      <HeapPressureDialog
-        open={heapDialogOpen}
-        event={heapEvent}
-        onClose={() => {
-          setHeapDialogOpen(false);
-          dismissHeapEvent();
-        }}
-        title={t('stage.heap.pauseTitle', 'Build paused due to memory pressure')}
-        confirmLabel={t('stage.heap.pauseConfirm', 'OK')}
-        description={t('stage.heap.pauseHint', 'Reduce concurrency and resume when ready.')}
-      />
-      <Dialog
-        open={completionDialogOpen}
-        onClose={() => setCompletionDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          {completionSnapshot?.status === 'completed'
-            ? t('stage.progress.completedTitle', 'Build completed')
-            : t('stage.progress.failedTitle', 'Build failed')}
-        </DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <Typography variant="body2">
-            {t('stage.progress.completedStageLabel', 'Stage')}: {completionSnapshot?.stageLabel ?? completionStageLabel}
-          </Typography>
-          {completionSnapshot?.status === 'failed' ? (
-            <>
-              <Typography variant="body2">
-                {t('stage.progress.failedTaskLabel', 'Task')}: {completionSnapshot?.taskTitle ?? completionTaskTitle}
-              </Typography>
-              <Typography variant="body2">
-                {t('stage.progress.failedMessageLabel', 'Message')}: {completionSnapshot?.taskMessage ?? completionTaskMessage}
-              </Typography>
-            </>
-          ) : (
-            <Typography variant="body2">
-              {t('stage.progress.completedReasonLabel', 'Reason')}: {completionSnapshot?.reason ?? completionReason}
-            </Typography>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setCompletionDialogOpen(false)} variant="contained">
-            {t('common.close', 'Close')}
-          </Button>
-        </DialogActions>
-      </Dialog>
-      <Dialog
-        open={errorDialogOpen}
-        onClose={() => setErrorDialogOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>{t('stage.errors.title', 'Build errors')}</DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <Typography variant="body2" color="text.secondary">
-            {t('stage.errors.description', 'Some rows were skipped. Review the list below.')}
-          </Typography>
-          <Box sx={{ height: 360 }}>
-            <GenericDataGrid
-              columns={errorColumns}
-              rows={errorRows}
-              getRowId={(row) => row.id}
-              enableVirtualization
-              rowHeight={38}
-              maxHeight={360}
-              stickyHeader
-              dense
+        footer={(
+          <>
+            <HeapPressureDialog
+              open={heapDialogOpen}
+              event={heapEvent}
+              onClose={() => {
+                setHeapDialogOpen(false);
+                dismissHeapEvent();
+              }}
+              title={t('stage.heap.pauseTitle', 'Build paused due to memory pressure')}
+              confirmLabel={t('stage.heap.pauseConfirm', 'OK')}
+              description={t('stage.heap.pauseHint', 'Reduce concurrency and resume when ready.')}
             />
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ justifyContent: 'space-between', px: 3 }}>
-          <Typography variant="caption" color="text.secondary">
-            {`${errorRows.length} ${t('stage.errors.countLabel', 'errors')}`}
-          </Typography>
-          <Chip
-            size="small"
-            label={t('stage.errors.close', 'Close')}
-            onClick={() => setErrorDialogOpen(false)}
-            clickable
-          />
-        </DialogActions>
-      </Dialog>
+            <Dialog
+              open={completionDialogOpen}
+              onClose={() => setCompletionDialogOpen(false)}
+              maxWidth="sm"
+              fullWidth
+            >
+              <DialogTitle>
+                {completionSnapshot?.status === 'completed'
+                  ? t('stage.progress.completedTitle', 'Build completed')
+                  : t('stage.progress.failedTitle', 'Build failed')}
+              </DialogTitle>
+              <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Typography variant="body2">
+                  {t('stage.progress.completedStageLabel', 'Stage')}: {completionSnapshot?.stageLabel ?? completionStageLabel}
+                </Typography>
+                {completionSnapshot?.status === 'failed' ? (
+                  <>
+                    <Typography variant="body2">
+                      {t('stage.progress.failedTaskLabel', 'Task')}: {completionSnapshot?.taskTitle ?? completionTaskTitle}
+                    </Typography>
+                    <Typography variant="body2">
+                      {t('stage.progress.failedMessageLabel', 'Message')}: {completionSnapshot?.taskMessage ?? completionTaskMessage}
+                    </Typography>
+                  </>
+                ) : (
+                  <Typography variant="body2">
+                    {t('stage.progress.completedReasonLabel', 'Reason')}: {completionSnapshot?.reason ?? completionReason}
+                  </Typography>
+                )}
+              </DialogContent>
+              <DialogActions sx={{ px: 3, pb: 2 }}>
+                <Button onClick={() => setCompletionDialogOpen(false)} variant="contained">
+                  {t('common.close', 'Close')}
+                </Button>
+              </DialogActions>
+            </Dialog>
+            <Dialog
+              open={errorDialogOpen}
+              onClose={() => setErrorDialogOpen(false)}
+              maxWidth="md"
+              fullWidth
+            >
+              <DialogTitle>{t('stage.errors.title', 'Build errors')}</DialogTitle>
+              <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Typography variant="body2" color="text.secondary">
+                  {t('stage.errors.description', 'Some rows were skipped. Review the list below.')}
+                </Typography>
+                <Box sx={{ height: 360 }}>
+                  <GenericDataGrid
+                    columns={errorColumns}
+                    rows={errorRows}
+                    getRowId={(row) => row.id}
+                    enableVirtualization
+                    rowHeight={38}
+                    maxHeight={360}
+                    stickyHeader
+                    dense
+                  />
+                </Box>
+              </DialogContent>
+              <DialogActions sx={{ justifyContent: 'space-between', px: 3 }}>
+                <Typography variant="caption" color="text.secondary">
+                  {`${errorRows.length} ${t('stage.errors.countLabel', 'errors')}`}
+                </Typography>
+                <Chip
+                  size="small"
+                  label={t('stage.errors.close', 'Close')}
+                  onClick={() => setErrorDialogOpen(false)}
+                  clickable
+                />
+              </DialogActions>
+            </Dialog>
+          </>
+        )}
+      />
     </Box>
   );
 };

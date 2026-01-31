@@ -1,6 +1,6 @@
 # @hierarchidb/ui-auth
 
-UI auth components, contexts, and services (OIDC/Google/BFF/multi-provider) plus popup-detection and auth-recovery hooks.
+UI auth components, contexts, and services (OIDC/Google/BFF/multi-provider) plus popup-detection and auth hooks.
 
 ## Directory layout
 ```
@@ -15,12 +15,12 @@ index.ts      Public exports
 ## Key exports
 - Components: `AuthProviderDialog/Options/Prompt`, `AuthRequiredDialog`, `AuthErrorBoundary/Listener`, `LoginForm`, `OAuthCallback`, `UserAvatar/UserAvatarMenu`, `AuthMethodSettings`.
 - Contexts/hooks: `OIDCAuthProvider`/`useOIDCAuth`, `GoogleAuthProvider`/`useGoogleAuth`, `MultiAuthProvider`/`useMultiAuth`, `SimpleBFFAuthProvider`/`useSimpleBFFAuth`, `useAuth`, `getIdToken`.
-- Services: `AuthService` (provider-agnostic), `BFFAuthService`, `AuthCallbackHandler`, `PopupDetectionService`, `registerAuthUIHandlers` (ties into `@hierarchidb/auth-recovery` notifications).
+- Services: `AuthService` (provider-agnostic), `BFFAuthService`, `AuthCallbackHandler`, `PopupDetectionService`, `registerAuthUIHandlers` (ties into `@hierarchidb/auth` notifications).
 - Types: `AuthUser`, `AuthProviderType`, `AuthProviderConfig`, `AuthContextType`, `BFFAuthResponse`, `BFFSignInOptions`, `BFFUser`.
 
 ## Consumers / usage
 - App shell provides providers (OIDC/Google/BFF) at the root; plugin UIs consume `useAuth`/`useMultiAuth`.
-- `@hierarchidb/auth-recovery` uses `registerAuthUIHandlers` to bridge 401 recovery prompts.
+- `@hierarchidb/auth` uses `registerAuthUIHandlers` to bridge 401 recovery prompts.
 - User menu/profile components in `@hierarchidb/ui-usermenu` reuse `UserAvatar` and `useAuth`.
 
 ## Notes

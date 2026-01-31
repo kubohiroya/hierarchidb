@@ -118,6 +118,26 @@
   - done: 2026-01-31 00:58 JST app の plugin export 参照エラー修正を完了。
 
 2435) fix/tsdown/dts-index-normalize (P1) — 完了 (2026-01-31)
+
+2436) feat/auth/reorg (P1) — 完了 (2026-01-31)
+- ブランチ名: feat/auth/reorg
+- 依存: なし
+- 受け入れ基準: auth-api/auth の新構成方針が定義され、common/auth を完全廃止する移行計画（ExecPlan）が PLANS.md 規定に沿って作成される／棚卸し結果が反映される／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/auth-api/**`, `packages/features/auth-recovery/**`, `packages/common/auth/**`（削除予定）, `packages/features/auth/**`（新設予定）, 参照元各所
+- ロールバック手順: ExecPlan 実装前のため該当なし（計画段階）
+- チェックリスト:
+  - 既存 auth 関連パッケージの責務と参照先を棚卸しする
+  - 新構成（auth-api/auth）への移行方針を定義する
+  - ExecPlan を作成する
+  - 運用ログ start/update を追記する
+- 運用ログ:
+  - start: 2026-01-31 01:40 JST auth パッケージ再編の棚卸しと ExecPlan 作成に着手。
+  - update: 2026-01-31 02:20 JST auth/auth-api への移行方針を確定し、common-auth/auth-recovery を削除する方針を明記。
+  - update: 2026-01-31 02:45 JST @hierarchidb/auth を新設し AuthService/AuthNotificationSystem を移動、参照/依存/tsconfig/vite alias を更新。
+  - update: 2026-01-31 02:52 JST pnpm tools:gen-plugin-registry を実行（registry 更新）。
+  - update: 2026-01-31 03:05 JST pnpm install, pnpm --filter @hierarchidb/auth-api build, pnpm --filter @hierarchidb/auth build, pnpm --filter @hierarchidb/runtime-worker typecheck, pnpm --filter @hierarchidb/download typecheck, pnpm --filter @hierarchidb/ui-auth typecheck, pnpm --filter @hierarchidb/app typecheck を実行（exit 0）。
+  - done: 2026-01-31 03:05 JST auth パッケージ再編を完了。
+  - update: 2026-01-31 01:46 JST ExecPlan を plans/auth-reorg-execplan.md に作成。
 - ブランチ名: fix/tsdown/dts-index-normalize
 - 依存: なし
 - 受け入れ基準: shape/location/route/spreadsheet の index.d.ts が正しい named export を保持し index2.d.ts 依存が撤去される／pnpm --filter @hierarchidb/route-plugin build ほか必要範囲が exit 0／pnpm --filter @hierarchidb/app typecheck が exit 0／TASKS.md に運用ログを記載する
@@ -340,6 +360,9 @@
   - update: 2026-01-31 02:36 JST app テストの NodeAction/Tree/TreeNode を tree-api 参照へ修正。
   - update: 2026-01-31 02:37 JST pnpm typecheck exit 0 を確認。
   - update: 2026-01-31 02:45 JST common-types の実体ファイルが index.ts の再エクスポートのみであることと、common-types 参照がゼロであることを確認。
+  - update: 2026-01-31 08:54 JST common-types パッケージを削除し、tsconfig.base.json/dep-fence/config と docs/plans の参照を core-types 等へ更新。
+  - update: 2026-01-31 08:56 JST pnpm build を実行し exit 0 を確認。
+  - done: 2026-01-31 08:57 JST pnpm typecheck を実行し exit 0 を確認。
 
 2424) refactor/location-store/index-cleanup (P1) — 完了 (2026-01-29)
 - ブランチ名: refactor/location-store/index-cleanup
@@ -440,7 +463,7 @@
 - ブランチ名: fix/location/idegdm-pointid-type
 - 依存: なし
 - 受け入れ基準: ideGsmCsv の pointId 型エラーが解消される／LocationFeatureId と LocationPointId の整合が取れる／pnpm --filter @hierarchidb/location-store typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/location-store/src/locationTypes.ts`, `packages/features/location-store/src/ideGsmCsv.ts`（必要に応じて）
+- 影響範囲: `packages/features/location-store/src/locationTypes.ts`, `packages/features/location-store/src/ideGsmRouteCsv.ts`（必要に応じて）
 - ロールバック手順: 型定義の変更差分を revert して元の brand 定義へ戻す
 - チェックリスト:
   - LocationFeatureId と LocationPointId の型整合を修正する
@@ -450,6 +473,89 @@
   - start: 2026-01-29 12:20 JST ideGsmCsv の pointId 型エラー修正に着手。
   - update: 2026-01-29 12:27 JST LocationFeatureId の独立ブランドを復元し、LocationFeatureProperties を導入して ideGsmCsv を更新。
   - done: 2026-01-29 12:27 JST pnpm --filter @hierarchidb/location-store typecheck exit 0 を確認。
+
+2428) refactor/route/settings-model-unify (P1) — 完了 (2026-01-29)
+- 運用ログ:
+  - update: 2026-01-29 22:35 JST buildConfig の移行ロジックを useRouteBuildConfigStep に追加し、legacy processing から統合。
+  - update: 2026-01-29 22:40 JST RouteTileSettingsStep を buildConfig 参照へ変更。
+  - update: 2026-01-29 22:42 JST route-api の RouteEntity で processing/config を非推奨として注記。
+  - update: 2026-01-29 22:49 JST pnpm --filter @hierarchidb/route-api build exit 0（tsdown define warning あり）。
+  - update: 2026-01-29 22:50 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+  - done: 2026-01-29 22:50 JST Route設定モデルの buildConfig 統一を完了。
+
+- 運用ログ:
+  - start: 2026-01-29 22:10 JST ルート設定モデル統合に着手。
+
+- ブランチ名: refactor/route/settings-model-unify
+- 依存: なし
+- 受け入れ基準: draftData.processing と draftData.buildConfig が単一の設定モデルに統一される／UI（Step4/Step5）と Worker 側の設定参照が統一され、重複ロジックが削除される／既存の設定値がマイグレーションされ、挙動が変わらない／pnpm --filter @hierarchidb/route-plugin typecheck が exit 0／TASKS.md に運用ログを記載
+- 影響範囲: `plugins/route-plugin/src/ui/components/steps/**`, `plugins/route-plugin/src/services/**`, `packages/features/route-store/src/**`
+- ロールバック手順: 該当差分を revert し、processing/buildConfig の二重運用に戻す
+- チェックリスト:
+  - 統合後の設定モデル設計を確定する
+  - UI と Worker の参照先を統一する
+  - 既存データの移行/互換性を確認する
+  - pnpm --filter @hierarchidb/route-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ:
+
+2429) refactor/location/build-config-adapter (P1) — 進行中 (2026-01-29)
+- 運用ログ:
+  - start: 2026-01-29 22:55 JST Location 設定の BaseBuildConfig 化に着手。
+
+- ブランチ名: refactor/location/build-config-adapter
+- 依存: なし
+- 受け入れ基準: Location の設定状態が BaseBuildConfig ベースで保持される／FetchConfigSection/VTConfigSection などの共通UIが利用される／既存UIの入力値と保存値が一致する／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載
+- 影響範囲: `plugins/location-plugin/src/ui/**`, `plugins/location-plugin/src/common/**`, `packages/features/location-store/src/**`
+- ロールバック手順: 該当差分を revert し、従来の設定UIと保存形式に戻す
+- チェックリスト:
+  - BaseBuildConfig へのマッピング方針を決める
+  - 共通UIの利用に合わせて state/update を整理する
+  - 既存設定の移行/互換性を確認する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ:
+
+2430) refactor/ui/build-config-packaging (P2) — 未着手 (2026-01-29)
+- ブランチ名: refactor/ui/build-config-packaging
+- 依存: 2428
+- 受け入れ基準: BuildConfig 系コンポーネントが ui-accordion-config に集約された状態で破綻しない／追加共通UIの候補と移動方針が確定する／再エクスポート規約に違反しない／pnpm --filter @hierarchidb/ui-accordion-config build が exit 0／TASKS.md に運用ログを記載
+- 影響範囲: `packages/ui/accordion-config/src/**`, `plugins/**/src/ui/**`
+- ロールバック手順: 該当差分を revert して元の配置に戻す
+- チェックリスト:
+  - 共通UI候補を洗い出し、移動方針を決める
+  - 既存の import を整理し、再エクスポート規約を守る
+  - pnpm --filter @hierarchidb/ui-accordion-config build を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ:
+
+2431) refactor/ui/build-progress-shared (P2) — 未着手 (2026-01-29)
+- ブランチ名: refactor/ui/build-progress-shared
+- 依存: 2428
+- 受け入れ基準: 進捗サマリ/一覧表示が共通コンポーネント化され Shape/Route/Location で利用される／UI表示差分がない／タスク更新ロジックが共通関数に統合される／pnpm --filter @hierarchidb/ui-batch-progress build が exit 0／関連プラグインの typecheck が exit 0／TASKS.md に運用ログを記載
+- 影響範囲: `packages/ui/batch/src/**`, `plugins/shape-plugin/src/ui/**`, `plugins/route-plugin/src/ui/**`, `plugins/location-plugin/src/ui/**`
+- ロールバック手順: 該当差分を revert して各プラグイン固有の進捗UIに戻す
+- チェックリスト:
+  - 共通化対象の UI/ロジック を確定する
+  - 共通コンポーネントへ移行する
+  - pnpm --filter @hierarchidb/ui-batch-progress build を実行する
+  - 主要プラグインの typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ:
+
+2432) refactor/i18n/processing-common (P3) — 未着手 (2026-01-29)
+- ブランチ名: refactor/i18n/processing-common
+- 依存: 2430
+- 受け入れ基準: processing.* の重複キーが共通辞書に統合される／各プラグインの i18n 参照が共通辞書を参照する／既存表示文言が変わらない／pnpm --filter @hierarchidb/app typecheck または対象 plugin typecheck が exit 0／TASKS.md に運用ログを記載
+- 影響範囲: `packages/ui/i18n/src/**`, `plugins/**/src/ui/locales/**`
+- ロールバック手順: 該当差分を revert して各プラグインの個別辞書に戻す
+- チェックリスト:
+  - 重複キーの洗い出しと統合先を決める
+  - 各プラグインの参照を共通辞書へ移行する
+  - 既存表示文言の一致を確認する
+  - pnpm --filter @hierarchidb/app typecheck または対象 plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ:
 
 2423) investigation/shape-plugin-remove-remnants (P1) — 進行中 (2026-01-29)
 - ブランチ名: investigation/shape-plugin-remove-remnants
@@ -1320,7 +1426,7 @@
 - ブランチ名: fix/location/id-pointid-separation
 - 依存: なし
 - 受け入れ基準: location の id が uuidv4() で生成される／pointId が lat/lon 小数5桁のハッシュから生成される／IDE-GSM と tabular 取り込みの両方で同じ pointId 生成ルールが適用される／既存 UI 表示が退行しない／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/features/location-store/src/index.ts`, `packages/features/location-store/src/ideGsmCsv.ts`, `plugins/location-plugin/src/worker/tabular/materialize.ts`, `packages/runtime-worker/src/services/LocationMutationService.ts`, `plugins/location-plugin/src/services/pointRepository.ts`（調査後に確定）
+- 影響範囲: `packages/features/location-store/src/index.ts`, `packages/features/location-store/src/ideGsmRouteCsv.ts`, `plugins/location-plugin/src/worker/tabular/materialize.ts`, `packages/runtime-worker/src/services/LocationMutationService.ts`, `plugins/location-plugin/src/services/pointRepository.ts`（調査後に確定）
 - ロールバック手順: 該当差分を revert して id=pointId の従来挙動に戻す
 - チェックリスト:
   - pointId 生成の共通ヘルパーを用意し IDE-GSM/Tabular 両方へ適用する
@@ -11627,7 +11733,7 @@
 - ブランチ名: feat/route/idegsm-location-feature-linking
 - 依存: 2426
 - 受け入れ基準: IDE-GSM の LocationFeature 参照が route 仕様に合致する／LocationFeatureId を参照子として保持し、LocationNodeId も併記される／location 検索マップが兄弟順の近さで合成され先勝ちルールが守られる／route/location/shape の参照に基づく trash 制約が維持される／`pnpm --filter @hierarchidb/route-plugin typecheck` と `pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
-- 影響範囲: `packages/runtime-worker/src/services/RouteMutationService.ts`, `packages/features/route-api/src/ideGsmCsv.ts`, `packages/features/route-api/src/routeTypes.ts`, `packages/features/route-api/src/RouteMutationAPI.ts`, `packages/runtime-worker/src/services/route/ideGsmCsv.ts`, `plugins/route-plugin/src/services/ide-gsm/ideGsmCsv.ts`, `plugins/route-plugin/src/ui/components/steps/RouteBuildStep.tsx`（必要に応じて追加）
+- 影響範囲: `packages/runtime-worker/src/services/RouteMutationService.ts`, `packages/features/route-api/src/ideGsmRouteCsv.ts`, `packages/features/route-api/src/routeTypes.ts`, `packages/features/route-api/src/RouteMutationAPI.ts`, `packages/runtime-worker/src/services/route/ideGsmRouteCsv.ts`, `plugins/route-plugin/src/services/ide-gsm/ideGsmRouteCsv.ts`, `plugins/route-plugin/src/ui/components/steps/RouteBuildStep.tsx`（必要に応じて追加）
 - ロールバック手順: 該当差分を revert して IDE-GSM の参照解決と import 処理を旧挙動に戻す
 - チェックリスト:
   - IDE-GSM の LocationFeature 参照モデルを route-api の型で表現する
@@ -11686,3 +11792,92 @@
   - update: 2026-01-29 10:26 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
   - update: 2026-01-29 10:27 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
   - done: 2026-01-29 10:27 JST trash 参照ブロックの i18n 化を完了。
+
+
+2442) investigation/ui-commonality-shape-route-location (P2) — 進行中 (2026-01-31)
+- ブランチ名: investigation/ui-commonality-shape-route-location
+- 依存: なし
+- 受け入れ基準: Shape/Route/Location の Step4/Step5 UI で共通化済み・未共通化の範囲が整理される／差分ポイントが具体的なファイルで説明される／共通化の次アクションが優先度付きで提案される／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`, `plugins/route-plugin/src/ui/**`, `plugins/location-plugin/src/ui/**`, `packages/ui/**`（調査結果に応じて追加）
+- ロールバック手順: 調査のみのため差分なし
+- チェックリスト:
+  - Step4/Step5 の UI コンポーネント一覧を整理する
+  - 共通化済み・未共通化の範囲と差分を特定する
+  - 共通化候補と次アクションを優先度付きで提案する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-01-31 12:10 JST Shape/Route/Location の UI 共通化状況の調査に着手。
+  - update: 2026-01-31 12:26 JST Step4/Step5 の共通化状況と差分ポイントを整理。
+  - done: 2026-01-31 12:28 JST Shape/Route/Location の UI 共通化の現状整理と次アクション案を提示。
+
+
+2443) refactor/ui-accordion/zoom-band-section-unify (P1) — 完了 (2026-01-31)
+- ブランチ名: refactor/ui-accordion/zoom-band-section-unify
+- 依存: なし
+- 受け入れ基準: Shape/Route の ZoomBand 設定外枠が共通コンポーネント化される／共通ズーム帯反映ボタンの挙動が維持される／Shape/Route の参照先が共通コンポーネントに切り替わる／`pnpm --filter @hierarchidb/shape-plugin typecheck` と `pnpm --filter @hierarchidb/route-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/accordion-config/src/**`, `plugins/shape-plugin/src/ui/components/build-config/**`, `plugins/route-plugin/src/ui/components/steps/**`（必要に応じて追加）
+- ロールバック手順: 共通コンポーネントの追加と参照変更を revert して元の Shape/Route 実装へ戻す
+- チェックリスト:
+  - ZoomBand 外枠の共通コンポーネントを作成する
+  - Shape/Route の参照を共通コンポーネントへ切り替える
+  - 必要な typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-01-31 12:36 JST ZoomBand 外枠の共通化に着手。
+  - update: 2026-01-31 12:48 JST ZoomBandConfigSection を ui-accordion-config に追加し、Shape/Route の参照を切替。
+  - update: 2026-01-31 12:54 JST pnpm --filter @hierarchidb/ui-accordion-config build を実行（tsdown define warning あり）。
+  - update: 2026-01-31 12:56 JST pnpm --filter @hierarchidb/auth build を実行（@hierarchidb/auth の dist 不足解消）。
+  - update: 2026-01-31 12:57 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-01-31 12:58 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+  - done: 2026-01-31 12:58 JST ZoomBand 外枠の共通化を完了。
+
+2444) refactor/ui-build-progress/panel-unify (P1) — 完了 (2026-01-31)
+- ブランチ名: refactor/ui-build-progress/panel-unify
+- 依存: 2443
+- ExecPlan: plans/ui-build-progress-panel-unify-execplan.md
+- 受け入れ基準: Shape/Route の Step5 進捗 UI が共通パネルに統合される／ステージ表示とタスクサマリーの表示仕様が維持される／共通パネルで ui-batch-progress のロジックを利用する／`pnpm --filter @hierarchidb/shape-plugin typecheck` と `pnpm --filter @hierarchidb/route-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/components/src/**`, `plugins/shape-plugin/src/ui/components/build-progress/**`, `plugins/route-plugin/src/ui/components/steps/RouteBuildStep.tsx`（必要に応じて追加）
+- ロールバック手順: 共通パネルの追加と参照変更を revert して元の Shape/Route UI へ戻す
+- チェックリスト:
+  - 共通パネルの設計と追加先パッケージを確定する
+  - Shape/Route の進捗 UI を共通パネルへ移行する
+  - 必要な typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-01-31 13:10 JST Build進捗パネル共通化のExecPlan作成に着手。
+  - update: 2026-01-31 13:34 JST BuildProgressPanel を components に追加し、Shape/Route を共通パネルへ移行。
+  - update: 2026-01-31 13:39 JST pnpm --filter @hierarchidb/components build を実行（tsdown define warning あり）。
+  - update: 2026-01-31 13:41 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-01-31 13:41 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+  - done: 2026-01-31 13:42 JST Build進捗パネル共通化を完了。
+
+2445) refactor/ui-accordion/build-config-shell-unify (P2) — 完了 (2026-01-31)
+- ブランチ名: refactor/ui-accordion/build-config-shell-unify
+- 依存: 2443
+- 受け入れ基準: Fetch/VT/ZoomBand などを束ねる Step4 外枠が共通化される／Shape/Route で共通外枠を利用する／既存のレイアウト差分（必要な説明文など）が維持される／`pnpm --filter @hierarchidb/shape-plugin typecheck` と `pnpm --filter @hierarchidb/route-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/accordion-config/src/**`, `plugins/shape-plugin/src/ui/components/build-config/**`, `plugins/route-plugin/src/ui/components/steps/**`（必要に応じて追加）
+- ロールバック手順: 共通外枠の追加と参照変更を revert して元の Shape/Route 実装へ戻す
+- チェックリスト:
+  - 共通外枠コンポーネントを追加する
+  - Shape/Route の参照を共通外枠へ切り替える
+  - 必要な typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-01-31 13:55 JST Build設定外枠の共通化に着手。
+  - update: 2026-01-31 14:02 JST BuildConfigShell を ui-accordion-config に追加し、Shape/Route に適用。
+  - update: 2026-01-31 14:03 JST pnpm --filter @hierarchidb/ui-accordion-config build を実行（tsdown define warning あり）。
+  - update: 2026-01-31 14:04 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-01-31 14:04 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+  - done: 2026-01-31 14:05 JST Build設定外枠の共通化を完了。
+
+2446) refactor/ui-map/preview-shell-unify (P2) — 未着手 (2026-01-31)
+- ブランチ名: refactor/ui-map/preview-shell-unify
+- 依存: なし
+- 受け入れ基準: Map プレビューの共通シェルが追加され Shape/Location が利用する／ビュー状態保存・ベースマップ切替の共通処理が統合される／既存表示の差分がないことを確認できる／`pnpm --filter @hierarchidb/shape-plugin typecheck` と `pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/**`, `plugins/shape-plugin/src/ui/components/preview/**`, `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`（必要に応じて追加）
+- ロールバック手順: 共通シェルの追加と参照変更を revert して元の Shape/Location 実装へ戻す
+- チェックリスト:
+  - Map プレビュー共通シェルを追加する
+  - Shape/Location の参照を共通シェルへ切り替える
+  - 必要な typecheck を実行する
+  - 運用ログ start/update/done を追記する

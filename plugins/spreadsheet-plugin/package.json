@@ -55,7 +55,6 @@
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
-    "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/chunk-store": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/download": "workspace:*",
@@ -77,7 +76,8 @@
     "jotai": "^2.13.1",
     "react": ">=18.0.0",
     "flatgeobuf": "^4.4.0",
-    "shpjs": "^6.2.0"
+    "shpjs": "^6.2.0",
+    "@hierarchidb/auth-api": "workspace:*"
   },
   "devDependencies": {
     "@hierarchidb/chunk-store": "workspace:*",
@@ -94,8 +94,8 @@
     "jotai": "^2.13.1",
     "vitest": "^3.2.4",
     "flatgeobuf": "^4.4.0",
-    "shpjs": "^6.2.0"
+    "shpjs": "^6.2.0",
+    "@hierarchidb/auth-api": "workspace:*"
   },
-  "dependencies": {
-  }
+  "dependencies": {}
 }

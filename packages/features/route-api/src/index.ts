@@ -1,5 +1,5 @@
 export * from './routeTypes.js';
-export * from './ideGsmCsv.js';
+export * from './ideGsmRouteCsv.js';
 export * from './ideGsmRouteTypes.js';
 export * from './RouteQueryAPI.js';
 export * from './RouteMutationAPI.js';

@@ -1,5 +1,5 @@
-import type { AuthContext, AuthScope } from '@hierarchidb/auth-recovery';
-import { AuthService } from '@hierarchidb/auth-recovery';
+import type { AuthContext, AuthScope } from '@hierarchidb/auth-api';
+import { AuthService } from '@hierarchidb/auth';
 import { resolveNetworkUrl } from './helpers/resolveNetworkUrl.js';
 import { sleep } from '@hierarchidb/util';
 

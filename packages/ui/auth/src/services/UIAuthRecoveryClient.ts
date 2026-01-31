@@ -1,4 +1,4 @@
-import { AuthNotificationFactory, AuthNotificationRegistry } from '@hierarchidb/common-auth';
+import { AuthNotificationFactory, AuthNotificationRegistry } from '@hierarchidb/auth';
 
 export type AuthPromptResult = {
   token: string;

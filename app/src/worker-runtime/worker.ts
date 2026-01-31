@@ -4,7 +4,7 @@
  */
 
 import './worker-react-refresh-shim.js';
-import { AuthService } from '@hierarchidb/auth-recovery';
+import { AuthService } from '@hierarchidb/auth';
 import type {
   BatchProgressEvent,
   BatchSessionStatus,

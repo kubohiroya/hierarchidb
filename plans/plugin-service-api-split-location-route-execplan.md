@@ -73,14 +73,14 @@ All commands run from repository root: `/Users/hiroya/WebstormProjects/hierarchi
 
 1) Create `packages/features/location-api`:
 
-   - `packages/features/location-api/package.json` (use `tsdown` build; dependencies on `@hierarchidb/common-types`, `@hierarchidb/shape-store` if required by unified types).
+   - `packages/features/location-api/package.json` (use `tsdown` build; dependencies on `@hierarchidb/core-types`, `@hierarchidb/shape-store` if required by unified types).
    - `packages/features/location-api/tsconfig.json` (pattern from other feature packages).
    - `packages/features/location-api/src/locationTypes.ts` (unified definition).
    - `packages/features/location-api/src/index.ts` exporting `locationTypes`.
 
 2) Create `packages/features/route-api`:
 
-   - `packages/features/route-api/package.json` (dependencies only on `@hierarchidb/common-types` if needed).
+   - `packages/features/route-api/package.json` (dependencies only on `@hierarchidb/core-types` if needed).
    - `packages/features/route-api/tsconfig.json`.
    - `packages/features/route-api/src/routeTypes.ts` (unified definition).
    - `packages/features/route-api/src/index.ts` exporting `routeTypes`.

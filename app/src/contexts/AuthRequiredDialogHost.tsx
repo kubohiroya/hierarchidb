@@ -4,7 +4,7 @@ import {
   AuthNotificationRegistry,
   type AuthRequiredNotification,
   type AuthSuccessNotification,
-} from '@hierarchidb/common-auth';
+} from '@hierarchidb/auth';
 import { useDialogUrlSync } from '@hierarchidb/plugin-base';
 import { AuthRequiredDialog } from '@hierarchidb/ui-plugin-shell/ui-auth';
 import { useEffect, useRef, useState } from 'react';

@@ -26,7 +26,7 @@ index.ts                     Public exports
 
 ## Consumers / usage
 - Worker runtime and plugins (shape/route/location/etc.) compose `DownloadService` with Fetch + storage ports for persistence.
-- `@hierarchidb/auth-recovery` pairs via `createAuthAwareNetworkPort` to attach Authorization and auto-retry on 401.
+- `@hierarchidb/auth` pairs via `createAuthAwareNetworkPort` to attach Authorization and auto-retry on 401.
 - App dev server can proxy CORS with `HDB_LOCAL_PROXY=1` (`/proxy`).
 
 ## Notes

@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { IdeGsmRouteError } from './ideGsmCsv.js';
+import type { IdeGsmRouteError } from './ideGsmRouteCsv.js';
 
 export type IdeGsmRouteImportRequest = {
   nodeId: NodeId;

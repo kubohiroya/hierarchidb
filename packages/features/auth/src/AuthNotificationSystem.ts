@@ -1,95 +1,19 @@
 /**
  * @file AuthNotificationSystem.ts
- * @description Common authentication notification system for Worker-to-UI communication
+ * @description Authentication notification system for Worker-to-UI communication
  *
  * This system handles authentication errors that occur during batch processing
  * in Worker threads and coordinates with the UI layer for authentication flows.
  */
 
-export type AuthSource = 'worker' | 'cors-proxy' | 'bff' | 'external-api';
-export type PluginType = 'shape' | 'location' | 'route' | 'spreadsheet' | 'styler';
-export type AuthNotificationType = 'AUTH_REQUIRED' | 'AUTH_SUCCESS' | 'AUTH_CANCELLED';
-
-/**
- * Notification sent when authentication is required to continue processing
- */
-export interface AuthRequiredNotification {
-  type: 'AUTH_REQUIRED';
-  source: AuthSource;
-  context: {
-    requestId: string;
-    url: string;
-    method?: string;
-    errorCode: number;
-    errorMessage: string;
-    sessionId?: string; // Batch processing session
-    pluginType: PluginType;
-    retryCount?: number;
-  };
-  timestamp: number;
-}
-
-/**
- * Notification sent when authentication succeeds
- */
-export interface AuthSuccessNotification {
-  type: 'AUTH_SUCCESS';
-  context: {
-    requestId: string;
-    newToken: string;
-    tokenType?: 'Bearer' | 'Basic';
-    expiresAt: number;
-    sessionId?: string;
-    userInfo?: {
-      id: string;
-      email: string;
-      name: string;
-      picture?: string;
-    };
-  };
-  timestamp: number;
-}
-
-/**
- * Notification sent when authentication is cancelled
- */
-export interface AuthCancelledNotification {
-  type: 'AUTH_CANCELLED';
-  context: {
-    requestId: string;
-    sessionId?: string;
-    reason: 'user-cancelled' | 'timeout' | 'error';
-  };
-  timestamp: number;
-}
-
-/**
- * Union type for all authentication notifications
- */
-export type AuthNotification =
-  | AuthRequiredNotification
-  | AuthSuccessNotification
-  | AuthCancelledNotification;
-
-/**
- * Interface for handling authentication notifications
- */
-export interface AuthNotificationHandler {
-  /**
-   * Handle authentication required notification
-   */
-  onAuthRequired(notification: AuthRequiredNotification): Promise<void>;
-
-  /**
-   * Handle authentication success notification
-   */
-  onAuthSuccess(notification: AuthSuccessNotification): Promise<void>;
-
-  /**
-   * Handle authentication cancelled notification
-   */
-  onAuthCancelled(notification: AuthCancelledNotification): Promise<void>;
-}
+import type {
+  AuthCancelledNotification,
+  AuthNotification,
+  AuthNotificationHandler,
+  AuthRequiredNotification,
+  AuthSource,
+  AuthSuccessNotification,
+} from '@hierarchidb/auth-api';
 
 /**
  * Central registry for authentication notification handlers
@@ -225,7 +149,7 @@ export const AuthNotificationFactory = {
     errorCode: number;
     errorMessage: string;
     sessionId?: string;
-    pluginType: PluginType;
+    pluginType: AuthRequiredNotification['context']['pluginType'];
     retryCount?: number;
   }): AuthRequiredNotification {
     return {

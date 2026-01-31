@@ -29,8 +29,7 @@
   "peerDependencies": {
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
-    "@hierarchidb/download": "workspace:*",
-    "@hierarchidb/auth-recovery": "workspace:*"
+    "@hierarchidb/download": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
@@ -40,7 +39,6 @@
     "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
-    "@hierarchidb/download": "workspace:*",
-    "@hierarchidb/auth-recovery": "workspace:*"
+    "@hierarchidb/download": "workspace:*"
   }
 }

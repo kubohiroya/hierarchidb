@@ -74,7 +74,7 @@ _Last updated: 2025-10-30_
 1. ADR（`docs/architecture/adr/2025-xx-plugin-dialog-layering.md` 予定）を起案してレビュー依頼。
 2. Turbo/pnpm 設定への影響を整理し、必要な pipeline 変更を issue 化。
 3. Core 抽出フェーズ用のタスク細分化（例: `refactor/plugin-dialog-core/extract-controller` など）を Kanban に追加。
-4. App 依存の集約先としては `@hierarchidb/ui-shell` のみを利用し、feature 系パッケージは実体（`@hierarchidb/common-types`, `@hierarchidb/plugin-registry` 等）を直接 import する方針に更新済み。ガイド類でもこの構成を前提とする。
+4. App 依存の集約先としては `@hierarchidb/ui-shell` のみを利用し、feature 系パッケージは実体（`@hierarchidb/core-types`, `@hierarchidb/tree-api`, `@hierarchidb/plugin-registry` 等）を直接 import する方針に更新済み。ガイド類でもこの構成を前提とする。
 
 ---
 

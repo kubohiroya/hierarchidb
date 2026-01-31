@@ -1,7 +1,9 @@
 import type React from 'react';
 import { useEffect, useId } from 'react';
 import { Box, Grid, Slider, TextField, Typography } from '@mui/material';
-import type { RouteUpdaterPayload } from '@hierarchidb/route-api';
+import type { BaseBuildConfig } from '@hierarchidb/gis-sdk';
+import type { RouteUpdaterPayload } from '@hierarchidb/route-store';
+import { DEFAULT_ROUTE_BUILD_CONFIG, mergeRouteBuildConfig } from '../../../common/config/buildConfig.js';
 import { useTranslation } from '../../../common/i18n/index.js';
 
 interface RouteTileSettingsStepProps {
@@ -10,13 +12,13 @@ interface RouteTileSettingsStepProps {
   disabled?: boolean;
 }
 
-const MIN_WORKERS = 1;
-const MAX_WORKERS = 16;
+const MIN_BUFFER = 0;
+const MAX_BUFFER = 512;
 const MIN_ZOOM_LEVEL = 0;
 const MAX_ZOOM_LEVEL = 22;
 const DEFAULT_MIN_ZOOM = 5;
 const DEFAULT_MAX_ZOOM = 12;
-const DEFAULT_BUFFER = 1;
+const DEFAULT_BUFFER = 256;
 
 const clamp = (value: number, min: number, max: number): number => {
   if (Number.isNaN(value)) return min;
@@ -26,74 +28,66 @@ const clamp = (value: number, min: number, max: number): number => {
 export const RouteTileSettingsStep: React.FC<RouteTileSettingsStepProps> = ({ draft, onUpdate, disabled }) => {
   const fieldId = useId();
   const { t } = useTranslation();
-  const vectorTiles = draft.draftData?.processing?.vectorTiles ?? undefined;
-  const minZoom = clamp(vectorTiles?.minZoom ?? DEFAULT_MIN_ZOOM, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
-  const maxZoom = clamp(vectorTiles?.maxZoom ?? DEFAULT_MAX_ZOOM, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
-  const buffer = clamp(vectorTiles?.buffer ?? DEFAULT_BUFFER, MIN_WORKERS, MAX_WORKERS);
+  const buildConfig = (draft.draftData?.buildConfig ?? DEFAULT_ROUTE_BUILD_CONFIG) as BaseBuildConfig<string>;
+  const zoomBandBoundaries = buildConfig.transformConfig.zoomBandBoundaries;
+  const minZoom = clamp(zoomBandBoundaries[0] ?? DEFAULT_MIN_ZOOM, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
+  const maxZoom = clamp(zoomBandBoundaries[zoomBandBoundaries.length - 1] ?? DEFAULT_MAX_ZOOM, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
+  const buffer = clamp(buildConfig.vtConfig.bufferSize ?? DEFAULT_BUFFER, MIN_BUFFER, MAX_BUFFER);
 
   useEffect(() => {
-    const next = {
-      processing: {
-        ...(draft.draftData?.processing ?? {}),
-        vectorTiles: {
-          minZoom,
-          maxZoom,
-          buffer,
-        },
+    const nextConfig = mergeRouteBuildConfig(buildConfig, {
+      transformConfig: {
+        ...buildConfig.transformConfig,
+        zoomBandBoundaries: [minZoom, maxZoom],
       },
+      vtConfig: {
+        ...buildConfig.vtConfig,
+        bufferSize: buffer,
+      },
+    });
+    onUpdate({
+      buildConfig: nextConfig,
       zoomRange: [minZoom, maxZoom] as [number, number],
-    };
-    onUpdate(next);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleBufferChange = (_: Event, value: number | number[]) => {
     const raw = Array.isArray(value) ? value[0] ?? buffer : value ?? buffer;
-    const nextBuffer = clamp(Number(raw), MIN_WORKERS, MAX_WORKERS);
-    onUpdate({
-      processing: {
-        ...(draft.draftData?.processing ?? {}),
-        vectorTiles: {
-          minZoom,
-          maxZoom,
-          buffer: nextBuffer,
-        },
+    const nextBuffer = clamp(Number(raw), MIN_BUFFER, MAX_BUFFER);
+    const nextConfig = mergeRouteBuildConfig(buildConfig, {
+      vtConfig: {
+        ...buildConfig.vtConfig,
+        bufferSize: nextBuffer,
       },
     });
+    onUpdate({ buildConfig: nextConfig });
   };
 
   const handleMinZoomChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const raw = Number(event.target.value);
     const nextMin = clamp(raw, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
     const adjustedMax = Math.max(nextMin, maxZoom);
-    onUpdate({
-      processing: {
-        ...(draft.draftData?.processing ?? {}),
-        vectorTiles: {
-          minZoom: nextMin,
-          maxZoom: adjustedMax,
-          buffer,
-        },
+    const nextConfig = mergeRouteBuildConfig(buildConfig, {
+      transformConfig: {
+        ...buildConfig.transformConfig,
+        zoomBandBoundaries: [nextMin, adjustedMax],
       },
-      zoomRange: [nextMin, adjustedMax],
     });
+    onUpdate({ buildConfig: nextConfig, zoomRange: [nextMin, adjustedMax] });
   };
 
   const handleMaxZoomChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const raw = Number(event.target.value);
     const nextMax = clamp(raw, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
     const adjustedMin = Math.min(nextMax, minZoom);
-    onUpdate({
-      processing: {
-        ...(draft.draftData?.processing ?? {}),
-        vectorTiles: {
-          minZoom: adjustedMin,
-          maxZoom: nextMax,
-          buffer,
-        },
+    const nextConfig = mergeRouteBuildConfig(buildConfig, {
+      transformConfig: {
+        ...buildConfig.transformConfig,
+        zoomBandBoundaries: [adjustedMin, nextMax],
       },
-      zoomRange: [adjustedMin, nextMax],
     });
+    onUpdate({ buildConfig: nextConfig, zoomRange: [adjustedMin, nextMax] });
   };
 
   return (
@@ -108,8 +102,8 @@ export const RouteTileSettingsStep: React.FC<RouteTileSettingsStepProps> = ({ dr
             {t('tileSettings.bufferLabel', 'Vector tile buffer size')}: {buffer}
           </Typography>
           <Slider
-            min={MIN_WORKERS}
-            max={MAX_WORKERS}
+            min={MIN_BUFFER}
+            max={MAX_BUFFER}
             value={buffer}
             valueLabelDisplay="auto"
             onChange={handleBufferChange}

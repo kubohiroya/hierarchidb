@@ -42,7 +42,7 @@ Host side means code in app/, packages/runtime-worker/, packages/common/, and pa
 Key files and modules to update:
 
 - packages/runtime-worker/src/services/LocationMutationService.ts currently dynamic-imports location-plugin for IDE-GSM helpers.
-- plugins/location-plugin/src/services/ide-gsm/ideGsmCsv.ts and plugins/location-plugin/src/services/pointRepository.ts contain the helpers that should move to a store package.
+- plugins/location-plugin/src/services/ide-gsm/ideGsmRouteCsv.ts and plugins/location-plugin/src/services/pointRepository.ts contain the helpers that should move to a store package.
 - packages/features/styler-store/src/StylerEntity.ts imports spreadsheet-plugin types.
 - plugins/spreadsheet-plugin/src/common/types/SpreadsheetEntity.ts defines SpreadsheetEntity types that should move to a store package.
 - packages/runtime-worker/package.json and app/package.json declare direct plugin dependencies that should be removed or minimized in favor of plugin-registry.
@@ -74,7 +74,7 @@ Run the following commands from the repository root and compare results to the e
    Expectation: The remaining hits should be limited to plugin-registry infrastructure or be flagged as disallowed. Record the disallowed list in this plan and TASKS.md.
 
 2) Move IDE-GSM helpers from location-plugin to location-store and update imports.
-   Files: packages/features/location-store/src (new modules as needed), plugins/location-plugin/src/services/ide-gsm/ideGsmCsv.ts, plugins/location-plugin/src/services/pointRepository.ts, plugins/location-plugin/src/services/index.ts, packages/runtime-worker/src/services/LocationMutationService.ts.
+   Files: packages/features/location-store/src (new modules as needed), plugins/location-plugin/src/services/ide-gsm/ideGsmRouteCsv.ts, plugins/location-plugin/src/services/pointRepository.ts, plugins/location-plugin/src/services/index.ts, packages/runtime-worker/src/services/LocationMutationService.ts.
    Expectation: runtime-worker no longer imports @hierarchidb/location-plugin. location-plugin re-exports the helpers from location-store.
 
 3) Create spreadsheet-store and update styler-store/spreadsheet-plugin.

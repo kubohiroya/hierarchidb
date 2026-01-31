@@ -15,5 +15,5 @@ export {
   mortonKeyFromLonLat,
   mortonRangeForTile,
 } from './morton.js';
-export type { IdeGsmParseResult } from './ideGsmCsv.js';
-export { filterIdeGsmPointsBySelection, parseIdeGsmCsv } from './ideGsmCsv.js';
+export type { IdeGsmParseResult } from './ideGsmLocationCsv.js';
+export { filterIdeGsmPointsBySelection, parseIdeGsmCsv } from './ideGsmLocationCsv.js';

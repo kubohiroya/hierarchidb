@@ -13,11 +13,11 @@
       "~/*": [
         "app/src/*"
       ],
-      "@hierarchidb/auth-recovery": [
-        "packages/features/auth-recovery/dist/index.d.ts"
+      "@hierarchidb/auth": [
+        "packages/features/auth/dist/index.d.ts"
       ],
-      "@hierarchidb/auth-recovery/*": [
-        "packages/features/auth-recovery/dist/*"
+      "@hierarchidb/auth/*": [
+        "packages/features/auth/dist/*"
       ],
       "@hierarchidb/auth-api": [
         "packages/features/auth-api/dist/index.d.ts"
@@ -58,23 +58,11 @@
       "@hierarchidb/components/*": [
         "packages/components/dist/*"
       ],
-      "@hierarchidb/common-types": [
-        "packages/common/types/dist/index.d.ts"
-      ],
-      "@hierarchidb/common-types/*": [
-        "packages/common/types/dist/*"
-      ],
       "@hierarchidb/core-types": [
         "packages/core-types/dist/index.d.ts"
       ],
       "@hierarchidb/core-types/*": [
         "packages/core-types/dist/*"
-      ],
-      "@hierarchidb/common-auth": [
-        "packages/common/auth/dist/index.d.ts"
-      ],
-      "@hierarchidb/common-auth/*": [
-        "packages/common/auth/dist/*"
       ],
       "@hierarchidb/cors-proxy": [
         "packages/backend/cors-proxy/dist/index.d.ts"

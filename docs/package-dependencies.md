@@ -24,7 +24,7 @@ graph LR
   subgraph G_packages_common["packages/common"]
     N5["@hierarchidb/batch-api"]
     N6["@hierarchidb/common-auth"]
-    N7["@hierarchidb/common-types"]
+    N7["@hierarchidb/core-types"]
   end
   subgraph G_packages_components["packages/components"]
     N8["@hierarchidb/components"]

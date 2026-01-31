@@ -7,7 +7,7 @@ import { DataSourceStrategyFactory } from '../DataSourceStrategyFactory.js';
 import type { FetchOptions, ProcessOptions, SaveTarget } from '../DataSourceStrategy.js';
 
 // Mock AuthRecoveryService used by authFetch so strategies avoid real network
-vi.mock('@hierarchidb/auth-recovery', () => {
+vi.mock('@hierarchidb/auth', () => {
   const fetchWithAuth = async (input: string | URL, _init?: RequestInit): Promise<Response> => {
     const url = String(input);
     // Natural Earth ZIP

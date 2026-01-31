@@ -54,8 +54,9 @@ UI Layer (React/MUI) ←→ Comlink RPC ←→ Worker Layer ←→ Dexie (CoreDB
 
 #### Common Packages
 - `@hierarchidb/common-core` - Core types and utilities
+- `@hierarchidb/core-types` - Shared primitive/id/entity definitions
+- `@hierarchidb/tree-api` - Tree domain type definitions
 - `@hierarchidb/batch-api` - Batch API interfaces
-- `@hierarchidb/common-types` - Shared type definitions
 - `@hierarchidb/common-plugin-base` - Base plugin classes
 
 #### Runtime UI Packages

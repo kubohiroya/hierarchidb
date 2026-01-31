@@ -1,13 +1,15 @@
 import { SingletonMixin } from '@hierarchidb/util';
-import type { AuthContext, AuthHeadersProvider, AuthScope } from './ports.js';
 import type {
   AuthCancelledNotification,
+  AuthContext,
+  AuthHeadersProvider,
   AuthRequiredNotification,
+  AuthScope,
+  AuthSource,
   AuthSuccessNotification,
   PluginType,
-  AuthSource,
-} from '@hierarchidb/common-auth/AuthNotificationSystem';
-import { AuthNotificationFactory, AuthNotificationRegistry } from '@hierarchidb/common-auth/AuthNotificationSystem';
+} from '@hierarchidb/auth-api';
+import { AuthNotificationFactory, AuthNotificationRegistry } from './AuthNotificationSystem.js';
 
 type UiStorageBridge = {
   getItem(key: string): Promise<string | null>;
@@ -25,8 +27,8 @@ class AuthRequiredError extends Error {
 /**
  * AuthService
  *
- * - 初回認証／トークン更新／401時の再認証を含めた「認証付きfetchの唯一の入口」
- * - 従来名(AuthRecoveryService)は互換のため別名クラスとして残す
+ * - Single entry point for authenticated fetches, including initial auth, refresh, and 401 recovery.
+ * - Keeps the legacy AuthRecoveryService name available for compatibility.
  */
 export class AuthService implements AuthHeadersProvider {
   private registry = AuthNotificationRegistry.getInstance();
@@ -42,7 +44,7 @@ export class AuthService implements AuthHeadersProvider {
   }
 
   constructor() {
-    this.registry.register('features-auth-recovery', {
+    this.registry.register('features-auth', {
       onAuthRequired: async (_notification: AuthRequiredNotification) => {
         // No-op: the fetcher initiates auth flows directly via awaitAuth.
       },
@@ -97,7 +99,7 @@ export class AuthService implements AuthHeadersProvider {
       try {
         const headers = new Headers(init.headers);
         const auth = await this.getAuthHeaders();
-        Object.entries(auth).forEach(([k, v]) => headers.set(k, v));
+        Object.entries(auth).map(([k, v]) => headers.set(k, v));
 
         if (this.isAuthDebugEnabled()) {
           let hasStoredToken = false;

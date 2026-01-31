@@ -26,7 +26,6 @@
   "devDependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
-    "@hierarchidb/common-auth": "workspace:*",
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
     "@react-oauth/google": "^0.12.2",
@@ -41,12 +40,12 @@
     "react-i18next": "12.3.1",
     "react-oidc-context": "^3.3.0",
     "vite": "^7.1.3",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "@hierarchidb/auth": "workspace:*"
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
-    "@hierarchidb/common-auth": "workspace:*",
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
     "@react-oauth/google": "^0.12.2",
@@ -59,7 +58,8 @@
     "react-dom": "^18.3.1",
     "react-gravatar": "^2.6.3",
     "react-i18next": "12.3.1",
-    "react-oidc-context": "^3.3.0"
+    "react-oidc-context": "^3.3.0",
+    "@hierarchidb/auth": "workspace:*"
   },
   "license": "MIT",
   "module": "dist/index.js"

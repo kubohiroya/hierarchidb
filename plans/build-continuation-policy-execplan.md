@@ -87,7 +87,7 @@ Edits are source-only and safe to repeat. If compilation fails, revert the impac
 
 ## Interfaces and Dependencies
 
-Use existing BuildContinuationPolicy from `@hierarchidb/common-types` and FailureHandling from `@hierarchidb/vt-orchestrator`. Do not introduce new dependencies or new settings storage.
+Use existing BuildContinuationPolicy from `@hierarchidb/batch-api` and FailureHandling from `@hierarchidb/vt-orchestrator`. Do not introduce new dependencies or new settings storage.
 
 ---
 

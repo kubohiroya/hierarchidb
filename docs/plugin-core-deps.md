@@ -12,7 +12,7 @@ graph LR
   RC["@hierarchidb/ui-worker-client"]
 
   %% Shared libraries (light nodes)
-  CT["@hierarchidb/common-types"]
+  CT["@hierarchidb/core-types"]
   BA["@hierarchidb/batch-api"]
   BT["@hierarchidb/batch-types"]
   DL["@hierarchidb/download"]
@@ -24,7 +24,7 @@ graph LR
   TST["@hierarchidb/tabular-store"]
   TAG["@hierarchidb/tag"]
   UTIL["@hierarchidb/util"]
-  AUTH["@hierarchidb/auth-recovery"]
+  AUTH["@hierarchidb/auth"]
 
   %% Edges from core SDK packages
   PSA --> CT

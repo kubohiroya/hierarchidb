@@ -1,9 +1,6 @@
-/**
- * @file RuntimeWorkerService.ts
- * @description Export all authentication system components
- */
+export { AuthService } from './AuthService.js';
+export { AuthRecoveryService } from './AuthRecoveryService.js';
 
-// Re-export commonly used types
 export type {
   AuthCancelledNotification,
   AuthNotification,
@@ -13,8 +10,7 @@ export type {
   AuthSource,
   AuthSuccessNotification,
   PluginType,
-} from './AuthNotificationSystem.js';
-export * from './AuthNotificationSystem.js';
+} from '@hierarchidb/auth-api';
 
 export {
   AUTH_CONSTANTS,

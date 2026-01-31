@@ -9,4 +9,5 @@ export {
   LocationDatabase,
   closeEphemeralLocationDB,
   getEphemeralLocationDB,
+  hasLocationReferencesToShapes,
 } from './LocationDB.js';

@@ -67,13 +67,10 @@
     "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
-    "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/batch-runtime-services": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/ui-grid": "workspace:*",
-    "@hierarchidb/auth-recovery": "workspace:*",
-    "@hierarchidb/common-auth": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-batch-progress": "workspace:*",
     "@hierarchidb/ui-auth": "workspace:*",
@@ -86,7 +83,8 @@
     "@hierarchidb/location-api": "workspace:*",
     "@hierarchidb/location-store": "workspace:*",
     "@hierarchidb/gis-sdk": "workspace:*",
-    "react-virtuoso": "^4.14.0"
+    "react-virtuoso": "^4.14.0",
+    "@hierarchidb/auth": "workspace:*"
   },
   "peerDependencies": {
     "dexie": "^4.2.0",
@@ -102,7 +100,6 @@
     "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
-    "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/ui-datasource": "workspace:*",
     "@hierarchidb/ui-floating-window": "workspace:*",
@@ -113,8 +110,6 @@
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/ui-memory": "workspace:*",
-    "@hierarchidb/auth-recovery": "workspace:*",
-    "@hierarchidb/common-auth": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/ui-batch-progress": "workspace:*",
@@ -128,7 +123,8 @@
     "@hierarchidb/location-store": "workspace:*",
     "@hierarchidb/gis-sdk": "workspace:*",
     "react-virtuoso": "^4.14.0",
-    "notistack": "^3.0.2"
+    "notistack": "^3.0.2",
+    "@hierarchidb/auth": "workspace:*"
   },
   "hierarchidb": {
     "plugin": {
@@ -138,7 +134,7 @@
       "description": "Import locations of geo-resources from online data sources, analyze them, and present the results in coordinated map views.",
       "icon": {
         "mui": "LocationOn",
-        "emoji": "\ud83d\udccd",
+        "emoji": "📍",
         "color": "#a3b030",
         "component": {
           "specifier": "@hierarchidb/location-plugin/icon",

@@ -61,12 +61,9 @@
     "geojson-vt": "^3.2.1"
   },
   "peerDependencies": {
-    "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/batch-runtime-services": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/chunk-store": "workspace:*",
-    "@hierarchidb/common-auth": "workspace:*",
-    "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/components": "workspace:*",
@@ -122,16 +119,14 @@
     "shpjs": "^6.2.0",
     "topojson-client": "^3.1.0",
     "topojson-server": "^3.0.1",
-    "topojson-simplify": "^3.0.3"
+    "topojson-simplify": "^3.0.3",
+    "@hierarchidb/auth": "workspace:*"
   },
   "devDependencies": {
-    "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/batch-runtime-services": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/chunk-store": "workspace:*",
-    "@hierarchidb/common-auth": "workspace:*",
-    "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/components": "workspace:*",
@@ -186,7 +181,8 @@
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
     "uuid": "^11.1.0",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "@hierarchidb/auth": "workspace:*"
   },
   "type": "module",
   "hierarchidb": {

@@ -39,18 +39,18 @@ Worker 側の API は `packages/common/api/src/WorkerAPI.ts` のインターフ�
 
 ## Plan of Work
 
-まず location/route の IDE-GSM 処理を UI から外し、Worker API に移す。Worker API には「IDE-GSM 取込」を行うメソッドを追加し、進捗イベントをコールバックで UI に送る。location 側の CSV 解析ロジックは `steps-provider.tsx` 内に閉じているため、Worker でも使える共有モジュール（例: `plugins/location-plugin/src/services/ide-gsm/ideGsmCsv.ts`）へ移動し、依存関数（国コード解決、管理区分の解決、CSV パース）も同じモジュールへ集約する。route 側は既に `plugins/route-plugin/src/services/ide-gsm/ideGsmCsv.ts` があるため、Worker から呼べる形で再利用する。
+まず location/route の IDE-GSM 処理を UI から外し、Worker API に移す。Worker API には「IDE-GSM 取込」を行うメソッドを追加し、進捗イベントをコールバックで UI に送る。location 側の CSV 解析ロジックは `steps-provider.tsx` 内に閉じているため、Worker でも使える共有モジュール（例: `plugins/location-plugin/src/services/ide-gsm/ideGsmRouteCsv.ts`）へ移動し、依存関数（国コード解決、管理区分の解決、CSV パース）も同じモジュールへ集約する。route 側は既に `plugins/route-plugin/src/services/ide-gsm/ideGsmRouteCsv.ts` があるため、Worker から呼べる形で再利用する。
 
 location の Worker 側処理は `LocationMutationService` に追加し、以下を行う。1) `sourceUrl` の fetch（Worker で `authFetch` 相当が必要なら `@hierarchidb/download` か Worker 側ユーティリティを使う）、2) CSV の解析、3) 選択条件（国/タイプ）でフィルタ、4) Dexie への chunked bulkPut（`LocationEntitiesDB` または storeRegistry 経由）を行う。進捗は 0-100 の割合と、処理行数、保存行数などをコールバックで通知する。UI 側は `startLocationBatch` から Worker メソッドを呼び、Step5 で進捗を表示する。
 
-route の Worker 側処理は `RouteMutationService` に追加する。Location のインデックス作成は `LocationQueryAPI` を Worker 内で利用し、CSV 解析は `ideGsmCsv.ts` を使う。Dexie 保存は `RouteDatabase` に chunked bulkPut を使う。進捗イベントは location と同じ形で通知し、`RouteBuildStep` の進捗表示に連携する。
+route の Worker 側処理は `RouteMutationService` に追加する。Location のインデックス作成は `LocationQueryAPI` を Worker 内で利用し、CSV 解析は `ideGsmRouteCsv.ts` を使う。Dexie 保存は `RouteDatabase` に chunked bulkPut を使う。進捗イベントは location と同じ形で通知し、`RouteBuildStep` の進捗表示に連携する。
 
 UI 側は Step5 で Worker 実行中の進捗を表示し、完了したら従来のステータス更新（processingStatus 等）を反映する。エラーは Worker から UI に伝え、既存のエラーダイアログまたは通知に合わせる。
 
 ## Concrete Steps
 
 1. `packages/plugin-service-api/src/types/LocationMutationAPI.ts` と `packages/plugin-service-api/src/types/RouteMutationAPI.ts` に IDE-GSM 取込メソッドを追加する。進捗は `onProgress` コールバックを引数で受ける形にする。
-2. `packages/runtime-worker/src/services/LocationMutationService.ts` と `packages/runtime-worker/src/services/RouteMutationService.ts` に実装を追加する。location は CSV 解析ロジックを Worker 用に移動する。route は `ideGsmCsv.ts` を利用する。
+2. `packages/runtime-worker/src/services/LocationMutationService.ts` と `packages/runtime-worker/src/services/RouteMutationService.ts` に実装を追加する。location は CSV 解析ロジックを Worker 用に移動する。route は `ideGsmRouteCsv.ts` を利用する。
 3. Worker から必要なユーティリティが使えるように、location 側の CSV パース/国コード/管理区分解決の処理を `plugins/location-plugin/src/services/ide-gsm/` へ移動し、UI と Worker から共有する。
 4. UI 側の `plugins/location-plugin/src/ui/components/steps-provider.tsx` と `plugins/route-plugin/src/ui/components/steps/RouteBuildStep.tsx` を更新し、Worker API を呼び出す。進捗コールバックで Step5 の進捗表示を更新する。
 5. Step5 の進捗表示は既存の BuildStep を流用し、進捗割合とフェーズ名を表示する。必要なら新しいステージ定義（例: `ide-gsm-import`）を追加する。
@@ -70,7 +70,7 @@ IDE-GSM の取込は nodeId 単位で既存データを置き換えるため、�
 
 ## Interfaces and Dependencies
 
-Worker API の追加は `LocationMutationAPI` / `RouteMutationAPI` に行い、`packages/runtime-worker/src/services/*MutationService.ts` に対応する実装を追加する。進捗通知は Comlink で UI に渡すコールバック関数とし、UI は `packages/ui/worker-client/src/workerBridge.ts` 経由で呼び出す。bulkPut は Dexie の `bulkPut` をチャンク単位で使用し、チャンクサイズは 500〜2000 の範囲で安全な値を選ぶ。CSV 解析は location 側で新設する `plugins/location-plugin/src/services/ide-gsm/ideGsmCsv.ts` に集約し、route は既存の `plugins/route-plugin/src/services/ide-gsm/ideGsmCsv.ts` を使用する。
+Worker API の追加は `LocationMutationAPI` / `RouteMutationAPI` に行い、`packages/runtime-worker/src/services/*MutationService.ts` に対応する実装を追加する。進捗通知は Comlink で UI に渡すコールバック関数とし、UI は `packages/ui/worker-client/src/workerBridge.ts` 経由で呼び出す。bulkPut は Dexie の `bulkPut` をチャンク単位で使用し、チャンクサイズは 500〜2000 の範囲で安全な値を選ぶ。CSV 解析は location 側で新設する `plugins/location-plugin/src/services/ide-gsm/ideGsmRouteCsv.ts` に集約し、route は既存の `plugins/route-plugin/src/services/ide-gsm/ideGsmRouteCsv.ts` を使用する。
 
 --- 
 Plan Revision Note: 2025-12-26 JST に初版を作成。IDE-GSM の Worker 移行と進捗可視化のための作業計画を明文化した。

@@ -10,7 +10,7 @@ import { GeoBoundariesStrategy } from '../GeoBoundariesStrategy.js';
 import type { ShapeEntity } from '../../../common/types/ShapeEntity.js';
 
 // Mock AuthRecoveryService used by authFetch so strategies avoid real network
-vi.mock('@hierarchidb/auth-recovery', () => {
+vi.mock('@hierarchidb/auth', () => {
   const fetchWithAuth = async (input: string | URL, _init?: RequestInit): Promise<Response> => {
     const url = String(input);
     // Natural Earth downloads a ZIP; return a tiny valid zip buffer

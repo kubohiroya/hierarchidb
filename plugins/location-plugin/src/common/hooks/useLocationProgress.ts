@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { UnifiedProgressInfo } from '@hierarchidb/batch-api';
-import { AuthNotificationRegistry } from '@hierarchidb/common-auth';
+import { AuthNotificationRegistry } from '@hierarchidb/auth';
 import { usePluginBatchProgress } from '@hierarchidb/ui-batch-progress';
 
 export interface UseLocationProgressOptions {

@@ -16,7 +16,7 @@ import {
 import { TabularService } from '@hierarchidb/tabular-source';
 import { DexieChunkStore } from '@hierarchidb/chunk-store';
 import { FetchNetworkPort } from '@hierarchidb/download';
-import type { AuthScope } from '@hierarchidb/auth-recovery';
+import type { AuthScope } from '@hierarchidb/auth-api';
 import type { NodeId } from '@hierarchidb/core-types';
 import { toNodeId } from '@hierarchidb/core-types';
 import { getDBName } from '@hierarchidb/util';

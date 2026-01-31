@@ -1,8 +1,8 @@
 import type React from 'react';
 import { useMemo } from 'react';
-import { Alert, Box, Stack } from '@mui/material';
+import { Alert } from '@mui/material';
 import type { AlertColor } from '@mui/material';
-import { FetchConfigSection, VTConfigSection } from '@hierarchidb/ui-accordion-config';
+import { BuildConfigShell, FetchConfigSection, VTConfigSection } from '@hierarchidb/ui-accordion-config';
 import { TransformConfigSection } from './TransformConfigSection.js';
 import { ZoomBandConfigSection } from './ZoomBandConfigSection.js';
 import { CacheManagementSection } from './CacheManagementSection.tsx';
@@ -73,29 +73,30 @@ export const ShapeBuildConfigStep: React.FC<ShapeDialogStepProps> = ({
   });
 
   return (
-    <Box sx={{ p: 2 }}>
-      <Stack spacing={2}>
-        {heapWarning ? (
-          <Alert severity={heapWarning.severity} sx={{ alignItems: 'center' }}>
-            {heapWarning.message}
-          </Alert>
-        ) : null}
-        <ZoomBandConfigSection
-          config={config}
-          onChange={handleChange}
-          disabled={disabled}
-        />
-        <FetchConfigSection
-          t={t}
-          buildConfig={config}
-          update={fetchState.update}
-          filteringPreviewImages={filteringPreviewImages}
-          disabled={disabled}
-        />
-        <TransformConfigSection config={config} onChange={handleChange} disabled={disabled} />
-        <VTConfigSection t={t} buildConfig={config} update={updateVTConfig} disabled={disabled} />
-        <CacheManagementSection config={config} fetchState={fetchState} disabled={disabled} />
-      </Stack>
-    </Box>
+    <BuildConfigShell
+      padding={2}
+      spacing={2}
+      alert={heapWarning ? (
+        <Alert severity={heapWarning.severity} sx={{ alignItems: 'center' }}>
+          {heapWarning.message}
+        </Alert>
+      ) : null}
+    >
+      <ZoomBandConfigSection
+        config={config}
+        onChange={handleChange}
+        disabled={disabled}
+      />
+      <FetchConfigSection
+        t={t}
+        buildConfig={config}
+        update={fetchState.update}
+        filteringPreviewImages={filteringPreviewImages}
+        disabled={disabled}
+      />
+      <TransformConfigSection config={config} onChange={handleChange} disabled={disabled} />
+      <VTConfigSection t={t} buildConfig={config} update={updateVTConfig} disabled={disabled} />
+      <CacheManagementSection config={config} fetchState={fetchState} disabled={disabled} />
+    </BuildConfigShell>
   );
 };

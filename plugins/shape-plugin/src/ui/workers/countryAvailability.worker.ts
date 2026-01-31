@@ -4,7 +4,7 @@ import { fetchCountryAvailability } from '../../services/datasources/CountryAvai
 import type { CountryAvailabilityWorkerAPI, SerializedCountryAvailability, UiStorageBridge } from './countryAvailability.types.js';
 import type { NodeId } from '@hierarchidb/core-types';
 import { metadataLoader } from '../../services/metadata/MetadataLoader.js';
-import { AuthService } from '@hierarchidb/auth-recovery';
+import { AuthService } from '@hierarchidb/auth';
 import type { DataSourceName } from '../../common/types/index.js';
 
 const corsProxyBaseURL = typeof import.meta.env?.VITE_CORS_PROXY_BASE_URL === 'string'

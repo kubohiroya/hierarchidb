@@ -17,7 +17,7 @@ import {
 } from '@mui/material';
 import ConstructionIcon from '@mui/icons-material/Construction';
 import type { NodeId } from '@hierarchidb/core-types';
-import { BuildStepPanel, useBuildStageFilter } from '@hierarchidb/components';
+import { BuildProgressPanel, useBuildStageFilter } from '@hierarchidb/components';
 import { useAtomValue, useSetAtom } from 'jotai';
 import type { TaskWithMetadata } from './TaskListVirtualized.tsx';
 import { TaskListVirtualized, sortVectorTileTasks } from './TaskListVirtualized.tsx';
@@ -613,125 +613,125 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
   ]);
 
   return (
-    <Box display="flex" flexDirection="column" gap={3} height="100%" minHeight={0}>
-      <Box flex={1} minHeight={0}>
-        <BuildStepPanel
-          status={summary.buildStatus}
-          overallProgress={summary.overallProgress}
+    <BuildProgressPanel
+      status={summary.buildStatus}
+      overallProgress={summary.overallProgress}
+      stages={stages}
+      stageProgress={stageProgress}
+      paneProgress={paneProgress}
+      splitViewBreakpoints={[600, 900, 1200]}
+      splitViewInitialSizesByBreakpoint={[
+        Array.from({ length: stages.length }, () => 250),
+        Array.from({ length: stages.length }, () => 250),
+        Array.from({ length: stages.length }, () => 250),
+        Array.from({ length: stages.length }, () => 250),
+      ]}
+      splitViewAutoCloseCountsByBreakpoint={[
+        Math.max(0, stages.length - 1),
+        Math.max(0, stages.length - 2),
+        Math.max(0, stages.length - 3),
+        0,
+      ]}
+      stageContents={stageContents}
+      stageProgressContent={stageProgressContent}
+      stageConcurrencyIndicators={stageConcurrencyIndicators}
+      statusContent={summary.hasProgressData ? (
+        <TaskProgressSummaryCard
+          summary={summary}
           stages={stages}
-          stageProgress={stageProgress}
-          paneProgress={paneProgress}
-          splitViewBreakpoints={[600, 900, 1200]}
-          splitViewInitialSizesByBreakpoint={[
-            Array.from({ length: stages.length }, () => 250),
-            Array.from({ length: stages.length }, () => 250),
-            Array.from({ length: stages.length }, () => 250),
-            Array.from({ length: stages.length }, () => 250),
-          ]}
-          splitViewAutoCloseCountsByBreakpoint={[
-            Math.max(0, stages.length - 1),
-            Math.max(0, stages.length - 2),
-            Math.max(0, stages.length - 3),
-            0,
-          ]}
-          stageContents={stageContents}
-          stageProgressContent={stageProgressContent}
-          stageConcurrencyIndicators={stageConcurrencyIndicators}
-          statusContent={summary.hasProgressData ? (
-            <TaskProgressSummaryCard
-              summary={summary}
-              stages={stages}
-              tasksByStage={tasksByStage}
-              activeStageId={activeStageId}
-              resolveTaskTitle={resolveTaskTitle as (task: TaskWithMetadata) => string}
-              t={t}
-            />
-          ) : undefined}
-          startIcon={<ConstructionIcon fontSize="small" />}
-          onResume={controls.canStartOrResume ? handleStartClick : undefined}
-          onPause={controls.handlePause}
-          controlLabel={t('stage.controls.title', 'Build controls')}
-          pauseLabel={t('stage.controls.pause', 'Pause')}
-          startLabel={t('stage.controls.start', 'Start Build')}
-          resumeLabel={t('stage.controls.resume', 'Resume Build')}
-          statusLabel={controls.statusLabel}
-          controlDetails={controlDetails}
+          tasksByStage={tasksByStage}
+          activeStageId={activeStageId}
+          resolveTaskTitle={resolveTaskTitle as (task: TaskWithMetadata) => string}
+          t={t}
         />
-      </Box>
-      <Snackbar
-        open={crashHintOpen}
-        autoHideDuration={8000}
-        onClose={() => setCrashHintOpen(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-      >
-        <Alert severity="warning" variant="filled" onClose={() => setCrashHintOpen(false)}>
-          {crashHint}
-        </Alert>
-      </Snackbar>
-      <Snackbar
-        open={sizeWarningOpen}
-        autoHideDuration={8000}
-        onClose={() => setSizeWarningOpen(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-      >
-        <Alert severity="warning" variant="filled" onClose={() => setSizeWarningOpen(false)}>
-          {warningMessage}
-        </Alert>
-      </Snackbar>
-      <Dialog
-        open={completionDialogOpen}
-        onClose={() => setCompletionDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          {completionSnapshot?.status === 'completed'
-            ? t('stage.progress.completedTitle', 'Build completed')
-            : t('stage.progress.failedTitle', 'Build failed')}
-        </DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <Typography variant="body2">
-            {t('stage.progress.completedStageLabel', 'Stage')}: {completionSnapshot?.stageLabel ?? completionStageLabel}
-          </Typography>
-          {completionSnapshot?.status === 'failed' ? (
-            <>
+      ) : undefined}
+      startIcon={<ConstructionIcon fontSize="small" />}
+      onResume={controls.canStartOrResume ? handleStartClick : undefined}
+      onPause={controls.handlePause}
+      controlLabel={t('stage.controls.title', 'Build controls')}
+      pauseLabel={t('stage.controls.pause', 'Pause')}
+      startLabel={t('stage.controls.start', 'Start Build')}
+      resumeLabel={t('stage.controls.resume', 'Resume Build')}
+      statusLabel={controls.statusLabel}
+      controlDetails={controlDetails}
+      footer={(
+        <>
+          <Snackbar
+            open={crashHintOpen}
+            autoHideDuration={8000}
+            onClose={() => setCrashHintOpen(false)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+          >
+            <Alert severity="warning" variant="filled" onClose={() => setCrashHintOpen(false)}>
+              {crashHint}
+            </Alert>
+          </Snackbar>
+          <Snackbar
+            open={sizeWarningOpen}
+            autoHideDuration={8000}
+            onClose={() => setSizeWarningOpen(false)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+          >
+            <Alert severity="warning" variant="filled" onClose={() => setSizeWarningOpen(false)}>
+              {warningMessage}
+            </Alert>
+          </Snackbar>
+          <Dialog
+            open={completionDialogOpen}
+            onClose={() => setCompletionDialogOpen(false)}
+            maxWidth="sm"
+            fullWidth
+          >
+            <DialogTitle>
+              {completionSnapshot?.status === 'completed'
+                ? t('stage.progress.completedTitle', 'Build completed')
+                : t('stage.progress.failedTitle', 'Build failed')}
+            </DialogTitle>
+            <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               <Typography variant="body2">
-                {t('stage.progress.failedTaskLabel', 'Task')}: {completionSnapshot?.taskTitle ?? completionTaskTitle}
+                {t('stage.progress.completedStageLabel', 'Stage')}: {completionSnapshot?.stageLabel ?? completionStageLabel}
               </Typography>
-              <Typography variant="body2">
-                {t('stage.progress.failedMessageLabel', 'Message')}: {completionSnapshot?.taskMessage ?? completionTaskMessage}
-              </Typography>
-            </>
-          ) : (
-            <Typography variant="body2">
-              {t('stage.progress.completedReasonLabel', 'Reason')}: {completionSnapshot?.reason ?? completionReason}
-            </Typography>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setCompletionDialogOpen(false)} variant="contained">
-            {t('common.close', 'Close')}
-          </Button>
-        </DialogActions>
-      </Dialog>
-      {startWarning ? (
-        <Dialog open={warningDialogOpen} onClose={() => setWarningDialogOpen(false)}>
-          <DialogTitle>{startWarning.title}</DialogTitle>
-          <DialogContent>
-            <Typography variant="body2" color="text.secondary">
-              {startWarning.message}
-            </Typography>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setWarningDialogOpen(false)}>
-              {t('stage.warning.cancel', 'Cancel')}
-            </Button>
-            <Button variant="contained" onClick={handleConfirmStart}>
-              {t('stage.warning.proceed', 'Proceed')}
-            </Button>
-          </DialogActions>
-        </Dialog>
-      ) : null}
-    </Box>
+              {completionSnapshot?.status === 'failed' ? (
+                <>
+                  <Typography variant="body2">
+                    {t('stage.progress.failedTaskLabel', 'Task')}: {completionSnapshot?.taskTitle ?? completionTaskTitle}
+                  </Typography>
+                  <Typography variant="body2">
+                    {t('stage.progress.failedMessageLabel', 'Message')}: {completionSnapshot?.taskMessage ?? completionTaskMessage}
+                  </Typography>
+                </>
+              ) : (
+                <Typography variant="body2">
+                  {t('stage.progress.completedReasonLabel', 'Reason')}: {completionSnapshot?.reason ?? completionReason}
+                </Typography>
+              )}
+            </DialogContent>
+            <DialogActions sx={{ px: 3, pb: 2 }}>
+              <Button onClick={() => setCompletionDialogOpen(false)} variant="contained">
+                {t('common.close', 'Close')}
+              </Button>
+            </DialogActions>
+          </Dialog>
+          {startWarning ? (
+            <Dialog open={warningDialogOpen} onClose={() => setWarningDialogOpen(false)}>
+              <DialogTitle>{startWarning.title}</DialogTitle>
+              <DialogContent>
+                <Typography variant="body2" color="text.secondary">
+                  {startWarning.message}
+                </Typography>
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={() => setWarningDialogOpen(false)}>
+                  {t('stage.warning.cancel', 'Cancel')}
+                </Button>
+                <Button variant="contained" onClick={handleConfirmStart}>
+                  {t('stage.warning.proceed', 'Proceed')}
+                </Button>
+              </DialogActions>
+            </Dialog>
+          ) : null}
+        </>
+      )}
+    />
   );
 };

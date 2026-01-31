@@ -21,6 +21,7 @@ export * from './landingpage/LandingPage.js';
 export * from './sparkle-animation/index.ts';
 export * from './SelectionMatrix/index.js';
 export * from './BuildStepPanel.tsx';
+export * from './BuildProgressPanel.tsx';
 
 export * from './BuildStepStagePanel.js';
 export * from './BuildStepStageFilterContext.tsx';
@@ -28,3 +29,4 @@ export * from './LoadingButton.tsx';
 export type { BuildStage } from './BuildStage.tsx';
 
 export { BuildStepPanel } from './BuildStepPanel.tsx';
+export { BuildProgressPanel } from './BuildProgressPanel.tsx';

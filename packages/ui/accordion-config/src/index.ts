@@ -29,10 +29,12 @@ export type { PhaseConfigAccordionProps } from './components/PhaseConfigAccordio
 
 // Build config components
 export { BuildConfigSectionTitle } from './build-config/BuildConfigSectionTitle.js';
+export { BuildConfigShell } from './build-config/BuildConfigShell.js';
 export { DownloadRetryControls } from './build-config/DownloadRetryControls.js';
 export { FetchConfigSection } from './build-config/FetchConfigSection.js';
 export { VTConfigSection } from './build-config/VTConfigSection.js';
 export { WorkerNumberConfigCard } from './build-config/WorkerNumberConfigCard.js';
+export { ZoomBandConfigSection } from './build-config/ZoomBandConfigSection.js';
 export { ZoomBandRangeCard } from './build-config/ZoomBandRangeCard.js';
 export { getBuildConfigHoverCardSx } from './build-config/buildConfigCardStyles.js';
 

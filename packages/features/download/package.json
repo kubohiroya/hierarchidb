@@ -21,12 +21,14 @@
   "peerDependencies": {
     "@hierarchidb/util": "workspace:*",
     "dexie": "^4.2.0",
-    "@hierarchidb/auth-recovery": "workspace:*"
+    "@hierarchidb/auth": "workspace:*",
+    "@hierarchidb/auth-api": "workspace:*"
   },
   "devDependencies": {
     "typescript": "workspace:^5.9.3",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/auth-recovery": "workspace:*",
-    "dexie": "^4.2.0"
+    "dexie": "^4.2.0",
+    "@hierarchidb/auth": "workspace:*",
+    "@hierarchidb/auth-api": "workspace:*"
   }
 }

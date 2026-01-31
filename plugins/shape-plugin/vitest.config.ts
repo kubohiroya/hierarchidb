@@ -81,8 +81,8 @@ export default defineConfig({
         replacement: path.resolve(__dirname, '../../packages/ui/i18n/src/index.ts'),
       },
       {
-        find: '@hierarchidb/auth-recovery',
-        replacement: path.resolve(__dirname, './src/headless/mocks/auth-recovery.ts'),
+        find: '@hierarchidb/auth',
+        replacement: path.resolve(__dirname, './src/headless/mocks/auth.ts'),
       },
       {
         find: '@hierarchidb/resolver-store',

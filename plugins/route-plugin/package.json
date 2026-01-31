@@ -61,11 +61,9 @@
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
-    "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/batch-runtime-services": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/chunk-store": "workspace:*",
-    "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/download": "workspace:*",
@@ -89,7 +87,6 @@
     "@hierarchidb/ui-country-select": "workspace:*",
     "@hierarchidb/ui-datasource": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/gis-sdk": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@mui/icons-material": "^7.3.6",
@@ -101,9 +98,7 @@
     "@hierarchidb/ui-accordion-config": "workspace:*"
   },
   "devDependencies": {
-    "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/chunk-store": "workspace:*",
-    "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
@@ -118,7 +113,6 @@
     "@hierarchidb/gis-sdk": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/ui-country-select": "workspace:*",
     "@hierarchidb/ui-datasource": "workspace:*",
@@ -135,7 +129,7 @@
       "description": "Import transportation routes from online data sources, analyze them, and present the results in coordinated map views.",
       "icon": {
         "mui": "Route",
-        "emoji": "\u3030\ufe0f",
+        "emoji": "〰️",
         "color": "#a3b030",
         "component": {
           "specifier": "@hierarchidb/route-plugin/icon",

@@ -16,5 +16,5 @@ export class AuthService {
   }
 }
 
-// Backward-compatible alias
+// Legacy alias
 export class AuthRecoveryService extends AuthService {}

@@ -1,5 +1,5 @@
-import type { AuthScope } from '@hierarchidb/auth-recovery';
-import { AuthService } from '@hierarchidb/auth-recovery';
+import type { AuthScope } from '@hierarchidb/auth-api';
+import { AuthService } from '@hierarchidb/auth';
 import { DexieChunkStore } from '@hierarchidb/chunk-store';
 import { DownloadService, FetchNetworkPort } from '@hierarchidb/download';
 
@@ -68,7 +68,7 @@ export async function postJson(
       ...(headers || {}),
     },
   };
-  // scope is routed to UI notification via common-auth's pluginType (narrowed internally by AuthService).
+  // scope is routed to UI notification via auth's pluginType (narrowed internally by AuthService).
   const res = await auth.fetchWithAuth(url, init, { scope });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();

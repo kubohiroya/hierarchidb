@@ -9,12 +9,8 @@
  * and validation of plugin capabilities within the hierarchical database system.
  */
 
-import type {
-  NodeId,
-  NodeType,
-  PluginDefinition,
-  ValidationResult,
-} from '@hierarchidb/common-types';
+import type { NodeId, NodeType, ValidationResult } from '@hierarchidb/core-types';
+import type { PluginDefinition } from '@hierarchidb/plugin-base';
 
 /**
  * @deprecated This API will be split into specialized APIs for better separation of concerns.

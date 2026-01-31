@@ -351,8 +351,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/ui-plugin-basic-info",
         "@hierarchidb/ui-map",
         "@hierarchidb/ui-memory",
-        "@hierarchidb/auth-recovery",
-        "@hierarchidb/common-auth",
         "@hierarchidb/runtime-worker",
         "@hierarchidb/ui-dialog",
         "@hierarchidb/ui-batch-progress",
@@ -366,7 +364,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/location-store",
         "@hierarchidb/gis-sdk",
         "react-virtuoso",
-        "notistack"
+        "notistack",
+        "@hierarchidb/auth"
       ],
     exports: ["","worker","icon","ui"],
     manifest: {
@@ -409,8 +408,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/ui-plugin-basic-info",
           "@hierarchidb/ui-map",
           "@hierarchidb/ui-memory",
-          "@hierarchidb/auth-recovery",
-          "@hierarchidb/common-auth",
           "@hierarchidb/runtime-worker",
           "@hierarchidb/ui-dialog",
           "@hierarchidb/ui-batch-progress",
@@ -424,7 +421,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/location-store",
           "@hierarchidb/gis-sdk",
           "react-virtuoso",
-          "notistack"
+          "notistack",
+          "@hierarchidb/auth"
         ],
         "icon": {
           "mui": "LocationOn",
@@ -620,7 +618,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/vt-orchestrator",
         "@emotion/react",
         "@emotion/styled",
-        "@hierarchidb/auth-recovery",
         "@hierarchidb/batch-runtime-services",
         "@hierarchidb/batch-api",
         "@hierarchidb/chunk-store",
@@ -676,7 +673,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/vt-orchestrator",
           "@emotion/react",
           "@emotion/styled",
-          "@hierarchidb/auth-recovery",
           "@hierarchidb/batch-runtime-services",
           "@hierarchidb/batch-api",
           "@hierarchidb/chunk-store",
@@ -804,11 +800,9 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/vectortile-orchestrator",
         "@hierarchidb/vt-orchestrator",
         "geojson-vt",
-        "@hierarchidb/auth-recovery",
         "@hierarchidb/batch-runtime-services",
         "@hierarchidb/batch-api",
         "@hierarchidb/chunk-store",
-        "@hierarchidb/common-auth",
         "@hierarchidb/core-types",
         "@hierarchidb/tree-api",
         "@hierarchidb/components",
@@ -864,7 +858,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "shpjs",
         "topojson-client",
         "topojson-server",
-        "topojson-simplify"
+        "topojson-simplify",
+        "@hierarchidb/auth"
       ],
     exports: ["","worker","icon","ui"],
     manifest: {
@@ -882,11 +877,9 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/vectortile-orchestrator",
           "@hierarchidb/vt-orchestrator",
           "geojson-vt",
-          "@hierarchidb/auth-recovery",
           "@hierarchidb/batch-runtime-services",
           "@hierarchidb/batch-api",
           "@hierarchidb/chunk-store",
-          "@hierarchidb/common-auth",
           "@hierarchidb/core-types",
           "@hierarchidb/tree-api",
           "@hierarchidb/components",
@@ -942,7 +935,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "shpjs",
           "topojson-client",
           "topojson-server",
-          "topojson-simplify"
+          "topojson-simplify",
+          "@hierarchidb/auth"
         ],
         "icon": {
           "mui": "Hexagon",
@@ -1036,7 +1030,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     dependencies: [
         "@emotion/react",
         "@emotion/styled",
-        "@hierarchidb/auth-recovery",
         "@hierarchidb/chunk-store",
         "@hierarchidb/core-types",
         "@hierarchidb/download",
@@ -1058,7 +1051,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "jotai",
         "react",
         "flatgeobuf",
-        "shpjs"
+        "shpjs",
+        "@hierarchidb/auth-api"
       ],
     exports: ["","icon","worker","ui"],
     manifest: {
@@ -1073,7 +1067,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "dependencies": [
           "@emotion/react",
           "@emotion/styled",
-          "@hierarchidb/auth-recovery",
           "@hierarchidb/chunk-store",
           "@hierarchidb/core-types",
           "@hierarchidb/download",
@@ -1095,7 +1088,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "jotai",
           "react",
           "flatgeobuf",
-          "shpjs"
+          "shpjs",
+          "@hierarchidb/auth-api"
         ],
         "icon": {
           "mui": "Assessment",

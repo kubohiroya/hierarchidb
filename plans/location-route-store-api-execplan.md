@@ -46,7 +46,7 @@ Work from the repo root.
      - `packages/runtime-worker/src/WorkerService.ts`
      - `packages/runtime-worker/src/services/RouteMutationService.ts`
      - `packages/runtime-worker/src/services/RouteQueryService.ts`
-     - `packages/runtime-worker/src/services/route/ideGsmCsv.ts`
+     - `packages/runtime-worker/src/services/route/ideGsmRouteCsv.ts`
      - `packages/runtime-worker/src/services/LocationMutationService.ts`
      - `packages/runtime-worker/src/e2e/test-worker.entry.ts`
 

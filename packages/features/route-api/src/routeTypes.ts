@@ -109,8 +109,10 @@ export interface RouteEntity {
   startLocationId?: NodeId;
   endLocationId?: NodeId;
   lineGeometry?: [number, number][];
+  /** @deprecated Use buildConfig instead. */
   config?: RouteProcessingConfig;
   buildConfig?: BaseBuildConfig<string>;
+  /** @deprecated Use buildConfig instead. */
   processing?: RouteProcessingConfig;
   processedAt?: number;
   processingStatus?: 'pending' | 'processing' | 'completed' | 'failed';

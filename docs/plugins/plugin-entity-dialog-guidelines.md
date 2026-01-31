@@ -4,7 +4,7 @@
 
 ## 現状の課題（抜粋）
 - 型・命名のバラツキ: `BaseMapDraftPayload` / `SpreadsheetDialogData` / `StylerDialogData` / `LocationDraft` など、エンティティとダイアログ専用型が混在し、`draft` ネストや `metadata` 埋め込みがまちまち。
-- 共通型の重複定義: `TreeNodeUpdaterPayload` が `@hierarchidb/common-types` と `plugin-ui-host` 双方で定義され、UI/Worker 間の契約が読みづらい。
+- 共通型の重複定義: `TreeNodeUpdaterPayload` が `@hierarchidb/tree-api` と `plugin-ui-host` 双方で定義され、UI/Worker 間の契約が読みづらい。
 - 責務境界の不明瞭さ: ダイアログ側が name/description/tags を `draftData` に入れたり、UI 一時状態を Entity/PeerData に混入させるケースがある。
 - 参照箇所の分散: basemap/location/spreadsheet/styler それぞれで `DialogData` / `DialogState` / `PeerData` が別ファイル・別命名で存在し、共通ガイドがなく移行のコストが高い。
 
@@ -69,14 +69,14 @@ Step には `Partial<PluginNameEntity>` のみを渡し、必要に応じて `me
 
 ## 既存コードからの移行計画
 - **Phase 0: 互換整理**  
-  - `plugin-ui-host` 側の重複型を撤去し、`@hierarchidb/common-types` が提供する `TreeNodeUpdaterPayload` / `TreeNodeUpdaterState` へ一本化する。
+  - `plugin-ui-host` 側の重複型を撤去し、`@hierarchidb/tree-api` が提供する `TreeNodeUpdaterPayload` / `TreeNodeUpdaterState` へ一本化する。
   - `TreeNodeUpdaterPayload` の `id` を `treeNodeId` にリネームし、`TreeNodeUpdaterState` も同名フィールドで揃える。パッチ型は `TreeNodeUpdaterPatch<T>` 名に切り替える。
 - **Phase 1: 実態棚卸し**  
   - `rg "DialogData|DialogState|Draft|draft"` を用い、basemap/location/spreadsheet/styler など主要プラグインの命名とデータ構造をリストアップする。
   - `TASKS.md` にプラグインごとの移行サブタスクを追加し、依存関係と優先度を明示する。
 - **Phase 2: 型統合**  
   - 各プラグインで `PluginNameEntity` を基点に `TreeNodeUpdaterPayload<PluginNameEntity>` に収束させる。`metadata` はホスト（basic info）へ移し、`draft` ネストや UI 専用フィールドを除去。
-  - `plugin-ui-host` / `plugin-ui-sdk` 側は `@hierarchidb/common-types` の `TreeNodeUpdaterPayload` を唯一の契約とし、ローカル定義を削除。
+  - `plugin-ui-host` / `plugin-ui-sdk` 側は `@hierarchidb/tree-api` の `TreeNodeUpdaterPayload` を唯一の契約とし、ローカル定義を削除。
 - **Phase 3: ダイアログ実装の統一**  
   - すべての `PluginNameDialog` が `useTreeNodeUpdater<PluginNameEntity>` を使用するように置き換え、`DialogData` / `DialogState` などの冗長型を alias 経由で段階的に削除。
   - Step バリデーション/シリアライズは `Partial<PluginNameEntity>` を前提に再整理する。
@@ -97,4 +97,4 @@ Step には `Partial<PluginNameEntity>` のみを渡し、必要に応じて `me
 ## 関連ドキュメント
 - `docs/plugins/draft-baseline.md` — Working Copy の基本方針。
 - `docs/draft-dialog-hosting.md` — ダイアログホスト責務とレジストリ連携。
-- `packages/common/types/src/tree-node-batch-types.ts` — `TreeNodeUpdaterPayload` などの共通型。
+- `packages/features/tree-api/src/tree-node-types.ts` — `TreeNodeUpdaterPayload` などの共通型。

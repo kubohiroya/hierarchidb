@@ -32,7 +32,7 @@ const custom = [
     when: () => true,
     because: 'EntityId is deprecated. Use NodeId/TagId instead.',
     rules: [
-      { rule: 'source-import-ban', options: { from: '@hierarchidb/common-types', names: ['EntityId', 'toEntityId', 'generateEntityId'] }, severity: 'ERROR' },
+      { rule: 'source-import-ban', options: { from: '@hierarchidb/core-types', names: ['EntityId', 'toEntityId', 'generateEntityId'] }, severity: 'ERROR' },
     ],
   },
 
