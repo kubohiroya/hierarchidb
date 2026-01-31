@@ -124,19 +124,11 @@ const LocationSelectionContent: React.FC<LocationSelectionStepProps> = ({ draft,
     if (sources.length === 0) return;
     if (parseInFlightRef.current) return;
     if (hasSelection && hasAvailability) return;
-    const nonBlobSources = sources.filter((source) => !source.sourceUrl.startsWith('blob:'));
-    if (nonBlobSources.length === 0) {
-      if (hasSelection && !hasAvailability) {
-        setAvailabilityByCountry(selectionByCountries);
-      }
-      return;
-    }
-
     parseInFlightRef.current = true;
     const run = async () => {
       try {
         const parsedList = await Promise.all(
-          nonBlobSources.map(async (source) => {
+          sources.map(async (source) => {
             const blob = await downloadFile(source.sourceUrl);
             const csvText = await blob.text();
             return parseIdeGsmCsv(csvText);
@@ -258,6 +250,7 @@ const LocationSelectionContent: React.FC<LocationSelectionStepProps> = ({ draft,
         matrixConfig={matrixConfig}
         selections={currentSelections}
         onSelectionsChange={applySelections}
+        showRowSelection
         showAlphabetIndex
         showRegionIndex
         rowHeight={40}
