@@ -78,3 +78,21 @@ export async function hasRouteReferencesToLocations(
     .toArray();
   return endMatch.length > 0;
 }
+
+export async function countRouteReferencesToLocations(
+  locationNodeIds: NodeId[]
+): Promise<number> {
+  if (!locationNodeIds.length) return 0;
+  const db = getRouteDB();
+  await db.open?.();
+  const startIds = await db.features
+    .where('startLocationId')
+    .anyOf(locationNodeIds)
+    .primaryKeys();
+  const endIds = await db.features
+    .where('endLocationId')
+    .anyOf(locationNodeIds)
+    .primaryKeys();
+  const unique = new Set([...startIds, ...endIds]);
+  return unique.size;
+}

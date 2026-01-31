@@ -7,5 +7,6 @@ export {
   closeRouteDB,
   clearRouteDatabases,
   hasRouteReferencesToLocations,
+  countRouteReferencesToLocations,
   clearRouteDatabases as clearDatabases,
 } from './RouteDB.js';

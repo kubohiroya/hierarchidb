@@ -7,6 +7,7 @@ import type {
   RouteQueryAPI,
 } from '@hierarchidb/route-api';
 import type { RouteDatabaseHandle } from '@hierarchidb/route-store';
+import { countRouteReferencesToLocations } from '@hierarchidb/route-store';
 import { SingletonMixin } from '@hierarchidb/util';
 import {
   BTree,
@@ -115,6 +116,10 @@ export class RouteQueryService implements RouteQueryAPI {
       .toArray()
       .then((rows) => rows[0]);
     return record?.data ?? null;
+  }
+
+  async countRouteReferencesToLocations(locationNodeIds: NodeId[]): Promise<number> {
+    return countRouteReferencesToLocations(locationNodeIds);
   }
 
   private readonly tileCache = new LRUMap<string, BTree<RouteNearestSegment>>(
