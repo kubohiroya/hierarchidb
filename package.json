@@ -56,7 +56,6 @@
     "dev:with-watch": "node ./scripts/run-dev-with-turbo-watch.mjs",
     "e2e": "turbo run e2e",
     "eslint:deprecations": "eslint -f stylish --max-warnings=0 packages/runtime-worker/worker packages/plugins/shape-plugin",
-    "fix:tsconfig": "node scripts/normalize-tsconfig.mjs",
     "format": "turbo run format",
     "generate-gadm-iso-mapping": "tsx scripts/data-generation/generate-gadm-iso-mapping.ts",
     "generate:pdf": "node scripts/generate-pdf-with-translation.js",
