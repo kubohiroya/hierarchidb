@@ -19,9 +19,6 @@ import { getDataSourceConfig } from '../../../services/utils/utils.js';
 import type { ShapeEntity } from '../../../common/types/index.js';
 import { useShapePreviewStep } from './useShapePreviewStep.js';
 
-const LIGHT_BASEMAP_STYLE_URL = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
-const DARK_BASEMAP_STYLE_URL = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
-
 const resolveCommonZoomBounds = () => {
   const settings = loadTreeConsoleSettings();
   const boundaries = Array.isArray(settings.zoomBandBoundaries)
@@ -45,9 +42,6 @@ const resolveCommonZoomBounds = () => {
 export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: string) => {
   const preview = useShapePreviewStep(data, nodeId);
   const { minZoom, maxZoom } = useMemo(() => resolveCommonZoomBounds(), []);
-  const baseMapStyleUrl = preview.theme.palette.mode === 'dark'
-    ? DARK_BASEMAP_STYLE_URL
-    : LIGHT_BASEMAP_STYLE_URL;
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const lastZoomRef = useRef<number | null>(null);
   const [zoomSnackbarMessage, setZoomSnackbarMessage] = useState<string>('');
@@ -361,7 +355,6 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
     ...preview,
     minZoom,
     maxZoom,
-    baseMapStyleUrl,
     mapContainerRef,
     zoomSnackbarMessage,
     zoomSnackbarOpen,

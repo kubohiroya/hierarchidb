@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Alert, Button, CircularProgress } from '@mui/material';
 import { Hexagon as HexagonIcon, Layers as LayersIcon, QueryStats as QueryStatsIcon } from '@mui/icons-material';
 import type { MapViewState } from '@hierarchidb/ui-map';
-import { LayerSetVisibilityPanel, ResourceLayerMap, ScreenCenterSnackbar, ShapePreviewList } from '@hierarchidb/ui-map';
+import { LayerSetVisibilityPanel, MapPreviewShell, ScreenCenterSnackbar, ShapePreviewList } from '@hierarchidb/ui-map';
 import { FloatingWindow, useFloatingWindow } from '@hierarchidb/ui-floating-window';
 import { useShapePreviewStepView } from './useShapePreviewStepView.js';
 import type { ShapeEntity, ShapePreviewMapView } from '../../../common/types/index.js';
@@ -60,7 +60,6 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
     defaultView,
     minZoom,
     maxZoom,
-    baseMapStyleUrl,
     mapContainerRef,
     zoomSnackbarMessage,
     zoomSnackbarOpen,
@@ -143,59 +142,72 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
   );
   const renderMapPreview = () => {
     return (
-      <Box
-        ref={mapContainerRef}
-        flex={1}
-        minHeight={0}
-        height="100%"
-        borderRadius={1}
-        overflow="hidden"
-        position="relative"
-        sx={{ overscrollBehavior: 'contain', p: 0 }}
-      >
-        {layerSetsWindow.windowState.isVisible ? (
-          <FloatingWindow
-            title={t('preview.layerSets.title', 'Layer Sets')}
-            titleIcon={<LayersIcon sx={{ fontSize: '1rem', ml: 1 }} />}
-            initialState={layerSetsWindow.windowState}
-            onStateChange={layerSetsWindow.handlers.onStateChange}
-            onClose={layerSetsWindow.handlers.onClose}
-            resizable
-            minWidth={220}
-            minHeight={180}
-          >
-            <LayerSetVisibilityPanel
-              layerSets={availableLayerSets}
-              visibility={layerSetVisibility}
-              onToggle={toggleLayerSetVisibility}
-              items={layerSetItems}
+      <MapPreviewShell
+        containerRef={mapContainerRef}
+        overlay={(
+          <>
+            {layerSetsWindow.windowState.isVisible ? (
+              <FloatingWindow
+                title={t('preview.layerSets.title', 'Layer Sets')}
+                titleIcon={<LayersIcon sx={{ fontSize: '1rem', ml: 1 }} />}
+                initialState={layerSetsWindow.windowState}
+                onStateChange={layerSetsWindow.handlers.onStateChange}
+                onClose={layerSetsWindow.handlers.onClose}
+                resizable
+                minWidth={220}
+                minHeight={180}
+              >
+                <LayerSetVisibilityPanel
+                  layerSets={availableLayerSets}
+                  visibility={layerSetVisibility}
+                  onToggle={toggleLayerSetVisibility}
+                  items={layerSetItems}
+                />
+              </FloatingWindow>
+            ) : (
+              <Box position="absolute" top={layerSetsToggleTop} right={8} zIndex={3}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="large"
+                  aria-label={t('preview.layerSets.reopen', 'Show layer sets')}
+                  onClick={layerSetsWindow.handlers.show}
+                >
+                  <LayersIcon />
+                </Button>
+              </Box>
+            )}
+            {!featureWindowOpen ? (
+              <Box position="absolute" top={8} left={8} zIndex={3}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="large"
+                  aria-label={t('preview.metadata.reopenList', 'Show list')}
+                  onClick={() => setFeatureWindowOpen(true)}
+                >
+                  <HexagonIcon />
+                </Button>
+              </Box>
+            ) : null}
+            <ScreenCenterSnackbar
+              open={zoomSnackbarOpen}
+              message={zoomSnackbarMessage}
+              onClose={handleZoomSnackbarClose}
+              containerSx={{ zIndex: 4 }}
             />
-          </FloatingWindow>
-        ) : (
-          <Box position="absolute" top={layerSetsToggleTop} right={8} zIndex={3}>
-            <Button
-              variant="contained"
-              color="primary"
-              size="large"
-              aria-label={t('preview.layerSets.reopen', 'Show layer sets')}
-              onClick={layerSetsWindow.handlers.show}
-            >
-              <LayersIcon />
-            </Button>
-          </Box>
+          </>
         )}
-        <ResourceLayerMap
-          initialViewState={defaultView}
-          width="100%"
-          height="100%"
-          mapStyleUrl={baseMapStyleUrl}
-          basemapStyles={[]}
-          style={{ padding: 0 }}
-          vectorLayers={vectorLayers}
-          geoJsonLayers={geoJsonLayers}
-          attributionItems={attributionItems}
-          highlightOverridesByType={highlightOverridesByType}
-          stats={{
+        mapProps={{
+          initialViewState: defaultView,
+          width: '100%',
+          height: '100%',
+          style: { padding: 0 },
+          vectorLayers,
+          geoJsonLayers,
+          attributionItems,
+          highlightOverridesByType,
+          stats: {
             enabled: true,
             display: 'floating',
             floatingWindow: {
@@ -213,10 +225,20 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
               toggleButtonIcon: <QueryStatsIcon fontSize="small" />,
               toggleButtonPosition: { top: statsToggleTop, right: 8 },
             },
-          }}
-          showTileBoundaries
-          showTileCoordinates
-          interaction={{
+          },
+          showTileBoundaries: true,
+          showTileCoordinates: true,
+          identifyFeatureOnClick: {
+            layerIds: vectorLayerIds,
+            radius: 12,
+            disableDefaultSnackbar: true,
+            getFeatureId: (feature) => {
+              const candidate = feature.id ?? feature.properties?.id;
+              return typeof candidate === 'string' || typeof candidate === 'number' ? candidate : null;
+            },
+            onIdentify: handleMapIdentify,
+          },
+          interaction: {
             enabled: true,
             highlightLayerIds: vectorLayerIds,
             search: { enabled: false },
@@ -224,8 +246,8 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
             selection: { enabled: false },
             fitSelection: { enabled: true, padding: 24 },
             snackbar: { enabled: true, position: 'bottom-center' },
-          }}
-          mapOptions={{
+          },
+          mapOptions: {
             interactive: true,
             scrollZoom: true,
             dragPan: true,
@@ -234,44 +256,16 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
             touchZoomRotate: true,
             minZoom,
             maxZoom,
-          }}
-          controls={{
+          },
+          controls: {
             navigation: { position: 'top-right' },
             scale: { position: 'bottom-left' },
-          }}
-          onLoad={setMapInstance}
-          onViewStateChange={handleViewStateChange}
-          onMoveEnd={handleViewStateCommit}
-          identifyFeatureOnClick={{
-            layerIds: vectorLayerIds,
-            disableDefaultSnackbar: true,
-            getFeatureId: (feature) => {
-              const candidate = feature.id ?? feature.properties?.id;
-              return typeof candidate === 'string' || typeof candidate === 'number' ? candidate : null;
-            },
-            onIdentify: handleMapIdentify,
-          }}
-        />
-        <ScreenCenterSnackbar
-          open={zoomSnackbarOpen}
-          message={zoomSnackbarMessage}
-          onClose={handleZoomSnackbarClose}
-          containerSx={{ zIndex: 4 }}
-        />
-        {!featureWindowOpen && (
-          <Box position="absolute" top={8} left={8} zIndex={3}>
-            <Button
-              variant="contained"
-              color="primary"
-              size="large"
-              aria-label={t('preview.metadata.reopenList', 'Show list')}
-              onClick={() => setFeatureWindowOpen(true)}
-            >
-              <HexagonIcon />
-            </Button>
-          </Box>
-        )}
-      </Box>
+          },
+          onViewStateChange: handleViewStateChange,
+          onMoveEnd: handleViewStateCommit,
+          onLoad: setMapInstance,
+        }}
+      />
     );
   };
 
