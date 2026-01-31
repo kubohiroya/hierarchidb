@@ -110,6 +110,8 @@ export { useMapFeatureHighlights } from './preview/useMapFeatureHighlights.js';
 export { useMapFeatureHoverCandidates } from './preview/useMapFeatureHoverCandidates.js';
 export { useMapFeatureSelectionGestures } from './preview/useMapFeatureSelectionGestures.js';
 export { MapPreviewSearchPanel } from './preview/MapPreviewSearchPanel.js';
+export { MapPreviewShell } from './preview/MapPreviewShell.js';
+export { useMonochromeBasemapStyleUrl } from './preview/useMonochromeBasemapStyleUrl.js';
 export { MapPreviewSearchSettingsDialog } from './preview/MapPreviewSearchSettingsDialog.js';
 export { FeatureTableToolbar, type FeatureTableSearchConfig, type FeatureTableToolbarProps } from './preview/FeatureTableToolbar.js';
 export {
