@@ -221,7 +221,6 @@ export function SelectionMatrix<T = any>({
   // Handle row checkbox click
   const handleRowSelectAll = useCallback((rowIndex: number) => {
     if (onSelectRow) {
-      const isSelected = isRowSelected(rowIndex);
       const enabledColumns = columns
         .map((column, colIndex) => ({ column, colIndex }))
         .filter(({ column }, colIndex) => {
@@ -229,9 +228,20 @@ export function SelectionMatrix<T = any>({
           return row && isCellEnabled(row, column, rowIndex, colIndex);
         })
         .map(({ colIndex }) => colIndex);
+      if (enabledColumns.length === 0) return;
+      const isSelected = enabledColumns.every((colIndex) => Boolean(state[rowIndex]?.[colIndex]));
       onSelectRow(rowIndex, !isSelected, enabledColumns);
     }
-  }, [columns, isCellEnabled, isRowSelected, onSelectRow, rows]);
+  }, [columns, isCellEnabled, onSelectRow, rows, state]);
+
+  const isRowSelectable = useCallback(
+    (rowIndex: number) =>
+      columns.some((column, colIndex) => {
+        const row = rows[rowIndex];
+        return row && isCellEnabled(row, column, rowIndex, colIndex);
+      }),
+    [columns, isCellEnabled, rows],
+  );
 
   const { allSelected, allIndeterminate } = useMemo(() => {
     let enabled = 0;
@@ -426,18 +436,15 @@ export function SelectionMatrix<T = any>({
         )}
         {showRowSelection && (
           <TableCell padding="checkbox">
-            <Checkbox
-              checked={isRowSelected(rowIndex)}
-              indeterminate={isRowIndeterminate(rowIndex)}
-              onChange={() => handleRowSelectAll(rowIndex)}
-              disabled={
-                row.disabled ||
-                !columns.some((column, colIndex) =>
-                  isCellEnabled(row, column, rowIndex, colIndex),
-                )
-              }
-              size="small"
-            />
+            {isRowSelectable(rowIndex) ? (
+              <Checkbox
+                checked={isRowSelected(rowIndex)}
+                indeterminate={isRowIndeterminate(rowIndex)}
+                onChange={() => handleRowSelectAll(rowIndex)}
+                disabled={row.disabled}
+                size="small"
+              />
+            ) : null}
           </TableCell>
         )}
         {rowMetaColumns && rowMetaColumns.length > 0 ? (
