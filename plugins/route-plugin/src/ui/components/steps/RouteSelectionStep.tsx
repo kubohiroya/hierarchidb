@@ -187,7 +187,7 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = ({
       });
       return allowed;
     }
-    policy.allowedModes.forEach((mode) => allowed.add(mode));
+    policy.allowedModes.map((mode) => allowed.add(mode));
     return allowed;
   }, [allowedModeSet, coverageModeMap, isIdeGsm, policy.allowedModes]);
 
@@ -290,18 +290,7 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = ({
     if (!deepEqualSelectionRecord(selectionRecordSource, normalized)) {
       emitUpdate({ selectedArrayByCountries: normalized });
     }
-  }, [
-    coverage,
-    coverageKey,
-    dataSourceName,
-    deepEqualSelectionRecord,
-    emitUpdate,
-    hasAnySelection,
-    isIdeGsm,
-    iso.status,
-    normalizeSelectionRecord,
-    selectionRecordSource,
-  ]);
+  }, [coverage, coverageKey, dataSourceName, deepEqualSelectionRecord, emitUpdate, hasAnySelection, isIdeGsm, iso.status, normalizeSelectionRecord, policy.defaultChecked, selectionRecordSource]);
 
   const applySelections = useCallback(
     (nextSelections: MatrixSelection[]) => {
@@ -333,6 +322,34 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = ({
   onValidationChange(isValid);
   }, [coverage, coverageError, coverageLoading, hasAnySelection, isIdeGsm, onValidationChange]);
 
+  const selectionErrorMessage = useMemo(() => {
+    if (!isIdeGsm) return null;
+    if (!ideGsmSourceUrl) {
+      return t('routeConfig.ideGsmMissingSource', 'IDE-GSM source URL is required.');
+    }
+    if (coverageError) return coverageError;
+    if (coverage && coverage.errors.length > 0) {
+      return t('routeConfig.ideGsmValidationError', 'Resolve IDE-GSM parsing errors before selecting routes.');
+    }
+    return null;
+  }, [coverage, coverageError, ideGsmSourceUrl, isIdeGsm, t]);
+
+  const errorRows = useMemo(() => {
+    if (!coverage?.errors?.length) return [];
+    return coverage.errors.map((error) => ({
+      ...error,
+      sourceUrl: ideGsmSourceUrl ?? '',
+    }));
+  }, [coverage?.errors, ideGsmSourceUrl]);
+
+  const errorColumns = useMemo<GridColumn<(typeof errorRows)[number]>[]>(() => ([
+    { id: 'sourceUrl', label: t('routeConfig.ideGsmErrors.columns.source', 'Source'), width: 200 },
+    { id: 'rowNumber', label: t('routeConfig.ideGsmErrors.columns.row', 'Row'), width: 80, sortable: true },
+    { id: 'start', label: t('routeConfig.ideGsmErrors.columns.start', 'Start'), width: 160 },
+    { id: 'end', label: t('routeConfig.ideGsmErrors.columns.end', 'End'), width: 160 },
+    { id: 'reason', label: t('routeConfig.ideGsmErrors.columns.reason', 'Reason'), width: 360 },
+  ]), [t]);
+
   if (iso.status === 'loading') {
     return (
       <Box>
@@ -361,34 +378,6 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = ({
       </Box>
     );
   }
-
-  const selectionErrorMessage = useMemo(() => {
-    if (!isIdeGsm) return null;
-    if (!ideGsmSourceUrl) {
-      return t('routeConfig.ideGsmMissingSource', 'IDE-GSM source URL is required.');
-    }
-    if (coverageError) return coverageError;
-    if (coverage && coverage.errors.length > 0) {
-      return t('routeConfig.ideGsmValidationError', 'Resolve IDE-GSM parsing errors before selecting routes.');
-    }
-    return null;
-  }, [coverage, coverageError, ideGsmSourceUrl, isIdeGsm, t]);
-
-  const errorRows = useMemo(() => {
-    if (!coverage?.errors?.length) return [];
-    return coverage.errors.map((error) => ({
-      ...error,
-      sourceUrl: ideGsmSourceUrl ?? '',
-    }));
-  }, [coverage?.errors, ideGsmSourceUrl]);
-
-  const errorColumns = useMemo<GridColumn<(typeof errorRows)[number]>[]>(() => ([
-    { id: 'sourceUrl', label: t('routeConfig.ideGsmErrors.columns.source', 'Source'), width: 200 },
-    { id: 'rowNumber', label: t('routeConfig.ideGsmErrors.columns.row', 'Row'), width: 80, sortable: true },
-    { id: 'start', label: t('routeConfig.ideGsmErrors.columns.start', 'Start'), width: 160 },
-    { id: 'end', label: t('routeConfig.ideGsmErrors.columns.end', 'End'), width: 160 },
-    { id: 'reason', label: t('routeConfig.ideGsmErrors.columns.reason', 'Reason'), width: 360 },
-  ]), [t]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>

@@ -32,7 +32,7 @@ export function registerAuthUIHandlers(prompt: AuthPrompt, opts?: { id?: string 
           sessionId,
         });
         await registry.dispatch(success);
-      } catch (_error) {
+      } catch {
         const cancelled = AuthNotificationFactory.createAuthCancelled({
           requestId,
           sessionId,
