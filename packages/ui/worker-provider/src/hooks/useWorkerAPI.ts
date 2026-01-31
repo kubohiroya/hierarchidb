@@ -1,6 +1,5 @@
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { Remote } from 'comlink';
-import { useMemo } from 'react';
 import { getWorkerClientHook, type WorkerClientRef } from '../ui/workerClientHook.js';
 
 export interface UseWorkerAPIResult {
@@ -16,15 +15,14 @@ export interface UseWorkerAPIResult {
  * co-located with the registration mechanism.
  */
 export function useWorkerAPI(): UseWorkerAPIResult {
-  const client = useMemo(() => {
-    try {
-      const hook = getWorkerClientHook<WorkerClientRef>();
-      return hook();
-    } catch (error) {
-      console.warn('[useWorkerAPI] worker client hook is not registered', error);
-      return null;
-    }
-  }, []);
+  let client: WorkerClientRef | null = null;
+  try {
+    const hook = getWorkerClientHook<WorkerClientRef>();
+    client = hook();
+  } catch (error) {
+    console.warn('[useWorkerAPI] worker client hook is not registered', error);
+    client = null;
+  }
 
   if (!client) {
     return {
