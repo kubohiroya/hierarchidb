@@ -6,7 +6,7 @@
  * Corresponds to React Router route `t.($treeId).($pageNodeId).($targetNodeId).$nodeType.$action.tsx`
  */
 
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { createRoute } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
 import type {

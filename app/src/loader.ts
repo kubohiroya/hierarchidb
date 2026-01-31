@@ -1,12 +1,6 @@
 import type { WorkerAPI } from '@hierarchidb/worker-api';
-import {
-  NodeAction,
-  type NodeId,
-  type NodeType,
-  type Tree,
-  type TreeId,
-  type TreeNode,
-} from '@hierarchidb/common-types';
+import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
+import { NodeAction, type Tree, type TreeNode } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
 import type { LoadAppConfigReturn } from './loadAppConfig.ts';
 import { loadAppConfig } from './loadAppConfig.ts';

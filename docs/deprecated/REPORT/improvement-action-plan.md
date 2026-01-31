@@ -54,7 +54,7 @@ treeRootNodeId → rootNodeId (TreeTypes.rootNodeId)
 
 ```typescript
 // 現在：汎用的すぎるBaseEntityHandler
-export abstract class BaseEntityHandler<TEntity, TSubEntity, TWorkingCopy> {
+export abstract class BaseEntityHandler<TEntity, TSubEntity, TDraft> {
   // 全種類のエンティティに対して同じインターフェース
 }
 ```
@@ -155,9 +155,9 @@ export function deserializeTreeNode(data: unknown): TreeNode {
 
 ```typescript
 // 現在：TreeNodeのワーキングコピーのみ
-interface WorkingCopyTypes extends TreeNode {
-  workingCopyId: string;
-  workingCopyOf: NodeId;
+interface DraftTypes extends TreeNode {
+  draftId: string;
+  draftOf: NodeId;
   // ...
 }
 ```
@@ -166,9 +166,9 @@ interface WorkingCopyTypes extends TreeNode {
 
 ```typescript
 // エンティティ用ワーキングコピー
-interface EntiryWorkingCopyTypes<T extends BaseEntity> {
-  workingCopyId: string;
-  workingCopyOf: string; // EntityId
+interface EntiryDraftTypes<T extends BaseEntity> {
+  draftId: string;
+  draftOf: string; // EntityId
   entityType: 'peer' | 'group' | 'relational';
   entity: T;
   copiedAt: number;

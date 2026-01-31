@@ -13,14 +13,14 @@
 
 ### 2. ID管理の分離
 **変更前**: 
-- workingCopyIdが独自に存在
+- draftIdが独自に存在
 - TreeNodeとEntityで同じIDを使用
 
 **変更後**:
 - ワーキングコピーのTreeNodeは独自のtreeNodeIdを持つ
-- workingCopyOfプロパティでオリジナルのTreeNodeIdを参照
-- 新規作成時: workingCopyOf = 自身のID
-- 編集時: workingCopyOf = オリジナルのID
+- draftOfプロパティでオリジナルのTreeNodeIdを参照
+- 新規作成時: draftOf = 自身のID
+- 編集時: draftOf = オリジナルのID
 
 ### 3. Entity管理のコピーオンライト化
 **変更前**: ワーキングコピー作成時にEntityも即座にコピー
@@ -32,18 +32,18 @@
 ## 実装計画
 
 ### Phase 1: インターフェースの更新
-1. `packages/core/src/types/working-copy-lifecycle-plugin-definition.ts`の更新
-   - WorkingCopyをTreeNodeを継承する形に変更
-   - workingCopyIdの削除
+1. `packages/core/src/types/draft-lifecycle-plugin-definition.ts`の更新
+   - DraftをTreeNodeを継承する形に変更
+   - draftIdの削除
 
 2. `packages/core/src/types/tree-lifecycle-plugin-definition.ts`の確認
-   - WorkingCopyPropertiesが正しく定義されていることを確認
+   - DraftPropertiesが正しく定義されていることを確認
 
 ### Phase 2: TreeNodeワーキングコピー処理の実装
-1. `packages/worker/src/operations/WorkingCopyTreeNodeOperations.ts`の更新
-   - createWorkingCopyFromNode: TreeNodeのコピーとして作成
+1. `packages/worker/src/operations/DraftTreeNodeOperations.ts`の更新
+   - createDraftFromNode: TreeNodeのコピーとして作成
    - 独自のtreeNodeIdを採番
-   - workingCopyOfにオリジナルのIDをセット
+   - draftOfにオリジナルのIDをセット
 
 2. データベース保存先の分離
    - ワーキングコピーのTreeNode: EphemeralDB
@@ -51,9 +51,9 @@
 
 ### Phase 3: Entityのコピーオンライト実装
 1. `packages/worker/src/handlers/EntityHandler.ts`の更新
-   - createWorkingCopy: TreeNodeのみコピー、Entityはコピーしない
-   - updateWorkingCopy: 初回更新時にEntityをコピー
-   - commitWorkingCopy: Entity IDの繋ぎ直し処理
+   - createDraft: TreeNodeのみコピー、Entityはコピーしない
+   - updateDraft: 初回更新時にEntityをコピー
+   - commitDraft: Entity IDの繋ぎ直し処理
 
 2. Entity管理フラグの追加
    - hasEntityCopy: Entityがコピー済みかどうか
@@ -76,9 +76,9 @@
 
 ### Phase 5: テストと検証
 1. 単体テストの更新
-   - WorkingCopyOperations.test.ts
+   - DraftOperations.test.ts
    - EntityHandler.test.ts
-   - WorkingCopyHandler.test.ts
+   - DraftHandler.test.ts
 
 2. 統合テストの作成
    - TreeNodeとEntityの連携

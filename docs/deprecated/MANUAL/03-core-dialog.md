@@ -154,15 +154,15 @@ const PluginDialog: React.FC<PluginDialogProps> = ({
   onSave
 }) => {
   const [activeStep, setActiveStep] = useState(0);
-  const [formData, setFormData] = useState<WorkingCopyTypes>();
+  const [formData, setFormData] = useState<DraftTypes>();
   const [isDirty, setIsDirty] = useState(false);
 
   // ワーキングコピーの管理
   useEffect(() => {
     if (mode === 'edit' && nodeId) {
-      loadWorkingCopy(nodeId);
+      loadDraft(nodeId);
     } else {
-      createWorkingCopy();
+      createDraft();
     }
   }, [mode, nodeId]);
 
@@ -170,7 +170,7 @@ const PluginDialog: React.FC<PluginDialogProps> = ({
   useEffect(() => {
     if (isDirty) {
       const timer = setTimeout(() => {
-        saveWorkingCopy(formData);
+        saveDraft(formData);
         setIsDirty(false);
       }, 5000);
       return () => clearTimeout(timer);
@@ -273,6 +273,6 @@ const DiscardConfirmDialog: React.FC<{
 
 ## 次のステップ
 
-- [ワーキングコピー詳細](./03-core-workingcopy.md)
+- [ワーキングコピー詳細](./03-core-draft.md)
 - [プラグインダイアログ開発](./04-plugin-overview.md)
 - [UIコンポーネント](./05-dev-guidelines.md)

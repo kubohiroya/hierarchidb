@@ -94,63 +94,63 @@ class StylerEntityHandler extends PeerEntityHandler<StylerEntity> {
 
 **Working Copy Pattern Implementation**
 ```typescript
-interface WorkingCopyLifecycle {
+interface DraftLifecycle {
   // Create working copy for editing
-  createWorkingCopy(entityId: EntityId): Promise<StylerWorkingCopy>;
+  createDraft(entityId: EntityId): Promise<StylerDraft>;
   
   // Update working copy
-  updateWorkingCopy(workingCopyId: string, changes: Partial<StylerEntity>): Promise<void>;
+  updateDraft(draftId: string, changes: Partial<StylerEntity>): Promise<void>;
   
   // Commit changes to main entity
-  commitWorkingCopy(workingCopyId: string): Promise<StylerEntity>;
+  commitDraft(draftId: string): Promise<StylerEntity>;
   
   // Discard working copy
-  discardWorkingCopy(workingCopyId: string): Promise<void>;
+  discardDraft(draftId: string): Promise<void>;
 }
 
-class StylerWorkingCopyManager implements WorkingCopyLifecycle {
-  async createWorkingCopy(entityId: EntityId): Promise<StylerWorkingCopy> {
+class StylerDraftManager implements DraftLifecycle {
+  async createDraft(entityId: EntityId): Promise<StylerDraft> {
     const originalEntity = await this.entityHandler.getEntity(entityId);
     if (!originalEntity) {
       throw new Error('Entity not found');
     }
     
-    const workingCopyId = crypto.randomUUID();
-    const workingCopy: StylerWorkingCopy = {
+    const draftId = crypto.randomUUID();
+    const draft: StylerDraft = {
       ...originalEntity,
-      workingCopyId,
-      workingCopyOf: entityId,
+      draftId,
+      draftOf: entityId,
       copiedAt: Date.now(),
       isDirty: false,
     };
     
-    await this.workingCopyTable.add(workingCopy);
-    return workingCopy;
+    await this.draftTable.add(draft);
+    return draft;
   }
   
-  async commitWorkingCopy(workingCopyId: string): Promise<StylerEntity> {
-    const workingCopy = await this.getWorkingCopy(workingCopyId);
-    if (!workingCopy) {
+  async commitDraft(draftId: string): Promise<StylerEntity> {
+    const draft = await this.getDraft(draftId);
+    if (!draft) {
       throw new Error('Working copy not found');
     }
     
     // Update main entity
     const updatedEntity: StylerEntity = {
-      ...workingCopy,
+      ...draft,
       updatedAt: Date.now(),
-      version: workingCopy.version + 1,
+      version: draft.version + 1,
     };
     
     // Remove working copy properties
-    delete (updatedEntity as any).workingCopyId;
-    delete (updatedEntity as any).workingCopyOf;
+    delete (updatedEntity as any).draftId;
+    delete (updatedEntity as any).draftOf;
     delete (updatedEntity as any).copiedAt;
     delete (updatedEntity as any).isDirty;
     
     // Atomic update
-    await this.db.transaction('rw', [this.entityTable, this.workingCopyTable], async () => {
+    await this.db.transaction('rw', [this.entityTable, this.draftTable], async () => {
       await this.entityTable.put(updatedEntity);
-      await this.workingCopyTable.delete(workingCopyId);
+      await this.draftTable.delete(draftId);
     });
     
     return updatedEntity;
@@ -536,13 +536,13 @@ class LifecycleMaintenance {
   }
   
   async cleanupExpiredWorkingCopies(): Promise<void> {
-    const expiredCopies = await this.workingCopyTable
+    const expiredCopies = await this.draftTable
       .where('copiedAt')
       .below(Date.now() - this.WORKING_COPY_TTL)
       .toArray();
     
     for (const copy of expiredCopies) {
-      await this.discardWorkingCopy(copy.workingCopyId);
+      await this.discardDraft(copy.draftId);
     }
   }
 }

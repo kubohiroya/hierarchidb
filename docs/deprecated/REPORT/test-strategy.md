@@ -90,7 +90,7 @@ describe('フォルダ操作の統合テスト', () => {
   });
   
   it('フォルダを作成できる', async () => {
-    const result = await api.createWorkingCopyForCreate({
+    const result = await api.createDraftForCreate({
       parentNodeId: 'root',
       nodeType: 'folder-plugin',
       initialData: { name: 'Test Folder' }

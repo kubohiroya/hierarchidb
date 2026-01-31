@@ -801,65 +801,65 @@ lifecycle: {
 
 ### CopyOnWrite原則の実装
 
-HierarchiDBでは、**CopyOnWrite**原則に従い、編集中のEntityは必ずWorkingCopyとして管理されます。
+HierarchiDBでは、**CopyOnWrite**原則に従い、編集中のEntityは必ずDraftとして管理されます。
 
-#### WorkingCopy作成タイミング
+#### Draft作成タイミング
 
 **Step 2時点での作成**：ダイアログでデータソース選択など、実質的な編集が開始される時点
 
 ```typescript
 // UI Layer - Dialog Implementation
 export function ShapeDialog({ mode, nodeId, parentNodeId, open, onClose }: ShapeDialogProps) {
-  const [workingCopy, setWorkingCopy] = useState<ShapeWorkingCopy | null>(null);
+  const [draft, setDraft] = useState<ShapeDraft | null>(null);
   
-  // Step 1 → Step 2 遷移時にWorkingCopy作成
+  // Step 1 → Step 2 遷移時にDraft作成
   const handleMoveToStep2 = useCallback(async () => {
-    if (!workingCopy) {
+    if (!draft) {
       const api = await getShapeAPI();
       
       if (mode === 'edit' && nodeId) {
         // ✅ 既存エンティティの編集：CopyOnWrite
-        const workingCopyId = await api.createWorkingCopy(nodeId);
-        const copy = await api.getWorkingCopy(workingCopyId);
-        setWorkingCopy(copy);
+        const draftId = await api.createDraft(nodeId);
+        const copy = await api.getDraft(draftId);
+        setDraft(copy);
       } else if (mode === 'create' && parentNodeId) {
-        // ✅ 新規作成：Draft WorkingCopyTypes
-        const workingCopyId = await api.createNewDraftWorkingCopy(parentNodeId);
-        const copy = await api.getWorkingCopy(workingCopyId);
-        setWorkingCopy(copy);
+        // ✅ 新規作成：Draft DraftTypes
+        const draftId = await api.createNewDraftDraft(parentNodeId);
+        const copy = await api.getDraft(draftId);
+        setDraft(copy);
       }
     }
     setActiveStep(2);
-  }, [mode, nodeId, parentNodeId, workingCopy]);
+  }, [mode, nodeId, parentNodeId, draft]);
 }
 ```
 
-#### WorkingCopyTypes-based API Design
+#### DraftTypes-based API Design
 
-**すべてのバッチ処理APIはWorkingCopyベース**
+**すべてのバッチ処理APIはDraftベース**
 
 ```typescript
 // Shared Layer - API Interface
 export interface ShapeAPI {
-  // ✅ WorkingCopyTypes management
-  createWorkingCopy(nodeId: NodeId): Promise<EntityId>;
-  createNewDraftWorkingCopy(parentNodeId: NodeId): Promise<EntityId>;
-  getWorkingCopy(workingCopyId: EntityId): Promise<ShapeWorkingCopy | undefined>;
-  updateWorkingCopy(workingCopyId: EntityId, data: Partial<ShapeWorkingCopy>): Promise<void>;
-  commitWorkingCopy(workingCopyId: EntityId): Promise<void>;
-  discardWorkingCopy(workingCopyId: EntityId): Promise<void>;
+  // ✅ DraftTypes management
+  createDraft(nodeId: NodeId): Promise<EntityId>;
+  createNewDraftDraft(parentNodeId: NodeId): Promise<EntityId>;
+  getDraft(draftId: EntityId): Promise<ShapeDraft | undefined>;
+  updateDraft(draftId: EntityId, data: Partial<ShapeDraft>): Promise<void>;
+  commitDraft(draftId: EntityId): Promise<void>;
+  discardDraft(draftId: EntityId): Promise<void>;
 
-  // ✅ Batch processing - Always WorkingCopyTypes-based
+  // ✅ Batch processing - Always DraftTypes-based
   startBatchProcessing(
-    workingCopyId: EntityId,  // ← NodeIdではなくWorkingCopyId
+    draftId: EntityId,  // ← NodeIdではなくDraftId
     config: ProcessingConfig, 
     urlMetadata: UrlMetadata[]
   ): Promise<string>;
   
-  pauseBatchProcessing(workingCopyId: EntityId): Promise<void>;
-  resumeBatchProcessing(workingCopyId: EntityId): Promise<void>;
-  cancelBatchProcessing(workingCopyId: EntityId): Promise<void>;
-  getBatchProgress(workingCopyId: EntityId): Promise<ProgressInfo>;
+  pauseBatchProcessing(draftId: EntityId): Promise<void>;
+  resumeBatchProcessing(draftId: EntityId): Promise<void>;
+  cancelBatchProcessing(draftId: EntityId): Promise<void>;
+  getBatchProgress(draftId: EntityId): Promise<ProgressInfo>;
 }
 ```
 
@@ -874,7 +874,7 @@ export interface ShapeAPI {
 interface EphemeralDataLifecycle {
   // ダイアログ内：明示的管理
   dialogControlled: {
-    creation: "Step 2時点でWorkingCopy作成";
+    creation: "Step 2時点でDraft作成";
     updates: "ダイアログ内でのリアルタイム更新";
     cleanup: "Cancel/Save/Discard時の明示的削除";
   };
@@ -998,29 +998,29 @@ setInterval(() => {
 #### 完全なライフサイクル
 
 ```typescript
-// 1. WorkingCopy作成（Step 2）
-const workingCopyId = await shapeAPI.createWorkingCopy(nodeId);
+// 1. Draft作成（Step 2）
+const draftId = await shapeAPI.createDraft(nodeId);
 
 // 2. バッチ処理開始
 const sessionId = await shapeAPI.startBatchProcessing(
-  workingCopyId,
+  draftId,
   processingConfig,
   urlMetadata
 );
 
 // 3. 中断・再開（オプション）
-await shapeAPI.pauseBatchProcessing(workingCopyId);
-await shapeAPI.resumeBatchProcessing(workingCopyId);  // 中断地点から継続
+await shapeAPI.pauseBatchProcessing(draftId);
+await shapeAPI.resumeBatchProcessing(draftId);  // 中断地点から継続
 
 // 4. 最終保存（EphemeralDB → CoreDB）
-await shapeAPI.commitWorkingCopy(workingCopyId);  // 永続化
+await shapeAPI.commitDraft(draftId);  // 永続化
 // または
-await shapeAPI.discardWorkingCopy(workingCopyId); // 破棄
+await shapeAPI.discardDraft(draftId); // 破棄
 ```
 
-### WorkingCopy統一処理の利点
+### Draft統一処理の利点
 
-1. **新規・編集の区別なし**：すべてWorkingCopyベースで統一
+1. **新規・編集の区別なし**：すべてDraftベースで統一
 2. **中断・再開の一貫性**：処理状態の完全な保持
 3. **ダイレクトリンク対応**：URL経由での作業再開
 4. **自動クリーンアップ**：ゴミデータの確実な削除

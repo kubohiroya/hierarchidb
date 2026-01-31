@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { Dexie } from 'dexie';
 import type { NetworkPort, ResponseLike } from '@hierarchidb/download';
 import { DexieChunkStore } from '../index.js';

@@ -6,7 +6,7 @@
 import { TableCell, TableRow, TableSortLabel } from '@mui/material';
 import { flexRender } from '@tanstack/react-table';
 import type { MouseEvent as ReactMouseEvent } from 'react';
-import type { TreeNode } from '@hierarchidb/common-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import type { Header, Table as ReactTable } from '@tanstack/react-table';
 import { ResizeHandle, StyledTableHead } from '../TreeTableStyles.js';
 import { useTranslation } from '@hierarchidb/ui-i18n';

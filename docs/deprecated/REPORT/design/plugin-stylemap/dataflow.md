@@ -83,31 +83,31 @@ sequenceDiagram
     W-->>UI: ParseResult{columns, rows, metadata}
     
     %% 作業コピー作成
-    UI->>W: createWorkingCopy(parentId)
+    UI->>W: createDraft(parentId)
     W->>S: initializeStylerEntity()
-    S->>EDB: saveWorkingCopy(entity)
-    EDB-->>S: workingCopyId
-    S-->>W: workingCopyId
-    W-->>UI: workingCopyId
+    S->>EDB: saveDraft(entity)
+    EDB-->>S: draftId
+    S-->>W: draftId
+    W-->>UI: draftId
 
     %% カラーマッピング設定
     U->>UI: カラーマッピング設定変更
-    UI->>W: updateStyleConfig(workingCopyId, config)
+    UI->>W: updateStyleConfig(draftId, config)
     W->>S: calculateColorMapping(config, data)
     S-->>W: mappedColors
-    W->>EDB: updateWorkingCopy(workingCopyId, config)
+    W->>EDB: updateDraft(draftId, config)
     W-->>UI: previewData
 
     %% 保存処理
     U->>UI: 保存ボタンクリック
-    UI->>W: commitStyler(workingCopyId)
-    W->>S: commitWorkingCopy(workingCopyId)
+    UI->>W: commitStyler(draftId)
+    W->>S: commitDraft(draftId)
     
     S->>DB: beginTransaction()
     S->>CoreDB: saveStylerEntity(entity)
     S->>CoreDB: saveTableMetadata(tableMetadata)
     S->>CoreDB: bulkSaveRows(rows)
-    S->>EDB: deleteWorkingCopy(workingCopyId)
+    S->>EDB: deleteDraft(draftId)
     S->>DB: commitTransaction()
     
     S-->>W: success
@@ -138,16 +138,16 @@ sequenceDiagram
     CoreDB-->>S: RowEntity[]
     
     %% 作業コピー作成
-    S->>EDB: createWorkingCopy(entity)
-    EDB-->>S: workingCopyId
-    S-->>W: LoadedData{entity, table, rows, workingCopyId}
+    S->>EDB: createDraft(entity)
+    EDB-->>S: draftId
+    S-->>W: LoadedData{entity, table, rows, draftId}
     W-->>UI: LoadedData
 
     %% 編集処理
     loop 設定変更
         U->>UI: 設定変更
-        UI->>W: updateWorkingCopy(workingCopyId, changes)
-        W->>EDB: updateWorkingCopy(workingCopyId, changes)
+        UI->>W: updateDraft(draftId, changes)
+        W->>EDB: updateDraft(draftId, changes)
         W->>S: calculatePreview(changes, data)
         S-->>W: previewResult
         W-->>UI: リアルタイムプレビュー更新
@@ -156,14 +156,14 @@ sequenceDiagram
     %% コミット/キャンセル
     alt 保存
         U->>UI: 保存
-        UI->>W: commitChanges(workingCopyId)
-        W->>S: commitWorkingCopy(workingCopyId)
+        UI->>W: commitChanges(draftId)
+        W->>S: commitDraft(draftId)
         S->>CoreDB: updateEntity(entity)
-        S->>EDB: deleteWorkingCopy(workingCopyId)
+        S->>EDB: deleteDraft(draftId)
     else キャンセル
         U->>UI: キャンセル
-        UI->>W: discardChanges(workingCopyId)
-        W->>EDB: deleteWorkingCopy(workingCopyId)
+        UI->>W: discardChanges(draftId)
+        W->>EDB: deleteDraft(draftId)
     end
 ```
 
@@ -262,9 +262,9 @@ flowchart TD
 ```mermaid
 stateDiagram-v2
     [*] --> Original: Load from CoreDB
-    Original --> WorkingCopyTypes: Create Working Copy
+    Original --> DraftTypes: Create Working Copy
     
-    state WorkingCopyTypes {
+    state DraftTypes {
         [*] --> Clean
         Clean --> Dirty: User Edit
         Dirty --> Clean: Auto Save to EphemeralDB
@@ -280,8 +280,8 @@ stateDiagram-v2
         UndoRedoBuffer --> Dirty: Undo/Redo
     }
     
-    WorkingCopyTypes --> Committed: Commit Changes
-    WorkingCopyTypes --> Discarded: Cancel/Discard
+    DraftTypes --> Committed: Commit Changes
+    DraftTypes --> Discarded: Cancel/Discard
     
     Committed --> [*]: Save to CoreDB & Cleanup
     Discarded --> [*]: Delete Working Copy

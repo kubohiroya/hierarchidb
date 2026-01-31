@@ -3,15 +3,15 @@
    */
 
 //  @hierarchidb/_obsolate_common-type
-import type { ISO2, NodeId, TreeId } from '@hierarchidb/common-types';
-export type { NodeId } from '@hierarchidb/common-types';
+import type { ISO2, NodeId, TreeId } from '@hierarchidb/core-types';
+export type { NodeId } from '@hierarchidb/core-types';
 import type { TabularFilterRule, TabularSelectionConfig } from '@hierarchidb/ui-tabular';
 
 // ================================
 // Entity Types
 // ================================
 
-import type { Timestamp } from '@hierarchidb/common-types';
+import type { Timestamp } from '@hierarchidb/core-types';
 import type {
   LocationEntity as LocationEntityDefinition,
   LocationDataSource,

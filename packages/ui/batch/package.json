@@ -26,7 +26,7 @@
     "react": ">=18.0.0",
     "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
     "@hierarchidb/components": "workspace:*"
   },
@@ -34,7 +34,7 @@
     "react": ">=18.0.0",
     "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
     "@hierarchidb/components": "workspace:*",
     "typescript": "workspace:^5.9.3"

@@ -19,7 +19,7 @@
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "peerDependencies": {
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/gis-sdk": "workspace:*",
     "@hierarchidb/shape-api": "workspace:*",
     "@hierarchidb/util": "workspace:*",
@@ -27,7 +27,7 @@
     "dexie": "^4.2.0"
   },
   "devDependencies": {
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/gis-sdk": "workspace:*",
     "@hierarchidb/shape-api": "workspace:*",
     "@hierarchidb/util": "workspace:*",

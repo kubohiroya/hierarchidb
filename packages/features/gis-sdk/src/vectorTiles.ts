@@ -3,7 +3,7 @@ import type { Tile } from 'geojson-vt';
 import area from '@turf/area';
 import type vtPbfNS = require('@maplibre/vt-pbf');
 import type { FeatureMetadataRow } from '@hierarchidb/vectortile-store';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 
 import {
   latToTileY,

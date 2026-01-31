@@ -1,4 +1,5 @@
-import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, TreeId } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import { composeStepConfigs } from '@hierarchidb/plugin-base';
 import { isFolderNodeType } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import { loadUIPlugin } from '../../../../plugin-loaders/ui-plugin-loader.js';

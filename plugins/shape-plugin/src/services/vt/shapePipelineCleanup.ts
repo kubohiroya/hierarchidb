@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildConfig } from '../../common/types/index.js';
 import { shapeMutationAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
 import { deleteRawDataDataSourceBuffersForNode } from '../utils/chunkStore.js';

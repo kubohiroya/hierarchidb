@@ -1,5 +1,5 @@
 import type { TreeMutationAPI } from '@hierarchidb/tree-api';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 
 export type EmptyTrashBranchDeps = {
   nodeIds: ReadonlyArray<NodeId>;

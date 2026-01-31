@@ -1,12 +1,12 @@
+import type { NodeId } from '@hierarchidb/core-types';
 import type {
-  NodeId,
   StageHandler as CommonStageHandler,
   StageHandlerResult as CommonStageHandlerResult,
   TaskQueueEvent as CommonTaskQueueEvent,
   TaskQueueRecord as CommonTaskQueueRecord,
   TaskStage as CommonTaskStage,
   TaskStatus as CommonTaskStatus,
-} from '@hierarchidb/common-types';
+} from '@hierarchidb/batch-api';
 
 export type StageHandlerResult<TOutput = unknown> = CommonStageHandlerResult<TOutput>;
 export type StageHandler<TInput = unknown, TOutput = unknown> = CommonStageHandler<TInput, TOutput>;

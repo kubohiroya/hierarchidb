@@ -98,7 +98,7 @@ The project uses a monorepo structure with 43 packages organized in dependency l
 - **Plugin entity stores** - Custom entity types with EntityId branding
 
 ### EphemeralDB (Short-lived, cleared on browser close)
-- **WorkingCopyEntity** - Edit sessions with consistent NodeId keys
+- **DraftEntity** - Edit sessions with consistent NodeId keys
 - **TreeViewStateEntity** - UI state persistence
 - **ViewEntity** - Temporary view configurations
 
@@ -114,7 +114,7 @@ rootStates: '&[treeId+treeRootNodeType], treeId, treeRootNodeId'
 
 ### Node Type Registration
 ```typescript
-const MyNodeDefinition: PluginDefinition<Entity, SubEntity, WorkingCopyTypes> = {
+const MyNodeDefinition: PluginDefinition<Entity, SubEntity, DraftTypes> = {
   nodeType: 'mytype', // String literal, not enum
   database: { 
     entityStore: 'mytypes',

@@ -2,7 +2,8 @@
  * Search actions for TreeConsole.
  */
 
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-toolbar';
 import type { TreeConsoleActionDeps } from '../types.js';
 import { buildIndexFromNodes } from './helpers.ts';

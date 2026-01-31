@@ -1,9 +1,9 @@
 vk:doc kind=spec audience=dev scope=worker,tree
 
-# WorkingCopy/Trash Holder 名称エンコード仕様（v1）
+# Draft/Trash Holder 名称エンコード仕様（v1）
 
 ## 目的
-- `workingCopyRoot` 直下に作成する holder ノードの `name` で、対象親・対象ノード（または新規の予定ノード）を一意に表現する規約を定義する。
+- `draftRoot` 直下に作成する holder ノードの `name` で、対象親・対象ノード（または新規の予定ノード）を一意に表現する規約を定義する。
 
 ## 不変条件
 - 形式（v1）: `${parentId}\t${targetId}`（区切りはタブ文字 U+0009）。
@@ -49,7 +49,7 @@ export function decodeHolderName(name: string): { targetParentNodeId: string; ta
 - 現行実装は v1 固定（`\t` 区切り、ID自体に `\t` を含めない）。
 
 ## 参照
-- `docs/working-copy-alignment-status.md`（単一WC共有、移動/削除ブロック方針）
-- `docs/adr/adr-single-working-copy-per-target.md`
+- `docs/draft-alignment-status.md`（単一WC共有、移動/削除ブロック方針）
+- `docs/adr/adr-single-draft-per-target.md`
 - `docs/adr/adr-block-move-delete-when-wc-in-subtree.md`
-- `docs/adr/adr-workingcopy-trash-unification.md`
+- `docs/adr/adr-draft-trash-unification.md`

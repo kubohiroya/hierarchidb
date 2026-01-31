@@ -45,7 +45,7 @@ pnpm test --coverage
   TypeError: handler.importGeoJSON is not a function
 
 ⨯ ShapesEntityHandler › 正常系テストケース › TEST-003: Working Copyによる安全な編集機能
-  TypeError: handler.createWorkingCopy is not a function
+  TypeError: handler.createDraft is not a function
 ```
 
 ## テスト設計の詳細

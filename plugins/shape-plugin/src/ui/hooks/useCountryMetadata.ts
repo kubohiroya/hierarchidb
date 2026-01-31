@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { CountryMetadata, DataSourceName } from '../../common/types/index.js';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { metadataLoader } from '../../services/metadata/MetadataLoader.js';
 
 export interface UseCountryMetadataOptions {

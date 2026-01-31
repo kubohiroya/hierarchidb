@@ -66,11 +66,11 @@
         ]
       },
       {
-        "name": "WorkingCopyState",
+        "name": "DraftState",
         "locations": [
           {
             "package": "ui-dialog",
-            "path": "src/hooks/useWorkingCopy.ts"
+            "path": "src/hooks/useDraft.ts"
           },
           {
             "package": "ui-dialog",

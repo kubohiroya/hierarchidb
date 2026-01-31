@@ -1,10 +1,11 @@
 import type { TreeNodeUpdaterState } from '@hierarchidb/plugin-ui-sdk';
+import type { TreeNodeData } from '@hierarchidb/tree-api';
 
 export type CancelDecision = 'discard-force-delete' | 'discard-draft-only' | 'keep-draft';
 
 export function evaluateCancelPolicy<
   TPayload extends
-    import('@hierarchidb/common-types').TreeNodeData = import('@hierarchidb/common-types').TreeNodeData,
+    TreeNodeData = TreeNodeData,
 >(
   mode: 'create' | 'edit' | 'preview',
   draft: TreeNodeUpdaterState<TPayload> | null

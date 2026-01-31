@@ -6,7 +6,7 @@ Shape、Location、Route、Spreadsheetプラグインのコード分析により
 
 ### 主要な共通化候補
 - **EntityHandler基底クラス**: 約1,500行の重複コード削減可能
-- **WorkingCopyマネージャー**: 約800行の重複コード削減可能
+- **Draftマネージャー**: 約800行の重複コード削減可能
 - **CSV/ファイル処理**: 約600行の重複コード削減可能
 - **データベース操作**: 約400行の重複コード削減可能
 
@@ -29,7 +29,7 @@ Shape、Location、Route、Spreadsheetプラグインのコード分析により
 // packages/_obsolate_common/plugin-base/src/handlers/BaseEntityHandler.ts
 export abstract class BaseEntityHandler<
   TEntity extends BaseEntity,
-  TWorkingCopy extends BaseWorkingCopy
+  TDraft extends BaseDraft
 > {
   protected abstract table: Dexie.Table<TEntity>;
   
@@ -65,67 +65,67 @@ export abstract class BaseEntityHandler<
 }
 ```
 
-### 2.2 WorkingCopyマネージャー
+### 2.2 Draftマネージャー
 
 #### 現状の問題点
-WorkingCopy管理ロジックが各プラグインで重複：
-- `createWorkingCopy()` - 編集用コピー作成
-- `createNewDraftWorkingCopy()` - 新規ドラフト作成
-- `updateWorkingCopy()` - 編集内容の更新
-- `commitWorkingCopy()` - CoreDBへのコミット
-- `discardWorkingCopy()` - 編集の破棄
+Draft管理ロジックが各プラグインで重複：
+- `createDraft()` - 編集用コピー作成
+- `createNewDraftDraft()` - 新規ドラフト作成
+- `updateDraft()` - 編集内容の更新
+- `commitDraft()` - CoreDBへのコミット
+- `discardDraft()` - 編集の破棄
 
 #### 共通化提案
 ```typescript
-// packages/_obsolate_common/plugin-base/src/managers/WorkingCopyManager.ts
-export class WorkingCopyManager<
+// packages/_obsolate_common/plugin-base/src/managers/DraftManager.ts
+export class DraftManager<
   TEntity extends BaseEntity,
-  TWorkingCopy extends BaseWorkingCopy
+  TDraft extends BaseDraft
 > {
   constructor(
     private ephemeralDB: EphemeralDB,
-    private entityHandler: BaseEntityHandler<TEntity, TWorkingCopy>
+    private entityHandler: BaseEntityHandler<TEntity, TDraft>
   ) {}
   
-  async createWorkingCopy(entity: TEntity): Promise<TWorkingCopy> {
-    const workingCopy = this.buildWorkingCopy(entity);
-    await this.ephemeralDB.workingCopies.add(workingCopy);
-    return workingCopy;
+  async createDraft(entity: TEntity): Promise<TDraft> {
+    const draft = this.buildDraft(entity);
+    await this.ephemeralDB.workingCopies.add(draft);
+    return draft;
   }
   
-  async commitWorkingCopy(workingCopyId: EntityId): Promise<NodeId> {
-    const workingCopy = await this.getWorkingCopy(workingCopyId);
-    if (!workingCopy) throw new Error(`Working copy not found`);
+  async commitDraft(draftId: EntityId): Promise<NodeId> {
+    const draft = await this.getDraft(draftId);
+    if (!draft) throw new Error(`Working copy not found`);
     
     let nodeId: NodeId;
-    if (workingCopy.isDraft) {
+    if (draft.isDraft) {
       // 新規作成
       const entity = await this.entityHandler.createEntity(
         '' as NodeId,
-        workingCopy
+        draft
       );
       nodeId = entity.nodeId;
     } else {
       // 既存更新
       await this.entityHandler.updateEntity(
-        workingCopy.id,
-        workingCopy
+        draft.id,
+        draft
       );
-      nodeId = workingCopy.nodeId;
+      nodeId = draft.nodeId;
     }
     
-    await this.discardWorkingCopy(workingCopyId);
+    await this.discardDraft(draftId);
     return nodeId;
   }
   
-  protected buildWorkingCopy(entity: TEntity): TWorkingCopy {
+  protected buildDraft(entity: TEntity): TDraft {
     // デフォルト実装、オーバーライド可能
     return {
       ...entity,
       isDraft: false,
       copiedAt: Date.now(),
       originalVersion: entity.version,
-    } as TWorkingCopy;
+    } as TDraft;
   }
 }
 ```
@@ -268,9 +268,9 @@ export abstract class BasePluginDatabase {
 2. 各プラグインのEntityHandlerをBaseEntityHandlerを継承するよう修正
 3. 回帰テストの実施
 
-### Phase 3: WorkingCopy共通化（1週間）
-1. `WorkingCopyManager`の実装
-2. 各プラグインのWorkingCopy処理を共通マネージャーに移行
+### Phase 3: Draft共通化（1週間）
+1. `DraftManager`の実装
+2. 各プラグインのDraft処理を共通マネージャーに移行
 3. 統合テストの実施
 
 ### Phase 4: CSV/ファイル処理共通化（1週間）
@@ -361,7 +361,7 @@ export class ShapeEntityHandler {
 ### B. 共通化後のコード
 ```typescript
 // 約30行に削減
-export class ShapeEntityHandler extends BaseEntityHandler<ShapeEntity, ShapeWorkingCopy> {
+export class ShapeEntityHandler extends BaseEntityHandler<ShapeEntity, ShapeDraft> {
   protected buildEntity(
     nodeId: NodeId,
     entityId: EntityId,

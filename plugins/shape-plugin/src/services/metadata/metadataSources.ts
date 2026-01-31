@@ -15,7 +15,7 @@ import {
   resolveCountryContinentCode,
   resolveCountryContinentName,
 } from '../utils/iso3166.js';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { GEOBOUNDARIES_ALL_METADATA_URL } from '../utils/geoboundariesEndpoints.js';
 
 type GeoBoundariesRecord = Record<string, unknown>;

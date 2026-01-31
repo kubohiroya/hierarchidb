@@ -73,7 +73,7 @@ export interface StylerProperties {
 
 // 型合成によるエンティティ定義
 export type StylerEntity = PeerEntity & StylerProperties;
-export type StylerWorkingCopy = StylerEntity & WorkingCopyProperties;
+export type StylerDraft = StylerEntity & DraftProperties;
 
 // RelationalEntity（TableMetadata）
 export interface TableMetadataEntity extends RelationalEntity {
@@ -89,7 +89,7 @@ export interface TableMetadataEntity extends RelationalEntity {
 ```typescript
 // packages/plugin-loader/styler-plugin/src/handlers/StylerEntityHandler.ts
 
-export class StylerEntityHandler implements PeerEntityHandler<StylerEntity, never, StylerWorkingCopy> {
+export class StylerEntityHandler implements PeerEntityHandler<StylerEntity, never, StylerDraft> {
   constructor(
     private database: StylerDatabase,
     private tableMetadataManager: TableMetadataManager
@@ -113,7 +113,7 @@ export class StylerEntityHandler implements PeerEntityHandler<StylerEntity, neve
     return entity;
   }
 
-  async createWorkingCopy(nodeId: TreeNodeId): Promise<StylerWorkingCopy> {
+  async createDraft(nodeId: TreeNodeId): Promise<StylerDraft> {
     const entity = await this.getEntity(nodeId);
     if (!entity) {
       throw new Error(`StylerEntity not found for node ${nodeId}`);
@@ -121,15 +121,15 @@ export class StylerEntityHandler implements PeerEntityHandler<StylerEntity, neve
 
     return {
       ...entity,
-      workingCopyId: crypto.randomUUID(),
-      workingCopyOf: nodeId,
+      draftId: crypto.randomUUID(),
+      draftOf: nodeId,
       copiedAt: Date.now(),
       isDirty: false,
     };
   }
 
-  async commitWorkingCopy(nodeId: TreeNodeId, workingCopy: StylerWorkingCopy): Promise<void> {
-    const { workingCopyId, workingCopyOf, copiedAt, isDirty, ...entityData } = workingCopy;
+  async commitDraft(nodeId: TreeNodeId, draft: StylerDraft): Promise<void> {
+    const { draftId, draftOf, copiedAt, isDirty, ...entityData } = draft;
     
     await this.database.transaction('rw', [this.database.stylerEntities], async () => {
       await this.database.stylerEntities.put({
@@ -226,7 +226,7 @@ export class TableMetadataManager implements RelationalEntityManager<TableMetada
 ```typescript
 // packages/plugin-loader/styler-plugin/src/definitions/StylerDefinition.ts
 
-export const StylerDefinition: PluginDefinition<StylerEntity, never, StylerWorkingCopy> = {
+export const StylerDefinition: PluginDefinition<StylerEntity, never, StylerDraft> = {
   nodeType: 'styler-plugin',
   name: 'Styler',
   displayName: 'スタイルマップ',
@@ -313,7 +313,7 @@ export interface MyNodeProperties {
 
 // 型合成によるエンティティ定義
 export type MyNodeEntity = PeerEntity & MyNodeProperties;
-export type MyNodeWorkingCopy = MyNodeEntity & WorkingCopyProperties;
+export type MyNodeDraft = MyNodeEntity & DraftProperties;
 ```
 
 #### 9.3.5.3 トランザクション境界
@@ -368,18 +368,18 @@ await this.database.transaction('rw', [
 3. **ワーキングコピーの更新**
    ```typescript
    // 変更前
-   export interface MyWorkingCopy extends BaseWorkingCopy {
+   export interface MyDraft extends BaseDraft {
      // ...
    }
    
    // 変更後
-   export type MyWorkingCopy = MyEntity & WorkingCopyProperties;
+   export type MyDraft = MyEntity & DraftProperties;
    ```typescript
 // packages/core/src/types/lifecycle.ts
 
 export interface NodeLifecycleHooks<
   TEntity extends PeerEntity = PeerEntity,
-  TWorkingCopy extends BaseWorkingCopy = BaseWorkingCopy
+  TDraft extends BaseDraft = BaseDraft
 > {
   // ノードライフサイクル
   beforeCreate?: (
@@ -423,15 +423,15 @@ export interface NodeLifecycleHooks<
   ) => Promise<void>;
   
   // ワーキングコピー
-  onWorkingCopyCreated?: (
+  onDraftCreated?: (
     nodeId: TreeNodeId, 
-    workingCopy: TWorkingCopy
+    draft: TDraft
   ) => Promise<void>;
-  onWorkingCopyCommitted?: (
+  onDraftCommitted?: (
     nodeId: TreeNodeId, 
-    workingCopy: TWorkingCopy
+    draft: TDraft
   ) => Promise<void>;
-  onWorkingCopyDiscarded?: (
+  onDraftDiscarded?: (
     nodeId: TreeNodeId
   ) => Promise<void>;
 }

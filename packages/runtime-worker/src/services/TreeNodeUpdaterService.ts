@@ -7,15 +7,12 @@ import type {
 import type {
   CommitResult,
   DialogUIState,
-  NodeId,
-  NodeType,
   OnNameConflict,
-  TreeId,
   TreeNode,
   TreeNodeData,
   TreeNodeMetadata,
-  ValidationResult,
-} from '@hierarchidb/common-types';
+} from '@hierarchidb/tree-api';
+import type { NodeId, NodeType, TreeId, ValidationResult } from '@hierarchidb/core-types';
 import { resolveDefaultNodeName } from '../utils/default-node-name.js';
 import type { CommandProcessor } from './CommandProcessor.js';
 import type { CoreDB } from './CoreDB.js';

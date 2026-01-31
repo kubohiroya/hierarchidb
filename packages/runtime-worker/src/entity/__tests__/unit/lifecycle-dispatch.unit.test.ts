@@ -1,12 +1,11 @@
+import type { NodeId, Timestamp } from '@hierarchidb/core-types';
 import type {
   CommitDraftPayload,
   DuplicateNodesPayload,
   ImportNodesPayload,
-  NodeId,
   PasteNodesPayload,
-  Timestamp,
   TreeNode,
-} from '@hierarchidb/common-types';
+} from '@hierarchidb/tree-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CoreDB } from '../../../services/CoreDB.js';
 import type { CommandEnvelope } from '../../../services/command-types.js';

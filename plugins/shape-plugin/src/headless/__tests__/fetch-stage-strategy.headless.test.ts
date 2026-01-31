@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildProcessConfig } from '../../services/batch/types.js';
 import type { FetchTaskPayload } from '../../common/types/index.js';
 import { DEFAULT_BUILD_CONFIG } from '../../common/types/index.js';

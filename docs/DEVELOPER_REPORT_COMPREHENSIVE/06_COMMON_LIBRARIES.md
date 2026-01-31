@@ -16,13 +16,13 @@ graph TB
         NodeId["NodeId"]
         TreeId["TreeId"]
         EntityId["EntityId"]
-        WorkingCopyId["WorkingCopyId"]
+        DraftId["DraftId"]
     end
     
     subgraph "Composite Types"
         TreeNode["TreeNode"]
         Entity["Entity"]
-        WorkingCopyTypes["WorkingCopyTypes"]
+        DraftTypes["DraftTypes"]
     end
     
     subgraph "Utility Types"
@@ -34,16 +34,16 @@ graph TB
     string --> NodeId
     string --> TreeId
     string --> EntityId
-    string --> WorkingCopyId
+    string --> DraftId
     
     NodeId --> TreeNode
     TreeId --> TreeNode
     EntityId --> Entity
-    WorkingCopyId --> WorkingCopyTypes
+    DraftId --> DraftTypes
     
     TreeNode --> Result
     Entity --> Maybe
-    WorkingCopyTypes --> Brand
+    DraftTypes --> Brand
     
     classDef base fill:#e1f5fe
     classDef branded fill:#f3e5f5
@@ -51,8 +51,8 @@ graph TB
     classDef utility fill:#e8f5e9
     
     class string base
-    class NodeId,TreeId,EntityId,WorkingCopyId branded
-    class TreeNode,Entity,WorkingCopyTypes composite
+    class NodeId,TreeId,EntityId,DraftId branded
+    class TreeNode,Entity,DraftTypes composite
     class Result,Maybe,Brand utility
 ```
 
@@ -115,7 +115,7 @@ graph LR
     subgraph "Specific Types"
         TreeNodeEntity["TreeNodeEntity"]
         PluginEntity["PluginEntity"]
-        WorkingCopyEntity["WorkingCopyEntity"]
+        DraftEntity["DraftEntity"]
     end
     
     Identifiable --> TreeNodeBase
@@ -124,7 +124,7 @@ graph LR
     
     TreeNodeBase --> TreeNodeEntity
     EntityBase --> PluginEntity
-    HandlerBase --> WorkingCopyEntity
+    HandlerBase --> DraftEntity
     
     Disposable --> Observable
     Serializable --> Observable
@@ -137,7 +137,7 @@ graph LR
     class Identifiable,Timestamped,Versioned base
     class TreeNodeBase,EntityBase,HandlerBase domain
     class Disposable,Serializable,Observable utility
-    class TreeNodeEntity,PluginEntity,WorkingCopyEntity specific
+    class TreeNodeEntity,PluginEntity,DraftEntity specific
 ```
 
 ## Chapter 15: ユーティリティライブラリ (Utility Libraries) ⭐️⭐️⭐️⭐️⭐️
@@ -268,15 +268,15 @@ graph TB
     end
     
     subgraph "EphemeralDB (Temporary)"
-        WorkingCopyTypes["Working Copy"]
+        DraftTypes["Working Copy"]
         DraftChanges["Draft Changes"]
         UndoStack["Undo Stack"]
         RedoStack["Redo Stack"]
     end
     
     subgraph "Operations"
-        CreateCopy["createWorkingCopy()"]
-        ModifyCopy["modifyWorkingCopy()"]
+        CreateCopy["createDraft()"]
+        ModifyCopy["modifyDraft()"]
         CommitChanges["commitChanges()"]
         DiscardChanges["discardChanges()"]
     end
@@ -288,8 +288,8 @@ graph TB
     end
     
     OriginalNode --> CreateCopy
-    CreateCopy --> WorkingCopyTypes
-    WorkingCopyTypes --> ModifyCopy
+    CreateCopy --> DraftTypes
+    DraftTypes --> ModifyCopy
     ModifyCopy --> DraftChanges
     
     DraftChanges --> CommitChanges
@@ -298,7 +298,7 @@ graph TB
     DraftChanges --> DiscardChanges
     DiscardChanges --> OriginalNode
     
-    WorkingCopyTypes --> UndoStack
+    DraftTypes --> UndoStack
     UndoStack --> RedoStack
     
     DraftChanges --> DiffCalculation
@@ -311,7 +311,7 @@ graph TB
     classDef sync fill:#e1f5fe
     
     class OriginalNode,CommittedState persistent
-    class WorkingCopyTypes,DraftChanges,UndoStack,RedoStack temporary
+    class DraftTypes,DraftChanges,UndoStack,RedoStack temporary
     class CreateCopy,ModifyCopy,CommitChanges,DiscardChanges operations
     class DiffCalculation,MergeResolution,ConflictDetection sync
 ```

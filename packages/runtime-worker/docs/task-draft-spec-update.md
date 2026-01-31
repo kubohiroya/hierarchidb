@@ -1,6 +1,6 @@
-vk:task id=wc-spec-sync status=in_progress priority=P1 labels=worker,working-copy,docs
+vk:task id=wc-spec-sync status=in_progress priority=P1 labels=worker,draft,docs
 
-# タスク: WorkingCopy 仕様の実装反映と整合性確保
+# タスク: Draft 仕様の実装反映と整合性確保
 
 ## 背景 / 目的
 - 実装が先行しているため、現行の挙動を仕様へ反映し、将来の統合方針を固める。
@@ -11,7 +11,7 @@ vk:task id=wc-spec-sync status=in_progress priority=P1 labels=worker,working-cop
 - 統合設計（Ephemeral/TreeNode 二系統の一本化）方針の草案
 
 ## 成果物
-- `docs/working-copy-alignment-status.md`（現状整理）
+- `docs/draft-alignment-status.md`（現状整理）
 - 仕様本文の更新案（別途ファイル or 既存ドキュメントに章追加）
 - 統合ロードマップ（段階的移行、ロールバック手順）
 

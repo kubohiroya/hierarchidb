@@ -1,5 +1,6 @@
-import { createElement, type ComponentType } from 'react';
-import type { StepComponent } from '@hierarchidb/plugin-base';
+import { createElement, type ComponentType, type ReactNode } from 'react';
+
+type StepComponent = (...args: unknown[]) => ReactNode;
 
 export const wrapDialogStepComponent = <TProps extends object>(
   Component: ComponentType<TProps>,

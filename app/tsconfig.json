@@ -8,12 +8,6 @@
       "DOM",
       "DOM.Iterable"
     ],
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ]
-    },
-    "baseUrl": ".",
     "composite": false,
     "incremental": false,
     "declaration": false,

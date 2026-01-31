@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { NodeId, TaskQueueRecord } from '@hierarchidb/common-types';
+import type { NodeId, TaskQueueRecord } from '@hierarchidb/core-types';
 import { selectLatestTaskBySequence } from '../../taskOrdering.ts';
 
 type TaskOverrides = Partial<TaskQueueRecord> & { taskId: string; sequence: number; updatedAt: number };

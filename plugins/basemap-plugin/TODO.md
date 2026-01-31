@@ -7,7 +7,7 @@ Ensure the base-map plugin remains compatible with the evolving dialog/batch inf
 - [ ] Identify dependencies on shared Shape/Route components that may need updates.
 
 ## Phase 1: Dialog Integration
-- [ ] Audit current multi-step dialogs (if any) and align with the shared `useWorkingCopy` pattern.
+- [ ] Audit current multi-step dialogs (if any) and align with the shared `useDraft` pattern.
 - [ ] Reintroduce or extract step registrations so base map configuration steps behave as expected.
 
 ## Phase 2: Processing/Preview UI

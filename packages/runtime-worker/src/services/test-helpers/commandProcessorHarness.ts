@@ -1,5 +1,6 @@
 import 'fake-indexeddb/auto';
-import type { NodeId, NodeType, Timestamp, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import { SingletonMixin } from '@hierarchidb/util';
 import { CommandProcessor } from '../CommandProcessor.js';
 import { CoreDB } from '../CoreDB.js';

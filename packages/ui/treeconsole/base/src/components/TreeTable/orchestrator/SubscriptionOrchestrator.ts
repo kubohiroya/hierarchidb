@@ -1,6 +1,7 @@
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useRef } from 'react';
-import type { NodeId, TreeNode, TreeNodeEvent } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { TreeNode, TreeNodeEvent } from '@hierarchidb/tree-api';
 import type { SubTreeChanges } from '../state/features/subscription.atoms.js';
 import { coalesceBatches } from './mergeUtils.js';
 import type { WorkerAPI } from '@hierarchidb/worker-api';

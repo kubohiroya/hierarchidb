@@ -1,4 +1,4 @@
-import type { ISO2, ISO3 } from '@hierarchidb/common-types';
+import type { ISO2, ISO3 } from '@hierarchidb/core-types';
 
 export type DataSourceName = 'naturalearth' | 'geoboundaries' | 'geoboundaries-topojson' | 'gadm';
 export type CountryCode = ISO2 | ISO3;

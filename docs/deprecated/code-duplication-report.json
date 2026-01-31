@@ -91,7 +91,7 @@
     },
     {
       "type": "interface",
-      "name": "BaseMapWorkingCopy",
+      "name": "BaseMapDraft",
       "tokenCount": 165,
       "occurrences": [
         {

@@ -65,12 +65,12 @@ interface BaseMapEntity extends PeerEntity {
 }
 ```
 
-### BaseMapWorkingCopy
+### BaseMapDraft
 
 Working copy entity for draft editing operations:
 
 ```typescript
-interface BaseMapWorkingCopy extends WorkingCopyTypes {
+interface BaseMapDraft extends DraftTypes {
   nodeId: NodeId;
   name: string;
   description?: string;
@@ -101,9 +101,9 @@ interface BaseMapWorkingCopy extends WorkingCopyTypes {
   thumbnailUrl?: string;
   tags?: string[];
 
-  // Working copy specific fields (inherited from WorkingCopyTypes)
-  workingCopyId: string;
-  workingCopyOf: NodeId;
+  // Working copy specific fields (inherited from DraftTypes)
+  draftId: string;
+  draftOf: NodeId;
   copiedAt: number;
   isDirty: boolean;
 
@@ -205,8 +205,8 @@ const coreDBSchema = {
 #### 1. basemap_workingcopies (Draft Editing)
 ```sql
 CREATE TABLE basemap_workingcopies (
-  workingCopyId TEXT PRIMARY KEY,
-  workingCopyOf TEXT NOT NULL, -- NodeId reference
+  draftId TEXT PRIMARY KEY,
+  draftOf TEXT NOT NULL, -- NodeId reference
   nodeId TEXT NOT NULL,
   -- All BaseMapEntity fields for editing
   mapStyle TEXT NOT NULL,
@@ -257,7 +257,7 @@ CREATE INDEX idx_tiles_cache_cachedAt ON basemap_tiles_cache(cachedAt);
 #### Dexie Schema Configuration
 ```typescript
 const ephemeralDBSchema = {
-  basemap_workingcopies: '&workingCopyId, workingCopyOf, copiedAt',
+  basemap_workingcopies: '&draftId, draftOf, copiedAt',
   basemap_tiles_cache: '&tileId, zoom, x, y, cachedAt'
 };
 ```
@@ -270,7 +270,7 @@ const ephemeralDBSchema = {
 
 Extends `BaseEntityHandler` implementing the PeerEntity pattern:
 
-**注意**: 実装では、WorkingCopyでは`originalVersion`フィールドではなく、直接`version`フィールドが使用されています。
+**注意**: 実装では、Draftでは`originalVersion`フィールドではなく、直接`version`フィールドが使用されています。
 
 ```typescript
 class BaseMapEntityHandler extends BaseEntityHandler<BaseMapEntity> {
@@ -290,9 +290,9 @@ class BaseMapEntityHandler extends BaseEntityHandler<BaseMapEntity> {
   async deleteEntity(nodeId: NodeId): Promise<void>
 
   // Working copy operations
-  async createWorkingCopy(nodeId: NodeId): Promise<BaseMapWorkingCopy>
-  async commitWorkingCopy(nodeId: NodeId, workingCopy: BaseMapWorkingCopy): Promise<void>
-  async discardWorkingCopy(nodeId: NodeId): Promise<void>
+  async createDraft(nodeId: NodeId): Promise<BaseMapDraft>
+  async commitDraft(nodeId: NodeId, draft: BaseMapDraft): Promise<void>
+  async discardDraft(nodeId: NodeId): Promise<void>
 
   // Plugin-specific operations
   async changeMapStyle(nodeId: NodeId, style: BaseMapEntity['mapStyle']): Promise<void>
@@ -335,28 +335,28 @@ async createEntity(nodeId: NodeId, data?: Partial<BaseMapEntity>): Promise<BaseM
 #### Working Copy Operations
 ```typescript
 // Create working copy for draft editing
-async createWorkingCopy(nodeId: NodeId): Promise<BaseMapWorkingCopy> {
+async createDraft(nodeId: NodeId): Promise<BaseMapDraft> {
   const entity = await this.getEntity(nodeId);
   if (!entity) {
     throw new Error(`BaseMap entity not found for node: ${nodeId}`);
   }
 
-  const workingCopy: BaseMapWorkingCopy = {
+  const draft: BaseMapDraft = {
     ...entity,
-    workingCopyId: `wc-${nodeId}-${Date.now()}`,
-    workingCopyOf: nodeId,
+    draftId: `wc-${nodeId}-${Date.now()}`,
+    draftOf: nodeId,
     copiedAt: Date.now(),
     isDirty: false,
     // Note: 実装では originalVersion フィールドは使用されていません
   };
 
-  await this.ephemeralDB.table('basemap_workingcopies').add(workingCopy);
-  return workingCopy;
+  await this.ephemeralDB.table('basemap_workingcopies').add(draft);
+  return draft;
 }
 
 // Commit working copy changes to core entity
-async commitWorkingCopy(nodeId: NodeId, workingCopy: BaseMapWorkingCopy): Promise<void> {
-  const { isDirty, ...entityData } = workingCopy;
+async commitDraft(nodeId: NodeId, draft: BaseMapDraft): Promise<void> {
+  const { isDirty, ...entityData } = draft;
   
   // Update the entity with working copy data
   await this.updateEntity(nodeId, entityData);
@@ -381,12 +381,12 @@ async commitWorkingCopy(nodeId: NodeId, workingCopy: BaseMapWorkingCopy): Promis
 ### Edit Operation (Working Copy Pattern)
 ```
 1. UI: User starts editing
-2. Worker: BaseMapEntityHandler.createWorkingCopy()
+2. Worker: BaseMapEntityHandler.createDraft()
 3. Database: Insert into basemap_workingcopies table
 4. UI: User modifies working copy data
-5. Worker: BaseMapEntityHandler.updateWorkingCopy()
+5. Worker: BaseMapEntityHandler.updateDraft()
 6. UI: User commits changes
-7. Worker: BaseMapEntityHandler.commitWorkingCopy()
+7. Worker: BaseMapEntityHandler.commitDraft()
 8. Database: Update basemaps table, delete working copy
 9. UI: Subscription update notification
 ```

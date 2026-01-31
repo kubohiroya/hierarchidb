@@ -4,14 +4,8 @@
  */
 
 import type { WorkerAPI } from '@hierarchidb/worker-api';
-import type {
-  NodeAction,
-  NodeId,
-  NodeType,
-  Tree,
-  TreeId,
-  TreeNode,
-} from '@hierarchidb/common-types';
+import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
+import type { NodeAction, Tree, TreeNode } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {

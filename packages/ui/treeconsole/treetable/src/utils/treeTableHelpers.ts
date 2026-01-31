@@ -1,4 +1,4 @@
-import type { TreeNode } from '@hierarchidb/common-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 
 type TreeNodeWithTags = TreeNode & Record<string, unknown>;
 

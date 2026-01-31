@@ -3,8 +3,8 @@
   * TreeTable
   */
 
-import type { NodeId } from '@hierarchidb/common-types';
-import type { TreeNode } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 
 export function calculateNodeDepth(node: TreeNode, allNodes: TreeNode[]): number {
   if (!node.parentId) {

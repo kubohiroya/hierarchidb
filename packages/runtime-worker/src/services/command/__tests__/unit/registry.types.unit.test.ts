@@ -1,4 +1,5 @@
-import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, NodeType } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import { describe, expectTypeOf, it } from 'vitest';
 import { createEnvelope } from '../../envelope.util.js';
 import type { PayloadOf, ResultOf } from '../../registry.types.js';

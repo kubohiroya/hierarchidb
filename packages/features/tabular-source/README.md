@@ -12,7 +12,7 @@ processors/         ColumnRename/NumberCoerce/RequiredColumns
 processor.ts        Processor pipeline helpers
 store.ts            StorePort helpers
 ports.ts            StorePort/ParserPort contracts
-capability.ts       FeatureDefinition manifest
+capability.ts       Capability helpers
 batch-types.ts            Tabular types (schema/chunks)
 index.ts            Public exports
 ```
@@ -22,7 +22,6 @@ index.ts            Public exports
 - Registry: `registerParser`, built-ins for CSV/TSV/JSONL.
 - Processors: `ColumnRenameProcessor`, `NumberCoerceProcessor`, `RequiredColumnsValidator`.
 - Ports/types: `TabularStorePort`, `TabularParser`, `TabularChunk`, `TabularSchema`.
-- Capability: `FeatureDefinition.manifest` (`provides: ['tabular-source']`).
 
 ## XLSX
 - Optional via `@hierarchidb/tabular-source-xlsx` → call `installTabularXlsx()` (runtime-worker will dynamically import when available).

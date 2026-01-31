@@ -7,7 +7,7 @@ plugin（shape/location/route）や orchestrator（共通）から、
 永続化実装（TaskRegistry/ArtifactStore/metadata）を差し替え可能にします。
 
 - ここには「実装」は置きません（Dexie/Comlink/API 呼び出し等は持ち込まない）。
-- 依存は `@hierarchidb/common-types` 程度に留めます。
+- 依存は `@hierarchidb/core-types` 程度に留めます。
 
 ## 提供するもの（方針）
 
@@ -17,4 +17,3 @@ plugin（shape/location/route）や orchestrator（共通）から、
 - `ProgressInfoBase`（最小進捗 shape）
 
 詳細な共通化計画は `docs/refactoring-plan-shape-to-location-route.md` を参照。
-

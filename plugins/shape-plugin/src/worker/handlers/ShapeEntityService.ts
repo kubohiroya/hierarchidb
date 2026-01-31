@@ -3,8 +3,8 @@
  * Aligns shape-plugin with the _obsolate_common Draft API flow (basemap-style).
  */
 
-import type { TreeNodeUpdaterPayload } from '@hierarchidb/common-types';
-import type {NodeId} from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { TreeNodeUpdaterPayload } from '@hierarchidb/tree-api';
 import type { DataSourceName } from '../../common/types/index.js';
 import type {
   ShapeEntity,

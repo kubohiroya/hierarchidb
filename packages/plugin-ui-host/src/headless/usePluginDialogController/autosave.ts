@@ -1,4 +1,4 @@
-import type { TreeNodeData } from '@hierarchidb/common-types';
+import type { TreeNodeData } from '@hierarchidb/tree-api';
 import type { TreeNodeUpdaterState } from '@hierarchidb/plugin-ui-sdk';
 import { useEffect, useRef } from 'react';
 

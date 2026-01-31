@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { FeatureItemBase } from '@hierarchidb/runtime-worker';
 import { buildTileIdByZoom } from '@hierarchidb/location-store';
 import { LocationDB } from '../worker/locationEntitiesDB.js';

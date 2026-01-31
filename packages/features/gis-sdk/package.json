@@ -18,7 +18,7 @@
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/shape-api": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/vectortile-store": "workspace:*",

@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { TabularDataApi, TabularFilterRule, TabularSelectionConfig } from '@hierarchidb/ui-tabular';
 import { extractTabularRows } from './extract.js';
 import { materializeLocationPointsFromTabular } from './materialize.js';

@@ -68,7 +68,7 @@ graph TB
 | **ツリー操作** | `ITreeAPI` | ツリー構造管理 | `TreeId`, `NodeId` branded types |
 | **ノード操作** | `INodeAPI` | ノード CRUD 操作 | `NodeId` validation + type guards |
 | **エンティティ管理** | `IEntityAPI` | プラグインエンティティ | `EntityId` generic constraints |
-| **Working Copy** | `IWorkingCopyAPI` | 作業コピー管理 | `WorkingCopyId` lifecycle |
+| **Working Copy** | `IDraftAPI` | 作業コピー管理 | `DraftId` lifecycle |
 | **サブスクリプション** | `ISubscriptionAPI` | リアルタイム通知 | Observer pattern with types |
 
 ```typescript
@@ -114,26 +114,26 @@ interface INodeAPI {
   ): Promise<Result<void>>;
 }
 
-interface IWorkingCopyAPI {
+interface IDraftAPI {
   // 作業コピー作成
-  createWorkingCopy(
+  createDraft(
     nodeId: NodeId
-  ): Promise<Result<WorkingCopyId>>;
+  ): Promise<Result<DraftId>>;
   
   // 作業コピー更新
-  updateWorkingCopy(
-    workingCopyId: WorkingCopyId, 
-    changes: WorkingCopyChanges
+  updateDraft(
+    draftId: DraftId, 
+    changes: DraftChanges
   ): Promise<Result<void>>;
   
   // 変更コミット
-  commitWorkingCopy(
-    workingCopyId: WorkingCopyId
+  commitDraft(
+    draftId: DraftId
   ): Promise<Result<NodeId>>;
   
   // 変更破棄
-  discardWorkingCopy(
-    workingCopyId: WorkingCopyId
+  discardDraft(
+    draftId: DraftId
   ): Promise<Result<void>>;
 }
 ```
@@ -404,7 +404,7 @@ interface IPlugin {
   getIconComponent?(): React.ComponentType<IconProps>;
 }
 
-interface IEntityHandler<TEntity, TSubEntity = never, TWorkingCopy = TEntity> {
+interface IEntityHandler<TEntity, TSubEntity = never, TDraft = TEntity> {
   // CRUD操作
   create(nodeId: NodeId, data: Partial<TEntity>): Promise<Result<EntityId>>;
   read(entityId: EntityId): Promise<Result<TEntity>>;
@@ -412,10 +412,10 @@ interface IEntityHandler<TEntity, TSubEntity = never, TWorkingCopy = TEntity> {
   delete(entityId: EntityId): Promise<Result<void>>;
   
   // Working Copy操作
-  createWorkingCopy(entityId: EntityId): Promise<Result<TWorkingCopy>>;
-  updateWorkingCopy(workingCopyId: string, data: Partial<TWorkingCopy>): Promise<Result<void>>;
-  commitWorkingCopy(workingCopyId: string): Promise<Result<EntityId>>;
-  discardWorkingCopy(workingCopyId: string): Promise<Result<void>>;
+  createDraft(entityId: EntityId): Promise<Result<TDraft>>;
+  updateDraft(draftId: string, data: Partial<TDraft>): Promise<Result<void>>;
+  commitDraft(draftId: string): Promise<Result<EntityId>>;
+  discardDraft(draftId: string): Promise<Result<void>>;
   
   // サブエンティティ管理（オプショナル）
   createSubEntity?(parentId: EntityId, data: Partial<TSubEntity>): Promise<Result<EntityId>>;
@@ -435,8 +435,8 @@ class NodeTypeRegistry {
   private static instance: NodeTypeRegistry;
   private registrations = new Map<string, NodeTypeRegistration>();
   
-  register<TEntity, TSubEntity = never, TWorkingCopy = TEntity>(
-    definition: PluginDefinition<TEntity, TSubEntity, TWorkingCopy>
+  register<TEntity, TSubEntity = never, TDraft = TEntity>(
+    definition: PluginDefinition<TEntity, TSubEntity, TDraft>
   ): void {
     // バリデーション
     this.validateDefinition(definition);

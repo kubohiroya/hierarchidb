@@ -136,7 +136,7 @@ interface MyPeerEntity extends PeerEntity {
 }
 
 // 2. EntityHandler実装
-class MyEntityHandler implements EntityHandler<MyPeerEntity, GroupEntity, MyWorkingCopy> {
+class MyEntityHandler implements EntityHandler<MyPeerEntity, GroupEntity, MyDraft> {
   async createEntity(nodeId: TreeNodeId, data?: Partial<MyPeerEntity>): Promise<MyPeerEntity> {
     const entity: MyPeerEntity = {
       refencingNodeId: nodeId,
@@ -379,7 +379,7 @@ export class EntityMaintenanceService {
     const stats = await this.tableMetadataManager.getUsageStats();
     console.log('TableMetadata usage stats:', stats);
     
-    // 3. 古いWorkingCopyの削除（24時間以上経過）
+    // 3. 古いDraftの削除（24時間以上経過）
     await this.cleanupOldWorkingCopies();
   }
 }

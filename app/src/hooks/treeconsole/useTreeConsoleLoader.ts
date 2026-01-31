@@ -5,7 +5,8 @@
  */
 
 import type { WorkerAPI } from '@hierarchidb/worker-api';
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import { DualKeyMap } from '@hierarchidb/util';
 import type { Remote } from 'comlink';
 import type { Dispatch, SetStateAction } from 'react';

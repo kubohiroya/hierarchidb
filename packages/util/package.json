@@ -27,6 +27,9 @@
   ],
   "author": "HierarchiDB Team",
   "license": "MIT",
+  "dependencies": {
+    "@hierarchidb/batch-api": "workspace:*"
+  },
   "devDependencies": {
     "@types/node": "^22.1.0",
     "typescript": "workspace:^5.9.3",

@@ -61,7 +61,7 @@
     version: number;
   }
   export interface BaseSubEntity {...}
-  export interface BaseWorkingCopy extends BaseEntity {...}
+  export interface BaseDraft extends BaseEntity {...}
   ```
 - **テスト要件**:
   - [ ] 型定義のコンパイルテスト
@@ -84,13 +84,13 @@
   export interface PluginDefinition<
     TEntity extends BaseEntity = BaseEntity,
     TSubEntity extends BaseSubEntity = BaseSubEntity,
-    TWorkingCopy extends BaseWorkingCopy = BaseWorkingCopy
+    TDraft extends BaseDraft = BaseDraft
   > {
     readonly nodeType: TreeNodeType;
     readonly name: string;
     readonly displayName: string;
     readonly database: {...};
-    readonly entityHandler: EntityHandler<TEntity, TSubEntity, TWorkingCopy>;
+    readonly entityHandler: EntityHandler<TEntity, TSubEntity, TDraft>;
     readonly lifecycle?: NodeLifecycleHooks<TEntity>;
     readonly ui?: {...};
     readonly api?: {...};
@@ -145,7 +145,7 @@
 - **依存タスク**: TASK-0002
 - **実装詳細**:
   ```typescript
-  export interface EntityHandler<TEntity, TSubEntity, TWorkingCopy> {
+  export interface EntityHandler<TEntity, TSubEntity, TDraft> {
     createEntity(nodeId: TreeNodeId, data?: Partial<TEntity>): Promise<TEntity>;
     getEntity(nodeId: TreeNodeId): Promise<TEntity | undefined>;
     updateEntity(nodeId: TreeNodeId, data: Partial<TEntity>): Promise<void>;
@@ -205,8 +205,8 @@
 - **依存タスク**: TASK-0006
 - **実装詳細**:
   ```typescript
-  registerPlugin<TEntity, TSubEntity, TWorkingCopy>(
-    definition: UnifiedPluginDefinition<TEntity, TSubEntity, TWorkingCopy>
+  registerPlugin<TEntity, TSubEntity, TDraft>(
+    definition: UnifiedPluginDefinition<TEntity, TSubEntity, TDraft>
   ): void {
     if (this.definitions.has(definition.nodeType)) {
       throw new Error(`Node type ${nodeType} is already registered`);
@@ -330,7 +330,7 @@
 - **依存タスク**: TASK-0005
 - **実装詳細**:
   ```typescript
-  export interface NodeLifecycleHooks<TEntity, TWorkingCopy> {
+  export interface NodeLifecycleHooks<TEntity, TDraft> {
     beforeCreate?: (parentId: TreeNodeId, nodeData: Partial<TreeNode>) => Promise<void>;
     afterCreate?: (nodeId: TreeNodeId, entity: TEntity) => Promise<void>;
     beforeUpdate?: (nodeId: TreeNodeId, changes: Partial<TreeNode>) => Promise<void>;

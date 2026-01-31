@@ -10,7 +10,7 @@
 
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { Geometry } from 'geojson';
 import { VectorTileDbBase } from '@hierarchidb/vectortile-store';
 import type {

@@ -8,7 +8,8 @@ vi.mock('@tanstack/react-router', () => ({
 import type { ReactNode } from 'react';
 import type { ColumnBuilderParams } from '../components/internal/createTreeTableColumns.js';
 import { createTreeTableColumns } from '../components/internal/createTreeTableColumns.js';
-import type { NodeId, NodeType, TreeNode, Timestamp } from '@hierarchidb/common-types';
+import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 
 describe('TreeTable Draft chip', () => {
   const defaultParams: ColumnBuilderParams = {

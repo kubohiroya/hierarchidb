@@ -16,7 +16,7 @@
 ### 第3部: コア機能 (03-*)
 - **03-core-operations.md** - 基本操作（CRUD、Undo/Redo、Copy/Paste、Trash）
 - **03-core-dialog.md** - ダイアログシステム
-- **03-api-reference.md** - APIリファレンス（WorkerAPI、Query、Mutation、Observable、WorkingCopyTypes、PluginRegistryImpl）
+- **03-api-reference.md** - APIリファレンス（WorkerAPI、Query、Mutation、Observable、DraftTypes、PluginRegistryImpl）
 
 ### 第4部: プラグインシステム (04-*)
 - **04-plugin-entity-system.md** - 2×3エンティティ分類システム

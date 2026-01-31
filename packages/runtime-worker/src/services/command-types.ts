@@ -1,10 +1,7 @@
-import type {
-  CommandResult,
-  ErrorCode as CoreErrorCode,
-  Timestamp,
-} from '@hierarchidb/common-types';
+import type { Timestamp } from '@hierarchidb/core-types';
+import type { CommandResult, ErrorCode as CoreErrorCode } from '@hierarchidb/tree-api';
 
-export type { CommandResult } from '@hierarchidb/common-types';
+export type { CommandResult } from '@hierarchidb/tree-api';
 
 /**
  * Worker-specific command envelope

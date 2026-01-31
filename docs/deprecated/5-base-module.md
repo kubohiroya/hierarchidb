@@ -417,18 +417,18 @@ export class CoreDB extends Dexie {
 
 #### 5.4.2.2 EphemeralDB（短命・高頻度）
 ```ts
-export type WorkingCopyRow = WorkingCopyTypes;
+export type DraftRow = DraftTypes;
 export type TreeViewStateRow = TreeViewState;
 
 export class EphemeralDB extends Dexie {
-  workingCopies!: Table<WorkingCopyRow, string>;
+  workingCopies!: Table<DraftRow, string>;
   views!: Table<TreeViewStateRow, string>;
 
   constructor(name: string) {
     super(`${name}-EphemeralDB`);
     this.version(1).stores({
       workingCopies:
-        '&workingCopyId, workingCopyOf, parentTreeNodeId, updatedAt',
+        '&draftId, draftOf, parentTreeNodeId, updatedAt',
       views:
         '&treeViewId, updatedAt, [treeId+treeRootNodeType], [treeId+pageNodeId]'
     });
@@ -453,9 +453,9 @@ nodes.get({ parentTreeNodeId: pid, name })
 nodes.where('[parentTreeNodeId+updatedAt]').between([pid, ts], [pid, Dexie.maxKey])
 → [parentTreeNodeId+updatedAt]
 
-* WorkingCopyTypes → 元の探索
-nodes.where('workingCopyOf').equals(nodeId)
-→ workingCopyOf
+* DraftTypes → 元の探索
+nodes.where('draftOf').equals(nodeId)
+→ draftOf
 
 * Trash 一覧の時系列
 nodes.where('removedAt').above(0).reverse()
@@ -532,17 +532,17 @@ interface CommandEnvelope<K extends string, P> {
 #### 5.4.4.2 更新系論理コマンド
 
 * createNode
-    * createWorkingCopyForCreate（Undo非対象）
-      新規 treeNodeId を発行し、その値を workingCopyOf にもセット。
-    * discardWorkingCopyForCreate（Undo非対象）
-    * commitWorkingCopyForCreate（Undo対象）
+    * createDraftForCreate（Undo非対象）
+      新規 treeNodeId を発行し、その値を draftOf にもセット。
+    * discardDraftForCreate（Undo非対象）
+    * commitDraftForCreate（Undo対象）
 
 * updateNode
-    * createWorkingCopy（Undo非対象）
+    * createDraft（Undo非対象）
       編集対象ノードをスプレッド構文でシャローコピーし、treeNodeId を新規発行で上書き。
-      workingCopyOf には編集対象ノードの treeNodeId をセットし、copiedAt に Date.now() をセット。
-    * discardWorkingCopy（Undo非対象）
-    * commitWorkingCopy（Undo対象）
+      draftOf には編集対象ノードの treeNodeId をセットし、copiedAt に Date.now() をセット。
+    * discardDraft（Undo非対象）
+    * commitDraft（Undo対象）
 
 
 ```ts
@@ -550,33 +550,33 @@ interface CommandEnvelope<K extends string, P> {
 export interface TreeMutationService {
 
   // ---- working copy ----
-  createWorkingCopyForCreate(cmd: CommandEnvelope<'createWorkingCopyForCreate', {
-    workingCopyId: UUID;
+  createDraftForCreate(cmd: CommandEnvelope<'createDraftForCreate', {
+    draftId: UUID;
     parentTreeNodeId: TreeNodeId;
     name: string; // 正規化前可（Workerで正規化）
     description?: string;
   }>): Promise<void>;
 
-  createWorkingCopy(cmd: CommandEnvelope<'createWorkingCopy', {
-    workingCopyId: UUID;
+  createDraft(cmd: CommandEnvelope<'createDraft', {
+    draftId: UUID;
     sourceTreeNodeId: TreeNodeId;
   }>): Promise<void>;
 
-  discardWorkingCopyForCreate(cmd: CommandEnvelope<'discardWorkingCopyForCreate', {
-    workingCopyId: UUID;
+  discardDraftForCreate(cmd: CommandEnvelope<'discardDraftForCreate', {
+    draftId: UUID;
   }>): Promise<void>;
 
-  discardWorkingCopy(cmd: CommandEnvelope<'discardWorkingCopy', {
-    workingCopyId: UUID;
+  discardDraft(cmd: CommandEnvelope<'discardDraft', {
+    draftId: UUID;
   }>): Promise<void>;
 
-  commitWorkingCopyForCreate(cmd: CommandEnvelope<'commitWorkingCopyForCreate', {
-    workingCopyId: UUID;
+  commitDraftForCreate(cmd: CommandEnvelope<'commitDraftForCreate', {
+    draftId: UUID;
     onNameConflict?: OnNameConflict; // 既定: 'auto-rename'
   }>): Promise<{ seq: Seq; nodeId: TreeNodeId }>;
 
-  commitWorkingCopy(cmd: CommandEnvelope<'commitWorkingCopy', {
-    workingCopyId: UUID;
+  commitDraft(cmd: CommandEnvelope<'commitDraft', {
+    draftId: UUID;
     expectedUpdatedAt: Timestamp; // 楽観ロック（元ノード）
     onNameConflict?: OnNameConflict;
   }>): Promise<{ seq: Seq }>;

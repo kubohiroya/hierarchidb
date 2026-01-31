@@ -1,4 +1,5 @@
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import type { RouteQueryAPI } from '@hierarchidb/route-api';
 import type { ShapeQueryAPI } from '@hierarchidb/shape-api';
 import { MAPLIBRE_PROPERTY_METADATA } from '@hierarchidb/styler-store';

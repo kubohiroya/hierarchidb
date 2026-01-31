@@ -26,8 +26,8 @@ export class NodeTypeRegistry {
   private handlers: Map<TreeNodeType, EntityHandler>;
   
   static getInstance(): NodeTypeRegistry;
-  register<TEntity, TSubEntity, TWorkingCopy>(
-    definition: PluginDefinition<TEntity, TSubEntity, TWorkingCopy>
+  register<TEntity, TSubEntity, TDraft>(
+    definition: PluginDefinition<TEntity, TSubEntity, TDraft>
   ): void;
   unregister(nodeType: TreeNodeType): void;
   getDefinition(nodeType: TreeNodeType): PluginDefinition | undefined;

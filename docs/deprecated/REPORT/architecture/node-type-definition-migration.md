@@ -34,13 +34,13 @@ NodeTypeDefinitionの責務分離により、core層とUI層の依存関係を�
 export interface PluginDefinition<
   TEntity extends BaseEntity = BaseEntity,
   TSubEntity extends BaseSubEntity = BaseSubEntity,
-  TWorkingCopy extends BaseWorkingCopy = BaseWorkingCopy,
+  TDraft extends BaseDraft = BaseDraft,
 > {
   readonly nodeType: TreeNodeType;
   readonly name: string;
   readonly displayName: string;
   readonly database: DatabaseSchema;
-  readonly entityHandler: EntityHandler<TEntity, TSubEntity, TWorkingCopy>;
+  readonly entityHandler: EntityHandler<TEntity, TSubEntity, TDraft>;
   readonly lifecycle: NodeLifecycleHooks<TEntity>;
   // UI設定は含まない
 }

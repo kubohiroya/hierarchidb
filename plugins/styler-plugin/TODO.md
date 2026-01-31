@@ -7,7 +7,7 @@ Styler plugin builds on the same extensible dialog pattern. Coordinate refactor 
 - [ ] Identify dependencies on Shape/Spreadsheet components to reuse or generalize.
 
 ## Phase 1: Dialog Integration
-- [ ] Rewire Styler multi-step dialog using the shared `useWorkingCopy` hook, mapping StylerWorkingCopy fields correctly.
+- [ ] Rewire Styler multi-step dialog using the shared `useDraft` hook, mapping StylerDraft fields correctly.
 - [ ] Restore step provider registration for style configuration steps and ensure validation works.
 
 ## Phase 2: Batch/Preview UI

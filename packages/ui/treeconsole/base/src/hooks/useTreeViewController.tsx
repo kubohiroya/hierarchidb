@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { WorkerAPIAdapter } from '../adapters/index.js';
 import type { SelectionMode, TreeViewController, UndoRedoCommand, UndoRedoResult } from '../types/index.js';
-import type { NodeId, TreeNode, TreeNodeEvent } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { TreeNode, TreeNodeEvent } from '@hierarchidb/tree-api';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { RowSelectionState } from '@tanstack/react-table';
 import {
@@ -138,7 +139,7 @@ export function useTreeViewController(
     return new WorkerAPIAdapter({
       workerAPI: api,
       defaultViewId: 'treeconsole-view',
-      defaultOnNameConflict: (name: string) => `${name}-copy`,
+      defaultOnNameConflict: 'auto-rename',
     });
   }, [api, workerService]);
 

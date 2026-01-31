@@ -159,12 +159,12 @@ export const DocumentPluginDefinition: WorkerPluginDefinition<DocumentEntity> = 
       };
     },
     
-    async createWorkingCopy(nodeId) {
+    async createDraft(nodeId) {
       const entity = await this.get(nodeId);
       return {
         ...entity,
-        workingCopyId: generateId(),
-        workingCopyOf: nodeId,
+        draftId: generateId(),
+        draftOf: nodeId,
         copiedAt: Date.now(),
         isDirty: false
       };

@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
 import { i18n } from '@hierarchidb/ui-i18n';
 import {

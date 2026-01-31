@@ -51,7 +51,7 @@ import type { ExtendingNodeTypeDefinition } from '@hierarchidb/common-type';
 export const BaseMapPluginDefinition: ExtendingNodeTypeDefinition<
   FolderEntity,
   BaseMapEntity,
-  BaseMapWorkingCopy
+  BaseMapDraft
 > = {
   // 実装は既に完成済み、型名のみ修正
 ```

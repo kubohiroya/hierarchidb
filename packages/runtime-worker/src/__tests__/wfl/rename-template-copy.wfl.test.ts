@@ -2,14 +2,8 @@ import 'fake-indexeddb/auto';
 import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import type { ImportData } from '@hierarchidb/import-export-api';
-import type {
-  CommandEnvelope,
-  CommandResult,
-  NodeId,
-  PasteNodesPayload,
-  TreeId,
-  TreeNode,
-} from '@hierarchidb/common-types';
+import type { NodeId, TreeId } from '@hierarchidb/core-types';
+import type { CommandEnvelope, CommandResult, PasteNodesPayload, TreeNode } from '@hierarchidb/tree-api';
 import * as Comlink from 'comlink';
 import { describe, expect, it } from 'vitest';
 import { MessageChannel } from 'worker_threads';

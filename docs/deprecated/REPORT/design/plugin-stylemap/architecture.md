@@ -22,7 +22,7 @@ UI Layer (React/MUI + Styler Components)
 Worker Layer (StylerService + StylerDB)
     ↕ Dexie Transactions
 CoreDB (StylerEntity + TableMetadataEntity + RowEntity)
-EphemeralDB (WorkingCopyTypes + PreviewState)
+EphemeralDB (DraftTypes + PreviewState)
 ```
 
 ## コンポーネント構成
@@ -108,17 +108,17 @@ interface StylerWorkerAPI {
 ```typescript
 // 🟢 Working Copy Lifecycle
 class StylerEntityHandler {
-  async createWorkingCopy(nodeId: string): Promise<StylerWorkingCopy> {
+  async createDraft(nodeId: string): Promise<StylerDraft> {
     const original = await this.coreDB.getEntity(nodeId);
-    const workingCopy = { ...original, isWorkingCopy: true };
-    await this.ephemeralDB.saveWorkingCopy(workingCopy);
-    return workingCopy;
+    const draft = { ...original, isDraft: true };
+    await this.ephemeralDB.saveDraft(draft);
+    return draft;
   }
 
-  async commitWorkingCopy(nodeId: string): Promise<void> {
-    const workingCopy = await this.ephemeralDB.getWorkingCopy(nodeId);
-    await this.coreDB.saveEntity({ ...workingCopy, isWorkingCopy: false });
-    await this.ephemeralDB.deleteWorkingCopy(nodeId);
+  async commitDraft(nodeId: string): Promise<void> {
+    const draft = await this.ephemeralDB.getDraft(nodeId);
+    await this.coreDB.saveEntity({ ...draft, isDraft: false });
+    await this.ephemeralDB.deleteDraft(nodeId);
   }
 }
 ```

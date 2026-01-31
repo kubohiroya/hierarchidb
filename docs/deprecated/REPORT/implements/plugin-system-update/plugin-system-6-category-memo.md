@@ -36,7 +36,7 @@
    - 参照カウント0での自動削除
 
 4. **EphemeralEntityManager**
-   - WorkingCopy削除時のEphemeralデータ自動削除
+   - Draft削除時のEphemeralデータ自動削除
    - 期限切れEphemeralEntityの自動削除
 
 5. **統合テスト**
@@ -82,7 +82,7 @@ Greenフェーズで実装すべき内容：
    - 自動削除機能
 
 5. **EphemeralEntityManager**
-   - WorkingCopyライフサイクル連動
+   - Draftライフサイクル連動
    - 期限切れ自動削除
    - 定期クリーンアップ
 
@@ -132,7 +132,7 @@ Test Files  1 passed (1)
 - ✅ GroupEntityのグループ単位削除
 - ✅ RelationalEntityの参照追加と自動削除
 - ✅ 参照カウント0での自動削除
-- ✅ WorkingCopy削除時のEphemeralデータ自動削除
+- ✅ Draft削除時のEphemeralデータ自動削除
 - ✅ 期限切れEphemeralEntityの自動削除
 - ✅ BaseMapプラグインの完全ライフサイクル
 - ✅ Styler複合エンティティ管理

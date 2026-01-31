@@ -4,7 +4,8 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { NodeId, TreeId, TreeNodeMetadata } from '@hierarchidb/common-types';
+import type { NodeId, TreeId } from '@hierarchidb/core-types';
+import type { TreeNodeMetadata } from '@hierarchidb/tree-api';
 import { Box, Button, Typography } from '@mui/material';
 import { LocationOn } from '@mui/icons-material';
 import type {
@@ -44,7 +45,7 @@ import {
   type StepNavigationEvent,
   type StepComponentDescriptor,
 } from '@hierarchidb/ui-dialog';
-import type { DialogDisplayMode, DialogPosition as PluginDialogPosition, DialogSize as PluginDialogSize } from '@hierarchidb/common-types';
+import type { DialogDisplayMode, DialogPosition as PluginDialogPosition, DialogSize as PluginDialogSize } from '@hierarchidb/tree-api';
 import { notify } from '@hierarchidb/components';
 
 import {

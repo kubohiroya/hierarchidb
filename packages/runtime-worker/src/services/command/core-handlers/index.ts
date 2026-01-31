@@ -1,13 +1,7 @@
 // import crypto from 'crypto';
 
-import type {
-  CommandId,
-  NodeId,
-  NodeType,
-  Seq,
-  Timestamp,
-  TreeNode,
-} from '@hierarchidb/common-types';
+import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
+import type { CommandId, Seq, TreeNode } from '@hierarchidb/tree-api';
 import type { CoreDB } from '../../CoreDB.js';
 import type { CommandEnvelope, CommandResult, WorkerErrorCode } from '../../command-types.js';
 import { WorkerErrorCodeValue } from '../../command-types.js';

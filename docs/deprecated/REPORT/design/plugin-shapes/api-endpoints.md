@@ -101,7 +101,7 @@ Authorization: Bearer <jwt-token>
   "success": true,
   "data": {
     "nodeId": "_shapes_buggy-new-001",
-    "workingCopyId": "wc-_shapes_buggy-new-001-temp"
+    "draftId": "wc-_shapes_buggy-new-001-temp"
   }
 }
 ```
@@ -328,7 +328,7 @@ Cache-Control: public, max-age=43200
 
 ### 5. Working Copy管理エンドポイント
 
-#### POST /t/:treeId/:pageNodeId/:targetNodeId/shapes/working-copy
+#### POST /t/:treeId/:pageNodeId/:targetNodeId/shapes/draft
 **Working Copy作成** 🟢
 
 **Response:**
@@ -336,20 +336,20 @@ Cache-Control: public, max-age=43200
 {
   "success": true,
   "data": {
-    "workingCopyId": "wc-_shapes_buggy-tokyo-001",
+    "draftId": "wc-_shapes_buggy-tokyo-001",
     "copiedAt": 1703123456789,
     "expiresAt": 1703209856789
   }
 }
 ```
 
-#### GET /t/:treeId/:pageNodeId/:targetNodeId/shapes/working-copy/:workingCopyId
+#### GET /t/:treeId/:pageNodeId/:targetNodeId/shapes/draft/:draftId
 **Working Copy取得** 🟢
 
-#### PUT /t/:treeId/:pageNodeId/:targetNodeId/shapes/working-copy/:workingCopyId  
+#### PUT /t/:treeId/:pageNodeId/:targetNodeId/shapes/draft/:draftId  
 **Working Copy更新** 🟢
 
-#### POST /t/:treeId/:pageNodeId/:targetNodeId/shapes/working-copy/:workingCopyId/commit
+#### POST /t/:treeId/:pageNodeId/:targetNodeId/shapes/draft/:draftId/commit
 **Working Copyコミット** 🟢
 
 **Response:**
@@ -368,7 +368,7 @@ Cache-Control: public, max-age=43200
 }
 ```
 
-#### DELETE /t/:treeId/:pageNodeId/:targetNodeId/shapes/working-copy/:workingCopyId
+#### DELETE /t/:treeId/:pageNodeId/:targetNodeId/shapes/draft/:draftId
 **Working Copy破棄** 🟢
 
 ### 6. スタイル管理エンドポイント
@@ -566,8 +566,8 @@ wss://api.example.com/t/:treeId/:pageNodeId/:targetNodeId/shapes/ws
 #### Working Copy変更通知  
 ```json
 {
-  "type": "workingCopyUpdated",
-  "workingCopyId": "wc-_shapes_buggy-tokyo-001",
+  "type": "draftUpdated",
+  "draftId": "wc-_shapes_buggy-tokyo-001",
   "data": {
     "isDirty": true,
     "lastModified": 1703123456789

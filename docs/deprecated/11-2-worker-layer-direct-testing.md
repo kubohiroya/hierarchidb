@@ -88,12 +88,12 @@ describe('Worker層直接呼び出しテスト', () => {
 describe('フォルダ作成の内部動作', () => {
   it('Working Copyの作成と管理', async () => {
     // Given: 新しいWorking Copyを準備
-    const workingCopyId = 'wc-test-001';
+    const draftId = 'wc-test-001';
     const parentNodeId = 'root' as TreeNodeId;
     
     // When: EphemeralDBにWorking Copyを保存
     await ephemeralDB.workingCopies.add({
-      workingCopyId,
+      draftId,
       treeNodeId: null, // 新規作成なのでnull
       parentTreeNodeId: parentNodeId,
       nodeType: 'folder-plugin',
@@ -107,19 +107,19 @@ describe('フォルダ作成の内部動作', () => {
     });
 
     // Then: Working Copyが正しく保存される
-    const workingCopy = await ephemeralDB.workingCopies.get(workingCopyId);
-    expect(workingCopy).toBeDefined();
-    expect(workingCopy?.changes.name).toBe('Test Folder');
-    expect(workingCopy?.status).toBe('draft');
+    const draft = await ephemeralDB.workingCopies.get(draftId);
+    expect(draft).toBeDefined();
+    expect(draft?.changes.name).toBe('Test Folder');
+    expect(draft?.status).toBe('draft');
   });
 
   it('Working CopyからCoreDBへのコミット', async () => {
     // Given: Working Copyを準備
-    const workingCopyId = 'wc-test-002';
+    const draftId = 'wc-test-002';
     const newNodeId = 'node-001' as TreeNodeId;
     
     await ephemeralDB.workingCopies.add({
-      workingCopyId,
+      draftId,
       treeNodeId: null,
       parentTreeNodeId: 'root' as TreeNodeId,
       nodeType: 'folder-plugin',
@@ -142,14 +142,14 @@ describe('フォルダ作成の内部動作', () => {
     };
 
     await coreDB.nodes.add(newNode);
-    await ephemeralDB.workingCopies.delete(workingCopyId);
+    await ephemeralDB.workingCopies.delete(draftId);
 
     // Then: ノードが作成され、Working Copyが削除される
     const savedNode = await coreDB.nodes.get(newNodeId);
     expect(savedNode).toBeDefined();
     expect(savedNode?.name).toBe('Committed Folder');
 
-    const deletedWC = await ephemeralDB.workingCopies.get(workingCopyId);
+    const deletedWC = await ephemeralDB.workingCopies.get(draftId);
     expect(deletedWC).toBeUndefined();
   });
 });
@@ -439,7 +439,7 @@ it('状態スナップショット検証', async () => {
   const beforeWCCount = await ephemeralDB.workingCopies.count();
   
   // Operation
-  await mutationService.createWorkingCopy(command);
+  await mutationService.createDraft(command);
   
   // After: 変更後状態
   const afterCount = await coreDB.nodes.count();

@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { composeStepConfigs } from '@hierarchidb/plugin-base';
 import { renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';

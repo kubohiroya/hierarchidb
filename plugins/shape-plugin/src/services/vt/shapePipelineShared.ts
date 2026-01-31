@@ -1,4 +1,5 @@
-import type { NodeId, TaskQueueRecord } from '@hierarchidb/common-types';
+import type { TaskQueueRecord } from '@hierarchidb/batch-api';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { Feature, FeatureCollection, Geometry, LineString, MultiLineString, Point, MultiPoint, Polygon, MultiPolygon } from 'geojson';
 import type { Tile } from 'geojson-vt';
 import { geojson as geojsonApi } from 'flatgeobuf';

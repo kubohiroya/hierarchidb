@@ -128,7 +128,7 @@ packages/plugins/[plugin-name]/
 
 ```typescript
 import type { TreeNodeId } from '@hierarchidb/core';
-import type { BaseEntity, BaseWorkingCopy } from '@hierarchidb/worker/registry';
+import type { BaseEntity, BaseDraft } from '@hierarchidb/worker/registry';
 
 export interface MyPluginEntity extends BaseEntity {
   nodeId: TreeNodeId;
@@ -140,10 +140,10 @@ export interface MyPluginEntity extends BaseEntity {
   version: number;
 }
 
-export interface MyPluginWorkingCopy extends BaseWorkingCopy {
+export interface MyPluginDraft extends BaseDraft {
   nodeId: TreeNodeId;
-  workingCopyId: string;
-  workingCopyOf: TreeNodeId;
+  draftId: string;
+  draftOf: TreeNodeId;
   // プラグイン固有のフィールド
   customField1: string;
   customField2: number;
@@ -164,7 +164,7 @@ const myPluginIcon: IconDefinition = {
   description: 'プラグインの詳細な説明'
 };
 
-export const MyPluginDefinition: PluginDefinition<MyPluginEntity, never, MyPluginWorkingCopy> = {
+export const MyPluginDefinition: PluginDefinition<MyPluginEntity, never, MyPluginDraft> = {
   // 基本情報
   nodeType: 'myplugin',
   name: 'MyPlugin',
@@ -224,7 +224,7 @@ export const MyPluginDefinition: PluginDefinition<MyPluginEntity, never, MyPlugi
 ### 4.1 EntityHandler実装
 
 ```typescript
-export class MyPluginHandler implements EntityHandler<MyPluginEntity, never, MyPluginWorkingCopy> {
+export class MyPluginHandler implements EntityHandler<MyPluginEntity, never, MyPluginDraft> {
   private db: MyPluginDatabase;
   
   constructor() {
@@ -260,38 +260,38 @@ export class MyPluginHandler implements EntityHandler<MyPluginEntity, never, MyP
     await this.db.entities.delete(nodeId);
   }
   
-  async createWorkingCopy(nodeId: TreeNodeId): Promise<MyPluginWorkingCopy> {
+  async createDraft(nodeId: TreeNodeId): Promise<MyPluginDraft> {
     const entity = await this.getEntity(nodeId);
     if (!entity) {
       throw new Error(`Entity not found: ${nodeId}`);
     }
     
-    const workingCopy: MyPluginWorkingCopy = {
+    const draft: MyPluginDraft = {
       ...entity,
-      workingCopyId: crypto.randomUUID(),
-      workingCopyOf: nodeId,
+      draftId: crypto.randomUUID(),
+      draftOf: nodeId,
       isDirty: false,
       copiedAt: Date.now()
     };
     
-    await this.db.workingCopies.add(workingCopy);
-    return workingCopy;
+    await this.db.workingCopies.add(draft);
+    return draft;
   }
   
-  async commitWorkingCopy(nodeId: TreeNodeId, workingCopy: MyPluginWorkingCopy): Promise<void> {
-    const { workingCopyId, workingCopyOf, isDirty, copiedAt, ...entityData } = workingCopy;
+  async commitDraft(nodeId: TreeNodeId, draft: MyPluginDraft): Promise<void> {
+    const { draftId, draftOf, isDirty, copiedAt, ...entityData } = draft;
     await this.updateEntity(nodeId, entityData);
-    await this.db.workingCopies.delete(workingCopyId);
+    await this.db.workingCopies.delete(draftId);
   }
   
-  async discardWorkingCopy(nodeId: TreeNodeId): Promise<void> {
-    const workingCopy = await this.db.workingCopies
-      .where('workingCopyOf')
+  async discardDraft(nodeId: TreeNodeId): Promise<void> {
+    const draft = await this.db.workingCopies
+      .where('draftOf')
       .equals(nodeId)
       .first();
     
-    if (workingCopy) {
-      await this.db.workingCopies.delete(workingCopy.workingCopyId);
+    if (draft) {
+      await this.db.workingCopies.delete(draft.draftId);
     }
   }
 }
@@ -304,14 +304,14 @@ import Dexie, { type Table } from 'dexie';
 
 export class MyPluginDatabase extends Dexie {
   entities!: Table<MyPluginEntity>;
-  workingCopies!: Table<MyPluginWorkingCopy>;
+  workingCopies!: Table<MyPluginDraft>;
   
   constructor() {
     super('MyPluginDB');
     
     this.version(1).stores({
       entities: 'nodeId, customField1, createdAt, updatedAt',
-      workingCopies: 'workingCopyId, nodeId, workingCopyOf'
+      workingCopies: 'draftId, nodeId, draftOf'
     });
   }
 }
@@ -619,7 +619,7 @@ class MyPluginHandler {
 ```typescript
 // @hierarchidb/core
 export interface BaseEntity { /* ... */ }
-export interface BaseWorkingCopy { /* ... */ }
+export interface BaseDraft { /* ... */ }
 export type TreeNodeId = string;
 export type TreeNodeType = string;
 export type Timestamp = number;
@@ -633,7 +633,7 @@ export class PluginRegistryImpl { /* ... */ }
 
 ## 付録B: プラグイン作成チェックリスト
 
-- [ ] 型定義 (Entity, WorkingCopyTypes)
+- [ ] 型定義 (Entity, DraftTypes)
 - [ ] データベーススキーマ
 - [ ] EntityHandler実装
 - [ ] ライフサイクルフック

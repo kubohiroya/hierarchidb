@@ -19,7 +19,7 @@
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "peerDependencies": {
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*",
     "@hierarchidb/style-api": "workspace:*",
     "@hierarchidb/spreadsheet-store": "workspace:*",
@@ -28,7 +28,7 @@
     "dexie": "^4.2.0"
   },
   "devDependencies": {
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*",
     "@hierarchidb/style-api": "workspace:*",
     "@hierarchidb/spreadsheet-store": "workspace:*",

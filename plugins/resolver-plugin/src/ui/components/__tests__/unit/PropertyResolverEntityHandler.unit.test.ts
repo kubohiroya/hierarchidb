@@ -1,6 +1,7 @@
 import { vi, afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import { type CreateResolverData, ResolverEntityService } from '~/worker/ResolverEntityService.ts';
 
 vi.mock('@hierarchidb/plugin-registry', () => ({

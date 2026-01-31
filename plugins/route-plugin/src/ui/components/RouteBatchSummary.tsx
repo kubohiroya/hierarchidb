@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { toNodeId } from '@hierarchidb/common-types';
+import { toNodeId } from '@hierarchidb/core-types';
 import { useRouteBatchProgress } from '../hooks/useRouteBatchProgress.js';
 import { useTranslation } from '../../common/i18n/index.js';
 

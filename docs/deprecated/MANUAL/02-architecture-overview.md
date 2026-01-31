@@ -175,7 +175,7 @@ interface WorkerAPI {
   getMutationAPI(): Remote<TreeMutationAPI>;  // 変更操作
   getObservableAPI(): Remote<TreeObservableAPI>; // 監視・購読
   getPluginRegistryAPI(): Remote<PluginRegistryAPI>; // プラグイン管理
-  getWorkingCopyAPI(): Remote<WorkingCopyAPI>; // ワーキングコピー
+  getDraftAPI(): Remote<DraftAPI>; // ワーキングコピー
   initialize(): Promise<void>;                // システム初期化
   shutdown(): Promise<void>;                  // システム終了
   getSystemHealth(): Promise<SystemHealth>;   // ヘルスチェック
@@ -207,7 +207,7 @@ TypeScriptの型システムを最大限活用し、各APIメソッドは具体�
 | **TreeQueryAPI** | 読み取り専用のデータアクセス | • ツリービューの表示<br>• ノード情報の取得<br>• 検索機能の実装 | UIコンポーネント、表示ロジック |
 | **TreeMutationAPI** | データの作成・更新・削除 | • 新規ノード作成<br>• ノード名の変更<br>• ノードの削除・移動 | 編集機能、コマンド実行 |
 | **TreeObservableAPI** | リアルタイム変更監視 | • 自動更新UI<br>• 他ユーザーの変更検知<br>• 同期状態の管理 | リアクティブコンポーネント |
-| **WorkingCopyAPI** | 一時的な編集状態の管理 | • ダイアログでの編集<br>• ドラフト保存<br>• 編集のキャンセル | ダイアログ、フォーム |
+| **DraftAPI** | 一時的な編集状態の管理 | • ダイアログでの編集<br>• ドラフト保存<br>• 編集のキャンセル | ダイアログ、フォーム |
 | **PluginRegistryAPI** | プラグインシステムの管理 | • プラグイン登録<br>• 機能の動的追加<br>• メタデータ取得 | プラグインローダー、管理画面 |
 | **PluginAPI** | プラグイン固有機能の提供 | • カスタムインポート<br>• 専用エクスポート<br>• 特殊な処理 | プラグイン開発者 |
 
@@ -218,9 +218,9 @@ TypeScriptの型システムを最大限活用し、各APIメソッドは具体�
 ```typescript
 // 1. ユーザーが「新規フォルダ」ボタンをクリック
 const handleCreateFolder = async () => {
-  // 2. WorkingCopyAPIでドラフトを作成
-  const workingCopyAPI = await workerAPI.getWorkingCopyAPI();
-  const draft = await workingCopyAPI.createDraftWorkingCopy(
+  // 2. DraftAPIでドラフトを作成
+  const draftAPI = await workerAPI.getDraftAPI();
+  const draft = await draftAPI.createDraftDraft(
     'folder-plugin',
     currentParentId
   );
@@ -232,14 +232,14 @@ const handleCreateFolder = async () => {
   });
   
   if (result.confirmed) {
-    // 4. WorkingCopyAPIで変更を確定
-    await workingCopyAPI.commitWorkingCopy(draft.nodeId);
+    // 4. DraftAPIで変更を確定
+    await draftAPI.commitDraft(draft.nodeId);
     
     // 5. TreeObservableAPIが自動的に変更を通知
     // （事前に設定済みのサブスクリプションが反応）
   } else {
     // キャンセルの場合は破棄
-    await workingCopyAPI.discardWorkingCopy(draft.nodeId);
+    await draftAPI.discardDraft(draft.nodeId);
   }
 };
 ```
@@ -342,7 +342,7 @@ graph LR
   - `TreeQueryAPI`: 読み取り専用データアクセス
   - `TreeMutationAPI`: データ変更操作
   - `TreeObservableAPI`: リアルタイム監視・サブスクリプション
-  - `WorkingCopyAPI`: ドラフト・編集操作
+  - `DraftAPI`: ドラフト・編集操作
   - `PluginRegistryAPI`: プラグインシステム管理
   - `PluginAPI`: プラグイン固有API拡張
 - **@hierarchidb/worker**: Workerスレッド実装（DB操作・コマンド処理）

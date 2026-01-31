@@ -1,10 +1,5 @@
-import type {
-  CommandEnvelope,
-  CommandResult,
-  PasteNodesPayload,
-  TreeNode,
-} from '@hierarchidb/common-types';
-import { toNodeId, toNodeType } from '@hierarchidb/common-types';
+import { toNodeId, toNodeType } from '@hierarchidb/core-types';
+import type { CommandEnvelope, CommandResult, PasteNodesPayload, TreeNode } from '@hierarchidb/tree-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CommandProcessor } from '../../CommandProcessor.js';
 import type { CoreDB } from '../../CoreDB.js';

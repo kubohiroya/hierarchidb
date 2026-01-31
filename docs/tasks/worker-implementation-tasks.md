@@ -27,7 +27,7 @@ class CoreDB extends Dexie {
 
 // EphemeralDB: 一時データ用
 class EphemeralDB extends Dexie {
-  workingCopies!: Table<WorkingCopyTypes, UUID>;
+  workingCopies!: Table<DraftTypes, UUID>;
   treeViewStates!: Table<TreeViewState, string>;
   sessions!: Table<SessionData, string>;
 }
@@ -72,8 +72,8 @@ interface DraftProperties {
   isDraft?: boolean;
 }
 
-interface WorkingCopyProperties {
-  workingCopyOf?: TreeNodeId;
+interface DraftProperties {
+  draftOf?: TreeNodeId;
   copiedAt?: Timestamp;
 }
 
@@ -85,7 +85,7 @@ interface DescendantProperties {
 
 type TreeNode = TreeNodeBase &
   Partial<DraftProperties> &
-  Partial<WorkingCopyProperties> &
+  Partial<DraftProperties> &
   Partial<TrashItemProperties> &
   Partial<DescendantProperties>;
 ```
@@ -168,8 +168,8 @@ class NodeTypeRegistry {
   private definitions: Map<TreeNodeType, PluginDefinition>;
   private handlers: Map<TreeNodeType, EntityHandler>;
   
-  register<TEntity, TSubEntity, TWorkingCopy>(
-    definition: PluginDefinition<TEntity, TSubEntity, TWorkingCopy>
+  register<TEntity, TSubEntity, TDraft>(
+    definition: PluginDefinition<TEntity, TSubEntity, TDraft>
   ): void {
     // 型定義の登録
     // エンティティハンドラーの登録
@@ -252,15 +252,15 @@ expose(WorkerAPIImpl);
 
 **実装詳細**:
 ```typescript
-interface EntityHandler<TEntity, TSubEntity, TWorkingCopy> {
+interface EntityHandler<TEntity, TSubEntity, TDraft> {
   createEntity(nodeId: TreeNodeId, data?: Partial<TEntity>): Promise<TEntity>;
   getEntity(nodeId: TreeNodeId): Promise<TEntity | undefined>;
   updateEntity(nodeId: TreeNodeId, data: Partial<TEntity>): Promise<void>;
   deleteEntity(nodeId: TreeNodeId): Promise<void>;
   
-  createWorkingCopy(nodeId: TreeNodeId): Promise<TWorkingCopy>;
-  commitWorkingCopy(nodeId: TreeNodeId, workingCopy: TWorkingCopy): Promise<void>;
-  discardWorkingCopy(nodeId: TreeNodeId): Promise<void>;
+  createDraft(nodeId: TreeNodeId): Promise<TDraft>;
+  commitDraft(nodeId: TreeNodeId, draft: TDraft): Promise<void>;
+  discardDraft(nodeId: TreeNodeId): Promise<void>;
 }
 ```
 
@@ -327,13 +327,13 @@ class NodeLifecycleManager {
 - [ ] **タスクタイプ**: TDD
 - **優先度**: HIGH 🟢
 - **推定工数**: 16時間
-- **要件リンク**: [Working Copy改善](../spec/improved-working-copy-requirements.md)
+- **要件リンク**: [Working Copy改善](../spec/improved-draft-requirements.md)
 - **依存タスク**: Task 1, Task 2
 
 **実装詳細**:
 ```typescript
 // eria-cartographから移植・改良
-export async function createNewDraftWorkingCopy(
+export async function createNewDraftDraft(
   ephemeralDB: EphemeralDB,
   coreDB: CoreDB,
   parentTreeNodeId: TreeNodeId,
@@ -345,25 +345,25 @@ export async function createNewDraftWorkingCopy(
   const uniqueName = createNewName(siblingNames, baseName);
   
   // Draft Working Copy作成
-  const workingCopyId = generateUUID();
+  const draftId = generateUUID();
   const now = Date.now();
   
   await ephemeralDB.workingCopies.add({
-    workingCopyId,
+    draftId,
     parentTreeNodeId,
     treeNodeType,
     name: uniqueName,
     isDraft: true,
-    workingCopyOf: undefined, // 新規作成
+    draftOf: undefined, // 新規作成
     copiedAt: now,
     updatedAt: now
   });
   
-  return workingCopyId;
+  return draftId;
 }
 
-export async function commitWorkingCopy(
-  workingCopyId: UUID,
+export async function commitDraft(
+  draftId: UUID,
   isDraft: boolean
 ): Promise<CommandResult> {
   // 楽観的ロックチェック
@@ -402,7 +402,7 @@ export async function commitWorkingCopy(
 ```typescript
 class TreeMutationServiceImpl implements TreeMutationService {
   // Command Envelope対応メソッド（Undo/Redo対象）
-  async commitWorkingCopy(cmd: CommandEnvelope<'commitWorkingCopy', CommitWorkingCopyPayload>): Promise<CommandResult> {
+  async commitDraft(cmd: CommandEnvelope<'commitDraft', CommitDraftPayload>): Promise<CommandResult> {
     return this.commandProcessor.processCommand(cmd);
   }
   
@@ -411,16 +411,16 @@ class TreeMutationServiceImpl implements TreeMutationService {
   }
   
   // Direct APIメソッド（Undo/Redo対象外）
-  async createNewDraftWorkingCopy(
+  async createNewDraftDraft(
     parentId: TreeNodeId,
     nodeType: TreeNodeType,
     baseName: string
   ): Promise<TreeNodeId> {
-    return createNewDraftWorkingCopy(this.ephemeralDB, this.coreDB, parentId, nodeType, baseName);
+    return createNewDraftDraft(this.ephemeralDB, this.coreDB, parentId, nodeType, baseName);
   }
   
-  async discardWorkingCopy(workingCopyId: UUID): Promise<void> {
-    await this.ephemeralDB.workingCopies.delete(workingCopyId);
+  async discardDraft(draftId: UUID): Promise<void> {
+    await this.ephemeralDB.workingCopies.delete(draftId);
   }
 }
 ```
@@ -827,7 +827,7 @@ export interface BaseMapEntity extends BaseEntity {
 }
 
 // BaseMapハンドラー
-export class BaseMapHandler implements EntityHandler<BaseMapEntity, never, BaseMapWorkingCopy> {
+export class BaseMapHandler implements EntityHandler<BaseMapEntity, never, BaseMapDraft> {
   async createEntity(nodeId: TreeNodeId, data?: Partial<BaseMapEntity>): Promise<BaseMapEntity> {
     const entity: BaseMapEntity = {
       nodeId,
@@ -1580,35 +1580,35 @@ export class ErrorHandler {
 **実装詳細**:
 ```typescript
 export class OptimisticLockManager {
-  async checkWorkingCopyConflict(
-    workingCopyId: UUID,
+  async checkDraftConflict(
+    draftId: UUID,
     originalVersion: number
   ): Promise<boolean> {
-    const currentNode = await this.coreDB.treeNodes.get(workingCopyId);
+    const currentNode = await this.coreDB.treeNodes.get(draftId);
     return currentNode ? currentNode.version > originalVersion : false;
   }
   
-  async checkExistingWorkingCopy(nodeId: TreeNodeId): Promise<WorkingCopyTypes | undefined> {
+  async checkExistingDraft(nodeId: TreeNodeId): Promise<DraftTypes | undefined> {
     return await this.ephemeralDB.workingCopies
-      .where('workingCopyOf')
+      .where('draftOf')
       .equals(nodeId)
       .first();
   }
   
   async attemptCommit(
-    workingCopyId: UUID,
+    draftId: UUID,
     expectedVersion: number
   ): Promise<CommandResult> {
     return await this.coreDB.transaction('rw', this.coreDB.treeNodes, async () => {
-      const workingCopy = await this.ephemeralDB.workingCopies.get(workingCopyId);
-      if (!workingCopy) {
+      const draft = await this.ephemeralDB.workingCopies.get(draftId);
+      if (!draft) {
         throw new HierarchDBError(
           'Working copy not found',
           ErrorCode.WORKING_COPY_NOT_FOUND
         );
       }
       
-      const currentNode = await this.coreDB.treeNodes.get(workingCopy.workingCopyOf!);
+      const currentNode = await this.coreDB.treeNodes.get(draft.draftOf!);
       if (currentNode && currentNode.version > expectedVersion) {
         throw new HierarchDBError(
           'Commit conflict: node was modified',
@@ -1618,18 +1618,18 @@ export class OptimisticLockManager {
       }
       
       // コミット処理
-      await this.coreDB.treeNodes.update(workingCopy.workingCopyOf!, {
-        ...workingCopy,
+      await this.coreDB.treeNodes.update(draft.draftOf!, {
+        ...draft,
         version: (currentNode?.version || 0) + 1,
         updatedAt: Date.now()
       });
       
-      await this.ephemeralDB.workingCopies.delete(workingCopyId);
+      await this.ephemeralDB.workingCopies.delete(draftId);
       
       return {
         success: true,
         seq: this.getNextSeq(),
-        nodeId: workingCopy.workingCopyOf
+        nodeId: draft.draftOf
       };
     });
   }
@@ -1657,7 +1657,7 @@ export class OptimisticLockManager {
 **実装詳細**:
 ```typescript
 // 例：Working Copy操作のテスト
-describe('WorkingCopyOperations', () => {
+describe('DraftOperations', () => {
   let coreDB: CoreDB;
   let ephemeralDB: EphemeralDB;
   
@@ -1674,7 +1674,7 @@ describe('WorkingCopyOperations', () => {
     ]);
   });
   
-  describe('createNewDraftWorkingCopy', () => {
+  describe('createNewDraftDraft', () => {
     it('should create draft with unique name', async () => {
       // 既存ノード作成
       await coreDB.treeNodes.bulkAdd([
@@ -1683,7 +1683,7 @@ describe('WorkingCopyOperations', () => {
       ]);
       
       // Draft作成
-      const workingCopyId = await createNewDraftWorkingCopy(
+      const draftId = await createNewDraftDraft(
         ephemeralDB,
         coreDB,
         'root',
@@ -1692,14 +1692,14 @@ describe('WorkingCopyOperations', () => {
       );
       
       // 検証
-      const workingCopy = await ephemeralDB.workingCopies.get(workingCopyId);
-      expect(workingCopy).toBeDefined();
-      expect(workingCopy!.name).toBe('Document (3)');
-      expect(workingCopy!.isDraft).toBe(true);
+      const draft = await ephemeralDB.workingCopies.get(draftId);
+      expect(draft).toBeDefined();
+      expect(draft!.name).toBe('Document (3)');
+      expect(draft!.isDraft).toBe(true);
     });
   });
   
-  describe('commitWorkingCopy', () => {
+  describe('commitDraft', () => {
     it('should detect conflict', async () => {
       // テスト実装
     });
@@ -1744,21 +1744,21 @@ describe('Worker Integration Tests', () => {
   
   it('should handle complete workflow', async () => {
     // 1. Draft作成
-    const draftId = await api.createNewDraftWorkingCopy(
+    const draftId = await api.createNewDraftDraft(
       'root',
       TreeNodeType.Folder,
       'New Folder'
     );
     
     // 2. Draft編集
-    await api.updateWorkingCopy(draftId, {
+    await api.updateDraft(draftId, {
       description: 'Test folder-plugin'
     });
     
     // 3. Commit
-    const result = await api.commitWorkingCopyForCreate({
-      type: 'commitWorkingCopyForCreate',
-      payload: { workingCopyId: draftId },
+    const result = await api.commitDraftForCreate({
+      type: 'commitDraftForCreate',
+      payload: { draftId: draftId },
       meta: { commandId: generateUUID(), timestamp: Date.now() }
     });
     
@@ -1915,12 +1915,12 @@ export class MigrationTool {
     
     // hierarchidbの構造に変換
     const coreNodes: TreeNode[] = [];
-    const workingCopies: WorkingCopyTypes[] = [];
+    const workingCopies: DraftTypes[] = [];
     
     for (const eriaNode of eriaNodes) {
-      if (eriaNode.workingCopyOf) {
+      if (eriaNode.draftOf) {
         // Working Copyとして移行
-        workingCopies.push(this.convertToWorkingCopy(eriaNode));
+        workingCopies.push(this.convertToDraft(eriaNode));
       } else {
         // 通常ノードとして移行
         coreNodes.push(this.convertToTreeNode(eriaNode));

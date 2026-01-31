@@ -89,7 +89,7 @@ async redo(cmd: CommandEnvelope<'redo', RedoPayload>): Promise<CoreCommandResult
 await api.createFolder({ ... }); // CommandProcessorに記録されない
 
 // vs Command Envelope（記録される） 
-await api.commitWorkingCopyForCreate({ ... }); // CommandProcessorに記録される
+await api.commitDraftForCreate({ ... }); // CommandProcessorに記録される
 ```
 
 ### 2. UndoPayloadの仕様問題
@@ -122,38 +122,38 @@ async createFolder(params: {
   try {
     // バリデーション...
     
-    const workingCopyId = `wc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const draftId = `wc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     
     // Working Copy作成のCommand Envelope
-    const createCmd: CommandEnvelope<'createWorkingCopyForCreate', CreateWorkingCopyForCreatePayload> = {
+    const createCmd: CommandEnvelope<'createDraftForCreate', CreateDraftForCreatePayload> = {
       payload: {
-        workingCopyId,
+        draftId,
         parentTreeNodeId: params.parentNodeId,
         name: params.name,
         description: params.description,
       },
       commandId: `create-${Date.now()}`,
       groupId: `group-${Date.now()}`,
-      kind: 'createWorkingCopyForCreate',
+      kind: 'createDraftForCreate',
       issuedAt: Date.now(),
     };
     
     // CommandProcessorに記録
     await this.commandProcessor.processCommand(createCmd);
-    await this.createWorkingCopyForCreate(createCmd);
+    await this.createDraftForCreate(createCmd);
     
     // コミットのCommand Envelope
-    const commitCmd: CommandEnvelope<'commitWorkingCopyForCreate', CommitWorkingCopyForCreatePayload> = {
-      payload: { workingCopyId },
+    const commitCmd: CommandEnvelope<'commitDraftForCreate', CommitDraftForCreatePayload> = {
+      payload: { draftId },
       commandId: `commit-${Date.now()}`,
       groupId: createCmd.groupId, // 同じグループIDを使用
-      kind: 'commitWorkingCopyForCreate',
+      kind: 'commitDraftForCreate',
       issuedAt: Date.now(),
     };
     
     // CommandProcessorに記録
     await this.commandProcessor.processCommand(commitCmd);
-    const commitResult = await this.commitWorkingCopyForCreate(commitCmd);
+    const commitResult = await this.commitDraftForCreate(commitCmd);
     
     if (commitResult.success) {
       return {
@@ -271,11 +271,11 @@ export class CommandProcessor {
     cmd: CommandEnvelope<K, P>
   ): Promise<void> {
     switch (cmd.kind) {
-      case 'commitWorkingCopyForCreate':
+      case 'commitDraftForCreate':
         // 作成されたノードを削除
-        const createPayload = cmd.payload as CommitWorkingCopyForCreatePayload;
+        const createPayload = cmd.payload as CommitDraftForCreatePayload;
         // ノードIDを特定して削除する逆操作
-        await this.deleteCreatedNode(createPayload.workingCopyId);
+        await this.deleteCreatedNode(createPayload.draftId);
         break;
         
       case 'moveNodes':

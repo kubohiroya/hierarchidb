@@ -116,9 +116,9 @@ interface LifecycleHooks {
   afterDelete?: (nodeId: NodeId) => Promise<void>;
   
   // ワーキングコピーライフサイクル
-  onWorkingCopyCreate?: (nodeId: NodeId) => Promise<void>;
-  onWorkingCopyCommit?: (nodeId: NodeId) => Promise<void>;
-  onWorkingCopyDiscard?: (nodeId: NodeId) => Promise<void>;
+  onDraftCreate?: (nodeId: NodeId) => Promise<void>;
+  onDraftCommit?: (nodeId: NodeId) => Promise<void>;
+  onDraftDiscard?: (nodeId: NodeId) => Promise<void>;
 }
 ```
 

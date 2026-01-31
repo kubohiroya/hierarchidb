@@ -24,12 +24,13 @@
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/util": "workspace:*"
   },
   "peerDependencies": {
     "comlink": "^4.4.2",
     "@dnd-kit/modifiers": "^9.0.0",
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/worker-api": "workspace:*",
     "@hierarchidb/ui-treeconsole-breadcrumb": "workspace:*",
@@ -56,7 +57,7 @@
   "devDependencies": {
     "comlink": "^4.4.2",
     "@dnd-kit/modifiers": "^9.0.0",
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/worker-api": "workspace:*",
     "@hierarchidb/ui-treeconsole-breadcrumb": "workspace:*",

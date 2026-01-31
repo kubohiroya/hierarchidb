@@ -95,7 +95,7 @@ registry.registerPlugin(BaseMapUnifiedDefinition);
 
 ### Entity Structure
 - `BaseMapEntity` now includes more comprehensive map configuration
-- `BaseMapWorkingCopy` for edit operations
+- `BaseMapDraft` for edit operations
 - MapLibre GL compatible style configuration
 
 ### Extended APIs

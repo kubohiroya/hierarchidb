@@ -1,4 +1,4 @@
-import type { Timestamp } from '@hierarchidb/common-types';
+import type { Timestamp } from '@hierarchidb/core-types';
 import type { TabularFilterRule, TabularDataResult, TabularProcessingConfig } from '@hierarchidb/ui-tabular';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 

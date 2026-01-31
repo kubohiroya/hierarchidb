@@ -52,6 +52,7 @@ export type DuplicateNodesPayload = {
 export type MoveNodesPayload = {
   nodeIds: NodeId[];
   toParentId: NodeId;
+  onNameConflict?: OnNameConflict;
 };
 
 export type MoveToTrashPayload = {

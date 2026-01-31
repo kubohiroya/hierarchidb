@@ -4,7 +4,7 @@ import React from 'react';
 import { readFile } from 'node:fs/promises';
 import type { BatchProgressEvent, BatchProgressPayload, BatchTaskSummary, BatchTaskUpdateEvent, ProgressPhase } from '@hierarchidb/batch-api';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
-import type { NodeId, NodeType } from '@hierarchidb/common-types';
+import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { DEFAULT_BUILD_CONFIG, type SelectedArrayByCountries } from '@hierarchidb/shape-plugin';
 import { WorkerProvider } from '../WorkerProvider.tsx';
 

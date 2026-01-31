@@ -2,7 +2,7 @@
  * Undo/redo actions for TreeConsole.
  */
 
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { MaybeCP, TreeConsoleActionDeps } from '../types.js';
 import { fireCmdEvent, isCommandResult, showCommandError } from './helpers.ts';
 

@@ -12,14 +12,14 @@ accepted
 
 ## 決定（Decision）
 - 原本（ノード/エンティティ）1つにつき、保持できる WC は常に1つとする（グローバル共有）。
-- `createWorkingCopy(...)` は冪等で、既存の WC があればそれを返す（既存返却メタで識別可能）。
+- `createDraft(...)` は冪等で、既存の WC があればそれを返す（既存返却メタで識別可能）。
 - 編集ロックは導入しない。複数のブラウザ画面から同一 WC を編集できる。
 - 上書き防止は「コミット時の楽観ロック（version 比較）」で行う。差異があれば `COMMIT_CONFLICT` を返す。
 
 ## 影響（Consequences）
 - UI は liveQuery 等で原本の `version` 変化を把握し、「下書きのベースが古い」ことを通知する。
 - ユーザはリベース or そのままコミット試行を選択する。競合時は解消導線（再読込/差分確認）を提供する。
-- Tree 側は holder を `[parentId+name]` で一意化し、Entity 側は `workingCopyId` をユニークに保つことで、WC の単一性を保証する。
+- Tree 側は holder を `[parentId+name]` で一意化し、Entity 側は `draftId` をユニークに保つことで、WC の単一性を保証する。
 - 並行して別 WC を作る必要があるシナリオ（完全なオフライン分岐編集等）は、将来の拡張（ブランチング機能）で扱う。
 
 ## 代替案（Alternatives）
@@ -27,6 +27,6 @@ accepted
 - 複数 WC 併存 + マージ UI: 実装/UX コストが高く、現段階の要件を超える。
 
 ## 付記（Notes）
-- Tree 側 3根 + holder/child ペア設計、Entity 側同一テーブル共存設計（`workingCopyId`/`workingCopyOf`）と整合する。
+- Tree 側 3根 + holder/child ペア設計、Entity 側同一テーブル共存設計（`draftId`/`draftOf`）と整合する。
 - 実装は変更せず、仕様とテスト方針（競合検出/通知）を先に整備する。
 

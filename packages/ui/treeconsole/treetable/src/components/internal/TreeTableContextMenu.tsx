@@ -3,7 +3,7 @@
  * Wraps the TreeTable node context menu interactions with controller actions.
  */
 
-import type { TreeNode } from '@hierarchidb/common-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import type { NodeContextMenuProps } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { useEffect, useState, type ComponentType } from 'react';
 import type { TreeNodeInUI, TreeTableController } from '../../types.js';

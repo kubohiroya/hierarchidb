@@ -27,7 +27,7 @@
   - pitch?: number
   - createdAt: number
   - updatedAt: number
-- WorkingCopyTypes: BaseMapWorkingCopy（例）
+- DraftTypes: BaseMapDraft（例）
   - 編集中の一時状態。5章の working copy モデルに準拠。
 
 注意: 具体の型定義は 6章の例示をベースにするが、実装時に core 型群と整合させること。
@@ -36,7 +36,7 @@
 6章/11章の例に準拠。
 
 ```ts
-export const BaseMapUnifiedDefinition: UnifiedPluginDefinition<BaseMapEntity, never, BaseMapWorkingCopy> = {
+export const BaseMapUnifiedDefinition: UnifiedPluginDefinition<BaseMapEntity, never, BaseMapDraft> = {
   nodeType: 'basemap',
   name: 'BaseMap',
   displayName: 'Base Map',

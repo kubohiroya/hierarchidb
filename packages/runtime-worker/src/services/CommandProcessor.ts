@@ -1,4 +1,5 @@
-import type { CommandId, Seq, Timestamp, TreeChangeEvent } from '@hierarchidb/common-types';
+import type { Timestamp } from '@hierarchidb/core-types';
+import type { CommandId, Seq, TreeChangeEvent } from '@hierarchidb/tree-api';
 import { generateUUID, SingletonMixin } from '@hierarchidb/util';
 import { Subject } from 'rxjs';
 import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';

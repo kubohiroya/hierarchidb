@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type {
   ShapeBuildTaskRecord,
   ShapeTransformCache,

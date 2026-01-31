@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 
 /**
  * 共通 Task 定義（最小）。
@@ -37,4 +37,3 @@ export interface TaskRegistryPort<TStage extends string, TTask extends StageTask
 
   loadStageInputs?<T extends TInput>(stage: TStage): Promise<Map<string, T>>;
 }
-

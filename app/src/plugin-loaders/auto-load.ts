@@ -7,7 +7,7 @@
  * UI loader exists anymore.
  */
 
-import type { NodeType } from '@hierarchidb/common-types';
+import type { NodeType } from '@hierarchidb/core-types';
 import type { PluginDefinition } from '@hierarchidb/plugin-registry/types';
 import { getPluginRegistryContainer } from './di/container.ts';
 import type { PluginUiModuleLoader } from './di/interfaces.ts';

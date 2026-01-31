@@ -10,6 +10,9 @@
     "allowUnusedLabels": false,
     "moduleResolution": "NodeNext",
     "paths": {
+      "~/*": [
+        "app/src/*"
+      ],
       "@hierarchidb/auth-recovery": [
         "packages/features/auth-recovery/dist/index.d.ts"
       ],
@@ -168,12 +171,6 @@
       ],
       "@hierarchidb/memory/*": [
         "packages/memory/dist/*"
-      ],
-      "@hierarchidb/feature-registry": [
-        "packages/features/feature-registry/dist/index.d.ts"
-      ],
-      "@hierarchidb/feature-registry/*": [
-        "packages/features/feature-registry/dist/*"
       ],
       "@hierarchidb/gis-sdk": [
         "packages/features/gis-sdk/dist/index.d.ts"
@@ -344,7 +341,7 @@
         "plugins/shape-plugin/dist/*"
       ],
       "@hierarchidb/spreadsheet-plugin": [
-        "plugins/spreadsheet-plugin/dist/index2.d.ts"
+        "plugins/spreadsheet-plugin/dist/index.d.ts"
       ],
       "@hierarchidb/spreadsheet-plugin/*": [
         "plugins/spreadsheet-plugin/dist/*"

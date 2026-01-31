@@ -1,13 +1,12 @@
+import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type {
   CommitDraftPayload,
   DiscardDraftPayload,
   DuplicateNodesPayload,
   ImportNodesPayload,
-  NodeId,
-  NodeType,
   PasteNodesPayload,
   TreeNode,
-} from '@hierarchidb/common-types';
+} from '@hierarchidb/tree-api';
 import type { LocationMutationAPI } from '@hierarchidb/location-api';
 import type { RouteMutationAPI } from '@hierarchidb/route-api';
 import type { ShapeMutationAPI } from '@hierarchidb/shape-api';

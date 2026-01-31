@@ -5,7 +5,7 @@
  * The system will automatically resolve dependencies and load in correct order.
  */
 
-import type { NodeType } from '@hierarchidb/common-types';
+import type { NodeType } from '@hierarchidb/core-types';
 import { readRuntimeMode } from '@hierarchidb/util';
 import {
   getAllPluginNodeTypes,

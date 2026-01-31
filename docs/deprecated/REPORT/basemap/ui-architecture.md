@@ -52,7 +52,7 @@ interface BaseMapDialogProps {
   open: boolean;
   nodeId?: NodeId;
   entity?: BaseMapEntity;
-  workingCopy?: BaseMapWorkingCopy;
+  draft?: BaseMapDraft;
   onClose: () => void;
   onSave: (data: Partial<BaseMapEntity>) => void;
   mode?: 'create' | 'edit';
@@ -62,7 +62,7 @@ export const BaseMapDialog: React.FC<BaseMapDialogProps> = ({
   open,
   nodeId,
   entity,
-  workingCopy,
+  draft,
   onClose,
   onSave,
   mode = 'create',
@@ -72,7 +72,7 @@ export const BaseMapDialog: React.FC<BaseMapDialogProps> = ({
       open={open}
       nodeId={nodeId}
       entity={entity}
-      workingCopy={workingCopy}
+      draft={draft}
       onClose={onClose}
       onSave={onSave}
       mode={mode}
@@ -90,7 +90,7 @@ interface BaseMapStepperDialogProps {
   open: boolean;
   nodeId?: NodeId;
   entity?: BaseMapEntity;
-  workingCopy?: BaseMapWorkingCopy;
+  draft?: BaseMapDraft;
   onClose: () => void;
   onSave: (data: Partial<BaseMapEntity>) => void;
   mode?: 'create' | 'edit';
@@ -237,7 +237,7 @@ interface Step4PreviewProps {
 
 ```typescript
 const [formData, setFormData] = useState<FormData>(() => {
-  const baseData = workingCopy || entity;
+  const baseData = draft || entity;
   if (baseData) {
     return {
       name: baseData.name || '',
@@ -399,22 +399,22 @@ const handleSave = async () => {
 
 ```typescript
 // 作業コピーの作成
-const createWorkingCopy = async (nodeId: NodeId) => {
-  const workingCopy = await workerAPI.basemap.createWorkingCopy(nodeId);
-  setWorkingCopy(workingCopy);
+const createDraft = async (nodeId: NodeId) => {
+  const draft = await workerAPI.basemap.createDraft(nodeId);
+  setDraft(draft);
 };
 
 // 変更のコミット
 const commitChanges = async () => {
-  if (workingCopy) {
-    await workerAPI.basemap.commitWorkingCopy(nodeId, workingCopy);
+  if (draft) {
+    await workerAPI.basemap.commitDraft(nodeId, draft);
   }
 };
 
 // 変更の破棄
 const discardChanges = async () => {
-  if (workingCopy) {
-    await workerAPI.basemap.discardWorkingCopy(nodeId);
+  if (draft) {
+    await workerAPI.basemap.discardDraft(nodeId);
   }
 };
 ```

@@ -45,7 +45,7 @@ graph LR
     A[従来の課題] --> B[HierarchiDBの解決策]
     
     A1[UIブロッキング<br/>大量データ処理時] --> B1[Worker分離<br/>非同期処理]
-    A2[データ整合性<br/>複雑な編集操作] --> B2[WorkingCopyTypes<br/>パターン]
+    A2[データ整合性<br/>複雑な編集操作] --> B2[DraftTypes<br/>パターン]
     A3[拡張性の限界<br/>固定機能] --> B3[プラグイン<br/>アーキテクチャ]
     A4[型安全性不足<br/>実行時エラー] --> B4[厳格な型システム<br/>コンパイル時検証]
 ```
@@ -72,7 +72,7 @@ graph TB
     end
     
     subgraph "編集機能層"
-        B[WorkingCopyTypes] --> B1[安全な編集]
+        B[DraftTypes] --> B1[安全な編集]
         B --> B2[コミット/破棄]
         B --> B3[競合解決]
         
@@ -310,8 +310,8 @@ sequenceDiagram
     UI->>+RPC: createNode(parentId, nodeData)
     RPC->>+Worker: WorkerAPI.createNode()
     Worker->>+DB: transaction.begin()
-    Worker->>+DB: createWorkingCopy()
-    DB-->>-Worker: workingCopyId
+    Worker->>+DB: createDraft()
+    DB-->>-Worker: draftId
     Worker->>+DB: validateNodeData()
     Worker->>+DB: insertNode()
     Worker->>+DB: transaction.commit()

@@ -11,7 +11,7 @@ src/adapters/
 ├── WorkerAPIAdapter.ts           # メインアダプタークラス
 ├── commands/                     # コマンド変換
 │   ├── TreeMutationCommands.ts  # CRUD系コマンド変換
-│   ├── DraftCommands.ts   # WorkingCopy系コマンド変換
+│   ├── DraftCommands.ts   # Draft系コマンド変換
 │   └── HistoryCommands.ts       # Undo/Redo系コマンド変換
 ├── subscriptions/               # サブスクリプション変換
 │   ├── TreeObservableAdapter.ts # Observable → Callback変換
@@ -172,44 +172,44 @@ export class TreeMutationCommandsAdapter {
 
 **要確認ポイント**:
 - 古いコード: カスタムWorking Copy管理
-- 新しいコード: `createWorkingCopy` → `commitWorkingCopy` フロー
+- 新しいコード: `createDraft` → `commitDraft` フロー
 
 ```typescript
 // adapters/commands/DraftCommands.ts
-export class WorkingCopyCommandsAdapter {
+export class DraftCommandsAdapter {
   // 🟡 要確認: 既存の編集開始パターン
   async startNodeEdit(
     nodeId: TreeNodeId,
     context: AdapterContext
-  ): Promise<{ workingCopyId: UUID; currentData: TreeNode }> {
-    const workingCopyId = generateUUID();
+  ): Promise<{ draftId: UUID; currentData: TreeNode }> {
+    const draftId = generateUUID();
     
-    const command = createCommand('createWorkingCopy', {
-      workingCopyId,
+    const command = createCommand('createDraft', {
+      draftId,
       sourceTreeNodeId: nodeId
     }, { groupId: context.groupId });
 
-    await this.api.createWorkingCopy(command);
+    await this.api.createDraft(command);
     
     // 🟡 要確認: 既存コードでの初期データ取得方法
     const currentData = await this.getCurrentNodeData(nodeId);
     
-    return { workingCopyId, currentData };
+    return { draftId, currentData };
   }
 
   // 🟡 要確認: 保存時のバリデーションパターン
   async commitNodeEdit(
-    workingCopyId: UUID,
+    draftId: UUID,
     expectedUpdatedAt: Timestamp,
     context: AdapterContext
   ): Promise<void> {
-    const command = createCommand('commitWorkingCopy', {
-      workingCopyId,
+    const command = createCommand('commitDraft', {
+      draftId,
       expectedUpdatedAt,
       onNameConflict: context.onNameConflict
     }, { groupId: context.groupId });
 
-    const result = await this.api.commitWorkingCopy(command);
+    const result = await this.api.commitDraft(command);
     
     if (!result.success) {
       throw new TreeConsoleError(result.code, result.error);

@@ -1,4 +1,4 @@
-import type { TreeNode } from '@hierarchidb/common-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 
 export const logIntegrationWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;

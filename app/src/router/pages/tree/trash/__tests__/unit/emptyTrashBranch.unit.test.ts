@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { describe, expect, it, vi } from 'vitest';
 import { emptyTrashBranch } from '../../emptyTrashBranch.js';
 

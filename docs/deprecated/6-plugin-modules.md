@@ -54,7 +54,7 @@ workerでのAPIサービスを、アスペクト志向でのクロスカット�
 
 ```typescript
 // 例: BaseMapプラグイン定義
-export const BaseMapUnifiedDefinition: UnifiedPluginDefinition<BaseMapEntity, never, BaseMapWorkingCopy> = {
+export const BaseMapUnifiedDefinition: UnifiedPluginDefinition<BaseMapEntity, never, BaseMapDraft> = {
   // AOP機能（従来のNodeTypeDefinition）
   nodeType: 'basemap' as TreeNodeType,
   name: 'BaseMap',

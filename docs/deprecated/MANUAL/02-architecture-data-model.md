@@ -27,7 +27,7 @@ HierarchiDBのデータモデルは、コアのTreeNode構造と、プラグイ�
 │  │  - TreeNode (基本ツリー構造)                              │    │
 │  │  - TreeTypes (ツリーメタデータ)                               │    │
 │  │  │  - TreeRootState (展開状態)                          │    │
-│  │  - WorkingCopyTypes (一時編集データ)                          │    │
+│  │  - DraftTypes (一時編集データ)                          │    │
 │  └─────────────────────────────────────────────────────────┘    │
 ├─────────────────────────────────────────────────────────────────┤
 │  Layer 2: Plugin Entity Classification (6-Class System)        │
@@ -115,14 +115,14 @@ export type TreeNode = TreeNodeBase &
   Partial<TrashItemProperties>;
 
 // ワーキングコピー（一時編集用）
-export interface WorkingCopyProperties {
-  workingCopyId: UUID;
-  workingCopyOf: NodeId;
+export interface DraftProperties {
+  draftId: UUID;
+  draftOf: NodeId;
   copiedAt: Timestamp;
   isDirty: boolean;
 }
 
-export type WorkingCopyTypes = TreeNode & WorkingCopyProperties;
+export type DraftTypes = TreeNode & DraftProperties;
 ```
 
 ### 6.2.3 ツリー状態管理
@@ -223,7 +223,7 @@ export interface PersistentMetadata {
 // Ephemeral拡張
 export interface EphemeralMetadata {
   sessionId: UUID;
-  workingCopyId?: UUID;
+  draftId?: UUID;
   expiresAt: Timestamp;
   autoDeleteTriggers: AutoDeleteTrigger[];
 }
@@ -340,7 +340,7 @@ export class CoreDB extends Dexie {
 
 ```typescript
 export class EphemeralDB extends Dexie {
-  workingCopies!: Table<WorkingCopyTypes, UUID>;
+  workingCopies!: Table<DraftTypes, UUID>;
   sessions!: Table<SessionData, UUID>;
   
   // Ephemeralエンティティストア（動的登録）
@@ -349,7 +349,7 @@ export class EphemeralDB extends Dexie {
   constructor(name: string) {
     super(`${name}-EphemeralDB`);
     this.version(1).stores({
-      workingCopies: '&workingCopyId, workingCopyOf, parentNodeId, updatedAt',
+      workingCopies: '&draftId, draftOf, parentNodeId, updatedAt',
       sessions: '&sessionId, nodeId, expiresAt, [nodeId+sessionType]'
     });
     
@@ -443,10 +443,10 @@ export interface TreeMutationService {
   copyNode(payload: CopyNodePayload): Promise<CommandResult>;
   
   // Working Copy operations
-  createWorkingCopy(nodeId: NodeId): Promise<WorkingCopyTypes>;
-  updateWorkingCopy(workingCopyId: UUID, changes: Partial<TreeNode>): Promise<void>;
-  commitWorkingCopy(workingCopyId: UUID): Promise<CommandResult>;
-  discardWorkingCopy(workingCopyId: UUID): Promise<void>;
+  createDraft(nodeId: NodeId): Promise<DraftTypes>;
+  updateDraft(draftId: UUID, changes: Partial<TreeNode>): Promise<void>;
+  commitDraft(draftId: UUID): Promise<CommandResult>;
+  discardDraft(draftId: UUID): Promise<void>;
   
   // Plugin Entity mutations (自動ライフサイクル管理)
   createEntity<T>(

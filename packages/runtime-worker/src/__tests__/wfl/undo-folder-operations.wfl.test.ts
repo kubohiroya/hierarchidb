@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-types';
+import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import * as Comlink from 'comlink';
 import { describe, expect, it, vi } from 'vitest';
 import { MessageChannel, type MessagePort as NodeMessagePort } from 'worker_threads';

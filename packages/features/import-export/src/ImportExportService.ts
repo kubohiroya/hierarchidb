@@ -1,4 +1,5 @@
-import type { NodeId, NodeType, TreeNode, TreeNodeMetadata } from '@hierarchidb/common-types';
+import type { NodeId, NodeType } from '@hierarchidb/core-types';
+import type { TreeNode, TreeNodeMetadata } from '@hierarchidb/tree-api';
 import type {
   ExportNodesParams,
   ExportResult,

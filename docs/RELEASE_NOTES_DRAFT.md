@@ -21,7 +21,7 @@ Feature Flags
 Compatibility & Rollback
 - CommandProcessor routing for create/update/move/remove/recover is now unconditional (legacy flags removed)
 - Error codes now align with Core; UI mapping can be updated incrementally
-- WorkingCopyService.commit delegates to CP when V2 enabled; legacy path still works
+- DraftService.commit delegates to CP when V2 enabled; legacy path still works
 
 Migration (Trash)
 - Use `packages/runtime/worker/src/tools/trash-migrate.ts`

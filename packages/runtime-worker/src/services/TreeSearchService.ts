@@ -1,5 +1,5 @@
-import type { TreeQueryAPI } from '@hierarchidb/tree-api';
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { TreeNode, TreeQueryAPI } from '@hierarchidb/tree-api';
 
 type DepthSearchOptions = {
   maxDepth: number;

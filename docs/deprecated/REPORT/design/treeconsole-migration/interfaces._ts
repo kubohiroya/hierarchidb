@@ -243,7 +243,7 @@ export interface ResourceReferenceError extends Error {
 //
 // The WorkerAPI already provides:
 // - TreeObservableService (observeNode, observeChildren, observeSubtree, etc.)
-// - TreeMutationService (createWorkingCopy, commitWorkingCopy, moveNodes, etc.)
+// - TreeMutationService (createDraft, commitDraft, moveNodes, etc.)
 // - TreeQueryService (getNode, getChildren, searchNodes, etc.)
 // - All command handling via CommandEnvelope pattern
 // ============================================================================

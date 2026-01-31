@@ -3,7 +3,7 @@
  * @description Modeless dialog manager with stacking and restore icons for the map page.
  */
 
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { PluginDialogHeader } from '@hierarchidb/plugin-ui-host';
 import type {
   HeadlessDialogHeaderProps,

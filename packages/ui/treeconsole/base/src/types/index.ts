@@ -5,7 +5,8 @@
 
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 // Observable/Subscription types
-import type { NodeId, NodeType, TreeChangeEvent, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, NodeType } from '@hierarchidb/core-types';
+import type { OnNameConflict, TreeChangeEvent, TreeNode } from '@hierarchidb/tree-api';
 import type { DualKeyMap } from '@hierarchidb/util';
 import type { RowSelectionState } from '@tanstack/react-table';
 import type { ReactNode } from 'react';
@@ -342,7 +343,7 @@ export interface AdapterContext {
   sessionId?: string;
   groupId?: string;
   viewId?: string;
-  onNameConflict?: (name: string) => string;
+  onNameConflict?: OnNameConflict;
   prefetchDepth?: number;
   /** Optional latest node snapshot (metadata/data) already held by the caller */
   nodeSnapshot?: TreeNode;

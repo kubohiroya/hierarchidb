@@ -54,10 +54,10 @@ class FolderEntityHandler {
   async deleteEntity(nodeId: NodeId): Promise<void>;
   
   // Working Copyパターン
-  async createWorkingCopy(nodeId: NodeId): Promise<FolderEntityWorkingCopy>;
-  async commitWorkingCopy(nodeId: NodeId, workingCopy: FolderEntityWorkingCopy): Promise<void>;
-  async discardWorkingCopy(nodeId: NodeId): Promise<void>;
-  async updateWorkingCopy(workingCopyId: NodeId, updates: Partial<FolderEntityWorkingCopy>): Promise<FolderEntityWorkingCopy>;
+  async createDraft(nodeId: NodeId): Promise<FolderEntityDraft>;
+  async commitDraft(nodeId: NodeId, draft: FolderEntityDraft): Promise<void>;
+  async discardDraft(nodeId: NodeId): Promise<void>;
+  async updateDraft(draftId: NodeId, updates: Partial<FolderEntityDraft>): Promise<FolderEntityDraft>;
   
   // 追加機能
   async cleanup(nodeId: NodeId): Promise<void>;
@@ -129,19 +129,19 @@ async updateEntity(nodeId: NodeId, data: Partial<ExtendedEntity>): Promise<void>
 }
 ```
 
-### createWorkingCopy (オーバーライド可能)
+### createDraft (オーバーライド可能)
 
 作業コピー作成時の処理をカスタマイズ。
 
 ```typescript
-async createWorkingCopy(nodeId: NodeId): Promise<ExtendedWorkingCopy> {
-  const baseWorkingCopy = await super.createWorkingCopy(nodeId);
+async createDraft(nodeId: NodeId): Promise<ExtendedDraft> {
+  const baseDraft = await super.createDraft(nodeId);
   
   // 拡張データを作業コピーに含める
   const extendedData = await this.getExtendedData(nodeId);
   
   return {
-    ...baseWorkingCopy,
+    ...baseDraft,
     ...extendedData,
     isDraft: true
   };

@@ -158,7 +158,7 @@
 🎯 Working Copy作成を実行する
 🎉 元のShapesの完全なコピーがEphemeralDBに作成される
 🎉 Working Copy固有のIDが生成される
-🎉 workingCopyOfプロパティが元のnodeIdを参照する
+🎉 draftOfプロパティが元のnodeIdを参照する
 🎉 copiedAtプロパティに作成時刻が設定される
 🚫 元のShapesは変更されない
 ```

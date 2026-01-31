@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import type { TreeViewControllerProps } from './useTreeViewController.js';
 import { useTreeViewController } from './useTreeViewController.js';
-import { type NodeId } from '@hierarchidb/common-types';
+import { type NodeId } from '@hierarchidb/core-types';
 
 vi.mock('comlink', () => ({
   proxy: <T,>(value: T) => value,

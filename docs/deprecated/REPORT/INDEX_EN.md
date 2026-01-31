@@ -55,7 +55,7 @@
   - basemap-plugin-migration.md
   - plugin-migration.md
   - react19-es2022-migration.md
-  - working-copy-migration-plan.md
+  - draft-migration-plan.md
 - **[import-export-migration-plan.md](./import-export-migration-plan.md)** - Import/Export Migration
 
 ### Build & Development Environment

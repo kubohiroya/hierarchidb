@@ -58,7 +58,7 @@
   - MUI `TextField` による Name / Description 入力。
 - 入力と validated 条件
   - 必須: Name（非空）。
-  - validated: `!!workingCopy.name`。
+  - validated: `!!draft.name`。
 - バッチ処理開始ボタン
   - なし。
 
@@ -67,7 +67,7 @@
   - データソース一覧（`DATA_SOURCE_CONFIGS`）から選択（カード風 UI）。
 - 入力と validated 条件
   - 必須: `dataSourceName` の選択。
-  - validated: `!!workingCopy.dataSourceName`。
+  - validated: `!!draft.dataSourceName`。
 - バッチ処理開始ボタン
   - なし。
 
@@ -76,7 +76,7 @@
   - 選択したデータソースのライセンス表示＋同意アクション。
 - 入力と validated 条件
   - 必須: `licenseAgreement === true`。
-  - validated: `workingCopy.licenseAgreement === true`。
+  - validated: `draft.licenseAgreement === true`。
 - バッチ処理開始ボタン
   - なし。
 
@@ -84,7 +84,7 @@
 - 画面構成
   - 処理オプション（並列度、簡略化等）。
 - 入力と validated 条件
-  - 条件: `validateProcessingConfig(workingCopy.processingConfig)` が true。
+  - 条件: `validateProcessingConfig(draft.processingConfig)` が true。
   - validated: 上記検証の成功。
 - バッチ処理開始ボタン
   - 表示: あり（このステップ以降でフッターに表示）。
@@ -100,7 +100,7 @@
   - 国×行政レベル選択マトリクス、統計表示、選択検証。
 - 入力と validated 条件
   - 必須: 1 マス以上の選択。
-  - validated: `hasSelectedCountries(workingCopy)` が true。
+  - validated: `hasSelectedCountries(draft)` が true。
 - バッチ処理開始ボタン
   - 表示: あり（Step 4 と 5）。
   - 有効化条件: Step 4 記載の `canStartBatch` をすべて満たす。

@@ -61,7 +61,7 @@ HierarchiDBの現バージョンで実際に利用可能な機能を説明しま
    - プラグインエンティティ
 
 2. **EphemeralDB**: 一時データの保存
-   - WorkingCopyTypes（編集中データ）
+   - DraftTypes（編集中データ）
    - セッション情報
 
 ### 自動保存

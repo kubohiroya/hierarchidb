@@ -6,15 +6,15 @@ _Last updated: 2025-10-30_
 
 | レイヤー | 主な所在 | 役割/エクスポート | 主な依存 |
 | --- | --- | --- | --- |
-| **Author SDK** | `packages/plugin-ui-sdk/src/dialog` | プラグイン作者向け API（`BaseDialogPlugin`, `NodeDialogPlugin`, `NodeDialogExtensionAPI` 等）<br>Dialog ステップの定義・登録、WorkingCopy とのブリッジ | `@hierarchidb/plugin-service-api`, コア型 (`PeerEntity` など) |
+| **Author SDK** | `packages/plugin-ui-sdk/src/dialog` | プラグイン作者向け API（`BaseDialogPlugin`, `NodeDialogPlugin`, `NodeDialogExtensionAPI` 等）<br>Dialog ステップの定義・登録、Draft とのブリッジ | `@hierarchidb/plugin-service-api`, コア型 (`PeerEntity` など) |
 | **Presentation API** | `packages/plugin-presentation/src` | `getPresentation`, `getIconComponent`, `prefetchAllIcons` 等プレゼンテーションメタデータの取得とキャッシュ | `@hierarchidb/ui-icon` |
 | **Runtime Host UI** | `packages/plugin-ui-host/src` | `PluginDialogHost`（ファサード）, `PluginDialogShell`, `PluginDialogFooter`, `PluginDialogHeader` 等ホストアプリ向け UI / プレゼンテーション層 | `react`, `@mui/*`, `@tanstack/react-router`, `@hierarchidb/ui-worker-client` |
 | **Generic Dialog Components** | `packages/ui/dialog/src` | 共通ダイアログコンポーネント（`CommonDialog`, `AutoHideFullScreenDialog` 等）<br>プラグイン固有の知識は持たず UI スタイルに特化 | `@mui/*` |
-| **App Host Wiring** | `app/src/router/routes/tree/PluginDialogRoute.tsx` | React Router との接続、WorkingCopy ID リダイレクト、完了時ナビゲーション<br>`PluginDialogHost` ファサード経由でホスト固有オプションを注入 | `@tanstack/react-router`, `@hierarchidb/ui-worker-client`, `@hierarchidb/plugin-ui-host` |
+| **App Host Wiring** | `app/src/router/routes/tree/PluginDialogRoute.tsx` | React Router との接続、Draft ID リダイレクト、完了時ナビゲーション<br>`PluginDialogHost` ファサード経由でホスト固有オプションを注入 | `@tanstack/react-router`, `@hierarchidb/ui-worker-client`, `@hierarchidb/plugin-ui-host` |
 
 ### 1.1 現状の問題点
 - ヘッドレスロジックが `plugin-ui-sdk` と `ui/plugin-dialog` の双方に散在し、責務境界が不明瞭。
-- `PluginDialogShell` がアプリ固有のルーティング／WorkingCopy 処理を一部抱え、ホストごとの再利用が難しい（→ `PluginDialogHost` ファサードで吸収する）。
+- `PluginDialogShell` がアプリ固有のルーティング／Draft 処理を一部抱え、ホストごとの再利用が難しい（→ `PluginDialogHost` ファサードで吸収する）。
 - プレゼンテーションメタデータの参照元が複数（app 独自サービスと UI util）に分散しており、キャッシュ整合が取りにくい。
 - パッケージ名と実際の機能が一致しにくく、学習コストが高い（`ui-plugin-dialog` がヘッドレス処理も内包）。
 - ドキュメントが複数 README/タスクログに分散しており、俯瞰できる資料がない。
@@ -23,7 +23,7 @@ _Last updated: 2025-10-30_
 
 | 案 | 概要 | メリット | デメリット / リスク |
 | --- | --- | --- | --- |
-| **Option A: `@hierarchidb/plugin-base` 新設** | ヘッドレス機能（コントローラー、レジストリ、WorkingCopy ブリッジ）を新パッケージへ移動。`plugin-ui-sdk` は作者向け API を再エクスポートし、`plugin-ui-host` は UI に特化。 | レイヤーが明確化／テスト容易化。ホスト・作者両者が同じ抽象を参照できる。 | 新パッケージ追加による依存更新が広範。リリース順序管理が必要。 |
+| **Option A: `@hierarchidb/plugin-base` 新設** | ヘッドレス機能（コントローラー、レジストリ、Draft ブリッジ）を新パッケージへ移動。`plugin-ui-sdk` は作者向け API を再エクスポートし、`plugin-ui-host` は UI に特化。 | レイヤーが明確化／テスト容易化。ホスト・作者両者が同じ抽象を参照できる。 | 新パッケージ追加による依存更新が広範。リリース順序管理が必要。 |
 | **Option B: `@hierarchidb/plugin-dialog` へ統合** | `plugin-ui-sdk` と `plugin-ui-host` を単一パッケージの `/core`・`/ui` サブパスとして公開。 | 参照先が 1 つになり導入が簡単。 | 大規模な rename／公開範囲拡大でリリースが重い。軽量利用でも UI バンドルを引き込みがち。 |
 | **Option C: パッケージ維持 + ガイド整備** | 既存構成を保ちつつ、責務を再整理／ドキュメント整備。ヘッドレスロジックを片側へ寄せるなど小改修。 | 影響が小さく短期でできる。 | 根本的な散在は残り、長期的には再び混乱する恐れ。 |
 
@@ -33,7 +33,7 @@ _Last updated: 2025-10-30_
 - `@hierarchidb/plugin-base` を新設し、以下を移設
   - `usePluginDialogController` と関連型
   - Step / Host registry（`PluginStepRegistry`, `HostProfileRegistry`）
-  - WorkingCopy/TreeNode data ブリッジ（`getWorkerBridge`, WorkingCopy hooks）
+  - Draft/TreeNode data ブリッジ（`getWorkerBridge`, Draft hooks）
   - URL 同期・状態管理ロジック
 - `@hierarchidb/plugin-ui-sdk` は作者向け API を `plugin-base` から再エクスポート。
 - `@hierarchidb/plugin-ui-host` は UI コンポーネント（シェル、フッター、ステッパー）と `PluginDialogHost` ファサードに集中させる。
@@ -51,7 +51,7 @@ _Last updated: 2025-10-30_
    - 既存利用箇所（アプリ／プラグイン）は挙動変更なしでビルドが通ることを確認。
 
 3. **ホスト統合**（1〜2 PR）
-   - `@hierarchidb/plugin-ui-host` に `<PluginDialogHost />` を追加し、ルーターや WorkingCopy リダイレクトをコンポーネント化。
+   - `@hierarchidb/plugin-ui-host` に `<PluginDialogHost />` を追加し、ルーターや Draft リダイレクトをコンポーネント化。
    - `app` 側はルート定義／ナビゲーションコールバックを渡すだけで利用できる形に刷新。
 
 4. **整備・ドキュメント**（1 PR）

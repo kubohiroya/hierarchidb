@@ -3,7 +3,7 @@
  * @description Modeless dialog layout persistence helpers.
  */
 
-import type { DialogDisplayMode, DialogPosition, DialogSize } from '@hierarchidb/common-types';
+import type { DialogDisplayMode, DialogPosition, DialogSize } from '@hierarchidb/tree-api';
 import {
   getPresetSize,
   getViewportSize,

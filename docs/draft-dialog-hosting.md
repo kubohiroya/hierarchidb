@@ -1,4 +1,4 @@
-# WorkingCopy Dialog Hosting: Current Notes
+# Draft Dialog Hosting: Current Notes
 
 - Creation flow (TreeConsole): `create:<nodeType>` → create working copy node → navigate to `/t/<treeId>/<parentId>/<wcNodeId>/<nodeType>/create`. The dialog UI is resolved from the plugin registry entry (UI export) at runtime.
 - Responsibilities:

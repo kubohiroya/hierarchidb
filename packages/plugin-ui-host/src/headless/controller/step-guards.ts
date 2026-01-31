@@ -1,4 +1,5 @@
 import type { PluginStepConfig, StepData } from '@hierarchidb/plugin-base';
+import type { TreeNodeMetadata } from '@hierarchidb/tree-api';
 import type { DialogStep } from '@hierarchidb/ui-dialog';
 import type { BasicInfoMeta } from '../usePluginDialogController/data-types.js';
 import type { StepGuardState } from './types.js';
@@ -72,7 +73,7 @@ export const BASIC_INFO_META_KEY = '__basicInfoValidation';
 
 export const buildStepWorkingData = (
   draftData: StepData | undefined,
-  basicInfo?: import('@hierarchidb/common-types').TreeNodeMetadata | null,
+  basicInfo?: TreeNodeMetadata | null,
   _basicInfoMeta?: BasicInfoMeta
 ): StepData => {
   const baseSource = toRecord(basicInfo) ?? {};
@@ -227,7 +228,7 @@ export async function evaluateStepGuards({
 }
 
 export const mergeDialogData = (
-  _basic: import('@hierarchidb/common-types').TreeNodeMetadata,
+  _basic: TreeNodeMetadata,
   workingData: StepData | null | undefined
 ): StepData => {
   return workingData ? { ...workingData } : {};

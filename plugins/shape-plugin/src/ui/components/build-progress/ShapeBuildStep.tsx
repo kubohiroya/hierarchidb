@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { Provider, useAtomValue, useSetAtom } from 'jotai';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { ShapeBuildProgressPanel } from './ShapeBuildProgressPanel.js';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import {

@@ -2,7 +2,8 @@
  * Edit/preview dialog helpers for TreeConsole.
  */
 
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import { composeStepConfigs } from '@hierarchidb/plugin-base';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import { DualKeyMap } from '@hierarchidb/util';

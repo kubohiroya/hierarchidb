@@ -1,8 +1,8 @@
-import type { DataSourceName as CommonDataSourceName } from '@hierarchidb/common-types';
+import type { DataSourceName as CoreDataSourceName } from '@hierarchidb/core-types';
 
 export type CacheEntryData = Record<string, unknown> | string | number | boolean | null;
 
-export type DataSourceName = CommonDataSourceName;
+export type DataSourceName = CoreDataSourceName;
 
 export interface CommonSessionConfig {
   dataSourceName?: DataSourceName;

@@ -2,7 +2,7 @@
  * Clipboard actions for TreeConsole.
  */
 
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeConsoleActionDeps } from '../types.js';
 import {
   ensureClipboard,

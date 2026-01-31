@@ -43,9 +43,9 @@ const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
 **目的**: 楽観的ロッキングとundo/redo対応
 
 **実装内容**:
-- 編集開始時: `createWorkingCopy(nodeId)`呼び出し
-- 保存時: `commitWorkingCopy(nodeId)`でデータベース反映
-- キャンセル時: `discardWorkingCopy(nodeId)`で変更破棄
+- 編集開始時: `createDraft(nodeId)`呼び出し
+- 保存時: `commitDraft(nodeId)`でデータベース反映
+- キャンセル時: `discardDraft(nodeId)`で変更破棄
 - getCurrentNodeData()を使用したデータ整合性確保
 
 #### 3. バリデーション機能の追加
@@ -116,7 +116,7 @@ interface EditingState {
   editingNodeId: string | null;
   editingValue: string;
   originalValue: string;
-  workingCopyId: string | null;
+  draftId: string | null;
   validationErrors: string[];
   isLoading: boolean;
 }
@@ -143,13 +143,13 @@ interface TreeTableController {
 // 編集開始
 const startEdit = async (nodeId: string) => {
   const currentData = await getCurrentNodeData(nodeId);
-  const workingCopy = await createWorkingCopy(nodeId, currentData);
+  const draft = await createDraft(nodeId, currentData);
   
   setEditingState({
     editingNodeId: nodeId,
     editingValue: currentData.name,
     originalValue: currentData.name,
-    workingCopyId: workingCopy.id,
+    draftId: draft.id,
     validationErrors: [],
     isLoading: false,
   });
@@ -163,8 +163,8 @@ const finishEdit = async (nodeId: string, newValue: string) => {
     return false;
   }
   
-  await updateWorkingCopy(workingCopyId, { name: newValue });
-  await commitWorkingCopy(workingCopyId);
+  await updateDraft(draftId, { name: newValue });
+  await commitDraft(draftId);
   
   clearEditingState();
   return true;
@@ -211,6 +211,6 @@ const finishEdit = async (nodeId: string, newValue: string) => {
 
 ## 参考資料
 
-- [Working Copy Pattern実装](../implements/working-copy/)
+- [Working Copy Pattern実装](../implements/draft/)
 - [TreeConsole全体のアーキテクチャ](../architecture/)
 - [ユーザビリティガイドライン](../design/usability-guidelines.md)

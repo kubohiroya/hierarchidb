@@ -38,7 +38,7 @@ graph TD
         WA --> QA[TreeQueryAPI<br/>読み取り専用]
         WA --> MA[TreeMutationAPI<br/>データ変更]
         WA --> OA[TreeObservableAPI<br/>リアルタイム監視]
-        WA --> WCA[WorkingCopyAPI<br/>編集セッション]
+        WA --> WCA[DraftAPI<br/>編集セッション]
         WA --> PRA[PluginRegistryAPI<br/>プラグイン管理]
         WA --> PA[PluginAPI<br/>カスタム拡張]
     end
@@ -108,8 +108,8 @@ await workerAPI.initialize();
 #### `getPluginRegistryAPI(): Remote<PluginRegistryAPI>`
 プラグインシステム管理のためのPluginRegistryAPIプロキシを取得します。
 
-#### `getWorkingCopyAPI(): Remote<WorkingCopyAPI>`
-ドラフトと編集操作のためのWorkingCopyAPIプロキシを取得します。
+#### `getDraftAPI(): Remote<DraftAPI>`
+ドラフトと編集操作のためのDraftAPIプロキシを取得します。
 
 #### `getSystemHealth(): Promise<SystemHealth>`
 システム全体のヘルス状態を取得します。
@@ -337,37 +337,37 @@ interface EventFilter {
 #### `getActiveSubscriptions(): Promise<SubscriptionInfo[]>`
 アクティブな購読の一覧を取得します。
 
-## WorkingCopyAPI
+## DraftAPI
 
 ワーキングコピー（編集セッション）管理のためのAPI。
 
 ### メソッド
 
-#### `createDraftWorkingCopy(nodeType: TreeNodeType, parentNodeId: NodeId): Promise<WorkingCopyTypes>`
+#### `createDraftDraft(nodeType: TreeNodeType, parentNodeId: NodeId): Promise<DraftTypes>`
 新規ドラフトのワーキングコピーを作成します。
 
-#### `createWorkingCopyFromNode(nodeId: NodeId): Promise<WorkingCopyTypes>`
+#### `createDraftFromNode(nodeId: NodeId): Promise<DraftTypes>`
 既存ノードからワーキングコピーを作成します。
 
-#### `updateWorkingCopy(nodeId: NodeId, updates: Partial<WorkingCopyTypes>): Promise<void>`
+#### `updateDraft(nodeId: NodeId, updates: Partial<DraftTypes>): Promise<void>`
 ワーキングコピーを更新します。
 
-#### `commitWorkingCopy(nodeId: NodeId): Promise<CommitResult>`
+#### `commitDraft(nodeId: NodeId): Promise<CommitResult>`
 ワーキングコピーの変更を確定し、CoreDBに保存します。
 
-#### `discardWorkingCopy(nodeId: NodeId): Promise<void>`
+#### `discardDraft(nodeId: NodeId): Promise<void>`
 ワーキングコピーを破棄し、変更をキャンセルします。
 
-#### `getWorkingCopy(nodeId: NodeId): Promise<WorkingCopyTypes | undefined>`
+#### `getDraft(nodeId: NodeId): Promise<DraftTypes | undefined>`
 特定のワーキングコピーを取得します。
 
-#### `listWorkingCopies(): Promise<WorkingCopyTypes[]>`
+#### `listWorkingCopies(): Promise<DraftTypes[]>`
 すべてのアクティブなワーキングコピーを取得します。
 
-#### `hasWorkingCopy(nodeId: NodeId): Promise<boolean>`
+#### `hasDraft(nodeId: NodeId): Promise<boolean>`
 指定ノードのワーキングコピーが存在するか確認します。
 
-#### `validateWorkingCopy(nodeId: NodeId): Promise<ValidationResult>`
+#### `validateDraft(nodeId: NodeId): Promise<ValidationResult>`
 ワーキングコピーのバリデーションを実行します。
 
 ## PluginRegistryAPI
@@ -529,4 +529,4 @@ useEffect(() => {
 - [アーキテクチャ概要](./02-architecture-overview.md)
 - [コア操作機能](./03-core-operations.md)
 - [プラグイン開発](./04-plugin-lifecycle.md)
-- [ワーキングコピー管理](./migration/working-copy-migration-plan.md)
+- [ワーキングコピー管理](./migration/draft-migration-plan.md)

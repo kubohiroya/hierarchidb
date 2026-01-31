@@ -68,7 +68,8 @@
     "dexie": "^4.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
+    "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
@@ -98,7 +99,8 @@
     "react-dom": "^18.3.1",
     "typescript": "workspace:^5.9.3",
     "vitest": "^3.2.4",
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
+    "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
@@ -136,7 +138,7 @@
         "container"
       ],
       "capabilities": [
-        "workingCopy"
+        "draft"
       ]
     }
   }

@@ -126,8 +126,8 @@ visibility?: {
 ### Phase 2: Service層の命名規則統一
 
 #### 対象ファイル
-- 改名: `WorkingCopyManager.ts` → `WorkingCopyEntityService.ts`
-- 改名: `EntityWorkingCopyManager.ts` → `EntityWorkingCopyService.ts`
+- 改名: `DraftManager.ts` → `DraftEntityService.ts`
+- 改名: `EntityDraftManager.ts` → `EntityDraftService.ts`
 
 #### 作業内容
 1. ファイル名の変更
@@ -195,11 +195,11 @@ packages/runtime/worker/
 │   │   ├── BaseEntityHandler.ts         # 基底クラス
 │   │   ├── PeerEntityHandler.ts         # 抽象クラス
 │   │   ├── GroupEntityHandler.ts        # 抽象クラス
-│   │   └── WorkingCopyHandler.ts        # コア機能
+│   │   └── DraftHandler.ts        # コア機能
 │   └── services/
 │       ├── TreeQueryService.ts          # ツリー操作コア
 │       ├── TreeMutationService.ts       # ツリー変更コア
-│       ├── WorkingCopyEntityService.ts        # WorkingCopyコア（改名後）
+│       ├── DraftEntityService.ts        # Draftコア（改名後）
 │       └── TreeSubscriptionService.ts   # 購読管理コア
 ```
 

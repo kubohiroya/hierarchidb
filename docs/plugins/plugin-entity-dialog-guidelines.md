@@ -72,7 +72,7 @@ Step には `Partial<PluginNameEntity>` のみを渡し、必要に応じて `me
   - `plugin-ui-host` 側の重複型を撤去し、`@hierarchidb/common-types` が提供する `TreeNodeUpdaterPayload` / `TreeNodeUpdaterState` へ一本化する。
   - `TreeNodeUpdaterPayload` の `id` を `treeNodeId` にリネームし、`TreeNodeUpdaterState` も同名フィールドで揃える。パッチ型は `TreeNodeUpdaterPatch<T>` 名に切り替える。
 - **Phase 1: 実態棚卸し**  
-  - `rg "DialogData|DialogState|WorkingCopy|draft"` を用い、basemap/location/spreadsheet/styler など主要プラグインの命名とデータ構造をリストアップする。
+  - `rg "DialogData|DialogState|Draft|draft"` を用い、basemap/location/spreadsheet/styler など主要プラグインの命名とデータ構造をリストアップする。
   - `TASKS.md` にプラグインごとの移行サブタスクを追加し、依存関係と優先度を明示する。
 - **Phase 2: 型統合**  
   - 各プラグインで `PluginNameEntity` を基点に `TreeNodeUpdaterPayload<PluginNameEntity>` に収束させる。`metadata` はホスト（basic info）へ移し、`draft` ネストや UI 専用フィールドを除去。
@@ -84,7 +84,7 @@ Step には `Partial<PluginNameEntity>` のみを渡し、必要に応じて `me
   - 残存する旧名称の type import を `TreeNodeUpdater*` へ置換し、`rg "DialogData|DialogState"` が残らないことを確認。
   - テスト/型チェック: `pnpm lint && pnpm typecheck`、必要に応じて `pnpm --filter @hierarchidb/<plugin> test` を実行し、`TASKS.md` 運用ログに結果を記録。
 - **Phase 5: ドキュメント更新**  
-  - 本ガイドと `docs/plugins/working-copy-baseline.md` / `docs/workingcopy-dialog-hosting.md` の整合性を再確認し、差分があれば反映する。
+  - 本ガイドと `docs/plugins/draft-baseline.md` / `docs/draft-dialog-hosting.md` の整合性を再確認し、差分があれば反映する。
 
 ## ロールバック指針と検証
 - ロールバック: 本ガイドに従って加えた型/命名変更は個別コミットで管理し、必要に応じて該当コミットを revert。エイリアス導入で広範囲に影響する場合は feature flag ではなく段階的ブランチで統制する。
@@ -95,6 +95,6 @@ Step には `Partial<PluginNameEntity>` のみを渡し、必要に応じて `me
 - 失敗時は `TASKS.md` の運用ログにコマンド・終了コード・要約を記載し、必要ならエイリアス導入前の状態へ戻す。
 
 ## 関連ドキュメント
-- `docs/plugins/working-copy-baseline.md` — Working Copy の基本方針。
-- `docs/workingcopy-dialog-hosting.md` — ダイアログホスト責務とレジストリ連携。
+- `docs/plugins/draft-baseline.md` — Working Copy の基本方針。
+- `docs/draft-dialog-hosting.md` — ダイアログホスト責務とレジストリ連携。
 - `packages/common/types/src/tree-node-batch-types.ts` — `TreeNodeUpdaterPayload` などの共通型。

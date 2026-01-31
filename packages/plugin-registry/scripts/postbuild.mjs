@@ -27,3 +27,15 @@ for (const file of jsFiles) {
     writeFileSync(fullPath, replaced, 'utf-8');
   }
 }
+
+const typesPath = path.join(distDir, 'types.d.ts');
+try {
+  const originalTypes = readFileSync(typesPath, 'utf-8');
+  const marker = 'export type { PluginCategoryConfig, PluginDefinition, PluginIconConfig, PluginManifest, PluginRegistryEntry };';
+  if (!originalTypes.includes(marker)) {
+    const nextTypes = `${originalTypes}\n\n${marker}\n`;
+    writeFileSync(typesPath, nextTypes, 'utf-8');
+  }
+} catch {
+  // Ignore missing types output to keep build resilient.
+}

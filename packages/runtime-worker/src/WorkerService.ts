@@ -25,7 +25,6 @@ import { ImportExportDBPortCoreDBAdapter } from './services/adapters/ImportExpor
 import { TagDBPortCoreDBAdapter } from './services/adapters/TagDBPortCoreDBAdapter.js';
 import { CommandProcessor } from './services/CommandProcessor.js';
 import { CoreDB } from './services/CoreDB.js';
-import { bootstrapFeatures } from './services/FeatureBootstrap.js';
 import { ImportExportLifecycleService } from './services/ImportExportLifecycleService.js';
 import { LocationMutationService } from './services/LocationMutationService.js';
 import { LocationQueryService } from './services/LocationQueryService.js';
@@ -67,9 +66,6 @@ export class WorkerService {
   static async getSingleton(plugins: RuntimePluginDefinition[]): Promise<WorkerService> {
     return SingletonMixin.getSingleton('WorkerService', async () => {
       const coreDB: CoreDB = await CoreDB.getSingleton();
-      // Feature bootstrap (registry-driven). Keeps init order and opt-in capabilities.
-      await bootstrapFeatures();
-
       // Plugin-side Dexie peer stores are expected to self-register where applicable.
       // We avoid forcing worker-bundle imports here to keep bundles lean and prevent divergence.
 
@@ -154,6 +150,7 @@ export class WorkerService {
       const routeQueryService: RouteQueryAPI = await RouteQueryService.getSingleton(routeDB);
       const routeMutationService: RouteMutationAPI = await RouteMutationService.getSingleton(
         routeDB,
+        treeQueryService,
         locationQueryService
       );
       EntityLifecycleManager.getSingleton(coreDB, {

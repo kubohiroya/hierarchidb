@@ -4,7 +4,8 @@ import type {
   ImportValidationResult,
 } from '@hierarchidb/import-export-api';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
-import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, TreeId } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
 import { useCallback, useRef, useState } from 'react';
 import { getInstalledPlugins } from '../plugin-runtime/plugin-registry.ts';

@@ -24,8 +24,8 @@
 
 ### 新規導入されたもの
 1. **@hierarchidb/base-plugin**: 新しい基底クラス群
-   - `BaseEntityHandler<TEntity, TWorkingCopy, TCreateData, TSearchCriteria>`
-   - `HierarchicalEntityHandler<TEntity, TWorkingCopy, TCreateData, TSearchCriteria>`
+   - `BaseEntityHandler<TEntity, TDraft, TCreateData, TSearchCriteria>`
+   - `HierarchicalEntityHandler<TEntity, TDraft, TCreateData, TSearchCriteria>`
 2. **HierarchicalEntity interface**: nodeId必須フィールド追加
 
 ### 既存実装の発見
@@ -55,14 +55,14 @@
 ```typescript
 // FolderEntityHandler.old.ts から FolderEntityHandler.ts へ移動
 
-async createWorkingCopy(nodeId: NodeId): Promise<FolderEntityWorkingCopy> {
+async createDraft(nodeId: NodeId): Promise<FolderEntityDraft> {
   // 既に完成された実装が存在 - .old.tsから移動
   const entity = await this.getEntity(nodeId);
-  const workingCopyId = crypto.randomUUID() as EntityId;
+  const draftId = crypto.randomUUID() as EntityId;
   const now = Date.now();
 
-  const workingCopy: FolderEntityWorkingCopy = entity ? {
-    id: workingCopyId,
+  const draft: FolderEntityDraft = entity ? {
+    id: draftId,
     nodeId,
     name: entity.name,
     description: entity.description,
@@ -76,7 +76,7 @@ async createWorkingCopy(nodeId: NodeId): Promise<FolderEntityWorkingCopy> {
     originalVersion: entity.version,
   } : {
     // 新規作成時のデフォルト実装
-    id: workingCopyId,
+    id: draftId,
     nodeId,
     name: 'New Folder',
     description: '',
@@ -87,19 +87,19 @@ async createWorkingCopy(nodeId: NodeId): Promise<FolderEntityWorkingCopy> {
     copiedAt: now,
   };
 
-  await this.folderDB.workingCopies.add(workingCopy);
-  return workingCopy;
+  await this.folderDB.workingCopies.add(draft);
+  return draft;
 }
 
-async updateWorkingCopy(workingCopyId: EntityId, updates: Partial<FolderEntityWorkingCopy>): Promise<FolderEntityWorkingCopy> {
+async updateDraft(draftId: EntityId, updates: Partial<FolderEntityDraft>): Promise<FolderEntityDraft> {
   // 既存実装を移動・型調整
 }
 
-async commitWorkingCopy(nodeId: NodeId, workingCopy: FolderEntityWorkingCopy): Promise<void> {
+async commitDraft(nodeId: NodeId, draft: FolderEntityDraft): Promise<void> {
   // 既存実装を移動
 }
 
-async discardWorkingCopy(nodeId: NodeId): Promise<void> {
+async discardDraft(nodeId: NodeId): Promise<void> {
   // 既存実装を移動
 }
 ```
@@ -107,7 +107,7 @@ async discardWorkingCopy(nodeId: NodeId): Promise<void> {
 #### 1.2 型調整（tagsとmetadata除去）
 ```typescript
 // .old.ts の実装から tags, metadata フィールドを除去
-// FolderEntityWorkingCopy 型に合わせて調整
+// FolderEntityDraft 型に合わせて調整
 ```
 
 ### Phase 2: 型整合性修正
@@ -199,7 +199,7 @@ export type {
   FolderEntity,
   FolderBookmark,
   FolderTemplate,
-  FolderWorkingCopy,
+  FolderDraft,
   FolderOperationResult,
   FolderSearchQuery,
   FolderStatsSummary,
@@ -208,9 +208,9 @@ export type {
 } from '../entities/FolderEntity';
 
 // Working Copy types（現在不足）
-export interface FolderEntityWorkingCopy extends FolderEntity {
-  workingCopyId: string;
-  workingCopyOf: NodeId;
+export interface FolderEntityDraft extends FolderEntity {
+  draftId: string;
+  draftOf: NodeId;
   copiedAt: Timestamp;
   isDirty: boolean;
   expiresAt?: Timestamp;
@@ -276,9 +276,9 @@ export class FolderEntityManager {
     return entity || undefined; // null -> undefined 変換
   }
 
-  async createWorkingCopy(nodeId: NodeId): Promise<FolderEntityWorkingCopy> {
+  async createDraft(nodeId: NodeId): Promise<FolderEntityDraft> {
     // 正しいWorking Copy作成
-    return await this.handler.createWorkingCopy(nodeId);
+    return await this.handler.createDraft(nodeId);
   }
 
   async addBookmark(
@@ -307,7 +307,7 @@ export class FolderEntityManager {
 import { useTranslation } from 'react-i18next';  // provider-i18next -> react-i18next
 
 // Tags フィールドは削除（UIレベルでは使用しない）
-const handleUpdate = (updates: Partial<FolderEntityWorkingCopy>) => {
+const handleUpdate = (updates: Partial<FolderEntityDraft>) => {
   // tags フィールドを除去
   const { tags, ...validUpdates } = updates;
   onUpdate(validUpdates);
@@ -319,7 +319,7 @@ const handleUpdate = (updates: Partial<FolderEntityWorkingCopy>) => {
 // src/ui/RuntimeWorkerService.ts
 export type {
   FolderEntity,
-  FolderEntityWorkingCopy,
+  FolderEntityDraft,
   FolderSettings,
   FolderBookmark,
   FolderTemplate,
@@ -394,10 +394,10 @@ export function createDefaultFolderEntity(data: Partial<FolderEntity>): FolderEn
 describe('FolderEntityHandler', () => {
   // Working Copy メソッドのテスト修正
   it('should create working copy', async () => {
-    const workingCopy = await handler.createWorkingCopy(nodeId);
-    expect(workingCopy).toBeDefined();
-    expect(workingCopy.workingCopyId).toBeDefined();
-    expect(workingCopy.nodeId).toBe(nodeId);
+    const draft = await handler.createDraft(nodeId);
+    expect(draft).toBeDefined();
+    expect(draft.draftId).toBeDefined();
+    expect(draft.nodeId).toBe(nodeId);
   });
 
   // プロパティアクセステスト修正

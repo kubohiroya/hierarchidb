@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { LocationFeature, LocationGroupItemData, LocationRelationMeta } from './locationTypes.js';
 
 export interface LocationGroupItem {

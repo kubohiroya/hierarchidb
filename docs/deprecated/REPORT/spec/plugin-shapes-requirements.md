@@ -351,7 +351,7 @@ export const shapesPlugin: PluginConfig = {
       {
         name: 'shapes_workingcopies',
         storage: 'ephemeral',
-        schema: '&workingCopyId, workingCopyOf, copiedAt',
+        schema: '&draftId, draftOf, copiedAt',
         ttl: 86400000 // 24時間
       },
       {

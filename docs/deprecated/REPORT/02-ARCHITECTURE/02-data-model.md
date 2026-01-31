@@ -11,7 +11,7 @@ HierarchiDB Data Model
 │   └── TreeRootState
 └── Plugin Models (拡張データ)
     ├── Entity (6分類システム)
-    └── WorkingCopyTypes
+    └── DraftTypes
 ```
 
 ## コアデータモデル
@@ -176,12 +176,12 @@ interface BatchSessionEntity extends EphemeralRelationalEntity {
 
 ## ワーキングコピーシステム
 
-### WorkingCopy定義
+### Draft定義
 ```typescript
-interface WorkingCopyTypes extends TreeNode {
+interface DraftTypes extends TreeNode {
   // ワーキングコピー識別
-  workingCopyId: UUID;
-  workingCopyOf: NodeId;        // オリジナルノード
+  draftId: UUID;
+  draftOf: NodeId;        // オリジナルノード
   
   // 状態管理
   copiedAt: Timestamp;
@@ -197,7 +197,7 @@ interface WorkingCopyTypes extends TreeNode {
 ```
 新規作成/編集開始
     ↓
-WorkingCopy作成（EphemeralDB）
+Draft作成（EphemeralDB）
     ↓
 編集操作（リアルタイム保存）
     ↓
@@ -233,8 +233,8 @@ const coreDBSchema = {
 // 一時データスキーマ
 const ephemeralDBSchema = {
   workingCopies: [
-    '&workingCopyId',
-    'workingCopyOf',            // オリジナルノード参照
+    '&draftId',
+    'draftOf',            // オリジナルノード参照
     'parentNodeId',
     'updatedAt'
   ].join(', '),

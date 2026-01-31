@@ -8,10 +8,3 @@ export * from './processor.js';
 export * from './processors/ColumnRenameProcessor.js';
 export * from './processors/NumberCoerceProcessor.js';
 export * from './processors/RequiredColumnsValidator.js';
-export class FeatureDefinition {
-  static readonly manifest = { name: '@hierarchidb/tabular-source', provides: ['tabular-source'] };
-
-  static init(): void {
-    // no-op
-  }
-}

@@ -23,5 +23,5 @@ accepted
 - B: 常にエラーだが誘導なし → 解決導線に欠け、UXが悪化。
 
 ## 付記（Notes）
-- 単一WC共有（adr-single-working-copy-per-target）と整合。CommandProcessorのイベント設計にも影響するため、後続ドキュメントで補足する。
+- 単一WC共有（adr-single-draft-per-target）と整合。CommandProcessorのイベント設計にも影響するため、後続ドキュメントで補足する。
 

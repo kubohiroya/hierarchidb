@@ -1,10 +1,10 @@
+import type { NodeId } from '@hierarchidb/core-types';
 import type {
   DialogDisplayMode,
   DialogPosition,
   DialogSize,
   DialogUIState,
-  NodeId,
-} from '@hierarchidb/common-types';
+} from '@hierarchidb/tree-api';
 import {
   FRAME_CONSTANTS,
   getDialogLayoutViewport,

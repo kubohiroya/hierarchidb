@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeFeatureMetadata } from '@hierarchidb/shape-api';
 import { buildFeatureId, extractGeometryStats } from './featureMetadataUtils.ts';
 import { pickAdminCode, pickAdminName } from '@hierarchidb/gis-sdk';

@@ -99,8 +99,8 @@ type | ValidationFunction — packages/common/types/src/validation-plugin-defini
 <!-- END GENERATED CANDIDATES -->
 
 ## 既知の特殊ケース
-- `packages/common/types/src/entiry-working-copy-plugin-definition.ts.bak`（typo あり、`.bak`）
-  - 下記エクスポートはすべて外部未使用: `EntityWorkingCopy*`, `*WorkingCopy`, `EntiryWorkingCopyTypes` など計12件。
+- `packages/common/types/src/entiry-draft-plugin-definition.ts.bak`（typo あり、`.bak`）
+  - 下記エクスポートはすべて外部未使用: `EntityDraft*`, `*Draft`, `EntiryDraftTypes` など計12件。
   - 方針: 削除 or `deprecated/` へ移動を検討。
 
 ## 推奨アクション（非破壊）

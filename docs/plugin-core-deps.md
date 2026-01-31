@@ -16,7 +16,6 @@ graph LR
   BA["@hierarchidb/batch-api"]
   BT["@hierarchidb/batch-types"]
   DL["@hierarchidb/download"]
-  FR["@hierarchidb/feature-registry"]
   MAP["@hierarchidb/map-adapter"]
   MS["@hierarchidb/map-source"]
   IE["@hierarchidb/import-export"]
@@ -45,7 +44,6 @@ graph LR
   RW --> PSA
   RW --> BA
   RW --> CT
-  RW --> FR
   RW --> MAP
   RW --> MS
   RW --> IE

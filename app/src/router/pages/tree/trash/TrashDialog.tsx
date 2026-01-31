@@ -1,10 +1,10 @@
+import type { NodeId } from '@hierarchidb/core-types';
 import type {
   DialogDisplayMode,
   DialogPosition,
   DialogSize,
-  NodeId,
   TreeNode,
-} from '@hierarchidb/common-types';
+} from '@hierarchidb/tree-api';
 import {
   type HeadlessFooterRenderProps,
   type HeadlessHeaderRenderProps,

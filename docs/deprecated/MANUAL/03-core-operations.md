@@ -63,21 +63,21 @@ if (result.success) {
   console.log('Created node:', result.nodeId);
 }
 
-// WorkingCopyAPIを使用したドラフト作成と編集
-const workingCopyAPI = await workerAPI.getWorkingCopyAPI();
-const draft = await workingCopyAPI.createDraftWorkingCopy(
+// DraftAPIを使用したドラフト作成と編集
+const draftAPI = await workerAPI.getDraftAPI();
+const draft = await draftAPI.createDraftDraft(
   'document',
   parentNodeId
 );
 
 // 編集処理...
-await workingCopyAPI.updateWorkingCopy(draft.nodeId, {
+await draftAPI.updateDraft(draft.nodeId, {
   name: 'My Document',
   description: 'Important document'
 });
 
 // 保存
-await workingCopyAPI.commitWorkingCopy(draft.nodeId);
+await draftAPI.commitDraft(draft.nodeId);
 ```
 
 ### Read（読み取り）
@@ -133,21 +133,21 @@ sequenceDiagram
     participant UI as UI Dialog
     participant Client as UI Client
     participant Worker as Worker API
-    participant WCManager as WorkingCopyTypes Manager
+    participant WCManager as DraftTypes Manager
     participant Handler as Entity Handler
     participant EphemeralDB as EphemeralDB
     participant CoreDB as CoreDB
     
     UI->>Client: openDialog(nodeId)
-    Client->>Worker: createWorkingCopy(nodeId)
+    Client->>Worker: createDraft(nodeId)
     Worker->>Handler: getEntity(nodeId)
     Handler->>CoreDB: get(nodeId)
     CoreDB-->>Handler: entity
     
-    Worker->>WCManager: createWorkingCopy(entity)
-    WCManager->>EphemeralDB: add(workingCopy)
+    Worker->>WCManager: createDraft(entity)
+    WCManager->>EphemeralDB: add(draft)
     EphemeralDB-->>WCManager: success
-    WCManager-->>UI: workingCopy
+    WCManager-->>UI: draft
     
     loop Editing
         UI->>WCManager: update(changes)
@@ -160,11 +160,11 @@ sequenceDiagram
         WCManager->>Handler: updateEntity(data)
         Handler->>CoreDB: put(entity)
         CoreDB-->>Handler: success
-        WCManager->>EphemeralDB: delete(workingCopy)
+        WCManager->>EphemeralDB: delete(draft)
         EphemeralDB-->>UI: committed
     else Discard
         UI->>WCManager: discard()
-        WCManager->>EphemeralDB: delete(workingCopy)
+        WCManager->>EphemeralDB: delete(draft)
         EphemeralDB-->>UI: discarded
     end
 ```
@@ -179,23 +179,23 @@ await mutationAPI.updateNode({
   description: 'Updated description'
 });
 
-// WorkingCopyAPIを使用した編集セッション
-const workingCopyAPI = await workerAPI.getWorkingCopyAPI();
+// DraftAPIを使用した編集セッション
+const draftAPI = await workerAPI.getDraftAPI();
 
 // 既存ノードからワーキングコピー作成
-await workingCopyAPI.createWorkingCopyFromNode(targetNodeId);
+await draftAPI.createDraftFromNode(targetNodeId);
 
 // 編集
-await workingCopyAPI.updateWorkingCopy(targetNodeId, {
+await draftAPI.updateDraft(targetNodeId, {
   name: 'Edited Name',
   description: 'Edited via working copy'
 });
 
 // 変更を確定
-await workingCopyAPI.commitWorkingCopy(targetNodeId);
+await draftAPI.commitDraft(targetNodeId);
 
 // または変更を破棄
-// await workingCopyAPI.discardWorkingCopy(targetNodeId);
+// await draftAPI.discardDraft(targetNodeId);
 ```
 
 ### Delete（削除）
@@ -547,6 +547,6 @@ treeNodes: '++id, parentId, treeNodeType, name, createdAt'
 
 ## 次のステップ
 
-- [ワーキングコピー管理](./03-core-workingcopy.md)
+- [ワーキングコピー管理](./03-core-draft.md)
 - [ダイアログシステム](./03-core-dialog.md)
 - [プラグイン開発](./04-plugin-overview.md)

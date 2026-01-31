@@ -55,10 +55,10 @@ interface BaseMapEntity extends PeerEntity {
 }
 ```
 
-#### BaseMapWorkingCopy
+#### BaseMapDraft
 
 ```typescript
-interface BaseMapWorkingCopy extends WorkingCopyTypes {
+interface BaseMapDraft extends DraftTypes {
   // All BaseMapEntity fields
   nodeId: NodeId;
   mapStyle: 'streets' | 'satellite' | 'hybrid' | 'terrain' | 'custom';
@@ -76,8 +76,8 @@ interface BaseMapWorkingCopy extends WorkingCopyTypes {
   tags?: string[];
 
   // Working copy metadata
-  workingCopyId: string;
-  workingCopyOf: NodeId;
+  draftId: string;
+  draftOf: NodeId;
   copiedAt: number;
   isDirty: boolean;
 
@@ -308,10 +308,10 @@ await handler.deleteEntity('node-123' as NodeId);
 
 #### Working Copy メソッド
 
-##### createWorkingCopy
+##### createDraft
 
 ```typescript
-async createWorkingCopy(nodeId: NodeId): Promise<BaseMapWorkingCopy>
+async createDraft(nodeId: NodeId): Promise<BaseMapDraft>
 ```
 
 既存のエンティティから作業コピーを作成します。
@@ -320,25 +320,25 @@ async createWorkingCopy(nodeId: NodeId): Promise<BaseMapWorkingCopy>
 - `nodeId`: 作業コピーを作成するエンティティのNodeId
 
 **戻り値:**
-作成されたBaseMapWorkingCopyオブジェクト
+作成されたBaseMapDraftオブジェクト
 
 **エラー:**
 - `EntityNotFoundError`: エンティティが存在しない場合
 
 **使用例:**
 ```typescript
-const workingCopy = await handler.createWorkingCopy('node-123' as NodeId);
+const draft = await handler.createDraft('node-123' as NodeId);
 // 作業コピーを編集
-workingCopy.zoom = 15;
-workingCopy.isDirty = true;
+draft.zoom = 15;
+draft.isDirty = true;
 ```
 
-##### commitWorkingCopy
+##### commitDraft
 
 ```typescript
-async commitWorkingCopy(
+async commitDraft(
   nodeId: NodeId, 
-  workingCopy: BaseMapWorkingCopy
+  draft: BaseMapDraft
 ): Promise<void>
 ```
 
@@ -346,7 +346,7 @@ async commitWorkingCopy(
 
 **パラメータ:**
 - `nodeId`: エンティティのNodeId
-- `workingCopy`: コミットする作業コピー
+- `draft`: コミットする作業コピー
 
 **エラー:**
 - `EntityNotFoundError`: エンティティが存在しない場合
@@ -354,13 +354,13 @@ async commitWorkingCopy(
 
 **使用例:**
 ```typescript
-await handler.commitWorkingCopy('node-123' as NodeId, workingCopy);
+await handler.commitDraft('node-123' as NodeId, draft);
 ```
 
-##### discardWorkingCopy
+##### discardDraft
 
 ```typescript
-async discardWorkingCopy(nodeId: NodeId): Promise<void>
+async discardDraft(nodeId: NodeId): Promise<void>
 ```
 
 作業コピーを破棄します。
@@ -370,7 +370,7 @@ async discardWorkingCopy(nodeId: NodeId): Promise<void>
 
 **使用例:**
 ```typescript
-await handler.discardWorkingCopy('node-123' as NodeId);
+await handler.discardDraft('node-123' as NodeId);
 ```
 
 #### プラグイン固有メソッド
@@ -471,7 +471,7 @@ interface BaseMapDialogProps {
   open: boolean;
   nodeId?: NodeId;
   entity?: BaseMapEntity;
-  workingCopy?: BaseMapWorkingCopy;
+  draft?: BaseMapDraft;
   onClose: () => void;
   onSave: (data: Partial<BaseMapEntity>) => void;
   mode?: 'create' | 'edit';
@@ -722,12 +722,12 @@ basemaps: Table<BaseMapEntity>
 ##### basemap_workingcopies
 
 ```typescript
-basemap_workingcopies: Table<BaseMapWorkingCopy>
+basemap_workingcopies: Table<BaseMapDraft>
 ```
 
 作業コピーテーブル（TTL: 24時間）。
 
-**スキーマ:** `'&workingCopyId, workingCopyOf, copiedAt'`
+**スキーマ:** `'&draftId, draftOf, copiedAt'`
 
 ##### basemap_tiles_cache
 
@@ -909,19 +909,19 @@ async function createNewMap() {
 #### 2. 作業コピーでの編集
 
 ```typescript
-async function editMapWithWorkingCopy(nodeId: NodeId) {
+async function editMapWithDraft(nodeId: NodeId) {
   const handler = new BaseMapEntityHandler();
   
   // 作業コピー作成
-  const workingCopy = await handler.createWorkingCopy(nodeId);
+  const draft = await handler.createDraft(nodeId);
   
   // 編集
-  workingCopy.zoom = 15;
-  workingCopy.center = [139.7, 35.7];
-  workingCopy.isDirty = true;
+  draft.zoom = 15;
+  draft.center = [139.7, 35.7];
+  draft.isDirty = true;
   
   // コミット
-  await handler.commitWorkingCopy(nodeId, workingCopy);
+  await handler.commitDraft(nodeId, draft);
 }
 ```
 

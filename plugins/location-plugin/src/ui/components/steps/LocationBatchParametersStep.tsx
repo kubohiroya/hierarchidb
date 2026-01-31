@@ -25,7 +25,7 @@ import type {
   LocationRepresentationByZoomLevelConfig,
   LocationType,
 } from '../../../common/types/index.js';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { useTranslation } from '../../../common/i18n/index.js';
 import {
   Anchor,

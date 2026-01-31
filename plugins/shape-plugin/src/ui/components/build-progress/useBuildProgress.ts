@@ -1,4 +1,4 @@
-import type { NodeType } from '@hierarchidb/common-types';
+import type { NodeType } from '@hierarchidb/core-types';
 import { usePluginBatchProgress } from '@hierarchidb/ui-batch-progress';
 import {
   toShapeProgress,

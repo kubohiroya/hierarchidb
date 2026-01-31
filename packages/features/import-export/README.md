@@ -7,7 +7,7 @@ Import/export feature facade for tree nodes. Provides a storage-agnostic service
 ImportExportService.ts  Facade implementing ImportExportAPI
 ports.ts                DB port definition (bulk create/list/get)
 capability.ts           Enable/disable import/export per node type
-index.ts                Public exports + FeatureDefinition manifest
+index.ts                Public exports
 __tests__/              Unit tests
 ```
 
@@ -15,7 +15,6 @@ __tests__/              Unit tests
 - `ImportExportService` — `ImportExportAPI` implementation with progress/cancel support; static `getSingleton(dbPort)`.
 - Ports: `ImportExportDBPort` (`bulkCreateNodes`, `listChildren`, `getNode`).
 - Capability helpers: `enableImporter/disableImporter`, `enableExporter/disableExporter`.
-- `FeatureDefinition.manifest` (`provides: ['import', 'export']`).
 
 ## Consumers / usage
 - Worker runtime wires `ImportExportService` to CoreDB via an adapter; UI calls go through `@hierarchidb/import-export-api` contracts.

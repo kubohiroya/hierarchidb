@@ -1,4 +1,4 @@
-import type { NodeType } from '@hierarchidb/common-types';
+import type { NodeType } from '@hierarchidb/core-types';
 import type { PluginManifest } from '@hierarchidb/plugin-base';
 
 export const PLUGIN_ID = '@hierarchidb/resolver-plugin' as const;

@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 
 import type { ProgressInfo, VectorTileTask } from '../ports/sharedTypes.js';
 import type { VectorTileStageAdapter } from '../ports/VectorTileStageAdapter.js';

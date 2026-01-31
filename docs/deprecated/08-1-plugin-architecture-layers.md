@@ -50,7 +50,7 @@ HierarchiDBのプラグインシステムは、Worker層とUI層の2つの独立
 export interface WorkerPluginDefinition<
   TEntity extends BaseEntity,
   TSubEntity extends BaseSubEntity,
-  TWorkingCopy extends BaseWorkingCopy
+  TDraft extends BaseDraft
 > {
   // 基本情報
   nodeType: TreeNodeType;
@@ -67,7 +67,7 @@ export interface WorkerPluginDefinition<
   };
   
   // エンティティハンドラー
-  entityHandler: EntityHandler<TEntity, TSubEntity, TWorkingCopy>;
+  entityHandler: EntityHandler<TEntity, TSubEntity, TDraft>;
   
   // ライフサイクルフック
   lifecycle: {
@@ -84,7 +84,7 @@ export interface WorkerPluginDefinition<
     afterDelete?: (nodeId: TreeNodeId) => Promise<void>;
     
     // Working Copy
-    beforeCommit?: (workingCopy: TWorkingCopy) => Promise<void>;
+    beforeCommit?: (draft: TDraft) => Promise<void>;
     afterCommit?: (entity: TEntity) => Promise<void>;
     
     // 移動

@@ -10,13 +10,13 @@ sequenceDiagram
     UI->>Registry: get dialog component for nodeType
     Registry-->>UI: lazy-loaded React component factory
     UI->>Dialog: render { mode, nodeId, parentId }
-    Dialog->>Registry: useWorkingCopy.init(nodeType, mode, nodeId, parentId)
-    Registry->>Worker: getWorkingCopyAPI()
+    Dialog->>Registry: useDraft.init(nodeType, mode, nodeId, parentId)
+    Registry->>Worker: getDraftAPI()
     alt mode == 'edit'
         Worker->>Worker: fetch working copy by nodeId (entity + metadata)
         Worker-->>Registry: serialized working copy payload
     else mode == 'create'
-        Worker->>Worker: createDraftWorkingCopy(nodeType, parentId)
+        Worker->>Worker: createDraftDraft(nodeType, parentId)
         Worker-->>Registry: initial draft payload
     end
     Registry-->>Dialog: map payload via `mapFromWorker`
@@ -25,7 +25,7 @@ sequenceDiagram
 ```
 
 **Key Notes**
-- `useWorkingCopy` encapsulates the worker call sequence; dialogs provide `mapFromWorker` to translate payloads into UI-friendly state.
-- Modes `create`/`edit` are handled by the worker API (`createDraftWorkingCopy`, `getWorkingCopy`).
-- After the dialog is closed with success, `useWorkingCopy.commit()` pushes updates back to the worker before the node list refreshes.
+- `useDraft` encapsulates the worker call sequence; dialogs provide `mapFromWorker` to translate payloads into UI-friendly state.
+- Modes `create`/`edit` are handled by the worker API (`createDraftDraft`, `getDraft`).
+- After the dialog is closed with success, `useDraft.commit()` pushes updates back to the worker before the node list refreshes.
 ```

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
-import type { TreeNode } from '@hierarchidb/common-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import { Provider, useAtomValue, useSetAtom } from 'jotai';
 import { type FC, useEffect, type PropsWithChildren, type ReactElement } from 'react';
 import { useSubscriptionOrchestrator } from '../SubscriptionOrchestrator.js';

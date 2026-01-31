@@ -1,10 +1,5 @@
-import type {
-  DialogUIState,
-  NodeId,
-  OnNameConflict,
-  Timestamp,
-  TreeNode,
-} from '@hierarchidb/common-types';
+import type { NodeId, Timestamp } from '@hierarchidb/core-types';
+import type { DialogUIState, OnNameConflict, TreeNode } from '@hierarchidb/tree-api';
 import type { CoreDB } from '../CoreDB.js';
 import type { CommandResult } from '../command-types.js';
 import { WorkerErrorCodeValue } from '../command-types.js';

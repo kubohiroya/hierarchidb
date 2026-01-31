@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
-import type { NodeId, TreeId } from '@hierarchidb/common-types';
-import { toNodeType } from '@hierarchidb/common-types';
+import type { NodeId, TreeId } from '@hierarchidb/core-types';
+import { toNodeType } from '@hierarchidb/core-types';
 import * as Comlink from 'comlink';
 import { describe, expect, it } from 'vitest';
 import { MessageChannel } from 'worker_threads';

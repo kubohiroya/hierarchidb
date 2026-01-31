@@ -72,13 +72,13 @@ export interface ColorRule {
 }
 ```
 
-### 2.2 StylerWorkingCopy
+### 2.2 StylerDraft
 
 ```typescript
-export interface StylerWorkingCopy extends BaseWorkingCopy {
+export interface StylerDraft extends BaseDraft {
   nodeId: TreeNodeId;
-  workingCopyId: string;
-  workingCopyOf: TreeNodeId;
+  draftId: string;
+  draftOf: TreeNodeId;
   
   // エンティティと同じフィールド
   name: string;
@@ -118,8 +118,8 @@ sequenceDiagram
     WA->>SM: parseCSVFile(file)
     SM-->>WA: parsedData
     
-    WA->>EDB: createWorkingCopy('styler', config)
-    EDB-->>WA: workingCopyId
+    WA->>EDB: createDraft('styler', config)
+    EDB-->>WA: draftId
     
     WA->>LM: triggerBeforeCreate(config)
     Note over LM: データ検証
@@ -137,10 +137,10 @@ sequenceDiagram
         WA->>LM: triggerAfterCreate(entity)
         Note over LM: キャッシュ生成
         
-        WA->>EDB: commitWorkingCopy(workingCopyId)
+        WA->>EDB: commitDraft(draftId)
         WA-->>UI: Success(entity)
     else 検証失敗
-        WA->>EDB: discardWorkingCopy(workingCopyId)
+        WA->>EDB: discardDraft(draftId)
         WA-->>UI: Error(message)
     end
 ```
@@ -148,7 +148,7 @@ sequenceDiagram
 ### 3.2 フック実装
 
 ```typescript
-const stylerLifecycle: NodeLifecycleHooks<StylerEntity, StylerWorkingCopy> = {
+const stylerLifecycle: NodeLifecycleHooks<StylerEntity, StylerDraft> = {
   // インポート前検証
   beforeCreate: async (_parentId: TreeNodeId, nodeData: Partial<StylerEntity>) => {
     // ファイル形式検証
@@ -209,14 +209,14 @@ const stylerLifecycle: NodeLifecycleHooks<StylerEntity, StylerWorkingCopy> = {
   },
   
   // コミット前検証
-  beforeCommit: async (nodeId: TreeNodeId, workingCopy: StylerWorkingCopy) => {
+  beforeCommit: async (nodeId: TreeNodeId, draft: StylerDraft) => {
     // 必須フィールドチェック
-    if (!workingCopy.keyColumn) {
+    if (!draft.keyColumn) {
       throw new Error('Key column is required');
     }
     
     // スタイル設定の完全性チェック
-    if (!workingCopy.stylerConfig) {
+    if (!draft.stylerConfig) {
       throw new Error('Style configuration is required');
     }
   }
@@ -612,7 +612,7 @@ export const stylerWorkerExtensions = {
 ```typescript
 export class StylerDatabase extends Dexie {
   entities!: Table<StylerEntity>;
-  workingCopies!: Table<StylerWorkingCopy>;
+  workingCopies!: Table<StylerDraft>;
   tableMetadata!: Table<TableMetadata>;
   styleCache!: Table<StyleCache>;
   
@@ -621,7 +621,7 @@ export class StylerDatabase extends Dexie {
     
     this.version(3).stores({
       entities: 'nodeId, filename, keyColumn, cacheKey, updatedAt',
-      workingCopies: 'workingCopyId, nodeId, workingCopyOf',
+      workingCopies: 'draftId, nodeId, draftOf',
       tableMetadata: '&id, entityId, checksum',
       styleCache: '&key, entityId, createdAt'
     });

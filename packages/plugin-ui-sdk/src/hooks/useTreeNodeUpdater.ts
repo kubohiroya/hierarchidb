@@ -1,15 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  NodeId,
-  TreeId,
-  TreeNode,
-  NodeType,
-  TreeNodeMetadata,
+import type { NodeId, NodeType, Timestamp, TreeId } from '@hierarchidb/core-types';
+import type {
+  CommitDraftMode,
   DialogUIState,
-  Timestamp,
+  DiscardDraftOptions,
+  TreeNode,
   TreeNodeData,
-} from '@hierarchidb/common-types';
-import type { CommitDraftMode, DiscardDraftOptions, TreeNodeUpdaterAPI } from '@hierarchidb/tree-api';
+  TreeNodeMetadata,
+  TreeNodeUpdaterAPI,
+} from '@hierarchidb/tree-api';
 import type { TreeQueryAPI } from '@hierarchidb/tree-api';
 import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type { WorkerAPI } from '@hierarchidb/worker-api';

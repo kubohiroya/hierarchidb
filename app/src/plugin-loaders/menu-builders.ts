@@ -3,7 +3,7 @@
  * Sources: ~/plugin-loaders (generated at stage time)
  */
 
-import type { TreeId } from '@hierarchidb/common-types';
+import type { TreeId } from '@hierarchidb/core-types';
 import { getPresentation, prefetchAllIcons } from '../plugin-runtime/plugin-presentation.ts';
 import { getInstalledPlugins, type InstalledPlugin } from '../plugin-runtime/plugin-registry.ts';
 import { getMenuSpec, type MenuGroup } from './menu-spec.ts';

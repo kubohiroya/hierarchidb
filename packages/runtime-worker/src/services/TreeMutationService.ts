@@ -1,18 +1,15 @@
-import type { TreeMutationAPI } from '@hierarchidb/tree-api';
+import type { NodeId, NodeType, Timestamp, TreeId } from '@hierarchidb/core-types';
 import type {
   CommandEnvelope,
   CommandResult as CoreCommandResult,
   DuplicateNodesPayload,
   ImportNodesPayload,
-  NodeId,
-  NodeType,
   PasteNodesPayload,
   RedoPayload,
-  Timestamp,
-  TreeId,
+  TreeMutationAPI,
   TreeNode,
   UndoPayload,
-} from '@hierarchidb/common-types';
+} from '@hierarchidb/tree-api';
 import { SingletonMixin } from '@hierarchidb/util';
 import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';
 import { resolveDefaultNodeName } from '../utils/default-node-name.js';
@@ -22,6 +19,8 @@ import type { CoreDB } from './CoreDB.js';
 import { createNewName } from './DraftTreeNodeOperations.js';
 import { generateNodeId } from './nodeId.js';
 import { sanitizeMessageText } from './utils/error-adapter.js';
+import { hasRouteReferencesToLocations } from '@hierarchidb/route-store';
+import { hasLocationReferencesToShapes } from '@hierarchidb/location-store';
 
 const getCommandError = (result: CoreCommandResult, fallback = 'Unknown error'): string => {
   if (result.success) return fallback;
@@ -116,6 +115,42 @@ export class TreeMutationService implements TreeMutationAPI {
       if (!parent.parentId || parent.parentId === parent.id) break;
       cursor = parent.parentId;
     }
+  }
+
+  private async checkTrashReferenceGuard(
+    nodeIds: NodeId[]
+  ): Promise<{ blocked: boolean; message?: string }> {
+    if (nodeIds.length === 0) return { blocked: false };
+    const nodes: TreeNode[] = [];
+    for (const id of nodeIds) {
+      const node = await this.coreDB.getNode?.(id);
+      if (node) nodes.push(node);
+    }
+    const locationNodeIds = nodes
+      .filter((node) => node.nodeType === 'location')
+      .map((node) => node.id as NodeId);
+    if (locationNodeIds.length > 0) {
+      const hasReferences = await hasRouteReferencesToLocations(locationNodeIds);
+      if (hasReferences) {
+        return {
+          blocked: true,
+          message: 'TRASH_REF_ROUTE',
+        };
+      }
+    }
+    const shapeNodeIds = nodes
+      .filter((node) => node.nodeType === 'shape')
+      .map((node) => node.id as NodeId);
+    if (shapeNodeIds.length > 0) {
+      const hasReferences = await hasLocationReferencesToShapes(shapeNodeIds);
+      if (hasReferences) {
+        return {
+          blocked: true,
+          message: 'TRASH_REF_LOCATION',
+        };
+      }
+    }
+    return { blocked: false };
   }
 
   // ==================
@@ -650,6 +685,15 @@ export class TreeMutationService implements TreeMutationAPI {
    * : docs/13-trash-operations-analysis.md
    */
   async moveNodesToTrash(nodeIds: NodeId[]): Promise<{ success: boolean; error?: string }> {
+    try {
+      const guard = await this.checkTrashReferenceGuard(nodeIds);
+      if (guard.blocked) {
+        return { success: false, error: guard.message ?? 'Cannot move to trash.' };
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to validate references.';
+      return { success: false, error: message };
+    }
     // Route via CommandProcessor holder path first.
     // Capture original parents to reinforce flags after operation
     const originalParents = new Set<NodeId>();

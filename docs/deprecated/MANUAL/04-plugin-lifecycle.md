@@ -42,7 +42,7 @@ export class StylerEntityHandler implements EntityHandler<StylerEntity> {
     await this.database.stylerEntities.delete(nodeId);
     
     // 3. 手動でワーキングコピーを削除
-    await this.database.workingCopies.where('workingCopyOf').equals(nodeId).delete();
+    await this.database.workingCopies.where('draftOf').equals(nodeId).delete();
   }
 }
 ```
@@ -62,7 +62,7 @@ export class StylerEntityHandler implements EntityHandler<StylerEntity> {
 │  │  │        EntityRegistrationService                │    │    │
 │  │  └─────────────────────────────────────────────────┘    │    │
 │  │  ┌─────────────────────────────────────────────────┐    │    │
-│  │  │        WorkingCopyManager                       │    │    │
+│  │  │        DraftManager                       │    │    │
 │  │  └─────────────────────────────────────────────────┘    │    │
 │  │  ┌─────────────────────────────────────────────────┐    │    │
 │  │  │        DependencyResolver                       │    │    │
@@ -103,7 +103,7 @@ export interface EntityMetadata {
   dependencies?: EntityDependency[];
   
   /** ワーキングコピー設定 */
-  workingCopyConfig?: WorkingCopyConfig;
+  draftConfig?: DraftConfig;
   
   /** カスタムライフサイクルフック */
   customHooks?: EntityLifecycleHooks;
@@ -151,7 +151,7 @@ export interface EntityDependency {
 /**
  * ワーキングコピー設定
  */
-export interface WorkingCopyConfig {
+export interface DraftConfig {
   /** ワーキングコピーを作成するか */
   enabled: boolean;
   
@@ -244,7 +244,7 @@ export class EntityRegistrationService {
 export class AutoLifecycleManager {
   constructor(
     private registrationService: EntityRegistrationService,
-    private workingCopyManager: WorkingCopyManager,
+    private draftManager: DraftManager,
     private dependencyResolver: DependencyResolver,
     private database: Dexie
   ) {}
@@ -298,14 +298,14 @@ export class AutoLifecycleManager {
   /**
    * ワーキングコピー作成の自動処理
    */
-  async createWorkingCopies(nodeId: TreeNodeId, nodeType: TreeNodeType): Promise<WorkingCopySession> {
+  async createWorkingCopies(nodeId: TreeNodeId, nodeType: TreeNodeType): Promise<DraftSession> {
     const entities = this.registrationService.getEntitiesByNodeType(nodeType);
-    const session = new WorkingCopySession(nodeId);
+    const session = new DraftSession(nodeId);
     
     for (const entityMeta of entities) {
-      if (entityMeta.workingCopyConfig?.enabled) {
-        const workingCopy = await this.workingCopyManager.create(nodeId, entityMeta);
-        session.addWorkingCopy(entityMeta.storeName, workingCopy);
+      if (entityMeta.draftConfig?.enabled) {
+        const draft = await this.draftManager.create(nodeId, entityMeta);
+        session.addDraft(entityMeta.storeName, draft);
       }
     }
     
@@ -315,7 +315,7 @@ export class AutoLifecycleManager {
   /**
    * ワーキングコピーコミットの自動処理
    */
-  async commitWorkingCopies(session: WorkingCopySession): Promise<void> {
+  async commitWorkingCopies(session: DraftSession): Promise<void> {
     const entities = session.getEntityMetadata();
     
     // 依存関係順序でコミット
@@ -323,7 +323,7 @@ export class AutoLifecycleManager {
     
     await this.database.transaction('rw', session.getStoreNames(), async () => {
       for (const entityMeta of sortedEntities) {
-        await this.workingCopyManager.commit(session, entityMeta);
+        await this.draftManager.commit(session, entityMeta);
       }
     });
   }
@@ -352,20 +352,20 @@ export class AutoLifecycleManager {
 #### 3.3.3 ワーキングコピーマネージャー
 
 ```typescript
-// packages/worker/src/services/WorkingCopyManager.ts
+// packages/worker/src/services/DraftManager.ts
 
 /**
  * ワーキングコピー管理サービス
  * エンティティタイプに応じた統一的なワーキングコピー操作を提供
  */
-export class WorkingCopyManager {
+export class DraftManager {
   /**
    * ワーキングコピーを作成
    */
   async create<T extends PeerEntity>(
     nodeId: TreeNodeId,
     entityMeta: EntityMetadata
-  ): Promise<T & WorkingCopyProperties> {
+  ): Promise<T & DraftProperties> {
     // 元エンティティを取得
     const originalEntity = await this.database
       .table(entityMeta.storeName)
@@ -376,69 +376,69 @@ export class WorkingCopyManager {
     }
     
     // ワーキングコピーを作成
-    const workingCopy: T & WorkingCopyProperties = {
+    const draft: T & DraftProperties = {
       ...originalEntity,
-      workingCopyId: crypto.randomUUID(),
-      workingCopyOf: nodeId,
+      draftId: crypto.randomUUID(),
+      draftOf: nodeId,
       copiedAt: Date.now(),
       isDirty: false,
     };
     
     // ワーキングコピーストアに保存
-    const workingCopyStore = entityMeta.workingCopyConfig!.storeName;
-    await this.database.table(workingCopyStore).add(workingCopy);
+    const draftStore = entityMeta.draftConfig!.storeName;
+    await this.database.table(draftStore).add(draft);
     
-    return workingCopy;
+    return draft;
   }
   
   /**
    * ワーキングコピーをコミット
    */
   async commit(
-    session: WorkingCopySession,
+    session: DraftSession,
     entityMeta: EntityMetadata
   ): Promise<void> {
-    const workingCopy = session.getWorkingCopy(entityMeta.storeName);
-    if (!workingCopy) return;
+    const draft = session.getDraft(entityMeta.storeName);
+    if (!draft) return;
     
     // RelationalEntityの参照を更新
     if (entityMeta.entityType === 'relational') {
-      await this.updateRelationalReferences(workingCopy, entityMeta);
+      await this.updateRelationalReferences(draft, entityMeta);
     }
     
     // メインエンティティを更新
-    const { workingCopyId, workingCopyOf, copiedAt, isDirty, ...entityData } = workingCopy;
+    const { draftId, draftOf, copiedAt, isDirty, ...entityData } = draft;
     await this.database.table(entityMeta.storeName).put({
       ...entityData,
       updatedAt: Date.now(),
     });
     
     // ワーキングコピーを削除
-    const workingCopyStore = entityMeta.workingCopyConfig!.storeName;
-    await this.database.table(workingCopyStore).delete(workingCopy.workingCopyId);
+    const draftStore = entityMeta.draftConfig!.storeName;
+    await this.database.table(draftStore).delete(draft.draftId);
   }
   
   /**
    * RelationalEntityの参照カウントを更新
    */
   private async updateRelationalReferences(
-    workingCopy: any,
+    draft: any,
     entityMeta: EntityMetadata
   ): Promise<void> {
     for (const dependency of entityMeta.dependencies || []) {
       if (dependency.dependencyType === 'reference') {
-        const oldValue = workingCopy.original?.[dependency.referenceField];
-        const newValue = workingCopy[dependency.referenceField];
+        const oldValue = draft.original?.[dependency.referenceField];
+        const newValue = draft[dependency.referenceField];
         
         if (oldValue !== newValue) {
           // 古い参照を削除
           if (oldValue) {
-            await this.decrementReference(dependency.targetStore, oldValue, workingCopy.nodeId);
+            await this.decrementReference(dependency.targetStore, oldValue, draft.nodeId);
           }
           
           // 新しい参照を追加
           if (newValue) {
-            await this.incrementReference(dependency.targetStore, newValue, workingCopy.nodeId);
+            await this.incrementReference(dependency.targetStore, newValue, draft.nodeId);
           }
         }
       }
@@ -570,7 +570,7 @@ export const StylerDefinition: PluginDefinition = {
           cascadeDelete: true,
           autoCleanupOrphans: false,
         },
-        workingCopyConfig: {
+        draftConfig: {
           enabled: true,
           storeName: 'stylerWorkingCopies',
           autoCommitTriggers: ['onNodeSave'],
@@ -646,18 +646,18 @@ export class AutoEntityHandler<TEntity extends PeerEntity>
     await this.autoLifecycleManager.onNodeDelete(nodeId, this.nodeType);
   }
   
-  async createWorkingCopy(nodeId: TreeNodeId): Promise<TEntity & WorkingCopyProperties> {
+  async createDraft(nodeId: TreeNodeId): Promise<TEntity & DraftProperties> {
     // 自動ワーキングコピー作成
     const session = await this.autoLifecycleManager.createWorkingCopies(nodeId, this.nodeType);
-    return session.getPrimaryWorkingCopy() as TEntity & WorkingCopyProperties;
+    return session.getPrimaryDraft() as TEntity & DraftProperties;
   }
   
-  async commitWorkingCopy(
+  async commitDraft(
     nodeId: TreeNodeId, 
-    workingCopy: TEntity & WorkingCopyProperties
+    draft: TEntity & DraftProperties
   ): Promise<void> {
     // 自動ワーキングコピーコミット
-    const session = WorkingCopySession.fromWorkingCopy(workingCopy);
+    const session = DraftSession.fromDraft(draft);
     await this.autoLifecycleManager.commitWorkingCopies(session);
   }
   
@@ -694,8 +694,8 @@ export class AutoEntityHandler<TEntity extends PeerEntity>
    - packages/worker/src/services/AutoLifecycleManager.ts
    - TreeNodeイベントハンドリング
 
-2. **WorkingCopyManagerの実装**
-   - packages/worker/src/services/WorkingCopyManager.ts
+2. **DraftManagerの実装**
+   - packages/worker/src/services/DraftManager.ts
    - 統一的なワーキングコピー管理
 
 3. **AutoEntityHandlerの実装**

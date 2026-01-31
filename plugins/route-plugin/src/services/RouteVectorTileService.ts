@@ -1,5 +1,5 @@
 import { BatchService } from '@hierarchidb/batch';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { digestSha256Hex } from '@hierarchidb/util';
 import { TabularWriter } from '@hierarchidb/tabular-store';
 import { getRouteRuntimeWorkerClient } from './batch/adapters/RuntimeWorkerClient.js';

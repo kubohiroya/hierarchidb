@@ -1,9 +1,5 @@
-import type {
-  BaseEntity,
-  NodeId,
-  Timestamp,
-  TreeNodeUpdaterPayload,
-} from '@hierarchidb/common-types';
+import type { BaseEntity, NodeId, Timestamp } from '@hierarchidb/core-types';
+import type { TreeNodeUpdaterPayload } from '@hierarchidb/tree-api';
 
 export interface TimelineFrameViewState {
   longitude: number;

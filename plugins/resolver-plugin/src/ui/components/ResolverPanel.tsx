@@ -28,7 +28,7 @@ import {
   Speed as SpeedIcon,
   Timeline as TimelineIcon,
 } from '@mui/icons-material';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { ResolverEntity, PropertyMappingRule } from '../../common/types/index.js';
 import { useResolverPanel } from './useResolverPanel.js';
 

@@ -8,7 +8,7 @@ Shared map data source facade for GeoJSON retrieval from Dexie/IndexedDB. Provid
 MapSourceService.ts  Facade
 ports.ts             MapSourcePort contract
 adapters/            FeatureCollectionGridIndex and other helpers
-index.ts             Public exports + FeatureDefinition
+index.ts             Public exports
 ```
 
 ## Key exports
@@ -18,7 +18,6 @@ index.ts             Public exports + FeatureDefinition
 - `getMetadata()`
 - Port: `MapSourcePort` (pluggable backends).
 - Adapter: `FeatureCollectionGridIndex` (in-memory spatial index helper).
-- Capability: `FeatureDefinition.manifest` (`provides: ['map-source']`).
 
 ## Consumers / usage
 - Used by `@hierarchidb/map-adapter` / `@hierarchidb/ui-map` to render GeoJSON.

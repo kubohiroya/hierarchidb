@@ -3,7 +3,8 @@
  */
 
 import type { WorkerAPI } from '@hierarchidb/worker-api';
-import type { CommandResult, NodeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { CommandResult, TreeNode } from '@hierarchidb/tree-api';
 import { PluginStepRegistry } from '@hierarchidb/plugin-base';
 import { DualKeyMap } from '@hierarchidb/util';
 import type { Remote } from 'comlink';

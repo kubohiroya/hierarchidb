@@ -27,7 +27,7 @@ import {
   Speed as SpeedIcon,
   Train as TrainIcon,
 } from '@mui/icons-material';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import type { RouteNearestLineResponse, RouteUpdaterPayload } from '@hierarchidb/route-api';
 import { formatDistance, getTransportModeName, useTranslation } from '../../../common/i18n/index.js';

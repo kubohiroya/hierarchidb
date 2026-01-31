@@ -200,7 +200,7 @@ graph TB
     end
     
     subgraph "Data Flow"
-        CreateWorkingCopy["Create Working Copy"]
+        CreateDraft["Create Working Copy"]
         ModifyData["Modify Data"]
         CommitChanges["Commit Changes"]
         DiscardChanges["Discard Changes"]
@@ -212,8 +212,8 @@ graph TB
         VersionManagement["Version Management"]
     end
     
-    Nodes --> CreateWorkingCopy
-    CreateWorkingCopy --> WorkingCopies
+    Nodes --> CreateDraft
+    CreateDraft --> WorkingCopies
     WorkingCopies --> ModifyData
     ModifyData --> WorkingCopies
     
@@ -233,7 +233,7 @@ graph TB
     
     class Trees,Nodes,RootStates,PluginEntities persistent
     class WorkingCopies,ViewStates,TemporaryData,UndoRedoStack temporary
-    class CreateWorkingCopy,ModifyData,CommitChanges,DiscardChanges flow
+    class CreateDraft,ModifyData,CommitChanges,DiscardChanges flow
     class DiffCalculation,MergeConflictResolution,VersionManagement sync
 ```
 

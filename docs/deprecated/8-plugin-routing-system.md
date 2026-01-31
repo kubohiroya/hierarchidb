@@ -100,8 +100,8 @@ interface LoaderData {
 interface UnifiedPluginDefinition<
   TEntity extends BaseEntity = BaseEntity,
   TSubEntity extends BaseSubEntity = BaseSubEntity,
-  TWorkingCopy extends BaseWorkingCopy = BaseWorkingCopy
-> extends PluginDefinition<TEntity, TSubEntity, TWorkingCopy> {
+  TDraft extends BaseDraft = BaseDraft
+> extends PluginDefinition<TEntity, TSubEntity, TDraft> {
   // データベース管理（必須）
   readonly database: {
     entityStore: string;           // メインエンティティテーブル名
@@ -112,7 +112,7 @@ interface UnifiedPluginDefinition<
   };
   
   // エンティティハンドラー（必須）
-  readonly entityHandler: EntityHandler<TEntity, TSubEntity, TWorkingCopy>;
+  readonly entityHandler: EntityHandler<TEntity, TSubEntity, TDraft>;
   
   // React Routerルーティング統合
   readonly routing: {
@@ -159,7 +159,7 @@ import type { UnifiedPluginDefinition } from '@hierarchidb/core';
 export const pluginRegistry = NodeTypeRegistry.getInstance();
 
 // 統合プラグイン登録例（basemap）
-const basemapPlugin: UnifiedPluginDefinition<BasemapEntity, never, BasemapWorkingCopy> = {
+const basemapPlugin: UnifiedPluginDefinition<BasemapEntity, never, BasemapDraft> = {
   // NodeTypeDefinition部分（文書7基準）
   nodeType: 'basemap' as TreeNodeType,
   name: 'BaseMap',
@@ -172,7 +172,7 @@ const basemapPlugin: UnifiedPluginDefinition<BasemapEntity, never, BasemapWorkin
     entityStore: 'basemaps',
     schema: {
       basemaps: '&nodeId, name, mapStyle, center, zoom, updatedAt',
-      basemap_workingcopies: '&workingCopyId, workingCopyOf, copiedAt',
+      basemap_workingcopies: '&draftId, draftOf, copiedAt',
     },
     version: 1,
     indexes: ['mapStyle', 'updatedAt']
@@ -398,7 +398,7 @@ export { editAction, previewAction } from './actions';
 
 // Worker API拡張エクスポート
 export { BasemapWorkerExtensions } from './worker/extensions';
-export type { BasemapEntity, BasemapWorkingCopy } from './types';
+export type { BasemapEntity, BasemapDraft } from './types';
 
 // packages/plugin-loader/basemap/src/components/Edit.tsx
 import type { BasemapEntity } from '../types';

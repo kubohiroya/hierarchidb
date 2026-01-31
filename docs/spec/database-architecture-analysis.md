@@ -52,7 +52,7 @@ EphemeralDB {
 // Working CopyとTreeNodeが同じテーブルに混在
 treeNodes: Table<TreeNodeEntity, TreeNodeId> {
   // 本体ノード: createdAt, updatedAt
-  // Working Copy: workingCopyOf, copiedAt, isDraft
+  // Working Copy: draftOf, copiedAt, isDraft
   // → 混在により複雑なクエリが必要
 }
 ```
@@ -67,7 +67,7 @@ interface CoreDB {
 
 // EphemeralDB: 一時データ
 interface EphemeralDB {
-  workingCopies: Table<WorkingCopyTypes, UUID>;
+  workingCopies: Table<DraftTypes, UUID>;
   treeViewStates: Table<TreeViewState, string>;
 }
 ```
@@ -91,7 +91,7 @@ interface EphemeralDB {
 treeNodes: '&treeNodeId, parentTreeNodeId, [parentTreeNodeId+name], treeNodeType'
 
 // EphemeralDB: 作成・更新最適化  
-workingCopies: '&workingCopyId, workingCopyOf, parentTreeNodeId, updatedAt'
+workingCopies: '&draftId, draftOf, parentTreeNodeId, updatedAt'
 ```
 
 ### 3. トランザクション境界の明確化
@@ -126,7 +126,7 @@ eria-cartographの実装品質は高く、以下をhierarchidbに適用すべき
 
 ```typescript
 // eria-cartographからの優秀なパターン
-export async function createNewDraftWorkingCopy(
+export async function createNewDraftDraft(
   parentTreeNodeId: TreeNodeId,
   treeNodeType: TreeNodeType,
   baseName: string,
@@ -174,7 +174,7 @@ interface DatabaseArchitecture {
   
   // eria-cartographの実装パターンを適用
   operations: {
-    workingCopy: WorkingCopyOperations;  // 実証済み実装
+    draft: DraftOperations;  // 実証済み実装
     tree: TreeOperations;               // 実証済み実装
     descendant: DescendantOperations;   // 最適化済み実装
   }
@@ -190,8 +190,8 @@ interface HybridAPI {
   
   // 直接操作API（eria-cartographの便利性）
   direct: {
-    createWorkingCopy(node: TreeNode): Promise<TreeNodeId>;
-    commitWorkingCopy(id: TreeNodeId, isDraft: boolean): Promise<void>;
+    createDraft(node: TreeNode): Promise<TreeNodeId>;
+    commitDraft(id: TreeNodeId, isDraft: boolean): Promise<void>;
     // ...
   }
 }

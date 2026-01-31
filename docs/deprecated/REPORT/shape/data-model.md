@@ -106,7 +106,7 @@ export interface ShapesEntity extends PeerEntity {
 }
 
 // Working Copy with single-session constraint
-export type ShapesWorkingCopy = ShapesEntity & WorkingCopyProperties & {
+export type ShapesDraft = ShapesEntity & DraftProperties & {
   changes: Partial<ShapesEntity>;
   isDirty: boolean;
   
@@ -1269,23 +1269,23 @@ interface ExclusiveSessionManager {
 #### 2. **Extracted Working Copy Management**
 
 ```typescript
-class WorkingCopyManager {
+class DraftManager {
   // Simple exclusive access
-  async createWorkingCopy(nodeId: TreeNodeId): Promise<ShapesWorkingCopy> {
+  async createDraft(nodeId: TreeNodeId): Promise<ShapesDraft> {
     const existingSession = await this.getActiveSession(nodeId);
     if (existingSession) {
       throw new Error(`Node ${nodeId} already has active session: ${existingSession.sessionId}`);
     }
     
     // Create exclusive working copy
-    return this.createExclusiveWorkingCopy(nodeId);
+    return this.createExclusiveDraft(nodeId);
   }
   
   // No complex conflict resolution needed
-  async commitWorkingCopy(workingCopy: ShapesWorkingCopy): Promise<void> {
+  async commitDraft(draft: ShapesDraft): Promise<void> {
     // Direct commit - no merge conflicts possible
-    await this.directCommit(workingCopy);
-    await this.releaseExclusiveLock(workingCopy.nodeId);
+    await this.directCommit(draft);
+    await this.releaseExclusiveLock(draft.nodeId);
   }
 }
 ```

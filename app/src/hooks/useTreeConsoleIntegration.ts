@@ -5,8 +5,8 @@
  * Avoids Orchestrated APIs and uses direct Worker API calls.
  */
 
-import type { TreeTableExpandedAPI } from '@hierarchidb/tree-api';
-import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, TreeId } from '@hierarchidb/core-types';
+import type { TreeNode, TreeTableExpandedAPI } from '@hierarchidb/tree-api';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-toolbar';
 import { DualKeyMap } from '@hierarchidb/util';
@@ -62,6 +62,10 @@ export function useTreeConsoleIntegration({
   const defaultFilters = useMemo(() => getMenuSpec('resources').order, []);
   const { t, i18n } = useTranslation();
   const locale = i18n.resolvedLanguage ?? i18n.language ?? 'en';
+  const translateWithFallback = useMemo(
+    () => (key: string, fallback: string) => t(key, { defaultValue: fallback }) as string,
+    [t]
+  );
   const searchQuery = useMemo(() => {
     try {
       if (!locationSearch) return '';
@@ -333,6 +337,7 @@ export function useTreeConsoleIntegration({
         searchTerm,
         searchMode,
         locale,
+        translateWithFallback,
         selectedIds,
         expandedIds,
         returnTo,
@@ -357,6 +362,7 @@ export function useTreeConsoleIntegration({
       searchMode,
       searchTerm,
       locale,
+      translateWithFallback,
       selectedIds,
       setSSOT,
       setupSubscription,

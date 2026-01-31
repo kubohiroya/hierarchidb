@@ -38,7 +38,7 @@ TDD Greenフェーズにおいて、13個のテストケースを全て通す最
 ```typescript
 // 主要な型定義
 - ShapesEntity      // メインエンティティ
-- ShapesWorkingCopy // 編集用コピー
+- ShapesDraft // 編集用コピー
 - ShapeStyle        // スタイル設定
 - ShapesMetadata    // メタデータ
 - BatchTask         // バッチタスク
@@ -58,9 +58,9 @@ TDD Greenフェーズにおいて、13個のテストケースを全て通す最
 | `getEntity()` | エンティティ取得 | TEST-002, 003 | 🟢 |
 | `updateEntity()` | 更新とバージョン管理 | TEST-003 | 🟢 |
 | `importGeoJSON()` | GeoJSON検証とインポート | TEST-002, 101, 102, 203 | 🟢 |
-| `createWorkingCopy()` | 編集用コピー作成 | TEST-003, 105 | 🟢 |
-| `updateWorkingCopy()` | 編集追跡 | TEST-003 | 🟢 |
-| `commitWorkingCopy()` | 変更コミット | TEST-003 | 🟢 |
+| `createDraft()` | 編集用コピー作成 | TEST-003, 105 | 🟢 |
+| `updateDraft()` | 編集追跡 | TEST-003 | 🟢 |
+| `commitDraft()` | 変更コミット | TEST-003 | 🟢 |
 | `startBatchProcessing()` | バッチタスク作成 | TEST-005 | 🟡 |
 | `getMetadata()` | メタデータ取得 | TEST-202 | 🟡 |
 | `recoverFromWorkerCrash()` | Worker復旧 | TEST-103 | 🟢 |
@@ -112,10 +112,10 @@ private calculateBoundingBox(features: any[]): [number, number, number, number] 
 
 ```typescript
 // Working Copy競合防止
-private workingCopyLocks: Map<TreeNodeId, string> = new Map();
+private draftLocks: Map<TreeNodeId, string> = new Map();
 
-async createWorkingCopy(nodeId: TreeNodeId): Promise<ShapesWorkingCopy> {
-  if (this.workingCopyLocks.has(nodeId)) {
+async createDraft(nodeId: TreeNodeId): Promise<ShapesDraft> {
+  if (this.draftLocks.has(nodeId)) {
     throw new Error('WORKING_COPY_CONFLICT: 他のユーザーが編集中です');
   }
   // ...

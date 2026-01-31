@@ -1,4 +1,4 @@
-import type { CountryCode, NodeId } from '@hierarchidb/common-types';
+import type { CountryCode, NodeId } from '@hierarchidb/core-types';
 
 export type LocationPointKind = string;
 

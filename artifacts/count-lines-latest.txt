@@ -330,7 +330,7 @@
 ──────────────────────────────────────────────────
   📂 peer-store/                          28 lines
   📂 types/                            1,691 lines
-  📂 working-copy/                        16 lines
+  📂 draft/                        16 lines
   📄 preconnect.ts                             19 lines
 ──────────────────────────────────────────────────
   Total: 1,754 lines
@@ -342,7 +342,7 @@
   📂 handlers/                           880 lines
   📂 peer-store/                          75 lines
   📂 worker/                             249 lines
-  📂 working-copy/                       460 lines
+  📂 draft/                       460 lines
   📄 download.ts                          97 lines
   📄 preconnect.ts                             73 lines
 ──────────────────────────────────────────────────

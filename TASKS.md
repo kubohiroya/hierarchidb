@@ -47,6 +47,97 @@
   - update: 2026-01-30 12:31 JST plugin-service-api の残存モジュール/依存/参照先を整理し、廃止に向けた移行計画案を作成。
   - done: 2026-01-30 12:31 JST 調査と計画提示の準備を完了。
 
+2431) fix/batch/prepare-session-signature (P1) — 完了 (2026-01-31)
+- ブランチ名: fix/batch/prepare-session-signature
+- 依存: なし
+- 受け入れ基準: IBatchSessionManager の prepareSession 型が UnifiedBatchManagerBase と整合し build:types が exit 0 になる／必要な参照先が型エラーなくビルドできる／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/batch-api/src/BatchControlAPI.ts`, `packages/features/batch/src/manager/UnifiedBatchManagerBase.ts`, `packages/batch-runtime-services/src/BaseBatchSessionManager.ts`（必要に応じて追加）
+- ロールバック手順: 該当差分を revert して prepareSession の型定義を元に戻す
+- チェックリスト:
+  - IBatchSessionManager の型パラメータ設計を調整する
+  - UnifiedBatchManagerBase の実装に型を合わせる
+  - pnpm --filter @hierarchidb/batch build:types を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-31 00:05 JST IBatchSessionManager の prepareSession 型エラー修正に着手。
+  - blocked: 2026-01-31 00:09 JST pnpm --filter @hierarchidb/batch build:types が IBatchSessionManager 未更新の dist 解決で失敗。
+  - update: 2026-01-31 00:10 JST pnpm --filter @hierarchidb/batch-api build:types を先行実行。
+  - update: 2026-01-31 00:10 JST IBatchSessionManager をジェネリック化し UnifiedBatchManagerBase を対応、pnpm --filter @hierarchidb/batch build:types exit 0 を確認。
+  - done: 2026-01-31 00:11 JST prepareSession 型整合の修正を完了。
+
+2432) fix/ui-treeconsole/on-name-conflict-policy (P1) — 完了 (2026-01-31)
+- ブランチ名: fix/ui-treeconsole/on-name-conflict-policy
+- 依存: なし
+- 受け入れ基準: ui-treeconsole-base の MoveNodesPayload/onNameConflict 型エラーが解消される／onNameConflict は OnNameConflict ポリシーで統一される／pnpm --filter @hierarchidb/ui-treeconsole-base typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/treeconsole/base/src/adapters/commands/TreeMutationCommands.ts`, `packages/ui/treeconsole/base/src/types/index.ts`, `packages/ui/treeconsole/base/src/adapters/types.ts`, `packages/ui/treeconsole/base/src/adapters/WorkerAPIAdapter.ts`, `packages/ui/treeconsole/base/src/hooks/useTreeViewController.tsx`, `packages/ui/treeconsole/base/src/adapters/__tests__/WorkerAPIAdapter.test.ts`
+- ロールバック手順: 該当差分を revert して onNameConflict の型とデフォルト挙動を元に戻す
+- チェックリスト:
+  - onNameConflict の型を OnNameConflict に統一する
+  - WorkerAPIAdapter 既定値とテストを更新する
+  - pnpm --filter @hierarchidb/ui-treeconsole-base typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-31 00:20 JST ui-treeconsole-base の onNameConflict 型エラー修正に着手。
+  - update: 2026-01-31 00:23 JST onNameConflict を OnNameConflict ポリシーへ統一し、pnpm --filter @hierarchidb/ui-treeconsole-base typecheck exit 0 を確認。
+  - done: 2026-01-31 00:23 JST onNameConflict 型エラー修正を完了。
+
+2433) refactor/terminology/draft-to-draft (P1) — 進行中 (2026-01-31)
+- ブランチ名: refactor/terminology/draft-to-draft
+- 依存: なし
+- 受け入れ基準: リポジトリ内の Draft/Working Copy/working copy 表記を洗い出し、現行概念（draft）へ置換方針が合意される／合意範囲の置換が完了する／必要な typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/**`, `plugins/**`, `docs/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert して用語表記を元に戻す
+- チェックリスト:
+  - Draft 表記の残存箇所を調査する
+  - 置換方針（コード識別子/ドキュメント/表示文言）を確認する
+  - 合意範囲で置換を実施する
+  - 必要な typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-31 00:30 JST Draft → draft 用語置換の調査に着手。
+  - update: 2026-01-31 00:34 JST working-copy / workingCopy / WorkingCopy を一括置換。
+  - update: 2026-01-31 00:38 JST working-copy を含むファイル名を draft に改名。
+  - update: 2026-01-31 00:41 JST workingcopy を含むファイル名を draft に改名。
+  - blocked: 2026-01-31 00:42 JST pnpm typecheck が app で失敗（@hierarchidb/shape-plugin 等の export 参照エラー）。詳細はログ参照。
+
+2434) fix/app/typecheck-plugin-exports (P1) — 完了 (2026-01-31)
+- ブランチ名: fix/app/typecheck-plugin-exports
+- 依存: なし
+- 受け入れ基準: app の shape/location/route plugin export 参照エラーと implicit any が解消される／pnpm --filter @hierarchidb/app typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/package.json`, `plugins/location-plugin/package.json`, `plugins/route-plugin/package.json`, `app/src/router/routes/map/MapPage.tsx`, `app/src/contexts/__tests__/shape-workerprovider.full-flow.test.tsx`（必要に応じて追加）
+- ロールバック手順: 該当差分を revert して plugin types の参照先と MapPage の型注釈を元に戻す
+- チェックリスト:
+  - plugin の types/exports を index2.d.ts へ切替える
+  - MapPage の find コールバックに型注釈を付与する
+  - pnpm --filter @hierarchidb/app typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-31 00:50 JST app の plugin export 参照エラー修正に着手。
+  - update: 2026-01-31 00:55 JST shape/location/route の types を index2.d.ts に切替し、tsconfig.base.json の paths を更新。
+  - update: 2026-01-31 00:58 JST pnpm --filter @hierarchidb/app typecheck exit 0 を確認。
+  - done: 2026-01-31 00:58 JST app の plugin export 参照エラー修正を完了。
+
+2435) fix/tsdown/dts-index-normalize (P1) — 完了 (2026-01-31)
+- ブランチ名: fix/tsdown/dts-index-normalize
+- 依存: なし
+- 受け入れ基準: shape/location/route/spreadsheet の index.d.ts が正しい named export を保持し index2.d.ts 依存が撤去される／pnpm --filter @hierarchidb/route-plugin build ほか必要範囲が exit 0／pnpm --filter @hierarchidb/app typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `scripts/normalize-dts.mjs`, `plugins/*-plugin/package.json`, `tsconfig.base.json`（必要に応じて追加）
+- ロールバック手順: 該当差分を revert して index2.d.ts 参照に戻す
+- チェックリスト:
+  - normalize-dts スクリプトを追加する
+  - 対象プラグインの build 後に normalize-dts を実行する
+  - types/paths を index.d.ts に戻す
+  - pnpm --filter <対象> build を実行する
+  - pnpm --filter @hierarchidb/app typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-31 01:05 JST index2.d.ts 依存の恒久解消に着手。
+  - update: 2026-01-31 01:19 JST pnpm --filter @hierarchidb/route-plugin build と pnpm --filter @hierarchidb/spreadsheet-plugin build を実行（exit 0）。
+  - blocked: 2026-01-31 01:19 JST pnpm --filter @hierarchidb/app typecheck が core-types の export 不整合で失敗（NodeAction/Tree/TreeNode 未 export）。
+  - update: 2026-01-31 01:24 JST pnpm --filter @hierarchidb/app typecheck exit 0 を確認。
+  - done: 2026-01-31 01:24 JST index.d.ts 正規化の恒久対応を完了。
+  - update: 2026-01-31 01:31 JST normalize-tsconfig.mjs と fix:tsconfig を削除。
+
 2431) feat/shape-api/move-shape-types (P1) — 完了 (2026-01-30)
 - ブランチ名: feat/shape-api/move-shape-types
 - 依存: なし
@@ -228,6 +319,27 @@
   - start: 2026-01-30 23:24 JST common-types の分割移設に着手。
   - update: 2026-01-30 23:58 JST runtime-worker typecheck の再実行と残エラー修正に着手。
   - update: 2026-01-30 23:59 JST pnpm --filter @hierarchidb/runtime-worker typecheck exit 0 を確認。
+  - update: 2026-01-30 23:59 JST runtime-worker の common-types import を core-types/tree-api へ切替（command/Tree* 系、lifecycle、draft、adapter など）。
+  - blocked: 2026-01-30 23:59 JST pnpm --filter @hierarchidb/runtime-worker typecheck が ValidationResult の export 不足で失敗。
+  - update: 2026-01-30 23:59 JST ValidationResult を core-types に切替し、pnpm --filter @hierarchidb/runtime-worker typecheck exit 0 を確認。
+  - update: 2026-01-31 00:23 JST app/ui/plugins の common-types 参照を core-types/tree-api/batch-api/tag-api へ切替（treeconsole/treetable/worker-client/batch/shape/route/location 等）。
+  - blocked: 2026-01-31 00:24 JST pnpm --filter @hierarchidb/app typecheck が依存パッケージの dist 未生成等で失敗（@hierarchidb/ui-treeconsole-base, ui-dialog, ui-icon, plugin-registry/types などの解決不可と暗黙 any 連鎖）。
+  - update: 2026-01-31 00:32 JST pnpm build を実行し、exit 0 を確認（lint や build の警告は既知）。
+  - update: 2026-01-31 00:35 JST pnpm --filter @hierarchidb/app typecheck exit 0 を確認。
+  - update: 2026-01-31 01:04 JST common-types の残参照（テスト/設定）整理と tree-api 参照修正に着手。
+  - update: 2026-01-31 01:24 JST テスト/モックの common-types 参照を core-types/tree-api へ切替（runtime-worker, plugin-ui-host, import-export など）。
+  - update: 2026-01-31 01:38 JST pnpm build を実行し exit 0 を確認（tsdown define 警告/dep-fence 警告は既知）。
+  - blocked: 2026-01-31 01:40 JST @hierarchidb/testing-plugin-dialog-mocks typecheck が @hierarchidb/core-types 未解決で失敗。
+  - update: 2026-01-31 01:41 JST pnpm install を実行（peer dependency 警告あり）。
+  - update: 2026-01-31 01:42 JST @hierarchidb/runtime-worker / plugin-ui-host / import-export / chunk-store / testing-plugin-dialog-mocks typecheck exit 0 を確認。
+  - update: 2026-01-31 02:05 JST production code の common-types 参照を core-types/tree-api/batch-api へ移行（plugin-ui-host/sdk, route/location/import-export/gis/vt 等）。
+  - update: 2026-01-31 02:18 JST pnpm install / pnpm build を実行し exit 0 を確認（tsdown define 警告は既知）。
+  - blocked: 2026-01-31 02:28 JST pnpm typecheck が styler-plugin の implicit any で失敗。
+  - update: 2026-01-31 02:30 JST StylerMappingKeysStep の nextKey/nextValue に型注釈を追加。
+  - blocked: 2026-01-31 02:34 JST pnpm typecheck が app のテストで core-types 参照ミス（NodeAction/Tree/TreeNode）で失敗。
+  - update: 2026-01-31 02:36 JST app テストの NodeAction/Tree/TreeNode を tree-api 参照へ修正。
+  - update: 2026-01-31 02:37 JST pnpm typecheck exit 0 を確認。
+  - update: 2026-01-31 02:45 JST common-types の実体ファイルが index.ts の再エクスポートのみであることと、common-types 参照がゼロであることを確認。
 
 2424) refactor/location-store/index-cleanup (P1) — 完了 (2026-01-29)
 - ブランチ名: refactor/location-store/index-cleanup
@@ -11440,3 +11552,137 @@
   - update: 2026-01-29 09:27 JST pnpm --filter @hierarchidb/ui-batch-progress build exit 0（tsdown define warning あり）。
   - update: 2026-01-29 09:28 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
   - done: 2026-01-29 09:28 JST Step5 集計共通化・useShapeBuildStep 分割・shapePipeline 分割を完了。
+2440) investigation/feature-definition-usage (P2) — 進行中 (2026-01-30)
+- ブランチ名: investigation/feature-definition-usage
+- 依存: なし
+- 受け入れ基準: FeatureDefinition の定義箇所と用途が特定できる／参照・実行経路の有無から「有意義に使われているか」を根拠付きで判断できる／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/**`, `app/**`, `plugins/**`（調査結果に応じて追加）
+- ロールバック手順: 調査のみのため差分なし
+- チェックリスト:
+  - FeatureDefinition の定義と参照箇所を洗い出す
+  - 実行経路（UI/Worker/CLI など）を確認する
+  - 目的と現状の有意義な利用有無を整理する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-30 17:05 JST FeatureDefinition の用途と利用状況の調査に着手。
+  - update: 2026-01-30 17:18 JST feature-registry と runtime-worker の FeatureBootstrap/WorkerService を確認し、登録・起動はされるが registry が外部公開されていない点を整理。
+  - done: 2026-01-30 17:18 JST FeatureDefinition の定義/用途/参照箇所と現状の実利用度を把握。
+2441) refactor/feature/retire-feature-definition (P1) — 進行中 (2026-01-30)
+- ブランチ名: refactor/feature/retire-feature-definition
+- 依存: なし
+- 受け入れ基準: FeatureDefinition/FeatureRegistry/FeatureBootstrap を撤去し参照を削除する／必要な初期化はシングルトン生成で代替する／影響範囲の build/typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/runtime-worker/src/**`, `packages/features/**`, `plugins/**`, `app/**`, `packages/runtime-worker/package.json`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert して FeatureDefinition/FeatureRegistry/FeatureBootstrap を復元する
+- チェックリスト:
+  - FeatureDefinition/FeatureRegistry/FeatureBootstrap の定義と参照を撤去する
+  - 必要な初期化があればシングルトン生成で置き換える
+  - 影響範囲の build/typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-30 17:30 JST FeatureDefinition 全廃と起動経路の整理に着手。
+  - update: 2026-01-30 17:56 JST pnpm install を実行（peer dependency 警告あり）。
+  - update: 2026-01-30 18:07 JST pnpm build を実行したが app build で @hierarchidb/core-types 未解決により失敗。
+  - update: 2026-01-30 18:11 JST pnpm --filter @hierarchidb/core-types build を実行（exit 0）。
+  - update: 2026-01-30 18:34 JST pnpm build を再実行したが app build で @hierarchidb/core-types 未解決により再失敗。
+  - blocked: 2026-01-30 18:40 JST pnpm typecheck が ui-search-result-window の @hierarchidb/core-types 解決失敗で exit 2。
+  - update: 2026-01-30 18:53 JST ui-search-result-window/treeconsole-base/treeconsole-breadcrumb/treeconsole-treetable に core-types を dependencies 追加。
+  - update: 2026-01-30 19:05 JST pnpm install を再実行（peer dependency 警告あり）。
+  - update: 2026-01-30 19:12 JST pnpm build が exit 0（app build 含む）。
+  - blocked: 2026-01-30 19:20 JST pnpm typecheck が @hierarchidb/batch の型不一致（UnifiedBatchManagerBase.prepareSession）で exit 2。
+  - update: 2026-01-30 19:26 JST UnifiedBatchManagerBase.prepareSession をジェネリック拡張して IBatchSessionManager の型不一致を解消。
+  - update: 2026-01-31 10:11 JST folder-plugin の TagId import 欠落による typecheck エラーの修正に着手。
+  - update: 2026-01-31 10:13 JST pnpm --filter @hierarchidb/folder-plugin typecheck exit 0 を確認。
+2423) investigation/route/reference-node-links (P1) — 進行中 (2026-01-29)
+- ブランチ名: investigation/route/reference-node-links
+- 依存: なし
+- 受け入れ基準: route-plugin における start/end location 参照の保存・index・ゴミ箱移動制約の実装有無を特定できる／location/shape 参照の現行実装と比較して齟齬を説明できる／TASKS.md に運用ログを記載する
+- 影響範囲: 調査後に確定（コード変更なし）
+- ロールバック手順: 調査のみのため不要
+- チェックリスト:
+  - route-plugin の node schema / dexie index / worker API の参照フィールドを確認する
+  - location/shape の参照モデル（centroidForShapeId/ContainerId 等）と比較する
+  - ゴミ箱移動制約の実装有無を確認する
+  - 運用ログ start/update を追記する
+- 運用ログ：
+  - start: 2026-01-29 09:34 JST route の参照リンク仕様と現状実装の齟齬を調査開始。
+  - update: 2026-01-29 09:41 JST route の schema/manifest/API には startLocationId/endLocationId のみで containerNodeId は未定義、RouteDB/manifest のインデックスも未存在。参照によるゴミ箱移動ブロックは runtime-worker の政策に未実装（Policy C は WC のみ）。
+
+2426) investigation/route-idegsm-datasource-linking (P1) — 進行中 (2026-01-29)
+- ブランチ名: investigation/route-idegsm-datasource-linking
+- 依存: なし
+- 受け入れ基準: IDE-GSM CSV パースと RouteFeature 永続化の既存実装を特定できる／LocationFeature 参照解決 API の有無を特定できる／RouteFeature が LocationFeature ID 参照+キャッシュを持つか確認できる／routeノードが複数 RouteFeature を保持する現状を確認できる／齟齬を具体的なファイルと責務で説明できる／TASKS.md に運用ログを記載する
+- 影響範囲: 調査後に確定（コード変更なし）
+- ロールバック手順: 調査のみのため不要
+- チェックリスト:
+  - IDE-GSM CSV パースと RouteFeature 永続化の実装箇所を確認する
+  - ルートの名称→LocationFeature 参照 API の有無を確認する
+  - RouteFeature の start/end に LocationFeature ID とキャッシュがあるか確認する
+  - routeノードが複数 RouteFeature を持つ実装を確認する
+  - 齟齬を整理して記録する
+- 運用ログ：
+ - start: 2026-01-29 10:31 JST route IDE-GSM データソースと LocationFeature 参照連携の齟齬調査を開始。
+ - update: 2026-01-29 10:40 JST IDE-GSM の既存実装（LocationQueryAPI.listLocationGroups による名前解決→RouteMutationService.importIdeGsmRoutes→RouteDB.features へ bulkPut）を確認し、要求との差分を整理。
+
+2435) feat/route/idegsm-location-feature-linking (P1) — 完了 (2026-01-31)
+- ブランチ名: feat/route/idegsm-location-feature-linking
+- 依存: 2426
+- 受け入れ基準: IDE-GSM の LocationFeature 参照が route 仕様に合致する／LocationFeatureId を参照子として保持し、LocationNodeId も併記される／location 検索マップが兄弟順の近さで合成され先勝ちルールが守られる／route/location/shape の参照に基づく trash 制約が維持される／`pnpm --filter @hierarchidb/route-plugin typecheck` と `pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/runtime-worker/src/services/RouteMutationService.ts`, `packages/features/route-api/src/ideGsmCsv.ts`, `packages/features/route-api/src/routeTypes.ts`, `packages/features/route-api/src/RouteMutationAPI.ts`, `packages/runtime-worker/src/services/route/ideGsmCsv.ts`, `plugins/route-plugin/src/services/ide-gsm/ideGsmCsv.ts`, `plugins/route-plugin/src/ui/components/steps/RouteBuildStep.tsx`（必要に応じて追加）
+- ロールバック手順: 該当差分を revert して IDE-GSM の参照解決と import 処理を旧挙動に戻す
+- チェックリスト:
+  - IDE-GSM の LocationFeature 参照モデルを route-api の型で表現する
+  - 兄弟優先の LocationFeature マップ合成を RouteMutationService に実装する
+  - IDE-GSM 取り込みで LocationFeatureId を参照子として保存する
+  - UI からの取り込みで locationNodeIds の計算を worker 側へ移す
+  - `pnpm --filter @hierarchidb/route-plugin typecheck` を実行する
+  - `pnpm --filter @hierarchidb/location-plugin typecheck` を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-31 11:54 JST IDE-GSM の LocationFeature 参照とマップ合成の実装に着手。
+  - update: 2026-01-31 11:56 JST route-api の IDE-GSM 型/参照モデルを更新し、route build から location 解決を worker 側に移行。
+  - blocked: 2026-01-31 11:58 JST pnpm --filter @hierarchidb/route-plugin typecheck が route-api の dist 未更新で失敗。
+  - update: 2026-01-31 11:59 JST pnpm --filter @hierarchidb/route-api build を実行（tsdown define warning あり）。
+  - blocked: 2026-01-31 12:00 JST pnpm --filter @hierarchidb/route-plugin typecheck が LocationFeatureId の型不一致で失敗。
+  - update: 2026-01-31 12:01 JST LocationFeatureId の型キャストを追加し、pnpm --filter @hierarchidb/route-plugin typecheck / pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-01-31 12:02 JST IDE-GSM の LocationFeature 参照/兄弟優先マップ合成を実装し、UI から location 解決を撤去。
+
+2424) feat/route-location/trash-reference-guard (P1) — 完了 (2026-01-29)
+- ブランチ名: feat/route-location/trash-reference-guard
+- 依存: なし
+- 受け入れ基準: route→location、location→shape の参照を Dexie インデックスで判定するチェックが追加され、参照されているノードは trash 移動が失敗する／連鎖チェックは 1 段のみ（route→location、location→shape）／`pnpm --filter @hierarchidb/route-plugin typecheck` と `pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/runtime-worker/src/services/TreeMutationService.ts`, `packages/features/route-store/src/RouteDB.ts`, `packages/features/location-store/src/LocationDB.ts`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert して trash 操作の参照ガードと新インデックスを取り消す
+- チェックリスト:
+  - route-store で start/end location 参照チェックの関数を追加する
+  - location-store で shape 参照チェックの関数と index を追加する
+  - TreeMutationService の moveNodesToTrash で参照チェックを行う
+  - pnpm --filter @hierarchidb/route-plugin typecheck を実行する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-29 10:02 JST route/location 参照に基づく trash ブロック実装に着手。
+  - update: 2026-01-29 10:07 JST route-store/location-store に参照チェック関数を追加し、LocationDB に centroidForShapeContainerNodeId の index を追加。
+  - update: 2026-01-29 10:09 JST TreeMutationService の moveNodesToTrash に参照ガードを追加。
+  - update: 2026-01-29 10:11 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+  - update: 2026-01-29 10:12 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-01-29 10:12 JST route/location 参照ガードの実装を完了。
+
+2425) feat/ui/treeconsole-trash-reference-i18n (P2) — 完了 (2026-01-29)
+- ブランチ名: feat/ui/treeconsole-trash-reference-i18n
+- 依存: なし
+- 受け入れ基準: trash 参照ブロックのエラーメッセージが i18n 化され、UI 側で翻訳表示される／ハードコード文言が残らない／`pnpm --filter @hierarchidb/route-plugin typecheck` と `pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/runtime-worker/src/services/TreeMutationService.ts`, `app/src/hooks/treeconsole/actions/mutations.ts`, `app/src/hooks/treeconsole/types.ts`, `app/src/hooks/useTreeConsoleIntegration.ts`, `packages/ui/i18n/public/locales/*/common.json`（必要に応じて追加）
+- ロールバック手順: 変更差分を revert して従来のエラーメッセージ表示に戻す
+- チェックリスト:
+  - trash 参照エラーをコード化し UI で翻訳する
+  - i18n 辞書に文言を追加する
+  - pnpm --filter @hierarchidb/route-plugin typecheck を実行する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-29 10:18 JST trash 参照ブロックの i18n 化に着手。
+  - update: 2026-01-29 10:24 JST trash 参照エラーをコード化し、TreeConsole の moveToTrash で翻訳表示するように変更。
+  - update: 2026-01-29 10:25 JST i18n 辞書に treeConsole.errors を追加。
+  - update: 2026-01-29 10:26 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+  - update: 2026-01-29 10:27 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-01-29 10:27 JST trash 参照ブロックの i18n 化を完了。

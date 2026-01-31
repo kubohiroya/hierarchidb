@@ -1,4 +1,5 @@
-import type { CommandResult, NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { CommandResult } from '@hierarchidb/tree-api';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CommandTestHarness } from '../../test-helpers/commandProcessorHarness.js';
 import { createCommandTestHarness, seedNode } from '../../test-helpers/commandProcessorHarness.js';

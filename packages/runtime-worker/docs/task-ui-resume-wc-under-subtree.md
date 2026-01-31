@@ -1,4 +1,4 @@
-vk:task id=ui-resume-wc-under-subtree status=todo priority=P2 labels=ui,working-copy,tree
+vk:task id=ui-resume-wc-under-subtree status=todo priority=P2 labels=ui,draft,tree
 
 # タスク: 「配下のワーキングコピー編集を順次再開」メニュー
 
@@ -15,7 +15,7 @@ vk:task id=ui-resume-wc-under-subtree status=todo priority=P2 labels=ui,working-
 
 ## データ取得（初期案）
 - サブツリー列挙: `parentId` インデックスでBFSし、サブツリーのnodeId集合Sを得る。
-- WC検出: workingCopyRoot直下のholderを走査し、`decodeHolderName(name)`で
+- WC検出: draftRoot直下のholderを走査し、`decodeHolderName(name)`で
   - 編集WC: `targetNodeId ∈ S`
   - ドラフトWC: `targetParentNodeId ∈ S`
 - 最適化（将来）: `wcInSubtreeCount` カウンタを持たせ、判定/取得を高速化。

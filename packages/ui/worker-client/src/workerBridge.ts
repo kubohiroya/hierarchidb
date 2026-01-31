@@ -1,6 +1,12 @@
-import type { BatchProgressEvent, BatchSessionStatus, BatchTaskSummary, BatchTaskUpdateEvent } from '@hierarchidb/batch-api';
+import type {
+  BatchProgressEvent,
+  BatchSessionStatus,
+  BatchTaskSummary,
+  BatchTaskUpdateEvent,
+  BuildContinuationPolicy,
+} from '@hierarchidb/batch-api';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
-import type { BuildContinuationPolicy, NodeId, NodeType } from '@hierarchidb/common-types';
+import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { HeapPressureEvent } from '@hierarchidb/memory';
 import { proxy, type Remote } from 'comlink';
 

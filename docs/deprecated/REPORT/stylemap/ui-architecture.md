@@ -370,14 +370,14 @@ interface StylerUIState {
 **1. Working Copy Pattern:**
 ```typescript
 // Create working copy for editing
-const workingCopy = await createWorkingCopy(entity.nodeId);
+const draft = await createDraft(entity.nodeId);
 
 // Track changes
 const [isDirty, setIsDirty] = useState(false);
 
 // Commit or discard
-const handleSave = () => commitWorkingCopy(workingCopy.workingCopyId);
-const handleCancel = () => discardWorkingCopy(workingCopy.workingCopyId);
+const handleSave = () => commitDraft(draft.draftId);
+const handleCancel = () => discardDraft(draft.draftId);
 ```
 
 **2. Progressive Loading:**

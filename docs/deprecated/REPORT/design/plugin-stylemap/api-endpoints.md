@@ -25,7 +25,7 @@ IndexedDB (StylerDB)
 createStyler(
   parentId: TreeNodeId, 
   formData: StylerFormData
-): Promise<WorkingCopyResult<StylerEntity>>
+): Promise<DraftResult<StylerEntity>>
 ```
 
 **パラメータ**:
@@ -49,9 +49,9 @@ interface StylerFormData {
 
 **レスポンス**:
 ```typescript
-interface WorkingCopyResult<StylerEntity> {
+interface DraftResult<StylerEntity> {
   success: boolean;
-  workingCopyId?: UUID;         // 作業コピーID
+  draftId?: UUID;         // 作業コピーID
   data?: StylerEntity;        // 作成されたエンティティ
   error?: string;               // エラーメッセージ
 }
@@ -69,7 +69,7 @@ const result = await stylerAPI.createStyler('parent-123', {
 
 if (result.success) {
   console.log('Created Styler:', result.data);
-  console.log('Working Copy ID:', result.workingCopyId);
+  console.log('Working Copy ID:', result.draftId);
 }
 ```
 
@@ -242,49 +242,49 @@ if (cachedData) {
 
 ## 🟢 Working Copy Management API
 
-### POST /styler/working-copy/create
+### POST /styler/draft/create
 
 **説明**: 編集用の作業コピーを作成します
 
 **TypeScript シグネチャ**:
 ```typescript
-createWorkingCopy(nodeId: TreeNodeId): Promise<WorkingCopyResult<StylerWorkingCopy>>
+createDraft(nodeId: TreeNodeId): Promise<DraftResult<StylerDraft>>
 ```
 
 **レスポンス**:
 ```typescript
-interface StylerWorkingCopy extends StylerEntity {
+interface StylerDraft extends StylerEntity {
   originalId?: TreeNodeId;
-  workingCopyId: UUID;
-  isWorkingCopy: true;
+  draftId: UUID;
+  isDraft: true;
   pendingChanges?: Partial<StylerEntity>;
 }
 ```
 
 **使用例**:
 ```typescript
-const workingCopyResult = await stylerAPI.createWorkingCopy('styler-plugin-456');
-if (workingCopyResult.success) {
-  const workingCopyId = workingCopyResult.workingCopyId;
+const draftResult = await stylerAPI.createDraft('styler-plugin-456');
+if (draftResult.success) {
+  const draftId = draftResult.draftId;
   // 作業コピーで編集開始
 }
 ```
 
-### PUT /styler/working-copy/:workingCopyId
+### PUT /styler/draft/:draftId
 
 **説明**: 作業コピーの内容を更新します
 
 **TypeScript シグネチャ**:
 ```typescript
-updateWorkingCopy(
-  workingCopyId: UUID, 
+updateDraft(
+  draftId: UUID, 
   updates: Partial<StylerEntity>
-): Promise<WorkingCopyResult>
+): Promise<DraftResult>
 ```
 
 **使用例**:
 ```typescript
-await stylerAPI.updateWorkingCopy(workingCopyId, {
+await stylerAPI.updateDraft(draftId, {
   keyColumn: 'country_iso',
   valueColumn: 'gdp_per_capita',
   filterRules: [
@@ -298,35 +298,35 @@ await stylerAPI.updateWorkingCopy(workingCopyId, {
 });
 ```
 
-### POST /styler/working-copy/:workingCopyId/commit
+### POST /styler/draft/:draftId/commit
 
 **説明**: 作業コピーの変更をコミットします
 
 **TypeScript シグネチャ**:
 ```typescript
-commitWorkingCopy(workingCopyId: UUID): Promise<WorkingCopyResult>
+commitDraft(draftId: UUID): Promise<DraftResult>
 ```
 
 **使用例**:
 ```typescript
-const commitResult = await stylerAPI.commitWorkingCopy(workingCopyId);
+const commitResult = await stylerAPI.commitDraft(draftId);
 if (commitResult.success) {
   console.log('Changes committed successfully');
 }
 ```
 
-### DELETE /styler/working-copy/:workingCopyId
+### DELETE /styler/draft/:draftId
 
 **説明**: 作業コピーを破棄します（変更を保存せずに削除）
 
 **TypeScript シグネチャ**:
 ```typescript
-discardWorkingCopy(workingCopyId: UUID): Promise<WorkingCopyResult>
+discardDraft(draftId: UUID): Promise<DraftResult>
 ```
 
 **使用例**:
 ```typescript
-await stylerAPI.discardWorkingCopy(workingCopyId);
+await stylerAPI.discardDraft(draftId);
 console.log('Working copy discarded');
 ```
 
@@ -605,13 +605,13 @@ async function createStylerComplete(
   }
   
   // 2. Create working copy
-  const workingCopyResult = await stylerAPI.createWorkingCopy(parentId);
-  if (!workingCopyResult.success) {
-    throw new Error(`Working copy creation failed: ${workingCopyResult.error}`);
+  const draftResult = await stylerAPI.createDraft(parentId);
+  if (!draftResult.success) {
+    throw new Error(`Working copy creation failed: ${draftResult.error}`);
   }
   
   // 3. Update working copy with parsed data
-  await stylerAPI.updateWorkingCopy(workingCopyResult.workingCopyId!, {
+  await stylerAPI.updateDraft(draftResult.draftId!, {
     filename: file.name,
     tableMetadataId: parseResult.tableMetadata!.id,
     contentHash: parseResult.contentHash,
@@ -631,7 +631,7 @@ async function createStylerComplete(
   }
   
   // 5. Commit working copy
-  const commitResult = await stylerAPI.commitWorkingCopy(workingCopyResult.workingCopyId!);
+  const commitResult = await stylerAPI.commitDraft(draftResult.draftId!);
   if (!commitResult.success) {
     throw new Error(`Commit failed: ${commitResult.error}`);
   }
@@ -645,13 +645,13 @@ async function createStylerComplete(
 
 ```typescript
 async function updatePreviewRealtime(
-  workingCopyId: UUID,
+  draftId: UUID,
   configChanges: Partial<StylerConfig>,
   data: RowEntity[]
 ): Promise<StyleCalculationResult> {
   
   // 1. Update working copy with config changes
-  await stylerAPI.updateWorkingCopy(workingCopyId, {
+  await stylerAPI.updateDraft(draftId, {
     stylerConfig: configChanges
   });
   

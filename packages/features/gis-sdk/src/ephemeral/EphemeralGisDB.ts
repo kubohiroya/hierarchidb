@@ -1,5 +1,5 @@
 import { Dexie, type Table } from 'dexie';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 
 export type EphemeralStage = 'fetch' | 'transform' | 'vt';
 

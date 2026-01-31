@@ -5,7 +5,7 @@
 
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { VectorTileDbBase } from '@hierarchidb/vectortile-store';
 
 import type { RouteFeature } from '@hierarchidb/route-api';
@@ -57,4 +57,24 @@ export async function closeRouteDB(): Promise<void> {
 
 export async function clearRouteDatabases(): Promise<void> {
   await Dexie.delete(getDBName('route'));
+}
+
+export async function hasRouteReferencesToLocations(
+  locationNodeIds: NodeId[]
+): Promise<boolean> {
+  if (!locationNodeIds.length) return false;
+  const db = getRouteDB();
+  await db.open?.();
+  const startMatch = await db.features
+    .where('startLocationId')
+    .anyOf(locationNodeIds)
+    .limit(1)
+    .toArray();
+  if (startMatch.length > 0) return true;
+  const endMatch = await db.features
+    .where('endLocationId')
+    .anyOf(locationNodeIds)
+    .limit(1)
+    .toArray();
+  return endMatch.length > 0;
 }

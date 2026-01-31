@@ -79,7 +79,7 @@ plugin-shapes機能の実装に必要なテストケースを定義します。�
 
 #### TEST-003: Working Copy作成と編集
 - **テスト名**: Working Copyによる安全な編集機能
-  - **何をテストするか**: createWorkingCopy()とcommitWorkingCopy()の連携
+  - **何をテストするか**: createDraft()とcommitDraft()の連携
   - **期待される動作**: Draft状態での編集が正しくコミットされる
 - **入力値**:
   ```typescript

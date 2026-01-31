@@ -1,4 +1,5 @@
-import type { NodeId, TreeNodeMetadata } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { TreeNodeMetadata } from '@hierarchidb/tree-api';
 
 export type DialogUiState = unknown;
 

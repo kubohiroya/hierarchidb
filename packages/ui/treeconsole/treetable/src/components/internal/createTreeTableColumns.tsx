@@ -5,7 +5,8 @@ import {
   ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
 import type { ColumnDef } from '@tanstack/react-table';
-import type { TreeNode, NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import { rainbowColors } from '@hierarchidb/ui-theme';
 import { IndentSpace, NameCell } from '../TreeTableStyles.js';
 import { extractTags, normalizeNodeKey } from '../../utils/treeTableHelpers.js';

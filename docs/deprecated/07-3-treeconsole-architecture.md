@@ -85,7 +85,7 @@ export class TreeTableOrchestrator {
 export class WorkerAPIAdapter {
   // 責務別アダプター
   private mutationAdapter: TreeMutationCommandsAdapter;
-  private workingCopyAdapter: WorkingCopyCommandsAdapter;  
+  private draftAdapter: DraftCommandsAdapter;  
   private subscriptionManager: SubscriptionManager;
   
   // Legacy API → Modern API 変換
@@ -116,7 +116,7 @@ export class WorkerAPIAdapter {
 ```
 WorkerAPIAdapter (ファサード, 約300行)
 ├── TreeMutationCommandsAdapter (物理操作変換, 約150行)
-├── WorkingCopyCommandsAdapter (編集操作変換, 約120行)
+├── DraftCommandsAdapter (編集操作変換, 約120行)
 ├── SubscriptionManager (購読管理, 約180行)
 └── TreeObservableAdapter (Observable変換, 約100行)
 ```

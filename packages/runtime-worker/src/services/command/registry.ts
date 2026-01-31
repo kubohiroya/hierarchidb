@@ -1,4 +1,4 @@
-import type { Seq } from '@hierarchidb/common-types';
+import type { Seq } from '@hierarchidb/tree-api';
 import type { CommandEnvelope } from '../command-types.js';
 
 // Minimal command handler interfaces and registry implementation.

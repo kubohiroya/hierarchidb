@@ -37,7 +37,7 @@ hierarchidbプロジェクトにおける統合プラグインアーキテクチ
 
 - REQ-201: Resourcesツリー内にある場合、システムは basemap, stylers, shapes, locations, routes, propertyresolver プラグインを利用可能にしなければならない 🟢
 - REQ-202: Projectsツリー内にある場合、システムは project プラグインを利用可能にし、Resourcesツリーノードへの参照を許可しなければならない 🟢
-- REQ-203: ワーキングコピーが存在する場合、システムは commitWorkingCopy または discardWorkingCopy 操作を提供しなければならない 🟢
+- REQ-203: ワーキングコピーが存在する場合、システムは commitDraft または discardDraft 操作を提供しなければならない 🟢
 
 ### オプション要件
 

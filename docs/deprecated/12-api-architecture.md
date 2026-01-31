@@ -19,10 +19,10 @@ HierarchiDB implements a multi-layered API architecture that provides different 
 **Example**:
 ```typescript
 // Manual Working Copy workflow
-await mutationService.createWorkingCopyForCreate({
-  type: 'createWorkingCopyForCreate',
+await mutationService.createDraftForCreate({
+  type: 'createDraftForCreate',
   payload: {
-    workingCopyId: 'wc-123',
+    draftId: 'wc-123',
     parentTreeNodeId: parentId,
     name: name,
     description: description,
@@ -31,9 +31,9 @@ await mutationService.createWorkingCopyForCreate({
   timestamp: Date.now(),
 });
 
-await mutationService.commitWorkingCopyForCreate({
-  type: 'commitWorkingCopyForCreate', 
-  payload: { workingCopyId: 'wc-123' },
+await mutationService.commitDraftForCreate({
+  type: 'commitDraftForCreate', 
+  payload: { draftId: 'wc-123' },
   commandId: 'cmd-002',
   timestamp: Date.now(),
 });
@@ -59,23 +59,23 @@ await mutationService.commitWorkingCopyForCreate({
 **Example**:
 ```typescript
 // Command Envelope pattern
-await workerAPI.createWorkingCopyForCreate({
+await workerAPI.createDraftForCreate({
   payload: {
-    workingCopyId: 'wc-123',
+    draftId: 'wc-123',
     parentTreeNodeId: parentId,
     name: name,
   },
   commandId: 'cmd-001',
   groupId: 'group-001',
-  kind: 'createWorkingCopyForCreate',
+  kind: 'createDraftForCreate',
   issuedAt: Date.now(),
 });
 
-await workerAPI.commitWorkingCopyForCreate({
-  payload: { workingCopyId: 'wc-123' },
+await workerAPI.commitDraftForCreate({
+  payload: { draftId: 'wc-123' },
   commandId: 'cmd-002',
   groupId: 'group-001',
-  kind: 'commitWorkingCopyForCreate',
+  kind: 'commitDraftForCreate',
   issuedAt: Date.now(),
 });
 ```
@@ -206,18 +206,18 @@ async orchestratedOperation(params: OperationParams): Promise<OperationResult> {
 **Before**:
 ```typescript
 // Multiple steps, manual error handling
-const workingCopyId = generateId();
+const draftId = generateId();
 try {
-  await service.createWorkingCopyForCreate({...});
-  const result = await service.commitWorkingCopyForCreate({...});
+  await service.createDraftForCreate({...});
+  const result = await service.commitDraftForCreate({...});
   if (!result.success) {
-    await service.discardWorkingCopyForCreate({workingCopyId});
+    await service.discardDraftForCreate({draftId});
     throw new Error(result.error);
   }
   return result.nodeId;
 } catch (error) {
   // Manual cleanup
-  await service.discardWorkingCopyForCreate({workingCopyId});
+  await service.discardDraftForCreate({draftId});
   throw error;
 }
 ```

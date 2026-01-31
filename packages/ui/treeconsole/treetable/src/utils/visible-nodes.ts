@@ -3,7 +3,8 @@
  * Utility helpers to derive the visible TreeTable rows based on expansion atoms.
  */
 
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 
 export interface BuildVisibleNodesOptions {
   rootNodeId?: NodeId | string | null;

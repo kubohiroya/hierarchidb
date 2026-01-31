@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { RouteBatchManager, type RouteBatchRouteInput } from '../../src/services/RouteBatchManager.js';
 import type { RouteBatchConfig } from '../../src/common/types/ObsolateBuildConfig.js';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 
 describe('RouteBatchManager idempotency', () => {
   it('returns the same nodeId for identical input payload', async () => {

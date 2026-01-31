@@ -364,28 +364,28 @@ flowchart TD
 sequenceDiagram
     participant U1 as User 1
     participant U2 as User 2
-    participant WM as WorkingCopyManager
+    participant WM as DraftManager
     participant DB as EphemeralDB
     participant CD as ConflictDetector
     
-    U1->>WM: createWorkingCopy(entityId)
+    U1->>WM: createDraft(entityId)
     WM->>DB: create working_copy_1
     WM-->>U1: Working Copy Created
     
-    U2->>WM: createWorkingCopy(entityId)
+    U2->>WM: createDraft(entityId)
     WM->>CD: checkExistingCopies(entityId)
     CD-->>WM: Existing copy found
     WM-->>U2: Conflict: Read-only access
     
-    U1->>WM: updateWorkingCopy(changes)
+    U1->>WM: updateDraft(changes)
     WM->>DB: update working_copy_1
     
-    U1->>WM: commitWorkingCopy()
+    U1->>WM: commitDraft()
     WM->>DB: apply changes to core entity
     WM->>DB: delete working_copy_1
     WM-->>U2: Conflict resolved: Edit access available
     
-    U2->>WM: createWorkingCopy(entityId)
+    U2->>WM: createDraft(entityId)
     WM->>DB: create working_copy_2
     WM-->>U2: Working Copy Created
 ```

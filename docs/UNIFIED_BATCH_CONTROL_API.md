@@ -50,7 +50,7 @@ subscribeBatchProgress(
 ): Promise<() => void>;
 ```
 
-- `startBatchSession` は UI から nodeType / nodeId だけを受け取り、Runtime Worker が PeerEntity / WorkingCopy から設定値を読み出す。
+- `startBatchSession` は UI から nodeType / nodeId だけを受け取り、Runtime Worker が PeerEntity / Draft から設定値を読み出す。
 - `getBatchSessionStatus` はタブ再オープン時のリカバリ用途。存在しない場合はエラーを返す。
 - `subscribeBatchProgress` は解除ハンドラを返す。UI ではダイアログ終了時に明示的に解除。
 
@@ -65,7 +65,7 @@ subscribeBatchProgress(
   - [ ] runtime-shared に `BatchSessionId` / `BatchProgressEvent` / `BatchProgressPayload` を導入し、`IBatchSessionManager` と `AbstractBatchSession` を更新。
   - [ ] `subscribeBatchProgress` で Comlink 解除ハンドラを返却する実装を追加。
 - [ ] Shape / Location / Route の Runtime Worker アダプタを新 API へ対応させる。
-  - [ ] `startBatchSession(nodeId)` へ統一し、PeerEntity / WorkingCopy から設定値を解決する。
+  - [ ] `startBatchSession(nodeId)` へ統一し、PeerEntity / Draft から設定値を解決する。
   - [ ] 各プラグインで `payload` 生成ロジックと `StageKey` / `ProgressPhase` のマッピングを用意する。
   - [ ] 旧 `LegacyBatchProgressEvent` へ変換する互換レイヤ（必要なら一時的）を整備する。
 - [ ] UI フック / ダイアログを `BatchProgressEvent` ベースへ差し替える。

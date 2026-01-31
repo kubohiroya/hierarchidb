@@ -5,7 +5,8 @@
  * Avoids Orchestrated APIs as requested and focuses on direct Worker API calls.
  */
 
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
 import { Alert, Box, CircularProgress } from '@mui/material';

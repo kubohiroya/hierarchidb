@@ -19,7 +19,7 @@
 `normalizeFolderPeerData()` が空オブジェクトを許容し、TreeNode.payload には常に `schemaVersion` が入る。Folder は UI 表示系の値（name/description 等）を TreeNode 自身が持つため payload は極小のまま維持する。
 
 ### Working Copy
-ワーキングコピーの生成（createWorkingCopy）は runtime-worker 側の共通ロジックが担い、Folder 固有の追加フィールドはない。基本情報フォームは UI 側の state で管理され、TreeNode.draft に name/description が書き戻されるのみである。
+ワーキングコピーの生成（createDraft）は runtime-worker 側の共通ロジックが担い、Folder 固有の追加フィールドはない。基本情報フォームは UI 側の state で管理され、TreeNode.draft に name/description が書き戻されるのみである。
 
 ## basemap (`nodeType: "basemap"`)
 
@@ -79,7 +79,7 @@ Map style の既定は `{ style: 'streets' }`。Basic Info ステップで name/
 `normalizePeerData()` は過去の dialogWindow/dialogProgress 互換も含めて TreeNode.payload に格納する。Group/Relation は引き続き Dexie テーブルを使用するため、payload にはロングランタスクの進捗と UI ステートのみを残す。
 
 ### Working Copy
-`LocationEntityHandler`（`plugins/location-plugin/src/common/entities/LocationEntityHandler.ts`）が `WorkingCopyDraft` を合成し、カテゴリ・データソースなどの初期値を埋める。UI 側は StepCapabilities を参照して stepper 遷移可否を制御する。
+`LocationEntityHandler`（`plugins/location-plugin/src/common/entities/LocationEntityHandler.ts`）が `DraftDraft` を合成し、カテゴリ・データソースなどの初期値を埋める。UI 側は StepCapabilities を参照して stepper 遷移可否を制御する。
 
 ## shape (`nodeType: "shape"`)
 

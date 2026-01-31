@@ -23,7 +23,7 @@
     "@deck.gl/mapbox": "^9.1.14",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/ui-floating-window": "workspace:*",
     "@hierarchidb/ui-grid": "workspace:*",
     "@hierarchidb/ui-json-treeview": "workspace:*",
@@ -36,7 +36,7 @@
   },
   "devDependencies": {
     "@deck.gl/core": "^9.1.14",
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/ui-floating-window": "workspace:*",
     "@hierarchidb/ui-grid": "workspace:*",
     "@hierarchidb/ui-json-treeview": "workspace:*",

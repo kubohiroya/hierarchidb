@@ -78,8 +78,8 @@ sequenceDiagram
     Note over UI,EphemeralDB: ノード作成フロー
     UI->>RPC: createNode(nodeData)
     RPC->>Worker: WorkerAPI.createNode()
-    Worker->>EphemeralDB: createWorkingCopy()
-    EphemeralDB-->>Worker: workingCopyId
+    Worker->>EphemeralDB: createDraft()
+    EphemeralDB-->>Worker: draftId
     Worker->>CoreDB: createNode(finalNode)
     CoreDB-->>Worker: nodeId
     Worker->>Worker: executeLifecyleHooks()
@@ -89,7 +89,7 @@ sequenceDiagram
     Note over UI,EphemeralDB: ノード編集フロー
     UI->>RPC: editNode(nodeId, changes)
     RPC->>Worker: WorkerAPI.editNode()
-    Worker->>EphemeralDB: updateWorkingCopy()
+    Worker->>EphemeralDB: updateDraft()
     Worker->>CoreDB: commitChanges()
     Worker->>Worker: notifySubscribers()
     Worker-->>RPC: Result<void>

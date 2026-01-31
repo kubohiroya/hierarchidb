@@ -72,7 +72,7 @@ export interface TreeQueryService {
   ```typescript
   interface GetNodePayload {
     nodeId: TreeNodeId;
-    includeWorkingCopy?: boolean;
+    includeDraft?: boolean;
   }
   ```
 

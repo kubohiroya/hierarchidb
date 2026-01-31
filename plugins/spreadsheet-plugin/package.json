@@ -5,10 +5,10 @@
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
-  "types": "dist/index2.d.ts",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index2.d.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
@@ -40,12 +40,12 @@
         "dist/icon/index.d.ts"
       ],
       "*": [
-        "dist/index2.d.ts"
+        "dist/index.d.ts"
       ]
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts src/ui/index.ts src/worker/index.ts src/icon/index.ts --config ../../tsdown.config.ts",
+    "build": "tsdown src/index.ts src/ui/index.ts src/worker/index.ts src/icon/index.ts --config ../../tsdown.config.ts && node ../../scripts/normalize-dts.mjs",
     "typecheck": "tsc --noEmit --project tsconfig.json",
     "test": "pnpm vitest",
     "test:run": "pnpm vitest run",
@@ -57,7 +57,7 @@
     "@emotion/styled": "^11.14.0",
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/chunk-store": "workspace:*",
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/download": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",

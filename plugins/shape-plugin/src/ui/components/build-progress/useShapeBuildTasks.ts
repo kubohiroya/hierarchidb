@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import type { NodeId, NodeType } from '@hierarchidb/common-types';
+import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useAtom } from 'jotai';
 import {

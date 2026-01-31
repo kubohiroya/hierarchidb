@@ -15,7 +15,7 @@ vk:doc kind=ref audience=dev scope=worker
 | `NODE_NOT_FOUND` | 目的ノード不存在 | TreeQuery/Mutation で対象が見つからない |
 | `INVALID_OPERATION` | 不正操作（未対応/禁止） | レガシー API やポリシー違反 |
 | `UNKNOWN_ERROR` | 不明な失敗 | 予期せぬ例外のフォールバック |
-| `WORKING_COPY_NOT_FOUND` | WC 不存在 | WorkingCopyService で holder/metadata が欠落 |
+| `WORKING_COPY_NOT_FOUND` | WC 不存在 | DraftService で holder/metadata が欠落 |
 | `COMMIT_CONFLICT` | WC コミット競合 | version advance / concurrent commit |
 | `VALIDATION_ERROR` | 入力不正 | Zod/handler validate or name conflict |
 | `DATABASE_ERROR` | Dexie/IndexedDB 失敗 | ConstraintError, BulkError 等 |

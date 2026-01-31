@@ -1,5 +1,5 @@
 import React from 'react';
-import { toNodeId } from '@hierarchidb/common-types';
+import { toNodeId } from '@hierarchidb/core-types';
 import type { LocationDialogProps } from '../common/types/index.js';
 import type { LocationPanelProps } from '../common/components/LocationPanel.js';
 

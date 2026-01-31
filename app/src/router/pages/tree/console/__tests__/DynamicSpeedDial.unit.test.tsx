@@ -1,4 +1,4 @@
-import type { TreeId } from '@hierarchidb/common-types';
+import type { TreeId } from '@hierarchidb/core-types';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PluginMenuItem } from '~/hooks/usePluginMenuItems.js';

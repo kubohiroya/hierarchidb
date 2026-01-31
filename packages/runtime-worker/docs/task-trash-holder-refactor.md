@@ -4,7 +4,7 @@ vk:task id=trash-holder-refactor status=todo priority=P1 labels=worker,tree,tras
 
 ## 背景
 - 現行の Trash はノード本体に `originalParentId`/`originalName` を保持し、`trashRoot` 直下へ物理移動している。
-- WorkingCopy は holder+child ペア方式。両者でパターン統一し、命名衝突回避と復元処理の共通化を図る。
+- Draft は holder+child ペア方式。両者でパターン統一し、命名衝突回避と復元処理の共通化を図る。
 
 ## 変更方針
 - `trashRoot` 直下に Trash holder を作成し、child に実体ノードをぶら下げる。
@@ -26,6 +26,6 @@ vk:task id=trash-holder-refactor status=todo priority=P1 labels=worker,tree,tras
 
 ## 依存
 - `docs/holder-pair-pattern.md`
-- `docs/working-copy-holder-encoding.md`
+- `docs/draft-holder-encoding.md`
  - エピック: `epic-wc-trash-unification`
  - `wc-impl-align`, `tree-guard-policy-c`

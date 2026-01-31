@@ -1,5 +1,5 @@
 import type { Table } from 'dexie';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { FeatureStore, VectorTileStore } from './store.js';
 
 type VectorTileRowBase = {

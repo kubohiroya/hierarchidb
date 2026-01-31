@@ -2,7 +2,7 @@
  * Styler plugin metadata with entity reference hints
  */
 
-import { toNodeType } from '@hierarchidb/common-types';
+import { toNodeType } from '@hierarchidb/core-types';
 import type { PluginManifest } from '@hierarchidb/plugin-base';
 
 export const StylerMetadata: PluginManifest = {

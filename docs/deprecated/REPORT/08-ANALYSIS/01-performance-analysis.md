@@ -33,7 +33,7 @@ const benchmarks = {
     moveNode: '18ms'
   },
   
-  workingCopy: {
+  draft: {
     create: '5ms',
     update: '3ms',
     commit_simple: '15ms',

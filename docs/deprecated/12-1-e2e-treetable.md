@@ -32,7 +32,7 @@
 | 機能 | 優先度 | 説明 | 実装予定ファイル |
 |-----|-------|------|-----------------|
 | SubTree Subscription | 高 | リアルタイム更新同期 | `treetable-realtime-sync.e2e.ts` |
-| Working Copy | 高 | 編集セッション管理 | `treetable-working-copy.e2e.ts` |
+| Working Copy | 高 | 編集セッション管理 | `treetable-draft.e2e.ts` |
 | Undo/Redo | 高 | 操作の取り消し・やり直し | `treetable-undo-redo.e2e.ts` |
 | キーボードナビゲーション | 中 | アクセシビリティ対応 | `treetable-keyboard-nav.e2e.ts` |
 | パフォーマンス | 中 | 大量データでの動作確認 | `treetable-performance.e2e.ts` |

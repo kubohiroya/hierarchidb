@@ -4,7 +4,7 @@ import {
   jsonDeserializer,
   jsonSerializer,
 } from './chunkStore.js';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 
 const parseAdminLevel = (value: unknown): number | null => {
   if (typeof value === 'number' && Number.isInteger(value)) return value;

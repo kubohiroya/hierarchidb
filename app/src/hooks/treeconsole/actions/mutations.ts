@@ -2,7 +2,7 @@
  * Mutation actions for TreeConsole.
  */
 
-import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-types';
+import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import type { MaybeCP, TreeConsoleActionDeps } from '../types.js';
 import {
   createUniqueName,
@@ -11,6 +11,7 @@ import {
   showCommandError,
 } from './helpers.ts';
 import type { NavigationHelpers } from './navigation.ts';
+import { notify } from '@hierarchidb/components';
 
 export const createMutationActions = (
   deps: TreeConsoleActionDeps,
@@ -28,7 +29,28 @@ export const createMutationActions = (
     setState,
     setupSubscription,
     teardownSubscription,
+    translateWithFallback,
   } = deps;
+
+  const translateError = (key: string, fallback: string): string => (
+    translateWithFallback ? translateWithFallback(key, fallback) : fallback
+  );
+  const resolveTrashErrorMessage = (error?: string): string => {
+    if (!error) return translateError('treeConsole.errors.trashFailed', 'Move to trash failed.');
+    if (error === 'TRASH_REF_ROUTE') {
+      return translateError(
+        'treeConsole.errors.trashReferencedByRoutes',
+        'Cannot move to trash because routes reference this location.'
+      );
+    }
+    if (error === 'TRASH_REF_LOCATION') {
+      return translateError(
+        'treeConsole.errors.trashReferencedByLocations',
+        'Cannot move to trash because locations reference this shape.'
+      );
+    }
+    return error;
+  };
 
   const moveSelectionToTrash = async () => {
     if (!client || selectedIds.length === 0) return;
@@ -55,7 +77,9 @@ export const createMutationActions = (
       const mutationAPI = await client.getMutationAPI();
       const res = await mutationAPI.moveNodesToTrash(selectedIds as NodeId[]);
       if (!res.success) {
-        showCommandError('INVALID_OPERATION', res.error || 'Remove failed');
+        const message = resolveTrashErrorMessage(res.error);
+        notify.error(message);
+        showCommandError('INVALID_OPERATION', message);
         return;
       }
       const refreshTarget =

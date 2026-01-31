@@ -24,7 +24,7 @@
 #### hierarchiidb: UnifiedPluginDefinition
 ```typescript
 export const BaseMapUnifiedDefinition: UnifiedPluginDefinition<
-  BaseMapEntity, never, BaseMapWorkingCopy
+  BaseMapEntity, never, BaseMapDraft
 > = {
   nodeType: 'basemap',
   database: { /* スキーマ定義 */ },
@@ -52,7 +52,7 @@ export const BaseMapResourceDefinition: ResourceDefinition<BaseMapEntity> = {
   ui: { dialogMaxWidth: "md", stepCount: 2 },
   operations: new BaseMapHandler(),
   importExport: { exportData, importData },
-  workingCopy: { createWorkingCopy, commitWorkingCopy },
+  draft: { createDraft, commitDraft },
   lifecycle: { onCreate, onUpdate, onDelete }
 };
 ```
@@ -136,27 +136,27 @@ export interface BaseMapEntity extends ResourceEntity {
 
 #### hierarchiidb: 完全Working Copy
 ```typescript
-export interface BaseMapWorkingCopy extends BaseWorkingCopy {
+export interface BaseMapDraft extends BaseDraft {
   // 全BaseMapEntityフィールド + Working Copy制御
-  workingCopyId: string;
-  workingCopyOf: TreeNodeId;
+  draftId: string;
+  draftOf: TreeNodeId;
   copiedAt: number;
   isDirty: boolean;
   
   // Copy-on-Write実装
-  async createWorkingCopy(nodeId: TreeNodeId): Promise<BaseMapWorkingCopy>
-  async commitWorkingCopy(nodeId: TreeNodeId, workingCopy: BaseMapWorkingCopy): Promise<void>
-  async discardWorkingCopy(nodeId: TreeNodeId): Promise<void>
+  async createDraft(nodeId: TreeNodeId): Promise<BaseMapDraft>
+  async commitDraft(nodeId: TreeNodeId, draft: BaseMapDraft): Promise<void>
+  async discardDraft(nodeId: TreeNodeId): Promise<void>
 }
 ```
 
 #### eria-cartograph: 基本Working Copy
 ```typescript
 // ResourceEntityベースの基本的なワーキングコピー
-workingCopy: {
-  createWorkingCopy: async (sourceId: TreeNodeId) => string,
-  commitWorkingCopy: async (workingCopyId: string) => void,
-  discardWorkingCopy: async (workingCopyId: string) => void,
+draft: {
+  createDraft: async (sourceId: TreeNodeId) => string,
+  commitDraft: async (draftId: string) => void,
+  discardDraft: async (draftId: string) => void,
 }
 ```
 
@@ -167,13 +167,13 @@ workingCopy: {
 ```typescript
 export class BaseMapDatabase extends Dexie {
   entities!: Table<BaseMapEntity, TreeNodeId>;
-  workingCopies!: Table<BaseMapWorkingCopy, string>;
+  workingCopies!: Table<BaseMapDraft, string>;
 
   constructor() {
     super('BaseMapDB');
     this.version(1).stores({
       entities: 'nodeId, name, mapStyle, createdAt, updatedAt',
-      workingCopies: 'workingCopyId, workingCopyOf, nodeId, copiedAt'
+      workingCopies: 'draftId, draftOf, nodeId, copiedAt'
     });
   }
 }

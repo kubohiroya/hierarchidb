@@ -105,23 +105,23 @@ class EphemeralDataCleanupService {
 **現状**: Mock implementation - would fetch from EphemeralDB
 **実装内容**:
 ```typescript
-async getWorkingCopy(nodeId: NodeId): Promise<ShapeWorkingCopy | undefined> {
+async getDraft(nodeId: NodeId): Promise<ShapeDraft | undefined> {
   // 実際のEphemeralDBクエリ
-  const workingCopy = await this.ephemeralDB.workingCopies
+  const draft = await this.ephemeralDB.workingCopies
     .where('nodeId').equals(nodeId)
     .first();
   
-  if (!workingCopy) return undefined;
+  if (!draft) return undefined;
   
   // 関連データも取得
   const features = await this.ephemeralDB.processedFeatures
-    .where('workingCopyId').equals(workingCopy.id)
+    .where('draftId').equals(draft.id)
     .toArray();
   
   return {
-    ...workingCopy,
+    ...draft,
     features,
-    isDirty: workingCopy.version !== workingCopy.committedVersion
+    isDirty: draft.version !== draft.committedVersion
   };
 }
 ```

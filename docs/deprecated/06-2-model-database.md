@@ -6,7 +6,7 @@
     - nodes: &treeNodeId, parentTreeNodeId, &[parentTreeNodeId+name]（兄弟名ユニーク）, [parentTreeNodeId+updatedAt], removedAt, originalParentTreeNodeId, *references。
     - rootStates: &[treeId+treeRootNodeType]。
 - EphemeralDB（短命/高頻度）
-    - workingCopies: &workingCopyId, workingCopyOf, parentTreeNodeId, updatedAt。
+    - workingCopies: &draftId, draftOf, parentTreeNodeId, updatedAt。
     - views: &treeViewId, updatedAt, [treeId+treeRootNodeType], [treeId+pageNodeId]。
 
 代表クエリとインデックスの対応は 5.3 を参照。
@@ -74,18 +74,18 @@ export class CoreDB extends Dexie {
 
 #### 6.2.2.2 EphemeralDB（短命・高頻度）
 ```ts
-export type WorkingCopyRow = WorkingCopyTypes;
+export type DraftRow = DraftTypes;
 export type TreeViewStateRow = TreeViewState;
 
 export class EphemeralDB extends Dexie {
-  workingCopies!: Table<WorkingCopyRow, string>;
+  workingCopies!: Table<DraftRow, string>;
   views!: Table<TreeViewStateRow, string>;
 
   constructor(name: string) {
     super(`${name}-EphemeralDB`);
     this.version(1).stores({
       workingCopies:
-        '&workingCopyId, workingCopyOf, parentTreeNodeId, updatedAt',
+        '&draftId, draftOf, parentTreeNodeId, updatedAt',
       views:
         '&treeViewId, updatedAt, [treeId+treeRootNodeType], [treeId+pageNodeId]'
     });
@@ -110,9 +110,9 @@ export class EphemeralDB extends Dexie {
   nodes.where('[parentTreeNodeId+updatedAt]').between([pid, ts], [pid, Dexie.maxKey])
   → [parentTreeNodeId+updatedAt]
 
-* WorkingCopyTypes → 元の探索
-  workingCopies.where('workingCopyOf').equals(nodeId)
-  → workingCopyOf
+* DraftTypes → 元の探索
+  workingCopies.where('draftOf').equals(nodeId)
+  → draftOf
 
 * Trash 一覧の時系列
   nodes.where('removedAt').above(0).reverse()

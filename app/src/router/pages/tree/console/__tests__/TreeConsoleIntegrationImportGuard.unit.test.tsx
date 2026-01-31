@@ -1,6 +1,7 @@
 import { render } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import type { TreeConsoleToolbarProps } from '@hierarchidb/ui-treeconsole-toolbar';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 

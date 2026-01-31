@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { JSX } from 'react';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { RouteSourceOrchestrator } from '../../common/orchestrator/RouteSourceOrchestrator.js';
 import { RouteBatchOrchestrationService } from '../../common/orchestrator/RouteBatchOrchestrationService.js';
 import type { RouteBatchSpec } from '../../common/orchestrator/types.js';

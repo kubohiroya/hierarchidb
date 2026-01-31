@@ -1,4 +1,4 @@
-import type { NodeId, ISO2 } from '@hierarchidb/common-types';
+import type { ISO2, NodeId } from '@hierarchidb/core-types';
 import type { Geometry } from 'geojson';
 import type { ShapeBuildConfig } from './build.js';
 

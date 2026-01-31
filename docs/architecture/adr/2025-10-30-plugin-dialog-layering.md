@@ -5,7 +5,7 @@
 
 ## Decision
 
-1. Treat `@hierarchidb/plugin-base` as the single source for headless orchestration (registries, WorkingCopy bridge, dialog URL sync, capability evaluation). UI dependencies are forbidden here.
+1. Treat `@hierarchidb/plugin-base` as the single source for headless orchestration (registries, Draft bridge, dialog URL sync, capability evaluation). UI dependencies are forbidden here.
 2. Move presentation helpers (icon lookup, manifest-backed labels) into a dedicated package `@hierarchidb/plugin-presentation` and expose a façade component `PluginDialogHost` that wraps `PluginDialogShell` plus icon prefetch.
 3. Require host apps to consume plugin dialogs only through `@hierarchidb/plugin-ui-host`. A dep-fence guard prohibits direct imports from `@hierarchidb/plugin-base` or `@hierarchidb/plugin-service-{api,sdk}` inside `@hierarchidb/app`.
 4. Ensure plugin authors continue to rely on `@hierarchidb/plugin-ui-sdk`, which now re-exports the public types from `plugin-base` without exposing UI-layer internals.

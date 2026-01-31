@@ -33,7 +33,6 @@ graph LR
     N9["@hierarchidb/auth-recovery"]
     N10["@hierarchidb/batch"]
     N12["@hierarchidb/download"]
-    N13["@hierarchidb/feature-registry"]
     N14["@hierarchidb/fetch-save-metadata"]
     N15["@hierarchidb/import-export"]
     N16["@hierarchidb/map-adapter"]

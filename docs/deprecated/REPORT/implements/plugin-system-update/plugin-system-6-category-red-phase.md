@@ -23,7 +23,7 @@
 - ✅ 参照カウント0での自動削除
 
 ### 4. EphemeralEntityManager（2テスト）
-- ✅ WorkingCopy削除時のEphemeralデータ自動削除
+- ✅ Draft削除時のEphemeralデータ自動削除
 - ✅ 期限切れEphemeralEntityの自動削除
 
 ### 5. 統合テスト（2テスト）
@@ -54,7 +54,7 @@ Error: Not implemented
     at GroupEntityManager.create
     at GroupEntityManager.cleanup
     at RelationalEntityManager.removeReference
-    at EphemeralGroupEntityManager.cleanupByWorkingCopy
+    at EphemeralGroupEntityManager.cleanupByDraft
     at EphemeralGroupEntityManager.cleanupExpired
     at AutoEntityLifecycleManager.registerPlugin
     at AutoEntityLifecycleManager.handleNodeCreation
@@ -98,7 +98,7 @@ class AutoEntityLifecycleManager
 - `cleanup()`: ライフサイクル連動削除
 - `addReference()`: 参照追加
 - `removeReference()`: 参照削除
-- `cleanupByWorkingCopy()`: WorkingCopy連動削除
+- `cleanupByDraft()`: Draft連動削除
 - `cleanupExpired()`: 期限切れ削除
 - `registerPlugin()`: プラグイン登録
 - `handleNodeCreation()`: ノード作成処理

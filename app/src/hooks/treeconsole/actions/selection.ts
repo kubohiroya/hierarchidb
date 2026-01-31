@@ -2,7 +2,7 @@
  * Selection and expansion actions for TreeConsole.
  */
 
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { buildVisibleRows } from '../../../state/treeconsole.derive.js';
 import type { TreeConsoleActionDeps } from '../types.js';
 import { attachChildrenToIndex, getOrCreateIndex } from './helpers.ts';

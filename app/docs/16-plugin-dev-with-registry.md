@@ -38,7 +38,8 @@
 ### 2) plugin-manifest.ts（メタデータ）
 ```ts
 // packages/plugins/foo-plugin/src/plugin-manifest.ts
-import type { NodeType, PluginMetadata } from '@hierarchidb/common-types';
+import type { NodeType } from '@hierarchidb/core-types';
+import type { PluginMetadata } from '@hierarchidb/plugin-registry/types';
 
 export const PLUGIN_NODE_TYPE = 'foo' as NodeType;
 export const PLUGIN_MANIFEST: PluginMetadata = {
@@ -54,7 +55,7 @@ export const PLUGIN_MANIFEST: PluginMetadata = {
   description: 'Foo nodes for HierarchiDB',
 };
 ```
-- ブランド型 (`as NodeType`) を付与すると `@hierarchidb/common-types` のユーティリティと整合します。
+- ブランド型 (`as NodeType`) を付与すると `@hierarchidb/core-types` のユーティリティと整合します。
 - 追加の capability や schema があれば `capabilities` / `schema` フィールドに追記してください。
 
 ### 3) エントリ配置

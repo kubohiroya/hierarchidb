@@ -19,9 +19,9 @@ vi.mock('@hierarchidb/ui-treeconsole-breadcrumb', () => ({
 
 import { TreeConsoleContent } from '../TreeConsoleContent.js';
 import type { TreeConsoleContentProps, TreeViewController } from '~/types';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { DualKeyMap } from '@hierarchidb/util';
-import type { TreeNode } from '@hierarchidb/common-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 
 const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const theme = createTheme();

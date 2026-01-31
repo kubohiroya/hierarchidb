@@ -18,7 +18,7 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@hierarchidb/common-types": "workspace:*"
+    "@hierarchidb/core-types": "workspace:*"
   },
   "devDependencies": {
     "typescript": "workspace:*",

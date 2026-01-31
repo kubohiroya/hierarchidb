@@ -2,7 +2,8 @@
  * Types for TreeTable package
  */
 
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import type { NodeContextMenuProps } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import type { DualKeyMap } from '@hierarchidb/util';
 import type { RowSelectionState } from '@tanstack/react-table';

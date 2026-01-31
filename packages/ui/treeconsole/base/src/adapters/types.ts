@@ -5,7 +5,8 @@
   */
 
 import type { WorkerAPI } from '@hierarchidb/worker-api';
-import type { NodeId, TreeChangeEvent, TreeChangeEventType, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { OnNameConflict, TreeChangeEvent, TreeChangeEventType, TreeNode } from '@hierarchidb/tree-api';
 
 /**
   * WorkerAPI
@@ -30,7 +31,7 @@ export interface AdapterContext {
   groupId: string;
   /**
       */
-  onNameConflict?: (name: string) => string;
+  onNameConflict?: OnNameConflict;
 }
 
 /**
@@ -60,7 +61,7 @@ export interface WorkerAPIAdapterConfig {
   defaultViewId: string;
   /**
       */
-  defaultOnNameConflict?: (name: string) => string;
+  defaultOnNameConflict?: OnNameConflict;
 }
 
 /**

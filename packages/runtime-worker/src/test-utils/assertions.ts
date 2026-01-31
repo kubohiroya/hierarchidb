@@ -1,4 +1,4 @@
-import type { CommandResult, CommitResult } from '@hierarchidb/common-types';
+import type { CommandResult, CommitResult } from '@hierarchidb/tree-api';
 
 export type CommandResultSuccess = Extract<CommandResult, { success: true }>;
 export type CommandResultFailure = Extract<CommandResult, { success: false }>;

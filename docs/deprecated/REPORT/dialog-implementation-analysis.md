@@ -93,7 +93,7 @@ packages/ui-dialog/
 │   │   ├── StepperDialog.tsx           # マルチステップ基盤
 │   │   └── DraftIndicator.tsx          # ドラフト状態表示
 │   ├── hooks/
-│   │   ├── useWorkingCopyDeprecated.ts           # ワーキングコピー管理
+│   │   ├── useDraftDeprecated.ts           # ワーキングコピー管理
 │   │   ├── useDialogState.ts           # ダイアログ状態管理
 │   │   ├── useFormValidation.ts        # バリデーション
 │   │   └── useUnsavedChanges.ts        # 未保存変更検知
@@ -109,7 +109,7 @@ packages/ui-dialog/
    - 基本的な開閉処理
    - Loading/Error状態管理
 
-2. **useWorkingCopy** フック作成
+2. **useDraft** フック作成
    - ワーキングコピー作成/更新/破棄
    - EphemeralDB との連携
 
@@ -180,7 +180,7 @@ shapes_obsolate にある CommonDialog 実装を参考に、改善版を作成
 
 1. **即座に実装すべき項目**
    - CommonDialog 基本実装
-   - useWorkingCopy フック
+   - useDraft フック
    - UnsavedChangesDialog
 
 2. **次期スプリントで実装**
@@ -207,7 +207,7 @@ interface PluginDialogProps<T> {
   open: boolean;
 }
 
-interface WorkingCopyState<T> {
+interface DraftState<T> {
   data: T;
   isDirty: boolean;
   isDraft?: boolean;
@@ -219,8 +219,8 @@ interface WorkingCopyState<T> {
 ダイアログ状態管理のためのContext提供:
 ```typescript
 const DialogContext = React.createContext<{
-  workingCopy: WorkingCopyState;
-  updateWorkingCopy: (data: Partial<T>) => void;
+  draft: DraftState;
+  updateDraft: (data: Partial<T>) => void;
   commitChanges: () => Promise<void>;
   discardChanges: () => void;
 }>();

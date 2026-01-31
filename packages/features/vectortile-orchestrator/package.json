@@ -17,7 +17,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
     "vitest": "^3.2.4"
   },

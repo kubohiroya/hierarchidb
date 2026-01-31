@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import { useMultiSelection } from '../hooks/useMultiSelection.js';
 import type { SearchResult } from '../types/index.js';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 
 const meta: Meta = {
   title: 'SearchResult/useMultiSelection',

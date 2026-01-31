@@ -23,7 +23,7 @@ HierarchiDBプロジェクトの開発成果、技術仕様、実装詳細をま
 コア機能の実装詳細とコード解説。
 
 - **[01-core-features.md](./03-IMPLEMENTATION/01-core-features.md)** - CRUD、Undo/Redo、ゴミ箱機能
-- **[02-working-copy.md](./03-IMPLEMENTATION/02-working-copy.md)** - ワーキングコピーシステム
+- **[02-draft.md](./03-IMPLEMENTATION/02-draft.md)** - ワーキングコピーシステム
 - **[03-observable-pattern.md](./03-IMPLEMENTATION/03-observable-pattern.md)** - リアルタイム更新機能
 
 ### 🔌 04-PLUGIN-DEVELOPMENT（プラグイン開発）

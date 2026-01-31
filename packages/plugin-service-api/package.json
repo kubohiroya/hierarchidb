@@ -21,10 +21,10 @@
       "import": "./dist/peer-store/*.js",
       "default": "./dist/peer-store/*.js"
     },
-    "./working-copy/*": {
-      "types": "./dist/working-copy/*.d.ts",
-      "import": "./dist/working-copy/*.js",
-      "default": "./dist/working-copy/*.js"
+    "./draft/*": {
+      "types": "./dist/draft/*.d.ts",
+      "import": "./dist/draft/*.js",
+      "default": "./dist/draft/*.js"
     },
     "./package.json": "./package.json"
   },
@@ -37,7 +37,6 @@
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
-    "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/location-api": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*",
     "@hierarchidb/route-api": "workspace:*",

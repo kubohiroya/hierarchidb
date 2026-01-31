@@ -51,7 +51,7 @@ import { ColorMappingStep } from '../steps/ColorMappingStep';
 export const StylerExtension: ExtendableNodeTypeDefinition<
   FolderEntity,
   StylerEntity,
-  StylerWorkingCopy
+  StylerDraft
 > = {
   // 1. 基底プラグインを指定
   extends: 'folder-plugin',
@@ -195,7 +195,7 @@ export class StylerEntityHandler
   
   // FolderEntityHandlerから継承される基本CRUD操作:
   // - createEntity, getEntity, updateEntity, deleteEntity
-  // - createWorkingCopy, commitWorkingCopy, discardWorkingCopy
+  // - createDraft, commitDraft, discardDraft
   
   // Styler固有の拡張データ取得
   async getExtendedData(nodeId: NodeId): Promise<Partial<StylerEntity>> {

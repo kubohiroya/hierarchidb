@@ -46,7 +46,7 @@ export default defineConfig({
         replacement: path.resolve(__dirname, '../../packages/common/types/src/index.ts'),
       },
       {
-        find: '@hierarchidb/common-types',
+        find: '@hierarchidb/core-types',
         replacement: path.resolve(__dirname, '../../packages/common/types/src/index.ts'),
       },
       {

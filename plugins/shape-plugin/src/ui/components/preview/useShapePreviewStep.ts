@@ -7,7 +7,7 @@ import type {
   ShapePreviewMapView,
 } from '../../../common/types/index.js';
 import { isShapePreviewMetadataEnabled } from '../../../common/config/previewFlags.js';
-import { toNodeId, type NodeId } from '@hierarchidb/common-types';
+import { toNodeId, type NodeId } from '@hierarchidb/core-types';
 import { useTranslation } from '../../i18n.js';
 import type { ShapeFeatureMetadata, ShapeSourceMetadata, ShapeTransformErrorRecord } from '@hierarchidb/shape-api';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';

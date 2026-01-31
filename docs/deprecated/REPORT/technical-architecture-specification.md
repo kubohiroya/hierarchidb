@@ -85,14 +85,14 @@ classDiagram
         <<abstract>>
         #db: Dexie
         #tableName: string
-        #workingCopyTableName: string
+        #draftTableName: string
         +createEntity(nodeId: NodeId, data?: Partial~T~): Promise~T~
         +getEntity(nodeId: NodeId): Promise~T | undefined~
         +updateEntity(nodeId: NodeId, data: Partial~T~): Promise~void~
         +deleteEntity(nodeId: NodeId): Promise~void~
-        +createWorkingCopy(nodeId: NodeId): Promise~TWorkingCopy~
-        +commitWorkingCopy(nodeId: NodeId, workingCopy: TWorkingCopy): Promise~void~
-        +discardWorkingCopy(nodeId: NodeId): Promise~void~
+        +createDraft(nodeId: NodeId): Promise~TDraft~
+        +commitDraft(nodeId: NodeId, draft: TDraft): Promise~void~
+        +discardDraft(nodeId: NodeId): Promise~void~
         #generateNodeId(): string
         #now(): number
         #log(message: string, data?: any): void
@@ -251,13 +251,13 @@ classDiagram
     }
 
     class EphemeralDB {
-        +workingCopies: Table~WorkingCopyTypes, string~
+        +workingCopies: Table~DraftTypes, string~
         +views: Table~TreeViewState, string~
-        +entityWorkingCopies: Table~EntiryWorkingCopyTypes, string~
+        +entityWorkingCopies: Table~EntiryDraftTypes, string~
         +initialize(): Promise~void~
-        +getWorkingCopy(workingCopyId: string): Promise~WorkingCopyTypes | undefined~
-        +updateWorkingCopy(workingCopy: WorkingCopyTypes): Promise~void~
-        +discardWorkingCopy(workingCopyId: string): Promise~void~
+        +getDraft(draftId: string): Promise~DraftTypes | undefined~
+        +updateDraft(draft: DraftTypes): Promise~void~
+        +discardDraft(draftId: string): Promise~void~
     }
 
     class DexieAdapter {
@@ -327,31 +327,31 @@ sequenceDiagram
     participant UI as UI Dialog
     participant Client as UI Client
     participant Worker as Worker API
-    participant WCManager as WorkingCopyTypes Manager
+    participant WCManager as DraftTypes Manager
     participant EntityHandler as Entity Handler
     participant EphemeralDB as EphemeralDB
     participant CoreDB as CoreDB
     
     UI->>Client: openDialog(nodeId)
-    Client->>Worker: createEntityWorkingCopy(nodeId, entityType)
+    Client->>Worker: createEntityDraft(nodeId, entityType)
     Worker->>EntityHandler: getEntity(nodeId)
     EntityHandler->>CoreDB: table(entityTable).get(nodeId)
     CoreDB-->>EntityHandler: entity
     EntityHandler-->>Worker: entity
     
-    Worker->>WCManager: createPeerEntityWorkingCopy(entity, sessionId)
-    WCManager->>WCManager: generateWorkingCopyId()
-    WCManager->>EphemeralDB: table('entityWorkingCopies').add(workingCopy)
+    Worker->>WCManager: createPeerEntityDraft(entity, sessionId)
+    WCManager->>WCManager: generateDraftId()
+    WCManager->>EphemeralDB: table('entityWorkingCopies').add(draft)
     EphemeralDB-->>WCManager: success
-    WCManager-->>Worker: workingCopy
-    Worker-->>Client: workingCopy
-    Client-->>UI: workingCopy
+    WCManager-->>Worker: draft
+    Worker-->>Client: draft
+    Client-->>UI: draft
     
     loop Editing
-        UI->>Client: updateWorkingCopy(workingCopyId, changes)
-        Client->>Worker: updateEntityWorkingCopy(workingCopyId, changes)
-        Worker->>WCManager: updatePeerEntityWorkingCopy(workingCopyId, changes)
-        WCManager->>EphemeralDB: table('entityWorkingCopies').put(updatedWorkingCopy)
+        UI->>Client: updateDraft(draftId, changes)
+        Client->>Worker: updateEntityDraft(draftId, changes)
+        Worker->>WCManager: updatePeerEntityDraft(draftId, changes)
+        WCManager->>EphemeralDB: table('entityWorkingCopies').put(updatedDraft)
         EphemeralDB-->>WCManager: success
         WCManager->>WCManager: updateSessionActivity(sessionId)
         WCManager-->>Worker: success
@@ -360,24 +360,24 @@ sequenceDiagram
     end
     
     alt Commit Changes
-        UI->>Client: commitWorkingCopy(workingCopyId)
-        Client->>Worker: commitEntityWorkingCopy(workingCopyId)
-        Worker->>WCManager: commitPeerEntityWorkingCopy(workingCopyId, validator)
-        WCManager->>WCManager: validateWorkingCopy(workingCopy)
+        UI->>Client: commitDraft(draftId)
+        Client->>Worker: commitEntityDraft(draftId)
+        Worker->>WCManager: commitPeerEntityDraft(draftId, validator)
+        WCManager->>WCManager: validateDraft(draft)
         WCManager->>EntityHandler: updateEntity(nodeId, entityData)
         EntityHandler->>CoreDB: table(entityTable).put(entity)
         CoreDB-->>EntityHandler: success
         EntityHandler-->>WCManager: committedEntity
-        WCManager->>EphemeralDB: table('entityWorkingCopies').delete(workingCopyId)
+        WCManager->>EphemeralDB: table('entityWorkingCopies').delete(draftId)
         EphemeralDB-->>WCManager: success
         WCManager-->>Worker: committedEntity
         Worker-->>Client: committedEntity
         Client-->>UI: success
     else Discard Changes
-        UI->>Client: discardWorkingCopy(workingCopyId)
-        Client->>Worker: discardEntityWorkingCopy(workingCopyId)
-        Worker->>WCManager: discardEntityWorkingCopy(workingCopyId)
-        WCManager->>EphemeralDB: table('entityWorkingCopies').delete(workingCopyId)
+        UI->>Client: discardDraft(draftId)
+        Client->>Worker: discardEntityDraft(draftId)
+        Worker->>WCManager: discardEntityDraft(draftId)
+        WCManager->>EphemeralDB: table('entityWorkingCopies').delete(draftId)
         EphemeralDB-->>WCManager: success
         WCManager-->>Worker: success
         Worker-->>Client: success
@@ -527,31 +527,31 @@ graph TB
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Created : createWorkingCopy()
+    [*] --> Created : createDraft()
     
-    Created --> Editing : updateWorkingCopy()
-    Created --> Discarded : discardWorkingCopy()
+    Created --> Editing : updateDraft()
+    Created --> Discarded : discardDraft()
     
-    Editing --> Editing : updateWorkingCopy()
-    Editing --> Validating : commitWorkingCopy()
-    Editing --> Discarded : discardWorkingCopy()
+    Editing --> Editing : updateDraft()
+    Editing --> Validating : commitDraft()
+    Editing --> Discarded : discardDraft()
     Editing --> AutoSaved : autoSave() [if enabled]
     
-    AutoSaved --> Editing : updateWorkingCopy()
-    AutoSaved --> Validating : commitWorkingCopy()
-    AutoSaved --> Discarded : discardWorkingCopy()
+    AutoSaved --> Editing : updateDraft()
+    AutoSaved --> Validating : commitDraft()
+    AutoSaved --> Discarded : discardDraft()
     
     Validating --> ValidationFailed : validation error
     Validating --> Committing : validation success
     
     ValidationFailed --> Editing : fix errors
-    ValidationFailed --> Discarded : discardWorkingCopy()
+    ValidationFailed --> Discarded : discardDraft()
     
     Committing --> Committed : commit success
     Committing --> CommitFailed : commit error
     
     CommitFailed --> Editing : retry
-    CommitFailed --> Discarded : discardWorkingCopy()
+    CommitFailed --> Discarded : discardDraft()
     
     Committed --> [*]
     Discarded --> [*]
@@ -628,10 +628,10 @@ stateDiagram-v2
 stateDiagram-v2
     [*] --> SessionStarted : createSession()
     
-    SessionStarted --> Active : addWorkingCopy()
+    SessionStarted --> Active : addDraft()
     SessionStarted --> Ended : endSession()
     
-    Active --> Active : addWorkingCopy()
+    Active --> Active : addDraft()
     Active --> Active : updateActivity()
     Active --> Inactive : timeout
     Active --> Committing : endSession(commit=true)
@@ -653,7 +653,7 @@ stateDiagram-v2
     
     note right of SessionStarted
         Empty session
-        workingCopyIds = []
+        draftIds = []
     end note
     
     note right of Active

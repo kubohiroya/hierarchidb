@@ -29,7 +29,7 @@ import {
   normalizeZoomBandBoundaries,
 } from '@hierarchidb/util';
 import { useCallback, useMemo, useState, type MouseEvent, type ReactNode } from 'react';
-import type { BuildContinuationPolicy } from '@hierarchidb/common-types';
+import type { BuildContinuationPolicy } from '@hierarchidb/batch-api';
 import type { TreeConsoleToolbarActionParams } from '../../types.js';
 
 interface SettingsMenuProps {

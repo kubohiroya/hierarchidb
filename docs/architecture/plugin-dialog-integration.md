@@ -28,14 +28,14 @@ This memo captures the current implementation that discovers HierarchiDB plugins
 * `PluginDialogRoute` acquires the hook result, tolerating either a direct `WorkerAPI` proxy or an object with a `client` property, and passes the resolved client into the headless dialog shell.【F:packages/runtime-ui/plugin-dialog/src/components/PluginDialogRoute.tsx†L22-L120】
 * Inside the shell, `usePluginDialogController` rehydrates persisted dialog frame state, calls the worker for metadata (tags, working copies), merges host + plugin steps, and renders `StepAdapter` components that bridge `componentFactory` callbacks to actual dialog steps while keeping validation wired up.【F:packages/runtime-ui/plugin-dialog/src/headless/usePluginDialogController.tsx†L101-L231】
 * The controller now evaluates plugin-provided step capabilities (`canNavigateTo`, `canProceedToNext`, `canSave`, `canStartBatch`) on every state change to produce the `enabledStepIndices` array and Save/Batch flags consumed by `PluginDialogFooter`, ensuring the Next and Save buttons reflect the plugin’s service logic rather than local heuristics.【F:packages/runtime-ui/plugin-dialog/src/headless/usePluginDialogController.tsx†L36-L205】【F:packages/runtime-ui/plugin-dialog/src/headless/components/PluginDialogFooter.tsx†L1-L129】
-* `useWorkingCopy` encapsulates the worker interactions needed for draft management (create-from-node, draft creation, commit, discard), operating against the worker API proxy provided by the host component.【F:packages/runtime-ui/plugin-dialog/src/hooks/useWorkingCopy.ts†L1-L200】
+* `useDraft` encapsulates the worker interactions needed for draft management (create-from-node, draft creation, commit, discard), operating against the worker API proxy provided by the host component.【F:packages/runtime-ui/plugin-dialog/src/hooks/useDraft.ts†L1-L200】
 
 ## Worker client shape divergence
 
 ### (A) Direct `WorkerAPI` proxy
 
-* `PluginDialogRoute` and `usePluginDialogController` unwrap the registered hook value into a bare `WorkerAPI` remote, expecting every consumer to speak directly to Comlink-exposed methods such as `getQueryAPI()` and `getWorkingCopyAPI()`.【F:packages/runtime-ui/plugin-dialog/src/components/PluginDialogRoute.tsx†L22-L98】【F:packages/runtime-ui/plugin-dialog/src/headless/usePluginDialogController.tsx†L119-L137】
-* Hooks like `useWorkingCopy` require that proxy up front; if the hook returns `null` (for example while initialization is still in flight), saving throws `Error('Worker client not initialized')`, which matches the "WorkerAPI not available" failure currently observed in the UI.【F:packages/runtime-ui/plugin-dialog/src/hooks/useWorkingCopy.ts†L71-L137】
+* `PluginDialogRoute` and `usePluginDialogController` unwrap the registered hook value into a bare `WorkerAPI` remote, expecting every consumer to speak directly to Comlink-exposed methods such as `getQueryAPI()` and `getDraftAPI()`.【F:packages/runtime-ui/plugin-dialog/src/components/PluginDialogRoute.tsx†L22-L98】【F:packages/runtime-ui/plugin-dialog/src/headless/usePluginDialogController.tsx†L119-L137】
+* Hooks like `useDraft` require that proxy up front; if the hook returns `null` (for example while initialization is still in flight), saving throws `Error('Worker client not initialized')`, which matches the "WorkerAPI not available" failure currently observed in the UI.【F:packages/runtime-ui/plugin-dialog/src/hooks/useDraft.ts†L71-L137】
 * **Pros:** minimal surface area, no additional wrapper objects, easy to stub with the integration mocks already used by the headless dialog tests.
 * **Cons:** no room to expose initialization state, retry controls, or legacy helpers; every caller must guard for `null` manually; incompatible with plugins that still expect a `getAPI()` facade.
 
@@ -44,7 +44,7 @@ This memo captures the current implementation that discovers HierarchiDB plugins
 * The application already centralizes boot progress inside `WorkerProvider`, which publishes `{ client, isInitialized, initProgress, error }` via React context. A hook such as `useWorkerClient` exposes that bundle to UI code and can be registered through `registerWorkerClientHook` so that the headless shell receives a richer client object instead of a naked proxy.【F:app/src/contexts/WorkerProvider.tsx†L171-L259】【F:app/src/contexts/WorkerProvider.tsx†L368-L397】【F:packages/runtime/worker-bootstrap/src/ui/workerClientHook.ts†L1-L18】
 * The same context sits on top of `WorkerAPIClient`, so it still provides the initialized `Remote<WorkerAPI>` under the `client` field while preserving lifecycle helpers such as `initialize()`, `reset()`, and readiness checks.【F:app/src/WorkerAPIClient.ts†L12-L172】【F:app/src/contexts/WorkerProvider.tsx†L188-L258】
 * **Pros:** consistently surfaces readiness/error metadata for React components, makes it trivial to show overlays while the worker connects, and keeps the direct proxy accessible through the `client` property for shell internals.
-* **Cons:** existing plugin hooks like the folder and shape integrations still assume the hook returns an object with `getAPI()`, so adopting the context holder requires either adding a thin adapter or extending the shared shape to provide that legacy method.【F:packages/plugins/folder-plugin/src/ui/hooks/useWorkingCopy.ts†L1-L22】【F:packages/plugins/shape-plugin/src/ui/hooks/useShapeAPI.ts†L15-L74】
+* **Cons:** existing plugin hooks like the folder and shape integrations still assume the hook returns an object with `getAPI()`, so adopting the context holder requires either adding a thin adapter or extending the shared shape to provide that legacy method.【F:packages/plugins/folder-plugin/src/ui/hooks/useDraft.ts†L1-L22】【F:packages/plugins/shape-plugin/src/ui/hooks/useShapeAPI.ts†L15-L74】
 
 ### Recommendation
 
@@ -52,7 +52,7 @@ Standardize on the `WorkerProvider` client holder (B) and augment that shared sh
 
 ## Notable gaps and inconsistencies
 
-* Plugin helpers now receive a uniform `WorkerClientRef` with `client`, `getAPI()`, and lifecycle helpers so they no longer need to guard against raw `WorkerAPI` proxies leaking through the initialization window.【F:packages/plugins/shape-plugin/src/ui/hooks/useShapeAPI.ts†L15-L61】【F:packages/plugins/folder-plugin/src/ui/hooks/useWorkingCopy.ts†L1-L23】【F:packages/ui/core/src/hooks/useWorkingCopy.ts†L1-L41】
+* Plugin helpers now receive a uniform `WorkerClientRef` with `client`, `getAPI()`, and lifecycle helpers so they no longer need to guard against raw `WorkerAPI` proxies leaking through the initialization window.【F:packages/plugins/shape-plugin/src/ui/hooks/useShapeAPI.ts†L15-L61】【F:packages/plugins/folder-plugin/src/ui/hooks/useDraft.ts†L1-L23】【F:packages/ui/core/src/hooks/useDraft.ts†L1-L41】
 * The dialog package included an unused `WorkerBridge` scaffold with stubbed batching for validation and capability evaluation. It has now been removed in favor of wiring every consumer through the shared worker client hook.
 
 These findings should help prioritize cleanup work: deciding on a single worker-client shape for plugins, hardening the step registry/host merging, and either removing or completing the legacy bridge components.

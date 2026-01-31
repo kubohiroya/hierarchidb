@@ -70,7 +70,7 @@ export interface UIPluginDefinition {
     canUpdate: boolean;
     canDelete: boolean;
     canHaveChildren: boolean;
-    supportsWorkingCopy: boolean;
+    supportsDraft: boolean;
     supportsExport: boolean;
   };
   
@@ -255,7 +255,7 @@ export const FolderUIPlugin: UIPluginDefinition = {
     canUpdate: true,
     canDelete: true,
     canHaveChildren: true,
-    supportsWorkingCopy: false,
+    supportsDraft: false,
     supportsExport: false
   },
   
@@ -374,7 +374,7 @@ export const BaseMapUIPlugin: UIPluginDefinition = {
     canUpdate: true,
     canDelete: true,
     canHaveChildren: false,
-    supportsWorkingCopy: true,
+    supportsDraft: true,
     supportsExport: true
   },
   

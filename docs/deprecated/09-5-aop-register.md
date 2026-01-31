@@ -30,7 +30,7 @@ packages/plugins/{plugin-name}/
 
 ```typescript
 // 例: BaseMapプラグイン定義
-export const BaseMapUnifiedDefinition: UnifiedPluginDefinition<BaseMapEntity, never, BaseMapWorkingCopy> = {
+export const BaseMapUnifiedDefinition: UnifiedPluginDefinition<BaseMapEntity, never, BaseMapDraft> = {
   // AOP機能（従来のNodeTypeDefinition）
   nodeType: 'basemap' as TreeNodeType,
   name: 'BaseMap',
@@ -192,8 +192,8 @@ export interface PluginRouterAction {
 export interface UnifiedPluginDefinition<
   TEntity extends BaseEntity = BaseEntity,
   TSubEntity extends BaseSubEntity = BaseSubEntity,
-  TWorkingCopy extends BaseWorkingCopy = BaseWorkingCopy
-> extends PluginDefinition<TEntity, TSubEntity, TWorkingCopy> {
+  TDraft extends BaseDraft = BaseDraft
+> extends PluginDefinition<TEntity, TSubEntity, TDraft> {
   // React Routerルーティング統合
   readonly routing: {
     actions: Record<string, PluginRouterAction>;
@@ -227,8 +227,8 @@ export class NodeTypeRegistry {
   }
   
   // 統合プラグイン登録（PluginDefinition + Routing）
-  registerPlugin<TEntity extends BaseEntity, TSubEntity extends BaseSubEntity, TWorkingCopy extends BaseWorkingCopy>(
-    definition: UnifiedPluginDefinition<TEntity, TSubEntity, TWorkingCopy>
+  registerPlugin<TEntity extends BaseEntity, TSubEntity extends BaseSubEntity, TDraft extends BaseDraft>(
+    definition: UnifiedPluginDefinition<TEntity, TSubEntity, TDraft>
   ): void {
     const { nodeType, entityHandler, routing } = definition;
     
@@ -259,11 +259,11 @@ export class NodeTypeRegistry {
   }
 
   // 従来のNodeTypeDefinition登録（後方互換性）
-  register<TEntity extends BaseEntity, TSubEntity extends BaseSubEntity, TWorkingCopy extends BaseWorkingCopy>(
-    definition: PluginDefinition<TEntity, TSubEntity, TWorkingCopy>
+  register<TEntity extends BaseEntity, TSubEntity extends BaseSubEntity, TDraft extends BaseDraft>(
+    definition: PluginDefinition<TEntity, TSubEntity, TDraft>
   ): void {
     // UnifiedPluginDefinitionに変換して登録
-    const unifiedDefinition: UnifiedPluginDefinition<TEntity, TSubEntity, TWorkingCopy> = {
+    const unifiedDefinition: UnifiedPluginDefinition<TEntity, TSubEntity, TDraft> = {
       ...definition,
       routing: {
         actions: {}, // ルーティングアクションなし
@@ -322,16 +322,16 @@ export class NodeTypeRegistry {
     return definition?.meta?.dependencies ?? [];
   }
   
-  private registerDatabaseSchema<TEntity extends BaseEntity, TSubEntity extends BaseSubEntity, TWorkingCopy extends BaseWorkingCopy>(
-    definition: PluginDefinition<TEntity, TSubEntity, TWorkingCopy>
+  private registerDatabaseSchema<TEntity extends BaseEntity, TSubEntity extends BaseSubEntity, TDraft extends BaseDraft>(
+    definition: PluginDefinition<TEntity, TSubEntity, TDraft>
   ): void {
     // Dexieスキーマの動的登録
     const { database } = definition;
     // 実装詳細...
   }
   
-  private registerAPIExtensions<TEntity extends BaseEntity, TSubEntity extends BaseSubEntity, TWorkingCopy extends BaseWorkingCopy>(
-    definition: PluginDefinition<TEntity, TSubEntity, TWorkingCopy>
+  private registerAPIExtensions<TEntity extends BaseEntity, TSubEntity extends BaseSubEntity, TDraft extends BaseDraft>(
+    definition: PluginDefinition<TEntity, TSubEntity, TDraft>
   ): void {
     // API拡張の登録
     const { api } = definition;

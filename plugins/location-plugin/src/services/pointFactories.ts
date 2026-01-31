@@ -1,4 +1,4 @@
-import type { CountryCode, Timestamp } from '@hierarchidb/common-types';
+import type { CountryCode, Timestamp } from '@hierarchidb/core-types';
 import { buildLocationPointIdFromLatLon } from '@hierarchidb/location-store';
 import type {
   LocationPointProperties,

@@ -4,7 +4,7 @@
 
 import type { TreeTablePlugin } from '../types.js';
 import type { TreeNodeInUI } from '../../types.js';
-import type { NodeId, NodeType } from '@hierarchidb/common-types';
+import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { KeyboardEvent } from 'react';
 
 export interface InlineEditPluginConfig {

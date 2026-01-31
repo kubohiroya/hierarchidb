@@ -4,7 +4,7 @@
  * version
   */
 
-import type { TreeNode } from '@hierarchidb/common-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import { atom } from 'jotai';
 import type { DragDropState, EditingState, ExpansionState, SearchState, SelectionState } from '../types.js';
 

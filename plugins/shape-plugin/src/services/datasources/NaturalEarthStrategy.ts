@@ -5,7 +5,7 @@
 
 import { BaseDataSourceStrategy, type DataSourceConfig, type FetchOptions, type ProcessOptions } from './DataSourceStrategy.js';
 import type { ShapeEntity } from '../../common/types/index.js';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type JSZip from 'jszip';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import {

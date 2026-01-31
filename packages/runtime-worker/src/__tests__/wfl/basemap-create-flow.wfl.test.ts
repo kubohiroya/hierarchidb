@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import type { TreeNodeUpdaterAPI, TreeSubscriptionAPI } from '@hierarchidb/tree-api';
 import type { TreeMutationAPI, TreeQueryAPI } from '@hierarchidb/tree-api';
-import { type NodeId, type TreeId, toNodeType } from '@hierarchidb/common-types';
+import { type NodeId, type TreeId, toNodeType } from '@hierarchidb/core-types';
 import * as Comlink from 'comlink';
 import { describe, expect, it } from 'vitest';
 import { MessageChannel } from 'worker_threads';

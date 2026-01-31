@@ -3,7 +3,7 @@
  * @description Context provider for modeless dialog atoms and configuration.
  */
 
-import type { DialogDisplayMode, DialogPosition } from '@hierarchidb/common-types';
+import type { DialogDisplayMode, DialogPosition } from '@hierarchidb/tree-api';
 import type { SxProps, Theme } from '@mui/material/styles';
 import type { TooltipProps } from '@mui/material/Tooltip';
 import type React from 'react';

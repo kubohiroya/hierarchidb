@@ -21,7 +21,7 @@ hierarchidbフレームワークとeria-cartographの実装パターンに基づ
 │   ├── types/
 │   │   ├── openstreetmap-type.ts                   # 型定義エクスポート
 │   │   ├── ShapesEntity.ts            # エンティティ型定義
-│   │   ├── ShapesWorkingCopy.ts       # Working Copy型定義
+│   │   ├── ShapesDraft.ts       # Working Copy型定義
 │   │   ├── BatchTypes.ts              # バッチ処理型定義
 │   │   └── WorkerTypes.ts             # WebWorker通信型定義
 │   ├── handlers/
@@ -31,7 +31,7 @@ hierarchidbフレームワークとeria-cartographの実装パターンに基づ
 │   │   ├── ShapesService.ts           # UI側メインサービス
 │   │   ├── ShapesDB.ts                # データベースアクセス層
 │   │   ├── ShapesBatchService.ts      # バッチ処理サービス
-│   │   └── ShapesWorkingCopyService.ts# Working Copy管理
+│   │   └── ShapesDraftService.ts# Working Copy管理
 │   ├── workers/
 │   │   ├── ShapesWorker.ts            # メインWebWorker実装
 │   │   ├── ShapesWorkerAPI.ts         # Worker API定義
@@ -53,7 +53,7 @@ hierarchidbフレームワークとeria-cartographの実装パターンに基づ
 │   │   ├── useShapesState.ts          # Shapes状態管理
 │   │   ├── useShapesService.ts        # サービス接続フック
 │   │   ├── useShapesBatch.ts          # バッチ処理フック
-│   │   └── useShapesWorkingCopy.ts    # Working Copy管理
+│   │   └── useShapesDraft.ts    # Working Copy管理
 │   ├── routes/
 │   │   ├── _index.tsx                 # デフォルト表示
 │   │   ├── edit.tsx                   # 編集ルート
@@ -112,7 +112,7 @@ export const shapesPlugin: PluginConfig = {
       {
         name: 'shapes_workingcopies',
         storage: 'ephemeral',
-        schema: '&workingCopyId, workingCopyOf, copiedAt, isDirty',
+        schema: '&draftId, draftOf, copiedAt, isDirty',
         ttl: 86400000 // 24時間
       },
       {
@@ -263,9 +263,9 @@ export interface ShapesEntity extends BaseEntity {
 /**
  * Shapes Working Copy (階層DB Working Copyパターン)
  */
-export interface ShapesWorkingCopy extends ShapesEntity {
-  workingCopyId: string;
-  workingCopyOf: TreeNodeId;
+export interface ShapesDraft extends ShapesEntity {
+  draftId: string;
+  draftOf: TreeNodeId;
   copiedAt: number;
   isDirty: boolean;
   
@@ -322,9 +322,9 @@ export interface BatchBufferData {
  */
 import type { TreeNodeId } from '@hierarchidb/core';
 import { EntityHandler } from '@hierarchidb/worker/handlers';
-import type { ShapesEntity, ShapesWorkingCopy } from '../types';
+import type { ShapesEntity, ShapesDraft } from '../types';
 
-export class ShapesEntityHandler extends EntityHandler<ShapesEntity, never, ShapesWorkingCopy> {
+export class ShapesEntityHandler extends EntityHandler<ShapesEntity, never, ShapesDraft> {
   
   // ==================
   // 基本CRUD操作 (hierarchidbパターン準拠)
@@ -393,7 +393,7 @@ export class ShapesEntityHandler extends EntityHandler<ShapesEntity, never, Shap
     await Promise.all([
       this.coreDB.table('_shapes_buggy').delete(nodeId),
       this.coreDB.table('shapes_metadata').delete(nodeId),
-      this.ephemeralDB.table('shapes_workingcopies').where('workingCopyOf').equals(nodeId).delete(),
+      this.ephemeralDB.table('shapes_workingcopies').where('draftOf').equals(nodeId).delete(),
       this.ephemeralDB.table('shapes_vectortiles_cache').where('shapesId').equals(nodeId).delete(),
       this.ephemeralDB.table('shapes_batch_tasks').where('sessionId').equals(nodeId).delete()
     ]);
@@ -964,7 +964,7 @@ export function ShapesDialog({
   const { shouldShowDraftChip } = useDraftChipState({
     mode,
     isDraft: isDraft || false,
-    workingCopyManager: manager.workingCopyManager,
+    draftManager: manager.draftManager,
   });
 
   // フォーム状態管理

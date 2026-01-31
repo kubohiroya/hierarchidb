@@ -6,7 +6,8 @@
  * The types below alias to TreeNode and keep auxiliary types for UI/API.
  */
 
-import type { NodeId, TreeNode, Timestamp } from '@hierarchidb/common-types';
+import type { NodeId, Timestamp } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 
 // Primary entity alias: treat Folder as Core TreeNode
 export type FolderEntity = TreeNode;

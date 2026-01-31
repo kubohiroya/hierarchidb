@@ -3,7 +3,7 @@
  * @description Content blocks for modeless map dialog windows.
  */
 
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type {
   ShapeFeatureMetadata,
   ShapeFeatureRecord,

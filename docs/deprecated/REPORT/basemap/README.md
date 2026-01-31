@@ -47,7 +47,7 @@ UI Layer (React/MUI) ←→ Comlink RPC ←→ Worker Layer ←→ IndexedDB Sto
                                            ↓
                                    BaseMapEntityHandler
                                            ↓
-                              [BaseMapDB | WorkingCopyTypes | TileCache]
+                              [BaseMapDB | DraftTypes | TileCache]
 ```
 
 ### Key Components

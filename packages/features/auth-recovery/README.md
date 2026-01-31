@@ -7,14 +7,14 @@
 ```
 AuthRecoveryService.ts  Facade (token store, fetchWithAuth, headers)
 ports.ts                Token provider hooks
-capability.ts           Feature capability manifest
-index.ts                Public exports + FeatureDefinition
+capability.ts           Capability helpers
+index.ts                Public exports
 ```
 
 ## Key exports
 - `AuthRecoveryService` — singleton facade: `setToken`, `getAuthHeaders`, `fetchWithAuth` (emits `AuthRequired`, waits for `AuthSuccess`/`AuthCancelled`, retries).
 - Ports: token provider types for integration.
-- Capability: `FeatureDefinition.manifest` (`provides: ['auth-recovery']`).
+- Capability: `AuthNotificationRegistry` integration for auth recovery flows.
 
 ## Consumers / usage
 - UI auth layer (`packages/ui/auth`) registers `AuthNotificationRegistry` handlers and calls `setToken` on login/refresh.

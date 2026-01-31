@@ -2,12 +2,13 @@
 // This file defines a minimal CommandMap for core worker commands
 // and utility types to infer payload/result shapes from a command kind.
 
+import type { NodeId, NodeType, Timestamp, TreeId } from '@hierarchidb/core-types';
 import type {
   CommitDraftForCreatePayload,
   CommitDraftPayload,
-  CopyNodesPayload,
   CommandEnvelope as CoreCommandEnvelope,
   CommandResult as CoreCommandResult,
+  CopyNodesPayload,
   CreateDraftForCreatePayload,
   CreateDraftPayload,
   DiscardDraftPayload,
@@ -16,15 +17,11 @@ import type {
   ImportNodesPayload,
   MoveNodesPayload,
   MoveToTrashPayload,
-  NodeId,
-  NodeType,
   PasteNodesPayload,
   RedoPayload,
   RestoreFromTrashPayload,
-  Timestamp,
-  TreeId,
   UndoPayload,
-} from '@hierarchidb/common-types';
+} from '@hierarchidb/tree-api';
 
 // CommandMap covers the core mutation commands first. Additional commands can be
 // extended incrementally without breaking existing usages.

@@ -1,7 +1,4 @@
-import type {
-  TreeNodeData,
-  TreeNodeUpdaterPayload,
-} from '@hierarchidb/common-types';
+import type { TreeNodeData, TreeNodeUpdaterPayload, DialogUIState } from '@hierarchidb/tree-api';
 
 export interface PropertyMappingRule {
   id: string;
@@ -113,6 +110,6 @@ export interface StylerIntegration {
 }
 
 export type ResolverUpdaterPayload = TreeNodeUpdaterPayload<Partial<ResolverEntity>> & {
-  dialogUIState: import('@hierarchidb/common-types').DialogUIState;
+  dialogUIState: DialogUIState;
   lastValidation?: MappingValidationResult | null;
 };

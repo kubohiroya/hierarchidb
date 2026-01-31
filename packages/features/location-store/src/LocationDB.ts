@@ -3,7 +3,7 @@
  */
 
 import { getDBName } from '@hierarchidb/util';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { Dexie, type Table } from 'dexie';
 import type { LocationFeature } from '@hierarchidb/location-api';
 
@@ -33,6 +33,9 @@ export class LocationDB extends Dexie {
     this.version(12).stores({
       features: '&[nodeId+id], nodeId, id, type, mortonKey, [nodeId+mortonKey], [nodeId+type+mortonKey], centroidForShapeId, [centroidForShapeId+centroidForShapeContainerNodeId], updatedAt',
     });
+    this.version(13).stores({
+      features: '&[nodeId+id], nodeId, id, type, mortonKey, [nodeId+mortonKey], [nodeId+type+mortonKey], centroidForShapeId, centroidForShapeContainerNodeId, [centroidForShapeId+centroidForShapeContainerNodeId], updatedAt',
+    });
 
     this.features = this.table('features');
   }
@@ -60,6 +63,20 @@ export async function closeLocationDB(): Promise<void> {
 
 export async function clearLocationDatabases(): Promise<void> {
   await Dexie.delete(getDBName('location'));
+}
+
+export async function hasLocationReferencesToShapes(
+  shapeNodeIds: NodeId[]
+): Promise<boolean> {
+  if (!shapeNodeIds.length) return false;
+  const db = getLocationDB();
+  await db.open?.();
+  const matches = await db.features
+    .where('centroidForShapeContainerNodeId')
+    .anyOf(shapeNodeIds)
+    .limit(1)
+    .toArray();
+  return matches.length > 0;
 }
 
 // Backward-compatible aliases (to be removed after migration window).

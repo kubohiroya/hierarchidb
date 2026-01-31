@@ -56,8 +56,8 @@ Working copies provide isolated editing environments, preventing incomplete edit
 #### 3.1.1 Create Working Copy for New Node
 
 ```typescript
-interface CreateWorkingCopyForCreatePayload {
-  workingCopyId: UUID;
+interface CreateDraftForCreatePayload {
+  draftId: UUID;
   parentTreeNodeId: TreeNodeId;
   nodeType: string;
   name: string;                 // Will be normalized by Worker
@@ -68,7 +68,7 @@ interface CreateWorkingCopyForCreatePayload {
 
 **Worker Processing**:
 - Generates new `treeNodeId`
-- Sets `workingCopyOf` to same ID (marks as creation)
+- Sets `draftOf` to same ID (marks as creation)
 - Normalizes name for consistency
 - Stores in EphemeralDB
 - **NOT undoable** (no side effects)
@@ -76,8 +76,8 @@ interface CreateWorkingCopyForCreatePayload {
 #### 3.1.2 Discard Creation
 
 ```typescript
-interface DiscardWorkingCopyPayload {
-  workingCopyId: UUID;
+interface DiscardDraftPayload {
+  draftId: UUID;
 }
 ```
 
@@ -89,8 +89,8 @@ interface DiscardWorkingCopyPayload {
 #### 3.1.3 Commit New Node
 
 ```typescript
-interface CommitWorkingCopyForCreatePayload {
-  workingCopyId: UUID;
+interface CommitDraftForCreatePayload {
+  draftId: UUID;
   onNameConflict?: 'error' | 'auto-rename';  // Default: 'auto-rename'
 }
 ```
@@ -110,8 +110,8 @@ interface CommitWorkingCopyForCreatePayload {
 #### 3.2.1 Create Working Copy for Edit
 
 ```typescript
-interface CreateWorkingCopyPayload {
-  workingCopyId: UUID;
+interface CreateDraftPayload {
+  draftId: UUID;
   sourceTreeNodeId: TreeNodeId;
 }
 ```
@@ -119,7 +119,7 @@ interface CreateWorkingCopyPayload {
 **Worker Processing**:
 - Shallow copies source node
 - Generates new `treeNodeId` for working copy
-- Sets `workingCopyOf` to source node ID
+- Sets `draftOf` to source node ID
 - Sets `copiedAt` timestamp
 - Stores in EphemeralDB
 - **NOT undoable** (no permanent changes)
@@ -131,8 +131,8 @@ Same as discard for creation - removes working copy without applying changes.
 #### 3.2.3 Commit Edits
 
 ```typescript
-interface CommitWorkingCopyPayload {
-  workingCopyId: UUID;
+interface CommitDraftPayload {
+  draftId: UUID;
   expectedUpdatedAt?: Timestamp;  // For optimistic locking
   onNameConflict?: 'error' | 'auto-rename';
 }
@@ -368,8 +368,8 @@ interface RedoPayload {
 ### 5.4 Undoable vs Non-Undoable
 
 **Undoable Operations**:
-- `commitWorkingCopyForCreate` - Can delete created node
-- `commitWorkingCopy` - Can restore original
+- `commitDraftForCreate` - Can delete created node
+- `commitDraft` - Can restore original
 - `moveNodes` - Can move back
 - `duplicateNodes` - Can delete copies
 - `pasteNodes` - Can delete pasted
@@ -378,8 +378,8 @@ interface RedoPayload {
 - `importNodes` - Can delete imported
 
 **Non-Undoable Operations**:
-- `createWorkingCopy*` - No permanent effects
-- `discardWorkingCopy*` - No permanent effects
+- `createDraft*` - No permanent effects
+- `discardDraft*` - No permanent effects
 - `permanentDelete` - Data lost forever
 
 ## 6. Error Handling
@@ -465,17 +465,17 @@ async function handleMutation(operation: () => Promise<CommandResult>) {
 const groupId = generateId();
 
 // All operations share groupId for atomic undo
-await api.createWorkingCopyForCreate({
+await api.createDraftForCreate({
   groupId,
   commandId: generateId(),
-  kind: 'createWorkingCopyForCreate',
+  kind: 'createDraftForCreate',
   payload: { /* ... */ }
 });
 
-await api.commitWorkingCopyForCreate({
+await api.commitDraftForCreate({
   groupId,  // Same groupId
   commandId: generateId(),
-  kind: 'commitWorkingCopyForCreate',
+  kind: 'commitDraftForCreate',
   payload: { /* ... */ }
 });
 
@@ -498,7 +498,7 @@ const optimisticState = applyOptimisticUpdate(currentState, changes);
 setUIState(optimisticState);
 
 try {
-  const result = await api.commitWorkingCopy({
+  const result = await api.commitDraft({
     // ...
     payload: {
       expectedUpdatedAt: currentState.updatedAt  // Optimistic lock

@@ -7,7 +7,7 @@ The resolver plugin leverages the same extensible dialog framework. Track requir
 - [ ] Identify shared components reused from route/shape that must be updated.
 
 ## Phase 1: Dialog Integration
-- [ ] Verify resolver dialog uses `useWorkingCopy` correctly with current worker payloads.
+- [ ] Verify resolver dialog uses `useDraft` correctly with current worker payloads.
 - [ ] Ensure step provider registrations and validation pipelines are active.
 
 ## Phase 2: Batch/Processing UI (if applicable)

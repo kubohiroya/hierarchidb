@@ -53,8 +53,8 @@ The route batch processing implementation prioritizes shared infrastructure to r
 - Route engines must sit behind the existing service:
   - Implement engines inside `packages/plugins/route-plugin/src/services/RouteGenerator.ts` by adding concrete branches for `osm_route` and `searoute` instead of new modules. Reuse existing `direct` and `great_circle` implementations.
   - Add thin adapters that call feature services (see below) rather than hardcoding HTTP in the generator.
-- Feature registry wiring:
-  - Register engine capabilities via `@hierarchidb/feature-registry` at worker bootstrap. Provide caps such as `route.engine.osrm`, `route.engine.searoute` and consume them from `RouteGenerator`.
+- Engine capability wiring:
+  - Register engine capabilities via an explicit route engine registry at worker bootstrap. Provide caps such as `route.engine.osrm`, `route.engine.searoute` and consume them from `RouteGenerator`.
 - Reuse/promote shared utilities:
   - Move the simple RateLimiter from `packages/runtime-ui/datasource/src/services/DataSourceManager.ts` into a shared module (e.g., `packages/runtime-shared/batch-processor/src/RateLimiter.ts` or `packages/util/src/rateLimiter.ts`). Import it in Route scheduler; remove duplicate implementations.
   - Geometry encoding/extraction should reuse shape-plugin workers/utilities; do not build a new TopoJSON/MVT stack under route.

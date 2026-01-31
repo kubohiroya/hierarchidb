@@ -29,7 +29,7 @@
 -- 🟢 Main entity for storing style map configurations
 -- ------------------------------------------------------------------------------
 -- Dexie Schema Definition:
--- styleMapEntities: "&nodeId, fileContentHash, workingCopyOf"
+-- styleMapEntities: "&nodeId, fileContentHash, draftOf"
 
 /*
 CREATE TABLE style_map_entities (
@@ -58,8 +58,8 @@ CREATE TABLE style_map_entities (
     styleMapConfig JSON, -- StyleMapConfig
     
     -- Working copy management
-    workingCopyOf VARCHAR(255), -- Reference to original entity
-    isWorkingCopy BOOLEAN DEFAULT FALSE,
+    draftOf VARCHAR(255), -- Reference to original entity
+    isDraft BOOLEAN DEFAULT FALSE,
     
     -- Timestamps
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -74,7 +74,7 @@ CREATE TABLE style_map_entities (
     -- Additional dynamic properties stored as JSON
     
     FOREIGN KEY (tableMetadataId) REFERENCES table_metadata_entities(id),
-    FOREIGN KEY (workingCopyOf) REFERENCES style_map_entities(nodeId)
+    FOREIGN KEY (draftOf) REFERENCES style_map_entities(nodeId)
 );
 */
 
@@ -82,7 +82,7 @@ CREATE TABLE style_map_entities (
 -- Primary Key: nodeId (TreeNodeId)
 -- Indexes:
 --   - fileContentHash (for deduplication queries)
---   - workingCopyOf (for working copy queries)
+--   - draftOf (for working copy queries)
 --   - tableMetadataId (for join queries)
 --   - parentId (for hierarchical queries)
 --   - createdAt (for temporal queries)
@@ -165,16 +165,16 @@ CREATE TABLE row_entities (
 -- ================================================================================
 
 -- ------------------------------------------------------------------------------
--- WorkingCopyTypes Store (EphemeralDB)
+-- DraftTypes Store (EphemeralDB)
 -- 🟡 Temporary editing states with undo/redo support
 -- ------------------------------------------------------------------------------
 -- Dexie Schema Definition:
--- workingCopies: "&workingCopyId, originalId, sessionId"
+-- workingCopies: "&draftId, originalId, sessionId"
 
 /*
 CREATE TABLE working_copies (
     -- Primary key
-    workingCopyId UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    draftId UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     
     -- Reference to original entity
     originalId VARCHAR(255),
@@ -204,7 +204,7 @@ CREATE TABLE working_copies (
 -- 🟡 Command history for undo/redo operations
 -- ------------------------------------------------------------------------------
 -- Dexie Schema Definition:
--- undoRedoBuffer: "&commandId, workingCopyId, sequence"
+-- undoRedoBuffer: "&commandId, draftId, sequence"
 
 /*
 CREATE TABLE undo_redo_buffer (
@@ -212,7 +212,7 @@ CREATE TABLE undo_redo_buffer (
     commandId UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     
     -- Working copy reference
-    workingCopyId UUID NOT NULL,
+    draftId UUID NOT NULL,
     
     -- Command sequence (for ordering)
     sequence INTEGER NOT NULL,
@@ -232,7 +232,7 @@ CREATE TABLE undo_redo_buffer (
     -- Timestamp
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    FOREIGN KEY (workingCopyId) REFERENCES working_copies(workingCopyId)
+    FOREIGN KEY (draftId) REFERENCES working_copies(draftId)
 );
 */
 
@@ -287,9 +287,9 @@ CREATE TABLE file_cache_metadata (
 -- CREATE INDEX idx_stylemap_created ON style_map_entities(createdAt);
 
 -- Working Copy Queries  
--- CREATE INDEX idx_workingcopy_original ON working_copies(originalId);
--- CREATE INDEX idx_workingcopy_session ON working_copies(sessionId);
--- CREATE INDEX idx_workingcopy_expires ON working_copies(expiresAt);
+-- CREATE INDEX idx_draft_original ON working_copies(originalId);
+-- CREATE INDEX idx_draft_session ON working_copies(sessionId);
+-- CREATE INDEX idx_draft_expires ON working_copies(expiresAt);
 
 -- Table Metadata Queries
 -- CREATE INDEX idx_table_hash ON table_metadata_entities(contentHash);
@@ -300,8 +300,8 @@ CREATE TABLE file_cache_metadata (
 -- Compound index [t+r] covers most row queries efficiently
 
 -- Undo/Redo Queries
--- CREATE INDEX idx_undo_workingcopy ON undo_redo_buffer(workingCopyId);
--- CREATE INDEX idx_undo_sequence ON undo_redo_buffer(workingCopyId, sequence);
+-- CREATE INDEX idx_undo_draft ON undo_redo_buffer(draftId);
+-- CREATE INDEX idx_undo_sequence ON undo_redo_buffer(draftId, sequence);
 
 -- Cache Management Queries
 -- CREATE INDEX idx_cache_hash ON file_cache_metadata(contentHash);
@@ -392,7 +392,7 @@ WHERE expiresAt < CURRENT_TIMESTAMP;
 
 -- Clean orphaned undo/redo commands
 DELETE FROM undo_redo_buffer 
-WHERE workingCopyId NOT IN (SELECT workingCopyId FROM working_copies);
+WHERE draftId NOT IN (SELECT draftId FROM working_copies);
 
 -- Clean expired cache entries
 DELETE FROM file_cache_metadata 

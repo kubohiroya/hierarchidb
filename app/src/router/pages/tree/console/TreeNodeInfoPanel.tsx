@@ -1,4 +1,5 @@
-import type { TreeId, TreeNode } from '@hierarchidb/common-types';
+import type { TreeId } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import {
   NodeContextMenu,
   NodeTypeIcon,

@@ -1,4 +1,4 @@
-import type { TreeId } from '@hierarchidb/common-types';
+import type { TreeId } from '@hierarchidb/core-types';
 
 type BuildQueueState = {
   returnTo: string;

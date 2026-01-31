@@ -1,4 +1,5 @@
-import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, TreeId } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import type { ImportExportDBPort } from '@hierarchidb/import-export';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 

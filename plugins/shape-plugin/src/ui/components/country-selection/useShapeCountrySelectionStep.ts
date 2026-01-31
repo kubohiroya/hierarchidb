@@ -11,7 +11,7 @@ import {
 import { isDataSourceName, SHAPE_DATA_SOURCE_BY_NAME } from '../../../common/types/index.js';
 import type { CountryAvailabilityWorkerAPI, SerializedCountryAvailability } from '../../workers/countryAvailability.types.js';
 import { wrap, releaseProxy, proxy } from 'comlink';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { useDialogUrlSync } from '@hierarchidb/plugin-base';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';

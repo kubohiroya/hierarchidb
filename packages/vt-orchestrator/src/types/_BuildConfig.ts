@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type {
   ExtractionMode as CommonExtractionMode,
   FetchConfig as CommonFetchConfig,

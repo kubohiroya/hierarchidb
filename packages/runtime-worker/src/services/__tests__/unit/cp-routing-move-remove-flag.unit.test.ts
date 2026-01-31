@@ -1,4 +1,5 @@
-import type { NodeId, NodeType, Timestamp, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CommandProcessor } from '../../CommandProcessor.js';
 import type { CoreDB } from '../../CoreDB.js';

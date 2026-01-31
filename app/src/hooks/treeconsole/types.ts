@@ -6,7 +6,8 @@
  */
 
 import type { WorkerAPI } from '@hierarchidb/worker-api';
-import type { CommandResult, NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, TreeId } from '@hierarchidb/core-types';
+import type { CommandResult, TreeNode } from '@hierarchidb/tree-api';
 import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-toolbar';
@@ -129,6 +130,7 @@ export interface TreeConsoleActionDeps {
   expandedIds: NodeId[];
   locale?: string;
   returnTo?: string;
+  translateWithFallback?: (key: string, fallback: string) => string;
   setState: Dispatch<SetStateAction<TreeConsoleState>>;
   setSSOT: (patch: Partial<TreeConsoleSSOTEntry>) => void;
   ssot: TreeConsoleSSOTEntry;

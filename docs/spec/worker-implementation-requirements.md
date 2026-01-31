@@ -43,8 +43,8 @@
 ### 条件付き要件
 
 🟢 **Working Copy管理**
-- REQ-101: 新規作成の場合、システムは createWorkingCopyForCreateコマンドで一時データを作成しなければならない
-- REQ-102: 既存ノード編集の場合、システムは createWorkingCopyコマンドでシャローコピーを作成しなければならない
+- REQ-101: 新規作成の場合、システムは createDraftForCreateコマンドで一時データを作成しなければならない
+- REQ-102: 既存ノード編集の場合、システムは createDraftコマンドでシャローコピーを作成しなければならない
 - REQ-103: コミット時、システムは 楽観的ロックでバージョン競合を検出しなければならない
 
 🟢 **名前競合処理**
@@ -109,7 +109,7 @@
 
 🟢 **NodeTypeDefinition構造**
 ```typescript
-interface PluginDefinition<TEntity, TSubEntity, TWorkingCopy> {
+interface PluginDefinition<TEntity, TSubEntity, TDraft> {
   nodeType: TreeNodeType;
   name: string;
   displayName: string;
@@ -118,7 +118,7 @@ interface PluginDefinition<TEntity, TSubEntity, TWorkingCopy> {
     subEntityStores?: string[];
     schema: DatabaseSchema;
   };
-  entityHandler: EntityHandler<TEntity, TSubEntity, TWorkingCopy>;
+  entityHandler: EntityHandler<TEntity, TSubEntity, TDraft>;
   lifecycle: NodeLifecycleHooks<TEntity>;
   ui?: { /* UI設定 */ };
   api?: { /* API拡張 */ };
@@ -133,9 +133,9 @@ interface PluginDefinition<TEntity, TSubEntity, TWorkingCopy> {
 - `getEntity()`: エンティティの取得
 - `updateEntity()`: エンティティの更新
 - `deleteEntity()`: エンティティの削除
-- `createWorkingCopy()`: ワーキングコピー作成
-- `commitWorkingCopy()`: ワーキングコピーのコミット
-- `discardWorkingCopy()`: ワーキングコピーの破棄
+- `createDraft()`: ワーキングコピー作成
+- `commitDraft()`: ワーキングコピーのコミット
+- `discardDraft()`: ワーキングコピーの破棄
 
 🟡 **オプションメソッド**
 - `createSubEntity()`: サブエンティティ作成

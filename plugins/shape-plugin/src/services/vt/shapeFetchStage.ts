@@ -1,7 +1,7 @@
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
-import type { NodeId, ISO2 } from '@hierarchidb/common-types';
+import type { ISO2, NodeId } from '@hierarchidb/core-types';
 import { encodeFlatGeobufFromFeatureCollection } from '@hierarchidb/gis-sdk';
-import type { StageHandler, TaskQueueRecord } from '@hierarchidb/common-types';
+import type { StageHandler, TaskQueueRecord } from '@hierarchidb/batch-api';
 import type { ShapeBuildConfig } from '../../common/types/index.js';
 import {
   type VtTaskQueueDb,

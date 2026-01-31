@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { TabularDataResult } from '@hierarchidb/ui-tabular';
 import type { LocationPointProperties } from '../../common/entities/LocationPoint.js';
 import { buildLocationPointIdFromLatLon, buildTileIdByZoom } from '@hierarchidb/location-store';

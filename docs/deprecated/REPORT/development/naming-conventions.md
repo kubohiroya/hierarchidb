@@ -52,12 +52,12 @@ await api.delete({ ... });  // Wrong: ambiguous
 **Examples**:
 ```typescript
 // Correct
-await api.discardWorkingCopy({ workingCopyId: ... });
-await ephemeralDB.discardWorkingCopy(id);
+await api.discardDraft({ draftId: ... });
+await ephemeralDB.discardDraft(id);
 
 // Incorrect (don't use these)
-await api.deleteWorkingCopy({ ... });  // Wrong: delete is for database operations
-await api.removeWorkingCopy({ ... });  // Wrong: remove is for permanent deletion
+await api.deleteDraft({ ... });  // Wrong: delete is for database operations
+await api.removeDraft({ ... });  // Wrong: remove is for permanent deletion
 ```
 
 ### 4. `delete`
@@ -87,8 +87,8 @@ type CommandKind =
   | 'moveToTrash'      // Moving to trash
   | 'recoverFromTrash'  // Restoring from trash
   | 'remove'            // Permanent deletion
-  | 'discardWorkingCopy' // Canceling edits
-  | 'discardWorkingCopyForCreate' // Canceling creation
+  | 'discardDraft' // Canceling edits
+  | 'discardDraftForCreate' // Canceling creation
 
 // Avoid these names
 // ❌ 'delete' - Too ambiguous
@@ -102,14 +102,14 @@ type CommandKind =
 // Correct naming
 interface MoveToTrashPayload { ... }
 interface RemovePayload { ... }       // Not PermanentDeletePayload
-interface DiscardWorkingCopyPayload { ... }
+interface DiscardDraftPayload { ... }
 
 // Service methods
 interface TreeMutationService {
   moveToTrash(payload: MoveToTrashPayload): Promise<Result>;
   remove(payload: RemovePayload): Promise<Result>;  // Not permanentDelete
   recoverFromTrash(payload: RecoverFromTrashPayload): Promise<Result>;
-  discardWorkingCopy(payload: DiscardWorkingCopyPayload): Promise<Result>;
+  discardDraft(payload: DiscardDraftPayload): Promise<Result>;
 }
 ```
 
@@ -147,7 +147,7 @@ When updating existing code:
 1. **Search and Replace**:
    - `permanentDelete` → `remove`
    - `PermanentDeletePayload` → `RemovePayload`
-   - `deleteWorkingCopy` → `discardWorkingCopy` (except Dexie operations)
+   - `deleteDraft` → `discardDraft` (except Dexie operations)
 
 2. **Review Context Menus**:
    - Ensure "Remove" in regular context means "Move to Trash"
@@ -228,12 +228,12 @@ function DeleteButton({ nodeIds }: Props) {
 ### Working Copy Operations
 ```typescript
 // Correct implementation
-async function cancelEdit(workingCopyId: string) {
+async function cancelEdit(draftId: string) {
   // Use discard for working copies
-  await api.discardWorkingCopy({ workingCopyId });
+  await api.discardDraft({ draftId });
   
-  // NOT: await api.deleteWorkingCopy({ workingCopyId });
-  // NOT: await api.removeWorkingCopy({ workingCopyId });
+  // NOT: await api.deleteDraft({ draftId });
+  // NOT: await api.removeDraft({ draftId });
 }
 ```
 

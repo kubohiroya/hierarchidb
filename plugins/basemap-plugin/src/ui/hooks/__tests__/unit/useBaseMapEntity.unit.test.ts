@@ -1,4 +1,4 @@
-import type { TreeNode } from '@hierarchidb/common-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import { describe, expect, it } from 'vitest';
 import { __testUtils } from '../../useBaseMapEntity.js';
 

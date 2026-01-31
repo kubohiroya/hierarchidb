@@ -1,4 +1,5 @@
-import type { NodeId, StageHandler, TaskQueueRecord } from '@hierarchidb/common-types';
+import type { StageHandler, TaskQueueRecord } from '@hierarchidb/batch-api';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildConfig } from '../../common/types/index.js';
 import { createVtHandler, listTasksByStage, listTasksByStageAndStatus, putTasks, runStageTasks, updateTask, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { shapeMutationAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
@@ -155,4 +156,3 @@ export const runShapeVtStageSection = async (params: ShapeVtStageParams): Promis
     });
   }
 };
-

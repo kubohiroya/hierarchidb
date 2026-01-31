@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { NodeId, NodeType } from '@hierarchidb/common-types';
+import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { getWorkerBridge, type WorkerBridge } from '@hierarchidb/ui-worker-client';
 import { type BatchSessionStatus, type ProgressPhase, type UnifiedProgressInfo } from '@hierarchidb/batch-api';
 import { usePluginBatchProgress } from '@hierarchidb/ui-batch-progress';

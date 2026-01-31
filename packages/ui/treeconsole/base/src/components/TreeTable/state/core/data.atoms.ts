@@ -7,7 +7,7 @@
   */
 
 import { atom } from 'jotai';
-import type { TreeNode } from '@hierarchidb/common-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 
 /**
     */

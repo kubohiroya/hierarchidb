@@ -5,7 +5,8 @@
    */
 
 import type { WorkerAPI } from '@hierarchidb/worker-api';
-import type { NodeId, TreeNodeEvent } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { OnNameConflict, TreeNodeEvent } from '@hierarchidb/tree-api';
 // import { TreeObservableAdapter } from './subscriptions/TreeObservableAdapter.js'; // Currently unused
 import { TreeMutationCommandsAdapter } from './commands/TreeMutationCommands.js';
 import { DraftCommandsAdapter, type DraftEditSession } from './commands/DraftCommands.js';
@@ -18,7 +19,7 @@ type TreeNodeEventCallback = (event: TreeNodeEvent) => void;
 export class WorkerAPIAdapter {
   private workerAPI: WorkerAPI;
   private viewId: string;
-  private defaultOnNameConflict: (name: string) => string;
+  private defaultOnNameConflict: OnNameConflict;
 
   // Individual adapters
   // private _observableAdapter: TreeObservableAdapter; // Currently unused - remove until needed
@@ -29,7 +30,7 @@ export class WorkerAPIAdapter {
   constructor(config: WorkerAPIAdapterConfig) {
     this.workerAPI = config.workerAPI;
     this.viewId = config.defaultViewId;
-    this.defaultOnNameConflict = config.defaultOnNameConflict || ((name: string) => `${name}-copy`);
+    this.defaultOnNameConflict = config.defaultOnNameConflict ?? 'auto-rename';
 
     // Initialize adapters
     // this._observableAdapter = new TreeObservableAdapter(this.workerAPI); // Currently unused
@@ -248,7 +249,7 @@ export class WorkerAPIAdapter {
             */
   getAdapterInfo(): {
     viewId: string;
-    defaultOnNameConflict: (name: string) => string;
+    defaultOnNameConflict: OnNameConflict;
     subscriptionStats: ReturnType<SubscriptionManager['getSubscriptionStats']>;
   } {
     return {

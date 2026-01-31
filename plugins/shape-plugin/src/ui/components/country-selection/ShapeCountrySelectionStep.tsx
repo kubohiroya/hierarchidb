@@ -4,7 +4,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import { CountryMatrixSelector } from '@hierarchidb/ui-country-select';
 import { useShapeCountrySelectionStep } from './useShapeCountrySelectionStep.js';
 import { useTranslation } from '../../i18n.js';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { AuthReadyGate } from '@hierarchidb/ui-auth';
 import type { ShapeDialogStepProps } from '../ShapeDialogStepProps.tsx';
 

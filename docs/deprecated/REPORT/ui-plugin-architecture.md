@@ -53,7 +53,7 @@ graph TB
         G[ui-inline-editing]
         H[ui-validation]
         I[ui-keyboard-navigation]
-        J[ui-working-copy]
+        J[ui-draft]
         K[ui-drag-drop]
         L[ui-search-highlight]
     end
@@ -94,7 +94,7 @@ export interface TreeTableCoreProps {
   enableAdvancedKeyboardNav?: boolean;
   enableDragDropEnhancements?: boolean;
   enableSearchHighlight?: boolean;
-  enableWorkingCopyIntegration?: boolean;
+  enableDraftIntegration?: boolean;
 }
 
 export interface TreeTablePlugin {
@@ -210,9 +210,9 @@ export function TreeConsoleProvider({
       <TreeDataProvider {...props}>
         <ValidationProvider>
           <KeyboardNavigationProvider>
-            <WorkingCopyProvider>
+            <DraftProvider>
               {children}
-            </WorkingCopyProvider>
+            </DraftProvider>
           </KeyboardNavigationProvider>
         </ValidationProvider>
       </TreeDataProvider>
@@ -308,14 +308,14 @@ export const inlineEditingPlugin: TreeTablePlugin = {
 // packages/ui-inline-editing/src/hooks/useInlineEditing.ts
 export function useInlineEditing({
   controller,
-  workingCopyService,
+  draftService,
   validator,
 }: UseInlineEditingProps) {
   const [editingState, setEditingState] = useState<EditingState>({
     editingNodeId: null,
     editingValue: '',
     originalValue: '',
-    workingCopyId: null,
+    draftId: null,
     validationErrors: [],
     isLoading: false,
   });
@@ -329,13 +329,13 @@ export function useInlineEditing({
       if (!currentData) throw new Error('Node not found');
       
       // Create working copy for optimistic locking
-      const workingCopy = await workingCopyService?.createWorkingCopy(nodeId, currentData);
+      const draft = await draftService?.createDraft(nodeId, currentData);
       
       setEditingState({
         editingNodeId: nodeId,
         editingValue: currentData.name,
         originalValue: currentData.name,
-        workingCopyId: workingCopy?.id || null,
+        draftId: draft?.id || null,
         validationErrors: [],
         isLoading: false,
       });
@@ -343,10 +343,10 @@ export function useInlineEditing({
       setEditingState(prev => ({ ...prev, isLoading: false }));
       throw error;
     }
-  }, [controller, workingCopyService]);
+  }, [controller, draftService]);
   
   const finishEdit = useCallback(async (newValue: string) => {
-    if (!editingState.editingNodeId || !editingState.workingCopyId) return false;
+    if (!editingState.editingNodeId || !editingState.draftId) return false;
     
     try {
       // Validate new value
@@ -364,18 +364,18 @@ export function useInlineEditing({
       }
       
       // Update working copy and commit
-      await workingCopyService?.updateWorkingCopy(
-        editingState.workingCopyId,
+      await draftService?.updateDraft(
+        editingState.draftId,
         { name: newValue }
       );
-      await workingCopyService?.commitWorkingCopy(editingState.workingCopyId);
+      await draftService?.commitDraft(editingState.draftId);
       
       // Clear editing atoms
       setEditingState({
         editingNodeId: null,
         editingValue: '',
         originalValue: '',
-        workingCopyId: null,
+        draftId: null,
         validationErrors: [],
         isLoading: false,
       });
@@ -385,22 +385,22 @@ export function useInlineEditing({
       console.error('Failed to save edit:', error);
       return false;
     }
-  }, [editingState, validator, workingCopyService]);
+  }, [editingState, validator, draftService]);
   
   const cancelEdit = useCallback(async () => {
-    if (editingState.workingCopyId) {
-      await workingCopyService?.discardWorkingCopy(editingState.workingCopyId);
+    if (editingState.draftId) {
+      await draftService?.discardDraft(editingState.draftId);
     }
     
     setEditingState({
       editingNodeId: null,
       editingValue: '',
       originalValue: '',
-      workingCopyId: null,
+      draftId: null,
       validationErrors: [],
       isLoading: false,
     });
-  }, [editingState.workingCopyId, workingCopyService]);
+  }, [editingState.draftId, draftService]);
   
   return {
     editingState,
@@ -601,7 +601,7 @@ function AdvancedTreeTable({
       basePlugins.push(
         inlineEditingPlugin,
         keyboardNavigationPlugin,
-        workingCopyPlugin
+        draftPlugin
       );
     }
     
@@ -614,7 +614,7 @@ function AdvancedTreeTable({
         controller={controller}
         enableInlineEditing={enableAdvancedFeatures}
         enableAdvancedKeyboardNav={enableAdvancedFeatures}
-        enableWorkingCopyIntegration={enableAdvancedFeatures}
+        enableDraftIntegration={enableAdvancedFeatures}
         viewHeight={600}
         viewWidth={800}
       />

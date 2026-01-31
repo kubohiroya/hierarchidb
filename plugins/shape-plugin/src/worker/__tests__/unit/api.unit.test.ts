@@ -3,7 +3,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { BatchConfig } from '../../../common/types/index.js';
 import { DEFAULT_BUILD_CONFIG, mergeBuildConfig } from '../../../common/types/index.js';
 import { shapeBatchAPI } from '../../api.js';

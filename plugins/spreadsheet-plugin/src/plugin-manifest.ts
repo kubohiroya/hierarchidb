@@ -1,5 +1,5 @@
 import type { PluginManifest } from '@hierarchidb/plugin-base';
-import type { NodeType } from '@hierarchidb/common-types';
+import type { NodeType } from '@hierarchidb/core-types';
 
 export const SPREADSHEET_PLUGIN_ID = '@hierarchidb/spreadsheet-plugin' as const;
 export const SPREADSHEET_PLUGIN_VERSION = '0.2.0' as const;

@@ -5,7 +5,7 @@
  * and displays them as creation actions, filtered by treeId.
  */
 
-import type { TreeId } from '@hierarchidb/common-types';
+import type { TreeId } from '@hierarchidb/core-types';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import { Box, Portal, SpeedDial, SpeedDialAction, SpeedDialIcon } from '@mui/material';
 import type { PluginMenuItem, TreeContext } from '~/plugin-loaders/menu-builders.js';

@@ -1,5 +1,5 @@
 import { type Table, Dexie } from 'dexie';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 
 export type RouteVectorTileRecord = {
   id: string;

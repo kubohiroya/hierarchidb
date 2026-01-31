@@ -127,15 +127,15 @@ await service.commitDraft(nodeId);
 **New Pattern:**
 ```typescript
 // Use WorkerAPI working copy methods
-const workingCopyId = generateId();
+const draftId = generateId();
 
 // For create
-await api.createWorkingCopyForCreate({
+await api.createDraftForCreate({
   commandId: generateId(),
   groupId: generateGroupId(),
-  kind: 'createWorkingCopyForCreate',
+  kind: 'createDraftForCreate',
   payload: {
-    workingCopyId,
+    draftId,
     parentTreeNodeId: parentId,
     name: 'New Node',
     description: ''
@@ -144,24 +144,24 @@ await api.createWorkingCopyForCreate({
 });
 
 // For edit
-await api.createWorkingCopy({
+await api.createDraft({
   commandId: generateId(),
   groupId: generateGroupId(),
-  kind: 'createWorkingCopy',
+  kind: 'createDraft',
   payload: {
-    workingCopyId,
+    draftId,
     sourceTreeNodeId: nodeId
   },
   issuedAt: Date.now()
 });
 
 // Commit
-await api.commitWorkingCopy({
+await api.commitDraft({
   commandId: generateId(),
   groupId: generateGroupId(),
-  kind: 'commitWorkingCopy',
+  kind: 'commitDraft',
   payload: {
-    workingCopyId,
+    draftId,
     expectedUpdatedAt: timestamp,
     onNameConflict: 'auto-rename'
   },

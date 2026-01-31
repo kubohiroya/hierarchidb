@@ -82,7 +82,7 @@
 - `WorkerProvider` は `WorkerAPIClient` と `WorkerInitializationChannel` を組み合わせた独自の状態管理を実装しており、fallback UI はあるが Promise を手動で扱っている。
 - `app/src/client.ts` の `initializeWorker()` はローカル Worker エントリ (`./worker.ts`) を生成した後、`WorkerProvider` が公開する `window.__HDB_WORKER_CLIENT_REF__` を通じて `WorkerBridge` へクライアント参照を共有する。プラグイン側で直接 `@hierarchidb/*/worker` を import する経路は排除済み。
 - （2025-09-30 更新）プラグイン worker は `register*WorkerStores` ファクトリ経由に統一済みで、`StylerEntitiesDB` などの静的再エクスポートは撤去された。現在はモジュール末尾で `export { StylerEntitiesDB }` する実装はなく、chunk 分割は阻害されていない。
-- runtime 側では `FeatureBootstrap` が多数の静的 import を保持し、オプション機能のみ `importOptionalFeature()` で遅延化している。
+- Runtime no longer uses `FeatureBootstrap`; optional feature init is handled via explicit singleton/service wiring and dynamic imports where needed.
 - 既存の codemod/自動化仕組みは未整備だったため compareTaskOrder.ts を新設。今後のフェーズでは各プラグイン向け codemod を `scripts/codemods/mods/*.ts` に配置する想定。
 
 

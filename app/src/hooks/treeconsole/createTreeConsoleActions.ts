@@ -5,7 +5,7 @@
  * extracted dependencies from the integration hook.
  */
 
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { createClipboardActions } from './actions/clipboard.ts';
 import { createContextMenuAction } from './actions/contextMenu.ts';
 import { createDialogHelpers } from './actions/dialog.ts';

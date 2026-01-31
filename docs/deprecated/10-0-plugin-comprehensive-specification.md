@@ -30,7 +30,7 @@ HierarchiDBのプラグインシステムは、2×3のエンティティ分類�
 │  │                │    │ ┌─────────────┬─────────────┬───────┐ │  │
 │  │• treeNodeId    │    │ │ Persistent  │ Ephemeral   │       │ │  │
 │  │• parentId      │←─→ │ ├─────────────┼─────────────┤       │ │  │
-│  │• treeNodeType  │    │ │Styler     │WorkingCopyTypes  │ Peer  │ │  │
+│  │• treeNodeType  │    │ │Styler     │DraftTypes  │ Peer  │ │  │
 │  │• name, etc     │    │ │BaseMap      │ViewState    │       │ │  │
 │  │                │    │ ├─────────────┼─────────────┤       │ │  │
 │  │• 既存システム   │    │ │VectorTiles  │ShapeData    │ Group │ │  │
@@ -106,7 +106,7 @@ const BaseMapEntityClassification = {
   relationship: '1:1',
   lifecycle: 'TreeNodeと同期',
   storage: 'CoreDB',
-  workingCopySupported: true
+  draftSupported: true
 } as const;
 ```
 
@@ -202,7 +202,7 @@ export interface ShapeDataEntity extends GroupEntity {
   processedAt: number;
   
   // EphemeralGroupEntityプロパティ  
-  workingCopyId?: string;
+  draftId?: string;
   autoCleanup: boolean;
   expiresAt: number;
 }
@@ -252,7 +252,7 @@ const ShapesEntityClassification = {
     category: 'EphemeralGroupEntity',
     entityType: 'ShapeDataEntity',
     relationship: '1:N',
-    lifecycle: 'WorkingCopy削除時自動クリーンアップ'
+    lifecycle: 'Draft削除時自動クリーンアップ'
   }, {
     category: 'PersistentRelationalEntity',
     entityType: 'SourceDataEntity',
@@ -298,11 +298,11 @@ const ShapesEntityClassification = {
 #### ドラフト対応例
 ```typescript
 // ドラフト保存時の処理
-async saveAsDraft(workingCopyId: string): Promise<void> {
-  const workingCopy = await this.getWorkingCopy(workingCopyId);
+async saveAsDraft(draftId: string): Promise<void> {
+  const draft = await this.getDraft(draftId);
   
   // ワーキングコピーをオリジナルに反映（isDraft=true）
-  await this.commitWorkingCopy(workingCopyId, {
+  await this.commitDraft(draftId, {
     isDraft: true,
     draftMetadata: {
       savedAt: Date.now(),
@@ -312,7 +312,7 @@ async saveAsDraft(workingCopyId: string): Promise<void> {
 }
 
 // ドラフト再開時の処理
-async resumeDraft(nodeId: TreeNodeId): Promise<WorkingCopyTypes> {
+async resumeDraft(nodeId: TreeNodeId): Promise<DraftTypes> {
   const node = await this.getNode(nodeId);
   
   if (!node.isDraft) {
@@ -320,7 +320,7 @@ async resumeDraft(nodeId: TreeNodeId): Promise<WorkingCopyTypes> {
   }
   
   // ドラフトからワーキングコピーを再作成
-  return await this.createWorkingCopy(nodeId, {
+  return await this.createDraft(nodeId, {
     resumeFromDraft: true
   });
 }
@@ -429,14 +429,14 @@ export class RelationalEntityManager<T extends RelationalEntity> implements Enti
 export class EphemeralPeerEntityManager<T extends PeerEntity> extends PeerEntityManager<T> {
   async cleanup(nodeId: TreeNodeId): Promise<void> {
     await super.cleanup(nodeId);
-    // WorkingCopy削除時のクリーンアップも追加
+    // Draft削除時のクリーンアップも追加
   }
 }
 
 export class EphemeralGroupEntityManager<T extends GroupEntity> extends GroupEntityManager<T> {
-  async cleanupByWorkingCopy(workingCopyId: string): Promise<void> {
-    // WorkingCopy削除時に関連するエフェメラルデータを削除
-    const entities = await this.db.where('workingCopyId').equals(workingCopyId).toArray();
+  async cleanupByDraft(draftId: string): Promise<void> {
+    // Draft削除時に関連するエフェメラルデータを削除
+    const entities = await this.db.where('draftId').equals(draftId).toArray();
     await this.db.bulkDelete(entities.map(e => e.id));
   }
 }
@@ -511,8 +511,8 @@ export class AutoEntityLifecycleManager {
       }
     });
     
-    // WorkingCopy削除時の自動クリーンアップ（Ephemeralエンティティ）
-    WorkingCopyLifecycleHooks.afterDiscard.add(async (workingCopyId) => {
+    // Draft削除時の自動クリーンアップ（Ephemeralエンティティ）
+    DraftLifecycleHooks.afterDiscard.add(async (draftId) => {
       const ephemeralManagers = [
         this.managers.get('EphemeralPeerEntityManager'),
         this.managers.get('EphemeralGroupEntityManager'),
@@ -520,7 +520,7 @@ export class AutoEntityLifecycleManager {
       ];
       
       await Promise.all(ephemeralManagers.map(manager => 
-        manager?.cleanupByWorkingCopy?.(workingCopyId)
+        manager?.cleanupByDraft?.(draftId)
       ));
     });
     
@@ -559,7 +559,7 @@ export interface UIPluginDefinition {
     canHaveChildren: boolean;
     
     // 6分類システム対応機能
-    supportsWorkingCopy: boolean;
+    supportsDraft: boolean;
     supportsEphemeralData: boolean;
     supportsMultiStep: boolean;
     supportsBulkOperations: boolean;
@@ -596,7 +596,7 @@ interface EntityUIDefinition {
   category: EntityCategory;
   entityType: string;
   uiFeatures: {
-    supportsWorkingCopy?: boolean;
+    supportsDraft?: boolean;
     supportsVersioning?: boolean;
     supportsExport?: boolean;
     supportsPreview?: boolean;
@@ -621,7 +621,7 @@ export const FolderUIPlugin: UIPluginDefinition = {
       category: 'PersistentPeerEntity',
       entityType: 'TreeNode', // TreeNodeのみ使用
       uiFeatures: {
-        supportsWorkingCopy: false,
+        supportsDraft: false,
         supportsVersioning: false,
         supportsExport: false,
         supportsPreview: false
@@ -635,7 +635,7 @@ export const FolderUIPlugin: UIPluginDefinition = {
     canUpdate: true,
     canDelete: true,
     canHaveChildren: true,
-    supportsWorkingCopy: false,
+    supportsDraft: false,
     supportsEphemeralData: false,
     supportsMultiStep: false,
     supportsBulkOperations: true,
@@ -666,7 +666,7 @@ export const BaseMapUIPlugin: UIPluginDefinition = {
       category: 'PersistentPeerEntity',
       entityType: 'BaseMapEntity',
       uiFeatures: {
-        supportsWorkingCopy: true,
+        supportsDraft: true,
         supportsVersioning: true,
         supportsExport: true,
         supportsPreview: true,
@@ -685,7 +685,7 @@ export const BaseMapUIPlugin: UIPluginDefinition = {
     canUpdate: true,
     canDelete: true,
     canHaveChildren: false,
-    supportsWorkingCopy: true,
+    supportsDraft: true,
     supportsEphemeralData: false,
     supportsMultiStep: false,
     supportsBulkOperations: false,
@@ -718,7 +718,7 @@ export const StylerUIPlugin: UIPluginDefinition = {
       category: 'PersistentPeerEntity',
       entityType: 'StylerEntity',
       uiFeatures: {
-        supportsWorkingCopy: true,
+        supportsDraft: true,
         supportsVersioning: true,
         supportsExport: true,
         supportsPreview: true
@@ -728,7 +728,7 @@ export const StylerUIPlugin: UIPluginDefinition = {
       category: 'PersistentRelationalEntity',
       entityType: 'TableMetadataEntity',
       uiFeatures: {
-        supportsWorkingCopy: false,
+        supportsDraft: false,
         supportsVersioning: true
       }
     }]
@@ -740,7 +740,7 @@ export const StylerUIPlugin: UIPluginDefinition = {
     canUpdate: true,
     canDelete: true,
     canHaveChildren: false,
-    supportsWorkingCopy: true,
+    supportsDraft: true,
     supportsEphemeralData: false,
     supportsMultiStep: true, // 6ステップウィザード
     supportsBulkOperations: false,
@@ -772,7 +772,7 @@ export const ShapesUIPlugin: UIPluginDefinition = {
       category: 'PersistentGroupEntity',
       entityType: 'VectorTilesEntity',
       uiFeatures: {
-        supportsWorkingCopy: true,
+        supportsDraft: true,
         supportsVersioning: true,
         supportsExport: true,
         supportsPreview: true,
@@ -784,7 +784,7 @@ export const ShapesUIPlugin: UIPluginDefinition = {
       category: 'EphemeralGroupEntity',
       entityType: 'ShapeDataEntity',
       uiFeatures: {
-        supportsWorkingCopy: false,
+        supportsDraft: false,
         supportsBatchOperations: true
       }
     }, {
@@ -808,7 +808,7 @@ export const ShapesUIPlugin: UIPluginDefinition = {
     canUpdate: true,
     canDelete: true,
     canHaveChildren: false,
-    supportsWorkingCopy: true,
+    supportsDraft: true,
     supportsEphemeralData: true,
     supportsMultiStep: true, // 4段階バッチ処理
     supportsBulkOperations: true,
@@ -1159,29 +1159,29 @@ export class UnifiedDataAdapter {
     }
   }
   
-  // WorkingCopy管理（6分類対応）
-  async createWorkingCopy(
+  // Draft管理（6分類対応）
+  async createDraft(
     nodeId: TreeNodeId,
     nodeType: TreeNodeType
   ): Promise<string> {
     const plugin = UIPluginRegistry.get(nodeType);
     
-    if (!plugin.capabilities.supportsWorkingCopy) {
+    if (!plugin.capabilities.supportsDraft) {
       throw new Error(`${nodeType} does not support working copies`);
     }
     
-    return await this.workerAPI.createWorkingCopy(nodeId);
+    return await this.workerAPI.createDraft(nodeId);
   }
   
-  async commitWorkingCopy(workingCopyId: string): Promise<void> {
-    await this.workerAPI.commitWorkingCopy(workingCopyId);
+  async commitDraft(draftId: string): Promise<void> {
+    await this.workerAPI.commitDraft(draftId);
   }
   
-  async discardWorkingCopy(workingCopyId: string): Promise<void> {
-    await this.workerAPI.discardWorkingCopy(workingCopyId);
+  async discardDraft(draftId: string): Promise<void> {
+    await this.workerAPI.discardDraft(draftId);
     
     // エフェメラルデータの自動クリーンアップ
-    await this.workerAPI.cleanupEphemeralData(workingCopyId);
+    await this.workerAPI.cleanupEphemeralData(draftId);
   }
   
   // バッチ処理（Shapesプラグイン用）
@@ -1238,7 +1238,7 @@ export class UnifiedDataAdapter {
 
 - [x] **UnifiedDataAdapter実装**
   - 6分類エンティティ対応データアクセス
-  - WorkingCopy管理
+  - Draft管理
   - BatchSession管理
 
 ### Phase 2: 既存プラグイン改修（3週間）
@@ -1252,7 +1252,7 @@ export class UnifiedDataAdapter {
 #### Week 6: BaseMapプラグイン6分類対応
 - [x] **BaseMapEntity → PeerEntity移行**
   - 既存実装の6分類対応
-  - WorkingCopy機能の強化
+  - Draft機能の強化
   - UI統一プラグイン化
 
 #### Week 7: Stylerプラグイン複合エンティティ対応

@@ -1,13 +1,6 @@
 import type { TreeQueryAPI } from '@hierarchidb/tree-api';
-import type {
-  NodeId,
-  NodeType,
-  ObserveNodePayload,
-  Timestamp,
-  TreeChangeEvent,
-  TreeNode,
-  TreeNodeEvent,
-} from '@hierarchidb/common-types';
+import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
+import type { ObserveNodePayload, TreeChangeEvent, TreeNode, TreeNodeEvent } from '@hierarchidb/tree-api';
 import { Subject } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import type { CoreDB } from '../../CoreDB.js';

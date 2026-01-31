@@ -19,7 +19,7 @@ vk:doc kind=design audience=dev scope=worker
 - RelationalEntity(N:N): 主キー [&srcNodeId+type+dstNodeId]。src/dst のインデックス必須。
 
 状態表現（WC/Trash/通常）
-- TreeNode が `workingCopyRoot`/`trashRoot`/通常ルート配下にあることで状態を決定。Entity 側に removed/draft フラグは持たない。
+- TreeNode が `draftRoot`/`trashRoot`/通常ルート配下にあることで状態を決定。Entity 側に removed/draft フラグは持たない。
 - クエリ時に Node の位置から状態を解釈する（例: UI で WC/Trash を切替表示）。
 
 コマンドとの対応（抜粋）
@@ -31,9 +31,9 @@ vk:doc kind=design audience=dev scope=worker
 - pasteNodes: 新 NodeId に対する Entity をバルク作成（クリップボード構造に準拠）。
 - importNodes: 2パス（ID割当→実体/関係の適用）。チャンク＋Tx。
 - working copy:
-  - createWorkingCopy: originalNodeId の Entity を wcNodeId で丸ごと複製（永続）。
-  - commitWorkingCopy: wcNodeId 側の Peer/Group を targetNodeId へアップサート。Relational は ID 付け替え。
-  - discardWorkingCopy: wcNodeId 側の Entity を削除。
+  - createDraft: originalNodeId の Entity を wcNodeId で丸ごと複製（永続）。
+  - commitDraft: wcNodeId 側の Peer/Group を targetNodeId へアップサート。Relational は ID 付け替え。
+  - discardDraft: wcNodeId 側の Entity を削除。
 
 トランザクション/バルク
 - CommandProcessor の `processCommand` 内で TreeNode と Entity を同じ `runInTx('rw', ['nodes', ...entityTables])` に束ねる。

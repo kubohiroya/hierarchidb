@@ -26,13 +26,13 @@
   - updatedAt: number
 - Sub-Entity: FeatureSubEntity（任意）
   - 特定のフィーチャに関するメタ情報を格納
-- WorkingCopyTypes: ShapeWorkingCopy（例）
+- DraftTypes: ShapeDraft（例）
   - 簡略化やフィルタの試行錯誤を安全に行うための一時状態
 
 ## 12.3.3 UnifiedPluginDefinition（想定）
 
 ```ts
-export const ShapesUnifiedDefinition: UnifiedPluginDefinition<ShapeEntity, FeatureSubEntity, ShapeWorkingCopy> = {
+export const ShapesUnifiedDefinition: UnifiedPluginDefinition<ShapeEntity, FeatureSubEntity, ShapeDraft> = {
   nodeType: 'shapes',
   name: 'Shapes',
   displayName: 'Shapes',

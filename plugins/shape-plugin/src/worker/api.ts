@@ -3,7 +3,8 @@
  * Exposes batch-oriented operations for runtime worker adapters
  */
 
-import { toNodeId, type BuildContinuationPolicy, type NodeId, type TaskQueueRecord } from '@hierarchidb/common-types';
+import { toNodeId, type NodeId } from '@hierarchidb/core-types';
+import type { BuildContinuationPolicy, TaskQueueRecord } from '@hierarchidb/batch-api';
 import type { ShapeBuildConfig } from '../common/types/index.js';
 import {
   type BatchSession,

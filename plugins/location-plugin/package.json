@@ -41,7 +41,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts src/services/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/worker/locationEntitiesDB.ts src/worker/locationGroupStore.dexie.ts src/worker/locationRelationStore.dexie.ts src/locationEntitiesDB.ts src/icon/index.ts --config ../../tsdown.config.ts",
+    "build": "tsdown src/index.ts src/services/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/worker/locationEntitiesDB.ts src/worker/locationGroupStore.dexie.ts src/worker/locationRelationStore.dexie.ts src/locationEntitiesDB.ts src/icon/index.ts --config ../../tsdown.config.ts && node ../../scripts/normalize-dts.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:watch": "vitest",
@@ -64,7 +64,9 @@
     "@hierarchidb/components": "workspace:*",
     "@hierarchidb/download": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
+    "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/batch-runtime-services": "workspace:*",
@@ -97,7 +99,9 @@
     "@hierarchidb/components": "workspace:*",
     "@hierarchidb/download": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
+    "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/ui-datasource": "workspace:*",
@@ -153,7 +157,7 @@
         "location"
       ],
       "capabilities": [
-        "workingCopy",
+        "draft",
         "batch",
         "visualization"
       ]

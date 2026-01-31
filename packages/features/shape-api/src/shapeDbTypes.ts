@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildProgressSummary, ShapeTileLayerInfo } from './shapeTypes.js';
 
 export interface ShapeBuildSessionRecord<

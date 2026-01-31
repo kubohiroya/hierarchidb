@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { RouteBatchConfig } from '../../src/common/types/ObsolateBuildConfig.js';
 import type { RouteBatchTask } from '../../src/services/RouteBatchSession.js';
 import { RouteBatchSession } from '../../src/services/RouteBatchSession.js';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { RouteGenerationMethod } from '../entities/RouteEntity.js';
 
 class TestGenerator {

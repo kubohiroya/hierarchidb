@@ -1,4 +1,5 @@
-import type { ISO2, Timestamp, TreeNodeData } from '@hierarchidb/common-types';
+import type { ISO2, Timestamp } from '@hierarchidb/core-types';
+import type { TreeNodeData } from '@hierarchidb/tree-api';
 import type {
   IdeGsmSourceEntry,
   LocationBatchFilterCriteria,

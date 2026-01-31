@@ -68,7 +68,7 @@ private isUndoableCommand(type: string): boolean {
     'createFolder', // 【フォルダ作成】: テスト要件対応のため追加
     'moveFolder',   // 【フォルダ移動】: 将来対応のため追加
     'updateFolder', // 【フォルダ更新】: 将来対応のため追加
-    'commitWorkingCopyForCreate', // 【Working Copy コミット】: 実際の作成処理
+    'commitDraftForCreate', // 【Working Copy コミット】: 実際の作成処理
   ];
   return undoableCommands.includes(type);
 }

@@ -56,10 +56,6 @@ export default defineConfig({
         workspaceRoot,
         'packages/features/worker-api/src/index.ts',
       ),
-      '@hierarchidb/common-types': path.resolve(
-        workspaceRoot,
-        'packages/common/types/src/index.ts',
-      ),
       '@hierarchidb/auth-recovery': path.resolve(
         workspaceRoot,
         'packages/features/auth-recovery/src/index.ts',
@@ -67,10 +63,6 @@ export default defineConfig({
       '@hierarchidb/download': path.resolve(
         workspaceRoot,
         'packages/features/download/src/index.ts',
-      ),
-      '@hierarchidb/feature-registry': path.resolve(
-        workspaceRoot,
-        'packages/features/feature-registry/src/index.ts',
       ),
       '@hierarchidb/import-export': path.resolve(
         workspaceRoot,

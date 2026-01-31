@@ -1,11 +1,5 @@
-import type {
-  CommandId,
-  NodeId,
-  NodeType,
-  Seq,
-  Timestamp,
-  TreeNode,
-} from '@hierarchidb/common-types';
+import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
+import type { CommandId, Seq, TreeNode } from '@hierarchidb/tree-api';
 import type { CoreDB } from '../../CoreDB.js';
 import type {
   CommandEnvelope,

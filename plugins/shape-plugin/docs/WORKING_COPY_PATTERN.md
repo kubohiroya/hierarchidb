@@ -35,7 +35,7 @@ Working Copy Patternは、HierarchiDBの**デュアルデータベース戦略**
 │    CoreDB     │ │    EphemeralDB      │
 │ (永続データ)   │ │   (一時データ)       │
 │               │ │                     │
-│ ShapeEntity   │ │ ShapeWorkingCopy    │
+│ ShapeEntity   │ │ ShapeDraft    │
 └───────────────┘ └─────────────────────┘
 ```
 
@@ -57,11 +57,11 @@ interface ShapeEntity {
 
 ※ DownloadTaskPayload は UI 側で生成し、`startBatchProcess` 呼び出し時に Worker へ渡す。CoreDB には永続化しない。
 
-#### 2. ShapeWorkingCopy (EphemeralDB)
+#### 2. ShapeDraft (EphemeralDB)
 編集中の一時データ：
 
 ```typescript
-interface ShapeWorkingCopy {
+interface ShapeDraft {
   nodeId: NodeId;                  // 元のノードID（新規の場合は空）
   baseVersion: number;             // ベースバージョン
   isModified: boolean;             // 変更フラグ
@@ -83,12 +83,12 @@ sequenceDiagram
     participant EphemeralDB
     
     User->>UI: 編集ボタンクリック
-    UI->>Worker: createWorkingCopy(nodeId)
+    UI->>Worker: createDraft(nodeId)
     Worker->>CoreDB: getEntity(nodeId)
     CoreDB-->>Worker: ShapeEntity
     Worker->>Worker: クローン作成
-    Worker->>EphemeralDB: save(workingCopy)
-    Worker-->>UI: workingCopyId
+    Worker->>EphemeralDB: save(draft)
+    Worker-->>UI: draftId
     UI->>UI: 編集フォーム表示
 ```
 
@@ -102,9 +102,9 @@ sequenceDiagram
     participant EphemeralDB
     
     User->>UI: フィールド変更
-    UI->>Worker: updateWorkingCopy(id, changes)
+    UI->>Worker: updateDraft(id, changes)
     Worker->>EphemeralDB: get(id)
-    EphemeralDB-->>Worker: workingCopy
+    EphemeralDB-->>Worker: draft
     Worker->>Worker: マージ処理
     Worker->>EphemeralDB: save(updated)
     Worker-->>UI: 更新完了
@@ -121,9 +121,9 @@ sequenceDiagram
     participant EphemeralDB
     
     User->>UI: 保存ボタンクリック
-    UI->>Worker: commitWorkingCopy(id)
+    UI->>Worker: commitDraft(id)
     Worker->>EphemeralDB: get(id)
-    EphemeralDB-->>Worker: workingCopy
+    EphemeralDB-->>Worker: draft
     
     alt 新規作成の場合
         Worker->>Worker: 新規NodeId生成
@@ -151,8 +151,8 @@ export class ShapeEntityHandler {
   /**
    * 既存エンティティからWorking Copyを作成
    */
-  async createWorkingCopy(entity: ShapeEntity): Promise<ShapeWorkingCopy> {
-    const workingCopy: ShapeWorkingCopy = {
+  async createDraft(entity: ShapeEntity): Promise<ShapeDraft> {
+    const draft: ShapeDraft = {
       id: entity.id,
       nodeId: entity.nodeId,
       name: entity.name,
@@ -169,20 +169,20 @@ export class ShapeEntityHandler {
     };
 
     // EphemeralDBに保存
-    await this.ephemeralDB.workingCopies.put(workingCopy);
+    await this.ephemeralDB.workingCopies.put(draft);
     
     console.log(`Created working copy for entity: ${entity.id}`);
-    return workingCopy;
+    return draft;
   }
 
   /**
    * 新規ドラフトWorking Copyを作成
    */
-  async createNewDraftWorkingCopy(parentId: NodeId): Promise<ShapeWorkingCopy> {
-    const workingCopyId = generateEntityId() as EntityId;
+  async createNewDraftDraft(parentId: NodeId): Promise<ShapeDraft> {
+    const draftId = generateEntityId() as EntityId;
 
-    const workingCopy: ShapeWorkingCopy = {
-      id: workingCopyId,
+    const draft: ShapeDraft = {
+      id: draftId,
       nodeId: '' as NodeId, // コミット時に設定
       name: '',
       description: '',
@@ -197,25 +197,25 @@ export class ShapeEntityHandler {
       version: 1,
     };
 
-    await this.ephemeralDB.workingCopies.put(workingCopy);
+    await this.ephemeralDB.workingCopies.put(draft);
     
-    console.log(`Created new draft working copy: ${workingCopyId}`);
-    return workingCopy;
+    console.log(`Created new draft working copy: ${draftId}`);
+    return draft;
   }
 
   /**
    * Working Copyを更新
    */
-  async updateWorkingCopy(
-    workingCopyId: EntityId, 
+  async updateDraft(
+    draftId: EntityId, 
     changes: Partial<ShapeEntity>
-  ): Promise<ShapeWorkingCopy> {
-    const existing = await this.ephemeralDB.workingCopies.get(workingCopyId);
+  ): Promise<ShapeDraft> {
+    const existing = await this.ephemeralDB.workingCopies.get(draftId);
     if (!existing) {
-      throw new Error(`Working copy not found: ${workingCopyId}`);
+      throw new Error(`Working copy not found: ${draftId}`);
     }
 
-    const updated: ShapeWorkingCopy = {
+    const updated: ShapeDraft = {
       ...existing,
       ...changes,
       isModified: true,
@@ -229,21 +229,21 @@ export class ShapeEntityHandler {
   /**
    * Working CopyをCoreDBにコミット
    */
-  async commitWorkingCopy(workingCopyId: EntityId): Promise<NodeId> {
+  async commitDraft(draftId: EntityId): Promise<NodeId> {
     // 1. EphemeralDBからWorking Copyを取得
-    const workingCopy = await this.ephemeralDB.workingCopies.get(workingCopyId);
-    if (!workingCopy) {
-      throw new Error(`Working copy not found: ${workingCopyId}`);
+    const draft = await this.ephemeralDB.workingCopies.get(draftId);
+    if (!draft) {
+      throw new Error(`Working copy not found: ${draftId}`);
     }
 
     let nodeId: NodeId;
     
     // 2. 新規か既存かで処理を分岐
-    if (workingCopy.isDraft) {
+    if (draft.isDraft) {
       // 新規エンティティの作成
       nodeId = generateNodeId() as NodeId;
       const entity: ShapeEntity = {
-        ...workingCopy,
+        ...draft,
         id: generateEntityId() as EntityId,
         nodeId: nodeId,
         isDraft: undefined, // ドラフトフラグを削除
@@ -254,21 +254,21 @@ export class ShapeEntityHandler {
       
     } else {
       // 既存エンティティの更新
-      nodeId = workingCopy.nodeId;
-      const entity = await this.coreDB.shapes.get(workingCopy.id);
+      nodeId = draft.nodeId;
+      const entity = await this.coreDB.shapes.get(draft.id);
       
       if (!entity) {
-        throw new Error(`Original entity not found: ${workingCopy.id}`);
+        throw new Error(`Original entity not found: ${draft.id}`);
       }
       
       // バージョンチェック（楽観的ロック）
-      if (entity.version !== workingCopy.version) {
+      if (entity.version !== draft.version) {
         throw new Error('Version conflict detected. Please refresh and retry.');
       }
       
       const updated: ShapeEntity = {
         ...entity,
-        ...workingCopy,
+        ...draft,
         version: entity.version + 1,
         updatedAt: Date.now(),
       };
@@ -278,8 +278,8 @@ export class ShapeEntityHandler {
     }
 
     // 3. Working CopyをEphemeralDBから削除
-    await this.ephemeralDB.workingCopies.delete(workingCopyId);
-    console.log(`Committed and cleaned up working copy: ${workingCopyId}`);
+    await this.ephemeralDB.workingCopies.delete(draftId);
+    console.log(`Committed and cleaned up working copy: ${draftId}`);
     
     return nodeId;
   }
@@ -287,9 +287,9 @@ export class ShapeEntityHandler {
   /**
    * Working Copyを破棄
    */
-  async discardWorkingCopy(workingCopyId: EntityId): Promise<void> {
-    await this.ephemeralDB.workingCopies.delete(workingCopyId);
-    console.log(`Discarded working copy: ${workingCopyId}`);
+  async discardDraft(draftId: EntityId): Promise<void> {
+    await this.ephemeralDB.workingCopies.delete(draftId);
+    console.log(`Discarded working copy: ${draftId}`);
   }
 }
 ```
@@ -297,15 +297,15 @@ export class ShapeEntityHandler {
 ### React Hook の実装
 
 ```typescript
-// packages/plugin-loader/shape-plugin/src/ui/hooks/useShapeWorkingCopy.ts
+// packages/plugin-loader/shape-plugin/src/ui/hooks/useShapeDraft.ts
 
 // NOTE: `useShapeAPI` has been removed. Use `getWorkerBridge()` with `getShapeQueryAPI` / `getShapeMutationAPI` and batch-control APIs instead.
 
-export function useShapeWorkingCopy(
+export function useShapeDraft(
   nodeId: NodeId | null,
   mode: 'create' | 'edit'
 ) {
-  const [workingCopy, setWorkingCopy] = useState<ShapeWorkingCopy | null>(null);
+  const [draft, setDraft] = useState<ShapeDraft | null>(null);
   const [isDirty, setIsDirty] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const api = useShapeAPI();
@@ -314,21 +314,21 @@ export function useShapeWorkingCopy(
   useEffect(() => {
     if (!nodeId && mode === 'edit') return;
     
-    const initWorkingCopy = async () => {
+    const initDraft = async () => {
       setIsLoading(true);
       try {
-        let wc: ShapeWorkingCopy;
+        let wc: ShapeDraft;
         
         if (mode === 'create') {
           // 新規作成
-          wc = await api.createNewDraftWorkingCopy(nodeId || ('' as NodeId));
+          wc = await api.createNewDraftDraft(nodeId || ('' as NodeId));
         } else {
           // 既存編集
           const entity = await api.getEntity(nodeId!);
-          wc = await api.createWorkingCopy(entity);
+          wc = await api.createDraft(entity);
         }
         
-        setWorkingCopy(wc);
+        setDraft(wc);
         setIsDirty(false);
       } catch (error) {
         console.error('Failed to initialize working copy:', error);
@@ -337,33 +337,33 @@ export function useShapeWorkingCopy(
       }
     };
 
-    initWorkingCopy();
+    initDraft();
   }, [nodeId, mode]);
 
   // Working Copyの更新
-  const updateWorkingCopy = useCallback(
-    async (changes: Partial<ShapeWorkingCopy>) => {
-      if (!workingCopy) return;
+  const updateDraft = useCallback(
+    async (changes: Partial<ShapeDraft>) => {
+      if (!draft) return;
       
       try {
-        const updated = await api.updateWorkingCopy(workingCopy.id, changes);
-        setWorkingCopy(updated);
+        const updated = await api.updateDraft(draft.id, changes);
+        setDraft(updated);
         setIsDirty(true);
       } catch (error) {
         console.error('Failed to update working copy:', error);
         throw error;
       }
     },
-    [workingCopy, api]
+    [draft, api]
   );
 
   // コミット処理
   const commit = useCallback(async () => {
-    if (!workingCopy) return;
+    if (!draft) return;
     
     setIsLoading(true);
     try {
-      const nodeId = await api.commitWorkingCopy(workingCopy.id);
+      const nodeId = await api.commitDraft(draft.id);
       setIsDirty(false);
       return nodeId;
     } catch (error) {
@@ -372,26 +372,26 @@ export function useShapeWorkingCopy(
     } finally {
       setIsLoading(false);
     }
-  }, [workingCopy, api]);
+  }, [draft, api]);
 
   // 破棄処理
   const discard = useCallback(async () => {
-    if (!workingCopy) return;
+    if (!draft) return;
     
     try {
-      await api.discardWorkingCopy(workingCopy.id);
-      setWorkingCopy(null);
+      await api.discardDraft(draft.id);
+      setDraft(null);
       setIsDirty(false);
     } catch (error) {
       console.error('Failed to discard working copy:', error);
     }
-  }, [workingCopy, api]);
+  }, [draft, api]);
 
   return {
-    workingCopy,
+    draft,
     isDirty,
     isLoading,
-    updateWorkingCopy,
+    updateDraft,
     commit,
     discard,
   };
@@ -404,18 +404,18 @@ export function useShapeWorkingCopy(
 
 | メソッド | 説明 | パラメータ | 戻り値 |
 |---------|------|-----------|--------|
-| `createWorkingCopy` | 既存エンティティからWorking Copyを作成 | `entity: ShapeEntity` | `Promise<ShapeWorkingCopy>` |
-| `createNewDraftWorkingCopy` | 新規ドラフトWorking Copyを作成 | `parentId: NodeId` | `Promise<ShapeWorkingCopy>` |
-| `getWorkingCopy` | Working Copyを取得 | `id: EntityId` | `Promise<ShapeWorkingCopy \| undefined>` |
-| `updateWorkingCopy` | Working Copyを更新 | `id: EntityId, changes: Partial<ShapeEntity>` | `Promise<ShapeWorkingCopy>` |
-| `commitWorkingCopy` | Working CopyをCoreDBにコミット | `id: EntityId` | `Promise<NodeId>` |
-| `discardWorkingCopy` | Working Copyを破棄 | `id: EntityId` | `Promise<void>` |
+| `createDraft` | 既存エンティティからWorking Copyを作成 | `entity: ShapeEntity` | `Promise<ShapeDraft>` |
+| `createNewDraftDraft` | 新規ドラフトWorking Copyを作成 | `parentId: NodeId` | `Promise<ShapeDraft>` |
+| `getDraft` | Working Copyを取得 | `id: EntityId` | `Promise<ShapeDraft \| undefined>` |
+| `updateDraft` | Working Copyを更新 | `id: EntityId, changes: Partial<ShapeEntity>` | `Promise<ShapeDraft>` |
+| `commitDraft` | Working CopyをCoreDBにコミット | `id: EntityId` | `Promise<NodeId>` |
+| `discardDraft` | Working Copyを破棄 | `id: EntityId` | `Promise<void>` |
 
 ### React Hooks
 
 | Hook | 説明 | パラメータ | 戻り値 |
 |------|------|-----------|--------|
-| `useShapeWorkingCopy` | Shape編集用のWorking Copy管理 | `nodeId: NodeId \| null, mode: 'create' \| 'edit'` | Working Copy状態と操作関数 |
+| `useShapeDraft` | Shape編集用のWorking Copy管理 | `nodeId: NodeId \| null, mode: 'create' \| 'edit'` | Working Copy状態と操作関数 |
 
 ## 利用シナリオ
 
@@ -426,16 +426,16 @@ export function useShapeWorkingCopy(
 
 function ShapeEditDialog({ nodeId, onClose }: Props) {
   const {
-    workingCopy,
+    draft,
     isDirty,
     isLoading,
-    updateWorkingCopy,
+    updateDraft,
     commit,
     discard,
-  } = useShapeWorkingCopy(nodeId, 'edit');
+  } = useShapeDraft(nodeId, 'edit');
 
   const handleCountryChange = async (countries: string[]) => {
-    await updateWorkingCopy({
+    await updateDraft({
       selectedCountries: countries,
     });
   };
@@ -466,7 +466,7 @@ function ShapeEditDialog({ nodeId, onClose }: Props) {
       <DialogTitle>Edit Shape</DialogTitle>
       <DialogContent>
         <CountrySelector
-          value={workingCopy?.selectedCountries || []}
+          value={draft?.selectedCountries || []}
           onChange={handleCountryChange}
         />
       </DialogContent>
@@ -488,27 +488,27 @@ function ShapeEditDialog({ nodeId, onClose }: Props) {
 
 function ShapeCreateDialog({ parentNodeId, onClose }: Props) {
   const {
-    workingCopy,
+    draft,
     isDirty,
-    updateWorkingCopy,
+    updateDraft,
     commit,
     discard,
-  } = useShapeWorkingCopy(null, 'create');
+  } = useShapeDraft(null, 'create');
 
   const [step, setStep] = useState(0);
 
   const handleStepComplete = async (stepData: any) => {
-    await updateWorkingCopy(stepData);
+    await updateDraft(stepData);
     setStep(step + 1);
   };
 
   const handleCreate = async () => {
     try {
       // 最終バリデーション
-      if (!workingCopy?.name) {
+      if (!draft?.name) {
         throw new Error('Name is required');
       }
-      if (!workingCopy?.licenseAgreement) {
+      if (!draft?.licenseAgreement) {
         throw new Error('License agreement is required');
       }
 
@@ -578,7 +578,7 @@ function ShapeBuildStep({ data, onChange }: Props) {
 ```typescript
 // 常にtry-catchでエラーをハンドリング
 try {
-  await commitWorkingCopy(workingCopyId);
+  await commitDraft(draftId);
 } catch (error) {
   if (error.message.includes('Version conflict')) {
     // バージョンコンフリクトの処理
@@ -596,9 +596,9 @@ try {
 // デバウンスを使用した自動保存
 const debouncedUpdate = useMemo(
   () => debounce(async (changes) => {
-    await updateWorkingCopy(changes);
+    await updateDraft(changes);
   }, 1000),
-  [updateWorkingCopy]
+  [updateDraft]
 );
 ```
 
@@ -625,9 +625,9 @@ useEffect(() => {
 // コンポーネントのアンマウント時にWorking Copyを破棄
 useEffect(() => {
   return () => {
-    if (workingCopy && isDirty) {
+    if (draft && isDirty) {
       // 非同期でクリーンアップ
-      api.discardWorkingCopy(workingCopy.id).catch(console.error);
+      api.discardDraft(draft.id).catch(console.error);
     }
   };
 }, []);
@@ -643,7 +643,7 @@ const handleChange = async (field: string, value: any) => {
   
   // バックグラウンドでWorking Copyを更新
   try {
-    await updateWorkingCopy({ [field]: value });
+    await updateDraft({ [field]: value });
   } catch (error) {
     // エラー時はUIを元に戻す
     setLocalState(prevState);
@@ -668,10 +668,10 @@ const handleChange = async (field: string, value: any) => {
 **解決方法**:
 ```typescript
 // Working Copyの再作成
-const recoverWorkingCopy = async () => {
+const recoverDraft = async () => {
   const entity = await api.getEntity(nodeId);
-  const newWorkingCopy = await api.createWorkingCopy(entity);
-  setWorkingCopy(newWorkingCopy);
+  const newDraft = await api.createDraft(entity);
+  setDraft(newDraft);
 };
 ```
 
@@ -686,8 +686,8 @@ const recoverWorkingCopy = async () => {
 // 最新データを取得してマージ
 const resolveConflict = async () => {
   const latest = await api.getEntity(nodeId);
-  const merged = mergeChanges(workingCopy.changes, latest);
-  await updateWorkingCopy(merged);
+  const merged = mergeChanges(draft.changes, latest);
+  await updateDraft(merged);
 };
 ```
 
@@ -702,8 +702,8 @@ const resolveConflict = async () => {
 // 適切なクリーンアップの実装
 useEffect(() => {
   const cleanup = async () => {
-    if (workingCopyRef.current) {
-      await api.discardWorkingCopy(workingCopyRef.current.id);
+    if (draftRef.current) {
+      await api.discardDraft(draftRef.current.id);
     }
   };
 
@@ -728,7 +728,7 @@ useEffect(() => {
 const commitWithRetry = async (maxRetries = 3) => {
   for (let i = 0; i < maxRetries; i++) {
     try {
-      return await api.commitWorkingCopy(workingCopyId);
+      return await api.commitDraft(draftId);
     } catch (error) {
       if (i === maxRetries - 1) throw error;
       await delay(1000 * Math.pow(2, i)); // Exponential backoff
@@ -744,9 +744,9 @@ const commitWithRetry = async (maxRetries = 3) => {
 ```typescript
 // 変更があったフィールドのみ送信
 const updateOnlyChangedFields = async (newData: Partial<ShapeEntity>) => {
-  const changes = diff(workingCopy, newData);
+  const changes = diff(draft, newData);
   if (Object.keys(changes).length > 0) {
-    await updateWorkingCopy(changes);
+    await updateDraft(changes);
   }
 };
 ```
@@ -765,27 +765,27 @@ const batchUpdates = useMemo(() => {
     flush: async () => {
       if (pending.length === 0) return;
       const merged = pending.reduce((acc, curr) => ({ ...acc, ...curr }), {});
-      await updateWorkingCopy(merged);
+      await updateDraft(merged);
       pending.length = 0;
     },
   };
-}, [updateWorkingCopy]);
+}, [updateDraft]);
 ```
 
 ### 3. キャッシング
 
 ```typescript
 // Working Copyのキャッシュ
-const workingCopyCache = new Map<EntityId, ShapeWorkingCopy>();
+const draftCache = new Map<EntityId, ShapeDraft>();
 
-const getCachedWorkingCopy = async (id: EntityId) => {
-  if (workingCopyCache.has(id)) {
-    return workingCopyCache.get(id);
+const getCachedDraft = async (id: EntityId) => {
+  if (draftCache.has(id)) {
+    return draftCache.get(id);
   }
   
-  const wc = await api.getWorkingCopy(id);
+  const wc = await api.getDraft(id);
   if (wc) {
-    workingCopyCache.set(id, wc);
+    draftCache.set(id, wc);
   }
   return wc;
 };

@@ -9,14 +9,14 @@ BaseMapプラグインの開発・実装に関するガイドです。段階的�
 #### エンティティ設計
 - BaseMapEntity型定義の完成
 - MapLibre GL Style仕様サポート
-- WorkingCopy型定義の実装
+- Draft型定義の実装
 - デフォルト値とプリセットの定義
 
 #### エンティティハンドラー
 - BaseMapEntityHandlerの基本実装
 - PeerEntityHandlerパターンの適用
 - CRUD操作の実装
-- WorkingCopyパターンのサポート
+- Draftパターンのサポート
 - プラグイン固有のAPI実装
 
 #### UI基盤
@@ -342,7 +342,7 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
 
 ```typescript
 import Dexie, { Table } from 'dexie';
-import type { BaseMapEntity, BaseMapWorkingCopy } from '../types';
+import type { BaseMapEntity, BaseMapDraft } from '../types';
 
 export interface TileCache {
   tileId: string;
@@ -358,7 +358,7 @@ export interface TileCache {
 
 export class BaseMapDatabase extends Dexie {
   basemaps!: Table<BaseMapEntity>;
-  basemap_workingcopies!: Table<BaseMapWorkingCopy>;
+  basemap_workingcopies!: Table<BaseMapDraft>;
   basemap_tiles_cache!: Table<TileCache>;
 
   constructor() {
@@ -366,7 +366,7 @@ export class BaseMapDatabase extends Dexie {
     
     this.version(1).stores({
       basemaps: '&nodeId, mapStyle, updatedAt, createdAt',
-      basemap_workingcopies: '&workingCopyId, workingCopyOf, copiedAt',
+      basemap_workingcopies: '&draftId, draftOf, copiedAt',
       basemap_tiles_cache: '&tileId, nodeId, zoom, x, y, cachedAt',
     });
 
@@ -553,15 +553,15 @@ describe('BaseMapEntityHandler', () => {
       const nodeId = 'test-node-1' as NodeId;
       const entity = await handler.createEntity(nodeId);
       
-      const workingCopy = await handler.createWorkingCopy(nodeId);
-      expect(workingCopy.workingCopyOf).toBe(nodeId);
-      expect(workingCopy.isDirty).toBe(false);
+      const draft = await handler.createDraft(nodeId);
+      expect(draft.draftOf).toBe(nodeId);
+      expect(draft.isDirty).toBe(false);
 
       // Modify working copy
-      workingCopy.mapStyle = 'satellite';
-      workingCopy.isDirty = true;
+      draft.mapStyle = 'satellite';
+      draft.isDirty = true;
 
-      await handler.commitWorkingCopy(nodeId, workingCopy);
+      await handler.commitDraft(nodeId, draft);
       
       const updatedEntity = await handler.getEntity(nodeId);
       expect(updatedEntity?.mapStyle).toBe('satellite');

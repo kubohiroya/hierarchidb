@@ -228,7 +228,7 @@ export class DependencyResolver {
 export interface PluginDefinition<
   TEntity extends PeerEntity = PeerEntity,
   TSubEntity extends GroupEntity = GroupEntity,
-  TWorkingCopy extends TEntity & WorkingCopyProperties = TEntity & WorkingCopyProperties
+  TDraft extends TEntity & DraftProperties = TEntity & DraftProperties
 > {
   // 基本情報
   readonly nodeType: TreeNodeType;
@@ -542,7 +542,7 @@ import type {
   EphemeralGroupEntity,
   TreeNodeId, 
   UUID,
-  WorkingCopyProperties 
+  DraftProperties 
 } from '@hierarchidb/core';
 
 // メインエンティティ（PersistentPeer）
@@ -554,7 +554,7 @@ export interface MyPluginProperties {
 }
 
 export type MyPluginEntity = PersistentPeerEntity & MyPluginProperties;
-export type MyPluginWorkingCopy = MyPluginEntity & WorkingCopyProperties;
+export type MyPluginDraft = MyPluginEntity & DraftProperties;
 
 // 設定構造
 export interface MyPluginSettings {
@@ -580,12 +580,12 @@ export interface MyPluginDataEntity extends EphemeralGroupEntity {
 
 import type { PluginDefinition } from '@hierarchidb/core';
 import { MyPluginDialog, MyPluginPanel } from '../ui';
-import type { MyPluginEntity, MyPluginWorkingCopy } from '../types';
+import type { MyPluginEntity, MyPluginDraft } from '../types';
 
 export const MyPluginDefinition: PluginDefinition<
   MyPluginEntity,
   never,
-  MyPluginWorkingCopy
+  MyPluginDraft
 > = {
   nodeType: 'my-plugin',
   name: 'MyPlugin',
@@ -960,15 +960,15 @@ describe('MyPlugin Integration', () => {
     const nodeId = await registry.createNode('my-plugin', { name: 'Test Node' });
     
     // ワーキングコピー作成
-    const workingCopy = await registry.createWorkingCopy(nodeId);
+    const draft = await registry.createDraft(nodeId);
     
     // ワーキングコピー更新
-    await registry.updateWorkingCopy(workingCopy.workingCopyId, {
+    await registry.updateDraft(draft.draftId, {
       settings: { option1: 'updated', option2: 42, option3: true }
     });
     
     // ワーキングコピーコミット
-    await registry.commitWorkingCopy(workingCopy.workingCopyId);
+    await registry.commitDraft(draft.draftId);
     
     // 結果確認
     const finalEntity = await registry.getEntity(nodeId);

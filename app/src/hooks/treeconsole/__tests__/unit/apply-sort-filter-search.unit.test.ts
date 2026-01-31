@@ -4,7 +4,7 @@
  * Verifies ordering, filtering, and search behaviour for applySortFilterSearch.
  */
 
-import type { NodeId, NodeType, Timestamp } from '@hierarchidb/common-types';
+import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import { describe, expect, it } from 'vitest';
 import { applySortFilterSearch } from '../../sortFilter.js';

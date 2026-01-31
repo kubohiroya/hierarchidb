@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import type { NodeId, TreeId } from '@hierarchidb/common-types';
+import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import { useTreeNodeDialog } from '@hierarchidb/plugin-ui-sdk';
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';

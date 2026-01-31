@@ -3,19 +3,22 @@
   * TreeConsoleCRUDWorkerAPICommandEnvelope
    */
 
-import type { WorkerAPI } from '@hierarchidb/worker-api';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeMutationAPI } from '@hierarchidb/tree-api';
 import type {
   DuplicateNodesPayload,
   MoveNodesPayload,
   MoveToTrashPayload,
-  NodeId,
   RestoreFromTrashPayload,
-  RemovePayload,
-} from '@hierarchidb/common-types';
+} from '@hierarchidb/tree-api';
+import type { WorkerAPI } from '@hierarchidb/worker-api';
 import { createCommand } from '../utils.js';
 import type { CommandAdapterOptions } from '../../types/index.js';
 import { TreeConsoleAdapterError } from '../../types/index.js';
+
+type RemovePayload = {
+  nodeIds: NodeId[];
+};
 
 export class TreeMutationCommandsAdapter {
   constructor(private workerAPI: WorkerAPI) {

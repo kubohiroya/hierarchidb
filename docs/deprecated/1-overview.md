@@ -28,11 +28,11 @@ hierarchiidb のコアアーキテクチャは以下の4層で構成されます
     - 長命データ：**TreeEntity / TreeNodeEntity / TreeRootStateEntity**。
     - トランザクションで整合性を確保。
 4. **EphemeralDB（Dexie）**
-    - 短命データ：**WorkingCopyEntity / TreeViewStateEntity**。
+    - 短命データ：**DraftEntity / TreeViewStateEntity**。
     - 頻繁に変化する編集・表示状態を格納。
 
 **処理の流れ（例：ノード編集）**  
-UI → Comlink → Worker（EphemeralDB に WorkingCopyTypes 保存）→ コミットで CoreDB に反映 → UI へ差分 publish。
+UI → Comlink → Worker（EphemeralDB に DraftTypes 保存）→ コミットで CoreDB に反映 → UI へ差分 publish。
 
 ```mermaid
 flowchart LR
@@ -45,7 +45,7 @@ flowchart LR
   W -- "差分 publish / 応答" --> UI
 
   W --> CoreDB["CoreDB (Dexie, 長命)\nTreeEntity / TreeNodeEntity / TreeRootStateEntity\n※Txで整合性"]
-  W --> EphDB["EphemeralDB (Dexie, 短命)\nWorkingCopyEntity / TreeViewStateEntity"]
+  W --> EphDB["EphemeralDB (Dexie, 短命)\nDraftEntity / TreeViewStateEntity"]
 
   classDef db fill:#888,stroke:#88a,stroke-width:1.5px;
   class CoreDB,EphDB db;

@@ -66,7 +66,7 @@
   - 対象ダイアログで永続化の往復が行えること。
 - 回帰
   - moveToTrash / recoverFromTrash では PeerEntity を削除しない。
-  - empty trash / discardWorkingCopy では PeerEntity を削除する。
+  - empty trash / discardDraft では PeerEntity を削除する。
 
 **ロールバック計画**
 - Phase 2 で問題発生時はフラグを true に戻して一時退避。

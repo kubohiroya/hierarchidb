@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AuthNotificationFactory, AuthNotificationRegistry } from '@hierarchidb/common-auth';
-import { toNodeId } from '@hierarchidb/common-types';
+import { toNodeId } from '@hierarchidb/core-types';
 import { act, renderHook } from '@testing-library/react';
 import { useLocationProgress } from '../../useLocationProgress.js';
 

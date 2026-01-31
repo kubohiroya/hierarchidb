@@ -27,7 +27,7 @@ BatchProcessingMonitorDialog（全画面）→
 
 ### 1.3 技術スタック
 - **ベースコンポーネント**: `@hierarchidb/ui-dialog` パッケージの `StepperDialog`
-- **状態管理**: `@hierarchidb/ui-dialog` の `useWorkingCopy`, `useDialogContext`
+- **状態管理**: `@hierarchidb/ui-dialog` の `useDraft`, `useDialogContext`
 - **仮想化**: `@tanstack/react-virtual` (既存プロジェクトで採用済み)
 - **分割表示**: `allotment` (4ペイン分割)
 - **UI フレームワーク**: Material-UI v5 (`@hierarchidb/ui-core`で提供)
@@ -40,7 +40,7 @@ BatchProcessingMonitorDialog（全画面）→
 5ステップのウィザード形式で地理データの設定を行う。
 
 ```tsx
-import { StepperDialog, useWorkingCopy, useDialogContext } from '@hierarchidb/ui-base-dialog';
+import { StepperDialog, useDraft, useDialogContext } from '@hierarchidb/ui-base-dialog';
 import { FullscreenIcon, FullscreenExitIcon, PlayArrowIcon } from '@hierarchidb/ui-core/icon';
 
 export const ShapesStepperDialog = ({ mode, nodeId, parentNodeId, onClose }) => {
@@ -48,14 +48,14 @@ export const ShapesStepperDialog = ({ mode, nodeId, parentNodeId, onClose }) => 
   
   // Working Copy管理
   const {
-    workingCopy,
-    updateWorkingCopy,
+    draft,
+    updateDraft,
     commitChanges,
     discardChanges,
     saveAsDraft,
     isDirty,
     isProcessing,
-  } = useWorkingCopy<ShapesEntity>({
+  } = useDraft<ShapesEntity>({
     mode,
     nodeId,
     parentNodeId,
@@ -68,13 +68,13 @@ export const ShapesStepperDialog = ({ mode, nodeId, parentNodeId, onClose }) => 
   // Step 4-5でのバッチ処理開始条件チェック
   const canStartBatch = useMemo(() => {
     return (
-      workingCopy.name?.length > 0 &&
-      !!workingCopy.dataSourceName &&
-      workingCopy.licenseAgreement === true &&
-      validateProcessingConfig(workingCopy.processingConfig) &&
-      hasSelectedCountries(workingCopy)
+      draft.name?.length > 0 &&
+      !!draft.dataSourceName &&
+      draft.licenseAgreement === true &&
+      validateProcessingConfig(draft.processingConfig) &&
+      hasSelectedCountries(draft)
     );し
-  }, [workingCopy]);
+  }, [draft]);
 
   // バッチ処理開始（Step 4-5から可能）
   const handleStartBatch = useCallback(() => {
@@ -90,33 +90,33 @@ export const ShapesStepperDialog = ({ mode, nodeId, parentNodeId, onClose }) => 
   const steps = [
     {
       label: 'Basic Information',
-      content: <BasicInfoStep workingCopy={workingCopy} onUpdate={updateWorkingCopy} />,
-      validate: () => workingCopy.name?.length > 0,
+      content: <BasicInfoStep draft={draft} onUpdate={updateDraft} />,
+      validate: () => draft.name?.length > 0,
     },
     {
       label: 'Data Source',
-      content: <DataSourceSelectStep workingCopy={workingCopy} onUpdate={updateWorkingCopy} />,
-      validate: () => !!workingCopy.dataSourceName,
+      content: <DataSourceSelectStep draft={draft} onUpdate={updateDraft} />,
+      validate: () => !!draft.dataSourceName,
     },
     {
       label: 'License Agreement',
-      content: <LicenseAgreementStep workingCopy={workingCopy} onUpdate={updateWorkingCopy} />,
-      validate: () => workingCopy.licenseAgreement === true,
+      content: <LicenseAgreementStep draft={draft} onUpdate={updateDraft} />,
+      validate: () => draft.licenseAgreement === true,
     },
     {
       label: 'Processing Configuration',
-      content: <ProcessingConfigStep workingCopy={workingCopy} onUpdate={updateWorkingCopy} />,
-      validate: () => validateProcessingConfig(workingCopy.processingConfig),
+      content: <ProcessingConfigStep draft={draft} onUpdate={updateDraft} />,
+      validate: () => validateProcessingConfig(draft.processingConfig),
     },
     {
       label: 'Country Selection',
       content: (
         <CountryAdminMatrixStep 
-          workingCopy={workingCopy} 
-          onUpdate={updateWorkingCopy}
+          draft={draft} 
+          onUpdate={updateDraft}
         />
       ),
-      validate: () => hasSelectedCountries(workingCopy),
+      validate: () => hasSelectedCountries(draft),
     },
   ];
 
@@ -160,8 +160,8 @@ export const ShapesStepperDialog = ({ mode, nodeId, parentNodeId, onClose }) => 
         open={batchDialogOpen}
         onClose={handleBatchDialogClose}
         nodeId={nodeId}
-        config={workingCopy.processingConfig}
-        urlMetadata={workingCopy.urlMetadata}
+        config={draft.processingConfig}
+        urlMetadata={draft.urlMetadata}
         onBatchCompleted={() => {
           // バッチ完了時は両ダイアログを閉じて保存
           setBatchDialogOpen(false);
@@ -248,11 +248,11 @@ const CustomStepperFooter = ({
 
 ```tsx
 interface BasicInfoStepProps {
-  workingCopy: ShapeWorkingCopy;
-  onUpdate: (updates: Partial<ShapeWorkingCopy>) => void;
+  draft: ShapeDraft;
+  onUpdate: (updates: Partial<ShapeDraft>) => void;
 }
 
-const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ workingCopy, onUpdate }) => {
+const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ draft, onUpdate }) => {
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h6" gutterBottom>
@@ -265,17 +265,17 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ workingCopy, onUpdate }) 
       <Stack spacing={3}>
         <TextField
           label="Name"
-          value={workingCopy.name || ''}
+          value={draft.name || ''}
           onChange={(e) => onUpdate({ name: e.target.value })}
           required
           fullWidth
-          error={!workingCopy.name}
-          helperText={!workingCopy.name ? 'Name is required' : 'Enter a descriptive name for this configuration'}
+          error={!draft.name}
+          helperText={!draft.name ? 'Name is required' : 'Enter a descriptive name for this configuration'}
         />
         
         <TextField
           label="Description"
-          value={workingCopy.description || ''}
+          value={draft.description || ''}
           onChange={(e) => onUpdate({ description: e.target.value })}
           multiline
           rows={3}
@@ -297,7 +297,7 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ workingCopy, onUpdate }) 
 **実装**: `packages/plugins/shape/src/components/DataSourceSelector/DataSourceSelectPanel.tsx` として既に移植済み
 
 ```tsx
-const DataSourceSelectStep = ({ workingCopy, onUpdate }) => {
+const DataSourceSelectStep = ({ draft, onUpdate }) => {
   const handleDataSourceSelect = (dataSourceName: string) => {
     onUpdate({ 
       dataSourceName,
@@ -320,7 +320,7 @@ const DataSourceSelectStep = ({ workingCopy, onUpdate }) => {
           <Grid xs={12} sm={6} key={dataSource.name}>
             <DataSourceCard
               dataSource={dataSource}
-              isSelected={workingCopy.dataSourceName === dataSource.name}
+              isSelected={draft.dataSourceName === dataSource.name}
               onSelect={() => handleDataSourceSelect(dataSource.name)}
             />
           </Grid>
@@ -378,8 +378,8 @@ const DataSourceCard = ({ dataSource, isSelected, onSelect }) => {
 **重要変更**: チェックボックス削除、ボタンクリックのみで同意
 
 ```tsx
-const LicenseAgreementStep = ({ workingCopy, onUpdate }) => {
-  const dataSource = DATA_SOURCE_CONFIGS[workingCopy.dataSourceName];
+const LicenseAgreementStep = ({ draft, onUpdate }) => {
+  const dataSource = DATA_SOURCE_CONFIGS[draft.dataSourceName];
   
   const handleLicenseAgreement = () => {
     // 外部リンク開く + 同意フラグセット
@@ -417,15 +417,15 @@ const LicenseAgreementStep = ({ workingCopy, onUpdate }) => {
           </Typography>
           
           <Button
-            variant={workingCopy.licenseAgreement ? "outlined" : "contained"}
-            color={workingCopy.licenseAgreement ? "success" : "warning"}
+            variant={draft.licenseAgreement ? "outlined" : "contained"}
+            color={draft.licenseAgreement ? "success" : "warning"}
             size="large"
             startIcon={<OpenInNewIcon />}
             onClick={handleLicenseAgreement}
             fullWidth
             sx={{ mt: 2 }}
           >
-            {workingCopy.licenseAgreement 
+            {draft.licenseAgreement 
               ? "License Agreed - View Details" 
               : "View License Terms & Agree"
             }
@@ -433,7 +433,7 @@ const LicenseAgreementStep = ({ workingCopy, onUpdate }) => {
         </Stack>
       </Alert>
       
-      {workingCopy.licenseAgreement && (
+      {draft.licenseAgreement && (
         <Alert severity="success" sx={{ mt: 2 }}>
           <Stack direction="row" spacing={1} alignItems="center">
             <CheckCircleIcon color="success" />
@@ -442,7 +442,7 @@ const LicenseAgreementStep = ({ workingCopy, onUpdate }) => {
             </Typography>
           </Stack>
           <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
-            Agreed on: {new Date(workingCopy.licenseAgreedAt).toLocaleString()}
+            Agreed on: {new Date(draft.licenseAgreedAt).toLocaleString()}
           </Typography>
         </Alert>
       )}
@@ -463,7 +463,7 @@ const LicenseAgreementStep = ({ workingCopy, onUpdate }) => {
 - **品質パラメータ**: 簡略化の許容誤差、ベクタータイル品質設定
 
 ```tsx
-const ProcessingConfigStep = ({ workingCopy, onUpdate }) => {
+const ProcessingConfigStep = ({ draft, onUpdate }) => {
   return (
     <Box sx={{ p: 2 }}>
       <Typography variant="h6" sx={{ mb: 2 }}>
@@ -477,7 +477,7 @@ const ProcessingConfigStep = ({ workingCopy, onUpdate }) => {
             <CloudDownloadIcon color="primary" />
             <Typography variant="subtitle1">Download Configuration</Typography>
             <Chip 
-              label={`${workingCopy.processingConfig?.concurrentDownloads || 2} concurrent`}
+              label={`${draft.processingConfig?.concurrentDownloads || 2} concurrent`}
               size="small" variant="outlined"
             />
           </Stack>
@@ -487,10 +487,10 @@ const ProcessingConfigStep = ({ workingCopy, onUpdate }) => {
             <Grid xs={12} sm={6}>
               <Typography gutterBottom>Concurrent Downloads</Typography>
               <Slider
-                value={workingCopy.processingConfig?.concurrentDownloads || 2}
+                value={draft.processingConfig?.concurrentDownloads || 2}
                 onChange={(_, value) => onUpdate({
                   processingConfig: {
-                    ...workingCopy.processingConfig,
+                    ...draft.processingConfig,
                     concurrentDownloads: value as number
                   }
                 })}
@@ -507,10 +507,10 @@ const ProcessingConfigStep = ({ workingCopy, onUpdate }) => {
             <Grid xs={12} sm={6}>
               <TextField
                 label="CORS Proxy Base URL"
-                value={workingCopy.processingConfig?.corsProxyBaseURL || ''}
+                value={draft.processingConfig?.corsProxyBaseURL || ''}
                 onChange={(e) => onUpdate({
                   processingConfig: {
-                    ...workingCopy.processingConfig,
+                    ...draft.processingConfig,
                     corsProxyBaseURL: e.target.value
                   }
                 })}
@@ -530,9 +530,9 @@ const ProcessingConfigStep = ({ workingCopy, onUpdate }) => {
             <FilterAltIcon color="secondary" />
             <Typography variant="subtitle1">Feature Processing (Stage 1)</Typography>
             <Chip 
-              label={workingCopy.processingConfig?.enableFeatureFiltering ? 'Filtering ON' : 'Filtering OFF'}
+              label={draft.processingConfig?.enableFeatureFiltering ? 'Filtering ON' : 'Filtering OFF'}
               size="small"
-              color={workingCopy.processingConfig?.enableFeatureFiltering ? 'success' : 'default'}
+              color={draft.processingConfig?.enableFeatureFiltering ? 'success' : 'default'}
               variant="outlined"
             />
           </Stack>
@@ -542,10 +542,10 @@ const ProcessingConfigStep = ({ workingCopy, onUpdate }) => {
             <FormControlLabel
               control={
                 <Switch
-                  checked={workingCopy.processingConfig?.enableFeatureFiltering || false}
+                  checked={draft.processingConfig?.enableFeatureFiltering || false}
                   onChange={(e) => onUpdate({
                     processingConfig: {
-                      ...workingCopy.processingConfig,
+                      ...draft.processingConfig,
                       enableFeatureFiltering: e.target.checked
                     }
                   })}
@@ -554,15 +554,15 @@ const ProcessingConfigStep = ({ workingCopy, onUpdate }) => {
               label="Enable Feature Filtering"
             />
             
-            {workingCopy.processingConfig?.enableFeatureFiltering && (
+            {draft.processingConfig?.enableFeatureFiltering && (
               <>
                 <FormControl component="fieldset">
                   <FormLabel component="legend">Filtering Method</FormLabel>
                   <RadioGroup
-                    value={workingCopy.processingConfig?.featureFilterMethod || 'hybrid'}
+                    value={draft.processingConfig?.featureFilterMethod || 'hybrid'}
                     onChange={(e) => onUpdate({
                       processingConfig: {
-                        ...workingCopy.processingConfig,
+                        ...draft.processingConfig,
                         featureFilterMethod: e.target.value as FeatureFilterMethod
                       }
                     })}
@@ -576,10 +576,10 @@ const ProcessingConfigStep = ({ workingCopy, onUpdate }) => {
                 <Box>
                   <Typography gutterBottom>Feature Area Threshold (%)</Typography>
                   <Slider
-                    value={workingCopy.processingConfig?.featureAreaThreshold || 0.1}
+                    value={draft.processingConfig?.featureAreaThreshold || 0.1}
                     onChange={(_, value) => onUpdate({
                       processingConfig: {
-                        ...workingCopy.processingConfig,
+                        ...draft.processingConfig,
                         featureAreaThreshold: value as number
                       }
                     })}
@@ -601,7 +601,7 @@ const ProcessingConfigStep = ({ workingCopy, onUpdate }) => {
             <LayersIcon color="success" />
             <Typography variant="subtitle1">Vector Tile Generation</Typography>
             <Chip 
-              label={`${workingCopy.processingConfig?.concurrentProcesses || 2} concurrent`}
+              label={`${draft.processingConfig?.concurrentProcesses || 2} concurrent`}
               size="small" variant="outlined"
             />
           </Stack>
@@ -612,10 +612,10 @@ const ProcessingConfigStep = ({ workingCopy, onUpdate }) => {
               <TextField
                 label="Concurrent Processes"
                 type="number"
-                value={workingCopy.processingConfig?.concurrentProcesses || 2}
+                value={draft.processingConfig?.concurrentProcesses || 2}
                 onChange={(e) => onUpdate({
                   processingConfig: {
-                    ...workingCopy.processingConfig,
+                    ...draft.processingConfig,
                     concurrentProcesses: parseInt(e.target.value)
                   }
                 })}
@@ -629,10 +629,10 @@ const ProcessingConfigStep = ({ workingCopy, onUpdate }) => {
               <TextField
                 label="Max Zoom Level"
                 type="number"
-                value={workingCopy.processingConfig?.maxZoomLevel || 12}
+                value={draft.processingConfig?.maxZoomLevel || 12}
                 onChange={(e) => onUpdate({
                   processingConfig: {
-                    ...workingCopy.processingConfig,
+                    ...draft.processingConfig,
                     maxZoomLevel: parseInt(e.target.value)
                   }
                 })}
@@ -659,27 +659,27 @@ const ProcessingConfigStep = ({ workingCopy, onUpdate }) => {
 - バッチ処理開始により別ダイアログへ遷移
 
 ```tsx
-const CountryAdminMatrixStep = ({ workingCopy, onUpdate }) => {
+const CountryAdminMatrixStep = ({ draft, onUpdate }) => {
   const virtuosoRef = useRef<TableVirtuosoHandle | null>(null);
   
   // データソース対応国リスト取得
   const countryMetadataArray = useMemo(() => {
-    return getCountryMetadataForDataSource(workingCopy.dataSourceName);
-  }, [workingCopy.dataSourceName]);
+    return getCountryMetadataForDataSource(draft.dataSourceName);
+  }, [draft.dataSourceName]);
   
   // 選択可能最大行政レベル
   const maxAdminLevel = useMemo(() => {
-    const dataSourceConfig = DataSourceConfigs[workingCopy.dataSourceName];
+    const dataSourceConfig = DataSourceConfigs[draft.dataSourceName];
     return dataSourceConfig?.maxAdminLevel || 0;
-  }, [workingCopy.dataSourceName]);
+  }, [draft.dataSourceName]);
   
   // マトリクス状態管理
   const checkboxMatrix = useMemo(() => {
-    if (typeof workingCopy.checkboxState === 'string') {
-      return deserializeMatrix(workingCopy.checkboxState);
+    if (typeof draft.checkboxState === 'string') {
+      return deserializeMatrix(draft.checkboxState);
     }
-    return workingCopy.checkboxState || initializeMatrix(countryMetadataArray.length, maxAdminLevel + 1);
-  }, [workingCopy.checkboxState, countryMetadataArray.length, maxAdminLevel]);
+    return draft.checkboxState || initializeMatrix(countryMetadataArray.length, maxAdminLevel + 1);
+  }, [draft.checkboxState, countryMetadataArray.length, maxAdminLevel]);
   
   return (
     <Box sx={{ height: '70vh', display: 'flex', flexDirection: 'column' }}>
@@ -726,7 +726,7 @@ const CountryAdminMatrixStep = ({ workingCopy, onUpdate }) => {
               rowIndex={index}
               adminLevels={maxAdminLevel}
               checkboxStates={checkboxMatrix[index] || []}
-              downloadedStates={workingCopy.downloadedMatrix?.[index] || []}
+              downloadedStates={draft.downloadedMatrix?.[index] || []}
               headerState={headerStates.rowCheckboxes[index]}
               onCellChange={handleCellChange}
               onRowSelect={handleRowSelect}
@@ -1251,7 +1251,7 @@ const handleClose = () => {
 ### 4.1 Working Copy管理
 
 ```typescript
-interface ShapeWorkingCopy {
+interface ShapeDraft {
   // Step 1: Basic Information
   name: string;
   description?: string;

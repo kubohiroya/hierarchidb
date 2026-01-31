@@ -1,5 +1,6 @@
 import type { WorkerAPI } from '@hierarchidb/worker-api';
-import type { NodeId, SubscriptionId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { SubscriptionId } from '@hierarchidb/tree-api';
 import type { Remote } from 'comlink';
 
 export type SubscriptionKind = 'trash' | 'page';

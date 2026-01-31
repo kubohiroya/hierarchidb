@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-types';
+import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CoreDB } from '../../services/CoreDB.js';
 import { TreeNodeUpdaterService } from '../../services/TreeNodeUpdaterService.js';

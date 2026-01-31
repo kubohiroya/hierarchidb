@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { proxy } from 'comlink';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useIsoCountries } from '@hierarchidb/ui-country-select';
 import { IDE_GSM_BULK_CHUNK_SIZE, type IdeGsmImportProgress } from '@hierarchidb/location-api';

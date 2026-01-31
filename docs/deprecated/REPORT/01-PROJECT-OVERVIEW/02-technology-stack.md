@@ -42,7 +42,7 @@ class CoreDB extends Dexie {
 
 class EphemeralDB extends Dexie {
   // 一時データ（24時間で自動削除）
-  workingCopies!: Table<WorkingCopyTypes, UUID>;
+  workingCopies!: Table<DraftTypes, UUID>;
   sessions!: Table<SessionData, UUID>;
 }
 ```

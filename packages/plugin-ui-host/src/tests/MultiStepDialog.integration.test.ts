@@ -5,7 +5,7 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { WorkerAPIMock } from '../__tests__/plugin-dialog-mocks';
 
 describe('Multi-Step Dialog Integration', () => {

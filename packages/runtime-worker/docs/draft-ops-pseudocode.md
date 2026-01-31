@@ -1,6 +1,6 @@
 vk:doc kind=spec audience=dev scope=worker
 
-# WorkingCopy 主要オペレーション擬似コード
+# Draft 主要オペレーション擬似コード
 
 この文書は実装を変えずに、Tx境界と典型エラー処理、戻りスキーマを共有する目的の草案です。
 
@@ -8,7 +8,7 @@ vk:doc kind=spec audience=dev scope=worker
 - holder/child/関連エンティティの作成・反映・削除は同一DBトランザクションで原子的に行う。
 - 途中失敗時は全体ロールバック（別スレッド通知やUI更新はTx外で非同期に行う）。
 
-## createWorkingCopy（get-or-create）
+## createDraft（get-or-create）
 
 ```ts
 type CreateWcResult = {
@@ -17,13 +17,13 @@ type CreateWcResult = {
   returnedExisting: boolean;
 };
 
-async function createWorkingCopy(treeId: string, targetParentId: string, targetNodeId: string | null): Promise<CreateWcResult> {
-  const workingCopyRootId = getWorkingCopyRootId(treeId);
+async function createDraft(treeId: string, targetParentId: string, targetNodeId: string | null): Promise<CreateWcResult> {
+  const draftRootId = getDraftRootId(treeId);
   const name = encodeHolderName(targetParentId, targetNodeId ?? preallocateNodeId());
 
   return db.transaction('rw', db.nodes, async () => {
     // 1) Try find existing holder
-    const holder = await db.nodes.where('[parentId+name]').equals([workingCopyRootId, name]).first();
+    const holder = await db.nodes.where('[parentId+name]').equals([draftRootId, name]).first();
     if (holder) {
       const child = await getSingleChild(holder.id);
       return { wcHolderId: holder.id, wcNodeId: child.id, returnedExisting: true };
@@ -31,15 +31,15 @@ async function createWorkingCopy(treeId: string, targetParentId: string, targetN
 
     // 2) Create holder + child atomically
     const wcHolderId = allocNodeId();
-    await db.nodes.put({ id: wcHolderId, parentId: workingCopyRootId, name, type: 'workingCopyHolder' });
+    await db.nodes.put({ id: wcHolderId, parentId: draftRootId, name, type: 'draftHolder' });
     const wcNodeId = allocNodeIdOrGiven(targetNodeId); // given for draft, else new for edit copy
-    await db.nodes.put({ id: wcNodeId, parentId: wcHolderId, name: 'wc', type: 'workingCopy' /* payload... */ });
+    await db.nodes.put({ id: wcNodeId, parentId: wcHolderId, name: 'wc', type: 'draft' /* payload... */ });
 
     return { wcHolderId, wcNodeId, returnedExisting: false };
   }).catch(async (err) => {
     if (isConstraintError(err)) {
       // Another tab created it concurrently. Re-read existing.
-      const holder = await db.nodes.where('[parentId+name]').equals([workingCopyRootId, name]).first();
+      const holder = await db.nodes.where('[parentId+name]').equals([draftRootId, name]).first();
       if (!holder) throw err; // unexpected
       const child = await getSingleChild(holder.id);
       return { wcHolderId: holder.id, wcNodeId: child.id, returnedExisting: true };
@@ -49,7 +49,7 @@ async function createWorkingCopy(treeId: string, targetParentId: string, targetN
 }
 ```
 
-## commitWorkingCopy（編集/ドラフト統合）
+## commitDraft（編集/ドラフト統合）
 
 ```ts
 type CommitOk = { status: 'ok'; autoRenameTo?: string };
@@ -57,7 +57,7 @@ type CommitConflict = { status: 'COMMIT_CONFLICT'; originalVersion: number; wcVe
 type NameConflict = { status: 'NAME_CONFLICT'; suggestedName: string };
 type CommitResult = CommitOk | CommitConflict | NameConflict;
 
-async function commitWorkingCopy(treeId: string, wcHolderId: string): Promise<CommitResult> {
+async function commitDraft(treeId: string, wcHolderId: string): Promise<CommitResult> {
   const holder = await db.nodes.get(wcHolderId);
   if (!holder) throw new Error('WC holder not found');
   const { targetParentNodeId, targetNodeId } = decodeHolderName(holder.name);
@@ -101,15 +101,15 @@ async function commitWorkingCopy(treeId: string, wcHolderId: string): Promise<Co
 ```
 
 実装メモ（反映状況）
-- `commitWorkingCopyV2` として実装済み（編集/ドラフト双方、NAME_CONFLICT/COMMIT_CONFLICT/auto-renameを返却）。
+- `commitDraftV2` として実装済み（編集/ドラフト双方、NAME_CONFLICT/COMMIT_CONFLICT/auto-renameを返却）。
 
 ## 移動/削除のブロック判定（ポリシーC）
 
 ```ts
 async function hasWcInSubtree(rootId: string, targetId: string): Promise<boolean> {
   const subtreeIds = await collectSubtreeIds(targetId); // BFS via parentId index
-  const workingCopyRootId = getWorkingCopyRootId(rootId);
-  const holders = await db.nodes.where('parentId').equals(workingCopyRootId).toArray();
+  const draftRootId = getDraftRootId(rootId);
+  const holders = await db.nodes.where('parentId').equals(draftRootId).toArray();
   for (const h of holders) {
     const { targetParentNodeId, targetNodeId } = decodeHolderName(h.name);
     if (subtreeIds.has(targetNodeId) || subtreeIds.has(targetParentNodeId)) return true;

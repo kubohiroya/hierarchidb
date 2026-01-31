@@ -12,7 +12,7 @@ Spreadsheet Pluginは、HierarchiDBにおける汎用的な表データ処理基
                  Persistent                    Ephemeral
     ┌──────────────────────────────┬──────────────────────────────┐
     │                              │                              │
-Peer│  SpreadsheetRefEntity        │  SpreadsheetWorkingCopy      │
+Peer│  SpreadsheetRefEntity        │  SpreadsheetDraft      │
     │  StylerEntity              │  SpreadsheetViewState        │
     │                              │                              │
     ├──────────────────────────────┼──────────────────────────────┤

@@ -173,11 +173,11 @@ export class SpreadsheetCSVProcessor {
 
 ### Phase 5: Working Copy統合（folder-plugin修正後）
 
-#### 5.1 SpreadsheetWorkingCopy実装確認
+#### 5.1 SpreadsheetDraft実装確認
 ```typescript
 // src/extension/definition.ts
-// 既存のWorkingCopy実装は完成済み
-export interface SpreadsheetWorkingCopy extends SpreadsheetEntity {
+// 既存のDraft実装は完成済み
+export interface SpreadsheetDraft extends SpreadsheetEntity {
   isDraft: boolean;
   originalId?: string;
   copiedAt: number;

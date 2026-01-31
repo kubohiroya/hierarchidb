@@ -1,4 +1,5 @@
-import type { NodeId, TreeNode, TreeNodeMetadata } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { TreeNode, TreeNodeMetadata } from '@hierarchidb/tree-api';
 import type { CoreDB } from '../CoreDB.js';
 
 /**

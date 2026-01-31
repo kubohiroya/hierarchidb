@@ -89,7 +89,7 @@ interface FolderEntity extends BaseEntity {
 }
 
 // フォルダライフサイクルフック
-const folderLifecycle: NodeLifecycleHooks<FolderEntity, FolderWorkingCopy> = {
+const folderLifecycle: NodeLifecycleHooks<FolderEntity, FolderDraft> = {
   beforeCreate: async (parentId, nodeData) => {
     // フォルダ名の検証
     if (!nodeData.name || nodeData.name.trim().length === 0) {
@@ -125,7 +125,7 @@ const folderLifecycle: NodeLifecycleHooks<FolderEntity, FolderWorkingCopy> = {
 export const TreeNode2Definition: UnifiedPluginDefinition<
   TreeNode2Entity,
   never,
-  TreeNode2WorkingCopy
+  TreeNode2Draft
 > = {
   nodeType: 'treenode2',
   name: 'TreeNode2',
@@ -275,7 +275,7 @@ import { Folder2Database } from '../database/Folder2Database';
 export class Folder2Handler implements EntityHandler<
   FolderEntity,
   never,
-  FolderWorkingCopy
+  FolderDraft
 > {
   private db: Folder2Database;
   
@@ -325,23 +325,23 @@ export class Folder2Handler implements EntityHandler<
     await this.db.entities.delete(nodeId);
   }
   
-  // WorkingCopy関連のメソッド
-  async createWorkingCopy(nodeId: TreeNodeId): Promise<FolderWorkingCopy> {
+  // Draft関連のメソッド
+  async createDraft(nodeId: TreeNodeId): Promise<FolderDraft> {
     const entity = await this.getEntity(nodeId);
     if (!entity) {
       throw new Error(`Folder not found: ${nodeId}`);
     }
     
-    const workingCopy: FolderWorkingCopy = {
+    const draft: FolderDraft = {
       ...entity,
-      workingCopyId: crypto.randomUUID(),
-      workingCopyOf: nodeId,
+      draftId: crypto.randomUUID(),
+      draftOf: nodeId,
       isDirty: false,
       copiedAt: Date.now()
     };
     
-    await this.db.workingCopies.add(workingCopy);
-    return workingCopy;
+    await this.db.workingCopies.add(draft);
+    return draft;
   }
   
   // 他のメソッド...

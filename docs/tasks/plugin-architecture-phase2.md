@@ -38,8 +38,8 @@
 - **依存タスク**: TASK-0005
 - **実装詳細**:
   ```typescript
-  export abstract class BaseEntityHandler<TEntity, TSubEntity, TWorkingCopy> 
-    implements EntityHandler<TEntity, TSubEntity, TWorkingCopy> {
+  export abstract class BaseEntityHandler<TEntity, TSubEntity, TDraft> 
+    implements EntityHandler<TEntity, TSubEntity, TDraft> {
     protected db: Dexie;
     
     abstract createEntity(nodeId: TreeNodeId, data?: Partial<TEntity>): Promise<TEntity>;
@@ -106,9 +106,9 @@
 - **依存タスク**: TASK-0018
 - **実装詳細**:
   ```typescript
-  createWorkingCopy(nodeId: TreeNodeId): Promise<TWorkingCopy>;
-  commitWorkingCopy(nodeId: TreeNodeId, workingCopy: TWorkingCopy): Promise<void>;
-  discardWorkingCopy(nodeId: TreeNodeId): Promise<void>;
+  createDraft(nodeId: TreeNodeId): Promise<TDraft>;
+  commitDraft(nodeId: TreeNodeId, draft: TDraft): Promise<void>;
+  discardDraft(nodeId: TreeNodeId): Promise<void>;
   ```
 - **テスト要件**:
   - [ ] ワーキングコピー作成

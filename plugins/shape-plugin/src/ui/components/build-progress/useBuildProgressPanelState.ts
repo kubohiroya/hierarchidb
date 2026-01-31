@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { useAtomValue } from 'jotai';
 import type { BuildStatus } from '@hierarchidb/components';
 import { useTranslation } from '../../i18n.js';

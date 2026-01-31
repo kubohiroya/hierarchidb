@@ -1,12 +1,12 @@
-# Folder WorkingCopy Policy
+# Folder Draft Policy
 
 Status: Draft • Last updated: 2025-09-11
 
-This document summarizes how “WorkingCopy” applies to folder nodes and how UI/worker enforce it.
+This document summarizes how “Draft” applies to folder nodes and how UI/worker enforce it.
 
-- Single WorkingCopy per target: a subtree may contain at most one active WorkingCopy for a given target entity. See `adr-single-working-copy-per-target`.
-- Holder-based Trash: deletion and recover operations flow through “trash holders” under the per-tree trash root. See `adr-workingcopy-trash-unification`.
-- Policy C (move/delete guard): moving or deleting a node is blocked if any descendant has an active WorkingCopy. Enforcement lives in the Worker `CommandProcessor` (Policy C), so UI does not duplicate the check.
+- Single Draft per target: a subtree may contain at most one active Draft for a given target entity. See `adr-single-draft-per-target`.
+- Holder-based Trash: deletion and recover operations flow through “trash holders” under the per-tree trash root. See `adr-draft-trash-unification`.
+- Policy C (move/delete guard): moving or deleting a node is blocked if any descendant has an active Draft. Enforcement lives in the Worker `CommandProcessor` (Policy C), so UI does not duplicate the check.
 
 Implications for UI (TreeConsole):
 
@@ -23,5 +23,5 @@ Developer notes:
 References:
 
 - `packages/runtime/worker/src/services/CommandProcessor.ts`
-- `packages/runtime/worker/docs/adr/adr-workingcopy-trash-unification.md`
+- `packages/runtime/worker/docs/adr/adr-draft-trash-unification.md`
 - `packages/runtime/worker/docs/adr/adr-block-move-delete-when-wc-in-subtree.md`

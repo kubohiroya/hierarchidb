@@ -64,11 +64,15 @@ export interface PluginManifest {
   nodeType?: NodeType;
   version?: string;
   description?: string;
+  author?: string;
+  status?: string;
   priority?: number;
   extends?: string;
   dependencies?: string[];
   icon?: PluginIconConfig;
   category?: PluginCategoryConfig;
+  tags?: string[];
+  entityHints?: Record<string, unknown>;
   visibility?: {
     hidden?: boolean;
     showInCreateMenu?: boolean;

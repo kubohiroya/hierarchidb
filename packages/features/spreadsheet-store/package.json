@@ -19,12 +19,12 @@
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "peerDependencies": {
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/ui-tabular": "workspace:*"
   },
   "devDependencies": {
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/ui-tabular": "workspace:*",
     "typescript": "workspace:^5.9.3"

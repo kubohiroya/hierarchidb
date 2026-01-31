@@ -76,12 +76,12 @@ interface DialogTransition {
   target: 'ShapeBuildStep';
   conditions: {
     validationPassed: boolean;
-    workingCopySaved: boolean;
+    draftSaved: boolean;
     batchConfigReady: boolean;
   };
   actions: {
     beforeTransition: [
-      'saveWorkingCopy',
+      'saveDraft',
       'createBatchSession',
       'registerProgressCallback'
     ];
@@ -103,7 +103,7 @@ interface CompletionBehavior {
     showNotification: true;
     notificationDuration: 5000;
     actions: [
-      'commitWorkingCopy',
+      'commitDraft',
       'cleanupBatchSession',
       'refreshParentView'
     ];
@@ -114,7 +114,7 @@ interface CompletionBehavior {
     allowRetry: true;
     actions: [
       'logError',
-      'preserveWorkingCopy',
+      'preserveDraft',
       'showRetryOption'
     ];
   };
@@ -124,7 +124,7 @@ interface CompletionBehavior {
     confirmBeforeClose: true;
     actions: [
       'pauseBatchSession',
-      'preserveWorkingCopy',
+      'preserveDraft',
       'cleanupPartialData'
     ];
   };
@@ -178,7 +178,7 @@ interface DialogState {
   shapeEditDialog: {
     isOpen: boolean;
     mode: 'create' | 'edit';
-    workingCopyId?: EntityId;
+    draftId?: EntityId;
   };
   
   batchProcessingDialog: {

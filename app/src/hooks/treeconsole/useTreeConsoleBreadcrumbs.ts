@@ -6,7 +6,8 @@
  */
 
 import type { WorkerAPI } from '@hierarchidb/worker-api';
-import type { NodeId, SubscriptionId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { SubscriptionId, TreeNode } from '@hierarchidb/tree-api';
 import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import type { Remote } from 'comlink';
 import { proxy as comlinkProxy } from 'comlink';

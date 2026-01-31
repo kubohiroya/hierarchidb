@@ -1,4 +1,4 @@
-import type { NodeId, Timestamp } from '@hierarchidb/common-types';
+import type { NodeId, Timestamp } from '@hierarchidb/core-types';
 import type { BatchProgressCallback, BatchProgressEvent, BatchSessionStatus, IBatchSessionManager } from '@hierarchidb/batch-api';
 
 export interface UnifiedBatchSession<TConfig, TData> {
@@ -19,12 +19,16 @@ export interface BatchPersistence<TConfig, TData> {
   onSessionCompleted?(nodeId: NodeId): Promise<void> | void;
 }
 
-export abstract class UnifiedBatchManagerBase<TConfig, TData> implements IBatchSessionManager {
+export abstract class UnifiedBatchManagerBase<TConfig, TData> implements IBatchSessionManager<TConfig, TData> {
   private readonly pending = new Map<NodeId, UnifiedBatchSession<TConfig, TData>>();
 
   protected constructor(protected readonly persistence?: BatchPersistence<TConfig, TData>) {}
 
-  async prepareSession(nodeId: NodeId, config: TConfig, data: TData): Promise<void> {
+  async prepareSession<TConfigParam extends TConfig = TConfig, TDataParam extends TData = TData>(
+    nodeId: NodeId,
+    config: TConfigParam,
+    data: TDataParam
+  ): Promise<void> {
     const payload: UnifiedBatchSession<TConfig, TData> = {
       config,
       data,

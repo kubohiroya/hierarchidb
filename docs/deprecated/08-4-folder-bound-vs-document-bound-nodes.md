@@ -93,28 +93,28 @@ export abstract class DocumentPluginBase<TEntity extends DocumentEntity> {
   readonly capabilities = {
     canHaveChildren: false,
     isContainer: false,
-    supportsWorkingCopy: true,
+    supportsDraft: true,
     supportsVersioning: true,
     supportsExport: true
   };
   
   // Working Copy 管理
-  async createWorkingCopy(nodeId: TreeNodeId): Promise<TEntity & WorkingCopyMixin> {
+  async createDraft(nodeId: TreeNodeId): Promise<TEntity & DraftMixin> {
     const entity = await this.get(nodeId);
     return {
       ...entity,
-      workingCopyId: generateId(),
-      workingCopyOf: nodeId,
+      draftId: generateId(),
+      draftOf: nodeId,
       copiedAt: Date.now(),
       isDirty: false
     };
   }
   
-  async commitWorkingCopy(workingCopyId: string): Promise<TEntity> {
+  async commitDraft(draftId: string): Promise<TEntity> {
     // Working Copy のコミット処理
-    const workingCopy = await this.getWorkingCopy(workingCopyId);
-    const committed = await this.update(workingCopy.workingCopyOf, workingCopy);
-    await this.deleteWorkingCopy(workingCopyId);
+    const draft = await this.getDraft(draftId);
+    const committed = await this.update(draft.draftOf, draft);
+    await this.deleteDraft(draftId);
     return committed;
   }
   
@@ -130,7 +130,7 @@ export abstract class DocumentPluginBase<TEntity extends DocumentEntity> {
   }
   
   protected abstract formatExport(entity: TEntity, format: string): Promise<Blob>;
-  protected abstract getWorkingCopy(workingCopyId: string): Promise<TEntity & WorkingCopyMixin>;
+  protected abstract getDraft(draftId: string): Promise<TEntity & DraftMixin>;
 }
 
 interface DocumentEntity extends BaseEntity {
@@ -328,8 +328,8 @@ export class BaseMapPlugin extends DocumentPluginBase<BaseMapEntity> {
     }
   }
   
-  protected async getWorkingCopy(workingCopyId: string): Promise<BaseMapEntity & WorkingCopyMixin> {
-    return await this.ephemeralDB.workingCopies.get(workingCopyId);
+  protected async getDraft(draftId: string): Promise<BaseMapEntity & DraftMixin> {
+    return await this.ephemeralDB.workingCopies.get(draftId);
   }
   
   // BaseMap固有の機能
@@ -386,9 +386,9 @@ export class PluginTypeDetector {
     return plugin?.capabilities?.canHaveChildren || false;
   }
   
-  static supportsWorkingCopy(nodeType: TreeNodeType): boolean {
+  static supportsDraft(nodeType: TreeNodeType): boolean {
     const plugin = UIPluginRegistry.get(nodeType);
-    return plugin?.capabilities?.supportsWorkingCopy || false;
+    return plugin?.capabilities?.supportsDraft || false;
   }
 }
 ```
@@ -490,7 +490,7 @@ function getBaseContextMenuItems(capabilities: PluginCapabilities): ContextMenuI
     });
   }
   
-  if (capabilities.supportsWorkingCopy) {
+  if (capabilities.supportsDraft) {
     items.push({
       label: 'Edit',
       icon: <EditIcon />,
@@ -568,7 +568,7 @@ export const BaseMapUIPlugin: UIPluginDefinition = {
   capabilities: {
     isContainer: false,
     canHaveChildren: false,
-    supportsWorkingCopy: true,
+    supportsDraft: true,
     supportsVersioning: true,
     supportsExport: true
   },

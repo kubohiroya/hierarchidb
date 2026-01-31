@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { TabularDataResult } from '@hierarchidb/ui-tabular';
 import { RouteDB } from '@hierarchidb/route-store';
 import type { RouteEntity } from '@hierarchidb/route-store';

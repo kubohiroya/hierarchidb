@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { RouteVectorTileRecord } from './RouteDB.js';
 import type { RouteFeature } from '@hierarchidb/route-api';
 

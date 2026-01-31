@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { authFetch } from '@hierarchidb/download';
 import type { LocationPointProperties } from '@hierarchidb/location-store';
 import type { LocationMutationAPI } from '@hierarchidb/location-api';

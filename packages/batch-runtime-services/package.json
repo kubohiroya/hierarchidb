@@ -27,7 +27,7 @@
     "@hierarchidb/batch": "workspace:*"
   },
   "peerDependencies": {
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/download": "workspace:*",
     "@hierarchidb/auth-recovery": "workspace:*"
@@ -38,7 +38,7 @@
     "react-transition-group": "^4.4.5",
     "typescript": "workspace:^5.9.3",
     "@hierarchidb/batch": "workspace:*",
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/download": "workspace:*",
     "@hierarchidb/auth-recovery": "workspace:*"

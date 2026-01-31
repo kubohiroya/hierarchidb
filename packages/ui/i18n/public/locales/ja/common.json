@@ -348,6 +348,11 @@
       "preview": "プレビュー",
       "build": "ビルド"
     },
+    "errors": {
+      "trashFailed": "ゴミ箱への移動に失敗しました。",
+      "trashReferencedByRoutes": "ルートが参照しているため、このロケーションはゴミ箱に移動できません。",
+      "trashReferencedByLocations": "ロケーションが参照しているため、このシェイプはゴミ箱に移動できません。"
+    },
     "infoPanel": {
       "noTimestamp": "—",
       "emptyDescription": "説明がありません。",

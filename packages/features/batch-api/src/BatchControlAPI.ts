@@ -127,8 +127,8 @@ export interface UseBatchProgressOptions {
   autoSubscribe?: boolean;
 }
 
-export interface IBatchSessionManager {
-  prepareSession?<TConfig, TData>(nodeId: NodeId, config: TConfig, data: TData): Promise<void>;
+export interface IBatchSessionManager<TConfig = unknown, TData = unknown> {
+  prepareSession?(nodeId: NodeId, config: TConfig, data: TData): Promise<void>;
   startBatchSession(nodeId: NodeId): Promise<BatchSessionStatus>;
   pauseBatchSession(nodeId: NodeId): Promise<void>;
   resumeBatchSession(nodeId: NodeId): Promise<void>;

@@ -1,5 +1,6 @@
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
-import { toNodeType } from '@hierarchidb/common-types';
+import { toNodeType } from '@hierarchidb/core-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CoreDB } from '../../CoreDB.js';
 import { TreeQueryService } from '../../TreeQueryService.js';

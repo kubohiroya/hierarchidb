@@ -20,7 +20,7 @@
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "peerDependencies": {
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/download": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@noble/hashes": "^1.4.0",
@@ -28,7 +28,7 @@
   },
   "devDependencies": {
     "typescript": "workspace:^5.9.3",
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/download": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@noble/hashes": "^1.4.0",

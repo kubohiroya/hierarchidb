@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 
 export type VectorTileMetadataLoader<Row> = (nodeId: NodeId) => Promise<Row[]>;
 

@@ -1,4 +1,5 @@
-import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, NodeType } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import { SingletonMixin } from '@hierarchidb/util';
 import type { RuntimePluginDefinition } from '../types/RuntimePluginDefinition.js';
 import { workerError } from '../utils/workerLogger.js';

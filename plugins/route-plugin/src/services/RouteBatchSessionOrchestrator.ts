@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { RouteBatchManager, type RouteBatchRouteInput, type RouteBatchManagerDeps } from './RouteBatchManager.js';
 import type { RouteBatchSession } from './RouteBatchSession.js';
 import type { RouteBatchConfig } from '@hierarchidb/route-store';

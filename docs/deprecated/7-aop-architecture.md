@@ -41,9 +41,9 @@ export interface BaseSubEntity {
 }
 
 // ワーキングコピーの基本インターフェース
-export interface BaseWorkingCopy extends BaseEntity {
-  workingCopyId: UUID;
-  workingCopyOf: TreeNodeId;
+export interface BaseDraft extends BaseEntity {
+  draftId: UUID;
+  draftOf: TreeNodeId;
   copiedAt: Timestamp;
   isDirty: boolean;
 }
@@ -133,7 +133,7 @@ export interface TypedClientAPIExtensions<T extends Record<string, ClientAPIMeth
 export interface PluginDefinition<
   TEntity extends BaseEntity = BaseEntity,
   TSubEntity extends BaseSubEntity = BaseSubEntity,
-  TWorkingCopy extends BaseWorkingCopy = BaseWorkingCopy
+  TDraft extends BaseDraft = BaseDraft
 > {
   // 基本情報
   readonly nodeType: TreeNodeType;
@@ -151,7 +151,7 @@ export interface PluginDefinition<
   };
   
   // エンティティハンドラー
-  readonly entityHandler: EntityHandler<TEntity, TSubEntity, TWorkingCopy>;
+  readonly entityHandler: EntityHandler<TEntity, TSubEntity, TDraft>;
   
   // ライフサイクルフック
   readonly lifecycle: NodeLifecycleHooks<TEntity>;
@@ -188,7 +188,7 @@ export interface PluginDefinition<
 export interface EntityHandler<
   TEntity extends BaseEntity = BaseEntity,
   TSubEntity extends BaseSubEntity = BaseSubEntity,
-  TWorkingCopy extends BaseWorkingCopy = BaseWorkingCopy
+  TDraft extends BaseDraft = BaseDraft
 > {
   // エンティティ操作
   createEntity(nodeId: TreeNodeId, data?: Partial<TEntity>): Promise<TEntity>;
@@ -212,12 +212,12 @@ export interface EntityHandler<
   ): Promise<void>;
   
   // ワーキングコピー操作
-  createWorkingCopy(nodeId: TreeNodeId): Promise<TWorkingCopy>;
-  commitWorkingCopy(
+  createDraft(nodeId: TreeNodeId): Promise<TDraft>;
+  commitDraft(
     nodeId: TreeNodeId, 
-    workingCopy: TWorkingCopy
+    draft: TDraft
   ): Promise<void>;
-  discardWorkingCopy(nodeId: TreeNodeId): Promise<void>;
+  discardDraft(nodeId: TreeNodeId): Promise<void>;
   
   // 特殊操作
   duplicate?(nodeId: TreeNodeId, newNodeId: TreeNodeId): Promise<void>;
@@ -245,7 +245,7 @@ export interface EntityBackup<TEntity extends BaseEntity = BaseEntity> {
 
 export interface NodeLifecycleHooks<
   TEntity extends BaseEntity = BaseEntity,
-  TWorkingCopy extends BaseWorkingCopy = BaseWorkingCopy
+  TDraft extends BaseDraft = BaseDraft
 > {
   // ノードライフサイクル
   beforeCreate?: (
@@ -289,15 +289,15 @@ export interface NodeLifecycleHooks<
   ) => Promise<void>;
   
   // ワーキングコピー
-  onWorkingCopyCreated?: (
+  onDraftCreated?: (
     nodeId: TreeNodeId, 
-    workingCopy: TWorkingCopy
+    draft: TDraft
   ) => Promise<void>;
-  onWorkingCopyCommitted?: (
+  onDraftCommitted?: (
     nodeId: TreeNodeId, 
-    workingCopy: TWorkingCopy
+    draft: TDraft
   ) => Promise<void>;
-  onWorkingCopyDiscarded?: (
+  onDraftDiscarded?: (
     nodeId: TreeNodeId
   ) => Promise<void>;
 }
@@ -324,8 +324,8 @@ export interface PluginRouterAction {
 export interface UnifiedPluginDefinition<
   TEntity extends BaseEntity = BaseEntity,
   TSubEntity extends BaseSubEntity = BaseSubEntity,
-  TWorkingCopy extends BaseWorkingCopy = BaseWorkingCopy
-> extends PluginDefinition<TEntity, TSubEntity, TWorkingCopy> {
+  TDraft extends BaseDraft = BaseDraft
+> extends PluginDefinition<TEntity, TSubEntity, TDraft> {
   // React Routerルーティング統合
   readonly routing: {
     actions: Record<string, PluginRouterAction>;
@@ -359,8 +359,8 @@ export class NodeTypeRegistry {
   }
   
   // 統合プラグイン登録（PluginDefinition + Routing）
-  registerPlugin<TEntity extends BaseEntity, TSubEntity extends BaseSubEntity, TWorkingCopy extends BaseWorkingCopy>(
-    definition: UnifiedPluginDefinition<TEntity, TSubEntity, TWorkingCopy>
+  registerPlugin<TEntity extends BaseEntity, TSubEntity extends BaseSubEntity, TDraft extends BaseDraft>(
+    definition: UnifiedPluginDefinition<TEntity, TSubEntity, TDraft>
   ): void {
     const { nodeType, entityHandler, routing } = definition;
     
@@ -391,11 +391,11 @@ export class NodeTypeRegistry {
   }
 
   // 従来のNodeTypeDefinition登録（後方互換性）
-  register<TEntity extends BaseEntity, TSubEntity extends BaseSubEntity, TWorkingCopy extends BaseWorkingCopy>(
-    definition: PluginDefinition<TEntity, TSubEntity, TWorkingCopy>
+  register<TEntity extends BaseEntity, TSubEntity extends BaseSubEntity, TDraft extends BaseDraft>(
+    definition: PluginDefinition<TEntity, TSubEntity, TDraft>
   ): void {
     // UnifiedPluginDefinitionに変換して登録
-    const unifiedDefinition: UnifiedPluginDefinition<TEntity, TSubEntity, TWorkingCopy> = {
+    const unifiedDefinition: UnifiedPluginDefinition<TEntity, TSubEntity, TDraft> = {
       ...definition,
       routing: {
         actions: {}, // ルーティングアクションなし
@@ -454,16 +454,16 @@ export class NodeTypeRegistry {
     return definition?.meta?.dependencies ?? [];
   }
   
-  private registerDatabaseSchema<TEntity extends BaseEntity, TSubEntity extends BaseSubEntity, TWorkingCopy extends BaseWorkingCopy>(
-    definition: PluginDefinition<TEntity, TSubEntity, TWorkingCopy>
+  private registerDatabaseSchema<TEntity extends BaseEntity, TSubEntity extends BaseSubEntity, TDraft extends BaseDraft>(
+    definition: PluginDefinition<TEntity, TSubEntity, TDraft>
   ): void {
     // Dexieスキーマの動的登録
     const { database } = definition;
     // 実装詳細...
   }
   
-  private registerAPIExtensions<TEntity extends BaseEntity, TSubEntity extends BaseSubEntity, TWorkingCopy extends BaseWorkingCopy>(
-    definition: PluginDefinition<TEntity, TSubEntity, TWorkingCopy>
+  private registerAPIExtensions<TEntity extends BaseEntity, TSubEntity extends BaseSubEntity, TDraft extends BaseDraft>(
+    definition: PluginDefinition<TEntity, TSubEntity, TDraft>
   ): void {
     // API拡張の登録
     const { api } = definition;
@@ -486,12 +486,12 @@ export class NodeLifecycleManager {
   
   async executeLifecycleHook<
     TEntity extends BaseEntity = BaseEntity,
-    TWorkingCopy extends BaseWorkingCopy = BaseWorkingCopy,
-    THookName extends keyof NodeLifecycleHooks<TEntity, TWorkingCopy> = keyof NodeLifecycleHooks<TEntity, TWorkingCopy>
+    TDraft extends BaseDraft = BaseDraft,
+    THookName extends keyof NodeLifecycleHooks<TEntity, TDraft> = keyof NodeLifecycleHooks<TEntity, TDraft>
   >(
     hookName: THookName,
     nodeType: TreeNodeType,
-    ...args: Parameters<NonNullable<NodeLifecycleHooks<TEntity, TWorkingCopy>[THookName]>>
+    ...args: Parameters<NonNullable<NodeLifecycleHooks<TEntity, TDraft>[THookName]>>
   ): Promise<void> {
     const definition = this.registry.getDefinition(nodeType);
     if (!definition?.lifecycle) return;
@@ -615,7 +615,7 @@ export interface Plugin<TContext extends PluginContext = PluginContext> {
   readonly description?: string;
   
   // ノードタイプ定義（型安全）
-  readonly nodeTypes?: Array<PluginDefinition<BaseEntity, BaseSubEntity, BaseWorkingCopy>>;
+  readonly nodeTypes?: Array<PluginDefinition<BaseEntity, BaseSubEntity, BaseDraft>>;
   
   // 初期化（コンテキストの型を指定可能）
   initialize?(context: TContext): Promise<void>;
@@ -744,7 +744,7 @@ export interface BaseMapEntity extends BaseEntity {
   version: number;
 }
 
-export interface BaseMapWorkingCopy extends BaseWorkingCopy {
+export interface BaseMapDraft extends BaseDraft {
   nodeId: TreeNodeId;
   name: string;
   description?: string;
@@ -753,8 +753,8 @@ export interface BaseMapWorkingCopy extends BaseWorkingCopy {
   zoom: number;
   bearing: number;
   pitch: number;
-  workingCopyId: UUID;
-  workingCopyOf: TreeNodeId;
+  draftId: UUID;
+  draftOf: TreeNodeId;
   copiedAt: Timestamp;
   isDirty: boolean;
   createdAt: Timestamp;
@@ -771,7 +771,7 @@ export interface BaseMapWorkingCopy extends BaseWorkingCopy {
 export class BaseMapHandler implements EntityHandler<
   BaseMapEntity,
   never,
-  BaseMapWorkingCopy
+  BaseMapDraft
 > {
   private db: BaseMapDatabase;
   
@@ -820,42 +820,42 @@ export class BaseMapHandler implements EntityHandler<
     await this.db.entities.delete(nodeId);
   }
   
-  async createWorkingCopy(nodeId: TreeNodeId): Promise<BaseMapWorkingCopy> {
+  async createDraft(nodeId: TreeNodeId): Promise<BaseMapDraft> {
     const entity = await this.getEntity(nodeId);
     if (!entity) {
       throw new Error(`Entity not found: ${nodeId}`);
     }
     
-    const workingCopy: BaseMapWorkingCopy = {
+    const draft: BaseMapDraft = {
       ...entity,
-      workingCopyId: generateUUID(),
-      workingCopyOf: nodeId,
+      draftId: generateUUID(),
+      draftOf: nodeId,
       copiedAt: Date.now(),
       isDirty: false
     };
     
-    await this.db.workingCopies.add(workingCopy);
-    return workingCopy;
+    await this.db.workingCopies.add(draft);
+    return draft;
   }
   
-  async commitWorkingCopy(
+  async commitDraft(
     nodeId: TreeNodeId,
-    workingCopy: BaseMapWorkingCopy
+    draft: BaseMapDraft
   ): Promise<void> {
-    const { workingCopyId, workingCopyOf, copiedAt, isDirty, ...entityData } = workingCopy;
+    const { draftId, draftOf, copiedAt, isDirty, ...entityData } = draft;
     
     await this.updateEntity(nodeId, entityData);
-    await this.db.workingCopies.delete(workingCopy.workingCopyId);
+    await this.db.workingCopies.delete(draft.draftId);
   }
   
-  async discardWorkingCopy(nodeId: TreeNodeId): Promise<void> {
-    const workingCopy = await this.db.workingCopies
-      .where('workingCopyOf')
+  async discardDraft(nodeId: TreeNodeId): Promise<void> {
+    const draft = await this.db.workingCopies
+      .where('draftOf')
       .equals(nodeId)
       .first();
     
-    if (workingCopy) {
-      await this.db.workingCopies.delete(workingCopy.workingCopyId);
+    if (draft) {
+      await this.db.workingCopies.delete(draft.draftId);
     }
   }
   
@@ -883,7 +883,7 @@ export class BaseMapHandler implements EntityHandler<
 export const BaseMapNodeDefinition: PluginDefinition<
   BaseMapEntity,
   never,
-  BaseMapWorkingCopy
+  BaseMapDraft
 > = {
   nodeType: 'basemap' as TreeNodeType,
   name: 'BaseMap',
@@ -895,7 +895,7 @@ export const BaseMapNodeDefinition: PluginDefinition<
     entityStore: 'basemaps',
     schema: {
       basemaps: '&nodeId, name, mapStyle, updatedAt',
-      workingCopies: '&workingCopyId, workingCopyOf, copiedAt'
+      workingCopies: '&draftId, draftOf, copiedAt'
     },
     version: 1
   },
@@ -1082,8 +1082,8 @@ export class WorkerAPIRegistry {
 ```typescript
 // packages/worker/src/services/ExtendedTreeMutationService.ts
 
-interface CommitWorkingCopyPayload {
-  workingCopyId: UUID;
+interface CommitDraftPayload {
+  draftId: UUID;
   nodeType?: TreeNodeType;
   onNameConflict?: 'error' | 'auto-rename';
 }
@@ -1098,13 +1098,13 @@ export class ExtendedTreeMutationService extends TreeMutationServiceImpl {
     this.apiRegistry = new WorkerAPIRegistry();
   }
   
-  async commitWorkingCopyForCreate(
-    cmd: CommandEnvelope<'commitWorkingCopyForCreate', CommitWorkingCopyPayload>
+  async commitDraftForCreate(
+    cmd: CommandEnvelope<'commitDraftForCreate', CommitDraftPayload>
   ): Promise<{ seq: Seq; nodeId: TreeNodeId }> {
-    const { workingCopyId, nodeType } = cmd.payload;
+    const { draftId, nodeType } = cmd.payload;
     
     // ノードタイプ取得
-    const node = await this.getWorkingCopyNode(workingCopyId);
+    const node = await this.getDraftNode(draftId);
     const actualNodeType = nodeType || node.treeNodeType;
     
     // ライフサイクル処理を含む作成

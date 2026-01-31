@@ -3,7 +3,7 @@
  * Provides _obsolate_common implementation for batch session managers
  */
 
-import type { NodeId} from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { AbstractBatchSession } from '@hierarchidb/batch';
 import {
   type BatchProgressCallback,

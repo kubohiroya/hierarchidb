@@ -1,5 +1,5 @@
 import type { WorkerAPI } from '@hierarchidb/worker-api';
-import type { NodeId, TreeId } from '@hierarchidb/common-types';
+import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import type { Remote } from 'comlink';
 import { proxy as comlinkProxy } from 'comlink';
 import { useEffect, useRef, useState } from 'react';

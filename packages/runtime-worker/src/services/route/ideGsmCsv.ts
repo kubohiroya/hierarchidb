@@ -1,5 +1,5 @@
-import type { NodeId } from '@hierarchidb/common-types';
-import type { LocationQueryAPI } from '@hierarchidb/location-api';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { LocationFeatureId, LocationQueryAPI } from '@hierarchidb/location-api';
 import type {
   IdeGsmLocationRecord,
   IdeGsmRouteError,
@@ -21,7 +21,8 @@ export async function buildIdeGsmLocationIndex(
       if (!data?.name) continue;
       if (index.has(data.name)) continue;
       index.set(data.name, {
-        id: item.id as NodeId,
+        locationFeatureId: item.id as LocationFeatureId,
+        locationNodeId: nodeId,
         name: data.name,
         latitude: data.latitude,
         longitude: data.longitude,

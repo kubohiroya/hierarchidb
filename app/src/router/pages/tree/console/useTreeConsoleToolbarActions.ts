@@ -2,11 +2,9 @@ import type { ImportData } from '@hierarchidb/import-export-api';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type {
   BuildContinuationPolicy,
-  NodeId,
-  NodeType,
-  TreeId,
-  TreeNode,
-} from '@hierarchidb/common-types';
+} from '@hierarchidb/batch-api';
+import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import type {
   TreeConsoleToolbar,

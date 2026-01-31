@@ -9,7 +9,7 @@ MapViewService.ts     Facade
 ports.ts              MapAdapterPort contract
 adapters/             MapLibreDeckAdapter (maplibre-gl + deck.gl)
 TileSourceProvider.ts Tile source abstraction
-index.ts              Public exports + FeatureDefinition
+index.ts              Public exports
 ```
 
 ## Key exports
@@ -17,7 +17,6 @@ index.ts              Public exports + FeatureDefinition
 - Port: `MapAdapterPort`.
 - Adapter: `MapLibreDeckAdapter` (constructors passed or lazily imported); env overrides `MAP_ADAPTER_MAPLIBRE_PKG` / `MAP_ADAPTER_DECK_PKG`.
 - `TileSourceProvider` for template/function tile sources.
-- `FeatureDefinition.manifest` (`provides: ['map-adapter']`).
 
 ## Consumers / usage
 - `@hierarchidb/ui-map` uses this to render layers; map data is supplied via `@hierarchidb/map-source`.

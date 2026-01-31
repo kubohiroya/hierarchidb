@@ -7,7 +7,7 @@
 
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 import type { TreeSubscriptionAPI } from '@hierarchidb/tree-api';
-import type { SubscriptionId, UndoStateEvent } from '@hierarchidb/common-types';
+import type { SubscriptionId, UndoStateEvent } from '@hierarchidb/tree-api';
 import { proxy, type Remote } from 'comlink';
 import type { Dispatch, SetStateAction } from 'react';
 import { useCallback, useEffect, useRef } from 'react';

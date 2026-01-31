@@ -14,7 +14,7 @@ import {
 } from '@hierarchidb/ui-datasource';
 import type { LocationDataSource, LocationEntity, LocationType } from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
-import type { Timestamp } from '@hierarchidb/common-types';
+import type { Timestamp } from '@hierarchidb/core-types';
 
 const ORDERED_DATA_SOURCES: LocationDataSource[] = [
   'ide-gsm',

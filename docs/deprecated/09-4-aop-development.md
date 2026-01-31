@@ -61,8 +61,8 @@ interface BasemapEntity extends BaseEntity {
 interface UnifiedPluginDefinition<
   TEntity extends BaseEntity = BaseEntity,
   TSubEntity extends BaseSubEntity = BaseSubEntity,
-  TWorkingCopy extends BaseWorkingCopy = BaseWorkingCopy
-> extends PluginDefinition<TEntity, TSubEntity, TWorkingCopy> {
+  TDraft extends BaseDraft = BaseDraft
+> extends PluginDefinition<TEntity, TSubEntity, TDraft> {
   // データベース管理（必須）
   readonly database: {
     entityStore: string;           // メインエンティティテーブル名
@@ -73,7 +73,7 @@ interface UnifiedPluginDefinition<
   };
   
   // エンティティハンドラー（必須）
-  readonly entityHandler: EntityHandler<TEntity, TSubEntity, TWorkingCopy>;
+  readonly entityHandler: EntityHandler<TEntity, TSubEntity, TDraft>;
   
   // React Routerルーティング統合
   readonly routing: {
@@ -110,7 +110,7 @@ import type { UnifiedPluginDefinition } from '@hierarchidb/core';
 export const pluginRegistry = NodeTypeRegistry.getInstance();
 
 // 統合プラグイン登録例（basemap）
-const basemapPlugin: UnifiedPluginDefinition<BasemapEntity, never, BasemapWorkingCopy> = {
+const basemapPlugin: UnifiedPluginDefinition<BasemapEntity, never, BasemapDraft> = {
   // NodeTypeDefinition部分（文書7基準）
   nodeType: 'basemap' as TreeNodeType,
   name: 'BaseMap',
@@ -123,7 +123,7 @@ const basemapPlugin: UnifiedPluginDefinition<BasemapEntity, never, BasemapWorkin
     entityStore: 'basemaps',
     schema: {
       basemaps: '&nodeId, name, mapStyle, center, zoom, updatedAt',
-      basemap_workingcopies: '&workingCopyId, workingCopyOf, copiedAt',
+      basemap_workingcopies: '&draftId, draftOf, copiedAt',
     },
     version: 1,
     indexes: ['mapStyle', 'updatedAt']
@@ -349,7 +349,7 @@ export { editAction, previewAction } from './actions';
 
 // Worker API拡張エクスポート
 export { BasemapWorkerExtensions } from './worker/extensions';
-export type { BasemapEntity, BasemapWorkingCopy } from './types';
+export type { BasemapEntity, BasemapDraft } from './types';
 
 // packages/plugin-loader/basemap/src/containers/Edit.tsx
 import type { BasemapEntity } from '../types';
@@ -1119,12 +1119,12 @@ export class NodeLifecycleManager {
   
   async executeLifecycleHook<
     TEntity extends BaseEntity = BaseEntity,
-    TWorkingCopy extends BaseWorkingCopy = BaseWorkingCopy,
-    THookName extends keyof NodeLifecycleHooks<TEntity, TWorkingCopy> = keyof NodeLifecycleHooks<TEntity, TWorkingCopy>
+    TDraft extends BaseDraft = BaseDraft,
+    THookName extends keyof NodeLifecycleHooks<TEntity, TDraft> = keyof NodeLifecycleHooks<TEntity, TDraft>
   >(
     hookName: THookName,
     nodeType: TreeNodeType,
-    ...args: Parameters<NonNullable<NodeLifecycleHooks<TEntity, TWorkingCopy>[THookName]>>
+    ...args: Parameters<NonNullable<NodeLifecycleHooks<TEntity, TDraft>[THookName]>>
   ): Promise<void> {
     const definition = this.registry.getDefinition(nodeType);
     if (!definition?.lifecycle) return;
@@ -1248,7 +1248,7 @@ export interface Plugin<TContext extends PluginContext = PluginContext> {
   readonly description?: string;
   
   // ノードタイプ定義（型安全）
-  readonly nodeTypes?: Array<PluginDefinition<BaseEntity, BaseSubEntity, BaseWorkingCopy>>;
+  readonly nodeTypes?: Array<PluginDefinition<BaseEntity, BaseSubEntity, BaseDraft>>;
   
   // 初期化（コンテキストの型を指定可能）
   initialize?(context: TContext): Promise<void>;
@@ -1422,8 +1422,8 @@ export class WorkerAPIRegistry {
 ```typescript
 // packages/worker/src/services/ExtendedTreeMutationService.ts
 
-interface CommitWorkingCopyPayload {
-  workingCopyId: UUID;
+interface CommitDraftPayload {
+  draftId: UUID;
   nodeType?: TreeNodeType;
   onNameConflict?: 'error' | 'auto-rename';
 }
@@ -1438,13 +1438,13 @@ export class ExtendedTreeMutationService extends TreeMutationServiceImpl {
     this.apiRegistry = new WorkerAPIRegistry();
   }
   
-  async commitWorkingCopyForCreate(
-    cmd: CommandEnvelope<'commitWorkingCopyForCreate', CommitWorkingCopyPayload>
+  async commitDraftForCreate(
+    cmd: CommandEnvelope<'commitDraftForCreate', CommitDraftPayload>
   ): Promise<{ seq: Seq; nodeId: TreeNodeId }> {
-    const { workingCopyId, nodeType } = cmd.payload;
+    const { draftId, nodeType } = cmd.payload;
     
     // ノードタイプ取得
-    const node = await this.getWorkingCopyNode(workingCopyId);
+    const node = await this.getDraftNode(draftId);
     const actualNodeType = nodeType || node.treeNodeType;
     
     // ライフサイクル処理を含む作成

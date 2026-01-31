@@ -58,8 +58,8 @@
 - 有効なparentTreeNodeIdが存在
 
 **When（実行条件）**: 🟢
-- createWorkingCopyForCreateを実行
-- commitWorkingCopyForCreateを実行
+- createDraftForCreateを実行
+- commitDraftForCreateを実行
 
 **Then（期待結果）**: 🟢
 - beforeCreateフックがcommit前に実行される

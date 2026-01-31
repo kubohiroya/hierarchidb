@@ -13,7 +13,7 @@ helpers/authFetch.ts         Auth recovery fetch helper
 helpers/resolveNetworkUrl.ts CORS proxy + local proxy resolution (exports only get/set for proxy)
 authNotifications.ts         Auth-required notifications
 postJson.ts                  Auth-aware JSON POST helper
-index.ts                     Public exports + FeatureDefinition manifest
+index.ts                     Public exports
 ```
 
 ## Key exports
@@ -23,7 +23,6 @@ index.ts                     Public exports + FeatureDefinition manifest
 - Auth notifications: `registerPluginAuthNotifier`, `notifyPluginAuthRequired`.
 - Auth helpers: `authFetch`, `createAuthAwareNetworkPort`.
 - CORS proxy helpers: `setCorsProxyBaseURL`, `getCorsProxyBaseURL`.
-- Capability: `FeatureDefinition.manifest` (`provides: ['download','net.port']`); `FeatureDefinition.init` optionally provides default `net.port`.
 
 ## Consumers / usage
 - Worker runtime and plugins (shape/route/location/etc.) compose `DownloadService` with Fetch + storage ports for persistence.

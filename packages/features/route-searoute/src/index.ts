@@ -8,12 +8,3 @@ export class SeaRouteService {
     return undefined;
   }
 }
-
-export class FeatureDefinition {
-  static readonly manifest = { name: '@hierarchidb/route-searoute', provides: ['route-searoute'] };
-
-  static init(): void {
-    // no-op
-  }
-}
-

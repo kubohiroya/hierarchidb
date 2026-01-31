@@ -1,4 +1,4 @@
-import type { TreeNode } from '@hierarchidb/common-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import type { MapLibreLayer, MapLibreStyle } from '@hierarchidb/ui-map';
 
 export type TreeNodeLike = Pick<TreeNode, 'id' | 'parentId' | 'nodeType' | 'metadata'>;

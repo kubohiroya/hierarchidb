@@ -1,5 +1,6 @@
 import type { ImportNodesParams, ImportResult } from '@hierarchidb/import-export-api';
-import type { CommandEnvelope, ImportNodesPayload, Timestamp } from '@hierarchidb/common-types';
+import type { Timestamp } from '@hierarchidb/core-types';
+import type { CommandEnvelope, ImportNodesPayload } from '@hierarchidb/tree-api';
 import type { ImportExportDBPort } from '@hierarchidb/import-export';
 import { ImportExportService as BaseImportExportService } from '@hierarchidb/import-export';
 import { SingletonMixin } from '@hierarchidb/util';

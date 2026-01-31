@@ -1,5 +1,5 @@
 import { metadataLoader } from '../metadata/MetadataLoader.js';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { DataSourceName } from '../../common/types/index.js';
 import { defaultDataSourceFactory } from './DataSourceStrategyFactory.js';
 import { resolveStrategyIdFromDataSource } from './strategyIds.js';

@@ -3,7 +3,7 @@
  * @description Service for resolving Location plugin references
  */
 
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 
 /**
  * Location data from Location plugin

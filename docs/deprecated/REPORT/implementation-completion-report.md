@@ -162,36 +162,36 @@ export class StylerEntityHandler extends PeerEntityHandler<StylerEntity> {
 
 #### 5. エンティティワーキングコピー基本機能
 **新規作成ファイル**:
-- `packages/core/src/types/entiry-working-copy-lifecycle-plugin-definition.ts` - エンティティ用ワーキングコピー型定義
-- `packages/worker/src/services/EntityWorkingCopyManager.ts` - エンティティワーキングコピー管理
+- `packages/core/src/types/entiry-draft-lifecycle-plugin-definition.ts` - エンティティ用ワーキングコピー型定義
+- `packages/worker/src/services/EntityDraftManager.ts` - エンティティワーキングコピー管理
 
 **主要機能**:
 ```typescript
 // エンティティ別のワーキングコピー
-export type PeerEntityWorkingCopy<T extends PeerEntity> = T & EntityWorkingCopyProperties;
-export type GroupEntityWorkingCopy<T extends GroupEntity> = T & EntityWorkingCopyProperties;
-export type RelationalEntityWorkingCopy<T extends RelationalEntity> = T & EntityWorkingCopyProperties & {
+export type PeerEntityDraft<T extends PeerEntity> = T & EntityDraftProperties;
+export type GroupEntityDraft<T extends GroupEntity> = T & EntityDraftProperties;
+export type RelationalEntityDraft<T extends RelationalEntity> = T & EntityDraftProperties & {
   originalReferencingNodeIds: NodeId[]; // 元の参照
   workingReferencingNodeIds: NodeId[];  // 作業中の参照
 };
 
 // セッション管理
-export interface EntityWorkingCopySession {
+export interface EntityDraftSession {
   sessionId: string;
   nodeId: NodeId;
-  workingCopyIds: EntityId[];
+  draftIds: EntityId[];
   autoSaveEnabled: boolean;
 }
 
 // 統計情報
-export interface EntityWorkingCopyStats {
+export interface EntityDraftStats {
   totalWorkingCopies: number;
   workingCopiesByType: { peer: number; group: number; relational: number };
   dirtyWorkingCopies: number;
 }
 ```
 
-**EntityWorkingCopyManager の機能**:
+**EntityDraftManager の機能**:
 - エンティティ分類別のワーキングコピー作成
 - セッション管理（複数エンティティの一括編集）
 - 自動保存・自動クリーンアップ

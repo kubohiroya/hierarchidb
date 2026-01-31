@@ -131,7 +131,7 @@ const treeId = generateId() as TreeId;  // Required cast
 
 ```typescript
 // Entity handler hierarchy
-BaseEntityHandler<TEntity, TWorkingCopy>
+BaseEntityHandler<TEntity, TDraft>
   ├── MetadataEntityHandler  // For entities with metadata/tags
   ├── HierarchicalEntityHandler  // For console structures
   └── (Custom handlers)
@@ -141,7 +141,7 @@ import { MetadataEntityHandler } from '@hierarchidb/common-plugin-base';
 
 export class LocationEntityHandler extends MetadataEntityHandler<
   LocationEntity,
-  LocationWorkingCopy,
+  LocationDraft,
   CreateLocationData,
   LocationFilterCriteria
 > {
@@ -162,7 +162,7 @@ export class LocationEntityHandler extends MetadataEntityHandler<
 - Uses branded types for all IDs
 
 ### EphemeralDB (Temporary)
-- WorkingCopyEntity for edit sessions
+- DraftEntity for edit sessions
 - UI state and view configurations
 - Cleared on browser close
 

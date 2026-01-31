@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import type { TreeNode } from '@hierarchidb/common-types';
-import { toNodeId } from '@hierarchidb/common-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
+import { toNodeId } from '@hierarchidb/core-types';
 
 const ROOT_PARENT_ID = toNodeId('__root__');
 import { canDropNode } from '../utils/index.js';

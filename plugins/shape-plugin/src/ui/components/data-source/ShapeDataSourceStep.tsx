@@ -6,7 +6,7 @@ import { DataSourceSelectionStep } from '@hierarchidb/ui-datasource';
 import { useShapeDataSourceStep } from './useShapeDataSourceStep.js';
 import { useTranslation } from '../../i18n.js';
 import { clearShapeDataSourceCache } from '../../utils/clearDataSourceCache.js';
-import { toNodeId } from '@hierarchidb/common-types';
+import { toNodeId } from '@hierarchidb/core-types';
 import type { ShapeDialogStepProps } from '../ShapeDialogStepProps.tsx';
 
 /**

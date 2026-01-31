@@ -42,12 +42,12 @@ The workspace relies on `pnpm`. `app/` contains the main UI, with shared documen
   - Worker 起動処理（`app/src/worker-runtime/worker.ts`）は `WorkerInitializationReporter` → `pluginWorkerLoaders` → `@hierarchidb/runtime-worker` の `WorkerModuleLoader` → `wirePluginsFromModules` の順でモジュールを読み込み、deny-list / fallback / legacy defs もここで処理する。結果として `getAllRuntimeExports()` から lifecycle/handler を抽出し、プラグイン定義へ差し戻す。
 
 - **UI レイヤ（`@hierarchidb/plugin-ui-host` / `plugin-ui-sdk`）**
-  - `packages/plugin-ui-host/docs/ARCHITECTURE.md` の MultiStep ダイアログが UI のコア。Jotai Atom (`workingCopyAtom`, `dialogStateAtom`, `validationResultsAtom`, `stepCapabilitiesAtom`) と `useWorkerSync` が 100ms デバウンスの Comlink RPC をラップし、`StepCapabilities`（`canNavigateTo`/`canStartBatch` 等）をプラグインごとに合成する。
+  - `packages/plugin-ui-host/docs/ARCHITECTURE.md` の MultiStep ダイアログが UI のコア。Jotai Atom (`draftAtom`, `dialogStateAtom`, `validationResultsAtom`, `stepCapabilitiesAtom`) と `useWorkerSync` が 100ms デバウンスの Comlink RPC をラップし、`StepCapabilities`（`canNavigateTo`/`canStartBatch` 等）をプラグインごとに合成する。
   - ワーキングコピーは CoreDB の TreeNode `draftData`/`draftMetadata` を正とする。UI では URL Query でステップ位置を保持し、Jotai でリアクティブに管理する。`plugins/README.md` の 3 層アーキ図にある通り、UI ↔ Worker 間は Comlink + MessageChannel の RPC のみを使用し、プレビューや Progress 表示は `WorkerBridge` を経由する。
 
 - **Worker レイヤ（`@hierarchidb/runtime-worker` / `plugin-service-sdk`）**
   - `packages/plugin-service-sdk/src/worker/bridge.ts` の `getWorkerBridge()` は `window.__HDB_WORKER_CLIENT_REF__`（`WorkerProvider` が注入）の Remote を捕捉し、`startBatchSession`/`getBatchSessionStatus`/`pause`/`resume`/`cancel`/`subscribeBatchProgress` を UI に提供する。`plugins/location-plugin/src/common/hooks/useLocationProgress.ts` 等の hook はこの Bridge を介して進捗イベントを購読する。
-  - `@hierarchidb/runtime-worker` は IoC コンテナ (`WorkerDiTokens`) で Plugin loader を DI し、`PluginWorkerModuleLoader` が Dexie ストア登録や `register<Plugin>WorkerStores` 呼び出しを担う。`@hierarchidb/ui-worker-client` の `wirePluginsFromModules` が EntityHandler/Lifecycle hook を登録し、Undo/Redo・Import/Export・WorkingCopy API を 1 か所で公開する。
+  - `@hierarchidb/runtime-worker` は IoC コンテナ (`WorkerDiTokens`) で Plugin loader を DI し、`PluginWorkerModuleLoader` が Dexie ストア登録や `register<Plugin>WorkerStores` 呼び出しを担う。`@hierarchidb/ui-worker-client` の `wirePluginsFromModules` が EntityHandler/Lifecycle hook を登録し、Undo/Redo・Import/Export・Draft API を 1 か所で公開する。
 
 ## Turbo ベースの開発・ビルド・型チェックフロー
 
@@ -86,9 +86,9 @@ Use `TASKS.md` as the single source of truth: move cards to Doing, note branches
 ## Agent Workflow Notes
 Work in small, reviewable increments. Document sandbox blockers and attempted alternatives in `TASKS.md`, and never modify code without updating the Kanban and 運用ログ. Prioritise reversibility—capture config edits, migrations, and generated assets so a flag toggle or revert restores prior behaviour quickly.
 
-### Dialog hosting (TreeConsole / WorkingCopy)
+### Dialog hosting (TreeConsole / Draft)
 - Creation flow: `create:<nodeType>` → working copy node作成 → `/t/<treeId>/<parentId>/<wcNodeId>/<nodeType>/create` へ遷移し、plugin registry の UI エントリ経由でダイアログをロードする。
-- Host責務は app 側（HeadlessPluginDialog + `useTreeNodeUpdater` で `draftMetadata`/`draftData` を扱う）。Plugin側は UI エントリ公開とステップ/評価ロジックの提供に集中する（詳細: `docs/workingcopy-dialog-hosting.md`）。
+- Host責務は app 側（HeadlessPluginDialog + `useTreeNodeUpdater` で `draftMetadata`/`draftData` を扱う）。Plugin側は UI エントリ公開とステップ/評価ロジックの提供に集中する（詳細: `docs/draft-dialog-hosting.md`）。
 
 ### 作業プロセスの自己ルール
 - **DoD 提案義務**: ユーザーからタスク指示を受けるたびに、着手前に自分から DoD（受け入れ基準）を箇条書きで提案し、ユーザーの了承を得てから作業を開始する。承認前にタスクを進めない。

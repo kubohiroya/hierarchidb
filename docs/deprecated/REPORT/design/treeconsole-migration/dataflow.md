@@ -98,14 +98,14 @@ flowchart LR
     C --> C1[subscribeToSubtree]
     C --> C2[moveNodes]
     C --> C3[deleteNodes]
-    C --> C4[createWorkingCopy]
-    C --> C5[commitWorkingCopy]
+    C --> C4[createDraft]
+    C --> C5[commitDraft]
     
     C1 --> D[WorkerAPI.observeSubtree]
     C2 --> E[WorkerAPI.moveNodes]
     C3 --> F[WorkerAPI.moveToTrash]
-    C4 --> G[WorkerAPI.createWorkingCopy]
-    C5 --> H[WorkerAPI.commitWorkingCopy]
+    C4 --> G[WorkerAPI.createDraft]
+    C5 --> H[WorkerAPI.commitDraft]
 ```
 
 ## 🟢 5. Drag & Drop フロー
@@ -147,8 +147,8 @@ sequenceDiagram
 flowchart TD
     A[ノード編集開始] --> B{編集タイプ}
     
-    B -->|新規作成| C[createWorkingCopyForCreate]
-    B -->|既存編集| D[createWorkingCopy]
+    B -->|新規作成| C[createDraftForCreate]
+    B -->|既存編集| D[createDraft]
     
     C --> E[フォーム表示]
     D --> E
@@ -156,10 +156,10 @@ flowchart TD
     E --> F[ユーザー編集]
     F --> G{保存・破棄}
     
-    G -->|保存| H[commitWorkingCopy]
-    G -->|破棄| I[discardWorkingCopy]
+    G -->|保存| H[commitDraft]
+    G -->|破棄| I[discardDraft]
     
-    H --> J[WorkingCopyTypes → CoreDB]
+    H --> J[DraftTypes → CoreDB]
     I --> K[Working Copy削除]
     
     J --> L[TreeChangeEvent発行]

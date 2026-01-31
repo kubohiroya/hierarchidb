@@ -33,13 +33,13 @@ export interface BaseMapEntity extends BaseEntity {
 }
 ```
 
-### 2.2 BaseMapWorkingCopy
+### 2.2 BaseMapDraft
 
 ```typescript
-export interface BaseMapWorkingCopy extends BaseWorkingCopy {
+export interface BaseMapDraft extends BaseDraft {
   nodeId: TreeNodeId;
-  workingCopyId: string;
-  workingCopyOf: TreeNodeId;
+  draftId: string;
+  draftOf: TreeNodeId;
   
   // エンティティと同じフィールド
   name: string;
@@ -73,8 +73,8 @@ sequenceDiagram
     participant PDB as BaseMapDB
 
     UI->>WA: createBaseMap(data)
-    WA->>EDB: createWorkingCopy('basemap', data)
-    EDB-->>WA: workingCopyId
+    WA->>EDB: createDraft('basemap', data)
+    EDB-->>WA: draftId
     
     WA->>LM: triggerBeforeCreate(data)
     Note over LM: 座標・ズーム検証
@@ -87,10 +87,10 @@ sequenceDiagram
         WA->>LM: triggerAfterCreate(entity)
         Note over LM: スタイルリソース初期化
         
-        WA->>EDB: commitWorkingCopy(workingCopyId)
+        WA->>EDB: commitDraft(draftId)
         WA-->>UI: Success(entity)
     else 検証失敗
-        WA->>EDB: discardWorkingCopy(workingCopyId)
+        WA->>EDB: discardDraft(draftId)
         WA-->>UI: Error(message)
     end
 ```
@@ -98,7 +98,7 @@ sequenceDiagram
 ### 3.2 フック実装
 
 ```typescript
-const baseMapLifecycle: NodeLifecycleHooks<BaseMapEntity, BaseMapWorkingCopy> = {
+const baseMapLifecycle: NodeLifecycleHooks<BaseMapEntity, BaseMapDraft> = {
   // 作成前検証
   beforeCreate: async (_parentId: TreeNodeId, nodeData: Partial<BaseMapEntity>) => {
     // 座標検証

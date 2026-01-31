@@ -49,7 +49,7 @@ export const basemapPlugin: PluginConfig = {
       {
         name: 'basemap_workingcopies',
         storage: 'ephemeral',
-        schema: '&workingCopyId, workingCopyOf, copiedAt',
+        schema: '&draftId, draftOf, copiedAt',
         ttl: 86400000, // 24時間
       },
       {
@@ -94,7 +94,7 @@ export const basemapPlugin: PluginConfig = {
 ### BaseMapDefinition.ts でのライフサイクルフック
 
 ```typescript
-const baseMapLifecycle: NodeLifecycleHooks<BaseMapEntity, BaseMapWorkingCopy> = {
+const baseMapLifecycle: NodeLifecycleHooks<BaseMapEntity, BaseMapDraft> = {
   // ノード作成前の検証
   beforeCreate: async (parentId: NodeId, nodeData: Partial<BaseMapEntity>) => {
     // 座標検証
@@ -213,17 +213,17 @@ const baseMapLifecycle: NodeLifecycleHooks<BaseMapEntity, BaseMapWorkingCopy> = 
   },
 
   // 作業コピーコミット前の検証
-  beforeCommit: async (nodeId: NodeId, workingCopy: BaseMapWorkingCopy) => {
+  beforeCommit: async (nodeId: NodeId, draft: BaseMapDraft) => {
     // 作業コピーの整合性チェック
-    if (!workingCopy.isDirty) {
+    if (!draft.isDirty) {
       console.warn('Committing working copy with no changes');
     }
 
     // データ整合性検証
-    await validateWorkingCopyIntegrity(workingCopy);
+    await validateDraftIntegrity(draft);
 
     // バージョン競合チェック
-    await checkVersionConflicts(nodeId, workingCopy);
+    await checkVersionConflicts(nodeId, draft);
   },
 
   // 作業コピーコミット後の処理
@@ -391,7 +391,7 @@ async function clearRelatedCaches(nodeId: NodeId): Promise<void> {
 
   // 関連する作業コピーも更新
   await db.basemap_workingcopies
-    .where('workingCopyOf')
+    .where('draftOf')
     .equals(nodeId)
     .modify({ isDirty: true });
 }
@@ -450,46 +450,46 @@ async function cleanupExternalResources(nodeId: NodeId): Promise<void> {
 #### 作業コピー作成
 
 ```typescript
-async function createWorkingCopyWithLifecycle(nodeId: NodeId): Promise<BaseMapWorkingCopy> {
-  // ライフサイクルフック: beforeWorkingCopyCreate
-  await executeHook('beforeWorkingCopyCreate', nodeId);
+async function createDraftWithLifecycle(nodeId: NodeId): Promise<BaseMapDraft> {
+  // ライフサイクルフック: beforeDraftCreate
+  await executeHook('beforeDraftCreate', nodeId);
 
   // 作業コピー作成
   const handler = new BaseMapEntityHandler();
-  const workingCopy = await handler.createWorkingCopy(nodeId);
+  const draft = await handler.createDraft(nodeId);
 
-  // ライフサイクルフック: afterWorkingCopyCreate
-  await executeHook('afterWorkingCopyCreate', nodeId, workingCopy);
+  // ライフサイクルフック: afterDraftCreate
+  await executeHook('afterDraftCreate', nodeId, draft);
 
-  return workingCopy;
+  return draft;
 }
 ```
 
 #### 作業コピーコミット
 
 ```typescript
-async function validateWorkingCopyIntegrity(workingCopy: BaseMapWorkingCopy): Promise<void> {
+async function validateDraftIntegrity(draft: BaseMapDraft): Promise<void> {
   // データ整合性チェック
-  if (!workingCopy.nodeId || !workingCopy.workingCopyOf) {
+  if (!draft.nodeId || !draft.draftOf) {
     throw new Error('Working copy missing required references');
   }
 
   // 地図設定の検証
-  await validateMapConfiguration(workingCopy);
+  await validateMapConfiguration(draft);
 
   // スタイル設定の検証
-  if (workingCopy.styleConfig) {
-    await validateMapLibreStyle(workingCopy.styleConfig);
+  if (draft.styleConfig) {
+    await validateMapLibreStyle(draft.styleConfig);
   }
 }
 
-async function checkVersionConflicts(nodeId: NodeId, workingCopy: BaseMapWorkingCopy): Promise<void> {
+async function checkVersionConflicts(nodeId: NodeId, draft: BaseMapDraft): Promise<void> {
   const currentEntity = await getBaseMapEntity(nodeId);
   if (!currentEntity) {
     throw new Error('Entity not found for working copy commit');
   }
 
-  if (currentEntity.version > workingCopy.originalVersion) {
+  if (currentEntity.version > draft.originalVersion) {
     throw new Error(
       'Version conflict: entity has been modified by another process. Please refresh and try again.'
     );

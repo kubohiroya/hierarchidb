@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import type { DialogDisplayMode, DialogPosition, DialogSize } from '@hierarchidb/common-types';
+import type { DialogDisplayMode, DialogPosition, DialogSize } from '@hierarchidb/tree-api';
 
 export interface DialogViewState {
   size: DialogSize;

@@ -13,7 +13,7 @@ import {
 } from './DataSourceStrategy.js';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { ShapeEntity } from '../../common/types/index.js';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import {
   buildRawDataDataSourceCacheKey,
   buildShapeCacheKey,

@@ -9,7 +9,7 @@ import { useTheme } from '@mui/material/styles';
 import { LocationOn } from '@mui/icons-material';
 import { Anchor, FlightTakeoff, ForkRight, LocationCity, Public, Subway } from '@mui/icons-material';
 import type { SvgIconComponent } from '@mui/icons-material';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type {
   MapToggleSelection,
   MapViewState,

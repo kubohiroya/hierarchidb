@@ -4,7 +4,8 @@ import { render, screen, cleanup } from '@testing-library/react';
 import { rainbowColors } from '@hierarchidb/ui-theme';
 import type { ColumnBuilderParams } from '../components/internal/createTreeTableColumns.js';
 import { createTreeTableColumns } from '../components/internal/createTreeTableColumns.js';
-import type { NodeId, TreeNode, NodeType, Timestamp } from '@hierarchidb/common-types';
+import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 
 const mockGetPluginIconColor = vi.hoisted(() => vi.fn(() => undefined));
 const mockIsFolderNodeType = vi.hoisted(() => vi.fn((nodeType: string) => nodeType === 'folder'));

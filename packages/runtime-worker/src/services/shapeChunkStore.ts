@@ -4,7 +4,7 @@ import {
   type ChunkStoreSerializer,
   DexieChunkStore,
 } from '@hierarchidb/chunk-store';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 
 const bufferSerializer: ChunkStoreSerializer<ArrayBuffer> = (value) => value;
 const bufferDeserializer: ChunkStoreDeserializer<ArrayBuffer> = (value) => value;

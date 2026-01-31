@@ -13,8 +13,8 @@ export interface DraftProperties {
   isDraft?: boolean; // エンティティ作成が未完了のノード
 }
 
-export interface WorkingCopyProperties {
-  workingCopyOf?: TreeNodeId; // 編集対象の元ノードID（新規作成時はundefined）
+export interface DraftProperties {
+  draftOf?: TreeNodeId; // 編集対象の元ノードID（新規作成時はundefined）
   copiedAt?: Timestamp; // Working Copy作成時刻
 }
 
@@ -23,7 +23,7 @@ export type TreeNode = TreeNodeBase &
   Partial<ReferenceProperties> &
   Partial<TrashItemProperties> &
   Partial<DraftProperties> &
-  Partial<WorkingCopyProperties>;
+  Partial<DraftProperties>;
 ```
 
 ## 2. API設計の階層化
@@ -33,8 +33,8 @@ export type TreeNode = TreeNodeBase &
 ```typescript
 // Undo/Redoが必要な操作 → Command Pattern
 interface UndoableCommands {
-  commitWorkingCopy: CommandEnvelope<'commitWorkingCopy', CommitWorkingCopyPayload>;
-  commitWorkingCopyForCreate: CommandEnvelope<'commitWorkingCopyForCreate', CommitWorkingCopyForCreatePayload>;
+  commitDraft: CommandEnvelope<'commitDraft', CommitDraftPayload>;
+  commitDraftForCreate: CommandEnvelope<'commitDraftForCreate', CommitDraftForCreatePayload>;
   moveNodes: CommandEnvelope<'moveNodes', MoveNodesPayload>;
   duplicateNodes: CommandEnvelope<'duplicateNodes', DuplicateNodesPayload>;
   deleteNodes: CommandEnvelope<'deleteNodes', DeleteNodesPayload>;
@@ -43,9 +43,9 @@ interface UndoableCommands {
 // Undo/Redoが不要な操作 → Direct API
 interface DirectOperations {
   // Working Copy操作（commitを除く）
-  createNewDraftWorkingCopy(parentId: TreeNodeId, nodeType: TreeNodeType, baseName: string): Promise<TreeNodeId>;
-  createWorkingCopy(treeNode: TreeNode): Promise<TreeNodeId>;
-  discardWorkingCopy(workingCopyId: TreeNodeId): Promise<void>;
+  createNewDraftDraft(parentId: TreeNodeId, nodeType: TreeNodeType, baseName: string): Promise<TreeNodeId>;
+  createDraft(treeNode: TreeNode): Promise<TreeNodeId>;
+  discardDraft(draftId: TreeNodeId): Promise<void>;
   
   // 読み取り操作
   getPathToRoot(nodeId: TreeNodeId): Promise<TreeNode[]>;
@@ -76,7 +76,7 @@ export interface TreeNodeWithChildren extends TreeNode, DescendantProperties {
 ```typescript
 // packages/core/src/types/console-lifecycle-plugin-definition.ts
 import type { Timestamped } from './timestamped';
-import type { WorkingCopyProperties } from './workingCopy';
+import type { DraftProperties } from './draft';
 import type { DraftProperties } from './draft';
 import type { TrashItemProperties } from './trash';
 import type { DescendantProperties } from './descendant';
@@ -94,7 +94,7 @@ export interface TreeNodeBase extends Timestamped {
 // Mixin構成
 export interface TreeNodeEntity extends
   TreeNodeBase,
-  Partial<WorkingCopyProperties>,
+  Partial<DraftProperties>,
   Partial<DraftProperties>,
   Partial<TrashItemProperties>,
   Partial<DescendantProperties> {}
@@ -121,8 +121,8 @@ export function createNewName(siblingNames: string[], baseName: string): string 
   return newName;
 }
 
-// packages/worker/src/operations/workingCopyOperations.ts
-export async function createNewDraftWorkingCopy(
+// packages/worker/src/operations/draftOperations.ts
+export async function createNewDraftDraft(
   db: EphemeralDB,
   coreDB: CoreDB,
   parentTreeNodeId: TreeNodeId,
@@ -332,7 +332,7 @@ expose(WorkerFacade);
 ## 8. 実装優先順位とタイムライン
 
 ### Phase 1: 基礎改善（1週間）
-- [x] Draft/WorkingCopyProperties分離
+- [x] Draft/DraftProperties分離
 - [x] TreeNode Mixin構成
 - [x] Descendant情報拡張
 - [ ] 名前重複処理実装

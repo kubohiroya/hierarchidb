@@ -13,7 +13,7 @@ HierarchiDBのプラグインダイアログシステムは、プラグインが
 │                    UI Layer (React)                  │
 │  ┌─────────────────────────────────────────────┐    │
 │  │            Jotai Atoms (State)              │    │
-│  │  • workingCopyAtom                          │    │
+│  │  • draftAtom                          │    │
 │  │  • dialogStateAtom                          │    │
 │  │  • validationResultsAtom                    │    │
 │  │  • stepCapabilitiesAtom                     │    │
@@ -120,7 +120,7 @@ export interface StepCapabilities {
 ### Jotai Atoms
 
 #### 基本Atoms
-- `workingCopyAtom`: 現在のワーキングコピーデータ
+- `draftAtom`: 現在のワーキングコピーデータ
 - `dialogStateAtom`: ダイアログのナビゲーション状態
 - `validationResultsAtom`: 各ステップのバリデーション結果
 - `stepCapabilitiesAtom`: 各ステップの能力評価結果
@@ -160,7 +160,7 @@ UI層とWorker層の通信を管理：
 onChange(newData) 
   ↓
 // 2. Jotai atom更新
-updateWorkingCopyAtom(newData)
+updateDraftAtom(newData)
   ↓
 // 3. useWorkerSync内で検知
 queueValidation({ stepId, data })

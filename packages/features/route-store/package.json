@@ -19,14 +19,14 @@
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "peerDependencies": {
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/route-api": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/vectortile-store": "workspace:*",
     "dexie": "^4.2.0"
   },
   "devDependencies": {
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/route-api": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/vectortile-store": "workspace:*",

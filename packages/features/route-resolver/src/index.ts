@@ -21,12 +21,3 @@ export class ResolverService {
     return undefined;
   }
 }
-
-export class FeatureDefinition {
-  static readonly manifest = { name: '@hierarchidb/route-resolver', provides: ['route-resolver'] };
-
-  static init(): void {
-    // no-op
-  }
-}
-

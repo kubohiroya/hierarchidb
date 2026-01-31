@@ -1,21 +1,21 @@
-vk:adr id=adr-workingcopy-trash-unification status=accepted
+vk:adr id=adr-draft-trash-unification status=accepted
 
-# ADR: WorkingCopy/Trash の holder 方式への統一（エンコード/Tx/ポリシーCの確定）
+# ADR: Draft/Trash の holder 方式への統一（エンコード/Tx/ポリシーCの確定）
 
 ## 状態
 accepted
 
 ## 文脈（Context）
-- WorkingCopy は `workingCopyRoot` 直下に holder+child のペアで表現する実装方針が先行し、Trash はノード自身に `originalParentId`/`originalName` を保持して `trashRoot` 直下へ物理移動する方式が混在していた。
-- UI/運用上の要請（名前衝突の単純化、復元/コミットの共通化、未保存作業の保護）から、WorkingCopy と Trash の内部表現と探索パターンを統一する必要がある。
+- Draft は `draftRoot` 直下に holder+child のペアで表現する実装方針が先行し、Trash はノード自身に `originalParentId`/`originalName` を保持して `trashRoot` 直下へ物理移動する方式が混在していた。
+- UI/運用上の要請（名前衝突の単純化、復元/コミットの共通化、未保存作業の保護）から、Draft と Trash の内部表現と探索パターンを統一する必要がある。
 - 既存の方針（単一WC共有、ポリシーC）と、holder.name の一意エンコード規約（v1）を前提に、Tx一貫性（同一Txで holder+child+エンティティの整合を保つ）を明文化する。
 
 ## 決定（Decision）
-- 表現統一: WorkingCopy/Trash ともに「特別ルート直下の holder ノード + その直下に child 1件（実体）」のペアで表現する。
-  - holder は `workingCopyRoot` または `trashRoot` の直下にのみ存在。
+- 表現統一: Draft/Trash ともに「特別ルート直下の holder ノード + その直下に child 1件（実体）」のペアで表現する。
+  - holder は `draftRoot` または `trashRoot` の直下にのみ存在。
   - child は常に1件（0件/2件以上は不正）。
 - エンコード（v1）: holder.name は TAB 区切り（U+0009）で親IDと対象IDを一意に表す。
-  - WorkingCopy: `${targetParentNodeId}\t${targetNodeId}`（編集WC=既存 target、ドラフトWC=新規採番 target）。
+  - Draft: `${targetParentNodeId}\t${targetNodeId}`（編集WC=既存 target、ドラフトWC=新規採番 target）。
   - Trash: `${originalParentNodeId}\t${trashedNodeId}`（復元先の決定に使用）。
   - v1 では NodeId に TAB を含めない。v2 以降で `v2:<b64(parent)>:<b64(target)>` 等へ拡張可能。
 - 単一WC共有: 原本（または予定 targetId）あたり WC は常に1つ。get-or-create で既存を返す。
@@ -32,7 +32,7 @@ accepted
 - 分散Tx: ブラウザ内 CoreDB と Worker 内 EphemeralDB を跨ぐ分散トランザクションは行わない。コミットは「CoreDB 内単一Tx」を原則とし、UI通知は別チャネルで行う。
 
 ## 影響範囲（Consequences / Impact）
-- runtime-worker: holder エンコード/デコードのユーティリティを単一実装へ集約し、WorkingCopy/Trash の CRUD/探索/ガード判定を同パターンに統一。`[parentId+name]` インデックスの利用を徹底。
+- runtime-worker: holder エンコード/デコードのユーティリティを単一実装へ集約し、Draft/Trash の CRUD/探索/ガード判定を同パターンに統一。`[parentId+name]` インデックスの利用を徹底。
 - ui（runtime-ui, app）: 
   - ブロック理由（ポリシーC）の明示、編集再開導線（配下WCの一覧/ジャンプ）を提供。
   - ドラフト/復元の自動リネーム結果（`autoRenameTo`）を受け取り表示。
@@ -43,7 +43,7 @@ accepted
 
 ## 移行方針（Migration Plan）
 1) ユーティリティ集約: `holder-encoding` を共通化（encode/decode/validate）。全呼び出しを置換。
-2) WorkingCopy 側アライン: 既存実装をドキュメント準拠に確認（get-or-create/単一性/楽観ロック）。
+2) Draft 側アライン: 既存実装をドキュメント準拠に確認（get-or-create/単一性/楽観ロック）。
 3) Trash 統合（behind-the-flag）: holder 方式で作成/復元を実装し、旧フィールドの書き込みを停止。読みは両対応。
 4) ガード適用: ポリシーC を CommandProcessor レイヤで一貫適用（移動/削除の前判定）。
 5) UI 更新: ブロック時の理由表示/編集再開/名前自動変更の表示・取り消し導線。
@@ -51,9 +51,9 @@ accepted
 
 ## 関連/参照（References）
 - `docs/holder-pair-pattern.md`
-- `docs/working-copy-holder-encoding.md`
-- `docs/working-copy-ops-pseudocode.md`
-- `docs/adr/adr-single-working-copy-per-target.md`
+- `docs/draft-holder-encoding.md`
+- `docs/draft-ops-pseudocode.md`
+- `docs/adr/adr-single-draft-per-target.md`
 - `docs/adr/adr-block-move-delete-when-wc-in-subtree.md`
 
 ## 受け入れ基準（Acceptance Criteria）

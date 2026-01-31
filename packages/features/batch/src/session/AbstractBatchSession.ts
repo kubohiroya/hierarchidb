@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { BaseBatchConfig, BatchProgress, BatchProgressEvent, BatchProgressPayload, ProgressPhase } from '@hierarchidb/batch-api';
 import type { BatchSessionState, ResourceUsage } from '@hierarchidb/batch-api';
 

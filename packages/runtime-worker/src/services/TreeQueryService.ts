@@ -1,4 +1,4 @@
-import type { ListChildrenOptions, TreeQueryAPI } from '@hierarchidb/tree-api';
+import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import type {
   CommandResult,
   CopyNodesPayload,
@@ -6,11 +6,11 @@ import type {
   GetAncestorsPayload,
   GetChildrenPayload,
   GetDescendantsPayload,
-  NodeId,
+  ListChildrenOptions,
   Tree,
-  TreeId,
   TreeNode,
-} from '@hierarchidb/common-types';
+  TreeQueryAPI,
+} from '@hierarchidb/tree-api';
 import { SingletonMixin } from '@hierarchidb/util';
 import type { CoreDB } from './CoreDB.js';
 

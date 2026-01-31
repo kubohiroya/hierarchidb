@@ -109,13 +109,13 @@ class WorkerAPIImpl implements WorkerAPI {
     const { nodeId, updates } = request;
     
     // Create working copy
-    const workingCopy = await this.workingCopyHandler.create(nodeId);
+    const draft = await this.draftHandler.create(nodeId);
     
     // Apply updates
-    await this.workingCopyHandler.update(workingCopy.id, updates);
+    await this.draftHandler.update(draft.id, updates);
     
     // Commit changes
-    return await this.workingCopyHandler.commit(workingCopy.id);
+    return await this.draftHandler.commit(draft.id);
   }
 }
 
@@ -298,7 +298,7 @@ export class FeatureFlags {
     const [major, minor] = this.clientVersion.split('.').map(Number);
     
     // Enable features based on version
-    this.flags.set('workingCopyPattern', major >= 2);
+    this.flags.set('draftPattern', major >= 2);
     this.flags.set('brandedTypes', major >= 2);
     this.flags.set('subscriptions', major >= 2 && minor >= 1);
     this.flags.set('bulkOperations', major >= 2 && minor >= 2);

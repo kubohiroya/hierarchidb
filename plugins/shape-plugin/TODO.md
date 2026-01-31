@@ -6,7 +6,7 @@
 - [ ] Confirm worker/API contracts (shape worker public API, unified batch manager) and note discrepancies.
 
 ## Phase 1: Multi-step Dialog Reconstruction
-- [ ] Reinstate `useWorkingCopy` integration with proper mapper to/from worker payloads.
+- [ ] Reinstate `useDraft` integration with proper mapper to/from worker payloads.
 - [ ] Rewire `ShapeDialog` to use headless multi-step dialog with Steps 2-5 components.
 - [ ] Reconnect step validation and navigation logic (using summary utilities) to enable user flow.
 - [ ] Restore `steps-provider.tsx` to register steps via `PluginStepRegistry`.

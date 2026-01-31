@@ -1,4 +1,5 @@
-import { NodeAction, type NodeId, type TreeId } from '@hierarchidb/common-types';
+import { NodeAction } from '@hierarchidb/tree-api';
+import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import { loadTreeConsoleSettings, TREE_CONSOLE_SETTINGS_STORAGE_KEY } from '@hierarchidb/util';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';

@@ -1,4 +1,5 @@
-import type { BuildContinuationPolicy, NodeId } from '@hierarchidb/common-types';
+import type { BuildContinuationPolicy } from '@hierarchidb/batch-api';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { DataSourceName, FetchTaskPayload, SelectedArrayByCountries } from '../../common/types/index.js';
 import type { ShapeBuildConfig } from '../../common/types/index.js';
 import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';

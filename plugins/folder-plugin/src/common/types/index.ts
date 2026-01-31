@@ -1,10 +1,10 @@
 // Import tag-related types
-export type { TagId } from '@hierarchidb/common-types';
+export type { TagId } from '@hierarchidb/core-types';
 
-export type { TagSuggestion } from '@hierarchidb/common-types';
+export type { TagSuggestion } from '@hierarchidb/tag-api';
 
 // Additional display types for UI
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 
 export interface FolderDisplayData {
   id: NodeId;

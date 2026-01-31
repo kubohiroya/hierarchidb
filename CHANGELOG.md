@@ -22,7 +22,7 @@ All notable changes to this project will be documented in this file.
 - runtime-worker: Headless (Node + fake-indexeddb) integration tests for CP routing, Policy C, WC flows
 - runtime-worker: Trash migration tool (legacy <-> holder) with metrics
 - runtime-worker: Lightweight command metrics and docs（2025-09-19 時点で常時有効化）
-- runtime-worker: WorkingCopyService commit now delegates to CP (V2) when enabled
+- runtime-worker: DraftService commit now delegates to CP (V2) when enabled
 - runtime-worker: NodeLifecycleManager reference counting port (registry injection) and headless unit test
 
 ## 2025-09-02

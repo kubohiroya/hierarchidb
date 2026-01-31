@@ -16,7 +16,7 @@ import {
   useTheme,
 } from '@mui/material';
 import ConstructionIcon from '@mui/icons-material/Construction';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { BuildStepPanel, useBuildStageFilter } from '@hierarchidb/components';
 import { useAtomValue, useSetAtom } from 'jotai';
 import type { TaskWithMetadata } from './TaskListVirtualized.tsx';

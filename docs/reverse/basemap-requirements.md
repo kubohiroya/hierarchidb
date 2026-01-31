@@ -119,8 +119,8 @@ BaseMap機能は、**地図ビジュアライゼーションのための基盤�
 システムは安全な編集のためのWorking Copyパターンを提供しなければならない。
 
 **実装根拠**:
-- `BaseMapWorkingCopy` インターフェース
-- `createWorkingCopy()` / `commitWorkingCopy()` / `discardWorkingCopy()` メソッド
+- `BaseMapDraft` インターフェース
+- `createDraft()` / `commitDraft()` / `discardDraft()` メソッド
 - `isDirty` フラグによる変更検知
 
 ### 条件付き要件

@@ -18,8 +18,7 @@ The runtime worker and app should not depend on plugin-owned type definitions fo
 
 ## Surprises & Discoveries
 
-- Observation: Runtime-worker typecheck currently fails due to `@hierarchidb/tag` missing `FeatureDefinition` export, so validation is blocked until that is resolved.
-  Evidence: User-reported `TS2305: Module '"@hierarchidb/tag"' has no exported member 'FeatureDefinition'.`
+- Update: FeatureDefinition/FeatureRegistry were retired, so the earlier `@hierarchidb/tag` export mismatch is no longer applicable.
 
 ## Decision Log
 
@@ -77,4 +76,4 @@ The new store packages expose only type exports and constants. No runtime code s
 
 Plan update note: Initial plan created to extract location/route store types into feature packages and update imports to remove host-to-plugin type coupling.
 Plan update note: Marked completed progress items for package creation and import updates, and recorded the route-store dependency decision.
-Plan update note: Documented the known `@hierarchidb/tag` FeatureDefinition typecheck blocker in Surprises & Discoveries.
+Plan update note: Noted that FeatureDefinition/FeatureRegistry were retired and the prior tag export blocker no longer applies.

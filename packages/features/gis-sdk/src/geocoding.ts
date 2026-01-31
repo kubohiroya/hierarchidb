@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeQueryAPI } from '@hierarchidb/shape-api';
 import type { Feature, MultiPolygon, Polygon } from 'geojson';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';

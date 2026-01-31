@@ -15,12 +15,3 @@ export function isTabularXlsxInstalled(): boolean {
 export function markTabularXlsxInstalled(): void {
   installed = true;
 }
-
-export class FeatureDefinition {
-  static readonly manifest = { name: '@hierarchidb/tabular-source-xlsx', depends: ['@hierarchidb/tabular-source'], provides: ['tabular-source'] };
-
-  static init(): void {
-    installTabularXlsx();
-    markTabularXlsxInstalled();
-  }
-}

@@ -1,4 +1,4 @@
-import type { NodeId, Timestamp } from '@hierarchidb/common-types'; //A
+import type { NodeId, Timestamp } from '@hierarchidb/core-types'; //A
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CoreDB } from '../../../services/CoreDB.js';
 

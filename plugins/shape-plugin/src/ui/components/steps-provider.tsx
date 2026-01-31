@@ -6,7 +6,7 @@ import type {
   SelectedArrayByCountries,
 } from '../../common/types/ShapeEntity.ts';
 import { summarizeCheckboxState, validateBatchConfig } from '../../common/types/index.js';
-import { type NodeId, toNodeId } from '@hierarchidb/common-types';
+import { type NodeId, toNodeId } from '@hierarchidb/core-types';
 import { ShapeDataSourceStep } from './data-source/ShapeDataSourceStep.tsx';
 import { ShapePreviewStep } from './preview/ShapePreviewStep.tsx';
 import { useTranslation as getTranslation } from '../../ui/i18n.js';

@@ -78,10 +78,10 @@ interface BaseEntity {
 }
 
 // 既存のプラグインシステム（エンティティ専用、変更なし）
-interface UnifiedPluginDefinition<TEntity, TSubEntity, TWorkingCopy> {
+interface UnifiedPluginDefinition<TEntity, TSubEntity, TDraft> {
   nodeType: TreeNodeType;
-  entityHandler: EntityHandler<TEntity, TSubEntity, TWorkingCopy>;
-  lifecycle: NodeLifecycleHooks<TEntity, TWorkingCopy>;
+  entityHandler: EntityHandler<TEntity, TSubEntity, TDraft>;
+  lifecycle: NodeLifecycleHooks<TEntity, TDraft>;
   // ... 既存の定義
 }
 ```
@@ -150,7 +150,7 @@ export interface UIPluginDefinition {
     readonly canDelete: boolean;
     readonly canHaveChildren: boolean;
     readonly canMove: boolean;
-    readonly supportsWorkingCopy: boolean;
+    readonly supportsDraft: boolean;
     readonly supportsVersioning: boolean;
     readonly supportsExport: boolean;
     readonly supportsBulkOperations: boolean;
@@ -502,7 +502,7 @@ export const FolderUIPlugin: UIPluginDefinition = {
     canDelete: true,
     canHaveChildren: true,
     canMove: true,
-    supportsWorkingCopy: false,
+    supportsDraft: false,
     supportsVersioning: false,
     supportsExport: false,
     supportsBulkOperations: true
@@ -719,7 +719,7 @@ export const BaseMapUIPlugin: UIPluginDefinition = {
     canDelete: true,
     canHaveChildren: false,
     canMove: true,
-    supportsWorkingCopy: true,
+    supportsDraft: true,
     supportsVersioning: true,
     supportsExport: true,
     supportsBulkOperations: false
@@ -950,7 +950,7 @@ export const ProjectUIPlugin: UIPluginDefinition = {
     canDelete: true,
     canHaveChildren: true,
     canMove: true,
-    supportsWorkingCopy: false,
+    supportsDraft: false,
     supportsVersioning: false,
     supportsExport: true,
     supportsBulkOperations: true

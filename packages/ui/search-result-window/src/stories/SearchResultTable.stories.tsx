@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Provider } from 'jotai';
 import { SearchResultTable } from '../components/SearchResultTable.js';
 import type { SearchResult } from '../types/index.js';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 
 const meta: Meta<typeof SearchResultTable> = {
   title: 'SearchResult/SearchResultTable',

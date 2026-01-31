@@ -50,7 +50,7 @@
     "typescript": "workspace:^5.9.3",
     "vite": "^5.0.11",
     "vitest": "^3.2.4",
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/auth-api": "workspace:*",
     "@hierarchidb/worker-api": "workspace:*",
@@ -59,7 +59,7 @@
   "peerDependencies": {
     "comlink": "^4.4.1",
     "@hierarchidb/memory": "workspace:*",
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/auth-api": "workspace:*",
     "@hierarchidb/worker-api": "workspace:*",

@@ -72,7 +72,7 @@
   - [ ] MapLibreGL互換性
 - **完了条件**:
   - [ ] BaseMapEntity定義完成
-  - [ ] WorkingCopy定義完成
+  - [ ] Draft定義完成
 
 #### Day 38 (TASK-0038): BaseMapプラグイン - EntityHandler実装
 
@@ -83,7 +83,7 @@
 - **依存タスク**: TASK-0037
 - **実装詳細**:
   ```typescript
-  export class BaseMapHandler implements EntityHandler<BaseMapEntity, never, BaseMapWorkingCopy> {
+  export class BaseMapHandler implements EntityHandler<BaseMapEntity, never, BaseMapDraft> {
     async createEntity(nodeId: TreeNodeId, data?: Partial<BaseMapEntity>): Promise<BaseMapEntity> {
       // 地図設定の初期化
       // デフォルト値設定

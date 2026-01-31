@@ -3,7 +3,7 @@
  * @description BaseMap entity types focused on persistent basemap configuration
  */
 
-import type { Timestamp } from '@hierarchidb/common-types';
+import type { Timestamp } from '@hierarchidb/core-types';
 import type { BaseSearchCriteria } from '@hierarchidb/plugin-base';
 
 /**
@@ -25,7 +25,7 @@ export interface MapViewport {
   pitch: number;
 }
 
-import type { TreeNodeData } from '@hierarchidb/common-types';
+import type { TreeNodeData } from '@hierarchidb/tree-api';
 
 /**
  * BaseMap entity persisted for each tree node

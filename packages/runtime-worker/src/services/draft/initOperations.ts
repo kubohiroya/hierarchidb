@@ -1,4 +1,5 @@
-import type { NodeId, NodeType, Timestamp, TreeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, NodeType, Timestamp, TreeId } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import type { CoreDB } from '../CoreDB.js';
 import { generateNodeId } from '../nodeId.js';
 import { createNewName, getChildNames } from './nameUtilities.js';

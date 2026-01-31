@@ -4,12 +4,11 @@
  */
 
 import type {
-  NodeId,
-  TreeId,
   TreeNode,
   TreeNodeMetadata,
   TreeNodeUpdater,
-} from '@hierarchidb/common-types';
+} from '@hierarchidb/tree-api';
+import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import { createTreeNodeUpdaterActions, useTreeNodeUpdater } from '@hierarchidb/plugin-ui-sdk';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';

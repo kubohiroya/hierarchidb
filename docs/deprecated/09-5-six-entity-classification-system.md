@@ -38,9 +38,9 @@ Ephemeral     │ Peer×Ephemeral │ Group×Ephemeral│ Relation×Ephemeral
 - **削除条件**: ユーザが明示的に削除、またはTreeNode削除時のカスケード削除
 
 #### EphemeralDB（一時的データ）
-- **保存対象**: WorkingCopyTypes、EphemeralなPeer/Group/Relationエンティティ
+- **保存対象**: DraftTypes、EphemeralなPeer/Group/Relationエンティティ
 - **ライフサイクル**: 編集ダイアログのセッション内でのみ生存
-- **削除条件**: ダイアログ閉鎖時、WorkingCopy破棄時、またはセッション終了時に自動削除
+- **削除条件**: ダイアログ閉鎖時、Draft破棄時、またはセッション終了時に自動削除
 
 ## 3. 各分類の詳細仕様
 
@@ -128,7 +128,7 @@ export interface EphemeralGroupEntity extends GroupEntity {
   autoDelete: {
     onSessionComplete: boolean;
     onDialogClose: boolean;
-    onWorkingCopyDiscard: boolean;
+    onDraftDiscard: boolean;
     maxIdleTime: number; // ms
   };
 }
@@ -283,7 +283,7 @@ export interface BatchBufferEntity extends EphemeralGroupEntity {
   autoDelete: {
     onSessionComplete: true;
     onDialogClose: true;
-    onWorkingCopyDiscard: true;
+    onDraftDiscard: true;
     maxIdleTime: 3600000; // 1時間
   };
 }
@@ -304,7 +304,7 @@ export interface FeatureIndexEntity extends EphemeralGroupEntity {
   autoDelete: {
     onSessionComplete: true;
     onDialogClose: true;
-    onWorkingCopyDiscard: true;
+    onDraftDiscard: true;
     maxIdleTime: 1800000; // 30分
   };
 }
@@ -327,7 +327,7 @@ export interface TileBufferEntity extends EphemeralGroupEntity {
   autoDelete: {
     onSessionComplete: true;
     onDialogClose: false; // vectortilesステージまで保持
-    onWorkingCopyDiscard: true;
+    onDraftDiscard: true;
     maxIdleTime: 900000; // 15分
   };
 }
@@ -369,7 +369,7 @@ export interface BatchSessionEntity extends EphemeralRelationalEntity {
 2. `autoDelete.onDialogClose = true`のEphemeralEntityを削除
 3. 未完了の中間データを自動クリーンアップ
 
-#### WorkingCopy破棄時
+#### Draft破棄時
 1. 関連する全EphemeralEntityを削除
 2. PersistentEntityは保持（コミット済みのため）
 
@@ -420,13 +420,13 @@ export class EphemeralCleanupService {
   }
   
   /**
-   * WorkingCopy破棄時の自動削除
+   * Draft破棄時の自動削除
    */
-  async onWorkingCopyDiscard(workingCopyId: UUID): Promise<void> {
-    const entities = await this.findEphemeralEntitiesByWorkingCopy(workingCopyId);
+  async onDraftDiscard(draftId: UUID): Promise<void> {
+    const entities = await this.findEphemeralEntitiesByDraft(draftId);
     
     for (const entity of entities) {
-      if (entity.autoDelete.onWorkingCopyDiscard) {
+      if (entity.autoDelete.onDraftDiscard) {
         await this.deleteEphemeralEntity(entity);
       }
     }
@@ -466,12 +466,12 @@ export class EphemeralCleanupService {
 export class SixClassificationLifecycleManager extends AutoLifecycleManager {
   constructor(
     registrationService: EntityRegistrationService,
-    workingCopyManager: WorkingCopyManager,
+    draftManager: DraftManager,
     dependencyResolver: DependencyResolver,
     databaseManager: DatabaseManager,
     ephemeralCleanupService: EphemeralCleanupService
   ) {
-    super(registrationService, workingCopyManager, dependencyResolver, databaseManager);
+    super(registrationService, draftManager, dependencyResolver, databaseManager);
     this.ephemeralCleanupService = ephemeralCleanupService;
   }
   

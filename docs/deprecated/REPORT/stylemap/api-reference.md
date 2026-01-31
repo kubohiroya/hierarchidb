@@ -27,7 +27,7 @@ interface StylerPluginDefinition extends PluginDefinition {
   displayName: 'Styler';
   database: DatabaseDefinition;
   entityHandler: StylerEntityHandler;
-  lifecycle: NodeLifecycleHooks<StylerEntity, StylerWorkingCopy>;
+  lifecycle: NodeLifecycleHooks<StylerEntity, StylerDraft>;
   ui: UIPluginDefinition;
 }
 

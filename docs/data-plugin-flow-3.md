@@ -20,7 +20,7 @@ sequenceDiagram
         WorkerCtl-->>Registry: WorkerClientRef
         Registry-->>UI: WorkerClientRef
     end
-    UI->>Worker: invoke API (e.g. getWorkingCopy, startBatchProcessing)
+    UI->>Worker: invoke API (e.g. getDraft, startBatchProcessing)
 ```
 
 **Key Notes**

@@ -179,14 +179,14 @@ classDiagram
         <<abstract>>
         #db: Dexie
         #tableName: string
-        #workingCopyTableName: string
+        #draftTableName: string
         +createEntity(nodeId, data?): Promise~Entity~
         +getEntity(nodeId): Promise~Entity~
         +updateEntity(nodeId, data): Promise~void~
         +deleteEntity(nodeId): Promise~void~
-        +createWorkingCopy(nodeId): Promise~WorkingCopyTypes~
-        +commitWorkingCopy(nodeId, wc): Promise~void~
-        +discardWorkingCopy(nodeId): Promise~void~
+        +createDraft(nodeId): Promise~DraftTypes~
+        +commitDraft(nodeId, wc): Promise~void~
+        +discardDraft(nodeId): Promise~void~
         #generateNodeId(): string
         #now(): number
     }
@@ -428,9 +428,9 @@ const ShapesLifecycle = {
     await context.entities.relation.removeAllReferences(node.id);
   },
 
-  onWorkingCopyDiscard: async (workingCopyId: string, context: Context) => {
+  onDraftDiscard: async (draftId: string, context: Context) => {
     // Ephemeralエンティティ自動削除
-    await context.entities.ephemeral.deleteByWorkingCopy(workingCopyId);
+    await context.entities.ephemeral.deleteByDraft(draftId);
   }
 };
 ```

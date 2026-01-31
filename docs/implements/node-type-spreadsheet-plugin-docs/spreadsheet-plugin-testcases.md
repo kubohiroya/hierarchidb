@@ -235,7 +235,7 @@
 - **テスト名**: 存在しないWorking CopyのコミットまたはDiscard要求
   - **エラーケースの概要**: 削除済みまたは無効なWorking Copyに対する操作
   - **エラー処理の重要性**: データ整合性エラーによるシステム不安定防止
-- **入力値**: 無効なWorking Copy ID `commitWorkingCopy('non-existent-id')`
+- **入力値**: 無効なWorking Copy ID `commitDraft('non-existent-id')`
   - **不正な理由**: 指定されたWorking Copyがシステム内に存在しない
   - **実際の発生シナリオ**: セッション期限切れ、同時編集での競合状態
 - **期待される結果**: `throw new Error('Working copy not found')`

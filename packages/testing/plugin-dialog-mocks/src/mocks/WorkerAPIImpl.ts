@@ -1,6 +1,5 @@
-import type { PluginDialogAPI, StepCapabilities } from '@hierarchidb/tree-api';
-import type { TreeNodeUpdater, TreeNodeUpdaterPayload } from '@hierarchidb/common-types';
-import type { NodeId, ValidationResult } from '@hierarchidb/common-types';
+import type { NodeId, ValidationResult } from '@hierarchidb/core-types';
+import type { PluginDialogAPI, StepCapabilities, TreeNodeUpdater, TreeNodeUpdaterPayload } from '@hierarchidb/tree-api';
 
 type DraftData = {
   name?: unknown;

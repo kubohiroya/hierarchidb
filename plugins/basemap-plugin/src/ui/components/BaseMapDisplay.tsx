@@ -4,7 +4,7 @@
  * Renders the configured basemap with all settings applied
  */
 
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 // CrossViewSnackbar/useCrossHighlightSync pull tabular-store (node:module) into client bundle; disable for browser safety
 // import { CrossViewSnackbar, useCrossHighlightSync } from '@hierarchidb/ui-grid';
 import {

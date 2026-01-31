@@ -95,7 +95,7 @@ interface CoreServices {
   queryService: TreeQueryService;
   mutationService: TreeMutationService;
   observableService: TreeObservableService;
-  workingCopyService: WorkingCopyEntityService;
+  draftService: DraftEntityService;
   pluginRegistry: PluginRegistryService;
 }
 ```
@@ -165,7 +165,7 @@ class CoreDB extends Dexie {
 
 // 一時データベース（EphemeralDB）
 class EphemeralDB extends Dexie {
-  workingCopies!: Table<WorkingCopyTypes, UUID>;
+  workingCopies!: Table<DraftTypes, UUID>;
   sessions!: Table<SessionData, UUID>;
   
   constructor() {

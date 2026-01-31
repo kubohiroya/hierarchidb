@@ -10,6 +10,7 @@ import type {
   DialogProgressState,
   DialogSize,
   DialogState,
+  TreeNodeData,
   DialogUIState,
   DialogWindowState,
 } from '@hierarchidb/tree-api';
@@ -89,8 +90,6 @@ export interface PluginDialogFooterOptions {
   primaryButtons?: PluginDialogFooterPrimaryButtonOptions;
   saveDraftLabel?: string;
 }
-
-import type { TreeNodeData } from '@hierarchidb/common-types';
 
 type PluginDefinedEntity = TreeNodeData;
 type LocalTreeNodeUpdaterState = TreeNodeUpdaterState<PluginDefinedEntity> & {

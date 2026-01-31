@@ -3,7 +3,7 @@
   */
 
 import type { ShapeEntity } from '../../common/types/ShapeEntity.js';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeStepValidationResult } from '../../common/types/index.js';
 import type { ChunkStoreMetadata } from '@hierarchidb/chunk-store';
 

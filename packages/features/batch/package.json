@@ -20,13 +20,13 @@
   },
   "peerDependencies": {
     "@hierarchidb/batch-api": "workspace:*",
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/download": "workspace:*",
     "react": ">=18.0.0"
   },
   "devDependencies": {
     "@hierarchidb/batch-api": "workspace:*",
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/download": "workspace:*",
     "@types/react": "^18.3.5",
     "react": ">=18.0.0",

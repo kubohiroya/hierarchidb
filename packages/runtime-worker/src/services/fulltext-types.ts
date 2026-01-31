@@ -1,4 +1,4 @@
-import type { NodeId, TreeId } from '@hierarchidb/common-types';
+import type { NodeId, TreeId } from '@hierarchidb/core-types';
 
 export interface FulltextNodeRecord {
   treeId: TreeId;

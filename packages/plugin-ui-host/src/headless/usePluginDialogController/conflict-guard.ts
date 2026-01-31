@@ -1,5 +1,6 @@
 import type { WorkerAPI } from '@hierarchidb/worker-api';
-import type { NodeId, TreeNodeData, TreeNodeMetadata } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { TreeNodeData, TreeNodeMetadata } from '@hierarchidb/tree-api';
 import type { TreeNodeUpdaterState } from '@hierarchidb/plugin-ui-sdk';
 import type { Remote } from 'comlink';
 import { useCallback, useEffect, useRef, useState } from 'react';

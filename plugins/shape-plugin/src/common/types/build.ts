@@ -1,4 +1,5 @@
-import type { NodeId, TaskStage } from '@hierarchidb/common-types';
+import type { TaskStage } from '@hierarchidb/batch-api';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { BaseBuildConfig, VectorTileFormat } from '@hierarchidb/gis-sdk';
 import type { ResourceUsage, StageStatus } from '@hierarchidb/shape-store';
 import type { DataSourceName } from './data-source.js';

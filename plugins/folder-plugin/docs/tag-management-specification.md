@@ -165,7 +165,7 @@ interface CategoryOption<T extends string> {
 
 ```typescript
 interface BasicInfoFormProps {
-  workingCopy: T;                   // プラグイン固有のWorkingCopy型
+  draft: T;                   // プラグイン固有のDraft型
   onUpdate: (updates: Partial<T>) => void;
   disabled?: boolean;
 }
@@ -213,8 +213,8 @@ export const LOCATION_CATEGORIES: CategoryOption<LocationCategory>[] = [
 
 #### 3. Step1コンポーネントの実装
 ```typescript
-export const LocationBasicInfoStep: React.FC<BasicInfoFormProps<LocationWorkingCopy>> = ({
-  workingCopy,
+export const LocationBasicInfoStep: React.FC<BasicInfoFormProps<LocationDraft>> = ({
+  draft,
   onUpdate,
   disabled
 }) => {
@@ -223,7 +223,7 @@ export const LocationBasicInfoStep: React.FC<BasicInfoFormProps<LocationWorkingC
       {/* 共通フィールド */}
       <TextField
         label="名前"
-        value={workingCopy.name}
+        value={draft.name}
         onChange={(e) => onUpdate({ name: e.target.value })}
         required
         disabled={disabled}
@@ -231,7 +231,7 @@ export const LocationBasicInfoStep: React.FC<BasicInfoFormProps<LocationWorkingC
       
       <TextField
         label="説明"
-        value={workingCopy.description || ''}
+        value={draft.description || ''}
         onChange={(e) => onUpdate({ description: e.target.value })}
         multiline
         rows={3}
@@ -239,14 +239,14 @@ export const LocationBasicInfoStep: React.FC<BasicInfoFormProps<LocationWorkingC
       />
       
       <TagInput
-        value={workingCopy.tags}
+        value={draft.tags}
         onChange={(tags) => onUpdate({ tags })}
         disabled={disabled}
       />
       
       {/* プラグイン固有フィールド */}
       <CategorySelector
-        value={workingCopy.category}
+        value={draft.category}
         onChange={(category) => onUpdate({ category })}
         options={LOCATION_CATEGORIES}
         placeholder="カテゴリを選択"
@@ -260,24 +260,24 @@ export const LocationBasicInfoStep: React.FC<BasicInfoFormProps<LocationWorkingC
 
 ## データ永続化仕様
 
-### WorkingCopy への保存
-Step1からStep2への遷移時、フォーム値をWorkingCopyに保存：
+### Draft への保存
+Step1からStep2への遷移時、フォーム値をDraftに保存：
 
 ```typescript
 const handleNextStep = () => {
   // バリデーション
-  if (!workingCopy.name) {
+  if (!draft.name) {
     throw new Error('名前は必須です');
   }
   
-  // WorkingCopyに保存
-  updateWorkingCopy({
-    name: workingCopy.name,
-    description: workingCopy.description,
-    tags: workingCopy.tags,
-    category: workingCopy.category,
+  // Draftに保存
+  updateDraft({
+    name: draft.name,
+    description: draft.description,
+    tags: draft.tags,
+    category: draft.category,
     updatedAt: Date.now(),
-    version: workingCopy.version + 1
+    version: draft.version + 1
   });
   
   setActiveStep(1); // Step2へ遷移
@@ -290,10 +290,10 @@ const handleNextStep = () => {
 ```typescript
 const handleCommit = async () => {
   // 1. PeerEntityを保存
-  const entity = await entityHandler.commitWorkingCopy(nodeId);
+  const entity = await entityHandler.commitDraft(nodeId);
   
   // 2. タグ関連付けを保存
-  for (const tagId of workingCopy.tags) {
+  for (const tagId of draft.tags) {
     await tagService.addTagToNode(nodeId, tagId);
   }
   

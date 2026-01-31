@@ -74,20 +74,20 @@
 
 ### 1.4 EphemeralEntityクリーンアップ
 
-- **テスト名**: WorkingCopy削除時のEphemeralデータ自動削除
-  - **何をテストするか**: WorkingCopyライフサイクルに連動した削除
-  - **期待される動作**: WorkingCopy破棄時に関連するEphemeralEntityが削除
+- **テスト名**: Draft削除時のEphemeralデータ自動削除
+  - **何をテストするか**: Draftライフサイクルに連動した削除
+  - **期待される動作**: Draft破棄時に関連するEphemeralEntityが削除
 - **入力値**: 
   ```typescript
-  workingCopyId: 'wc-001'
+  draftId: 'wc-001'
   ephemeralData: [
-    { id: 'ed-001', workingCopyId: 'wc-001', stage: 'download' },
-    { id: 'ed-002', workingCopyId: 'wc-001', stage: 'extract1' }
+    { id: 'ed-001', draftId: 'wc-001', stage: 'download' },
+    { id: 'ed-002', draftId: 'wc-001', stage: 'extract1' }
   ]
   ```
   - **入力データの意味**: Shapesプラグインの処理中間データ
-- **期待される結果**: WorkingCopy削除後、関連するEphemeralEntityがすべて削除
-  - **期待結果の理由**: EphemeralEntityはWorkingCopyと同じライフサイクル
+- **期待される結果**: Draft削除後、関連するEphemeralEntityがすべて削除
+  - **期待結果の理由**: EphemeralEntityはDraftと同じライフサイクル
 - **テストの目的**: 自動クリーンアップ機能の確認
   - **確認ポイント**: メモリリークの防止
 - 🟢 このテストケースの信頼性レベル: 設計文書の自動ライフサイクル管理から導出

@@ -31,7 +31,7 @@ HierarchiDBのプラグインシステムは、Worker層での技術的最適化
 │  │   (既存維持)    │    │ ┌─────────────┬─────────────┬───────┐ │  │
 │  │                │    │ │ Persistent  │ Ephemeral   │       │ │  │
 │  │• treeNodeId    │←─→ │ ├─────────────┼─────────────┤       │ │  │
-│  │• parentId      │    │ │Styler     │WorkingCopyTypes  │ Peer  │ │  │
+│  │• parentId      │    │ │Styler     │DraftTypes  │ Peer  │ │  │
 │  │• treeNodeType  │    │ │BaseMap      │ViewState    │(1:1)  │ │  │
 │  │• name, etc     │    │ ├─────────────┼─────────────┤       │ │  │
 │  │                │    │ │VectorTiles  │ShapeData    │ Group │ │  │
@@ -242,10 +242,10 @@ export class AutoEntityLifecycleManager {
       await manager.cleanup(nodeId, entity.entityType);
     });
     
-    // WorkingCopy削除時の自動クリーンアップを設定（Ephemeralエンティティ）
+    // Draft削除時の自動クリーンアップを設定（Ephemeralエンティティ）
     if (entity.category.startsWith('Ephemeral')) {
-      WorkingCopyLifecycleHooks.afterDiscard.add(async (workingCopyId) => {
-        await manager.cleanupByWorkingCopy(workingCopyId, entity.entityType);
+      DraftLifecycleHooks.afterDiscard.add(async (draftId) => {
+        await manager.cleanupByDraft(draftId, entity.entityType);
       });
     }
   }
@@ -436,7 +436,7 @@ interface EntityUIDefinition {
   category: EntityCategory;
   entityType: string;
   uiFeatures: {
-    supportsWorkingCopy?: boolean;
+    supportsDraft?: boolean;
     supportsVersioning?: boolean;
     supportsExport?: boolean;
     supportsPreview?: boolean;
@@ -454,7 +454,7 @@ interface PluginCapabilities {
   canHaveChildren: boolean;
   
   // 6分類システム対応機能
-  supportsWorkingCopy: boolean;
+  supportsDraft: boolean;
   supportsEphemeralData: boolean;
   supportsMultiStep: boolean;
   supportsBulkOperations: boolean;
@@ -705,7 +705,7 @@ export abstract class ContainerPluginBase<TEntity extends PeerEntity> {
 ```
 
 #### ドキュメント型プラグイン（ドキュメントベース）
-- **特徴**: 単一エンティティ、WorkingCopyTypes、バージョン管理、エクスポート
+- **特徴**: 単一エンティティ、DraftTypes、バージョン管理、エクスポート
 - **例**: BaseMap, Styler, Shapes
 - **エンティティ**: PeerEntity, GroupEntity, RelationalEntity
 - **UI**: 編集ダイアログ、プレビュー、エクスポート
@@ -715,18 +715,18 @@ export abstract class DocumentPluginBase<TEntity extends PeerEntity> {
   readonly capabilities = {
     canHaveChildren: false,
     isContainer: false,
-    supportsWorkingCopy: true,
+    supportsDraft: true,
     supportsVersioning: true,
     supportsExport: true
   };
   
   // Working Copy 管理
-  async createWorkingCopy(nodeId: TreeNodeId): Promise<TEntity & WorkingCopyMixin> {
+  async createDraft(nodeId: TreeNodeId): Promise<TEntity & DraftMixin> {
     const entity = await this.get(nodeId);
     return {
       ...entity,
-      workingCopyId: generateId(),
-      workingCopyOf: nodeId,
+      draftId: generateId(),
+      draftOf: nodeId,
       copiedAt: Date.now(),
       isDirty: false
     };
@@ -759,9 +759,9 @@ export class PluginTypeDetector {
     return plugin?.capabilities?.canHaveChildren || false;
   }
   
-  static supportsWorkingCopy(nodeType: TreeNodeType): boolean {
+  static supportsDraft(nodeType: TreeNodeType): boolean {
     const plugin = UIPluginRegistry.get(nodeType);
-    return plugin?.capabilities?.supportsWorkingCopy || false;
+    return plugin?.capabilities?.supportsDraft || false;
   }
 }
 
@@ -945,7 +945,7 @@ export const FolderUIPlugin: UIPluginDefinition = {
   nodeType: 'folder-plugin',
   capabilities: {
     canHaveChildren: true,
-    supportsWorkingCopy: false,
+    supportsDraft: false,
     supportsMultiStep: false
   },
   components: { icon: FolderIcon, editDialog: FolderEditDialog }
@@ -975,7 +975,7 @@ export const BaseMapUIPlugin: UIPluginDefinition = {
   nodeType: 'basemap',
   capabilities: {
     canHaveChildren: false,
-    supportsWorkingCopy: true,
+    supportsDraft: true,
     supportsExport: true
   },
   components: {
@@ -1014,7 +1014,7 @@ export const StylerWorkerPlugin: WorkerPluginDefinition = {
 export const StylerUIPlugin: UIPluginDefinition = {
   nodeType: 'styler-plugin',
   capabilities: {
-    supportsWorkingCopy: true,
+    supportsDraft: true,
     supportsMultiStep: true,
     supportsRelationalEntities: true
   },
@@ -1063,7 +1063,7 @@ export const ShapesWorkerPlugin: WorkerPluginDefinition = {
 export const ShapesUIPlugin: UIPluginDefinition = {
   nodeType: '_shapes_buggy',
   capabilities: {
-    supportsWorkingCopy: true,
+    supportsDraft: true,
     supportsEphemeralData: true,
     supportsMultiStep: true,
     supportsBulkOperations: true,
@@ -1087,7 +1087,7 @@ export const ShapesUIPlugin: UIPluginDefinition = {
 
 ### Phase 2: 中級プラグイン対応（3週間）
 1. **BaseMapプラグイン**: PeerEntity対応と統一UI
-2. **基本機能テスト**: CRUD操作とWorkingCopy管理
+2. **基本機能テスト**: CRUD操作とDraft管理
 3. **パフォーマンス最適化**: データアクセス層の改善
 
 ### Phase 3: 高級プラグイン対応（4週間）

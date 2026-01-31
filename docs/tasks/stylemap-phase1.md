@@ -111,7 +111,7 @@
   - [ ] テーブル構造の正規化設計
 - **注意事項**: 🟢 eria-cartographパターン踏襲
 
-#### Day 4 (TASK-0064): StylerWorkingCopy型定義
+#### Day 4 (TASK-0064): StylerDraft型定義
 
 - [ ] **タスク完了**
 - **推定工数**: 8時間
@@ -119,10 +119,10 @@
 - **要件リンク**: REQ-007 🟢
 - **依存タスク**: TASK-0063
 - **実装詳細**:
-  - StylerWorkingCopy インターフェース定義
-  - BaseWorkingCopy継承
+  - StylerDraft インターフェース定義
+  - BaseDraft継承
   - 全StylerEntityフィールド + Working Copy制御
-  - workingCopyId, workingCopyOf, copiedAt, isDirty
+  - draftId, draftOf, copiedAt, isDirty
 - **テスト要件**:
   - [ ] 型定義の整合性テスト
   - [ ] 必須フィールド検証
@@ -132,7 +132,7 @@
   - [ ] 必須フィールド欠如時の適切なエラーメッセージ
   - [ ] 型変換失敗時の回復処理
 - **完了条件**:
-  - [ ] BaseWorkingCopyとの継承関係確立
+  - [ ] BaseDraftとの継承関係確立
   - [ ] hierarchidb Working Copyパターン準拠
   - [ ] 変更追跡機能が正しく動作
 - **注意事項**: 🟡 hierarchidb固有のWorking Copy実装
@@ -388,9 +388,9 @@
 - **要件リンク**: REQ-007 🟢
 - **依存タスク**: TASK-0073, TASK-0019 (ワーキングコピー管理)
 - **実装詳細**:
-  - createWorkingCopy メソッド実装
-  - commitWorkingCopy メソッド実装
-  - discardWorkingCopy メソッド実装
+  - createDraft メソッド実装
+  - commitDraft メソッド実装
+  - discardDraft メソッド実装
   - isDirty フラグ管理
 - **テスト要件**:
   - [ ] 型定義の整合性テスト

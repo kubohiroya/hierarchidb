@@ -101,13 +101,13 @@ src/components/steps/LocationSelectionStep.tsx (21箇所)
 // 修正前（型制約エラー）
 export class LocationEntityHandler extends BaseEntityHandler<
   LocationEntity,
-  LocationWorkingCopy,        // ← WorkingCopy制約違反
+  LocationDraft,        // ← Draft制約違反
   CreateLocationData,
   LocationFilterCriteria
 > {
 
-// 修正後（正しいWorkingCopy型）
-export interface LocationWorkingCopy extends LocationEntity, WorkingCopyProperties {
+// 修正後（正しいDraft型）
+export interface LocationDraft extends LocationEntity, DraftProperties {
   isDraft: boolean;
   originalId?: EntityId;
   copiedAt: number;
@@ -115,7 +115,7 @@ export interface LocationWorkingCopy extends LocationEntity, WorkingCopyProperti
 
 export class LocationEntityHandler extends BaseEntityHandler<
   LocationEntity,
-  LocationWorkingCopy,
+  LocationDraft,
   CreateLocationData,
   LocationFilterCriteria
 > {

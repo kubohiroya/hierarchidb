@@ -51,8 +51,8 @@ packages/plugins/basemap-plugin/
    - 不要なフィールド（tags, metadata）の削除
    - 新しい型システムへの適応
 
-2. **WorkingCopy型の更新**
-   - 新しいWorkingCopyインターフェースへの適応
+2. **Draft型の更新**
+   - 新しいDraftインターフェースへの適応
    - isDraft, originalIdなどの新フィールドの追加
 
 ### フェーズ3: ハンドラーの実装更新
@@ -62,7 +62,7 @@ packages/plugins/basemap-plugin/
    ```typescript
    export class BaseMapEntityHandler extends FolderEntityHandler<
      BaseMapEntity,
-     BaseMapWorkingCopy,
+     BaseMapDraft,
      CreateBaseMapData,
      BaseMapSearchCriteria
    > {
@@ -139,7 +139,7 @@ export interface BaseMapEntity extends FolderEntity {
   baseMapMetadataId?: string;
 }
 
-export interface BaseMapWorkingCopy extends BaseMapEntity {
+export interface BaseMapDraft extends BaseMapEntity {
   isDraft: true;
   originalId?: string;
   copiedAt: number;
@@ -150,12 +150,12 @@ export interface BaseMapWorkingCopy extends BaseMapEntity {
 ```typescript
 export class BaseMapEntityHandler extends FolderEntityHandler<
   BaseMapEntity,
-  BaseMapWorkingCopy,
+  BaseMapDraft,
   CreateBaseMapData,
   BaseMapSearchCriteria
 > {
   protected table = this.coreDB.table<BaseMapEntity>('baseMaps');
-  protected workingCopyTable = this.ephemeralDB.table<BaseMapWorkingCopy>('baseMapWorkingCopies');
+  protected draftTable = this.ephemeralDB.table<BaseMapDraft>('baseMapWorkingCopies');
 
   // 実装は基底クラスのメソッドをオーバーライド
   protected async createEntityData(nodeId: NodeId, data?: CreateBaseMapData): Promise<BaseMapEntity> {

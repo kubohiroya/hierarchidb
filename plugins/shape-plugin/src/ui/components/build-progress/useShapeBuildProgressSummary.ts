@@ -8,7 +8,7 @@ import {
   type TaskCountSummary,
   type TaskStageCarrier,
 } from '@hierarchidb/ui-batch-progress';
-import type { TaskStage } from '@hierarchidb/common-types';
+import type { TaskStage } from '@hierarchidb/batch-api';
 import type { BuildProgress, BuildProgressStatus } from './shapeBuildProgressMapping.ts';
 import type { BatchTaskSummary } from '@hierarchidb/batch-api';
 

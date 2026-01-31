@@ -5,7 +5,7 @@
  * for use with TreeConsolePanel.
  */
 
-import type { TreeNode } from '@hierarchidb/common-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import type { HierarchicalTreeNode, TreeTableColumn } from '@hierarchidb/ui-treeconsole-base';
 
 /**

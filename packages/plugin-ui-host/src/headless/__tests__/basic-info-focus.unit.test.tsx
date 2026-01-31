@@ -1,4 +1,5 @@
-import type { NodeId, TreeNodeMetadata } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { TreeNodeMetadata } from '@hierarchidb/tree-api';
 import type { composeStepConfigs } from '@hierarchidb/plugin-base';
 import { renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';

@@ -13,7 +13,7 @@ mindmap
         バルク操作
         検索・フィルタ
       編集機能
-        WorkingCopyTypes
+        DraftTypes
         Undo/Redo
         競合解決
       リアルタイム機能
@@ -84,7 +84,7 @@ graph TB
 
 #### 4.1.2 編集機能要求
 
-**WorkingCopyパターン実装**
+**Draftパターン実装**
 
 ```mermaid
 sequenceDiagram
@@ -98,23 +98,23 @@ sequenceDiagram
     UI->>Worker: startEdit(nodeId)
     Worker->>CoreDB: loadOriginalNode(nodeId)
     CoreDB-->>Worker: originalNode
-    Worker->>EphemeralDB: createWorkingCopy(originalNode)
-    EphemeralDB-->>Worker: workingCopyId
-    Worker-->>UI: editSession{workingCopyId}
+    Worker->>EphemeralDB: createDraft(originalNode)
+    EphemeralDB-->>Worker: draftId
+    Worker-->>UI: editSession{draftId}
     
-    UI->>Worker: modifyNode(workingCopyId, changes)
-    Worker->>EphemeralDB: updateWorkingCopy(workingCopyId, changes)
+    UI->>Worker: modifyNode(draftId, changes)
+    Worker->>EphemeralDB: updateDraft(draftId, changes)
     
     Note over UI,EphemeralDB: コミットまたは破棄
     
     alt Commit Changes
-        UI->>Worker: commitChanges(workingCopyId)
-        Worker->>EphemeralDB: getWorkingCopy(workingCopyId)
+        UI->>Worker: commitChanges(draftId)
+        Worker->>EphemeralDB: getDraft(draftId)
         Worker->>CoreDB: updateOriginalNode(changes)
-        Worker->>EphemeralDB: deleteWorkingCopy(workingCopyId)
+        Worker->>EphemeralDB: deleteDraft(draftId)
     else Discard Changes
-        UI->>Worker: discardChanges(workingCopyId)
-        Worker->>EphemeralDB: deleteWorkingCopy(workingCopyId)
+        UI->>Worker: discardChanges(draftId)
+        Worker->>EphemeralDB: deleteDraft(draftId)
     end
 ```
 
@@ -297,7 +297,7 @@ graph LR
     subgraph "Core API"
         A[Base Worker API] --> A1[TreeQueryAPI]
         A --> A2[TreeMutationAPI]
-        A --> A3[WorkingCopyAPI]
+        A --> A3[DraftAPI]
     end
     
     subgraph "Plugin Extension"
@@ -1606,7 +1606,7 @@ const displayName = escapeHtml(node.name);
 
 // ✅ 複雑なロジックは意図を説明
 // Working Copyパターンにより、元データへの影響なしに編集を実現
-const workingCopy = await this.createWorkingCopy(originalNode);
+const draft = await this.createDraft(originalNode);
 ```
 
 ### 7.3 実装パターン
@@ -1833,17 +1833,17 @@ describe('NodeValidator', () => {
  * 
  * @example
  * ```typescript
- * const session = await workingCopyService.startEdit(nodeId);
- * await workingCopyService.updateWorkingCopy(session.workingCopyId, changes);
- * await workingCopyService.commitChanges(session.workingCopyId);
+ * const session = await draftService.startEdit(nodeId);
+ * await draftService.updateDraft(session.draftId, changes);
+ * await draftService.commitChanges(session.draftId);
  * ```
  */
-export class WorkingCopyEntityService {
+export class DraftEntityService {
   /**
    * ノードの編集セッションを開始する
    * 
    * @param sourceNodeId - 編集対象のノードID
-   * @returns 編集セッション情報。workingCopyIdを含む
+   * @returns 編集セッション情報。draftIdを含む
    * @throws {ValidationError} sourceNodeIdが無効な場合
    * @throws {NotFoundError} 指定されたノードが存在しない場合
    * 
@@ -1857,7 +1857,7 @@ export class WorkingCopyEntityService {
   /**
    * Working Copyの変更をコミットしてCoreDBに反映する
    * 
-   * @param workingCopyId - コミット対象のworking copy ID
+   * @param draftId - コミット対象のworking copy ID
    * @returns コミット結果
    * 
    * @throws {ConcurrencyError} 元ノードが他で変更されている場合
@@ -1866,7 +1866,7 @@ export class WorkingCopyEntityService {
    * @transactional CoreDBとEphemeralDBの両方でトランザクション実行
    * @performance O(1) for single node, O(n) for subtree operations
    */
-  async commitChanges(workingCopyId: NodeId): Promise<Result<void>> {
+  async commitChanges(draftId: NodeId): Promise<Result<void>> {
     // 実装...
   }
 }

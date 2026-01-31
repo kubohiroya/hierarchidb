@@ -5,7 +5,7 @@
  * to ensure consistency across the application.
  */
 
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 
 /**
  * Base props for all base-dialog containers

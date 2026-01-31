@@ -97,7 +97,7 @@ export const BaseMapPlugin: WorkerPluginDefinition = {
   entityDefinition: {
     interface: 'BaseMapEntity extends PeerEntity',
     properties: ['center', 'zoom', 'style', 'bounds'],
-    workingCopySupported: true
+    draftSupported: true
   }
 };
 
@@ -252,10 +252,10 @@ export class AutoEntityLifecycleManager {
       await manager.cleanup(nodeId, entity.entityType);
     });
     
-    // WorkingCopy削除時の自動クリーンアップを設定（Ephemeralエンティティ）
+    // Draft削除時の自動クリーンアップを設定（Ephemeralエンティティ）
     if (entity.category.startsWith('Ephemeral')) {
-      WorkingCopyLifecycleHooks.afterDiscard.add(async (workingCopyId) => {
-        await manager.cleanupByWorkingCopy(workingCopyId, entity.entityType);
+      DraftLifecycleHooks.afterDiscard.add(async (draftId) => {
+        await manager.cleanupByDraft(draftId, entity.entityType);
       });
     }
   }
@@ -371,7 +371,7 @@ interface EntityUIDefinition {
   category: EntityCategory;
   entityType: string;
   uiFeatures: {
-    supportsWorkingCopy?: boolean;
+    supportsDraft?: boolean;
     supportsVersioning?: boolean;
     supportsExport?: boolean;
     supportsPreview?: boolean;
@@ -387,7 +387,7 @@ interface PluginCapabilities {
   canHaveChildren: boolean;
   
   // 6分類システム対応機能
-  supportsWorkingCopy: boolean;
+  supportsDraft: boolean;
   supportsEphemeralData: boolean;
   supportsMultiStep: boolean;
   supportsBulkOperations: boolean;
@@ -446,23 +446,23 @@ export class EntityDataAdapter {
     return entities;
   }
   
-  // WorkingCopy対応
-  async createWorkingCopy(
+  // Draft対応
+  async createDraft(
     nodeId: TreeNodeId,
     nodeType: TreeNodeType
   ): Promise<string> {
     const plugin = UIPluginRegistry.get(nodeType);
     
-    if (!plugin.capabilities.supportsWorkingCopy) {
+    if (!plugin.capabilities.supportsDraft) {
       throw new Error(`${nodeType} does not support working copies`);
     }
     
-    return await this.workerAPI.createWorkingCopy(nodeId);
+    return await this.workerAPI.createDraft(nodeId);
   }
   
   // エフェメラルデータのクリーンアップ
-  async cleanupEphemeralData(workingCopyId: string): Promise<void> {
-    await this.workerAPI.cleanupEphemeralData(workingCopyId);
+  async cleanupEphemeralData(draftId: string): Promise<void> {
+    await this.workerAPI.cleanupEphemeralData(draftId);
   }
 }
 ```
@@ -484,12 +484,12 @@ export class PluginDialogManager {
       throw new Error(`${nodeType} does not support multi-step operations`);
     }
     
-    let workingCopyId: string | null = null;
+    let draftId: string | null = null;
     let ephemeralData: Record<string, any> = {};
     
     try {
       // ワーキングコピー作成
-      workingCopyId = await this.dataAdapter.createWorkingCopy(nodeType);
+      draftId = await this.dataAdapter.createDraft(nodeType);
       
       // ステップごとの処理
       for (let i = 0; i < steps.length; i++) {
@@ -500,7 +500,7 @@ export class PluginDialogManager {
           step,
           stepIndex: i,
           isLastStep,
-          workingCopyId,
+          draftId,
           ephemeralData,
           plugin
         });
@@ -511,7 +511,7 @@ export class PluginDialogManager {
         // 最後のステップでない場合は中間データを保存
         if (!isLastStep) {
           await this.workerAPI.saveEphemeralData(
-            workingCopyId,
+            draftId,
             step,
             ephemeralData
           );
@@ -519,13 +519,13 @@ export class PluginDialogManager {
       }
       
       // 成功時：永続化
-      const finalResult = await this.workerAPI.commitWorkingCopy(workingCopyId);
+      const finalResult = await this.workerAPI.commitDraft(draftId);
       onComplete(finalResult);
       
     } catch (error) {
       // エラー時：クリーンアップ
-      if (workingCopyId) {
-        await this.dataAdapter.cleanupEphemeralData(workingCopyId);
+      if (draftId) {
+        await this.dataAdapter.cleanupEphemeralData(draftId);
       }
       throw error;
     }
@@ -535,7 +535,7 @@ export class PluginDialogManager {
     step: string;
     stepIndex: number;
     isLastStep: boolean;
-    workingCopyId: string;
+    draftId: string;
     ephemeralData: Record<string, any>;
     plugin: UIPluginDefinition;
   }): Promise<{ ephemeralData: Record<string, any> }> {
@@ -585,7 +585,7 @@ export const FolderUIPlugin: UIPluginDefinition = {
       category: 'PersistentPeerEntity', // TreeNodeのみだが便宜上
       entityType: 'TreeNode',
       uiFeatures: {
-        supportsWorkingCopy: false,
+        supportsDraft: false,
         supportsVersioning: false,
         supportsExport: false,
         supportsPreview: false
@@ -599,7 +599,7 @@ export const FolderUIPlugin: UIPluginDefinition = {
     canUpdate: true,
     canDelete: true,
     canHaveChildren: true,
-    supportsWorkingCopy: false,
+    supportsDraft: false,
     supportsEphemeralData: false,
     supportsMultiStep: false,
     supportsBulkOperations: true,
@@ -649,7 +649,7 @@ export const ShapesUIPlugin: UIPluginDefinition = {
       category: 'PersistentGroupEntity',
       entityType: 'VectorTilesEntity',
       uiFeatures: {
-        supportsWorkingCopy: true,
+        supportsDraft: true,
         supportsVersioning: true,
         supportsExport: true,
         supportsPreview: true
@@ -659,14 +659,14 @@ export const ShapesUIPlugin: UIPluginDefinition = {
       category: 'EphemeralGroupEntity',
       entityType: 'ShapeDataEntity',
       uiFeatures: {
-        supportsWorkingCopy: false,
+        supportsDraft: false,
         supportsVersioning: false
       }
     }, {
       category: 'PersistentRelationalEntity',
       entityType: 'SourceDataEntity',
       uiFeatures: {
-        supportsWorkingCopy: false,
+        supportsDraft: false,
         supportsVersioning: true
       }
     }]
@@ -678,7 +678,7 @@ export const ShapesUIPlugin: UIPluginDefinition = {
     canUpdate: true,
     canDelete: true,
     canHaveChildren: false,
-    supportsWorkingCopy: true,
+    supportsDraft: true,
     supportsEphemeralData: true,
     supportsMultiStep: true,
     supportsBulkOperations: true,

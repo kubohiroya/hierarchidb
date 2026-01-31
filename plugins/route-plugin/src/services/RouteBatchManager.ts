@@ -3,7 +3,7 @@
  * @description Route batch processing manager extending Shape's batch infrastructure
  */
 
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 
 // No longer extend local batch shim; RouteBatchSession provides shared behavior
 import type { RouteGenerationConfig } from '@hierarchidb/route-store';
@@ -11,7 +11,7 @@ import type { RouteBatchConfig } from '@hierarchidb/route-store';
 import { RouteBatchSession, type RouteBatchTask } from './RouteBatchSession.js';
 import type { BatchProgressEvent } from '@hierarchidb/batch-api';
 import { VtTaskQueueDb, putTasks } from '@hierarchidb/vt-orchestrator';
-import type { TaskQueueRecord, TaskStage } from '@hierarchidb/common-types';
+import type { TaskQueueRecord, TaskStage } from '@hierarchidb/batch-api';
 
 export type ProgressUpdate = { jobId: string; progress: number; phase: string; ts: number };
 export type ProgressEmitter = { emit?: (event: ProgressUpdate) => void };

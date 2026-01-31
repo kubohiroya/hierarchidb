@@ -1,4 +1,4 @@
-import type { NodeType } from '@hierarchidb/common-types';
+import type { NodeType } from '@hierarchidb/core-types';
 
 export const PLUGIN_ID = '@hierarchidb/shape-plugin' as const;
 export const PLUGIN_VERSION = '0.1.0' as const;

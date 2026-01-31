@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { NodeId, NodeType, ProgressEvent } from '@hierarchidb/common-types';
+import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { UnifiedProgressInfo } from '@hierarchidb/batch-api';
 import { AuthNotificationRegistry } from '@hierarchidb/common-auth';
 import { usePluginBatchProgress } from '@hierarchidb/ui-batch-progress';
@@ -7,6 +7,16 @@ import { usePluginBatchProgress } from '@hierarchidb/ui-batch-progress';
 export interface UseLocationProgressOptions {
   autoSubscribe?: boolean;
 }
+
+type ProgressEvent = {
+  nodeId: NodeId;
+  taskType: string;
+  total: number;
+  completed: number;
+  failed: number;
+  percentage: number;
+  timestamp: number;
+};
 
 export interface LocationProgressEvent extends ProgressEvent {
   message?: string;

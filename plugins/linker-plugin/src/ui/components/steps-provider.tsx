@@ -1,5 +1,5 @@
 import { PluginStepRegistry, type PluginStepConfig, type PluginStepProps, type StepData } from '@hierarchidb/plugin-base';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { LinkerDraft } from '../../common/types/index.js';
 import { ResourcePicker } from '../steps/ResourcePicker.js';
 import { AggregatedList } from '../steps/AggregatedList.js';

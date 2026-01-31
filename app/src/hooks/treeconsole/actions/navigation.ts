@@ -2,7 +2,7 @@
  * Navigation helpers and actions for TreeConsole.
  */
 
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import type { TreeConsoleActionDeps } from '../types.js';

@@ -3,7 +3,7 @@
  * @description ERIA-Cartograph:
  */
 
-//import { FeatureFilterMethod, FeatureFilterMethod } from '@hierarchidb/common-types';
+//import { FeatureFilterMethod, FeatureFilterMethod } from '@hierarchidb/core-types';
 import type {
   ExtractionMode as CommonExtractionMode,
   FeatureFilterMethod as CommonFeatureFilterMethod,

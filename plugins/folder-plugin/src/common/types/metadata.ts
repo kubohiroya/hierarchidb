@@ -2,7 +2,7 @@
   * Folder plugin metadata - UIWorker
   */
 
-import type { NodeType } from '@hierarchidb/common-types';
+import type { NodeType } from '@hierarchidb/core-types';
 
 export const FolderMetadata = {
   id: '@hierarchidb/folder-plugin',

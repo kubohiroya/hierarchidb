@@ -31,7 +31,7 @@ packages/plugins/basemap/
 
 #### 現在の実装特徴
 - ✅ **PeerEntity相当の実装**: 1:1のTreeNode関係
-- ✅ **WorkingCopy対応**: 完全な編集フロー実装済み
+- ✅ **Draft対応**: 完全な編集フロー実装済み
 - ✅ **Dexieデータベース**: 最適化されたスキーマ
 - ✅ **UIコンポーネント**: 作成・編集・プレビューの完全セット
 - ⚠️ **従来型定義**: 6分類システム非対応
@@ -115,7 +115,7 @@ export interface BaseMapEntity extends PeerEntity {
 #### After: 6分類対応型定義
 ```typescript
 // packages/plugin-loader/basemap/src/types/BaseMapEntity.ts (改修後)
-import { PeerEntity, WorkingCopyProperties } from '@hierarchidb/core';
+import { PeerEntity, DraftProperties } from '@hierarchidb/core';
 
 // BaseMap固有プロパティ
 export interface BaseMapProperties {
@@ -133,7 +133,7 @@ export interface BaseMapProperties {
 
 // 型合成パターン適用
 export type BaseMapEntity = PeerEntity & BaseMapProperties;
-export type BaseMapWorkingCopy = BaseMapEntity & WorkingCopyProperties;
+export type BaseMapDraft = BaseMapEntity & DraftProperties;
 
 // バリデーション関数
 export function validateBaseMapEntity(entity: BaseMapEntity): ValidationResult {
@@ -167,7 +167,7 @@ export function validateBaseMapEntity(entity: BaseMapEntity): ValidationResult {
 export const BaseMapUnifiedDefinition: PluginDefinition<
   BaseMapEntity,
   never,
-  BaseMapWorkingCopy
+  BaseMapDraft
 > = {
   nodeType: 'basemap',
   // ... 従来定義
@@ -254,7 +254,7 @@ export const BaseMapUIPlugin: UIPluginDefinition = {
       category: 'PersistentPeerEntity',
       entityType: 'BaseMapEntity',
       uiFeatures: {
-        supportsWorkingCopy: true,
+        supportsDraft: true,
         supportsVersioning: true,
         supportsExport: true,
         supportsPreview: true,
@@ -274,7 +274,7 @@ export const BaseMapUIPlugin: UIPluginDefinition = {
     canUpdate: true,
     canDelete: true,
     canHaveChildren: false,
-    supportsWorkingCopy: true,
+    supportsDraft: true,
     supportsEphemeralData: false,
     supportsMultiStep: false,
     supportsBulkOperations: false,
@@ -351,7 +351,7 @@ export const BaseMapUIPlugin: UIPluginDefinition = {
 export class BaseMapHandler implements EntityHandler<
   BaseMapEntity,
   never, // GroupEntityなし
-  BaseMapWorkingCopy
+  BaseMapDraft
 > {
   // 既存の実装をそのまま維持
   // 型定義の変更により自動的に6分類システム対応
@@ -365,7 +365,7 @@ export class BaseMapHandler implements EntityHandler<
 #### After: 6分類対応型定義
 ```typescript
 // packages/plugin-loader/styler-plugin/src/types/StylerEntity.ts (改修後)
-import { PeerEntity, RelationalEntity, WorkingCopyProperties } from '@hierarchidb/core';
+import { PeerEntity, RelationalEntity, DraftProperties } from '@hierarchidb/core';
 
 // Styler固有プロパティ
 export interface StylerProperties {
@@ -383,7 +383,7 @@ export interface StylerProperties {
 
 // 型合成パターン適用
 export type StylerEntity = PeerEntity & StylerProperties;
-export type StylerWorkingCopy = StylerEntity & WorkingCopyProperties;
+export type StylerDraft = StylerEntity & DraftProperties;
 
 // RelationalEntity（既存実装をそのまま活用）
 export interface TableMetadataProperties {
@@ -468,7 +468,7 @@ export const StylerUIPlugin: UIPluginDefinition = {
       category: 'PersistentPeerEntity',
       entityType: 'StylerEntity',
       uiFeatures: {
-        supportsWorkingCopy: true,
+        supportsDraft: true,
         supportsVersioning: true,
         supportsExport: true,
         supportsPreview: true
@@ -478,7 +478,7 @@ export const StylerUIPlugin: UIPluginDefinition = {
       category: 'PersistentRelationalEntity',
       entityType: 'TableMetadataEntity',
       uiFeatures: {
-        supportsWorkingCopy: false,
+        supportsDraft: false,
         supportsVersioning: true
       }
     }]
@@ -491,7 +491,7 @@ export const StylerUIPlugin: UIPluginDefinition = {
     canUpdate: true,
     canDelete: true,
     canHaveChildren: false,
-    supportsWorkingCopy: true,
+    supportsDraft: true,
     supportsEphemeralData: false,
     supportsMultiStep: true, // 6ステップウィザード
     supportsBulkOperations: false,
@@ -560,7 +560,7 @@ lifecycleManager.registerPlugin(BaseMapWorkerPlugin);
 lifecycleManager.registerPlugin(StylerWorkerPlugin);
 
 // TreeNode削除時の自動クリーンアップが有効化される
-// WorkingCopy削除時の自動クリーンアップが有効化される
+// Draft削除時の自動クリーンアップが有効化される
 // RelationalEntityの参照カウント管理が有効化される
 ```
 
@@ -571,7 +571,7 @@ lifecycleManager.registerPlugin(StylerWorkerPlugin);
 export class BaseMapDatabase extends Dexie {
   // 既存のテーブル定義をそのまま維持
   entities!: Table<BaseMapEntity, TreeNodeId>;
-  workingCopies!: Table<BaseMapWorkingCopy, string>;
+  workingCopies!: Table<BaseMapDraft, string>;
   
   constructor() {
     super('BaseMapDB');
@@ -579,7 +579,7 @@ export class BaseMapDatabase extends Dexie {
     // 既存のスキーマをそのまま維持（後方互換性）
     this.version(1).stores({
       entities: 'nodeId, name, center, zoom, updatedAt',
-      workingCopies: 'workingCopyId, nodeId, workingCopyOf'
+      workingCopies: 'draftId, nodeId, draftOf'
     });
     
     // 6分類システム対応のフック追加

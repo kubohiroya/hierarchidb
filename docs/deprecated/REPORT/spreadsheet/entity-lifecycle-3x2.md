@@ -21,7 +21,7 @@
                  Persistent                    Ephemeral
     ┌──────────────────────────────┬──────────────────────────────┐
     │                              │                              │
-Peer│  SpreadsheetRefEntity        │  SpreadsheetWorkingCopy      │
+Peer│  SpreadsheetRefEntity        │  SpreadsheetDraft      │
     │  StylerEntity              │  SpreadsheetViewState        │
     │                              │                              │
     ├──────────────────────────────┼──────────────────────────────┤

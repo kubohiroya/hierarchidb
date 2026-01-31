@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { NobleSha3HashPort, type ChunkStoreMetadata, type HashAlgorithm } from '@hierarchidb/chunk-store';
 import { sleep } from '@hierarchidb/util';
 import type { FetchOptions, RawDataPipeline, RetryConfig } from '../datasources/DataSourceStrategy.js';

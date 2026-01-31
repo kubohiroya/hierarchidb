@@ -29,7 +29,7 @@ cp-routing フローの UI E2E テスト（`e2e/cp-routing-wc-flow.spec.ts`）�
 
 ## DOM 安定化とフラグ初期化について
 
-- テストは `e2e/utils/test-helpers.ts` の `waitForTreeTableLoad` / `waitForSubTreeUpdate` / `waitForWorkingCopyUpdate` を利用しており、TreeTable の描画や Working Copy 同期が完了するまで待機します。必要に応じて `waitForSubTreeUpdate(page, timeout)` のタイムアウト値をシナリオ側で拡張できます。
+- テストは `e2e/utils/test-helpers.ts` の `waitForTreeTableLoad` / `waitForSubTreeUpdate` / `waitForDraftUpdate` を利用しており、TreeTable の描画や Working Copy 同期が完了するまで待機します。必要に応じて `waitForSubTreeUpdate(page, timeout)` のタイムアウト値をシナリオ側で拡張できます。
 - runtime-worker の CommandProcessor ルーティングは既定で常時有効になっているため、事前のフラグ設定や localStorage 初期化は不要です。
 
 ## よくあるトラブル

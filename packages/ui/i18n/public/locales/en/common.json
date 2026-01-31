@@ -348,6 +348,11 @@
       "preview": "Preview",
       "build": "Build"
     },
+    "errors": {
+      "trashFailed": "Move to trash failed.",
+      "trashReferencedByRoutes": "Cannot move to trash because routes reference this location.",
+      "trashReferencedByLocations": "Cannot move to trash because locations reference this shape."
+    },
     "infoPanel": {
       "noTimestamp": "—",
       "emptyDescription": "No description provided.",

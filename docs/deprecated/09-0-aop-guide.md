@@ -66,8 +66,8 @@ sequenceDiagram
     Note over CM: コマンド実行開始
     
     %% ワーキングコピー作成
-    CM->>EDB: createWorkingCopy(nodeType, data)
-    EDB-->>CM: workingCopyId
+    CM->>EDB: createDraft(nodeType, data)
+    EDB-->>CM: draftId
     Note over EDB: ワーキングコピー作成<br/>（編集セッション開始）
     
     CM->>LM: triggerBeforeCreate(parentId, nodeType, data)
@@ -81,7 +81,7 @@ sequenceDiagram
         
         alt バリデーションエラー
             LM-->>CM: Error
-            CM->>EDB: discardWorkingCopy(workingCopyId)
+            CM->>EDB: discardDraft(draftId)
             Note over EDB: ワーキングコピー削除
             CM-->>WA: CommandResult(error)
             WA-->>UI: Error Response
@@ -89,7 +89,7 @@ sequenceDiagram
     end
     
     %% ワーキングコピーで変更を適用
-    CM->>EDB: updateWorkingCopy(workingCopyId, validatedData)
+    CM->>EDB: updateDraft(draftId, validatedData)
     Note over EDB: ワーキングコピー更新
     
     %% CoreDBにコミット
@@ -110,7 +110,7 @@ sequenceDiagram
     
     %% コミット完了
     CM->>CDB: commitTransaction()
-    CM->>EDB: commitWorkingCopy(workingCopyId)
+    CM->>EDB: commitDraft(draftId)
     Note over EDB: ワーキングコピー削除<br/>（正常完了）
     
     LM-->>CM: OK
@@ -139,10 +139,10 @@ sequenceDiagram
     UI->>PS: updateEntityWithBusinessLogic(nodeId, data)
     
     %% ワーキングコピー作成
-    PS->>CM: createWorkingCopy(nodeId)
-    CM->>EDB: createWorkingCopy(nodeId)
+    PS->>CM: createDraft(nodeId)
+    CM->>EDB: createDraft(nodeId)
     Note over EDB: 現在の状態をコピー<br/>（編集セッション開始）
-    EDB-->>CM: workingCopyId
+    EDB-->>CM: draftId
     
     CM->>LM: triggerBeforeUpdate(nodeId, changes)
     
@@ -152,7 +152,7 @@ sequenceDiagram
     
     alt バリデーションエラー
         LM-->>CM: Error
-        CM->>EDB: discardWorkingCopy(workingCopyId)
+        CM->>EDB: discardDraft(draftId)
         Note over EDB: ワーキングコピー削除<br/>（変更破棄）
         CM-->>PS: Error
         PS-->>UI: Error Response
@@ -163,14 +163,14 @@ sequenceDiagram
     
     %% ワーキングコピーで変更を適用
     PS->>EH: updateEntity(nodeId, processedData)
-    EH->>EDB: updateWorkingCopy(workingCopyId, changes)
+    EH->>EDB: updateDraft(draftId, changes)
     Note over EDB: ワーキングコピー更新<br/>（変更をバッファリング）
     EDB-->>EH: OK
     
     %% コミット前検証
-    PS->>CM: commitWorkingCopy(nodeId)
-    CM->>LM: triggerBeforeCommit(nodeId, workingCopy)
-    LM->>PD: lifecycle.beforeCommit(nodeId, workingCopy)
+    PS->>CM: commitDraft(nodeId)
+    CM->>LM: triggerBeforeCommit(nodeId, draft)
+    LM->>PD: lifecycle.beforeCommit(nodeId, draft)
     PD-->>LM: OK
     
     %% CoreDBとPlugin DBへコミット
@@ -178,7 +178,7 @@ sequenceDiagram
     CM->>CDB: updateTreeNode(nodeId, metadata)
     CM->>PDB: updateEntity(nodeId, data)
     
-    CM->>EDB: commitWorkingCopy(workingCopyId)
+    CM->>EDB: commitDraft(draftId)
     Note over EDB: ワーキングコピーの内容を<br/>メインデータに反映し<br/>ワーキングコピー削除
     
     CM->>CDB: commitTransaction()
@@ -212,9 +212,9 @@ sequenceDiagram
     WA->>CM: executeCommand(MOVE_TO_TRASH)
     
     %% 削除用ワーキングコピー作成
-    CM->>EDB: createWorkingCopy(nodeId, 'delete')
+    CM->>EDB: createDraft(nodeId, 'delete')
     Note over EDB: 削除前の状態を保存<br/>（削除セッション開始）
-    EDB-->>CM: workingCopyId
+    EDB-->>CM: draftId
     
     CM->>LM: triggerBeforeDelete(nodeId)
     LM->>PD: lifecycle.beforeDelete(nodeId)
@@ -224,14 +224,14 @@ sequenceDiagram
     
     alt 削除不可（参照あり）
         LM-->>CM: Error(Referenced)
-        CM->>EDB: discardWorkingCopy(workingCopyId)
+        CM->>EDB: discardDraft(draftId)
         Note over EDB: ワーキングコピー削除<br/>（削除操作キャンセル）
         CM-->>WA: CommandResult(error)
         WA-->>UI: Error Response
     end
     
     %% ワーキングコピーで削除をマーク
-    CM->>EDB: markForDeletion(workingCopyId)
+    CM->>EDB: markForDeletion(draftId)
     Note over EDB: 削除予定としてマーク
     
     %% CoreDBでゴミ箱移動処理
@@ -252,7 +252,7 @@ sequenceDiagram
     
     %% コミット完了
     CM->>CDB: commitTransaction()
-    CM->>EDB: commitWorkingCopy(workingCopyId)
+    CM->>EDB: commitDraft(draftId)
     Note over EDB: ワーキングコピー削除<br/>（削除完了）
     
     LM-->>CM: OK
@@ -335,7 +335,7 @@ export class LifecycleManager {
 | 操作 | 実行されるフック | 実行順序 | エラー時の動作 |
 |------|-----------------|----------|--------------|
 | ノード作成 | beforeCreate → afterCreate | 1. バリデーション<br>2. ノード作成<br>3. エンティティ作成<br>4. 初期化処理 | beforeCreate失敗時は作成中止 |
-| ノード更新 | beforeUpdate → beforeCommit → afterCommit | 1. 更新前検証<br>2. WorkingCopy作成<br>3. 変更適用<br>4. コミット前検証<br>5. コミット<br>6. 後処理 | beforeUpdate/beforeCommit失敗時は更新中止 |
+| ノード更新 | beforeUpdate → beforeCommit → afterCommit | 1. 更新前検証<br>2. Draft作成<br>3. 変更適用<br>4. コミット前検証<br>5. コミット<br>6. 後処理 | beforeUpdate/beforeCommit失敗時は更新中止 |
 | ノード削除 | beforeDelete → afterDelete | 1. 削除前チェック<br>2. ゴミ箱移動<br>3. エンティティ削除<br>4. クリーンアップ | beforeDelete失敗時は削除中止 |
 | ノード移動 | beforeMove → afterMove | 1. 移動前検証<br>2. ツリー構造更新<br>3. 移動後処理 | beforeMove失敗時は移動中止 |
 
@@ -402,7 +402,7 @@ packages/plugins/[plugin-name]/
 ```typescript
 // packages/plugin-loader/[plugin-name]/src/types/openstreetmap-type.ts
 import type { TreeNodeId } from '@hierarchidb/core';
-import type { BaseEntity, BaseWorkingCopy } from '~/registry/unified-plugin';
+import type { BaseEntity, BaseDraft } from '~/registry/unified-plugin';
 
 // エンティティ定義
 export interface MyPluginEntity extends BaseEntity {
@@ -416,10 +416,10 @@ export interface MyPluginEntity extends BaseEntity {
 }
 
 // ワーキングコピー定義（編集用）
-export interface MyPluginWorkingCopy extends BaseWorkingCopy {
+export interface MyPluginDraft extends BaseDraft {
   nodeId: TreeNodeId;
-  workingCopyId: string;
-  workingCopyOf: TreeNodeId;
+  draftId: string;
+  draftOf: TreeNodeId;
   customField1: string;
   customField2: number;
   isDirty: boolean;
@@ -434,7 +434,7 @@ export interface MyPluginWorkingCopy extends BaseWorkingCopy {
 ```typescript
 // packages/plugin-loader/[plugin-name]/src/database/MyPluginDatabase.ts
 import Dexie, { type Table } from 'dexie';
-import type { MyPluginEntity, MyPluginWorkingCopy } from '../types';
+import type { MyPluginEntity, MyPluginDraft } from '../types';
 
 /**
  * プラグイン専用データベース
@@ -444,7 +444,7 @@ import type { MyPluginEntity, MyPluginWorkingCopy } from '../types';
  */
 export class MyPluginDatabase extends Dexie {
   entities!: Table<MyPluginEntity>;
-  workingCopies!: Table<MyPluginWorkingCopy>;
+  workingCopies!: Table<MyPluginDraft>;
 
   constructor() {
     // プラグイン固有のDB名を使用
@@ -453,13 +453,13 @@ export class MyPluginDatabase extends Dexie {
     // バージョン1の定義
     this.version(1).stores({
       entities: 'nodeId, customField1, createdAt, updatedAt',
-      workingCopies: 'workingCopyId, nodeId, workingCopyOf'
+      workingCopies: 'draftId, nodeId, draftOf'
     });
 
     // 将来のマイグレーション例
     // this.version(2).stores({
     //   entities: 'nodeId, customField1, customField3, createdAt, updatedAt',
-    //   workingCopies: 'workingCopyId, nodeId, workingCopyOf'
+    //   workingCopies: 'draftId, nodeId, draftOf'
     // }).upgrade(tx => {
     //   return tx.table('entities').toCollection().modify(entity => {
     //     entity.customField3 = 'default_value';
@@ -520,10 +520,10 @@ export function getMyPluginDatabase(): MyPluginDatabase {
 // packages/plugin-loader/[plugin-name]/src/handlers/MyPluginHandler.ts
 import type { TreeNodeId } from '@hierarchidb/core';
 import type { EntityHandler } from '~/registry/unified-plugin';
-import type { MyPluginEntity, MyPluginWorkingCopy } from '../types';
+import type { MyPluginEntity, MyPluginDraft } from '../types';
 import { MyPluginDatabase } from '../database/MyPluginDatabase';
 
-export class MyPluginHandler implements EntityHandler<MyPluginEntity, never, MyPluginWorkingCopy> {
+export class MyPluginHandler implements EntityHandler<MyPluginEntity, never, MyPluginDraft> {
   private db: MyPluginDatabase;
 
   constructor() {
@@ -559,38 +559,38 @@ export class MyPluginHandler implements EntityHandler<MyPluginEntity, never, MyP
     await this.db.entities.delete(nodeId);
   }
 
-  async createWorkingCopy(nodeId: TreeNodeId): Promise<MyPluginWorkingCopy> {
+  async createDraft(nodeId: TreeNodeId): Promise<MyPluginDraft> {
     const entity = await this.getEntity(nodeId);
     if (!entity) {
       throw new Error(`Entity not found: ${nodeId}`);
     }
 
-    const workingCopy: MyPluginWorkingCopy = {
+    const draft: MyPluginDraft = {
       ...entity,
-      workingCopyId: crypto.randomUUID(),
-      workingCopyOf: nodeId,
+      draftId: crypto.randomUUID(),
+      draftOf: nodeId,
       isDirty: false,
       copiedAt: Date.now()
     };
 
-    await this.db.workingCopies.add(workingCopy);
-    return workingCopy;
+    await this.db.workingCopies.add(draft);
+    return draft;
   }
 
-  async commitWorkingCopy(nodeId: TreeNodeId, workingCopy: MyPluginWorkingCopy): Promise<void> {
-    const { workingCopyId, workingCopyOf, isDirty, copiedAt, ...entityData } = workingCopy;
+  async commitDraft(nodeId: TreeNodeId, draft: MyPluginDraft): Promise<void> {
+    const { draftId, draftOf, isDirty, copiedAt, ...entityData } = draft;
     await this.updateEntity(nodeId, entityData);
-    await this.db.workingCopies.delete(workingCopyId);
+    await this.db.workingCopies.delete(draftId);
   }
 
-  async discardWorkingCopy(nodeId: TreeNodeId): Promise<void> {
-    const workingCopy = await this.db.workingCopies
-      .where('workingCopyOf')
+  async discardDraft(nodeId: TreeNodeId): Promise<void> {
+    const draft = await this.db.workingCopies
+      .where('draftOf')
       .equals(nodeId)
       .first();
     
-    if (workingCopy) {
-      await this.db.workingCopies.delete(workingCopy.workingCopyId);
+    if (draft) {
+      await this.db.workingCopies.delete(draft.draftId);
     }
   }
 }
@@ -601,7 +601,7 @@ export class MyPluginHandler implements EntityHandler<MyPluginEntity, never, MyP
 ```typescript
 // packages/plugin-loader/[plugin-name]/src/services/MyPluginService.ts
 import type { TreeNodeId } from '@hierarchidb/core';
-import type { MyPluginEntity, MyPluginWorkingCopy } from '../types';
+import type { MyPluginEntity, MyPluginDraft } from '../types';
 import { MyPluginHandler } from '../handlers/MyPluginHandler';
 
 /**
@@ -759,9 +759,9 @@ export class WorkerAPIImpl {
 ```typescript
 // packages/plugin-loader/[plugin-name]/src/definitions/MyPluginDefinition.ts（一部）
 import type { NodeLifecycleHooks } from '~/registry/unified-plugin';
-import type { MyPluginEntity, MyPluginWorkingCopy } from '../types';
+import type { MyPluginEntity, MyPluginDraft } from '../types';
 
-const myPluginLifecycle: NodeLifecycleHooks<MyPluginEntity, MyPluginWorkingCopy> = {
+const myPluginLifecycle: NodeLifecycleHooks<MyPluginEntity, MyPluginDraft> = {
   // ノード作成前の検証
   beforeCreate: async (parentId, nodeData) => {
     // カスタムバリデーション
@@ -787,7 +787,7 @@ const myPluginLifecycle: NodeLifecycleHooks<MyPluginEntity, MyPluginWorkingCopy>
   },
 
   // ワーキングコピーのコミット前処理
-  beforeCommit: async (nodeId, workingCopy) => {
+  beforeCommit: async (nodeId, draft) => {
     // コミット前の最終検証
   },
 
@@ -888,7 +888,7 @@ export function MyPluginEditor() {
 ```typescript
 // packages/plugin-loader/[plugin-name]/src/definitions/MyPluginDefinition.ts
 import type { PluginDefinition, IconDefinition } from '~/registry/unified-plugin';
-import type { MyPluginEntity, MyPluginWorkingCopy } from '../types';
+import type { MyPluginEntity, MyPluginDraft } from '../types';
 import { MyPluginHandler } from '../handlers/MyPluginHandler';
 import { myPluginSchema } from '../database/MyPluginDatabase';
 
@@ -912,7 +912,7 @@ const myPluginIcon: IconDefinition = {
   color: '#4CAF50'
 };
 
-export const MyPluginDefinition: PluginDefinition<MyPluginEntity, never, MyPluginWorkingCopy> = {
+export const MyPluginDefinition: PluginDefinition<MyPluginEntity, never, MyPluginDraft> = {
   // 基本情報
   nodeType: 'myplugin',
   name: 'MyPlugin',
@@ -1207,7 +1207,7 @@ export const MyPluginList = memo(function MyPluginList({ items }) {
 ```tsx
 // @hierarchidb/core
 export interface BaseEntity { /*...*/ }
-export interface BaseWorkingCopy { /*...*/ }
+export interface BaseDraft { /*...*/ }
 export interface TreeNode { /*...*/ }
 export type TreeNodeId = string;
 export type TreeNodeType = string;

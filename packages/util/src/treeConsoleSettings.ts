@@ -1,4 +1,4 @@
-import type { BuildContinuationPolicy } from '@hierarchidb/common-types';
+import type { BuildContinuationPolicy } from '@hierarchidb/batch-api';
 import {
   DEFAULT_ZOOM_BAND_BOUNDARIES,
   ZOOM_BAND_MAX_RANGES,

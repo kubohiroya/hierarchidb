@@ -15,10 +15,10 @@ The TreeConsole package will import and use these existing services from `@hiera
 - `observeWorkingCopies()` - Subscribe to working copy changes
 
 ### TreeMutationService
-- `createWorkingCopyForCreate()` - Create new node working copy
-- `createWorkingCopy()` - Create edit working copy
-- `commitWorkingCopy()` - Commit changes
-- `discardWorkingCopy()` - Discard changes
+- `createDraftForCreate()` - Create new node working copy
+- `createDraft()` - Create edit working copy
+- `commitDraft()` - Commit changes
+- `discardDraft()` - Discard changes
 - `moveNodes()` - Move nodes to new parent
 - `duplicateNodes()` - Duplicate nodes
 - `pasteNodes()` - Paste copied nodes

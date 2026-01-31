@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { TabularDataResult } from '@hierarchidb/ui-tabular';
 import { buildTileIdByZoom, type LocationPointProperties } from '@hierarchidb/location-store';
 

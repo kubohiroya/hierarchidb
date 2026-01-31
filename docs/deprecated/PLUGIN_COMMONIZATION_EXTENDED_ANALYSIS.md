@@ -52,7 +52,7 @@ graph TD
 
 ### 3.1 EntityHandler実装パターン
 
-| プラグイン | 実装方式 | CRUD | WorkingCopy | 特殊メソッド |
+| プラグイン | 実装方式 | CRUD | Draft | 特殊メソッド |
 |-----------|---------|------|-------------|-------------|
 | **Folder** | 独自実装 | ✅ | ✅ | addBookmark, addTemplate |
 | **BaseMap** | Folder継承 | ✅ | ✅ | setStyle, setProvider |
@@ -81,33 +81,33 @@ graph TD
 - **BaseMap**: FolderDatabaseを継承
 - **Styler**: SpreadsheetDatabaseを利用
 
-### 3.3 WorkingCopy管理の実装差異
+### 3.3 Draft管理の実装差異
 
 ```typescript
 // パターン1: EphemeralDB利用（Shape, Folder, Spreadsheet）
 class Pattern1Handler {
-  async createWorkingCopy(entity: Entity): Promise<WorkingCopy> {
-    const workingCopy = this.buildWorkingCopy(entity);
-    await this.ephemeralDB.workingCopies.add(workingCopy);
-    return workingCopy;
+  async createDraft(entity: Entity): Promise<Draft> {
+    const draft = this.buildDraft(entity);
+    await this.ephemeralDB.workingCopies.add(draft);
+    return draft;
   }
 }
 
 // パターン2: メモリ内管理（PropertyResolver, Project）
 class Pattern2Handler {
-  private workingCopies = new Map<NodeId, WorkingCopy>();
+  private workingCopies = new Map<NodeId, Draft>();
   
-  async createWorkingCopy(nodeId: NodeId): Promise<WorkingCopy> {
+  async createDraft(nodeId: NodeId): Promise<Draft> {
     const entity = await this.getEntity(nodeId);
-    const workingCopy = { ...entity, isDraft: false };
-    this.workingCopies.set(nodeId, workingCopy);
-    return workingCopy;
+    const draft = { ...entity, isDraft: false };
+    this.workingCopies.set(nodeId, draft);
+    return draft;
   }
 }
 
 // パターン3: 即座返却型（Styler, BaseMap）
 class Pattern3Handler {
-  async createWorkingCopy(nodeId: NodeId): Promise<WorkingCopy> {
+  async createDraft(nodeId: NodeId): Promise<Draft> {
     const entity = await this.getEntity(nodeId);
     return { ...entity, isDraft: false, copiedAt: Date.now() };
   }
@@ -121,7 +121,7 @@ class Pattern3Handler {
 | 共通化対象 | 現在の重複行数 | 削減可能行数 | 削減率 |
 |-----------|--------------|------------|--------|
 | EntityHandler基底 | 約2,700行 | 約2,200行 | 81% |
-| WorkingCopy管理 | 約1,350行 | 約1,100行 | 81% |
+| Draft管理 | 約1,350行 | 約1,100行 | 81% |
 | データベース操作 | 約900行 | 約700行 | 78% |
 | CSV/ファイル処理 | 約600行 | 約500行 | 83% |
 | 検索・フィルタリング | 約450行 | 約350行 | 78% |
@@ -136,8 +136,8 @@ class Pattern3Handler {
 // packages/_obsolate_common/plugin-base/src/handlers/HierarchicalEntityHandler.ts
 export abstract class HierarchicalEntityHandler<
   TEntity extends BaseEntity & { parentId?: NodeId },
-  TWorkingCopy extends BaseWorkingCopy
-> extends BaseEntityHandler<TEntity, TWorkingCopy> {
+  TDraft extends BaseDraft
+> extends BaseEntityHandler<TEntity, TDraft> {
   
   // 階層構造管理
   async getChildren(parentId: NodeId): Promise<TEntity[]> {
@@ -176,9 +176,9 @@ export abstract class HierarchicalEntityHandler<
 // packages/_obsolate_common/plugin-base/src/handlers/ExtensibleEntityHandler.ts
 export abstract class ExtensibleEntityHandler<
   TEntity extends BaseEntity,
-  TWorkingCopy extends BaseWorkingCopy,
+  TDraft extends BaseDraft,
   TExtension = any
-> extends BaseEntityHandler<TEntity, TWorkingCopy> {
+> extends BaseEntityHandler<TEntity, TDraft> {
   
   protected extensions = new Map<string, TExtension>();
   
@@ -219,8 +219,8 @@ export abstract class ExtensibleEntityHandler<
 // packages/_obsolate_common/plugin-base/src/handlers/MetadataEntityHandler.ts
 export abstract class MetadataEntityHandler<
   TEntity extends BaseEntity & { metadata?: Record<string, any> },
-  TWorkingCopy extends BaseWorkingCopy
-> extends BaseEntityHandler<TEntity, TWorkingCopy> {
+  TDraft extends BaseDraft
+> extends BaseEntityHandler<TEntity, TDraft> {
   
   // メタデータ操作
   async setMetadata(
@@ -283,7 +283,7 @@ export abstract class MetadataEntityHandler<
 | 共通化対象 | 影響プラグイン数 | 削減行数 | 実装難易度 | 優先度 |
 |-----------|----------------|---------|-----------|--------|
 | BaseEntityHandler | 9 | 2,200 | 低 | **最高** |
-| WorkingCopyManager | 9 | 1,100 | 中 | **高** |
+| DraftManager | 9 | 1,100 | 中 | **高** |
 | HierarchicalHandler | 4 | 400 | 低 | **高** |
 | CSVProcessor | 2 | 500 | 低 | **中** |
 | MetadataHandler | 6 | 300 | 低 | **中** |

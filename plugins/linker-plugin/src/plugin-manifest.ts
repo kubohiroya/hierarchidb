@@ -1,4 +1,4 @@
-import { toNodeType } from '@hierarchidb/common-types';
+import { toNodeType } from '@hierarchidb/core-types';
 import type { PluginManifest } from '@hierarchidb/plugin-base';
 
 export const PLUGIN_ID = '@hierarchidb/linker-plugin' as const;

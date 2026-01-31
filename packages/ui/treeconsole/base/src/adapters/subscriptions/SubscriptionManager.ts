@@ -4,7 +4,8 @@
    */
 
 import type { WorkerAPI } from '@hierarchidb/worker-api';
-import type { NodeId, TreeNodeEvent } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { TreeNodeEvent } from '@hierarchidb/tree-api';
 import { TreeObservableAdapter } from './TreeObservableAdapter.js';
 import type { AdapterContext, UnsubscribeFunction } from '../../types/index.js';
 import { TreeConsoleAdapterError } from '../../types/index.js';

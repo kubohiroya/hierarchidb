@@ -9,7 +9,7 @@
   - エンティティ複合DB（peer/group/relations を束ねる汎用）: `kebab-case-nodeType + -entities`（短い nodeType 前提。例: `folder-entities`, `location-entities`, `spreadsheet-entities`）
 - テーブル名（camelCase, 複数形）
   - Peer: `xxxEntities`（例: `shapeEntities`, `spreadsheetEntities`, `projects`, `routes`, `baseMaps`, `folders`）
-  - WorkingCopy: `workingCopies`（Peer の複本）
+  - Draft: `workingCopies`（Peer の複本）
   - Group/Features: `features`（map preview metadata）
   - Relational: `relations`
   - 補助: 機能が明確な名詞の複数形（例: `rawFileMetadata`, `rowChunks`, `featureBuffers`, `vectorTiles`, `tileBuffers`, `cache`, `snapshots`, `analysisResults`, `routeCache`）

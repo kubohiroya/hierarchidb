@@ -25,7 +25,7 @@ interface StylerDatabaseStructure {
   tableMetadata: TableMetadataEntity[];
   
   // Working copies for draft editing
-  stylerWorkingCopies: StylerWorkingCopy[];
+  stylerWorkingCopies: StylerDraft[];
 }
 ```
 
@@ -36,12 +36,12 @@ const indexConfiguration = {
   // Primary indices for core entities
   stylers: '&nodeId, name, createdAt, updatedAt, tableMetadataId',
   tableMetadata: '&id, contentHash, filename, referenceCount, lastAccessedAt',
-  stylerWorkingCopies: '&workingCopyId, workingCopyOf, copiedAt',
+  stylerWorkingCopies: '&draftId, draftOf, copiedAt',
   
   // Performance indices for queries
   stylersByTable: '[tableMetadataId+nodeId]',
   tablesByHash: '[contentHash+filename]',
-  workingCopiesByNode: '[workingCopyOf+copiedAt]',
+  workingCopiesByNode: '[draftOf+copiedAt]',
 };
 ```
 
@@ -197,18 +197,18 @@ export interface TableMetadataEntity extends RelationalEntity {
 
 ### Working Copy System
 
-#### StylerWorkingCopy
+#### StylerDraft
 Extends StylerEntity with working copy properties for draft editing.
 
 ```typescript
-export interface WorkingCopyProperties {
-  workingCopyId: string;
-  workingCopyOf: string;
+export interface DraftProperties {
+  draftId: string;
+  draftOf: string;
   copiedAt: number;
   isDirty: boolean;
 }
 
-export type StylerWorkingCopy = StylerEntity & WorkingCopyProperties;
+export type StylerDraft = StylerEntity & DraftProperties;
 ```
 
 ### Configuration Types
@@ -464,11 +464,11 @@ export class StylerEntityHandler extends PeerEntityHandler<StylerEntity> {
 ### Working Copy Operations
 
 ```typescript
-interface WorkingCopyOperations {
-  createWorkingCopy(nodeId: NodeId): Promise<StylerWorkingCopy>;
-  updateWorkingCopy(workingCopyId: string, changes: Partial<StylerEntity>): Promise<void>;
-  commitWorkingCopy(workingCopyId: string): Promise<StylerEntity>;
-  discardWorkingCopy(workingCopyId: string): Promise<void>;
+interface DraftOperations {
+  createDraft(nodeId: NodeId): Promise<StylerDraft>;
+  updateDraft(draftId: string, changes: Partial<StylerEntity>): Promise<void>;
+  commitDraft(draftId: string): Promise<StylerEntity>;
+  discardDraft(draftId: string): Promise<void>;
 }
 ```
 

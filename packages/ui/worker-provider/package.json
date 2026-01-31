@@ -52,7 +52,7 @@
     "typescript": "workspace:^5.9.3",
     "vite": "^5.0.11",
     "vitest": "^3.2.4",
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/worker-api": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*"
   },
@@ -60,7 +60,7 @@
     "comlink": "^4.4.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/worker-api": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*"
   },

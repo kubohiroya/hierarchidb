@@ -1,4 +1,5 @@
-import type { BuildContinuationPolicy, NodeId, StageHandler, TaskQueueRecord } from '@hierarchidb/common-types';
+import type { BuildContinuationPolicy, StageHandler, TaskQueueRecord } from '@hierarchidb/batch-api';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildConfig } from '../../common/types/index.js';
 import type { CountryMetadata } from '../../common/types/index.js';
 import { createTransformByBandHandler, listTasksByStage, putTasks, runStageTasks, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';

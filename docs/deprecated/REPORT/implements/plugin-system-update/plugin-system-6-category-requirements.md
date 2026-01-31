@@ -130,7 +130,7 @@ await manager.cleanup(nodeId); // TreeNode削除時の自動クリーンアッ�
 - 🟡 循環参照の検出と防止
 
 #### EphemeralEntity自動クリーンアップ
-- 🟢 WorkingCopy削除時の連鎖削除
+- 🟢 Draft削除時の連鎖削除
 - 🟢 セッションタイムアウト時の削除
 - 🟡 大量データ削除時のパフォーマンス
 

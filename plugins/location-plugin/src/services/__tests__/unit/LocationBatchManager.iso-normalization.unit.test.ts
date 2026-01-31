@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { LocationPointProperties } from '../../../common/entities/LocationPoint.js';
 import type { LocationBatchConfig } from '../../../common/entities/LocationEntity.js';
 

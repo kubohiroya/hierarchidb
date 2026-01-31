@@ -1,6 +1,6 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { TaskQueueEvent, TaskQueueRecord, TaskStage, TaskStatus } from '../types/types.js';
 //import type { TaskQueueEvent, TaskQueueRecord, TaskStage, TaskStatus } from '@hierarchidb/gis-sdk';
 

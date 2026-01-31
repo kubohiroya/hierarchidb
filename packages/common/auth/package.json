@@ -36,12 +36,12 @@
   },
   "dependencies": {},
   "peerDependencies": {
-    "@hierarchidb/common-types": "workspace:*"
+    "@hierarchidb/core-types": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "typescript": "workspace:^5.9.3",
-    "@hierarchidb/common-types": "workspace:*"
+    "@hierarchidb/core-types": "workspace:*"
   },
   "keywords": [
     "hierarchidb",

@@ -4,7 +4,7 @@
  */
 
 import { ShapeMetadata } from '../common/types/metadata.js';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeEntity } from '../common/types/index.js';
 import { shapeBatchAPI } from './api.js';
 import { ShapeEntityHandler } from './handlers/index.js';

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { LocationEntity } from '../../../types/index';
-import type { Timestamp } from '@hierarchidb/common-types';
+import type { Timestamp } from '@hierarchidb/core-types';
 import { LocationSelectionStep } from '../../LocationSelectionStep';
 import en from '../../../../locales/en.json' with { type: 'json' };
 

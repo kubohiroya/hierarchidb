@@ -3,7 +3,7 @@ import { Button, CircularProgress, Tooltip } from '@mui/material';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import { toNodeId } from '@hierarchidb/common-types';
+import { toNodeId } from '@hierarchidb/core-types';
 import { useRouteBatchProgress } from '../hooks/useRouteBatchProgress.js';
 import { useTranslation } from '../../common/i18n/index.js';
 

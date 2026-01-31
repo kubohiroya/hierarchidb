@@ -2,7 +2,7 @@
  * Types for TreeConsoleToolbar_Deprecated package
  */
 
-import type { BuildContinuationPolicy } from '@hierarchidb/common-types';
+import type { BuildContinuationPolicy } from '@hierarchidb/batch-api';
 
 export type TreeConsoleSearchMode = 'local';
 

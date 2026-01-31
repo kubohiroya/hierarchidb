@@ -1,4 +1,4 @@
-import type { TreeId } from '@hierarchidb/common-types';
+import type { TreeId } from '@hierarchidb/core-types';
 import { useIconRegistry } from '@hierarchidb/ui-icon';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-plugin-shell/ui-i18n';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';

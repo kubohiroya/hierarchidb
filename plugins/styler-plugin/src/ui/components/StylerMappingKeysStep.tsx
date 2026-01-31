@@ -91,14 +91,14 @@ export const StylerMappingKeysStep: React.FC<PluginStepProps<StylerStepData>> = 
         valueColumn={valueColumn}
         columns={columns}
         menuContainer={menuContainer}
-        onKeyColumnChange={(nextKey) =>
+        onKeyColumnChange={(nextKey: string) =>
           onChange({
             ...(data ?? {}),
             keyColumn: nextKey,
             mapping: { ...(data?.mapping ?? {}), keyColumn: nextKey },
           } as StylerStepData)
         }
-        onValueColumnChange={(nextValue) =>
+        onValueColumnChange={(nextValue: string) =>
           onChange({
             ...(data ?? {}),
             valueColumn: nextValue,

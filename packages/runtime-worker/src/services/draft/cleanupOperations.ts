@@ -1,5 +1,5 @@
 import type { DiscardDraftOptions } from '@hierarchidb/tree-api';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { generateUUID } from '@hierarchidb/util';
 import type { CoreDB } from '../CoreDB.js';
 import type { CommandEnvelope } from '../command-types.js';

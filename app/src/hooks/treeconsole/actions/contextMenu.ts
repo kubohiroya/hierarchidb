@@ -2,7 +2,8 @@
  * Context menu action handler for TreeConsole.
  */
 
-import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import { notify } from '@hierarchidb/components';
 import { isFolderNodeType } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';

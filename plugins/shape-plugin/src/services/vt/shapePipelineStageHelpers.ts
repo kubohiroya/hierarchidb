@@ -1,4 +1,5 @@
-import type { BuildContinuationPolicy, NodeId, TaskQueueRecord } from '@hierarchidb/common-types';
+import type { BuildContinuationPolicy, TaskQueueRecord } from '@hierarchidb/batch-api';
+import type { NodeId } from '@hierarchidb/core-types';
 import { listTasksByStageAndStatus, updateTask, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 
 export const resolveFailureHandling = (policy: BuildContinuationPolicy): 'continue' | 'stop' => (

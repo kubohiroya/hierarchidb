@@ -19,9 +19,12 @@
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@hierarchidb/core-types": "workspace:*"
+  },
   "peerDependencies": {
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
+    "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/components": "workspace:*",
     "@hierarchidb/ui-treeconsole-breadcrumb": "workspace:*",
     "@hierarchidb/ui-theme": "workspace:*",
@@ -50,7 +53,8 @@
   },
   "type": "module",
   "devDependencies": {
-    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
+    "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/components": "workspace:*",
     "@hierarchidb/ui-treeconsole-breadcrumb": "workspace:*",
     "@hierarchidb/ui-theme": "workspace:*",

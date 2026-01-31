@@ -5,7 +5,7 @@ import {
   type StartBatchContext,
   type StepData,
 } from '@hierarchidb/plugin-base';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { RouteUpdaterPayload } from '../../common/types/index.js';
 import { toRouteUpdaterPayload } from '../../common/utils/draft.js';
 import { useTranslation as getTranslation } from '../../common/i18n/index.js';

@@ -1,5 +1,5 @@
 import type { SpreadsheetEntity, SpreadSheetDataSourceType } from '@hierarchidb/spreadsheet-store';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { MapLibreStyle } from '@hierarchidb/ui-map';
 
 import type { StepData } from '@hierarchidb/plugin-base';

@@ -131,7 +131,7 @@ TreeNodeUpdaterAPI と draftMetadata/draftData 経路の採用状況。`rg TreeN
 | location   | △ | 既存 UI は独自更新が残るため、MultiStep 化して `useTreeNodeUpdater` → draftMetadata/Data に寄せる。進捗 API もドラフト同期に付け替え。 |
 | resolver   | ○ | draftMetadata/draftData へ統一済み。更なる共通化を継続。 |
 | route      | ○ | TreeNodeUpdater + draftMetadata/draftData へ統一済み。 |
-| shape      | △ | 旧 WorkingCopy 依存の記述を TreeNodeUpdater 用語に更新し、UI/Worker 実装を `useTreeNodeUpdater`/DraftService ベースに置換。Shape の import/export 手順も draftMetadata/draftData で再検証する。 |
+| shape      | △ | 旧 Draft 依存の記述を TreeNodeUpdater 用語に更新し、UI/Worker 実装を `useTreeNodeUpdater`/DraftService ベースに置換。Shape の import/export 手順も draftMetadata/draftData で再検証する。 |
 | spreadsheet| ○ | 部分利用済み。全ステップが共通フローか確認を推奨。 |
 | styler     | △ | マルチステップ化時に `useTreeNodeUpdater` を導入し、スタイル一時データを draftData に集約。commit は TreeNodeUpdaterAPI で実施。 |
 | timeline   | △ | 新規実装は TreeNodeUpdaterAPI を前提に、取込/プレビューも draftData から読む。 |
@@ -250,7 +250,7 @@ graph TB
 
 ## 🧩 Draft/Working Copy 利用状況（metadata / data）
 
-各プラグインが WorkingCopy をどう扱うかの最新整理。Basic Info は draftMetadata、ドメインペイロードは draftData に格納する共通パターンで統一しています（folder は data/draftData を空オブジェクトで維持）。
+各プラグインが Draft をどう扱うかの最新整理。Basic Info は draftMetadata、ドメインペイロードは draftData に格納する共通パターンで統一しています（folder は data/draftData を空オブジェクトで維持）。
 
 | プラグイン | Draft ホスト/フック | draftMetadata の主用途 | draftData の主用途 | 備考 |
 |---|---|---|---|---|
@@ -263,7 +263,7 @@ graph TB
 | route | useTreeNodeUpdater（RouteDialogHost） | name/description/tags | route payload 全般 | 標準パターン |
 | resolver | useTreeNodeUpdater（ResolverDialogHost） | name/description/tags | schema / mapping / validation | 標準パターン |
 | linker | useTreeNodeUpdater（ResourcePickerDialogHost 等） | name/description/tags | 最小限（metadata 側が主） | draftData 依存低め |
-| timeline | 未使用/最小 | なし | なし | WorkingCopy 非依存 |
+| timeline | 未使用/最小 | なし | なし | Draft 非依存 |
 
 補足:
 - Draft の生成・編集は DraftAPI（initTreeNode / updateTreeNodeDraftMetadata / updateTreeNodeDraftData / commitDraft）を経由する。createDraftBase 系は廃止済み。
@@ -364,7 +364,7 @@ export const MyPlugin: PluginDefinition = {
 
 #### 自動スキーマ管理
 ```typescript
-export const MyPluginDefinition: PluginDefinition<MyEntity, never, MyWorkingCopy> = {
+export const MyPluginDefinition: PluginDefinition<MyEntity, never, MyDraft> = {
   database: {
     entityStore: 'my_entities',  // テーブル名
     schema: {                    // Dexieスキーマ

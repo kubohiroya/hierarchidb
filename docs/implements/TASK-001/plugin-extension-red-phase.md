@@ -91,7 +91,7 @@
    - `packages/common/core/src/types/batch-types.ts`
 
 2. **基本型定義**
-   - ExtendableNodeTypeDefinition<TBase, TExtended, TWorkingCopy>
+   - ExtendableNodeTypeDefinition<TBase, TExtended, TDraft>
    - BaseNodeDefinition<TEntity>
    - DialogStepDefinition
    - ExtendedFieldDefinition

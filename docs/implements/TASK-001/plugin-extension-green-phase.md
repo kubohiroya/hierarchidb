@@ -112,7 +112,7 @@ export interface BaseEntityExtension<TBase, TExtended> {
 
 #### ExtendableNodeTypeDefinition
 ```typescript
-export interface ExtendableNodeTypeDefinition<TBase, TExtended, TWorkingCopy> {
+export interface ExtendableNodeTypeDefinition<TBase, TExtended, TDraft> {
   extends: string;
   nodeType: string;
   name: string;

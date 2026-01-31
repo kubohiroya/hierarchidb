@@ -8,14 +8,13 @@ Reusable tagging capability. Centralizes tag CRUD and node–tag associations be
 TagService.ts   Facade implementing TagAPI
 ports.ts        TagDBPort contract
 capability.ts   register/isTaggable helpers
-index.ts        Public exports + FeatureDefinition
+index.ts        Public exports
 ```
 
 ## Key exports
 - `TagService` — `create/get/update/delete` tags; `addTagToNode/removeTagFromNode/getTagsForNode/getNodesForTag`.
 - Port: `TagDBPort` for persistence.
 - Capability: `registerTaggable`, `isTaggable`.
-- `FeatureDefinition.manifest` (`provides: ['tag']`).
 
 ## Consumers / usage
 - Worker runtime wires `TagService` to CoreDB/Dexie; UI uses TagAPI from `@hierarchidb/tag-api`.

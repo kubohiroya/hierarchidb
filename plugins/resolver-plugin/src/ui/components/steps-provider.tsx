@@ -5,7 +5,7 @@ import { ValidationConfigStep } from './steps/ValidationConfigStep.js';
 import { DuplicateResolutionStep } from './steps/DuplicateResolutionStep.js';
 import { PreviewTestStep } from './steps/PreviewTestStep.js';
 import type { ResolverUpdaterPayload, SchemaInfo, MappingValidationResult } from '../../common/types/index.js';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { ResolverBuildStep } from './steps/ResolverBuildStep.js';
 
 const registry = PluginStepRegistry.getInstance();

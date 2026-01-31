@@ -6,7 +6,7 @@ vk:doc kind=guide audience=dev scope=worker
 
 - Policy C（移動/削除ブロック）
   - 目的: サブツリーに Working Copy (WC) がある間の move/remove を禁止し、編集中の不整合を防ぐ。
-  - 実装: `CommandProcessor` 入口で常時検査。`trees.workingCopyRootId` → `nodes.where('parentId').anyOf(...)` → holder.name を decode → サブツリーID Set と突き合わせ。
+  - 実装: `CommandProcessor` 入口で常時検査。`trees.draftRootId` → `nodes.where('parentId').anyOf(...)` → holder.name を decode → サブツリーID Set と突き合わせ。
 
 - Trash（holder 方式）
   - 目的: Trash 復元・競合・参照整合性の取り扱いを単純化。

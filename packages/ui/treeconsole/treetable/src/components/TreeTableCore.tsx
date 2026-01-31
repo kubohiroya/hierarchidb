@@ -13,7 +13,8 @@ import {
   type SortingState,
   useReactTable,
 } from '@tanstack/react-table';
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
+import type { TreeNode } from '@hierarchidb/tree-api';
 import { NodeContextMenu, NodeTypeIcon } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { Skeleton, TableBody, TableCell, TableRow } from '@mui/material';
 import type { TreeNodeInUI, TreeTableCoreProps } from '../types.js';

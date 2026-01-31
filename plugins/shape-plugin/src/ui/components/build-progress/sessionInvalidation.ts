@@ -1,7 +1,7 @@
 import type { ShapeBuildStage } from '@hierarchidb/shape-api';
 import type { ShapeEntity } from '../../../common/types/index.js';
 import { mergeBuildConfig } from '../../../common/types/index.js';
-import { toNodeId, type NodeId } from '@hierarchidb/common-types';
+import { toNodeId, type NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
 import { ephemeralShapeAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
 

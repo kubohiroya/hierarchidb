@@ -15,8 +15,7 @@ import { CheckCircle, CloudDownload, Tune, AltRoute } from '@mui/icons-material'
 import { BuildStepPanel, type BuildStage, type BuildStatus, notify } from '@hierarchidb/components';
 import { HeapPressureDialog, useHeapPressureGuard } from '@hierarchidb/ui-memory';
 import { GenericDataGrid, type GridColumn } from '@hierarchidb/ui-grid';
-import type { NodeId, NodeType } from '@hierarchidb/common-types';
-import { findRelatedNodesByPriority } from '@hierarchidb/tree-api';
+import type { NodeId } from '@hierarchidb/core-types';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
 import { proxy } from 'comlink';
 import { IDE_GSM_BULK_CHUNK_SIZE, type IdeGsmImportProgress } from '@hierarchidb/route-api';
@@ -126,8 +125,6 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
   draft,
   onUpdate,
   nodeId,
-  parentId,
-  mode,
 }) => {
   const { t } = useTranslation();
   const { api, initialize } = useWorkerAPI();
@@ -332,26 +329,6 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     status,
   ]);
 
-  const resolveLocationNodes = useCallback(async (): Promise<NodeId[]> => {
-    if (!api) return [];
-    const query = await api.getQueryAPI();
-    let resolvedParentId: NodeId | null = null;
-
-    if (mode === 'create' && parentId) {
-      resolvedParentId = parentId as NodeId;
-    } else if (nodeId) {
-      const node = await query.getNode(nodeId as NodeId);
-      resolvedParentId = node?.parentId ?? null;
-    }
-
-    if (!resolvedParentId) return [];
-    const nodes = await findRelatedNodesByPriority(query, {
-      parentId: resolvedParentId,
-      nodeTypes: ['location' as NodeType],
-    });
-    return nodes.map((node) => node.id as NodeId);
-  }, [api, mode, nodeId, parentId]);
-
   const runIdeGsmBuild = useCallback(async () => {
     if (buildInFlightRef.current) return;
     if (!api) {
@@ -382,18 +359,12 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     });
     try {
       await initialize();
-      const locationNodeIds = await resolveLocationNodes();
-      if (locationNodeIds.length === 0) {
-        throw new Error('No related location nodes found.');
-      }
-
       const routeNodeId = (draft.treeNodeId ?? nodeId) as NodeId;
       const routeMutation = await api.getRouteMutationAPI();
       const result = await routeMutation.importIdeGsmRoutes(
         {
           nodeId: routeNodeId,
           sourceUrl,
-          locationNodeIds,
           chunkSize: IDE_GSM_BULK_CHUNK_SIZE,
         },
         proxy((progress: IdeGsmImportProgress) => {
@@ -417,7 +388,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     } finally {
       buildInFlightRef.current = false;
     }
-  }, [api, draft, initialize, mapIdeGsmProgress, nodeId, onUpdate, resolveLocationNodes, t]);
+  }, [api, draft, initialize, mapIdeGsmProgress, nodeId, onUpdate, t]);
 
   return (
     <Box display="flex" flexDirection="column" gap={2}>

@@ -13,7 +13,7 @@ packages/common/plugin-base/
 └── src/
     ├── RuntimeWorkerService.ts
     ├── types/
-    │   ├── base-lifecycle-plugin-definition.ts      # BaseEntity, BaseWorkingCopy等の基底型定義
+    │   ├── base-lifecycle-plugin-definition.ts      # BaseEntity, BaseDraft等の基底型定義
     │   └── RuntimeWorkerService.ts
     ├── handlers/
     │   ├── BaseEntityHandler.ts        # 基底EntityHandler（500行）
@@ -21,7 +21,7 @@ packages/common/plugin-base/
     │   ├── MetadataEntityHandler.ts    # メタデータ管理Handler（380行）
     │   └── RuntimeWorkerService.ts
     ├── managers/
-    │   ├── WorkingCopyManager.ts       # WorkingCopy統一管理（350行）
+    │   ├── DraftManager.ts       # Draft統一管理（350行）
     │   └── RuntimeWorkerService.ts
     └── utils/
         ├── id-generator.ts              # ID生成ユーティリティ
@@ -66,9 +66,9 @@ packages/common/plugin-base/
 
 **適用対象プラグイン:** Shape, Location, Route, Folder, BaseMap, Project
 
-### 4. WorkingCopyManager
+### 4. DraftManager
 **完全実装済み機能:**
-- ✅ WorkingCopy作成（既存/新規ドラフト）
+- ✅ Draft作成（既存/新規ドラフト）
 - ✅ 更新・コミット・破棄
 - ✅ 変更追跡（modifiedFields）
 - ✅ バリデーション機能
@@ -86,7 +86,7 @@ packages/common/plugin-base/
 | BaseEntityHandler | 500行 | 約1,800行 | 72% |
 | HierarchicalEntityHandler | 430行 | 約600行 | 58% |
 | MetadataEntityHandler | 380行 | 約900行 | 70% |
-| WorkingCopyManager | 350行 | 約900行 | 72% |
+| DraftManager | 350行 | 約900行 | 72% |
 | **合計** | **1,660行** | **約4,200行** | **71%** |
 
 ### 品質向上効果
@@ -109,7 +109,7 @@ export class FolderEntityHandler {
 // After: 共通基底クラス利用（約50行）
 export class FolderEntityHandler extends HierarchicalEntityHandler<
   FolderEntity & MetadataEntity,
-  FolderWorkingCopy
+  FolderDraft
 > {
   protected buildEntity(nodeId: NodeId, entityId: EntityId, data: Partial<FolderEntity>) {
     return {
@@ -139,7 +139,7 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
 - [x] 共通基底クラスの設計と実装
 - [x] 階層構造管理の抽象化
 - [x] メタデータ管理の統一
-- [x] WorkingCopy管理の一元化
+- [x] Draft管理の一元化
 - [x] 型安全なID生成ユーティリティ
 
 ### ⏳ 残作業
@@ -154,8 +154,8 @@ export class FolderEntityHandler extends HierarchicalEntityHandler<
 ### 1. 型安全性の確保
 ```typescript
 // ジェネリクスによる完全な型推論
-class MyHandler extends BaseEntityHandler<MyEntity, MyWorkingCopy> {
-  // MyEntity, MyWorkingCopyの型が自動推論される
+class MyHandler extends BaseEntityHandler<MyEntity, MyDraft> {
+  // MyEntity, MyDraftの型が自動推論される
 }
 ```
 

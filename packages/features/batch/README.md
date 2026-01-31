@@ -6,13 +6,12 @@ Lightweight batch orchestration with a minimal `mapChunks` helper; designed to e
 ## Directory layout
 ```
 BatchService.ts   Facade
-index.ts          Public exports + FeatureDefinition
+index.ts          Public exports
 ```
 
 ## Key exports
 - `BatchService`
   - `mapChunks(source, fn, { concurrency, progress })` — parallel map with progress + abort support.
-- `FeatureDefinition.manifest` (`provides: ['batch']`).
 
 ## Consumers / usage
 - Compose with `@hierarchidb/download` to process URL lists.

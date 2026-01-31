@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { getDialogSurfaceColor } from '@hierarchidb/ui-dialog';
 import { InfoOutlined as InfoOutlinedIcon } from '@mui/icons-material';
 import { Box, IconButton, Stack, Tooltip, Typography } from '@mui/material';

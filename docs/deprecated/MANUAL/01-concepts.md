@@ -58,7 +58,7 @@ TreeNodeに紐づけられた追加情報。プラグインごとに定義され
 
 ## ワーキングコピーシステム
 
-### WorkingCopyTypes（ワーキングコピー）
+### DraftTypes（ワーキングコピー）
 編集時に作成される一時的なデータのコピー。
 
 **特徴:**
@@ -89,7 +89,7 @@ TreeNodeに紐づけられた追加情報。プラグインごとに定義され
 セッション限定のデータを保存する一時データベース。
 
 **保存対象:**
-- WorkingCopyEntity（編集中データ）
+- DraftEntity（編集中データ）
 - TreeViewStateEntity（UI状態）
 - Ephemeralエンティティ
 

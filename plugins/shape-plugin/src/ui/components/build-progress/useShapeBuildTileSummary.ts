@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { BuildStatus } from '@hierarchidb/components';
 import type { ShapeEntity } from '../../../common/types/index.js';
 import { shapeQueryAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';

@@ -1,12 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
-import type {
-  NodeId,
-  NodeType,
-  Timestamp,
-  TreeNode,
-  TreeNodeMetadata,
-} from '@hierarchidb/common-types';
+import type { NodeId, NodeType, Timestamp } from '@hierarchidb/core-types';
+import type { TreeNode, TreeNodeMetadata } from '@hierarchidb/tree-api';
 import { CommandProcessor } from '../../services/CommandProcessor.js';
 import { CoreDB } from '../../services/CoreDB.js';
 import { TreeNodeUpdaterService } from '../../services/TreeNodeUpdaterService.js';

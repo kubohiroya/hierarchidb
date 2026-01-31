@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import type { NodeId, NodeType, TaskStage } from '@hierarchidb/common-types';
+import type { TaskStage } from '@hierarchidb/batch-api';
+import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { useShapeBuildTasks } from './useShapeBuildTasks.ts';
 import { useBuildProgress } from './useBuildProgress.js';
 import { useTranslation } from '../../i18n.js';

@@ -1,9 +1,11 @@
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { resolveLocationAttribution } from '@hierarchidb/location-plugin';
 import type { LocationType } from '@hierarchidb/location-store';
 import type { LocationQueryAPI } from '@hierarchidb/location-api';
 import { ROUTE_DATA_SOURCES } from '@hierarchidb/route-plugin';
+import type { RouteDataSourceConfig } from '@hierarchidb/route-plugin';
 import { SHAPE_DATA_SOURCES } from '@hierarchidb/shape-plugin';
+import type { DataSourceConfig as ShapeDataSourceConfig } from '@hierarchidb/shape-plugin';
 import type {
   LayerSetId,
   LayerSetVisibility,
@@ -371,7 +373,7 @@ export default function MapPage() {
     const resolveShape = (dataSourceName?: string | null) => {
       if (!dataSourceName) return null;
       const normalized = dataSourceName.toLowerCase();
-      const config = SHAPE_DATA_SOURCES.find((source) => source.name.toLowerCase() === normalized);
+      const config = SHAPE_DATA_SOURCES.find((source: ShapeDataSourceConfig) => source.name.toLowerCase() === normalized);
       if (!config) return null;
       return {
         id: `shape:${config.name}`,
@@ -384,7 +386,7 @@ export default function MapPage() {
     const resolveRoute = (dataSourceName?: string | null) => {
       if (!dataSourceName) return null;
       const normalized = dataSourceName.toLowerCase();
-      const config = ROUTE_DATA_SOURCES.find((source) => source.name.toLowerCase() === normalized);
+      const config = ROUTE_DATA_SOURCES.find((source: RouteDataSourceConfig) => source.name.toLowerCase() === normalized);
       if (!config) return null;
       return {
         id: `route:${config.name}`,

@@ -6,7 +6,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { useTreeViewController } from './useTreeViewController.js';
-import { toNodeId, toNodeType, type NodeId, type TreeNode, type TreeNodeEvent } from '@hierarchidb/common-types';
+import { toNodeId, toNodeType, type NodeId } from '@hierarchidb/core-types';
+import type { TreeNode, TreeNodeEvent } from '@hierarchidb/tree-api';
 import type { WorkerAPI } from '@hierarchidb/worker-api';
 
 vi.mock('comlink', () => ({

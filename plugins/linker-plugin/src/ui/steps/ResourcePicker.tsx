@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, IconButton, InputAdornment, Stack, TextField, Tooltip, Typography } from '@mui/material';
-import type { TreeQueryAPI } from '@hierarchidb/tree-api';
-import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, TreeId } from '@hierarchidb/core-types';
+import type { TreeNode, TreeQueryAPI } from '@hierarchidb/tree-api';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import { DualKeyMap } from '@hierarchidb/util';
 import { ArrowBack as BackIcon, ArrowForward as ForwardIcon, ExpandMore as ExpandIcon, ExpandLess as CollapseIcon, Search as SearchIcon } from '@mui/icons-material';

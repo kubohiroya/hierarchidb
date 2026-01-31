@@ -218,12 +218,12 @@ const node = deserializeTreeNode(data);
 **基本機能は実装済み:**
 ```typescript
 // EphemeralDB にワーキングコピーテーブル存在
-workingCopies!: Table<WorkingCopyRow, string>;
+workingCopies!: Table<DraftRow, string>;
 
 // 基本操作メソッド実装済み
-async getWorkingCopy(workingCopyId: string): Promise<WorkingCopyTypes | undefined>
-async updateWorkingCopy(workingCopy: WorkingCopyTypes): Promise<void>
-async discardWorkingCopy(workingCopyId: string): Promise<void>
+async getDraft(draftId: string): Promise<DraftTypes | undefined>
+async updateDraft(draft: DraftTypes): Promise<void>
+async discardDraft(draftId: string): Promise<void>
 ```
 
 ### 7.2 実際の問題点

@@ -10,7 +10,7 @@ eria-cartographの実装分析により、Working Copyシステムに以下の�
 現在の仕様では新規作成と既存ノード編集が区別されていません。
 
 ### 2. Working Copy管理の複雑性
-単一のWorkingCopyインターフェースでは、異なるライフサイクルを持つ用途を適切に表現できません。
+単一のDraftインターフェースでは、異なるライフサイクルを持つ用途を適切に表現できません。
 
 ## 改善提案
 
@@ -23,8 +23,8 @@ export interface DraftProperties {
 }
 
 // 既存ノード編集用のWorking Copy
-export interface WorkingCopyProperties {
-  workingCopyOf?: TreeNodeId; // 編集対象の元ノードID
+export interface DraftProperties {
+  draftOf?: TreeNodeId; // 編集対象の元ノードID
   copiedAt?: Timestamp; // コピー作成時刻
 }
 
@@ -34,7 +34,7 @@ export interface TreeNodeBase {
 }
 
 export type TreeNode = TreeNodeBase & 
-  Partial<WorkingCopyProperties> & 
+  Partial<DraftProperties> & 
   Partial<DraftProperties> &
   Partial<TrashItemProperties>;
 ```
@@ -45,8 +45,8 @@ export type TreeNode = TreeNodeBase &
 
 ```typescript
 // 新規作成用Draft操作
-export interface CreateWorkingCopyForCreatePayload {
-  workingCopyId: UUID;
+export interface CreateDraftForCreatePayload {
+  draftId: UUID;
   parentTreeNodeId: TreeNodeId;
   treeNodeType: TreeNodeType; // 追加：ノードタイプ指定
   name: string;
@@ -54,8 +54,8 @@ export interface CreateWorkingCopyForCreatePayload {
 }
 
 // Draft→本体への変換操作
-export interface CommitWorkingCopyForCreatePayload {
-  workingCopyId: UUID;
+export interface CommitDraftForCreatePayload {
+  draftId: UUID;
   isDraft: boolean; // 追加：Draft状態の制御
   onNameConflict?: OnNameConflict;
 }
@@ -94,20 +94,20 @@ export interface TreeNodeWithChildren extends TreeNode {
 ```typescript
 export interface TreeMutationServiceDirect {
   // Working Copy直接操作
-  createNewDraftWorkingCopy(
+  createNewDraftDraft(
     parentTreeNodeId: TreeNodeId,
     treeNodeType: TreeNodeType,
     baseName: string,
   ): Promise<TreeNodeId>;
 
-  createWorkingCopy(treeNode: TreeNode): Promise<TreeNodeId>;
+  createDraft(treeNode: TreeNode): Promise<TreeNodeId>;
 
-  commitWorkingCopy(
-    workingCopyNodeId: TreeNodeId,
+  commitDraft(
+    draftNodeId: TreeNodeId,
     isDraft: boolean,
   ): Promise<void>;
 
-  discardWorkingCopy(workingCopyNodeId: TreeNodeId): Promise<void>;
+  discardDraft(draftNodeId: TreeNodeId): Promise<void>;
 
   // 基本操作
   update(
@@ -150,7 +150,7 @@ export class WorkerFacade {
 ## 実装優先順位
 
 ### Phase 1: 基本Working Copy改善 (1週間)
-- [ ] DraftProperties/WorkingCopyPropertiesの分離
+- [ ] DraftProperties/DraftPropertiesの分離
 - [ ] TreeNodeBase型の拡張
 - [ ] Working Copy操作の基本実装
 

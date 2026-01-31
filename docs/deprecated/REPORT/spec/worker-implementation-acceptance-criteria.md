@@ -34,8 +34,8 @@
 - UI層からComlink経由で接続済み
 
 **When（実行条件）**: 🟢
-- createWorkingCopyForCreateコマンドを送信
-- 必須パラメータ（workingCopyId, parentTreeNodeId, name）を含む
+- createDraftForCreateコマンドを送信
+- 必須パラメータ（draftId, parentTreeNodeId, name）を含む
 
 **Then（期待結果）**: 🟢
 - コマンドが順序付けて処理される
@@ -76,7 +76,7 @@
 - 元ノードのupdatedAtタイムスタンプを保持
 
 **When（実行条件）**: 🟢
-- commitWorkingCopyコマンドを送信
+- commitDraftコマンドを送信
 - expectedUpdatedAtパラメータを含む
 
 **Then（期待結果）**: 🟢

@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 import { createDexieVectorTileStore } from '@hierarchidb/runtime-worker';
 import type { VectorTileStore } from '@hierarchidb/runtime-worker';
 import type { ShapeDB, VectorTileRecord } from '@hierarchidb/shape-store';

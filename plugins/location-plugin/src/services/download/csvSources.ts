@@ -1,4 +1,4 @@
-import type { Timestamp } from '@hierarchidb/common-types';
+import type { Timestamp } from '@hierarchidb/core-types';
 import type { LocationPointProperties } from '../../common/entities/LocationPoint.js';
 import { parseNumber } from './mappers.js';
 import { buildHeaderIndex, getColumnValue, parseCsvTable } from './csvUtils.js';

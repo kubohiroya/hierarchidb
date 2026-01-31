@@ -22,7 +22,6 @@
 | `packages/features/auth-recovery` | tsconfig.json |
 | `packages/features/batch` | tsconfig.json |
 | `packages/features/download` | tsconfig.json, tsconfig.typecheck.json |
-| `packages/features/feature-registry` | tsconfig.json, tsconfig.typecheck.json |
 | `packages/features/fetch-save-metadata` | tsconfig.json |
 | `packages/features/import-export` | tsconfig.json, tsconfig.typecheck.json |
 | `packages/features/map-adapter` | tsconfig.json, tsconfig.typecheck.json |
@@ -93,7 +92,7 @@
 
 ## 作業計画（turbo + tsdown への段階移行）
 1. **現状調査と PoC**
-   - 代表パッケージ（例: `packages/features/feature-registry`）で既存ビルド・型検証フローを把握。
+   - 代表パッケージ（例: `packages/features/download`）で既存ビルド・型検証フローを把握。
    - `tsdown` を導入し、`tsup` スクリプトを差し替えた上で Turbo 経由の `build` が成功するか検証。
    - PoC 結果を TASKS 運用ログへ記録。
 2. **共通設定の整備**

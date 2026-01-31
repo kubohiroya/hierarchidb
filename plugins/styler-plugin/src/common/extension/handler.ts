@@ -3,7 +3,7 @@
  * Processes Styler-specific data when creating/editing folders
  */
 
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/core-types';
 
 export interface StylerExtensionData {
   stylerConfig?: Record<string, unknown>;

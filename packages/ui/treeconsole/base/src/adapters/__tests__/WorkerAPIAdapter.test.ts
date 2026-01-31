@@ -6,7 +6,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Observable } from 'rxjs';
 
-import type { CommandResult, TreeChangeEvent } from '@hierarchidb/common-types';
+import type { CommandResult, TreeChangeEvent } from '@hierarchidb/tree-api';
 import { WorkerAPIAdapter } from '../WorkerAPIAdapter.js';
 
 //  WorkerAPI
@@ -78,7 +78,7 @@ describe('WorkerAPIAdapter', () => {
     adapter = new WorkerAPIAdapter({
       workerAPI: mockWorkerAPI,
       defaultViewId: 'test-view',
-      defaultOnNameConflict: (name: string) => `${name}-copy`,
+      defaultOnNameConflict: 'auto-rename',
     });
   });
 
@@ -87,7 +87,7 @@ describe('WorkerAPIAdapter', () => {
       const info = adapter.getAdapterInfo();
 
       expect(info.viewId).toBe('test-view');
-      expect(info.defaultOnNameConflict('test')).toBe('test-copy');
+      expect(info.defaultOnNameConflict).toBe('auto-rename');
       expect(info.subscriptionStats.total).toBe(0);
     });
 
@@ -167,7 +167,7 @@ describe('WorkerAPIAdapter', () => {
         expect.objectContaining({
           nodeIds: ['node1', 'node2'],
           toParentId: 'target-parent',
-          onNameConflict: expect.any(Function),
+          onNameConflict: 'auto-rename',
         }),
       );
     });
