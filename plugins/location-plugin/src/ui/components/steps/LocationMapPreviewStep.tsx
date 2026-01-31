@@ -5,7 +5,6 @@
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Button } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import { LocationOn } from '@mui/icons-material';
 import { Anchor, FlightTakeoff, ForkRight, LocationCity, Public, Subway } from '@mui/icons-material';
 import type { SvgIconComponent } from '@mui/icons-material';
@@ -26,7 +25,7 @@ import {
   lonLatToTileXY,
   MapToggleCard,
   LocationPreviewList,
-  ResourceLayerMap,
+  MapPreviewShell,
   resolveTileIdField,
 } from '@hierarchidb/ui-map';
 import type {
@@ -76,10 +75,6 @@ const DEFAULT_MAX_ZOOM = 12;
 const DEFAULT_ICON_SIZE_RANGE: [number, number] = [12, 28];
 const DEFAULT_LABEL_SIZE_RANGE: [number, number] = [10, 18];
 const LABEL_SIZE_SCALE = 1.3;
-const MONOCHROME_STYLE_URLS = {
-  dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
-  light: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
-};
 const MIN_ICON_SIZE = 8;
 const MAX_ICON_SIZE = 48;
 const MIN_LABEL_SIZE = 8;
@@ -368,7 +363,6 @@ type PreviewPoint = {
 };
 
 export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ draft: _draft, nodeId, onUpdate }) => {
-  const theme = useTheme();
   useIdeGsmImportOnEntry({ draft: _draft, nodeId, onUpdate });
   const { translations } = useTranslation();
   const previewNodeId = nodeId ?? 'preview' as NodeId;
@@ -539,12 +533,6 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       };
     })
   ), [iconConfig, labelConfig, translations.locationTypes]);
-
-  const mapStyleUrl = useMemo(() => (
-    theme.palette.mode === 'dark'
-      ? MONOCHROME_STYLE_URLS.dark
-      : MONOCHROME_STYLE_URLS.light
-  ), [theme.palette.mode]);
   const terrainWindow = useFloatingWindow({
     persistKey: 'hierarchidb:ui:floating-window:location:terrain',
     initialPosition: { x: 80, y: 40 },
@@ -987,86 +975,78 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
 
   return (
     <Box display="flex" flexDirection="column" height="100%" minHeight={0} flex={1}>
-      <Box
-        flex={1}
-        minHeight={0}
-        height="100%"
-        borderRadius={1}
-        overflow="hidden"
-        position="relative"
-        sx={{ overscrollBehavior: 'contain', p: 0 }}
-      >
-        <ResourceLayerMap
-          initialViewState={initialViewState}
-          width="100%"
-          height="100%"
-          mapStyleUrl={mapStyleUrl}
-          basemapStyles={[]}
-          vectorLayers={[]}
-          geoJsonLayers={locationGeoJsonLayers}
-          attributionItems={attributionItems}
-          mapOptions={DEFAULT_MAP_CONFIG.interactionOptions}
-          onLoad={handleMapLoad}
-          onMoveEnd={handleMapMoveEnd}
-        />
-        {terrainWindow.windowState.isVisible ? (
-          <FloatingWindow
-            title="Terrain Types"
-            initialState={terrainWindow.windowState}
-            onStateChange={terrainWindow.handlers.onStateChange}
-            onClose={terrainWindow.handlers.onClose}
-          >
-            <Box sx={{ height: '100%', minHeight: 0 }}>
-              <MapToggleCard
-                title=""
-                options={terrainToggleOptions}
-                selection={locationTypeSelection}
-                onToggle={handleLocationToggle}
+      <MapPreviewShell
+        mapProps={{
+          initialViewState: initialViewState,
+          width: '100%',
+          height: '100%',
+          vectorLayers: [],
+          geoJsonLayers: locationGeoJsonLayers,
+          attributionItems,
+          mapOptions: DEFAULT_MAP_CONFIG.interactionOptions,
+          onLoad: handleMapLoad,
+          onMoveEnd: handleMapMoveEnd,
+        }}
+        overlay={(
+          <>
+            {metadataWindowOpen ? (
+              <LocationPreviewList
+                title={translations.mapPreview?.tabs?.metadata ?? 'Locations'}
+                rows={filteredMetadataRows}
+                columns={filteredMetadataColumns}
+                loading={metadataLoading}
+                errorText={metadataError}
+                selectedRows={selectedMetadataIds}
+                onSelectionChange={handleMetadataSelectionChange}
+                recyclingState={recyclingState}
+                onToggleRecycling={handleToggleRecycling}
+                onClose={() => setMetadataWindowOpen(false)}
               />
-            </Box>
-          </FloatingWindow>
-        ) : (
-          <Box position="absolute" top={8} right={8} zIndex={3}>
-            <Button
-              variant="contained"
-              color="primary"
-              size="large"
-              aria-label="Show terrain types"
-              onClick={terrainWindow.handlers.show}
-            >
-              <LocationCity />
-            </Button>
-          </Box>
+            ) : (
+              <Box position="absolute" top={8} left={8} zIndex={3}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="large"
+                  aria-label={translations.mapPreview?.tabs?.metadata ?? 'Show locations'}
+                  onClick={() => setMetadataWindowOpen(true)}
+                >
+                  <LocationOn />
+                </Button>
+              </Box>
+            )}
+            {terrainWindow.windowState.isVisible ? (
+              <FloatingWindow
+                title="Terrain Types"
+                initialState={terrainWindow.windowState}
+                onStateChange={terrainWindow.handlers.onStateChange}
+                onClose={terrainWindow.handlers.onClose}
+              >
+                <Box sx={{ height: '100%', minHeight: 0 }}>
+                  <MapToggleCard
+                    title=""
+                    options={terrainToggleOptions}
+                    selection={locationTypeSelection}
+                    onToggle={handleLocationToggle}
+                  />
+                </Box>
+              </FloatingWindow>
+            ) : (
+              <Box position="absolute" top={8} right={8} zIndex={3}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="large"
+                  aria-label="Show terrain types"
+                  onClick={terrainWindow.handlers.show}
+                >
+                  <LocationCity />
+                </Button>
+              </Box>
+            )}
+          </>
         )}
-        {metadataWindowOpen ? (
-          <LocationPreviewList
-            title='Location'
-            rows={filteredMetadataRows}
-            columns={filteredMetadataColumns}
-            loading={metadataLoading}
-            loadingText={translations.mapPreview?.metadataLoading ?? 'Loading metadata...'}
-            emptyText={translations.mapPreview?.metadataEmpty ?? 'No metadata available yet.'}
-            errorText={metadataError}
-            selectedRows={selectedMetadataIds}
-            onSelectionChange={handleMetadataSelectionChange}
-            recyclingState={recyclingState}
-            onToggleRecycling={handleToggleRecycling}
-            onClose={() => setMetadataWindowOpen(false)}
-          />
-        ) : (
-          <Box position="absolute" top={8} left={8} zIndex={3}>
-            <Button
-              variant="contained"
-              color="primary"
-              size="large"
-              aria-label="Show list"
-              onClick={() => setMetadataWindowOpen(true)}
-            >
-              <LocationOn />
-            </Button>
-          </Box>
-        )}
-      </Box>
+      />
     </Box>
   );
 };
