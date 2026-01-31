@@ -67,6 +67,7 @@ registry.registerConfigProvider<LocationStepData>({
               onUpdate={(updates) => p.onChange(mergeData(draft, updates))}
               licenseRequired={LICENSE_REQUIRED}
               disabled={Boolean(p.disabled)}
+              nodeId={p.nodeId as NodeId | undefined}
             />
           );
         },
