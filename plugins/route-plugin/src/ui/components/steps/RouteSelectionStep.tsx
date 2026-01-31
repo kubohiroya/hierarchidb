@@ -4,16 +4,29 @@
  */
 
 import type React from 'react';
-import { Suspense, useCallback, useEffect, useMemo, useRef } from 'react';
-import { Alert, Box, CircularProgress, Typography } from '@mui/material';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Typography,
+} from '@mui/material';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { DirectionsBoat, DirectionsCar, Flight, Train, Tram } from '@mui/icons-material';
+import type { NodeId } from '@hierarchidb/core-types';
 import type { RouteEntity, RouteUpdaterPayload } from '@hierarchidb/route-api';
 import { useTranslation } from '../../../common/i18n/index.js';
 import { getRouteUpdaterPayload } from '../../../common/utils/draft.js';
 import { CountryMatrixSelector, useIsoCountries, type MatrixConfig, type MatrixSelection } from '@hierarchidb/ui-country-select';
-import { ROUTE_MODES, type RouteMode } from '@hierarchidb/route-api';
+import { ROUTE_MODES, type IdeGsmRouteCoverageResult, type RouteMode } from '@hierarchidb/route-api';
 import { AuthReadyGate } from '@hierarchidb/ui-auth';
+import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
+import { GenericDataGrid, type GridColumn } from '@hierarchidb/ui-grid';
 
 export interface RouteSelectionStepProps {
   draft: RouteUpdaterPayload;
@@ -71,12 +84,21 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = ({
   parentId: _parentId,
 }) => {
   const { t, translations } = useTranslation();
+  const { api, initialize } = useWorkerAPI();
   const iso = useIsoCountries();
   const draft = useMemo(() => getRouteUpdaterPayload(draftProp), [draftProp]);
   const dataSourceName = draft.dataSourceName ?? null;
+  const ideGsmSourceUrl = draft.ideGsmSourceUrl ?? null;
+  const isIdeGsm = dataSourceName === 'ide-gsm';
+  const routeNodeId = (draftProp.treeNodeId ?? _nodeId) as NodeId | undefined;
   const policy = useMemo(() => resolveModePolicy(dataSourceName), [dataSourceName]);
   const allowedModeSet = useMemo(() => new Set(policy.allowedModes), [policy.allowedModes]);
   const lastDataSourceRef = useRef<string | null>(dataSourceName);
+  const lastCoverageRef = useRef<string | null>(null);
+  const [coverage, setCoverage] = useState<IdeGsmRouteCoverageResult | null>(null);
+  const [coverageError, setCoverageError] = useState<string | null>(null);
+  const [coverageLoading, setCoverageLoading] = useState(false);
+  const [errorDialogOpen, setErrorDialogOpen] = useState(false);
 
   const emitUpdate = useCallback(
     (updates: Partial<RouteEntity>) => {
@@ -88,6 +110,91 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = ({
   );
 
   const selectionByCountries = useMemo(() => draft.selectedArrayByCountries ?? {}, [draft.selectedArrayByCountries]);
+
+  useEffect(() => {
+    if (!isIdeGsm) {
+      setCoverage(null);
+      setCoverageError(null);
+      setCoverageLoading(false);
+      return;
+    }
+    if (!ideGsmSourceUrl) {
+      setCoverage(null);
+      setCoverageError(t('routeConfig.ideGsmMissingSource', 'IDE-GSM source URL is required.'));
+      setCoverageLoading(false);
+      return;
+    }
+    if (!routeNodeId) {
+      setCoverage(null);
+      setCoverageError(t('routeConfig.ideGsmMissingNode', 'Route node is not available.'));
+      setCoverageLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setCoverageLoading(true);
+    setCoverageError(null);
+    void (async () => {
+      try {
+        if (!api) {
+          throw new Error(t('routeConfig.ideGsmMissingWorker', 'Worker API is unavailable.'));
+        }
+        await initialize();
+        const routeMutation = await api.getRouteMutationAPI();
+        const result = await routeMutation.resolveIdeGsmRouteCoverage({
+          nodeId: routeNodeId,
+          sourceUrl: ideGsmSourceUrl,
+        });
+        if (cancelled) return;
+        if (!result || Object.keys(result.coverageByCountry ?? {}).length === 0) {
+          throw new Error(t('routeConfig.ideGsmEmptyCoverage', 'No routes found in IDE-GSM data.'));
+        }
+        setCoverage(result);
+        if (result.errors.length > 0) {
+          setErrorDialogOpen(true);
+        }
+      } catch (error) {
+        if (cancelled) return;
+        const message = error instanceof Error ? error.message : String(error);
+        setCoverage(null);
+        setCoverageError(message);
+      } finally {
+        if (!cancelled) setCoverageLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [api, ideGsmSourceUrl, initialize, isIdeGsm, routeNodeId, t]);
+
+  const coverageModeMap = useMemo(() => {
+    const map = new Map<string, Set<RouteMode>>();
+    if (!coverage) return map;
+    Object.entries(coverage.coverageByCountry ?? {}).forEach(([country, modes]) => {
+      map.set(country, new Set(modes));
+    });
+    return map;
+  }, [coverage]);
+
+  const resolveAllowedModesForCountry = useCallback((countryCode: string) => {
+    const allowed = new Set<RouteMode>();
+    if (isIdeGsm) {
+      const coverageModes = coverageModeMap.get(countryCode);
+      if (!coverageModes) return allowed;
+      coverageModes.forEach((mode) => {
+        if (allowedModeSet.has(mode)) {
+          allowed.add(mode);
+        }
+      });
+      return allowed;
+    }
+    policy.allowedModes.forEach((mode) => allowed.add(mode));
+    return allowed;
+  }, [allowedModeSet, coverageModeMap, isIdeGsm, policy.allowedModes]);
+
+  const coverageKey = useMemo(() => {
+    if (!isIdeGsm || !coverage) return null;
+    return JSON.stringify(coverage.coverageByCountry ?? {});
+  }, [coverage, isIdeGsm]);
 
   const matrixConfig: MatrixConfig = useMemo(() => ({
     columns: ROUTE_MODE_COLUMNS.map((mode) => ({
@@ -145,17 +252,17 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = ({
   const normalizeSelectionRecord = useCallback((applyDefaults: boolean) => {
     if (iso.status !== 'ready') return {};
     const normalized: Record<string, boolean[]> = {};
-    const defaultChecked = applyDefaults ? policy.defaultChecked : null;
     iso.countries.forEach((country) => {
       const row = selectionByCountries[country.code] ?? [];
+      const allowedByCountry = resolveAllowedModesForCountry(country.code);
       normalized[country.code] = matrixConfig.columns.map((col, colIdx) => {
-        if (!allowedModeSet.has(col.id as RouteMode)) return false;
-        if (defaultChecked) return defaultChecked.has(col.id as RouteMode);
+        if (!allowedByCountry.has(col.id as RouteMode)) return false;
+        if (applyDefaults) return true;
         return Boolean(row[colIdx]);
       });
     });
     return normalized;
-  }, [allowedModeSet, iso.countries, iso.status, matrixConfig.columns, policy.defaultChecked, selectionByCountries]);
+  }, [iso.countries, iso.status, matrixConfig.columns, resolveAllowedModesForCountry, selectionByCountries]);
 
   const hasAnySelection = useMemo(() => {
     if (iso.status !== 'ready') return false;
@@ -171,19 +278,28 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = ({
     if (dataSourceChanged) {
       lastDataSourceRef.current = dataSourceName;
     }
-    const shouldApplyDefaults = Boolean(policy.defaultChecked && (dataSourceChanged || !hasAnySelection));
+    const coverageChanged = lastCoverageRef.current !== coverageKey;
+    if (coverageChanged) {
+      lastCoverageRef.current = coverageKey;
+    }
+    const shouldApplyDefaults = Boolean(
+      (isIdeGsm && coverage && (dataSourceChanged || !hasAnySelection || (coverageChanged && !hasAnySelection))) ||
+      (!isIdeGsm && policy.defaultChecked && (dataSourceChanged || !hasAnySelection))
+    );
     const normalized = normalizeSelectionRecord(shouldApplyDefaults);
     if (!deepEqualSelectionRecord(selectionRecordSource, normalized)) {
       emitUpdate({ selectedArrayByCountries: normalized });
     }
   }, [
+    coverage,
+    coverageKey,
     dataSourceName,
     deepEqualSelectionRecord,
     emitUpdate,
     hasAnySelection,
+    isIdeGsm,
     iso.status,
     normalizeSelectionRecord,
-    policy.defaultChecked,
     selectionRecordSource,
   ]);
 
@@ -194,22 +310,28 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = ({
       iso.countries.forEach((country) => {
         const entry = nextSelections.find((sel) => sel.countryCode === country.code);
         const selections = entry?.selections ?? {};
+        const allowedByCountry = resolveAllowedModesForCountry(country.code);
         normalized[country.code] = matrixConfig.columns.map((col) => {
-          const allowed = allowedModeSet.has(col.id as RouteMode);
-          return allowed ? Boolean(selections[col.id]) : false;
+          return allowedByCountry.has(col.id as RouteMode) ? Boolean(selections[col.id]) : false;
         });
       });
       if (!deepEqualSelectionRecord(selectionRecordSource, normalized)) {
         emitUpdate({ selectedArrayByCountries: normalized });
       }
     },
-    [allowedModeSet, deepEqualSelectionRecord, emitUpdate, iso.countries, iso.status, matrixConfig.columns, selectionRecordSource],
+    [deepEqualSelectionRecord, emitUpdate, iso.countries, iso.status, matrixConfig.columns, resolveAllowedModesForCountry, selectionRecordSource],
   );
 
   useEffect(() => {
-    const isValid = hasAnySelection;
-    onValidationChange(isValid);
-  }, [hasAnySelection, onValidationChange]);
+  const isValid =
+    hasAnySelection &&
+    (!isIdeGsm ||
+      (!coverageError &&
+        !coverageLoading &&
+        Boolean(coverage) &&
+        (coverage?.errors?.length ?? 0) === 0));
+  onValidationChange(isValid);
+  }, [coverage, coverageError, coverageLoading, hasAnySelection, isIdeGsm, onValidationChange]);
 
   if (iso.status === 'loading') {
     return (
@@ -240,6 +362,34 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = ({
     );
   }
 
+  const selectionErrorMessage = useMemo(() => {
+    if (!isIdeGsm) return null;
+    if (!ideGsmSourceUrl) {
+      return t('routeConfig.ideGsmMissingSource', 'IDE-GSM source URL is required.');
+    }
+    if (coverageError) return coverageError;
+    if (coverage && coverage.errors.length > 0) {
+      return t('routeConfig.ideGsmValidationError', 'Resolve IDE-GSM parsing errors before selecting routes.');
+    }
+    return null;
+  }, [coverage, coverageError, ideGsmSourceUrl, isIdeGsm, t]);
+
+  const errorRows = useMemo(() => {
+    if (!coverage?.errors?.length) return [];
+    return coverage.errors.map((error) => ({
+      ...error,
+      sourceUrl: ideGsmSourceUrl ?? '',
+    }));
+  }, [coverage?.errors, ideGsmSourceUrl]);
+
+  const errorColumns = useMemo<GridColumn<(typeof errorRows)[number]>[]>(() => ([
+    { id: 'sourceUrl', label: t('routeConfig.ideGsmErrors.columns.source', 'Source'), width: 200 },
+    { id: 'rowNumber', label: t('routeConfig.ideGsmErrors.columns.row', 'Row'), width: 80, sortable: true },
+    { id: 'start', label: t('routeConfig.ideGsmErrors.columns.start', 'Start'), width: 160 },
+    { id: 'end', label: t('routeConfig.ideGsmErrors.columns.end', 'End'), width: 160 },
+    { id: 'reason', label: t('routeConfig.ideGsmErrors.columns.reason', 'Reason'), width: 360 },
+  ]), [t]);
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       <CountryMatrixSelector
@@ -247,13 +397,65 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = ({
         matrixConfig={matrixConfig}
         selections={currentSelections}
         onSelectionsChange={applySelections}
+        showRowSelection
         showAlphabetIndex
         showRegionIndex
         rowHeight={40}
-        isCellEnabled={(_, columnId) => allowedModeSet.has(columnId as RouteMode)}
+        isCellEnabled={(country, columnId) => resolveAllowedModesForCountry(country.code).has(columnId as RouteMode)}
+        loading={isIdeGsm && coverageLoading}
+        errorMessage={selectionErrorMessage}
         height="100%"
         maxHeight={undefined}
       />
+      {isIdeGsm && coverage?.errors?.length ? (
+        <Box sx={{ mt: 1 }}>
+          <Alert
+            severity="error"
+            action={(
+              <Button color="inherit" size="small" onClick={() => setErrorDialogOpen(true)}>
+                {t('routeConfig.ideGsmErrors.open', 'Details')}
+              </Button>
+            )}
+          >
+            {t('routeConfig.ideGsmErrors.summary', 'IDE-GSM parsing errors detected. Review the error list.')}
+          </Alert>
+        </Box>
+      ) : null}
+      <Dialog
+        open={errorDialogOpen}
+        onClose={() => setErrorDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>{t('routeConfig.ideGsmErrors.title', 'IDE-GSM errors')}</DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {ideGsmSourceUrl ? (
+            <Typography variant="body2" color="text.secondary">
+              {t('routeConfig.ideGsmErrors.sourceLabel', 'Source')}: {ideGsmSourceUrl}
+            </Typography>
+          ) : null}
+          <Typography variant="body2" color="text.secondary">
+            {t('routeConfig.ideGsmErrors.description', 'Some routes could not be resolved. Check the rows below.')}
+          </Typography>
+          <Box sx={{ height: 360 }}>
+            <GenericDataGrid
+              columns={errorColumns}
+              rows={errorRows}
+              getRowId={(row) => row.id}
+              enableVirtualization
+              rowHeight={38}
+              maxHeight={360}
+              stickyHeader
+              dense
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setErrorDialogOpen(false)} variant="contained">
+            {t('common.close', 'Close')}
+          </Button>
+        </DialogActions>
+      </Dialog>
       {policy.defaultChecked && (
         <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
           {t('routeConfig.defaultSelectionNote', 'Default selections are applied based on the data source.')}
