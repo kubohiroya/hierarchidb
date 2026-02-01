@@ -177,9 +177,11 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
     : typeof (value as Record<string, unknown>).gid2 === 'string'
       ? (value as Record<string, unknown>).gid2 as string
       : undefined;
-  const admin0Name = typeof (value as Record<string, unknown>).admin0Name === 'string'
-    ? (value as Record<string, unknown>).admin0Name as string
-    : undefined;
+  const admin0 = typeof (value as Record<string, unknown>).admin0 === 'string'
+    ? (value as Record<string, unknown>).admin0 as string
+    : typeof (value as Record<string, unknown>).admin0Name === 'string'
+      ? (value as Record<string, unknown>).admin0Name as string
+      : undefined;
 
   const centroidForShapeId = normalizeCentroidForShapeId(valueRecord.centroidForShapeId);
   const centroidForShapeContainerNodeId = normalizeCentroidForShapeContainerNodeId(
@@ -193,7 +195,7 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
     longitude,
     type,
     admin0Code,
-    admin0Name,
+    admin0,
     admin1,
     admin2,
     ...(centroidForShapeId !== undefined && { centroidForShapeId }),

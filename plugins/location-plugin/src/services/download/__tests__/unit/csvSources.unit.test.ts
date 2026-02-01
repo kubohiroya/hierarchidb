@@ -22,7 +22,7 @@ describe('csvSources', () => {
     expect(points[0].metadata?.ourAirportsId).toBe('1');
     expect(points[0].metadata?.iataCode).toBe('AAA');
     expect(points[0].metadata?.airportCode).toBe('AAA');
-    expect(points[0].admin0Name).toBe('Japan');
+    expect(points[0].admin0).toBe('Japan');
   });
 
   it('parses OpenFlights CSV rows into airport points', async () => {
@@ -47,7 +47,7 @@ describe('csvSources', () => {
     expect(points).toHaveLength(1);
     expect(points[0].type).toBe('port');
     expect(points[0].admin0Code).toBe('');
-    expect(points[0].admin0Name).toBe('Japan');
+    expect(points[0].admin0).toBe('Japan');
     expect(points[0].metadata?.worldPortIndexId).toBe('123');
     expect(points[0].metadata?.portCode).toBe('JPTKO');
   });

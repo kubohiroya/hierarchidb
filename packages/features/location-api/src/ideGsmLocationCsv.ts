@@ -37,7 +37,7 @@ const toLocationType = (name: string, isAdminCenter: boolean): LocationType => {
 type CountryEntry = { countryEn: string; alpha2: string; alpha3?: string };
 type SubdivisionEntry = { code: string; subdivisionEn: string; subdivisionLocal: string };
 
-let countryNameToCode: Map<string, string> | null = null;
+let countryNameToCode: Map<string, { alpha2: string; countryEn: string }> | null = null;
 const subdivisionCache = new Map<string, SubdivisionEntry[]>();
 
 const normalizeCountryKey = (value: string): string =>
@@ -69,29 +69,37 @@ const findHeaderIndex = (headers: string[], candidates: string[]): number => {
   return -1;
 };
 
-const getCountryCodeByName = async (countryName?: string): Promise<string> => {
-  if (!countryName) return '';
+const getCountryByName = async (countryName?: string): Promise<{ alpha2: string; countryEn: string } | null> => {
+  if (!countryName) return null;
   const raw = countryName.trim();
   if (raw) {
     const alias = COUNTRY_CODE_ALIASES.get(raw) ?? COUNTRY_CODE_ALIASES.get(raw.toLowerCase());
-    if (alias) return alias;
+    if (alias) {
+      await ensureIso3166Data({ csvUrl: DEFAULT_CSV_URL });
+      const { country } = await getCountry(alias);
+      if (country) {
+        return { alpha2: country.alpha2, countryEn: country.countryEn };
+      }
+      return { alpha2: alias, countryEn: raw };
+    }
   }
   if (!countryNameToCode) {
     await ensureIso3166Data({ csvUrl: DEFAULT_CSV_URL });
     const countries = (await getAllCountries()) as CountryEntry[];
     countryNameToCode = new Map(
       countries.flatMap((country: CountryEntry) => {
-        const entries: Array<[string, string]> = [];
-        entries.push([normalizeCountryKey(country.countryEn), country.alpha2]);
-        if (country.alpha2) entries.push([country.alpha2.toLowerCase(), country.alpha2]);
-        if (country.alpha3) entries.push([country.alpha3.toLowerCase(), country.alpha2]);
+        const entries: Array<[string, { alpha2: string; countryEn: string }]> = [];
+        const payload = { alpha2: country.alpha2, countryEn: country.countryEn };
+        entries.push([normalizeCountryKey(country.countryEn), payload]);
+        if (country.alpha2) entries.push([country.alpha2.toLowerCase(), payload]);
+        if (country.alpha3) entries.push([country.alpha3.toLowerCase(), payload]);
         return entries;
       }),
     );
   }
   const normalized = normalizeCountryKey(countryName);
-  if (!normalized) return '';
-  return countryNameToCode.get(normalized) ?? '';
+  if (!normalized) return null;
+  return countryNameToCode.get(normalized) ?? null;
 };
 
 const normalizeAdminName = (value?: string) => value?.trim().toLowerCase() ?? '';
@@ -161,9 +169,9 @@ export const parseIdeGsmCsv = async (csvText: string): Promise<IdeGsmParseResult
     const lat = Number(row?.[latIndex >= 0 ? latIndex : 1]);
     const lon = Number(row?.[lonIndex >= 0 ? lonIndex : 2]);
     if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
-    const admin0Name =
+    const admin0 =
       row[countryIndex >= 0 ? countryIndex : 3]?.trim() || undefined;
-    const admin1Name =
+    const admin1 =
       row[admin1Index >= 0 ? admin1Index : 4]?.trim() || undefined;
     const adminCenterFlag = row[adminCenterIndex >= 0 ? adminCenterIndex : 5]?.trim() ?? '0';
     const isAdminCenter = adminCenterFlag === '1';
@@ -190,26 +198,36 @@ export const parseIdeGsmCsv = async (csvText: string): Promise<IdeGsmParseResult
       longitude: lon,
       type,
       ...buildTileIdByZoom(lon, lat),
-      admin0Name,
-      admin1Name,
+      admin0,
+      admin1,
       admin0Code: normalizedCode?.length === 2 ? normalizedCode : undefined,
       metadata,
     });
   }
 
   if (!points.length) return { points, rowCount: rows.length };
-  const countryCodeCache = new Map<string, string>();
+  const countryCache = new Map<string, { alpha2: string; countryEn: string }>();
   for (const point of points) {
-    if (point.admin0Code) {
-      const normalized = point.admin0Code.toUpperCase();
-      point.admin0Code = normalized;
-    }
-    const key = point.admin0Name ?? '';
+    const key = point.admin0 ?? '';
     if (key) {
-      if (!countryCodeCache.has(key)) {
-        countryCodeCache.set(key, await getCountryCodeByName(key));
+      if (!countryCache.has(key)) {
+        const resolved = await getCountryByName(key);
+        if (resolved) {
+          countryCache.set(key, resolved);
+        }
       }
-      point.admin0Code = countryCodeCache.get(key) ?? '';
+      const resolved = countryCache.get(key);
+      if (resolved) {
+        point.admin0 = resolved.countryEn;
+        point.admin0Code = resolved.alpha2;
+      }
+    }
+    if (!point.admin0 && point.admin0Code) {
+      const { country } = await getCountry(point.admin0Code);
+      if (country?.countryEn) {
+        point.admin0 = country.countryEn;
+        point.admin0Code = country.alpha2;
+      }
     }
     if (point.admin1Code) {
       point.admin1Code = await resolveAdmin1Code(point.admin0Code, point.admin1Code);
@@ -229,7 +247,7 @@ export const filterIdeGsmPointsBySelection = (
   const typeSet = new Set(entries.flatMap((entry) => entry.types));
   return points.filter((point) => {
     const normalizedCode = point.admin0Code?.toUpperCase();
-    const normalizedName = point.admin0Name?.toLowerCase();
+    const normalizedName = point.admin0?.toLowerCase();
     const matchesCountry =
       (!normalizedCode && !normalizedName)
       || (normalizedCode && countrySet.has(normalizedCode))

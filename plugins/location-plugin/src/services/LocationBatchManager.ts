@@ -781,7 +781,7 @@ export class LocationBatchManager {
 
       if (normalizedCodes.length > 0 || normalizedNames.length > 0) {
         const normalizedLocationCode = location.admin0Code?.toUpperCase();
-        const normalizedLocationName = location.admin0Name?.toLowerCase();
+        const normalizedLocationName = location.admin0?.toLowerCase();
         const matchesCode = normalizedLocationCode
           ? normalizedCodes.includes(normalizedLocationCode)
           : false;
@@ -822,7 +822,7 @@ export class LocationBatchManager {
       if (!hasCountryFilter) return true;
 
       const normalizedLocationCode = location.admin0Code?.toUpperCase();
-      const normalizedLocationName = location.admin0Name?.toLowerCase();
+      const normalizedLocationName = location.admin0?.toLowerCase();
       const matchesCode = countryCode && normalizedLocationCode
         ? normalizedLocationCode === countryCode
         : false;
@@ -844,7 +844,7 @@ export class LocationBatchManager {
     if (map.size === 0) return locations;
     return locations.map((location) => {
       const rawCode = location.admin0Code?.trim();
-      const rawName = location.admin0Name?.trim();
+      const rawName = location.admin0?.trim();
       const normalized = this.resolveIso2Code(map, rawCode, rawName);
       if (!normalized || normalized === location.admin0Code) return location;
       return { ...location, admin0Code: normalized };

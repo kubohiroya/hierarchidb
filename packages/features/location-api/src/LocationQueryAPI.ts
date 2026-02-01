@@ -40,7 +40,7 @@ export interface LocationNearestPoint {
   name?: string;
   type?: string;
   region?: string;
-  admin0Name?: string;
+  admin0?: string;
   longitude: number;
   latitude: number;
   properties?: Record<string, unknown>;

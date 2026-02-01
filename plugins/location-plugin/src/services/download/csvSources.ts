@@ -33,7 +33,7 @@ export const parseOurAirportsCsv = async (
       localCode: getColumnValue(row, headerIndex, 'local_code'),
       municipality: getColumnValue(row, headerIndex, 'municipality'),
       isoCountry: getColumnValue(row, headerIndex, 'iso_country'),
-      countryName: getColumnValue(row, headerIndex, 'country_name', 'country'),
+      countryName: getColumnValue(row, headerIndex, 'admin0_name', 'country_name', 'country'),
       isoRegion: getColumnValue(row, headerIndex, 'iso_region'),
       scheduledService: getColumnValue(row, headerIndex, 'scheduled_service'),
       elevationFt: parseNumber(getColumnValue(row, headerIndex, 'elevation_ft')),
@@ -109,10 +109,10 @@ export const parseWorldPortIndexCsv = async (
       'countryalpha2',
     );
     const rawCountryName = getColumnValue(row, headerIndex, 'country', 'country_name', 'countrycode');
-    const countryCode = rawCountryCode && rawCountryCode.length === 2
+    const admin0Code = rawCountryCode && rawCountryCode.length === 2
       ? rawCountryCode
       : undefined;
-    const countryName = rawCountryName && (!countryCode || rawCountryName.length > 2)
+    const admin0Name = rawCountryName && (!admin0Code || rawCountryName.length > 2)
       ? rawCountryName
       : undefined;
     return buildWorldPortIndexPointProperties({
@@ -120,8 +120,8 @@ export const parseWorldPortIndexCsv = async (
       name,
       latitude: lat,
       longitude: lon,
-      countryCode,
-      countryName,
+      countryCode: admin0Code,
+      countryName: admin0Name,
       regionName: getColumnValue(row, headerIndex, 'region_name', 'region'),
       unlocode: getColumnValue(row, headerIndex, 'un/locode', 'unlocode', 'locode'),
       harborSize: getColumnValue(row, headerIndex, 'harbor_size', 'harborsize'),

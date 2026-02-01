@@ -4,8 +4,8 @@
 
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Box, Button, Typography } from '@mui/material';
-import { LocationOn } from '@mui/icons-material';
+import { Box, Button, Typography, useTheme } from '@mui/material';
+import { LocationOn, Palette } from '@mui/icons-material';
 import { Anchor, FlightTakeoff, ForkRight, LocationCity, Public, Subway } from '@mui/icons-material';
 import type { SvgIconComponent } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/core-types';
@@ -45,6 +45,9 @@ import type { MapLibreMapInstance } from '@hierarchidb/ui-map';
 import type { LocationGroupItem } from '@hierarchidb/location-api';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { useIdeGsmImportOnEntry } from '../../hooks/useIdeGsmImportOnEntry.js';
+import { LocationStyleConfigPanel } from './LocationStyleConfigPanel.js';
+
+const debugPrefix = '[LocationPreview]';
 
 const KNOWN_LOCATION_TYPES: readonly LocationType[] = [
   'area_centroid',
@@ -111,9 +114,8 @@ const METADATA_COLUMNS_ORDER = [
   'admin0',
   'admin0Code',
   'admin1',
-  'admin2',
-  'admin2Name',
   'admin1Code',
+  'admin2',
   'admin2Code',
   'updatedAt',
   'metadata',
@@ -135,11 +137,7 @@ const buildMetadataRows = (items: LocationGroupItem[]): Array<Record<string, unk
     const data = item.data;
     const rawType = typeof data?.type === 'string' ? data.type : undefined;
     const rawCountryCode = typeof data?.admin0Code === 'string' ? data.admin0Code : undefined;
-    const rawCountryName = typeof data?.admin0Name === 'string' ? data.admin0Name : undefined;
-    const countryFlag = resolveCountryFlag(rawCountryCode);
-    const admin0Label = rawCountryName
-      ? `${countryFlag ? `${countryFlag} ` : ''}${rawCountryName}`
-      : (countryFlag ? `${countryFlag}` : undefined);
+    const rawCountryName = typeof data?.admin0 === 'string' ? data.admin0 : undefined;
     return {
       id: item.id,
       pointId: data?.pointId,
@@ -147,11 +145,10 @@ const buildMetadataRows = (items: LocationGroupItem[]): Array<Record<string, unk
       type: rawType ? resolveLocationType(rawType) : 'area_centroid',
       latitude: data?.latitude,
       longitude: data?.longitude,
-      admin0: admin0Label,
+      admin0: rawCountryName,
       admin0Code: rawCountryCode,
       admin1: data?.admin1,
       admin2: data?.admin2,
-      admin2Name: data?.admin2,
       admin1Code: data?.admin1Code,
       admin2Code: data?.admin2Code,
       updatedAt: formatTimestamp(item.updatedAt),
@@ -161,9 +158,10 @@ const buildMetadataRows = (items: LocationGroupItem[]): Array<Record<string, unk
 );
 
 const buildMetadataColumns = (rows: Array<Record<string, unknown>>): string[] => {
-  const baseColumns = METADATA_COLUMNS_ORDER.filter((col) =>
-    rows.some((row) => row[col] != null && row[col] !== ''),
-  );
+  const forcedColumns = new Set(['admin0', 'admin0Code', 'admin1', 'admin1Code', 'admin2', 'admin2Code']);
+  const baseColumns = METADATA_COLUMNS_ORDER.filter((col) => (
+    forcedColumns.has(col) || rows.some((row) => row[col] != null && row[col] !== '')
+  ));
   const extra = new Set<string>();
   rows.forEach((row) => {
     Object.keys(row).forEach((key) => {
@@ -399,6 +397,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
   useIdeGsmImportOnEntry({ draft: _draft, nodeId, onUpdate });
   const { translations, t } = useTranslation();
   const previewNodeId = nodeId ?? 'preview' as NodeId;
+  const theme = useTheme();
   const [previewPoints, setPreviewPoints] = useState<PreviewPoint[]>([]);
   const [metadataRows, setMetadataRows] = useState<Array<Record<string, unknown>>>([]);
   const [metadataItems, setMetadataItems] = useState<LocationGroupItem[]>([]);
@@ -406,6 +405,8 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
   const [selectedMetadataIds, setSelectedMetadataIds] = useState<Set<string>>(new Set());
   const [metadataError, setMetadataError] = useState<string | undefined>();
   const metadataRequestRef = useRef(0);
+  const [rowFilterMode, setRowFilterMode] = useState<'all' | 'viewport'>('all');
+  const [rowSearchOnly, setRowSearchOnly] = useState(true);
   const [locationTypeSelection, setLocationTypeSelection] = useState<MapToggleSelection>(() =>
     Object.fromEntries(LOCATION_TYPE_OPTIONS.map((option) => [option.id, true])) as MapToggleSelection
   );
@@ -418,16 +419,24 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     });
   }, [metadataRows, locationTypeSelection]);
 
-  const filteredMetadataColumns = useMemo(
-    () => buildMetadataColumns(filteredMetadataRows),
-    [filteredMetadataRows],
-  );
-
   const handleMetadataSelectionChange = useCallback((selected: Set<string | number>) => {
     const next = new Set<string>();
     selected.forEach((value) => next.add(String(value)));
     setSelectedMetadataIds(next);
   }, []);
+
+  const viewportRowIds = useMemo(() => (
+    new Set(previewPoints.map((point) => String(point.id)))
+  ), [previewPoints]);
+  const displayedMetadataRows = useMemo(() => {
+    if (rowFilterMode !== 'viewport') return filteredMetadataRows;
+    if (viewportRowIds.size === 0) return [];
+    return filteredMetadataRows.filter((row) => viewportRowIds.has(String(row.id)));
+  }, [filteredMetadataRows, rowFilterMode, viewportRowIds]);
+  const displayedMetadataColumns = useMemo(
+    () => buildMetadataColumns(displayedMetadataRows),
+    [displayedMetadataRows],
+  );
 
   const isMetadataRecycling = useCallback((item: LocationGroupItem) => {
     const meta = item.data?.metadata;
@@ -515,6 +524,18 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       return acc;
     }, {} as LocationLabelConfig);
   }, [_draft.labelConfig, tilesMaxZoom]);
+  const admin0ColumnFormatter = useCallback((value: unknown, row: Record<string, unknown>) => {
+    const name = typeof value === 'string' ? value : '';
+    const code = typeof row.admin0Code === 'string' ? row.admin0Code : undefined;
+    const flag = resolveCountryFlag(code);
+    if (!name && !flag) return '';
+    return (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+        {flag ? <Typography variant="body2">{flag}</Typography> : null}
+        <Typography variant="body2">{name}</Typography>
+      </Box>
+    );
+  }, []);
   const typeColumnFormatter = useCallback((value: unknown) => {
     const rawType = typeof value === 'string' ? value : undefined;
     const type = rawType ? resolveLocationType(rawType) : 'area_centroid';
@@ -540,6 +561,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     }
     let cancelled = false;
     const requestId = ++metadataRequestRef.current;
+    console.info(debugPrefix, 'metadata-fetch:start', { nodeId });
     setMetadataLoading(true);
     setMetadataError(undefined);
 
@@ -550,6 +572,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
         const api = await bridge.getLocationQueryAPI();
         const items = await api.listLocationGroups(nodeId);
         if (cancelled || requestId !== metadataRequestRef.current) return;
+        console.info(debugPrefix, 'metadata-fetch:success', { nodeId, count: items.length });
         const rows = buildMetadataRows(items);
         setMetadataItems(items);
         setMetadataRows(rows);
@@ -557,6 +580,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       } catch (error) {
         if (cancelled || requestId !== metadataRequestRef.current) return;
         const message = error instanceof Error ? error.message : String(error);
+        console.error(debugPrefix, 'metadata-fetch:error', { nodeId, message });
         setMetadataItems([]);
         setMetadataRows([]);
         setMetadataLoading(false);
@@ -569,7 +593,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     return () => {
       cancelled = true;
     };
-  }, [nodeId]);
+  }, [nodeId, _draft.ideGsmSelectionHash, _draft.processingStatus]);
 
   const terrainToggleOptions = useMemo(() => (
     LOCATION_TYPE_OPTIONS.map((option) => {
@@ -591,6 +615,12 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     initialSize: { width: 280, height: 280 },
   });
 
+  const styleConfigWindow = useFloatingWindow({
+    persistKey: 'hierarchidb:ui:floating-window:location:style-config',
+    initialPosition: { x: 680, y: 40 },
+    initialSize: { width: 520, height: 640 },
+  });
+
   const attributionItems = useMemo<MapAttributionItem[]>(() => {
     if (!dataSourceAttribution) return [];
     return [{
@@ -610,6 +640,10 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
   );
 
   const fetchViewportPoints = useCallback(async (viewState?: MapViewState) => {
+    console.info(debugPrefix, 'viewport-fetch:request', {
+      nodeId: previewNodeId,
+      enabledTypes: enabledLocationTypes.length,
+    });
     if (!previewNodeId || previewNodeId === 'preview') {
       setPreviewPoints([]);
       return;
@@ -689,12 +723,13 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
         })
         .filter((point): point is PreviewPoint & Record<string, unknown> => Boolean(point));
       const filtered = filterItemsByTileIdSet(points, tileIdSet, tileIdField);
+      console.info(debugPrefix, 'viewport-fetch:success', { nodeId: previewNodeId, count: filtered.length });
       setPreviewPoints(filtered as PreviewPoint[]);
     } catch (err) {
       if (requestId === queryRequestRef.current) {
         setPreviewPoints([]);
       }
-      console.warn('[LocationMapPreviewStep] viewport query failed', err);
+      console.error(debugPrefix, 'viewport-fetch:error', { nodeId: previewNodeId, error: err });
     }
   }, [enabledLocationTypes, previewNodeId]);
 
@@ -715,7 +750,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
         queryTimerRef.current = null;
       }
     };
-  }, [scheduleViewportQuery]);
+  }, [scheduleViewportQuery, _draft.ideGsmSelectionHash, _draft.processingStatus]);
   useEffect(() => () => {
     if (hoverFrameRef.current) {
       window.cancelAnimationFrame(hoverFrameRef.current);
@@ -864,7 +899,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       const admin2 = typeof data?.admin2 === 'string' ? data.admin2 : undefined;
       const region = [admin1, admin2].filter(Boolean).join(' / ') || undefined;
       const countryCode = typeof data?.admin0Code === 'string' ? data.admin0Code : undefined;
-      const countryName = typeof data?.admin0Name === 'string' ? data.admin0Name : undefined;
+      const countryName = typeof data?.admin0 === 'string' ? data.admin0 : undefined;
       const countryFlag = resolveCountryFlag(countryCode);
       const countryLabel = countryName
         ? `${countryFlag ? `${countryFlag} ` : ''}${countryName}`
@@ -1040,6 +1075,18 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     return buildZoomScaledMatchExpression(entries, 0, MIN_ZOOM_LEVEL, tilesMaxZoom);
   }, [labelConfig, tilesMaxZoom]);
 
+  const labelHaloColor = useMemo(() => (theme.palette.mode === 'dark' ? '#000000' : '#ffffff'), [theme.palette.mode]);
+
+  const labelOpacityExpression = useMemo(() => {
+    const entries: Array<[LocationType, ThresholdZoomMatchConfig]> = KNOWN_LOCATION_TYPES.map((type) => {
+      const entry = labelConfig[type];
+      const zoomRange = normalizeRange(entry?.zoomRange ?? [MIN_ZOOM_LEVEL, tilesMaxZoom], MIN_ZOOM_LEVEL, tilesMaxZoom);
+      const startZoom = zoomRange[0];
+      return [type, { startZoom, fixedZoom: startZoom + 1, baseStartZoom: MIN_ZOOM_LEVEL, minValue: 0, maxValue: 1 }];
+    });
+    return buildThresholdedZoomMatchExpression(entries, 0, MIN_ZOOM_LEVEL, tilesMaxZoom);
+  }, [labelConfig, tilesMaxZoom]);
+
   const initialViewState = useMemo(
     () => buildInitialViewState(undefined),
     [],
@@ -1135,8 +1182,9 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       },
       paint: {
         'text-color': labelColorExpression,
-        'text-halo-color': '#ffffff',
+        'text-halo-color': labelHaloColor,
         'text-halo-width': 1,
+        'text-opacity': labelOpacityExpression,
       },
     });
     return layers;
@@ -1148,6 +1196,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     iconSizeExpression,
     iconsReady,
     labelColorExpression,
+    labelHaloColor,
     labelSizeExpression,
     locationFilter,
     previewPoints,
@@ -1251,15 +1300,27 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
             {metadataWindowOpen ? (
               <LocationPreviewList
                 title={translations.mapPreview?.tabs?.metadata ?? 'Locations'}
-                rows={filteredMetadataRows}
-                columns={filteredMetadataColumns}
-                columnFormatters={{ type: typeColumnFormatter }}
+                rows={displayedMetadataRows}
+                columns={displayedMetadataColumns}
+                columnFormatters={{ type: typeColumnFormatter, admin0: admin0ColumnFormatter }}
                 loading={metadataLoading}
                 errorText={metadataError}
                 selectedRows={selectedMetadataIds}
                 onSelectionChange={handleMetadataSelectionChange}
                 recyclingState={recyclingState}
                 onToggleRecycling={handleToggleRecycling}
+                rowFilterConfig={{
+                  mode: rowFilterMode,
+                  onModeChange: setRowFilterMode,
+                  searchOnly: rowSearchOnly,
+                  onSearchOnlyChange: setRowSearchOnly,
+                  labels: {
+                    title: 'Rows',
+                    allRows: 'Show all locations in this node',
+                    viewportRows: 'Show locations in the current viewport',
+                    searchOnly: 'Show only locations matching the search field',
+                  },
+                }}
                 onClose={() => setMetadataWindowOpen(false)}
               />
             ) : (
@@ -1275,6 +1336,22 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
                 </Button>
               </Box>
             )}
+            {styleConfigWindow.windowState.isVisible ? (
+              <FloatingWindow
+                title="Style Config"
+                titleIcon={<Palette fontSize="small" />}
+                initialState={styleConfigWindow.windowState}
+                onStateChange={styleConfigWindow.handlers.onStateChange}
+                onClose={styleConfigWindow.handlers.onClose}
+              >
+                <Box sx={{ height: '100%', minHeight: 0, overflow: 'auto' }}>
+                  <LocationStyleConfigPanel
+                    draft={_draft}
+                    onUpdate={onUpdate}
+                  />
+                </Box>
+              </FloatingWindow>
+            ) : null}
             {terrainWindow.windowState.isVisible ? (
               <FloatingWindow
                 title="Terrain Types"
@@ -1291,19 +1368,33 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
                   />
                 </Box>
               </FloatingWindow>
-            ) : (
-              <Box position="absolute" top={8} right={8} zIndex={3}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  size="large"
-                  aria-label="Show terrain types"
-                  onClick={terrainWindow.handlers.show}
-                >
-                  <LocationCity />
-                </Button>
+            ) : null}
+            {!terrainWindow.windowState.isVisible || !styleConfigWindow.windowState.isVisible ? (
+              <Box position="absolute" top={8} right={8} zIndex={3} display="flex" flexDirection="column" gap={1}>
+                {!terrainWindow.windowState.isVisible ? (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    size="large"
+                    aria-label="Show terrain types"
+                    onClick={terrainWindow.handlers.show}
+                  >
+                    <LocationCity />
+                  </Button>
+                ) : null}
+                {!styleConfigWindow.windowState.isVisible ? (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    size="large"
+                    aria-label="Show style config"
+                    onClick={styleConfigWindow.handlers.show}
+                  >
+                    <Palette />
+                  </Button>
+                ) : null}
               </Box>
-            )}
+            ) : null}
           </>
         )}
       />

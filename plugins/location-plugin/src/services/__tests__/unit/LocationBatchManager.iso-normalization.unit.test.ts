@@ -54,7 +54,7 @@ describe('LocationBatchManager country normalization', () => {
         longitude: 140.0,
         type: 'airport',
         admin0Code: 'USA',
-        admin0Name: 'United States',
+        admin0: 'United States',
       },
       {
         schemaVersion: 2,
@@ -64,7 +64,7 @@ describe('LocationBatchManager country normalization', () => {
         longitude: 139.0,
         type: 'port',
         admin0Code: '',
-        admin0Name: 'Japan',
+        admin0: 'Japan',
       },
       {
         schemaVersion: 2,
@@ -74,7 +74,7 @@ describe('LocationBatchManager country normalization', () => {
         longitude: 138.0,
         type: 'airport',
         admin0Code: 'US',
-        admin0Name: 'United States',
+        admin0: 'United States',
       },
       {
         schemaVersion: 2,
@@ -84,7 +84,7 @@ describe('LocationBatchManager country normalization', () => {
         longitude: 137.0,
         type: 'airport',
         admin0Code: '',
-        admin0Name: 'Unknownland',
+        admin0: 'Unknownland',
       },
     ]);
 

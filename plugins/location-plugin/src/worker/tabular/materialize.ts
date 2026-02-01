@@ -49,7 +49,7 @@ export async function materializeLocationPointsFromTabular(
     const admin0Code = toStringVal(r.admin0Code) ?? toStringVal(r.countryCode) ?? '';
     const admin1 = toStringVal(r.admin1) ?? toStringVal(r.adminCode1);
     const admin2 = toStringVal(r.admin2) ?? toStringVal(r.adminCode2);
-    const admin0Name = toStringVal(r.admin0Name) ?? toStringVal(r.countryName) ?? toStringVal(r.country);
+    const admin0 = toStringVal(r.admin0) ?? toStringVal(r.admin0Name) ?? toStringVal(r.countryName) ?? toStringVal(r.country);
 
     normalized.push({
       schemaVersion: 2,
@@ -59,7 +59,7 @@ export async function materializeLocationPointsFromTabular(
       longitude: lon,
       type,
       admin0Code,
-      admin0Name,
+      admin0,
       admin1,
       admin2,
       ...buildTileIdByZoom(lon, lat),

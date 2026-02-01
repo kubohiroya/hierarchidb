@@ -127,14 +127,12 @@ export interface LocationPointProperties {
   latitude: number;
   longitude: number;
   type: LocationPointKind;
-  admin0Name?: string;
-  admin1Name?: string;
-  admin2Name?: string;
+  admin0?: string;
+  admin1?: string;
+  admin2?: string;
   admin0Code?: string;
   admin1Code?: string;
   admin2Code?: string;
-  admin1?: string;
-  admin2?: string;
   centroidForShapeId?: number;
   centroidForShapeContainerNodeId?: NodeId;
   z0?: string;
