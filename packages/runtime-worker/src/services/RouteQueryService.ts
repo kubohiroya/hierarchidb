@@ -1,5 +1,6 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import type {
+  RouteLineString,
   RouteNearestEndpoint,
   RouteNearestLine,
   RouteNearestLineQuery,
@@ -26,16 +27,7 @@ type RoutePointSummary = {
   pointId?: string;
 };
 
-type RouteLineStringRecord = {
-  id: string;
-  nodeId: NodeId;
-  routeMode?: string;
-  waypoints?: [number, number][];
-  distance?: number;
-  startPoint?: RoutePointSummary;
-  endPoint?: RoutePointSummary;
-  featureId?: string;
-};
+type RouteLineStringRecord = RouteLineString;
 
 type RouteNearestSegment = {
   line: RouteLineStringRecord;
@@ -118,6 +110,11 @@ export class RouteQueryService implements RouteQueryAPI {
     return record?.data ?? null;
   }
 
+  async listRouteLineStrings(nodeId: NodeId): Promise<RouteLineStringRecord[]> {
+    await this.db.open?.();
+    return this.getLineStrings(nodeId);
+  }
+
   async countRouteReferencesToLocations(locationNodeIds: NodeId[]): Promise<number> {
     return countRouteReferencesToLocations(locationNodeIds);
   }
@@ -140,7 +137,10 @@ export class RouteQueryService implements RouteQueryAPI {
     const cached = this.tileCache.get(cacheKey);
     if (cached) return cached;
 
-    const lineStrings = await this.getLineStrings(nodeId);
+    const indexedIds = await this.getTileLineIds(nodeId, z, x, y);
+    const lineStrings = indexedIds
+      ? await this.getLineStringsByIds(nodeId, indexedIds)
+      : await this.getLineStrings(nodeId);
     if (!lineStrings.length) return null;
 
     const bbox = tileToBbox(z, x, y);
@@ -164,6 +164,32 @@ export class RouteQueryService implements RouteQueryAPI {
     const items = (rows as RouteLineStringRecord[]).map((row) => ({ ...row }));
     this.lineStringCache.set(nodeId, { checkedAt: Date.now(), items });
     return items;
+  }
+
+  private async getLineStringsByIds(
+    nodeId: NodeId,
+    ids: string[]
+  ): Promise<RouteLineStringRecord[]> {
+    if (!ids.length) return [];
+    const bulkGet = this.db.features.bulkGet;
+    if (bulkGet) {
+      const rows = await bulkGet(ids as NodeId[]);
+      const items = rows.filter(Boolean).map((row) => ({ ...(row as RouteLineStringRecord) }));
+      return items;
+    }
+    const rows = await this.db.features.where('nodeId').equals(nodeId).toArray();
+    const wanted = new Set(ids);
+    return (rows as RouteLineStringRecord[]).filter((row) => wanted.has(String(row.id)));
+  }
+
+  private async getTileLineIds(nodeId: NodeId, z: number, x: number, y: number): Promise<string[] | null> {
+    const rows = await this.db.tileIndex
+      .where('[nodeId+z+x+y]')
+      .equals([nodeId, z, x, y])
+      .toArray();
+    const record = rows[0];
+    if (!record?.lineIds?.length) return null;
+    return record.lineIds;
   }
 
   private toNearestLine(line: RouteLineStringRecord): RouteNearestLine {

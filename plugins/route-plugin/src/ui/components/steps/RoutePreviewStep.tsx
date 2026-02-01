@@ -10,15 +10,14 @@ import {
   buildRoutePreviewRows,
   DEFAULT_MAP_CONFIG,
   MapToggleCard,
-  mergeFilters,
   RoutePreviewList,
   ResourceLayerMap,
+  type ResourceVectorLayer,
   useVectorTilePreviewSearch,
   type MapAttributionItem,
   type MapLibreMapInstance,
   type MapToggleSelection,
   type MapViewState,
-  type ResourceGeoJsonLayer,
 } from '@hierarchidb/ui-map';
 import {
   DirectionsBoat as DirectionsBoatIcon,
@@ -29,10 +28,12 @@ import {
 } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/core-types';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
-import type { RouteNearestLineResponse, RouteUpdaterPayload } from '@hierarchidb/route-api';
+import type { RouteLineString, RouteNearestLineResponse, RouteUpdaterPayload } from '@hierarchidb/route-api';
 import { formatDistance, getTransportModeName, useTranslation } from '../../../common/i18n/index.js';
 import { ROUTE_MODES, type RouteMode } from '@hierarchidb/route-api';
 import { ROUTE_DATA_SOURCES } from '../../../common/datasource/configs.js';
+import { getDBName } from '@hierarchidb/util';
+import { buildRouteColorExpression, mergeRouteStyleConfig, resolveLineDashArray } from '../../../common/styles/routeStyle.js';
 
 interface RoutePreviewStepProps {
   draft: RouteUpdaterPayload;
@@ -57,10 +58,17 @@ const ROUTE_MODE_OPTIONS: RouteModeOption[] = [
   { id: ROUTE_MODES.ROAD, label: 'Road', icon: <DirectionsCarIcon fontSize="small" />, modes: [ROUTE_MODES.ROAD, ROUTE_MODES.HIGHWAY] },
 ];
 
-const resolveBounds = (geometry: [number, number][]): Bounds | null => {
-  if (!geometry.length) return null;
-  const lngs = geometry.map((point) => point[0]);
-  const lats = geometry.map((point) => point[1]);
+const resolveBoundsForLines = (lines: [number, number][][]): Bounds | null => {
+  if (!lines.length) return null;
+  const lngs: number[] = [];
+  const lats: number[] = [];
+  lines.forEach((line) => {
+    line.forEach((point) => {
+      lngs.push(point[0]);
+      lats.push(point[1]);
+    });
+  });
+  if (!lngs.length || !lats.length) return null;
   let minLon = Math.min(...lngs);
   let maxLon = Math.max(...lngs);
   let minLat = Math.min(...lats);
@@ -76,6 +84,23 @@ const resolveBounds = (geometry: [number, number][]): Bounds | null => {
   return { minLon, maxLon, minLat, maxLat };
 };
 
+const normalizeCoordinate = (point: [number, number] | number[]): [number, number] | null => {
+  if (!Array.isArray(point) || point.length < 2) return null;
+  const lon = Number(point[0]);
+  const lat = Number(point[1]);
+  if (!Number.isFinite(lon) || !Number.isFinite(lat)) return null;
+  return [lon, lat];
+};
+
+const normalizeLineCoordinates = (points: Array<[number, number] | number[]>): [number, number][] => {
+  const coords: [number, number][] = [];
+  for (const point of points) {
+    const normalized = normalizeCoordinate(point);
+    if (normalized) coords.push(normalized);
+  }
+  return coords;
+};
+
 const resolveMetersPerPixel = (latitude: number, zoom: number): number => {
   const worldCircumference = 40_075_016.686;
   const latFactor = Math.cos((latitude * Math.PI) / 180);
@@ -83,27 +108,13 @@ const resolveMetersPerPixel = (latitude: number, zoom: number): number => {
   return (worldCircumference * latFactor) / scale;
 };
 
-const resolveRouteMode = (draft: RouteUpdaterPayload['draftData']): RouteMode | null => {
-  const selection = draft?.transportSelection;
-  if (selection === 'high-speed-rail') return ROUTE_MODES.H_RAILWAY;
-  if (selection === 'rail') return ROUTE_MODES.RAILWAY;
-  if (selection === 'highway') return ROUTE_MODES.HIGHWAY;
-  if (selection === 'road') return ROUTE_MODES.ROAD;
-  const mode = draft?.transportMode;
-  if (mode === 'air') return ROUTE_MODES.AIRWAY;
-  if (mode === 'sea') return ROUTE_MODES.WATERWAY;
-  if (mode === 'rail') return ROUTE_MODES.RAILWAY;
-  if (mode === 'road') return ROUTE_MODES.ROAD;
-  return null;
-};
-
 export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeId }) => {
   const { t, locale } = useTranslation();
-  const hasGeometry = Array.isArray(draft.draftData?.lineGeometry) && draft.draftData?.lineGeometry.length > 0;
-  const geometry: [number, number][] = useMemo(()=> draft.draftData?.lineGeometry ?? [], [draft.draftData?.lineGeometry]);
   const previewNodeId = nodeId ?? draft.treeNodeId;
-  const bounds = useMemo(() => resolveBounds(geometry), [geometry]);
   const workerBridgeRef = useRef(getWorkerBridge());
+  const [lineStrings, setLineStrings] = useState<RouteLineString[]>([]);
+  const [lineStringsLoading, setLineStringsLoading] = useState(false);
+  const [lineStringsError, setLineStringsError] = useState<string | null>(null);
   const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
   const [routeModeSelection, setRouteModeSelection] = useState<MapToggleSelection>(() =>
     Object.fromEntries(ROUTE_MODE_OPTIONS.map((option) => [option.id, true])) as MapToggleSelection
@@ -116,12 +127,32 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
   const hoverTimerRef = useRef<number | null>(null);
   const hoverRequestIdRef = useRef(0);
   const lastHoverRef = useRef<{ longitude: number; latitude: number; zoom: number } | null>(null);
+  const hasGeometry = lineStrings.length > 0;
+  const showMissingGeometry = !lineStringsLoading && !hasGeometry && !lineStringsError;
+  const lineGeometries = useMemo<[number, number][][]>(() => (
+    lineStrings
+      .map((line) => {
+        if (Array.isArray(line.waypoints) && line.waypoints.length >= 2) {
+          return normalizeLineCoordinates(line.waypoints);
+        }
+        return normalizeLineCoordinates([
+          [line.startPoint.longitude, line.startPoint.latitude],
+          [line.endPoint.longitude, line.endPoint.latitude],
+        ]);
+      })
+      .filter((coords) => coords.length >= 2)
+  ), [lineStrings]);
+  const bounds = useMemo(() => resolveBoundsForLines(lineGeometries), [lineGeometries]);
   const dataSourceConfig = useMemo(() => {
     const name = draft.draftData?.dataSourceName;
     if (!name) return undefined;
     const normalized = name.toLowerCase();
     return ROUTE_DATA_SOURCES.find((source) => source.name.toLowerCase() === normalized);
   }, [draft.draftData?.dataSourceName]);
+  const routeStyleConfig = useMemo(
+    () => mergeRouteStyleConfig(draft.draftData?.routeStyleConfig),
+    [draft.draftData?.routeStyleConfig],
+  );
   const attributionItems = useMemo<MapAttributionItem[]>(() => {
     if (!dataSourceConfig) return [];
     return [{
@@ -133,6 +164,36 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
       licenseUrl: dataSourceConfig.licenseUrl,
     }];
   }, [dataSourceConfig]);
+
+  useEffect(() => {
+    if (!previewNodeId) {
+      setLineStrings([]);
+      return;
+    }
+    let active = true;
+    setLineStringsLoading(true);
+    setLineStringsError(null);
+    void (async () => {
+      try {
+        const api = await workerBridgeRef.current.getRouteQueryAPI();
+        const rows = await api.listRouteLineStrings(previewNodeId);
+        if (!active) return;
+        setLineStrings(rows);
+      } catch (error) {
+        if (!active) return;
+        const message = error instanceof Error ? error.message : String(error);
+        setLineStringsError(message);
+        setLineStrings([]);
+      } finally {
+        if (active) {
+          setLineStringsLoading(false);
+        }
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [previewNodeId]);
 
   const formatTemplate = useCallback(
     (template: string, values: Record<string, string | number>) =>
@@ -246,7 +307,6 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
     () => buildCategoryFilter(enabledRouteModes, routeModeValues, ['routeMode', 'mode', 'route_mode']),
     [enabledRouteModes, routeModeValues],
   );
-  const routeMode = useMemo(() => resolveRouteMode(draft.draftData), [draft.draftData]);
   const initialViewState = useMemo<MapViewState>(() => {
     if (!bounds) return DEFAULT_MAP_CONFIG.viewState;
     const longitude = (bounds.minLon + bounds.maxLon) / 2;
@@ -257,52 +317,43 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
       zoom: DEFAULT_MAP_CONFIG.viewState.zoom,
     };
   }, [bounds]);
-  const geoJsonLayers = useMemo<ResourceGeoJsonLayer[]>(() => {
+  const vectorLayers = useMemo<ResourceVectorLayer[]>(() => {
+    if (!previewNodeId) return [];
     if (!hasGeometry) return [];
     return [
       {
-        layerId: `route-preview-${previewNodeId ?? 'route'}`,
-        sourceId: `route-preview-source-${previewNodeId ?? 'route'}`,
-        layerType: 'line',
-        data: {
-          type: 'FeatureCollection',
-          features: [
-            {
-              type: 'Feature',
-              geometry: {
-                type: 'LineString',
-                coordinates: geometry,
-              },
-              properties: {
-                routeMode: routeMode ?? ROUTE_MODES.ROAD,
-              },
-            },
-          ],
+        nodeId: String(previewNodeId),
+        nodeType: 'route',
+        dbName: getDBName('route'),
+        tileDataProvider: async (z, x, y, nodeIdOverride) => {
+          const api = await workerBridgeRef.current.getRouteQueryAPI();
+          const targetId = (nodeIdOverride ?? previewNodeId) as NodeId;
+          return api.getVectorTile(targetId, z, x, y);
         },
-        paint: {
-          'line-color': '#f24c3d',
-          'line-width': 2,
-          'line-opacity': 0.9,
+        promoteId: 'id',
+        layerConfig: {
+          layerType: 'line',
+          sourceLayer: 'layer0',
+          paint: {
+            'line-color': buildRouteColorExpression(routeStyleConfig),
+            'line-width': routeStyleConfig.lineWidth,
+            'line-opacity': 0.9,
+            ...(resolveLineDashArray(routeStyleConfig.lineStyle)
+              ? { 'line-dasharray': resolveLineDashArray(routeStyleConfig.lineStyle) }
+              : {}),
+          },
+          filter: routeFilter,
         },
+        layerLabel: t('preview.vectorLayerLabel', 'Routes'),
       },
     ];
-  }, [geometry, hasGeometry, previewNodeId, routeMode]);
-  const filteredGeoJsonLayers = useMemo(
-    () => {
-      if (enabledRouteModes.length === 0) return [];
-      return geoJsonLayers.map((layer) => ({
-        ...layer,
-        filter: mergeFilters(layer.filter, routeFilter),
-      }));
-    },
-    [enabledRouteModes.length, geoJsonLayers, routeFilter],
-  );
+  }, [hasGeometry, previewNodeId, routeFilter, routeStyleConfig, t]);
   const handleRouteModeToggle = useCallback((id: string) => {
     setRouteModeSelection((prev) => ({ ...prev, [id]: !prev[id] }));
   }, []);
   const listRows = useMemo(
-    () => (hasGeometry ? buildRoutePreviewRows([geometry]) : []),
-    [geometry, hasGeometry],
+    () => (hasGeometry ? buildRoutePreviewRows(lineGeometries) : []),
+    [hasGeometry, lineGeometries],
   );
   const getRowId = useCallback((row: (typeof listRows)[number]) => String(row.id), []);
   const buildSearchText = useCallback((row: (typeof listRows)[number]) => ([
@@ -333,9 +384,14 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
         {t('preview.description', 'Preview the generated route geometry once the stage is complete.')}
       </Typography>
 
-      {!hasGeometry && (
+      {showMissingGeometry && (
         <Alert severity="info">
           {t('preview.missing', 'No route geometry is available yet. Run Build to generate a preview.')}
+        </Alert>
+      )}
+      {lineStringsError && (
+        <Alert severity="error">
+          {lineStringsError}
         </Alert>
       )}
 
@@ -374,8 +430,7 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
                   height="100%"
                   mapStyleUrl={DEFAULT_MAP_CONFIG.mapStyleUrl}
                   basemapStyles={[]}
-                  vectorLayers={[]}
-                  geoJsonLayers={filteredGeoJsonLayers}
+                  vectorLayers={vectorLayers}
                   attributionItems={attributionItems}
                   mapOptions={DEFAULT_MAP_CONFIG.interactionOptions}
                   onLoad={setMapInstance}
@@ -383,6 +438,8 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
                 <RoutePreviewList
                   title={t('preview.list.title', 'Routes')}
                   rows={listRows}
+                  loading={lineStringsLoading}
+                  error={lineStringsError ?? undefined}
                   columnLabels={{
                     lineId: t('preview.list.columns.lineId', 'Line Id'),
                     startLon: t('preview.list.columns.startLon', 'Start Lon'),

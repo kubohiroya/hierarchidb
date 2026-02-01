@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { RouteNearestLineQuery, RouteNearestLineResponse } from './routeTypes.js';
+import type { RouteLineString, RouteNearestLineQuery, RouteNearestLineResponse } from './routeTypes.js';
 
 /**
  * Exposes route plugin artifacts.
@@ -8,5 +8,6 @@ import type { RouteNearestLineQuery, RouteNearestLineResponse } from './routeTyp
 export interface RouteQueryAPI {
   findNearestRouteLine(query: RouteNearestLineQuery): Promise<RouteNearestLineResponse>;
   getVectorTile(nodeId: NodeId, z: number, x: number, y: number): Promise<ArrayBuffer | null>;
+  listRouteLineStrings(nodeId: NodeId): Promise<RouteLineString[]>;
   countRouteReferencesToLocations(locationNodeIds: NodeId[]): Promise<number>;
 }
