@@ -3,7 +3,6 @@
  */
 
 import type React from 'react';
-import { useEffect, useMemo } from 'react';
 import {
   Box,
   Card,
@@ -19,13 +18,9 @@ import {
 } from '@mui/material';
 import type {
   LocationEntity,
-  LocationIconConfig,
   LocationIconId,
-  LocationLabelConfig,
-  LocationRepresentationByZoomLevelConfig,
   LocationType,
 } from '../../../common/types/index.js';
-import { useTranslation } from '../../../common/i18n/index.js';
 import {
   Anchor,
   FlightTakeoff,
@@ -34,7 +29,7 @@ import {
   Subway,
 } from '@mui/icons-material';
 import type { SvgIconComponent } from '@mui/icons-material';
-import { LOCATION_TYPE_STYLES } from './locationTypes.js';
+import { useLocationStyleConfigPanel } from './useLocationStyleConfigPanel.ts';
 
 interface LocationStyleConfigPanelProps {
   draft: Partial<LocationEntity>;
@@ -43,9 +38,6 @@ interface LocationStyleConfigPanelProps {
 }
 
 const MIN_ZOOM_LEVEL = 0;
-const MAX_ZOOM_LEVEL = 22;
-const DEFAULT_MAX_ZOOM = 12;
-
 const LOCATION_TYPES: LocationType[] = [
   'area_centroid',
   'airport',
@@ -53,22 +45,6 @@ const LOCATION_TYPES: LocationType[] = [
   'railway_station',
   'interchange',
 ];
-
-const DEFAULT_TYPE_COLORS: Record<LocationType, string> = {
-  area_centroid: '#d62728',
-  airport: LOCATION_TYPE_STYLES.airport.color,
-  port: '#1f77b4',
-  railway_station: '#2ca02c',
-  interchange: LOCATION_TYPE_STYLES.interchange.color,
-};
-
-const DEFAULT_ICON_IDS: Record<LocationType, LocationIconId> = {
-  area_centroid: 'location_city',
-  airport: 'flight_takeoff',
-  port: 'directions_boat',
-  railway_station: 'train',
-  interchange: 'fork_right',
-};
 
 const ICON_OPTIONS: Array<{ id: LocationIconId; Icon: SvgIconComponent; labelKey: string }> = [
   { id: 'location_city', Icon: LocationCity, labelKey: 'location_city' },
@@ -113,110 +89,19 @@ const normalizeZoomStops = (values: number[], maxZoom: number): [number, number,
   return normalized as [number, number, number, number];
 };
 
-const buildDefaultRepresentationConfig = (maxZoom: number): LocationRepresentationByZoomLevelConfig => {
-  const stops = normalizeZoomStops([
-    0,
-    Math.round(maxZoom * 0.4),
-    Math.round(maxZoom * 0.6),
-    Math.round(maxZoom * 0.8),
-  ], maxZoom);
-  return LOCATION_TYPES.reduce((acc, type) => {
-    acc[type] = {
-      pointFromZoom: stops[0],
-      polygonFromZoom: stops[1],
-      iconFromZoom: stops[2],
-      iconFixedFromZoom: stops[3],
-    };
-    return acc;
-  }, {} as LocationRepresentationByZoomLevelConfig);
-};
-
-const buildDefaultIconConfig = (): LocationIconConfig => (
-  LOCATION_TYPES.reduce((acc, type) => {
-    acc[type] = {
-      color: DEFAULT_TYPE_COLORS[type],
-      iconId: DEFAULT_ICON_IDS[type],
-      sizeRange: DEFAULT_ICON_SIZE_RANGE,
-    };
-    return acc;
-  }, {} as LocationIconConfig)
-);
-
-const buildDefaultLabelConfig = (maxZoom: number): LocationLabelConfig => {
-  const zoomRange = normalizeRange([
-    Math.round(maxZoom * 0.6),
-    Math.round(maxZoom * 0.8),
-  ], MIN_ZOOM_LEVEL, maxZoom);
-  return LOCATION_TYPES.reduce((acc, type) => {
-    acc[type] = {
-      color: DEFAULT_TYPE_COLORS[type],
-      zoomRange,
-      sizeRange: DEFAULT_LABEL_SIZE_RANGE,
-    };
-    return acc;
-  }, {} as LocationLabelConfig);
-};
 
 export const LocationStyleConfigPanel: React.FC<LocationStyleConfigPanelProps> = ({
   draft: draftProp,
   onUpdate,
   disabled,
 }) => {
-  const { translations } = useTranslation();
-  const draft = draftProp ?? {};
-  const tilesMaxZoom = clamp(draft.tilesMaxZoom ?? DEFAULT_MAX_ZOOM, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
-
-  const representationDefaults = useMemo(
-    () => buildDefaultRepresentationConfig(tilesMaxZoom),
-    [tilesMaxZoom],
-  );
-  const iconDefaults = useMemo(() => buildDefaultIconConfig(), []);
-  const labelDefaults = useMemo(
-    () => buildDefaultLabelConfig(tilesMaxZoom),
-    [tilesMaxZoom],
-  );
-
-  const representationConfig = useMemo(() => (
-    LOCATION_TYPES.reduce((acc, type) => {
-      acc[type] = draft.representationByZoomLevelConfig?.[type] ?? representationDefaults[type];
-      return acc;
-    }, {} as LocationRepresentationByZoomLevelConfig)
-  ), [draft.representationByZoomLevelConfig, representationDefaults]);
-
-  const iconConfig = useMemo(() => (
-    LOCATION_TYPES.reduce((acc, type) => {
-      acc[type] = draft.iconConfig?.[type] ?? iconDefaults[type];
-      return acc;
-    }, {} as LocationIconConfig)
-  ), [draft.iconConfig, iconDefaults]);
-
-  const labelConfig = useMemo(() => (
-    LOCATION_TYPES.reduce((acc, type) => {
-      acc[type] = draft.labelConfig?.[type] ?? labelDefaults[type];
-      return acc;
-    }, {} as LocationLabelConfig)
-  ), [draft.labelConfig, labelDefaults]);
-
-  useEffect(() => {
-    const needsRepresentation = LOCATION_TYPES.some((type) => !draft.representationByZoomLevelConfig?.[type]);
-    if (needsRepresentation) {
-      onUpdate?.({ representationByZoomLevelConfig: representationConfig });
-    }
-  }, [draft.representationByZoomLevelConfig, onUpdate, representationConfig]);
-
-  useEffect(() => {
-    const needsIcons = LOCATION_TYPES.some((type) => !draft.iconConfig?.[type]);
-    if (needsIcons) {
-      onUpdate?.({ iconConfig });
-    }
-  }, [draft.iconConfig, iconConfig, onUpdate]);
-
-  useEffect(() => {
-    const needsLabels = LOCATION_TYPES.some((type) => !draft.labelConfig?.[type]);
-    if (needsLabels) {
-      onUpdate?.({ labelConfig });
-    }
-  }, [draft.labelConfig, labelConfig, onUpdate]);
+  const {
+    translations,
+    tilesMaxZoom,
+    representationConfig,
+    iconConfig,
+    labelConfig,
+  } = useLocationStyleConfigPanel(draftProp, onUpdate);
 
   const handleRepresentationChange = (type: LocationType, value: number | number[]) => {
     if (!Array.isArray(value)) return;

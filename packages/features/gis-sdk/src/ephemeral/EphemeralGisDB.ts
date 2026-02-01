@@ -46,11 +46,11 @@ export class EphemeralGisDB<Config = unknown> extends Dexie {
 
   constructor(name: string) {
     super(name);
-    this.version(4)
+    this.version(5)
       .stores({
-        fetchCache: '&id, nodeId, timestamp',
-        transformCache: '&id, nodeId, timestamp',
-        sessions: '&nodeId, status, stage, startTime'
+        fetchCache: '&id, nodeId',
+        transformCache: '&id, nodeId',
+        sessions: '&nodeId'
       })
       .upgrade(async () => {
         await this.fetchCache.clear();

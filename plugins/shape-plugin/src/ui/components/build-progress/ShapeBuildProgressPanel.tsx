@@ -23,7 +23,7 @@ import type { TaskWithMetadata } from './TaskListVirtualized.tsx';
 import { TaskListVirtualized, sortVectorTileTasks } from './TaskListVirtualized.tsx';
 import type { ShapeEntity } from '../../../common/types/ShapeEntity.ts';
 import { isSkippedMessage } from '../../../common/utils/taskMessages.ts';
-import { useBuildProgressPanelState } from './useBuildProgressPanelState.ts';
+import { useShapeBuildProgressPanel } from './useShapeBuildProgressPanel.ts';
 import type { TaskProgressSummary } from '../../atoms/shapeBuildProgressAtoms.ts';
 import { taskScrollTargetAtom, taskViewportRangeAtom } from '../../atoms/shapeBuildProgressAtoms.ts';
 import type { BuildStage } from '@hierarchidb/components';
@@ -556,20 +556,21 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
     resolveStatusLabel,
     resolveStatusColor,
     controlDetails,
-    resolveStageValue,
     stageConcurrencyIndicators,
     handleStartClick,
     handleConfirmStart,
-  } = useBuildProgressPanelState({ data, nodeId });
+    stageProgressItems,
+    stageContentItems,
+  } = useShapeBuildProgressPanel({ data, nodeId });
 
   const stageProgressContent = useMemo(() => (
-    stages.reduce<Record<string, JSX.Element>>((acc, stage) => {
-      const stageTasks = tasksByStage[stage.id] ?? [];
+    stageProgressItems.reduce<Record<string, JSX.Element>>((acc, item) => {
+      const stage = item.stage;
       acc[stage.id] = (
         <Stack gap={1}>
           <TaskProgressBar
             stages={[stage]}
-            tasksByStage={{ [stage.id]: stageTasks }}
+            tasksByStage={{ [stage.id]: item.tasks }}
             buildStatus={summary.buildStatus}
             activeStageId={activeStageId}
             resolveTaskTitle={resolveTaskTitle}
@@ -578,14 +579,15 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
       );
       return acc;
     }, {})
-  ), [activeStageId, stages, tasksByStage, summary.buildStatus, resolveTaskTitle]);
+  ), [activeStageId, stageProgressItems, summary.buildStatus, resolveTaskTitle]);
 
   const stageContents = useMemo(() => (
-    stages.reduce<Record<string, JSX.Element>>((acc, stage) => {
+    stageContentItems.reduce<Record<string, JSX.Element>>((acc, item) => {
+      const stage = item.stage;
       acc[stage.id] = (
         <BuildProgressStageContent
           stage={stage}
-          stageValue={resolveStageValue(stage.id)}
+          stageValue={item.stageValue}
           tasksByStage={tasksByStage}
           paneProgress={paneProgress ?? []}
           isTasksLoading={isTasksLoading}
@@ -600,9 +602,8 @@ export const ShapeBuildProgressPanel = ({ data, nodeId }: { data?: Partial<Shape
       return acc;
     }, {})
   ), [
-    stages,
+    stageContentItems,
     paneProgress,
-    resolveStageValue,
     resolveStatusColor,
     resolveStatusLabel,
     resolveTaskTitle,

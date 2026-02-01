@@ -22,6 +22,12 @@ Plugins under `plugins/` contain TSX components that mix rendering (JSX) with st
 - [x] (2026-02-01 20:10 JST) Ran `pnpm --filter @hierarchidb/location-plugin typecheck` (exit 0).
 - [x] (2026-02-01 20:25 JST) Extracted hook for route-plugin (RouteDataSourceStep).
 - [x] (2026-02-01 20:26 JST) Ran `pnpm --filter @hierarchidb/route-plugin typecheck` (exit 0).
+- [x] (2026-02-01 20:45 JST) Extracted hook for shape-plugin (ShapeBuildProgressPanel).
+- [x] (2026-02-01 20:46 JST) Ran `pnpm --filter @hierarchidb/shape-plugin typecheck` (exit 0).
+- [x] (2026-02-01 21:05 JST) Extracted hook for location-plugin (LocationStyleConfigPanel).
+- [x] (2026-02-01 21:11 JST) Ran `pnpm --filter @hierarchidb/location-plugin typecheck` (exit 0).
+- [x] (2026-02-01 21:25 JST) Extracted hook for route-plugin (RouteBatchLaunchForm).
+- [x] (2026-02-01 21:26 JST) Ran `pnpm --filter @hierarchidb/route-plugin typecheck` (exit 0).
 - [ ] Extract logic into hooks for remaining target components.
 - [ ] Run typecheck for remaining affected plugins and record results.
 - [ ] Update TASKS.md with progress and completion notes.
@@ -33,6 +39,9 @@ Plugins under `plugins/` contain TSX components that mix rendering (JSX) with st
 
 - Observation: LocationSelectionStep needed explicit type-only imports after moving buildSelectionRecord to the component.
   Evidence: `pnpm --filter @hierarchidb/location-plugin typecheck` failed with TS2304/TS2552 until MatrixSelection/LocationType imports were added.
+
+- Observation: LocationStyleConfigPanel needed cleanup of unused constants/types after moving default config logic into the hook.
+  Evidence: `pnpm --filter @hierarchidb/location-plugin typecheck` failed with TS6196/TS6133 until the unused definitions were removed.
 
 ## Decision Log
 
@@ -122,3 +131,4 @@ Plan change note: Updated progress for styler-plugin extraction, recorded typech
 Plan change note: Updated progress for shape-plugin extraction and recorded typecheck run.
 Plan change note: Updated progress for location-plugin extraction, recorded typecheck run, and noted type-only import fix.
 Plan change note: Updated progress for route-plugin extraction and recorded typecheck run.
+Plan change note: Updated progress for shape/location/route extractions, recorded typecheck runs, and noted cleanup of unused constants in LocationStyleConfigPanel.

@@ -70,14 +70,13 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig> {
 
   constructor() {
     super(getDBName('shape-ephemeral'));
-    this.version(14).stores({
-      fetchCache: '&id, nodeId, domainType, sourceKey, [nodeId+sourceKey], countryCode, adminLevel, [nodeId+countryCode+adminLevel], timestamp',
-      transformCache: '&id, nodeId, bandId, domainType, sourceKey, [nodeId+bandId], [nodeId+bandId+sourceKey], countryCode, adminLevel, [nodeId+countryCode+adminLevel], timestamp',
-      sessions: '&nodeId, status, stage, startTime',
-      cache: '&key, type, lastAccessed, ttl',
-      tileIdToBufferRelations: '&id, nodeId, bandId, tileId, bufferId, [nodeId+bandId], [nodeId+bandId+tileId]',
+    this.version(15).stores({
+      fetchCache: '&id, nodeId',
+      transformCache: '&id, nodeId',
+      sessions: '&nodeId',
+      tileIdToBufferRelations: '&id, nodeId, bufferId',
       batchTasks: '&taskId, nodeId, [nodeId+status], [nodeId+taskType]',
-      transformErrors: '&id, nodeId, taskId, bandId, sourceKey, [nodeId+taskId], [nodeId+bandId], [nodeId+sourceKey], createdAt',
+      transformErrors: '&id, nodeId',
     }).upgrade((tx) =>
       tx.table('batchTasks')
         .toCollection()

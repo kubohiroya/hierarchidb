@@ -301,14 +301,22 @@ export class ShapeDB extends VectorTileDbBase {
   constructor() {
     super(getDBName('shape'));
 
-    this.version(7).stores(this.mergeVectorTileStores({
-      buildSessions: '&nodeId, status, startedAt, updatedAt',
+    this.version(8).stores(this.mergeVectorTileStores({
+      buildSessions: '&nodeId, status',
       features: '++id, nodeId, [nodeId+adminLevel]',
       vectorTiles: '&tileId, nodeId, [nodeId+z+x+y]',
     }));
 
     this.initVectorTileTables();
     this.buildSessions = this.table('buildSessions');
+  }
+
+  protected mergeVectorTileStores(stores: Record<string, string>): Record<string, string> {
+    return {
+      ...stores,
+      featureMetadata: '&id, nodeId',
+      sourceMetadata: '&id, nodeId',
+    };
   }
 
   // Build Session Management

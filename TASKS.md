@@ -12809,6 +12809,23 @@
   - update: 2026-02-01 20:01 JST featureListRows/displayedFeatureRows に国旗付与、countryName がコードの場合は getCountry で補完するよう修正。
   - done: 2026-02-01 20:01 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
 
+2471) refactor/shape-db/remove-unused-indexes (P1) — 進行中 (2026-02-01 20:15 JST)
+- ブランチ名: refactor/shape-db/remove-unused-indexes
+- 依存: なし
+- 受け入れ基準: hidb-shape / hidb-shape-ephemeral の未使用テーブル/インデックスが削除される／Dexie version が更新される／`pnpm --filter @hierarchidb/shape-store typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/shape-store/src/ShapeDB.ts`, `packages/features/shape-store/src/EphemeralShapeDB.ts`, `packages/features/gis-sdk/src/ephemeral/EphemeralGisDB.ts`
+- ロールバック手順: Dexie version と stores 定義を revert して元に戻す
+- チェックリスト:
+  - ShapeDB の buildSessions / metadata インデックスを整理する
+  - EphemeralShapeDB の cache テーブルと未使用インデックスを削除する
+  - EphemeralGisDB の cache テーブルを削除する
+  - shape-store typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 20:15 JST shape DB の未使用テーブル/インデックス削除に着手。
+  - update: 2026-02-01 20:18 JST ShapeDB/EphemeralShapeDB/EphemeralGisDB の stores を整理し version を更新。
+  - done: 2026-02-01 20:18 JST pnpm --filter @hierarchidb/shape-store typecheck exit 0 を確認。
+
 2466) fix/location-preview/snackbar-theme (P1) — 進行中 (2026-02-01 17:58 JST)
 - ブランチ名: fix/location-preview/snackbar-theme
 - 依存: なし
@@ -13149,3 +13166,11 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - update: 2026-02-01 20:10 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
   - update: 2026-02-01 20:25 JST route-plugin の RouteDataSourceStep をフックへ抽出。
   - update: 2026-02-01 20:26 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 20:45 JST shape-plugin の ShapeBuildProgressPanel をフックへ抽出。
+  - update: 2026-02-01 20:46 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 21:05 JST location-plugin の LocationStyleConfigPanel をフックへ抽出。
+  - blocked: 2026-02-01 21:07 JST pnpm --filter @hierarchidb/location-plugin typecheck が未使用型/定数で失敗。
+  - update: 2026-02-01 21:10 JST LocationStyleConfigPanel の不要定義を整理。
+  - update: 2026-02-01 21:11 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 21:25 JST route-plugin の RouteBatchLaunchForm をフックへ抽出。
+  - update: 2026-02-01 21:26 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
