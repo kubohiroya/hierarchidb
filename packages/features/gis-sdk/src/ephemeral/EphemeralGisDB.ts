@@ -39,10 +39,13 @@ export interface BatchSessionMetadata<Config = unknown> {
   tableId?: string;
 }
 
-export class EphemeralGisDB<Config = unknown> extends Dexie {
+export class EphemeralGisDB<
+  Config = unknown,
+  SessionRecord = BatchSessionMetadata<Config>
+> extends Dexie {
   fetchCache!: Table<FetchCacheRecord>;
   transformCache!: Table<TransformCacheRecord>;
-  sessions!: Table<BatchSessionMetadata<Config>>;
+  sessions!: Table<SessionRecord>;
 
   constructor(name: string) {
     super(name);

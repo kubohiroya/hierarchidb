@@ -117,7 +117,7 @@ const toTaskSummary = (task: ShapeBuildTaskRecord): ShapeBuildTaskSummary => ({
 
 export class ShapeQueryAPIImpl implements ShapeQueryAPI {
   async listBuildSessions(nodeId: NodeId): Promise<ShapeBuildSessionSummary[]> {
-    const sessions = await shapeDB.buildSessions.where('nodeId').equals(nodeId).toArray();
+    const sessions = await ephemeralShapeDB.sessions.where('nodeId').equals(nodeId).toArray();
     return sessions.map((session) => ({
       nodeId: session.nodeId,
       status: mapStatus(session.status),
@@ -129,7 +129,7 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
   }
 
   async getBuildSession(nodeId: NodeId): Promise<ShapeBuildSessionSummary | null> {
-    const session = await shapeDB.getBuildSession(nodeId);
+    const session = await ephemeralShapeDB.sessions.get(nodeId);
     if (!session) return null;
     return {
       nodeId: session.nodeId,
@@ -142,20 +142,20 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
   }
 
   async listBuildSessionRecords(nodeId: NodeId): Promise<ShapeBuildSessionRecord[]> {
-    const sessions = await shapeDB.buildSessions.where('nodeId').equals(nodeId).toArray();
+    const sessions = await ephemeralShapeDB.sessions.where('nodeId').equals(nodeId).toArray();
     return sessions.map(toShapeBuildSessionRecord);
   }
 
   async getBuildSessionRecord(nodeId: NodeId): Promise<ShapeBuildSessionRecord | null> {
-    const session = await shapeDB.getBuildSession(nodeId);
+    const session = await ephemeralShapeDB.sessions.get(nodeId);
     return session ? toShapeBuildSessionRecord(session) : null;
   }
 
   async listBuildSessionRecordsByStatus(
     statuses: Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>,
   ): Promise<ShapeBuildSessionRecord[]> {
-    const sessions = await shapeDB.buildSessions.where('status').anyOf(statuses).toArray();
-    return sessions.map(toShapeBuildSessionRecord);
+    const sessions = await ephemeralShapeDB.sessions.toArray();
+    return sessions.filter((session) => statuses.includes(session.status)).map(toShapeBuildSessionRecord);
   }
 
   async listBuildTasks(nodeId: NodeId): Promise<ShapeBuildTaskSummary[]> {
@@ -181,7 +181,7 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
   }
 
   async getProcessingStatus(nodeId: NodeId): Promise<ShapeProcessingStatus | null> {
-    const sessions = await shapeDB.buildSessions.where('nodeId').equals(nodeId).toArray();
+    const sessions = await ephemeralShapeDB.sessions.where('nodeId').equals(nodeId).toArray();
     const latest = sessions.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))[0];
     if (!latest) {
       return {
@@ -403,7 +403,7 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
     if (!record) {
       throw new Error('Invalid build session config');
     }
-    await shapeDB.buildSessions.put(record);
+    await ephemeralShapeDB.sessions.put(record);
   }
 
   async updateBuildSession(nodeId: NodeId, updates: Partial<ShapeBuildSessionRecord>): Promise<void> {
@@ -411,11 +411,14 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
     if (!patch) {
       throw new Error('Invalid build session config update');
     }
-    await shapeDB.updateBuildSession(nodeId, patch);
+    await ephemeralShapeDB.sessions.update(nodeId, {
+      ...patch,
+      updatedAt: Date.now(),
+    });
   }
 
   async deleteBuildSession(nodeId: NodeId): Promise<void> {
-    await shapeDB.buildSessions.delete(nodeId);
+    await ephemeralShapeDB.sessions.delete(nodeId);
   }
 
   async deleteBuildTasks(nodeId: NodeId): Promise<void> {

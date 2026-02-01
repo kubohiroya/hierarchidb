@@ -38,6 +38,10 @@ class EphemeralRouteDexie extends Dexie {
       vectorTiles: '&id, sessionId, nodeId, [sessionId+z+x+y], timestamp',
       sessions: '&sessionId, nodeId, status, createdAt, updatedAt',
     });
+    this.version(2).stores({
+      vectorTiles: '&id, sessionId, timestamp',
+      sessions: '&sessionId',
+    });
   }
 }
 

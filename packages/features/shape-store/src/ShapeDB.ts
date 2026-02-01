@@ -3,7 +3,6 @@
  *
  * Manages all persistent data for the shapes plugin including:
  * - Shape entities and metadata
- * - Build sessions and tasks
  * - Feature indices
  * - Vector tiles
  */
@@ -289,9 +288,6 @@ export interface VectorTileRecord {
 
 export class ShapeDB extends VectorTileDbBase {
 
-  // Build processing tables
-  buildSessions!: Table<BuildSessionRecord, ShapeContainerNodeId>;
-
   // Feature storage tables
   features!: Table<ShapeFeature, number>;
 
@@ -301,14 +297,12 @@ export class ShapeDB extends VectorTileDbBase {
   constructor() {
     super(getDBName('shape'));
 
-    this.version(8).stores(this.mergeVectorTileStores({
-      buildSessions: '&nodeId, status',
+    this.version(9).stores(this.mergeVectorTileStores({
       features: '++id, nodeId, [nodeId+adminLevel]',
       vectorTiles: '&tileId, nodeId, [nodeId+z+x+y]',
     }));
 
     this.initVectorTileTables();
-    this.buildSessions = this.table('buildSessions');
   }
 
   protected mergeVectorTileStores(stores: Record<string, string>): Record<string, string> {
@@ -317,33 +311,6 @@ export class ShapeDB extends VectorTileDbBase {
       featureMetadata: '&id, nodeId',
       sourceMetadata: '&id, nodeId',
     };
-  }
-
-  // Build Session Management
-  async createBuildSession(
-    session: BuildSessionRecord,
-  ): Promise<BuildSessionRecord> {
-    await this.buildSessions.put(session);
-    return session;
-  }
-
-  async getBuildSession(nodeId: ShapeContainerNodeId): Promise<BuildSessionRecord | undefined> {
-    return await this.buildSessions.get(nodeId);
-  }
-
-  async updateBuildSession(nodeId: ShapeContainerNodeId, updates: Partial<BuildSessionRecord>): Promise<void> {
-    await this.buildSessions.update(nodeId, {
-      ...updates,
-      updatedAt: Date.now(),
-    });
-  }
-
-  async getActiveBuildSessions(nodeId: ShapeContainerNodeId): Promise<BuildSessionRecord[]> {
-    return await this.buildSessions
-      .where('nodeId')
-      .equals(nodeId)
-      .and((session) => session.status === 'running' || session.status === 'paused')
-      .toArray();
   }
 
   // Build Task Management

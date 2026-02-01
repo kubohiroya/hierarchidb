@@ -1,7 +1,7 @@
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { Table } from 'dexie';
-import type { BuildProcessConfig, BuildTaskRecord, TaskStatus } from './ShapeDB.js';
+import type { BuildProcessConfig, BuildSessionRecord, BuildTaskRecord, TaskStatus } from './ShapeDB.js';
 import type { ShapeTransformErrorRecord } from '@hierarchidb/shape-api';
 import {
   EphemeralGisDB,
@@ -61,7 +61,7 @@ export type TileIdToBufferRelation = {
   createdAt: number;
 };
 
-export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig> {
+export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig, BuildSessionRecord> {
   buildTasks!: Table<BuildTaskRecord, string>;
   tileIdToBufferRelations!: Table<TileIdToBufferRelation, string>;
   declare fetchCache: Table<FetchCacheRecord, string>;

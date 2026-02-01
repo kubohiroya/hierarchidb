@@ -12826,6 +12826,59 @@
   - update: 2026-02-01 20:18 JST ShapeDB/EphemeralShapeDB/EphemeralGisDB の stores を整理し version を更新。
   - done: 2026-02-01 20:18 JST pnpm --filter @hierarchidb/shape-store typecheck exit 0 を確認。
 
+2473) chore/location-route/db-index-audit (P2) — 完了 (2026-02-01 21:05 JST)
+- ブランチ名: chore/location-route/db-index-audit
+- 依存: なし
+- 受け入れ基準: location/route の DB テーブル・インデックスの未使用候補を列挙し分類する／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/location-store/src/LocationDB.ts`, `packages/features/route-store/src/RouteDB.ts`, `plugins/route-plugin/src/database/EphemeralRouteDB.ts`
+- ロールバック手順: なし（調査のみ）
+- チェックリスト:
+  - LocationDB のテーブル/インデックス使用状況を確認する
+  - RouteDB/EphemeralRouteDB のテーブル/インデックス使用状況を確認する
+  - 未使用候補を分類して提示する
+  - 運用ログ start/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 21:00 JST location/route の DB 未使用テーブル/インデックス調査に着手。
+  - done: 2026-02-01 21:05 JST 調査結果の候補一覧を整理。
+
+2474) refactor/location-route/remove-unused-indexes (P2) — 進行中 (2026-02-01 21:12 JST)
+- ブランチ名: refactor/location-route/remove-unused-indexes
+- 依存: なし
+- 受け入れ基準: location/route の未使用テーブル/インデックスを削除し Dexie version を更新する／`pnpm --filter @hierarchidb/location-store typecheck` と `pnpm --filter @hierarchidb/route-store typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/location-store/src/LocationDB.ts`, `packages/features/route-store/src/RouteDB.ts`, `plugins/route-plugin/src/database/EphemeralRouteDB.ts`
+- ロールバック手順: Dexie version と stores 定義を revert して元に戻す
+- チェックリスト:
+  - LocationDB の未使用インデックスを削除する
+  - RouteDB の未使用インデックスを削除する
+  - EphemeralRouteDB の未使用インデックスを削除する
+  - location-store/route-store の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 21:12 JST location/route の未使用インデックス削除に着手。
+  - update: 2026-02-01 21:18 JST LocationDB/RouteDB/EphemeralRouteDB の stores を整理し version を更新。
+  - done: 2026-02-01 21:19 JST pnpm --filter @hierarchidb/location-store typecheck と pnpm --filter @hierarchidb/route-store typecheck が exit 0 を確認。
+
+2472) refactor/shape-db/move-build-sessions (P1) — 進行中 (2026-02-01 20:35 JST)
+- ブランチ名: refactor/shape-db/move-build-sessions
+- 依存: なし
+- 受け入れ基準: hidb-shape の buildSessions が削除され、hidb-shape-ephemeral の sessions に移行される／runtime-worker と shape-plugin が ephemeral sessions を参照する／Dexie version が更新される／`pnpm --filter @hierarchidb/shape-store typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/shape-store/src/ShapeDB.ts`, `packages/features/shape-store/src/EphemeralShapeDB.ts`, `packages/runtime-worker/src/services/ShapeMutationService.ts`, `packages/runtime-worker/src/services/ShapeQueryService.ts`, `plugins/shape-plugin/src/services/batch/ShapeBuildAPIClient.ts`
+- ロールバック手順: buildSessions を ShapeDB に戻し、runtime-worker/shape-plugin を元の参照に revert する
+- チェックリスト:
+  - ShapeDB から buildSessions を削除し version を更新する
+  - EphemeralShapeDB の sessions を BuildSessionRecord 型で扱えるようにする
+  - runtime-worker の build session 書き込み/参照を ephemeral sessions に移す
+  - shape-plugin の build session 参照を ephemeral sessions に移す
+  - shape-store typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 20:35 JST buildSessions を hidb-shape から ephemeral へ移行する作業に着手。
+  - update: 2026-02-01 20:46 JST ShapeDB の buildSessions を削除し、ephemeral sessions へ移行するよう runtime-worker / shape-plugin を更新。
+  - done: 2026-02-01 20:47 JST pnpm --filter @hierarchidb/shape-store typecheck exit 0 を確認。
+  - update: 2026-02-01 21:28 JST EphemeralGisDB を sessions 型注入可能に拡張し、shape 側で BuildSessionRecord を正規型として扱えるように変更。
+  - update: 2026-02-01 21:30 JST pnpm --filter @hierarchidb/gis-sdk build / pnpm --filter @hierarchidb/shape-store build を実行。
+  - done: 2026-02-01 21:31 JST pnpm --filter @hierarchidb/shape-store typecheck / pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
 2466) fix/location-preview/snackbar-theme (P1) — 進行中 (2026-02-01 17:58 JST)
 - ブランチ名: fix/location-preview/snackbar-theme
 - 依存: なし
@@ -13174,3 +13227,17 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - update: 2026-02-01 21:11 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
   - update: 2026-02-01 21:25 JST route-plugin の RouteBatchLaunchForm をフックへ抽出。
   - update: 2026-02-01 21:26 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 22:10 JST location-plugin の LocationDataSourceStep フック抽出に着手。
+  - update: 2026-02-01 22:20 JST location-plugin の LocationDataSourceStep をフックへ抽出。
+  - update: 2026-02-01 22:21 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 22:40 JST location-plugin の LocationMapPreviewStep フック抽出に着手。
+  - blocked: 2026-02-01 22:52 JST pnpm --filter @hierarchidb/location-plugin typecheck が useLocationMapPreviewStep.ts の JSX で失敗。
+  - update: 2026-02-01 22:53 JST useLocationMapPreviewStep を .tsx へ変更。
+  - update: 2026-02-01 22:54 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 23:10 JST route-plugin の RouteSelectionStep フック抽出に着手。
+  - update: 2026-02-01 23:20 JST route-plugin の RouteSelectionStep をフックへ抽出。
+  - update: 2026-02-01 23:21 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 23:35 JST shape-plugin の TransformConfigSection フック抽出に着手。
+  - blocked: 2026-02-01 23:45 JST pnpm --filter @hierarchidb/shape-plugin typecheck が useTransformConfigSectionView.ts の未使用 import で失敗。
+  - update: 2026-02-01 23:46 JST useTransformConfigSectionView の未使用 import を削除。
+  - update: 2026-02-01 23:47 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。

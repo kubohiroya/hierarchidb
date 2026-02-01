@@ -28,6 +28,14 @@ Plugins under `plugins/` contain TSX components that mix rendering (JSX) with st
 - [x] (2026-02-01 21:11 JST) Ran `pnpm --filter @hierarchidb/location-plugin typecheck` (exit 0).
 - [x] (2026-02-01 21:25 JST) Extracted hook for route-plugin (RouteBatchLaunchForm).
 - [x] (2026-02-01 21:26 JST) Ran `pnpm --filter @hierarchidb/route-plugin typecheck` (exit 0).
+- [x] (2026-02-01 22:20 JST) Extracted hook for location-plugin (LocationDataSourceStep).
+- [x] (2026-02-01 22:21 JST) Ran `pnpm --filter @hierarchidb/location-plugin typecheck` (exit 0).
+- [x] (2026-02-01 22:50 JST) Extracted hook for location-plugin (LocationMapPreviewStep).
+- [x] (2026-02-01 22:54 JST) Ran `pnpm --filter @hierarchidb/location-plugin typecheck` (exit 0).
+- [x] (2026-02-01 23:20 JST) Extracted hook for route-plugin (RouteSelectionStep).
+- [x] (2026-02-01 23:21 JST) Ran `pnpm --filter @hierarchidb/route-plugin typecheck` (exit 0).
+- [x] (2026-02-01 23:45 JST) Extracted hook for shape-plugin (TransformConfigSection).
+- [x] (2026-02-01 23:47 JST) Ran `pnpm --filter @hierarchidb/shape-plugin typecheck` (exit 0).
 - [ ] Extract logic into hooks for remaining target components.
 - [ ] Run typecheck for remaining affected plugins and record results.
 - [ ] Update TASKS.md with progress and completion notes.
@@ -42,6 +50,12 @@ Plugins under `plugins/` contain TSX components that mix rendering (JSX) with st
 
 - Observation: LocationStyleConfigPanel needed cleanup of unused constants/types after moving default config logic into the hook.
   Evidence: `pnpm --filter @hierarchidb/location-plugin typecheck` failed with TS6196/TS6133 until the unused definitions were removed.
+
+- Observation: LocationMapPreviewStep hook file needed a `.tsx` extension because it contains JSX.
+  Evidence: `pnpm --filter @hierarchidb/location-plugin typecheck` failed with TS1005 until the file was renamed to `.tsx`.
+
+- Observation: TransformConfigSection hook needed unused import cleanup after extraction.
+  Evidence: `pnpm --filter @hierarchidb/shape-plugin typecheck` failed with TS6133 until the unused import was removed.
 
 ## Decision Log
 
@@ -132,3 +146,6 @@ Plan change note: Updated progress for shape-plugin extraction and recorded type
 Plan change note: Updated progress for location-plugin extraction, recorded typecheck run, and noted type-only import fix.
 Plan change note: Updated progress for route-plugin extraction and recorded typecheck run.
 Plan change note: Updated progress for shape/location/route extractions, recorded typecheck runs, and noted cleanup of unused constants in LocationStyleConfigPanel.
+Plan change note: Updated progress for location-plugin LocationDataSourceStep extraction and recorded typecheck run.
+Plan change note: Updated progress for location-plugin LocationMapPreviewStep extraction and recorded typecheck run.
+Plan change note: Updated progress for route-plugin RouteSelectionStep and shape-plugin TransformConfigSection extractions with typecheck runs.

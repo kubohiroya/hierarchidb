@@ -45,6 +45,11 @@ export class RouteDB extends VectorTileDbBase {
       vectorTiles: '&tileId, nodeId, [nodeId+z+x+y], z, timestamp',
       tileIndex: '&id, nodeId, [nodeId+z+x+y], z, x, y, updatedAt',
     }));
+    this.version(5).stores(this.mergeVectorTileStores({
+      features: '&id, nodeId, startLocationId, endLocationId',
+      vectorTiles: '&tileId, nodeId, [nodeId+z+x+y]',
+      tileIndex: '&id, nodeId, [nodeId+z+x+y]',
+    }));
 
     this.features = this.table('features');
     this.vectorTiles = this.table('vectorTiles');

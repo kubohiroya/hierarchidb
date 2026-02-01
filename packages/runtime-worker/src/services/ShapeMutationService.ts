@@ -205,9 +205,14 @@ export class ShapeMutationService implements ShapeMutationAPI {
     await this.db.open?.();
   }
 
+  private async ensureEphemeralOpen(): Promise<void> {
+    await ephemeralShapeDB.open?.();
+  }
+
   async upsertBuildSession(session: ShapeBuildSessionRecord): Promise<void> {
     await this.ensureOpen();
-    await this.db.buildSessions.put(toBuildSessionRecord(session));
+    await this.ensureEphemeralOpen();
+    await ephemeralShapeDB.sessions.put(toBuildSessionRecord(session));
   }
 
   async updateBuildSession(
@@ -215,12 +220,18 @@ export class ShapeMutationService implements ShapeMutationAPI {
     updates: Partial<ShapeBuildSessionRecord>
   ): Promise<void> {
     await this.ensureOpen();
-    await this.db.updateBuildSession(nodeId, toBuildSessionUpdates(updates));
+    await this.ensureEphemeralOpen();
+    const patch = toBuildSessionUpdates(updates);
+    await ephemeralShapeDB.sessions.update(nodeId, {
+      ...patch,
+      updatedAt: Date.now(),
+    });
   }
 
   async deleteBuildSession(nodeId: NodeId): Promise<void> {
     await this.ensureOpen();
-    await this.db.buildSessions.delete(nodeId);
+    await this.ensureEphemeralOpen();
+    await ephemeralShapeDB.sessions.delete(nodeId);
   }
 
   async deleteBuildTasks(nodeId: NodeId): Promise<void> {

@@ -102,27 +102,35 @@ export class ShapeQueryService implements ShapeQueryAPI {
     await this.db.open?.();
   }
 
+  private async ensureEphemeralOpen(): Promise<void> {
+    await ephemeralShapeDB.open?.();
+  }
+
   async listBuildSessions(nodeId: NodeId): Promise<ShapeBuildSessionSummary[]> {
     await this.ensureOpen();
-    const sessions = await this.db.buildSessions.where('nodeId').equals(nodeId).toArray();
+    await this.ensureEphemeralOpen();
+    const sessions = await ephemeralShapeDB.sessions.where('nodeId').equals(nodeId).toArray();
     return sessions.map(toSessionSummary);
   }
 
   async getBuildSession(nodeId: NodeId): Promise<ShapeBuildSessionSummary | null> {
     await this.ensureOpen();
-    const session = await this.db.buildSessions.get(nodeId);
+    await this.ensureEphemeralOpen();
+    const session = await ephemeralShapeDB.sessions.get(nodeId);
     return session ? toSessionSummary(session) : null;
   }
 
   async listBuildSessionRecords(nodeId: NodeId): Promise<ShapeBuildSessionRecord[]> {
     await this.ensureOpen();
-    const sessions = await this.db.buildSessions.where('nodeId').equals(nodeId).toArray();
+    await this.ensureEphemeralOpen();
+    const sessions = await ephemeralShapeDB.sessions.where('nodeId').equals(nodeId).toArray();
     return sessions.map(toShapeBuildSessionRecord);
   }
 
   async getBuildSessionRecord(nodeId: NodeId): Promise<ShapeBuildSessionRecord | null> {
     await this.ensureOpen();
-    const session = await this.db.getBuildSession(nodeId);
+    await this.ensureEphemeralOpen();
+    const session = await ephemeralShapeDB.sessions.get(nodeId);
     return session ? toShapeBuildSessionRecord(session) : null;
   }
 
@@ -130,8 +138,10 @@ export class ShapeQueryService implements ShapeQueryAPI {
     statuses: Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>
   ): Promise<ShapeBuildSessionRecord[]> {
     await this.ensureOpen();
-    const sessions = await this.db.buildSessions.where('status').anyOf(statuses).toArray();
-    return sessions.map(toShapeBuildSessionRecord);
+    await this.ensureEphemeralOpen();
+    const sessions = await ephemeralShapeDB.sessions.toArray();
+    const filtered = sessions.filter((session) => statuses.includes(session.status));
+    return filtered.map(toShapeBuildSessionRecord);
   }
 
   async listBuildTasks(nodeId: NodeId): Promise<ShapeBuildTaskSummary[]> {
@@ -163,7 +173,8 @@ export class ShapeQueryService implements ShapeQueryAPI {
 
   async getProcessingStatus(nodeId: NodeId): Promise<ShapeProcessingStatus | null> {
     await this.ensureOpen();
-    const sessions = await this.db.buildSessions.where('nodeId').equals(nodeId).toArray();
+    await this.ensureEphemeralOpen();
+    const sessions = await ephemeralShapeDB.sessions.where('nodeId').equals(nodeId).toArray();
     const latest = sessions.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))[0];
     if (!latest) {
       return {

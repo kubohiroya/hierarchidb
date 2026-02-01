@@ -36,6 +36,9 @@ export class LocationDB extends Dexie {
     this.version(13).stores({
       features: '&[nodeId+id], nodeId, id, type, mortonKey, [nodeId+mortonKey], [nodeId+type+mortonKey], centroidForShapeId, centroidForShapeContainerNodeId, [centroidForShapeId+centroidForShapeContainerNodeId], updatedAt',
     });
+    this.version(14).stores({
+      features: '&[nodeId+id], nodeId, [nodeId+mortonKey], [nodeId+type+mortonKey], centroidForShapeContainerNodeId',
+    });
 
     this.features = this.table('features');
   }
