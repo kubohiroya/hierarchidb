@@ -98,7 +98,7 @@ const stripSourceUrlFromData = (data: unknown): unknown => {
   if (!data || typeof data !== 'object') return data;
   const metadata = (data as { metadata?: unknown }).metadata;
   if (!metadata || typeof metadata !== 'object') return data;
-  if (!Object.prototype.hasOwnProperty.call(metadata, 'sourceUrl')) return data;
+  if (!Object.hasOwn(metadata, 'sourceUrl')) return data;
   const { sourceUrl: _sourceUrl, ...rest } = metadata as Record<string, unknown>;
   return { ...(data as Record<string, unknown>), metadata: rest };
 };
