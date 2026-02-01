@@ -14,6 +14,7 @@ import type {
 } from '@hierarchidb/ui-dialog';
 import { BasicInfoStep } from '@hierarchidb/ui-plugin-basic-info';
 import { atom, useAtom } from 'jotai';
+import type { PrimitiveAtom } from 'jotai';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -52,6 +53,7 @@ type StepAdapterProps = {
   dialogRef?: React.RefObject<HTMLElement | null>;
   stepProps: HeadlessPluginStepProps<Partial<PluginDefinedEntity>>;
   stepData: TreeNodeMetadata | Partial<PluginDefinedEntity>;
+  draftAtom: PrimitiveAtom<StepData>;
 };
 
 const shallowEqualStepData = (a?: StepData, b?: StepData): boolean => {
@@ -79,23 +81,18 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
   onDataChange,
   dialogRef,
   stepData,
+  draftAtom,
 }) => {
-  const draftAtom = useRef(atom<StepData>(stepData ?? {}));
-  const [, setSlice] = useAtom(draftAtom.current);
-  const prevStepDataRef = useRef<StepData>(toRecord(stepData) ?? {});
+  const [slice, setSlice] = useAtom(draftAtom);
 
   useEffect(() => {
     const next = toRecord(stepData) ?? {};
-    if (isShallowEqualStepData(prevStepDataRef.current, next)) {
-      return;
-    }
-    prevStepDataRef.current = next;
-    setSlice(next);
+    setSlice((prev) => (isShallowEqualStepData(prev, next) ? prev : next));
   }, [setSlice, stepData]);
 
   const handleChange = useCallback(
     (patch: TreeNodeMetadata | Partial<PluginDefinedEntity>) => {
-      const current = toRecord(stepData) ?? {};
+      const current = toRecord(slice) ?? {};
       const nextData: Partial<PluginDefinedEntity> = { ...current, ...(patch as object) };
       onDataChange?.(nextData);
       setSlice(nextData);
@@ -111,8 +108,10 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
         }));
       }
     },
-    [cfg.id, onDataChange, stepData, setDraftData, setSlice]
+    [cfg.id, onDataChange, setDraftData, setSlice, slice]
   );
+
+  const resolvedData = cfg.id === 'basic-info' ? stepData : (slice ?? {});
 
   return (
     <>
@@ -120,7 +119,7 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
         mode,
         nodeId,
         parentId,
-        data: (stepData ?? {}) as Partial<PluginDefinedEntity>,
+        data: (resolvedData ?? {}) as Partial<PluginDefinedEntity>,
         uiState,
         disabled: false,
         onChange: handleChange,
@@ -207,7 +206,7 @@ export function useDialogSteps({
   basicInfoLabel,
 }: Params): StepCompositionResult<PluginDefinedEntity> {
   const [uiState, setUiState] = useState<DialogUiState>({});
-  const [draftAtom] = useState(() =>
+  const [draftAtom] = useState<PrimitiveAtom<StepData>>(() =>
     atom(buildStepWorkingData(draftData, basicInfo, basicInfoMeta))
   );
   const [, setDraftAtomValue] = useAtom(draftAtom);
@@ -406,6 +405,7 @@ export function useDialogSteps({
           dialogRef={ctx.dialogRef}
           stepProps={stepProps}
           stepData={cfg.id === 'basic-info' ? ctx.basicInfo : ctx.draftData}
+          draftAtom={draftAtom}
         />
       );
     };

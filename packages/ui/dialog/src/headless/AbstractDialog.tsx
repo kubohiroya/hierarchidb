@@ -124,7 +124,6 @@ export function AbstractDialog<TData>(props: HeadlessDialogProps<TData>) {
     if (prev.onStepNavigate !== nextValue.onStepNavigate) return 'onStepNavigate';
     if (prev.onRequestClose !== nextValue.onRequestClose) return 'onRequestClose';
     if (prev.onRequestCommit !== nextValue.onRequestCommit) return 'onRequestCommit';
-    if (!shallowEqualData(prev.stepData, nextValue.stepData)) return 'stepData';
     if (!shallowEqualData(prev.stepComponents, nextValue.stepComponents)) return 'stepComponents';
     if (!shallowEqualData(prev.enabledStepIndices, nextValue.enabledStepIndices))
       return 'enabledStepIndices';

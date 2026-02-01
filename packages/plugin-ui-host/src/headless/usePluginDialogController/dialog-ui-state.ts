@@ -51,11 +51,6 @@ export function useDialogUIStateSync(params: {
     return Math.max(index + 1, 1);
   }, []);
 
-  const dialogUIStateRef = useRef<DialogUIState | null>(dialogUIState ?? null);
-  useEffect(() => {
-    dialogUIStateRef.current = dialogUIState ?? null;
-  }, [dialogUIState]);
-
   const restoreKeyRef = useRef<string | number | null>(restoreKey ?? null);
   const progressRestoredRef = useRef(false);
   const windowRestoredRef = useRef(false);
@@ -66,6 +61,26 @@ export function useDialogUIStateSync(params: {
     progressRestoredRef.current = false;
     windowRestoredRef.current = false;
   }, [restoreKey]);
+  const dialogUIStateRef = useRef<DialogUIState | null>(dialogUIState ?? null);
+  useEffect(() => {
+    if (!dialogUIState) return;
+    const prev = dialogUIStateRef.current;
+    if (!prev || !windowRestoredRef.current) {
+      dialogUIStateRef.current = dialogUIState;
+      return;
+    }
+    const nextWindow = dialogUIState.dialogWindow ?? null;
+    const nextProgress = dialogUIState.dialogProgress ?? null;
+    const mergedWindow = prev.dialogWindow ?? nextWindow;
+    const mergedProgress = nextProgress ?? prev.dialogProgress ?? null;
+    dialogUIStateRef.current =
+      mergedWindow || mergedProgress
+        ? {
+            dialogWindow: mergedWindow ?? null,
+            dialogProgress: mergedProgress ?? null,
+          }
+        : null;
+  }, [dialogUIState]);
 
   useEffect(() => {
     const state = dialogUIStateRef.current;

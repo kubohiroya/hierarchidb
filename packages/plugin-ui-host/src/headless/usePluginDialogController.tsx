@@ -36,7 +36,6 @@ import { loadTreeConsoleSettings, TREE_CONSOLE_SETTINGS_STORAGE_KEY } from '@hie
 import type { Theme } from '@mui/material/styles';
 import { useNavigate } from '@tanstack/react-router';
 import type { Remote } from 'comlink';
-import { dequal } from 'dequal';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -465,16 +464,12 @@ export function usePluginDialogController(
     basicInfoLabel: t('common.basicInfo.title', 'Basic Information'),
   });
 
-  // Stabilize stepData reference to avoid noisy context diffs in HeadlessPluginDialog
+  // Keep stepData stable across draft updates; refresh only on step change.
   const stepDataRef = useRef<Partial<PluginDefinedEntity>>(currentStepData);
-  const stableStepData = useMemo(() => {
-    const prev = stepDataRef.current;
-    if (dequal(prev, currentStepData)) {
-      return prev;
-    }
+  useEffect(() => {
     stepDataRef.current = currentStepData;
-    return currentStepData;
-  }, [currentStepData]);
+  }, [activeStepIndex]);
+  const stableStepData = stepDataRef.current;
 
   const { resolveIcon } = useIconRegistry();
   const iconNodeType =
