@@ -4,7 +4,7 @@
 
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Box, Button, Typography, useTheme } from '@mui/material';
+import { Box, Button, LinearProgress, Typography, useTheme } from '@mui/material';
 import { LocationOn, Palette } from '@mui/icons-material';
 import { Anchor, FlightTakeoff, ForkRight, LocationCity, Public, Subway } from '@mui/icons-material';
 import type { SvgIconComponent } from '@mui/icons-material';
@@ -40,12 +40,14 @@ import { useTranslation } from '../../../common/i18n/index.js';
 import { FloatingWindow, useFloatingWindow } from '@hierarchidb/ui-floating-window';
 import { LOCATION_TYPE_STYLES } from './locationTypes.js';
 import { resolveLocationAttribution } from '../../../common/datasources/attribution.js';
-import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
+import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
 import type { MapLibreMapInstance } from '@hierarchidb/ui-map';
 import type { LocationGroupItem } from '@hierarchidb/location-api';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { useIdeGsmImportOnEntry } from '../../hooks/useIdeGsmImportOnEntry.js';
 import { LocationStyleConfigPanel } from './LocationStyleConfigPanel.js';
+import { subscribeIdeGsmProgress } from '../../state/ideGsmProgress.js';
+import type { IdeGsmImportProgress } from '@hierarchidb/location-api';
 
 const debugPrefix = '[LocationPreview]';
 
@@ -398,13 +400,21 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
   const { translations, t } = useTranslation();
   const previewNodeId = nodeId ?? 'preview' as NodeId;
   const theme = useTheme();
+  const [ideGsmProgress, setIdeGsmProgress] = useState<IdeGsmImportProgress | null>(null);
   const [previewPoints, setPreviewPoints] = useState<PreviewPoint[]>([]);
   const [metadataRows, setMetadataRows] = useState<Array<Record<string, unknown>>>([]);
   const [metadataItems, setMetadataItems] = useState<LocationGroupItem[]>([]);
   const [metadataLoading, setMetadataLoading] = useState(false);
+  const [metadataLoadingText, setMetadataLoadingText] = useState('Preparing metadata...');
   const [selectedMetadataIds, setSelectedMetadataIds] = useState<Set<string>>(new Set());
   const [metadataError, setMetadataError] = useState<string | undefined>();
   const metadataRequestRef = useRef(0);
+  const {
+    api: workerApi,
+    loading: workerLoading,
+    error: workerError,
+    initialize: initializeWorker,
+  } = useWorkerAPI();
   const [rowFilterMode, setRowFilterMode] = useState<'all' | 'viewport'>('all');
   const [rowSearchOnly, setRowSearchOnly] = useState(true);
   const [locationTypeSelection, setLocationTypeSelection] = useState<MapToggleSelection>(() =>
@@ -418,6 +428,11 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       return Boolean(locationTypeSelection[type]);
     });
   }, [metadataRows, locationTypeSelection]);
+
+  useEffect(() => {
+    if (!nodeId) return;
+    return subscribeIdeGsmProgress(nodeId, setIdeGsmProgress);
+  }, [nodeId]);
 
   const handleMetadataSelectionChange = useCallback((selected: Set<string | number>) => {
     const next = new Set<string>();
@@ -438,6 +453,16 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     [displayedMetadataRows],
   );
 
+  const ideGsmProgressValue = useMemo(() => {
+    if (!ideGsmProgress) return null;
+    const total = ideGsmProgress.total ?? 0;
+    const processed = ideGsmProgress.processed ?? 0;
+    if (total <= 0) return null;
+    return Math.min(100, Math.max(0, (processed / total) * 100));
+  }, [ideGsmProgress]);
+
+  const showIdeGsmProgress = ideGsmProgress?.phase === 'save';
+
   const isMetadataRecycling = useCallback((item: LocationGroupItem) => {
     const meta = item.data?.metadata;
     if (!meta || typeof meta !== 'object') return false;
@@ -457,6 +482,14 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
   const handleToggleRecycling = useCallback(async () => {
     if (!nodeId) return;
     if (selectedMetadataIds.size === 0) return;
+    if (!workerApi || workerLoading) {
+      setMetadataError('Worker is not ready. Please wait for worker initialization.');
+      return;
+    }
+    if (workerError) {
+      setMetadataError(`Worker error: ${workerError.message}`);
+      return;
+    }
     type LocationGroupItemWithData = LocationGroupItem & { data: NonNullable<LocationGroupItem['data']> };
     const selectedItems = metadataItems.filter(
       (item): item is LocationGroupItemWithData => (
@@ -475,15 +508,22 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
         },
       },
     }));
-    const bridge = getWorkerBridge();
-    await bridge.initialize();
-    const api = await bridge.getLocationMutationAPI();
+    await initializeWorker();
+    const api = await workerApi.getLocationMutationAPI();
     await api.upsertLocationGroups(nodeId, updatedItems);
     const updatedMap = new Map(updatedItems.map((item) => [String(item.id), item]));
     const nextItems: LocationGroupItem[] = metadataItems.map((item) => updatedMap.get(String(item.id)) ?? item);
     setMetadataItems(nextItems);
     setMetadataRows(buildMetadataRows(nextItems));
-  }, [metadataItems, nodeId, selectedMetadataIds]);
+  }, [
+    initializeWorker,
+    metadataItems,
+    nodeId,
+    selectedMetadataIds,
+    workerApi,
+    workerError,
+    workerLoading,
+  ]);
 
   const [iconsReady, setIconsReady] = useState(false);
   const [metadataWindowOpen, setMetadataWindowOpen] = useState(true);
@@ -564,14 +604,30 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     setMetadataLoading(true);
     setMetadataError(undefined);
 
+    if (workerError) {
+      setMetadataLoading(false);
+      setMetadataError(`Worker error: ${workerError.message}`);
+      return () => {
+        cancelled = true;
+      };
+    }
+    if (workerLoading || !workerApi) {
+      setMetadataLoadingText('Waiting for worker connection...');
+      return () => {
+        cancelled = true;
+      };
+    }
+
     const run = async () => {
       try {
-        const bridge = getWorkerBridge();
-        await bridge.initialize();
-        const api = await bridge.getLocationQueryAPI();
+        setMetadataLoadingText('Initializing worker...');
+        await initializeWorker();
+        setMetadataLoadingText('Fetching metadata from worker...');
+        const api = await workerApi.getLocationQueryAPI();
         const items = await api.listLocationGroups(nodeId);
         if (cancelled || requestId !== metadataRequestRef.current) return;
         console.info(debugPrefix, 'metadata-fetch:success', { nodeId, count: items.length });
+        setMetadataLoadingText('Preparing metadata rows...');
         const rows = buildMetadataRows(items);
         setMetadataItems(items);
         setMetadataRows(rows);
@@ -583,7 +639,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
         setMetadataItems([]);
         setMetadataRows([]);
         setMetadataLoading(false);
-        setMetadataError(message);
+        setMetadataError(`Metadata fetch failed: ${message}`);
       }
     };
 
@@ -592,7 +648,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     return () => {
       cancelled = true;
     };
-  }, [nodeId]);
+  }, [initializeWorker, nodeId, workerApi, workerError, workerLoading]);
 
   const terrainToggleOptions = useMemo(() => (
     LOCATION_TYPE_OPTIONS.map((option) => {
@@ -652,6 +708,10 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       setPreviewPoints([]);
       return;
     }
+    if (!workerApi || workerLoading || workerError) {
+      setPreviewPoints([]);
+      return;
+    }
     const map = mapRef.current;
     const mapWithBounds = map as MapLibreMapInstance & {
       getBounds?: () => {
@@ -676,9 +736,8 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     };
     const requestId = ++queryRequestRef.current;
     try {
-      const bridge = getWorkerBridge();
-      await bridge.initialize();
-      const api = await bridge.getLocationQueryAPI();
+      await initializeWorker();
+      const api = await workerApi.getLocationQueryAPI();
       const zoomValue = viewState?.zoom ?? map.getZoom();
       const tileZoom = clampTileZoom(zoomValue, 0, MAX_TILE_ID_ZOOM);
       const tileIdField = resolveTileIdField(tileZoom, MAX_TILE_ID_ZOOM);
@@ -730,7 +789,14 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       }
       console.error(debugPrefix, 'viewport-fetch:error', { nodeId: previewNodeId, error: err });
     }
-  }, [enabledLocationTypes, previewNodeId]);
+  }, [
+    enabledLocationTypes,
+    initializeWorker,
+    previewNodeId,
+    workerApi,
+    workerError,
+    workerLoading,
+  ]);
 
   const scheduleViewportQuery = useCallback((viewState?: MapViewState) => {
     if (queryTimerRef.current) {
@@ -1297,13 +1363,23 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
         }}
         overlay={(
           <>
+            {showIdeGsmProgress ? (
+              <Box position="absolute" top={0} left={0} right={0} zIndex={5}>
+                <LinearProgress
+                  variant={ideGsmProgressValue == null ? 'indeterminate' : 'determinate'}
+                  value={ideGsmProgressValue ?? undefined}
+                  sx={{ height: 4 }}
+                />
+              </Box>
+            ) : null}
             {metadataWindowOpen ? (
               <LocationPreviewList
-                title={translations.mapPreview?.tabs?.metadata ?? 'Locations'}
+                title={t('mapPreview.metadataTitle', 'Location: metadata')}
                 rows={displayedMetadataRows}
                 columns={displayedMetadataColumns}
                 columnFormatters={{ type: typeColumnFormatter, admin0: admin0ColumnFormatter }}
                 loading={metadataLoading}
+                loadingText={metadataLoadingText}
                 errorText={metadataError}
                 selectedRows={selectedMetadataIds}
                 onSelectionChange={handleMetadataSelectionChange}
