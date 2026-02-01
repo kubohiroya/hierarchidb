@@ -6,6 +6,10 @@ import type { TreeNode, TreeQueryAPI } from '@hierarchidb/tree-api';
 import type {
   IdeGsmLocationRecord,
   IdeGsmRouteCoverageResult,
+  RouteTileIndexRequest,
+  RouteTileIndexResult,
+  RouteVectorTileBuildRequest,
+  RouteVectorTileBuildResult,
   RouteMutationAPI,
   RouteLineString,
   RouteWaypointInput,
@@ -18,10 +22,14 @@ import {
   type IdeGsmRouteImportRequest,
   type IdeGsmRouteImportResult,
 } from '@hierarchidb/route-api';
+import { ROUTE_MODES } from '@hierarchidb/route-api';
 import { RouteGenerator, SearouteEngine } from '@hierarchidb/route-engine';
 import type { RouteDatabaseHandle } from '@hierarchidb/route-store';
 import { SingletonMixin } from '@hierarchidb/util';
 import { buildIdeGsmLocationIndex, parseIdeGsmCsv } from './route/ideGsmCsv.js';
+import { getStageProcessingClient } from './StageProcessingService.js';
+import { writeVectorTileInput } from './vectorTileStageRunner.js';
+import { clampZoom } from './nearest/tileNearest.js';
 
 export class RouteMutationService implements RouteMutationAPI {
   static async getSingleton(
@@ -53,6 +61,7 @@ export class RouteMutationService implements RouteMutationAPI {
   async clearRouteArtifacts(nodeId: NodeId): Promise<void> {
     await this.deleteRouteLineStrings(nodeId);
     await this.db.vectorTiles.where('nodeId').equals(nodeId).delete?.();
+    await this.db.tileIndex.where('nodeId').equals(nodeId).delete?.();
   }
 
   async applyIdeGsmWaypoints(lines: RouteWaypointInput[]): Promise<RouteWaypointResult[]> {
@@ -194,6 +203,117 @@ export class RouteMutationService implements RouteMutationAPI {
       emit({ phase: 'failed', message });
       throw error;
     }
+  }
+
+  async buildRouteTileIndex(request: RouteTileIndexRequest): Promise<RouteTileIndexResult> {
+    await this.ensureOpen();
+    const [minZoom, maxZoom] = normalizeZoomRange(request.minZoom, request.maxZoom);
+    const lines = await this.db.features.where('nodeId').equals(request.nodeId).toArray();
+    const tileIndex = new Map<string, Set<string>>();
+    for (const line of lines) {
+      const points = resolveRoutePoints(line);
+      if (points.length < 2) continue;
+      for (let i = 0; i < points.length - 1; i += 1) {
+        const start = points[i] as [number, number];
+        const end = points[i + 1] as [number, number];
+        for (let z = minZoom; z <= maxZoom; z += 1) {
+          const range = resolveTileRangeForSegment(start, end, z);
+          for (let x = range.x1; x <= range.x2; x += 1) {
+            for (let y = range.y1; y <= range.y2; y += 1) {
+              const key = buildTileKey(request.nodeId, z, x, y);
+              const existing = tileIndex.get(key) ?? new Set<string>();
+              existing.add(String(line.id));
+              tileIndex.set(key, existing);
+            }
+          }
+        }
+      }
+    }
+
+    const now = Date.now();
+    const records = Array.from(tileIndex.entries()).map(([key, lineIds]) => {
+      const { nodeId, z, x, y } = parseTileKey(key);
+      return {
+        id: key,
+        nodeId,
+        z,
+        x,
+        y,
+        lineIds: Array.from(lineIds),
+        updatedAt: now,
+      };
+    });
+    await this.db.tileIndex.where('nodeId').equals(request.nodeId).delete?.();
+    if (records.length > 0) {
+      await this.db.tileIndex.bulkPut?.(records);
+    }
+    return {
+      tileCount: records.length,
+      lineCount: lines.length,
+      minZoom,
+      maxZoom,
+    };
+  }
+
+  async generateRouteVectorTiles(
+    request: RouteVectorTileBuildRequest
+  ): Promise<RouteVectorTileBuildResult> {
+    await this.ensureOpen();
+    const [minZoom, maxZoom] = normalizeZoomRange(request.minZoom, request.maxZoom);
+    await this.db.vectorTiles.where('nodeId').equals(request.nodeId).delete?.();
+    const lines = await this.db.features.where('nodeId').equals(request.nodeId).toArray();
+    const features = lines
+      .map((line) => {
+        const points = resolveRoutePoints(line);
+        if (points.length < 2) return null;
+        return {
+          type: 'Feature' as const,
+          id: String(line.id),
+          properties: {
+            id: String(line.id),
+            routeMode: line.routeMode,
+          },
+          geometry: {
+            type: 'LineString' as const,
+            coordinates: points,
+          },
+        };
+      })
+      .filter((feature): feature is NonNullable<typeof feature> => Boolean(feature));
+
+    const collection = {
+      type: 'FeatureCollection' as const,
+      features,
+    };
+    const buffer = new TextEncoder().encode(JSON.stringify(collection)).buffer;
+    const bufferId = `${String(request.nodeId)}-route-vt`;
+    await writeVectorTileInput(bufferId, buffer, {
+      inputFormat: request.inputFormat ?? 'geojson',
+      inputCompression: request.inputCompression ?? 'none',
+      nodeId: request.nodeId,
+      tileId: bufferId,
+      chunkStoreName: 'hidb-chunks',
+    });
+
+    const stage = await getStageProcessingClient();
+    const result = await stage.vectortile.generateTiles(bufferId, {
+      format: 'mvt',
+      compression: 'gzip',
+      minZoom,
+      maxZoom,
+      inputFormat: request.inputFormat ?? 'geojson',
+      inputCompression: request.inputCompression ?? 'none',
+      buffer: request.bufferSize,
+      targetNodeId: request.nodeId,
+      targetNodeType: 'route',
+    });
+
+    return {
+      tilesGenerated: result.tilesGenerated,
+      totalBytes: result.totalBytes,
+      zoomMin: minZoom,
+      zoomMax: maxZoom,
+    };
   }
 
   private async resolveIdeGsmLocationNodeIds(nodeId: NodeId): Promise<NodeId[]> {
@@ -417,3 +537,84 @@ const createRouteTextStore = (): DexieChunkStore<string> => {
     networkPort: net,
   });
 };
+
+const resolveRoutePoints = (line: RouteLineString): [number, number][] => {
+  if (Array.isArray(line.waypoints) && line.waypoints.length >= 2) {
+    return line.waypoints;
+  }
+  if (line.startPoint && line.endPoint) {
+    return [
+      [line.startPoint.longitude, line.startPoint.latitude],
+      [line.endPoint.longitude, line.endPoint.latitude],
+    ];
+  }
+  return [];
+};
+
+const normalizeZoomRange = (min: number, max: number): [number, number] => {
+  const minZoom = clampZoom(min);
+  const maxZoom = clampZoom(max);
+  if (minZoom <= maxZoom) return [minZoom, maxZoom];
+  return [maxZoom, minZoom];
+};
+
+const resolveLegacyCoordinates = (
+  point?: RouteWaypointInput['startPoint']
+): [number, number] | undefined => {
+  if (!point) return undefined;
+  const legacy = point as { longitude?: number; latitude?: number };
+  if (typeof legacy.longitude === 'number' && typeof legacy.latitude === 'number') {
+    return [legacy.longitude, legacy.latitude];
+  }
+  return undefined;
+};
+
+const buildTileKey = (nodeId: NodeId, z: number, x: number, y: number): string =>
+  `${String(nodeId)}:${z}:${x}:${y}`;
+
+const parseTileKey = (key: string): { nodeId: NodeId; z: number; x: number; y: number } => {
+  const [nodeIdRaw, zRaw, xRaw, yRaw] = key.split(':');
+  return {
+    nodeId: nodeIdRaw as NodeId,
+    z: Number(zRaw),
+    x: Number(xRaw),
+    y: Number(yRaw),
+  };
+};
+
+const resolveTileRangeForSegment = (
+  start: [number, number],
+  end: [number, number],
+  z: number
+): { x1: number; x2: number; y1: number; y2: number } => {
+  const minLon = Math.min(start[0], end[0]);
+  const maxLon = Math.max(start[0], end[0]);
+  const minLat = Math.min(start[1], end[1]);
+  const maxLat = Math.max(start[1], end[1]);
+  const maxIndex = 2 ** z - 1;
+  const x1 = clampTileIndex(lonToTileX(minLon, z), maxIndex);
+  const x2 = clampTileIndex(lonToTileX(maxLon, z), maxIndex);
+  const y1 = clampTileIndex(latToTileY(maxLat, z), maxIndex);
+  const y2 = clampTileIndex(latToTileY(minLat, z), maxIndex);
+  return {
+    x1: Math.min(x1, x2),
+    x2: Math.max(x1, x2),
+    y1: Math.min(y1, y2),
+    y2: Math.max(y1, y2),
+  };
+};
+
+const lonToTileX = (lon: number, z: number): number => {
+  const scale = 2 ** z;
+  return Math.floor(((lon + 180) / 360) * scale);
+};
+
+const latToTileY = (lat: number, z: number): number => {
+  const scale = 2 ** z;
+  const rad = (lat * Math.PI) / 180;
+  return Math.floor(((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * scale);
+};
+
+const clampTileIndex = (value: number, maxIndex: number): number => (
+  Math.min(maxIndex, Math.max(0, value))
+);

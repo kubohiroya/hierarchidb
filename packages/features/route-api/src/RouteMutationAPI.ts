@@ -6,6 +6,12 @@ import type {
   IdeGsmRouteImportRequest,
   IdeGsmRouteImportResult,
 } from './ideGsmRouteTypes.js';
+import type {
+  RouteTileIndexRequest,
+  RouteTileIndexResult,
+  RouteVectorTileBuildRequest,
+  RouteVectorTileBuildResult,
+} from './routeBuildTypes.js';
 import type { RouteWaypointInput, RouteWaypointResult } from './routeTypes.js';
 
 export interface RouteMutationAPI {
@@ -20,4 +26,6 @@ export interface RouteMutationAPI {
     request: IdeGsmRouteImportRequest,
     progress?: IdeGsmImportCallback,
   ): Promise<IdeGsmRouteImportResult>;
+  buildRouteTileIndex(request: RouteTileIndexRequest): Promise<RouteTileIndexResult>;
+  generateRouteVectorTiles(request: RouteVectorTileBuildRequest): Promise<RouteVectorTileBuildResult>;
 }

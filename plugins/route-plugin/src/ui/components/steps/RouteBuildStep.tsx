@@ -11,7 +11,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { CheckCircle, CloudDownload, Tune, AltRoute } from '@mui/icons-material';
+import { CheckCircle, CloudDownload, Tune } from '@mui/icons-material';
 import { BuildProgressPanel, type BuildStage, type BuildStatus, notify } from '@hierarchidb/components';
 import { HeapPressureDialog, useHeapPressureGuard } from '@hierarchidb/ui-memory';
 import { GenericDataGrid, type GridColumn } from '@hierarchidb/ui-grid';
@@ -28,6 +28,7 @@ import type {
 import { useTranslation } from '../../../common/i18n/index.js';
 import { getRouteUpdaterPayload } from '../../../common/utils/draft.js';
 import { useRouteBuildCrashInsight } from '../../hooks/useRouteBuildCrashInsight.js';
+import { DEFAULT_ROUTE_BUILD_CONFIG } from '../../../common/config/buildConfig.js';
 import {
   BUILD_MONITOR_SAMPLE_INTERVAL_MS,
   appendBuildSample,
@@ -48,28 +49,22 @@ interface RouteBuildStepProps {
 
 const STAGES: BuildStage[] = [
   {
-    icon: <Tune/>,
-    id: 'prepare',
-    title: 'Prepare',
-    description: 'Validate route parameters.',
-  },
-  {
     icon: <CloudDownload/>,
     id: 'fetch',
     title: 'Fetch',
-    description: 'Fetch route graph data.',
+    description: 'Download, parse, and save route features.',
   },
   {
-    icon: <AltRoute/>,
-    id: 'compute',
-    title: 'Compute',
-    description: 'Calculate routes and metrics.',
+    icon: <Tune/>,
+    id: 'transform',
+    title: 'Transform',
+    description: 'Build tile index for route lookup.',
   },
   {
     icon: <CheckCircle/>,
-    id: 'finalize',
-    title: 'Finalize',
-    description: 'Persist results and indexes.',
+    id: 'vt',
+    title: 'Vector Tiles',
+    description: 'Generate vector tiles for rendering.',
   },
 ];
 const SPLITVIEW_BREAKPOINTS = [600, 900, 1200];
@@ -91,6 +86,12 @@ const buildMonitorConfig = {
   maxSamples: 3,
   memoryPressureRatio: 0.85,
 } as const;
+const FETCH_STAGE_MAX = 33;
+const TRANSFORM_STAGE_MAX = 66;
+const VT_STAGE_MAX = 100;
+const DEFAULT_MIN_ZOOM = 5;
+const DEFAULT_MAX_ZOOM = 12;
+const DEFAULT_BUFFER = 256;
 
 const TRANSPORT_SELECTION_LABELS: Record<RouteTransportSelection, { key: string; fallback: string }> = {
   air: { key: 'transportModes.air', fallback: 'Air' },
@@ -142,6 +143,31 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
       (draft as { endLocationId?: string }).endLocationId,
   );
 
+  const resolveZoomRange = useCallback((): [number, number] => {
+    const zoomRange = (draft as { zoomRange?: [number, number] }).zoomRange;
+    if (zoomRange && zoomRange.length === 2) {
+      return zoomRange;
+    }
+    const buildConfig = (draft.draftData?.buildConfig ?? DEFAULT_ROUTE_BUILD_CONFIG) as {
+      transformConfig?: { zoomBandBoundaries?: number[] };
+    };
+    const boundaries = buildConfig.transformConfig?.zoomBandBoundaries ?? [DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM];
+    const minZoom = boundaries[0] ?? DEFAULT_MIN_ZOOM;
+    const maxZoom = boundaries[boundaries.length - 1] ?? DEFAULT_MAX_ZOOM;
+    return [minZoom, maxZoom];
+  }, [draft]);
+
+  const resolveVectorTileConfig = useCallback(() => {
+    const buildConfig = (draft.draftData?.buildConfig ?? DEFAULT_ROUTE_BUILD_CONFIG) as {
+      vtConfig?: { bufferSize?: number; inputFormat?: 'geojson' | 'flatgeobuf'; inputCompression?: 'gzip' | 'none' };
+    };
+    return {
+      bufferSize: buildConfig.vtConfig?.bufferSize ?? DEFAULT_BUFFER,
+      inputFormat: buildConfig.vtConfig?.inputFormat ?? 'geojson',
+      inputCompression: buildConfig.vtConfig?.inputCompression ?? 'none',
+    };
+  }, [draft]);
+
   const [status, setStatus] = useState<BuildStatus>('idle');
   const [overallProgress, setOverallProgress] = useState(0);
   const [heapDialogOpen, setHeapDialogOpen] = useState(false);
@@ -172,8 +198,23 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
 
   const stageProgress = useMemo(() => {
     const map: Record<string, number> = {};
-    STAGES.forEach((stage, idx) => {
-      map[stage.id] = Math.min(100, Math.max(0, overallProgress - idx * 10));
+    const ranges: Record<string, { start: number; end: number }> = {
+      fetch: { start: 0, end: FETCH_STAGE_MAX },
+      transform: { start: FETCH_STAGE_MAX, end: TRANSFORM_STAGE_MAX },
+      vt: { start: TRANSFORM_STAGE_MAX, end: VT_STAGE_MAX },
+    };
+    STAGES.forEach((stage) => {
+      const range = ranges[stage.id] ?? { start: 0, end: VT_STAGE_MAX };
+      if (overallProgress <= range.start) {
+        map[stage.id] = 0;
+        return;
+      }
+      if (overallProgress >= range.end) {
+        map[stage.id] = 100;
+        return;
+      }
+      const denom = Math.max(1, range.end - range.start);
+      map[stage.id] = Math.round(((overallProgress - range.start) / denom) * 100);
     });
     return map;
   }, [overallProgress]);
@@ -232,22 +273,30 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     const total = progress.total ?? 0;
     const processed = progress.processed ?? 0;
     const ratio = total > 0 ? Math.min(1, processed / total) : 0;
+    let percent = 0;
     switch (progress.phase) {
       case 'fetch':
-        return 10;
+        percent = 10;
+        break;
       case 'parse':
-        return 20 + Math.round(ratio * 25);
+        percent = 20 + Math.round(ratio * 25);
+        break;
       case 'waypoints':
-        return 45 + Math.round(ratio * 35);
+        percent = 45 + Math.round(ratio * 35);
+        break;
       case 'save':
-        return 80 + Math.round(ratio * 20);
+        percent = 80 + Math.round(ratio * 20);
+        break;
       case 'completed':
-        return 100;
+        percent = 100;
+        break;
       case 'failed':
-        return Math.max(0, Math.min(100, Math.round(ratio * 100)));
+        percent = Math.max(0, Math.min(100, Math.round(ratio * 100)));
+        break;
       default:
-        return 0;
+        percent = 0;
     }
+    return Math.round((percent / 100) * FETCH_STAGE_MAX);
   }, []);
 
   const resolveIdeGsmLabel = useCallback((progress: IdeGsmImportProgress): string => {
@@ -377,8 +426,27 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
       if (result.errors.length > 0) {
         setErrorDialogOpen(true);
       }
+      setIdeGsmPhase(null);
+      setOverallProgress(FETCH_STAGE_MAX);
+
+      const [minZoom, maxZoom] = resolveZoomRange();
+      setOverallProgress(FETCH_STAGE_MAX + 1);
+      await routeMutation.buildRouteTileIndex({ nodeId: routeNodeId, minZoom, maxZoom });
+      setOverallProgress(TRANSFORM_STAGE_MAX);
+
+      const vtConfig = resolveVectorTileConfig();
+      setOverallProgress(TRANSFORM_STAGE_MAX + 1);
+      await routeMutation.generateRouteVectorTiles({
+        nodeId: routeNodeId,
+        minZoom,
+        maxZoom,
+        bufferSize: vtConfig.bufferSize,
+        inputFormat: vtConfig.inputFormat,
+        inputCompression: vtConfig.inputCompression,
+      });
+
       setStatus('completed');
-      setOverallProgress(100);
+      setOverallProgress(VT_STAGE_MAX);
       onUpdate({ processingStatus: 'completed', processedAt: Date.now(), buildFinishedAt: Date.now() });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -388,7 +456,17 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     } finally {
       buildInFlightRef.current = false;
     }
-  }, [api, draft, initialize, mapIdeGsmProgress, nodeId, onUpdate, t]);
+  }, [
+    api,
+    draft,
+    initialize,
+    mapIdeGsmProgress,
+    nodeId,
+    onUpdate,
+    resolveVectorTileConfig,
+    resolveZoomRange,
+    t,
+  ]);
 
   return (
     <Box display="flex" flexDirection="column" gap={2}>

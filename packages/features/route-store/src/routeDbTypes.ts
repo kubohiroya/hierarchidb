@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import type { RouteVectorTileRecord } from './RouteDB.js';
+import type { RouteTileIndexRecord, RouteVectorTileRecord } from './RouteDB.js';
 import type { RouteFeature } from '@hierarchidb/route-api';
 
 export type RouteDatabaseHandle = {
@@ -13,6 +13,7 @@ export type RouteDatabaseHandle = {
       };
     };
     bulkPut?: (items: RouteFeature[]) => Promise<unknown>;
+    bulkGet?: (keys: NodeId[]) => Promise<Array<RouteFeature | undefined>>;
   };
   vectorTiles: {
     where: (key: string) => {
@@ -24,5 +25,14 @@ export type RouteDatabaseHandle = {
     bulkPut?: (items: RouteVectorTileRecord[]) => Promise<unknown>;
     bulkDelete?: (keys: string[]) => Promise<unknown>;
     get?: (key: string) => Promise<RouteVectorTileRecord | undefined>;
+  };
+  tileIndex: {
+    where: (key: string) => {
+      equals: (value: NodeId | [NodeId, number, number, number]) => {
+        toArray: () => Promise<RouteTileIndexRecord[]>;
+        delete?: () => Promise<number>;
+      };
+    };
+    bulkPut?: (items: RouteTileIndexRecord[]) => Promise<unknown>;
   };
 };

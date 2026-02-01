@@ -22,20 +22,33 @@ export type RouteVectorTileRecord = {
   timestamp: number;
 };
 
+export type RouteTileIndexRecord = {
+  id: string;
+  nodeId: NodeId;
+  z: number;
+  x: number;
+  y: number;
+  lineIds: string[];
+  updatedAt: number;
+};
+
 export class RouteDB extends VectorTileDbBase {
   features!: Table<RouteFeature, RouteFeature['id']>;
   vectorTiles!: Table<RouteVectorTileRecord, string>;
+  tileIndex!: Table<RouteTileIndexRecord, string>;
 
   constructor(dbName: string = getDBName('route')) {
     super(dbName);
-    this.version(3).stores(this.mergeVectorTileStores({
+    this.version(4).stores(this.mergeVectorTileStores({
       features:
         '&id, nodeId, startLocationId, endLocationId, transportMode, [startLocationId+endLocationId], processingStatus, createdAt, updatedAt',
       vectorTiles: '&tileId, nodeId, [nodeId+z+x+y], z, timestamp',
+      tileIndex: '&id, nodeId, [nodeId+z+x+y], z, x, y, updatedAt',
     }));
 
     this.features = this.table('features');
     this.vectorTiles = this.table('vectorTiles');
+    this.tileIndex = this.table('tileIndex');
     this.initVectorTileTables();
   }
 
