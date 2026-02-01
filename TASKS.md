@@ -11752,6 +11752,186 @@
   - update: 2026-01-31 12:01 JST LocationFeatureId の型キャストを追加し、pnpm --filter @hierarchidb/route-plugin typecheck / pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
   - done: 2026-01-31 12:02 JST IDE-GSM の LocationFeature 参照/兄弟優先マップ合成を実装し、UI から location 解決を撤去。
 
+2436) feat/route/idegsm-selection-matrix (P1) — 完了 (2026-02-01)
+- ブランチ名: feat/route/idegsm-selection-matrix
+- 依存: 2435
+- 受け入れ基準: IDE-GSM 取り込み対象の国×交通モードが CSV/Location 参照から算出され、Route Selection のセル有効化と初期チェックが一致する／対象外の国は無効化される／解析失敗時は Route Selection がブロックされる／行ごとの一括選択チェックボックスが追加され route では有効化される／`pnpm --filter @hierarchidb/route-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/route-api/src/**`, `packages/runtime-worker/src/services/RouteMutationService.ts`, `packages/ui/country-select/src/components/CountryMatrixSelector.tsx`, `plugins/route-plugin/src/ui/components/steps/RouteSelectionStep.tsx`（必要に応じて追加）
+- ロールバック手順: 該当差分を revert して Route Selection の CSV 解析/行チェックボックスを撤去する
+- チェックリスト:
+  - IDE-GSM の国×交通モード抽出 API を route-api/runtime-worker に追加する
+  - Route Selection で CSV 解析結果を反映し初期チェックを適用する
+  - CountryMatrixSelector に行選択チェックボックスを追加し route で有効化する
+  - `pnpm --filter @hierarchidb/route-plugin typecheck` を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-31 12:05 JST IDE-GSM の国×交通モード解析と Route Selection 反映に着手。
+  - update: 2026-02-01 03:30 JST IDE-GSM の国×交通モード抽出 API を route-api/runtime-worker に追加し、Route Selection へ反映。
+  - update: 2026-02-01 03:31 JST CountryMatrixSelector に行選択チェックボックスを追加し、route で有効化。
+  - update: 2026-02-01 03:33 JST pnpm --filter @hierarchidb/route-api build / pnpm --filter @hierarchidb/ui-country-select build（tsdown define warning あり）。
+  - update: 2026-02-01 03:34 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 03:35 JST IDE-GSM CSV 解析に基づく国×交通モード選択と行一括選択 UI を実装。
+
+2437) fix/location/idegsm-selection-availability (P1) — 完了 (2026-02-01)
+- ブランチ名: fix/location/idegsm-selection-availability
+- 依存: なし
+- 受け入れ基準: IDE-GSM の CSV 指定後に Location Selection で有効な国×カラムのチェックボックスが表示される／原因（URL 種別や解析フロー）の修正が反映される／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationSelectionStep.tsx`（必要に応じて追加）
+- ロールバック手順: 該当差分を revert して IDE-GSM 解析フローを元に戻す
+- チェックリスト:
+  - IDE-GSM CSV の解析対象に blob URL を含める
+  - Location Selection のセル有効化が availability に反映される
+  - `pnpm --filter @hierarchidb/location-plugin typecheck` を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-02-01 03:37 JST IDE-GSM 取り込み後に Location Selection のチェックボックスが表示されない問題の修正に着手。
+  - update: 2026-02-01 03:37 JST blob URL を除外していたため解析が走らない問題を修正し、pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 03:37 JST IDE-GSM の CSV 解析対象を拡張し、Location Selection の有効セル表示を回復。
+
+2438) feat/route-location/idegsm-error-dialog-and-row-select (P1) — 完了 (2026-02-01)
+- ブランチ名: feat/route-location/idegsm-error-dialog-and-row-select
+- 依存: 2436
+- 受け入れ基準: Route Selection で IDE-GSM 解析失敗時にエラーダイアログが表示され、行番号/始点/終点/理由/CSV を表形式で確認できる／解析失敗時は Route Selection がブロックされる／Location Selection でも行一括選択チェックボックスが表示される／`pnpm --filter @hierarchidb/route-plugin typecheck` と `pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/route-plugin/src/ui/components/steps/RouteSelectionStep.tsx`, `plugins/location-plugin/src/ui/components/steps/LocationSelectionStep.tsx`（必要に応じて追加）
+- ロールバック手順: 該当差分を revert してエラーダイアログ/行選択を撤去する
+- チェックリスト:
+  - Route Selection の IDE-GSM 解析失敗ダイアログを追加する
+  - Location Selection で行一括選択チェックボックスを有効化する
+  - `pnpm --filter @hierarchidb/route-plugin typecheck` を実行する
+  - `pnpm --filter @hierarchidb/location-plugin typecheck` を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-02-01 03:39 JST IDE-GSM 解析失敗ダイアログと location の行選択追加に着手。
+  - update: 2026-02-01 03:40 JST Route Selection に IDE-GSM エラー一覧ダイアログとブロック表示を追加。
+  - update: 2026-02-01 03:40 JST Location Selection で行一括選択チェックボックスを有効化。
+  - update: 2026-02-01 03:41 JST pnpm --filter @hierarchidb/route-plugin typecheck / pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 03:41 JST IDE-GSM 解析失敗時のダイアログ表示と location の行一括選択 UI を実装。
+
+2439) fix/location/idegsm-selection-countrycode (P1) — 完了 (2026-02-01)
+- ブランチ名: fix/location/idegsm-selection-countrycode
+- 依存: 2437
+- 受け入れ基準: IDE-GSM 解析後に Location Selection の国×地点タイプのチェックボックスが表示され、該当セルが初期チェックONになる／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/location-api/src/ideGsmLocationCsv.ts`, `plugins/location-plugin/src/ui/utils/ideGsmSelection.ts`（必要に応じて追加）
+- ロールバック手順: 該当差分を revert して IDE-GSM の countryCode 設定を元に戻す
+- チェックリスト:
+  - IDE-GSM パース結果に countryCode を設定する
+  - availability 判定で admin0Code を補助利用する
+  - `pnpm --filter @hierarchidb/location-plugin typecheck` を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-02-01 03:46 JST IDE-GSM の countryCode 連携不備により選択セルが表示されない問題の修正に着手。
+  - update: 2026-02-01 03:47 JST IDE-GSM パースで countryCode を補完し、availability 判定で admin0Code を参照するよう修正。
+  - update: 2026-02-01 03:47 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 03:47 JST IDE-GSM 由来の国×地点タイプのチェックボックス表示を回復。
+
+2440) fix/location/idegsm-japan-countrycode-alias (P1) — 完了 (2026-02-01)
+- ブランチ名: fix/location/idegsm-japan-countrycode-alias
+- 依存: 2439
+- 受け入れ基準: IDE-GSM の Japan 行で国×地点タイプのチェックボックスが表示される／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/location-api/src/ideGsmLocationCsv.ts`（必要に応じて追加）
+- ロールバック手順: 該当差分を revert して国名別名の補正を元に戻す
+- チェックリスト:
+  - countryName の正規化を強化し alpha2/alpha3/別名から ISO2 を解決する
+  - `pnpm --filter @hierarchidb/location-api build` を実行する
+  - `pnpm --filter @hierarchidb/location-plugin typecheck` を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-02-01 03:54 JST Japan 行が無効になる問題の修正に着手。
+  - update: 2026-02-01 03:55 JST 国名正規化を強化し、JP 別名を補正。
+  - update: 2026-02-01 03:55 JST pnpm --filter @hierarchidb/location-api build / pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 03:55 JST Japan 行のチェックボックス表示を回復。
+
+2441) feat/location/idegsm-remove-file-confirm (P1) — 完了 (2026-02-01)
+- ブランチ名: feat/location/idegsm-remove-file-confirm
+- 依存: 2438
+- 受け入れ基準: IDE-GSM のファイル削除時に確認ダイアログを表示し、route 参照件数を警告表示できる／削除確定で該当ノードの IDE-GSM 由来データが破棄される／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationDataSourceStep.tsx`, `packages/features/route-api/src/RouteQueryAPI.ts`, `packages/runtime-worker/src/services/RouteQueryService.ts`, `packages/features/route-store/src/RouteDB.ts`（必要に応じて追加）
+- ロールバック手順: 該当差分を revert して削除確認/参照件数表示を撤去する
+- チェックリスト:
+  - RouteQueryAPI に参照件数取得を追加する
+  - LocationDataSourceStep に確認ダイアログと削除処理を実装する
+  - `pnpm --filter @hierarchidb/location-plugin typecheck` を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-02-01 04:05 JST IDE-GSM ファイル削除時の確認ダイアログと参照件数表示に着手。
+  - update: 2026-02-01 04:05 JST RouteQueryAPI に参照件数取得を追加し、LocationDataSourceStep に確認ダイアログと削除処理を実装。
+  - update: 2026-02-01 04:05 JST pnpm --filter @hierarchidb/route-api build / pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 04:05 JST IDE-GSM ファイル削除時の確認ダイアログと参照件数警告を追加。
+
+2442) fix/ui-worker-provider/useworkerapi-hooks (P1) — 完了 (2026-02-01)
+- ブランチ名: fix/ui-worker-provider/useworkerapi-hooks
+- 依存: なし
+- 受け入れ基準: useWorkerAPI の Hooks ルール違反警告が解消される／`pnpm --filter @hierarchidb/ui-worker-provider build` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/worker-provider/src/hooks/useWorkerAPI.ts`
+- ロールバック手順: 該当差分を revert して useWorkerAPI の実装を戻す
+- チェックリスト:
+  - useWorkerAPI 内の hook 呼び出しをトップレベルに戻す
+  - `pnpm --filter @hierarchidb/ui-worker-provider build` を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-02-01 04:09 JST LocationDataSourceStep の Hooks 警告対応に着手。
+  - update: 2026-02-01 04:10 JST useWorkerAPI の hook 呼び出しをトップレベルに戻す修正を実施。
+  - update: 2026-02-01 04:10 JST pnpm --filter @hierarchidb/ui-worker-provider build exit 0 を確認（tsdown define warning あり）。
+  - done: 2026-02-01 04:10 JST useWorkerAPI の Hooks 警告を解消。
+
+2443) fix/location/idegsm-selection-country-mapping (P1) — 完了 (2026-02-01)
+- ブランチ名: fix/location/idegsm-selection-country-mapping
+- 依存: 2440
+- 受け入れ基準: IDE-GSM の Japan 行で対象セルが表示される／ヘッダの country/country code 列が存在する場合でも countryCode が正しく解決される／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/location-api/src/ideGsmLocationCsv.ts`（必要に応じて追加）
+- ロールバック手順: 該当差分を revert して IDE-GSM の列推定を元に戻す
+- チェックリスト:
+  - IDE-GSM CSV の列名推定と countryCode 優先処理を追加する
+  - `pnpm --filter @hierarchidb/location-api build` を実行する
+  - `pnpm --filter @hierarchidb/location-plugin typecheck` を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-02-01 04:12 JST IDE-GSM の国名列/コード列の推定不足による Japan 行未表示の修正に着手。
+  - update: 2026-02-01 04:13 JST IDE-GSM CSV のヘッダ推定と countryCode 優先処理を追加。
+  - update: 2026-02-01 04:13 JST pnpm --filter @hierarchidb/location-api build / pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 04:13 JST Japan 行のチェックボックス表示を改善。
+
+2444) fix/ui-selection-matrix/row-select (P1) — 完了 (2026-02-01)
+- ブランチ名: fix/ui-selection-matrix/row-select
+- 依存: 2438
+- 受け入れ基準: 行内に有効セルがない場合は行一括選択チェックボックスを表示しない／行一括選択が全有効セルに反映される／`pnpm --filter @hierarchidb/location-plugin typecheck` と `pnpm --filter @hierarchidb/route-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/components/src/SelectionMatrix/SelectionMatrix.tsx`（必要に応じて追加）
+- ロールバック手順: 該当差分を revert して行一括選択の挙動を元に戻す
+- チェックリスト:
+  - 行内に有効セルがない場合の行チェックボックス非表示を実装する
+  - 行一括選択が全有効セルに適用されるよう修正する
+  - `pnpm --filter @hierarchidb/components build` を実行する
+  - `pnpm --filter @hierarchidb/location-plugin typecheck` を実行する
+  - `pnpm --filter @hierarchidb/route-plugin typecheck` を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-02-01 04:19 JST 行一括選択の非表示/挙動修正に着手。
+  - update: 2026-02-01 04:21 JST 行内有効セル無しのときはチェックボックスを表示しないよう修正。
+  - update: 2026-02-01 04:21 JST 行一括選択が全有効セルに反映されるよう修正。
+  - update: 2026-02-01 04:22 JST pnpm --filter @hierarchidb/components build / pnpm --filter @hierarchidb/location-plugin typecheck / pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 04:22 JST 行一括選択の表示条件と挙動を修正。
+  - update: 2026-02-01 04:24 JST 行内セル無し時の行チェックボックスセルは残し、列ズレを防止。
+  - update: 2026-02-01 04:24 JST 行一括選択が全有効セルに反映されるよう修正（row updateの累積を修正）。
+  - update: 2026-02-01 04:25 JST pnpm --filter @hierarchidb/components build / pnpm --filter @hierarchidb/location-plugin typecheck / pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+
+2445) fix/ui-country-select/select-all (P1) — 完了 (2026-02-01)
+- ブランチ名: fix/ui-country-select/select-all
+- 依存: 2444
+- 受け入れ基準: 左上の全体一括選択が全有効セルに反映される／`pnpm --filter @hierarchidb/ui-country-select build` が exit 0／`pnpm --filter @hierarchidb/location-plugin typecheck` と `pnpm --filter @hierarchidb/route-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/country-select/src/components/CountryMatrixSelector.tsx`
+- ロールバック手順: 該当差分を revert して一括選択の挙動を元に戻す
+- チェックリスト:
+  - 全体一括選択の一括更新をバッチ適用する
+  - `pnpm --filter @hierarchidb/ui-country-select build` を実行する
+  - `pnpm --filter @hierarchidb/location-plugin typecheck` を実行する
+  - `pnpm --filter @hierarchidb/route-plugin typecheck` を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-02-01 04:29 JST 左上の全体一括選択の不整合修正に着手。
+  - update: 2026-02-01 04:30 JST 全体一括選択のバッチ適用を追加。
+  - update: 2026-02-01 04:30 JST pnpm --filter @hierarchidb/ui-country-select build / pnpm --filter @hierarchidb/location-plugin typecheck / pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 04:30 JST 左上の全体一括選択が全有効セルに反映されるよう修正。
+
 2424) feat/route-location/trash-reference-guard (P1) — 完了 (2026-01-29)
 - ブランチ名: feat/route-location/trash-reference-guard
 - 依存: なし
@@ -11870,7 +12050,7 @@
   - update: 2026-01-31 14:04 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
   - done: 2026-01-31 14:05 JST Build設定外枠の共通化を完了。
 
-2446) refactor/ui-map/preview-shell-unify (P2) — 未着手 (2026-01-31)
+2446) refactor/ui-map/preview-shell-unify (P2) — 完了 (2026-01-31)
 - ブランチ名: refactor/ui-map/preview-shell-unify
 - 依存: なし
 - 受け入れ基準: Map プレビューの共通シェルが追加され Shape/Location が利用する／ビュー状態保存・ベースマップ切替の共通処理が統合される／既存表示の差分がないことを確認できる／`pnpm --filter @hierarchidb/shape-plugin typecheck` と `pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
@@ -11881,3 +12061,203 @@
   - Shape/Location の参照を共通シェルへ切り替える
   - 必要な typecheck を実行する
   - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-01-31 14:15 JST Mapプレビュー共通シェルの共通化に着手。
+  - update: 2026-01-31 14:28 JST ui-map に MapPreviewShell/useMonochromeBasemapStyleUrl を追加し、Shape/Location のプレビューを移行。
+  - update: 2026-01-31 14:30 JST pnpm --filter @hierarchidb/ui-map build を実行（tsdown define warning あり）。
+  - update: 2026-01-31 14:36 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-01-31 14:37 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-01-31 14:38 JST Mapプレビュー共通シェルの適用を完了。
+
+
+2447) fix/ui-map/map-preview-shell-props (P1) — 完了 (2026-01-31)
+- ブランチ名: fix/ui-map/map-preview-shell-props
+- 依存: なし
+- 受け入れ基準: MapPreviewShell が mapStyleUrl/mapStyleObject の型制約を満たすように分岐される／`pnpm --filter @hierarchidb/ui-map typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/preview/MapPreviewShell.tsx`
+- ロールバック手順: MapPreviewShell の差分を revert して元の props 展開へ戻す
+- チェックリスト:
+  - mapStyleUrl と mapStyleObject の排他制約を守るように分岐を追加する
+  - `pnpm --filter @hierarchidb/ui-map typecheck` を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-01-31 15:05 JST MapPreviewShell の型エラー修正に着手。
+  - update: 2026-01-31 15:07 JST mapStyleObject と mapStyleUrl の排他分岐を追加。
+  - update: 2026-01-31 15:08 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
+  - done: 2026-01-31 15:08 JST MapPreviewShell の型エラー修正を完了。
+
+2448) feat/route-plugin/shape-aligned-pipeline (P1) — 進行中 (2026-01-31)
+- ブランチ名: feat/route-plugin/shape-aligned-pipeline
+- 依存: なし
+- ExecPlan: plans/route-shape-aligned-pipeline-execplan.md
+- 受け入れ基準: route のビルドが shape と同じ fetch/transform/vt ステージ構成で動作し、fetch 内で IDE-GSM の fetch/parse/waypoints/save を一括実行する／transform は転置インデックス生成のみを行う／vt でベクタタイル生成が行われる／タイル境界で LineString が分割され、始点/中継点/終点を含まないタイルでも表示される／`pnpm --filter @hierarchidb/route-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/route-plugin/src/ui/components/steps/**`, `plugins/route-plugin/src/services/**`, `packages/runtime-worker/src/services/**`, `packages/features/vt-orchestrator/**`（必要に応じて追加）
+- ロールバック手順: route のステージ再編と vt 連携の差分を revert して旧フローへ戻す
+- チェックリスト:
+  - ExecPlan を作成し合意する
+  - route のステージ構成を fetch/transform/vt に揃える
+  - fetch ステージで IDE-GSM の fetch/parse/waypoints/save を一括実行する
+  - transform ステージで転置インデックス生成のみを実行する
+  - vt ステージでベクタタイル生成を実行する
+  - 必要な typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-01-31 16:40 JST route のステージ再編（fetch/transform/vt）と vt 連携の実装に着手。
+  - update: 2026-01-31 16:46 JST ExecPlan を plans/route-shape-aligned-pipeline-execplan.md に作成。
+  - update: 2026-01-31 16:58 JST RouteMutationService にタイルインデックス/ベクタタイル生成を追加し、RouteBuild/Preview を fetch/transform/vt に再編。
+  - update: 2026-01-31 17:01 JST pnpm --filter @hierarchidb/route-api build を実行（tsdown define warning あり、exit 0）。
+  - update: 2026-01-31 17:02 JST pnpm --filter @hierarchidb/route-store build を実行（tsdown define warning あり、exit 0）。
+  - blocked: 2026-01-31 17:05 JST pnpm --filter @hierarchidb/runtime-worker typecheck が RouteDatabaseHandle の bulkGet 型不一致で失敗。
+  - update: 2026-01-31 17:08 JST RouteDatabaseHandle bulkGet の型を NodeId[] に修正し、pnpm --filter @hierarchidb/route-store build を再実行（exit 0）。
+  - update: 2026-01-31 17:10 JST pnpm --filter @hierarchidb/runtime-worker typecheck exit 0 を確認。
+  - blocked: 2026-01-31 17:12 JST pnpm --filter @hierarchidb/route-plugin typecheck が未使用 import と line geometry 型不整合で失敗。
+  - update: 2026-01-31 17:15 JST RouteBuildStep の未使用 import と RoutePreviewStep の座標正規化を修正。
+ - update: 2026-01-31 17:17 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+
+2449) feat/route-plugin/route-config-style-ui (P1) — 完了 (2026-02-01)
+- ブランチ名: feat/route-plugin/route-config-style-ui
+- 依存: なし
+- 受け入れ基準: Route Config のアコーディオン最下部に交通モード別の色設定 UI と線の太さ/スタイル設定 UI が表示される／設定が route ノードの保存データに反映されプレビュー表示に反映される／i18n（英/日）が揃う／`pnpm --filter @hierarchidb/route-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/route-plugin/src/ui/components/steps/RouteSelectionStep.tsx`, `plugins/route-plugin/src/ui/components/steps/RoutePreviewStep.tsx`, `plugins/route-plugin/src/common/styles/routeStyle.ts`, `packages/features/route-api/src/routeTypes.ts`, `plugins/route-plugin/src/ui/locales/*.json`（必要に応じて追加）
+- ロールバック手順: route のスタイル設定 UI と routeStyleConfig 関連の差分を revert して UI/プレビューを元に戻す
+- チェックリスト:
+  - Route Config アコーディオンに交通モード別カラー/線幅/線種 UI を追加する
+  - 保存データへ routeStyleConfig を反映しプレビューに適用する
+  - i18n（英/日）を追加する
+  - `pnpm --filter @hierarchidb/route-plugin typecheck` を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-02-01 10:00 JST Route Config のスタイル設定 UI 追加に着手。
+  - update: 2026-02-01 10:05 JST pnpm --filter @hierarchidb/route-api build を実行（tsdown define warning あり、exit 0）。
+  - update: 2026-02-01 10:06 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 10:07 JST Route Config のスタイル設定 UI 追加を完了。
+
+2450) feat/location-preview/hover-snackbar (P1) — 完了 (2026-02-01)
+- ブランチ名: feat/location-preview/hover-snackbar
+- 依存: なし
+- 受け入れ基準: Location Preview でマウス近傍 8px の LocationFeature を検出できる／該当地点が Snackbar に 1件ずつ表示され、地点タイプのアイコン/地点タイプ名/地点名/地域名/国名が確認できる／既存のプレビュー表示が退行しない／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`（必要に応じて追加）
+- ロールバック手順: hover Snackbar の差分を revert してプレビュー表示を元に戻す
+- チェックリスト:
+  - マウス近傍 8px の LocationFeature を抽出する
+  - Snackbar に地点情報を 1件ずつ表示する
+  - `pnpm --filter @hierarchidb/location-plugin typecheck` を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-02-01 10:10 JST Location Preview の hover Snackbar 実装に着手。
+  - update: 2026-02-01 10:15 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 10:16 JST Location Preview の hover Snackbar 実装を完了。
+
+2451) feat/ui-map/snackbar-position-and-location-hover (P1) — 完了 (2026-02-01)
+- ブランチ名: feat/ui-map/snackbar-position-and-location-hover
+- 依存: なし
+- 受け入れ基準: ui-map の Snackbar が表示位置を指定でき、既定が画面下中央になる／Location Preview の hover Snackbar が UI 設定色（アイコン/円）に応じて色を切替え、admin0 名が最後に表示される／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/components/ResourceLayerMap.tsx`, `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`（必要に応じて追加）
+- ロールバック手順: ui-map Snackbar 拡張と Location hover 表示の差分を revert して元の挙動に戻す
+- チェックリスト:
+  - ui-map の Snackbar 位置と表示内容の指定機能を追加する
+  - Location Preview の hover 表示を ui-map Snackbar に移行し色/表示順を修正する
+  - `pnpm --filter @hierarchidb/location-plugin typecheck` を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-02-01 10:25 JST ui-map Snackbar と Location hover 表示の修正に着手。
+  - update: 2026-02-01 10:31 JST pnpm --filter @hierarchidb/ui-map build を実行（tsdown define warning あり、exit 0）。
+  - update: 2026-02-01 10:32 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 10:33 JST ui-map Snackbar 拡張と Location hover 表示の修正を完了。
+
+2452) feat/location-preview/flag-emoji (P1) — 完了 (2026-02-01)
+- ブランチ名: feat/location-preview/flag-emoji
+- 依存: なし
+- 受け入れ基準: Location Preview の hover Snackbar で admin0 名の直前に国旗絵文字が表示される／国名が不明な場合は国旗を表示しない／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`
+- ロールバック手順: hover Snackbar の国旗表示差分を revert して元に戻す
+- チェックリスト:
+  - admin0 の国コードから国旗絵文字を解決して表示する
+  - `pnpm --filter @hierarchidb/location-plugin typecheck` を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-02-01 10:35 JST Location Preview hover Snackbar の国旗表示追加に着手。
+  - update: 2026-02-01 10:37 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 10:38 JST Location Preview hover Snackbar の国旗表示追加を完了。
+
+2453) feat/location-preview/metadata-admin0-icon (P1) — 完了 (2026-02-01)
+- ブランチ名: feat/location-preview/metadata-admin0-icon
+- 依存: なし
+- 受け入れ基準: Location Preview の Metadata 表に admin0/admin0Code/admin2/admin2Code が追加される／type 列に Style Config の色付きアイコンが表示される／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`
+- ロールバック手順: Metadata 表のカラム追加と type アイコン表示の差分を revert して元に戻す
+- チェックリスト:
+  - Metadata 行に admin0/admin0Code/admin2/admin2Code を追加する
+  - type 列に色付きアイコンを表示する
+  - `pnpm --filter @hierarchidb/location-plugin typecheck` を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-02-01 10:40 JST Location Preview Metadata のカラムと type アイコン表示追加に着手。
+  - update: 2026-02-01 10:45 JST pnpm --filter @hierarchidb/ui-map build を実行（tsdown define warning あり、exit 0）。
+  - update: 2026-02-01 10:46 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 10:47 JST Location Preview Metadata のカラムと type アイコン表示追加を完了。
+
+2454) fix/location-preview/admin0-flag-and-metadata (P1) — 完了 (2026-02-01)
+- ブランチ名: fix/location-preview/admin0-flag-and-metadata
+- 依存: なし
+- 受け入れ基準: Location Preview の Snackbar に admin0 の国旗絵文字＋国名が表示される／Metadata 表に admin0（国旗絵文字＋国名）/admin0Code/admin2 名称が追加される／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`
+- ロールバック手順: admin0 表示修正と Metadata カラム追加の差分を revert して元に戻す
+- チェックリスト:
+  - Snackbar の admin0 国旗/国名表示を修正する
+  - Metadata に admin0 表示列を追加する
+  - `pnpm --filter @hierarchidb/location-plugin typecheck` を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-02-01 10:50 JST Location Preview の admin0 表示修正に着手。
+  - update: 2026-02-01 10:53 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 10:54 JST Location Preview の admin0 表示修正を完了。
+
+2455) refactor/locationfeature/admin0-rename (P1) — 完了 (2026-02-01)
+- ブランチ名: refactor/locationfeature/admin0-rename
+- 依存: なし
+- ExecPlan: plans/locationfeature-admin0-rename-execplan.md
+- 受け入れ基準: LocationFeature の countryCode/countryName が admin0Code/admin0Name に統一され参照が残らない／Metadata 表から countryCode/countryName 列が撤去される／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/location-api/src/locationTypes.ts`, `packages/features/location-api/src/ideGsmLocationCsv.ts`, `plugins/location-plugin/src/worker/normalizers.ts`, `plugins/location-plugin/src/services/**`, `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`（必要に応じて追加）
+- ロールバック手順: admin0 命名統一の差分を revert して countryCode/countryName を復元する
+- チェックリスト:
+  - LocationFeature の型と生成処理を admin0 命名に統一する
+  - Metadata 表から countryCode/countryName 列を撤去する
+  - `pnpm --filter @hierarchidb/location-plugin typecheck` を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-02-01 11:00 JST LocationFeature の admin0 命名統一に着手。
+  - update: 2026-02-01 11:08 JST pnpm --filter @hierarchidb/location-api build を実行（tsdown define warning あり、exit 0）。
+  - update: 2026-02-01 11:10 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 11:12 JST LocationFeature の admin0 命名統一を完了。
+
+2456) feat/location-preview/snackbar-sort-and-minimap (P1) — 完了 (2026-02-01)
+- ブランチ名: feat/location-preview/snackbar-sort-and-minimap
+- 依存: なし
+- 受け入れ基準: Snackbar の表示順が y→x の昇順で並び、連番が付与される／Snackbar 左側に 64x64 の SVG ミニマップが表示され、ズーム×4 の相対位置に連番が描画される／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`
+- ロールバック手順: Snackbar の並び/ミニマップ差分を revert して元の表示に戻す
+- チェックリスト:
+  - Snackbar 並び順と連番表示を実装する
+  - ミニマップ SVG を追加し相対位置を描画する
+  - `pnpm --filter @hierarchidb/location-plugin typecheck` を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-02-01 11:20 JST Location Preview Snackbar 並び/ミニマップの実装に着手。
+  - update: 2026-02-01 11:23 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 11:24 JST Snackbar 並び/ミニマップの実装を完了。
+
+2457) fix/location-preview/snackbar-follow-pointer (P1) — 完了 (2026-02-01)
+- ブランチ名: fix/location-preview/snackbar-follow-pointer
+- 依存: なし
+- 受け入れ基準: マウスポインタ移動に応じて Snackbar（ミニマップ含む）が更新される／既存の表示順・連番・色付けが維持される／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`
+- ロールバック手順: Snackbar 更新判定の差分を revert して元に戻す
+- チェックリスト:
+  - ポインタ移動でミニマップの描画が更新されるよう判定を調整する
+  - `pnpm --filter @hierarchidb/location-plugin typecheck` を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-02-01 11:30 JST Snackbar のポインタ追従修正に着手。
+  - update: 2026-02-01 11:32 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 11:33 JST Snackbar のポインタ追従修正を完了。
