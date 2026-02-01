@@ -482,8 +482,8 @@ async function buildWaypoints(
   generator: RouteGenerator
 ): Promise<RouteWaypointResult> {
   const method = resolveIdeGsmMethod(line.routeMode);
-  const start = line.startPoint?.coordinates;
-  const end = line.endPoint?.coordinates;
+  const start = line.startPoint?.coordinates ?? resolveLegacyCoordinates(line.startPoint);
+  const end = line.endPoint?.coordinates ?? resolveLegacyCoordinates(line.endPoint);
   if (!method || !start || !end) {
     return {
       id: line.id,
@@ -504,9 +504,17 @@ async function buildWaypoints(
   };
 }
 
-function resolveIdeGsmMethod(routeMode?: string): 'great_circle' | 'searoute' | null {
-  if (routeMode === 'airway') return 'great_circle';
-  if (routeMode === 'waterway') return 'searoute';
+function resolveIdeGsmMethod(routeMode?: string): 'direct' | 'great_circle' | 'searoute' | null {
+  if (routeMode === ROUTE_MODES.AIRWAY) return 'great_circle';
+  if (routeMode === ROUTE_MODES.WATERWAY) return 'searoute';
+  if (
+    routeMode === ROUTE_MODES.RAILWAY ||
+    routeMode === ROUTE_MODES.H_RAILWAY ||
+    routeMode === ROUTE_MODES.ROAD ||
+    routeMode === ROUTE_MODES.HIGHWAY
+  ) {
+    return 'direct';
+  }
   return null;
 }
 

@@ -37,12 +37,17 @@ async function applyWaypoints(line: RouteFeature): Promise<RouteFeature> {
   return next;
 }
 
-function resolveMethod(line: RouteFeature): 'great_circle' | 'searoute' | null {
+function resolveMethod(line: RouteFeature): 'direct' | 'great_circle' | 'searoute' | null {
   switch (line.routeMode) {
     case ROUTE_MODES.AIRWAY:
       return 'great_circle';
     case ROUTE_MODES.WATERWAY:
       return 'searoute';
+    case ROUTE_MODES.RAILWAY:
+    case ROUTE_MODES.H_RAILWAY:
+    case ROUTE_MODES.ROAD:
+    case ROUTE_MODES.HIGHWAY:
+      return 'direct';
     default:
       return null;
   }
