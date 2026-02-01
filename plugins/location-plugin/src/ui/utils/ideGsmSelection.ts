@@ -20,7 +20,7 @@ export const buildAvailabilityMapFromIdeGsmPoints = (
   const typeIndex = new Map(baseTypes.map((typeDef, index) => [typeDef.id, index]));
   const availabilityMap: Record<string, boolean[]> = {};
   points.forEach((point) => {
-    const countryCode = (point.countryCode ?? point.admin0Code)?.toUpperCase();
+    const countryCode = point.admin0Code?.toUpperCase();
     if (!countryCode) return;
     const idx = typeIndex.get(point.type as LocationType);
     if (idx == null) return;

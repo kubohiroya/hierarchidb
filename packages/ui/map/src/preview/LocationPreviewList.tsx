@@ -12,6 +12,7 @@ export type LocationPreviewListProps = {
   tableId?: string | null;
   rows?: Array<Record<string, unknown>>;
   columns?: string[];
+  columnFormatters?: Record<string, (value: unknown, row: Record<string, unknown>) => React.ReactNode>;
   loading?: boolean;
   loadingText?: string;
   emptyText?: string;
@@ -42,6 +43,7 @@ export const LocationPreviewList: React.FC<LocationPreviewListProps> = ({
   tableId,
   rows,
   columns,
+  columnFormatters,
   loading = false,
   loadingText = 'Loading metadata...',
   emptyText = 'No metadata available yet.',
@@ -107,9 +109,9 @@ export const LocationPreviewList: React.FC<LocationPreviewListProps> = ({
       label: column,
       width: column === 'metadata' ? 240 : 140,
       sortable: true,
-      format: (value) => formatCellValue(value),
+      format: (value, row) => columnFormatters?.[column]?.(value, row) ?? formatCellValue(value),
     }))
-  ), [resolvedColumns]);
+  ), [columnFormatters, resolvedColumns]);
 
   const handleCellClick = useCallback((params: { row: Record<string, unknown>; columnId: string }) => {
     if (params.columnId !== 'metadata') return;

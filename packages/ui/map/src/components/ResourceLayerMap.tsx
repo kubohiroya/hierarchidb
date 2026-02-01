@@ -110,8 +110,10 @@ export type ResourceLayerMapProps = BaseMapProps & {
   hoveredFeatures?: MapLibreGeoJSONFeature[];
   snackbar?: {
     position?: 'top' | 'bottom' | 'bottom-center' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+    content?: React.ReactNode;
     renderContent?: (features: MapLibreGeoJSONFeature[]) => React.ReactNode;
     autoHideDuration?: number | null;
+    open?: boolean;
   };
   interaction?: {
     enabled?: boolean;
@@ -142,8 +144,10 @@ export type ResourceLayerMapProps = BaseMapProps & {
     snackbar?: {
       enabled?: boolean;
       position?: 'top' | 'bottom' | 'bottom-center' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+      content?: React.ReactNode;
       renderContent?: (features: MapLibreGeoJSONFeature[]) => React.ReactNode;
       autoHideDuration?: number | null;
+      open?: boolean;
     };
   };
   stats?: {
@@ -1259,11 +1263,13 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
 
   const snackbarFeatures = interactionEnabled ? hoveredInteractionFeatures : (hoveredFeatures ?? []);
   const effectiveSnackbar = interactionEnabled ? (interactionSnackbar ?? snackbar ?? {}) : snackbar;
-  const snackbarPosition = effectiveSnackbar?.position ?? 'bottom';
+  const snackbarPosition = effectiveSnackbar?.position ?? 'bottom-center';
   const anchorOrigin = (() => {
     switch (snackbarPosition) {
       case 'top':
         return { vertical: 'top', horizontal: 'center' } as const;
+      case 'bottom':
+        return { vertical: 'bottom', horizontal: 'center' } as const;
       case 'bottom-center':
         return { vertical: 'bottom', horizontal: 'center' } as const;
       case 'top-left':
@@ -1279,8 +1285,10 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
     }
   })();
   const snackbarContent =
-    effectiveSnackbar?.renderContent?.(snackbarFeatures)
+    effectiveSnackbar?.content
+    ?? effectiveSnackbar?.renderContent?.(snackbarFeatures)
     ?? buildHoverSnackbarContent(snackbarFeatures);
+  const snackbarOpen = effectiveSnackbar?.open ?? (snackbarEnabled && snackbarFeatures.length > 0);
 
   return (
     <>
@@ -1431,7 +1439,7 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
       ) : null}
       {effectiveSnackbar && (
         <Snackbar
-          open={snackbarEnabled && snackbarFeatures.length > 0}
+          open={snackbarOpen}
           autoHideDuration={effectiveSnackbar.autoHideDuration ?? null}
           message={snackbarContent}
           anchorOrigin={anchorOrigin}

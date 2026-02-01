@@ -4,7 +4,7 @@
 
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Box, Button } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import { LocationOn } from '@mui/icons-material';
 import { Anchor, FlightTakeoff, ForkRight, LocationCity, Public, Subway } from '@mui/icons-material';
 import type { SvgIconComponent } from '@mui/icons-material';
@@ -63,6 +63,8 @@ const DEFAULT_TYPE_COLORS: Record<LocationType, string> = {
 };
 
 const PREFETCH_MARGIN_PX = 64;
+const HOVER_RADIUS_PX = 8;
+const MAX_HOVER_RESULTS = 10;
 const CIRCLE_RADIUS_MIN = 2;
 const CIRCLE_RADIUS_MAX_ZOOM = 11;
 const CIRCLE_RADIUS_SLOPE = 0.6;
@@ -106,10 +108,11 @@ const METADATA_COLUMNS_ORDER = [
   'type',
   'latitude',
   'longitude',
-  'countryCode',
-  'countryName',
+  'admin0',
+  'admin0Code',
   'admin1',
   'admin2',
+  'admin2Name',
   'admin1Code',
   'admin2Code',
   'updatedAt',
@@ -131,6 +134,12 @@ const buildMetadataRows = (items: LocationGroupItem[]): Array<Record<string, unk
   items.map((item) => {
     const data = item.data;
     const rawType = typeof data?.type === 'string' ? data.type : undefined;
+    const rawCountryCode = typeof data?.admin0Code === 'string' ? data.admin0Code : undefined;
+    const rawCountryName = typeof data?.admin0Name === 'string' ? data.admin0Name : undefined;
+    const countryFlag = resolveCountryFlag(rawCountryCode);
+    const admin0Label = rawCountryName
+      ? `${countryFlag ? `${countryFlag} ` : ''}${rawCountryName}`
+      : (countryFlag ? `${countryFlag}` : undefined);
     return {
       id: item.id,
       pointId: data?.pointId,
@@ -138,10 +147,11 @@ const buildMetadataRows = (items: LocationGroupItem[]): Array<Record<string, unk
       type: rawType ? resolveLocationType(rawType) : 'area_centroid',
       latitude: data?.latitude,
       longitude: data?.longitude,
-      countryCode: data?.admin0Code,
-      countryName: data?.admin0Name,
+      admin0: admin0Label,
+      admin0Code: rawCountryCode,
       admin1: data?.admin1,
       admin2: data?.admin2,
+      admin2Name: data?.admin2,
       admin1Code: data?.admin1Code,
       admin2Code: data?.admin2Code,
       updatedAt: formatTimestamp(item.updatedAt),
@@ -362,9 +372,32 @@ type PreviewPoint = {
   tileId?: string;
 };
 
+type HoverMatch = {
+  id: string;
+  index: number;
+  name?: string;
+  type: LocationType;
+  typeLabel: string;
+  region?: string;
+  countryLabel?: string;
+  miniMapX: number;
+  miniMapY: number;
+  Icon: SvgIconComponent;
+  color: string;
+};
+
+const resolveCountryFlag = (countryCode?: string): string | undefined => {
+  if (!countryCode || countryCode.length !== 2) return undefined;
+  const normalized = countryCode.toUpperCase();
+  if (!/^[A-Z]{2}$/.test(normalized)) return undefined;
+  const base = 0x1f1e6;
+  const codes = Array.from(normalized).map((char) => base + char.charCodeAt(0) - 65);
+  return String.fromCodePoint(...codes);
+};
+
 export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ draft: _draft, nodeId, onUpdate }) => {
   useIdeGsmImportOnEntry({ draft: _draft, nodeId, onUpdate });
-  const { translations } = useTranslation();
+  const { translations, t } = useTranslation();
   const previewNodeId = nodeId ?? 'preview' as NodeId;
   const [previewPoints, setPreviewPoints] = useState<PreviewPoint[]>([]);
   const [metadataRows, setMetadataRows] = useState<Array<Record<string, unknown>>>([]);
@@ -446,12 +479,16 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
 
   const [iconsReady, setIconsReady] = useState(false);
   const [metadataWindowOpen, setMetadataWindowOpen] = useState(true);
+  const [hoverMatches, setHoverMatches] = useState<HoverMatch[]>([]);
+  const [mapReady, setMapReady] = useState(false);
   const mapRef = useRef<MapLibreMapInstance | null>(null);
   const styleImageMissingHandlerRef = useRef<((event: { id: string }) => void) | null>(null);
   const styleLoadHandlerRef = useRef<(() => void) | null>(null);
   const iconReloadingRef = useRef(false);
   const queryTimerRef = useRef<number | null>(null);
   const queryRequestRef = useRef(0);
+  const hoverFrameRef = useRef<number | null>(null);
+  const hoverPointRef = useRef<{ x: number; y: number } | null>(null);
   const dataSourceAttribution = useMemo(
     () => resolveLocationAttribution(_draft.dataSource ?? null),
     [_draft.dataSource],
@@ -478,6 +515,21 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       return acc;
     }, {} as LocationLabelConfig);
   }, [_draft.labelConfig, tilesMaxZoom]);
+  const typeColumnFormatter = useCallback((value: unknown) => {
+    const rawType = typeof value === 'string' ? value : undefined;
+    const type = rawType ? resolveLocationType(rawType) : 'area_centroid';
+    const iconEntry = iconConfig[type];
+    const iconId = iconEntry?.iconId ?? DEFAULT_ICON_IDS[type];
+    const Icon = LOCATION_ICON_COMPONENTS[iconId] ?? LOCATION_TYPE_STYLES[type].icon;
+    const color = iconEntry?.color ?? DEFAULT_TYPE_COLORS[type];
+    const label = t(`locationTypes.${type}`, type);
+    return (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+        <Icon fontSize="small" htmlColor={color} />
+        <Typography variant="body2">{label}</Typography>
+      </Box>
+    );
+  }, [iconConfig, t]);
 
   useEffect(() => {
     if (!nodeId) {
@@ -664,6 +716,12 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       }
     };
   }, [scheduleViewportQuery]);
+  useEffect(() => () => {
+    if (hoverFrameRef.current) {
+      window.cancelAnimationFrame(hoverFrameRef.current);
+      hoverFrameRef.current = null;
+    }
+  }, []);
   const knownLocationTypes = useMemo(() => LOCATION_TYPE_OPTIONS.map((option) => option.id), []);
   const locationFilter = useMemo(
     () => buildCategoryFilter(enabledLocationTypes, knownLocationTypes, ['type']),
@@ -688,6 +746,179 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     () => new Map(iconAssets.map((asset) => [asset.imageId, asset])),
     [iconAssets],
   );
+  const metadataById = useMemo(
+    () => new Map(metadataItems.map((item) => [String(item.id), item])),
+    [metadataItems],
+  );
+  const locationPreviewSnackbar = useMemo(() => {
+    if (hoverMatches.length === 0) return undefined;
+    return (
+      <Box sx={{ display: 'flex', gap: 1.5, minWidth: 320 }}>
+        <Box sx={{ width: 64, height: 64, flex: '0 0 64px' }}>
+          <svg width={64} height={64} viewBox="0 0 64 64">
+            <circle cx={32} cy={32} r={32} fill="rgba(0,0,0,0.04)" />
+            <circle cx={32} cy={32} r={31.5} fill="none" stroke="rgba(0,0,0,0.18)" />
+            {hoverMatches.map((match) => (
+              <g key={match.id}>
+                <text
+                  x={match.miniMapX}
+                  y={match.miniMapY}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  fontSize="10"
+                  fontWeight="700"
+                  fill={match.color}
+                >
+                  {match.index}
+                </text>
+              </g>
+            ))}
+          </svg>
+        </Box>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 220 }}>
+          {hoverMatches.map((match) => (
+            <Box key={match.id} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="caption" sx={{ width: 18, textAlign: 'right' }}>
+                {match.index}.
+              </Typography>
+              <match.Icon fontSize="small" htmlColor={match.color} />
+              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  {match.typeLabel} {match.name ? `・${match.name}` : ''}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {[
+                    match.region,
+                    match.countryLabel,
+                  ].filter(Boolean).join(' / ')}
+                </Typography>
+              </Box>
+            </Box>
+          ))}
+        </Box>
+      </Box>
+    );
+  }, [hoverMatches]);
+
+  const clearHoverMatches = useCallback(() => {
+    setHoverMatches([]);
+  }, []);
+
+  const resolveHoverMatches = useCallback((point: { x: number; y: number }) => {
+    const map = mapRef.current as (MapLibreMapInstance & {
+      project?: (lngLat: { lng: number; lat: number }) => { x: number; y: number };
+    }) | null;
+    if (!map?.project) {
+      clearHoverMatches();
+      return;
+    }
+    if (previewPoints.length === 0) {
+      clearHoverMatches();
+      return;
+    }
+    const radiusSquared = HOVER_RADIUS_PX * HOVER_RADIUS_PX;
+    const zoomValue = typeof map.getZoom === 'function' ? map.getZoom() : MIN_ZOOM_LEVEL;
+    const candidates = previewPoints
+      .map((previewPoint) => {
+        const projected = map.project?.({ lng: previewPoint.longitude, lat: previewPoint.latitude });
+        if (!projected) return null;
+        const dx = projected.x - point.x;
+        const dy = projected.y - point.y;
+        const distanceSquared = dx * dx + dy * dy;
+        return {
+          previewPoint,
+          distanceSquared,
+          projectedX: projected.x,
+          projectedY: projected.y,
+          dx,
+          dy,
+        };
+      })
+      .filter((entry): entry is {
+        previewPoint: PreviewPoint;
+        distanceSquared: number;
+        projectedX: number;
+        projectedY: number;
+        dx: number;
+        dy: number;
+      } => {
+        if (!entry) return false;
+        return entry.distanceSquared <= radiusSquared;
+      })
+      .sort((a, b) => {
+        if (a.projectedY !== b.projectedY) return a.projectedY - b.projectedY;
+        if (a.projectedX !== b.projectedX) return a.projectedX - b.projectedX;
+        return a.distanceSquared - b.distanceSquared;
+      })
+      .slice(0, MAX_HOVER_RESULTS);
+
+    const nextMatches = candidates.map(({ previewPoint, dx, dy }, index) => {
+      const metadata = metadataById.get(previewPoint.id);
+      const data = metadata?.data;
+      const type = previewPoint.type;
+      const typeLabel = t(`locationTypes.${type}`, type);
+      const name = data?.name ?? previewPoint.name;
+      const representation = representationConfig[type];
+      const useIcon = zoomValue >= representation.iconFromZoom;
+      const admin1 = typeof data?.admin1 === 'string' ? data.admin1 : undefined;
+      const admin2 = typeof data?.admin2 === 'string' ? data.admin2 : undefined;
+      const region = [admin1, admin2].filter(Boolean).join(' / ') || undefined;
+      const countryCode = typeof data?.admin0Code === 'string' ? data.admin0Code : undefined;
+      const countryName = typeof data?.admin0Name === 'string' ? data.admin0Name : undefined;
+      const countryFlag = resolveCountryFlag(countryCode);
+      const countryLabel = countryName
+        ? `${countryFlag ? `${countryFlag} ` : ''}${countryName}`
+        : (countryFlag ? `${countryFlag}` : undefined);
+      const iconEntry = iconConfig[type];
+      const iconId = iconEntry?.iconId ?? DEFAULT_ICON_IDS[type];
+      const Icon = LOCATION_ICON_COMPONENTS[iconId] ?? LOCATION_TYPE_STYLES[type].icon;
+      const circleColor = iconEntry?.color ?? DEFAULT_TYPE_COLORS[type];
+      const iconColor = iconEntry?.color ?? DEFAULT_TYPE_COLORS[type];
+      const color = useIcon ? iconColor : circleColor;
+      const miniMapX = 32 + dx * 4;
+      const miniMapY = 32 + dy * 4;
+      return {
+        id: previewPoint.id,
+        index: index + 1,
+        name,
+        type,
+        typeLabel,
+        region,
+        countryLabel,
+        miniMapX,
+        miniMapY,
+        Icon,
+        color,
+      };
+    });
+
+    const isSame =
+      hoverMatches.length === nextMatches.length
+      && hoverMatches.every((prev, index) => {
+        const next = nextMatches[index];
+        if (!next) return false;
+        if (prev.id !== next.id) return false;
+        const prevX = Math.round(prev.miniMapX);
+        const prevY = Math.round(prev.miniMapY);
+        const nextX = Math.round(next.miniMapX);
+        const nextY = Math.round(next.miniMapY);
+        return prevX === nextX && prevY === nextY;
+      });
+    if (!isSame) {
+      setHoverMatches(nextMatches);
+    }
+  }, [clearHoverMatches, hoverMatches, iconConfig, metadataById, previewPoints, representationConfig, t]);
+
+  const scheduleHoverLookup = useCallback((point: { x: number; y: number }) => {
+    hoverPointRef.current = point;
+    if (hoverFrameRef.current) {
+      window.cancelAnimationFrame(hoverFrameRef.current);
+    }
+    hoverFrameRef.current = window.requestAnimationFrame(() => {
+      if (!hoverPointRef.current) return;
+      resolveHoverMatches(hoverPointRef.current);
+    });
+  }, [resolveHoverMatches]);
 
   const loadIconImage = useCallback((map: MapLibreMapInstance, asset: {
     imageId: string;
@@ -927,6 +1158,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
   }, []);
   const handleMapLoad = useCallback((map: MapLibreMapInstance) => {
     mapRef.current = map;
+    setMapReady(true);
     loadMapIcons(map);
     const mapWithEvents = map as MapLibreMapInstance & {
       on?: (type: string, listener: (event: { id: string }) => void) => void;
@@ -973,6 +1205,28 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     scheduleViewportQuery(viewState);
   }, [scheduleViewportQuery]);
 
+  useEffect(() => {
+    if (!mapReady) return;
+    const map = mapRef.current as (MapLibreMapInstance & {
+      on?: (name: string, handler: (event: { point?: { x: number; y: number } }) => void) => void;
+      off?: (name: string, handler: (event: { point?: { x: number; y: number } }) => void) => void;
+    }) | null;
+    if (!map?.on) return;
+    const handleMouseMove = (event: { point?: { x: number; y: number } }) => {
+      if (!event?.point) return;
+      scheduleHoverLookup({ x: event.point.x, y: event.point.y });
+    };
+    const handleMouseLeave = () => {
+      clearHoverMatches();
+    };
+    map.on('mousemove', handleMouseMove);
+    map.on('mouseleave', handleMouseLeave);
+    return () => {
+      map.off?.('mousemove', handleMouseMove);
+      map.off?.('mouseleave', handleMouseLeave);
+    };
+  }, [clearHoverMatches, mapReady, scheduleHoverLookup]);
+
   return (
     <Box display="flex" flexDirection="column" height="100%" minHeight={0} flex={1}>
       <MapPreviewShell
@@ -983,6 +1237,11 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
           vectorLayers: [],
           geoJsonLayers: locationGeoJsonLayers,
           attributionItems,
+          snackbar: {
+            content: locationPreviewSnackbar,
+            open: hoverMatches.length > 0,
+            autoHideDuration: null,
+          },
           mapOptions: DEFAULT_MAP_CONFIG.interactionOptions,
           onLoad: handleMapLoad,
           onMoveEnd: handleMapMoveEnd,
@@ -994,6 +1253,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
                 title={translations.mapPreview?.tabs?.metadata ?? 'Locations'}
                 rows={filteredMetadataRows}
                 columns={filteredMetadataColumns}
+                columnFormatters={{ type: typeColumnFormatter }}
                 loading={metadataLoading}
                 errorText={metadataError}
                 selectedRows={selectedMetadataIds}

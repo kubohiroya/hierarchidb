@@ -53,8 +53,8 @@ describe('LocationBatchManager country normalization', () => {
         latitude: 35.0,
         longitude: 140.0,
         type: 'airport',
-        countryCode: 'USA',
-        countryName: 'United States',
+        admin0Code: 'USA',
+        admin0Name: 'United States',
       },
       {
         schemaVersion: 2,
@@ -63,8 +63,8 @@ describe('LocationBatchManager country normalization', () => {
         latitude: 36.0,
         longitude: 139.0,
         type: 'port',
-        countryCode: '',
-        countryName: 'Japan',
+        admin0Code: '',
+        admin0Name: 'Japan',
       },
       {
         schemaVersion: 2,
@@ -73,8 +73,8 @@ describe('LocationBatchManager country normalization', () => {
         latitude: 34.0,
         longitude: 138.0,
         type: 'airport',
-        countryCode: 'US',
-        countryName: 'United States',
+        admin0Code: 'US',
+        admin0Name: 'United States',
       },
       {
         schemaVersion: 2,
@@ -83,8 +83,8 @@ describe('LocationBatchManager country normalization', () => {
         latitude: 33.0,
         longitude: 137.0,
         type: 'airport',
-        countryCode: '',
-        countryName: 'Unknownland',
+        admin0Code: '',
+        admin0Name: 'Unknownland',
       },
     ]);
 
@@ -100,9 +100,9 @@ describe('LocationBatchManager country normalization', () => {
     const points = await manager.collectLocationPoints(nodeId, config);
     const byId = new Map(points.map((point) => [point.pointId, point]));
 
-    expect(byId.get('point-1' as LocationPointProperties['pointId'])?.countryCode).toBe('US');
-    expect(byId.get('point-2' as LocationPointProperties['pointId'])?.countryCode).toBe('JP');
-    expect(byId.get('point-3' as LocationPointProperties['pointId'])?.countryCode).toBe('US');
-    expect(byId.get('point-4' as LocationPointProperties['pointId'])?.countryCode).toBe('');
+    expect(byId.get('point-1' as LocationPointProperties['pointId'])?.admin0Code).toBe('US');
+    expect(byId.get('point-2' as LocationPointProperties['pointId'])?.admin0Code).toBe('JP');
+    expect(byId.get('point-3' as LocationPointProperties['pointId'])?.admin0Code).toBe('US');
+    expect(byId.get('point-4' as LocationPointProperties['pointId'])?.admin0Code).toBe('');
   }, 20000);
 });

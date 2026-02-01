@@ -780,8 +780,8 @@ export class LocationBatchManager {
       }
 
       if (normalizedCodes.length > 0 || normalizedNames.length > 0) {
-        const normalizedLocationCode = location.countryCode?.toUpperCase();
-        const normalizedLocationName = location.countryName?.toLowerCase();
+        const normalizedLocationCode = location.admin0Code?.toUpperCase();
+        const normalizedLocationName = location.admin0Name?.toLowerCase();
         const matchesCode = normalizedLocationCode
           ? normalizedCodes.includes(normalizedLocationCode)
           : false;
@@ -821,8 +821,8 @@ export class LocationBatchManager {
       }
       if (!hasCountryFilter) return true;
 
-      const normalizedLocationCode = location.countryCode?.toUpperCase();
-      const normalizedLocationName = location.countryName?.toLowerCase();
+      const normalizedLocationCode = location.admin0Code?.toUpperCase();
+      const normalizedLocationName = location.admin0Name?.toLowerCase();
       const matchesCode = countryCode && normalizedLocationCode
         ? normalizedLocationCode === countryCode
         : false;
@@ -843,11 +843,11 @@ export class LocationBatchManager {
     const map = await this.getCountryNameMap();
     if (map.size === 0) return locations;
     return locations.map((location) => {
-      const rawCode = location.countryCode?.trim();
-      const rawName = location.countryName?.trim();
+      const rawCode = location.admin0Code?.trim();
+      const rawName = location.admin0Name?.trim();
       const normalized = this.resolveIso2Code(map, rawCode, rawName);
-      if (!normalized || normalized === location.countryCode) return location;
-      return { ...location, countryCode: normalized };
+      if (!normalized || normalized === location.admin0Code) return location;
+      return { ...location, admin0Code: normalized };
     });
   }
 

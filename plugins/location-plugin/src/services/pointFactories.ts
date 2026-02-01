@@ -15,8 +15,8 @@ interface BasePointParams {
   type: LocationPointKind;
   latitude: number;
   longitude: number;
-  countryCode: CountryCode;
-  countryName?: string;
+  admin0Code: CountryCode;
+  admin0Name?: string;
   admin1?: string;
   admin2?: string;
   metadata?: LocationPointMetadata;
@@ -49,8 +49,8 @@ export const createLocationPointProperties = (params: BasePointParams): Location
   latitude: params.latitude,
   longitude: params.longitude,
   type: params.type,
-  countryCode: params.countryCode,
-  countryName: params.countryName,
+  admin0Code: params.admin0Code,
+  admin0Name: params.admin0Name,
   admin1: params.admin1,
   admin2: params.admin2,
   metadata: params.metadata,
@@ -79,8 +79,8 @@ export const buildOsmPointProperties = async (
     addressState: raw.address?.state,
     addressCity: raw.address?.city || raw.address?.town || raw.address?.village,
   });
-  const countryCode = raw.address?.country_code?.toUpperCase() ?? '';
-  const countryName = raw.address?.country;
+  const admin0Code = raw.address?.country_code?.toUpperCase() ?? '';
+  const admin0Name = raw.address?.country;
   const admin1 = raw.address?.state;
   const admin2 = raw.address?.city || raw.address?.town || raw.address?.village;
 
@@ -90,8 +90,8 @@ export const buildOsmPointProperties = async (
     type,
     latitude,
     longitude,
-    countryCode,
-    countryName,
+    admin0Code,
+    admin0Name,
     admin1: admin1 ?? undefined,
     admin2: admin2 ?? undefined,
     metadata,
@@ -113,7 +113,7 @@ export const buildOverpassPointProperties = async (
     lastSeenAt: timestamp,
     overpassQuery: raw.tags?.overpassQuery,
   });
-  const countryCode = raw.tags?.['addr:country']?.toUpperCase() ?? '';
+  const admin0Code = raw.tags?.['addr:country']?.toUpperCase() ?? '';
   const admin1 = raw.tags?.['addr:state'] ?? raw.tags?.['addr:region'];
   const admin2 = raw.tags?.['addr:city'] ?? raw.tags?.['addr:district'];
 
@@ -123,7 +123,7 @@ export const buildOverpassPointProperties = async (
     type,
     latitude,
     longitude,
-    countryCode,
+    admin0Code,
     admin1: admin1 ?? undefined,
     admin2: admin2 ?? undefined,
     metadata,
@@ -154,7 +154,7 @@ export const buildGeoNamesPointProperties = async (
     type,
     latitude: raw.lat,
     longitude: raw.lng,
-    countryCode: raw.countryCode ?? '',
+    admin0Code: raw.countryCode ?? '',
     admin1: raw.adminCode1,
     admin2: raw.adminCode2,
     metadata,
@@ -182,7 +182,7 @@ export const buildWikidataPointProperties = async (
     type,
     latitude: raw.coordinates.lat,
     longitude: raw.coordinates.lon,
-    countryCode: raw.countryCode ?? '',
+    admin0Code: raw.countryCode ?? '',
     admin1: raw.admin1,
     admin2: raw.admin2,
     metadata,
@@ -206,7 +206,7 @@ export const buildCustomPointProperties = async (
     type,
     latitude: raw.latitude,
     longitude: raw.longitude,
-    countryCode: raw.countryCode ?? '',
+    admin0Code: raw.countryCode ?? '',
     admin1: raw.admin1,
     admin2: raw.admin2,
     metadata,
@@ -263,8 +263,8 @@ export const buildOurAirportsPointProperties = async (
     type: 'airport',
     latitude: raw.latitude,
     longitude: raw.longitude,
-    countryCode: raw.isoCountry?.toUpperCase() ?? '',
-    countryName: raw.countryName,
+    admin0Code: raw.isoCountry?.toUpperCase() ?? '',
+    admin0Name: raw.countryName,
     admin1: raw.isoRegion,
     admin2: raw.municipality,
     metadata,
@@ -312,8 +312,8 @@ export const buildOpenFlightsPointProperties = async (
     type: 'airport',
     latitude: raw.latitude,
     longitude: raw.longitude,
-    countryCode: '',
-    countryName: raw.country,
+    admin0Code: '',
+    admin0Name: raw.country,
     admin1: undefined,
     admin2: raw.city,
     metadata,
@@ -353,8 +353,8 @@ export const buildWorldPortIndexPointProperties = async (
     type: 'port',
     latitude: raw.latitude,
     longitude: raw.longitude,
-    countryCode: raw.countryCode?.toUpperCase() ?? '',
-    countryName: raw.countryName,
+    admin0Code: raw.countryCode?.toUpperCase() ?? '',
+    admin0Name: raw.countryName,
     admin1: raw.regionName,
     metadata,
   });

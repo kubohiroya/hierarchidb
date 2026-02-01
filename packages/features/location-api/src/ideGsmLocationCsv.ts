@@ -192,7 +192,7 @@ export const parseIdeGsmCsv = async (csvText: string): Promise<IdeGsmParseResult
       ...buildTileIdByZoom(lon, lat),
       admin0Name,
       admin1Name,
-      countryCode: normalizedCode?.length === 2 ? normalizedCode : undefined,
+      admin0Code: normalizedCode?.length === 2 ? normalizedCode : undefined,
       metadata,
     });
   }
@@ -200,12 +200,9 @@ export const parseIdeGsmCsv = async (csvText: string): Promise<IdeGsmParseResult
   if (!points.length) return { points, rowCount: rows.length };
   const countryCodeCache = new Map<string, string>();
   for (const point of points) {
-    if (point.countryCode) {
-      const normalized = point.countryCode.toUpperCase();
-      point.countryCode = normalized;
-      if (!point.admin0Code) {
-        point.admin0Code = normalized;
-      }
+    if (point.admin0Code) {
+      const normalized = point.admin0Code.toUpperCase();
+      point.admin0Code = normalized;
     }
     const key = point.admin0Name ?? '';
     if (key) {
@@ -213,7 +210,6 @@ export const parseIdeGsmCsv = async (csvText: string): Promise<IdeGsmParseResult
         countryCodeCache.set(key, await getCountryCodeByName(key));
       }
       point.admin0Code = countryCodeCache.get(key) ?? '';
-      point.countryCode = point.admin0Code || point.countryCode;
     }
     if (point.admin1Code) {
       point.admin1Code = await resolveAdmin1Code(point.admin0Code, point.admin1Code);

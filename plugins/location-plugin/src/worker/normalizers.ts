@@ -128,7 +128,7 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
       latitude: typeof value.latitude === 'number' ? value.latitude : 0,
       longitude: typeof value.longitude === 'number' ? value.longitude : 0,
       type: typeof value.type === 'string' ? value.type : 'unknown',
-      countryCode: typeof legacy.gid0 === 'string' ? legacy.gid0 : '',
+      admin0Code: typeof legacy.gid0 === 'string' ? legacy.gid0 : '',
       admin1: typeof legacy.gid1 === 'string' ? legacy.gid1 : undefined,
       admin2: typeof legacy.gid2 === 'string' ? legacy.gid2 : undefined,
       ...(centroidForShapeId !== undefined && { centroidForShapeId }),
@@ -145,7 +145,7 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
       latitude: 0,
       longitude: 0,
       type: 'unknown',
-      countryCode: '',
+      admin0Code: '',
       admin1: undefined,
       admin2: undefined,
       metadata: undefined,
@@ -162,8 +162,8 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
   const latitude = typeof valueRecord.latitude === 'number' ? valueRecord.latitude : 0;
   const longitude = typeof valueRecord.longitude === 'number' ? valueRecord.longitude : 0;
   const type = typeof valueRecord.type === 'string' ? valueRecord.type : 'unknown';
-  const countryCode = typeof (value as Record<string, unknown>).countryCode === 'string'
-    ? (value as Record<string, unknown>).countryCode as string
+  const admin0Code = typeof (value as Record<string, unknown>).admin0Code === 'string'
+    ? (value as Record<string, unknown>).admin0Code as string
     : typeof (value as Record<string, unknown>).gid0 === 'string'
       ? (value as Record<string, unknown>).gid0 as string
       : '';
@@ -177,8 +177,8 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
     : typeof (value as Record<string, unknown>).gid2 === 'string'
       ? (value as Record<string, unknown>).gid2 as string
       : undefined;
-  const countryName = typeof (value as Record<string, unknown>).countryName === 'string'
-    ? (value as Record<string, unknown>).countryName as string
+  const admin0Name = typeof (value as Record<string, unknown>).admin0Name === 'string'
+    ? (value as Record<string, unknown>).admin0Name as string
     : undefined;
 
   const centroidForShapeId = normalizeCentroidForShapeId(valueRecord.centroidForShapeId);
@@ -192,8 +192,8 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
     latitude,
     longitude,
     type,
-    countryCode,
-    countryName,
+    admin0Code,
+    admin0Name,
     admin1,
     admin2,
     ...(centroidForShapeId !== undefined && { centroidForShapeId }),

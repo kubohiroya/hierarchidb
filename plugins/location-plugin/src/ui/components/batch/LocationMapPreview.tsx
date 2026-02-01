@@ -465,7 +465,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
     const typeLabel = nearest.type && typeSettings[nearest.type as LocationType]?.name
       ? typeSettings[nearest.type as LocationType].name
       : nearest.type ?? 'unknown';
-    const countryLabel = nearest.countryName ?? '';
+    const countryLabel = nearest.admin0Name ?? '';
     const regionLabel = nearest.region ?? '';
     const latText = Number.isFinite(nearest.latitude) ? nearest.latitude.toFixed(5) : String(nearest.latitude);
     const lonText = Number.isFinite(nearest.longitude) ? nearest.longitude.toFixed(5) : String(nearest.longitude);

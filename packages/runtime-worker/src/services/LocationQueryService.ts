@@ -293,7 +293,7 @@ export class LocationQueryService implements LocationQueryAPI {
           name: (item.data as { name?: string } | undefined)?.name,
           type: (item.data as { type?: string } | undefined)?.type,
           region: (item.data as { admin1?: string } | undefined)?.admin1,
-          countryName: (item.data as { countryName?: string } | undefined)?.countryName,
+          admin0Name: (item.data as { admin0Name?: string } | undefined)?.admin0Name,
           longitude,
           latitude,
           properties: item.data as unknown as Record<string, unknown>,

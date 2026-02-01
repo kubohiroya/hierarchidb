@@ -127,8 +127,6 @@ export interface LocationPointProperties {
   latitude: number;
   longitude: number;
   type: LocationPointKind;
-  countryName?: string;
-  countryCode?: CountryCode;
   admin0Name?: string;
   admin1Name?: string;
   admin2Name?: string;
