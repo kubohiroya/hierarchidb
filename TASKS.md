@@ -12261,3 +12261,461 @@
   - start: 2026-02-01 11:30 JST Snackbar のポインタ追従修正に着手。
   - update: 2026-02-01 11:32 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
   - done: 2026-02-01 11:33 JST Snackbar のポインタ追従修正を完了。
+
+2458) feat/location/migrate-legacy-admin0-once (P1) — 完了 (2026-02-01)
+- ブランチ名: refactor/locationfeature/admin0-rename
+- 依存: なし
+- 受け入れ基準: 手動実行で legacy countryCode/countryName を admin0Code/admin0Name に移行できる／IDE-GSM CSV で admin0 が必ずセットされる／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/location-api/src/LocationMutationAPI.ts`, `packages/runtime-worker/src/services/LocationMutationService.ts`, `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`, `packages/features/location-api/src/ideGsmLocationCsv.ts`, `plugins/location-plugin/src/services/download/csvSources.ts`, `plugins/location-plugin/src/services/pointFactories.ts`, `plugins/location-plugin/src/worker/normalizers.ts`, `plugins/location-plugin/src/worker/tabular/materialize.ts`, `packages/runtime-worker/src/services/LocationMutationService.ts`, `packages/runtime-worker/src/services/LocationQueryService.ts`（必要に応じて追加）
+- ロールバック手順: マイグレーション API と UI ボタンの差分を revert して元に戻す
+- チェックリスト:
+  - 手動マイグレーション API を追加し UI から実行できるようにする
+  - IDE-GSM CSV で admin0 がセットされるようにする
+  - `pnpm --filter @hierarchidb/location-api build` / `pnpm --filter @hierarchidb/ui-map build` / `pnpm --filter @hierarchidb/location-plugin typecheck` を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-02-01 11:40 JST legacy admin0 マイグレーションの一時追加に着手。
+  - update: 2026-02-01 11:43 JST pnpm --filter @hierarchidb/location-api build を実行（tsdown define warning あり、exit 0）。
+  - update: 2026-02-01 11:44 JST pnpm --filter @hierarchidb/ui-map build を実行（tsdown define warning あり、exit 0）。
+  - update: 2026-02-01 11:45 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 11:46 JST legacy admin0 マイグレーションの一時追加を完了。
+
+2459) fix/location-preview/metadata-admin0-columns (P1) — 進行中 (2026-02-01)
+- ブランチ名: fix/location-preview/metadata-admin0-columns
+- 依存: なし
+- 受け入れ基準: Metadata 表の列候補に admin0/admin0Code が表示される／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/preview/LocationPreviewList.tsx`, `packages/ui/map/src/preview/MapPreviewFloatingTable.tsx`（必要に応じて追加）
+- ロールバック手順: 列候補の挙動変更を revert して元に戻す
+- チェックリスト:
+  - 列候補の生成ロジックを調査し admin0/admin0Code が表示されるよう調整する
+  - `pnpm --filter @hierarchidb/location-plugin typecheck` を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-02-01 11:55 JST Metadata 列候補の admin0 表示対応に着手。
+  - update: 2026-02-01 11:57 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 11:58 JST Metadata 列候補の admin0 表示対応を完了。
+
+2460) feat/location-preview/metadata-row-filter (P1) — 完了 (2026-02-01)
+- ブランチ名: feat/location-preview/metadata-row-filter
+- 依存: なし
+- 受け入れ基準: Metadata 表の Columns メニューに Rows カードが追加される（全件/視界内/検索一致）／Columns 候補に admin0/admin0Code/admin2Name が常時表示される／Migrate admin0 ボタンが撤去される／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/preview/MapPreviewFloatingTable.tsx`, `packages/ui/map/src/preview/LocationPreviewList.tsx`, `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`（必要に応じて追加）
+- ロールバック手順: Rows フィルタ UI と admin2Name 列候補、Migrate admin0 ボタン撤去の差分を revert して元に戻す
+- チェックリスト:
+  - Rows フィルタ UI を Columns メニューに追加して row 表示を切替できるようにする
+  - admin2Name を常時列候補に含める
+  - Migrate admin0 ボタンを撤去する
+  - `pnpm --filter @hierarchidb/location-plugin typecheck` を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-02-01 11:53 JST Metadata 行フィルタ UI と admin2Name 列候補対応に着手。
+  - update: 2026-02-01 11:55 JST pnpm --filter @hierarchidb/location-plugin typecheck が ui-map の型差分で失敗したため、pnpm --filter @hierarchidb/ui-map build を実行（tsdown define warning あり）。
+  - update: 2026-02-01 11:55 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 11:55 JST Metadata 行フィルタ UI と admin2Name 列候補対応を完了。
+
+2461) feat/location/ide-gsm-remove-reimport (P1) — 完了 (2026-02-01)
+- ブランチ名: feat/location/ide-gsm-remove-reimport
+- 依存: なし
+- 受け入れ基準: IDE-GSM のファイル削除確認後に残りファイルを再インポートする／削除時に LocationFeature を全削除してから再構築する／処理中は重複実行できない／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationDataSourceStep.tsx`, `plugins/location-plugin/src/ui/hooks/useIdeGsmImportOnEntry.ts`, `packages/runtime-worker/src/services/LocationMutationService.ts`, `packages/features/location-api/src/ideGsmTypes.ts`（必要に応じて追加）
+- ロールバック手順: IDE-GSM の再インポート処理と append 書き込みの差分を revert して元に戻す
+- チェックリスト:
+  - IDE-GSM の削除確認後に再インポートを行う流れを実装する
+  - append/replace の書き込みモードを追加する
+  - `pnpm --filter @hierarchidb/location-api build` / `pnpm --filter @hierarchidb/location-plugin typecheck` を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-02-01 12:00 JST IDE-GSM ファイル削除後の再インポート対応に着手。
+  - update: 2026-02-01 12:05 JST pnpm --filter @hierarchidb/location-api build を実行（tsdown define warning あり、exit 0）。
+  - update: 2026-02-01 12:05 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 12:05 JST IDE-GSM ファイル削除後の再インポート対応を完了。
+
+2462) fix/location/datasource-remove-ui-and-metadata-columns (P1) — 完了 (2026-02-01)
+- ブランチ名: fix/location/datasource-remove-ui-and-metadata-columns
+- 依存: なし
+- 受け入れ基準: Data Source の削除ボタンでファイルがUIから消える／Metadata カラムが admin0/admin0Code/admin1/admin1Code/admin2/admin2Code に統一され順序が一致する／Column/Row Config ダイアログの見出しが修正される／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationDataSourceStep.tsx`, `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`, `packages/features/location-api/src/locationTypes.ts`, `packages/features/location-api/src/LocationQueryAPI.ts`, `packages/runtime-worker/src/services/LocationMutationService.ts`, `packages/runtime-worker/src/services/LocationQueryService.ts`, `plugins/location-plugin/src/worker/normalizers.ts`, `plugins/location-plugin/src/worker/tabular/materialize.ts`, `packages/ui/map/src/preview/MapPreviewFloatingTable.tsx`（必要に応じて追加）
+- ロールバック手順: Data Source 削除UIと admin0 系カラムの差分を revert して元に戻す
+- チェックリスト:
+  - Data Source 削除時の UI 更新を安定化する
+  - Metadata カラム名/順序を admin0 系に統一し schema の揺れを解消する
+  - Column/Row Config ダイアログの見出しを修正する
+  - `pnpm --filter @hierarchidb/location-api build` / `pnpm --filter @hierarchidb/location-plugin typecheck` を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-02-01 12:26 JST Data Source 削除UIと Metadata カラム統一の対応に着手。
+  - update: 2026-02-01 12:28 JST pnpm --filter @hierarchidb/location-api build を実行（tsdown define warning あり、exit 0）。
+  - update: 2026-02-01 12:28 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 12:28 JST Data Source 削除UIと Metadata カラム統一の対応を完了。
+  - update: 2026-02-01 12:36 JST Data Source 削除UIの更新ループを修正し、pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 12:40 JST Data Source の削除ボタンイベント伝播を抑制し、pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 12:44 JST Data Source の削除ボタンを onMouseDown で直接起動するよう修正し、pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 12:45 JST IDE-GSM パネル全体のクリック伝播を遮断し、pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 12:53 JST ×ボタンの console.log 追加と未使用修正を行い、pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 13:05 JST IDE-GSM sourceUrl 削除APIと upsert 取り込みへ切替し、pnpm --filter @hierarchidb/location-api build / pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 13:54 JST ×ボタンの click capture で削除発火するよう修正し、pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 14:20 JST ×ボタンを Import と同じ onClick パターンへ統一し、pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 14:22 JST Data Source の state 同期ループを修正し、pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 14:24 JST onRemoveFile のログを追加し、pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 14:27 JST DataSourceSelector が defaultPrevented を尊重するよう修正し、pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 14:32 JST DataSourceSelectionStep の再選択時 onChange を抑止し、pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 14:38 JST data-ignore-select を導入して IDE-GSM パネル内クリックで再選択しないよう修正し、pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+
+
+2448) investigation/location-label-zoom-range (P1) — 進行中 (2026-01-31)
+- ブランチ名: investigation/location-label-zoom-range
+- 依存: なし
+- 受け入れ基準: Location のラベル表示ズーム範囲がどの設定からどの描画経路で適用されるかを説明できる／下限未達で表示される原因を特定できる／修正案を提示できる／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/**`, `packages/ui/map/src/**`, `packages/features/location-api/src/**`（調査結果に応じて追加）
+- ロールバック手順: 調査のみのため差分なし
+- チェックリスト:
+  - ラベル表示のズーム設定が保存される箇所を特定する
+  - ui-map の描画側でズーム範囲が参照される箇所を特定する
+  - 下限未達で表示される原因を整理する
+  - 修正案と影響範囲を提示する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-01-31 15:15 JST Locationラベル表示ズーム範囲の調査に着手。
+  - update: 2026-01-31 15:24 JST labelConfig の保存/参照箇所と描画式を確認。
+  - update: 2026-01-31 15:26 JST 下限未達で表示される原因（補間式の仕様）を特定。
+  - done: 2026-01-31 15:28 JST Locationラベル表示ズーム範囲の説明と原因特定を完了。
+
+
+2449) fix/location-label-opacity-gate (P1) — 完了 (2026-01-31)
+- ブランチ名: fix/location-label-opacity-gate
+- 依存: なし
+- 受け入れ基準: ラベルのtext-opacityがズーム下限で0になる／下限未達ではラベルが表示されない／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`
+- ロールバック手順: text-opacity の追加差分を revert して元の挙動へ戻す
+- チェックリスト:
+  - labelConfig の zoomRange を使った text-opacity 式を追加する
+  - location-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-01-31 15:32 JST ラベル表示の opacity ゲート追加に着手。
+  - update: 2026-01-31 15:34 JST labelOpacityExpression を追加し text-opacity へ適用。
+  - update: 2026-01-31 15:35 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-01-31 15:35 JST ラベルの opacity ゲート追加を完了。
+
+
+2450) refactor/location-style-config-floating (P1) — 完了 (2026-02-01)
+
+2451) feat/location-preview/label-halo-dark (P1) — 完了 (2026-02-01)
+
+2452) fix/location-preview/ide-gsm-metadata (P1) — 完了 (2026-02-01)
+
+2453) fix/location-datasource/remove-ide-gsm-card (P1) — 完了 (2026-02-01)
+
+2454) fix/location-datasource/remove-ide-gsm-dialog (P1) — 完了 (2026-02-01)
+
+2455) fix/location-preview/ide-gsm-import-without-iso (P1) — 完了 (2026-02-01)
+
+2456) fix/location-preview/ide-gsm-import-default-selection (P1) — 完了 (2026-02-01)
+
+2457) chore/location-preview/ide-gsm-debug-logs (P1) — 完了 (2026-02-01)
+
+2458) chore/location-preview/ide-gsm-progress-logs (P1) — 完了 (2026-02-01)
+
+2459) fix/location-ide-gsm/admin0-fields (P1) — 完了 (2026-02-01)
+
+2460) fix/location-datasource/remove-card-stability (P1) — 完了 (2026-02-01)
+
+2461) fix/location-datasource/remove-dialog-stability (P1) — 完了 (2026-02-01)
+
+2462) fix/location-datasource/remove-card-preview (P1) — 完了 (2026-02-01)
+- ブランチ名: fix/location-datasource/remove-card-preview
+- 依存: なし
+- 受け入れ基準: X 押下中にカード表示が消えない／No CSV files imported が No files imported になる／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationDataSourceStep.tsx`, `plugins/location-plugin/src/ui/locales/en.json`
+- ロールバック手順: sync guard と文言修正を revert して元に戻す
+- チェックリスト:
+  - removeDialogOpen 中は visibleSources 同期を止める
+  - No CSV files imported の文言を修正する
+  - location-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-02-01 20:55 JST 削除時のカード表示安定化に着手。
+  - update: 2026-02-01 20:58 JST removeDialogOpen 中の同期を抑制し文言修正を追加。
+  - update: 2026-02-01 20:59 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 20:59 JST 削除時のカード表示安定化を完了。
+
+
+- ブランチ名: fix/location-datasource/remove-dialog-stability
+- 依存: なし
+- 受け入れ基準: X 押下で背後のカード表示が崩れない／削除がダイアログ全体の再描画や位置ズレを起こさない／No CSV files imported → No files imported へ修正／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationDataSourceStep.tsx`
+- ロールバック手順: UI state 同期削除と文言修正を revert して元に戻す
+- チェックリスト:
+  - 削除ダイアログの UI state 同期を外す
+  - No CSV files imported を修正する
+  - location-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-02-01 20:30 JST 削除時の UI 乱れ修正に着手。
+  - update: 2026-02-01 20:36 JST UI state 同期を削除し No files imported 文言に変更。
+  - update: 2026-02-01 20:37 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 20:37 JST 削除時の UI 乱れ修正を完了。
+
+
+- ブランチ名: fix/location-datasource/remove-card-stability
+- 依存: なし
+- 受け入れ基準: X 押下後にカードが即時消えて再表示されない／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationDataSourceStep.tsx`
+- ロールバック手順: buildEntryKey の変更を revert して元に戻す
+- チェックリスト:
+  - buildEntryKey を sizeBytes 依存から切り離す
+  - location-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-02-01 20:05 JST IDE-GSM カード再表示の改善に着手。
+  - update: 2026-02-01 20:08 JST sourceUrl/fileName ベースの key に変更。
+  - update: 2026-02-01 20:09 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 20:09 JST IDE-GSM カード再表示の改善を完了。
+
+
+- ブランチ名: fix/location-ide-gsm/admin0-fields
+- 依存: なし
+- 受け入れ基準: IDE-GSM CSV パース結果で admin0/admin0Code が設定される／保存時に admin0/admin0Code が保持される／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/location-api/src/ideGsmLocationCsv.ts`, `packages/runtime-worker/src/services/LocationMutationService.ts`（必要に応じて追加）
+- ロールバック手順: admin0/admin0Code のマッピング変更を revert して元に戻す
+- チェックリスト:
+  - IDE-GSM CSV のパースで admin0/admin0Code を確認する
+  - 保存前に admin0/admin0Code が保持されることを確認する
+  - location-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-02-01 19:30 JST IDE-GSM admin0/admin0Code の調査に着手。
+  - update: 2026-02-01 19:45 JST Country列の名称から alpha2/countryEn を解決して admin0/admin0Code を正規化。
+  - update: 2026-02-01 19:46 JST pnpm --filter @hierarchidb/location-api typecheck exit 0 を確認。
+  - done: 2026-02-01 19:46 JST IDE-GSM admin0/admin0Code の正規化を完了。
+  - update: 2026-02-01 19:35 JST alpha3 の admin0Code を alpha2 に変換する処理を追加。
+  - update: 2026-02-01 19:36 JST pnpm --filter @hierarchidb/location-api typecheck exit 0 を確認。
+  - done: 2026-02-01 19:36 JST IDE-GSM admin0/admin0Code の調整を完了。
+
+
+- ブランチ名: chore/location-preview/ide-gsm-progress-logs
+- 依存: なし
+- 受け入れ基準: import progress の phase/processed/total が console に出る／import 完了時の戻り値が console に出る／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/hooks/useIdeGsmImportOnEntry.ts`
+- ロールバック手順: 追加した progress/return ログを削除して元に戻す
+- チェックリスト:
+  - progress callback と完了結果のログを追加する
+  - location-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-02-01 19:15 JST IDE-GSM import の progress ログ追加に着手。
+  - update: 2026-02-01 19:18 JST progress/return のログを追加。
+  - update: 2026-02-01 19:19 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 19:19 JST IDE-GSM import の progress ログ追加を完了。
+
+
+- ブランチ名: chore/location-preview/ide-gsm-debug-logs
+- 依存: なし
+- 受け入れ基準: Step4 で import の開始/完了/失敗が console に出る／metadata/viewport 取得のログが出る／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/hooks/useIdeGsmImportOnEntry.ts`, `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`
+- ロールバック手順: 追加した console ログを削除して元に戻す
+- チェックリスト:
+  - useIdeGsmImportOnEntry に import 状態のログを追加する
+  - LocationMapPreviewStep に metadata/viewport ログを追加する
+  - location-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-02-01 19:00 JST Step4 IDE-GSM import のデバッグログ追加に着手。
+  - update: 2026-02-01 19:05 JST import/metadata/viewport のログを追加。
+  - update: 2026-02-01 19:06 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 19:06 JST Step4 IDE-GSM import のデバッグログ追加を完了。
+
+
+- ブランチ名: fix/location-preview/ide-gsm-import-default-selection
+- 依存: なし
+- 受け入れ基準: selection が空の初期状態でも IDE-GSM import が走る／preview に metadata と地図表示が出る／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/hooks/useIdeGsmImportOnEntry.ts`
+- ロールバック手順: selectionHash が空の時に import を走らせる変更を revert する
+- チェックリスト:
+  - selectionHash が空の時は __all__ hash を使う
+  - selectionEntries が空でも selectionHash が空なら import を許可する
+  - location-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-02-01 18:25 JST selection 空の IDE-GSM import を調整開始。
+  - update: 2026-02-01 18:28 JST __all__ hash と空選択の import 許可を追加。
+  - update: 2026-02-01 18:29 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 18:29 JST selection 空の IDE-GSM import 調整を完了。
+
+
+- ブランチ名: fix/location-preview/ide-gsm-import-without-iso
+- 依存: なし
+- 受け入れ基準: IDE-GSM の import が iso 未準備でも走る／preview に metadata と地図表示が出る／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/hooks/useIdeGsmImportOnEntry.ts`
+- ロールバック手順: iso 準備待ちの guard を復元して元に戻す
+- チェックリスト:
+  - iso 未準備時の fallback Countries を追加する
+  - location-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-02-01 18:05 JST IDE-GSM preview 空表示の調査に着手。
+  - update: 2026-02-01 18:10 JST iso 未準備でも selectionEntries を作れる fallback を追加。
+  - update: 2026-02-01 18:12 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 18:12 JST IDE-GSM preview 空表示の修正を完了。
+
+
+- ブランチ名: fix/location-datasource/remove-ide-gsm-dialog
+- 依存: なし
+- 受け入れ基準: IDE-GSM のカード X 押下で削除確認ダイアログが開く／削除確定後にカードが即時削除される／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationDataSourceStep.tsx`（必要に応じて追加）
+- ロールバック手順: 削除ダイアログの変更を revert して元に戻す
+- チェックリスト:
+  - removeDialogOpen が false に戻る原因を特定する
+  - ダイアログが開き続けるよう修正する
+  - location-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-02-01 17:10 JST IDE-GSM 削除ダイアログの不具合調査に着手。
+  - update: 2026-02-01 17:35 JST 削除対象を pendingRemoveKey で追跡し index ずれに耐性を追加。
+  - update: 2026-02-01 17:36 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 17:36 JST IDE-GSM 削除ダイアログの不具合修正を完了。
+  - update: 2026-02-01 17:15 JST データソース選択の click ハンドラを無効化する data-ignore-select を追加。
+  - update: 2026-02-01 17:16 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 18:32 JST 削除確認ダイアログの状態を uiState へ退避し、Step 再マウント時の復元に対応。
+  - update: 2026-02-01 18:41 JST Remove 時の削除対象を draft 由来の IDE-GSM ソースから算出するよう修正。
+  - update: 2026-02-01 18:47 JST ideGsmSources と visibleSources の同期で削除が巻き戻るのを防ぐため、pendingDraftKey による同期抑止を追加。
+  - update: 2026-02-01 18:49 JST LocationDataSourceStep で useRef の import 漏れを補正。
+  - update: 2026-02-01 18:57 JST Remove 時の更新と ideGsmSources の反映状況を追うログを追加。
+  - update: 2026-02-01 19:04 JST IDE-GSM 削除時に ideGsmSources/SourceUrl/FileName を空配列・空文字で明示クリアするよう修正。
+  - update: 2026-02-01 19:08 JST pendingDraftKey の空文字を真偽値判定で落としていたため、null 判定で同期抑止が効くよう修正。
+  - update: 2026-02-01 19:16 JST IDE-GSM 削除時に TreeNodeUpdaterAPI で draftData を即時更新する処理を追加。
+  - update: 2026-02-01 19:28 JST storeRegistry 未登録時でも LocationDB に書き込むフォールバックを追加し、preview 0 件を回避。
+  - update: 2026-02-01 19:38 JST storeRegistry 分岐を location の Query/Mutation から撤去し、常に LocationDB を参照するよう統一。
+  - update: 2026-02-01 19:40 JST pnpm --filter @hierarchidb/runtime-worker typecheck exit 0 を確認。
+  - update: 2026-02-01 19:40 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 20:03 JST storeRegistry 定義/参照を撤去し、EntityLifecycleManager/StageProcessingService などを DB 直参照に切替。
+  - update: 2026-02-01 20:17 JST storeRegistry 参照テストを整理し、EntityLifecycleManager の DB コピー動作に合わせて更新。
+  - update: 2026-02-01 20:18 JST pnpm --filter @hierarchidb/runtime-worker typecheck exit 0 を確認。
+  - update: 2026-02-01 20:19 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 20:20 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 20:20 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 17:16 JST IDE-GSM 削除ダイアログの不具合修正を完了。
+
+
+- ブランチ名: fix/location-datasource/remove-ide-gsm-card
+- 依存: なし
+- 受け入れ基準: IDE-GSM のファイルカードで X を押すとカードが即時削除される／未読み込みのファイルでも削除が成立する／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationDataSourceStep.tsx`, `packages/ui/datasource/src/IdeGsmImportPanel.tsx`（必要に応じて追加）
+- ロールバック手順: ファイル削除の変更を revert して元に戻す
+- チェックリスト:
+  - X ボタンで削除が反映されない原因を特定する
+  - 即時にカードが消えるよう修正する
+  - location-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-02-01 16:55 JST IDE-GSM ファイルカード削除不具合の調査に着手。
+  - update: 2026-02-01 16:58 JST ideGsmSources の変更に追従して visibleSources を同期。
+  - update: 2026-02-01 16:59 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 16:59 JST IDE-GSM ファイルカード削除の不具合修正を完了。
+
+
+- ブランチ名: fix/location-preview/ide-gsm-metadata
+- 依存: なし
+- 受け入れ基準: IDE-GSM 選択後の preview で metadata が表示され続ける／地図上にロケーションが表示される／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`, `plugins/location-plugin/src/ui/hooks/useIdeGsmImportOnEntry.ts`（必要に応じて追加）
+- ロールバック手順: 関連差分を revert して元の表示挙動へ戻す
+- チェックリスト:
+  - IDE-GSM 選択後に metadata/preview が空になる原因を特定する
+  - 表示が復旧するよう修正する
+  - location-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-02-01 16:35 JST IDE-GSM 選択後のプレビュー空表示の調査に着手。
+  - update: 2026-02-01 16:42 JST IDE-GSM import 完了後に metadata/preview を再取得するよう依存関係を追加。
+  - update: 2026-02-01 16:43 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 16:43 JST IDE-GSM preview の空表示修正を完了。
+
+
+- ブランチ名: feat/location-preview/label-halo-dark
+- 依存: なし
+- 受け入れ基準: dark mode ではラベルの text-halo-color が黒になる／light mode は現状のまま／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`
+- ロールバック手順: text-halo-color の条件分岐を revert して元の固定色へ戻す
+- チェックリスト:
+  - theme mode を参照して text-halo-color を切り替える
+  - location-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-02-01 16:20 JST dark mode のラベルハロー色切り替えに着手。
+  - update: 2026-02-01 16:23 JST dark mode 判定で text-halo-color を切り替え。
+  - update: 2026-02-01 16:24 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 16:24 JST dark mode のラベルハロー色切り替えを完了。
+
+
+- ブランチ名: refactor/location-style-config-floating
+- 依存: なし
+- 受け入れ基準: Style Config UI がプレビュー内フローティングウィンドウへ移設される／ウィンドウタイトルが Style Config、アイコンが Palette になる／Style Config ステップが廃止され selection→preview の順になる／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps-provider.tsx`, `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`, `plugins/location-plugin/src/ui/components/steps/LocationBatchParametersStep.tsx`, `plugins/location-plugin/src/ui/components/steps/LocationStyleConfigPanel.tsx`
+- ロールバック手順: ステップ構成とプレビュー内UI移設を revert して元に戻す
+- チェックリスト:
+  - Style Config のUIをプレビューの FloatingWindow に移設する
+  - LocationSelection の直後に Preview が来るよう steps-provider を修正する
+  - typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ：
+  - start: 2026-01-31 15:40 JST LocationのStyle Config UI移設に着手。
+  - update: 2026-02-01 16:10 JST Style Config をプレビューのFloatingWindowへ移設しステップ構成を更新。
+  - update: 2026-02-01 16:11 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 16:12 JST LocationのStyle Config UI移設を完了。
+
+2463) fix/location-datasource/dialog-ui-state-sync (P1) — 進行中 (2026-02-01 16:34 JST)
+- ブランチ名: fix/location-datasource/dialog-ui-state-sync
+- 依存: なし
+- 受け入れ基準: X 押下中にカード表示が即時で No files imported に切り替わらない／削除確定時にダイアログ位置が復元位置へジャンプしない／dialogUIState の保存・復元が最新値で一貫する／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/plugin-ui-host/src/headless/usePluginDialogController/dialog-ui-state.ts`, `plugins/location-plugin/src/ui/components/steps/LocationDataSourceStep.tsx`, `plugins/location-plugin/src/ui/locales/ja.json`（必要に応じて追加）
+- ロールバック手順: dialogUIState の保存/復元変更を revert して元に戻す
+- チェックリスト:
+  - dialogUIState の保存/復元の競合箇所を特定する
+  - 削除確定前に背後カードが消えないようにする
+  - 削除確定時の位置ジャンプを防止する
+  - location-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 16:34 JST 削除時の dialogUIState 位置ズレ修正に着手。
+  - update: 2026-02-01 16:43 JST dialogUIState の同期を安定化し、削除ダイアログ中の表示揺れ対策と noFiles 文言更新を追加。
+  - update: 2026-02-01 16:43 JST pnpm --filter @hierarchidb/plugin-ui-host typecheck exit 0 を確認。
+  - update: 2026-02-01 16:43 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 16:49 JST updateTreeNodeDraftData で削除後の draft を永続化。
+  - update: 2026-02-01 16:49 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+
+2464) refactor/plugin-dialog/step-data-atom (P1) — 進行中 (2026-02-01 17:03 JST)
+- ブランチ名: refactor/plugin-dialog/step-data-atom
+- 依存: なし
+- 受け入れ基準: draftData の永続化更新でプラグインダイアログ全体が再描画されない／Step内の表示更新は維持される／`pnpm --filter @hierarchidb/ui-dialog typecheck` と `pnpm --filter @hierarchidb/plugin-ui-host typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/dialog/src/headless/AbstractDialog.tsx`, `packages/plugin-ui-host/src/headless/usePluginDialogController/steps.tsx`
+- ロールバック手順: AbstractDialog の diff 判定と StepAdapter の atom 化を revert して元に戻す
+- チェックリスト:
+  - AbstractDialog の stepData 差分判定を除外する
+  - StepAdapter が共有 atom で stepData を保持する
+  - ui-dialog / plugin-ui-host の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 17:03 JST stepData の atom 化と再描画抑制に着手。
+  - update: 2026-02-01 17:04 JST stepData diff を除外し、StepAdapter を共有 atom で管理。
+  - update: 2026-02-01 17:04 JST pnpm --filter @hierarchidb/ui-dialog typecheck exit 0 を確認。
+  - update: 2026-02-01 17:04 JST pnpm --filter @hierarchidb/plugin-ui-host typecheck exit 0 を確認。
+  - update: 2026-02-01 17:07 JST usePluginDialogController の stepData 更新をステップ遷移時のみへ限定。
+  - update: 2026-02-01 17:07 JST pnpm --filter @hierarchidb/plugin-ui-host typecheck exit 0 を確認。
+
+2465) refactor/datasource-selector/option-memo (P1) — 進行中 (2026-02-01 17:16 JST)
+- ブランチ名: refactor/datasource-selector/option-memo
+- 依存: なし
+- 受け入れ基準: IDE-GSM 内部変更時に DataSource 選択全体が再描画されない／IDE-GSM option のみ更新される／`pnpm --filter @hierarchidb/ui-datasource typecheck` と `pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/datasource/src/DataSourceSelector.tsx`, `packages/ui/datasource/src/DataSourceSelectionStep.tsx`, `packages/ui/datasource/src/DataSourceSelectionCard.tsx`, `plugins/location-plugin/src/ui/components/steps/LocationDataSourceStep.tsx`
+- ロールバック手順: DataSourceSelector の memo と LocationDataSourceStep の option metadata 化を revert して元に戻す
+- チェックリスト:
+  - DataSourceSelector の option 行を memo 化する
+  - DataSourceSelectionStep の onChange を useCallback 化する
+  - IDE-GSM option だけ再描画されるよう metadata を使用する
+  - ui-datasource / location-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 17:16 JST DataSource 選択の部分再描画化に着手。
+  - update: 2026-02-01 17:17 JST DataSourceSelector を memo 化し IDE-GSM option を metadata 経由で更新。
+  - update: 2026-02-01 17:17 JST pnpm --filter @hierarchidb/ui-datasource typecheck exit 0 を確認。
+  - update: 2026-02-01 17:17 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
