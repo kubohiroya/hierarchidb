@@ -1,17 +1,19 @@
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { getLocationDB } from '@hierarchidb/location-store';
+import type { LocationFeatureId, LocationPointId } from '@hierarchidb/location-api';
 import type { CoreDB } from '../../../services/CoreDB.js';
 import { EntityLifecycleManager } from '../../EntityLifecycleManager.js';
-import type { FeatureItemBase, FeatureStore } from '../../store.js';
-import { storeRegistry } from '../../store-registry.js';
 
 describe('EntityLifecycleManager.copyGroupsByMapping', () => {
   beforeEach(() => {
     vi.resetModules();
   });
 
-  it('bulkUpserts items for each nodeType present in mapping', async () => {
+  it('copies location features for mapped nodes', async () => {
+    const db = getLocationDB();
+    await db.open?.();
     const nodeMap = new Map<NodeId, TreeNode>();
     const withPayload = (
       node: Omit<TreeNode, 'data' | 'draftData' | 'metadata' | 'draftMetadata' | 'visible'> &
@@ -36,39 +38,33 @@ describe('EntityLifecycleManager.copyGroupsByMapping', () => {
         version: 1,
       });
     const addNode = (id: NodeId, nodeType: NodeType) => nodeMap.set(id, makeNode(id, nodeType));
-    const folderSrc = 'folder-src' as NodeId;
-    const folderDst = 'folder-dst' as NodeId;
-    const routeSrc = 'route-src' as NodeId;
-    const routeDst = 'route-dst' as NodeId;
-    const folderType = 'folder' as NodeType;
-    const routeType = 'route' as NodeType;
-    addNode(folderSrc, folderType);
-    addNode(routeSrc, routeType);
+    const src = 'location-src' as NodeId;
+    const dst = 'location-dst' as NodeId;
+    const locationType = 'location' as NodeType;
+    addNode(src, locationType);
 
-    const upserts: Array<{ nodeId: NodeId; items: FeatureItemBase[] }> = [];
-    const makeStore = (items: FeatureItemBase[]): FeatureStore<FeatureItemBase> => ({
-      async list(nodeId) {
-        return nodeId === folderSrc || nodeId === routeSrc ? items : [];
+    await db.features.where('nodeId').anyOf([src, dst]).delete();
+    await db.features.bulkPut([{
+      nodeId: src,
+      id: 'loc-1' as LocationFeatureId,
+      type: 'area_centroid',
+      data: {
+        schemaVersion: 2,
+        pointId: 'p1' as LocationPointId,
+        name: 'Point 1',
+        latitude: 0,
+        longitude: 0,
+        type: 'area_centroid',
       },
-      async bulkUpsert(nodeId, data) {
-        upserts.push({ nodeId, items: data });
-      },
-      async bulkDelete() {},
-    });
-
-    storeRegistry.registerFeatures('folder', makeStore([{ id: 'f1' }]));
-    storeRegistry.registerFeatures('route', makeStore([{ id: 'r1' }]));
+      updatedAt: Date.now(),
+    }]);
 
     const core: Pick<CoreDB, 'getNode'> = {
       getNode: vi.fn(async (id: NodeId) => nodeMap.get(id)),
     };
 
     const mgr = EntityLifecycleManager.getSingleton(core as unknown as CoreDB);
-    const mapping: ReadonlyArray<readonly [NodeId, NodeId]> = [
-      [folderSrc, folderDst] as const,
-      [routeSrc, routeDst] as const,
-    ];
-    EntityLifecycleManager.setIdMapping('cmd-group', mapping);
+    EntityLifecycleManager.setIdMapping('cmd-group', [[src, dst]]);
 
     await mgr.onDuplicateNodes({
       commandId: 'cmd-group',
@@ -79,8 +75,9 @@ describe('EntityLifecycleManager.copyGroupsByMapping', () => {
       type: 'duplicateNodes',
     });
 
-    expect(core.getNode).toHaveBeenCalledTimes(2);
-    expect(upserts).toHaveLength(2);
-    expect(upserts.map((e) => e.nodeId)).toEqual(expect.arrayContaining([folderDst, routeDst]));
+    expect(core.getNode).toHaveBeenCalledTimes(1);
+    const copied = await db.features.where('nodeId').equals(dst).toArray();
+    expect(copied).toHaveLength(1);
+    expect(copied[0]?.data?.name).toBe('Point 1');
   });
 });

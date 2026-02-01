@@ -8,7 +8,7 @@ import {
 import { type LayerInfo, shapeDB } from '@hierarchidb/shape-store';
 import type { FeatureMetadataRow } from '@hierarchidb/vectortile-store';
 import type { VectorTileItemBase } from '../entity/store.js';
-import { storeRegistry } from '../entity/store-registry.js';
+import { getRouteDB } from '@hierarchidb/route-store';
 import type {
   FetchWorkerAPI,
   TransformWorkerAPI,
@@ -22,48 +22,8 @@ import { ShapeMutationService } from './ShapeMutationService.js';
 const buildShapeTileId = (nodeId: NodeId, z: number, x: number, y: number): string =>
   `${nodeId}-${z}-${x}-${y}`;
 
-const ensureShapeVectorTileStore = (): void => {
-  if (storeRegistry.getVectorTiles('shape')) return;
-  storeRegistry.registerVectorTiles('shape', {
-    async list(nodeId: NodeId) {
-      const rows = await shapeDB.vectorTiles.where('nodeId').equals(nodeId).toArray();
-      return rows.map((row) => ({ ...row, id: row.tileId }));
-    },
-    async bulkUpsert(
-      nodeId: NodeId,
-      items: Array<VectorTileStoreItem & { id?: string }>
-    ): Promise<void> {
-      if (!items.length) return;
-      const now = Date.now();
-      const rows = items.map((item) => {
-        const bytes =
-          item.data_Uint8Array ??
-          (item.data instanceof Uint8Array
-            ? item.data
-            : item.data
-              ? new Uint8Array(item.data)
-              : null);
-        const size = typeof item.size === 'number' ? item.size : (bytes?.byteLength ?? 0);
-        return {
-          ...item,
-          tileId: buildShapeTileId(nodeId, item.z, item.x, item.y),
-          nodeId,
-          data_Uint8Array: bytes ?? new Uint8Array(),
-          size,
-          features: item.features ?? 0,
-          layers: (item.layers ?? []) as LayerInfo[],
-          generatedAt: item.generatedAt ?? now,
-          contentHash: item.contentHash ?? '',
-          contentEncoding: item.contentEncoding,
-          version: item.version ?? 1,
-        };
-      });
-      await shapeDB.vectorTiles.bulkPut(rows);
-    },
-    async bulkDelete(_nodeId: NodeId, itemIds: Array<string>): Promise<void> {
-      await shapeDB.vectorTiles.bulkDelete(itemIds);
-    },
-  });
+const ensureShapeVectorTileStore = async (): Promise<void> => {
+  await shapeDB.open?.();
 };
 
 type VectorTileStoreItem = VectorTileItemBase & {
@@ -190,62 +150,54 @@ class RealVTWorker implements VTWorkerAPI {
     tiles: VectorTileRow[]
   ): Promise<void> {
     if (!tiles.length) return;
-    const store = storeRegistry.getVectorTiles(nodeType);
-    if (!store) {
-      console.warn('[VectorTiles] store missing for nodeType', { nodeType });
-      return;
-    }
     const resolvedNodeId = nodeId;
     const now = Date.now();
-    const items = await Promise.all(
-      tiles.map(async (tile) => {
-        const base = {
-          id: `${nodeId}-${tile.z}-${tile.x}-${tile.y}`,
-          z: tile.z,
-          x: tile.x,
-          y: tile.y,
-        };
-        if (nodeType === 'shape') {
+    if (nodeType === 'shape') {
+      await shapeDB.open?.();
+      const rows = await Promise.all(
+        tiles.map(async (tile) => {
           const contentHash = await this.hashBytes(tile.data);
           return {
-            ...base,
+            tileId: buildShapeTileId(resolvedNodeId, tile.z, tile.x, tile.y),
+            nodeId: resolvedNodeId,
+            z: tile.z,
+            x: tile.x,
+            y: tile.y,
             data_Uint8Array: tile.data,
             size: tile.size,
             features: 0,
-            layers: [],
+            layers: [] as LayerInfo[],
             generatedAt: now,
             contentHash,
+            contentEncoding: undefined,
             version: 1,
           };
-        }
-        if (nodeType === 'location') {
-          const hash = await this.hashBytes(tile.data);
-          return {
-            ...base,
-            data: tile.data.buffer.slice(
-              tile.data.byteOffset,
-              tile.data.byteOffset + tile.data.byteLength
-            ),
-            size: tile.size,
-            hash,
-            featureCount: 0,
-            timestamp: now,
-            contentType: tile.contentType,
-          };
-        }
-        return {
-          ...base,
-          data: tile.data.buffer.slice(
-            tile.data.byteOffset,
-            tile.data.byteOffset + tile.data.byteLength
-          ),
-          size: tile.size,
-          contentType: tile.contentType,
-          timestamp: now,
-        };
-      })
-    );
-    await store.bulkUpsert(resolvedNodeId, items);
+        })
+      );
+      await shapeDB.vectorTiles.bulkPut(rows);
+      return;
+    }
+    if (nodeType === 'route') {
+      const db = getRouteDB();
+      await db.open?.();
+      const rows = tiles.map((tile) => ({
+        tileId: `${resolvedNodeId}-${tile.z}-${tile.x}-${tile.y}`,
+        nodeId: resolvedNodeId,
+        z: tile.z,
+        x: tile.x,
+        y: tile.y,
+        data: tile.data.buffer.slice(
+          tile.data.byteOffset,
+          tile.data.byteOffset + tile.data.byteLength
+        ),
+        size: tile.size,
+        contentType: tile.contentType ?? 'application/vnd.mapbox-vector-tile',
+        timestamp: now,
+      }));
+      await db.vectorTiles.bulkPut(rows);
+      return;
+    }
+    console.warn('[VectorTiles] unsupported nodeType', { nodeType });
   }
 
   private async storeFeatureMetadata(
@@ -439,39 +391,53 @@ class RealVTWorker implements VTWorkerAPI {
   }
 
   async getTile(nodeId: NodeId, z: number, x: number, y: number, nodeType?: string) {
-    const store = storeRegistry.getVectorTiles<VectorTileStoreItem>(this.resolveNodeType(nodeType));
-    if (!store) return null;
-    const items = await store.list(nodeId);
-    const item = items.find((entry) => entry.z === z && entry.x === x && entry.y === y);
-    const bytes = item ? this.resolveItemBytes(item) : null;
-    return bytes;
+    const resolvedType = this.resolveNodeType(nodeType);
+    if (resolvedType === 'shape') {
+      await shapeDB.open?.();
+      const tile = await shapeDB.vectorTiles
+        .where('[nodeId+z+x+y]')
+        .equals([nodeId, z, x, y])
+        .first();
+      return tile?.data_Uint8Array ?? null;
+    }
+    if (resolvedType === 'route') {
+      const db = getRouteDB();
+      await db.open?.();
+      const tile = await db.vectorTiles
+        .where('[nodeId+z+x+y]')
+        .equals([nodeId, z, x, y])
+        .first();
+      return tile?.data ? new Uint8Array(tile.data) : null;
+    }
+    return null;
   }
 
   async listTiles(nodeId: NodeId, nodeType?: string) {
-    const store = storeRegistry.getVectorTiles<VectorTileStoreItem>(this.resolveNodeType(nodeType));
-    if (!store) return [];
-    const items = await store.list(nodeId);
-    return items
-      .map((entry) => {
-        const bytes = this.resolveItemBytes(entry);
-        const size = typeof entry.size === 'number' ? entry.size : (bytes?.byteLength ?? 0);
-        const timestamp =
-          typeof entry.timestamp === 'number'
-            ? entry.timestamp
-            : typeof entry.generatedAt === 'number'
-              ? entry.generatedAt
-              : Date.now();
-        return {
-          z: Number(entry.z),
-          x: Number(entry.x),
-          y: Number(entry.y),
-          size,
-          timestamp,
-        };
-      })
-      .filter(
-        (entry) => Number.isFinite(entry.z) && Number.isFinite(entry.x) && Number.isFinite(entry.y)
-      );
+    const resolvedType = this.resolveNodeType(nodeType);
+    if (resolvedType === 'shape') {
+      await shapeDB.open?.();
+      const items = await shapeDB.vectorTiles.where('nodeId').equals(nodeId).toArray();
+      return items.map((entry) => ({
+        z: Number(entry.z),
+        x: Number(entry.x),
+        y: Number(entry.y),
+        size: entry.size ?? 0,
+        timestamp: entry.generatedAt ?? Date.now(),
+      }));
+    }
+    if (resolvedType === 'route') {
+      const db = getRouteDB();
+      await db.open?.();
+      const items = await db.vectorTiles.where('nodeId').equals(nodeId).toArray();
+      return items.map((entry) => ({
+        z: Number(entry.z),
+        x: Number(entry.x),
+        y: Number(entry.y),
+        size: entry.size ?? 0,
+        timestamp: entry.timestamp ?? Date.now(),
+      }));
+    }
+    return [];
   }
 
   async getSummary(nodeId: NodeId, nodeType?: string) {
@@ -494,7 +460,7 @@ let singleton: StageProcessingService | null = null;
 
 export async function getStageProcessingService(): Promise<StageProcessingService> {
   if (!singleton) {
-    ensureShapeVectorTileStore();
+    await ensureShapeVectorTileStore();
     singleton = {
       download: new RealFetchWorker(),
       extract: new RealTransformWorker(),

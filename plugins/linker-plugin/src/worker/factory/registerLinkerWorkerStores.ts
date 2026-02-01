@@ -1,7 +1,6 @@
 /// <reference types="vite/client" />
 
 export interface RegisterLinkerWorkerStoresOptions {
-  storeRegistry?: unknown;
   signal?: AbortSignal;
 }
 

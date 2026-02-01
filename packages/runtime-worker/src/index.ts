@@ -18,7 +18,6 @@ export {
   createDexieFeatureStore,
   createDexieVectorTileStore,
 } from './entity/dexie-stores.js';
-export { storeRegistry } from './entity/store-registry.js';
 export * from './module-paths.js';
 // CoreDB and draft utilities (for plugin-side usage)
 export { CoreDB } from './services/CoreDB.js';

@@ -16,10 +16,6 @@ vi.mock('../../loaders/uiPlugins.js', () => ({
   }),
 }));
 
-vi.mock('@hierarchidb/runtime-worker', () => ({
-  storeRegistry: {},
-}));
-
 vi.mock('@tanstack/react-router', () => ({
   createRouter: vi.fn(({ history }) => ({ history })),
   createBrowserHistory: vi.fn(() => ({ location: {} })),

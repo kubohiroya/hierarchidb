@@ -74,7 +74,7 @@ async function loadPluginWorkers(): Promise<void> {
 
   const modulePaths = await loadModulePaths();
 
-  // Run preload hooks sequentially to avoid concurrent storeRegistry mutations across plugins.
+  // Run preload hooks sequentially to avoid concurrent plugin preloads across plugins.
   for (const pluginId of PLUGINS_TO_PRELOAD) {
     if (!hasWorkerExport(pluginId)) {
       continue;
@@ -85,13 +85,11 @@ async function loadPluginWorkers(): Promise<void> {
       if (preloadExports.length === 0) {
         continue;
       }
-      const storeRegistry = modulePaths.storeRegistry ?? null;
-      const loaderOptions = storeRegistry ? { storeRegistry } : undefined;
       for (const exportName of preloadExports) {
         const loader = (mod as Record<string, unknown>)[exportName];
         if (typeof loader === 'function') {
           try {
-            await Promise.resolve((loader as (options?: unknown) => unknown)(loaderOptions));
+            await Promise.resolve((loader as (options?: unknown) => unknown)());
           } catch (error) {
             console.warn(`[WorkerModuleLoader] ${exportName}() failed for ${pluginId}`, error);
           }

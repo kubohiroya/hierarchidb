@@ -17,8 +17,6 @@ const importPluginWorkerMock = vi.hoisted(() =>
   vi.fn<(id: string) => Promise<Record<string, unknown>>>()
 );
 
-const mockStoreRegistry = {};
-
 const appWorkerStorePreloadsMock: Record<string, string[]> = {
   basemap: ['loadBasemapEntitiesDbModule'],
   folder: ['loadFolderEntitiesDbModule'],
@@ -59,7 +57,6 @@ vi.mock('@hierarchidb/runtime-worker', () => ({
   },
   WorkerDiTokens: { PluginWorkerLoaderMap: Symbol('PluginWorkerLoaderMap') },
   importPluginWorker: importPluginWorkerMock,
-  storeRegistry: mockStoreRegistry,
 }));
 
 describe('WorkerModuleLoader', () => {

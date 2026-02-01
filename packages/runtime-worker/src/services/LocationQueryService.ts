@@ -18,7 +18,6 @@ import type {
   LocationViewportQueryOptions,
 } from '@hierarchidb/location-api';
 import { SingletonMixin } from '@hierarchidb/util';
-import { storeRegistry } from '../entity/store-registry.js';
 import { haversineMeters, metersToLongitudeDelta } from './nearest/tileNearest.js';
 
 const MAX_LATITUDE = 85.05112878;
@@ -95,6 +94,27 @@ const toGroupItem = (row: {
   updatedAt: row.updatedAt,
 });
 
+const stripSourceUrlFromData = (data: unknown): unknown => {
+  if (!data || typeof data !== 'object') return data;
+  const metadata = (data as { metadata?: unknown }).metadata;
+  if (!metadata || typeof metadata !== 'object') return data;
+  if (!Object.prototype.hasOwnProperty.call(metadata, 'sourceUrl')) return data;
+  const { sourceUrl: _sourceUrl, ...rest } = metadata as Record<string, unknown>;
+  return { ...(data as Record<string, unknown>), metadata: rest };
+};
+
+const sanitizeFeature = (row: LocationFeature): LocationFeature => {
+  const nextData = stripSourceUrlFromData(row.data);
+  if (nextData === row.data) return row;
+  return { ...row, data: nextData as LocationFeature['data'] };
+};
+
+const sanitizeGroupItem = (item: LocationGroupItem): LocationGroupItem => {
+  const nextData = stripSourceUrlFromData(item.data);
+  if (nextData === item.data) return item;
+  return { ...item, data: nextData as LocationGroupItem['data'] };
+};
+
 export class LocationQueryService implements LocationQueryAPI {
   static async getSingleton(): Promise<LocationQueryService> {
     return SingletonMixin.getSingleton(
@@ -104,32 +124,19 @@ export class LocationQueryService implements LocationQueryAPI {
   }
 
   async listLocationFeatures(nodeId: NodeId): Promise<LocationFeature[]> {
-    const store = storeRegistry.getFeatures<LocationFeature>('location');
-    if (store) {
-      const items = await store.list(nodeId);
-      return items;
-    }
     const db = getLocationDB();
     const rows = await db.features.where('nodeId').equals(nodeId).toArray();
-    return rows;
+    return rows.map((row) => sanitizeFeature(row));
   }
 
   async listLocationGroups(nodeId: NodeId): Promise<LocationGroupItem[]> {
-    const store = storeRegistry.getFeatures<LocationGroupItem>('location');
-    if (store) {
-      const items = await store.list(nodeId);
-      return items.map((item) => toGroupItem(item));
-    }
     const db = getLocationDB();
     const rows = await db.features.where('nodeId').equals(nodeId).toArray();
-    return rows.map((row) => toGroupItem(row));
+    return rows.map((row) => sanitizeGroupItem(toGroupItem(row)));
   }
 
   async listLocationRelations(nodeId: NodeId): Promise<LocationRelation[]> {
-    const store = storeRegistry.getRelations('location');
-    if (!store) return [];
-    const relations = await store.listByNode(nodeId);
-    return relations.map((rel) => ({ ...rel })) as LocationRelation[];
+    return [];
   }
 
   async queryByMortonPrefixes(
@@ -176,7 +183,7 @@ export class LocationQueryService implements LocationQueryAPI {
       }
     }
 
-    return Array.from(results.values());
+    return Array.from(results.values()).map((row) => sanitizeFeature(row));
   }
 
   async queryByViewport(
@@ -239,16 +246,20 @@ export class LocationQueryService implements LocationQueryAPI {
         if (types && types.length > 0) {
           for (const type of types) {
             await collectRange(range.start, range.end, type);
-            if (maxPoints > 0 && results.size >= maxPoints) return Array.from(results.values());
+            if (maxPoints > 0 && results.size >= maxPoints) {
+              return Array.from(results.values()).map((row) => sanitizeFeature(row));
+            }
           }
         } else {
           await collectRange(range.start, range.end);
-          if (maxPoints > 0 && results.size >= maxPoints) return Array.from(results.values());
+          if (maxPoints > 0 && results.size >= maxPoints) {
+            return Array.from(results.values()).map((row) => sanitizeFeature(row));
+          }
         }
       }
     }
 
-    return Array.from(results.values());
+    return Array.from(results.values()).map((row) => sanitizeFeature(row));
   }
 
   async findNearestLocationPoint(
@@ -293,7 +304,7 @@ export class LocationQueryService implements LocationQueryAPI {
           name: (item.data as { name?: string } | undefined)?.name,
           type: (item.data as { type?: string } | undefined)?.type,
           region: (item.data as { admin1?: string } | undefined)?.admin1,
-          admin0Name: (item.data as { admin0Name?: string } | undefined)?.admin0Name,
+          admin0: (item.data as { admin0?: string } | undefined)?.admin0,
           longitude,
           latitude,
           properties: item.data as unknown as Record<string, unknown>,

@@ -10,9 +10,11 @@ import type {
 import type { LocationMutationAPI } from '@hierarchidb/location-api';
 import type { RouteMutationAPI } from '@hierarchidb/route-api';
 import type { ShapeMutationAPI } from '@hierarchidb/shape-api';
+import { getLocationDB } from '@hierarchidb/location-store';
+import { getRouteDB } from '@hierarchidb/route-store';
+import { shapeDB } from '@hierarchidb/shape-store';
 import type { CoreDB } from '../services/CoreDB.js';
 import type { CommandEnvelope } from '../services/command-types.js';
-import { storeRegistry } from './store-registry.js';
 
 type DiscardDraftEnvelope = CommandEnvelope<'discardDraft', DiscardDraftPayload>;
 type CommitDraftEnvelope = CommandEnvelope<'commitDraft', CommitDraftPayload>;
@@ -185,11 +187,48 @@ export class EntityLifecycleManager {
       const snapshot = await resolveNode(this.coreDB, src, sourceNodes);
       const nodeType = snapshot?.nodeType;
       if (!nodeType) continue;
-      const store = storeRegistry.getFeatures(nodeType);
-      if (!store) continue;
-      const items = await store.list(src);
-      if (!items || items.length === 0) continue;
-      await store.bulkUpsert(dst, items);
+      if (nodeType === 'shape') {
+        await shapeDB.open?.();
+        const rows = await shapeDB.features.where('nodeId').equals(src).toArray();
+        if (!rows.length) continue;
+        const now = Date.now();
+        const copies = rows.map(({ id, createdAt, updatedAt, ...rest }) => ({
+          ...rest,
+          nodeId: dst,
+          createdAt: now,
+          updatedAt: now,
+        }));
+        await shapeDB.storeFeatures(copies);
+        continue;
+      }
+      if (nodeType === 'location') {
+        const db = getLocationDB();
+        await db.open?.();
+        const rows = await db.features.where('nodeId').equals(src).toArray();
+        if (!rows.length) continue;
+        const copies = rows.map((row) => ({
+          ...row,
+          nodeId: dst,
+        }));
+        await db.features.bulkPut(copies);
+        continue;
+      }
+      if (nodeType === 'route') {
+        const db = getRouteDB();
+        await db.open?.();
+        const rows = await db.features.where('nodeId').equals(src).toArray();
+        if (!rows.length) continue;
+        const now = Date.now();
+        const copies = rows.map((row) => ({
+          ...row,
+          id: crypto.randomUUID() as NodeId,
+          nodeId: dst,
+          createdAt: now,
+          updatedAt: now,
+        }));
+        await db.features.bulkPut(copies);
+        continue;
+      }
     }
   }
 
@@ -197,23 +236,8 @@ export class EntityLifecycleManager {
     mapping: NodeMapping,
     sourceNodes?: SourceNodeMap
   ): Promise<void> {
-    for (const [src] of mapping.entries()) {
-      const snapshot = await resolveNode(this.coreDB, src, sourceNodes);
-      const nodeType = snapshot?.nodeType;
-      if (!nodeType) continue;
-      const relStore = storeRegistry.getRelations(nodeType);
-      if (!relStore) continue;
-      const relations = await relStore.listByNode(src);
-      if (!relations || relations.length === 0) continue;
-      const transformed: typeof relations = [];
-      for (const rel of relations) {
-        const newSrc = mapping.get(rel.srcNodeId);
-        const newDst = mapping.get(rel.dstNodeId);
-        if (!newSrc || !newDst) continue;
-        transformed.push({ ...rel, srcNodeId: newSrc, dstNodeId: newDst, updatedAt: Date.now() });
-      }
-      if (transformed.length > 0) await relStore.bulkUpsert(transformed);
-    }
+    void mapping;
+    void sourceNodes;
   }
 
   private async copyVectorTilesByMapping(
@@ -224,43 +248,68 @@ export class EntityLifecycleManager {
       const snapshot = await resolveNode(this.coreDB, src, sourceNodes);
       const nodeType = snapshot?.nodeType;
       if (!nodeType) continue;
-      const store = storeRegistry.getVectorTiles(nodeType);
-      if (!store) continue;
-      const items = await store.list(src);
-      if (!items || items.length === 0) continue;
-      await store.bulkUpsert(dst, items);
+      if (nodeType === 'shape') {
+        await shapeDB.open?.();
+        const rows = await shapeDB.vectorTiles.where('nodeId').equals(src).toArray();
+        if (!rows.length) continue;
+        const copies = rows.map((row) => ({
+          ...row,
+          nodeId: dst,
+          tileId: `${dst}-${row.z}-${row.x}-${row.y}`,
+        }));
+        await shapeDB.vectorTiles.bulkPut(copies);
+        continue;
+      }
+      if (nodeType === 'route') {
+        const db = getRouteDB();
+        await db.open?.();
+        const rows = await db.vectorTiles.where('nodeId').equals(src).toArray();
+        if (!rows.length) continue;
+        const copies = rows.map((row) => ({
+          ...row,
+          nodeId: dst,
+          tileId: `${dst}-${row.z}-${row.x}-${row.y}`,
+        }));
+        await db.vectorTiles.bulkPut(copies);
+        continue;
+      }
     }
   }
 
   private async deleteFeatures(nodeType: NodeType, nodeIds: NodeId[]): Promise<void> {
-    const store = storeRegistry.getFeatures(nodeType);
-    if (!store) return;
-    for (const nodeId of nodeIds) {
-      const items = await store.list(nodeId);
-      if (!items || items.length === 0) continue;
-      const ids = items.map((item) => item.id);
-      await store.bulkDelete(nodeId, ids);
+    if (nodeType === 'shape') {
+      await shapeDB.open?.();
+      await shapeDB.features.where('nodeId').anyOf(nodeIds).delete();
+      return;
+    }
+    if (nodeType === 'location') {
+      const db = getLocationDB();
+      await db.open?.();
+      await db.features.where('nodeId').anyOf(nodeIds).delete();
+      return;
+    }
+    if (nodeType === 'route') {
+      const db = getRouteDB();
+      await db.open?.();
+      await db.features.where('nodeId').anyOf(nodeIds).delete();
     }
   }
 
   private async deleteRelations(nodeType: NodeType, nodeIds: NodeId[]): Promise<void> {
-    const relStore = storeRegistry.getRelations(nodeType);
-    if (!relStore) return;
-    for (const nodeId of nodeIds) {
-      const rels = await relStore.listByNode(nodeId);
-      if (!rels || rels.length === 0) continue;
-      await relStore.bulkDelete(rels);
-    }
+    void nodeType;
+    void nodeIds;
   }
 
   private async deleteVectorTiles(nodeType: NodeType, nodeIds: NodeId[]): Promise<void> {
-    const store = storeRegistry.getVectorTiles(nodeType);
-    if (!store) return;
-    for (const nodeId of nodeIds) {
-      const items = await store.list(nodeId);
-      if (!items || items.length === 0) continue;
-      const ids = items.map((item) => item.id);
-      await store.bulkDelete(nodeId, ids);
+    if (nodeType === 'shape') {
+      await shapeDB.open?.();
+      await shapeDB.vectorTiles.where('nodeId').anyOf(nodeIds).delete();
+      return;
+    }
+    if (nodeType === 'route') {
+      const db = getRouteDB();
+      await db.open?.();
+      await db.vectorTiles.where('nodeId').anyOf(nodeIds).delete();
     }
   }
 
