@@ -3,7 +3,7 @@ import { IconButton, Typography } from '@mui/material';
 import { Hexagon } from '@mui/icons-material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { Recycling as RecyclingIcon } from '@mui/icons-material';
-import type { GridColumn } from '@hierarchidb/ui-grid';
+import type { GridColumn, GridGroupingState } from '@hierarchidb/ui-grid';
 import { FloatingWindow, useFloatingWindow } from '@hierarchidb/ui-floating-window';
 import {
   MapPreviewFloatingTable,
@@ -176,6 +176,7 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
     completed: 'Completed',
     failed: 'Failed',
   };
+  const noGrouping = useMemo<GridGroupingState>(() => [], []);
 
   const searchOnly = rowFilterConfig?.searchOnly ?? true;
   const tableRows = useMemo(() => {
@@ -342,6 +343,7 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
           ) : null}
         maxHeight={maxHeight}
         rowFilterConfig={rowFilterConfig}
+        grouping={noGrouping}
         containerSx={{
           position: 'static',
           width: '100%',

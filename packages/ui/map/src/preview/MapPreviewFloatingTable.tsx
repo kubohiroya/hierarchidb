@@ -59,6 +59,7 @@ export type MapPreviewFloatingTableProps<Row extends { id: string | number }> = 
   columns: GridColumn<Row>[];
   persistKeyBase?: string;
   defaultGrouping?: GridGroupingState;
+  grouping?: GridGroupingState;
   defaultSorting?: GridSortingState;
   search?: FeatureTableSearchConfig;
   countText?: string;
@@ -128,6 +129,7 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
     columns,
     persistKeyBase,
     defaultGrouping = [],
+    grouping,
     defaultSorting = [],
     search,
     countText,
@@ -156,6 +158,7 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
   const columnSizingKey = persistKeyBase ? buildGridStateKey(persistKeyBase, 'columnSizing') : null;
   const sortingKey = persistKeyBase ? buildGridStateKey(persistKeyBase, 'sorting') : null;
   const groupingKey = persistKeyBase ? buildGridStateKey(persistKeyBase, 'grouping') : null;
+  const isGroupingControlled = grouping !== undefined;
   const [columnVisibility, setColumnVisibility] = useState<GridColumnVisibilityState>(() => (
     visibilityKey ? (loadGridStateValue<GridColumnVisibilityState>(visibilityKey) ?? {}) : {}
   ));
@@ -169,7 +172,8 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
     }
     return defaultSorting;
   });
-  const [grouping, setGrouping] = useState<GridGroupingState>(() => {
+  const [groupingState, setGroupingState] = useState<GridGroupingState>(() => {
+    if (isGroupingControlled) return grouping;
     if (groupingKey) {
       const saved = loadGridStateValue<GridGroupingState>(groupingKey);
       if (saved) return saved;
@@ -275,9 +279,14 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
   }, [sorting, sortingKey]);
 
   useEffect(() => {
-    if (!groupingKey) return;
-    saveGridStateValue(groupingKey, grouping);
-  }, [grouping, groupingKey]);
+    if (!groupingKey || isGroupingControlled) return;
+    saveGridStateValue(groupingKey, groupingState);
+  }, [groupingKey, groupingState, isGroupingControlled]);
+
+  useEffect(() => {
+    if (!isGroupingControlled) return;
+    setGroupingState(grouping);
+  }, [grouping, isGroupingControlled]);
 
   return (
     <Paper
@@ -325,8 +334,8 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
             onCellClick={onCellClick}
             sorting={sorting}
             onSortingChange={setSorting}
-            grouping={grouping}
-            onGroupingChange={setGrouping}
+            grouping={isGroupingControlled ? grouping : groupingState}
+            onGroupingChange={isGroupingControlled ? undefined : setGroupingState}
             columnVisibility={columnVisibility}
             onColumnVisibilityChange={setColumnVisibility}
             columnSizing={columnSizing}

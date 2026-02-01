@@ -12894,6 +12894,22 @@
   - update: 2026-02-01 22:24 JST steps-provider と plugin-base registry の unknown cast を撤去。
   - done: 2026-02-01 22:26 JST pnpm --filter @hierarchidb/route-plugin typecheck / pnpm --filter @hierarchidb/location-plugin typecheck / pnpm --filter @hierarchidb/plugin-base build が exit 0 を確認。
 
+2477) fix/shape-preview/metadata-rows (P1) — 進行中 (2026-02-01 22:40 JST)
+- ブランチ名: fix/shape-preview/metadata-rows
+- 依存: なし
+- 受け入れ基準: Shape: metadata テーブルの AdminLevel 行が展開UIにならず通常行で表示される／`pnpm --filter @hierarchidb/ui-map typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/preview/MapPreviewFloatingTable.tsx`, `packages/ui/map/src/preview/ShapePreviewList.tsx`
+- ロールバック手順: grouping の制御追加を revert して元に戻す
+- チェックリスト:
+  - MapPreviewFloatingTable に grouping の制御を追加する
+  - ShapePreviewList で grouping を無効化する
+  - ui-map typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 22:40 JST Shape metadata テーブルの行展開UI撤去に着手。
+  - update: 2026-02-01 22:43 JST grouping 制御を追加し ShapePreviewList で grouping を無効化。
+  - done: 2026-02-01 22:43 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
+
 2472) refactor/shape-db/move-build-sessions (P1) — 進行中 (2026-02-01 20:35 JST)
 - ブランチ名: refactor/shape-db/move-build-sessions
 - 依存: なし
@@ -13295,3 +13311,19 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - update: 2026-02-02 00:58 JST pnpm --filter @hierarchidb/resolver-plugin typecheck exit 0 を確認。
   - update: 2026-02-02 01:10 JST repository全体の .tsx を行数集計し、400行以上の一覧を抽出。
   - update: 2026-02-02 01:20 JST テスト/ストーリー除外で .tsx 行数上位10件を抽出。
+
+2482) refactor/repo/tsx-hook-extraction-400plus (P1) — 進行中 (2026-02-02 01:30 JST)
+- ブランチ名: refactor/repo/tsx-hook-extraction-400plus
+- 依存: なし
+- 受け入れ基準: テスト/ストーリー除外の .tsx 行数上位10件についてロジックをフック/サブコンポーネントへ分離しTSXを描画中心へ整理する／対象パッケージの typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: app/**, packages/**, plugins/**（対象10ファイル）
+- ロールバック手順: 対象ファイルと新規フックの差分を revert して元の実装へ戻す
+- チェックリスト:
+  - 上位10件を順にフック/サブコンポーネント化する
+  - 対象パッケージ/プラグインの typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-02 01:30 JST テスト/ストーリー除外の .tsx 上位10件フック抽出に着手。
+  - update: 2026-02-02 01:32 JST ExecPlan を plans/repo-tsx-400plus-execplan.md に作成。
+  - update: 2026-02-02 01:50 JST modelessDialogContent を modelessDialogContentData へ分割してフック抽出。
+  - update: 2026-02-02 01:52 JST pnpm --filter @hierarchidb/app typecheck exit 0 を確認（plugin-base build warning あり）。
