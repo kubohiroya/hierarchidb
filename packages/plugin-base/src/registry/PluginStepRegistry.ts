@@ -193,7 +193,7 @@ export class PluginStepRegistry {
     if (this.providers.has(provider.nodeType)) {
       return;
     }
-    this.providers.set(provider.nodeType, provider as unknown as PluginStepProvider<StepData>);
+    this.providers.set(provider.nodeType, provider as PluginStepProvider<StepData>);
     this.emitChange();
   }
 
@@ -204,7 +204,7 @@ export class PluginStepRegistry {
     }
     this.configProviders.set(
       provider.nodeType,
-      provider as unknown as PluginStepConfigProvider<StepData>
+      provider as PluginStepConfigProvider<StepData>
     );
     this.emitChange();
   }

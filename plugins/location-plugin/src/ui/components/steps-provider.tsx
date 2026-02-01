@@ -1,5 +1,5 @@
 import { PluginStepRegistry, type PluginStepProps } from '@hierarchidb/plugin-base';
-import type { NodeId } from '@hierarchidb/core-types';
+import { toNodeId, type NodeId } from '@hierarchidb/core-types';
 import type { TreeNodeMetadata } from '@hierarchidb/tree-api';
 import type { LocationEntity } from '../../common/types/index.js';
 import { LocationDataSourceStep } from './steps/LocationDataSourceStep.js';
@@ -30,6 +30,10 @@ const mergeData = (
 type StepProps = PluginStepProps<LocationStepData>;
 
 const LICENSE_REQUIRED = false;
+
+const resolveNodeId = (nodeId?: string): NodeId | undefined => (
+  typeof nodeId === 'string' && nodeId.length > 0 ? toNodeId(nodeId) : undefined
+);
 
 const canProceedFromDataSource = (data?: LocationStepData): boolean => {
   const source = data?.dataSource;
@@ -66,7 +70,7 @@ registry.registerConfigProvider<LocationStepData>({
               onUpdate={(updates) => p.onChange(mergeData(draft, updates))}
               licenseRequired={LICENSE_REQUIRED}
               disabled={Boolean(p.disabled)}
-              nodeId={p.nodeId as NodeId | undefined}
+              nodeId={resolveNodeId(p.nodeId)}
               uiState={p.uiState as Record<string, unknown> | undefined}
               onUiStateChange={(next) => p.onUiStateChange?.(next)}
             />
@@ -97,7 +101,7 @@ registry.registerConfigProvider<LocationStepData>({
           return (
             <LocationMapPreviewStep
               draft={draft}
-              nodeId={p.nodeId as unknown as NodeId | undefined}
+              nodeId={resolveNodeId(p.nodeId)}
               onUpdate={(updates) => p.onChange(mergeData(draft, updates))}
             />
           );

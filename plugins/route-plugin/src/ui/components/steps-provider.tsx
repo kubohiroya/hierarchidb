@@ -5,7 +5,7 @@ import {
   type StartBatchContext,
   type StepData,
 } from '@hierarchidb/plugin-base';
-import type { NodeId } from '@hierarchidb/core-types';
+import { toNodeId, type NodeId } from '@hierarchidb/core-types';
 import type { RouteUpdaterPayload } from '../../common/types/index.js';
 import { toRouteUpdaterPayload } from '../../common/utils/draft.js';
 import { useTranslation as getTranslation } from '../../common/i18n/index.js';
@@ -39,6 +39,10 @@ const ensureDraft = (data?: PluginStepProps['data']): RouteStepData => {
     ...(base as RouteUpdaterPayload),
   };
 };
+
+const resolveNodeId = (nodeId?: string): NodeId | undefined => (
+  typeof nodeId === 'string' && nodeId.length > 0 ? toNodeId(nodeId) : undefined
+);
 
 const mergeDraft = (current: RouteStepData, updates: Partial<RouteStepData>): RouteStepData => {
   const nextDraftMetadata = updates.draftMetadata ?? current.draftMetadata ?? null;
@@ -92,10 +96,10 @@ registry.registerConfigProvider<RouteStepData>({
           const draft = ensureDraft(p.data);
           return (
             <RouteDataSourceStep
-              draft={draft as unknown as RouteUpdaterPayload}
+              draft={draft}
               onUpdate={(updates) => p.onChange(mergeDraft(draft, { draftData: updates }))}
               onValidationChange={p.setValid}
-              nodeId={p.nodeId}
+              nodeId={resolveNodeId(p.nodeId)}
             />
           );
         },
@@ -108,12 +112,12 @@ registry.registerConfigProvider<RouteStepData>({
           const draft = ensureDraft(p.data);
           return (
             <RouteSelectionStep
-              draft={draft as unknown as RouteUpdaterPayload}
+              draft={draft}
               onUpdate={(updates) => p.onChange(mergeDraft(draft, { draftData: updates }))}
               onValidationChange={p.setValid}
               mode={p.mode}
-              nodeId={p.nodeId}
-              parentId={p.parentId}
+              nodeId={resolveNodeId(p.nodeId)}
+              parentId={resolveNodeId(p.parentId)}
             />
           );
         },
@@ -126,9 +130,9 @@ registry.registerConfigProvider<RouteStepData>({
           const draft = ensureDraft(p.data);
           return (
             <RouteProcessingStep
-              draft={draft as unknown as RouteUpdaterPayload}
+              draft={draft}
               onUpdate={(updates) => p.onChange(mergeDraft(draft, { draftData: updates }))}
-              nodeId={p.nodeId as NodeId | undefined}
+              nodeId={resolveNodeId(p.nodeId)}
               disabled={Boolean(p.disabled)}
             />
           );
@@ -143,10 +147,10 @@ registry.registerConfigProvider<RouteStepData>({
           const draft = ensureDraft(p.data);
           return (
             <RouteBuildStep
-              draft={draft as unknown as RouteUpdaterPayload}
+              draft={draft}
               onUpdate={(updates) => p.onChange(mergeDraft(draft, { draftData: updates }))}
-              nodeId={p.nodeId}
-              parentId={p.parentId}
+              nodeId={resolveNodeId(p.nodeId)}
+              parentId={resolveNodeId(p.parentId)}
               mode={p.mode}
             />
           );
@@ -168,7 +172,7 @@ registry.registerConfigProvider<RouteStepData>({
         optional: true,
         componentFactory: (p: StepProps) => {
           const draft = ensureDraft(p.data);
-          return <RoutePreviewStep draft={draft as unknown as RouteUpdaterPayload} nodeId={p.nodeId as NodeId | undefined} />;
+          return <RoutePreviewStep draft={draft} nodeId={resolveNodeId(p.nodeId)} />;
         },
         validate: (data?: RouteStepData) => isRouteBuildPersisted(data),
       },

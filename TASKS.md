@@ -12878,6 +12878,22 @@
   - update: 2026-02-01 22:13 JST pnpm --filter @hierarchidb/core-types build / pnpm --filter @hierarchidb/tag typecheck / pnpm --filter @hierarchidb/runtime-worker typecheck / pnpm --filter @hierarchidb/map-adapter typecheck / pnpm --filter @hierarchidb/location-plugin typecheck / pnpm --filter @hierarchidb/shape-plugin typecheck / pnpm --filter @hierarchidb/app typecheck を実行。
   - done: 2026-02-01 22:13 JST 全対象パッケージの typecheck exit 0 を確認。
 
+2476) refactor/types/remove-unknown-casts-c (P2) — 進行中 (2026-02-01 22:20 JST)
+- ブランチ名: refactor/types/remove-unknown-casts-c
+- 依存: なし
+- 受け入れ基準: Cカテゴリの as unknown as を型ガード/型変換で置換する／route/location/plugin-base で typecheck が通る／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps-provider.tsx`, `plugins/route-plugin/src/ui/components/steps-provider.tsx`, `packages/plugin-base/src/registry/HostProfileRegistry.ts`, `packages/plugin-base/src/registry/PluginStepRegistry.ts`
+- ロールバック手順: 各ファイルの変更を revert して元に戻す
+- チェックリスト:
+  - steps-provider の nodeId/draft の unknown cast を排除する
+  - PluginStepRegistry/HostProfileRegistry の unknown cast を除去する
+  - typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 22:20 JST Cカテゴリの as unknown as 置換作業に着手。
+  - update: 2026-02-01 22:24 JST steps-provider と plugin-base registry の unknown cast を撤去。
+  - done: 2026-02-01 22:26 JST pnpm --filter @hierarchidb/route-plugin typecheck / pnpm --filter @hierarchidb/location-plugin typecheck / pnpm --filter @hierarchidb/plugin-base build が exit 0 を確認。
+
 2472) refactor/shape-db/move-build-sessions (P1) — 進行中 (2026-02-01 20:35 JST)
 - ブランチ名: refactor/shape-db/move-build-sessions
 - 依存: なし
@@ -13266,8 +13282,16 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - blocked: 2026-02-02 00:18 JST pnpm --filter @hierarchidb/route-plugin typecheck が useRoutePreviewStep.tsx の未使用 import で失敗。
   - update: 2026-02-02 00:19 JST useRoutePreviewStep の未使用 import を削除。
   - update: 2026-02-02 00:20 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+  - blocked: 2026-02-02 00:50 JST pnpm --filter @hierarchidb/route-plugin typecheck が RoutePreviewStep の未使用 import で失敗。
+  - update: 2026-02-02 00:51 JST RoutePreviewStep の未使用 import を削除。
+  - update: 2026-02-02 00:52 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
   - update: 2026-02-02 00:30 JST spreadsheet-plugin の TabularDataFilterStep フック抽出に着手。
   - blocked: 2026-02-02 00:32 JST pnpm --filter @hierarchidb/spreadsheet-plugin typecheck が mode/disabled 未指定で失敗。
   - update: 2026-02-02 00:33 JST TabularDataFilterStep の hook 呼び出しに mode/disabled を追加。
   - update: 2026-02-02 00:34 JST pnpm --filter @hierarchidb/spreadsheet-plugin typecheck exit 0 を確認。
   - update: 2026-02-02 00:45 JST resolver-plugin の ValidationConfigStep フック抽出に着手。
+  - blocked: 2026-02-02 00:56 JST pnpm --filter @hierarchidb/resolver-plugin typecheck が ruleFormData 型不整合で失敗。
+  - update: 2026-02-02 00:57 JST useValidationConfigStepView の引数型を form data に合わせて調整。
+  - update: 2026-02-02 00:58 JST pnpm --filter @hierarchidb/resolver-plugin typecheck exit 0 を確認。
+  - update: 2026-02-02 01:10 JST repository全体の .tsx を行数集計し、400行以上の一覧を抽出。
+  - update: 2026-02-02 01:20 JST テスト/ストーリー除外で .tsx 行数上位10件を抽出。

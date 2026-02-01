@@ -40,6 +40,9 @@ Plugins under `plugins/` contain TSX components that mix rendering (JSX) with st
 - [x] (2026-02-02 00:20 JST) Ran `pnpm --filter @hierarchidb/route-plugin typecheck` (exit 0).
 - [x] (2026-02-02 00:33 JST) Extracted hook for spreadsheet-plugin (TabularDataFilterStep).
 - [x] (2026-02-02 00:34 JST) Ran `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` (exit 0).
+- [x] (2026-02-02 00:52 JST) Ran `pnpm --filter @hierarchidb/route-plugin typecheck` after RoutePreviewStep cleanup (exit 0).
+- [x] (2026-02-02 00:57 JST) Extracted hook for resolver-plugin (ValidationConfigStep).
+- [x] (2026-02-02 00:58 JST) Ran `pnpm --filter @hierarchidb/resolver-plugin typecheck` (exit 0).
 - [ ] Extract logic into hooks for remaining target components.
 - [ ] Run typecheck for remaining affected plugins and record results.
 - [ ] Update TASKS.md with progress and completion notes.
@@ -63,6 +66,9 @@ Plugins under `plugins/` contain TSX components that mix rendering (JSX) with st
 
 - Observation: TabularDataFilterStep hook needed mode/disabled passthrough after extraction.
   Evidence: `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` failed with TS2345 until mode/disabled were forwarded.
+
+- Observation: ValidationConfigStep view hook needed form data typing instead of full ValidationRule.
+  Evidence: `pnpm --filter @hierarchidb/resolver-plugin typecheck` failed with TS2741 until the hook type was loosened.
 
 ## Decision Log
 
@@ -157,3 +163,4 @@ Plan change note: Updated progress for location-plugin LocationDataSourceStep ex
 Plan change note: Updated progress for location-plugin LocationMapPreviewStep extraction and recorded typecheck run.
 Plan change note: Updated progress for route-plugin RouteSelectionStep and shape-plugin TransformConfigSection extractions with typecheck runs.
 Plan change note: Updated progress for route-plugin RoutePreviewStep and spreadsheet-plugin TabularDataFilterStep with typecheck runs.
+Plan change note: Updated progress for resolver-plugin ValidationConfigStep extraction and typecheck reruns.

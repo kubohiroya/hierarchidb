@@ -28,7 +28,7 @@ export class HostProfileRegistry {
   }
 
   register<TData extends StepData>(provider: HostProfileProvider<TData>): void {
-    this.providers.set(provider.name, provider as unknown as HostProfileProvider<StepData>);
+    this.providers.set(provider.name, provider as HostProfileProvider<StepData>);
     this.emitChange();
   }
 
