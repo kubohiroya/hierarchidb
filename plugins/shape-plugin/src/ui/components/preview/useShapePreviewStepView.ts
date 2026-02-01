@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   MapAttributionItem,
   MapViewState,
@@ -9,12 +9,18 @@ import type {
   ResolvedLayerSetEntry,
   LayerSetListItem,
 } from '@hierarchidb/ui-map';
+import type { MapLibreGeoJSONFeature } from '@hierarchidb/ui-map';
 import { DEFAULT_LAYER_SETS, buildLayerSetListItems, getLayerSetDefinition, resolveLayerSetEntries } from '@hierarchidb/ui-map';
 import {
   loadTreeConsoleSettings,
   TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM,
   TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM,
 } from '@hierarchidb/util';
+import {
+  ensureIso3166Data,
+  getAllCountries,
+  getCountry,
+} from '@hierarchidb/gen-iso3166-2/browser';
 import { getDataSourceConfig } from '../../../services/utils/utils.js';
 import type { ShapeEntity } from '../../../common/types/index.js';
 import { useShapePreviewStep } from './useShapePreviewStep.js';
@@ -39,6 +45,82 @@ const resolveCommonZoomBounds = () => {
   };
 };
 
+const resolveCountryFlag = (countryCode?: string): string | undefined => {
+  if (!countryCode || countryCode.length !== 2) return undefined;
+  const normalized = countryCode.toUpperCase();
+  if (!/^[A-Z]{2}$/.test(normalized)) return undefined;
+  const base = 0x1f1e6;
+  const codes = Array.from(normalized).map((char) => base + char.charCodeAt(0) - 65);
+  return String.fromCodePoint(...codes);
+};
+
+const resolveIso3166CsvUrl = (): string => {
+  const meta = (typeof import.meta !== 'undefined'
+    ? (import.meta as { env?: { BASE_URL?: string; VITE_BASE_URL?: string } })
+    : null);
+  const envBase = meta?.env?.VITE_BASE_URL || meta?.env?.BASE_URL || '/';
+  const normalizedBase = envBase.endsWith('/') ? envBase : `${envBase}/`;
+  return `${normalizedBase}iso3166-2-level1.csv`;
+};
+
+const ADMIN_LABEL_PATTERN = /(?:adm|admin)\s*(\d+)/i;
+
+const toPropertyString = (value: unknown): string | undefined => {
+  if (typeof value === 'string') return value.trim() || undefined;
+  if (typeof value === 'number') return Number.isFinite(value) ? String(value) : undefined;
+  return undefined;
+};
+
+const pickFirstString = (properties: Record<string, unknown>, keys: string[]): string | undefined => {
+  for (const key of keys) {
+    const value = toPropertyString(properties[key]);
+    if (value) return value;
+  }
+  return undefined;
+};
+
+const resolveAdminLevel = (properties: Record<string, unknown>): number | undefined => {
+  const candidates = [
+    properties.adminLevel,
+    properties.admin_level,
+    properties.ADM_LEVEL,
+    properties.level,
+    properties.admin_lvl,
+  ];
+  for (const value of candidates) {
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value === 'string') {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+  }
+  const labelCandidates = [
+    properties.shapeType,
+    properties.boundaryType,
+    properties.adminType,
+    properties.ADMIN_TYPE,
+    properties.layer,
+    properties.LAYER,
+  ];
+  for (const candidate of labelCandidates) {
+    if (typeof candidate !== 'string') continue;
+    const match = candidate.match(ADMIN_LABEL_PATTERN);
+    if (!match) continue;
+    const parsed = Number(match[1]);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return undefined;
+};
+
+const buildDefaultHoverLabel = (properties: Record<string, unknown>): string | null => {
+  const label =
+    (properties.name as string | undefined) ??
+    (properties.NAME as string | undefined) ??
+    (properties.label as string | undefined) ??
+    (properties.id as string | number | undefined);
+  return label ? String(label) : null;
+};
+
 export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: string) => {
   const preview = useShapePreviewStep(data, nodeId);
   const { minZoom, maxZoom } = useMemo(() => resolveCommonZoomBounds(), []);
@@ -46,6 +128,32 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
   const lastZoomRef = useRef<number | null>(null);
   const [zoomSnackbarMessage, setZoomSnackbarMessage] = useState<string>('');
   const [zoomSnackbarOpen, setZoomSnackbarOpen] = useState(false);
+  const [countryByCode, setCountryByCode] = useState<Map<string, { name: string; alpha2?: string }>>(new Map());
+  const [isoReady, setIsoReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const result = await ensureIso3166Data({ csvUrl: resolveIso3166CsvUrl() });
+      const countries = await getAllCountries();
+      if (cancelled) return;
+      const map = new Map<string, { name: string; alpha2?: string }>();
+      countries.forEach((country) => {
+        const name = country.countryEn;
+        if (country.alpha2) {
+          map.set(country.alpha2.toUpperCase(), { name, alpha2: country.alpha2 });
+        }
+        if (country.alpha3) {
+          map.set(country.alpha3.toUpperCase(), { name, alpha2: country.alpha2 });
+        }
+      });
+      setCountryByCode(map);
+      setIsoReady(result.source !== 'none');
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const [layerSetVisibility, setLayerSetVisibility] = useState<LayerSetVisibility>({
     location: false,
@@ -73,6 +181,118 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
   const handleZoomSnackbarClose = useCallback(() => {
     setZoomSnackbarOpen(false);
   }, []);
+
+  const buildAdminHoverCandidate = useCallback((properties: Record<string, unknown>) => {
+    const level = resolveAdminLevel(properties);
+    if (level == null) return null;
+    const adminLabel = `ADM${level}`;
+    const adminName = pickFirstString(properties, [
+      'name',
+      'NAME',
+      'name_en',
+      'NAME_EN',
+      'shapeName',
+      'NAME_1',
+      'NAME_2',
+      'NAME_3',
+      'NAME_4',
+      'NAME_5',
+      'adminName',
+    ]);
+    const countryCode = pickFirstString(properties, [
+      'countryCode',
+      'ISO_A2',
+      'ISO2',
+      'ISO_2',
+      'ISO_A3',
+      'ADM0_A3',
+      'ISO3',
+      'shapeISO',
+    ]);
+    let mappedCountry = countryCode ? countryByCode.get(countryCode.toUpperCase()) : undefined;
+    if (!mappedCountry && isoReady && countryCode) {
+      getCountry(countryCode)
+        .then((result) => {
+          const resolved = result?.country ?? null;
+          if (!resolved) return;
+          const name = resolved.countryEn;
+          const alpha2 = resolved.alpha2;
+          setCountryByCode((prev) => {
+            const next = new Map(prev);
+            if (resolved.alpha2) next.set(resolved.alpha2.toUpperCase(), { name, alpha2 });
+            if (resolved.alpha3) next.set(resolved.alpha3.toUpperCase(), { name, alpha2 });
+            return next;
+          });
+        })
+        .catch(() => {
+          // ignore
+        });
+    }
+    const mappedCountryName = mappedCountry?.name;
+    const countryName =
+      mappedCountryName ??
+      pickFirstString(properties, [
+        'countryName',
+        'country',
+        'COUNTRY',
+        'COUNTRY_NAME',
+        'NAME_0',
+        'ADMIN',
+        'SOVEREIGNT',
+      ]);
+    const flag = resolveCountryFlag(mappedCountry?.alpha2 ?? countryCode);
+    const countryLabel = countryName
+      ? `${flag ? `${flag} ` : ''}${countryName}`
+      : countryCode
+        ? `${flag ? `${flag} ` : ''}${countryCode}`
+        : 'Unknown';
+
+    if (level <= 0) {
+      return { level, label: `${adminLabel}: ${countryLabel}` };
+    }
+    if (level === 1) {
+      const admin1 = adminName ?? countryName ?? 'Unknown';
+      return { level, label: `${adminLabel}: ${admin1} / ${countryLabel}` };
+    }
+    const admin2 = adminName ?? 'Unknown';
+    const admin1 = pickFirstString(properties, [
+      'admin1Name',
+      'NAME_1',
+      'name_1',
+      'ADM1_NAME',
+      'admin1',
+    ]);
+    const parts = [admin2, admin1, countryLabel].filter(
+      (part): part is string => Boolean(part && part.trim().length > 0),
+    );
+    return { level, label: `${adminLabel}: ${parts.join(' / ')}` };
+  }, [countryByCode]);
+
+  const hoverSnackbarContent = useCallback((features: MapLibreGeoJSONFeature[]) => {
+    if (features.length === 0) return '';
+    const adminCandidates = features
+      .map((feature, index) => {
+        const props = (feature.properties ?? {}) as Record<string, unknown>;
+        const adminParts = buildAdminHoverCandidate(props);
+        if (!adminParts) return null;
+        return { index, ...adminParts };
+      })
+      .filter(
+        (candidate): candidate is { index: number; level: number; label: string } =>
+          Boolean(candidate),
+      );
+    if (adminCandidates.length > 0) {
+      adminCandidates.sort((a, b) => (b.level - a.level) || (a.index - b.index));
+      return adminCandidates[0]?.label ?? '';
+    }
+    const labels = features
+      .slice(0, 3)
+      .map((feature) => {
+        const props = (feature.properties ?? {}) as Record<string, unknown>;
+        return buildDefaultHoverLabel(props) ?? 'Feature';
+      });
+    return labels.join(' / ');
+  }, [buildAdminHoverCandidate]);
 
   const layerSetName = data.buildConfig?.vtConfig?.layerSetName ?? 'shape';
   const layerSetDefinition = useMemo(
@@ -360,6 +580,7 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
     zoomSnackbarOpen,
     handleViewStateChange,
     handleZoomSnackbarClose,
+    hoverSnackbarContent,
     vectorLayers,
     vectorLayerIds,
     tileLayerNames: resolvedLayerNames.available,

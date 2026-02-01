@@ -4,8 +4,9 @@
  */
 
 import type React from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { Box, Button, IconButton, Snackbar, Typography } from '@mui/material';
+import { isValidElement, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { Box as MuiBox, Button, IconButton, Snackbar, Typography } from '@mui/material';
+import type { BoxProps } from '@mui/material';
 import { FloatingWindow } from '@hierarchidb/ui-floating-window';
 import type { WindowState } from '@hierarchidb/ui-floating-window';
 import type { Theme } from '@mui/material/styles';
@@ -504,6 +505,26 @@ const formatBytes = (value: number): string => {
   return `${size.toFixed(size >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
 };
 
+const isRenderableNode = (value: unknown): value is React.ReactNode => {
+  if (value == null || typeof value === 'boolean') return false;
+  if (typeof value === 'string' || typeof value === 'number') return true;
+  if (Array.isArray(value)) return true;
+  return isValidElement(value);
+};
+
+const normalizeChildren = (children: React.ReactNode): React.ReactNode => {
+  if (children == null || typeof children === 'boolean') return null;
+  if (Array.isArray(children)) {
+    const filtered = children.filter(isRenderableNode);
+    return filtered.length > 0 ? filtered : null;
+  }
+  return isRenderableNode(children) ? children : null;
+};
+
+const Box: React.FC<BoxProps> = ({ children, ...props }) => (
+  <MuiBox {...props}>{normalizeChildren(children)}</MuiBox>
+);
+
 const MapStatsPanel: React.FC<{
   store: MapStatsStore;
   vectorLayerEntries: Array<{ id: string; label?: string }>;
@@ -512,6 +533,11 @@ const MapStatsPanel: React.FC<{
   title?: string;
 }> = ({ store, vectorLayerEntries, renderExtra, showTitle = true, title = 'Dexie Tile Stats' }) => {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
+  const extraNode = useMemo(() => {
+    if (!renderExtra) return null;
+    const rendered = renderExtra();
+    return isRenderableNode(rendered) ? rendered : null;
+  }, [renderExtra]);
   return (
     <Box
       display="flex"
@@ -548,9 +574,9 @@ const MapStatsPanel: React.FC<{
             ))
           )}
         </Box>
-      {renderExtra ? (
+      {extraNode ? (
         <Box sx={{ px: 1.5, py: 1, color: 'text.primary' }}>
-          {renderExtra()}
+          {extraNode}
         </Box>
       ) : null}
     </Box>
@@ -713,6 +739,8 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
   };
   const statsToggleButtonVisible = statsWindowConfig?.showToggleButton ?? false;
   const statsToggleButtonIcon = statsWindowConfig?.toggleButtonIcon ?? statsWindowIcon ?? <TuneIcon fontSize="small" />;
+  const resolvedStatsWindowIcon = isRenderableNode(statsWindowIcon) ? statsWindowIcon : null;
+  const resolvedStatsToggleButtonIcon = isRenderableNode(statsToggleButtonIcon) ? statsToggleButtonIcon : null;
   const statsToggleButtonPosition = useMemo(()=>statsWindowConfig?.toggleButtonPosition ?? { top: 12, left: 12 }, [
     statsWindowConfig?.toggleButtonPosition
   ]);
@@ -1307,10 +1335,11 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
         return { ...base, bottom: 16, left: '50%', transform: 'translateX(-50%)' };
     }
   })();
-  const snackbarContent =
+  const rawSnackbarContent =
     effectiveSnackbar?.content
     ?? effectiveSnackbar?.renderContent?.(snackbarFeatures)
     ?? buildHoverSnackbarContent(snackbarFeatures);
+  const snackbarContent = isRenderableNode(rawSnackbarContent) ? rawSnackbarContent : '';
   const snackbarOpen = effectiveSnackbar?.open ?? (snackbarEnabled && snackbarFeatures.length > 0);
 
   return (
@@ -1368,7 +1397,7 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
       {statsActive && statsDisplay === 'floating' && statsWindowOpen ? (
         <FloatingWindow
           title={statsWindowTitle}
-          titleIcon={statsWindowIcon}
+          titleIcon={resolvedStatsWindowIcon ?? undefined}
           initialState={statsWindowState}
           onStateChange={setStatsWindowState}
           onClose={() => setStatsWindowState((prev) => ({ ...prev, isVisible: false }))}
@@ -1396,7 +1425,7 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
             aria-label="Show data tiles stats"
             onClick={() => setStatsWindowState((prev) => ({ ...prev, isVisible: true }))}
           >
-            {statsToggleButtonIcon}
+            {resolvedStatsToggleButtonIcon}
           </Button>
         </Box>
       ) : null}
