@@ -1,4 +1,5 @@
 import type React from 'react';
+import { useCallback } from 'react';
 import { Box, Typography } from '@mui/material';
 import { LicenseAgreementStep } from '@hierarchidb/ui-license';
 import type { DataSourceSelectorProps, DataSourceOption } from './DataSourceSelector.js';
@@ -66,13 +67,14 @@ export const DataSourceSelectionStep = <TAgreedAt,>({
       : String(state.licenseAgreedAt)
     : undefined;
 
-  const handleSelect = (next: string) => {
+  const handleSelect = useCallback((next: string) => {
+    if (next === value) return;
     onChange({
       dataSourceId: next,
       licenseAgreement: false,
       licenseAgreedAt: undefined,
     });
-  };
+  }, [onChange, value]);
 
   const handleAgree = () => {
     const buildAgreedAt =

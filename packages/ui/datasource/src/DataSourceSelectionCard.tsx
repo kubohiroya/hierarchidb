@@ -4,16 +4,20 @@ import { DataSourceSelector } from './DataSourceSelector.js';
 import type { DataSourceSelectorProps } from './DataSourceSelector.js';
 
 export interface DataSourceSelectionCardProps extends DataSourceSelectorProps {
-  title?: string;
+  title?: React.ReactNode;
 }
 
 export const DataSourceSelectionCard: React.FC<DataSourceSelectionCardProps> = ({
-  title = 'Data Source',
+  title,
   ...props
 }) => (
   <Card variant="outlined">
     <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      {title ? <Typography variant="subtitle1">{title}</Typography> : null}
+      {title ? (
+        <Typography variant="subtitle2" color="text.secondary">
+          {title}
+        </Typography>
+      ) : null}
       <DataSourceSelector {...props} />
     </CardContent>
   </Card>

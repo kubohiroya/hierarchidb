@@ -72,7 +72,7 @@
       "importButton": "Import",
       "buttonLabel": "IDE-GSM ファイルを選択",
       "instructions": "IDE-GSM の CSV/Excel ファイルをアップロードまたはURL指定してください。",
-      "noFiles": "CSV ファイルはまだ読み込まれていません。",
+      "noFiles": "ファイルはまだ読み込まれていません。",
       "importLocal": "ローカルファイルを読み込む",
       "importRemote": "リモートファイルを読み込む",
       "fileFallback": "読み込み済みファイル",

@@ -72,7 +72,7 @@
       "importButton": "Import",
       "buttonLabel": "Select IDE-GSM file",
       "instructions": "Provide an IDE-GSM CSV/Excel file via upload or URL.",
-      "noFiles": "No CSV files imported.",
+      "noFiles": "No files imported.",
       "importLocal": "Import Local Files",
       "importRemote": "Import Remote Files",
       "fileFallback": "Imported file",
