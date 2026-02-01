@@ -4,7 +4,6 @@ import type { TreeNodeMetadata } from '@hierarchidb/tree-api';
 import type { LocationEntity } from '../../common/types/index.js';
 import { LocationDataSourceStep } from './steps/LocationDataSourceStep.js';
 import { LocationSelectionStep } from './steps/LocationSelectionStep.js';
-import { LocationBatchParametersStep } from './steps/LocationBatchParametersStep.js';
 import { LocationMapPreviewStep } from './steps/LocationMapPreviewStep.js';
 import { i18n } from '@hierarchidb/ui-i18n';
 
@@ -68,6 +67,8 @@ registry.registerConfigProvider<LocationStepData>({
               licenseRequired={LICENSE_REQUIRED}
               disabled={Boolean(p.disabled)}
               nodeId={p.nodeId as NodeId | undefined}
+              uiState={p.uiState as Record<string, unknown> | undefined}
+              onUiStateChange={(next) => p.onUiStateChange?.(next)}
             />
           );
         },
@@ -86,22 +87,6 @@ registry.registerConfigProvider<LocationStepData>({
           );
         },
         validate: (data?: LocationStepData) => hasSelection(data),
-      },
-      {
-        id: 'batch-parameters',
-        label: String(i18n.t('steps.batchParameters.label', { ns: 'location-plugin', defaultValue: 'Style Config' })),
-        componentFactory: (p: StepProps) => {
-          const draft = ensureData(p.data);
-          return (
-            <LocationBatchParametersStep
-              draft={draft}
-              onUpdate={(updates) => p.onChange(mergeData(draft, updates))}
-              disabled={Boolean(p.disabled)}
-              nodeId={p.nodeId as NodeId | undefined}
-            />
-          );
-        },
-        validate: () => true,
       },
       {
         id: 'map-preview',

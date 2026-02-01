@@ -13,6 +13,19 @@ export type LocationPreviewListProps = {
   rows?: Array<Record<string, unknown>>;
   columns?: string[];
   columnFormatters?: Record<string, (value: unknown, row: Record<string, unknown>) => React.ReactNode>;
+  toolbarActions?: React.ReactNode;
+  rowFilterConfig?: {
+    mode: 'all' | 'viewport';
+    onModeChange: (mode: 'all' | 'viewport') => void;
+    searchOnly: boolean;
+    onSearchOnlyChange: (value: boolean) => void;
+    labels?: {
+      title?: string;
+      allRows?: string;
+      viewportRows?: string;
+      searchOnly?: string;
+    };
+  };
   loading?: boolean;
   loadingText?: string;
   emptyText?: string;
@@ -44,6 +57,8 @@ export const LocationPreviewList: React.FC<LocationPreviewListProps> = ({
   rows,
   columns,
   columnFormatters,
+  toolbarActions,
+  rowFilterConfig,
   loading = false,
   loadingText = 'Loading metadata...',
   emptyText = 'No metadata available yet.',
@@ -70,6 +85,7 @@ export const LocationPreviewList: React.FC<LocationPreviewListProps> = ({
   const [jsonDialogValue, setJsonDialogValue] = useState<unknown>(null);
   const [jsonDialogTitle, setJsonDialogTitle] = useState<string>('Metadata');
   const normalizedRows = useMemo(()=>Array.isArray(rows) ? rows : [], [rows]);
+  const searchOnly = rowFilterConfig?.searchOnly ?? true;
   const resolvedColumns = useMemo(() => {
     if (columns && columns.length > 0) return columns;
     const keys = new Set<string>();
@@ -80,6 +96,7 @@ export const LocationPreviewList: React.FC<LocationPreviewListProps> = ({
   }, [columns, normalizedRows]);
 
   const filteredRows = useMemo(() => {
+    if (!searchOnly) return normalizedRows;
     const query = searchValue.trim().toLowerCase();
     if (!query) return normalizedRows;
     return normalizedRows.filter((row) => (
@@ -89,19 +106,19 @@ export const LocationPreviewList: React.FC<LocationPreviewListProps> = ({
         return String(value).toLowerCase().includes(query);
       })
     ));
-  }, [normalizedRows, resolvedColumns, searchValue]);
+  }, [normalizedRows, resolvedColumns, searchOnly, searchValue]);
 
   const resolvedTitle = useMemo(() => {
     const total = normalizedRows.length;
     if (!total) return title;
     const totalLabel = total.toLocaleString();
     const query = searchValue.trim();
-    if (query) {
+    if (query && searchOnly) {
       const filteredLabel = filteredRows.length.toLocaleString();
       return `${title} (${filteredLabel}/${totalLabel} rows)`;
     }
     return `${title} (${totalLabel} rows)`;
-  }, [filteredRows.length, normalizedRows.length, searchValue, title]);
+  }, [filteredRows.length, normalizedRows.length, searchOnly, searchValue, title]);
 
   const gridColumns = useMemo<GridColumn<(typeof normalizedRows)[number]>[]>(() => (
     resolvedColumns.map((column) => ({
@@ -171,18 +188,24 @@ export const LocationPreviewList: React.FC<LocationPreviewListProps> = ({
           onSelectionChange={onSelectionChange}
           onCellClick={handleCellClick}
           enableColumnSelector
-          toolbarActions={onToggleRecycling ? (
-            <IconButton
-              aria-label="Toggle recycling"
-              size="small"
-              onClick={onToggleRecycling}
-              disabled={recyclingState === 'none'}
-            >
-              <RecyclingIcon
-                fontSize="small"
-                color={recyclingState === 'on' ? 'success' : recyclingState === 'partial' ? 'warning' : 'inherit'}
-              />
-            </IconButton>
+          rowFilterConfig={rowFilterConfig}
+          toolbarActions={onToggleRecycling || toolbarActions ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {onToggleRecycling ? (
+                <IconButton
+                  aria-label="Toggle recycling"
+                  size="small"
+                  onClick={onToggleRecycling}
+                  disabled={recyclingState === 'none'}
+                >
+                  <RecyclingIcon
+                    fontSize="small"
+                    color={recyclingState === 'on' ? 'success' : recyclingState === 'partial' ? 'warning' : 'inherit'}
+                  />
+                </IconButton>
+              ) : null}
+              {toolbarActions}
+            </Box>
           ) : null}
           containerSx={{
             position: 'static',
@@ -197,7 +220,7 @@ export const LocationPreviewList: React.FC<LocationPreviewListProps> = ({
         />
       </Box>
     );
-  }, [emptyText, errorText, filteredRows, gridColumns, loading, loadingText, normalizedRows.length, onSelectionChange, onToggleRecycling, recyclingState, resolvedTitle, searchValue, selectedRows, tableId]);
+  }, [emptyText, errorText, filteredRows, gridColumns, loading, loadingText, normalizedRows.length, onSelectionChange, onToggleRecycling, recyclingState, resolvedTitle, rowFilterConfig, searchValue, selectedRows, tableId]);
 
   return (
     <FloatingWindow

@@ -10,9 +10,14 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
+  FormControl,
   FormControlLabel,
   FormGroup,
   Paper,
+  Radio,
+  RadioGroup,
+  Typography,
 } from '@mui/material';
 import {
   TanstackDataGrid,
@@ -75,6 +80,18 @@ export type MapPreviewFloatingTableProps<Row extends { id: string | number }> = 
   toolbarActions?: React.ReactNode;
   onCellClick?: (params: { row: Row; columnId: string }) => void;
   containerSx?: Record<string, unknown>;
+  rowFilterConfig?: {
+    mode: 'all' | 'viewport';
+    onModeChange: (mode: 'all' | 'viewport') => void;
+    searchOnly: boolean;
+    onSearchOnlyChange: (value: boolean) => void;
+    labels?: {
+      title?: string;
+      allRows?: string;
+      viewportRows?: string;
+      searchOnly?: string;
+    };
+  };
 };
 
 export const buildErrorSummaryById = <TError,>(
@@ -132,6 +149,7 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
     toolbarActions,
     onCellClick,
     containerSx,
+    rowFilterConfig,
   } = props;
   const [columnSelectorOpen, setColumnSelectorOpen] = useState(false);
   const visibilityKey = persistKeyBase ? buildGridStateKey(persistKeyBase, 'visibility') : null;
@@ -324,8 +342,11 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
         fullWidth
         sx={{ zIndex: (theme) => theme.zIndex.modal + 20 }}
       >
-        <DialogTitle>Columns</DialogTitle>
+        <DialogTitle>Column/Row Config</DialogTitle>
         <DialogContent dividers>
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            Columns
+          </Typography>
           <FormGroup>
             {resolvedColumns.map((column) => {
               const id = String(column.id);
@@ -350,6 +371,40 @@ export const MapPreviewFloatingTable = <Row extends { id: string | number }>(
               );
             })}
           </FormGroup>
+          {rowFilterConfig ? (
+            <Box sx={{ mt: 2 }}>
+              <Divider sx={{ mb: 2 }} />
+              <Typography variant="subtitle2">
+                {rowFilterConfig.labels?.title ?? 'Rows'}
+              </Typography>
+              <FormControl component="fieldset" sx={{ mt: 1 }}>
+                <RadioGroup
+                  value={rowFilterConfig.mode}
+                  onChange={(event) => rowFilterConfig.onModeChange(event.target.value as 'all' | 'viewport')}
+                >
+                  <FormControlLabel
+                    value="all"
+                    control={<Radio />}
+                    label={rowFilterConfig.labels?.allRows ?? 'Show all locations in this node'}
+                  />
+                  <FormControlLabel
+                    value="viewport"
+                    control={<Radio />}
+                    label={rowFilterConfig.labels?.viewportRows ?? 'Show locations in the current viewport'}
+                  />
+                </RadioGroup>
+                <FormControlLabel
+                  control={(
+                    <Checkbox
+                      checked={rowFilterConfig.searchOnly}
+                      onChange={(event) => rowFilterConfig.onSearchOnlyChange(event.target.checked)}
+                    />
+                  )}
+                  label={rowFilterConfig.labels?.searchOnly ?? 'Show only locations matching the search field'}
+                />
+              </FormControl>
+            </Box>
+          ) : null}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setColumnSelectorOpen(false)}>Close</Button>
