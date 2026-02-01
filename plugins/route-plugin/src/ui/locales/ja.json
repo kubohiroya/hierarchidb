@@ -75,7 +75,20 @@
     "locationEmpty": "利用できる兄弟ロケーションがまだありません。",
     "startLocationLabel": "始点ロケーション",
     "endLocationLabel": "終点ロケーション",
-    "locationPlaceholder": "ロケーションを選択"
+    "locationPlaceholder": "ロケーションを選択",
+    "style": {
+      "title": "ルートのスタイル",
+      "description": "交通モードごとの色と線のスタイルを設定します。",
+      "modeColorsTitle": "交通モード別の色",
+      "modeColorLabel": "色",
+      "lineWidthLabel": "線の太さ",
+      "lineStyleLabel": "線のスタイル",
+      "lineStyle": {
+        "solid": "実線",
+        "dashed": "破線",
+        "dotted": "点線"
+      }
+    }
   },
   "routeGeneration": {
     "direct": "直線",
@@ -165,6 +178,7 @@
     "missing": "ルート形状がまだありません。ビルドを実行してください。",
     "ready": "ルート形状が利用可能です。ここにマッププレビューが表示されます。",
     "mapTitle": "マッププレビュー",
+    "vectorLayerLabel": "ルート",
     "hoverTemplate": "{mode} / {start} -> {end} / {distance}",
     "hoverUnknown": "不明なルート",
     "tabs": {

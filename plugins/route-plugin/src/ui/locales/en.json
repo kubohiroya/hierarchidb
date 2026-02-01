@@ -76,6 +76,20 @@
     "startLocationLabel": "Start location",
     "endLocationLabel": "End location",
     "locationPlaceholder": "Select a location"
+    ,
+    "style": {
+      "title": "Route style",
+      "description": "Configure colors and line styles per transport mode.",
+      "modeColorsTitle": "Mode colors",
+      "modeColorLabel": "Color",
+      "lineWidthLabel": "Line width",
+      "lineStyleLabel": "Line style",
+      "lineStyle": {
+        "solid": "Solid",
+        "dashed": "Dashed",
+        "dotted": "Dotted"
+      }
+    }
   },
   "routeGeneration": {
     "direct": "Straight line",
@@ -164,6 +178,7 @@
     "description": "Preview the generated route geometry once the build is complete.",
     "missing": "No route geometry is available yet. Run Build to generate a preview.",
     "ready": "Route geometry is available. Map preview will appear here.",
+    "vectorLayerLabel": "Routes",
     "mapTitle": "Map Preview",
     "hoverTemplate": "{mode} / {start} -> {end} / {distance}",
     "hoverUnknown": "Unknown route",

@@ -7,6 +7,9 @@ import type React from 'react';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Box,
   Button,
   CircularProgress,
@@ -14,10 +17,16 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
+  Grid,
+  MenuItem,
+  Select,
+  Slider,
+  TextField,
   Typography,
 } from '@mui/material';
 import type { SvgIconComponent } from '@mui/icons-material';
-import { DirectionsBoat, DirectionsCar, Flight, Train, Tram } from '@mui/icons-material';
+import { DirectionsBoat, DirectionsCar, ExpandMore, Flight, Train, Tram } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { RouteEntity, RouteUpdaterPayload } from '@hierarchidb/route-api';
 import { useTranslation } from '../../../common/i18n/index.js';
@@ -27,6 +36,10 @@ import { ROUTE_MODES, type IdeGsmRouteCoverageResult, type RouteMode } from '@hi
 import { AuthReadyGate } from '@hierarchidb/ui-auth';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
 import { GenericDataGrid, type GridColumn } from '@hierarchidb/ui-grid';
+import {
+  buildDefaultRouteStyleConfig,
+  mergeRouteStyleConfig,
+} from '../../../common/styles/routeStyle.js';
 
 export interface RouteSelectionStepProps {
   draft: RouteUpdaterPayload;
@@ -50,6 +63,15 @@ const ROUTE_MODE_COLUMNS: SelectionColumn[] = [
   { id: ROUTE_MODES.RAILWAY, labelKey: 'transportModes.rail', icon: Tram },
   { id: ROUTE_MODES.ROAD, labelKey: 'transportModes.road', icon: DirectionsCar },
 ];
+
+const ROUTE_STYLE_OPTIONS = [
+  { id: 'solid', labelKey: 'routeConfig.style.lineStyle.solid', fallback: 'Solid' },
+  { id: 'dashed', labelKey: 'routeConfig.style.lineStyle.dashed', fallback: 'Dashed' },
+  { id: 'dotted', labelKey: 'routeConfig.style.lineStyle.dotted', fallback: 'Dotted' },
+] as const;
+
+const LINE_WIDTH_MIN = 1;
+const LINE_WIDTH_MAX = 8;
 
 type ModePolicy = {
   allowedModes: RouteMode[];
@@ -91,6 +113,11 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = ({
   const ideGsmSourceUrl = draft.ideGsmSourceUrl ?? null;
   const isIdeGsm = dataSourceName === 'ide-gsm';
   const routeNodeId = (draftProp.treeNodeId ?? _nodeId) as NodeId | undefined;
+  const styleDefaults = useMemo(() => buildDefaultRouteStyleConfig(), []);
+  const styleConfig = useMemo(
+    () => mergeRouteStyleConfig(draft.routeStyleConfig ?? styleDefaults),
+    [draft.routeStyleConfig, styleDefaults],
+  );
   const policy = useMemo(() => resolveModePolicy(dataSourceName), [dataSourceName]);
   const allowedModeSet = useMemo(() => new Set(policy.allowedModes), [policy.allowedModes]);
   const lastDataSourceRef = useRef<string | null>(dataSourceName);
@@ -311,6 +338,37 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = ({
     [deepEqualSelectionRecord, emitUpdate, iso.countries, iso.status, matrixConfig.columns, resolveAllowedModesForCountry, selectionRecordSource],
   );
 
+  const updateStyleConfig = useCallback((next: typeof styleConfig) => {
+    emitUpdate({ routeStyleConfig: next });
+  }, [emitUpdate]);
+
+  const handleModeColorChange = useCallback((mode: RouteMode, value: string) => {
+    updateStyleConfig({
+      ...styleConfig,
+      modeColors: {
+        ...styleConfig.modeColors,
+        [mode]: value,
+      },
+    });
+  }, [styleConfig, updateStyleConfig]);
+
+  const handleLineWidthChange = useCallback((value: number | number[]) => {
+    const raw = Array.isArray(value) ? value[0] ?? styleConfig.lineWidth : value;
+    const nextWidth = Math.min(LINE_WIDTH_MAX, Math.max(LINE_WIDTH_MIN, Number(raw)));
+    updateStyleConfig({
+      ...styleConfig,
+      lineWidth: nextWidth,
+    });
+  }, [styleConfig, updateStyleConfig]);
+
+  const handleLineStyleChange = useCallback((value: string) => {
+    const nextStyle = ROUTE_STYLE_OPTIONS.find((option) => option.id === value)?.id ?? 'solid';
+    updateStyleConfig({
+      ...styleConfig,
+      lineStyle: nextStyle,
+    });
+  }, [styleConfig, updateStyleConfig]);
+
   useEffect(() => {
   const isValid =
     hasAnySelection &&
@@ -455,6 +513,76 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = ({
           {t('routeConfig.customSelectionNote', 'Choose the Route Selection to fetch for each country.')}
         </Typography>
       )}
+      <Accordion sx={{ mt: 2 }}>
+        <AccordionSummary expandIcon={<ExpandMore />}>
+          <Box>
+            <Typography variant="subtitle1">
+              {t('routeConfig.style.title', 'Route style')}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {t('routeConfig.style.description', 'Configure colors and line styles per transport mode.')}
+            </Typography>
+          </Box>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Typography variant="subtitle2">
+              {t('routeConfig.style.modeColorsTitle', 'Mode colors')}
+            </Typography>
+            <Grid container spacing={2}>
+              {ROUTE_MODE_COLUMNS.map((mode) => (
+                <Grid key={mode.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <mode.icon fontSize="small" />
+                    <Typography variant="body2" sx={{ flex: 1 }}>
+                      {t(mode.labelKey, mode.id)}
+                    </Typography>
+                    <TextField
+                      type="color"
+                      size="small"
+                      value={styleConfig.modeColors[mode.id]}
+                      onChange={(event) => handleModeColorChange(mode.id, event.target.value)}
+                      inputProps={{ 'aria-label': t('routeConfig.style.modeColorLabel', 'Color') }}
+                    />
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+            <Divider />
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  {t('routeConfig.style.lineWidthLabel', 'Line width')}
+                </Typography>
+                <Slider
+                  min={LINE_WIDTH_MIN}
+                  max={LINE_WIDTH_MAX}
+                  value={styleConfig.lineWidth}
+                  onChange={(_, next) => handleLineWidthChange(next)}
+                  valueLabelDisplay="auto"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  {t('routeConfig.style.lineStyleLabel', 'Line style')}
+                </Typography>
+                <Select
+                  fullWidth
+                  size="small"
+                  value={styleConfig.lineStyle}
+                  onChange={(event) => handleLineStyleChange(String(event.target.value))}
+                >
+                  {ROUTE_STYLE_OPTIONS.map((option) => (
+                    <MenuItem key={option.id} value={option.id}>
+                      {t(option.labelKey, option.fallback)}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </Grid>
+            </Grid>
+          </Box>
+        </AccordionDetails>
+      </Accordion>
     </Box>
   );
 };
