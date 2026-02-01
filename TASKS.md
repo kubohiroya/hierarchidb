@@ -12806,7 +12806,8 @@
   - update: 2026-02-01 19:29 JST alpha3 でも国名/国旗を補完するよう修正。
   - update: 2026-02-01 19:35 JST ISO3166-2 CSV を BASE_URL 基準で読み込むよう修正。
   - update: 2026-02-01 19:43 JST getCountry を併用し ISO3166-2 API で国名補完できない場合も補う。
-  - done: 2026-02-01 19:43 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 20:01 JST featureListRows/displayedFeatureRows に国旗付与、countryName がコードの場合は getCountry で補完するよう修正。
+  - done: 2026-02-01 20:01 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
 
 2466) fix/location-preview/snackbar-theme (P1) — 進行中 (2026-02-01 17:58 JST)
 - ブランチ名: fix/location-preview/snackbar-theme
@@ -13140,3 +13141,11 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - update: 2026-02-01 19:16 JST pnpm --filter @hierarchidb/basemap-plugin typecheck exit 0 を確認。
   - update: 2026-02-01 19:30 JST styler-plugin の StylerAlgorithmStep2 をフックへ抽出。
   - update: 2026-02-01 19:31 JST pnpm --filter @hierarchidb/styler-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 19:50 JST shape-plugin の ShapeBuildStep atom sync をフックへ抽出。
+  - update: 2026-02-01 19:51 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 20:05 JST location-plugin の LocationSelectionStep をフックへ抽出。
+  - blocked: 2026-02-01 20:07 JST pnpm --filter @hierarchidb/location-plugin typecheck が MatrixSelection/LocationType 未import で失敗。
+  - update: 2026-02-01 20:09 JST LocationSelectionStep の type import を追加。
+  - update: 2026-02-01 20:10 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 20:25 JST route-plugin の RouteDataSourceStep をフックへ抽出。
+  - update: 2026-02-01 20:26 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。

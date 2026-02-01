@@ -18,7 +18,6 @@ import {
 } from '@hierarchidb/util';
 import {
   ensureIso3166Data,
-  getAllCountries,
   getCountry,
 } from '@hierarchidb/gen-iso3166-2/browser';
 import { getDataSourceConfig } from '../../../services/utils/utils.js';
@@ -130,24 +129,13 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
   const [zoomSnackbarOpen, setZoomSnackbarOpen] = useState(false);
   const [countryByCode, setCountryByCode] = useState<Map<string, { name: string; alpha2?: string }>>(new Map());
   const [isoReady, setIsoReady] = useState(false);
+  const pendingCountryCodesRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
       const result = await ensureIso3166Data({ csvUrl: resolveIso3166CsvUrl() });
-      const countries = await getAllCountries();
       if (cancelled) return;
-      const map = new Map<string, { name: string; alpha2?: string }>();
-      countries.forEach((country) => {
-        const name = country.countryEn;
-        if (country.alpha2) {
-          map.set(country.alpha2.toUpperCase(), { name, alpha2: country.alpha2 });
-        }
-        if (country.alpha3) {
-          map.set(country.alpha3.toUpperCase(), { name, alpha2: country.alpha2 });
-        }
-      });
-      setCountryByCode(map);
       setIsoReady(result.source !== 'none');
     })();
     return () => {
@@ -182,6 +170,33 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
     setZoomSnackbarOpen(false);
   }, []);
 
+  const queueCountryCode = useCallback((code: string) => {
+    const upper = code.toUpperCase();
+    if (!upper) return;
+    if (countryByCode.has(upper)) return;
+    if (pendingCountryCodesRef.current.has(upper)) return;
+    pendingCountryCodesRef.current.add(upper);
+    getCountry(upper)
+      .then((result) => {
+        const resolved = result?.country ?? null;
+        if (!resolved) return;
+        setCountryByCode((prev) => {
+          const next = new Map(prev);
+          const name = resolved.countryEn;
+          const alpha2 = resolved.alpha2;
+          if (resolved.alpha2) next.set(resolved.alpha2.toUpperCase(), { name, alpha2 });
+          if (resolved.alpha3) next.set(resolved.alpha3.toUpperCase(), { name, alpha2 });
+          return next;
+        });
+      })
+      .catch(() => {
+        // ignore
+      })
+      .finally(() => {
+        pendingCountryCodesRef.current.delete(upper);
+      });
+  }, [countryByCode]);
+
   const buildAdminHoverCandidate = useCallback((properties: Record<string, unknown>) => {
     const level = resolveAdminLevel(properties);
     if (level == null) return null;
@@ -199,7 +214,16 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
       'NAME_5',
       'adminName',
     ]);
-    const countryCode = pickFirstString(properties, [
+    const countryNameCandidate = pickFirstString(properties, [
+      'countryName',
+      'country',
+      'COUNTRY',
+      'COUNTRY_NAME',
+      'NAME_0',
+      'ADMIN',
+      'SOVEREIGNT',
+    ]);
+    const countryCodeCandidate = pickFirstString(properties, [
       'countryCode',
       'ISO_A2',
       'ISO2',
@@ -209,37 +233,18 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
       'ISO3',
       'shapeISO',
     ]);
-    let mappedCountry = countryCode ? countryByCode.get(countryCode.toUpperCase()) : undefined;
-    if (!mappedCountry && isoReady && countryCode) {
-      getCountry(countryCode)
-        .then((result) => {
-          const resolved = result?.country ?? null;
-          if (!resolved) return;
-          const name = resolved.countryEn;
-          const alpha2 = resolved.alpha2;
-          setCountryByCode((prev) => {
-            const next = new Map(prev);
-            if (resolved.alpha2) next.set(resolved.alpha2.toUpperCase(), { name, alpha2 });
-            if (resolved.alpha3) next.set(resolved.alpha3.toUpperCase(), { name, alpha2 });
-            return next;
-          });
-        })
-        .catch(() => {
-          // ignore
-        });
+    const codeFromName = (!countryCodeCandidate && countryNameCandidate && /^[A-Z]{2,3}$/.test(countryNameCandidate))
+      ? countryNameCandidate
+      : undefined;
+    const countryCode = countryCodeCandidate ?? codeFromName;
+    if (isoReady && countryCode) {
+      queueCountryCode(countryCode);
     }
+    const mappedCountry = countryCode ? countryByCode.get(countryCode.toUpperCase()) : undefined;
     const mappedCountryName = mappedCountry?.name;
     const countryName =
       mappedCountryName ??
-      pickFirstString(properties, [
-        'countryName',
-        'country',
-        'COUNTRY',
-        'COUNTRY_NAME',
-        'NAME_0',
-        'ADMIN',
-        'SOVEREIGNT',
-      ]);
+      (countryNameCandidate && !/^[A-Z]{2,3}$/.test(countryNameCandidate) ? countryNameCandidate : undefined);
     const flag = resolveCountryFlag(mappedCountry?.alpha2 ?? countryCode);
     const countryLabel = countryName
       ? `${flag ? `${flag} ` : ''}${countryName}`
@@ -293,6 +298,55 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
       });
     return labels.join(' / ');
   }, [buildAdminHoverCandidate]);
+
+  useEffect(() => {
+    if (!isoReady) return;
+    preview.featureListRows.forEach((row) => {
+      const code = row.countryCode
+        ?? (row.countryName && /^[A-Z]{2,3}$/.test(row.countryName) ? row.countryName : undefined);
+      if (code) queueCountryCode(code);
+    });
+  }, [isoReady, preview.featureListRows, queueCountryCode]);
+
+  const featureListRowsWithFlags = useMemo(() => {
+    if (!preview.featureListRows.length) return preview.featureListRows;
+    return preview.featureListRows.map((row) => {
+      const code = row.countryCode
+        ?? (row.countryName && /^[A-Z]{2,3}$/.test(row.countryName) ? row.countryName : undefined);
+      const mapped = code ? countryByCode.get(code.toUpperCase()) : undefined;
+      const name = mapped?.name
+        ?? (row.countryName && !/^[A-Z]{2,3}$/.test(row.countryName) ? row.countryName : undefined)
+        ?? '';
+      const flag = resolveCountryFlag(mapped?.alpha2 ?? code);
+      const countryName = name
+        ? `${flag ? `${flag} ` : ''}${name}`
+        : row.countryName ?? '';
+      return {
+        ...row,
+        countryName,
+      };
+    });
+  }, [countryByCode, preview.featureListRows]);
+
+  const displayedFeatureRowsWithFlags = useMemo(() => {
+    if (!preview.displayedFeatureRows.length) return preview.displayedFeatureRows;
+    return preview.displayedFeatureRows.map((row) => {
+      const code = row.countryCode
+        ?? (row.countryName && /^[A-Z]{2,3}$/.test(row.countryName) ? row.countryName : undefined);
+      const mapped = code ? countryByCode.get(code.toUpperCase()) : undefined;
+      const name = mapped?.name
+        ?? (row.countryName && !/^[A-Z]{2,3}$/.test(row.countryName) ? row.countryName : undefined)
+        ?? '';
+      const flag = resolveCountryFlag(mapped?.alpha2 ?? code);
+      const countryName = name
+        ? `${flag ? `${flag} ` : ''}${name}`
+        : row.countryName ?? '';
+      return {
+        ...row,
+        countryName,
+      };
+    });
+  }, [countryByCode, preview.displayedFeatureRows]);
 
   const layerSetName = data.buildConfig?.vtConfig?.layerSetName ?? 'shape';
   const layerSetDefinition = useMemo(
@@ -573,6 +627,8 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
 
   return {
     ...preview,
+    featureListRows: featureListRowsWithFlags,
+    displayedFeatureRows: displayedFeatureRowsWithFlags,
     minZoom,
     maxZoom,
     mapContainerRef,

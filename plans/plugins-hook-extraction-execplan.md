@@ -16,6 +16,12 @@ Plugins under `plugins/` contain TSX components that mix rendering (JSX) with st
 - [x] (2026-02-01 19:16 JST) Ran `pnpm --filter @hierarchidb/basemap-plugin typecheck` (exit 0).
 - [x] (2026-02-01 19:30 JST) Extracted hooks for styler-plugin (StylerAlgorithmStep2) and kept rendering unchanged.
 - [x] (2026-02-01 19:31 JST) Ran `pnpm --filter @hierarchidb/styler-plugin typecheck` (exit 0).
+- [x] (2026-02-01 19:50 JST) Extracted hook for shape-plugin BuildProgress atom sync (ShapeBuildStep).
+- [x] (2026-02-01 19:51 JST) Ran `pnpm --filter @hierarchidb/shape-plugin typecheck` (exit 0).
+- [x] (2026-02-01 20:05 JST) Extracted hook for location-plugin (LocationSelectionStep).
+- [x] (2026-02-01 20:10 JST) Ran `pnpm --filter @hierarchidb/location-plugin typecheck` (exit 0).
+- [x] (2026-02-01 20:25 JST) Extracted hook for route-plugin (RouteDataSourceStep).
+- [x] (2026-02-01 20:26 JST) Ran `pnpm --filter @hierarchidb/route-plugin typecheck` (exit 0).
 - [ ] Extract logic into hooks for remaining target components.
 - [ ] Run typecheck for remaining affected plugins and record results.
 - [ ] Update TASKS.md with progress and completion notes.
@@ -24,6 +30,9 @@ Plugins under `plugins/` contain TSX components that mix rendering (JSX) with st
 
 - Observation: Hook extraction for StylerAlgorithmStep2 required narrowing hook params to a Pick of PluginStepProps to avoid missing `mode`/`disabled` fields.
   Evidence: `pnpm --filter @hierarchidb/styler-plugin typecheck` initially failed with TS2345 until the hook param type was narrowed.
+
+- Observation: LocationSelectionStep needed explicit type-only imports after moving buildSelectionRecord to the component.
+  Evidence: `pnpm --filter @hierarchidb/location-plugin typecheck` failed with TS2304/TS2552 until MatrixSelection/LocationType imports were added.
 
 ## Decision Log
 
@@ -110,3 +119,6 @@ Use React hooks already present in the component. Do not introduce new dependenc
   }
 Plan change note: Updated progress for basemap-plugin extraction, recorded typecheck run, and logged starting plugin choice.
 Plan change note: Updated progress for styler-plugin extraction, recorded typecheck run, and noted hook param typing adjustment.
+Plan change note: Updated progress for shape-plugin extraction and recorded typecheck run.
+Plan change note: Updated progress for location-plugin extraction, recorded typecheck run, and noted type-only import fix.
+Plan change note: Updated progress for route-plugin extraction and recorded typecheck run.
