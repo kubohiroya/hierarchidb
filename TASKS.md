@@ -13136,3 +13136,5 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - start: 2026-02-01 18:50 JST plugins の TSX フック抽出リファクタに着手。
   - update: 2026-02-01 18:55 JST ExecPlan を plans/plugins-hook-extraction-execplan.md に作成。
   - update: 2026-02-01 19:00 JST plugins/**/*.tsx を棚卸しし、候補（Location/Route/Shape/Styler/Basemap 等の大規模TSX）を抽出。
+  - update: 2026-02-01 19:15 JST basemap-plugin の BaseMapDisplay と ViewportStep をフックへ抽出。
+  - update: 2026-02-01 19:16 JST pnpm --filter @hierarchidb/basemap-plugin typecheck exit 0 を確認。
