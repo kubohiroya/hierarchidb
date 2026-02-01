@@ -92,7 +92,7 @@ export class CoreDB extends Dexie {
   tagAssociations!: Table<NodeTagAssociation, [NodeId, TagEntity['id']]>;
 
   //  Subject
-  public readonly changeSubject = new Subject<TreeChangeEvent>();
+  public changeSubject = new Subject<TreeChangeEvent>();
 
   /**
    * Run a function within a Dexie transaction.
@@ -128,6 +128,10 @@ export class CoreDB extends Dexie {
       await instance.initialize();
       return instance;
     });
+  }
+
+  static createForTest(name: string): CoreDB {
+    return new CoreDB(name);
   }
 
   private constructor(name: string) {

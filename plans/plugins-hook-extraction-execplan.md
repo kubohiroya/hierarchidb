@@ -36,6 +36,10 @@ Plugins under `plugins/` contain TSX components that mix rendering (JSX) with st
 - [x] (2026-02-01 23:21 JST) Ran `pnpm --filter @hierarchidb/route-plugin typecheck` (exit 0).
 - [x] (2026-02-01 23:45 JST) Extracted hook for shape-plugin (TransformConfigSection).
 - [x] (2026-02-01 23:47 JST) Ran `pnpm --filter @hierarchidb/shape-plugin typecheck` (exit 0).
+- [x] (2026-02-02 00:17 JST) Extracted hook for route-plugin (RoutePreviewStep).
+- [x] (2026-02-02 00:20 JST) Ran `pnpm --filter @hierarchidb/route-plugin typecheck` (exit 0).
+- [x] (2026-02-02 00:33 JST) Extracted hook for spreadsheet-plugin (TabularDataFilterStep).
+- [x] (2026-02-02 00:34 JST) Ran `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` (exit 0).
 - [ ] Extract logic into hooks for remaining target components.
 - [ ] Run typecheck for remaining affected plugins and record results.
 - [ ] Update TASKS.md with progress and completion notes.
@@ -56,6 +60,9 @@ Plugins under `plugins/` contain TSX components that mix rendering (JSX) with st
 
 - Observation: TransformConfigSection hook needed unused import cleanup after extraction.
   Evidence: `pnpm --filter @hierarchidb/shape-plugin typecheck` failed with TS6133 until the unused import was removed.
+
+- Observation: TabularDataFilterStep hook needed mode/disabled passthrough after extraction.
+  Evidence: `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` failed with TS2345 until mode/disabled were forwarded.
 
 ## Decision Log
 
@@ -149,3 +156,4 @@ Plan change note: Updated progress for shape/location/route extractions, recorde
 Plan change note: Updated progress for location-plugin LocationDataSourceStep extraction and recorded typecheck run.
 Plan change note: Updated progress for location-plugin LocationMapPreviewStep extraction and recorded typecheck run.
 Plan change note: Updated progress for route-plugin RouteSelectionStep and shape-plugin TransformConfigSection extractions with typecheck runs.
+Plan change note: Updated progress for route-plugin RoutePreviewStep and spreadsheet-plugin TabularDataFilterStep with typecheck runs.

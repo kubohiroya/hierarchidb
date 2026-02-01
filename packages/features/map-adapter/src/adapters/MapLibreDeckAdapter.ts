@@ -153,7 +153,7 @@ export class MapLibreDeckAdapter implements MapAdapterPort {
 }
 
 function toLayers(specs: DeckLayerSpec[]): LayersList {
-  return specs.map((spec) => ({ ...spec })) as unknown as LayersList;
+  return specs;
 }
 
 function resolveMapLibreCtor(mod: unknown): MapLibreCtor {

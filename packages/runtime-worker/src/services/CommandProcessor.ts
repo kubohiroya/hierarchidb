@@ -1,7 +1,6 @@
 import type { Timestamp } from '@hierarchidb/core-types';
 import type { CommandId, Seq, TreeChangeEvent } from '@hierarchidb/tree-api';
 import { generateUUID, SingletonMixin } from '@hierarchidb/util';
-import { Subject } from 'rxjs';
 import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';
 import { recordCommandLatency } from '../utils/metrics.js';
 import { PERFORMANCE_CONFIG } from '../utils/performance-config.js';
@@ -335,12 +334,6 @@ export class CommandProcessor {
    * : DI
    */
   constructor(private readonly coreDB: CoreDB) {
-    const changeSubject = (coreDB as Partial<{ changeSubject?: { subscribe?: unknown } }>)
-      .changeSubject as { subscribe?: unknown } | undefined;
-    if (!changeSubject || typeof changeSubject.subscribe !== 'function') {
-      (coreDB as unknown as { changeSubject: Subject<TreeChangeEvent> }).changeSubject =
-        new Subject<TreeChangeEvent>();
-    }
     this.history = new CommandHistoryManager({
       coreDB,
       getNextSeq: () => this.getNextSeq(),

@@ -1,5 +1,3 @@
-import { useState } from 'react';
-import { useAtomValue } from 'jotai';
 import {
   TabularDataFilter,
   TabularProvider,
@@ -9,12 +7,15 @@ import {
 } from '@hierarchidb/ui-tabular';
 import type { SpreadsheetEntity } from '../../../common/types/SpreadsheetEntity.js';
 import { Box, CircularProgress, Typography } from '@mui/material';
-import { useTabularDataFilter } from '../../hooks/useTabularDataFilter.js';
-import { useTabularKeyValueState } from '../../hooks/useTabularKeyValueState.js';
-import { filterRulesAtom } from '../../state/tabularKeyValueAtoms.js';
 import { useTabularDataFilterStep } from '../../hooks/useTabularDataFilterStep.js';
 import { TabularFilterSections } from '../TabularFilterSections.js';
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
+import type { useTabularKeyValueState } from '../../hooks/useTabularKeyValueState.js';
+import type { useTabularDataFilter } from '../../hooks/useTabularDataFilter.js';
+import {
+  useTabularDataFilterStepView,
+  type TabularDataFilterStepProps,
+} from './useTabularDataFilterStepView.js';
 
 type FilterInnerProps<T extends SpreadsheetEntity> = ReturnType<typeof useTabularDataFilter<T>> & {
   setValid: PluginStepProps<T>['setValid'];
@@ -143,14 +144,6 @@ const TabularDataFilterInner = <T extends SpreadsheetEntity>({
   );
 };
 
-export interface TabularDataFilterStepProps<T extends SpreadsheetEntity> extends PluginStepProps<T> {
-  renderSections?: TabularDataFilterProps['renderSections'];
-  onFiltersChanged?: (filters: TabularFilterRule[]) => void;
-  onPreviewReady?: (preview: TabularDataResult) => void;
-  translationNamespace?: string;
-  showPreview?: boolean;
-}
-
 export const TabularDataFilterStep = <T extends SpreadsheetEntity>({
   data,
   onChange,
@@ -162,14 +155,9 @@ export const TabularDataFilterStep = <T extends SpreadsheetEntity>({
   onPreviewReady,
   translationNamespace,
   showPreview = true,
+  mode,
+  disabled,
 }: TabularDataFilterStepProps<T>) => {
-  const [keyValueValid, setKeyValueValid] = useState(false);
-  const keyValueState = useTabularKeyValueState<T>({
-    data,
-    onChange,
-    setError,
-    onSetFilterValid: setKeyValueValid,
-  });
   const {
     pluginId,
     tabularApi,
@@ -179,8 +167,23 @@ export const TabularDataFilterStep = <T extends SpreadsheetEntity>({
     syncFilters,
     handlePreviewData,
     dialogData,
-  } = useTabularDataFilter<T>({ data, onChange, setValid, setError, dialogRef });
-  const filtersFromAtom = useAtomValue(filterRulesAtom);
+    filtersFromAtom,
+    keyValueState,
+    keyValueValid,
+  } = useTabularDataFilterStepView<T>({
+    data,
+    onChange,
+    setValid,
+    setError,
+    dialogRef,
+    renderSections,
+    onFiltersChanged,
+    onPreviewReady,
+    translationNamespace,
+    showPreview,
+    mode,
+    disabled,
+  });
 
   return (
     <TabularProvider tabularApi={tabularApi}>

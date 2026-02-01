@@ -24,7 +24,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import Grid from '@mui/material/Grid';
 import {
   Add as AddIcon,
   Close as CloseIcon,
@@ -33,6 +32,7 @@ import {
   Rule as RuleIcon,
 } from '@mui/icons-material';
 import type { ResolverUpdaterPayload, SchemaInfo, ValidationRule } from '../../../common/types/index.js';
+import { useValidationConfigStepView } from './useValidationConfigStepView.js';
 import { useValidationConfigStep } from './useValidationConfigStep.js';
 
 interface ValidationConfigStepProps {
@@ -43,21 +43,13 @@ interface ValidationConfigStepProps {
   targetSchema: SchemaInfo | null;
 }
 
-const VALIDATION_RULE_TYPES: { value: ValidationRule['ruleType'], label: string, description: string }[] = [
-  { value: 'required', label: 'Required', description: 'Property must have a value' },
-  { value: 'type', label: 'Type Check', description: 'Property must be of specified type' },
-  { value: 'range', label: 'Range', description: 'Numeric value must be within range' },
-  { value: 'pattern', label: 'Pattern', description: 'String value must match regex pattern' },
-  { value: 'custom', label: 'Custom', description: 'Custom validation function' },
-];
-
 export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
-                                                                            data,
-                                                                            onUpdate,
-                                                                            onValidationChange,
-                                                                            sourceSchema,
-                                                                            targetSchema,
-                                                                          }) => {
+  data,
+  onUpdate,
+  onValidationChange,
+  sourceSchema,
+  targetSchema,
+}) => {
   const {
     availableProperties,
     closeRuleDialog,
@@ -80,92 +72,13 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
     targetSchema,
   });
 
-  const renderParameterFields = () => {
-    switch (ruleFormData.ruleType) {
-      case 'type':
-        return (
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Expected Type</InputLabel>
-            <Select
-              value={ruleFormData.parameters.expectedType || 'string'}
-              onChange={(e) => updateRuleFormData({
-                parameters: { ...ruleFormData.parameters, expectedType: e.target.value },
-              })}
-              label="Expected Type"
-            >
-              <MenuItem value="string">String</MenuItem>
-              <MenuItem value="number">Number</MenuItem>
-              <MenuItem value="boolean">Boolean</MenuItem>
-              <MenuItem value="array">Array</MenuItem>
-              <MenuItem value="object">Object</MenuItem>
-            </Select>
-          </FormControl>
-        );
-
-      case 'range':
-        return (
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 6 }}>
-              <TextField
-                fullWidth
-                label="Minimum Value"
-                type="number"
-                value={ruleFormData.parameters.min || ''}
-                onChange={(e) => updateRuleFormData({
-                  parameters: { ...ruleFormData.parameters, min: parseFloat(e.target.value) || undefined },
-                })}
-              />
-            </Grid>
-            <Grid size={{ xs: 6 }}>
-              <TextField
-                fullWidth
-                label="Maximum Value"
-                type="number"
-                value={ruleFormData.parameters.max || ''}
-                onChange={(e) => updateRuleFormData({
-                  parameters: { ...ruleFormData.parameters, max: parseFloat(e.target.value) || undefined },
-                })}
-              />
-            </Grid>
-          </Grid>
-        );
-
-      case 'pattern':
-        return (
-          <TextField
-            fullWidth
-            label="Regex Pattern"
-            value={ruleFormData.parameters.pattern || ''}
-            onChange={(e) => updateRuleFormData({
-              parameters: { ...ruleFormData.parameters, pattern: e.target.value },
-            })}
-            placeholder="^[A-Z][a-z]+$"
-            helperText="Enter a JavaScript regular expression"
-            sx={{ mb: 2 }}
-          />
-        );
-
-      case 'custom':
-        return (
-          <TextField
-            fullWidth
-            multiline
-            rows={3}
-            label="Custom Validation Function"
-            value={ruleFormData.parameters.function || ''}
-            onChange={(e) => updateRuleFormData({
-              parameters: { ...ruleFormData.parameters, function: e.target.value },
-            })}
-            placeholder="function validate(value) { return value.length > 0; }"
-            helperText="JavaScript function that returns true for valid values"
-            sx={{ mb: 2 }}
-          />
-        );
-
-      default:
-        return null;
-    }
-  };
+  const {
+    renderParameterFields,
+    ruleTypeMenu,
+  } = useValidationConfigStepView({
+    ruleFormData,
+    updateRuleFormData,
+  });
 
   return (
     <Box>
@@ -222,7 +135,7 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
           {validationRules.length > 0 && (
             <Paper sx={{ mb: 2 }}>
               <List>
-              {validationRules.map((rule: ValidationRule, index: number) => (
+                {validationRules.map((rule: ValidationRule, index: number) => (
                   <React.Fragment key={rule.id}>
                     <ListItem>
                       <ListItemText
@@ -297,7 +210,6 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
         </Alert>
       )}
 
-      {/* Rule Dialog */}
       <Dialog open={showRuleDialog} onClose={closeRuleDialog} maxWidth="sm" fullWidth>
         <DialogTitle>
           <Box display="flex" justifyContent="space-between" alignItems="center">
@@ -329,20 +241,11 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
               value={ruleFormData.ruleType}
               onChange={(e) => updateRuleFormData({
                 ruleType: e.target.value as ValidationRule['ruleType'],
-                parameters: {}, // Reset parameters when rule type changes
+                parameters: {},
               })}
               label="Rule Type"
             >
-              {VALIDATION_RULE_TYPES.map((type: typeof VALIDATION_RULE_TYPES[number]) => (
-                <MenuItem key={type.value} value={type.value}>
-                  <Box>
-                    <Typography variant="body2">{type.label}</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {type.description}
-                    </Typography>
-                  </Box>
-                </MenuItem>
-              ))}
+              {ruleTypeMenu}
             </Select>
           </FormControl>
 

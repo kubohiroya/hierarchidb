@@ -13,15 +13,12 @@ export interface MapStyleSpec {
   styleObject?: any; // inline style json
 }
 
-export type DeckLayerSpec = {
-  id: string;
-  type: string; // e.g., 'GeoJsonLayer', 'ScatterplotLayer'
-  props: Record<string, any>;
-};
+import type { Layer } from 'deck.gl';
+
+export type DeckLayerSpec = Layer;
 
 export interface MapViewConfig {
   container: HTMLElement;
   initialViewState: ViewState;
   mapStyle?: MapStyleSpec;
 }
-

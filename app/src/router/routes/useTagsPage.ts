@@ -1,4 +1,4 @@
-import type { TagId, TreeId } from '@hierarchidb/core-types';
+import { toTagId, type TagId, type TreeId } from '@hierarchidb/core-types';
 import type { NodeTagAssociation, TagEntity } from '@hierarchidb/tag-api';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { useWorker } from '~/contexts/WorkerProvider.js';
@@ -30,7 +30,7 @@ export function useTagsPage(uuid?: string) {
       if (!uuid) return null;
       if (!workerClient) throw new Error('Worker not connected');
       const tagAPI = await workerClient.getTagAPI();
-      const tag = await tagAPI.getTag(uuid as unknown as TagId);
+      const tag = await tagAPI.getTag(toTagId(uuid));
       return tag ?? null;
     },
     enabled: !!uuid && isConnected,
@@ -43,7 +43,7 @@ export function useTagsPage(uuid?: string) {
       if (!uuid) return [];
       if (!workerClient) throw new Error('Worker not connected');
       const tagAPI = await workerClient.getTagAPI();
-      const associations = await tagAPI.getNodesByTag(uuid as unknown as TagId);
+      const associations = await tagAPI.getNodesByTag(toTagId(uuid));
 
       const taggedNodesData: TaggedNode[] = [];
 

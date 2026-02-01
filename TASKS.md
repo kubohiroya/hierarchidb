@@ -12858,6 +12858,26 @@
   - update: 2026-02-01 21:18 JST LocationDB/RouteDB/EphemeralRouteDB の stores を整理し version を更新。
   - done: 2026-02-01 21:19 JST pnpm --filter @hierarchidb/location-store typecheck と pnpm --filter @hierarchidb/route-store typecheck が exit 0 を確認。
 
+2475) refactor/types/remove-unknown-casts-a (P1) — 進行中 (2026-02-01 21:50 JST)
+- ブランチ名: refactor/types/remove-unknown-casts-a
+- 依存: なし
+- 受け入れ基準: Aカテゴリの as unknown as を型ガード/ファクトリ/適切な型で置換する／core-types/tag/runtime-worker/map-adapter/app の影響箇所が typecheck で通る／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/core-types/src/id-util.ts`, `packages/core-types/src/index.ts`, `packages/features/tag/src/TagService.ts`, `app/src/router/routes/useTagsPage.ts`, `packages/runtime-worker/src/services/CoreDB.ts`, `packages/runtime-worker/src/services/CommandProcessor.ts`, `packages/runtime-worker/src/services/test-helpers/commandProcessorHarness.ts`, `plugins/shape-plugin/src/worker/handlers/ShapeEntityService.ts`, `plugins/location-plugin/src/worker/normalizers.ts`, `app/src/hooks/treeconsole/sortFilter.ts`, `packages/features/map-adapter/src/adapters/MapLibreDeckAdapter.ts`
+- ロールバック手順: 各ファイルの変更を revert して元に戻す
+- チェックリスト:
+  - TagId/NodeId 生成の型キャストをファクトリ化する
+  - CoreDB/CommandProcessor の不要な unknown cast を撤去する
+  - Record 系アクセスを型ガード化する
+  - map-adapter の Layer 変換を unknown cast なしで扱う
+  - typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 21:50 JST Aカテゴリの as unknown as 置換作業に着手。
+  - update: 2026-02-01 22:05 JST TagId/NodeId の生成を toTagId/toNodeId へ移行し、CoreDB/CommandProcessor の unknown cast を撤去。
+  - update: 2026-02-01 22:09 JST map-adapter を DeckLayerSpec=Layer に合わせて layers 変換の unknown cast を撤去。
+  - update: 2026-02-01 22:13 JST pnpm --filter @hierarchidb/core-types build / pnpm --filter @hierarchidb/tag typecheck / pnpm --filter @hierarchidb/runtime-worker typecheck / pnpm --filter @hierarchidb/map-adapter typecheck / pnpm --filter @hierarchidb/location-plugin typecheck / pnpm --filter @hierarchidb/shape-plugin typecheck / pnpm --filter @hierarchidb/app typecheck を実行。
+  - done: 2026-02-01 22:13 JST 全対象パッケージの typecheck exit 0 を確認。
+
 2472) refactor/shape-db/move-build-sessions (P1) — 進行中 (2026-02-01 20:35 JST)
 - ブランチ名: refactor/shape-db/move-build-sessions
 - 依存: なし
@@ -13241,3 +13261,13 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - blocked: 2026-02-01 23:45 JST pnpm --filter @hierarchidb/shape-plugin typecheck が useTransformConfigSectionView.ts の未使用 import で失敗。
   - update: 2026-02-01 23:46 JST useTransformConfigSectionView の未使用 import を削除。
   - update: 2026-02-01 23:47 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-02-02 00:05 JST route-plugin の RoutePreviewStep フック抽出に着手。
+  - update: 2026-02-02 00:17 JST route-plugin の RoutePreviewStep をフックへ抽出。
+  - blocked: 2026-02-02 00:18 JST pnpm --filter @hierarchidb/route-plugin typecheck が useRoutePreviewStep.tsx の未使用 import で失敗。
+  - update: 2026-02-02 00:19 JST useRoutePreviewStep の未使用 import を削除。
+  - update: 2026-02-02 00:20 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+  - update: 2026-02-02 00:30 JST spreadsheet-plugin の TabularDataFilterStep フック抽出に着手。
+  - blocked: 2026-02-02 00:32 JST pnpm --filter @hierarchidb/spreadsheet-plugin typecheck が mode/disabled 未指定で失敗。
+  - update: 2026-02-02 00:33 JST TabularDataFilterStep の hook 呼び出しに mode/disabled を追加。
+  - update: 2026-02-02 00:34 JST pnpm --filter @hierarchidb/spreadsheet-plugin typecheck exit 0 を確認。
+  - update: 2026-02-02 00:45 JST resolver-plugin の ValidationConfigStep フック抽出に着手。

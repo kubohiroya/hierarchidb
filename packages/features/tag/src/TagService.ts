@@ -1,4 +1,4 @@
-import type { NodeId, TagId, Timestamp } from '@hierarchidb/core-types';
+import { toTagId, type NodeId, type TagId, type Timestamp } from '@hierarchidb/core-types';
 import type { CreateTagRequest, TagAPI, TagAssociationRequest, TagSuggestion, UpdateTagRequest, NodeTagAssociation, NodeTagAssociationId, TagEntity } from '@hierarchidb/tag-api';
 import { SingletonMixin, generateId } from '@hierarchidb/util';
 import type { TagDBPort } from './ports.js';
@@ -145,6 +145,6 @@ export class TagService implements TagAPI {
   }
 
   generateTagId(): TagId {
-    return `tag_${generateId()}` as unknown as TagId;
+    return toTagId(`tag_${generateId()}`);
   }
 }

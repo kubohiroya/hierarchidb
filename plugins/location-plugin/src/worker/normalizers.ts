@@ -87,9 +87,9 @@ export const normalizePeerData = (data: unknown): LocationPeerData => {
 
   return {
     schemaVersion: 1,
-    lastProgress: sanitizeProgress((data as Record<string, unknown>).lastProgress),
-    lastError: sanitizeErrorInfo((data as Record<string, unknown>).lastError),
-    metadata: sanitizeMetadata((data as Record<string, unknown>).metadata),
+    lastProgress: sanitizeProgress(isRecord(data) ? data.lastProgress : undefined),
+    lastError: sanitizeErrorInfo(isRecord(data) ? data.lastError : undefined),
+    metadata: sanitizeMetadata(isRecord(data) ? data.metadata : undefined),
   };
 };
 
@@ -103,10 +103,9 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
   if (isGroupData(value)) {
     const schemaVersion = value.schemaVersion === 2 ? 2 : 1;
     if (schemaVersion === 2) {
-      const valueRecord = value as unknown as Record<string, unknown>;
-      const centroidForShapeId = normalizeCentroidForShapeId(valueRecord.centroidForShapeId);
+      const centroidForShapeId = normalizeCentroidForShapeId(value.centroidForShapeId);
       const centroidForShapeContainerNodeId = normalizeCentroidForShapeContainerNodeId(
-        valueRecord.centroidForShapeContainerNodeId
+        value.centroidForShapeContainerNodeId
       );
       return {
         ...value,
@@ -116,7 +115,19 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
         metadata: sanitizeMetadata(value.metadata),
       };
     }
-    const legacy = value as unknown as Record<string, unknown>;
+    const legacy = value as {
+      pid?: unknown;
+      gid0?: unknown;
+      gid1?: unknown;
+      gid2?: unknown;
+      payload?: unknown;
+      centroidForShapeId?: unknown;
+      centroidForShapeContainerNodeId?: unknown;
+      name?: unknown;
+      latitude?: unknown;
+      longitude?: unknown;
+      type?: unknown;
+    };
     const centroidForShapeId = normalizeCentroidForShapeId(legacy.centroidForShapeId);
     const centroidForShapeContainerNodeId = normalizeCentroidForShapeContainerNodeId(
       legacy.centroidForShapeContainerNodeId

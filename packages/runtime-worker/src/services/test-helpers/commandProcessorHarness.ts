@@ -5,10 +5,6 @@ import { SingletonMixin } from '@hierarchidb/util';
 import { CommandProcessor } from '../CommandProcessor.js';
 import { CoreDB } from '../CoreDB.js';
 
-type CoreConstructor = new (name: string) => CoreDB;
-
-const CoreDBCtor = CoreDB as unknown as CoreConstructor;
-
 export type CommandTestHarness = {
   core: CoreDB;
   cp: CommandProcessor;
@@ -17,7 +13,7 @@ export type CommandTestHarness = {
 
 export async function createCommandTestHarness(label: string): Promise<CommandTestHarness> {
   const dbName = `hidb-core-test-${label}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  const core = new CoreDBCtor(dbName);
+  const core = CoreDB.createForTest(dbName);
   await core.open();
   await core.initialize();
   const cp = new CommandProcessor(core);

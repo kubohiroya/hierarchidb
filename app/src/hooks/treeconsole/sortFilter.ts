@@ -8,6 +8,9 @@ import type { NodeType } from '@hierarchidb/core-types';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import type { TreeConsoleState } from './types.js';
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
 export interface SortFilterConfig {
   sortBy?: string;
   sortDirection?: 'asc' | 'desc';
@@ -45,7 +48,10 @@ export function applySortFilterSearch(
     const resolve = (node: HierarchicalTreeNode): unknown => {
       if (key === 'name') return node.metadata?.name ?? '';
       if (key === 'description') return node.metadata?.description ?? '';
-      return (node as unknown as Record<string, unknown>)[key];
+      if (isRecord(node) && key in node) {
+        return node[key];
+      }
+      return undefined;
     };
     const va = resolve(a) ?? '';
     const vb = resolve(b) ?? '';

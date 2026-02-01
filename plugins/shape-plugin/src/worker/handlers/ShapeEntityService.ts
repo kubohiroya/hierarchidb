@@ -43,7 +43,7 @@ export class ShapeEntityService {
     const hasDraft = (node as { draftData?: unknown }).draftData !== null &&
       typeof (node as { draftData?: unknown }).draftData !== 'undefined';
     const targetField = hasDraft ? 'draftData' : 'data';
-    const targetValue = (node as unknown as Record<string, unknown>)[targetField];
+    const targetValue = (node as { data?: unknown; draftData?: unknown })[targetField];
     if (isRecord(targetValue)) {
       return targetValue as ShapeEntity;
     }
@@ -62,7 +62,7 @@ export class ShapeEntityService {
     const hasDraft = (node as { draftData?: unknown }).draftData !== null &&
       typeof (node as { draftData?: unknown }).draftData !== 'undefined';
     const targetField = hasDraft ? 'draftData' : 'data';
-    const targetValue = (node as unknown as Record<string, unknown>)[targetField];
+    const targetValue = (node as { data?: unknown; draftData?: unknown })[targetField];
     const payload = isRecord(targetValue)
       ? (targetValue as Record<string, unknown>)
       : {};
@@ -89,7 +89,7 @@ export class ShapeEntityService {
     const hasDraft = (node as { draftData?: unknown }).draftData !== null &&
       typeof (node as { draftData?: unknown }).draftData !== 'undefined';
     const targetField = hasDraft ? 'draftData' : 'data';
-    const targetValue = (node as unknown as Record<string, unknown>)[targetField];
+    const targetValue = (node as { data?: unknown; draftData?: unknown })[targetField];
     const payload = isRecord(targetValue)
       ? (targetValue as Record<string, unknown>)
       : {};
