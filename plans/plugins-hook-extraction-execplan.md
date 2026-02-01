@@ -14,14 +14,16 @@ Plugins under `plugins/` contain TSX components that mix rendering (JSX) with st
 - [x] (2026-02-01 19:00 JST) Inventoried `plugins/**/*.tsx` and identified high-logic candidates.
 - [x] (2026-02-01 19:15 JST) Extracted hooks for basemap-plugin (BaseMapDisplay, ViewportStep) and kept rendering unchanged.
 - [x] (2026-02-01 19:16 JST) Ran `pnpm --filter @hierarchidb/basemap-plugin typecheck` (exit 0).
+- [x] (2026-02-01 19:30 JST) Extracted hooks for styler-plugin (StylerAlgorithmStep2) and kept rendering unchanged.
+- [x] (2026-02-01 19:31 JST) Ran `pnpm --filter @hierarchidb/styler-plugin typecheck` (exit 0).
 - [ ] Extract logic into hooks for remaining target components.
 - [ ] Run typecheck for remaining affected plugins and record results.
 - [ ] Update TASKS.md with progress and completion notes.
 
 ## Surprises & Discoveries
 
-- Observation: Pending.
-  Evidence: Pending.
+- Observation: Hook extraction for StylerAlgorithmStep2 required narrowing hook params to a Pick of PluginStepProps to avoid missing `mode`/`disabled` fields.
+  Evidence: `pnpm --filter @hierarchidb/styler-plugin typecheck` initially failed with TS2345 until the hook param type was narrowed.
 
 ## Decision Log
 
@@ -107,3 +109,4 @@ Use React hooks already present in the component. Do not introduce new dependenc
     return { ... };
   }
 Plan change note: Updated progress for basemap-plugin extraction, recorded typecheck run, and logged starting plugin choice.
+Plan change note: Updated progress for styler-plugin extraction, recorded typecheck run, and noted hook param typing adjustment.

@@ -13138,3 +13138,5 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - update: 2026-02-01 19:00 JST plugins/**/*.tsx を棚卸しし、候補（Location/Route/Shape/Styler/Basemap 等の大規模TSX）を抽出。
   - update: 2026-02-01 19:15 JST basemap-plugin の BaseMapDisplay と ViewportStep をフックへ抽出。
   - update: 2026-02-01 19:16 JST pnpm --filter @hierarchidb/basemap-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 19:30 JST styler-plugin の StylerAlgorithmStep2 をフックへ抽出。
+  - update: 2026-02-01 19:31 JST pnpm --filter @hierarchidb/styler-plugin typecheck exit 0 を確認。
