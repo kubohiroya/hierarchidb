@@ -127,9 +127,24 @@ const resolveAdmin1Code = async (countryCode?: string, admin1?: string): Promise
   return match?.code;
 };
 
-export const parseIdeGsmCsv = async (csvText: string): Promise<IdeGsmParseResult> => {
+const buildRowValues = (headers: string[], row: Record<string, unknown>): string[] =>
+  headers.map((header) => {
+    const value = row[header];
+    if (value == null) return '';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  });
+
+export const parseIdeGsmTable = async (
+  headers: string[],
+  rows: string[][],
+): Promise<IdeGsmParseResult> => {
   const points: LocationFeatureProperties[] = [];
-  const { headers, rows } = parseCsvTable(csvText, { delimiter: ',', hasHeader: true });
   const nameIndex = findHeaderIndex(headers, ['name', 'location', 'place']);
   const latIndex = findHeaderIndex(headers, ['lat', 'latitude']);
   const lonIndex = findHeaderIndex(headers, ['lon', 'lng', 'longitude', 'long']);
@@ -235,6 +250,23 @@ export const parseIdeGsmCsv = async (csvText: string): Promise<IdeGsmParseResult
   }
 
   return { points, rowCount: rows.length };
+};
+
+export const parseIdeGsmRecords = async (
+  headers: string[],
+  rows: Array<Record<string, unknown>>,
+): Promise<IdeGsmParseResult> => {
+  const normalizedHeaders = headers.map((header) => header.trim()).filter((header) => header.length > 0);
+  if (normalizedHeaders.length === 0) {
+    return { points: [], rowCount: 0 };
+  }
+  const valueRows = rows.map((row) => buildRowValues(normalizedHeaders, row));
+  return await parseIdeGsmTable(normalizedHeaders, valueRows);
+};
+
+export const parseIdeGsmCsv = async (csvText: string): Promise<IdeGsmParseResult> => {
+  const { headers, rows } = parseCsvTable(csvText, { delimiter: ',', hasHeader: true });
+  return await parseIdeGsmTable(headers, rows);
 };
 
 export const filterIdeGsmPointsBySelection = (

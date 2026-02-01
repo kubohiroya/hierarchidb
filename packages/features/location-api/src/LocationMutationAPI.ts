@@ -13,7 +13,7 @@ export interface LocationMutationAPI {
   deleteLocationRelations(relations: LocationRelation[]): Promise<void>;
   clearLocationEntities(nodeId: NodeId): Promise<void>;
   clearLocationArtifacts(nodeId: NodeId): Promise<void>;
-  deleteLocationBySourceUrl(nodeId: NodeId, sourceUrl: string): Promise<void>;
+  deleteLocationBySourceKey(nodeId: NodeId, sourceKey: string): Promise<void>;
   migrateLegacyAdmin0(nodeId: NodeId): Promise<{ scanned: number; updated: number }>;
   importIdeGsmLocations(
     request: IdeGsmLocationImportRequest,

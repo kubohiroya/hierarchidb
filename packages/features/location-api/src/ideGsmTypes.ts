@@ -33,7 +33,7 @@ export type IdeGsmLocationPointInput = {
 
 export type IdeGsmLocationImportRequest = {
   nodeId: NodeId;
-  sourceUrl: string;
+  tabularSourceId: string;
   selectionEntries: IdeGsmSelectionEntry[];
   chunkSize?: number;
   mode?: 'replace' | 'append' | 'upsert';

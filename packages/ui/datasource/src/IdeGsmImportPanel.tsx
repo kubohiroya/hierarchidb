@@ -24,9 +24,15 @@ import { FileInputWithUrl } from '@hierarchidb/ui-file';
 
 export type IdeGsmFileEntry = {
   fileName: string;
-  sourceUrl: string;
+  sourceId: string;
   sizeBytes?: number;
   sourceType?: 'local' | 'remote';
+};
+
+export type IdeGsmImportPayload = {
+  file: File;
+  downloadUrl?: string;
+  sourceType: 'local' | 'remote';
 };
 
 export type IdeGsmImportLabels = {
@@ -42,14 +48,15 @@ export type IdeGsmImportLabels = {
 
 type IdeGsmImportSingleProps = {
   fileName?: string;
-  sourceUrl?: string;
-  onChange: (payload: IdeGsmFileEntry) => void;
+  sourceId?: string;
+  sizeBytes?: number;
+  onChange: (payload: IdeGsmImportPayload) => void;
   onClear: () => void;
 };
 
 type IdeGsmImportMultiProps = {
   files: IdeGsmFileEntry[];
-  onAddFile: (payload: IdeGsmFileEntry) => void;
+  onAddFile: (payload: IdeGsmImportPayload) => void;
   onRemoveFile: (index: number) => void;
 };
 
@@ -71,11 +78,6 @@ const formatBytes = (bytes?: number): string => {
     unitIndex += 1;
   }
   return `${value.toFixed(1)} ${units[unitIndex]}`;
-};
-
-const inferSourceType = (sourceUrl: string, fallback: 'local' | 'remote'): 'local' | 'remote' => {
-  if (sourceUrl.startsWith('http://') || sourceUrl.startsWith('https://')) return 'remote';
-  return fallback;
 };
 
 const IdeGsmFileCard: React.FC<{
@@ -145,24 +147,17 @@ export const IdeGsmImportPanel: React.FC<IdeGsmImportPanelProps> = (props) => {
     if (isMulti) {
       return props.files;
     }
-    if (props.fileName || props.sourceUrl) {
-      const sourceUrl = props.sourceUrl ?? '';
+    if (props.fileName || props.sourceId) {
+      const sourceId = props.sourceId ?? '';
       return [{
         fileName: props.fileName ?? labels.fileFallback,
-        sourceUrl,
-        sourceType: inferSourceType(sourceUrl, 'local'),
+        sourceId,
+        sourceType: 'local',
+        sizeBytes: props.sizeBytes,
       }];
     }
     return [];
   }, [isMulti, labels.fileFallback, props]);
-
-  const readFileAsDataUrl = (file: File): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result ?? ''));
-      reader.onerror = () => reject(reader.error ?? new Error('Failed to read file'));
-      reader.readAsDataURL(file);
-    });
 
   const closeDialogs = () => {
     setLocalDialogOpen(false);
@@ -171,23 +166,18 @@ export const IdeGsmImportPanel: React.FC<IdeGsmImportPanelProps> = (props) => {
 
   const handleFileSelect = async (file: File, downloadUrl?: string) => {
     const sourceType = downloadUrl ? 'remote' : 'local';
-    const nextUrl = downloadUrl ?? (await readFileAsDataUrl(file));
-    const payload: IdeGsmFileEntry = {
-      fileName: file.name,
-      sourceUrl: nextUrl,
-      sizeBytes: file.size,
-      sourceType,
-    };
     if (isMulti) {
-      const hasDuplicate = props.files.some((entry) => {
-        if (entry.sourceUrl === payload.sourceUrl) return true;
-        return entry.fileName === payload.fileName && entry.sizeBytes === payload.sizeBytes;
+      props.onAddFile({
+        file,
+        downloadUrl,
+        sourceType,
       });
-      if (!hasDuplicate) {
-        props.onAddFile(payload);
-      }
     } else {
-      props.onChange(payload);
+      props.onChange({
+        file,
+        downloadUrl,
+        sourceType,
+      });
     }
     closeDialogs();
   };
@@ -226,7 +216,7 @@ export const IdeGsmImportPanel: React.FC<IdeGsmImportPanelProps> = (props) => {
             <Box display="flex" sx={{ flexFlow: 'row wrap', gap: 0.75 }}>
               {files.map((entry, index) => (
                 <IdeGsmFileCard
-                  key={`${entry.fileName}-${entry.sourceUrl}-${index}`}
+                  key={`${entry.fileName}-${entry.sourceId}-${index}`}
                   entry={entry}
                   sizeLabel={formatBytes(entry.sizeBytes)}
                   onRemove={(event) => handleRemove(event, index)}
@@ -255,6 +245,7 @@ export const IdeGsmImportPanel: React.FC<IdeGsmImportPanelProps> = (props) => {
               <Button
                 startIcon={<Add />}
                 onClick={(event) => {
+                  event.currentTarget.blur();
                   event.stopPropagation();
                   if (lastAction === 'remote') {
                     setRemoteDialogOpen(true);
@@ -268,6 +259,7 @@ export const IdeGsmImportPanel: React.FC<IdeGsmImportPanelProps> = (props) => {
               </Button>
               <Button
                 onClick={(event) => {
+                  event.currentTarget.blur();
                   event.stopPropagation();
                   setMenuAnchor(event.currentTarget);
                 }}
@@ -283,6 +275,7 @@ export const IdeGsmImportPanel: React.FC<IdeGsmImportPanelProps> = (props) => {
             >
               <MenuItem
                 onClick={() => {
+                  menuAnchor?.blur();
                   setMenuAnchor(null);
                   setLastAction('local');
                   setLocalDialogOpen(true);
@@ -295,6 +288,7 @@ export const IdeGsmImportPanel: React.FC<IdeGsmImportPanelProps> = (props) => {
               </MenuItem>
               <MenuItem
                 onClick={() => {
+                  menuAnchor?.blur();
                   setMenuAnchor(null);
                   setLastAction('remote');
                   setRemoteDialogOpen(true);
@@ -312,7 +306,7 @@ export const IdeGsmImportPanel: React.FC<IdeGsmImportPanelProps> = (props) => {
       <Dialog open={localDialogOpen} onClose={() => setLocalDialogOpen(false)} fullWidth maxWidth="sm">
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, pt: 2 }}>
           <Typography variant="subtitle1">{labels.importLocal}</Typography>
-          <IconButton aria-label="Close" onClick={() => setLocalDialogOpen(false)}>
+          <IconButton aria-label="Close" onClick={() => setLocalDialogOpen(false)} autoFocus>
             <Close />
           </IconButton>
         </Box>
@@ -330,7 +324,7 @@ export const IdeGsmImportPanel: React.FC<IdeGsmImportPanelProps> = (props) => {
       <Dialog open={remoteDialogOpen} onClose={() => setRemoteDialogOpen(false)} fullWidth maxWidth="sm">
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, pt: 2 }}>
           <Typography variant="subtitle1">{labels.importRemote}</Typography>
-          <IconButton aria-label="Close" onClick={() => setRemoteDialogOpen(false)}>
+          <IconButton aria-label="Close" onClick={() => setRemoteDialogOpen(false)} autoFocus>
             <Close />
           </IconButton>
         </Box>

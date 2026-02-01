@@ -110,7 +110,7 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = ({
   const iso = useIsoCountries();
   const draft = useMemo(() => getRouteUpdaterPayload(draftProp), [draftProp]);
   const dataSourceName = draft.dataSourceName ?? null;
-  const ideGsmSourceUrl = draft.ideGsmSourceUrl ?? null;
+  const ideGsmSourceId = draft.tabularSourceId ?? null;
   const isIdeGsm = dataSourceName === 'ide-gsm';
   const routeNodeId = (draftProp.treeNodeId ?? _nodeId) as NodeId | undefined;
   const styleDefaults = useMemo(() => buildDefaultRouteStyleConfig(), []);
@@ -145,9 +145,9 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = ({
       setCoverageLoading(false);
       return;
     }
-    if (!ideGsmSourceUrl) {
+    if (!ideGsmSourceId) {
       setCoverage(null);
-      setCoverageError(t('routeConfig.ideGsmMissingSource', 'IDE-GSM source URL is required.'));
+      setCoverageError(t('routeConfig.ideGsmMissingSource', 'IDE-GSM source is required.'));
       setCoverageLoading(false);
       return;
     }
@@ -169,7 +169,7 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = ({
         const routeMutation = await api.getRouteMutationAPI();
         const result = await routeMutation.resolveIdeGsmRouteCoverage({
           nodeId: routeNodeId,
-          sourceUrl: ideGsmSourceUrl,
+          tabularSourceId: ideGsmSourceId,
         });
         if (cancelled) return;
         if (!result || Object.keys(result.coverageByCountry ?? {}).length === 0) {
@@ -191,7 +191,7 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [api, ideGsmSourceUrl, initialize, isIdeGsm, routeNodeId, t]);
+  }, [api, ideGsmSourceId, initialize, isIdeGsm, routeNodeId, t]);
 
   const coverageModeMap = useMemo(() => {
     const map = new Map<string, Set<RouteMode>>();
@@ -382,26 +382,27 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = ({
 
   const selectionErrorMessage = useMemo(() => {
     if (!isIdeGsm) return null;
-    if (!ideGsmSourceUrl) {
-      return t('routeConfig.ideGsmMissingSource', 'IDE-GSM source URL is required.');
+    if (!ideGsmSourceId) {
+      return t('routeConfig.ideGsmMissingSource', 'IDE-GSM source is required.');
     }
     if (coverageError) return coverageError;
     if (coverage && coverage.errors.length > 0) {
       return t('routeConfig.ideGsmValidationError', 'Resolve IDE-GSM parsing errors before selecting routes.');
     }
     return null;
-  }, [coverage, coverageError, ideGsmSourceUrl, isIdeGsm, t]);
+  }, [coverage, coverageError, ideGsmSourceId, isIdeGsm, t]);
 
   const errorRows = useMemo(() => {
     if (!coverage?.errors?.length) return [];
+    const label = draft.ideGsmFileName ?? '';
     return coverage.errors.map((error) => ({
       ...error,
-      sourceUrl: ideGsmSourceUrl ?? '',
+      sourceLabel: label,
     }));
-  }, [coverage?.errors, ideGsmSourceUrl]);
+  }, [coverage?.errors, draft.ideGsmFileName]);
 
   const errorColumns = useMemo<GridColumn<(typeof errorRows)[number]>[]>(() => ([
-    { id: 'sourceUrl', label: t('routeConfig.ideGsmErrors.columns.source', 'Source'), width: 200 },
+    { id: 'sourceLabel', label: t('routeConfig.ideGsmErrors.columns.source', 'Source'), width: 200 },
     { id: 'rowNumber', label: t('routeConfig.ideGsmErrors.columns.row', 'Row'), width: 80, sortable: true },
     { id: 'start', label: t('routeConfig.ideGsmErrors.columns.start', 'Start'), width: 160 },
     { id: 'end', label: t('routeConfig.ideGsmErrors.columns.end', 'End'), width: 160 },
@@ -476,9 +477,9 @@ const RouteSelectionContent: React.FC<RouteSelectionStepProps> = ({
       >
         <DialogTitle>{t('routeConfig.ideGsmErrors.title', 'IDE-GSM errors')}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {ideGsmSourceUrl ? (
+          {draft.ideGsmFileName ? (
             <Typography variant="body2" color="text.secondary">
-              {t('routeConfig.ideGsmErrors.sourceLabel', 'Source')}: {ideGsmSourceUrl}
+              {t('routeConfig.ideGsmErrors.sourceLabel', 'Source')}: {draft.ideGsmFileName}
             </Typography>
           ) : null}
           <Typography variant="body2" color="text.secondary">

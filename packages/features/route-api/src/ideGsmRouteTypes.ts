@@ -4,7 +4,7 @@ import type { RouteMode } from './routeTypes.js';
 
 export type IdeGsmRouteImportRequest = {
   nodeId: NodeId;
-  sourceUrl: string;
+  tabularSourceId: string;
   locationNodeIds?: NodeId[];
   chunkSize?: number;
 };

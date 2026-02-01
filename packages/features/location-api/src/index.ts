@@ -16,4 +16,9 @@ export {
   mortonRangeForTile,
 } from './morton.js';
 export type { IdeGsmParseResult } from './ideGsmLocationCsv.js';
-export { filterIdeGsmPointsBySelection, parseIdeGsmCsv } from './ideGsmLocationCsv.js';
+export {
+  filterIdeGsmPointsBySelection,
+  parseIdeGsmCsv,
+  parseIdeGsmRecords,
+  parseIdeGsmTable,
+} from './ideGsmLocationCsv.js';

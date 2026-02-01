@@ -70,7 +70,7 @@ export type LocationLabelConfig = Record<LocationType, LocationLabelConfigEntry>
 
 export type IdeGsmSourceEntry = {
   fileName: string;
-  sourceUrl: string;
+  tabularSourceId: string;
   sizeBytes?: number;
   sourceType?: 'local' | 'remote';
 };

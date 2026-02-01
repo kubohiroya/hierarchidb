@@ -1,12 +1,10 @@
 import type { NodeId } from '@hierarchidb/core-types';
-import { authFetch } from '@hierarchidb/download';
 import type { LocationFeature, LocationPointProperties } from '@hierarchidb/location-store';
 import type { LocationMutationAPI } from '@hierarchidb/location-api';
 import {
   filterIdeGsmPointsBySelection,
   getLocationDB,
   mortonKeyFromLonLat,
-  parseIdeGsmCsv,
 } from '@hierarchidb/location-store';
 import {
   IDE_GSM_BULK_CHUNK_SIZE,
@@ -18,6 +16,8 @@ import {
   type LocationRelation,
 } from '@hierarchidb/location-api';
 import { SingletonMixin } from '@hierarchidb/util';
+import { parseIdeGsmRecords } from '@hierarchidb/location-api';
+import { loadTabularTableRows } from './utils/tabular.js';
 
 type LocationPointWriteProgress = {
   total: number;
@@ -92,30 +92,16 @@ export class LocationMutationService implements LocationMutationAPI {
     await db.clearNodeData(nodeId);
   }
 
-  private async toSourceKey(sourceUrl: string): Promise<string> {
-    if (!sourceUrl) return '';
-    if (!globalThis.crypto?.subtle) {
-      throw new Error('crypto.subtle is not available for sourceKey hashing');
-    }
-    const data = new TextEncoder().encode(sourceUrl);
-    const digest = await globalThis.crypto.subtle.digest('SHA-256', data);
-    return Array.from(new Uint8Array(digest))
-      .map((byte) => byte.toString(16).padStart(2, '0'))
-      .join('');
-  }
-
-  async deleteLocationBySourceUrl(nodeId: NodeId, sourceUrl: string): Promise<void> {
+  async deleteLocationBySourceKey(nodeId: NodeId, sourceKey: string): Promise<void> {
     const db = getLocationDB();
     await db.open?.();
-    const sourceKey = await this.toSourceKey(sourceUrl);
     const rows = await db.features.where('nodeId').equals(nodeId).toArray();
     if (!rows.length) return;
     const targetIds = rows
       .filter((row) => {
         const meta = (row.data?.metadata ?? {}) as Record<string, unknown>;
         const storedKey = typeof meta.sourceKey === 'string' ? meta.sourceKey : '';
-        const storedUrl = typeof meta.sourceUrl === 'string' ? meta.sourceUrl : '';
-        return (sourceKey && storedKey === sourceKey) || (!storedKey && storedUrl === sourceUrl);
+        return sourceKey && storedKey === sourceKey;
       })
       .map((row) => row.id);
     if (!targetIds.length) return;
@@ -200,18 +186,14 @@ export class LocationMutationService implements LocationMutationAPI {
     try {
       emit({ phase: 'fetch' });
 
-      const response = await authFetch('location', request.sourceUrl);
-      if (!response.ok) {
-        throw new Error(`IDE-GSM fetch failed (${response.status})`);
-      }
-      const csvText = await response.text();
-      const parsed = await parseIdeGsmCsv(csvText);
+      const { headers, rows } = await loadTabularTableRows('location', request.tabularSourceId);
+      const parsed = await parseIdeGsmRecords(headers, rows);
       emit({ phase: 'parse', total: parsed.rowCount, processed: parsed.rowCount });
 
       const filtered = filterIdeGsmPointsBySelection(parsed.points, request.selectionEntries);
       emit({ phase: 'filter', total: parsed.points.length, processed: filtered.length });
 
-      const sourceKey = await this.toSourceKey(request.sourceUrl);
+      const sourceKey = request.tabularSourceId;
       const chunkSize = request.chunkSize ?? IDE_GSM_BULK_CHUNK_SIZE;
       const writeMode = request.mode ?? 'upsert';
       const enriched = filtered.map((point) => ({

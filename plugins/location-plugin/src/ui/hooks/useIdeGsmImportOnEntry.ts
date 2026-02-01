@@ -31,17 +31,21 @@ export const useIdeGsmImportOnEntry = ({
     if (draft.ideGsmSources && draft.ideGsmSources.length > 0) {
       return draft.ideGsmSources;
     }
-    if (draft.ideGsmSourceUrl) {
+    if (draft.tabularSourceId) {
       return [{
         fileName: draft.ideGsmFileName ?? '',
-        sourceUrl: draft.ideGsmSourceUrl,
+        tabularSourceId: draft.tabularSourceId,
       }];
     }
     return [];
-  }, [draft.ideGsmFileName, draft.ideGsmSourceUrl, draft.ideGsmSources]);
-  const sourceKey = useMemo(
-    () => ideGsmSources.map((source) => source.sourceUrl).sort().join('|'),
+  }, [draft.ideGsmFileName, draft.ideGsmSources, draft.tabularSourceId]);
+  const validSources = useMemo(
+    () => ideGsmSources.filter((source) => typeof source.tabularSourceId === 'string' && source.tabularSourceId.length > 0),
     [ideGsmSources],
+  );
+  const sourceKey = useMemo(
+    () => validSources.map((source) => source.tabularSourceId).sort().join('|'),
+    [validSources],
   );
   const combinedHash = useMemo(
     () => (selectionHash ? `${selectionHash}::${sourceKey}` : `__all__::${sourceKey}`),
@@ -52,7 +56,7 @@ export const useIdeGsmImportOnEntry = ({
   useEffect(() => {
     if (draft.dataSource !== 'ide-gsm') return;
     if (!nodeId) return;
-    if (ideGsmSources.length === 0) return;
+    if (validSources.length === 0) return;
     if (draft.ideGsmSelectionHash === combinedHash) return;
     if (inFlightRef.current) return;
 
@@ -69,7 +73,7 @@ export const useIdeGsmImportOnEntry = ({
       selectionHash,
       combinedHash,
       selectionEntriesCount: selectionEntries.length,
-      sources: ideGsmSources.map((source) => source.sourceUrl),
+      sources: validSources.map((source) => source.tabularSourceId),
     });
     inFlightRef.current = true;
     onUpdate?.({ processingStatus: 'processing' });
@@ -80,11 +84,11 @@ export const useIdeGsmImportOnEntry = ({
         const bridge = getWorkerBridge();
         await bridge.initialize();
         const api = await bridge.getLocationMutationAPI();
-        for (const source of ideGsmSources) {
+        for (const source of validSources) {
           const result = await api.importIdeGsmLocations(
             {
               nodeId,
-              sourceUrl: source.sourceUrl,
+              tabularSourceId: source.tabularSourceId,
               selectionEntries,
               chunkSize: IDE_GSM_BULK_CHUNK_SIZE,
               mode: 'upsert',
@@ -100,12 +104,12 @@ export const useIdeGsmImportOnEntry = ({
               updateIdeGsmProgress(nodeId, progress);
             }),
           );
-          console.info(debugPrefix, 'import-result', { nodeId, sourceUrl: source.sourceUrl, total: result.total });
+          console.info(debugPrefix, 'import-result', { nodeId, tabularSourceId: source.tabularSourceId, total: result.total });
         }
         if (cancelled) return;
         console.info(debugPrefix, 'source-complete', {
           nodeId,
-          sources: ideGsmSources.map((source) => source.sourceUrl),
+          sources: validSources.map((source) => source.tabularSourceId),
         });
         console.info(debugPrefix, 'complete', { nodeId, combinedHash });
         onUpdate?.({
@@ -146,6 +150,7 @@ export const useIdeGsmImportOnEntry = ({
     nodeId,
     onUpdate,
     selection,
+    validSources,
     combinedHash,
   ]);
 };

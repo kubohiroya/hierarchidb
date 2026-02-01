@@ -7,8 +7,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import type { LocationEntity } from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
-import { parseIdeGsmCsv } from '@hierarchidb/location-api';
-import { downloadFile } from '@hierarchidb/ui-file';
+import { parseIdeGsmRecords } from '@hierarchidb/location-api';
 import { notify } from '@hierarchidb/components';
 import { buildAvailabilityMapFromIdeGsmPoints, buildSelectionMapFromAvailability } from '../../utils/ideGsmSelection.js';
 import type { LocationType } from '../../../common/types/index.js';
@@ -16,6 +15,7 @@ import type { IdeGsmSourceEntry } from '@hierarchidb/location-api';
 import { CountryMatrixSelector, useIsoCountries, type Country, type MatrixConfig, type MatrixSelection } from '@hierarchidb/ui-country-select';
 import { BASE_LOCATION_TYPES, resolveTypesForSource } from './locationTypes.js';
 import { AuthReadyGate } from '@hierarchidb/ui-auth';
+import { createLocationTabularApi } from '../../../common/tabular/createLocationTabularApi.js';
 
 interface LocationSelectionStepProps {
   draft: Partial<LocationEntity>;
@@ -48,6 +48,7 @@ export const buildSelectionRecord = (
 const LocationSelectionContent: React.FC<LocationSelectionStepProps> = ({ draft, onUpdate }) => {
   const { translations, t } = useTranslation();
   const iso = useIsoCountries();
+  const tabularApi = useMemo(() => createLocationTabularApi(), []);
   const allowedTypes = resolveTypesForSource(draft.dataSource ?? '');
   const allowedTypeSet = useMemo(()=>new Set(allowedTypes), [allowedTypes]);
   const typeDescriptions = translations.selection?.typeDescriptions ?? {};
@@ -94,14 +95,14 @@ const LocationSelectionContent: React.FC<LocationSelectionStepProps> = ({ draft,
     if (draft.ideGsmSources && draft.ideGsmSources.length > 0) {
       return draft.ideGsmSources;
     }
-    if (draft.ideGsmSourceUrl) {
+    if (draft.tabularSourceId) {
       return [{
         fileName: draft.ideGsmFileName ?? '',
-        sourceUrl: draft.ideGsmSourceUrl,
+        tabularSourceId: draft.tabularSourceId,
       }];
     }
     return [];
-  }, [draft.ideGsmFileName, draft.ideGsmSourceUrl, draft.ideGsmSources]);
+  }, [draft.ideGsmFileName, draft.ideGsmSources, draft.tabularSourceId]);
   const [availabilityByCountry, setAvailabilityByCountry] = useState<Record<string, boolean[]>>({});
   const parseInFlightRef = useRef(false);
   const typeIndex = useMemo(
@@ -120,7 +121,7 @@ const LocationSelectionContent: React.FC<LocationSelectionStepProps> = ({ draft,
 
   useEffect(() => {
     if (draft.dataSource !== 'ide-gsm') return;
-    const sources = ideGsmSources.filter((source) => source.sourceUrl);
+    const sources = ideGsmSources.filter((source) => source.tabularSourceId);
     if (sources.length === 0) return;
     if (parseInFlightRef.current) return;
     if (hasSelection && hasAvailability) return;
@@ -129,9 +130,10 @@ const LocationSelectionContent: React.FC<LocationSelectionStepProps> = ({ draft,
       try {
         const parsedList = await Promise.all(
           sources.map(async (source) => {
-            const blob = await downloadFile(source.sourceUrl);
-            const csvText = await blob.text();
-            return parseIdeGsmCsv(csvText);
+            const tableId = source.tabularSourceId;
+            const result = await tabularApi.getFilteredData(tableId, { valueColumns: [], filterRules: [] });
+            const headers = result.columns.map((column) => column.name);
+            return parseIdeGsmRecords(headers, result.rows);
           }),
         );
         const points = parsedList.flatMap((parsed) => parsed.points);
@@ -161,6 +163,7 @@ const LocationSelectionContent: React.FC<LocationSelectionStepProps> = ({ draft,
     onUpdate,
     selectionByCountries,
     t,
+    tabularApi,
   ]);
 
   const selectionMatrixSource = useMemo(() => {

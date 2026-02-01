@@ -107,6 +107,7 @@ export interface RouteEntity {
   licenseAgreedAt?: Timestamp;
   ideGsmFileName?: string;
   ideGsmSourceUrl?: string;
+  ideGsmFileSizeBytes?: number;
   tabularSourceId?: string;
   transportMode?: TransportMode;
   transportModes?: TransportMode[];

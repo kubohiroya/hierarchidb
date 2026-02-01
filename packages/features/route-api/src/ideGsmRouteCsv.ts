@@ -61,25 +61,39 @@ type IdeGsmRow = {
   metadata: Record<string, string | number | boolean>;
 };
 
-export function parseIdeGsmRouteCsv(
-  csvText: string,
+type TabularRowRecord = Record<string, unknown>;
+
+const buildRowValues = (headers: string[], row: TabularRowRecord): string[] =>
+  headers.map((header) => {
+    const value = row[header];
+    if (value == null) return '';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  });
+
+export function parseIdeGsmRouteTable(
+  headers: string[],
+  rows: string[][],
   locationIndex: Map<string, IdeGsmLocationRecord>,
   nodeId: NodeId
 ): { lineStrings: RouteLineString[]; errors: IdeGsmRouteError[] } {
-  const rows = csvText.split(/\r?\n/).filter((line) => line.trim().length > 0);
   if (rows.length === 0) {
     return { lineStrings: [], errors: [] };
   }
 
-  const header = rows[0]!.split(',').map((h) => h.trim());
-  const headerIndex = createHeaderIndex(header);
+  const headerIndex = createHeaderIndex(headers);
 
   const lineStrings: RouteLineString[] = [];
   const errors: IdeGsmRouteError[] = [];
 
-  for (let i = 1; i < rows.length; i += 1) {
-    const raw = rows[i]!;
-    const cols = splitCsvLine(raw);
+  for (let i = 0; i < rows.length; i += 1) {
+    const cols = rows[i];
+    if (!cols) continue;
     const rowNumber = i + 1;
     try {
       const parsed = parseIdeGsmRow(cols, headerIndex);
@@ -137,6 +151,35 @@ export function parseIdeGsmRouteCsv(
   }
 
   return { lineStrings, errors };
+}
+
+export function parseIdeGsmRouteRecords(
+  headers: string[],
+  rows: TabularRowRecord[],
+  locationIndex: Map<string, IdeGsmLocationRecord>,
+  nodeId: NodeId
+): { lineStrings: RouteLineString[]; errors: IdeGsmRouteError[] } {
+  const normalizedHeaders = headers.map((header) => header.trim()).filter((header) => header.length > 0);
+  if (normalizedHeaders.length === 0) {
+    return { lineStrings: [], errors: [] };
+  }
+  const values = rows.map((row) => buildRowValues(normalizedHeaders, row));
+  return parseIdeGsmRouteTable(normalizedHeaders, values, locationIndex, nodeId);
+}
+
+export function parseIdeGsmRouteCsv(
+  csvText: string,
+  locationIndex: Map<string, IdeGsmLocationRecord>,
+  nodeId: NodeId
+): { lineStrings: RouteLineString[]; errors: IdeGsmRouteError[] } {
+  const rows = csvText.split(/\r?\n/).filter((line) => line.trim().length > 0);
+  if (rows.length === 0) {
+    return { lineStrings: [], errors: [] };
+  }
+
+  const header = rows[0]?.split(',').map((h) => h.trim()) ?? [];
+  const body = rows.slice(1).map((row) => splitCsvLine(row));
+  return parseIdeGsmRouteTable(header, body, locationIndex, nodeId);
 }
 
 function createHeaderIndex(header: string[]): Record<string, number> {

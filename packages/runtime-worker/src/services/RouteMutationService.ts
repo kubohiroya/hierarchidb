@@ -1,6 +1,4 @@
-import { DexieChunkStore } from '@hierarchidb/chunk-store';
 import type { ISO2, NodeId } from '@hierarchidb/core-types';
-import { FetchNetworkPort, getCorsProxyBaseURL } from '@hierarchidb/download';
 import type { LocationQueryAPI } from '@hierarchidb/location-api';
 import type { TreeNode, TreeQueryAPI } from '@hierarchidb/tree-api';
 import type {
@@ -26,7 +24,9 @@ import { ROUTE_MODES } from '@hierarchidb/route-api';
 import { RouteGenerator, SearouteEngine } from '@hierarchidb/route-engine';
 import type { RouteDatabaseHandle } from '@hierarchidb/route-store';
 import { SingletonMixin } from '@hierarchidb/util';
-import { buildIdeGsmLocationIndex, parseIdeGsmCsv } from './route/ideGsmCsv.js';
+import { buildIdeGsmLocationIndex } from './route/ideGsmCsv.js';
+import { parseIdeGsmRouteRecords } from '@hierarchidb/route-api';
+import { loadTabularTableRows } from './utils/tabular.js';
 import { getStageProcessingClient } from './StageProcessingService.js';
 import { writeVectorTileInput } from './vectorTileStageRunner.js';
 import { clampZoom } from './nearest/tileNearest.js';
@@ -91,16 +91,9 @@ export class RouteMutationService implements RouteMutationAPI {
       throw new Error('No related location nodes found.');
     }
 
-    const store = createRouteTextStore();
-    const cacheKey = buildCacheKey('route-ide-gsm', request.sourceUrl);
-    const entry = await store.getOrFetchForNode(request.nodeId, request.sourceUrl, {
-      accept: 'text/csv',
-      cacheKey,
-    });
-    const csvText = entry.value;
-
+    const { headers, rows } = await loadTabularTableRows('route', request.tabularSourceId);
     const locationIndex = await buildIdeGsmLocationIndex(this.locationQueryService, locationNodeIds);
-    const { lineStrings, errors } = parseIdeGsmCsv(csvText, locationIndex, request.nodeId);
+    const { lineStrings, errors } = parseIdeGsmRouteRecords(headers, rows, locationIndex, request.nodeId);
     const coverageByCountry = buildCoverageByCountry(lineStrings);
     const rowCount = lineStrings.length + errors.length;
     return {
@@ -129,19 +122,12 @@ export class RouteMutationService implements RouteMutationAPI {
         throw new Error('No related location nodes found.');
       }
 
-      const store = createRouteTextStore();
-      const cacheKey = buildCacheKey('route-ide-gsm', request.sourceUrl);
-      const entry = await store.getOrFetchForNode(request.nodeId, request.sourceUrl, {
-        accept: 'text/csv',
-        cacheKey,
-      });
-      const csvText = entry.value;
-
       const locationIndex = await buildIdeGsmLocationIndex(
         this.locationQueryService,
         locationNodeIds
       );
-      const { lineStrings, errors } = parseIdeGsmCsv(csvText, locationIndex, request.nodeId);
+      const { headers, rows } = await loadTabularTableRows('route', request.tabularSourceId);
+      const { lineStrings, errors } = parseIdeGsmRouteRecords(headers, rows, locationIndex, request.nodeId);
       emit({ phase: 'parse', total: lineStrings.length, processed: lineStrings.length });
 
       const generator = await getIdeGsmRouteGenerator();
@@ -517,34 +503,6 @@ function resolveIdeGsmMethod(routeMode?: string): 'direct' | 'great_circle' | 's
   }
   return null;
 }
-
-const textEncoder = new TextEncoder();
-const textDecoder = new TextDecoder();
-
-const buildCacheKey = (prefix: string, url: string): string => `${prefix}:${hashString(url)}`;
-
-const hashString = (input: string): string => {
-  let hash = 0;
-  for (let i = 0; i < input.length; i += 1) {
-    hash = (hash * 31 + input.charCodeAt(i)) >>> 0;
-  }
-  return hash.toString(16);
-};
-
-const createRouteTextStore = (): DexieChunkStore<string> => {
-  const corsProxyBaseURL = getCorsProxyBaseURL() || undefined;
-  const net = new FetchNetworkPort({
-    perHostConcurrency: 4,
-    corsProxyBaseURL,
-    auth: { scope: 'route' },
-  });
-  return new DexieChunkStore<string>({
-    dbName: 'hidb-chunks',
-    serializer: (value) => textEncoder.encode(value).buffer,
-    deserializer: (buffer) => textDecoder.decode(new Uint8Array(buffer)),
-    networkPort: net,
-  });
-};
 
 const resolveRoutePoints = (line: RouteLineString): [number, number][] => {
   if (Array.isArray(line.waypoints) && line.waypoints.length >= 2) {

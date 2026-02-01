@@ -12,12 +12,14 @@ import {
   type DataSourceOption,
   IdeGsmImportPanel,
   type IdeGsmFileEntry,
+  type IdeGsmImportPayload,
   type IdeGsmImportLabels,
 } from '@hierarchidb/ui-datasource';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
 import type { LocationDataSource, LocationEntity, LocationType } from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
 import type { NodeId, Timestamp } from '@hierarchidb/core-types';
+import { createLocationTabularApi } from '../../../common/tabular/createLocationTabularApi.js';
 
 const ORDERED_DATA_SOURCES: LocationDataSource[] = [
   'ide-gsm',
@@ -144,6 +146,29 @@ const DISABLED_SOURCES: LocationDataSource[] = ORDERED_DATA_SOURCES.filter(
 
 const HIDDEN_SOURCES: LocationDataSource[] = ['custom', 'manual'];
 
+const ensureTabularXlsx = async (): Promise<void> => {
+  await import('@hierarchidb/tabular-source-xlsx');
+};
+
+const decodeDataUrlToFile = (dataUrl: string, filename: string): File | null => {
+  if (!dataUrl.startsWith('data:')) return null;
+  const [header, payload] = dataUrl.split(',');
+  if (!header || payload === undefined) return null;
+  const match = /^data:(.*?)(;base64)?$/.exec(header);
+  const mime = match?.[1] || 'application/octet-stream';
+  const isBase64 = Boolean(match?.[2]);
+  try {
+    const data = isBase64 ? atob(payload) : decodeURIComponent(payload);
+    const bytes = new Uint8Array(data.length);
+    for (let i = 0; i < data.length; i += 1) {
+      bytes[i] = data.charCodeAt(i);
+    }
+    return new File([bytes], filename, { type: mime });
+  } catch {
+    return null;
+  }
+};
+
 export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
   draft,
   onUpdate,
@@ -153,6 +178,7 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
 }) => {
   const { t } = useTranslation();
   const { api, initialize } = useWorkerAPI();
+  const tabularApi = useMemo(() => createLocationTabularApi(), []);
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const [pendingRemoveIndex, setPendingRemoveIndex] = useState<number | null>(null);
   const [pendingRemoveKey, setPendingRemoveKey] = useState<string | null>(null);
@@ -160,6 +186,7 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
   const [routeRefLoading, setRouteRefLoading] = useState(false);
   const [routeRefError, setRouteRefError] = useState<string | null>(null);
   const [removeInProgress, setRemoveInProgress] = useState(false);
+  const [importInProgress, setImportInProgress] = useState(false);
 
   const value = useMemo<LocationDataSource>(
     () => (draft.dataSource as LocationDataSource) ?? 'openstreetmap',
@@ -203,26 +230,25 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
   const ideGsmSources = useMemo<IdeGsmFileEntry[]>(() => {
     if (draft.ideGsmSources && draft.ideGsmSources.length > 0) {
       return draft.ideGsmSources.map((entry) => ({
-        ...entry,
-        sourceType:
-          entry.sourceType ??
-          (entry.sourceUrl.startsWith('http://') || entry.sourceUrl.startsWith('https://')
-            ? 'remote'
-            : 'local'),
+        fileName: entry.fileName,
+        sourceId: entry.tabularSourceId,
+        sizeBytes: entry.sizeBytes,
+        sourceType: entry.sourceType ?? 'local',
       }));
     }
-    if (draft.ideGsmSourceUrl) {
-      const sourceUrl = draft.ideGsmSourceUrl;
+    if (draft.tabularSourceId) {
+      const sizeBytes = typeof draft.ideGsmFileSizeBytes === 'number' ? draft.ideGsmFileSizeBytes : undefined;
       return [{
         fileName: draft.ideGsmFileName ?? t('dataSource.ideGsm.fileFallback', 'Imported file'),
-        sourceUrl,
-        sourceType: sourceUrl.startsWith('http://') || sourceUrl.startsWith('https://') ? 'remote' : 'local',
+        sourceId: draft.tabularSourceId,
+        sizeBytes,
+        sourceType: 'local',
       }];
     }
     return [];
-  }, [draft.ideGsmFileName, draft.ideGsmSourceUrl, draft.ideGsmSources, t]);
+  }, [draft.ideGsmFileName, draft.ideGsmFileSizeBytes, draft.ideGsmSources, draft.tabularSourceId, t]);
   const buildEntryKey = (entry: IdeGsmFileEntry): string => (
-    `${entry.sourceUrl || ''}::${entry.fileName}`
+    `${entry.sourceId || ''}::${entry.fileName}`
   );
   const buildSourceKey = (sources: IdeGsmFileEntry[]): string => (
     sources
@@ -234,6 +260,67 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
   const pendingDraftKeyRef = useRef<string | null>(null);
   const stableSourcesRef = useRef<IdeGsmFileEntry[]>(ideGsmSources);
   const sourceKey = useMemo(() => buildSourceKey(ideGsmSources), [ideGsmSources]);
+
+  useEffect(() => {
+    if (!draft.ideGsmSourceUrl) return;
+    if (draft.tabularSourceId) return;
+    if (draft.ideGsmSources && draft.ideGsmSources.length > 0) return;
+    if (importInProgress) return;
+    let cancelled = false;
+    const migrate = async () => {
+      setImportInProgress(true);
+      try {
+        await ensureTabularXlsx();
+        const fallbackName = draft.ideGsmFileName ?? t('dataSource.ideGsm.fileFallback', 'Imported file');
+        const dataUrlFile = decodeDataUrlToFile(draft.ideGsmSourceUrl ?? '', fallbackName);
+        const metadata = dataUrlFile
+          ? await tabularApi.uploadTabularFile(dataUrlFile, {})
+          : await tabularApi.downloadTabularFromUrl(draft.ideGsmSourceUrl ?? '', {}, nodeId);
+        if (cancelled || !metadata) return;
+        const entry: IdeGsmFileEntry = {
+          fileName: metadata.filename ?? fallbackName,
+          sourceId: metadata.id,
+          sizeBytes: metadata.fileSizeBytes ?? dataUrlFile?.size,
+          sourceType: dataUrlFile ? 'local' : 'remote',
+        };
+        onUpdate({
+          ideGsmSources: [{
+            fileName: entry.fileName,
+            tabularSourceId: entry.sourceId,
+            sizeBytes: entry.sizeBytes,
+            sourceType: entry.sourceType,
+          }],
+          ideGsmFileName: entry.fileName,
+          ideGsmFileSizeBytes: entry.sizeBytes,
+          tabularSourceId: entry.sourceId,
+          ideGsmSourceUrl: undefined,
+          ideGsmSelectionHash: undefined,
+          selectedArrayByCountries: {},
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error('[LocationDataSourceStep] failed to migrate legacy IDE-GSM source', message);
+      } finally {
+        if (!cancelled) {
+          setImportInProgress(false);
+        }
+      }
+    };
+    void migrate();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    draft.ideGsmFileName,
+    draft.ideGsmSourceUrl,
+    draft.ideGsmSources,
+    draft.tabularSourceId,
+    importInProgress,
+    nodeId,
+    onUpdate,
+    t,
+    tabularApi,
+  ]);
 
   useEffect(() => {
     if (removeDialogOpen || pendingRemoveKey) return;
@@ -256,21 +343,48 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
 
   const displaySources = removeDialogOpen ? stableSourcesRef.current : visibleSources;
 
-  const handleAddFile = useCallback((payload: IdeGsmFileEntry) => {
-    const nextSources = [...displaySources, payload];
-    const primary = nextSources[nextSources.length - 1];
-    const nextKey = buildSourceKey(nextSources);
-    pendingDraftKeyRef.current = nextKey;
-    setVisibleSources(nextSources);
-    setVisibleSourceKey(nextKey);
-    onUpdate({
-      ideGsmSources: nextSources,
-      ideGsmFileName: primary?.fileName,
-      ideGsmSourceUrl: primary?.sourceUrl,
-      selectedArrayByCountries: {},
-      ideGsmSelectionHash: undefined,
-    });
-  }, [displaySources, onUpdate]);
+  const handleAddFile = useCallback(async (payload: IdeGsmImportPayload) => {
+    if (importInProgress) return;
+    setImportInProgress(true);
+    try {
+      await ensureTabularXlsx();
+      const metadata = await tabularApi.uploadTabularFile(payload.file, {});
+      const entry: IdeGsmFileEntry = {
+        fileName: metadata.filename ?? payload.file.name,
+        sourceId: metadata.id,
+        sizeBytes: metadata.fileSizeBytes ?? payload.file.size,
+        sourceType: payload.sourceType,
+      };
+      if (displaySources.some((source) => source.sourceId === entry.sourceId)) {
+        return;
+      }
+      const nextSources = [...displaySources, entry];
+      const primary = nextSources[nextSources.length - 1];
+      const nextKey = buildSourceKey(nextSources);
+      pendingDraftKeyRef.current = nextKey;
+      setVisibleSources(nextSources);
+      setVisibleSourceKey(nextKey);
+      onUpdate({
+        ideGsmSources: nextSources.map((source) => ({
+          fileName: source.fileName,
+          tabularSourceId: source.sourceId,
+          sizeBytes: source.sizeBytes,
+          sourceType: source.sourceType,
+        })),
+        ideGsmFileName: primary?.fileName,
+        ideGsmFileSizeBytes: primary?.sizeBytes,
+        tabularSourceId: primary?.sourceId,
+        selectedArrayByCountries: {},
+        ideGsmSelectionHash: undefined,
+        ideGsmSourceUrl: undefined,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error('[LocationDataSourceStep] failed to import IDE-GSM file', message);
+    } finally {
+      setImportInProgress(false);
+    }
+  }, [buildSourceKey, displaySources, importInProgress, onUpdate, tabularApi]);
 
   const requestRemoveFile = (index: number) => {
     const entry = displaySources[index];
@@ -291,12 +405,12 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
     ideGsmPanel: {
       files: displaySources,
       labels: ideGsmLabels,
-      defaultDownloadUrl: draft.ideGsmSourceUrl,
-      disabled: Boolean(disabled) || removeInProgress,
+      defaultDownloadUrl: undefined,
+      disabled: Boolean(disabled) || removeInProgress || importInProgress,
       onAddFile: handleAddFile,
       onRemoveFile: handleRemoveFile,
     },
-  }), [displaySources, ideGsmLabels, draft.ideGsmSourceUrl, disabled, removeInProgress, handleAddFile, handleRemoveFile]);
+  }), [displaySources, ideGsmLabels, disabled, removeInProgress, importInProgress, handleAddFile, handleRemoveFile]);
 
   const resolvedOptions = useMemo<DataSourceSelectionOption[]>(
     () => baseOptions.map((option) =>
@@ -313,7 +427,7 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
       labels: IdeGsmImportLabels;
       defaultDownloadUrl?: string;
       disabled?: boolean;
-      onAddFile: (payload: IdeGsmFileEntry) => void;
+      onAddFile: (payload: IdeGsmImportPayload) => void;
       onRemoveFile: (index: number) => void;
     } } | undefined;
     const ideGsmPanel = meta?.ideGsmPanel;
@@ -422,9 +536,16 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
     setVisibleSourceKey(nextKey);
     const nextDraftPayload: Record<string, unknown> = {
       ...(draft as Record<string, unknown>),
-      ideGsmSources: nextSources,
+      ideGsmSources: nextSources.map((source) => ({
+        fileName: source.fileName,
+        tabularSourceId: source.sourceId,
+        sizeBytes: source.sizeBytes,
+        sourceType: source.sourceType,
+      })),
       ideGsmFileName: primary?.fileName ?? '',
-      ideGsmSourceUrl: primary?.sourceUrl ?? '',
+      ideGsmFileSizeBytes: primary?.sizeBytes ?? undefined,
+      tabularSourceId: primary?.sourceId ?? undefined,
+      ideGsmSourceUrl: undefined,
       ...(nextSources.length > 0 ? {} : { selectedArrayByCountries: {} }),
       ideGsmSelectionHash: undefined,
       ...(nextSources.length > 0
@@ -439,8 +560,9 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
         await initialize();
         const locationMutation = await api.getLocationMutationAPI();
         const removed = previousSources.find((entry) => buildEntryKey(entry) === resolvedKey) ?? previousSources[resolvedIndex];
-        if (removed?.sourceUrl) {
-          await locationMutation.deleteLocationBySourceUrl(nodeId, removed.sourceUrl);
+        if (removed?.sourceId) {
+          await locationMutation.deleteLocationBySourceKey(nodeId, removed.sourceId);
+          await tabularApi.removeTableReference(removed.sourceId, 'location');
         }
         const updaterAPI = await api.getTreeNodeUpdaterAPI();
         await updaterAPI.updateTreeNodeDraftData(nodeId, nextDraftPayload as Record<string, unknown>);
@@ -456,9 +578,16 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
     }
     const hasSources = nextSources.length > 0;
     onUpdate({
-      ideGsmSources: nextSources,
+      ideGsmSources: nextSources.map((source) => ({
+        fileName: source.fileName,
+        tabularSourceId: source.sourceId,
+        sizeBytes: source.sizeBytes,
+        sourceType: source.sourceType,
+      })),
       ideGsmFileName: primary?.fileName ?? '',
-      ideGsmSourceUrl: primary?.sourceUrl ?? '',
+      ideGsmFileSizeBytes: primary?.sizeBytes ?? undefined,
+      tabularSourceId: primary?.sourceId ?? undefined,
+      ideGsmSourceUrl: undefined,
       ...(hasSources ? {} : { selectedArrayByCountries: {} }),
       ideGsmSelectionHash: undefined,
       ...(hasSources
@@ -490,8 +619,9 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
             licenseAgreement: next.licenseAgreement,
             licenseAgreedAt: next.licenseAgreedAt,
             ideGsmFileName: nextSource === 'ide-gsm' ? draft.ideGsmFileName : undefined,
-            ideGsmSourceUrl: nextSource === 'ide-gsm' ? draft.ideGsmSourceUrl : undefined,
             ideGsmSources: nextSource === 'ide-gsm' ? draft.ideGsmSources : undefined,
+            ideGsmFileSizeBytes: nextSource === 'ide-gsm' ? draft.ideGsmFileSizeBytes : undefined,
+            tabularSourceId: nextSource === 'ide-gsm' ? draft.tabularSourceId : undefined,
             ...(sourceChanged
               ? { selectedArrayByCountries: {}, ideGsmSelectionHash: undefined }
               : {}),

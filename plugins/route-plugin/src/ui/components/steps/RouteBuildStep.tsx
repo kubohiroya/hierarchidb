@@ -389,9 +389,9 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
       notify.info(t('stage.errors.unsupportedSource', 'Selected data source is not supported yet.'));
       return;
     }
-    const sourceUrl = (draft as { ideGsmSourceUrl?: string }).ideGsmSourceUrl;
-    if (!sourceUrl) {
-      notify.error(t('stage.errors.missingSource', 'IDE-GSM source URL is required.'));
+    const sourceId = (draft as { tabularSourceId?: string }).tabularSourceId;
+    if (!sourceId) {
+      notify.error(t('stage.errors.missingSource', 'IDE-GSM source is required.'));
       return;
     }
 
@@ -413,7 +413,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
       const result = await routeMutation.importIdeGsmRoutes(
         {
           nodeId: routeNodeId,
-          sourceUrl,
+          tabularSourceId: sourceId,
           chunkSize: IDE_GSM_BULK_CHUNK_SIZE,
         },
         proxy((progress: IdeGsmImportProgress) => {

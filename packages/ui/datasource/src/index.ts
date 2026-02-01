@@ -23,6 +23,7 @@ export type {
 export { IdeGsmImportPanel } from './IdeGsmImportPanel.js';
 export type {
   IdeGsmFileEntry,
+  IdeGsmImportPayload,
   IdeGsmImportLabels,
   IdeGsmImportPanelProps,
 } from './IdeGsmImportPanel.js';
