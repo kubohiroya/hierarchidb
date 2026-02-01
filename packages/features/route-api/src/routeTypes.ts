@@ -15,6 +15,14 @@ export const ROUTE_MODES = {
 
 export type RouteMode = typeof ROUTE_MODES[keyof typeof ROUTE_MODES];
 
+export type RouteLineStyle = 'solid' | 'dashed' | 'dotted';
+
+export type RouteStyleConfig = {
+  modeColors: Record<RouteMode, string>;
+  lineWidth: number;
+  lineStyle: RouteLineStyle;
+};
+
 export interface RoutePoint {
   locationFeatureId?: LocationFeatureId;
   locationId?: NodeId;
@@ -113,6 +121,7 @@ export interface RouteEntity {
   /** @deprecated Use buildConfig instead. */
   config?: RouteProcessingConfig;
   buildConfig?: BaseBuildConfig<string>;
+  routeStyleConfig?: RouteStyleConfig;
   /** @deprecated Use buildConfig instead. */
   processing?: RouteProcessingConfig;
   processedAt?: number;
