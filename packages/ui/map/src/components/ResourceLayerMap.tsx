@@ -9,6 +9,7 @@ import { Box, Button, IconButton, Snackbar, Typography } from '@mui/material';
 import { FloatingWindow } from '@hierarchidb/ui-floating-window';
 import type { WindowState } from '@hierarchidb/ui-floating-window';
 import type { Theme } from '@mui/material/styles';
+import type { SxProps } from '@mui/material/styles';
 import { useTheme } from '@mui/material/styles';
 import { Close as CloseIcon, FitScreen as FitScreenIcon, Tune as TuneIcon } from '@mui/icons-material';
 import { createPortal } from 'react-dom';
@@ -114,6 +115,7 @@ export type ResourceLayerMapProps = BaseMapProps & {
     renderContent?: (features: MapLibreGeoJSONFeature[]) => React.ReactNode;
     autoHideDuration?: number | null;
     open?: boolean;
+    contentSx?: SxProps<Theme>;
   };
   interaction?: {
     enabled?: boolean;
@@ -148,6 +150,7 @@ export type ResourceLayerMapProps = BaseMapProps & {
       renderContent?: (features: MapLibreGeoJSONFeature[]) => React.ReactNode;
       autoHideDuration?: number | null;
       open?: boolean;
+      contentSx?: SxProps<Theme>;
     };
   };
   stats?: {
@@ -1284,6 +1287,26 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
         return { vertical: 'bottom', horizontal: 'center' } as const;
     }
   })();
+  const snackbarContentSx = effectiveSnackbar?.contentSx;
+  const snackbarPositionStyle = (() => {
+    const base = { position: 'absolute' as const, zIndex: 4 } as const;
+    switch (snackbarPosition) {
+      case 'top':
+        return { ...base, top: 16, left: '50%', transform: 'translateX(-50%)' };
+      case 'top-left':
+        return { ...base, top: 16, left: 16 };
+      case 'top-right':
+        return { ...base, top: 16, right: 16 };
+      case 'bottom-left':
+        return { ...base, bottom: 16, left: 16 };
+      case 'bottom-right':
+        return { ...base, bottom: 16, right: 16 };
+      case 'bottom':
+      case 'bottom-center':
+      default:
+        return { ...base, bottom: 16, left: '50%', transform: 'translateX(-50%)' };
+    }
+  })();
   const snackbarContent =
     effectiveSnackbar?.content
     ?? effectiveSnackbar?.renderContent?.(snackbarFeatures)
@@ -1291,7 +1314,7 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
   const snackbarOpen = effectiveSnackbar?.open ?? (snackbarEnabled && snackbarFeatures.length > 0);
 
   return (
-    <>
+    <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
       <MapLibreMap
         {...baseMapProps}
         {...mapStyleProps}
@@ -1443,13 +1466,10 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
           autoHideDuration={effectiveSnackbar.autoHideDuration ?? null}
           message={snackbarContent}
           anchorOrigin={anchorOrigin}
-          sx={
-            anchorOrigin.vertical === 'bottom' && anchorOrigin.horizontal === 'center'
-              ? { left: '50%', transform: 'translateX(-50%)' }
-              : undefined
-          }
+          ContentProps={snackbarContentSx ? { sx: snackbarContentSx } : undefined}
+          sx={snackbarPositionStyle}
         />
       )}
-    </>
+    </Box>
   );
 };

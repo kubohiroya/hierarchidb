@@ -12716,6 +12716,87 @@
   - 運用ログ start/update/done を追記する
 - 運用ログ:
   - start: 2026-02-01 17:16 JST DataSource 選択の部分再描画化に着手。
-  - update: 2026-02-01 17:17 JST DataSourceSelector を memo 化し IDE-GSM option を metadata 経由で更新。
-  - update: 2026-02-01 17:17 JST pnpm --filter @hierarchidb/ui-datasource typecheck exit 0 を確認。
-  - update: 2026-02-01 17:17 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+ - update: 2026-02-01 17:17 JST DataSourceSelector を memo 化し IDE-GSM option を metadata 経由で更新。
+ - update: 2026-02-01 17:17 JST pnpm --filter @hierarchidb/ui-datasource typecheck exit 0 を確認。
+ - update: 2026-02-01 17:17 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+
+2466) fix/location/metadata-sourcekey (P1) — 進行中 (2026-02-01 17:50 JST)
+- ブランチ名: fix/location/metadata-sourcekey
+- 依存: なし
+- 受け入れ基準: LocationFeature の metadata に data URL を保存しない／sourceKey で識別・削除できる／metadata 取得で巨大な sourceUrl を返さない／`pnpm --filter @hierarchidb/runtime-worker typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/runtime-worker/src/services/LocationMutationService.ts`, `packages/runtime-worker/src/services/LocationQueryService.ts`
+- ロールバック手順: sourceKey 追加と metadata サニタイズを revert し、旧実装へ戻す
+- チェックリスト:
+  - sourceUrl を sourceKey（hash）へ変換して保存する
+  - deleteLocationBySourceUrl を sourceKey ベースで削除する（legacy sourceUrl もフォールバック）
+  - list/query の metadata から sourceUrl を除外して返す
+  - runtime-worker typecheck を実行する
+  - 運用ログ start/update/done を追記する
+ - 運用ログ:
+  - start: 2026-02-01 17:50 JST metadata.sourceUrl の肥大化によるクラッシュ対応に着手。
+  - update: 2026-02-01 18:04 JST sourceKey（SHA-256）を保存し sourceUrl は保存しないよう変更。deleteLocationBySourceUrl は sourceKey/legacy sourceUrl の両対応に更新。
+  - update: 2026-02-01 18:04 JST LocationQueryService で metadata.sourceUrl をサニタイズして返却。
+  - done: 2026-02-01 18:05 JST pnpm --filter @hierarchidb/runtime-worker typecheck exit 0 を確認。
+
+2466) fix/location-preview/snackbar-theme (P1) — 進行中 (2026-02-01 17:58 JST)
+- ブランチ名: fix/location-preview/snackbar-theme
+- 依存: なし
+- 受け入れ基準: light/dark の Snackbar 配色が逆転していない／dark 時の背景が読める明度になる／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`
+- ロールバック手順: Snackbar の色指定変更を revert して元に戻す
+- チェックリスト:
+  - Snackbar の背景/文字色を theme.mode に合わせて設定する
+  - location-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 17:58 JST Snackbar の light/dark 配色修正に着手。
+  - update: 2026-02-01 17:59 JST Snackbar の背景/文字色を theme.mode に合わせて調整。
+  - update: 2026-02-01 17:59 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+
+2467) fix/location-preview/snackbar-border (P1) — 進行中 (2026-02-01 18:02 JST)
+- ブランチ名: fix/location-preview/snackbar-border
+- 依存: なし
+- 受け入れ基準: Snackbar の外枠が light/dark で表示されない／背景と可読性は維持される／`pnpm --filter @hierarchidb/ui-map typecheck` と `pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/components/ResourceLayerMap.tsx`, `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`
+- ロールバック手順: snackbar contentSx の追加を revert して元に戻す
+- チェックリスト:
+  - ResourceLayerMap に snackbar contentSx を追加する
+  - LocationMapPreview の snackbar で枠なしスタイルを指定する
+  - ui-map / location-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 18:02 JST Snackbar 外枠撤去に着手。
+  - update: 2026-02-01 18:03 JST ResourceLayerMap に contentSx を追加し Location Snackbar で枠なし指定。
+  - update: 2026-02-01 18:03 JST pnpm --filter @hierarchidb/ui-map build exit 0 を確認（tsdown define 警告あり）。
+  - update: 2026-02-01 18:03 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+
+2468) fix/ui-map/snackbar-inset (P1) — 進行中 (2026-02-01 18:05 JST)
+- ブランチ名: fix/ui-map/snackbar-inset
+- 依存: なし
+- 受け入れ基準: Snackbar が ui-map 表示範囲内に収まる／画面外に出ない／既存表示内容は維持される／`pnpm --filter @hierarchidb/ui-map typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/components/ResourceLayerMap.tsx`
+- ロールバック手順: Snackbar の container/position 変更を revert して元に戻す
+- チェックリスト:
+  - Snackbar を map コンテナ内にレンダリングする
+  - 表示位置を map 内オフセットに固定する
+  - ui-map の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 18:05 JST Snackbar の map 内配置修正に着手。
+  - update: 2026-02-01 18:06 JST Snackbar を map コンテナ内の絶対配置へ変更。
+  - update: 2026-02-01 18:06 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
+
+2469) fix/location-preview/snackbar-type-label (P1) — 進行中 (2026-02-01 18:09 JST)
+- ブランチ名: fix/location-preview/snackbar-type-label
+- 依存: なし
+- 受け入れ基準: Snackbar の型名テキスト（Area centroid など）が表示されない／その他表示は維持される／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`
+- ロールバック手順: Snackbar 表示の文言変更を revert して元に戻す
+- チェックリスト:
+  - Snackbar から typeLabel 表示を撤去する
+  - location-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 18:09 JST Snackbar の型名表示撤去に着手。
+  - update: 2026-02-01 18:09 JST Snackbar から typeLabel 表示を撤去。
+  - update: 2026-02-01 18:09 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。

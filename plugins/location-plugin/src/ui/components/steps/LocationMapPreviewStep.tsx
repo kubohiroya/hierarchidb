@@ -421,7 +421,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
 
   const handleMetadataSelectionChange = useCallback((selected: Set<string | number>) => {
     const next = new Set<string>();
-    selected.forEach((value) => next.add(String(value)));
+    selected.forEach((value) => {next.add(String(value))});
     setSelectedMetadataIds(next);
   }, []);
 
@@ -447,10 +447,10 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
   const recyclingState = useMemo(() => {
     if (selectedMetadataIds.size === 0) return 'none' as const;
     const selectedItems = metadataItems.filter((item) => selectedMetadataIds.has(String(item.id)));
-    if (selectedItems.length == 0) return 'none' as const;
+    if (selectedItems.length === 0) return 'none' as const;
     const recyclingCount = selectedItems.filter(isMetadataRecycling).length;
-    if (recyclingCount == 0) return 'off' as const;
-    if (recyclingCount == selectedItems.length) return 'on' as const;
+    if (recyclingCount === 0) return 'off' as const;
+    if (recyclingCount === selectedItems.length) return 'on' as const;
     return 'partial' as const;
   }, [isMetadataRecycling, metadataItems, selectedMetadataIds]);
 
@@ -463,9 +463,8 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
         selectedMetadataIds.has(String(item.id)) && item.data?.schemaVersion === 2
       )
     );
-    if (selectedItems.length == 0) return;
-    const recyclingCount = selectedItems.filter(isMetadataRecycling).length;
-    const nextValue = recyclingCount != selectedItems.length;
+    if (selectedItems.length === 0) return;
+    const nextValue = selectedItems.length;
     const updatedItems: LocationGroupItem[] = selectedItems.map((item) => ({
       ...item,
       data: {
@@ -484,7 +483,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     const nextItems: LocationGroupItem[] = metadataItems.map((item) => updatedMap.get(String(item.id)) ?? item);
     setMetadataItems(nextItems);
     setMetadataRows(buildMetadataRows(nextItems));
-  }, [isMetadataRecycling, metadataItems, nodeId, selectedMetadataIds]);
+  }, [metadataItems, nodeId, selectedMetadataIds]);
 
   const [iconsReady, setIconsReady] = useState(false);
   const [metadataWindowOpen, setMetadataWindowOpen] = useState(true);
@@ -593,7 +592,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     return () => {
       cancelled = true;
     };
-  }, [nodeId, _draft.ideGsmSelectionHash, _draft.processingStatus]);
+  }, [nodeId]);
 
   const terrainToggleOptions = useMemo(() => (
     LOCATION_TYPE_OPTIONS.map((option) => {
@@ -750,7 +749,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
         queryTimerRef.current = null;
       }
     };
-  }, [scheduleViewportQuery, _draft.ideGsmSelectionHash, _draft.processingStatus]);
+  }, [scheduleViewportQuery]);
   useEffect(() => () => {
     if (hoverFrameRef.current) {
       window.cancelAnimationFrame(hoverFrameRef.current);
@@ -785,14 +784,20 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     () => new Map(metadataItems.map((item) => [String(item.id), item])),
     [metadataItems],
   );
+  const isDarkMode = theme.palette.mode === 'dark';
   const locationPreviewSnackbar = useMemo(() => {
     if (hoverMatches.length === 0) return undefined;
+    const snackbarBg = isDarkMode ? 'rgba(32,32,36,0.92)' : 'rgba(255,255,255,0.96)';
+    const snackbarText = isDarkMode ? '#F5F5F7' : '#1F1F24';
+    const radarFill = isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)';
+    const radarStroke = isDarkMode ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.18)';
     return (
-      <Box sx={{ display: 'flex', gap: 1.5, minWidth: 320 }}>
+      <Box sx={{ display: 'flex', gap: 1.5, minWidth: 320, color: snackbarText, bgcolor: snackbarBg, borderRadius: 1.5, px: 1.5, py: 1 }}>
         <Box sx={{ width: 64, height: 64, flex: '0 0 64px' }}>
           <svg width={64} height={64} viewBox="0 0 64 64">
-            <circle cx={32} cy={32} r={32} fill="rgba(0,0,0,0.04)" />
-            <circle cx={32} cy={32} r={31.5} fill="none" stroke="rgba(0,0,0,0.18)" />
+            <title>miniRader</title>
+            <circle cx={32} cy={32} r={32} fill={radarFill} />
+            <circle cx={32} cy={32} r={31.5} fill="none" stroke={radarStroke} />
             {hoverMatches.map((match) => (
               <g key={match.id}>
                 <text
@@ -818,10 +823,12 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
               </Typography>
               <match.Icon fontSize="small" htmlColor={match.color} />
               <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  {match.typeLabel} {match.name ? `・${match.name}` : ''}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
+                {match.name ? (
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: snackbarText }}>
+                    {match.name}
+                  </Typography>
+                ) : null}
+                <Typography variant="caption" sx={{ color: isDarkMode ? "rgba(245,245,247,0.7)" : "rgba(31,31,36,0.6)" }}>
                   {[
                     match.region,
                     match.countryLabel,
@@ -833,7 +840,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
         </Box>
       </Box>
     );
-  }, [hoverMatches]);
+  }, [hoverMatches, isDarkMode]);
 
   const clearHoverMatches = useCallback(() => {
     setHoverMatches([]);
@@ -1188,20 +1195,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       },
     });
     return layers;
-  }, [
-    circleColorExpression,
-    circleRadiusExpression,
-    enabledLocationTypes.length,
-    iconImageExpression,
-    iconSizeExpression,
-    iconsReady,
-    labelColorExpression,
-    labelHaloColor,
-    labelSizeExpression,
-    locationFilter,
-    previewPoints,
-    previewNodeId,
-  ]);
+  }, [enabledLocationTypes.length, previewPoints, locationFilter, previewNodeId, circleRadiusExpression, circleColorExpression, iconsReady, labelSizeExpression, labelColorExpression, labelHaloColor, labelOpacityExpression, iconImageExpression, iconSizeExpression]);
   const handleLocationToggle = useCallback((id: string) => {
     setLocationTypeSelection((prev) => ({ ...prev, [id]: !prev[id] }));
   }, []);
@@ -1290,6 +1284,12 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
             content: locationPreviewSnackbar,
             open: hoverMatches.length > 0,
             autoHideDuration: null,
+            contentSx: {
+              backgroundColor: 'transparent',
+              boxShadow: 'none',
+              border: 'none',
+              padding: 0,
+            },
           },
           mapOptions: DEFAULT_MAP_CONFIG.interactionOptions,
           onLoad: handleMapLoad,
