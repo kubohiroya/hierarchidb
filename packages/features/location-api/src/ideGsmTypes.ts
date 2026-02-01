@@ -36,6 +36,7 @@ export type IdeGsmLocationImportRequest = {
   sourceUrl: string;
   selectionEntries: IdeGsmSelectionEntry[];
   chunkSize?: number;
+  mode?: 'replace' | 'append' | 'upsert';
 };
 
 export type IdeGsmLocationImportResult = {

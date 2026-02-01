@@ -115,7 +115,11 @@ const IdeGsmFileCard: React.FC<{
       <IconButton
         size="small"
         aria-label={removeLabel}
-        onClick={onRemove}
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          onRemove(event);
+        }}
         disabled={disabled}
       >
         <Close fontSize="small" />
@@ -189,9 +193,14 @@ export const IdeGsmImportPanel: React.FC<IdeGsmImportPanelProps> = (props) => {
   };
 
   const handleRemove = (event: React.MouseEvent<HTMLButtonElement>, index: number) => {
+    event.preventDefault();
     event.stopPropagation();
     if (isMulti) {
-      props.onRemoveFile(index);
+      try {
+        props.onRemoveFile(index);
+      } catch (error) {
+        console.log('onRemoveFile error', error);
+      }
     } else {
       props.onClear();
     }
@@ -202,6 +211,7 @@ export const IdeGsmImportPanel: React.FC<IdeGsmImportPanelProps> = (props) => {
   return (
     <>
       <Box
+        data-ignore-select="true"
         sx={{
           mt: 1.5,
           p: 1.5,

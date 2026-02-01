@@ -3,14 +3,16 @@
  */
 
 import type React from 'react';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from '@mui/material';
 import {
   DataSourceSelectionStep,
   type DataSourceSelectionOption,
   type DataSourceSelectorProps,
+  type DataSourceOption,
   IdeGsmImportPanel,
   type IdeGsmFileEntry,
+  type IdeGsmImportLabels,
 } from '@hierarchidb/ui-datasource';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
 import type { LocationDataSource, LocationEntity, LocationType } from '../../../common/types/index.js';
@@ -37,6 +39,8 @@ interface LocationDataSourceStepProps {
   licenseRequired?: boolean;
   disabled?: boolean;
   nodeId?: NodeId;
+  uiState?: Record<string, unknown>;
+  onUiStateChange?: (uiState: Record<string, unknown>) => void;
 }
 
 const LICENSE_DETAILS: Record<
@@ -151,16 +155,18 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
   const { api, initialize } = useWorkerAPI();
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const [pendingRemoveIndex, setPendingRemoveIndex] = useState<number | null>(null);
+  const [pendingRemoveKey, setPendingRemoveKey] = useState<string | null>(null);
   const [routeRefCount, setRouteRefCount] = useState<number | null>(null);
   const [routeRefLoading, setRouteRefLoading] = useState(false);
   const [routeRefError, setRouteRefError] = useState<string | null>(null);
+  const [removeInProgress, setRemoveInProgress] = useState(false);
 
   const value = useMemo<LocationDataSource>(
     () => (draft.dataSource as LocationDataSource) ?? 'openstreetmap',
     [draft.dataSource]
   );
 
-  const options = useMemo<DataSourceSelectionOption[]>(
+  const baseOptions = useMemo<DataSourceSelectionOption[]>(
     () =>
       ORDERED_DATA_SOURCES.filter((sourceId) => !HIDDEN_SOURCES.includes(sourceId)).map((sourceId) => {
         const license = LICENSE_DETAILS[sourceId];
@@ -181,7 +187,7 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
   const ideGsmLabels = useMemo(
     () => ({
       importButton: t('dataSource.ideGsm.importButton', 'Import'),
-      noFiles: t('dataSource.ideGsm.noFiles', 'No CSV files imported.'),
+      noFiles: t('dataSource.ideGsm.noFiles', 'No files imported.'),
       importLocal: t('dataSource.ideGsm.importLocal', 'Import Local Files'),
       importRemote: t('dataSource.ideGsm.importRemote', 'Import Remote Files'),
       fileFallback: t('dataSource.ideGsm.fileFallback', 'Imported file'),
@@ -215,56 +221,102 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
     }
     return [];
   }, [draft.ideGsmFileName, draft.ideGsmSourceUrl, draft.ideGsmSources, t]);
+  const buildEntryKey = (entry: IdeGsmFileEntry): string => (
+    `${entry.sourceUrl || ''}::${entry.fileName}`
+  );
+  const buildSourceKey = (sources: IdeGsmFileEntry[]): string => (
+    sources
+      .map((entry) => buildEntryKey(entry))
+      .join('|')
+  );
+  const [visibleSources, setVisibleSources] = useState<IdeGsmFileEntry[]>(ideGsmSources);
+  const [visibleSourceKey, setVisibleSourceKey] = useState<string>(() => buildSourceKey(ideGsmSources));
+  const pendingDraftKeyRef = useRef<string | null>(null);
+  const stableSourcesRef = useRef<IdeGsmFileEntry[]>(ideGsmSources);
+  const sourceKey = useMemo(() => buildSourceKey(ideGsmSources), [ideGsmSources]);
 
-  const requestRemoveFile = async (index: number) => {
-    setPendingRemoveIndex(index);
-    setRemoveDialogOpen(true);
-    setRouteRefCount(null);
-    setRouteRefError(null);
-    if (!api || !nodeId) return;
-    setRouteRefLoading(true);
-    try {
-      await initialize();
-      const routeQuery = await api.getRouteQueryAPI();
-      const count = await routeQuery.countRouteReferencesToLocations([nodeId]);
-      setRouteRefCount(count);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      setRouteRefError(message);
-    } finally {
-      setRouteRefLoading(false);
-    }
-  };
-
-  const confirmRemoveFile = async () => {
-    if (pendingRemoveIndex == null) return;
-    const nextSources = ideGsmSources.filter((_, idx) => idx !== pendingRemoveIndex);
-    const primary = nextSources[nextSources.length - 1];
-    if (api && nodeId) {
-      try {
-        await initialize();
-        const locationMutation = await api.getLocationMutationAPI();
-        await locationMutation.clearLocationArtifacts(nodeId);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        setRouteRefError(message);
+  useEffect(() => {
+    if (removeDialogOpen || pendingRemoveKey) return;
+    if (pendingDraftKeyRef.current !== null) {
+      if (sourceKey === pendingDraftKeyRef.current) {
+        pendingDraftKeyRef.current = null;
+      } else {
+        return;
       }
     }
+    if (sourceKey === visibleSourceKey) return;
+    setVisibleSources(ideGsmSources);
+    setVisibleSourceKey(sourceKey);
+  }, [ideGsmSources, sourceKey, visibleSourceKey, removeDialogOpen, pendingRemoveKey]);
+
+  useEffect(() => {
+    if (removeDialogOpen || pendingRemoveKey || removeInProgress) return;
+    stableSourcesRef.current = visibleSources;
+  }, [removeDialogOpen, pendingRemoveKey, removeInProgress, visibleSources]);
+
+  const displaySources = removeDialogOpen ? stableSourcesRef.current : visibleSources;
+
+  const handleAddFile = useCallback((payload: IdeGsmFileEntry) => {
+    const nextSources = [...displaySources, payload];
+    const primary = nextSources[nextSources.length - 1];
+    const nextKey = buildSourceKey(nextSources);
+    pendingDraftKeyRef.current = nextKey;
+    setVisibleSources(nextSources);
+    setVisibleSourceKey(nextKey);
     onUpdate({
-      ideGsmSources: nextSources.length > 0 ? nextSources : undefined,
+      ideGsmSources: nextSources,
       ideGsmFileName: primary?.fileName,
       ideGsmSourceUrl: primary?.sourceUrl,
       selectedArrayByCountries: {},
       ideGsmSelectionHash: undefined,
-      processingStatus: undefined,
-      processedAt: undefined,
-      lastProcessedAt: undefined,
     });
-    setRemoveDialogOpen(false);
-    setPendingRemoveIndex(null);
+  }, [displaySources, onUpdate]);
+
+  const requestRemoveFile = (index: number) => {
+    const entry = displaySources[index];
+    if (!entry) return;
+    const entryKey = buildEntryKey(entry);
+    setPendingRemoveIndex(index);
+    setPendingRemoveKey(entryKey);
+    setRemoveDialogOpen(true);
+    setRouteRefCount(null);
+    setRouteRefError(null);
   };
 
-  const renderOption: DataSourceSelectorProps['renderOption'] = (option, active) => {
+  const handleRemoveFile = useCallback((index: number) => {
+    requestRemoveFile(index);
+  }, [requestRemoveFile]);
+
+  const ideGsmOptionMeta = useMemo(() => ({
+    ideGsmPanel: {
+      files: displaySources,
+      labels: ideGsmLabels,
+      defaultDownloadUrl: draft.ideGsmSourceUrl,
+      disabled: Boolean(disabled) || removeInProgress,
+      onAddFile: handleAddFile,
+      onRemoveFile: handleRemoveFile,
+    },
+  }), [displaySources, ideGsmLabels, draft.ideGsmSourceUrl, disabled, removeInProgress, handleAddFile, handleRemoveFile]);
+
+  const resolvedOptions = useMemo<DataSourceSelectionOption[]>(
+    () => baseOptions.map((option) =>
+      option.id === 'ide-gsm'
+        ? { ...option, metadata: ideGsmOptionMeta }
+        : option
+    ),
+    [baseOptions, ideGsmOptionMeta]
+  );
+
+  const renderOption: DataSourceSelectorProps['renderOption'] = useCallback((option: DataSourceOption, active: boolean) => {
+    const meta = option.metadata as { ideGsmPanel?: {
+      files: IdeGsmFileEntry[];
+      labels: IdeGsmImportLabels;
+      defaultDownloadUrl?: string;
+      disabled?: boolean;
+      onAddFile: (payload: IdeGsmFileEntry) => void;
+      onRemoveFile: (index: number) => void;
+    } } | undefined;
+    const ideGsmPanel = meta?.ideGsmPanel;
     const supported =
       SOURCE_TYPES[option.id as LocationDataSource] ?? SOURCE_TYPES.openstreetmap ?? [];
     const icons = supported
@@ -288,37 +340,143 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
           </Typography>
           <Typography variant="caption">{icons}</Typography>
         </Box>
-        {isIdeGsm && active ? (
-          <IdeGsmImportPanel
-            files={ideGsmSources}
-            labels={ideGsmLabels}
-            defaultDownloadUrl={draft.ideGsmSourceUrl}
-            disabled={Boolean(disabled)}
-            onAddFile={(payload) => {
-              const nextSources = [...ideGsmSources, payload];
-              const primary = nextSources[nextSources.length - 1];
-              onUpdate({
-                ideGsmSources: nextSources,
-                ideGsmFileName: primary?.fileName,
-                ideGsmSourceUrl: primary?.sourceUrl,
-                selectedArrayByCountries: {},
-                ideGsmSelectionHash: undefined,
-              });
+        {isIdeGsm && active && ideGsmPanel ? (
+          <Box
+            data-ignore-select="true"
+            onMouseDown={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
             }}
-            onRemoveFile={(index) => {
-              void requestRemoveFile(index);
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
             }}
-          />
+          >
+            <IdeGsmImportPanel
+              files={ideGsmPanel.files}
+              labels={ideGsmPanel.labels}
+              defaultDownloadUrl={ideGsmPanel.defaultDownloadUrl}
+              disabled={ideGsmPanel.disabled}
+              onAddFile={ideGsmPanel.onAddFile}
+              onRemoveFile={ideGsmPanel.onRemoveFile}
+            />
+          </Box>
         ) : null}
       </Stack>
     );
+  }, []);
+
+  useEffect(() => {
+    if (!removeDialogOpen || pendingRemoveIndex == null) return;
+    if (!api || !nodeId) return;
+    let cancelled = false;
+    const fetchRouteRefCount = async () => {
+      setRouteRefLoading(true);
+      try {
+        await initialize();
+        const routeQuery = await api.getRouteQueryAPI();
+        const count = await routeQuery.countRouteReferencesToLocations([nodeId]);
+        if (!cancelled) {
+          setRouteRefCount(count);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          const message = error instanceof Error ? error.message : String(error);
+          setRouteRefError(message);
+        }
+      } finally {
+        if (!cancelled) {
+          setRouteRefLoading(false);
+        }
+      }
+    };
+    void fetchRouteRefCount();
+    return () => {
+      cancelled = true;
+    };
+  }, [api, initialize, nodeId, pendingRemoveIndex, removeDialogOpen]);
+
+  const confirmRemoveFile = async () => {
+    const resolvedIndex = pendingRemoveIndex;
+    const resolvedKey = pendingRemoveKey;
+    if (resolvedIndex == null || !resolvedKey) return;
+    setRemoveInProgress(true);
+    const previousSources = ideGsmSources;
+    let removed = false;
+    const nextSources = previousSources.filter((entry, idx) => {
+      if (removed) return true;
+      if (idx == resolvedIndex) {
+        removed = true;
+        return false;
+      }
+      if (buildEntryKey(entry) === resolvedKey) {
+        removed = true;
+        return false;
+      }
+      return true;
+    });
+    const primary = nextSources[nextSources.length - 1];
+    const nextKey = buildSourceKey(nextSources);
+    pendingDraftKeyRef.current = nextKey;
+    setVisibleSources(nextSources);
+    setVisibleSourceKey(nextKey);
+    const nextDraftPayload: Record<string, unknown> = {
+      ...(draft as Record<string, unknown>),
+      ideGsmSources: nextSources,
+      ideGsmFileName: primary?.fileName ?? '',
+      ideGsmSourceUrl: primary?.sourceUrl ?? '',
+      ...(nextSources.length > 0 ? {} : { selectedArrayByCountries: {} }),
+      ideGsmSelectionHash: undefined,
+      ...(nextSources.length > 0
+        ? { processingStatus: 'pending' }
+        : { processingStatus: undefined, processedAt: undefined, lastProcessedAt: undefined }),
+    };
+    if ('draftMetadata' in nextDraftPayload) {
+      delete nextDraftPayload.draftMetadata;
+    }
+    if (api && nodeId) {
+      try {
+        await initialize();
+        const locationMutation = await api.getLocationMutationAPI();
+        const removed = previousSources.find((entry) => buildEntryKey(entry) === resolvedKey) ?? previousSources[resolvedIndex];
+        if (removed?.sourceUrl) {
+          await locationMutation.deleteLocationBySourceUrl(nodeId, removed.sourceUrl);
+        }
+        const updaterAPI = await api.getTreeNodeUpdaterAPI();
+        await updaterAPI.updateTreeNodeDraftData(nodeId, nextDraftPayload as Record<string, unknown>);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        setRouteRefError(message);
+        pendingDraftKeyRef.current = null;
+        setVisibleSources(previousSources);
+        setVisibleSourceKey(buildSourceKey(previousSources));
+        setRemoveInProgress(false);
+        return;
+      }
+    }
+    const hasSources = nextSources.length > 0;
+    onUpdate({
+      ideGsmSources: nextSources,
+      ideGsmFileName: primary?.fileName ?? '',
+      ideGsmSourceUrl: primary?.sourceUrl ?? '',
+      ...(hasSources ? {} : { selectedArrayByCountries: {} }),
+      ideGsmSelectionHash: undefined,
+      ...(hasSources
+        ? { processingStatus: 'pending' }
+        : { processingStatus: undefined, processedAt: undefined, lastProcessedAt: undefined }),
+    });
+    setRemoveDialogOpen(false);
+    setPendingRemoveIndex(null);
+    setPendingRemoveKey(null);
+    setRemoveInProgress(false);
   };
+
 
   return (
     <Box>
       <DataSourceSelectionStep<Timestamp>
         title={t('dataSource.title', 'Data Source')}
-        options={options}
+        options={resolvedOptions}
         state={{
           dataSourceId: value,
           licenseAgreement: Boolean(draft.licenseAgreement),
@@ -354,7 +512,9 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
       />
       <Dialog
         open={removeDialogOpen}
-        onClose={() => setRemoveDialogOpen(false)}
+        onClose={() => {
+          setRemoveDialogOpen(false);
+        }}
         maxWidth="sm"
         fullWidth
       >
@@ -365,7 +525,7 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
           <Typography variant="body2">
             {t(
               'dataSource.ideGsm.removeConfirmMessage',
-              'Removing this file will discard all locations imported from it.',
+              'Removing this file will discard its locations and re-import the remaining files.',
             )}
           </Typography>
           {routeRefLoading ? (
@@ -386,10 +546,12 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
           ) : null}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setRemoveDialogOpen(false)}>
+          <Button onClick={() => {
+            setRemoveDialogOpen(false);
+          }}>
             {t('common.cancel', 'Cancel')}
           </Button>
-          <Button onClick={confirmRemoveFile} color="error" variant="contained">
+          <Button onClick={confirmRemoveFile} color="error" variant="contained" disabled={removeInProgress}>
             {t('dataSource.ideGsm.removeConfirmAction', 'Remove')}
           </Button>
         </DialogActions>

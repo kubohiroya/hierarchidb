@@ -10,6 +10,8 @@ import { BASE_LOCATION_TYPES } from '../components/steps/locationTypes.js';
 import { updateIdeGsmProgress } from '../state/ideGsmProgress.js';
 import { buildIdeGsmSelectionEntries, buildIdeGsmSelectionHash } from '../utils/ideGsmSelection.js';
 
+const debugPrefix = '[LocationIdeGsmImport]';
+
 export const useIdeGsmImportOnEntry = ({
   draft,
   nodeId,
@@ -22,6 +24,9 @@ export const useIdeGsmImportOnEntry = ({
   const iso = useIsoCountries();
   const selection = draft.selectedArrayByCountries ?? {};
   const selectionHash = useMemo(() => buildIdeGsmSelectionHash(selection), [selection]);
+  const fallbackCountries = useMemo(() => (
+    Object.keys(selection).map((code) => ({ code, name: code, continent: 'XX' as const }))
+  ), [selection]);
   const ideGsmSources = useMemo<IdeGsmSourceEntry[]>(() => {
     if (draft.ideGsmSources && draft.ideGsmSources.length > 0) {
       return draft.ideGsmSources;
@@ -39,7 +44,7 @@ export const useIdeGsmImportOnEntry = ({
     [ideGsmSources],
   );
   const combinedHash = useMemo(
-    () => (selectionHash ? `${selectionHash}::${sourceKey}` : ''),
+    () => (selectionHash ? `${selectionHash}::${sourceKey}` : `__all__::${sourceKey}`),
     [selectionHash, sourceKey],
   );
   const inFlightRef = useRef(false);
@@ -48,14 +53,24 @@ export const useIdeGsmImportOnEntry = ({
     if (draft.dataSource !== 'ide-gsm') return;
     if (!nodeId) return;
     if (ideGsmSources.length === 0) return;
-    if (!combinedHash) return;
     if (draft.ideGsmSelectionHash === combinedHash) return;
-    if (iso.status !== 'ready') return;
     if (inFlightRef.current) return;
 
-    const selectionEntries = buildIdeGsmSelectionEntries(selection, iso.countries, BASE_LOCATION_TYPES);
-    if (selectionEntries.length === 0) return;
+    const selectionEntries = buildIdeGsmSelectionEntries(
+      selection,
+      iso.status === 'ready' ? iso.countries : fallbackCountries,
+      BASE_LOCATION_TYPES,
+    );
+    if (selectionEntries.length === 0 && selectionHash) return;
 
+    console.info(debugPrefix, 'start', {
+      nodeId,
+      sourceKey,
+      selectionHash,
+      combinedHash,
+      selectionEntriesCount: selectionEntries.length,
+      sources: ideGsmSources.map((source) => source.sourceUrl),
+    });
     inFlightRef.current = true;
     onUpdate?.({ processingStatus: 'processing' });
 
@@ -66,19 +81,33 @@ export const useIdeGsmImportOnEntry = ({
         await bridge.initialize();
         const api = await bridge.getLocationMutationAPI();
         for (const source of ideGsmSources) {
-          await api.importIdeGsmLocations(
+          const result = await api.importIdeGsmLocations(
             {
               nodeId,
               sourceUrl: source.sourceUrl,
               selectionEntries,
               chunkSize: IDE_GSM_BULK_CHUNK_SIZE,
+              mode: 'upsert',
             },
             proxy((progress: IdeGsmImportProgress) => {
+              console.info(debugPrefix, 'progress', {
+                nodeId,
+                phase: progress.phase,
+                processed: progress.processed,
+                total: progress.total,
+                chunk: progress.chunk,
+              });
               updateIdeGsmProgress(nodeId, progress);
             }),
           );
+          console.info(debugPrefix, 'import-result', { nodeId, sourceUrl: source.sourceUrl, total: result.total });
         }
         if (cancelled) return;
+        console.info(debugPrefix, 'source-complete', {
+          nodeId,
+          sources: ideGsmSources.map((source) => source.sourceUrl),
+        });
+        console.info(debugPrefix, 'complete', { nodeId, combinedHash });
         onUpdate?.({
           ideGsmSelectionHash: combinedHash,
           processingStatus: 'completed',
@@ -87,8 +116,9 @@ export const useIdeGsmImportOnEntry = ({
         });
       } catch (error) {
         if (cancelled) return;
-        onUpdate?.({ processingStatus: 'failed' });
         const message = error instanceof Error ? error.message : String(error);
+        console.error(debugPrefix, 'failed', { nodeId, message, sourceKey, selectionHash });
+        onUpdate?.({ processingStatus: 'failed' });
         updateIdeGsmProgress(nodeId, {
           phase: 'failed',
           message,
