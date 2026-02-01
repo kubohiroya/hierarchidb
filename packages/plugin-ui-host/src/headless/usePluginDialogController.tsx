@@ -468,7 +468,7 @@ export function usePluginDialogController(
   const stepDataRef = useRef<Partial<PluginDefinedEntity>>(currentStepData);
   useEffect(() => {
     stepDataRef.current = currentStepData;
-  }, [activeStepIndex]);
+  }, [ currentStepData]);
   const stableStepData = stepDataRef.current;
 
   const { resolveIcon } = useIconRegistry();
@@ -895,7 +895,7 @@ export function usePluginDialogController(
   useEffect(() => {
     autoBuildStartedRef.current = false;
     autoBuildCompleteRef.current = false;
-  }, [nodeId, autoBuildEnabled]);
+  }, []);
   useEffect(() => {
     if (!autoBuildEnabled || !open) return;
     if (!activeStartBatch || !canStartBatch) return;

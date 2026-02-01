@@ -412,7 +412,7 @@ export function useDialogSteps({
 
     stepComponentRegistryRef.current.set(cfgId, Component);
     return Component;
-  }, []);
+  }, [draftAtom]);
 
   const stepDescriptors = useMemo<
     ReadonlyArray<StepComponentDescriptor<Partial<PluginDefinedEntity>>>

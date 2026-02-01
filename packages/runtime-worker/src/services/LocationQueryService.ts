@@ -135,7 +135,7 @@ export class LocationQueryService implements LocationQueryAPI {
     return rows.map((row) => sanitizeGroupItem(toGroupItem(row)));
   }
 
-  async listLocationRelations(nodeId: NodeId): Promise<LocationRelation[]> {
+  async listLocationRelations(_nodeId: NodeId): Promise<LocationRelation[]> {
     return [];
   }
 

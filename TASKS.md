@@ -13119,3 +13119,20 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - update: 2026-02-02 07:05 JST SafeBox で children を正規化する実装へ置換。
   - update: 2026-02-02 07:05 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
   - done: 2026-02-02 07:05 JST ResourceLayerMap の Box children 正規化を完了。
+
+2474) refactor/plugins/hook-extraction-tsx (P1) — 進行中 (2026-02-01 18:50 JST)
+- ブランチ名: refactor/plugins/hook-extraction-tsx
+- 依存: なし
+- 受け入れ基準: plugins 配下の .tsx を調査して混在ロジックを特定できる／対象コンポーネントのロジックがカスタムフックへ切り出される／必要な plugin の typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/**`（調査後に特定）
+- ロールバック手順: 各コンポーネント/フックの差分を revert して元の実装に戻す
+- チェックリスト:
+  - ExecPlan を作成する（plans/plugins-hook-extraction-execplan.md）
+  - plugins/**/*.tsx を走査し対象をリスト化する
+  - 対象コンポーネントのロジックをカスタムフックに切り出す
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 18:50 JST plugins の TSX フック抽出リファクタに着手。
+  - update: 2026-02-01 18:55 JST ExecPlan を plans/plugins-hook-extraction-execplan.md に作成。
+  - update: 2026-02-01 19:00 JST plugins/**/*.tsx を棚卸しし、候補（Location/Route/Shape/Styler/Basemap 等の大規模TSX）を抽出。

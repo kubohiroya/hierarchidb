@@ -247,19 +247,19 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
     }
     return [];
   }, [draft.ideGsmFileName, draft.ideGsmFileSizeBytes, draft.ideGsmSources, draft.tabularSourceId, t]);
-  const buildEntryKey = (entry: IdeGsmFileEntry): string => (
+  const buildEntryKey = useCallback((entry: IdeGsmFileEntry): string => (
     `${entry.sourceId || ''}::${entry.fileName}`
-  );
-  const buildSourceKey = (sources: IdeGsmFileEntry[]): string => (
+  ), []);
+  const buildSourceKey = useCallback((sources: IdeGsmFileEntry[]): string => (
     sources
       .map((entry) => buildEntryKey(entry))
       .join('|')
-  );
+  ), [buildEntryKey]);
   const [visibleSources, setVisibleSources] = useState<IdeGsmFileEntry[]>(ideGsmSources);
   const [visibleSourceKey, setVisibleSourceKey] = useState<string>(() => buildSourceKey(ideGsmSources));
   const pendingDraftKeyRef = useRef<string | null>(null);
   const stableSourcesRef = useRef<IdeGsmFileEntry[]>(ideGsmSources);
-  const sourceKey = useMemo(() => buildSourceKey(ideGsmSources), [ideGsmSources]);
+  const sourceKey = useMemo(() => buildSourceKey(ideGsmSources), [buildSourceKey, ideGsmSources]);
 
   useEffect(() => {
     if (!draft.ideGsmSourceUrl) return;
@@ -386,7 +386,7 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
     }
   }, [buildSourceKey, displaySources, importInProgress, onUpdate, tabularApi]);
 
-  const requestRemoveFile = (index: number) => {
+  const requestRemoveFile = useCallback((index: number) => {
     const entry = displaySources[index];
     if (!entry) return;
     const entryKey = buildEntryKey(entry);
@@ -395,7 +395,7 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
     setRemoveDialogOpen(true);
     setRouteRefCount(null);
     setRouteRefError(null);
-  };
+  }, [buildEntryKey, displaySources]);
 
   const handleRemoveFile = useCallback((index: number) => {
     requestRemoveFile(index);
@@ -519,7 +519,7 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
     let removed = false;
     const nextSources = previousSources.filter((entry, idx) => {
       if (removed) return true;
-      if (idx == resolvedIndex) {
+      if (idx === resolvedIndex) {
         removed = true;
         return false;
       }

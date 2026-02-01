@@ -220,7 +220,7 @@ export const LocationPreviewList: React.FC<LocationPreviewListProps> = ({
         />
       </Box>
     );
-  }, [emptyText, errorText, filteredRows, gridColumns, loading, loadingText, normalizedRows.length, onSelectionChange, onToggleRecycling, recyclingState, resolvedTitle, rowFilterConfig, searchValue, selectedRows, tableId]);
+  }, [emptyText, errorText, filteredRows, gridColumns, handleCellClick, loading, loadingText, normalizedRows.length, onSelectionChange, onToggleRecycling, recyclingState, resolvedTitle, rowFilterConfig, searchValue, selectedRows, tableId, toolbarActions]);
 
   return (
     <FloatingWindow
