@@ -1,0 +1,30 @@
+import type { NodeId } from '@hierarchidb/core-types';
+
+export type RouteTileIndexRequest = {
+  nodeId: NodeId;
+  minZoom: number;
+  maxZoom: number;
+};
+
+export type RouteTileIndexResult = {
+  tileCount: number;
+  lineCount: number;
+  minZoom: number;
+  maxZoom: number;
+};
+
+export type RouteVectorTileBuildRequest = {
+  nodeId: NodeId;
+  minZoom: number;
+  maxZoom: number;
+  bufferSize?: number;
+  inputFormat?: 'geojson' | 'flatgeobuf';
+  inputCompression?: 'gzip' | 'none';
+};
+
+export type RouteVectorTileBuildResult = {
+  tilesGenerated: number;
+  totalBytes: number;
+  zoomMin?: number;
+  zoomMax?: number;
+};
