@@ -248,7 +248,10 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
       try {
         if (mapRef && typeof mapRef.getStyle === 'function') {
           const style = mapRef.getStyle();
-          if (layerId && style.layers) {
+          if (!style || !style.layers) {
+            return;
+          }
+          if (layerId) {
             if (mapRef.getLayer(layerId)) {
               logLayerEvent('layer removed (cleanup)', { layerId });
               mapRef.removeLayer(layerId);

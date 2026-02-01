@@ -12738,6 +12738,76 @@
   - update: 2026-02-01 18:04 JST LocationQueryService で metadata.sourceUrl をサニタイズして返却。
   - done: 2026-02-01 18:05 JST pnpm --filter @hierarchidb/runtime-worker typecheck exit 0 を確認。
 
+2467) fix/location/metadata-loading-status (P1) — 進行中 (2026-02-01 18:12 JST)
+- ブランチ名: fix/location/metadata-loading-status
+- 依存: なし
+- 受け入れ基準: Location preview の metadata ロードが Worker 未準備時にクラッシュしない／Loading の詳細メッセージが表示される／`pnpm --filter @hierarchidb/location-plugin typecheck` と `pnpm --filter @hierarchidb/app typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`
+- ロールバック手順: Worker API ガードと loadingText の差分を revert して元に戻す
+- チェックリスト:
+  - Worker API の接続待ち/初期化をガードする
+  - metadata ロード状態の詳細メッセージを追加する
+  - location-plugin / app typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 18:12 JST metadata ロード時の Worker 未準備エラー対応に着手。
+  - update: 2026-02-01 18:17 JST LocationMapPreviewStep で useWorkerAPI を使い、metadata/viewport/recycling の worker 呼び出しをガード。
+  - update: 2026-02-01 18:17 JST metadata ロードの詳細メッセージを loadingText で表示。
+  - done: 2026-02-01 18:18 JST pnpm --filter @hierarchidb/location-plugin typecheck / pnpm --filter @hierarchidb/app typecheck exit 0 を確認。
+
+2468) fix/route/datasource-card-size-focus (P1) — 進行中 (2026-02-01 18:35 JST)
+- ブランチ名: fix/route/datasource-card-size-focus
+- 依存: なし
+- 受け入れ基準: route の IDE-GSM インポートカードでファイルサイズが表示される／aria-hidden 警告が出ない／`pnpm --filter @hierarchidb/route-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/datasource/src/IdeGsmImportPanel.tsx`, `plugins/route-plugin/src/ui/components/steps/RouteDataSourceStep.tsx`, `packages/features/route-api/src/routeTypes.ts`
+- ロールバック手順: sizeBytes と focus 対策の差分を revert して元に戻す
+- チェックリスト:
+  - IDE-GSM 単一ファイルで sizeBytes を保持・表示する
+  - Dialog open 時の focus を外し aria-hidden 警告を回避する
+  - route-plugin typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 18:35 JST route IDE-GSM ファイルサイズ表示と aria-hidden 警告対応に着手。
+  - update: 2026-02-01 18:41 JST IdeGsmImportPanel に sizeBytes を追加し、Dialog 起動時に focus を外す処理を追加。
+  - update: 2026-02-01 18:41 JST RouteEntity に ideGsmFileSizeBytes を追加し、RouteDataSourceStep で保持/反映。
+  - update: 2026-02-01 18:42 JST pnpm --filter @hierarchidb/route-api build / pnpm --filter @hierarchidb/ui-datasource build を実行。
+  - done: 2026-02-01 18:42 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+
+2469) fix/route/datasource-validation (P1) — 進行中 (2026-02-01 18:58 JST)
+- ブランチ名: fix/route/datasource-validation
+- 依存: なし
+- 受け入れ基準: route DataSource で IDE-GSM ファイル選択後に step が valid になり Route Selection へ遷移できる／`pnpm --filter @hierarchidb/route-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/route-plugin/src/ui/components/steps/RouteDataSourceStep.tsx`
+- ロールバック手順: resolvedSource と validation 変更を revert して元に戻す
+- チェックリスト:
+  - resolvedSource の既定を ide-gsm に合わせる
+  - IDE-GSM 選択時の validation を sourceUrl に連動させる
+  - route-plugin typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 18:58 JST route DataSource の validation 不具合に着手。
+  - update: 2026-02-01 19:00 JST resolvedSource の既定を ide-gsm に変更し、validation を ideGsmSourceUrl 連動に修正。
+  - done: 2026-02-01 19:00 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+
+2470) fix/shape/hover-snackbar-country (P1) — 進行中 (2026-02-01 19:20 JST)
+- ブランチ名: fix/shape/hover-snackbar-country
+- 依存: なし
+- 受け入れ基準: hover snackbar が countryCode を ISO3166-2 で国名へ補完し国旗を付与、国コードの括弧表記を撤去／`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/preview/useShapePreviewStepView.ts`, `plugins/shape-plugin/src/ui/components/preview/ShapePreviewStep.tsx`
+- ロールバック手順: hover snackbar の renderContent と ISO3166-2 参照を revert して元に戻す
+- チェックリスト:
+  - ISO3166-2 から国名を補完する
+  - 国旗 + 国名表記にする（コード括弧は撤去）
+  - shape-plugin typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 19:20 JST shape hover snackbar の国名/国旗補完に着手。
+  - update: 2026-02-01 19:24 JST ISO3166-2 を読み込み hover snackbar の国名補完と国旗表示を追加、国コードの括弧表記を撤去。
+  - update: 2026-02-01 19:29 JST alpha3 でも国名/国旗を補完するよう修正。
+  - update: 2026-02-01 19:35 JST ISO3166-2 CSV を BASE_URL 基準で読み込むよう修正。
+  - update: 2026-02-01 19:43 JST getCountry を併用し ISO3166-2 API で国名補完できない場合も補う。
+  - done: 2026-02-01 19:43 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
 2466) fix/location-preview/snackbar-theme (P1) — 進行中 (2026-02-01 17:58 JST)
 - ブランチ名: fix/location-preview/snackbar-theme
 - 依存: なし
@@ -12800,3 +12870,252 @@
   - start: 2026-02-01 18:09 JST Snackbar の型名表示撤去に着手。
   - update: 2026-02-01 18:09 JST Snackbar から typeLabel 表示を撤去。
   - update: 2026-02-01 18:09 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+
+2470) fix/shape-preview/remove-adminlevel-grouping (P2) — 完了 (2026-02-01 18:20 JST)
+- ブランチ名: fix/shape-preview/remove-adminlevel-grouping
+- 依存: なし
+- 受け入れ基準: shape-plugin の preview で AdminLevel ごとのグループ表示が廃止される／既存の preview 表示が崩れない／必要な typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`（必要に応じて追加）
+- ロールバック手順: AdminLevel グルーピング表示の差分を revert して元に戻す
+- チェックリスト:
+  - preview の AdminLevel グルーピング表示を撤去する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 18:15 JST shape preview の AdminLevel グルーピング撤去に着手。
+  - blocked: 2026-02-01 18:18 JST pnpm --filter @hierarchidb/shape-plugin typecheck が mergeBounds 未使用で失敗。
+  - update: 2026-02-01 18:20 JST AdminLevel グルーピングの集約処理を撤去し、不要な helper を削除。
+  - done: 2026-02-01 18:20 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+) fix/shape-preview/column-row-config-rows-card (P2) — 進行中 ()
+- ブランチ名: fix/shape-preview/column-row-config-rows-card
+- 依存: なし
+- 受け入れ基準: shape の preview Column/Row Config で Rows カードが location と同じ下部位置に表示される／Rows の挙動（追加・削除・並び・表示条件）が location と同等になる／
+> @hierarchidb/shape-plugin@0.1.0 typecheck /Users/hiroya/WebstormProjects/hierarchidb/plugins/shape-plugin
+> tsc --noEmit
+
+src/ui/components/preview/useShapePreviewStep.ts(194,7): error TS6133: 'mergeBounds' is declared but its value is never read.
+/Users/hiroya/WebstormProjects/hierarchidb/plugins/shape-plugin:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @hierarchidb/shape-plugin@0.1.0 typecheck: `tsc --noEmit`
+Exit status 2 が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: （必要に応じて追加）
+- ロールバック手順: Column/Row Config の Rows カード位置・挙動変更を revert して元の表示へ戻す
+- チェックリスト:
+  - shape preview の Column/Row Config で Rows カード位置を location と合わせる
+  - Rows の挙動差分を洗い出して location と同等に揃える
+  - shape-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start:  shape preview の Column/Row Config を location と揃える作業に着手。
+
+
+2471) fix/shape-preview/column-row-config-rows-card (P2) — 進行中 (2026-02-01 18:38 JST)
+- ブランチ名: fix/shape-preview/column-row-config-rows-card
+- 依存: なし
+- 受け入れ基準: shape の preview Column/Row Config で Rows カードが location と同じ下部位置に表示される／Rows の挙動（追加・削除・並び・表示条件）が location と同等になる／`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`（必要に応じて追加）
+- ロールバック手順: Column/Row Config の Rows カード位置・挙動変更を revert して元の表示へ戻す
+- チェックリスト:
+  - shape preview の Column/Row Config で Rows カード位置を location と合わせる
+  - Rows の挙動差分を洗い出して location と同等に揃える
+  - shape-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 18:38 JST shape preview の Column/Row Config を location と揃える作業に着手。
+  - update: 2026-02-01 18:46 JST shape preview の Rows フィルター追加に伴い ui-map の d.ts 未更新で typecheck が失敗したため、ui-map をビルドして更新。
+  - update: 2026-02-01 18:46 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define 警告あり）。
+  - update: 2026-02-01 18:46 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 18:46 JST shape preview の Column/Row Config を location と同等の Rows カード/挙動に更新。
+
+2472) fix/shape-preview/snackbar-flag (P2) — 完了 (2026-02-01 18:34 JST)
+- ブランチ名: fix/shape-preview/snackbar-flag
+- 依存: なし
+- 受け入れ基準: shape preview のホバー Snackbar で国名の前に国旗絵文字が表示される／国名や国コードが不明な場合は表示しない／`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`（必要に応じて追加）
+- ロールバック手順: Snackbar の国旗表示差分を revert して元に戻す
+- チェックリスト:
+  - Snackbar の国名表示前に国旗絵文字を付与する
+  - shape-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 18:30 JST shape preview Snackbar の国旗表示に着手。
+  - update: 2026-02-01 18:33 JST hover ラベルの国名表示に国旗絵文字を付与。
+  - done: 2026-02-01 18:34 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+
+2473) fix/preview/title-metadata-prefix (P2) — 進行中 (2026-02-01 19:20 JST)
+- ブランチ名: fix/preview/title-metadata-prefix
+- 依存: なし
+- 受け入れ基準: shape preview の floating window タイトルが "Shape: metadata (n rows)" 形式になる／location preview の floating window タイトルが "Location: metadata (n rows)" 形式になる／既存のカウント挙動は維持される／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/**`, `plugins/location-plugin/src/ui/**`
+- ロールバック手順: タイトル変更の差分を revert して元の表示に戻す
+- チェックリスト:
+  - shape preview のタイトルを Shape: metadata 形式へ更新する
+  - location preview のタイトルを Location: metadata 形式へ更新する
+  - 影響範囲の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 19:20 JST preview の metadata タイトル接頭辞変更に着手。
+  - update: 2026-02-01 19:22 JST shape/location preview の metadata タイトルを指定形式へ更新。
+  - update: 2026-02-01 19:22 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-02-01 19:22 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 19:22 JST preview の metadata タイトル接頭辞変更を完了。
+
+
+2474) fix/shape-preview/adminlevel-no-grouping (P2) — 進行中 (2026-02-01 19:22 JST)
+- ブランチ名: fix/shape-preview/adminlevel-no-grouping
+- 依存: なし
+- 受け入れ基準: Shape: metadata の floating window テーブルで Admin Level による行グループ化が無効になる／Admin Level カラムは通常の列として表示される／既存の検索・選択・カウント表示は維持される／`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/preview/ShapePreviewList.tsx`
+- ロールバック手順: Admin Level の grouping 設定を復元して元の表示に戻す
+- チェックリスト:
+  - ShapePreviewList の adminLevel grouping を撤去する
+  - shape-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 19:22 JST Shape: metadata の Admin Level グループ化撤去に着手。
+  - update: 2026-02-01 19:23 JST ShapePreviewList の Admin Level grouping を撤去。
+  - update: 2026-02-01 19:23 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define 警告あり）。
+  - update: 2026-02-01 19:23 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 19:23 JST Shape: metadata の Admin Level グループ化撤去を完了。
+  - update: 2026-02-01 19:25 JST ShapePreviewList の normalizeAdminLevelGroup 参照を撤去して runtime エラーを解消。
+  - update: 2026-02-01 19:25 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define 警告あり）。
+  - update: 2026-02-01 19:25 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 19:25 JST Shape: metadata の Admin Level グループ化撤去の修正を完了。
+
+2473) fix/ui-map/vector-tile-cleanup-guard (P1) — 完了 (2026-02-01 18:43 JST)
+- ブランチ名: fix/ui-map/vector-tile-cleanup-guard
+- 依存: なし
+- 受け入れ基準: VectorTileLayer cleanup が map atoms 未初期化でも例外にならない／`Cannot read properties of undefined (reading 'layers')` が発生しない／`pnpm --filter @hierarchidb/ui-map typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/components/VectorTileLayer.tsx`（必要に応じて追加）
+- ロールバック手順: cleanup ガード追加を revert して元の実装に戻す
+- チェックリスト:
+  - map atoms 未初期化時に cleanup をスキップするガードを追加する
+  - ui-map の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 18:40 JST VectorTileLayer cleanup の例外ガード対応に着手。
+ - update: 2026-02-01 18:42 JST map.getStyle が未定義の場合に cleanup をスキップするガードを追加。
+  - done: 2026-02-01 18:43 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
+
+2475) fix/ide-gsm/sourcekey-tabular-store (P1) — 進行中 (2026-02-01 20:30 JST)
+- ブランチ名: fix/ide-gsm/sourcekey-tabular-store
+- 依存: なし
+- 受け入れ基準: IDE-GSM の import で sourceKey に data URL が入らず tabular-store の tableId が保存される／Location と Route の両方で tabular-store 経由の import が動作する／既存の data URL が draft に残っている場合は UI 側で tabular-store に移行できる／`pnpm --filter @hierarchidb/location-plugin typecheck` と `pnpm --filter @hierarchidb/route-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/datasource/src/IdeGsmImportPanel.tsx`, `packages/features/tabular-store/src/index.ts`, `packages/runtime-worker/src/services/utils/tabular.ts`, `packages/features/location-api/src/**`, `packages/features/route-api/src/**`, `packages/runtime-worker/src/services/LocationMutationService.ts`, `packages/runtime-worker/src/services/RouteMutationService.ts`, `plugins/location-plugin/src/ui/**`, `plugins/route-plugin/src/ui/**`（必要に応じて追加）
+- ロールバック手順: 該当差分を revert して IDE-GSM の sourceUrl ベース処理に戻す
+- チェックリスト:
+  - IDE-GSM import の payload を tabular-store の tableId 参照へ置換する
+  - Location/Route の IDE-GSM import を tabular-store 経由の rows 解析に切替える
+  - 既存 data URL のドラフトを tabular-store に移行する処理を用意する
+  - 影響範囲の typecheck/build を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 20:30 JST IDE-GSM sourceKey を tabular-store 化する作業に着手。
+  - update: 2026-02-01 23:31 JST pnpm --filter @hierarchidb/tabular-store build exit 0（tsdown define 警告あり）。
+  - update: 2026-02-01 23:31 JST pnpm --filter @hierarchidb/location-api build exit 0（tsdown define 警告あり）。
+  - update: 2026-02-01 23:31 JST pnpm --filter @hierarchidb/route-api build exit 0（tsdown define 警告あり）。
+  - update: 2026-02-01 23:31 JST pnpm --filter @hierarchidb/runtime-worker typecheck exit 0 を確認。
+  - blocked: 2026-02-01 23:31 JST pnpm --filter @hierarchidb/location-plugin typecheck が ui-datasource の dist 未更新で失敗（IdeGsmImportPayload/sourceId 未反映）。
+  - update: 2026-02-01 23:31 JST pnpm --filter @hierarchidb/ui-datasource build exit 0（tsdown define 警告あり）。
+  - update: 2026-02-01 23:31 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - blocked: 2026-02-01 23:31 JST pnpm --filter @hierarchidb/route-plugin typecheck が @hierarchidb/tabular-store/src 参照で失敗。
+  - update: 2026-02-01 23:31 JST RouteTabularMetadataManager の import を @hierarchidb/tabular-store に修正。
+ - update: 2026-02-01 23:31 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 23:31 JST IDE-GSM sourceKey の tabular-store 置換と Location/Route 反映を完了。
+
+2476) fix/location-ide-gsm/skip-empty-source (P1) — 進行中 (2026-02-01 23:36 JST)
+- ブランチ名: fix/location-ide-gsm/skip-empty-source
+- 依存: なし
+- 受け入れ基準: tabularSourceId を持たない IDE-GSM ソースでは import を実行しない／WorkerBridge 未初期化エラーが発生しない／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/hooks/useIdeGsmImportOnEntry.ts`
+- ロールバック手順: 追加した sourceKey ガードを revert して元の import 実行条件に戻す
+- チェックリスト:
+  - 有効な tabularSourceId がない場合は import をスキップする
+  - location-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 23:36 JST IDE-GSM の空 sourceKey で WorkerBridge が呼ばれる不具合修正に着手。
+  - update: 2026-02-01 23:36 JST 有効な tabularSourceId のみ import 対象に絞るガードを追加。
+ - update: 2026-02-01 23:36 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 23:36 JST IDE-GSM 空 sourceKey の import 実行抑止を完了。
+
+2477) fix/location-preview/ide-gsm-progress-bar (P2) — 進行中 (2026-02-01 23:49 JST)
+- ブランチ名: fix/location-preview/ide-gsm-progress-bar
+- 依存: なし
+- 受け入れ基準: Location preview 上辺に IDE-GSM import の進捗バーが表示される／progress の processed/total が LinearProgress に反映される／completed/failed で非表示になる／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`
+- ロールバック手順: 進捗バー表示の差分を revert して元の preview 表示に戻す
+- チェックリスト:
+  - ideGsmProgress を購読して LinearProgress を表示する
+  - location-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 23:49 JST Location preview の IDE-GSM 進捗バー追加に着手。
+  - update: 2026-02-01 23:49 JST IDE-GSM progress の購読と LinearProgress 表示を追加。
+ - update: 2026-02-01 23:49 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 23:49 JST Location preview の IDE-GSM 進捗バー表示を完了。
+
+2478) fix/location-preview/ide-gsm-progress-save-only (P2) — 進行中 (2026-02-01 23:51 JST)
+- ブランチ名: fix/location-preview/ide-gsm-progress-save-only
+- 依存: なし
+- 受け入れ基準: LinearProgress が phase 'save' のときのみ表示される／processed/total の進捗表示は維持される／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`
+- ロールバック手順: save のみ表示する条件を revert して元の表示条件に戻す
+- チェックリスト:
+  - save 以外の phase では LinearProgress を非表示にする
+  - location-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-01 23:51 JST Location preview の進捗バーを save 時のみ表示する修正に着手。
+  - update: 2026-02-01 23:51 JST save 以外の phase では LinearProgress を非表示にする条件へ変更。
+  - update: 2026-02-01 23:51 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-01 23:51 JST Location preview の進捗バー表示条件を save 時のみに限定。
+
+2479) fix/ui-map/box-children-warning (P2) — 進行中 (2026-02-02 00:05 JST)
+- ブランチ名: fix/ui-map/box-children-warning
+- 依存: なし
+- 受け入れ基準: ResourceLayerMap/MapPreviewShell 経由で Box children の prop type warning が出ない／snackbar と stats renderExtra の挙動は維持される／`pnpm --filter @hierarchidb/ui-map typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/components/ResourceLayerMap.tsx`
+- ロールバック手順: 追加した children ガードを revert して元のレンダリング条件へ戻す
+- チェックリスト:
+  - renderExtra/snackbarContent の ReactNode ガードを追加する
+  - ui-map の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-02 00:05 JST ResourceLayerMap の Box children 警告対応に着手。
+  - update: 2026-02-02 00:05 JST snackbarContent/renderExtra の ReactNode ガードを追加。
+  - update: 2026-02-02 00:05 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
+  - done: 2026-02-02 00:05 JST Box children の prop type warning 対応を完了。
+
+2480) fix/ui-map/box-children-warning-icon-guard (P2) — 進行中 (2026-02-02 00:09 JST)
+- ブランチ名: fix/ui-map/box-children-warning-icon-guard
+- 依存: なし
+- 受け入れ基準: stats の titleIcon/toggleButtonIcon が ReactNode でない場合は描画されず、Box children warning が出ない／既存の stats UI 表示は維持される／`pnpm --filter @hierarchidb/ui-map typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/components/ResourceLayerMap.tsx`
+- ロールバック手順: icon の ReactNode ガードを revert して元の表示に戻す
+- チェックリスト:
+  - stats icon の ReactNode ガードを追加する
+  - ui-map の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-02 00:09 JST stats icon の ReactNode ガード追加に着手。
+  - update: 2026-02-02 00:09 JST stats titleIcon/toggleButtonIcon の ReactNode ガードを追加。
+  - update: 2026-02-02 00:09 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
+  - done: 2026-02-02 00:09 JST stats icon の ReactNode ガード追加を完了。
+
+2481) fix/ui-map/safe-box-children (P2) — 進行中 (2026-02-02 07:05 JST)
+- ブランチ名: fix/ui-map/safe-box-children
+- 依存: なし
+- 受け入れ基準: ResourceLayerMap の Box children が常に ReactNode に正規化され warning が出ない／表示上の退行がない／`pnpm --filter @hierarchidb/ui-map typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/components/ResourceLayerMap.tsx`
+- ロールバック手順: SafeBox/children 正規化を revert して元の Box 使用に戻す
+- チェックリスト:
+  - ResourceLayerMap 内の Box を children 正規化つきに置換する
+  - ui-map の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-02 07:05 JST ResourceLayerMap の Box children 正規化に着手。
+  - update: 2026-02-02 07:05 JST SafeBox で children を正規化する実装へ置換。
+  - update: 2026-02-02 07:05 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
+  - done: 2026-02-02 07:05 JST ResourceLayerMap の Box children 正規化を完了。

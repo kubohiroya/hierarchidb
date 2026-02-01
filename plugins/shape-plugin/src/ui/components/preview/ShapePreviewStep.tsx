@@ -47,6 +47,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
     featureMetadataError,
     featureMetadataLoaded,
     featureListRows,
+    displayedFeatureRows,
     featureSearchKeyword,
     setFeatureSearchKeyword,
     errorSummaryById,
@@ -54,6 +55,10 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
     selectedFeatureIds,
     setSelectedFeatureIds,
     toggleRecyclingForSelection,
+    featureRowFilterMode,
+    setFeatureRowFilterMode,
+    featureRowSearchOnly,
+    setFeatureRowSearchOnly,
     vectorLayerIds,
     setMapInstance,
     handleMapIdentify,
@@ -65,6 +70,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
     zoomSnackbarOpen,
     handleViewStateChange,
     handleZoomSnackbarClose,
+    hoverSnackbarContent,
     vectorLayers,
     highlightOverridesByType,
     geoJsonLayers,
@@ -245,7 +251,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
             hover: { enabled: true },
             selection: { enabled: false },
             fitSelection: { enabled: true, padding: 24 },
-            snackbar: { enabled: true, position: 'bottom-center' },
+            snackbar: { enabled: true, position: 'bottom-center', renderContent: hoverSnackbarContent },
           },
           mapOptions: {
             interactive: true,
@@ -274,9 +280,9 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
     if (!featureWindowOpen) return null;
     return (
       <ShapePreviewList
-        title={t('preview.tabs.shape', 'Shape')}
+        title={t('preview.metadata.title', 'Shape: metadata')}
         onClose={() => setFeatureWindowOpen(false)}
-        rows={featureListRows}
+        rows={displayedFeatureRows}
         columnLabels={{
           featureId: t('preview.metadata.columns.featureId', 'Feature ID'),
           countryName: t('preview.metadata.columns.countryName', 'Country'),
@@ -308,6 +314,16 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
         onSelectionChange={(next) => {
           setSelectedFeatureIds(Array.from(next).map(String));
         }}
+        countText={(() => {
+          if (featureRowFilterMode === 'viewport') {
+            return `${displayedFeatureRows.length} ${t('preview.metadata.rows', 'Rows')}`;
+          }
+          const keyword = featureSearchKeyword.trim();
+          if (keyword && featureRowSearchOnly) {
+            return `${matchedFeatureIdSet.size} ${t('preview.metadata.matches', 'Matched')}`;
+          }
+          return `${featureListRows.length} ${t('preview.metadata.rows', 'Rows')}`;
+        })()}
         emptyContent={!nodeId ? (
           <Alert severity="info" sx={{ m: 2 }}>
             {t('preview.metadata.missingSession', 'Build the dataset to generate metadata.')}
@@ -330,6 +346,18 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
           completed: t('build.taskStatus.completed', 'Completed'),
         }}
         onToggleRecycling={toggleRecyclingForSelection}
+        rowFilterConfig={{
+          mode: featureRowFilterMode,
+          onModeChange: setFeatureRowFilterMode,
+          searchOnly: featureRowSearchOnly,
+          onSearchOnlyChange: setFeatureRowSearchOnly,
+          labels: {
+            title: 'Rows',
+            allRows: 'Show all shapes in this node',
+            viewportRows: 'Show shapes in the current viewport',
+            searchOnly: 'Show only shapes matching the search field',
+          },
+        }}
       />
     );
   };

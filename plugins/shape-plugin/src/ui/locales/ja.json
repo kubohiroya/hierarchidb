@@ -303,6 +303,7 @@
       "errors": "エラー一覧"
     },
     "metadata": {
+      "title": "Shape: metadata",
       "missingSession": "メタデータがまだありません。",
       "empty": "メタデータがまだ生成されていません。",
       "loading": "メタデータを読み込み中...",

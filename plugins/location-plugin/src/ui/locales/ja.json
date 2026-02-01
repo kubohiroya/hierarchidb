@@ -191,6 +191,7 @@
     "title": "地図プレビュー",
     "loading": "地図プレビューを読み込み中…",
     "description": "生成済みのポイントを地図でプレビューします。",
+    "metadataTitle": "Location: metadata",
     "tabs": {
       "map": "地図",
       "metadata": "メタデータ"

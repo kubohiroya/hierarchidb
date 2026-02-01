@@ -191,6 +191,7 @@
     "title": "Map Preview",
     "loading": "Loading map preview\u2026",
     "description": "Preview the generated points on the map.",
+    "metadataTitle": "Location: metadata",
     "tabs": {
       "map": "Map",
       "metadata": "Metadata"

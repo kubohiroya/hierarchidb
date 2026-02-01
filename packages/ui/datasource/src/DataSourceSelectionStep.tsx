@@ -55,7 +55,6 @@ export const DataSourceSelectionStep = <TAgreedAt,>({
   renderOption,
   createAgreedAt,
   renderDetails,
-  selectionTitle = 'Data Source',
   detailsTitle = 'Data Source Details',
 }: DataSourceSelectionStepProps<TAgreedAt>): React.JSX.Element => {
   const fallbackValue = options[0]?.id ?? '';
@@ -113,7 +112,6 @@ export const DataSourceSelectionStep = <TAgreedAt,>({
       </Box>
 
       <DataSourceSelectionCard
-        title={selectionTitle}
         options={options}
         value={value}
         onChange={handleSelect}

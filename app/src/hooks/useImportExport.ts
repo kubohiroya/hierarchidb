@@ -267,8 +267,8 @@ export function useImportExport(client?: Remote<WorkerAPI>, ready?: boolean) {
       const errors: string[] = [];
 
       if (data.length === 0) {
-        errors.push('CSV file is empty');
-        return { valid: false, errors, message: 'CSV file is empty' };
+        errors.push('Tabular file is empty');
+        return { valid: false, errors, message: 'Tabular file is empty' };
       }
 
       const headers = data[0];

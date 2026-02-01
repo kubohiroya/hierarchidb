@@ -303,6 +303,7 @@
       "errors": "Error List"
     },
     "metadata": {
+      "title": "Shape: metadata",
       "missingSession": "No metadata entries have been generated yet.",
       "empty": "No metadata entries have been generated yet.",
       "loading": "Loading metadata...",
