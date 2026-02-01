@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { IconButton, Typography } from '@mui/material';
 import { Hexagon } from '@mui/icons-material';
 import { alpha, useTheme } from '@mui/material/styles';
@@ -73,6 +73,18 @@ export type ShapePreviewListProps = {
   maxHeight?: number;
   onClose?: () => void;
   onToggleRecycling?: () => void;
+  rowFilterConfig?: {
+    mode: 'all' | 'viewport';
+    onModeChange: (mode: 'all' | 'viewport') => void;
+    searchOnly: boolean;
+    onSearchOnlyChange: (value: boolean) => void;
+    labels?: {
+      title?: string;
+      allRows?: string;
+      viewportRows?: string;
+      searchOnly?: string;
+    };
+  };
 };
 
 const WINDOW_PERSIST_KEY = 'hierarchidb:ui:floating-window:shape:features';
@@ -118,6 +130,7 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
   maxHeight,
   onClose,
   onToggleRecycling,
+  rowFilterConfig,
 }) => {
   const theme = useTheme();
   const initialPosition = useMemo(() => ({ x: 80, y: 140 }), []);
@@ -159,23 +172,16 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
     }
     normalizedRef.current = true;
   }, [handlers, initialPosition, initialSize, show, windowState.isVisible, windowState.position.x, windowState.position.y, windowState.size.height, windowState.size.width]);
-  const normalizeAdminLevelGroup = useCallback((value: string) => {
-    const match = /^ADM(\d+)$/i.exec(value.trim());
-    if (!match) return value;
-    const level = Number(match[1]);
-    if (!Number.isFinite(level)) return value;
-    if (level >= 3) return 'ADM3+';
-    return `ADM${level}`;
-  }, []);
   const resolvedStatusLabels: MapPreviewStatusLabels = statusLabels ?? {
     completed: 'Completed',
     failed: 'Failed',
   };
 
+  const searchOnly = rowFilterConfig?.searchOnly ?? true;
   const tableRows = useMemo(() => {
     const normalizeCount = (value?: number) => (typeof value === 'number' ? value : '');
     const keyword = search?.value.trim().toLowerCase();
-    const filtered = keyword
+    const filtered = keyword && searchOnly
       ? rows.filter((row) => matchedRows?.has(String(row.featureId ?? row.id)))
       : rows;
     const mapped = filtered.map((row) => ({
@@ -208,6 +214,7 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
     resolvedStatusLabels.failed,
     rows,
     search?.value,
+    searchOnly,
   ]);
 
   const resolvedMatchedRows = useMemo(() => {
@@ -233,7 +240,6 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
       width: 120,
       align: 'right',
       sortable: true,
-      groupingValue: (row) => normalizeAdminLevelGroup(String(row.adminLevel ?? '')),
     },
     { id: 'adminCode', label: columnLabels.adminCode, width: 120, sortable: true },
     { id: 'dataSource', label: columnLabels.dataSource, width: 140, sortable: true },
@@ -242,7 +248,7 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
     { id: 'polygonCount', label: columnLabels.polygonCount, width: 120, align: 'right', sortable: true },
     { id: 'bbox', label: columnLabels.bbox, width: 220, sortable: true },
     { id: 'area', label: columnLabels.area, width: 140, align: 'right', sortable: true, format: formatLogicalCode },
-  ]), [columnLabels, normalizeAdminLevelGroup]);
+  ]), [columnLabels]);
 
   const recyclingSelectionState = useMemo(() => {
     if (!selectedRows || selectedRows.size === 0) return 'none';
@@ -259,8 +265,11 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
     if (!countLabels) return undefined;
     const keyword = search?.value.trim();
     const count = tableRows.length;
-    return keyword ? `${count} ${countLabels.matched}` : `${count} ${countLabels.rows}`;
-  }, [countLabels, countText, search?.value, tableRows.length]);
+    if (keyword && searchOnly) {
+      return `${count} ${countLabels.matched}`;
+    }
+    return `${count} ${countLabels.rows}`;
+  }, [countLabels, countText, search?.value, searchOnly, tableRows.length]);
   const resolvedTitle = useMemo(() => {
     if (!resolvedCountText) return title;
     const normalizedCountText = resolvedCountText.replace(/\bRows\b/g, 'rows');
@@ -330,8 +339,9 @@ export const ShapePreviewList: React.FC<ShapePreviewListProps> = ({
               color={recyclingSelectionState === 'on' ? 'success' : recyclingSelectionState === 'partial' ? 'warning' : 'inherit'}
             />
           </IconButton>
-        ) : null}
+          ) : null}
         maxHeight={maxHeight}
+        rowFilterConfig={rowFilterConfig}
         containerSx={{
           position: 'static',
           width: '100%',

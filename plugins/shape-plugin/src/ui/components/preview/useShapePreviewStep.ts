@@ -34,6 +34,7 @@ import {
   mapHoverMatchesAtom,
   mapSearchMatchesAtom,
   mapSelectedMatchesAtom,
+  mapViewportFeatureIdsAtom,
   resolveLayerSetEntries,
   useVectorTilePreviewMetadata,
   useVectorTilePreviewSearch,
@@ -120,6 +121,16 @@ const pickCountryNameFromProps = (properties: Record<string, unknown> | undefine
 const pickCountryCodeFromProps = (properties: Record<string, unknown> | undefined): string | undefined =>
   pickFromProps(properties, ['countryCode', 'ISO_A2', 'ISO2', 'ISO_2', 'ISO_A3', 'ADM0_A3', 'ISO3', 'shapeISO']);
 
+const buildFlagEmoji = (countryCode?: string): string | null => {
+  if (!countryCode || countryCode.length !== 2) return null;
+  const normalized = countryCode.toUpperCase();
+  if (!/^[A-Z]{2}$/.test(normalized)) return null;
+  const base = 0x1f1e6;
+  const first = normalized.charCodeAt(0) - 65;
+  const second = normalized.charCodeAt(1) - 65;
+  return String.fromCodePoint(base + first, base + second);
+};
+
 const pickAdminNameByLevel = (
   properties: Record<string, unknown> | undefined,
   level: number,
@@ -147,25 +158,29 @@ const buildHoverLabel = (
   const countryCode = normalizeCountryCodeValue(
     pickCountryCodeFromProps(properties) ?? row.countryCode,
   );
+  const normalizedCountryName = normalizeText(countryName);
+  const hasCountryName = Boolean(normalizedCountryName) && normalizedCountryName !== 'unknown';
+  const flagEmoji = hasCountryName ? buildFlagEmoji(countryCode) : null;
+  const countryLabel = flagEmoji ? `${flagEmoji} ${countryName}` : countryName;
   const countrySuffix = countryCode ? ` (${countryCode})` : '';
   if (adminLevel <= 0) {
-    return `ADM0: ${countryName}${countrySuffix}`;
+    return `ADM0: ${countryLabel}${countrySuffix}`;
   }
   if (adminLevel === 1) {
     const admin1 = pickAdminNameByLevel(properties, 1) ?? countryName;
-    return `ADM1: ${admin1} / ${countryName}${countrySuffix}`;
+    return `ADM1: ${admin1} / ${countryLabel}${countrySuffix}`;
   }
   if (adminLevel === 2) {
     const admin2 = pickAdminNameByLevel(properties, 2) ?? pickAdminNameByLevel(properties, 1);
     const admin1 = pickAdminNameByLevel(properties, 1);
-    const parts = [admin2, admin1, countryName].filter((part, index, arr) => {
+    const parts = [admin2, admin1, countryLabel].filter((part, index, arr) => {
       if (!part) return false;
       return arr.indexOf(part) === index;
     });
     return `ADM2: ${parts.join(' / ')}${countrySuffix}`;
   }
   const adminName = pickAdminNameByLevel(properties, adminLevel) ?? countryName;
-  return `ADM${adminLevel}: ${adminName} / ${countryName}${countrySuffix}`;
+  return `ADM${adminLevel}: ${adminName} / ${countryLabel}${countrySuffix}`;
 };
 
 const parseSourceKey = (sourceKey?: string): { countryCode?: string; adminLevel?: number } => {
@@ -184,14 +199,6 @@ const buildLookupKey = (countryCode?: string, adminLevel?: number): string | nul
   return `${countryCode}:${adminLevel}`;
 };
 
-const buildAdminGroupKey = (row: ShapePreviewFeatureRow): string | null => {
-  if (row.dataSource !== 'geoboundaries' && row.dataSource !== 'geoboundaries-topojson') return null;
-  if (row.adminLevel !== 1) return null;
-  const countryCode = normalizeCountryCodeValue(row.countryCode);
-  const adminKey = normalizeText(row.adminCode) ?? normalizeText(row.adminName);
-  if (!countryCode || !adminKey) return null;
-  return `adm1:${countryCode}:${adminKey.toLowerCase()}`;
-};
 
 const buildCountryGroupKey = (countryCode?: string): string | null => {
   const normalized = normalizeCountryCodeValue(countryCode);
@@ -199,23 +206,6 @@ const buildCountryGroupKey = (countryCode?: string): string | null => {
   return `country:${normalized}`;
 };
 
-const mergeBounds = (
-  current: [number, number, number, number] | undefined,
-  next: [number, number, number, number] | undefined,
-): [number, number, number, number] | undefined => {
-  if (!next || next.length !== 4) return current;
-  const [minX, minY, maxX, maxY] = next;
-  if ([minX, minY, maxX, maxY].some((value) => typeof value !== 'number' || !Number.isFinite(value))) {
-    return current;
-  }
-  if (!current) return [minX, minY, maxX, maxY];
-  return [
-    Math.min(current[0], minX),
-    Math.min(current[1], minY),
-    Math.max(current[2], maxX),
-    Math.max(current[3], maxY),
-  ];
-};
 
 const isNumericId = (value?: string): boolean => {
   if (!value) return false;
@@ -279,6 +269,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   const setMapSearchMatches = useSetAtom(mapSearchMatchesAtom);
   const setMapSelectedMatches = useSetAtom(mapSelectedMatchesAtom);
   const setMapHoverMatches = useSetAtom(mapHoverMatchesAtom);
+  const viewportFeatureIdsByLayer = useAtomValue(mapViewportFeatureIdsAtom);
 
   const previewDraft = data as ShapePreviewDraft;
   const tilesUrl = previewDraft.tilesUrl ?? previewDraft.tilesEndpoint ?? '';
@@ -839,9 +830,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
   const {
     featureListRows,
     rowIdToMembers,
-    featureToAdminKey,
     featureToCountryKey,
-    adminGroupMembers,
     countryGroupMembers,
   } = useMemo(() => {
     const rows = featureMetadataRows.map((row) => toFeatureListRow(row));
@@ -894,12 +883,9 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     });
 
     const baseRows = Array.from(collapsed.values());
-    const adminGroups = new Map<string, ShapePreviewFeatureRow[]>();
     const listRows: ShapePreviewFeatureRow[] = [];
     const rowIdToMembers = new Map<string, string[]>();
-    const featureToAdminKey = new Map<string, string>();
     const featureToCountryKey = new Map<string, string>();
-    const adminGroupMembers = new Map<string, string[]>();
     const countryGroupMembers = new Map<string, string[]>();
 
     baseRows.forEach((row) => {
@@ -913,58 +899,15 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
         members.push(memberId);
         countryGroupMembers.set(countryKey, members);
       }
-      const adminKey = buildAdminGroupKey(row);
-      if (adminKey) {
-        featureToAdminKey.set(memberId, adminKey);
-        const group = adminGroups.get(adminKey) ?? [];
-        group.push(row);
-        adminGroups.set(adminKey, group);
-        return;
-      }
       listRows.push({ ...row, aggregationLevel: 'feature' });
       rowIdToMembers.set(rowKey, [memberId]);
     });
 
-    const aggregatedRows: ShapePreviewFeatureRow[] = [];
-    adminGroups.forEach((groupRows, adminKey) => {
-      const memberIds = groupRows
-        .map((row) => String(row.featureId ?? row.id ?? ''))
-        .filter(Boolean);
-      if (memberIds.length === 0) return;
-      adminGroupMembers.set(adminKey, memberIds);
-      const countryCode = normalizeCountryCodeValue(groupRows[0]?.countryCode);
-      const adminName = groupRows.find((row) => normalizeText(row.adminName))?.adminName;
-      const adminCode = groupRows.find((row) => normalizeText(row.adminCode))?.adminCode;
-      const adminLabel = normalizeText(adminCode) ?? normalizeText(adminName) ?? 'unknown';
-      const groupId = `ADM1:${countryCode ?? 'UNKNOWN'}:${adminLabel}`;
-      const aggregated: ShapePreviewFeatureRow = {
-        id: groupId,
-        featureId: groupId,
-        memberFeatureIds: memberIds,
-        aggregationLevel: 'admin',
-        countryName: groupRows.find((row) => normalizeText(row.countryName))?.countryName,
-        countryCode,
-        adminName,
-        adminCode,
-        adminLevel: 1,
-        dataSource: groupRows.find((row) => row.dataSource)?.dataSource,
-        createdAt: Math.min(...groupRows.map((row) => row.createdAt ?? Date.now())),
-        vertexCount: groupRows.reduce((sum, row) => sum + (row.vertexCount ?? 0), 0),
-        polygonCount: groupRows.reduce((sum, row) => sum + (row.polygonCount ?? 0), 0),
-        area: groupRows.reduce((sum, row) => sum + (row.area ?? 0), 0),
-        bbox: groupRows.reduce((current, row) => mergeBounds(current, row.bbox), undefined as [number, number, number, number] | undefined),
-      };
-      aggregatedRows.push(aggregated);
-      rowIdToMembers.set(groupId, memberIds);
-    });
-
-    const featureListRows = [...aggregatedRows, ...listRows];
+    const featureListRows = [...listRows];
     return {
       featureListRows,
       rowIdToMembers,
-      featureToAdminKey,
       featureToCountryKey,
-      adminGroupMembers,
       countryGroupMembers,
     };
   }, [featureMetadataRows, normalizedTransformErrorRows, resolveSourceContext, toFeatureListRow]);
@@ -997,6 +940,23 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     () => new Set(matchedFeatureIds),
     [matchedFeatureIds],
   );
+  const [featureRowFilterMode, setFeatureRowFilterMode] = useState<'all' | 'viewport'>('all');
+  const [featureRowSearchOnly, setFeatureRowSearchOnly] = useState(true);
+
+  const viewportFeatureIdSet = useMemo(() => {
+    if (!viewportFeatureIdsByLayer) return null;
+    const collected = new Set<string>();
+    viewportFeatureIdsByLayer.forEach((ids) => {
+      ids.forEach((id) => collected.add(String(id)));
+    });
+    return collected;
+  }, [viewportFeatureIdsByLayer]);
+
+  const displayedFeatureRows = useMemo(() => {
+    if (featureRowFilterMode !== 'viewport') return featureListRows;
+    if (!viewportFeatureIdSet || viewportFeatureIdSet.size === 0) return [];
+    return featureListRows.filter((row) => viewportFeatureIdSet.has(String(row.featureId ?? row.id)));
+  }, [featureListRows, featureRowFilterMode, viewportFeatureIdSet]);
 
   const baseErrorSummaryById = useMemo<MapPreviewErrorSummaryById>(() => (
     buildErrorSummaryById(normalizedTransformErrorRows, {
@@ -1069,14 +1029,12 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
       const members = rowIdToMembers.get(id) ?? [id];
       members.forEach((memberId) => {
         result.add(memberId);
-        const adminKey = featureToAdminKey.get(memberId);
-        if (adminKey) addMembers(adminGroupMembers.get(adminKey));
         const countryKey = featureToCountryKey.get(memberId);
         if (countryKey) addMembers(countryGroupMembers.get(countryKey));
       });
     });
     return Array.from(result);
-  }, [adminGroupMembers, countryGroupMembers, featureToAdminKey, featureToCountryKey, rowIdToMembers]);
+  }, [countryGroupMembers, featureToCountryKey, rowIdToMembers]);
 
   const resolvedLayerSetEntries = useMemo<ResolvedLayerSetEntry[]>(() => {
     const definition = getLayerSetDefinition(layerSetName);
@@ -1297,6 +1255,11 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>, nodeId?: string)
     setSelectionContext,
     errorSummaryById,
     matchedFeatureIdSet,
+    displayedFeatureRows,
+    featureRowFilterMode,
+    setFeatureRowFilterMode,
+    featureRowSearchOnly,
+    setFeatureRowSearchOnly,
     selectedIdSet,
     hoveredIdSet,
     hoverMessage,
