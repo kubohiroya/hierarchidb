@@ -1,7 +1,6 @@
 import type { NodeId } from '@hierarchidb/core-types';
 import { resolveLocationAttribution } from '@hierarchidb/location-plugin';
 import type { LocationType } from '@hierarchidb/location-store';
-import type { LocationQueryAPI } from '@hierarchidb/location-api';
 import { ROUTE_DATA_SOURCES } from '@hierarchidb/route-plugin';
 import type { RouteDataSourceConfig } from '@hierarchidb/route-plugin';
 import { SHAPE_DATA_SOURCES } from '@hierarchidb/shape-plugin';
@@ -11,10 +10,8 @@ import type {
   LayerSetVisibility,
   MapAttributionItem,
   MapLibreGeoJSONFeature,
-  MapLibreMapInstance,
   MapToggleSelection,
   MapViewState,
-  ResourceGeoJsonLayer,
 } from '@hierarchidb/ui-plugin-shell/ui-map';
 import {
   buildCategoryFilter,
@@ -24,20 +21,11 @@ import {
   ResourceLayerMap,
   ScreenCenterSnackbar,
 } from '@hierarchidb/ui-plugin-shell/ui-map';
-import { ensureWorkerAPI } from '@hierarchidb/ui-worker-client';
 import {
   loadTreeConsoleSettings,
   TREE_CONSOLE_ZOOM_BAND_MAX_ZOOM,
   TREE_CONSOLE_ZOOM_BAND_MIN_ZOOM,
 } from '@hierarchidb/util';
-import type { SvgIconComponent } from '@mui/icons-material';
-import {
-  DirectionsBoat as DirectionsBoatIcon,
-  FlightTakeoff as FlightTakeoffIcon,
-  ForkRight as ForkRightIcon,
-  LocationCity as LocationCityIcon,
-  Train as TrainIcon,
-} from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -49,11 +37,8 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useLoaderData, useParams, useSearch } from '@tanstack/react-router';
-import { MaplibreExportControl } from '@watergis/maplibre-gl-export';
-import type { Feature } from 'geojson';
 import { useAtom, useSetAtom } from 'jotai';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
 import useGeolocationImport from 'react-hook-geolocation';
 import type { MapLayerInfo } from '../../../state/mapSearch.atoms.js';
 import { mapLayerInfoAtom, mapStylerToggleAtom } from '../../../state/mapSearch.atoms.js';
@@ -70,9 +55,9 @@ import {
 import type { MapSearch } from './types.js';
 import { useFolderLayers } from './useFolderLayers.js';
 import { useMapViewState } from './useMapViewState.js';
+import { useLocationViewportLayers } from './useLocationViewportLayers.js';
 import '@watergis/maplibre-gl-export/dist/maplibre-gl-export.css';
 
-const PREFETCH_MARGIN_PX = 64;
 const LOCATION_INTERACTION_RADIUS_PX = 8;
 const CIRCLE_RADIUS_MIN = 2;
 const LOCATION_MAX_ZOOM = 11;
@@ -103,23 +88,6 @@ const resolveCommonZoomBounds = () => {
 };
 
 
-const resolveLayerSetEntryPriority = (layerSetId: LayerSetId, entryId?: string): number => {
-  const layerSet = DEFAULT_LAYER_SETS.find((set) => set.id === layerSetId);
-  if (!layerSet) return 0;
-  if (!entryId) return layerSet.priority * 100;
-  const index = layerSet.entries.findIndex((entry) => entry.id === entryId);
-  if (index < 0) return layerSet.priority * 100;
-  return layerSet.priority * 100 + (layerSet.entries.length - index);
-};
-
-const LOCATION_ICON_COMPONENTS: Record<LocationType, SvgIconComponent> = {
-  area_centroid: LocationCityIcon,
-  airport: FlightTakeoffIcon,
-  port: DirectionsBoatIcon,
-  railway_station: TrainIcon,
-  interchange: ForkRightIcon,
-};
-
 export default function MapPage() {
   const useGeolocation =
     (useGeolocationImport as unknown as { default?: typeof useGeolocationImport }).default ??
@@ -129,7 +97,6 @@ export default function MapPage() {
   const search = useSearch({ from: '/map/$nodeId' }) as MapSearch;
   const loaderViewState = useLoaderData({ from: '/map/$nodeId' }) as LoaderMapViewState;
   const geolocation = useGeolocation();
-  const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
   const [missingLayerDialogOpen, setMissingLayerDialogOpen] = useState(false);
   const [missingLayerIds, setMissingLayerIds] = useState<string[]>([]);
   const [stylerToggles, setStylerToggles] = useAtom(mapStylerToggleAtom);
@@ -151,14 +118,7 @@ export default function MapPage() {
     route: true,
     shape: true,
   });
-  const mapInstanceRef = useRef<MapLibreMapInstance | null>(null);
-  const exportControlRef = useRef<MaplibreExportControl | null>(null);
-  const locationQueryPromiseRef = useRef<Promise<LocationQueryAPI> | null>(null);
-  const locationQueryTimerRef = useRef<number | null>(null);
-  const locationQueryRequestRef = useRef(0);
   const lastZoomRef = useRef<number | null>(null);
-  const [locationGeoJsonLayers, setLocationGeoJsonLayers] = useState<ResourceGeoJsonLayer[]>([]);
-  const [locationIconsReady, setLocationIconsReady] = useState(false);
   const [zoomSnackbarMessage, setZoomSnackbarMessage] = useState('');
   const [zoomSnackbarOpen, setZoomSnackbarOpen] = useState(false);
 
@@ -187,13 +147,6 @@ export default function MapPage() {
     stylerToggles,
   });
 
-  const getLocationQueryAPI = useCallback(async (): Promise<LocationQueryAPI> => {
-    if (locationQueryPromiseRef.current) {
-      return locationQueryPromiseRef.current;
-    }
-    locationQueryPromiseRef.current = ensureWorkerAPI().then((api) => api.getLocationQueryAPI());
-    return locationQueryPromiseRef.current;
-  }, []);
 
   const setMapLayerInfo = useSetAtom(mapLayerInfoAtom);
   const {
@@ -350,23 +303,6 @@ export default function MapPage() {
     });
   }, [enabledLocationKinds, enabledRouteModes, locationTypeFilter, routeModeValues, vectorLayers, layerSetVisibility]);
 
-  const combinedGeoJsonLayers = useMemo(
-    () => [
-      ...geoJsonLayers,
-      ...(layerSetVisibility.location ? locationGeoJsonLayers : []),
-    ],
-    [geoJsonLayers, layerSetVisibility.location, locationGeoJsonLayers]
-  );
-
-  const highlightLayerIds = useMemo(
-    () => [
-      ...filteredVectorLayers.map(
-        (layer) => layer.layerConfig?.layerId ?? `resource-layer-${layer.nodeId}`
-      ),
-      ...combinedGeoJsonLayers.map((layer) => layer.layerId),
-    ],
-    [combinedGeoJsonLayers, filteredVectorLayers]
-  );
 
   const attributionItems = useMemo<MapAttributionItem[]>(() => {
     const items: MapAttributionItem[] = [];
@@ -635,283 +571,38 @@ export default function MapPage() {
     []
   );
 
-  const ensureLocationIcons = useCallback((map: MapLibreMapInstance) => {
-    const mapWithImages = map as MapLibreMapInstance & {
-      hasImage?: (id: string) => boolean;
-      addImage?: (id: string, image: HTMLImageElement, options?: { sdf?: boolean }) => void;
-    };
-    if (!mapWithImages.addImage) return;
-    const missing = (
-      Object.entries(LOCATION_ICON_COMPONENTS) as Array<[LocationType, SvgIconComponent]>
-    ).filter(([type]) => !mapWithImages.hasImage?.(`location-icon-${type}`));
-    if (missing.length === 0) {
-      setLocationIconsReady(true);
-      return;
-    }
-    setLocationIconsReady(false);
-    const loaders = missing.map(
-      ([type, Icon]) =>
-        new Promise<void>((resolve) => {
-          const iconId = `location-icon-${type}`;
-          const svg = renderToStaticMarkup(<Icon htmlColor={LOCATION_TYPE_COLORS[type]} />);
-          const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-          const image = new Image();
-          image.onload = () => {
-            if (!mapWithImages.hasImage?.(iconId)) {
-              mapWithImages.addImage?.(iconId, image);
-            }
-            resolve();
-          };
-          image.onerror = () => resolve();
-          image.src = dataUrl;
-        })
-    );
-    void Promise.all(loaders).then(() => setLocationIconsReady(true));
-  }, []);
+  const {
+    locationGeoJsonLayers,
+    handleMapLoad,
+    handleLocationMoveEnd,
+  } = useLocationViewportLayers({
+    nodeId,
+    locationLayers,
+    layerSetVisibility,
+    enabledLocationKinds,
+    locationTypeFilter,
+    locationCirclePaint,
+    locationIconImageExpression,
+    locationIconSizeExpression,
+  });
 
-  const buildLocationLayersForNode = useCallback(
-    (layer: (typeof locationLayers)[number], features: Array<Feature>): ResourceGeoJsonLayer[] => {
-      const sourceId = layer.sourceId;
-      const base = {
-        data: {
-          type: 'FeatureCollection' as const,
-          features,
-        },
-        filter: locationTypeFilter ?? undefined,
-        absolutePath: layer.absolutePath,
-      };
-      const layers: ResourceGeoJsonLayer[] = [
-        {
-          layerId: `${layer.layerId}-circle`,
-          sourceId,
-          layerType: 'circle',
-          paint: locationCirclePaint,
-          layerSetId: 'location',
-          layerPriority: resolveLayerSetEntryPriority('location', 'location-points'),
-          layerLabel: layer.absolutePath ?? layer.layerId,
-          ...base,
-        },
-      ];
-      if (locationIconsReady) {
-        layers.push({
-          layerId: `${layer.layerId}-icon`,
-          sourceId,
-          layerType: 'symbol',
-          layout: {
-            'icon-image': locationIconImageExpression,
-            'icon-size': locationIconSizeExpression,
-            'icon-allow-overlap': true,
-            'icon-ignore-placement': true,
-          },
-          layerSetId: 'location',
-          layerPriority: resolveLayerSetEntryPriority('location', 'location-symbols'),
-          layerLabel: layer.absolutePath ?? layer.layerId,
-          ...base,
-        });
-      }
-      return layers;
-    },
-    [
-      locationCirclePaint,
-      locationIconImageExpression,
-      locationIconSizeExpression,
-      locationIconsReady,
-      locationTypeFilter,
-    ]
+  const combinedGeoJsonLayers = useMemo(
+    () => [
+      ...geoJsonLayers,
+      ...(layerSetVisibility.location ? locationGeoJsonLayers : []),
+    ],
+    [geoJsonLayers, layerSetVisibility.location, locationGeoJsonLayers]
   );
 
-  const fetchLocationViewportPoints = useCallback(
-    async (viewState?: MapViewState) => {
-      if (!mapInstanceRef.current) return;
-      if (locationLayers.length === 0) {
-        setLocationGeoJsonLayers([]);
-        return;
-      }
-      if (!layerSetVisibility.location) {
-        setLocationGeoJsonLayers([]);
-        return;
-      }
-      const map = mapInstanceRef.current;
-      const bounds = map.getBounds?.();
-      if (!bounds) return;
-      const bbox: [number, number, number, number] = [
-        bounds.getWest(),
-        bounds.getSouth(),
-        bounds.getEast(),
-        bounds.getNorth(),
-      ];
-      const canvas = map.getCanvas();
-      const viewportSizePx = {
-        width: canvas?.clientWidth ?? 0,
-        height: canvas?.clientHeight ?? 0,
-      };
-      const requestId = ++locationQueryRequestRef.current;
-      if (enabledLocationKinds.length === 0) {
-        const emptyLayers = locationLayers.flatMap((layer) =>
-          buildLocationLayersForNode(layer, [])
-        );
-        setLocationGeoJsonLayers(emptyLayers);
-        return;
-      }
-      try {
-        const api = await getLocationQueryAPI();
-        const zoom = viewState?.zoom ?? map.getZoom();
-        const layers = await Promise.all(
-          locationLayers.map(async (layer) => {
-            const items = await api.queryByViewport(
-              layer.nodeId as NodeId,
-              bbox,
-              zoom,
-              enabledLocationKinds,
-              {
-                prefetchMarginPx: PREFETCH_MARGIN_PX,
-                viewportSizePx,
-              }
-            );
-            const features: Array<Feature | null> = items.map((item) => {
-              const data = item.data as
-                | {
-                    pointId?: string;
-                    name?: string;
-                    longitude?: number;
-                    latitude?: number;
-                    type?: string;
-                    countryName?: string;
-                    countryCode?: string;
-                    admin1?: string;
-                    admin2?: string;
-                    admin1Code?: string;
-                    admin2Code?: string;
-                    metadata?: Record<string, string | number | null>;
-                  }
-                | undefined;
-              const longitude = data?.longitude;
-              const latitude = data?.latitude;
-              if (
-                typeof longitude !== 'number' ||
-                !Number.isFinite(longitude) ||
-                typeof latitude !== 'number' ||
-                !Number.isFinite(latitude)
-              ) {
-                return null;
-              }
-              return {
-                type: 'Feature' as const,
-                id: String(item.id),
-                geometry: {
-                  type: 'Point' as const,
-                  coordinates: [longitude, latitude],
-                },
-                properties: {
-                  id: String(item.id),
-                  pointId: data?.pointId ?? item.id,
-                  name: data?.name,
-                  type: data?.type ?? 'area_centroid',
-                  countryName: data?.countryName,
-                  countryCode: data?.countryCode,
-                  admin1: data?.admin1,
-                  admin2: data?.admin2,
-                  admin1Code: data?.admin1Code,
-                  admin2Code: data?.admin2Code,
-                  metadata: data?.metadata ?? {},
-                },
-              } satisfies Feature;
-            });
-            const filtered = features.filter((feature): feature is Feature => feature !== null);
-            return buildLocationLayersForNode(layer, filtered);
-          })
-        );
-        if (requestId !== locationQueryRequestRef.current) return;
-        setLocationGeoJsonLayers(layers.flat());
-      } catch (error) {
-        if (requestId === locationQueryRequestRef.current) {
-          setLocationGeoJsonLayers(
-            locationLayers.flatMap((layer) => buildLocationLayersForNode(layer, []))
-          );
-        }
-        console.warn('[MapPage] Failed to query location viewport', error);
-      }
-    },
-    [buildLocationLayersForNode, enabledLocationKinds, getLocationQueryAPI, layerSetVisibility.location, locationLayers]
+  const highlightLayerIds = useMemo(
+    () => [
+      ...filteredVectorLayers.map(
+        (layer) => layer.layerConfig?.layerId ?? `resource-layer-${layer.nodeId}`
+      ),
+      ...combinedGeoJsonLayers.map((layer) => layer.layerId),
+    ],
+    [combinedGeoJsonLayers, filteredVectorLayers]
   );
-
-  const scheduleLocationQuery = useCallback(
-    (viewState?: MapViewState) => {
-      if (locationQueryTimerRef.current) {
-        window.clearTimeout(locationQueryTimerRef.current);
-      }
-      locationQueryTimerRef.current = window.setTimeout(() => {
-        void fetchLocationViewportPoints(viewState);
-      }, 150);
-    },
-    [fetchLocationViewportPoints]
-  );
-
-  const handleMapLoad = useCallback(
-    (map: MapLibreMapInstance) => {
-      console.log('[MapPage] Map loaded', map);
-      mapInstanceRef.current = map;
-      setMapInstance(map);
-      ensureLocationIcons(map);
-      scheduleLocationQuery();
-      if (!exportControlRef.current) {
-        const control = new MaplibreExportControl({
-          Format: 'pdf',
-          Local: 'ja',
-          Filename: nodeId ? `map-${nodeId}` : 'map-export',
-        });
-        map.addControl(control, 'bottom-left');
-        exportControlRef.current = control;
-      }
-    },
-    [ensureLocationIcons, nodeId, scheduleLocationQuery]
-  );
-
-  useEffect(() => {
-    return () => {
-      if (mapInstanceRef.current && exportControlRef.current) {
-        mapInstanceRef.current.removeControl(exportControlRef.current);
-        exportControlRef.current = null;
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!mapInstance) return;
-    const handleStyleData = () => {
-      ensureLocationIcons(mapInstance);
-    };
-    mapInstance.on('styledata', handleStyleData);
-    return () => {
-      mapInstance.off('styledata', handleStyleData);
-    };
-  }, [ensureLocationIcons, mapInstance]);
-
-  useEffect(() => {
-    if (!layerSetVisibility.location) {
-      setLocationGeoJsonLayers([]);
-      return () => {
-        if (locationQueryTimerRef.current) {
-          window.clearTimeout(locationQueryTimerRef.current);
-          locationQueryTimerRef.current = null;
-        }
-      };
-    }
-    if (locationLayers.length > 0) {
-      setLocationGeoJsonLayers(
-        locationLayers.flatMap((layer) => buildLocationLayersForNode(layer, []))
-      );
-    } else {
-      setLocationGeoJsonLayers([]);
-    }
-    scheduleLocationQuery();
-    return () => {
-      if (locationQueryTimerRef.current) {
-        window.clearTimeout(locationQueryTimerRef.current);
-        locationQueryTimerRef.current = null;
-      }
-    };
-  }, [buildLocationLayersForNode, layerSetVisibility.location, locationLayers, scheduleLocationQuery]);
 
   const handleLocationTypeToggle = useCallback((id: string) => {
     setLocationTypeSelection((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -924,14 +615,6 @@ export default function MapPage() {
   const handleLayerSetToggle = useCallback((id: LayerSetId) => {
     setLayerSetVisibility((prev) => ({ ...prev, [id]: !prev[id] }));
   }, []);
-
-  const handleLocationMoveEnd = useCallback(
-    (viewState: MapViewState) => {
-      scheduleLocationQuery(viewState);
-    },
-    [scheduleLocationQuery]
-  );
-
   const handleZoomSnackbarClose = useCallback(() => {
     setZoomSnackbarOpen(false);
   }, []);

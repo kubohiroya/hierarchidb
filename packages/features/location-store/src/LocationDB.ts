@@ -1,5 +1,5 @@
 /**
- * LocationDB - storage for Location plugin artifacts
+ * LocationDB - storage for persistent Location features.
  */
 
 import { getDBName } from '@hierarchidb/util';
@@ -14,6 +14,7 @@ export class LocationDB extends Dexie {
   constructor() {
     super(getDBName('location'));
 
+    // Legacy schemas retained for migration compatibility only.
     this.version(9).stores({
       features: '&[nodeId+id], nodeId, id, type, mortonKey, [nodeId+mortonKey], [nodeId+type+mortonKey], updatedAt',
       vectorTiles: '&id, nodeId, [z+x+y], timestamp',
@@ -82,8 +83,4 @@ export async function hasLocationReferencesToShapes(
   return matches.length > 0;
 }
 
-// Backward-compatible aliases (to be removed after migration window).
-export { LocationDB as LocationDatabase };
-export const getLocationDatabase = getLocationDB;
-export const getEphemeralLocationDB = getLocationDB;
-export const closeEphemeralLocationDB = closeLocationDB;
+// No ephemeral database is currently implemented for Location.

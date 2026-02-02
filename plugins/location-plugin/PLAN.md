@@ -18,7 +18,7 @@
 - バッチ実行の API 群（開始/状態/キャンセル/再開）が `location-plugin` 経由で提供される。
 - ダウンロード/計算/タイル生成の各ステージが `@hierarchidb/{batch,download}` を経由して実行される（計算/タイル化は当面 plugin 側実装）。
 - 途中失敗時のリトライ/再開（resume）がセッション単位で可能（タスクの冪等性を担保）。
-- 生成物（ベクトルタイル等）が `LocationDB` に保存され、UI から確認できる（最低限: 可視化 or 検証 API）。
+- 生成物（LocationFeature）が `LocationDB` に保存され、UI から確認できる（最低限: 可視化 or 検証 API）。
 - ユニット/統合/E2E スモークが追加され、CI で `pnpm test` が通る。
 - 機能フラグは既定 OFF（`LOCATION_BATCH_VTILES_V1`）。
 
@@ -42,16 +42,17 @@
   2) `compute`（ETL: 座標/属性整形、タイル化）
   3) `finalize`（成果物の格納/インデックス更新）
 - すべて `BatchService` でセッション/タスク化。`mapChunks` ベースでチャンク並列、上限は `concurrency` に集約。
-- 中間成果は Ephemeral DB/一時ストレージ（`locationCache`）に保存、完成後に `vectorTiles` テーブルへコミット。
+- 中間成果は Ephemeral DB/一時ストレージ（`locationCache`）の導入を検討し、現状は `LocationDB.features` へ保存する。
 
 ## データモデル/DB 変更案（LocationDB）
 
-- 追加テーブル（`Dexie` 定義の例）
+- 現行の `LocationDB` は `features` のみを保持する。
+- 追加テーブル（`Dexie` 定義の例、将来案）
   - `sessions`: `&id, nodeId, status, createdAt, updatedAt, stats`
   - `tasks`: `&id, sessionId, kind, status, startedAt, finishedAt, attempt, payloadHash`
   - `cache`: `&id, key, type, size, createdAt, ttl`
   - `vectorTiles`: `&id, z, x, y, bytes, createdAt, etag?`
-- マイグレーションは互換オープン（旧 DB 名も開ける）で段階導入。ロールバックは新規テーブル未使用状態へ戻すだけで可。
+- マイグレーションは互換オープンで段階導入。ロールバックは新規テーブル未使用状態へ戻すだけで可。
 
 ## 処理フロー（概要）
 
@@ -152,4 +153,4 @@ getVectorTile(nodeId: NodeId, z: number, x: number, y: number): Promise<Uint8Arr
 
 - `LocationBatchOrchestrator` (worker)
 - `startLocationBatch`, `getLocationBatchStatus`, `resumeLocationBatch`, `cancelLocationBatch`, `getVectorTile`
-- `LocationDB` tables: `sessions`, `tasks`, `cache`, `vectorTiles`
+- `LocationDB` tables: 現行は `features` のみ。`sessions`/`tasks`/`cache`/`vectorTiles` は将来案。

@@ -52,12 +52,12 @@ type LocationPoint = GroupEntity<string> & {
 各データソース向けのパーサは、地点としての用途に直結しない情報を `metadata` に集約する。`metadata` は `Record<string, string | number | null>` として統一し、同名キーが存在する場合は後続のパーサで上書きしない運用を前提とする。
 
 ### 3. 永続化フェーズ（Persistent DB）
-- 完成した `LocationPoint` を Ephemeral DB ではなく永続ストア（Dexie 永続テーブル / BFF 経由の本番 DB）へ保存する。既存エンティティと重複する場合はアップサートポリシーを定義する。
-- バッチセッションのメタデータ（設定値・取得元・処理数・最終更新時刻など）は `locations_sessions` のようなセッション管理テーブルに記録する。
+- 完成した `LocationPoint` を永続ストア（`LocationDB.features`）へ保存する。既存エンティティと重複する場合はアップサートポリシーを定義する。
+- バッチセッションのメタデータ（設定値・取得元・処理数・最終更新時刻など）の永続化は将来のセッション管理テーブル導入時に対応する。
 
-### 4. ベクトルタイル生成フェーズ
-- 永続化した `LocationPoint` 群をもとに、ズーム範囲（例: 5〜14）ごとのベクトルタイルを生成する。Shape Plugin にならい、`LocationVectorTileService` を通じて Worker にタイル生成を委譲する。
-- 生成されたタイルは `vector_tiles` テーブルやオブジェクトストレージに保存し、`pid / countryCode / admin1 / admin2` などの属性をプロパティとして埋め込む。
+### 4. ベクトルタイル生成フェーズ（将来案）
+- 永続化した `LocationPoint` 群をもとに、ズーム範囲ごとのベクトルタイルを生成する。
+- 生成されたタイルは将来導入予定の `vectorTiles` テーブルやオブジェクトストレージに保存する。
 
 ### 5. 進捗監視と通知
 - `UnifiedLocationBatchManager` + `WorkerBridge` を用い、`prepareSession → startBatchSession → onBatchProgress` の流れを確立する。
@@ -74,16 +74,16 @@ type LocationPoint = GroupEntity<string> & {
 - 既存の `LocationVectorTileService` を活用しつつ、`prepareSession` 時の設定（タイル解像度、並列数など）を `LocationBatchConfig` で指定できるようにする。
 - セッション再開／クリーンアップ／ログ蓄積などの運用周りは Shape Plugin と同様に Dexie のセッションテーブルを活用し、未完了セッション検知や LRU クリーニングを実装する。
 
-### 8. セッション管理の DoD とテスト方針
+### 8. セッション管理の DoD とテスト方針（将来案）
 
-UnifiedLocationBatchManager と LocationBatchSessionManager の組み合わせで、次の条件を満たすことを完了条件（Definition of Done）とする。
+UnifiedLocationBatchManager と LocationBatchSessionManager の組み合わせで、将来次の条件を満たすことを完了条件（Definition of Done）とする。
 
-1. **prepareSession**
-   - `pendingSessions`（Dexie v4）へ `points`・`settings`・`config` を必ず保存する。
+1. **prepareSession（将来案）**
+   - 一時ストア（EphemeralLocationDB など）へ `points`・`settings`・`config` を保存する。
    - TTL によるクリーンアップを実装し、テストでは `storedAt` を偽装して削除されることを確認する。
 
-2. **startBatchSession**
-   - `pendingSessions` からデータを取り出し、`sessions` に `status=running`・`totalPoints`・`zoomMin/zoomMax` を記録する。
+2. **startBatchSession（将来案）**
+   - 一時ストアからデータを取り出し、`sessions` に `status=running`・`totalPoints`・`zoomMin/zoomMax` を記録する。
    - LocationPoints の永続化（`appendLocationPoints`）完了後にタイル生成へ進む。統合テストでは `LocationDB.features` に書き込まれるレコード数をアサートする。
 
 3. **progress / completion**
@@ -94,7 +94,7 @@ UnifiedLocationBatchManager と LocationBatchSessionManager の組み合わせ�
    - `resume(sessionId)` 呼び出し時に `sessions` の状態が `running` に戻ること。
    - Pause / Cancel は `LocationBatchSession` への委譲を spy で確認する。`UnifiedLocationBatchManager.test.ts` に pause / resume / cancel の委譲テストを追加済み。
 
-5. **ベクトルタイル生成**
+5. **ベクトルタイル生成（将来案）**
    - `LocationVectorTileService` を介して生成したタイルが `vectorTiles` に保存され、`hash` と `featureCount` を保持する。
    - 再生成時は `clearSession` → `bulkPut` の流れで上書きされる。
 

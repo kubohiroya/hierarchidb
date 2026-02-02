@@ -1,4 +1,4 @@
-import type { PluginStepConfig, StepData } from './PluginStepRegistry.js';
+import type { BivariantCallback, PluginStepConfig, StepData } from './PluginStepRegistry.js';
 
 export type HostName = string;
 
@@ -11,14 +11,14 @@ export interface HostProfileProvider<TData extends StepData = StepData> {
   getBaseStepConfigs: (
     mode: 'create' | 'edit',
     ctx: HostProfileContext
-  ) => PluginStepConfig<TData>[];
+  ) => ReadonlyArray<PluginStepConfig<TData>>;
   // Optional overall submit guard; host may tighten eligibility
-  canSubmit?: (data: TData) => boolean | Promise<boolean>;
+  canSubmit?: BivariantCallback<[data: TData], boolean | Promise<boolean>>;
 }
 
 export class HostProfileRegistry {
   private static singleton: HostProfileRegistry | null = null;
-  private providers = new Map<HostName, HostProfileProvider<StepData>>();
+  private providers = new Map<HostName, HostProfileProvider<any>>();
   private listeners: Set<() => void> = new Set();
   private version = 0;
 
@@ -28,11 +28,11 @@ export class HostProfileRegistry {
   }
 
   register<TData extends StepData>(provider: HostProfileProvider<TData>): void {
-    this.providers.set(provider.name, provider as HostProfileProvider<StepData>);
+    this.providers.set(provider.name, provider);
     this.emitChange();
   }
 
-  get(name: HostName): HostProfileProvider<StepData> | undefined {
+  get(name: HostName): HostProfileProvider<any> | undefined {
     return this.providers.get(name);
   }
 

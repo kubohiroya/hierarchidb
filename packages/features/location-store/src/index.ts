@@ -3,11 +3,6 @@ export {
   LocationDB,
   closeLocationDB,
   clearLocationDatabases,
-  clearLocationDatabases as clearDatabases,
   getLocationDB,
-  getLocationDatabase,
-  LocationDatabase,
-  closeEphemeralLocationDB,
-  getEphemeralLocationDB,
   hasLocationReferencesToShapes,
 } from './LocationDB.js';

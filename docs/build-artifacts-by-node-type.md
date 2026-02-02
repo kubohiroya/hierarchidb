@@ -67,19 +67,18 @@
 
 ### 中間生成物
 
-- 保存先: `EphemeralLocationDB` または `EphemeralShapeDB` に統合
+- 保存先: 現状は専用 DB 未実装（必要時に `EphemeralLocationDB` を新設）
 - 想定内容:
   - CSV/データソースの一時解析結果
 - 削除:
-  - Step4 の手動削除ボタンで削除可能（未実装の場合は追加）
-  - Step4 の自動削除設定に従って削除可能（未実装の場合は追加）
+  - 実装時に Step4 の手動削除ボタンで削除可能にする
 
 ### ビルド結果
 
-- 保存先: `LocationDB`（未実装の可能性があるため新設前提）
+- 保存先: `LocationDB`（features の永続化）
 - 想定内容:
-  - Point
-  - フィーチャーごとのメタデータ
+  - Point（LocationFeature）
+  - フィーチャーごとのメタデータ（features 内 metadata）
 - 削除:
   - ツリーノードが存在する限り保持
   - Step4 の手動削除ボタンで削除可能（未実装の場合は追加）
@@ -90,7 +89,7 @@ CoreDB でツリーノードが削除された場合、ノード種別に応じ�
 
 - Shape: `EphemeralShapeDB` と `ShapeDB` の対象 `nodeId` データを削除
 - Route: `EphemeralRouteDB` と `RouteDB` の対象 `nodeId` データを削除
-- Location: `EphemeralLocationDB` と `LocationDB` の対象 `nodeId` データを削除
+- Location: `LocationDB` の対象 `nodeId` データを削除（Ephemeral は未実装）
 
 ## fetchWithAuth と外部URLのキャッシュ確認
 

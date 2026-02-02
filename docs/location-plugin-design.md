@@ -315,6 +315,7 @@
 - `LocationVectorTileService` を **廃止**し、QueryAPI ベースの取得へ置換する。
 - `LocationDB.vectorTiles` は **移行で停止/削除**し、`locationPoints` を単一ソースとする。
 - Step5 は **データの保存のみ**を行い、タイル生成や変換処理を持たない。
+- tabular metadata は `hidb-location-metadata`（TabularDatabaseManager）に保存し、`LocationDB` は features の永続化のみを担う。
 
 ## 確認事項（要決定）
 

@@ -46,9 +46,9 @@
   - plugin が fetch タスクを **taskQueue に記録**し、自身で fetch を実行する
   - plugin が transform/vt タスクを生成し、vt-orchestrator に投入する
   - vt-orchestrator は transform/vt の実行とリソース制御を担う
-- **EphemeralShapeDB / EphemeralRouteDB / EphemeralLocationDB**
+- **EphemeralShapeDB / EphemeralRouteDB / EphemeralLocationDB（Location は未実装）**
   - stage1/transform の中間ストア（スキーマ + Query/Mutation）
-- **ShapeDB / RouteDB / LocationDB**
+- **ShapeDB / RouteDB / LocationDB（Location は features 永続のみ）**
   - 生成済みベクトルタイルや成果物の永続化と Query/Mutation
 - **vt-orchestrator**
   - ステージ間のタスク生成と実行を統括
@@ -63,8 +63,8 @@
   - RouteDB（成果物の永続化）
   - EphemeralRouteDB（中間生成物、未実装の場合は追加）
 - `packages/features/location-store`
-  - LocationDB（成果物の永続化）
-  - EphemeralLocationDB（中間生成物、未実装の場合は追加）
+  - LocationDB（features の永続化）
+  - EphemeralLocationDB（中間生成物。未実装のため必要時に新設）
 - `packages/vt-orchestrator`
   - buildConfig を受け取り、transform/vt のタスクを実行
   - maxBuffersPerTask / maxVerticesPerTask / band3 予約上限を適用
@@ -90,7 +90,8 @@
 - `packages/features/route-store/src/RouteDB.ts`
   - RouteDB（成果物の永続化）
 - `packages/features/location-store/src/LocationDB.ts`
-  - LocationDB（成果物の永続化）と EphemeralLocationDB
+  - LocationDB（features の永続化）
+  - EphemeralLocationDB（未実装）
 
 ### vt-orchestrator
 
@@ -255,9 +256,9 @@ flowchart LR
 ## 保存先の分担（ストア）
 
 - `stage1Buffers` / `transformBandBuffers` / `tileIndexBand` / `vtBand3Reservations`
-  - EphemeralShapeDB / EphemeralRouteDB / EphemeralLocationDB に保持する
+  - EphemeralShapeDB / EphemeralRouteDB / EphemeralLocationDB に保持する（Location は未実装）
 - 生成済みタイル（vt-pbf）
-  - ShapeDB / RouteDB / LocationDB に保存する
+  - ShapeDB / RouteDB / LocationDB に保存する（Location は features のみ）
 
 ## タイル保存キー（連結方式）
 

@@ -11,9 +11,9 @@ The repository contains multiple TSX files over 400 lines (excluding tests/stori
 ## Progress
 
 - [x] (2026-02-02 01:50 JST) Extract Route 1: modelessDialogContent.tsx (split hooks to modelessDialogContentData).
-- [ ] (2026-02-02) Extract Route 2: ResourceLayerMap.tsx
-- [ ] (2026-02-02) Extract Route 3: useLocationMapPreviewStep.tsx
-- [ ] (2026-02-02) Extract Route 4: usePluginDialogController.tsx
+- [x] (2026-02-02 02:45 JST) Extract Route 2: ResourceLayerMap.tsx (stats logic to useResourceLayerMapStats).
+- [x] (2026-02-02 03:35 JST) Extract Route 3: useLocationMapPreviewStep.tsx (split metadata/map/config hooks).
+- [x] (2026-02-02 04:35 JST) Extract Route 4: usePluginDialogController.tsx (step-navigation hook).
 - [ ] (2026-02-02) Extract Route 5: MapPage.tsx
 - [ ] (2026-02-02) Extract Route 6: LocationMapPreview.tsx
 - [ ] (2026-02-02) Extract Route 7: plugins.tsx
@@ -50,4 +50,4 @@ The repository contains multiple TSX files over 400 lines (excluding tests/stori
 - Rendering output and behavior remain unchanged.
 - Target package/plugin typecheck succeeds (exit 0).
 - TASKS.md and ExecPlan contain progress and verification logs.
-Plan change note: Completed Route 1 modelessDialogContent split and recorded app typecheck.
+Plan change note: Completed Route 1 modelessDialogContent split and recorded app typecheck. Completed Route 2 ResourceLayerMap stats hook extraction and recorded ui-map typecheck. Completed Route 3 LocationMapPreviewStep hook split and recorded location-plugin typecheck. Completed Route 4 usePluginDialogController step-navigation hook split and recorded plugin-ui-host typecheck.

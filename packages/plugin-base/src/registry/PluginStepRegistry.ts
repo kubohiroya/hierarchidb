@@ -10,6 +10,25 @@ import { dialogStepLocalizationRegistry } from './DialogStepLocalizationRegistry
 // Abstract step payload shape. Concrete plugins should extend this with their own dialog data types.
 export type StepData = object;
 
+export type BivariantCallback<TArgs extends unknown[], TResult> = {
+  bivarianceHack: (...args: TArgs) => TResult;
+}['bivarianceHack'];
+
+type DataCallback<TData extends StepData, TUiState, TResult> = BivariantCallback<
+  [data: TData, uiState?: TUiState],
+  TResult
+>;
+
+type OptionalDataCallback<TData extends StepData, TResult> = BivariantCallback<
+  [data?: TData],
+  TResult
+>;
+
+type StartBatchCallback<TData extends StepData, TUiState> = BivariantCallback<
+  [data: TData, context: StartBatchContext<TData, TUiState>],
+  void | Promise<void>
+>;
+
 export interface StepLocalizationConfig {
   defaultTitle?: string;
   titles?: Partial<Record<string, string>>;
@@ -38,8 +57,8 @@ export interface PluginStepProvider<TData extends StepData = StepData> {
  */
 export interface PluginStepConfigProvider<TData extends StepData = StepData, TUiState = unknown> {
   nodeType: string;
-  getCreateStepConfigs(): PluginStepConfig<TData, TUiState>[];
-  getEditStepConfigs(nodeId: string, data?: TData): PluginStepConfig<TData, TUiState>[];
+  getCreateStepConfigs(): ReadonlyArray<PluginStepConfig<TData, TUiState>>;
+  getEditStepConfigs(nodeId: string, data?: TData): ReadonlyArray<PluginStepConfig<TData, TUiState>>;
   validateAccess?(nodeId?: string): Promise<boolean>;
 }
 
@@ -84,23 +103,22 @@ export interface PluginStepConfig<TData extends StepData = StepData, TUiState = 
   localization?: StepLocalizationConfig;
 
   /** Step component factory */
-  componentFactory: (props: PluginStepProps<TData, TUiState>) => ReactNode;
+  componentFactory: BivariantCallback<[props: PluginStepProps<TData, TUiState>], ReactNode>;
 
   /** Validation function */
-  validate?: (data?: TData) => boolean | Promise<boolean>;
+  validate?: OptionalDataCallback<TData, boolean | Promise<boolean>>;
 
   /** Step capabilities */
   capabilities?: {
-    canNavigateTo?: (
-      fromStep: number,
-      data: TData,
-      uiState?: TUiState
-    ) => boolean | Promise<boolean>;
-    canStartBatch?: (data: TData, uiState?: TUiState) => boolean | Promise<boolean>;
-    canSave?: (data: TData, uiState?: TUiState) => boolean | Promise<boolean>;
-    canProceedToNext?: (data: TData, uiState?: TUiState) => boolean | Promise<boolean>;
-    canBackToPrevious?: (data: TData, uiState?: TUiState) => boolean | Promise<boolean>;
-    startBatch?: (data: TData, context: StartBatchContext<TData, TUiState>) => void | Promise<void>;
+    canNavigateTo?: BivariantCallback<
+      [fromStep: number, data: TData, uiState?: TUiState],
+      boolean | Promise<boolean>
+    >;
+    canStartBatch?: DataCallback<TData, TUiState, boolean | Promise<boolean>>;
+    canSave?: DataCallback<TData, TUiState, boolean | Promise<boolean>>;
+    canProceedToNext?: DataCallback<TData, TUiState, boolean | Promise<boolean>>;
+    canBackToPrevious?: DataCallback<TData, TUiState, boolean | Promise<boolean>>;
+    startBatch?: StartBatchCallback<TData, TUiState>;
   };
 
   /** Whether step is optional */
@@ -130,10 +148,10 @@ export interface PluginStepProps<TData extends StepData = StepData, TUiState = u
   uiState?: TUiState;
 
   /** Update data */
-  onChange: (data: TData) => void;
+  onChange: BivariantCallback<[data: TData], void>;
 
   /** Update UI atoms */
-  onUiStateChange?: (uiState: TUiState) => void;
+  onUiStateChange?: BivariantCallback<[uiState: TUiState], void>;
 
   /** Mark step as valid/invalid */
   setValid: (valid: boolean) => void;
@@ -168,7 +186,7 @@ const registerAndResolveLabel = <TData extends StepData>(
 export class PluginStepRegistry {
   private static instance: PluginStepRegistry;
   private providers: Map<string, PluginStepProvider<StepData>> = new Map();
-  private configProviders: Map<string, PluginStepConfigProvider<StepData>> = new Map();
+  private configProviders: Map<string, PluginStepConfigProvider<any, unknown>> = new Map();
   private listeners: Set<() => void> = new Set();
   private version = 0;
 
@@ -202,10 +220,7 @@ export class PluginStepRegistry {
     if (this.configProviders.has(provider.nodeType)) {
       return;
     }
-    this.configProviders.set(
-      provider.nodeType,
-      provider as PluginStepConfigProvider<StepData>
-    );
+    this.configProviders.set(provider.nodeType, provider);
     this.emitChange();
   }
 
@@ -225,7 +240,7 @@ export class PluginStepRegistry {
     return this.providers.get(nodeType);
   }
 
-  getConfigProvider(nodeType: string): PluginStepConfigProvider<StepData> | undefined {
+  getConfigProvider(nodeType: string): PluginStepConfigProvider<any, unknown> | undefined {
     return this.configProviders.get(nodeType);
   }
 

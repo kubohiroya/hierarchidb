@@ -7,7 +7,6 @@ import type { NodeId, TreeId } from '@hierarchidb/core-types';
 import type {
   DialogDisplayMode,
   DialogPosition,
-  DialogProgressState,
   DialogSize,
   DialogState,
   TreeNodeData,
@@ -27,7 +26,6 @@ import { type TreeNodeUpdaterState, useTreeNodeUpdater } from '@hierarchidb/plug
 import type {
   HeadlessDialogProps,
   StepComponentDescriptor,
-  StepNavigationEvent,
 } from '@hierarchidb/ui-dialog';
 import { PluginDialogContent } from '@hierarchidb/ui-dialog';
 import { useIconRegistry } from '@hierarchidb/ui-icon';
@@ -50,7 +48,6 @@ import type {
   PluginDialogFooterProps,
 } from './components/PluginDialogFooter.js';
 import { toRecord } from './controller/step-guards.js';
-import type { DialogActionInFlight } from './types.js';
 import { useAutosave } from './usePluginDialogController/autosave.js';
 import { useBasicInfoState } from './usePluginDialogController/basic-info.js';
 import { useStepCapabilities } from './usePluginDialogController/capabilities.js';
@@ -64,6 +61,7 @@ import { useDialogDirtyState } from './usePluginDialogController/dirty-state.js'
 import { useDialogFrameState } from './usePluginDialogController/frame-state.js';
 import { usePendingAction } from './usePluginDialogController/pending-action.js';
 import { useDialogSteps } from './usePluginDialogController/steps.js';
+import { useStepNavigation } from './usePluginDialogController/step-navigation.js';
 
 export interface PluginDialogControllerOptions {
   mode: 'create' | 'edit' | 'preview';
@@ -628,104 +626,27 @@ export function usePluginDialogController(
   const saveDraftHandlerRef = useRef<(() => Promise<void>) | undefined>(undefined);
   const startBatchHandlerRef = useRef<(() => Promise<void>) | undefined>(undefined);
 
-  const ensureNoConflictRef = useRef(ensureNoConflict);
-  useEffect(() => {
-    ensureNoConflictRef.current = ensureNoConflict;
-  }, [ensureNoConflict]);
 
-  const updateLocalDraftRef = useRef(updateLocalDraft);
-  useEffect(() => {
-    updateLocalDraftRef.current = updateLocalDraft;
-  }, [updateLocalDraft]);
 
-  const setActiveStepIndexRef = useRef(setActiveStepIndex);
-  const setUrlStepRef = useRef(setUrlStep);
-  useEffect(() => {
-    setActiveStepIndexRef.current = setActiveStepIndex;
-    setUrlStepRef.current = setUrlStep;
-  }, [setActiveStepIndex, setUrlStep]);
-
-  const activeStepIndexRef = useRef(activeStepIndex);
-  activeStepIndexRef.current = activeStepIndex;
-  const enabledStepsNavRef = useRef(enabledStepIndices);
-  enabledStepsNavRef.current = enabledStepIndices;
-  const validatedStepsNavRef = useRef(validatedStepIndices);
-  validatedStepsNavRef.current = validatedStepIndices;
-  const stepsLengthRef = useRef(steps.length);
-  stepsLengthRef.current = steps.length;
-  const pendingStepTransitionRef = useRef<{ target: number; resolve: () => void } | null>(null);
-  const canSaveRef = useRef(canSaveCurrent);
-  canSaveRef.current = canSaveCurrent;
   const handleSubmitRef = useRef<(() => Promise<void>) | null>(null);
 
-  const handleNavigation = useCallback(
-    (event: StepNavigationEvent) => {
-      const action: DialogActionInFlight =
-        event.type === 'direct'
-          ? { type: 'step', index: event.targetIndex ?? activeStepIndexRef.current }
-          : { type: event.type };
-      void runWithPending(action, async () => {
-        let nextIndex = activeStepIndexRef.current;
-        switch (event.type) {
-          case 'direct':
-            nextIndex = Math.max(
-              0,
-              Math.min(event.targetIndex ?? activeStepIndexRef.current, stepsLengthRef.current - 1)
-            );
-            break;
-          case 'next':
-            nextIndex = Math.min(activeStepIndexRef.current + 1, stepsLengthRef.current - 1);
-            break;
-          case 'back':
-            nextIndex = Math.max(activeStepIndexRef.current - 1, 0);
-            break;
-        }
-        if (nextIndex === activeStepIndexRef.current) return;
-        const waitForTransition = new Promise<void>((resolve) => {
-          pendingStepTransitionRef.current = { target: nextIndex, resolve };
-        });
-        try {
-          await Promise.resolve(updateLocalDraftRef.current?.());
-        } finally {
-          setActiveStepIndexRef.current(nextIndex);
-          setUrlStepRef.current(nextIndex);
-          updateDialogUIState({
-            dialogProgress: {
-              activeStepIndex: toPersistedStepIndex(nextIndex),
-            } as DialogProgressState,
-          });
-        }
-        if (commitTreeNodeUpdater) {
-          const persistState = {
-            ...getPersistableDialogUIState(),
-            dialogProgress: { activeStepIndex: toPersistedStepIndex(nextIndex) },
-          };
-          const targetId = (treeUpdater?.treeNodeId ?? nodeId) as NodeId;
-          const payload: TreeNodeUpdaterState<Partial<PluginDefinedEntity>> = {
-            treeNodeId: targetId,
-            draftMetadata: treeUpdater?.draftMetadata ?? null,
-            draftData: nodeType === 'folder' ? null : { ...(localDraftDataRef.current ?? {}) },
-            dialogUIState: persistState,
-          };
-          try {
-            await commitTreeNodeUpdater('save-draft', payload);
-          } catch (err) {
-            console.warn('[PluginDialogShell] step persistence failed', err);
-          }
-        }
-        await Promise.race([
-          waitForTransition,
-          new Promise<void>((resolve) => {
-            window.setTimeout(resolve, 5000);
-          }),
-        ]);
-        if (pendingStepTransitionRef.current?.target === nextIndex) {
-          pendingStepTransitionRef.current = null;
-        }
-      });
-    },
-    [commitTreeNodeUpdater, getPersistableDialogUIState, nodeId, nodeType, runWithPending, toPersistedStepIndex, treeUpdater?.draftMetadata, treeUpdater?.treeNodeId, updateDialogUIState]
-  );
+  const { handleNavigation } = useStepNavigation({
+    activeStepIndex,
+    stepsLength: steps.length,
+    setActiveStepIndex,
+    setUrlStep,
+    toPersistedStepIndex,
+    runWithPending,
+    updateLocalDraft,
+    updateDialogUIState,
+    getPersistableDialogUIState,
+    commitTreeNodeUpdater: commitTreeNodeUpdater ?? undefined,
+    nodeId,
+    nodeType,
+    treeUpdaterTreeNodeId: treeUpdater?.treeNodeId,
+    treeUpdaterDraftMetadata: treeUpdater?.draftMetadata ?? null,
+    localDraftDataRef,
+  });
 
   const navigateToNode = useCallback(
     (targetId: NodeId) => {
@@ -764,15 +685,6 @@ export function usePluginDialogController(
     },
     [dialogPosition, handlePositionChange, persistDialogWindow]
   );
-
-  useEffect(() => {
-    const pending = pendingStepTransitionRef.current;
-    if (pending && pending.target === activeStepIndex) {
-      pending.resolve();
-      pendingStepTransitionRef.current = null;
-    }
-  }, [activeStepIndex]);
-
   const handleSubmit = useCallback(async () => {
     await runWithPending({ type: 'commit' }, async () => {
       const ok = await ensureNoConflict();

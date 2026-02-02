@@ -11,7 +11,7 @@ This memo captures the current implementation that discovers HierarchiDB plugins
 
 * At startup, `root.tsx` registers `useWorkerClient` as the shared worker hook, runs `registerAllUIPlugins()` (leveraging the generated UI loader), prefetches menu builders, and reads `pluginDefinitions` from `~/plugin-registry` to populate the global cache consumed by the dialog runtime.【F:app/src/root.tsx†L1-L162】【F:app/src/plugin-loader/auto-load.ts†L1-L72】
 * `app/src/services/plugin-presentation.ts` consumes the static registry to normalize labels, MUI icons, emoji, and priorities; `menu-builders.ts` then uses that presentation data when constructing speed-dial menus while still retaining a fallback for missing definitions.【F:app/src/services/plugin-presentation.ts†L1-L158】【F:app/src/plugin-loader/menu-builders.ts†L1-L119】
-* `app/src/services/plugin-services.ts` lazily imports各プラグインのルートエントリを動的に解決し、必要なヘルパー（例: ShapeDB や getEphemeralLocationDB）を取得します。【F:app/src/services/plugin-services.ts†L1-L74】
+* `app/src/services/plugin-services.ts` lazily imports各プラグインのルートエントリを動的に解決し、必要なヘルパー（例: ShapeDB や LocationDB）を取得します。【F:app/src/services/plugin-services.ts†L1-L74】
 
 ## Dialog composition flow
 

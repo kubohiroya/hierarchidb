@@ -13240,8 +13240,24 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
 - 運用ログ:
   - start: 2026-02-02 07:05 JST ResourceLayerMap の Box children 正規化に着手。
   - update: 2026-02-02 07:05 JST SafeBox で children を正規化する実装へ置換。
-  - update: 2026-02-02 07:05 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
+ - update: 2026-02-02 07:05 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
   - done: 2026-02-02 07:05 JST ResourceLayerMap の Box children 正規化を完了。
+
+2482) investigation/location-db-separation (P2) — 完了 (2026-02-02 08:57 JST)
+- ブランチ名: investigation/location-db-separation
+- 依存: なし
+- 受け入れ基準: LocationDB/Location-metadata の利用実態と分離理由をコード根拠付きで整理できる／未使用テーブル（vectorTiles/pendingSessions 等）の扱い案を提示できる／統合/分離/ephemeral 化の比較案を提示できる／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/location-store/src/LocationDB.ts`, `plugins/location-plugin/src/common/tabular/LocationTabularMetadataManager.ts`, `app/src/router/routes/modeless/modelessDialogContentData.ts`, `docs/location-plugin-design.md`, `plugins/location-plugin/PLAN.md`, `plugins/location-plugin/batch-processing-ja.md`（調査後に確定）
+- ロールバック手順: 調査のみのため差分なし
+- チェックリスト:
+  - LocationDB のテーブル/利用箇所を確認する
+  - location-metadata の利用箇所を確認する
+  - 分離/統合/ephemeral 化の提案を整理する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-02 08:57 JST Location DB 分離理由と未使用テーブル整理の調査に着手。
+  - update: 2026-02-02 08:57 JST LocationDB は features のみ使用、vectorTiles/pendingSessions は旧スキーマに残存。location-metadata は tabular の metadata 参照で使用中と確認。
+  - done: 2026-02-02 08:57 JST Location DB 利用実態と分離/統合/ephemeral 化の提案整理を完了。
 
 2474) refactor/plugins/hook-extraction-tsx (P1) — 進行中 (2026-02-01 18:50 JST)
 - ブランチ名: refactor/plugins/hook-extraction-tsx
@@ -13327,3 +13343,51 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - update: 2026-02-02 01:32 JST ExecPlan を plans/repo-tsx-400plus-execplan.md に作成。
   - update: 2026-02-02 01:50 JST modelessDialogContent を modelessDialogContentData へ分割してフック抽出。
   - update: 2026-02-02 01:52 JST pnpm --filter @hierarchidb/app typecheck exit 0 を確認（plugin-base build warning あり）。
+  - start: 2026-02-02 02:20 JST ResourceLayerMap のフック抽出に着手。
+  - update: 2026-02-02 02:45 JST ResourceLayerMap の stats ロジックを useResourceLayerMapStats へ抽出。
+  - update: 2026-02-02 02:46 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
+  - start: 2026-02-02 03:05 JST LocationMapPreviewStep のフック抽出に着手。
+  - update: 2026-02-02 03:35 JST LocationMapPreviewStep を metadata/map/config フックに分割。
+  - update: 2026-02-02 03:36 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - start: 2026-02-02 03:50 JST plugin-base typecheck の型エラー修正に着手。
+  - blocked: 2026-02-02 03:55 JST pnpm --filter @hierarchidb/plugin-base typecheck が HostProfileRegistry/PluginStepRegistry の provider 型不整合で失敗。
+  - update: 2026-02-02 04:05 JST registry の provider map を any ベースに緩和し、BivariantCallback/ReadonlyArray の補助型を追加。
+  - update: 2026-02-02 04:06 JST pnpm --filter @hierarchidb/plugin-base typecheck exit 0 を確認。
+  - start: 2026-02-02 04:15 JST usePluginDialogController のフック抽出に着手。
+  - update: 2026-02-02 04:35 JST usePluginDialogController のナビゲーション処理を step-navigation フックへ分割。
+  - update: 2026-02-02 04:36 JST pnpm --filter @hierarchidb/plugin-ui-host typecheck exit 0 を確認。
+  - start: 2026-02-02 04:50 JST MapPage のフック抽出に着手。
+
+2483) fix/location-db/doc-alignment (P2) — 完了 (2026-02-02 09:04 JST)
+- ブランチ名: fix/location-db/doc-alignment
+- 依存: なし
+- 受け入れ基準: LocationDB/location-metadata の役割が現行コードに一致するようドキュメントを更新する／未使用の ephemaral/pending/vectorTiles 記述を整理する／LocationDB の互換 alias を撤去する／`pnpm --filter @hierarchidb/location-store typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/location-store/src/LocationDB.ts`, `packages/features/location-store/src/index.ts`, `docs/vt-pipeline-design.md`, `docs/build-artifacts-by-node-type.md`, `docs/location-plugin-design.md`, `plugins/location-plugin/PLAN.md`, `plugins/location-plugin/batch-processing-ja.md`, `docs/architecture/plugin-dialog-integration.md`
+- ロールバック手順: 該当差分を revert して旧ドキュメント/alias に戻す
+- チェックリスト:
+  - LocationDB の alias を撤去する
+  - location 関連ドキュメントを現行実装へ合わせて更新する
+  - location-store の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-02 09:04 JST Location DB の役割整理とドキュメント更新に着手。
+  - update: 2026-02-02 09:04 JST LocationDB の互換 alias を撤去し、location-metadata の役割を文書化。
+  - update: 2026-02-02 09:04 JST vt-pipeline/build-artifacts/location-plugin docs を現行の features 永続・ephemeral 未実装に合わせて更新。
+  - update: 2026-02-02 09:04 JST pnpm --filter @hierarchidb/location-store typecheck exit 0 を確認。
+  - update: 2026-02-02 09:06 JST リポジトリ内に getLocationDatabase/LocationDatabase/getEphemeralLocationDB の参照が残っていないことを確認。
+  - done: 2026-02-02 09:04 JST Location DB ドキュメントと alias 整理を完了。
+
+2484) fix/app/map-handle-location-move-end-redeclare (P1) — 進行中 (2026-02-02)
+- ブランチ名: fix/app/map-handle-location-move-end-redeclare
+- 依存: なし
+- 受け入れ基準: MapPage.tsx の handleLocationMoveEnd 再宣言エラーが解消される／@hierarchidb/app build が exit 0（もしくは次の別エラーへ進む）／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/routes/map/MapPage.tsx`
+- ロールバック手順: 該当差分を revert して元の宣言に戻す
+- チェックリスト:
+  - handleLocationMoveEnd の再宣言を解消する
+  - pnpm --filter @hierarchidb/app build を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-02 09:10 JST MapPage の handleLocationMoveEnd 再宣言エラー修正に着手。
+  - update: 2026-02-02 09:15 JST pnpm --filter @hierarchidb/app build を実行（tsdown define 警告と Vite の chunk size 警告あり、exit 0）。
+  - done: 2026-02-02 09:15 JST handleLocationMoveEnd の再宣言エラー解消を確認。
