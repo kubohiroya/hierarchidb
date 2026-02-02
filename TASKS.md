@@ -13357,6 +13357,17 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - update: 2026-02-02 04:35 JST usePluginDialogController のナビゲーション処理を step-navigation フックへ分割。
   - update: 2026-02-02 04:36 JST pnpm --filter @hierarchidb/plugin-ui-host typecheck exit 0 を確認。
   - start: 2026-02-02 04:50 JST MapPage のフック抽出に着手。
+  - update: 2026-02-02 10:21 JST MapPage の location viewport ロジックを useLocationViewportLayers に分離。
+  - update: 2026-02-02 10:21 JST normalize-dts.mjs を index3 優先に更新し、location/route plugin build と app typecheck を実行（警告あり、exit 0）。
+  - update: 2026-02-02 10:40 JST LocationMapPreview と plugins.tsx のフック抽出反映および spreadsheet-plugin の d.ts 警告解消に着手。
+  - update: 2026-02-02 12:34 JST LocationMapPreview を useLocationMapPreview へ分割。
+  - update: 2026-02-02 12:34 JST plugins.tsx を usePluginsPageState へ分割。
+  - update: 2026-02-02 12:34 JST normalize-dts.mjs に spreadsheet-plugin の d.ts 補正を追加し build を再実行。
+  - update: 2026-02-02 12:34 JST pnpm --filter @hierarchidb/spreadsheet-plugin build exit 0（define warningあり）。
+  - update: 2026-02-02 12:34 JST pnpm --filter @hierarchidb/location-plugin build exit 0（define warningあり）。
+  - update: 2026-02-02 12:34 JST pnpm --filter @hierarchidb/route-plugin build exit 0（define warningあり）。
+  - update: 2026-02-02 12:34 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-02-02 12:34 JST pnpm --filter @hierarchidb/app typecheck exit 0（plugin-base build define warningあり）。
 
 2483) fix/location-db/doc-alignment (P2) — 完了 (2026-02-02 09:04 JST)
 - ブランチ名: fix/location-db/doc-alignment
@@ -13391,3 +13402,18 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - start: 2026-02-02 09:10 JST MapPage の handleLocationMoveEnd 再宣言エラー修正に着手。
   - update: 2026-02-02 09:15 JST pnpm --filter @hierarchidb/app build を実行（tsdown define 警告と Vite の chunk size 警告あり、exit 0）。
   - done: 2026-02-02 09:15 JST handleLocationMoveEnd の再宣言エラー解消を確認。
+
+2485) fix/spreadsheet-plugin/steps-provider-readonly (P1) — 進行中 (2026-02-02)
+- ブランチ名: fix/spreadsheet-plugin/steps-provider-readonly
+- 依存: なし
+- 受け入れ基準: steps-provider.tsx の readonly 配列代入エラーが解消される／pnpm --filter @hierarchidb/spreadsheet-plugin typecheck が exit 0（もしくは次の別エラーへ進む）／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/spreadsheet-plugin/src/ui/components/steps-provider.tsx`
+- ロールバック手順: 該当差分を revert して元の型に戻す
+- チェックリスト:
+  - readonly 配列の型不一致を修正する
+  - pnpm --filter @hierarchidb/spreadsheet-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-02 09:20 JST steps-provider.tsx の readonly 配列エラー修正に着手。
+  - update: 2026-02-02 09:22 JST steps-provider の戻り型を ReadonlyArray へ修正。
+  - done: 2026-02-02 09:22 JST pnpm --filter @hierarchidb/spreadsheet-plugin typecheck exit 0 を確認。

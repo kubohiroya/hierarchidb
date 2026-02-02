@@ -14,17 +14,18 @@ The repository contains multiple TSX files over 400 lines (excluding tests/stori
 - [x] (2026-02-02 02:45 JST) Extract Route 2: ResourceLayerMap.tsx (stats logic to useResourceLayerMapStats).
 - [x] (2026-02-02 03:35 JST) Extract Route 3: useLocationMapPreviewStep.tsx (split metadata/map/config hooks).
 - [x] (2026-02-02 04:35 JST) Extract Route 4: usePluginDialogController.tsx (step-navigation hook).
-- [ ] (2026-02-02) Extract Route 5: MapPage.tsx
-- [ ] (2026-02-02) Extract Route 6: LocationMapPreview.tsx
-- [ ] (2026-02-02) Extract Route 7: plugins.tsx
+- [x] (2026-02-02 10:21 JST) Extract Route 5: MapPage.tsx
+- [x] (2026-02-02 12:34 JST) Extract Route 6: LocationMapPreview.tsx
+- [x] (2026-02-02 12:34 JST) Extract Route 7: plugins.tsx
 - [ ] (2026-02-02) Extract Route 8: SimpleBFFAuthContext.tsx
 - [ ] (2026-02-02) Extract Route 9: GenericDataGrid.tsx
 - [ ] (2026-02-02) Extract Route 10: ShapeBuildProgressPanel.tsx
-- [ ] Run typecheck per affected package/plugin and record results.
+- [x] (2026-02-02 12:34 JST) Run typecheck per affected package/plugin and record results.
 
 ## Surprises & Discoveries
 
-- None yet.
+- (2026-02-02) tsdown emitted index3.d.ts for location/route plugins; normalize-dts.mjs now prefers index3 to keep public exports consistent.
+- (2026-02-02) spreadsheet-plugin d.ts reexports caused CIRCULAR_REEXPORT; normalize-dts.mjs now rewrites ui/index.d.ts imports based on dist/ui/index.js to avoid cycles.
 
 ## Decision Log
 
@@ -50,4 +51,4 @@ The repository contains multiple TSX files over 400 lines (excluding tests/stori
 - Rendering output and behavior remain unchanged.
 - Target package/plugin typecheck succeeds (exit 0).
 - TASKS.md and ExecPlan contain progress and verification logs.
-Plan change note: Completed Route 1 modelessDialogContent split and recorded app typecheck. Completed Route 2 ResourceLayerMap stats hook extraction and recorded ui-map typecheck. Completed Route 3 LocationMapPreviewStep hook split and recorded location-plugin typecheck. Completed Route 4 usePluginDialogController step-navigation hook split and recorded plugin-ui-host typecheck.
+Plan change note: Completed Route 1 modelessDialogContent split and recorded app typecheck. Completed Route 2 ResourceLayerMap stats hook extraction and recorded ui-map typecheck. Completed Route 3 LocationMapPreviewStep hook split and recorded location-plugin typecheck. Completed Route 4 usePluginDialogController step-navigation hook split and recorded plugin-ui-host typecheck. Completed Route 5 MapPage hook split and recorded app typecheck after normalize-dts update.

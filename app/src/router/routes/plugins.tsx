@@ -1,7 +1,6 @@
 // import { WorkerAPIClient } from '../WorkerAPIClient.ts';
 // import type { Remote } from 'comlink';
 // import type { WorkerAPI } from '@hierarchidb/_obsolate_common-api';
-import type { NodeType } from '@hierarchidb/core-types';
 import { useIconRegistry } from '@hierarchidb/ui-icon';
 // UIPluginRegistry is legacy; this page now reads vite-generated metadata
 // import { getUIPluginRegistry } from '@hierarchidb/ui-plugin-shell/ui-core';
@@ -54,9 +53,10 @@ import {
 } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import type React from 'react';
-import { useCallback, useEffect, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getInstalledPlugins } from '~/plugin-runtime/plugin-registry.js';
+import { usePluginsPageState } from './usePluginsPageState.js';
+import type { DisplayPlugin } from './pluginsTypes.js';
 
 // Meta function for React Router v7
 export function meta() {
@@ -71,7 +71,7 @@ interface EnhancedPluginRowProps {
   index: number;
   dependencies: string[];
   onDelete: (pluginName: string) => void;
-  onReload: (pluginName: string, clearDatabase: boolean) => void;
+  onReset: (pluginName: string) => void;
   disabled?: boolean;
 }
 
@@ -95,29 +95,12 @@ interface ResetPluginDialogProps {
 }
 
 // Enhanced Plugin Row with Dependencies and Operations
-type DisplayPlugin = {
-  nodeType: NodeType;
-  displayName: string;
-  description: string;
-  dependencies: string[];
-  menuGroup: string;
-  createOrder: number;
-  icon: { muiIconName?: string; emoji?: string; color?: string };
-  iconColor?: string;
-  backgroundColor: string;
-  hasUI: boolean;
-  hasWorker: boolean;
-  hasCommon: boolean;
-  packageName: string;
-  version: string | null;
-};
-
 function EnhancedPluginRow({
   plugin,
   index,
   dependencies,
   onDelete,
-  onReload,
+  onReset,
   disabled = false,
 }: EnhancedPluginRowProps) {
   const [open, setOpen] = useState(false);
@@ -151,7 +134,7 @@ function EnhancedPluginRow({
   };
 
   const handleReset = () => {
-    onReload(plugin.nodeType, true);
+    onReset(plugin.nodeType);
     handleMenuClose();
   };
 
@@ -531,190 +514,27 @@ export default function PluginsPage() {
   const navigate = useNavigate();
   const { t } = useTranslation('common');
   const { resolveIcon } = useIconRegistry();
-  const [workerPlugins, setWorkerPlugins] = useState<DisplayPlugin[]>([]);
-  const [uiPluginsList, setUiPluginsList] = useState<DisplayPlugin[]>([]);
-  const [pluginDependencies, setPluginDependencies] = useState<Record<string, string[]>>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [resetDialogOpen, setResetDialogOpen] = useState(false);
-  const [selectedPlugin, setSelectedPlugin] = useState<string | null>(null);
-  const [affectedPlugins, setAffectedPlugins] = useState<string[]>([]);
-  const [operationInProgress, setOperationInProgress] = useState(false);
+  const {
+    workerPlugins,
+    uiPluginsList,
+    pluginDependencies,
+    loading,
+    error,
+    deleteDialogOpen,
+    resetDialogOpen,
+    selectedPlugin,
+    affectedPlugins,
+    operationInProgress,
+    isProduction,
+    handleDeletePlugin,
+    handleResetPlugin,
+    confirmDelete,
+    confirmReset,
+    closeDeleteDialog,
+    closeResetDialog,
+  } = usePluginsPageState();
 
-  // Check if running in production mode
-  const isProduction = import.meta.env.MODE === 'production';
-
-  // Calculate affected plugin-loaders (children) when operating on a parent
-  const calculateAffectedPlugins = (pluginName: string): string[] => {
-    const affected = new Set<string>([pluginName]);
-    const queue = [pluginName];
-
-    while (queue.length > 0) {
-      const current = queue.shift();
-      if (!current) {
-        continue;
-      }
-
-      // Find all plugin-loaders that depend on the current one
-      for (const [plugin, deps] of Object.entries(pluginDependencies)) {
-        if (deps.includes(current) && !affected.has(plugin)) {
-          affected.add(plugin);
-          queue.push(plugin);
-        }
-      }
-    }
-
-    return Array.from(affected);
-  };
-
-  // Handle delete plugin operation
-  const handleDeletePlugin = (pluginName: string) => {
-    setSelectedPlugin(pluginName);
-    const affected = calculateAffectedPlugins(pluginName);
-    setAffectedPlugins(affected);
-    setDeleteDialogOpen(true);
-  };
-
-  // Confirm delete operation
-  const confirmDelete = async (clearDatabase: boolean) => {
-    if (!selectedPlugin) return;
-
-    setOperationInProgress(true);
-    try {
-      // const client: Remote<WorkerAPI> = await WorkerAPIClient.getSingleton();
-
-      // Delete plugin and its descendants
-      for (const plugin of affectedPlugins) {
-        console.log(`Deleting plugin: ${plugin}, clearDatabase: ${clearDatabase}`);
-        // TODO: Implement actual deletion logic with Worker API
-        // await client.deletePlugin(plugin, { clearDatabase });
-      }
-
-      // Reload plugin-loaders
-      await loadPlugins();
-    } catch (err) {
-      console.error('Failed to delete plugin:', err);
-      setError(err instanceof Error ? err.message : 'Failed to delete plugin');
-    } finally {
-      setOperationInProgress(false);
-      setDeleteDialogOpen(false);
-      setSelectedPlugin(null);
-      setAffectedPlugins([]);
-    }
-  };
-
-  // Handle reset plugin operation
-  const handleResetPlugin = (pluginName: string) => {
-    setSelectedPlugin(pluginName);
-    const affected = calculateAffectedPlugins(pluginName);
-    setAffectedPlugins(affected);
-    setResetDialogOpen(true);
-  };
-
-  // Confirm reset operation
-  const confirmReset = async () => {
-    if (!selectedPlugin) return;
-
-    setOperationInProgress(true);
-    try {
-      // const client: Remote<WorkerAPI> = await WorkerAPIClient.getSingleton();
-      const affected = affectedPlugins;
-
-      // Reset plugin and its descendants
-      if (selectedPlugin === 'folder') {
-        // Special case: Complete system reset
-        console.warn('⚠️ Performing complete system reset');
-        // TODO: Implement complete system reset
-        // This would:
-        // 1. Clear ALL TreeNodes
-        // 2. Clear ALL plugin entity data (group/relations only)
-        // 3. Clear ALL GroupEntity data
-        // 4. Clear ALL RelationalEntity data
-        // 5. Recreate initial trees and root nodes
-        // await client.resetSystem();
-        console.log('System reset: Clearing ALL data and recreating initial atoms');
-      } else {
-        // Reset specific plugin and dependents
-        // This only clears GroupEntity and RelationalEntity data
-        // TreeNodes and TreeNode data/draftData are preserved
-        for (const plugin of affected) {
-          console.log(`Resetting plugin: ${plugin} (GroupEntity and RelationalEntity only)`);
-          // TODO: Implement actual reset logic with Worker API
-          // This would:
-          // 1. Clear GroupEntity data for this plugin type
-          // 2. Clear RelationalEntity data for this plugin type
-          // 3. TreeNodes remain intact
-          // 4. TreeNode data/draftData remains intact
-          // await client.resetPluginEntities(plugin, { preserveTreeNodes: true, preservePeerEntities: true });
-        }
-      }
-
-      // Reload plugin-loaders
-      await loadPlugins();
-    } catch (err) {
-      console.error('Failed to reset plugin:', err);
-      setError(err instanceof Error ? err.message : 'Failed to reset plugin');
-    } finally {
-      setOperationInProgress(false);
-      setResetDialogOpen(false);
-      setSelectedPlugin(null);
-      setAffectedPlugins([]);
-    }
-  };
-
-  // Handle reload plugin operation (deprecated - replaced by reset)
-  /*
-  const handleReloadPlugin = async (pluginName: string, clearDatabase: boolean) => {
-    // This is now handled by handleResetPlugin
-    if (clearDatabase) {
-      handleResetPlugin(pluginName);
-    }
-  };
-   */
-  const loadPlugins = useCallback(() => {
-    try {
-      setLoading(true);
-      const installed = getInstalledPlugins();
-      const display: DisplayPlugin[] = installed.map((plugin) => ({
-        nodeType: plugin.nodeType as NodeType,
-        displayName: plugin.label,
-        description: plugin.description,
-        dependencies: plugin.dependencies,
-        menuGroup: plugin.menuGroup,
-        createOrder: plugin.createOrder,
-        icon: plugin.icon,
-        iconColor: plugin.iconColor,
-        backgroundColor: plugin.backgroundColor,
-        hasUI: plugin.hasUI,
-        hasWorker: plugin.hasWorker,
-        hasCommon: plugin.hasCommon,
-        packageName: plugin.packageName,
-        version: plugin.version,
-      }));
-
-      const dependencyMap: Record<string, string[]> = {};
-      for (const plugin of display) {
-        dependencyMap[plugin.nodeType] = plugin.dependencies;
-      }
-
-      setWorkerPlugins(display);
-      setUiPluginsList(display);
-      setPluginDependencies(dependencyMap);
-      setError(null);
-    } catch (err) {
-      console.error('Failed to load plugins:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load plugin metadata');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadPlugins();
-  }, [loadPlugins]);
-
-  // UI plugin-loaders list now comes from vite metadata (uiPluginsList)
+// UI plugin-loaders list now comes from vite metadata (uiPluginsList)
 
   if (loading) {
     return (
@@ -818,7 +638,7 @@ export default function PluginsPage() {
                     index={index}
                     dependencies={pluginDependencies[plugin.nodeType] || []}
                     onDelete={handleDeletePlugin}
-                    onReload={handleResetPlugin}
+                    onReset={handleResetPlugin}
                     disabled={operationInProgress}
                   />
                 ))}
@@ -834,11 +654,7 @@ export default function PluginsPage() {
           affectedPlugins={affectedPlugins}
           isProduction={isProduction}
           onConfirm={confirmReset}
-          onCancel={() => {
-            setResetDialogOpen(false);
-            setSelectedPlugin(null);
-            setAffectedPlugins([]);
-          }}
+          onCancel={closeResetDialog}
           loading={operationInProgress}
         />
 
@@ -848,11 +664,7 @@ export default function PluginsPage() {
           pluginName={selectedPlugin || ''}
           affectedPlugins={affectedPlugins}
           onConfirm={confirmDelete}
-          onCancel={() => {
-            setDeleteDialogOpen(false);
-            setSelectedPlugin(null);
-            setAffectedPlugins([]);
-          }}
+          onCancel={closeDeleteDialog}
           loading={operationInProgress}
         />
 
