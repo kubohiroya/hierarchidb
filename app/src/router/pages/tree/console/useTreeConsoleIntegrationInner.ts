@@ -190,9 +190,7 @@ export function useTreeConsoleIntegrationInner({
         (pageNodeId ? String(pageNodeId) : treeId ? `${treeId}:root` : null);
       const nodeData: HierarchicalTreeNode = {
         id: rawId as NodeId,
-        nodeType: (breadcrumbNode.nodeType ??
-          breadcrumbNode.type ??
-          'folder') as HierarchicalTreeNode['nodeType'],
+        nodeType: (breadcrumbNode.nodeType ?? 'folder') as HierarchicalTreeNode['nodeType'],
         metadata: {
           name: breadcrumbNode.metadata?.name ?? breadcrumbNode.name ?? '',
           description: breadcrumbNode.metadata?.description,

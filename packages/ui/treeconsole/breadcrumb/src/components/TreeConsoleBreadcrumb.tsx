@@ -256,7 +256,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
       return;
     }
     const nodeId = node.id ?? node.treeNodeId;
-    const nodeType = node.nodeType ?? node.type;
+    const nodeType = node.nodeType;
     if (!nodeId || !nodeType) {
       setOpenSteps([]);
       return;

@@ -344,8 +344,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     }
   }, [anchorReference, open, anchorForMenu, onClose]);
 
-  const isFolder =
-    nodeType === 'folder' || nodeType === 'folder-plugin' || nodeType === 'ProjectFolder' || nodeType === 'ResourceFolder';
+  const isFolder = isFolderNodeType(nodeType);
   const hasOpenSteps = Boolean(_onOpenStep && (openSteps.length > 0 || openStepsLoading));
 
   // Build Create submenu items

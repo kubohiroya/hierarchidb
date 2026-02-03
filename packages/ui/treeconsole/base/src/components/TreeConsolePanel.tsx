@@ -253,13 +253,13 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       resolvePreviewGuardState: resolvePreviewGuardState
         ? (node: TreeNodeInUI) => resolvePreviewGuardState(node as HierarchicalTreeNode)
         : undefined,
-      resolveOpenSteps: props.resolveOpenSteps
-        ? (node: TreeNodeInUI) => {
-            const resolver = props.resolveOpenSteps;
-            if (!resolver) return Promise.resolve([]);
-            return resolver(String(node.id ?? ''), String(node.nodeType || node.type || 'folder'));
-          }
-        : undefined,
+          resolveOpenSteps: props.resolveOpenSteps
+            ? (node: TreeNodeInUI) => {
+                const resolver = props.resolveOpenSteps;
+                if (!resolver) return Promise.resolve([]);
+                return resolver(String(node.id ?? ''), String(node.nodeType || 'folder'));
+              }
+            : undefined,
       onContextAction: (
         action: string,
         node: TreeNodeInUI,
@@ -269,7 +269,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
           const nodeData: HierarchicalTreeNode = {
             ...(node as unknown as HierarchicalTreeNode),
             id: node.id,
-            nodeType: (node.nodeType || node.type || 'folder') as NodeType,
+            nodeType: (node.nodeType || 'folder') as NodeType,
           };
           props.onContextMenuAction(action, nodeData, options);
         }

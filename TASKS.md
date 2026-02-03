@@ -13556,4 +13556,7 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - update: 2026-02-02 23:52 JST resolveOpenSteps の nodeType 判定に node.type をフォールバックとして追加。pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
   - update: 2026-02-03 00:05 JST resolveOpenSteps の nodeType 判定は param の非フォルダ値を優先するよう修正（node.type フォールバックは撤去済み）。
   - update: 2026-02-03 00:12 JST Open ステップの非同期解決中でもサブメニューが出るよう、openStepsLoading を導入して Loading 表示を追加。
+  - update: 2026-02-03 01:05 JST open-step 解決で node.type フォールバックを撤去し、openSteps 空時は Step1 を返すよう補正。
+  - blocked: 2026-02-03 01:08 JST pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck が openStepsLoading の型未反映で失敗。
+  - update: 2026-02-03 01:09 JST pnpm --filter @hierarchidb/ui-treeconsole-breadcrumb build → treetable/base/app typecheck を再実行し exit 0 を確認。
   - done: 2026-02-02 23:08 JST URL step 優先、永続化抑制、Open の Step サブメニュー化を完了。

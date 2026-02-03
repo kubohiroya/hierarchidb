@@ -28,6 +28,7 @@ const buildDialogData = (node?: TreeNode | null): Record<string, unknown> => {
   if (!node) return {};
   const baseMeta = node.draftMetadata ?? node.metadata ?? {};
   const base = {
+    nodeId: node.id,
     name: typeof baseMeta.name === 'string' ? baseMeta.name : '',
     description: typeof baseMeta.description === 'string' ? baseMeta.description : '',
     tags: Array.isArray(baseMeta.tags)
@@ -36,7 +37,12 @@ const buildDialogData = (node?: TreeNode | null): Record<string, unknown> => {
   };
   const data = isRecord(node.data) ? node.data : {};
   const draftData = isRecord(node.draftData) ? node.draftData : {};
-  return { ...base, ...data, ...draftData };
+  return { ...base, ...data, ...draftData, draftData, data };
+};
+
+const resolveDraftPayload = (node?: TreeNode | null): Record<string, unknown> => {
+  if (!node || !isRecord(node.draftData)) return {};
+  return node.draftData;
 };
 
 const resolveActiveStepIndex = (node?: TreeNode | null): number => {
@@ -72,14 +78,9 @@ export async function resolveOpenStepsForNode(params: {
     }
   }
 
-  const nodeTypeFromParam = params.nodeType;
   const nodeTypeFromNode = resolvedNode?.nodeType ?? params.node?.nodeType;
-  const useParamType =
-    typeof nodeTypeFromParam === 'string' &&
-    nodeTypeFromParam.trim().length > 0 &&
-    !isFolderNodeType(nodeTypeFromParam) &&
-    nodeTypeFromParam !== 'folder';
-  const candidateType = useParamType ? nodeTypeFromParam : nodeTypeFromNode ?? nodeTypeFromParam;
+  const nodeTypeFromParam = params.nodeType;
+  const candidateType = nodeTypeFromNode ?? nodeTypeFromParam;
   const normalizedType = normalizeNodeType(candidateType);
   if (!normalizedType || isFolderNodeType(normalizedType) || normalizedType === 'folder') {
     return [];
@@ -88,10 +89,11 @@ export async function resolveOpenStepsForNode(params: {
   await loadUIPlugin(normalizedType).catch(() => false);
 
   const dialogData = buildDialogData(resolvedNode);
-  let composed = composeStepConfigs(normalizedType, 'edit', dialogData);
+  const draftPayload = resolveDraftPayload(resolvedNode);
+  let composed = composeStepConfigs(normalizedType, 'edit', draftPayload);
   if (!composed.configs?.length) {
     await loadAllUIPlugins().catch(() => false);
-    composed = composeStepConfigs(normalizedType, 'edit', dialogData);
+    composed = composeStepConfigs(normalizedType, 'edit', draftPayload);
   }
   const steps: StepConfigLike[] = [];
 
@@ -125,7 +127,7 @@ export async function resolveOpenStepsForNode(params: {
   );
 
   if (steps.length === 0) {
-    return [];
+    return [{ step: 1, label: 'Step 1', disabled: false }];
   }
 
   const filled = await Promise.all(
