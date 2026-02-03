@@ -20,7 +20,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { BuildProgressPanel, useBuildStageFilter } from '@hierarchidb/components';
 import { useAtomValue, useSetAtom } from 'jotai';
 import type { TaskWithMetadata } from './TaskListVirtualized.tsx';
-import { TaskListVirtualized, sortVectorTileTasks } from './TaskListVirtualized.tsx';
+import { TaskListVirtualized, sortTransformTasks, sortVectorTileTasks } from './TaskListVirtualized.tsx';
 import type { ShapeEntity } from '../../../common/types/ShapeEntity.ts';
 import { isSkippedMessage } from '../../../common/utils/taskMessages.ts';
 import { useShapeBuildProgressPanel } from './useShapeBuildProgressPanel.ts';
@@ -61,6 +61,8 @@ const TaskProgressBar = ({
     const stageTasks = tasksByStage[viewportStageId] ?? [];
     const orderedStageTasks = viewportStageId === 'vt'
       ? sortVectorTileTasks(stageTasks)
+      : viewportStageId === 'transform'
+        ? sortTransformTasks(stageTasks)
       : stageTasks;
     const startIndex = orderedStageTasks.findIndex((task) => task.taskId === viewportStartId);
     const endIndex = orderedStageTasks.findIndex((task) => task.taskId === viewportEndId);
@@ -92,6 +94,8 @@ const TaskProgressBar = ({
       }
       const orderedTasks = stage.id === 'vt'
         ? sortVectorTileTasks(stageTasks)
+        : stage.id === 'transform'
+          ? sortTransformTasks(stageTasks)
         : stageTasks;
       nextStageCounts.set(stage.id, orderedTasks.length);
       orderedTasks.forEach((task) => {

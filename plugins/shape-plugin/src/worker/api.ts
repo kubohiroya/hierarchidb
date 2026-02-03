@@ -114,15 +114,6 @@ const resolveEffectiveTaskStatus = (task: TaskQueueRecord): TaskQueueRecord['sta
 };
 
 const resolveTaskProgress = (task: TaskQueueRecord): number => {
-  if (task.stage !== 'transform') {
-    return task.progress ?? 0;
-  }
-  const output = task.outputData as Record<string, unknown> | undefined;
-  const processed = typeof output?.processedPolygons === 'number' ? output.processedPolygons : null;
-  const total = typeof output?.totalPolygons === 'number' ? output.totalPolygons : null;
-  if (processed !== null && total !== null && total > 0) {
-    return Math.min(100, Math.max(0, Math.round((processed / total) * 100)));
-  }
   return task.progress ?? 0;
 };
 
@@ -192,6 +183,7 @@ const buildTaskSummaryFields = (
   errorMessage?: string;
   index?: number;
   sequence?: number;
+  stagePriority?: number;
   metadata?: TaskWeightMetadata;
 } => ({
   message: task.message ?? task.errorMessage,
@@ -200,6 +192,7 @@ const buildTaskSummaryFields = (
   errorMessage: task.errorMessage,
   index: task.index,
   sequence: task.sequence,
+  stagePriority: task.stagePriority,
   metadata: buildTaskSummaryMetadata(meta),
 });
 
@@ -239,6 +232,7 @@ const mapTaskQueueRecordToTaskSummary = (
     errorMessage: base.errorMessage,
     index: base.index,
     sequence: base.sequence,
+    stagePriority: base.stagePriority,
     metadata: base.metadata,
   };
 };
@@ -258,6 +252,7 @@ type ShapeBatchTaskSummary = BatchTaskSummary & {
   errorMessage?: string;
   index?: number;
   sequence?: number;
+  stagePriority?: number;
 };
 
 type TaskWeightMeta = {

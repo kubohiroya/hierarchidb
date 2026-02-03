@@ -1,3 +1,76 @@
+2496) fix/shape/transform-svg-order-adm0-first (P2) — 進行中 (2026-02-03)
+- ブランチ名: fix/shape/transform-svg-order-adm0-first
+- 依存: なし
+- 受け入れ基準: ステージ進捗 SVG の transform タスク並びが ADM0 優先になる／タスク一覧と整合する／必要範囲の typecheck/build が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/ShapeBuildProgressPanel.tsx`（必要に応じて追加）
+- ロールバック手順: 該当差分を revert して元の並び順へ戻す
+- チェックリスト:
+  - transform ステージの SVG 並びに stagePriority 昇順を適用する
+  - タスク一覧の順序と一致することを確認する
+  - 必要範囲の typecheck/build を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-03 12:20 JST transform の SVG 並びを ADM0 優先に調整開始。
+  - update: 2026-02-03 12:23 JST SVG 進捗バーの transform 並びに stagePriority 昇順を適用。
+  - update: 2026-02-03 12:24 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-02-03 12:24 JST transform の SVG 並びを ADM0 優先に調整完了。
+
+2495) fix/shape/transform-task-order-adm0-first (P2) — 進行中 (2026-02-03)
+- ブランチ名: fix/shape/transform-task-order-adm0-first
+- 依存: なし
+- 受け入れ基準: transform ステージのタスク一覧が実際の処理順に近い形で ADM0 優先になる／必要範囲の typecheck/build が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/ui/components/build-progress/TaskListVirtualized.tsx`, `plugins/shape-plugin/src/ui/atoms/shapeBuildProgressAtoms.ts`（必要に応じて追加）
+- ロールバック手順: 該当差分を revert して元の順序表示に戻す
+- チェックリスト:
+  - task summary に stagePriority を載せる
+  - transform ステージの表示順を stagePriority 昇順に調整する
+  - 必要範囲の typecheck/build を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-03 12:00 JST transform タスクの表示順を ADM0 優先に調整する作業に着手。
+  - update: 2026-02-03 12:06 JST task summary に stagePriority を追加し、transform ステージの表示順を stagePriority 昇順に変更。
+  - update: 2026-02-03 12:07 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-02-03 12:07 JST transform タスクの表示順を ADM0 優先に調整完了。
+
+2494) fix/shape/transform-progress-update-source (P1) — 進行中 (2026-02-03)
+- ブランチ名: fix/shape/transform-progress-update-source
+- 依存: なし
+- 受け入れ基準: transform タスクの進捗%は updateTaskPhase のみが更新し、reportPolygonProgress は message/outputData 更新のみになる／必要範囲の typecheck/build が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`, `plugins/shape-plugin/src/worker/api.ts`（必要に応じて追加）
+- ロールバック手順: 該当差分を revert して progress 更新を元に戻す
+- チェックリスト:
+  - reportPolygonProgress から progress 更新を撤去する
+  - resolveTaskProgress が outputData 由来で進捗を再計算しないよう調整する
+  - 必要範囲の typecheck/build を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-03 11:25 JST transform の progress 更新経路の整理に着手。
+  - update: 2026-02-03 11:40 JST runStageTasks の stop_on_first_error で失敗 taskId をエラーに付与し、abort 理由に含めるよう調整。
+  - update: 2026-02-03 11:41 JST transform ステージで runStageTasks 例外時にも queued/running を failed 化し、failedTaskId を errorMessage に含めるよう対応。
+  - update: 2026-02-03 11:42 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+  - update: 2026-02-03 11:42 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-02-03 11:42 JST abort 原因タスクの特定情報を failed に反映する処理を追加。
+  - update: 2026-02-03 11:30 JST reportPolygonProgress から progress 更新を撤去し、updateTaskPhase のみが進捗を更新するよう整理。
+  - update: 2026-02-03 11:31 JST resolveTaskProgress が outputData 由来で再計算しないよう変更。
+  - update: 2026-02-03 11:31 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-02-03 11:31 JST progress 更新経路の整理を完了。
+
+2493) investigation/shape-task-progress-nonmonotonic (P2) — 進行中 (2026-02-03)
+- ブランチ名: investigation/shape-task-progress-nonmonotonic
+- 依存: なし
+- 受け入れ基準: shape build の個別タスク進捗が単調増加しない原因箇所をコード参照付きで説明できる／影響条件を整理する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/services/vt/**`, `packages/vt-orchestrator/src/**`
+- ロールバック手順: 調査のみのため該当なし
+- チェックリスト:
+  - タスク進捗の計算/更新経路を追跡する
+  - 進捗リセット/上書きの発生箇所を特定する
+  - 条件と説明をまとめる
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-03 11:10 JST shape build タスク進捗の非単調挙動の原因調査に着手。
+  - update: 2026-02-03 11:15 JST 進捗は TaskQueueRecord の progress / outputData に依存し、リセット箇所を整理。
+  - done: 2026-02-03 11:15 JST 原因説明をまとめて報告。
+
 2492) fix/shape/task-message-overflow-hidden (P2) — 進行中 (2026-02-03)
 - ブランチ名: fix/shape/task-message-overflow-hidden
 - 依存: なし

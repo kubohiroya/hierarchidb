@@ -54,6 +54,20 @@ export const sortVectorTileTasks = (tasks: ShapeBuildTaskSummary[]): ShapeBuildT
   return sorted;
 };
 
+export const sortTransformTasks = (tasks: ShapeBuildTaskSummary[]): ShapeBuildTaskSummary[] => {
+  const sorted = [...tasks];
+  sorted.sort((a, b) => {
+    const pa = typeof a.stagePriority === 'number' ? a.stagePriority : Number.POSITIVE_INFINITY;
+    const pb = typeof b.stagePriority === 'number' ? b.stagePriority : Number.POSITIVE_INFINITY;
+    if (pa !== pb) return pa - pb;
+    const ia = typeof a.index === 'number' ? a.index : Number.POSITIVE_INFINITY;
+    const ib = typeof b.index === 'number' ? b.index : Number.POSITIVE_INFINITY;
+    if (ia !== ib) return ia - ib;
+    return a.taskId.localeCompare(b.taskId);
+  });
+  return sorted;
+};
+
 export const TaskListVirtualized = ({
   stageId,
   tasks,
@@ -82,6 +96,11 @@ export const TaskListVirtualized = ({
     estimateSize: () => 72,
     overscan: 8,
   });
+  const orderedTasks = useMemo(() => {
+    if (stageId === 'vt') return sortVectorTileTasks(tasks);
+    if (stageId === 'transform') return sortTransformTasks(tasks);
+    return tasks;
+  }, [stageId, tasks]);
   const resolvePhaseMessage = useMemo(() => {
     return (message?: string | null): string | null => {
       if (!message) return null;
@@ -98,10 +117,10 @@ export const TaskListVirtualized = ({
   useEffect(() => {
     if (!shouldVirtualize) return;
     if (!scrollToTaskId) return;
-    const index = tasks.findIndex((task) => task.taskId === scrollToTaskId);
+    const index = orderedTasks.findIndex((task) => task.taskId === scrollToTaskId);
     if (index < 0) return;
     window.requestAnimationFrame(() => virtualizer.scrollToIndex(index, { align: 'center' }));
-  }, [ scrollToTaskId, shouldVirtualize, tasks, virtualizer]);
+  }, [ scrollToTaskId, shouldVirtualize, orderedTasks, virtualizer]);
 
   const virtualItems = virtualizer.getVirtualItems();
   useEffect(() => {
@@ -113,8 +132,8 @@ export const TaskListVirtualized = ({
     }
     const startIndex = virtualItems[0]?.index ?? 0;
     const endIndex = virtualItems[virtualItems.length - 1]?.index ?? startIndex;
-    const startTaskId = tasks[startIndex]?.taskId ?? '';
-    const endTaskId = tasks[endIndex]?.taskId ?? startTaskId;
+    const startTaskId = orderedTasks[startIndex]?.taskId ?? '';
+    const endTaskId = orderedTasks[endIndex]?.taskId ?? startTaskId;
     if (!startTaskId || !endTaskId) return;
     const next = {
       stageId,
@@ -122,7 +141,7 @@ export const TaskListVirtualized = ({
       endIndex,
       startTaskId,
       endTaskId,
-      total: tasks.length,
+      total: orderedTasks.length,
     };
     const prev = lastViewportRef.current;
     if (
@@ -141,7 +160,7 @@ export const TaskListVirtualized = ({
       ...next,
       updatedAt: Date.now(),
     });
-  }, [setViewportRange, shouldVirtualize, stageId, tasks, virtualItems]);
+  }, [setViewportRange, shouldVirtualize, stageId, orderedTasks, virtualItems]);
 
   useEffect(() => {
     if (shouldVirtualize) return;
@@ -151,9 +170,9 @@ export const TaskListVirtualized = ({
       return;
     }
     const startIndex = 0;
-    const endIndex = tasks.length - 1;
-    const startTaskId = tasks[startIndex]?.taskId ?? '';
-    const endTaskId = tasks[endIndex]?.taskId ?? startTaskId;
+    const endIndex = orderedTasks.length - 1;
+    const startTaskId = orderedTasks[startIndex]?.taskId ?? '';
+    const endTaskId = orderedTasks[endIndex]?.taskId ?? startTaskId;
     if (!startTaskId || !endTaskId) return;
     const next = {
       stageId,
@@ -161,7 +180,7 @@ export const TaskListVirtualized = ({
       endIndex,
       startTaskId,
       endTaskId,
-      total: tasks.length,
+      total: orderedTasks.length,
     };
     const prev = lastViewportRef.current;
     if (
@@ -180,7 +199,7 @@ export const TaskListVirtualized = ({
       ...next,
       updatedAt: Date.now(),
     });
-  }, [setViewportRange, shouldVirtualize, stageId, tasks]);
+  }, [setViewportRange, shouldVirtualize, stageId, orderedTasks]);
 
   const renderTaskItem = useCallback((task: ShapeBuildTaskSummary, key: string, style?: CSSProperties) => {
     const statusValue = task.status;
@@ -216,7 +235,7 @@ export const TaskListVirtualized = ({
       {shouldVirtualize ? (
         <Box sx={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
           {virtualizer.getVirtualItems().map((virtualRow) => {
-            const task = tasks[virtualRow.index];
+            const task = orderedTasks[virtualRow.index];
             if (!task) return null;
             const taskTitle = resolveTaskTitle(task as TaskWithMetadata);
             const key = task.taskId ?? `${virtualRow.index}-${taskTitle}`;
@@ -232,7 +251,7 @@ export const TaskListVirtualized = ({
         </Box>
       ) : (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, pr: 1 }}>
-          {tasks.map((task, index) => {
+          {orderedTasks.map((task, index) => {
             const taskTitle = resolveTaskTitle(task as TaskWithMetadata);
             const key = task.taskId ?? `${index}-${taskTitle}`;
             return renderTaskItem(task, key);

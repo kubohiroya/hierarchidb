@@ -17,6 +17,7 @@ export type RawTaskSummary = BatchTaskSummary & {
   error?: string;
   errorMessage?: string;
   index?: number;
+  stagePriority?: number;
   sequence?: number;
   updatedAt?: number;
 };

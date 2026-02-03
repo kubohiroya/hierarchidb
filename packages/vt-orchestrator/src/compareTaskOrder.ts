@@ -39,13 +39,22 @@ export async function runStageTasks<TInput = unknown, TOutput = unknown>(
   let activeWorkers = 0;
   const workerPromises: Promise<void>[] = [];
 
-  const normalizeErrorMessage = (error: unknown): string => (
-    error instanceof Error ? error.message : String(error)
-  );
+  const extractTaskId = (error: unknown): string | null => {
+    if (!error || typeof error !== 'object') return null;
+    const candidate = (error as { taskId?: string }).taskId;
+    return typeof candidate === 'string' && candidate.length > 0 ? candidate : null;
+  };
+
+  const normalizeErrorMessage = (error: unknown): string => {
+    const base = error instanceof Error ? error.message : String(error);
+    const taskId = extractTaskId(error);
+    return taskId ? `${base} (failedTaskId=${taskId})` : base;
+  };
 
   const abortAll = (error: Error, taskId: string) => {
     if (aborted) return;
     aborted = true;
+    (error as { taskId?: string }).taskId = taskId;
     failureError = error;
     failureTaskId = taskId;
     if (abortSignal && !abortSignal.aborted) {

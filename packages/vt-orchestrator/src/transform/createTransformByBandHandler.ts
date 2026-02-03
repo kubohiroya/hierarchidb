@@ -1107,18 +1107,12 @@ export const createTransformByBandHandler = (
     taskId: string,
     processedPolygons: number,
     totalPolygons: number,
-    progressRange?: { start: number; end: number },
     message?: string,
   ): Promise<void> => {
     const total = Math.max(0, Math.round(totalPolygons));
     const processed = Math.max(0, Math.round(processedPolygons));
-    const progressRatio = total > 0 ? processed / total : 0;
-    const progress = progressRange
-      ? Math.min(100, Math.max(0, Math.round(progressRange.start + (progressRange.end - progressRange.start) * progressRatio)))
-      : Math.min(100, Math.max(0, Math.round(progressRatio * 100)));
     try {
       await updateTask(taskQueue, taskId, {
-        progress,
         ...(message ? { message } : {}),
         outputData: {
           processedPolygons: processed,
@@ -1358,12 +1352,7 @@ export const createTransformByBandHandler = (
           const now = Date.now();
           if (!force && now - lastReportAt < 2000) return;
           lastReportAt = now;
-          await reportPolygonProgress(
-            taskId,
-            processedPolygonCount,
-            inputPolygonCount,
-            { start: taskProgressRange.simplifyStart, end: taskProgressRange.simplifyEnd },
-          );
+          await reportPolygonProgress(taskId, processedPolygonCount, inputPolygonCount);
         };
         await updateTaskPhase(taskId, 'simplify-only:start', taskProgressRange.simplifyStart);
         const simplifyPromise = runStageWithLabel('simplify-only', () => (

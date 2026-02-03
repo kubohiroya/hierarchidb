@@ -81,15 +81,32 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
     featureIdAllowlist: params.diffBuildEnabled ? params.recyclingAllowlist : undefined,
     abortSignal: transformByBandAbortController.signal,
   });
-  await runStageTasks({
-    nodeId: params.nodeId,
-    stage: 'transform',
-    handler: transformByBandHandler as unknown as StageHandler<ShapeTransformByBandTaskInput>,
-    waitIfPaused: params.waitIfPaused,
-    maxConcurrent: params.buildConfig.transformConfig.maxConcurrent,
-    failureHandling: params.failureHandling,
-    abortController: transformByBandAbortController,
-  });
+  try {
+    await runStageTasks({
+      nodeId: params.nodeId,
+      stage: 'transform',
+      handler: transformByBandHandler as unknown as StageHandler<ShapeTransformByBandTaskInput>,
+      waitIfPaused: params.waitIfPaused,
+      maxConcurrent: params.buildConfig.transformConfig.maxConcurrent,
+      failureHandling: params.failureHandling,
+      abortController: transformByBandAbortController,
+    });
+  } catch (error) {
+    const baseMessage = error instanceof Error ? error.message : String(error);
+    const failedTaskId = error && typeof error === 'object'
+      ? (error as { taskId?: string }).taskId
+      : undefined;
+    const reason = failedTaskId ? `${baseMessage} (failedTaskId=${failedTaskId})` : baseMessage;
+    await finalizePendingStageTasks(
+      params.taskQueue,
+      params.nodeId,
+      'transform',
+      `aborted: ${reason}`,
+      '[ShapeTransform][PipelineDiagnostics] transform stage aborted',
+      params.pipelineRunId,
+    );
+    throw error;
+  }
   console.warn('[ShapeTransform][PipelineDiagnostics] stage transform completed', JSON.stringify({
     nodeId: params.nodeId,
     runId: params.pipelineRunId ?? null,
