@@ -6,6 +6,7 @@ import {
   isFolderNodeType,
   type OpenStepOption,
 } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
+import { i18n } from '@hierarchidb/ui-i18n';
 import type { Remote } from 'comlink';
 import { loadAllUIPlugins, loadUIPlugin } from '../../plugin-loaders/ui-plugin-loader.js';
 
@@ -43,6 +44,22 @@ const buildDialogData = (node?: TreeNode | null): Record<string, unknown> => {
 const resolveDraftPayload = (node?: TreeNode | null): Record<string, unknown> => {
   if (!node || !isRecord(node.draftData)) return {};
   return node.draftData;
+};
+
+const resolveBasicInfoLabel = (): string => {
+  try {
+    const lang = String(i18n.resolvedLanguage ?? i18n.language ?? '').toLowerCase();
+    if (lang.startsWith('ja')) {
+      return '基本情報';
+    }
+    const label = i18n.t('basicInfo.title', {
+      ns: 'common',
+      defaultValue: 'Basic Information',
+    });
+    return typeof label === 'string' ? label : 'Basic Information';
+  } catch {
+    return 'Basic Information';
+  }
 };
 
 const resolveActiveStepIndex = (node?: TreeNode | null): number => {
@@ -100,7 +117,7 @@ export async function resolveOpenStepsForNode(params: {
   if (!composed.hasHostBase) {
     steps.push({
       id: 'basic-info',
-      label: 'Basic Info',
+      label: resolveBasicInfoLabel(),
       optional: false,
       validate: () => Boolean(String(dialogData.name ?? '').trim()),
     });

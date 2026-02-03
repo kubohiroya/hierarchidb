@@ -34,7 +34,7 @@ export const TaskItem: React.FC<Props> = ({
       />
     </Stack>
     {message ? (
-      <Typography variant="caption" color="text.secondary">
+      <Typography variant="caption" color="text.secondary" sx={{ overflow: 'hidden' }}>
         {message}
       </Typography>
     ) : null}

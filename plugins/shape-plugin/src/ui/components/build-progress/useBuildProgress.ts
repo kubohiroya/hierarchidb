@@ -44,25 +44,6 @@ export function useBuildProgress(
       mapUnifiedToStatus: (info) => toShapeStatus(info as ExtendedProgress | null),
     },
   );
-  const debugKey = nodeId ?? 'none';
-  const debugSnapshot = {
-    nodeId,
-    error: error?.message ?? null,
-    status: derivedStatus?.status ?? null,
-    progress: progress?.percentage ?? null,
-    taskType: progress?.taskType ?? null,
-  };
-
-  if (typeof window !== 'undefined') {
-    const lastKey = `__shapeProgressDebug_${debugKey}`;
-    const prev = (window as unknown as Record<string, unknown>)[lastKey] as typeof debugSnapshot | undefined;
-    const changed = !prev || Object.keys(debugSnapshot).some((key) => prev[key as keyof typeof debugSnapshot] !== debugSnapshot[key as keyof typeof debugSnapshot]);
-    if (changed) {
-      console.debug('[ShapeBuildStep] progressState', debugSnapshot);
-      (window as unknown as Record<string, unknown>)[lastKey] = debugSnapshot;
-    }
-  }
-
   return {
     progress,
     status: derivedStatus,

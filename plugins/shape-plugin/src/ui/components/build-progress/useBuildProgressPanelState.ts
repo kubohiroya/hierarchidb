@@ -51,7 +51,6 @@ export const useBuildProgressPanelState = (params: {
     draft: params.data,
     nodeId: resolvedNodeId ? String(resolvedNodeId) : undefined,
   });
-  const lastTaskStageSnapshotRef = useRef<string | null>(null);
   const activeStageId = useMemo(() => {
     if (summary.buildStatus !== 'running') return null;
     for (const stage of stages) {
@@ -79,29 +78,6 @@ export const useBuildProgressPanelState = (params: {
     isDev,
     t,
   });
-
-  useEffect(() => {
-    if (!isDev) return;
-    const snapshot = JSON.stringify({
-      stages: stages.map((stage) => stage.id),
-      keys: Object.keys(tasksByStage),
-      counts: Object.fromEntries(Object.entries(tasksByStage).map(([stageId, tasks]) => ([
-        stageId,
-        {
-          total: tasks.length,
-          completed: tasks.filter((task) => task.status === 'completed').length,
-          failed: tasks.filter((task) => task.status === 'failed').length,
-          running: tasks.filter((task) => task.status === 'running').length,
-          queued: tasks.filter((task) => task.status === 'queued').length,
-          paused: tasks.filter((task) => task.status === 'paused').length,
-          regression: tasks.filter((task) => task.status === 'regression').length,
-        },
-      ]))),
-    });
-    if (snapshot === lastTaskStageSnapshotRef.current) return;
-    lastTaskStageSnapshotRef.current = snapshot;
-    console.debug('[ShapeBuildProgress] stageTaskSnapshot', JSON.parse(snapshot));
-  }, [stages, tasksByStage]);
 
   const resolveTaskTitle = useCallback(
     (task: TaskWithMetadata): string =>

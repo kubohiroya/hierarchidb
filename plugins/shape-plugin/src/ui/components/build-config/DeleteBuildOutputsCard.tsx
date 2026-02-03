@@ -11,6 +11,11 @@ export type DeleteBuildOutputsCardProps = {
   deleteVTLabel: string;
   deleteMetadataLabel: string;
   countsLoading?: boolean;
+  deleteFetchApiLoading?: boolean;
+  deleteFetchFilteredLoading?: boolean;
+  deleteTransformLoading?: boolean;
+  deleteVTLoading?: boolean;
+  deleteMetadataLoading?: boolean;
   canDeleteFetchApiCache: boolean;
   canDeleteFetchFilteredCache: boolean;
   canDeleteTransformCache: boolean;
@@ -34,6 +39,11 @@ export const DeleteBuildOutputsCard: React.FC<DeleteBuildOutputsCardProps> = ({
   deleteVTLabel,
   deleteMetadataLabel,
   countsLoading,
+  deleteFetchApiLoading,
+  deleteFetchFilteredLoading,
+  deleteTransformLoading,
+  deleteVTLoading,
+  deleteMetadataLoading,
   canDeleteFetchApiCache,
   canDeleteFetchFilteredCache,
   canDeleteTransformCache,
@@ -64,6 +74,11 @@ export const DeleteBuildOutputsCard: React.FC<DeleteBuildOutputsCardProps> = ({
           deleteVTLabel={deleteVTLabel}
           deleteMetadataLabel={deleteMetadataLabel}
           countsLoading={countsLoading}
+          deleteFetchApiLoading={deleteFetchApiLoading}
+          deleteFetchFilteredLoading={deleteFetchFilteredLoading}
+          deleteTransformLoading={deleteTransformLoading}
+          deleteVTLoading={deleteVTLoading}
+          deleteMetadataLoading={deleteMetadataLoading}
           canDeleteFetchApiCache={canDeleteFetchApiCache}
           canDeleteFetchFilteredCache={canDeleteFetchFilteredCache}
           canDeleteTransformCache={canDeleteTransformCache}

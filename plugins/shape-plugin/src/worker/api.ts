@@ -728,11 +728,6 @@ export const shapeBatchAPI = {
     const nodeForSession = draftLike.nodeId ?? draftLike.treeNodeId ?? draftId;
     const pipelineKey = String(nodeForSession);
     if (activePipelines.has(pipelineKey)) {
-      const existingRunId = activePipelineRuns.get(pipelineKey) ?? 'unknown';
-      console.warn('[shapeBatchAPI] startBatchProcess ignored: pipeline already active', {
-        nodeId: nodeForSession,
-        runId: existingRunId,
-      });
       await emitProgressSnapshot(nodeForSession, 'startBatchProcess ignored: pipeline already active');
       return nodeForSession;
     }
@@ -850,10 +845,6 @@ export const shapeBatchAPI = {
         await seedTaskQueueFromBuildTasks(nodeId);
       }
       if (activePipelines.has(pipelineKey)) {
-        console.warn('[shapeBatchAPI] resumeBatchSession ignored: pipeline already active', {
-          nodeId,
-          runId: activePipelineRuns.get(pipelineKey) ?? 'unknown',
-        });
         await emitProgressSnapshot(nodeId, 'resumeBatchSession ignored: pipeline already active');
         return;
       }
@@ -1155,13 +1146,6 @@ export const shapeBatchAPI = {
             event.task,
             weightMap.get(event.task.taskId)
           );
-          console.debug('[shapeBatchAPI] task update', {
-            taskId: summary.taskId,
-            stage: summary.stage,
-            status: summary.status,
-            progress: summary.progress,
-            sequence: summary.sequence,
-          });
           callback({ type: 'update', nodeId: event.nodeId, task: summary });
         } catch (error) {
           console.error('[shapeBatchAPI] task update failed', error);

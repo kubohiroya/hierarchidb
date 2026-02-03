@@ -100,14 +100,6 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
     const baseList = pendingTasksRef.current ?? tasksRef.current;
     const currentTask = tasksMapRef.current.get(task.taskId);
     if (!shouldApplyTaskUpdate(currentTask, task)) {
-      const currentSequence = typeof currentTask?.sequence === 'number' ? currentTask.sequence : null;
-      const nextSequence = typeof task.sequence === 'number' ? task.sequence : null;
-      console.debug('[ShapeBuildStep] task update ignored', {
-        taskId: task.taskId,
-        stage: task.stage,
-        currentSequence,
-        nextSequence,
-      });
       return baseList;
     }
     const nextMap = new Map(tasksMapRef.current);

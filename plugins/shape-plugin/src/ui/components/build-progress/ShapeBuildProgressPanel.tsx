@@ -261,6 +261,7 @@ const TaskProgressBar = ({
         onPointerLeave={handlePointerUp}
         style={{ touchAction: 'none' }}
       >
+        <title>{activeStageId}</title>
         {flowBandRange ? (
           <defs>
             <clipPath id={`task-progress-flow-${flowBandClipId}`}>
@@ -481,14 +482,8 @@ const BuildProgressStageContent = ({
           <Skeleton variant="text" width="70%" />
           <Skeleton variant="rounded" height={88} />
         </>
-      ) : showTaskSkeleton ? (
-        <>
-          {showHeader ? (
+      ) : showTaskSkeleton ? showHeader && (
             <Typography variant="subtitle2">{stage.title}</Typography>
-          ) : null}
-          <Skeleton variant="text" width="60%" />
-          <Skeleton variant="rounded" height={160} />
-        </>
       ) : !hasTasks ? (
         <>
           {showHeader ? (

@@ -6,6 +6,7 @@ import {
   Layers as LayersIcon,
 } from '@mui/icons-material';
 import { useTranslation } from '../../i18n.js';
+import { LoadingButton } from '@hierarchidb/components';
 
 type Props = {
   deleteFetchApiLabel: string;
@@ -14,6 +15,11 @@ type Props = {
   deleteVTLabel: string;
   deleteMetadataLabel: string;
   countsLoading?: boolean;
+  deleteFetchApiLoading?: boolean;
+  deleteFetchFilteredLoading?: boolean;
+  deleteTransformLoading?: boolean;
+  deleteVTLoading?: boolean;
+  deleteMetadataLoading?: boolean;
   canDeleteFetchApiCache: boolean;
   canDeleteFetchFilteredCache: boolean;
   canDeleteTransformCache: boolean;
@@ -35,6 +41,11 @@ export const FetchConfigFormControls: React.FC<Props> = ({
   deleteVTLabel,
   deleteMetadataLabel,
   countsLoading = false,
+  deleteFetchApiLoading = false,
+  deleteFetchFilteredLoading = false,
+  deleteTransformLoading = false,
+  deleteVTLoading = false,
+  deleteMetadataLoading = false,
   canDeleteFetchApiCache,
   canDeleteFetchFilteredCache,
   canDeleteTransformCache,
@@ -49,19 +60,23 @@ export const FetchConfigFormControls: React.FC<Props> = ({
   onResetDefaults,
 }) => {
   const { t } = useTranslation();
-  const apiDisabled = countsLoading || !canDeleteFetchApiCache;
-  const filteredDisabled = countsLoading || !canDeleteFetchFilteredCache;
+  const apiDisabled = countsLoading || deleteFetchApiLoading || !canDeleteFetchApiCache;
+  const filteredDisabled = countsLoading || deleteFetchFilteredLoading || !canDeleteFetchFilteredCache;
+  const transformDisabled = deleteTransformLoading || !canDeleteTransformCache;
+  const vtDisabled = deleteVTLoading || !canDeleteVTCache;
+  const metadataDisabled = deleteMetadataLoading || !canDeleteMetadata;
 
   return (
     <>
       <Grid container spacing={1} sx={{ width: '100%' }}>
         <Grid size={{ xs: 12, sm: 6 }}>
-          <Button
+          <LoadingButton
             fullWidth
             variant="outlined"
             color="error"
             startIcon={<CloudDownloadIcon />}
             disabled={apiDisabled}
+            loading={deleteFetchApiLoading}
             onClick={onDeleteFetchApiCache}
           >
             <Typography
@@ -70,55 +85,59 @@ export const FetchConfigFormControls: React.FC<Props> = ({
             >
               {deleteFetchApiLabel}
             </Typography>
-          </Button>
+          </LoadingButton>
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
-          <Button
+          <LoadingButton
             fullWidth
             variant="outlined"
             color="error"
             startIcon={<FilterAltIcon />}
             disabled={filteredDisabled}
+            loading={deleteFetchFilteredLoading}
             onClick={onDeleteFetchFilteredCache}
           >
             {deleteFetchFilteredLabel}
-          </Button>
+          </LoadingButton>
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
-          <Button
+          <LoadingButton
             fullWidth
             variant="outlined"
             color="error"
             startIcon={<FilterAltIcon />}
-            disabled={!canDeleteTransformCache}
+            disabled={transformDisabled}
+            loading={deleteTransformLoading}
             onClick={onDeleteTransformCache}
           >
             {deleteTransformFilterLabel}
-          </Button>
+          </LoadingButton>
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
-          <Button
+          <LoadingButton
             fullWidth
             variant="outlined"
             color="error"
             startIcon={<LayersIcon />}
-            disabled={!canDeleteVTCache}
+            disabled={vtDisabled}
+            loading={deleteVTLoading}
             onClick={onDeleteVTCache}
           >
             {deleteVTLabel}
-          </Button>
+          </LoadingButton>
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
-          <Button
+          <LoadingButton
             fullWidth
             variant="outlined"
             color="error"
             startIcon={<DescriptionIcon />}
-            disabled={!canDeleteMetadata}
+            disabled={metadataDisabled}
+            loading={deleteMetadataLoading}
             onClick={onDeleteMetadata}
           >
             {deleteMetadataLabel}
-          </Button>
+          </LoadingButton>
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
           <Button

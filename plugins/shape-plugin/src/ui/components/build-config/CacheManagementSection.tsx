@@ -36,6 +36,11 @@ export const CacheManagementSection: React.FC<Props> = ({ config, fetchState, di
     deleteVTLabel,
     deleteMetadataLabel,
     countsLoading,
+    deleteFetchApiLoading,
+    deleteFetchFilteredLoading,
+    deleteTransformLoading,
+    deleteVTLoading,
+    deleteMetadataLoading,
     canDeleteFetchApiCache,
     canDeleteFetchFilteredCache,
     canDeleteTransformCache,
@@ -176,6 +181,11 @@ export const CacheManagementSection: React.FC<Props> = ({ config, fetchState, di
               deleteVTLabel={deleteVTLabel}
               deleteMetadataLabel={deleteMetadataLabel}
               countsLoading={countsLoading}
+              deleteFetchApiLoading={deleteFetchApiLoading}
+              deleteFetchFilteredLoading={deleteFetchFilteredLoading}
+              deleteTransformLoading={deleteTransformLoading}
+              deleteVTLoading={deleteVTLoading}
+              deleteMetadataLoading={deleteMetadataLoading}
               canDeleteFetchApiCache={canDeleteFetchApiCache}
               canDeleteFetchFilteredCache={canDeleteFetchFilteredCache}
               canDeleteTransformCache={canDeleteTransformCache}

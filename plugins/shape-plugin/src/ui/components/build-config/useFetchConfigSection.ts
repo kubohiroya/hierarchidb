@@ -37,6 +37,14 @@ type CacheCounts = {
   vt: number;
 };
 
+type DeleteLoadingState = {
+  fetchApi: boolean;
+  fetchFiltered: boolean;
+  transform: boolean;
+  vt: boolean;
+  metadata: boolean;
+};
+
 type StageLikeTask = {
   stage: TaskStage;
   type?: TaskStage;
@@ -56,6 +64,13 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
   const bridgeRef = useMemo(() => getWorkerBridge(), []);
 
   const [countsLoading, setCountsLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState<DeleteLoadingState>({
+    fetchApi: false,
+    fetchFiltered: false,
+    transform: false,
+    vt: false,
+    metadata: false,
+  });
 
   const [counts, setCounts] = useState<CacheCounts>({
     fetchApi: 0,
@@ -185,6 +200,18 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
   const canDeleteVTCache = !isRunning && !disabled && vtDeleteCount > 0;
   const canDeleteMetadata = !isRunning && !disabled && metadataDeleteCount > 0;
 
+  const runDelete = useCallback(async (
+    key: keyof DeleteLoadingState,
+    action: () => Promise<void>,
+  ): Promise<void> => {
+    setDeleteLoading((prev) => ({ ...prev, [key]: true }));
+    try {
+      await action();
+    } finally {
+      setDeleteLoading((prev) => ({ ...prev, [key]: false }));
+    }
+  }, []);
+
   const clearBatchTasksForType = useCallback(async (taskType: BuildTaskType) => {
     const rows = await ephemeralShapeAPIImpl.listBuildTasksByType(nodeId, taskType);
     await ephemeralShapeAPIImpl.deleteBuildTasksByIds(rows.map((task) => task.taskId));
@@ -259,26 +286,30 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
   }, [bridgeRef, draft, nodeId]);
 
   const handleDeleteFetchApiCache = useCallback(async () => {
-    await deleteRawDataDataSourceBuffersForNode(nodeId);
-    await clearBatchTasksForType('fetch');
-    setBuildTasks((prev) => prev.filter((task) => !isFetchTask(task)));
-    setPersistedTasks((prev) => prev.filter((task) => !isFetchTask(task)));
-    await loadCounts();
-    notify.success('Deleted API cache');
-  }, [nodeId, clearBatchTasksForType, loadCounts, setBuildTasks, setPersistedTasks]);
+    await runDelete('fetchApi', async () => {
+      await deleteRawDataDataSourceBuffersForNode(nodeId);
+      await clearBatchTasksForType('fetch');
+      setBuildTasks((prev) => prev.filter((task) => !isFetchTask(task)));
+      setPersistedTasks((prev) => prev.filter((task) => !isFetchTask(task)));
+      await loadCounts();
+      notify.success('Deleted API cache');
+    });
+  }, [nodeId, clearBatchTasksForType, loadCounts, runDelete, setBuildTasks, setPersistedTasks]);
 
   const handleDeleteFetchFilteredCache = useCallback(async () => {
-    await ephemeralShapeAPIImpl.clearStage(nodeId, 'fetch');
-    await clearBatchTasksForType('fetch');
-    setBuildTasks((prev) => prev.filter((task) => !isFetchTask(task)));
-    setPersistedTasks((prev) => prev.filter((task) => !isFetchTask(task)));
-    await loadCounts();
-    const shouldPreserveSession = draft?.processingStatus === 'completed' || hasTileSummary || await hasPersistedOutputs();
-    if (!shouldPreserveSession) {
-      onResetSession?.();
-      await persistSessionReset();
-    }
-    notify.success('Deleted filtered cache');
+    await runDelete('fetchFiltered', async () => {
+      await ephemeralShapeAPIImpl.clearStage(nodeId, 'fetch');
+      await clearBatchTasksForType('fetch');
+      setBuildTasks((prev) => prev.filter((task) => !isFetchTask(task)));
+      setPersistedTasks((prev) => prev.filter((task) => !isFetchTask(task)));
+      await loadCounts();
+      const shouldPreserveSession = draft?.processingStatus === 'completed' || hasTileSummary || await hasPersistedOutputs();
+      if (!shouldPreserveSession) {
+        onResetSession?.();
+        await persistSessionReset();
+      }
+      notify.success('Deleted filtered cache');
+    });
   }, [
     nodeId,
     clearBatchTasksForType,
@@ -288,44 +319,52 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
     loadCounts,
     onResetSession,
     persistSessionReset,
+    runDelete,
     setBuildTasks,
     setPersistedTasks,
   ]);
 
   const handleDeleteTransformCache = useCallback(async () => {
-    await ephemeralShapeAPIImpl.clearStage(nodeId, 'transform');
-    await clearBatchTasksForType('transform');
-    setBuildTasks((prev) => prev.filter((task) => !isTransformTask(task)));
-    setPersistedTasks((prev) => prev.filter((task) => !isTransformTask(task)));
-    await loadCounts();
-    notify.success('Deleted transform cache');
-  }, [nodeId, clearBatchTasksForType, loadCounts, setBuildTasks, setPersistedTasks]);
+    await runDelete('transform', async () => {
+      await ephemeralShapeAPIImpl.clearStage(nodeId, 'transform');
+      await clearBatchTasksForType('transform');
+      setBuildTasks((prev) => prev.filter((task) => !isTransformTask(task)));
+      setPersistedTasks((prev) => prev.filter((task) => !isTransformTask(task)));
+      await loadCounts();
+      notify.success('Deleted transform cache');
+    });
+  }, [nodeId, clearBatchTasksForType, loadCounts, runDelete, setBuildTasks, setPersistedTasks]);
 
   const handleDeleteVTCache = useCallback(async () => {
-    await ephemeralShapeAPIImpl.clearStage(nodeId, 'vt');
-    await clearBatchTasksForType('vt');
-    await clearFinalOutputs();
-    setBuildTasks((prev) => prev.filter((task) => !isVectorTileStage(task.stage)));
-    setPersistedTasks((prev) => prev.filter((task) => !isVectorTileStage(task.stage)));
-    await persistTileSummaryReset();
-    await loadCounts();
-    notify.success('Deleted vt cache');
+    await runDelete('vt', async () => {
+      await ephemeralShapeAPIImpl.clearStage(nodeId, 'vt');
+      await clearBatchTasksForType('vt');
+      await clearFinalOutputs();
+      setBuildTasks((prev) => prev.filter((task) => !isVectorTileStage(task.stage)));
+      setPersistedTasks((prev) => prev.filter((task) => !isVectorTileStage(task.stage)));
+      await persistTileSummaryReset();
+      await loadCounts();
+      notify.success('Deleted vt cache');
+    });
   }, [
     nodeId,
     clearBatchTasksForType,
     clearFinalOutputs,
     loadCounts,
     persistTileSummaryReset,
+    runDelete,
     setBuildTasks,
     setPersistedTasks,
   ]);
 
   const handleDeleteMetadata = useCallback(async () => {
-    await shapeMutationAPIImpl.deleteFeatureMetadataByNode(nodeId);
-    await shapeMutationAPIImpl.deleteSourceMetadataByNode(nodeId);
-    await loadCounts();
-    notify.success('Deleted metadata');
-  }, [nodeId, loadCounts]);
+    await runDelete('metadata', async () => {
+      await shapeMutationAPIImpl.deleteFeatureMetadataByNode(nodeId);
+      await shapeMutationAPIImpl.deleteSourceMetadataByNode(nodeId);
+      await loadCounts();
+      notify.success('Deleted metadata');
+    });
+  }, [nodeId, loadCounts, runDelete]);
 
   const update = useCallback((partial: Partial<ShapeBuildConfig>) => {
     onChange(mergeBuildConfig(config, partial));
@@ -348,6 +387,11 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
     deleteVTLabel,
     deleteMetadataLabel,
     countsLoading,
+    deleteFetchApiLoading: deleteLoading.fetchApi,
+    deleteFetchFilteredLoading: deleteLoading.fetchFiltered,
+    deleteTransformLoading: deleteLoading.transform,
+    deleteVTLoading: deleteLoading.vt,
+    deleteMetadataLoading: deleteLoading.metadata,
     canDeleteFetchApiCache,
     canDeleteFetchFilteredCache,
     canDeleteTransformCache,

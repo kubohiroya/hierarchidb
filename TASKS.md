@@ -1,3 +1,72 @@
+2492) fix/shape/task-message-overflow-hidden (P2) — 進行中 (2026-02-03)
+- ブランチ名: fix/shape/task-message-overflow-hidden
+- 依存: なし
+- 受け入れ基準: shape Step5 build のタスク message 表示に overflow: hidden が適用され、はみ出しが抑制される／必要範囲の typecheck/build が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/TaskItem.tsx`（必要に応じて追加）
+- ロールバック手順: 該当差分を revert して overflow 設定を元に戻す
+- チェックリスト:
+  - タスク message の Typography に overflow: hidden を追加する
+  - 必要範囲の typecheck/build を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-03 10:55 JST shape Step5 build の message overflow 制御に着手。
+  - update: 2026-02-03 10:56 JST TaskItem の message に overflow: hidden を適用。
+  - update: 2026-02-03 10:56 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-02-03 10:56 JST message overflow 制御を完了。
+
+2491) fix/shape/delete-build-outputs-loading (P2) — 進行中 (2026-02-03)
+- ブランチ名: fix/shape/delete-build-outputs-loading
+- 依存: なし
+- 受け入れ基準: 「即時でのビルド生成物の削除」カードの削除ボタン押下後、削除完了まで disabled + スピナー表示となる／失敗時にボタンが復帰する／必要範囲の typecheck/build が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-config/**`（必要に応じて追加）
+- ロールバック手順: 該当差分を revert してボタンの loading/disabled 連動を元に戻す
+- チェックリスト:
+  - 削除アクション実行中の loading state を追加する
+  - 削除ボタンに loading + disabled を反映する
+  - 必要範囲の typecheck/build を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-03 10:40 JST 削除ボタンの loading/disabled 連動対応に着手。
+  - update: 2026-02-03 10:46 JST DeleteBuildOutputsCard の削除ボタンに loading state を追加し、実行中は disabled + スピナー表示に変更。
+  - update: 2026-02-03 10:47 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-02-03 10:47 JST 削除ボタンの loading/disabled 連動を完了。
+
+2490) chore/logs/shape-build-minimal (P2) — 進行中 (2026-02-03)
+- ブランチ名: chore/logs/shape-build-minimal
+- 依存: なし
+- 受け入れ基準: Shape build の UI/worker ログが開始/終了/失敗などの必要最小限に整理される／冗長な progressState/atoms/snapshot の debug 出力が削除される／必要範囲の typecheck/build が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/**`, `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/services/vt/**`（必要に応じて追加）
+- ロールバック手順: 該当差分を revert してログ出力を元に戻す
+- チェックリスト:
+  - Shape build UI の debug ログを整理する
+  - Shape build worker の start/resume/pipeline ログを最小限にする
+  - 必要範囲の typecheck/build を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-03 10:20 JST Shape build の冗長ログ削減に着手。
+  - blocked: 2026-02-03 10:26 JST pnpm --filter @hierarchidb/shape-plugin typecheck が api.ts の unused で失敗（TS6133）。
+  - update: 2026-02-03 10:27 JST Shape build UI/worker の debug ログを削除し、開始/終了/失敗ログに整理。
+  - update: 2026-02-03 10:28 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-02-03 10:28 JST Shape build の冗長ログ削減を完了。
+
+2489) fix/shape/tile-buffer-relations-index (P1) — 進行中 (2026-02-03)
+- ブランチ名: fix/shape/tile-buffer-relations-index
+- 依存: なし
+- 受け入れ基準: Dexie の tileIdToBufferRelations に [nodeId+bandId] インデックスが定義され SchemaError が再現しない／DB バージョン更新とマイグレーション方針を明記する／必要範囲の typecheck/build が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/**`, `packages/features/shape-store/**`, `packages/runtime-worker/**`（必要に応じて追加）
+- ロールバック手順: 該当差分を revert してインデックス追加前へ戻す
+- チェックリスト:
+  - tileIdToBufferRelations の schema/index 定義を確認する
+  - [nodeId+bandId] インデックスを追加し DB バージョンを更新する
+  - マイグレーションの影響と確認手順を明記する
+  - 必要範囲の typecheck/build を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-03 10:05 JST Dexie SchemaError（tileIdToBufferRelations の [nodeId+bandId] 未 index）調査と修正に着手。
+  - update: 2026-02-03 10:10 JST EphemeralShapeDB を version 17 に更新し tileIdToBufferRelations に [nodeId+bandId]/[nodeId+bandId+tileId] を追加。インデックス追加のみのため既存データは維持、Dexie の upgrade で再作成される方針。
+  - update: 2026-02-03 10:11 JST pnpm --filter @hierarchidb/shape-store typecheck exit 0 を確認。
+  - done: 2026-02-03 10:11 JST tileIdToBufferRelations の複合インデックス追加と schema 更新を完了。
+
 2428) fix/tsconfig/paths-no-src (P1) — 完了 (2026-01-30)
 - ブランチ名: fix/tsconfig/paths-no-src
 - 依存: なし
@@ -13559,4 +13628,6 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - update: 2026-02-03 01:05 JST open-step 解決で node.type フォールバックを撤去し、openSteps 空時は Step1 を返すよう補正。
   - blocked: 2026-02-03 01:08 JST pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck が openStepsLoading の型未反映で失敗。
   - update: 2026-02-03 01:09 JST pnpm --filter @hierarchidb/ui-treeconsole-breadcrumb build → treetable/base/app typecheck を再実行し exit 0 を確認。
+  - update: 2026-02-03 01:14 JST Open サブメニューの Basic Info ラベルを common.basicInfo.title から解決するよう修正。
+  - update: 2026-02-03 01:20 JST 日本語ロケール時は Basic Info を「基本情報」固定表示するよう補正。
   - done: 2026-02-02 23:08 JST URL step 優先、永続化抑制、Open の Step サブメニュー化を完了。

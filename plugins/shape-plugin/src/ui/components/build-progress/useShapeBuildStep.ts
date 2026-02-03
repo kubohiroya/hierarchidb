@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import type { TaskStage } from '@hierarchidb/batch-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { useShapeBuildTasks } from './useShapeBuildTasks.ts';
@@ -61,7 +61,6 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const activeNodeId = nodeId ?? data?.nodeId ?? null;
 
   const { progress, status, error } = useBuildProgress(activeNodeId, { autoSubscribe: Boolean(activeNodeId) });
-  const warnedSkippedTasksRef = useRef<Set<string>>(new Set());
   const hasNodeId = Boolean(activeNodeId && !error);
   const effectiveProgress = hasNodeId ? progress : null;
   const effectiveStatus = hasNodeId ? status : null;
@@ -89,38 +88,10 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const taskType = effectiveProgress?.taskType;
   const resolvedTaskType = taskType ?? effectiveStatus?.stage ?? stages[0]?.id;
   const overallProgress = effectiveProgress?.percentage ?? effectiveStatus?.progress ?? 0;
-  const debugStateRef = useRef<Record<string, unknown> | null>(null);
   const monitorKey = useMemo(() => {
     const resolvedNodeId = nodeId ?? data?.nodeId;
     return getBuildMonitorKey({ storagePrefix: 'hdb:shape:stage-monitor', maxSamples: 3, memoryPressureRatio: 0.85, heapWarningRatio: 0.85, heapCriticalRatio: 0.9 }, resolvedNodeId ? String(resolvedNodeId) : null);
   }, [data?.nodeId, nodeId]);
-  useEffect(() => {
-    const nextState = {
-      nodeId: activeNodeId,
-      hasNodeId,
-      buildStatus: buildStatus,
-      progress: effectiveProgress?.percentage ?? null,
-      taskType: taskType ?? null,
-      message: effectiveProgress?.message ?? null,
-      error: error?.message ?? null,
-    };
-    const prev = debugStateRef.current;
-    const entries = Object.entries(nextState) as Array<[keyof typeof nextState, unknown]>;
-    const hasChanged = !prev || entries.some(([key, value]) => (prev as typeof nextState)[key] !== value);
-    if (hasChanged) {
-      console.debug('[ShapeBuildStep] atoms', nextState);
-      debugStateRef.current = nextState;
-    }
-  }, [
-    activeNodeId,
-    hasNodeId,
-    buildStatus,
-    effectiveProgress?.percentage,
-    effectiveProgress?.message,
-    taskType,
-    error?.message,
-  ]);
-
   const { timingSnapshot } = useShapeBuildTiming({
     buildStatus,
     taskType,
@@ -155,29 +126,6 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     isSkippedTask: (task) => isSkippedMessage(task.message),
     timingStageMs: timingSnapshot.stageMs,
   });
-  useEffect(() => {
-    if (displayTasks.length === 0) return;
-    const warned = warnedSkippedTasksRef.current;
-    for (const task of displayTasks) {
-      if (!task.taskId || !isSkippedMessage(task.message)) continue;
-      if (warned.has(task.taskId)) continue;
-      warned.add(task.taskId);
-      console.info(
-        `[ShapeBuildStep] skipped taskId=${task.taskId} stage=${normalizeStageKey(task)} message=${task.message}`
-      );
-    }
-  }, [displayTasks]);
-  const lastTaskSummaryRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (displayTasks.length === 0) return;
-    const snapshot = JSON.stringify({
-      total: displayTasks.length,
-      byStage: progressSummary.taskSummary,
-    });
-    if (snapshot === lastTaskSummaryRef.current) return;
-    lastTaskSummaryRef.current = snapshot;
-    console.debug('[ShapeBuildStep] taskSummary', JSON.parse(snapshot));
-  }, [displayTasks.length, progressSummary.taskSummary]);
   const {
     statusLabel,
     warningMessage,
@@ -201,7 +149,6 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   }, [data?.buildConfig]);
   const hasSelection = summarizeCheckboxState(selectedArrayByCountries).hasSelection;
   const hasDataSource = Boolean(data?.buildConfig?.dataSourceName);
-  const debugScope = '[ShapeBuildStep]';
   const bridgeRef = useRef(getWorkerBridge());
   const workerClientHook = useMemo(() => {
     try {
@@ -216,18 +163,11 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const handleProviderSelect = useCallback((_provider: AuthProviderType) => {}, []);
 
   const saveDraftBeforeBatch = useCallback(async (patch?: Partial<ShapeEntity>) => {
-    console.debug(`${debugScope} saveDraftBeforeBatch:start`, {
-      nodeId: activeNodeId,
-      hasWorkerClient: Boolean(workerClient),
-      buildStatus,
-    });
     if (!activeNodeId) {
-      console.debug(`${debugScope} saveDraftBeforeBatch:missingNodeId`);
       notify.warning('NodeId is missing.');
       return false;
     }
     if (!workerClient) {
-      console.debug(`${debugScope} saveDraftBeforeBatch:missingWorkerClient`);
       notify.error('Worker client is unavailable.');
       return false;
     }
@@ -236,10 +176,6 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       ...(patch?.buildConfig ?? {}),
     };
     try {
-      console.debug(`${debugScope} saveDraftBeforeBatch:updateDraft`, {
-        nodeId: activeNodeId,
-        dataSourceName: baseBatchConfig.dataSourceName ?? null,
-      });
       const api = workerClient.getAPI();
       const updater = await api.getTreeNodeUpdaterAPI();
       await updater.updateTreeNode(activeNodeId, {
@@ -249,10 +185,6 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
           ...(patch ?? {}),
           batchConfig: baseBatchConfig,
         } as Record<string, unknown>,
-      });
-      console.debug(`${debugScope} saveDraftBeforeBatch:complete`, {
-        nodeId: activeNodeId,
-        dataSourceName: baseBatchConfig.dataSourceName ?? null,
       });
       return true;
     } catch (error) {
@@ -309,12 +241,6 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
 
   const canResume = buildStatus === 'paused';
   const handleStartOrResume = useCallback(async (options?: { forceRestart?: boolean; autoResume?: boolean }): Promise<boolean> => {
-    console.debug(`${debugScope} startOrResume:click`, {
-      nodeId: activeNodeId,
-      buildStatus,
-      forceRestart: options?.forceRestart ?? false,
-      autoResume: options?.autoResume ?? false,
-    });
     if (!activeNodeId) {
       notify.warning('NodeId is missing.');
       return false;
@@ -335,25 +261,16 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     }
     const saved = await saveDraftBeforeBatch();
     if (!saved) {
-      console.debug(`${debugScope} startOrResume:saveDraftFailed`);
       return false;
     }
     try {
       await bridgeRef.current.initialize();
-      console.debug(`${debugScope} startOrResume:bridgeReady`);
       const payloads = await buildDownloadTaskPayloads();
       if (!payloads || payloads.length === 0) {
-        console.debug(`${debugScope} startOrResume:missingPayloads`, { nodeId: activeNodeId });
         return false;
       }
-      console.debug(`${debugScope} startOrResume:startBatch`, {
-        nodeId: activeNodeId,
-        nodeType: SHAPE_NODE_TYPE,
-        payloadCount: payloads.length,
-      });
       const policy = loadTreeConsoleSettings().buildContinuationPolicy ?? 'finish_all_stages';
       const statusResult = await bridgeRef.current.startBatchSession(SHAPE_NODE_TYPE, activeNodeId, payloads, policy);
-      console.debug(`${debugScope} startOrResume:startBatchResult`, statusResult ?? null);
       const nextStatus = statusResult.status === 'completed'
         ? 'completed'
         : statusResult.status === 'failed'

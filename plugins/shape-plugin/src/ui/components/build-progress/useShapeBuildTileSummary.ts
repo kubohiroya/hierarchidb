@@ -35,7 +35,7 @@ export const useShapeBuildTileSummary = ({
           onChange({ tileSummary: summary });
         }
       } catch (error) {
-        console.debug('[ShapeBuildStep] tile summary load failed', error);
+        void error;
       }
     };
     void loadSummary();

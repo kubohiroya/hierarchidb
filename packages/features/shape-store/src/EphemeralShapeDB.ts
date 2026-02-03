@@ -86,6 +86,14 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig, BuildSe
           }
         })
     );
+    this.version(17).stores({
+      fetchCache: '&id, nodeId, [nodeId+sourceKey]',
+      transformCache: '&id, nodeId',
+      sessions: '&nodeId',
+      tileIdToBufferRelations: '&id, nodeId, bufferId, [nodeId+bandId], [nodeId+bandId+tileId]',
+      batchTasks: '&taskId, nodeId, [nodeId+status], [nodeId+taskType]',
+      transformErrors: '&id, nodeId',
+    });
     this.tileIdToBufferRelations = this.table('tileIdToBufferRelations');
     this.buildTasks = this.table('batchTasks');
     this.fetchCache = this.table('fetchCache');
