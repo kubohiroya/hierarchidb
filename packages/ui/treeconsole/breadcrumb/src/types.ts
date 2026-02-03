@@ -2,7 +2,7 @@
  * Types for TreeConsoleBreadcrumb package
  */
 
-import type { NodeContextMenuProps } from './components/NodeContextMenu.js';
+import type { NodeContextMenuProps, OpenStepOption } from './components/NodeContextMenu.js';
 
 export interface BreadcrumbNode {
   treeNodeId?: string;
@@ -111,4 +111,9 @@ export interface TreeConsoleBreadcrumbProps {
       nextVisible?: boolean;
     },
   ) => void;
+
+  /**
+   * Optional resolver for Open-step submenu.
+   */
+  resolveOpenSteps?: (nodeId: string, nodeType: string) => Promise<OpenStepOption[]>;
 }

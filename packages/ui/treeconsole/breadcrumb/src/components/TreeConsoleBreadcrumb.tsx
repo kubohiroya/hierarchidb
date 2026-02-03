@@ -25,6 +25,7 @@ import {
   type MouseEvent,
   type ReactElement,
   useCallback,
+  useEffect,
   useState,
 } from 'react';
 import type { BreadcrumbNode, TreeConsoleBreadcrumbProps } from '../types.js';
@@ -176,6 +177,8 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
 
   const [contextMenuAnchor, setContextMenuAnchor] = useState<HTMLElement | null>(null);
   const [contextMenuNode, setContextMenuNode] = useState<BreadcrumbNode | null>(null);
+  const [openSteps, setOpenSteps] = useState<import('./NodeContextMenu.js').OpenStepOption[]>([]);
+  const [openStepsLoading, setOpenStepsLoading] = useState(false);
 
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [pendingDeleteNodeId, setPendingDeleteNodeId] = useState<string | null>(null);
@@ -241,7 +244,36 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
   const handleContextMenuClose = () => {
     setContextMenuAnchor(null);
     setContextMenuNode(null);
+    setOpenSteps([]);
   };
+
+  useEffect(() => {
+    const resolver = props.resolveOpenSteps;
+    const node = contextMenuNode;
+    if (!resolver || !contextMenuAnchor || !node) {
+      setOpenSteps([]);
+      setOpenStepsLoading(false);
+      return;
+    }
+    const nodeId = node.id ?? node.treeNodeId;
+    const nodeType = node.nodeType ?? node.type;
+    if (!nodeId || !nodeType) {
+      setOpenSteps([]);
+      return;
+    }
+    let cancelled = false;
+    setOpenStepsLoading(true);
+    void (async () => {
+      const steps = await resolver(String(nodeId), String(nodeType));
+      if (!cancelled) {
+        setOpenSteps(Array.isArray(steps) ? steps : []);
+        setOpenStepsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [contextMenuAnchor, contextMenuNode, props.resolveOpenSteps]);
 
   const handleCreate = (type: string) => {
     if (contextMenuNode && onContextAction) {
@@ -502,6 +534,13 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
             contextMenuNode || undefined
           )
         }
+        onOpenStep={(step) => {
+          if (contextMenuNode && onContextAction) {
+            onContextAction(`open-step:${step}`, contextMenuNode, { source: 'breadcrumb' });
+          }
+        }}
+        openSteps={openSteps}
+        openStepsLoading={openStepsLoading}
         onToggleVisible={(nextVisible) => {
           if (contextMenuNode && onContextAction) {
             onContextAction('toggle-visibility', contextMenuNode, { source: 'breadcrumb', nextVisible });

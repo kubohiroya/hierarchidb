@@ -60,6 +60,8 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
     buildTargetLoading,
     canPreview,
     previewGuardLoading,
+    openSteps,
+    openStepsLoading,
   } = useTreeNodeInfoPanel({ treeId, node, onContextMenuAction });
   const isVisible = currentNode?.visible !== false;
   const parentNodeId = currentNode?.parentId;
@@ -244,8 +246,11 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
         canRemove={canMutate}
         canBuild={isBuildable}
         canPreview={canPreview && !previewGuardLoading}
+        openSteps={openSteps}
+        openStepsLoading={openStepsLoading}
         onOpen={() => handleContextMenuTrigger('navigate')}
         onOpenFolder={() => handleContextMenuTrigger('navigate')}
+        onOpenStep={(step: number) => handleContextMenuTrigger(`open-step:${step}`)}
         onPreview={() => handleContextMenuTrigger('preview')}
         onBuild={handleBuild}
         onEdit={() => handleContextMenuTrigger('edit')}

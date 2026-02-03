@@ -4,7 +4,7 @@
  */
 
 import type { TreeNode } from '@hierarchidb/tree-api';
-import type { NodeContextMenuProps } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import type { NodeContextMenuProps, OpenStepOption } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { useEffect, useState, type ComponentType } from 'react';
 import type { TreeNodeInUI, TreeTableController } from '../../types.js';
 
@@ -34,6 +34,8 @@ export function TreeTableContextMenu({
   const open = Boolean(contextMenuState.anchorEl) || Boolean(contextMenuState.anchorPosition);
   const [previewGuardState, setPreviewGuardState] = useState<{ canOpen: boolean } | null>(null);
   const [previewGuardLoading, setPreviewGuardLoading] = useState(false);
+  const [openSteps, setOpenSteps] = useState<OpenStepOption[]>([]);
+  const [openStepsLoading, setOpenStepsLoading] = useState(false);
 
   useEffect(() => {
     if (!open || !node) {
@@ -54,6 +56,32 @@ export function TreeTableContextMenu({
       if (cancelled) return;
       setPreviewGuardState(guard);
       setPreviewGuardLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [controller, node, open]);
+
+  useEffect(() => {
+    if (!open || !node) {
+      setOpenSteps([]);
+      setOpenStepsLoading(false);
+      return;
+    }
+    const resolver = controller?.resolveOpenSteps;
+    if (!resolver) {
+      setOpenSteps([]);
+      setOpenStepsLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setOpenStepsLoading(true);
+    void (async () => {
+      const steps = await resolver(node as TreeNodeInUI);
+      if (!cancelled) {
+        setOpenSteps(Array.isArray(steps) ? steps : []);
+        setOpenStepsLoading(false);
+      }
     })();
     return () => {
       cancelled = true;
@@ -162,6 +190,14 @@ export function TreeTableContextMenu({
         }
         handleClose();
       }}
+      onOpenStep={(step) => {
+        if (node) {
+          triggerContextAction(`open-step:${step}`, { source: 'treetable' });
+        }
+        handleClose();
+      }}
+      openSteps={openSteps}
+      openStepsLoading={openStepsLoading}
       onPreview={() => {
         if (node) {
           triggerContextAction('preview', { source: 'treetable' });

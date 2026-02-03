@@ -27,7 +27,7 @@
               },
               "transformConfig": {
                 "zoomBandBoundaries": [
-                  0,
+                  2,
                   3,
                   6
                 ],

@@ -13,7 +13,7 @@ const t = (key: string, defaultValue: string) =>
 
 registry.registerConfigProvider({
   nodeType: SPREADSHEET_NODE_TYPE,
-  getCreateStepConfigs(): PluginStepConfig<SpreadsheetEntity>[] {
+  getCreateStepConfigs(): ReadonlyArray<PluginStepConfig<SpreadsheetEntity>> {
     return [
       {
         id: 'data-source',
@@ -39,7 +39,7 @@ registry.registerConfigProvider({
       },
     ];
   },
-  getEditStepConfigs(): PluginStepConfig<SpreadsheetEntity>[] {
+  getEditStepConfigs(): ReadonlyArray<PluginStepConfig<SpreadsheetEntity>> {
     return this.getCreateStepConfigs();
   },
 });

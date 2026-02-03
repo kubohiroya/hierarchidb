@@ -34,6 +34,7 @@ export type ContextAction =
   | 'export'
   | 'trash'
   | 'toggle-visibility'
+  | `open-step:${number}`
   | `create:${string}`;
 
 export interface UseTreeConsoleIntegrationParams {

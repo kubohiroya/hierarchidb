@@ -74,9 +74,14 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
     } else if (node.nodeType in emptyDraftDataByType) {
       draftData = { ...emptyDraftDataByType[node.nodeType] };
     } else {
-      throw new Error(
-        `[TreeNodeUpdaterService] draftData/data missing for node ${String(node.id ?? node.nodeType)}`
-      );
+      if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+        console.warn(
+          `[TreeNodeUpdaterService] draftData/data missing for node ${String(
+            node.id ?? node.nodeType
+          )}; using empty draftData`
+        );
+      }
+      draftData = {};
     }
     const dialogUIState =
       (node as { dialogUIState?: DialogUIState | null }).dialogUIState ?? this.defaultDialogUIState;

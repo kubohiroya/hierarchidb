@@ -160,6 +160,8 @@
     "react-draggable": "^4.5.0",
     "react-i18next": "12.3.1",
     "react-resizable": "^3.0.5",
+    "rollup": "4.50.1",
+    "rollup-plugin-dts": "^6.3.0",
     "searoute-js": "^0.1.0",
     "storybook": "7.6.20",
     "ts-morph": "^26.0.0",

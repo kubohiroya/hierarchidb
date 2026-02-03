@@ -73,7 +73,7 @@ export function createTestBatchConfig(): BatchConfig {
       deleteOnComplete: false,
     },
     transformConfig: {
-      zoomBandBoundaries: [0, 3, 6],
+      zoomBandBoundaries: [1, 2, 3, 6],
       maxConcurrent: 2,
       enableFeatureFiltering: true,
       featureAreaThreshold: 0.05,

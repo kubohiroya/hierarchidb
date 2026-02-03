@@ -4,7 +4,7 @@
 
 import type { NodeId } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
-import type { NodeContextMenuProps } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import type { NodeContextMenuProps, OpenStepOption } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import type { DualKeyMap } from '@hierarchidb/util';
 import type { RowSelectionState } from '@tanstack/react-table';
 import type { MouseEvent, ReactNode } from 'react';
@@ -67,6 +67,7 @@ export interface TreeTableController {
   resolvePreviewGuardState?: (
     node: TreeNodeInUI
   ) => Promise<{ canOpen: boolean; finalStepIndex?: number }>;
+  resolveOpenSteps?: (node: TreeNodeInUI) => Promise<OpenStepOption[]>;
 }
 
 // TreeTable core props

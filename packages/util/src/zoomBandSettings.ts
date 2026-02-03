@@ -1,8 +1,8 @@
-export const ZOOM_BAND_MIN_ZOOM = 0;
+export const ZOOM_BAND_MIN_ZOOM = 1;
 export const ZOOM_BAND_MAX_ZOOM = 11;
 export const ZOOM_BAND_MIN_RANGES = 1;
 export const ZOOM_BAND_MAX_RANGES = 10;
-export const DEFAULT_ZOOM_BAND_BOUNDARIES = [0, 3, 6];
+export const DEFAULT_ZOOM_BAND_BOUNDARIES = [1, 2, 3, 6];
 
 export type ZoomBandRange = {
   min: number;

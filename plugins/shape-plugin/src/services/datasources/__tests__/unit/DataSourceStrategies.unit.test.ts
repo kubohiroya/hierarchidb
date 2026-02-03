@@ -60,7 +60,7 @@ const minimalBatchConfig = {
   },
   transformConfig: {
     workers: 1,
-    zoomBandBoundaries: [0, 3, 6],
+    zoomBandBoundaries: [1, 2, 3, 6],
     tolerance: 0.01,
     featureFilterMethod: 'hybrid' as const,
     areaThreshold: 1,

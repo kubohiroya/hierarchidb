@@ -45,12 +45,14 @@
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts src/ui/index.ts src/worker/index.ts src/icon/index.ts --config ../../tsdown.config.ts && node ../../scripts/normalize-dts.mjs",
+    "build": "pnpm build:js && pnpm build:dts",
     "typecheck": "tsc --noEmit --project tsconfig.json",
     "test": "pnpm vitest",
     "test:run": "pnpm vitest run",
     "clean": "rm -rf dist",
-    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
+    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
+    "build:dts": "rollup -c rollup.dts.config.mjs",
+    "build:js": "tsdown src/index.ts src/ui/index.ts src/worker/index.ts src/icon/index.ts --config ../../tsdown.config.ts"
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
@@ -77,7 +79,8 @@
     "react": ">=18.0.0",
     "flatgeobuf": "^4.4.0",
     "shpjs": "^6.2.0",
-    "@hierarchidb/auth-api": "workspace:*"
+    "@hierarchidb/auth-api": "workspace:*",
+    "@hierarchidb/ui-i18n": "workspace:*"
   },
   "devDependencies": {
     "@hierarchidb/chunk-store": "workspace:*",
@@ -95,7 +98,11 @@
     "vitest": "^3.2.4",
     "flatgeobuf": "^4.4.0",
     "shpjs": "^6.2.0",
-    "@hierarchidb/auth-api": "workspace:*"
+    "@hierarchidb/auth-api": "workspace:*",
+    "@hierarchidb/ui-i18n": "workspace:*"
   },
-  "dependencies": {}
+  "dependencies": {},
+  "tsdown": {
+    "dts": false
+  }
 }

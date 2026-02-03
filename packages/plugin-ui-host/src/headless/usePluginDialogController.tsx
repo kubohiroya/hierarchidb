@@ -333,6 +333,34 @@ export function usePluginDialogController(
     },
   });
 
+  const buildDialogUIStateForCommit = useCallback(
+    (forcedActiveStepIndex?: number): DialogUIState => {
+      const base = getPersistableDialogUIState() ?? dialogUIStateRef.current ?? {};
+      if (typeof forcedActiveStepIndex !== 'number' || Number.isNaN(forcedActiveStepIndex)) {
+        return base;
+      }
+      return {
+        ...base,
+        dialogProgress: {
+          activeStepIndex: toPersistedStepIndex(forcedActiveStepIndex),
+        },
+      };
+    },
+    [getPersistableDialogUIState, dialogUIStateRef, toPersistedStepIndex]
+  );
+
+  const buildDialogUIStateForPersist = useCallback((): DialogUIState => {
+    const base = getPersistableDialogUIState() ?? dialogUIStateRef.current ?? {};
+    const existingProgress = dialogUIStateRef.current?.dialogProgress?.activeStepIndex;
+    if (typeof existingProgress !== 'number' || Number.isNaN(existingProgress)) {
+      return {
+        ...base,
+        dialogProgress: null,
+      };
+    }
+    return base;
+  }, [getPersistableDialogUIState, dialogUIStateRef]);
+
   const draftDataWithoutMeta = useMemo<Partial<PluginDefinedEntity>>(
     () => (toRecord(draft?.draftData ?? null) as Partial<PluginDefinedEntity>) ?? {},
     [draft?.draftData]
@@ -705,7 +733,7 @@ export function usePluginDialogController(
           tags: basicInfo.tags,
         },
         draftData: nodeType === 'folder' ? null : (normalizedData ?? null),
-        dialogUIState: getPersistableDialogUIState(),
+        dialogUIState: buildDialogUIStateForCommit(activeStepIndex),
       };
       const savedNodeId = await commitTreeNodeUpdater('save', savePayload);
       const targetId = (savedNodeId ?? treeUpdater?.treeNodeId ?? nodeId) as NodeId;
@@ -717,10 +745,11 @@ export function usePluginDialogController(
     basicInfo.description,
     basicInfo.name,
     basicInfo.tags,
+    activeStepIndex,
+    buildDialogUIStateForCommit,
     commitTreeNodeUpdater,
     dialogData,
     ensureNoConflict,
-    getPersistableDialogUIState,
     navigateToNode,
     nodeType,
     onClose,
@@ -749,7 +778,7 @@ export function usePluginDialogController(
           description: basicInfo.description,
           tags: basicInfo.tags,
         },
-        dialogUIState: getPersistableDialogUIState(),
+        dialogUIState: buildDialogUIStateForCommit(activeStepIndex),
       };
       await commitTreeNodeUpdater('save-draft', draftPayload);
       const targetId = (pageNodeId ?? nodeId) as NodeId;
@@ -762,13 +791,14 @@ export function usePluginDialogController(
     updateLocalDraft,
     treeUpdater?.treeNodeId,
     treeUpdater?.draftMetadata,
+    activeStepIndex,
+    buildDialogUIStateForCommit,
     nodeId,
     nodeType,
     dialogData,
     basicInfo.name,
     basicInfo.description,
     basicInfo.tags,
-    getPersistableDialogUIState,
     commitTreeNodeUpdater,
     pageNodeId,
     navigateToNode,
@@ -917,7 +947,7 @@ export function usePluginDialogController(
         treeNodeId,
         draftMetadata: treeUpdater?.draftMetadata ?? null,
         draftData: nodeType === 'folder' ? null : (treeUpdater?.draftData ?? null),
-        dialogUIState: getPersistableDialogUIState(),
+        dialogUIState: buildDialogUIStateForPersist(),
       };
       await commitTreeNodeUpdater('save-draft', payload);
     } catch (error) {
@@ -926,7 +956,7 @@ export function usePluginDialogController(
   }, [
     commitTreeNodeUpdater,
     dialogMode,
-    getPersistableDialogUIState,
+    buildDialogUIStateForPersist,
     nodeId,
     nodeType,
     treeUpdater?.draftData,

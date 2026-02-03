@@ -360,7 +360,7 @@ describe('Shape WorkerProvider full flow', () => {
         dataSourceName: 'geoboundaries',
         transformConfig: {
           ...DEFAULT_BUILD_CONFIG.transformConfig,
-          zoomBandBoundaries: [0, 4],
+          zoomBandBoundaries: [1, 2, 4],
           tolerance: 1,
         },
       };

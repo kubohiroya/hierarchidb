@@ -7,6 +7,7 @@ import type { Remote } from 'comlink';
 import { useCallback, useMemo, useState } from 'react';
 import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration.ts';
 import { resolvePreviewGuardState } from '~/hooks/treeconsole/actions/dialog.ts';
+import { resolveOpenStepsForNode } from '~/hooks/treeconsole/resolveOpenSteps.ts';
 import { resolveDeveloperMode } from '~/utils/developerMode.ts';
 import { canImportFromNode } from './treeConsoleIntegrationUtils.js';
 import { useIndexedDbReset } from './useIndexedDbReset.js';
@@ -213,6 +214,22 @@ export function useTreeConsoleIntegrationInner({
     [actions, pageNodeId, treeId]
   );
 
+  const resolveOpenSteps = useCallback(
+    async (nodeId: string, nodeType: string) => {
+      const resolvedId = nodeId as NodeId;
+      const indexedNode =
+        (nodeIndex?.get(resolvedId) as TreeNode | undefined) ??
+        (pageTreeNode && String(pageTreeNode.id) === String(resolvedId) ? pageTreeNode : undefined);
+      return resolveOpenStepsForNode({
+        nodeId: resolvedId,
+        nodeType,
+        node: indexedNode ?? null,
+        client: client ?? null,
+      });
+    },
+    [client, nodeIndex, pageTreeNode]
+  );
+
   const availableTemplateOptions = useMemo(
     () =>
       treeId === 'r'
@@ -320,6 +337,7 @@ export function useTreeConsoleIntegrationInner({
     canGoForward: state.canGoForward,
     onContextMenuAction: handleContextMenuAction,
     resolvePreviewGuardState: resolvePreviewGuardStateForNode,
+    resolveOpenSteps,
     onBreadcrumbContextAction: handleBreadcrumbContextAction,
     onMoveNodes: actions.handleMoveNodes,
     useTrashColumns: isTrashPage,
@@ -336,6 +354,7 @@ export function useTreeConsoleIntegrationInner({
     useTrashColumns: isTrashPage,
     iconInteractive: !isTrashPage,
     onContextAction: handleBreadcrumbContextAction,
+    resolveOpenSteps,
   } as TreeConsoleBreadcrumbProps;
 
   const infoPanelProps: TreeNodeInfoPanelProps = {

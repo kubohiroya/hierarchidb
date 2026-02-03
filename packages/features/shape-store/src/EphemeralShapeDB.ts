@@ -70,8 +70,8 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig, BuildSe
 
   constructor() {
     super(getDBName('shape-ephemeral'));
-    this.version(15).stores({
-      fetchCache: '&id, nodeId',
+    this.version(16).stores({
+      fetchCache: '&id, nodeId, [nodeId+sourceKey]',
       transformCache: '&id, nodeId',
       sessions: '&nodeId',
       tileIdToBufferRelations: '&id, nodeId, bufferId',

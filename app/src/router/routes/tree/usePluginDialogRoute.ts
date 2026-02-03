@@ -68,14 +68,6 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
     return Number.isFinite(parsed) && parsed >= 1 ? String(parsed) : null;
   }, [location.hash, location.pathname, params.step]);
 
-  const initialStepRef = useRef<number | null>(null);
-  const forceInitialStepRef = useRef<boolean | null>(null);
-
-  useEffect(() => {
-    initialStepRef.current = null;
-    forceInitialStepRef.current = null;
-  }, []);
-
   const parsedStep = useMemo(() => {
     if (stepParam !== null && stepParam !== undefined) {
       const n = parseInt(stepParam, 10);
@@ -128,15 +120,9 @@ export function usePluginDialogRoute(data: PluginDialogLoaderData) {
     returnToParam,
   ]);
 
-  if (initialStepRef.current === null) {
-    initialStepRef.current = parsedStep;
-  }
-  if (forceInitialStepRef.current === null) {
-    forceInitialStepRef.current = stepParam !== null && parsedStep > 1;
-  }
-  const currentStep = initialStepRef.current ?? parsedStep;
+  const currentStep = parsedStep;
   const requestedAction = params.action?.toLowerCase() ?? '';
-  const forceInitialStep = (forceInitialStepRef.current ?? false) || requestedAction === 'preview';
+  const forceInitialStep = stepParam !== null || requestedAction === 'preview';
 
   const mode: 'create' | 'edit' | 'preview' =
     requestedAction === 'preview'

@@ -13368,6 +13368,79 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - update: 2026-02-02 12:34 JST pnpm --filter @hierarchidb/route-plugin build exit 0（define warningあり）。
   - update: 2026-02-02 12:34 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
   - update: 2026-02-02 12:34 JST pnpm --filter @hierarchidb/app typecheck exit 0（plugin-base build define warningあり）。
+  - update: 2026-02-02 12:47 JST scripts/normalize-dts.mjs を撤去し、各 plugin build から参照を削除。
+  - update: 2026-02-02 12:47 JST pnpm --filter @hierarchidb/location-plugin build exit 0（define warningあり）。
+  - update: 2026-02-02 12:47 JST pnpm --filter @hierarchidb/route-plugin build exit 0（define warningあり）。
+  - update: 2026-02-02 12:47 JST pnpm --filter @hierarchidb/shape-plugin build exit 0（define warningあり）。
+  - update: 2026-02-02 12:47 JST pnpm --filter @hierarchidb/spreadsheet-plugin build exit 0（define warningあり）。
+  - start: 2026-02-02 13:10 JST plugins/*-plugin の rolldown-vite 移行適合性を調査。
+  - update: 2026-02-02 15:33 JST rollup/rollup-plugin-dts を workspace に追加。
+  - update: 2026-02-02 15:33 JST spreadsheet-plugin に rollup.dts.config.mjs を追加し build:dts を導入（tsdown dts を無効化）。
+  - update: 2026-02-02 15:33 JST pnpm --filter @hierarchidb/spreadsheet-plugin build を実行（tsdown define warning と rollup-plugin-dts の @hierarchidb/ui-i18n unresolved 警告あり）。
+  - update: 2026-02-02 15:39 JST @hierarchidb/ui-i18n から i18n を export し build を実行。
+  - update: 2026-02-02 15:39 JST spreadsheet-plugin に @hierarchidb/ui-i18n を peer/dev 追加し build を再実行（tsdown の MISSING_EXPORT は解消、rollup-plugin-dts の unresolved 警告は継続）。
+  - update: 2026-02-02 18:39 JST AGENTS.md のバンドル方針を JS は tsdown / d.ts は別経路可に更新。
+  - update: 2026-02-02 18:43 JST plugins/*-plugin の build を build:js/build:dts に分割し rollup.dts.config.mjs を追加。
+  - update: 2026-02-02 18:43 JST turbo.json に build:js/build:dts タスクを追加。
+  - update: 2026-02-02 18:43 JST pnpm --filter @hierarchidb/spreadsheet-plugin build exit 0（tsdown define warning と rollup dts の unused external 警告あり）。
+  - update: 2026-02-02 19:05 JST route-plugin に src/worker/factory/index.ts を追加して build:dts の entry を解消。
+  - update: 2026-02-02 19:05 JST pnpm --filter @hierarchidb/route-plugin build exit 0（tsdown define warning と MISSING_EXPORT/unused external 警告あり）。
+  - start: 2026-02-02 19:12 JST location/shape plugin build の確認に着手。
+  - update: 2026-02-02 19:22 JST location/shape の rollup.dts.config.mjs を実在 entry に合わせて修正。
+  - update: 2026-02-02 19:26 JST pnpm --filter @hierarchidb/location-plugin build exit 0（tsdown define/MISSING_EXPORT 警告と rollup dts の unused external 警告あり）。
+  - update: 2026-02-02 19:27 JST pnpm --filter @hierarchidb/shape-plugin build exit 0（tsdown define/MISSING_EXPORT 警告と rollup dts の unused external/empty chunk 警告あり）。
+  - done: 2026-02-02 19:27 JST location/shape plugin build:dts の entry 不一致を解消し build を再確認。
+  - start: 2026-02-02 19:34 JST MISSING_EXPORT 警告の解消（ui-worker-provider/spreadsheet-store など）に着手。
+  - update: 2026-02-02 19:39 JST spreadsheet-plugin index の type-only export を明示。
+  - update: 2026-02-02 19:50 JST spreadsheet-plugin の SpreadsheetEntity type を type alias に変更。
+  - update: 2026-02-02 20:04 JST ui-worker-provider の useWorkerAPI を const export 化。
+  - update: 2026-02-02 20:04 JST ui-i18n の i18n を const export 化。
+  - update: 2026-02-02 20:04 JST spreadsheet-plugin の createPluginTabularApi を明示 export。
+  - update: 2026-02-02 20:12 JST ui-worker-provider/ui-i18n/spreadsheet-plugin を再ビルド（define 警告あり、exit 0）。
+  - update: 2026-02-02 20:14 JST location/shape plugin build を再実行（MISSING_EXPORT は useWorkerAPI/i18n/createPluginTabularApi が継続）。
+  - blocked: 2026-02-02 20:14 JST tsdown の MISSING_EXPORT が export list で解消せず（dist に export があるのに警告継続）。
+  - update: 2026-02-02 20:26 JST location-plugin に ui-worker-provider/spreadsheet-plugin を peer/dev 追加。
+  - update: 2026-02-02 20:26 JST shape-plugin に ui-i18n を peer/dev 追加。
+  - update: 2026-02-02 20:30 JST location/shape plugin build を再実行（MISSING_EXPORT 解消、define/unused external 警告のみ）。
+  - done: 2026-02-02 20:30 JST MISSING_EXPORT の原因を dependency/peer 未登録による外部化漏れと判断。
+  - start: 2026-02-02 20:38 JST shape fetchCache の nodeId+sourceKey index 警告対応に着手。
+  - update: 2026-02-02 20:40 JST EphemeralShapeDB の fetchCache に nodeId+sourceKey index を追加（version 16）。
+  - update: 2026-02-02 20:43 JST pnpm --filter @hierarchidb/shape-store build exit 0（define 警告あり）。
+  - update: 2026-02-02 20:43 JST pnpm --filter @hierarchidb/shape-plugin build exit 0（define/unused external/empty chunk 警告あり）。
+  - done: 2026-02-02 20:43 JST fetchCache の nodeId+sourceKey index 警告対応を完了。
+  - start: 2026-02-02 20:49 JST resolver-plugin の rollup.dts entry 不一致を解消。
+  - update: 2026-02-02 20:53 JST resolver-plugin の rollup/build:js から worker entry を除外。
+  - update: 2026-02-02 20:55 JST pnpm --filter @hierarchidb/resolver-plugin build exit 0（define/MISSING_EXPORT/unused external 警告あり）。
+  - done: 2026-02-02 20:55 JST resolver-plugin の rollup dts entry 不一致を解消。
+  - start: 2026-02-02 21:01 JST resolver-plugin の exports/typesVersions から worker を除外。
+  - update: 2026-02-02 21:04 JST resolver-plugin exports/typesVersions から worker を削除。
+  - update: 2026-02-02 21:04 JST pnpm --filter @hierarchidb/resolver-plugin build exit 0（define/MISSING_EXPORT/unused external 警告あり）。
+  - done: 2026-02-02 21:04 JST resolver-plugin の exports/typesVersions を実装と整合。
+  - start: 2026-02-02 21:09 JST timeline-plugin の rollup.dts entry 不一致を解消。
+  - update: 2026-02-02 21:12 JST timeline-plugin の rollup/build/exports から worker entry を除外。
+  - update: 2026-02-02 21:14 JST pnpm --filter @hierarchidb/timeline-plugin build exit 0（define/MISSING_EXPORT/unused external 警告あり）。
+  - done: 2026-02-02 21:14 JST timeline-plugin の rollup dts entry 不一致を解消。
+  - start: 2026-02-02 21:19 JST timeline-plugin に ui-i18n を peer/dev 追加して MISSING_EXPORT を解消。
+  - update: 2026-02-02 21:21 JST timeline-plugin に ui-i18n を peer/dev 追加。
+  - update: 2026-02-02 21:21 JST pnpm --filter @hierarchidb/timeline-plugin build exit 0（define/unused external 警告あり）。
+  - done: 2026-02-02 21:21 JST timeline-plugin の MISSING_EXPORT を解消。
+  - start: 2026-02-02 21:27 JST basemap-plugin の rollup.dts entry 不一致を解消。
+  - update: 2026-02-02 21:31 JST basemap-plugin の rollup/build/exports から worker/services database を除外。
+  - update: 2026-02-02 21:34 JST basemap-plugin に ui-i18n を peer/dev 追加。
+  - update: 2026-02-02 21:36 JST pnpm --filter @hierarchidb/basemap-plugin build exit 0（define/unused external 警告あり）。
+  - done: 2026-02-02 21:36 JST basemap-plugin の rollup dts entry 不一致を解消。
+  - start: 2026-02-02 21:41 JST styler-plugin の rollup.dts entry 不一致を解消。
+  - update: 2026-02-02 21:44 JST styler-plugin の rollup/build/exports から worker/common shared を除外。
+  - update: 2026-02-02 21:47 JST styler-plugin に ui-i18n を peer/dev 追加。
+  - update: 2026-02-02 21:49 JST pnpm --filter @hierarchidb/styler-plugin build exit 0（define/empty chunk 警告あり）。
+  - done: 2026-02-02 21:49 JST styler-plugin の rollup dts entry 不一致を解消。
+  - start: 2026-02-02 21:58 JST plugin-ui-host の DialogUIState null エラー修正に着手。
+  - update: 2026-02-02 22:01 JST buildDialogUIStateForCommit/forPersist を null 非許容に修正。
+  - update: 2026-02-02 22:01 JST pnpm --filter @hierarchidb/plugin-ui-host typecheck exit 0 を確認。
+  - done: 2026-02-02 22:01 JST DialogUIState の null エラーを解消。
+  - update: 2026-02-02 19:14 JST pnpm --filter @hierarchidb/location-plugin build を実行（build:dts で src/worker/locationRelationStore.dexie.ts が見つからず exit 1）。
+  - update: 2026-02-02 19:16 JST pnpm --filter @hierarchidb/shape-plugin build を実行（build:dts で src/common/shared/index.ts が見つからず exit 1）。
+  - blocked: 2026-02-02 19:16 JST rollup.dts.config.mjs の entry に存在しないパスがあり build:dts が失敗。
 
 2483) fix/location-db/doc-alignment (P2) — 完了 (2026-02-02 09:04 JST)
 - ブランチ名: fix/location-db/doc-alignment
@@ -13417,3 +13490,70 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - start: 2026-02-02 09:20 JST steps-provider.tsx の readonly 配列エラー修正に着手。
   - update: 2026-02-02 09:22 JST steps-provider の戻り型を ReadonlyArray へ修正。
   - done: 2026-02-02 09:22 JST pnpm --filter @hierarchidb/spreadsheet-plugin typecheck exit 0 を確認。
+
+2486) fix/shape/skip-z0-z1-tiles (P1) — 進行中 (2026-02-02)
+- ブランチ名: fix/shape/skip-z0-z1-tiles
+- 依存: なし
+- 受け入れ基準: 共通ズーム帯/shape ズーム帯の最小値が z2 となり、既定の境界が [2, 3, 6] に更新される／z0/z1 のタイル生成が行われない（band0 は z2 のみ）／関連テスト・設定が整合する／必要範囲の typecheck/build が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/util/src/zoomBandSettings.ts`, `packages/util/src/treeConsoleSettings.ts`, `plugins/shape-plugin/src/services/utils/utils.ts`, `plugins/shape-plugin/src/services/vt/shapePipelineShared.ts`, `plugins/shape-plugin/src/common/types/constants.ts`, `app/src/contexts/__tests__/shape-workerprovider.full-flow.test.tsx`（必要に応じて追加）
+- ロールバック手順: 変更したズーム関連定数・設定を元に戻し、z0/z1 が含まれる既定値へ復帰する
+- チェックリスト:
+  - 共通ズーム率の既定値と最小ズームを z2 起点に更新する
+  - shape build のバンド生成/バリデーションが z2 以降に整合するよう調整する
+  - 影響するテスト/テンプレートの境界値を更新する
+  - 必要範囲の typecheck/build を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-02 21:10 JST shape build の z0/z1 タイル生成停止に向けた共通ズーム率設定の調整に着手。
+  - update: 2026-02-02 21:15 JST ZOOM_BAND_MIN_ZOOM を 2 に固定し、DEFAULT_ZOOM_BAND_BOUNDARIES を [2, 3, 6] に更新。
+  - update: 2026-02-02 21:15 JST shape/app のテストとテンプレートの zoomBandBoundaries を z2 起点に更新。
+  - update: 2026-02-02 21:24 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - update: 2026-02-02 21:26 JST pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define warning あり）を確認。
+  - done: 2026-02-02 21:26 JST z2 起点の共通ズーム帯と既定境界 [2, 3, 6] への更新を完了。
+
+2487) fix/shape/processing-step4-next (P1) — 進行中 (2026-02-02)
+- ブランチ名: fix/shape/processing-step4-next
+- 依存: なし
+- 受け入れ基準: 処理設定ステップで Next が無効になる原因（zoomBandBoundaries の旧値/未正規化）が解消され、デフォルト状態で Next が有効になる／変更内容とロールバック手順を記録する／必要範囲の typecheck/build が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-config/useShapeBuildConfigStep.ts`（必要に応じて追加）
+- ロールバック手順: useShapeBuildConfigStep の正規化ロジックを差し戻し、既存の buildConfig 統合のみへ戻す
+- チェックリスト:
+  - buildConfig の zoomBandBoundaries を min/max に合わせて正規化する
+  - 正規化が data.buildConfig に反映されることを確認する
+  - 必要範囲の typecheck/build を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-02 21:40 JST 処理設定ステップの Next が無効になる問題の原因調査に着手。
+  - update: 2026-02-02 21:43 JST useShapeBuildConfigStep で zoomBandBoundaries を min/max に正規化し data へ反映するよう修正。
+ - update: 2026-02-02 21:45 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+ - done: 2026-02-02 21:45 JST 処理設定ステップの Next 無効化を正規化で解消。
+
+2488) fix/ui-treeconsole/open-step-priority (P1) — 進行中 (2026-02-02)
+- ブランチ名: fix/ui-treeconsole/open-step-priority
+- 依存: なし
+- 受け入れ基準: URL の step 指定が永続化 activeStepIndex より優先される／「開いただけ」では永続化 activeStepIndex を上書きしない（ナビゲーション/Save/SaveDraft 時のみ更新）／コンテキストメニューの Open が Step1..StepN のサブメニューとなり未到達ステップは disabled／ぱんくず・TreeNodeInfoPanel・TreeTable のアイコンから同様に選択できる／必要範囲の typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/routes/tree/usePluginDialogRoute.ts`, `packages/plugin-ui-host/src/headless/usePluginDialogController.tsx`, `packages/ui/treeconsole/breadcrumb/src/components/NodeContextMenu.tsx`, `packages/ui/treeconsole/breadcrumb/src/components/TreeConsoleBreadcrumb.tsx`, `packages/ui/treeconsole/treetable/src/components/internal/TreeTableContextMenu.tsx`, `packages/ui/treeconsole/base/src/components/TreeConsolePanel.tsx`, `app/src/hooks/treeconsole/resolveOpenSteps.ts`, `app/src/router/pages/tree/console/useTreeConsoleIntegrationInner.ts`, `app/src/router/pages/tree/console/useTreeNodeInfoPanel.ts`, `app/src/hooks/treeconsole/actions/contextMenu.ts`, `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx`（必要に応じて追加）
+- ロールバック手順: 追加した open-step ハンドリングと URL 優先ロジックを revert し、既存の activeStepIndex 優先・Open 単一アクションへ戻す
+- チェックリスト:
+  - URL step 指定時に initial step を優先し、永続化の上書きを抑制する
+  - Open サブメニューの step 選択と disabled 判定を実装する
+  - ぱんくず/TreeNodeInfoPanel/TreeTable の各アイコンで step 選択を提供する
+  - 必要範囲の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-02 22:05 JST URL step 優先と Open サブメニュー化の実装に着手。
+  - update: 2026-02-02 22:40 JST URL step 優先/永続化抑制の調整、Open ステップサブメニューと open-step アクション導線、step 到達判定の解決処理を追加。
+  - update: 2026-02-02 22:41 JST pnpm --filter @hierarchidb/ui-treeconsole-breadcrumb build を実行（tsdown define 警告あり、exit 0）。
+  - update: 2026-02-02 22:44 JST pnpm --filter @hierarchidb/app typecheck を実行（tsdown define 警告あり、exit 0）。
+  - update: 2026-02-02 23:05 JST URL 変更時の step/mode 同期を追加し、usePluginDialogRoute の step 固定化を撤去。
+  - update: 2026-02-02 23:08 JST pnpm --filter @hierarchidb/app typecheck を実行（tsdown define 警告あり、exit 0）。
+  - update: 2026-02-02 23:12 JST ui-treeconsole-base の resolveOpenSteps 型エラーを修正、pnpm --filter @hierarchidb/ui-treeconsole-base typecheck exit 0 を確認。
+  - update: 2026-02-02 23:20 JST TreeNodeUpdaterService が draftData/data 欠損時に空データへフォールバックするよう調整、pnpm --filter @hierarchidb/runtime-worker typecheck exit 0 を確認。
+  - update: 2026-02-02 23:28 JST navigate アクションを処理し、Open ステップ解決で全プラグイン読み込み再試行を追加。
+  - update: 2026-02-02 23:31 JST pnpm --filter @hierarchidb/app typecheck を実行（tsdown define 警告あり、exit 0）。
+  - update: 2026-02-02 23:37 JST resolveOpenSteps で nodeType が folder 判定される場合に node 側の nodeType を優先するよう調整。pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-02-02 23:45 JST resolveOpenSteps の nodeType 判定を DB から取得した node を優先するよう変更。pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-02-02 23:52 JST resolveOpenSteps の nodeType 判定に node.type をフォールバックとして追加。pnpm --filter @hierarchidb/app typecheck exit 0（tsdown define 警告あり）。
+  - update: 2026-02-03 00:05 JST resolveOpenSteps の nodeType 判定は param の非フォルダ値を優先するよう修正（node.type フォールバックは撤去済み）。
+  - update: 2026-02-03 00:12 JST Open ステップの非同期解決中でもサブメニューが出るよう、openStepsLoading を導入して Loading 表示を追加。
+  - done: 2026-02-02 23:08 JST URL step 優先、永続化抑制、Open の Step サブメニュー化を完了。

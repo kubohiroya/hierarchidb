@@ -175,6 +175,17 @@ export function useDialogFrameState({
     };
   }, [isBrowser, readDialogPathState]);
 
+  useEffect(() => {
+    if (!isBrowser || !forceInitialStep) return;
+    const { mode, step } = readDialogPathState();
+    const parsedMode = parseDisplayMode(mode);
+    const fallbackStep = Math.max(initialStep, 1);
+    setUrlState((prev) => ({
+      mode: parsedMode ?? prev.mode,
+      step: step ?? fallbackStep,
+    }));
+  }, [forceInitialStep, initialStep, isBrowser, readDialogPathState]);
+
   const [activeStepIndex, setActiveStepIndex] = useState(toInternalStepIndex(initialStep));
   useEffect(() => {
     if (typeof urlStep === 'number') {

@@ -7,7 +7,7 @@ import type { TreeTableColumn } from './TreeTable/index.js';
 import { toNodeType, type NodeId, type NodeType } from '@hierarchidb/core-types';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { type TreeNodeInUI, type TreeTableController, TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
-import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import { TreeConsoleBreadcrumb, type OpenStepOption } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { TreeConsoleFooter } from './TreeConsoleFooter.js';
 import type { HierarchicalTreeNode } from '../types/index.js';
 import { DualKeyMap } from '@hierarchidb/util';
@@ -112,6 +112,7 @@ export interface TreeConsolePanelProps {
       nextVisible?: boolean;
     }
   ) => void;
+  readonly resolveOpenSteps?: (nodeId: string, nodeType: string) => Promise<OpenStepOption[]>;
   readonly onStartTour?: () => void;
   readonly onMoveNodes?: (nodeIds: string[], targetParentId: string) => void;
   /** Optional: For column-width persistence, provide treeId to scope keys */
@@ -252,6 +253,13 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       resolvePreviewGuardState: resolvePreviewGuardState
         ? (node: TreeNodeInUI) => resolvePreviewGuardState(node as HierarchicalTreeNode)
         : undefined,
+      resolveOpenSteps: props.resolveOpenSteps
+        ? (node: TreeNodeInUI) => {
+            const resolver = props.resolveOpenSteps;
+            if (!resolver) return Promise.resolve([]);
+            return resolver(String(node.id ?? ''), String(node.nodeType || node.type || 'folder'));
+          }
+        : undefined,
       onContextAction: (
         action: string,
         node: TreeNodeInUI,
@@ -351,6 +359,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
             ? (targetId: string, draggedId: string) => props.onMoveNodes?.([draggedId], targetId)
             : undefined,
           onContextAction: props.onBreadcrumbContextAction,
+          resolveOpenSteps: props.resolveOpenSteps,
         };
         const renderDefault = () => <TreeConsoleBreadcrumb {...defaultRendererProps} />;
         if (props.breadcrumbRenderer) {

@@ -28,7 +28,7 @@ const buildConfig = {
   transformConfig: {
     ...DEFAULT_BUILD_CONFIG.transformConfig,
     maxConcurrent: 1,
-    zoomBandBoundaries: [0, 4],
+    zoomBandBoundaries: [1, 2, 4],
   },
   vtConfig: {
     ...DEFAULT_BUILD_CONFIG.vtConfig,

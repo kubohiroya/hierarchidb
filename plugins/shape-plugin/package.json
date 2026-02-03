@@ -45,13 +45,15 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsdown src/common/shared/index.ts src/index.ts src/services/index.ts src/ui/index.ts src/worker/index.ts src/worker/public.ts src/worker/shapeEntitiesDB.ts src/worker/shapeGroupStore.dexie.ts src/worker/shapeRelationStore.dexie.ts src/icon/index.ts --config ../../tsdown.config.ts --splitting false && node ../../scripts/normalize-dts.mjs",
+    "build": "pnpm build:js && pnpm build:dts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
     "clean": "rm -rf dist",
-    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
+    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
+    "build:js": "tsdown src/common/shared/index.ts src/index.ts src/services/index.ts src/ui/index.ts src/worker/index.ts src/worker/public.ts src/worker/shapeEntitiesDB.ts src/worker/shapeGroupStore.dexie.ts src/worker/shapeRelationStore.dexie.ts src/icon/index.ts --config ../../tsdown.config.ts --splitting false",
+    "build:dts": "rollup -c rollup.dts.config.mjs"
   },
   "dependencies": {
     "@hierarchidb/shape-store": "workspace:*",
@@ -61,12 +63,12 @@
     "geojson-vt": "^3.2.1"
   },
   "peerDependencies": {
-    "@hierarchidb/batch-runtime-services": "workspace:*",
+    "@hierarchidb/auth": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/batch-runtime-services": "workspace:*",
     "@hierarchidb/chunk-store": "workspace:*",
-    "@hierarchidb/core-types": "workspace:*",
-    "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/components": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/download": "workspace:*",
     "@hierarchidb/folder-plugin": "workspace:*",
     "@hierarchidb/gen-iso3166-2": "workspace:*",
@@ -79,6 +81,7 @@
     "@hierarchidb/shape-store": "workspace:*",
     "@hierarchidb/spreadsheet-plugin": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
+    "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/ui-accordion-config": "workspace:*",
     "@hierarchidb/ui-auth": "workspace:*",
     "@hierarchidb/ui-batch-progress": "workspace:*",
@@ -87,6 +90,7 @@
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/ui-floating-window": "workspace:*",
     "@hierarchidb/ui-grid": "workspace:*",
+    "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/ui-license": "workspace:*",
     "@hierarchidb/ui-lru-splitview": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
@@ -99,9 +103,9 @@
     "@hierarchidb/ui-worker-provider": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@mapbox/vector-tile": "^2.0.3",
+    "@maplibre/vt-pbf": "^4.0.3",
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
-    "@maplibre/vt-pbf": "^4.0.3",
     "@ngageoint/geopackage": "^4.2.6",
     "@tanstack/react-virtual": "^3.2.0",
     "@turf/turf": "^7.0.0",
@@ -119,17 +123,16 @@
     "shpjs": "^6.2.0",
     "topojson-client": "^3.1.0",
     "topojson-server": "^3.0.1",
-    "topojson-simplify": "^3.0.3",
-    "@hierarchidb/auth": "workspace:*"
+    "topojson-simplify": "^3.0.3"
   },
   "devDependencies": {
+    "@hierarchidb/auth": "workspace:*",
     "@hierarchidb/batch": "workspace:*",
-    "@hierarchidb/batch-runtime-services": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/batch-runtime-services": "workspace:*",
     "@hierarchidb/chunk-store": "workspace:*",
-    "@hierarchidb/core-types": "workspace:*",
-    "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/components": "workspace:*",
+    "@hierarchidb/core-types": "workspace:*",
     "@hierarchidb/download": "workspace:*",
     "@hierarchidb/folder-plugin": "workspace:*",
     "@hierarchidb/gen-iso3166-2": "workspace:*",
@@ -141,6 +144,7 @@
     "@hierarchidb/shape-store": "workspace:*",
     "@hierarchidb/spreadsheet-plugin": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
+    "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/ui-accordion-config": "workspace:*",
     "@hierarchidb/ui-auth": "workspace:*",
     "@hierarchidb/ui-batch-progress": "workspace:*",
@@ -149,6 +153,7 @@
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/ui-floating-window": "workspace:*",
     "@hierarchidb/ui-grid": "workspace:*",
+    "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/ui-license": "workspace:*",
     "@hierarchidb/ui-lru-splitview": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
@@ -158,9 +163,9 @@
     "@hierarchidb/ui-tabular": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
     "@hierarchidb/ui-worker-provider": "workspace:*",
+    "@maplibre/vt-pbf": "^4.0.3",
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
-    "@maplibre/vt-pbf": "^4.0.3",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.5.2",
@@ -181,8 +186,7 @@
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
     "uuid": "^11.1.0",
-    "vitest": "^3.2.4",
-    "@hierarchidb/auth": "workspace:*"
+    "vitest": "^3.2.4"
   },
   "type": "module",
   "hierarchidb": {
@@ -252,5 +256,8 @@
         ]
       }
     }
+  },
+  "tsdown": {
+    "dts": false
   }
 }

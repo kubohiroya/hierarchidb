@@ -24,4 +24,4 @@ export type { BuildTreeConsoleLinkOptions } from './utils/linkFactory.js';
 export { getPluginIconColor, isFolderNodeType } from './utils/nodeTypeIconColor.js';
 
 // Re-export the NodeContextMenuProps type for consumers
-export type { NodeContextMenuProps } from './components/NodeContextMenu.js';
+export type { NodeContextMenuProps, OpenStepOption } from './components/NodeContextMenu.js';

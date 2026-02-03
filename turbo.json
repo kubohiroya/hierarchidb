@@ -142,6 +142,52 @@
         "reports/runtime-worker/*.xml"
       ],
       "cache": false
+    },
+    "build:js": {
+      "dependsOn": [
+        "^build:js"
+      ],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!**/*.md",
+        "!docs/**",
+        "!plans/**",
+        "!reports/**",
+        "!coverage/**",
+        "!artifacts/**",
+        "!playwright-report/**",
+        "!storybook-static/**",
+        "!e2e-results/**",
+        "!tmp/**"
+      ],
+      "outputs": [
+        "dist/**",
+        "build/**",
+        "storybook-static/**"
+      ]
+    },
+    "build:dts": {
+      "dependsOn": [
+        "^build:dts"
+      ],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!**/*.md",
+        "!docs/**",
+        "!plans/**",
+        "!reports/**",
+        "!coverage/**",
+        "!artifacts/**",
+        "!playwright-report/**",
+        "!storybook-static/**",
+        "!e2e-results/**",
+        "!tmp/**"
+      ],
+      "outputs": [
+        "dist/**/*.d.ts",
+        "dist/**/*.d.ts.map",
+        "**/*.tsbuildinfo"
+      ]
     }
   }
 }

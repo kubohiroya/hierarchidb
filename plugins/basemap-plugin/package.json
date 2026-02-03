@@ -8,9 +8,6 @@
   "types": "dist/index.d.ts",
   "typesVersions": {
     "*": {
-      "worker": [
-        "dist/worker/index.d.ts"
-      ],
       "ui": [
         "dist/ui/index.d.ts"
       ],
@@ -32,18 +29,13 @@
       "import": "./dist/icon/index.js",
       "default": "./dist/icon/index.js"
     },
-    "./worker": {
-      "types": "./dist/worker/index.d.ts",
-      "import": "./dist/worker/index.js",
-      "default": "./dist/worker/index.js"
-    },
     "./ui": {
       "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.js"
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts src/services/database/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/icon/index.ts --config ../../tsdown.config.ts",
+    "build": "pnpm build:js && pnpm build:dts",
     "test": "vitest",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
@@ -52,7 +44,9 @@
     "format": "biome check --write src",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "dev:tsc": "tsc --watch",
-    "typecheck": "tsc --noEmit --project tsconfig.json"
+    "typecheck": "tsc --noEmit --project tsconfig.json",
+    "build:js": "tsdown src/index.ts src/ui/index.ts src/icon/index.ts --config ../../tsdown.config.ts",
+    "build:dts": "rollup -c rollup.dts.config.mjs"
   },
   "dependencies": {
     "@hierarchidb/plugin-base": "workspace:*",
@@ -61,43 +55,45 @@
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
-    "@mui/icons-material": "^7.3.6",
-    "@mui/material": "^7.3.6",
-    "react": ">=18.0.0",
-    "jotai": "^2.13.1",
     "@hierarchidb/core-types": "workspace:*",
-    "@hierarchidb/tree-api": "workspace:*",
-    "@hierarchidb/ui-worker-provider": "workspace:*",
+    "@hierarchidb/folder-plugin": "workspace:*",
+    "@hierarchidb/plugin-base": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
-    "@hierarchidb/folder-plugin": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
-    "@hierarchidb/ui-map": "workspace:*",
+    "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/ui-grid": "workspace:*",
+    "@hierarchidb/ui-i18n": "workspace:*",
+    "@hierarchidb/ui-map": "workspace:*",
+    "@hierarchidb/ui-worker-provider": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/plugin-base": "workspace:*"
+    "@mui/icons-material": "^7.3.6",
+    "@mui/material": "^7.3.6",
+    "jotai": "^2.13.1",
+    "react": ">=18.0.0"
   },
   "devDependencies": {
-    "@testing-library/react": "^14.3.1",
-    "fake-indexeddb": "^4.0.2",
-    "jsdom": "^22.1.0",
-    "react": ">=18.0.0",
-    "@mui/material": "^7.3.6",
-    "@mui/icons-material": "^7.3.6",
-    "jotai": "^2.13.1",
-    "vitest": "^3.2.4",
     "@hierarchidb/core-types": "workspace:*",
-    "@hierarchidb/tree-api": "workspace:*",
-    "@hierarchidb/ui-worker-provider": "workspace:*",
+    "@hierarchidb/folder-plugin": "workspace:*",
+    "@hierarchidb/plugin-base": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
-    "@hierarchidb/folder-plugin": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
-    "@hierarchidb/ui-map": "workspace:*",
+    "@hierarchidb/tree-api": "workspace:*",
     "@hierarchidb/ui-grid": "workspace:*",
+    "@hierarchidb/ui-i18n": "workspace:*",
+    "@hierarchidb/ui-map": "workspace:*",
+    "@hierarchidb/ui-plugin-basic-info": "workspace:*",
+    "@hierarchidb/ui-worker-provider": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/plugin-base": "workspace:*",
-    "@hierarchidb/ui-plugin-basic-info": "workspace:*"
+    "@mui/icons-material": "^7.3.6",
+    "@mui/material": "^7.3.6",
+    "@testing-library/react": "^14.3.1",
+    "fake-indexeddb": "^4.0.2",
+    "jotai": "^2.13.1",
+    "jsdom": "^22.1.0",
+    "react": ">=18.0.0",
+    "vitest": "^3.2.4"
   },
   "keywords": [
     "hierarchidb",
@@ -122,7 +118,7 @@
       "description": "Specify the shared map style and viewport that ancestor nodes in the tree will use as their basemap.",
       "icon": {
         "mui": "Public",
-        "emoji": "\ud83c\udf0d",
+        "emoji": "🌍",
         "color": "#b0b3d9",
         "component": {
           "specifier": "@hierarchidb/basemap-plugin/icon",
@@ -168,5 +164,8 @@
         ]
       }
     }
+  },
+  "tsdown": {
+    "dts": false
   }
 }

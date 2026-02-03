@@ -3,6 +3,7 @@ import type { TreeNode } from '@hierarchidb/tree-api';
 import {
   getPluginIconColor,
   isFolderNodeType,
+  type OpenStepOption,
 } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import { rainbowColors } from '@hierarchidb/ui-theme';
 import type { HierarchicalTreeNode, TreeConsolePanelProps } from '@hierarchidb/ui-treeconsole-base';
@@ -17,6 +18,7 @@ import { useTreeConsoleSSOT } from '~/state/treeconsole.atoms.ts';
 import { convertTreeNodeToTreeNodeData } from '~/utils/treeNodeConverter.js';
 import { resolveBuildTargetForNode, startBuildFlow } from './buildFlow.ts';
 import { resolvePreviewGuardState } from '~/hooks/treeconsole/actions/dialog.ts';
+import { resolveOpenStepsForNode } from '~/hooks/treeconsole/resolveOpenSteps.ts';
 
 type ContextMenuHandler = NonNullable<TreeConsolePanelProps['onContextMenuAction']>;
 
@@ -57,6 +59,8 @@ export function useTreeNodeInfoPanel({
   const [menuNode, setMenuNode] = useState<HierarchicalTreeNode | null>(nodeData ?? null);
   const [confirmTrashOpen, setConfirmTrashOpen] = useState(false);
   const [pendingTrashNode, setPendingTrashNode] = useState<HierarchicalTreeNode | null>(null);
+  const [openSteps, setOpenSteps] = useState<OpenStepOption[]>([]);
+  const [openStepsLoading, setOpenStepsLoading] = useState(false);
 
   useEffect(() => {
     setMenuAnchorEl(null);
@@ -146,6 +150,31 @@ export function useTreeNodeInfoPanel({
   useEffect(() => {
     setMenuNode(nodeData ?? null);
   }, [nodeData]);
+
+  useEffect(() => {
+    if (!menuAnchorEl || !menuNode) {
+      setOpenSteps([]);
+      setOpenStepsLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setOpenStepsLoading(true);
+    void (async () => {
+      const steps = await resolveOpenStepsForNode({
+        nodeId: menuNode.id as NodeId,
+        nodeType: menuNode.nodeType,
+        node: currentNode ?? node ?? null,
+        client: workerClient,
+      });
+      if (!cancelled) {
+        setOpenSteps(Array.isArray(steps) ? steps : []);
+        setOpenStepsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [menuAnchorEl, menuNode, currentNode, node, workerClient]);
 
   useEffect(() => {
     if (!workerClient || !node?.id) return;
@@ -383,5 +412,7 @@ export function useTreeNodeInfoPanel({
     canPreview,
     previewGuardLoading,
     treeId,
+    openSteps,
+    openStepsLoading,
   };
 }

@@ -43,14 +43,16 @@
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts src/ui/index.ts src/icon/index.ts --config ../../tsdown.config.ts --splitting false",
+    "build": "pnpm build:js && pnpm build:dts",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "test": "vitest --passWithNoTests",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",
     "dev:tsc": "tsc --watch",
-    "typecheck": "tsc --noEmit --project tsconfig.json"
+    "typecheck": "tsc --noEmit --project tsconfig.json",
+    "build:js": "tsdown src/index.ts src/ui/index.ts src/icon/index.ts --config ../../tsdown.config.ts --splitting false",
+    "build:dts": "rollup -c rollup.dts.config.mjs"
   },
   "dependencies": {
     "@hierarchidb/plugin-base": "workspace:*"
@@ -119,7 +121,7 @@
       "description": "Define hierarchical container nodes that semantically organize various types of nodes and consolidate their functions.",
       "icon": {
         "mui": "Folder",
-        "emoji": "\ud83d\udcc1",
+        "emoji": "📁",
         "color": "#c0eeff",
         "component": {
           "specifier": "@hierarchidb/folder-plugin/icon",
@@ -155,5 +157,8 @@
   },
   "turbo": {
     "pipeline": {}
+  },
+  "tsdown": {
+    "dts": false
   }
 }

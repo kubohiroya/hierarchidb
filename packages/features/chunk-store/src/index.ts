@@ -186,7 +186,7 @@ export class DexieChunkStore<T> implements StoragePort {
     };
     const db = options.db
       ? options.db
-      : new ChunkStoreDB(options.dbName ?? getDBName('chunk-store'), tables);
+      : new ChunkStoreDB(getDBName(options.dbName|| 'chunk'), tables);
 
     this.files = options.db ? (db.table(tables.files) as Table<FileRecord, ChunkStoreMetadataId>) : (db as ChunkStoreDB).files;
     this.chunks = options.db ? (db.table(tables.chunks) as Table<ChunkRecord, [ChunkStoreMetadataId, number]>) : (db as ChunkStoreDB).chunks;

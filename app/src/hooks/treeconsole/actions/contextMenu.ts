@@ -87,6 +87,23 @@ export const createContextMenuAction = (
           await loadChildrenOf(id);
         };
 
+        if (normalizedAction.startsWith('open-step:')) {
+          const rawStep = normalizedAction.split(':')[1] ?? '';
+          const parsedStep = parseInt(rawStep, 10);
+          if (!Number.isFinite(parsedStep) || parsedStep < 1) {
+            showCommandError('INVALID_OPERATION', `Invalid step: ${rawStep}`);
+            return;
+          }
+          setSSOT({ selectedIds: [targetNodeId] });
+          await openEditDialog(targetNodeId, node, { initialStep: parsedStep });
+          return;
+        }
+
+        if (normalizedAction === 'navigate') {
+          navigation.navigateTo(targetNodeId);
+          return;
+        }
+
         if (normalizedAction === 'edit') {
           setSSOT({ selectedIds: [targetNodeId] });
           await openEditDialog(targetNodeId, node);

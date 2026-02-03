@@ -8,9 +8,6 @@
   "types": "dist/index.d.ts",
   "typesVersions": {
     "*": {
-      "worker": [
-        "dist/worker/index.d.ts"
-      ],
       "icon": [
         "dist/icon/index.d.ts"
       ],
@@ -24,11 +21,6 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
-    },
-    "./worker": {
-      "types": "./dist/worker/index.d.ts",
-      "import": "./dist/worker/index.js",
-      "default": "./dist/worker/index.js"
     },
     "./icon": {
       "types": "./dist/icon/index.d.ts",
@@ -44,13 +36,15 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsdown src/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/icon/index.ts --config ../../tsdown.config.ts",
+    "build": "pnpm build:js && pnpm build:dts",
     "test": "vitest run",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
-    "typecheck": "tsc --noEmit --project tsconfig.json"
+    "typecheck": "tsc --noEmit --project tsconfig.json",
+    "build:js": "tsdown src/index.ts src/ui/index.ts src/icon/index.ts --config ../../tsdown.config.ts",
+    "build:dts": "rollup -c rollup.dts.config.mjs"
   },
   "dependencies": {
     "@hierarchidb/plugin-base": "workspace:*",
@@ -105,7 +99,7 @@
       "displayName": "Resolver",
       "icon": {
         "mui": "Extension",
-        "emoji": "\ud83e\udde9",
+        "emoji": "🧩",
         "color": "#ffb3c1",
         "component": {
           "specifier": "@hierarchidb/resolver-plugin/icon",
@@ -130,5 +124,8 @@
         "relationalData"
       ]
     }
+  },
+  "tsdown": {
+    "dts": false
   }
 }

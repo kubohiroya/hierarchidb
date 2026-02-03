@@ -27,6 +27,7 @@ type CreateMenuEntry = { key: string; nodeType: string; label: string; descripti
 type CreateMenuBuilder = (treeId?: string) => CreateMenuEntry[];
 type GlobalMenuBuilders = { buildMenuItemsForTreeId?: CreateMenuBuilder; buildMenuItemsForContext?: CreateMenuBuilder };
 const buildableNodeTypes = new Set(['styler', 'shape', 'route']);
+export type OpenStepOption = { step: number; label?: string; disabled?: boolean };
 
 const logNodeContextMenuWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -55,6 +56,7 @@ export interface NodeContextMenuProps {
   canPreview?: boolean;
   onOpen?: () => void;
   onOpenFolder?: () => void;
+  onOpenStep?: (step: number) => void;
   onPreview?: () => void;
   onBuild?: () => void;
   onEdit?: () => void;
@@ -73,6 +75,10 @@ export interface NodeContextMenuProps {
   onRestoreToCurrent?: () => void;
   /** Optional explicit create items list; if omitted, tries to stage from global builders */
   createItems?: Array<{ type: string; label: string; description?: string }>;
+  /** Optional step options for "Open" submenu */
+  openSteps?: OpenStepOption[];
+  /** Optional loading flag for async step options */
+  openStepsLoading?: boolean;
 }
 
 /**
@@ -99,6 +105,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     canPreview: canPreviewOverride,
     onOpen: _onOpen,
     onOpenFolder: _onOpenFolder,
+    onOpenStep: _onOpenStep,
     onPreview: _onPreview,
     onBuild: _onBuild,
     onEdit: _onEdit,
@@ -110,10 +117,14 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     onCut: _onCut,
     onToggleVisible: _onToggleVisible,
     isVisible,
+    openSteps = [],
+    openStepsLoading = false,
   } = props;
 
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [addMenuAnchor, setAddMenuAnchor] = useState<HTMLElement | null>(null);
+  const [openStepMenuOpen, setOpenStepMenuOpen] = useState(false);
+  const [openStepMenuAnchor, setOpenStepMenuAnchor] = useState<HTMLElement | null>(null);
   const [localInvisible, setLocalInvisible] = useState<boolean | null>(null);
   const { t, language } = useGlobalI18nTranslator();
   const { resolveIcon } = useIconRegistry();
@@ -184,10 +195,22 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     }
   },[]);
 
+  const handleOpenStepMenuClick = useCallback((event: MouseEvent<HTMLElement>) => {
+    event.stopPropagation();
+    event.preventDefault();
+    const menuItem = event.currentTarget.closest('li');
+    if (menuItem) {
+      setOpenStepMenuAnchor(menuItem as HTMLElement);
+      setOpenStepMenuOpen(true);
+    }
+  }, []);
+
   const handleMainMenuClose = useCallback(() => {
     // Close all submenus as well
     setAddMenuOpen(false);
     setAddMenuAnchor(null);
+    setOpenStepMenuOpen(false);
+    setOpenStepMenuAnchor(null);
     onClose();
   },[onClose]);
 
@@ -206,6 +229,13 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     handleMainMenuClose();
     // Defer until after menu unmount/aria-hidden settles
     setTimeout(() => { onOpen?.(); }, 0);
+  }, [blurActive, handleMainMenuClose]);
+
+  const handleOpenStepClick = useCallback((step: number) => {
+    const onOpenStep = propsRef.current.onOpenStep;
+    blurActive();
+    handleMainMenuClose();
+    setTimeout(() => { onOpenStep?.(step); }, 0);
   }, [blurActive, handleMainMenuClose]);
 
   const handleOpenFolderClick = useCallback(() => {
@@ -285,6 +315,8 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     if (!anchorEl) {
       setAddMenuOpen(false);
       setAddMenuAnchor(null);
+      setOpenStepMenuOpen(false);
+      setOpenStepMenuAnchor(null);
     }
   }, [anchorEl]);
 
@@ -314,6 +346,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
 
   const isFolder =
     nodeType === 'folder' || nodeType === 'folder-plugin' || nodeType === 'ProjectFolder' || nodeType === 'ResourceFolder';
+  const hasOpenSteps = Boolean(_onOpenStep && (openSteps.length > 0 || openStepsLoading));
 
   // Build Create submenu items
   type BuiltItem = { type: string; label: string; description?: string; icon?: { muiIconName?: string; emoji?: string; color?: string } };
@@ -451,6 +484,14 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
               </ListItemIcon>
               <ListItemText primary={openFolderLabel} />
             </MenuItem>
+          ) : hasOpenSteps ? (
+            <MenuItem key="menuitem-open-steps" onClick={handleOpenStepMenuClick} aria-label={openLabel}>
+              <ListItemIcon>
+                <FolderIcon />
+              </ListItemIcon>
+              <ListItemText primary={openLabel} />
+              <ChevronRightIcon sx={{ marginLeft: 'auto' }} />
+            </MenuItem>
           ) : (
             <MenuItem key="menuitem-open" onClick={handleOpenClick} aria-label={openLabel}>
               <ListItemIcon>
@@ -558,6 +599,64 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
             </Tooltip>
           );
         })}
+      </Menu>
+
+      {/*
+ Open Steps
+*/}
+      <Menu
+        anchorEl={openStepMenuAnchor}
+        open={openStepMenuOpen}
+        onClose={handleMainMenuClose}
+        disablePortal={false}
+        disableScrollLock={true}
+        keepMounted={false}
+        disableAutoFocus
+        disableAutoFocusItem
+        disableEnforceFocus
+        disableRestoreFocus
+        MenuListProps={{
+          autoFocusItem: false,
+          dense: true,
+          disablePadding: false,
+        }}
+        anchorOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'left',
+        }}
+        slotProps={{
+          paper: {
+            elevation: 8,
+            sx: {
+              zIndex: 9999,
+              minWidth: 140,
+            },
+          },
+        }}
+      >
+        {openStepsLoading && openSteps.length === 0 ? (
+          <MenuItem key="step-loading" disabled aria-label="Loading">
+            <ListItemText primary={translateWithFallback('treeConsole.contextMenu.loading', 'Loading...')} />
+          </MenuItem>
+        ) : (
+          openSteps.map((entry) => {
+            const stepLabel = entry.label?.trim() || `Step ${entry.step}`;
+            return (
+              <MenuItem
+                key={`step-${entry.step}`}
+                onClick={() => handleOpenStepClick(entry.step)}
+                disabled={Boolean(entry.disabled)}
+                aria-label={stepLabel}
+              >
+                <ListItemText primary={stepLabel} />
+              </MenuItem>
+            );
+          })
+        )}
       </Menu>
     </>
   );

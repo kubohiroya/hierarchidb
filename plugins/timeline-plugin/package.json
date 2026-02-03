@@ -17,11 +17,6 @@
       "import": "./dist/icon/index.js",
       "default": "./dist/icon/index.js"
     },
-    "./worker": {
-      "types": "./dist/worker/index.d.ts",
-      "import": "./dist/worker/index.js",
-      "default": "./dist/worker/index.js"
-    },
     "./ui": {
       "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.js"
@@ -29,9 +24,6 @@
   },
   "typesVersions": {
     "*": {
-      "worker": [
-        "dist/worker/index.d.ts"
-      ],
       "ui": [
         "dist/ui/index.d.ts"
       ],
@@ -44,10 +36,12 @@
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts src/services/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/icon/index.ts --config ../../tsdown.config.ts",
+    "build": "pnpm build:js && pnpm build:dts",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
-    "typecheck": "tsc --noEmit --project tsconfig.json"
+    "typecheck": "tsc --noEmit --project tsconfig.json",
+    "build:js": "tsdown src/index.ts src/services/index.ts src/ui/index.ts src/icon/index.ts --config ../../tsdown.config.ts",
+    "build:dts": "rollup -c rollup.dts.config.mjs"
   },
   "dependencies": {
     "@hierarchidb/core-types": "workspace:*",
@@ -63,33 +57,35 @@
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
+    "@hierarchidb/core-types": "workspace:*",
+    "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/plugin-service-api": "workspace:*",
+    "@hierarchidb/plugin-ui-sdk": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/tree-api": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/ui-i18n": "workspace:*",
+    "@hierarchidb/ui-worker-provider": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
-    "react": ">=18.0.0",
-    "@hierarchidb/core-types": "workspace:*",
-    "@hierarchidb/tree-api": "workspace:*",
-    "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/plugin-service-api": "workspace:*",
-    "@hierarchidb/runtime-worker": "workspace:*",
-    "@hierarchidb/ui-dialog": "workspace:*",
-    "@hierarchidb/plugin-base": "workspace:*",
-    "@hierarchidb/plugin-ui-sdk": "workspace:*",
-    "@hierarchidb/ui-worker-provider": "workspace:*"
+    "react": ">=18.0.0"
   },
   "devDependencies": {
-    "@types/react-transition-group": "^4.4.12",
-    "@types/node": "^20.10.5",
-    "react": ">=18.0.0",
-    "typescript": "workspace:^5.9.3",
     "@hierarchidb/core-types": "workspace:*",
-    "@hierarchidb/tree-api": "workspace:*",
-    "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/plugin-service-api": "workspace:*",
-    "@hierarchidb/runtime-worker": "workspace:*",
-    "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
-    "@hierarchidb/ui-worker-provider": "workspace:*"
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/tree-api": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/ui-i18n": "workspace:*",
+    "@hierarchidb/ui-worker-provider": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
+    "@types/node": "^20.10.5",
+    "@types/react-transition-group": "^4.4.12",
+    "react": ">=18.0.0",
+    "typescript": "workspace:^5.9.3"
   },
   "hierarchidb": {
     "plugin": {
@@ -98,7 +94,7 @@
       "description": "Arrange descendant nodes as timeline frames and play them back as map animations inside a special folder node.",
       "icon": {
         "mui": "AccessTime",
-        "emoji": "\ud83d\udd52",
+        "emoji": "🕒",
         "color": "#8a7cbf",
         "component": {
           "specifier": "@hierarchidb/timeline-plugin/icon",
@@ -106,5 +102,8 @@
         }
       }
     }
+  },
+  "tsdown": {
+    "dts": false
   }
 }
