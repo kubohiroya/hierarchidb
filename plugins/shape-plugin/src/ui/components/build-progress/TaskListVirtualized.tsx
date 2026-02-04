@@ -160,7 +160,7 @@ export const TaskListVirtualized = ({
       ...next,
       updatedAt: Date.now(),
     });
-  }, [setViewportRange, shouldVirtualize, stageId, orderedTasks, virtualItems]);
+  }, [setViewportRange, shouldVirtualize, stageId, orderedTasks, virtualItems, tasks.length]);
 
   useEffect(() => {
     if (shouldVirtualize) return;
@@ -199,7 +199,7 @@ export const TaskListVirtualized = ({
       ...next,
       updatedAt: Date.now(),
     });
-  }, [setViewportRange, shouldVirtualize, stageId, orderedTasks]);
+  }, [setViewportRange, shouldVirtualize, stageId, orderedTasks, tasks.length]);
 
   const renderTaskItem = useCallback((task: ShapeBuildTaskSummary, key: string, style?: CSSProperties) => {
     const statusValue = task.status;
