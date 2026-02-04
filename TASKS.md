@@ -1,3 +1,141 @@
+2502) fix/ui-treeconsole-base/treenode-type-field (P1) — 完了 (2026-02-04)
+- ブランチ名: fix/ui-treeconsole-base/treenode-type-field
+- 依存: なし
+- 受け入れ基準: TreeConsolePanel で TreeNodeInUI に未定義フィールドが混入しない／`pnpm --filter @hierarchidb/ui-treeconsole-base typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/treeconsole/base/src/components/TreeConsolePanel.tsx`
+- ロールバック手順: type 付与を元に戻す
+- チェックリスト:
+  - TreeNodeInUI の型定義に沿うよう余計なフィールドを撤去する
+  - ui-treeconsole-base の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-04 12:55 JST TreeConsolePanel の type フィールド起因の型エラー修正に着手。
+  - update: 2026-02-04 12:56 JST TreeNodeInUI から未定義の type フィールドを削除。
+  - update: 2026-02-04 12:56 JST pnpm --filter @hierarchidb/ui-treeconsole-base typecheck exit 0 を確認。
+  - done: 2026-02-04 12:56 JST TreeNodeInUI の type フィールド修正を完了。
+
+2503) fix/shape-build/pause-pending-hook-imports (P1) — 完了 (2026-02-04)
+- ブランチ名: fix/shape-build/pause-pending-hook-imports
+- 依存: なし
+- 受け入れ基準: useShapeBuildStep の useState/useEffect 参照が解決される／isPausePending が atom sync に渡る／`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStep.ts`
+- ロールバック手順: 追加した import と return 値を元に戻す
+- チェックリスト:
+  - useState/useEffect の import を追加する
+  - isPausePending を返却に含める
+  - shape-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-04 13:05 JST useShapeBuildStep の hook import 欠落と isPausePending 不足の修正に着手。
+  - update: 2026-02-04 13:06 JST useState/useEffect import を追加し isPausePending を返却に追加。
+  - update: 2026-02-04 13:06 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-02-04 13:06 JST useShapeBuildStep の hook import 修正を完了。
+
+2500) feat/shape/vt-memory-logs-tiling (P2) — 進行中 (2026-02-03)
+- ブランチ名: feat/shape/vt-memory-logs-tiling
+- 依存: なし
+- 受け入れ基準: vt ステージの tiling/encode/store 周辺でメモリ・入力サイズ・所要時間のログが追加される／heap が取得できない環境でも安全に動作する／必要範囲の typecheck/build が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/vt-orchestrator/src/vt/vtStage.ts`
+- ロールバック手順: 該当差分を revert してログを元に戻す
+- チェックリスト:
+  - tiling/encode/store 周辺のメモリ・所要時間ログを追加する
+  - 必要範囲の typecheck/build を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-03 13:40 JST vt tiling/encode/store のメモリログ追加に着手。
+  - update: 2026-02-04 10:10 JST vt tiling/encode/store のメモリログ追加を再開。
+  - update: 2026-02-04 10:24 JST vt の tiling/per-tile/per-feature/encode/store のメモリ・所要時間ログを追加。
+  - update: 2026-02-04 10:26 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+  - update: 2026-02-04 10:31 JST vt のログフィールド名を duration/elapsed に統一（ms 表記削除）。
+  - update: 2026-02-04 10:33 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+  - done: 2026-02-04 10:33 JST vt tiling/encode/store のメモリログ追加を完了。
+
+2501) fix/shape/pause-loading-other-steps (P2) — 進行中 (2026-02-03)
+- ブランチ名: fix/shape/pause-loading-other-steps
+- 依存: なし
+- 受け入れ基準: Step5 以外の build/pause UI でも pause 押下直後〜停止完了まで pause ボタンが loading/disabled になる／pause 失敗時は復帰する／必要範囲の build が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/route-plugin/src/ui/components/steps/RouteBuildStep.tsx`（必要に応じて追加）
+- ロールバック手順: 該当差分を revert して pause の loading/disabled を撤去する
+- チェックリスト:
+  - pause pending state を追加する
+  - pause 失敗/完了で pending state を解除する
+  - UI 側で loading/disabled を反映する
+  - 必要範囲の build を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-03 14:20 JST Step5 以外の pause loading/disabled 連動対応に着手。
+  - update: 2026-02-03 14:24 JST Route build の pause pending state を追加し、停止完了で解除するよう調整。
+  - update: 2026-02-03 14:25 JST pnpm --filter @hierarchidb/route-plugin build exit 0 を確認。
+  - done: 2026-02-03 14:25 JST Step5 以外の pause loading/disabled 連動を完了。
+
+2500) fix/shape/step5-pause-loading (P2) — 進行中 (2026-02-03)
+- ブランチ名: fix/shape/step5-pause-loading
+- 依存: なし
+- 受け入れ基準: Step5 の pause 押下直後から停止完了まで停止ボタンが loading/disabled になる／pause 失敗時はボタンが復帰する／必要範囲の build が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/**`, `packages/components/src/BuildControlCard.tsx`, `packages/components/src/BuildStepPanel.tsx`
+- ロールバック手順: 該当差分を revert して pause の loading/disabled を撤去する
+- チェックリスト:
+  - pause 押下直後に pending state を立てる
+  - pause 失敗/完了で pending state を解除する
+  - UI 側で loading/disabled を反映する
+  - 必要範囲の build を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-03 14:10 JST Step5 pause の loading/disabled 連動対応に着手。
+  - update: 2026-02-03 14:12 JST pause pending state を追加し、停止完了/失敗で解除するよう調整。
+  - update: 2026-02-03 14:12 JST pause ボタンに loading/disabled 表示を反映。
+  - update: 2026-02-03 14:14 JST pnpm --filter @hierarchidb/shape-plugin build exit 0 を確認。
+  - done: 2026-02-03 14:14 JST Step5 pause の loading/disabled 連動を完了。
+
+2499) fix/shape/fetchcache-integrity-and-tx (P1) — 進行中 (2026-02-03)
+- ブランチ名: fix/shape/fetchcache-integrity-and-tx
+- 依存: なし
+- 受け入れ基準: fetchCache の整合性チェックで null/必須キー欠落を検知したら明確なエラーを出して停止する／fetchCache の write/delete を明示的トランザクション化する／必要範囲の typecheck/build が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/services/vt/shapeFetchStage.ts`, `plugins/shape-plugin/src/services/vt/shapePipelineTransformStage.ts`
+- ロールバック手順: 該当差分を revert して整合性チェックとトランザクション化を元に戻す
+- チェックリスト:
+  - fetchCache の整合性チェックを追加する
+  - fetchCache の write/delete を transaction で包む
+  - 必要範囲の typecheck/build を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-03 13:20 JST fetchCache 整合性チェックと transaction 化に着手。
+  - update: 2026-02-03 13:25 JST fetchCache の整合性チェックを追加し、不整合時に明確なエラーを投げるよう変更。
+  - update: 2026-02-03 13:26 JST fetchCache の put/update/delete を transaction 化。
+  - update: 2026-02-03 13:27 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-02-03 13:27 JST fetchCache 整合性チェックと transaction 化を完了。
+
+2498) feat/shape/vt-collect-memory-logs (P2) — 進行中 (2026-02-03)
+- ブランチ名: feat/shape/vt-collect-memory-logs
+- 依存: なし
+- 受け入れ基準: collectFeatures の開始/終了でメモリ・処理時間のログが出る／heap が取得できない環境でも安全に動作する／必要範囲の typecheck/build が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/vt-orchestrator/src/vt/vtStage.ts`
+- ロールバック手順: 該当差分を revert してログを元に戻す
+- チェックリスト:
+  - collectFeatures 前後のメモリ/時間ログを追加する
+  - 必要範囲の typecheck/build を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-03 12:55 JST collectFeatures のメモリログ追加に着手。
+  - update: 2026-02-03 13:00 JST collect start/done のメモリ・所要時間ログを追加。
+  - update: 2026-02-03 13:01 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+  - done: 2026-02-03 13:01 JST collectFeatures のメモリログ追加を完了。
+
+2497) feat/shape/vt-low-zoom-serial (P2) — 進行中 (2026-02-03)
+- ブランチ名: feat/shape/vt-low-zoom-serial
+- 依存: なし
+- 受け入れ基準: 低ズーム帯（z0-2）の vt タスクは maxConcurrent=1 で処理される／高ズーム帯は既定の vtConfig.maxConcurrent を維持する／必要範囲の typecheck/build が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/vt/shapePipelineVtStage.ts`, `packages/vt-orchestrator/src/types/types.ts`, `packages/vt-orchestrator/src/compareTaskOrder.ts`
+- ロールバック手順: 該当差分を revert して vt の並列制御を元に戻す
+- チェックリスト:
+  - runStageTasks に taskFilter を追加して対象タスクのみ実行できるようにする
+  - 低ズーム帯（bandMaxZoom <= 2）だけ maxConcurrent=1 で実行する
+  - 残りの vt タスクは既定の maxConcurrent で実行する
+  - 必要範囲の typecheck/build を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-03 12:40 JST 低ズーム帯 vt のシリアル実行対応に着手。
+
 2496) fix/shape/transform-svg-order-adm0-first (P2) — 進行中 (2026-02-03)
 - ブランチ名: fix/shape/transform-svg-order-adm0-first
 - 依存: なし
@@ -13258,6 +13396,22 @@ Exit status 2 が exit 0／TASKS.md に運用ログを記載する
   - map atoms 未初期化時に cleanup をスキップするガードを追加する
   - ui-map の typecheck を実行する
   - 運用ログ start/update/done を追記する
+
+2478) fix/ui-floating-window/useState-undefined (P1) — 完了 (2026-02-04)
+- ブランチ名: fix/ui-floating-window/useState-undefined
+- 依存: なし
+- 受け入れ基準: FloatingWindowPortalProvider の useState undefined が発生しない／`pnpm --filter @hierarchidb/ui-floating-window typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/floating-window/src/components/FloatingWindowPortalProvider.tsx`
+- ロールバック手順: React フック参照を元の実装に戻す
+- チェックリスト:
+  - React フック参照のスコープを明示化する
+  - ui-floating-window の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-04 12:40 JST FloatingWindowPortalProvider の useState undefined 調査に着手。
+  - update: 2026-02-04 12:42 JST React フックを React.* 経由に統一して参照を明示化。
+  - update: 2026-02-04 12:43 JST pnpm --filter @hierarchidb/ui-floating-window typecheck exit 0 を確認。
+  - done: 2026-02-04 12:43 JST FloatingWindowPortalProvider の useState undefined 対応を完了。
 - 運用ログ:
   - start: 2026-02-01 18:40 JST VectorTileLayer cleanup の例外ガード対応に着手。
  - update: 2026-02-01 18:42 JST map.getStyle が未定義の場合に cleanup をスキップするガードを追加。

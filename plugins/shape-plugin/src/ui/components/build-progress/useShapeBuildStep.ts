@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { TaskStage } from '@hierarchidb/batch-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import { useShapeBuildTasks } from './useShapeBuildTasks.ts';
@@ -60,6 +60,8 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
   const { t } = useTranslation();
   const activeNodeId = nodeId ?? data?.nodeId ?? null;
 
+  const [isPausePending, setIsPausePending] = useState(false);
+
   const { progress, status, error } = useBuildProgress(activeNodeId, { autoSubscribe: Boolean(activeNodeId) });
   const hasNodeId = Boolean(activeNodeId && !error);
   const effectiveProgress = hasNodeId ? progress : null;
@@ -83,6 +85,13 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     }
     return baseBuildStatus;
   }, [baseBuildStatus, hasInFlightTasks]);
+  useEffect(() => {
+    if (!isPausePending) return;
+    if (buildStatus !== "running") {
+      setIsPausePending(false);
+    }
+  }, [buildStatus, isPausePending]);
+
   const selectedArrayByCountries = data?.selectedArrayByCountries;
 
   const taskType = effectiveProgress?.taskType;
@@ -290,15 +299,18 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
       notify.warning('NodeId is missing.');
       return;
     }
+    if (isPausePending) return;
+    setIsPausePending(true);
     try {
       await bridgeRef.current.initialize();
       await bridgeRef.current.pauseBatchSession(SHAPE_NODE_TYPE, activeNodeId);
       await persistDraftPatch({ processingStatus: 'paused' });
     } catch (error) {
+      setIsPausePending(false);
       notify.error('Failed to pause build.');
       console.error('[ShapeBuildProgressStep] pause failed', error);
     }
-  }, [activeNodeId, persistDraftPatch]);
+  }, [activeNodeId, isPausePending, persistDraftPatch]);
   const { canStartOrResume, isStartPending, startOrResume } = useShapeBuildAutoResume({
     activeNodeId,
     buildStatus,
@@ -339,6 +351,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     canStartOrResume,
     handleStartOrResume: startOrResume,
     handlePause,
+    isPausePending,
     authDialogOpen,
     closeAuthDialog,
     handleProviderSelect,

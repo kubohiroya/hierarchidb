@@ -170,6 +170,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
 
   const [status, setStatus] = useState<BuildStatus>('idle');
   const [overallProgress, setOverallProgress] = useState(0);
+  const [isPausePending, setIsPausePending] = useState(false);
   const [heapDialogOpen, setHeapDialogOpen] = useState(false);
   const [errorRows, setErrorRows] = useState<IdeGsmRouteError[]>([]);
   const [ideGsmPhase, setIdeGsmPhase] = useState<IdeGsmImportProgress | null>(null);
@@ -223,6 +224,12 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     if (!heapEvent) return;
     setHeapDialogOpen(true);
   }, [heapEvent]);
+
+  useEffect(() => {
+    if (status !== 'running') {
+      setIsPausePending(false);
+    }
+  }, [status]);
 
   useEffect(() => {
     if (status !== 'running') {
@@ -529,12 +536,17 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
         splitViewBreakpoints={SPLITVIEW_BREAKPOINTS}
         splitViewInitialSizesByBreakpoint={SPLITVIEW_INITIAL_SIZES}
         splitViewAutoCloseCountsByBreakpoint={SPLITVIEW_AUTO_CLOSE_COUNTS}
-        onPause={() => setStatus('paused')}
+        onPause={() => {
+          if (isPausePending) return;
+          setIsPausePending(true);
+          setStatus('paused');
+        }}
         onResume={runIdeGsmBuild}
         onComplete={() => {
           setStatus('completed');
           setOverallProgress(100);
         }}
+        pauseLoading={isPausePending}
         footer={(
           <>
             <HeapPressureDialog

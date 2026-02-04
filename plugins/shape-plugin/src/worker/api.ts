@@ -347,6 +347,27 @@ const buildTaskWeightContext = async (
   });
 
   const fetchCaches = await ephemeralShapeDB.fetchCache.where('nodeId').equals(nodeId).toArray();
+  let invalidFetchCacheCount = 0;
+  let invalidFetchCacheIdCount = 0;
+  let invalidFetchCacheSourceKeyCount = 0;
+  for (const cache of fetchCaches as Array<unknown>) {
+    if (!cache || typeof cache !== 'object') {
+      invalidFetchCacheCount += 1;
+      continue;
+    }
+    const record = cache as { id?: unknown; sourceKey?: unknown };
+    if (typeof record.id !== 'string' || record.id.length === 0) {
+      invalidFetchCacheIdCount += 1;
+    }
+    if (typeof record.sourceKey !== 'string' || record.sourceKey.length === 0) {
+      invalidFetchCacheSourceKeyCount += 1;
+    }
+  }
+  if (invalidFetchCacheCount > 0 || invalidFetchCacheIdCount > 0 || invalidFetchCacheSourceKeyCount > 0) {
+    throw new Error(
+      `fetchCache integrity error: nodeId=${String(nodeId)} invalid=${invalidFetchCacheCount} invalidId=${invalidFetchCacheIdCount} invalidSourceKey=${invalidFetchCacheSourceKeyCount} total=${fetchCaches.length}`
+    );
+  }
   const fetchCacheById = new Map(
     fetchCaches.map((cache) => [cache.id, { polygonCount: cache.polygonCount ?? 0 }] as const),
   );

@@ -703,7 +703,7 @@ const buildLayerIndexes = async (
         ...debugContext,
         layerName,
         ...layerStats,
-        durationMs: Date.now() - layerStartedAt,
+        duration: Date.now() - layerStartedAt,
         heap: getHeapSnapshot(),
       }));
     }
@@ -713,7 +713,7 @@ const buildLayerIndexes = async (
       ...debugContext,
       layerCount: layers.size,
       indexCount: indexes.size,
-      durationMs: Date.now() - startAt,
+      duration: Date.now() - startAt,
     }));
   }
   return indexes;
@@ -786,6 +786,13 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
         String(task.nodeId),
         { groupByContinent, continentByCountry: context.continentByCountry }
       );
+      console.info('[vt] collect done', JSON.stringify({
+        ...taskContext,
+        bufferCount: input.bufferIds.length,
+        duration: Date.now() - collectStartedAt,
+        collected: Boolean(collected),
+        heap: getHeapSnapshot(),
+      }));
       if (!collected) {
         return { status: 'completed', message: 'skipped: no features' };
       }
@@ -829,7 +836,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
         features: collection.features.length,
         bufferBytes: totalBufferBytes,
         maxBufferBytes,
-        durationMs: Date.now() - collectStartedAt,
+        duration: Date.now() - collectStartedAt,
         heap: getHeapSnapshot(),
       }));
 
@@ -893,7 +900,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
       const vtpbf = await loadVtPbf();
       console.info('[vt] vtpbf load done', JSON.stringify({
         ...taskContext,
-        durationMs: Date.now() - vtpbfStartedAt,
+        duration: Date.now() - vtpbfStartedAt,
         heap: getHeapSnapshot(),
       }));
       console.info('[vt] tiling start', JSON.stringify({
@@ -974,6 +981,14 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
             },
             { featureCount: 0, layerVertexCount: 0, maxFeatureVertices: 0 },
           );
+          const perTileIndexStartedAt = Date.now();
+          console.info('[vt] per-tile index start', JSON.stringify({
+            ...taskContext,
+            layerCount: layerMap.size,
+            ...perTileStats,
+            zRange: [band.zMin, band.zMax],
+            heap: getHeapSnapshot(),
+          }));
           console.info('[vt] per-tile index enabled', JSON.stringify({
             ...taskContext,
             layerCount: layerMap.size,
@@ -1051,6 +1066,13 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
               }
             }
           }
+          console.info('[vt] per-tile index done', JSON.stringify({
+            ...taskContext,
+            layerCount: layerMap.size,
+            tileCount: aggregatedLayersByTileId.size,
+            duration: Date.now() - perTileIndexStartedAt,
+            heap: getHeapSnapshot(),
+          }));
           if (emptyTileWithFeatures) {
             console.warn('[vt] geojson-vt produced empty tile for clipped features', JSON.stringify({
               ...taskContext,
@@ -1105,6 +1127,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
           const usePerFeatureIndex = layerVertexCount >= perFeatureVertexThreshold
             || maxFeatureVertices >= perFeatureMaxVertices;
           if (usePerFeatureIndex && features) {
+            const perFeatureIndexStartedAt = Date.now();
             console.info('[vt] per-feature index enabled', JSON.stringify({
               ...taskContext,
               layerName,
@@ -1169,6 +1192,13 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
                 }
               }
             }
+            console.info('[vt] per-feature index done', JSON.stringify({
+              ...taskContext,
+              layerName,
+              tileCount: aggregatedLayersByTileId.size,
+              duration: Date.now() - perFeatureIndexStartedAt,
+              heap: getHeapSnapshot(),
+            }));
             if (aggregatedLayersByTileId.size === 0) {
               console.warn('[vt] per-feature index produced no layers', JSON.stringify({
                 ...taskContext,
@@ -1323,6 +1353,22 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
         lineStringCount: 0,
         vertexCount: 0,
       };
+      const encodeStats = {
+        tileCount: 0,
+        bytes: 0,
+        duration: 0,
+      };
+      const storeStats = {
+        tileCount: 0,
+        bytes: 0,
+        duration: 0,
+      };
+      console.info('[vt] encode/store start', JSON.stringify({
+        ...taskContext,
+        totalTiles,
+        bufferCount: input.bufferIds.length,
+        heap: getHeapSnapshot(),
+      }));
       for (let z = band.zMin; z <= band.zMax; z++) {
         assertNotAborted(abortSignal);
         const { xStart, xEnd, yStart, yEnd } = parentToChildRange(parent, z);
@@ -1355,7 +1401,11 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
             totalOutputStats.vertexCount += outputStats.vertexCount;
             let bytes: Uint8Array;
             try {
+              const encodeStartedAt = Date.now();
               bytes = vtpbf.fromGeojsonVt(layers as unknown as Tile[], { version: 2 }) as Uint8Array;
+              encodeStats.duration += Date.now() - encodeStartedAt;
+              encodeStats.tileCount += 1;
+              encodeStats.bytes += bytes.byteLength;
             } catch (error) {
               console.error('[vt] failed to encode tile', JSON.stringify({
                 ...taskContext,
@@ -1371,6 +1421,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
               throw error;
             }
             try {
+              const storeStartedAt = Date.now();
               await tileWriter({
                 tileId,
                 z,
@@ -1380,6 +1431,9 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
                 data: bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
                 layers,
               });
+              storeStats.duration += Date.now() - storeStartedAt;
+              storeStats.tileCount += 1;
+              storeStats.bytes += bytes.byteLength;
             } catch (error) {
               console.error('[vt] tileWriter failed', JSON.stringify({
                 ...taskContext,
@@ -1407,6 +1461,18 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
         }
       }
 
+      console.info('[vt] tiling done', JSON.stringify({
+        ...taskContext,
+        processedTiles,
+        generatedTiles,
+        totalTiles,
+        inputTotals: totalInputStats,
+        outputTotals: totalOutputStats,
+        encodeStats,
+        storeStats,
+        duration: Date.now() - tilingStartedAt,
+        heap: getHeapSnapshot(),
+      }));
       const finalTileSummary = buildTileSummary(tilesByZoom);
       if (generatedTiles === 0) {
         console.warn('[vt] generated zero tiles', JSON.stringify({
@@ -1435,7 +1501,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
         generatedTiles,
         totalTiles,
         outputTotals: totalOutputStats,
-        tilingDurationMs: Date.now() - tilingStartedAt,
+        tilingDuration: Date.now() - tilingStartedAt,
         heap: getHeapSnapshot(),
       }));
       return {

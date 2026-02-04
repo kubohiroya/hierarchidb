@@ -125,7 +125,9 @@ export const runShapeTransformStageSection = async (params: ShapeTransformStageP
     await getFailedTaskCount(params.taskQueue, params.nodeId, 'transform'),
   );
   if (params.buildConfig.fetchConfig.deleteOnComplete) {
-    await params.ephemeralStore.fetchCache.where('nodeId').equals(params.nodeId).delete();
+    await params.ephemeralStore.transaction('rw', params.ephemeralStore.fetchCache, async () => {
+      await params.ephemeralStore.fetchCache.where('nodeId').equals(params.nodeId).delete();
+    });
   }
   return shouldStop;
 };

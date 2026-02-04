@@ -36,6 +36,7 @@ export type TaskProgressControls = {
   statusLabel: string;
   handleStartOrResume?: () => Promise<void>;
   handlePause?: () => void;
+  pausePending?: boolean;
 };
 
 export type TaskScrollTarget = {
@@ -92,6 +93,7 @@ export const taskProgressControlsAtom = atom<TaskProgressControls>({
   statusLabel: '',
   handleStartOrResume: async () => {},
   handlePause: () => {},
+  pausePending: false,
 });
 export const taskProgressAuthAtom = atom<TaskProgressAuthState>({
   authDialogOpen: false,

@@ -405,26 +405,28 @@ const putFetchCache = async (params: {
   inputPolygonCount?: number;
 }): Promise<string> => {
   const recordId = buildFetchCacheId(params.nodeId, params.sourceKey);
-  await ephemeralShapeDB.fetchCache.put({
-    id: recordId,
-    nodeId: params.nodeId,
-    domainType: 'shape',
-    sourceKey: params.sourceKey,
-    countryCode: params.countryCode,
-    adminLevel: params.adminLevel,
-    data: params.data,
-    format: params.format,
-    compression: params.compression,
-    featureCount: params.featureCount,
-    inputFeatureCount: params.inputFeatureCount,
-    bbox: params.bbox,
-    downloadTime: params.downloadTime,
-    size: params.data.byteLength,
-    vertexCount: params.vertexCount,
-    polygonCount: params.polygonCount,
-    inputVertexCount: params.inputVertexCount,
-    inputPolygonCount: params.inputPolygonCount,
-    timestamp: Date.now(),
+  await ephemeralShapeDB.transaction('rw', ephemeralShapeDB.fetchCache, async () => {
+    await ephemeralShapeDB.fetchCache.put({
+      id: recordId,
+      nodeId: params.nodeId,
+      domainType: 'shape',
+      sourceKey: params.sourceKey,
+      countryCode: params.countryCode,
+      adminLevel: params.adminLevel,
+      data: params.data,
+      format: params.format,
+      compression: params.compression,
+      featureCount: params.featureCount,
+      inputFeatureCount: params.inputFeatureCount,
+      bbox: params.bbox,
+      downloadTime: params.downloadTime,
+      size: params.data.byteLength,
+      vertexCount: params.vertexCount,
+      polygonCount: params.polygonCount,
+      inputVertexCount: params.inputVertexCount,
+      inputPolygonCount: params.inputPolygonCount,
+      timestamp: Date.now(),
+    });
   });
   return recordId;
 };
@@ -761,10 +763,12 @@ const createFetchHandler = (params: {
             data = await encodeFlatGeobufFromFeatureCollection(cachedCollection);
           }
           if (data) {
-            await ephemeralShapeDB.fetchCache.update(existing.id, {
-              data,
-              size: data.byteLength,
-              timestamp: Date.now(),
+            await ephemeralShapeDB.transaction('rw', ephemeralShapeDB.fetchCache, async () => {
+              await ephemeralShapeDB.fetchCache.update(existing.id, {
+                data,
+                size: data.byteLength,
+                timestamp: Date.now(),
+              });
             });
           }
         }

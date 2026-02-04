@@ -1,4 +1,4 @@
-import { Box, Button, Stack, Typography } from '@mui/material';
+import { Box, Button, CircularProgress, Stack, Typography } from '@mui/material';
 import type { ReactNode } from 'react';
 import { LoadingButton } from './LoadingButton.js';
 import PauseIcon from '@mui/icons-material/Pause';
@@ -11,6 +11,7 @@ type BuildControlCardProps = {
   onResume?: () => void;
   controlLabel?: string;
   pauseLabel?: string;
+  pauseLoading?: boolean;
   startLabel?: string;
   resumeLabel?: string;
   startIcon?: ReactNode;
@@ -24,19 +25,28 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
                                                              onResume,
                                                              controlLabel,
                                                              pauseLabel,
+                                                             pauseLoading,
                                                              startLabel,
                                                              resumeLabel,
                                                              startIcon,
                                                              resumeIcon,
                                                              details,
                                                            }) => {
+  const pauseSpinner = (
+    <CircularProgress
+      size={16}
+      thickness={5}
+      color="inherit"
+    />
+  );
+  const computedPauseIcon = pauseLoading ? pauseSpinner : <PauseIcon fontSize="small" />;
   const computedLabel = status === 'paused'
     ? (resumeLabel ?? 'Resume Build')
     : (startLabel ?? 'Start Build');
   const computedIcon = status === 'paused'
     ? (resumeIcon ?? <PlayArrowIcon fontSize="small" />)
     : (startIcon ?? <PlayArrowIcon fontSize="small" />);
-  const disablePause = status !== 'running' || !onPause;
+  const disablePause = status !== 'running' || !onPause || pauseLoading;
   const disableStart = !onResume || status === 'running';
   const isLoading = status === 'running';
 
@@ -63,7 +73,7 @@ export const BuildControlCard: React.FC<BuildControlCardProps> = ({
         <Button
           variant="outlined"
           size="small"
-          endIcon={<PauseIcon fontSize="small" />}
+          endIcon={computedPauseIcon}
           disabled={disablePause}
           onClick={onPause}
         >

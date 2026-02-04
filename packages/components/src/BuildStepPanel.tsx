@@ -26,6 +26,7 @@ export interface BuildStepPanelProps {
   onComplete?: () => void;
   controlLabel?: string;
   pauseLabel?: string;
+  pauseLoading?: boolean;
   startLabel?: string;
   resumeLabel?: string;
   startIcon?: ReactNode;
@@ -52,6 +53,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   onComplete,
   controlLabel,
   pauseLabel,
+  pauseLoading,
   startLabel,
   resumeLabel,
   startIcon,
@@ -184,6 +186,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
           onResume={onResume}
           controlLabel={controlLabel}
           pauseLabel={pauseLabel}
+          pauseLoading={pauseLoading}
           startLabel={startLabel}
           resumeLabel={resumeLabel}
           startIcon={startIcon}

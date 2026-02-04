@@ -1,6 +1,6 @@
 import { useTheme } from '@mui/material';
 import type { ReactNode } from 'react';
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import * as React from 'react';
 
 export const FLOATING_WINDOW_ROOT_ID = 'hdb-floating-window-root';
 export const DEFAULT_FLOATING_WINDOW_Z_INDEX = 1310;
@@ -10,12 +10,12 @@ type FloatingWindowPortalContextValue = {
   isProvider: boolean;
 };
 
-const FloatingWindowPortalContext = createContext<FloatingWindowPortalContextValue>({
+const FloatingWindowPortalContext = React.createContext<FloatingWindowPortalContextValue>({
   root: null,
   isProvider: false,
 });
 
-export const useFloatingWindowPortal = () => useContext(FloatingWindowPortalContext);
+export const useFloatingWindowPortal = () => React.useContext(FloatingWindowPortalContext);
 
 export function FloatingWindowPortalProvider({
   children,
@@ -27,7 +27,7 @@ export function FloatingWindowPortalProvider({
   const theme = useTheme();
   const resolvedZIndex = zIndex ?? Math.max(theme.zIndex.modal + 10, 0);
   const root = useFloatingWindowPortalRoot(resolvedZIndex);
-  const contextValue = useMemo(() => ({ root, isProvider: true }), [root]);
+  const contextValue = React.useMemo(() => ({ root, isProvider: true }), [root]);
 
   return (
     <FloatingWindowPortalContext.Provider value={contextValue}>
@@ -37,9 +37,9 @@ export function FloatingWindowPortalProvider({
 }
 
 export function useFloatingWindowPortalRoot(zIndex: number) {
-  const [root, setRoot] = useState<HTMLDivElement | null>(null);
+  const [root, setRoot] = React.useState<HTMLDivElement | null>(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (typeof document === 'undefined') return undefined;
     const body = document.body;
     if (!body) return undefined;

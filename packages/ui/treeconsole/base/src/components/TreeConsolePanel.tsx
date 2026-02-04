@@ -188,7 +188,6 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       const base: TreeNodeInUI = {
         ...node,
         nodeType: toNodeType(node.nodeType || 'folder'),
-        type: (node.nodeType || 'folder') as string,
         metadata: { ...node.metadata, name: displayName},
         hasChildren: Boolean(node.hasChildren ?? (Array.isArray(node.children) && node.children.length > 0)),
         depth: normalizedDepth,
