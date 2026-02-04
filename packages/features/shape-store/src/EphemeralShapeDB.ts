@@ -16,7 +16,7 @@ type DomainType = 'shape' | 'route';
 export type TransformCacheRecord = {
   id: string;
   nodeId: NodeId;
-  bandId: number;
+  bandIndex: number;
   domainType: DomainType;
   sourceKey: string;
   countryCode?: string;
@@ -55,7 +55,7 @@ export type FetchCacheRecord = {
 export type TileIdToBufferRelation = {
   id: string;
   nodeId: NodeId;
-  bandId: number;
+  bandIndex: number;
   tileId: string;
   bufferId: string;
   createdAt: number;
@@ -90,7 +90,27 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig, BuildSe
       fetchCache: '&id, nodeId, [nodeId+sourceKey]',
       transformCache: '&id, nodeId',
       sessions: '&nodeId',
-      tileIdToBufferRelations: '&id, nodeId, bufferId, [nodeId+bandId], [nodeId+bandId+tileId]',
+      tileIdToBufferRelations: '&id, nodeId, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
+      batchTasks: '&taskId, nodeId, [nodeId+status], [nodeId+taskType]',
+      transformErrors: '&id, nodeId',
+    });
+    this.version(18).stores({
+      fetchCache: '&id, nodeId, [nodeId+sourceKey]',
+      transformCache: '&id, nodeId, [nodeId+bandIndex]',
+      sessions: '&nodeId',
+      tileIdToBufferRelations: '&id, nodeId, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
+      batchTasks: '&taskId, nodeId, [nodeId+status], [nodeId+taskType]',
+      transformErrors: '&id, nodeId',
+    }).upgrade(async (tx) => {
+      await tx.table('transformCache').clear();
+      await tx.table('tileIdToBufferRelations').clear();
+    });
+    // Index-only upgrade; keep existing caches to avoid unnecessary rebuild.
+    this.version(19).stores({
+      fetchCache: '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
+      transformCache: '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel]',
+      sessions: '&nodeId',
+      tileIdToBufferRelations: '&id, nodeId, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
       batchTasks: '&taskId, nodeId, [nodeId+status], [nodeId+taskType]',
       transformErrors: '&id, nodeId',
     });

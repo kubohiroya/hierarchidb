@@ -78,7 +78,7 @@ describe('WorkerAPIAdapter', () => {
     adapter = new WorkerAPIAdapter({
       workerAPI: mockWorkerAPI,
       defaultViewId: 'test-view',
-      defaultOnNameConflict: 'auto-rename',
+      defaultOnNameConflict: 'error',
     });
   });
 
@@ -87,7 +87,7 @@ describe('WorkerAPIAdapter', () => {
       const info = adapter.getAdapterInfo();
 
       expect(info.viewId).toBe('test-view');
-      expect(info.defaultOnNameConflict).toBe('auto-rename');
+      expect(info.defaultOnNameConflict).toBe('error');
       expect(info.subscriptionStats.total).toBe(0);
     });
 
@@ -167,7 +167,7 @@ describe('WorkerAPIAdapter', () => {
         expect.objectContaining({
           nodeIds: ['node1', 'node2'],
           toParentId: 'target-parent',
-          onNameConflict: 'auto-rename',
+          onNameConflict: 'error',
         }),
       );
     });

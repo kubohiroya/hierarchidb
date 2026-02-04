@@ -352,7 +352,7 @@
         "admin0Name": "Admin0 Name",
         "adminAreaName": "Admin1/2 Name",
         "adminLevel": "Admin Level",
-        "bandId": "Band",
+        "bandIndex": "Band",
         "featureId": "Feature Id",
         "polygonCount": "Polygons (Error/Total)",
         "ringCount": "Rings (Error/Total)",

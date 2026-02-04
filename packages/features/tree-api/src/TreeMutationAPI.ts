@@ -53,7 +53,7 @@ export interface TreeMutationAPI {
   moveNodes(params: {
     nodeIds: NodeId[];
     toParentId: NodeId;
-    onNameConflict?: 'error' | 'auto-rename';
+    onNameConflict?: 'error' | 'auto-rename' | 'overwrite';
   }): Promise<{ success: boolean; error?: string }>;
 
   /**
@@ -94,7 +94,7 @@ export interface TreeMutationAPI {
   restoreNodesFromTrash(params: {
     nodeIds: NodeId[];
     toParentId?: NodeId;
-    onNameConflict?: 'error' | 'auto-rename';
+    onNameConflict?: 'error' | 'auto-rename' | 'overwrite';
   }): Promise<{ success: boolean; error?: string }>;
 
   /**

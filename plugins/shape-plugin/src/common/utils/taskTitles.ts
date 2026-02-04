@@ -34,8 +34,8 @@ const buildTransformTitle = (input: Record<string, unknown>): string | undefined
   const country = readString(input.countryName) ?? readString(input.countryCode);
   const adminLevel = readNumber(input.adminLevel);
   const adminLabel = adminLevel !== null ? `ADM${adminLevel}` : undefined;
-  const bandId = readNumber(input.bandId);
-  const bandLabel = bandId !== null ? `band${bandId}` : undefined;
+  const bandIndex = readNumber(input.bandIndex);
+  const bandLabel = bandIndex !== null ? `band${bandIndex}` : undefined;
   const bandMinZoom = readNumber(input.bandMinZoom);
   const bandMaxZoom = readNumber(input.bandMaxZoom);
   const zoomBandLabel = bandMinZoom !== null && bandMaxZoom !== null
@@ -49,10 +49,10 @@ const buildVtTitle = (input: Record<string, unknown>): string | undefined => {
   const TILE_INDEX_BITS = 22;
   const TILE_INDEX_SCALE = 2 ** TILE_INDEX_BITS;
   const TILE_INDEX_STRIDE = TILE_INDEX_SCALE * TILE_INDEX_SCALE;
-  const bandId = readNumber(input.bandId);
+  const bandIndex = readNumber(input.bandIndex);
   const zBase = readNumber(input.zBase);
   const tileId = readNumber(input.tileId);
-  const bandLabel = bandId !== null ? `band${bandId}` : undefined;
+  const bandLabel = bandIndex !== null ? `band${bandIndex}` : undefined;
   const unpackTileId = (tileIdValue: number, zBaseValue: number): { x: number; y: number } | null => {
     const offset = tileIdValue - (zBaseValue * TILE_INDEX_STRIDE);
     if (!Number.isFinite(offset)) return null;

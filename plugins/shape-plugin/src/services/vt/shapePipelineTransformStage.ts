@@ -22,7 +22,7 @@ import type { ephemeralShapeDB } from '@hierarchidb/shape-store';
 export type ShapeTransformStageParams = {
   nodeId: NodeId;
   buildConfig: ShapeBuildConfig;
-  bands: Array<{ bandId: number; zMin: number; zMax: number; zBase: number }>;
+  bands: Array<{ bandIndex: number; zMin: number; zMax: number; zBase: number }>;
   enableHighDetailBands: boolean;
   countryLookup: Map<string, CountryMetadata>;
   taskQueue: VtTaskQueueDb;

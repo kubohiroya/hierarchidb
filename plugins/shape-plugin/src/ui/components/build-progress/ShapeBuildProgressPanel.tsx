@@ -405,7 +405,20 @@ const TaskProgressSummaryCard = ({
           <Typography variant="caption" color="text.secondary">
             {summary.taskUnitLabel || t('stage.progress.task', 'Polygons')}
           </Typography>
-          <Typography variant="body2">{summary.taskLabel}</Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              overflow: 'hidden',
+              display: '-webkit-box',
+              WebkitBoxOrient: 'vertical',
+              WebkitLineClamp: 2,
+              lineHeight: 1.4,
+              minHeight: '2.8em',
+              maxHeight: '2.8em',
+            }}
+          >
+            {summary.taskLabel}
+          </Typography>
         </Stack>
       </Stack>
       <Stack gap={1}>

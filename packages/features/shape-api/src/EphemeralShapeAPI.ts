@@ -27,7 +27,7 @@ export interface EphemeralShapeQueryAPI {
   countTransformCaches(nodeId: NodeId): Promise<number>;
 
   listTileIdRelations(nodeId: NodeId): Promise<ShapeTileIdToBufferRelation[]>;
-  listTileIdRelationsByTileId(nodeId: NodeId, bandId: number, tileId: string): Promise<ShapeTileIdToBufferRelation[]>;
+  listTileIdRelationsByTileId(nodeId: NodeId, bandIndex: number, tileId: string): Promise<ShapeTileIdToBufferRelation[]>;
 
   getNumCaches(): Promise<{
     numFetchCaches: number;

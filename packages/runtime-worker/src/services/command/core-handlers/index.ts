@@ -171,24 +171,76 @@ async function handleMoveNodes(
     const payload = envelope.payload as {
       nodeIds: NodeId[];
       toParentId: NodeId;
-      onNameConflict?: 'error' | 'auto-rename';
+      onNameConflict?: 'error' | 'auto-rename' | 'overwrite';
     };
 
+    const conflictPolicy = payload.onNameConflict ?? 'error';
     const beforeNodes: TreeNode[] = [];
     const toUpdate: TreeNode[] = [];
+    const movingSet = new Set<NodeId>(payload.nodeIds);
     const siblings = (await deps.coreDB.listChildren?.(payload.toParentId)) || [];
     const siblingNames = new Set<string>(siblings.map((sibling) => sibling.metadata.name));
+    const siblingByName = new Map<string, TreeNode[]>();
+    for (const sibling of siblings) {
+      if (movingSet.has(sibling.id as NodeId)) continue;
+      const list = siblingByName.get(sibling.metadata.name) ?? [];
+      list.push(sibling);
+      siblingByName.set(sibling.metadata.name, list);
+    }
 
+    const conflictNodes = new Map<NodeId, TreeNode>();
+    const movingNodes: TreeNode[] = [];
     for (const nodeId of payload.nodeIds) {
       const node = await deps.coreDB.getNode?.(nodeId);
       if (!node) {
         continue;
       }
+      movingNodes.push(node);
+      const conflicts = siblingByName.get(node.metadata.name);
+      if (conflicts && conflicts.length > 0) {
+        conflicts.forEach((conflict) => {
+          conflictNodes.set(conflict.id as NodeId, conflict);
+        });
+      }
+    }
+
+    if (conflictNodes.size > 0 && conflictPolicy === 'error') {
+      const sample = conflictNodes.values().next().value as TreeNode | undefined;
+      const name = sample?.metadata?.name ?? 'unknown';
+      return deps.createErrorResult(
+        `Name conflict: '${name}' already exists`,
+        WorkerErrorCodeValue.NAME_NOT_UNIQUE
+      );
+    }
+
+    if (conflictNodes.size > 0 && conflictPolicy === 'overwrite') {
+      const removedNodes: TreeNode[] = [];
+      const removedIds = new Set<NodeId>();
+      for (const conflict of conflictNodes.values()) {
+        if (removedIds.has(conflict.id as NodeId)) continue;
+        const descendants = (await deps.coreDB.listDescendants?.(conflict.id as NodeId)) || [];
+        descendants.forEach((node) => {
+          if (!removedIds.has(node.id as NodeId)) {
+            removedIds.add(node.id as NodeId);
+            removedNodes.push(node);
+          }
+        });
+        await deps.coreDB.removeSubtreeTx(conflict.id as NodeId);
+        await deps.coreDB.deleteNode(conflict.id as NodeId);
+        removedIds.add(conflict.id as NodeId);
+        removedNodes.push(conflict);
+      }
+      if (removedNodes.length > 0) {
+        await deps.onNodesRemoved?.(envelope.commandId as CommandId, removedNodes);
+      }
+    }
+
+    for (const node of movingNodes) {
       beforeNodes.push({ ...node });
 
       let nextName = node.metadata.name;
       let originalNamePatch: string | undefined;
-      if (payload.onNameConflict === 'auto-rename') {
+      if (conflictPolicy === 'auto-rename') {
         if (siblingNames.has(nextName)) {
           originalNamePatch =
             (node as { originalName?: string }).originalName ?? node.metadata.name;

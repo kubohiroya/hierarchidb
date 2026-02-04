@@ -6,7 +6,9 @@ import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import type { MaybeCP, TreeConsoleActionDeps } from '../types.js';
 import {
   createUniqueName,
+  confirmOverwrite,
   fireCmdEvent,
+  isNameConflictError,
   resolveTrashNavigationTarget,
   showCommandError,
 } from './helpers.ts';
@@ -167,10 +169,31 @@ export const createMutationActions = (
       const res = await mutationAPI.moveNodes({
         nodeIds: nodeIds as NodeId[],
         toParentId: targetParentId as NodeId,
+        onNameConflict: 'error',
       });
       if (!res.success) {
-        showCommandError('INVALID_OPERATION', res.error || 'Move failed');
-        return;
+        if (isNameConflictError(res.error)) {
+          const message = translateError(
+            'treeConsole.conflicts.moveOverwrite',
+            'A node with the same name exists. Overwrite it?'
+          );
+          const allowOverwrite = confirmOverwrite(message);
+          if (!allowOverwrite) {
+            return;
+          }
+          const overwriteResult = await mutationAPI.moveNodes({
+            nodeIds: nodeIds as NodeId[],
+            toParentId: targetParentId as NodeId,
+            onNameConflict: 'overwrite',
+          });
+          if (!overwriteResult.success) {
+            showCommandError('INVALID_OPERATION', overwriteResult.error || 'Move failed');
+            return;
+          }
+        } else {
+          showCommandError('INVALID_OPERATION', res.error || 'Move failed');
+          return;
+        }
       }
       await loadChildrenOf(targetParentId as NodeId);
       await refreshUndoRedo();

@@ -139,7 +139,7 @@ export function useTreeViewController(
     return new WorkerAPIAdapter({
       workerAPI: api,
       defaultViewId: 'treeconsole-view',
-      defaultOnNameConflict: 'auto-rename',
+      defaultOnNameConflict: 'error',
     });
   }, [api, workerService]);
 

@@ -319,7 +319,6 @@ export function useTreeNodeUpdater<TPayload extends Record<string, unknown> = Re
       const { wc: wcAPI } = await getClient();
 
       const res = await wcAPI.updateTreeNode(targetId, {
-        onNameConflict: 'auto-rename',
         mode,
         draftMetadata: finalData.draftMetadata ?? null,
         draftData: finalData.draftData ?? null,

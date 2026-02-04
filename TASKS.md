@@ -31,6 +31,30 @@
   - update: 2026-02-04 13:06 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
   - done: 2026-02-04 13:06 JST useShapeBuildStep の hook import 修正を完了。
 
+2501) refactor/shape/bandindex-rename (P1) — 完了 (2026-02-04)
+- ブランチ名: refactor/shape/bandindex-rename
+- 依存: なし
+- 受け入れ基準: bandIndex 名称へ全面統一（型/DB/API/UI/ログ/テスト含む）／Dexie schema の version 更新と移行対応／旧名の混在が残らない（検索で許容箇所以外に bandIndex が残らない）／必要範囲の typecheck/build が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/**`, `plugins/**`, `app/**`（bandIndex 参照全般）
+- ロールバック手順: 該当差分を revert して旧名称へ戻し、Dexie schema 版本号を戻す
+- チェックリスト:
+  - bandIndex 名称への置換を実施する
+  - Dexie schema の version 更新と移行を実装する
+  - 影響範囲の typecheck/build を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-04 10:40 JST bandIndex 名称統一の作業に着手。
+  - update: 2026-02-04 10:52 JST bandIndex 名称統一の参照箇所を抽出し、全体置換を開始。
+  - update: 2026-02-04 11:05 JST EphemeralShapeDB を version 18 に更新し transformCache に [nodeId+bandIndex] を追加、upgrade で transformCache/tileIdToBufferRelations を clear。
+  - update: 2026-02-04 11:10 JST docs/plans/TASKS の bandIndex 表記へ更新。
+  - update: 2026-02-04 11:14 JST pnpm --filter @hierarchidb/shape-api build exit 0（tsdown define 警告あり）。
+  - update: 2026-02-04 11:15 JST pnpm --filter @hierarchidb/shape-store build exit 0（tsdown define 警告あり）。
+  - update: 2026-02-04 11:16 JST pnpm --filter @hierarchidb/vt-orchestrator build exit 0（tsdown define 警告あり）。
+  - update: 2026-02-04 11:17 JST pnpm --filter @hierarchidb/shape-store typecheck exit 0。
+  - update: 2026-02-04 11:18 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0。
+  - update: 2026-02-04 11:19 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+  - done: 2026-02-04 11:22 JST bandIndex 名称統一を完了。
+
 2500) feat/shape/vt-memory-logs-tiling (P2) — 進行中 (2026-02-03)
 - ブランチ名: feat/shape/vt-memory-logs-tiling
 - 依存: なし
@@ -49,6 +73,114 @@
   - update: 2026-02-04 10:31 JST vt のログフィールド名を duration/elapsed に統一（ms 表記削除）。
   - update: 2026-02-04 10:33 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
   - done: 2026-02-04 10:33 JST vt tiling/encode/store のメモリログ追加を完了。
+
+2504) fix/shape/fetch-transform-cache-country-admin-index (P1) — 進行中 (2026-02-04)
+
+2505) fix/shape-step5/summary-card-clamp (P1) — 完了 (2026-02-04)
+
+2506) fix/ui-plugin-dialog/memory-remain-bar (P1) — 完了 (2026-02-04)
+- ブランチ名: fix/ui-plugin-dialog/memory-remain-bar
+- 依存: なし
+- 受け入れ基準: development モード時のみ PluginDialog コンテンツ上端にメモリ残量の LinearProgress が表示される／performance.memory が無い環境では非表示で落ちない／`pnpm --filter @hierarchidb/plugin-ui-host typecheck` もしくは `pnpm --filter @hierarchidb/ui-dialog typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/plugin-ui-host/src/headless/components/DialogScaffold.tsx`
+- ロールバック手順: 追加した表示コンポーネントを削除する
+- チェックリスト:
+  - dev 判定と memory 残量の表示を追加する
+  - 必要な typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-04 14:25 JST PluginDialog に dev 用メモリ残量バーを追加する作業に着手。
+  - update: 2026-02-04 14:29 JST DialogScaffold に dev 判定のメモリ残量バー（LinearProgress）を追加。
+  - update: 2026-02-04 14:30 JST pnpm --filter @hierarchidb/plugin-ui-host typecheck exit 0 を確認。
+  - update: 2026-02-04 14:36 JST メモリ残量バーを padding/margin なしにし、20%/10% で warning/error 色へ変更。
+  - update: 2026-02-04 14:36 JST pnpm --filter @hierarchidb/plugin-ui-host typecheck exit 0 を確認。
+  - done: 2026-02-04 14:30 JST PluginDialog の dev 用メモリ残量バー対応を完了。
+
+2507) fix/shape-build/max-update-depth (P1) — 完了 (2026-02-04)
+- ブランチ名: fix/shape-build/max-update-depth
+- 依存: なし
+- 受け入れ基準: Shape build の Step5 で発生する Maximum update depth exceeded が解消される／useShapeBuildTaskSync/useShapeBuildTasks の更新ループが発生しない／`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync.ts`, `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTasks.ts`（必要に応じて追加）
+- ロールバック手順: 該当差分を revert して元の同期ロジックへ戻す
+- チェックリスト:
+  - 更新ループの原因を特定し、setState の無限連鎖を止める
+  - 既存のタスク更新反映が維持されることを確認する
+  - shape-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-04 16:10 JST Shape build の Maximum update depth exceeded 対応に着手。
+  - update: 2026-02-04 16:18 JST task 同期の flush 比較を committedTasksRef に統一し、冗長更新を抑制。
+  - update: 2026-02-04 16:18 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-02-04 16:18 JST Shape build の最大更新深度エラー対応を完了。
+- ブランチ名: fix/shape-step5/summary-card-clamp
+- 依存: なし
+- 受け入れ基準: Step5 ビルドのサマリーカード内の現在タスク/メッセージが2行固定で表示されレイアウトが安定する／タスクリストのメッセージも2行固定になる／`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/ShapeBuildProgressPanel.tsx`, `plugins/shape-plugin/src/ui/components/build-progress/TaskItem.tsx`
+- ロールバック手順: 該当スタイル変更を元に戻す
+- チェックリスト:
+  - summary/task メッセージの 2 行固定（line-clamp + 高さ固定）を適用する
+  - shape-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-04 14:10 JST Step5 サマリーカード/タスクメッセージの2行固定対応に着手。
+  - update: 2026-02-04 14:14 JST TaskProgressSummaryCard と TaskItem のメッセージを2行固定に変更。
+  - update: 2026-02-04 14:15 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-02-04 14:15 JST Step5 サマリーカード/タスクメッセージの2行固定対応を完了。
+- ブランチ名: fix/shape/fetch-transform-cache-country-admin-index
+- 依存: なし
+- 受け入れ基準: fetchCache/transformCache に [nodeId+countryCode+adminLevel] を追加し SchemaError が解消される／Dexie schema の version 更新と upgrade 方針を明記する／`pnpm --filter @hierarchidb/shape-store typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/shape-store/src/EphemeralShapeDB.ts`
+- ロールバック手順: 該当差分を revert して schema を元に戻す
+- チェックリスト:
+  - fetchCache/transformCache に [nodeId+countryCode+adminLevel] のインデックスを追加する
+  - Dexie schema version を更新し upgrade 方針を明記する
+  - shape-store の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-04 13:25 JST fetch/transform cache の country/admin インデックス追加に着手。
+  - update: 2026-02-04 13:29 JST EphemeralShapeDB version 19 で fetchCache/transformCache に [nodeId+countryCode+adminLevel] を追加（インデックスのみ・既存キャッシュ保持）。
+  - update: 2026-02-04 13:30 JST pnpm --filter @hierarchidb/shape-store typecheck exit 0。
+  - done: 2026-02-04 13:30 JST country/admin インデックス追加を完了。
+
+2505) fix/draft/disable-auto-rename-on-save (P1) — 進行中 (2026-02-04)
+- ブランチ名: fix/draft/disable-auto-rename-on-save
+- 依存: なし
+- 受け入れ基準: save/save-draft で auto-rename が既定適用されない（TreeNodeUpdater の default が error になる）／新規作成の初期命名は従来どおり initTreeNode でユニーク化される／`pnpm --filter @hierarchidb/runtime-worker typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/runtime-worker/src/services/TreeNodeUpdaterService.ts`, `packages/plugin-ui-sdk/src/hooks/useTreeNodeUpdater.ts`, `packages/features/tree-api/src/TreeNodeUpdaterAPI.ts`
+- ロールバック手順: 該当差分を revert して auto-rename 既定を復元する
+- チェックリスト:
+  - TreeNodeUpdaterService の conflictPolicy 既定を error に変更する
+  - useTreeNodeUpdater の commit リクエストから onNameConflict を外す
+  - TreeNodeUpdaterAPI のドキュメントを更新する
+  - runtime-worker の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-04 13:40 JST save/save-draft の auto-rename 既定無効化に着手。
+  - update: 2026-02-04 13:44 JST TreeNodeUpdaterService の conflictPolicy 既定を error に変更。
+  - update: 2026-02-04 13:45 JST useTreeNodeUpdater の commit リクエストから onNameConflict を撤去。
+  - update: 2026-02-04 13:46 JST TreeNodeUpdaterAPI と plugins/README の説明を更新。
+  - update: 2026-02-04 13:47 JST pnpm --filter @hierarchidb/runtime-worker typecheck exit 0。
+  - done: 2026-02-04 13:47 JST save/save-draft の auto-rename 既定無効化を完了。
+
+2506) fix/tree/move-paste-conflict-dialog (P1) — 進行中 (2026-02-04)
+- ブランチ名: fix/tree/move-paste-conflict-dialog
+- 依存: なし
+- 受け入れ基準: move/paste の衝突時にダイアログで「中止/上書き」を選択できる／move/paste は暗黙 auto-rename を行わない／duplicate は auto-rename の連番 suffix を維持する／`pnpm --filter @hierarchidb/runtime-worker typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/hooks/treeconsole/actions/*.ts`, `packages/runtime-worker/src/services/TreeMutationService.ts`, `packages/runtime-worker/src/services/command/core-handlers/index.ts`, `packages/features/tree-api/src/*`, `packages/ui/treeconsole/base/src/*`
+- ロールバック手順: 該当差分を revert して auto-rename 既定・衝突時の挙動を元に戻す
+- チェックリスト:
+  - onNameConflict に overwrite を追加し、move/paste で衝突時に NAME_NOT_UNIQUE を返す
+  - move/paste の overwrite を実装し、既存ノードの削除後に処理を続行できる
+  - move/paste の UI で衝突時にダイアログを表示する
+  - duplicate の auto-rename を維持する
+  - runtime-worker の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-04 14:20 JST move/paste の衝突ダイアログ対応に着手。
+  - update: 2026-02-04 14:35 JST onNameConflict に overwrite を追加し、move/paste の衝突処理を実装。
+  - update: 2026-02-04 14:38 JST move/paste の UI で衝突時に上書き確認を表示するよう対応。
+  - update: 2026-02-04 14:41 JST pnpm --filter @hierarchidb/tree-api build exit 0（tsdown define 警告あり）。
+  - update: 2026-02-04 14:42 JST pnpm --filter @hierarchidb/runtime-worker typecheck exit 0。
 
 2501) fix/shape/pause-loading-other-steps (P2) — 進行中 (2026-02-03)
 - ブランチ名: fix/shape/pause-loading-other-steps
@@ -263,18 +395,18 @@
 2489) fix/shape/tile-buffer-relations-index (P1) — 進行中 (2026-02-03)
 - ブランチ名: fix/shape/tile-buffer-relations-index
 - 依存: なし
-- 受け入れ基準: Dexie の tileIdToBufferRelations に [nodeId+bandId] インデックスが定義され SchemaError が再現しない／DB バージョン更新とマイグレーション方針を明記する／必要範囲の typecheck/build が exit 0／TASKS.md に運用ログを記載する
+- 受け入れ基準: Dexie の tileIdToBufferRelations に [nodeId+bandIndex] インデックスが定義され SchemaError が再現しない／DB バージョン更新とマイグレーション方針を明記する／必要範囲の typecheck/build が exit 0／TASKS.md に運用ログを記載する
 - 影響範囲: `plugins/shape-plugin/**`, `packages/features/shape-store/**`, `packages/runtime-worker/**`（必要に応じて追加）
 - ロールバック手順: 該当差分を revert してインデックス追加前へ戻す
 - チェックリスト:
   - tileIdToBufferRelations の schema/index 定義を確認する
-  - [nodeId+bandId] インデックスを追加し DB バージョンを更新する
+  - [nodeId+bandIndex] インデックスを追加し DB バージョンを更新する
   - マイグレーションの影響と確認手順を明記する
   - 必要範囲の typecheck/build を実行する
   - 運用ログ start/update/done/blocked を追記する
 - 運用ログ:
-  - start: 2026-02-03 10:05 JST Dexie SchemaError（tileIdToBufferRelations の [nodeId+bandId] 未 index）調査と修正に着手。
-  - update: 2026-02-03 10:10 JST EphemeralShapeDB を version 17 に更新し tileIdToBufferRelations に [nodeId+bandId]/[nodeId+bandId+tileId] を追加。インデックス追加のみのため既存データは維持、Dexie の upgrade で再作成される方針。
+  - start: 2026-02-03 10:05 JST Dexie SchemaError（tileIdToBufferRelations の [nodeId+bandIndex] 未 index）調査と修正に着手。
+  - update: 2026-02-03 10:10 JST EphemeralShapeDB を version 17 に更新し tileIdToBufferRelations に [nodeId+bandIndex]/[nodeId+bandIndex+tileId] を追加。インデックス追加のみのため既存データは維持、Dexie の upgrade で再作成される方針。
   - update: 2026-02-03 10:11 JST pnpm --filter @hierarchidb/shape-store typecheck exit 0 を確認。
   - done: 2026-02-03 10:11 JST tileIdToBufferRelations の複合インデックス追加と schema 更新を完了。
 
@@ -6690,7 +6822,7 @@
 - 運用ログ：
   - start: 2026-01-18 14:10 JST プラグインダイアログ最大化時に「次へ」が押せない問題の調査に着手。
   - update: 2026-01-18 14:20 JST 最大化時にリサイズハンドルを描画しないよう調整し、フッター右下のクリック阻害を回避する対応を追加。
-  - blocked: 2026-01-18 14:25 JST pnpm typecheck が @hierarchidb/vt-orchestrator build:types の TransformByBandCacheRecord に bandId が無い型エラー（createTransformByBandHandler.ts:868）で失敗。
+  - blocked: 2026-01-18 14:25 JST pnpm typecheck が @hierarchidb/vt-orchestrator build:types の TransformByBandCacheRecord に bandIndex が無い型エラー（createTransformByBandHandler.ts:868）で失敗。
   - update: 2026-01-18 14:40 JST ダイアログ表示時に SpeedDial を確実に抑制するため、hash ルーティング時の dialog route 判定を追加。
   - blocked: 2026-01-18 14:45 JST pnpm typecheck が @hierarchidb/runtime-worker の EphemeralShapeDB/TransformByBandCacheRecord/TransformByZoomCacheRecord 型エラー（ShapeMutationService.ts/ShapeQueryService.ts/vectorTileStageRunner.ts）で失敗。
   - update: 2026-01-18 15:05 JST ダイアログ表示中は SpeedDial を強制的に非表示にするため、PluginDialogFrame が dialog-open 共有状態を通知し DynamicSpeedDial がそれに追従するよう調整。

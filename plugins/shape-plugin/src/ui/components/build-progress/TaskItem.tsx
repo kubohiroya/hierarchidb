@@ -34,7 +34,19 @@ export const TaskItem: React.FC<Props> = ({
       />
     </Stack>
     {message ? (
-      <Typography variant="caption" color="text.secondary" sx={{ overflow: 'hidden' }}>
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{
+          overflow: 'hidden',
+          display: '-webkit-box',
+          WebkitBoxOrient: 'vertical',
+          WebkitLineClamp: 2,
+          lineHeight: 1.4,
+          minHeight: '2.8em',
+          maxHeight: '2.8em',
+        }}
+      >
         {message}
       </Typography>
     ) : null}

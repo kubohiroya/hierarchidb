@@ -72,9 +72,10 @@ export function validateAndNormalizeEnvelope(
   if (
     obj.onNameConflict !== undefined &&
     obj.onNameConflict !== 'error' &&
-    obj.onNameConflict !== 'auto-rename'
+    obj.onNameConflict !== 'auto-rename' &&
+    obj.onNameConflict !== 'overwrite'
   ) {
-    return { ok: false, error: 'onNameConflict must be "error" or "auto-rename"' };
+    return { ok: false, error: 'onNameConflict must be "error", "auto-rename", or "overwrite"' };
   }
   // meta (optional)
   if (obj.meta !== undefined) {
@@ -119,7 +120,7 @@ export function validateAndNormalizeEnvelope(
     payload: obj.payload,
     issuedAt: obj.issuedAt as number,
     sourceViewId: typeof obj.sourceViewId === 'string' ? obj.sourceViewId : undefined,
-    onNameConflict: obj.onNameConflict as 'error' | 'auto-rename' | undefined,
+    onNameConflict: obj.onNameConflict as 'error' | 'auto-rename' | 'overwrite' | undefined,
     type: (obj.type ?? kind) as string,
     meta: normalizedMeta,
   };

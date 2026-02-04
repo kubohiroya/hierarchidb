@@ -352,7 +352,7 @@
         "admin0Name": "Admin0名",
         "adminAreaName": "Admin1/2名",
         "adminLevel": "自治体レベル",
-        "bandId": "バンド",
+        "bandIndex": "バンド",
         "featureId": "フィーチャーID",
         "polygonCount": "ポリゴン(エラー/総数)",
         "ringCount": "リング(エラー/総数)",

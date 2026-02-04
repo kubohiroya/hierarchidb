@@ -168,7 +168,7 @@ export interface ShapeFetchCache {
 export interface ShapeTransformCache {
   id: string;
   nodeId: NodeId;
-  bandId: number;
+  bandIndex: number;
   domainType: 'shape' | 'route';
   sourceKey: string;
   data: ArrayBuffer;
@@ -262,7 +262,7 @@ export interface ShapeTransformErrorRecord {
   stage: ShapeBuildStage;
   issueStage?: string;
   issueKind?: string;
-  bandId?: number;
+  bandIndex?: number;
   sourceKey?: string;
   countryCode?: string;
   countryName?: string;

@@ -28,7 +28,7 @@ export type DynamicConcurrencyConfig = {
 };
 
 export type BandConfig = {
-  bandId: number;
+  bandIndex: number;
   zMin: number;
   zMax: number;
   zBase: number;
@@ -66,7 +66,7 @@ export const DEFAULT_TASK_SPLIT = {
 
 export type TransformByBandTaskInput = {
   fetchCacheId: string;
-  bandId: number;
+  bandIndex: number;
   bandMinZoom?: number;
   bandMaxZoom?: number;
   domainType: 'shape' | 'route';
@@ -77,7 +77,7 @@ export type TransformByBandTaskInput = {
 };
 
 export type VtTaskInput = {
-  bandId: number;
+  bandIndex: number;
   zBase: number;
   tileId: number;
   bufferIds: string[];

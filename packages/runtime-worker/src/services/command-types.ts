@@ -14,7 +14,7 @@ export type CommandEnvelope<TType extends string, TPayload> = {
   payload: TPayload;
   issuedAt: Timestamp;
   sourceViewId?: string;
-  onNameConflict?: 'error' | 'auto-rename';
+  onNameConflict?: 'error' | 'auto-rename' | 'overwrite';
   type?: TType; // Alias for 'kind' for backward compatibility
   meta?: CommandMeta; // Optional worker-specific metadata
 };

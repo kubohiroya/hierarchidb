@@ -60,7 +60,7 @@ export interface ShapeVectorTileRecord {
 export interface ShapeTileIdToBufferRelation {
   id: string;
   nodeId: NodeId;
-  bandId: number;
+  bandIndex: number;
   tileId: string;
   bufferId: string;
   createdAt: number;

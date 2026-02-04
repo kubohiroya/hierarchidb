@@ -21,7 +21,7 @@ import type { ephemeralShapeDB } from '@hierarchidb/shape-store';
 export type ShapeVtStageParams = {
   nodeId: NodeId;
   buildConfig: ShapeBuildConfig;
-  bands: Array<{ bandId: number; zMin: number; zMax: number; zBase: number }>;
+  bands: Array<{ bandIndex: number; zMin: number; zMax: number; zBase: number }>;
   enableHighDetailBands: boolean;
   taskQueue: VtTaskQueueDb;
   waitIfPaused?: () => Promise<void>;

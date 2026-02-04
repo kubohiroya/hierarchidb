@@ -1139,7 +1139,7 @@ export const createTransformByBandHandler = (
   if (typeof baseTolerance !== 'number') {
     throw new Error('transform requires tolerance');
   }
-  const bandMap = new Map(bands.map((band) => [band.bandId, band] as const));
+  const bandMap = new Map(bands.map((band) => [band.bandIndex, band] as const));
 
   return async (task): Promise<StageHandlerResult> => {
     const taskId = task.taskId;
@@ -1147,9 +1147,9 @@ export const createTransformByBandHandler = (
     if (!input) {
       return { status: 'failed', errorMessage: 'transform failed: task input is missing' };
     }
-    const band = bandMap.get(input.bandId);
+    const band = bandMap.get(input.bandIndex);
     if (!band) {
-      return { status: 'failed', errorMessage: `transform failed: unknown bandId (${input.bandId})` };
+      return { status: 'failed', errorMessage: `transform failed: unknown bandIndex (${input.bandIndex})` };
     }
     const tolerance = resolveTransformTolerance(baseTolerance, band.zMax);
     if (tolerance !== baseTolerance) {
@@ -1158,7 +1158,7 @@ export const createTransformByBandHandler = (
         taskId,
         sourceKey: input.sourceKey,
         adminLevel: input.adminLevel,
-        bandId: input.bandId,
+        bandIndex: input.bandIndex,
         zTarget: band.zMax,
         baseTolerance,
         appliedTolerance: tolerance,
@@ -1308,7 +1308,7 @@ export const createTransformByBandHandler = (
           taskId,
           sourceKey: input.sourceKey,
           adminLevel: input.adminLevel,
-          bandId: input.bandId,
+          bandIndex: input.bandIndex,
           zTarget: band.zMax,
           featureCount: inputFeatureCount,
           samples,
@@ -1339,7 +1339,7 @@ export const createTransformByBandHandler = (
         console.log('[ShapeTransform][SimplifyOnlyMetrics] start', {
           nodeId: task.nodeId,
           taskId,
-          bandId: input.bandId,
+          bandIndex: input.bandIndex,
           zTarget: band.zMax,
           featureCount: inputFeatureCount,
           polygonCount: inputPolygonCount,
@@ -1370,7 +1370,7 @@ export const createTransformByBandHandler = (
         console.log('[ShapeTransform][SimplifyOnlyMetrics] done', {
           nodeId: task.nodeId,
           taskId,
-          bandId: input.bandId,
+          bandIndex: input.bandIndex,
           zTarget: band.zMax,
           durationMs: Date.now() - simplifyStartAt,
           processedPolygons: processedPolygonCount,
@@ -1397,7 +1397,7 @@ export const createTransformByBandHandler = (
               nodeId: task.nodeId,
               taskId: task.taskId,
               stage: 'transform',
-              bandId: input.bandId,
+              bandIndex: input.bandIndex,
               sourceKey: input.sourceKey,
               countryCode: input.countryCode,
               adminLevel: input.adminLevel,
@@ -1554,7 +1554,7 @@ export const createTransformByBandHandler = (
               nodeId: task.nodeId,
               taskId: task.taskId,
               stage: 'transform',
-              bandId: input.bandId,
+              bandIndex: input.bandIndex,
               sourceKey: input.sourceKey,
               countryCode: input.countryCode,
               adminLevel: input.adminLevel,
@@ -1712,7 +1712,7 @@ export const createTransformByBandHandler = (
           stage: 'transform',
           issueStage: 'simplify-only',
           issueKind: 'max-vertices',
-          bandId: input.bandId,
+          bandIndex: input.bandIndex,
           sourceKey: input.sourceKey,
           countryCode: input.countryCode,
           adminLevel: input.adminLevel,
@@ -1818,7 +1818,7 @@ export const createTransformByBandHandler = (
           taskId,
           sourceKey: input.sourceKey,
           adminLevel: input.adminLevel,
-          bandId: input.bandId,
+          bandIndex: input.bandIndex,
           zTarget: band.zMax,
           boundary: boundaryDiagnostics,
         }));
@@ -1833,7 +1833,7 @@ export const createTransformByBandHandler = (
           taskId,
           sourceKey: input.sourceKey,
           adminLevel: input.adminLevel,
-          bandId: input.bandId,
+          bandIndex: input.bandIndex,
           zTarget: band.zMax,
           issueCount: issues.length,
           sample,
@@ -1859,7 +1859,7 @@ export const createTransformByBandHandler = (
       await runStageWithLabel('encode:validate', () => validateEncodedFlatGeobuf(encoded));
       await updateTaskPhase(taskId, 'encode:done', taskProgressRange.encodeEnd);
       const extractionRatio = inputFeatureCount > 0 ? simplified.features.length / inputFeatureCount : 0;
-      const cacheId = `${task.nodeId}-b${input.bandId}-${input.domainType}-${input.sourceKey}`;
+      const cacheId = `${task.nodeId}-b${input.bandIndex}-${input.domainType}-${input.sourceKey}`;
 
       stageLabel = 'cache:put';
       assertNotAborted(abortSignal);
@@ -1868,7 +1868,7 @@ export const createTransformByBandHandler = (
         await ephemeralDB.transformCache.put({
           id: cacheId,
           nodeId: task.nodeId,
-          bandId: input.bandId,
+          bandIndex: input.bandIndex,
           domainType: input.domainType,
           sourceKey: input.sourceKey,
           countryCode: input.countryCode,
@@ -1888,7 +1888,7 @@ export const createTransformByBandHandler = (
       const tileIds = collectTileIdsForCollection(outputCollectionValue, band.zBase);
       console.info('[ShapeTransform][TileIndex]', JSON.stringify({
         nodeId: String(task.nodeId),
-        bandId: input.bandId,
+        bandIndex: input.bandIndex,
         zBase: band.zBase,
         sourceKey: input.sourceKey,
         adminLevel: input.adminLevel,
@@ -1898,9 +1898,9 @@ export const createTransformByBandHandler = (
       if (tileIds.length > 0) {
         const createdAt = Date.now();
         const relations = tileIds.map((tileId) => ({
-          id: `${task.nodeId}:${input.bandId}:${tileId}:${cacheId}`,
+          id: `${task.nodeId}:${input.bandIndex}:${tileId}:${cacheId}`,
           nodeId: task.nodeId,
-          bandId: input.bandId,
+          bandIndex: input.bandIndex,
           tileId: String(tileId),
           bufferId: cacheId,
           createdAt,

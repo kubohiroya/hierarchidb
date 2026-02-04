@@ -62,7 +62,7 @@ PluginDialog の各ステップで入力を更新すると、下記の経路で 
    - ステップ `onUpdate` → `useTreeNodeUpdater.updateDraft`。`draftData` にパッチをマージし、必要に応じて `draftMetadata`（name/description/tags）も更新。  
    - `updateDraft` はローカル state を更新しつつ 150ms デバウンスの `persistDraft` を起動。  
    - `persistDraft` は Worker クライアント (`wc`) に対し `updateTreeNodeDraftMetadata` → `updateTreeNodeDraftData` を送る（TreeNodeUpdaterAPI）。  
-   - `saveDraft`（ダイアログ確定）は同じ 2 API を送った後に `commitDraft` を呼ぶ（auto-rename で衝突回避）。
+   - `saveDraft`（ダイアログ確定）は同じ 2 API を送った後に `commitDraft` を呼ぶ (onNameConflict defaults to error; auto-rename is only used during initTreeNode naming).
 
 2) Worker (runtime-worker)  
    - DraftService が TreeNodeUpdaterAPI を実装。`updateTreeNodeDraftData/Metadata` は `DraftTreeNodeOperations` を呼び、CoreDB(Dexie) の `nodes` テーブルを更新。`draftData` は `{ ...prev, ...updater }` でマージ。  
@@ -87,7 +87,7 @@ useTreeNodeUpdater-->>WorkerClient(wc): persistDraft (debounced)\nupdateTreeNode
 WorkerClient(wc)-->>DraftService(Worker): updateTreeNodeDraftMetadata\nupdateTreeNodeDraftData
 DraftService(Worker)->>Dexie(CoreDB.nodes): merge draftMetadata/draftData
 
-note over useTreeNodeUpdater,DraftService(Worker): saveDraft() は上記2APIの後\ncommitDraft() を実行（auto-rename考慮）
+note over useTreeNodeUpdater,DraftService(Worker): saveDraft() calls commitDraft() after the two APIs\nonNameConflict defaults to error; auto-rename is only used during initTreeNode naming
 DraftService(Worker)-->>Dexie(CoreDB.nodes): commitDraft (wc -> main node)
 ```
 

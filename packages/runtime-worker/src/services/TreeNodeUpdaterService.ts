@@ -229,7 +229,7 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
   }
 
   async updateTreeNode(draftId: NodeId, request?: CommitDraftRequest): Promise<CommitResult> {
-    const conflictPolicy: OnNameConflict = request?.onNameConflict ?? 'auto-rename';
+    const conflictPolicy: OnNameConflict = request?.onNameConflict ?? 'error';
     const mode: CommitDraftMode = request?.mode ?? 'save';
 
     const updates: Partial<TreeNode> = {};

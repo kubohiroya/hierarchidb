@@ -656,10 +656,10 @@ export class EphemeralShapeApiImpl implements EphemeralShapeAPI {
     return ephemeralShapeDB.tileIdToBufferRelations.where('nodeId').equals(nodeId).toArray() as Promise<ShapeTileIdToBufferRelation[]>;
   }
 
-  async listTileIdRelationsByTileId(nodeId: NodeId, bandId: number, tileId: string): Promise<ShapeTileIdToBufferRelation[]> {
+  async listTileIdRelationsByTileId(nodeId: NodeId, bandIndex: number, tileId: string): Promise<ShapeTileIdToBufferRelation[]> {
     return ephemeralShapeDB.tileIdToBufferRelations
-      .where('[nodeId+bandId+tileId]')
-      .equals([nodeId, bandId, tileId])
+      .where('[nodeId+bandIndex+tileId]')
+      .equals([nodeId, bandIndex, tileId])
       .toArray() as Promise<ShapeTileIdToBufferRelation[]>;
   }
 

@@ -26,7 +26,7 @@ import { ephemeralShapeDB } from '@hierarchidb/shape-store';
 
 export type ShapeTransformByBandTaskInput = {
   fetchCacheId: string;
-  bandId: number;
+  bandIndex: number;
   bandMinZoom?: number;
   bandMaxZoom?: number;
   domainType: 'shape';
@@ -39,7 +39,7 @@ export type ShapeTransformByBandTaskInput = {
 };
 
 export type ShapeVtTaskInput = {
-  bandId: number;
+  bandIndex: number;
   bandMinZoom: number;
   bandMaxZoom: number;
   zBase: number;
@@ -92,7 +92,7 @@ export const buildBands = (zoomBandBoundaries: number[]) => {
     const isLastRange = index === ranges.length - 1;
     const cappedMax = isLastRange ? range.max : Math.max(range.min, range.max - 1);
     return {
-      bandId: index,
+      bandIndex: index,
       zMin: range.min,
       zMax: cappedMax,
       zBase: range.min,
@@ -308,15 +308,15 @@ const collectTileIdsForCollection = (collection: FeatureCollection, zBase: numbe
 
 export const backfillTileRelationsFromTransformCache = async (params: {
   nodeId: NodeId;
-  bandId: number;
+  bandIndex: number;
   zBase: number;
   ephemeralStore: typeof ephemeralShapeDB;
 }): Promise<{ relationCount: number; tileBuffers: Map<number, string[]> }> => {
-  const { nodeId, bandId, zBase, ephemeralStore } = params;
+  const { nodeId, bandIndex, zBase, ephemeralStore } = params;
   const buffers = await ephemeralStore.transaction('r', ephemeralStore.transformCache, async () => (
     ephemeralStore.transformCache
-      .where('[nodeId+bandId]')
-      .equals([nodeId, bandId])
+      .where('[nodeId+bandIndex]')
+      .equals([nodeId, bandIndex])
       .toArray()
   ));
   const completedBuffers = buffers.filter((buffer) => isTransformCacheComplete(buffer));
@@ -327,7 +327,7 @@ export const backfillTileRelationsFromTransformCache = async (params: {
   const pending: Array<{
     id: string;
     nodeId: NodeId;
-    bandId: number;
+    bandIndex: number;
     tileId: string;
     bufferId: string;
     createdAt: number;
@@ -346,7 +346,7 @@ export const backfillTileRelationsFromTransformCache = async (params: {
       const debug = describeBuffer(buffer.data);
       console.warn('[shape-vt] failed to decode transform cache', {
         nodeId,
-        bandId,
+        bandIndex,
         bufferId: buffer.id,
         timestamp: buffer.timestamp,
         byteLength: debug.byteLength,
@@ -366,9 +366,9 @@ export const backfillTileRelationsFromTransformCache = async (params: {
         tileBuffers.set(tileId, [buffer.id]);
       }
       pending.push({
-        id: `${String(nodeId)}:${bandId}:${tileId}:${buffer.id}`,
+        id: `${String(nodeId)}:${bandIndex}:${tileId}:${buffer.id}`,
         nodeId,
-        bandId,
+        bandIndex,
         tileId: String(tileId),
         bufferId: buffer.id,
         createdAt,
@@ -393,7 +393,7 @@ export const hasHighDetailSelection = (
 
 export const buildTransformByBandTasks = async (
   nodeId: NodeId,
-  bands: Array<{ bandId: number; zMin: number; zMax: number; zBase: number }>,
+  bands: Array<{ bandIndex: number; zMin: number; zMax: number; zBase: number }>,
   enableHighDetailBands: boolean,
   countryLookup: Map<string, CountryMetadata>,
   configSignature: string,
@@ -416,7 +416,7 @@ export const buildTransformByBandTasks = async (
         if (typeof adminLevel !== 'number' || adminLevel < 2) continue;
       }
       tasks.push({
-        taskId: `${String(nodeId)}:transform:${band.bandId}:${buffer.sourceKey}`,
+        taskId: `${String(nodeId)}:transform:${band.bandIndex}:${buffer.sourceKey}`,
         nodeId,
         stage: 'transform',
         status: 'queued',
@@ -425,7 +425,7 @@ export const buildTransformByBandTasks = async (
         progress: 0,
         inputData: {
           fetchCacheId: buffer.id,
-          bandId: band.bandId,
+          bandIndex: band.bandIndex,
           bandMinZoom: band.zMin,
           bandMaxZoom: band.zMax,
           domainType: 'shape',
@@ -472,12 +472,12 @@ export const buildContinentLookup = (metadata: CountryMetadata[]): Map<string, s
 const listTransformCacheIdsByTile = async (
   store: typeof ephemeralShapeDB,
   nodeId: NodeId,
-  bandId: number,
+  bandIndex: number,
   tileId: number,
 ): Promise<string[]> => {
   const rows = await store.tileIdToBufferRelations
-    .where('[nodeId+bandId+tileId]')
-    .equals([nodeId, bandId, String(tileId)])
+    .where('[nodeId+bandIndex+tileId]')
+    .equals([nodeId, bandIndex, String(tileId)])
     .toArray();
   return rows.map((row) => row.bufferId);
 };
@@ -485,7 +485,7 @@ const listTransformCacheIdsByTile = async (
 export const buildVtTasks = async (
   nodeId: NodeId,
   ephemeralStore: typeof ephemeralShapeDB,
-  bands: Array<{ bandId: number; zMin: number; zMax: number; zBase: number }>,
+  bands: Array<{ bandIndex: number; zMin: number; zMax: number; zBase: number }>,
   enableHighDetailBands: boolean,
   configSignature: string,
 ): Promise<Array<TaskQueueRecord<ShapeVtTaskInput>>> => {
@@ -499,8 +499,8 @@ export const buildVtTasks = async (
     let relationCount = 0;
     const buildTileBuffers = async () => {
       await ephemeralStore.tileIdToBufferRelations
-        .where('[nodeId+bandId]')
-        .equals([nodeId, band.bandId])
+        .where('[nodeId+bandIndex]')
+        .equals([nodeId, band.bandIndex])
         .each((row) => {
           relationCount += 1;
           const tileId = Number(row.tileId);
@@ -517,7 +517,7 @@ export const buildVtTasks = async (
     if (relationCount === 0) {
       const backfilled = await backfillTileRelationsFromTransformCache({
         nodeId,
-        bandId: band.bandId,
+        bandIndex: band.bandIndex,
         zBase: band.zBase,
         ephemeralStore,
       });
@@ -529,14 +529,14 @@ export const buildVtTasks = async (
         });
         console.warn('[shape-vt] rebuilt missing tile relations', {
           nodeId,
-          bandId: band.bandId,
+          bandIndex: band.bandIndex,
           relationCount,
         });
       }
     }
     console.info('[shape-vt] tile relation snapshot', {
       nodeId,
-      bandId: band.bandId,
+      bandIndex: band.bandIndex,
       zBase: band.zBase,
       relationCount,
       tileCount: tileBuffers.size,
@@ -545,7 +545,7 @@ export const buildVtTasks = async (
     const tileIds = [...tileBuffers.keys()];
     for (const tileId of tileIds) {
       const bufferIds = tileBuffers.get(tileId)
-        ?? await listTransformCacheIdsByTile(ephemeralStore, nodeId, band.bandId, tileId);
+        ?? await listTransformCacheIdsByTile(ephemeralStore, nodeId, band.bandIndex, tileId);
       if (bufferIds.length === 0) continue;
       const buffers = await ephemeralStore.transaction('r', ephemeralStore.transformCache, async () => (
         ephemeralStore.transformCache.where('id').anyOf(bufferIds).toArray()
@@ -558,14 +558,14 @@ export const buildVtTasks = async (
       const featureById = new Map(completedBuffers.map((buffer) => [buffer.id, buffer.featureCount] as const));
       const featureCount = usableBufferIds.reduce((sum, bufferId) => sum + (featureById.get(bufferId) ?? 0), 0);
       tasks.push({
-        taskId: `${String(nodeId)}:vt:${band.bandId}:${band.zBase}:${tileId}`,
+        taskId: `${String(nodeId)}:vt:${band.bandIndex}:${band.zBase}:${tileId}`,
         nodeId,
         stage: 'vt',
         status: 'queued',
         index,
         progress: 0,
         inputData: {
-          bandId: band.bandId,
+          bandIndex: band.bandIndex,
           bandMinZoom: band.zMin,
           bandMaxZoom: band.zMax,
           zBase: band.zBase,

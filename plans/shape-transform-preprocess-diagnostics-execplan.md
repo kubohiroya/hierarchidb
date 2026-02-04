@@ -51,7 +51,7 @@ Transform errors: Records stored in `shape-ephemeral` that include `lineFeatures
 
 ## Plan of Work
 
-Start by restructuring transform-stage logging to be concise but information-rich. Replace broad console warning strings with structured logs keyed by event names and include nodeId, bandId, sourceKey, and featureId. Introduce a diagnostic object collected per feature/polygon during preprocessing that includes which step rejected or modified geometry (snap, clean, ring fix, area exclusion, self-intersection fix). This data should feed both logs and error records.
+Start by restructuring transform-stage logging to be concise but information-rich. Replace broad console warning strings with structured logs keyed by event names and include nodeId, bandIndex, sourceKey, and featureId. Introduce a diagnostic object collected per feature/polygon during preprocessing that includes which step rejected or modified geometry (snap, clean, ring fix, area exclusion, self-intersection fix). This data should feed both logs and error records.
 
 Next, extend `ShapeTransformErrorRecord` (and the stored line features) with a small, explicit issue category and stage, such as `issueStage: 'snap' | 'clean' | 'ringFix' | 'areaExclusion' | 'selfIntersection' | 'simplify'` and `issueKind: 'invalidRing' | 'openRing' | 'degenerateRing' | 'nonFinite' | 'droppedPolygon' | 'splitPolygon'`. These fields should be optional to preserve compatibility. Use this category to color overlays in Step6. Keep the overlay minimal: one layer for error outlines, one for selected errors, and a small legend indicating category colors. Do not introduce new UI settings unless required.
 

@@ -490,7 +490,7 @@ export class CommandHistoryManager {
         const payload = command.payload as {
           nodeIds: NodeId[];
           toParentId: NodeId;
-          onNameConflict?: 'error' | 'auto-rename';
+          onNameConflict?: 'error' | 'auto-rename' | 'overwrite';
         };
         for (const nodeId of payload.nodeIds) {
           const node = await this.deps.coreDB.getNode?.(nodeId);
@@ -527,7 +527,7 @@ export class CommandHistoryManager {
         const payload = command.payload as {
           nodeIds: NodeId[];
           toParentId?: NodeId;
-          onNameConflict?: 'error' | 'auto-rename';
+          onNameConflict?: 'error' | 'auto-rename' | 'overwrite';
         };
         const commandId = command.commandId as CommandId;
         const redoSnapshot = this.redoRestoreState.get(commandId);

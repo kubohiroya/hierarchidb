@@ -650,7 +650,7 @@ const buildLayerIndexes = async (
   debugContext?: {
     taskId: string;
     nodeId: string;
-    bandId?: number | null;
+    bandIndex?: number | null;
     tileId?: number | null;
     continent?: string;
   }
@@ -725,7 +725,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
   if (!layerSetName) {
     throw new Error('vt stage requires layerSetName');
   }
-  const bandMap = new Map(bands.map((band) => [band.bandId, band] as const));
+  const bandMap = new Map(bands.map((band) => [band.bandIndex, band] as const));
   const taskQueue = new VtTaskQueueDb();
 
   return async (task): Promise<StageHandlerResult> => {
@@ -737,7 +737,7 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
     const taskContext = {
       taskId: task.taskId,
       nodeId: String(task.nodeId),
-      bandId: input?.bandId,
+      bandIndex: input?.bandIndex,
       tileId: input?.tileId,
       bufferCount: bufferIds.length,
     };
@@ -748,9 +748,9 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
       if (!input.bufferIds || input.bufferIds.length === 0) {
         return { status: 'completed', message: 'skipped: bufferIds is empty' };
       }
-      const band = bandMap.get(input.bandId);
+      const band = bandMap.get(input.bandIndex);
       if (!band) {
-        return { status: 'failed', errorMessage: `Unknown bandId: ${input.bandId}` };
+        return { status: 'failed', errorMessage: `Unknown bandIndex: ${input.bandIndex}` };
       }
       const parent = unpackTileId(input.tileId, band.zBase);
       const groupByContinent = Boolean(

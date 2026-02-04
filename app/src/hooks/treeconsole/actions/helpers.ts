@@ -101,6 +101,15 @@ export const showCommandError = (...args: unknown[]): void => {
   console.error('[HDB] Command Error:', ...args);
 };
 
+export const isNameConflictError = (error?: string): boolean => {
+  if (!error) return false;
+  return /name conflict/i.test(error) || /already exists/i.test(error);
+};
+
+export const confirmOverwrite = (message: string): boolean => {
+  return window.confirm(message);
+};
+
 export const isCommandResult = (value: unknown): value is CommandResult =>
   typeof value === 'object' && value !== null && 'success' in value;
 

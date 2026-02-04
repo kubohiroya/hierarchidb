@@ -214,7 +214,7 @@ export class TreeMutationService implements TreeMutationAPI {
   async moveNodes(params: {
     nodeIds: NodeId[];
     toParentId: NodeId;
-    onNameConflict?: 'error' | 'auto-rename';
+    onNameConflict?: 'error' | 'auto-rename' | 'overwrite';
   }): Promise<{ success: boolean; error?: string }> {
     return this.moveNodesViaCommandProcessor(params);
   }
@@ -222,7 +222,7 @@ export class TreeMutationService implements TreeMutationAPI {
   private async moveNodesViaCommandProcessor(params: {
     nodeIds: NodeId[];
     toParentId: NodeId;
-    onNameConflict?: 'error' | 'auto-rename';
+    onNameConflict?: 'error' | 'auto-rename' | 'overwrite';
   }): Promise<{ success: boolean; error?: string }> {
     const cmd = this.commandProcessor.createEnvelope('moveNodes', {
       nodeIds: params.nodeIds,
@@ -330,7 +330,7 @@ export class TreeMutationService implements TreeMutationAPI {
   async restoreNodesFromTrash(params: {
     nodeIds: NodeId[];
     toParentId?: NodeId;
-    onNameConflict?: 'error' | 'auto-rename';
+    onNameConflict?: 'error' | 'auto-rename' | 'overwrite';
   }): Promise<{ success: boolean; error?: string }> {
     const conflictPolicy = params.onNameConflict ?? 'auto-rename';
     const cmd = this.commandProcessor.createEnvelope('restoreFromTrash', {
@@ -554,7 +554,29 @@ export class TreeMutationService implements TreeMutationAPI {
       const newNodeIds: NodeId[] = [];
 
       //  :
-      const siblings = (await this.coreDB.listChildren?.(parentId)) || [];
+      let siblings = (await this.coreDB.listChildren?.(parentId)) || [];
+      if (onNameConflict === 'overwrite') {
+        const desiredNames = new Set<string>();
+        for (const nodeId of nodeIds) {
+          const sourceNode = nodes[nodeId];
+          if (!sourceNode) continue;
+          desiredNames.add(sourceNode.metadata.name);
+        }
+        const conflicts = siblings
+          .filter((sibling) => desiredNames.has(sibling.metadata.name))
+          .map((sibling) => sibling.id as NodeId);
+        if (conflicts.length > 0) {
+          const removeResult = await this.removeNodesViaCommandProcessor(conflicts);
+          if (!removeResult.success) {
+            return {
+              success: false,
+              error: removeResult.error || 'Failed to overwrite existing nodes',
+              code: 'INVALID_OPERATION',
+            } as CoreCommandResult;
+          }
+          siblings = (await this.coreDB.listChildren?.(parentId)) || [];
+        }
+      }
       const existingNames = new Set<string>(
         siblings.map((sibling: TreeNode) => sibling.metadata.name)
       );
@@ -586,7 +608,7 @@ export class TreeMutationService implements TreeMutationAPI {
         const generated = newName === 'Untitled';
         if ((onNameConflict === 'auto-rename' || generated) && existingNames.has(newName)) {
           newName = this.resolveNameConflictEfficiently(newName, existingNames);
-        } else if (onNameConflict === 'error' && existingNames.has(newName)) {
+        } else if ((onNameConflict === 'error' || onNameConflict === 'overwrite') && existingNames.has(newName)) {
           return {
             success: false,
             error: `Name conflict: '${newName}' already exists`,

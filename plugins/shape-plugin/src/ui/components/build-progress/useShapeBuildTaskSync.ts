@@ -44,6 +44,7 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
   const isLoadingRef = useRef(false);
   const errorRef = useRef<Error | null>(null);
   const tasksRef = useRef<ShapeBuildTaskSummary[]>([]);
+  const committedTasksRef = useRef<ShapeBuildTaskSummary[]>([]);
   const tasksMapRef = useRef<Map<string, ShapeBuildTaskSummary>>(new Map());
   const pendingTasksRef = useRef<ShapeBuildTaskSummary[] | null>(null);
   const pendingDeleteIdsRef = useRef<Set<string>>(new Set());
@@ -69,10 +70,11 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
 
   const flushTasks = useCallback((next: ShapeBuildTaskSummary[]) => {
     const cleaned = applyPendingDeletes(next);
-    if (areTaskListsEqual(cleaned, tasksRef.current)) {
+    if (areTaskListsEqual(cleaned, committedTasksRef.current)) {
       pendingTasksRef.current = null;
       return;
     }
+    committedTasksRef.current = cleaned;
     setTasks(cleaned);
     pendingTasksRef.current = null;
     tasksMapRef.current = new Map(cleaned.map((task) => [task.taskId, task]));
@@ -149,6 +151,7 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
 
   const syncTasksRef = useCallback((tasks: ShapeBuildTaskSummary[]) => {
     tasksRef.current = tasks;
+    committedTasksRef.current = tasks;
     tasksMapRef.current = new Map(tasks.map((task) => [task.taskId, task]));
   }, []);
 

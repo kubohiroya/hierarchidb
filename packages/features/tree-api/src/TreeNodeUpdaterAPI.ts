@@ -58,7 +58,7 @@ export interface CommitDraftRequest<TData = Record<string, unknown>> {
   mode?: CommitDraftMode;
   /**
    * Policy for resolving name conflicts during commit operations.
-   * Defaults to `'auto-rename'` for backward compatibility.
+   * Defaults to `'error'` so name collisions surface explicitly.
    */
   onNameConflict?: OnNameConflict;
 }

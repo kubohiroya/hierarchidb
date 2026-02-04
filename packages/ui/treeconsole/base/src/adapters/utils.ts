@@ -29,7 +29,7 @@ export function createCommand<K extends string, P>(
     payload,
     issuedAt: Date.now() as Timestamp,
     sourceViewId: options?.sourceViewId,
-    onNameConflict: options?.onNameConflict || 'auto-rename',
+    onNameConflict: options?.onNameConflict || 'error',
   };
 }
 

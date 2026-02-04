@@ -9,7 +9,7 @@ export type CommandGroupId = string;
 export type CommandId = string;
 export type Seq = number;
 
-export type OnNameConflict = 'error' | 'auto-rename';
+export type OnNameConflict = 'error' | 'auto-rename' | 'overwrite';
 
 export type ErrorCode =
   | 'NAME_NOT_UNIQUE'

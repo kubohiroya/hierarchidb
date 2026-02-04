@@ -217,9 +217,9 @@ flowchart LR
 
 ### transformBandBuffers
 
-- `id` (PK): `${nodeId}-b${bandId}-${domainType}-${sourceKey}`
+- `id` (PK): `${nodeId}-b${bandIndex}-${domainType}-${sourceKey}`
 - `nodeId`
-- `bandId` (0/1/2/3)
+- `bandIndex` (0/1/2/3)
 - `domainType` (`shape` / `route`)
 - `sourceKey`
 - `countryCode`
@@ -234,15 +234,15 @@ flowchart LR
 ### tileIndexBand（帯内最小zのみ）
 
 - `nodeId`
-- `bandId`
+- `bandIndex`
 - `zBase` (0/3/6/9)
 - `tileId`
 - `bufferId` (transformBandBuffers.id)
 
 **インデックス**
-- `&[nodeId+bandId+tileId+bufferId]`
-- `[nodeId+bandId+tileId]`
-- `[nodeId+bandId+bufferId]`
+- `&[nodeId+bandIndex+tileId+bufferId]`
+- `[nodeId+bandIndex+tileId]`
+- `[nodeId+bandIndex+bufferId]`
 
 ### vtBand3Reservations
 
@@ -378,7 +378,7 @@ vt-orchestrator は fetch の実行は行わない。
 ### transform タスク（plugin → taskQueue）
 
 - `nodeId`
-- `bandId`
+- `bandIndex`
 - `stage1BufferId`
 - `domainType`
 - `sourceKey`
@@ -387,7 +387,7 @@ vt-orchestrator は fetch の実行は行わない。
 ### vt タスク（plugin → taskQueue）
 
 - `nodeId`
-- `bandId`
+- `bandIndex`
 - `zBase`
 - `tileId`（zBase のタイル）
 - `bufferIds[]`（上限分割後の対象バッファ）
@@ -462,9 +462,9 @@ vt-orchestrator は fetch の実行は行わない。
 
 ### transform
 
-- **判定キー**: `domainType + sourceKey + bandId + transformConfigHash`
+- **判定キー**: `domainType + sourceKey + bandIndex + transformConfigHash`
   - transformConfigHash に含める項目:
-    - `bandId`, `bandRange`（zMin/zMax）
+    - `bandIndex`, `bandRange`（zMin/zMax）
     - `gridSnap`（extent=4096、round）
     - `simplificationTolerance`（Transform の係数）
     - `quantize`（transform の量子化）
@@ -482,7 +482,7 @@ vt-orchestrator は fetch の実行は行わない。
 
 ### vt
 
-- **判定キー**: `domainType + bandId + zBase + tileId + bufferSetHash + vtConfigHash`
+- **判定キー**: `domainType + bandIndex + zBase + tileId + bufferSetHash + vtConfigHash`
   - bufferSetHash に含める項目:
     - `bufferIds[]` をソートした配列
   - vtConfigHash に含める項目:
@@ -522,10 +522,10 @@ vt-orchestrator は fetch の実行は行わない。
   - PK: `${nodeId}-${domainType}-${sourceKey}`
 - **transformBandBuffers**
   - テーブル: `transformBandBuffers`
-  - PK: `${nodeId}-b${bandId}-${domainType}-${sourceKey}`
+  - PK: `${nodeId}-b${bandIndex}-${domainType}-${sourceKey}`
 - **tileIndexBand**
   - テーブル: `tileIndexBand`
-  - インデックス: `&[nodeId+bandId+tileId+bufferId]`
+  - インデックス: `&[nodeId+bandIndex+tileId+bufferId]`
 
 ## taskId 生成規則（現行の課題と新仕様）
 
@@ -539,12 +539,12 @@ vt-orchestrator は fetch の実行は行わない。
 
 **taskId の構成（例）**
 - `fetch`: `${nodeId}:fetch:${domainType}:${sourceKey}`
-- `transform`: `${nodeId}:transform:${bandId}:${domainType}:${sourceKey}`
-- `vt`: `${nodeId}:vt:${bandId}:${zBase}:${tileId}:${bufferSetHash}`
+- `transform`: `${nodeId}:transform:${bandIndex}:${domainType}:${sourceKey}`
+- `vt`: `${nodeId}:vt:${bandIndex}:${zBase}:${tileId}:${bufferSetHash}`
 
 **拡張例（hash を含める場合）**
-- `transform`: `${nodeId}:transform:${bandId}:${domainType}:${sourceKey}:${transformConfigHash}`
-- `vt`: `${nodeId}:vt:${bandId}:${zBase}:${tileId}:${bufferSetHash}:${vtConfigHash}`
+- `transform`: `${nodeId}:transform:${bandIndex}:${domainType}:${sourceKey}:${transformConfigHash}`
+- `vt`: `${nodeId}:vt:${bandIndex}:${zBase}:${tileId}:${bufferSetHash}:${vtConfigHash}`
 
 **補足**
 - `bufferSetHash` は `bufferIds[]` の内容を安定ハッシュ化した値
