@@ -100,7 +100,7 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
   }), []);
 
   const mergeTask = useCallback((task: ShapeBuildTaskSummary) => {
-    const baseList = pendingTasksRef.current ?? tasksRef.current;
+    const baseList = pendingTasksRef.current ?? committedTasksRef.current;
     const currentTask = tasksMapRef.current.get(task.taskId);
     if (!shouldApplyTaskUpdate(currentTask, task)) {
       return baseList;
@@ -139,7 +139,7 @@ export const useShapeBuildTaskSync = ({ setTasks, setIsLoading, setError }: Sync
   const handleDelete = useCallback((taskId: string) => {
     pendingDeleteIdsRef.current.add(taskId);
     tasksMapRef.current.delete(taskId);
-    const current = pendingTasksRef.current ?? tasksRef.current;
+    const current = pendingTasksRef.current ?? committedTasksRef.current;
     scheduleFlush(current);
     if (errorRef.current !== null) {
       setError(null);

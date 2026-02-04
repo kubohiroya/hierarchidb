@@ -258,6 +258,7 @@ const TaskProgressBar = ({
         height={rectHeight}
         viewBox={`0 0 ${viewWidth} 1`}
         preserveAspectRatio="none"
+        shapeRendering="crispEdges"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -305,7 +306,7 @@ const TaskProgressBar = ({
               <rect
                 x={x}
                 y={y}
-                width={Math.ceil(segment.width) + 2}
+                width={segment.width}
                 height={height}
                 fill={segment.fill}
               />

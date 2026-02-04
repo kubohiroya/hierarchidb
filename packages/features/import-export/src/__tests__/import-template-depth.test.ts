@@ -64,7 +64,7 @@ class InMemoryImportExportPort implements ImportExportDBPort {
 }
 
 async function loadPopulationTemplate() {
-  const templateUrl = new URL('../../../../app/public/templates/population-2023/tree-nodes.json', import.meta.url);
+  const templateUrl = new URL('../../../../app/public/templates/population-2023/population-by-countries-2023.json', import.meta.url);
   const raw = await readFile(templateUrl, 'utf-8');
   const json = JSON.parse(raw) as {
     nodes: Record<string, Record<string, unknown>>;

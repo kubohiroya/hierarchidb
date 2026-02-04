@@ -107,6 +107,15 @@ export const useTransformConfigSectionView = ({
   };
   const hoverCardSx = getBuildConfigHoverCardSx(disabled);
 
+  const handleTransformWorkersChange = (maxConcurrent: number) => {
+    update({
+      transformConfig: {
+        ...baseTransformConfig,
+        maxConcurrent,
+      },
+    });
+  };
+
   const handleThresholdAreaChange = (value: number | number[]) => {
     if (Array.isArray(value)) return;
     const nextArea = Math.pow(10, value);
@@ -170,6 +179,7 @@ export const useTransformConfigSectionView = ({
     toTolerance,
     formatTolerance,
     formatPx2,
+    handleTransformWorkersChange,
     handleThresholdAreaChange,
     handleToleranceChange,
     handleLargeAreaToleranceChange,

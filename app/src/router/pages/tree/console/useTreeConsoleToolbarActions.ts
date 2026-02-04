@@ -242,7 +242,7 @@ export function useTreeConsoleToolbarActions({
 
           let templateData: TemplateData | undefined;
           let lastErr: unknown;
-          const candidates = ['tree-nodes.json'];
+          const candidates = ['population-by-countries-2023.json'];
           for (const b of candidateBases) {
             for (const fname of candidates) {
               const u = `${String(b).replace(/\/+$/, '/')}templates/${templateId}/${fname}`;

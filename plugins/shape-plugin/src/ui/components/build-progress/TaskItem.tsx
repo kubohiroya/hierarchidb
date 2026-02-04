@@ -1,5 +1,5 @@
 import type React from 'react';
-import { Box, Chip, LinearProgress, Stack, Typography } from '@mui/material';
+import { Box, Chip, LinearProgress, Stack, Tooltip, Typography } from '@mui/material';
 
 type Props = {
   title: string;
@@ -11,6 +11,8 @@ type Props = {
   fallbackProgress: number;
 };
 
+export const TASK_ITEM_HEIGHT = 50;
+
 export const TaskItem: React.FC<Props> = ({
   title,
   statusLabel,
@@ -19,50 +21,55 @@ export const TaskItem: React.FC<Props> = ({
   detailLines,
   progress,
   fallbackProgress,
-}) => (
-  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-    <Stack direction="row" spacing={1} alignItems="center">
-      <Typography variant="caption" sx={{ flex: 1 }}>
-        {title}
-      </Typography>
-      <Chip
-        label={statusLabel}
-        color={statusColor}
-        size="small"
-        variant="outlined"
-        sx={{ transform: 'translateY(8px)' }}
+}) => {
+  const displayMessage = message ?? detailLines?.[0] ?? '';
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: `${TASK_ITEM_HEIGHT}px`,
+        minHeight: `${TASK_ITEM_HEIGHT}px`,
+        maxHeight: `${TASK_ITEM_HEIGHT}px`,
+      }}
+    >
+      <LinearProgress
+        variant="determinate"
+        value={Math.min(100, Math.max(0, progress ?? fallbackProgress))}
+        color={statusColor === 'default' ? 'primary' : statusColor}
       />
-    </Stack>
-    {message ? (
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        sx={{
-          overflow: 'hidden',
-          display: '-webkit-box',
-          WebkitBoxOrient: 'vertical',
-          WebkitLineClamp: 2,
-          lineHeight: 1.4,
-          minHeight: '2.8em',
-          maxHeight: '2.8em',
-        }}
-      >
-        {message}
-      </Typography>
-    ) : null}
-    {detailLines?.length ? (
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
-        {detailLines.map((line, index) => (
-          <Typography key={`${index.toString()}-${line}`} variant="caption" color="text.secondary">
-            {line}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, minHeight: 0, flex: 1, overflow: 'hidden' }}>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Typography variant="caption" sx={{ flex: 1 }}>
+            {title}
           </Typography>
-        ))}
+          <Chip label={statusLabel} color={statusColor} size="small" variant="outlined" />
+        </Stack>
+        <Tooltip
+          title={displayMessage}
+          placement="top-start"
+          disableHoverListener={!displayMessage}
+          disableFocusListener={!displayMessage}
+          disableTouchListener={!displayMessage}
+        >
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              lineHeight: 1.2,
+              minHeight: '1.2em',
+              maxHeight: '1.2em',
+              visibility: displayMessage ? 'visible' : 'hidden',
+            }}
+          >
+            {displayMessage}
+          </Typography>
+        </Tooltip>
       </Box>
-    ) : null}
-    <LinearProgress
-      variant="determinate"
-      value={Math.min(100, Math.max(0, progress ?? fallbackProgress))}
-      color={statusColor === 'default' ? 'primary' : statusColor}
-    />
-  </Box>
-);
+    </Box>
+  );
+};

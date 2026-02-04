@@ -5,7 +5,7 @@ import { useSetAtom } from 'jotai';
 import type { ShapeBuildTaskSummary } from '../../atoms/shapeBuildProgressAtoms.js';
 import { isSkippedMessage } from '../../../common/utils/taskMessages.ts';
 import { taskViewportRangeAtom } from '../../atoms/shapeBuildProgressAtoms.js';
-import { TaskItem } from './TaskItem.tsx';
+import { TaskItem, TASK_ITEM_HEIGHT } from './TaskItem.tsx';
 import { formatGeometrySimplifySummary, parseGeometrySimplifyError } from './geometrySimplifyError.ts';
 import { taskPhaseLabels } from './taskPhaseLabels.ts';
 import { useTranslation } from '../../i18n.js';
@@ -93,7 +93,7 @@ export const TaskListVirtualized = ({
   const virtualizer = useVirtualizer({
     count: tasks.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 72,
+    estimateSize: () => TASK_ITEM_HEIGHT,
     overscan: 8,
   });
   const orderedTasks = useMemo(() => {
@@ -125,13 +125,22 @@ export const TaskListVirtualized = ({
   const virtualItems = virtualizer.getVirtualItems();
   useEffect(() => {
     if (!shouldVirtualize) return;
-    if (tasks.length === 0 || virtualItems.length === 0) {
+    if (tasks.length === 0) {
       setViewportRange((prev) => (prev && prev.stageId === stageId ? null : prev));
       lastViewportRef.current = null;
       return;
     }
-    const startIndex = virtualItems[0]?.index ?? 0;
-    const endIndex = virtualItems[virtualItems.length - 1]?.index ?? startIndex;
+    const scrollEl = parentRef.current;
+    if (!scrollEl) return;
+    const viewportHeight = scrollEl.clientHeight;
+    const scrollTop = scrollEl.scrollTop;
+    const total = orderedTasks.length;
+    if (total === 0 || viewportHeight <= 0) return;
+    const startIndex = Math.min(Math.max(Math.floor(scrollTop / TASK_ITEM_HEIGHT), 0), total - 1);
+    const endIndex = Math.min(
+      Math.max(Math.floor((scrollTop + viewportHeight - 1) / TASK_ITEM_HEIGHT), startIndex),
+      total - 1,
+    );
     const startTaskId = orderedTasks[startIndex]?.taskId ?? '';
     const endTaskId = orderedTasks[endIndex]?.taskId ?? startTaskId;
     if (!startTaskId || !endTaskId) return;
@@ -141,7 +150,7 @@ export const TaskListVirtualized = ({
       endIndex,
       startTaskId,
       endTaskId,
-      total: orderedTasks.length,
+      total,
     };
     const prev = lastViewportRef.current;
     if (
@@ -246,6 +255,7 @@ export const TaskListVirtualized = ({
               width: '100%',
               transform: `translateY(${virtualRow.start}px)`,
               paddingRight: 2,
+              height: `${TASK_ITEM_HEIGHT}px`,
             });
           })}
         </Box>

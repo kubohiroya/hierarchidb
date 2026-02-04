@@ -139,7 +139,7 @@
     },
     "filter": {
       "title": "Transform 設定",
-      "workersStage1": "Transform のワーカー数（フィルタリング）",
+      "workersStage1": "Transform のワーカー数（簡略化）",
       "workersStage1Help": "並列度を増やすと高速化しますがブラウザがメモリ不足で不安定化することがあります。",
       "workersStage2": "Transform のワーカー数（前処理）",
       "workersStage2Help": "並列度を増やすと高速化しますがブラウザがメモリ不足で不安定化することがあります。",

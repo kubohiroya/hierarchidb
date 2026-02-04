@@ -139,7 +139,7 @@
     },
     "filter": {
       "title": "Transform Settings",
-      "workersStage1": "Transform Workers (Filtering)",
+      "workersStage1": "Transform Workers (Simplification)",
       "workersStage1Help": "Higher concurrency can speed up processing but may exhaust browser memory.",
       "workersStage2": "Transform Workers (Preprocessing)",
       "workersStage2Help": "Higher concurrency can speed up processing but may exhaust browser memory.",

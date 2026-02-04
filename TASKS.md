@@ -112,6 +112,175 @@
   - update: 2026-02-04 16:18 JST task 同期の flush 比較を committedTasksRef に統一し、冗長更新を抑制。
   - update: 2026-02-04 16:18 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
   - done: 2026-02-04 16:18 JST Shape build の最大更新深度エラー対応を完了。
+
+2508) fix/ui-plugin-dialog/remove-memory-bar (P1) — 完了 (2026-02-04)
+- ブランチ名: fix/ui-plugin-dialog/remove-memory-bar
+- 依存: なし
+- 受け入れ基準: PluginDialog の dev 用メモリ残量バーが撤去される／`pnpm --filter @hierarchidb/plugin-ui-host typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/plugin-ui-host/src/headless/components/DialogScaffold.tsx`
+
+2510) fix/shape/transform-tolerance-default (P2) — 進行中 (2026-02-04)
+- ブランチ名: fix/shape/transform-tolerance-default
+- 依存: なし
+- 受け入れ基準: Transform の既定 tolerance が 0.2 になる／Step4 のデフォルト設定に反映される／`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/common/types/constants.ts`（必要に応じて追加）
+- ロールバック手順: tolerance を 0.1 に戻す
+- チェックリスト:
+  - DEFAULT_BUILD_CONFIG の transformConfig.tolerance を更新する
+  - shape-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-04 17:22 JST Transform の既定 tolerance を 0.2 に変更する作業に着手。
+  - update: 2026-02-04 17:23 JST DEFAULT_BUILD_CONFIG の transformConfig.tolerance を 0.2 に更新。
+  - update: 2026-02-04 17:23 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+
+2511) investigation/shape-build-resume-after-cache-purge (P2) — 進行中 (2026-02-04)
+- ブランチ名: investigation/shape-build-resume-after-cache-purge
+- 依存: なし
+- 受け入れ基準: キャッシュ削除後の再ビルドで fetch 完了ログ以降に進まない原因をコード参照付きで説明できる／再現条件と影響範囲を整理できる／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/vt/shapePipeline.ts`, `plugins/shape-plugin/src/services/vt/shapePipelineTransformStage.ts`, `plugins/shape-plugin/src/services/metadata/MetadataLoader.ts`, `plugins/shape-plugin/src/services/metadata/metadataSources.ts`, `plugins/shape-plugin/src/services/vt/shapePipelineShared.ts`
+- ロールバック手順: 調査のみのため不要
+- チェックリスト:
+  - fetch 完了後の呼び出し順と前提条件を確認する
+  - metadata 読み込み/キャッシュ再生成の失敗条件を整理する
+  - taskQueue とキャッシュ削除の不整合の可能性を整理する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-04 17:32 JST キャッシュ削除後の再ビルド停止の原因調査に着手。
+  - update: 2026-02-04 17:34 JST fetch 完了直後の transform 入口で metadataLoader が必ず呼ばれる経路を確認（shapePipeline.ts）。
+  - update: 2026-02-04 17:35 JST metadata キャッシュ削除 + offline/取得失敗で例外が投げられるため、fetch 完了ログ以降が出ない可能性を整理。
+  - update: 2026-02-04 17:36 JST resumeExistingTasks=true の場合に taskQueue とキャッシュの不整合が起きやすい点を整理。
+  - done: 2026-02-04 17:36 JST 原因候補と確認ポイントの整理を完了。
+
+2512) fix/shape/step4-delete-cache-clears-tasks (P1) — 進行中 (2026-02-04)
+- ブランチ名: fix/shape/step4-delete-cache-clears-tasks
+- 依存: なし
+- 受け入れ基準: Step4 のキャッシュ削除時に関連する taskQueue/build tasks が削除され、再ビルド時に古いタスクが残らない／`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-config/useFetchConfigSection.ts`
+- ロールバック手順: 追加したタスク削除の連鎖を撤去する
+- チェックリスト:
+  - キャッシュ削除時に downstream の taskQueue を合わせて削除する
+  - shape-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-04 17:46 JST Step4 キャッシュ削除時の taskQueue 同期削除に着手。
+  - update: 2026-02-04 17:50 JST fetch/transform/vt の削除時に downstream を含めて taskQueue/build tasks をクリアするよう整理。
+  - update: 2026-02-04 17:51 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+
+2513) fix/shape/transform-workers-ui (P2) — 進行中 (2026-02-04)
+- ブランチ名: fix/shape/transform-workers-ui
+- 依存: なし
+- 受け入れ基準: Step4 の Transform アコーディオン先頭に Transform workers（maxConcurrent）設定が復活する／`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-config/TransformConfigSection.tsx`
+- ロールバック手順: 追加した worker 数カードを撤去する
+- チェックリスト:
+  - Transform アコーディオン先頭に maxConcurrent の設定UIを追加する
+  - shape-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-04 17:58 JST Transform worker 数設定のUI復活に着手。
+  - update: 2026-02-04 18:03 JST Transform アコーディオン先頭に maxConcurrent 設定カードを追加。
+  - update: 2026-02-04 18:04 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+  - update: 2026-02-04 18:08 JST Transform Workers ラベルを Simplification に変更。
+  - update: 2026-02-04 18:09 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+- ロールバック手順: 該当差分を revert してメモリバーを復帰する
+- チェックリスト:
+  - メモリ残量バーの表示ロジックを撤去する
+  - plugin-ui-host の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-04 16:30 JST PluginDialog のメモリ残量バー撤去に着手。
+  - update: 2026-02-04 16:36 JST DialogScaffold からメモリ残量バーの表示ロジックを撤去。
+  - update: 2026-02-04 16:36 JST pnpm --filter @hierarchidb/plugin-ui-host typecheck exit 0 を確認。
+  - done: 2026-02-04 16:36 JST PluginDialog のメモリ残量バー撤去を完了。
+
+2514) investigation/shape-build-step-atom-sync-max-update-depth (P1) — 進行中 (2026-02-05)
+- ブランチ名: investigation/shape-build-step-atom-sync-max-update-depth
+- 依存: なし
+- 受け入れ基準: useShapeBuildStepAtomSync 周辺のコード精読に基づき Maximum update depth exceeded の原因仮説を提示できる／依存関係ごとの再描画トリガを整理できる／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildStepAtomSync.ts`（必要に応じて関連 hook）
+- ロールバック手順: 調査のみのため不要
+- チェックリスト:
+  - useShapeBuildStepAtomSync と呼び出し元の依存関係を精読する
+  - 最大更新深度警告のループ要因と仮説を整理する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-05 09:12 JST useShapeBuildStepAtomSync の最大更新深度警告の原因調査に着手。
+  - update: 2026-02-05 10:21 JST Dexie 既存DB/テーブル構成を確認し buildStateRegistry の格納候補を整理。
+  - done: 2026-02-05 10:21 JST buildStateRegistry の Dexie格納候補提案を準備。
+  - update: 2026-02-05 10:02 JST onChange のシーケンス番号付与/古い更新の無視ロジックを検索。
+  - done: 2026-02-05 10:02 JST シーケンス番号による merge ガードは該当範囲で未確認。
+  - update: 2026-02-05 09:52 JST onChange の反映経路と step data の更新タイミングを追跡。
+  - done: 2026-02-05 09:52 JST onChange 未反映の可能性を整理。
+  - update: 2026-02-05 09:34 JST useShapeBuildStepAtomSync と関連 hook を精読し、更新ループの仮説を整理。
+  - done: 2026-02-05 09:34 JST 最大更新深度警告の原因仮説整理を完了。
+
+2509) fix/shape-build/max-update-depth-loop (P1) — 完了 (2026-02-04)
+- ブランチ名: fix/shape-build/max-update-depth-loop
+- 依存: なし
+- 受け入れ基準: Shape build 中の Maximum update depth exceeded が再発しない／setTasks の更新ループが抑止される／`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/useShapeBuildTaskSync.ts`（必要に応じて追加）
+- ロールバック手順: 該当差分を revert して元の同期ロジックへ戻す
+- チェックリスト:
+  - 更新ループの発生条件を抑止する
+  - 既存のタスク更新反映が維持されることを確認する
+  - shape-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-04 16:30 JST Shape build の update depth ループ再調査に着手。
+  - update: 2026-02-04 16:38 JST merge/delete の基準リストを committedTasksRef に統一し、古い tasksRef 参照を撤去。
+  - update: 2026-02-04 16:38 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-02-04 16:38 JST Shape build の update depth ループ再修正を完了。
+
+2510) fix/shape-build/task-list-tooltip (P1) — 完了 (2026-02-04)
+- ブランチ名: fix/shape-build/task-list-tooltip
+- 依存: なし
+- 受け入れ基準: Task 一覧の省略メッセージがホバーで全体表示される／メッセージ表示欄が1行固定になる／`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/TaskItem.tsx`
+- ロールバック手順: 該当差分を revert して tooltip/表示高さを元に戻す
+- チェックリスト:
+  - TaskItem のメッセージに tooltip を付与する
+  - メッセージの表示高さを1行分に調整する
+  - shape-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-04 16:50 JST Task 一覧のメッセージ tooltip/1行固定対応に着手。
+  - update: 2026-02-04 16:54 JST TaskItem のメッセージに Tooltip を付与し、表示高さを1行分に調整。
+  - update: 2026-02-04 16:54 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-02-04 16:54 JST Task 一覧のメッセージ tooltip/1行固定対応を完了。
+
+2511) fix/shape-build/task-list-height (P1) — 完了 (2026-02-04)
+- ブランチ名: fix/shape-build/task-list-height
+- 依存: なし
+- 受け入れ基準: TaskItem の高さが 96px → 50px に変更される／仮想リストの表示が崩れない／`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/TaskItem.tsx`
+- ロールバック手順: 該当差分を revert して 96px に戻す
+- チェックリスト:
+  - TaskItem の高さを 50px に変更する
+  - shape-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-04 17:05 JST TaskItem 高さを 50px へ変更する作業に着手。
+  - update: 2026-02-04 17:06 JST TASK_ITEM_HEIGHT を 50px に変更。
+  - update: 2026-02-04 17:06 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-02-04 17:06 JST TaskItem の高さ変更を完了。
+
+2512) chore/template/population-2023-default-selection (P1) — 完了 (2026-02-04)
+- ブランチ名: chore/template/population-2023-default-selection
+- 依存: なし
+- 受け入れ基準: テンプレート JSON が population-by-countries-2023.json に改名される／参照先が新ファイル名に更新される／デフォルト選択が全世界レベル1まで＋中国/インドはレベル2までになる／TASKS.md に運用ログを記載する
+- 影響範囲: `app/public/templates/population-2023/population-by-countries-2023.json`, `app/src/router/pages/tree/console/useTreeConsoleToolbarActions.ts`, `packages/**/__tests__/*.test.ts`
+- ロールバック手順: ファイル名と参照先を tree-nodes.json に戻し、選択配列を元に戻す
+- チェックリスト:
+  - テンプレートの JSON を新ファイル名に改名する
+  - 参照箇所を新ファイル名に更新する
+  - 既定選択を「全世界レベル1まで＋中国/インドはレベル2まで」に更新する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-04 17:20 JST population-2023 テンプレートの改名と既定選択更新に着手。
+  - update: 2026-02-04 17:25 JST テンプレート JSON を population-by-countries-2023.json へ改名し参照先を更新。
+  - update: 2026-02-04 17:25 JST 全世界はレベル1まで、CN/IN はレベル2まで選択する既定へ更新。
+  - done: 2026-02-04 17:25 JST population-2023 テンプレートの改名と既定選択更新を完了。
 - ブランチ名: fix/shape-step5/summary-card-clamp
 - 依存: なし
 - 受け入れ基準: Step5 ビルドのサマリーカード内の現在タスク/メッセージが2行固定で表示されレイアウトが安定する／タスクリストのメッセージも2行固定になる／`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
@@ -181,6 +350,35 @@
   - update: 2026-02-04 14:38 JST move/paste の UI で衝突時に上書き確認を表示するよう対応。
   - update: 2026-02-04 14:41 JST pnpm --filter @hierarchidb/tree-api build exit 0（tsdown define 警告あり）。
   - update: 2026-02-04 14:42 JST pnpm --filter @hierarchidb/runtime-worker typecheck exit 0。
+
+2507) fix/shape/step5-task-item-fixed-height (P2) — 進行中 (2026-02-04)
+- ブランチ名: fix/shape/step5-task-item-fixed-height
+- 依存: なし
+- 受け入れ基準: Step5 のタスク一覧で各タスク行の高さが固定され、スクロール挙動が安定する／メッセージ/詳細は表示を維持しつつ折返しで高さが変わらない／`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-progress/TaskItem.tsx`, `plugins/shape-plugin/src/ui/components/build-progress/TaskListVirtualized.tsx`
+- ロールバック手順: 該当差分を revert して可変高さの表示へ戻す
+- チェックリスト:
+  - TaskItem の高さを固定し、メッセージ/詳細の表示領域を固定する
+  - Virtualizer の estimateSize と row 高さを固定値に合わせる
+  - shape-plugin の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-04 14:55 JST Step5 タスク行の固定高さ対応に着手。
+  - update: 2026-02-04 14:58 JST TaskItem の高さ固定とメッセージ/詳細の表示枠固定を追加。
+  - update: 2026-02-04 14:59 JST TaskListVirtualized の固定高さ/estimateSize を一致させた。
+  - update: 2026-02-04 15:00 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+  - done: 2026-02-04 15:00 JST Step5 タスク行の固定高さ対応を完了。
+  - update: 2026-02-04 15:07 JST TaskItem の固定高さ内で LinearProgress が常に表示されるよう構造を調整。
+  - update: 2026-02-04 15:08 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+  - update: 2026-02-04 15:13 JST SVG サマリーのビューポート帯の開始位置ズレを補正。
+  - update: 2026-02-04 15:14 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+  - update: 2026-02-04 16:47 JST SVG サマリーのビューポート帯の開始/終了位置を固定行高とスクロール位置で再計算する対応に着手。
+  - update: 2026-02-04 16:50 JST ビューポート帯の開始/終了位置を固定行高 + scrollTop で算出するよう修正。
+  - update: 2026-02-04 16:50 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+  - update: 2026-02-04 16:56 JST タスク1件のレイアウトを Progress→タイトル+Chip→メッセージの3段に変更。
+  - update: 2026-02-04 16:59 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+  - update: 2026-02-04 17:10 JST task weight map のエラーで update が落ちないよう safe 経路を追加。
+  - update: 2026-02-04 17:11 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
 
 2501) fix/shape/pause-loading-other-steps (P2) — 進行中 (2026-02-03)
 - ブランチ名: fix/shape/pause-loading-other-steps

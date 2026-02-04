@@ -34,7 +34,7 @@ export const DEFAULT_BUILD_CONFIG: ShapeBuildConfig = {
       elongatedShapeCorrectionFactor: 1.3,
     },
     deleteOnComplete: false,
-    tolerance: 0.1,
+    tolerance: 0.2,
     areaThreshold: 1.0,
     excludePolygonAreaCoefficient: 1,
     omitDetailsConfig: {

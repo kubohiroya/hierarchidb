@@ -460,6 +460,19 @@ const buildTaskWeightMap = async (
   return map;
 };
 
+const buildTaskWeightMapSafe = async (
+  nodeId: NodeId,
+  tasks: TaskQueueRecord[],
+): Promise<Map<string, TaskWeightMeta>> => {
+  try {
+    return await buildTaskWeightMap(nodeId, tasks);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[shapeBatchAPI] task weight map failed', { nodeId: String(nodeId), message });
+    return new Map();
+  }
+};
+
 const summarizeTaskQueueProgress = async (
   tasks: TaskQueueRecord[],
   taskType?: TaskQueueRecord['stage'],
@@ -509,7 +522,7 @@ const buildTaskSummarySnapshot = async (
   taskQueue: VtTaskQueueDb,
 ): Promise<ShapeBatchTaskSummary[]> => {
   const tasks = await listTasks(taskQueue, nodeId);
-  const weightMap = await buildTaskWeightMap(nodeId, tasks);
+  const weightMap = await buildTaskWeightMapSafe(nodeId, tasks);
   return tasks.map((task) => mapTaskQueueRecordToTaskSummary(task, weightMap.get(task.taskId)));
 };
 
@@ -956,7 +969,7 @@ export const shapeBatchAPI = {
     const taskQueue = new VtTaskQueueDb();
     const vtTasks = await listTasks(taskQueue, nodeId);
     if (vtTasks.length > 0) {
-      const weightMap = await buildTaskWeightMap(nodeId, vtTasks);
+      const weightMap = await buildTaskWeightMapSafe(nodeId, vtTasks);
       return vtTasks.map((task) => mapTaskQueueRecordToBatchTask(task, weightMap.get(task.taskId)));
     }
     return [];
@@ -1157,7 +1170,7 @@ export const shapeBatchAPI = {
       void (async () => {
         try {
           const tasks = await listTasks(taskQueue, event.nodeId);
-          const weightMap = await buildTaskWeightMap(nodeId, tasks);
+          const weightMap = await buildTaskWeightMapSafe(nodeId, tasks);
           const summary = mapTaskQueueRecordToTaskSummary(
             event.task,
             weightMap.get(event.task.taskId)

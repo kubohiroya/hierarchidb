@@ -21,7 +21,7 @@ import {
 } from '@mui/icons-material';
 import { ExtractionPanel } from '../processing/ExtractionPanel.js';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
-import { BuildConfigSectionTitle } from '@hierarchidb/ui-accordion-config';
+import { BuildConfigSectionTitle, WorkerNumberConfigCard } from '@hierarchidb/ui-accordion-config';
 import { useTransformConfigSectionView } from './useTransformConfigSectionView.ts';
 
 type Props = {
@@ -47,6 +47,7 @@ export const TransformConfigSection: React.FC<Props> = ({ config, disabled, onCh
     toTolerance,
     formatTolerance,
     formatPx2,
+    handleTransformWorkersChange,
     handleThresholdAreaChange,
     handleToleranceChange,
     handleLargeAreaToleranceChange,
@@ -74,6 +75,24 @@ export const TransformConfigSection: React.FC<Props> = ({ config, disabled, onCh
       <AccordionDetails sx={{ p: 3 }}>
         <Stack spacing={3}>
           <Grid container spacing={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+              <WorkerNumberConfigCard
+                title={t('processing.transform.workersStage1', 'Transform Workers (Simplification)')}
+                value={baseTransformConfig.maxConcurrent}
+                icon={<FilterAltIcon fontSize="small" color="primary" />}
+                helperText={t(
+                  'processing.transform.workersStage1Help',
+                  'Higher concurrency can speed up processing but may exhaust browser memory.',
+                )}
+                warningText={undefined}
+                onChange={handleTransformWorkersChange}
+                min={1}
+                max={4}
+                step={1}
+                formatLabel={(value) => t('processing.workers.countLabel', '{{count}} workers', { count: value })}
+                disabled={disabled}
+              />
+            </Grid>
             <Grid size={{ xs: 12 }}>
               <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2, ...hoverCardSx }}>
                 <Stack spacing={2}>
