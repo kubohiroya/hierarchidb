@@ -122,7 +122,6 @@ export const TaskListVirtualized = ({
     window.requestAnimationFrame(() => virtualizer.scrollToIndex(index, { align: 'center' }));
   }, [ scrollToTaskId, shouldVirtualize, orderedTasks, virtualizer]);
 
-  const virtualItems = virtualizer.getVirtualItems();
   useEffect(() => {
     if (!shouldVirtualize) return;
     if (tasks.length === 0) {
@@ -169,7 +168,7 @@ export const TaskListVirtualized = ({
       ...next,
       updatedAt: Date.now(),
     });
-  }, [setViewportRange, shouldVirtualize, stageId, orderedTasks, virtualItems, tasks.length]);
+  }, [setViewportRange, shouldVirtualize, stageId, orderedTasks, tasks.length]);
 
   useEffect(() => {
     if (shouldVirtualize) return;

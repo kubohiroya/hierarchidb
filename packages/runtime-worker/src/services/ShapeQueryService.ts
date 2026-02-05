@@ -23,10 +23,10 @@ import type {
 import {
   type BuildSessionRecord,
   type BuildTaskRecord,
-  ephemeralShapeDB,
   type ProgressInfo,
   type ShapeDB,
 } from '@hierarchidb/shape-store';
+import { hidbEphemeralDB as ephemeralShapeDB } from '@hierarchidb/gis-sdk';
 import { SingletonMixin } from '@hierarchidb/util';
 import {
   countFetchDataDataSourceBuffersForNode,

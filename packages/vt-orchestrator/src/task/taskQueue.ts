@@ -1,6 +1,7 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/core-types';
+import { EPHEMERAL_DB_SCHEMA } from '@hierarchidb/gis-sdk';
 import type { TaskQueueEvent, TaskQueueRecord, TaskStage, TaskStatus } from '../types/types.js';
 //import type { TaskQueueEvent, TaskQueueRecord, TaskStage, TaskStatus } from '@hierarchidb/gis-sdk';
 
@@ -8,19 +9,11 @@ import type { TaskQueueEvent, TaskQueueRecord, TaskStage, TaskStatus } from '../
 export class VtTaskQueueDb extends Dexie {
   tasks!: Table<TaskQueueRecord, string>;
 
-  constructor(dbName: string = getDBName('vt-task-queue')) {
+  constructor(dbName: string = getDBName('ephemeral')) {
     super(dbName);
-    this.version(1).stores({
-      tasks:
-        '&taskId, nodeId, stage, status, index, stagePriority'
-        + ', [nodeId+stage], [nodeId+status], [nodeId+stage+status], [nodeId+stage+stagePriority]',
-    });
-    this.version(2).stores({
-      tasks:
-        '&taskId, nodeId, stage, status, index, stagePriority'
-        + ', [nodeId+stage], [nodeId+status], [nodeId+stage+status], [nodeId+stage+stagePriority]',
-    }).upgrade((tx) =>
-      tx.table('tasks')
+    this.version(1).stores(EPHEMERAL_DB_SCHEMA);
+    this.version(2).stores(EPHEMERAL_DB_SCHEMA).upgrade((tx) =>
+      tx.table('vtTaskQueue')
         .toCollection()
         .modify((task) => {
           if (task.status === 'waiting') {
@@ -28,7 +21,7 @@ export class VtTaskQueueDb extends Dexie {
           }
         })
     );
-    this.tasks = this.table('tasks');
+    this.tasks = this.table('vtTaskQueue');
   }
 }
 

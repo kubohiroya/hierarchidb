@@ -22,7 +22,7 @@ import type { ShapeTileLayerInfo, ShapeVectorTileRecord } from '@hierarchidb/sha
 import { extractGeometryStats } from './featureMetadataUtils.ts';
 import { buildStableSignature } from './taskSignatures.ts';
 import { deleteTasksByIds, VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
-import { ephemeralShapeDB } from '@hierarchidb/shape-store';
+import { hidbEphemeralDB as ephemeralShapeDB, type HidbEphemeralDB } from '@hierarchidb/gis-sdk';
 
 export type ShapeTransformByBandTaskInput = {
   fetchCacheId: string;
@@ -310,7 +310,7 @@ export const backfillTileRelationsFromTransformCache = async (params: {
   nodeId: NodeId;
   bandIndex: number;
   zBase: number;
-  ephemeralStore: typeof ephemeralShapeDB;
+  ephemeralStore: HidbEphemeralDB;
 }): Promise<{ relationCount: number; tileBuffers: Map<number, string[]> }> => {
   const { nodeId, bandIndex, zBase, ephemeralStore } = params;
   const buffers = await ephemeralStore.transaction('r', ephemeralStore.transformCache, async () => (
@@ -470,7 +470,7 @@ export const buildContinentLookup = (metadata: CountryMetadata[]): Map<string, s
 };
 
 const listTransformCacheIdsByTile = async (
-  store: typeof ephemeralShapeDB,
+  store: HidbEphemeralDB,
   nodeId: NodeId,
   bandIndex: number,
   tileId: number,
@@ -484,7 +484,7 @@ const listTransformCacheIdsByTile = async (
 
 export const buildVtTasks = async (
   nodeId: NodeId,
-  ephemeralStore: typeof ephemeralShapeDB,
+  ephemeralStore: HidbEphemeralDB,
   bands: Array<{ bandIndex: number; zMin: number; zMax: number; zBase: number }>,
   enableHighDetailBands: boolean,
   configSignature: string,

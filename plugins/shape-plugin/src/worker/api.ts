@@ -45,7 +45,8 @@ import {
   putTasks,
   updateTask,
 } from '@hierarchidb/vt-orchestrator';
-import { ephemeralShapeDB, type BuildTaskRecord } from '@hierarchidb/shape-store';
+import type { BuildTaskRecord } from '@hierarchidb/shape-store';
+import { hidbEphemeralDB as ephemeralShapeDB } from '@hierarchidb/gis-sdk';
 import { runShapePipeline } from '../services/vt/shapePipeline.js';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../services/batch/ShapeBuildAPIClient.ts';
 import { isSkippedMessage } from '../common/utils/taskMessages.ts';

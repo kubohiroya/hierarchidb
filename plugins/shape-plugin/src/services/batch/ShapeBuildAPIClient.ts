@@ -38,7 +38,8 @@ import {
   toShapeBuildSessionRecord,
   toVectorTileRecord,
 } from './shapeSessionMappers.js';
-import { shapeDB, ephemeralShapeDB } from '@hierarchidb/shape-store';
+import { shapeDB } from '@hierarchidb/shape-store';
+import { hidbEphemeralDB as ephemeralShapeDB } from '@hierarchidb/gis-sdk';
 import type { VectorTileRecord } from '@hierarchidb/shape-store';
 
 const mapStatus = (status: ShapeBuildSessionSummary['status'] | 'running' | 'idle'): ShapeProcessingStatus['status'] => {

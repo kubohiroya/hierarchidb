@@ -11,7 +11,7 @@ import { GadmFetchStageStrategy } from '../../services/batch/strategies/GadmFetc
 import { GeoBoundariesFetchStageStrategy } from '../../services/batch/strategies/GeoBoundariesFetchStageStrategy.js';
 import { NaturalEarthDownloadStrategy } from '../../services/batch/strategies/NaturalEarthDownloadStrategy.js';
 import type { Feature, FeatureCollection } from 'geojson';
-import { ephemeralShapeDB } from '@hierarchidb/shape-store';
+import { hidbEphemeralDB as ephemeralShapeDB } from '@hierarchidb/gis-sdk';
 import { buildRawDataDataSourceCacheKey } from '../../services/utils/chunkStore.js';
 
 const createConfig = (dataSource: string): BuildProcessConfig => ({

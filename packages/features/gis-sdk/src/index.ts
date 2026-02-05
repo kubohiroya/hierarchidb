@@ -60,4 +60,22 @@ export {
   type FetchCacheRecord,
   type TransformCacheRecord,
 } from './ephemeral/EphemeralGisDB.js';
+export {
+  EPHEMERAL_DB_SCHEMA,
+  type BuildStage,
+  type BuildStatus,
+  type BuildTaskStatus,
+  type EphemeralBuildSessionRecord,
+  type EphemeralBuildTaskRecord,
+  type EphemeralDomainType,
+  type EphemeralFetchCacheRecord,
+  type EphemeralTransformCacheRecord,
+  type EphemeralTransformErrorRecord,
+  type EphemeralTileIdToBufferRelation,
+  type StopReason,
+} from './ephemeral/EphemeralBuildState.js';
+export {
+  HidbEphemeralDB,
+  hidbEphemeralDB,
+} from './ephemeral/HidbEphemeralDB.js';
 export * from './config.js';

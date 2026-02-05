@@ -1,9 +1,9 @@
-import type { EphemeralShapeDB } from '@hierarchidb/shape-store';
+import type { HidbEphemeralDB } from '@hierarchidb/gis-sdk';
 import type { TransformConfig, VTConfig } from '@hierarchidb/gis-sdk';
 import type { BandConfig } from './types/types.js';
 
 export type TransformByBandStageContext = {
-  ephemeralDB: EphemeralShapeDB;
+  ephemeralDB: HidbEphemeralDB;
   transformConfig: TransformConfig;
   bands: BandConfig[];
   featureIdAllowlist?: Set<string>;
@@ -21,7 +21,7 @@ export type VtTileWriter = (tile: {
 }) => Promise<void>;
 
 export type VTStageContext = {
-  ephemeralDB: EphemeralShapeDB;
+  ephemeralDB: HidbEphemeralDB;
   vtConfig: VTConfig;
   bands: BandConfig[];
   abortSignal?: AbortSignal;

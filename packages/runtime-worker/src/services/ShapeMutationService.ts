@@ -14,7 +14,6 @@ import {
   type BuildProcessConfig,
   type BuildSessionRecord,
   type BuildStage,
-  ephemeralShapeDB,
   type LayerInfo,
   type ProgressInfo,
   type ResourceUsage,
@@ -22,6 +21,7 @@ import {
   type StageStatus,
   type VectorTileRecord,
 } from '@hierarchidb/shape-store';
+import { hidbEphemeralDB as ephemeralShapeDB } from '@hierarchidb/gis-sdk';
 import { SingletonMixin } from '@hierarchidb/util';
 import { storeRawDataDataSourceBufferForNode } from './shapeChunkStore.js';
 

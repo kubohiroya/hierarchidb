@@ -16,7 +16,7 @@ import { useDialogUrlSync } from '@hierarchidb/plugin-base';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { VtTaskQueueDb } from '@hierarchidb/vt-orchestrator';
 import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
-import { ephemeralShapeDB } from '@hierarchidb/shape-store';
+import { hidbEphemeralDB as ephemeralShapeDB } from '@hierarchidb/gis-sdk';
 import { deleteRawDataDataSourceBuffersForNodeKeys } from '../../../services/utils/chunkStore.ts';
 import { shapeMutationAPIImpl } from '../../../services/batch/ShapeBuildAPIClient.ts';
 

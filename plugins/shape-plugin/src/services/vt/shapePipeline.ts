@@ -3,7 +3,8 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildConfig } from '../../common/types/index.js';
 import type { CountryMetadata, DataSourceName, FetchTaskPayload, SelectedArrayByCountries } from '../../common/types/index.js';
 import { VtTaskQueueDb, deleteTasksByNode } from '@hierarchidb/vt-orchestrator';
-import { ephemeralShapeDB, shapeDB } from '@hierarchidb/shape-store';
+import { shapeDB } from '@hierarchidb/shape-store';
+import { hidbEphemeralDB as ephemeralShapeDB, type HidbEphemeralDB } from '@hierarchidb/gis-sdk';
 import { metadataLoader } from '../metadata/MetadataLoader.js';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../batch/ShapeBuildAPIClient.ts';
 import {
@@ -34,7 +35,7 @@ export type ShapePipelineParams = {
 type ShapePipelineContext = {
   params: ShapePipelineParams;
   taskQueue: VtTaskQueueDb;
-  ephemeralStore: typeof ephemeralShapeDB;
+  ephemeralStore: HidbEphemeralDB;
   resumeExistingTasks: boolean;
   buildContinuationPolicy: BuildContinuationPolicy;
   failureHandling: ReturnType<typeof resolveFailureHandling>;

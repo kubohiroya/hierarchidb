@@ -215,6 +215,49 @@
   - update: 2026-02-05 09:34 JST useShapeBuildStepAtomSync と関連 hook を精読し、更新ループの仮説を整理。
   - done: 2026-02-05 09:34 JST 最大更新深度警告の原因仮説整理を完了。
 
+2515) plan/ephemeral-db-unification (P1) — 進行中 (2026-02-05)
+- ブランチ名: plan/ephemeral-db-unification
+- 依存: なし
+- 受け入れ基準: hidb-ephemeral の目的/スコープを整理し移行対象を一覧化する／現行DBスキーマから共通スキーマ案を提示する（batchTasks→buildTasks改名含む）／段階移行/ロールバック手順を整理する／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/shape-store/src/EphemeralShapeDB.ts`, `packages/vt-orchestrator/src/task/taskQueue.ts`（必要に応じて追加）
+- ロールバック手順: 調査/設計のみのため不要
+- チェックリスト:
+  - 既存の ephemeral 系Dexie DB/テーブル構成を整理する
+  - hidb-ephemeral の共通スキーマ案を作成する
+  - 段階移行/併存/ロールバックの流れを整理する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-05 10:35 JST hidb-ephemeral 統合計画の整理に着手。
+  - update: 2026-02-05 11:00 JST hidb-ephemeral 共通スキーマ案と移行フェーズ案を整理。
+  - done: 2026-02-05 11:00 JST hidb-ephemeral 統合計画の一次整理を完了。
+  - update: 2026-02-05 10:46 JST shape/route/vt-task-queue のDexie構成を精査し統合対象を整理。
+  - done: 2026-02-05 10:46 JST hidb-ephemeral 統合の配置案をまとめ。
+  - update: 2026-02-05 11:22 JST gis-sdk に共通スキーマ型と Dexie schema 定義を追加。
+  - done: 2026-02-05 11:22 JST hidb-ephemeral 共通スキーマの型定義を準備。
+
+2516) plan/ephemeral-db-phase1 (P1) — 進行中 (2026-02-05)
+- ブランチ名: plan/ephemeral-db-phase1
+- 依存: 2515
+- 受け入れ基準: hidb-ephemeral の新Dexieクラスを追加する／旧DB→新DBの読み取り切替点を整理する／batchTasks→buildTasks改名の適用箇所を整理する／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/gis-sdk/src/ephemeral/*`（必要に応じて追加）
+- ロールバック手順: 調査/設計のみのため不要
+- チェックリスト:
+  - hidb-ephemeral の新Dexieクラスを追加する
+  - 読み取り切替点の候補を整理する
+  - batchTasks→buildTasks の改名対象を整理する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-05 11:40 JST hidb-ephemeral Phase1 の準備に着手。
+  - update: 2026-02-05 12:36 JST shape の sessions/buildTasks/cache を hidb-ephemeral へ切替開始。
+  - update: 2026-02-05 13:05 JST shape の読み取り先を hidb-ephemeral に切替。
+  - done: 2026-02-05 13:05 JST shape 読み取り切替を完了。
+  - update: 2026-02-05 12:20 JST vt-task-queue を hidb-ephemeral の vtTaskQueue テーブルへ切替。
+  - update: 2026-02-05 12:06 JST 読み取り切替設計（フォールバックなし）を整理。
+  - done: 2026-02-05 12:06 JST Phase1-1 読み取り切替設計を完了。
+  - update: 2026-02-05 11:55 JST hidb-ephemeral の新Dexieクラスと共通スキーマ実装を追加。
+  - update: 2026-02-05 11:56 JST 読み取り切替点と batchTasks→buildTasks 改名対象を整理。
+  - done: 2026-02-05 11:56 JST hidb-ephemeral Phase1 の準備を完了。
+
 2509) fix/shape-build/max-update-depth-loop (P1) — 完了 (2026-02-04)
 - ブランチ名: fix/shape-build/max-update-depth-loop
 - 依存: なし

@@ -10,7 +10,7 @@ import {
   putTasks,
   runStageTasks,
 } from '@hierarchidb/vt-orchestrator';
-import { ephemeralShapeDB } from '@hierarchidb/shape-store';
+import { hidbEphemeralDB as ephemeralShapeDB } from '@hierarchidb/gis-sdk';
 import type { ShapeFeatureMetadata } from '@hierarchidb/shape-api';
 import {
   pickAdminCode,
