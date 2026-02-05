@@ -11,7 +11,7 @@ import type {
   ShapeStepValidationResult,
   SelectedArrayByCountries,
 } from '../../common/types/index.js';
-import { SHAPE_DATA_SOURCES } from '../../common/types/constants.js';
+import { DEFAULT_BUILD_CONFIG, SHAPE_DATA_SOURCES } from '../../common/types/constants.js';
 import { GEOBOUNDARIES_RELEASE_BASE_URL } from './geoboundariesEndpoints.js';
 import type { ShapeBuildConfig } from '../../common/types/index.js';
 import {
@@ -80,17 +80,21 @@ export function validateBatchConfig(config: ShapeBuildConfig): ShapeStepValidati
   const errors: string[] = [];
   const warnings: string[] = [];
 
-  const fetchConcurrency = config.fetchConfig.maxConcurrent;
+  const fetchConfig = config.fetchConfig ?? DEFAULT_BUILD_CONFIG.fetchConfig;
+  const transformConfig = config.transformConfig ?? DEFAULT_BUILD_CONFIG.transformConfig;
+  const areaBasedTolerance = transformConfig.areaBasedTolerance ?? DEFAULT_BUILD_CONFIG.transformConfig.areaBasedTolerance;
+
+  const fetchConcurrency = fetchConfig.maxConcurrent;
   if (fetchConcurrency < 1 || fetchConcurrency > 4) {
     errors.push('Concurrent downloads must be between 1 and 4');
   }
 
-  const transformConcurrentProcesses = config.transformConfig.maxConcurrent;
+  const transformConcurrentProcesses = transformConfig.maxConcurrent;
   if (transformConcurrentProcesses < 1 || transformConcurrentProcesses > 8) {
     errors.push('Concurrent transform processes must be between 1 and 8');
   }
 
-  const zoomBandBoundaries = config.transformConfig.zoomBandBoundaries;
+  const zoomBandBoundaries = transformConfig.zoomBandBoundaries;
   const zoomBandCount = Math.max(0, zoomBandBoundaries.length - 1);
   if (zoomBandCount < ZOOM_BAND_MIN_RANGES || zoomBandCount > ZOOM_BAND_MAX_RANGES) {
     errors.push(`Zoom band count must be between ${ZOOM_BAND_MIN_RANGES} and ${ZOOM_BAND_MAX_RANGES}`);
@@ -120,19 +124,18 @@ export function validateBatchConfig(config: ShapeBuildConfig): ShapeStepValidati
     }
   }
 
-  const areaThreshold = config.transformConfig.featureAreaThreshold;
+  const areaThreshold = transformConfig.featureAreaThreshold;
   if (areaThreshold < 0 || areaThreshold > 10000) {
     errors.push('Feature area threshold must be between 0 and 10000');
   }
 
-  const areaBasedTolerance = config.transformConfig.areaBasedTolerance;
   if (areaBasedTolerance.thresholdAreaPx2 <= 0 || !Number.isFinite(areaBasedTolerance.thresholdAreaPx2)) {
     errors.push('Area-based tolerance threshold area must be > 0');
   }
   if (areaBasedTolerance.largeAreaTolerance < 0 || !Number.isFinite(areaBasedTolerance.largeAreaTolerance)) {
     errors.push('Area-based tolerance large-area tolerance must be >= 0');
   }
-  if (areaBasedTolerance.largeAreaTolerance > config.transformConfig.tolerance) {
+  if (areaBasedTolerance.largeAreaTolerance > transformConfig.tolerance) {
     warnings.push('Area-based tolerance large-area tolerance exceeds tolerance; it will be capped.');
   }
 
