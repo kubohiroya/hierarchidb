@@ -17,119 +17,6 @@ test.describe('Shape build background (real pipeline)', () => {
   test('continues build after leaving step and persists tiles', async ({ page }) => {
     test.setTimeout(120000);
 
-    const geoJson = {
-      type: 'FeatureCollection',
-      features: [
-        {
-          type: 'Feature',
-          properties: {
-            shapeName: 'Japan',
-            shapeISO: 'JPN',
-          },
-          geometry: {
-            type: 'Polygon',
-            coordinates: [
-              [
-                [139.75, 35.68],
-                [139.80, 35.68],
-                [139.80, 35.72],
-                [139.75, 35.72],
-                [139.75, 35.68],
-              ],
-            ],
-          },
-        },
-      ],
-    };
-
-    const metadataUrlPattern = '**/geoboundaries.org/api/current/gbOpen/ALL/ALL/**';
-    const boundaryMetadataUrlPattern = '**/geoboundaries.org/api/current/gbOpen/JPN/ADM0/**';
-    const geoJsonUrl = 'https://geoboundaries.test/JPN_ADM0.json';
-
-    const downloadTaskPayloads = [{
-      url: geoJsonUrl,
-      countryCode: 'JPN',
-      countryName: 'Japan',
-      adminLevel: 0,
-      dataSource: 'geoboundaries',
-    }];
-
-    const context = page.context();
-    await context.route(metadataUrlPattern, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([
-          {
-            boundaryISO: 'JPN',
-            boundaryName: 'Japan',
-            boundaryType: 'ADM0',
-            Continent: 'Asia',
-          },
-        ]),
-      });
-    });
-
-    await context.route(boundaryMetadataUrlPattern, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          simplifiedGeometryGeoJSON: geoJsonUrl,
-          boundaryYear: 2023,
-          licenseDetail: 'Test License',
-        }),
-      });
-    });
-
-    await context.route('**/hierarchidb-cors-proxy.kubohiroya.workers.dev/**', async (route) => {
-      const requestUrl = new URL(route.request().url());
-      const targetUrl = requestUrl.searchParams.get('url') ?? '';
-      if (targetUrl.includes('/gbOpen/ALL/ALL/')) {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify([
-            {
-              boundaryISO: 'JPN',
-              boundaryName: 'Japan',
-              boundaryType: 'ADM0',
-              Continent: 'Asia',
-            },
-          ]),
-        });
-        return;
-      }
-      if (targetUrl.includes('/gbOpen/JPN/ADM0/')) {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            simplifiedGeometryGeoJSON: geoJsonUrl,
-            boundaryYear: 2023,
-            licenseDetail: 'Test License',
-          }),
-        });
-        return;
-      }
-      if (targetUrl.includes('geoboundaries.test')) {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify(geoJson),
-        });
-        return;
-      }
-      await route.fulfill({ status: 404, body: 'Not Found' });
-    });
-
-    await context.route('**/geoboundaries.test/**', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(geoJson),
-      });
-    });
 
     await page.goto(buildAppUrl('t/r'), { waitUntil: 'networkidle' });
     await dismissGuidedTour(page);
@@ -273,7 +160,7 @@ test.describe('Shape build background (real pipeline)', () => {
       };
     }, { buildConfig, selectedArrayByCountries, nodeType: 'shape' });
 
-    const startResult = await page.evaluate(async ({ nodeId, downloadTaskPayloads }) => {
+    const startResult = await page.evaluate(async ({ nodeId, selectedArrayByCountries, dataSourceName }) => {
       const ref = (window as any).__HDB_WORKER_CLIENT_REF__;
       const api = ref?.client ?? ref?.getAPI?.();
       if (!api) {
@@ -284,7 +171,12 @@ test.describe('Shape build background (real pipeline)', () => {
       } else if (api.initialize) {
         await api.initialize();
       }
-      const result = await api.startBatchSession('shape', nodeId, downloadTaskPayloads, 'finish_all_stages');
+      const payloads = await api.generateShapeDownloadTaskPayloadsFromSelection(
+        nodeId,
+        dataSourceName,
+        selectedArrayByCountries,
+      );
+      const result = await api.startBatchSession('shape', nodeId, payloads, 'finish_all_stages');
       const tasks = await api.getBatchTasks('shape', nodeId).catch(() => []);
       return {
         status: result?.status ?? null,
@@ -292,7 +184,8 @@ test.describe('Shape build background (real pipeline)', () => {
       };
     }, {
       nodeId: shapeNode.nodeId,
-      downloadTaskPayloads,
+      selectedArrayByCountries,
+      dataSourceName: buildConfig.dataSourceName,
     });
 
     if (!startResult) {

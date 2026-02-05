@@ -14,6 +14,7 @@
   - update: 2026-02-05 22:12 JST ResourceLayerMap の GeoJSON レイヤー更新を差分適用に変更し、切替時の全消去を回避。
   - update: 2026-02-05 22:13 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
   - update: 2026-02-05 22:13 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-02-05 22:14 JST Terrain Types 切替時の非対象タイプのブリンク抑制を完了。
 
 2523) fix/location-plugin/remove-unused-onupdate (P1) — 進行中 (2026-02-05)
 - ブランチ名: fix/location-plugin/remove-unused-onupdate
@@ -543,6 +544,8 @@
   - update: 2026-02-06 11:50 JST 完了待機のログに running task の詳細（taskId/stage/progress）を含めるよう拡張。
   - update: 2026-02-06 11:55 JST failed task の詳細をログへ含め、failed 件数が出た時点で即時エラーにするよう補強。
   - update: 2026-02-06 12:00 JST build ダイアログを開かずに startBatchSession を実行する形に切替（auto-pause を避けて c) を検証）。
+  - update: 2026-02-06 12:10 JST c) 実パイプライン検証を実ネットワークに切り替える方針で E2E モックを撤去する作業に着手。
+  - update: 2026-02-06 12:15 JST E2E の geoboundaries モック/固定 payload を撤去し、実ネットワークで payload 生成する経路に切替。
 
 2509) fix/shape-build/max-update-depth-loop (P1) — 完了 (2026-02-04)
 - ブランチ名: fix/shape-build/max-update-depth-loop
@@ -12787,6 +12790,7 @@
   - update: 2026-01-31 10:11 JST folder-plugin の TagId import 欠落による typecheck エラーの修正に着手。
   - update: 2026-01-31 10:13 JST pnpm --filter @hierarchidb/folder-plugin typecheck exit 0 を確認。
   - update: 2026-02-05 22:20 JST shape-build-background.e2e の status 取得で必須フィールド欠落による TS2322 を修正。
+  - blocked: 2026-02-05 22:22 JST pnpm typecheck が app の openInNewTab/searchTerm 型エラーで exit 1。
 2423) investigation/route/reference-node-links (P1) — 進行中 (2026-01-29)
 - ブランチ名: investigation/route/reference-node-links
 - 依存: なし
