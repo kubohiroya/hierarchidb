@@ -257,6 +257,20 @@
   - update: 2026-02-05 11:55 JST hidb-ephemeral の新Dexieクラスと共通スキーマ実装を追加。
   - update: 2026-02-05 11:56 JST 読み取り切替点と batchTasks→buildTasks 改名対象を整理。
   - done: 2026-02-05 11:56 JST hidb-ephemeral Phase1 の準備を完了。
+  - update: 2026-02-05 10:45 JST route の sessions を hidb-ephemeral へ切替。
+  - blocked: 2026-02-05 10:46 JST pnpm --filter @hierarchidb/route-plugin typecheck で hidbEphemeralDB 未export エラー（gis-sdk dist 未更新）。
+  - update: 2026-02-05 10:46 JST pnpm --filter @hierarchidb/gis-sdk build exit 0（tsdown define 警告あり）。
+  - update: 2026-02-05 10:46 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0。
+  - update: 2026-02-05 10:52 JST route のセッションメタは tiles から算出し、tableId は hidb-ephemeral sessions に保持する方針に整理。
+  - update: 2026-02-05 10:52 JST EphemeralRouteDB の sessions テーブル/型を撤去し、vectorTiles のみ維持。
+  - update: 2026-02-05 10:52 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0。
+  - update: 2026-02-05 11:30 JST RoutePreviewList を1本ルートのメタ（モード/名称/地点名/行政名/中継点数/距離）表示へ切替。
+  - update: 2026-02-05 11:30 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define 警告あり）。
+  - update: 2026-02-05 11:30 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0。
+  - update: 2026-02-05 11:36 JST RoutePreviewList のモード列にローカライズ済み表示とアイコン+色を追加。
+  - update: 2026-02-05 11:36 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define 警告あり）。
+  - update: 2026-02-05 11:36 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0。
+  - start: 2026-02-05 11:41 JST vtTaskQueue を buildTasks に統合する作業に着手。
 
 2509) fix/shape-build/max-update-depth-loop (P1) — 完了 (2026-02-04)
 - ブランチ名: fix/shape-build/max-update-depth-loop

@@ -15,22 +15,8 @@ export type RouteVectorTileRecord = {
   contentType?: string;
 };
 
-export type RouteSessionRecord = {
-  sessionId: string;
-  nodeId: NodeId;
-  bbox?: [number, number, number, number];
-  zoomMin?: number;
-  zoomMax?: number;
-  totalLines?: number;
-  createdAt?: number;
-  updatedAt?: number;
-  status?: 'idle' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
-  tableId?: string;
-};
-
 class EphemeralRouteDexie extends Dexie {
   vectorTiles!: Table<RouteVectorTileRecord, string>;
-  sessions!: Table<RouteSessionRecord, string>;
 
   constructor(dbName = 'hdb-ephemeral-route') {
     super(dbName);
@@ -41,6 +27,9 @@ class EphemeralRouteDexie extends Dexie {
     this.version(2).stores({
       vectorTiles: '&id, sessionId, timestamp',
       sessions: '&sessionId',
+    });
+    this.version(3).stores({
+      vectorTiles: '&id, sessionId, nodeId, [sessionId+z+x+y], timestamp',
     });
   }
 }

@@ -1,5 +1,6 @@
 import type React from 'react';
 import { useMemo } from 'react';
+import { Box } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import type { GridColumn } from '@hierarchidb/ui-grid';
 import { FloatingWindow } from '@hierarchidb/ui-floating-window';
@@ -11,29 +12,65 @@ import {
   type MapPreviewStatusLabels,
 } from './MapPreviewFloatingTable.js';
 
+type RoutePreviewSourcePoint = {
+  name?: string;
+  locationName?: string;
+  admin0Name?: string;
+  admin1Name?: string;
+  admin2Name?: string;
+};
+
+type RoutePreviewSourceLine = {
+  id: string | number;
+  name?: string;
+  routeMode?: string;
+  startPoint?: RoutePreviewSourcePoint;
+  endPoint?: RoutePreviewSourcePoint;
+  waypoints?: [number, number][];
+  distance?: number;
+};
+
 export type RoutePreviewLineRow = {
   id: string | number;
-  startLon?: number;
-  startLat?: number;
-  endLon?: number;
-  endLat?: number;
+  routeMode?: string;
+  routeName?: string;
+  startName?: string;
+  startAdmin0?: string;
+  startAdmin1?: string;
+  startAdmin2?: string;
+  endName?: string;
+  endAdmin0?: string;
+  endAdmin1?: string;
+  endAdmin2?: string;
+  waypointCount?: number;
   distanceMeters?: number;
-  vertexCount?: number;
 };
 
 export type RoutePreviewColumnLabels = {
   lineId: string;
-  startLon: string;
-  startLat: string;
-  endLon: string;
-  endLat: string;
+  routeMode: string;
+  routeName: string;
+  startName: string;
+  startAdmin0: string;
+  startAdmin1: string;
+  startAdmin2: string;
+  endName: string;
+  endAdmin0: string;
+  endAdmin1: string;
+  endAdmin2: string;
+  waypointCount: string;
   distanceMeters: string;
-  vertexCount: string;
 };
 
 export type RoutePreviewListCountLabels = {
   matched: string;
   rows: string;
+};
+
+export type RoutePreviewModeMeta = {
+  label: string;
+  icon: React.ReactNode;
+  color?: string;
 };
 
 export type RoutePreviewListProps = {
@@ -42,6 +79,7 @@ export type RoutePreviewListProps = {
   columnLabels: RoutePreviewColumnLabels;
   search?: MapPreviewSearchConfig;
   matchedRows?: Set<string>;
+  modeMeta?: Record<string, RoutePreviewModeMeta>;
   selectedRows?: Set<string>;
   onSelectionChange?: (selected: Set<string | number>) => void;
   loading?: boolean;
@@ -74,29 +112,40 @@ const haversineMeters = (lat1: number, lon1: number, lat2: number, lon2: number)
   return 6371008.8 * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 };
 
-const computeDistanceMeters = (coords: [number, number][]): number => {
-  if (coords.length < 2) return 0;
+const estimateLineDistance = (waypoints?: [number, number][]): number | undefined => {
+  if (!waypoints || waypoints.length < 2) return undefined;
   let total = 0;
-  for (let i = 0; i < coords.length - 1; i += 1) {
-    const [lon1, lat1] = coords[i]!;
-    const [lon2, lat2] = coords[i + 1]!;
-    total += haversineMeters(lat1, lon1, lat2, lon2);
+  for (let i = 0; i < waypoints.length - 1; i += 1) {
+    const start = waypoints[i];
+    const end = waypoints[i + 1];
+    if (!start || !end) continue;
+    total += haversineMeters(start[1], start[0], end[1], end[0]);
   }
   return total;
 };
 
-export const buildRoutePreviewRows = (lines: [number, number][][]): RoutePreviewLineRow[] => (
-  lines.map((coords, index) => {
-    const [startLon, startLat] = coords[0] ?? [undefined, undefined];
-    const [endLon, endLat] = coords[coords.length - 1] ?? [undefined, undefined];
+const resolvePointName = (point?: RoutePreviewSourcePoint): string | undefined => (
+  point?.name ?? point?.locationName
+);
+
+export const buildRoutePreviewRows = (lines: RoutePreviewSourceLine[]): RoutePreviewLineRow[] => (
+  lines.map((line) => {
+    const waypointCount = Math.max(0, (line.waypoints?.length ?? 0) - 2);
+    const distanceMeters = line.distance ?? estimateLineDistance(line.waypoints);
     return {
-      id: index,
-      startLon,
-      startLat,
-      endLon,
-      endLat,
-      distanceMeters: computeDistanceMeters(coords),
-      vertexCount: coords.length,
+      id: line.id,
+      routeMode: line.routeMode,
+      routeName: line.name,
+      startName: resolvePointName(line.startPoint),
+      startAdmin0: line.startPoint?.admin0Name,
+      startAdmin1: line.startPoint?.admin1Name,
+      startAdmin2: line.startPoint?.admin2Name,
+      endName: resolvePointName(line.endPoint),
+      endAdmin0: line.endPoint?.admin0Name,
+      endAdmin1: line.endPoint?.admin1Name,
+      endAdmin2: line.endPoint?.admin2Name,
+      waypointCount,
+      distanceMeters,
     };
   })
 );
@@ -107,6 +156,7 @@ export const RoutePreviewList: React.FC<RoutePreviewListProps> = ({
   columnLabels,
   search,
   matchedRows,
+  modeMeta,
   selectedRows,
   onSelectionChange,
   loading,
@@ -126,17 +176,22 @@ export const RoutePreviewList: React.FC<RoutePreviewListProps> = ({
     const filtered = keyword
       ? rows.filter((row) => matchedRows?.has(String(row.id)))
       : rows;
-    const mapped = filtered.map((row) => ({
+    return filtered.map((row) => ({
       id: row.id,
       lineId: row.id,
-      startLon: formatNumber(row.startLon),
-      startLat: formatNumber(row.startLat),
-      endLon: formatNumber(row.endLon),
-      endLat: formatNumber(row.endLat),
-      distanceMeters: formatInteger(row.distanceMeters),
-      vertexCount: typeof row.vertexCount === 'number' ? row.vertexCount : '',
+      routeMode: row.routeMode ?? '',
+      routeName: row.routeName ?? '',
+      startName: row.startName ?? '',
+      startAdmin0: row.startAdmin0 ?? '',
+      startAdmin1: row.startAdmin1 ?? '',
+      startAdmin2: row.startAdmin2 ?? '',
+      endName: row.endName ?? '',
+      endAdmin0: row.endAdmin0 ?? '',
+      endAdmin1: row.endAdmin1 ?? '',
+      endAdmin2: row.endAdmin2 ?? '',
+      waypointCount: formatInteger(row.waypointCount),
+      distanceMeters: formatNumber(row.distanceMeters, 2),
     }));
-    return mapped;
   }, [matchedRows, rows, search?.value]);
 
   const resolvedMatchedRows = useMemo(() => {
@@ -146,13 +201,35 @@ export const RoutePreviewList: React.FC<RoutePreviewListProps> = ({
 
   const columns = useMemo<GridColumn<(typeof tableRows)[number]>[]>(() => ([
     { id: 'lineId', label: columnLabels.lineId, width: 120, sortable: true },
-    { id: 'startLon', label: columnLabels.startLon, width: 140, align: 'right', sortable: true },
-    { id: 'startLat', label: columnLabels.startLat, width: 140, align: 'right', sortable: true },
-    { id: 'endLon', label: columnLabels.endLon, width: 140, align: 'right', sortable: true },
-    { id: 'endLat', label: columnLabels.endLat, width: 140, align: 'right', sortable: true },
+    {
+      id: 'routeMode',
+      label: columnLabels.routeMode,
+      width: 150,
+      sortable: true,
+      format: (value) => {
+        const key = typeof value === 'string' ? value : String(value ?? '');
+        const meta = key ? modeMeta?.[key] : undefined;
+        if (!meta) return key;
+        return (
+          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>
+            <Box sx={{ display: 'inline-flex', color: meta.color }}>{meta.icon}</Box>
+            <span>{meta.label}</span>
+          </Box>
+        );
+      },
+    },
+    { id: 'routeName', label: columnLabels.routeName, width: 180, sortable: true },
+    { id: 'startName', label: columnLabels.startName, width: 160, sortable: true },
+    { id: 'startAdmin0', label: columnLabels.startAdmin0, width: 160, sortable: true },
+    { id: 'startAdmin1', label: columnLabels.startAdmin1, width: 160, sortable: true },
+    { id: 'startAdmin2', label: columnLabels.startAdmin2, width: 160, sortable: true },
+    { id: 'endName', label: columnLabels.endName, width: 160, sortable: true },
+    { id: 'endAdmin0', label: columnLabels.endAdmin0, width: 160, sortable: true },
+    { id: 'endAdmin1', label: columnLabels.endAdmin1, width: 160, sortable: true },
+    { id: 'endAdmin2', label: columnLabels.endAdmin2, width: 160, sortable: true },
+    { id: 'waypointCount', label: columnLabels.waypointCount, width: 140, align: 'right', sortable: true },
     { id: 'distanceMeters', label: columnLabels.distanceMeters, width: 160, align: 'right', sortable: true },
-    { id: 'vertexCount', label: columnLabels.vertexCount, width: 140, align: 'right', sortable: true },
-  ]), [columnLabels]);
+  ]), [columnLabels, modeMeta]);
 
   const resolvedCountText = useMemo(() => {
     if (countText) return countText;
@@ -171,7 +248,7 @@ export const RoutePreviewList: React.FC<RoutePreviewListProps> = ({
       title={resolvedTitle}
       initialState={{
         position: { x: 80, y: 140 },
-        size: { width: 520, height: 360 },
+        size: { width: 740, height: 420 },
         isVisible: true,
         isMinimized: false,
       }}

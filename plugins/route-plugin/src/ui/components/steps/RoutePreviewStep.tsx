@@ -38,6 +38,7 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
     setSelectedIds,
     emptyErrorSummary,
     emptyContent,
+    modeMeta,
     columnLabels,
     countLabels,
     searchLabels,
@@ -111,6 +112,7 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
                 loading={lineStringsLoading}
                 error={lineStringsError ?? undefined}
                 columnLabels={columnLabels}
+                modeMeta={modeMeta}
                 search={{
                   value: listSearch,
                   onChange: setListSearch,

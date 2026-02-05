@@ -22,6 +22,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import type { RouteLineString, RouteNearestLineResponse, RouteUpdaterPayload } from '@hierarchidb/route-api';
 import { formatDistance, getTransportModeName, useTranslation } from '../../../common/i18n/index.js';
+import { ROUTE_MODE_COLUMNS } from './useRouteSelectionStep.js';
 import { ROUTE_MODES, type RouteMode } from '@hierarchidb/route-api';
 import { ROUTE_DATA_SOURCES } from '../../../common/datasource/configs.js';
 import { getDBName } from '@hierarchidb/util';
@@ -345,19 +346,39 @@ export const useRoutePreviewStep = ({
     setRouteModeSelection((prev) => ({ ...prev, [id]: !prev[id] }));
   }, []);
   const listRows = useMemo(
-    () => (hasGeometry ? buildRoutePreviewRows(lineGeometries) : []),
-    [hasGeometry, lineGeometries],
+    () => (hasGeometry ? buildRoutePreviewRows(lineStrings) : []),
+    [hasGeometry, lineStrings],
   );
+  const routeModeMeta = useMemo(() => Object.fromEntries(
+    ROUTE_MODE_COLUMNS.map((mode) => [
+      mode.id,
+      {
+        label: t(mode.labelKey, mode.id),
+        icon: <mode.icon fontSize="small" />,
+        color: routeStyleConfig.modeColors[mode.id],
+      },
+    ]),
+  ), [routeStyleConfig.modeColors, t]);
   const getRowId = useCallback((row: (typeof listRows)[number]) => String(row.id), []);
-  const buildSearchText = useCallback((row: (typeof listRows)[number]) => ([
-    row.id,
-    row.startLon,
-    row.startLat,
-    row.endLon,
-    row.endLat,
-    row.distanceMeters,
-    row.vertexCount,
-  ].filter((value) => value != null).join(' ')), []);
+  const buildSearchText = useCallback((row: (typeof listRows)[number]) => {
+    const modeLabel = row.routeMode ? routeModeMeta[row.routeMode]?.label : undefined;
+    return [
+      row.id,
+      row.routeMode,
+      modeLabel,
+      row.routeName,
+      row.startName,
+      row.startAdmin0,
+      row.startAdmin1,
+      row.startAdmin2,
+      row.endName,
+      row.endAdmin0,
+      row.endAdmin1,
+      row.endAdmin2,
+      row.waypointCount,
+      row.distanceMeters,
+    ].filter((value) => value != null && value !== '').join(' ');
+  }, [routeModeMeta]);
 
   useVectorTilePreviewSearch(
     hasGeometry,
@@ -408,14 +429,21 @@ export const useRoutePreviewStep = ({
     setSelectedIds,
     emptyErrorSummary,
     emptyContent,
+    modeMeta: routeModeMeta,
     columnLabels: {
       lineId: t('preview.list.columns.lineId', 'Line Id'),
-      startLon: t('preview.list.columns.startLon', 'Start Lon'),
-      startLat: t('preview.list.columns.startLat', 'Start Lat'),
-      endLon: t('preview.list.columns.endLon', 'End Lon'),
-      endLat: t('preview.list.columns.endLat', 'End Lat'),
+      routeMode: t('preview.list.columns.routeMode', 'Mode'),
+      routeName: t('preview.list.columns.routeName', 'Route Name'),
+      startName: t('preview.list.columns.startName', 'Start'),
+      startAdmin0: t('preview.list.columns.startAdmin0', 'Start Admin0'),
+      startAdmin1: t('preview.list.columns.startAdmin1', 'Start Admin1'),
+      startAdmin2: t('preview.list.columns.startAdmin2', 'Start Admin2'),
+      endName: t('preview.list.columns.endName', 'End'),
+      endAdmin0: t('preview.list.columns.endAdmin0', 'End Admin0'),
+      endAdmin1: t('preview.list.columns.endAdmin1', 'End Admin1'),
+      endAdmin2: t('preview.list.columns.endAdmin2', 'End Admin2'),
+      waypointCount: t('preview.list.columns.waypointCount', 'Waypoints'),
       distanceMeters: t('preview.list.columns.distanceMeters', 'Distance (m)'),
-      vertexCount: t('preview.list.columns.vertexCount', 'Vertices'),
     },
     countLabels: {
       matched: t('preview.list.matched', 'Matched'),

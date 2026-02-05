@@ -3,13 +3,12 @@ import type { NodeId } from '@hierarchidb/core-types';
 import { digestSha256Hex } from '@hierarchidb/util';
 import { TabularWriter } from '@hierarchidb/tabular-store';
 import { getRouteRuntimeWorkerClient } from './batch/adapters/RuntimeWorkerClient.js';
-import { encodeFlatGeobufFromFeatureCollection } from '@hierarchidb/gis-sdk';
+import { encodeFlatGeobufFromFeatureCollection, hidbEphemeralDB } from '@hierarchidb/gis-sdk';
 import { writeVectorTileInput } from '@hierarchidb/runtime-worker';
 import {
   clearExpiredVectorTiles,
   clearVectorTilesForSession,
   getEphemeralRouteDB,
-  type RouteSessionRecord,
   type RouteVectorTileRecord,
 } from '../database/EphemeralRouteDB.js';
 
@@ -67,6 +66,7 @@ export class RouteVectorTileService {
     }
     const sessionId = `route-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     const db = getEphemeralRouteDB();
+    const ephemeralDb = hidbEphemeralDB;
     try {
       await clearVectorTilesForSession(sessionId);
       await clearExpiredVectorTiles(VECTOR_TILE_TTL);
@@ -136,18 +136,18 @@ export class RouteVectorTileService {
       totalLines: lines.length,
       tableId,
     };
-    await db.sessions.put({
-      sessionId,
+    await ephemeralDb.sessions.put({
       nodeId,
-      bbox: summary.bbox,
-      zoomMin: summary.zoomMin,
-      zoomMax: summary.zoomMax,
-      totalLines: summary.totalLines,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
       status: 'completed',
       tableId,
-    } satisfies RouteSessionRecord);
+      domainType: 'route',
+      stopReason: 'completed',
+      stage: 'vt',
+      progress: 100,
+      startedAt: Date.now(),
+      updatedAt: Date.now(),
+      completedAt: Date.now(),
+    });
     return summary;
   }
 
@@ -161,6 +161,7 @@ export class RouteVectorTileService {
     tableId?: string;
   }> {
     const db = getEphemeralRouteDB();
+    const ephemeralDb = hidbEphemeralDB;
     const list = await db.vectorTiles.where('sessionId').equals(sessionId).toArray();
     if (list.length === 0) return { exists: false, layers: [], tiles: 0, sizeBytes: 0 };
     const zmin = Math.min(...list.map((r) => r.z));
@@ -180,7 +181,8 @@ export class RouteVectorTileService {
       if (east > maxLon) maxLon = east;
       if (north > maxLat) maxLat = north;
     }
-    const sessions = await db.sessions.get(sessionId);
+    const sessionNodeId = list[0]?.nodeId ?? null;
+    const sessions = sessionNodeId ? await ephemeralDb.sessions.get(sessionNodeId) : null;
     return {
       exists: true,
       layers: ['route_lines'],
