@@ -40,6 +40,12 @@ export interface EphemeralBuildTaskRecord {
   createdAt?: number;
   updatedAt?: number;
   sequence?: number;
+  stage?: BuildStage;
+  inputData?: unknown;
+  outputData?: unknown;
+  retryCount?: number;
+  startedAt?: number;
+  completedAt?: number;
 }
 
 export interface EphemeralFetchCacheRecord {
@@ -100,7 +106,7 @@ export interface EphemeralTileIdToBufferRelation {
   createdAt: number;
 }
 
-export const EPHEMERAL_DB_SCHEMA: Record<string, string> = {
+export const LEGACY_EPHEMERAL_DB_SCHEMA: Record<string, string> = {
   sessions:
     '&nodeId, domainType, status, updatedAt'
     + ', [domainType+status], [domainType+updatedAt]',
@@ -119,4 +125,22 @@ export const EPHEMERAL_DB_SCHEMA: Record<string, string> = {
   vtTaskQueue:
     '&taskId, nodeId, domainType, stage, status, index, stagePriority, sequence'
     + ', [nodeId+stage], [nodeId+status], [nodeId+stage+status], [nodeId+stage+stagePriority]',
+};
+
+export const EPHEMERAL_DB_SCHEMA: Record<string, string> = {
+  sessions:
+    '&nodeId, domainType, status, updatedAt'
+    + ', [domainType+status], [domainType+updatedAt]',
+  buildTasks:
+    '&taskId, nodeId, domainType, taskType, status, index, stagePriority, sequence'
+    + ', [nodeId+status], [nodeId+taskType], [nodeId+taskType+status], [nodeId+taskType+stagePriority]'
+    + ', [domainType+status]',
+  fetchCache:
+    '&id, nodeId, domainType, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
+  transformCache:
+    '&id, nodeId, domainType, [nodeId+bandIndex], [nodeId+countryCode+adminLevel]',
+  transformErrors:
+    '&id, nodeId, domainType',
+  tileIdToBufferRelations:
+    '&id, nodeId, domainType, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
 };

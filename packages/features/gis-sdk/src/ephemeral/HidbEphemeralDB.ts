@@ -8,7 +8,7 @@ import type {
   EphemeralTransformErrorRecord,
   EphemeralTileIdToBufferRelation,
 } from './EphemeralBuildState.js';
-import { EPHEMERAL_DB_SCHEMA } from './EphemeralBuildState.js';
+import { EPHEMERAL_DB_SCHEMA, LEGACY_EPHEMERAL_DB_SCHEMA } from './EphemeralBuildState.js';
 
 export class HidbEphemeralDB extends Dexie {
   sessions!: Table<EphemeralBuildSessionRecord, string>;
@@ -17,12 +17,11 @@ export class HidbEphemeralDB extends Dexie {
   transformCache!: Table<EphemeralTransformCacheRecord, string>;
   transformErrors!: Table<EphemeralTransformErrorRecord, string>;
   tileIdToBufferRelations!: Table<EphemeralTileIdToBufferRelation, string>;
-  vtTaskQueue!: Table<Record<string, unknown>, string>;
 
   constructor(dbName: string = getDBName('ephemeral')) {
     super(dbName);
-    this.version(1).stores(EPHEMERAL_DB_SCHEMA);
-    this.version(2).stores(EPHEMERAL_DB_SCHEMA).upgrade((tx) =>
+    this.version(1).stores(LEGACY_EPHEMERAL_DB_SCHEMA);
+    this.version(2).stores(LEGACY_EPHEMERAL_DB_SCHEMA).upgrade((tx) =>
       tx.table('vtTaskQueue')
         .toCollection()
         .modify((task) => {
@@ -31,13 +30,33 @@ export class HidbEphemeralDB extends Dexie {
           }
         })
     );
+    this.version(3).stores(EPHEMERAL_DB_SCHEMA).upgrade(async (tx) => {
+      let legacyTasks: Array<Record<string, unknown>> = [];
+      try {
+        legacyTasks = await tx.table('vtTaskQueue').toArray();
+      } catch {
+        return;
+      }
+      if (legacyTasks.length === 0) return;
+      const mapped = legacyTasks.map((task) => {
+        const stage = typeof task.stage === 'string' ? task.stage : undefined;
+        const taskType = typeof task.taskType === 'string' ? task.taskType : stage ?? 'vt';
+        const status = task.status === 'waiting' ? 'queued' : task.status;
+        return {
+          ...task,
+          taskType,
+          stage: stage ?? taskType,
+          status: status ?? 'queued',
+        };
+      });
+      await tx.table('buildTasks').bulkPut(mapped);
+    });
     this.sessions = this.table('sessions');
     this.buildTasks = this.table('buildTasks');
     this.fetchCache = this.table('fetchCache');
     this.transformCache = this.table('transformCache');
     this.transformErrors = this.table('transformErrors');
     this.tileIdToBufferRelations = this.table('tileIdToBufferRelations');
-    this.vtTaskQueue = this.table('vtTaskQueue');
   }
 
   async clearNodeData(nodeId: string): Promise<void> {
@@ -48,7 +67,6 @@ export class HidbEphemeralDB extends Dexie {
       this.tileIdToBufferRelations,
       this.buildTasks,
       this.transformErrors,
-      this.vtTaskQueue,
     ], async () => {
       await this.fetchCache.where('nodeId').equals(nodeId).delete();
       await this.transformCache.where('nodeId').equals(nodeId).delete();
@@ -56,7 +74,6 @@ export class HidbEphemeralDB extends Dexie {
       await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).delete();
       await this.buildTasks.where('nodeId').equals(nodeId).delete();
       await this.transformErrors.where('nodeId').equals(nodeId).delete();
-      await this.vtTaskQueue.where('nodeId').equals(nodeId).delete();
     });
   }
 
@@ -139,7 +156,6 @@ export class HidbEphemeralDB extends Dexie {
       this.tileIdToBufferRelations,
       this.buildTasks,
       this.transformErrors,
-      this.vtTaskQueue,
     ], async () => {
       await Promise.all([
         this.fetchCache.clear(),
@@ -148,7 +164,6 @@ export class HidbEphemeralDB extends Dexie {
         this.tileIdToBufferRelations.clear(),
         this.buildTasks.clear(),
         this.transformErrors.clear(),
-        this.vtTaskQueue.clear(),
       ]);
     });
   }

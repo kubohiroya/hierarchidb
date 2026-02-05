@@ -271,6 +271,9 @@
   - update: 2026-02-05 11:36 JST pnpm --filter @hierarchidb/ui-map build exit 0（tsdown define 警告あり）。
   - update: 2026-02-05 11:36 JST pnpm --filter @hierarchidb/route-plugin typecheck exit 0。
   - start: 2026-02-05 11:41 JST vtTaskQueue を buildTasks に統合する作業に着手。
+  - update: 2026-02-05 11:45 JST vtTaskQueue のデータを buildTasks へ移行し、vt-orchestrator の参照先を buildTasks に切替。
+  - update: 2026-02-05 11:45 JST pnpm --filter @hierarchidb/gis-sdk build exit 0（tsdown define 警告あり）。
+  - update: 2026-02-05 11:45 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0。
 
 2509) fix/shape-build/max-update-depth-loop (P1) — 完了 (2026-02-04)
 - ブランチ名: fix/shape-build/max-update-depth-loop

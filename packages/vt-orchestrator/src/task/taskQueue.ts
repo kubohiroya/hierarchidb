@@ -1,18 +1,31 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/core-types';
-import { EPHEMERAL_DB_SCHEMA } from '@hierarchidb/gis-sdk';
+import { EPHEMERAL_DB_SCHEMA, LEGACY_EPHEMERAL_DB_SCHEMA } from '@hierarchidb/gis-sdk';
 import type { TaskQueueEvent, TaskQueueRecord, TaskStage, TaskStatus } from '../types/types.js';
 //import type { TaskQueueEvent, TaskQueueRecord, TaskStage, TaskStatus } from '@hierarchidb/gis-sdk';
 
 
+
+type StoredTaskRecord<TInput = unknown, TOutput = unknown> = TaskQueueRecord<TInput, TOutput> & {
+  taskType: TaskStage;
+  domainType?: string;
+};
+
+const toTaskQueueRecord = <TInput = unknown, TOutput = unknown>(
+  task: StoredTaskRecord<TInput, TOutput>
+): TaskQueueRecord<TInput, TOutput> => {
+  const { taskType, ...rest } = task;
+  return { ...rest, stage: rest.stage ?? taskType };
+};
+
 export class VtTaskQueueDb extends Dexie {
-  tasks!: Table<TaskQueueRecord, string>;
+  tasks!: Table<StoredTaskRecord, string>;
 
   constructor(dbName: string = getDBName('ephemeral')) {
     super(dbName);
-    this.version(1).stores(EPHEMERAL_DB_SCHEMA);
-    this.version(2).stores(EPHEMERAL_DB_SCHEMA).upgrade((tx) =>
+    this.version(1).stores(LEGACY_EPHEMERAL_DB_SCHEMA);
+    this.version(2).stores(LEGACY_EPHEMERAL_DB_SCHEMA).upgrade((tx) =>
       tx.table('vtTaskQueue')
         .toCollection()
         .modify((task) => {
@@ -21,7 +34,28 @@ export class VtTaskQueueDb extends Dexie {
           }
         })
     );
-    this.tasks = this.table('vtTaskQueue');
+    this.version(3).stores(EPHEMERAL_DB_SCHEMA).upgrade(async (tx) => {
+      let legacyTasks: Array<Record<string, unknown>> = [];
+      try {
+        legacyTasks = await tx.table('vtTaskQueue').toArray();
+      } catch {
+        return;
+      }
+      if (legacyTasks.length == 0) return;
+      const mapped = legacyTasks.map((task) => {
+        const stage = typeof task.stage === 'string' ? task.stage : undefined;
+        const taskType = typeof task.taskType === 'string' ? task.taskType : stage ?? 'vt';
+        const status = task.status === 'waiting' ? 'queued' : task.status;
+        return {
+          ...task,
+          taskType,
+          stage: stage ?? taskType,
+          status: status ?? 'queued',
+        };
+      });
+      await tx.table('buildTasks').bulkPut(mapped);
+    });
+    this.tasks = this.table('buildTasks');
   }
 }
 
@@ -77,15 +111,16 @@ export async function putTasks(
   const existing = await db.tasks.bulkGet(taskIds);
   const existingSequence = new Map(
     existing
-      .filter((task): task is TaskQueueRecord => Boolean(task))
+      .filter((task): task is StoredTaskRecord => Boolean(task))
       .map((task) => [task.taskId, task.sequence ?? 0])
   );
-  const payload = tasks.map((task) => {
+  const payload: StoredTaskRecord[] = tasks.map((task) => {
     const baseSequence = Number.isFinite(task.sequence) ? task.sequence ?? 0 : 0;
     const priorSequence = existingSequence.get(task.taskId) ?? 0;
     const nextSequence = Math.max(baseSequence, priorSequence, 1);
     return {
       ...task,
+      taskType: task.stage,
       progress: Number.isFinite(task.progress) ? task.progress : 0,
       status: task.status ?? 'queued',
       createdAt: task.createdAt ?? now,
@@ -94,7 +129,7 @@ export async function putTasks(
     };
   });
   await db.tasks.bulkPut(payload);
-  payload.forEach((task) => {emitTaskEvent(task.nodeId, task)});
+  payload.forEach((task) => {emitTaskEvent(task.nodeId, toTaskQueueRecord(task))});
 }
 
 export async function updateTask(
@@ -121,7 +156,7 @@ export async function updateTask(
     };
     await db.tasks.update(taskId, payload);
     const task = await db.tasks.get(taskId);
-    if (task) emitTaskEvent(task.nodeId, task);
+    if (task) emitTaskEvent(task.nodeId, toTaskQueueRecord(task));
   });
 }
 
@@ -129,7 +164,8 @@ export async function listTasks(
   db: VtTaskQueueDb,
   nodeId: NodeId
 ): Promise<TaskQueueRecord[]> {
-  return db.tasks.where('nodeId').equals(nodeId).sortBy('index');
+  const tasks = await db.tasks.where('nodeId').equals(nodeId).sortBy('index');
+  return tasks.map((task) => toTaskQueueRecord(task));
 }
 
 export async function listTasksByStage(
@@ -137,7 +173,8 @@ export async function listTasksByStage(
   nodeId: NodeId,
   stage: TaskStage
 ): Promise<TaskQueueRecord[]> {
-  return db.tasks.where('[nodeId+stage]').equals([nodeId, stage]).sortBy('index');
+  const tasks = await db.tasks.where('[nodeId+taskType]').equals([nodeId, stage]).sortBy('index');
+  return tasks.map((task) => toTaskQueueRecord(task));
 }
 
 export async function listTasksByStatus(
@@ -145,7 +182,8 @@ export async function listTasksByStatus(
   nodeId: NodeId,
   status: TaskStatus
 ): Promise<TaskQueueRecord[]> {
-  return db.tasks.where('[nodeId+status]').equals([nodeId, status]).sortBy('index');
+  const tasks = await db.tasks.where('[nodeId+status]').equals([nodeId, status]).sortBy('index');
+  return tasks.map((task) => toTaskQueueRecord(task));
 }
 
 export async function listTasksByStageAndStatus(
@@ -154,7 +192,8 @@ export async function listTasksByStageAndStatus(
   stage: TaskStage,
   status: TaskStatus
 ): Promise<TaskQueueRecord[]> {
-  return db.tasks.where('[nodeId+stage+status]').equals([nodeId, stage, status]).sortBy('index');
+  const tasks = await db.tasks.where('[nodeId+taskType+status]').equals([nodeId, stage, status]).sortBy('index');
+  return tasks.map((task) => toTaskQueueRecord(task));
 }
 
 export async function deleteTasksByNode(
