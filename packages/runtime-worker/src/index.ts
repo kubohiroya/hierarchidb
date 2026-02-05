@@ -55,5 +55,7 @@ export {
   writeVectorTileInput,
 } from './services/vectorTileStageRunner.js';
 export { resolveDefaultNodeName } from './utils/default-node-name.js';
+export { ShapeMutationService } from './services/ShapeMutationService.js';
+export { ShapeQueryService } from './services/ShapeQueryService.js';
 // Worker service (public API for worker bootstrap)
 export { WorkerService } from './WorkerService.js';

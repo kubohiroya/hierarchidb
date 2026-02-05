@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/core-types';
+import type { ShapeBuildStopReason } from '@hierarchidb/shape-api';
 import type { BuildStatus } from '@hierarchidb/components';
 
 type Args = {
   activeNodeId: NodeId | null;
   buildStatus: BuildStatus;
+  stopReason?: ShapeBuildStopReason;
   runtimeStatus: string | null;
   handleStartOrResume: (options: { forceRestart: boolean; autoResume?: boolean }) => Promise<boolean>;
   handlePause: (reason?: 'route-leave' | 'user-pause') => void;
@@ -17,6 +19,7 @@ type Args = {
 export const useShapeBuildAutoResume = ({
   activeNodeId,
   buildStatus,
+  stopReason,
   runtimeStatus,
   handleStartOrResume,
   handlePause,
@@ -50,6 +53,13 @@ export const useShapeBuildAutoResume = ({
     const isFinished = runtimeStatus === 'completed' || runtimeStatus === 'failed';
     shouldSuspendRef.current = !isFinished && (hasActiveProcessing || isRunning);
   }, [buildStatus, runtimeStatus]);
+  const canAutoResume = useMemo(() => {
+    if (buildStatus === 'completed' || buildStatus === 'failed') return false;
+    if (buildStatus === 'paused') return stopReason === 'route-leave';
+    if (stopReason && stopReason !== 'route-leave') return false;
+    return true;
+  }, [buildStatus, stopReason]);
+
   const suspendIfRunning = useCallback(() => {
     if (!shouldSuspendRef.current) return;
     void handlePause('route-leave');
@@ -94,15 +104,21 @@ export const useShapeBuildAutoResume = ({
   useEffect(() => {
     if (!activeNodeId || !canStartOrResume || isStartPending) return;
     if (typeof window === 'undefined') return;
+    const storage = window.localStorage;
+    if (!storage || typeof storage.getItem !== 'function' || typeof storage.removeItem !== 'function') return;
     try {
-      const stored = window.localStorage.getItem('autoResumeBuild');
+      const stored = storage.getItem('autoResumeBuild');
       if (!stored || stored !== String(activeNodeId)) return;
-      window.localStorage.removeItem('autoResumeBuild');
+      if (!canAutoResume) {
+        storage.removeItem('autoResumeBuild');
+        return;
+      }
+      storage.removeItem('autoResumeBuild');
       void startOrResume({ autoResume: true });
     } catch (error) {
       console.warn('[ShapeBuildStep] auto-resume build failed', error);
     }
-  }, [activeNodeId, canStartOrResume, isStartPending, startOrResume]);
+  }, [activeNodeId, canAutoResume, canStartOrResume, isStartPending, startOrResume]);
 
   return {
     canStartOrResume,

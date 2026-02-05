@@ -124,6 +124,10 @@ export default defineConfig({
         workspaceRoot,
         'packages/features/tabular-source-xlsx/src/index.ts',
       ),
+      '@hierarchidb/vt-orchestrator': path.resolve(
+        workspaceRoot,
+        'packages/vt-orchestrator/src/index.ts',
+      ),
     },
   },
   plugins: [tsconfigPaths()],

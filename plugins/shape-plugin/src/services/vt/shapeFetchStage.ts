@@ -1029,7 +1029,7 @@ export const runShapeFetchStage = async (params: ShapeFetchStageParams): Promise
   const resumeExistingTasks = Boolean(params.resumeExistingTasks);
   if (!resumeExistingTasks) {
     await params.taskQueue.tasks
-      .where('[nodeId+stage]')
+      .where('[nodeId+taskType]')
       .equals([params.nodeId, 'fetch'])
       .delete();
   }

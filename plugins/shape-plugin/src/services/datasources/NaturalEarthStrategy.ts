@@ -313,7 +313,12 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
 let jszipModule: Promise<typeof JSZip> | null = null;
 function ensureJsZip(): Promise<typeof JSZip> {
   if (!jszipModule) {
-    jszipModule = import('jszip').then((mod) => mod.default ?? mod);
+    jszipModule = import('jszip').then((mod) => {
+      if ('default' in mod && mod.default) {
+        return mod.default;
+      }
+      return mod as unknown as typeof JSZip;
+    });
   }
   return jszipModule;
 }

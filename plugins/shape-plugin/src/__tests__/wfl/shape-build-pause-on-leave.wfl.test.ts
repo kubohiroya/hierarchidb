@@ -4,7 +4,7 @@ import type { ShapeBuildSessionRecord, ShapeMutationAPI, ShapeQueryAPI } from '@
 import * as Comlink from 'comlink';
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('@hierarchidb/gis-sdk', async () => (
-  await import('../../../../features/gis-sdk/dist/index.js')
+  await import('../../../../packages/features/gis-sdk/dist/index.js')
 ));
 
 import { MessageChannel, type MessagePort as NodeMessagePort } from 'worker_threads';

@@ -303,6 +303,15 @@
   - start: 2026-02-05 11:50 JST ビルドのバックグラウンド化段階定義を TASKS へ記録。
   - update: 2026-02-05 14:07 JST ExecPlan を plans/shape-build-background-execution-execplan.md に作成。
   - update: 2026-02-05 16:10 JST stopReason の型追加と pause に route-leave 理由を永続化する実装に着手。
+  - start: 2026-02-05 16:18 JST a) 復帰時停止維持の結合テスト追加に着手。
+  - update: 2026-02-05 16:45 JST pnpm --filter @hierarchidb/runtime-worker test -- --run src/__tests__/wfl/shape-build-resume-after-pause.wfl.test.ts exit 0（82 tests）。
+  - start: 2026-02-05 16:47 JST b) 自動再開条件の実装と結合テスト追加に着手。
+  - update: 2026-02-05 16:52 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+  - blocked: 2026-02-05 16:53 JST pnpm --filter @hierarchidb/shape-plugin test で localStorage モック不足、alias 不備、ネットワーク依存テストが失敗。
+  - update: 2026-02-05 16:57 JST pnpm --filter @hierarchidb/shape-plugin test exit 0（6 passed/1 skipped、localstorage warning あり）。
+  - update: 2026-02-05 17:03 JST shape-vt-pipeline.full-flow.headless.test の skip 条件を撤去し、pnpm --filter @hierarchidb/shape-plugin test exit 0（11 passed/1 skipped）。
+  - update: 2026-02-05 17:06 JST pnpm --filter @hierarchidb/runtime-worker test -- --run src/__tests__/wfl/shape-build-resume-after-pause.wfl.test.ts exit 0（84 tests）。
+  - start: 2026-02-05 17:13 JST c) バックグラウンド継続の結合テスト設計に着手。
   - blocked: 2026-02-05 16:20 JST pnpm --filter @hierarchidb/shape-plugin typecheck で EphemeralBuildSessionRecord/EphemeralTransformCacheRecord などの型不一致が発生。
   - update: 2026-02-05 17:05 JST stopReason の型追加と pause 理由の永続化（route-leave/user-pause）を実装。
   - update: 2026-02-05 17:12 JST Ephemeral sessions/buildTasks/transformCache の型不一致を正規化/unknown cast で解消。
@@ -337,6 +346,10 @@
   - update: 2026-02-05 19:45 JST pnpm --filter @hierarchidb/runtime-worker test -- --run exit 0（75 tests）。
   - update: 2026-02-05 19:10 JST vitest 設定で core-types/location-api/route-api/gis-sdk を src 参照にし、vitest.setup に fake-indexeddb/auto を追加。
   - update: 2026-02-05 19:12 JST pnpm --filter @hierarchidb/runtime-worker test -- --run exit 0（2件はskip）。
+  - start: 2026-02-05 15:44 JST shape build の一時停止/再開完了とキャッシュ削除後再開の結合テスト追加に着手。
+  - update: 2026-02-05 15:46 JST pnpm --filter @hierarchidb/runtime-worker test -- --run exit 0（81 tests）。
+  - start: 2026-02-05 16:05 JST 実パイプラインの一時停止/再開結合テスト追加に着手。
+  - update: 2026-02-05 16:14 JST pnpm --filter @hierarchidb/runtime-worker test -- --run exit 0（81 tests）。
 
 2509) fix/shape-build/max-update-depth-loop (P1) — 完了 (2026-02-04)
 - ブランチ名: fix/shape-build/max-update-depth-loop
@@ -456,6 +469,61 @@
   - start: 2026-02-04 18:50 JST validateBatchConfig の undefined 参照クラッシュ対応に着手。
   - update: 2026-02-04 18:55 JST validateBatchConfig で transformConfig/areaBasedTolerance の既定値を適用。
   - blocked: 2026-02-04 18:56 JST pnpm --filter @hierarchidb/shape-plugin typecheck が ShapeBuildAPIClient 等の既存型エラーで失敗（進行には対応方針の指示が必要）。
+
+2516) fix/runtime-worker/ts6307-shape-test-entry (P1) — 進行中 (2026-02-04)
+- ブランチ名: fix/runtime-worker/ts6307-shape-test-entry
+- 依存: なし
+- 受け入れ基準: runtime-worker typecheck で shape-test-worker.entry.ts 起因の TS6307 が解消される／`pnpm --filter @hierarchidb/runtime-worker typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/runtime-worker/tsconfig.typecheck.json`, `plugins/shape-plugin/src/e2e/shape-test-worker.entry.ts`, `plugins/shape-plugin/src/services/datasources/NaturalEarthStrategy.ts`, `plugins/shape-plugin/src/__tests__/wfl/shape-build-resume-after-pause.wfl.test.ts`（必要に応じて追加）
+- ロールバック手順: 該当差分を revert して元の typecheck 対象へ戻す
+- チェックリスト:
+  - typecheck 対象の範囲を調整し TS6307 を解消する
+  - runtime-worker の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-04 19:10 JST runtime-worker の TS6307 修正に着手。
+  - update: 2026-02-04 19:16 JST tsconfig.typecheck.json で e2e/wfl を除外し TS6307 を解消。
+  - update: 2026-02-04 19:16 JST pnpm --filter @hierarchidb/runtime-worker typecheck exit 0 を確認。
+  - update: 2026-02-05 19:35 JST shape-plugin services を限定 include にし直して TS6307 を解消。
+  - update: 2026-02-05 19:35 JST NaturalEarthStrategy の jszip import 型を正規化。
+ - update: 2026-02-05 19:36 JST pnpm --filter @hierarchidb/runtime-worker typecheck exit 0 を確認。
+  - done: 2026-02-05 19:36 JST runtime-worker の TS6307 修正を完了。
+  - update: 2026-02-05 20:10 JST shape-test-worker.entry と wfl テストを shape-plugin 側へ移設し、runtime-worker からの相対参照を撤去。
+  - update: 2026-02-05 20:12 JST runtime-worker/shape-plugin の typecheck exit 0 を確認。
+  - update: 2026-02-05 20:13 JST pnpm --filter @hierarchidb/runtime-worker build exit 0（tsdown の define 警告あり）を確認。
+  - done: 2026-02-05 20:14 JST shape-test-worker.entry の配置を shape-plugin 側へ整理完了。
+
+2517) fix/gis-sdk/ephemeral-timestamp-guard (P1) — 進行中 (2026-02-04)
+- ブランチ名: fix/gis-sdk/ephemeral-timestamp-guard
+- 依存: なし
+- 受け入れ基準: HidbEphemeralDB の timestamp 判定で undefined を参照しない／`pnpm --filter @hierarchidb/gis-sdk typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/gis-sdk/src/ephemeral/HidbEphemeralDB.ts`
+- ロールバック手順: 該当差分を revert して元の filter に戻す
+- チェックリスト:
+  - timestamp 判定に undefined ガードを追加する
+  - gis-sdk の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-04 19:10 JST HidbEphemeralDB の timestamp undefined ガード修正に着手。
+  - update: 2026-02-04 19:15 JST timestamp 判定を record?.timestamp に変更。
+  - update: 2026-02-04 19:15 JST pnpm --filter @hierarchidb/gis-sdk typecheck exit 0 を確認。
+  - done: 2026-02-04 19:15 JST HidbEphemeralDB の undefined ガードを完了。
+
+2518) fix/runtime-worker/lifecycle-log-flag (P1) — 進行中 (2026-02-04)
+- ブランチ名: fix/runtime-worker/lifecycle-log-flag
+- 依存: なし
+- 受け入れ基準: NodeLifecycleManager の shouldLogInfo 未定義エラーが解消される／`pnpm --filter @hierarchidb/runtime-worker typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/runtime-worker/src/services/NodeLifecycleManager.ts`
+- ロールバック手順: 該当差分を revert して元の参照に戻す
+- チェックリスト:
+  - shouldLogInfo の定義を追加する
+  - runtime-worker の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-04 19:10 JST NodeLifecycleManager の shouldLogInfo 修正に着手。
+  - update: 2026-02-04 19:15 JST shouldLogInfo フラグを追加して参照エラーを解消。
+  - update: 2026-02-04 19:16 JST pnpm --filter @hierarchidb/runtime-worker typecheck exit 0 を確認。
+  - done: 2026-02-04 19:16 JST NodeLifecycleManager の shouldLogInfo 修正を完了。
 - ブランチ名: fix/shape-step5/summary-card-clamp
 - 依存: なし
 - 受け入れ基準: Step5 ビルドのサマリーカード内の現在タスク/メッセージが2行固定で表示されレイアウトが安定する／タスクリストのメッセージも2行固定になる／`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する

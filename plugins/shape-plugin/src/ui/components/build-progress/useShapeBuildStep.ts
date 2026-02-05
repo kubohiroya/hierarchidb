@@ -304,7 +304,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     try {
       await bridgeRef.current.initialize();
       await bridgeRef.current.pauseBatchSession(SHAPE_NODE_TYPE, activeNodeId, reason);
-      await persistDraftPatch({ processingStatus: 'paused' });
+      await persistDraftPatch({ processingStatus: 'paused', stopReason: reason });
     } catch (error) {
       setIsPausePending(false);
       notify.error('Failed to pause build.');

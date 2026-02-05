@@ -9,9 +9,4 @@ import { setCorsProxyBaseURL } from '@hierarchidb/download';
 
 // Default: run network integration tests directly in Node (no CORS proxy).
 setCorsProxyBaseURL('');
-if (!('ENABLE_SHAPE_DEEP_TESTS' in process.env)) {
-  console.log('[shape-plugin tests] ENABLE_SHAPE_DEEP_TESTS not set: heavy worker specs will be skipped');
-  process.env.ENABLE_SHAPE_DEEP_TESTS = '';
-}
-
 // Package-specific setup can be added here if needed

@@ -56,7 +56,7 @@ export class HidbEphemeralDB extends Dexie {
           return (await this.transformCache
             .where('nodeId')
             .equals(nodeId)
-            .filter((record) => (record as { timestamp?: number }).timestamp > 0)
+            .filter((record) => (record?.timestamp ?? 0) > 0)
             .count()) > 0;
         case 'vt':
           return (await this.tileIdToBufferRelations.where('nodeId').equals(nodeId).count()) > 0;

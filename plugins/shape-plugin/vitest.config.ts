@@ -43,11 +43,11 @@ export default defineConfig({
       // Map legacy core imports to public dist builds for tests
       {
         find: '@hierarchidb/core',
-        replacement: path.resolve(__dirname, '../../packages/common/types/src/index.ts'),
+        replacement: path.resolve(__dirname, '../../packages/core-types/src/index.ts'),
       },
       {
         find: '@hierarchidb/core-types',
-        replacement: path.resolve(__dirname, '../../packages/common/types/src/index.ts'),
+        replacement: path.resolve(__dirname, '../../packages/core-types/src/index.ts'),
       },
       {
         find: '@hierarchidb/batch-api',
@@ -56,6 +56,14 @@ export default defineConfig({
       {
         find: '@hierarchidb/ui-worker-client',
         replacement: path.resolve(__dirname, '../../packages/ui/worker-client/src/index.ts'),
+      },
+      {
+        find: '@hierarchidb/ui-batch',
+        replacement: path.resolve(__dirname, '../../packages/ui/batch/src/index.ts'),
+      },
+      {
+        find: '@hierarchidb/ui-batch-progress',
+        replacement: path.resolve(__dirname, '../../packages/ui/batch/src/index.ts'),
       },
       {
         find: '@hierarchidb/runtime-worker',

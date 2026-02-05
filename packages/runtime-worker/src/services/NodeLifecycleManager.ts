@@ -22,6 +22,7 @@ export class NodeLifecycleManager {
   private events: LifecycleEvent[] = [];
 
   private refCountRegistry?: ReferenceCountingRegistry;
+  private shouldLogInfo = false;
 
   constructor(
     private coreDB: CoreDB,

@@ -1,4 +1,5 @@
 import type { ISO2, NodeId } from '@hierarchidb/core-types';
+import type { ShapeBuildStopReason } from '@hierarchidb/shape-api';
 import type { Geometry } from 'geojson';
 import type { ShapeBuildConfig } from './build.js';
 
@@ -35,6 +36,7 @@ export interface ShapeEntity {
   // Processing Status
   batchSessionId?: string;
   processingStatus?: 'idle' | 'processing' | 'paused' | 'completed' | 'failed';
+  stopReason?: ShapeBuildStopReason;
   tileSummary?: { tiles: number; totalBytes: number; zoomMin?: number; zoomMax?: number };
   buildStartedAt?: number;
   buildFinishedAt?: number;

@@ -50,6 +50,8 @@ vi.mock('@hierarchidb/components', () => ({
 
 vi.mock('@hierarchidb/util', () => ({
   loadTreeConsoleSettings: () => ({ buildContinuationPolicy: 'finish_all_stages' }),
+  DEFAULT_ZOOM_BAND_BOUNDARIES: [2, 3, 6],
+  getDBName: (suffix: string) => `test-${suffix}`,
 }));
 
 vi.mock('@hierarchidb/ui-monitoring', () => ({
