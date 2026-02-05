@@ -60,6 +60,13 @@ export const useIdeGsmImportOnEntry = ({
     if (draft.ideGsmSelectionHash === combinedHash) return;
     if (inFlightRef.current) return;
 
+    let bridge: ReturnType<typeof getWorkerBridge> | null = null;
+    try {
+      bridge = getWorkerBridge();
+    } catch {
+      return;
+    }
+
     const selectionEntries = buildIdeGsmSelectionEntries(
       selection,
       iso.status === 'ready' ? iso.countries : fallbackCountries,
@@ -76,14 +83,15 @@ export const useIdeGsmImportOnEntry = ({
       sources: validSources.map((source) => source.tabularSourceId),
     });
     inFlightRef.current = true;
-    onUpdate?.({ processingStatus: 'processing' });
 
     let cancelled = false;
     const run = async () => {
       try {
-        const bridge = getWorkerBridge();
-        await bridge.initialize();
-        const api = await bridge.getLocationMutationAPI();
+        await bridge?.initialize();
+        if (cancelled) return;
+        onUpdate?.({ processingStatus: 'processing' });
+        const api = await bridge?.getLocationMutationAPI();
+        if (!api) return;
         for (const source of validSources) {
           const result = await api.importIdeGsmLocations(
             {
@@ -142,15 +150,17 @@ export const useIdeGsmImportOnEntry = ({
       cancelled = true;
     };
   }, [
+    combinedHash,
     draft.dataSource,
     draft.ideGsmSelectionHash,
+    fallbackCountries,
     iso.countries,
     iso.status,
-    ideGsmSources,
     nodeId,
     onUpdate,
     selection,
+    selectionHash,
+    sourceKey,
     validSources,
-    combinedHash,
   ]);
 };

@@ -46,7 +46,16 @@ test.describe('Shape build background (real pipeline)', () => {
     const boundaryMetadataUrlPattern = '**/geoboundaries.org/api/current/gbOpen/JPN/ADM0/**';
     const geoJsonUrl = 'https://geoboundaries.test/JPN_ADM0.json';
 
-    await page.route(metadataUrlPattern, async (route) => {
+    const downloadTaskPayloads = [{
+      url: geoJsonUrl,
+      countryCode: 'JPN',
+      countryName: 'Japan',
+      adminLevel: 0,
+      dataSource: 'geoboundaries',
+    }];
+
+    const context = page.context();
+    await context.route(metadataUrlPattern, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -61,7 +70,7 @@ test.describe('Shape build background (real pipeline)', () => {
       });
     });
 
-    await page.route(boundaryMetadataUrlPattern, async (route) => {
+    await context.route(boundaryMetadataUrlPattern, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -73,7 +82,48 @@ test.describe('Shape build background (real pipeline)', () => {
       });
     });
 
-    await page.route('**/geoboundaries.test/**', async (route) => {
+    await context.route('**/hierarchidb-cors-proxy.kubohiroya.workers.dev/**', async (route) => {
+      const requestUrl = new URL(route.request().url());
+      const targetUrl = requestUrl.searchParams.get('url') ?? '';
+      if (targetUrl.includes('/gbOpen/ALL/ALL/')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify([
+            {
+              boundaryISO: 'JPN',
+              boundaryName: 'Japan',
+              boundaryType: 'ADM0',
+              Continent: 'Asia',
+            },
+          ]),
+        });
+        return;
+      }
+      if (targetUrl.includes('/gbOpen/JPN/ADM0/')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            simplifiedGeometryGeoJSON: geoJsonUrl,
+            boundaryYear: 2023,
+            licenseDetail: 'Test License',
+          }),
+        });
+        return;
+      }
+      if (targetUrl.includes('geoboundaries.test')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(geoJson),
+        });
+        return;
+      }
+      await route.fulfill({ status: 404, body: 'Not Found' });
+    });
+
+    await context.route('**/geoboundaries.test/**', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -89,6 +139,9 @@ test.describe('Shape build background (real pipeline)', () => {
     await page.evaluate(async () => {
       const ref = (window as any).__HDB_WORKER_CLIENT_REF__;
       const api = ref?.client ?? ref?.getAPI?.();
+      if (api?.setCorsProxyBaseURL) {
+        await api.setCorsProxyBaseURL('');
+      }
       if (api?.setAuthToken) {
         await api.setAuthToken('e2e-test-token', 'Bearer');
       }
@@ -106,7 +159,7 @@ test.describe('Shape build background (real pipeline)', () => {
         retryBackoff: 'linear',
       },
       transformConfig: {
-        zoomBandBoundaries: [2, 3, 6],
+        zoomBandBoundaries: [1, 2, 3, 6],
         maxConcurrent: 1,
         enableFeatureFiltering: true,
         featureAreaThreshold: 1.0,
@@ -220,63 +273,126 @@ test.describe('Shape build background (real pipeline)', () => {
       };
     }, { buildConfig, selectedArrayByCountries, nodeType: 'shape' });
 
-    const nodeLink = page.getByRole('link', { name: new RegExp(shapeNode.name) });
-    await expect(nodeLink).toBeVisible({ timeout: 10000 });
-    await nodeLink.click();
-
-    const launchBuildButton = page.getByRole('button', { name: /ビルドを開始|ビルド開始|Build/i });
-    await expect(launchBuildButton).toBeVisible({ timeout: 10000 });
-    await launchBuildButton.click();
-
-    const summaryCard = page.locator('[data-testid="shape-plugin-batch-progress-summary"]');
-
-    await page.evaluate(async ({ nodeId, selectedArrayByCountries, dataSourceName }) => {
+    const startResult = await page.evaluate(async ({ nodeId, downloadTaskPayloads }) => {
       const ref = (window as any).__HDB_WORKER_CLIENT_REF__;
       const api = ref?.client ?? ref?.getAPI?.();
       if (!api) {
         throw new Error('Worker client not ready');
       }
-      const payloads = await api.generateShapeDownloadTaskPayloadsFromSelection(
-        nodeId,
-        dataSourceName,
-        selectedArrayByCountries,
-      );
-      await api.startBatchSession('shape', nodeId, payloads, 'finish_all_stages');
+      if (ref?.initialize) {
+        await ref.initialize();
+      } else if (api.initialize) {
+        await api.initialize();
+      }
+      const result = await api.startBatchSession('shape', nodeId, downloadTaskPayloads, 'finish_all_stages');
+      const tasks = await api.getBatchTasks('shape', nodeId).catch(() => []);
+      return {
+        status: result?.status ?? null,
+        taskCount: Array.isArray(tasks) ? tasks.length : 0,
+      };
     }, {
       nodeId: shapeNode.nodeId,
-      selectedArrayByCountries,
-      dataSourceName: buildConfig.dataSourceName,
+      downloadTaskPayloads,
     });
+
+    if (!startResult) {
+      throw new Error('startBatchSession returned null');
+    }
 
     await page.goto(buildAppUrl(`t/${shapeNode.treeId}/${shapeNode.pageNodeId}`), { waitUntil: 'networkidle' });
     await waitForTreeTableLoad(page);
 
     const waitForCompletion = async () => {
       const deadline = Date.now() + 90000;
+      let lastStatus: { status: string | null; tiles: number; taskSummary: Record<string, number> | null; runningStages: string[]; runningTask: { taskId: string | null; stage: string | null; status: string | null; progress: number | null; message: string | null } | null; failedTask: { taskId: string | null; stage: string | null; status: string | null; progress: number | null; message: string | null } | null } | null = null;
       while (Date.now() < deadline) {
         const status = await page.evaluate(async (nodeId) => {
-          const global = window as { __shapeWorkerClient?: unknown };
-          if (!global.__shapeWorkerClient) {
-            const ref = (window as any).__HDB_WORKER_CLIENT_REF__?.client;
-            if (!ref) {
-              return { status: null, tiles: 0 };
-            }
-            global.__shapeWorkerClient = ref;
+          const ref = (window as any).__HDB_WORKER_CLIENT_REF__;
+          const api = ref?.client ?? ref?.getAPI?.();
+          if (!api) {
+            return {
+              status: null,
+              tiles: 0,
+              taskSummary: null,
+              runningStages: [],
+              runningTask: null,
+              failedTask: null,
+            };
           }
-          const client = global.__shapeWorkerClient as any;
-          const queryAPI = await client.getShapeQueryAPI();
-          const session = await queryAPI.getBuildSessionRecord(nodeId);
+          const treeAPI = await api.getQueryAPI();
+          const node = await treeAPI.getNode(nodeId);
+          const data = (node?.draftData ?? node?.data) as { processingStatus?: string } | null;
+          const queryAPI = await api.getShapeQueryAPI();
           const summary = await queryAPI.getVectorTileSummary(nodeId);
+          const tasks = await api.getBatchTasks('shape', nodeId).catch(() => []);
+          const summaryCounts = Array.isArray(tasks)
+            ? tasks.reduce((acc: Record<string, number>, task: { status?: string }) => {
+                const key = task.status ?? 'unknown';
+                acc[key] = (acc[key] ?? 0) + 1;
+                return acc;
+              }, {})
+            : null;
+          const runningTasks = Array.isArray(tasks)
+            ? tasks.filter((task: { status?: string }) => task.status === 'running')
+            : [];
+          const runningStages = runningTasks.map((task: { stage?: string }) => task.stage ?? 'unknown');
+          const failedTasks = Array.isArray(tasks)
+            ? tasks.filter((task: { status?: string }) => task.status === 'failed')
+            : [];
+          const firstRunning = runningTasks[0] as {
+            taskId?: string;
+            stage?: string;
+            status?: string;
+            progress?: number;
+            message?: string;
+          } | undefined;
+          const firstFailed = failedTasks[0] as {
+            taskId?: string;
+            stage?: string;
+            status?: string;
+            progress?: number;
+            message?: string;
+          } | undefined;
           return {
-            status: session?.status ?? null,
+            status: data?.processingStatus ?? null,
             tiles: summary?.tiles ?? 0,
+            taskSummary: summaryCounts,
+            runningStages,
+            runningTask: firstRunning
+              ? {
+                  taskId: firstRunning.taskId ?? null,
+                  stage: firstRunning.stage ?? null,
+                  status: firstRunning.status ?? null,
+                  progress: typeof firstRunning.progress === 'number' ? firstRunning.progress : null,
+                  message: firstRunning.message ?? null,
+                }
+              : null,
+            failedTask: firstFailed
+              ? {
+                  taskId: firstFailed.taskId ?? null,
+                  stage: firstFailed.stage ?? null,
+                  status: firstFailed.status ?? null,
+                  progress: typeof firstFailed.progress === 'number' ? firstFailed.progress : null,
+                  message: firstFailed.message ?? null,
+                }
+              : null,
           };
         }, shapeNode.nodeId);
 
+        lastStatus = status;
+        if (status.taskSummary?.failed) {
+          throw new Error(`Shape build failed (task=${JSON.stringify(status.failedTask ?? {})})`);
+        }
         if (status.status === 'completed' && status.tiles > 0) return;
+        if (status.status === 'failed') {
+          throw new Error('Shape build failed');
+        }
         await page.waitForTimeout(1000);
       }
-      throw new Error('Timed out waiting for shape build completion');
+      const statusText = lastStatus
+        ? `status=${lastStatus.status ?? 'null'} tiles=${lastStatus.tiles} tasks=${JSON.stringify(lastStatus.taskSummary ?? {})} runningStages=${JSON.stringify(lastStatus.runningStages ?? [])} runningTask=${JSON.stringify(lastStatus.runningTask ?? {})} failedTask=${JSON.stringify(lastStatus.failedTask ?? {})}`
+        : 'status=unknown';
+      throw new Error(`Timed out waiting for shape build completion (${statusText})`);
     };
 
     await waitForCompletion();
@@ -289,6 +405,7 @@ test.describe('Shape build background (real pipeline)', () => {
     const launchBuildButtonAfter = page.getByRole('button', { name: /ビルドを開始|ビルド開始|Build/i });
     await expect(launchBuildButtonAfter).toBeVisible({ timeout: 10000 });
     await launchBuildButtonAfter.click();
+    const summaryCard = page.locator('[data-testid="shape-plugin-batch-progress-summary"]');
     await expect(summaryCard).toBeVisible({ timeout: 20000 });
 
     const completion = await page.evaluate(async (nodeId) => {

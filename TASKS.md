@@ -1,3 +1,36 @@
+2523) fix/location-preview/terrain-toggle-blink (P1) — 進行中 (2026-02-05)
+- ブランチ名: fix/location-preview/terrain-toggle-blink
+- 依存: なし
+- 受け入れ基準: Terrain Types の切替時に対象タイプはブリンク1回までで、対象外タイプの表示がブリンクしない／viewport-fetch は発生してよいが対象外タイプの表示が維持される／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`, `plugins/location-plugin/src/ui/hooks/useLocationMapPreviewMap.tsx`, `packages/ui/map/src/preview/LocationPreviewList.tsx`（必要に応じて追加）
+- ロールバック手順: Terrain Types 切替の表示維持ロジックを revert して元の挙動に戻す
+- チェックリスト:
+  - Terrain Types 切替時に非対象タイプの表示がリセットされる箇所を特定する
+  - 非対象タイプの表示を維持するよう更新する
+  - location-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-05 22:08 JST Terrain Types 切替時の非対象タイプのブリンク抑制に着手。
+  - update: 2026-02-05 22:12 JST ResourceLayerMap の GeoJSON レイヤー更新を差分適用に変更し、切替時の全消去を回避。
+  - update: 2026-02-05 22:13 JST pnpm --filter @hierarchidb/ui-map typecheck exit 0 を確認。
+  - update: 2026-02-05 22:13 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+
+2523) fix/location-plugin/remove-unused-onupdate (P1) — 進行中 (2026-02-05)
+- ブランチ名: fix/location-plugin/remove-unused-onupdate
+- 依存: なし
+- 受け入れ基準: `useLocationMapPreviewStep.tsx` の未使用 onUpdate が解消される／`pnpm --filter @hierarchidb/location-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/components/steps/useLocationMapPreviewStep.tsx`
+- ロールバック手順: onUpdate の削除差分を戻す
+- チェックリスト:
+  - onUpdate の未使用を解消する
+  - location-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-05 22:15 JST useLocationMapPreviewStep の未使用 onUpdate を解消する作業に着手。
+  - update: 2026-02-05 22:15 JST useLocationMapPreviewStep から未使用の onUpdate を削除。
+  - update: 2026-02-05 22:16 JST LocationMapPreviewStep から onUpdate の引き渡しを削除。
+  - update: 2026-02-05 22:16 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+
 2522) fix/location-preview/metadata-window-table-height (P1) — 進行中 (2026-02-05)
 - ブランチ名: fix/location-preview/metadata-window-table-height
 - 依存: なし
@@ -15,6 +48,14 @@
   - blocked: 2026-02-05 21:19 JST `pnpm --filter @hierarchidb/app typecheck` が既存の型エラーで失敗（openInNewTab/searchTerm 参照の未定義など）。
   - update: 2026-02-05 21:24 JST TanstackDataGrid の TableContainer に height を付与して縦リサイズ追従を調整。
   - blocked: 2026-02-05 21:24 JST `pnpm --filter @hierarchidb/app typecheck` が既存の型エラーで失敗（openInNewTab/searchTerm 参照の未定義など）。
+  - update: 2026-02-05 21:38 JST LocationPreviewList で MapPreviewFloatingTable に maxHeight=100% を付与。
+  - blocked: 2026-02-05 21:39 JST `pnpm --filter @hierarchidb/app typecheck` が既存の型エラーで失敗（openInNewTab/searchTerm 参照の未定義など）。
+  - update: 2026-02-05 21:40 JST FloatingWindow の WindowContent を flex レイアウトにして縦伸長を安定化。
+  - blocked: 2026-02-05 21:40 JST `pnpm --filter @hierarchidb/app typecheck` が既存の型エラーで失敗（openInNewTab/searchTerm 参照の未定義など）。
+  - update: 2026-02-05 21:44 JST LocationPreviewList の内側Boxを flex:1 に変更し、MapPreviewFloatingTable maxHeight の型を拡張。
+  - blocked: 2026-02-05 21:45 JST `pnpm --filter @hierarchidb/app typecheck` が既存の型エラーで失敗（openInNewTab/searchTerm 参照の未定義など）。
+  - update: 2026-02-05 21:46 JST TanstackDataGrid の virtualizer に実測行高の計測を追加。
+  - blocked: 2026-02-05 21:47 JST `pnpm --filter @hierarchidb/app typecheck` が既存の型エラーで失敗（openInNewTab/searchTerm 参照の未定義など）。
 
 2521) fix/ui-map/remove-click-snackbar (P1) — 進行中 (2026-02-05)
 - ブランチ名: fix/ui-map/remove-click-snackbar
@@ -485,6 +526,23 @@
   - update: 2026-02-06 10:25 JST Playwright の Start Build ボタンが無効のため、WorkerAPI の startBatchSession を直接呼ぶ形へ E2E を変更。
   - update: 2026-02-06 10:30 JST WorkerAPI 呼び出しで client.getAPI() を使っていたため、__HDB_WORKER_CLIENT_REF__ から API を直接取得するよう修正。
   - update: 2026-02-06 10:35 JST geoboundaries の AuthRequiredError 回避のため、E2E で setAuthToken を付与。
+  - update: 2026-02-06 10:40 JST geoboundaries の fetch が worker から発生するため、Playwright の intercept を page.route から context.route に変更。
+  - update: 2026-02-06 10:45 JST CORS proxy 経由の 401 を避けるため、E2E で setCorsProxyBaseURL('') を設定。
+  - update: 2026-02-06 10:50 JST zoomBandBoundaries が 1 開始必須のため、E2E の buildConfig を [1,2,3,6] へ更新。
+  - update: 2026-02-06 10:55 JST CORS proxy URL へのアクセスが 401 になるため、proxy 経由の URL も Playwright でモック。
+  - update: 2026-02-06 11:00 JST downloadTaskPayloads をテスト側で固定定義し、startBatchSession を直接実行する形へ修正。
+  - update: 2026-02-06 11:05 JST geoboundaries メタデータの iso3 に合わせ、downloadTaskPayloads の countryCode を JPN に変更。
+  - update: 2026-02-06 11:10 JST build 完了待機のタイムアウト時に最後の status/tiles を表示するよう E2E を補強。
+  - update: 2026-02-06 11:15 JST startBatchSession 実行前に worker initialize を明示呼び出し。
+  - update: 2026-02-06 11:20 JST build 完了待機のステータス取得を getBatchSessionStatus に切替。
+  - update: 2026-02-06 11:25 JST startBatchSession の戻り値が idle/failed の場合に即時エラーとするよう E2E を強化。
+  - update: 2026-02-06 11:30 JST startBatchSession 後に tasks 件数も確認し、idle 時にタスク数を併記するよう補強。
+  - update: 2026-02-06 11:35 JST 完了待機を processingStatus + tileSummary 基準へ切替し、failed を検知したら即時エラーとするよう修正。
+  - update: 2026-02-06 11:40 JST 完了待機のログに batch tasks の状態集計を含めるよう拡張。
+  - update: 2026-02-06 11:45 JST 完了待機のログに running task の stage 情報を含めるよう補強。
+  - update: 2026-02-06 11:50 JST 完了待機のログに running task の詳細（taskId/stage/progress）を含めるよう拡張。
+  - update: 2026-02-06 11:55 JST failed task の詳細をログへ含め、failed 件数が出た時点で即時エラーにするよう補強。
+  - update: 2026-02-06 12:00 JST build ダイアログを開かずに startBatchSession を実行する形に切替（auto-pause を避けて c) を検証）。
 
 2509) fix/shape-build/max-update-depth-loop (P1) — 完了 (2026-02-04)
 - ブランチ名: fix/shape-build/max-update-depth-loop
@@ -1583,6 +1641,9 @@
   - update: 2026-01-29 15:18 JST useWorkerAPI の準備完了まで IDE-GSM import を開始しないように修正。
   - update: 2026-01-29 15:19 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
   - update: 2026-01-29 15:30 JST import 判定用の最小ログを追加し、pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-01-29 15:42 JST viewport fetch の失敗/未準備時に previewPoints をクリアしないよう変更。
+  - update: 2026-01-29 15:43 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-01-29 16:05 JST Map Preview から IDE-GSM import を除外し、Worker 未準備時は import を開始しない方針で対応。
 
 2423) investigation/shape-plugin-remove-remnants (P1) — 進行中 (2026-01-29)
 - ブランチ名: investigation/shape-plugin-remove-remnants
@@ -12725,6 +12786,7 @@
   - update: 2026-01-30 19:26 JST UnifiedBatchManagerBase.prepareSession をジェネリック拡張して IBatchSessionManager の型不一致を解消。
   - update: 2026-01-31 10:11 JST folder-plugin の TagId import 欠落による typecheck エラーの修正に着手。
   - update: 2026-01-31 10:13 JST pnpm --filter @hierarchidb/folder-plugin typecheck exit 0 を確認。
+  - update: 2026-02-05 22:20 JST shape-build-background.e2e の status 取得で必須フィールド欠落による TS2322 を修正。
 2423) investigation/route/reference-node-links (P1) — 進行中 (2026-01-29)
 - ブランチ名: investigation/route/reference-node-links
 - 依存: なし

@@ -176,6 +176,7 @@ export const LocationPreviewList: React.FC<LocationPreviewListProps> = ({
           showTitle={false}
           rows={filteredRows as Array<{ id: string | number }>}
           columns={gridColumns}
+          maxHeight="100%"
           search={{
             value: searchValue,
             onChange: setSearchValue,
@@ -232,7 +233,7 @@ export const LocationPreviewList: React.FC<LocationPreviewListProps> = ({
       onStateChange={handlers.onStateChange}
       onClose={onClose}
     >
-      <Box sx={{ height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
         {content}
       </Box>
       <Dialog

@@ -9,7 +9,6 @@ import { useFloatingWindow } from '@hierarchidb/ui-floating-window';
 import { LOCATION_TYPE_STYLES } from './locationTypes.js';
 import { resolveLocationAttribution } from '../../../common/datasources/attribution.js';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
-import { useIdeGsmImportOnEntry } from '../../hooks/useIdeGsmImportOnEntry.js';
 import { subscribeIdeGsmProgress } from '../../state/ideGsmProgress.js';
 import type { IdeGsmImportProgress } from '@hierarchidb/location-api';
 import {
@@ -48,13 +47,10 @@ const buildInitialViewState = (bbox?: [number, number, number, number]): MapView
 export const useLocationMapPreviewStep = ({
   draft,
   nodeId,
-  onUpdate,
 }: {
   draft: Partial<LocationEntity>;
   nodeId?: NodeId;
-  onUpdate?: (updates: Partial<LocationEntity>) => void;
 }) => {
-  useIdeGsmImportOnEntry({ draft, nodeId, onUpdate });
   const { translations, t } = useTranslation();
   const theme = useTheme();
   const [ideGsmProgress, setIdeGsmProgress] = useState<IdeGsmImportProgress | null>(null);

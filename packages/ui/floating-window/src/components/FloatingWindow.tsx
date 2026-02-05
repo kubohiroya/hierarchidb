@@ -71,6 +71,9 @@ const WindowContent = styled(Box)(({ theme }) => ({
   padding: 2,
   overflowY: 'auto',
   backgroundColor: theme.palette.background.paper,
+  display: 'flex',
+  flexDirection: 'column',
+  minHeight: 0,
 }));
 
 const ResizeHandle = styled(Box)({

@@ -56,7 +56,6 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
   } = useLocationMapPreviewStep({
     draft,
     nodeId,
-    onUpdate,
   });
 
   return (

@@ -249,7 +249,6 @@ export const useLocationMapPreviewMap = (
       return;
     }
     if (!workerApi || workerLoading || workerError) {
-      setPreviewPoints([]);
       return;
     }
     const map = mapRef.current;
@@ -324,9 +323,6 @@ export const useLocationMapPreviewMap = (
       console.info(DEBUG_PREFIX, 'viewport-fetch:success', { nodeId: previewNodeId, count: filtered.length });
       setPreviewPoints(filtered as PreviewPoint[]);
     } catch (err) {
-      if (requestId === queryRequestRef.current) {
-        setPreviewPoints([]);
-      }
       console.error(DEBUG_PREFIX, 'viewport-fetch:error', { nodeId: previewNodeId, error: err });
     }
   }, [

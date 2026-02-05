@@ -71,7 +71,7 @@ export type MapPreviewFloatingTableProps<Row extends { id: string | number }> = 
   selectedRows?: Set<string>;
   onSelectionChange?: (selected: Set<string | number>) => void;
   rowSx?: (state: { selected: boolean; matched: boolean; hovered: boolean }) => Record<string, unknown> | undefined;
-  maxHeight?: number;
+  maxHeight?: number | string;
   emptyContent?: React.ReactNode;
   errorSummaryById?: MapPreviewErrorSummaryById;
   errorColumnLabels?: MapPreviewErrorColumnLabels;

@@ -455,6 +455,7 @@ export function TanstackDataGrid<T extends RowRecord>(props: TanstackDataGridPro
     count: enableVirtualization ? rowModel.length : 0,
     getScrollElement: () => bodyContainerRef.current,
     estimateSize: () => rowHeight,
+    measureElement: (element) => element?.getBoundingClientRect().height ?? rowHeight,
     overscan: 6,
   });
 
@@ -631,6 +632,8 @@ export function TanstackDataGrid<T extends RowRecord>(props: TanstackDataGridPro
                   key={row.id}
                   hover
                   sx={sx}
+                  ref={enableVirtualization ? virtualizer.measureElement : undefined}
+                  data-index={enableVirtualization ? virtualRow.index : undefined}
                   onMouseEnter={() => onRowHover?.(row.original, rowId)}
                   onMouseLeave={() => onRowLeave?.(row.original, rowId)}
                   onClick={() => onRowClick?.(row.original, rowId)}
