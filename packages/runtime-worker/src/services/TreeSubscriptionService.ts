@@ -53,6 +53,12 @@ export class TreeSubscriptionService {
   private totalLatency = 0;
   private eventCount = 0;
 
+  private readonly shouldLogInfo =
+    typeof console !== 'undefined' &&
+    typeof console.log === 'function' &&
+    !(globalThis as { __HDB_SILENCE_WORKER_LOGS__?: boolean })
+      .__HDB_SILENCE_WORKER_LOGS__;
+
   private readonly undoStateSubscriptions = new Map<
     SubscriptionId,
     (event: UndoStateEvent) => void
@@ -766,12 +772,14 @@ export class TreeSubscriptionService {
 
     // Subscribe to the stream and store the subscription for cleanup
     const instrumentedCallback = (event: TreeNodeEvent) => {
-      console.log('[TreeSubscriptionService][node] emit event', {
-        subscriptionNodeId: String(nodeId),
-        eventNodeId: String(event.nodeId),
-        type: event.type,
-        hasNode: Boolean(event.node),
-      });
+      if (this.shouldLogInfo) {
+        console.log('[TreeSubscriptionService][node] emit event', {
+          subscriptionNodeId: String(nodeId),
+          eventNodeId: String(event.nodeId),
+          type: event.type,
+          hasNode: Boolean(event.node),
+        });
+      }
       callback(event);
     };
 

@@ -8,8 +8,6 @@ import { MessageChannel } from 'worker_threads';
 import { createEndpointFromMessagePort } from '../../e2e/test-utils/messagePortEndpoint.js';
 import { exposeTestAPI } from '../../e2e/test-worker.entry.js';
 
-const decodeDraftHolderName = (name: string) => ({ targetNodeId: name as NodeId });
-
 type TestWorkerAPI = {
   ping(): Promise<{ response: string; timestamp: number }>;
   getQueryAPI(): Promise<import('@hierarchidb/tree-api').TreeQueryAPI>;
@@ -36,7 +34,7 @@ async function waitFor<T>(
 }
 
 describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', () => {
-  it.skip('subscribes subtree and trash, creates/moves/deletes with expected notifications', async () => {
+  it('subscribes subtree and trash, creates/moves/deletes with expected notifications', async () => {
     const { port1, port2 } = new MessageChannel();
     await exposeTestAPI(createEndpointFromMessagePort(port1));
     const client = Comlink.wrap<TestWorkerAPI>(createEndpointFromMessagePort(port2));
@@ -95,15 +93,12 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     const wcNode = await queryAPI.getNode(wcNodeId);
     expect(wcNode).toBeTruthy();
     if (!wcNode) throw new Error('Working copy node missing');
-    const wcHolder = await queryAPI.getNode(wcNode.parentId as NodeId);
-    expect(wcHolder).toBeTruthy();
-    if (!wcHolder) throw new Error('Working copy holder missing');
-
-    const { targetNodeId } = decodeDraftHolderName(wcHolder.metadata.name);
-    const canonicalId = targetNodeId as NodeId;
-
     const commitRes = await wcAPI.commitDraft(wcNodeId);
     expect(commitRes?.status).toBe('ok');
+    if (commitRes?.status !== 'ok') {
+      throw new Error(`commitDraft failed: ${JSON.stringify(commitRes)}`);
+    }
+    const canonicalId = commitRes.nodeId;
 
     await waitFor(() =>
       subtreeEvents.some((event) => event?.nodeId === canonicalId && typeof event.type === 'string')
@@ -123,7 +118,8 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     const trashedNode = afterTrashChildren.find((node) => node.id === canonicalId);
     expect(trashedNode).toBeTruthy();
     if (!trashedNode) throw new Error('Trashed node not found');
-    expect(trashedNode).toBe('trash');
+    expect(trashedNode.parentId).toBe(trashRootId);
+    expect(trashedNode.removedAt).toBeTruthy();
     expect(trashedNode.metadata.name).not.toBe('tmp');
     expect(trashedNode.originalName).toBe('tmp');
     expect(trashedNode.originalParentId).toBe(rootId);
@@ -170,7 +166,8 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     const trashedAgain = afterSecondTrashChildren.find((node) => node.id === canonicalId);
     expect(trashedAgain).toBeTruthy();
     if (!trashedAgain) throw new Error('Trashed node (second) not found');
-    expect(trashedAgain).toBe('trash');
+    expect(trashedAgain.parentId).toBe(trashRootId);
+    expect(trashedAgain.removedAt).toBeTruthy();
     expect(trashedAgain.metadata.name).not.toBe('tmp');
     expect(trashedAgain.originalName).toBe('tmp');
     expect(trashedAgain.originalParentId).toBe(rootId);

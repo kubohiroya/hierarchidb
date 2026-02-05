@@ -7,8 +7,6 @@ import { MessageChannel } from 'worker_threads';
 import { createEndpointFromMessagePort } from '../../e2e/test-utils/messagePortEndpoint.js';
 import { exposeTestAPI } from '../../e2e/test-worker.entry.js';
 
-const decodeDraftHolderName = (name: string) => ({ targetNodeId: name as NodeId });
-
 type TestWorkerAPI = {
   getQueryAPI(): Promise<import('@hierarchidb/tree-api').TreeQueryAPI>;
   getMutationAPI(): Promise<import('@hierarchidb/tree-api').TreeMutationAPI>;
@@ -39,17 +37,12 @@ async function createCommittedNode(
   const wcNodeId = res.nodeId as NodeId;
   const wcNode = await queryAPI.getNode(wcNodeId);
   if (!wcNode) throw new Error('draft node missing');
-  const holder = await queryAPI.getNode(wcNode.parentId as NodeId);
-  if (!holder) throw new Error('draft holder missing');
-
-  const { targetNodeId } = decodeDraftHolderName(holder.metadata.name);
-  const canonicalId = targetNodeId as NodeId;
   const commitRes = await updaterAPI.commitDraft(wcNodeId);
   if (commitRes?.status !== 'ok') {
     throw new Error(`commitDraft failed: ${JSON.stringify(commitRes)}`);
   }
 
-  return canonicalId;
+  return commitRes.nodeId;
 }
 
 describe('trash duplicate names handling', () => {

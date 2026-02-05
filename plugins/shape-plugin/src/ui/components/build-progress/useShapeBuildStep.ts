@@ -294,7 +294,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     }
   }, [activeNodeId, buildStatus, buildDownloadTaskPayloads, canResume, persistDraftPatch, saveDraftBeforeBatch]);
 
-  const handlePause = useCallback(async (): Promise<void> => {
+  const handlePause = useCallback(async (reason: 'route-leave' | 'user-pause' = 'user-pause'): Promise<void> => {
     if (!activeNodeId) {
       notify.warning('NodeId is missing.');
       return;
@@ -303,7 +303,7 @@ export const useShapeBuildStep = ({ data, onChange, nodeId }: Args) => {
     setIsPausePending(true);
     try {
       await bridgeRef.current.initialize();
-      await bridgeRef.current.pauseBatchSession(SHAPE_NODE_TYPE, activeNodeId);
+      await bridgeRef.current.pauseBatchSession(SHAPE_NODE_TYPE, activeNodeId, reason);
       await persistDraftPatch({ processingStatus: 'paused' });
     } catch (error) {
       setIsPausePending(false);

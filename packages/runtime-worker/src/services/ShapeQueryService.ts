@@ -21,12 +21,18 @@ import type {
   ShapeVTMetadata,
 } from '@hierarchidb/shape-api';
 import {
+  type BuildProcessConfig,
   type BuildSessionRecord,
-  type BuildTaskRecord,
+  type BuildTaskType,
   type ProgressInfo,
+  type ResourceUsage,
   type ShapeDB,
+  type StageStatus,
 } from '@hierarchidb/shape-store';
-import { hidbEphemeralDB as ephemeralShapeDB } from '@hierarchidb/gis-sdk';
+import {
+  hidbEphemeralDB as ephemeralShapeDB,
+  type EphemeralBuildSessionRecord,
+} from '@hierarchidb/gis-sdk';
 import { SingletonMixin } from '@hierarchidb/util';
 import {
   countFetchDataDataSourceBuffersForNode,
@@ -43,6 +49,21 @@ const toProgressSummary = (progress: ProgressInfo): ShapeBuildProgressSummary =>
   taskType: progress.taskType,
 });
 
+const toBuildStage = (stage?: string): ProgressInfo['taskType'] => {
+  if (stage === 'processing') return stage;
+  if (stage === 'fetch' || stage === 'transform' || stage === 'vt') return stage;
+  return undefined;
+};
+
+const toProgressInfo = (progress: ShapeBuildProgressSummary): ProgressInfo => ({
+  total: progress.total,
+  completed: progress.completed,
+  failed: progress.failed,
+  skipped: progress.skipped,
+  percentage: progress.percentage,
+  taskType: toBuildStage(progress.taskType),
+});
+
 const toShapeBuildSessionRecord = (session: BuildSessionRecord): ShapeBuildSessionRecord => {
   const resourceUsage: Record<string, unknown> | undefined = session.resourceUsage
     ? { ...session.resourceUsage }
@@ -56,9 +77,10 @@ const toShapeBuildSessionRecord = (session: BuildSessionRecord): ShapeBuildSessi
     startedAt: session.startedAt,
     updatedAt: session.updatedAt,
     completedAt: session.completedAt,
-    progress: toProgressSummary(session.progress),
+    progress: toProgressInfo(session.progress),
     stages,
     resourceUsage,
+    stopReason: session.stopReason,
     canResume: session.canResume,
     lastActivity: session.lastActivity,
     expiresAt: session.expiresAt,
@@ -80,7 +102,7 @@ const toSessionSummary = (session: BuildSessionRecord): ShapeBuildSessionSummary
   progress: session.progress,
 });
 
-const toTaskSummary = (task: BuildTaskRecord): ShapeBuildTaskSummary => ({
+const toTaskSummary = (task: ShapeBuildTaskRecord): ShapeBuildTaskSummary => ({
   taskId: task.taskId,
   nodeId: task.nodeId,
   taskType: task.taskType,
@@ -90,6 +112,104 @@ const toTaskSummary = (task: BuildTaskRecord): ShapeBuildTaskSummary => ({
   message: task.message,
   errorMessage: task.errorMessage,
 });
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isNumber = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value);
+
+const isTaskStatus = (value: unknown): value is StageStatus['status'] =>
+  value === 'queued'
+  || value === 'running'
+  || value === 'completed'
+  || value === 'failed'
+  || value === 'regression';
+
+const isStageStatus = (value: unknown): value is StageStatus => {
+  if (!isRecord(value)) return false;
+  return isTaskStatus(value.status)
+    && isNumber(value.progress)
+    && isNumber(value.tasksTotal)
+    && isNumber(value.tasksCompleted)
+    && isNumber(value.tasksFailed)
+    && (value.message === undefined || typeof value.message === 'string');
+};
+
+const isBuildProcessConfig = (value: unknown): value is BuildProcessConfig => {
+  if (!isRecord(value)) return false;
+  return isRecord(value.download)
+    && isRecord(value.extract1)
+    && isRecord(value.extract2)
+    && isRecord(value.vectorTiles);
+};
+
+const isProgressSummary = (value: unknown): value is ShapeBuildProgressSummary => {
+  if (!isRecord(value)) return false;
+  return isNumber(value.total)
+    && isNumber(value.completed)
+    && isNumber(value.failed)
+    && isNumber(value.skipped)
+    && isNumber(value.percentage)
+    && (value.taskType === undefined || typeof value.taskType === 'string');
+};
+
+const readStageMap = (value: unknown): Record<BuildTaskType, StageStatus> | null => {
+  if (!isRecord(value)) return null;
+  const fetch = value.fetch;
+  const transform = value.transform;
+  const vt = value.vt;
+  if (!isStageStatus(fetch) || !isStageStatus(transform) || !isStageStatus(vt)) return null;
+  return { fetch, transform, vt };
+};
+
+const readResourceUsage = (value: unknown): ResourceUsage | undefined => {
+  if (!isRecord(value)) return undefined;
+  if (!isNumber(value.memoryUsed)
+    || !isNumber(value.memoryPeak)
+    || !isNumber(value.cpuPercent)
+    || !isNumber(value.storageUsed)
+    || !isNumber(value.networkBytesReceived)
+    || !isNumber(value.networkBytesSent)) {
+    return undefined;
+  }
+  return {
+    memoryUsed: value.memoryUsed,
+    memoryPeak: value.memoryPeak,
+    cpuPercent: value.cpuPercent,
+    storageUsed: value.storageUsed,
+    networkBytesReceived: value.networkBytesReceived,
+    networkBytesSent: value.networkBytesSent,
+  };
+};
+
+const toBuildSessionRecordFromEphemeral = (
+  session: EphemeralBuildSessionRecord
+): BuildSessionRecord | null => {
+  if (!isBuildProcessConfig(session.config)) return null;
+  if (!isProgressSummary(session.progress)) return null;
+  const stages = readStageMap(session.stages);
+  if (!stages) return null;
+  if (!isNumber(session.startedAt) || !isNumber(session.updatedAt)) return null;
+  return {
+    nodeId: session.nodeId,
+    draftId: session.draftId,
+    status: session.status,
+    config: session.config,
+    startedAt: session.startedAt,
+    updatedAt: session.updatedAt,
+    completedAt: session.completedAt,
+    progress: toProgressInfo(session.progress),
+    stages,
+    resourceUsage: readResourceUsage(session.resourceUsage),
+    stopReason: session.stopReason,
+    canResume: session.canResume,
+    lastActivity: session.lastActivity,
+    expiresAt: session.expiresAt,
+  };
+};
+
+const isNonNull = <T>(value: T | null): value is T => value !== null;
 
 export class ShapeQueryService implements ShapeQueryAPI {
   static async getSingleton(db: ShapeDB): Promise<ShapeQueryService> {
@@ -110,28 +230,32 @@ export class ShapeQueryService implements ShapeQueryAPI {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
     const sessions = await ephemeralShapeDB.sessions.where('nodeId').equals(nodeId).toArray();
-    return sessions.map(toSessionSummary);
+    const records = sessions.map(toBuildSessionRecordFromEphemeral).filter(isNonNull);
+    return records.map(toSessionSummary);
   }
 
   async getBuildSession(nodeId: NodeId): Promise<ShapeBuildSessionSummary | null> {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
     const session = await ephemeralShapeDB.sessions.get(nodeId);
-    return session ? toSessionSummary(session) : null;
+    const record = session ? toBuildSessionRecordFromEphemeral(session) : null;
+    return record ? toSessionSummary(record) : null;
   }
 
   async listBuildSessionRecords(nodeId: NodeId): Promise<ShapeBuildSessionRecord[]> {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
     const sessions = await ephemeralShapeDB.sessions.where('nodeId').equals(nodeId).toArray();
-    return sessions.map(toShapeBuildSessionRecord);
+    const records = sessions.map(toBuildSessionRecordFromEphemeral).filter(isNonNull);
+    return records.map(toShapeBuildSessionRecord);
   }
 
   async getBuildSessionRecord(nodeId: NodeId): Promise<ShapeBuildSessionRecord | null> {
     await this.ensureOpen();
     await this.ensureEphemeralOpen();
     const session = await ephemeralShapeDB.sessions.get(nodeId);
-    return session ? toShapeBuildSessionRecord(session) : null;
+    const record = session ? toBuildSessionRecordFromEphemeral(session) : null;
+    return record ? toShapeBuildSessionRecord(record) : null;
   }
 
   async listBuildSessionRecordsByStatus(
@@ -141,20 +265,19 @@ export class ShapeQueryService implements ShapeQueryAPI {
     await this.ensureEphemeralOpen();
     const sessions = await ephemeralShapeDB.sessions.toArray();
     const filtered = sessions.filter((session) => statuses.includes(session.status));
-    return filtered.map(toShapeBuildSessionRecord);
+    const records = filtered.map(toBuildSessionRecordFromEphemeral).filter(isNonNull);
+    return records.map(toShapeBuildSessionRecord);
   }
 
   async listBuildTasks(nodeId: NodeId): Promise<ShapeBuildTaskSummary[]> {
     await this.ensureOpen();
     const tasks = await ephemeralShapeDB.buildTasks.where('nodeId').equals(nodeId).toArray();
-    return tasks.map(toTaskSummary);
+    return tasks.map((task) => toTaskSummary(task));
   }
 
   async listBuildTaskRecords(nodeId: NodeId): Promise<ShapeBuildTaskRecord[]> {
     await this.ensureOpen();
-    return ephemeralShapeDB.buildTasks.where('nodeId').equals(nodeId).toArray() as Promise<
-      ShapeBuildTaskRecord[]
-    >;
+    return ephemeralShapeDB.buildTasks.where('nodeId').equals(nodeId).toArray();
   }
 
   async listBuildTaskRecordsByStage(
@@ -183,18 +306,26 @@ export class ShapeQueryService implements ShapeQueryAPI {
         errorMessages: [],
       };
     }
+    const latestSession = toBuildSessionRecordFromEphemeral(latest);
+    if (!latestSession) {
+      return {
+        status: 'idle',
+        hasErrors: false,
+        errorMessages: [],
+      };
+    }
     const totalFeatures = await this.getProcessedFeatureCount(nodeId);
     const totalVectorTiles = await this.db.vectorTiles.where('nodeId').equals(nodeId).count();
     return {
-      status: mapStatus(latest.status),
-      lastProcessed: latest.completedAt ?? latest.updatedAt,
+      status: mapStatus(latestSession.status),
+      lastProcessed: latestSession.completedAt ?? latestSession.updatedAt,
       totalFeatures,
       totalVectorTiles,
-      hasErrors: latest.status === 'failed',
-      errorMessages: latest.status === 'failed' ? ['Build processing failed'] : [],
-      stage: latest.progress?.taskType,
-      progress: latest.progress?.percentage,
-      lastUpdated: latest.updatedAt,
+      hasErrors: latestSession.status === 'failed',
+      errorMessages: latestSession.status === 'failed' ? ['Build processing failed'] : [],
+      stage: latestSession.progress?.taskType,
+      progress: latestSession.progress?.percentage,
+      lastUpdated: latestSession.updatedAt,
     };
   }
 
@@ -379,8 +510,6 @@ export class ShapeQueryService implements ShapeQueryAPI {
   }
 
   async listTransformErrorRecords(nodeId: NodeId): Promise<ShapeTransformErrorRecord[]> {
-    return ephemeralShapeDB.transformErrors.where('nodeId').equals(nodeId).toArray() as Promise<
-      ShapeTransformErrorRecord[]
-    >;
+    return ephemeralShapeDB.transformErrors.where('nodeId').equals(nodeId).toArray();
   }
 }

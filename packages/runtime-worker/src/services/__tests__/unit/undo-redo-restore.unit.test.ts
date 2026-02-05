@@ -1,6 +1,8 @@
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
+import type { TreeChangeEvent } from '@hierarchidb/tree-api';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Subject } from 'rxjs';
 import { CommandProcessor } from '../../CommandProcessor.js';
 import type { CoreDB } from '../../CoreDB.js';
 
@@ -18,6 +20,7 @@ describe('Undo/Redo for restoreFromTrash', () => {
     'getNode' | 'updateNode' | 'listChildren' | 'deleteNode' | 'createNode'
   > & {
     state: Map<NodeId, TrashedNode>;
+    changeSubject: Subject<TreeChangeEvent>;
   };
 
   type CoreStub = CoreStubBase;
@@ -52,6 +55,7 @@ describe('Undo/Redo for restoreFromTrash', () => {
 
     const baseCore: CoreStubBase = {
       state,
+      changeSubject: new Subject<TreeChangeEvent>(),
       getNode: vi.fn(async (id: NodeId) => state.get(id)),
       updateNode: vi.fn(async (node: Partial<TreeNode> & { id: NodeId }) => {
         const current = state.get(node.id);

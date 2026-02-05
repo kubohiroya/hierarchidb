@@ -4,6 +4,8 @@
  */
 
 // Import base setup (includes all _obsolate_common mocks)
+import 'fake-indexeddb/auto';
+
 // Minimal worker-specific test setup for isolated unit tests.
 // Intentionally avoids importing monorepo-wide setup to prevent tsconfig resolution issues.
 
@@ -23,9 +25,13 @@ type EntitiesOverrideFactory =
 
 type TestGlobal = typeof globalThis & {
   __HDB_PLUGIN_ENTITY_OVERRIDES__?: Record<string, EntitiesOverrideFactory>;
+  __HDB_SILENCE_WORKER_LOGS__?: boolean;
 };
 
 const globalWithOverrides = globalThis as TestGlobal;
+
+// Reduce noisy logs in test output without affecting production behavior.
+globalWithOverrides.__HDB_SILENCE_WORKER_LOGS__ = true;
 
 // Provide lightweight EntitiesDB overrides so peer-entity cleanup code paths
 // do not attempt to import plugin-specific Dexie implementations during unit tests.

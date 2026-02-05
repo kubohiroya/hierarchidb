@@ -19,7 +19,7 @@ export interface WorkerBridge {
     buildContinuationPolicy?: BuildContinuationPolicy
   ): Promise<BatchSessionStatus>;
   getBatchSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus>;
-  pauseBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<void>;
+  pauseBatchSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
   resumeBatchSession(
     nodeType: NodeType,
     nodeId: NodeId,
@@ -106,9 +106,9 @@ class WorkerBridgeImpl implements WorkerBridge {
     return api.getBatchSessionStatus(nodeType, nodeId);
   }
 
-  async pauseBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<void> {
+  async pauseBatchSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void> {
     const api = await ensureWorkerAPI();
-    await api.pauseBatchSession(nodeType, nodeId);
+    await api.pauseBatchSession(nodeType, nodeId, reason);
   }
 
   async resumeBatchSession(

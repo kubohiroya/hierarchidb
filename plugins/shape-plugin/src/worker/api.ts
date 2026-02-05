@@ -5,6 +5,7 @@
 
 import { toNodeId, type NodeId } from '@hierarchidb/core-types';
 import type { BuildContinuationPolicy, TaskQueueRecord } from '@hierarchidb/batch-api';
+import type { ShapeBuildStopReason } from '@hierarchidb/shape-api';
 import type { ShapeBuildConfig } from '../common/types/index.js';
 import {
   type BatchSession,
@@ -46,7 +47,7 @@ import {
   updateTask,
 } from '@hierarchidb/vt-orchestrator';
 import type { BuildTaskRecord } from '@hierarchidb/shape-store';
-import { hidbEphemeralDB as ephemeralShapeDB } from '@hierarchidb/gis-sdk';
+import { hidbEphemeralDB as ephemeralShapeDB, type EphemeralBuildTaskRecord } from '@hierarchidb/gis-sdk';
 import { runShapePipeline } from '../services/vt/shapePipeline.js';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../services/batch/ShapeBuildAPIClient.ts';
 import { isSkippedMessage } from '../common/utils/taskMessages.ts';
@@ -128,14 +129,24 @@ const normalizeTaskPhase = (status: TaskQueueRecord['status'] | string): Progres
 );
 
 
-const normalizeResumedTaskStatus = (status: BuildTaskRecord['status']): TaskQueueRecord['status'] => {
+type BuildTaskRecordLike = BuildTaskRecord | EphemeralBuildTaskRecord;
+
+const normalizeResumedTaskStatus = (status: BuildTaskRecordLike['status']): TaskQueueRecord['status'] => {
   if (status === 'failed' || status === 'regression' || status === 'running') {
     return 'queued';
   }
   return status;
 };
 
-const mapBuildTaskToQueueTask = (task: BuildTaskRecord): TaskQueueRecord => {
+const isStopReason = (value: string): value is ShapeBuildStopReason => (
+  value === 'route-leave'
+  || value === 'user-pause'
+  || value === 'failed'
+  || value === 'completed'
+  || value === 'unknown'
+);
+
+const mapBuildTaskToQueueTask = (task: BuildTaskRecordLike): TaskQueueRecord => {
   const nextStatus = normalizeResumedTaskStatus(task.status);
   const keepMessage = nextStatus === 'completed' ? task.message : undefined;
   return {
@@ -850,8 +861,17 @@ export const shapeBatchAPI = {
     if (command === 'session/pause') {
       const nodeId = payload.nodeId as NodeId;
       if (!nodeId) throw new Error('[shapeBatchAPI] session/pause requires nodeId');
+      const rawStopReason = typeof payload.stopReason === 'string' ? payload.stopReason : undefined;
+      const stopReason = rawStopReason && isStopReason(rawStopReason) ? rawStopReason : undefined;
       setPaused(nodeId, true);
       await emitProgressSnapshot(nodeId);
+      if (stopReason) {
+        try {
+          await shapeMutationAPIImpl.updateBuildSession(nodeId, { stopReason });
+        } catch (error) {
+          console.warn('[shapeBatchAPI] failed to persist stopReason', error);
+        }
+      }
       return;
     }
     if (command === 'session/resume') {

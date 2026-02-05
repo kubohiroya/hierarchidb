@@ -404,10 +404,10 @@ reporter.reportStepProgress('Load Comlink', 0);
           const session = api.getBatchSession ? await api.getBatchSession(nodeId) : undefined;
           return toBatchSessionStatus(session as Record<string, unknown> | undefined, nodeId);
         },
-        pauseBatchSession: async (nodeType: NodeType, nodeId: NodeId): Promise<void> => {
+        pauseBatchSession: async (nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void> => {
           const api = resolveShapeBatchApiOrThrow(nodeType);
           if (api.invokeBatchCommand) {
-            await api.invokeBatchCommand('session/pause', { nodeId });
+            await api.invokeBatchCommand('session/pause', { nodeId, stopReason: reason });
             return;
           }
           const session = api.getBatchSession ? await api.getBatchSession(nodeId) : undefined;

@@ -1,4 +1,7 @@
 import type { NodeId } from '@hierarchidb/core-types';
+
+export type ShapeBuildStopReason = 'route-leave' | 'user-pause' | 'failed' | 'completed' | 'unknown';
+
 import type { ShapeBuildProgressSummary, ShapeTileLayerInfo } from './shapeTypes.js';
 
 export interface ShapeBuildSessionRecord<
@@ -17,6 +20,7 @@ export interface ShapeBuildSessionRecord<
   progress: Progress;
   stages: StageMap;
   resourceUsage?: ResourceUsage;
+  stopReason?: ShapeBuildStopReason;
   canResume?: boolean;
   lastActivity?: number;
   expiresAt?: number;

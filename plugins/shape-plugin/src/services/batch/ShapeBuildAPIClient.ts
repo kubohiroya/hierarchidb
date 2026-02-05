@@ -4,6 +4,7 @@ import type {
   ShapeBuildSessionRecord,
   ShapeBuildSessionSummary,
   ShapeBuildStage,
+  ShapeBuildProgressSummary,
   ShapeBuildTaskRecord,
   ShapeBuildTaskStatus,
   ShapeBuildTaskSummary,
@@ -32,20 +33,130 @@ import {
 } from '../utils/chunkStore.js';
 import { resolveCountryContinentName, resolveCountryName } from '../utils/iso3166.js';
 import {
+  isBuildProcessConfig,
   toBuildSessionRecord,
   toBuildSessionUpdates,
+  toProgressInfo,
   toProgressSummary,
   toShapeBuildSessionRecord,
   toVectorTileRecord,
 } from './shapeSessionMappers.js';
 import { shapeDB } from '@hierarchidb/shape-store';
-import { hidbEphemeralDB as ephemeralShapeDB } from '@hierarchidb/gis-sdk';
-import type { VectorTileRecord } from '@hierarchidb/shape-store';
+import type {
+  BuildSessionRecord,
+  BuildTaskType,
+  ResourceUsage,
+  StageStatus,
+  VectorTileRecord,
+} from '@hierarchidb/shape-store';
+import {
+  hidbEphemeralDB as ephemeralShapeDB,
+  type EphemeralBuildSessionRecord,
+} from '@hierarchidb/gis-sdk';
 
 const mapStatus = (status: ShapeBuildSessionSummary['status'] | 'running' | 'idle'): ShapeProcessingStatus['status'] => {
   if (status === 'running') return 'processing';
   if (status === 'idle') return 'idle';
   return status;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isNumber = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value);
+
+const isProgressSummary = (value: unknown): value is ShapeBuildProgressSummary => {
+  if (!isRecord(value)) return false;
+  return isNumber(value.total)
+    && isNumber(value.completed)
+    && isNumber(value.failed)
+    && isNumber(value.skipped)
+    && isNumber(value.percentage)
+    && (value.taskType === undefined || typeof value.taskType === 'string');
+};
+
+const isStageStatus = (value: unknown): value is StageStatus => {
+  if (!isRecord(value)) return false;
+  return isNumber(value.progress)
+    && isNumber(value.tasksTotal)
+    && isNumber(value.tasksCompleted)
+    && isNumber(value.tasksFailed)
+    && typeof value.status === 'string'
+    && (value.message === undefined || typeof value.message === 'string');
+};
+
+const readStageMap = (value: unknown): Record<BuildTaskType, StageStatus> | null => {
+  if (!isRecord(value)) return null;
+  const fetch = value.fetch;
+  const transform = value.transform;
+  const vt = value.vt;
+  if (!isStageStatus(fetch) || !isStageStatus(transform) || !isStageStatus(vt)) return null;
+  return { fetch, transform, vt };
+};
+
+const readResourceUsage = (value: unknown): ResourceUsage | undefined => {
+  if (!isRecord(value)) return undefined;
+  if (!isNumber(value.memoryUsed)
+    || !isNumber(value.memoryPeak)
+    || !isNumber(value.cpuPercent)
+    || !isNumber(value.storageUsed)
+    || !isNumber(value.networkBytesReceived)
+    || !isNumber(value.networkBytesSent)) {
+    return undefined;
+  }
+  return {
+    memoryUsed: value.memoryUsed,
+    memoryPeak: value.memoryPeak,
+    cpuPercent: value.cpuPercent,
+    storageUsed: value.storageUsed,
+    networkBytesReceived: value.networkBytesReceived,
+    networkBytesSent: value.networkBytesSent,
+  };
+};
+
+const toBuildSessionRecordFromEphemeral = (
+  session: EphemeralBuildSessionRecord
+): BuildSessionRecord | null => {
+  if (!isBuildProcessConfig(session.config)) return null;
+  if (!isProgressSummary(session.progress)) return null;
+  const stages = readStageMap(session.stages);
+  if (!stages) return null;
+  if (!isNumber(session.startedAt) || !isNumber(session.updatedAt)) return null;
+  return {
+    nodeId: session.nodeId,
+    draftId: session.draftId,
+    status: session.status,
+    config: session.config,
+    startedAt: session.startedAt,
+    updatedAt: session.updatedAt,
+    completedAt: session.completedAt,
+    progress: toProgressInfo(session.progress),
+    stages,
+    resourceUsage: readResourceUsage(session.resourceUsage),
+    stopReason: session.stopReason,
+    canResume: session.canResume,
+    lastActivity: session.lastActivity,
+    expiresAt: session.expiresAt,
+  };
+};
+
+const isNonNull = <T>(value: T | null): value is T => value !== null;
+
+const readBuildSessionsByNode = async (nodeId: NodeId): Promise<BuildSessionRecord[]> => {
+  const sessions = await ephemeralShapeDB.sessions.where('nodeId').equals(nodeId).toArray();
+  return sessions.map(toBuildSessionRecordFromEphemeral).filter(isNonNull);
+};
+
+const readBuildSession = async (nodeId: NodeId): Promise<BuildSessionRecord | undefined> => {
+  const session = await ephemeralShapeDB.sessions.get(nodeId);
+  if (!session) return undefined;
+  return toBuildSessionRecordFromEphemeral(session) ?? undefined;
+};
+
+const readAllBuildSessions = async (): Promise<BuildSessionRecord[]> => {
+  const sessions = await ephemeralShapeDB.sessions.toArray();
+  return sessions.map(toBuildSessionRecordFromEphemeral).filter(isNonNull);
 };
 
 const listVtTilesByNode = async (nodeId: NodeId): Promise<VectorTileRecord[]> => (
@@ -118,7 +229,7 @@ const toTaskSummary = (task: ShapeBuildTaskRecord): ShapeBuildTaskSummary => ({
 
 export class ShapeQueryAPIImpl implements ShapeQueryAPI {
   async listBuildSessions(nodeId: NodeId): Promise<ShapeBuildSessionSummary[]> {
-    const sessions = await ephemeralShapeDB.sessions.where('nodeId').equals(nodeId).toArray();
+    const sessions = await readBuildSessionsByNode(nodeId);
     return sessions.map((session) => ({
       nodeId: session.nodeId,
       status: mapStatus(session.status),
@@ -130,7 +241,7 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
   }
 
   async getBuildSession(nodeId: NodeId): Promise<ShapeBuildSessionSummary | null> {
-    const session = await ephemeralShapeDB.sessions.get(nodeId);
+    const session = await readBuildSession(nodeId);
     if (!session) return null;
     return {
       nodeId: session.nodeId,
@@ -143,31 +254,31 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
   }
 
   async listBuildSessionRecords(nodeId: NodeId): Promise<ShapeBuildSessionRecord[]> {
-    const sessions = await ephemeralShapeDB.sessions.where('nodeId').equals(nodeId).toArray();
+    const sessions = await readBuildSessionsByNode(nodeId);
     return sessions.map(toShapeBuildSessionRecord);
   }
 
   async getBuildSessionRecord(nodeId: NodeId): Promise<ShapeBuildSessionRecord | null> {
-    const session = await ephemeralShapeDB.sessions.get(nodeId);
+    const session = await readBuildSession(nodeId);
     return session ? toShapeBuildSessionRecord(session) : null;
   }
 
   async listBuildSessionRecordsByStatus(
     statuses: Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>,
   ): Promise<ShapeBuildSessionRecord[]> {
-    const sessions = await ephemeralShapeDB.sessions.toArray();
+    const sessions = await readAllBuildSessions();
     return sessions.filter((session) => statuses.includes(session.status)).map(toShapeBuildSessionRecord);
   }
 
   async listBuildTasks(nodeId: NodeId): Promise<ShapeBuildTaskSummary[]> {
     const db = ephemeralShapeDB;
     const tasks = await db.buildTasks.where('nodeId').equals(nodeId).toArray();
-    return tasks.map((task) => toTaskSummary(task as ShapeBuildTaskRecord));
+    return tasks.map((task) => toTaskSummary(task));
   }
 
   async listBuildTaskRecords(nodeId: NodeId): Promise<ShapeBuildTaskRecord[]> {
     const db = ephemeralShapeDB;
-    return db.buildTasks.where('nodeId').equals(nodeId).toArray() as Promise<ShapeBuildTaskRecord[]>;
+    return db.buildTasks.where('nodeId').equals(nodeId).toArray();
   }
 
   async listBuildTaskRecordsByStage(nodeId: NodeId, stage: ShapeBuildStage): Promise<ShapeBuildTaskRecord[]> {
@@ -178,11 +289,11 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
   async getBuildTaskRecord(taskId: string): Promise<ShapeBuildTaskRecord | null> {
     const db = ephemeralShapeDB;
     const task = await db.buildTasks.get(taskId);
-    return task ? (task as ShapeBuildTaskRecord) : null;
+    return task ?? null;
   }
 
   async getProcessingStatus(nodeId: NodeId): Promise<ShapeProcessingStatus | null> {
-    const sessions = await ephemeralShapeDB.sessions.where('nodeId').equals(nodeId).toArray();
+    const sessions = await readBuildSessionsByNode(nodeId);
     const latest = sessions.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))[0];
     if (!latest) {
       return {
@@ -345,7 +456,7 @@ export class ShapeQueryAPIImpl implements ShapeQueryAPI {
     const rows = await ephemeralShapeDB.transformErrors
       .where('nodeId')
       .equals(nodeId)
-      .toArray() as ShapeTransformErrorRecord[];
+      .toArray();
     const missing = rows.filter((row) => {
       if (!row.countryCode) return false;
       return !row.countryName || !row.continentName;
@@ -519,19 +630,20 @@ export class ShapeMutationAPIImpl implements ShapeMutationAPI {
 
 export class EphemeralShapeApiImpl implements EphemeralShapeAPI {
   async listBuildTasks(nodeId: NodeId): Promise<ShapeBuildTaskRecord[]> {
-    return ephemeralShapeDB.buildTasks.where('nodeId').equals(nodeId).toArray() as Promise<ShapeBuildTaskRecord[]>;
+    return ephemeralShapeDB.buildTasks.where('nodeId').equals(nodeId).toArray();
   }
 
   async listBuildTasksByStatus(nodeId: NodeId, status: ShapeBuildTaskStatus): Promise<ShapeBuildTaskRecord[]> {
-    return ephemeralShapeDB.buildTasks.where('[nodeId+status]').equals([nodeId, status]).toArray() as Promise<ShapeBuildTaskRecord[]>;
+    return ephemeralShapeDB.buildTasks.where('[nodeId+status]').equals([nodeId, status]).toArray();
   }
 
   async listBuildTasksByType(nodeId: NodeId, taskType: ShapeBuildStage): Promise<ShapeBuildTaskRecord[]> {
-    return ephemeralShapeDB.buildTasks.where('[nodeId+taskType]').equals([nodeId, taskType]).toArray() as Promise<ShapeBuildTaskRecord[]>;
+    return ephemeralShapeDB.buildTasks.where('[nodeId+taskType]').equals([nodeId, taskType]).toArray();
   }
 
   async getBuildTask(taskId: string): Promise<ShapeBuildTaskRecord | null> {
-    return (await ephemeralShapeDB.buildTasks.get(taskId)) ?? null;
+    const task = await ephemeralShapeDB.buildTasks.get(taskId);
+    return task ?? null;
   }
 
   async countBuildTasks(nodeId: NodeId): Promise<number> {

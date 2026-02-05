@@ -67,7 +67,12 @@ export async function commitTreeNodeDraft(
     }
     return candidate;
   })();
-  if (typeof console !== 'undefined' && typeof console.debug === 'function') {
+  const shouldLogDebug =
+    typeof console !== 'undefined' &&
+    typeof console.debug === 'function' &&
+    !(globalThis as { __HDB_SILENCE_WORKER_LOGS__?: boolean })
+      .__HDB_SILENCE_WORKER_LOGS__;
+  if (shouldLogDebug) {
     console.debug('[commitDraft] finalizing draft', {
       id: draft.id,
       draftMetadata: pendingMeta,

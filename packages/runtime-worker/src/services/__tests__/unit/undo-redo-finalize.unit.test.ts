@@ -1,6 +1,8 @@
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
+import type { TreeChangeEvent } from '@hierarchidb/tree-api';
 import type { TreeNode } from '@hierarchidb/tree-api';
 import { describe, expect, it } from 'vitest';
+import { Subject } from 'rxjs';
 import type { CoreDB } from '../../CoreDB.js';
 
 // fulltext tables removed; core stub only
@@ -14,6 +16,7 @@ interface CoreStubBase {
   updateNode: (node: Partial<TreeNode> & { id: NodeId }) => Promise<void>;
   deleteNode: (id: NodeId) => Promise<void>;
   listChildren: (parentId: NodeId) => Promise<TreeNode[]>;
+  changeSubject: Subject<TreeChangeEvent>;
 }
 
 function makeCore(): CoreStubBase {
@@ -21,6 +24,7 @@ function makeCore(): CoreStubBase {
 
   return {
     state,
+    changeSubject: new Subject<TreeChangeEvent>(),
     async getNode(id: NodeId) {
       return state[id];
     },

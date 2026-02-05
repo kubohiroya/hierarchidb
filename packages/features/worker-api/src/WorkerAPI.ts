@@ -78,7 +78,7 @@ export interface WorkerAPI {
     buildContinuationPolicy?: BuildContinuationPolicy
   ): Promise<BatchSessionStatus>;
   getBatchSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus>;
-  pauseBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<void>;
+  pauseBatchSession(nodeType: NodeType, nodeId: NodeId, reason?: string): Promise<void>;
   resumeBatchSession(
     nodeType: NodeType,
     nodeId: NodeId,

@@ -1,5 +1,7 @@
 import type { NodeId, Timestamp } from '@hierarchidb/core-types'; //A
+import type { TreeChangeEvent } from '@hierarchidb/tree-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Subject } from 'rxjs';
 import type { CoreDB } from '../../../services/CoreDB.js';
 
 describe('EntityLifecycleManager integration (base skeleton)', () => {
@@ -8,10 +10,11 @@ describe('EntityLifecycleManager integration (base skeleton)', () => {
   });
 
   it('notifies lifecycle on commitDraft when flag ON', async () => {
-    const core: Pick<CoreDB, 'getNode' | 'updateNode' | 'createNode'> = {
+    const core: Pick<CoreDB, 'getNode' | 'updateNode' | 'createNode'> & { changeSubject: Subject<TreeChangeEvent> } = {
       getNode: vi.fn(async () => undefined),
       updateNode: vi.fn(async () => undefined),
       createNode: vi.fn(async () => undefined),
+      changeSubject: new Subject<TreeChangeEvent>(),
     };
     const { EntityLifecycleManager } = await import('../../EntityLifecycleManager.js');
     type LifecycleInstance = ReturnType<typeof EntityLifecycleManager.getSingleton>;

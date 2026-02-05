@@ -8,8 +8,6 @@ import { MessageChannel } from 'worker_threads';
 import { createEndpointFromMessagePort } from '../../e2e/test-utils/messagePortEndpoint.js';
 import { exposeTestAPI } from '../../e2e/test-worker.entry.js';
 
-const decodeDraftHolderName = (name: string) => ({ targetNodeId: name as NodeId });
-
 type TestWorkerAPI = {
   getQueryAPI(): Promise<import('@hierarchidb/tree-api').TreeQueryAPI>;
   getMutationAPI(): Promise<import('@hierarchidb/tree-api').TreeMutationAPI>;
@@ -32,7 +30,7 @@ async function waitFor<T>(
 }
 
 describe('Comlink + fake-indexeddb integration: partial trash restore flow', () => {
-  it.skip('restores a subset of trashed nodes while keeping the remaining nodes under trash holders', async () => {
+  it('restores a subset of trashed nodes while keeping the remaining nodes under trash holders', async () => {
     const { port1, port2 } = new MessageChannel();
     await exposeTestAPI(createEndpointFromMessagePort(port1));
     const client = Comlink.wrap<TestWorkerAPI>(createEndpointFromMessagePort(port2));
@@ -69,16 +67,12 @@ describe('Comlink + fake-indexeddb integration: partial trash restore flow', () 
         throw new Error(`draft node missing for ${name}`);
       }
 
-      const holder = await queryAPI.getNode(draftNode.parentId as NodeId);
-      if (!holder) {
-        throw new Error(`holder missing for ${name}`);
-      }
-
-      const { targetNodeId } = decodeDraftHolderName(holder.metadata.name);
-      const canonicalId = targetNodeId as NodeId;
-
       const commitResult = await updaterAPI.commitDraft(createResult.nodeId);
       expect(commitResult.status).toBe('ok');
+      if (commitResult.status !== 'ok') {
+        throw new Error(`commitDraft failed for ${name}: ${JSON.stringify(commitResult)}`);
+      }
+      const canonicalId = commitResult.nodeId;
       await waitFor(async () => {
         const committed = await queryAPI.getNode(canonicalId);
         return Boolean(committed);
@@ -157,12 +151,7 @@ describe('Comlink + fake-indexeddb integration: partial trash restore flow', () 
       return trashChildren.some((node) => node.id === childOneId);
     });
 
-    const release = (client as unknown as { [Comlink.releaseProxy]?: () => Promise<void> })[
-      Comlink.releaseProxy
-    ];
-    if (release) {
-      await release.call(client);
-    }
+    await client[Comlink.releaseProxy]?.();
     port1.close();
     port2.close();
   }, 20_000);

@@ -1,4 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { TreeChangeEvent } from '@hierarchidb/tree-api';
+import { Subject } from 'rxjs';
 import { assertCommandFailure } from '../../../test-utils/assertions.js';
 import { CommandProcessor } from '../../CommandProcessor.js';
 import type { CoreDB } from '../../CoreDB.js';
@@ -7,7 +9,9 @@ import type { CommandEnvelope } from '../../command-types.js';
 let coreDBStub: CoreDB;
 
 beforeAll(async () => {
-  coreDBStub = {} as Partial<CoreDB> as CoreDB;
+  coreDBStub = {
+    changeSubject: new Subject<TreeChangeEvent>(),
+  } as Partial<CoreDB> as CoreDB;
 });
 
 afterAll(async () => {});

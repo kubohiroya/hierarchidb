@@ -116,6 +116,11 @@ export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContrac
     }
 
     const specifier = this.specMap[nodeType] ?? createPluginWorkerSpecifier(nodeType);
+    const shouldLogWarn =
+      typeof console !== 'undefined' &&
+      typeof console.warn === 'function' &&
+      !(globalThis as { __HDB_SILENCE_WORKER_LOGS__?: boolean })
+        .__HDB_SILENCE_WORKER_LOGS__;
     if (!specifier) {
       throw new Error(`[PluginWorkerModuleLoader] Unknown worker plugin: ${nodeType}`);
     }
@@ -125,20 +130,24 @@ export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContrac
       try {
         return (await directLoader()) as T;
       } catch (loaderError) {
-        console.warn(
-          `[PluginWorkerModuleLoader] direct loader failed for ${nodeType}, attempting bare specifier`,
-          loaderError
-        );
+        if (shouldLogWarn) {
+          console.warn(
+            `[PluginWorkerModuleLoader] direct loader failed for ${nodeType}, attempting bare specifier`,
+            loaderError
+          );
+        }
       }
     }
 
     try {
       return await this.loadFromSpecifier<T>(specifier);
     } catch (error) {
-      console.warn(
-        `[PluginWorkerModuleLoader] import failed for ${nodeType} via ${specifier}`,
-        error
-      );
+      if (shouldLogWarn) {
+        console.warn(
+          `[PluginWorkerModuleLoader] import failed for ${nodeType} via ${specifier}`,
+          error
+        );
+      }
       throw error;
     }
   }

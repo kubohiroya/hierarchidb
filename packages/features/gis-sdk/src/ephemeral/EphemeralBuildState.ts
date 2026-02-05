@@ -1,4 +1,10 @@
 import type { NodeId } from '@hierarchidb/core-types';
+import type {
+  ShapeBuildProgressSummary,
+  ShapeBuildTaskPayload,
+  ShapeBuildTaskResult,
+  ShapeTransformErrorRecord,
+} from '@hierarchidb/shape-api';
 
 export type EphemeralDomainType = 'shape' | 'route' | 'vt';
 
@@ -10,13 +16,26 @@ export type BuildStage = 'fetch' | 'transform' | 'vt';
 
 export type BuildTaskStatus = 'queued' | 'running' | 'completed' | 'failed' | 'regression';
 
+export interface EphemeralStageStatus {
+  status: BuildTaskStatus;
+  progress: number;
+  tasksTotal: number;
+  tasksCompleted: number;
+  tasksFailed: number;
+  message?: string;
+}
+
 export interface EphemeralBuildSessionRecord {
   nodeId: NodeId;
+  draftId?: NodeId;
   domainType?: EphemeralDomainType;
   status: BuildStatus;
   stopReason?: StopReason;
   stage?: BuildStage;
-  progress?: number;
+  progress?: ShapeBuildProgressSummary | number;
+  config?: unknown;
+  stages?: Record<BuildStage, EphemeralStageStatus>;
+  resourceUsage?: unknown;
   startedAt?: number;
   updatedAt?: number;
   completedAt?: number;
@@ -32,17 +51,17 @@ export interface EphemeralBuildTaskRecord {
   domainType?: EphemeralDomainType;
   taskType: BuildStage;
   status: BuildTaskStatus;
-  index?: number;
+  index: number;
   stagePriority?: number;
-  progress?: number;
+  progress: number;
   message?: string;
   errorMessage?: string;
   createdAt?: number;
   updatedAt?: number;
   sequence?: number;
   stage?: BuildStage;
-  inputData?: unknown;
-  outputData?: unknown;
+  inputData?: ShapeBuildTaskPayload;
+  outputData?: ShapeBuildTaskResult;
   retryCount?: number;
   startedAt?: number;
   completedAt?: number;
@@ -73,7 +92,7 @@ export interface EphemeralFetchCacheRecord {
 export interface EphemeralTransformCacheRecord {
   id: string;
   nodeId: NodeId;
-  domainType?: EphemeralDomainType;
+  domainType: 'shape' | 'route';
   bandIndex: number;
   sourceKey: string;
   countryCode?: string;
@@ -87,19 +106,14 @@ export interface EphemeralTransformCacheRecord {
   timestamp: number;
 }
 
-export interface EphemeralTransformErrorRecord {
-  id: string;
-  nodeId: NodeId;
+export interface EphemeralTransformErrorRecord extends ShapeTransformErrorRecord {
   domainType?: EphemeralDomainType;
-  stage?: BuildStage;
-  message?: string;
-  createdAt?: number;
 }
 
 export interface EphemeralTileIdToBufferRelation {
   id: string;
   nodeId: NodeId;
-  domainType?: EphemeralDomainType;
+  domainType?: 'shape' | 'route';
   bandIndex: number;
   tileId: string;
   bufferId: string;

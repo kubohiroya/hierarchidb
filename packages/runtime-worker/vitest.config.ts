@@ -44,6 +44,22 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      '@hierarchidb/core-types': path.resolve(
+        workspaceRoot,
+        'packages/core-types/src/index.ts',
+      ),
+      '@hierarchidb/gis-sdk': path.resolve(
+        workspaceRoot,
+        'packages/features/gis-sdk/src/index.ts',
+      ),
+      '@hierarchidb/location-api': path.resolve(
+        workspaceRoot,
+        'packages/features/location-api/src/index.ts',
+      ),
+      '@hierarchidb/route-api': path.resolve(
+        workspaceRoot,
+        'packages/features/route-api/src/index.ts',
+      ),
       '@hierarchidb/batch-api': path.resolve(
         workspaceRoot,
         'packages/features/batch-api/src/index.ts',

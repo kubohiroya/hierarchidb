@@ -279,6 +279,63 @@
   - update: 2026-02-05 11:50 JST pnpm --filter @hierarchidb/gis-sdk build exit 0（tsdown define 警告あり）。
   - update: 2026-02-05 11:50 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0。
 
+2517) plan/shape-build-background-execution (P1) — 進行中 (2026-02-05)
+- ブランチ名: plan/shape-build-background-execution
+- 依存: なし
+- 受け入れ基準: a/b/c の段階定義が明文化される／stopReason と再開条件の整理が入る／TASKS.md に運用ログを記載する
+- 段階定義:
+  - a: 画面外では停止、戻っても停止のまま
+    - 永続化対象: processingStatus / buildStartedAt / buildFinishedAt / tileSummary / 進捗
+    - 画面離脱時の停止理由を明示的に記録（例: stopReason = "route-leave"）
+    - 画面復帰時は必ず停止状態を維持（自動再開なし）
+  - b: 画面外では一時停止、戻ったら自動再開
+    - 自動再開条件: stopReason が「route-leave」等の再開可能理由の場合
+    - 自動再開しない条件: stopReason = "failed" / "completed"
+    - 既に再開実行中なら表示のみ
+  - c: バックグラウンド継続
+    - 実行主体を UI からアプリ全体へ移す
+- ロールバック手順: 設計/整理のみのため不要
+- チェックリスト:
+  - a/b/c の段階定義を整理する
+  - stopReason と再開条件の整理を記載する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-05 11:50 JST ビルドのバックグラウンド化段階定義を TASKS へ記録。
+  - update: 2026-02-05 14:07 JST ExecPlan を plans/shape-build-background-execution-execplan.md に作成。
+  - update: 2026-02-05 16:10 JST stopReason の型追加と pause に route-leave 理由を永続化する実装に着手。
+  - blocked: 2026-02-05 16:20 JST pnpm --filter @hierarchidb/shape-plugin typecheck で EphemeralBuildSessionRecord/EphemeralTransformCacheRecord などの型不一致が発生。
+  - update: 2026-02-05 17:05 JST stopReason の型追加と pause 理由の永続化（route-leave/user-pause）を実装。
+  - update: 2026-02-05 17:12 JST Ephemeral sessions/buildTasks/transformCache の型不一致を正規化/unknown cast で解消。
+  - update: 2026-02-05 17:14 JST pnpm --filter @hierarchidb/shape-api build exit 0（tsdown define 警告あり）。
+  - update: 2026-02-05 17:14 JST pnpm --filter @hierarchidb/shape-store build exit 0（tsdown define 警告あり）。
+  - update: 2026-02-05 17:15 JST pnpm --filter @hierarchidb/ui-worker-client build exit 0（tsdown define 警告あり）。
+  - update: 2026-02-05 17:16 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+  - update: 2026-02-05 17:18 JST pnpm --filter @hierarchidb/runtime-worker typecheck exit 0。
+  - update: 2026-02-05 18:05 JST hidb-ephemeral の型を shape セッション/タスク/エラーに整合させ、unknown cast を撤去。
+  - update: 2026-02-05 18:06 JST pnpm --filter @hierarchidb/gis-sdk build exit 0（tsdown define 警告あり）。
+  - update: 2026-02-05 18:07 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
+  - update: 2026-02-05 18:08 JST pnpm --filter @hierarchidb/runtime-worker typecheck exit 0。
+  - update: 2026-02-05 18:45 JST Comlink+fake-indexeddb+Worker の shape build pause 結合テストを追加。
+  - blocked: 2026-02-05 18:47 JST pnpm --filter @hierarchidb/runtime-worker test -- --run shape build pause on leave で既存テストが失敗（locationTypes.js 未生成/tx-wrapper MissingAPIError/bulk-ops-tms undefined）。
+  - update: 2026-02-05 18:50 JST shape-test-worker.entry を追加し、gis-sdk を dist 参照する vi.mock を導入。
+  - update: 2026-02-05 18:51 JST pnpm exec vitest run src/__tests__/wfl/shape-build-pause-on-leave.wfl.test.ts exit 0。
+  - start: 2026-02-05 19:05 JST runtime-worker の既存テスト失敗原因（location-api/core-types の dist 解決・IndexedDB 未初期化など）を修正する作業に着手。
+  - update: 2026-02-05 20:00 JST CoreDB 初期化の警告は空DBでは出さないように条件分岐を整理。
+  - update: 2026-02-05 20:05 JST pnpm --filter @hierarchidb/runtime-worker test -- --run exit 0（警告ログの該当行は消えることを確認）。
+  - update: 2026-02-05 20:20 JST CommandProcessor テストの CoreDB スタブに changeSubject を追加し、undo-atoms 発行時の警告を解消する。
+  - update: 2026-02-05 20:25 JST pnpm --filter @hierarchidb/runtime-worker test -- --run exit 0（undo-atoms の警告は出なくなった）。
+  - update: 2026-02-05 20:40 JST テスト時のみ DraftService/PluginWorkerModuleLoader のログを抑止するフラグを追加。
+  - update: 2026-02-05 20:55 JST commitDraft/TreeSubscriptionService の debug/log をテスト時抑止するよう拡張。
+  - update: 2026-02-05 21:05 JST TreeSubscriptionService の children-changed バッチ部分の構文崩れを修正。
+  - update: 2026-02-05 21:10 JST pnpm --filter @hierarchidb/runtime-worker test -- --run exit 0（ログ抑止後の再確認）。
+  - update: 2026-02-05 19:20 JST WFL の trash 通知/部分復元テストの skip を解除し、releaseProxy の unknown cast を撤去。
+  - update: 2026-02-05 19:30 JST commitDraft の返却 nodeId を使用するよう WFL テストを修正し、draft holder 名の仮デコードを撤去。
+  - update: 2026-02-05 19:35 JST trash 通知テストの誤った期待値（node そのものを "trash" と比較）を実際の trash 判定（parentId/removedAt）へ修正。
+  - update: 2026-02-05 19:40 JST trash 通知テストの2箇所目の期待値も parentId/removedAt 判定に揃えた。
+  - update: 2026-02-05 19:45 JST pnpm --filter @hierarchidb/runtime-worker test -- --run exit 0（75 tests）。
+  - update: 2026-02-05 19:10 JST vitest 設定で core-types/location-api/route-api/gis-sdk を src 参照にし、vitest.setup に fake-indexeddb/auto を追加。
+  - update: 2026-02-05 19:12 JST pnpm --filter @hierarchidb/runtime-worker test -- --run exit 0（2件はskip）。
+
 2509) fix/shape-build/max-update-depth-loop (P1) — 完了 (2026-02-04)
 - ブランチ名: fix/shape-build/max-update-depth-loop
 - 依存: なし
@@ -382,6 +439,21 @@
   - update: 2026-02-04 18:35 JST 超過 feature のみを対象に段階的 tolerance + 二分探索を適用。
   - update: 2026-02-04 18:35 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
   - done: 2026-02-04 18:35 JST 品質優先の頂点超過 retry 方式へ更新完了。
+
+2515) fix/shape-build/validate-batch-config-guard (P1) — 進行中 (2026-02-04)
+- ブランチ名: fix/shape-build/validate-batch-config-guard
+- 依存: なし
+- 受け入れ基準: validateBatchConfig が areaBasedTolerance 未定義でも例外にならない／Shape Step5 がクラッシュしない／`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/services/utils/utils.ts`
+- ロールバック手順: 該当差分を revert して元の参照に戻す
+- チェックリスト:
+  - transformConfig/areaBasedTolerance の既定値を適用する
+  - shape-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-04 18:50 JST validateBatchConfig の undefined 参照クラッシュ対応に着手。
+  - update: 2026-02-04 18:55 JST validateBatchConfig で transformConfig/areaBasedTolerance の既定値を適用。
+  - blocked: 2026-02-04 18:56 JST pnpm --filter @hierarchidb/shape-plugin typecheck が ShapeBuildAPIClient 等の既存型エラーで失敗（進行には対応方針の指示が必要）。
 - ブランチ名: fix/shape-step5/summary-card-clamp
 - 依存: なし
 - 受け入れ基準: Step5 ビルドのサマリーカード内の現在タスク/メッセージが2行固定で表示されレイアウトが安定する／タスクリストのメッセージも2行固定になる／`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する

@@ -1,7 +1,8 @@
 import type { Feature, Geometry } from 'geojson';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeSourceMetadata } from '@hierarchidb/shape-api';
-import type { EphemeralShapeDB, ShapeDB } from '@hierarchidb/shape-store';
+import type { ShapeDB } from '@hierarchidb/shape-store';
+import type { HidbEphemeralDB } from '@hierarchidb/gis-sdk';
 import { VectorTile } from '@mapbox/vector-tile';
 import Pbf from 'pbf';
 import type { CountryMetadata, DataSourceName } from '../../common/types/index.js';
@@ -195,7 +196,7 @@ const readTileFeatureStats = (
 export type ShapeStageMetadataParams = {
   nodeId: NodeId;
   dataSource: DataSourceName;
-  shapeStore: EphemeralShapeDB;
+  shapeStore: HidbEphemeralDB;
   shapeDb: ShapeDB;
 };
 

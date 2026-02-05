@@ -154,6 +154,7 @@ export const toBuildSessionUpdates = (
   if (updates.progress !== undefined) next.progress = toProgressInfo(updates.progress);
   if (updates.stages !== undefined) next.stages = toStageMap(updates.stages);
   if (updates.resourceUsage !== undefined) next.resourceUsage = toResourceUsage(updates.resourceUsage);
+  if (updates.stopReason !== undefined) next.stopReason = updates.stopReason;
   if (updates.canResume !== undefined) next.canResume = updates.canResume;
   if (updates.lastActivity !== undefined) next.lastActivity = updates.lastActivity;
   if (updates.expiresAt !== undefined) next.expiresAt = updates.expiresAt;
@@ -171,6 +172,7 @@ export const toShapeBuildSessionRecord = (session: BuildSessionRecord): ShapeBui
   progress: toProgressSummary(session.progress),
   stages: { ...session.stages },
   resourceUsage: toResourceUsageRecord(session.resourceUsage),
+  stopReason: session.stopReason,
   canResume: session.canResume,
   lastActivity: session.lastActivity,
   expiresAt: session.expiresAt,
@@ -189,6 +191,7 @@ export const toShapeBuildSessionUpdates = (
   if (updates.progress !== undefined) next.progress = toProgressSummary(updates.progress);
   if (updates.stages !== undefined) next.stages = { ...updates.stages };
   if (updates.resourceUsage !== undefined) next.resourceUsage = toResourceUsageRecord(updates.resourceUsage);
+  if (updates.stopReason !== undefined) next.stopReason = updates.stopReason;
   if (updates.canResume !== undefined) next.canResume = updates.canResume;
   if (updates.lastActivity !== undefined) next.lastActivity = updates.lastActivity;
   if (updates.expiresAt !== undefined) next.expiresAt = updates.expiresAt;

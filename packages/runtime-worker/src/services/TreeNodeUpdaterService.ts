@@ -254,12 +254,17 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
     if (Object.keys(updates).length > 0) {
       await this.coreDB.nodes.update(draftId, updates);
     }
+    const shouldLogDebug =
+      typeof console !== 'undefined' &&
+      typeof console.debug === 'function' &&
+      !(globalThis as { __HDB_SILENCE_WORKER_LOGS__?: boolean })
+        .__HDB_SILENCE_WORKER_LOGS__;
     // Ensure dialogUIState is persisted when provided (save-draft path often depends on it).
     if (request?.dialogUIState) {
       await this.coreDB.nodes.update(draftId, { dialogUIState: request.dialogUIState });
     }
 
-    if (typeof console !== 'undefined' && typeof console.debug === 'function') {
+    if (shouldLogDebug) {
       console.debug('[DraftService] commitDraft request', {
         draftId,
         conflictPolicy,
@@ -277,7 +282,7 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
       nodeMaybe =
         (await this.ensureDialogUIState(nodeMaybe ?? undefined, false)) ?? nodeMaybe ?? undefined;
       const node = this.normalizeForUpdater(nodeMaybe ?? undefined, requestedName);
-      if (typeof console !== 'undefined' && typeof console.debug === 'function') {
+      if (shouldLogDebug) {
         const draftMeta = (node as { draftMetadata?: TreeNodeMetadata | null })?.draftMetadata;
         const draftData = (node as { draftData?: Record<string, unknown> | null })?.draftData;
         const dialogUIState = (node as { dialogUIState?: DialogUIState | null })?.dialogUIState;
@@ -299,7 +304,7 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
     }
 
     const result = await commitDraftOp(this.coreDB, draftId, conflictPolicy);
-    if (typeof console !== 'undefined' && typeof console.debug === 'function') {
+    if (shouldLogDebug) {
       const requestedName = request?.draftMetadata?.name;
       let nodeMaybe: TreeNode | undefined =
         result.status === 'ok'

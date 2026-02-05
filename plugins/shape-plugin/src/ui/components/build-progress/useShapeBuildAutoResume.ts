@@ -7,7 +7,7 @@ type Args = {
   buildStatus: BuildStatus;
   runtimeStatus: string | null;
   handleStartOrResume: (options: { forceRestart: boolean; autoResume?: boolean }) => Promise<boolean>;
-  handlePause: () => void;
+  handlePause: (reason?: 'route-leave' | 'user-pause') => void;
   hasFailedFetchTasks: boolean;
   hasDataSource: boolean;
   hasSelection: boolean;
@@ -52,7 +52,7 @@ export const useShapeBuildAutoResume = ({
   }, [buildStatus, runtimeStatus]);
   const suspendIfRunning = useCallback(() => {
     if (!shouldSuspendRef.current) return;
-    void handlePause();
+    void handlePause('route-leave');
   }, [handlePause]);
   useEffect(() => {
     activeNodeIdRef.current = activeNodeId ?? null;

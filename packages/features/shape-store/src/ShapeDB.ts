@@ -73,6 +73,8 @@ export interface ResourceUsage {
   networkBytesSent: number;
 }
 
+export type BuildStopReason = 'route-leave' | 'user-pause' | 'failed' | 'completed' | 'unknown';
+
 export interface LayerInfo {
   name: string;
   featureCount: number;
@@ -92,6 +94,7 @@ export interface BuildSessionRecord {
   progress: ProgressInfo;
   stages: Record<BuildStage, StageStatus>;
   resourceUsage?: ResourceUsage;
+  stopReason?: BuildStopReason;
   canResume?: boolean;
   lastActivity?: number;
   expiresAt?: number;
