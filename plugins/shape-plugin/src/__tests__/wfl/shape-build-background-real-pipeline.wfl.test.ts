@@ -4,6 +4,7 @@ import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildSessionRecord, ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
 import type { FetchTaskPayload, ShapeBuildConfig } from '../../../../../plugins/shape-plugin/src/common/types/index.js';
 import { DEFAULT_BUILD_CONFIG } from '../../../../../plugins/shape-plugin/src/common/types/constants.ts';
+import { hidbEphemeralDB } from '@hierarchidb/gis-sdk';
 import * as Comlink from 'comlink';
 vi.mock('comlink', async () => (
   await vi.importActual('comlink')
@@ -342,6 +343,36 @@ const waitFor = async (
   throw new Error(`Timed out waiting for ${label}`);
 };
 
+const debugTransformCacheAccess = async (nodeId: NodeId): Promise<void> => {
+  const relations = await hidbEphemeralDB.tileIdToBufferRelations.where('nodeId').equals(nodeId).toArray();
+  const bufferIds = Array.from(new Set(relations.map((relation) => relation.bufferId)));
+  console.info('[test][debug] transformCache buffers', JSON.stringify({
+    nodeId,
+    relationCount: relations.length,
+    bufferCount: bufferIds.length,
+    bufferSample: bufferIds.slice(0, 3),
+  }));
+  if (bufferIds.length === 0) return;
+  const sampleId = bufferIds[0];
+  const getStartedAt = Date.now();
+  const record = await hidbEphemeralDB.transformCache.get(sampleId);
+  console.info('[test][debug] transformCache get done', JSON.stringify({
+    nodeId,
+    bufferId: sampleId,
+    hasRecord: Boolean(record),
+    durationMs: Date.now() - getStartedAt,
+  }));
+  const bulkStartedAt = Date.now();
+  const bulk = await hidbEphemeralDB.transformCache.bulkGet([sampleId]);
+  const bulkCount = bulk.filter((item) => Boolean(item)).length;
+  console.info('[test][debug] transformCache bulkGet done', JSON.stringify({
+    nodeId,
+    bufferId: sampleId,
+    recordCount: bulkCount,
+    durationMs: Date.now() - bulkStartedAt,
+  }));
+};
+
 
 const ensureCompressionStreams = async (): Promise<void> => {
   const needsCompression = typeof CompressionStream !== 'function';
@@ -359,6 +390,11 @@ const ensureCompressionStreams = async (): Promise<void> => {
 describe('Comlink + fake-indexeddb integration: shape build background (real pipeline)', () => {
   it('keeps pipeline running after UI disconnect and writes vector tiles', async () => {
     await ensureCompressionStreams();
+    (globalThis as { __HDB_VT_COLLECT_TIMEOUT_MS?: number }).__HDB_VT_COLLECT_TIMEOUT_MS = 15000;
+    (globalThis as { __HDB_VT_ASYNC_ITER_TIMEOUT_MS?: number }).__HDB_VT_ASYNC_ITER_TIMEOUT_MS = 15000;
+    (globalThis as { __HDB_VT_DEBUG_COLLECT?: boolean }).__HDB_VT_DEBUG_COLLECT = true;
+    (globalThis as { __HDB_VT_COLLECT_BULKGET?: boolean }).__HDB_VT_COLLECT_BULKGET = true;
+    (globalThis as { __HDB_VT_COLLECT_GET_EACH?: boolean }).__HDB_VT_COLLECT_GET_EACH = true;
     const nodeId = 'shape-build-pipeline-background-real' as NodeId;
     const setup = await setupWorker();
 
@@ -395,6 +431,10 @@ describe('Comlink + fake-indexeddb integration: shape build background (real pip
         const observerQuery = await observer.client.getShapeQueryAPI();
         const observerPipeline = await observer.client.getShapePipelineTestAPI();
         const observerAdmin = await observer.client.getShapeEphemeralAdminAPI();
+        await waitFor(async () => (
+          (await hidbEphemeralDB.tileIdToBufferRelations.where('nodeId').equals(nodeId).count()) > 0
+        ), { label: 'tile relation creation' });
+        await debugTransformCacheAccess(nodeId);
         await observerPipeline.waitForPipeline(nodeId);
         const taskQueue = new VtTaskQueueDb();
         const queueTasks = await taskQueue.tasks.where('nodeId').equals(nodeId).toArray();
@@ -440,6 +480,11 @@ describe('Comlink + fake-indexeddb integration: shape build background (real pip
         await closeClientPorts(observer);
       }
     } finally {
+      delete (globalThis as { __HDB_VT_COLLECT_TIMEOUT_MS?: number }).__HDB_VT_COLLECT_TIMEOUT_MS;
+      delete (globalThis as { __HDB_VT_ASYNC_ITER_TIMEOUT_MS?: number }).__HDB_VT_ASYNC_ITER_TIMEOUT_MS;
+      delete (globalThis as { __HDB_VT_DEBUG_COLLECT?: boolean }).__HDB_VT_DEBUG_COLLECT;
+      delete (globalThis as { __HDB_VT_COLLECT_BULKGET?: boolean }).__HDB_VT_COLLECT_BULKGET;
+      delete (globalThis as { __HDB_VT_COLLECT_GET_EACH?: boolean }).__HDB_VT_COLLECT_GET_EACH;
       await cleanupWorker(setup);
     }
   }, 120_000);

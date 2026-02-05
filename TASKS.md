@@ -15,6 +15,12 @@
   - update: 2026-02-05 18:38 JST BuildSessionLauncherButtons を追加し AppBar に組み込み。
   - update: 2026-02-05 18:39 JST pnpm --filter @hierarchidb/app typecheck exit 0（plugin-base tsdown の define 警告あり）を確認。
   - done: 2026-02-05 18:40 JST AppBar の BuildSessionLauncherButton 表示追加を完了。
+  - start: 2026-02-05 18:41 JST WorkerAPI の pub/sub 化対応に着手。
+  - update: 2026-02-05 18:58 JST WorkerAPI にビルドセッション購読APIを追加し worker runtime へ実装。
+  - update: 2026-02-05 18:59 JST BuildSessionLauncherButtons のポーリングを撤去し pub/sub 経由へ移行。
+  - update: 2026-02-05 19:00 JST pnpm --filter @hierarchidb/worker-api build exit 0（tsdown の define 警告あり）を確認。
+  - update: 2026-02-05 19:00 JST pnpm --filter @hierarchidb/app typecheck exit 0（plugin-base tsdown の define 警告あり）を確認。
+  - done: 2026-02-05 19:00 JST WorkerAPI の pub/sub 化対応を完了。
 
 2502) fix/ui-treeconsole-base/treenode-type-field (P1) — 完了 (2026-02-04)
 - ブランチ名: fix/ui-treeconsole-base/treenode-type-field
@@ -373,6 +379,34 @@
   - update: 2026-02-05 18:18 JST vt-orchestrator の createTransformByBandHandler/createVtHandler をテスト用簡易実装にモックし、shapePipelineShared.buildVtTasks を最小タスク生成に差し替え。
   - update: 2026-02-05 18:21 JST c) 背景継続テストはセッション完了の検証に絞り、pnpm --filter @hierarchidb/shape-plugin exec vitest run src/__tests__/wfl/shape-build-resume-after-pause.wfl.test.ts exit 0（10 tests）。
   - update: 2026-02-05 18:25 JST 結合テストの dataSource を geoboundaries に変更。
+  - update: 2026-02-05 18:54 JST c) 実パイプライン用の結合テストを追加（shape-build-background-real-pipeline.wfl）。
+  - update: 2026-02-05 18:54 JST shape-test-worker.entry の pipeline 状態を module-scope 化し、複数クライアントで共有。
+  - blocked: 2026-02-05 18:54 JST 実パイプラインテストが vt collect でハング（ログは vt collect start で停止）。
+  - update: 2026-02-05 19:12 JST vt collect のハング切り分けとして bulkGet 経路のテストフラグ追加と再実行に着手。
+  - update: 2026-02-05 19:14 JST c) 実パイプラインテストで __HDB_VT_COLLECT_BULKGET を有効化し再実行（pnpm --filter @hierarchidb/shape-plugin exec vitest run src/__tests__/wfl/shape-build-background-real-pipeline.wfl.test.ts）。
+  - blocked: 2026-02-05 19:14 JST vt collect start で再び停止し 120s タイムアウト（collect records へ進まず、bulkGet 経路でもハング）。
+  - update: 2026-02-05 19:30 JST vt collect の await 前後ログ（collect fetch start/done）を追加し再実行。
+  - blocked: 2026-02-05 19:30 JST collect fetch start の直後で停止し 120s タイムアウト（fetch done へ進まず）。
+  - update: 2026-02-05 19:37 JST collect 前に transformCache.count を挿入し、count 完了後に fetch start へ進むことを確認。
+  - blocked: 2026-02-05 19:37 JST bulkGet の await で停止し 120s タイムアウト（count は即時完了、fetch done へ進まず）。
+  - update: 2026-02-05 19:42 JST テスト側で transformCache.get/bulkGet を実行し即時完了することを確認（id 1件、durationMs=0）。
+  - blocked: 2026-02-05 19:42 JST worker 側の bulkGet だけが停止（テスト側の direct access は正常）。
+  - update: 2026-02-05 19:45 JST collectFeatures を transaction("r") でラップし transaction start/done を確認。
+  - blocked: 2026-02-05 19:45 JST transaction は完了するが bulkGet の await で停止（fetch done へ進まず）。
+  - update: 2026-02-05 19:49 JST worker 側で get-each 経路を追加し、collect get start/done を確認。
+  - blocked: 2026-02-05 19:49 JST collect get は完了するが fetch done が出ず 120s タイムアウト（transaction done 後に停止）。
+  - update: 2026-02-05 19:53 JST collect fetch done ログを transaction 直後に移動。
+  - blocked: 2026-02-05 19:53 JST transaction done まで進むが fetch done ログが出ず 120s タイムアウト（ログ出力前後で停止）。
+  - update: 2026-02-05 19:56 JST fetch done ログ直前に await Promise.resolve() を挿入。
+  - blocked: 2026-02-05 19:56 JST microtask を挟んでも fetch done ログが出ず 120s タイムアウト（transaction done 直後で停止）。
+  - update: 2026-02-05 19:59 JST post-transaction A/B ログと setTimeout(0) ログを追加。
+  - blocked: 2026-02-05 19:59 JST post-transaction A/B は出るが setTimeout と fetch done が出ず 120s タイムアウト（イベントループが回っていない可能性）。
+  - update: 2026-02-05 20:02 JST fetch done を単純文字列ログへ変更。
+  - blocked: 2026-02-05 20:02 JST 単純ログでも fetch done が出ず 120s タイムアウト（A/B は出る）。
+  - update: 2026-02-05 20:07 JST post-transaction B 直後に return records（debugCollect 時）を挿入。
+  - blocked: 2026-02-05 20:07 JST 早期 return でも vitest が 120s タイムアウト（vt collect done は出るが test 完了せず）。
+  - update: 2026-02-05 20:20 JST fake-indexeddb の疑いが濃厚なため、ブラウザE2Eでの c) 実パイプライン検証に切り替え。
+  - update: 2026-02-05 20:20 JST shape build background の Playwright テスト（e2e/shape/shape-build-background.spec.ts）を追加。
 
 2509) fix/shape-build/max-update-depth-loop (P1) — 完了 (2026-02-04)
 - ブランチ名: fix/shape-build/max-update-depth-loop

@@ -18,6 +18,7 @@ import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
 import type { VTStageContext } from '../contexts.js';
 import type { BandConfig, StageHandler, StageHandlerResult, VtTaskInput } from '../types/types.js';
 import { updateTask, VtTaskQueueDb } from '../task/taskQueue.js';
+import { EphemeralTransformCacheRecord } from '@hierarchidb/gis-sdk';
 
 const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureCollection | null> => {
   if (!decoded || typeof decoded !== 'object') return null;
@@ -28,8 +29,22 @@ const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureColl
   }
   if (typeof (decoded as AsyncIterable<unknown>)[Symbol.asyncIterator] === 'function') {
     const features: Feature[] = [];
-    for await (const feature of decoded as AsyncIterable<Feature>) {
-      features.push(feature);
+    const iterator = (decoded as AsyncIterable<Feature>)[Symbol.asyncIterator]();
+    const testIterTimeoutMs = (globalThis as { __HDB_VT_ASYNC_ITER_TIMEOUT_MS?: number }).__HDB_VT_ASYNC_ITER_TIMEOUT_MS;
+    while (true) {
+      const next = typeof testIterTimeoutMs === 'number' && testIterTimeoutMs > 0
+        ? await new Promise<IteratorResult<Feature>>((resolve, reject) => {
+          const timeoutId = setTimeout(() => {
+            reject(new Error(`[vt] async iterator timeout after ${testIterTimeoutMs}ms`));
+          }, testIterTimeoutMs);
+          iterator.next()
+            .then((value) => resolve(value))
+            .catch((error) => reject(error))
+            .finally(() => clearTimeout(timeoutId));
+        })
+        : await iterator.next();
+      if (next.done) break;
+      features.push(next.value);
     }
     return { type: 'FeatureCollection', features };
   }
@@ -264,14 +279,14 @@ const featureBBox = (feature: Feature): TileBBox | null => {
       return;
     }
     if (Array.isArray(p)) {
-      p.forEach((child) => visit(child));
+      p.map((child) => visit(child));
     }
   };
   const visitGeometry = (geom: Feature['geometry']): void => {
     if (!geom) return;
     if (geom.type === 'GeometryCollection') {
       const geometries = Array.isArray(geom.geometries) ? geom.geometries : [];
-      geometries.forEach((child) => visitGeometry(child));
+      geometries.map((child) => visitGeometry(child));
       return;
     }
     if ('coordinates' in geom) {
@@ -485,14 +500,97 @@ const collectFeatures = async (
   const featureStats: InputFeatureStats[] = [];
   const bufferSizes = new Map<string, number>();
   const featuresByContinent = options?.groupByContinent ? new Map<string, Feature[]>() : undefined;
-  const records = await context.ephemeralDB.transformCache
-    .where('id')
-    .anyOf(bufferIds)
-    .toArray();
+  const debugCollect = (globalThis as { __HDB_VT_DEBUG_COLLECT?: boolean }).__HDB_VT_DEBUG_COLLECT === true;
+  if (debugCollect) {
+    const testTimeoutMs = (globalThis as { __HDB_VT_COLLECT_TIMEOUT_MS?: number }).__HDB_VT_COLLECT_TIMEOUT_MS;
+    console.info('[vt][debug] collect buffers', JSON.stringify({
+      nodeId,
+      bufferCount: bufferIds.length,
+      testTimeoutMs: typeof testTimeoutMs === 'number' ? testTimeoutMs : null,
+    }));
+  }
+  if (debugCollect) {
+    const countStartedAt = Date.now();
+    console.info('[vt][debug] collect count start', JSON.stringify({ nodeId }));
+    const count = await context.ephemeralDB.transformCache.count();
+    console.info('[vt][debug] collect count done', JSON.stringify({
+      nodeId,
+      count,
+      durationMs: Date.now() - countStartedAt,
+    }));
+    console.info('[vt][debug] collect fetch start', JSON.stringify({
+      nodeId,
+      useBulkGet: (globalThis as { __HDB_VT_COLLECT_BULKGET?: boolean }).__HDB_VT_COLLECT_BULKGET === true,
+      bufferCount: bufferIds.length,
+    }));
+  }
+  const useBulkGet = (globalThis as { __HDB_VT_COLLECT_BULKGET?: boolean }).__HDB_VT_COLLECT_BULKGET === true;
+  const useGetEach = (globalThis as { __HDB_VT_COLLECT_GET_EACH?: boolean }).__HDB_VT_COLLECT_GET_EACH === true;
+  const fetchStartedAt = Date.now();
+  const records = await context.ephemeralDB.transaction('r', [context.ephemeralDB.transformCache], async () => {
+    if (debugCollect) {
+      console.info('[vt][debug] collect transaction start', JSON.stringify({ nodeId }));
+    }
+    let loaded: EphemeralTransformCacheRecord[];
+    if (useGetEach) {
+      const collected: EphemeralTransformCacheRecord[] = [];
+      for (const bufferId of bufferIds) {
+        if (debugCollect) {
+          console.info('[vt][debug] collect get start', JSON.stringify({ nodeId, bufferId }));
+        }
+        const record = await context.ephemeralDB.transformCache.get(bufferId);
+        if (debugCollect) {
+          console.info('[vt][debug] collect get done', JSON.stringify({
+            nodeId,
+            bufferId,
+            hasRecord: Boolean(record),
+          }));
+        }
+        if (record) {
+          collected.push(record);
+        }
+      }
+      loaded = collected;
+    } else if (useBulkGet) {
+      loaded = (await context.ephemeralDB.transformCache.bulkGet(bufferIds)).filter((record): record is typeof records[number] => Boolean(record));
+    } else {
+      loaded = await context.ephemeralDB.transformCache
+        .where('id')
+        .anyOf(bufferIds)
+        .toArray();
+    }
+    if (debugCollect) {
+      console.info('[vt][debug] collect transaction done', JSON.stringify({ nodeId }));
+    }
+    return loaded;
+  });
+  if (debugCollect) {
+    console.info('[vt][debug] post-transaction A', JSON.stringify({ nodeId }));
+    setTimeout(() => {
+      console.info('[vt][debug] post-transaction timeout', JSON.stringify({ nodeId }));
+    }, 0);
+    console.info('[vt][debug] post-transaction B', JSON.stringify({ nodeId }));
+    return records;
+  }
   for (const record of records) {
     if (!record || record.timestamp <= 0) continue;
     bufferSizes.set(record.id, record.data.byteLength);
+    if (debugCollect) {
+      console.info('[vt][debug] decode start', JSON.stringify({
+        nodeId,
+        bufferId: record.id,
+        byteLength: record.data.byteLength,
+      }));
+    }
     const collection = await decodeTransformByBandCache(record.data);
+    if (debugCollect) {
+      console.info('[vt][debug] decode done', JSON.stringify({
+        nodeId,
+        bufferId: record.id,
+        hasCollection: Boolean(collection),
+        featureCount: collection?.features?.length ?? 0,
+      }));
+    }
     if (!collection) {
       const debug = describeBuffer(record.data);
       console.warn('[shape-vt] failed to decode transform cache for vt stage', JSON.stringify({
@@ -780,12 +878,26 @@ export const createVtHandler = (context: VTStageContext): StageHandler<VtTaskInp
         bufferCount: input.bufferIds.length,
         heap: getHeapSnapshot(),
       }));
-      const collected = await collectFeatures(
+      const testTimeoutMs = (globalThis as { __HDB_VT_COLLECT_TIMEOUT_MS?: number }).__HDB_VT_COLLECT_TIMEOUT_MS;
+      const collectPromise = collectFeatures(
         context,
         input.bufferIds,
         String(task.nodeId),
         { groupByContinent, continentByCountry: context.continentByCountry }
       );
+      const collected = typeof testTimeoutMs === 'number' && testTimeoutMs > 0
+        ? await new Promise<Awaited<typeof collectPromise>>((resolve, reject) => {
+          const timeoutId = setTimeout(() => {
+            reject(new Error(
+              `[vt] collect timeout after ${testTimeoutMs}ms (nodeId=${String(task.nodeId)}, taskId=${task.taskId})`
+            ));
+          }, testTimeoutMs);
+          collectPromise
+            .then((value) => resolve(value))
+            .catch((error) => reject(error))
+            .finally(() => clearTimeout(timeoutId));
+        })
+        : await collectPromise;
       console.info('[vt] collect done', JSON.stringify({
         ...taskContext,
         bufferCount: input.bufferIds.length,
