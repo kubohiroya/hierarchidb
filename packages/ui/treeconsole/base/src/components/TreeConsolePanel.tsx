@@ -97,6 +97,7 @@ export interface TreeConsolePanelProps {
       expandTarget?: boolean;
       source?: 'breadcrumb' | 'treetable' | 'speedDial';
       nextVisible?: boolean;
+      openInNewTab?: boolean;
     }
   ) => void;
   readonly resolvePreviewGuardState?: (
@@ -110,6 +111,7 @@ export interface TreeConsolePanelProps {
       expandTarget?: boolean;
       source?: 'breadcrumb' | 'treetable' | 'speedDial';
       nextVisible?: boolean;
+      openInNewTab?: boolean;
     }
   ) => void;
   readonly resolveOpenSteps?: (nodeId: string, nodeType: string) => Promise<OpenStepOption[]>;

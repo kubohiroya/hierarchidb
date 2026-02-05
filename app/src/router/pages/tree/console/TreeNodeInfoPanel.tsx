@@ -65,11 +65,13 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
   } = useTreeNodeInfoPanel({ treeId, node, onContextMenuAction });
   const isVisible = currentNode?.visible !== false;
   const parentNodeId = currentNode?.parentId;
+  const isStylerNode = currentNode?.nodeType === 'styler';
   const isRootNode =
     (treeId && currentNode?.id === `${treeId}:root`) ||
     currentNode?.depth === 0 ||
     (currentNode?.id && parentNodeId === currentNode.id);
   const showCloseButton = Boolean(treeId && parentNodeId && !isRootNode);
+  const isStylerMenuNode = menuNode?.nodeType === 'styler';
 
   if (!currentNode) {
     return (
@@ -198,7 +200,7 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
               startIcon={<ConstructionIcon />}
               onClick={handleBuild}
               aria-label={labels.buildAria}
-              disabled={buildTargetLoading || currentNode?.nodeType === 'location'}
+              disabled={buildTargetLoading || currentNode?.nodeType === 'location' || isStylerNode}
             >
               {labels.buildLabel}
             </Button>
@@ -244,7 +246,7 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
         canCut={canMutate}
         canTrash={canMutate}
         canRemove={canMutate}
-        canBuild={isBuildable}
+        canBuild={isBuildable && !isStylerMenuNode}
         canPreview={canPreview && !previewGuardLoading}
         openSteps={openSteps}
         openStepsLoading={openStepsLoading}

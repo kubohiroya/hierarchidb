@@ -646,7 +646,10 @@ export const useShapeCountrySelectionStep = ({ data, onChange, nodeId: _nodeId }
   );
 
   const createDefaultSelectionRow = useCallback(
-    (levels: number[]) => Array.from({ length: resolvedMaxAdminLevel + 1 }, (_, idx) => levels.includes(idx)),
+    (levels: number[]) => Array.from(
+      { length: resolvedMaxAdminLevel + 1 },
+      (_, idx) => idx === 0 && levels.includes(0),
+    ),
     [resolvedMaxAdminLevel],
   );
 

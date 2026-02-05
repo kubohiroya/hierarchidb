@@ -381,6 +381,9 @@ export interface TreeConsolePanelProps extends TreeTableConsolePanelProps {
   onBreadcrumbContextAction?: (
     action: string,
     node: TreeNode,
-    options?: { navigateToParent?: boolean }
+    options?: {
+      navigateToParent?: boolean;
+      openInNewTab?: boolean;
+    }
   ) => void;
 }

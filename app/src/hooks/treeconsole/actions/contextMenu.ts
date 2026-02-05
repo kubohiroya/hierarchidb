@@ -28,6 +28,7 @@ type OpenEditDialog = (
     initialStep?: number;
     displayMode?: 'full' | 'normal';
     action?: 'edit' | 'preview';
+    openInNewTab?: boolean;
   }
 ) => Promise<void>;
 
@@ -55,6 +56,7 @@ export const createContextMenuAction = (
     treeId,
     pageNodeId,
     pushPath,
+    searchTerm,
     selectedIds,
     returnTo,
     ssot,

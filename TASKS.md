@@ -1,3 +1,19 @@
+2524) fix/shape-store/buildtasks-stage-index (P1) — 進行中 (2026-02-05)
+- ブランチ名: fix/shape-store/buildtasks-stage-index
+- 依存: なし
+- 受け入れ基準: buildTasks の [nodeId+stage] インデックス不足による SchemaError が解消される／Dexie schema の version 更新が行われる／`pnpm --filter @hierarchidb/shape-store typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/features/shape-store/src/EphemeralShapeDB.ts`
+- ロールバック手順: version 20 の schema 追加を revert して以前の定義に戻す
+- チェックリスト:
+  - batchTasks に [nodeId+stage] を追加する
+  - shape-store の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-05 23:05 JST buildTasks の [nodeId+stage] インデックス不足修正に着手。
+  - update: 2026-02-05 23:06 JST EphemeralShapeDB version 20 に [nodeId+stage] を追加。
+  - update: 2026-02-05 23:07 JST pnpm --filter @hierarchidb/shape-store typecheck exit 0 を確認。
+  - done: 2026-02-05 23:07 JST buildTasks の [nodeId+stage] インデックス追加を完了。
+
 2523) fix/location-preview/terrain-toggle-blink (P1) — 進行中 (2026-02-05)
 - ブランチ名: fix/location-preview/terrain-toggle-blink
 - 依存: なし
@@ -189,6 +205,26 @@
   - update: 2026-02-04 13:19 JST dataSource 未設定時に geoboundaries を初期化する処理を追加。
   - update: 2026-02-04 13:19 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
   - done: 2026-02-04 13:19 JST shape 新規作成時の dataSource 初期化を完了。
+
+2505) fix/app/styler-build-disabled (P1) — 進行中 (2026-02-04)
+- ブランチ名: fix/app/styler-build-disabled
+- 依存: なし
+- 受け入れ基準: styler ノードで Build ボタンとコンテキストメニュー Build が disabled になる／他ノードの挙動は変わらない／`pnpm --filter @hierarchidb/app typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx`
+- ロールバック手順: styler 判定の無効化差分を revert する
+- チェックリスト:
+  - styler ノードの Build ボタンを disabled にする
+  - styler ノードの Build コンテキストメニューを disabled にする
+  - app の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-04 13:28 JST styler ノードの Build 無効化対応に着手。
+  - update: 2026-02-04 13:30 JST TreeNodeInfoPanel で styler ノードの Build を disabled 化。
+  - blocked: 2026-02-04 13:31 JST `pnpm --filter @hierarchidb/app typecheck` が失敗（contextMenu.ts の openInNewTab/searchTerm 型エラー）。
+  - update: 2026-02-04 13:39 JST contextMenu の openInNewTab/searchTerm 型エラーを修正。
+  - update: 2026-02-04 13:40 JST ui-treeconsole-base の openInNewTab オプションを追加し build を更新。
+  - update: 2026-02-04 13:41 JST pnpm --filter @hierarchidb/app typecheck exit 0 を確認（tsdown define 警告あり）。
+  - done: 2026-02-04 13:41 JST styler ノードの Build 無効化対応を完了。
 
 2500) feat/shape/vt-memory-logs-tiling (P2) — 進行中 (2026-02-03)
 - ブランチ名: feat/shape/vt-memory-logs-tiling
@@ -546,6 +582,7 @@
   - update: 2026-02-06 12:00 JST build ダイアログを開かずに startBatchSession を実行する形に切替（auto-pause を避けて c) を検証）。
   - update: 2026-02-06 12:10 JST c) 実パイプライン検証を実ネットワークに切り替える方針で E2E モックを撤去する作業に着手。
   - update: 2026-02-06 12:15 JST E2E の geoboundaries モック/固定 payload を撤去し、実ネットワークで payload 生成する経路に切替。
+  - blocked: 2026-02-06 12:25 JST 実ネットワークで geoboundaries メタデータ fetch が Failed to fetch（CORS/ネットワーク要因）で停止。HIERARCHIDB_E2E=1 pnpm exec playwright test --project=chromium --grep "Shape build background" exit 1。
 
 2509) fix/shape-build/max-update-depth-loop (P1) — 完了 (2026-02-04)
 - ブランチ名: fix/shape-build/max-update-depth-loop

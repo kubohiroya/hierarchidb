@@ -114,6 +114,15 @@ export class EphemeralShapeDB extends EphemeralGisDB<BuildProcessConfig, BuildSe
       batchTasks: '&taskId, nodeId, [nodeId+status], [nodeId+taskType]',
       transformErrors: '&id, nodeId',
     });
+    // Index-only upgrade for stage queries.
+    this.version(20).stores({
+      fetchCache: '&id, nodeId, [nodeId+sourceKey], [nodeId+countryCode+adminLevel]',
+      transformCache: '&id, nodeId, [nodeId+bandIndex], [nodeId+countryCode+adminLevel]',
+      sessions: '&nodeId',
+      tileIdToBufferRelations: '&id, nodeId, bufferId, [nodeId+bandIndex], [nodeId+bandIndex+tileId]',
+      batchTasks: '&taskId, nodeId, [nodeId+status], [nodeId+taskType], [nodeId+stage]',
+      transformErrors: '&id, nodeId',
+    });
     this.tileIdToBufferRelations = this.table('tileIdToBufferRelations');
     this.buildTasks = this.table('batchTasks');
     this.fetchCache = this.table('fetchCache');
