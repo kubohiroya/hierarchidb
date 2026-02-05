@@ -18,6 +18,7 @@ import { Outlet, useLoaderData, useNavigate, useRouterState } from '@tanstack/re
 import type { ReactNode } from 'react';
 import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import AppLogoIcon from '~/components/AppLogoIcon.js';
+import { BuildSessionLauncherButtons } from '~/components/BuildSessionLauncherButtons.js';
 import { useOptionalBootProgress } from '~/contexts/BootProgressProvider.js';
 import { useWorker } from '~/contexts/WorkerProvider.js';
 import type { TreeConsoleIntegrationProps } from '~/router/pages/tree/console/TreeConsoleIntegration.js';
@@ -169,6 +170,12 @@ export function TreeLayoutBody({ data }: TreeLayoutBodyProps) {
             <Box sx={{ flexGrow: 1 }} />
 
             <Stack direction="row" spacing={1} alignItems="center">
+              {data.tree?.id ? (
+                <BuildSessionLauncherButtons
+                  treeId={data.tree.id}
+                  pageNodeId={data.pageNodeId}
+                />
+              ) : null}
               {isUserMenuReady ? (
                 <Box sx={{ ml: '8px' }}>
                   <UserLoginButton />

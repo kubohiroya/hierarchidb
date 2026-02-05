@@ -134,7 +134,7 @@ vi.mock('../../../../../plugins/shape-plugin/src/services/metadata/MetadataLoade
     }
 
     getAvailableDataSources(): string[] {
-      return ['naturalearth'];
+      return ['geoboundaries'];
     }
   }
 
@@ -333,7 +333,7 @@ const createTestBuildConfig = (): ShapeBuildConfig => {
   const dynamicBase = DEFAULT_BUILD_CONFIG.vtConfig.dynamicConcurrency;
   return {
     ...DEFAULT_BUILD_CONFIG,
-    dataSourceName: 'naturalearth',
+    dataSourceName: 'geoboundaries',
     fetchConfig: {
       ...DEFAULT_BUILD_CONFIG.fetchConfig,
       maxConcurrent: 1,
@@ -357,11 +357,11 @@ const createTestBuildConfig = (): ShapeBuildConfig => {
 
 const downloadTaskPayloads: FetchTaskPayload[] = [
   {
-    url: 'mock://naturalearth/jp/admin0',
+    url: 'mock://geoboundaries/jp/admin0',
     countryCode: 'JP',
     countryName: 'Japan',
     adminLevel: 0,
-    dataSource: 'naturalearth',
+    dataSource: 'geoboundaries',
   },
 ];
 

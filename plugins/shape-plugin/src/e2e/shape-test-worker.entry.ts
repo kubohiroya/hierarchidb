@@ -76,6 +76,11 @@ type ShapeWorkerTestAPI = {
   getShapePipelineTestAPI(): ShapePipelineTestAPI;
 };
 
+
+const pipelineRuns = new Map<string, Promise<void>>();
+const pipelineStates = new Map<string, PipelineState>();
+const pauseStates = new Map<string, PipelinePauseState>();
+
 async function main(endpoint?: Endpoint): Promise<void> {
   const ensureEphemeralOpen = async (): Promise<void> => {
     if (!hidbEphemeralDB.isOpen()) {
@@ -191,10 +196,6 @@ async function main(endpoint?: Endpoint): Promise<void> {
       };
     },
   };
-
-  const pipelineRuns = new Map<string, Promise<void>>();
-  const pipelineStates = new Map<string, PipelineState>();
-  const pauseStates = new Map<string, PipelinePauseState>();
 
   const ensurePauseState = (nodeId: NodeId): PipelinePauseState => {
     const key = String(nodeId);

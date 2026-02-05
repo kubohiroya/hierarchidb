@@ -1,3 +1,21 @@
+2519) feat/appbar/build-session-launcher-buttons (P1) — 完了 (2026-02-05)
+- ブランチ名: feat/appbar/build-session-launcher-buttons
+- 依存: なし
+- 受け入れ基準: AppBar の UserAvatarMenu 左側にビルド中セッションの BuildSessionLauncherButton 群が横並びで表示される／ビルド完了時に自動的に非表示になる／各ボタンにノード種別の色・MUIアイコンとノード名ラベルが表示される／Tooltip にビルド中ノードのパスと Build ステップの全体進捗カード相当の内容が表示される／ボタン押下で該当ノードの Build ステップへ遷移できる／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/components/appbar/AppBar.tsx`, `app/src/components/appbar/UserAvatarMenu.tsx`（必要に応じて追加）
+- ロールバック手順: 追加した BuildSessionLauncherButton 表示カードを撤去する
+- チェックリスト:
+  - AppBar に BuildSessionLauncherButton 群の横並びカードを追加する
+  - ビルド中セッションの取得と完了時非表示の条件を確認する
+  - Tooltip の表示内容と Build ステップ遷移を実装する
+  - 必要な typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-05 18:24 JST AppBar の BuildSessionLauncherButton 表示追加に着手。
+  - update: 2026-02-05 18:38 JST BuildSessionLauncherButtons を追加し AppBar に組み込み。
+  - update: 2026-02-05 18:39 JST pnpm --filter @hierarchidb/app typecheck exit 0（plugin-base tsdown の define 警告あり）を確認。
+  - done: 2026-02-05 18:40 JST AppBar の BuildSessionLauncherButton 表示追加を完了。
+
 2502) fix/ui-treeconsole-base/treenode-type-field (P1) — 完了 (2026-02-04)
 - ブランチ名: fix/ui-treeconsole-base/treenode-type-field
 - 依存: なし
@@ -354,6 +372,7 @@
   - update: 2026-02-05 18:10 JST vitest run で transform/vt 処理が進まずタイムアウトする事象を確認。
   - update: 2026-02-05 18:18 JST vt-orchestrator の createTransformByBandHandler/createVtHandler をテスト用簡易実装にモックし、shapePipelineShared.buildVtTasks を最小タスク生成に差し替え。
   - update: 2026-02-05 18:21 JST c) 背景継続テストはセッション完了の検証に絞り、pnpm --filter @hierarchidb/shape-plugin exec vitest run src/__tests__/wfl/shape-build-resume-after-pause.wfl.test.ts exit 0（10 tests）。
+  - update: 2026-02-05 18:25 JST 結合テストの dataSource を geoboundaries に変更。
 
 2509) fix/shape-build/max-update-depth-loop (P1) — 完了 (2026-02-04)
 - ブランチ名: fix/shape-build/max-update-depth-loop
