@@ -2,10 +2,39 @@ import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/core-types';
 import type { ShapeBuildSessionRecord, ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
 import * as Comlink from 'comlink';
+vi.mock('comlink', async () => (
+  await vi.importActual('comlink')
+));
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('@hierarchidb/gis-sdk', async () => (
-  await import('../../../../packages/features/gis-sdk/dist/index.js')
+  await import('../../../../../packages/features/gis-sdk/dist/index.js')
 ));
+
+vi.mock('@hierarchidb/vt-orchestrator', async () => {
+  const actual = await vi.importActual<typeof import('@hierarchidb/vt-orchestrator')>('@hierarchidb/vt-orchestrator');
+  const { unpackTileId } = await import('../../../../../packages/vt-orchestrator/src/tiles/tileId.ts');
+  const createVtHandler: typeof actual.createVtHandler = (context) => {
+    type HandlerTask = Parameters<ReturnType<typeof actual.createVtHandler>>[0];
+    return async (task: HandlerTask) => {
+      const input = task.inputData;
+      if (!input) {
+        return { status: 'failed', errorMessage: 'vt task input is missing' };
+      }
+      const parent = unpackTileId(input.tileId, input.zBase);
+      await context.tileWriter({
+        tileId: input.tileId,
+        z: parent.z,
+        x: parent.x,
+        y: parent.y,
+        data: new Uint8Array([1]).buffer,
+        layers: {},
+        bufferSetHash: input.sourceKey ?? 'mock',
+      });
+      return { status: 'completed', progress: 100 };
+    };
+  };
+  return { ...actual, createVtHandler };
+});
 
 import { MessageChannel, type MessagePort as NodeMessagePort } from 'worker_threads';
 import { createEndpointFromMessagePort } from '../../e2e/test-utils/messagePortEndpoint.js';
@@ -41,7 +70,7 @@ const setupWorker = async (): Promise<WorkerSetup> => {
 };
 
 const cleanupWorker = async (setup: WorkerSetup): Promise<void> => {
-  const release = (setup.client as unknown as { [Comlink.releaseProxy]?: () => Promise<void> })[
+  const release = (setup.client as { [Comlink.releaseProxy]?: () => Promise<void> })[
     Comlink.releaseProxy
   ];
   if (release) {

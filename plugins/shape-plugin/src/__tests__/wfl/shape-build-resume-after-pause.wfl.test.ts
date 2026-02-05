@@ -5,11 +5,81 @@ import type { ShapeBuildSessionRecord, ShapeMutationAPI, ShapeQueryAPI } from '@
 import type { FetchTaskPayload, ShapeBuildConfig } from '../../../../../plugins/shape-plugin/src/common/types/index.js';
 import { DEFAULT_BUILD_CONFIG } from '../../../../../plugins/shape-plugin/src/common/types/constants.ts';
 import * as Comlink from 'comlink';
+vi.mock('comlink', async () => (
+  await vi.importActual('comlink')
+));
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('@hierarchidb/gis-sdk', async () => (
-  await import('../../../../packages/features/gis-sdk/dist/index.js')
+  await import('../../../../../packages/features/gis-sdk/dist/index.js')
 ));
 
+vi.mock('@hierarchidb/vt-orchestrator', async () => {
+  const actual = await vi.importActual<typeof import('@hierarchidb/vt-orchestrator')>('@hierarchidb/vt-orchestrator');
+  const { unpackTileId } = await import('../../../../../packages/vt-orchestrator/src/tiles/tileId.ts');
+  const createTransformByBandHandler: typeof actual.createTransformByBandHandler = () => {
+    type HandlerTask = Parameters<ReturnType<typeof actual.createTransformByBandHandler>>[0];
+    return async (_task: HandlerTask) => ({ status: 'completed', progress: 100 });
+  };
+
+  const createVtHandler: typeof actual.createVtHandler = (context) => {
+    type HandlerTask = Parameters<ReturnType<typeof actual.createVtHandler>>[0];
+    return async (task: HandlerTask) => {
+      const input = task.inputData;
+      if (!input) {
+        return { status: 'failed', errorMessage: 'vt task input is missing' };
+      }
+      const parent = unpackTileId(input.tileId, input.zBase);
+      await context.tileWriter({
+        tileId: input.tileId,
+        z: parent.z,
+        x: parent.x,
+        y: parent.y,
+        data: new Uint8Array([1]).buffer,
+        layers: {},
+        bufferSetHash: input.sourceKey ?? 'mock',
+      });
+      return { status: 'completed', progress: 100 };
+    };
+  };
+  return { ...actual, createTransformByBandHandler, createVtHandler };
+});
+
+vi.mock('../../../../../plugins/shape-plugin/src/services/vt/shapePipelineShared.ts', async () => {
+  const actual = await vi.importActual<typeof import('../../../../../plugins/shape-plugin/src/services/vt/shapePipelineShared.ts')>(
+    '../../../../../plugins/shape-plugin/src/services/vt/shapePipelineShared.ts',
+  );
+  const { packTileId } = await import('../../../../../packages/vt-orchestrator/src/tiles/tileId.ts');
+  const buildVtTasks: typeof actual.buildVtTasks = async (
+    nodeId,
+    _ephemeralStore,
+    bands,
+    _enableHighDetailBands,
+    configSignature,
+  ) => {
+    let index = 0;
+    return bands.map((band) => ({
+      taskId: `${String(nodeId)}:vt:${band.bandIndex}:${band.zBase}:0`,
+      nodeId,
+      stage: 'vt',
+      status: 'queued',
+      index: index++,
+      progress: 0,
+      inputData: {
+        bandIndex: band.bandIndex,
+        bandMinZoom: band.zMin,
+        bandMaxZoom: band.zMax,
+        zBase: band.zBase,
+        tileId: packTileId(0, 0, band.zBase),
+        bufferIds: [`${String(nodeId)}-mock-buffer-${band.bandIndex}`],
+        featureCount: 1,
+        domainType: 'shape',
+        sourceKey: 'mock',
+        configSignature,
+      },
+    }));
+  };
+  return { ...actual, buildVtTasks };
+});
 const mockMetadata = vi.hoisted(() => ([
   {
     countryCode: 'JP',
@@ -173,6 +243,7 @@ type WorkerSetup = {
   port1: NodeMessagePort;
   port2: NodeMessagePort;
   terminateAll: () => void;
+  closed?: boolean;
 };
 
 const setupWorker = async (): Promise<WorkerSetup> => {
@@ -193,7 +264,20 @@ const setupWorker = async (): Promise<WorkerSetup> => {
   };
 };
 
-const cleanupWorker = async (setup: WorkerSetup): Promise<void> => {
+const setupAdditionalClient = async (): Promise<WorkerSetup> => {
+  const { exposeShapeTestAPI } = await import('../../e2e/shape-test-worker.entry.js');
+  const { port1, port2 } = new MessageChannel();
+  await exposeShapeTestAPI(createEndpointFromMessagePort(port1));
+  const client = Comlink.wrap<WorkerTestAPI>(createEndpointFromMessagePort(port2));
+  return {
+    client,
+    port1,
+    port2,
+    terminateAll: () => {},
+  };
+};
+
+const closeClientPorts = async (setup: WorkerSetup): Promise<void> => {
   const release = (setup.client as { [Comlink.releaseProxy]?: () => Promise<void> })[
     Comlink.releaseProxy
   ];
@@ -202,6 +286,20 @@ const cleanupWorker = async (setup: WorkerSetup): Promise<void> => {
   }
   setup.port1.close();
   setup.port2.close();
+  setup.closed = true;
+};
+
+const cleanupWorker = async (setup: WorkerSetup): Promise<void> => {
+  if (!setup.closed) {
+    const release = (setup.client as { [Comlink.releaseProxy]?: () => Promise<void> })[
+      Comlink.releaseProxy
+    ];
+    if (release) {
+      await release.call(setup.client);
+    }
+    setup.port1.close();
+    setup.port2.close();
+  }
   setup.terminateAll();
 };
 
@@ -547,6 +645,54 @@ describe('Comlink + fake-indexeddb integration: shape build pause/resume (pipeli
       await cleanupWorker(setup);
     }
   }, 20_000);
+
+  it('keeps pipeline running after UI disconnect (background c)', async () => {
+    const nodeId = 'shape-build-pipeline-background' as NodeId;
+    const setup = await setupWorker();
+
+    try {
+      const mutation = await setup.client.getShapeMutationAPI();
+      const query = await setup.client.getShapeQueryAPI();
+      const admin = await setup.client.getShapeEphemeralAdminAPI();
+      const pipeline = await setup.client.getShapePipelineTestAPI();
+
+      await mutation.deleteBuildSession(nodeId);
+      await mutation.deleteBuildTasks(nodeId);
+      await admin.clearShapeEphemeralCache(nodeId, 'fetchCache');
+      await admin.clearShapeEphemeralCache(nodeId, 'transformCache');
+      await admin.clearShapeEphemeralCache(nodeId, 'transformErrors');
+      await admin.clearShapeEphemeralCache(nodeId, 'tileIdToBufferRelations');
+
+      await mutation.upsertBuildSession(createBaseSession(nodeId, Date.now()));
+
+      await pipeline.startPipeline({
+        nodeId,
+        buildConfig: createTestBuildConfig(),
+        downloadTaskPayloads,
+        resumeExistingTasks: false,
+      });
+
+      await waitFor(async () => {
+        const tasks = await query.listBuildTaskRecordsByStage(nodeId, 'fetch');
+        return tasks.length > 0;
+      }, { label: 'fetch task creation' });
+
+      const observer = await setupAdditionalClient();
+      try {
+        await closeClientPorts(setup);
+        const observerQuery = await observer.client.getShapeQueryAPI();
+        const observerPipeline = await observer.client.getShapePipelineTestAPI();
+        await observerPipeline.waitForPipeline(nodeId);
+        await completeSession(await observer.client.getShapeMutationAPI(), nodeId, Date.now());
+        const record = await observerQuery.getBuildSessionRecord(nodeId);
+        expect(record?.status).toBe('completed');
+      } finally {
+        await closeClientPorts(observer);
+      }
+    } finally {
+      await cleanupWorker(setup);
+    }
+  }, 25_000);
 
   it.each<[
     string,
