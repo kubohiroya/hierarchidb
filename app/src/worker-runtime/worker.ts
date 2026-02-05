@@ -21,7 +21,7 @@ import {
   type HeapPressureEvent,
 } from '@hierarchidb/memory';
 import type { PluginDefinition } from '@hierarchidb/plugin-registry/types';
-import type { ShapeDataSourceName } from '@hierarchidb/shape-api';
+import type { ShapeBuildSessionRecord, ShapeDataSourceName } from '@hierarchidb/shape-api';
 import {
   configureWorkerContainer,
   getWorkerContainer,
@@ -29,6 +29,7 @@ import {
   WorkerDiTokens,
   WorkerService,
 } from '@hierarchidb/runtime-worker';
+import { liveQuery } from 'dexie';
 import {
   getAllRuntimeExports,
   WorkerInitializationReporter,
@@ -330,6 +331,13 @@ reporter.reportStepProgress('Load Comlink', 0);
         return api;
       };
       const SHAPE_NODE_TYPE = 'shape' as NodeType;
+      const normalizeSessionStatuses = (
+        statuses: Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>
+      ): Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'> => (
+        statuses.length > 0
+          ? statuses
+          : (['running'] as Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>)
+      );
 
       const api = {
         ping: () => services.ping(),
@@ -482,6 +490,39 @@ reporter.reportStepProgress('Load Comlink', 0);
             console.warn(`[worker bootstrap] getBatchTasks failed for ${nodeType}:`, msg);
             return [];
           }
+        },
+        listBuildSessionRecordsByStatus: async (
+          nodeType: NodeType,
+          statuses: Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>
+        ): Promise<ShapeBuildSessionRecord[]> => {
+          if (nodeType !== SHAPE_NODE_TYPE) return [];
+          const queryAPI = services.getShapeQueryAPI();
+          return queryAPI.listBuildSessionRecordsByStatus(normalizeSessionStatuses(statuses));
+        },
+        subscribeBuildSessionRecordsByStatus: async (
+          nodeType: NodeType,
+          statuses: Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>,
+          callback: (sessions: ShapeBuildSessionRecord[]) => void
+        ): Promise<() => void> => {
+          if (nodeType !== SHAPE_NODE_TYPE) {
+            return () => {};
+          }
+          const queryAPI = services.getShapeQueryAPI();
+          const normalized = normalizeSessionStatuses(statuses);
+          const observable = liveQuery(() => queryAPI.listBuildSessionRecordsByStatus(normalized));
+          const subscription = observable.subscribe({
+            next: (sessions) => {
+              callback(sessions);
+            },
+            error: (error) => {
+              const msg = error instanceof Error ? error.message : String(error);
+              console.warn('[worker bootstrap] build session subscription failed:', msg);
+              callback([]);
+            },
+          });
+          return Comlink.proxy(() => {
+            subscription.unsubscribe();
+          });
         },
         setUiStorageBridge: async (bridge: UiStorageBridge): Promise<void> => {
           const auth = await AuthService.getSingleton();

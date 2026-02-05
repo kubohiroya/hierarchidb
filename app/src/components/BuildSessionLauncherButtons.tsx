@@ -12,10 +12,7 @@ import {
   Typography,
 } from '@mui/material';
 import type { BuildStage } from '@hierarchidb/components';
-import { buildTaskCountSummary, computePercentage } from '@hierarchidb/ui-batch-progress';
-import type { NodeId, TreeId } from '@hierarchidb/core-types';
-import type { EphemeralBuildSessionRecord, EphemeralBuildTaskRecord } from '@hierarchidb/gis-sdk';
-import { hidbEphemeralDB } from '@hierarchidb/gis-sdk';
+import type { NodeId, NodeType, TreeId } from '@hierarchidb/core-types';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
 import { useIconRegistry } from '@hierarchidb/ui-icon';
 import type { TreeNode } from '@hierarchidb/tree-api';
@@ -25,6 +22,8 @@ import {
   Layers as LayersIcon,
   Tune as TuneIcon,
 } from '@mui/icons-material';
+import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
+import { proxy } from 'comlink';
 import { useWorker } from '~/contexts/WorkerProvider.js';
 import { startBuildFlow } from '~/router/pages/tree/console/buildFlow.ts';
 
@@ -34,8 +33,7 @@ type BuildSessionLauncherButtonsProps = {
 };
 
 type BuildSessionEntry = {
-  session: EphemeralBuildSessionRecord;
-  tasks: EphemeralBuildTaskRecord[];
+  session: ShapeBuildSessionRecord;
   node: TreeNode | null;
   nodePath: string;
 };
@@ -48,8 +46,6 @@ type ProgressSummary = {
   percentage: number;
   taskType?: string;
 };
-
-const POLL_INTERVAL_MS = 2000;
 
 type LoadingButtonProps = ComponentProps<typeof Button> & { loading?: boolean };
 
@@ -69,12 +65,6 @@ const LoadingButton = ({ loading = false, disabled, endIcon, ...rest }: LoadingB
       aria-busy={loading ? 'true' : undefined}
     />
   );
-};
-
-const isSkippedMessage = (message?: string | null): boolean => {
-  if (!message) return false;
-  const normalized = message.trim().toLowerCase();
-  return normalized === 'skipped' || normalized.startsWith('skipped:');
 };
 
 const isProgressSummary = (value: unknown): value is ProgressSummary => {
@@ -124,6 +114,7 @@ export function BuildSessionLauncherButtons({ treeId, pageNodeId }: BuildSession
   const { client: workerClient } = useWorker();
   const { t } = useGlobalI18nTranslator();
   const { resolveIcon } = useIconRegistry();
+  const shapeNodeType = 'shape' as NodeType;
   const stages = useBuildStages(t);
   const stageById = useMemo(() => new Map(stages.map((stage) => [stage.id, stage])), [stages]);
   const [entries, setEntries] = useState<BuildSessionEntry[]>([]);
@@ -131,64 +122,60 @@ export function BuildSessionLauncherButtons({ treeId, pageNodeId }: BuildSession
   const location = useRouterState({ select: (state) => state.location });
   const returnTo = useMemo(() => `${location.pathname}${location.searchStr ?? ''}`, [location.pathname, location.searchStr]);
 
-  const fetchSessions = useCallback(async () => {
-    const sessions = await hidbEphemeralDB.sessions.where('status').equals('running').toArray();
-    if (sessions.length === 0) {
+  useEffect(() => {
+    if (!workerClient) {
       setEntries([]);
       return;
     }
-
-    const nodeIds = Array.from(new Set(sessions.map((session) => String(session.nodeId))));
-    const tasksByNodeId = new Map<string, EphemeralBuildTaskRecord[]>();
-    await Promise.all(
-      nodeIds.map(async (nodeId) => {
-        const tasks = await hidbEphemeralDB.buildTasks.where('nodeId').equals(nodeId).toArray();
-        tasksByNodeId.set(nodeId, tasks);
-      })
-    );
-
-    const queryAPI = workerClient ? await workerClient.getQueryAPI().catch(() => null) : null;
-    const updatedCache = new Map(nodeCacheRef.current);
-    await Promise.all(
-      nodeIds.map(async (nodeId) => {
-        if (!queryAPI || updatedCache.has(nodeId)) return;
-        const pathNodes = await queryAPI.getNodePath(nodeId as NodeId).catch(() => []);
-        if (pathNodes.length === 0) return;
-        const node = pathNodes[pathNodes.length - 1] ?? null;
-        const nodePath = toNodePathLabel(pathNodes);
-        updatedCache.set(nodeId, { node, nodePath });
-      })
-    );
-    nodeCacheRef.current = updatedCache;
-
-    const nextEntries = sessions.map((session) => {
-      const nodeKey = String(session.nodeId);
-      const cached = updatedCache.get(nodeKey);
-      return {
-        session,
-        tasks: tasksByNodeId.get(nodeKey) ?? [],
-        node: cached?.node ?? null,
-        nodePath: cached?.nodePath ?? '',
+    let active = true;
+    let unsubscribe: (() => void) | null = null;
+    const subscribe = async () => {
+      const queryAPI = await workerClient.getQueryAPI().catch(() => null);
+      if (!queryAPI) return;
+      const unsub = await workerClient.subscribeBuildSessionRecordsByStatus(
+        shapeNodeType,
+        ['running'],
+        proxy(async (sessions: ShapeBuildSessionRecord[]) => {
+          if (!active) return;
+          const nodeIds = Array.from(new Set(sessions.map((session) => String(session.nodeId))));
+          const updatedCache = new Map(nodeCacheRef.current);
+          await Promise.all(
+            nodeIds.map(async (nodeId) => {
+              if (updatedCache.has(nodeId)) return;
+              const pathNodes = await queryAPI.getNodePath(nodeId as NodeId).catch(() => []);
+              if (pathNodes.length === 0) return;
+              const node = pathNodes[pathNodes.length - 1] ?? null;
+              const nodePath = toNodePathLabel(pathNodes);
+              updatedCache.set(nodeId, { node, nodePath });
+            })
+          );
+          nodeCacheRef.current = updatedCache;
+          const nextEntries = sessions.map((session) => {
+            const nodeKey = String(session.nodeId);
+            const cached = updatedCache.get(nodeKey);
+            return {
+              session,
+              node: cached?.node ?? null,
+              nodePath: cached?.nodePath ?? '',
+            };
+          });
+          setEntries(nextEntries);
+        })
+      );
+      unsubscribe = () => {
+        if (typeof unsub === 'function') {
+          unsub();
+        }
       };
-    });
-    setEntries(nextEntries);
-  }, [workerClient]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const run = async () => {
-      if (cancelled) return;
-      await fetchSessions();
     };
-    void run();
-    const interval = setInterval(() => {
-      void run();
-    }, POLL_INTERVAL_MS);
+    void subscribe();
     return () => {
-      cancelled = true;
-      clearInterval(interval);
+      active = false;
+      if (unsubscribe) {
+        unsubscribe();
+      }
     };
-  }, [fetchSessions]);
+  }, [workerClient]);
 
   const handleNavigateToBuild = useCallback(
     async (entry: BuildSessionEntry) => {
@@ -218,21 +205,17 @@ export function BuildSessionLauncherButtons({ treeId, pageNodeId }: BuildSession
           failed: progressSummary.failed,
           skipped: progressSummary.skipped,
         }
-        : buildTaskCountSummary(entry.tasks, (task) => isSkippedMessage(task.message));
-      const percentage = progressSummary?.percentage ?? computePercentage(counts);
-      const stageId =
-        progressSummary?.taskType
-        ?? entry.session.stage
-        ?? entry.tasks.find((task) => task.status === 'running')?.taskType
-        ?? entry.tasks.find((task) => task.status === 'queued')?.taskType;
+        : {
+          total: 0,
+          completed: 0,
+          failed: 0,
+          skipped: 0,
+        };
+      const percentage = progressSummary?.percentage ?? 0;
+      const stageId = progressSummary?.taskType;
       const stageTitle = stageId ? stageById.get(stageId)?.title ?? stageId : undefined;
       const status = entry.session.status ?? 'idle';
-      const runningTask = entry.tasks.find((task) => task.status === 'running')
-        ?? entry.tasks.find((task) => task.status === 'queued');
-      const taskMessage = runningTask?.message?.trim();
-      const rawCounts = counts.total > 0
-        ? counts
-        : buildTaskCountSummary(entry.tasks, (task) => isSkippedMessage(task.message));
+      const rawCounts = counts.total > 0 ? counts : counts;
       const stageLabel = stageTitle ?? (() => {
         if (status === 'running') return t('stage.progress.unknownStage', 'processing');
         if (status === 'paused') return t('stage.progress.pausedStage', 'paused');
@@ -252,7 +235,7 @@ export function BuildSessionLauncherButtons({ treeId, pageNodeId }: BuildSession
           }
           return t('stage.progress.ready', 'Ready');
         }
-        return taskMessage || stageTitle || t('stage.progress.working', 'Working...');
+        return stageTitle || t('stage.progress.working', 'Working...');
       })();
       const taskUnitLabel = t('stage.progress.taskUnitTasks', 'Tasks');
       return {

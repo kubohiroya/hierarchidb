@@ -3,7 +3,12 @@ import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/locatio
 import type { HeapPressureEvent } from '@hierarchidb/memory';
 import type { PluginLifecycleAPI } from '@hierarchidb/plugin-base';
 import type { RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/route-api';
-import type { ShapeDataSourceName, ShapeMutationAPI, ShapeQueryAPI } from '@hierarchidb/shape-api';
+import type {
+  ShapeBuildSessionRecord,
+  ShapeDataSourceName,
+  ShapeMutationAPI,
+  ShapeQueryAPI,
+} from '@hierarchidb/shape-api';
 import type { StyleMutationAPI, StyleQueryAPI } from '@hierarchidb/style-api';
 import type { BatchProgressEvent, BatchSessionStatus, BatchTaskSummary, BatchTaskUpdateEvent, BuildContinuationPolicy } from '@hierarchidb/batch-api';
 import type { ImportExportAPI } from '@hierarchidb/import-export-api';
@@ -89,6 +94,15 @@ export interface WorkerAPI {
     nodeType: NodeType,
     nodeId: NodeId,
     callback: (event: BatchTaskUpdateEvent) => void
+  ): Promise<() => void>;
+  listBuildSessionRecordsByStatus(
+    nodeType: NodeType,
+    statuses: Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>
+  ): Promise<ShapeBuildSessionRecord[]>;
+  subscribeBuildSessionRecordsByStatus(
+    nodeType: NodeType,
+    statuses: Array<'idle' | 'running' | 'paused' | 'completed' | 'failed'>,
+    callback: (sessions: ShapeBuildSessionRecord[]) => void
   ): Promise<() => void>;
   generateShapeDownloadTaskPayloadsFromSelection(
     nodeId: NodeId,

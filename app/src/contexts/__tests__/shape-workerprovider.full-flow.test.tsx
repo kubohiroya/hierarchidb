@@ -197,6 +197,8 @@ vi.mock('~/worker-runtime/client.ts', async () => {
         const tasks = await shapeBatchAPI.getBatchTasks(nodeId);
         return tasks.map(toBatchTaskSummary);
       },
+      listBuildSessionRecordsByStatus: async () => [],
+      subscribeBuildSessionRecordsByStatus: async (_nodeType, _statuses, _callback) => () => {},
       subscribeBatchTasks: async (_nodeType, nodeId, callback) => {
         if (shapeBatchAPI.subscribeToTasks) {
           return shapeBatchAPI.subscribeToTasks(nodeId, callback);
