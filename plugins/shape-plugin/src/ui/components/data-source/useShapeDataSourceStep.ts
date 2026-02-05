@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import type { DataSourceSelectionOption } from '@hierarchidb/ui-datasource';
 import type { DataSourceConfig, DataSourceName, ShapeEntity } from '../../../common/types/index.js';
 import { mergeBuildConfig } from '../../../services/utils/utils.js';
@@ -26,6 +26,19 @@ export const useShapeDataSourceStep = ({ data, onChange }: Args) => {
   );
 
   const dataSourceId = draftData.buildConfig?.dataSourceName;
+
+  useEffect(() => {
+    if (dataSourceId) return;
+    if (draftData.buildConfig) {
+      onChange({
+        buildConfig: mergeBuildConfig(draftData.buildConfig, {
+          dataSourceName: DEFAULT_BUILD_CONFIG.dataSourceName,
+        }),
+      });
+      return;
+    }
+    onChange({ buildConfig: DEFAULT_BUILD_CONFIG });
+  }, [dataSourceId, draftData.buildConfig, onChange]);
 
   const handleChange = useCallback((next: {
     dataSourceId?: string;
