@@ -286,6 +286,11 @@ class RealVTWorker implements VTWorkerAPI {
     onProgress?: (progress: VectorTileProgress) => void
   ) {
     const startedAt = Date.now();
+    const shouldLogDebug =
+      typeof console !== 'undefined' &&
+      typeof console.debug === 'function' &&
+      !(globalThis as { __HDB_SILENCE_WORKER_LOGS__?: boolean })
+        .__HDB_SILENCE_WORKER_LOGS__;
     const abortKey = config.abortKey;
     const controller = abortKey ? new AbortController() : null;
     if (abortKey && controller) {
@@ -294,14 +299,18 @@ class RealVTWorker implements VTWorkerAPI {
     try {
       const readStart = Date.now();
       const buf = await this.readBuffer(inputBufferId);
-      console.debug('[VectorTiles] readInputBuffer', {
-        bufferId: inputBufferId,
-        ms: Date.now() - readStart,
-      });
+      if (shouldLogDebug) {
+        console.debug('[VectorTiles] readInputBuffer', {
+          bufferId: inputBufferId,
+          ms: Date.now() - readStart,
+        });
+      }
       if (!buf) return { tilesGenerated: 0, totalBytes: 0 };
       const decodeStart = Date.now();
       const inputBuffer = await this.decodeInputBuffer(buf, config.inputCompression);
-      console.debug('[VectorTiles] decodeInputBuffer', { ms: Date.now() - decodeStart });
+      if (shouldLogDebug) {
+        console.debug('[VectorTiles] decodeInputBuffer', { ms: Date.now() - decodeStart });
+      }
       const nodeId = (config.targetNodeId ??
         (inputBufferId.includes('-extract2-')
           ? inputBufferId.substring(0, inputBufferId.lastIndexOf('-extract2-'))
@@ -325,14 +334,18 @@ class RealVTWorker implements VTWorkerAPI {
           sdkConfig,
           onProgress
         );
-        console.debug('[VectorTiles] generateFromFgb', {
-          tilesGenerated: result.tilesGenerated,
-          totalBytes: result.totalBytes,
-          ms: Date.now() - genStart,
-        });
+        if (shouldLogDebug) {
+          console.debug('[VectorTiles] generateFromFgb', {
+            tilesGenerated: result.tilesGenerated,
+            totalBytes: result.totalBytes,
+            ms: Date.now() - genStart,
+          });
+        }
         const storeStart = Date.now();
         await this.storeVectorTiles(nodeType, nodeId, result.tiles);
-        console.debug('[VectorTiles] storeTiles', { ms: Date.now() - storeStart });
+        if (shouldLogDebug) {
+          console.debug('[VectorTiles] storeTiles', { ms: Date.now() - storeStart });
+        }
         const metaStart = Date.now();
         await this.storeFeatureMetadata(
           nodeType,
@@ -340,7 +353,9 @@ class RealVTWorker implements VTWorkerAPI {
           result.featureMetadata,
           config.metadataReplace
         );
-        console.debug('[VectorTiles] storeMetadata', { ms: Date.now() - metaStart });
+        if (shouldLogDebug) {
+          console.debug('[VectorTiles] storeMetadata', { ms: Date.now() - metaStart });
+        }
         return {
           tilesGenerated: result.tilesGenerated,
           totalBytes: result.totalBytes,
@@ -354,14 +369,18 @@ class RealVTWorker implements VTWorkerAPI {
         sdkConfig,
         onProgress
       );
-      console.debug('[VectorTiles] generateFromJson', {
-        tilesGenerated: result.tilesGenerated,
-        totalBytes: result.totalBytes,
-        ms: Date.now() - genStart,
-      });
+      if (shouldLogDebug) {
+        console.debug('[VectorTiles] generateFromJson', {
+          tilesGenerated: result.tilesGenerated,
+          totalBytes: result.totalBytes,
+          ms: Date.now() - genStart,
+        });
+      }
       const storeStart = Date.now();
       await this.storeVectorTiles(nodeType, nodeId, result.tiles);
-      console.debug('[VectorTiles] storeTiles', { ms: Date.now() - storeStart });
+      if (shouldLogDebug) {
+        console.debug('[VectorTiles] storeTiles', { ms: Date.now() - storeStart });
+      }
       const metaStart = Date.now();
       await this.storeFeatureMetadata(
         nodeType,
@@ -369,8 +388,12 @@ class RealVTWorker implements VTWorkerAPI {
         result.featureMetadata,
         config.metadataReplace
       );
-      console.debug('[VectorTiles] storeMetadata', { ms: Date.now() - metaStart });
-      console.debug('[VectorTiles] generateTiles total', { ms: Date.now() - startedAt });
+      if (shouldLogDebug) {
+        console.debug('[VectorTiles] storeMetadata', { ms: Date.now() - metaStart });
+      }
+      if (shouldLogDebug) {
+        console.debug('[VectorTiles] generateTiles total', { ms: Date.now() - startedAt });
+      }
       return {
         tilesGenerated: result.tilesGenerated,
         totalBytes: result.totalBytes,

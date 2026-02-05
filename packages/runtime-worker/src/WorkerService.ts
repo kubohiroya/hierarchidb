@@ -208,7 +208,14 @@ export class WorkerService {
   ) {}
 
   ping(): { response: 'pong'; timestamp: number } {
-    console.log('[WorkerAPIImpl] ping() called');
+    const shouldLogInfo =
+      typeof console !== 'undefined' &&
+      typeof console.log === 'function' &&
+      !(globalThis as { __HDB_SILENCE_WORKER_LOGS__?: boolean })
+        .__HDB_SILENCE_WORKER_LOGS__;
+    if (shouldLogInfo) {
+      console.log('[WorkerAPIImpl] ping() called');
+    }
     return {
       response: 'pong',
       timestamp: Date.now(),

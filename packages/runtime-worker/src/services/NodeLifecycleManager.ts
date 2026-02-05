@@ -265,7 +265,9 @@ export class NodeLifecycleManager {
         return;
       }
       // Fallback: log only
-      console.log(`Reference counting not implemented for ${nodeType} node ${nodeId}`);
+      if (this.shouldLogInfo) {
+        console.log(`Reference counting not implemented for ${nodeType} node ${nodeId}`);
+      }
     } catch (e) {
       workerError(
         `Failed to increment reference count for ${nodeType} node ${nodeId}:`,
@@ -285,7 +287,9 @@ export class NodeLifecycleManager {
         await handler.decrementReferenceCount(nodeId);
         return;
       }
-      console.log(`Reference counting decrement not implemented for ${nodeType} node ${nodeId}`);
+      if (this.shouldLogInfo) {
+        console.log(`Reference counting decrement not implemented for ${nodeType} node ${nodeId}`);
+      }
     } catch (e) {
       workerError(
         `Failed to decrement reference count for ${nodeType} node ${nodeId}:`,

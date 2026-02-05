@@ -328,6 +328,8 @@
   - update: 2026-02-05 20:55 JST commitDraft/TreeSubscriptionService の debug/log をテスト時抑止するよう拡張。
   - update: 2026-02-05 21:05 JST TreeSubscriptionService の children-changed バッチ部分の構文崩れを修正。
   - update: 2026-02-05 21:10 JST pnpm --filter @hierarchidb/runtime-worker test -- --run exit 0（ログ抑止後の再確認）。
+  - update: 2026-02-05 21:25 JST WorkerService/NodeLifecycleManager/StageProcessingService のログもテスト時抑止に揃えた。
+  - update: 2026-02-05 21:30 JST pnpm --filter @hierarchidb/runtime-worker test -- --run exit 0（追加ログ抑止の確認）。
   - update: 2026-02-05 19:20 JST WFL の trash 通知/部分復元テストの skip を解除し、releaseProxy の unknown cast を撤去。
   - update: 2026-02-05 19:30 JST commitDraft の返却 nodeId を使用するよう WFL テストを修正し、draft holder 名の仮デコードを撤去。
   - update: 2026-02-05 19:35 JST trash 通知テストの誤った期待値（node そのものを "trash" と比較）を実際の trash 判定（parentId/removedAt）へ修正。
