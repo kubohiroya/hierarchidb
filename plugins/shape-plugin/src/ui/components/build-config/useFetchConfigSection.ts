@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useId } from 'react';
 import type { ShapeEntity } from '../../../common/types/index.js';
 import { DEFAULT_BUILD_CONFIG, mergeBuildConfig } from '../../../common/types/index.js';
-import type { TaskStage } from '@hierarchidb/batch-api';
+import type { BatchSessionStatus, TaskStage } from '@hierarchidb/batch-api';
 import type { NodeId, NodeType } from '@hierarchidb/core-types';
 import type { ShapeBuildConfig } from '../../../common/types/index.js';
 import { notify } from '@hierarchidb/components';
@@ -79,7 +79,7 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
   });
   const [resultCounts, setResultCounts] = useState({ tiles: 0, metadata: 0 });
 
-  const [isRunning, setIsRunning] = useState<boolean | null>(null);
+  const [sessionStatus, setSessionStatus] = useState<BatchSessionStatus['status'] | null>(null);
   const setBuildTasks = useSetAtom(tasksAtom);
   const setPersistedTasks = useSetAtom(persistedTasksAtom);
   const countUnit = t('processing.download.countUnit', '');
@@ -136,7 +136,7 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
     if (!nodeId) {
       setCounts({ fetchApi: 0, fetchFiltered: 0, transform: 0, vt: 0 });
       setResultCounts({ tiles: 0, metadata: 0 });
-      setIsRunning(false);
+      setSessionStatus(null);
       setCountsLoading(false);
       return;
     }
@@ -167,7 +167,7 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
         .then(() => bridgeRef.getBatchSessionStatus(SHAPE_NODE_TYPE, nodeId))
         .catch(() => null);
 
-      setIsRunning(sessionStatus?.status === 'running');
+      setSessionStatus(sessionStatus?.status ?? null);
 
       setCounts({
         fetchApi: rawCacheCount,
@@ -193,11 +193,17 @@ export const useFetchConfigSection = ({ config, nodeId, draft, disabled, onChang
     };
   }, [loadCounts]);
 
-  const canDeleteFetchApiCache = !isRunning && !disabled && fetchApiDeleteCount > 0;
-  const canDeleteFetchFilteredCache = !isRunning && !disabled && fetchFilteredDeleteCount > 0;
-  const canDeleteTransformCache = !isRunning && !disabled && transformDeleteCount > 0;
-  const canDeleteVTCache = !isRunning && !disabled && vtDeleteCount > 0;
-  const canDeleteMetadata = !isRunning && !disabled && metadataDeleteCount > 0;
+  const draftStatus = draft?.processingStatus ?? null;
+  const allowDeleteWhileBusy = (
+    (sessionStatus !== null && ['running', 'paused', 'failed', 'queued'].includes(sessionStatus))
+    || (draftStatus !== null && ['processing', 'paused', 'failed'].includes(draftStatus))
+  );
+  const deleteEnabled = allowDeleteWhileBusy || !disabled;
+  const canDeleteFetchApiCache = deleteEnabled && fetchApiDeleteCount > 0;
+  const canDeleteFetchFilteredCache = deleteEnabled && fetchFilteredDeleteCount > 0;
+  const canDeleteTransformCache = deleteEnabled && transformDeleteCount > 0;
+  const canDeleteVTCache = deleteEnabled && vtDeleteCount > 0;
+  const canDeleteMetadata = deleteEnabled && metadataDeleteCount > 0;
 
   const runDelete = useCallback(async (
     key: keyof DeleteLoadingState,

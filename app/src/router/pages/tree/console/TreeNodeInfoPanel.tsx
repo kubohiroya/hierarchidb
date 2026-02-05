@@ -3,6 +3,7 @@ import type { TreeNode } from '@hierarchidb/tree-api';
 import {
   NodeContextMenu,
   NodeTypeIcon,
+  isFolderNodeType,
 } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import { SEARCH_FIELD_MIN_WIDTH_PX, SEARCH_FIELD_WIDTH_PX } from '@hierarchidb/ui-search-field';
 import type { TreeConsolePanelProps } from '@hierarchidb/ui-treeconsole-base';
@@ -72,6 +73,7 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
     (currentNode?.id && parentNodeId === currentNode.id);
   const showCloseButton = Boolean(treeId && parentNodeId && !isRootNode);
   const isStylerMenuNode = menuNode?.nodeType === 'styler';
+  const canCreate = isFolderNodeType(menuNode?.nodeType);
 
   if (!currentNode) {
     return (
@@ -239,7 +241,7 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
         nodeName={menuNode?.metadata?.name ?? ''}
         treeId={treeId}
         isVisible={isVisible}
-        canCreate={false}
+        canCreate={canCreate}
         canEdit={canMutate}
         canDuplicate={canMutate}
         canCopy={canMutate}
@@ -256,6 +258,7 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
         onPreview={(options) => handleContextMenuTrigger('preview', options)}
         onBuild={(options) => handleContextMenuTrigger('build', options)}
         onEdit={(options) => handleContextMenuTrigger('edit', options)}
+        onCreate={(type, options) => handleContextMenuTrigger(`create:${type}`, options)}
         onDuplicate={() => handleContextMenuTrigger('duplicate')}
         onCopy={() => handleContextMenuTrigger('copy')}
         onCut={() => handleContextMenuTrigger('cut')}

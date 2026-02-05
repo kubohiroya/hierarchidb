@@ -10,7 +10,7 @@ import { DEFAULT_ZOOM_BAND_BOUNDARIES } from '@hierarchidb/util';
 export const DEFAULT_BUILD_CONFIG: ShapeBuildConfig = {
   dataSourceName: 'geoboundaries',
   fetchConfig: {
-    maxConcurrent: 2,
+    maxConcurrent: 4,
     deleteOnComplete: false,
     timeoutMs: 300000,
     retryAttempts: 3,
@@ -20,7 +20,7 @@ export const DEFAULT_BUILD_CONFIG: ShapeBuildConfig = {
   },
   transformConfig: {
     zoomBandBoundaries: DEFAULT_ZOOM_BAND_BOUNDARIES,
-    maxConcurrent: 2,
+    maxConcurrent: 3,
     enableFeatureFiltering: true,
     featureAreaThreshold: 1.0,
     minVertexCountForAreaFilter: 10,
@@ -42,7 +42,7 @@ export const DEFAULT_BUILD_CONFIG: ShapeBuildConfig = {
     },
     areaBasedTolerance: {
       thresholdAreaPx2: 4096 * 4096,
-      largeAreaTolerance: 0.1,
+      largeAreaTolerance: 1.0,
     },
     minRingVertices: 4,
     boundaryDisableAtZoomOrAbove: 3,

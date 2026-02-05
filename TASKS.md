@@ -1,3 +1,34 @@
+2526) fix/appbar/build-session-buttons-running (P1) — 進行中 (2026-02-06)
+- ブランチ名: fix/appbar/build-session-buttons-running
+- 依存: なし
+- 受け入れ基準: 別タブでビルド実行中でも AppBar にビルドセッションボタンが表示される／表示されない原因の解析と根本対処が明文化される／フォールバックなしで新経路のみになる／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/components/BuildSessionLauncherButtons.tsx`, `app/src/worker-runtime/worker.ts`, `plugins/shape-plugin/src/worker/api.ts`（必要に応じて追加）
+- ロールバック手順: build session の更新経路を元に戻し、AppBar から該当ボタンの表示ロジックを撤去
+- チェックリスト:
+  - build session record が `running` として永続化される経路を確認する
+  - 別タブ起動時にも購読で表示されることを確認する
+  - 必要な typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-06 13:05 JST AppBar のビルドセッションボタン非表示問題の調査に着手。
+  - update: 2026-02-06 13:10 JST ビルド開始/再開/完了で sessions を更新する方針で実装着手。
+  - update: 2026-02-06 13:18 JST shape worker で build session を upsert/update する経路を追加。
+  - update: 2026-02-06 13:19 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2525) fix/shape-create/default-world-level0 (P1) — 進行中 (2026-02-06)
+- ブランチ名: fix/shape-create/default-world-level0
+- 依存: なし
+- 受け入れ基準: Shape ノードの Create 時に国選択の初期値が世界各国 Level0 のみになる／既存ノードの選択状態が意図せず変更されない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/country-selection/useShapeCountrySelectionStep.ts`
+- ロールバック手順: createDefaultSelectionRow を元の全レベル選択ロジックへ戻す
+- チェックリスト:
+  - Create 時の初期選択を Level0 に限定する
+  - 必要な typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-06 12:30 JST Shape Create のデフォルト国選択を Level0 のみにする作業に着手。
+  - update: 2026-02-06 12:31 JST createDefaultSelectionRow を Level0 のみに限定。
+
 2524) fix/shape-store/buildtasks-stage-index (P1) — 進行中 (2026-02-05)
 - ブランチ名: fix/shape-store/buildtasks-stage-index
 - 依存: なし
@@ -13,6 +44,70 @@
   - update: 2026-02-05 23:06 JST EphemeralShapeDB version 20 に [nodeId+stage] を追加。
   - update: 2026-02-05 23:07 JST pnpm --filter @hierarchidb/shape-store typecheck exit 0 を確認。
   - done: 2026-02-05 23:07 JST buildTasks の [nodeId+stage] インデックス追加を完了。
+
+2527) fix/tree-console/context-menu-create-folder-only (P1) — 進行中 (2026-02-05)
+- ブランチ名: fix/tree-console/context-menu-create-folder-only
+- 依存: なし
+- 受け入れ基準: TreeNodeInfoPanel/パンくず/TreeTable のコンテキストメニューでフォルダ以外は Create が表示されない／フォルダ時は Create が先頭に表示される／`pnpm --filter @hierarchidb/app typecheck` が exit 0 または blocked を記録／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx`, `packages/ui/treeconsole/breadcrumb/src/components/TreeConsoleBreadcrumb.tsx`, `packages/ui/treeconsole/treetable/src/components/internal/TreeTableContextMenu.tsx`（必要に応じて追加）
+- ロールバック手順: Create 表示条件の差分を revert して元に戻す
+- チェックリスト:
+  - TreeNodeInfoPanel の Create 表示をフォルダ時のみ許可する
+  - パンくず/TreeTable の Create 表示をフォルダ時のみ許可する
+  - app の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-05 22:36 JST Create のフォルダ限定表示に着手。
+  - update: 2026-02-05 22:38 JST パンくず/TreeTable の Create をフォルダ時のみ表示に変更。
+  - update: 2026-02-05 22:39 JST pnpm --filter @hierarchidb/app typecheck exit 0（plugin-base tsdown define 警告あり）を確認。
+
+2526) fix/tree-info-panel/context-menu-create-first (P1) — 進行中 (2026-02-05)
+- ブランチ名: fix/tree-info-panel/context-menu-create-first
+- 依存: なし
+- 受け入れ基準: TreeNodeInfoPanel のアイコンコンテキストメニューでフォルダノード時に Create が先頭に表示される／パンくず・TreeTable の既存挙動と一致する／フォルダ以外のメニュー順は維持される／`pnpm --filter @hierarchidb/app typecheck` が exit 0 または blocked を記録／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx`（必要に応じて追加）
+- ロールバック手順: メニュー順序調整の差分を revert して元に戻す
+- チェックリスト:
+  - TreeNodeInfoPanel のフォルダメニューで Create を先頭に並べる
+  - 既存の非フォルダメニュー順が維持されることを確認する
+  - app の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-05 22:28 JST TreeNodeInfoPanel の Create メニュー先頭化に着手。
+  - update: 2026-02-05 22:31 JST TreeNodeInfoPanel のフォルダメニューで Create を有効化し先頭表示に統一。
+  - update: 2026-02-05 22:32 JST pnpm --filter @hierarchidb/app typecheck exit 0（plugin-base tsdown define 警告あり）を確認。
+
+2525) fix/shape-fetch/default-workers-3 (P1) — 進行中 (2026-02-05)
+- ブランチ名: fix/shape-fetch/default-workers-3
+- 依存: なし
+- 受け入れ基準: Fetch の同時ワーカー数デフォルトが 2→3 に変更される／既存保存値は上書きされない／UI 表示と保存値が一致する／`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0 もしくは blocked を記録／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/common/types/constants.ts`（必要に応じて追加）
+- ロールバック手順: fetchConfig.maxConcurrent のデフォルトを 2 に戻す
+- チェックリスト:
+  - Fetch Workers のデフォルト値を 3 に更新する
+  - 既存保存値が優先されることを確認する
+  - shape-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-05 22:22 JST Fetch Workers のデフォルト値変更に着手。
+  - update: 2026-02-05 22:24 JST fetchConfig.maxConcurrent のデフォルトを 3 に変更。
+  - update: 2026-02-05 22:24 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2524) fix/shape-transform/default-workers-4 (P1) — 進行中 (2026-02-05)
+- ブランチ名: fix/shape-transform/default-workers-4
+- 依存: なし
+- 受け入れ基準: Transform Workers (Simplification) のデフォルト値が 2→4 に変更される／既存保存値は上書きされない／UI 表示と保存値が一致する／`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/common/types/constants.ts`（必要に応じて追加）
+- ロールバック手順: transformConfig.maxConcurrent のデフォルトを 2 に戻す
+- チェックリスト:
+  - Transform Workers のデフォルト値を 4 に更新する
+  - 既存保存値が優先されることを確認する
+  - shape-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-05 22:18 JST Transform Workers のデフォルト値変更に着手。
+  - update: 2026-02-05 22:19 JST transformConfig.maxConcurrent のデフォルトを 4 に変更。
+  - blocked: 2026-02-05 22:19 JST pnpm --filter @hierarchidb/shape-plugin typecheck が既存の未使用変数エラー（stopSessionTracking）で失敗。
 
 2523) fix/location-preview/terrain-toggle-blink (P1) — 進行中 (2026-02-05)
 - ブランチ名: fix/location-preview/terrain-toggle-blink
@@ -12828,6 +12923,50 @@
   - update: 2026-01-31 10:13 JST pnpm --filter @hierarchidb/folder-plugin typecheck exit 0 を確認。
   - update: 2026-02-05 22:20 JST shape-build-background.e2e の status 取得で必須フィールド欠落による TS2322 を修正。
   - blocked: 2026-02-05 22:22 JST pnpm typecheck が app の openInNewTab/searchTerm 型エラーで exit 1。
+2442) investigation/shape-transform-vertex-limit (P1) — 完了 (2026-02-05)
+- ブランチ名: investigation/shape-transform-vertex-limit
+- 依存: なし
+- 受け入れ基準: Transform の頂点数超過で simplify tolerance が上がらない原因を特定し、コード根拠と実行経路で説明できる／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`, `packages/vt-orchestrator/src/transform/geometry.ts`, `plugins/shape-plugin/src/common/types/constants.ts`
+- ロールバック手順: 調査のみのため差分なし
+- チェックリスト:
+  - 変換ステージの簡略化リトライ処理を確認する
+  - tolerance の算出と上限設定を確認する
+  - 実行経路と挙動の整合を説明する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-02-05 22:46 JST Transform の max vertices エラーと tolerance 再調整の挙動調査に着手。
+  - update: 2026-02-05 22:46 JST retryTolerance が areaBasedTolerance で上限 clamp されるため増えない経路を確認。
+  - done: 2026-02-05 22:46 JST Transform の頂点超過で再簡略化が効かない要因を特定。
+2443) fix/shape/raise-large-area-tolerance (P1) — 進行中 (2026-02-05)
+- ブランチ名: fix/shape/raise-large-area-tolerance
+- 依存: なし
+- 受け入れ基準: Transform の retry で tolerance が上限 clamp されず再簡略化が有効になる／shape の default build config が更新される／pnpm --filter @hierarchidb/shape-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/common/types/constants.ts`
+- ロールバック手順: transformConfig.areaBasedTolerance.largeAreaTolerance を元の値へ戻す
+- チェックリスト:
+  - largeAreaTolerance を引き上げる
+  - shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-02-05 22:49 JST largeAreaTolerance の引き上げに着手。
+  - update: 2026-02-05 22:52 JST largeAreaTolerance を 1.0 へ引き上げ。
+  - done: 2026-02-05 22:52 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+2444) fix/shape/delete-build-outputs-enabled-while-busy (P1) — 進行中 (2026-02-05)
+- ブランチ名: fix/shape/delete-build-outputs-enabled-while-busy
+- 依存: なし
+- 受け入れ基準: ビルド中/一時停止/失敗後に「即時でのビルド生成物の削除」が enabled になる／影響範囲の typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/build-config/useFetchConfigSection.ts`
+- ロールバック手順: canDelete 判定を元の実装へ戻す
+- チェックリスト:
+  - バッチセッション状態に応じた delete 有効化条件を修正する
+  - pnpm --filter @hierarchidb/shape-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-02-05 22:54 JST build 中の delete ボタン有効化条件の修正に着手。
+  - update: 2026-02-05 22:54 JST running/paused/failed/queued を busy 判定に含め、delete 有効化条件を調整。
+  - update: 2026-02-05 23:02 JST processingStatus(processing/paused/failed) でも delete を有効化するよう補正。
+  - done: 2026-02-05 23:02 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
 2423) investigation/route/reference-node-links (P1) — 進行中 (2026-01-29)
 - ブランチ名: investigation/route/reference-node-links
 - 依存: なし

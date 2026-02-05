@@ -4,7 +4,7 @@
  */
 
 import type { TreeNode } from '@hierarchidb/tree-api';
-import type { NodeContextMenuProps, OpenStepOption } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import { isFolderNodeType, type NodeContextMenuProps, OpenStepOption } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { useEffect, useState, type ComponentType } from 'react';
 import type { TreeNodeInUI, TreeTableController } from '../../types.js';
 
@@ -119,7 +119,7 @@ export function TreeTableContextMenu({
       treeId={treeId}
       nodeName={node?.metadata.name}
       isVisible={node?.visible ?? true}
-      canCreate
+      canCreate={isFolderNodeType(node?.nodeType)}
       canEdit={!isRoot}
       canRemove={!isRoot}
       canDuplicate={!isRoot}

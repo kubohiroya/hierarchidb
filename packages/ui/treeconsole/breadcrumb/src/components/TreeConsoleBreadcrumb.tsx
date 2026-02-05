@@ -496,7 +496,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
         isVisible={
           contextMenuNode?.visible !== false
         }
-        canCreate={true}
+        canCreate={isFolderNodeType(contextMenuNode?.nodeType ?? contextMenuNode?.type)}
         canEdit={!isRootContext}
         canTrash={!isRootContext}
         canRemove={!isRootContext}

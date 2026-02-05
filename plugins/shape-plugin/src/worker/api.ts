@@ -5,7 +5,7 @@
 
 import { toNodeId, type NodeId } from '@hierarchidb/core-types';
 import type { BuildContinuationPolicy, TaskQueueRecord } from '@hierarchidb/batch-api';
-import type { ShapeBuildStopReason } from '@hierarchidb/shape-api';
+import type { ShapeBuildSessionRecord, ShapeBuildStopReason } from '@hierarchidb/shape-api';
 import type { ShapeBuildConfig } from '../common/types/index.js';
 import {
   type BatchSession,
@@ -46,7 +46,7 @@ import {
   putTasks,
   updateTask,
 } from '@hierarchidb/vt-orchestrator';
-import type { BuildTaskRecord } from '@hierarchidb/shape-store';
+import type { BuildTaskRecord, StageStatus } from '@hierarchidb/shape-store';
 import { hidbEphemeralDB as ephemeralShapeDB, type EphemeralBuildTaskRecord } from '@hierarchidb/gis-sdk';
 import { runShapePipeline } from '../services/vt/shapePipeline.js';
 import { shapeMutationAPIImpl, shapeQueryAPIImpl } from '../services/batch/ShapeBuildAPIClient.ts';
@@ -103,6 +103,7 @@ const taskCallbacks = new Map<string, TaskSubscription>();
 const pauseStates = new Map<string, PauseState>();
 const activePipelines = new Set<string>();
 const activePipelineRuns = new Map<string, string>();
+const sessionSubscriptions = new Map<string, () => void>();
 
 const shapeEntityHandlerSingleton = new ShapeEntityHandler();
 const getShapeEntityHandler = (): ShapeEntityHandler => shapeEntityHandlerSingleton;
@@ -550,6 +551,160 @@ const buildProgressPayloadFromTasks = async (
   };
 };
 
+const buildStageStatus = (tasks: TaskQueueRecord[]): StageStatus => {
+  const total = tasks.length;
+  let completed = 0;
+  let failed = 0;
+  let skipped = 0;
+  let running = 0;
+  tasks.forEach((task) => {
+    const status = resolveEffectiveTaskStatus(task);
+    if (status === 'failed') {
+      failed += 1;
+      return;
+    }
+    if (status === 'completed') {
+      if (isSkippedMessage(task.message)) {
+        skipped += 1;
+      } else {
+        completed += 1;
+      }
+      return;
+    }
+    if (status === 'running') {
+      running += 1;
+    }
+  });
+  const doneCount = Math.min(total, completed + skipped + failed);
+  const progress = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+  const status: StageStatus['status'] = failed > 0
+    ? 'failed'
+    : total > 0 && doneCount >= total
+      ? 'completed'
+      : running > 0
+        ? 'running'
+        : 'queued';
+  return {
+    status,
+    progress,
+    tasksTotal: total,
+    tasksCompleted: completed + skipped,
+    tasksFailed: failed,
+  };
+};
+
+const buildStageStatusMap = (tasks: TaskQueueRecord[]): Record<TaskQueueRecord['stage'], StageStatus> => ({
+  fetch: buildStageStatus(tasks.filter((task) => task.stage === 'fetch')),
+  transform: buildStageStatus(tasks.filter((task) => task.stage === 'transform')),
+  vt: buildStageStatus(tasks.filter((task) => task.stage === 'vt')),
+});
+
+const resolveSessionStatus = (
+  nodeId: NodeId,
+  tasks: TaskQueueRecord[],
+): ShapeBuildSessionRecord['status'] => {
+  if (getPauseState(nodeId).paused) return 'paused';
+  return summarizeTaskQueueStatus(tasks).status;
+};
+
+const resolveSessionLastActivity = (tasks: TaskQueueRecord[]): number => {
+  const latest = selectLatestTaskBySequence(tasks);
+  const timestamp = latest ? resolveTaskActivityTimestamp(latest) : Date.now();
+  return timestamp > 0 ? timestamp : Date.now();
+};
+
+const resolveSessionExpiresAt = (lastActivity: number): number => (
+  lastActivity + 5 * 60 * 1000
+);
+
+const updateBuildSessionFromTasks = async (
+  nodeId: NodeId,
+  overrides?: {
+    status?: ShapeBuildSessionRecord['status'];
+    stopReason?: ShapeBuildStopReason;
+    canResume?: boolean;
+    completedAt?: number;
+  },
+): Promise<void> => {
+  try {
+    const taskQueue = new VtTaskQueueDb();
+    const tasks = await listTasks(taskQueue, nodeId);
+    const progress = await summarizeTaskQueueProgress(tasks, resolveTaskType(tasks));
+    const stages = buildStageStatusMap(tasks);
+    const status = overrides?.status ?? resolveSessionStatus(nodeId, tasks);
+    const lastActivity = resolveSessionLastActivity(tasks);
+    const expiresAt = resolveSessionExpiresAt(lastActivity);
+    await shapeMutationAPIImpl.updateBuildSession(nodeId, {
+      status,
+      progress,
+      stages,
+      stopReason: overrides?.stopReason,
+      canResume: overrides?.canResume,
+      completedAt: overrides?.completedAt,
+      lastActivity,
+      expiresAt,
+    });
+  } catch (error) {
+    console.warn('[shapeBatchAPI] build session update failed', error);
+  }
+};
+
+const upsertBuildSessionSnapshot = async (
+  input: {
+    nodeId: NodeId;
+    draftId?: NodeId;
+    config: ShapeBuildConfig;
+    tasks: TaskQueueRecord[];
+    status: ShapeBuildSessionRecord['status'];
+    startedAt?: number;
+    stopReason?: ShapeBuildStopReason;
+    canResume?: boolean;
+    completedAt?: number;
+  },
+): Promise<void> => {
+  const now = Date.now();
+  const progress = await summarizeTaskQueueProgress(input.tasks, resolveTaskType(input.tasks));
+  const stages = buildStageStatusMap(input.tasks);
+  const existing = await shapeQueryAPIImpl.getBuildSessionRecord(input.nodeId).catch(() => null);
+  const startedAt = existing?.startedAt ?? input.startedAt ?? now;
+  const lastActivity = resolveSessionLastActivity(input.tasks);
+  const expiresAt = resolveSessionExpiresAt(lastActivity);
+  const record: ShapeBuildSessionRecord = {
+    nodeId: input.nodeId,
+    draftId: input.draftId ?? existing?.draftId,
+    status: input.status,
+    config: buildBuildSessionConfig(input.config),
+    startedAt,
+    updatedAt: now,
+    completedAt: input.completedAt,
+    progress,
+    stages,
+    stopReason: input.stopReason,
+    canResume: input.canResume,
+    lastActivity,
+    expiresAt,
+  };
+  await shapeMutationAPIImpl.upsertBuildSession(record);
+};
+
+const startSessionTracking = (nodeId: NodeId): void => {
+  const key = String(nodeId);
+  if (sessionSubscriptions.has(key)) return;
+  const unsubscribe = onTaskQueueUpdate(nodeId, () => {
+    void updateBuildSessionFromTasks(nodeId);
+  });
+  sessionSubscriptions.set(key, unsubscribe);
+};
+
+const stopSessionTracking = (nodeId: NodeId): void => {
+  const key = String(nodeId);
+  const unsubscribe = sessionSubscriptions.get(key);
+  if (unsubscribe) {
+    unsubscribe();
+  }
+  sessionSubscriptions.delete(key);
+};
+
 const getPauseState = (nodeId: NodeId): PauseState => {
   const key = String(nodeId);
   const existing = pauseStates.get(key);
@@ -795,6 +950,16 @@ export const shapeBatchAPI = {
       await resetRunningTasks(nodeForSession);
       await resetFailedTasks(nodeForSession);
     }
+    await upsertBuildSessionSnapshot({
+      nodeId: nodeForSession,
+      draftId,
+      config: mergedBatchConfig,
+      tasks: existingTasks,
+      status: 'running',
+      startedAt: buildStartedAt,
+      canResume: false,
+    });
+    startSessionTracking(nodeForSession);
     console.warn('[shapeBatchAPI] startBatchProcess pipeline start', {
       nodeId: nodeForSession,
       runId: pipelineRunId,
@@ -811,19 +976,34 @@ export const shapeBatchAPI = {
       resumeExistingTasks,
       pipelineRunId,
     }).then(async () => {
+      const completedAt = Date.now();
       await handler.updateEntity(nodeForSession, {
-        buildFinishedAt: Date.now(),
+        buildFinishedAt: completedAt,
         processingStatus: 'completed',
       });
+      await updateBuildSessionFromTasks(nodeForSession, {
+        status: 'completed',
+        stopReason: 'completed',
+        completedAt,
+        canResume: false,
+      });
     }).catch(async (error) => {
+      const failedAt = Date.now();
       console.error('[shapeBatchAPI] vt pipeline failed', error);
       await handler.updateEntity(nodeForSession, {
         processingStatus: 'failed',
+      });
+      await updateBuildSessionFromTasks(nodeForSession, {
+        status: 'failed',
+        stopReason: 'failed',
+        completedAt: failedAt,
+        canResume: false,
       });
     }).finally(() => {
       activePipelines.delete(pipelineKey);
       activePipelineRuns.delete(pipelineKey);
       pauseStates.delete(String(nodeForSession));
+      stopSessionTracking(nodeForSession);
       void emitProgressSnapshot(nodeForSession);
     });
 
@@ -865,13 +1045,11 @@ export const shapeBatchAPI = {
       const stopReason = rawStopReason && isStopReason(rawStopReason) ? rawStopReason : undefined;
       setPaused(nodeId, true);
       await emitProgressSnapshot(nodeId);
-      if (stopReason) {
-        try {
-          await shapeMutationAPIImpl.updateBuildSession(nodeId, { stopReason });
-        } catch (error) {
-          console.warn('[shapeBatchAPI] failed to persist stopReason', error);
-        }
-      }
+      await updateBuildSessionFromTasks(nodeId, {
+        status: 'paused',
+        stopReason,
+        canResume: true,
+      });
       return;
     }
     if (command === 'session/resume') {
@@ -890,9 +1068,10 @@ export const shapeBatchAPI = {
         }
       }
       await resetFailedTasks(nodeId);
-      const existingTasks = await listTasks(taskQueue, nodeId);
+      let existingTasks = await listTasks(taskQueue, nodeId);
       if (existingTasks.length === 0) {
         await seedTaskQueueFromBuildTasks(nodeId);
+        existingTasks = await listTasks(taskQueue, nodeId);
       }
       if (activePipelines.has(pipelineKey)) {
         await emitProgressSnapshot(nodeId, 'resumeBatchSession ignored: pipeline already active');
@@ -917,6 +1096,15 @@ export const shapeBatchAPI = {
           'resumeBatchSession',
         );
         const pipelineRunId = `${nodeId}:${Date.now()}`;
+        await upsertBuildSessionSnapshot({
+          nodeId,
+          config: mergedBuildConfig,
+          tasks: existingTasks,
+          status: 'running',
+          startedAt: Date.now(),
+          canResume: false,
+        });
+        startSessionTracking(nodeId);
         activePipelines.add(pipelineKey);
         activePipelineRuns.set(pipelineKey, pipelineRunId);
         console.warn('[shapeBatchAPI] resumeBatchSession pipeline start', {
@@ -933,19 +1121,34 @@ export const shapeBatchAPI = {
           buildContinuationPolicy,
           pipelineRunId,
         }).then(async () => {
+          const completedAt = Date.now();
           await handler.updateEntity(nodeId, {
-            buildFinishedAt: Date.now(),
+            buildFinishedAt: completedAt,
             processingStatus: 'completed',
           });
+          await updateBuildSessionFromTasks(nodeId, {
+            status: 'completed',
+            stopReason: 'completed',
+            completedAt,
+            canResume: false,
+          });
         }).catch(async (error) => {
+          const failedAt = Date.now();
           console.error('[shapeBatchAPI] vt pipeline failed', error);
           await handler.updateEntity(nodeId, {
             processingStatus: 'failed',
+          });
+          await updateBuildSessionFromTasks(nodeId, {
+            status: 'failed',
+            stopReason: 'failed',
+            completedAt: failedAt,
+            canResume: false,
           });
         }).finally(() => {
           activePipelines.delete(pipelineKey);
           activePipelineRuns.delete(pipelineKey);
           pauseStates.delete(pipelineKey);
+          stopSessionTracking(nodeId);
           void emitProgressSnapshot(nodeId);
         });
       }
