@@ -62,7 +62,6 @@ export {
 } from './ephemeral/EphemeralGisDB.js';
 export {
   EPHEMERAL_DB_SCHEMA,
-  LEGACY_EPHEMERAL_DB_SCHEMA,
   type BuildStage,
   type BuildStatus,
   type BuildTaskStatus,

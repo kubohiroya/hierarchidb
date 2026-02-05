@@ -8,7 +8,7 @@ import type {
   EphemeralTransformErrorRecord,
   EphemeralTileIdToBufferRelation,
 } from './EphemeralBuildState.js';
-import { EPHEMERAL_DB_SCHEMA, LEGACY_EPHEMERAL_DB_SCHEMA } from './EphemeralBuildState.js';
+import { EPHEMERAL_DB_SCHEMA } from './EphemeralBuildState.js';
 
 export class HidbEphemeralDB extends Dexie {
   sessions!: Table<EphemeralBuildSessionRecord, string>;
@@ -20,37 +20,7 @@ export class HidbEphemeralDB extends Dexie {
 
   constructor(dbName: string = getDBName('ephemeral')) {
     super(dbName);
-    this.version(1).stores(LEGACY_EPHEMERAL_DB_SCHEMA);
-    this.version(2).stores(LEGACY_EPHEMERAL_DB_SCHEMA).upgrade((tx) =>
-      tx.table('vtTaskQueue')
-        .toCollection()
-        .modify((task) => {
-          if (task.status === 'waiting') {
-            task.status = 'queued';
-          }
-        })
-    );
-    this.version(3).stores(EPHEMERAL_DB_SCHEMA).upgrade(async (tx) => {
-      let legacyTasks: Array<Record<string, unknown>> = [];
-      try {
-        legacyTasks = await tx.table('vtTaskQueue').toArray();
-      } catch {
-        return;
-      }
-      if (legacyTasks.length === 0) return;
-      const mapped = legacyTasks.map((task) => {
-        const stage = typeof task.stage === 'string' ? task.stage : undefined;
-        const taskType = typeof task.taskType === 'string' ? task.taskType : stage ?? 'vt';
-        const status = task.status === 'waiting' ? 'queued' : task.status;
-        return {
-          ...task,
-          taskType,
-          stage: stage ?? taskType,
-          status: status ?? 'queued',
-        };
-      });
-      await tx.table('buildTasks').bulkPut(mapped);
-    });
+    this.version(1).stores(EPHEMERAL_DB_SCHEMA);
     this.sessions = this.table('sessions');
     this.buildTasks = this.table('buildTasks');
     this.fetchCache = this.table('fetchCache');

@@ -1,7 +1,7 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/core-types';
-import { EPHEMERAL_DB_SCHEMA, LEGACY_EPHEMERAL_DB_SCHEMA } from '@hierarchidb/gis-sdk';
+import { EPHEMERAL_DB_SCHEMA } from '@hierarchidb/gis-sdk';
 import type { TaskQueueEvent, TaskQueueRecord, TaskStage, TaskStatus } from '../types/types.js';
 //import type { TaskQueueEvent, TaskQueueRecord, TaskStage, TaskStatus } from '@hierarchidb/gis-sdk';
 
@@ -24,37 +24,7 @@ export class VtTaskQueueDb extends Dexie {
 
   constructor(dbName: string = getDBName('ephemeral')) {
     super(dbName);
-    this.version(1).stores(LEGACY_EPHEMERAL_DB_SCHEMA);
-    this.version(2).stores(LEGACY_EPHEMERAL_DB_SCHEMA).upgrade((tx) =>
-      tx.table('vtTaskQueue')
-        .toCollection()
-        .modify((task) => {
-          if (task.status === 'waiting') {
-            task.status = 'queued';
-          }
-        })
-    );
-    this.version(3).stores(EPHEMERAL_DB_SCHEMA).upgrade(async (tx) => {
-      let legacyTasks: Array<Record<string, unknown>> = [];
-      try {
-        legacyTasks = await tx.table('vtTaskQueue').toArray();
-      } catch {
-        return;
-      }
-      if (legacyTasks.length == 0) return;
-      const mapped = legacyTasks.map((task) => {
-        const stage = typeof task.stage === 'string' ? task.stage : undefined;
-        const taskType = typeof task.taskType === 'string' ? task.taskType : stage ?? 'vt';
-        const status = task.status === 'waiting' ? 'queued' : task.status;
-        return {
-          ...task,
-          taskType,
-          stage: stage ?? taskType,
-          status: status ?? 'queued',
-        };
-      });
-      await tx.table('buildTasks').bulkPut(mapped);
-    });
+    this.version(1).stores(EPHEMERAL_DB_SCHEMA);
     this.tasks = this.table('buildTasks');
   }
 }

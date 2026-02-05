@@ -274,6 +274,10 @@
   - update: 2026-02-05 11:45 JST vtTaskQueue のデータを buildTasks へ移行し、vt-orchestrator の参照先を buildTasks に切替。
   - update: 2026-02-05 11:45 JST pnpm --filter @hierarchidb/gis-sdk build exit 0（tsdown define 警告あり）。
   - update: 2026-02-05 11:45 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0。
+  - start: 2026-02-05 11:49 JST vtTaskQueue/legacy fallback を撤去し新経路のみへ整理。
+  - update: 2026-02-05 11:50 JST vtTaskQueue/LEGACY schema を撤去し新スキーマのみへ整理。
+  - update: 2026-02-05 11:50 JST pnpm --filter @hierarchidb/gis-sdk build exit 0（tsdown define 警告あり）。
+  - update: 2026-02-05 11:50 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0。
 
 2509) fix/shape-build/max-update-depth-loop (P1) — 完了 (2026-02-04)
 - ブランチ名: fix/shape-build/max-update-depth-loop
@@ -341,6 +345,43 @@
   - update: 2026-02-04 17:25 JST テンプレート JSON を population-by-countries-2023.json へ改名し参照先を更新。
   - update: 2026-02-04 17:25 JST 全世界はレベル1まで、CN/IN はレベル2まで選択する既定へ更新。
   - done: 2026-02-04 17:25 JST population-2023 テンプレートの改名と既定選択更新を完了。
+
+2513) fix/shape-transform/retry-tolerance-vertex-limit (P1) — 完了 (2026-02-04)
+- ブランチ名: fix/shape-transform/retry-tolerance-vertex-limit
+- 依存: なし
+- 受け入れ基準: transform 簡略化後の頂点数が 65535 を超える場合に tolerance を +0.5 ずつ最大 +5.0 まで増やして再簡略化する／超過が解消されるまで再試行する／`pnpm --filter @hierarchidb/vt-orchestrator typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`
+- ロールバック手順: 該当差分を revert して従来の retry ロジックへ戻す
+- チェックリスト:
+  - 0.5 ステップで最大 10 回の retry を実装する
+  - 既存の簡略化処理フローを維持する
+  - vt-orchestrator の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-04 17:40 JST transform の頂点上限超過時の retry tolerance 実装に着手。
+  - update: 2026-02-04 17:46 JST tolerance を +0.5 ずつ最大 +5.0 まで増やす retry へ変更。
+  - update: 2026-02-04 17:46 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+  - update: 2026-02-04 18:05 JST retry 条件を 65536 の 10% (=6553) に変更し、t+5.0*(i+1) 方式へ修正。
+  - update: 2026-02-04 18:05 JST しきい値未満時の二分探索（5 - ceil(i/2) 回）を追加。
+  - update: 2026-02-04 18:05 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+  - done: 2026-02-04 18:05 JST transform の頂点上限超過 retry 仕様更新を完了。
+
+2514) fix/shape-transform/quality-first-vertex-retry (P1) — 完了 (2026-02-04)
+- ブランチ名: fix/shape-transform/quality-first-vertex-retry
+- 依存: なし
+- 受け入れ基準: 6553 超過のポリゴンのみを対象に段階的 tolerance 増分と二分探索を行う／全体一律簡略化は行わない／`pnpm --filter @hierarchidb/vt-orchestrator typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/vt-orchestrator/src/transform/createTransformByBandHandler.ts`
+- ロールバック手順: 該当差分を revert して従来の全体簡略化 retry へ戻す
+- チェックリスト:
+  - 超過した feature のみ再簡略化する
+  - tolerance 5.0 刻み + 二分探索で最小限の簡略化に寄せる
+  - vt-orchestrator の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-04 18:20 JST 品質優先の頂点超過 retry 方式へ修正着手。
+  - update: 2026-02-04 18:35 JST 超過 feature のみを対象に段階的 tolerance + 二分探索を適用。
+  - update: 2026-02-04 18:35 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0 を確認。
+  - done: 2026-02-04 18:35 JST 品質優先の頂点超過 retry 方式へ更新完了。
 - ブランチ名: fix/shape-step5/summary-card-clamp
 - 依存: なし
 - 受け入れ基準: Step5 ビルドのサマリーカード内の現在タスク/メッセージが2行固定で表示されレイアウトが安定する／タスクリストのメッセージも2行固定になる／`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
