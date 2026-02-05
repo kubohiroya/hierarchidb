@@ -26,6 +26,7 @@ import type { ShapeBuildSessionRecord } from '@hierarchidb/shape-api';
 import { proxy } from 'comlink';
 import { useWorker } from '~/contexts/WorkerProvider.js';
 import { startBuildFlow } from '~/router/pages/tree/console/buildFlow.ts';
+import { openInNewTab } from '~/utils/openInNewTab.ts';
 
 type BuildSessionLauncherButtonsProps = {
   treeId?: TreeId;
@@ -178,7 +179,7 @@ export function BuildSessionLauncherButtons({ treeId, pageNodeId }: BuildSession
   }, [workerClient]);
 
   const handleNavigateToBuild = useCallback(
-    async (entry: BuildSessionEntry) => {
+    async (entry: BuildSessionEntry, options?: { openInNewTab?: boolean }) => {
       if (!treeId || !pageNodeId || !workerClient) return;
       if (!entry.node?.id) return;
       await startBuildFlow({
@@ -187,7 +188,13 @@ export function BuildSessionLauncherButtons({ treeId, pageNodeId }: BuildSession
         node: entry.node,
         returnTo,
         workerClient,
-        navigate: (to) => navigate({ to }),
+        navigate: (to) => {
+          if (options?.openInNewTab) {
+            openInNewTab(to);
+            return;
+          }
+          navigate({ to });
+        },
       });
     },
     [navigate, pageNodeId, returnTo, treeId, workerClient]
@@ -339,7 +346,7 @@ export function BuildSessionLauncherButtons({ treeId, pageNodeId }: BuildSession
                 size="small"
                 variant="outlined"
                 startIcon={icon}
-                onClick={() => handleNavigateToBuild(entry)}
+                onClick={(event) => handleNavigateToBuild(entry, { openInNewTab: event.shiftKey })}
               >
                 {nodeName}
               </LoadingButton>

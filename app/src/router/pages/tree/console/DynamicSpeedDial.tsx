@@ -13,7 +13,7 @@ import { useDynamicSpeedDial } from './useDynamicSpeedDial.js';
 
 interface DynamicSpeedDialProps {
   treeId: TreeId | undefined;
-  onCreateAction: (action: string, node: HierarchicalTreeNode) => void;
+  onCreateAction: (action: string, node: HierarchicalTreeNode, options?: { openInNewTab?: boolean }) => void;
   position?: { bottom?: number; right?: number; left?: number; top?: number };
   hidden?: boolean;
   menuContext?: TreeContext; // Optional explicit context to stage items from VM
@@ -145,7 +145,9 @@ export function DynamicSpeedDial({
                     key={`${item.key}-${language}`}
                     icon={resolveIcon({ nodeType: item.nodeType, icon: item.icon })}
                     tooltipTitle={tooltipLabel}
-                    onClick={() => handleVMActionClick(item.nodeType)}
+                    onClick={(event) =>
+                      handleVMActionClick(item.nodeType, { openInNewTab: event.shiftKey })
+                    }
                     sx={{
                       '& .MuiTooltip-tooltip': {
                         maxWidth: 300,

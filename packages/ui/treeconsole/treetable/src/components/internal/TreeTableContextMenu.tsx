@@ -99,6 +99,7 @@ export function TreeTableContextMenu({
       expandTarget?: boolean;
       source?: 'treetable';
       nextVisible?: boolean;
+      openInNewTab?: boolean;
     }
   ) => {
     if (!node) return;
@@ -130,18 +131,22 @@ export function TreeTableContextMenu({
           triggerContextAction('toggle-visibility', { source: 'treetable', nextVisible });
         }
       }}
-      onCreate={(type: string) => {
+      onCreate={(type: string, options) => {
         if (node) {
-          triggerContextAction(`create:${type}`, { expandTarget: true, source: 'treetable' });
+          triggerContextAction(`create:${type}`, {
+            expandTarget: true,
+            source: 'treetable',
+            openInNewTab: options?.openInNewTab,
+          });
         }
         handleClose();
       }}
-      onEdit={() => {
+      onEdit={(options) => {
         if (!node || isRoot) {
           handleClose();
           return;
         }
-        triggerContextAction('edit', { source: 'treetable' });
+        triggerContextAction('edit', { source: 'treetable', openInNewTab: options?.openInNewTab });
         handleClose();
       }}
       onDuplicate={() => {
@@ -178,21 +183,32 @@ export function TreeTableContextMenu({
           triggerContextAction('cut', { navigateToParent: true, source: 'treetable' });
         }
       }}
-      onOpen={() => {
+      onOpen={(options) => {
         if (node) {
-          controller?.onNodeClick?.(node.id, node);
+          if (options?.openInNewTab) {
+            triggerContextAction('navigate', { source: 'treetable', openInNewTab: true });
+          } else {
+            controller?.onNodeClick?.(node.id, node);
+          }
         }
         handleClose();
       }}
-      onOpenFolder={() => {
+      onOpenFolder={(options) => {
         if (node) {
-          controller?.onNodeClick?.(node.id, node);
+          if (options?.openInNewTab) {
+            triggerContextAction('navigate', { source: 'treetable', openInNewTab: true });
+          } else {
+            controller?.onNodeClick?.(node.id, node);
+          }
         }
         handleClose();
       }}
-      onOpenStep={(step) => {
+      onOpenStep={(step, options) => {
         if (node) {
-          triggerContextAction(`open-step:${step}`, { source: 'treetable' });
+          triggerContextAction(`open-step:${step}`, {
+            source: 'treetable',
+            openInNewTab: options?.openInNewTab,
+          });
         }
         handleClose();
       }}

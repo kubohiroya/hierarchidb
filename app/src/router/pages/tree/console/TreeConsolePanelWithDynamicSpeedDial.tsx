@@ -134,7 +134,9 @@ export function TreeConsolePanelWithDynamicSpeedDial({
       {/* Our dynamic SpeedDial that replaces the hardcoded one */}
       <DynamicSpeedDial
         treeId={treeId}
-        onCreateAction={(action: string) => onContextMenuAction(action, speedDialContextNode)}
+        onCreateAction={(action: string, _, options) =>
+          onContextMenuAction(action, speedDialContextNode, options)
+        }
         position={{ bottom: 16, right: 16 }}
         hidden={!panelProps.canCreate || isDialogRoute || speedDialSuppressed}
         onSuppress={() => setSpeedDialSuppressed(true)}

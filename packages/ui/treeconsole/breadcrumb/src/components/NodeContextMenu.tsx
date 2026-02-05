@@ -16,6 +16,7 @@ import {
   Edit as EditIcon,
   FileCopy as DuplicateIcon,
   Folder as FolderIcon,
+  OpenInNew as OpenInNewIcon,
   PlayArrow as PlayArrowIcon,
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
@@ -54,13 +55,13 @@ export interface NodeContextMenuProps {
   canCut?: boolean;
   canBuild?: boolean;
   canPreview?: boolean;
-  onOpen?: () => void;
-  onOpenFolder?: () => void;
-  onOpenStep?: (step: number) => void;
-  onPreview?: () => void;
-  onBuild?: () => void;
-  onEdit?: () => void;
-  onCreate?: (type: string) => void;
+  onOpen?: (options?: { openInNewTab?: boolean }) => void;
+  onOpenFolder?: (options?: { openInNewTab?: boolean }) => void;
+  onOpenStep?: (step: number, options?: { openInNewTab?: boolean }) => void;
+  onPreview?: (options?: { openInNewTab?: boolean }) => void;
+  onBuild?: (options?: { openInNewTab?: boolean }) => void;
+  onEdit?: (options?: { openInNewTab?: boolean }) => void;
+  onCreate?: (type: string, options?: { openInNewTab?: boolean }) => void;
   onDuplicate?: () => void;
   /** @deprecated Use onTrash */
   onRemove?: () => void;
@@ -126,6 +127,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
   const [openStepMenuOpen, setOpenStepMenuOpen] = useState(false);
   const [openStepMenuAnchor, setOpenStepMenuAnchor] = useState<HTMLElement | null>(null);
   const [localInvisible, setLocalInvisible] = useState<boolean | null>(null);
+  const [isShiftPressed, setIsShiftPressed] = useState(false);
   const { t, language } = useGlobalI18nTranslator();
   const { resolveIcon } = useIconRegistry();
 
@@ -166,6 +168,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
       : isFolderNodeType(nodeType) || buildableNodeTypes.has(normalizedNodeType));
   const showBuildEntry = Boolean(_onBuild) && (canBuildEntry || isLocationNode);
   const buildDisabled = !canBuildEntry || isLocationNode;
+  const openInNewAdornment = isShiftPressed ? <OpenInNewIcon fontSize="small" sx={{ m: 0, p: 0, fontSize: '95%' }} /> : null;
 
   // Use refs to store the latest props to avoid stale closures
   const propsRef = useRef(props);
@@ -183,6 +186,31 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
       setLocalInvisible(null);
     }
   }, [open, isVisible, localInvisible]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Shift') {
+        setIsShiftPressed(true);
+      }
+    };
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (event.key === 'Shift') {
+        setIsShiftPressed(false);
+      }
+    };
+    const onBlur = () => {
+      setIsShiftPressed(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', onBlur);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', onBlur);
+    };
+  }, []);
 
   const handleAddMenuClick = useCallback((event: MouseEvent<HTMLElement>) => {
     event.stopPropagation();
@@ -223,41 +251,51 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     }
   },[]);
 
-  const handleOpenClick = useCallback(() => {
+  const resolveOpenInNew = useCallback(
+    (event?: MouseEvent<HTMLElement>) => Boolean(event?.shiftKey || isShiftPressed),
+    [isShiftPressed]
+  );
+
+  const handleOpenClick = useCallback((event?: MouseEvent<HTMLElement>) => {
     const onOpen = propsRef.current.onOpen;
+    const openInNewTab = resolveOpenInNew(event);
     blurActive();
     handleMainMenuClose();
     // Defer until after menu unmount/aria-hidden settles
-    setTimeout(() => { onOpen?.(); }, 0);
-  }, [blurActive, handleMainMenuClose]);
+    setTimeout(() => { onOpen?.({ openInNewTab }); }, 0);
+  }, [blurActive, handleMainMenuClose, resolveOpenInNew]);
 
-  const handleOpenStepClick = useCallback((step: number) => {
+  const handleOpenStepClick = useCallback((step: number, event?: MouseEvent<HTMLElement>) => {
     const onOpenStep = propsRef.current.onOpenStep;
+    const openInNewTab = resolveOpenInNew(event);
     blurActive();
     handleMainMenuClose();
-    setTimeout(() => { onOpenStep?.(step); }, 0);
-  }, [blurActive, handleMainMenuClose]);
+    setTimeout(() => { onOpenStep?.(step, { openInNewTab }); }, 0);
+  }, [blurActive, handleMainMenuClose, resolveOpenInNew]);
 
-  const handleOpenFolderClick = useCallback(() => {
+  const handleOpenFolderClick = useCallback((event?: MouseEvent<HTMLElement>) => {
     const onOpenFolder = propsRef.current.onOpenFolder;
+    const openInNewTab = resolveOpenInNew(event);
     blurActive();
     handleMainMenuClose();
-    setTimeout(() => { onOpenFolder?.(); }, 0);
-  }, [blurActive, handleMainMenuClose]);
+    setTimeout(() => { onOpenFolder?.({ openInNewTab }); }, 0);
+  }, [blurActive, handleMainMenuClose, resolveOpenInNew]);
 
-  const handleEditClick = useCallback(() => {
+  const handleEditClick = useCallback((event?: MouseEvent<HTMLElement>) => {
     const onEdit = propsRef.current.onEdit;
+    const openInNewTab = resolveOpenInNew(event);
     blurActive();
     handleMainMenuClose();
-    setTimeout(() => { onEdit?.(); }, 0);
-  }, [blurActive, handleMainMenuClose]);
+    setTimeout(() => { onEdit?.({ openInNewTab }); }, 0);
+  }, [blurActive, handleMainMenuClose, resolveOpenInNew]);
 
-  const handleCreateClick = useCallback((type: string) => {
+  const handleCreateClick = useCallback((type: string, event?: MouseEvent<HTMLElement>) => {
     const onCreate = propsRef.current.onCreate;
+    const openInNewTab = resolveOpenInNew(event);
     blurActive();
     handleMainMenuClose();
-    setTimeout(() => { onCreate?.(type); }, 0);
-  }, [blurActive, handleMainMenuClose]);
+    setTimeout(() => { onCreate?.(type, { openInNewTab }); }, 0);
+  }, [blurActive, handleMainMenuClose, resolveOpenInNew]);
 
   const handleDuplicateClick = useCallback(() => {
     const onDuplicate = propsRef.current.onDuplicate;
@@ -288,19 +326,21 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     setTimeout(() => { onCut?.(); }, 0);
   }, [blurActive, handleMainMenuClose]);
 
-  const handlePreviewClick = useCallback(() => {
+  const handlePreviewClick = useCallback((event?: MouseEvent<HTMLElement>) => {
     const onPreview = propsRef.current.onPreview;
+    const openInNewTab = resolveOpenInNew(event);
     blurActive();
     handleMainMenuClose();
-    setTimeout(() => { onPreview?.(); }, 0);
-  }, [blurActive, handleMainMenuClose]);
+    setTimeout(() => { onPreview?.({ openInNewTab }); }, 0);
+  }, [blurActive, handleMainMenuClose, resolveOpenInNew]);
 
-  const handleBuildClick = useCallback(() => {
+  const handleBuildClick = useCallback((event?: MouseEvent<HTMLElement>) => {
     const onBuild = propsRef.current.onBuild;
+    const openInNewTab = resolveOpenInNew(event);
     blurActive();
     handleMainMenuClose();
-    setTimeout(() => { onBuild?.(); }, 0);
-  }, [blurActive, handleMainMenuClose]);
+    setTimeout(() => { onBuild?.({ openInNewTab }); }, 0);
+  }, [blurActive, handleMainMenuClose, resolveOpenInNew]);
 
   const handleToggleVisible = useCallback(() => {
     const onToggleVisible = propsRef.current.onToggleVisible;
@@ -477,38 +517,41 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
         {[
           <Divider key="divider-action-group" />,
           isFolder ? (
-            <MenuItem key="menuitem-open-folder" onClick={handleOpenFolderClick} aria-label={openFolderLabel}>
-              <ListItemIcon>
-                <FolderIcon />
-              </ListItemIcon>
-              <ListItemText primary={openFolderLabel} />
-            </MenuItem>
-          ) : hasOpenSteps ? (
-            <MenuItem key="menuitem-open-steps" onClick={handleOpenStepMenuClick} aria-label={openLabel}>
-              <ListItemIcon>
-                <FolderIcon />
-              </ListItemIcon>
-              <ListItemText primary={openLabel} />
-              <ChevronRightIcon sx={{ marginLeft: 'auto' }} />
-            </MenuItem>
-          ) : (
-            <MenuItem key="menuitem-open" onClick={handleOpenClick} aria-label={openLabel}>
-              <ListItemIcon>
-                <FolderIcon />
-              </ListItemIcon>
-              <ListItemText primary={openLabel} />
-            </MenuItem>
-          ),
-          <MenuItem key="menuitem-edit" onClick={handleEditClick} disabled={!canEdit} aria-label={editLabel}>
+          <MenuItem key="menuitem-open-folder" onClick={(event) => handleOpenFolderClick(event)} aria-label={openFolderLabel}>
+            <ListItemIcon>
+              <FolderIcon />
+            </ListItemIcon>
+            <ListItemText primary={openFolderLabel} />
+            {openInNewAdornment ? <span style={{ marginLeft: 'auto' }}>{openInNewAdornment}</span> : null}
+          </MenuItem>
+        ) : hasOpenSteps ? (
+          <MenuItem key="menuitem-open-steps" onClick={handleOpenStepMenuClick} aria-label={openLabel}>
+            <ListItemIcon>
+              <FolderIcon />
+            </ListItemIcon>
+            <ListItemText primary={openLabel} />
+            <ChevronRightIcon sx={{ marginLeft: 'auto' }} />
+          </MenuItem>
+        ) : (
+          <MenuItem key="menuitem-open" onClick={(event) => handleOpenClick(event)} aria-label={openLabel}>
+            <ListItemIcon>
+              <FolderIcon />
+            </ListItemIcon>
+            <ListItemText primary={openLabel} />
+            {openInNewAdornment ? <span style={{ marginLeft: 'auto' }}>{openInNewAdornment}</span> : null}
+          </MenuItem>
+        ),
+          <MenuItem key="menuitem-edit" onClick={(event) => handleEditClick(event)} disabled={!canEdit} aria-label={editLabel}>
             <ListItemIcon>
               <EditIcon />
             </ListItemIcon>
             <ListItemText primary={editLabel} />
+            {openInNewAdornment ? <span style={{ marginLeft: 'auto' }}>{openInNewAdornment}</span> : null}
           </MenuItem>,
           showBuildEntry ? (
             <MenuItem
               key="menuitem-build"
-              onClick={handleBuildClick}
+              onClick={(event) => handleBuildClick(event)}
               aria-label={buildLabel}
               disabled={buildDisabled}
             >
@@ -516,11 +559,12 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
                 <ConstructionIcon />
               </ListItemIcon>
               <ListItemText primary={buildLabel} />
+              {openInNewAdornment ? <span style={{ marginLeft: 'auto' }}>{openInNewAdornment}</span> : null}
             </MenuItem>
           ) : null,
           <MenuItem
             key="menuitem-preview"
-            onClick={handlePreviewClick}
+            onClick={(event) => handlePreviewClick(event)}
             aria-label={previewLabel}
             disabled={!canPreview}
           >
@@ -528,6 +572,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
               <PlayArrowIcon />
             </ListItemIcon>
             <ListItemText primary={previewLabel} />
+            {openInNewAdornment ? <span style={{ marginLeft: 'auto' }}>{openInNewAdornment}</span> : null}
           </MenuItem>,
         ].filter(Boolean)}
       </Menu>
@@ -578,11 +623,12 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
             return (
               <MenuItem
                 key={`${ci.type}-${language}`}
-                onClick={() => handleCreateClick(ci.type)}
+                onClick={(event) => handleCreateClick(ci.type, event)}
                 aria-label={localizedLabel}
               >
                 <ListItemIcon>{IconEl}</ListItemIcon>
                 <ListItemText>{localizedLabel}</ListItemText>
+                {openInNewAdornment ? <span style={{ marginLeft: 'auto' }}>{openInNewAdornment}</span> : null}
               </MenuItem>
             );
           }
@@ -590,9 +636,10 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
           return (
             <Tooltip key={`${ci.type}-${language}`} title={localizedDescription} placement="right" enterDelay={300} arrow>
               <span style={{ display: 'block' }}>
-                <MenuItem onClick={() => handleCreateClick(ci.type)} aria-label={localizedLabel}>
+                <MenuItem onClick={(event) => handleCreateClick(ci.type, event)} aria-label={localizedLabel}>
                   <ListItemIcon>{IconEl}</ListItemIcon>
                   <ListItemText>{localizedLabel}</ListItemText>
+                  {openInNewAdornment ? <span style={{ marginLeft: 'auto' }}>{openInNewAdornment}</span> : null}
                 </MenuItem>
               </span>
             </Tooltip>
@@ -647,11 +694,12 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
             return (
               <MenuItem
                 key={`step-${entry.step}`}
-                onClick={() => handleOpenStepClick(entry.step)}
+                onClick={(event) => handleOpenStepClick(entry.step, event)}
                 disabled={Boolean(entry.disabled)}
                 aria-label={stepLabel}
               >
                 <ListItemText primary={stepLabel} />
+                {openInNewAdornment ? <span style={{ marginLeft: 'auto' }}>{openInNewAdornment}</span> : null}
               </MenuItem>
             );
           })

@@ -91,6 +91,7 @@ export interface TreeConsoleActions {
       expandTarget?: boolean;
       source?: 'breadcrumb' | 'treetable' | 'speedDial';
       nextVisible?: boolean;
+      openInNewTab?: boolean;
     }
   ) => void;
   handleUndo: () => Promise<void>;

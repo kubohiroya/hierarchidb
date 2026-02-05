@@ -78,7 +78,7 @@ export async function dismissGuidedTour(page: Page): Promise<void> {
  */
 export async function waitForTreeTableLoad(page: Page): Promise<void> {
   // Wait for the main TreeTable component
-  await expect(page.locator('[data-testid="console-table"]')).toBeVisible();
+  await expect(page.locator('[data-testid="console-table"], [data-tour-id="tree-table"]')).toBeVisible();
 
   // Wait for loading indicators to disappear
   await expect(page.locator('[data-testid="loading-spinner"]')).not.toBeVisible();
@@ -86,10 +86,11 @@ export async function waitForTreeTableLoad(page: Page): Promise<void> {
   // Wait for at least one row to be present (or empty atoms)
   await page.waitForFunction(
     () => {
-      const table = document.querySelector('[data-testid="console-table"]');
-      const rows = table?.querySelectorAll('[data-testid="console-table-row"]');
+      const table = document.querySelector('[data-testid="console-table"], [data-tour-id="tree-table"]');
+      const rows = table?.querySelectorAll('tr');
       const emptyState = table?.querySelector('[data-testid="empty-atoms"]');
-      return (rows && rows.length > 0) || emptyState;
+      const hasNoData = table?.textContent?.includes('No data');
+      return (rows && rows.length > 1) || emptyState || hasNoData;
     },
     { timeout: 10000 }
   );

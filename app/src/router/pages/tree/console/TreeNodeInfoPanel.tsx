@@ -248,12 +248,12 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
         canPreview={canPreview && !previewGuardLoading}
         openSteps={openSteps}
         openStepsLoading={openStepsLoading}
-        onOpen={() => handleContextMenuTrigger('navigate')}
-        onOpenFolder={() => handleContextMenuTrigger('navigate')}
-        onOpenStep={(step: number) => handleContextMenuTrigger(`open-step:${step}`)}
-        onPreview={() => handleContextMenuTrigger('preview')}
-        onBuild={handleBuild}
-        onEdit={() => handleContextMenuTrigger('edit')}
+        onOpen={(options) => handleContextMenuTrigger('navigate', options)}
+        onOpenFolder={(options) => handleContextMenuTrigger('navigate', options)}
+        onOpenStep={(step: number, options) => handleContextMenuTrigger(`open-step:${step}`, options)}
+        onPreview={(options) => handleContextMenuTrigger('preview', options)}
+        onBuild={(options) => handleContextMenuTrigger('build', options)}
+        onEdit={(options) => handleContextMenuTrigger('edit', options)}
         onDuplicate={() => handleContextMenuTrigger('duplicate')}
         onCopy={() => handleContextMenuTrigger('copy')}
         onCut={() => handleContextMenuTrigger('cut')}

@@ -7,8 +7,6 @@ import {
   clearTestData,
   buildAppUrl,
 } from '../utils/test-helpers';
-import { DEFAULT_BUILD_CONFIG } from '../../plugins/shape-plugin/src/common/types/constants.ts';
-import { toNodeType } from '../../packages/common/types/dist';
 
 test.describe('Shape build background (real pipeline)', () => {
   test.beforeEach(async ({ page }) => {
@@ -86,14 +84,88 @@ test.describe('Shape build background (real pipeline)', () => {
     await page.goto(buildAppUrl('t/r'), { waitUntil: 'networkidle' });
     await dismissGuidedTour(page);
     await waitForTreeTableLoad(page);
+    await page.waitForFunction(() => Boolean((window as any).__HDB_WORKER_CLIENT_REF__?.client), null, { timeout: 15000 });
 
-    const buildConfig = JSON.parse(JSON.stringify(DEFAULT_BUILD_CONFIG));
+    const buildConfig = {
+      dataSourceName: 'geoboundaries',
+      fetchConfig: {
+        maxConcurrent: 1,
+        deleteOnComplete: false,
+        timeoutMs: 300000,
+        retryAttempts: 3,
+        retryDelay: 1000,
+        retryLimit: 3,
+        retryBackoff: 'linear',
+      },
+      transformConfig: {
+        zoomBandBoundaries: [2, 3, 6],
+        maxConcurrent: 1,
+        enableFeatureFiltering: true,
+        featureAreaThreshold: 1.0,
+        minVertexCountForAreaFilter: 10,
+        aspectRatioThreshold: 5,
+        featureFilterMethod: 'hybrid',
+        hybridFilterConfig: {
+          quickRejectThreshold: 0.002,
+          regularShapeMinRatio: 0.5,
+          regularShapeMaxRatio: 2.0,
+          simpleShapeVertexThreshold: 10,
+          elongatedShapeCorrectionFactor: 1.3,
+        },
+        deleteOnComplete: false,
+        tolerance: 0.2,
+        areaThreshold: 1.0,
+        excludePolygonAreaCoefficient: 1,
+        omitDetailsConfig: {
+          level: 'strong',
+        },
+        areaBasedTolerance: {
+          thresholdAreaPx2: 4096 * 4096,
+          largeAreaTolerance: 0.1,
+        },
+        minRingVertices: 4,
+        boundaryDisableAtZoomOrAbove: 3,
+      },
+      vtConfig: {
+        enableTopojsonSimplify: true,
+        maxConcurrent: 1,
+        dynamicConcurrency: {
+          enabled: true,
+          minConcurrent: 1,
+          highWatermark: 0.85,
+          lowWatermark: 0.6,
+          adjustStep: 1,
+          sampleMs: 2000,
+        },
+        tolerance: 0,
+        extent: 4096,
+        bufferSize: 256,
+        boundaryDedupe: true,
+        indexMaxPoints: 0,
+        layerSetName: 'shape',
+        promoteId: 'id',
+        tileSize: 256,
+        inputFormat: 'geojson',
+        inputCompression: 'none',
+        tileExpandFactor: 1,
+        tileExpandMargin: 0,
+        format: 'mvt',
+        compression: 'gzip',
+      },
+      cleanupConfig: {
+        deleteFetchApiCache: false,
+        deleteFetchFilteredCache: false,
+        deleteTransformCache: false,
+        deleteVTCache: false,
+      },
+    };
     const selectedArrayByCountries = { JP: [true] };
 
     const shapeNode = await page.evaluate(async ({ buildConfig, selectedArrayByCountries, nodeType }) => {
-      const mod = await import('../../app/src/worker-runtime/WorkerAPIClient.js');
-      const { WorkerAPIClient } = mod;
-      const client = await WorkerAPIClient.getOrInit();
+      const client = (window as any).__HDB_WORKER_CLIENT_REF__?.client;
+      if (!client) {
+        throw new Error('Worker client not ready');
+      }
       const queryAPI = await client.getQueryAPI();
       const mutationAPI = await client.getMutationAPI();
       const updaterAPI = await client.getTreeNodeUpdaterAPI();
@@ -135,11 +207,17 @@ test.describe('Shape build background (real pipeline)', () => {
         treeId: tree.id,
         pageNodeId: rootId,
         nodeId: commitResult.nodeId,
+        name,
       };
-    }, { buildConfig, selectedArrayByCountries, nodeType: toNodeType('shape') });
+    }, { buildConfig, selectedArrayByCountries, nodeType: 'shape' });
 
-    const buildStepUrl = buildAppUrl(`t/${shapeNode.treeId}/${shapeNode.pageNodeId}/${shapeNode.nodeId}/shape/edit/edit/4`);
-    await page.goto(buildStepUrl, { waitUntil: 'networkidle' });
+    const nodeLink = page.getByRole('link', { name: new RegExp(shapeNode.name) });
+    await expect(nodeLink).toBeVisible({ timeout: 10000 });
+    await nodeLink.click();
+
+    const launchBuildButton = page.getByRole('button', { name: /ビルドを開始|ビルド開始|Build/i });
+    await expect(launchBuildButton).toBeVisible({ timeout: 10000 });
+    await launchBuildButton.click();
 
     const summaryCard = page.locator('[data-testid="shape-plugin-batch-progress-summary"]');
     await expect(summaryCard).toBeVisible({ timeout: 20000 });
@@ -185,15 +263,24 @@ test.describe('Shape build background (real pipeline)', () => {
 
     await waitForCompletion();
 
-    await page.goto(buildStepUrl, { waitUntil: 'networkidle' });
+    await page.goto(buildAppUrl(`t/${shapeNode.treeId}/${shapeNode.pageNodeId}`), { waitUntil: 'networkidle' });
+    await waitForTreeTableLoad(page);
+    const nodeLinkAfter = page.getByRole('link', { name: new RegExp(shapeNode.name) });
+    await expect(nodeLinkAfter).toBeVisible({ timeout: 10000 });
+    await nodeLinkAfter.click();
+    const launchBuildButtonAfter = page.getByRole('button', { name: /ビルドを開始|ビルド開始|Build/i });
+    await expect(launchBuildButtonAfter).toBeVisible({ timeout: 10000 });
+    await launchBuildButtonAfter.click();
     await expect(summaryCard).toBeVisible({ timeout: 20000 });
 
     const completion = await page.evaluate(async (nodeId) => {
       const global = window as unknown as { __shapeWorkerClient?: unknown };
       if (!global.__shapeWorkerClient) {
-        const mod = await import('../../app/src/worker-runtime/WorkerAPIClient.js');
-        const { WorkerAPIClient } = mod;
-        global.__shapeWorkerClient = await WorkerAPIClient.getOrInit();
+        const ref = (window as any).__HDB_WORKER_CLIENT_REF__?.client;
+        if (!ref) {
+          return { status: null, tiles: 0 };
+        }
+        global.__shapeWorkerClient = ref;
       }
       const client = global.__shapeWorkerClient as any;
       const queryAPI = await client.getShapeQueryAPI();

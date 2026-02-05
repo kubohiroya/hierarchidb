@@ -1,3 +1,22 @@
+2520) feat/ui/shift-open-in-new-tab (P1) — 進行中 (2026-02-05)
+- ブランチ名: feat/ui/shift-open-in-new-tab
+- 依存: なし
+- 受け入れ基準: SpeedDial のノード作成メニューと TreeConsole のコンテキストメニュー（Create/Open/Edit/Build/Preview）およびビルド中セッションのボタンで Shift+クリック時に新規タブで遷移する／コンテキストメニュー表示中に Shift が押されている間は該当メニュー右端に OpenInNew アイコンが表示される／`pnpm --filter @hierarchidb/app typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `app/src/router/pages/tree/console/**`, `packages/ui/treeconsole/**`, `app/src/components/BuildSessionLauncherButtons.tsx`（必要に応じて追加）
+- ロールバック手順: 追加した Shift 判定/新規タブ導線と OpenInNew アイコン表示を削除し、従来の同一タブ遷移に戻す
+- チェックリスト:
+  - コンテキストメニューの Shift 押下時アイコン表示を実装する
+  - Shift+クリック時の新規タブ遷移を SpeedDial/ContextMenu/BuildSessionLauncherButton で実装する
+  - app の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-05 20:41 JST Shift+クリック時の新規タブ遷移と OpenInNew 表示の実装に着手。
+  - update: 2026-02-05 20:42 JST Open サブメニューを開く項目から OpenInNew アイコンを撤去。
+  - update: 2026-02-05 20:45 JST OpenInNew アイコンの margin を 0 に統一。
+  - update: 2026-02-05 20:46 JST OpenInNew アイコンの padding を 0 に統一。
+  - update: 2026-02-05 20:47 JST OpenInNew アイコンのサイズを 90% に調整。
+  - update: 2026-02-05 20:48 JST OpenInNew アイコンのサイズを 95% に調整。
+
 2519) feat/appbar/build-session-launcher-buttons (P1) — 完了 (2026-02-05)
 - ブランチ名: feat/appbar/build-session-launcher-buttons
 - 依存: なし
@@ -1466,6 +1485,37 @@
   - pnpm --filter @hierarchidb/app typecheck または対象 plugin typecheck を実行する
   - 運用ログ start/done/blocked を追記する
 - 運用ログ:
+
+2427) feat/location/default-datasource-ide-gsm (P1) — 完了 (2026-01-29)
+- ブランチ名: feat/location/default-datasource-ide-gsm
+- 依存: なし
+- 受け入れ基準: Location Create の dataSource 初期値が ide-gsm になる／Edit や既存フローに副作用がない／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert して従来のデフォルト値に戻す
+- チェックリスト:
+  - Create 初期化ロジックの dataSource を ide-gsm に設定する
+  - Edit フローへの影響がないことを確認する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-29 14:35 JST Location Create の dataSource 初期値を ide-gsm に変更する作業に着手。
+  - update: 2026-01-29 14:37 JST create 時の draft 正規化で dataSource のデフォルトを ide-gsm に設定。
+  - update: 2026-01-29 14:37 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-01-29 14:38 JST Location Create の dataSource 初期値を ide-gsm に変更完了。
+
+2428) fix/location-preview/avoid-viewport-reimport (P1) — 進行中 (2026-01-29)
+- ブランチ名: fix/location-preview/avoid-viewport-reimport
+- 依存: なし
+- 受け入れ基準: 地図のパン/ズームのみで IDE-GSM の import 進捗が再発火しない／viewport fetch による再描画でも既存表示が消えない／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/**`, `packages/ui/map/src/**`（調査後に確定）
+- ロールバック手順: 該当差分を revert して従来の viewport 連動の挙動に戻す
+- チェックリスト:
+  - viewport 変更時の IDE-GSM import 再発火条件を確認する
+  - 表示消失の原因を特定し、差分更新に変更する
+  - pnpm --filter @hierarchidb/location-plugin typecheck を実行する
+  - 運用ログ start/done/blocked を追記する
+- 運用ログ：
+  - start: 2026-01-29 14:45 JST location preview の viewport 変化で import が再発火する問題の調査に着手。
 
 2423) investigation/shape-plugin-remove-remnants (P1) — 進行中 (2026-01-29)
 - ブランチ名: investigation/shape-plugin-remove-remnants

@@ -10,6 +10,7 @@ import { DualKeyMap } from '@hierarchidb/util';
 import { loadUIPlugin } from '../../../plugin-loaders/ui-plugin-loader.js';
 import type { TreeConsoleActionDeps } from '../types.js';
 import { showCommandError } from './helpers.ts';
+import { openInNewTab } from '~/utils/openInNewTab.ts';
 
 export const PREVIEW_GUARD_NODE_TYPES = new Set([
   'basemap',
@@ -117,6 +118,7 @@ export const createDialogHelpers = (deps: TreeConsoleActionDeps) => {
       initialStep?: number;
       displayMode?: 'full' | 'normal';
       action?: 'edit' | 'preview';
+      openInNewTab?: boolean;
     }
   ) => {
     if (!client || !pushPath || !treeId) {
@@ -161,7 +163,12 @@ export const createDialogHelpers = (deps: TreeConsoleActionDeps) => {
       const basePath = `/t/${treeId}/${parentForRoute}/${canonicalId}/${nodeType}/${action}`;
       const mode = dialogOptions?.displayMode ?? 'normal';
       const step = dialogOptions?.initialStep ?? 1;
-      pushPath(`${basePath}/${mode}/${step}`);
+      const nextUrl = `${basePath}/${mode}/${step}`;
+      if (dialogOptions?.openInNewTab) {
+        openInNewTab(nextUrl);
+      } else {
+        pushPath(nextUrl);
+      }
     } catch (error) {
       console.error('Failed to launch edit dialog:', error);
       showCommandError('UNKNOWN_ERROR', error instanceof Error ? error.message : String(error));

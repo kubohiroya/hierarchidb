@@ -8,7 +8,6 @@ import {
   clearTestData,
   buildAppUrl,
 } from '../utils/test-helpers';
-import { toNodeType } from '../../packages/common/types/dist';
 
 type Scenario = {
   name: string;
@@ -97,7 +96,7 @@ test.describe('Route progress controls', () => {
           const updaterAPI = await client.getTreeNodeUpdaterAPI();
           const name = `Route Progress ${Date.now()}`;
           const createResult = await mutationAPI.createNode({
-            nodeType: toNodeType('route'),
+            nodeType: 'route',
             treeId: tree.id,
             parentId: rootId,
             name,

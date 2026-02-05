@@ -36,14 +36,14 @@ export interface UseDynamicSpeedDialResult extends DynamicSpeedDialState {
   translateWithFallback: (key: string, fallback: string) => string;
   handleClose: () => void;
   toggleOpen: () => void;
-  handleVMActionClick: (nodeType: string) => void;
+  handleVMActionClick: (nodeType: string, options?: { openInNewTab?: boolean }) => void;
   transitionDuration: number;
 }
 
 export function useDynamicSpeedDial(params: {
   treeId?: TreeId;
   hidden?: boolean;
-  onCreateAction: (action: string, node: HierarchicalTreeNode) => void;
+  onCreateAction: (action: string, node: HierarchicalTreeNode, options?: { openInNewTab?: boolean }) => void;
   onSuppress?: () => void;
   menuContext?: TreeContext;
 }): UseDynamicSpeedDialResult {
@@ -125,11 +125,11 @@ export function useDynamicSpeedDial(params: {
   }, []);
 
   const handleVMActionClick = useCallback(
-    (nodeType: string) => {
+    (nodeType: string, options?: { openInNewTab?: boolean }) => {
       const action = `create:${nodeType}`;
       onSuppress?.();
       handleClose();
-      onCreateAction(action, {} as HierarchicalTreeNode);
+      onCreateAction(action, {} as HierarchicalTreeNode, options);
     },
     [handleClose, onCreateAction, onSuppress]
   );

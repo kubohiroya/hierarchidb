@@ -11,6 +11,7 @@ import { loadUIPlugin } from '../../../plugin-loaders/ui-plugin-loader.js';
 import { startBuildFlow } from '../../../router/pages/tree/console/buildFlow.ts';
 import type { ContextAction, TreeConsoleActionDeps } from '../types.js';
 import { PREVIEW_GUARD_MESSAGE, PREVIEW_GUARD_NODE_TYPES } from './dialog.js';
+import { openInNewTab } from '~/utils/openInNewTab.ts';
 import {
   createUniqueName,
   fireCmdEvent,
@@ -72,6 +73,7 @@ export const createContextMenuAction = (
         expandTarget?: boolean;
         source?: 'breadcrumb' | 'treetable' | 'speedDial';
         nextVisible?: boolean;
+        openInNewTab?: boolean;
       }
     ): void => {
       void (async () => {
@@ -95,18 +97,26 @@ export const createContextMenuAction = (
             return;
           }
           setSSOT({ selectedIds: [targetNodeId] });
-          await openEditDialog(targetNodeId, node, { initialStep: parsedStep });
+          await openEditDialog(targetNodeId, node, {
+            initialStep: parsedStep,
+            openInNewTab: options?.openInNewTab,
+          });
           return;
         }
 
         if (normalizedAction === 'navigate') {
+          if (options?.openInNewTab && treeId) {
+            const qs = searchTerm ? `?q=${encodeURIComponent(searchTerm)}` : '';
+            openInNewTab(`/t/${treeId}/${targetNodeId}${qs}`);
+            return;
+          }
           navigation.navigateTo(targetNodeId);
           return;
         }
 
         if (normalizedAction === 'edit') {
           setSSOT({ selectedIds: [targetNodeId] });
-          await openEditDialog(targetNodeId, node);
+          await openEditDialog(targetNodeId, node, { openInNewTab: options?.openInNewTab });
           return;
         }
 
@@ -139,9 +149,14 @@ export const createContextMenuAction = (
             const wcNodeId = res.nodeId as NodeId;
 
             const navigateToCreateDialog = () => {
-              if (!pushPath) return;
               const nodeTypePath = String(newType);
-              pushPath(`/t/${treeId}/${targetNodeId}/${wcNodeId}/${nodeTypePath}/create`);
+              const nextUrl = `/t/${treeId}/${targetNodeId}/${wcNodeId}/${nodeTypePath}/create`;
+              if (options?.openInNewTab) {
+                openInNewTab(nextUrl);
+                return;
+              }
+              if (!pushPath) return;
+              pushPath(nextUrl);
             };
 
             if (source === 'breadcrumb') {
@@ -223,6 +238,7 @@ export const createContextMenuAction = (
             initialStep: previewStepIndex ?? undefined,
             displayMode: shouldGuardPreview || previewStepIndex != null ? 'full' : undefined,
             action: 'preview',
+            openInNewTab: options?.openInNewTab,
           });
           return;
         }
@@ -235,7 +251,13 @@ export const createContextMenuAction = (
             node,
             returnTo,
             workerClient: client,
-            navigate: (to) => pushPath(to),
+            navigate: (to) => {
+              if (options?.openInNewTab) {
+                openInNewTab(to);
+                return;
+              }
+              pushPath(to);
+            },
           });
           return;
         }

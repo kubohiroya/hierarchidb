@@ -67,11 +67,15 @@ const buildDefaultFrame = (): { size: PluginDialogSize; position: PluginDialogPo
 
 type LocationDraftPayload = Partial<LocationEntity>;
 
-const normalizeLocationDraft = (raw: TreeNodeUpdaterState<LocationEntity> | null): LocationDraft => {
+const normalizeLocationDraft = (
+  raw: TreeNodeUpdaterState<LocationEntity> | null,
+  mode: LocationDialogProps['mode']
+): LocationDraft => {
   const draftData = (raw?.draftData ?? {}) as LocationDraftPayload;
 
   const normalizedDraft: LocationDraftPayload = {
     ...draftData,
+    ...(mode === 'create' && !draftData.dataSource ? { dataSource: 'ide-gsm' } : {}),
   };
 
   return {
@@ -175,7 +179,10 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
   const [isBatchStarting, setIsBatchStarting] = useState(false);
   const [buildStatus, setBuildStatus] = useState<string | null>(null);
 
-  const dialogData = useMemo<LocationDraft>(() => normalizeLocationDraft(rawDraft), [rawDraft]);
+  const dialogData = useMemo<LocationDraft>(
+    () => normalizeLocationDraft(rawDraft, mode),
+    [mode, rawDraft]
+  );
   const emptyTableMetadata = useMemo<TabularTableMetadata>(() => ({
     id: dialogData.tabularSourceId ?? 'temp-table',
     filename: dialogData.tabularSourceId ?? 'temp',
