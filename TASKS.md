@@ -1,3 +1,37 @@
+2522) fix/location-preview/metadata-window-table-height (P1) — 進行中 (2026-02-05)
+- ブランチ名: fix/location-preview/metadata-window-table-height
+- 依存: なし
+- 受け入れ基準: Location preview の metadata floating window を縦に拡大してもテーブルが高さに追従し、下部の余白が出ない／他の preview 表示に副作用がない／`pnpm --filter @hierarchidb/app typecheck` が exit 0 または blocked を記録／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/location-plugin/src/ui/**`（preview metadata window）
+- ロールバック手順: テーブル高さ調整の差分を戻す
+- チェックリスト:
+  - metadata floating window のレイアウトとテーブル高さを見直す
+  - 既存の preview 表示への影響がないことを確認する
+  - app の typecheck を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-05 21:16 JST Location preview の metadata floating window 高さ不一致修正に着手。
+  - update: 2026-02-05 21:19 JST LocationPreviewList のテーブル container を flex 伸長に調整。
+  - blocked: 2026-02-05 21:19 JST `pnpm --filter @hierarchidb/app typecheck` が既存の型エラーで失敗（openInNewTab/searchTerm 参照の未定義など）。
+  - update: 2026-02-05 21:24 JST TanstackDataGrid の TableContainer に height を付与して縦リサイズ追従を調整。
+  - blocked: 2026-02-05 21:24 JST `pnpm --filter @hierarchidb/app typecheck` が既存の型エラーで失敗（openInNewTab/searchTerm 参照の未定義など）。
+
+2521) fix/ui-map/remove-click-snackbar (P1) — 進行中 (2026-02-05)
+- ブランチ名: fix/ui-map/remove-click-snackbar
+- 依存: なし
+- 受け入れ基準: ui-map の地図クリックで Snackbar が表示されない／クリック時の他の挙動に影響がない／`pnpm --filter @hierarchidb/app typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `packages/ui/map/src/components/MapLibreMap.tsx`
+- ロールバック手順: Snackbar 表示処理を復元する
+- チェックリスト:
+  - ui-map のクリック時 Snackbar 表示を撤去する
+  - クリック時の他ロジックが維持されることを確認する
+  - app の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-05 21:13 JST ui-map の地図クリック時 Snackbar 表示撤去に着手。
+  - update: 2026-02-05 21:14 JST MapLibreMap のクリック時 Snackbar 表示を削除。
+  - blocked: 2026-02-05 21:14 JST `pnpm --filter @hierarchidb/app typecheck` が既存の型エラーで失敗（openInNewTab/searchTerm 参照の未定義など）。
+
 2520) feat/ui/shift-open-in-new-tab (P1) — 進行中 (2026-02-05)
 - ブランチ名: feat/ui/shift-open-in-new-tab
 - 依存: なし
@@ -97,6 +131,22 @@
   - update: 2026-02-04 11:18 JST pnpm --filter @hierarchidb/vt-orchestrator typecheck exit 0。
   - update: 2026-02-04 11:19 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0。
   - done: 2026-02-04 11:22 JST bandIndex 名称統一を完了。
+
+2504) fix/shape/default-datasource-geoboundaries (P2) — 完了 (2026-02-04)
+- ブランチ名: fix/shape/default-datasource-geoboundaries
+- 依存: なし
+- 受け入れ基準: shape 新規作成時に dataSourceName が geoboundaries で初期化される／既存データは変わらない／`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/data-source/useShapeDataSourceStep.ts`
+- ロールバック手順: 初期化用 useEffect を撤去して元の挙動に戻す
+- チェックリスト:
+  - dataSource 未設定時に DEFAULT_BUILD_CONFIG を初期化する
+  - shape-plugin の typecheck を実行する
+  - 運用ログ start/update/done を追記する
+- 運用ログ:
+  - start: 2026-02-04 13:18 JST shape 新規作成時の dataSource 初期化対応に着手。
+  - update: 2026-02-04 13:19 JST dataSource 未設定時に geoboundaries を初期化する処理を追加。
+  - update: 2026-02-04 13:19 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+  - done: 2026-02-04 13:19 JST shape 新規作成時の dataSource 初期化を完了。
 
 2500) feat/shape/vt-memory-logs-tiling (P2) — 進行中 (2026-02-03)
 - ブランチ名: feat/shape/vt-memory-logs-tiling
@@ -426,6 +476,15 @@
   - blocked: 2026-02-05 20:07 JST 早期 return でも vitest が 120s タイムアウト（vt collect done は出るが test 完了せず）。
   - update: 2026-02-05 20:20 JST fake-indexeddb の疑いが濃厚なため、ブラウザE2Eでの c) 実パイプライン検証に切り替え。
   - update: 2026-02-05 20:20 JST shape build background の Playwright テスト（e2e/shape/shape-build-background.spec.ts）を追加。
+  - update: 2026-02-06 09:20 JST Playwright テストの導線を Build ステップ直リンクから UI の「ビルドを開始」操作へ変更。
+  - update: 2026-02-06 09:21 JST Playwright の再実行準備（権限付き実行が必要）に着手。
+  - update: 2026-02-06 09:40 JST Playwright テストで save-draft 追記・起動前の summary 期待を撤去し、WorkerAPI の参照をグローバル経路へ統一。
+  - update: 2026-02-06 10:05 JST Playwright テストがビルド開始ボタンのクリックでタイムアウト（オーバーレイが pointer を遮断）。force click へ修正。
+  - update: 2026-02-06 10:10 JST Playwright の Start Build ボタンが strict mode で 2件解決されたため、enabled ボタンのみを選択するロケータへ修正。
+  - update: 2026-02-06 10:20 JST Playwright の Start Build ボタンが無効のままのため、node 作成後に save-draft + data を同時に保存するよう E2E を修正。
+  - update: 2026-02-06 10:25 JST Playwright の Start Build ボタンが無効のため、WorkerAPI の startBatchSession を直接呼ぶ形へ E2E を変更。
+  - update: 2026-02-06 10:30 JST WorkerAPI 呼び出しで client.getAPI() を使っていたため、__HDB_WORKER_CLIENT_REF__ から API を直接取得するよう修正。
+  - update: 2026-02-06 10:35 JST geoboundaries の AuthRequiredError 回避のため、E2E で setAuthToken を付与。
 
 2509) fix/shape-build/max-update-depth-loop (P1) — 完了 (2026-02-04)
 - ブランチ名: fix/shape-build/max-update-depth-loop
@@ -1503,7 +1562,7 @@
   - update: 2026-01-29 14:37 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
   - done: 2026-01-29 14:38 JST Location Create の dataSource 初期値を ide-gsm に変更完了。
 
-2428) fix/location-preview/avoid-viewport-reimport (P1) — 進行中 (2026-01-29)
+2428) fix/location-preview/avoid-viewport-reimport (P1) — 完了 (2026-01-29)
 - ブランチ名: fix/location-preview/avoid-viewport-reimport
 - 依存: なし
 - 受け入れ基準: 地図のパン/ズームのみで IDE-GSM の import 進捗が再発火しない／viewport fetch による再描画でも既存表示が消えない／pnpm --filter @hierarchidb/location-plugin typecheck が exit 0／TASKS.md に運用ログを記載する
@@ -1516,6 +1575,14 @@
   - 運用ログ start/done/blocked を追記する
 - 運用ログ：
   - start: 2026-01-29 14:45 JST location preview の viewport 変化で import が再発火する問題の調査に着手。
+  - update: 2026-01-29 14:52 JST useIdeGsmImportOnEntry で LocationDraft の nested draft を参照するよう修正。
+  - update: 2026-01-29 14:53 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - done: 2026-01-29 14:54 JST viewport 変化による IDE-GSM 再インポートの再発火を抑制。
+  - update: 2026-01-29 15:06 JST ideGsmSelectionHash を root/draft 両方から参照し、source/selection の root fallback を追加。
+  - update: 2026-01-29 15:07 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-01-29 15:18 JST useWorkerAPI の準備完了まで IDE-GSM import を開始しないように修正。
+  - update: 2026-01-29 15:19 JST pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
+  - update: 2026-01-29 15:30 JST import 判定用の最小ログを追加し、pnpm --filter @hierarchidb/location-plugin typecheck exit 0 を確認。
 
 2423) investigation/shape-plugin-remove-remnants (P1) — 進行中 (2026-01-29)
 - ブランチ名: investigation/shape-plugin-remove-remnants

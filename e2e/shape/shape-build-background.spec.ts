@@ -86,6 +86,14 @@ test.describe('Shape build background (real pipeline)', () => {
     await waitForTreeTableLoad(page);
     await page.waitForFunction(() => Boolean((window as any).__HDB_WORKER_CLIENT_REF__?.client), null, { timeout: 15000 });
 
+    await page.evaluate(async () => {
+      const ref = (window as any).__HDB_WORKER_CLIENT_REF__;
+      const api = ref?.client ?? ref?.getAPI?.();
+      if (api?.setAuthToken) {
+        await api.setAuthToken('e2e-test-token', 'Bearer');
+      }
+    });
+
     const buildConfig = {
       dataSourceName: 'geoboundaries',
       fetchConfig: {
