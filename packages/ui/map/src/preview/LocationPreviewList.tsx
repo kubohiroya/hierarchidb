@@ -213,6 +213,8 @@ export const LocationPreviewList: React.FC<LocationPreviewListProps> = ({
             maxWidth: '100%',
             height: '100%',
             maxHeight: '100%',
+            flex: 1,
+            minHeight: 0,
             top: 'auto',
             right: 'auto',
             boxShadow: 'none',

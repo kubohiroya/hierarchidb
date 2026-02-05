@@ -20,14 +20,14 @@ import type {
   ShapeVectorTileRecord,
   ShapeVTMetadata,
 } from '@hierarchidb/shape-api';
-import {
-  type BuildProcessConfig,
-  type BuildSessionRecord,
-  type BuildTaskType,
-  type ProgressInfo,
-  type ResourceUsage,
-  type ShapeDB,
-  type StageStatus,
+import type {
+  BuildProcessConfig,
+  BuildSessionRecord,
+  BuildTaskType,
+  ProgressInfo,
+  ResourceUsage,
+  ShapeDB,
+  StageStatus,
 } from '@hierarchidb/shape-store';
 import {
   hidbEphemeralDB as ephemeralShapeDB,
@@ -39,15 +39,6 @@ import {
   listRawDataDataSourceMetadataForNode,
   readRawDataDataSourceBuffer,
 } from './shapeChunkStore.js';
-
-const toProgressSummary = (progress: ProgressInfo): ShapeBuildProgressSummary => ({
-  total: progress.total,
-  completed: progress.completed,
-  failed: progress.failed,
-  skipped: progress.skipped,
-  percentage: progress.percentage,
-  taskType: progress.taskType,
-});
 
 const toBuildStage = (stage?: string): ProgressInfo['taskType'] => {
   if (stage === 'processing') return stage;

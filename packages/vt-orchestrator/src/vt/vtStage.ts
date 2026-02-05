@@ -18,7 +18,7 @@ import { NobleSha3HashPort } from '@hierarchidb/chunk-store';
 import type { VTStageContext } from '../contexts.js';
 import type { BandConfig, StageHandler, StageHandlerResult, VtTaskInput } from '../types/types.js';
 import { updateTask, VtTaskQueueDb } from '../task/taskQueue.js';
-import { EphemeralTransformCacheRecord } from '@hierarchidb/gis-sdk';
+import type { EphemeralTransformCacheRecord } from '@hierarchidb/gis-sdk';
 
 const normalizeFeatureCollection = async (decoded: unknown): Promise<FeatureCollection | null> => {
   if (!decoded || typeof decoded !== 'object') return null;
@@ -526,8 +526,7 @@ const collectFeatures = async (
   }
   const useBulkGet = (globalThis as { __HDB_VT_COLLECT_BULKGET?: boolean }).__HDB_VT_COLLECT_BULKGET === true;
   const useGetEach = (globalThis as { __HDB_VT_COLLECT_GET_EACH?: boolean }).__HDB_VT_COLLECT_GET_EACH === true;
-  const fetchStartedAt = Date.now();
-  const records = await context.ephemeralDB.transaction('r', [context.ephemeralDB.transformCache], async () => {
+  const records: EphemeralTransformCacheRecord[] = await context.ephemeralDB.transaction('r', [context.ephemeralDB.transformCache], async () => {
     if (debugCollect) {
       console.info('[vt][debug] collect transaction start', JSON.stringify({ nodeId }));
     }
@@ -564,14 +563,6 @@ const collectFeatures = async (
     }
     return loaded;
   });
-  if (debugCollect) {
-    console.info('[vt][debug] post-transaction A', JSON.stringify({ nodeId }));
-    setTimeout(() => {
-      console.info('[vt][debug] post-transaction timeout', JSON.stringify({ nodeId }));
-    }, 0);
-    console.info('[vt][debug] post-transaction B', JSON.stringify({ nodeId }));
-    return records;
-  }
   for (const record of records) {
     if (!record || record.timestamp <= 0) continue;
     bufferSizes.set(record.id, record.data.byteLength);

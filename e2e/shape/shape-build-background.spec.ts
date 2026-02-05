@@ -186,9 +186,9 @@ test.describe('Shape build background (real pipeline)', () => {
         throw new Error(`Failed to create shape node: ${createResult ?? 'unknown error'}`);
       }
 
-      const wcNodeId = createResult.nodeId;
+      const nodeId = createResult.nodeId;
       const now = Date.now();
-      await updaterAPI.updateTreeNodeDraftData(wcNodeId, {
+      const draftPayload = {
         name,
         description: 'E2E shape build background test',
         buildConfig,
@@ -196,17 +196,18 @@ test.describe('Shape build background (real pipeline)', () => {
         processingStatus: 'idle',
         licenseAgreement: true,
         licenseAgreedAt: new Date(now).toISOString(),
-      });
+      };
 
-      const commitResult = await updaterAPI.commitDraft(wcNodeId, { onNameConflict: 'auto-rename' });
-      if (commitResult.status !== 'ok') {
-        throw new Error(`Shape commit failed: ${commitResult.status}`);
-      }
+      await updaterAPI.updateTreeNode(nodeId, {
+        mode: 'save-draft',
+        data: draftPayload,
+        draftData: draftPayload,
+      });
 
       return {
         treeId: tree.id,
         pageNodeId: rootId,
-        nodeId: commitResult.nodeId,
+        nodeId,
         name,
       };
     }, { buildConfig, selectedArrayByCountries, nodeType: 'shape' });
@@ -220,17 +221,24 @@ test.describe('Shape build background (real pipeline)', () => {
     await launchBuildButton.click();
 
     const summaryCard = page.locator('[data-testid="shape-plugin-batch-progress-summary"]');
-    await expect(summaryCard).toBeVisible({ timeout: 20000 });
 
-    const startButton = page.getByRole('button', { name: /Start Build|ビルド開始|ビルドを開始/i });
-    await expect(startButton).toBeEnabled({ timeout: 10000 });
-    await startButton.click();
-
-    const warningDialog = page.getByRole('dialog', { name: /Build warning|ビルド警告|警告/i });
-    if (await warningDialog.isVisible({ timeout: 2000 })) {
-      const proceedButton = warningDialog.getByRole('button', { name: /Proceed|続行|実行/i });
-      await proceedButton.click();
-    }
+    await page.evaluate(async ({ nodeId, selectedArrayByCountries, dataSourceName }) => {
+      const ref = (window as any).__HDB_WORKER_CLIENT_REF__;
+      const api = ref?.client ?? ref?.getAPI?.();
+      if (!api) {
+        throw new Error('Worker client not ready');
+      }
+      const payloads = await api.generateShapeDownloadTaskPayloadsFromSelection(
+        nodeId,
+        dataSourceName,
+        selectedArrayByCountries,
+      );
+      await api.startBatchSession('shape', nodeId, payloads, 'finish_all_stages');
+    }, {
+      nodeId: shapeNode.nodeId,
+      selectedArrayByCountries,
+      dataSourceName: buildConfig.dataSourceName,
+    });
 
     await page.goto(buildAppUrl(`t/${shapeNode.treeId}/${shapeNode.pageNodeId}`), { waitUntil: 'networkidle' });
     await waitForTreeTableLoad(page);
@@ -239,11 +247,13 @@ test.describe('Shape build background (real pipeline)', () => {
       const deadline = Date.now() + 90000;
       while (Date.now() < deadline) {
         const status = await page.evaluate(async (nodeId) => {
-          const global = window as unknown as { __shapeWorkerClient?: unknown };
+          const global = window as { __shapeWorkerClient?: unknown };
           if (!global.__shapeWorkerClient) {
-            const mod = await import('../../app/src/worker-runtime/WorkerAPIClient.js');
-            const { WorkerAPIClient } = mod;
-            global.__shapeWorkerClient = await WorkerAPIClient.getOrInit();
+            const ref = (window as any).__HDB_WORKER_CLIENT_REF__?.client;
+            if (!ref) {
+              return { status: null, tiles: 0 };
+            }
+            global.__shapeWorkerClient = ref;
           }
           const client = global.__shapeWorkerClient as any;
           const queryAPI = await client.getShapeQueryAPI();

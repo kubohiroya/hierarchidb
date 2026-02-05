@@ -602,6 +602,7 @@ export function TanstackDataGrid<T extends RowRecord>(props: TanstackDataGridPro
         sx={{
           flex: 1,
           minHeight: 0,
+          height: enableVirtualization ? (maxHeight ?? '100%') : undefined,
           maxHeight: enableVirtualization ? maxHeight : undefined,
           overflow: 'auto',
         }}
