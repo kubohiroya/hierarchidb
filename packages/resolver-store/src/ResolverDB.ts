@@ -1,13 +1,14 @@
 import { Dexie, type Table } from 'dexie';
-import type { NodeId } from '@hierarchidb/core-types';
+import type { NodeId, PeerEntity } from '@hierarchidb/core-types';
 import { getDBName } from '@hierarchidb/util';
 
-export type ResolverEntity = {
-  id: string;
+export interface ResolverEntityPayload {
   nodeId: NodeId;
   name?: string;
   [key: string]: unknown;
-};
+}
+
+export type ResolverEntity = PeerEntity<ResolverEntityPayload>;
 
 export class ResolverDB extends Dexie {
   resolvers!: Table<ResolverEntity, string>;

@@ -130,6 +130,7 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
   const [countryByCode, setCountryByCode] = useState<Map<string, { name: string; alpha2?: string }>>(new Map());
   const [isoReady, setIsoReady] = useState(false);
   const pendingCountryCodesRef = useRef<Set<string>>(new Set());
+  const [mapRenderPending, setMapRenderPending] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -422,6 +423,94 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
     [vectorLayers],
   );
 
+  useEffect(() => {
+    const map = preview.mapInstance;
+    if (!map || !preview.nodeId || vectorLayerIds.length === 0) {
+      setMapRenderPending(false);
+      return;
+    }
+    setMapRenderPending(true);
+    const handleIdle = () => {
+      setMapRenderPending(false);
+    };
+    map.on('idle', handleIdle);
+    return () => {
+      map.off('idle', handleIdle);
+    };
+  }, [preview.mapInstance, preview.nodeId, vectorLayerIds]);
+
+  useEffect(() => {
+    const map = preview.mapInstance;
+    if (!map) return;
+
+    const logStartRef = (() => {
+      const start = performance.now();
+      return { value: start };
+    })();
+
+    const buildPayload = (event: unknown) => {
+      const payload = event as {
+        sourceId?: unknown;
+        dataType?: unknown;
+        sourceDataType?: unknown;
+        tile?: { z?: unknown; x?: unknown; y?: unknown; id?: unknown; tileID?: unknown };
+      };
+      const sourceId = typeof payload?.sourceId === 'string' ? payload.sourceId : undefined;
+      const dataType = typeof payload?.dataType === 'string' ? payload.dataType : undefined;
+      const sourceDataType = typeof payload?.sourceDataType === 'string' ? payload.sourceDataType : undefined;
+      const tile = payload?.tile;
+      const tileInfo = tile && typeof tile === 'object'
+        ? {
+          z: typeof tile.z === 'number' ? tile.z : undefined,
+          x: typeof tile.x === 'number' ? tile.x : undefined,
+          y: typeof tile.y === 'number' ? tile.y : undefined,
+          id: typeof tile.id === 'string' || typeof tile.id === 'number' ? tile.id : undefined,
+          tileID: typeof tile.tileID === 'number' ? tile.tileID : undefined,
+        }
+        : undefined;
+      return { sourceId, dataType, sourceDataType, tile: tileInfo };
+    };
+
+    const logEvent = (eventName: string) => (event: unknown) => {
+      const now = performance.now();
+      const elapsedMs = Math.round(now - logStartRef.value);
+      console.log('[ShapePreview][MapEvent]', {
+        event: eventName,
+        elapsedMs,
+        ...buildPayload(event),
+      });
+    };
+
+    const handleSourceDataLoading = logEvent('sourcedataloading');
+    const handleData = logEvent('data');
+    const handleTile = logEvent('tile');
+    const handleIdle = (event: unknown) => {
+      const now = performance.now();
+      const elapsedMs = Math.round(now - logStartRef.value);
+      console.log('[ShapePreview][MapEvent]', {
+        event: 'idle',
+        elapsedMs,
+        ...buildPayload(event),
+      });
+      console.log('[ShapePreview][MapEvent]', {
+        event: 'idle-total',
+        elapsedMs,
+      });
+    };
+
+    map.on('sourcedataloading', handleSourceDataLoading);
+    map.on('data', handleData);
+    map.on('tile', handleTile);
+    map.on('idle', handleIdle);
+
+    return () => {
+      map.off('sourcedataloading', handleSourceDataLoading);
+      map.off('data', handleData);
+      map.off('tile', handleTile);
+      map.off('idle', handleIdle);
+    };
+  }, [preview.mapInstance]);
+
   const resolvedLayerNames = useMemo(() => {
     const tileLayerNames = preview.tileLayerNames ?? [];
     const lookup = new Map(resolvedLayerSetEntries.map((entry) => [entry.id, entry]));
@@ -637,6 +726,7 @@ export const useShapePreviewStepView = (data: Partial<ShapeEntity>, nodeId: stri
     handleViewStateChange,
     handleZoomSnackbarClose,
     hoverSnackbarContent,
+    showMapLoading: mapRenderPending,
     vectorLayers,
     vectorLayerIds,
     tileLayerNames: resolvedLayerNames.available,

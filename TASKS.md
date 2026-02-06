@@ -1,3 +1,68 @@
+2558) fix/shape-preview/map-event-timestamps (P1) — 完了 (2026-02-07)
+- ブランチ名: fix/shape-preview/map-event-timestamps
+- 依存: なし
+- 受け入れ基準: shape preview の map event ログに performance.now() 由来の経過時間が付与される／idle 到達時に総経過時間が出力される／既存のログ内容は維持する／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/preview/**`
+- ロールバック手順: timestamp 追加の差分を revert して元のログへ戻す
+- チェックリスト:
+  - map event のログへ timestamp を付与する
+  - idle 時に経過時間ログを追加する
+  - 既存ログと両立することを確認する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 13:05 JST shape preview の map event ログにタイムスタンプ追加へ着手。
+  - update: 2026-02-07 13:10 JST map event ログへ elapsedMs を追加し idle-total を出力。
+  - done: 2026-02-07 13:11 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2557) fix/shape-preview/map-event-logs (P1) — 完了 (2026-02-07)
+- ブランチ名: fix/shape-preview/map-event-logs
+- 依存: なし
+- 受け入れ基準: shape preview の MapLibre で sourcedataloading/data/tile/idle のイベントログが console に出る／ログには event 名と主要識別情報が含まれる／既存の preview 表示に回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/preview/**`
+- ロールバック手順: map event logging の差分を revert して元の挙動へ戻す
+- チェックリスト:
+  - map イベントを on/off で購読する
+  - console.log の出力内容を整える
+  - shape preview の表示差分を確認する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 12:50 JST shape preview の map event ログ出力に着手。
+  - update: 2026-02-07 12:56 JST map event の console.log を追加。
+  - done: 2026-02-07 12:57 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
+2556) test/shape-plugin/dialog-draftdata (P1) — 進行中 (2026-02-06)
+- ブランチ名: test/shape-plugin/dialog-draftdata
+- 依存: なし
+- 受け入れ基準: shape-plugin でテンプレート由来/作成(create)由来の shape ノードについて、ダイアログ開始時点の draftData 値と valid 条件がテストで検証できる／テスト実行が exit 0／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/**`
+- ロールバック手順: 追加したテスト差分を revert する
+- チェックリスト:
+  - テンプレート由来の shape ノードでダイアログ開始時点の draftData/valid 条件を検証するテストを追加する
+  - create 由来の shape ノードでダイアログ開始時点の draftData/valid 条件を検証するテストを追加する
+  - pnpm --filter @hierarchidb/shape-plugin test を実行する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-06 23:08 JST shape-plugin のダイアログ draftData/valid 条件テスト追加に着手。
+  - update: 2026-02-06 23:48 JST shape ダイアログ初期 draftData/valid 条件の unit テストを追加。
+  - update: 2026-02-06 23:48 JST テンプレート由来の processing-configuration は validateBatchConfig で invalid になることを確認。
+  - blocked: 2026-02-06 23:48 JST pnpm --filter @hierarchidb/shape-plugin test が既存の import 解決エラーで exit 1（shape-build-*.wfl で packages//{src,dist} 参照、useShapeBuildAutoResume.reload で import 解決失敗、ShapeBuildAPIClient で @hierarchidb/shape-store 未解決）。
+
+2556) fix/shape-preview/multipolygon-loading-bar (P1) — 完了 (2026-02-07)
+- ブランチ名: fix/shape-preview/multipolygon-loading-bar
+- 依存: なし
+- 受け入れ基準: shape preview ステップで MultiPolygon の描画完了まで地図上辺に LinearProgress が表示され、描画完了後に非表示になる／location preview と同じ表示位置・高さになる／既存の shape preview 表示に回帰がない／TASKS.md に運用ログを記載する
+- 影響範囲: `plugins/shape-plugin/src/ui/components/preview/**`
+- ロールバック手順: shape preview の loading 表示差分を revert して元の挙動へ戻す
+- チェックリスト:
+  - map 描画完了までの loading 状態を取得する
+  - MapPreviewShell の overlay へ LinearProgress を追加する
+  - shape preview の表示差分を確認する
+  - 運用ログ start/update/done/blocked を追記する
+- 運用ログ:
+  - start: 2026-02-07 12:30 JST shape preview の MultiPolygon 描画待ち LinearProgress 実装に着手。
+  - update: 2026-02-07 12:40 JST shape preview の map idle 監視と LinearProgress 表示を追加。
+  - done: 2026-02-07 12:41 JST pnpm --filter @hierarchidb/shape-plugin typecheck exit 0 を確認。
+
 2555) fix/app/type-errors (P1) — 完了 (2026-02-06)
 - ブランチ名: fix/app/type-errors
 - 依存: なし
@@ -312,6 +377,12 @@
   - update: 2026-02-06 22:50 JST pnpm --filter @hierarchidb/plugin-ui-sdk typecheck exit 0 を確認。
   - update: 2026-02-06 23:03 JST ビルド時の draftData/data 参照経路と国選択が空になる要因（draftData 空のまま残る）を確認。
   - update: 2026-02-07 09:10 JST draftData を Partial<PeerEntity> へ統一する型修正に着手。
+  - update: 2026-02-07 09:45 JST draftData 型統一と PeerEntity 適合の残作業（Spreadsheet を中心）を継続。
+  - update: 2026-02-07 09:52 JST resolver-store の ResolverEntity を PeerEntity へ更新、pnpm --filter @hierarchidb/resolver-store typecheck exit 0 を確認。
+  - update: 2026-02-07 10:12 JST progress が単調増加にならず Maximum update depth exceeded が再現するとの報告を受領、再現条件整理と原因特定を優先対応に追加。
+  - update: 2026-02-07 10:28 JST Step5 ビルド中のタスク一覧更新で再現（データ量不問）。useBatchProgress.ts:49 から setState が連鎖し Maximum update depth exceeded が発生するログを確認。
+  - update: 2026-02-07 10:46 JST useBatchProgress の進捗更新を単調化（percentage 低下のクランプ）し、phase=completed でもタスク完了前は確定更新を抑止。
+  - update: 2026-02-07 10:47 JST pnpm --filter @hierarchidb/batch typecheck exit 0 を確認。
 
 2537) investigate/shape-build/multipolygon-merge-hypothesis (P1) — 進行中 (2026-02-06)
 - ブランチ名: investigate/shape-build/multipolygon-merge-hypothesis

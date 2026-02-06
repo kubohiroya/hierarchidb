@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Alert, Button, CircularProgress } from '@mui/material';
+import { Box, Alert, Button, CircularProgress, LinearProgress } from '@mui/material';
 import { Hexagon as HexagonIcon, Layers as LayersIcon, QueryStats as QueryStatsIcon } from '@mui/icons-material';
 import type { MapViewState } from '@hierarchidb/ui-map';
 import { LayerSetVisibilityPanel, MapPreviewShell, ScreenCenterSnackbar, ShapePreviewList } from '@hierarchidb/ui-map';
@@ -71,6 +71,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
     handleViewStateChange,
     handleZoomSnackbarClose,
     hoverSnackbarContent,
+    showMapLoading,
     vectorLayers,
     highlightOverridesByType,
     geoJsonLayers,
@@ -152,6 +153,11 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId,
         containerRef={mapContainerRef}
         overlay={(
           <>
+            {showMapLoading ? (
+              <Box position="absolute" top={0} left={0} right={0} zIndex={5}>
+                <LinearProgress sx={{ height: 4 }} />
+              </Box>
+            ) : null}
             {layerSetsWindow.windowState.isVisible ? (
               <FloatingWindow
                 title={t('preview.layerSets.title', 'Layer Sets')}

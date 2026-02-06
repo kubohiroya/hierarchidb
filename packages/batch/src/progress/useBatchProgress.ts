@@ -8,6 +8,12 @@ type SubscribeResult = Unsubscribe | Promise<Unsubscribe>;
 
 type Adapter = BatchProgressAdapter | null;
 
+const resolveSkippedCount = (info: UnifiedProgressInfo): number => {
+  const payload = info.payload as Record<string, unknown> | undefined;
+  const skipped = payload?.skipped;
+  return typeof skipped === 'number' && Number.isFinite(skipped) ? skipped : 0;
+};
+
 export function useBatchProgress(
   adapter: Adapter,
   { autoSubscribe = true }: UseBatchProgressOptions = {},
@@ -31,22 +37,29 @@ export function useBatchProgress(
     pendingRef.current = null;
     if (next) {
       const prev = lastProgressRef.current;
-      if (prev && prev.stage === next.stage && next.percentage < prev.percentage) {
-        return;
+      if (next.phase === 'completed') {
+        const skipped = resolveSkippedCount(next);
+        const done = next.completed + next.failed + skipped;
+        if (next.total > 0 && done < next.total) {
+          return;
+        }
       }
+      const normalized = prev && next.percentage < prev.percentage
+        ? { ...next, percentage: prev.percentage }
+        : next;
       const isSame = Boolean(
         prev
-        && prev.stage === next.stage
-        && prev.phase === next.phase
-        && prev.percentage === next.percentage
-        && prev.completed === next.completed
-        && prev.failed === next.failed
-        && prev.total === next.total
-        && prev.message === next.message
+        && prev.stage === normalized.stage
+        && prev.phase === normalized.phase
+        && prev.percentage === normalized.percentage
+        && prev.completed === normalized.completed
+        && prev.failed === normalized.failed
+        && prev.total === normalized.total
+        && prev.message === normalized.message
       );
       if (isSame) return;
-      lastProgressRef.current = next;
-      setProgress(next);
+      lastProgressRef.current = normalized;
+      setProgress(normalized);
     }
   }, []);
 
